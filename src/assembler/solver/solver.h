@@ -6,12 +6,13 @@
 #include <vector>
 #include <string>
 
+#include "../instance.h"
+
 namespace espreso {
 
 struct Step;
 class Mesh;
 class Physics;
-class Instance;
 class LinearSolver;
 namespace store { class ResultStore; }
 class TimeEval;
@@ -22,28 +23,30 @@ class Solver
 {
 public:
 	Solver(
+			const std::string &name,
 			Mesh *mesh,
-			std::vector<Physics*> &physics,
-			std::vector<Instance*> &instances,
-			std::vector<LinearSolver*> &linearSolvers,
+			Physics* physics,
+			LinearSolver* linearSolver,
 			store::ResultStore* store);
 
 	virtual void run(Step &step) =0;
+	const std::string& name() const { return _name; }
 
 	virtual ~Solver();
 
-	std::vector<Physics*> physics;
-	std::vector<Instance*> instances;
-	std::vector<LinearSolver*> linearSolvers;
+	Physics* physics;
+	LinearSolver* linearSolver;
 
 protected:
-	void assembleStiffnessMatrices(const Step &step);
-	void assembleResidualForces(const Step &step);
-	void assembleB1(const Step &step);
-	void subtractSolutionFromB1c(const Step &step);
-	void makeStiffnessMatricesRegular(const Step &step);
-	void assembleB0(const Step &step);
+	void assembleMatrices(const Step &step, Matrices matrices);
+	void updateMatrices(const Step &step, Matrices matrices, const std::vector<Solution*> &solution);
+
+	void composeGluing(const Step &step, Matrices matrices);
+	void regularizeMatrices(const Step &step, Matrices matrices);
 	void processSolution(const Step &step);
+
+	void subtractSolutionFromB1c(const Step &step);
+
 
 	void lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext, Physics *physics, const Step &step);
 	void sumVectors(std::vector<std::vector<double> > &result, const std::vector<std::vector<double> > &a, const std::vector<std::vector<double> > &b, double alpha = 1, double beta = 1);
@@ -56,6 +59,7 @@ protected:
 	void startLinearSolver();
 	void finalizeLinearSolver();
 
+	std::string _name;
 	Mesh *_mesh;
 	store::ResultStore* _store;
 

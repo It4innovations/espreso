@@ -20,8 +20,8 @@
 
 using namespace espreso;
 
-Physics::Physics(Mesh *mesh, Instance *instance)
-: _mesh(mesh), _instance(instance)
+Physics::Physics(const std::string &name, Mesh *mesh, Instance *instance)
+: _name(name), _mesh(mesh), _instance(instance)
 {
 
 }
@@ -84,6 +84,8 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, c
 		insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, domain);
 	}
 
+	Me.resize(0, 0);
+	Re.resize(0, 0);
 	for (size_t i = 0; i < _mesh->faces().size(); i++) {
 		if (_mesh->faces()[i]->inDomain(domain)) {
 			processFace(step, _mesh->faces()[i], Ke, fe);
@@ -163,7 +165,7 @@ void Physics::insertElementToDomain(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix
 		}
 	} else {
 		if (Ke.rows() != 0 || Ke.columns() != 0) {
-			ESINFO(ERROR) << "ESPRESO internal error: something wrong happens while assembling stiffness matrix K.";
+			ESINFO(ERROR) << "ESPRESO internal error: something wrong happens while assembling stiffness matrix K(" << Ke.rows() << "," << Ke.columns() << ").";
 		}
 	}
 
@@ -175,7 +177,7 @@ void Physics::insertElementToDomain(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix
 		}
 	} else {
 		if (Me.rows() != 0 || Me.columns() != 0) {
-			ESINFO(ERROR) << "ESPRESO internal error: something wrong happens while assembling mass matrix M.";
+			ESINFO(ERROR) << "ESPRESO internal error: something wrong happens while assembling mass matrix M(" << Me.rows() << "," << Me.columns() << ").";
 		}
 	}
 
@@ -186,7 +188,8 @@ void Physics::insertElementToDomain(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix
 		}
 	} else {
 		if (Re.rows() != 0 || Re.columns() != 0) {
-			ESINFO(ERROR) << "ESPRESO internal error: something wrong happens while assembling matrix R with residual forces.";
+			std::cout << DOFs;
+			ESINFO(ERROR) << "ESPRESO internal error: something wrong happens while assembling matrix R(" << Re.rows() << "," << Re.columns() << ") with residual forces.";
 		}
 	}
 
@@ -196,7 +199,7 @@ void Physics::insertElementToDomain(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix
 		}
 	} else {
 		if (fe.rows() != 0 || fe.columns() != 0) {
-			ESINFO(ERROR) << "ESPRESO internal error: something wrong happens while assembling right-hand side vector";
+			ESINFO(ERROR) << "ESPRESO internal error: something wrong happens while assembling right-hand side vector f(" << fe.rows() << "," << fe.columns() << ").";
 		}
 	}
 }
@@ -399,6 +402,9 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOpe
 
 void Physics::assembleB1(const Step &step, bool withRedundantMultipliers, bool withScaling)
 {
+	for (size_t d = 0; d < _instance->domains; d++) {
+		_instance->B1[d].cols = _instance->DOFs[d];
+	}
 	EqualityConstraints::insertDirichletToB1(*_instance, _mesh->regions(), _mesh->nodes(), pointDOFs(), withRedundantMultipliers);
 	EqualityConstraints::insertElementGluingToB1(*_instance, _mesh->neighbours(), _mesh->regions(), _mesh->nodes(), pointDOFs(), withRedundantMultipliers, withScaling);
 }

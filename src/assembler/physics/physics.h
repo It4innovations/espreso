@@ -34,7 +34,8 @@ struct Physics {
 		DIRICHLET
 	};
 
-	Physics(Mesh *mesh, Instance *instance);
+	Physics(const std::string &name, Mesh *mesh, Instance *instance);
+	const std::string& name() const { return _name; }
 
 	virtual void prepareTotalFETI() =0;
 	virtual void prepareHybridTotalFETIWithCorners() =0;
@@ -79,6 +80,7 @@ struct Physics {
 	Instance* instance() { return _instance; }
 
 //protected:
+	std::string _name;
 	Mesh *_mesh;
 	Instance *_instance;
 };

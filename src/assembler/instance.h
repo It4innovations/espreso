@@ -12,10 +12,13 @@ class SparseMatrix;
 class Solution;
 
 enum Matrices : int {
-	K = 1,
-	M = 2,
-	R = 4,
-	f = 8
+	K   = 1 << 1,
+	M   = 1 << 2,
+	R   = 1 << 3,
+	f   = 1 << 4,
+	B0  = 1 << 5,
+	B1  = 1 << 6,
+	B1c = 1 << 7
 };
 
 struct Instance {
@@ -61,24 +64,31 @@ struct Instance {
 	std::vector<Solution*> solutions;
 };
 
-inline Matrices operator|(Matrices m1, Matrices m2)
+inline Matrices operator~(Matrices m)
+{
+	return static_cast<Matrices>(~static_cast<int>(m));
+}
+
+inline Matrices operator|(Matrices m1, const Matrices &m2)
 {
 	return static_cast<Matrices>(static_cast<int>(m1) | static_cast<int>(m2));
 }
 
-inline Matrices operator|=(Matrices m1, Matrices m2)
+inline Matrices& operator|=(Matrices &m1, const Matrices &m2)
 {
-	return static_cast<Matrices>(static_cast<int>(m1) | static_cast<int>(m2));
+	m1 = static_cast<Matrices>(static_cast<int>(m1) | static_cast<int>(m2));
+	return m1;
 }
 
-inline Matrices operator&(Matrices m1, Matrices m2)
+inline Matrices operator&(Matrices m1, const Matrices &m2)
 {
 	return static_cast<Matrices>(static_cast<int>(m1) & static_cast<int>(m2));
 }
 
-inline Matrices operator&=(Matrices m1, Matrices m2)
+inline Matrices& operator&=(Matrices &m1, const Matrices &m2)
 {
-	return static_cast<Matrices>(static_cast<int>(m1) & static_cast<int>(m2));
+	m1 = static_cast<Matrices>(static_cast<int>(m1) & static_cast<int>(m2));
+	return m1;
 }
 
 }

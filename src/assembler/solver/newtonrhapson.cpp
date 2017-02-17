@@ -13,27 +13,28 @@ using namespace espreso;
 
 NewtonRhapson::NewtonRhapson(
 		Mesh *mesh,
-		std::vector<Physics*> &physics,
-		std::vector<Instance*> &instances,
-		std::vector<LinearSolver*> &linearSolvers,
+		Physics* physics,
+		LinearSolver* linearSolver,
 		store::ResultStore* store,
 		const NonLinearSolverBase &configuration)
-: Solver(mesh, physics, instances, linearSolvers, store), _configuration(configuration)
+: Solver("NEWTON RHAPSON", mesh, physics, linearSolver, store), _configuration(configuration)
 {
 
 }
 
 void NewtonRhapson::run(Step &step)
 {
+	ESINFO(PROGRESS1) << "Run " << _name << " solver for " << physics->name();
+
 	if (!_configuration.convergenceParameters().checkSolution() && _configuration.convergenceParameters().checkResidual()) {
 		ESINFO(GLOBAL_ERROR) << "It is not possible to turn off the both 'temperature' and 'heat' convergence.";
 	}
 	step.solver = 0;
 
-	assembleStiffnessMatrices(step);
-	assembleB1(step);
-	makeStiffnessMatricesRegular(step);
-	assembleB0(step);
+	assembleMatrices(step, Matrices::K | Matrices::f);
+	composeGluing(step, Matrices::B1);
+	regularizeMatrices(step, Matrices::K);
+	composeGluing(step, Matrices::B0);
 
 	initLinearSolver();
 	startLinearSolver();
@@ -55,54 +56,53 @@ void NewtonRhapson::run(Step &step)
 		(temperatureResidual > _configuration.convergenceParameters().requestedSolution() ||
 		heatResidual > _configuration.convergenceParameters().requestedResidual())) {
 
-		T = instances.front()->primalSolution;
+		T = physics->instance()->primalSolution;
 
 		////////
-		instances.front() = new Instance(instances.front()->domains);
-		instances.front()->DOFs = physics.front()->instance()->DOFs;
-		instances.front()->primalSolution = physics.front()->instance()->primalSolution;
-		instances.front()->solutions = physics.front()->instance()->solutions;
-		physics.front()->instance()->solutions.resize(0);
-		linearSolvers.front() = new LinearSolver(linearSolvers.front()->configuration, linearSolvers.front()->physics, linearSolvers.front()->constraints);
-		physics.front()->_instance = instances.front();
+		Instance *old = physics->instance();
+		physics->_instance = new Instance(old->domains);
+		physics->instance()->DOFs = old->DOFs;
+		physics->instance()->primalSolution = old->primalSolution;
+		physics->instance()->solutions = old->solutions;
+		physics->instance()->solutions.resize(0);
+		linearSolver = new LinearSolver(linearSolver->configuration, linearSolver->physics, linearSolver->constraints);
 		processSolution(step);
 		///////
 
-		assembleStiffnessMatrices(step);
-		F_ext = instances.front()->f;
+		updateMatrices(step, Matrices::K | Matrices::f, physics->instance()->solutions);
+		F_ext = physics->instance()->f;
 		if (_configuration.convergenceParameters().checkResidual()) {
-			heatResidual = physics.front()->sumSquares(physics.front()->instance()->f, Physics::SumOperation::SUM);
+			heatResidual = physics->sumSquares(physics->instance()->f, Physics::SumOperation::SUM);
 		}
-		assembleResidualForces(step);
-		sumVectors(physics.front()->instance()->f, physics.front()->instance()->f, physics.front()->instance()->R, 1, -1);
+		assembleMatrices(step, Matrices::R);
+		sumVectors(physics->instance()->f, physics->instance()->f, physics->instance()->R, 1, -1);
 		if (_configuration.convergenceParameters().checkResidual()) {
-			heatResidual += physics.front()->sumSquares(physics.front()->instance()->f, Physics::SumOperation::SUM, Physics::SumRestriction::DIRICHLET, step.load);
+			heatResidual += physics->sumSquares(physics->instance()->f, Physics::SumOperation::SUM, Physics::SumRestriction::DIRICHLET, step.load);
 		}
-		assembleB1(step);
+		composeGluing(step, Matrices::B1);
 
 		subtractSolutionFromB1c(step);
 
-		makeStiffnessMatricesRegular(step);
+		regularizeMatrices(step, Matrices::K);
 
 		initLinearSolver();
 		startLinearSolver();
 
 		if (_configuration.line_search) {
-			lineSearch(T, physics.front()->instance()->primalSolution, F_ext, physics.front(), step);
+			lineSearch(T, physics->instance()->primalSolution, F_ext, physics, step);
 		}
 		if (_configuration.convergenceParameters().checkSolution()) {
-			temperatureResidual = sqrt(physics.front()->sumSquares(physics.front()->instance()->primalSolution, Physics::SumOperation::AVERAGE));
+			temperatureResidual = sqrt(physics->sumSquares(physics->instance()->primalSolution, Physics::SumOperation::AVERAGE));
 		}
-		sumVectors(physics.front()->instance()->primalSolution, T, physics.front()->instance()->primalSolution);
+		sumVectors(physics->instance()->primalSolution, T, physics->instance()->primalSolution);
 		if (_configuration.convergenceParameters().checkSolution()) {
-			temperatureResidual /= sqrt(physics.front()->sumSquares(physics.front()->instance()->primalSolution, Physics::SumOperation::AVERAGE));;
+			temperatureResidual /= sqrt(physics->sumSquares(physics->instance()->primalSolution, Physics::SumOperation::AVERAGE));;
 		}
 
 		processSolution(step);
 
 		if (_configuration.convergenceParameters().checkResidual()) {
-			assembleStiffnessMatrices(step);
-			assembleResidualForces(step);
+			assembleMatrices(step, Matrices::K | Matrices::R | Matrices::f);
 			// double R;
 			// |R| = f - R
 			// R = physics.front()->sumSquares(physics.front()->instance()->f, Physics::SumOperation::SUM);

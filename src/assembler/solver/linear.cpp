@@ -1,26 +1,30 @@
 
 #include "linear.h"
 #include "../step.h"
+#include "../instance.h"
+#include "../physics/physics.h"
+#include "../../basis/logging/logging.h"
 
 using namespace espreso;
 
 Linear::Linear(
 		Mesh *mesh,
-		std::vector<Physics*> &physics,
-		std::vector<Instance*> &instances,
-		std::vector<LinearSolver*> &linearSolvers,
+		Physics* physics,
+		LinearSolver* linearSolver,
 		store::ResultStore* store)
-: Solver(mesh, physics, instances, linearSolvers, store)
+: Solver("LINEAR", mesh, physics, linearSolver, store)
 {
 
 }
 
 void Linear::run(Step &step)
 {
-	assembleStiffnessMatrices(step);
-	assembleB1(step);
-	makeStiffnessMatricesRegular(step);
-	assembleB0(step);
+	ESINFO(PROGRESS1) << "Run " << _name << " solver for " << physics->name();
+
+	assembleMatrices(step, Matrices::K | Matrices::f);
+	composeGluing(step, Matrices::B1);
+	regularizeMatrices(step, Matrices::K);
+	composeGluing(step, Matrices::B0);
 
 	initLinearSolver();
 	startLinearSolver();

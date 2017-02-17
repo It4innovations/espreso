@@ -38,19 +38,19 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		for (size_t i = 1; i <= configuration.advection_diffusion_2D.physics_solver.load_steps; i++) {
 			auto it = configuration.advection_diffusion_2D.physics_solver.load_steps_settings.find(i);
 			if (it == configuration.advection_diffusion_2D.physics_solver.load_steps_settings.end()) {
-				loadSteps.push_back(new Linear(mesh, _physics, _instances, _linearSolvers, store));
+				loadSteps.push_back(new Linear(mesh, _physics.front(),  _linearSolvers.front(), store));
 				break;
 			}
 			LoadStepSettings<AdvectionDiffusionNonLinearConvergence> *loadStepSettings = it->second;
 
 			if (loadStepSettings->type == LoadStepSettingsBase::TYPE::STEADY_STATE) {
 				if (loadStepSettings->mode == LoadStepSettingsBase::MODE::LINEAR) {
-					loadSteps.push_back(new Linear(mesh, _physics, _instances, _linearSolvers, store));
+					loadSteps.push_back(new Linear(mesh, _physics.front(), _linearSolvers.front(), store));
 				}
 				if (loadStepSettings->mode == LoadStepSettingsBase::MODE::NONLINEAR) {
 					switch (loadStepSettings->nonlinear_solver.method) {
 					case NonLinearSolverBase::METHOD::NEWTON_RHAPSON:
-						loadSteps.push_back(new NewtonRhapson(mesh, _physics, _instances, _linearSolvers, store, loadStepSettings->nonlinear_solver));
+						loadSteps.push_back(new NewtonRhapson(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->nonlinear_solver));
 						break;
 					default:
 						ESINFO(GLOBAL_ERROR) << "Not implemented non-linear solver method";

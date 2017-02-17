@@ -11,9 +11,8 @@ class Linear: public Solver
 public:
 	Linear(
 			Mesh *mesh,
-			std::vector<Physics*> &physics,
-			std::vector<Instance*> &instances,
-			std::vector<LinearSolver*> &linearSolvers,
+			Physics* physics,
+			LinearSolver* linearSolver,
 			store::ResultStore* store);
 
 	virtual void run(Step &step);

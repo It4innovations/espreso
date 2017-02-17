@@ -13,9 +13,8 @@ class NewtonRhapson: public Solver
 public:
 	NewtonRhapson(
 			Mesh *mesh,
-			std::vector<Physics*> &physics,
-			std::vector<Instance*> &instances,
-			std::vector<LinearSolver*> &linearSolvers,
+			Physics* physics,
+			LinearSolver* linearSolver,
 			store::ResultStore* store,
 			const NonLinearSolverBase &configuration);
 

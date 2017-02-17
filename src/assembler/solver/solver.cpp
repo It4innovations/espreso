@@ -20,14 +20,14 @@
 using namespace espreso;
 
 Solver::Solver(
+		const std::string &name,
 		Mesh *mesh,
-		std::vector<Physics*> &physics,
-		std::vector<Instance*> &instances,
-		std::vector<LinearSolver*> &linearSolvers,
+		Physics* physics,
+		LinearSolver* linearSolver,
 		store::ResultStore* store)
-: physics(physics), instances(instances), linearSolvers(linearSolvers), _mesh(mesh), _store(store)
+: physics(physics), linearSolver(linearSolver), _name(name), _mesh(mesh), _store(store)
 {
-	_timeStatistics = new TimeEval("Solver Overall Timing");
+	_timeStatistics = new TimeEval(physics->name() + " solved by " + _name + " solver overall timing");
 	_timeStatistics->totalTime.startWithBarrier();
 }
 
@@ -36,6 +36,16 @@ Solver::~Solver()
 	delete _timeStatistics;
 }
 
+static std::string mNames(espreso::Matrices matrices)
+{
+	return
+	std::string(matrices & espreso::Matrices::K  ? "K "  : "") +
+	std::string(matrices & espreso::Matrices::M  ? "M "  : "") +
+	std::string(matrices & espreso::Matrices::R  ? "R "  : "") +
+	std::string(matrices & espreso::Matrices::f  ? "f "  : "") +
+	std::string(matrices & espreso::Matrices::B0 ? "B0 " : "") +
+	std::string(matrices & espreso::Matrices::B1 ? "B1 " : "");
+}
 
 void Solver::storeData(const Step &step, std::vector<SparseMatrix> &matrices, const std::string &name, const std::string &description)
 {
@@ -63,132 +73,130 @@ void Solver::storeData(const Step &step, std::vector<std::vector<double> > &vect
 
 void Solver::storeSolution(const Step &step)
 {
-	for (size_t i = 0; i < instances.size(); i++) {
-		for (size_t s = 0; s < instances[i]->solutions.size(); s++) {
-			_store->storeValues(instances[i]->solutions[s]->name, instances[i]->solutions[i]->properties, instances[i]->solutions[s]->data, instances[i]->solutions[s]->eType);
+	for (size_t s = 0; s < physics->instance()->solutions.size(); s++) {
+		_store->storeValues(physics->instance()->solutions[s]->name, physics->instance()->solutions[s]->properties, physics->instance()->solutions[s]->data, physics->instance()->solutions[s]->eType);
+	}
+}
+
+void Solver::assembleMatrices(const Step &step, Matrices matrices)
+{
+	updateMatrices(step, matrices, {});
+}
+
+void Solver::updateMatrices(const Step &step, Matrices matrices, const std::vector<Solution*> &solution)
+{
+	if (matrices & ~(Matrices::K | Matrices::M | Matrices::R | Matrices::f)) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: invalid matrices passed to Solver::assembleMatrices.";
+	}
+
+	ESINFO(PROGRESS2) << physics->name() << (solution.size() ? " updates" : " assembles") << " matrices: " << mNames(matrices);
+
+	TimeEvent time(std::string(solution.size() ? "Updates" : "Assembles") + " matrices " + mNames(matrices) + " by " + physics->name()); time.start();
+	physics->updateMatrix(step, matrices, solution);
+	time.endWithBarrier(); _timeStatistics->addEvent(time);
+
+	if (matrices & Matrices::K) {
+		storeData(step, physics->instance()->K, "K", "stiffness matrices K");
+	}
+	if (matrices & Matrices::M) {
+		storeData(step, physics->instance()->M, "M", "mass matrices K");
+	}
+	if (matrices & Matrices::R) {
+		storeData(step, physics->instance()->R, "R", "residual forces R");
+	}
+	if (matrices & Matrices::f) {
+		storeData(step, physics->instance()->f, "f", "right-hand side");
+	}
+}
+
+void Solver::regularizeMatrices(const Step &step, Matrices matrices)
+{
+	if (matrices & ~(Matrices::K)) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: invalid matrices passed to Solver::regularizeMatrices.";
+	}
+
+	ESINFO(PROGRESS2) << physics->name() << " regularizes matrices: " << mNames(matrices);
+
+	TimeEvent time("Regularization of matrices " + mNames(matrices) + " by " + physics->name()); time.start();
+	physics->makeStiffnessMatricesRegular(linearSolver->configuration.regularization);
+	time.endWithBarrier(); _timeStatistics->addEvent(time);
+
+	if (matrices & Matrices::K) {
+		storeData(step, physics->instance()->N1, "R1", "N1");
+		storeData(step, physics->instance()->N2, "R2", "N2");
+		storeData(step, physics->instance()->RegMat, "RegMat", "RegMat");
+	}
+}
+
+void Solver::composeGluing(const Step &step, Matrices matrices)
+{
+	if (matrices & ~(Matrices::B0 | Matrices::B1)) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: invalid matrices passed to Solver::composeGluing.";
+	}
+	if (linearSolver->configuration.method == ESPRESO_METHOD::TOTAL_FETI) {
+		matrices &= ~(Matrices::B0);
+	}
+	if (!matrices) {
+		return;
+	}
+
+	ESINFO(PROGRESS2) << "Compose gluing matrices " << mNames(matrices) << "for " << physics->name();
+
+	TimeEvent time("Composition of gluing matrices" + mNames(matrices) + "for " + physics->name()); time.start();
+	if (matrices & Matrices::B0) {
+		switch (linearSolver->configuration.B0_type) {
+		case B0_TYPE::CORNERS:
+			physics->assembleB0FromCorners(step);
+			break;
+		case B0_TYPE::KERNELS:
+			physics->assembleB0FromKernels(step);
+			break;
+		default:
+			ESINFO(GLOBAL_ERROR) << "Unknown type of B0";
 		}
 	}
-}
+	if (matrices & Matrices::B1) {
+		physics->assembleB1(step, linearSolver->configuration.redundant_lagrange, linearSolver->configuration.scaling);
+	}
+	time.endWithBarrier(); _timeStatistics->addEvent(time);
 
-void Solver::assembleStiffnessMatrices(const Step &step)
-{
-	ESINFO(PROGRESS2) << "Assemble matrices K and RHS.";
-	TimeEvent timePhysics("Assemble stiffness matrices"); timePhysics.start();
-	std::for_each(physics.begin(), physics.end(), [&] (Physics *p) { p->assembleMatrix(step, Matrices::K | Matrices::f); });
-	timePhysics.endWithBarrier(); _timeStatistics->addEvent(timePhysics);
+	if (matrices & Matrices::B0) {
+		storeData(step, physics->instance()->B0, "B0", "B0");
+	}
 
-	for (size_t i = 0; i < instances.size(); i++) {
-		storeData(step, instances[i]->K, instances.size() > 1 ? "K" + std::to_string(i) + "_" : "K", "stiffness matrices");
-		storeData(step, instances[i]->f, instances.size() > 1 ? "f" + std::to_string(i) + "_" : "f", "RHS");
+	if (matrices & Matrices::B1) {
+		storeData(step, physics->instance()->B1, "B1", "B1");
+		storeData(step, physics->instance()->B1c, "B1c", "B1c");
+		storeData(step, physics->instance()->B1duplicity, "B1duplicity", "B1duplicity");
 	}
 }
 
-void Solver::assembleResidualForces(const Step &step)
+void Solver::processSolution(const Step &step)
 {
-	ESINFO(PROGRESS2) << "Subtract residual forces.";
-	TimeEvent timeSub("Subtract residual forces"); timeSub.start();
-	for (size_t i = 0; i < instances.size(); i++) {
-		physics[i]->assembleMatrix(step, Matrices::R);
-	}
-	timeSub.endWithBarrier(); _timeStatistics->addEvent(timeSub);
+	ESINFO(PROGRESS2) << "Run " << physics->name() << " post-processing";
+	TimeEvent time(physics->name() + " post-processing"); time.start();
+	physics->processSolution(step);
+	time.endWithBarrier(); _timeStatistics->addEvent(time);
 
-	for (size_t i = 0; i < instances.size(); i++) {
-		storeData(step, instances[i]->R, instances.size() > 1 ? "R" + std::to_string(i) + "_" : "R", "Residual forces");
-	}
-}
-
-void Solver::makeStiffnessMatricesRegular(const Step &step)
-{
-	ESINFO(PROGRESS2) << "Assemble matrices R1, R2 and RegMat.";
-	TimeEvent timeReg("Make K regular"); timeReg.start();
-	for (size_t i = 0; i < instances.size(); i++) {
-		physics[i]->makeStiffnessMatricesRegular(linearSolvers[i]->configuration.regularization);
-	}
-	timeReg.endWithBarrier(); _timeStatistics->addEvent(timeReg);
-
-	for (size_t i = 0; i < instances.size(); i++) {
-		storeData(step, instances[i]->N1, instances.size() > 1 ? "R1" + std::to_string(i) + "_" : "R1", "R1");
-		storeData(step, instances[i]->N2, instances.size() > 1 ? "R2" + std::to_string(i) + "_" : "R2", "R2");
-		storeData(step, instances[i]->RegMat, instances.size() > 1 ? "RegMat" + std::to_string(i) + "_" : "RegMat", "regularization matrix");
-	}
-}
-
-void Solver::assembleB1(const Step &step)
-{
-	ESINFO(PROGRESS2) << "Assemble B1.";
-	TimeEvent timeConstrainsB1("Assemble B1"); timeConstrainsB1.startWithBarrier();
-	for (size_t i = 0; i < instances.size(); i++) {
-		for (size_t d = 0; d < instances[i]->domains; d++) {
-			instances[i]->B1[d].cols = instances[i]->DOFs[d];
-		}
-		physics[i]->assembleB1(step, linearSolvers[i]->configuration.redundant_lagrange, linearSolvers[i]->configuration.scaling);
-	}
-	timeConstrainsB1.end(); _timeStatistics->addEvent(timeConstrainsB1);
-
-	for (size_t i = 0; i < instances.size(); i++) {
-		storeData(step, instances[i]->B1, instances.size() > 1 ? "B1" + std::to_string(i) + "_" : "B1", "Total FETI gluing matrices");
-		storeData(step, instances[i]->B1duplicity, instances.size() > 1 ? "B1duplicity" + std::to_string(i) + "_" : "B1duplicity", "B1 duplicity");
-		storeData(step, instances[i]->B1c, instances.size() > 1 ? "B1c" + std::to_string(i) + "_" : "B1c", "B1 c");
-	}
-
-	if (_store->configuration().gluing) {
-		for (size_t i = 0; i < instances.size(); i++) {
-			store::VTK::gluing(_store->configuration(), *_mesh, *instances[i], "B1", physics[i]->pointDOFs().size());
-		}
-	}
+	storeData(step, physics->instance()->primalSolution, "solution", "solution");
 }
 
 void Solver::subtractSolutionFromB1c(const Step &step)
 {
 	ESINFO(PROGRESS2) << "Subtract solution from B1c.";
 	TimeEvent timesubtractB1c("Assemble B1"); timesubtractB1c.startWithBarrier();
-	for (size_t i = 0; i < instances.size(); i++) {
-		#pragma omp parallel for
-		for (size_t d = 0; d < instances[i]->domains; d++) {
-			for (size_t j = 0; j < instances[i]->B1[d].J_col_indices.size(); j++) {
-				if (instances[i]->B1[d].I_row_indices[j] > (eslocal)instances[i]->block[Instance::CONSTRAINT::DIRICHLET]) {
-					break;
-				}
-				instances[i]->B1c[d][j] -= instances[i]->primalSolution[d][instances[i]->B1[d].J_col_indices[j] - 1];
+	#pragma omp parallel for
+	for (size_t d = 0; d < physics->instance()->domains; d++) {
+		for (size_t j = 0; j < physics->instance()->B1[d].J_col_indices.size(); j++) {
+			if (physics->instance()->B1[d].I_row_indices[j] > (eslocal)physics->instance()->block[Instance::CONSTRAINT::DIRICHLET]) {
+				break;
 			}
+			physics->instance()->B1c[d][j] -= physics->instance()->primalSolution[d][physics->instance()->B1[d].J_col_indices[j] - 1];
 		}
 	}
 	timesubtractB1c.end(); _timeStatistics->addEvent(timesubtractB1c);
 
-	for (size_t i = 0; i < instances.size(); i++) {
-		storeData(step, instances[i]->B1c, instances.size() > 1 ? "B1c" + std::to_string(i) + "_" : "B1c", "B1 c");
-	}
-}
-
-void Solver::assembleB0(const Step &step)
-{
-	ESINFO(PROGRESS2) << "Assemble B0.";
-	TimeEvent timeConstrainsB0("Assemble B0"); timeConstrainsB0.startWithBarrier();
-	for (size_t i = 0; i < instances.size(); i++) {
-		for (size_t d = 0; d < instances[i]->domains; d++) {
-			instances[i]->B0[d].cols = instances[i]->DOFs[d];
-		}
-
-		if (linearSolvers[i]->configuration.method == ESPRESO_METHOD::TOTAL_FETI) {
-			continue;
-		}
-
-		switch (linearSolvers[i]->configuration.B0_type) {
-		case B0_TYPE::CORNERS:
-			physics[i]->assembleB0FromCorners(step);
-			break;
-		case B0_TYPE::KERNELS:
-			physics[i]->assembleB0FromKernels(step);
-			break;
-		default:
-			ESINFO(GLOBAL_ERROR) << "Unknown type of B0";
-		}
-	}
-	timeConstrainsB0.end(); _timeStatistics->addEvent(timeConstrainsB0);
-
-	for (size_t i = 0; i < instances.size(); i++) {
-		storeData(step, instances[i]->B0, instances.size() > 1 ? "B0" + std::to_string(i) + "_" : "B0", "Hybrid Totoal FETI gluing matrices");
-	}
+	storeData(step, physics->instance()->B1c, "B1c", "B1c");
 }
 
 void Solver::lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext, Physics *physics, const Step &step)
@@ -271,41 +279,24 @@ void Solver::sumVectors(std::vector<std::vector<double> > &result, const std::ve
 	}
 }
 
-void Solver::processSolution(const Step &step)
-{
-	TimeEvent store("Store solution"); store.startWithBarrier();
-	for (size_t i = 0; i < instances.size(); i++) {
-		physics[i]->processSolution(step);
-	}
-	store.end(); _timeStatistics->addEvent(store);
-
-	for (size_t i = 0; i < instances.size(); i++) {
-		storeData(step, instances[i]->primalSolution, instances.size() > 1 ? "solution" + std::to_string(i) + "_" : "solution", "solution");
-	}
-}
-
 void Solver::initLinearSolver()
 {
 	TimeEvent timeSolver("Initialize solver"); timeSolver.startWithBarrier();
-	for (size_t i = 0; i < linearSolvers.size(); i++) {
-		linearSolvers[i]->steel(instances[i]);
-		linearSolvers[i]->init(_mesh->neighbours());
-	}
+	linearSolver->steel(physics->instance());
+	linearSolver->init(_mesh->neighbours());
 	timeSolver.end(); _timeStatistics->addEvent(timeSolver);
 }
 
 void Solver::startLinearSolver()
 {
 	TimeEvent timeSolve("Linear Solver - runtime"); timeSolve.start();
-	for (size_t i = 0; i < instances.size(); i++) {
-		linearSolvers[i]->Solve(instances[i]->f, instances[i]->primalSolution);
-	}
+	linearSolver->Solve(physics->instance()->f, physics->instance()->primalSolution);
 	timeSolve.endWithBarrier(); _timeStatistics->addEvent(timeSolve);
 }
 
 void Solver::finalizeLinearSolver()
 {
-	std::for_each(linearSolvers.begin(), linearSolvers.end(), [&] (LinearSolver *s) { s->finilize(); });
+	linearSolver->finilize();
 
 	_store->finalize();
 
