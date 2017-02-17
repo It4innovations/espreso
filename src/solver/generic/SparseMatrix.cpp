@@ -946,6 +946,20 @@ void SparseMatrix::ConvertDenseToCSR( eslocal clearDense_1_keep_Dense_0 ){
 	eslocal lda     = m;
 	eslocal info    = 0;
 
+	std::vector<double> values;
+
+	double *data = dense_values.data();
+
+	if (type == 'S' && rows * cols != dense_values.size()) {
+		// mkl_ddnscsr needs full dense matrix
+		values.reserve(rows * cols);
+		for (eslocal r = 0, begin = 0; r < rows; begin += ++r) {
+			values.insert(values.end(), dense_values.begin() + begin, dense_values.begin() + begin + r + 1);
+			values.insert(values.end(), cols - r - 1, 0);
+		}
+		data = values.data();
+	}
+
 	eslocal job[8];
 
 	// Convert to sparse format - find nnz step
@@ -968,7 +982,7 @@ void SparseMatrix::ConvertDenseToCSR( eslocal clearDense_1_keep_Dense_0 ){
 	mkl_ddnscsr (
 		job,
 		&m, &n,
-		&dense_values[0], &lda,
+		data, &lda,
 		&CSR_V_values[0], &CSR_J_col_indices[0], &CSR_I_row_indices[0],
 		&info);
 
@@ -985,7 +999,7 @@ void SparseMatrix::ConvertDenseToCSR( eslocal clearDense_1_keep_Dense_0 ){
 	mkl_ddnscsr (
 		job,
 		&m, &n,
-		&dense_values[0], &lda,
+		data, &lda,
 		&CSR_V_values[0], &CSR_J_col_indices[0], &CSR_I_row_indices[0],
 		&info);
 
