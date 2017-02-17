@@ -72,6 +72,23 @@ void LinearSolver::setup() {
 
 }
 
+void LinearSolver::updated(Matrices matrices)
+{
+	// TODO update appropriate solver objects
+
+	if (matrices & Matrices::K) {
+		std::cout << "Matrices K were updated\n";
+	}
+
+	if (matrices & (Matrices::K | Matrices::M)) {
+		std::cout << "Matrices K and M were updated\n";
+	}
+
+	if (matrices & (Matrices::B1)) {
+		std::cout << "Matrices B1\n";
+	}
+}
+
 void LinearSolver::steel(Instance *instance)
 {
 	setup();

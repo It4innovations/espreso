@@ -36,6 +36,7 @@ public:
 
 	void setup();
 	void steel(Instance *instance);
+	void updated(Matrices matrices);
 
 	void init(const std::vector<int> &neighbours);
 
