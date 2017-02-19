@@ -144,6 +144,13 @@ void Solver::composeGluing(const Step &step, Matrices matrices)
 
 	TimeEvent time("Composition of gluing matrices" + mNames(matrices) + "for " + physics->name()); time.start();
 	if (matrices & Matrices::B0) {
+		// TODO: create update method
+		physics->instance()->B0.clear();
+		physics->instance()->B0.resize(physics->instance()->domains);
+		for (size_t d = 0; d < physics->instance()->domains; d++) {
+			physics->instance()->B0[d].type = 'G';
+			physics->instance()->B0subdomainsMap[d].clear();
+		}
 		switch (linearSolver->configuration.B0_type) {
 		case B0_TYPE::CORNERS:
 			physics->assembleB0FromCorners(step);
@@ -156,6 +163,22 @@ void Solver::composeGluing(const Step &step, Matrices matrices)
 		}
 	}
 	if (matrices & Matrices::B1) {
+		// TODO: create update method
+		physics->instance()->B1.clear();
+		physics->instance()->B1.resize(physics->instance()->domains);
+		physics->instance()->inequality.clear();
+		physics->instance()->inequality.resize(physics->instance()->domains);
+		physics->instance()->B1clustersMap.clear();
+		for (size_t d = 0; d < physics->instance()->domains; d++) {
+			physics->instance()->B1[d].type = 'G';
+			physics->instance()->B1c[d].clear();
+			physics->instance()->LB[d].clear();
+			physics->instance()->B1duplicity[d].clear();
+			physics->instance()->inequalityC[d].clear();
+			physics->instance()->B1subdomainsMap[d].clear();
+		}
+		physics->instance()->block.clear();
+		physics->instance()->block.resize(3, 0);
 		physics->assembleB1(step, linearSolver->configuration.redundant_lagrange, linearSolver->configuration.scaling);
 	}
 	time.endWithBarrier(); _timeStatistics->addEvent(time);
@@ -180,6 +203,38 @@ void Solver::processSolution(const Step &step)
 
 	storeData(step, physics->instance()->primalSolution, "solution", "solution");
 }
+
+void Solver::initLinearSolver()
+{
+	TimeEvent timeSolver("Initialize linear solver"); timeSolver.startWithBarrier();
+	linearSolver->init();
+	timeSolver.end(); _timeStatistics->addEvent(timeSolver);
+}
+
+void Solver::updateLinearSolver(Matrices matrices)
+{
+	TimeEvent timeSolver("Update linear solver"); timeSolver.startWithBarrier();
+	linearSolver->update(matrices);
+	timeSolver.end(); _timeStatistics->addEvent(timeSolver);
+}
+
+void Solver::runLinearSolver()
+{
+	TimeEvent timeSolve("Linear Solver - runtime"); timeSolve.start();
+	linearSolver->run();
+	timeSolve.endWithBarrier(); _timeStatistics->addEvent(timeSolve);
+}
+
+void Solver::finalizeLinearSolver()
+{
+	linearSolver->finilize();
+
+	_store->finalize();
+
+	_timeStatistics->totalTime.endWithBarrier();
+	_timeStatistics->printStatsMPI();
+}
+
 
 void Solver::subtractSolutionFromB1c(const Step &step)
 {
@@ -277,30 +332,5 @@ void Solver::sumVectors(std::vector<std::vector<double> > &result, const std::ve
 			result[d][i] = alpha * a[d][i] + beta * b[d][i];
 		}
 	}
-}
-
-void Solver::initLinearSolver()
-{
-	TimeEvent timeSolver("Initialize solver"); timeSolver.startWithBarrier();
-	linearSolver->steel(physics->instance());
-	linearSolver->init(_mesh->neighbours());
-	timeSolver.end(); _timeStatistics->addEvent(timeSolver);
-}
-
-void Solver::startLinearSolver()
-{
-	TimeEvent timeSolve("Linear Solver - runtime"); timeSolve.start();
-	linearSolver->Solve(physics->instance()->f, physics->instance()->primalSolution);
-	timeSolve.endWithBarrier(); _timeStatistics->addEvent(timeSolve);
-}
-
-void Solver::finalizeLinearSolver()
-{
-	linearSolver->finilize();
-
-	_store->finalize();
-
-	_timeStatistics->totalTime.endWithBarrier();
-	_timeStatistics->printStatsMPI();
 }
 

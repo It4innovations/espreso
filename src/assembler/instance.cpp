@@ -6,7 +6,8 @@
 
 using namespace espreso;
 
-Instance::Instance(size_t domains): domains(domains)
+Instance::Instance(size_t domains, const std::vector<int> &neighbours)
+: domains(domains), neighbours(neighbours)
 {
 	DOFs.resize(domains);
 

@@ -27,7 +27,7 @@ void Linear::run(Step &step)
 	composeGluing(step, Matrices::B0);
 
 	initLinearSolver();
-	startLinearSolver();
+	runLinearSolver();
 	processSolution(step);
 	storeSolution(step);
 

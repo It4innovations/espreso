@@ -17,26 +17,21 @@
 
 namespace espreso {
 
+struct Instance;
 
 class LinearSolver {
 public:
 
-	LinearSolver(const ESPRESOSolver &configuration, OldPhysics &physics, Constraints &constraints)
-	: configuration(configuration),
-	  timeEvalMain("ESPRESO Solver Overal Timing"),
-	  physics(physics),
-	  constraints(constraints),
-	  cluster(configuration),
-	  solver(configuration)
-	{
-		setup();
-	}
+	LinearSolver(Instance *instance, const ESPRESOSolver &configuration);
+	LinearSolver(const ESPRESOSolver &configuration, OldPhysics &physics, Constraints &constraints); // to be removed
+
+	void init();
+	void update(Matrices matrices);
+	void run();
 
 	virtual ~LinearSolver();
 
 	void setup();
-	void steel(Instance *instance);
-	void updated(Matrices matrices);
 
 	void init(const std::vector<int> &neighbours);
 
@@ -84,12 +79,15 @@ public:
 
 	void set_R_from_K();
 
+	Instance *instance;
 	const ESPRESOSolver &configuration;
 
-	TimeEval timeEvalMain; //(string("ESPRESO Solver Overal Timing"));
+	// TODO: to be removed
+	OldPhysics *physics;
+	Constraints *constraints;
 
-	OldPhysics &physics;
-	Constraints &constraints;
+
+	TimeEval timeEvalMain; //(string("ESPRESO Solver Overal Timing"));
 
 private:
 	eslocal number_of_subdomains_per_cluster;
@@ -97,9 +95,8 @@ private:
 	bool 	SINGULAR;
 	bool 	KEEP_FACTORS;
 
-	Cluster cluster;
-
-	IterSolver solver;
+	Cluster *cluster;
+	IterSolver *solver;
 
 
 

@@ -29,7 +29,7 @@ public:
 	void Create_SC_perDomain( bool USE_FLOAT );
     void Create_Kinv_perDomain();
 	void SetupKsolvers ( );
-    void CreateDirichletPrec( OldPhysics &physics );
+    void CreateDirichletPrec( Instance *instance );
 
 //private:
 

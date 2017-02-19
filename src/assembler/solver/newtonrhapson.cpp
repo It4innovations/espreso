@@ -37,7 +37,7 @@ void NewtonRhapson::run(Step &step)
 	composeGluing(step, Matrices::B0);
 
 	initLinearSolver();
-	startLinearSolver();
+	runLinearSolver();
 	processSolution(step);
 
 	double temperatureResidual = _configuration.convergenceParameters().requestedSolution();
@@ -58,17 +58,6 @@ void NewtonRhapson::run(Step &step)
 
 		T = physics->instance()->primalSolution;
 
-		////////
-		Instance *old = physics->instance();
-		physics->_instance = new Instance(old->domains);
-		physics->instance()->DOFs = old->DOFs;
-		physics->instance()->primalSolution = old->primalSolution;
-		physics->instance()->solutions = old->solutions;
-		physics->instance()->solutions.resize(0);
-		linearSolver = new LinearSolver(linearSolver->configuration, linearSolver->physics, linearSolver->constraints);
-		processSolution(step);
-		///////
-
 		updateMatrices(step, Matrices::K | Matrices::f, physics->instance()->solutions);
 		F_ext = physics->instance()->f;
 		if (_configuration.convergenceParameters().checkResidual()) {
@@ -85,8 +74,8 @@ void NewtonRhapson::run(Step &step)
 
 		regularizeMatrices(step, Matrices::K);
 
-		initLinearSolver();
-		startLinearSolver();
+		updateLinearSolver(Matrices::K | Matrices::f | Matrices::B1c);
+		runLinearSolver();
 
 		if (_configuration.line_search) {
 			lineSearch(T, physics->instance()->primalSolution, F_ext, physics, step);

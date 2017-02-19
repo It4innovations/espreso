@@ -23,10 +23,11 @@ enum Matrices : int {
 
 struct Instance {
 
-	Instance(size_t domains);
+	Instance(size_t domains, const std::vector<int> &neighbours);
 	~Instance();
 
 	size_t domains;
+	std::vector<int> neighbours;
 	std::vector<size_t> DOFs;
 
 	std::vector<SparseMatrix> K, M, N1, N2, RegMat;

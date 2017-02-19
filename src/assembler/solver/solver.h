@@ -45,6 +45,11 @@ protected:
 	void regularizeMatrices(const Step &step, Matrices matrices);
 	void processSolution(const Step &step);
 
+	void initLinearSolver();
+	void updateLinearSolver(Matrices matrices);
+	void runLinearSolver();
+	void finalizeLinearSolver();
+
 	void subtractSolutionFromB1c(const Step &step);
 
 
@@ -54,10 +59,6 @@ protected:
 	void storeData(const Step &step, std::vector<SparseMatrix> &matrices, const std::string &name, const std::string &description);
 	void storeData(const Step &step, std::vector<std::vector<double> > &vectors, const std::string &name, const std::string &description);
 	void storeSolution(const Step &step);
-
-	void initLinearSolver();
-	void startLinearSolver();
-	void finalizeLinearSolver();
 
 	std::string _name;
 	Mesh *_mesh;

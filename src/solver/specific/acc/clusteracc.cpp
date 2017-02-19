@@ -1,7 +1,7 @@
 
 #include "clusteracc.h"
 
-#include "../../../assembler/old_physics/assembler.h"
+#include "../../../assembler/instance.h"
 
 using namespace espreso;
 
@@ -752,7 +752,7 @@ void ClusterAcc::SetupKsolvers ( ) {
     }
 }
 
-void ClusterAcc::CreateDirichletPrec( OldPhysics &physics ) {
+void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
     // Prepare matrix pack
 
     // detect how many MPI processes is running per node
@@ -955,11 +955,11 @@ void ClusterAcc::CreateDirichletPrec( OldPhysics &physics ) {
         for (eslocal j = 0; j < accPreconditioners[mic].size(); ++j ) {
             eslocal d = accPreconditioners[mic].at(j);
             SEQ_VECTOR <eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
-            SEQ_VECTOR <eslocal> perm_vec_full ( physics.K[d].rows );
-            SEQ_VECTOR <eslocal> perm_vec_diff ( physics.K[d].rows );
+            SEQ_VECTOR <eslocal> perm_vec_full ( instance->K[d].rows );
+            SEQ_VECTOR <eslocal> perm_vec_diff ( instance->K[d].rows );
 
-            SEQ_VECTOR <eslocal> I_row_indices_p (physics.K[d].nnz);
-            SEQ_VECTOR <eslocal> J_col_indices_p (physics.K[d].nnz);
+            SEQ_VECTOR <eslocal> I_row_indices_p (instance->K[d].nnz);
+            SEQ_VECTOR <eslocal> J_col_indices_p (instance->K[d].nnz);
 
             for (eslocal i = 0; i < perm_vec.size(); i++) {
                 perm_vec[i] = perm_vec[i] - 1;
@@ -975,8 +975,8 @@ void ClusterAcc::CreateDirichletPrec( OldPhysics &physics ) {
             perm_vec_full = perm_vec_diff;
             perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
 
-            SparseMatrix K_modif = physics.K[d];
-            SparseMatrix RegMatCRS = physics.RegMat[d];
+            SparseMatrix K_modif = instance->K[d];
+            SparseMatrix RegMatCRS = instance->RegMat[d];
             RegMatCRS.ConvertToCSRwithSort(0);
             K_modif.MatAddInPlace(RegMatCRS,'N',-1);
             // K_modif.RemoveLower();
@@ -1035,8 +1035,8 @@ void ClusterAcc::CreateDirichletPrec( OldPhysics &physics ) {
 
             eslocal sc_size = perm_vec.size();
 
-            if (sc_size == physics.K[d].rows) {
-                domains[d].Prec = physics.K[d];
+            if (sc_size == instance->K[d].rows) {
+                domains[d].Prec = instance->K[d];
                 domains[d].Prec.ConvertCSRToDense(1);
                 // if physics.K[d] does not contain inner DOF
             } else {
@@ -1136,11 +1136,11 @@ void ClusterAcc::CreateDirichletPrec( OldPhysics &physics ) {
     for (size_t j = 0; j < hostPreconditioners.size(); ++j ) {
         eslocal d = hostPreconditioners.at(j);
         SEQ_VECTOR <eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
-        SEQ_VECTOR <eslocal> perm_vec_full ( physics.K[d].rows );
-        SEQ_VECTOR <eslocal> perm_vec_diff ( physics.K[d].rows );
+        SEQ_VECTOR <eslocal> perm_vec_full ( instance->K[d].rows );
+        SEQ_VECTOR <eslocal> perm_vec_diff ( instance->K[d].rows );
 
-        SEQ_VECTOR <eslocal> I_row_indices_p (physics.K[d].nnz);
-        SEQ_VECTOR <eslocal> J_col_indices_p (physics.K[d].nnz);
+        SEQ_VECTOR <eslocal> I_row_indices_p (instance->K[d].nnz);
+        SEQ_VECTOR <eslocal> J_col_indices_p (instance->K[d].nnz);
 
         for (eslocal i = 0; i < perm_vec.size(); i++) {
             perm_vec[i] = perm_vec[i] - 1;
@@ -1156,8 +1156,8 @@ void ClusterAcc::CreateDirichletPrec( OldPhysics &physics ) {
         perm_vec_full = perm_vec_diff;
         perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
 
-        SparseMatrix K_modif = physics.K[d];
-        SparseMatrix RegMatCRS = physics.RegMat[d];
+        SparseMatrix K_modif = instance->K[d];
+        SparseMatrix RegMatCRS = instance->RegMat[d];
         RegMatCRS.ConvertToCSRwithSort(0);
         K_modif.MatAddInPlace(RegMatCRS,'N',-1);
         // K_modif.RemoveLower();
@@ -1216,8 +1216,8 @@ void ClusterAcc::CreateDirichletPrec( OldPhysics &physics ) {
 
         eslocal sc_size = perm_vec.size();
 
-        if (sc_size == physics.K[d].rows) {
-            domains[d].Prec = physics.K[d];
+        if (sc_size == instance->K[d].rows) {
+            domains[d].Prec = instance->K[d];
             domains[d].Prec.ConvertCSRToDense(1);
             // if physics.K[d] does not contain inner DOF
         } else {

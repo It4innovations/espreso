@@ -33,8 +33,8 @@
 
     namespace espreso {
 
+    struct Instance;
     class Domain;
-    class OldPhysics;
 
     class ClusterBase
     {
@@ -191,7 +191,7 @@
 
         void Create_Kinv_perDomain();
         virtual void Create_SC_perDomain( bool USE_FLOAT ) = 0;
-        virtual void CreateDirichletPrec( OldPhysics &physics );
+        virtual void CreateDirichletPrec( Instance *instance );
 
 	void B1_comp_MatVecSum(SEQ_VECTOR < SEQ_VECTOR <double> > & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_non_transpose );
 

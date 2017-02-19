@@ -30,9 +30,9 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 	if (configuration.physics == PHYSICS::ADVECTION_DIFFUSION_2D && configuration.advection_diffusion_2D.newassembler) {
 		_newAssembler = true;
-		_instances.push_back(new Instance(mesh->parts()));
+		_instances.push_back(new Instance(mesh->parts(), mesh->neighbours()));
 		_physics.push_back(new NewAdvectionDiffusion2D(mesh, _instances.front(), configuration.advection_diffusion_2D));
-		_linearSolvers.push_back(new LinearSolver(configuration.advection_diffusion_2D.espreso, instance->physics(), instance->constraints()));
+		_linearSolvers.push_back(new LinearSolver(_instances.front(), configuration.advection_diffusion_2D.espreso));
 		store = new store::VTK(configuration.output, *mesh, "results");
 
 		for (size_t i = 1; i <= configuration.advection_diffusion_2D.physics_solver.load_steps; i++) {
