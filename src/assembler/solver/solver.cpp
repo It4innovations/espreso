@@ -150,6 +150,17 @@ void Solver::updateVector(const Step &step, Matrices v1, Matrices v2, double alp
 	ESINFO(GLOBAL_ERROR) << "Implement updating vector " << mNames(v1);
 }
 
+void Solver::updateVector(const Step &step, Matrices v1, const std::vector<std::vector<double> > &v2, double alpha, double beta)
+{
+	ESINFO(PROGRESS2) << "Update vector: " << mNames(v1);
+	if (v1 & Matrices::primar) {
+
+		TimeEvent time(std::string("Update vector " + mNames(v1))); time.start();
+		sumVectors(physics->instance()->primalSolution, physics->instance()->primalSolution, v2, alpha, beta);
+		time.endWithBarrier(); _timeStatistics->addEvent(time);
+	}
+}
+
 void Solver::regularizeMatrices(const Step &step, Matrices matrices)
 {
 	if (matrices & ~(Matrices::K)) {

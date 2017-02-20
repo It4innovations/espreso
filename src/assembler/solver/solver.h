@@ -41,6 +41,7 @@ protected:
 	void assembleMatrices(const Step &step, Matrices matrices);
 	void updateMatrices(const Step &step, Matrices matrices, const std::vector<Solution*> &solution);
 	void updateVector(const Step &step, Matrices v1, Matrices v2, double alpha, double beta);
+	void updateVector(const Step &step, Matrices v1, const std::vector<std::vector<double> > &v2, double alpha, double beta);
 
 	void composeGluing(const Step &step, Matrices matrices);
 	void regularizeMatrices(const Step &step, Matrices matrices);

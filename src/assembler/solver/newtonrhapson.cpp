@@ -84,6 +84,7 @@ void NewtonRhapson::run(Step &step)
 			temperatureResidual = sqrt(physics->sumSquares(physics->instance()->primalSolution, Physics::SumOperation::AVERAGE));
 		}
 		sumVectors(physics->instance()->primalSolution, T, physics->instance()->primalSolution);
+		updateVector(step, Matrices::primar, T, 1, 1);
 		if (_configuration.convergenceParameters().checkSolution()) {
 			temperatureResidual /= sqrt(physics->sumSquares(physics->instance()->primalSolution, Physics::SumOperation::AVERAGE));;
 		}
