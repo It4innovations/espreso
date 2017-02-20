@@ -2,6 +2,7 @@
 #include "logging.h"
 
 #include "../../configuration/environment.h"
+#include "../../assembler/step.h"
 
 namespace espreso {
 
@@ -12,7 +13,33 @@ size_t Measure::outputLevel = 0;
 
 std::string Logging::output = "log";
 int Logging::rank = 0;
+Step *Logging::step = NULL;
 
+std::string Logging::prepareFile(const std::string &name)
+{
+	std::stringstream directory, file, mkdir;
+
+	if (step == NULL) {
+		directory << output << "/" << rank << "/";
+	} else {
+		directory << output << "/step" << step->load << "/iteration" << step->iteration << "/substep" << step->solver << "/" << rank << "/";
+	}
+	file << directory.str() << "/" << name << ".txt";
+
+	mkdir << "mkdir -p " << directory.str();
+	if (system(mkdir.str().c_str())) {
+		ESINFO(ERROR) << "Cannot create log directory\n";
+	}
+
+	return file.str();
+}
+
+std::string Logging::prepareFile(size_t subdomain, const std::string &name)
+{
+	std::stringstream ss;
+	ss << name << subdomain;
+	return prepareFile(ss.str());
+}
 
 Test::~Test()
 {

@@ -78,6 +78,7 @@ enum MeasureEvent {
 };
 
 struct OutputConfiguration;
+struct Step;
 
 class Test
 {
@@ -239,29 +240,11 @@ protected:
 class Logging {
 
 public:
-	static std::string prepareFile(const std::string &name)
-	{
-		std::stringstream dir, file, mkdir;
-
-		dir << output << "/" << rank << "/";
-		file << dir.str() << "/" << name << ".txt";
-
-		mkdir << "mkdir -p " << dir.str();
-		if (system(mkdir.str().c_str())) {
-			ESINFO(ERROR) << "Cannot create log directory\n";
-		}
-
-		return file.str();
-	}
-
-	static std::string prepareFile(size_t subdomain, const std::string &name)
-	{
-		std::stringstream ss;
-		ss << name << subdomain;
-		return prepareFile(ss.str());
-	}
+	static std::string prepareFile(const std::string &name);
+	static std::string prepareFile(size_t subdomain, const std::string &name);
 
 	static std::string output;
+	static Step *step;
 	static int rank;
 };
 }

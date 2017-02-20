@@ -121,6 +121,7 @@ void Factory::solve()
 		instance->finalize();
 	} else {
 		Step step;
+		Logging::step = &step;
 		for (size_t loadStep = 0; loadStep < loadSteps.size(); loadStep++) {
 			step.load = loadStep;
 			loadSteps[loadStep]->run(step);
