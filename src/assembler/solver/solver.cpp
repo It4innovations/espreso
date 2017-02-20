@@ -93,7 +93,7 @@ void Solver::assembleResidualForces(const Step &step)
 	timeSub.endWithBarrier(); _timeStatistics->addEvent(timeSub);
 
 	for (size_t i = 0; i < instances.size(); i++) {
-		storeData(step, instances[i]->f, instances.size() > 1 ? "f" + std::to_string(i) + "_" : "f", "RHS");
+		storeData(step, instances[i]->R, instances.size() > 1 ? "R" + std::to_string(i) + "_" : "R", "Residual forces");
 	}
 }
 
