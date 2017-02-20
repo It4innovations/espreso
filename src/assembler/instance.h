@@ -12,13 +12,15 @@ class SparseMatrix;
 class Solution;
 
 enum Matrices : int {
-	K   = 1 << 1,
-	M   = 1 << 2,
-	R   = 1 << 3,
-	f   = 1 << 4,
-	B0  = 1 << 5,
-	B1  = 1 << 6,
-	B1c = 1 << 7
+	K      = 1 << 1,
+	M      = 1 << 2,
+	R      = 1 << 3,
+	f      = 1 << 4,
+	B0     = 1 << 5,
+	B1     = 1 << 6,
+	B1c    = 1 << 7,
+	primar = 1 << 8,
+	dual   = 1 << 9
 };
 
 struct Instance {

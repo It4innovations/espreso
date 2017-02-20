@@ -40,6 +40,7 @@ public:
 protected:
 	void assembleMatrices(const Step &step, Matrices matrices);
 	void updateMatrices(const Step &step, Matrices matrices, const std::vector<Solution*> &solution);
+	void updateVector(const Step &step, Matrices v1, Matrices v2, double alpha, double beta);
 
 	void composeGluing(const Step &step, Matrices matrices);
 	void regularizeMatrices(const Step &step, Matrices matrices);
@@ -49,9 +50,6 @@ protected:
 	void updateLinearSolver(Matrices matrices);
 	void runLinearSolver();
 	void finalizeLinearSolver();
-
-	void subtractSolutionFromB1c(const Step &step);
-
 
 	void lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext, Physics *physics, const Step &step);
 	void sumVectors(std::vector<std::vector<double> > &result, const std::vector<std::vector<double> > &a, const std::vector<std::vector<double> > &b, double alpha = 1, double beta = 1);

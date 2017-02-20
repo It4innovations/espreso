@@ -39,12 +39,15 @@ Solver::~Solver()
 static std::string mNames(espreso::Matrices matrices)
 {
 	return
-	std::string(matrices & espreso::Matrices::K  ? "K "  : "") +
-	std::string(matrices & espreso::Matrices::M  ? "M "  : "") +
-	std::string(matrices & espreso::Matrices::R  ? "R "  : "") +
-	std::string(matrices & espreso::Matrices::f  ? "f "  : "") +
-	std::string(matrices & espreso::Matrices::B0 ? "B0 " : "") +
-	std::string(matrices & espreso::Matrices::B1 ? "B1 " : "");
+	std::string(matrices & espreso::Matrices::K      ? "K "      : "") +
+	std::string(matrices & espreso::Matrices::M      ? "M "      : "") +
+	std::string(matrices & espreso::Matrices::R      ? "R "      : "") +
+	std::string(matrices & espreso::Matrices::f      ? "f "      : "") +
+	std::string(matrices & espreso::Matrices::B0     ? "B0 "     : "") +
+	std::string(matrices & espreso::Matrices::B1     ? "B1 "     : "");
+	std::string(matrices & espreso::Matrices::B1c    ? "B1c "    : "") +
+	std::string(matrices & espreso::Matrices::primar ? "Primar " : "");
+	std::string(matrices & espreso::Matrices::dual   ? "Dual "   : "");
 }
 
 void Solver::storeData(const Step &step, std::vector<SparseMatrix> &matrices, const std::string &name, const std::string &description)
@@ -109,6 +112,44 @@ void Solver::updateMatrices(const Step &step, Matrices matrices, const std::vect
 	}
 }
 
+void Solver::updateVector(const Step &step, Matrices v1, Matrices v2, double alpha, double beta)
+{
+	ESINFO(PROGRESS2) << "Update vector: " << mNames(v1) << " = " << alpha << " * " << mNames(v1) << (beta < 0 ? " - " : " + ") << beta << " * " << mNames(v2);
+	if (v1 & Matrices::f) {
+		if (v2 & Matrices::R) {
+
+			TimeEvent time(std::string("Update vector " + mNames(v1))); time.start();
+			sumVectors(physics->instance()->f, physics->instance()->f, physics->instance()->R, alpha, beta);
+			time.endWithBarrier(); _timeStatistics->addEvent(time);
+
+			storeData(step, physics->instance()->f, "f", "right-hand side (f - R)");
+			return;
+		}
+	}
+
+	if (v1 & Matrices::B1c) {
+		if (v2 & Matrices::primar) {
+
+			TimeEvent time(std::string("Update vector " + mNames(v1))); time.start();
+			#pragma omp parallel for
+			for (size_t d = 0; d < physics->instance()->domains; d++) {
+				for (size_t j = 0; j < physics->instance()->B1[d].J_col_indices.size(); j++) {
+					if (physics->instance()->B1[d].I_row_indices[j] > (eslocal)physics->instance()->block[Instance::CONSTRAINT::DIRICHLET]) {
+						break;
+					}
+					physics->instance()->B1c[d][j] = alpha * physics->instance()->B1c[d][j] + beta * physics->instance()->primalSolution[d][physics->instance()->B1[d].J_col_indices[j] - 1];
+				}
+			}
+			time.endWithBarrier(); _timeStatistics->addEvent(time);
+
+			storeData(step, physics->instance()->B1c, "B1c", "B1c (B1c - primar)");
+			return;
+		}
+	}
+
+	ESINFO(GLOBAL_ERROR) << "Implement updating vector " << mNames(v1);
+}
+
 void Solver::regularizeMatrices(const Step &step, Matrices matrices)
 {
 	if (matrices & ~(Matrices::K)) {
@@ -122,8 +163,8 @@ void Solver::regularizeMatrices(const Step &step, Matrices matrices)
 	time.endWithBarrier(); _timeStatistics->addEvent(time);
 
 	if (matrices & Matrices::K) {
-		storeData(step, physics->instance()->N1, "R1", "N1");
-		storeData(step, physics->instance()->N2, "R2", "N2");
+		storeData(step, physics->instance()->N1, "N1", "N1");
+		storeData(step, physics->instance()->N2, "N2", "N2");
 		storeData(step, physics->instance()->RegMat, "RegMat", "RegMat");
 	}
 }
@@ -233,25 +274,6 @@ void Solver::finalizeLinearSolver()
 
 	_timeStatistics->totalTime.endWithBarrier();
 	_timeStatistics->printStatsMPI();
-}
-
-
-void Solver::subtractSolutionFromB1c(const Step &step)
-{
-	ESINFO(PROGRESS2) << "Subtract solution from B1c.";
-	TimeEvent timesubtractB1c("Assemble B1"); timesubtractB1c.startWithBarrier();
-	#pragma omp parallel for
-	for (size_t d = 0; d < physics->instance()->domains; d++) {
-		for (size_t j = 0; j < physics->instance()->B1[d].J_col_indices.size(); j++) {
-			if (physics->instance()->B1[d].I_row_indices[j] > (eslocal)physics->instance()->block[Instance::CONSTRAINT::DIRICHLET]) {
-				break;
-			}
-			physics->instance()->B1c[d][j] -= physics->instance()->primalSolution[d][physics->instance()->B1[d].J_col_indices[j] - 1];
-		}
-	}
-	timesubtractB1c.end(); _timeStatistics->addEvent(timesubtractB1c);
-
-	storeData(step, physics->instance()->B1c, "B1c", "B1c");
 }
 
 void Solver::lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext, Physics *physics, const Step &step)

@@ -59,20 +59,21 @@ void NewtonRhapson::run(Step &step)
 		T = physics->instance()->primalSolution;
 
 		updateMatrices(step, Matrices::K | Matrices::f | Matrices::R, physics->instance()->solutions);
-		F_ext = physics->instance()->f;
+
+		if (_configuration.line_search) {
+			F_ext = physics->instance()->f;
+		}
 		if (_configuration.convergenceParameters().checkResidual()) {
 			heatResidual = physics->sumSquares(physics->instance()->f, Physics::SumOperation::SUM);
 		}
-		sumVectors(physics->instance()->f, physics->instance()->f, physics->instance()->R, 1, -1);
+		updateVector(step, Matrices::f, Matrices::R, 1, -1);
 		if (_configuration.convergenceParameters().checkResidual()) {
 			heatResidual += physics->sumSquares(physics->instance()->f, Physics::SumOperation::SUM, Physics::SumRestriction::DIRICHLET, step.load);
 		}
+
 		composeGluing(step, Matrices::B1);
-
-		subtractSolutionFromB1c(step);
-
+		updateVector(step, Matrices::B1c, Matrices::primar, 1, -1);
 		regularizeMatrices(step, Matrices::K);
-
 		updateLinearSolver(Matrices::K | Matrices::f | Matrices::B1c);
 		runLinearSolver();
 
