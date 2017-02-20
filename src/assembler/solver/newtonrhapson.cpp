@@ -58,12 +58,11 @@ void NewtonRhapson::run(Step &step)
 
 		T = physics->instance()->primalSolution;
 
-		updateMatrices(step, Matrices::K | Matrices::f, physics->instance()->solutions);
+		updateMatrices(step, Matrices::K | Matrices::f | Matrices::R, physics->instance()->solutions);
 		F_ext = physics->instance()->f;
 		if (_configuration.convergenceParameters().checkResidual()) {
 			heatResidual = physics->sumSquares(physics->instance()->f, Physics::SumOperation::SUM);
 		}
-		assembleMatrices(step, Matrices::R);
 		sumVectors(physics->instance()->f, physics->instance()->f, physics->instance()->R, 1, -1);
 		if (_configuration.convergenceParameters().checkResidual()) {
 			heatResidual += physics->sumSquares(physics->instance()->f, Physics::SumOperation::SUM, Physics::SumRestriction::DIRICHLET, step.load);

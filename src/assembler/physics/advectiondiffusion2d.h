@@ -18,9 +18,9 @@ struct NewAdvectionDiffusion2D: public Physics2D
 	void prepareTotalFETI();
 
 	void processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
-	void processFace(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const;
-	void processEdge(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const;
-	void processNode(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const;
+	void processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
+	void processEdge(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
+	void processNode(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
 	void processSolution(const Step &step);
 
 	void analyticRegularization(size_t domain);

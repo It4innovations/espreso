@@ -175,10 +175,26 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 
 	eslocal Ksize = e->nodes();
 
-	Ke.resize(Ksize, Ksize);
-	Ke = 0;
-	fe.resize(Ksize, 1);
-	fe = 0;
+	Ke.resize(0, 0);
+	Me.resize(0, 0);
+	Re.resize(0, 0);
+	fe.resize(0, 0);
+	if (matrices & Matrices::K) {
+		Ke.resize(Ksize, Ksize);
+		Ke = 0;
+	}
+	if (matrices & Matrices::M) {
+		Me.resize(Ksize, Ksize);
+		Me = 0;
+	}
+	if (matrices & Matrices::R) {
+		Re.resize(Ksize, 1);
+		Re = 0;
+	}
+	if (matrices & Matrices::f) {
+		fe.resize(Ksize, 1);
+		fe = 0;
+	}
 
 	DenseMatrix u(1, 2), v(1, 2), re(1, e->nodes());
 	double normGradN = 0;
@@ -253,19 +269,23 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 		Ce(0, 0) += _configuration.sigma * h_e * norm_u_e;
 		Ce(1, 1) += _configuration.sigma * h_e * norm_u_e;
 
-		Ke.multiply(dND, Ce * dND, detJ * e->weighFactor()[gp] * gpThickness(0, 0), 1, true);
-		Ke.multiply(e->N()[gp], b_e, detJ * e->weighFactor()[gp], 1, true);
-		if (konst * e->weighFactor()[gp] * detJ != 0) {
-			Ke.multiply(b_e, b_e, konst * e->weighFactor()[gp] * detJ, 1, true);
-		}
-		if (CAU) {
-			Ke.multiply(dND, dND, C_e * e->weighFactor()[gp] * detJ, 1, true);
+		if (matrices & (Matrices::K | Matrices::R)) {
+			Ke.multiply(dND, Ce * dND, detJ * e->weighFactor()[gp] * gpThickness(0, 0), 1, true);
+			Ke.multiply(e->N()[gp], b_e, detJ * e->weighFactor()[gp], 1, true);
+			if (konst * e->weighFactor()[gp] * detJ != 0) {
+				Ke.multiply(b_e, b_e, konst * e->weighFactor()[gp] * detJ, 1, true);
+			}
+			if (CAU) {
+				Ke.multiply(dND, dND, C_e * e->weighFactor()[gp] * detJ, 1, true);
+			}
 		}
 
-		for (eslocal i = 0; i < Ksize; i++) {
-			fe(i, 0) += detJ * e->weighFactor()[gp] * e->N()[gp](0, i) * f(i, 0);
-			if (norm_u_e != 0) {
-				fe(i, 0) += detJ * e->weighFactor()[gp] * h_e * tau_e * b_e(0, i) * f(i, 0) / (2 * norm_u_e);
+		if (matrices & Matrices::f) {
+			for (eslocal i = 0; i < Ksize; i++) {
+				fe(i, 0) += detJ * e->weighFactor()[gp] * e->N()[gp](0, i) * f(i, 0);
+				if (norm_u_e != 0) {
+					fe(i, 0) += detJ * e->weighFactor()[gp] * h_e * tau_e * b_e(0, i) * f(i, 0) / (2 * norm_u_e);
+				}
 			}
 		}
 	}
@@ -274,29 +294,46 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 	}
 }
 
-void NewAdvectionDiffusion2D::processFace(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
+void NewAdvectionDiffusion2D::processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	ESINFO(ERROR) << "Advection diffusion 2D cannot process face";
 }
 
-void NewAdvectionDiffusion2D::processEdge(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
+void NewAdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.load) ||
 		e->hasProperty(Property::HEAT_FLOW, step.load) ||
 		e->hasProperty(Property::HEAT_FLUX, step.load))) {
 
 		Ke.resize(0, 0);
+		Me.resize(0, 0);
+		Re.resize(0, 0);
 		fe.resize(0, 0);
 		return;
 	}
+	if (!(matrices & (Matrices::K | Matrices::f))) {
+		Ke.resize(0, 0);
+		Me.resize(0, 0);
+		Re.resize(0, 0);
+		fe.resize(0, 0);
+		return;
+	}
+
 	DenseMatrix coordinates(e->nodes(), 2), dND(1, 2), q(e->nodes(), 1), htc(e->nodes(), 1), thickness(e->nodes(), 1), flow(e->nodes(), 1);
+	DenseMatrix T(e->nodes(), 1);
 	DenseMatrix gpQ(1, 1), gpHtc(1, 1), gpThickness(1, 1), gpFlow(1, 1);
 
-	double area = 1;
+	double area = 1, temp;
 	eslocal Ksize = e->nodes();
 	Ke.resize(0, 0);
-	fe.resize(Ksize, 1);
-	fe = 0;
+	Me.resize(0, 0);
+	Re.resize(0, 0);
+	fe.resize(0, 0);
+
+	if (matrices & Matrices::f) {
+		fe.resize(Ksize, 1);
+		fe = 0;
+	}
 
 	for (size_t r = 0; r < e->regions().size(); r++) {
 		if (step.load < e->regions()[r]->settings.size() && e->regions()[r]->settings[step.load].count(Property::HEAT_FLOW)) {
@@ -315,10 +352,12 @@ void NewAdvectionDiffusion2D::processEdge(const Step &step, const Element *e, De
 		coordinates(n, 0) = _mesh->coordinates()[e->node(n)].x;
 		coordinates(n, 1) = _mesh->coordinates()[e->node(n)].y;
 
-		double temp = 0;
-		if (_instance->solutions.size()) {
-			temp = _instance->solutions[0]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(n), e->domains().front()));
+		if (solution.size()) {
+			temp = solution[0]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(n), e->domains().front()));
+		} else {
+			temp = 0;
 		}
+		T(n, 0) = temp;
 		htc(n, 0) = e->getProperty(Property::HEAT_TRANSFER_COEFFICIENT, n, step.load, 0);
 		q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.load, 0) - temp);
 		q(n, 0) += e->getProperty(Property::HEAT_FLOW, n, step.load, 0) / area;
@@ -343,7 +382,7 @@ void NewAdvectionDiffusion2D::processEdge(const Step &step, const Element *e, De
 	}
 }
 
-void NewAdvectionDiffusion2D::processNode(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const
+void NewAdvectionDiffusion2D::processNode(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 
 }

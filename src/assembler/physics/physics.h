@@ -52,9 +52,9 @@ struct Physics {
 	virtual MatrixType getMatrixType(const Step &step, size_t domain) const =0;
 
 	virtual void processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const =0;
-	virtual void processFace(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const =0;
-	virtual void processEdge(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const =0;
-	virtual void processNode(const Step &step, const Element *e, DenseMatrix &Ke, DenseMatrix &fe) const =0;
+	virtual void processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const =0;
+	virtual void processEdge(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const =0;
+	virtual void processNode(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const =0;
 	virtual void processSolution(const Step &step) =0;
 
 	virtual void fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslocal> &DOFs) const;

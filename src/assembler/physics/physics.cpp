@@ -88,7 +88,7 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, c
 	Re.resize(0, 0);
 	for (size_t i = 0; i < _mesh->faces().size(); i++) {
 		if (_mesh->faces()[i]->inDomain(domain)) {
-			processFace(step, _mesh->faces()[i], Ke, fe);
+			processFace(step, matrices, _mesh->faces()[i], Ke, Me, Re, fe, solution);
 			fillDOFsIndices(_mesh->faces()[i], domain, DOFs);
 			insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, domain);
 		}
@@ -96,7 +96,7 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, c
 
 	for (size_t i = 0; i < _mesh->edges().size(); i++) {
 		if (_mesh->edges()[i]->inDomain(domain)) {
-			processEdge(step, _mesh->edges()[i], Ke, fe);
+			processEdge(step, matrices, _mesh->edges()[i], Ke, Me, Re, fe, solution);
 			fillDOFsIndices(_mesh->edges()[i], domain, DOFs);
 			insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, domain);
 		}
@@ -125,16 +125,19 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, const Element *e
 {
 	processElement(step, matrices, e, Ke, Me, Re, fe, solution);
 
+	DenseMatrix Ki, Mi, Ri, fi;
 	for (size_t i = 0; i < e->filledFaces(); i++) {
-		DenseMatrix Ki, fi;
-		processFace(step, e->face(i), Ki, fi);
+		processFace(step, matrices, e->face(i), Ki, Mi, Ri, fi, solution);
 		Ke += Ki;
+		Me += Mi;
+		Re += Ri;
 		fe += fi;
 	}
 	for (size_t i = 0; i < e->filledEdges(); i++) {
-		DenseMatrix Ki, fi;
-		processEdge(step, e->edge(i), Ki, fi);
+		processEdge(step, matrices, e->edge(i), Ki, Mi, Ri, fi, solution);
 		Ke += Ki;
+		Me += Mi;
+		Re += Ri;
 		fe += fi;
 	}
 }
