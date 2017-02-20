@@ -37,15 +37,15 @@ void LinearSolver::update(Matrices matrices)
 	// TODO update appropriate solver objects
 
 	if (matrices & Matrices::K) {
-		std::cout << "Matrices K were updated\n";
+//		std::cout << "Matrices K were updated\n";
 	}
 
 	if (matrices & (Matrices::K & Matrices::M)) {
-		std::cout << "Matrices K and M were updated\n";
+//		std::cout << "Matrices K and M were updated\n";
 	}
 
 	if (matrices & (Matrices::B1 | Matrices::B1c)) {
-		std::cout << "Matrices B1 or B1c were updated\n";
+		// std::cout << "Matrices B1 or B1c were updated\n";
 	}
 
 	// TODO: remove full re-initialization
