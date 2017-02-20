@@ -339,6 +339,7 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOpe
 			}
 
 		}
+		#pragma omp atomic
 		csum += tSum;
 	}
 
@@ -396,6 +397,7 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOpe
 			}
 
 		}
+		#pragma omp atomic
 		csum += tSum;
 	}
 
