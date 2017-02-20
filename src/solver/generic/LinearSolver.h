@@ -59,6 +59,7 @@ public:
 	void Preprocessing( std::vector < std::vector < eslocal > > & lambda_map_sub );
 
 	void Solve( std::vector < std::vector <double > >	& f_vec, std::vector < std::vector < double > > & prim_solution );
+	void Solve( std::vector < std::vector <double > >	& f_vec, std::vector < std::vector < double > > & prim_solution, std::vector < std::vector < double > > & dual_solution );
 
 	void Postprocessing ();
 

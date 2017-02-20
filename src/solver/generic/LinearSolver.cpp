@@ -60,7 +60,7 @@ void LinearSolver::update(Matrices matrices)
 // run solver and store primal and dual solution
 void LinearSolver::run()
 {
-	Solve(instance->f, instance->primalSolution);
+	Solve(instance->f, instance->primalSolution, instance->dualSolution);
 }
 
 
@@ -594,15 +594,24 @@ for (size_t d = 0; d < cluster->domains.size(); d++) {
 }
 
 void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,
-		                  std::vector < std::vector < double > >  & prim_solution) {
+		                  std::vector < std::vector < double > >  & prim_solution)
+{
+
+	std::vector < std::vector < double > > dual_solution;
+	Solve(f_vec, prim_solution, dual_solution);
+}
+
+void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,
+		                  std::vector < std::vector < double > >  & prim_solution,
+		                  std::vector < std::vector < double > > & dual_solution) {
 
 	 TimeEvent timeSolCG(string("Solver - CG Solver runtime"));
 	 timeSolCG.start();
 
 	if (solver->USE_DYNAMIC == 0) {
-		solver->Solve_singular    ( *cluster, f_vec, prim_solution );
+		solver->Solve_singular    ( *cluster, f_vec, prim_solution, dual_solution );
 	} else {
-		solver->Solve_non_singular( *cluster, f_vec, prim_solution );
+		solver->Solve_non_singular( *cluster, f_vec, prim_solution, dual_solution );
 		solver->timing.totalTime.printStatMPI();
 		//solver->timing.totalTime.Reset();
 	}

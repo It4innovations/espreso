@@ -161,8 +161,8 @@ public:
 	void Setup          ( SEQ_VECTOR <double> & parameters , Cluster & cluster_in );
 	void Preprocessing  ( Cluster & cluster );
 
-	void Solve_singular     ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel );
-	void Solve_non_singular ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel );
+	void Solve_singular     ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel, SEQ_VECTOR < SEQ_VECTOR <double> > & out_dual_solution_parallel );
+	void Solve_non_singular ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel, SEQ_VECTOR < SEQ_VECTOR <double> > & out_dual_solution_parallel );
 
 
 
@@ -196,7 +196,7 @@ public:
 	void GetResiduum_Dual_singular_parallel ( Cluster & cluster, SEQ_VECTOR <double> & dual_residuum_out );
 
 	void MakeSolution_Primal_singular_parallel ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out );
-	void GetSolution_Primal_singular_parallel  ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out );
+	void GetSolution_Primal_singular_parallel  ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out, SEQ_VECTOR < SEQ_VECTOR <double> > & dual_solution_out );
 
 };
 

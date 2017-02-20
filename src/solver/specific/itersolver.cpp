@@ -104,7 +104,8 @@ void IterSolverBase::Preprocessing ( Cluster & cluster )
 
 void IterSolverBase::Solve_singular ( Cluster & cluster,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
-	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel )
+	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel,
+	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_dual_solution_parallel)
 {
 
 	switch (configuration.solver) {
@@ -134,7 +135,7 @@ void IterSolverBase::Solve_singular ( Cluster & cluster,
 
 	 TimeEvent timeGetSol(string("Solver - Get Primal Solution"));
 	 timeGetSol.start();
-	GetSolution_Primal_singular_parallel( cluster, in_right_hand_side_primal, out_primal_solution_parallel );
+	GetSolution_Primal_singular_parallel( cluster, in_right_hand_side_primal, out_primal_solution_parallel, out_dual_solution_parallel );
 	 timeGetSol.endWithBarrier();
 	 postproc_timing.addEvent(timeGetSol);
 
@@ -147,7 +148,8 @@ void IterSolverBase::Solve_singular ( Cluster & cluster,
 
 void IterSolverBase::Solve_non_singular ( Cluster & cluster,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
-	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel )
+	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel,
+	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_dual_solution_parallel)
 {
 	switch (configuration.solver) {
 	case ESPRESO_ITERATIVE_SOLVER::PCG:
@@ -177,8 +179,8 @@ void IterSolverBase::GetResiduum_Dual_singular_parallel    ( Cluster & cluster, 
 
 void IterSolverBase::GetSolution_Dual_singular_parallel    ( Cluster & cluster, SEQ_VECTOR <double> & dual_solution_out, SEQ_VECTOR<double> & amplitudes_out ) {
 
-	dual_solution_out = dual_soultion_compressed_parallel;
 	cluster.decompress_lambda_vector( dual_solution_out );
+	dual_solution_out = dual_soultion_compressed_parallel;
 
 	amplitudes_out	  = amplitudes;
 
@@ -186,7 +188,8 @@ void IterSolverBase::GetSolution_Dual_singular_parallel    ( Cluster & cluster, 
 
 void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
-		SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out ) {
+		SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out,
+		SEQ_VECTOR < SEQ_VECTOR <double> > & dual_solution_out) {
 
 	MakeSolution_Primal_singular_parallel(cluster, in_right_hand_side_primal, primal_solution_out );
 	//primal_solution_out = primal_solution_parallel;
@@ -219,6 +222,7 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 				x_in_tmp[i] = dual_soultion_compressed_parallel[ cluster.domains[d].lambda_map_sub_local[i]]; // * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T'); // Bt*lambda
 		}
+		dual_solution_out = cluster.x_prim_cluster1;
 
 		for (size_t d = 0; d < cluster.domains.size(); d++) {
 			cluster.domains[d].K.MatVec(primal_solution_out[d], cluster.x_prim_cluster2[d],'N');
