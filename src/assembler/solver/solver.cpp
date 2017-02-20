@@ -44,9 +44,9 @@ static std::string mNames(espreso::Matrices matrices)
 	std::string(matrices & espreso::Matrices::R      ? "R "      : "") +
 	std::string(matrices & espreso::Matrices::f      ? "f "      : "") +
 	std::string(matrices & espreso::Matrices::B0     ? "B0 "     : "") +
-	std::string(matrices & espreso::Matrices::B1     ? "B1 "     : "");
+	std::string(matrices & espreso::Matrices::B1     ? "B1 "     : "") +
 	std::string(matrices & espreso::Matrices::B1c    ? "B1c "    : "") +
-	std::string(matrices & espreso::Matrices::primar ? "Primar " : "");
+	std::string(matrices & espreso::Matrices::primar ? "Primar " : "") +
 	std::string(matrices & espreso::Matrices::dual   ? "Dual "   : "");
 }
 
