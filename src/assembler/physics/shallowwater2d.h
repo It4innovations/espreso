@@ -1,17 +1,17 @@
 
-#ifndef SRC_ASSEMBLER_PHYSICS_SHALLOWWATTER2D_H_
-#define SRC_ASSEMBLER_PHYSICS_SHALLOWWATTER2D_H_
+#ifndef SRC_ASSEMBLER_PHYSICS_SHALLOWWATER2D_H_
+#define SRC_ASSEMBLER_PHYSICS_SHALLOWWATER2D_H_
 
 #include "physics2d.h"
 
 namespace espreso {
 
 enum class Property;
-// struct ShallowWatter2DConfiguration;
+struct ShallowWater2DConfiguration;
 
-struct ShallowWatter2D: public Physics2D
+struct ShallowWater2D: public Physics2D
 {
-	ShallowWatter2D(Mesh *mesh, Instance *instance); //, const ShallowWatter2DConfiguration &configuration);
+	ShallowWater2D(Mesh *mesh, Instance *instance, const ShallowWater2DConfiguration &configuration);
 
 	MatrixType getMatrixType(const Step &step, size_t domain) const;
 
@@ -27,12 +27,12 @@ struct ShallowWatter2D: public Physics2D
 
 	const std::vector<Property>& pointDOFs() const
 	{
-		static std::vector<Property> pointDOFs = { Property::TEMPERATURE };
+		static std::vector<Property> pointDOFs = { Property::MOMENTUM_X, Property::MOMENTUN_Y, Property::PRESSURE };
 		return pointDOFs;
 	}
 	const std::vector<Property>& midPointDOFs() const
 	{
-		static std::vector<Property> midPointDOFs = { Property::TEMPERATURE };
+		static std::vector<Property> midPointDOFs = { Property::MOMENTUM_X, Property::MOMENTUN_Y, Property::PRESSURE };
 		return midPointDOFs;
 	}
 	const std::vector<Property>& edgeDOFs() const
@@ -52,13 +52,11 @@ struct ShallowWatter2D: public Physics2D
 	}
 
 protected:
-	void assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K) const;
-
-	//const ShallowWatter2DConfiguration &_configuration;
+	const ShallowWater2DConfiguration &_configuration;
 };
 
 }
 
 
 
-#endif /* SRC_ASSEMBLER_PHYSICS_SHALLOWWATTER2D_H_ */
+#endif /* SRC_ASSEMBLER_PHYSICS_SHALLOWWATER2D_H_ */
