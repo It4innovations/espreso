@@ -1,0 +1,93 @@
+|*****************************************************************************|
+|-----------------------------------------------------------------------------|
+|                                      |                                      |
+|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
+|                                      |   http://espreso.it4i.cz             |
+|-----------------------------------------------------------------------------|
+|  Case Description: homogenous problem with constant temperature             |
+|                                                                             |
+|-----------------------------------------------------------------------------|
+|*****************************************************************************|
+
+INPUT GENERATOR;
+PHYSICS SHALLOW_WATER_2D;
+
+GENERATOR {
+
+  SHAPE GRID;
+
+  GRID {
+    UNIFORM_DECOMPOSITION 1;
+
+    ELEMENT_TYPE   [ARG0];
+
+    LENGTH_X           10;
+    LENGTH_Y           10;
+    LENGTH_Z            1;
+
+    BLOCKS_X            1;
+    BLOCKS_Y            1;
+    BLOCKS_Z            1;
+
+    CLUSTERS_X     [ARG1];
+    CLUSTERS_Y     [ARG2];
+    CLUSTERS_Z          1;
+
+    DOMAINS_X      [ARG3];
+    DOMAINS_Y      [ARG4];
+    DOMAINS_Z           1;
+
+    ELEMENTS_X     [ARG5];
+    ELEMENTS_Y     [ARG6];
+    ELEMENTS_Z          1;
+
+    NODES {
+        LEFT   "< 0, 10> < 0,  0> <0, 0>";
+        RIGHT  "< 0, 10> <10, 10> <0, 0>";
+        TOP    "< 0,  0> < 0, 10> <0, 0>";
+        BOTTOM "<10, 10> < 0, 10> <0, 0>";
+    }
+  }
+}
+
+SHALLOW_WATER_2D {
+
+  SOLVER_LIBRARY   ESPRESO;
+
+  ESPRESO {
+
+    METHOD           TOTAL_FETI;
+    SOLVER                  PCG;
+    PRECONDITIONER    DIRICHLET;
+    REGULARIZATION  NULL_PIVOTS;
+    B0_TYPE             CORNERS;
+  }
+
+  MOMENTUM {
+    1 {
+      LEFT    X 0, Y 0;
+      RIGHT   X 0, Y 0;
+      TOP     X 0, Y 0;
+      BOTTOM  X 0, Y 0;
+    }
+  }
+
+  MATERIALS {
+
+    1 {
+      MODEL ISOTROPIC;
+
+      DENSITY 1;
+      KXX  1e-5;
+      KXY  1e-5;
+      Cp      1;
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS 1;
+  }
+}
+
+
+
