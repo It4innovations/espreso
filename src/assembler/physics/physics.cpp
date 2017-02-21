@@ -26,6 +26,15 @@ Physics::Physics(const std::string &name, Mesh *mesh, Instance *instance)
 
 }
 
+void Physics::init()
+{
+	_nodesDOFsOffsets = _mesh->nodesDOFOffsets(pointDOFs());
+	_midNodesDOFsOffsets = _mesh->nodesDOFOffsets(midPointDOFs());
+	_edgesDOFsOffsets = _mesh->edgesDOFOffsets(edgeDOFs());
+	_facesDOFsOffsets = _mesh->facesDOFOffsets(faceDOFs());
+	_elementsDOFsOffsets = _mesh->elementsDOFOffsets(elementDOFs());
+}
+
 void Physics::assembleMatrix(const Step &step, Matrices matrix)
 {
 	updateMatrix(step, matrix, {});
@@ -150,10 +159,10 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, const Element *e
  */
 void Physics::fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslocal> &DOFs) const
 {
-	DOFs.resize(e->nodes() * pointDOFs().size());
+	DOFs.resize(e->nodes() * pointDOFsOffsets().size());
 	for (size_t n = 0, i = 0; n < e->nodes(); n++) {
-		for (size_t dof = 0; dof < pointDOFs().size(); dof++, i++) {
-			DOFs[i] = _mesh->nodes()[e->node(n)]->DOFIndex(domain, dof);
+		for (size_t dof = 0; dof < pointDOFsOffsets().size(); dof++, i++) {
+			DOFs[i] = _mesh->nodes()[e->node(n)]->DOFIndex(domain, pointDOFsOffsets()[dof]);
 		}
 	}
 }

@@ -74,6 +74,7 @@ void NewAdvectionDiffusion2D::prepareTotalFETI()
 	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
 	_mesh->removeDuplicateRegions();
 	_mesh->fillDomainsSettings();
+	init();
 }
 
 void NewAdvectionDiffusion2D::analyticRegularization(size_t domain)

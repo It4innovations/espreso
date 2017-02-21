@@ -749,7 +749,7 @@ void Mesh::loadNodeProperty(const std::map<size_t, std::map<std::string, std::st
 	}
 }
 
-Region* Mesh::region(const std::string &name)
+Region* Mesh::region(const std::string &name) const
 {
 	auto it = std::find_if(_regions.begin(), _regions.end(), [&] (const Region *region) { return region->name.compare(name) == 0; });
 	if (it != _regions.end()) {
@@ -757,6 +757,65 @@ Region* Mesh::region(const std::string &name)
 	}
 	ESINFO(GLOBAL_ERROR) << "Unknown region '" << name << "'";
 	exit(EXIT_FAILURE);
+}
+
+static size_t DOFOffset(const std::vector<Property> &offsets, Property property)
+{
+	for (size_t i = 0; i < offsets.size(); i++) {
+		if (offsets[i] == property) {
+			return i;
+		}
+	}
+	ESINFO(ERROR) << "Property '" << property << "' not added to Mesh.";
+	return -1;
+}
+
+size_t Mesh::nodesDOFOffset(Property property) const
+{
+	return DOFOffset(_nodesDOFsOffsets, property);
+}
+
+size_t Mesh::edgesDOFOffset(Property property) const
+{
+	return DOFOffset(_edgesDOFsOffsets, property);
+}
+
+size_t Mesh::facesDOFOffset(Property property) const
+{
+	return DOFOffset(_facesDOFsOffsets, property);
+}
+
+size_t Mesh::elementsDOFOffset(Property property) const
+{
+	return DOFOffset(_elementsDOFsOffsets, property);
+}
+
+std::vector<size_t> Mesh::nodesDOFOffsets(std::vector<Property> properties) const
+{
+	std::vector<size_t> DOFsOffsets;
+	std::for_each(properties.begin(), properties.end(), [&] (Property p) { DOFsOffsets.push_back(nodesDOFOffset(p)); });
+	return DOFsOffsets;
+}
+
+std::vector<size_t> Mesh::edgesDOFOffsets(std::vector<Property> properties) const
+{
+	std::vector<size_t> DOFsOffsets;
+	std::for_each(properties.begin(), properties.end(), [&] (Property p) { DOFsOffsets.push_back(edgesDOFOffset(p)); });
+	return DOFsOffsets;
+}
+
+std::vector<size_t> Mesh::facesDOFOffsets(std::vector<Property> properties) const
+{
+	std::vector<size_t> DOFsOffsets;
+	std::for_each(properties.begin(), properties.end(), [&] (Property p) { DOFsOffsets.push_back(facesDOFOffset(p)); });
+	return DOFsOffsets;
+}
+
+std::vector<size_t> Mesh::elementsDOFOffsets(std::vector<Property> properties) const
+{
+	std::vector<size_t> DOFsOffsets;
+	std::for_each(properties.begin(), properties.end(), [&] (Property p) { DOFsOffsets.push_back(elementsDOFOffset(p)); });
+	return DOFsOffsets;
 }
 
 std::vector<std::vector<Region*> > Mesh::getRegionsWithProperties(const std::vector<Region*> &regions, size_t loadStep, const std::vector<Property> &properties)
@@ -1584,7 +1643,8 @@ static void setDOFsIndices(
 		std::vector<Element*> &elements,
 		std::vector<std::vector<Element*> > &DOFtoElement,
 		size_t parts,
-		const std::vector<Property> &DOFs,
+		size_t DOFsSize,
+		const std::vector<size_t> &DOFs,
 		const std::vector<size_t> &offsets,
 		const std::vector<std::vector<std::vector<size_t> > > &threadsOffsets)
 {
@@ -1607,9 +1667,9 @@ static void setDOFsIndices(
 			for (size_t d = 0; d < elements[i]->domains().size(); d++) {
 
 				for (size_t dof = 0; dof < DOFs.size(); dof++) {
-					if (elements[i]->DOFsIndices()[d * DOFs.size() + dof] == __HAS_DOF__) {
+					if (elements[i]->DOFsIndices()[d * DOFsSize + DOFs[dof]] == __HAS_DOF__) {
 
-						elements[i]->DOFsIndices()[d * DOFs.size() + dof] = counters[elements[i]->domains()[d]]++;
+						elements[i]->DOFsIndices()[d * DOFsSize + DOFs[dof]] = counters[elements[i]->domains()[d]]++;
 						tDOFtoElement[t][elements[i]->domains()[d]].push_back(elements[i]);
 
 					}
@@ -1651,6 +1711,8 @@ std::vector<size_t> Mesh::assignVariousDOFsIndicesToNodes(const std::vector<size
 		}
 	};
 
+	size_t prevDOFsSize = _nodesDOFsOffsets.size();
+	_nodesDOFsOffsets.insert(_nodesDOFsOffsets.end(), DOFs.begin(), DOFs.end());
 
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, _nodes.size());
@@ -1662,9 +1724,10 @@ std::vector<size_t> Mesh::assignVariousDOFsIndicesToNodes(const std::vector<size
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<std::vector<size_t> > threadOffset(parts(), std::vector<size_t>(DOFs.size(), 0));
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
-			_nodes[i]->DOFsIndices().resize(DOFs.size() * _nodes[i]->domains().size(), __WITHOUT_DOF__);
+			_nodes[i]->DOFsIndices().reserve(_nodesDOFsOffsets.size() * _nodes[i]->domains().size());
 
 			for (size_t d = 0; d < _nodes[i]->domains().size(); d++) {
+				_nodes[i]->DOFsIndices().insert(_nodes[i]->DOFsIndices().begin() + (d + 1) * prevDOFsSize + d * (prevDOFsSize + DOFs.size()), DOFs.size(), __WITHOUT_DOF__);
 				std::vector<bool> addDOF(DOFs.size(), false);
 
 				fillDOFs(_nodes[i], i, _nodes[i]->domains()[d], addDOF);
@@ -1692,7 +1755,7 @@ std::vector<size_t> Mesh::assignVariousDOFsIndicesToNodes(const std::vector<size
 		}
 	}
 
-	setDOFsIndices(_nodes, _DOFtoElement, parts(), DOFs, offsets, threadsOffsets);
+	setDOFsIndices(_nodes, _DOFtoElement, parts(), _nodesDOFsOffsets.size(), nodesDOFOffsets(DOFs), offsets, threadsOffsets);
 
 	return sizes;
 }
@@ -1702,7 +1765,8 @@ static std::vector<size_t> fillUniformDOFs(
 		std::vector<Element*> &elements,
 		std::vector<std::vector<Element*> > &DOFtoElement,
 		size_t parts,
-		const std::vector<Property> &DOFs,
+		size_t prevDOFsSize,
+		const std::vector<size_t> &DOFs,
 		const std::vector<size_t> &offsets)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -1715,9 +1779,10 @@ static std::vector<size_t> fillUniformDOFs(
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<size_t> threadOffset(parts, 0);
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
-			elements[i]->DOFsIndices().resize(DOFs.size() * elements[i]->domains().size(), 1);
+			elements[i]->DOFsIndices().reserve(elements[i]->DOFsIndices().size() + DOFs.size() * elements[i]->domains().size());
 
 			for (size_t d = 0; d < elements[i]->domains().size(); d++) {
+				elements[i]->DOFsIndices().insert(elements[i]->DOFsIndices().begin() + (d + 1) * prevDOFsSize + d * (prevDOFsSize + DOFs.size()), DOFs.size(), __HAS_DOF__);
 				threadOffset[elements[i]->domains()[d]]++;
 			}
 		}
@@ -1736,34 +1801,40 @@ static std::vector<size_t> fillUniformDOFs(
 		}
 	}
 
-	setDOFsIndices(elements, DOFtoElement, parts, DOFs, offsets, threadsOffsets);
+	setDOFsIndices(elements, DOFtoElement, parts, prevDOFsSize + DOFs.size(), DOFs, offsets, threadsOffsets);
 
 	return sizes;
 }
 
 std::vector<size_t> Mesh::assignUniformDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs)
 {
-	return fillUniformDOFs(_nodes, _DOFtoElement, parts(), DOFs, offsets);
+	for (size_t i = 0; i < DOFs.size(); i++) {
+		if (std::find(_nodesDOFsOffsets.begin(), _nodesDOFsOffsets.end(), DOFs[i]) != _nodesDOFsOffsets.end()) {
+			ESINFO(GLOBAL_ERROR) << "ESPRESO not supports more physics with the same DOFs.";
+		}
+	}
+	_nodesDOFsOffsets.insert(_nodesDOFsOffsets.end(), DOFs.begin(), DOFs.end());
+	return fillUniformDOFs(_nodes, _DOFtoElement, parts(), _nodesDOFsOffsets.size() - DOFs.size(), nodesDOFOffsets(DOFs), offsets);
 }
 
 std::vector<size_t> Mesh::assignUniformDOFsIndicesToEdges(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs)
 {
-	return fillUniformDOFs(_edges, _DOFtoElement, parts(), DOFs, offsets);
+	return fillUniformDOFs(_edges, _DOFtoElement, parts(), 0, edgesDOFOffsets(DOFs), offsets);
 }
 
 std::vector<size_t> Mesh::assignUniformDOFsIndicesToFaces(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs)
 {
-	return fillUniformDOFs(_faces, _DOFtoElement, parts(), DOFs, offsets);
+	return fillUniformDOFs(_faces, _DOFtoElement, parts(), 0, facesDOFOffsets(DOFs), offsets);
 }
 
 std::vector<size_t> Mesh::assignUniformDOFsIndicesToElements(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs)
 {
-	return fillUniformDOFs(_elements, _DOFtoElement, parts(), DOFs, offsets);
+	return fillUniformDOFs(_elements, _DOFtoElement, parts(), 0, elementsDOFOffsets(DOFs), offsets);
 }
 
 std::vector<size_t> APIMesh::distributeDOFsToDomains(const std::vector<size_t> &offsets)
 {
-	return fillUniformDOFs(_DOFs, _DOFtoElement, parts(), { Property::UNKNOWN }, offsets);
+	return fillUniformDOFs(_DOFs, _DOFtoElement, parts(), 0, { 0 }, offsets);
 }
 
 static void computeDOFsCounters(std::vector<Element*> &elements, const std::vector<Property> &DOFs, std::vector<int> neighbours, const std::vector<esglobal> &l2g, const std::vector<G2L> &g2l)

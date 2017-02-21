@@ -111,7 +111,15 @@ public:
 	void synchronizeGlobalIndices();
 	void synchronizeNeighbours();
 
-	Region* region(const std::string &name);
+	Region* region(const std::string &name) const;
+	size_t nodesDOFOffset(Property property) const;
+	size_t edgesDOFOffset(Property property) const;
+	size_t facesDOFOffset(Property property) const;
+	size_t elementsDOFOffset(Property property) const;
+	std::vector<size_t> nodesDOFOffsets(std::vector<Property> properties) const;
+	std::vector<size_t> edgesDOFOffsets(std::vector<Property> properties) const;
+	std::vector<size_t> facesDOFOffsets(std::vector<Property> properties) const;
+	std::vector<size_t> elementsDOFOffsets(std::vector<Property> properties) const;
 
 	bool isContinuous() const { return _continuous; }
 
@@ -190,6 +198,18 @@ protected:
 
 	/** @brief list of settings for each domain and load step*/
 	std::vector<std::vector<std::set<Property> > > _properties;
+
+	/** @brief list of DOFs offsets for nodes (useful for multiple physics)*/
+	std::vector<Property> _nodesDOFsOffsets;
+
+	/** @brief list of DOFs offsets for edges (useful for multiple physics)*/
+	std::vector<Property> _edgesDOFsOffsets;
+
+	/** @brief list of DOFs offsets for faces (useful for multiple physics)*/
+	std::vector<Property> _facesDOFsOffsets;
+
+	/** @brief list of DOFs offsets for elements (useful for multiple physics)*/
+	std::vector<Property> _elementsDOFsOffsets;
 
 	/** @brief list of evaluators */
 	std::vector<Evaluator*> _evaluators;
