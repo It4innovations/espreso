@@ -27,12 +27,12 @@ struct ShallowWater2D: public Physics2D
 
 	const std::vector<Property>& pointDOFs() const
 	{
-		static std::vector<Property> pointDOFs = { Property::MOMENTUM_X, Property::MOMENTUN_Y, Property::PRESSURE };
+		static std::vector<Property> pointDOFs = { Property::MOMENTUM_X, Property::MOMENTUM_Y, Property::PRESSURE };
 		return pointDOFs;
 	}
 	const std::vector<Property>& midPointDOFs() const
 	{
-		static std::vector<Property> midPointDOFs = { Property::MOMENTUM_X, Property::MOMENTUN_Y, Property::PRESSURE };
+		static std::vector<Property> midPointDOFs = { Property::MOMENTUM_X, Property::MOMENTUM_Y, Property::PRESSURE };
 		return midPointDOFs;
 	}
 	const std::vector<Property>& edgeDOFs() const

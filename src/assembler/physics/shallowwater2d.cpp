@@ -37,7 +37,7 @@ void ShallowWater2D::prepareTotalFETI()
 	_instance->DOFs = _mesh->assignUniformDOFsIndicesToNodes(_instance->DOFs, pointDOFs());
 	_mesh->computeNodesDOFsCounters(pointDOFs());
 
-	_mesh->loadNodeProperty(_configuration.momentum, { }, { Property::MOMENTUM_X, Property::MOMENTUN_Y });
+	_mesh->loadNodeProperty(_configuration.momentum, { "X", "Y" }, { Property::MOMENTUM_X, Property::MOMENTUM_Y });
 	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
 	_mesh->removeDuplicateRegions();
 	_mesh->fillDomainsSettings();
@@ -51,7 +51,58 @@ void ShallowWater2D::analyticRegularization(size_t domain)
 
 void ShallowWater2D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
+	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
+	DenseMatrix coordinates(e->nodes(), 2), J(2, 2), invJ(2, 2), dND;
+	double detJ, temp;
 
+	for (size_t i = 0; i < e->nodes(); i++) {
+		coordinates(i, 0) = _mesh->coordinates()[e->node(i)].x;
+		coordinates(i, 1) = _mesh->coordinates()[e->node(i)].y;
+	}
+
+	eslocal Ksize = 3 * e->nodes();
+
+	Ke.resize(0, 0);
+	Me.resize(0, 0);
+	Re.resize(0, 0);
+	fe.resize(0, 0);
+	if (matrices & Matrices::K) {
+		Ke.resize(Ksize, Ksize);
+		Ke = 0;
+	}
+	if (matrices & Matrices::M) {
+		Me.resize(Ksize, Ksize);
+		Me = 0;
+	}
+	if (matrices & Matrices::R) {
+		Re.resize(Ksize, 1);
+		Re = 0;
+	}
+	if (matrices & Matrices::f) {
+		fe.resize(Ksize, 1);
+		fe = 0;
+	}
+
+	DenseMatrix u(1, 2), v(1, 2), re(1, e->nodes());
+	double normGradN = 0;
+
+	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
+		u.multiply(e->N()[gp], U, 1, 0);
+
+		J.multiply(e->dN()[gp], coordinates);
+		detJ = determinant2x2(J.values());
+		inverse2x2(J.values(), invJ.values(), detJ);
+
+		gpThickness.multiply(e->N()[gp], thickness);
+		gpK.multiply(e->N()[gp], K);
+
+		Ce(0, 0) = gpK(0, 0);
+		Ce(1, 1) = gpK(0, 1);
+		Ce(0, 1) = gpK(0, 2);
+		Ce(1, 0) = gpK(0, 3);
+
+		dND.multiply(invJ, e->dN()[gp]);
+	}
 }
 
 void ShallowWater2D::processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const

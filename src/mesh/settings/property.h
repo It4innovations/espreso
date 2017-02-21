@@ -12,7 +12,7 @@ enum class Property : int {
 	DISPLACEMENT_Y,
 	DISPLACEMENT_Z,
 	MOMENTUM_X,
-	MOMENTUN_Y,
+	MOMENTUM_Y,
 	MOMENTUM_Z,
 	TEMPERATURE,
 	PRESSURE,
@@ -54,6 +54,9 @@ inline std::ostream& operator<<(std::ostream& os, const Property& property)
 		case Property::DISPLACEMENT_X: return os << "DISPLACEMENT_X";
 		case Property::DISPLACEMENT_Y: return os << "DISPLACEMENT_Y";
 		case Property::DISPLACEMENT_Z: return os << "DISPLACEMENT_Z";
+		case Property::MOMENTUM_X: return os << "MOMENTUM_X";
+		case Property::MOMENTUM_Y: return os << "MOMENTUM_Y";
+		case Property::MOMENTUM_Z: return os << "MOMENTUM_Z";
 		case Property::TEMPERATURE: return os << "TEMPERATURE";
 		case Property::PRESSURE: return os << "PRESSURE";
 

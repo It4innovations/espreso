@@ -14,6 +14,7 @@
 #include "physics/advectiondiffusion3d.h"
 #include "physics/linearelasticity2d.h"
 #include "physics/linearelasticity3d.h"
+#include "physics/shallowwater2d.h"
 
 namespace espreso {
 
@@ -46,6 +47,7 @@ struct GlobalConfiguration: public Configuration {
 		{ "TRANSIENT_ELASTICITY_3D", PHYSICS::TRANSIENT_ELASTICITY_3D, "3D transient elasticity." },
 		{ "ADVECTION_DIFFUSION_2D" , PHYSICS::ADVECTION_DIFFUSION_2D , "2D advection diffusion"},
 		{ "ADVECTION_DIFFUSION_3D" , PHYSICS::ADVECTION_DIFFUSION_3D , "3D advection diffusion"},
+		{ "SHALLOW_WATER_2D"       , PHYSICS::SHALLOW_WATER_2D       , "2D shallow water"},
 		{ "STOKES"                 , PHYSICS::STOKES                 , "Stokes"}
 	}));
 
@@ -61,6 +63,7 @@ struct GlobalConfiguration: public Configuration {
 	SUBCONFIG(LinearElasticity3DConfiguration  , linear_elasticity_3D  , "3D Linear elasticity solver.");
 	SUBCONFIG(AdvectionDiffusion2DConfiguration, advection_diffusion_2D, "2D advection diffusiuon solver.");
 	SUBCONFIG(AdvectionDiffusion3DConfiguration, advection_diffusion_3D, "3D advection diffusiuon solver.");
+	SUBCONFIG(ShallowWater2DConfiguration      , shallow_water_2D      , "2D shallow water solver.");
 
 	SUBCONFIG(Results, results, "Expected output results.");
 

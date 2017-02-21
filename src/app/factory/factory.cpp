@@ -8,6 +8,7 @@
 #include "../../assembler/solver/newtonrhapson.h"
 
 #include "../../assembler/physics/advectiondiffusion2d.h"
+#include "../../assembler/physics/shallowwater2d.h"
 #include "../../solver/generic/LinearSolver.h"
 #include "../../output/vtk/vtk.h"
 
@@ -26,6 +27,19 @@ Factory::Factory(const GlobalConfiguration &configuration)
 : store(NULL), instance(NULL), mesh(new Mesh()), _newAssembler(false)
 {
 	input::Loader::load(configuration, *mesh, configuration.env.MPIrank, configuration.env.MPIsize);
+
+	if (configuration.physics == PHYSICS::SHALLOW_WATER_2D) {
+		_newAssembler = true;
+		_instances.push_back(new Instance(mesh->parts(), mesh->neighbours()));
+		_physics.push_back(new ShallowWater2D(mesh, _instances.front(), configuration.shallow_water_2D));
+		_linearSolvers.push_back(new LinearSolver(_instances.front(), configuration.shallow_water_2D.espreso));
+		store = new store::VTK(configuration.output, *mesh, "results");
+
+		loadSteps.push_back(new Linear(mesh, _physics.front(),  _linearSolvers.front(), store));
+		meshPreprocessing();
+		return;
+	}
+
 	Assembler::compose(configuration, instance, *mesh);
 
 	if (configuration.physics == PHYSICS::ADVECTION_DIFFUSION_2D && configuration.advection_diffusion_2D.newassembler) {
