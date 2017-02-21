@@ -354,9 +354,9 @@ int SparseSolverPardiso::Factorization(const std::string &str) {
 	}
 
 #ifdef DEBUG
-	ESINFO(PROGRESS2) << "Reordering completed ... ";
-	ESINFO(PROGRESS2) << "Number of nonzeros in factors = " <<  iparm[17];
-	ESINFO(PROGRESS2) << "Number of factorization MFLOPS = " << iparm[18];
+	ESINFO(PROGRESS3) << "Reordering completed ... ";
+	ESINFO(PROGRESS3) << "Number of nonzeros in factors = " <<  iparm[17];
+	ESINFO(PROGRESS3) << "Number of factorization MFLOPS = " << iparm[18];
 #endif
 
 	/* -------------------------------------------------------------------- */

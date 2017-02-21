@@ -11,13 +11,13 @@ using namespace espreso;
 
 void LinearPhysics::assembleStiffnessMatrices()
 {
-	ESINFO(PROGRESS2) << "Assemble matrices K, kernels, and RHS.";
+	ESINFO(PROGRESS3) << "Assemble matrices K, kernels, and RHS.";
 	#pragma omp parallel for
 	for  (size_t p = 0; p < _mesh.parts(); p++) {
 		composeSubdomain(p);
 		K[p].mtype = mtype;
-		ESINFO(PROGRESS2) << Info::plain() << ".";
+		ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
-	ESINFO(PROGRESS2);
+	ESINFO(PROGRESS3);
 }
 

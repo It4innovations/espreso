@@ -47,9 +47,9 @@ void Physics::updateMatrix(const Step &step, Matrices matrix, const std::vector<
 			break;
 		}
 
-		ESINFO(PROGRESS2) << Info::plain() << ".";
+		ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
-	ESINFO(PROGRESS2);
+	ESINFO(PROGRESS3);
 }
 
 void Physics::assembleMatrix(const Step &step, Matrices matrices, size_t domain)
@@ -239,9 +239,9 @@ void Physics::makeStiffnessMatricesRegular(REGULARIZATION regularization)
 			}
 			break;
 		}
-		ESINFO(PROGRESS2) << Info::plain() << ".";
+		ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
-	ESINFO(PROGRESS2);
+	ESINFO(PROGRESS3);
 }
 
 double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction, size_t loadStep) const

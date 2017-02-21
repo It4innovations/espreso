@@ -23,14 +23,14 @@ PrecomputedPhysics::PrecomputedPhysics(
 
 void PrecomputedPhysics::assembleStiffnessMatrices()
 {
-	ESINFO(PROGRESS2) << "Assemble matrices K and RHS.";
+	ESINFO(PROGRESS3) << "Assemble matrices K and RHS.";
 	#pragma omp parallel for
 	for  (size_t p = 0; p < _mesh.parts(); p++) {
 		composeSubdomain(p);
 		K[p].mtype = mtype;
-		ESINFO(PROGRESS2) << Info::plain() << ".";
+		ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
-	ESINFO(PROGRESS2);
+	ESINFO(PROGRESS3);
 }
 
 void PrecomputedPhysics::saveMeshProperties(store::ResultStore &store)

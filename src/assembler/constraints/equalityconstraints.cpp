@@ -121,7 +121,7 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 		constraints.B1clustersMap.push_back({ (esglobal)i, environment->MPIrank });
 	}
 
-	ESINFO(DETAILS) << "Lambdas with Dirichlet in B1: " << constraints.B1[0].rows;
+	ESINFO(EXHAUSTIVE) << "Lambdas with Dirichlet in B1: " << constraints.B1[0].rows;
 	ESTEST(MANDATORY) << "ESPRESO requires some nodes with Dirichlet condition." << (globalDirichletSize == 0 ? TEST_FAILED : TEST_PASSED);
 }
 
@@ -435,7 +435,7 @@ void EqualityConstraints::insertElementGluingToB1(Constraints &constraints, cons
 		constraints.B1clustersMap.insert(constraints.B1clustersMap.end(), cMap[t].begin(), cMap[t].end());
 	}
 
-	ESINFO(DETAILS) << "Lambdas in B1: " << constraints.B1[0].rows;
+	ESINFO(EXHAUSTIVE) << "Lambdas in B1: " << constraints.B1[0].rows;
 }
 
 #ifdef HAVE_MORTAR
@@ -604,7 +604,7 @@ void EqualityConstraints::insertDomainGluingToB0(Constraints &constraints, const
 		}
 	}
 
-	ESINFO(DETAILS) << "Average number of lambdas in B0 is " << Info::averageValue(lambdas);
+	ESINFO(EXHAUSTIVE) << "Average number of lambdas in B0 is " << Info::averageValue(lambdas);
 }
 
 void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<SparseMatrix> &kernel)
@@ -828,7 +828,7 @@ void EqualityConstraints::insertDirichletToB1(Instance &instance, const std::vec
 		instance.B1clustersMap.push_back({ (esglobal)i, environment->MPIrank });
 	}
 
-	ESINFO(DETAILS) << "Lambdas with Dirichlet in B1: " << instance.B1[0].rows;
+	ESINFO(EXHAUSTIVE) << "Lambdas with Dirichlet in B1: " << instance.B1[0].rows;
 	ESTEST(MANDATORY) << "ESPRESO requires some nodes with Dirichlet condition." << (globalDirichletSize == 0 ? TEST_FAILED : TEST_PASSED);
 }
 
@@ -1146,7 +1146,7 @@ void EqualityConstraints::insertElementGluingToB1(Instance &instance, const std:
 		instance.B1clustersMap.insert(instance.B1clustersMap.end(), cMap[t].begin(), cMap[t].end());
 	}
 
-	ESINFO(DETAILS) << "Lambdas in B1: " << instance.B1[0].rows;
+	ESINFO(EXHAUSTIVE) << "Lambdas in B1: " << instance.B1[0].rows;
 }
 
 
@@ -1197,7 +1197,7 @@ void EqualityConstraints::insertCornersGluingToB0(Instance &instance, const std:
 		}
 	}
 
-	ESINFO(DETAILS) << "Average number of lambdas in B0 is " << Info::averageValue(lambdas);
+	ESINFO(EXHAUSTIVE) << "Average number of lambdas in B0 is " << Info::averageValue(lambdas);
 }
 
 void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std::vector<Element*> &elements, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs)

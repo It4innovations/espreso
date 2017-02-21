@@ -326,7 +326,7 @@ int SparseSolverDissection::Factorization(const std::string &str) {
 	/* all memory that is necessary for the factorization. */
 	/* -------------------------------------------------------------------- */
 
-	ESINFO(PROGRESS2) << Info::plain() << "f";
+	ESINFO(PROGRESS3) << Info::plain() << "f";
 
 	if (USE_FLOAT) {
 		printf("Method Factorization for float is not implemented - float not available in Dissection solver.\n");

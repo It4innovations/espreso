@@ -3961,7 +3961,7 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 
 		count_cv += mpi_size/li;
 
-		ESINFO(PROGRESS2) << " Collecting matrices G : " << count_cv <<" of " << mpi_size;
+		ESINFO(PROGRESS3) << " Collecting matrices G : " << count_cv <<" of " << mpi_size;
 	}
 
 	//SparseMatrix Gtt;
@@ -3981,23 +3981,23 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 
 		double t1 = omp_get_wtime();
 		G.MatTranspose(Gt);
-		ESINFO(PROGRESS2) << "Gtranspose = " << omp_get_wtime() - t1;
+		ESINFO(PROGRESS3) << "Gtranspose = " << omp_get_wtime() - t1;
 
 		t1 = omp_get_wtime();
 		SparseMatrix GGt_Mat;
 		GGt_Mat.MatMat(G, 'N', Gt);
-		ESINFO(PROGRESS2) << "G x Gt = " << omp_get_wtime() - t1;
+		ESINFO(PROGRESS3) << "G x Gt = " << omp_get_wtime() - t1;
 
 		t1 = omp_get_wtime();
 		Gt.Clear();
 		G.Clear();
-		ESINFO(PROGRESS2) << "G and Gt clear = " << omp_get_wtime() - t1;
+		ESINFO(PROGRESS3) << "G and Gt clear = " << omp_get_wtime() - t1;
 
 		ESINFO(EXHAUSTIVE) << GGt_Mat.SpyText();
 
 		t1 = omp_get_wtime();
 		GGt_Mat.RemoveLower();
-		ESINFO(PROGRESS2) << "GGt remove lower = " << omp_get_wtime() - t1;
+		ESINFO(PROGRESS3) << "GGt remove lower = " << omp_get_wtime() - t1;
 
 		t1 = omp_get_wtime();
 		// Create Sparse Direct solver for GGt
@@ -4005,7 +4005,7 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 
 		t1 = omp_get_wtime();
 		GGt.ImportMatrix(GGt_Mat);
-		ESINFO(PROGRESS2) << "ImportMatrix = " << omp_get_wtime() - t1;
+		ESINFO(PROGRESS3) << "ImportMatrix = " << omp_get_wtime() - t1;
 
 
 		t1 = omp_get_wtime();
@@ -4016,7 +4016,7 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 		std::stringstream ss;
 		ss << "Create GGt -> rank: " << environment->MPIrank;
 		GGt.Factorization(ss.str());
-		ESINFO(PROGRESS2) << "Factorization = " << omp_get_wtime() - t1;
+		ESINFO(PROGRESS3) << "Factorization = " << omp_get_wtime() - t1;
 
 
 		t1 = omp_get_wtime();
@@ -4035,9 +4035,9 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 
 #if TIME_MEAS >= 1
 	double end = omp_get_wtime();
-	ESINFO(PROGRESS2) <<"CG Loop - Create GGt  - collect all matrices   - Runtime = " << ec1 - sc1 << " s";
-	ESINFO(PROGRESS2) <<"CG Loop - Create GGt  - GGt fact. processing   - Runtime = " << ep1 - sp1 << " s";
-	ESINFO(PROGRESS2) <<"CG Loop - Create GGt  - total = proc + comm    - Runtime = " << end - start << " s";
+	ESINFO(PROGRESS3) <<"CG Loop - Create GGt  - collect all matrices   - Runtime = " << ec1 - sc1 << " s";
+	ESINFO(PROGRESS3) <<"CG Loop - Create GGt  - GGt fact. processing   - Runtime = " << ep1 - sp1 << " s";
+	ESINFO(PROGRESS3) <<"CG Loop - Create GGt  - total = proc + comm    - Runtime = " << end - start << " s";
 #endif
 
 }
@@ -4144,7 +4144,7 @@ for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
 
 		count_cv_l += mpi_size/li;
 
-		ESINFO(PROGRESS2) << "Collecting matrices G : " << count_cv_l <<" of " << mpi_size;
+		ESINFO(PROGRESS3) << "Collecting matrices G : " << count_cv_l <<" of " << mpi_size;
 	}
 	 collectGGt_time.end(); collectGGt_time.printStatMPI(); preproc_timing.addEvent(collectGGt_time);
 
@@ -4353,7 +4353,7 @@ for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
 
 		count_cv_l += mpi_size/li;
 
-		ESINFO(PROGRESS2) << "Collecting matrices G : " << count_cv_l <<" of " << mpi_size;
+		ESINFO(PROGRESS3) << "Collecting matrices G : " << count_cv_l <<" of " << mpi_size;
 	}
 	 collectGGt_time.end(); collectGGt_time.printStatMPI(); preproc_timing.addEvent(collectGGt_time);
 

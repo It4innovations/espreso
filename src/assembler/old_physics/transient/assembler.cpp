@@ -12,19 +12,19 @@ using namespace espreso;
 
 void TransientPhysics::assembleStiffnessMatrices()
 {
-	ESINFO(PROGRESS2) << "Assemble matrices K, M, and RHS.";
+	ESINFO(PROGRESS3) << "Assemble matrices K, M, and RHS.";
 	#pragma omp parallel for
 	for  (size_t p = 0; p < _mesh.parts(); p++) {
 		composeSubdomain(p);
 		K[p].mtype = mtype;
-		ESINFO(PROGRESS2) << Info::plain() << ".";
+		ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
-	ESINFO(PROGRESS2);
+	ESINFO(PROGRESS3);
 }
 
 void TransientPhysics::saveStiffnessMatrices()
 {
-	ESINFO(PROGRESS2) << "Save matrices K, M, RHS, and A constant";
+	ESINFO(PROGRESS3) << "Save matrices K, M, RHS, and A constant";
 	for (size_t p = 0; p < _mesh.parts(); p++) {
 		std::ofstream osK(Logging::prepareFile(p, "K").c_str());
 		osK << K[p];

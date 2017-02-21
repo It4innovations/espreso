@@ -3609,7 +3609,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 //  - OWN
 #if VERBOSE_KERNEL == 4
     if (d_sub==0){
-      ESINFO(PROGRESS2) << "debug set-up";
+      ESINFO(PROGRESS3) << "debug set-up";
     }
 #endif
 
@@ -4585,7 +4585,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //  - OWN
 #if VERBOSE_KERNEL == 4
     if (d_sub==0){
-      ESINFO(PROGRESS2) << "debug set-up";
+      ESINFO(PROGRESS3) << "debug set-up";
     }
 #endif
 

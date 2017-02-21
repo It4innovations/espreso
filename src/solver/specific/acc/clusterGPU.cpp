@@ -36,7 +36,7 @@ ClusterGPU::~ClusterGPU() {
 
 void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
-	ESINFO(PROGRESS2) << "Creating B1*K+*B1t Schur Complements with Pardiso SC and coping them to GPU";
+	ESINFO(PROGRESS3) << "Creating B1*K+*B1t Schur Complements with Pardiso SC and coping them to GPU";
 
 	bool GPU_full = false;
 	//GPU_full = true;
@@ -47,21 +47,21 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	int nDevices;
 	cudaGetDeviceCount(&nDevices);
 
-	ESINFO(PROGRESS2) << Info::plain() << "\n*** GPU Accelerators available on the server " << "\n\n";
+	ESINFO(PROGRESS3) << Info::plain() << "\n*** GPU Accelerators available on the server " << "\n\n";
 	for (int i = 0; i < nDevices; i++) {
 		cudaDeviceProp prop;
 		cudaGetDeviceProperties(&prop, i);
-		ESINFO(PROGRESS2) << Info::plain() << " Device Number: " << i << "\n";
-		ESINFO(PROGRESS2) << Info::plain() << " Device name: " << prop.name << "\n";
-		ESINFO(PROGRESS2) << Info::plain() << " Memory Clock Rate (KHz): " << prop.memoryClockRate << "\n";
-		ESINFO(PROGRESS2) << Info::plain() << " Memory Bus Width (bits): " << prop.memoryBusWidth << "\n";
-		ESINFO(PROGRESS2) << Info::plain() << " Peak Memory Bandwidth (GB/s): " << 2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6 << "\n";
+		ESINFO(PROGRESS3) << Info::plain() << " Device Number: " << i << "\n";
+		ESINFO(PROGRESS3) << Info::plain() << " Device name: " << prop.name << "\n";
+		ESINFO(PROGRESS3) << Info::plain() << " Memory Clock Rate (KHz): " << prop.memoryClockRate << "\n";
+		ESINFO(PROGRESS3) << Info::plain() << " Memory Bus Width (bits): " << prop.memoryBusWidth << "\n";
+		ESINFO(PROGRESS3) << Info::plain() << " Peak Memory Bandwidth (GB/s): " << 2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6 << "\n";
 
 		cudaSetDevice(i);
 		size_t free, total;
 		cudaMemGetInfo(&free, &total);
-		ESINFO(PROGRESS2) << Info::plain() << " GPU Total Memory [MB]: " << total/1024/1024 << "\n";
-		ESINFO(PROGRESS2) << Info::plain() << " GPU Free Memory [MB]:  " << free/1024/1024 << "\n\n";
+		ESINFO(PROGRESS3) << Info::plain() << " GPU Total Memory [MB]: " << total/1024/1024 << "\n";
+		ESINFO(PROGRESS3) << Info::plain() << " GPU Free Memory [MB]:  " << free/1024/1024 << "\n\n";
 
 	}
 
@@ -159,8 +159,8 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		}
 	}
 
-	ESINFO(PROGRESS2) << Info::plain() << "\n Domains on GPU : " << domains_on_GPU << "\n";
-	ESINFO(PROGRESS2) << Info::plain() << " Domains on CPU : " << domains_on_CPU << "\n";
+	ESINFO(PROGRESS3) << Info::plain() << "\n Domains on GPU : " << domains_on_GPU << "\n";
+	ESINFO(PROGRESS3) << Info::plain() << " Domains on CPU : " << domains_on_CPU << "\n";
 
 	std::vector <int> on_gpu (environment->MPIsize, 0);
 	MPI_Gather(&domains_on_GPU,1,MPI_INT,&on_gpu[0],1,MPI_INT, 0, MPI_COMM_WORLD);
@@ -176,7 +176,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 
 	for (eslocal i = 0; i < environment->MPIsize; i++) {
-		ESINFO(PROGRESS2) << Info::plain()
+		ESINFO(PROGRESS3) << Info::plain()
 			<< " MPI rank " << i <<
 			"\t - GPU : domains = \t" << on_gpu[i] << "\t Total DOFs = \t" << don_gpu[i] <<
 			"\t - CPU : domains = \t" << on_cpu[i] << "\t Total DOFs = \t" << don_cpu[i] << "\n";
@@ -188,7 +188,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 //		if (domains[d].isOnACC == 1 || !configuration.combine_sc_and_spds) {
 //			// Calculates SC on CPU and keeps it CPU memory
 //			GetSchurComplement(USE_FLOAT, d);
-//			ESINFO(PROGRESS2) << Info::plain() << ".";
+//			ESINFO(PROGRESS3) << Info::plain() << ".";
 //		}
 //	}
 
@@ -203,7 +203,7 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 		if (domains[d].isOnACC == 1 || !configuration.combine_sc_and_spds) {
 			// Calculates SC on CPU and keeps it CPU memory
 			GetSchurComplement(USE_FLOAT, d);
-			ESINFO(PROGRESS2) << Info::plain() << ".";
+			ESINFO(PROGRESS3) << Info::plain() << ".";
 
 			// Set if Upper or Lower part is referenced
 			domains[d].B1Kplus.uplo = 'U';
@@ -215,7 +215,7 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 		if (d+1 < domains_in_global_index.size() && (domains[d+1].isOnACC == 1 || !configuration.combine_sc_and_spds)) {
 			// Calculates SC on CPU and keeps it CPU memory
 			GetSchurComplement(USE_FLOAT, d+1);
-			ESINFO(PROGRESS2) << Info::plain() << ".";
+			ESINFO(PROGRESS3) << Info::plain() << ".";
 
 			eslocal sc1_rows = domains[d].B1Kplus.rows;
 			eslocal sc2_rows = domains[d+1].B1Kplus.rows;
@@ -311,12 +311,12 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 			if (domains[d].isOnACC == 1 || !configuration.combine_sc_and_spds) {
 				// Calculates SC on CPU and keeps it CPU memory
 				GetSchurComplement(USE_FLOAT, d);
-				ESINFO(PROGRESS2) << Info::plain() << ".";
+				ESINFO(PROGRESS3) << Info::plain() << ".";
 			}
 		}
 #endif
 
-	ESINFO(PROGRESS2) << Info::plain() << "\n";
+	ESINFO(PROGRESS3) << Info::plain() << "\n";
 
 	CreateCudaStreamPool();
 
@@ -414,11 +414,11 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 				if (USE_FLOAT) {
 					SEQ_VECTOR <float>  ().swap (domains[d].B1Kplus.dense_values_fl);
 
-					ESINFO(PROGRESS2) << Info::plain() << "g";
+					ESINFO(PROGRESS3) << Info::plain() << "g";
 				} else {
 					SEQ_VECTOR <double> ().swap (domains[d].B1Kplus.dense_values);
 
-					ESINFO(PROGRESS2) << Info::plain() << "G";
+					ESINFO(PROGRESS3) << Info::plain() << "G";
 				}
 			} else {
 
@@ -470,16 +470,16 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 					SEQ_VECTOR <float>  ().swap (domains[d].B1Kplus.dense_values_fl);
 
 					if (USE_FLOAT)
-						ESINFO(PROGRESS2) << Info::plain() << "f";
+						ESINFO(PROGRESS3) << Info::plain() << "f";
 					else
-						ESINFO(PROGRESS2) << Info::plain() << "F";
+						ESINFO(PROGRESS3) << Info::plain() << "F";
 
 				} else {
 
 					if (USE_FLOAT)
-						ESINFO(PROGRESS2) << Info::plain() << "c";
+						ESINFO(PROGRESS3) << Info::plain() << "c";
 					else
-						ESINFO(PROGRESS2) << Info::plain() << "C";
+						ESINFO(PROGRESS3) << Info::plain() << "C";
 				}
 			}
 
@@ -488,28 +488,28 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 			if (configuration.combine_sc_and_spds) {
 
 				if (USE_FLOAT)
-					ESINFO(PROGRESS2) << Info::plain() << "f";
+					ESINFO(PROGRESS3) << Info::plain() << "f";
 				else
-					ESINFO(PROGRESS2) << Info::plain() << "F";
+					ESINFO(PROGRESS3) << Info::plain() << "F";
 
 			} else {
 
 				//GetSchurComplement(USE_FLOAT, d);
 
 				if (USE_FLOAT)
-					ESINFO(PROGRESS2) << Info::plain() << "c";
+					ESINFO(PROGRESS3) << Info::plain() << "c";
 				else
-					ESINFO(PROGRESS2) << Info::plain() << "C";
+					ESINFO(PROGRESS3) << Info::plain() << "C";
 
 			}
 
 		}
 
-//		ESINFO(PROGRESS2) << Info::plain() << " Domain: " << d << " GPU : " << domains[d].isOnACC << "\n";
+//		ESINFO(PROGRESS3) << Info::plain() << " Domain: " << d << " GPU : " << domains[d].isOnACC << "\n";
 	}
 
-	ESINFO(PROGRESS2) << Info::plain() << "\n Domains transfered to GPU : " << domains_on_GPU << "\n";
-	ESINFO(PROGRESS2) << Info::plain() << " Domains on CPU : " << domains_on_CPU << "\n";
+	ESINFO(PROGRESS3) << Info::plain() << "\n Domains transfered to GPU : " << domains_on_GPU << "\n";
+	ESINFO(PROGRESS3) << Info::plain() << " Domains on CPU : " << domains_on_CPU << "\n";
 
 //	cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
 //
@@ -557,9 +557,9 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 //				SEQ_VECTOR <float>  ().swap (domains[i].B1Kplus.dense_values_fl);
 //				domains[i].Kplus.keep_factors = false;
 //				if (USE_FLOAT)
-//					ESINFO(PROGRESS2) << Info::plain() << "g";
+//					ESINFO(PROGRESS3) << Info::plain() << "g";
 //				else
-//					ESINFO(PROGRESS2) << Info::plain() << "G";
+//					ESINFO(PROGRESS3) << Info::plain() << "G";
 //			} else {
 //				domains[i].isOnACC = 0;
 //				GPU_full = true;
@@ -567,30 +567,30 @@ for (eslocal d = 0; d < domains_in_global_index.size(); d += 2 ) {
 //					SEQ_VECTOR <double> ().swap (domains[i].B1Kplus.dense_values);
 //					SEQ_VECTOR <float>  ().swap (domains[i].B1Kplus.dense_values_fl);
 //					if (USE_FLOAT)
-//						ESINFO(PROGRESS2) << Info::plain() << "p";
+//						ESINFO(PROGRESS3) << Info::plain() << "p";
 //					else
-//						ESINFO(PROGRESS2) << Info::plain() << "P";
+//						ESINFO(PROGRESS3) << Info::plain() << "P";
 //				} else {
 //					if (USE_FLOAT)
-//						ESINFO(PROGRESS2) << Info::plain() << "c";
+//						ESINFO(PROGRESS3) << Info::plain() << "c";
 //					else
-//						ESINFO(PROGRESS2) << Info::plain() << "C";
+//						ESINFO(PROGRESS3) << Info::plain() << "C";
 //				}
 //			}
 //
 //		} else {
 //                        domains[i].isOnACC = 0;
 //			if (USE_FLOAT)
-//				ESINFO(PROGRESS2) << Info::plain() << "p";
+//				ESINFO(PROGRESS3) << Info::plain() << "p";
 //			else
-//				ESINFO(PROGRESS2) << Info::plain() << "P";
+//				ESINFO(PROGRESS3) << Info::plain() << "P";
 //		}
 //
 //		//GPU_full = true;
 //
 //	}
 
-	ESINFO(PROGRESS2);
+	ESINFO(PROGRESS3);
 
 }
 
@@ -611,7 +611,7 @@ void ClusterGPU::GetSchurComplement( bool USE_FLOAT, eslocal i ) {
 		domains[i].B1Kplus.USE_FLOAT = true;
 	}
 
-	//ESINFO(PROGRESS2) << Info::plain() << "s";
+	//ESINFO(PROGRESS3) << Info::plain() << "s";
 
 	// if Schur complement is symmetric - then remove lower part - slower for GPU but more mem. efficient
 	if (configuration.schur_type == MATRIX_STORAGE::SYMMETRIC) {

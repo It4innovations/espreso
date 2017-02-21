@@ -239,7 +239,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 				norm = sqrt(norm);
 
 				if (norm < configuration.Ksolver_epsilon) {
-					ESINFO(PROGRESS2) << " " << step;
+					ESINFO(PROGRESS3) << " " << step;
 					success = true;
 					break;
 				}
@@ -247,7 +247,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 		}
 
 		if (!success) {
-			ESINFO(PROGRESS2) << "FAILED";
+			ESINFO(PROGRESS3) << "FAILED";
 		}
 
 		for (size_t i = 0; i < r.size(); i++) {
@@ -302,7 +302,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 				norm = sqrt(norm);
 
 				if (norm < configuration.Ksolver_epsilon) {
-					ESINFO(PROGRESS2) << " " << step;
+					ESINFO(PROGRESS3) << " " << step;
 					break;
 				}
 
@@ -310,7 +310,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in_y_out) {
 		}
 
 		if (!success) {
-			ESINFO(PROGRESS2) << "FAILED";
+			ESINFO(PROGRESS3) << "FAILED";
 		}
 
 		for (size_t i = 0; i < r.size(); i++) {

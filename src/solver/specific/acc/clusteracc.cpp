@@ -17,7 +17,7 @@ ClusterAcc::~ClusterAcc() {
 
 void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 
-    ESINFO(PROGRESS2) << "Creating Local Schur complements";
+    ESINFO(PROGRESS3) << "Creating Local Schur complements";
 
     // detect how many MPI processes is running per node
     int _MPIglobalRank;
@@ -60,7 +60,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     MPI_Comm_size(_currentNode, &_MPInodeSize);
     MPI_Comm_split(MPI_COMM_WORLD, _MPInodeRank, _MPIglobalRank, &_storingProcs);
     // END - detect how many MPI processes is running per node
-    ESINFO(PROGRESS2) << "MPI ranks per node: " << _MPInodeSize;
+    ESINFO(PROGRESS3) << "MPI ranks per node: " << _MPInodeSize;
     //TODO:
     int accelerators_per_node = 2;
     int target;
@@ -123,7 +123,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
             sched_setaffinity(0, sizeof(cpu_set_t), &my_set); /* Set affinity of tihs process to */
             /* the defined mask, i.e. only 7. */
         }
-        //ESINFO(PROGRESS2)
+        //ESINFO(PROGRESS3)
         std::cout << "Global MPI rank: " << _MPIglobalRank << " - Node MPI rank: " << _MPInodeRank << " uses: " << used_core_num << " Xeon Phi processing cores of accelerator #" << target <<" (from " << first_core << " to " << last_core <<  ")\n";
     }
 
@@ -233,7 +233,7 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
                         this->B1KplusPacks[i].getDataLength(j) * sizeof(double) );
                 SEQ_VECTOR<double>().swap(  domains[domN].B1Kplus.dense_values);
                 //domains[domN].B1Kplus.Clear();
-                ESINFO(PROGRESS2) << Info::plain() << ".";
+                ESINFO(PROGRESS3) << Info::plain() << ".";
             }
         }
 
@@ -245,7 +245,7 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
 #pragma omp parallel for
         for (eslocal d = 0; d < hostDomains.size(); ++d) {
 
-            ESINFO(PROGRESS2) << Info::plain() << "*";
+            ESINFO(PROGRESS3) << Info::plain() << "*";
             eslocal domN = hostDomains.at(d);
             SparseMatrix TmpB;
             domains[domN].B1_comp_dom.MatTranspose(TmpB);
@@ -386,7 +386,7 @@ void ClusterAcc::Create_Kinv_perDomain() {
 for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
         domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
 
-    ESINFO(PROGRESS2) << "Creating B1*K+*B1t on Xeon Phi accelerator";
+    ESINFO(PROGRESS3) << "Creating B1*K+*B1t on Xeon Phi accelerator";
 
 
     // compute sizes of data to be offloaded to MIC
@@ -429,7 +429,7 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
         offset += matrixPerPack;
     }
 
-    ESINFO(PROGRESS2) << "Creating B1*K+*B1t : ";
+    ESINFO(PROGRESS3) << "Creating B1*K+*B1t : ";
 
     #pragma omp parallel for
 for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
@@ -444,7 +444,7 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
         domains[i].KplusF.SolveMatF(domains[i].B1t_comp_dom, domains[i].B1Kplus, false);
         domains[i].B1Kplus.MatTranspose();
 
-        ESINFO(PROGRESS2) << Info::plain() << " " << i;
+        ESINFO(PROGRESS3) << Info::plain() << " " << i;
 
         SparseMatrix Btmp;
         Btmp.MatAddInPlace(domains[i].B1Kplus, 'N', 1.0);
@@ -460,7 +460,7 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
 
     }
 
-    ESINFO(PROGRESS2);
+    ESINFO(PROGRESS3);
 
     delete [] dom2dev;
     delete [] offsets;
@@ -796,7 +796,7 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
     MPI_Comm_size(_currentNode, &_MPInodeSize);
     MPI_Comm_split(MPI_COMM_WORLD, _MPInodeRank, _MPIglobalRank, &_storingProcs);
     // END - detect how many MPI processes is running per node
-    ESINFO(PROGRESS2) << "MPI ranks per node: " << _MPInodeSize;
+    ESINFO(PROGRESS3) << "MPI ranks per node: " << _MPInodeSize;
     //TODO:
     int accelerators_per_node = 2;
     int target;
@@ -859,7 +859,7 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
             sched_setaffinity(0, sizeof(cpu_set_t), &my_set); /* Set affinity of tihs process to */
             /* the defined mask, i.e. only 7. */
         }
-        //ESINFO(PROGRESS2)
+        //ESINFO(PROGRESS3)
         std::cout << "Global MPI rank: " << _MPIglobalRank << " - Node MPI rank: " << _MPInodeRank << " uses: " << used_core_num << " Xeon Phi processing cores of accelerator #" << target <<" (from " << first_core << " to " << last_core <<  ")\n";
     }
 
@@ -1121,7 +1121,7 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
             memcpy( matrixPointer, &( domains[ d ].Prec.dense_values[ 0 ] ), 
                     this->DirichletPacks[ mic ].getDataLength( j ) * sizeof( double ) );
             SEQ_VECTOR<double>().swap( domains[d].Prec.dense_values );
-            ESINFO(PROGRESS2) << Info::plain() << ".";
+            ESINFO(PROGRESS3) << Info::plain() << ".";
         }
     }
 
@@ -1297,8 +1297,8 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
             osS.close();
         }
 
-        ESINFO(PROGRESS2) << Info::plain() << ".";
+        ESINFO(PROGRESS3) << Info::plain() << ".";
     }
 
-    ESINFO(PROGRESS2);   
+    ESINFO(PROGRESS3);   
 }

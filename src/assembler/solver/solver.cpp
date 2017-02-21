@@ -127,7 +127,7 @@ void Solver::updateMatrices(const Step &step, Matrices matrices, const std::vect
 
 void Solver::updateVector(const Step &step, Matrices v1, Matrices v2, double alpha, double beta)
 {
-	ESINFO(PROGRESS2) << "Update vector: " << mNames(v1) << " = " << alpha << " * " << mNames(v1) << (beta < 0 ? " - " : " + ") << beta << " * " << mNames(v2);
+	ESINFO(PROGRESS2) << "Update vector: " << mNames(v1) << "= " << alpha << " * " << mNames(v1) << (beta < 0 ? "- " : "+ ") << fabs(beta) << " * " << mNames(v2);
 	if (v1 & Matrices::f) {
 		if (v2 & Matrices::R) {
 
@@ -271,6 +271,8 @@ void Solver::processSolution(const Step &step)
 
 void Solver::initLinearSolver()
 {
+	ESINFO(PROGRESS2) << "Initialization of linear solver";
+
 	TimeEvent timeSolver("Initialize linear solver"); timeSolver.startWithBarrier();
 	linearSolver->init();
 	timeSolver.end(); _timeStatistics->addEvent(timeSolver);
@@ -278,6 +280,8 @@ void Solver::initLinearSolver()
 
 void Solver::updateLinearSolver(Matrices matrices)
 {
+	ESINFO(PROGRESS2) << "Updating of linear solver";
+
 	TimeEvent timeSolver("Update linear solver"); timeSolver.startWithBarrier();
 	linearSolver->update(matrices);
 	timeSolver.end(); _timeStatistics->addEvent(timeSolver);
@@ -285,6 +289,8 @@ void Solver::updateLinearSolver(Matrices matrices)
 
 void Solver::runLinearSolver()
 {
+	ESINFO(PROGRESS2) << "Solve system";
+
 	TimeEvent timeSolve("Linear Solver - runtime"); timeSolve.start();
 	linearSolver->run();
 	timeSolve.endWithBarrier(); _timeStatistics->addEvent(timeSolve);
@@ -292,6 +298,8 @@ void Solver::runLinearSolver()
 
 void Solver::finalizeLinearSolver()
 {
+	ESINFO(PROGRESS2) << "Finalize " << _name << " solver";
+
 	linearSolver->finilize();
 
 	_store->finalize();

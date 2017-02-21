@@ -214,7 +214,7 @@ void SparseSolverMUMPS::Factorization() {
 	dmumps_c(&id); // Factorization
 
 #ifdef DEBUG
-	ESINFO(PROGRESS2) << "Factorization completed ... ";
+	ESINFO(PROGRESS3) << "Factorization completed ... ";
 #endif
 
 	m_factorized = 1;

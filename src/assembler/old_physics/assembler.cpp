@@ -50,7 +50,7 @@ OldPhysics::~OldPhysics()
 
 void OldPhysics::saveStiffnessMatrices()
 {
-	ESINFO(PROGRESS2) << "Save matrices K and RHS.";
+	ESINFO(PROGRESS3) << "Save matrices K and RHS.";
 	for (size_t p = 0; p < K.size(); p++) {
 		std::ofstream osK(Logging::prepareFile(p, "K").c_str());
 		osK << K[p];

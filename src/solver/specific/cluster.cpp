@@ -329,9 +329,9 @@ void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in,
 
 		domains[d].enable_SP_refinement = true;
 	    //}
-	    ESINFO(PROGRESS2) << Info::plain() << ".";
+	    ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
-	ESINFO(PROGRESS2);
+	ESINFO(PROGRESS3);
 }
 
 
@@ -344,7 +344,7 @@ void ClusterBase::SetClusterHFETI () {
 
 		int MPIrank;
 		MPI_Comm_rank (MPI_COMM_WORLD, &MPIrank);
-		ESINFO(PROGRESS2) << "HFETI preprocessing start";
+		ESINFO(PROGRESS3) << "HFETI preprocessing start";
 
 		TimeEvent B0_time("Compress B0 per cluster");
 		B0_time.start();
@@ -535,7 +535,7 @@ void ClusterBase::multKplusGlobal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double
 
 void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 
-	//ESINFO(PROGRESS2) << "K+ multiply HFETI";
+	//ESINFO(PROGRESS3) << "K+ multiply HFETI";
 	mkl_set_num_threads(1);
 
 	cluster_time.totalTime.start();
@@ -701,9 +701,9 @@ for (size_t d = 0; d < domains.size(); d++)
 		for (eslocal i = 0; i < domain_size; i++)
 			x_in[d][i] = tm2[d][i] + tm3[d][i];
 
-		//ESINFO(PROGRESS2) << Info::plain() << ".";
+		//ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
-	//ESINFO(PROGRESS2);
+	//ESINFO(PROGRESS3);
 	loop_2_1_time.end();
 
 	cluster_time.totalTime.end();
@@ -1208,7 +1208,7 @@ void ClusterBase::CreateF0() {
 
 	SEQ_VECTOR <SparseMatrix> tmpF0v (domains.size());
 
-	ESINFO(PROGRESS2) << "HFETI - Create F0";
+	ESINFO(PROGRESS3) << "HFETI - Create F0";
 
 	 TimeEvent solve_F0_time("B0 compression; F0 multiple InitialCondition solve");
 	 solve_F0_time.start();
@@ -1278,10 +1278,10 @@ for (size_t d = 0; d < domains.size(); d++) {
 		domains[d].B0Kplus.Clear();
 
 		domains[d].Kplus.msglvl=0;
-		ESINFO(PROGRESS2) << Info::plain() << ".";
+		ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
 
-	ESINFO(PROGRESS2);
+	ESINFO(PROGRESS3);
 
 	 solve_F0_time.end();
 	 solve_F0_time.printStatMPI();
@@ -1416,7 +1416,7 @@ void ClusterBase::CreateSa() {
 
 		SparseMatrix Kernel_Sa;
 		SparseMatrix Kernel_Sa2;
-		ESINFO(PROGRESS2) << "Salfa - regularization from matrix";
+		ESINFO(PROGRESS3) << "Salfa - regularization from matrix";
 
 		//SparseMatrix GGt;
 		//GGt.MatMat(G0,'N',G0t);
@@ -2643,7 +2643,7 @@ void ClusterBase::CreateDirichletPrec(Instance *instance)
 			osS.close();
 		}
 
-		ESINFO(PROGRESS2) << Info::plain() << ".";
+		ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
 }
 

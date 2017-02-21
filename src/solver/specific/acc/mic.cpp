@@ -749,7 +749,7 @@ void SparseSolverMIC::Create_SC(
         MKL_INT *SC_sizes,
         eslocal generate_symmetric_sc_1_generate_general_sc_0
         ) {
-    //ESINFO(PROGRESS2) << "Creating Schur complements";
+    //ESINFO(PROGRESS3) << "Creating Schur complements";
 
 
     // data to be transfered to MIC
@@ -798,7 +798,7 @@ void SparseSolverMIC::Create_SC(
             eslocal myRank = omp_get_thread_num();
             matrixPerThread[myRank] = (double*) _mm_malloc(maxSize * sizeof(double), 64);
         }
-        //ESINFO(PROGRESS2) << "start";
+        //ESINFO(PROGRESS3) << "start";
 #pragma omp parallel
         {
             eslocal myRank = omp_get_thread_num();
@@ -894,7 +894,7 @@ void SparseSolverMIC::Create_SC(
         }
 
 
-        //ESINFO(PROGRESS2) << "end";
+        //ESINFO(PROGRESS3) << "end";
     }
 }
 

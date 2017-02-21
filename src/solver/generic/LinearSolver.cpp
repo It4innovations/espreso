@@ -290,7 +290,7 @@ for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 			configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET ) {
 		TimeEvent timeDirPrec(string("Solver - Dirichlet Preconditioner calculation")); timeDirPrec.start();
 
-		ESINFO(PROGRESS2) << "Calculate Dirichlet preconditioner";
+		ESINFO(PROGRESS3) << "Calculate Dirichlet preconditioner";
         cluster->CreateDirichletPrec( instance );
        /* 
 		cilk_for (size_t d = 0; d < physics.K.size(); d++) {
@@ -458,10 +458,10 @@ for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 				osS.close();
 			}
 
-			ESINFO(PROGRESS2) << Info::plain() << ".";
+			ESINFO(PROGRESS3) << Info::plain() << ".";
 		}
         */
-		ESINFO(PROGRESS2);
+		ESINFO(PROGRESS3);
 
 		timeDirPrec.endWithBarrier(); timeEvalMain.addEvent(timeDirPrec);
 	}
@@ -481,7 +481,7 @@ for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 
 	TimeEvent KregMem(string("Solver - K regularization mem. [MB]")); KregMem.startWithoutBarrier( GetProcessMemory_u() );
 
-	ESINFO(PROGRESS2) << "Make K regular";
+	ESINFO(PROGRESS3) << "Make K regular";
 	cluster->ImportKmatrixAndRegularize( instance->K, instance->RegMat );
 
 	KregMem.endWithoutBarrier( GetProcessMemory_u() );
@@ -519,7 +519,7 @@ for (eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 
 	// *** K Factorization ****************************************************************************************************
 	TimeEvent KFactMem(string("Solver - K factorization mem. [MB]")); KFactMem.startWithoutBarrier( GetProcessMemory_u() );
-	ESINFO(PROGRESS2) << "Factorize K";
+	ESINFO(PROGRESS3) << "Factorize K";
 
 	cluster->SetupKsolvers();
 
@@ -738,7 +738,7 @@ for(eslocal d = 0; d < number_of_subdomains_per_cluster; d++) {
 		cluster->domains[d].Kplus_Rb2 = cluster->domains[d].Kplus_R2;
 
 	}
-	ESINFO(PROGRESS2) << "K kernel detected";
+	ESINFO(PROGRESS3) << "K kernel detected";
   // sum of ||K*R|| (all subdomains on the cluster)
   //
   //
