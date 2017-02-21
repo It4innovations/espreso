@@ -27,6 +27,7 @@ struct OutputConfiguration: public Configuration {
 
 	PARAMETER(bool, results, "Save results", true);
 	PARAMETER(bool, properties, "Save also input parameters", false);
+	PARAMETER(bool, substeps, "Save substep results", false);
 	PARAMETER(bool, gluing, "Save lagrange multipliers", false);
 
 	PARAMETER(double, domain_shrink_ratio, "All domains are shrunk by this ratio", .95);

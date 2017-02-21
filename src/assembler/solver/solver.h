@@ -58,6 +58,7 @@ protected:
 	void storeData(const Step &step, std::vector<SparseMatrix> &matrices, const std::string &name, const std::string &description);
 	void storeData(const Step &step, std::vector<std::vector<double> > &vectors, const std::string &name, const std::string &description);
 	void storeSolution(const Step &step);
+	void storeSubSolution(const Step &step);
 
 	std::string _name;
 	Mesh *_mesh;

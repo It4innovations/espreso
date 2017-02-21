@@ -29,7 +29,7 @@ void NewtonRhapson::run(Step &step)
 	if (!_configuration.convergenceParameters().checkSolution() && _configuration.convergenceParameters().checkResidual()) {
 		ESINFO(GLOBAL_ERROR) << "It is not possible to turn off the both 'temperature' and 'heat' convergence.";
 	}
-	step.solver = 0;
+	step.substep = 0;
 
 	assembleMatrices(step, Matrices::K | Matrices::f);
 	composeGluing(step, Matrices::B1);
@@ -39,6 +39,7 @@ void NewtonRhapson::run(Step &step)
 	initLinearSolver();
 	runLinearSolver();
 	processSolution(step);
+	storeSubSolution(step);
 
 	double temperatureResidual = _configuration.convergenceParameters().requestedSolution();
 	double heatResidual = _configuration.convergenceParameters().requestedResidual();
@@ -52,7 +53,7 @@ void NewtonRhapson::run(Step &step)
 	std::vector<std::vector<double> > T;
 	std::vector<std::vector<double> > F_ext;
 	while (
-		step.solver++ < _configuration.max_iterations &&
+		step.substep++ < _configuration.max_iterations &&
 		(temperatureResidual > _configuration.convergenceParameters().requestedSolution() ||
 		heatResidual > _configuration.convergenceParameters().requestedResidual())) {
 
@@ -68,7 +69,7 @@ void NewtonRhapson::run(Step &step)
 		}
 		updateVector(step, Matrices::f, Matrices::R, 1, -1);
 		if (_configuration.convergenceParameters().checkResidual()) {
-			heatResidual += physics->sumSquares(physics->instance()->f, Physics::SumOperation::SUM, Physics::SumRestriction::DIRICHLET, step.load);
+			heatResidual += physics->sumSquares(physics->instance()->f, Physics::SumOperation::SUM, Physics::SumRestriction::DIRICHLET, step.step);
 		}
 
 		composeGluing(step, Matrices::B1);
@@ -89,6 +90,7 @@ void NewtonRhapson::run(Step &step)
 		}
 
 		processSolution(step);
+		storeSubSolution(step);
 
 		if (_configuration.convergenceParameters().checkResidual()) {
 			assembleMatrices(step, Matrices::K | Matrices::R | Matrices::f);

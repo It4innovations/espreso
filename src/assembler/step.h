@@ -7,11 +7,11 @@
 namespace espreso {
 
 struct Step {
-	Step(): load(0), iteration(0), solver(0) {}
+	Step(): step(0), iteration(0), substep(0) {}
 
-	size_t load;
+	size_t step;
 	size_t iteration;
-	size_t solver;
+	size_t substep;
 };
 
 }

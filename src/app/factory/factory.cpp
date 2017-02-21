@@ -123,7 +123,7 @@ void Factory::solve()
 		Step step;
 		Logging::step = &step;
 		for (size_t loadStep = 0; loadStep < loadSteps.size(); loadStep++) {
-			step.load = loadStep;
+			step.step = loadStep;
 			loadSteps[loadStep]->run(step);
 			_solution = _instances.front()->primalSolution;
 		}
