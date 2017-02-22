@@ -41,6 +41,7 @@ void ShallowWater2D::prepareTotalFETI()
 	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
 	_mesh->removeDuplicateRegions();
 	_mesh->fillDomainsSettings();
+	init();
 }
 
 void ShallowWater2D::analyticRegularization(size_t domain)
@@ -60,7 +61,7 @@ void ShallowWater2D::processElement(const Step &step, Matrices matrices, const E
 		coordinates(i, 1) = _mesh->coordinates()[e->node(i)].y;
 	}
 
-	eslocal Ksize = 3 * e->nodes();
+	eslocal Ksize = pointDOFs().size() * e->nodes();
 
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
