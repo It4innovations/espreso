@@ -53,12 +53,24 @@ void ShallowWater2D::analyticRegularization(size_t domain)
 void ShallowWater2D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
-	DenseMatrix coordinates(e->nodes(), 2), J(2, 2), invJ(2, 2), dND;
-	double detJ, temp;
+	DenseMatrix coordinates(e->nodes(), 2), J(2, 2), invJ(2, 2), Cu(e->nodes(), e->nodes());
+	double detJ;
+	DenseMatrix U(e->nodes(), 2), u(e->nodes(), 2), h(e->nodes(), 1), p(e->nodes(), 1);
+	DenseMatrix gpU(1, 2), gpu(1, 2), gph(1, 1), gpp(1, 1);
 
 	for (size_t i = 0; i < e->nodes(); i++) {
 		coordinates(i, 0) = _mesh->coordinates()[e->node(i)].x;
 		coordinates(i, 1) = _mesh->coordinates()[e->node(i)].y;
+
+		if (solution.size()) {
+			U(i, 0) = solution[0]->get(Property::MOMENTUM_X, e->domains().front(), _mesh->coordinates().localIndex(e->node(i), e->domains().front()));
+			U(i, 1) = solution[0]->get(Property::MOMENTUM_Y, e->domains().front(), _mesh->coordinates().localIndex(e->node(i), e->domains().front()));
+			p(i, 0) = solution[0]->get(Property::PRESSURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(i), e->domains().front()));
+		} else {
+			U(i, 0) = 0; // INITIAL MOMENTUM X
+			U(i, 1) = 0; // INITIAL MOMENTUM Y
+			p(i, 0) = 1; // INITIAL PRESSURE
+		}
 	}
 
 	eslocal Ksize = pointDOFs().size() * e->nodes();
@@ -81,7 +93,11 @@ void ShallowWater2D::processElement(const Step &step, Matrices matrices, const E
 		detJ = determinant2x2(J.values());
 		inverse2x2(J.values(), invJ.values(), detJ);
 
+		gpU.multiply(e->N()[gp], U);
+		gpp.multiply(e->N()[gp], p);
+
 		Me.multiply(e->N()[gp], e->N()[gp], e->weighFactor()[gp] * detJ, 1, true, false);
+		Cu.multiply(e->N()[gp], e->N()[gp], e->weighFactor()[gp] * detJ, 1, true, false);
 	}
 }
 
