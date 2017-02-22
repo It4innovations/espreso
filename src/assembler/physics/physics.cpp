@@ -172,7 +172,7 @@ void Physics::insertElementToDomain(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix
 		}
 	}
 
-	if (DOFs.size() % Me.rows() == 0 && DOFs.size() % Me.columns() == 0) {
+	if (Me.rows() && Me.columns() && DOFs.size() % Me.rows() == 0 && DOFs.size() % Me.columns() == 0) {
 		size_t multiplicity = DOFs.size() / Me.rows();
 		for (size_t m = 0; m < multiplicity; m++) {
 			for (size_t r = 0; r < Me.rows(); r++) {
