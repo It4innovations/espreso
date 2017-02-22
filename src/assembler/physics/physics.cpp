@@ -410,8 +410,8 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOpe
 
 void Physics::assembleB1(const Step &step, bool withRedundantMultipliers, bool withScaling)
 {
-	EqualityConstraints::insertDirichletToB1(*_instance, _mesh->regions(), _mesh->nodes(), pointDOFs(), withRedundantMultipliers);
-	EqualityConstraints::insertElementGluingToB1(*_instance, _mesh->neighbours(), _mesh->regions(), _mesh->nodes(), pointDOFs(), withRedundantMultipliers, withScaling);
+	EqualityConstraints::insertDirichletToB1(*_instance, _mesh->regions(), _mesh->nodes(), pointDOFs(), _nodesDOFsOffsets, withRedundantMultipliers);
+	EqualityConstraints::insertElementGluingToB1(*_instance, _mesh->neighbours(), _mesh->regions(), _mesh->nodes(), pointDOFs(), _nodesDOFsOffsets, withRedundantMultipliers, withScaling);
 }
 
 

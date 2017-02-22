@@ -726,7 +726,7 @@ void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std:
 	}
 }
 
-void EqualityConstraints::insertDirichletToB1(Instance &instance, const std::vector<Region*> &regions, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs, bool withRedundantMultiplier)
+void EqualityConstraints::insertDirichletToB1(Instance &instance, const std::vector<Region*> &regions, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs, const std::vector<size_t> &DOFsOffsets, bool withRedundantMultiplier)
 {
 	size_t loadStep = 0;
 
@@ -748,11 +748,10 @@ void EqualityConstraints::insertDirichletToB1(Instance &instance, const std::vec
 					if (!withRedundantMultiplier && nodes[i]->clusters()[0] != environment->MPIrank) {
 						continue;
 					}
-					const std::vector<eslocal>& indices = nodes[i]->DOFsIndices();
 					double value = nodes[i]->getProperty(DOFs[dof], 0, loadStep, 0);
 					for(size_t d = 0; d < nodes[i]->domains().size(); d++) {
-						if (indices[d * DOFs.size() + dof] != -1) {
-							dirichlet[nodes[i]->domains()[d]][t].push_back(indices[d * DOFs.size() + dof] + 1);
+						if (nodes[i]->DOFIndex(nodes[i]->domains()[d], DOFsOffsets[dof]) != -1) {
+							dirichlet[nodes[i]->domains()[d]][t].push_back(nodes[i]->DOFIndex(nodes[i]->domains()[d], DOFsOffsets[dof]) + 1);
 							dirichletValues[nodes[i]->domains()[d]][t].push_back(value);
 						}
 						if (!withRedundantMultiplier) {
@@ -833,7 +832,7 @@ void EqualityConstraints::insertDirichletToB1(Instance &instance, const std::vec
 }
 
 
-std::vector<esglobal> EqualityConstraints::computeLambdasID(Instance &instance, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, bool withRedundantMultiplier)
+std::vector<esglobal> EqualityConstraints::computeLambdasID(Instance &instance, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<size_t> &DOFsOffsets, bool withRedundantMultiplier)
 {
 	size_t loadStep = 0;
 
@@ -859,7 +858,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Instance &instance, 
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 
 			for (size_t dof = 0; dof < DOFs.size(); dof++) {
-				size_t n = elements[e]->numberOfGlobalDomainsWithDOF(dof);
+				size_t n = elements[e]->numberOfGlobalDomainsWithDOF(DOFsOffsets[dof]);
 				if (n > 1 && (!withRedundantMultiplier || !Mesh::commonRegion(skippedRegions[dof], elements[e]->regions()))) {
 					if (elements[e]->clusters()[0] == environment->MPIrank) { // set lambda ID
 						if (withRedundantMultiplier) {
@@ -946,13 +945,13 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Instance &instance, 
 }
 
 
-void EqualityConstraints::insertElementGluingToB1(Instance &instance, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, bool withRedundantMultiplier, bool withScaling)
+void EqualityConstraints::insertElementGluingToB1(Instance &instance, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<size_t> &DOFsOffsets, bool withRedundantMultiplier, bool withScaling)
 {
 	auto n2i = [ & ] (size_t neighbour) {
 		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
 	};
 
-	std::vector<esglobal> lambdasID = computeLambdasID(instance, neighbours, regions, elements, DOFs, withRedundantMultiplier);
+	std::vector<esglobal> lambdasID = computeLambdasID(instance, neighbours, regions, elements, DOFs, DOFsOffsets, withRedundantMultiplier);
 
 	std::vector<eslocal> permutation(lambdasID.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
@@ -978,9 +977,9 @@ void EqualityConstraints::insertElementGluingToB1(Instance &instance, const std:
 
 	auto findDomain = [&] (const Element *e, size_t d, size_t dof) -> eslocal {
 		auto &DOFIndices = e->DOFsIndices();
-		size_t c = 0, DOFs = DOFIndices.size() / e->domains().size();
+		size_t c = 0, DOFsSize = DOFIndices.size() / e->domains().size();
 		for (size_t i = 0; i < e->domains().size(); i++) {
-			if (DOFIndices[i * DOFs + dof] != -1) {
+			if (DOFIndices[i * DOFsSize + dof] != -1) {
 				if (d == c++) {
 					return e->domains()[i];
 				}
@@ -1007,7 +1006,7 @@ void EqualityConstraints::insertElementGluingToB1(Instance &instance, const std:
 			for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 
 				const Element *e = elements[permutation[i] / DOFs.size()];
-				size_t dof = permutation[i] % DOFs.size();
+				size_t dof = DOFsOffsets[permutation[i] % DOFs.size()];
 
 				for (auto c = e->clusters().begin(); c != e->clusters().end(); ++c) {
 					if (*c != environment->MPIrank) {
@@ -1034,7 +1033,7 @@ void EqualityConstraints::insertElementGluingToB1(Instance &instance, const std:
 		for (size_t i = 0; i < diagonals.size(); i++) {
 
 			const Element *e = elements[permutation[i] / DOFs.size()];
-			size_t dof = permutation[i] % DOFs.size();
+			size_t dof = DOFsOffsets[permutation[i] % DOFs.size()];
 
 			for (auto c = e->clusters().begin(); c != e->clusters().end(); ++c) {
 				if (*c == environment->MPIrank) {
@@ -1056,7 +1055,7 @@ void EqualityConstraints::insertElementGluingToB1(Instance &instance, const std:
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 
 			const Element *e = elements[permutation[i] / DOFs.size()];
-			size_t dof = permutation[i] % DOFs.size();
+			size_t dof = DOFsOffsets[permutation[i] % DOFs.size()];
 			esglobal offset = 0;
 			double duplicity = 0;
 			if (withScaling) {
@@ -1150,7 +1149,7 @@ void EqualityConstraints::insertElementGluingToB1(Instance &instance, const std:
 }
 
 
-void EqualityConstraints::insertCornersGluingToB0(Instance &instance, const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
+void EqualityConstraints::insertCornersGluingToB0(Instance &instance, const std::vector<Element*> &elements, const std::vector<size_t> &DOFsOffsets)
 {
 	if (!elements.size()) {
 		return;
@@ -1163,18 +1162,17 @@ void EqualityConstraints::insertCornersGluingToB0(Instance &instance, const std:
 	size_t lambdas = instance.B0[0].rows;
 
 	for (size_t e = 0; e < elements.size(); e++) {
-		for (size_t dof = 0; dof < DOFs.size(); dof++) {
-			if (elements[e]->numberOfLocalDomainsWithDOF(dof) > 1) { // inner nodes are not glued
-				const std::vector<eslocal> &DOFIndices = elements[e]->DOFsIndices();
+		for (size_t dof = 0; dof < DOFsOffsets.size(); dof++) {
+			if (elements[e]->numberOfLocalDomainsWithDOF(DOFsOffsets[dof]) > 1) { // inner nodes are not glued
 
 				for (size_t d1 = 0, d2 = 1; d2 < elements[e]->domains().size(); d1++, d2++) {
 
 					instance.B0[elements[e]->domains()[d1]].I_row_indices.push_back(lambdas + 1);
-					instance.B0[elements[e]->domains()[d1]].J_col_indices.push_back(DOFIndices[d1 * DOFs.size() + dof] + 1);
+					instance.B0[elements[e]->domains()[d1]].J_col_indices.push_back(elements[e]->DOFIndex(elements[e]->domains()[d1], DOFsOffsets[dof]) + 1);
 					instance.B0[elements[e]->domains()[d1]].V_values.push_back(1);
 
 					instance.B0[elements[e]->domains()[d2]].I_row_indices.push_back(lambdas + 1);
-					instance.B0[elements[e]->domains()[d2]].J_col_indices.push_back(DOFIndices[d2 * DOFs.size() + dof] + 1);
+					instance.B0[elements[e]->domains()[d2]].J_col_indices.push_back(elements[e]->DOFIndex(elements[e]->domains()[d2], DOFsOffsets[dof]) + 1);
 					instance.B0[elements[e]->domains()[d2]].V_values.push_back(-1);
 
 					lambdas++;
@@ -1200,7 +1198,7 @@ void EqualityConstraints::insertCornersGluingToB0(Instance &instance, const std:
 	ESINFO(EXHAUSTIVE) << "Average number of lambdas in B0 is " << Info::averageValue(lambdas);
 }
 
-void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std::vector<Element*> &elements, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs)
+void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std::vector<Element*> &elements, const std::vector<Element*> &nodes, const std::vector<size_t> &DOFsOffsets)
 {
 	std::vector<Element*> el(elements);
 
@@ -1242,10 +1240,10 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 
 			for (eslocal col = 0; col < instance.N1[domains[0]].cols; col++) {
 				for (size_t n = 0; n < nodesOnInterface.size(); n++) {
-					for (size_t dof = 0; dof < DOFs.size(); dof++) {
+					for (size_t dof = 0; dof < DOFsOffsets.size(); dof++) {
 						instance.B0[p].I_row_indices.push_back(i * instance.N1[0].cols + col + 1);
 						instance.B0[p].J_col_indices.push_back(nodesOnInterface[n]->DOFIndex(p, dof) + 1);
-						instance.B0[p].V_values.push_back(sign * instance.N1[domains[0]].dense_values[instance.N1[domains[0]].rows * col + nodesOnInterface[n]->DOFIndex(domains[0], dof)]);
+						instance.B0[p].V_values.push_back(sign * instance.N1[domains[0]].dense_values[instance.N1[domains[0]].rows * col + nodesOnInterface[n]->DOFIndex(domains[0], DOFsOffsets[dof])]);
 					}
 				}
 			}
