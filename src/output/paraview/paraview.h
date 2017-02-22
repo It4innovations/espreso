@@ -17,6 +17,7 @@ public:
 	virtual void storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType);
 	virtual void storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType);
 	virtual void finalize();
+	int numb;
 };
 
 }
