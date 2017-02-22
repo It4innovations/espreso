@@ -67,43 +67,22 @@ void ShallowWater2D::processElement(const Step &step, Matrices matrices, const E
 	Me.resize(0, 0);
 	Re.resize(0, 0);
 	fe.resize(0, 0);
-	if (matrices & Matrices::K) {
-		Ke.resize(Ksize, Ksize);
-		Ke = 0;
-	}
 	if (matrices & Matrices::M) {
-		Me.resize(Ksize, Ksize);
+		Me.resize(e->nodes(), e->nodes());
 		Me = 0;
-	}
-	if (matrices & Matrices::R) {
-		Re.resize(Ksize, 1);
-		Re = 0;
 	}
 	if (matrices & Matrices::f) {
 		fe.resize(Ksize, 1);
 		fe = 0;
 	}
 
-//	DenseMatrix u(1, 2), v(1, 2), re(1, e->nodes());
-//	double normGradN = 0;
-//
-//	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
-//		u.multiply(e->N()[gp], U, 1, 0);
-//
-//		J.multiply(e->dN()[gp], coordinates);
-//		detJ = determinant2x2(J.values());
-//		inverse2x2(J.values(), invJ.values(), detJ);
-//
-//		gpThickness.multiply(e->N()[gp], thickness);
-//		gpK.multiply(e->N()[gp], K);
-//
-//		Ce(0, 0) = gpK(0, 0);
-//		Ce(1, 1) = gpK(0, 1);
-//		Ce(0, 1) = gpK(0, 2);
-//		Ce(1, 0) = gpK(0, 3);
-//
-//		dND.multiply(invJ, e->dN()[gp]);
-//	}
+	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
+		J.multiply(e->dN()[gp], coordinates);
+		detJ = determinant2x2(J.values());
+		inverse2x2(J.values(), invJ.values(), detJ);
+
+		Me.multiply(e->N()[gp], e->N()[gp], e->weighFactor()[gp] * detJ, 1, true, false);
+	}
 }
 
 void ShallowWater2D::processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
