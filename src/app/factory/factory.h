@@ -24,6 +24,8 @@ struct Factory {
 	~Factory();
 
 	void solve();
+	void finalize();
+
 	void check(const Results &configuration);
 
 	double norm() const;

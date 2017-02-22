@@ -33,6 +33,7 @@ int main(int argc, char** argv)
 		ESINFO(ALWAYS) << "Mesh partitiated to " << parts * environment->MPIsize << " parts saved";
 	}
 
+	factory.finalize();
 	MPI_Finalize();
 }
 

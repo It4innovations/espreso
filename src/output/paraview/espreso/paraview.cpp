@@ -10,7 +10,7 @@ using namespace espreso::store;
 Paraview::Paraview(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
 : ResultStore(output, mesh, path)
 {
-	ESINFO(GLOBAL_ERROR) << "Re-compile ESPRESO with Paraview support.";
+	ESINFO(ALWAYS) << Info::TextColor::YELLOW << "ESPRESO not supports Catalyst - re-compile ESPRESO with VTK library.";
 }
 
 void Paraview::storeGeometry(size_t timeStep) { }
