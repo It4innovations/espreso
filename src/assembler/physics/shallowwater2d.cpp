@@ -34,14 +34,13 @@ MatrixType ShallowWater2D::getMatrixType(const Step &step, size_t domain) const
 
 void ShallowWater2D::prepareTotalFETI()
 {
-	_instance->DOFs = _mesh->assignUniformDOFsIndicesToNodes(_instance->DOFs, pointDOFs());
+	_instance->DOFs = _mesh->assignUniformDOFsIndicesToNodes(_instance->DOFs, pointDOFs(), _nodesDOFsOffsets);
 	_mesh->computeNodesDOFsCounters(pointDOFs());
 
 	_mesh->loadNodeProperty(_configuration.momentum, { "X", "Y" }, { Property::MOMENTUM_X, Property::MOMENTUM_Y });
 	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
 	_mesh->removeDuplicateRegions();
 	_mesh->fillDomainsSettings();
-	init();
 }
 
 void ShallowWater2D::analyticRegularization(size_t domain)

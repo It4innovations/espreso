@@ -46,7 +46,8 @@ void LinearElasticity2D::prepareMeshStructures()
 	Triangle3::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 
-	matrixSize = _mesh.assignUniformDOFsIndicesToNodes(matrixSize, pointDOFs);
+	std::vector<size_t> DOFsOffsets;
+	matrixSize = _mesh.assignUniformDOFsIndicesToNodes(matrixSize, pointDOFs, DOFsOffsets);
 	_mesh.computeNodesDOFsCounters(pointDOFs);
 
 	if (_solverConfiguration.regularization == REGULARIZATION::FIX_POINTS) {

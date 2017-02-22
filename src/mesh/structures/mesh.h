@@ -96,11 +96,11 @@ public:
 	const std::vector<Material*>& materials() const { return _materials; }
 	const std::vector<Evaluator*>& evaluators() const { return _evaluators; }
 
-	std::vector<size_t> assignVariousDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs);
-	std::vector<size_t> assignUniformDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs);
-	std::vector<size_t> assignUniformDOFsIndicesToEdges(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs);
-	std::vector<size_t> assignUniformDOFsIndicesToFaces(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs);
-	std::vector<size_t> assignUniformDOFsIndicesToElements(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs);
+	std::vector<size_t> assignVariousDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets);
+	std::vector<size_t> assignUniformDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets);
+	std::vector<size_t> assignUniformDOFsIndicesToEdges(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets);
+	std::vector<size_t> assignUniformDOFsIndicesToFaces(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets);
+	std::vector<size_t> assignUniformDOFsIndicesToElements(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets);
 
 	void computeNodesDOFsCounters(const std::vector<Property> &DOFs);
 	void computeEdgesDOFsCounters(const std::vector<Property> &DOFs);
@@ -112,14 +112,6 @@ public:
 	void synchronizeNeighbours();
 
 	Region* region(const std::string &name) const;
-	size_t nodesDOFOffset(Property property) const;
-	size_t edgesDOFOffset(Property property) const;
-	size_t facesDOFOffset(Property property) const;
-	size_t elementsDOFOffset(Property property) const;
-	std::vector<size_t> nodesDOFOffsets(std::vector<Property> properties) const;
-	std::vector<size_t> edgesDOFOffsets(std::vector<Property> properties) const;
-	std::vector<size_t> facesDOFOffsets(std::vector<Property> properties) const;
-	std::vector<size_t> elementsDOFOffsets(std::vector<Property> properties) const;
 
 	bool isContinuous() const { return _continuous; }
 

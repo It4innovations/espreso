@@ -110,7 +110,6 @@ struct Physics {
 	Instance *_instance;
 
 protected:
-	void init();
 	std::vector<size_t> _nodesDOFsOffsets;
 	std::vector<size_t> _midNodesDOFsOffsets;
 	std::vector<size_t> _edgesDOFsOffsets;

@@ -26,15 +26,6 @@ Physics::Physics(const std::string &name, Mesh *mesh, Instance *instance)
 
 }
 
-void Physics::init()
-{
-	_nodesDOFsOffsets = _mesh->nodesDOFOffsets(pointDOFs());
-	_midNodesDOFsOffsets = _mesh->nodesDOFOffsets(midPointDOFs());
-	_edgesDOFsOffsets = _mesh->edgesDOFOffsets(edgeDOFs());
-	_facesDOFsOffsets = _mesh->facesDOFOffsets(faceDOFs());
-	_elementsDOFsOffsets = _mesh->elementsDOFOffsets(elementDOFs());
-}
-
 void Physics::assembleMatrix(const Step &step, Matrices matrix)
 {
 	updateMatrix(step, matrix, {});
