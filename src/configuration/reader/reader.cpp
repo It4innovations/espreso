@@ -174,6 +174,7 @@ void Reader::_read(Configuration &configuration, const std::string &file, const 
 			std::string value = tokenStack.top()->value();
 			if (value.size() > 4 && StringCompare::caseInsensitiveSuffix(value, ".ecf")) {
 				tokenStack.push(new Tokenizer(value));
+				break;
 			}
 			if (value.size() > 2 && StringCompare::caseInsensitivePreffix("ARG", value)) {
 				std::stringstream ss(std::string(value.begin() + 3, value.end()));
@@ -198,10 +199,30 @@ void Reader::_read(Configuration &configuration, const std::string &file, const 
 						}
 					}
 				}
+				break;
 			}
 			if (value.size() > 4 && StringCompare::caseInsensitiveSuffix(value, ".csv")) {
-				std::cout << "READ CSV file\n";
+				Tokenizer csv(value);
+				bool run = true;
+				while(run) {
+					switch (csv.next()) {
+					case Tokenizer::Token::END:
+						run = false;
+						break;
+					case Tokenizer::Token::STRING:
+						values.push_back(csv.value() + (values.size() % 2 == 0 ? "," : ";"));
+						break;
+					case Tokenizer::Token::LINE_END:
+					case Tokenizer::Token::DELIMITER:
+					case Tokenizer::Token::EXPRESSION_END:
+						break;
+					default:
+						ESINFO(GLOBAL_ERROR) << "Error while reading file '" << value << "'";
+					}
+				}
+				break;
 			}
+			values.push_back(value);
 			break;
 		}
 		case Tokenizer::Token::OBJECT_OPEN:

@@ -42,7 +42,10 @@ struct StringCompare {
 
 	static bool caseInsensitivePreffix(const std::string &s1, const std::string &s2)
 	{
-		return std::equal(s1.begin(), s1.end(), s2.begin(), _equals);
+		if (s1.size() <= s2.size()) {
+			return std::equal(s1.begin(), s1.end(), s2.begin(), _equals);
+		}
+		return false;
 	}
 
 	static bool caseSensitiveSuffix(const std::string &s1, const std::string &s2)

@@ -30,6 +30,22 @@ Material::Material(const Coordinates &coordinates, const Configuration &configur
 		if (!StringCompare::caseInsensitiveEq(configuration.orderedParameters[p]->name, "MODEL")) {
 			const std::string &value = configuration.orderedParameters[p]->get();
 			delete _values[configuration.orderedParameters[p]->index()];
+			if (StringCompare::caseInsensitivePreffix("TABULAR", value)) {
+				std::vector<std::string> values = Parser::split(Parser::strip(value), ";, ");
+				std::vector<std::pair<double, double> > data;
+				if (values.size() % 2 == 0 || values.size() < 5) {
+					ESINFO(GLOBAL_ERROR) << "Invalid tabular data: use TABULAR [VARIABLE; PROPERTY; X0; Y0; X1; Y1; ]";
+				}
+				for (size_t i = 1; i < values.size(); i += 2) {
+					std::stringstream ss1(values[i]);
+					std::stringstream ss2(values[i + 1]);
+					double v1, v2;
+					ss1 >> v1; ss2 >> v2;
+					data.push_back(std::make_pair(v1, v2));
+				}
+				_values[configuration.orderedParameters[p]->index()] = new TableInterpolationEvaluator("TABLE", data);
+				continue;
+			}
 			if (StringCompare::contains(value, { "x", "y", "z", "TEMPERATURE" })) {
 				_values[configuration.orderedParameters[p]->index()] = new CoordinatesEvaluator(value, _coordinates);
 			} else {
