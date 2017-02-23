@@ -27,7 +27,7 @@ static void create(std::ofstream &os, const std::string &path)
 }
 
 VTK::VTK(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
-: ResultStore(output, mesh, path), _lastData(ElementType::ELEMENTS)
+: ResultStore(output, &mesh, path), _lastData(ElementType::ELEMENTS)
 {
 	switch (_output.format) {
 	case OUTPUT_FORMAT::VTK_LEGACY_FORMAT:
@@ -55,15 +55,15 @@ static size_t coordinateSize(const espreso::Coordinates &coordinates)
 void VTK::coordinates()
 {
 	create(_os, _path);
-	size_t parts = _mesh.parts();
-	size_t cSize = coordinateSize(_mesh.coordinates());
+	size_t parts = _mesh->parts();
+	size_t cSize = coordinateSize(_mesh->coordinates());
 
 	_os << "DATASET UNSTRUCTURED_GRID\n";
 	_os << "POINTS " << cSize << " float\n";
 
 	for (size_t p = 0; p < parts; p++) {
-		for (size_t i = 0; i < _mesh.coordinates().localToCluster(p).size(); i++) {
-			_os << shrink(_mesh.coordinates().get(i, p), p) << "\n";
+		for (size_t i = 0; i < _mesh->coordinates().localToCluster(p).size(); i++) {
+			_os << shrink(_mesh->coordinates().get(i, p), p) << "\n";
 		}
 	}
 	_os << "\n";
@@ -73,7 +73,7 @@ void VTK::coordinates()
 void VTK::nodes(const std::vector<Element*> &nodes)
 {
 	create(_os, _path);
-	std::vector<size_t> domainSize(_mesh.parts(), 0);
+	std::vector<size_t> domainSize(_mesh->parts(), 0);
 	size_t size = 0;
 	for (size_t i = 0; i < nodes.size(); i++) {
 		for (size_t d = 0; d < nodes[i]->domains().size(); d++) {
@@ -81,12 +81,12 @@ void VTK::nodes(const std::vector<Element*> &nodes)
 		}
 	}
 
-	for (size_t i = 0; i < _mesh.parts(); i++) {
+	for (size_t i = 0; i < _mesh->parts(); i++) {
 		size += domainSize[i];
 	}
 
 	size_t offset = 0;
-	std::vector<std::vector<eslocal> > points(_mesh.parts());
+	std::vector<std::vector<eslocal> > points(_mesh->parts());
 	for (size_t i = 0; i < nodes.size(); i++) {
 		for (size_t d = 0; d < nodes[i]->domains().size(); d++) {
 			points[nodes[i]->domains()[d]].push_back(offset++);
@@ -97,13 +97,13 @@ void VTK::nodes(const std::vector<Element*> &nodes)
 	_os << "POINTS " << size << " float\n";
 	for (size_t i = 0; i < nodes.size(); i++) {
 		for (size_t d = 0; d < nodes[i]->domains().size(); d++) {
-			_os << shrink(_mesh.coordinates()[nodes[i]->node(0)], nodes[i]->domains()[d]) << "\n";
+			_os << shrink(_mesh->coordinates()[nodes[i]->node(0)], nodes[i]->domains()[d]) << "\n";
 		}
 	}
 	_os << "\n";
 
-	_os << "CELLS " << _mesh.parts() << " " << size + _mesh.parts() << "\n";
-	for (size_t d = 0; d < _mesh.parts(); d++) {
+	_os << "CELLS " << _mesh->parts() << " " << size + _mesh->parts() << "\n";
+	for (size_t d = 0; d < _mesh->parts(); d++) {
 		_os << points[d].size();
 		for (size_t i = 0; i < points[d].size(); i++) {
 			_os << " " << points[d][i];
@@ -113,17 +113,17 @@ void VTK::nodes(const std::vector<Element*> &nodes)
 
 	_os << "\n";
 
-	_os << "CELL_TYPES " << _mesh.parts() << "\n";
-	for (size_t d = 0; d < _mesh.parts(); d++) {
+	_os << "CELL_TYPES " << _mesh->parts() << "\n";
+	for (size_t d = 0; d < _mesh->parts(); d++) {
 		_os << "2\n";
 	}
 	_os << "\n";
 
 	// DECOMPOSITION TO SUBDOMAINS
-	_os << "CELL_DATA " << _mesh.parts() << "\n";
+	_os << "CELL_DATA " << _mesh->parts() << "\n";
 	_os << "SCALARS decomposition int 1\n";
 	_os << "LOOKUP_TABLE decomposition\n";
-	for (size_t d = 0; d < _mesh.parts(); d++) {
+	for (size_t d = 0; d < _mesh->parts(); d++) {
 		_os << d << "\n";
 	}
 	_os << "\n";
@@ -132,28 +132,28 @@ void VTK::nodes(const std::vector<Element*> &nodes)
 void VTK::nodes(const std::vector<std::vector<eslocal> > &nodes)
 {
 	create(_os, _path);
-	std::vector<size_t> domainSize(_mesh.parts(), 0);
+	std::vector<size_t> domainSize(_mesh->parts(), 0);
 	size_t size = 0;
 	for (size_t i = 0; i < nodes.size(); i++) {
 		domainSize[i] = nodes[i].size();
 	}
 
-	for (size_t i = 0; i < _mesh.parts(); i++) {
+	for (size_t i = 0; i < _mesh->parts(); i++) {
 		size += domainSize[i];
 	}
 
 	_os << "DATASET UNSTRUCTURED_GRID\n";
 	_os << "POINTS " << size << " float\n";
-	for (size_t p = 0; p < _mesh.parts(); p++) {
+	for (size_t p = 0; p < _mesh->parts(); p++) {
 		for (size_t i = 0; i < nodes[p].size(); i++) {
-			_os << shrink(_mesh.coordinates()[nodes[p][i]], p) << "\n";
+			_os << shrink(_mesh->coordinates()[nodes[p][i]], p) << "\n";
 		}
 	}
 	_os << "\n";
 
-	_os << "CELLS " << _mesh.parts() << " " << size + _mesh.parts() << "\n";
+	_os << "CELLS " << _mesh->parts() << " " << size + _mesh->parts() << "\n";
 
-	for (size_t d = 0, index = 0; d < _mesh.parts(); d++) {
+	for (size_t d = 0, index = 0; d < _mesh->parts(); d++) {
 		_os << nodes[d].size();
 		for (size_t i = 0; i < nodes[d].size(); i++) {
 			_os << " " << index++;
@@ -163,17 +163,17 @@ void VTK::nodes(const std::vector<std::vector<eslocal> > &nodes)
 
 	_os << "\n";
 
-	_os << "CELL_TYPES " << _mesh.parts() << "\n";
-	for (size_t d = 0; d < _mesh.parts(); d++) {
+	_os << "CELL_TYPES " << _mesh->parts() << "\n";
+	for (size_t d = 0; d < _mesh->parts(); d++) {
 		_os << "2\n";
 	}
 	_os << "\n";
 
 	// DECOMPOSITION TO SUBDOMAINS
-	_os << "CELL_DATA " << _mesh.parts() << "\n";
+	_os << "CELL_DATA " << _mesh->parts() << "\n";
 	_os << "SCALARS decomposition int 1\n";
 	_os << "LOOKUP_TABLE decomposition\n";
-	for (size_t d = 0; d < _mesh.parts(); d++) {
+	for (size_t d = 0; d < _mesh->parts(); d++) {
 		_os << d << "\n";
 	}
 	_os << "\n";
@@ -185,14 +185,14 @@ void VTK::cells(ElementType eType)
 
 	switch (eType) {
 	case espreso::store::ElementType::ELEMENTS:
-		elements.insert(elements.end(), _mesh.elements().begin(), _mesh.elements().end());
+		elements.insert(elements.end(), _mesh->elements().begin(), _mesh->elements().end());
 		break;
 	case espreso::store::ElementType::FACES:
-		elements.insert(elements.end(), _mesh.faces().begin(), _mesh.faces().end());
+		elements.insert(elements.end(), _mesh->faces().begin(), _mesh->faces().end());
 		std::sort(elements.begin(), elements.end(), [] (const espreso::Element* e1, const espreso::Element *e2) { return e1->domains() < e2->domains(); });
 		break;
 	case espreso::store::ElementType::EDGES:
-		elements.insert(elements.end(), _mesh.edges().begin(), _mesh.edges().end());
+		elements.insert(elements.end(), _mesh->edges().begin(), _mesh->edges().end());
 		std::sort(elements.begin(), elements.end(), [] (const espreso::Element* e1, const espreso::Element *e2) { return e1->domains() < e2->domains(); });
 		break;
 	default:
@@ -206,8 +206,8 @@ void VTK::cells(ElementType eType)
 	}
 
 	std::vector<size_t> offset = { 0 };
-	for (size_t p = 1; p < _mesh.parts(); p++) {
-		offset.push_back(offset[p - 1] + _mesh.coordinates().localSize(p - 1));
+	for (size_t p = 1; p < _mesh->parts(); p++) {
+		offset.push_back(offset[p - 1] + _mesh->coordinates().localSize(p - 1));
 	}
 
 	// ELEMENTS
@@ -216,7 +216,7 @@ void VTK::cells(ElementType eType)
 		for (size_t d = 0; d < elements[i]->domains().size(); d++) {
 			_os << elements[i]->nodes();
 			for (size_t j = 0; j < elements[i]->nodes(); j++) {
-				_os << " " << _mesh.coordinates().localIndex(elements[i]->node(j), elements[i]->domains()[d]) + offset[elements[i]->domains()[d]];
+				_os << " " << _mesh->coordinates().localIndex(elements[i]->node(j), elements[i]->domains()[d]) + offset[elements[i]->domains()[d]];
 			}
 			_os << "\n";
 		}
@@ -263,8 +263,8 @@ void VTK::lambdas(const std::vector<std::vector<eslocal> > &nodes, std::function
 
 	for (size_t p = 0; p < nodes.size(); p++) {
 		for (size_t n = 0; n < nodes[p].size(); n++) {
-			Point p1 = shrink(_mesh.coordinates()[nodes[p][n]], p, n, true);
-			Point p2 = shrink(_mesh.coordinates()[nodes[p][n]], p, n, false);
+			Point p1 = shrink(_mesh->coordinates()[nodes[p][n]], p, n, true);
+			Point p2 = shrink(_mesh->coordinates()[nodes[p][n]], p, n, false);
 			_os << p1 << " " << p2 << "\n";
 		}
 	}

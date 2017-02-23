@@ -32,7 +32,7 @@
 using namespace espreso::store;
 
 VTK::VTK(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
-: ResultStore(output, mesh, path), _lastData(ElementType::ELEMENTS)
+: ResultStore(output, &mesh, path), _lastData(ElementType::ELEMENTS)
 {
 	computeCenters();
 	VTKGrid = vtkUnstructuredGrid::New();
@@ -49,9 +49,9 @@ VTK::~VTK()
 void VTK::coordinates()
 {
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-	for (size_t d = 0; d < _mesh.parts(); d++) {
-		for (size_t i = 0; i < _mesh.coordinates().localSize(d); i++) {
-			espreso::Point p = shrink(_mesh.coordinates().get(i, d), d);
+	for (size_t d = 0; d < _mesh->parts(); d++) {
+		for (size_t i = 0; i < _mesh->coordinates().localSize(d); i++) {
+			espreso::Point p = shrink(_mesh->coordinates().get(i, d), d);
 			points->InsertNextPoint(p.x, p.y, p.z);
 		}
 	}
@@ -82,7 +82,7 @@ void VTK::nodes(const std::vector<Element*> &nodes)
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 	for (size_t i = 0, c = 0; i < nodes.size(); i++) {
 		for (size_t d = 0; d < nodes[i]->domains().size(); d++, node++) {
-			espreso::Point p = shrink(_mesh.coordinates()[nodes[i]->node(0)], nodes[i]->domains()[d]);
+			espreso::Point p = shrink(_mesh->coordinates()[nodes[i]->node(0)], nodes[i]->domains()[d]);
 			points->InsertNextPoint(p.x, p.y, p.z);
 			decomposition[c++] = nodes[i]->domains()[d];
 			VTKGrid->InsertNextCell(nodes[i]->vtkCode(), 1, &node);
@@ -107,7 +107,7 @@ void VTK::nodes(const std::vector<std::vector<eslocal> > &nodes)
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 	for (size_t part = 0, c = 0; part < nodes.size(); part++) {
 		for (size_t n = 0; n < nodes[part].size(); n++, node++) {
-			espreso::Point p = shrink(_mesh.coordinates()[nodes[part][n]], part);
+			espreso::Point p = shrink(_mesh->coordinates()[nodes[part][n]], part);
 			points->InsertNextPoint(p.x, p.y, p.z);
 			decomposition[c++] = part;
 			VTKGrid->InsertNextCell(NodeVTKCode, 1, &node);
@@ -124,14 +124,14 @@ void VTK::cells(ElementType eType)
 
 	switch (eType) {
 	case espreso::store::ElementType::ELEMENTS:
-		elements.insert(elements.end(), _mesh.elements().begin(), _mesh.elements().end());
+		elements.insert(elements.end(), _mesh->elements().begin(), _mesh->elements().end());
 		break;
 	case espreso::store::ElementType::FACES:
-		elements.insert(elements.end(), _mesh.faces().begin(), _mesh.faces().end());
+		elements.insert(elements.end(), _mesh->faces().begin(), _mesh->faces().end());
 		std::sort(elements.begin(), elements.end(), [] (const espreso::Element* e1, const espreso::Element *e2) { return e1->domains() < e2->domains(); });
 		break;
 	case espreso::store::ElementType::EDGES:
-		elements.insert(elements.end(), _mesh.edges().begin(), _mesh.edges().end());
+		elements.insert(elements.end(), _mesh->edges().begin(), _mesh->edges().end());
 		std::sort(elements.begin(), elements.end(), [] (const espreso::Element* e1, const espreso::Element *e2) { return e1->domains() < e2->domains(); });
 		break;
 	default:
@@ -145,8 +145,8 @@ void VTK::cells(ElementType eType)
 	}
 
 	std::vector<size_t> offset = { 0 };
-	for (size_t p = 1; p < _mesh.parts(); p++) {
-		offset.push_back(offset[p - 1] + _mesh.coordinates().localSize(p - 1));
+	for (size_t p = 1; p < _mesh->parts(); p++) {
+		offset.push_back(offset[p - 1] + _mesh->coordinates().localSize(p - 1));
 	}
 
 	std::vector<vtkIdType> nodes(20);
@@ -158,7 +158,7 @@ void VTK::cells(ElementType eType)
 		for (size_t d = 0; d < elements[i]->domains().size(); d++) {
 			nodes.clear();
 			for (size_t n = 0; n < elements[i]->nodes(); n++) {
-				nodes.push_back(_mesh.coordinates().localIndex(elements[i]->node(n), elements[i]->domains()[d]) + offset[elements[i]->domains()[d]]);
+				nodes.push_back(_mesh->coordinates().localIndex(elements[i]->node(n), elements[i]->domains()[d]) + offset[elements[i]->domains()[d]]);
 			}
 			decomposition[c++] = elements[i]->domains()[d];
 			VTKGrid->InsertNextCell(elements[i]->vtkCode(), elements[i]->nodes(), nodes.data());
@@ -178,9 +178,9 @@ void VTK::lambdas(const std::vector<std::vector<eslocal> > &nodes, std::function
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 	for (size_t part = 0; part < nodes.size(); part++) {
 		for (size_t n = 0; n < nodes[part].size(); n++) {
-			espreso::Point p = shrink(_mesh.coordinates()[nodes[part][n]], part, n, true);
+			espreso::Point p = shrink(_mesh->coordinates()[nodes[part][n]], part, n, true);
 			points->InsertNextPoint(p.x, p.y, p.z);
-			p = shrink(_mesh.coordinates()[nodes[part][n]], part, n, false);
+			p = shrink(_mesh->coordinates()[nodes[part][n]], part, n, false);
 			points->InsertNextPoint(p.x, p.y, p.z);
 		}
 	}
@@ -333,9 +333,9 @@ void VTK::finalize()
 	case OUTPUT_FORMAT::ENSIGHT_FORMAT: {
 		if (!VTKGrid->GetCellData()->GetArray("BlockId")) {
 			// EnSight needs Block ID for each cell
-			std::vector<std::vector<eslocal> > blockID(_mesh.parts());
-			for (size_t p = 0; p < _mesh.parts(); p++) {
-				blockID[p].resize(_mesh.getPartition()[p + 1] - _mesh.getPartition()[p], 1);
+			std::vector<std::vector<eslocal> > blockID(_mesh->parts());
+			for (size_t p = 0; p < _mesh->parts(); p++) {
+				blockID[p].resize(_mesh->getPartition()[p + 1] - _mesh->getPartition()[p], 1);
 			}
 			storeData<vtkIntArray, eslocal>(VTKGrid, VTKDataArrays, "BlockId", 1, blockID, ElementType::ELEMENTS);
 		}

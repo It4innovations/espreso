@@ -10,7 +10,7 @@ struct Solver;
 struct Physics;
 struct Instance;
 class LinearSolver;
-namespace store { class ResultStore; }
+namespace store { class ResultStoreList; }
 
 
 struct GlobalConfiguration;
@@ -31,7 +31,7 @@ struct Factory {
 	double norm() const;
 
 	std::vector<Solver*> loadSteps;
-	store::ResultStore* store;
+	store::ResultStoreList* store;
 
 	OldInstance *instance;
 	Mesh *mesh;

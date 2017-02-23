@@ -10,6 +10,7 @@
 #include "../../assembler/physics/advectiondiffusion2d.h"
 #include "../../assembler/physics/shallowwater2d.h"
 #include "../../solver/generic/LinearSolver.h"
+#include "../../output/resultstorelist.h"
 #include "../../output/vtk/vtk.h"
 #include "../../output/vtk/catalyst.h"
 
@@ -43,13 +44,20 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 	Assembler::compose(configuration, instance, *mesh);
 
+	store = new store::ResultStoreList(configuration.output);
+
+	if (configuration.output.catalyst) {
+		store->add(new store::Catalyst(configuration.output, *mesh, "results"));
+	}
+	if (configuration.output.results || configuration.output.properties) {
+		store->add(new store::VTK(configuration.output, *mesh, "results"));
+	}
+
 	if (configuration.physics == PHYSICS::ADVECTION_DIFFUSION_2D && configuration.advection_diffusion_2D.newassembler) {
 		_newAssembler = true;
 		_instances.push_back(new Instance(mesh->parts(), mesh->neighbours()));
 		_physics.push_back(new NewAdvectionDiffusion2D(mesh, _instances.front(), configuration.advection_diffusion_2D));
 		_linearSolvers.push_back(new LinearSolver(_instances.front(), configuration.advection_diffusion_2D.espreso));
-		// store = new store::VTK(configuration.output, *mesh, "results");
-		store = new store::Catalyst(configuration.output, *mesh, "results");
 
 		for (size_t i = 1; i <= configuration.advection_diffusion_2D.physics_solver.load_steps; i++) {
 			auto it = configuration.advection_diffusion_2D.physics_solver.load_steps_settings.find(i);

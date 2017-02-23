@@ -21,7 +21,7 @@
 using namespace espreso::store;
 
 Catalyst::Catalyst(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
-: ResultStore(output, mesh, path)
+: ResultStore(output, &mesh, path)
 {
 	processor = vtkCPProcessor::New();
 	VTKGrid = vtkUnstructuredGrid::New();
@@ -52,34 +52,34 @@ Catalyst::~Catalyst()
 void Catalyst::storeGeometry(size_t timeStep)
 {
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-	for (size_t d = 0; d < _mesh.parts(); d++) {
-		for (size_t i = 0; i < _mesh.coordinates().localSize(d); i++) {
-			const espreso::Point &p = _mesh.coordinates().get(i, d);
+	for (size_t d = 0; d < _mesh->parts(); d++) {
+		for (size_t i = 0; i < _mesh->coordinates().localSize(d); i++) {
+			const espreso::Point &p = _mesh->coordinates().get(i, d);
 			points->InsertNextPoint(p.x, p.y, p.z);
 		}
 	}
 	VTKGrid->SetPoints(points);
 
 	size_t nSize = 0;
-	for (size_t i = 0; i < _mesh.elements().size(); i++) {
-		nSize += _mesh.elements()[i]->domains().size() * _mesh.elements()[i]->nodes();
+	for (size_t i = 0; i < _mesh->elements().size(); i++) {
+		nSize += _mesh->elements()[i]->domains().size() * _mesh->elements()[i]->nodes();
 	}
 
 	std::vector<size_t> offset = { 0 };
-	for (size_t p = 1; p < _mesh.parts(); p++) {
-		offset.push_back(offset[p - 1] + _mesh.coordinates().localSize(p - 1));
+	for (size_t p = 1; p < _mesh->parts(); p++) {
+		offset.push_back(offset[p - 1] + _mesh->coordinates().localSize(p - 1));
 	}
 
 	VTKGrid->Allocate(static_cast<vtkIdType>(nSize));
 
 	std::vector<vtkIdType> nodes(20);
-	for (size_t i = 0, c = 0; i < _mesh.elements().size(); i++) {
-		for (size_t d = 0; d < _mesh.elements()[i]->domains().size(); d++) {
+	for (size_t i = 0, c = 0; i < _mesh->elements().size(); i++) {
+		for (size_t d = 0; d < _mesh->elements()[i]->domains().size(); d++) {
 			nodes.clear();
-			for (size_t n = 0; n < _mesh.elements()[i]->nodes(); n++) {
-				nodes.push_back(_mesh.coordinates().localIndex(_mesh.elements()[i]->node(n), _mesh.elements()[i]->domains()[d]) + offset[_mesh.elements()[i]->domains()[d]]);
+			for (size_t n = 0; n < _mesh->elements()[i]->nodes(); n++) {
+				nodes.push_back(_mesh->coordinates().localIndex(_mesh->elements()[i]->node(n), _mesh->elements()[i]->domains()[d]) + offset[_mesh->elements()[i]->domains()[d]]);
 			}
-			VTKGrid->InsertNextCell(_mesh.elements()[i]->vtkCode(), _mesh.elements()[i]->nodes(), nodes.data());
+			VTKGrid->InsertNextCell(_mesh->elements()[i]->vtkCode(), _mesh->elements()[i]->nodes(), nodes.data());
 		}
 	}
 }

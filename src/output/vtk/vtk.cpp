@@ -33,18 +33,18 @@ void VTK::computeCenters()
 	if (skipStoring()) {
 		return;
 	}
-	_sCenters.resize(_mesh.parts());
-	for (size_t p = 0; p < _mesh.coordinates().parts(); p++) {
-		for (size_t i = 0; i < _mesh.coordinates().localSize(p); i++) {
-			_sCenters[p] += _mesh.coordinates().get(i, p);
+	_sCenters.resize(_mesh->parts());
+	for (size_t p = 0; p < _mesh->coordinates().parts(); p++) {
+		for (size_t i = 0; i < _mesh->coordinates().localSize(p); i++) {
+			_sCenters[p] += _mesh->coordinates().get(i, p);
 		}
-		_sCenters[p] /= _mesh.coordinates().localSize(p);
+		_sCenters[p] /= _mesh->coordinates().localSize(p);
 	}
 
-	for (size_t i = 0; i < _mesh.coordinates().clusterSize(); i++) {
-		_cCenter += _mesh.coordinates()[i];
+	for (size_t i = 0; i < _mesh->coordinates().clusterSize(); i++) {
+		_cCenter += _mesh->coordinates()[i];
 	}
-	_cCenter /= _mesh.coordinates().clusterSize();
+	_cCenter /= _mesh->coordinates().clusterSize();
 }
 
 Point VTK::shrink(const Point &p, size_t part) const
@@ -77,13 +77,13 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 	if (skipStoring()) {
 		return;
 	}
-	std::vector<std::vector<int> > selection(_mesh.parts());
-	std::vector<std::vector<double> > values(_mesh.parts());
+	std::vector<std::vector<int> > selection(_mesh->parts());
+	std::vector<std::vector<double> > values(_mesh->parts());
 
 	switch (eType) {
 	case ElementType::ELEMENTS:
-		for (size_t e = 0; e < _mesh.elements().size(); e++) {
-			const Element *element = _mesh.elements()[e];
+		for (size_t e = 0; e < _mesh->elements().size(); e++) {
+			const Element *element = _mesh->elements()[e];
 			for (size_t p = 0; p < properties.size(); p++) {
 				size_t domain = element->domains()[0];
 				double value = 0;
@@ -102,8 +102,8 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 		ESINFO(GLOBAL_ERROR) << "Implement store properties for edges";
 		break;
 	case ElementType::NODES:
-		for (size_t n = 0; n < _mesh.nodes().size(); n++) {
-			const Element *node = _mesh.nodes()[n];
+		for (size_t n = 0; n < _mesh->nodes().size(); n++) {
+			const Element *node = _mesh->nodes()[n];
 			for (size_t p = 0; p < properties.size(); p++) {
 				for (size_t d = 0; d < node->domains().size(); d++) {
 					size_t domain = node->domains()[d];

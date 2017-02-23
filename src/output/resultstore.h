@@ -33,11 +33,11 @@ public:
 	virtual ~ResultStore() {};
 
 protected:
-	ResultStore(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
+	ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path)
 	:_output(output), _mesh(mesh), _path(path) {};
 
 	const OutputConfiguration &_output;
-	const Mesh &_mesh;
+	const Mesh *_mesh;
 	std::string _path;
 };
 
