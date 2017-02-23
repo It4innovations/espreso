@@ -116,7 +116,7 @@ ADVECTION_DIFFUSION_2D {
       MODEL ISOTROPIC;
 
       DENSITY 1;
-      KXX     2 + 5 * (T/50) * (T/50);
+      KXX     2 + 5 * (TEMPERATURE/50) * (TEMPERATURE/50);
       Cp      1;
     }
   }

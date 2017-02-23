@@ -91,13 +91,13 @@ ExpressionEvaluator::ExpressionEvaluator(std::ifstream &is, std::vector<std::str
 }
 
 CoordinatesEvaluator::CoordinatesEvaluator(const std::string &expression, const Coordinates &coordinates, Property property)
-: ExpressionEvaluator(expression, { "x", "y", "z", "T" }, property), _coordinates(coordinates)
+: ExpressionEvaluator(expression, { "x", "y", "z", "TEMPERATURE" }, property), _coordinates(coordinates)
 {
 
 }
 
 CoordinatesEvaluator::CoordinatesEvaluator(std::ifstream &is, const Coordinates &coordinates, Property property)
-: ExpressionEvaluator(is, { "x", "y", "z", "T" }, property), _coordinates(coordinates)
+: ExpressionEvaluator(is, { "x", "y", "z", "TEMPERATURE" }, property), _coordinates(coordinates)
 {
 
 }
