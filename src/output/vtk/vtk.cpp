@@ -17,22 +17,8 @@
 namespace espreso {
 namespace store {
 
-bool VTK::skipStoring()
-{
-	if (_output.properties) {
-		return false;
-	}
-	if (_output.results) {
-		return false;
-	}
-	return true;
-}
-
 void VTK::computeCenters()
 {
-	if (skipStoring()) {
-		return;
-	}
 	_sCenters.resize(_mesh->parts());
 	for (size_t p = 0; p < _mesh->coordinates().parts(); p++) {
 		for (size_t i = 0; i < _mesh->coordinates().localSize(p); i++) {
@@ -65,18 +51,12 @@ Point VTK::shrink(const Point &p, const Point &sCenter, const Point &cCenter) co
 
 void VTK::storeGeometry(size_t timeStep)
 {
-	if (skipStoring()) {
-		return;
-	}
 	coordinates();
 	cells(ElementType::ELEMENTS);
 }
 
 void VTK::storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType)
 {
-	if (skipStoring()) {
-		return;
-	}
 	std::vector<std::vector<int> > selection(_mesh->parts());
 	std::vector<std::vector<double> > values(_mesh->parts());
 
@@ -122,9 +102,6 @@ void VTK::storeProperty(const std::string &name, const std::vector<Property> &pr
 
 void VTK::storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType)
 {
-	if (skipStoring()) {
-		return;
-	}
 	data(name, dimension, values, eType);
 }
 
