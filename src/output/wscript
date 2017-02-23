@@ -2,9 +2,7 @@
 def configure(ctx):
     ctx.recurse("vtk")
     ctx.recurse("espreso")
-    ctx.recurse("paraview")
 
 def build(ctx):
     ctx.recurse("vtk")
     ctx.recurse("espreso")
-    ctx.recurse("paraview")

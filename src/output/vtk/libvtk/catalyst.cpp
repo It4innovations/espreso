@@ -1,7 +1,5 @@
 
-#include <unistd.h>
-
-#include "../paraview.h"
+#include "../catalyst.h"
 
 #include "../../../mesh/elements/element.h"
 #include "../../../mesh/structures/mesh.h"
@@ -22,7 +20,7 @@
 
 using namespace espreso::store;
 
-Paraview::Paraview(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
+Catalyst::Catalyst(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
 : ResultStore(output, mesh, path)
 {
 	processor = vtkCPProcessor::New();
@@ -40,7 +38,7 @@ Paraview::Paraview(const OutputConfiguration &output, const Mesh &mesh, const st
 	dataDescription->ForceOutputOn();
 }
 
-Paraview::~Paraview()
+Catalyst::~Catalyst()
 {
 	processor->Finalize();
 	processor->Delete();
@@ -51,7 +49,7 @@ Paraview::~Paraview()
 	}
 }
 
-void Paraview::storeGeometry(size_t timeStep)
+void Catalyst::storeGeometry(size_t timeStep)
 {
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 	for (size_t d = 0; d < _mesh.parts(); d++) {
@@ -86,12 +84,12 @@ void Paraview::storeGeometry(size_t timeStep)
 	}
 }
 
-void Paraview::storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType)
+void Catalyst::storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType)
 {
 	ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Catalyst skips storing properties.";
 }
 
-void Paraview::storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType)
+void Catalyst::storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType)
 {
 	size_t size = 0;
 	for (size_t i = 0; i < values.size(); i++) {
@@ -128,7 +126,7 @@ void Paraview::storeValues(const std::string &name, size_t dimension, const std:
 	processor->CoProcess(dataDescription);
 }
 
-void Paraview::finalize()
+void Catalyst::finalize()
 {
 
 }

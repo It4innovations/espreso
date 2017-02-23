@@ -1,10 +1,6 @@
 
 import os
-import sys
 import glob
-
-sys.path.append(os.path.abspath("../../python/waf"))
-from utils import *
 
 def configure(ctx):
     ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env["VTK::INCLUDE"] ])
@@ -31,7 +27,7 @@ def configure(ctx):
         vtklibs = [ lib.split('/')[-1][3:-3] for lib in glob.glob(ctx.env["VTK::LIBPATH"][0] + "/*.so") ]
 
     ctx.start_msg("Checking for VTK libraries")
-    if len(vtklibs) and all(lib.startswith("vtk") for lib in vtklibs):
+    if len(vtklibs): # Improve testing VTK libraries
         ctx.end_msg("found")
     else:
         ctx.end_msg("not found - set path to VTK libraries (parameter VTK::LIBPATH)", color='YELLOW')
@@ -48,7 +44,7 @@ def build(ctx):
         )
     else:
         ctx.objects(
-            source = ctx.path.ant_glob('*.cpp') + ctx.path.ant_glob('espreso/*.cpp'),
+            source = ctx.path.ant_glob('*.cpp') + ctx.path.ant_glob('dummy/*.cpp'),
             target = "generic_out",
             use    = "espreso_includes"
         )

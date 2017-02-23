@@ -11,7 +11,7 @@
 #include "../../assembler/physics/shallowwater2d.h"
 #include "../../solver/generic/LinearSolver.h"
 #include "../../output/vtk/vtk.h"
-#include "../../output/paraview/paraview.h"
+#include "../../output/vtk/catalyst.h"
 
 #include "../../input/loader.h"
 #include "../../assembler/assembler.h"
@@ -49,7 +49,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		_physics.push_back(new NewAdvectionDiffusion2D(mesh, _instances.front(), configuration.advection_diffusion_2D));
 		_linearSolvers.push_back(new LinearSolver(_instances.front(), configuration.advection_diffusion_2D.espreso));
 		// store = new store::VTK(configuration.output, *mesh, "results");
-		store = new store::Paraview(configuration.output, *mesh, "results");
+		store = new store::Catalyst(configuration.output, *mesh, "results");
 
 		for (size_t i = 1; i <= configuration.advection_diffusion_2D.physics_solver.load_steps; i++) {
 			auto it = configuration.advection_diffusion_2D.physics_solver.load_steps_settings.find(i);
