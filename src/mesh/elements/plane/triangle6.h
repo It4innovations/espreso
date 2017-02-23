@@ -4,6 +4,7 @@
 
 #include "planeelement.h"
 #include "triangle3.h"
+#include "../line/line3.h"
 
 #define Triangle6NodesCount 6
 #define Triangle6EdgeCount 3
@@ -45,6 +46,11 @@ public:
 	size_t coarseNodes() const { return Triangle3NodesCount; }
 	size_t gaussePoints() const { return Triangle6GPCount; }
 
+	const std::vector<eslocal>& edgeNodes(size_t index) const { return Triangle6::_edgesNodes[index]; }
+
+	const std::vector<DenseMatrix>& edgedN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Line3::_dN; }
+	const std::vector<DenseMatrix>& edgeN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Line3::_N; }
+
 	const std::vector<DenseMatrix>& dN(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Triangle6::_dN; }
 	const std::vector<DenseMatrix>& N(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Triangle6::_N; }
 	const std::vector<double>& weighFactor(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Triangle6::_weighFactor; }
@@ -54,6 +60,10 @@ public:
 	const std::vector<Property>& edgeDOFs() const { return Triangle6::_DOFEdge; }
 	const std::vector<Property>& pointDOFs() const { return Triangle6::_DOFPoint; }
 	const std::vector<Property>& midPointDOFs() const { return Triangle6::_DOFMidPoint; }
+
+	static std::vector<DenseMatrix> _dN;
+	static std::vector<DenseMatrix> _N;
+	static std::vector<double> _weighFactor;
 
 protected:
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
@@ -65,15 +75,13 @@ protected:
 private:
 	eslocal _indices[Triangle6NodesCount];
 
-	static std::vector<DenseMatrix> _dN;
-	static std::vector<DenseMatrix> _N;
-	static std::vector<double> _weighFactor;
-
 	static std::vector<Property> _DOFElement;
 	static std::vector<Property> _DOFFace;
 	static std::vector<Property> _DOFEdge;
 	static std::vector<Property> _DOFPoint;
 	static std::vector<Property> _DOFMidPoint;
+
+	static std::vector<std::vector<eslocal> > _edgesNodes;
 };
 
 }

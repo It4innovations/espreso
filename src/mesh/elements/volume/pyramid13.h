@@ -3,6 +3,7 @@
 #define SRC_MESH_ELEMENTS_VOLUME_PYRAMID13_H_
 
 #include "volumeelement.h"
+#include "../line/line3.h"
 #include "../plane/square8.h"
 #include "../plane/triangle6.h"
 #include "pyramid5.h"
@@ -48,6 +49,14 @@ public:
 	size_t coarseNodes() const { return Pyramid5NodesCount; }
 	size_t gaussePoints() const { return Pyramid13GPCount; }
 
+	const std::vector<eslocal>& faceNodes(size_t index) const { return Pyramid13::_facesNodes[index]; }
+	const std::vector<eslocal>& edgeNodes(size_t index) const { return Pyramid13::_edgesNodes[index]; }
+
+	const std::vector<DenseMatrix>& facedN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { return index < 1 ? Square8::_dN : Triangle6::_dN; }
+	const std::vector<DenseMatrix>& faceN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { return index < 1 ? Square8::_N : Triangle6::_N; }
+	const std::vector<DenseMatrix>& edgedN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Line3::_dN; }
+	const std::vector<DenseMatrix>& edgeN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Line3::_N; }
+
 	const std::vector<DenseMatrix>& dN(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Pyramid13::_dN; }
 	const std::vector<DenseMatrix>& N(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Pyramid13::_N; }
 	const std::vector<double>& weighFactor(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Pyramid13::_weighFactor; }
@@ -57,6 +66,10 @@ public:
 	const std::vector<Property>& edgeDOFs() const { return Pyramid13::_DOFEdge; }
 	const std::vector<Property>& pointDOFs() const { return Pyramid13::_DOFPoint; }
 	const std::vector<Property>& midPointDOFs() const { return Pyramid13::_DOFMidPoint; }
+
+	static std::vector<DenseMatrix> _dN;
+	static std::vector<DenseMatrix> _N;
+	static std::vector<double> _weighFactor;
 
 protected:
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
@@ -69,15 +82,14 @@ protected:
 private:
 	eslocal _indices[Pyramid13NodesCount];
 
-	static std::vector<DenseMatrix> _dN;
-	static std::vector<DenseMatrix> _N;
-	static std::vector<double> _weighFactor;
-
 	static std::vector<Property> _DOFElement;
 	static std::vector<Property> _DOFFace;
 	static std::vector<Property> _DOFEdge;
 	static std::vector<Property> _DOFPoint;
 	static std::vector<Property> _DOFMidPoint;
+
+	static std::vector<std::vector<eslocal> > _facesNodes;
+	static std::vector<std::vector<eslocal> > _edgesNodes;
 };
 
 }

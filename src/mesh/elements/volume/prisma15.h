@@ -3,6 +3,7 @@
 #define SRC_MESH_ELEMENTS_VOLUME_PRISMA15_H_
 
 #include "volumeelement.h"
+#include "../line/line3.h"
 #include "../plane/square8.h"
 #include "../plane/triangle6.h"
 #include "prisma6.h"
@@ -48,6 +49,14 @@ public:
 	size_t coarseNodes() const { return Prisma6NodesCount; }
 	size_t gaussePoints() const { return Prisma15GPCount; }
 
+	const std::vector<eslocal>& faceNodes(size_t index) const { return Prisma15::_facesNodes[index]; }
+	const std::vector<eslocal>& edgeNodes(size_t index) const { return Prisma15::_edgesNodes[index]; }
+
+	const std::vector<DenseMatrix>& facedN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { return index < 3 ? Square8::_dN : Triangle6::_dN; }
+	const std::vector<DenseMatrix>& faceN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { return index < 3 ? Square8::_N : Triangle6::_N; }
+	const std::vector<DenseMatrix>& edgedN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Line3::_dN; }
+	const std::vector<DenseMatrix>& edgeN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Line3::_N; }
+
 	const std::vector<DenseMatrix>& dN(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Prisma15::_dN; }
 	const std::vector<DenseMatrix>& N(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Prisma15::_N; }
 	const std::vector<double>& weighFactor(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Prisma15::_weighFactor; }
@@ -57,6 +66,10 @@ public:
 	const std::vector<Property>& edgeDOFs() const { return Prisma15::_DOFEdge; }
 	const std::vector<Property>& pointDOFs() const { return Prisma15::_DOFPoint; }
 	const std::vector<Property>& midPointDOFs() const { return Prisma15::_DOFMidPoint; }
+
+	static std::vector<DenseMatrix> _dN;
+	static std::vector<DenseMatrix> _N;
+	static std::vector<double> _weighFactor;
 
 protected:
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
@@ -69,15 +82,14 @@ protected:
 private:
 	eslocal _indices[Prisma15NodesCount];
 
-	static std::vector<DenseMatrix> _dN;
-	static std::vector<DenseMatrix> _N;
-	static std::vector<double> _weighFactor;
-
 	static std::vector<Property> _DOFElement;
 	static std::vector<Property> _DOFFace;
 	static std::vector<Property> _DOFEdge;
 	static std::vector<Property> _DOFPoint;
 	static std::vector<Property> _DOFMidPoint;
+
+	static std::vector<std::vector<eslocal> > _facesNodes;
+	static std::vector<std::vector<eslocal> > _edgesNodes;
 };
 
 }

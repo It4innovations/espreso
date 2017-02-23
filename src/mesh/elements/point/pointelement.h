@@ -46,6 +46,23 @@ public:
 	void addFace(Element* face) { ESINFO(GLOBAL_ERROR) << "Point element has no face"; }
 	void addEdge(Element* edge) { ESINFO(GLOBAL_ERROR) << "Point element has no edge"; }
 
+	const std::vector<eslocal>& faceNodes(size_t index) const
+	{
+		static std::vector<eslocal> _facesNodes;
+		return _facesNodes;
+	}
+
+	const std::vector<eslocal>& edgeNodes(size_t index) const
+	{
+		static std::vector<eslocal> _edgesNodes;
+		return _edgesNodes;
+	}
+
+	const std::vector<DenseMatrix>& facedN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(ERROR) << "Point has no base functions for face."; exit(1); }
+	const std::vector<DenseMatrix>& faceN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(ERROR) << "Point volume has no base functions for face."; exit(1); }
+	const std::vector<DenseMatrix>& edgedN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(ERROR) << "Point volume has no base functions for edge."; exit(1); }
+	const std::vector<DenseMatrix>& edgeN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(ERROR) << "Point volume has no base functions for edge."; exit(1); }
+
 protected:
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const
 	{

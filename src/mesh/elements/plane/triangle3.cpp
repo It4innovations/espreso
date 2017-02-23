@@ -11,6 +11,12 @@ std::vector<Property> Triangle3::_DOFEdge;
 std::vector<Property> Triangle3::_DOFPoint;
 std::vector<Property> Triangle3::_DOFMidPoint;
 
+std::vector<std::vector<eslocal> > Triangle3::_edgesNodes = {
+	{ 0, 1 },
+	{ 1, 2 },
+	{ 2, 0 },
+};
+
 static std::vector<std::vector<double> > get_st()
 {
 	std::vector< std::vector<double> > st(2, std::vector<double>(Triangle3GPCount));
@@ -150,10 +156,11 @@ size_t Triangle3::fillEdges()
 
 	size_t filled = _edges.size();
 
-	for (size_t edge = 0; edge < 3; edge++) {
-		line[0] = _indices[ edge         ];
-		line[1] = _indices[(edge + 1) % 3];
-		addUniqueEdge<Line2>(line, filled);
+	for (size_t e = 0; e < Triangle3EdgeCount; e++) {
+		for (size_t n = 0; n < Line2NodesCount; n++) {
+			line[n] = _indices[_edgesNodes[e][n]];
+		}
+		addUniqueEdge<Line2>(line, filled, Line2NodesCount);
 	}
 	return filled;
 }

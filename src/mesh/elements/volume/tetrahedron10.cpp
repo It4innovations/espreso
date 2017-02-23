@@ -12,6 +12,21 @@ std::vector<Property> Tetrahedron10::_DOFEdge;
 std::vector<Property> Tetrahedron10::_DOFPoint;
 std::vector<Property> Tetrahedron10::_DOFMidPoint;
 
+std::vector<std::vector<eslocal> > Tetrahedron10::_facesNodes = {
+	{ 0, 1, 3, 4, 8, 7 },
+	{ 1, 2, 3, 5, 9, 8 },
+	{ 2, 0, 3, 6, 7, 9 },
+	{ 2, 1, 0, 5, 4, 6 }
+};
+
+std::vector<std::vector<eslocal> > Tetrahedron10::_edgesNodes = {
+	{ 0, 1, 4 },
+	{ 1, 2, 5 },
+	{ 2, 0, 6 },
+	{ 0, 3, 7 },
+	{ 1, 3, 8 },
+	{ 2, 3, 9 }
+};
 
 static std::vector<DenseMatrix> Tetra10_dN()
 {
@@ -365,17 +380,13 @@ size_t Tetrahedron10::fillEdges()
 
 	size_t filled = _edges.size();
 
-	for (size_t edge = 0; edge < 3; edge++) {
-		line[0] = _indices[ edge         ];
-		line[1] = _indices[(edge + 1) % 3];
-		line[2] = _indices[ edge + 4     ];
-		addUniqueEdge<Line3>(line, filled);
-
-		line[0] = _indices[edge    ];
-		line[1] = _indices[       3];
-		line[2] = _indices[edge + 7];
-		addUniqueEdge<Line3>(line, filled);
+	for (size_t e = 0; e < Tetrahedron10EdgeCount; e++) {
+		for (size_t n = 0; n < Line3NodesCount; n++) {
+			line[n] = _indices[_edgesNodes[e][n]];
+		}
+		addUniqueEdge<Line3>(line, filled, Line2NodesCount);
 	}
+
 	return filled;
 }
 
@@ -390,41 +401,13 @@ size_t Tetrahedron10::fillFaces()
 
 	size_t filled = _faces.size();
 
-	triangle[0] = _indices[1];
-	triangle[1] = _indices[0];
-	triangle[2] = _indices[2];
+	for (size_t f = 0; f < Tetrahedron10FacesCount; f++) {
+		for (size_t n = 0; n < Triangle6NodesCount; n++) {
+			triangle[n] = _indices[_facesNodes[f][n]];
+		}
+		addUniqueFace<Triangle6>(triangle, filled, Triangle3NodesCount);
+	}
 
-	triangle[3] = _indices[4];
-	triangle[4] = _indices[6];
-	triangle[5] = _indices[5];
-	addUniqueFace<Triangle6>(triangle, filled, Triangle3NodesCount);
-
-	triangle[0] = _indices[0];
-	triangle[1] = _indices[1];
-	triangle[2] = _indices[3];
-
-	triangle[3] = _indices[4];
-	triangle[4] = _indices[8];
-	triangle[5] = _indices[7];
-	addUniqueFace<Triangle6>(triangle, filled, Triangle3NodesCount);
-
-	triangle[0] = _indices[1];
-	triangle[1] = _indices[2];
-	triangle[2] = _indices[3];
-
-	triangle[3] = _indices[5];
-	triangle[4] = _indices[9];
-	triangle[5] = _indices[8];
-	addUniqueFace<Triangle6>(triangle, filled, Triangle3NodesCount);
-
-	triangle[0] = _indices[2];
-	triangle[1] = _indices[0];
-	triangle[2] = _indices[3];
-
-	triangle[3] = _indices[6];
-	triangle[4] = _indices[7];
-	triangle[5] = _indices[9];
-	addUniqueFace<Triangle6>(triangle, filled, Triangle3NodesCount);
 	return filled;
 }
 

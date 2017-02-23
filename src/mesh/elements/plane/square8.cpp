@@ -11,6 +11,13 @@ std::vector<Property> Square8::_DOFEdge;
 std::vector<Property> Square8::_DOFPoint;
 std::vector<Property> Square8::_DOFMidPoint;
 
+std::vector<std::vector<eslocal> > Square8::_edgesNodes = {
+	{ 0, 1, 4 },
+	{ 1, 2, 5 },
+	{ 2, 3, 6 },
+	{ 3, 0, 7 }
+};
+
 static std::vector<std::vector<double> > get_st()
 {
 	std::vector< std::vector<double> > st(2, std::vector<double>(Square8GPCount));
@@ -142,12 +149,13 @@ size_t Square8::fillEdges()
 
 	size_t filled = _edges.size();
 
-	for (size_t edge = 0; edge < 4; edge++) {
-		line[0] = _indices[ edge         ];
-		line[1] = _indices[(edge + 1) % 4];
-		line[2] = _indices[ edge + 4     ];
-		addUniqueEdge<Line3>(line, filled);
+	for (size_t e = 0 ; e < Square8EdgeCount; e++) {
+		for (size_t n = 0; n < Line3NodesCount; n++) {
+			line[n] = _indices[_edgesNodes[e][n]];
+		}
+		addUniqueEdge<Line3>(line, filled, Line2NodesCount);
 	}
+
 	return filled;
 }
 

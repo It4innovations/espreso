@@ -13,6 +13,26 @@ std::vector<Property> Prisma6::_DOFEdge;
 std::vector<Property> Prisma6::_DOFPoint;
 std::vector<Property> Prisma6::_DOFMidPoint;
 
+std::vector<std::vector<eslocal> > Prisma6::_facesNodes = {
+	{ 0, 1, 4, 3 },
+	{ 1, 2, 5, 4 },
+	{ 2, 0, 3, 5 },
+	{ 2, 1, 0 },
+	{ 3, 4, 5 }
+};
+
+std::vector<std::vector<eslocal> > Prisma6::_edgesNodes = {
+	{ 0, 1 },
+	{ 1, 2 },
+	{ 2, 0 },
+	{ 3, 4 },
+	{ 4, 5 },
+	{ 5, 3 },
+	{ 0, 3 },
+	{ 1, 4 },
+	{ 2, 5 }
+};
+
 static std::vector< std::vector< double> > Prisma6_rst()
 {
 	std::vector< std::vector<double> > rst(3, std::vector<double>(Prisma6GPCount));
@@ -195,19 +215,13 @@ size_t Prisma6::fillEdges()
 
 	size_t filled = _edges.size();
 
-	for (size_t edge = 0; edge < 3; edge++) {
-		line[0] = _indices[ edge         ];
-		line[1] = _indices[(edge + 1) % 3];
-		addUniqueEdge<Line2>(line, filled);
-
-		line[0] = _indices[ edge          +  3];
-		line[1] = _indices[(edge + 1) % 3 +  3];
-		addUniqueEdge<Line2>(line, filled);
-
-		line[0] = _indices[edge     ];
-		line[1] = _indices[edge +  3];
-		addUniqueEdge<Line2>(line, filled);
+	for (size_t e = 0 ; e < Prisma6EdgeCount; e++) {
+		for (size_t n = 0; n < Line2NodesCount; n++) {
+			line[n] = _indices[_edgesNodes[e][n]];
+		}
+		addUniqueEdge<Line2>(line, filled, Line2NodesCount);
 	}
+
 	return filled;
 }
 
@@ -222,23 +236,20 @@ size_t Prisma6::fillFaces()
 
 	size_t filled = _faces.size();
 
-	for (size_t face = 0; face < 3; face++) {
-		square[0] = _indices[ face              ];
-		square[1] = _indices[(face + 1) % 3     ];
-		square[2] = _indices[(face + 1) % 3 + 3 ];
-		square[3] = _indices[ face          + 3 ];
+	for (size_t f = 0; f < 3; f++) {
+		for (size_t n = 0; n < Square4NodesCount; n++) {
+			square[n] = _indices[_facesNodes[f][n]];
+		}
 		addUniqueFace<Square4>(square, filled, Square4NodesCount);
 	}
 
-	triangle[0] = _indices[1];
-	triangle[1] = _indices[0];
-	triangle[2] = _indices[2];
-	addUniqueFace<Triangle3>(triangle, filled, Triangle3NodesCount);
+	for (size_t f = 3 ; f < Prisma6FacesCount; f++) {
+		for (size_t n = 0; n < Triangle3NodesCount; n++) {
+			triangle[n] = _indices[_facesNodes[f][n]];
+		}
+		addUniqueFace<Triangle3>(triangle, filled, Triangle3NodesCount);
+	}
 
-	triangle[0] = _indices[3];
-	triangle[1] = _indices[4];
-	triangle[2] = _indices[5];
-	addUniqueFace<Triangle3>(triangle, filled, Triangle3NodesCount);
 	return filled;
 }
 

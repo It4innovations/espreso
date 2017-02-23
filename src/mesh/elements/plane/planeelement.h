@@ -34,6 +34,15 @@ public:
 		_edges.push_back(edge);
 	}
 
+	const std::vector<eslocal>& faceNodes(size_t index) const
+	{
+		static std::vector<eslocal> _facesNodes;
+		return _facesNodes;
+	}
+
+	const std::vector<DenseMatrix>& facedN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(ERROR) << "Plane element has no base functions for face."; exit(1); }
+	const std::vector<DenseMatrix>& faceN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(ERROR) << "Plane element has no base functions for face."; exit(1); }
+
 protected:
 	void setFace(size_t index, Element* face) { ESINFO(GLOBAL_ERROR) << "Plane element has no face"; }
 	void setEdge(size_t index, Element* edge) { _edges[index] = edge; }

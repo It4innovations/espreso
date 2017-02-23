@@ -12,6 +12,30 @@ std::vector<Property> Hexahedron20::_DOFEdge;
 std::vector<Property> Hexahedron20::_DOFPoint;
 std::vector<Property> Hexahedron20::_DOFMidPoint;
 
+std::vector<std::vector<eslocal> > Hexahedron20::_facesNodes = {
+	{ 0, 1, 5, 4,  8, 17, 12, 16 },
+	{ 3, 2, 1, 0, 10,  9,  8, 11 },
+	{ 4, 5, 6, 7, 12, 13, 14, 15 },
+	{ 7, 6, 2, 3, 14, 18, 10, 19 },
+	{ 1, 2, 6, 5,  9, 18, 13, 17 },
+	{ 3, 0, 4, 7, 11, 16, 15, 19 }
+};
+
+std::vector<std::vector<eslocal> > Hexahedron20::_edgesNodes = {
+	{ 0, 1,  8 },
+	{ 1, 2,  9 },
+	{ 2, 3, 10 },
+	{ 3, 0, 11 },
+	{ 4, 5, 12 },
+	{ 5, 6, 13 },
+	{ 6, 7, 14 },
+	{ 7, 4, 15 },
+	{ 0, 4, 16 },
+	{ 1, 5, 17 },
+	{ 2, 6, 18 },
+	{ 3, 7, 19 }
+};
+
 static std::vector<std::vector< double> > Hexa20_rst()
 {
 	std::vector< std::vector<double> > rst(3, std::vector<double>(Hexahedron20GPCount));
@@ -348,22 +372,13 @@ size_t Hexahedron20::fillEdges()
 
 	size_t filled = _edges.size();
 
-	for (size_t edge = 0; edge < 4; edge++) {
-		line[0] = _indices[ edge         ];
-		line[1] = _indices[(edge + 1) % 4];
-		line[2] = _indices[ edge + 8     ];
-		addUniqueEdge<Line3>(line, filled);
-
-		line[0] = _indices[ edge          +  4];
-		line[1] = _indices[(edge + 1) % 4 +  4];
-		line[2] = _indices[ edge          + 12];
-		addUniqueEdge<Line3>(line, filled);
-
-		line[0] = _indices[edge     ];
-		line[1] = _indices[edge +  4];
-		line[2] = _indices[edge + 16];
-		addUniqueEdge<Line3>(line, filled);
+	for (size_t e = 0 ; e < Hexahedron20EdgeCount; e++) {
+		for (size_t n = 0; n < Line3NodesCount; n++) {
+			line[n] = _indices[_edgesNodes[e][n]];
+		}
+		addUniqueEdge<Line3>(line, filled, Line2NodesCount);
 	}
+
 	return filled;
 }
 
@@ -377,40 +392,12 @@ size_t Hexahedron20::fillFaces()
 
 	size_t filled = _faces.size();
 
-	for (size_t face = 0; face < 4; face++) {
-		square[0] = _indices[ face               ];
-		square[1] = _indices[(face + 1) % 4      ];
-		square[2] = _indices[(face + 1) % 4 + 4  ];
-		square[3] = _indices[ face + 4           ];
-
-		square[4] = _indices[ face          + 8  ];
-		square[5] = _indices[(face + 1) % 4 + 16 ];
-		square[6] = _indices[ face          + 12 ];
-		square[7] = _indices[ face          + 16 ];
+	for (size_t f = 0 ; f < Hexahedron20FacesCount; f++) {
+		for (size_t n = 0; n < Square8NodesCount; n++) {
+			square[n] = _indices[_facesNodes[f][n]];
+		}
 		addUniqueFace<Square8>(square, filled, Square4NodesCount);
 	}
-
-	square[0] = _indices[0];
-	square[1] = _indices[3];
-	square[2] = _indices[2];
-	square[3] = _indices[1];
-
-	square[4] = _indices[11];
-	square[5] = _indices[10];
-	square[6] = _indices[9];
-	square[7] = _indices[8];
-	addUniqueFace<Square8>(square, filled, Square4NodesCount);
-
-	square[0] = _indices[4];
-	square[1] = _indices[5];
-	square[2] = _indices[6];
-	square[3] = _indices[7];
-
-	square[4] = _indices[12];
-	square[5] = _indices[13];
-	square[6] = _indices[14];
-	square[7] = _indices[15];
-	addUniqueFace<Square8>(square, filled, Square4NodesCount);
 	return filled;
 }
 

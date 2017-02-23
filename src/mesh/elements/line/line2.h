@@ -51,6 +51,9 @@ public:
 	const std::vector<Property>& pointDOFs() const { return Line2::_DOFPoint; }
 	const std::vector<Property>& midPointDOFs() const { return Line2::_DOFMidPoint; }
 
+	static std::vector<DenseMatrix> _dN;
+	static std::vector<DenseMatrix> _N;
+	static std::vector<double> _weighFactor;
 
 protected:
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
@@ -59,10 +62,6 @@ protected:
 
 private:
 	eslocal _indices[Line2NodesCount];
-
-	static std::vector<DenseMatrix> _dN;
-	static std::vector<DenseMatrix> _N;
-	static std::vector<double> _weighFactor;
 
 	static std::vector<Property> _DOFElement;
 	static std::vector<Property> _DOFFace;

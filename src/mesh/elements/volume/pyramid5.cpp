@@ -13,6 +13,25 @@ std::vector<Property> Pyramid5::_DOFEdge;
 std::vector<Property> Pyramid5::_DOFPoint;
 std::vector<Property> Pyramid5::_DOFMidPoint;
 
+std::vector<std::vector<eslocal> > Pyramid5::_facesNodes = {
+	{ 3, 2, 1, 0 },
+	{ 0, 1, 4 },
+	{ 1, 2, 4 },
+	{ 2, 3, 4 },
+	{ 3, 0, 4 }
+};
+
+std::vector<std::vector<eslocal> > Pyramid5::_edgesNodes = {
+	{ 0, 1 },
+	{ 1, 2 },
+	{ 2, 3 },
+	{ 3, 0 },
+	{ 0, 4 },
+	{ 1, 4 },
+	{ 2, 4 },
+	{ 3, 4 }
+};
+
 static std::vector< std::vector< double> > Pyramid5_rst()
 {
 	std::vector< std::vector<double> > rst(3, std::vector<double>(Pyramid5GPCount));
@@ -182,15 +201,13 @@ size_t Pyramid5::fillEdges()
 
 	size_t filled = _edges.size();
 
-	for (size_t edge = 0; edge < 4; edge++) {
-		line[0] = _indices[ edge         ];
-		line[1] = _indices[(edge + 1) % 4];
-		addUniqueEdge<Line2>(line, filled);
-
-		line[0] = _indices[edge];
-		line[1] = _indices[   4];
-		addUniqueEdge<Line2>(line, filled);
+	for (size_t e = 0 ; e < Pyramid5EdgeCount; e++) {
+		for (size_t n = 0; n < Line2NodesCount; n++) {
+			line[n] = _indices[_edgesNodes[e][n]];
+		}
+		addUniqueEdge<Line2>(line, filled, Line2NodesCount);
 	}
+
 	return filled;
 }
 
@@ -206,18 +223,18 @@ size_t Pyramid5::fillFaces()
 
 	size_t filled = _faces.size();
 
-	for (size_t face = 1; face < 5; face++) {
-		triangle[0] = _indices[face - 1];
-		triangle[1] = _indices[face % 4];
-		triangle[2] = _indices[4];
+	for (size_t n = 0; n < Square4NodesCount; n++) {
+		square[n] = _indices[_facesNodes[0][n]];
+	}
+	addUniqueFace<Square4>(square, filled, Square4NodesCount);
+
+	for (size_t f = 1 ; f < Pyramid5FacesCount; f++) {
+		for (size_t n = 0; n < Triangle3NodesCount; n++) {
+			triangle[n] = _indices[_facesNodes[f][n]];
+		}
 		addUniqueFace<Triangle3>(triangle, filled, Triangle3NodesCount);
 	}
 
-	square[0] = _indices[0];
-	square[1] = _indices[3];
-	square[2] = _indices[2];
-	square[3] = _indices[1];
-	addUniqueFace<Square4>(square, filled, Square4NodesCount);
 	return filled;
 }
 

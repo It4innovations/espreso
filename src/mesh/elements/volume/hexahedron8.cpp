@@ -12,6 +12,30 @@ std::vector<Property> Hexahedron8::_DOFEdge;
 std::vector<Property> Hexahedron8::_DOFPoint;
 std::vector<Property> Hexahedron8::_DOFMidPoint;
 
+std::vector<std::vector<eslocal> > Hexahedron8::_facesNodes = {
+	{ 0, 1, 5, 4 },
+	{ 3, 2, 1, 0 },
+	{ 4, 5, 6, 7 },
+	{ 7, 6, 2, 3 },
+	{ 1, 2, 6, 5 },
+	{ 3, 0, 4, 7 }
+};
+
+std::vector<std::vector<eslocal> > Hexahedron8::_edgesNodes = {
+	{ 0, 1 },
+	{ 1, 2 },
+	{ 2, 3 },
+	{ 3, 0 },
+	{ 4, 5 },
+	{ 5, 6 },
+	{ 6, 7 },
+	{ 7, 4 },
+	{ 0, 4 },
+	{ 1, 5 },
+	{ 2, 6 },
+	{ 3, 7 }
+};
+
 static std::vector<DenseMatrix> Hexa_dN() {
 	std::vector<DenseMatrix> dN(
 		Hexahedron8GPCount,
@@ -143,19 +167,13 @@ size_t Hexahedron8::fillEdges()
 
 	size_t filled = _edges.size();
 
-	for (size_t edge = 0; edge < 4; edge++) {
-		line[0] = _indices[ edge         ];
-		line[1] = _indices[(edge + 1) % 4];
-		addUniqueEdge<Line2>(line, filled);
-
-		line[0] = _indices[ edge          +  4];
-		line[1] = _indices[(edge + 1) % 4 +  4];
-		addUniqueEdge<Line2>(line, filled);
-
-		line[0] = _indices[edge     ];
-		line[1] = _indices[edge +  4];
-		addUniqueEdge<Line2>(line, filled);
+	for (size_t e = 0 ; e < Hexahedron8EdgeCount; e++) {
+		for (size_t n = 0; n < Line2NodesCount; n++) {
+			line[n] = _indices[_edgesNodes[e][n]];
+		}
+		addUniqueEdge<Line2>(line, filled, Line2NodesCount);
 	}
+
 	return filled;
 }
 
@@ -169,25 +187,13 @@ size_t Hexahedron8::fillFaces()
 
 	size_t filled = _faces.size();
 
-	for (size_t face = 0; face < 4; face++) {
-		square[0] = _indices[ face             ];
-		square[1] = _indices[(face + 1) % 4    ];
-		square[2] = _indices[(face + 1) % 4 + 4];
-		square[3] = _indices[ face + 4         ];
+	for (size_t f = 0 ; f < Hexahedron8FacesCount; f++) {
+		for (size_t n = 0; n < Square4NodesCount; n++) {
+			square[n] = _indices[_facesNodes[f][n]];
+		}
 		addUniqueFace<Square4>(square, filled, Square4NodesCount);
 	}
 
-	square[0] = _indices[0];
-	square[1] = _indices[3];
-	square[2] = _indices[2];
-	square[3] = _indices[1];
-	addUniqueFace<Square4>(square, filled, Square4NodesCount);
-
-	square[0] = _indices[4];
-	square[1] = _indices[5];
-	square[2] = _indices[6];
-	square[3] = _indices[7];
-	addUniqueFace<Square4>(square, filled, Square4NodesCount);
 	return filled;
 }
 

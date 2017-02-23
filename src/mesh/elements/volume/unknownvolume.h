@@ -31,6 +31,25 @@ public:
 	const std::vector<eslocal>& DOFsIndices() const { return _DOFs; }
 	const std::vector<double>& stiffnessMatrix() const { return _stiffnessMatrix; }
 
+	const std::vector<eslocal>& edgeNodes(size_t index) const
+	{
+		// It is impossible to compute it
+		static std::vector<eslocal> _edgeNodes;
+		return _edgeNodes;
+	}
+
+	const std::vector<eslocal>& faceNodes(size_t index) const
+	{
+		// It is impossible to compute it
+		static std::vector<eslocal> _faceNodes;
+		return _faceNodes;
+	}
+
+	const std::vector<DenseMatrix>& facedN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(ERROR) << "Unknown volume has no base functions for face."; exit(1); }
+	const std::vector<DenseMatrix>& faceN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(ERROR) << "Unknown volume has no base functions for face."; exit(1); }
+	const std::vector<DenseMatrix>& edgedN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(ERROR) << "Unknown volume has no base functions for edge."; exit(1); }
+	const std::vector<DenseMatrix>& edgeN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(ERROR) << "Unknown volume has no base functions for edge."; exit(1); }
+
 	const std::vector<DenseMatrix>& dN(ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(GLOBAL_ERROR) << "Unknown element has no base functions"; exit(EXIT_FAILURE); }
 	const std::vector<DenseMatrix>& N(ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(GLOBAL_ERROR) << "Unknown element has no base functions"; exit(EXIT_FAILURE); }
 	const std::vector<double>& weighFactor(ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(GLOBAL_ERROR) << "Unknown element has no base functions"; exit(EXIT_FAILURE); }

@@ -13,6 +13,24 @@ std::vector<Property> Pyramid13::_DOFEdge;
 std::vector<Property> Pyramid13::_DOFPoint;
 std::vector<Property> Pyramid13::_DOFMidPoint;
 
+std::vector<std::vector<eslocal> > Pyramid13::_facesNodes = {
+	{ 3, 2, 1, 0,  7,  6, 5, 8 },
+	{ 0, 1, 4, 5, 10,  9 },
+	{ 1, 2, 4, 6, 11, 10 },
+	{ 2, 3, 4, 7, 12, 11 },
+	{ 3, 0, 4, 8,  9, 12 }
+};
+std::vector<std::vector<eslocal> > Pyramid13::_edgesNodes = {
+	{ 0, 1,  5 },
+	{ 1, 2,  6 },
+	{ 2, 3,  7 },
+	{ 3, 0,  8 },
+	{ 0, 4,  9 },
+	{ 1, 4, 10 },
+	{ 2, 4, 11 },
+	{ 3, 4, 12 }
+};
+
 static std::vector< std::vector< double> > Pyramid13_rst()
 {
 	std::vector< std::vector<double> > rst(3, std::vector<double>(Pyramid13GPCount));
@@ -300,17 +318,13 @@ size_t Pyramid13::fillEdges()
 
 	size_t filled = _edges.size();
 
-	for (size_t edge = 0; edge < 4; edge++) {
-		line[0] = _indices[ edge         ];
-		line[1] = _indices[(edge + 1) % 4];
-		line[2] = _indices[ edge + 5     ];
-		addUniqueEdge<Line3>(line, filled);
-
-		line[0] = _indices[edge    ];
-		line[1] = _indices[       4];
-		line[2] = _indices[edge + 9];
-		addUniqueEdge<Line3>(line, filled);
+	for (size_t e = 0 ; e < Pyramid13EdgeCount; e++) {
+		for (size_t n = 0; n < Line3NodesCount; n++) {
+			line[n] = _indices[_edgesNodes[e][n]];
+		}
+		addUniqueEdge<Line3>(line, filled, Line2NodesCount);
 	}
+
 	return filled;
 }
 
@@ -326,27 +340,18 @@ size_t Pyramid13::fillFaces()
 
 	size_t filled = _faces.size();
 
-	for (size_t face = 1; face < 5; face++) {
-		triangle[0] = _indices[face - 1];
-		triangle[1] = _indices[face % 4];
-		triangle[2] = _indices[4];
+	for (size_t n = 0; n < Square8NodesCount; n++) {
+		square[n] = _indices[_facesNodes[0][n]];
+	}
+	addUniqueFace<Square8>(square, filled, Square4NodesCount);
 
-		triangle[3] = _indices[face - 1 + 5];
-		triangle[4] = _indices[face % 4 + 9];
-		triangle[5] = _indices[face - 1 + 9];
+	for (size_t f = 1 ; f < Pyramid13FacesCount; f++) {
+		for (size_t n = 0; n < Triangle6NodesCount; n++) {
+			triangle[n] = _indices[_facesNodes[f][n]];
+		}
 		addUniqueFace<Triangle6>(triangle, filled, Triangle3NodesCount);
 	}
 
-	square[0] = _indices[0];
-	square[1] = _indices[3];
-	square[2] = _indices[2];
-	square[3] = _indices[1];
-
-	square[4] = _indices[8];
-	square[5] = _indices[7];
-	square[6] = _indices[6];
-	square[7] = _indices[5];
-	addUniqueFace<Square8>(square, filled, Square4NodesCount);
 	return filled;
 }
 

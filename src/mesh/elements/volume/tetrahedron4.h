@@ -2,6 +2,7 @@
 #ifndef SRC_MESH_ELEMENTS_VOLUME_TETRAHEDRON4_H_
 #define SRC_MESH_ELEMENTS_VOLUME_TETRAHEDRON4_H_
 
+#include "../line/line2.h"
 #include "../plane/triangle3.h"
 #include "volumeelement.h"
 
@@ -47,6 +48,14 @@ public:
 	size_t coarseNodes() const { return Tetrahedron4NodesCount; }
 	size_t gaussePoints() const { return Tetrahedron4GPCount; }
 
+	const std::vector<eslocal>& faceNodes(size_t index) const { return Tetrahedron4::_facesNodes[index]; }
+	const std::vector<eslocal>& edgeNodes(size_t index) const { return Tetrahedron4::_edgesNodes[index]; }
+
+	const std::vector<DenseMatrix>& facedN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Triangle3::_dN; }
+	const std::vector<DenseMatrix>& faceN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Triangle3::_N; }
+	const std::vector<DenseMatrix>& edgedN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Line2::_dN; }
+	const std::vector<DenseMatrix>& edgeN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Line2::_N; }
+
 	const std::vector<DenseMatrix>& dN(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Tetrahedron4::_dN; }
 	const std::vector<DenseMatrix>& N(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Tetrahedron4::_N; }
 	const std::vector<double>& weighFactor(ElementPointType type = ElementPointType::GAUSSE_POINT) const { return Tetrahedron4::_weighFactor; }
@@ -56,6 +65,10 @@ public:
 	const std::vector<Property>& edgeDOFs() const { return Tetrahedron4::_DOFEdge; }
 	const std::vector<Property>& pointDOFs() const { return Tetrahedron4::_DOFPoint; }
 	const std::vector<Property>& midPointDOFs() const { return Tetrahedron4::_DOFMidPoint; }
+
+	static std::vector<DenseMatrix> _dN;
+	static std::vector<DenseMatrix> _N;
+	static std::vector<double> _weighFactor;
 
 protected:
 	std::vector<eslocal> getNeighbours(size_t nodeIndex) const;
@@ -68,15 +81,14 @@ protected:
 private:
 	eslocal _indices[Tetrahedron4NodesCount];
 
-	static std::vector<DenseMatrix> _dN;
-	static std::vector<DenseMatrix> _N;
-	static std::vector<double> _weighFactor;
-
 	static std::vector<Property> _DOFElement;
 	static std::vector<Property> _DOFFace;
 	static std::vector<Property> _DOFEdge;
 	static std::vector<Property> _DOFPoint;
 	static std::vector<Property> _DOFMidPoint;
+
+	static std::vector<std::vector<eslocal> > _facesNodes;
+	static std::vector<std::vector<eslocal> > _edgesNodes;
 };
 
 

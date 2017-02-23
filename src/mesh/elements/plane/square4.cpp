@@ -11,6 +11,13 @@ std::vector<Property> Square4::_DOFEdge;
 std::vector<Property> Square4::_DOFPoint;
 std::vector<Property> Square4::_DOFMidPoint;
 
+std::vector<std::vector<eslocal> > Square4::_edgesNodes = {
+	{ 0, 1 },
+	{ 1, 2 },
+	{ 2, 3 },
+	{ 3, 0 }
+};
+
 static std::vector<DenseMatrix> get_dN(double CsQ_scale) {
 	std::vector<DenseMatrix> dN(
 		Square4GPCount,
@@ -109,11 +116,13 @@ size_t Square4::fillEdges()
 
 	size_t filled = _edges.size();
 
-	for (size_t edge = 0; edge < 4; edge++) {
-		line[0] = _indices[ edge         ];
-		line[1] = _indices[(edge + 1) % 4];
-		addUniqueEdge<Line2>(line, filled);
+	for (size_t e = 0 ; e < Square4EdgeCount; e++) {
+		for (size_t n = 0; n < Line2NodesCount; n++) {
+			line[n] = _indices[_edgesNodes[e][n]];
+		}
+		addUniqueEdge<Line2>(line, filled, Line2NodesCount);
 	}
+
 	return filled;
 }
 

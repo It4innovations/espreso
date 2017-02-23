@@ -73,6 +73,11 @@ public:
 
 	virtual ~Element() {};
 
+	virtual const std::vector<DenseMatrix>& facedN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const = 0;
+	virtual const std::vector<DenseMatrix>& faceN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const = 0;
+	virtual const std::vector<DenseMatrix>& edgedN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const = 0;
+	virtual const std::vector<DenseMatrix>& edgeN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const = 0;
+
 	virtual const std::vector<DenseMatrix>& dN(ElementPointType type = ElementPointType::GAUSSE_POINT) const = 0;
 	virtual const std::vector<DenseMatrix>& N(ElementPointType type = ElementPointType::GAUSSE_POINT) const = 0;
 	virtual const std::vector<double>& weighFactor(ElementPointType type = ElementPointType::GAUSSE_POINT) const = 0;
@@ -93,6 +98,9 @@ public:
 	virtual size_t nodes() const = 0;
 	virtual size_t coarseNodes() const = 0;
 	virtual size_t gaussePoints() const = 0;
+
+	virtual const std::vector<eslocal>& faceNodes(size_t index) const =0;
+	virtual const std::vector<eslocal>& edgeNodes(size_t index) const =0;
 
 	virtual Element* face(size_t index) const = 0;
 	virtual Element* edge(size_t index) const = 0;
@@ -213,10 +221,10 @@ protected:
 
 
 	template <class TEdge>
-	void addUniqueEdge(eslocal *line, size_t filled)
+	void addUniqueEdge(eslocal *line, size_t filled, size_t coarseSize)
 	{
 		for (size_t i = 0; i < filled; i++) {
-			if (std::is_permutation(edge(i)->indices(), edge(i)->indices() + 2, line)) {
+			if (std::is_permutation(edge(i)->indices(), edge(i)->indices() + coarseSize, line)) {
 				return;
 			}
 		}
