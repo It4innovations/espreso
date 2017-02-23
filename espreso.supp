@@ -158,3 +158,45 @@
    ...
 }
 
+{
+   Python Free
+   Memcheck:Addr4
+   fun:PyObject_Free
+   ...
+}
+
+{
+   Pyhon Realloc
+   Memcheck:Addr4
+   fun:PyObject_Realloc
+   ...
+}
+
+{
+   Python Free cond
+   Memcheck:Cond
+   fun:PyObject_Free
+   ...
+}
+
+{
+   Python Free value
+   Memcheck:Value8
+   fun:PyObject_Free
+   ...
+}
+
+{
+   Python Realloc Cond
+   Memcheck:Cond
+   fun:PyObject_Realloc
+   ...
+}
+
+{
+   Python Realloc Value
+   Memcheck:Value8
+   fun:PyObject_Realloc
+   ...
+}
+
