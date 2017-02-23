@@ -339,11 +339,11 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 		lambda_n_max_2_g = fabs(lambda_n_max_2_g);
 
 		norm_ce  = parallel_norm_compressed(cluster, ce_l);
-		if (fabs(norm_ce) < 10e-8)
+		if (fabs(norm_ce) < 1)
 			norm_ce += 1.0;
 
 		norm_cn  = parallel_norm_compressed(cluster, cn_l);
-		if (fabs(norm_cn) < 10e-8)
+		if (fabs(norm_cn) < 1)
 			norm_cn += 1.0;
 
 		norm_Beu = parallel_norm_compressed(cluster, Be_l);
