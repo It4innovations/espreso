@@ -61,7 +61,7 @@ struct StringCompare {
 		return false;
 	}
 
-	static bool contains(const std::string &s, const std::string &variables) {
+	static bool contains(const std::string &s, const std::vector<std::string> &variables) {
 		for (size_t v = 0; v < variables.size(); v++) {
 			if (s.find(variables[v]) != std::string::npos) {
 				return true;

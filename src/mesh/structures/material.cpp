@@ -30,7 +30,7 @@ Material::Material(const Coordinates &coordinates, const Configuration &configur
 		if (!StringCompare::caseInsensitiveEq(configuration.orderedParameters[p]->name, "MODEL")) {
 			const std::string &value = configuration.orderedParameters[p]->get();
 			delete _values[configuration.orderedParameters[p]->index()];
-			if (StringCompare::contains(value, "xyzT")) {
+			if (StringCompare::contains(value, { "x", "y", "z", "TEMPERATURE" })) {
 				_values[configuration.orderedParameters[p]->index()] = new CoordinatesEvaluator(value, _coordinates);
 			} else {
 				espreso::Expression expr(value, {});
@@ -51,7 +51,7 @@ void Material::set(MATERIAL_PARAMETER parameter, const std::string &value)
 {
 	delete _values[(size_t)parameter];
 
-	if (StringCompare::contains(value, "xyzt")) {
+	if (StringCompare::contains(value, { "x", "y", "z", "TEMPERATURE" })) {
 		_values[(size_t)parameter] = new CoordinatesEvaluator(value, _coordinates);
 	} else {
 		espreso::Expression expr(value, {});

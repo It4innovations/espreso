@@ -673,7 +673,7 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 				continue;
 			}
 
-			if (!StringCompare::contains(value, "xyzt")) {
+			if (!StringCompare::contains(value, { "x", "y", "z", "TEMPERATURE" })) {
 				Expression expr(value, {});
 				evaluators.push_back(new ConstEvaluator(expr.evaluate({}), properties[p]));
 			} else {
