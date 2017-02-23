@@ -16,9 +16,16 @@ public:
 			Physics* physics,
 			LinearSolver* linearSolver,
 			store::ResultStore* store,
-			const NonLinearSolverBase &configuration);
+			const NonLinearSolverBase &configuration,
+			Matrices restriction = Matrices::NONE);
 
 	virtual void run(Step &step);
+
+	virtual void init(Step &step);
+	virtual void preprocess(Step &step);
+	virtual void solve(Step &step);
+	virtual void postprocess(Step &step);
+	virtual void finalize(Step &step);
 
 protected:
 	const NonLinearSolverBase &_configuration;

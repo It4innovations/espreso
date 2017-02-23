@@ -16,8 +16,9 @@ NewtonRhapson::NewtonRhapson(
 		Physics* physics,
 		LinearSolver* linearSolver,
 		store::ResultStore* store,
-		const NonLinearSolverBase &configuration)
-: Solver("NEWTON RHAPSON", mesh, physics, linearSolver, store), _configuration(configuration)
+		const NonLinearSolverBase &configuration,
+		Matrices restriction)
+: Solver("NEWTON RHAPSON", mesh, physics, linearSolver, store, restriction), _configuration(configuration)
 {
 
 }
@@ -26,17 +27,32 @@ void NewtonRhapson::run(Step &step)
 {
 	ESINFO(PROGRESS1) << "Run " << _name << " solver for " << physics->name();
 
-	if (!_configuration.convergenceParameters().checkSolution() && _configuration.convergenceParameters().checkResidual()) {
-		ESINFO(GLOBAL_ERROR) << "It is not possible to turn off the both 'temperature' and 'heat' convergence.";
-	}
-	step.substep = 0;
+	init(step);
+	preprocess(step);
+	solve(step);
+	postprocess(step);
+	finalize(step);
+}
 
+void NewtonRhapson::init(Step &step)
+{
 	assembleMatrices(step, Matrices::K | Matrices::f);
 	composeGluing(step, Matrices::B1);
 	regularizeMatrices(step, Matrices::K);
 	composeGluing(step, Matrices::B0);
+}
 
+void NewtonRhapson::preprocess(Step &step)
+{
 	initLinearSolver();
+}
+
+void NewtonRhapson::solve(Step &step)
+{
+	if (!_configuration.convergenceParameters().checkSolution() && _configuration.convergenceParameters().checkResidual()) {
+		ESINFO(GLOBAL_ERROR) << "It is not possible to turn off the both 'temperature' and 'heat' convergence.";
+	}
+	step.substep = 0;
 	runLinearSolver();
 	processSolution(step);
 	storeSubSolution(step);
@@ -101,7 +117,16 @@ void NewtonRhapson::run(Step &step)
 			// TODO
 		}
 	}
+}
+
+void NewtonRhapson::postprocess(Step &step)
+{
+	processSolution(step);
 	storeSolution(step);
+}
+
+void NewtonRhapson::finalize(Step &step)
+{
 	finalizeLinearSolver();
 }
 

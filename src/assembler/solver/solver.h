@@ -27,9 +27,17 @@ public:
 			Mesh *mesh,
 			Physics* physics,
 			LinearSolver* linearSolver,
-			store::ResultStore* store);
+			store::ResultStore* store,
+			Matrices restriction);
 
 	virtual void run(Step &step) =0;
+
+	virtual void init(Step &step) =0;
+	virtual void preprocess(Step &step) =0;
+	virtual void solve(Step &step) =0;
+	virtual void postprocess(Step &step) =0;
+	virtual void finalize(Step &step) =0;
+
 	const std::string& name() const { return _name; }
 
 	virtual ~Solver();
@@ -63,6 +71,7 @@ protected:
 	std::string _name;
 	Mesh *_mesh;
 	store::ResultStore* _store;
+	Matrices _restriction;
 
 	TimeEval *_timeStatistics;
 };

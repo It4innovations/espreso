@@ -12,7 +12,9 @@ class SparseMatrix;
 class Solution;
 
 enum Matrices : int {
-	K      = 1 << 1,
+	NONE   = 0,
+	K      = 1 << 0,
+	N      = 1 << 1,
 	M      = 1 << 2,
 	R      = 1 << 3,
 	f      = 1 << 4,

@@ -24,8 +24,9 @@ Solver::Solver(
 		Mesh *mesh,
 		Physics* physics,
 		LinearSolver* linearSolver,
-		store::ResultStore* store)
-: physics(physics), linearSolver(linearSolver), _name(name), _mesh(mesh), _store(store)
+		store::ResultStore* store,
+		Matrices restriction)
+: physics(physics), linearSolver(linearSolver), _name(name), _mesh(mesh), _store(store), _restriction(~restriction)
 {
 	_timeStatistics = new TimeEval(physics->name() + " solved by " + _name + " solver overall timing");
 	_timeStatistics->totalTime.startWithBarrier();
@@ -101,8 +102,12 @@ void Solver::assembleMatrices(const Step &step, Matrices matrices)
 
 void Solver::updateMatrices(const Step &step, Matrices matrices, const std::vector<Solution*> &solution)
 {
+	matrices &= _restriction;
 	if (matrices & ~(Matrices::K | Matrices::M | Matrices::R | Matrices::f)) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: invalid matrices passed to Solver::assembleMatrices.";
+	}
+	if (!matrices) {
+		return;
 	}
 
 	ESINFO(PROGRESS2) << physics->name() << (solution.size() ? " updates" : " assembles") << " matrices: " << mNames(matrices);
