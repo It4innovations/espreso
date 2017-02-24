@@ -8,7 +8,7 @@
 using namespace espreso::store;
 
 Catalyst::Catalyst(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
-: VTK(output, mesh, path), processor(NULL), VTKGrid(NULL), dataDescription(NULL)
+: VTK(output, mesh, path), processor(NULL), dataDescription(NULL)
 {
 	ESINFO(ALWAYS) << Info::TextColor::YELLOW << "ESPRESO not supports Catalyst - re-compile ESPRESO with VTK library.";
 }
