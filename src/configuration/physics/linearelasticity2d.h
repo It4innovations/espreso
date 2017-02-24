@@ -2,6 +2,7 @@
 #ifndef SRC_CONFIGURATION_PHYSICS_LINEARELASTICITY2D_H_
 #define SRC_CONFIGURATION_PHYSICS_LINEARELASTICITY2D_H_
 
+#include "../material/coordinatesystem.h"
 #include "../material/holder.h"
 #include "../solver.h"
 
@@ -22,6 +23,8 @@ struct LinearElasticity2DMaterial: public Configuration {
 		{ "LINEAR_ELASTIC_ORTHOTROPIC", MATERIAL_MODEL::LINEAR_ELASTIC_ORTHOTROPIC, "Orthotropic material." },
 		{ "LINEAR_ELASTIC_ANISOTROPIC", MATERIAL_MODEL::LINEAR_ELASTIC_ANISOTROPIC, "Anisotropic material." }
 	}));
+
+	SUBCONFIG(CoordinateSystem, coordinate_system, "Element coordinate system.");
 };
 
 struct LinearElasticity2DConfiguration: public Configuration {
