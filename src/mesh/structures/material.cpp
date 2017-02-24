@@ -1,11 +1,66 @@
 
 #include "material.h"
 
-#include "../../configuration/configuration.h"
+
+#include "../../configuration/material/coordinatesystem.h"
 #include "coordinates.h"
 #include "../settings/evaluator.h"
 
 using namespace espreso;
+
+MaterialCoordination::MaterialCoordination()
+{
+	type = Type::CARTESIAN;
+	center[0] = new ConstEvaluator(0);
+	center[1] = new ConstEvaluator(0);
+	center[2] = new ConstEvaluator(0);
+	rotation[0] = new ConstEvaluator(0);
+	rotation[1] = new ConstEvaluator(0);
+	rotation[2] = new ConstEvaluator(0);
+}
+
+MaterialCoordination::MaterialCoordination(const Coordinates &coordinates, const CoordinateSystem &coordinateSystem)
+{
+	switch (coordinateSystem.type) {
+	case CoordinateSystem::TYPE::CARTESIAN:
+		type = Type::CARTESIAN;
+		break;
+	case CoordinateSystem::TYPE::CYLINDRICAL:
+		type = Type::CYLINDRICAL;
+		break;
+	case CoordinateSystem::TYPE::SPHERICAL:
+		type = Type::SPHERICAL;
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Unknown coordinate system type.";
+	}
+
+	auto fill = [&] (Evaluator* &param, const std::string &value) {
+		if (StringCompare::contains(value, { "x", "y", "z", "TEMPERATURE" })) {
+			param = new CoordinatesEvaluator(value, coordinates);
+		} else {
+			espreso::Expression expr(value, {});
+			param = new ConstEvaluator(expr.evaluate({}));
+		}
+	};
+
+	fill(center[0], coordinateSystem.center_x);
+	fill(center[1], coordinateSystem.center_y);
+	fill(center[2], coordinateSystem.center_z);
+	fill(rotation[0], coordinateSystem.rotation_x);
+	fill(rotation[1], coordinateSystem.rotation_y);
+	fill(rotation[2], coordinateSystem.rotation_z);
+}
+
+MaterialCoordination::~MaterialCoordination()
+{
+	delete center[0];
+	delete center[1];
+	delete center[2];
+	delete rotation[0];
+	delete rotation[1];
+	delete rotation[2];
+}
 
 Material::Material(const Coordinates &coordinates): _coordinates(coordinates), _models((size_t)PHYSICS::SIZE, MATERIAL_MODEL::SIZE)
 {
@@ -14,8 +69,8 @@ Material::Material(const Coordinates &coordinates): _coordinates(coordinates), _
 	}
 }
 
-Material::Material(const Coordinates &coordinates, const Configuration &configuration)
-: _coordinates(coordinates)
+Material::Material(const Coordinates &coordinates, const Configuration &configuration, const CoordinateSystem &coordination)
+: _coordinates(coordinates), _coordination(coordinates, coordination)
 {
 	for (size_t i = 0; i < (size_t)MATERIAL_PARAMETER::SIZE; i++) {
 		_values.push_back(new ConstEvaluator(0));

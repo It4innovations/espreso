@@ -107,30 +107,62 @@ void NewAdvectionDiffusion2D::analyticRegularization(size_t domain)
 void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K) const
 {
 	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
+
+	auto d2r = [] (double degree) -> double {
+		return M_PI * degree / 180;
+	};
+
+	double cos, sin;
+	switch (material->coordination().type) {
+	case MaterialCoordination::Type::CARTESIAN:
+		cos = std::cos(d2r(material->coordination().rotation[2]->evaluate(e->node(node))));
+		sin = std::sin(d2r(material->coordination().rotation[2]->evaluate(e->node(node))));
+		break;
+	case MaterialCoordination::Type::CYLINDRICAL: {
+		Point origin(material->coordination().center[0]->evaluate(e->node(node)), material->coordination().center[1]->evaluate(e->node(node)), 0);
+		const Point &p = _mesh->coordinates()[e->node(node)];
+		double rotation = std::atan2((p.y - origin.y), (p.x - origin.x));
+		cos = std::cos(rotation);
+		sin = std::sin(rotation);
+		break;
+	}
+	}
+
+	DenseMatrix TCT(2, 2), T(2, 2), C(2, 2);
+	T(0, 0) =  cos; T(0, 1) = sin;
+	T(1, 0) = -sin; T(1, 1) = cos;
+
 	switch (material->getModel(PHYSICS::ADVECTION_DIFFUSION_2D)) {
 	case MATERIAL_MODEL::ISOTROPIC:
-		K(node, 0) = K(node, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.step, temp);
-		K(node, 2) = K(node, 3) = 0;
+		C(0, 0) = C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.step, temp);
+		C(0, 1) = C(1, 0) = 0;
 		break;
 	case MATERIAL_MODEL::DIAGONAL:
-		K(node, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.step, temp);
-		K(node, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.step, temp);
-		K(node, 2) = K(node, 3) = 0;
+		C(0, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.step, temp);
+		C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.step, temp);
+		C(0, 1) = C(1, 0) = 0;
 		break;
 	case MATERIAL_MODEL::SYMMETRIC:
-		K(node, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.step, temp);
-		K(node, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.step, temp);
-		K(node, 2) = K(node, 3) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(node), step.step, temp);
+		C(0, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.step, temp);
+		C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.step, temp);
+		C(1, 0) = C(0, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(node), step.step, temp);
 		break;
 	case MATERIAL_MODEL::ANISOTROPIC:
-		K(node, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.step, temp);
-		K(node, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.step, temp);
-		K(node, 2) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(node), step.step, temp);
-		K(node, 3) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX)->evaluate(e->node(node), step.step, temp);
+		C(0, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.step, temp);
+		C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.step, temp);
+		C(0, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(node), step.step, temp);
+		C(1, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX)->evaluate(e->node(node), step.step, temp);
 		break;
 	default:
 		ESINFO(ERROR) << "Advection diffusion 2D not supports set material model";
 	}
+
+	TCT.multiply(T, C * T, 1, 0, true, false);
+
+	K(node, 0) = TCT(0, 0);
+	K(node, 1) = TCT(1, 1);
+	K(node, 2) = TCT(0, 1);
+	K(node, 3) = TCT(1, 0);
 }
 
 void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const

@@ -14,12 +14,30 @@ namespace espreso {
 class Coordinates;
 class Evaluator;
 struct Configuration;
+struct CoordinateSystem;
+
+struct MaterialCoordination {
+
+	MaterialCoordination();
+	MaterialCoordination(const Coordinates &coordinates, const CoordinateSystem &coordinateSystem);
+	~MaterialCoordination();
+
+	enum class Type {
+		CARTESIAN,
+		CYLINDRICAL,
+		SPHERICAL
+	};
+
+	Type type;
+	Evaluator* center[3];
+	Evaluator* rotation[3];
+};
 
 class Material {
 
 public:
 	Material(const Coordinates &coordinates);
-	Material(const Coordinates &coordinates, const Configuration &configuration);
+	Material(const Coordinates &coordinates, const Configuration &configuration, const CoordinateSystem &coordination);
 
 	virtual ~Material();
 
@@ -30,6 +48,8 @@ public:
 	void set(MATERIAL_PARAMETER parameter, Evaluator* value);
 	void setModel(PHYSICS physics, MATERIAL_MODEL model) { _models[(size_t)physics] = model; }
 
+	const MaterialCoordination& coordination() const { return _coordination; }
+
 	void store(std::ofstream& os);
 	void load(std::ifstream& is);
 
@@ -38,6 +58,7 @@ protected:
 
 	std::vector<MATERIAL_MODEL> _models;
 	std::vector<Evaluator*> _values;
+	MaterialCoordination _coordination;
 };
 
 }

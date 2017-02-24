@@ -29,6 +29,7 @@
 
 #include "metis.h"
 #include "../../configuration/environment.h"
+#include "../../configuration/material/coordinatesystem.h"
 
 namespace espreso {
 
@@ -799,7 +800,8 @@ void Mesh::loadMaterial(Region *region, size_t index, const std::string &name, c
 	for (size_t e = 0; e < region->elements().size(); e++) {
 		region->elements()[e]->setParam(Element::MATERIAL, index);
 	}
-	_materials.push_back(new Material(*_coordinates, configuration));
+	const Configuration* coordinateSystem = configuration.subconfigurations.find("COORDINATE_SYSTEM")->second;
+	_materials.push_back(new Material(*_coordinates, configuration, dynamic_cast<const CoordinateSystem&>(*coordinateSystem)));
 	ESINFO(OVERVIEW) << "Set material '" << name << "' for region '" << region->name << "'";
 }
 
