@@ -51,10 +51,6 @@ GENERATOR {
     EDGES {
         RIGHT  "<0, 1> <1, 1> <0, 0>";
     }
-
-    ELEMENTS {
-        ALL_EL ALL;
-    }
   }
 }
 
@@ -91,17 +87,22 @@ ADVECTION_DIFFUSION_2D {
   MATERIALS {
 
     1 {
-      MODEL ISOTROPIC;
+      MODEL DIAGONAL;
 
       DENSITY 1;
       KXX     1;
-      KXY     1;
+      KYY    10;
       Cp      1;
+
+      COORDINATE_SYSTEM {
+        TYPE   CARTESIAN;
+        ROTATION_Z    45;
+      }
     }
   }
 
   MATERIAL_SET {
-    ALL_EL 1;
+    ALL_ELEMENTS   1;
   }
 }
 

@@ -74,11 +74,11 @@ ADVECTION_DIFFUSION_2D {
   MATERIALS {
 
     1 {
-      MODEL ISOTROPIC;
+      MODEL DIAGONAL;
 
       DENSITY 1;
       KXX  1e-5;
-      KXY  1e-5;
+      KYY  1e-3;
       Cp      1;
     }
   }
