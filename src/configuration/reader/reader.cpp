@@ -4,6 +4,7 @@
 #include <getopt.h>
 #include <stack>
 #include <functional>
+#include <regex>
 
 #include "../basis/logging/logging.h"
 #include "../configuration/globalconfiguration.h"
@@ -12,8 +13,8 @@
 using namespace espreso;
 
 static struct option long_options[] = {
-		{"config",  no_argument, 0, 'c'},
-		{"default",  no_argument, 0, 'd'},
+		{"config",  required_argument, 0, 'c'},
+		{"default",  optional_argument, 0, 'd'},
 		{"help",  no_argument, 0, 'h'},
 		{0, 0, 0, 0}
 };
@@ -78,7 +79,8 @@ void Reader::_read(Configuration &configuration, int* argc, char ***argv)
 		confFile = "decomposer.ecf";
 	}
 
-	while ((option = getopt_long(*argc, *argv, "c:dhvtm", opts.data(), &option_index)) != -1) {
+	std::vector<std::string> subConfigurations;
+	while ((option = getopt_long(*argc, *argv, "c:d::hvtm", opts.data(), &option_index)) != -1) {
 		switch (option) {
 		case 'p':
 			// parameters will be read after configuration file
@@ -87,12 +89,24 @@ void Reader::_read(Configuration &configuration, int* argc, char ***argv)
 			helpVerboseLevel++;
 			break;
 		case 'd':
-			store(configuration);
-			exit(EXIT_SUCCESS);
+			if (optarg == NULL) {
+				subConfigurations.push_back(".*");
+			} else {
+				subConfigurations.push_back(std::string(optarg));
+			}
+			break;
 		case 'c':
 			confFile = optarg;
 			break;
+		case '?':
+			exit(EXIT_FAILURE);
+			break;
 		}
+	}
+
+	if (subConfigurations.size()) {
+		store(configuration, subConfigurations);
+		exit(EXIT_SUCCESS);
 	}
 
 	if (helpVerboseLevel) {
@@ -327,7 +341,7 @@ static void printConfiguration(const Configuration &configuration, size_t indent
 	}
 }
 
-static void storeConfiguration(std::ofstream &os, const Configuration &configuration, size_t indent)
+static void storeConfiguration(std::ofstream &os, const Configuration &configuration, size_t indent, std::vector<std::regex> &patterns)
 {
 	for (size_t i = 0; i < configuration.storeParameters().size(); i++) {
 		ParameterBase *parameter = configuration.storeParameters()[i];
@@ -336,10 +350,18 @@ static void storeConfiguration(std::ofstream &os, const Configuration &configura
 	}
 
 	for (size_t i = 0; i < configuration.storeConfigurations().size(); i++) {
-		os << "\n" << spaces(indent) << uppercase(configuration.storeConfigurations()[i]->name) << " { ";
-		os << "# " << configuration.storeConfigurations()[i]->description << "\n";
-		storeConfiguration(os, *configuration.storeConfigurations()[i], indent + 2);
-		os << spaces(indent) << "}\n\n";
+		if (std::any_of(patterns.begin(), patterns.end(), [&] (const std::regex &regex) {
+			std::smatch sm;
+			std::regex_match(configuration.storeConfigurations()[i]->name, sm, regex);
+			return sm.size();
+		})) {
+
+			os << "\n" << spaces(indent) << uppercase(configuration.storeConfigurations()[i]->name) << " { ";
+			os << "# " << configuration.storeConfigurations()[i]->description << "\n";
+			std::vector<std::regex> all = { std::regex(".*") };
+			storeConfiguration(os, *configuration.storeConfigurations()[i], indent + 2, all);
+			os << spaces(indent) << "}\n\n";
+		}
 	}
 }
 
@@ -349,7 +371,7 @@ void Reader::print(const Configuration &configuration)
 	printConfiguration(configuration, 4);
 }
 
-void Reader::store(const Configuration &configuration)
+void Reader::store(const Configuration &configuration, const std::vector<std::string> &subConfigurations)
 {
 	std::ofstream os("espreso.ecf.default");
 
@@ -368,7 +390,10 @@ void Reader::store(const Configuration &configuration)
 	os << "|*****************************************************************************|\n";
 	os << "|-------------------------  INPUT/OUTPUT DEFINITION --------------------------|\n\n";
 
-	storeConfiguration(os, configuration, 0);
+	std::vector<std::regex> patterns;
+	std::for_each(subConfigurations.begin(), subConfigurations.end(), [&] (const std::string &s) { patterns.push_back(std::regex(s)); });
+
+	storeConfiguration(os, configuration, 0, patterns);
 	ESINFO(ALWAYS) << "configuration stored to 'espreso.ecf.default'";
 }
 

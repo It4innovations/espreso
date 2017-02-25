@@ -31,7 +31,7 @@ struct GlobalConfiguration: public Configuration {
 	GlobalConfiguration(int *argc, char ***argv) { Reader::read(*this, argc, argv); Reader::set(this->env); }
 
 	void print() { Reader::print(*this); }
-	void store() { Reader::store(*this); }
+	void store() { Reader::store(*this, { ".*" }); }
 
 	OPTION(INPUT, input, "test input", INPUT::GENERATOR, OPTIONS({
 			{ "WORKBENCH", INPUT::WORKBENCH, "Ansys Workbench input file" },

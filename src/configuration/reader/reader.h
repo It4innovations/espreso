@@ -20,7 +20,7 @@ public:
 	static void set(const Environment &env);
 
 	static void print(const Configuration &configuration);
-	static void store(const Configuration &configuration);
+	static void store(const Configuration &configuration, const std::vector<std::string> &subConfigurations);
 
 private:
 	static void _read(Configuration &configuration, const std::string &file, const std::vector<std::string> &args);
