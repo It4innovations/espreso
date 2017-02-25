@@ -15,6 +15,7 @@
 #include "physics/linearelasticity2d.h"
 #include "physics/linearelasticity3d.h"
 #include "physics/shallowwater2d.h"
+#include "reader/reader.h"
 
 namespace espreso {
 

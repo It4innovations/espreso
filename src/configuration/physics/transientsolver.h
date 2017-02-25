@@ -3,7 +3,7 @@
 #define SRC_CONFIGURATION_PHYSICS_TRANSIENTSOLVER_H_
 
 
-#include "../configuration.h"
+#include "../configuration.hpp"
 
 namespace espreso {
 

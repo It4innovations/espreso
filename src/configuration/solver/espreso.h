@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIGURATION_SOLVER_ESPRESO_H_
 #define SRC_CONFIGURATION_SOLVER_ESPRESO_H_
 
-#include "../configuration.h"
+#include "../configuration.hpp"
 #include "espresooptions.h"
 
 namespace espreso {

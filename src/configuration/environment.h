@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIGURATION_ENVIRONMENT_H_
 #define SRC_CONFIGURATION_ENVIRONMENT_H_
 
-#include "../configuration/configuration.h"
+#include "../configuration/configuration.hpp"
 
 namespace espreso {
 

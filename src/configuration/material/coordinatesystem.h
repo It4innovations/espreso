@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIGURATION_MATERIAL_COORDINATESYSTEM_H_
 #define SRC_CONFIGURATION_MATERIAL_COORDINATESYSTEM_H_
 
-#include "../configuration.h"
+#include "../configuration.hpp"
 
 namespace espreso {
 

@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIGURATION_INPUT_INPUTGENERATORELEMENTS_H_
 #define SRC_CONFIGURATION_INPUT_INPUTGENERATORELEMENTS_H_
 
-#include "../configuration.h"
+#include "../configuration.hpp"
 
 namespace espreso {
 

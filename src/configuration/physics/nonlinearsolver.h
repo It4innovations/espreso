@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIGURATION_PHYSICS_NONLINEARSOLVER_H_
 #define SRC_CONFIGURATION_PHYSICS_NONLINEARSOLVER_H_
 
-#include "../configuration.h"
+#include "../configuration.hpp"
 
 namespace espreso {
 

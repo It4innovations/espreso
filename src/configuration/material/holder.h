@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIGURATION_MATERIAL_HOLDER_H_
 #define SRC_CONFIGURATION_MATERIAL_HOLDER_H_
 
-#include "../configuration.h"
+#include "../configuration.hpp"
 #include "parameters.h"
 
 namespace espreso {

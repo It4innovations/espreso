@@ -7,7 +7,7 @@
 #include <regex>
 
 #include "../basis/logging/logging.h"
-#include "../configuration/globalconfiguration.h"
+#include "../configuration/environment.h"
 #include "tokenizer.h"
 
 using namespace espreso;
