@@ -57,7 +57,7 @@ struct GridConfiguration: public Configuration {
 
 	PARAMETER(bool, uniform_decomposition, "Grid is uniformly decomposed", true);
 
-	SUBMAP(size_t, bool, blocks, "List of grid blocks [<INDEX> <VALUE>]. Where value indicate if a block will be generated.", "<INDEX>", true);
+	SUBMAP(size_t, bool, blocks, "List of grid blocks [<INDEX> <VALUE>]. Where value indicate if a block will be generated.", 0, true);
 
 	SUBMAP(std::string, std::string, nodes, "List of nodes regions.", "<REGION_NAME>", "<INTERVAL / PATTERN[ALL]>");
 	SUBMAP(std::string, std::string, edges, "List of edges regions.", "<REGION_NAME>", "<INTERVAL / PATTERN[ALL]>");

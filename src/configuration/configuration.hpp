@@ -12,17 +12,21 @@
 #define OPTION(type, name, description, value, options)         type name = ParameterHolder::create<type>(#name, description, name, value, options, this)
 #define PARAMETER(type, name, description, value)               type name = ParameterHolder::create<type>(#name, description, name, value, #type, this)
 
+
 #define SUBCONFIG(type, name, description) \
 	type name = Configuration::create<type>(#name, description, this)
 
-#define SUBMAP(type1, type2, name, description, dparameter, dvalue) \
-	std::map<type1, type2> name = mapToBaseType<type1, type2>::create(#name, description, this)
+#define SUBMAPTOCONFIG(type1, type2, name, description) \
+	std::map<type1, type2*> name = mapToConfiguration<type1, type2>::create(#name, description, this)
+
+
+#define SUBMAP(type1, type2, name, description, parameter, value) \
+	std::map<type1, type2> name = mapToBaseType<type1, type2>::create(#name, description, parameter, value, #type1, #type2, this)
 
 #define SUBMAPTOMAP(type1, type2, type3, name, description) \
 	std::map<type1, std::map<type2, type3> > name = mapToMapToBaseType<type1, type2, type3>::create(#name, description, this)
 
-#define SUBMAPTOCONFIG(type1, type2, name, description) \
-	std::map<type1, type2*> name = mapToConfiguration<type1, type2>::create(#name, description, this)
+
 
 #define SUBMAPTOMAPTOCONFIG(type1, type2, type3, name, description) \
 	std::map<type1, std::map<type2, type3*> > name = mapToMapToConfiguration<type1, type2, type3>::create(#name, description, this)
@@ -263,9 +267,13 @@ struct mapToMapToConfiguration: public Configuration {
 template <typename Tparameter, typename Tvalue>
 struct mapToBaseType: public Configuration {
 	std::map<Tparameter, Tvalue> *map;
+	std::string dParameter;
 	std::vector<ParameterBase*> dummy;
 
-	static std::map<Tparameter, Tvalue> create(const std::string &name, const std::string &description, Configuration* conf)
+	static std::map<Tparameter, Tvalue> create(
+			const std::string &name, const std::string &description,
+			const Tparameter &parameter, const Tvalue &value,
+			const std::string &tParameter, const std::string &tValue, Configuration* conf)
 	{
 		std::map<Tparameter, Tvalue> configuration;
 		mapToBaseType<Tparameter, Tvalue> *subconf = new mapToBaseType<Tparameter, Tvalue>();
@@ -275,9 +283,12 @@ struct mapToBaseType: public Configuration {
 		subconf->map = &configuration;
 		subconf->name = name;
 		subconf->description = description;
-//		subconf->dummy.push_back(new mapToConfiguration<Tparameter, Tvalue>());
-//		subconf->dummy.back()->name = "DEFAULT";
-//		subconf->dummy.back()->description = "VALUE"; // TODO: improve
+		std::stringstream pss, vss;
+		pss << parameter;
+		vss << value;
+		subconf->dummy.push_back(new ValueHolder<std::string>(pss.str(), "Accepts list of parameters of the following type", subconf->dParameter, "NOT SET HERE", ""));
+		subconf->dParameter = vss.str();
+		subconf->dummy[0]->allowedValue = tParameter + " " + tValue;
 		return configuration;
 	}
 
