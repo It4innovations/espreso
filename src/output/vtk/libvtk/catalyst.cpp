@@ -1,9 +1,13 @@
 
+#include <unistd.h>
+
 #include "../catalyst.h"
 
 #include "../../../mesh/elements/element.h"
 #include "../../../mesh/structures/mesh.h"
 #include "../../../mesh/structures/coordinates.h"
+
+#include "../../../configuration/output.h"
 
 #include "vtkNew.h"
 #include "vtkUnstructuredGrid.h"
@@ -16,7 +20,7 @@
 using namespace espreso::store;
 
 Catalyst::Catalyst(const OutputConfiguration &output, const Mesh &mesh, const std::string &path)
-: VTK(output, mesh, path)
+: VTK(output, mesh, path), timeStep(0)
 {
 	processor = vtkCPProcessor::New();
 	dataDescription = vtkCPDataDescription::New();
@@ -24,11 +28,10 @@ Catalyst::Catalyst(const OutputConfiguration &output, const Mesh &mesh, const st
 	processor->Initialize();
 
 	vtkNew<vtkCPPythonScriptPipeline> pipeline;
-	pipeline->Initialize("plane.py");
+	pipeline->Initialize("src/output/vtk/catalyst.py");
 	processor->AddPipeline(pipeline.GetPointer());
 
 	dataDescription->AddInput("input");
-	dataDescription->SetTimeData(0, 0);
 	dataDescription->ForceOutputOn();
 }
 
@@ -43,8 +46,10 @@ void Catalyst::storeValues(const std::string &name, size_t dimension, const std:
 {
 	VTK::storeValues(name, dimension, values, eType);
 
+	dataDescription->SetTimeData(timeStep++, timeStep++);
 	dataDescription->GetInputDescriptionByName("input")->SetGrid(VTKGrid);
 	processor->CoProcess(dataDescription);
+	sleep(_output.sleep);
 }
 
 void Catalyst::finalize()

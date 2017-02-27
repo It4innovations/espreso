@@ -23,6 +23,7 @@ public:
 protected:
 	vtkCPProcessor *processor;
 	vtkCPDataDescription *dataDescription;
+	size_t timeStep;
 };
 
 }

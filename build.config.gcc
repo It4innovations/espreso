@@ -28,9 +28,6 @@ HYPRE::LIBPATH =    # PATH to Hypre library
 VTK::INCLUDE =    # Path to VTK headers
 VTK::LIBPATH =    # Path to VTK libraries
 
-PARAVIEW::INCLUDE =    # Path to Paraview headers
-PARAVIEW::LIBPATH =    # Path to Paraview libraries
-
 # Next lines are ignored if BUILD_TOOLS == 0
 METISLIB = metis		# Name of METIS library
 

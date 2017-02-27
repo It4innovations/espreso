@@ -31,6 +31,7 @@ struct OutputConfiguration: public Configuration {
 	PARAMETER(bool, gluing, "Save lagrange multipliers", false);
 
 	PARAMETER(bool, catalyst, "Allow live visualization", false);
+	PARAMETER(size_t, sleep, "Sleep interval between consecutive time step visialization", 0);
 
 	PARAMETER(double, domain_shrink_ratio, "All domains are shrunk by this ratio", .95);
 	PARAMETER(double, cluster_shrink_ratio  , "All clusters are shrunk by this ratio"  , .9);

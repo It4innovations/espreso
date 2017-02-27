@@ -35,7 +35,6 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		_instances.push_back(new Instance(mesh->parts(), mesh->neighbours()));
 		_physics.push_back(new ShallowWater2D(mesh, _instances.front(), configuration.shallow_water_2D));
 		_linearSolvers.push_back(new LinearSolver(_instances.front(), configuration.shallow_water_2D.espreso));
-		store = new store::VTK(configuration.output, *mesh, "results");
 
 		loadSteps.push_back(new Linear(mesh, _physics.front(),  _linearSolvers.front(), store));
 		meshPreprocessing();
