@@ -19,6 +19,9 @@
 #define SUBMAPTOCONFIG(type1, type2, name, description) \
 	std::map<type1, type2*> name = mapToConfiguration<type1, type2>::create(#name, description, this)
 
+#define SUBMAPTOMAPTOCONFIG(type1, type2, type3, name, description) \
+	std::map<type1, std::map<type2, type3*> > name = mapToMapToConfiguration<type1, type2, type3>::create(#name, description, this)
+
 
 #define SUBMAP(type1, type2, name, description, parameter, value) \
 	std::map<type1, type2> name = mapToBaseType<type1, type2>::create(#name, description, parameter, value, #type1, #type2, this)
@@ -27,9 +30,6 @@
 	std::map<type1, std::map<type2, type3> > name = mapToMapToBaseType<type1, type2, type3>::create(#name, description, this)
 
 
-
-#define SUBMAPTOMAPTOCONFIG(type1, type2, type3, name, description) \
-	std::map<type1, std::map<type2, type3*> > name = mapToMapToConfiguration<type1, type2, type3>::create(#name, description, this)
 
 namespace espreso {
 
@@ -284,11 +284,20 @@ struct mapToBaseType: public Configuration {
 		subconf->name = name;
 		subconf->description = description;
 		std::stringstream pss, vss;
-		pss << parameter;
+		pss << "#" << parameter;
 		vss << value;
 		subconf->dummy.push_back(new ValueHolder<std::string>(pss.str(), "Accepts list of parameters of the following type", subconf->dParameter, "NOT SET HERE", ""));
 		subconf->dParameter = vss.str();
-		subconf->dummy[0]->allowedValue = tParameter + " " + tValue;
+		if (StringCompare::caseSensitiveEq(tParameter, "std::string")) {
+			subconf->dummy[0]->allowedValue = "* ";
+		} else {
+			subconf->dummy[0]->allowedValue = tParameter + " ";
+		}
+		if (StringCompare::caseSensitiveEq(tValue, "std::string")) {
+			subconf->dummy[0]->allowedValue += "*";
+		} else {
+			subconf->dummy[0]->allowedValue += tValue;
+		}
 		return configuration;
 	}
 
