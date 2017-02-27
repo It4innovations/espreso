@@ -1,4 +1,7 @@
 
+#include <cstring>
+#include <fstream>
+
 #include "prisma6.h"
 #include "../line/line2.h"
 #include "../plane/triangle3.h"

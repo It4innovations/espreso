@@ -2,6 +2,8 @@
 #include <signal.h>
 #include <csignal>
 
+#include "mpi.h"
+
 #include "../configuration/globalconfiguration.h"
 #include "factory/factory.h"
 

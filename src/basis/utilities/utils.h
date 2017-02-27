@@ -3,7 +3,8 @@
 #define BASIS_UTILITIES_UTILS_H_
 
 #include <stdlib.h>
-#include "../logging/logging.h"
+#include <vector>
+#include <string>
 
 namespace espreso {
 

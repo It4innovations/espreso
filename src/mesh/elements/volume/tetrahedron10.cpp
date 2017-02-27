@@ -1,4 +1,7 @@
 
+#include <cstring>
+#include <fstream>
+
 #include "tetrahedron10.h"
 #include "../line/line3.h"
 #include "../plane/triangle6.h"

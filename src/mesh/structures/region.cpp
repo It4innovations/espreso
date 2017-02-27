@@ -1,4 +1,6 @@
 
+#include "mpi.h"
+
 #include "region.h"
 #include "../elements/element.h"
 #include "../structures/coordinates.h"

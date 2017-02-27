@@ -1,11 +1,7 @@
-/*
- * Boundary.cpp
- *
- *  Created on: Dec 4, 2016
- *      Author: beh01
- */
 
 #include "boundary.h"
+
+#include <algorithm>
 
 #include "../../../basis/utilities/utils.h"
 

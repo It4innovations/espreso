@@ -2,6 +2,7 @@
 #define ELEMENT_H_
 
 #include <vector>
+#include <algorithm>
 
 #include "../../basis/logging/logging.h"
 

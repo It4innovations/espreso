@@ -2,14 +2,8 @@
 #ifndef BASIS_LOGGING_TIMEEVAL_H_
 #define BASIS_LOGGING_TIMEEVAL_H_
 
-#include "mpi.h"
-#include "omp.h"
-#include <iostream>
-#include <cmath>
+#include <string>
 #include <vector>
-#include <iomanip>
-
-#include "logging.h"
 
 namespace espreso {
 
@@ -19,10 +13,7 @@ struct TimeEvent
 
 	TimeEvent(std::string name);
 
-	static double time()
-	{
-		return omp_get_wtime();
-	}
+	static double time();
 
 	void start();
 	void startWithBarrier();

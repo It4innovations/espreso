@@ -7,7 +7,7 @@
 #include "../../configuration/globalconfiguration.h"
 #include "../../input/api/api.h"
 
-espreso::Environment espreso::DataHolder::environment;
+espreso::Environment* espreso::DataHolder::environment;
 std::list<FETI4IStructMatrix*> espreso::DataHolder::matrices;
 std::list<FETI4IStructInstance*> espreso::DataHolder::instances;
 espreso::TimeEval espreso::DataHolder::timeStatistics("API total time");
@@ -46,7 +46,7 @@ void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 		options[FETI4I_TESTING_LEVEL] = environment->testing_level;
 		options[FETI4I_MEASURE_LEVEL] = environment->measure_level;
 		options[FETI4I_PRINT_MATRICES] = environment->print_matrices;
-		environment = &DataHolder::environment;
+		environment = DataHolder::environment;
 	} else {
 		ESPRESOInput input;
 		ESPRESOSolver solver;
@@ -72,7 +72,7 @@ void FETI4ISetDefaultRealOptions(FETI4IReal* options)
 		espreso::GlobalConfiguration configuration("espreso.ecf");
 
 		options[FETI4I_EPSILON] = configuration.linear_elasticity_3D.espreso.epsilon;
-		environment = &DataHolder::environment;
+		environment = DataHolder::environment;
 	} else {
 		ESPRESOSolver solver;
 

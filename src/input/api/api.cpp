@@ -1,4 +1,6 @@
 
+#include "mpi.h"
+
 #include "api.h"
 #include "../../mesh/settings/evaluator.h"
 

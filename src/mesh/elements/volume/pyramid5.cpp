@@ -1,4 +1,7 @@
 
+#include <cstring>
+#include <fstream>
+
 #include "pyramid5.h"
 #include "../line/line2.h"
 #include "../plane/triangle3.h"

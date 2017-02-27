@@ -1,4 +1,6 @@
 
+#include <fstream>
+
 #include "../espreso/espresobinaryformat.h"
 
 #include "../../configuration/environment.h"

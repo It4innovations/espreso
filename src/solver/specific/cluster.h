@@ -28,6 +28,7 @@
 #include "../generic/Domain.h"
 #include "densesolvers.h"
 
+#include "../../basis/logging/timeeval.h"
 #include "../generic/utils.h"
 //#include "../../assembler/physics/assembler.h"
 

@@ -4,10 +4,12 @@
 
 #include <iostream>
 #include <list>
+#include <vector>
 
-#include "../../configuration/environment.h"
+#include "../../basis/logging/timeeval.h"
 
 namespace espreso {
+struct Environment;
 class OldInstance;
 class APIMesh;
 class ESPRESOSolver;
@@ -37,7 +39,7 @@ struct FETI4IStructInstance {
 namespace espreso {
 
 struct DataHolder {
-	static Environment environment;
+	static Environment *environment;
 	static std::list<FETI4IStructMatrix*> matrices;
 	static std::list<FETI4IStructInstance*> instances;
 	static TimeEval timeStatistics;

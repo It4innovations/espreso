@@ -1,4 +1,6 @@
 
+#include <cstring>
+
 #include "unknownvolume.h"
 #include "../plane/unknownplane.h"
 #include "../../../basis/utilities/utils.h"

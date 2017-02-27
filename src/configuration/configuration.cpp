@@ -3,6 +3,8 @@
 
 #include "../basis/logging/logging.h"
 
+#include <algorithm>
+
 using namespace espreso;
 
 ParameterBase::ParameterBase(const std::string &name, const std::string &description, const std::string &allowedValue)

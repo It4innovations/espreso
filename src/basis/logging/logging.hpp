@@ -1,4 +1,6 @@
 
+#include "mpi.h"
+
 #include "logging.h"
 
 namespace espreso {

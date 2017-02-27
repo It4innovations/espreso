@@ -10,6 +10,8 @@
 #include "../mesh/structures/region.h"
 #include "../mesh/settings/evaluator.h"
 
+#include "../basis/logging/timeeval.h"
+#include "../basis/logging/logging.hpp"
 #include "../basis/utilities/utils.h"
 #include "../configuration/globalconfiguration.h"
 #include "espreso/espresobinaryformat.h"

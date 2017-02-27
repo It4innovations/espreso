@@ -1,4 +1,11 @@
 
+#include "omp.h"
+
+#include <sys/sysinfo.h>
+#include <execinfo.h>
+#include <iostream>
+#include <fstream>
+
 #include "logging.h"
 
 #include "../../configuration/environment.h"
@@ -121,6 +128,10 @@ Info::~Info()
 	fflush(stdout);
 }
 
+double Measure::time()
+{
+	return omp_get_wtime();
+}
 
 Measure::~Measure()
 {

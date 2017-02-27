@@ -1,4 +1,6 @@
 
+#include <fstream>
+
 #include "element.h"
 #include "../structures/region.h"
 #include "../structures/coordinates.h"

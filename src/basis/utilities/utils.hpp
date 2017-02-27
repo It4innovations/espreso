@@ -1,4 +1,7 @@
 
+#include "../logging/logging.h"
+#include <cmath>
+
 #include "utils.h"
 
 namespace espreso {

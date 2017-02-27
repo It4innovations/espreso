@@ -1,4 +1,6 @@
 
+#include "mpi.h"
+
 #include "communication.h"
 #include "../../configuration/environment.h"
 

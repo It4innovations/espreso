@@ -1,4 +1,6 @@
 
+#include <fstream>
+
 #include "../../mesh/elements/line/line2.h"
 #include "../../mesh/elements/line/line3.h"
 

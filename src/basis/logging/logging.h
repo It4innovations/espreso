@@ -2,18 +2,9 @@
 #ifndef BASIS_LOGGING_LOGGING_H_
 #define BASIS_LOGGING_LOGGING_H_
 
-#include <cstdlib>
 #include <string>
 #include <sstream>
-#include <iostream>
-#include <fstream>
 #include <vector>
-#include <algorithm>
-#include <sys/sysinfo.h>
-#include <execinfo.h>
-#include <cstring>
-
-#include "timeeval.h"
 
 #define ESTEST(EVENT) if (!espreso::Test::report(EVENT))    ; else espreso::Test(EVENT).get()
 #define ESINFO(EVENT) if (!espreso::Info::report(EVENT))    ; else espreso::Info(EVENT).get()
@@ -200,10 +191,7 @@ struct Checkpoint;
 class Measure
 {
 public:
-	static double time()
-	{
-		return omp_get_wtime();
-	}
+	static double time();
 
 	Measure(MeasureEvent event): event(event) {};
 	~Measure();
@@ -248,8 +236,6 @@ public:
 	static int rank;
 };
 }
-
-#include "logging.hpp"
 
 
 #endif /* BASIS_LOGGING_LOGGING_H_ */

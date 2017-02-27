@@ -1,7 +1,14 @@
 
 #include "timeeval.h"
 
+#include <iomanip>
+#include <cmath>
+
+#include "mpi.h"
+#include "omp.h"
+
 #include "../../configuration/environment.h"
+#include "logging.h"
 
 using namespace espreso;
 
@@ -28,6 +35,11 @@ void TimeEvent::reset() {
 	g_maxTime = 0.0;
 	g_stdDev  = 0.0;
 	g_sumTime = 0.0;
+}
+
+double TimeEvent::time()
+{
+	return omp_get_wtime();
 }
 
 void TimeEvent::start(double time) {

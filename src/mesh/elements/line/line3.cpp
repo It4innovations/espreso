@@ -1,4 +1,7 @@
 
+#include <cstring>
+#include <fstream>
+
 #include "line3.h"
 #include "../../../basis/matrices/denseMatrix.h"
 

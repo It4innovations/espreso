@@ -1,4 +1,7 @@
 
+#include <cstring>
+#include <fstream>
+
 #include "hexahedron20.h"
 #include "../line/line3.h"
 #include "../plane/square8.h"
