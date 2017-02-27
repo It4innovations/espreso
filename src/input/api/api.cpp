@@ -14,6 +14,7 @@
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
 
+#include "../../basis/logging/logging.hpp"
 #include "../../basis/utilities/utils.h"
 #include "../../configuration/environment.h"
 #include "../../configuration/input/input.h"

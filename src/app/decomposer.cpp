@@ -6,6 +6,7 @@
 #include "../mesh/structures/coordinates.h"
 #include "factory/factory.h"
 #include "../output/espreso/espresobinaryformat.h"
+#include "../basis/logging/logging.hpp"
 
 using namespace espreso;
 
