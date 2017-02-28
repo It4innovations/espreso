@@ -167,6 +167,16 @@ void IterSolverBase::Solve_non_singular ( Cluster & cluster,
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown CG solver";
 	}
+
+	 postproc_timing.totalTime.start();
+
+	 TimeEvent timeGetSol(string("Solver - Get Primal Solution"));
+	 timeGetSol.start();
+	GetSolution_Primal_singular_parallel( cluster, in_right_hand_side_primal, out_primal_solution_parallel, out_dual_solution_parallel );
+	 timeGetSol.endWithBarrier();
+	 postproc_timing.addEvent(timeGetSol);
+
+	 postproc_timing.totalTime.endWithBarrier();
 }
 
 
@@ -3466,10 +3476,9 @@ void IterSolverBase::Solve_RegCG_nonsingular  ( Cluster & cluster,
 										    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 										    SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel) {
 
-	size_t dl_size = cluster.my_lamdas_indices.size();
+	eslocal dl_size = cluster.my_lamdas_indices.size();
 
-	SEQ_VECTOR <double> x_l  (dl_size, 0);
-	SEQ_VECTOR <double> b_l  (dl_size, 0);
+	SEQ_VECTOR <double> x_l (dl_size, 0);
 
 	SEQ_VECTOR <double> Ax_l (dl_size, 0);
 	SEQ_VECTOR <double> Ap_l (dl_size, 0);
@@ -3483,62 +3492,74 @@ void IterSolverBase::Solve_RegCG_nonsingular  ( Cluster & cluster,
 	SEQ_VECTOR <double> z_l  (dl_size, 0);
 	SEQ_VECTOR <double> p_l  (dl_size, 0);
 
-	SEQ_VECTOR <double> s_l  (dl_size, 0);
-	SEQ_VECTOR <double> q_l  (dl_size, 0);
-	SEQ_VECTOR <double> m_l  (dl_size, 0);
-	SEQ_VECTOR <double> n_l  (dl_size, 0);
-
 	SEQ_VECTOR <double> u_l  (dl_size, 0);
 
+	SEQ_VECTOR <double> b_l  (dl_size, 0);
+
 	double beta_l  = 0;
-
 	double alpha_l = 0;
-
 	double norm_l;
 	double tol;
 
+	cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );
+	cluster.CreateVec_d_perCluster ( in_right_hand_side_primal );
 
-    // *** CG iteration loop ******************************************************************
-	// *** - input to CG - vec_b - right hand side in primal
+	// *** CG start ***************************************************************
+
+	// t1 = Uc\(Lc\d);
+	// x = Ct * t1;
+
+	x_l;// = cluster.vec_d;
+
+	//double x_norm_l = parallel_norm_compressed(cluster, cluster.vec_d);
+	//printf (       "Test probe 1: norm = %1.30f \n", x_norm_l );
+	//x_norm_l = parallel_norm_compressed(cluster, x_l);
+	//printf (       "Test probe 1: norm = %1.30f \n", x_norm_l );
+
+	// *** Combine vectors b from all clusters ************************************
+	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
+
+	// *** Ax = apply_A(CLUSTER,Bt,x); ********************************************
+	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
+
+	// *** up0 pro ukoncovani v primaru
+	////cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
+	////	cluster.domains[d].BtLambda_i = cluster.x_prim_cluster2[d];
+	////	//cluster.domains[d].BtLambda_i.resize(cluster.domains[d].up0.size(), 0);
+	////	cluster.domains[d].norm_f = 0.0;
+	////	for (eslocal i = 0; i < cluster.domains[d].up0.size(); i++ ) {
+	////		cluster.domains[d].up0[i]     = cluster.domains[d].up0[i] - cluster.x_prim_cluster1[d][i];  // (K+ * f) - (K+ * Bt * lambda)
+	////
+	////		cluster.domains[d].norm_f += cluster.domains[d].f[i] * cluster.domains[d].f[i];
+	////	}
+	////}
+
+	// Get norm of f (right hand side)
+	double norm_prim_fl = 0.0;
+	double norm_prim_fg = 0.0;
+	for (size_t d = 0; d < cluster.domains.size(); d++)
+		norm_prim_fl += cluster.domains[d].norm_f;
+
+	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	//MPI_Reduce   (&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	norm_prim_fg = sqrt(norm_prim_fg);
 
 
-//	cluster.domains[0].B1_comp.MatVec(cluster.x_prim_cluster1[0], cluster.compressed_tmp, 'N', 0, 0, 0.0);
-//	for (eslocal d = 1; d < cluster.domains.size(); d++) {
-//		cluster.domains[d].multKplusLocal(in_right_hand_side_primal[d],  cluster.x_prim_cluster1[0]);
-//		cluster.domains[d].B1_comp.MatVec(cluster.x_prim_cluster1[0], cluster.compressed_tmp, 'N', 0, 0, 1.0);
-//	}
-//	All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, b_l);
 
-	//// *** convert right hand side to dual
-	std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
-	SEQ_VECTOR < double > y_out_tmp;
-	for (size_t d = 0; d < cluster.domains.size(); d++) {
-		// *** convert right hand side to dual
-		cluster.domains[d].multKplusLocal(in_right_hand_side_primal[d],  cluster.x_prim_cluster1[d]);
-
-		y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
-		cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster1[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
-
-		for (size_t i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-			cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
-	}
-	All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, b_l);
-
-
-
-	eslocal iter = 0;
-	timing.totalTime.reset();
-
-	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);
-
+	// *** r = b - Ax *************************************************************
 	#pragma omp parallel for
-for (size_t i = 0; i < r_l.size(); i++) {	// r = b - Ax;
+	for (size_t i = 0; i < r_l.size(); i++)
 		r_l[i] = b_l[i] - Ax_l[i];
-		wp_l[i] = 0.0;
-		yp_l[i] = 0.0;
-	}
 
-	tol = epsilon * parallel_norm_compressed(cluster, b_l);
+//	if (USE_GGtINV == 1) {
+//		Projector_l_inv_compG( timeEvalProj, cluster, r_l, u_l , 0);
+//	} else {
+//		Projector_l_compG    ( timeEvalProj, cluster, r_l, u_l , 0);
+//	}
+	u_l = r_l;
+
+	// *** Calculate the stop condition *******************************************
+	tol = epsilon * parallel_norm_compressed(cluster, u_l);
 
 	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
@@ -3554,11 +3575,14 @@ for (size_t i = 0; i < r_l.size(); i++) {	// r = b - Ax;
 
 	ESINFO(CONVERGENCE)
 		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
 		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "tol" << spaces(precision / 2)
+		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
 		<< spaces(indent.size()) << "time[s]";
 
-	for ( iter = 0; iter < 1000; iter++) {
+	// *** Start the CG iteration loop ********************************************
+	for (int iter = 0; iter < CG_max_iter; iter++) {
+
 		timing.totalTime.start();
 
 		#pragma omp parallel for
@@ -3573,96 +3597,380 @@ for (size_t i = 0; i < r_l.size(); i++) {
 		case ESPRESO_PRECONDITIONER::DIRICHLET:
 		case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
 		case ESPRESO_PRECONDITIONER::MAGIC:
-			#pragma omp parallel for
-			for (size_t i = 0; i < w_l.size(); i++) {
-				w_l[i] = r_l[i];
-			}
-			apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, y_l);
+			proj1_time.start();
+//			if (USE_GGtINV == 1) {
+//				Projector_l_inv_compG( timeEvalProj, cluster, r_l, w_l, 0 );
+//			} else {
+//				Projector_l_compG		  ( timeEvalProj, cluster, r_l, w_l, 0 );
+//			}
+			w_l = r_l;
+			proj1_time.end();
+
+			// Scale
+			prec_time.start();
+			apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, z_l);
+			prec_time.end();
+			// Re-Scale
+
+			proj2_time.start();
+//			if (USE_GGtINV == 1) {
+//				Projector_l_inv_compG( timeEvalProj, cluster, z_l, y_l, 0 );
+//			} else {
+//				Projector_l_compG		  ( timeEvalProj, cluster, z_l, y_l, 0 );
+//			}
+			y_l = z_l;
+			proj2_time.end();
 			break;
 		case ESPRESO_PRECONDITIONER::NONE:
+			proj_time.start();
+//			if (USE_GGtINV == 1) {
+//				Projector_l_inv_compG( timeEvalProj, cluster, r_l, w_l, 0 );
+//			} else {
+//				Projector_l_compG		  ( timeEvalProj, cluster, r_l, w_l, 0 );
+//			}
+			w_l = r_l;
+			proj_time.end();
+
 			#pragma omp parallel for
-			for (size_t i = 0; i < w_l.size(); i++) {
-				w_l[i] = r_l[i];
-			}
-			#pragma omp parallel for
-			for (size_t i = 0; i < w_l.size(); i++) {
+for (size_t i = 0; i < w_l.size(); i++)
 				y_l[i] = w_l[i];
-			}
+
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
 		}
 
 
+		//------------------------------------------
 		if (iter == 0) {									// if outputs.n_it==1;
+
 			#pragma omp parallel for
-			for (size_t i = 0; i < y_l.size(); i++) {
+for (size_t i = 0; i < y_l.size(); i++)
 				p_l[i] = y_l[i];							// p = y;
-			}
+
 		} else {
+
 			ddot_beta.start();
 			beta_l =          parallel_ddot_compressed(cluster, y_l, w_l);
 			beta_l = beta_l / parallel_ddot_compressed(cluster, yp_l, wp_l);
 			ddot_beta.end();
 
 			#pragma omp parallel for
-			for (size_t i = 0; i < p_l.size(); i++) {
+for (size_t i = 0; i < p_l.size(); i++)
 				p_l[i] = y_l[i] + beta_l * p_l[i];			// p = y + beta * p;
-			}
+
 		}
 
-		apply_A_l_comp_dom_B(timeEvalAppa, cluster, p_l, Ap_l);
 
 
+		//------------------------------------------
+		 appA_time.start();
+		apply_A_l_comp_dom_B(timeEvalAppa, cluster, p_l, Ap_l); // apply_A_l_compB(timeEvalAppa, cluster, p_l, Ap_l);
+		 appA_time.end();
 
+		//------------------------------------------
+		 ddot_alpha.start();
 		alpha_l =           parallel_ddot_compressed(cluster, y_l, w_l);
 		alpha_l = alpha_l / parallel_ddot_compressed(cluster, p_l, Ap_l);
+		 ddot_alpha.end();
 
+		//-----------------------------------------
+		// *** up0 pro ukoncovani v primaru
+
+		//// //cilk_
+		////for (eslocal d = 0; d < cluster.domains.size(); d++) {
+		////	for (eslocal i = 0; i < cluster.domains[d].up0.size(); i++ ) {
+		////		cluster.domains[d].up0[i]        -= alpha_l * cluster.x_prim_cluster1[d][i];
+		////		cluster.domains[d].BtLambda_i[i] += alpha_l * cluster.x_prim_cluster2[d][i];
+		////	}
+		////	cluster.domains[d].norm_vec.resize(cluster.domains[d].up0.size());
+		////	cluster.domains[d].K.MatVec(cluster.domains[d].up0, cluster.domains[d].norm_vec, 'N');
+		////	cluster.domains[d].norm_c = 0.0;
+		////	for (eslocal i = 0; i < cluster.domains[d].up0.size(); i++ ) {
+		////		cluster.domains[d].norm_vec[i] = cluster.domains[d].norm_vec[i]
+		////			                           + cluster.domains[d].BtLambda_i[i]
+		////									   - cluster.domains[d].f[i];
+		////
+		////		cluster.domains[d].norm_c += cluster.domains[d].norm_vec[i] * cluster.domains[d].norm_vec[i];
+		////	}
+		////}
+
+		//double norm_prim_l = 0.0;
+		//double norm_prim_g = 0.0;
+		//for (eslocal d = 0; d < cluster.domains.size(); d++)
+		//	norm_prim_l += cluster.domains[d].norm_c;
+
+		//MPI_Allreduce(&norm_prim_l, &norm_prim_g, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		////MPI_Reduce(&norm_prim_l, &norm_prim_g, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		//norm_prim_g = sqrt(norm_prim_g);
+
+
+
+
+
+		//------------------------------------------
 		#pragma omp parallel for
-		for (size_t i = 0; i < x_l.size(); i++) {
+for (size_t i = 0; i < x_l.size(); i++) {
 			x_l[i] = x_l[i] + alpha_l * p_l[i];
 			r_l[i] = r_l[i] - alpha_l * Ap_l[i];
 		}
 
-		timing.totalTime.end();
+		 norm_time.start();
+		norm_l = parallel_norm_compressed(cluster, w_l);
+		 norm_time.end();
 
-		norm_l = parallel_norm_compressed(cluster, r_l);
+		 timing.totalTime.end();
 
 		ESINFO(CONVERGENCE)
 			<< indent << std::setw(iterationWidth) << iter + 1
+			<< indent << std::fixed << std::setprecision(precision) <<  norm_l / tol * epsilon
 			<< indent << std::scientific << std::setprecision(3) << norm_l
-			<< indent << tol
+			<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
 			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
-
+		// *** Stop condition ******************************************************************
 		if (norm_l < tol)
 			break;
 
-	} // end iter loop
+	} // end of CG iterations
 
-	 TimeEvent timeGetSol(string("Solver - Get Primal Solution"));
-	 timeGetSol.start();
 
-	// reconstruction of u
-	#pragma omp parallel for
-for (size_t d = 0; d < cluster.domains.size(); d++) {
-		SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
+	// *** save solution - in dual and amplitudes *********************************************
+	dual_soultion_compressed_parallel   = x_l;
+	dual_residuum_compressed_parallel   = r_l;
 
-		for (size_t i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-			x_in_tmp[i] = x_l[ cluster.domains[d].lambda_map_sub_local[i]];
+//	if (USE_GGtINV == 1) {
+//		Projector_l_inv_compG ( timeEvalProj, cluster, r_l, amplitudes, 2 );
+//	} else {
+//		Projector_l_compG	  ( timeEvalProj, cluster, r_l, amplitudes, 2 );
+//	}
+	amplitudes.clear();
+	amplitudes.resize(r_l.size());
+	// *** end - save solution - in dual and amplitudes ***************************************
 
-		cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
 
-		for(size_t i = 0; i < in_right_hand_side_primal[d].size(); i++)
-			out_primal_solution_parallel[d][i] = in_right_hand_side_primal[d][i] - cluster.x_prim_cluster1[d][i];
+	// *** Preslocal out the timing for the iteration loop ***************************************
 
-		cluster.domains[d].multKplusLocal(out_primal_solution_parallel[d]);
-
+	switch (USE_PREC) {
+	case ESPRESO_PRECONDITIONER::LUMPED:
+	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+	case ESPRESO_PRECONDITIONER::DIRICHLET:
+	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+	case ESPRESO_PRECONDITIONER::MAGIC:
+		timing.addEvent(proj1_time);
+		timing.addEvent(prec_time );
+		timing.addEvent(proj2_time);
+		break;
+	case ESPRESO_PRECONDITIONER::NONE:
+		timing.addEvent(proj_time);
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
 	}
 
-	 timeGetSol.endWithBarrier();
-	 timing.addEvent(timeGetSol);
+	timing.addEvent(appA_time );
+	timing.addEvent(ddot_beta);
+	timing.addEvent(ddot_alpha);
 
+	// *** END - Preslocal out the timing for the iteration loop ***********************************
+
+//	size_t dl_size = cluster.my_lamdas_indices.size();
+//
+//	SEQ_VECTOR <double> x_l  (dl_size, 0);
+//	SEQ_VECTOR <double> b_l  (dl_size, 0);
+//
+//	SEQ_VECTOR <double> Ax_l (dl_size, 0);
+//	SEQ_VECTOR <double> Ap_l (dl_size, 0);
+//	SEQ_VECTOR <double> r_l  (dl_size, 0);
+//
+//	SEQ_VECTOR <double> w_l  (dl_size, 0);
+//	SEQ_VECTOR <double> wp_l (dl_size, 0);
+//
+//	SEQ_VECTOR <double> y_l  (dl_size, 0);
+//	SEQ_VECTOR <double> yp_l (dl_size, 0);
+//	SEQ_VECTOR <double> z_l  (dl_size, 0);
+//	SEQ_VECTOR <double> p_l  (dl_size, 0);
+//
+//	SEQ_VECTOR <double> s_l  (dl_size, 0);
+//	SEQ_VECTOR <double> q_l  (dl_size, 0);
+//	SEQ_VECTOR <double> m_l  (dl_size, 0);
+//	SEQ_VECTOR <double> n_l  (dl_size, 0);
+//
+//	SEQ_VECTOR <double> u_l  (dl_size, 0);
+//
+//	double beta_l  = 0;
+//
+//	double alpha_l = 0;
+//
+//	double norm_l;
+//	double tol;
+//
+//
+//    // *** CG iteration loop ******************************************************************
+//	// *** - input to CG - vec_b - right hand side in primal
+//
+//
+////	cluster.domains[0].B1_comp.MatVec(cluster.x_prim_cluster1[0], cluster.compressed_tmp, 'N', 0, 0, 0.0);
+////	for (eslocal d = 1; d < cluster.domains.size(); d++) {
+////		cluster.domains[d].multKplusLocal(in_right_hand_side_primal[d],  cluster.x_prim_cluster1[0]);
+////		cluster.domains[d].B1_comp.MatVec(cluster.x_prim_cluster1[0], cluster.compressed_tmp, 'N', 0, 0, 1.0);
+////	}
+////	All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, b_l);
+//
+//	//// *** convert right hand side to dual
+//	std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
+//	SEQ_VECTOR < double > y_out_tmp;
+//	for (size_t d = 0; d < cluster.domains.size(); d++) {
+//		// *** convert right hand side to dual
+//		cluster.domains[d].multKplusLocal(in_right_hand_side_primal[d],  cluster.x_prim_cluster1[d]);
+//
+//		y_out_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
+//		cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster1[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+//
+//		for (size_t i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+//			cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
+//	}
+//	All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, b_l);
+//
+//
+//
+//	eslocal iter = 0;
+//	timing.totalTime.reset();
+//
+//	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);
+//
+//	#pragma omp parallel for
+//for (size_t i = 0; i < r_l.size(); i++) {	// r = b - Ax;
+//		r_l[i] = b_l[i] - Ax_l[i];
+//		wp_l[i] = 0.0;
+//		yp_l[i] = 0.0;
+//	}
+//
+//	tol = epsilon * parallel_norm_compressed(cluster, b_l);
+//
+//	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+//	int iterationWidth = ceil(log(CG_max_iter) / log(10));
+//	std::string indent = "   ";
+//
+//	auto spaces = [] (int count) {
+//		std::stringstream ss;
+//		for (int i = 0; i < count; i++) {
+//			ss << " ";
+//		}
+//		return ss.str();
+//	};
+//
+//	ESINFO(CONVERGENCE)
+//		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+//		<< spaces(indent.size() + 4) << "r" << spaces(4)
+//		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "tol" << spaces(precision / 2)
+//		<< spaces(indent.size()) << "time[s]";
+//
+//	for ( iter = 0; iter < configuration.iterations; iter++) {
+//		timing.totalTime.start();
+//
+//		#pragma omp parallel for
+//for (size_t i = 0; i < r_l.size(); i++) {
+//			wp_l[i] = w_l[i];				//	wp = w;
+//			yp_l[i] = y_l[i];				//	yp = y
+//		}
+//
+//		switch (USE_PREC) {
+//		case ESPRESO_PRECONDITIONER::LUMPED:
+//		case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+//		case ESPRESO_PRECONDITIONER::DIRICHLET:
+//		case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+//		case ESPRESO_PRECONDITIONER::MAGIC:
+//			#pragma omp parallel for
+//			for (size_t i = 0; i < w_l.size(); i++) {
+//				w_l[i] = r_l[i];
+//			}
+//			apply_prec_comp_dom_B(timeEvalPrec, cluster, w_l, y_l);
+//			break;
+//		case ESPRESO_PRECONDITIONER::NONE:
+//			#pragma omp parallel for
+//			for (size_t i = 0; i < w_l.size(); i++) {
+//				w_l[i] = r_l[i];
+//			}
+//			#pragma omp parallel for
+//			for (size_t i = 0; i < w_l.size(); i++) {
+//				y_l[i] = w_l[i];
+//			}
+//			break;
+//		default:
+//			ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+//		}
+//
+//
+//		if (iter == 0) {									// if outputs.n_it==1;
+//			#pragma omp parallel for
+//			for (size_t i = 0; i < y_l.size(); i++) {
+//				p_l[i] = y_l[i];							// p = y;
+//			}
+//		} else {
+//			ddot_beta.start();
+//			beta_l =          parallel_ddot_compressed(cluster, y_l, w_l);
+//			beta_l = beta_l / parallel_ddot_compressed(cluster, yp_l, wp_l);
+//			ddot_beta.end();
+//
+//			#pragma omp parallel for
+//			for (size_t i = 0; i < p_l.size(); i++) {
+//				p_l[i] = y_l[i] + beta_l * p_l[i];			// p = y + beta * p;
+//			}
+//		}
+//
+//		apply_A_l_comp_dom_B(timeEvalAppa, cluster, p_l, Ap_l);
+//
+//
+//
+//		alpha_l =           parallel_ddot_compressed(cluster, y_l, w_l);
+//		alpha_l = alpha_l / parallel_ddot_compressed(cluster, p_l, Ap_l);
+//
+//		#pragma omp parallel for
+//		for (size_t i = 0; i < x_l.size(); i++) {
+//			x_l[i] = x_l[i] + alpha_l * p_l[i];
+//			r_l[i] = r_l[i] - alpha_l * Ap_l[i];
+//		}
+//
+//		timing.totalTime.end();
+//
+//		norm_l = parallel_norm_compressed(cluster, r_l);
+//
+//		ESINFO(CONVERGENCE)
+//			<< indent << std::setw(iterationWidth) << iter + 1
+//			<< indent << std::scientific << std::setprecision(3) << norm_l
+//			<< indent << tol
+//			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
+//
+//
+//		if (norm_l < tol)
+//			break;
+//
+//	} // end iter loop
+//
+//	 TimeEvent timeGetSol(string("Solver - Get Primal Solution"));
+//	 timeGetSol.start();
+//
+//	// reconstruction of u
+//	#pragma omp parallel for
+//for (size_t d = 0; d < cluster.domains.size(); d++) {
+//		SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
+//
+//		for (size_t i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+//			x_in_tmp[i] = x_l[ cluster.domains[d].lambda_map_sub_local[i]];
+//
+//		cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
+//
+//		for(size_t i = 0; i < in_right_hand_side_primal[d].size(); i++)
+//			out_primal_solution_parallel[d][i] = in_right_hand_side_primal[d][i] - cluster.x_prim_cluster1[d][i];
+//
+//		cluster.domains[d].multKplusLocal(out_primal_solution_parallel[d]);
+//
+//	}
+//
+//	 timeGetSol.endWithBarrier();
+//	 timing.addEvent(timeGetSol);
+//
 
 }
 
