@@ -42,6 +42,7 @@ void Physics::updateMatrix(const Step &step, Matrices matrix, const std::vector<
 		case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		case MatrixType::REAL_SYMMETRIC_INDEFINITE:
 			_instance->K[d].RemoveLower();
+			_instance->M[d].RemoveLower();
 			break;
 		case MatrixType::REAL_UNSYMMETRIC:
 			break;
@@ -111,7 +112,7 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, c
 	if (matrices & Matrices::M) {
 		SparseCSRMatrix<eslocal> csrM = _M;
 		_instance->M[domain] = csrM;
-		// _instance->M[domain].mtype = getMatrixType(step, domain);
+		_instance->M[domain].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 	}
 
 }
