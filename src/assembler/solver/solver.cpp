@@ -120,7 +120,7 @@ void Solver::updateMatrices(const Step &step, Matrices matrices, const std::vect
 		storeData(step, physics->instance()->K, "K", "stiffness matrices K");
 	}
 	if (matrices & Matrices::M) {
-		storeData(step, physics->instance()->M, "M", "mass matrices K");
+		storeData(step, physics->instance()->M, "M", "mass matrices M");
 	}
 	if (matrices & Matrices::R) {
 		storeData(step, physics->instance()->R, "R", "residual forces R");
