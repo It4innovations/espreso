@@ -6,6 +6,8 @@
 
 namespace espreso {
 
+struct TransientSolver;
+
 class TransientFirstOrderImplicit: public Solver
 {
 public:
@@ -13,7 +15,8 @@ public:
 			Mesh *mesh,
 			Physics* physics,
 			LinearSolver* linearSolver,
-			store::ResultStore* store);
+			store::ResultStore* store,
+			const TransientSolver &configuration);
 
 	virtual void run(Step &step);
 
@@ -22,6 +25,9 @@ public:
 	virtual void solve(Step &step);
 	virtual void postprocess(Step &step);
 	virtual void finalize(Step &step);
+
+protected:
+	const TransientSolver &_configuration;
 };
 
 }

@@ -66,7 +66,8 @@ void LinearSolver::run()
 
 
 LinearSolver::LinearSolver(const ESPRESOSolver &configuration, OldPhysics &physics, Constraints &constraints)
-: configuration(configuration),
+: instance(NULL),
+  configuration(configuration),
   physics(&physics),
   constraints(&constraints),
   timeEvalMain("ESPRESO Solver Overal Timing")
@@ -93,10 +94,17 @@ void LinearSolver::setup() {
 
     // ***************************************************************************************************************************
 	// Cluster structure  setup
-	if ( SINGULAR )
-		cluster->USE_DYNAMIC		= 0;
-	else
-		cluster->USE_DYNAMIC		= 1;
+
+	cluster->USE_DYNAMIC = 0;
+	if (instance != NULL) {
+		cluster->USE_DYNAMIC = 1;
+		for (size_t d = 0; d < instance->domains; d++) {
+			if (instance->N1[d].cols) {
+				cluster->USE_DYNAMIC = 0;
+				break;
+			}
+		}
+	}
 
 	switch (configuration.method) {
 	case ESPRESO_METHOD::TOTAL_FETI:

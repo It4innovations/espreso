@@ -48,7 +48,7 @@ struct TransientSolver: public Configuration {
 	SUBCONFIG(AutoTimeStepping, auto_time_stepping, "Auto-time stepping parameters.");
 
 	PARAMETER(double, time_step     , "Time step", 1e-2);
-	PARAMETER(double, time_of_lading, "Lading time", 1);
+	PARAMETER(double, time_of_loading, "Loading time", 1);
 };
 
 }

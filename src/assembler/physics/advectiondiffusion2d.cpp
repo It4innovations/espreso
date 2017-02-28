@@ -173,9 +173,10 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 	double detJ, temp;
 	DenseMatrix f(e->nodes(), 1);
 	DenseMatrix U(e->nodes(), 2);
+	DenseMatrix m(e->nodes(), 1);
 	DenseMatrix T(e->nodes(), 1);
 	DenseMatrix thickness(e->nodes(), 1), K(e->nodes(), 4);
-	DenseMatrix gpThickness(1, 1), gpK(1, 4);
+	DenseMatrix gpThickness(1, 1), gpK(1, 4), gpM(1, 1);
 
 	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
 
@@ -191,16 +192,13 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 		coordinates(i, 0) = _mesh->coordinates()[e->node(i)].x;
 		coordinates(i, 1) = _mesh->coordinates()[e->node(i)].y;
 		thickness(i, 0) = e->getProperty(Property::THICKNESS, i, step.step, 1);
-		U(i, 0) =
-				e->getProperty(Property::TRANSLATION_MOTION_X, i, step.step, 0) *
+		m(i, 0) =
 				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(e->node(i), step.step, temp) *
 				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(e->node(i), step.step, temp) *
 				thickness(i, 0);
-		U(i, 1) =
-				e->getProperty(Property::TRANSLATION_MOTION_Y, i, step.step, 0) *
-				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(e->node(i), step.step, temp) *
-				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(e->node(i), step.step, temp) *
-				thickness(i, 0);
+
+		U(i, 0) = e->getProperty(Property::TRANSLATION_MOTION_X, i, step.step, 0) * m(i, 0);
+		U(i, 1) = e->getProperty(Property::TRANSLATION_MOTION_Y, i, step.step, 0) * m(i, 0);
 		f(i, 0) = e->sumProperty(Property::HEAT_SOURCE, i, step.step, 0) * thickness(i, 0);
 		assembleMaterialMatrix(step, e, i, temp, K);
 	}
@@ -240,6 +238,7 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 
 		gpThickness.multiply(e->N()[gp], thickness);
 		gpK.multiply(e->N()[gp], K);
+		gpM.multiply(e->N()[gp], m);
 
 		Ce(0, 0) = gpK(0, 0);
 		Ce(1, 1) = gpK(0, 1);
@@ -301,6 +300,9 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 		Ce(0, 0) += _configuration.sigma * h_e * norm_u_e;
 		Ce(1, 1) += _configuration.sigma * h_e * norm_u_e;
 
+		if (matrices & Matrices::M) {
+			Me.multiply(e->N()[gp], e->N()[gp], detJ * gpM(0, 0) * e->weighFactor()[gp], 1, true);
+		}
 		if (matrices & (Matrices::K | Matrices::R)) {
 			Ke.multiply(dND, Ce * dND, detJ * e->weighFactor()[gp] * gpThickness(0, 0), 1, true);
 			Ke.multiply(e->N()[gp], b_e, detJ * e->weighFactor()[gp], 1, true);

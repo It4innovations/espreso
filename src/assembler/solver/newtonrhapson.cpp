@@ -83,13 +83,13 @@ void NewtonRhapson::solve(Step &step)
 		if (_configuration.convergenceParameters().checkResidual()) {
 			heatResidual = physics->sumSquares(physics->instance()->f, Physics::SumOperation::SUM);
 		}
-		updateVector(step, Matrices::f, Matrices::R, 1, -1);
+		sum(step, Matrices::f, Matrices::R, 1, -1);
 		if (_configuration.convergenceParameters().checkResidual()) {
 			heatResidual += physics->sumSquares(physics->instance()->f, Physics::SumOperation::SUM, Physics::SumRestriction::DIRICHLET, step.step);
 		}
 
 		composeGluing(step, Matrices::B1);
-		updateVector(step, Matrices::B1c, Matrices::primar, 1, -1);
+		sum(step, Matrices::B1c, Matrices::primar, 1, -1);
 		regularizeMatrices(step, Matrices::K);
 		updateLinearSolver(Matrices::K | Matrices::f | Matrices::B1c);
 		runLinearSolver();
@@ -100,7 +100,7 @@ void NewtonRhapson::solve(Step &step)
 		if (_configuration.convergenceParameters().checkSolution()) {
 			temperatureResidual = sqrt(physics->sumSquares(physics->instance()->primalSolution, Physics::SumOperation::AVERAGE));
 		}
-		updateVector(step, Matrices::primar, T, 1, 1);
+		sum(step, Matrices::primar, T, 1, 1);
 		if (_configuration.convergenceParameters().checkSolution()) {
 			temperatureResidual /= sqrt(physics->sumSquares(physics->instance()->primalSolution, Physics::SumOperation::AVERAGE));;
 		}

@@ -26,7 +26,7 @@ Solver::Solver(
 		LinearSolver* linearSolver,
 		store::ResultStore* store,
 		Matrices restriction)
-: physics(physics), linearSolver(linearSolver), _name(name), _mesh(mesh), _store(store), _restriction(~restriction)
+: physics(physics), instance(physics->instance()), linearSolver(linearSolver), _name(name), _mesh(mesh), _store(store), _restriction(~restriction)
 {
 	_timeStatistics = new TimeEval(physics->name() + " solved by " + _name + " solver overall timing");
 	_timeStatistics->totalTime.startWithBarrier();
@@ -130,14 +130,14 @@ void Solver::updateMatrices(const Step &step, Matrices matrices, const std::vect
 	}
 }
 
-void Solver::updateVector(const Step &step, Matrices v1, Matrices v2, double alpha, double beta)
+void Solver::sum(const Step &step, Matrices v1, Matrices v2, double alpha, double beta)
 {
-	ESINFO(PROGRESS2) << "Update vector: " << mNames(v1) << "= " << alpha << " * " << mNames(v1) << (beta < 0 ? "- " : "+ ") << fabs(beta) << " * " << mNames(v2);
+	ESINFO(PROGRESS2) << "Sum " << mNames(v1) << "= " << alpha << " * " << mNames(v1) << (beta < 0 ? "- " : "+ ") << fabs(beta) << " * " << mNames(v2);
 	if (v1 & Matrices::f) {
 		if (v2 & Matrices::R) {
 
 			TimeEvent time(std::string("Update vector " + mNames(v1))); time.start();
-			sumVectors(physics->instance()->f, physics->instance()->f, physics->instance()->R, alpha, beta);
+			sum(physics->instance()->f, physics->instance()->f, physics->instance()->R, alpha, beta);
 			time.endWithBarrier(); _timeStatistics->addEvent(time);
 
 			storeData(step, physics->instance()->f, "f", "right-hand side (f - R)");
@@ -165,16 +165,56 @@ void Solver::updateVector(const Step &step, Matrices v1, Matrices v2, double alp
 		}
 	}
 
+	if (v1 & Matrices::K) {
+		if (v2 & Matrices::M) {
+
+			TimeEvent time(std::string("Update matrix " + mNames(v1))); time.start();
+			#pragma omp parallel for
+			for (size_t d = 0; d < physics->instance()->domains; d++) {
+				physics->instance()->K[d].MatAddInPlace(physics->instance()->M[d], 'N', 1);
+			}
+			time.endWithBarrier(); _timeStatistics->addEvent(time);
+
+			storeData(step, physics->instance()->K, "K", "K (K + M)");
+			return;
+		}
+	}
+
 	ESINFO(GLOBAL_ERROR) << "Implement updating vector " << mNames(v1);
 }
 
-void Solver::updateVector(const Step &step, Matrices v1, const std::vector<std::vector<double> > &v2, double alpha, double beta)
+void Solver::sum(const Step &step, Matrices v1, const std::vector<std::vector<double> > &v2, double alpha, double beta, const std::string v2name)
 {
-	ESINFO(PROGRESS2) << "Update vector: " << mNames(v1);
+	ESINFO(PROGRESS2) << "Sum " << mNames(v1) << "= " << alpha << " * " << mNames(v1) << (beta < 0 ? "- " : "+ ") << fabs(beta) << " * " + v2name;
 	if (v1 & Matrices::primar) {
 
 		TimeEvent time(std::string("Update vector " + mNames(v1))); time.start();
-		sumVectors(physics->instance()->primalSolution, physics->instance()->primalSolution, v2, alpha, beta);
+		sum(physics->instance()->primalSolution, physics->instance()->primalSolution, v2, alpha, beta);
+		time.endWithBarrier(); _timeStatistics->addEvent(time);
+	}
+}
+
+void Solver::sum(std::vector<std::vector<double> > &result, const std::vector<std::vector<double> > &a, const std::vector<std::vector<double> > &b, double alpha, double beta, const std::string resultName, const std::string aName, const std::string bName)
+{
+	ESINFO(PROGRESS2) << "Sum " << resultName << " = " << alpha << " * " << aName << " " << (beta < 0 ? "- " : "+ ") << fabs(beta) << " * " << bName;
+	#pragma omp parallel for
+	for (size_t d = 0; d < a.size(); d++) {
+		for (size_t i = 0; i < a[d].size(); i++) {
+			result[d][i] = alpha * a[d][i] + beta * b[d][i];
+		}
+	}
+}
+
+
+void Solver::multiply(const Step &step, Matrices v1, std::vector<std::vector<double> > &v2, std::vector<std::vector<double> > &solution, double beta, const std::string v2name, const std::string solutionName)
+{
+	ESINFO(PROGRESS2) << "Multiply " << solutionName << " = " << beta << " * " << mNames(v1) << " * " << v2name;
+	if (v1 & Matrices::M) {
+		TimeEvent time(std::string("Multiply " + mNames(v1) + "with vector " + v2name)); time.start();
+		#pragma omp parallel for
+		for (size_t d = 0; d < physics->instance()->domains; d++) {
+			physics->instance()->M[d].MatVec(v2[d], solution[d], 'N', 0, 0, beta);
+		}
 		time.endWithBarrier(); _timeStatistics->addEvent(time);
 	}
 }
@@ -338,7 +378,7 @@ void Solver::lineSearch(const std::vector<std::vector<double> > &U, std::vector<
 	std::vector<std::vector<double> > F_ext_r = F_ext;
 
 	for (size_t i = 0; i < 6; i++) {
-		sumVectors(solution, U, deltaU, 1, alpha);
+		sum(solution, U, deltaU, 1, alpha);
 
 		solution.swap(physics->instance()->primalSolution);
 		physics->assembleMatrix(step, Matrices::R);
@@ -346,14 +386,14 @@ void Solver::lineSearch(const std::vector<std::vector<double> > &U, std::vector<
 
 		if (i == 0) {
 			faStart = multiply(deltaU, physics->instance()->f);
-			sumVectors(F_ext_r, F_ext, physics->instance()->R, 1, -1);
+			sum(F_ext_r, F_ext, physics->instance()->R, 1, -1);
 			fb = multiply(deltaU, F_ext_r);
 			if ((faStart < 0 && fb < 0) || (faStart >= 0 && fb >= 0)) {
 				return;
 			}
 			fa = faStart;
 		} else {
-			sumVectors(F_ext_r, F_ext, physics->instance()->R, 1, -1);
+			sum(F_ext_r, F_ext, physics->instance()->R, 1, -1);
 			fx = multiply(deltaU, F_ext_r);
 			if (fa * fx < 0) {
 				b = alpha;
@@ -379,17 +419,7 @@ void Solver::lineSearch(const std::vector<std::vector<double> > &U, std::vector<
 		alpha = 1;
 	}
 
-	sumVectors(solution, U, deltaU, 0, alpha);
+	sum(solution, U, deltaU, 0, alpha);
 	solution.swap(deltaU);
-}
-
-void Solver::sumVectors(std::vector<std::vector<double> > &result, const std::vector<std::vector<double> > &a, const std::vector<std::vector<double> > &b, double alpha, double beta)
-{
-	#pragma omp parallel for
-	for (size_t d = 0; d < a.size(); d++) {
-		for (size_t i = 0; i < a[d].size(); i++) {
-			result[d][i] = alpha * a[d][i] + beta * b[d][i];
-		}
-	}
 }
 

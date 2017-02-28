@@ -43,13 +43,17 @@ public:
 	virtual ~Solver();
 
 	Physics* physics;
+	Instance* instance;
 	LinearSolver* linearSolver;
 
 protected:
 	void assembleMatrices(const Step &step, Matrices matrices);
 	void updateMatrices(const Step &step, Matrices matrices, const std::vector<Solution*> &solution);
-	void updateVector(const Step &step, Matrices v1, Matrices v2, double alpha, double beta);
-	void updateVector(const Step &step, Matrices v1, const std::vector<std::vector<double> > &v2, double alpha, double beta);
+
+	void sum(const Step &step, Matrices v1, Matrices v2, double alpha = 1, double beta = 1);
+	void sum(const Step &step, Matrices v1, const std::vector<std::vector<double> > &v2, double alpha = 1, double beta = 1, const std::string v2name = "{?}");
+	void sum(std::vector<std::vector<double> > &result, const std::vector<std::vector<double> > &a, const std::vector<std::vector<double> > &b, double alpha = 1, double beta = 1, const std::string resultName = "{?}", const std::string aName = "{?}", const std::string bName = "{?}");
+	void multiply(const Step &step, Matrices v1, std::vector<std::vector<double> > &v2, std::vector<std::vector<double> > &solution, double beta = 1, const std::string v2name = "{?}", const std::string solutionName = "{?}");
 
 	void composeGluing(const Step &step, Matrices matrices);
 	void regularizeMatrices(const Step &step, Matrices matrices);
@@ -61,7 +65,7 @@ protected:
 	void finalizeLinearSolver();
 
 	void lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext, Physics *physics, const Step &step);
-	void sumVectors(std::vector<std::vector<double> > &result, const std::vector<std::vector<double> > &a, const std::vector<std::vector<double> > &b, double alpha = 1, double beta = 1);
+
 
 	void storeData(const Step &step, std::vector<SparseMatrix> &matrices, const std::string &name, const std::string &description);
 	void storeData(const Step &step, std::vector<std::vector<double> > &vectors, const std::string &name, const std::string &description);
