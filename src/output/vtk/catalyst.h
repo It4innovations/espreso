@@ -7,6 +7,7 @@
 
 class vtkCPProcessor;
 class vtkCPDataDescription;
+class vtkFieldData;
 
 namespace espreso {
 namespace store {
@@ -23,6 +24,7 @@ public:
 protected:
 	vtkCPProcessor *processor;
 	vtkCPDataDescription *dataDescription;
+	vtkFieldData *fieldData;
 	size_t timeStep;
 };
 

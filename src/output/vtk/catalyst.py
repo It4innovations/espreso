@@ -34,6 +34,11 @@ def CreateCoProcessor():
       renderView1.CameraParallelScale = 0.6311503291488461
       renderView1.Background = [0.32, 0.34, 0.43]
 
+      # scale = datadescription.GetUserData().GetAbstractArray("scale").GetValue(0);
+      # label = datadescription.GetUserData().GetAbstractArray("label").GetValue(0);
+      # print scale
+      # print label
+
       # register the view with coprocessor
       # and provide it with information such as the filename to use,
       # how frequently to write the images, etc.
@@ -71,13 +76,13 @@ def CreateCoProcessor():
       # show data from results0vtk
       results0vtkDisplay = Show(results0vtk, renderView1)
       # trace defaults for the display properties.
-      results0vtkDisplay.ColorArrayName = ['POINTS', 'temperature_s0i0']
+      results0vtkDisplay.ColorArrayName = ['POINTS', 'results']
       results0vtkDisplay.LookupTable = temperatures0i0LUT
       results0vtkDisplay.GlyphType = 'Arrow'
       # results0vtkDisplay.ScalarOpacityUnitDistance = 0.036909895158202304
-      # results0vtkDisplay.SetScaleArray = ['POINTS', 'temperature_s0i0']
+      # results0vtkDisplay.SetScaleArray = ['POINTS', 'results']
       # results0vtkDisplay.ScaleTransferFunction = 'PiecewiseFunction'
-      # results0vtkDisplay.OpacityArray = ['POINTS', 'temperature_s0i0']
+      # results0vtkDisplay.OpacityArray = ['POINTS', 'results']
       # results0vtkDisplay.OpacityTransferFunction = 'PiecewiseFunction'
 
       # show color legend
@@ -87,7 +92,7 @@ def CreateCoProcessor():
 
       # get color legend/bar for temperatures0i0LUT in view renderView1
       temperatures0i0LUTColorBar = GetScalarBar(temperatures0i0LUT, renderView1)
-      temperatures0i0LUTColorBar.Title = 'temperature_s0i0'
+      temperatures0i0LUTColorBar.Title = 'results'
       temperatures0i0LUTColorBar.ComponentTitle = ''
     return Pipeline()
 
@@ -110,7 +115,7 @@ coprocessor = CreateCoProcessor()
 
 #--------------------------------------------------------------
 # Enable Live-Visualizaton with ParaView
-coprocessor.EnableLiveVisualization(True, 1)
+coprocessor.EnableLiveVisualization(False, 1)
 
 
 # ---------------------- Data Selection method ----------------------
