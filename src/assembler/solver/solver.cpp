@@ -132,12 +132,11 @@ void Solver::updateMatrices(const Step &step, Matrices matrices, const std::vect
 
 void Solver::sum(const Step &step, Matrices v1, Matrices v2, double alpha, double beta)
 {
-	ESINFO(PROGRESS2) << "Sum " << mNames(v1) << "= " << alpha << " * " << mNames(v1) << (beta < 0 ? "- " : "+ ") << fabs(beta) << " * " << mNames(v2);
 	if (v1 & Matrices::f) {
 		if (v2 & Matrices::R) {
 
 			TimeEvent time(std::string("Update vector " + mNames(v1))); time.start();
-			sum(physics->instance()->f, physics->instance()->f, physics->instance()->R, alpha, beta);
+			sum(physics->instance()->f, physics->instance()->f, physics->instance()->R, alpha, beta, mNames(v1), mNames(v1), mNames(v2));
 			time.endWithBarrier(); _timeStatistics->addEvent(time);
 
 			storeData(step, physics->instance()->f, "f", "right-hand side (f - R)");
@@ -145,6 +144,7 @@ void Solver::sum(const Step &step, Matrices v1, Matrices v2, double alpha, doubl
 		}
 	}
 
+	ESINFO(PROGRESS2) << "Sum " << mNames(v1) << "= " << alpha << " * " << mNames(v1) << (beta < 0 ? "- " : "+ ") << fabs(beta) << " * " << mNames(v2);
 	if (v1 & Matrices::B1c) {
 		if (v2 & Matrices::primar) {
 
@@ -168,10 +168,13 @@ void Solver::sum(const Step &step, Matrices v1, Matrices v2, double alpha, doubl
 	if (v1 & Matrices::K) {
 		if (v2 & Matrices::M) {
 
+			if (alpha != 1) {
+				ESINFO(ERROR) << "Cannot sum matrices with alpha != 1";
+			}
 			TimeEvent time(std::string("Update matrix " + mNames(v1))); time.start();
 			#pragma omp parallel for
 			for (size_t d = 0; d < physics->instance()->domains; d++) {
-				physics->instance()->K[d].MatAddInPlace(physics->instance()->M[d], 'N', 1);
+				physics->instance()->K[d].MatAddInPlace(physics->instance()->M[d], 'N', beta);
 			}
 			time.endWithBarrier(); _timeStatistics->addEvent(time);
 
@@ -185,13 +188,26 @@ void Solver::sum(const Step &step, Matrices v1, Matrices v2, double alpha, doubl
 
 void Solver::sum(const Step &step, Matrices v1, const std::vector<std::vector<double> > &v2, double alpha, double beta, const std::string v2name)
 {
-	ESINFO(PROGRESS2) << "Sum " << mNames(v1) << "= " << alpha << " * " << mNames(v1) << (beta < 0 ? "- " : "+ ") << fabs(beta) << " * " + v2name;
 	if (v1 & Matrices::primar) {
 
 		TimeEvent time(std::string("Update vector " + mNames(v1))); time.start();
-		sum(physics->instance()->primalSolution, physics->instance()->primalSolution, v2, alpha, beta);
+		sum(physics->instance()->primalSolution, physics->instance()->primalSolution, v2, alpha, beta, mNames(v1), mNames(v1), v2name);
 		time.endWithBarrier(); _timeStatistics->addEvent(time);
+
+		storeData(step, physics->instance()->primalSolution, "solution", "solution = alpha * solution + beta * " + v2name);
+		return;
 	}
+
+	if (v1 & Matrices::f) {
+
+		TimeEvent time(std::string("Update vector " + mNames(v1))); time.start();
+		sum(physics->instance()->f, physics->instance()->f, v2, alpha, beta, mNames(v1), mNames(v1), v2name);
+		time.endWithBarrier(); _timeStatistics->addEvent(time);
+
+		storeData(step, physics->instance()->f, "f", "f = alpha * f + beta * " + v2name);
+		return;
+	}
+	ESINFO(GLOBAL_ERROR) << "Implement sum " << mNames(v1) << "and " << v2name;
 }
 
 void Solver::sum(std::vector<std::vector<double> > &result, const std::vector<std::vector<double> > &a, const std::vector<std::vector<double> > &b, double alpha, double beta, const std::string resultName, const std::string aName, const std::string bName)

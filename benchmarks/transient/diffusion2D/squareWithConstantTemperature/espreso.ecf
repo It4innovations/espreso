@@ -56,7 +56,7 @@ ADVECTION_DIFFUSION_2D {
 
     METHOD           TOTAL_FETI;
     SOLVER                  PCG;
-    PRECONDITIONER         NONE;
+    PRECONDITIONER    DIRICHLET;
     REGULARIZATION   FIX_POINTS;
     B0_TYPE             CORNERS;
   }
@@ -92,11 +92,10 @@ ADVECTION_DIFFUSION_2D {
   MATERIALS {
 
     1 {
-      MODEL DIAGONAL;
+      MODEL ISOTROPIC;
 
       DENSITY 1;
-      KXX  1e-5;
-      KYY  1e-3;
+      KXX     1;
       Cp      1;
     }
   }

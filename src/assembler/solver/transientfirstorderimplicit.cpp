@@ -54,13 +54,19 @@ void TransientFirstOrderImplicit::run(Step &step)
 		y[d].resize(instance->DOFs[d]);
 	}
 
-	for (step.iteration = 0; step.iteration < 1; step.iteration++) {
-		assembleMatrices(step, Matrices::K | Matrices::M | Matrices::f);
+	for (step.iteration = 0; step.iteration < 100; step.iteration++) {
+		ESINFO(PROGRESS2) << _name << " iteration " << step.iteration + 1;
+		if (step.iteration) {
+			updateMatrices(step, Matrices::K | Matrices::M | Matrices::f, instance->solutions);
+		} else {
+			assembleMatrices(step, Matrices::K | Matrices::M | Matrices::f);
+		}
 		composeGluing(step, Matrices::B1 | Matrices::B0); // TODO: B0 without kernels
 
 		sum(step, Matrices::K, Matrices::M, 1, 1 / (alpha * _configuration.time_step));
 		sum(x, u, v, 1 / (alpha * _configuration.time_step), (1 - alpha) / alpha, "x", "u", "v");
-		multiply(step, Matrices::M, x, y, 1, "x", "y");
+
+		multiply(step, Matrices::M, x, y, 0, "x", "y");
 		sum(step, Matrices::f, y, 1, 1, "y");
 
 		if (step.iteration) {
@@ -69,14 +75,14 @@ void TransientFirstOrderImplicit::run(Step &step)
 			initLinearSolver();
 		}
 		runLinearSolver();
-
-		sum(deltaU, physics->instance()->primalSolution, u, 1, -1);
-		sum(v, v, deltaU, 1 / (alpha * _configuration.time_step), (1 - alpha) / alpha, "v", "v", "deltaU");
-		sum(step, Matrices::primar, deltaU, 1, 1, "deltaU");
+		sum(deltaU, physics->instance()->primalSolution, u, 1, -1, "deltaU", "u_" + std::to_string(step.iteration + 1), "u_" + std::to_string(step.iteration));
+		sum(v, deltaU, v, 1 / (alpha * _configuration.time_step), - (1 - alpha) / alpha, "v", "deltaU", "v");
+		u = instance->primalSolution;
 
 		processSolution(step);
 		storeSolution(step);
 	}
+	finalizeLinearSolver();
 }
 
 void TransientFirstOrderImplicit::init(Step &step)
