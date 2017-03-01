@@ -26,6 +26,7 @@ public:
 	LinearSolver(const ESPRESOSolver &configuration, OldPhysics &physics, Constraints &constraints); // to be removed
 
 	void init();
+
 	void update(Matrices matrices);
 	void run();
 

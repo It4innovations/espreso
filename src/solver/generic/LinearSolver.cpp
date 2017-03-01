@@ -34,18 +34,26 @@ void LinearSolver::init()
 // make partial initialization according to updated matrices
 void LinearSolver::update(Matrices matrices)
 {
-	// TODO update appropriate solver objects
+	// TODO update appropriate solver objects and stop steeling matrices! :)
 
 	if (matrices & Matrices::K) {
-//		std::cout << "Matrices K were updated\n";
+		// factorization and preconditioners and HFETI preprocessing
 	}
 
-	if (matrices & (Matrices::K & Matrices::M)) {
-//		std::cout << "Matrices K and M were updated\n";
+	if (matrices & (Matrices::N | Matrices::B1)) {
+		// updateGGt();
 	}
 
-	if (matrices & (Matrices::B1 | Matrices::B1c)) {
-		// std::cout << "Matrices B1 or B1c were updated\n";
+	if (matrices & (Matrices::B1c | Matrices::f)) {
+		// update dual RHS
+	}
+
+	if (matrices & Matrices::B0) {
+		// HFETI preprocessing
+	}
+
+	if (matrices & Matrices::B1duplicity) {
+		// update duplicity vector
 	}
 
 	// TODO: remove full re-initialization

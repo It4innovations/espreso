@@ -12,17 +12,18 @@ class SparseMatrix;
 class Solution;
 
 enum Matrices : int {
-	NONE   = 0,
-	K      = 1 << 0,
-	N      = 1 << 1,
-	M      = 1 << 2,
-	R      = 1 << 3,
-	f      = 1 << 4,
-	B0     = 1 << 5,
-	B1     = 1 << 6,
-	B1c    = 1 << 7,
-	primar = 1 << 8,
-	dual   = 1 << 9
+	NONE        = 0,
+	K           = 1 << 0, // Stiffness matrix
+	N           = 1 << 1, // Null spaces (N1, N2)
+	M           = 1 << 2, // Mass matrix (only in assembler)
+	R           = 1 << 3, // Residual forces (only in assembler)
+	f           = 1 << 4, // Right-hand side
+	B0          = 1 << 5, // Hybrid Total FETI gluing
+	B1          = 1 << 6, // Total FETI gluing
+	B1c         = 1 << 7, // Simple B1c
+	B1duplicity = 1 << 8, // Lambdas duplicity
+	primar      = 1 << 9, // Primar solution
+	dual        = 1 << 10  // Dual solution (B1 * Lambdas)
 };
 
 struct Instance {
