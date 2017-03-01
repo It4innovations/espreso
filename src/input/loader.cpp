@@ -60,7 +60,7 @@ void Loader::fill()
 
 	// LOAD ELEMENTS
 	TimeEvent tElements("elements"); tElements.start();
-	elements(mesh._elements, mesh._faces, mesh._edges);
+	elements(mesh._bodies, mesh._elements, mesh._faces, mesh._edges);
 	materials(mesh._materials);
 
 	mesh.fillNodesFromCoordinates();

@@ -90,6 +90,8 @@ public:
 
 	size_t parts() const { return _partPtrs.size() - 1; }
 	const std::vector<eslocal>& getPartition() const { return _partPtrs; }
+	size_t bodies() const { return _bodies.size() - 1; }
+	const std::vector<size_t>& getBodies() const { return _bodies; }
 
 	const std::vector<int>& neighbours() const { return _neighbours; }
 	const std::vector<Region*>& regions() const { return _regions; }
@@ -151,6 +153,9 @@ protected:
 
 	/** @brief Reference to coordinates. */
 	Coordinates *_coordinates;
+
+	/** @brief Body in part 'i' is from _bodies[i] to _bodies[i + 1]. */
+	std::vector<size_t> _bodies;
 
 	/** @brief Elements in part 'i' are from _partPtrs[i] to _partPtrs[i + 1]. */
 	std::vector<eslocal> _partPtrs;

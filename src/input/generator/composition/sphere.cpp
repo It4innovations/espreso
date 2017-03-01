@@ -175,9 +175,10 @@ void Sphere::points(Coordinates &coordinates)
 	}
 }
 
-void Sphere::elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
+void Sphere::elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
 {
 	_block->elements(elements);
+	bodies = { 0, elements.size() };
 }
 
 bool Sphere::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)

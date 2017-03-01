@@ -38,9 +38,8 @@ namespace espreso {
 Mesh::Mesh(): _continuous(true), _elements(0)
 {
 	_coordinates = new Coordinates();
-	_partPtrs.resize(2);
-	_partPtrs[0] = 0;
-	_partPtrs[1] = 0;
+	_bodies = { 0, 0 };
+	_partPtrs = { 0, 0 };
 
 	_regions.push_back(new Region(_elements));
 	_regions.back()->name = "ALL_ELEMENTS";

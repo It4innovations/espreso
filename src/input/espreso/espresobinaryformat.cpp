@@ -137,7 +137,7 @@ static void addElements(std::ifstream &is, std::vector<espreso::Element*> &eleme
 	}
 };
 
-void ESPRESOBinaryFormat::elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
+void ESPRESOBinaryFormat::elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
 {
 	std::stringstream fileName;
 	fileName << _esdata.path << "/" << _rank << "/elements.dat";
@@ -149,6 +149,7 @@ void ESPRESOBinaryFormat::elements(std::vector<Element*> &elements, std::vector<
 	addElements(is, elements, size);
 
 	is.close();
+	bodies = { 0, elements.size() };
 }
 
 void ESPRESOBinaryFormat::materials(std::vector<Material*> &materials)

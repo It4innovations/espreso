@@ -97,7 +97,7 @@ void OpenFOAM::points(Coordinates &coordinates)
 	}
 }
 
-void OpenFOAM::elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
+void OpenFOAM::elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
 {
 	FoamFile facesFile(_polyMeshPath + "faces");
 	std::vector<Face> _faces;
@@ -164,6 +164,7 @@ void OpenFOAM::elements(std::vector<Element*> &elements, std::vector<Element*> &
 		elements[neighbour[i]]->addFace(faces[i]);
 		faces[i]->addParent(elements[neighbour[i]]);
 	}
+	bodies = { 0, elements.size() };
 }
 
 void OpenFOAM::regions(

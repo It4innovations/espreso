@@ -27,7 +27,7 @@ protected:
 	OpenFOAM(const ESPRESOInput &configuration, Mesh &mesh, int rank, int size);
 
 	void points(Coordinates &coordinates);
-	void elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
+	void elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
 	void materials(std::vector<Material> &materials) {};
 	void regions(
 				std::vector<Evaluator*> &evaluators,

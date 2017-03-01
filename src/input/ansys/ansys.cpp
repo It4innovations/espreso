@@ -43,8 +43,9 @@ void AnsysWorkbench::points(Coordinates &coordinates)
 }
 
 
-void AnsysWorkbench::elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
+void AnsysWorkbench::elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
 {
+	bodies = { 0 };
 	while (true) {
 		switch (_parser.process()) {
 		case WorkbenchCommands::WB:
@@ -55,6 +56,7 @@ void AnsysWorkbench::elements(std::vector<Element*> &elements, std::vector<Eleme
 		case WorkbenchCommands::EBLOCK: {
 			std::vector<Region*> dummyRegions;
 			_parser.eblock(elements, dummyRegions, faces, edges);
+			bodies.push_back(elements.size());
 			break;
 		}
 		case WorkbenchCommands::END:

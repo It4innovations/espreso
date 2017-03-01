@@ -38,7 +38,7 @@ public:
 	static void load(const SphereConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
 
 	virtual void points(Coordinates &coordinates);
-	virtual void elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
+	virtual void elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
 	virtual void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges);
 	virtual void regions(
 			std::vector<Evaluator*> &evaluators,

@@ -20,7 +20,7 @@ protected:
 	: Loader(mesh), _esdata(configuration), _rank(rank), _size(size) { };
 
 	void points(Coordinates &coordinates);
-	void elements(std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
+	void elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
 	void materials(std::vector<Material*> &materials);
 	void regions(
 			std::vector<Evaluator*> &evaluators,
