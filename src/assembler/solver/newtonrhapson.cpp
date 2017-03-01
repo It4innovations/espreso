@@ -93,7 +93,11 @@ void NewtonRhapson::solve(Step &step)
 
 			T = physics->instance()->primalSolution;
 
-			updateMatrices(step, Matrices::K | Matrices::f | Matrices::R, physics->instance()->solutions);
+			if (_configuration.method == NonLinearSolverBase::METHOD::MODIFIED_NEWTON_RHAPSON && step.substep > 1) {
+				updateMatrices(step, Matrices::f | Matrices::R, physics->instance()->solutions);
+			} else {
+				updateMatrices(step, Matrices::K | Matrices::f | Matrices::R, physics->instance()->solutions);
+			}
 			#pragma omp parallel for
 			for (size_t d = 0; d < instance->domains; d++) {
 				for (size_t i = 0; i < instance->f[d].size(); i++) {
@@ -121,7 +125,12 @@ void NewtonRhapson::solve(Step &step)
 			}
 			sum(step, Matrices::B1c, Matrices::primar, 1, -1);
 			regularizeMatrices(step, Matrices::K);
-			updateLinearSolver(Matrices::K | Matrices::f | Matrices::B1c);
+
+			if (_configuration.method == NonLinearSolverBase::METHOD::MODIFIED_NEWTON_RHAPSON && step.substep) {
+				updateLinearSolver(Matrices::f | Matrices::B1c);
+			} else {
+				updateLinearSolver(Matrices::K | Matrices::f | Matrices::B1c);
+			}
 			runLinearSolver();
 
 			if (_configuration.line_search) {
