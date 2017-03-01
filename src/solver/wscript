@@ -137,6 +137,7 @@ def build(ctx):
     if ctx.env.SOLVER == "DISSECTION":
         sources = source_files + (
             "specific/cpu/SparseSolverDissection.cpp",
+            "specific/cpu/SparseSolverMKL.cpp",
             "specific/cpu/clustercpu.cpp",
             "specific/cpu/itersolvercpu.cpp",
             "specific/cpu/DenseSolverMKL.cpp")

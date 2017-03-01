@@ -34,14 +34,14 @@ SparseSolverDissection::SparseSolverDissection(){
     // Symbolic refactorization settings
     decomposer = 1; // 0 for SCOTCH, 1 for METIS, 2 for TRIDIAG(Cuthill-McKee)
     eps_pivot = 1.e-2; // pivot threshold
-    nb_levels = -1; //8; // number of level of dissection //-1 (automatic)
-    scaling = 0;
-    kernel_detection_all = false; // is singular?
+    nb_levels = -1; // number of level of dissection //-1 (automatic)
+    scaling = 2; //0;
+    kernel_detection_all = true; //false; // is singular?
     min_nodes = 256; // not set
     dslv = NULL;
     // dslv_fl = NULL;
     diss_verbose = false;
-    fp = NULL;
+    fp = stdout;
     called = 0;
 
     MPIrank = 0;
@@ -404,6 +404,11 @@ int SparseSolverDissection::Factorization(const std::string &str) {
 		tmp_sol.resize(m_Kplus_size); // - POZOR mozna se musi odkomentovat kvuli alokaci tmp_sol
 	}
 
+//	eslocal kernel_dimension = dslv->kern_dimension();
+//	SEQ_VECTOR <double> kernel_vectors(kernel_dimension * rows);
+//	dslv->GetKernelVectors(&kernel_vectors.front());
+
+
   return 0;
 }
 
@@ -436,7 +441,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		
 	} else {
 
-		bool projection = false;
+		bool projection = true;
 		bool is_trans = false;
 		bool is_scaling = true;
 		dslv->SolveSingle(&rhs_sol.front(), projection, is_trans, is_scaling);
@@ -515,7 +520,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 		exit(1);
 
 	} else {
-		bool projection = false;
+		bool projection = true;
 		bool is_trans = false;
 		bool is_scaling = true;
 
@@ -588,7 +593,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 
 	} else {
 
-		bool projection = false;
+		bool projection = true;
 		bool is_trans = false;
 		bool is_scaling = true;
 		dslv->SolveSingle(&rhs[rhs_start_index], projection, is_trans, is_scaling);

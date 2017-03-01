@@ -57,6 +57,7 @@ namespace espreso {
 
 #elif defined(SOLVER_DISSECTION)
 #include "cpu/SparseSolverDissection.h"
+#include "cpu/SparseSolverMKL.h"
 
 namespace espreso {
 	typedef SparseSolverDissection SparseSolverCPU;
