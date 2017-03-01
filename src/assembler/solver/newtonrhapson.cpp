@@ -37,7 +37,20 @@ void NewtonRhapson::run(Step &step)
 void NewtonRhapson::init(Step &step)
 {
 	assembleMatrices(step, Matrices::K | Matrices::f);
+	size_t substeps = _configuration.stepping == NonLinearSolverBase::STEPPINGG::TRUE ? _configuration.substeps : 1;
+	#pragma omp parallel for
+	for (size_t d = 0; d < instance->domains; d++) {
+		for (size_t i = 0; i < instance->f[d].size(); i++) {
+			instance->f[d][i] /= substeps;
+		}
+	}
 	composeGluing(step, Matrices::B1);
+	#pragma omp parallel for
+	for (size_t d = 0; d < instance->domains; d++) {
+		for (size_t i = 0; i < instance->B1c[d].size(); i++) {
+			instance->B1c[d][i] /= substeps;
+		}
+	}
 	regularizeMatrices(step, Matrices::K);
 	composeGluing(step, Matrices::B0);
 }
@@ -52,69 +65,87 @@ void NewtonRhapson::solve(Step &step)
 	if (!_configuration.convergenceParameters().checkSolution() && _configuration.convergenceParameters().checkResidual()) {
 		ESINFO(GLOBAL_ERROR) << "It is not possible to turn off the both 'temperature' and 'heat' convergence.";
 	}
-	step.substep = 0;
+
 	runLinearSolver();
 	processSolution(step);
 	storeSubSolution(step);
 
-	double temperatureResidual = _configuration.convergenceParameters().requestedSolution();
-	double heatResidual = _configuration.convergenceParameters().requestedResidual();
-	if (_configuration.convergenceParameters().checkSolution()) {
-		temperatureResidual *= 10;
-	}
-	if (_configuration.convergenceParameters().checkResidual()) {
-		heatResidual *= 10;
-	}
-
 	std::vector<std::vector<double> > T;
 	std::vector<std::vector<double> > F_ext;
-	while (
-		step.substep++ < _configuration.max_iterations &&
-		(temperatureResidual > _configuration.convergenceParameters().requestedSolution() ||
-		heatResidual > _configuration.convergenceParameters().requestedResidual())) {
 
-		T = physics->instance()->primalSolution;
+	size_t substeps = _configuration.stepping == NonLinearSolverBase::STEPPINGG::TRUE ? _configuration.substeps : 1;
+	for (step.iteration = 0; step.iteration < substeps; step.iteration++) {
 
-		updateMatrices(step, Matrices::K | Matrices::f | Matrices::R, physics->instance()->solutions);
-
-		if (_configuration.line_search) {
-			F_ext = physics->instance()->f;
-		}
-		if (_configuration.convergenceParameters().checkResidual()) {
-			heatResidual = physics->sumSquares(physics->instance()->f, Physics::SumOperation::SUM);
-		}
-		sum(step, Matrices::f, Matrices::R, 1, -1);
-		if (_configuration.convergenceParameters().checkResidual()) {
-			heatResidual += physics->sumSquares(physics->instance()->f, Physics::SumOperation::SUM, Physics::SumRestriction::DIRICHLET, step.step);
-		}
-
-		composeGluing(step, Matrices::B1);
-		sum(step, Matrices::B1c, Matrices::primar, 1, -1);
-		regularizeMatrices(step, Matrices::K);
-		updateLinearSolver(Matrices::K | Matrices::f | Matrices::B1c);
-		runLinearSolver();
-
-		if (_configuration.line_search) {
-			lineSearch(T, physics->instance()->primalSolution, F_ext, physics, step);
-		}
+		step.substep = 0;
+		double temperatureResidual = _configuration.convergenceParameters().requestedSolution();
+		double heatResidual = _configuration.convergenceParameters().requestedResidual();
 		if (_configuration.convergenceParameters().checkSolution()) {
-			temperatureResidual = sqrt(physics->sumSquares(physics->instance()->primalSolution, Physics::SumOperation::AVERAGE));
+			temperatureResidual *= 10;
 		}
-		sum(step, Matrices::primar, T, 1, 1);
-		if (_configuration.convergenceParameters().checkSolution()) {
-			temperatureResidual /= sqrt(physics->sumSquares(physics->instance()->primalSolution, Physics::SumOperation::AVERAGE));;
-		}
-
-		processSolution(step);
-		storeSubSolution(step);
-
 		if (_configuration.convergenceParameters().checkResidual()) {
-			assembleMatrices(step, Matrices::K | Matrices::R | Matrices::f);
-			// double R;
-			// |R| = f - R
-			// R = physics.front()->sumSquares(physics.front()->instance()->f, Physics::SumOperation::SUM);
-			// |R| -= BtLambda
-			// TODO
+			heatResidual *= 10;
+		}
+
+		while (
+			step.substep++ < _configuration.max_iterations &&
+			(temperatureResidual > _configuration.convergenceParameters().requestedSolution() ||
+			heatResidual > _configuration.convergenceParameters().requestedResidual())) {
+
+			T = physics->instance()->primalSolution;
+
+			updateMatrices(step, Matrices::K | Matrices::f | Matrices::R, physics->instance()->solutions);
+			#pragma omp parallel for
+			for (size_t d = 0; d < instance->domains; d++) {
+				for (size_t i = 0; i < instance->f[d].size(); i++) {
+					instance->f[d][i] *= (step.iteration + 1) / (double)substeps;
+				}
+			}
+
+			if (_configuration.line_search) {
+				F_ext = physics->instance()->f;
+			}
+			if (_configuration.convergenceParameters().checkResidual()) {
+				heatResidual = physics->sumSquares(physics->instance()->f, Physics::SumOperation::SUM);
+			}
+			sum(step, Matrices::f, Matrices::R, 1, -1);
+			if (_configuration.convergenceParameters().checkResidual()) {
+				heatResidual += physics->sumSquares(physics->instance()->f, Physics::SumOperation::SUM, Physics::SumRestriction::DIRICHLET, step.step);
+			}
+
+			composeGluing(step, Matrices::B1);
+			#pragma omp parallel for
+			for (size_t d = 0; d < instance->domains; d++) {
+				for (size_t i = 0; i < instance->B1c[d].size(); i++) {
+					instance->B1c[d][i] *= (step.iteration + 1) / (double)substeps;
+				}
+			}
+			sum(step, Matrices::B1c, Matrices::primar, 1, -1);
+			regularizeMatrices(step, Matrices::K);
+			updateLinearSolver(Matrices::K | Matrices::f | Matrices::B1c);
+			runLinearSolver();
+
+			if (_configuration.line_search) {
+				lineSearch(T, physics->instance()->primalSolution, F_ext, physics, step);
+			}
+			if (_configuration.convergenceParameters().checkSolution()) {
+				temperatureResidual = sqrt(physics->sumSquares(physics->instance()->primalSolution, Physics::SumOperation::AVERAGE));
+			}
+			sum(step, Matrices::primar, T, 1, 1);
+			if (_configuration.convergenceParameters().checkSolution()) {
+				temperatureResidual /= sqrt(physics->sumSquares(physics->instance()->primalSolution, Physics::SumOperation::AVERAGE));;
+			}
+
+			processSolution(step);
+			storeSubSolution(step);
+
+			if (_configuration.convergenceParameters().checkResidual()) {
+				assembleMatrices(step, Matrices::K | Matrices::R | Matrices::f);
+				// double R;
+				// |R| = f - R
+				// R = physics.front()->sumSquares(physics.front()->instance()->f, Physics::SumOperation::SUM);
+				// |R| -= BtLambda
+				// TODO
+			}
 		}
 	}
 }

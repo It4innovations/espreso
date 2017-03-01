@@ -76,6 +76,9 @@ Factory::Factory(const GlobalConfiguration &configuration)
 					case NonLinearSolverBase::METHOD::NEWTON_RHAPSON:
 						loadSteps.push_back(new NewtonRhapson(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->nonlinear_solver));
 						break;
+					case NonLinearSolverBase::METHOD::MODIFIED_NEWTON_RHAPSON:
+						loadSteps.push_back(new NewtonRhapson(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->nonlinear_solver));
+						break;
 					default:
 						ESINFO(GLOBAL_ERROR) << "Not implemented non-linear solver method";
 					}

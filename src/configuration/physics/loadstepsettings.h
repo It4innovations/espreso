@@ -29,8 +29,7 @@ struct LoadStepSettingsBase: public Configuration {
 		{ "NONLINEAR", MODE::NONLINEAR, "Non-linear." },
 	}));
 
-	PARAMETER(size_t, start_time, "Step start time.", 0);
-	PARAMETER(size_t, end_time  , "Step end time"   , 1);
+	PARAMETER(double, duration, "Duration time of the load step.", 1);
 
 	SUBCONFIG(TransientSolver, transient_solver, "Transient configuration for each load step.");
 };
