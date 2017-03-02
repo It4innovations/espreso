@@ -209,7 +209,7 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 	Me.resize(0, 0);
 	Re.resize(0, 0);
 	fe.resize(0, 0);
-	if (matrices & Matrices::K) {
+	if (matrices & (Matrices::K | Matrices::R)) {
 		Ke.resize(Ksize, Ksize);
 		Ke = 0;
 	}
@@ -325,6 +325,9 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 	}
 	if (matrices & Matrices::R) {
 		Re.multiply(Ke, T);
+		if (!(matrices & Matrices::K)) {
+			Ke.resize(0, 0);
+		}
 	}
 }
 
