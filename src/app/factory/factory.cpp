@@ -14,6 +14,9 @@
 #include "../../output/resultstorelist.h"
 #include "../../output/vtk/vtk.h"
 #include "../../output/vtk/catalyst.h"
+#include "../../output2/resultstore/vtklegacy.h"
+#include "../../output2/resultstore/vtkxmlascii.h"
+#include "../../output2/resultstore/vtkxmlbinary.h"
 
 #include "../../input/loader.h"
 #include "../../assembler/assembler.h"
@@ -38,7 +41,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		_linearSolvers.push_back(new LinearSolver(_instances.front(), configuration.shallow_water_2D.espreso));
 
 		loadSteps.push_back(new Linear(mesh, _physics.front(),  _linearSolvers.front(), store));
-		meshPreprocessing();
+		meshPreprocessing(configuration.output);
 		return;
 	}
 
@@ -105,11 +108,11 @@ Factory::Factory(const GlobalConfiguration &configuration)
 				ESINFO(GLOBAL_ERROR) << "Not implemented Physics solver";
 			}
 		}
-		meshPreprocessing();
+		meshPreprocessing(configuration.output);
 	}
 }
 
-void Factory::meshPreprocessing()
+void Factory::meshPreprocessing(const OutputConfiguration &configuration)
 {
 	for (size_t i = 0; i < _physics.size(); i++) {
 
@@ -141,6 +144,14 @@ void Factory::meshPreprocessing()
 	if (Test::report(EXPENSIVE)) {
 		mesh->checkRegions(mesh->nodes());
 	}
+
+	// output::VTKLegacy vtklegacy(configuration, mesh, "tmp");
+	output::VTKXMLASCII vtkxmlascii(configuration, mesh, "tmp");
+	// output::VTKXMLBinary vtkxmlbinary(configuration, mesh, "tmp");
+	Step step;
+	// vtklegacy.storeSettings(step);
+	vtkxmlascii.storeSettings(step);
+	// vtkxmlbinary.storeSettings(step);
 }
 
 void Factory::finalize()

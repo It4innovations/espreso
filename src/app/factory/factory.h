@@ -14,6 +14,7 @@ namespace store { class ResultStoreList; }
 
 
 struct GlobalConfiguration;
+struct OutputConfiguration;
 struct Results;
 struct OldInstance;
 struct Mesh;
@@ -37,7 +38,7 @@ struct Factory {
 	Mesh *mesh;
 
 private:
-	void meshPreprocessing();
+	void meshPreprocessing(const OutputConfiguration &configuration);
 
 	std::vector<Solver*> _solvers;
 	std::vector<Physics*> _physics;

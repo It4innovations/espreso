@@ -1,0 +1,11 @@
+
+def configure(ctx):
+    pass
+
+def build(ctx):
+
+    ctx.objects(
+        source = ctx.path.ant_glob('**/*.cpp'),
+        target = "output2",
+        use    = "espreso_includes"
+    )

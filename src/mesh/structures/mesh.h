@@ -88,6 +88,7 @@ public:
 	const std::vector<Element*>& fixPoints(size_t part) const { return _fixPoints[part]; };
 	const std::vector<Element*>& corners() const { return _corners; };
 
+	size_t steps() const { return _steps; }
 	size_t parts() const { return _partPtrs.size() - 1; }
 	const std::vector<eslocal>& getPartition() const { return _partPtrs; }
 	size_t bodies() const { return _bodies.size() - 1; }
@@ -195,6 +196,9 @@ protected:
 
 	/** @brief list of settings for each domain and load step*/
 	std::vector<std::vector<std::set<Property> > > _properties;
+
+	/** @brief number of load steps */
+	size_t _steps;
 
 	/** @brief list of DOFs offsets for nodes (useful for multiple physics)*/
 	std::vector<Property> _nodesDOFsOffsets;

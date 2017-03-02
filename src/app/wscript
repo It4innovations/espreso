@@ -52,14 +52,14 @@ def build(ctx):
     ctx.program(
         source       = "espreso.cpp",
         target       = "espreso",
-        use          = "espreso_includes basis config solver loader generator ansys_in espreso_in openfoam_in generic_out mesh bem assembler factory",
+        use          = "espreso_includes basis config solver loader generator ansys_in espreso_in openfoam_in generic_out output2 mesh bem assembler factory",
         install_path = ctx.ROOT
     )
 
     ctx.program(
         source       = "decomposer.cpp",
         target       = "decomposer",
-        use          = "espreso_includes basis config solver loader generator ansys_in espreso_in openfoam_in espreso_out generic_out mesh bem assembler factory",
+        use          = "espreso_includes basis config solver loader generator ansys_in espreso_in openfoam_in espreso_out output2 generic_out mesh bem assembler factory",
         install_path = ctx.ROOT
     )
 

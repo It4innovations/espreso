@@ -298,6 +298,7 @@ void VTK::finalize()
 		writer->SetFileName((name.str() + ".vtu").c_str());
 		writer->SetInputData(VTKGrid);
 		writer->SetDataModeToBinary();
+		writer->SetDataModeToAscii();
 		if (_output.compression) {
 			writer->SetCompressorTypeToZLib();
 		} else {

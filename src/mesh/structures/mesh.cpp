@@ -38,6 +38,7 @@ namespace espreso {
 Mesh::Mesh(): _continuous(true), _elements(0)
 {
 	_coordinates = new Coordinates();
+	_steps = 1;
 	_bodies = { 0, 0 };
 	_partPtrs = { 0, 0 };
 
@@ -838,6 +839,10 @@ void Mesh::fillDomainsSettings()
 {
 	_properties.clear();
 	_properties.resize(parts());
+
+	for (size_t r = 0; r < _regions.size(); r++) {
+		std::max(_steps, _regions[r]->settings.size());
+	}
 
 	auto addProperties = [&] (const std::vector<eslocal> &domains, size_t region) {
 		for (size_t d = 0; d < domains.size(); d++) {

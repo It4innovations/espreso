@@ -32,6 +32,8 @@ struct Esutils
 
 	template<typename Ttype>
 	static typename std::vector<Ttype>::const_iterator max_element(const std::vector<Ttype> &elements);
+
+	static std::string createDirectory(const std::vector<std::string> &path);
 };
 
 
