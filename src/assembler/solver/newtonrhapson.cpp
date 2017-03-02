@@ -62,7 +62,7 @@ void NewtonRhapson::preprocess(Step &step)
 
 void NewtonRhapson::solve(Step &step)
 {
-	if (!_configuration.convergenceParameters().checkSolution() && _configuration.convergenceParameters().checkResidual()) {
+	if (!_configuration.convergenceParameters().checkSolution() && !_configuration.convergenceParameters().checkResidual()) {
 		ESINFO(GLOBAL_ERROR) << "It is not possible to turn off the both 'temperature' and 'heat' convergence.";
 	}
 
@@ -72,24 +72,19 @@ void NewtonRhapson::solve(Step &step)
 
 	std::vector<std::vector<double> > T;
 	std::vector<std::vector<double> > F_ext;
+	std::vector<std::vector<double> > f_R_BtLambda;
+
 
 	size_t substeps = _configuration.stepping == NonLinearSolverBase::STEPPINGG::TRUE ? _configuration.substeps : 1;
 	for (step.iteration = 0; step.iteration < substeps; step.iteration++) {
 
 		step.substep = 0;
-		double temperatureResidual = _configuration.convergenceParameters().requestedSolution();
-		double heatResidual = _configuration.convergenceParameters().requestedResidual();
-		if (_configuration.convergenceParameters().checkSolution()) {
-			temperatureResidual *= 10;
-		}
-		if (_configuration.convergenceParameters().checkResidual()) {
-			heatResidual *= 10;
-		}
+		double temperatureResidual = 10 * _configuration.convergenceParameters().requestedSolution();
+		double heatResidual;
 
 		while (
 			step.substep++ < _configuration.max_iterations &&
-			(temperatureResidual > _configuration.convergenceParameters().requestedSolution() ||
-			heatResidual > _configuration.convergenceParameters().requestedResidual())) {
+			temperatureResidual > _configuration.convergenceParameters().requestedSolution()) {
 
 			T = physics->instance()->primalSolution;
 
@@ -109,11 +104,20 @@ void NewtonRhapson::solve(Step &step)
 				F_ext = physics->instance()->f;
 			}
 			if (_configuration.convergenceParameters().checkResidual()) {
-				heatResidual = physics->sumSquares(physics->instance()->f, Physics::SumOperation::SUM);
+				heatResidual = physics->sumSquares(physics->instance()->f, Physics::SumOperation::SUM, Physics::SumRestriction::NON_DIRICHLET, step.step);
+				heatResidual += physics->sumSquares(physics->instance()->R, Physics::SumOperation::SUM, Physics::SumRestriction::DIRICHLET, step.step);
+				heatResidual = sqrt(heatResidual);
 			}
 			sum(step, Matrices::f, Matrices::R, 1, -1);
 			if (_configuration.convergenceParameters().checkResidual()) {
-				heatResidual += physics->sumSquares(physics->instance()->f, Physics::SumOperation::SUM, Physics::SumRestriction::DIRICHLET, step.step);
+				sum(f_R_BtLambda, instance->f, instance->dualSolution, 1 , -1, "heat residual", "f - R", "Bt * Lambda");
+				heatResidual /= sqrt(physics->sumSquares(f_R_BtLambda, Physics::SumOperation::SUM));
+				if (
+					heatResidual < _configuration.convergenceParameters().requestedResidual() &&
+					temperatureResidual < _configuration.convergenceParameters().requestedSolution()) {
+
+					break;
+				}
 			}
 
 			composeGluing(step, Matrices::B1);
@@ -139,24 +143,16 @@ void NewtonRhapson::solve(Step &step)
 			if (_configuration.convergenceParameters().checkSolution()) {
 				temperatureResidual = sqrt(physics->sumSquares(physics->instance()->primalSolution, Physics::SumOperation::AVERAGE));
 			}
-			sum(step, Matrices::primar, T, 1, 1);
+			sum(step, Matrices::primar, T, 1, 1, "prevSolution");
 			if (_configuration.convergenceParameters().checkSolution()) {
 				temperatureResidual /= sqrt(physics->sumSquares(physics->instance()->primalSolution, Physics::SumOperation::AVERAGE));;
 			}
 
 			processSolution(step);
 			storeSubSolution(step);
-
-			if (_configuration.convergenceParameters().checkResidual()) {
-				assembleMatrices(step, Matrices::K | Matrices::R | Matrices::f);
-				// double R;
-				// |R| = f - R
-				// R = physics.front()->sumSquares(physics.front()->instance()->f, Physics::SumOperation::SUM);
-				// |R| -= BtLambda
-				// TODO
-			}
 		}
 	}
+	step.iteration = substeps - 1;
 }
 
 void NewtonRhapson::postprocess(Step &step)
