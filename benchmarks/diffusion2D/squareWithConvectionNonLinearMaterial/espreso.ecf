@@ -76,10 +76,15 @@ ADVECTION_DIFFUSION_2D {
 
         NONLINEAR_SOLVER {
           METHOD   NEWTON_RHAPSON;
-          LINE_SEARCH      FALSE;
+          LINE_SEARCH       FALSE;
+          STEPPING           TRUE;
+          SUBSTEPS         [ARG7];
           CONVERGENCE_PARAMETERS {
             TEMPERATURE           TRUE;
             TEMPERATURE_RESIDUAL  1e-3;
+
+            HEAT                 FALSE;
+            HEAT_RESIDUAL         1e-3;
           }
         }
       }

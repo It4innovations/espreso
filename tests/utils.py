@@ -62,7 +62,7 @@ class TestCaseCreator:
             if not skip(files):
                 for file in files:
                     if file.endswith(ext) and not omit.match(file):
-                        examples.append(( root, file.rstrip(ext)))
+                        examples.append(( root, file.replace(ext, '')))
 
         examples.sort()
 

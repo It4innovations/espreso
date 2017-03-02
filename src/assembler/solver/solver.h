@@ -54,6 +54,7 @@ protected:
 	void sum(const Step &step, Matrices v1, const std::vector<std::vector<double> > &v2, double alpha = 1, double beta = 1, const std::string v2name = "{?}");
 	void sum(std::vector<std::vector<double> > &result, const std::vector<std::vector<double> > &a, const std::vector<std::vector<double> > &b, double alpha = 1, double beta = 1, const std::string resultName = "{?}", const std::string aName = "{?}", const std::string bName = "{?}");
 	void multiply(const Step &step, Matrices v1, std::vector<std::vector<double> > &v2, std::vector<std::vector<double> > &solution, double beta = 1, const std::string v2name = "{?}", const std::string solutionName = "{?}");
+	void multiply(const Step &step, Matrices v, double beta);
 
 	void composeGluing(const Step &step, Matrices matrices);
 	void regularizeMatrices(const Step &step, Matrices matrices);

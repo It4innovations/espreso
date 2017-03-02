@@ -38,19 +38,9 @@ void NewtonRhapson::init(Step &step)
 {
 	assembleMatrices(step, Matrices::K | Matrices::f);
 	size_t substeps = _configuration.stepping == NonLinearSolverBase::STEPPINGG::TRUE ? _configuration.substeps : 1;
-	#pragma omp parallel for
-	for (size_t d = 0; d < instance->domains; d++) {
-		for (size_t i = 0; i < instance->f[d].size(); i++) {
-			instance->f[d][i] /= substeps;
-		}
-	}
+	multiply(step, Matrices::f, (step.iteration + 1) / (double)substeps);
 	composeGluing(step, Matrices::B1);
-	#pragma omp parallel for
-	for (size_t d = 0; d < instance->domains; d++) {
-		for (size_t i = 0; i < instance->B1c[d].size(); i++) {
-			instance->B1c[d][i] /= substeps;
-		}
-	}
+	multiply(step, Matrices::B1c, (step.iteration + 1) / (double)substeps);
 	regularizeMatrices(step, Matrices::K);
 	composeGluing(step, Matrices::B0);
 }
@@ -93,12 +83,7 @@ void NewtonRhapson::solve(Step &step)
 			} else {
 				updateMatrices(step, Matrices::K | Matrices::f | Matrices::R, physics->instance()->solutions);
 			}
-			#pragma omp parallel for
-			for (size_t d = 0; d < instance->domains; d++) {
-				for (size_t i = 0; i < instance->f[d].size(); i++) {
-					instance->f[d][i] *= (step.iteration + 1) / (double)substeps;
-				}
-			}
+			multiply(step, Matrices::f, (step.iteration + 1) / (double)substeps);
 
 			if (_configuration.line_search) {
 				F_ext = physics->instance()->f;
@@ -121,12 +106,7 @@ void NewtonRhapson::solve(Step &step)
 			}
 
 			composeGluing(step, Matrices::B1);
-			#pragma omp parallel for
-			for (size_t d = 0; d < instance->domains; d++) {
-				for (size_t i = 0; i < instance->B1c[d].size(); i++) {
-					instance->B1c[d][i] *= (step.iteration + 1) / (double)substeps;
-				}
-			}
+			multiply(step, Matrices::B1c, (step.iteration + 1) / (double)substeps);
 			sum(step, Matrices::B1c, Matrices::primar, 1, -1);
 			regularizeMatrices(step, Matrices::K);
 

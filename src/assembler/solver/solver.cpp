@@ -253,6 +253,47 @@ void Solver::multiply(const Step &step, Matrices v1, std::vector<std::vector<dou
 	}
 }
 
+void Solver::multiply(const Step &step, Matrices v, double beta)
+{
+	if (beta == 1) {
+		return;
+	}
+	ESINFO(PROGRESS2) << "Multiply " << mNames(v) << " by " << beta;
+	if (v & Matrices::f) {
+		TimeEvent time(std::string("Multiply " + mNames(Matrices::f) + "by " + std::to_string(beta))); time.start();
+		#pragma omp parallel for
+		for (size_t d = 0; d < instance->domains; d++) {
+			for (size_t i = 0; i < instance->f[d].size(); i++) {
+				instance->f[d][i] *= beta;
+			}
+		}
+		time.endWithBarrier(); _timeStatistics->addEvent(time);
+	}
+	if (v & Matrices::R) {
+		TimeEvent time(std::string("Multiply " + mNames(Matrices::R) + "by " + std::to_string(beta))); time.start();
+		#pragma omp parallel for
+		for (size_t d = 0; d < instance->domains; d++) {
+			for (size_t i = 0; i < instance->R[d].size(); i++) {
+				instance->R[d][i] *= beta;
+			}
+		}
+		time.endWithBarrier(); _timeStatistics->addEvent(time);
+	}
+	if (v & Matrices::B1c) {
+		TimeEvent time(std::string("Multiply " + mNames(Matrices::B1c) + "by " + std::to_string(beta))); time.start();
+		#pragma omp parallel for
+		for (size_t d = 0; d < instance->domains; d++) {
+			for (size_t i = 0; i < instance->B1c[d].size(); i++) {
+				instance->B1c[d][i] *= beta;
+			}
+		}
+		time.endWithBarrier(); _timeStatistics->addEvent(time);
+	}
+	if (v & ~(Matrices::R | Matrices::f | Matrices::B1c)) {
+		ESINFO(ERROR) << "ESPRESO internal error: not implemented multiplication of " << mNames(v & ~(Matrices::R | Matrices::f | Matrices::B1c)) << "by " << beta;
+	}
+}
+
 void Solver::regularizeMatrices(const Step &step, Matrices matrices)
 {
 	if (matrices & ~(Matrices::K)) {
