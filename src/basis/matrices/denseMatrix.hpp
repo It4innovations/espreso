@@ -1,5 +1,7 @@
 #include "denseMatrix.h"
 
+#include <map>
+
 namespace espreso {
 
 template<typename Tindices>

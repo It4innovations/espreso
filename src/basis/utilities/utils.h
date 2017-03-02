@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <vector>
 #include <string>
+#include <ostream>
 
 namespace espreso {
 
