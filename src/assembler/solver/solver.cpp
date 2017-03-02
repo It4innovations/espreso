@@ -194,7 +194,7 @@ void Solver::sum(const Step &step, Matrices v1, const std::vector<std::vector<do
 		sum(physics->instance()->primalSolution, physics->instance()->primalSolution, v2, alpha, beta, mNames(v1), mNames(v1), v2name);
 		time.endWithBarrier(); _timeStatistics->addEvent(time);
 
-		storeData(step, physics->instance()->primalSolution, "solution", "solution = alpha * solution + beta * " + v2name);
+		storeData(step, physics->instance()->primalSolution, "solution", "solution = " + std::to_string(alpha) + " * solution + " + std::to_string(beta) + " * " + v2name);
 		return;
 	}
 
@@ -204,7 +204,7 @@ void Solver::sum(const Step &step, Matrices v1, const std::vector<std::vector<do
 		sum(physics->instance()->f, physics->instance()->f, v2, alpha, beta, mNames(v1), mNames(v1), v2name);
 		time.endWithBarrier(); _timeStatistics->addEvent(time);
 
-		storeData(step, physics->instance()->f, "f", "f = alpha * f + beta * " + v2name);
+		storeData(step, physics->instance()->f, "f", "f = " + std::to_string(alpha) + " * f + " + std::to_string(beta) + " * " + v2name);
 		return;
 	}
 	ESINFO(GLOBAL_ERROR) << "Implement sum " << mNames(v1) << "and " << v2name;
@@ -213,8 +213,26 @@ void Solver::sum(const Step &step, Matrices v1, const std::vector<std::vector<do
 void Solver::sum(std::vector<std::vector<double> > &result, const std::vector<std::vector<double> > &a, const std::vector<std::vector<double> > &b, double alpha, double beta, const std::string resultName, const std::string aName, const std::string bName)
 {
 	ESINFO(PROGRESS2) << "Sum " << resultName << " = " << alpha << " * " << aName << " " << (beta < 0 ? "- " : "+ ") << fabs(beta) << " * " << bName;
+	if (result.size() == 0) {
+		result.resize(a.size());
+	}
+	if (a.size() != b.size()) {
+		ESINFO(ERROR) << "ESPRESO internal error: Solver::sum " << aName << ".size() != " << bName << ".size()";
+	}
+	if (result.size() != a.size()) {
+		ESINFO(ERROR) << "ESPRESO internal error: Solver::sum " << resultName << ".size() != " << aName << ".size()";
+	}
 	#pragma omp parallel for
 	for (size_t d = 0; d < a.size(); d++) {
+		if (result[d].size() == 0) {
+			result[d].resize(a[d].size());
+		}
+		if (a[d].size() != b[d].size()) {
+			ESINFO(ERROR) << "ESPRESO internal error: Solver::sum " << aName << "[d].size() != " << bName << "[d].size()";
+		}
+		if (result[d].size() != a[d].size()) {
+			ESINFO(ERROR) << "ESPRESO internal error: Solver::sum " << resultName << "[d].size() != " << aName << "[d].size()";
+		}
 		for (size_t i = 0; i < a[d].size(); i++) {
 			result[d][i] = alpha * a[d][i] + beta * b[d][i];
 		}
@@ -394,7 +412,7 @@ void Solver::lineSearch(const std::vector<std::vector<double> > &U, std::vector<
 	std::vector<std::vector<double> > F_ext_r = F_ext;
 
 	for (size_t i = 0; i < 6; i++) {
-		sum(solution, U, deltaU, 1, alpha);
+		sum(solution, U, deltaU, 1, alpha, "u_" + std::to_string(step.substep), "u_" + std::to_string(step.substep - 1), "delta_u");
 
 		solution.swap(physics->instance()->primalSolution);
 		physics->assembleMatrix(step, Matrices::R);
@@ -402,14 +420,14 @@ void Solver::lineSearch(const std::vector<std::vector<double> > &U, std::vector<
 
 		if (i == 0) {
 			faStart = multiply(deltaU, physics->instance()->f);
-			sum(F_ext_r, F_ext, physics->instance()->R, 1, -1);
+			sum(F_ext_r, F_ext, physics->instance()->R, 1, -1, "F_ext", "F_ext", "R");
 			fb = multiply(deltaU, F_ext_r);
 			if ((faStart < 0 && fb < 0) || (faStart >= 0 && fb >= 0)) {
 				return;
 			}
 			fa = faStart;
 		} else {
-			sum(F_ext_r, F_ext, physics->instance()->R, 1, -1);
+			sum(F_ext_r, F_ext, physics->instance()->R, 1, -1, "F_ext", "F_ext", "R");
 			fx = multiply(deltaU, F_ext_r);
 			if (fa * fx < 0) {
 				b = alpha;
@@ -435,7 +453,7 @@ void Solver::lineSearch(const std::vector<std::vector<double> > &U, std::vector<
 		alpha = 1;
 	}
 
-	sum(solution, U, deltaU, 0, alpha);
+	sum(solution, U, deltaU, 0, alpha, "u_" + std::to_string(step.substep), "u_" + std::to_string(step.substep - 1), "delta_u");
 	solution.swap(deltaU);
 }
 
