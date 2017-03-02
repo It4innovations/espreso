@@ -31,7 +31,8 @@ struct Physics {
 
 	enum class SumRestriction {
 		NONE,
-		DIRICHLET
+		DIRICHLET,
+		NON_DIRICHLET
 	};
 
 	Physics(const std::string &name, Mesh *mesh, Instance *instance);
