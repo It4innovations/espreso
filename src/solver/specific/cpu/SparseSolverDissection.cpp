@@ -708,13 +708,13 @@ void SparseSolverDissection::SolveMat_Sparse( espreso::SparseMatrix & A_in, espr
 		/* -------------------------------------------------------------------- */
 		/* .. Termination and release of memory. */
 		/* -------------------------------------------------------------------- */
-		phase = -1;			/* Release internal memory. */
-		MKL_INT nRhs = 1;
-		double ddum;			/* Double dummy */
-		MKL_INT idum;			/* Integer dummy. */
-		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-				&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
-				iparm, &msglvl, &ddum, &ddum, &error);
+//		phase = -1;			/* Release internal memory. */
+//		MKL_INT nRhs = 1;
+//		double ddum;			/* Double dummy */
+//		MKL_INT idum;			/* Integer dummy. */
+//		PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+//				&rows, &ddum, CSR_I_row_indices, CSR_J_col_indices, &idum, &nRhs,
+//				iparm, &msglvl, &ddum, &ddum, &error);
 		initialized = false;
 	}
 }

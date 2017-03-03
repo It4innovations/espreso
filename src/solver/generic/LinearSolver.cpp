@@ -715,6 +715,9 @@ void LinearSolver::setup_InitClusterAndSolver( )
 		cluster->USE_HFETI = false;
 		break;
 	case ESPRESO_METHOD::HYBRID_FETI:
+		printf("--- HYBRID FETI not working with dissection solver yet ---");
+		exit(0);
+
 		cluster->USE_HFETI = true;
 		break;
 	default:

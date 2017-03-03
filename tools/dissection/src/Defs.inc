@@ -12,7 +12,7 @@ CCFLAGS = -O3 -restrict -DCLOCK_GETTIME -DDD_REAL -DBLAS_MKL -DINT_WIDTH=$(INT_W
 ifeq ($(LIBTYPE), SHARED)
   LD       = icpc
   CCFLAGS += -fPIC
-  LDFLAGS  = -shared -L$(LIBS) -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lmetis -lqd -lscotch -lscotcherr -lpthread -lrt -o
+  LDFLAGS  = -shared -L$(LIBS) -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -lmetis -lqd -lscotch -lscotcherr -lpthread -lrt -o
   EXTLIB   = so
 else
   LD      = ar
