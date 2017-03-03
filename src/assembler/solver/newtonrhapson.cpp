@@ -64,6 +64,7 @@ void NewtonRhapson::solve(Step &step)
 	std::vector<std::vector<double> > F_ext;
 	std::vector<std::vector<double> > f_R_BtLambda;
 
+	double alpha, max;
 
 	size_t substeps = _configuration.stepping == NonLinearSolverBase::STEPPINGG::TRUE ? _configuration.substeps : 1;
 	for (step.iteration = 0; step.iteration < substeps; step.iteration++) {
@@ -123,7 +124,8 @@ void NewtonRhapson::solve(Step &step)
 			runLinearSolver();
 
 			if (_configuration.line_search) {
-				lineSearch(T, physics->instance()->primalSolution, F_ext, physics, step);
+				max = maxAbsValue(physics->instance()->primalSolution);
+				alpha = lineSearch(T, physics->instance()->primalSolution, F_ext, physics, step);
 			}
 			if (_configuration.convergenceParameters().checkSolution()) {
 				temperatureResidual = sqrt(physics->sumSquares(physics->instance()->primalSolution, Physics::SumOperation::AVERAGE));

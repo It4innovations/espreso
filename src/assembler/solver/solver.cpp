@@ -428,7 +428,7 @@ void Solver::finalizeLinearSolver()
 	_timeStatistics->printStatsMPI();
 }
 
-void Solver::lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext, Physics *physics, const Step &step)
+double Solver::lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext, Physics *physics, const Step &step)
 {
 	auto multiply = [] (const std::vector<std::vector<double> > &v1, const std::vector<std::vector<double> > &v2) {
 		double cmul = 0, gmul;
@@ -464,7 +464,7 @@ void Solver::lineSearch(const std::vector<std::vector<double> > &U, std::vector<
 			sum(F_ext_r, F_ext, physics->instance()->R, 1, -1, "F_ext_r", "F_ext", "R");
 			fb = multiply(deltaU, F_ext_r);
 			if ((faStart < 0 && fb < 0) || (faStart >= 0 && fb >= 0)) {
-				return;
+				return alpha;
 			}
 			fa = faStart;
 		} else {
@@ -496,5 +496,18 @@ void Solver::lineSearch(const std::vector<std::vector<double> > &U, std::vector<
 
 	sum(solution, U, deltaU, 0, alpha, "u_" + std::to_string(step.substep), "u_" + std::to_string(step.substep - 1), "delta_u");
 	solution.swap(deltaU);
+	return alpha;
+}
+
+double Solver::maxAbsValue(const std::vector<std::vector<double> > &v) const
+{
+	double max = 0;
+	for (size_t p = 0; p < v.size(); p++) {
+		max = std::max(max, *std::max_element(v[p].begin(), v[p].end(), [] (const double v1, const double v2) { return std::fabs(v1) < std::fabs(v2); }));
+	}
+
+	double gmax;
+	MPI_Allreduce(&max, &gmax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+	return gmax;
 }
 
