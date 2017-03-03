@@ -1527,15 +1527,20 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 		return ss.str();
 	};
 
-	ESINFO(CONVERGENCE)
-		<< spaces(indent.size() + iterationWidth - 4) << "iter"
-		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
-		<< spaces(indent.size() + 4) << "r" << spaces(4)
-		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
-		<< spaces(indent.size()) << "time[s]";
+	double min_tol = 1e-12;
+	if (tol < min_tol) {
+		ESINFO(CONVERGENCE) << Info::TextColor::RED << "The NORM is fulfilled.";
+	} else {
+		ESINFO(CONVERGENCE)
+			<< spaces(indent.size() + iterationWidth - 4) << "iter"
+			<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+			<< spaces(indent.size() + 4) << "r" << spaces(4)
+			<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+			<< spaces(indent.size()) << "time[s]";
+	}
 
 	// *** Start the CG iteration loop ********************************************
-	for (int iter = 0; iter < CG_max_iter; iter++) {
+	for (int iter = 0; tol > min_tol && iter < CG_max_iter; iter++) {
 
 		timing.totalTime.start();
 
