@@ -456,19 +456,19 @@ void Solver::lineSearch(const std::vector<std::vector<double> > &U, std::vector<
 		sum(solution, U, deltaU, 1, alpha, "u_" + std::to_string(step.substep), "u_" + std::to_string(step.substep - 1), "delta_u");
 
 		solution.swap(physics->instance()->primalSolution);
-		physics->assembleMatrix(step, Matrices::R);
+		physics->updateMatrix(step, Matrices::R, physics->instance()->solutions);
 		solution.swap(physics->instance()->primalSolution);
 
 		if (i == 0) {
 			faStart = multiply(deltaU, physics->instance()->f);
-			sum(F_ext_r, F_ext, physics->instance()->R, 1, -1, "F_ext", "F_ext", "R");
+			sum(F_ext_r, F_ext, physics->instance()->R, 1, -1, "F_ext_r", "F_ext", "R");
 			fb = multiply(deltaU, F_ext_r);
 			if ((faStart < 0 && fb < 0) || (faStart >= 0 && fb >= 0)) {
 				return;
 			}
 			fa = faStart;
 		} else {
-			sum(F_ext_r, F_ext, physics->instance()->R, 1, -1, "F_ext", "F_ext", "R");
+			sum(F_ext_r, F_ext, physics->instance()->R, 1, -1, "F_ext_r", "F_ext", "R");
 			fx = multiply(deltaU, F_ext_r);
 			if (fa * fx < 0) {
 				b = alpha;
