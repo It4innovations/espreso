@@ -47,7 +47,7 @@ static std::string mNames(espreso::Matrices matrices)
 	std::string(matrices & espreso::Matrices::B0     ? "B0 "     : "") +
 	std::string(matrices & espreso::Matrices::B1     ? "B1 "     : "") +
 	std::string(matrices & espreso::Matrices::B1c    ? "B1c "    : "") +
-	std::string(matrices & espreso::Matrices::primar ? "Primar " : "") +
+	std::string(matrices & espreso::Matrices::primal ? "Primar " : "") +
 	std::string(matrices & espreso::Matrices::dual   ? "Dual "   : "");
 }
 
@@ -146,7 +146,7 @@ void Solver::sum(const Step &step, Matrices v1, Matrices v2, double alpha, doubl
 
 	ESINFO(PROGRESS2) << "Sum " << mNames(v1) << "= " << alpha << " * " << mNames(v1) << (beta < 0 ? "- " : "+ ") << fabs(beta) << " * " << mNames(v2);
 	if (v1 & Matrices::B1c) {
-		if (v2 & Matrices::primar) {
+		if (v2 & Matrices::primal) {
 
 			TimeEvent time(std::string("Update vector " + mNames(v1))); time.start();
 			#pragma omp parallel for
@@ -188,7 +188,7 @@ void Solver::sum(const Step &step, Matrices v1, Matrices v2, double alpha, doubl
 
 void Solver::sum(const Step &step, Matrices v1, const std::vector<std::vector<double> > &v2, double alpha, double beta, const std::string v2name)
 {
-	if (v1 & Matrices::primar) {
+	if (v1 & Matrices::primal) {
 
 		TimeEvent time(std::string("Update vector " + mNames(v1))); time.start();
 		sum(physics->instance()->primalSolution, physics->instance()->primalSolution, v2, alpha, beta, mNames(v1), mNames(v1), v2name);

@@ -22,7 +22,7 @@ enum Matrices : int {
 	B1          = 1 << 6, // Total FETI gluing
 	B1c         = 1 << 7, // Simple B1c
 	B1duplicity = 1 << 8, // Lambdas duplicity
-	primar      = 1 << 9, // Primar solution
+	primal      = 1 << 9, // Primal solution
 	dual        = 1 << 10  // Dual solution (B1 * Lambdas)
 };
 

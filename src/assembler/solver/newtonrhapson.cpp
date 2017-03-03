@@ -107,7 +107,7 @@ void NewtonRhapson::solve(Step &step)
 
 			composeGluing(step, Matrices::B1);
 			multiply(step, Matrices::B1c, (step.iteration + 1) / (double)substeps);
-			sum(step, Matrices::B1c, Matrices::primar, 1, -1);
+			sum(step, Matrices::B1c, Matrices::primal, 1, -1);
 			regularizeMatrices(step, Matrices::K);
 
 			if (_configuration.method == NonLinearSolverBase::METHOD::MODIFIED_NEWTON_RHAPSON && step.substep) {
@@ -123,7 +123,7 @@ void NewtonRhapson::solve(Step &step)
 			if (_configuration.convergenceParameters().checkSolution()) {
 				temperatureResidual = sqrt(physics->sumSquares(physics->instance()->primalSolution, Physics::SumOperation::AVERAGE));
 			}
-			sum(step, Matrices::primar, T, 1, 1, "prevSolution");
+			sum(step, Matrices::primal, T, 1, 1, "prevSolution");
 			if (_configuration.convergenceParameters().checkSolution()) {
 				temperatureResidual /= sqrt(physics->sumSquares(physics->instance()->primalSolution, Physics::SumOperation::AVERAGE));;
 			}
