@@ -37,7 +37,8 @@ protected:
 	ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path);
 
 	virtual void store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, DataArrays &data) =0;
-	virtual void compose(const std::string &name, const std::vector<std::string> &names) {};
+	virtual void composeClusters(const std::string &root, const std::string &name, const DataArrays &data) {};
+	virtual void composeRegions(const std::string &name, const std::vector<std::string> &names) {};
 
 	virtual void preprocessing();
 	virtual void regionPreprocessing(const espreso::Region &region, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements);

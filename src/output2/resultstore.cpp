@@ -4,6 +4,7 @@
 #include "resultstore.h"
 
 #include "../configuration/output.h"
+#include "../configuration/environment.h"
 
 #include "../basis/point/point.h"
 #include "../mesh/elements/element.h"
@@ -214,14 +215,23 @@ void ResultStore::storeSettings(size_t steps)
 void ResultStore::storeSettings(const std::vector<size_t> &steps)
 {
 	std::vector<std::string> prefixes;
+	std::vector<std::string> roots;
+
+
 	for (size_t step = 0; step < steps.size(); step++) {
-		prefixes.push_back(Esutils::createDirectory({ "results", "step" + std::to_string(steps[step]) }));
+		if (!environment->MPIrank) {
+			roots.push_back(Esutils::createDirectory({ "results", "step" + std::to_string(steps[step]) }));
+		}
+		prefixes.push_back(Esutils::createDirectory({ "results", "step" + std::to_string(steps[step]), std::to_string(environment->MPIrank) }));
 	}
 
 	DataArrays data;
 	fillMeshSettings(data, _coordinates, _mesh->getPartition());
 	for (size_t step = 0; step < steps.size(); step++) {
 		store(prefixes[step] + "mesh", _coordinates, _elementsTypes, _elementsNodes, _elements, data);
+		if (!environment->MPIrank) {
+			composeClusters(roots[step], "mesh", data);
+		}
 	}
 
 	std::vector<std::vector<std::string> >  names(steps.size(), { "mesh" });
@@ -237,12 +247,18 @@ void ResultStore::storeSettings(const std::vector<size_t> &steps)
 
 			store(prefixes[step] + _mesh->regions()[r]->name, coordinates, elementTypes, elementNodes, elements, rData);
 			names[step].push_back(_mesh->regions()[r]->name);
+			if (!environment->MPIrank) {
+				composeClusters(roots[step], _mesh->regions()[r]->name, rData);
+			}
 		}
 	}
 
-	for (size_t step = 0; step < steps.size(); step++) {
-		compose(prefixes[step] + "settings", names[step]);
-	}
+	// TODO: it is not working
+//	if (!environment->MPIrank) {
+//		for (size_t step = 0; step < steps.size(); step++) {
+//			composeRegions(roots[step] + "settings", names[step]);
+//		}
+//	}
 }
 
 void ResultStore::storeSolution(const Step &step, const Solution &solution)
