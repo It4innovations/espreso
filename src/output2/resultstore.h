@@ -4,14 +4,17 @@
 
 #include <string>
 #include <map>
+#include <vector>
 
-#include "store.h"
 #include "../basis/point/point.h"
 
 namespace espreso {
 
+class Mesh;
 class Region;
+struct Step;
 struct Solution;
+struct OutputConfiguration;
 
 namespace output {
 
@@ -22,7 +25,7 @@ struct DataArrays {
 	~DataArrays();
 };
 
-class ResultStore: public Store {
+class ResultStore {
 
 public:
 	virtual void storeSettings(const Step &step);
@@ -30,6 +33,7 @@ public:
 	virtual void storeSettings(const std::vector<size_t> &steps);
 
 	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution);
+	virtual void finalize() =0;
 
 	virtual ~ResultStore() {};
 
@@ -48,6 +52,10 @@ protected:
 	virtual void regionData(size_t step, const espreso::Region &region, DataArrays &data);
 
 	virtual void coordinatePreprocessing(const std::vector<std::vector<eslocal> > &indices, std::vector<double> &coordinates, std::vector<size_t> &offsets);
+
+	const OutputConfiguration &_configuration;
+	const Mesh *_mesh;
+	std::string _path;
 
 	std::vector<double> _coordinates; // x1, y1, z1, x2, y2, z2, ...
 	std::vector<eslocal> _elementsTypes;  // code1, code2, ...

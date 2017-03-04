@@ -37,7 +37,7 @@ DataArrays::~DataArrays()
 }
 
 ResultStore::ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path)
-: Store(output, mesh, path)
+: _configuration(output), _mesh(mesh), _path(path)
 {
 
 }
