@@ -11,8 +11,7 @@
 #include "../solution.h"
 
 #include "../../mesh/structures/mesh.h"
-
-#include "../../output/vtk/vtk.h"
+#include "../../output/resultstore.h"
 
 #include "../../solver/generic/SparseMatrix.h"
 #include "../../solver/generic/LinearSolver.h"
@@ -24,7 +23,7 @@ Solver::Solver(
 		Mesh *mesh,
 		Physics* physics,
 		LinearSolver* linearSolver,
-		store::ResultStore* store,
+		output::Store* store,
 		Matrices restriction)
 : physics(physics), instance(physics->instance()), linearSolver(linearSolver), _name(name), _mesh(mesh), _store(store), _restriction(~restriction)
 {
@@ -77,21 +76,13 @@ void Solver::storeData(const Step &step, std::vector<std::vector<double> > &vect
 
 void Solver::storeSolution(const Step &step)
 {
-	std::stringstream ss;
-	ss << "_s" << step.step << "i" << step.substep;
-	for (size_t s = 0; s < physics->instance()->solutions.size(); s++) {
-		_store->storeValues(physics->instance()->solutions[s]->name + ss.str(), physics->instance()->solutions[s]->properties, physics->instance()->solutions[s]->data, physics->instance()->solutions[s]->eType);
-	}
+	_store->storeSolution(step, instance->solutions);
 }
 
 void Solver::storeSubSolution(const Step &step)
 {
 	if (_store->configuration().substeps) {
-		std::stringstream ss;
-		ss << "_s" << step.step << "i" << step.substep << "_" << step.iteration;
-		for (size_t s = 0; s < physics->instance()->solutions.size(); s++) {
-			_store->storeValues(physics->instance()->solutions[s]->name + ss.str(), physics->instance()->solutions[s]->properties, physics->instance()->solutions[s]->data, physics->instance()->solutions[s]->eType);
-		}
+		_store->storeSolution(step, instance->solutions);
 	}
 }
 

@@ -18,7 +18,7 @@ class ESPRESOSolver;
 enum class Property;
 class SparseMatrix;
 
-namespace store {
+namespace output {
 class ResultStore;
 }
 
@@ -32,10 +32,10 @@ struct OldPhysics {
 	virtual void assembleB1() =0;
 	virtual void assembleB0() =0;
 
-	virtual void postProcess(store::ResultStore &store, const std::vector<std::vector<double> > &solution) {};
+	virtual void postProcess(output::ResultStore &store, const std::vector<std::vector<double> > &solution) {};
 
-	virtual void saveMeshProperties(store::ResultStore &store) =0;
-	virtual void saveMeshResults(store::ResultStore &store, const std::vector<std::vector<double> > &results) =0;
+	virtual void saveMeshProperties(output::ResultStore &store) =0;
+	virtual void saveMeshResults(output::ResultStore &store, const std::vector<std::vector<double> > &results) =0;
 	virtual void saveStiffnessMatrices();
 	virtual void saveKernelMatrices();
 

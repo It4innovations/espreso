@@ -15,7 +15,7 @@ public:
 			Mesh *mesh,
 			Physics* physics,
 			LinearSolver* linearSolver,
-			store::ResultStore* store,
+			output::Store* store,
 			const NonLinearSolverBase &configuration,
 			Matrices restriction = Matrices::NONE);
 

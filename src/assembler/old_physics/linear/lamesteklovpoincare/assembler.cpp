@@ -50,12 +50,12 @@ void LameSteklovPoincare::prepareMeshStructures()
 	Triangle6::setDOFs(elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs);
 }
 
-void LameSteklovPoincare::saveMeshProperties(store::ResultStore &store)
+void LameSteklovPoincare::saveMeshProperties(output::ResultStore &store)
 {
 
 }
 
-void LameSteklovPoincare::saveMeshResults(store::ResultStore &store, const std::vector<std::vector<double> > &results)
+void LameSteklovPoincare::saveMeshResults(output::ResultStore &store, const std::vector<std::vector<double> > &results)
 {
 
 }

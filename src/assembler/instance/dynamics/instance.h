@@ -5,8 +5,8 @@
 #include "../instance.h"
 
 #include "../../../configuration/output.h"
+#include "../../../old_output/vtk/vtk.h"
 #include "../../constraints/constraints.h"
-#include "../../../output/vtk/vtk.h"
 #include "../../../solver/generic/LinearSolver.h"
 
 namespace espreso {

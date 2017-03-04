@@ -4,14 +4,18 @@
 // we use ESPRESO assembler for compute stiffness matrices
 #include "../src/app/factory/factory.h"
 #include "../src/assembler/instance/instance.h"
+#include "../src/assembler/solution.h"
+#include "../src/assembler/step.h"
 #include "../src/basis/matrices/denseMatrix.h"
-#include "../src/output/vtk/vtk.h"
 #include "../src/mesh/settings/property.h"
 #include "../src/mesh/elements/element.h"
 #include "../src/mesh/structures/mesh.h"
+#include "../src/mesh/structures/elementtypes.h"
 #include "../src/mesh/structures/coordinates.h"
 #include "../src/assembler/old_physics/assembler.h"
 #include "../src/configuration/globalconfiguration.h"
+#include "../src/output/resultstore/vtkxmlascii.h"
+
 
 int main(int argc, char** argv)
 {
@@ -120,9 +124,11 @@ int main(int argc, char** argv)
 
 	// Process solution
 
-	espreso::store::VTK vtk(configuration.output, *factory.mesh, "results");
-	vtk.storeGeometry();
-	vtk.storeValues("api_result", DOFs.size(), solution, espreso::store::ElementType::NODES);
+	espreso::output::VTKXMLASCII vtk(configuration.output, factory.mesh, "results");
+	espreso::Step step;
+	std::vector<espreso::Solution*> sol;
+	sol.push_back(new espreso::Solution("solution", espreso::ElementType::NODES, factory.instance->physics().pointDOFs, solution));
+	vtk.storeSolution(step, sol);
 
 	// Remove data
 	FETI4IDestroy(K);

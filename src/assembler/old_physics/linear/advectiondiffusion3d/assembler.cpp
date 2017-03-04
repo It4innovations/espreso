@@ -12,6 +12,7 @@
 #include "../../../../mesh/structures/mesh.h"
 #include "../../../../mesh/structures/region.h"
 #include "../../../../mesh/structures/material.h"
+#include "../../../../mesh/structures/elementtypes.h"
 
 #include "../../../../mesh/elements/plane/square4.h"
 #include "../../../../mesh/elements/plane/square8.h"
@@ -26,10 +27,10 @@
 #include "../../../../mesh/elements/volume/pyramid5.h"
 #include "../../../../mesh/elements/volume/tetrahedron10.h"
 #include "../../../../mesh/elements/volume/tetrahedron4.h"
+#include "../../../../output/resultstore.h"
 
 #include "../../../constraints/equalityconstraints.h"
 
-#include "../../../../output/vtk/vtk.h"
 
 namespace espreso {
 
@@ -143,16 +144,16 @@ void AdvectionDiffusion3D::assembleB0()
 	}
 }
 
-void AdvectionDiffusion3D::saveMeshProperties(store::ResultStore &store)
+void AdvectionDiffusion3D::saveMeshProperties(output::ResultStore &store)
 {
-	store.storeProperty("translationMotion", { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y, Property::TRANSLATION_MOTION_Z }, store::ElementType::ELEMENTS);
-	store.storeProperty("headSource", { Property::HEAT_SOURCE }, store::ElementType::ELEMENTS);
-	store.storeProperty("temperature", { Property::TEMPERATURE }, store::ElementType::NODES);
+//	store.storeProperty("translationMotion", { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y, Property::TRANSLATION_MOTION_Z }, ElementType::ELEMENTS);
+//	store.storeProperty("headSource", { Property::HEAT_SOURCE }, ElementType::ELEMENTS);
+//	store.storeProperty("temperature", { Property::TEMPERATURE }, ElementType::NODES);
 }
 
-void AdvectionDiffusion3D::saveMeshResults(store::ResultStore &store, const std::vector<std::vector<double> > &results)
+void AdvectionDiffusion3D::saveMeshResults(output::ResultStore &store, const std::vector<std::vector<double> > &results)
 {
-	store.storeValues("temperature", 1, results, store::ElementType::NODES);
+	store.storeValues("temperature", 1, results, ElementType::NODES);
 }
 
 static double determinant3x3(DenseMatrix &m)
@@ -749,7 +750,7 @@ static void postProcessElement(std::vector<double> &gradient, std::vector<double
 	flux.push_back(matFlux(2, 0) / element->gaussePoints());
 }
 
-void AdvectionDiffusion3D::postProcess(store::ResultStore &store, const std::vector<std::vector<double> > &solution)
+void AdvectionDiffusion3D::postProcess(output::ResultStore &store, const std::vector<std::vector<double> > &solution)
 {
 	if (!_configuration.post_process) {
 		return;
@@ -771,8 +772,8 @@ void AdvectionDiffusion3D::postProcess(store::ResultStore &store, const std::vec
 		}
 	}
 
-	store.storeValues("gradient", 3, termalGradient, store::ElementType::ELEMENTS);
-	store.storeValues("flux", 3, termalFlux, store::ElementType::ELEMENTS);
+	store.storeValues("gradient", 3, termalGradient, ElementType::ELEMENTS);
+	store.storeValues("flux", 3, termalFlux, ElementType::ELEMENTS);
 }
 
 

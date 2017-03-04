@@ -5,8 +5,8 @@
 #include "../mesh/structures/mesh.h"
 #include "../mesh/structures/coordinates.h"
 #include "factory/factory.h"
-#include "../output/espreso/espresobinaryformat.h"
 #include "../basis/logging/logging.hpp"
+#include "../output/datastore/espresobinaryformat.h"
 
 using namespace espreso;
 
@@ -30,7 +30,7 @@ int main(int argc, char** argv)
 			sizes[p] = factory.mesh->coordinates().localSize(p);
 		}
 		ESINFO(ALWAYS) << "Nodes in domains: " << Info::averageValues(sizes);
-		store::ESPRESOBinaryFormat::store(*factory.mesh, path.str());
+		output::ESPRESOBinaryFormat::store(*factory.mesh, path.str());
 		ESINFO(ALWAYS) << "Mesh partitiated to " << parts * environment->MPIsize << " parts saved";
 	}
 

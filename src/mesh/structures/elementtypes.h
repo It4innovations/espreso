@@ -1,0 +1,17 @@
+
+#ifndef SRC_MESH_STRUCTURES_ELEMENTTYPES_H_
+#define SRC_MESH_STRUCTURES_ELEMENTTYPES_H_
+
+namespace espreso {
+
+enum class ElementType {
+	NODES,
+	EDGES,
+	FACES,
+	ELEMENTS
+};
+
+}
+
+
+#endif /* SRC_MESH_STRUCTURES_ELEMENTTYPES_H_ */

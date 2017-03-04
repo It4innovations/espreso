@@ -9,13 +9,13 @@
 namespace espreso {
 
 enum class Property;
-namespace store { enum class ElementType; }
+enum class ElementType;
 
 
 struct Solution {
 
-	Solution(const std::string &name, store::ElementType eType, const std::vector<Property> &properties, const std::vector<std::vector<double> > &data);
-	Solution(const std::string &name, store::ElementType eType, const std::vector<Property> &properties);
+	Solution(const std::string &name, ElementType eType, const std::vector<Property> &properties, const std::vector<std::vector<double> > &data);
+	Solution(const std::string &name, ElementType eType, const std::vector<Property> &properties);
 
 	inline double get(Property property, eslocal domain, eslocal index) const
 	{
@@ -23,7 +23,7 @@ struct Solution {
 	}
 
 	std::string name;
-	store::ElementType eType;
+	ElementType eType;
 	size_t properties;
 	const std::vector<std::vector<double> > &data;
 protected:

@@ -11,13 +11,6 @@
 #include "../../assembler/physics/advectiondiffusion2d.h"
 #include "../../assembler/physics/shallowwater2d.h"
 #include "../../solver/generic/LinearSolver.h"
-#include "../../output/resultstorelist.h"
-#include "../../output/vtk/vtk.h"
-#include "../../output/vtk/catalyst.h"
-#include "../../output2/resultstore/vtklegacy.h"
-#include "../../output2/resultstore/vtkxmlascii.h"
-#include "../../output2/resultstore/vtkxmlbinary.h"
-
 #include "../../input/loader.h"
 #include "../../assembler/assembler.h"
 #include "../../assembler/instance/instance.h"
@@ -26,6 +19,10 @@
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/settings/evaluator.h"
 #include "../../mesh/elements/element.h"
+#include "../../output/resultstorelist.h"
+#include "../../output/resultstore/vtklegacy.h"
+#include "../../output/resultstore/vtkxmlascii.h"
+#include "../../output/resultstore/vtkxmlbinary.h"
 
 namespace espreso {
 
@@ -47,13 +44,13 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 	Assembler::compose(configuration, instance, *mesh);
 
-	store = new store::ResultStoreList(configuration.output);
+	store = new output::ResultStoreList(configuration.output);
 
 	if (configuration.output.catalyst) {
-		store->add(new store::Catalyst(configuration.output, *mesh, "results"));
+		// store->add(new output::Catalyst(configuration.output, *mesh, "results"));
 	}
 	if (configuration.output.results || configuration.output.properties) {
-		store->add(new store::VTK(configuration.output, *mesh, "results"));
+		store->add(new output::VTKXMLASCII(configuration.output, mesh, "results"));
 	}
 
 	if (configuration.physics == PHYSICS::ADVECTION_DIFFUSION_2D && configuration.advection_diffusion_2D.newassembler) {
@@ -140,18 +137,12 @@ void Factory::meshPreprocessing(const OutputConfiguration &configuration)
 		}
 
 	}
-	store->storeGeometry();
 	if (Test::report(EXPENSIVE)) {
 		mesh->checkRegions(mesh->nodes());
 	}
-
-	// output::VTKLegacy vtklegacy(configuration, mesh, "tmp");
-	output::VTKXMLASCII vtkxmlascii(configuration, mesh, "tmp");
-	// output::VTKXMLBinary vtkxmlbinary(configuration, mesh, "tmp");
-	Step step;
-	// vtklegacy.storeSettings(step);
-	vtkxmlascii.storeSettings(step);
-	// vtkxmlbinary.storeSettings(step);
+	if (configuration.properties) {
+		store->storeSettings(mesh->steps());
+	}
 }
 
 void Factory::finalize()

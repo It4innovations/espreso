@@ -17,8 +17,8 @@ struct PrecomputedPhysics: public OldPhysics {
 
 	virtual void assembleStiffnessMatrices();
 
-	void saveMeshProperties(store::ResultStore &store);
-	void saveMeshResults(store::ResultStore &store, const std::vector<std::vector<double> > &results);
+	void saveMeshProperties(output::ResultStore &store);
+	void saveMeshResults(output::ResultStore &store, const std::vector<std::vector<double> > &results);
 
 	PrecomputedPhysics(
 			APIMesh &mesh,

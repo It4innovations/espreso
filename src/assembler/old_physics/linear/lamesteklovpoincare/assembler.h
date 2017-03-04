@@ -20,8 +20,8 @@ struct LameSteklovPoincare: public LinearPhysics
 	void assembleB1() {};
 	void assembleB0() {};
 
-	void saveMeshProperties(store::ResultStore &store);
-	void saveMeshResults(store::ResultStore &store, const std::vector<std::vector<double> > &results);
+	void saveMeshProperties(output::ResultStore &store);
+	void saveMeshResults(output::ResultStore &store, const std::vector<std::vector<double> > &results);
 
 	static std::vector<Property> elementDOFs;
 	static std::vector<Property> faceDOFs;

@@ -18,10 +18,10 @@ struct AdvectionDiffusion2D: public LinearPhysics
 	void assembleB1();
 	void assembleB0();
 
-	void postProcess(store::ResultStore &store, const std::vector<std::vector<double> > &solution);
+	void postProcess(output::ResultStore &store, const std::vector<std::vector<double> > &solution);
 
-	void saveMeshProperties(store::ResultStore &store);
-	void saveMeshResults(store::ResultStore &store, const std::vector<std::vector<double> > &results);
+	void saveMeshProperties(output::ResultStore &store);
+	void saveMeshResults(output::ResultStore &store, const std::vector<std::vector<double> > &results);
 
 	const AdvectionDiffusion2DConfiguration &_configuration;
 

@@ -12,15 +12,17 @@
 #include "../../../../mesh/structures/mesh.h"
 #include "../../../../mesh/structures/region.h"
 #include "../../../../mesh/structures/material.h"
+#include "../../../../mesh/structures/elementtypes.h"
 
 #include "../../../../mesh/elements/plane/square4.h"
 #include "../../../../mesh/elements/plane/square8.h"
 #include "../../../../mesh/elements/plane/triangle3.h"
 #include "../../../../mesh/elements/plane/triangle6.h"
 
+#include "../../../../output/resultstore.h"
+
 #include "../../../constraints/equalityconstraints.h"
 
-#include "../../../../output/vtk/vtk.h"
 
 namespace espreso {
 
@@ -104,16 +106,16 @@ void AdvectionDiffusion2D::prepareMeshStructures()
 	_mesh.removeDuplicateRegions();
 }
 
-void AdvectionDiffusion2D::saveMeshProperties(store::ResultStore &store)
+void AdvectionDiffusion2D::saveMeshProperties(output::ResultStore &store)
 {
-	store.storeProperty("translationMotion", { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y }, store::ElementType::ELEMENTS);
-	store.storeProperty("headSource", { Property::HEAT_SOURCE }, store::ElementType::ELEMENTS);
-	store.storeProperty("temperature", { Property::TEMPERATURE }, store::ElementType::NODES);
+//	store.storeProperty("translationMotion", { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y }, ElementType::ELEMENTS);
+//	store.storeProperty("headSource", { Property::HEAT_SOURCE }, ElementType::ELEMENTS);
+//	store.storeProperty("temperature", { Property::TEMPERATURE }, ElementType::NODES);
 }
 
-void AdvectionDiffusion2D::saveMeshResults(store::ResultStore &store, const std::vector<std::vector<double> > &results)
+void AdvectionDiffusion2D::saveMeshResults(output::ResultStore &store, const std::vector<std::vector<double> > &results)
 {
-	store.storeValues("temperature", 1, results, store::ElementType::NODES);
+	store.storeValues("temperature", 1, results, ElementType::NODES);
 }
 
 void AdvectionDiffusion2D::assembleB1()
@@ -646,7 +648,7 @@ static void postProcessElement(std::vector<double> &gradient, std::vector<double
 	flux.push_back(matFlux(1, 0) / element->nodes());
 }
 
-void AdvectionDiffusion2D::postProcess(store::ResultStore &store, const std::vector<std::vector<double> > &solution)
+void AdvectionDiffusion2D::postProcess(output::ResultStore &store, const std::vector<std::vector<double> > &solution)
 {
 	if (!_configuration.post_process) {
 		return;
@@ -667,8 +669,8 @@ void AdvectionDiffusion2D::postProcess(store::ResultStore &store, const std::vec
 		}
 	}
 
-	store.storeValues("gradient", 2, termalGradient, store::ElementType::ELEMENTS);
-	store.storeValues("flux", 2, termalFlux, store::ElementType::ELEMENTS);
+	store.storeValues("gradient", 2, termalGradient, ElementType::ELEMENTS);
+	store.storeValues("flux", 2, termalFlux, ElementType::ELEMENTS);
 }
 
 }

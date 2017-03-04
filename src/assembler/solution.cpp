@@ -5,7 +5,7 @@
 
 using namespace espreso;
 
-Solution::Solution(const std::string &name, store::ElementType eType, const std::vector<Property> &properties, const std::vector<std::vector<double> > &data)
+Solution::Solution(const std::string &name, ElementType eType, const std::vector<Property> &properties, const std::vector<std::vector<double> > &data)
 : name(name), eType(eType), properties(properties.size()), data(data), _offset(static_cast<int>(Property::SIZE))
 {
 	for (size_t p = 0; p < properties.size(); p++) {
@@ -13,7 +13,7 @@ Solution::Solution(const std::string &name, store::ElementType eType, const std:
 	}
 }
 
-Solution::Solution(const std::string &name, store::ElementType eType, const std::vector<Property> &properties)
+Solution::Solution(const std::string &name, ElementType eType, const std::vector<Property> &properties)
 : name(name), eType(eType), properties(properties.size()), data(_data), _offset(static_cast<int>(Property::SIZE))
 {
 	for (size_t p = 0; p < properties.size(); p++) {

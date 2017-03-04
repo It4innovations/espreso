@@ -5,32 +5,37 @@
 #include "resultstore.h"
 
 namespace espreso {
-namespace store {
+namespace output {
 
-class ResultStoreList: public ResultStore {
+class ResultStoreList: public Store {
 
 public:
-	ResultStoreList(const OutputConfiguration &output): ResultStore(output, NULL, "") { };
+	ResultStoreList(const OutputConfiguration &output): Store(output) { };
 	~ResultStoreList() { std::for_each(_results.begin(), _results.end(), [] (ResultStore *rs) { delete rs; } ); }
 
 	void add(ResultStore *rs) { _results.push_back(rs); }
 
-	void storeGeometry(size_t timeStep = -1)
+	virtual void storeSettings(const Step &step)
 	{
-		std::for_each(_results.begin(), _results.end(), [&] (ResultStore *rs) { rs->storeGeometry(timeStep); } );
+		std::for_each(_results.begin(), _results.end(), [&] (ResultStore *rs) { rs->storeSettings(step); } );
 	}
 
-	void storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType)
+	virtual void storeSettings(size_t steps)
 	{
-		std::for_each(_results.begin(), _results.end(), [&] (ResultStore *rs) { rs->storeProperty(name, properties, eType); } );
+		std::for_each(_results.begin(), _results.end(), [&] (ResultStore *rs) { rs->storeSettings(steps); } );
 	}
 
-	void storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType)
+	virtual void storeSettings(const std::vector<size_t> &steps)
 	{
-		std::for_each(_results.begin(), _results.end(), [&] (ResultStore *rs) { rs->storeValues(name, dimension, values, eType); } );
+		std::for_each(_results.begin(), _results.end(), [&] (ResultStore *rs) { rs->storeSettings(steps); } );
 	}
 
-	void finalize()
+	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution)
+	{
+		std::for_each(_results.begin(), _results.end(), [&] (ResultStore *rs) { rs->storeSolution(step, solution); } );
+	}
+
+	virtual void finalize()
 	{
 		std::for_each(_results.begin(), _results.end(), [&] (ResultStore *rs) { rs->finalize(); } );
 	}

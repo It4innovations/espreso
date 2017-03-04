@@ -111,7 +111,6 @@ def configure(ctx):
 
     ctx.setenv("espreso", ctx.env.derive());
     ctx.recurse("src/output")
-    ctx.recurse("src/output2")
     ctx.recurse("src/app")
 
     check_environment(ctx)
@@ -152,7 +151,6 @@ def build(ctx):
 
     ctx.env = ctx.all_envs["espreso"]
     ctx.recurse("src/output")
-    ctx.recurse("src/output2")
     ctx.recurse("src/app")
 
     ctx.env = ctx.all_envs["api"]

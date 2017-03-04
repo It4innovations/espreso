@@ -12,6 +12,7 @@
 #include "../../../../mesh/settings/evaluator.h"
 #include "../../../../mesh/structures/mesh.h"
 #include "../../../../mesh/structures/material.h"
+#include "../../../../mesh/structures/elementtypes.h"
 
 #include "../../../../mesh/elements/plane/square4.h"
 #include "../../../../mesh/elements/plane/square8.h"
@@ -20,7 +21,8 @@
 
 #include "../../../constraints/equalityconstraints.h"
 
-#include "../../../../output/vtk/vtk.h"
+#include "../../../../output/resultstore.h"
+
 
 namespace espreso {
 
@@ -72,24 +74,24 @@ void LinearElasticity2D::prepareMeshStructures()
 	_mesh.removeDuplicateRegions();
 }
 
-void LinearElasticity2D::saveMeshProperties(store::ResultStore &store)
+void LinearElasticity2D::saveMeshProperties(output::ResultStore &store)
 {
-	store.storeProperty("displacement", { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y }, store::ElementType::NODES);
-	store.storeProperty("forces", { Property::FORCE_X, Property::FORCE_Y }, store::ElementType::NODES);
-	store.storeProperty("obstacle", { Property::OBSTACLE }, store::ElementType::NODES);
-	store.storeProperty("normal_direction", { Property::NORMAL_DIRECTION }, store::ElementType::NODES);
+//	store.storeProperty("displacement", { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y }, ElementType::NODES);
+//	store.storeProperty("forces", { Property::FORCE_X, Property::FORCE_Y }, ElementType::NODES);
+//	store.storeProperty("obstacle", { Property::OBSTACLE }, ElementType::NODES);
+//	store.storeProperty("normal_direction", { Property::NORMAL_DIRECTION }, ElementType::NODES);
 	if (_solverConfiguration.regularization == REGULARIZATION::FIX_POINTS) {
-		store::VTK::fixPoints(store.configuration(), _mesh, "fixPoints");
+//		store::VTK::fixPoints(store.configuration(), _mesh, "fixPoints");
 	}
 	if (_solverConfiguration.method == ESPRESO_METHOD::HYBRID_FETI) {
 		switch (_solverConfiguration.B0_type) {
 		case B0_TYPE::CORNERS:
 		case B0_TYPE::COMBINED:
-			store::VTK::mesh(store.configuration(), _mesh, "edges", store::ElementType::EDGES);
-			store::VTK::corners(store.configuration(), _mesh, "corners");
+//			store::VTK::mesh(store.configuration(), _mesh, "edges", store::ElementType::EDGES);
+//			store::VTK::corners(store.configuration(), _mesh, "corners");
 			break;
 		case B0_TYPE::KERNELS:
-			store::VTK::mesh(store.configuration(), _mesh, "edges", store::ElementType::EDGES);
+//			store::VTK::mesh(store.configuration(), _mesh, "edges", store::ElementType::EDGES);
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented saving properties of B0";
@@ -97,9 +99,9 @@ void LinearElasticity2D::saveMeshProperties(store::ResultStore &store)
 	}
 }
 
-void LinearElasticity2D::saveMeshResults(store::ResultStore &store, const std::vector<std::vector<double> > &results)
+void LinearElasticity2D::saveMeshResults(output::ResultStore &store, const std::vector<std::vector<double> > &results)
 {
-	store.storeValues("displacement", 2, results, store::ElementType::NODES);
+	store.storeValues("displacement", 2, results, ElementType::NODES);
 }
 
 void LinearElasticity2D::assembleB1()

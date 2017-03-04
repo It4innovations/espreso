@@ -6,7 +6,7 @@
 
 #include "../../../configuration/output.h"
 #include "../../constraints/constraints.h"
-#include "../../../output/vtk/vtk.h"
+#include "../../../output/resultstore/vtkxmlascii.h"
 #include "../../../solver/generic/LinearSolver.h"
 
 namespace espreso {
@@ -22,7 +22,7 @@ struct LinearInstance: public OldInstance
 	_constrains(configuration.espreso, mesh),
 	_physics(mesh, _constrains, configuration),
 	_linearSolver(configuration.espreso, _physics, _constrains),
-	_store(_output, mesh, "results")
+	_store(_output, &mesh, "results")
 	{
 		_timeStatistics.totalTime.startWithBarrier();
 	};
@@ -44,7 +44,7 @@ protected:
 	Constraints _constrains;
 	TPhysics _physics;
 	LinearSolver _linearSolver;
-	store::VTK _store;
+	output::VTKXMLASCII _store;
 };
 
 }

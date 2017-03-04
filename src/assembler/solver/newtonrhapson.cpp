@@ -15,7 +15,7 @@ NewtonRhapson::NewtonRhapson(
 		Mesh *mesh,
 		Physics* physics,
 		LinearSolver* linearSolver,
-		store::ResultStore* store,
+		output::Store* store,
 		const NonLinearSolverBase &configuration,
 		Matrices restriction)
 : Solver("NEWTON RHAPSON", mesh, physics, linearSolver, store, restriction), _configuration(configuration)

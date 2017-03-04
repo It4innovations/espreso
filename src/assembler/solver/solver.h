@@ -14,7 +14,7 @@ struct Step;
 class Mesh;
 class Physics;
 class LinearSolver;
-namespace store { class ResultStore; }
+namespace output { class Store; }
 class TimeEval;
 class SparseMatrix;
 
@@ -27,7 +27,7 @@ public:
 			Mesh *mesh,
 			Physics* physics,
 			LinearSolver* linearSolver,
-			store::ResultStore* store,
+			output::Store* store,
 			Matrices restriction);
 
 	virtual void run(Step &step) =0;
@@ -76,7 +76,7 @@ protected:
 
 	std::string _name;
 	Mesh *_mesh;
-	store::ResultStore* _store;
+	output::Store* _store;
 	Matrices _restriction;
 
 	TimeEval *_timeStatistics;

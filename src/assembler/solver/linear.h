@@ -13,7 +13,7 @@ public:
 			Mesh *mesh,
 			Physics* physics,
 			LinearSolver* linearSolver,
-			store::ResultStore* store,
+			output::Store* store,
 			Matrices restriction = Matrices::NONE);
 
 	virtual void run(Step &step);

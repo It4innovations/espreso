@@ -1,8 +1,11 @@
 
 def configure(ctx):
-    ctx.recurse("vtk")
-    ctx.recurse("espreso")
+    pass
 
 def build(ctx):
-    ctx.recurse("vtk")
-    ctx.recurse("espreso")
+
+    ctx.objects(
+        source = ctx.path.ant_glob('**/*.cpp'),
+        target = "output2",
+        use    = "espreso_includes"
+    )

@@ -6,8 +6,6 @@
 #include "../instance.h"
 #include "../solution.h"
 
-#include "../../output/resultstore.h"
-
 #include "../../mesh/settings/property.h"
 #include "../../mesh/settings/evaluator.h"
 #include "../../mesh/elements/element.h"
@@ -15,6 +13,7 @@
 #include "../../mesh/structures/material.h"
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
+#include "../../mesh/structures/elementtypes.h"
 
 
 #include "../../basis/matrices/denseMatrix.h"
@@ -502,6 +501,6 @@ void NewAdvectionDiffusion2D::processSolution(const Step &step)
 		delete _instance->solutions[0];
 	}
 
-	_instance->solutions[0] = new Solution("temperature", store::ElementType::NODES, pointDOFs(), _instance->primalSolution);
+	_instance->solutions[0] = new Solution("temperature", ElementType::NODES, pointDOFs(), _instance->primalSolution);
 }
 

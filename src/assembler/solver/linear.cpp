@@ -11,7 +11,7 @@ Linear::Linear(
 		Mesh *mesh,
 		Physics* physics,
 		LinearSolver* linearSolver,
-		store::ResultStore* store,
+		output::Store* store,
 		Matrices restriction)
 : Solver("LINEAR", mesh, physics, linearSolver, store, restriction)
 {

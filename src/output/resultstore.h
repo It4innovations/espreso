@@ -3,47 +3,95 @@
 #define SRC_OUTPUT_RESULTSTORE_H_
 
 #include <string>
+#include <map>
 #include <vector>
+
+#include "../basis/point/point.h"
 
 namespace espreso {
 
 class Mesh;
-class OutputConfiguration;
-enum class Property;
+class Region;
+struct Step;
+struct Solution;
+struct OutputConfiguration;
+enum class ElementType;
 
-namespace store {
+namespace output {
 
-enum class ElementType {
-	NODES,
-	EDGES,
-	FACES,
-	ELEMENTS
+struct DataArrays {
+	std::map<std::string, std::vector<eslocal>* > pointDataInteger, elementDataInteger;
+	std::map<std::string, std::vector<double>* > pointDataDouble, elementDataDouble;
+
+	~DataArrays();
 };
 
-class ResultStore {
+class Store {
 
 public:
-	const OutputConfiguration& configuration() const { return _output; };
+	const OutputConfiguration& configuration() const { return _configuration; }
 
-	virtual void storeGeometry(size_t timeStep = -1) = 0;
-	virtual void storeProperty(const std::string &name, const std::vector<Property> &properties, ElementType eType) = 0;
-	virtual void storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType) = 0;
+	virtual void storeSettings(const Step &step) =0;
+	virtual void storeSettings(size_t steps) =0;
+	virtual void storeSettings(const std::vector<size_t> &steps) =0;
+
+	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution) =0;
 	virtual void finalize() =0;
+
+	virtual ~Store() {};
+
+protected:
+	Store(const OutputConfiguration &configuration): _configuration(configuration) {};
+
+	const OutputConfiguration &_configuration;
+};
+
+class ResultStore: public Store {
+
+public:
+	const OutputConfiguration& configuration() const { return _configuration; }
+
+	// TODO: remove it after removing old physics
+	void storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType);
+
+	virtual void storeSettings(const Step &step);
+	virtual void storeSettings(size_t steps);
+	virtual void storeSettings(const std::vector<size_t> &steps);
+
+	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution);
+	virtual void finalize() {};
 
 	virtual ~ResultStore() {};
 
 protected:
-	ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path)
-	:_output(output), _mesh(mesh), _path(path) {};
+	ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path);
 
-	const OutputConfiguration &_output;
+	virtual void store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, DataArrays &data) =0;
+	virtual void store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const std::vector<Solution*> &solution) =0;
+
+	virtual void composeClusters(const std::string &root, const std::string &name, const DataArrays &data) {};
+	virtual void composeClusters(const std::string &root, const std::string &name, const std::vector<Solution*> &solution) {};
+	virtual void composeRegions(const std::string &name, const std::vector<std::string> &names) {};
+
+	virtual void preprocessing();
+	virtual void regionPreprocessing(const espreso::Region &region, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements);
+	virtual void regionData(size_t step, const espreso::Region &region, DataArrays &data);
+
+	virtual void coordinatePreprocessing(const std::vector<std::vector<eslocal> > &indices, std::vector<double> &coordinates, std::vector<size_t> &offsets);
+
 	const Mesh *_mesh;
 	std::string _path;
+
+	std::vector<double> _coordinates; // x1, y1, z1, x2, y2, z2, ...
+	std::vector<eslocal> _elementsTypes;  // code1, code2, ...
+	std::vector<eslocal> _elementsNodes;  // nodes1, nodes2, ...
+	std::vector<eslocal> _elements;  // n11, n12, n13, ..., n21, n22, n23, ...
+
+	Point _clusterCenter;
+	std::vector<Point> _domainsCenters;
 };
 
 }
 }
-
-
 
 #endif /* SRC_OUTPUT_RESULTSTORE_H_ */
