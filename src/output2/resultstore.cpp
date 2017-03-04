@@ -141,7 +141,7 @@ void ResultStore::regionData(size_t step, const espreso::Region &region, DataArr
 				values->back() += region.elements()[e]->sumProperty(it->first, n, step, 0);
 			}
 			values->back() /= region.elements()[e]->nodes();
-			values->insert(values->end(), region.elements()[e]->domains().size(), values->back());
+			values->insert(values->end(), region.elements()[e]->domains().size() - 1, values->back());
 		}
 		std::stringstream ss;
 		ss << it->first;
@@ -261,9 +261,20 @@ void ResultStore::storeSettings(const std::vector<size_t> &steps)
 //	}
 }
 
-void ResultStore::storeSolution(const Step &step, const Solution &solution)
+void ResultStore::storeSolution(const Step &step, const std::vector<Solution*> &solution)
 {
+	std::string prefix;
+	std::string root;
 
+	if (!environment->MPIrank) {
+		root = Esutils::createDirectory({ "results", "step" + std::to_string(step.step) });
+	}
+	prefix = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), std::to_string(environment->MPIrank) });
+
+	store("solution", _coordinates, _elementsTypes, _elementsNodes, _elements, solution);
+	if (!environment->MPIrank) {
+		composeClusters(root, "solution", solution);
+	}
 }
 
 

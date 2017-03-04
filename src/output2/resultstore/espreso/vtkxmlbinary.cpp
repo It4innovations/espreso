@@ -14,13 +14,11 @@ VTKXMLBinary::VTKXMLBinary(const OutputConfiguration &output, const Mesh *mesh, 
 void VTKXMLBinary::store(std::ostream &os, const std::vector<eslocal> &data)
 {
 	os.write(reinterpret_cast<const char*>(data.data()), data.size() * sizeof(eslocal));
-	os << "\n";
 }
 
 void VTKXMLBinary::store(std::ostream &os, const std::vector<double> &data)
 {
 	os.write(reinterpret_cast<const char*>(data.data()), data.size() * sizeof(double));
-	os << "\n";
 }
 
 

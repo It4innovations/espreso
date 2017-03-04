@@ -17,7 +17,14 @@ protected:
 	VTKXML(const OutputConfiguration &output, const Mesh *mesh, const std::string &path);
 
 	virtual void store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, DataArrays &data);
+	virtual void store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const std::vector<Solution*> &solution);
+
+	virtual void storeMesh(std::ofstream &os, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements);
+
 	virtual void composeClusters(const std::string &root, const std::string &name, const DataArrays &data);
+	virtual void composeClusters(const std::string &root, const std::string &name, const std::vector<Solution*> &solution);
+	virtual void savePVTU(const std::string &root, const std::string &name, const std::vector<std::string> &pointDataInt, const std::vector<std::string> &pointDataDouble, const std::vector<std::string> &cellDataInt, const std::vector<std::string> &cellDataDouble);
+
 	virtual void composeRegions(const std::string &name, const std::vector<std::string> &names);
 
 	virtual void regionPreprocessing(const espreso::Region &region, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements);

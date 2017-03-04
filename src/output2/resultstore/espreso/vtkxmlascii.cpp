@@ -3,8 +3,6 @@
 
 #include "../vtkxmlascii.h"
 
-#include "../../../basis/utilities/utils.h"
-
 using namespace espreso::output;
 
 VTKXMLASCII::VTKXMLASCII(const OutputConfiguration &output, const Mesh *mesh, const std::string &path)
@@ -15,12 +13,16 @@ VTKXMLASCII::VTKXMLASCII(const OutputConfiguration &output, const Mesh *mesh, co
 
 void VTKXMLASCII::store(std::ostream &os, const std::vector<eslocal> &data)
 {
-	os << data;
+	for (size_t i = 0; i < data.size(); i++) {
+		os << data[i] << " ";
+	}
 }
 
 void VTKXMLASCII::store(std::ostream &os, const std::vector<double> &data)
 {
-	os << data;
+	for (size_t i = 0; i < data.size(); i++) {
+		os << data[i] << " ";
+	}
 }
 
 
