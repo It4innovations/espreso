@@ -9,6 +9,6 @@ def build(ctx):
     ctx.program(
         source       = "apitest.cpp",
         target       = "apitest",
-        use          = "basis config loader generator ansys_in espreso_in openfoam_in espreso_out output2 generic_out assembler mesh factory feti4i",
+        use          = "basis config loader generator ansys_in espreso_in openfoam_in datastore resultstore assembler mesh factory feti4i",
         install_path = ctx.ROOT + "/libespreso"
     )
