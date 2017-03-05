@@ -231,7 +231,7 @@ void ResultStore::storeSettings(const std::vector<size_t> &steps)
 	for (size_t step = 0; step < steps.size(); step++) {
 		store(prefixes[step] + "mesh", _coordinates, _elementsTypes, _elementsNodes, _elements, data);
 		if (!environment->MPIrank) {
-			composeClusters(roots[step], "mesh", data);
+			linkClusters(roots[step], "mesh", data);
 		}
 	}
 
@@ -249,7 +249,7 @@ void ResultStore::storeSettings(const std::vector<size_t> &steps)
 			store(prefixes[step] + _mesh->regions()[r]->name, coordinates, elementTypes, elementNodes, elements, rData);
 			names[step].push_back(_mesh->regions()[r]->name);
 			if (!environment->MPIrank) {
-				composeClusters(roots[step], _mesh->regions()[r]->name, rData);
+				linkClusters(roots[step], _mesh->regions()[r]->name, rData);
 			}
 		}
 	}
@@ -292,7 +292,7 @@ void ResultStore::storeSolution(const Step &step, const std::vector<Solution*> &
 
 	store(prefix + "solution", _coordinates, _elementsTypes, _elementsNodes, _elements, solution);
 	if (!environment->MPIrank) {
-		composeClusters(root, "solution", solution);
+		linkClusters(root, "solution", solution, _coordinates.size() / 3, _elementsTypes.size());
 	}
 }
 

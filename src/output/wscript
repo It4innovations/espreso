@@ -10,7 +10,7 @@ def configure(ctx):
     for file in glob.glob(ctx.path.abspath() + "/resultstore/libvtk/*.cpp"):
         for line in open(file, "r"):
             if line.find("#include") != -1:
-                if line.find("vtk") != -1 and line.find("vtk.h") == -1:
+                if line.find("#include \"vtk") != -1:
                     includes += [ line ]
 
     ctx.env.VTK = ctx.check_cc(
@@ -45,13 +45,13 @@ def build(ctx):
 
     if ctx.env.VTK:
         ctx.objects(
-            source = ctx.path.ant_glob('*.cpp') + ctx.path.ant_glob('resultstore/libvtk/*.cpp'),
+            source = ctx.path.ant_glob('*.cpp') + ctx.path.ant_glob('resultstore/*.cpp') + ctx.path.ant_glob('resultstore/libvtk/*.cpp'),
             target = "resultstore",
             use    = "espreso_includes"
         )
     else:
         ctx.objects(
-            source = ctx.path.ant_glob('*.cpp') + ctx.path.ant_glob('resultstore/espreso/*.cpp'),
+            source = ctx.path.ant_glob('*.cpp') + ctx.path.ant_glob('resultstore/*.cpp') + ctx.path.ant_glob('resultstore/espreso/*.cpp'),
             target = "resultstore",
             use    = "espreso_includes"
         )
