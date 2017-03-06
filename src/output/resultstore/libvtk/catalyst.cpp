@@ -87,10 +87,5 @@ void Catalyst::storeSolution(const Step &step, const std::vector<Solution*> &sol
 	sleep(_configuration.sleep);
 }
 
-void Catalyst::finalize()
-{
-
-}
-
 
 

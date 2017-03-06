@@ -2,7 +2,7 @@
 #ifndef SRC_OUTPUT_RESULTSTORELIST_H_
 #define SRC_OUTPUT_RESULTSTORELIST_H_
 
-#include "resultstore.h"
+#include "store.h"
 
 namespace espreso {
 namespace output {
@@ -11,37 +11,37 @@ class ResultStoreList: public Store {
 
 public:
 	ResultStoreList(const OutputConfiguration &output): Store(output) { };
-	~ResultStoreList() { std::for_each(_results.begin(), _results.end(), [] (ResultStore *rs) { delete rs; } ); }
+	~ResultStoreList() { std::for_each(_results.begin(), _results.end(), [] (Store *rs) { delete rs; } ); }
 
-	void add(ResultStore *rs) { _results.push_back(rs); }
+	void add(Store *rs) { _results.push_back(rs); }
 
 	virtual void storeSettings(const Step &step)
 	{
-		std::for_each(_results.begin(), _results.end(), [&] (ResultStore *rs) { rs->storeSettings(step); } );
+		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeSettings(step); } );
 	}
 
 	virtual void storeSettings(size_t steps)
 	{
-		std::for_each(_results.begin(), _results.end(), [&] (ResultStore *rs) { rs->storeSettings(steps); } );
+		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeSettings(steps); } );
 	}
 
 	virtual void storeSettings(const std::vector<size_t> &steps)
 	{
-		std::for_each(_results.begin(), _results.end(), [&] (ResultStore *rs) { rs->storeSettings(steps); } );
+		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeSettings(steps); } );
 	}
 
 	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution)
 	{
-		std::for_each(_results.begin(), _results.end(), [&] (ResultStore *rs) { rs->storeSolution(step, solution); } );
+		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeSolution(step, solution); } );
 	}
 
 	virtual void finalize()
 	{
-		std::for_each(_results.begin(), _results.end(), [&] (ResultStore *rs) { rs->finalize(); } );
+		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->finalize(); } );
 	}
 
 protected:
-	std::vector<ResultStore*> _results;
+	std::vector<Store*> _results;
 };
 
 }

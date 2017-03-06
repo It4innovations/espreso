@@ -43,6 +43,11 @@ ResultStore::ResultStore(const OutputConfiguration &output, const Mesh *mesh, co
 
 }
 
+ResultStore::~ResultStore()
+{
+
+}
+
 static espreso::Point computeClusterCenter(const espreso::Mesh *mesh)
 {
 	espreso::Point clusterCenter;
@@ -165,14 +170,26 @@ void ResultStore::preprocessing()
 		std::vector<std::vector<eslocal> > dElementsTypes(_mesh->parts());
 		std::vector<std::vector<eslocal> > dElementsNodes(_mesh->parts());
 		std::vector<std::vector<eslocal> > dElements(_mesh->parts());
+		std::vector<size_t> offsets(_mesh->parts());
 		#pragma omp parallel for
-		for (size_t p = 0, offset = 0; p < _mesh->parts(); p++) {
-			for (size_t e = _mesh->getPartition()[p]; e < _mesh->getPartition()[p + 1]; offset += _mesh->elements()[e++]->nodes()) {
+		for (size_t p = 0; p < _mesh->parts(); p++) {
+			size_t offset = 0;
+			for (size_t e = _mesh->getPartition()[p]; e < _mesh->getPartition()[p + 1]; e++) {
 				dElementsTypes[p].push_back(_mesh->elements()[e]->vtkCode());
-				dElementsNodes[p].push_back(offset + _mesh->elements()[e]->nodes());
+				dElementsNodes[p].push_back(_mesh->elements()[e]->nodes());
+				offset += _mesh->elements()[e]->nodes();
 				for (size_t n = 0; n < _mesh->elements()[e]->nodes(); n++) {
 					dElements[p].push_back(_mesh->coordinates().localIndex(_mesh->elements()[e]->node(n), p) + domainOffset[p]);
 				}
+			}
+			offsets[p] = offset;
+		}
+
+		Esutils::sizesToOffsets(offsets);
+		#pragma omp parallel for
+		for (size_t p = 0; p < _mesh->parts(); p++) {
+			for (size_t e = _mesh->getPartition()[p], i = 0; e < _mesh->getPartition()[p + 1]; e++, i++) {
+				dElementsNodes[p][i] = offsets[p] += dElementsNodes[p][i];
 			}
 		}
 
@@ -217,7 +234,6 @@ void ResultStore::storeSettings(const std::vector<size_t> &steps)
 {
 	std::vector<std::string> prefixes;
 	std::vector<std::string> roots;
-
 
 	for (size_t step = 0; step < steps.size(); step++) {
 		if (!environment->MPIrank) {
@@ -280,15 +296,24 @@ void ResultStore::storeSolution(const Step &step, const std::vector<Solution*> &
 	std::string root;
 
 	if (!environment->MPIrank) {
-		root = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.iteration) });
+		root = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep) });
 	}
-	prefix = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.iteration), std::to_string(environment->MPIrank) });
+	prefix = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), std::to_string(environment->MPIrank) });
 
 	store(prefix + "solution", _coordinates, _elementsTypes, _elementsNodes, _elements, solution);
 	if (!environment->MPIrank) {
 		linkClusters(root, "solution", solution, _coordinates.size() / 3, _elementsTypes.size());
 	}
+	_steps.push_back(std::make_pair(root, step));
 }
+
+void ResultStore::finalize()
+{
+	if (!environment->MPIrank) {
+		linkSteps("solution", _steps);
+	}
+}
+
 
 
 

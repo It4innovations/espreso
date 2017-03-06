@@ -4,17 +4,16 @@
 
 #include <string>
 #include <map>
-#include <vector>
 
 #include "../basis/point/point.h"
+#include "../assembler/step.h"
+
+#include "store.h"
 
 namespace espreso {
 
 class Mesh;
 class Region;
-struct Step;
-struct Solution;
-struct OutputConfiguration;
 enum class ElementType;
 
 namespace output {
@@ -24,26 +23,6 @@ struct DataArrays {
 	std::map<std::string, std::vector<double>* > pointDataDouble, elementDataDouble;
 
 	~DataArrays();
-};
-
-class Store {
-
-public:
-	const OutputConfiguration& configuration() const { return _configuration; }
-
-	virtual void storeSettings(const Step &step) =0;
-	virtual void storeSettings(size_t steps) =0;
-	virtual void storeSettings(const std::vector<size_t> &steps) =0;
-
-	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution) =0;
-	virtual void finalize() =0;
-
-	virtual ~Store() {};
-
-protected:
-	Store(const OutputConfiguration &configuration): _configuration(configuration) {};
-
-	const OutputConfiguration &_configuration;
 };
 
 class ResultStore: public Store {
@@ -59,8 +38,9 @@ public:
 	virtual void storeSettings(const std::vector<size_t> &steps);
 
 	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution);
+	virtual void finalize();
 
-	virtual ~ResultStore() {};
+	virtual ~ResultStore();
 
 protected:
 	ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path);
@@ -72,8 +52,7 @@ protected:
 	virtual void linkClusters(const std::string &root, const std::string &name, const DataArrays &data) =0;
 	virtual void linkClusters(const std::string &root, const std::string &name, const std::vector<Solution*> &solution, size_t points, size_t cells) =0;
 
-	virtual void linkSteps(const std::string &root, const std::string &name, const DataArrays &data) =0;
-	virtual void linkSteps(const std::string &root, const std::string &name, const std::vector<Solution*> &solution) =0;
+	virtual void linkSteps(const std::string &name, const std::vector<std::pair<std::string, Step> > &steps) =0;
 
 	const Mesh *_mesh;
 	std::string _path;
@@ -85,6 +64,8 @@ protected:
 
 	Point _clusterCenter;
 	std::vector<Point> _domainsCenters;
+
+	std::vector<std::pair<std::string, Step> > _steps;
 
 private:
 	virtual void regionPreprocessing(const espreso::Region &region, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements);

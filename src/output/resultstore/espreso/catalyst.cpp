@@ -36,10 +36,5 @@ void Catalyst::storeSolution(const Step &step, const std::vector<Solution*> &sol
 
 }
 
-void Catalyst::finalize()
-{
-
-}
-
 
 

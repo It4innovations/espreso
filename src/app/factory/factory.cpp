@@ -163,6 +163,7 @@ void Factory::meshPreprocessing(const OutputConfiguration &configuration)
 void Factory::finalize()
 {
 	// Detele store while finalizing because of Catalyst
+	store->finalize();
 	delete store;
 }
 

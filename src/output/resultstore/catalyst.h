@@ -23,7 +23,6 @@ public:
 	virtual void storeSettings(const std::vector<size_t> &steps);
 
 	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution);
-	virtual void finalize();
 
 protected:
 	vtkCPProcessor *_processor;

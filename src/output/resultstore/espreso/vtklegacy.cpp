@@ -15,11 +15,6 @@ VTKLegacy::VTKLegacy(const OutputConfiguration &output, const Mesh *mesh, const 
 	preprocessing();
 }
 
-void VTKLegacy::finalize()
-{
-
-}
-
 static void storeMesh(std::ofstream &os, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements)
 {
 	os << "# vtk DataFile Version 4.0\n";

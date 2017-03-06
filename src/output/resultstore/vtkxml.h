@@ -15,7 +15,6 @@ class VTKXML: public ResultStore {
 
 public:
 	virtual ~VTKXML();
-	virtual void finalize();
 
 protected:
 	VTKXML(const OutputConfiguration &output, const Mesh *mesh, const std::string &path);
@@ -32,8 +31,7 @@ protected:
 	virtual void linkClusters(const std::string &root, const std::string &name, const DataArrays &data);
 	virtual void linkClusters(const std::string &root, const std::string &name, const std::vector<Solution*> &solution, size_t points, size_t cells);
 
-	virtual void linkSteps(const std::string &root, const std::string &name, const DataArrays &data);
-	virtual void linkSteps(const std::string &root, const std::string &name, const std::vector<Solution*> &solution);
+	virtual void linkSteps(const std::string &name, const std::vector<std::pair<std::string, Step> > &steps);
 
 	virtual std::string format() =0;
 	virtual void storePointData(const std::string &name, size_t points, const std::vector<std::vector<int> > &data) =0;

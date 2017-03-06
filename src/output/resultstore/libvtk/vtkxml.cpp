@@ -24,11 +24,6 @@ VTKXML::~VTKXML()
 
 }
 
-void VTKXML::finalize()
-{
-
-}
-
 void VTKXML::initWriter(const std::string &name, size_t points, size_t cells)
 {
 	_VTKGrid = vtkUnstructuredGrid::New();

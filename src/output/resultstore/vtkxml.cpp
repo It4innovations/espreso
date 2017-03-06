@@ -109,14 +109,21 @@ void VTKXML::linkClusters(const std::string &root, const std::string &name, cons
 	os << "</VTKFile>\n";
 }
 
-void VTKXML::linkSteps(const std::string &root, const std::string &name, const DataArrays &data)
+void VTKXML::linkSteps(const std::string &name, const std::vector<std::pair<std::string, Step> > &steps)
 {
+	std::ofstream os;
 
+	os.open(name + ".pvd", std::ios::out | std::ios::trunc);
+
+	os << "<?xml version=\"1.0\"?>\n";
+	os << "<VTKFile type=\"Collection\" version=\"0.1\" byte_order=\"LittleEndian\">\n";
+	os << "<Collection>\n";
+	for (size_t i = 0; i < steps.size(); i++) {
+		os << "  <DataSet timestep=\"" << steps[i].second.currentTime << "\" file=\"" << steps[i].first << name << ".pvtu\"/>\n";
+	}
+	os << "</Collection>\n";
+	os << "</VTKFile>\n";
 }
 
-void VTKXML::linkSteps(const std::string &root, const std::string &name, const std::vector<Solution*> &solution)
-{
-
-}
 
 
