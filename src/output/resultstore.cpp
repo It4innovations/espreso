@@ -288,6 +288,10 @@ void ResultStore::storeValues(const std::string &name, size_t dimension, const s
 	solution.push_back(new Solution(name, eType, props, values));
 	storeSolution(step, solution);
 	delete solution.back();
+	if (!environment->MPIrank) {
+		linkSteps("solution", _steps);
+	}
+	_steps.clear();
 }
 
 void ResultStore::storeSolution(const Step &step, const std::vector<Solution*> &solution)
@@ -309,7 +313,7 @@ void ResultStore::storeSolution(const Step &step, const std::vector<Solution*> &
 
 void ResultStore::finalize()
 {
-	if (!environment->MPIrank) {
+	if (!environment->MPIrank && _steps.size()) {
 		linkSteps("solution", _steps);
 	}
 }
