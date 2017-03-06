@@ -70,14 +70,14 @@ ADVECTION_DIFFUSION_2D {
     INTERPOLATION  LINEAR;
     LOAD_STEPS_SETTINGS {
       1 {
-        TYPE  TRANSIENT;
-        MODE     LINEAR;
+        TYPE   TRANSIENT;
+        MODE      LINEAR;
+        DURATION_TIME  2;
 
         TRANSIENT_SOLVER {
           METHOD    CRANK_NICOLSON;
           ALPHA_SET    FROM_METHOD;
-          TIME_OF_LOADING        2;
-          TIME_STEP            .01;
+          TIME_STEP             .2;
         }
       }
     }
