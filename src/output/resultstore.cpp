@@ -280,9 +280,9 @@ void ResultStore::storeSolution(const Step &step, const std::vector<Solution*> &
 	std::string root;
 
 	if (!environment->MPIrank) {
-		root = Esutils::createDirectory({ "results", "step" + std::to_string(step.step) });
+		root = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.iteration) });
 	}
-	prefix = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), std::to_string(environment->MPIrank) });
+	prefix = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.iteration), std::to_string(environment->MPIrank) });
 
 	store(prefix + "solution", _coordinates, _elementsTypes, _elementsNodes, _elements, solution);
 	if (!environment->MPIrank) {
