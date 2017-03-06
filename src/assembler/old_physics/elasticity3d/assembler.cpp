@@ -576,7 +576,8 @@ static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::ve
 	RegMat.RemoveLower();
 	RegMat.mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 
-	SparseSolverCPU NtN;
+//	SparseSolverCPU NtN;
+	SparseSolverMKL NtN;
 	NtN.ImportMatrix(RegMat);
 	RegMat.Clear();
 
