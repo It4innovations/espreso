@@ -7,19 +7,19 @@
 namespace espreso {
 
 enum class OUTPUT_FORMAT {
-	VTK_LEGACY_FORMAT = 0,
-	VTK_BINARY_FORMAT = 1,
-	VTK_MULTIBLOCK_FORMAT = 2,
-	ENSIGHT_FORMAT = 3
+	VTK_LEGACY = 0,
+	VTK_XML_ASCII = 1,
+	VTK_XML_BINARY = 2,
+	ENSIGHT = 3
 };
 
 struct OutputConfiguration: public Configuration {
 
-	OPTION(OUTPUT_FORMAT, format, "Format - only LEGACY format is supported without VTK library", OUTPUT_FORMAT::VTK_LEGACY_FORMAT, OPTIONS({
-		{ "VTK_LEGACY"    , OUTPUT_FORMAT::VTK_LEGACY_FORMAT    , "*.vtk files" },
-		{ "VTK_BINARY"    , OUTPUT_FORMAT::VTK_BINARY_FORMAT    , "*.vtu files" },
-		{ "VTK_MULTIBLOCK", OUTPUT_FORMAT::VTK_MULTIBLOCK_FORMAT, "*.vtu + *.vtm files" },
-		{ "ENSIGHT"       , OUTPUT_FORMAT::ENSIGHT_FORMAT       , "EnSight files" }
+	OPTION(OUTPUT_FORMAT, format, "Format - only LEGACY format is supported without VTK library", OUTPUT_FORMAT::VTK_XML_ASCII, OPTIONS({
+		{ "VTK_LEGACY"    , OUTPUT_FORMAT::VTK_LEGACY    , "*.vtk files" },
+		{ "VTK_XML_ASCII"    , OUTPUT_FORMAT::VTK_XML_ASCII    , "*.vtu files in ASCII format" },
+		{ "VTK_XML_BINARY", OUTPUT_FORMAT::VTK_XML_BINARY, "*.vtu files in binary format" },
+		{ "ENSIGHT"       , OUTPUT_FORMAT::ENSIGHT       , "EnSight files" }
 	}));
 
 	PARAMETER(bool, compression, "Compression - needs VTK library", true);

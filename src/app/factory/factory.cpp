@@ -20,6 +20,7 @@
 #include "../../mesh/settings/evaluator.h"
 #include "../../mesh/elements/element.h"
 #include "../../output/resultstorelist.h"
+
 #include "../../output/resultstore/vtklegacy.h"
 #include "../../output/resultstore/vtkxmlascii.h"
 #include "../../output/resultstore/vtkxmlbinary.h"
@@ -50,7 +51,20 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		// store->add(new output::Catalyst(configuration.output, *mesh, "results"));
 	}
 	if (configuration.output.results || configuration.output.properties) {
-		store->add(new output::VTKXMLASCII(configuration.output, mesh, "results"));
+		switch (configuration.output.format) {
+		case OUTPUT_FORMAT::VTK_LEGACY:
+			store->add(new output::VTKLegacy(configuration.output, mesh, "results"));
+			break;
+		case OUTPUT_FORMAT::VTK_XML_ASCII:
+			store->add(new output::VTKXMLBinary(configuration.output, mesh, "results"));
+			break;
+		case OUTPUT_FORMAT::VTK_XML_BINARY:
+			store->add(new output::VTKXMLASCII(configuration.output, mesh, "results"));
+			break;
+		default:
+			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: add OUTPUT_FORMAT to factory.";
+		}
+
 	}
 
 	if (configuration.physics == PHYSICS::ADVECTION_DIFFUSION_2D && configuration.advection_diffusion_2D.newassembler) {
