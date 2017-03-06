@@ -16,7 +16,8 @@ public:
 			Physics* physics,
 			LinearSolver* linearSolver,
 			store::ResultStore* store,
-			const TransientSolver &configuration);
+			const TransientSolver &configuration,
+			double duration);
 
 	virtual void run(Step &step);
 
@@ -28,6 +29,7 @@ public:
 
 protected:
 	const TransientSolver &_configuration;
+	double _duration;
 };
 
 }

@@ -90,7 +90,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 					case TransientSolver::METHOD::CRANK_NICOLSON:
 					case TransientSolver::METHOD::GALERKIN:
 					case TransientSolver::METHOD::BACKWARD_DIFF:
-						loadSteps.push_back(new TransientFirstOrderImplicit(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->transient_solver));
+						loadSteps.push_back(new TransientFirstOrderImplicit(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->transient_solver, loadStepSettings->duration_time));
 						break;
 					case TransientSolver::METHOD::FORWARD_DIFF:
 						ESINFO(GLOBAL_ERROR) << "Not implemented transient solver method.";

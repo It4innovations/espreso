@@ -16,9 +16,10 @@ TransientFirstOrderImplicit::TransientFirstOrderImplicit(
 		Physics* physics,
 		LinearSolver* linearSolver,
 		store::ResultStore* store,
-		const TransientSolver &configuration)
+		const TransientSolver &configuration,
+		double duration)
 : Solver("TRANSIENT FIRST ORDER IMPLICIT", mesh, physics, linearSolver, store, Matrices::NONE),
-  _configuration(configuration)
+  _configuration(configuration), _duration(duration)
 {
 
 }
@@ -54,7 +55,11 @@ void TransientFirstOrderImplicit::run(Step &step)
 		y[d].resize(instance->DOFs[d]);
 	}
 
-	for (step.substep = 0; step.substep < 100; step.substep++) {
+	double startTime = step.currentTime;
+	step.timeStep = _configuration.time_step;
+	step.currentTime += step.timeStep;
+
+	for (step.substep = 0; step.currentTime < startTime + _duration; step.substep++) {
 		ESINFO(PROGRESS2) << _name << " iteration " << step.substep + 1;
 		if (step.substep) {
 			updateMatrices(step, Matrices::K | Matrices::M | Matrices::f, instance->solutions);
@@ -81,6 +86,7 @@ void TransientFirstOrderImplicit::run(Step &step)
 
 		processSolution(step);
 		storeSolution(step);
+		step.currentTime += step.timeStep;
 	}
 	finalizeLinearSolver();
 }
