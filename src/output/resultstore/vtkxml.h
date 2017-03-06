@@ -5,6 +5,7 @@
 #include "../resultstore.h"
 
 class vtkUnstructuredGrid;
+class vtkXMLWriter;
 
 namespace espreso {
 
@@ -35,11 +36,25 @@ protected:
 	virtual void linkSteps(const std::string &root, const std::string &name, const DataArrays &data);
 	virtual void linkSteps(const std::string &root, const std::string &name, const std::vector<Solution*> &solution);
 
-	virtual std::string format() const =0;
-	virtual void store(std::ostream &os, const std::vector<eslocal> &data) =0;
-	virtual void store(std::ostream &os, const std::vector<double> &data) =0;
+	virtual std::string format() =0;
+	virtual void storePointData(const std::string &name, size_t points, const std::vector<std::vector<int> > &data) =0;
+	virtual void storePointData(const std::string &name, size_t points, const std::vector<std::vector<long> > &data) =0;
+	virtual void storePointData(const std::string &name, size_t points, const std::vector<std::vector<double> > &data) =0;
+	virtual void storePointData(const std::string &name, size_t points, const std::vector<int> &data) =0;
+	virtual void storePointData(const std::string &name, size_t points, const std::vector<long> &data) =0;
+	virtual void storePointData(const std::string &name, size_t points, const std::vector<double> &data) =0;
+
+	virtual void storeCellData(const std::string &name, size_t cells, const std::vector<std::vector<int> > &data) =0;
+	virtual void storeCellData(const std::string &name, size_t cells, const std::vector<std::vector<long> > &data) =0;
+	virtual void storeCellData(const std::string &name, size_t cells, const std::vector<std::vector<double> > &data) =0;
+	virtual void storeCellData(const std::string &name, size_t cells, const std::vector<int> &data) =0;
+	virtual void storeCellData(const std::string &name, size_t cells, const std::vector<long> &data) =0;
+	virtual void storeCellData(const std::string &name, size_t cells, const std::vector<double> &data) =0;
 
 	vtkUnstructuredGrid *_VTKGrid;
+	vtkXMLWriter *_writer;
+	std::vector<void*> _VTKDataArrays;
+
 	std::ofstream *_os;
 };
 

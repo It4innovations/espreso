@@ -82,14 +82,11 @@ void VTKXML::linkClusters(const std::string &root, const std::string &name, cons
 	os << "    <PPointData>\n";
 	for (size_t i = 0; i < solution.size(); i++) {
 		if (solution[i]->eType == ElementType::NODES) {
-			size_t components = 0;
-			std::for_each(solution[i]->data.begin(), solution[i]->data.end(), [&] (const std::vector<double> &part) { components += part.size(); });
-			components /= points;
-			os << "    <DataArray type=\"Float64\" Name=\"" << solution[i]->name << "\" format=\"" << format() << "\" NumberOfComponents=\"" << components  << "\">\n";
-			os << "      ";
-			std::for_each(solution[i]->data.begin(), solution[i]->data.end(), [&] (const std::vector<double> &part) { store(os, part); });;
-			os << "\n";
-			os << "    </DataArray>\n";
+			size_t size = 0;
+			for (size_t p = 0; p < solution[i]->data.size(); p++) {
+				size += solution[i]->data[p].size();
+			}
+			os << "      <PDataArray type=\"Float64\" Name=\"" << solution[i]->name << "\" format=\"" << format() << "\" NumberOfComponents=\"" << size / points << "\"/>\n";
 		}
 	}
 	os << "    </PPointData>\n";
@@ -97,14 +94,11 @@ void VTKXML::linkClusters(const std::string &root, const std::string &name, cons
 	os << "    <PCellData>\n";
 	for (size_t i = 0; i < solution.size(); i++) {
 		if (solution[i]->eType == ElementType::ELEMENTS) {
-			size_t components = 0;
-			std::for_each(solution[i]->data.begin(), solution[i]->data.end(), [&] (const std::vector<double> &part) { components += part.size(); });
-			components /= cells;
-			os << "    <DataArray type=\"Float64\" Name=\"" << solution[i]->name << "\" format=\"" << format() << "\" NumberOfComponents=\"" << components << "\">\n";
-			os << "      ";
-			std::for_each(solution[i]->data.begin(), solution[i]->data.end(), [&] (const std::vector<double> &part) { store(os, part); });;
-			os << "\n";
-			os << "    </DataArray>\n";
+			size_t size = 0;
+			for (size_t p = 0; p < solution[i]->data.size(); p++) {
+				size += solution[i]->data[p].size();
+			}
+			os << "      <PDataArray type=\"Float64\" Name=\"" << solution[i]->name << "\" format=\"" << format() << "\" NumberOfComponents=\"" << size / cells << "\"/>\n";
 		}
 	}
 	os << "    </PCellData>\n";
