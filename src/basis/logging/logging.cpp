@@ -29,7 +29,7 @@ std::string Logging::prepareFile(const std::string &name)
 	if (step == NULL) {
 		directory << output << "/" << rank << "/";
 	} else {
-		directory << output << "/step" << step->step << "/iteration" << step->iteration << "/substep" << step->substep << "/" << rank << "/";
+		directory << output << "/step" << step->step << "/iteration" << step->substep << "/substep" << step->iteration << "/" << rank << "/";
 	}
 	file << directory.str() << "/" << name << ".txt";
 

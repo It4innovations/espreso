@@ -54,9 +54,9 @@ void TransientFirstOrderImplicit::run(Step &step)
 		y[d].resize(instance->DOFs[d]);
 	}
 
-	for (step.iteration = 0; step.iteration < 100; step.iteration++) {
-		ESINFO(PROGRESS2) << _name << " iteration " << step.iteration + 1;
-		if (step.iteration) {
+	for (step.substep = 0; step.substep < 100; step.substep++) {
+		ESINFO(PROGRESS2) << _name << " iteration " << step.substep + 1;
+		if (step.substep) {
 			updateMatrices(step, Matrices::K | Matrices::M | Matrices::f, instance->solutions);
 		} else {
 			assembleMatrices(step, Matrices::K | Matrices::M | Matrices::f);
@@ -69,13 +69,13 @@ void TransientFirstOrderImplicit::run(Step &step)
 		multiply(step, Matrices::M, x, y, 0, "x", "y");
 		sum(step, Matrices::f, y, 1, 1, "y");
 
-		if (step.iteration) {
+		if (step.substep) {
 			updateLinearSolver(Matrices::K | Matrices::M | Matrices::f | Matrices::B1c);
 		} else {
 			initLinearSolver();
 		}
 		runLinearSolver();
-		sum(deltaU, physics->instance()->primalSolution, u, 1, -1, "deltaU", "u_" + std::to_string(step.iteration + 1), "u_" + std::to_string(step.iteration));
+		sum(deltaU, physics->instance()->primalSolution, u, 1, -1, "deltaU", "u_" + std::to_string(step.substep + 1), "u_" + std::to_string(step.substep));
 		sum(v, deltaU, v, 1 / (alpha * _configuration.time_step), - (1 - alpha) / alpha, "v", "deltaU", "v");
 		u = instance->primalSolution;
 

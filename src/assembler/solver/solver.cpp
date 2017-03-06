@@ -78,7 +78,7 @@ void Solver::storeData(const Step &step, std::vector<std::vector<double> > &vect
 void Solver::storeSolution(const Step &step)
 {
 	std::stringstream ss;
-	ss << "_s" << step.step << "i" << step.iteration;
+	ss << "_s" << step.step << "i" << step.substep;
 	for (size_t s = 0; s < physics->instance()->solutions.size(); s++) {
 		_store->storeValues(physics->instance()->solutions[s]->name + ss.str(), physics->instance()->solutions[s]->properties, physics->instance()->solutions[s]->data, physics->instance()->solutions[s]->eType);
 	}
@@ -88,7 +88,7 @@ void Solver::storeSubSolution(const Step &step)
 {
 	if (_store->configuration().substeps) {
 		std::stringstream ss;
-		ss << "_s" << step.step << "i" << step.iteration << "_" << step.substep;
+		ss << "_s" << step.step << "i" << step.substep << "_" << step.iteration;
 		for (size_t s = 0; s < physics->instance()->solutions.size(); s++) {
 			_store->storeValues(physics->instance()->solutions[s]->name + ss.str(), physics->instance()->solutions[s]->properties, physics->instance()->solutions[s]->data, physics->instance()->solutions[s]->eType);
 		}
@@ -453,7 +453,7 @@ double Solver::lineSearch(const std::vector<std::vector<double> > &U, std::vecto
 	std::vector<std::vector<double> > F_ext_r = F_ext;
 
 	for (size_t i = 0; i < 6; i++) {
-		sum(solution, U, deltaU, 1, alpha, "u_" + std::to_string(step.substep), "u_" + std::to_string(step.substep - 1), "delta_u");
+		sum(solution, U, deltaU, 1, alpha, "u_" + std::to_string(step.iteration), "u_" + std::to_string(step.iteration - 1), "delta_u");
 
 		solution.swap(physics->instance()->primalSolution);
 		physics->updateMatrix(step, Matrices::R, physics->instance()->solutions);
@@ -494,7 +494,7 @@ double Solver::lineSearch(const std::vector<std::vector<double> > &U, std::vecto
 		alpha = 1;
 	}
 
-	sum(solution, U, deltaU, 0, alpha, "u_" + std::to_string(step.substep), "u_" + std::to_string(step.substep - 1), "delta_u");
+	sum(solution, U, deltaU, 0, alpha, "u_" + std::to_string(step.iteration), "u_" + std::to_string(step.iteration - 1), "delta_u");
 	solution.swap(deltaU);
 	return alpha;
 }
@@ -503,7 +503,7 @@ double Solver::maxAbsValue(const std::vector<std::vector<double> > &v) const
 {
 	double max = 0;
 	for (size_t p = 0; p < v.size(); p++) {
-		max = std::max(max, *std::max_element(v[p].begin(), v[p].end(), [] (const double v1, const double v2) { return std::fabs(v1) < std::fabs(v2); }));
+		max = std::max(max, std::fabs(*std::max_element(v[p].begin(), v[p].end(), [] (const double v1, const double v2) { return std::fabs(v1) < std::fabs(v2); })));
 	}
 
 	double gmax;
