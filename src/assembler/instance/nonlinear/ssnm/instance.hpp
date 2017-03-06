@@ -15,7 +15,7 @@ void SemiSmoothNewtonMethod<TPhysics, TConfiguration>::init()
 	timePreparation.endWithBarrier(); _timeStatistics.addEvent(timePreparation);
 
 	if (_output.properties || _output.results) {
-		_store.storeGeometry();
+		// _store.storeGeometry();
 	}
 	if (_output.properties) {
 		_physics.saveMeshProperties(_store);
@@ -46,7 +46,7 @@ void SemiSmoothNewtonMethod<TPhysics, TConfiguration>::init()
 	}
 
 	if (_output.gluing) {
-		store::VTK::gluing(_output, _mesh, _constraints, "B1", _physics.pointDOFs.size());
+		// store::VTK::gluing(_output, _mesh, _constraints, "B1", _physics.pointDOFs.size());
 	}
 
 	TimeEvent timeSolver("Initialize solver"); timeSolver.startWithBarrier();

@@ -12,7 +12,7 @@ void DynamicsInstance<TPhysics>::init()
 	timePreparation.endWithBarrier(); _timeStatistics.addEvent(timePreparation);
 
 	if (_output.properties || _output.results) {
-		_store.storeGeometry(_time);
+		// _store.storeGeometry(_time);
 	}
 	if (_output.properties) {
 		_physics.saveMeshProperties(_store);
@@ -96,7 +96,7 @@ void DynamicsInstance<TPhysics>::solve(std::vector<std::vector<double> > &soluti
 	}
 
 	if (_time && _output.results) {
-		_store.storeGeometry(_time);
+		// _store.storeGeometry(_time);
 	}
 
 	TimeEvent timeLSrun("Linear Solver - runtime"); timeLSrun.start();
