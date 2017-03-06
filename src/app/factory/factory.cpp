@@ -24,6 +24,7 @@
 #include "../../output/resultstore/vtklegacy.h"
 #include "../../output/resultstore/vtkxmlascii.h"
 #include "../../output/resultstore/vtkxmlbinary.h"
+#include "../../output/resultstore/catalyst.h"
 
 namespace espreso {
 
@@ -48,7 +49,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 	store = new output::ResultStoreList(configuration.output);
 
 	if (configuration.output.catalyst) {
-		// store->add(new output::Catalyst(configuration.output, *mesh, "results"));
+		store->add(new output::Catalyst(configuration.output, mesh, "results"));
 	}
 	if (configuration.output.results || configuration.output.properties) {
 		switch (configuration.output.format) {

@@ -78,13 +78,6 @@ protected:
 	const Mesh *_mesh;
 	std::string _path;
 
-
-private:
-	virtual void regionPreprocessing(const espreso::Region &region, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements);
-	virtual void regionData(size_t step, const espreso::Region &region, DataArrays &data);
-
-	virtual void coordinatePreprocessing(const std::vector<std::vector<eslocal> > &indices, std::vector<double> &coordinates, std::vector<size_t> &offsets);
-
 	std::vector<double> _coordinates; // x1, y1, z1, x2, y2, z2, ...
 	std::vector<eslocal> _elementsTypes;  // code1, code2, ...
 	std::vector<eslocal> _elementsNodes;  // nodes1, nodes2, ...
@@ -92,6 +85,12 @@ private:
 
 	Point _clusterCenter;
 	std::vector<Point> _domainsCenters;
+
+private:
+	virtual void regionPreprocessing(const espreso::Region &region, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements);
+	virtual void regionData(size_t step, const espreso::Region &region, DataArrays &data);
+
+	virtual void coordinatePreprocessing(const std::vector<std::vector<eslocal> > &indices, std::vector<double> &coordinates, std::vector<size_t> &offsets);
 };
 
 }
