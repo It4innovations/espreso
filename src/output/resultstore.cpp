@@ -253,13 +253,6 @@ void ResultStore::storeSettings(const std::vector<size_t> &steps)
 			}
 		}
 	}
-
-	// TODO: it is not working
-//	if (!environment->MPIrank) {
-//		for (size_t step = 0; step < steps.size(); step++) {
-//			composeRegions(roots[step] + "settings", names[step]);
-//		}
-//	}
 }
 
 void ResultStore::storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType)
@@ -278,6 +271,7 @@ void ResultStore::storeValues(const std::string &name, size_t dimension, const s
 
 	solution.push_back(new Solution(name, eType, props, values));
 	storeSolution(step, solution);
+	delete solution.back();
 }
 
 void ResultStore::storeSolution(const Step &step, const std::vector<Solution*> &solution)

@@ -2,7 +2,6 @@
 #include "vtkxml.h"
 
 #include <fstream>
-#include <algorithm>
 
 #include "../../configuration/environment.h"
 #include "../../assembler/solution.h"

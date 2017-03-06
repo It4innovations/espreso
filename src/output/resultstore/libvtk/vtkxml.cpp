@@ -1,23 +1,10 @@
 
 #include <fstream>
-#include <algorithm>
 
-#include "vtkNew.h"
 #include "vtkSmartPointer.h"
-
-#include "vtkPointData.h"
-#include "vtkCellData.h"
 #include "vtkUnstructuredGrid.h"
-
-#include "vtkGeometryFilter.h"
-#include "vtkDataSetSurfaceFilter.h"
-#include "vtkTriangleFilter.h"
-#include "vtkDecimatePro.h"
-#include "vtkAppendFilter.h"
-
 #include "vtkXMLWriter.h"
 
-#include "../../../configuration/environment.h"
 #include "../../../assembler/solution.h"
 #include "../../../mesh/structures/elementtypes.h"
 
@@ -111,6 +98,10 @@ void VTKXML::finalizeWriter()
 {
 	_writer->Write();
 	_VTKGrid->Delete();
+	for (size_t i = 0; i < _VTKDataArrays.size(); i++) {
+		delete[] _VTKDataArrays[i];
+	}
+	_VTKDataArrays.clear();
 }
 
 

@@ -54,8 +54,8 @@ void VTKXML::addMesh(std::vector<double> &coordinates, std::vector<eslocal> &ele
 
 	(*_os) << "  <Cells>\n";
 	storeCellData("connectivity", elements.size(), elements);
-	storeCellData("offset", elementsNodes.size(), elements);
-	storeCellData("types", elementsTypes.size(), elements);
+	storeCellData("offsets", elementsTypes.size(), elementsNodes);
+	storeCellData("types", elementsTypes.size(), elementsTypes);
 	(*_os) << "  </Cells>\n";
 }
 
