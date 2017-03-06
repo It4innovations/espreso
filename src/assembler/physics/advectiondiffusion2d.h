@@ -52,7 +52,7 @@ struct NewAdvectionDiffusion2D: public Physics2D
 	}
 
 protected:
-	void assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K) const;
+	void assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD) const;
 
 	const AdvectionDiffusion2DConfiguration &_configuration;
 };

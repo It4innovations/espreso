@@ -42,6 +42,7 @@ struct AdvectionDiffusion2DConfiguration: public Configuration {
 		{ "CAU" , STABILIZATION::CAU , "CAU stabilization." },
 	}));
 	PARAMETER(double, sigma, "Inconsistent stabilization parameters.", 0);
+	PARAMETER(bool, tangent_matrix_correction, "Add derivation matrix to stiffness matrix.", 0);
 
 	PARAMETER(bool, newassembler, "New version of assembler.", 1);
 

@@ -30,6 +30,9 @@ NewAdvectionDiffusion2D::NewAdvectionDiffusion2D(Mesh *mesh, Instance *instance,
 
 MatrixType NewAdvectionDiffusion2D::getMatrixType(const Step &step, size_t domain) const
 {
+	if (_configuration.tangent_matrix_correction) {
+		return MatrixType::REAL_UNSYMMETRIC;
+	}
 	if (_mesh->hasProperty(domain, Property::TRANSLATION_MOTION_X, step.step) || _mesh->hasProperty(domain, Property::TRANSLATION_MOTION_Y, step.step)) {
 		return MatrixType::REAL_UNSYMMETRIC;
 	} else {
@@ -104,7 +107,7 @@ void NewAdvectionDiffusion2D::analyticRegularization(size_t domain)
 	_instance->RegMat[domain].ConvertToCSR(1);
 }
 
-void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K) const
+void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD) const
 {
 	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
 
@@ -128,36 +131,75 @@ void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Ele
 	}
 	}
 
-	DenseMatrix TCT(2, 2), T(2, 2), C(2, 2);
+	DenseMatrix TCT(2, 2), T(2, 2), C(2, 2), _CD, TCDT;
 	T(0, 0) =  cos; T(0, 1) = sin;
 	T(1, 0) = -sin; T(1, 1) = cos;
+
+	if (_configuration.tangent_matrix_correction) {
+		_CD.resize(2, 2);
+		TCDT.resize(2, 2);
+	}
+
+	auto derivation = [&] (MATERIAL_PARAMETER p, double h) {
+		return (
+				material->get(p)->evaluate(e->node(node), step.step, temp + h) -
+				material->get(p)->evaluate(e->node(node), step.step, temp - h)
+				) / (2 * h);
+	};
 
 	switch (material->getModel(PHYSICS::ADVECTION_DIFFUSION_2D)) {
 	case MATERIAL_MODEL::ISOTROPIC:
 		C(0, 0) = C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.step, temp);
 		C(0, 1) = C(1, 0) = 0;
+		if (_configuration.tangent_matrix_correction) {
+			_CD(0, 0) = _CD(1, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, temp / 1e4);
+			_CD(0, 1) = _CD(1, 0) = 0;
+		}
 		break;
 	case MATERIAL_MODEL::DIAGONAL:
 		C(0, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.step, temp);
 		C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.step, temp);
 		C(0, 1) = C(1, 0) = 0;
+		if (_configuration.tangent_matrix_correction) {
+			_CD(0, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, temp / 1e4);
+			_CD(1, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY, temp / 1e4);
+			_CD(0, 1) = _CD(1, 0) = 0;
+		}
 		break;
 	case MATERIAL_MODEL::SYMMETRIC:
 		C(0, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.step, temp);
 		C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.step, temp);
 		C(1, 0) = C(0, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(node), step.step, temp);
+		if (_configuration.tangent_matrix_correction) {
+			_CD(0, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, temp / 1e4);
+			_CD(1, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY, temp / 1e4);
+			_CD(0, 1) = _CD(1, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY, temp / 1e4);
+		}
 		break;
 	case MATERIAL_MODEL::ANISOTROPIC:
 		C(0, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.step, temp);
 		C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.step, temp);
 		C(0, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(node), step.step, temp);
 		C(1, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX)->evaluate(e->node(node), step.step, temp);
+		if (_configuration.tangent_matrix_correction) {
+			_CD(0, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, temp / 1e4);
+			_CD(1, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY, temp / 1e4);
+			_CD(0, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY, temp / 1e4);
+			_CD(1, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX, temp / 1e4);
+		}
 		break;
 	default:
 		ESINFO(ERROR) << "Advection diffusion 2D not supports set material model";
 	}
 
 	TCT.multiply(T, C * T, 1, 0, true, false);
+	if (_configuration.tangent_matrix_correction) {
+		TCDT.multiply(T, _CD * T, 1, 0, true, false);
+		CD(node, 0) = TCDT(0, 0);
+		CD(node, 1) = TCDT(1, 1);
+		CD(node, 2) = TCDT(0, 1);
+		CD(node, 3) = TCDT(1, 0);
+	}
 
 	K(node, 0) = TCT(0, 0);
 	K(node, 1) = TCT(1, 1);
@@ -177,10 +219,16 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 	DenseMatrix T(e->nodes(), 1);
 	DenseMatrix thickness(e->nodes(), 1), K(e->nodes(), 4);
 	DenseMatrix gpThickness(1, 1), gpK(1, 4), gpM(1, 1);
+	DenseMatrix tangentK, BT, BTN, gpCD, CD, CDBTN, CDe;
 
 	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
 
 	coordinates.resize(e->nodes(), 2);
+
+	if (_configuration.tangent_matrix_correction) {
+		CD.resize(e->nodes(), 4);
+		CDe.resize(2, 2);
+	}
 
 	for (size_t i = 0; i < e->nodes(); i++) {
 		if (solution.size()) {
@@ -200,7 +248,7 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 		U(i, 0) = e->getProperty(Property::TRANSLATION_MOTION_X, i, step.step, 0) * m(i, 0);
 		U(i, 1) = e->getProperty(Property::TRANSLATION_MOTION_Y, i, step.step, 0) * m(i, 0);
 		f(i, 0) = e->sumProperty(Property::HEAT_SOURCE, i, step.step, 0) * thickness(i, 0);
-		assembleMaterialMatrix(step, e, i, temp, K);
+		assembleMaterialMatrix(step, e, i, temp, K, CD);
 	}
 
 	eslocal Ksize = e->nodes();
@@ -226,6 +274,10 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 		fe = 0;
 	}
 
+	if (_configuration.tangent_matrix_correction) {
+		tangentK.resize(Ksize, Ksize);
+	}
+
 	DenseMatrix u(1, 2), v(1, 2), re(1, e->nodes());
 	double normGradN = 0;
 
@@ -238,12 +290,20 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 
 		gpThickness.multiply(e->N()[gp], thickness);
 		gpK.multiply(e->N()[gp], K);
+		if (_configuration.tangent_matrix_correction) {
+			gpCD.multiply(e->N()[gp], CD);
+			CDe(0, 0) = gpCD(0, 0);
+			CDe(1, 1) = gpCD(0, 1);
+			CDe(0, 1) = gpCD(0, 2);
+			CDe(1, 0) = gpCD(0, 3);
+		}
 		gpM.multiply(e->N()[gp], m);
 
 		Ce(0, 0) = gpK(0, 0);
 		Ce(1, 1) = gpK(0, 1);
 		Ce(0, 1) = gpK(0, 2);
 		Ce(1, 0) = gpK(0, 3);
+
 
 		dND.multiply(invJ, e->dN()[gp]);
 
@@ -304,6 +364,12 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 			Me.multiply(e->N()[gp], e->N()[gp], detJ * gpM(0, 0) * e->weighFactor()[gp], 1, true);
 		}
 		if (matrices & (Matrices::K | Matrices::R)) {
+			if (_configuration.tangent_matrix_correction) {
+				BT.multiply(e->dN()[gp], T);
+				BTN.multiply(BT, e->N()[gp]);
+				CDBTN.multiply(CDe, BTN);
+				tangentK.multiply(e->dN()[gp], CDBTN, 1, 1, true);
+			}
 			Ke.multiply(dND, Ce * dND, detJ * e->weighFactor()[gp] * gpThickness(0, 0), 1, true);
 			Ke.multiply(e->N()[gp], b_e, detJ * e->weighFactor()[gp], 1, true);
 			if (konst * e->weighFactor()[gp] * detJ != 0) {
@@ -323,11 +389,16 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 			}
 		}
 	}
+
 	if (matrices & Matrices::R) {
 		Re.multiply(Ke, T);
 		if (!(matrices & Matrices::K)) {
 			Ke.resize(0, 0);
 		}
+	}
+
+	if ((matrices & Matrices::K) && _configuration.tangent_matrix_correction) {
+		Ke += tangentK;
 	}
 }
 
