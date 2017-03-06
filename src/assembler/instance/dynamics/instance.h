@@ -5,7 +5,7 @@
 #include "../instance.h"
 
 #include "../../../configuration/output.h"
-#include "../../../old_output/vtk/vtk.h"
+#include "../../../output/resultstore/vtkxmlascii.h"
 #include "../../constraints/constraints.h"
 #include "../../../solver/generic/LinearSolver.h"
 
@@ -44,7 +44,7 @@ protected:
 	Constraints _constrains;
 	TPhysics _physics;
 	LinearSolver _linearSolver;
-	store::VTK _store;
+	output::VTKXMLASCII _store;
 
 private:
 	size_t _time;

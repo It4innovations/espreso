@@ -40,7 +40,7 @@ protected:
 	TPhysics _physics;
 	LinearSolver _linearSolver;
 	std::vector<std::vector<double> > _prevSolution;
-	store::VTK _store;
+	output::VTKXMLASCII _store;
 };
 
 }

@@ -1,8 +1,0 @@
-
-def configure(ctx):
-    ctx.recurse("vtk")
-    ctx.recurse("espreso")
-
-def build(ctx):
-    ctx.recurse("vtk")
-    ctx.recurse("espreso")
