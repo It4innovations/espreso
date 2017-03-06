@@ -39,6 +39,12 @@ void TransientFirstOrderImplicit::run(Step &step)
 	case TransientSolver::METHOD::BACKWARD_DIFF:
 		alpha = 1;
 		break;
+	case TransientSolver::METHOD::USER:
+		alpha = _configuration.alpha;
+		if (alpha <= 0 || alpha > 1) {
+			ESINFO(GLOBAL_ERROR) << "Alpha has to be from interval (0, 1>.";
+		}
+		break;
 	default:
 		ESINFO(GLOBAL_ERROR) << "Not supported first order implicit solver method.";
 	}

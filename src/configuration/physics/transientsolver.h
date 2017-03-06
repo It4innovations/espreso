@@ -23,27 +23,19 @@ struct TransientSolver: public Configuration {
 		CRANK_NICOLSON,
 		FORWARD_DIFF,
 		GALERKIN,
-		BACKWARD_DIFF
-	};
-
-	enum class ALPHA {
-		OFF,
-		ON,
-		FROM_METHOD
+		BACKWARD_DIFF,
+		USER
 	};
 
 	OPTION(METHOD, method, "Transient method", METHOD::CRANK_NICOLSON, OPTIONS({
 		{ "CRANK_NICOLSON", METHOD::CRANK_NICOLSON, "Crank-Nicolson method." },
 		{ "FORWARD_DIFF"  , METHOD::FORWARD_DIFF  , "Forward differences." },
 		{ "GALERKIN"      , METHOD::GALERKIN      , "Galerkin method." },
-		{ "BACKWARD_DIFF" , METHOD::BACKWARD_DIFF , "Backward differences." }
+		{ "BACKWARD_DIFF" , METHOD::BACKWARD_DIFF , "Backward differences." },
+		{ "USER"          , METHOD::USER          , "Alpha defined by user." }
 	}));
 
-	OPTION(ALPHA, alpha_set, "Alpha set", ALPHA::FROM_METHOD, OPTIONS({
-		{ "0"          , ALPHA::OFF        , "Off." },
-		{ "1"          , ALPHA::ON         , "On." },
-		{ "FROM_METHOD", ALPHA::FROM_METHOD, "From method." }
-	}));
+	PARAMETER(double, alpha, "Alpha in case of METHOD == USER from range (0, 1>.", 0.5);
 
 	SUBCONFIG(AutoTimeStepping, auto_time_stepping, "Auto-time stepping parameters.");
 

@@ -76,7 +76,6 @@ ADVECTION_DIFFUSION_2D {
 
         TRANSIENT_SOLVER {
           METHOD    CRANK_NICOLSON;
-          ALPHA_SET    FROM_METHOD;
           TIME_STEP             .2;
         }
       }
@@ -94,7 +93,6 @@ ADVECTION_DIFFUSION_2D {
   }
 
   MATERIALS {
-
     1 {
       MODEL ISOTROPIC;
 
