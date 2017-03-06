@@ -116,10 +116,10 @@ void ResultStore::regionPreprocessing(const espreso::Region &region, std::vector
 	std::vector<size_t> offsets;
 	coordinatePreprocessing(rCoordinates, coordinates, offsets);
 
-	for (size_t e = 0; e < rElements.size(); e++) {
+	for (size_t e = 0, offset = 0; e < rElements.size(); e++) {
 		elementsTypes.insert(elementsTypes.end(), rElements[e]->domains().size(), rElements[e]->vtkCode());
-		elementsNodes.insert(elementsNodes.end(), rElements[e]->domains().size(), rElements[e]->nodes());
-		for (auto d = rElements[e]->domains().begin(); d != rElements[e]->domains().end(); ++d) {
+		for (auto d = rElements[e]->domains().begin(); d != rElements[e]->domains().end(); ++d, offset += rElements[e]->nodes()) {
+			elementsNodes.push_back(offset + rElements[e]->nodes());
 			for (size_t n = 0; n < rElements[e]->nodes(); n++) {
 				eslocal oIndex = std::lower_bound(rCoordinates[*d].begin(), rCoordinates[*d].end(), rElements[e]->node(n)) - rCoordinates[*d].begin();
 				elements.push_back(oIndex + offsets[*d]);
@@ -166,10 +166,10 @@ void ResultStore::preprocessing()
 		std::vector<std::vector<eslocal> > dElementsNodes(_mesh->parts());
 		std::vector<std::vector<eslocal> > dElements(_mesh->parts());
 		#pragma omp parallel for
-		for (size_t p = 0; p < _mesh->parts(); p++) {
-			for (size_t e = _mesh->getPartition()[p]; e < _mesh->getPartition()[p + 1]; e++) {
+		for (size_t p = 0, offset = 0; p < _mesh->parts(); p++) {
+			for (size_t e = _mesh->getPartition()[p]; e < _mesh->getPartition()[p + 1]; offset += _mesh->elements()[e++]->nodes()) {
 				dElementsTypes[p].push_back(_mesh->elements()[e]->vtkCode());
-				dElementsNodes[p].push_back(_mesh->elements()[e]->nodes());
+				dElementsNodes[p].push_back(offset + _mesh->elements()[e]->nodes());
 				for (size_t n = 0; n < _mesh->elements()[e]->nodes(); n++) {
 					dElements[p].push_back(_mesh->coordinates().localIndex(_mesh->elements()[e]->node(n), p) + domainOffset[p]);
 				}

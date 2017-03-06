@@ -19,12 +19,6 @@ VTKXML::VTKXML(const OutputConfiguration &output, const Mesh *mesh, const std::s
 	preprocessing();
 }
 
-void VTKXML::regionPreprocessing(const espreso::Region &region, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements)
-{
-	ResultStore::regionPreprocessing(region, coordinates, elementsTypes, elementsNodes, elements);
-}
-
-
 VTKXML::~VTKXML()
 {
 
@@ -55,10 +49,10 @@ void VTKXML::addMesh(std::vector<double> &coordinates, std::vector<eslocal> &ele
 	_VTKGrid->Allocate(static_cast<vtkIdType>(elements.size()));
 
 	std::vector<vtkIdType> nodes(20);
-	for (size_t i = 0, p = 0; i < elementsTypes.size(); p += elementsNodes[i++]) {
+	for (size_t i = 0, p = 0; i < elementsTypes.size(); p = elementsNodes[i++]) {
 		nodes.clear();
-		nodes.insert(nodes.end(), elements.begin() + p, elements.begin() + p + elementsNodes[i]);
-		_VTKGrid->InsertNextCell(elementsTypes[i], elementsNodes[i], nodes.data());
+		nodes.insert(nodes.end(), elements.begin() + p, elements.begin() + elementsNodes[i]);
+		_VTKGrid->InsertNextCell(elementsTypes[i], elementsNodes[i] - p, nodes.data());
 	}
 }
 

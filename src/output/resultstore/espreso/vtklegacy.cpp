@@ -15,6 +15,11 @@ VTKLegacy::VTKLegacy(const OutputConfiguration &output, const Mesh *mesh, const 
 	preprocessing();
 }
 
+void VTKLegacy::finalize()
+{
+
+}
+
 static void storeMesh(std::ofstream &os, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements)
 {
 	os << "# vtk DataFile Version 4.0\n";
@@ -31,10 +36,10 @@ static void storeMesh(std::ofstream &os, std::vector<double> &coordinates, std::
 	os << "\n";
 
 	os << "CELLS " << elementsTypes.size() << " " << elementsNodes.size() + elements.size()<< "\n";
-	for (size_t e = 0, p = 0; e < elementsTypes.size(); p += elementsNodes[e++]) {
-		os << elementsNodes[e] << " ";
-		for (size_t n = 0; n < elementsNodes[e]; n++) {
-			os << elements[p + n] << " ";
+	for (size_t e = 0, offset = 0; e < elementsTypes.size(); offset = elementsNodes[e++]) {
+		os << elementsNodes[e] - offset << " ";
+		for (size_t n = 0; n < elementsNodes[e] - offset; n++) {
+			os << elements[offset + n] << " ";
 		}
 		os << "\n";
 	}

@@ -14,17 +14,7 @@ VTKXML::VTKXML(const OutputConfiguration &output, const Mesh *mesh, const std::s
 : ResultStore(output, mesh, path), _VTKGrid(NULL), _writer(NULL), _os(NULL)
 {
 	preprocessing();
-	size_t offset = 0;
-	std::for_each(_elementsNodes.begin(), _elementsNodes.end(), [&] (eslocal &nodes) { nodes = offset += nodes; });
 }
-
-void VTKXML::regionPreprocessing(const espreso::Region &region, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements)
-{
-	ResultStore::regionPreprocessing(region, coordinates, elementsTypes, elementsNodes, elements);
-	size_t offset = 0;
-	std::for_each(elementsNodes.begin(), elementsNodes.end(), [&] (eslocal &nodes) { nodes = offset += nodes; });
-}
-
 
 VTKXML::~VTKXML()
 {

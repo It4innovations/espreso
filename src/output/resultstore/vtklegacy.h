@@ -14,9 +14,18 @@ public:
 	VTKLegacy(const OutputConfiguration &output, const Mesh *mesh, const std::string &path);
 	virtual ~VTKLegacy() {};
 
+	virtual void finalize();
+
 protected:
 	virtual void store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, DataArrays &data);
 	virtual void store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const std::vector<Solution*> &solution);
+
+	// Legacy format cannot be linked
+	virtual void linkClusters(const std::string &root, const std::string &name, const DataArrays &data) {};
+	virtual void linkClusters(const std::string &root, const std::string &name, const std::vector<Solution*> &solution, size_t points, size_t cells) {};
+
+	virtual void linkSteps(const std::string &root, const std::string &name, const DataArrays &data) {};
+	virtual void linkSteps(const std::string &root, const std::string &name, const std::vector<Solution*> &solution) {};
 };
 
 }
