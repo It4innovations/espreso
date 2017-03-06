@@ -2299,13 +2299,25 @@ for (size_t j = 0; j < G_in.J_col_indices.size(); j++ ) {
 
 void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f ) {
 
-	eslocal size_d = domains[0].Kplus_R.cols; // because transpose of R
-
-	if ( USE_HFETI == 1 ) {
-		vec_d.resize( size_d );
-	} else {
-		vec_d.resize( domains.size() * size_d );	// MFETI
+	SEQ_VECTOR <eslocal> kerindices (domains.size() + 1, 0);
+	kerindices[0] = 0;
+	for (size_t k = 1; k < kerindices.size(); k++) {
+		kerindices[k] = kerindices[k-1] + domains[k-1].Kplus_R.cols;
 	}
+
+	eslocal size_d = 0;
+	if ( USE_HFETI == 1 ) {
+		for (size_t d = 0; d < domains.size(); d++) {
+			if (size_d > domains[d].Kplus_R.cols)
+				size_d = domains[d].Kplus_R.cols;
+		}
+	} else {
+		for (size_t d = 0; d < domains.size(); d++) {
+				size_d += domains[d].Kplus_R.cols;
+		}
+	}
+	vec_d.resize( size_d );
+
 
 	if (SYMMETRIC_SYSTEM) {
 
@@ -2320,15 +2332,15 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 		} else {
 			for (size_t d = 0; d < domains.size(); d++) {											// MFETI
 				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
-					domains[d].Kplus_R.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
+					domains[d].Kplus_R. DenseMatVec(f[d], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
 				} else {
-					domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
+					domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
 				}
 			}
 		}
 
 	} else {
-
+		// NON-SYMMETRIC SYSTEM
 		if ( USE_HFETI == 1) {
 			for (size_t d = 0; d < domains.size(); d++) {
 				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
@@ -2340,9 +2352,9 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 		} else {
 			for (size_t d = 0; d < domains.size(); d++) {											// MFETI
 				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
-					domains[d].Kplus_R2.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
+					domains[d].Kplus_R2. DenseMatVec(f[d], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
 				} else {
-					domains[d].Kplus_Rb2.DenseMatVec(f[d], vec_d, 'T', 0, d * size_d, 0.0 );				// MFETI
+					domains[d].Kplus_Rb2.DenseMatVec(f[d], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
 				}
 			}
 		}
