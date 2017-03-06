@@ -3,6 +3,9 @@
 *.o
 *.so
 *.vtk
+*.pvd
+*.vtu
+*.vtm
 *.pyc
 *.png
 *.a
