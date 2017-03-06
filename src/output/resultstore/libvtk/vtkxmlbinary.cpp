@@ -42,12 +42,13 @@ static void* addPointData(vtkUnstructuredGrid * VTKGrid, const std::string &name
 	}
 	TType *array = new TType[size];
 	for (size_t i = 0, offset = 0; i < data.size(); offset += data[i++].size()) {
-		memcpy(array + offset, data[i].data(), data[i].size() * sizeof(int));
+		memcpy(array + offset, data[i].data(), data[i].size() * sizeof(TType));
 	}
+
 	vtkNew<TVTKType> vtkArray;
 	vtkArray->SetName(name.c_str());
 	vtkArray->SetNumberOfComponents(size / points);
-	vtkArray->SetArray(array, static_cast<vtkIdType>(data.size()), 1);
+	vtkArray->SetArray(array, static_cast<vtkIdType>(size), 1);
 
 	VTKGrid->GetPointData()->AddArray(vtkArray.GetPointer());
 	if (VTKGrid->GetPointData()->GetNumberOfArrays() == 1) {
@@ -79,12 +80,12 @@ static void* addCellData(vtkUnstructuredGrid * VTKGrid, const std::string &name,
 	}
 	TType *array = new TType[size];
 	for (size_t i = 0, offset = 0; i < data.size(); offset += data[i++].size()) {
-		memcpy(array + offset, data[i].data(), data[i].size() * sizeof(int));
+		memcpy(array + offset, data[i].data(), data[i].size() * sizeof(TType));
 	}
 	vtkNew<TVTKType> vtkArray;
 	vtkArray->SetName(name.c_str());
 	vtkArray->SetNumberOfComponents(size / cells);
-	vtkArray->SetArray(array, static_cast<vtkIdType>(data.size()), 1);
+	vtkArray->SetArray(array, static_cast<vtkIdType>(size), 1);
 
 	VTKGrid->GetCellData()->AddArray(vtkArray.GetPointer());
 	return array;

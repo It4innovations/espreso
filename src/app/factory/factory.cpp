@@ -56,10 +56,10 @@ Factory::Factory(const GlobalConfiguration &configuration)
 			store->add(new output::VTKLegacy(configuration.output, mesh, "results"));
 			break;
 		case OUTPUT_FORMAT::VTK_XML_ASCII:
-			store->add(new output::VTKXMLBinary(configuration.output, mesh, "results"));
+			store->add(new output::VTKXMLASCII(configuration.output, mesh, "results"));
 			break;
 		case OUTPUT_FORMAT::VTK_XML_BINARY:
-			store->add(new output::VTKXMLASCII(configuration.output, mesh, "results"));
+			store->add(new output::VTKXMLBinary(configuration.output, mesh, "results"));
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: add OUTPUT_FORMAT to factory.";
