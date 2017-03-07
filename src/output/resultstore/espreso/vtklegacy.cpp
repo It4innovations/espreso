@@ -68,49 +68,29 @@ void VTKLegacy::store(const std::string &name, std::vector<double> &coordinates,
 
 	os << "CELL_DATA " << elementsTypes.size() << "\n";
 	for (auto it = data.elementDataInteger.begin(); it != data.elementDataInteger.end(); ++it) {
-		if (it->second->size() % elementsTypes.size() != 0) {
-			ESINFO(ERROR) << "ESPRESO internal error: wrong integer elements data size of " << it->first;
-		}
-
-		size_t scalarSize = it->second->size() / elementsTypes.size();
-		os << "SCALARS " << it->first << " int " << scalarSize << "\n";
+		os << "SCALARS " << it->first << " int " << it->second.first << "\n";
 		os << "LOOKUP_TABLE default\n";
-		storeData(os, *it->second, scalarSize);
+		storeData(os, *it->second.second, it->second.first);
 	}
 
 	for (auto it = data.elementDataDouble.begin(); it != data.elementDataDouble.end(); ++it) {
-		if (it->second->size() % elementsTypes.size() != 0) {
-			ESINFO(ERROR) << "ESPRESO internal error: wrong double elements data size of " << it->first;
-		}
-
-		size_t scalarSize = it->second->size() / elementsTypes.size();
-		os << "SCALARS " << it->first << " int " << scalarSize << "\n";
+		os << "SCALARS " << it->first << " int " << it->second.first << "\n";
 		os << "LOOKUP_TABLE default\n";
-		storeData(os, *it->second, scalarSize);
+		storeData(os, *it->second.second, it->second.first);
 	}
 
 	size_t coordinateSize = coordinates.size() / 3;
 	os << "POINT_DATA " << coordinateSize << "\n";
 	for (auto it = data.pointDataInteger.begin(); it != data.pointDataInteger.end(); ++it) {
-		if (it->second->size() % coordinateSize != 0) {
-			ESINFO(ERROR) << "ESPRESO internal error: wrong integer point data size of " << it->first;
-		}
-
-		size_t scalarSize = it->second->size() / coordinateSize;
-		os << "SCALARS " << it->first << " int " << scalarSize << "\n";
+		os << "SCALARS " << it->first << " int " << it->second.first << "\n";
 		os << "LOOKUP_TABLE default\n";
-		storeData(os, *it->second, scalarSize);
+		storeData(os, *it->second.second, it->second.first);
 	}
 
 	for (auto it = data.pointDataDouble.begin(); it != data.pointDataDouble.end(); ++it) {
-		if (it->second->size() % coordinateSize != 0) {
-			ESINFO(ERROR) << "ESPRESO internal error: wrong double point data size of " << it->first;
-		}
-
-		size_t scalarSize = it->second->size() / coordinateSize;
-		os << "SCALARS " << it->first << " double " << scalarSize << "\n";
+		os << "SCALARS " << it->first << " double " << it->second.first << "\n";
 		os << "LOOKUP_TABLE default\n";
-		storeData(os, *it->second, scalarSize);
+		storeData(os, *it->second.second, it->second.first);
 	}
 }
 

@@ -24,16 +24,16 @@ using namespace espreso::output;
 DataArrays::~DataArrays()
 {
 	for (auto it = elementDataDouble.begin(); it != elementDataDouble.end(); ++it) {
-		delete it->second;
+		delete it->second.second;
 	}
 	for (auto it = elementDataInteger.begin(); it != elementDataInteger.end(); ++it) {
-		delete it->second;
+		delete it->second.second;
 	}
 	for (auto it = pointDataDouble.begin(); it != pointDataDouble.end(); ++it) {
-		delete it->second;
+		delete it->second.second;
 	}
 	for (auto it = pointDataInteger.begin(); it != pointDataInteger.end(); ++it) {
-		delete it->second;
+		delete it->second.second;
 	}
 }
 
@@ -133,7 +133,7 @@ void ResultStore::elementsPreprocessing(const std::vector<Element*> &region, std
 
 void ResultStore::regionData(size_t step, const espreso::Region &region, DataArrays &data)
 {
-	if (!region.elements().size()) {
+	if (region.settings.size() <= step) {
 		return;
 	}
 	for (auto it = region.settings[step].begin(); it != region.settings[step].end(); ++it) {
@@ -149,7 +149,7 @@ void ResultStore::regionData(size_t step, const espreso::Region &region, DataArr
 		}
 		std::stringstream ss;
 		ss << it->first;
-		data.elementDataDouble[ss.str()] = values;
+		data.elementDataDouble[ss.str()] = std::make_pair(1, values);
 	}
 }
 
@@ -211,9 +211,9 @@ static void fillMeshSettings(DataArrays &data, const std::vector<double> &coordi
 		decomposition->insert(decomposition->end(), partPtrs[p + 1] - partPtrs[p], p);
 	}
 
-	data.pointDataInteger["pointID"] = pointID;
-	data.elementDataInteger["elementID"] = elementID;
-	data.elementDataInteger["decomposition"] = decomposition;
+	data.pointDataInteger["pointID"] = std::make_pair(1, pointID);
+	data.elementDataInteger["elementID"] = std::make_pair(1, elementID);
+	data.elementDataInteger["decomposition"] = std::make_pair(1, decomposition);
 }
 
 void ResultStore::storeSettings(const Step &step)
@@ -228,41 +228,44 @@ void ResultStore::storeSettings(size_t steps)
 	storeSettings(_steps);
 }
 
+template <class TData>
+std::string ResultStore::store(const std::string &name, const Step &step, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const TData &data)
+{
+	std::string root, prefix;
+	if (!environment->MPIrank) {
+		root = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep) });
+	}
+	prefix = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), std::to_string(environment->MPIrank) });
+
+	store(prefix + name, coordinates, elementsTypes, elementsNodes, elements, data);
+	if (!environment->MPIrank) {
+		linkClusters(root, name, data);
+	}
+	return root;
+}
+
 void ResultStore::storeSettings(const std::vector<size_t> &steps)
 {
-	std::vector<std::string> prefixes;
-	std::vector<std::string> roots;
-
-	for (size_t step = 0; step < steps.size(); step++) {
-		if (!environment->MPIrank) {
-			roots.push_back(Esutils::createDirectory({ "results", "step" + std::to_string(steps[step]) }));
-		}
-		prefixes.push_back(Esutils::createDirectory({ "results", "step" + std::to_string(steps[step]), std::to_string(environment->MPIrank) }));
-	}
+	Step step;
 
 	DataArrays data;
 	fillMeshSettings(data, _coordinates, _mesh->getPartition());
-	for (size_t step = 0; step < steps.size(); step++) {
-		store(prefixes[step] + "mesh", _coordinates, _elementsTypes, _elementsNodes, _elements, data);
-		if (!environment->MPIrank) {
-			linkClusters(roots[step], "mesh", data);
-		}
+	for (size_t i = 0; i < steps.size(); i++) {
+		step.step = steps[i];
+		store("mesh", step, _coordinates, _elementsTypes, _elementsNodes, _elements, data);
 	}
 
-	for (size_t r = 2; r < _mesh->regions().size(); r++) {
-
+	for (size_t r = 0; r < _mesh->regions().size(); r++) {
 		std::vector<double> coordinates;
-		std::vector<eslocal> elementTypes, elementNodes, elements;
-		elementsPreprocessing(_mesh->regions()[r]->elements(), coordinates, elementTypes, elementNodes, elements);
+		std::vector<eslocal> elementsTypes, elementsNodes, elements;
+		elementsPreprocessing(_mesh->regions()[r]->elements(), coordinates, elementsTypes, elementsNodes, elements);
 
-		for (size_t step = 0; step < steps.size(); step++) {
+		for (size_t i = 0; i < steps.size(); i++) {
 			DataArrays rData;
-			regionData(steps[step], *_mesh->regions()[r], rData);
+			regionData(steps[step.step], *_mesh->regions()[r], rData);
 
-			store(prefixes[step] + _mesh->regions()[r]->name, coordinates, elementTypes, elementNodes, elements, rData);
-			if (!environment->MPIrank) {
-				linkClusters(roots[step], _mesh->regions()[r]->name, rData);
-			}
+			step.step = steps[i];
+			store(_mesh->regions()[r]->name, step, coordinates, elementsTypes, elementsNodes, elements, rData);
 		}
 	}
 }
@@ -292,19 +295,10 @@ void ResultStore::storeValues(const std::string &name, size_t dimension, const s
 
 void ResultStore::storeSolution(const Step &step, const std::vector<Solution*> &solution)
 {
-	std::string prefix;
-	std::string root;
+	std::string file;
 
-	if (!environment->MPIrank) {
-		root = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep) });
-	}
-	prefix = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), std::to_string(environment->MPIrank) });
-
-	store(prefix + "solution", _coordinates, _elementsTypes, _elementsNodes, _elements, solution);
-	if (!environment->MPIrank) {
-		linkClusters(root, "solution", solution, _coordinates.size() / 3, _elementsTypes.size());
-	}
-	_steps.push_back(std::make_pair(root, step));
+	file = store("solution", step, _coordinates, _elementsTypes, _elementsNodes, _elements, solution);
+	_steps.push_back(std::make_pair(file, step));
 }
 
 void ResultStore::finalize()

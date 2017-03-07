@@ -28,7 +28,7 @@ VTKXMLASCII::~VTKXMLASCII()
 }
 
 template <typename TVTKType, typename TType>
-static void* addPointData(vtkUnstructuredGrid * VTKGrid, const std::string &name, size_t points, const std::vector<std::vector<TType> > &data)
+static void* addPointData(vtkUnstructuredGrid * VTKGrid, const std::string &name, size_t components, const std::vector<std::vector<TType> > &data)
 {
 	size_t size = 0;
 	for (size_t i = 0; i < data.size(); i++) {
@@ -41,7 +41,7 @@ static void* addPointData(vtkUnstructuredGrid * VTKGrid, const std::string &name
 
 	vtkNew<TVTKType> vtkArray;
 	vtkArray->SetName(name.c_str());
-	vtkArray->SetNumberOfComponents(size / points);
+	vtkArray->SetNumberOfComponents(components);
 	vtkArray->SetArray(array, static_cast<vtkIdType>(size), 1);
 
 	VTKGrid->GetPointData()->AddArray(vtkArray.GetPointer());
@@ -52,11 +52,11 @@ static void* addPointData(vtkUnstructuredGrid * VTKGrid, const std::string &name
 }
 
 template <typename TVTKType, typename TType>
-static void addPointData(vtkUnstructuredGrid * VTKGrid, const std::string &name, size_t points, const std::vector<TType> &data)
+static void addPointData(vtkUnstructuredGrid * VTKGrid, const std::string &name, size_t components, const std::vector<TType> &data)
 {
 	vtkNew<TVTKType> vtkArray;
 	vtkArray->SetName(name.c_str());
-	vtkArray->SetNumberOfComponents(data.size() / points);
+	vtkArray->SetNumberOfComponents(components);
 	vtkArray->SetArray(const_cast<TType*>(data.data()), static_cast<vtkIdType>(data.size()), 1);
 
 	VTKGrid->GetPointData()->AddArray(vtkArray.GetPointer());
@@ -66,7 +66,7 @@ static void addPointData(vtkUnstructuredGrid * VTKGrid, const std::string &name,
 }
 
 template <typename TVTKType, typename TType>
-static void* addCellData(vtkUnstructuredGrid * VTKGrid, const std::string &name, size_t cells, const std::vector<std::vector<TType> > &data)
+static void* addCellData(vtkUnstructuredGrid * VTKGrid, const std::string &name, size_t components, const std::vector<std::vector<TType> > &data)
 {
 	size_t size = 0;
 	for (size_t i = 0; i < data.size(); i++) {
@@ -78,7 +78,7 @@ static void* addCellData(vtkUnstructuredGrid * VTKGrid, const std::string &name,
 	}
 	vtkNew<TVTKType> vtkArray;
 	vtkArray->SetName(name.c_str());
-	vtkArray->SetNumberOfComponents(size / cells);
+	vtkArray->SetNumberOfComponents(components);
 	vtkArray->SetArray(array, static_cast<vtkIdType>(size), 1);
 
 	VTKGrid->GetCellData()->AddArray(vtkArray.GetPointer());
@@ -86,75 +86,75 @@ static void* addCellData(vtkUnstructuredGrid * VTKGrid, const std::string &name,
 }
 
 template <typename TVTKType, typename TType>
-static void addCellData(vtkUnstructuredGrid * VTKGrid, const std::string &name, size_t cells, const std::vector<TType> &data)
+static void addCellData(vtkUnstructuredGrid * VTKGrid, const std::string &name, size_t components, const std::vector<TType> &data)
 {
 	vtkNew<TVTKType> vtkArray;
 	vtkArray->SetName(name.c_str());
-	vtkArray->SetNumberOfComponents(data.size() / cells);
+	vtkArray->SetNumberOfComponents(components);
 	vtkArray->SetArray(const_cast<TType*>(data.data()), static_cast<vtkIdType>(data.size()), 1);
 
 	VTKGrid->GetCellData()->AddArray(vtkArray.GetPointer());
 }
 
-void VTKXMLASCII::storePointData(const std::string &name, size_t points, const std::vector<std::vector<int> > &data)
+void VTKXMLASCII::storePointData(const std::string &name, size_t components, const std::vector<std::vector<int> > &data)
 {
-	_VTKDataArrays.push_back(addPointData<vtkIntArray>(_VTKGrid, name, points, data));
+	_VTKDataArrays.push_back(addPointData<vtkIntArray>(_VTKGrid, name, components, data));
 }
 
-void VTKXMLASCII::storePointData(const std::string &name, size_t points, const std::vector<std::vector<long> > &data)
+void VTKXMLASCII::storePointData(const std::string &name, size_t components, const std::vector<std::vector<long> > &data)
 {
-	_VTKDataArrays.push_back(addPointData<vtkLongArray>(_VTKGrid, name, points, data));
+	_VTKDataArrays.push_back(addPointData<vtkLongArray>(_VTKGrid, name, components, data));
 }
 
-void VTKXMLASCII::storePointData(const std::string &name, size_t points, const std::vector<std::vector<double> > &data)
+void VTKXMLASCII::storePointData(const std::string &name, size_t components, const std::vector<std::vector<double> > &data)
 {
-	_VTKDataArrays.push_back(addPointData<vtkDoubleArray>(_VTKGrid, name, points, data));
+	_VTKDataArrays.push_back(addPointData<vtkDoubleArray>(_VTKGrid, name, components, data));
 }
 
-void VTKXMLASCII::storePointData(const std::string &name, size_t points, const std::vector<int> &data)
+void VTKXMLASCII::storePointData(const std::string &name, size_t components, const std::vector<int> &data)
 {
-	addPointData<vtkIntArray>(_VTKGrid, name, points, data);
+	addPointData<vtkIntArray>(_VTKGrid, name, components, data);
 }
 
-void VTKXMLASCII::storePointData(const std::string &name, size_t points, const std::vector<long> &data)
+void VTKXMLASCII::storePointData(const std::string &name, size_t components, const std::vector<long> &data)
 {
-	addPointData<vtkLongArray>(_VTKGrid, name, points, data);
+	addPointData<vtkLongArray>(_VTKGrid, name, components, data);
 }
 
-void VTKXMLASCII::storePointData(const std::string &name, size_t points, const std::vector<double> &data)
+void VTKXMLASCII::storePointData(const std::string &name, size_t components, const std::vector<double> &data)
 {
-	addPointData<vtkDoubleArray>(_VTKGrid, name, points, data);
+	addPointData<vtkDoubleArray>(_VTKGrid, name, components, data);
 }
 
 
-void VTKXMLASCII::storeCellData(const std::string &name, size_t cells, const std::vector<std::vector<int> > &data)
+void VTKXMLASCII::storeCellData(const std::string &name, size_t components, const std::vector<std::vector<int> > &data)
 {
-	_VTKDataArrays.push_back(addCellData<vtkIntArray>(_VTKGrid, name, cells, data));
+	_VTKDataArrays.push_back(addCellData<vtkIntArray>(_VTKGrid, name, components, data));
 }
 
-void VTKXMLASCII::storeCellData(const std::string &name, size_t cells, const std::vector<std::vector<long> > &data)
+void VTKXMLASCII::storeCellData(const std::string &name, size_t components, const std::vector<std::vector<long> > &data)
 {
-	_VTKDataArrays.push_back(addCellData<vtkLongArray>(_VTKGrid, name, cells, data));
+	_VTKDataArrays.push_back(addCellData<vtkLongArray>(_VTKGrid, name, components, data));
 }
 
-void VTKXMLASCII::storeCellData(const std::string &name, size_t cells, const std::vector<std::vector<double> > &data)
+void VTKXMLASCII::storeCellData(const std::string &name, size_t components, const std::vector<std::vector<double> > &data)
 {
-	_VTKDataArrays.push_back(addCellData<vtkDoubleArray>(_VTKGrid, name, cells, data));
+	_VTKDataArrays.push_back(addCellData<vtkDoubleArray>(_VTKGrid, name, components, data));
 }
 
-void VTKXMLASCII::storeCellData(const std::string &name, size_t cells, const std::vector<int> &data)
+void VTKXMLASCII::storeCellData(const std::string &name, size_t components, const std::vector<int> &data)
 {
-	addCellData<vtkIntArray>(_VTKGrid, name, cells, data);
+	addCellData<vtkIntArray>(_VTKGrid, name, components, data);
 }
 
-void VTKXMLASCII::storeCellData(const std::string &name, size_t cells, const std::vector<long> &data)
+void VTKXMLASCII::storeCellData(const std::string &name, size_t components, const std::vector<long> &data)
 {
-	addCellData<vtkLongArray>(_VTKGrid, name, cells, data);
+	addCellData<vtkLongArray>(_VTKGrid, name, components, data);
 }
 
-void VTKXMLASCII::storeCellData(const std::string &name, size_t cells, const std::vector<double> &data)
+void VTKXMLASCII::storeCellData(const std::string &name, size_t components, const std::vector<double> &data)
 {
-	addCellData<vtkDoubleArray>(_VTKGrid, name, cells, data);
+	addCellData<vtkDoubleArray>(_VTKGrid, name, components, data);
 }
 
 

@@ -20,8 +20,8 @@ enum class ElementType;
 namespace output {
 
 struct DataArrays {
-	std::map<std::string, std::vector<eslocal>* > pointDataInteger, elementDataInteger;
-	std::map<std::string, std::vector<double>* > pointDataDouble, elementDataDouble;
+	std::map<std::string, std::pair<size_t, std::vector<eslocal>* > > pointDataInteger, elementDataInteger;
+	std::map<std::string, std::pair<size_t, std::vector<double>* > > pointDataDouble, elementDataDouble;
 
 	~DataArrays();
 };
@@ -53,7 +53,7 @@ protected:
 	virtual void store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const std::vector<Solution*> &solution) =0;
 
 	virtual void linkClusters(const std::string &root, const std::string &name, const DataArrays &data) =0;
-	virtual void linkClusters(const std::string &root, const std::string &name, const std::vector<Solution*> &solution, size_t points, size_t cells) =0;
+	virtual void linkClusters(const std::string &root, const std::string &name, const std::vector<Solution*> &solution) =0;
 
 	virtual void linkSteps(const std::string &name, const std::vector<std::pair<std::string, Step> > &steps) =0;
 
@@ -71,14 +71,8 @@ protected:
 	std::vector<std::pair<std::string, Step> > _steps;
 
 private:
-	void store(
-			std::vector<std::string> &roots, std::vector<std::string> &prefixs,
-			const std::string &name, const Step &step,
-			std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const DataArrays &data);
-	void store(
-			std::vector<std::string> &roots, std::vector<std::string> &prefixs,
-			const std::string &name, const Step &step,
-			std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const std::vector<Solution*> &solution);
+	template <class TData>
+	std::string store(const std::string &name, const Step &step, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const TData &data);
 
 	void elementsPreprocessing(const std::vector<Element*> &region, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements);
 	void regionData(size_t step, const espreso::Region &region, DataArrays &data);

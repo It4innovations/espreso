@@ -80,7 +80,7 @@ void Catalyst::storeSolution(const Step &step, const std::vector<Solution*> &sol
 		_dataDescription->SetUserData(_fieldData);
 	}
 
-	addData(_coordinates.size() / 3, _elementsTypes.size(), solution);
+	addData(solution);
 	_dataDescription->SetTimeData(step.iteration, step.iteration);
 	_dataDescription->GetInputDescriptionByName("input")->SetGrid(_VTKGrid);
 	_processor->CoProcess(_dataDescription);

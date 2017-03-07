@@ -25,7 +25,7 @@ static void storeData(std::ofstream &os, const std::string &type, const std::str
 	for (size_t i = 0; i < data.size(); i++) {
 		size += data[i].size();
 	}
-	os << "    <DataArray type=\"" << type << "\" Name=\"" << name << "\" format=\"binary\" NumberOfComponents=\"" << elements / size << "\">\n";
+	os << "    <DataArray type=\"" << type << "\" Name=\"" << name << "\" format=\"binary\" NumberOfComponents=\"" << size / (elements ? elements : 1) << "\">\n";
 	os << "      ";
 	for (size_t i = 0; i < data.size(); i++) {
 		os.write(reinterpret_cast<const char*>(data[i].data()), data[i].size() * sizeof(TType));
@@ -37,7 +37,7 @@ static void storeData(std::ofstream &os, const std::string &type, const std::str
 template <typename TType>
 static void storeData(std::ofstream &os, const std::string &type, const std::string &name, size_t elements, const std::vector<TType> &data)
 {
-	os << "    <DataArray type=\"" << type << "\" Name=\"" << name << "\" format=\"binary\" NumberOfComponents=\"" << elements / data.size() << "\">\n";
+	os << "    <DataArray type=\"" << type << "\" Name=\"" << name << "\" format=\"binary\" NumberOfComponents=\"" << data.size() / (elements ? elements : 1) << "\">\n";
 	os << "      ";
 	for (size_t i = 0; i < data.size(); i++) {
 		os.write(reinterpret_cast<const char*>(data.data()), data.size() * sizeof(TType));

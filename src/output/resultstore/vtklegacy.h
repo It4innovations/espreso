@@ -20,7 +20,7 @@ protected:
 
 	// Legacy format cannot be linked
 	virtual void linkClusters(const std::string &root, const std::string &name, const DataArrays &data) {};
-	virtual void linkClusters(const std::string &root, const std::string &name, const std::vector<Solution*> &solution, size_t points, size_t cells) {};
+	virtual void linkClusters(const std::string &root, const std::string &name, const std::vector<Solution*> &solution) {};
 
 	virtual void linkSteps(const std::string &name, const std::vector<std::pair<std::string, Step> > &steps) {};
 };

@@ -34,45 +34,45 @@ void VTKXML::initWriter(const std::string &name, size_t points, size_t cells)
 void VTKXML::addMesh(std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements)
 {
 	(*_os) << "  <Points>\n";
-	storePointData("Points", coordinates.size() / 3, coordinates);
+	storePointData("Points", 3, coordinates);
 	(*_os) << "  </Points>\n";
 
 	(*_os) << "  <Cells>\n";
-	storeCellData("connectivity", elements.size(), elements);
-	storeCellData("offsets", elementsTypes.size(), elementsNodes);
-	storeCellData("types", elementsTypes.size(), elementsTypes);
+	storeCellData("connectivity", 1, elements);
+	storeCellData("offsets", 1, elementsNodes);
+	storeCellData("types", 1, elementsTypes);
 	(*_os) << "  </Cells>\n";
 }
 
-void VTKXML::addData(size_t points, size_t cells, const DataArrays &data)
+void VTKXML::addData(const DataArrays &data)
 {
 	(*_os) << "  <PointData>\n";
 	for (auto it = data.pointDataInteger.begin(); it != data.pointDataInteger.end(); ++it) {
-		storePointData(it->first, points, *it->second);
+		storePointData(it->first, it->second.first, *it->second.second);
 	}
 
 	for (auto it = data.pointDataDouble.begin(); it != data.pointDataDouble.end(); ++it) {
-		storePointData(it->first, points, *it->second);
+		storePointData(it->first, it->second.first, *it->second.second);
 	}
 	(*_os) << "  </PointData>\n";
 
 	(*_os) << "  <CellData>\n";
 	for (auto it = data.elementDataInteger.begin(); it != data.elementDataInteger.end(); ++it) {
-		storeCellData(it->first, cells, *it->second);
+		storeCellData(it->first, it->second.first, *it->second.second);
 	}
 
 	for (auto it = data.elementDataDouble.begin(); it != data.elementDataDouble.end(); ++it) {
-		storeCellData(it->first, cells, *it->second);
+		storeCellData(it->first, it->second.first, *it->second.second);
 	}
 	(*_os) << "  </CellData>\n";
 }
 
-void VTKXML::addData(size_t points, size_t cells, const std::vector<Solution*> &solution)
+void VTKXML::addData(const std::vector<Solution*> &solution)
 {
 	(*_os) << "  <PointData>\n";
 	for (size_t i = 0; i < solution.size(); i++) {
 		if (solution[i]->eType == ElementType::NODES) {
-			storePointData(solution[i]->name, points, solution[i]->data);
+			storePointData(solution[i]->name, solution[i]->properties, solution[i]->data);
 		}
 	}
 	(*_os) << "  </PointData>\n";
@@ -80,7 +80,7 @@ void VTKXML::addData(size_t points, size_t cells, const std::vector<Solution*> &
 	(*_os) << "  <CellData>\n";
 	for (size_t i = 0; i < solution.size(); i++) {
 		if (solution[i]->eType == ElementType::ELEMENTS) {
-			storeCellData(solution[i]->name, points, solution[i]->data);
+			storeCellData(solution[i]->name, solution[i]->properties, solution[i]->data);
 		}
 	}
 	(*_os) << "  </CellData>\n";

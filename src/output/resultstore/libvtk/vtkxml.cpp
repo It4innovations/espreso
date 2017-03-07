@@ -52,33 +52,33 @@ void VTKXML::addMesh(std::vector<double> &coordinates, std::vector<eslocal> &ele
 }
 
 
-void VTKXML::addData(size_t points, size_t cells, const DataArrays &data)
+void VTKXML::addData(const DataArrays &data)
 {
 	for (auto it = data.pointDataInteger.begin(); it != data.pointDataInteger.end(); ++it) {
-		storePointData(it->first, points, *it->second);
+		storePointData(it->first, it->second.first, *it->second.second);
 	}
 	for (auto it = data.pointDataDouble.begin(); it != data.pointDataDouble.end(); ++it) {
-		storePointData(it->first, points, *it->second);
+		storePointData(it->first, it->second.first, *it->second.second);
 	}
 
 	for (auto it = data.elementDataInteger.begin(); it != data.elementDataInteger.end(); ++it) {
-		storeCellData(it->first, cells, *it->second);
+		storeCellData(it->first, it->second.first, *it->second.second);
 	}
 	for (auto it = data.elementDataDouble.begin(); it != data.elementDataDouble.end(); ++it) {
-		storeCellData(it->first, cells, *it->second);
+		storeCellData(it->first, it->second.first, *it->second.second);
 	}
 }
 
-void VTKXML::addData(size_t points, size_t cells, const std::vector<Solution*> &solution)
+void VTKXML::addData(const std::vector<Solution*> &solution)
 {
 	for (size_t i = 0; i < solution.size(); i++) {
 		if (solution[i]->eType == ElementType::NODES) {
-			storePointData(solution[i]->name, points, solution[i]->data);
+			storePointData(solution[i]->name, solution[i]->properties, solution[i]->data);
 		}
 	}
 	for (size_t i = 0; i < solution.size(); i++) {
 		if (solution[i]->eType == ElementType::ELEMENTS) {
-			storeCellData(solution[i]->name, cells, solution[i]->data);
+			storeCellData(solution[i]->name, solution[i]->properties, solution[i]->data);
 		}
 	}
 }

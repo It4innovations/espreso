@@ -18,13 +18,14 @@ VTKXMLASCII::~VTKXMLASCII()
 }
 
 template <typename TType>
-static void storeData(std::ofstream &os, const std::string &type, const std::string &name, size_t elements, const std::vector<std::vector<TType> > &data)
+static void storeData(std::ofstream &os, const std::string &type, const std::string &name, size_t components, const std::vector<std::vector<TType> > &data)
 {
 	size_t size = 0;
 	for (size_t i = 0; i < data.size(); i++) {
 		size += data[i].size();
 	}
-	os << "    <DataArray type=\"" << type << "\" Name=\"" << name << "\" format=\"ascii\" NumberOfComponents=\"" << size / elements << "\">\n";
+
+	os << "    <DataArray type=\"" << type << "\" Name=\"" << name << "\" format=\"ascii\" NumberOfComponents=\"" << components << "\">\n";
 	os << "      ";
 	for (size_t i = 0; i < data.size(); i++) {
 		for (size_t j = 0; j < data[i].size(); j++) {
@@ -36,9 +37,9 @@ static void storeData(std::ofstream &os, const std::string &type, const std::str
 }
 
 template <typename TType>
-static void storeData(std::ofstream &os, const std::string &type, const std::string &name, size_t elements, const std::vector<TType> &data)
+static void storeData(std::ofstream &os, const std::string &type, const std::string &name, size_t components, const std::vector<TType> &data)
 {
-	os << "    <DataArray type=\"" << type << "\" Name=\"" << name << "\" format=\"ascii\" NumberOfComponents=\"" << data.size() / elements << "\">\n";
+	os << "    <DataArray type=\"" << type << "\" Name=\"" << name << "\" format=\"ascii\" NumberOfComponents=\"" << components << "\">\n";
 	os << "      ";
 	for (size_t i = 0; i < data.size(); i++) {
 		os << data[i] << " ";
@@ -47,66 +48,66 @@ static void storeData(std::ofstream &os, const std::string &type, const std::str
 	os << "    </DataArray>\n";
 }
 
-void VTKXMLASCII::storePointData(const std::string &name, size_t points, const std::vector<std::vector<int> > &data)
+void VTKXMLASCII::storePointData(const std::string &name, size_t components, const std::vector<std::vector<int> > &data)
 {
-	storeData(*_os, "Int32", name, points, data);
+	storeData(*_os, "Int32", name, components, data);
 }
 
-void VTKXMLASCII::storePointData(const std::string &name, size_t points, const std::vector<std::vector<long> > &data)
+void VTKXMLASCII::storePointData(const std::string &name, size_t components, const std::vector<std::vector<long> > &data)
 {
-	storeData(*_os, "Int64", name, points, data);
+	storeData(*_os, "Int64", name, components, data);
 }
 
-void VTKXMLASCII::storePointData(const std::string &name, size_t points, const std::vector<std::vector<double> > &data)
+void VTKXMLASCII::storePointData(const std::string &name, size_t components, const std::vector<std::vector<double> > &data)
 {
 
-	storeData(*_os, "Float64", name, points, data);
+	storeData(*_os, "Float64", name, components, data);
 }
 
-void VTKXMLASCII::storePointData(const std::string &name, size_t points, const std::vector<int> &data)
+void VTKXMLASCII::storePointData(const std::string &name, size_t components, const std::vector<int> &data)
 {
-	storeData(*_os, "Int32", name, points, data);
+	storeData(*_os, "Int32", name, components, data);
 }
 
-void VTKXMLASCII::storePointData(const std::string &name, size_t points, const std::vector<long> &data)
+void VTKXMLASCII::storePointData(const std::string &name, size_t components, const std::vector<long> &data)
 {
-	storeData(*_os, "Int64", name, points, data);
+	storeData(*_os, "Int64", name, components, data);
 }
 
-void VTKXMLASCII::storePointData(const std::string &name, size_t points, const std::vector<double> &data)
+void VTKXMLASCII::storePointData(const std::string &name, size_t components, const std::vector<double> &data)
 {
-	storeData(*_os, "Float64", name, points, data);
+	storeData(*_os, "Float64", name, components, data);
 }
 
 
-void VTKXMLASCII::storeCellData(const std::string &name, size_t cells, const std::vector<std::vector<int> > &data)
+void VTKXMLASCII::storeCellData(const std::string &name, size_t components, const std::vector<std::vector<int> > &data)
 {
-	storeData(*_os, "Int32", name, cells, data);
+	storeData(*_os, "Int32", name, components, data);
 }
 
-void VTKXMLASCII::storeCellData(const std::string &name, size_t cells, const std::vector<std::vector<long> > &data)
+void VTKXMLASCII::storeCellData(const std::string &name, size_t components, const std::vector<std::vector<long> > &data)
 {
-	storeData(*_os, "Int64", name, cells, data);
+	storeData(*_os, "Int64", name, components, data);
 }
 
-void VTKXMLASCII::storeCellData(const std::string &name, size_t cells, const std::vector<std::vector<double> > &data)
+void VTKXMLASCII::storeCellData(const std::string &name, size_t components, const std::vector<std::vector<double> > &data)
 {
-	storeData(*_os, "Float64", name, cells, data);
+	storeData(*_os, "Float64", name, components, data);
 }
 
-void VTKXMLASCII::storeCellData(const std::string &name, size_t cells, const std::vector<int> &data)
+void VTKXMLASCII::storeCellData(const std::string &name, size_t components, const std::vector<int> &data)
 {
-	storeData(*_os, "Int32", name, cells, data);
+	storeData(*_os, "Int32", name, components, data);
 }
 
-void VTKXMLASCII::storeCellData(const std::string &name, size_t cells, const std::vector<long> &data)
+void VTKXMLASCII::storeCellData(const std::string &name, size_t components, const std::vector<long> &data)
 {
-	storeData(*_os, "Int64", name, cells, data);
+	storeData(*_os, "Int64", name, components, data);
 }
 
-void VTKXMLASCII::storeCellData(const std::string &name, size_t cells, const std::vector<double> &data)
+void VTKXMLASCII::storeCellData(const std::string &name, size_t components, const std::vector<double> &data)
 {
-	storeData(*_os, "Float64", name, cells, data);
+	storeData(*_os, "Float64", name, components, data);
 }
 
 
