@@ -2308,7 +2308,7 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 	eslocal size_d = 0;
 	if ( USE_HFETI == 1 ) {
 		for (size_t d = 0; d < domains.size(); d++) {
-			if (size_d > domains[d].Kplus_R.cols)
+			if (size_d < domains[d].Kplus_R.cols)
 				size_d = domains[d].Kplus_R.cols;
 		}
 	} else {

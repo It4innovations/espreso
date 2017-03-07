@@ -624,13 +624,13 @@ void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,
 	 TimeEvent timeSolCG(string("Solver - CG Solver runtime"));
 	 timeSolCG.start();
 
-	if (solver->USE_DYNAMIC == 0) {
+	//if (solver->USE_DYNAMIC == 0) {
 		solver->Solve_singular    ( *cluster, f_vec, prim_solution, dual_solution );
-	} else {
-		solver->Solve_non_singular( *cluster, f_vec, prim_solution, dual_solution );
-		solver->timing.totalTime.printStatMPI();
+	//} else {
+	//	solver->Solve_non_singular( *cluster, f_vec, prim_solution, dual_solution );
+	//	solver->timing.totalTime.printStatMPI();
 		//solver->timing.totalTime.Reset();
-	}
+	//}
 
 	 timeSolCG.endWithBarrier();
      timeEvalMain.addEvent(timeSolCG);
