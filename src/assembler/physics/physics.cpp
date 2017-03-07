@@ -65,18 +65,18 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, c
 	std::vector<eslocal> DOFs;
 
 	if (matrices & Matrices::K) {
-		_K.resize(_instance->DOFs[domain], _instance->DOFs[domain]);
+		_K.resize(_instance->domainDOFCount[domain], _instance->domainDOFCount[domain]);
 	}
 	if (matrices & Matrices::M) {
-		_M.resize(_instance->DOFs[domain], _instance->DOFs[domain]);
+		_M.resize(_instance->domainDOFCount[domain], _instance->domainDOFCount[domain]);
 	}
 	if (matrices & Matrices::R) {
 		_instance->R[domain].clear();
-		_instance->R[domain].resize(_instance->DOFs[domain]);
+		_instance->R[domain].resize(_instance->domainDOFCount[domain]);
 	}
 	if (matrices & Matrices::f) {
 		_instance->f[domain].clear();
-		_instance->f[domain].resize(_instance->DOFs[domain]);
+		_instance->f[domain].resize(_instance->domainDOFCount[domain]);
 	}
 
 	for (eslocal e = _mesh->getPartition()[domain]; e < _mesh->getPartition()[domain + 1]; e++) {

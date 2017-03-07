@@ -41,7 +41,8 @@ MatrixType NewAdvectionDiffusion2D::getMatrixType(const Step &step, size_t domai
 
 void NewAdvectionDiffusion2D::prepareTotalFETI()
 {
-	_instance->DOFs = _mesh->assignUniformDOFsIndicesToNodes(_instance->DOFs, pointDOFs(), _nodesDOFsOffsets);
+	_instance->domainDOFCount = _mesh->assignUniformDOFsIndicesToNodes(_instance->domainDOFCount, pointDOFs(), _nodesDOFsOffsets);
+	_instance->properties = pointDOFs();
 	_mesh->computeNodesDOFsCounters(pointDOFs());
 
 	_mesh->loadProperty(_configuration.initial_temperature, { }, { Property::INITIAL_TEMPERATURE });

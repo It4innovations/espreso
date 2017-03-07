@@ -54,11 +54,11 @@ void TransientFirstOrderImplicit::run(Step &step)
 	std::vector<std::vector<double> > x(instance->domains), y(instance->domains);
 
 	for (size_t d = 0; d < instance->domains; d++) {
-		u[d].resize(instance->DOFs[d]);
-		deltaU[d].resize(instance->DOFs[d]);
-		v[d].resize(instance->DOFs[d]);
-		x[d].resize(instance->DOFs[d]);
-		y[d].resize(instance->DOFs[d]);
+		u[d].resize(instance->domainDOFCount[d]);
+		deltaU[d].resize(instance->domainDOFCount[d]);
+		v[d].resize(instance->domainDOFCount[d]);
+		x[d].resize(instance->domainDOFCount[d]);
+		y[d].resize(instance->domainDOFCount[d]);
 	}
 
 	double startTime = step.currentTime;

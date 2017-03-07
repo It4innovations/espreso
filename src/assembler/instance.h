@@ -8,6 +8,7 @@
 
 namespace espreso {
 
+enum class Property;
 class SparseMatrix;
 class Solution;
 
@@ -33,8 +34,9 @@ struct Instance {
 	~Instance();
 
 	size_t domains;
+	std::vector<size_t> &domainDOFCount;
+	std::vector<Property> &properties;
 	std::vector<int> neighbours;
-	std::vector<size_t> &DOFs;
 
 	std::vector<SparseMatrix> &K, &N1, &N2, &RegMat;
 	std::vector<SparseMatrix> &M;
@@ -77,7 +79,8 @@ private:
 	std::vector<std::vector<double> > _B1c, _LB, _B1duplicity, _inequalityC;
 	std::vector<std::vector<esglobal> > _B0subdomainsMap, _B1subdomainsMap, _B1clustersMap;
 
-	std::vector<size_t> _DOFs, _block;
+	std::vector<size_t> _domainDOFCount, _block;
+	std::vector<Property> _properties;
 };
 
 inline Matrices operator~(Matrices m)

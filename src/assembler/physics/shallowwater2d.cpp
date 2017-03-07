@@ -33,7 +33,7 @@ MatrixType ShallowWater2D::getMatrixType(const Step &step, size_t domain) const
 
 void ShallowWater2D::prepareTotalFETI()
 {
-	_instance->DOFs = _mesh->assignUniformDOFsIndicesToNodes(_instance->DOFs, pointDOFs(), _nodesDOFsOffsets);
+	_instance->domainDOFCount = _mesh->assignUniformDOFsIndicesToNodes(_instance->domainDOFCount, pointDOFs(), _nodesDOFsOffsets);
 	_mesh->computeNodesDOFsCounters(pointDOFs());
 
 	_mesh->loadNodeProperty(_configuration.momentum, { "X", "Y" }, { Property::MOMENTUM_X, Property::MOMENTUM_Y });

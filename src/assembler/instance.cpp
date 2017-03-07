@@ -8,8 +8,9 @@ using namespace espreso;
 
 Instance::Instance(size_t domains, const std::vector<int> &neighbours)
 : domains(domains),
+  domainDOFCount(_domainDOFCount),
+  properties(_properties),
   neighbours(neighbours),
-  DOFs(_DOFs),
   K(_K), N1(_N1), N2(_N2), RegMat(_RegMat),
   M(_M),
   R(_R), f(_f),
@@ -22,7 +23,7 @@ Instance::Instance(size_t domains, const std::vector<int> &neighbours)
   inequality(_inequality), inequalityC(_inequalityC),
   block(_block)
 {
-	DOFs.resize(domains);
+	domainDOFCount.resize(domains);
 
 	K.resize(domains);
 	N1.resize(domains);
@@ -62,10 +63,11 @@ Instance::Instance(size_t domains, const std::vector<int> &neighbours)
 
 Instance::Instance(Instance &other, Matrices &share)
 : domains(other.domains),
+  properties(other.properties),
   neighbours(other.neighbours),
 
   // shared K -> also share kernels and regularization matrix
-  DOFs(share & Matrices::K ? other.DOFs :_DOFs),
+  domainDOFCount(share & Matrices::K ? other.domainDOFCount :_domainDOFCount),
   K(share & Matrices::K ? other.K : _K),
   N1(share & Matrices::K ? other.N1 : _N1),
   N2(share & Matrices::K ? other.N2 : _N2),
@@ -89,7 +91,7 @@ Instance::Instance(Instance &other, Matrices &share)
   block(share & Matrices::B1 ? other.block : _block)
 {
 	if (!(share & Matrices::K)) {
-		DOFs.resize(domains);
+		domainDOFCount.resize(domains);
 		K.resize(domains);
 		N1.resize(domains);
 		N2.resize(domains);

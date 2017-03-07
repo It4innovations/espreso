@@ -549,7 +549,7 @@ void EqualityConstraints::insertMortarGluingToB1(Constraints &constraints, const
 
 #else
 
-void EqualityConstraints::insertMortarGluingToB1(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
+void EqualityConstraints::insertMortarGluingToB1(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &domainDOFCount)
 {
 	size_t loadStep = 0;
 	for (size_t r = 0; r < constraints._mesh.regions().size(); r++) {
@@ -792,7 +792,7 @@ void EqualityConstraints::insertDirichletToB1(Instance &instance, const std::vec
 	#pragma omp parallel for
 	for (size_t p = 0; p < instance.domains; p++) {
 		instance.B1[p].rows += globalDirichletSize;
-		instance.B1[p].cols = instance.DOFs[p];
+		instance.B1[p].cols = instance.domainDOFCount[p];
 	}
 
 	#pragma omp parallel for
@@ -937,7 +937,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Instance &instance, 
 	#pragma omp parallel for
 	for (size_t p = 0; p < instance.domains; p++) {
 		instance.B1[p].rows += totalNumberOfLambdas;
-		instance.B1[p].cols = instance.DOFs[p];
+		instance.B1[p].cols = instance.domainDOFCount[p];
 	}
 	instance.block[Constraints::BLOCK::EQUALITY_CONSTRAINTS] += totalNumberOfLambdas;
 
@@ -1132,7 +1132,7 @@ void EqualityConstraints::insertElementGluingToB1(Instance &instance, const std:
 			instance.B1[p].V_values.insert(instance.B1[p].V_values.end(), vals[t][p].begin(), vals[t][p].end());
 			instance.B1duplicity[p].insert(instance.B1duplicity[p].end(), dup[t][p].begin(), dup[t][p].end());
 		}
-		instance.B1[p].cols = instance.DOFs[p];
+		instance.B1[p].cols = instance.domainDOFCount[p];
 		instance.B1[p].nnz = instance.B1[p].I_row_indices.size();
 		instance.B1c[p].resize(instance.B1[p].nnz, 0);
 		instance.LB[p].resize(instance.B1[p].nnz, -std::numeric_limits<double>::infinity());
@@ -1186,7 +1186,7 @@ void EqualityConstraints::insertCornersGluingToB0(Instance &instance, const std:
 	#pragma omp parallel for
 	for  (size_t p = 0; p < instance.domains; p++) {
 		instance.B0[p].rows = lambdas;
-		instance.B0[p].cols = instance.DOFs[p];
+		instance.B0[p].cols = instance.domainDOFCount[p];
 		instance.B0[p].nnz = instance.B0[p].I_row_indices.size();
 
 		instance.B0subdomainsMap[p].reserve(instance.B0[p].nnz);
@@ -1251,7 +1251,7 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 
 
 		instance.B0[p].rows = instance.N1[0].cols * (part.size() - 1);
-		instance.B0[p].cols = instance.DOFs[p];
+		instance.B0[p].cols = instance.domainDOFCount[p];
 		instance.B0[p].nnz = instance.B0[p].I_row_indices.size();
 		instance.B0subdomainsMap[p].reserve(instance.B0[p].nnz);
 		for (eslocal i = instance.B0subdomainsMap[p].size(); i < instance.B0[p].nnz; i++) {
