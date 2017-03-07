@@ -5385,9 +5385,13 @@ void   BcastMatrix ( eslocal rank, eslocal mpi_root, eslocal source_rank, Sparse
 		A.CSR_V_values.     resize(A.nnz);
 	}
 
-	MPI_Bcast(&A.CSR_I_row_indices[0], A.rows + 1, esglobal_mpi, source_rank, MPI_COMM_WORLD);
-	MPI_Bcast(&A.CSR_J_col_indices[0], A.nnz,      esglobal_mpi, source_rank, MPI_COMM_WORLD);
-	MPI_Bcast(&A.CSR_V_values[0],      A.nnz,   MPI_DOUBLE, source_rank, MPI_COMM_WORLD);
+	if (A.nnz > 0) {
+
+		MPI_Bcast(&A.CSR_I_row_indices[0], A.rows + 1, esglobal_mpi, source_rank, MPI_COMM_WORLD);
+		MPI_Bcast(&A.CSR_J_col_indices[0], A.nnz,      esglobal_mpi, source_rank, MPI_COMM_WORLD);
+		MPI_Bcast(&A.CSR_V_values[0],      A.nnz,   MPI_DOUBLE, source_rank, MPI_COMM_WORLD);
+
+	}
 }
 
 void   All_Reduce_lambdas_compB2( Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out )
