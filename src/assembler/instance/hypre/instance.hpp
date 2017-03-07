@@ -21,7 +21,7 @@ void HypreInstance<TPhysics, TConfiguration>::init()
 //------------------------------------------------------------------------------
 	_physics.prepareMeshStructures();
 	if (_output.properties || _output.results) {
-		_store.storeGeometry();
+		// _store.storeGeometry();
 	}
 
 	if (_output.properties) {

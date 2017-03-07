@@ -4,6 +4,7 @@
 
 #include "../instance.h"
 #include "../../../configuration/solver/hypre.h"
+#include "../../../output/resultstore/vtkxmlascii.h"
 
 #ifdef HAVE_HYPRE
 
@@ -21,7 +22,7 @@ public:
 	feiPtr(MPI_COMM_WORLD),
 	_constrains(configuration.espreso, mesh),
 	_physics(mesh, _constrains, configuration),
-	_store(output, mesh, "results")
+	_store(output, &mesh, "results")
 	{
 		_timeStatistics.totalTime.startWithBarrier();
 	}
@@ -43,7 +44,7 @@ protected:
 	LLNL_FEI_Impl feiPtr;
 	Constraints _constrains;
 	TPhysics _physics;
-	store::VTK _store;
+	output::VTKXMLASCII _store;
 
 };
 
