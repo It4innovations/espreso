@@ -81,11 +81,11 @@ void TransientFirstOrderImplicit::run(Step &step)
 		sum(step, Matrices::f, y, 1, 1, "y");
 
 		if (step.substep) {
-			updateLinearSolver(Matrices::K | Matrices::M | Matrices::f | Matrices::B1c);
+			updateLinearSolver(step, Matrices::K | Matrices::M | Matrices::f | Matrices::B1c);
 		} else {
-			initLinearSolver();
+			initLinearSolver(step);
 		}
-		runLinearSolver();
+		runLinearSolver(step);
 		sum(deltaU, physics->instance()->primalSolution, u, 1, -1, "deltaU", "u_" + std::to_string(step.substep + 1), "u_" + std::to_string(step.substep));
 		sum(v, deltaU, v, 1 / (alpha * _configuration.time_step), - (1 - alpha) / alpha, "v", "deltaU", "v");
 		u = instance->primalSolution;
@@ -94,7 +94,7 @@ void TransientFirstOrderImplicit::run(Step &step)
 		storeSolution(step);
 		step.currentTime += step.timeStep;
 	}
-	finalizeLinearSolver();
+	finalizeLinearSolver(step);
 }
 
 void TransientFirstOrderImplicit::init(Step &step)

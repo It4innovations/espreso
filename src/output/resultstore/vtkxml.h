@@ -19,7 +19,7 @@ public:
 protected:
 	VTKXML(const OutputConfiguration &output, const Mesh *mesh, const std::string &path);
 
-	virtual void store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, DataArrays &data);
+	virtual void store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const DataArrays &data);
 	virtual void store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const std::vector<Solution*> &solution);
 
 	virtual void initWriter(const std::string &name, size_t points, size_t cells);

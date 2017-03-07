@@ -30,6 +30,11 @@ public:
 		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeSettings(steps); } );
 	}
 
+	virtual void storeFETIData(const Step &step, const Instance &instance)
+	{
+		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeFETIData(step, instance); } );
+	}
+
 	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution)
 	{
 		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeSolution(step, solution); } );

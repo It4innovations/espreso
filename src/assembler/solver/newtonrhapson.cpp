@@ -47,7 +47,7 @@ void NewtonRhapson::init(Step &step)
 
 void NewtonRhapson::preprocess(Step &step)
 {
-	initLinearSolver();
+	initLinearSolver(step);
 }
 
 void NewtonRhapson::solve(Step &step)
@@ -56,7 +56,7 @@ void NewtonRhapson::solve(Step &step)
 		ESINFO(GLOBAL_ERROR) << "It is not possible to turn off the both 'temperature' and 'heat' convergence.";
 	}
 
-	runLinearSolver();
+	runLinearSolver(step);
 	processSolution(step);
 	storeSubSolution(step);
 
@@ -143,11 +143,11 @@ void NewtonRhapson::solve(Step &step)
 			regularizeMatrices(step, Matrices::K);
 
 			if (_configuration.method == NonLinearSolverBase::METHOD::MODIFIED_NEWTON_RHAPSON && step.iteration) {
-				updateLinearSolver(Matrices::f | Matrices::B1c);
+				updateLinearSolver(step, Matrices::f | Matrices::B1c);
 			} else {
-				updateLinearSolver(Matrices::K | Matrices::f | Matrices::B1c);
+				updateLinearSolver(step, Matrices::K | Matrices::f | Matrices::B1c);
 			}
-			runLinearSolver();
+			runLinearSolver(step);
 
 			ESINFO(CONVERGENCE) <<  "    LINEAR_SOLVER_OUTPUT: SOLVER = " << "PCG" <<   " N_ITERATIONS = " << "1" << "  " ;
 
@@ -206,7 +206,7 @@ void NewtonRhapson::postprocess(Step &step)
 
 void NewtonRhapson::finalize(Step &step)
 {
-	finalizeLinearSolver();
+	finalizeLinearSolver(step);
 }
 
 

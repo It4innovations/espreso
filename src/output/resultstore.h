@@ -12,6 +12,7 @@
 
 namespace espreso {
 
+class Element;
 class Mesh;
 class Region;
 enum class ElementType;
@@ -37,6 +38,8 @@ public:
 	virtual void storeSettings(size_t steps);
 	virtual void storeSettings(const std::vector<size_t> &steps);
 
+	virtual void storeFETIData(const Step &step, const Instance &instance);
+
 	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution);
 	virtual void finalize();
 
@@ -46,7 +49,7 @@ protected:
 	ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path);
 	virtual void preprocessing();
 
-	virtual void store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, DataArrays &data) =0;
+	virtual void store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const DataArrays &data) =0;
 	virtual void store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const std::vector<Solution*> &solution) =0;
 
 	virtual void linkClusters(const std::string &root, const std::string &name, const DataArrays &data) =0;
@@ -68,10 +71,26 @@ protected:
 	std::vector<std::pair<std::string, Step> > _steps;
 
 private:
-	virtual void regionPreprocessing(const espreso::Region &region, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements);
-	virtual void regionData(size_t step, const espreso::Region &region, DataArrays &data);
+	void store(
+			std::vector<std::string> &roots, std::vector<std::string> &prefixs,
+			const std::string &name, const Step &step,
+			std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const DataArrays &data);
+	void store(
+			std::vector<std::string> &roots, std::vector<std::string> &prefixs,
+			const std::string &name, const Step &step,
+			std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const std::vector<Solution*> &solution);
 
-	virtual void coordinatePreprocessing(const std::vector<std::vector<eslocal> > &indices, std::vector<double> &coordinates, std::vector<size_t> &offsets);
+	void elementsPreprocessing(const std::vector<Element*> &region, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements);
+	void regionData(size_t step, const espreso::Region &region, DataArrays &data);
+
+	void coordinatePreprocessing(const std::vector<std::vector<eslocal> > &indices, std::vector<double> &coordinates, std::vector<size_t> &offsets);
+
+	void storeFixPoints(const Step &step);
+	void storeCorners(const Step &step);
+	void storeDirichlet(const Step &step, const Instance &instance);
+	void storeLambdas(const Step &step, const Instance &instance);
+
+
 };
 
 }

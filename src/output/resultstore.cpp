@@ -94,20 +94,18 @@ void ResultStore::coordinatePreprocessing(const std::vector<std::vector<eslocal>
 	}
 }
 
-void ResultStore::regionPreprocessing(const espreso::Region &region, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements)
+void ResultStore::elementsPreprocessing(const std::vector<Element*> &region, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements)
 {
-	if (!region.elements().size()) {
+	if (!region.size()) {
 		// TODO: collected output
 		return;
 	}
-	std::vector<espreso::Element*> rElements(region.elements().begin(), region.elements().end());
-	std::sort(rElements.begin(), rElements.end(), [] (const espreso::Element* e1, const espreso::Element *e2) { return e1->domains() < e2->domains(); });
 
 	std::vector<std::vector<eslocal> > rCoordinates(_mesh->parts());
-	for (size_t e = 0; e < rElements.size(); e++) {
-		for (auto d = rElements[e]->domains().begin(); d != rElements[e]->domains().end(); ++d) {
-			for (size_t n = 0; n < rElements[e]->nodes(); n++) {
-				rCoordinates[*d].push_back(rElements[e]->node(n));
+	for (size_t e = 0; e < region.size(); e++) {
+		for (auto d = region[e]->domains().begin(); d != region[e]->domains().end(); ++d) {
+			for (size_t n = 0; n < region[e]->nodes(); n++) {
+				rCoordinates[*d].push_back(region[e]->node(n));
 			}
 		}
 	}
@@ -121,12 +119,12 @@ void ResultStore::regionPreprocessing(const espreso::Region &region, std::vector
 	std::vector<size_t> offsets;
 	coordinatePreprocessing(rCoordinates, coordinates, offsets);
 
-	for (size_t e = 0, offset = 0; e < rElements.size(); e++) {
-		elementsTypes.insert(elementsTypes.end(), rElements[e]->domains().size(), rElements[e]->vtkCode());
-		for (auto d = rElements[e]->domains().begin(); d != rElements[e]->domains().end(); ++d, offset += rElements[e]->nodes()) {
-			elementsNodes.push_back(offset + rElements[e]->nodes());
-			for (size_t n = 0; n < rElements[e]->nodes(); n++) {
-				eslocal oIndex = std::lower_bound(rCoordinates[*d].begin(), rCoordinates[*d].end(), rElements[e]->node(n)) - rCoordinates[*d].begin();
+	for (size_t e = 0, offset = 0; e < region.size(); e++) {
+		elementsTypes.insert(elementsTypes.end(), region[e]->domains().size(), region[e]->vtkCode());
+		for (auto d = region[e]->domains().begin(); d != region[e]->domains().end(); ++d, offset += region[e]->nodes()) {
+			elementsNodes.push_back(offset + region[e]->nodes());
+			for (size_t n = 0; n < region[e]->nodes(); n++) {
+				eslocal oIndex = std::lower_bound(rCoordinates[*d].begin(), rCoordinates[*d].end(), region[e]->node(n)) - rCoordinates[*d].begin();
 				elements.push_back(oIndex + offsets[*d]);
 			}
 		}
@@ -251,19 +249,17 @@ void ResultStore::storeSettings(const std::vector<size_t> &steps)
 		}
 	}
 
-	std::vector<std::vector<std::string> >  names(steps.size(), { "mesh" });
 	for (size_t r = 2; r < _mesh->regions().size(); r++) {
 
 		std::vector<double> coordinates;
 		std::vector<eslocal> elementTypes, elementNodes, elements;
-		regionPreprocessing(*_mesh->regions()[r], coordinates, elementTypes, elementNodes, elements);
+		elementsPreprocessing(_mesh->regions()[r]->elements(), coordinates, elementTypes, elementNodes, elements);
 
 		for (size_t step = 0; step < steps.size(); step++) {
 			DataArrays rData;
 			regionData(steps[step], *_mesh->regions()[r], rData);
 
 			store(prefixes[step] + _mesh->regions()[r]->name, coordinates, elementTypes, elementNodes, elements, rData);
-			names[step].push_back(_mesh->regions()[r]->name);
 			if (!environment->MPIrank) {
 				linkClusters(roots[step], _mesh->regions()[r]->name, rData);
 			}
@@ -317,6 +313,36 @@ void ResultStore::finalize()
 		linkSteps("solution", _steps);
 	}
 }
+
+
+void ResultStore::storeFETIData(const Step &step, const Instance &instance)
+{
+	storeFixPoints(step);
+	storeCorners(step);
+	storeDirichlet(step, instance);
+	storeLambdas(step, instance);
+}
+
+void ResultStore::storeFixPoints(const Step &step)
+{
+
+}
+
+void ResultStore::storeCorners(const Step &step)
+{
+
+}
+
+void ResultStore::storeDirichlet(const Step &step, const Instance &instance)
+{
+
+}
+
+void ResultStore::storeLambdas(const Step &step, const Instance &instance)
+{
+
+}
+
 
 
 

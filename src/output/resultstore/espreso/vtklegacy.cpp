@@ -59,7 +59,7 @@ static void storeData(std::ofstream &os, const std::vector<Ttype> &data, size_t 
 	os << "\n";
 }
 
-void VTKLegacy::store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, DataArrays &data)
+void VTKLegacy::store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const DataArrays &data)
 {
 	std::ofstream os;
 	os.open((name + ".vtk").c_str(), std::ios::out | std::ios::trunc);

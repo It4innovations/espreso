@@ -12,7 +12,7 @@ void LinearInstance<TPhysics, TConfiguration>::init()
 	_physics.prepareMeshStructures();
 	timePreparation.endWithBarrier(); _timeStatistics.addEvent(timePreparation);
 
-	if (_output.properties) {
+	if (_output.settings) {
 		_store.storeSettings(1);
 	}
 
@@ -44,7 +44,7 @@ void LinearInstance<TPhysics, TConfiguration>::init()
 		_constrains.save();
 	}
 
-	if (_output.gluing) {
+	if (_output.FETI_data) {
 //		store::VTK::gluing(_output, _mesh, _constrains, "B1", _physics.pointDOFs.size());
 	}
 
@@ -66,7 +66,7 @@ void LinearInstance<TPhysics, TConfiguration>::solve(std::vector<std::vector<dou
 	if (_output.results) {
 		_physics.saveMeshResults(_store, solution);
 	}
-	if (_output.properties || _output.results) {
+	if (_output.settings || _output.results) {
 		_store.finalize();
 	}
 }

@@ -8,6 +8,7 @@ namespace espreso {
 
 struct Step;
 struct Solution;
+struct Instance;
 struct OutputConfiguration;
 
 namespace output {
@@ -20,6 +21,8 @@ public:
 	virtual void storeSettings(const Step &step) =0;
 	virtual void storeSettings(size_t steps) =0;
 	virtual void storeSettings(const std::vector<size_t> &steps) =0;
+
+	virtual void storeFETIData(const Step &step, const Instance &instance) =0;
 
 	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution) =0;
 	virtual void finalize() =0;

@@ -81,7 +81,7 @@ void Solver::storeSolution(const Step &step)
 
 void Solver::storeSubSolution(const Step &step)
 {
-	if (_store->configuration().substeps) {
+	if (_store->configuration().iterations) {
 		_store->storeSolution(step, instance->solutions);
 	}
 }
@@ -380,7 +380,7 @@ void Solver::processSolution(const Step &step)
 	storeData(step, physics->instance()->primalSolution, "solution", "solution");
 }
 
-void Solver::initLinearSolver()
+void Solver::initLinearSolver(const Step &step)
 {
 	ESINFO(PROGRESS2) << "Initialization of linear solver";
 
@@ -389,7 +389,7 @@ void Solver::initLinearSolver()
 	timeSolver.end(); _timeStatistics->addEvent(timeSolver);
 }
 
-void Solver::updateLinearSolver(Matrices matrices)
+void Solver::updateLinearSolver(const Step &step, Matrices matrices)
 {
 	ESINFO(PROGRESS2) << "Updating of linear solver";
 
@@ -398,8 +398,12 @@ void Solver::updateLinearSolver(Matrices matrices)
 	timeSolver.end(); _timeStatistics->addEvent(timeSolver);
 }
 
-void Solver::runLinearSolver()
+void Solver::runLinearSolver(const Step &step)
 {
+	if (_store->configuration().FETI_data) {
+		_store->storeFETIData(step, *instance);
+	}
+
 	ESINFO(PROGRESS2) << "Solve system";
 
 	TimeEvent timeSolve("Linear Solver - runtime"); timeSolve.start();
@@ -407,7 +411,7 @@ void Solver::runLinearSolver()
 	timeSolve.endWithBarrier(); _timeStatistics->addEvent(timeSolve);
 }
 
-void Solver::finalizeLinearSolver()
+void Solver::finalizeLinearSolver(const Step &step)
 {
 	ESINFO(PROGRESS2) << "Finalize " << _name << " solver";
 

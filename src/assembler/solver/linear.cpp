@@ -40,12 +40,12 @@ void Linear::init(Step &step)
 
 void Linear::preprocess(Step &step)
 {
-	initLinearSolver();
+	initLinearSolver(step);
 }
 
 void Linear::solve(Step &step)
 {
-	runLinearSolver();
+	runLinearSolver(step);
 }
 
 void Linear::postprocess(Step &step)
@@ -56,5 +56,5 @@ void Linear::postprocess(Step &step)
 
 void Linear::finalize(Step &step)
 {
-	finalizeLinearSolver();
+	finalizeLinearSolver(step);
 }

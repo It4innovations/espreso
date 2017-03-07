@@ -9,7 +9,7 @@
 
 using namespace espreso::output;
 
-void VTKXML::store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, DataArrays &data)
+void VTKXML::store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const DataArrays &data)
 {
 	initWriter(name, coordinates.size() / 3, elementsTypes.size());
 	addMesh(coordinates, elementsTypes, elementsNodes, elements);

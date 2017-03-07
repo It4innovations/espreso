@@ -26,9 +26,9 @@ struct OutputConfiguration: public Configuration {
 	PARAMETER(double, decimation, "Decimation - needs VTK library", 0);
 
 	PARAMETER(bool, results, "Save results", true);
-	PARAMETER(bool, properties, "Save also input parameters", false);
-	PARAMETER(bool, substeps, "Save substep results", false);
-	PARAMETER(bool, gluing, "Save lagrange multipliers", false);
+	PARAMETER(bool, settings, "Save also input parameters", false);
+	PARAMETER(bool, iterations, "Save results for all iterations", false);
+	PARAMETER(bool, FETI_data, "Save FETI data (fix points, gluing, etc...)", false);
 
 	PARAMETER(bool, catalyst, "Allow live visualization", false);
 	PARAMETER(size_t, sleep, "Sleep interval between consecutive time step visialization", 0);

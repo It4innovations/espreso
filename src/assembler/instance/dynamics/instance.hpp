@@ -11,10 +11,10 @@ void DynamicsInstance<TPhysics>::init()
 	_physics.prepareMeshStructures();
 	timePreparation.endWithBarrier(); _timeStatistics.addEvent(timePreparation);
 
-	if (_output.properties || _output.results) {
+	if (_output.settings || _output.results) {
 		// _store.storeGeometry(_time);
 	}
-	if (_output.properties) {
+	if (_output.settings) {
 		_physics.saveMeshProperties(_store);
 	}
 

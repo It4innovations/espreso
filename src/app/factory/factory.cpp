@@ -51,7 +51,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 	if (configuration.output.catalyst) {
 		store->add(new output::Catalyst(configuration.output, mesh, "results"));
 	}
-	if (configuration.output.results || configuration.output.properties) {
+	if (configuration.output.results || configuration.output.settings) {
 		switch (configuration.output.format) {
 		case OUTPUT_FORMAT::VTK_LEGACY:
 			store->add(new output::VTKLegacy(configuration.output, mesh, "results"));
@@ -155,7 +155,7 @@ void Factory::meshPreprocessing(const OutputConfiguration &configuration)
 	if (Test::report(EXPENSIVE)) {
 		mesh->checkRegions(mesh->nodes());
 	}
-	if (configuration.properties) {
+	if (configuration.settings) {
 		store->storeSettings(mesh->steps());
 	}
 }

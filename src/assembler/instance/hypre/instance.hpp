@@ -20,11 +20,11 @@ void HypreInstance<TPhysics, TConfiguration>::init()
 	MPI_Status stat;
 //------------------------------------------------------------------------------
 	_physics.prepareMeshStructures();
-	if (_output.properties || _output.results) {
+	if (_output.settings || _output.results) {
 		// _store.storeGeometry();
 	}
 
-	if (_output.properties) {
+	if (_output.settings) {
 		_physics.saveMeshProperties(_store);
 	}
 //------------------------------------------------------------------------------

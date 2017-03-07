@@ -60,10 +60,10 @@ protected:
 	void regularizeMatrices(const Step &step, Matrices matrices);
 	void processSolution(const Step &step);
 
-	void initLinearSolver();
-	void updateLinearSolver(Matrices matrices);
-	void runLinearSolver();
-	void finalizeLinearSolver();
+	void initLinearSolver(const Step &step);
+	void updateLinearSolver(const Step &step, Matrices matrices);
+	void runLinearSolver(const Step &step);
+	void finalizeLinearSolver(const Step &step);
 
 	double lineSearch(const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext, Physics *physics, const Step &step);
 
