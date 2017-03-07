@@ -8,6 +8,8 @@
 
 #include "../basis/point/point.h"
 #include "../mesh/elements/element.h"
+#include "../mesh/elements/point/node.h"
+#include "../mesh/elements/line/line2.h"
 #include "../mesh/structures/coordinates.h"
 #include "../mesh/structures/mesh.h"
 #include "../mesh/structures/region.h"
@@ -16,8 +18,12 @@
 
 #include "../assembler/step.h"
 #include "../assembler/solution.h"
+#include "../assembler/instance.h"
+
+#include "../solver/generic/SparseMatrix.h"
 
 #include "../basis/utilities/utils.h"
+#include "../basis/utilities/communication.h"
 
 using namespace espreso::output;
 
@@ -319,22 +325,207 @@ void ResultStore::storeFETIData(const Step &step, const Instance &instance)
 
 void ResultStore::storeFixPoints(const Step &step)
 {
+	std::vector<Element*> fixPoints;
+	for (size_t p = 0; p < _mesh->fixPoints().size(); p++) {
+		fixPoints.insert(fixPoints.end(), _mesh->fixPoints(p).begin(), _mesh->fixPoints(p).end());
+	}
 
+	std::sort(fixPoints.begin(), fixPoints.end());
+	Esutils::removeDuplicity(fixPoints);
+
+	DataArrays data;
+	std::vector<double> coordinates;
+	std::vector<eslocal> elementsTypes, elementsNodes, elements;
+	elementsPreprocessing(fixPoints, coordinates, elementsTypes, elementsNodes, elements);
+	store("fix_points", step, coordinates, elementsTypes, elementsNodes, elements, data);
 }
 
 void ResultStore::storeCorners(const Step &step)
 {
+	std::vector<Element*> corners = _mesh->corners();
 
+	DataArrays data;
+	std::vector<double> coordinates;
+	std::vector<eslocal> elementsTypes, elementsNodes, elements;
+	elementsPreprocessing(corners, coordinates, elementsTypes, elementsNodes, elements);
+	store("corners", step, coordinates, elementsTypes, elementsNodes, elements, data);
 }
 
 void ResultStore::storeDirichlet(const Step &step, const Instance &instance)
 {
+	for (size_t p = 0; p < instance.properties.size(); p++) {
+		DataArrays data;
+		std::vector<double> coordinates, *values = new std::vector<double>();
+		std::vector<eslocal> elementsTypes, elementsNodes, elements;
+		Point point;
 
+		for (size_t d = 0; d < instance.domains; d++) {
+			for (size_t i = 0; instance.B1[d].I_row_indices[i] <= instance.block[Instance::CONSTRAINT::DIRICHLET]; i++) {
+				const Element *e = _mesh->getDOFsElement(d, instance.B1[d].J_col_indices[i] - 1);
+				point = _mesh->coordinates()[e->node(0)];
+				point = _clusterCenter + (point - _clusterCenter) * _configuration.cluster_shrink_ratio;
+				point = _domainsCenters[d] + (point - _domainsCenters[d]) * _configuration.domain_shrink_ratio;
+				coordinates.insert(coordinates.end(), { point.x, point.y, point.z });
+				values->push_back(instance.B1c[d][i]);
+			}
+		}
+
+		elementsTypes.resize(values->size(), NodeVTKCode);
+		elementsNodes.resize(values->size());
+		elements.resize(values->size());
+		std::iota(elementsNodes.begin(), elementsNodes.end(), 1);
+		std::iota(elements.begin(), elements.end(), 0);
+		std::stringstream ss;
+		ss << instance.properties[p];
+		data.pointDataDouble[ss.str()] = std::make_pair(1, values);
+		store("DIRICHLET_" + ss.str(), step, coordinates, elementsTypes, elementsNodes, elements, data);
+	}
 }
 
 void ResultStore::storeLambdas(const Step &step, const Instance &instance)
 {
+	std::vector<int> neighbours(environment->MPIsize);
+	std::iota(neighbours.begin(), neighbours.end(), 0);
 
+	DataArrays data;
+	std::vector<std::pair<esglobal, esglobal> > lMap;
+
+	for (size_t i = 0; i < instance.B1clustersMap.size(); i++) {
+		if (instance.B1clustersMap[i].front() < instance.block[Instance::CONSTRAINT::DIRICHLET]) {
+			continue;
+		}
+		if (instance.B1clustersMap[i].size() == 2) {
+			lMap.push_back(std::make_pair((esglobal)instance.B1clustersMap[i][0], (esglobal)(lMap.size())));
+			lMap.push_back(std::make_pair((esglobal)instance.B1clustersMap[i][0], (esglobal)(lMap.size())));
+		} else {
+			lMap.push_back(std::make_pair((esglobal)instance.B1clustersMap[i][0], (esglobal)(lMap.size())));
+		}
+	}
+
+	std::vector<double> coordinates(6 * lMap.size()), duplicity(lMap.size()), *values = new std::vector<double>(lMap.size());
+	std::vector<eslocal> elementsTypes(lMap.size(), -1), elementsNodes, elements;
+	elementsNodes.reserve(lMap.size());
+	elements.reserve(2 * lMap.size());
+
+	for (size_t i = 0; i < lMap.size(); i++) {
+		elementsNodes.push_back(2 * i + 2);
+		elements.push_back(2 * i);
+		elements.push_back(2 * i + 1);
+	}
+
+	auto lIndex = [&] (esglobal lambda) {
+		std::pair<esglobal, esglobal> pair(lambda, 0);
+		auto it = std::lower_bound(lMap.begin(), lMap.end(), pair);
+		if (it == lMap.end() || it->first != lambda) {
+			ESINFO(ERROR) << "Invalid lamdas in B1.";
+		}
+		return it - lMap.begin();
+	};
+
+	for (size_t p = 0; p < instance.properties.size(); p++) {
+		std::vector<std::vector<esglobal> > sLambdas(environment->MPIsize);
+		std::vector<std::vector<Point> > sPoints(environment->MPIsize);
+		std::vector<std::vector<esglobal> > rLambdas(environment->MPIsize);
+		std::vector<std::vector<Point> > rPoints(environment->MPIsize);
+		Point point;
+
+		for (size_t d = 0; d < instance.domains; d++) {
+			auto start = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[Instance::CONSTRAINT::DIRICHLET]);
+			auto end = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[Instance::CONSTRAINT::DIRICHLET] + instance.block[Instance::CONSTRAINT::EQUALITY_CONSTRAINTS]);
+			for (size_t i = start - instance.B1[d].I_row_indices.begin(); i < end - instance.B1[d].I_row_indices.begin(); i++) {
+				auto it = std::lower_bound(instance.B1clustersMap.begin(), instance.B1clustersMap.end(), instance.B1[d].I_row_indices[i] - 1, [&] (const std::vector<esglobal> &v, esglobal i) {
+					return v[0] < i;
+				});
+				const Element *e = _mesh->getDOFsElement(d, instance.B1[d].J_col_indices[i] - 1);
+				point = _mesh->coordinates()[e->node(0)];
+				point = _clusterCenter + (point - _clusterCenter) * _configuration.cluster_shrink_ratio;
+				point = _domainsCenters[d] + (point - _domainsCenters[d]) * _configuration.domain_shrink_ratio;
+				size_t index = lIndex(it->front());
+				for (size_t c = 1; c < it->size(); c++) {
+					if ((*it)[c] == environment->MPIrank) {
+						if (elementsTypes[index] != -1) {
+							index++;
+							if (lMap[index].first != it->front()) {
+								ESINFO(ERROR) << "Broken B1.";
+							}
+						}
+						elementsTypes[index] = Line2VTKCode;
+						coordinates[6 * index + 0] = point.x;
+						coordinates[6 * index + 1] = point.y;
+						coordinates[6 * index + 2] = point.z;
+						(*values)[index] = instance.B1[d].V_values[i];
+						duplicity[index] = instance.B1duplicity[d][i];
+					} else {
+						sLambdas[(*it)[c]].push_back(it->front());
+						sPoints[(*it)[c]].push_back(point);
+					}
+				}
+			}
+		}
+
+
+		if (!Communication::exchangeUnknownSize(sLambdas, rLambdas, neighbours)) {
+			ESINFO(ERROR) << "problem while exchanging Lambdas in storeLambdas.";
+		}
+		if (!Communication::exchangeUnknownSize(sPoints, rPoints, neighbours)) {
+			ESINFO(ERROR) << "problem while exchanging Points in storeLambdas.";
+		}
+		for (int i = 0; i < environment->MPIsize; i++) {
+			if (sLambdas[i].size() != rLambdas[i].size() || sPoints[i].size() != rPoints[i].size()) {
+				ESINFO(ERROR) << "Lambda indices do not match.";
+			}
+		}
+
+		for (size_t d = 0; d < instance.domains; d++) {
+			auto start = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[Instance::CONSTRAINT::DIRICHLET]);
+			auto end = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[Instance::CONSTRAINT::DIRICHLET] + instance.block[Instance::CONSTRAINT::EQUALITY_CONSTRAINTS]);
+			for (size_t i = start - instance.B1[d].I_row_indices.begin(); i < end - instance.B1[d].I_row_indices.begin(); i++) {
+				auto it = std::lower_bound(instance.B1clustersMap.begin(), instance.B1clustersMap.end(), instance.B1[d].I_row_indices[i] - 1, [&] (const std::vector<esglobal> &v, esglobal i) {
+					return v[0] < i;
+				});
+				size_t lindex = lIndex(it->front());
+				for (size_t c = 2; c < it->size(); c++) {
+					size_t index = std::find(rLambdas[(*it)[c]].begin(), rLambdas[(*it)[c]].end(), it->front()) - rLambdas[(*it)[c]].begin();
+					if (index == rLambdas[(*it)[c]].size() || rLambdas[(*it)[c]][index] != it->front()) {
+						ESINFO(ERROR) << "Different Lambdas on neighbour clusters.";
+					}
+					coordinates[6 * lindex + 3] = rPoints[(*it)[c]][index].x;
+					coordinates[6 * lindex + 4] = rPoints[(*it)[c]][index].y;
+					coordinates[6 * lindex + 5] = rPoints[(*it)[c]][index].z;
+				}
+			}
+		}
+
+		for (size_t i = 0; i < lMap.size(); i++) {
+			if (i + 1 < lMap.size() && lMap[i].first == lMap[i + 1].first) {
+				Point a(coordinates[6 * (i + 0) + 0], coordinates[6 * (i + 0) + 1], coordinates[6 * (i + 0) + 2]);
+				Point b(coordinates[6 * (i + 1) + 0], coordinates[6 * (i + 1) + 1], coordinates[6 * (i + 1) + 2]);
+				Point length = b - a;
+				Point ax = a + length * duplicity[i];
+				Point bx = b - length * duplicity[i + 1];
+				coordinates[6 * (i + 0) + 3] = ax.x;
+				coordinates[6 * (i + 0) + 4] = ax.y;
+				coordinates[6 * (i + 0) + 5] = ax.z;
+				coordinates[6 * (i + 1) + 3] = bx.x;
+				coordinates[6 * (i + 1) + 4] = bx.y;
+				coordinates[6 * (i + 1) + 5] = bx.z;
+				i++;
+			} else {
+				Point a(coordinates[6 * (i + 0) + 0], coordinates[6 * (i + 0) + 1], coordinates[6 * (i + 0) + 2]);
+				Point b(coordinates[6 * (i + 0) + 3], coordinates[6 * (i + 0) + 4], coordinates[6 * (i + 0) + 5]);
+				Point length = b - a;
+				Point ax = a + length * duplicity[i];
+				coordinates[6 * (i + 0) + 3] = ax.x;
+				coordinates[6 * (i + 0) + 4] = ax.y;
+				coordinates[6 * (i + 0) + 5] = ax.z;
+			}
+		}
+
+		std::stringstream ss;
+		ss << instance.properties[p];
+		data.elementDataDouble["values"] = std::make_pair(1, values);
+		store("EQUALITY_CONSTRAINTS_" + ss.str(), step, coordinates, elementsTypes, elementsNodes, elements, data);
+	}
 }
 
 

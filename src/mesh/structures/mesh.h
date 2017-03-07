@@ -80,7 +80,7 @@ public:
 	const std::vector<Element*>& edges() const { return _edges; };
 	const std::vector<Element*>& nodes() const { return _nodes; };
 
-	const Element* getDOFsElement(size_t part, size_t DOF) const { return _DOFtoElement[part][DOF]; }
+	Element* getDOFsElement(size_t part, size_t DOF) const { return _DOFtoElement[part][DOF]; }
 	std::vector<std::vector<Region*> > getRegionsWithProperties(size_t loadStep, const std::vector<Property> &properties) const;
 	static std::vector<std::vector<Region*> > getRegionsWithProperties(const std::vector<Region*> &regions, size_t loadStep, const std::vector<Property> &properties);
 	static bool commonRegion(const std::vector<Region*> &v1, const std::vector<Region*> &v2);
