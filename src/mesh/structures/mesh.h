@@ -85,8 +85,9 @@ public:
 	static std::vector<std::vector<Region*> > getRegionsWithProperties(const std::vector<Region*> &regions, size_t loadStep, const std::vector<Property> &properties);
 	static bool commonRegion(const std::vector<Region*> &v1, const std::vector<Region*> &v2);
 
-	const std::vector<Element*>& fixPoints(size_t part) const { return _fixPoints[part]; };
-	const std::vector<Element*>& corners() const { return _corners; };
+	const std::vector<std::vector<Element*> >& fixPoints() const { return _fixPoints; }
+	const std::vector<Element*>& fixPoints(size_t part) const { return _fixPoints[part]; }
+	const std::vector<Element*>& corners() const { return _corners; }
 
 	size_t steps() const { return _steps; }
 	size_t parts() const { return _partPtrs.size() - 1; }
