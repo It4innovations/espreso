@@ -1,6 +1,7 @@
 
 import subprocess
 import os
+import sys
 import re
 import shutil
 
@@ -43,6 +44,31 @@ class TestCaseCreator:
                 next[i] = iterators[i].next()
                 if next[i]:
                     break
+
+    @staticmethod
+    def select(*directories):
+        argv = [ sys.argv[0] ]
+        origin = []
+        selection = []
+
+        for directory in directories:
+            origin.append([ directory ])
+            selection.append([])
+            for arg in sys.argv[1:]:
+                if arg.startswith("-") or arg.startswith("--"):
+                    argv.append(arg)
+                    continue
+                if os.path.commonprefix([ directory, os.path.join(ESPRESO_ROOT, arg) ]) == directory:
+                    selection[-1].append(os.path.join(ESPRESO_ROOT, arg))
+
+        if len(sys.argv) == len(argv):
+            if len(origin) == 1:
+                return origin[0]
+            return tuple(origin)
+        sys.argv = argv
+        if len(selection) == 1:
+            return selection[0]
+        return tuple(selection)
 
     @staticmethod
     def gather(folder, ext, omit = "$^"):

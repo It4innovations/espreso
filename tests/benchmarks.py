@@ -25,9 +25,10 @@ class ESPRESOBenchmarks(unittest.TestCase):
 
 if __name__ == '__main__':
 
-    benchmarks = os.path.join(ROOT, "benchmarks")
+    benchmarks = TestCaseCreator.select(os.path.join(ROOT, "benchmarks"))
 
-    for name, path, file in TestCaseCreator.gather(benchmarks, ".test"):
-        TestCaseCreator.create_test(ESPRESOBenchmarks, ESPRESOBenchmarks.benchmark, name, path, file)
+    for subdirectory in benchmarks:
+        for name, path, file in TestCaseCreator.gather(subdirectory, ".test"):
+            TestCaseCreator.create_test(ESPRESOBenchmarks, ESPRESOBenchmarks.benchmark, name, path, file)
 
     unittest.main()
