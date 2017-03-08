@@ -159,6 +159,14 @@ class Espreso:
 
     def __init__(self, path=ESPRESO_ROOT, config={}):
         self.path = path
+        self.mpirun = [ "mpirun" ]
+
+        bashrc = os.path.join(os.path.expanduser("~"), ".bashrc")
+        if os.path.isfile(bashrc):
+            for line in open(bashrc, 'r'):
+                if line.find("alias") != -1 and line.find("mpirun") != -1:
+                    self.mpirun = map(lambda x: x.strip(" '\""), line.split("=")[1].split())
+
         if path != ESPRESO_ROOT:
             self.path = os.path.join(ESPRESO_TESTS, path)
 
@@ -232,7 +240,7 @@ class Espreso:
 
 
     def run(self, processes, *args, **kwargs):
-        program = [ "mpirun", "-n", str(processes), os.path.join(self.path, "espreso")]
+        program = self.mpirun + [ "-n", str(processes), os.path.join(self.path, "espreso")]
 
         output, error = self.run_program(program, *args, **kwargs)
         if error != "":
@@ -241,7 +249,7 @@ class Espreso:
             raise EspresoError(output)
 
     def valgrind(self, processes, *args, **kwargs):
-        program = [ "mpirun", "-n", str(processes), "valgrind", "-q", "--leak-check=full", "--suppressions={0}/espreso.supp".format(self.path), os.path.join(self.path, "espreso")]
+        program = self.mpirun + [ "-n", str(processes), "valgrind", "-q", "--leak-check=full", "--suppressions={0}/espreso.supp".format(self.path), os.path.join(self.path, "espreso")]
 
         output, error = self.run_program(program, *args, **kwargs)
         if error != "":
@@ -273,7 +281,7 @@ class Espreso:
         return output
 
     def output(self, processes, *args, **kwargs):
-        program = [ "mpirun", "-n", str(processes), os.path.join(self.path, "espreso")]
+        program = self.mpirun + [ "-n", str(processes), os.path.join(self.path, "espreso")]
 
         output, error = self.run_program(program, *args, **kwargs)
         if error != "":
@@ -282,7 +290,7 @@ class Espreso:
         return output
 
     def fail(self, processes, *args, **kwargs):
-        program = [ "mpirun", "-n", str(processes), os.path.join(self.path, "espreso")]
+        program = self.mpirun + [ "-n", str(processes), os.path.join(self.path, "espreso")]
 
         output, error = self.run_program(program, *args, **kwargs)
         if error == "":
