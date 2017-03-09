@@ -312,7 +312,7 @@ namespace espreso {
 
 #endif
         this->copiedToMIC = true;
-        if ( !config::solver::LOAD_BALANCING ) {
+        if ( !this->loadBalancing ) {
             free(this->matrices);
             this->matrices = NULL;
         }
@@ -380,7 +380,6 @@ namespace espreso {
         double beta  = 0.0;
         eslocal one = 1;
         long start = (long) (MICratio * nMatrices); 
-
 #pragma omp parallel for //schedule(dynamic,10)
         for ( long i = start ; i < nMatrices; i++ ) {
             if ( !packed[i] ) {
@@ -468,6 +467,7 @@ namespace espreso {
                 eslocal one = 1;
                 long nIters = (long) (nMatrices*MICratio);
                 double start = omp_get_wtime();
+                int nth;
 #pragma omp parallel for schedule(dynamic)
                 for ( long i = 0 ; i < nIters; i++ ) {
                     if ( !packed[i] ) {
@@ -483,7 +483,7 @@ namespace espreso {
                     }
                 }
                 elapsedTime[0] = omp_get_wtime() - start;
-            }
+             }
     }
 
     void DenseMatrixPack::DenseMatsVecsMIC_Sync( ) {

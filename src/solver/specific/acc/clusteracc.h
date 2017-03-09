@@ -17,11 +17,11 @@ public:
 	// Constructor
 	ClusterAcc(eslocal cluster_index): ClusterBase(cluster_index) {
         this->deleteMatrices = false;
-        this->NUM_MICS = 2;
+        this->SetAcceleratorAffinity();
     };
 	ClusterAcc(): ClusterBase() {
         this->deleteMatrices = false;
-        this->NUM_MICS = 2;
+        this->SetAcceleratorAffinity();
     };
 
     virtual ~ClusterAcc();
@@ -31,14 +31,14 @@ public:
 	void SetupKsolvers ( );
     void CreateDirichletPrec( Physics &physics );
 
+    // sets affinity of processes on accelerators
+    void SetAcceleratorAffinity();
+
 //private:
 
     // packed matrices
     SEQ_VECTOR<DenseMatrixPack> B1KplusPacks;
     
-    // number of accelerators
-    eslocal NUM_MICS;
-
     // global solver for offloading all domains to Xeon Phi
     SEQ_VECTOR<SparseSolverAcc> solver;
 
@@ -60,8 +60,20 @@ public:
     // vector of indices of domains on the host
     SEQ_VECTOR<eslocal> hostPreconditioners;
 
+    // number of MPI processes per node
+    eslocal MPI_per_node;
 
+    // number of MPI processes per accelerator
+    eslocal MPI_per_acc;
+    
+    // number of accelerators per MPI process
+    eslocal acc_per_MPI;
 
+    // id of devices to offload to
+    SEQ_VECTOR<eslocal> myTargets;
+
+    // local rank on the accelerator
+    eslocal acc_rank;
 
     bool deleteMatrices;
 };
