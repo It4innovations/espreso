@@ -45,9 +45,6 @@ CUDA32:
   script:
     - ./waf configure --SOLVER=CUDA --INT_WIDTH=32
     - ./waf install -j8
-    - python tests/benchmarks.py
-    - python tests/input.py
-    - python tests/solver.py
 
 CUDA64:
   stage: tests
@@ -56,9 +53,6 @@ CUDA64:
   script:
     - ./waf configure --SOLVER=CUDA --INT_WIDTH=64
     - ./waf install -j8
-    - python tests/benchmarks.py
-    - python tests/input.py
-    - python tests/solver.py
 
 PARDISO32:
   stage: tests
