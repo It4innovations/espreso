@@ -19,7 +19,12 @@ Environment::Environment(): executable("espreso")
 		MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
 	}
 
-	executable = Esutils::getEnv<std::string>("_");
+	char *var = getenv("_");
+	if (var != NULL) {
+		executable = Esutils::getEnv<std::string>("_");
+	} else {
+		executable = "espreso";
+	}
 
 	MKL_NUM_THREADS    = ParameterHolder::create<size_t>("MKL_NUM_THREADS"   , "Number of MKL threads"          , MKL_NUM_THREADS   , Esutils::getEnv<size_t>("MKL_NUM_THREADS")   , "size_t", this);
 	OMP_NUM_THREADS    = ParameterHolder::create<size_t>("OMP_NUM_THREADS"   , "Number of OMP threads"          , OMP_NUM_THREADS   , Esutils::getEnv<size_t>("OMP_NUM_THREADS")   , "size_t", this);
