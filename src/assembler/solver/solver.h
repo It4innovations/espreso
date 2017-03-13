@@ -59,8 +59,10 @@ protected:
 
 	void subtractDirichlet();
 
-	void multiply(const Step &step, Matrices v1, std::vector<std::vector<double> > &v2, std::vector<std::vector<double> > &solution, double beta = 1, const std::string v2name = "{?}", const std::string solutionName = "{?}");
-	void multiply(const Step &step, Matrices v, double beta);
+	/// y = A * x
+	void multiply(std::vector<std::vector<double> > &y, std::vector<SparseMatrix> &A, std::vector<std::vector<double> > &x, const std::string &description);
+	/// x = a * x
+	void multiply(std::vector<std::vector<double> > &x, double a, const std::string &description);
 
 	void composeGluing(const Step &step, Matrices matrices);
 	void regularizeMatrices(const Step &step, Matrices matrices);

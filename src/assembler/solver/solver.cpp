@@ -149,6 +149,7 @@ void Solver::sum(std::vector<std::vector<double> > &z, double a, const std::vect
 void Solver::sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::vector<size_t> &prefix, const std::string &description)
 {
 	ESINFO(PROGRESS2) << "Compute " << description;
+	TimeEvent time("Compute " + description); time.start();
 	if (z.size() == 0) {
 		z.resize(x.size());
 	}
@@ -164,10 +165,12 @@ void Solver::sum(std::vector<std::vector<double> > &z, double a, const std::vect
 			z[d][i] = a * x[d][i] + b * y[d][i];
 		}
 	}
+	time.endWithBarrier(); _timeStatistics->addEvent(time);
 }
 
 void Solver::sum(std::vector<SparseMatrix> &A, double beta, std::vector<SparseMatrix> &B, const std::string &description)
 {
+	ESINFO(PROGRESS2) << "Compute " << description;
 	TimeEvent time("Compute " + description); time.start();
 	#pragma omp parallel for
 	for (size_t d = 0; d < physics->instance()->domains; d++) {
@@ -176,58 +179,28 @@ void Solver::sum(std::vector<SparseMatrix> &A, double beta, std::vector<SparseMa
 	time.endWithBarrier(); _timeStatistics->addEvent(time);
 }
 
-void Solver::multiply(const Step &step, Matrices v1, std::vector<std::vector<double> > &v2, std::vector<std::vector<double> > &solution, double beta, const std::string v2name, const std::string solutionName)
+void Solver::multiply(std::vector<std::vector<double> > &y, std::vector<SparseMatrix> &A, std::vector<std::vector<double> > &x, const std::string &description)
 {
-	ESINFO(PROGRESS2) << "Multiply " << solutionName << " = " << beta << " * " << mNames(v1) << " * " << v2name;
-	if (v1 & Matrices::M) {
-		TimeEvent time(std::string("Multiply " + mNames(v1) + "with vector " + v2name)); time.start();
-		#pragma omp parallel for
-		for (size_t d = 0; d < physics->instance()->domains; d++) {
-			physics->instance()->M[d].MatVec(v2[d], solution[d], 'N', 0, 0, beta);
-		}
-		time.endWithBarrier(); _timeStatistics->addEvent(time);
+	ESINFO(PROGRESS2) << "Compute " << description;
+	TimeEvent time("Compute " + description); time.start();
+	#pragma omp parallel for
+	for (size_t d = 0; d < physics->instance()->domains; d++) {
+		A[d].MatVec(x[d], y[d], 'N', 0, 0, 0);
 	}
+	time.endWithBarrier(); _timeStatistics->addEvent(time);
 }
 
-void Solver::multiply(const Step &step, Matrices v, double beta)
+void Solver::multiply(std::vector<std::vector<double> > &x, double a, const std::string &description)
 {
-	if (beta == 1) {
-		return;
-	}
-	ESINFO(PROGRESS2) << "Multiply " << mNames(v) << " by " << beta;
-	if (v & Matrices::f) {
-		TimeEvent time(std::string("Multiply " + mNames(Matrices::f) + "by " + std::to_string(beta))); time.start();
-		#pragma omp parallel for
-		for (size_t d = 0; d < instance->domains; d++) {
-			for (size_t i = 0; i < instance->f[d].size(); i++) {
-				instance->f[d][i] *= beta;
-			}
+	ESINFO(PROGRESS2) << "Compute " << description;
+	TimeEvent time("Compute " + description); time.start();
+	#pragma omp parallel for
+	for (size_t d = 0; d < x.size(); d++) {
+		for (size_t i = 0; i < x[d].size(); i++) {
+			x[d][i] *= a;
 		}
-		time.endWithBarrier(); _timeStatistics->addEvent(time);
 	}
-	if (v & Matrices::R) {
-		TimeEvent time(std::string("Multiply " + mNames(Matrices::R) + "by " + std::to_string(beta))); time.start();
-		#pragma omp parallel for
-		for (size_t d = 0; d < instance->domains; d++) {
-			for (size_t i = 0; i < instance->R[d].size(); i++) {
-				instance->R[d][i] *= beta;
-			}
-		}
-		time.endWithBarrier(); _timeStatistics->addEvent(time);
-	}
-	if (v & Matrices::B1c) {
-		TimeEvent time(std::string("Multiply " + mNames(Matrices::B1c) + "by " + std::to_string(beta))); time.start();
-		#pragma omp parallel for
-		for (size_t d = 0; d < instance->domains; d++) {
-			for (size_t i = 0; i < instance->B1c[d].size(); i++) {
-				instance->B1c[d][i] *= beta;
-			}
-		}
-		time.endWithBarrier(); _timeStatistics->addEvent(time);
-	}
-	if (v & ~(Matrices::R | Matrices::f | Matrices::B1c)) {
-		ESINFO(ERROR) << "ESPRESO internal error: not implemented multiplication of " << mNames(v & ~(Matrices::R | Matrices::f | Matrices::B1c)) << "by " << beta;
-	}
+	time.endWithBarrier(); _timeStatistics->addEvent(time);
 }
 
 void Solver::regularizeMatrices(const Step &step, Matrices matrices)

@@ -78,7 +78,7 @@ void TransientFirstOrderImplicit::run(Step &step)
 		sum(instance->K, 1 / (alpha * _configuration.time_step), instance->M, "K += (1 / " + ASCII::alpha + ASCII::DELTA + "t) * M");
 		sum(x, 1 / (alpha * _configuration.time_step), u, (1 - alpha) / alpha, v, "x = (1 / " + ASCII::alpha + ASCII::DELTA + ") * u + (1 - " + ASCII::alpha + ") / " + ASCII::alpha + " * v");
 
-		multiply(step, Matrices::M, x, y, 0, "x", "y");
+		multiply(y, instance->M, x, "y = M * x");
 		sum(instance->f, 1, instance->f, 1, y, "f += y");
 
 		if (step.substep) {
