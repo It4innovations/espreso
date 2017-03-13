@@ -107,19 +107,6 @@ void Solver::updateMatrices(const Step &step, Matrices matrices, const std::vect
 	TimeEvent time(std::string(solution.size() ? "Updates" : "Assembles") + " matrices " + mNames(matrices) + " by " + physics->name()); time.start();
 	physics->updateMatrix(step, matrices, solution);
 	time.endWithBarrier(); _timeStatistics->addEvent(time);
-
-	if (matrices & Matrices::K) {
-		storeData(step, physics->instance()->K, "K", "stiffness matrices K");
-	}
-	if (matrices & Matrices::M) {
-		storeData(step, physics->instance()->M, "M", "mass matrices M");
-	}
-	if (matrices & Matrices::R) {
-		storeData(step, physics->instance()->R, "R", "residual forces R");
-	}
-	if (matrices & Matrices::f) {
-		storeData(step, physics->instance()->f, "f", "right-hand side");
-	}
 }
 
 void Solver::subtractDirichlet()
@@ -214,12 +201,6 @@ void Solver::regularizeMatrices(const Step &step, Matrices matrices)
 	TimeEvent time("Regularization of matrices " + mNames(matrices) + " by " + physics->name()); time.start();
 	physics->makeStiffnessMatricesRegular(linearSolver->configuration.regularization);
 	time.endWithBarrier(); _timeStatistics->addEvent(time);
-
-	if (matrices & Matrices::K) {
-		storeData(step, physics->instance()->N1, "N1", "N1");
-		storeData(step, physics->instance()->N2, "N2", "N2");
-		storeData(step, physics->instance()->RegMat, "RegMat", "RegMat");
-	}
 }
 
 void Solver::composeGluing(const Step &step, Matrices matrices)
@@ -276,16 +257,6 @@ void Solver::composeGluing(const Step &step, Matrices matrices)
 		physics->assembleB1(step, linearSolver->configuration.redundant_lagrange, linearSolver->configuration.scaling);
 	}
 	time.endWithBarrier(); _timeStatistics->addEvent(time);
-
-	if (matrices & Matrices::B0) {
-		storeData(step, physics->instance()->B0, "B0", "B0");
-	}
-
-	if (matrices & Matrices::B1) {
-		storeData(step, physics->instance()->B1, "B1", "B1");
-		storeData(step, physics->instance()->B1c, "B1c", "B1c");
-		storeData(step, physics->instance()->B1duplicity, "B1duplicity", "B1duplicity");
-	}
 }
 
 void Solver::processSolution(const Step &step)
@@ -300,6 +271,21 @@ void Solver::processSolution(const Step &step)
 
 void Solver::initLinearSolver(const Step &step)
 {
+	storeData(step, physics->instance()->K, "K", "stiffness matrices K");
+	storeData(step, physics->instance()->M, "M", "mass matrices M");
+	storeData(step, physics->instance()->R, "R", "residual forces R");
+	storeData(step, physics->instance()->f, "f", "right-hand side");
+
+	storeData(step, physics->instance()->N1, "N1", "N1");
+	storeData(step, physics->instance()->N2, "N2", "N2");
+	storeData(step, physics->instance()->RegMat, "RegMat", "RegMat");
+
+	storeData(step, physics->instance()->B1, "B1", "B1");
+	storeData(step, physics->instance()->B1c, "B1c", "B1c");
+	storeData(step, physics->instance()->B1duplicity, "B1duplicity", "B1duplicity");
+
+	storeData(step, physics->instance()->B0, "B0", "B0");
+
 	ESINFO(PROGRESS2) << "Initialization of linear solver";
 
 	TimeEvent timeSolver("Initialize linear solver"); timeSolver.startWithBarrier();
@@ -309,6 +295,21 @@ void Solver::initLinearSolver(const Step &step)
 
 void Solver::updateLinearSolver(const Step &step, Matrices matrices)
 {
+	storeData(step, physics->instance()->K, "K", "stiffness matrices K");
+	storeData(step, physics->instance()->M, "M", "mass matrices M");
+	storeData(step, physics->instance()->R, "R", "residual forces R");
+	storeData(step, physics->instance()->f, "f", "right-hand side");
+
+	storeData(step, physics->instance()->N1, "N1", "N1");
+	storeData(step, physics->instance()->N2, "N2", "N2");
+	storeData(step, physics->instance()->RegMat, "RegMat", "RegMat");
+
+	storeData(step, physics->instance()->B1, "B1", "B1");
+	storeData(step, physics->instance()->B1c, "B1c", "B1c");
+	storeData(step, physics->instance()->B1duplicity, "B1duplicity", "B1duplicity");
+
+	storeData(step, physics->instance()->B0, "B0", "B0");
+
 	ESINFO(PROGRESS2) << "Updating of linear solver";
 
 	TimeEvent timeSolver("Update linear solver"); timeSolver.startWithBarrier();
