@@ -6,6 +6,7 @@
 #include "../physics/physics.h"
 
 #include "../../basis/utilities/utils.h"
+#include "../../basis/logging/constants.h"
 #include "../../configuration/physics/nonlinearsolver.h"
 #include "../../solver/generic/LinearSolver.h"
 
@@ -111,9 +112,9 @@ void NewtonRhapson::solve(Step &step)
 					heatResidual_second = 1e-3;
 				}
 			}
-			sum(step, Matrices::f, Matrices::R, 1, -1);
+			sum(instance->f, 1, instance->f, -1, instance->R, "f = f - R");
 			if (_configuration.convergenceParameters().checkResidual()) {
-				sum(f_R_BtLambda, instance->f, instance->dualSolution, 1 , -1, "heat residual", "f - R", "Bt * Lambda");
+				sum(f_R_BtLambda, 1, instance->f, -1, instance->dualSolution, "(f - R) * Bt * Lambda");
 				heatResidual_first = sqrt(physics->sumSquares(f_R_BtLambda, Physics::SumOperation::SUM));
 				heatResidual = heatResidual_first / heatResidual_second;
 
@@ -139,7 +140,7 @@ void NewtonRhapson::solve(Step &step)
 
 			composeGluing(step, Matrices::B1);
 			multiply(step, Matrices::B1c, (step.substep + 1) / (double)substeps);
-			sum(step, Matrices::B1c, Matrices::primal, 1, -1);
+			subtractDirichlet();
 			regularizeMatrices(step, Matrices::K);
 
 			if (_configuration.method == NonLinearSolverBase::METHOD::MODIFIED_NEWTON_RHAPSON && step.iteration) {
@@ -164,7 +165,7 @@ void NewtonRhapson::solve(Step &step)
 			if (_configuration.convergenceParameters().checkSolution()) {
 				temperatureResidual_first = sqrt(physics->sumSquares(physics->instance()->primalSolution, Physics::SumOperation::AVERAGE));
 			}
-			sum(step, Matrices::primal, T, 1, 1, "prevSolution");
+			sum(instance->primalSolution, 1, instance->primalSolution, 1, T, "u = " + ASCII::DELTA + "u + u");
 			if (_configuration.convergenceParameters().checkSolution()) {
 				 temperatureResidual_second = sqrt(physics->sumSquares(physics->instance()->primalSolution, Physics::SumOperation::AVERAGE));
 				if (temperatureResidual_second < 1e-3) {

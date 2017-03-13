@@ -50,9 +50,15 @@ protected:
 	void assembleMatrices(const Step &step, Matrices matrices);
 	void updateMatrices(const Step &step, Matrices matrices, const std::vector<Solution*> &solution);
 
-	void sum(const Step &step, Matrices v1, Matrices v2, double alpha = 1, double beta = 1);
-	void sum(const Step &step, Matrices v1, const std::vector<std::vector<double> > &v2, double alpha = 1, double beta = 1, const std::string v2name = "{?}");
-	void sum(std::vector<std::vector<double> > &result, const std::vector<std::vector<double> > &a, const std::vector<std::vector<double> > &b, double alpha = 1, double beta = 1, const std::string resultName = "{?}", const std::string aName = "{?}", const std::string bName = "{?}");
+	/// z = a * x + b + y
+	void sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::string &description);
+	/// z = a * x + b + y (prefix variant)
+	void sum(std::vector<std::vector<double> > &z, double a, const std::vector<std::vector<double> > &x, double b, const std::vector<std::vector<double> > &y, const std::vector<size_t> &prefix, const std::string &description);
+	/// A += beta * B
+	void sum(std::vector<SparseMatrix> &A, double beta, std::vector<SparseMatrix> &B, const std::string &description);
+
+	void subtractDirichlet();
+
 	void multiply(const Step &step, Matrices v1, std::vector<std::vector<double> > &v2, std::vector<std::vector<double> > &solution, double beta = 1, const std::string v2name = "{?}", const std::string solutionName = "{?}");
 	void multiply(const Step &step, Matrices v, double beta);
 

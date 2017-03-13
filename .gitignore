@@ -14,7 +14,7 @@
 /*.dat
 *.out
 build*
-*log*
+log*
 *.config
 doc/html/*
 doc/xml/*

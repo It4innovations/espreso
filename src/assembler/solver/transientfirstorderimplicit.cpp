@@ -8,6 +8,7 @@
 #include "../instance.h"
 #include "../physics/physics.h"
 #include "../../basis/logging/logging.h"
+#include "../../basis/logging/constants.h"
 
 using namespace espreso;
 
@@ -74,11 +75,11 @@ void TransientFirstOrderImplicit::run(Step &step)
 		}
 		composeGluing(step, Matrices::B1 | Matrices::B0); // TODO: B0 without kernels
 
-		sum(step, Matrices::K, Matrices::M, 1, 1 / (alpha * _configuration.time_step));
-		sum(x, u, v, 1 / (alpha * _configuration.time_step), (1 - alpha) / alpha, "x", "u", "v");
+		sum(instance->K, 1 / (alpha * _configuration.time_step), instance->M, "K += (1 / " + ASCII::alpha + ASCII::DELTA + "t) * M");
+		sum(x, 1 / (alpha * _configuration.time_step), u, (1 - alpha) / alpha, v, "x = (1 / " + ASCII::alpha + ASCII::DELTA + ") * u + (1 - " + ASCII::alpha + ") / " + ASCII::alpha + " * v");
 
 		multiply(step, Matrices::M, x, y, 0, "x", "y");
-		sum(step, Matrices::f, y, 1, 1, "y");
+		sum(instance->f, 1, instance->f, 1, y, "f += y");
 
 		if (step.substep) {
 			updateLinearSolver(step, Matrices::K | Matrices::M | Matrices::f | Matrices::B1c);
@@ -86,8 +87,8 @@ void TransientFirstOrderImplicit::run(Step &step)
 			initLinearSolver(step);
 		}
 		runLinearSolver(step);
-		sum(deltaU, physics->instance()->primalSolution, u, 1, -1, "deltaU", "u_" + std::to_string(step.substep + 1), "u_" + std::to_string(step.substep));
-		sum(v, deltaU, v, 1 / (alpha * _configuration.time_step), - (1 - alpha) / alpha, "v", "deltaU", "v");
+		sum(deltaU, 1, instance->primalSolution, -1, u, ASCII::DELTA + "u = u_i - u_i_1");
+		sum(v, 1 / (alpha * _configuration.time_step), deltaU, - (1 - alpha) / alpha, v, "v = (1 / " + ASCII::alpha + ASCII::DELTA + "t) * " + ASCII::DELTA + "u - (1 - " + ASCII::alpha + ") / " + ASCII::alpha + " * v");
 		u = instance->primalSolution;
 
 		processSolution(step);
