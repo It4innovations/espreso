@@ -13,7 +13,7 @@ Linear::Linear(
 		LinearSolver* linearSolver,
 		output::Store* store,
 		Matrices restriction)
-: Solver("LINEAR", mesh, physics, linearSolver, store, restriction)
+: Solver("STEADY STATE", mesh, physics, linearSolver, store, restriction)
 {
 
 }
