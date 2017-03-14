@@ -205,21 +205,48 @@ void ResultStore::preprocessing()
 	}
 }
 
-static void fillMeshSettings(DataArrays &data, const std::vector<double> &coordinates, const std::vector<eslocal> &partPtrs)
+static void fillMeshSettings(DataArrays &data, const std::vector<double> &coordinates, const espreso::Mesh *mesh)
 {
-	std::vector<eslocal> *pointID = new std::vector<eslocal>(coordinates.size() / 3);
-	std::vector<eslocal> *elementID = new std::vector<eslocal>(partPtrs.back());
+	std::vector<eslocal> *pointIDcluster = new std::vector<eslocal>(coordinates.size() / 3);
+	std::vector<eslocal> *pointIDglobal = new std::vector<eslocal>();
+	std::vector<eslocal> *elementID = new std::vector<eslocal>(mesh->getPartition().back());
 	std::vector<eslocal> *decomposition = new std::vector<eslocal>();
 
-	std::iota(pointID->begin(), pointID->end(), 0);
+	std::iota(pointIDcluster->begin(), pointIDcluster->end(), 0);
 	std::iota(elementID->begin(), elementID->end(), 0);
-	for (size_t p = 0; p < partPtrs.size() - 1; p++) {
-		decomposition->insert(decomposition->end(), partPtrs[p + 1] - partPtrs[p], p);
+	for (size_t p = 0; p < mesh->getPartition().size() - 1; p++) {
+		decomposition->insert(decomposition->end(), mesh->getPartition()[p + 1] - mesh->getPartition()[p], p);
 	}
 
-	data.pointDataInteger["pointID"] = std::make_pair(1, pointID);
+	pointIDglobal->reserve(coordinates.size() / 3);
+	for (size_t p = 0; p < mesh->parts(); p++) {
+		for (size_t i = 0; i < mesh->coordinates().localSize(p); i++) {
+			pointIDglobal->push_back(mesh->coordinates().globalIndex(i, p));
+		}
+	}
+
+	data.pointDataInteger["pointIDcluster"] = std::make_pair(1, pointIDcluster);
+	data.pointDataInteger["pointIDglobal"] = std::make_pair(1, pointIDglobal);
 	data.elementDataInteger["elementID"] = std::make_pair(1, elementID);
 	data.elementDataInteger["decomposition"] = std::make_pair(1, decomposition);
+
+	for (int r = 0; r < espreso::environment->MPIsize; r++) {
+		std::vector<eslocal> *cluster = new std::vector<eslocal>(coordinates.size() / 3);
+		data.pointDataInteger["cluster" + std::to_string(r)] = std::make_pair(1, cluster);
+	}
+
+	std::vector<size_t> offsets(mesh->parts());
+	for (size_t p = 1; p < mesh->parts(); p++) {
+		offsets[p] = offsets[p - 1] + mesh->coordinates().localSize(p - 1);
+	}
+
+	for (size_t n = 0; n < mesh->nodes().size(); n++) {
+		for (auto c = mesh->nodes()[n]->clusters().begin(); c != mesh->nodes()[n]->clusters().end(); ++c) {
+			for (auto d = mesh->nodes()[n]->domains().begin(); d != mesh->nodes()[n]->domains().end(); ++d) {
+				(*data.pointDataInteger["cluster" + std::to_string(*c)].second)[offsets[*d] + mesh->coordinates().localIndex(n, *d)] = 1;
+			}
+		}
+	}
 }
 
 void ResultStore::storeSettings(const Step &step)
@@ -255,7 +282,7 @@ void ResultStore::storeSettings(const std::vector<size_t> &steps)
 	Step step;
 
 	DataArrays data;
-	fillMeshSettings(data, _coordinates, _mesh->getPartition());
+	fillMeshSettings(data, _coordinates, _mesh);
 	for (size_t i = 0; i < steps.size(); i++) {
 		step.step = steps[i];
 		store("mesh", step, _coordinates, _elementsTypes, _elementsNodes, _elements, data);
