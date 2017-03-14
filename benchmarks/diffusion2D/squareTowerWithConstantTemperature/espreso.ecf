@@ -1,0 +1,128 @@
+|*****************************************************************************|
+|-----------------------------------------------------------------------------|
+|                                      |                                      |
+|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
+|                                      |   http://espreso.it4i.cz             |
+|-----------------------------------------------------------------------------|
+|  Case Description: homogenous problem with constant temperature             |
+|                                                                             |
+|-----------------------------------------------------------------------------|
+|*****************************************************************************|
+
+INPUT GENERATOR;
+PHYSICS ADVECTION_DIFFUSION_2D;
+
+GENERATOR {
+
+  SHAPE GRID_TOWER;
+
+  GRID_TOWER {
+
+    DIRECTION    X;
+
+    GRIDS{
+      0 {
+        UNIFORM_DECOMPOSITION 1;
+
+        ELEMENT_TYPE   [ARG0];
+
+        LENGTH_X            1;
+        LENGTH_Y            1;
+        LENGTH_Z            1;
+
+        BLOCKS_X            1;
+        BLOCKS_Y            1;
+        BLOCKS_Z            1;
+
+        CLUSTERS_X     [ARG1];
+        CLUSTERS_Y     [ARG2];
+        CLUSTERS_Z          1;
+
+        DOMAINS_X      [ARG3];
+        DOMAINS_Y      [ARG4];
+        DOMAINS_Z           1;
+
+        ELEMENTS_X     [ARG5];
+        ELEMENTS_Y     [ARG6];
+        ELEMENTS_Z          1;
+
+        NODES {
+          LEFT   "<0, 0> <0, 1> <0, 0>";
+        }
+      }
+
+      1 {
+        UNIFORM_DECOMPOSITION 1;
+
+        ELEMENT_TYPE   [ARG0];
+
+        LENGTH_X            1;
+        LENGTH_Y            1;
+        LENGTH_Z            1;
+
+        BLOCKS_X            1;
+        BLOCKS_Y            1;
+        BLOCKS_Z            1;
+
+        CLUSTERS_X     [ARG1];
+        CLUSTERS_Y     [ARG2];
+        CLUSTERS_Z          1;
+    
+        DOMAINS_X      [ARG3];
+        DOMAINS_Y      [ARG4];
+        DOMAINS_Z           1;
+    
+        ELEMENTS_X     [ARG5];
+        ELEMENTS_Y     [ARG6];
+        ELEMENTS_Z          1;
+    
+        NODES {
+          RIGHT  "<1, 1> <0, 1> <0, 0>";
+        }
+      }
+    }
+  }
+}
+
+ADVECTION_DIFFUSION_2D {
+
+  SOLVER_LIBRARY   ESPRESO;
+
+  ESPRESO {
+
+    METHOD           TOTAL_FETI;
+    SOLVER                  PCG;
+    PRECONDITIONER    DIRICHLET;
+    REGULARIZATION  NULL_PIVOTS;
+    B0_TYPE             CORNERS;
+  }
+  
+  STABILIZATION CAU;
+  SIGMA           0;
+
+  TEMPERATURE {
+    1 {
+      LEFT   0;
+      RIGHT  2;
+    }
+  }
+
+  MATERIALS {
+
+    1 {
+      MODEL DIAGONAL;
+
+      DENSITY 1;
+      KXX  1e-5;
+      KYY  1e-3;
+      Cp      1;
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS 1;
+  }
+}
+
+
+
