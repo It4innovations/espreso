@@ -50,6 +50,15 @@ struct Triple {
 	template <typename TOther>
 	Triple<Ttype> operator%(const Triple<TOther> &p) const { return Triple<Ttype>(x % p.x, y % p.y, z % p.z); }
 
+	template <typename TOther>
+	Triple<Ttype>& operator+=(const Triple<TOther> &p)
+	{
+		x += p.x;
+		y += p.y;
+		z += p.z;
+		return *this;
+	}
+
 	bool operator<(Ttype value) const { return x < value || y < value || z < value; }
 
 	template <typename TOther>

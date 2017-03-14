@@ -2,7 +2,7 @@
 #ifndef SRC_CONFIGURATION_INPUT_INPUTGENERATORGRID_H_
 #define SRC_CONFIGURATION_INPUT_INPUTGENERATORGRID_H_
 
-#include "input/inputgeneratorelements.h"
+#include "inputgeneratorelements.h"
 
 namespace espreso {
 

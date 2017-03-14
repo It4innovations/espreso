@@ -1,5 +1,6 @@
 
 #include "composition/grid.h"
+#include "composition/gridtower.h"
 #include "composition/sphere.h"
 
 #include "generator.h"
@@ -13,6 +14,9 @@ void Generator::generate(const ESPRESOGenerator &configuration, Mesh &mesh, size
 	switch (configuration.shape) {
 	case GENERATOR_SHAPE::GRID:
 		Grid::load(configuration.grid, mesh, index, size);
+		break;
+	case GENERATOR_SHAPE::GRID_TOWER:
+		GridTower::load(configuration.grid_tower, mesh, index, size);
 		break;
 	case GENERATOR_SHAPE::SPHERE:
 		Sphere::load(configuration.sphere, mesh, index, size);

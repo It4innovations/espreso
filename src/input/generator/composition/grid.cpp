@@ -172,7 +172,12 @@ Grid::~Grid()
 	delete _block;
 }
 
-void Grid::points(Coordinates &coordinates)
+size_t Grid::pointCount() const
+{
+	return (_settings.blocks * _settings.clusters * _settings.domains * _settings.elements * (Triple<size_t>(_subnodes) - 1) + 1).mul();
+}
+
+void Grid::points(Coordinates &coordinates, size_t globalIdOffset)
 {
 	_block->points(coordinates._points);
 
@@ -181,12 +186,11 @@ void Grid::points(Coordinates &coordinates)
 	Triple<size_t> coffset = _clusterOffset * cnodes;
 	Triple<size_t> size = (gnodes + 1).toSize();
 
-
 	Triple<size_t> offset;
 	for (offset.z = 0; offset.z <= cnodes.z; offset.z++) {
 		for (offset.y = 0; offset.y <= cnodes.y; offset.y++) {
 			for (offset.x = 0; offset.x <= cnodes.x; offset.x++) {
-				coordinates._globalIndex.push_back(((coffset + offset) * size).sum());
+				coordinates._globalIndex.push_back(((coffset + offset) * size).sum() + globalIdOffset);
 				coordinates._globalMapping.push_back(G2L(coordinates._globalIndex.back(), (esglobal)coordinates._globalMapping.size()));
 			}
 		}

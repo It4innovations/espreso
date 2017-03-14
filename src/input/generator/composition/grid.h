@@ -33,13 +33,16 @@ struct GridSettings {
 
 class Grid: public Loader {
 
+	friend class GridTower;
+
 public:
 	Grid(const GridConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
 	virtual ~Grid();
 
 	static void load(const GridConfiguration &configuration, Mesh &mesh, size_t index, size_t size);
 
-	virtual void points(Coordinates &coordinates);
+	virtual void points(Coordinates &coordinates) { points(coordinates, 0); }
+	virtual void points(Coordinates &coordinates, size_t globalIdOffset);
 	virtual void elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges);
 	virtual void neighbours(std::vector<Element*> &nodes, std::vector<int> &neighbours, const std::vector<Element*> &faces, const std::vector<Element*> &edges);
 	virtual void regions(
@@ -51,6 +54,8 @@ public:
 			std::vector<Element*> &nodes);
 
 	virtual bool partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners);
+
+	size_t pointCount() const;
 
 protected:
 	const GridConfiguration &_grid;

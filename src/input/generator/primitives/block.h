@@ -20,10 +20,9 @@ public:
 	virtual void region(const std::vector<Element*> &elements, Region *region, const BlockBorder &border, size_t dimension) =0;
 	virtual ~BlockGenerator() {};
 
+	BlockSetting block;
 protected:
 	BlockGenerator(Mesh &mesh, const BlockSetting &block): block(block) {};
-
-	BlockSetting block;
 };
 
 template <class TElement>
