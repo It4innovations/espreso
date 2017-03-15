@@ -71,6 +71,38 @@ bool Communication::receiveUpperKnownSize(const std::vector<std::vector<Ttype> >
 	return true;
 }
 
+template <typename Ttype>
+bool Communication::gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer)
+{
+	std::vector<size_t> offsets;
+	return gatherUnknownSize(sBuffer, rBuffer, offsets);
+}
+
+template <typename Ttype>
+bool Communication::gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, std::vector<size_t> &offsets)
+{
+	int size = sizeof(Ttype) * sBuffer.size();
+	std::vector<int> rSizes(environment->MPIsize), rOffsets(environment->MPIsize);
+	MPI_Gather(&size, sizeof(int), MPI_BYTE, rSizes.data(), sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
+
+	if (!environment->MPIrank) {
+		size = 0;
+		for (size_t i = 0; i < rSizes.size(); i++) {
+			rOffsets[i] = size;
+			size += rSizes[i];
+		}
+		rBuffer.resize(size / sizeof(Ttype));
+	}
+
+	MPI_Gatherv(sBuffer.data(), sBuffer.size() * sizeof(Ttype), MPI_BYTE, rBuffer.data(), rSizes.data(), rOffsets.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+
+	offsets.resize(environment->MPIsize);
+	for (size_t i = 0; i < rOffsets.size(); i++) {
+		offsets[i] = rOffsets[i] / sizeof(Ttype);
+	}
+	return true;
+}
+
 }
 
 
