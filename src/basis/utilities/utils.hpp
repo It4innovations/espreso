@@ -43,11 +43,12 @@ std::vector<Ttype> Esutils::getDistribution(size_t parts, Ttype start, Ttype end
 	std::vector<Ttype> distribution(parts + 1, 0);
 	size_t chunkSize = std::ceil(size / (double)parts);
 	for (size_t t = 1; t < parts; t++) {
-		distribution[t] = t * chunkSize - start;
-		if (distribution[t] - start > size) {
+		distribution[t] = t * chunkSize + start;
+		if (distribution[t] > size) {
 			distribution[t] = end;
 		}
 	}
+	distribution[0] = start;
 	distribution[parts] = end;
 
 	return distribution;
