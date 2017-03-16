@@ -114,6 +114,7 @@ public:
 
 	void synchronizeGlobalIndices();
 	void synchronizeNeighbours();
+	void synchronizeRegionOrder();
 
 	Region* region(const std::string &name) const;
 

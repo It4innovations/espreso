@@ -2165,6 +2165,18 @@ void Mesh::synchronizeNeighbours()
 	}
 }
 
+void Mesh::synchronizeRegionOrder()
+{
+	std::vector<Region*> regions(_regions.begin(), _regions.begin() + 2);
+	std::vector<char> name;
+	for (size_t r = 2; r < _regions.size(); r++) {
+		name = std::vector<char>(_regions[r]->name.begin(), _regions[r]->name.end());
+		Communication::broadcastUnknownSize(name);
+		regions.push_back(region(std::string(name.begin(), name.end())));
+	}
+	_regions.swap(regions);
+}
+
 void Mesh::checkNeighbours()
 {
 	ESINFO(ALWAYS) << Info::TextColor::BLUE << "Checking whether neighbours are correct";
