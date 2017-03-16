@@ -92,7 +92,9 @@ void SparseSolverMIC::ImportMatrices_wo_Copy(SparseMatrix ** A, eslocal nMatrice
     this->nMatrices = nMatrices;
 
     this->device = mic;
+    this->matrices = A;
 
+/*
     rows = (MKL_INT*) _mm_malloc(nMatrices * sizeof(MKL_INT), 64);
     cols = (MKL_INT*) _mm_malloc(nMatrices * sizeof(MKL_INT), 64);
     nnz =  (MKL_INT*) _mm_malloc(nMatrices * sizeof(MKL_INT), 64);
@@ -192,7 +194,7 @@ void SparseSolverMIC::ImportMatrices_wo_Copy(SparseMatrix ** A, eslocal nMatrice
         }
     }
     isOffloaded = true;
-
+*/
 }
 
 
@@ -204,7 +206,8 @@ void SparseSolverMIC::ImportMatrices(SparseMatrix ** A, eslocal nMatrices, esloc
     this->nMatrices = nMatrices;
 
     this->device = mic;
-
+    this->matrices = A;
+/*
     rows = (MKL_INT*) _mm_malloc(nMatrices * sizeof(MKL_INT), 64);
     cols = (MKL_INT*) _mm_malloc(nMatrices * sizeof(MKL_INT), 64);
     nnz =  (MKL_INT*) _mm_malloc(nMatrices * sizeof(MKL_INT), 64);
@@ -291,7 +294,7 @@ void SparseSolverMIC::ImportMatrices(SparseMatrix ** A, eslocal nMatrices, esloc
         }
     }
     isOffloaded = true;
-
+*/
 }
 
 void SparseSolverMIC::ImportMatrices_fl(SparseMatrix ** A, eslocal nMatrices, eslocal mic) {
@@ -300,8 +303,9 @@ void SparseSolverMIC::ImportMatrices_fl(SparseMatrix ** A, eslocal nMatrices, es
 
     this->device = mic;
     this->nMatrices = nMatrices;
+    this->matrices = A;
 
-    rows = (MKL_INT*) _mm_malloc(nMatrices * sizeof(MKL_INT), 64);
+/*    rows = (MKL_INT*) _mm_malloc(nMatrices * sizeof(MKL_INT), 64);
     cols = (MKL_INT*) _mm_malloc(nMatrices * sizeof(MKL_INT), 64);
     nnz =  (MKL_INT*) _mm_malloc(nMatrices * sizeof(MKL_INT), 64);
     CSR_I_row_indices_size = (MKL_INT*) _mm_malloc(nMatrices * sizeof(MKL_INT), 64);
@@ -389,6 +393,7 @@ void SparseSolverMIC::ImportMatrices_fl(SparseMatrix ** A, eslocal nMatrices, es
     }
 
     isOffloaded = true;
+    */
 }
 
 void SparseSolverMIC::Factorization(const std::string &str) {
@@ -564,6 +569,20 @@ void SparseSolverMIC::Factorization(const std::string &str) {
 
     m_factorized = true;
 }
+
+
+void SparseSolverMIC::Factorization(
+    const std::string &str,
+    SparseMatrixPack &factors_out
+    ) {
+
+    if ( this->matrices != NULL ) {
+        factors_out.AddMatrices( this->A, this->nMatrices );
+    }
+
+    factors_out.FactorizeMIC();
+}
+
 void SparseSolverMIC::Solve( SEQ_VECTOR <double> ** rhs_sol) {
 
     if (!m_factorized) {

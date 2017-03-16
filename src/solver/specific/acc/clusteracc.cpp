@@ -333,8 +333,6 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 
     for (eslocal i = 0 ; i < this->acc_per_MPI; ++i) {
         matrixPerPack[i] = domains.size() / this->acc_per_MPI;
-
-        std::cout << matrixPerPack[i] << std::endl;
     }
     for (eslocal i = 0 ; i < domains.size() % this->acc_per_MPI; ++i) {
         matrixPerPack[i]++;
