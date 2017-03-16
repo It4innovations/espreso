@@ -22,6 +22,11 @@ struct Solution {
 		return data[domain][index * properties + _offset[static_cast<int>(property)]];
 	}
 
+	inline double get(size_t propertyOffset, eslocal domain, eslocal index) const
+	{
+		return data[domain][index * properties + propertyOffset];
+	}
+
 	std::string name;
 	ElementType eType;
 	size_t properties;
