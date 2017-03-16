@@ -103,6 +103,16 @@ bool Communication::gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::ve
 	return true;
 }
 
+template <typename Ttype>
+bool Communication::broadcastUnknownSize(std::vector<Ttype> &buffer)
+{
+	int size = buffer.size();
+	MPI_Bcast(&size, sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
+	buffer.resize(size);
+	MPI_Bcast(buffer.data(), sizeof(Ttype) * size, MPI_BYTE, 0, MPI_COMM_WORLD);
+	return true;
+}
+
 }
 
 

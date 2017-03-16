@@ -20,6 +20,9 @@ struct Communication {
 
 	template <typename Ttype>
 	static bool gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, std::vector<size_t> &offsets);
+
+	template <typename Ttype>
+	static bool broadcastUnknownSize(std::vector<Ttype> &buffer);
 };
 
 
