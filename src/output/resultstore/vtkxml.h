@@ -19,18 +19,14 @@ public:
 protected:
 	VTKXML(const OutputConfiguration &output, const Mesh *mesh, const std::string &path);
 
-	virtual void store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const DataArrays &data);
-	virtual void store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const std::vector<Solution*> &solution);
+	virtual void store(const std::string &name, const RegionInfo *regionInfo);
 
 	virtual void initWriter(const std::string &name, size_t points, size_t cells);
-	virtual void addMesh(std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements);
-	virtual void addData(const DataArrays &data);
-	virtual void addData(const std::vector<Solution*> &solution);
+	virtual void addMesh(const RegionInfo *regionInfo);
+	virtual void addData(const DataArrays &data, const std::vector<Solution*> &solution);
 	virtual void finalizeWriter();
 
-	virtual void linkClusters(const std::string &root, const std::string &name, const DataArrays &data);
-	virtual void linkClusters(const std::string &root, const std::string &name, const std::vector<Solution*> &solution);
-
+	virtual void linkClusters(const std::string &root, const std::string &name, const RegionInfo *regionInfo);
 	virtual void linkSteps(const std::string &name, const std::vector<std::pair<std::string, Step> > &steps);
 
 	virtual std::string format() =0;

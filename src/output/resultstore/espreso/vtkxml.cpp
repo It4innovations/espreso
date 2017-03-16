@@ -13,7 +13,7 @@ using namespace espreso::output;
 VTKXML::VTKXML(const OutputConfiguration &output, const Mesh *mesh, const std::string &path)
 : ResultStore(output, mesh, path), _VTKGrid(NULL), _writer(NULL), _os(NULL)
 {
-	preprocessing();
+
 }
 
 VTKXML::~VTKXML()
@@ -31,20 +31,20 @@ void VTKXML::initWriter(const std::string &name, size_t points, size_t cells)
 	(*_os) << "<Piece NumberOfPoints=\"" << points << "\" NumberOfCells=\"" << cells << "\">\n";
 }
 
-void VTKXML::addMesh(std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements)
+void VTKXML::addMesh(const RegionInfo *regionInfo)
 {
 	(*_os) << "  <Points>\n";
-	storePointData("Points", 3, coordinates);
+	storePointData("Points", 3, regionInfo->coordinates);
 	(*_os) << "  </Points>\n";
 
 	(*_os) << "  <Cells>\n";
-	storeCellData("connectivity", 1, elements);
-	storeCellData("offsets", 1, elementsNodes);
-	storeCellData("types", 1, elementsTypes);
+	storeCellData("connectivity", 1, regionInfo->elements);
+	storeCellData("offsets", 1, regionInfo->elementsNodes);
+	storeCellData("types", 1, regionInfo->elementsTypes);
 	(*_os) << "  </Cells>\n";
 }
 
-void VTKXML::addData(const DataArrays &data)
+void VTKXML::addData(const DataArrays &data, const std::vector<Solution*> &solution)
 {
 	(*_os) << "  <PointData>\n";
 	for (auto it = data.pointDataInteger.begin(); it != data.pointDataInteger.end(); ++it) {
@@ -53,6 +53,12 @@ void VTKXML::addData(const DataArrays &data)
 
 	for (auto it = data.pointDataDouble.begin(); it != data.pointDataDouble.end(); ++it) {
 		storePointData(it->first, it->second.first, *it->second.second);
+	}
+
+	for (size_t i = 0; i < solution.size(); i++) {
+		if (solution[i]->eType == ElementType::NODES) {
+			storePointData(solution[i]->name, solution[i]->properties, solution[i]->data);
+		}
 	}
 	(*_os) << "  </PointData>\n";
 
@@ -64,20 +70,6 @@ void VTKXML::addData(const DataArrays &data)
 	for (auto it = data.elementDataDouble.begin(); it != data.elementDataDouble.end(); ++it) {
 		storeCellData(it->first, it->second.first, *it->second.second);
 	}
-	(*_os) << "  </CellData>\n";
-}
-
-void VTKXML::addData(const std::vector<Solution*> &solution)
-{
-	(*_os) << "  <PointData>\n";
-	for (size_t i = 0; i < solution.size(); i++) {
-		if (solution[i]->eType == ElementType::NODES) {
-			storePointData(solution[i]->name, solution[i]->properties, solution[i]->data);
-		}
-	}
-	(*_os) << "  </PointData>\n";
-
-	(*_os) << "  <CellData>\n";
 	for (size_t i = 0; i < solution.size(); i++) {
 		if (solution[i]->eType == ElementType::ELEMENTS) {
 			storeCellData(solution[i]->name, solution[i]->properties, solution[i]->data);

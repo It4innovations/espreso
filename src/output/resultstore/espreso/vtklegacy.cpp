@@ -12,10 +12,10 @@ using namespace espreso::output;
 VTKLegacy::VTKLegacy(const OutputConfiguration &output, const Mesh *mesh, const std::string &path)
 : ResultStore(output, mesh, path)
 {
-	preprocessing();
+
 }
 
-static void storeMesh(std::ofstream &os, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements)
+static void storeMesh(std::ofstream &os, const RegionInfo *regionInfo)
 {
 	os << "# vtk DataFile Version 4.0\n";
 	os << "ESPRESO output\n";
@@ -23,26 +23,26 @@ static void storeMesh(std::ofstream &os, std::vector<double> &coordinates, std::
 	os << "\n";
 
 	os << "DATASET UNSTRUCTURED_GRID\n";
-	os << "POINTS " << coordinates.size() / 3 << " float\n";
+	os << "POINTS " << regionInfo->coordinates.size() / 3 << " float\n";
 
-	for (size_t i = 0; i < coordinates.size(); i += 3) {
-		os << coordinates[i] << " " << coordinates[i + 1] << " " << coordinates[i + 2] << "\n";
+	for (size_t i = 0; i < regionInfo->coordinates.size(); i += 3) {
+		os << regionInfo->coordinates[i] << " " << regionInfo->coordinates[i + 1] << " " << regionInfo->coordinates[i + 2] << "\n";
 	}
 	os << "\n";
 
-	os << "CELLS " << elementsTypes.size() << " " << elementsNodes.size() + elements.size()<< "\n";
-	for (size_t e = 0, offset = 0; e < elementsTypes.size(); offset = elementsNodes[e++]) {
-		os << elementsNodes[e] - offset << " ";
-		for (size_t n = 0; n < elementsNodes[e] - offset; n++) {
-			os << elements[offset + n] << " ";
+	os << "CELLS " << regionInfo->elementsTypes.size() << " " << regionInfo->elementsNodes.size() + regionInfo->elements.size()<< "\n";
+	for (size_t e = 0, offset = 0; e < regionInfo->elementsTypes.size(); offset = regionInfo->elementsNodes[e++]) {
+		os << regionInfo->elementsNodes[e] - offset << " ";
+		for (size_t n = 0; n < regionInfo->elementsNodes[e] - offset; n++) {
+			os << regionInfo->elements[offset + n] << " ";
 		}
 		os << "\n";
 	}
 	os << "\n";
 
-	os << "CELL_TYPES " << elementsTypes.size() << "\n";
-	for (size_t e = 0, p = 0; e < elementsTypes.size(); e++) {
-		os << elementsTypes[e] << "\n";
+	os << "CELL_TYPES " << regionInfo->elementsTypes.size() << "\n";
+	for (size_t e = 0, p = 0; e < regionInfo->elementsTypes.size(); e++) {
+		os << regionInfo->elementsTypes[e] << "\n";
 	}
 	os << "\n";
 }
@@ -59,41 +59,6 @@ static void storeData(std::ofstream &os, const std::vector<Ttype> &data, size_t 
 	os << "\n";
 }
 
-void VTKLegacy::store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const DataArrays &data)
-{
-	std::ofstream os;
-	os.open((name + ".vtk").c_str(), std::ios::out | std::ios::trunc);
-
-	storeMesh(os, coordinates, elementsTypes, elementsNodes, elements);
-
-	os << "CELL_DATA " << elementsTypes.size() << "\n";
-	for (auto it = data.elementDataInteger.begin(); it != data.elementDataInteger.end(); ++it) {
-		os << "SCALARS " << it->first << " int " << it->second.first << "\n";
-		os << "LOOKUP_TABLE default\n";
-		storeData(os, *it->second.second, it->second.first);
-	}
-
-	for (auto it = data.elementDataDouble.begin(); it != data.elementDataDouble.end(); ++it) {
-		os << "SCALARS " << it->first << " int " << it->second.first << "\n";
-		os << "LOOKUP_TABLE default\n";
-		storeData(os, *it->second.second, it->second.first);
-	}
-
-	size_t coordinateSize = coordinates.size() / 3;
-	os << "POINT_DATA " << coordinateSize << "\n";
-	for (auto it = data.pointDataInteger.begin(); it != data.pointDataInteger.end(); ++it) {
-		os << "SCALARS " << it->first << " int " << it->second.first << "\n";
-		os << "LOOKUP_TABLE default\n";
-		storeData(os, *it->second.second, it->second.first);
-	}
-
-	for (auto it = data.pointDataDouble.begin(); it != data.pointDataDouble.end(); ++it) {
-		os << "SCALARS " << it->first << " double " << it->second.first << "\n";
-		os << "LOOKUP_TABLE default\n";
-		storeData(os, *it->second.second, it->second.first);
-	}
-}
-
 template <typename Ttype>
 static void storeData(std::ofstream &os, const std::vector<std::vector<Ttype> > &data, size_t scalarSize)
 {
@@ -108,49 +73,74 @@ static void storeData(std::ofstream &os, const std::vector<std::vector<Ttype> > 
 	os << "\n";
 }
 
-void VTKLegacy::store(const std::string &name, std::vector<double> &coordinates, std::vector<eslocal> &elementsTypes, std::vector<eslocal> &elementsNodes, std::vector<eslocal> &elements, const std::vector<Solution*> &solution)
+void VTKLegacy::store(const std::string &name, const RegionInfo *regionInfo)
 {
 	std::ofstream os;
 	os.open((name + ".vtk").c_str(), std::ios::out | std::ios::trunc);
 
-	storeMesh(os, coordinates, elementsTypes, elementsNodes, elements);
+	storeMesh(os, regionInfo);
 
-	os << "CELL_DATA " << elementsTypes.size() << "\n";
-	for (size_t i = 0; i < solution.size(); i++) {
-		if (solution[i]->eType != ElementType::ELEMENTS) {
-			continue;
-		}
-		size_t scalarSize = 0;
-		for (size_t p = 0; p < solution[i]->data.size(); p++) {
-			scalarSize += solution[i]->data[p].size();
-		}
-		if (scalarSize % elementsTypes.size() != 0) {
-			ESINFO(ERROR) << "ESPRESO internal error: wrong solution elements data size.";
-		}
-		scalarSize /= elementsTypes.size();
-
-		os << "SCALARS " << solution[i]->name << " double " << scalarSize << "\n";
+	os << "CELL_DATA " << regionInfo->elementsTypes.size() << "\n";
+	for (auto it = regionInfo->data.elementDataInteger.begin(); it != regionInfo->data.elementDataInteger.end(); ++it) {
+		os << "SCALARS " << it->first << " int " << it->second.first << "\n";
 		os << "LOOKUP_TABLE default\n";
-		storeData(os, solution[i]->data, scalarSize);
+		storeData(os, *it->second.second, it->second.first);
 	}
 
-	os << "POINT_DATA " << coordinates.size() / 3 << "\n";
-	for (size_t i = 0; i < solution.size(); i++) {
-		if (solution[i]->eType != ElementType::NODES) {
+	for (auto it = regionInfo->data.elementDataDouble.begin(); it != regionInfo->data.elementDataDouble.end(); ++it) {
+		os << "SCALARS " << it->first << " int " << it->second.first << "\n";
+		os << "LOOKUP_TABLE default\n";
+		storeData(os, *it->second.second, it->second.first);
+	}
+
+	for (size_t i = 0; i < regionInfo->solutions.size(); i++) {
+		if (regionInfo->solutions[i]->eType != ElementType::ELEMENTS) {
 			continue;
 		}
 		size_t scalarSize = 0;
-		for (size_t p = 0; p < solution[i]->data.size(); p++) {
-			scalarSize += solution[i]->data[p].size();
+		for (size_t p = 0; p < regionInfo->solutions[i]->data.size(); p++) {
+			scalarSize += regionInfo->solutions[i]->data[p].size();
 		}
-		if (scalarSize % (coordinates.size() / 3) != 0) {
+		if (scalarSize % regionInfo->elementsTypes.size() != 0) {
 			ESINFO(ERROR) << "ESPRESO internal error: wrong solution elements data size.";
 		}
-		scalarSize /= (coordinates.size() / 3);
+		scalarSize /= regionInfo->elementsTypes.size();
 
-		os << "SCALARS " << solution[i]->name << " double " << scalarSize << "\n";
+		os << "SCALARS " << regionInfo->solutions[i]->name << " double " << scalarSize << "\n";
 		os << "LOOKUP_TABLE default\n";
-		storeData(os, solution[i]->data, scalarSize);
+		storeData(os, regionInfo->solutions[i]->data, scalarSize);
+	}
+
+	size_t coordinateSize = regionInfo->coordinates.size() / 3;
+	os << "POINT_DATA " << coordinateSize << "\n";
+	for (auto it = regionInfo->data.pointDataInteger.begin(); it != regionInfo->data.pointDataInteger.end(); ++it) {
+		os << "SCALARS " << it->first << " int " << it->second.first << "\n";
+		os << "LOOKUP_TABLE default\n";
+		storeData(os, *it->second.second, it->second.first);
+	}
+
+	for (auto it = regionInfo->data.pointDataDouble.begin(); it != regionInfo->data.pointDataDouble.end(); ++it) {
+		os << "SCALARS " << it->first << " double " << it->second.first << "\n";
+		os << "LOOKUP_TABLE default\n";
+		storeData(os, *it->second.second, it->second.first);
+	}
+
+	for (size_t i = 0; i < regionInfo->solutions.size(); i++) {
+		if (regionInfo->solutions[i]->eType != ElementType::NODES) {
+			continue;
+		}
+		size_t scalarSize = 0;
+		for (size_t p = 0; p < regionInfo->solutions[i]->data.size(); p++) {
+			scalarSize += regionInfo->solutions[i]->data[p].size();
+		}
+		if (scalarSize % (regionInfo->coordinates.size() / 3) != 0) {
+			ESINFO(ERROR) << "ESPRESO internal error: wrong solution elements data size.";
+		}
+		scalarSize /= (regionInfo->coordinates.size() / 3);
+
+		os << "SCALARS " << regionInfo->solutions[i]->name << " double " << scalarSize << "\n";
+		os << "LOOKUP_TABLE default\n";
+		storeData(os, regionInfo->solutions[i]->data, scalarSize);
 	}
 }
 
