@@ -140,7 +140,6 @@ public:
 	//Destructor
 	virtual ~IterSolverBase() {};
 
-
 	// *** Coarse problem related members
 	void CreateGGt    ( Cluster & cluster ); //, int mpi_rank, int mpi_root, int mpi_size, SparseSolverCPU & GGt );
 	void CreateGGt_inv_dist  ( Cluster & cluster );
@@ -152,18 +151,16 @@ public:
 	void Projector_l_inv_compG_d( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
 
 	// *** Apply A embers - moved to children
-  virtual void apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) =0;
+	virtual void apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) =0;
 
-  // *** Apply preconditioner 
-  virtual void apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out );
+	// *** Apply preconditioner
+	virtual void apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out );
 
 	// *** Public functions
-	void Setup          ( SEQ_VECTOR <double> & parameters , Cluster & cluster_in );
+	void Setup          ( Cluster & cluster_in );
 	void Preprocessing  ( Cluster & cluster );
 
 	void Solve_singular     ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel, SEQ_VECTOR < SEQ_VECTOR <double> > & out_dual_solution_parallel );
-	void Solve_non_singular ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel, SEQ_VECTOR < SEQ_VECTOR <double> > & out_dual_solution_parallel );
-
 
 
 	// *** Power Method - Estimation of maximum eigenvalue of matrix
@@ -186,9 +183,9 @@ public:
 	void Solve_new_CG_singular_dom ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 	void Solve_PipeCG_singular_dom ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 
-	// *** Dynamic solvers
-	void Solve_RegCG_nonsingular  ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel);
-	void Solve_PipeCG_nonsingular ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel);
+//	// *** Dynamic solvers
+//	void Solve_RegCG_nonsingular  ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel);
+//	void Solve_PipeCG_nonsingular ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel);
 
 
 	// *** Functions related to getting solution from the solver

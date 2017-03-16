@@ -673,8 +673,6 @@ for (eslocal d = 0; d < domains.size(); d++) {
 			domains[d].Kplus.MPIrank = environment->MPIrank;
 		}
 
-		domains[d].domain_prim_size = domains[d].Kplus.cols;
-
 		if ( d == 0 && environment->MPIrank == 0) {
 			domains[d].Kplus.msglvl = 0; //Info::report(LIBRARIES) ? 1 : 0;
 		}

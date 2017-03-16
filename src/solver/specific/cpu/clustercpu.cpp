@@ -113,8 +113,6 @@ for (size_t d = 0; d < domains.size(); d++) {
             domains[d].Kplus.MPIrank = environment->MPIrank;
         }
 
-        domains[d].domain_prim_size = domains[d].Kplus.cols;
-
         //TODO: Hot Fix - needs to be done better
         if ( !SYMMETRIC_SYSTEM ) {
             // 11 = Real and unsymmetric matrix
