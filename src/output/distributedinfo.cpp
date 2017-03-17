@@ -37,22 +37,18 @@ static espreso::Point computeClusterCenter(const espreso::Mesh *mesh)
 	return clusterCenter;
 }
 
-DistributedInfo::DistributedInfo(const Mesh *mesh, double domainShrinkRatio, double clusterShrinkRatio)
-: MeshInfo(mesh), _domainShrinkRatio(domainShrinkRatio), _clusterShrinkRatio(clusterShrinkRatio)
+DistributedInfo::DistributedInfo(const Mesh *mesh, double domainShrinkRatio, double clusterShrinkRatio, InfoMode mode)
+: MeshInfo(mesh, mode), _domainShrinkRatio(domainShrinkRatio), _clusterShrinkRatio(clusterShrinkRatio)
 {
-
+	if (_mode | InfoMode::PREPARE) {
+		_domainsCenters = computeDomainsCenters(_mesh);
+		_clusterCenter = computeClusterCenter(_mesh);
+		prepare(_mesh->elements(), 0, _mesh->elements().size());
+	}
 }
 
-DistributedInfo::DistributedInfo(const Mesh *mesh, size_t body, double domainShrinkRatio, double clusterShrinkRatio)
-: MeshInfo(mesh, body), _domainShrinkRatio(domainShrinkRatio), _clusterShrinkRatio(clusterShrinkRatio)
-{
-	_domainsCenters = computeDomainsCenters(_mesh);
-	_clusterCenter = computeClusterCenter(_mesh);
-	prepare(_mesh->elements(), 0, _mesh->elements().size());
-}
-
-DistributedInfo::DistributedInfo(const Mesh *mesh, const Region* region, double domainShrinkRatio, double clusterShrinkRatio)
-: MeshInfo(mesh, region), _domainShrinkRatio(domainShrinkRatio), _clusterShrinkRatio(clusterShrinkRatio)
+DistributedInfo::DistributedInfo(const Mesh *mesh, const Region* region, double domainShrinkRatio, double clusterShrinkRatio, InfoMode mode)
+: MeshInfo(mesh, region, mode), _domainShrinkRatio(domainShrinkRatio), _clusterShrinkRatio(clusterShrinkRatio)
 {
 	_domainsCenters = computeDomainsCenters(_mesh);
 	_clusterCenter = computeClusterCenter(_mesh);
@@ -144,7 +140,7 @@ void DistributedInfo::prepare(const std::vector<Element*> &region, size_t begin,
 
 void DistributedInfo::addGeneralInfo()
 {
-	if (_body == -1) {
+	if (_region == NULL) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: general info can be added only to region with all elements.";
 	}
 

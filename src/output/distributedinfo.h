@@ -13,8 +13,8 @@ namespace output {
 
 struct DistributedInfo: public MeshInfo {
 
-	DistributedInfo(const Mesh *mesh, size_t body, double domainShrinkRatio, double clusterShrinkRatio);
-	DistributedInfo(const Mesh *mesh, const Region* region, double domainShrinkRatio, double clusterShrinkRatio);
+	DistributedInfo(const Mesh *mesh, double domainShrinkRatio, double clusterShrinkRatio, InfoMode mode = InfoMode::PREPARE);
+	DistributedInfo(const Mesh *mesh, const Region* region, double domainShrinkRatio, double clusterShrinkRatio, InfoMode mode = InfoMode::PREPARE);
 
 	MeshInfo* deriveRegion(const Region *region) const;
 	MeshInfo* copyWithoutMesh() const;
@@ -36,7 +36,6 @@ protected:
 	std::vector<Point> _domainsCenters;
 
 private:
-	DistributedInfo(const Mesh *mesh, double domainShrinkRatio, double clusterShrinkRatio);
 	void prepare(const std::vector<Element*> &region, size_t begin, size_t end);
 };
 

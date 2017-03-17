@@ -22,9 +22,15 @@ class MeshInfo {
 	friend class ResultStore;
 
 public:
-	MeshInfo(const Mesh *mesh): _mesh(mesh), _body(-1), _region(NULL) {};
-	MeshInfo(const Mesh *mesh, size_t body): _mesh(mesh), _body(body), _region(NULL) {};
-	MeshInfo(const Mesh *mesh, const Region *region): _mesh(mesh), _body(-1), _region(region) {};
+
+	enum InfoMode: int {
+		PREPARE          = 1 << 0,
+		DIVIDE_BODIES    = 1 << 1,
+		DIVIDE_MATERIALS = 1 << 2
+	};
+
+	MeshInfo(const Mesh *mesh, InfoMode mode): _mesh(mesh), _mode(mode), _region(NULL) {};
+	MeshInfo(const Mesh *mesh, const Region *region, InfoMode mode): _mesh(mesh), _mode(mode), _region(region) {};
 
 	size_t regions() const { return _regions.size(); }
 	const RegionData& region(size_t r) const { return _regions[r]; }
@@ -46,9 +52,9 @@ public:
 
 protected:
 	const Mesh *_mesh;
+	InfoMode _mode;
 
 	std::vector<RegionData> _regions;
-	size_t _body;
 	const Region *_region;
 };
 

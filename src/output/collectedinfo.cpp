@@ -20,22 +20,20 @@
 
 using namespace espreso::output;
 
-CollectedInfo::CollectedInfo(const Mesh *mesh)
-: MeshInfo(mesh)
+CollectedInfo::CollectedInfo(const Mesh *mesh, InfoMode mode)
+: MeshInfo(mesh, mode)
 {
-
+	if (_mode | InfoMode::PREPARE) {
+		prepare(_mesh->elements(), 0, _mesh->elements().size());
+	}
 }
 
-CollectedInfo::CollectedInfo(const Mesh *mesh, size_t body)
-: MeshInfo(mesh, body)
+CollectedInfo::CollectedInfo(const Mesh *mesh, const Region* region, InfoMode mode)
+: MeshInfo(mesh, region, mode)
 {
-	prepare(_mesh->elements(), 0, _mesh->elements().size());
-}
-
-CollectedInfo::CollectedInfo(const Mesh *mesh, const Region* region)
-: MeshInfo(mesh, region)
-{
-	prepare(region->elements(), 0, region->elements().size());
+	if (_mode | InfoMode::PREPARE) {
+		prepare(region->elements(), 0, region->elements().size());
+	}
 }
 
 MeshInfo* CollectedInfo::deriveRegion(const Region *region) const
@@ -52,6 +50,7 @@ MeshInfo* CollectedInfo::copyWithoutMesh() const
 
 void CollectedInfo::prepare(const std::vector<Element*> &region, size_t begin, size_t end)
 {
+	std::cout << "prepare\n";
 	size_t threads = environment->OMP_NUM_THREADS;
 	_regions.push_back(RegionData());
 
@@ -275,7 +274,7 @@ void CollectedInfo::addSettings(size_t step)
 
 void CollectedInfo::addSolution(const std::vector<Solution*> &solution)
 {
-	if (_body == -1 && _region == NULL) {
+	if (_region != NULL) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: cannot store solution.";
 	}
 
@@ -285,8 +284,7 @@ void CollectedInfo::addSolution(const std::vector<Solution*> &solution)
 		const std::vector<Element*> *elements = NULL;
 		if (_region != NULL) {
 			elements = &_region->elements();
-		}
-		if (_body != -1) {
+		} else {
 			switch (solution[i]->eType) {
 			case ElementType::ELEMENTS:
 				elements = &_mesh->elements();

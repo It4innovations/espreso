@@ -32,9 +32,9 @@ ResultStore::ResultStore(const OutputConfiguration &output, const Mesh *mesh, co
 : Store(output), _mesh(mesh), _path(path)
 {
 	if (_configuration.collected) {
-		_meshInfo = new CollectedInfo(_mesh, (size_t)0);
+		_meshInfo = new CollectedInfo(_mesh);
 	} else {
-		_meshInfo = new DistributedInfo(_mesh, (size_t)0, _configuration.domain_shrink_ratio, _configuration.cluster_shrink_ratio);
+		_meshInfo = new DistributedInfo(_mesh, _configuration.domain_shrink_ratio, _configuration.cluster_shrink_ratio);
 	}
 }
 

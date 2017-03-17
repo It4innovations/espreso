@@ -13,8 +13,8 @@ namespace output {
 
 struct CollectedInfo: public MeshInfo {
 
-	CollectedInfo(const Mesh *mesh, size_t body);
-	CollectedInfo(const Mesh *mesh, const Region* region);
+	CollectedInfo(const Mesh *mesh, InfoMode mode = InfoMode::PREPARE);
+	CollectedInfo(const Mesh *mesh, const Region* region, InfoMode mode = InfoMode::PREPARE);
 
 	MeshInfo* deriveRegion(const Region *region) const;
 	MeshInfo* copyWithoutMesh() const;
@@ -34,7 +34,6 @@ protected:
 	std::vector<esglobal> _globalIDsMultiplicity;
 
 private:
-	CollectedInfo(const Mesh *mesh);
 	void prepare(const std::vector<Element*> &region, size_t begin, size_t end);
 
 };
