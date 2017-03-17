@@ -45,7 +45,9 @@ MeshInfo* CollectedInfo::deriveRegion(const Region *region) const
 
 MeshInfo* CollectedInfo::copyWithoutMesh() const
 {
-	return new CollectedInfo(_mesh);
+	CollectedInfo* copy = new CollectedInfo(_mesh);
+	copy->_regions.push_back(RegionData());
+	return copy;
 }
 
 void CollectedInfo::prepare(const std::vector<Element*> &region, size_t begin, size_t end)
