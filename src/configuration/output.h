@@ -33,7 +33,10 @@ struct OutputConfiguration: public Configuration {
 	PARAMETER(bool, catalyst, "Allow live visualization", false);
 	PARAMETER(size_t, sleep, "Sleep interval between consecutive time step visialization", 0);
 
-	PARAMETER(bool  , collected             , "Gather results from all processes to one file."                               , false);
+	PARAMETER(bool  , collected             , "Gather results from all processes to one file." , false);
+	PARAMETER(bool  , separate_bodies       , "Store mesh bodies to separated files."          , true);
+	PARAMETER(bool  , separate_materials    , "Store mesh material to separated files."        , false);
+
 	PARAMETER(double, domain_shrink_ratio   , "All domains are shrunk by this ratio (effective only for COLLECTED=FALSE)."   , .95);
 	PARAMETER(double, cluster_shrink_ratio  , "All clusters are shrunk by this ratio (effective only for COLLECTED=FALSE)."  , .9);
 };
