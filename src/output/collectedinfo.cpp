@@ -50,7 +50,6 @@ MeshInfo* CollectedInfo::copyWithoutMesh() const
 
 void CollectedInfo::prepare(const std::vector<Element*> &region, size_t begin, size_t end)
 {
-	std::cout << "prepare\n";
 	size_t threads = environment->OMP_NUM_THREADS;
 	_regions.push_back(RegionData());
 

@@ -20,15 +20,15 @@ public:
 protected:
 	VTKXML(const OutputConfiguration &output, const Mesh *mesh, const std::string &path);
 
-	virtual void store(const std::string &name, const RegionData &regionData);
+	virtual std::string store(const std::string &name, const RegionData &regionData);
 
-	virtual void initWriter(const std::string &name, size_t points, size_t cells);
+	virtual std::string initWriter(const std::string &name, size_t points, size_t cells);
 	virtual void addMesh(const RegionData &regionData);
 	virtual void addData(const DataArrays &data, const std::vector<Solution*> &solution);
 	virtual void finalizeWriter();
 
-	virtual void linkClusters(const std::string &root, const std::string &name, const RegionData &regionData);
-	virtual void linkSteps(const std::string &name, const std::vector<std::pair<std::string, Step> > &steps);
+	virtual std::string linkClusters(const std::string &root, const std::string &name, const RegionData &regionData);
+	virtual void linkSteps(const std::string &name, const std::vector<std::pair<Step, std::vector<std::string> > > &steps);
 
 	virtual std::string format() =0;
 	virtual void storePointData(const std::string &name, size_t components, const std::vector<std::vector<int> > &data) =0;

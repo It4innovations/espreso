@@ -11,15 +11,16 @@
 
 using namespace espreso::output;
 
-void VTKXML::store(const std::string &name, const RegionData &regionData)
+std::string VTKXML::store(const std::string &name, const RegionData &regionData)
 {
-	initWriter(name, regionData.coordinates.size() / 3, regionData.elementsTypes.size());
+	std::string file = initWriter(name, regionData.coordinates.size() / 3, regionData.elementsTypes.size());
 	addMesh(regionData);
 	addData(regionData.data, regionData.solutions);
 	finalizeWriter();
+	return file;
 }
 
-void VTKXML::linkClusters(const std::string &root, const std::string &name, const RegionData &regionData)
+std::string VTKXML::linkClusters(const std::string &root, const std::string &name, const RegionData &regionData)
 {
 	std::ofstream os;
 
@@ -74,13 +75,13 @@ void VTKXML::linkClusters(const std::string &root, const std::string &name, cons
 	}
 	os << "  </PUnstructuredGrid>\n";
 	os << "</VTKFile>\n";
+
+	return root + name + ".pvtu";
 }
 
-void VTKXML::linkSteps(const std::string &name, const std::vector<std::pair<std::string, Step> > &steps)
+void VTKXML::linkSteps(const std::string &name, const std::vector<std::pair<Step, std::vector<std::string> > > &steps)
 {
 	std::ofstream os;
-
-	std::string ext = _configuration.collected ? ".vtu" : ".pvtu";
 
 	os.open(name + ".pvd", std::ios::out | std::ios::trunc);
 
@@ -88,7 +89,9 @@ void VTKXML::linkSteps(const std::string &name, const std::vector<std::pair<std:
 	os << "<VTKFile type=\"Collection\" version=\"0.1\" byte_order=\"LittleEndian\">\n";
 	os << "<Collection>\n";
 	for (size_t i = 0; i < steps.size(); i++) {
-		os << "  <DataSet timestep=\"" << steps[i].second.currentTime << "\" file=\"" << steps[i].first << name << ext << "\"/>\n";
+		for (size_t j = 0; j < steps[i].second.size(); j++) {
+			os << "  <DataSet timestep=\"" << steps[i].first.currentTime << "\" file=\"" << steps[i].second[j] << "\"/>\n";
+		}
 	}
 	os << "</Collection>\n";
 	os << "</VTKFile>\n";

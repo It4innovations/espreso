@@ -23,7 +23,7 @@ VTKXML::~VTKXML()
 
 }
 
-void VTKXML::initWriter(const std::string &name, size_t points, size_t cells)
+std::string VTKXML::initWriter(const std::string &name, size_t points, size_t cells)
 {
 	_os = new std::ofstream();
 	_os->open((name + ".vtu").c_str(), std::ios::out | std::ios::trunc);
@@ -31,6 +31,7 @@ void VTKXML::initWriter(const std::string &name, size_t points, size_t cells)
 	(*_os) << "<VTKFile type=\"UnstructuredGrid\" version=\"0.1\" byte_order=\"LittleEndian\" header_type=\"UInt32\">\n";
 	(*_os) << "<UnstructuredGrid>\n";
 	(*_os) << "<Piece NumberOfPoints=\"" << points << "\" NumberOfCells=\"" << cells << "\">\n";
+	return name + ".vtu";
 }
 
 void VTKXML::addMesh(const RegionData &regionData)

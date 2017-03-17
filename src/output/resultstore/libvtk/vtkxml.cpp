@@ -26,11 +26,12 @@ VTKXML::~VTKXML()
 
 }
 
-void VTKXML::initWriter(const std::string &name, size_t points, size_t cells)
+std::string VTKXML::initWriter(const std::string &name, size_t points, size_t cells)
 {
 	_VTKGrid = vtkUnstructuredGrid::New();
 	_writer->SetFileName((name + ".vtu").c_str());
 	_writer->SetInputData(_VTKGrid);
+	return name + ".vtu";
 }
 
 void VTKXML::addMesh(const RegionData &regionData)

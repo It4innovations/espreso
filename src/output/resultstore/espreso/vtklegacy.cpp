@@ -75,7 +75,7 @@ static void storeData(std::ofstream &os, const std::vector<std::vector<Ttype> > 
 	os << "\n";
 }
 
-void VTKLegacy::store(const std::string &name, const RegionData &regionData)
+std::string VTKLegacy::store(const std::string &name, const RegionData &regionData)
 {
 	std::ofstream os;
 	os.open((name + ".vtk").c_str(), std::ios::out | std::ios::trunc);
@@ -144,6 +144,8 @@ void VTKLegacy::store(const std::string &name, const RegionData &regionData)
 		os << "LOOKUP_TABLE default\n";
 		storeData(os, regionData.solutions[i]->data, scalarSize);
 	}
+
+	return name + ".vtk";
 }
 
 

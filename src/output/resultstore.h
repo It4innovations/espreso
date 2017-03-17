@@ -43,19 +43,19 @@ public:
 protected:
 	ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path);
 
-	virtual void store(const std::string &name, const RegionData &regionData) =0;
+	virtual std::string store(const std::string &name, const RegionData &regionData) =0;
 
-	virtual void linkClusters(const std::string &root, const std::string &name, const RegionData &regionData) =0;
-	virtual void linkSteps(const std::string &name, const std::vector<std::pair<std::string, Step> > &steps) =0;
+	virtual std::string linkClusters(const std::string &root, const std::string &name, const RegionData &regionData) =0;
+	virtual void linkSteps(const std::string &name, const std::vector<std::pair<Step, std::vector<std::string> > > &steps) =0;
 
 	const Mesh *_mesh;
 	std::string _path;
 
 	MeshInfo* _meshInfo;
-	std::vector<std::pair<std::string, Step> > _steps;
+	std::vector<std::pair<Step, std::vector<std::string>> > _steps;
 
 private:
-	std::string store(const std::string &name, const Step &step, const MeshInfo *meshInfo);
+	std::vector<std::string> store(const std::string &name, const Step &step, const MeshInfo *meshInfo);
 
 	void storeElementInfo(const Step &step);
 	void storeFixPoints(const Step &step);

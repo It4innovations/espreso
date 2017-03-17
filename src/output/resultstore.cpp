@@ -43,23 +43,29 @@ ResultStore::~ResultStore()
 	delete _meshInfo;
 }
 
-std::string ResultStore::store(const std::string &name, const Step &step, const MeshInfo *meshInfo)
+std::vector<std::string> ResultStore::store(const std::string &name, const Step &step, const MeshInfo *meshInfo)
 {
 	std::string root = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep) });
+	std::vector<std::string> files;
 
 	if (meshInfo->distributed()) {
 		std::string prefix = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), std::to_string(environment->MPIrank) });
-		store(prefix + name, meshInfo->_regions[0]);
-		if (!environment->MPIrank) {
-			linkClusters(root, name, meshInfo->_regions[0]);
+		for (size_t r = 0; r < meshInfo->regions(); r++) {
+			store(prefix + name + std::to_string(r), meshInfo->region(r));
+			if (!environment->MPIrank) {
+				files.push_back(linkClusters(root, name + std::to_string(r), meshInfo->region(r)));
+			}
 		}
 
 	} else {
 		if (!environment->MPIrank) {
-			store(root + name, meshInfo->_regions[0]);
+			for (size_t r = 0; r < meshInfo->regions(); r++) {
+				files.push_back(store(root + name + std::to_string(r), meshInfo->region(r)));
+			}
 		}
 	}
-	return root;
+
+	return files;
 }
 
 void ResultStore::storeSettings(const Step &step)
@@ -78,14 +84,12 @@ void ResultStore::storeSettings(const std::vector<size_t> &steps)
 {
 	Step step;
 
-	for (size_t b = 0; b < _mesh->bodies(); b++) {
-		for (size_t i = 0; i < steps.size(); i++) {
-			step.step = steps[i];
+	for (size_t i = 0; i < steps.size(); i++) {
+		step.step = steps[i];
 
-			_meshInfo->addSettings(i);
-			store("body" + std::to_string(b), step, _meshInfo);
-			_meshInfo->clearData();
-		}
+		_meshInfo->addSettings(i);
+		store("mesh", step, _meshInfo);
+		_meshInfo->clearData();
 	}
 
 	MeshInfo *region;
@@ -120,27 +124,25 @@ void ResultStore::storeValues(const std::string &name, size_t dimension, const s
 	storeSolution(step, solution);
 	delete solution.back();
 	if (!environment->MPIrank) {
-		linkSteps("solution0", _steps);
+		linkSteps("solution", _steps);
 	}
 	_steps.clear();
 }
 
 void ResultStore::storeSolution(const Step &step, const std::vector<Solution*> &solution)
 {
-	std::string file;
-	for (size_t b = 0; b < _mesh->bodies(); b++) {
-		_meshInfo->addSolution(solution);
-		file = store("solution" + std::to_string(b), step, _meshInfo);
-		_meshInfo->clearData();
-	}
+	std::vector<std::string> files;
+	_meshInfo->addSolution(solution);
+	files = store("solution", step, _meshInfo);
+	_meshInfo->clearData();
 
-	_steps.push_back(std::make_pair(file, step));
+	_steps.push_back(std::make_pair(step, files));
 }
 
 void ResultStore::finalize()
 {
 	if (!environment->MPIrank && _steps.size()) {
-		linkSteps("solution0", _steps);
+		linkSteps("solution", _steps);
 	}
 }
 
@@ -156,11 +158,9 @@ void ResultStore::storeFETIData(const Step &step, const Instance &instance)
 
 void ResultStore::storeElementInfo(const Step &step)
 {
-	for (size_t b = 0; b < _mesh->bodies(); b++) {
-		_meshInfo->addGeneralInfo();
-		store("mesh_info", step, _meshInfo);
-		_meshInfo->clearData();
-	}
+	_meshInfo->addGeneralInfo();
+	store("mesh_info", step, _meshInfo);
+	_meshInfo->clearData();
 }
 
 void ResultStore::storeFixPoints(const Step &step)
