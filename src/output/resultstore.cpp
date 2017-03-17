@@ -199,7 +199,7 @@ void ResultStore::storeDirichlet(const Step &step, const Instance &instance)
 		Point point;
 
 		for (size_t d = 0; d < instance.domains; d++) {
-			for (size_t i = 0; instance.B1[d].I_row_indices[i] <= instance.block[Instance::CONSTRAINT::DIRICHLET]; i++) {
+			for (size_t i = 0; i < instance.B1[d].I_row_indices.size() && instance.B1[d].I_row_indices[i] <= instance.block[Instance::CONSTRAINT::DIRICHLET]; i++) {
 				const Element *e = _mesh->getDOFsElement(d, instance.B1[d].J_col_indices[i] - 1);
 				point = _meshInfo->shrink(_mesh->coordinates()[e->node(0)], d);
 				info->_regions[0].coordinates.insert(info->_regions[0].coordinates.end(), { point.x, point.y, point.z });
