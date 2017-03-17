@@ -31,36 +31,32 @@ using namespace espreso::output;
 ResultStore::ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path)
 : Store(output), _mesh(mesh), _path(path)
 {
-	for (size_t b = 0; b < _mesh->bodies(); b++) {
-		if (_configuration.collected) {
-			_bodies.push_back(new CollectedInfo(_mesh, b));
-		} else {
-			_bodies.push_back(new DistributedInfo(_mesh, b, _configuration.domain_shrink_ratio, _configuration.cluster_shrink_ratio));
-		}
+	if (_configuration.collected) {
+		_meshInfo = new CollectedInfo(_mesh, (size_t)0);
+	} else {
+		_meshInfo = new DistributedInfo(_mesh, (size_t)0, _configuration.domain_shrink_ratio, _configuration.cluster_shrink_ratio);
 	}
 }
 
 ResultStore::~ResultStore()
 {
-	for (size_t b = 0; b < _mesh->bodies(); b++) {
-		delete _bodies[b];
-	}
+	delete _meshInfo;
 }
 
-std::string ResultStore::store(const std::string &name, const Step &step, const MeshInfo *regionInfo)
+std::string ResultStore::store(const std::string &name, const Step &step, const MeshInfo *meshInfo)
 {
 	std::string root = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep) });
 
-	if (regionInfo->distributed()) {
+	if (meshInfo->distributed()) {
 		std::string prefix = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), std::to_string(environment->MPIrank) });
-		store(prefix + name, regionInfo);
+		store(prefix + name, meshInfo->_regions[0]);
 		if (!environment->MPIrank) {
-			linkClusters(root, name, regionInfo);
+			linkClusters(root, name, meshInfo->_regions[0]);
 		}
 
 	} else {
 		if (!environment->MPIrank) {
-			store(root + name, regionInfo);
+			store(root + name, meshInfo->_regions[0]);
 		}
 	}
 	return root;
@@ -86,15 +82,15 @@ void ResultStore::storeSettings(const std::vector<size_t> &steps)
 		for (size_t i = 0; i < steps.size(); i++) {
 			step.step = steps[i];
 
-			_bodies[b]->addSettings(i);
-			store("body" + std::to_string(b), step, _bodies[b]);
-			_bodies[b]->clearData();
+			_meshInfo->addSettings(i);
+			store("body" + std::to_string(b), step, _meshInfo);
+			_meshInfo->clearData();
 		}
 	}
 
 	MeshInfo *region;
 	for (size_t r = 2; r < _mesh->regions().size(); r++) {
-		region = _bodies[0]->deriveRegion(_mesh->regions()[r]);
+		region = _meshInfo->deriveRegion(_mesh->regions()[r]);
 		for (size_t i = 0; i < steps.size(); i++) {
 			step.step = steps[i];
 
@@ -133,9 +129,9 @@ void ResultStore::storeSolution(const Step &step, const std::vector<Solution*> &
 {
 	std::string file;
 	for (size_t b = 0; b < _mesh->bodies(); b++) {
-		_bodies[b]->addSolution(solution);
-		file = store("solution" + std::to_string(b), step, _bodies[b]);
-		_bodies[b]->clearData();
+		_meshInfo->addSolution(solution);
+		file = store("solution" + std::to_string(b), step, _meshInfo);
+		_meshInfo->clearData();
 	}
 
 	_steps.push_back(std::make_pair(file, step));
@@ -161,9 +157,9 @@ void ResultStore::storeFETIData(const Step &step, const Instance &instance)
 void ResultStore::storeElementInfo(const Step &step)
 {
 	for (size_t b = 0; b < _mesh->bodies(); b++) {
-		_bodies[b]->addGeneralInfo();
-		store("mesh_info", step, _bodies[b]);
-		_bodies[b]->clearData();
+		_meshInfo->addGeneralInfo();
+		store("mesh_info", step, _meshInfo);
+		_meshInfo->clearData();
 	}
 }
 
@@ -179,7 +175,7 @@ void ResultStore::storeFixPoints(const Step &step)
 
 	Region region(fixPoints);
 
-	MeshInfo *info = _bodies[0]->deriveRegion(&region);
+	MeshInfo *info = _meshInfo->deriveRegion(&region);
 	store("fix_points", step, info);
 	delete info;
 }
@@ -190,14 +186,14 @@ void ResultStore::storeCorners(const Step &step)
 
 	Region region(corners);
 
-	MeshInfo *info = _bodies[0]->deriveRegion(&region);
+	MeshInfo *info = _meshInfo->deriveRegion(&region);
 	store("corners", step, info);
 	delete info;
 }
 
 void ResultStore::storeDirichlet(const Step &step, const Instance &instance)
 {
-	MeshInfo *info = _bodies[0]->copyWithoutMesh();
+	MeshInfo *info = _meshInfo->copyWithoutMesh();
 	for (size_t p = 0; p < instance.properties.size(); p++) {
 		std::vector<double> *values = new std::vector<double>();
 		Point point;
@@ -205,20 +201,20 @@ void ResultStore::storeDirichlet(const Step &step, const Instance &instance)
 		for (size_t d = 0; d < instance.domains; d++) {
 			for (size_t i = 0; instance.B1[d].I_row_indices[i] <= instance.block[Instance::CONSTRAINT::DIRICHLET]; i++) {
 				const Element *e = _mesh->getDOFsElement(d, instance.B1[d].J_col_indices[i] - 1);
-				point = _bodies[0]->shrink(_mesh->coordinates()[e->node(0)], d);
-				info->coordinates.insert(info->coordinates.end(), { point.x, point.y, point.z });
+				point = _meshInfo->shrink(_mesh->coordinates()[e->node(0)], d);
+				info->_regions[0].coordinates.insert(info->_regions[0].coordinates.end(), { point.x, point.y, point.z });
 				values->push_back(instance.B1c[d][i]);
 			}
 		}
 
-		info->elementsTypes.resize(values->size(), NodeVTKCode);
-		info->elementsNodes.resize(values->size());
-		info->elements.resize(values->size());
-		std::iota(info->elementsNodes.begin(), info->elementsNodes.end(), 1);
-		std::iota(info->elements.begin(), info->elements.end(), 0);
+		info->_regions[0].elementsTypes.resize(values->size(), NodeVTKCode);
+		info->_regions[0].elementsNodes.resize(values->size());
+		info->_regions[0].elements.resize(values->size());
+		std::iota(info->_regions[0].elementsNodes.begin(), info->_regions[0].elementsNodes.end(), 1);
+		std::iota(info->_regions[0].elements.begin(), info->_regions[0].elements.end(), 0);
 		std::stringstream ss;
 		ss << instance.properties[p];
-		info->data.pointDataDouble[ss.str()] = std::make_pair(1, values);
+		info->_regions[0].data.pointDataDouble[ss.str()] = std::make_pair(1, values);
 		store("DIRICHLET_" + ss.str(), step, info);
 		info->clearData();
 	}
@@ -227,11 +223,11 @@ void ResultStore::storeDirichlet(const Step &step, const Instance &instance)
 
 void ResultStore::storeLambdas(const Step &step, const Instance &instance)
 {
-	if (!_bodies[0]->distributed()) {
+	if (!_meshInfo->distributed()) {
 		// it is pointless to store lambdas for collected result
 		return;
 	}
-	MeshInfo *info = _bodies[0]->copyWithoutMesh();
+	MeshInfo *info = _meshInfo->copyWithoutMesh();
 
 	std::vector<int> neighbours(environment->MPIsize);
 	std::iota(neighbours.begin(), neighbours.end(), 0);
@@ -252,15 +248,15 @@ void ResultStore::storeLambdas(const Step &step, const Instance &instance)
 
 	std::vector<double> duplicity(lMap.size()), *values = new std::vector<double>(lMap.size());
 
-	info->coordinates.resize(6 * lMap.size());
-	info->elementsTypes.resize(lMap.size(), -1);
-	info->elementsNodes.reserve(lMap.size());
-	info->elements.reserve(2 * lMap.size());
+	info->_regions[0].coordinates.resize(6 * lMap.size());
+	info->_regions[0].elementsTypes.resize(lMap.size(), -1);
+	info->_regions[0].elementsNodes.reserve(lMap.size());
+	info->_regions[0].elements.reserve(2 * lMap.size());
 
 	for (size_t i = 0; i < lMap.size(); i++) {
-		info->elementsNodes.push_back(2 * i + 2);
-		info->elements.push_back(2 * i);
-		info->elements.push_back(2 * i + 1);
+		info->_regions[0].elementsNodes.push_back(2 * i + 2);
+		info->_regions[0].elements.push_back(2 * i);
+		info->_regions[0].elements.push_back(2 * i + 1);
 	}
 
 	auto lIndex = [&] (esglobal lambda) {
@@ -290,16 +286,16 @@ void ResultStore::storeLambdas(const Step &step, const Instance &instance)
 			size_t index = lIndex(it->front());
 			for (size_t c = 1; c < it->size(); c++) {
 				if ((*it)[c] == environment->MPIrank) {
-					if (info->elementsTypes[index] != -1) {
+					if (info->_regions[0].elementsTypes[index] != -1) {
 						index++;
 						if (lMap[index].first != it->front()) {
 							ESINFO(ERROR) << "Broken B1.";
 						}
 					}
-					info->elementsTypes[index] = Line2VTKCode;
-					info->coordinates[6 * index + 0] = point.x;
-					info->coordinates[6 * index + 1] = point.y;
-					info->coordinates[6 * index + 2] = point.z;
+					info->_regions[0].elementsTypes[index] = Line2VTKCode;
+					info->_regions[0].coordinates[6 * index + 0] = point.x;
+					info->_regions[0].coordinates[6 * index + 1] = point.y;
+					info->_regions[0].coordinates[6 * index + 2] = point.z;
 					(*values)[index] = instance.B1[d].V_values[i];
 					duplicity[index] = instance.B1duplicity[d][i];
 				} else {
@@ -336,39 +332,39 @@ void ResultStore::storeLambdas(const Step &step, const Instance &instance)
 				if (index == rLambdas[(*it)[c]].size() || rLambdas[(*it)[c]][index] != it->front()) {
 					ESINFO(ERROR) << "Different Lambdas on neighbour clusters.";
 				}
-				info->coordinates[6 * lindex + 3] = rPoints[(*it)[c]][index].x;
-				info->coordinates[6 * lindex + 4] = rPoints[(*it)[c]][index].y;
-				info->coordinates[6 * lindex + 5] = rPoints[(*it)[c]][index].z;
+				info->_regions[0].coordinates[6 * lindex + 3] = rPoints[(*it)[c]][index].x;
+				info->_regions[0].coordinates[6 * lindex + 4] = rPoints[(*it)[c]][index].y;
+				info->_regions[0].coordinates[6 * lindex + 5] = rPoints[(*it)[c]][index].z;
 			}
 		}
 	}
 
 	for (size_t i = 0; i < lMap.size(); i++) {
 		if (i + 1 < lMap.size() && lMap[i].first == lMap[i + 1].first) {
-			Point a(info->coordinates[6 * (i + 0) + 0], info->coordinates[6 * (i + 0) + 1], info->coordinates[6 * (i + 0) + 2]);
-			Point b(info->coordinates[6 * (i + 1) + 0], info->coordinates[6 * (i + 1) + 1], info->coordinates[6 * (i + 1) + 2]);
+			Point a(info->_regions[0].coordinates[6 * (i + 0) + 0], info->_regions[0].coordinates[6 * (i + 0) + 1], info->_regions[0].coordinates[6 * (i + 0) + 2]);
+			Point b(info->_regions[0].coordinates[6 * (i + 1) + 0], info->_regions[0].coordinates[6 * (i + 1) + 1], info->_regions[0].coordinates[6 * (i + 1) + 2]);
 			Point length = b - a;
 			Point ax = a + length * duplicity[i];
 			Point bx = b - length * duplicity[i + 1];
-			info->coordinates[6 * (i + 0) + 3] = ax.x;
-			info->coordinates[6 * (i + 0) + 4] = ax.y;
-			info->coordinates[6 * (i + 0) + 5] = ax.z;
-			info->coordinates[6 * (i + 1) + 3] = bx.x;
-			info->coordinates[6 * (i + 1) + 4] = bx.y;
-			info->coordinates[6 * (i + 1) + 5] = bx.z;
+			info->_regions[0].coordinates[6 * (i + 0) + 3] = ax.x;
+			info->_regions[0].coordinates[6 * (i + 0) + 4] = ax.y;
+			info->_regions[0].coordinates[6 * (i + 0) + 5] = ax.z;
+			info->_regions[0].coordinates[6 * (i + 1) + 3] = bx.x;
+			info->_regions[0].coordinates[6 * (i + 1) + 4] = bx.y;
+			info->_regions[0].coordinates[6 * (i + 1) + 5] = bx.z;
 			i++;
 		} else {
-			Point a(info->coordinates[6 * (i + 0) + 0], info->coordinates[6 * (i + 0) + 1], info->coordinates[6 * (i + 0) + 2]);
-			Point b(info->coordinates[6 * (i + 0) + 3], info->coordinates[6 * (i + 0) + 4], info->coordinates[6 * (i + 0) + 5]);
+			Point a(info->_regions[0].coordinates[6 * (i + 0) + 0], info->_regions[0].coordinates[6 * (i + 0) + 1], info->_regions[0].coordinates[6 * (i + 0) + 2]);
+			Point b(info->_regions[0].coordinates[6 * (i + 0) + 3], info->_regions[0].coordinates[6 * (i + 0) + 4], info->_regions[0].coordinates[6 * (i + 0) + 5]);
 			Point length = b - a;
 			Point ax = a + length * duplicity[i];
-			info->coordinates[6 * (i + 0) + 3] = ax.x;
-			info->coordinates[6 * (i + 0) + 4] = ax.y;
-			info->coordinates[6 * (i + 0) + 5] = ax.z;
+			info->_regions[0].coordinates[6 * (i + 0) + 3] = ax.x;
+			info->_regions[0].coordinates[6 * (i + 0) + 4] = ax.y;
+			info->_regions[0].coordinates[6 * (i + 0) + 5] = ax.z;
 		}
 	}
 
-	info->data.elementDataDouble["values"] = std::make_pair(1, values);
+	info->_regions[0].data.elementDataDouble["values"] = std::make_pair(1, values);
 	store("EQUALITY_CONSTRAINTS", step, info);
 	delete info;
 }

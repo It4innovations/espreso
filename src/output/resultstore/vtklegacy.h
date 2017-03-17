@@ -5,7 +5,6 @@
 #include "../resultstore.h"
 
 namespace espreso {
-
 namespace output {
 
 class VTKLegacy: public ResultStore {
@@ -15,10 +14,10 @@ public:
 	virtual ~VTKLegacy() {};
 
 protected:
-	virtual void store(const std::string &name, const MeshInfo *regionInfo);
+	virtual void store(const std::string &name, const RegionData &regionData);
 
 	// Legacy format cannot be linked
-	virtual void linkClusters(const std::string &root, const std::string &name, const MeshInfo* regionInfo) {};
+	virtual void linkClusters(const std::string &root, const std::string &name, const RegionData &regionData) {};
 
 	virtual void linkSteps(const std::string &name, const std::vector<std::pair<std::string, Step> > &steps) {};
 };

@@ -6,29 +6,28 @@
 #include <map>
 #include <string>
 
+#include "regiondata.h"
+
 namespace espreso {
 
 class Mesh;
-class Element;
 struct Region;
 struct Solution;
 struct Point;
 
 namespace output {
 
-struct DataArrays {
-	std::map<std::string, std::pair<size_t, std::vector<eslocal>* > > pointDataInteger, elementDataInteger;
-	std::map<std::string, std::pair<size_t, std::vector<double>* > > pointDataDouble, elementDataDouble;
+class MeshInfo {
 
-	void clear();
-	~DataArrays();
-};
+	friend class ResultStore;
 
-struct MeshInfo {
-
+public:
 	MeshInfo(const Mesh *mesh): _mesh(mesh), _body(-1), _region(NULL) {};
 	MeshInfo(const Mesh *mesh, size_t body): _mesh(mesh), _body(body), _region(NULL) {};
 	MeshInfo(const Mesh *mesh, const Region *region): _mesh(mesh), _body(-1), _region(region) {};
+
+	size_t regions() const { return _regions.size(); }
+	const RegionData& region(size_t r) const { return _regions[r]; }
 
 	virtual MeshInfo* deriveRegion(const Region *region) const =0;
 	virtual MeshInfo* copyWithoutMesh() const =0;
@@ -45,16 +44,10 @@ struct MeshInfo {
 	virtual bool distributed() const =0;
 	virtual Point shrink(const Point &p, eslocal domain) const =0;
 
-	std::vector<double> coordinates; // x1, y1, z1, x2, y2, z2, ...
-	std::vector<eslocal> elementsTypes;  // code1, code2, ...
-	std::vector<eslocal> elementsNodes;  // nodes1, nodes2, ...
-	std::vector<eslocal> elements;  // n11, n12, n13, ..., n21, n22, n23, ...
-
-	DataArrays data;
-	std::vector<Solution*> solutions;
-
 protected:
 	const Mesh *_mesh;
+
+	std::vector<RegionData> _regions;
 	size_t _body;
 	const Region *_region;
 };

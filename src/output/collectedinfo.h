@@ -6,6 +6,9 @@
 #include "meshinfo.h"
 
 namespace espreso {
+
+class Element;
+
 namespace output {
 
 struct CollectedInfo: public MeshInfo {

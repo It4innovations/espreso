@@ -6,6 +6,9 @@
 #include "meshinfo.h"
 
 namespace espreso {
+
+class Element;
+
 namespace output {
 
 struct DistributedInfo: public MeshInfo {
@@ -15,8 +18,6 @@ struct DistributedInfo: public MeshInfo {
 
 	MeshInfo* deriveRegion(const Region *region) const;
 	MeshInfo* copyWithoutMesh() const;
-
-	void prepare(const std::vector<Element*> &region, size_t begin, size_t end);
 
 	void addSettings(size_t step);
 	void addSolution(const std::vector<Solution*> &solution);
@@ -36,6 +37,7 @@ protected:
 
 private:
 	DistributedInfo(const Mesh *mesh, double domainShrinkRatio, double clusterShrinkRatio);
+	void prepare(const std::vector<Element*> &region, size_t begin, size_t end);
 };
 
 }

@@ -3,6 +3,8 @@
 
 #include <fstream>
 
+#include "../../regiondata.h"
+
 #include "../../../mesh/structures/elementtypes.h"
 #include "../../../assembler/solution.h"
 #include "../../../basis/logging/logging.h"
@@ -15,7 +17,7 @@ VTKLegacy::VTKLegacy(const OutputConfiguration &output, const Mesh *mesh, const 
 
 }
 
-static void storeMesh(std::ofstream &os, const MeshInfo *regionInfo)
+static void storeMesh(std::ofstream &os, const espreso::output::RegionData &regionData)
 {
 	os << "# vtk DataFile Version 4.0\n";
 	os << "ESPRESO output\n";
@@ -23,26 +25,26 @@ static void storeMesh(std::ofstream &os, const MeshInfo *regionInfo)
 	os << "\n";
 
 	os << "DATASET UNSTRUCTURED_GRID\n";
-	os << "POINTS " << regionInfo->coordinates.size() / 3 << " float\n";
+	os << "POINTS " << regionData.coordinates.size() / 3 << " float\n";
 
-	for (size_t i = 0; i < regionInfo->coordinates.size(); i += 3) {
-		os << regionInfo->coordinates[i] << " " << regionInfo->coordinates[i + 1] << " " << regionInfo->coordinates[i + 2] << "\n";
+	for (size_t i = 0; i < regionData.coordinates.size(); i += 3) {
+		os << regionData.coordinates[i] << " " << regionData.coordinates[i + 1] << " " << regionData.coordinates[i + 2] << "\n";
 	}
 	os << "\n";
 
-	os << "CELLS " << regionInfo->elementsTypes.size() << " " << regionInfo->elementsNodes.size() + regionInfo->elements.size()<< "\n";
-	for (size_t e = 0, offset = 0; e < regionInfo->elementsTypes.size(); offset = regionInfo->elementsNodes[e++]) {
-		os << regionInfo->elementsNodes[e] - offset << " ";
-		for (size_t n = 0; n < regionInfo->elementsNodes[e] - offset; n++) {
-			os << regionInfo->elements[offset + n] << " ";
+	os << "CELLS " << regionData.elementsTypes.size() << " " << regionData.elementsNodes.size() + regionData.elements.size()<< "\n";
+	for (size_t e = 0, offset = 0; e < regionData.elementsTypes.size(); offset = regionData.elementsNodes[e++]) {
+		os << regionData.elementsNodes[e] - offset << " ";
+		for (size_t n = 0; n < regionData.elementsNodes[e] - offset; n++) {
+			os << regionData.elements[offset + n] << " ";
 		}
 		os << "\n";
 	}
 	os << "\n";
 
-	os << "CELL_TYPES " << regionInfo->elementsTypes.size() << "\n";
-	for (size_t e = 0, p = 0; e < regionInfo->elementsTypes.size(); e++) {
-		os << regionInfo->elementsTypes[e] << "\n";
+	os << "CELL_TYPES " << regionData.elementsTypes.size() << "\n";
+	for (size_t e = 0, p = 0; e < regionData.elementsTypes.size(); e++) {
+		os << regionData.elementsTypes[e] << "\n";
 	}
 	os << "\n";
 }
@@ -73,74 +75,74 @@ static void storeData(std::ofstream &os, const std::vector<std::vector<Ttype> > 
 	os << "\n";
 }
 
-void VTKLegacy::store(const std::string &name, const MeshInfo *regionInfo)
+void VTKLegacy::store(const std::string &name, const RegionData &regionData)
 {
 	std::ofstream os;
 	os.open((name + ".vtk").c_str(), std::ios::out | std::ios::trunc);
 
-	storeMesh(os, regionInfo);
+	storeMesh(os, regionData);
 
-	os << "CELL_DATA " << regionInfo->elementsTypes.size() << "\n";
-	for (auto it = regionInfo->data.elementDataInteger.begin(); it != regionInfo->data.elementDataInteger.end(); ++it) {
+	os << "CELL_DATA " << regionData.elementsTypes.size() << "\n";
+	for (auto it = regionData.data.elementDataInteger.begin(); it != regionData.data.elementDataInteger.end(); ++it) {
 		os << "SCALARS " << it->first << " int " << it->second.first << "\n";
 		os << "LOOKUP_TABLE default\n";
 		storeData(os, *it->second.second, it->second.first);
 	}
 
-	for (auto it = regionInfo->data.elementDataDouble.begin(); it != regionInfo->data.elementDataDouble.end(); ++it) {
+	for (auto it = regionData.data.elementDataDouble.begin(); it != regionData.data.elementDataDouble.end(); ++it) {
 		os << "SCALARS " << it->first << " int " << it->second.first << "\n";
 		os << "LOOKUP_TABLE default\n";
 		storeData(os, *it->second.second, it->second.first);
 	}
 
-	for (size_t i = 0; i < regionInfo->solutions.size(); i++) {
-		if (regionInfo->solutions[i]->eType != ElementType::ELEMENTS) {
+	for (size_t i = 0; i < regionData.solutions.size(); i++) {
+		if (regionData.solutions[i]->eType != ElementType::ELEMENTS) {
 			continue;
 		}
 		size_t scalarSize = 0;
-		for (size_t p = 0; p < regionInfo->solutions[i]->data.size(); p++) {
-			scalarSize += regionInfo->solutions[i]->data[p].size();
+		for (size_t p = 0; p < regionData.solutions[i]->data.size(); p++) {
+			scalarSize += regionData.solutions[i]->data[p].size();
 		}
-		if (scalarSize % regionInfo->elementsTypes.size() != 0) {
+		if (scalarSize % regionData.elementsTypes.size() != 0) {
 			ESINFO(ERROR) << "ESPRESO internal error: wrong solution elements data size.";
 		}
-		scalarSize /= regionInfo->elementsTypes.size();
+		scalarSize /= regionData.elementsTypes.size();
 
-		os << "SCALARS " << regionInfo->solutions[i]->name << " double " << scalarSize << "\n";
+		os << "SCALARS " << regionData.solutions[i]->name << " double " << scalarSize << "\n";
 		os << "LOOKUP_TABLE default\n";
-		storeData(os, regionInfo->solutions[i]->data, scalarSize);
+		storeData(os, regionData.solutions[i]->data, scalarSize);
 	}
 
-	size_t coordinateSize = regionInfo->coordinates.size() / 3;
+	size_t coordinateSize = regionData.coordinates.size() / 3;
 	os << "POINT_DATA " << coordinateSize << "\n";
-	for (auto it = regionInfo->data.pointDataInteger.begin(); it != regionInfo->data.pointDataInteger.end(); ++it) {
+	for (auto it = regionData.data.pointDataInteger.begin(); it != regionData.data.pointDataInteger.end(); ++it) {
 		os << "SCALARS " << it->first << " int " << it->second.first << "\n";
 		os << "LOOKUP_TABLE default\n";
 		storeData(os, *it->second.second, it->second.first);
 	}
 
-	for (auto it = regionInfo->data.pointDataDouble.begin(); it != regionInfo->data.pointDataDouble.end(); ++it) {
+	for (auto it = regionData.data.pointDataDouble.begin(); it != regionData.data.pointDataDouble.end(); ++it) {
 		os << "SCALARS " << it->first << " double " << it->second.first << "\n";
 		os << "LOOKUP_TABLE default\n";
 		storeData(os, *it->second.second, it->second.first);
 	}
 
-	for (size_t i = 0; i < regionInfo->solutions.size(); i++) {
-		if (regionInfo->solutions[i]->eType != ElementType::NODES) {
+	for (size_t i = 0; i < regionData.solutions.size(); i++) {
+		if (regionData.solutions[i]->eType != ElementType::NODES) {
 			continue;
 		}
 		size_t scalarSize = 0;
-		for (size_t p = 0; p < regionInfo->solutions[i]->data.size(); p++) {
-			scalarSize += regionInfo->solutions[i]->data[p].size();
+		for (size_t p = 0; p < regionData.solutions[i]->data.size(); p++) {
+			scalarSize += regionData.solutions[i]->data[p].size();
 		}
-		if (scalarSize % (regionInfo->coordinates.size() / 3) != 0) {
+		if (scalarSize % (regionData.coordinates.size() / 3) != 0) {
 			ESINFO(ERROR) << "ESPRESO internal error: wrong solution elements data size.";
 		}
-		scalarSize /= (regionInfo->coordinates.size() / 3);
+		scalarSize /= (regionData.coordinates.size() / 3);
 
-		os << "SCALARS " << regionInfo->solutions[i]->name << " double " << scalarSize << "\n";
+		os << "SCALARS " << regionData.solutions[i]->name << " double " << scalarSize << "\n";
 		os << "LOOKUP_TABLE default\n";
-		storeData(os, regionInfo->solutions[i]->data, scalarSize);
+		storeData(os, regionData.solutions[i]->data, scalarSize);
 	}
 }
 

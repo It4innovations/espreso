@@ -7,18 +7,19 @@
 #include "../../configuration/output.h"
 #include "../../assembler/solution.h"
 #include "../../mesh/structures/elementtypes.h"
+#include "../regiondata.h"
 
 using namespace espreso::output;
 
-void VTKXML::store(const std::string &name, const MeshInfo *regionInfo)
+void VTKXML::store(const std::string &name, const RegionData &regionData)
 {
-	initWriter(name, regionInfo->coordinates.size() / 3, regionInfo->elementsTypes.size());
-	addMesh(regionInfo);
-	addData(regionInfo->data, regionInfo->solutions);
+	initWriter(name, regionData.coordinates.size() / 3, regionData.elementsTypes.size());
+	addMesh(regionData);
+	addData(regionData.data, regionData.solutions);
 	finalizeWriter();
 }
 
-void VTKXML::linkClusters(const std::string &root, const std::string &name, const MeshInfo *regionInfo)
+void VTKXML::linkClusters(const std::string &root, const std::string &name, const RegionData &regionData)
 {
 	std::ofstream os;
 
@@ -33,37 +34,37 @@ void VTKXML::linkClusters(const std::string &root, const std::string &name, cons
 	os << "    </PPoints>\n";
 	os << "\n";
 	os << "    <PPointData>\n";
-	for (auto it = regionInfo->data.pointDataInteger.begin(); it != regionInfo->data.pointDataInteger.end(); ++it) {
+	for (auto it = regionData.data.pointDataInteger.begin(); it != regionData.data.pointDataInteger.end(); ++it) {
 		os << "      <PDataArray type=\"Int" << 8 * sizeof(eslocal) << "\" Name=\"" << it->first << "\" format=\"" << format() << "\" NumberOfComponents=\"" << it->second.first << "\"/>\n";
 	}
-	for (auto it = regionInfo->data.pointDataDouble.begin(); it != regionInfo->data.pointDataDouble.end(); ++it) {
+	for (auto it = regionData.data.pointDataDouble.begin(); it != regionData.data.pointDataDouble.end(); ++it) {
 		os << "      <PDataArray type=\"Float64\" Name=\"" << it->first << "\" format=\"" << format() << "\" NumberOfComponents=\"" << it->second.first << "\"/>\n";
 	}
-	for (size_t i = 0; i < regionInfo->solutions.size(); i++) {
-		if (regionInfo->solutions[i]->eType == ElementType::NODES) {
+	for (size_t i = 0; i < regionData.solutions.size(); i++) {
+		if (regionData.solutions[i]->eType == ElementType::NODES) {
 			size_t size = 0;
-			for (size_t p = 0; p < regionInfo->solutions[i]->data.size(); p++) {
-				size += regionInfo->solutions[i]->data[p].size();
+			for (size_t p = 0; p < regionData.solutions[i]->data.size(); p++) {
+				size += regionData.solutions[i]->data[p].size();
 			}
-			os << "      <PDataArray type=\"Float64\" Name=\"" << regionInfo->solutions[i]->name << "\" format=\"" << format() << "\" NumberOfComponents=\"" << regionInfo->solutions[i]->properties << "\"/>\n";
+			os << "      <PDataArray type=\"Float64\" Name=\"" << regionData.solutions[i]->name << "\" format=\"" << format() << "\" NumberOfComponents=\"" << regionData.solutions[i]->properties << "\"/>\n";
 		}
 	}
 	os << "    </PPointData>\n";
 	os << "\n";
 	os << "    <PCellData>\n";
-	for (auto it = regionInfo->data.elementDataInteger.begin(); it != regionInfo->data.elementDataInteger.end(); ++it) {
+	for (auto it = regionData.data.elementDataInteger.begin(); it != regionData.data.elementDataInteger.end(); ++it) {
 		os << "      <PDataArray type=\"Int" << 8 * sizeof(eslocal) << "\" Name=\"" << it->first << "\" format=\"" << format() << "\" NumberOfComponents=\"" << it->second.first << "\"/>\n";
 	}
-	for (auto it = regionInfo->data.elementDataDouble.begin(); it != regionInfo->data.elementDataDouble.end(); ++it) {
+	for (auto it = regionData.data.elementDataDouble.begin(); it != regionData.data.elementDataDouble.end(); ++it) {
 		os << "      <PDataArray type=\"Float64\" Name=\"" << it->first << "\" format=\"" << format() << "\" NumberOfComponents=\"" << it->second.first << "\"/>\n";
 	}
-	for (size_t i = 0; i < regionInfo->solutions.size(); i++) {
-		if (regionInfo->solutions[i]->eType == ElementType::ELEMENTS) {
+	for (size_t i = 0; i < regionData.solutions.size(); i++) {
+		if (regionData.solutions[i]->eType == ElementType::ELEMENTS) {
 			size_t size = 0;
-			for (size_t p = 0; p < regionInfo->solutions[i]->data.size(); p++) {
-				size += regionInfo->solutions[i]->data[p].size();
+			for (size_t p = 0; p < regionData.solutions[i]->data.size(); p++) {
+				size += regionData.solutions[i]->data[p].size();
 			}
-			os << "      <PDataArray type=\"Float64\" Name=\"" << regionInfo->solutions[i]->name << "\" format=\"" << format() << "\" NumberOfComponents=\"" << regionInfo->solutions[i]->properties << "\"/>\n";
+			os << "      <PDataArray type=\"Float64\" Name=\"" << regionData.solutions[i]->name << "\" format=\"" << format() << "\" NumberOfComponents=\"" << regionData.solutions[i]->properties << "\"/>\n";
 		}
 	}
 	os << "    </PCellData>\n";

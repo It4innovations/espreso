@@ -7,7 +7,6 @@
 
 #include "../basis/point/point.h"
 #include "../assembler/step.h"
-#include "meshinfo.h"
 #include "store.h"
 
 namespace espreso {
@@ -18,6 +17,9 @@ class Region;
 enum class ElementType;
 
 namespace output {
+
+struct RegionData;
+class MeshInfo;
 
 class ResultStore: public Store {
 
@@ -41,19 +43,19 @@ public:
 protected:
 	ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path);
 
-	virtual void store(const std::string &name, const MeshInfo *regionInfo) =0;
+	virtual void store(const std::string &name, const RegionData &regionData) =0;
 
-	virtual void linkClusters(const std::string &root, const std::string &name, const MeshInfo *regionInfo) =0;
+	virtual void linkClusters(const std::string &root, const std::string &name, const RegionData &regionData) =0;
 	virtual void linkSteps(const std::string &name, const std::vector<std::pair<std::string, Step> > &steps) =0;
 
 	const Mesh *_mesh;
 	std::string _path;
 
-	std::vector<MeshInfo*> _bodies;
+	MeshInfo* _meshInfo;
 	std::vector<std::pair<std::string, Step> > _steps;
 
 private:
-	std::string store(const std::string &name, const Step &step, const MeshInfo *regionInfo);
+	std::string store(const std::string &name, const Step &step, const MeshInfo *meshInfo);
 
 	void storeElementInfo(const Step &step);
 	void storeFixPoints(const Step &step);

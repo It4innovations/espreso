@@ -2,6 +2,8 @@
 #include <fstream>
 #include <algorithm>
 
+#include "../../regiondata.h"
+
 #include "../../../configuration/environment.h"
 #include "../../../assembler/solution.h"
 #include "../../../mesh/structures/elementtypes.h"
@@ -31,16 +33,16 @@ void VTKXML::initWriter(const std::string &name, size_t points, size_t cells)
 	(*_os) << "<Piece NumberOfPoints=\"" << points << "\" NumberOfCells=\"" << cells << "\">\n";
 }
 
-void VTKXML::addMesh(const MeshInfo *regionInfo)
+void VTKXML::addMesh(const RegionData &regionData)
 {
 	(*_os) << "  <Points>\n";
-	storePointData("Points", 3, regionInfo->coordinates);
+	storePointData("Points", 3, regionData.coordinates);
 	(*_os) << "  </Points>\n";
 
 	(*_os) << "  <Cells>\n";
-	storeCellData("connectivity", 1, regionInfo->elements);
-	storeCellData("offsets", 1, regionInfo->elementsNodes);
-	storeCellData("types", 1, regionInfo->elementsTypes);
+	storeCellData("connectivity", 1, regionData.elements);
+	storeCellData("offsets", 1, regionData.elementsNodes);
+	storeCellData("types", 1, regionData.elementsTypes);
 	(*_os) << "  </Cells>\n";
 }
 

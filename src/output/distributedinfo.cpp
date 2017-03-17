@@ -75,6 +75,7 @@ MeshInfo* DistributedInfo::copyWithoutMesh() const
 	DistributedInfo *copy = new DistributedInfo(_mesh, _domainShrinkRatio, _clusterShrinkRatio);
 	copy->_domainsCenters = _domainsCenters;
 	copy->_clusterCenter = _clusterCenter;
+	copy->_regions.push_back(RegionData());
 	return copy;
 }
 
@@ -87,6 +88,7 @@ espreso::Point DistributedInfo::shrink(const Point &p, eslocal domain) const
 
 void DistributedInfo::prepare(const std::vector<Element*> &region, size_t begin, size_t end)
 {
+	_regions.push_back(RegionData());
 	if (!region.size()) {
 		return;
 	}
@@ -121,20 +123,20 @@ void DistributedInfo::prepare(const std::vector<Element*> &region, size_t begin,
 		}
 	}
 
-	coordinates.clear();
+	_regions.back().coordinates.clear();
 	offsets = { 0 };
 	for (size_t p = 0; p < _mesh->parts(); p++) {
-		coordinates.insert(coordinates.end(), dCoordinates[p].begin(), dCoordinates[p].end());
-		offsets.push_back(coordinates.size() / 3);
+		_regions.back().coordinates.insert(_regions.back().coordinates.end(), dCoordinates[p].begin(), dCoordinates[p].end());
+		offsets.push_back(_regions.back().coordinates.size() / 3);
 	}
 
 	for (size_t e = 0, offset = 0; e < region.size(); e++) {
-		elementsTypes.insert(elementsTypes.end(), region[e]->domains().size(), region[e]->vtkCode());
+		_regions.back().elementsTypes.insert(_regions.back().elementsTypes.end(), region[e]->domains().size(), region[e]->vtkCode());
 		for (auto d = region[e]->domains().begin(); d != region[e]->domains().end(); ++d, offset += region[e]->nodes()) {
-			elementsNodes.push_back(offset + region[e]->nodes());
+			_regions.back().elementsNodes.push_back(offset + region[e]->nodes());
 			for (size_t n = 0; n < region[e]->nodes(); n++) {
 				eslocal oIndex = std::lower_bound(rCoordinates[*d].begin(), rCoordinates[*d].end(), region[e]->node(n)) - rCoordinates[*d].begin();
-				elements.push_back(oIndex + offsets[*d]);
+				_regions.back().elements.push_back(oIndex + offsets[*d]);
 			}
 		}
 	}
@@ -146,7 +148,7 @@ void DistributedInfo::addGeneralInfo()
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: general info can be added only to region with all elements.";
 	}
 
-	std::vector<eslocal> *pointIDcluster = new std::vector<eslocal>(coordinates.size() / 3);
+	std::vector<eslocal> *pointIDcluster = new std::vector<eslocal>(_regions.back().coordinates.size() / 3);
 	std::vector<eslocal> *pointIDglobal = new std::vector<eslocal>();
 	std::vector<eslocal> *elementID = new std::vector<eslocal>(_mesh->getPartition().back());
 	std::vector<eslocal> *decomposition = new std::vector<eslocal>();
@@ -157,21 +159,21 @@ void DistributedInfo::addGeneralInfo()
 		decomposition->insert(decomposition->end(), _mesh->getPartition()[p + 1] - _mesh->getPartition()[p], p);
 	}
 
-	pointIDglobal->reserve(coordinates.size() / 3);
+	pointIDglobal->reserve(_regions.back().coordinates.size() / 3);
 	for (size_t p = 0; p < _mesh->parts(); p++) {
 		for (size_t i = 0; i < _mesh->coordinates().localSize(p); i++) {
 			pointIDglobal->push_back(_mesh->coordinates().globalIndex(i, p));
 		}
 	}
 
-	data.pointDataInteger["pointIDcluster"] = std::make_pair(1, pointIDcluster);
-	data.pointDataInteger["pointIDglobal"] = std::make_pair(1, pointIDglobal);
-	data.elementDataInteger["elementID"] = std::make_pair(1, elementID);
-	data.elementDataInteger["decomposition"] = std::make_pair(1, decomposition);
+	_regions.back().data.pointDataInteger["pointIDcluster"] = std::make_pair(1, pointIDcluster);
+	_regions.back().data.pointDataInteger["pointIDglobal"] = std::make_pair(1, pointIDglobal);
+	_regions.back().data.elementDataInteger["elementID"] = std::make_pair(1, elementID);
+	_regions.back().data.elementDataInteger["decomposition"] = std::make_pair(1, decomposition);
 
 	for (int r = 0; r < espreso::environment->MPIsize; r++) {
-		std::vector<eslocal> *cluster = new std::vector<eslocal>(coordinates.size() / 3);
-		data.pointDataInteger["cluster" + std::to_string(r)] = std::make_pair(1, cluster);
+		std::vector<eslocal> *cluster = new std::vector<eslocal>(_regions.back().coordinates.size() / 3);
+		_regions.back().data.pointDataInteger["cluster" + std::to_string(r)] = std::make_pair(1, cluster);
 	}
 
 	std::vector<size_t> offsets(_mesh->parts());
@@ -182,7 +184,7 @@ void DistributedInfo::addGeneralInfo()
 	for (size_t n = 0; n < _mesh->nodes().size(); n++) {
 		for (auto c = _mesh->nodes()[n]->clusters().begin(); c != _mesh->nodes()[n]->clusters().end(); ++c) {
 			for (auto d = _mesh->nodes()[n]->domains().begin(); d != _mesh->nodes()[n]->domains().end(); ++d) {
-				(*data.pointDataInteger["cluster" + std::to_string(*c)].second)[offsets[*d] + _mesh->coordinates().localIndex(n, *d)] = 1;
+				(*_regions.back().data.pointDataInteger["cluster" + std::to_string(*c)].second)[offsets[*d] + _mesh->coordinates().localIndex(n, *d)] = 1;
 			}
 		}
 	}
@@ -213,13 +215,13 @@ void DistributedInfo::addSettings(size_t step)
 
 		std::stringstream ss;
 		ss << it->first;
-		data.elementDataDouble[ss.str()] = std::make_pair(1, values);
+		_regions.back().data.elementDataDouble[ss.str()] = std::make_pair(1, values);
 	}
 }
 
 void DistributedInfo::addSolution(const std::vector<Solution*> &solution)
 {
-	solutions.insert(solutions.end(), solution.begin(), solution.end());
+	_regions.back().solutions.insert(_regions.back().solutions.end(), solution.begin(), solution.end());
 }
 
 

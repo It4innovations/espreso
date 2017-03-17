@@ -6,6 +6,8 @@
 #include "../../../assembler/solution.h"
 #include "../../../configuration/output.h"
 
+#include "../../regiondata.h"
+
 #include "vtkSmartPointer.h"
 #include "vtkUnstructuredGrid.h"
 
@@ -80,7 +82,8 @@ void Catalyst::storeSolution(const Step &step, const std::vector<Solution*> &sol
 		_dataDescription->SetUserData(_fieldData);
 	}
 
-	addData(solution);
+	DataArrays data;
+	addData(data, solution);
 	_dataDescription->SetTimeData(step.iteration, step.iteration);
 	_dataDescription->GetInputDescriptionByName("input")->SetGrid(_VTKGrid);
 	_processor->CoProcess(_dataDescription);

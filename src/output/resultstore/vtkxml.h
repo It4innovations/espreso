@@ -8,8 +8,9 @@ class vtkUnstructuredGrid;
 class vtkXMLWriter;
 
 namespace espreso {
-
 namespace output {
+
+struct DataArrays;
 
 class VTKXML: public ResultStore {
 
@@ -19,14 +20,14 @@ public:
 protected:
 	VTKXML(const OutputConfiguration &output, const Mesh *mesh, const std::string &path);
 
-	virtual void store(const std::string &name, const MeshInfo *regionInfo);
+	virtual void store(const std::string &name, const RegionData &regionData);
 
 	virtual void initWriter(const std::string &name, size_t points, size_t cells);
-	virtual void addMesh(const MeshInfo *regionInfo);
+	virtual void addMesh(const RegionData &regionData);
 	virtual void addData(const DataArrays &data, const std::vector<Solution*> &solution);
 	virtual void finalizeWriter();
 
-	virtual void linkClusters(const std::string &root, const std::string &name, const MeshInfo *regionInfo);
+	virtual void linkClusters(const std::string &root, const std::string &name, const RegionData &regionData);
 	virtual void linkSteps(const std::string &name, const std::vector<std::pair<std::string, Step> > &steps);
 
 	virtual std::string format() =0;

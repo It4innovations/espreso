@@ -29,10 +29,17 @@ void DataArrays::clear()
 	pointDataInteger.clear();
 }
 
-void MeshInfo::clearData()
+void RegionData::clearData()
 {
 	data.clear();
 	solutions.clear();
+}
+
+void MeshInfo::clearData()
+{
+	for (size_t r = 0; r < _regions.size(); r++) {
+		_regions[r].clearData();
+	}
 }
 
 

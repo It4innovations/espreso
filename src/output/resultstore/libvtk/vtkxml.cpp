@@ -5,6 +5,8 @@
 #include "vtkUnstructuredGrid.h"
 #include "vtkXMLWriter.h"
 
+#include "../../regiondata.h"
+
 #include "../../../assembler/solution.h"
 #include "../../../mesh/structures/elementtypes.h"
 
@@ -31,23 +33,23 @@ void VTKXML::initWriter(const std::string &name, size_t points, size_t cells)
 	_writer->SetInputData(_VTKGrid);
 }
 
-void VTKXML::addMesh(const MeshInfo *regionInfo)
+void VTKXML::addMesh(const RegionData &regionData)
 {
 	// TODO: avoid copying
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 	points->SetDataTypeToDouble();
-	for (size_t i = 0; i < regionInfo->coordinates.size(); i += 3) {
-		points->InsertNextPoint(regionInfo->coordinates[i + 0], regionInfo->coordinates[i + 1], regionInfo->coordinates[i + 2]);
+	for (size_t i = 0; i < regionData.coordinates.size(); i += 3) {
+		points->InsertNextPoint(regionData.coordinates[i + 0], regionData.coordinates[i + 1], regionData.coordinates[i + 2]);
 	}
 	_VTKGrid->SetPoints(points);
 
-	_VTKGrid->Allocate(static_cast<vtkIdType>(regionInfo->elements.size()));
+	_VTKGrid->Allocate(static_cast<vtkIdType>(regionData.elements.size()));
 
 	std::vector<vtkIdType> nodes(20);
-	for (size_t i = 0, p = 0; i < regionInfo->elementsTypes.size(); p = regionInfo->elementsNodes[i++]) {
+	for (size_t i = 0, p = 0; i < regionData.elementsTypes.size(); p = regionData.elementsNodes[i++]) {
 		nodes.clear();
-		nodes.insert(nodes.end(), regionInfo->elements.begin() + p, regionInfo->elements.begin() + regionInfo->elementsNodes[i]);
-		_VTKGrid->InsertNextCell(regionInfo->elementsTypes[i], regionInfo->elementsNodes[i] - p, nodes.data());
+		nodes.insert(nodes.end(), regionData.elements.begin() + p, regionData.elements.begin() + regionData.elementsNodes[i]);
+		_VTKGrid->InsertNextCell(regionData.elementsTypes[i], regionData.elementsNodes[i] - p, nodes.data());
 	}
 }
 
