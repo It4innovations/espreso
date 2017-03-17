@@ -1,5 +1,5 @@
 
-#include "regioninfo.h"
+#include "meshinfo.h"
 
 using namespace espreso::output;
 
@@ -29,7 +29,7 @@ void DataArrays::clear()
 	pointDataInteger.clear();
 }
 
-void RegionInfo::clearData()
+void MeshInfo::clearData()
 {
 	data.clear();
 	solutions.clear();

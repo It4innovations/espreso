@@ -15,10 +15,10 @@ public:
 	virtual ~VTKLegacy() {};
 
 protected:
-	virtual void store(const std::string &name, const RegionInfo *regionInfo);
+	virtual void store(const std::string &name, const MeshInfo *regionInfo);
 
 	// Legacy format cannot be linked
-	virtual void linkClusters(const std::string &root, const std::string &name, const RegionInfo* regionInfo) {};
+	virtual void linkClusters(const std::string &root, const std::string &name, const MeshInfo* regionInfo) {};
 
 	virtual void linkSteps(const std::string &name, const std::vector<std::pair<std::string, Step> > &steps) {};
 };

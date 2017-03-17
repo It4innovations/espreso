@@ -38,13 +38,13 @@ static espreso::Point computeClusterCenter(const espreso::Mesh *mesh)
 }
 
 DistributedInfo::DistributedInfo(const Mesh *mesh, double domainShrinkRatio, double clusterShrinkRatio)
-: RegionInfo(mesh), _domainShrinkRatio(domainShrinkRatio), _clusterShrinkRatio(clusterShrinkRatio)
+: MeshInfo(mesh), _domainShrinkRatio(domainShrinkRatio), _clusterShrinkRatio(clusterShrinkRatio)
 {
 
 }
 
 DistributedInfo::DistributedInfo(const Mesh *mesh, size_t body, double domainShrinkRatio, double clusterShrinkRatio)
-: RegionInfo(mesh, body), _domainShrinkRatio(domainShrinkRatio), _clusterShrinkRatio(clusterShrinkRatio)
+: MeshInfo(mesh, body), _domainShrinkRatio(domainShrinkRatio), _clusterShrinkRatio(clusterShrinkRatio)
 {
 	_domainsCenters = computeDomainsCenters(_mesh);
 	_clusterCenter = computeClusterCenter(_mesh);
@@ -52,7 +52,7 @@ DistributedInfo::DistributedInfo(const Mesh *mesh, size_t body, double domainShr
 }
 
 DistributedInfo::DistributedInfo(const Mesh *mesh, const Region* region, double domainShrinkRatio, double clusterShrinkRatio)
-: RegionInfo(mesh, region), _domainShrinkRatio(domainShrinkRatio), _clusterShrinkRatio(clusterShrinkRatio)
+: MeshInfo(mesh, region), _domainShrinkRatio(domainShrinkRatio), _clusterShrinkRatio(clusterShrinkRatio)
 {
 	_domainsCenters = computeDomainsCenters(_mesh);
 	_clusterCenter = computeClusterCenter(_mesh);
@@ -60,7 +60,7 @@ DistributedInfo::DistributedInfo(const Mesh *mesh, const Region* region, double 
 }
 
 
-RegionInfo* DistributedInfo::deriveRegion(const Region *region) const
+MeshInfo* DistributedInfo::deriveRegion(const Region *region) const
 {
 	DistributedInfo *copy = new DistributedInfo(_mesh, _domainShrinkRatio, _clusterShrinkRatio);
 	copy->_domainsCenters = _domainsCenters;
@@ -70,7 +70,7 @@ RegionInfo* DistributedInfo::deriveRegion(const Region *region) const
 	return copy;
 }
 
-RegionInfo* DistributedInfo::copyWithoutMesh() const
+MeshInfo* DistributedInfo::copyWithoutMesh() const
 {
 	DistributedInfo *copy = new DistributedInfo(_mesh, _domainShrinkRatio, _clusterShrinkRatio);
 	copy->_domainsCenters = _domainsCenters;

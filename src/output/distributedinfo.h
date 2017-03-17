@@ -2,19 +2,19 @@
 #ifndef SRC_OUTPUT_DISTRIBUTEDINFO_H_
 #define SRC_OUTPUT_DISTRIBUTEDINFO_H_
 
-#include "regioninfo.h"
 #include "../basis/point/point.h"
+#include "meshinfo.h"
 
 namespace espreso {
 namespace output {
 
-struct DistributedInfo: public RegionInfo {
+struct DistributedInfo: public MeshInfo {
 
 	DistributedInfo(const Mesh *mesh, size_t body, double domainShrinkRatio, double clusterShrinkRatio);
 	DistributedInfo(const Mesh *mesh, const Region* region, double domainShrinkRatio, double clusterShrinkRatio);
 
-	RegionInfo* deriveRegion(const Region *region) const;
-	RegionInfo* copyWithoutMesh() const;
+	MeshInfo* deriveRegion(const Region *region) const;
+	MeshInfo* copyWithoutMesh() const;
 
 	void prepare(const std::vector<Element*> &region, size_t begin, size_t end);
 

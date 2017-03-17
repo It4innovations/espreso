@@ -15,7 +15,7 @@ VTKLegacy::VTKLegacy(const OutputConfiguration &output, const Mesh *mesh, const 
 
 }
 
-static void storeMesh(std::ofstream &os, const RegionInfo *regionInfo)
+static void storeMesh(std::ofstream &os, const MeshInfo *regionInfo)
 {
 	os << "# vtk DataFile Version 4.0\n";
 	os << "ESPRESO output\n";
@@ -73,7 +73,7 @@ static void storeData(std::ofstream &os, const std::vector<std::vector<Ttype> > 
 	os << "\n";
 }
 
-void VTKLegacy::store(const std::string &name, const RegionInfo *regionInfo)
+void VTKLegacy::store(const std::string &name, const MeshInfo *regionInfo)
 {
 	std::ofstream os;
 	os.open((name + ".vtk").c_str(), std::ios::out | std::ios::trunc);

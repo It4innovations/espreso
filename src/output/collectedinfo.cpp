@@ -21,29 +21,29 @@
 using namespace espreso::output;
 
 CollectedInfo::CollectedInfo(const Mesh *mesh)
-: RegionInfo(mesh)
+: MeshInfo(mesh)
 {
 
 }
 
 CollectedInfo::CollectedInfo(const Mesh *mesh, size_t body)
-: RegionInfo(mesh, body)
+: MeshInfo(mesh, body)
 {
 	prepare(_mesh->elements(), _mesh->getBodies()[body], _mesh->getBodies()[body + 1]);
 }
 
 CollectedInfo::CollectedInfo(const Mesh *mesh, const Region* region)
-: RegionInfo(mesh, region)
+: MeshInfo(mesh, region)
 {
 	prepare(region->elements(), 0, region->elements().size());
 }
 
-RegionInfo* CollectedInfo::deriveRegion(const Region *region) const
+MeshInfo* CollectedInfo::deriveRegion(const Region *region) const
 {
 	return new CollectedInfo(_mesh, region);
 }
 
-RegionInfo* CollectedInfo::copyWithoutMesh() const
+MeshInfo* CollectedInfo::copyWithoutMesh() const
 {
 	return new CollectedInfo(_mesh);
 }

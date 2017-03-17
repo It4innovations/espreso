@@ -47,7 +47,7 @@ ResultStore::~ResultStore()
 	}
 }
 
-std::string ResultStore::store(const std::string &name, const Step &step, const RegionInfo *regionInfo)
+std::string ResultStore::store(const std::string &name, const Step &step, const MeshInfo *regionInfo)
 {
 	std::string root = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep) });
 
@@ -92,7 +92,7 @@ void ResultStore::storeSettings(const std::vector<size_t> &steps)
 		}
 	}
 
-	RegionInfo *region;
+	MeshInfo *region;
 	for (size_t r = 2; r < _mesh->regions().size(); r++) {
 		region = _bodies[0]->deriveRegion(_mesh->regions()[r]);
 		for (size_t i = 0; i < steps.size(); i++) {
@@ -179,7 +179,7 @@ void ResultStore::storeFixPoints(const Step &step)
 
 	Region region(fixPoints);
 
-	RegionInfo *info = _bodies[0]->deriveRegion(&region);
+	MeshInfo *info = _bodies[0]->deriveRegion(&region);
 	store("fix_points", step, info);
 	delete info;
 }
@@ -190,14 +190,14 @@ void ResultStore::storeCorners(const Step &step)
 
 	Region region(corners);
 
-	RegionInfo *info = _bodies[0]->deriveRegion(&region);
+	MeshInfo *info = _bodies[0]->deriveRegion(&region);
 	store("corners", step, info);
 	delete info;
 }
 
 void ResultStore::storeDirichlet(const Step &step, const Instance &instance)
 {
-	RegionInfo *info = _bodies[0]->copyWithoutMesh();
+	MeshInfo *info = _bodies[0]->copyWithoutMesh();
 	for (size_t p = 0; p < instance.properties.size(); p++) {
 		std::vector<double> *values = new std::vector<double>();
 		Point point;
@@ -231,7 +231,7 @@ void ResultStore::storeLambdas(const Step &step, const Instance &instance)
 		// it is pointless to store lambdas for collected result
 		return;
 	}
-	RegionInfo *info = _bodies[0]->copyWithoutMesh();
+	MeshInfo *info = _bodies[0]->copyWithoutMesh();
 
 	std::vector<int> neighbours(environment->MPIsize);
 	std::iota(neighbours.begin(), neighbours.end(), 0);

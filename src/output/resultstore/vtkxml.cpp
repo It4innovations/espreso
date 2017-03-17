@@ -10,7 +10,7 @@
 
 using namespace espreso::output;
 
-void VTKXML::store(const std::string &name, const RegionInfo *regionInfo)
+void VTKXML::store(const std::string &name, const MeshInfo *regionInfo)
 {
 	initWriter(name, regionInfo->coordinates.size() / 3, regionInfo->elementsTypes.size());
 	addMesh(regionInfo);
@@ -18,7 +18,7 @@ void VTKXML::store(const std::string &name, const RegionInfo *regionInfo)
 	finalizeWriter();
 }
 
-void VTKXML::linkClusters(const std::string &root, const std::string &name, const RegionInfo *regionInfo)
+void VTKXML::linkClusters(const std::string &root, const std::string &name, const MeshInfo *regionInfo)
 {
 	std::ofstream os;
 

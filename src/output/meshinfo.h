@@ -1,6 +1,6 @@
 
-#ifndef SRC_OUTPUT_REGIONINFO_H_
-#define SRC_OUTPUT_REGIONINFO_H_
+#ifndef SRC_OUTPUT_MESHINFO_H_
+#define SRC_OUTPUT_MESHINFO_H_
 
 #include <vector>
 #include <map>
@@ -24,16 +24,16 @@ struct DataArrays {
 	~DataArrays();
 };
 
-struct RegionInfo {
+struct MeshInfo {
 
-	RegionInfo(const Mesh *mesh): _mesh(mesh), _body(-1), _region(NULL) {};
-	RegionInfo(const Mesh *mesh, size_t body): _mesh(mesh), _body(body), _region(NULL) {};
-	RegionInfo(const Mesh *mesh, const Region *region): _mesh(mesh), _body(-1), _region(region) {};
+	MeshInfo(const Mesh *mesh): _mesh(mesh), _body(-1), _region(NULL) {};
+	MeshInfo(const Mesh *mesh, size_t body): _mesh(mesh), _body(body), _region(NULL) {};
+	MeshInfo(const Mesh *mesh, const Region *region): _mesh(mesh), _body(-1), _region(region) {};
 
-	virtual RegionInfo* deriveRegion(const Region *region) const =0;
-	virtual RegionInfo* copyWithoutMesh() const =0;
+	virtual MeshInfo* deriveRegion(const Region *region) const =0;
+	virtual MeshInfo* copyWithoutMesh() const =0;
 
-	virtual ~RegionInfo() {};
+	virtual ~MeshInfo() {};
 
 	virtual void addSettings(size_t step) =0;
 	virtual void addSolution(const std::vector<Solution*> &solution) =0;
@@ -65,4 +65,4 @@ protected:
 
 
 
-#endif /* SRC_OUTPUT_REGIONINFO_H_ */
+#endif /* SRC_OUTPUT_MESHINFO_H_ */

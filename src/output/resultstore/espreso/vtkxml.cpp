@@ -31,7 +31,7 @@ void VTKXML::initWriter(const std::string &name, size_t points, size_t cells)
 	(*_os) << "<Piece NumberOfPoints=\"" << points << "\" NumberOfCells=\"" << cells << "\">\n";
 }
 
-void VTKXML::addMesh(const RegionInfo *regionInfo)
+void VTKXML::addMesh(const MeshInfo *regionInfo)
 {
 	(*_os) << "  <Points>\n";
 	storePointData("Points", 3, regionInfo->coordinates);

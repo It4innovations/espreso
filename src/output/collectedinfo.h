@@ -2,19 +2,19 @@
 #ifndef SRC_OUTPUT_COLLECTEDINFO_H_
 #define SRC_OUTPUT_COLLECTEDINFO_H_
 
-#include "regioninfo.h"
 #include "../basis/point/point.h"
+#include "meshinfo.h"
 
 namespace espreso {
 namespace output {
 
-struct CollectedInfo: public RegionInfo {
+struct CollectedInfo: public MeshInfo {
 
 	CollectedInfo(const Mesh *mesh, size_t body);
 	CollectedInfo(const Mesh *mesh, const Region* region);
 
-	RegionInfo* deriveRegion(const Region *region) const;
-	RegionInfo* copyWithoutMesh() const;
+	MeshInfo* deriveRegion(const Region *region) const;
+	MeshInfo* copyWithoutMesh() const;
 
 	void addSettings(size_t step);
 	void addSolution(const std::vector<Solution*> &solution);

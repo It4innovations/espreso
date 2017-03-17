@@ -31,7 +31,7 @@ void VTKXML::initWriter(const std::string &name, size_t points, size_t cells)
 	_writer->SetInputData(_VTKGrid);
 }
 
-void VTKXML::addMesh(const RegionInfo *regionInfo)
+void VTKXML::addMesh(const MeshInfo *regionInfo)
 {
 	// TODO: avoid copying
 	vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
