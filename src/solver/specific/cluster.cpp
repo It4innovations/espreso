@@ -29,26 +29,21 @@ void ClusterBase::ShowTiming()  {
 	cluster_time.printStatsMPI();
 }
 
-void ClusterBase::SetDynamicParameters(double set_dynamic_timestep, double set_dynamic_beta, double set_dynamic_gama) {
-
-	ESINFO(ERROR) << " SetDynamicParameters - obsolete function - has been disabled  ";
-	exit(0);
-
-//	dynamic_timestep = set_dynamic_timestep;
-//	dynamic_beta     = set_dynamic_beta;
-//	dynamic_gama     = set_dynamic_gama;
-//
-//	for (size_t d = 0; d < domains.size(); d++)
-//		domains[d].SetDynamicParameters(dynamic_timestep, dynamic_beta, dynamic_gama);
-
-}
-
 
 void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal number_of_subdomains ) {
 
 	// *** Init the vector of domains *****************************************************
 	domains_in_global_index.resize( number_of_subdomains ) ;
-	domains.resize( number_of_subdomains, Domain(configuration) );
+
+	domains.reserve(number_of_subdomains);
+	for (eslocal d = 0; d < number_of_subdomains; d++) {
+		domains.push_back( (Domain(configuration, instance, d, USE_HFETI)) );
+	}
+
+	#pragma omp parallel for
+	for (eslocal d = 0; d < number_of_subdomains; d++ ) {
+		domains[d].SetDomain();
+	}
 
 	if (USE_HFETI == 1) {
 		for (eslocal i = 0; i < number_of_subdomains; i++)						// HFETI
@@ -66,20 +61,36 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 	x_prim_cluster3.resize( domains.size() );
 
 
-
 	// *** Init all domains of the cluster ********************************************
-	for (eslocal i = 0; i < number_of_subdomains; i++ ) {
-		domains[i].domain_global_index 	= domains_in_global_index[i];
-		domains[i].USE_KINV    	 		= USE_KINV;
-		domains[i].USE_HFETI   	 		= USE_HFETI;
-		domains[i].USE_DYNAMIC 	 		= USE_DYNAMIC;
-		domains[i].domain_index  		= i;
+
+	#pragma omp parallel for
+	for (eslocal d = 0; d < number_of_subdomains; d++ ) {
+
+		// *** Temporary vectors for work primal domain size *******************************
+		x_prim_cluster1[d].resize( domains[d].domain_prim_size );
+    	x_prim_cluster2[d].resize( domains[d].domain_prim_size );
+    	x_prim_cluster3[d].resize( domains[d].domain_prim_size );
+
+		domains[d].domain_global_index 	= domains_in_global_index[d];
+		domains[d].USE_KINV    	 		= USE_KINV;
+		domains[d].USE_HFETI   	 		= USE_HFETI;
+		domains[d].USE_DYNAMIC 	 		= USE_DYNAMIC;
+		domains[d].domain_index  		= d;
+		domains[d].isOnACC  			= 0;
+
+
+		// Verbose level for K_plus
+		if ( d == 0 && environment->MPIrank == 0) {
+			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+		}
 
 	}
 
 }
 
-void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub ) {
+void ClusterBase::SetClusterPC( ) { // SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub ) {
+
+	SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub = instance->B1clustersMap;
 
 	//// *** Set up the dual size ********************************************************
 	int MPIrank; 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
@@ -286,18 +297,24 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 
 }
 
-void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in, SEQ_VECTOR <SparseMatrix> & RegMat ) {
+void ClusterBase::SetupPreconditioner ( ) {
 
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++) {
-		if ( d == 0 && environment->MPIrank == 0) {
-			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
-		}
-
-		domains[d].K.swap(K_in[d]);
-		domains[d]._RegMat.swap(RegMat[d]);
-
-		if ( configuration.preconditioner == ESPRESO_PRECONDITIONER::MAGIC ) {
+	switch (configuration.preconditioner) {
+	case ESPRESO_PRECONDITIONER::LUMPED:
+		// nothing needs to be done
+		break;
+	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+		// nothing needs to be done
+		break;
+	case ESPRESO_PRECONDITIONER::DIRICHLET:
+		CreateDirichletPrec(instance);
+		break;
+	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+		CreateDirichletPrec(instance);
+		break;
+	case ESPRESO_PRECONDITIONER::MAGIC: // Fast Lumped
+		#pragma omp parallel for
+		for (size_t d = 0; d < domains.size(); d++) {
 			if (domains[d]._RegMat.nnz > 0) {
 				domains[d]._RegMat.ConvertToCSR(1);
 				domains[d].Prec.MatAdd(domains[d].K, domains[d]._RegMat, 'N', -1);
@@ -306,35 +323,12 @@ void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in,
 				domains[d].Prec = domains[d].K;
 			}
 		}
-
-		domains[d].enable_SP_refinement = true;
-
-	    ESINFO(PROGRESS3) << Info::plain() << ".";
-
-        domains[d].domain_prim_size = domains[d].K.cols; //domains[d].Kplus.cols;
-
-    	x_prim_cluster1[d].resize( domains[d].domain_prim_size );
-    	x_prim_cluster2[d].resize( domains[d].domain_prim_size );
-    	x_prim_cluster3[d].resize( domains[d].domain_prim_size );
-
+		break;
+	case ESPRESO_PRECONDITIONER::NONE:
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
 	}
-	ESINFO(PROGRESS3);
-}
-
-void ClusterBase::SetClusterPC_AfterKplus () {
-
-	//// *** Alocate temporarly vectors for Temporary vectors for Apply_A function *********
-	//// *** - temporary vectors for work primal domain size *******************************
-//	x_prim_cluster1.resize( domains.size() );
-//	x_prim_cluster2.resize( domains.size() );
-//	x_prim_cluster3.resize( domains.size() );
-
-//	for (size_t d = 0; d < domains.size(); d++) {
-//		x_prim_cluster1[d].resize( domains[d].domain_prim_size );
-//		x_prim_cluster2[d].resize( domains[d].domain_prim_size );
-//		x_prim_cluster3[d].resize( domains[d].domain_prim_size );
-//	}
-	//// *** END - Alocate temporarly vectors for Temporary vectors for Apply_A function ***
 
 }
 

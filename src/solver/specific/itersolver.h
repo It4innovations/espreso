@@ -157,7 +157,6 @@ public:
 	virtual void apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out );
 
 	// *** Public functions
-	void Setup          ( Cluster & cluster_in );
 	void Preprocessing  ( Cluster & cluster );
 
 	void Solve_singular     ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel, SEQ_VECTOR < SEQ_VECTOR <double> > & out_dual_solution_parallel );

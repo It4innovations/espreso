@@ -75,8 +75,12 @@ for (size_t i = 0; i < domains_in_global_index.size(); i++ )
 
 void ClusterCPU::SetupKsolvers ( ) {
 
+
+
     #pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++) {
+	for (size_t d = 0; d < domains.size(); d++) {
+
+		domains[d].enable_SP_refinement = true;
 
         // Import of Regularized matrix K into Kplus (Sparse Solver)
     	switch (configuration.Ksolver) {
@@ -134,6 +138,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 
 
 void ClusterCPU::CreateDirichletPrec( Instance *instance ) {
+
 	#pragma omp parallel for
     for (size_t d = 0; d < instance->K.size(); d++) {
         SEQ_VECTOR <eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;

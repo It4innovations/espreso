@@ -32,7 +32,7 @@ public:
 
 	virtual ~LinearSolver();
 
-	void setup();
+//	void setup();
 
 	void init(const std::vector<int> &neighbours);
 
@@ -64,14 +64,13 @@ private:
 	eslocal number_of_subdomains_per_cluster;
 
 	bool 	SINGULAR;
-	bool 	KEEP_FACTORS;
 
 	Cluster *cluster;
 	IterSolver *solver;
 
 	void setup_HTFETI();
 	void setup_LocalSchurComplement();
-	void setup_ImportStiffnessMatrices();
+	void setup_Preconditioner();
 	void setup_FactorizationOfStiffnessMatrices();
 	void setup_KernelMatrices();
 	void setup_B1Matrices();
@@ -80,6 +79,7 @@ private:
 	void setup_CreateDirichletPreconditioner();
 	void setup_CreateG_GGt_CompressG();
 	void setup_SetupCommunicationLayer();
+	void setup_InitClusterAndSolver();
 };
 
 }
