@@ -35,8 +35,13 @@ protected:
 	Point _clusterCenter;
 	std::vector<Point> _domainsCenters;
 
+	// region x domain x indices
+	std::vector<std::vector<std::vector<eslocal> > > _cIndices;
+	// region x domain offset
+	std::vector<std::vector<size_t> > _cOffset;
+
 private:
-	void prepare(const std::vector<Element*> &region, size_t begin, size_t end);
+	void prepare(const std::vector<Element*> &region, InfoMode mode);
 };
 
 }

@@ -159,6 +159,7 @@ void ResultStore::storeFETIData(const Step &step, const Instance &instance)
 	storeElementInfo(step);
 	storeFixPoints(step);
 	storeCorners(step);
+	return; // FIX STORING B1
 	storeDirichlet(step, instance);
 	storeLambdas(step, instance);
 }
