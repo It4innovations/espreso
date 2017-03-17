@@ -48,7 +48,7 @@ DistributedInfo::DistributedInfo(const Mesh *mesh, size_t body, double domainShr
 {
 	_domainsCenters = computeDomainsCenters(_mesh);
 	_clusterCenter = computeClusterCenter(_mesh);
-	prepare(_mesh->elements(), _mesh->getBodies()[body], _mesh->getBodies()[body + 1]);
+	prepare(_mesh->elements(), 0, _mesh->elements().size());
 }
 
 DistributedInfo::DistributedInfo(const Mesh *mesh, const Region* region, double domainShrinkRatio, double clusterShrinkRatio)

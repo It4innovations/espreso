@@ -29,7 +29,7 @@ CollectedInfo::CollectedInfo(const Mesh *mesh)
 CollectedInfo::CollectedInfo(const Mesh *mesh, size_t body)
 : MeshInfo(mesh, body)
 {
-	prepare(_mesh->elements(), _mesh->getBodies()[body], _mesh->getBodies()[body + 1]);
+	prepare(_mesh->elements(), 0, _mesh->elements().size());
 }
 
 CollectedInfo::CollectedInfo(const Mesh *mesh, const Region* region)
