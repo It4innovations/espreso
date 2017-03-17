@@ -90,13 +90,15 @@ void ResultStore::storeSettings(size_t steps)
 void ResultStore::storeSettings(const std::vector<size_t> &steps)
 {
 	Step step;
+	std::vector<std::string> files;
 
 	for (size_t i = 0; i < steps.size(); i++) {
 		step.step = steps[i];
 
 		_meshInfo->addSettings(i);
-		store("mesh", step, _meshInfo);
+		files = store("mesh", step, _meshInfo);
 		_meshInfo->clearData();
+		_settings.push_back(std::make_pair(step, files));
 	}
 
 	MeshInfo *region;
@@ -106,8 +108,9 @@ void ResultStore::storeSettings(const std::vector<size_t> &steps)
 			step.step = steps[i];
 
 			region->addSettings(i);
-			store(_mesh->regions()[r]->name, step, region);
+			files = store(_mesh->regions()[r]->name, step, region);
 			region->clearData();
+			_settings.push_back(std::make_pair(step, files));
 		}
 		delete region;
 	}
@@ -131,25 +134,32 @@ void ResultStore::storeValues(const std::string &name, size_t dimension, const s
 	storeSolution(step, solution);
 	delete solution.back();
 	if (!environment->MPIrank) {
-		linkSteps("solution", _steps);
+		linkSteps("solution", _solutions);
 	}
-	_steps.clear();
+	_solutions.clear();
 }
 
 void ResultStore::storeSolution(const Step &step, const std::vector<Solution*> &solution)
 {
-	std::vector<std::string> files;
 	_meshInfo->addSolution(solution);
-	files = store("solution", step, _meshInfo);
+	std::vector<std::string> files = store("solution", step, _meshInfo);
 	_meshInfo->clearData();
 
-	_steps.push_back(std::make_pair(step, files));
+	_solutions.push_back(std::make_pair(step, files));
 }
 
 void ResultStore::finalize()
 {
-	if (!environment->MPIrank && _steps.size()) {
-		linkSteps("solution", _steps);
+	if (!environment->MPIrank) {
+		if (_solutions.size()) {
+			linkSteps("solution", _solutions);
+		}
+		if (_settings.size()) {
+			linkSteps("settings", _settings);
+		}
+		if (_FETIdata.size()) {
+			linkSteps("feti_data", _FETIdata);
+		}
 	}
 }
 
@@ -167,8 +177,9 @@ void ResultStore::storeFETIData(const Step &step, const Instance &instance)
 void ResultStore::storeElementInfo(const Step &step)
 {
 	_meshInfo->addGeneralInfo();
-	store("mesh_info", step, _meshInfo);
+	std::vector<std::string> files = store("mesh_info", step, _meshInfo);
 	_meshInfo->clearData();
+	_FETIdata.push_back(std::make_pair(step, files));
 }
 
 void ResultStore::storeFixPoints(const Step &step)
@@ -184,8 +195,9 @@ void ResultStore::storeFixPoints(const Step &step)
 	Region region(fixPoints);
 
 	MeshInfo *info = _meshInfo->deriveRegion(&region);
-	store("fix_points", step, info);
+	std::vector<std::string> files = store("fix_points", step, info);
 	delete info;
+	_FETIdata.push_back(std::make_pair(step, files));
 }
 
 void ResultStore::storeCorners(const Step &step)
@@ -195,8 +207,9 @@ void ResultStore::storeCorners(const Step &step)
 	Region region(corners);
 
 	MeshInfo *info = _meshInfo->deriveRegion(&region);
-	store("corners", step, info);
+	std::vector<std::string> files = store("corners", step, info);
 	delete info;
+	_FETIdata.push_back(std::make_pair(step, files));
 }
 
 void ResultStore::storeDirichlet(const Step &step, const Instance &instance)

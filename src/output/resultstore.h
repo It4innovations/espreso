@@ -52,7 +52,9 @@ protected:
 	std::string _path;
 
 	MeshInfo* _meshInfo;
-	std::vector<std::pair<Step, std::vector<std::string>> > _steps;
+	std::vector<std::pair<Step, std::vector<std::string>> > _solutions;
+	std::vector<std::pair<Step, std::vector<std::string>> > _settings;
+	std::vector<std::pair<Step, std::vector<std::string>> > _FETIdata;
 
 private:
 	std::vector<std::string> store(const std::string &name, const Step &step, const MeshInfo *meshInfo);
