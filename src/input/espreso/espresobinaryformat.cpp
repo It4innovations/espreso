@@ -204,7 +204,7 @@ void ESPRESOBinaryFormat::regions(
 			char *buffer = new char[length];
 			is.read(buffer, length);
 			regions.back()->name = std::string(buffer, buffer + length);
-			delete buffer;
+			delete[] buffer;
 		}
 
 		eslocal steps;
