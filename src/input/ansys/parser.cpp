@@ -244,7 +244,7 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements, std::vector<Region
 		eParams[Element::MATERIAL] = values[MATERIAL] - 1;
 		eParams[Element::CONSTANT] = values[CONSTANT];
 		eParams[Element::COORDINATES] = values[COORDINATES] - 1;
-		eParams[Element::BODY] = bodyCounter;
+		eParams[Element::BODY] = 0; // FIX ME! bodyCounter;
 		Element *e = AnsysUtils::createElement(values.data() + PARAM_SIZE, NODE_SIZE, eParams.data(), eType[values[ETYPE] - 1]);
 		switch (eType[values[ETYPE] - 1]) {
 		case 77:
