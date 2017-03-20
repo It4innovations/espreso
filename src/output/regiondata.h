@@ -29,6 +29,9 @@ struct RegionData {
 	DataArrays data;
 	std::vector<Solution*> solutions;
 
+	std::vector<std::string> pointDataNames() const;
+	std::vector<std::string> cellDataNames() const;
+
 	void clearData();
 };
 

@@ -1,6 +1,9 @@
 
 #include "meshinfo.h"
 
+#include "../assembler/solution.h"
+#include "../mesh/structures/elementtypes.h"
+
 using namespace espreso::output;
 
 DataArrays::~DataArrays()
@@ -27,6 +30,40 @@ void DataArrays::clear()
 	elementDataInteger.clear();
 	pointDataDouble.clear();
 	pointDataInteger.clear();
+}
+
+std::vector<std::string> RegionData::pointDataNames() const
+{
+	std::vector<std::string> names;
+	for (auto it = data.pointDataDouble.begin(); it != data.pointDataDouble.end(); ++it) {
+		names.push_back(it->first);
+	}
+	for (auto it = data.pointDataInteger.begin(); it != data.pointDataInteger.end(); ++it) {
+		names.push_back(it->first);
+	}
+	for (size_t i = 0; i < solutions.size(); i++) {
+		if (solutions[i]->eType == ElementType::NODES) {
+			names.push_back(solutions[i]->name);
+		}
+	}
+	return names;
+}
+
+std::vector<std::string> RegionData::cellDataNames() const
+{
+	std::vector<std::string> names;
+	for (auto it = data.elementDataDouble.begin(); it != data.elementDataDouble.end(); ++it) {
+		names.push_back(it->first);
+	}
+	for (auto it = data.elementDataInteger.begin(); it != data.elementDataInteger.end(); ++it) {
+		names.push_back(it->first);
+	}
+	for (size_t i = 0; i < solutions.size(); i++) {
+		if (solutions[i]->eType == ElementType::ELEMENTS) {
+			names.push_back(solutions[i]->name);
+		}
+	}
+	return names;
 }
 
 void RegionData::clearData()
