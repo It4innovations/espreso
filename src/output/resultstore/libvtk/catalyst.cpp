@@ -7,6 +7,7 @@
 #include "../../../configuration/output.h"
 
 #include "../../regiondata.h"
+#include "../../meshinfo.h"
 
 #include "vtkSmartPointer.h"
 #include "vtkUnstructuredGrid.h"
@@ -38,7 +39,7 @@ Catalyst::Catalyst(const OutputConfiguration &output, const Mesh *mesh, const st
 	_dataDescription->ForceOutputOn();
 
 	_VTKGrid = vtkUnstructuredGrid::New();
-	addMesh(_coordinates, _elementsTypes, _elementsNodes, _elements);
+	addMesh(_meshInfo->region(0)); // TODO: show more bodies via Catalyst
 }
 
 Catalyst::~Catalyst()

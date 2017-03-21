@@ -18,7 +18,7 @@ using namespace espreso::output;
 VTKXML::VTKXML(const OutputConfiguration &output, const Mesh *mesh, const std::string &path)
 : ResultStore(output, mesh, path), _VTKGrid(NULL), _writer(NULL), _os(NULL)
 {
-	preprocessing();
+
 }
 
 VTKXML::~VTKXML()
