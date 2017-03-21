@@ -325,7 +325,7 @@ void DistributedInfo::addSolution(const std::vector<Solution*> &solution)
 			for (size_t d = 0; d < _mesh->parts(); d++) {
 				for (size_t i = 0; i < _cIndices[r][d].size(); i++) {
 					for (size_t p = 0; p < solution[s]->properties; p++) {
-						(*rData)[solution[s]->properties * i + p + _cOffset[r][d]] = solution[s]->get(p, d, _mesh->coordinates().localIndex(_cIndices[r][d][i], d));
+						(*rData)[solution[s]->properties * (i + _cOffset[r][d]) + p] = solution[s]->get(p, d, _mesh->coordinates().localIndex(_cIndices[r][d][i], d));
 					}
 				}
 			}
