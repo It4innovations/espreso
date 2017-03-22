@@ -9,7 +9,8 @@ from waflib.Configure import conf
 def find_mpiicpc(conf):
 	if sys.platform=='cygwin':
 		conf.fatal('The Intel compiler does not work on Cygwin')
-	cxx=conf.find_program('mpiicpc',var='CXX')
+	cxx=conf.find_program('mpiicpc')
+	conf.env.CXX = cxx
 	conf.get_cc_version(cxx,icc=True)
 	conf.env.CXX_NAME='icc'
 def configure(conf):

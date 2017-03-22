@@ -68,9 +68,7 @@ def configure(ctx):
     try:
         ctx.find_program(ctx.env.CC)
         ctx.find_program(ctx.env.FC)
-        cxx = ctx.env.CXX
         ctx.load(ctx.env.CXX)
-        ctx.env.CXX = cxx
     except ctx.errors.ConfigurationError:
         ctx.fatal("Install MPI compiler supporting icpc/gcc or load the appropriate module.")
 
