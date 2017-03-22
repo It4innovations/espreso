@@ -15,7 +15,7 @@ std::string VTKXML::store(const std::string &name, const RegionData &regionData)
 {
 	std::string file = initWriter(name, regionData.coordinates.size() / 3, regionData.elementsTypes.size());
 	addMesh(regionData);
-	addData(regionData.data, regionData.solutions);
+	addData(regionData);
 	finalizeWriter();
 	return file;
 }
@@ -56,11 +56,8 @@ std::string VTKXML::linkClusters(const std::string &root, const std::string &nam
 	}
 	os << "    </PPointData>\n";
 	os << "\n";
-	if (regionData.pointDataNames().size()) {
-		os << "    <PCellData Scalars=\"" << regionData.pointDataNames()[0] << "\">\n";
-	} else {
-		os << "    <PCellData>\n";
-	}
+
+	os << "    <PCellData>\n";
 	for (auto it = regionData.data.elementDataInteger.begin(); it != regionData.data.elementDataInteger.end(); ++it) {
 		os << "      <PDataArray type=\"Int" << 8 * sizeof(eslocal) << "\" Name=\"" << it->first << "\" format=\"" << format() << "\" NumberOfComponents=\"" << it->second.first << "\"/>\n";
 	}

@@ -24,7 +24,7 @@ protected:
 
 	virtual std::string initWriter(const std::string &name, size_t points, size_t cells);
 	virtual void addMesh(const RegionData &regionData);
-	virtual void addData(const DataArrays &data, const std::vector<Solution*> &solution);
+	virtual void addData(const RegionData &regionData);
 	virtual void finalizeWriter();
 
 	virtual std::string linkClusters(const std::string &root, const std::string &name, const RegionData &regionData);
