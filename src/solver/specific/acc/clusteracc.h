@@ -38,6 +38,9 @@ public:
 
     // packed matrices
     SEQ_VECTOR<DenseMatrixPack> B1KplusPacks;
+
+    // packed matrices for sparse solve on MIC
+    SEQ_VECTOR<SparseMatrixPack> SparseKPack;
     
     // global solver for offloading all domains to Xeon Phi
     SEQ_VECTOR<SparseSolverAcc> solver;

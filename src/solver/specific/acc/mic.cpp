@@ -92,7 +92,7 @@ void SparseSolverMIC::ImportMatrices_wo_Copy(SparseMatrix ** A, eslocal nMatrice
     this->nMatrices = nMatrices;
 
     this->device = mic;
-    this->matrices = A;
+    this->A = A;
 
 /*
     rows = (MKL_INT*) _mm_malloc(nMatrices * sizeof(MKL_INT), 64);
@@ -206,7 +206,7 @@ void SparseSolverMIC::ImportMatrices(SparseMatrix ** A, eslocal nMatrices, esloc
     this->nMatrices = nMatrices;
 
     this->device = mic;
-    this->matrices = A;
+    this->A = A;
 /*
     rows = (MKL_INT*) _mm_malloc(nMatrices * sizeof(MKL_INT), 64);
     cols = (MKL_INT*) _mm_malloc(nMatrices * sizeof(MKL_INT), 64);
@@ -303,7 +303,7 @@ void SparseSolverMIC::ImportMatrices_fl(SparseMatrix ** A, eslocal nMatrices, es
 
     this->device = mic;
     this->nMatrices = nMatrices;
-    this->matrices = A;
+    this->A = A;
 
 /*    rows = (MKL_INT*) _mm_malloc(nMatrices * sizeof(MKL_INT), 64);
     cols = (MKL_INT*) _mm_malloc(nMatrices * sizeof(MKL_INT), 64);
@@ -576,8 +576,8 @@ void SparseSolverMIC::Factorization(
     SparseMatrixPack &factors_out
     ) {
 
-    if ( this->matrices != NULL ) {
-        factors_out.AddMatrices( this->A, this->nMatrices );
+    if ( this->A != NULL ) {
+        factors_out.AddMatrices( this->A, this->nMatrices, device );
     }
 
     factors_out.FactorizeMIC();

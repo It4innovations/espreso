@@ -257,38 +257,31 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
         }
         time_eval.timeEvents[0].end();
 
+        eslocal maxDevNumber = cluster.acc_per_MPI;
+
         time_eval.timeEvents[1].start();
         if (cluster.USE_HFETI == 0) {
             //cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
-            eslocal nMatrices = cluster.domains.size(); 
-            SEQ_VECTOR<SEQ_VECTOR<double>**> vectorsPerAcc;
-            vectorsPerAcc.reserve(config::solver::N_MICS);
-            SEQ_VECTOR<eslocal> nVecPerMIC;
-            nVecPerMIC.resize(config::solver::N_MICS);
+            
 
-            for (eslocal i = 0; i < config::solver::N_MICS; i++) {
-                nVecPerMIC[i] = nMatrices / config::solver::N_MICS;
-            }
-
-            for (eslocal i = 0 ; i < nMatrices % config::solver::N_MICS; i++ ) {
-                nVecPerMIC[i]++;
-            }
-
-            eslocal offset = 0;
-            for (eslocal i = 0; i < config::solver::N_MICS; i++) {
-                vectorsPerAcc[i] = new SEQ_VECTOR<double>*[ nVecPerMIC[ i ] ];
-                for (eslocal j = offset; j < offset + nVecPerMIC[ i ]; j++) {
-                    (vectorsPerAcc[i])[j - offset] = &(cluster.x_prim_cluster1[j]); 
+            for ( eslocal i = 0; i < maxDevNumber; ++i ) {
+                #pragma omp parallel for
+                for ( eslocal d = 0 ; d < cluster.accDomains[i].size(); ++d ) {
+                    eslocal domN = cluster.accDomains[i].at(d);
+                    for ( eslocal  j = 0 ; j < cluster.domains[domN].K.cols; ++j) {
+                        cluster.SparseKPack[i].SetX(d, j,cluster.x_prim_cluster1[domN].at(j));
+                    }
                 }
-                offset += nVecPerMIC[i];
-                //     cluster.solver[i].Solve(vectorsPerAcc[i]);
             }
-
-#pragma omp parallel num_threads(config::solver::N_MICS)
+#pragma omp parallel num_threads( maxDevNumber )
             {
                 eslocal myAcc = omp_get_thread_num();
-                cluster.solver[myAcc].Solve(vectorsPerAcc[myAcc]);
-                delete [] vectorsPerAcc[myAcc];
+                cluster.SparseKPack[ myAcc ].SolveMIC_Start();
+                cluster.SparseKPack[ myAcc ].SolveMIC_Sync();
+                for (eslocal i = 0 ; i < cluster.accDomains[ myAcc ].size(); ++i) {
+                     eslocal domN = cluster.accDomains[myAcc].at(i);
+                    cluster.SparseKPack[myAcc].GetY(i,cluster.x_prim_cluster1[domN]);
+                }
             }
             //for(eslocal i = 0; i < cluster.domains.size(); i++)
             //cluster.domains[i].multKplusLocal(cluster.x_prim_cluster1[i]);

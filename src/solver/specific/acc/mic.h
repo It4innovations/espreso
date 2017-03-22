@@ -5,6 +5,7 @@
 #include "../sparsesolver.h"
 #include "mkl_pardiso.h"
 #include "DenseMatrixPack.h"
+#include "SparseMatrixPack.h"
 
 namespace espreso {
 

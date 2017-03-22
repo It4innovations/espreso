@@ -45,7 +45,7 @@ namespace espreso {
         this->device = device;
 
         this->maxNMatrices = maxNMatrices;
-        this->prealloc_sizez = 0;
+        this->preallocSize = 0;
 
         this->matrix_values = NULL;
         this->matrix_values_mic = NULL;
@@ -53,7 +53,7 @@ namespace espreso {
         this->rowInd_mic = NULL;
         this->colInd = NULL;
         this->colInd_mic = NULL;
-    
+
         // preallocate data structures
         this->rows = NULL;
         this->cols = NULL;
@@ -144,29 +144,28 @@ SparseMatrixPack::SparseMatrixPack( const SparseMatrixPack& orig ) {
     this->MICratio = orig.MICratio;
     this->elapsedTime = orig.elapsedTime;
 
-    this->copiedToMIC = orig.copieToMIC;
+    this->copiedToMIC = orig.copiedToMIC;
 }
 
 SparseMatrixPack::~SparseMatrixPack() {
     // free the MIC's memory
     if (this->copiedToMIC) {
-#pragma offload_transfer target(mic:device) if(1) \
-        nocopy( matrix_values_mic : alloc_if( 0 ) free_if( 1 ) \
-        nocopy( rowInd_mic : alloc_if( 0 ) free_if( 1 ) \
-        nocopy( colInd_mic : alloc_if( 0 ) free_if( 1 ) \
+#pragma offload_transfer target(mic:device) if(1) \ 
+        nocopy( matrix_values_mic : alloc_if( 0 ) free_if( 1 ) targetptr ) \ 
+       nocopy( rowInd_mic : alloc_if( 0 ) free_if( 1 ) targetptr ) \
+        nocopy( colInd_mic : alloc_if( 0 ) free_if( 1 ) targetptr ) \
         nocopy( rows : alloc_if( 0 ) free_if( 1 ) ) \
         nocopy( cols : alloc_if( 0 ) free_if( 1 ) ) \
         nocopy( nnz : alloc_if( 0 ) free_if( 1 ) ) \
         nocopy( offsets : alloc_if( 0 ) free_if( 1 ) ) \
         nocopy( rowOffsets : alloc_if( 0 ) free_if(1) ) \
         nocopy( colOffsets : alloc_if( 0 ) free_if(1) ) \
-        nocopy( lengths : alloc_if( 0 ) free_if( 1 ) ) \
-        nocopy( mic_x_in : alloc_if( 0 ) free_if( 1 ) ) \
+       nocopy( mic_x_in : alloc_if( 0 ) free_if( 1 ) ) \
         nocopy( mic_y_out : alloc_if( 0 ) free_if( 1 ) ) \
         nocopy( elapsedTime : alloc_if( 0 ) free_if( 1 ) )
     }
 
-    if (this->matrices != NULL )
+    if (this->matrix_values != NULL )
         _mm_free( this->matrix_values );
     if (this->rows != NULL )
         delete [] this->rows ;
@@ -246,19 +245,26 @@ void SparseMatrixPack::SetDevice(
   }
   }*/
 
-void AddMatrices(
+void SparseMatrixPack::AddMatrices(
         SparseMatrix ** A, 
-        eslocal n
+        eslocal n,
+        eslocal device
         ) {
+
+    this->device = device;
 
     this->rows = new eslocal[ n ];
     this->cols = new eslocal[ n ];
     this->offsets = new long[ n ];
     this->rowOffsets = new long[ n ];
     this->colOffsets = new long[ n ];
+    this->x_in_offsets = new long[ n ];
+    this->y_out_offsets = new long[ n ];
     this->nnz = new eslocal[ n ]; 
 
     this->offsets[ 0 ] = 0;
+    this->x_in_offsets[ 0 ] = 0;
+    this->y_out_offsets[ 0 ] = 0;
     this->totalRows = 0; 
     this->totalCols = 0;
     this->x_in_dim = 0;
@@ -270,7 +276,7 @@ void AddMatrices(
         this->cols[ i ] = A[i]->cols;
         this->rowOffsets[ i ] = this->totalRows;
         this->colOffsets[ i ] = this->totalCols;
-        this->totalRows += this->rows[i] + 1;
+        this->totalRows += (this->rows[i] + 1);
         this->totalCols += A[i]->nnz;
         this->x_in_dim += this->cols[i];
         this->y_out_dim += this->rows[i];
@@ -279,6 +285,8 @@ void AddMatrices(
         this->preallocSize += A[i]->nnz;
         if ( i > 0 ) {
             this->offsets[ i ] = this->offsets[ i - 1 ] + this->nnz[ i - 1 ];
+            this->x_in_offsets[ i ] = this->x_in_offsets[ i - 1 ] + this->cols[ i - 1 ];
+            this->y_out_offsets[ i ] = this->y_out_offsets[ i - 1 ] + this->rows[ i - 1 ];
         }
         this->nMatrices++;
     }
@@ -286,6 +294,7 @@ void AddMatrices(
     this->matrix_values = ( double * ) _mm_malloc( this->preallocSize * sizeof( double ), 64 ); 
     this->rowInd = ( eslocal * ) _mm_malloc( this->totalRows * sizeof( eslocal ), 64 );
     this->colInd = ( eslocal * ) _mm_malloc( this->totalCols * sizeof( eslocal ), 64 );
+
 
     for ( eslocal i = 0 ; i < n ; ++i ) {
         memcpy( this->matrix_values + this->offsets[ i ], &(A[i]->CSR_V_values[0]), A[i]->nnz * sizeof( double ) );
@@ -301,7 +310,7 @@ void SparseMatrixPack::SetX(
         double value
         ) {
     if ( this->mic_x_in != NULL ) {
-        this->mic_x_in[position + this->colOffsets[ vector ]] = value;
+        this->mic_x_in[position + this->x_in_offsets[ vector ]] = value;
     } else {
         ESINFO(ERROR) << "Could not set vector element. Vector not yet allocated.";
     }
@@ -312,9 +321,9 @@ void SparseMatrixPack::GetY(
         std::SEQ_VECTOR <double> & y
         ) {
     if ( this->mic_y_out != NULL ) {
-        memcpy( &(y[0]), this->mic_y_out + this->rowOffsets[ vector ],
+        memcpy( &(y[0]), this->mic_y_out + this->y_out_offsets[ vector ],
                 this->rows[vector] * sizeof( double ) );
-   } else {
+    } else {
         ESINFO(ERROR) << "Could not copy vector. Vector not yet allocated.";
     }
 }
@@ -324,7 +333,6 @@ void SparseMatrixPack::CopyToMIC( ) {
     double * tmp_val;
     eslocal * tmp_rowInd;
     eslocal * tmp_colInd;
-
     // allocate targetptr array on MIC
 #pragma offload_transfer target(mic:device) \
     nocopy(tmp_val : length( this->preallocSize ) alloc_if(1) free_if(0) targetptr) \
@@ -345,10 +353,12 @@ void SparseMatrixPack::CopyToMIC( ) {
     in( colInd : length( this->totalCols ) into( this->colInd_mic ) alloc_if( 0 ) free_if( 0 ) targetptr ) \
     in( rows : length( nMatrices ) alloc_if( 1 ) free_if( 0 ) ) \
     in( cols : length( nMatrices ) alloc_if( 1 ) free_if( 0 ) ) \
-    in( nnz : length( nMatries ) alloc_if( 1 ) free_if( 0 ) ) \
+    in( nnz : length( nMatrices ) alloc_if( 1 ) free_if( 0 ) ) \
     in( offsets : length( nMatrices ) alloc_if( 1 ) free_if( 0 ) ) \
     in( rowOffsets : length( nMatrices ) alloc_if( 1 ) free_if(0) ) \
     in( colOffsets : length( nMatrices ) alloc_if( 1 ) free_if(0) ) \
+    in( x_in_offsets : length( nMatrices ) alloc_if( 1 ) free_if( 0 ) ) \
+    in( y_out_offsets : length( nMatrices ) alloc_if( 1 ) free_if( 0 )) \
     in( mic_x_in : length( this->x_in_dim ) alloc_if( 1 ) free_if( 0 ) ) \
     in( mic_y_out : length( this->y_out_dim ) alloc_if( 1 ) free_if( 0 ) ) \
     in( elapsedTime : length( 1 ) alloc_if( 1 ) free_if( 0 ) ) \
@@ -359,7 +369,7 @@ void SparseMatrixPack::CopyToMIC( ) {
         _mm_free( this->matrix_values );
         _mm_free( this->rowInd );
         _mm_free( this->colInd );
-        this->matrixValues = NULL;
+        this->matrix_values = NULL;
         this->rowInd = NULL; 
         this->colInd = NULL;
     }
@@ -374,18 +384,17 @@ void SparseMatrixPack::FactorizeMIC( ) {
     perm = new MKL_INT*[nMatrices];
     error = new MKL_INT[nMatrices];
 
-
     for (eslocal i = 0; i < nMatrices; i++) {
 
         pt[i] = new void*[64];
-        iparm[i] = new MKL_INT[65];
+        iparm[i] = new MKL_INT[64];
         dparm[i] = new double[65];
-        perm[i] = (MKL_INT*) _mm_malloc(rows[i] * sizeof(MKL_INT), 64);
-        for (eslocal j = 0; j < 65; j++) {
+        perm[i] = new MKL_INT[ rows[i] ];
+        for (eslocal j = 0; j < 64; j++) {
             iparm[i][j]=0;
         }
         for (eslocal j = 0; j < rows[i] ; j++) {
-            perm[i][j] = 0; 
+            perm[i][j] = j+1; 
         }
         for (eslocal j = 0 ;j < 64; j++) {
             pt[i][j] = 0;
@@ -398,7 +407,7 @@ void SparseMatrixPack::FactorizeMIC( ) {
     in(dparm : length(nMatrices) alloc_if(1) free_if(0)) \
     in(perm : length(nMatrices) alloc_if(1) free_if(0)) \
     in(error : length(nMatrices) alloc_if(1) free_if(0)) \
-    in(this : alloc_if(0) free_if(0))
+    in(this : length(0) alloc_if(0) free_if(0))
     for (eslocal i = 0; i<nMatrices; i++) {
         void **ptPointer = pt[i];
         MKL_INT* iparmPointer = iparm[i];
@@ -406,7 +415,7 @@ void SparseMatrixPack::FactorizeMIC( ) {
         MKL_INT *permPointer = perm[i];
 #pragma offload target(mic:device) \
         in( ptPointer : length(64) alloc_if(1) free_if(0)) \
-        in( iparmPointer : length(65) alloc_if(1) free_if(0)) \
+        in( iparmPointer : length(64) alloc_if(1) free_if(0)) \
         in( dparmPointer : length(65) alloc_if(1) free_if(0)) \
         in( permPointer : length(rows[i]) alloc_if(1) free_if(0)) \
         in(iparm : length(0) alloc_if(0) free_if(0)) \
@@ -423,7 +432,22 @@ void SparseMatrixPack::FactorizeMIC( ) {
     }
 
 
-#pragma offload target( mic : device ) 
+#pragma offload target( mic : device ) \
+    in( matrix_values_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr ) \
+    in( rowInd_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr ) \
+    in( colInd_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr ) \
+    in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( cols : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( nnz : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( offsets : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( rowOffsets : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( colOffsets : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( pt : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( iparm : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( dparm : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( error : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( perm : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) 
     {
         MKL_INT phase = 11;
         MKL_INT idum;
@@ -431,11 +455,13 @@ void SparseMatrixPack::FactorizeMIC( ) {
         MKL_INT maxfct = 1;
         double ddum; 
         MKL_INT m_nRhs = 0;
-        MKL_INT msglvl = 0;
+        MKL_INT msglvl =  0;
+        MKL_INT mtype = 2;
+
 
 #pragma omp parallel
         {
-#pragma omp for
+#pragma omp for 
             for (eslocal i = 0 ; i < nMatrices ; ++i ) {
                 iparm[i][2] = 0;
 
@@ -451,19 +477,21 @@ void SparseMatrixPack::FactorizeMIC( ) {
                 iparm[i][19-1] = -1;       /* Output: Mflops for LU factorization */
                 iparm[i][24-1] = 0;        /* Parallel factorization control */
                 iparm[i][25-1] = 0;        /* Parallel forward/backward solve control */
+                iparm[i][27-1] = 0;
                 iparm[i][28-1] = 0;
                 iparm[i][36-1] = 0;        /* Use Schur complement */
 
+
                 pardiso (pt[i], &maxfct, &mnum, &mtype, &phase,
                         &rows[i], matrix_values_mic + offsets[i], 
-                        rowInd + rowOffsets[i], colInd + colOffsets[i], perm[i], 
+                        rowInd_mic + rowOffsets[i], colInd_mic + colOffsets[i], perm[i], 
                         &m_nRhs, iparm[i], &msglvl, &ddum, &ddum, &error[i]);
             }
             bool initialized = true;
             for (eslocal i=0; i < nMatrices; i++) {
                 if (error[i] != 0) {
                     initialized = false;
-                    std::cerr << "ERROR during symbolic factorization of matrix " << i <<": " << str << "\n";
+                    std::cerr << "ERROR during symbolic factorization of matrix " << i << " : " << error[i] << "\n";
                 }
             }
             if (!initialized) {
@@ -485,14 +513,14 @@ void SparseMatrixPack::FactorizeMIC( ) {
             for (eslocal i = 0; i < nMatrices; i++) {
                 pardiso (pt[i], &maxfct, &mnum, &mtype, &phase,
                         &rows[i], matrix_values_mic + offsets[i], 
-                        rowInd + rowOffsets[i], colInd + colOffsets[i], perm[i], 
+                        rowInd_mic + rowOffsets[i], colInd_mic + colOffsets[i], perm[i], 
                         &m_nRhs, iparm[i], &msglvl, &ddum, &ddum, &error[i]);
             }
             bool m_factorized = true;
             for (eslocal i=0; i < nMatrices; i++) {
                 if (error[i] != 0) {
                     m_factorized = false;
-                    std::cerr << "ERROR during numeric factorization of matrix " << i <<": " << str << "\n";
+                    std::cerr << "ERROR during numeric factorization of matrix " << i << "\n";
                 }
             }
             if (m_factorized!=true) {
@@ -507,10 +535,27 @@ void SparseMatrixPack::FactorizeMIC( ) {
     }
 }
 
-SparseMatrixPack::SolveMIC_Start( 
-) {
-    #pragma offload target( mic : device ) \
-    in( this->mic_x_in : length( x_in_dim ) alloc_if( 0 ) free_if( 0 ) ) \
+void SparseMatrixPack::SolveMIC_Start( 
+        ) {
+#pragma offload target( mic : device ) \
+    in( matrix_values_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr ) \
+    in( rowInd_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr ) \
+    in( colInd_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr ) \
+    in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( cols : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( nnz : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( offsets : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( rowOffsets : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( colOffsets : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( x_in_offsets : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( y_out_offsets : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( pt : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( iparm : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( dparm : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( error : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( perm : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( mic_x_in : length( x_in_dim ) alloc_if( 0 ) free_if( 0 ) ) \
+    in( mic_y_out : length( 0 ) alloc_if(0 ) free_if( 0 ) ) \
     in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
     signal( mic_y_out )
     {
@@ -518,9 +563,10 @@ SparseMatrixPack::SolveMIC_Start(
         double ddum     = 0;
         MKL_INT idum    = 0; 
         MKL_INT n_rhs   = 1;
-        msglvl          = 1;
-        mnum            = 1;
-        maxfct          = 1;
+        MKL_INT msglvl  = 0;
+        MKL_INT mnum    = 1;
+        MKL_INT maxfct  = 1;
+        MKL_INT mtype   = 2;
 
         /* -------------------------------------------------------------------- */
         /* .. Back substitution and iterative refinement. */
@@ -528,19 +574,17 @@ SparseMatrixPack::SolveMIC_Start(
 
 #pragma omp parallel 
         {
-            eslocal myPhase = 331;
-#pragma omp for schedule(dynamic)
+            eslocal myPhase = 33;
+#pragma omp for 
             for (eslocal i = 0; i < nMatrices; i++) {
-                myPhase=331;
                 MKL_INT ip5backup = iparm[i][5];
-                iparm[i][5] = 0;
-                    myPhase=33;
-                    pardiso ( pt[i], &maxfct, &mnum, &mtype, &myPhase,
-                            &rows[i], matrix_values_mic + offsets[i],
-                            rowInd + rowOffsets[i], colInd + colOffsets[i], 
-                            &idum, &n_rhs, iparm[i], &msglvl, &tmp_sol_fl1[i], 
-                            &tmp_sol_fl2[i], &error[i] );
-
+                iparm[i][ 6 - 1 ] = 1;
+               double * out =  mic_y_out + y_out_offsets[i]; 
+                pardiso ( pt[i], &maxfct, &mnum, &mtype, &myPhase,
+                        &rows[i], matrix_values_mic + offsets[i],
+                        rowInd_mic + rowOffsets[i], colInd_mic + colOffsets[i], 
+                        &idum, &n_rhs, iparm[i], &msglvl, mic_x_in + x_in_offsets[i], 
+                        out, &error[i] );
                 iparm[i][5] = ip5backup;
             }
         }
@@ -557,218 +601,12 @@ SparseMatrixPack::SolveMIC_Start(
     }
 }
 
-SparseMatrixPack::SolveMIC_Sync( 
-) {
-#pragma offload_wait taret( mic : device ) wait( mic_y_out ) 
-#pragma offload_transfer target( mic : device ) \
-    out( mic_y_out : length( y_out_dim ) alloc_if( 0 ) free_if( 0 ) )
-}
-
-/*
-   void DenseMatrixPack::DenseMatsVecsCPU(
-   long start,
-   long end,
-   char T_for_transpose_N_for_not_transpose
-   ) {
-   double alpha = 1.0;
-   double beta  = 0.0;
-   eslocal one = 1;
-
-#pragma omp parallel for //schedule(dynamic,10)
-for ( long i = start ; i < end; i++ ) {
-if ( !packed[i] ) {
-dgemv(&T_for_transpose_N_for_not_transpose,
-&(rows[i]), &(cols[i]),
-&alpha, matrices + offsets[i], &(rows[i]),
-mic_x_in + colOffsets[i], &one,
-&beta, mic_y_out + rowOffsets[i], &one);
-} else {
-cblas_dspmv(CblasColMajor, CblasUpper,
-rows[i], 1.0, matrices + offsets[i], mic_x_in + colOffsets[i],
-1, 0.0, mic_y_out + rowOffsets[i], 1);
-}
-}
-}
-*/
-
-/*
-   void DenseMatrixPack::DenseMatsVecsRestCPU(
-   char T_for_transpose_N_for_not_transpose
-   ) {
-   double alpha = 1.0;
-   double beta  = 0.0;
-   eslocal one = 1;
-   long start = (long) (MICratio * nMatrices); 
-
-#pragma omp parallel for //schedule(dynamic,10)
-for ( long i = start ; i < nMatrices; i++ ) {
-if ( !packed[i] ) {
-dgemv(&T_for_transpose_N_for_not_transpose,
-&(rows[i]), &(cols[i]),
-&alpha, matrices + offsets[i], &(rows[i]),
-mic_x_in + colOffsets[i], &one,
-&beta, mic_y_out + rowOffsets[i], &one);
-} else {
-cblas_dspmv(CblasColMajor, CblasUpper,
-rows[i], 1.0, matrices + offsets[i], mic_x_in + colOffsets[i],
-1, 0.0, mic_y_out + rowOffsets[i], 1);
-}
-}
-}
-*/
-
-/*
-   void DenseMatrixPack::DenseMatsVecsMIC(
-   char T_for_transpose_N_for_not_transpose
-   ) {
-#ifdef MIC
-
-
-#pragma offload target(mic:device) if(1) \
-in( matrices_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr ) \
-in( mic_x_in : length( totalCols ) alloc_if( 0 ) free_if( 0 ) ) \
-in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-in( cols : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-in( offsets : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-in( rowOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
-in( colOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
-in( lengths : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-out( mic_y_out : length( totalRows ) alloc_if( 0 ) free_if( 0 ) ) \
-in( this : length(0) alloc_if( 0 ) free_if( 0 ) )
-{
-double alpha = 1.0;
-double beta  = 0.0;
-eslocal one = 1;
-
-//  omp_set_num_threads(24);
-
-#pragma omp parallel for //schedule(dynamic,10)
-for ( eslocal i = 0 ; i < nMatrices; i++ ) {
-
-if ( !packed[i] ) {
-dgemv(&T_for_transpose_N_for_not_transpose,
-&(rows[i]), &(cols[i]),
-&alpha, matrices_mic + offsets[i], &(rows[i]),
-mic_x_in + colOffsets[i], &one,
-&beta, mic_y_out + rowOffsets[i], &one);
-} else {
-cblas_dspmv(CblasColMajor, CblasUpper,
-rows[i], 1.0, matrices_mic + offsets[i], mic_x_in + colOffsets[i],
-1, 0.0, mic_y_out + rowOffsets[i], 1);
-}
-}
-}
-
-#endif
-
-}
-*/
-/*
-   void DenseMatrixPack::DenseMatsVecsMIC_Start(
-   char T_for_transpose_N_for_not_transpose
-   ) {
-   long nMatrices = this->nMatrices;
-#pragma offload target(mic:device) if(1) \
-in( this->mic_x_in :length(totalCols) alloc_if(0) free_if(0) ) \
-in( matrices_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr) \
-in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-in( cols : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-in( offsets : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-in( rowOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
-in( colOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
-in( lengths : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-in( mic_y_out : length( 0 ) alloc_if( 0 ) free_if( 0 )  ) \
-in( MICratio ) \
-in( elapsedTime : length(0) alloc_if(0) free_if(0) ) \ 
-signal( mic_y_out )\
-in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
-{
-double alpha = 1.0;
-double beta  = 0.0;
-eslocal one = 1;
-long nIters = (long) (nMatrices*MICratio);
-double start = omp_get_wtime();
-#pragma omp parallel for schedule(dynamic)
-for ( long i = 0 ; i < nIters; i++ ) {
-if ( !packed[i] ) {
-dgemv(&T_for_transpose_N_for_not_transpose,
-&(rows[i]), &(cols[i]),
-&alpha, matrices_mic + offsets[i], &(rows[i]),
-mic_x_in + colOffsets[i], &one,
-&beta, mic_y_out + rowOffsets[i], &one);
-} else {
-cblas_dspmv(CblasColMajor, CblasUpper,
-rows[i], 1.0, matrices_mic + offsets[i], mic_x_in + colOffsets[i],
-1, 0.0, mic_y_out + rowOffsets[i], 1);
-}
-}
-elapsedTime[0] = omp_get_wtime() - start;
-}
-}
-*/
-
-void SparseMatrixPack::SparseSolveMIC_Start(
-        char T_for_transpose_N_for_not_transpose
+void SparseMatrixPack::SolveMIC_Sync( 
         ) {
-    /*
-       long nMatrices = this->nMatrices;
-#pragma offload target(mic:device) if(1) \
-in( this->mic_x_in :length(totalCols) alloc_if(0) free_if(0) ) \
-in( matrices_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr) \
-in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-in( cols : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-in( offsets : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-in( rowOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
-in( colOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
-in( lengths : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-in( mic_y_out : length( 0 ) alloc_if( 0 ) free_if( 0 )  ) \
-in( MICratio ) \
-in( elapsedTime : length(0) alloc_if(0) free_if(0) ) \ 
-signal( mic_y_out )\
-in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
-{
-double alpha = 1.0;
-double beta  = 0.0;
-eslocal one = 1;
-long nIters = (long) (nMatrices*MICratio);
-double start = omp_get_wtime();
-#pragma omp parallel for schedule(dynamic)
-for ( long i = 0 ; i < nIters; i++ ) {
-if ( !packed[i] ) {
-dgemv(&T_for_transpose_N_for_not_transpose,
-&(rows[i]), &(cols[i]),
-&alpha, matrices_mic + offsets[i], &(rows[i]),
-mic_x_in + colOffsets[i], &one,
-&beta, mic_y_out + rowOffsets[i], &one);
-} else {
-cblas_dspmv(CblasColMajor, CblasUpper,
-rows[i], 1.0, matrices_mic + offsets[i], mic_x_in + colOffsets[i],
-1, 0.0, mic_y_out + rowOffsets[i], 1);
-}
-}
-elapsedTime[0] = omp_get_wtime() - start;
-}
-*/
+#pragma offload_wait target( mic : device ) wait( mic_y_out ) 
+#pragma offload_transfer target( mic : device ) \
+    out( mic_x_in : into(mic_y_out) length( y_out_dim ) alloc_if( 0 ) free_if( 0 ) )
 }
 
-
-
-/*
-   void DenseMatrixPack::DenseMatsVecsMIC_Sync( ) {
-#pragma offload_wait target(mic:device) wait(mic_y_out)
-#pragma offload_transfer target(mic:device) \
-out(mic_y_out : length( totalCols ) alloc_if( 0 ) free_if( 0 ) ) \
-out( elapsedTime : length(1) alloc_if(0) free_if(0) )
-
-}
-*/
-
-void SparseMatrixPack::SparseSolveMIC_Sync( ) {
-#pragma offload_wait target(mic:device) wait(mic_y_out)
-#pragma offload_transfer target(mic:device) \
-    out(mic_y_out : length( this->y_out_dim  ) alloc_if( 0 ) free_if( 0 ) ) \
-    out( elapsedTime : length(1) alloc_if(0) free_if(0) )
-
-}
 
 }

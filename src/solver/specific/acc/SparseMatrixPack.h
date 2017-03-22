@@ -1,6 +1,7 @@
 
 #include "../../generic/utils.h"
-
+#include "../../generic/SparseMatrix.h"
+#include "mkl_pardiso.h"
 
 
 using std::vector;
@@ -49,7 +50,8 @@ namespace espreso {
         // adds n matrices from the array A to the matrix pack
         void AddMatrices(
                 SparseMatrix ** A,
-                eslocal n
+                eslocal n,
+                eslocal device
                 );
 
         void AllocateVectors() {
@@ -182,6 +184,12 @@ namespace espreso {
 
         // offsets of columns
         long * colOffsets;
+        
+        // offsets of input vectors
+        long * x_in_offsets;
+
+        // offsets of output vectors
+        long * y_out_offsets;
 
         // input buffer on MIC
         double * mic_x_in;
@@ -197,6 +205,8 @@ namespace espreso {
 
         /* Factorization data */
 
+        MKL_INT mtype;
+        
         void *** pt;
 
         MKL_INT ** iparm;
@@ -205,7 +215,7 @@ namespace espreso {
 
         MKL_INT ** perm;
 
-        MKL_INT ** error;
+        MKL_INT * error;
 
         // ratio of work during mv multiplication 
         double MICratio;

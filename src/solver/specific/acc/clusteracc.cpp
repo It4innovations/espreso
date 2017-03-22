@@ -312,7 +312,6 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     for (eslocal i = 0; i < this->acc_per_MPI; ++i) {
         long currentMem = 0;
         target = this->myTargets.at(i);
-        std::cout << target << " " << this->MPI_per_acc << std::endl;
 #pragma offload target(mic:target)
         {
             long pages = sysconf(_SC_AVPHYS_PAGES);
@@ -894,6 +893,52 @@ void ClusterAcc::SetupKsolvers ( ) {
         }
     }
     if (!USE_KINV) {
+
+        double MICr = 1.0;
+
+        eslocal *matrixPerPack = new eslocal[ this->acc_per_MPI ];
+
+        for ( eslocal i = 0; i < this->acc_per_MPI; ++i ) {
+            matrixPerPack[i] = domains.size() / this->acc_per_MPI;    
+        }
+        for ( eslocal i = 0 ; i < domains.size() % this->acc_per_MPI; ++i ) {
+            matrixPerPack[i]++;
+        }
+
+        eslocal offset = 0; 
+        this->SparseKPack.resize( this->acc_per_MPI );
+        this->accDomains.resize( this->acc_per_MPI );
+        this->matricesPerAcc.reserve( this->acc_per_MPI );
+
+        for ( int i = 0; i < this->acc_per_MPI; ++i ) {
+            this->matricesPerAcc[ i ] = new SparseMatrix*[ matrixPerPack[ i ] ];
+            for ( int j = offset; j < offset + matrixPerPack[ i ]; ++j ) {
+                accDomains[ i ].push_back( j );       
+                this->matricesPerAcc[ i ][ j - offset ] = &(domains[j].K);
+            }
+            
+            offset += matrixPerPack[ i ];
+
+            this->SparseKPack[ i ].AddMatrices( this->matricesPerAcc[ i ], 
+                matrixPerPack[ i ], this->myTargets.at( i ) );
+            this->SparseKPack[ i ].setMICratio( MICr );
+
+            if ( config::solver::LOAD_BALANCING ) {
+                this->SparseKPack[ i ].enableLoadBalancing( );
+            } else {
+                this->SparseKPack[ i ].disableLoadBalancing( );
+            }
+        }
+
+        #pragma omp parallel num_threads( acc_per_MPI )
+        {
+            this->SparseKPack[ omp_get_thread_num() ].AllocateVectors();
+            this->SparseKPack[ omp_get_thread_num() ].CopyToMIC();
+            this->SparseKPack[ omp_get_thread_num() ].FactorizeMIC();
+        }
+        
+
+/*
         // send matrices to Xeon Phi
         eslocal nMatrices = domains.size();
         this->matricesPerAcc.reserve(config::solver::N_MICS);
@@ -926,6 +971,7 @@ void ClusterAcc::SetupKsolvers ( ) {
 
 
         deleteMatrices = true  ;
+        */
     }
 }
 
