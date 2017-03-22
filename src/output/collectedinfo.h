@@ -33,8 +33,11 @@ protected:
 	std::vector<esglobal> _globalIDsMap; // ID0position0, ID0position1, ..., ID1position0, ...
 	std::vector<esglobal> _globalIDsMultiplicity;
 
+	// region x indices
+	std::vector<std::vector<eslocal> > _cIndices;
+
 private:
-	void prepare(const std::vector<Element*> &region, size_t begin, size_t end);
+	void prepare(const std::vector<Element*> &region);
 
 };
 

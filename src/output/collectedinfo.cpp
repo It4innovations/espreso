@@ -24,7 +24,7 @@ CollectedInfo::CollectedInfo(const Mesh *mesh, InfoMode mode)
 : MeshInfo(mesh, mode)
 {
 	if (_mode | InfoMode::PREPARE) {
-		prepare(_mesh->elements(), 0, _mesh->elements().size());
+		prepare(_mesh->elements());
 	}
 }
 
@@ -32,7 +32,7 @@ CollectedInfo::CollectedInfo(const Mesh *mesh, const Region* region, InfoMode mo
 : MeshInfo(mesh, region, mode)
 {
 	if (_mode | InfoMode::PREPARE) {
-		prepare(region->elements(), 0, region->elements().size());
+		prepare(region->elements());
 	}
 }
 
@@ -48,18 +48,91 @@ MeshInfo* CollectedInfo::copyWithoutMesh() const
 	return copy;
 }
 
-void CollectedInfo::prepare(const std::vector<Element*> &region, size_t begin, size_t end)
+void CollectedInfo::prepare(const std::vector<Element*> &region)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
-	_regions.push_back(RegionData());
 
-	// Collect coordinates
-	std::vector<size_t> distribution = Esutils::getDistribution(threads, begin, end);
+	size_t bodies    = _mode & InfoMode::SEPARATE_BODIES    ? _mesh->bodies()           : 1;
+	size_t materials = _mode & InfoMode::SEPARATE_MATERIALS ? _mesh->materials().size() : 1;
+
+	_regions.resize(bodies * materials);
+
+	// divide elements to regions and gather them
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, region.size());
+	std::vector<std::vector<std::vector<esglobal> > > sElements(_regions.size(), std::vector<std::vector<esglobal> >(threads));
+	std::vector<std::vector<std::vector<eslocal> > > sElementsTypes(_regions.size(), std::vector<std::vector<esglobal> >(threads));
+	std::vector<std::vector<std::vector<eslocal> > > sElementsNodes(_regions.size(), std::vector<std::vector<esglobal> >(threads));
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
+			size_t regionOffset = 0;
+			if ((_mode & InfoMode::SEPARATE_BODIES) && region[e]->params()) {
+				regionOffset += region[e]->param(Element::Params::BODY) * materials;
+			}
+			if ((_mode & InfoMode::SEPARATE_MATERIALS) && region[e]->params()) {
+				regionOffset += region[e]->param(Element::Params::MATERIAL);
+			}
+			sElementsTypes[regionOffset][t].push_back(region[e]->vtkCode());
+			sElementsNodes[regionOffset][t].push_back(region[e]->nodes());
+			for (size_t n = 0; n < region[e]->nodes(); n++) {
+				sElements[regionOffset][t].push_back(_mesh->coordinates().globalIndex(region[e]->node(n)));
+			}
+		}
+	}
+
+	for (size_t r = 0; r < _regions.size(); r++) {
+		for (size_t t = 1; t < threads; t++) {
+			sElements[r][0].insert(sElements[r][0].end(), sElements[r][t].begin(), sElements[r][t].end());
+			sElementsTypes[r][0].insert(sElementsTypes[r][0].end(), sElementsTypes[r][t].begin(), sElementsTypes[r][t].end());
+			sElementsNodes[r][0].insert(sElementsNodes[r][0].end(), sElementsNodes[r][t].begin(), sElementsNodes[r][t].end());
+		}
+	}
+
+	for (size_t r = 0; r < _regions.size(); r++) {
+		if (!Communication::gatherUnknownSize(sElementsTypes[r][0], _regions[r].elementsTypes)) {
+			ESINFO(ERROR) << "ESPRESO internal error while collecting elements types of a region.";
+		}
+		if (!Communication::gatherUnknownSize(sElementsNodes[r][0], _regions[r].elementsNodes)) {
+			ESINFO(ERROR) << "ESPRESO internal error while collecting elements nodes of a region.";
+		}
+		if (!Communication::gatherUnknownSize(sElements[r][0], _regions[r].elements)) {
+			ESINFO(ERROR) << "ESPRESO internal error while collecting elements of a region.";
+		}
+	}
+
+	for (size_t r = 0; r < _regions.size(); r++) {
+		distribution = Esutils::getDistribution(threads, _regions[r].elementsNodes.size());
+		std::vector<eslocal> nodesOffsets(threads);
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			eslocal offset = 0;
+			for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+				offset += _regions[r].elementsNodes[i];
+			}
+			nodesOffsets[t] = offset;
+		}
+		Esutils::sizesToOffsets(nodesOffsets);
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			eslocal offset = nodesOffsets[t];
+			for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+				_regions[r].elementsNodes[i] += offset;
+				offset += _regions[r].elementsNodes[i] - offset;
+			}
+		}
+	}
+
+
+	// Gather coordinates and divide them to regions
 	std::vector<std::vector<esglobal> > sIDs(threads);
 	std::vector<esglobal> rIDs;
 	std::vector<double> sCoordinates;
 	std::vector<double> rCoordinates;
 
+	distribution = Esutils::getDistribution(threads, region.size());
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
@@ -77,7 +150,7 @@ void CollectedInfo::prepare(const std::vector<Element*> &region, size_t begin, s
 	std::sort(sIDs[0].begin(), sIDs[0].end());
 	Esutils::removeDuplicity(sIDs[0]);
 
-	rCoordinates.reserve(3 * sIDs[0].size());
+	sCoordinates.reserve(3 * sIDs[0].size());
 	for (size_t i = 0; i < sIDs[0].size(); i++) {
 		eslocal n = _mesh->coordinates().clusterIndex(sIDs[0][i]);
 		sCoordinates.insert(sCoordinates.end(), { _mesh->coordinates()[n].x, _mesh->coordinates()[n].y, _mesh->coordinates()[n].z });
@@ -90,86 +163,58 @@ void CollectedInfo::prepare(const std::vector<Element*> &region, size_t begin, s
 		ESINFO(ERROR) << "ESPRESO internal error while collecting points coordinates of a region.";
 	}
 
-	std::vector<esglobal> permutation(rIDs.size());
-	std::iota(permutation.begin(), permutation.end(), 0);
-	std::sort(permutation.begin(), permutation.end(), [&] (esglobal i, esglobal j) {
+	std::vector<esglobal> gPermutation(rIDs.size());
+	std::iota(gPermutation.begin(), gPermutation.end(), 0);
+	std::sort(gPermutation.begin(), gPermutation.end(), [&] (esglobal i, esglobal j) {
 		return rIDs[i] < rIDs[j];
 	});
 
-	_regions.back().coordinates.resize(rCoordinates.size());
-	distribution = Esutils::getDistribution(threads, rIDs.size());
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
-			_regions.back().coordinates[3 * i + 0] = rCoordinates[3 * permutation[i] + 0];
-			_regions.back().coordinates[3 * i + 1] = rCoordinates[3 * permutation[i] + 1];
-			_regions.back().coordinates[3 * i + 2] = rCoordinates[3 * permutation[i] + 2];
+	_cIndices.resize(_regions.size());
+	for (size_t r = 0; r < _regions.size(); r++) {
+		std::vector<std::vector<esglobal> > rNodes(threads);
+		distribution = Esutils::getDistribution(threads, _regions[r].elementsTypes.size());
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+
+			size_t begin = distribution[t] ? _regions[r].elementsNodes[distribution[t] - 1] : 0;
+			for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+
+				for (size_t n = begin; n < _regions[r].elementsNodes[i]; n++) {
+					rNodes[t].push_back(_regions[r].elements[n]);
+				}
+				begin = _regions[r].elementsNodes[i];
+
+			}
 		}
-	}
 
-	distribution = Esutils::getDistribution(threads, begin, end);
-	std::vector<std::vector<esglobal> > sElements(threads);
-	std::vector<std::vector<eslocal> > sElementsTypes(threads);
-	std::vector<std::vector<eslocal> > sElementsNodes(threads);
+		for (size_t t = 1; t < threads; t++) {
+			rNodes[0].insert(rNodes[0].end(), rNodes[t].begin(), rNodes[t].end());
+		}
+		std::sort(rNodes[0].begin(), rNodes[0].end());
+		Esutils::removeDuplicity(rNodes[0]);
+		_cIndices[r] = rNodes[0];
 
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
-			sElementsTypes[t].push_back(region[e]->vtkCode());
-			sElementsNodes[t].push_back(region[e]->nodes());
-			for (size_t n = 0; n < region[e]->nodes(); n++) {
-				sElements[t].push_back(_mesh->coordinates().globalIndex(region[e]->node(n)));
+		_regions[r].coordinates.resize(3 * _cIndices[r].size());
+		distribution = Esutils::getDistribution(threads, _cIndices[r].size());
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+				size_t index = std::lower_bound(gPermutation.begin(), gPermutation.end(), _cIndices[r][i], [&] (esglobal p, esglobal i) { return rIDs[p] < i; }) - gPermutation.begin();
+				_regions[r].coordinates[3 * i + 0] = rCoordinates[3 * gPermutation[index] + 0];
+				_regions[r].coordinates[3 * i + 1] = rCoordinates[3 * gPermutation[index] + 1];
+				_regions[r].coordinates[3 * i + 2] = rCoordinates[3 * gPermutation[index] + 2];
+			}
+		}
+
+		distribution = Esutils::getDistribution(threads, _regions[r].elements.size());
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+				_regions[r].elements[i] = std::lower_bound(_cIndices[r].begin(), _cIndices[r].end(), _regions[r].elements[i]) - _cIndices[r].begin();
 			}
 		}
 	}
-
-	for (size_t t = 1; t < threads; t++) {
-		sElements[0].insert(sElements[0].end(), sElements[t].begin(), sElements[t].end());
-		sElementsTypes[0].insert(sElementsTypes[0].end(), sElementsTypes[t].begin(), sElementsTypes[t].end());
-		sElementsNodes[0].insert(sElementsNodes[0].end(), sElementsNodes[t].begin(), sElementsNodes[t].end());
-	}
-
-	if (!Communication::gatherUnknownSize(sElementsTypes[0], _regions.back().elementsTypes)) {
-		ESINFO(ERROR) << "ESPRESO internal error while collecting elements types of a region.";
-	}
-	if (!Communication::gatherUnknownSize(sElementsNodes[0], _regions.back().elementsNodes)) {
-		ESINFO(ERROR) << "ESPRESO internal error while collecting elements nodes of a region.";
-	}
-	if (!Communication::gatherUnknownSize(sElements[0], _regions.back().elements)) {
-		ESINFO(ERROR) << "ESPRESO internal error while collecting elements of a region.";
-	}
-
-	distribution = Esutils::getDistribution(threads, _regions.back().elements.size());
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
-			_regions.back().elements[i] = std::lower_bound(permutation.begin(), permutation.end(), _regions.back().elements[i], [&] (esglobal index, esglobal value) {
-				return rIDs[index] < value;
-			}) - permutation.begin();
-		}
-	}
-
-	distribution = Esutils::getDistribution(threads, _regions.back().elementsNodes.size());
-	std::vector<eslocal> nodesOffsets(threads);
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		eslocal offset = 0;
-		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
-			offset += _regions.back().elementsNodes[i];
-		}
-		nodesOffsets[t] = offset;
-	}
-	Esutils::sizesToOffsets(nodesOffsets);
-
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		eslocal offset = nodesOffsets[t];
-		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
-			_regions.back().elementsNodes[i] += offset;
-			offset += _regions.back().elementsNodes[i] - offset;
-		}
-	}
-
 
 	// PREPARE SOLUTION VECTOR AVERAGING
 	std::vector<int> sMultiplicity(_mesh->coordinates().clusterSize()), rMultiplicity;
@@ -209,6 +254,7 @@ void CollectedInfo::prepare(const std::vector<Element*> &region, size_t begin, s
 		}
 		for (size_t i = distribution[t] + 1; i < distribution[t + 1]; i++) {
 			if (rIDs[_globalIDs[i - 1]] != rIDs[_globalIDs[i]]) {
+				pMap[t].insert(pMap[t].end(), rIDs[_globalIDs[i]] - rIDs[_globalIDs[i - 1]] - 1, pMap[t].back());
 				pMap[t].push_back(pMap[t].back());
 			}
 			pMap[t].back()++;
@@ -239,6 +285,9 @@ void CollectedInfo::addGeneralInfo()
 
 void CollectedInfo::addSettings(size_t step)
 {
+	size_t bodies    = _mode & InfoMode::SEPARATE_BODIES    ? _mesh->bodies()           : 1;
+	size_t materials = _mode & InfoMode::SEPARATE_MATERIALS ? _mesh->materials().size() : 1;
+
 	const Region *region = _region;
 	if (region == NULL) {
 		region = _mesh->regions()[0];
@@ -248,26 +297,35 @@ void CollectedInfo::addSettings(size_t step)
 		return;
 	}
 	for (auto it = region->settings[step].begin(); it != region->settings[step].end(); ++it) {
-		std::vector<double> sValues;
+		std::vector<std::vector<double> > sValues(_regions.size());
 
-		sValues.reserve(region->elements().size());
 		for (size_t e = 0; e < region->elements().size(); e++) {
-			sValues.push_back(0);
-			for (size_t n = 0; n < region->elements()[e]->nodes(); n++) {
-				sValues.back() += region->elements()[e]->sumProperty(it->first, n, step, 0);
+			size_t regionOffset = 0;
+			if ((_mode & InfoMode::SEPARATE_BODIES) && region->elements()[e]->params()) {
+				regionOffset += region->elements()[e]->param(Element::Params::BODY) * materials;
 			}
-			sValues.back() /= region->elements()[e]->nodes();
-			sValues.insert(sValues.end(), region->elements()[e]->domains().size() - 1, sValues.back());
+			if ((_mode & InfoMode::SEPARATE_MATERIALS) && region->elements()[e]->params()) {
+				regionOffset += region->elements()[e]->param(Element::Params::MATERIAL);
+			}
+
+			sValues[regionOffset].push_back(0);
+			for (size_t n = 0; n < region->elements()[e]->nodes(); n++) {
+				sValues[regionOffset].back() += region->elements()[e]->sumProperty(it->first, n, step, 0);
+			}
+			sValues[regionOffset].back() /= region->elements()[e]->nodes();
+			sValues[regionOffset].insert(sValues[regionOffset].end(), region->elements()[e]->domains().size() - 1, sValues[regionOffset].back());
 		}
 
-		std::vector<double> *values = new std::vector<double>();
-		if (!Communication::gatherUnknownSize(sValues, *values)) {
-			ESINFO(ERROR) << "ESPRESO internal error while collecting region data values.";
-		}
+		for (size_t r = 0; r < _regions.size(); r++) {
+			std::vector<double> *values = new std::vector<double>();
+			if (!Communication::gatherUnknownSize(sValues[r], *values)) {
+				ESINFO(ERROR) << "ESPRESO internal error while collecting region data values.";
+			}
 
-		std::stringstream ss;
-		ss << it->first;
-		_regions.back().data.elementDataDouble[ss.str()] = std::make_pair(1, values);
+			std::stringstream ss;
+			ss << it->first;
+			_regions[r].data.elementDataDouble[ss.str()] = std::make_pair(1, values);
+		}
 	}
 }
 
@@ -278,82 +336,89 @@ void CollectedInfo::addSolution(const std::vector<Solution*> &solution)
 	}
 
 	bool status = true;
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	size_t bodies    = _mode & InfoMode::SEPARATE_BODIES    ? _mesh->bodies()           : 1;
+	size_t materials = _mode & InfoMode::SEPARATE_MATERIALS ? _mesh->materials().size() : 1;
+
 	for (size_t i = 0; i < solution.size(); i++) {
 
-		const std::vector<Element*> *elements = NULL;
-		if (_region != NULL) {
-			elements = &_region->elements();
-		} else {
-			switch (solution[i]->eType) {
-			case ElementType::ELEMENTS:
-				elements = &_mesh->elements();
-				break;
-			case ElementType::NODES:
-				elements = &_mesh->nodes();
-				break;
-			default:
-				ESINFO(GLOBAL_ERROR) << "Implement storing solution for other element types.";
-			}
-		}
 
-		size_t threads = environment->OMP_NUM_THREADS;
-		std::vector<size_t> distribution = Esutils::getDistribution(threads, elements->size());
-		std::vector<double> sData(elements->size() * solution[i]->properties);
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
+		if (solution[i]->eType == ElementType::ELEMENTS) {
+			std::vector<std::vector<double> > sData(_regions.size());
 
-				switch (solution[i]->eType) {
-				case ElementType::ELEMENTS:
+			std::vector<std::vector<std::vector<double> > > rData(_regions.size(), std::vector<std::vector<double> >(threads));
+			std::vector<size_t> distribution = Esutils::getDistribution(threads, _mesh->elements().size());
+
+			#pragma omp parallel for
+			for (size_t t = 0; t < threads; t++) {
+				for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
+					size_t regionOffset = 0;
+					if ((_mode & InfoMode::SEPARATE_BODIES) && _mesh->elements()[e]->params()) {
+						regionOffset += _mesh->elements()[e]->param(Element::Params::BODY) * materials;
+					}
+					if ((_mode & InfoMode::SEPARATE_MATERIALS) && _mesh->elements()[e]->params()) {
+						regionOffset += _mesh->elements()[e]->param(Element::Params::MATERIAL);
+					}
+
+					eslocal d = std::lower_bound(_mesh->getPartition().begin(), _mesh->getPartition().end(), e + 1) - _mesh->getPartition().begin() - 1;
 					for (size_t p = 0; p < solution[i]->properties; p++) {
-						sData[e * solution[i]->properties] += solution[i]->get(p, 0, e);
+						rData[regionOffset][t].push_back(solution[i]->get(p, d, e - _mesh->getPartition()[d]));
 					}
-					break;
-				case ElementType::NODES:
-					for (auto d = (*elements)[e]->domains().begin(); d != (*elements)[e]->domains().end(); ++d) {
-						for (size_t p = 0; p < solution[i]->properties; p++) {
-							sData[e * solution[i]->properties] += solution[i]->get(p, *d, _mesh->coordinates().localIndex(e, *d));
-						}
-					}
-					break;
+
+				}
+			}
+
+			for (size_t r = 0; r < _regions.size(); r++) {
+				for (size_t t = 0; t < threads; t++) {
+					sData[r].insert(sData[r].end(), rData[r][t].begin(), rData[r][t].end());
 				}
 
+				std::vector<double> *collected = new std::vector<double>();
+				status = status && Communication::gatherUnknownSize(sData[r], *collected);
+				_regions[r].data.elementDataDouble[solution[i]->name] = std::make_pair(solution[i]->properties, collected);
 			}
 		}
 
-		switch (solution[i]->eType) {
-		case ElementType::ELEMENTS: {
-			std::vector<double> *collected = new std::vector<double>();
-			status = status && Communication::gatherUnknownSize(sData, *collected);
-			_regions.back().data.elementDataDouble[solution[i]->name] = std::make_pair(solution[i]->properties, collected);
-		} break;
-		case ElementType::NODES: {
+		if (solution[i]->eType == ElementType::NODES) {
+			std::vector<double> sData(solution[i]->properties * _mesh->nodes().size());
+
+			std::vector<size_t> distribution = Esutils::getDistribution(threads, _mesh->nodes().size());
+			#pragma omp parallel for
+			for (size_t t = 0; t < threads; t++) {
+				for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
+
+					for (auto d = _mesh->nodes()[n]->domains().begin(); d != _mesh->nodes()[n]->domains().end(); ++d) {
+						for (size_t p = 0; p < solution[i]->properties; p++) {
+							sData[n * solution[i]->properties + p] += solution[i]->get(p, *d, _mesh->coordinates().localIndex(n, *d));
+						}
+					}
+				}
+			}
+
 			std::vector<double> collected;
 			status = status && Communication::gatherUnknownSize(sData, collected);
-			if (!environment->MPIrank) {
-				std::vector<double> *averaged = new std::vector<double>();
-				_regions.back().data.pointDataDouble[solution[i]->name] = std::make_pair(solution[i]->properties, averaged);
-				averaged->resize(_regions.back().coordinates.size() * solution[i]->properties / 3);
 
-				size_t threads = environment->OMP_NUM_THREADS;
-				std::vector<size_t> distribution = Esutils::getDistribution(threads, _globalIDsMap.size());
+			for (size_t r = 0; r < _regions.size(); r++) {
+				std::vector<double> *averaged = new std::vector<double>();
+				_regions[r].data.pointDataDouble[solution[i]->name] = std::make_pair(solution[i]->properties, averaged);
+				averaged->resize(_cIndices[r].size() * solution[i]->properties);
+
+				std::vector<size_t> distribution = Esutils::getDistribution(threads, _cIndices[r].size());
 				#pragma omp parallel for
 				for (size_t t = 0; t < threads; t++) {
 					for (size_t id = distribution[t]; id < distribution[t + 1]; id++) {
 
 						for (size_t p = 0; p < solution[i]->properties; p++) {
-							for (esglobal j = (id == 0 ? 0 : _globalIDsMap[id - 1]); j < _globalIDsMap[id]; j++) {
+							for (esglobal j = _cIndices[r][id] ? _globalIDsMap[_cIndices[r][id] - 1] : 0; j < _globalIDsMap[_cIndices[r][id]]; j++) {
 								(*averaged)[id * solution[i]->properties + p] += collected[_globalIDs[j] * solution[i]->properties + p];
 							}
-							(*averaged)[id * solution[i]->properties + p] /= _globalIDsMultiplicity[id];
+							(*averaged)[id * solution[i]->properties + p] /= _globalIDsMultiplicity[_cIndices[r][id]];
 						}
 
 					}
 				}
 			}
-		} break;
-		default:
-			ESINFO(GLOBAL_ERROR) << "Implement storing solution for other element types.";
 		}
 	}
 
