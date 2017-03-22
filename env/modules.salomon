@@ -1,7 +1,12 @@
 
-module load impi/5.1.2.150-iccifort-2016.1.150-GCC-4.9.3-2.25
-module load imkl/11.3.1.150-iimpi-2016.01-GCC-4.9.3-2.25
-module load tbb/4.4.2.152
+#module load impi/5.1.2.150-iccifort-2016.1.150-GCC-4.9.3-2.25
+#module load imkl/11.3.1.150-iimpi-2016.01-GCC-4.9.3-2.25
+#module load tbb/4.4.2.152
 
-module load zlib/1.2.8-intel-2016.01
-module load CMake/3.3.1-intel-2016.01
+#module load zlib/1.2.8-intel-2016.01
+#module load CMake/3.3.1-intel-2016.01
+
+ml load zlib/1.2.11-GCCcore-6.3.0
+ml load CMake/3.7.2-intel-2017a
+ml load intel/2017a
+ml load tbb/4.4.2.152
