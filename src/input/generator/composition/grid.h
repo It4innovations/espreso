@@ -57,6 +57,9 @@ public:
 
 	size_t pointCount() const;
 
+	size_t bodyIndex() { return _body; }
+	void bodyIndex(size_t index) { _body = index; }
+
 protected:
 	const GridConfiguration &_grid;
 	GridSettings _settings;
@@ -66,6 +69,7 @@ protected:
 
 	size_t _index;
 	size_t _size;
+	size_t _body;
 
 	std::vector<int> _cMap;
 	int _clusterIndex;

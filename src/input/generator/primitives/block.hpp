@@ -76,10 +76,11 @@ void Block<TElement>::forEachElement(const Triple<size_t> &start, const Triple<s
 
 
 template <class TElement>
-void Block<TElement>::elements(std::vector<Element*> &elements)
+void Block<TElement>::elements(std::vector<Element*> &elements, size_t body)
 {
 	elements.reserve(TElement::subelements * (block.domains * block.elements).mul());
 	std::vector<eslocal> params(6);
+	params[Element::Params::BODY] = body;
 
 	Triple<size_t> offset;
 	for (offset.z = 0; offset.z < block.domains.z; offset.z++) {

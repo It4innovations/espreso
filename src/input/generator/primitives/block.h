@@ -32,7 +32,7 @@ public:
 	Block(Mesh &mesh, const BlockSetting &block): BlockGenerator(mesh, block) {};
 
 	void points(std::vector<Point> &points);
-	void elements(std::vector<Element*> &elements);
+	void elements(std::vector<Element*> &elements, size_t body);
 	void boundaries(std::vector<Element*> &nodes, const std::vector<int> &neighbours);
 	void uniformPartition(std::vector<eslocal> &partsPtrs, size_t subdomains);
 	void uniformFixPoints(const std::vector<Element*> &nodes, std::vector<std::vector<Element*> > &fixPoints);

@@ -177,7 +177,7 @@ void Sphere::points(Coordinates &coordinates)
 
 void Sphere::elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
 {
-	_block->elements(elements);
+	_block->elements(elements, 0);
 	bodies = { 0, elements.size() };
 }
 

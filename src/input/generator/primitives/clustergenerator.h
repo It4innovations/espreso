@@ -12,7 +12,7 @@ class ClusterGenerator {
 
 public:
 	virtual void points(std::vector<Point> &points) =0;
-	virtual void elements(std::vector<Element*> &elements) =0;
+	virtual void elements(std::vector<Element*> &elements, size_t body) =0;
 	virtual void boundaries(std::vector<Element*> &nodes, const std::vector<int> &neighbours) =0;
 
 	virtual void uniformPartition(std::vector<eslocal> &partsPtrs, size_t subdomains) =0;

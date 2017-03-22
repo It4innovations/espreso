@@ -65,7 +65,7 @@ void Grid::load(const GridConfiguration &configuration, Mesh &mesh, size_t index
 }
 
 Grid::Grid(const GridConfiguration &configuration, Mesh &mesh, size_t index, size_t size)
-: Loader(mesh), _grid(configuration), _settings(configuration), _index(index), _size(size)
+: Loader(mesh), _grid(configuration), _settings(configuration), _index(index), _size(size), _body(0)
 {
 	Triple<size_t> clusters = _settings.blocks * _settings.clusters;
 	std::string element;
@@ -199,7 +199,7 @@ void Grid::points(Coordinates &coordinates, size_t globalIdOffset)
 
 void Grid::elements(std::vector<size_t> &bodies, std::vector<Element*> &elements, std::vector<Element*> &faces, std::vector<Element*> &edges)
 {
-	_block->elements(elements);
+	_block->elements(elements, _body);
 	bodies = { 0, elements.size() };
 }
 

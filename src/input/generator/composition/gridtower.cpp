@@ -46,6 +46,7 @@ GridTower::GridTower(const GridTowerConfiguration &configuration, Mesh &mesh, si
 	for (size_t i = 0; i < _clusterIndexBegin; i++) {
 		_gridPointsIDOffset += counters[i];
 	}
+	_grid->bodyIndex(_gridIndex);
 }
 
 GridTower::~GridTower()
