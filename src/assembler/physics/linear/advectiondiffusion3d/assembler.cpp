@@ -168,13 +168,41 @@ void AdvectionDiffusion3D::assembleStiffnessMatrix(const Element* e, DenseMatrix
 	}
 }
 
+static void analyticsKernels(SparseMatrix &R1, size_t nodes)
+{
+	R1.rows = nodes;
+	R1.cols = 1;
+	R1.nnz = R1.rows * R1.cols;
+	R1.type = 'G';
+
+	R1.dense_values.resize(R1.nnz, 1 / sqrt(nodes));
+}
+
+static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat)
+{
+	RegMat.rows = K.rows;
+	RegMat.cols = K.cols;
+	RegMat.nnz  = 1;
+	RegMat.type = K.type;
+
+	RegMat.I_row_indices.push_back(1);
+	RegMat.J_col_indices.push_back(1);
+	RegMat.V_values.push_back(K.getDiagonalMaximum());
+	RegMat.ConvertToCSR(1);
+}
+
 void AdvectionDiffusion3D::makeStiffnessMatricesRegular()
 {
 	#pragma omp parallel for
 	for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
 		switch (config::solver::REGULARIZATION) {
 		case config::solver::REGULARIZATIONalternative::FIX_POINTS:
-			ESINFO(GLOBAL_ERROR) << "Implement fix point regularization for advection diffusion 3D";
+			analyticsKernels(R1[subdomain], _mesh.coordinates().localSize(subdomain));
+			analyticsRegMat(K[subdomain], RegMat[subdomain]);
+			K[subdomain].RemoveLower();
+			RegMat[subdomain].RemoveLower();
+			K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
+			RegMat[subdomain].ConvertToCOO(1);
 			break;
 		case config::solver::REGULARIZATIONalternative::NULL_PIVOTS:
             std::cout << "HOOVNOO" <<std::endl;
