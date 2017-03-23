@@ -30,6 +30,7 @@ public:
     void Create_Kinv_perDomain();
 	void SetupKsolvers ( );
     void CreateDirichletPrec( Physics &physics );
+    void multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in);
 
     // sets affinity of processes on accelerators
     void SetAcceleratorAffinity();

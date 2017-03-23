@@ -288,7 +288,7 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
             // }
         } else {
             // TODO NOT YET IMPLEMENTED ON MIC
-            cluster.multKplusGlobal_l(cluster.x_prim_cluster1);
+            cluster.multKplusGlobal_l_Acc(cluster.x_prim_cluster1);
         }
         time_eval.timeEvents[1].end();
 

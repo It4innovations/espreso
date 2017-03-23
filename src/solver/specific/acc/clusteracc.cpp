@@ -166,139 +166,7 @@ void ClusterAcc::SetAcceleratorAffinity() {
 
 }
 
-
 void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
-    //    ESINFO(PROGRESS2) << "Creating Local Schur complements";
-    //    // detect how many MPI processes is running per node
-    //    int _MPIglobalRank;
-    //    int _MPIglobalSize;
-    //    int _MPInodeRank;
-    //    int _MPInodeSize;
-    //    std::string _nodeName;
-    //    MPI_Comm _currentNode;
-    //    MPI_Comm _storingProcs;
-    //    MPI_Comm_rank(MPI_COMM_WORLD, &_MPIglobalRank);
-    //    MPI_Comm_size(MPI_COMM_WORLD, &_MPIglobalSize);
-    //    int color;
-    //    int length;
-    //    std::vector<char> name(MPI_MAX_PROCESSOR_NAME);
-    //    MPI_Get_processor_name(name.data(), &length);
-    //    _nodeName = std::string(name.begin(), name.begin() + length);
-    //    std::vector<int> rCounts(_MPIglobalSize);
-    //    std::vector<int> rDispl(_MPIglobalSize);
-    //    std::vector<int> colors(_MPIglobalSize);
-    //    std::vector<char> names;
-    //    MPI_Gather(&length, sizeof(int), MPI_BYTE, rCounts.data(), sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
-    //    for (size_t i = 1; i < rCounts.size(); i++) {
-    //        rDispl[i] += rDispl[i - 1] + rCounts[i - 1];
-    //    }
-    //    names.resize(rDispl.back() + rCounts.back());
-    //    MPI_Gatherv(name.data(), length * sizeof(char), MPI_BYTE, names.data(), rCounts.data(), rDispl.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
-    //    std::map<std::string, size_t> nodes;
-    //    for (size_t i = 0; i < _MPIglobalSize; i++) {
-    //        std::string str(names.begin() + rDispl[i], names.begin() + rDispl[i] + rCounts[i]);
-    //        auto it = nodes.find(str);
-    //        if (it == nodes.end()) {
-    //            size_t s = nodes.size();
-    //            nodes[str] = s;
-    //        }
-    //        colors[i] = nodes[str];
-    //    }
-    //    MPI_Scatter(colors.data(), sizeof(int), MPI_BYTE, &color, sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
-    //    MPI_Comm_split(MPI_COMM_WORLD, color, _MPIglobalRank, &_currentNode);
-    //    MPI_Comm_rank(_currentNode, &_MPInodeRank);
-    //    MPI_Comm_size(_currentNode, &_MPInodeSize);
-    //    MPI_Comm_split(MPI_COMM_WORLD, _MPInodeRank, _MPIglobalRank, &_storingProcs);
-    //    // END - detect how many MPI processes is running per node
-    //    ESINFO(PROGRESS2) << "MPI ranks per node: " << _MPInodeSize;
-    //    //TODO:
-    //    int accelerators_per_node = config::solver::N_MICS;
-    //    int target;
-    //
-    //    if (_MPInodeRank < (_MPInodeSize/2)) //  .../accelerators_per_node
-    //        target = 0;
-    //    else
-    //        target = 1;
-    //
-    //    if (accelerators_per_node == 1) target = 0;
-    //
-    //    int acc_per_MPI = 1;
-    //
-    //    // Set process placement on Xeon Phi
-    //    int ranks_per_node = _MPInodeSize;
-    //    //int rank = _MPInodeRank % (_MPInodeSize/2); //  .../accelerators_per_node
-    //    int rank = _MPInodeRank % (_MPInodeSize/accelerators_per_node);
-    //    //for (eslocal i = 0; i < accelerators_per_node; ++i) {
-    //    int used_core_num = 0;
-    //    int first_core = 0;
-    //    int last_core = 0;
-    //    // TODO: #pragma offload target(mic:i)
-    //#pragma offload target(mic:target)
-    //    {
-    //        //        	Logical to Physical Processor Mapping
-    //        //        	? Hardware:
-    //        //        	? Physical Cores are 0..60
-    //        //        	? Logical Cores are 0..243
-    //        //        	? Mapping is not what you are used to!
-    //        //        	? Logical Core 0 maps to Physical core 60, thread context 0
-    //        //        	? Logical Core 1 maps to Physical core 0, thread context 0
-    //        //        	? Logical Core 2 maps to Physical core 0, thread context 1
-    //        //        	? Logical Core 3 maps to Physical core 0, thread context 2
-    //        //        	? Logical Core 4 maps to Physical core 0, thread context 3
-    //        //        	? Logical Core 5 maps to Physical core 1, thread context 0
-    //        //        	? ...
-    //        //        	? Logical Core 240 maps to Physical core 59, thread context 3
-    //        //        	? Logical Core 241 maps to Physical core 60, thread context 1
-    //        //        	? Logical Core 242 maps to Physical core 60, thread context 2
-    //        //        	? Logical Core 243 maps to Physical core 60, thread context 3
-    //        //        	? OpenMP threads start binding to logical core 1, not logical core 0
-    //        //        	? For compact mapping 240 OpenMP threads are mapped to the first 60 cores
-    //        //        	? No contention for the core containing logical core 0 ? the core that the O/S uses most
-    //        //        	? But for scatter and balanced mappings, contention for logical core 0 begins at 61 threads
-    //        //        	? Not much performance impact unless O/S is very busy
-    //        //        	? Best to avoid core 60 for offload jobs & MPI jobs with compute/communication overlap
-    //        //        	? KMP_PLACE_THREADS limits the range of cores & thread contexts
-    //        //        	? E.g., KMP_PLACE_THREADS=60c,2c with KMP_AFFINITY=compact and OMP_NUM_THREADS=120 places 2
-    //        //        	threads on each of the first 60 cores
-    //        cpu_set_t my_set;        /* Define your cpu_set bit mask. */
-    //        CPU_ZERO(&my_set);       /* Initialize it all to 0, i.e. no CPUs selected. */
-    //        int cores = sysconf(_SC_NPROCESSORS_ONLN); // for Xeon Phi 7120 - results is 244
-    //        cores = (cores/4  ) - 1; // keep core for system and remove effect of hyperthreading
-    //        //std::cout << sysconf(_SC_NPROCESSORS_ONLN) << " Cores\n";//std::thread::hardware_concurrency() << "Cores \n";
-    //        //int cores_per_rank = accelerators_per_node * cores/ranks_per_node;
-    //        int cores_per_rank = accelerators_per_node * cores / ranks_per_node;
-    //        std::cout << "cores: "<<cores << std::endl;
-    //        std::cout << "cores_per_rank: " << cores_per_rank << std::endl;
-    //
-    //        //omp_set_num_threads((cores_per_rank)*4);
-    //        omp_set_num_threads(4*cores_per_rank);
-    //        for (int i = 0; i < cores_per_rank ; i++) {
-    //            if (i == 0) {
-    //                //first_core = 1*(cores_per_rank)*rank + 1*i;
-    //                first_core = cores_per_rank*rank + 1;
-    //            }
-    //            last_core = 1*(cores_per_rank)*rank + 1*i;
-    //            //int core = 1 + 4*(cores_per_rank)*rank + 4*i;
-    //
-    //            int core =1+  4*cores_per_rank*rank + 4*i;
-    //            for (int j = 0 ; j < 4; j++ ) {
-    //                std::cout << rank << " " << core << std::endl;
-    //                CPU_SET(core , &my_set);     /* set the bit that represents core 7. */
-    //                core++;
-    //            }
-    //            used_core_num++;
-    //        }   
-    //#pragma omp parallel
-    //        {
-    //            sched_setaffinity(0, sizeof(cpu_set_t), &my_set); /* Set affinity of tihs process to */
-    //        }
-    //        /* the defined mask, i.e. only 7. */
-    //    }
-    //    //ESINFO(PROGRESS2)
-    //    std::cout << "Global MPI rank: " << _MPIglobalRank << " - Node MPI rank: " << _MPInodeRank << " uses: " << used_core_num << " Xeon Phi processing cores of accelerator #" << target <<" (from " << first_core << " to " << last_core <<  ")\n";
-    //    // }
-
-
     // Ratio of work done on MIC
     double MICr = 1.0;
     if ( config::solver::LOAD_BALANCING ) {
@@ -1482,3 +1350,178 @@ void ClusterAcc::CreateDirichletPrec( Physics &physics ) {
 
     ESINFO(PROGRESS2);   
 }
+
+
+
+void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
+
+	//ESINFO(PROGRESS2) << "K+ multiply HFETI";
+	mkl_set_num_threads(1);
+
+	cluster_time.totalTime.start();
+
+	vec_fill_time.start();
+	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
+	vec_fill_time.end();
+
+	// loop over domains in the cluster
+	loop_1_1_time.start();
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++)
+	{
+		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
+		if (SYMMETRIC_SYSTEM) {
+			domains[d].Kplus_R.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
+		} else {
+			domains[d].Kplus_R2.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
+		}
+	}
+	loop_1_1_time.end();
+
+	loop_1_2_time.start();
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++)
+	{
+		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
+		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+
+		for (eslocal i = e0_start; i < e0_end; i++ )
+			vec_e0[i] = - tm3[d][i - e0_start];
+	}
+
+
+	for (size_t d = 0; d < domains.size(); d++)
+		for (eslocal i = 0; i < domains[d].B0Kplus_comp.rows; i++)
+			vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
+
+	// end loop over domains
+	loop_1_2_time.end();
+
+	mkl_set_num_threads(PAR_NUM_THREADS);
+	clusCP_time.start();
+
+
+	clus_F0_1_time.start();
+	F0.Solve(vec_g0, tm1[0], 0, 0);
+	clus_F0_1_time.end();
+
+	clus_G0_time.start();
+	if (SYMMETRIC_SYSTEM) {
+		G0.MatVec(tm1[0], tm2[0], 'N');
+	} else {
+		G02.MatVec(tm1[0], tm2[0], 'N');
+	}
+
+	clus_G0_time.end();
+
+	#pragma omp parallel for
+for (size_t i = 0; i < vec_e0.size(); i++)
+		tm2[0][i] = tm2[0][i] - vec_e0[i];
+
+	 clus_Sa_time.start();
+
+	switch (config::solver::SASOLVER) {
+	case config::solver::SASOLVERalternative::CPU_SPARSE:
+		Sa.Solve(tm2[0], vec_alfa, 0, 0);
+		break;
+	case config::solver::SASOLVERalternative::CPU_DENSE:
+		Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
+		break;
+	case config::solver::SASOLVERalternative::ACC_DENSE:
+		Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Not implemented S alfa solver.";
+	}
+
+	 clus_Sa_time.end();
+
+	 clus_G0t_time.start();
+	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
+	 clus_G0t_time.end();
+
+	#pragma omp parallel for
+for (size_t i = 0; i < vec_g0.size(); i++)
+		tm1[0][i] = vec_g0[i] - tm1[0][i];
+
+
+	clus_F0_2_time.start();
+	F0.Solve(tm1[0], vec_lambda,0,0);
+	clus_F0_2_time.end();
+
+	clusCP_time.end();
+
+	// Kplus_x
+	mkl_set_num_threads(1);
+	loop_2_1_time.start();
+
+    // accelerator stuff
+    eslocal maxDevNumber = this->acc_per_MPI;
+
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++)
+	{
+		eslocal domain_size = domains[d].domain_prim_size;
+
+		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0);
+		for (size_t i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+			tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
+		domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
+
+		for (eslocal i = 0; i < domain_size; i++)
+			tm1[d][i] = x_in[d][i] - tm1[d][i];
+   } 
+
+    for ( eslocal i = 0; i < maxDevNumber; ++i ) {
+        #pragma omp parallel for 
+        for ( eslocal d = 0 ; d < accDomains[i].size(); ++d ) {
+            eslocal domN = accDomains[i].at(d);
+            for ( eslocal j = 0 ; j < domains[domN].K.cols; ++j ) {
+                SparseKPack[i].SetX(d, j, tm1[domN].at(j));   
+            }
+        }
+    }
+    #pragma omp parallel num_threads( maxDevNumber ) 
+    {
+        eslocal myAcc = omp_get_thread_num();
+        SparseKPack[ myAcc ].SolveMIC_Start();
+        
+
+    }
+
+	//	domains[d].multKplusLocal(tm1[d] , tm2[d]);
+
+#pragma omp parallel for 
+for (size_t d = 0; d < domains.size(); d++) {
+		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
+		eslocal domain_size = domains[d].domain_prim_size;
+
+		domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
+}
+
+    #pragma omp parallel num_threads( maxDevNumber ) 
+    {
+        eslocal myAcc = omp_get_thread_num();
+        SparseKPack[ myAcc ].SolveMIC_Sync();
+        for (eslocal i = 0 ; i < accDomains[ myAcc ].size(); ++i) {
+            eslocal domN = accDomains[myAcc].at(i);
+            SparseKPack[myAcc].GetY(i,tm2[domN]);
+        }
+
+    }
+
+
+
+#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++) {
+		eslocal domain_size = domains[d].domain_prim_size;
+
+		for (eslocal i = 0; i < domain_size; i++)
+			x_in[d][i] = tm2[d][i] + tm3[d][i];
+
+	}
+	loop_2_1_time.end();
+
+	cluster_time.totalTime.end();
+}
+
