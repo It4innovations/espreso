@@ -27,10 +27,6 @@ class ESPRESOInput(unittest.TestCase):
 
 if __name__ == '__main__':
 
-    openfoam      = os.path.join(ROOT, "examples", "input", "openfoam")
-    workbench     = os.path.join(ROOT, "examples", "input", "workbench")
-    espresoBinary = os.path.join(ROOT, "examples", "input", "espresoBinaryFormat")
-
     openfoam, workbench, espresoBinary = TestCaseCreator.select(
         os.path.join(ROOT, "examples", "input", "openfoam"),
         os.path.join(ROOT, "examples", "input", "workbench"),

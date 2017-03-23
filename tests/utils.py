@@ -55,11 +55,12 @@ class TestCaseCreator:
             origin.append([ directory ])
             selection.append([])
             for arg in sys.argv[1:]:
-                if arg.startswith("-") or arg.startswith("--"):
-                    argv.append(arg)
-                    continue
                 if os.path.commonprefix([ directory, os.path.join(ESPRESO_ROOT, arg) ]) == directory:
                     selection[-1].append(os.path.join(ESPRESO_ROOT, arg))
+
+        for arg in sys.argv[1:]:
+            if arg.startswith("-") or arg.startswith("--"):
+                argv.append(arg)
 
         if len(sys.argv) == len(argv):
             if len(origin) == 1:
