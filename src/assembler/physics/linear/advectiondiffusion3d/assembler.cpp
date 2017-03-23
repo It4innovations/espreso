@@ -58,7 +58,9 @@ void AdvectionDiffusion3D::assembleB0()
 			EqualityConstraints::insertDomainGluingToB0(_constraints, _mesh.corners(), pointDOFs);
 			break;
 		case config::solver::B0_TYPEalternative::KERNELS:
-			std::for_each(R1.begin(), R1.end(), [] (SparseMatrix &m) { m.ConvertCSRToDense(0); });
+			if (config::solver::REGULARIZATION == config::solver::REGULARIZATIONalternative::NULL_PIVOTS) {
+				std::for_each(R1.begin(), R1.end(), [] (SparseMatrix &m) { m.ConvertCSRToDense(0); });
+			}
 			EqualityConstraints::insertKernelsToB0(_constraints, _mesh.faces(), pointDOFs, R1);
 			break;
 		default:
