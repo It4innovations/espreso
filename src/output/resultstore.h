@@ -8,6 +8,7 @@
 #include "../basis/point/point.h"
 #include "../assembler/step.h"
 #include "store.h"
+#include "meshinfo.h"
 
 namespace espreso {
 
@@ -19,7 +20,6 @@ enum class ElementType;
 namespace output {
 
 struct RegionData;
-class MeshInfo;
 
 class ResultStore: public Store {
 
@@ -41,7 +41,7 @@ public:
 	virtual ~ResultStore();
 
 protected:
-	ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path);
+	ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path, MeshInfo::InfoMode mode = MeshInfo::InfoMode::PREPARE);
 
 	virtual std::string store(const std::string &name, const RegionData &regionData) =0;
 

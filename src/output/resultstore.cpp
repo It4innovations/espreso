@@ -28,26 +28,29 @@
 
 using namespace espreso::output;
 
-ResultStore::ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path)
-: Store(output), _mesh(mesh), _path(path)
+ResultStore::ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path, MeshInfo::InfoMode mode)
+: Store(output), _mesh(mesh), _path(path), _meshInfo(NULL)
 {
-	MeshInfo::InfoMode mode = MeshInfo::PREPARE; // TODO: implement lazy preparation
 	if (_configuration.separate_bodies) {
 		mode = mode | MeshInfo::SEPARATE_BODIES;
 	}
 	if (_configuration.separate_materials) {
 		mode = mode | MeshInfo::SEPARATE_MATERIALS;
 	}
-	if (_configuration.collected) {
-		_meshInfo = new CollectedInfo(_mesh, mode);
-	} else {
-		_meshInfo = new DistributedInfo(_mesh, _configuration.domain_shrink_ratio, _configuration.cluster_shrink_ratio, mode);
+	if (mode & MeshInfo::InfoMode::PREPARE) {
+		if (_configuration.collected) {
+			_meshInfo = new CollectedInfo(_mesh, mode);
+		} else {
+			_meshInfo = new DistributedInfo(_mesh, _configuration.domain_shrink_ratio, _configuration.cluster_shrink_ratio, mode);
+		}
 	}
 }
 
 ResultStore::~ResultStore()
 {
-	delete _meshInfo;
+	if (_meshInfo != NULL) {
+		delete _meshInfo;
+	}
 }
 
 std::vector<std::string> ResultStore::store(const std::string &name, const Step &step, const MeshInfo *meshInfo)
