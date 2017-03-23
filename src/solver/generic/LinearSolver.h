@@ -32,30 +32,9 @@ public:
 
 	virtual ~LinearSolver();
 
-	void setup();
+//	void setup();
 
 	void init(const std::vector<int> &neighbours);
-
-//	void init(
-//			const Mesh &mesh,
-//
-//			std::vector < SparseMatrix >	& K_mat,
-//			std::vector < SparseMatrix >	& T_mat,
-//			std::vector < SparseMatrix >	& B1_mat,
-//			std::vector < SparseMatrix >	& B0_mat,
-//
-//			std::vector < std::vector <eslocal> >	& lambda_map_sub_B1,
-//			std::vector < std::vector <eslocal> >	& lambda_map_sub_B0,
-//			std::vector < std::vector <eslocal> >	& lambda_map_sub_clst,
-//			std::vector < std::vector <double> >	& B1_duplicity,
-//
-//			std::vector < std::vector <double > >	& f_vec,
-//			std::vector < std::vector <double > >	& vec_c,
-//
-//			const std::vector < std::vector <eslocal > >	& fix_nodes,
-//
-//			const std::vector < int > & neigh_clusters
-//	);
 
 	void Preprocessing( std::vector < std::vector < eslocal > > & lambda_map_sub );
 
@@ -68,40 +47,39 @@ public:
 
 	void CheckSolution( std::vector < std::vector < double > > & prim_solution );
 
-	void set_B1(
-			const std::vector < SparseMatrix >				& B1_mat,
-			const std::vector < std::vector <double> >        & B1_duplicity);
 
-	void set_B0(
-			const std::vector < SparseMatrix >				& B0_mat );
 
-//	void set_R(
-//			const Mesh &mesh
-//	);
 
-	void set_R_from_K();
 
 	Instance *instance;
 	const ESPRESOSolver &configuration;
-
-	// TODO: to be removed
-	OldPhysics *physics;
-	Constraints *constraints;
-
-
 	TimeEval timeEvalMain; //(string("ESPRESO Solver Overal Timing"));
 
+	// TODO: to be removed
+	OldPhysics  *physics;
+	Constraints *constraints;
+
 private:
+
 	eslocal number_of_subdomains_per_cluster;
 
 	bool 	SINGULAR;
-	bool 	KEEP_FACTORS;
 
 	Cluster *cluster;
 	IterSolver *solver;
 
-
-
+	void setup_HTFETI();
+	void setup_LocalSchurComplement();
+	void setup_Preconditioner();
+	void setup_FactorizationOfStiffnessMatrices();
+	void setup_KernelMatrices();
+	void setup_B1Matrices();
+	void setup_B0Matrices();
+	void setup_SetDirichletBoundaryConditions();
+	void setup_CreateDirichletPreconditioner();
+	void setup_CreateG_GGt_CompressG();
+	void setup_SetupCommunicationLayer();
+	void setup_InitClusterAndSolver();
 };
 
 }

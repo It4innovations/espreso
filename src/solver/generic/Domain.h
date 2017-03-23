@@ -21,10 +21,9 @@ using std::vector;
 using std::map;
 using std::make_pair;
 
-//#include <cilk/cilk.h>
-//#include <cilk/cilk_api.h>
-
 #include "../generic/utils.h"
+#include "../../assembler/instance.h"
+
 
 #pragma once
 
@@ -34,10 +33,84 @@ class Domain {
 
 public:
 	// Constructor
-	Domain(const ESPRESOSolver &configuration, eslocal domain_index, eslocal use_dynamic_1_no_dynamic_0);
-	Domain(const ESPRESOSolver &configuration);
+//	Domain(const ESPRESOSolver &configuration);
+	Domain(const ESPRESOSolver &configuration, Instance *instance_in, eslocal domain_index, eslocal USE_HTFETI_in);
+//	Domain(const ESPRESOSolver &configuration, eslocal domain_index, eslocal use_dynamic_1_no_dynamic_0);
 
-	ESPRESOSolver configuration;
+//    ClusterBase(const ESPRESOSolver &configuration, Instance *instance_in):
+//     	configuration(configuration),
+//			instance(instance_in),
+
+
+    const ESPRESOSolver &configuration;
+	Instance *instance;
+	// ************************
+
+//	Instance(size_t domains, const std::vector<int> &neighbours);
+//	Instance(Instance &other, Matrices &share);
+//	~Instance();
+//
+//	size_t domains;
+//	std::vector<size_t> 	&domainDOFCount;
+//	std::vector<Property> 	&properties;
+//	std::vector<int> 		neighbours;
+//
+//	std::vector<SparseMatrix> 			&K, &N1, &N2, &RegMat;
+
+	SparseMatrix &K;
+
+	SparseMatrix &Kplus_R;
+	SparseMatrix &Kplus_R2;
+	SparseMatrix Kplus_Rb;
+	SparseMatrix Kplus_Rb2;
+
+	SparseMatrix &_RegMat;
+
+
+//	std::vector<SparseMatrix> 			&M;
+//	std::vector<std::vector<double> > 	&R, &f;
+
+	SEQ_VECTOR <double> &f;
+
+//	// matrices for Hybrid FETI constraints
+//	std::vector<SparseMatrix> 			&B0;
+//	std::vector<std::vector<esglobal> > &B0subdomainsMap; // TODO: not needed
+
+	SparseMatrix B0;
+
+//	// matrices for FETI constraints
+//	std::vector<SparseMatrix> &B1;
+
+	SparseMatrix B1;
+
+//	std::vector<std::vector<esglobal> > &B1subdomainsMap; // TODO: not needed
+//	std::vector<std::vector<esglobal> > &B1clustersMap; // TODO: get it directly
+//
+//	std::vector<std::vector<double> > 	&B1c, &LB, &B1duplicity;
+//
+//	std::vector<SparseMatrix> 			&inequality;
+//	std::vector<std::vector<double> > 	&inequalityC;
+//
+//	// blocks types of B1
+//	enum CONSTRAINT {
+//		DIRICHLET,
+//		EQUALITY_CONSTRAINTS,
+//		INEQUALITY_CONSTRAINTS,
+//	};
+
+//	std::vector<size_t> &block;
+//
+//
+//	std::vector<std::vector<double> > primalSolution;
+//	std::vector<std::vector<double> > dualSolution;
+//
+//	std::vector<Solution*> solutions;
+
+
+	// ************************
+
+
+
 
 	// Domain specific variables
 	eslocal domain_global_index;
@@ -52,7 +125,6 @@ public:
 
 
 	// Matrices and vectors of the cluster
-	SparseMatrix B0;
 	SparseMatrix B0t;
 	SparseMatrix B0_comp;
 	SparseMatrix B0t_comp;
@@ -67,7 +139,6 @@ public:
 
 	SparseMatrix B1Kplus;
 	//SparseMatrix B1KplusB1t;
-	SparseMatrix B1;
 	SparseMatrix B1t;
 	SparseMatrix B1t_DirPr;
 	SEQ_VECTOR <eslocal> B1t_Dir_perm_vec;
@@ -85,23 +156,15 @@ public:
 	SparseSolverCPU Kplus;
 
 	SparseSolverCPU KplusF;
-	SEQ_VECTOR <double> f;
 	SEQ_VECTOR <double> vec_c;
 	SEQ_VECTOR <double> vec_lb;
 
-	SparseMatrix Kplus_R;
-	SparseMatrix Kplus_Rb;
-
-	SparseMatrix Kplus_R2;
-	SparseMatrix Kplus_Rb2;
 
 
 	SparseMatrix R;
-	SparseMatrix K;
 	SparseMatrix T;
 
 	// Matrix and coeficient for regularization
-	SparseMatrix _RegMat;
 
 	//SparseMatrix K_non_sym;
 	SparseMatrix M;
@@ -135,30 +198,19 @@ public:
 	SEQ_VECTOR <double> compressed_tmp;
 	SEQ_VECTOR <double> compressed_tmp2;
 
-	// variables for dynamic
-	double dynamic_timestep;
-	double dynamic_beta;
-	double dynamic_gama;
-
 	// CUDA
 	double * cuda_pinned_buff;
 	float  * cuda_pinned_buff_fl;
 	// END - CUDA
 
 	// Methods of the class
-	void SetDomain(eslocal USE_HFETI, eslocal use_dynamic_1_no_dynamic_0);
-
-	//void K_regularization( );
-	void K_regularizationFromR ( SparseMatrix & K_in);
-
-	void CreateKplus_R ( std::vector < std::vector < double > > coordinates );
+	void SetDomain();
 
 	void multKplusLocal( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, eslocal x_in_vector_start_index, eslocal y_out_vector_start_index );
 	void multKplusLocal( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out );
 	void multKplusLocal( SEQ_VECTOR <double> & x_in_y_out);
 
-	//dynamic
-	void SetDynamicParameters(double set_dynamic_timestep, double set_dynamic_beta, double set_dynamic_gama);
+
 };
 
 }

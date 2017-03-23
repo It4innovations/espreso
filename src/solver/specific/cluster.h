@@ -17,12 +17,9 @@
 #include <iomanip>
 #include <map>
 
-    using std::vector;
-    using std::map;
-    using std::make_pair;
-
-//#include <cilk/cilk.h>
-//#include <cilk/cilk_api.h>
+using std::vector;
+using std::map;
+using std::make_pair;
 
 #include "../generic/SparseMatrix.h"
 #include "../generic/Domain.h"
@@ -34,7 +31,9 @@
 
     namespace espreso {
 
-    struct Instance;
+//    struct Instance;
+
+
     class Domain;
 
     class ClusterBase
@@ -42,26 +41,48 @@
 
     public:
         // Constructor
-        ClusterBase(const ESPRESOSolver &configuration, eslocal cluster_index):
-        	configuration(configuration),
-            cluster_time("Cluster Timing "),
-            vec_fill_time("Reseting vec_g0 and vec_e0"),
-            loop_1_1_time("Loop 1: Kplus-sv, B0-mv, KpluR-mv"),
-            loop_1_2_time("Loop 1: vec_e0 and vec_g0"),
-            clusCP_time("Cluster CP - F0,GO,Sa,G0t,F0 "),
-            clus_F0_1_time("F0 solve - 1st "),
-            clus_F0_2_time("F0 solve - 2nd "),
-            clus_G0_time("G0  Mult "),
-            clus_G0t_time("G0t Mult "),
-            clus_Sa_time("Sa solve "),
-            loop_2_1_time("Loop2: Kplus-sv, B0-mv, Kplus-mv")
-        {
-            cluster_global_index = cluster_index;
-            iter_cnt_comm = 0;
-        };
+//        ClusterBase(const ESPRESOSolver &configuration, eslocal cluster_index):
+//        	configuration(configuration),
+//            cluster_time("Cluster Timing "),
+//            vec_fill_time("Reseting vec_g0 and vec_e0"),
+//            loop_1_1_time("Loop 1: Kplus-sv, B0-mv, KpluR-mv"),
+//            loop_1_2_time("Loop 1: vec_e0 and vec_g0"),
+//            clusCP_time("Cluster CP - F0,GO,Sa,G0t,F0 "),
+//            clus_F0_1_time("F0 solve - 1st "),
+//            clus_F0_2_time("F0 solve - 2nd "),
+//            clus_G0_time("G0  Mult "),
+//            clus_G0t_time("G0t Mult "),
+//            clus_Sa_time("Sa solve "),
+//            loop_2_1_time("Loop2: Kplus-sv, B0-mv, Kplus-mv")
+//        {
+//            cluster_global_index = cluster_index;
+//            iter_cnt_comm = 0;
+//        };
 
-        ClusterBase(const ESPRESOSolver &configuration):
+//        ClusterBase(const ESPRESOSolver &configuration):
+//        	configuration(configuration),
+//            cluster_time("Cluster Timing "),
+//
+//            vec_fill_time("Reseting vec_g0 and vec_e0"),
+//            loop_1_1_time("Loop 1: Kplus-sv, B0-mv, KpluR-mv"),
+//            loop_1_2_time("Loop 1: vec_e0 and vec_g0"),
+//
+//            clusCP_time("Cluster CP - F0,GO,Sa,G0t,F0 "),
+//            clus_F0_1_time("F0 solve - 1st "),
+//            clus_F0_2_time("F0 solve - 2nd "),
+//            clus_G0_time("G0  Mult "),
+//            clus_G0t_time("G0t Mult "),
+//            clus_Sa_time("Sa solve "),
+//
+//            loop_2_1_time("Loop2: Kplus-sv, B0-mv, Kplus-mv")
+//        {
+//            iter_cnt_comm = 0;
+//        }
+
+
+        ClusterBase(const ESPRESOSolver &configuration, Instance *instance_in):
         	configuration(configuration),
+			instance(instance_in),
             cluster_time("Cluster Timing "),
 
             vec_fill_time("Reseting vec_g0 and vec_e0"),
@@ -80,9 +101,12 @@
             iter_cnt_comm = 0;
         }
 
+
         virtual ~ClusterBase() {};
 
         const ESPRESOSolver &configuration;
+        Instance *instance;
+
 
         // Cluster specific variables
         eslocal cluster_global_index;
@@ -157,13 +181,12 @@
 
         // Functions of the class
 
-        void InitClusterPC ( eslocal * subdomains_global_indices, eslocal number_of_subdomains );
-        void SetClusterPC  ( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map);
-        void SetClusterPC_AfterKplus ();
+        void InitClusterPC   ( eslocal * subdomains_global_indices, eslocal number_of_subdomains );
+        void SetClusterPC    (); //SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map);
         void SetClusterHFETI ();
 
         virtual void SetupKsolvers ( ) = 0;
-        void ImportKmatrixAndRegularize (  SEQ_VECTOR <SparseMatrix> & K_in, SEQ_VECTOR <SparseMatrix> & RegMat  );
+        void SetupPreconditioner ( );
 
         void multKplusGlobal     ( SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, SEQ_VECTOR<eslocal> & cluster_map_vec);
         void multKplusGlobal_l   ( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in );
@@ -239,13 +262,6 @@
 
 	eslocal iter_cnt_comm;
 
-	// variables for dynamic
-	double dynamic_timestep;
-	double dynamic_beta;
-	double dynamic_gama;
-
-	// dynamic
-	void SetDynamicParameters(double set_dynamic_timestep, double set_dynamic_beta, double set_dynamic_gama);
 };
 
 }

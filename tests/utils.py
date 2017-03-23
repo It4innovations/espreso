@@ -266,7 +266,7 @@ class Espreso:
 
 
     def run(self, processes, *args, **kwargs):
-        program = self.mpirun + [ "-n", str(processes), os.path.join(self.path, "espreso")]
+        program = self.mpirun + [ "-n", str(processes),"--map-by", "core", os.path.join(self.path, "espreso")]
 
         output, error = self.run_program(program, *args, **kwargs)
         if error != "":

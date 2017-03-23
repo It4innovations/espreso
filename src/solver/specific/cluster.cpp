@@ -29,56 +29,68 @@ void ClusterBase::ShowTiming()  {
 	cluster_time.printStatsMPI();
 }
 
-void ClusterBase::SetDynamicParameters(double set_dynamic_timestep, double set_dynamic_beta, double set_dynamic_gama) {
-
-	dynamic_timestep = set_dynamic_timestep;
-	dynamic_beta     = set_dynamic_beta;
-	dynamic_gama     = set_dynamic_gama;
-
-	for (size_t d = 0; d < domains.size(); d++)
-		domains[d].SetDynamicParameters(dynamic_timestep, dynamic_beta, dynamic_gama);
-
-}
-
 
 void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal number_of_subdomains ) {
 
 	// *** Init the vector of domains *****************************************************
-	//LoadBinVectorInt(domains_in_global_index, string(path) + string(filename_DOMAINS));
 	domains_in_global_index.resize( number_of_subdomains ) ;
-	// domains_in_global_index[0] = index_of_first_subdomain ;
-	// *** END - Init the vector of domains ***********************************************
 
-	domains.resize( number_of_subdomains, Domain(configuration) );
+	domains.reserve(number_of_subdomains);
+	for (eslocal d = 0; d < number_of_subdomains; d++) {
+		domains.push_back( (Domain(configuration, instance, d, USE_HFETI)) );
+	}
+
+	#pragma omp parallel for
+	for (eslocal d = 0; d < number_of_subdomains; d++ ) {
+		domains[d].SetDomain();
+	}
 
 	if (USE_HFETI == 1) {
-		for (eslocal i = 0; i < number_of_subdomains; i++)									// HFETI
-			domains_in_global_index[i] = subdomains_global_indices[i] + 1;				// HFETI; [+1] -> domain numbering in espreso is from 1
+		for (eslocal i = 0; i < number_of_subdomains; i++)						// HFETI
+			domains_in_global_index[i] = subdomains_global_indices[i] + 1;		// HFETI; [+1] -> domain numbering in espreso is from 1
 	} else {
-		//domains_in_global_index[0]     = 1 + ( number_of_subdomains * ( domains_in_global_index[0] - 1 ) );	// MFETI
-		//for (eslocal i = 1; i < number_of_subdomains; i++)														// MFETI
-		//	domains_in_global_index[i] = domains_in_global_index[0] + i;									    // MFETI
-		for (eslocal i = 0; i < number_of_subdomains; i++)									// MFETI
-			domains_in_global_index[i] = subdomains_global_indices[i] + 1;				// MFETI; [+1] -> domain numbering in espreso is from 1
+		for (eslocal i = 0; i < number_of_subdomains; i++)						// MFETI
+			domains_in_global_index[i] = subdomains_global_indices[i] + 1;		// MFETI; [+1] -> domain numbering in espreso is from 1
 	}
+
+
+	//// *** Alocate temporarly vectors for Temporary vectors for Apply_A function *********
+	//// *** - temporary vectors for work primal domain size *******************************
+	x_prim_cluster1.resize( domains.size() );
+	x_prim_cluster2.resize( domains.size() );
+	x_prim_cluster3.resize( domains.size() );
+
 
 	// *** Init all domains of the cluster ********************************************
-	for (eslocal i = 0; i < number_of_subdomains; i++ ) {
-		domains[i].domain_global_index = domains_in_global_index[i];
-		domains[i].USE_KINV    	 = USE_KINV;
-		domains[i].USE_HFETI   	 = USE_HFETI;
-		domains[i].USE_DYNAMIC 	 = USE_DYNAMIC;
-		domains[i].domain_index  = i;
+
+	#pragma omp parallel for
+	for (eslocal d = 0; d < number_of_subdomains; d++ ) {
+
+		// *** Temporary vectors for work primal domain size *******************************
+		x_prim_cluster1[d].resize( domains[d].domain_prim_size );
+    	x_prim_cluster2[d].resize( domains[d].domain_prim_size );
+    	x_prim_cluster3[d].resize( domains[d].domain_prim_size );
+
+		domains[d].domain_global_index 	= domains_in_global_index[d];
+		domains[d].USE_KINV    	 		= USE_KINV;
+		domains[d].USE_HFETI   	 		= USE_HFETI;
+		domains[d].USE_DYNAMIC 	 		= USE_DYNAMIC;
+		domains[d].domain_index  		= d;
+		domains[d].isOnACC  			= 0;
+
+
+		// Verbose level for K_plus
+		if ( d == 0 && environment->MPIrank == 0) {
+			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+		}
 
 	}
-	// *** END - Init all domains of the cluster ***************************************
+
 }
 
-void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub ) {
+void ClusterBase::SetClusterPC( ) { // SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub ) {
 
-
-	//map <eslocal,eslocal> my_lamdas_map_indices;
-
+	SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub = instance->B1clustersMap;
 
 	//// *** Set up the dual size ********************************************************
 	int MPIrank; 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
@@ -93,7 +105,7 @@ void ClusterBase::SetClusterPC( SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_
 		tm3.resize(domains.size());
 
 		#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++) {
+		for (size_t d = 0; d < domains.size(); d++) {
 			eslocal max_tmp_vec_size = domains[d].B0.cols;
 
 			if (domains[d].B0.rows > domains[d].B0.cols)
@@ -109,8 +121,6 @@ for (size_t d = 0; d < domains.size(); d++) {
 
 	//// *** Detection of affinity of lag. multipliers to specific subdomains **************
 	//// *** - will be used to compress vectors and matrices for higher efficiency
-	//my_neighs = neigh_domains;
-
 
 	ESLOG(MEMORY) << "Setting vectors for lambdas";
 	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
@@ -148,7 +158,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 	//ESLOG(MEMORY) << "1 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 
 	#pragma omp parallel for
-for (size_t i = 0; i < my_neighs.size(); i++) {
+	for (size_t i = 0; i < my_neighs.size(); i++) {
 		my_comm_lambdas_indices[i] = lambdas_per_subdomain[my_neighs[i]];
 		my_comm_lambdas[i].resize(my_comm_lambdas_indices[i].size());
 		my_recv_lambdas[i].resize(my_comm_lambdas_indices[i].size());
@@ -162,7 +172,7 @@ for (size_t i = 0; i < my_neighs.size(); i++) {
 	//ESLOG(MEMORY) << "3 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 
 	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++ )
+	for (size_t d = 0; d < domains.size(); d++ )
 		if (USE_KINV == 1 ) {
 			domains[d].compressed_tmp.resize( domains[d].B1.I_row_indices.size(), 0);
 			domains[d].compressed_tmp2.resize( domains[d].B1.I_row_indices.size(), 0);
@@ -179,7 +189,7 @@ for (size_t d = 0; d < domains.size(); d++ )
 
 	// mapping/compression vector for domains
 	#pragma omp parallel for
-for (size_t i = 0; i < domains.size(); i++) {
+	for (size_t i = 0; i < domains.size(); i++) {
 		for (size_t j = 0; j < domains[i].lambda_map_sub.size(); j++) {
 			domains[i].my_lamdas_map_indices.insert(make_pair(domains[i].lambda_map_sub[j] ,j));
 		}
@@ -188,7 +198,7 @@ for (size_t i = 0; i < domains.size(); i++) {
 	//ESLOG(MEMORY) << "6 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 
 	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++) {
+	for (size_t d = 0; d < domains.size(); d++) {
 
             if (domains[d].lambda_map_sub.size() > 0 ) {
 
@@ -220,7 +230,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 	//// *** Create a vector of communication pattern needed for AllReduceLambdas function *******
 	my_comm_lambdas_indices_comp.resize(my_neighs.size());
 	#pragma omp parallel for
-for (size_t i = 0; i < my_neighs.size(); i++) {
+	for (size_t i = 0; i < my_neighs.size(); i++) {
 		my_comm_lambdas_indices_comp[i].resize( lambdas_per_subdomain[my_neighs[i]].size() );
 		for (size_t j = 0; j < lambdas_per_subdomain[my_neighs[i]].size(); j++ )
 			my_comm_lambdas_indices_comp[i][j] = _my_lamdas_map_indices[lambdas_per_subdomain[my_neighs[i]][j]];
@@ -236,7 +246,7 @@ for (size_t i = 0; i < my_neighs.size(); i++) {
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 	#pragma omp parallel for
-for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
+	for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
 
 		domains[i].B1_comp_dom.I_row_indices = domains[i].B1.I_row_indices;
 		domains[i].B1_comp_dom.J_col_indices = domains[i].B1.J_col_indices;
@@ -270,35 +280,16 @@ for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
 //			domains[i].B1t_Dir_perm_vec.erase(last, domains[i].B1t_Dir_perm_vec.end() );
 		}
 
-		//************************
-		if (configuration.regularization == REGULARIZATION::FIX_POINTS) {
-			domains[i].B1.Clear();
-		}
+//		if (configuration.regularization == REGULARIZATION::FIX_POINTS) {
+//			domains[i].B1.Clear();
+//		}
 
 		domains[i].B1t.Clear();
-//		domains[i].B1_comp.Clear();
-//		domains[i].B1t_comp.Clear();
-
 		domains[i].my_lamdas_map_indices.clear();
 
 	}
-
-
 	//// *** END - Compression of Matrix B1 to work with compressed lambda vectors *************
 
-
-
-	//// *** Compression of Matrix G1 to work with compressed lambda vectors *******************
-	ESLOG(MEMORY) << "G1 compression";
-	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
-	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
-
-	if (USE_DYNAMIC == 0) {
-		if ( ! (USE_HFETI == 1 && configuration.regularization == REGULARIZATION::NULL_PIVOTS )) {
-			Compress_G1();
-		}
-	}
-	//// *** END - Compression of Matrix G1 to work with compressed lambda vectors ***************
 
 	ESLOG(MEMORY) << "Lambdas end";
 	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
@@ -306,18 +297,24 @@ for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
 
 }
 
-void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in, SEQ_VECTOR <SparseMatrix> & RegMat ) {
+void ClusterBase::SetupPreconditioner ( ) {
 
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++) {
-		if ( d == 0 && environment->MPIrank == 0) {
-			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
-		}
-
-		domains[d].K.swap(K_in[d]);
-		domains[d]._RegMat.swap(RegMat[d]);
-
-		if ( configuration.preconditioner == ESPRESO_PRECONDITIONER::MAGIC ) {
+	switch (configuration.preconditioner) {
+	case ESPRESO_PRECONDITIONER::LUMPED:
+		// nothing needs to be done
+		break;
+	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+		// nothing needs to be done
+		break;
+	case ESPRESO_PRECONDITIONER::DIRICHLET:
+		CreateDirichletPrec(instance);
+		break;
+	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+		CreateDirichletPrec(instance);
+		break;
+	case ESPRESO_PRECONDITIONER::MAGIC: // Fast Lumped
+		#pragma omp parallel for
+		for (size_t d = 0; d < domains.size(); d++) {
 			if (domains[d]._RegMat.nnz > 0) {
 				domains[d]._RegMat.ConvertToCSR(1);
 				domains[d].Prec.MatAdd(domains[d].K, domains[d]._RegMat, 'N', -1);
@@ -326,12 +323,13 @@ void ClusterBase::ImportKmatrixAndRegularize ( SEQ_VECTOR <SparseMatrix> & K_in,
 				domains[d].Prec = domains[d].K;
 			}
 		}
-
-		domains[d].enable_SP_refinement = true;
-	    //}
-	    ESINFO(PROGRESS3) << Info::plain() << ".";
+		break;
+	case ESPRESO_PRECONDITIONER::NONE:
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
 	}
-	ESINFO(PROGRESS3);
+
 }
 
 
@@ -393,27 +391,6 @@ void ClusterBase::SetClusterHFETI () {
 	}
 	// *** END - Create Matrices for Hybrid FETI *****************************************
 }
-
-void ClusterBase::SetClusterPC_AfterKplus () {
-
-	//// *** Alocate temporarly vectors for Temporary vectors for Apply_A function *********
-	//// *** - temporary vectors for work primal domain size *******************************
-	x_prim_cluster1.resize( domains.size() );
-	x_prim_cluster2.resize( domains.size() );
-	x_prim_cluster3.resize( domains.size() );
-
-	for (size_t d = 0; d < domains.size(); d++) {
-		x_prim_cluster1[d].resize( domains[d].domain_prim_size );
-		x_prim_cluster2[d].resize( domains[d].domain_prim_size );
-		x_prim_cluster3[d].resize( domains[d].domain_prim_size );
-	}
-	//// *** END - Alocate temporarly vectors for Temporary vectors for Apply_A function ***
-
-	//// *** Prepare the initial right hand side in dual *************************************
-	//CreateVec_b_perCluster();
-
-}
-
 
 void ClusterBase::multKplusGlobal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, SEQ_VECTOR<eslocal> & cluster_map_vec) {
 
@@ -1102,7 +1079,7 @@ for (size_t d = 0; d < domains.size(); d++)
 void ClusterBase::CompressB0() {
 
 	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++) {
+	for (size_t d = 0; d < domains.size(); d++) {
 		domains[d].B0.MatTranspose(domains[d].B0t);
 		domains[d].B0_comp = domains[d].B0;
 
@@ -1139,7 +1116,7 @@ void ClusterBase::CreateG0() {
 	SEQ_VECTOR <SparseMatrix> G0LocalTemp( domains.size() );
 
 	#pragma omp parallel for
-for (size_t i = 0; i<domains.size(); i++) {
+	for (size_t i = 0; i<domains.size(); i++) {
 		domains[i].Kplus_R.ConvertDenseToCSR(0);
 
 		G0LocalTemp[i].MatMat(domains[i].B0, 'N', domains[i].Kplus_R );
@@ -1160,7 +1137,7 @@ for (size_t i = 0; i<domains.size(); i++) {
 		SEQ_VECTOR <SparseMatrix> G0LocalTemp2( domains.size() );
 
 		#pragma omp parallel for
-for (size_t i = 0; i<domains.size(); i++) {
+		for (size_t i = 0; i<domains.size(); i++) {
 			domains[i].Kplus_R2.ConvertDenseToCSR(0);
 
 			G0LocalTemp2[i].MatMat(domains[i].B0, 'N', domains[i].Kplus_R2 );
@@ -1214,7 +1191,7 @@ void ClusterBase::CreateF0() {
 	 solve_F0_time.start();
 
 	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++) {
+	for (size_t d = 0; d < domains.size(); d++) {
 
 		if (MPIrank == 0 && d == 0)
 			domains[d].Kplus.msglvl=0;
@@ -1683,7 +1660,7 @@ void ClusterBase::Create_G_perCluster() {
 	PAR_VECTOR < SparseMatrix > tmp_Mat2 (domains.size());
 
 	#pragma omp parallel for
-for (size_t j = 0; j < domains.size(); j++) {
+	for (size_t j = 0; j < domains.size(); j++) {
 
 	 	if (domains[j].Kplus_R.nnz != 0) {
 
@@ -1751,7 +1728,7 @@ for (size_t j = 0; j < domains.size(); j++) {
 
 	for (size_t j = 1; j < tmp_Mat.size(); j *= 2) {
 		#pragma omp parallel for
-for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
+		for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
 
 			if (i * 2 * j + j < tmp_Mat.size()) {
 				if (USE_HFETI == 1) {
@@ -2264,10 +2241,12 @@ for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
 
 void ClusterBase::Compress_G1() {
 
+	G1_comp.Clear();
 	Compress_G(G1, G1_comp);
 	G1.Clear();
 
 	if (!SYMMETRIC_SYSTEM) {
+		G2_comp.Clear();
 		Compress_G(G2, G2_comp);
 		G2.Clear();
 	}
@@ -2279,7 +2258,7 @@ void ClusterBase::Compress_G( SparseMatrix &G_in, SparseMatrix &G_comp_out ) {
 	G_in.ConvertToCOO( 1 );
 
 	#pragma omp parallel for
-for (size_t j = 0; j < G_in.J_col_indices.size(); j++ ) {
+	for (size_t j = 0; j < G_in.J_col_indices.size(); j++ ) {
 		G_in.J_col_indices[j] = _my_lamdas_map_indices[ G_in.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
 	}
 
@@ -2364,15 +2343,6 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 	for (size_t i = 0; i < vec_d.size(); i++) {
 		vec_d[i] = (-1.0) *  vec_d[i];
 	}
-
-
-//	std::stringstream ss;
-//	ss.precision(40);
-//	ss << "vec_d" << ".txt";
-//	std::ofstream os(ss.str().c_str());
-//	os.precision(40);
-//	os << vec_d;
-//	os.close();
 
 }
 
@@ -2465,7 +2435,6 @@ void ClusterBase::decompress_lambda_vector( SEQ_VECTOR <double> &   compressed_v
 void ClusterBase::B1_comp_MatVecSum( SEQ_VECTOR < SEQ_VECTOR <double> > & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_non_transpose ) {
 
 	ESINFO(ERROR) << " B1_comp_MatVecSum - not implemented ";
-
 	exit(0);
 
 	//if (domains.size() <= 3) {

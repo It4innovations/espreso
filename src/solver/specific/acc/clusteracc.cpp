@@ -710,8 +710,6 @@ void ClusterAcc::SetupKsolvers ( ) {
             domains[d].Kplus.MPIrank = environment->MPIrank;
         }
 
-        domains[d].domain_prim_size = domains[d].Kplus.cols;
-
         if ( d == 0 && environment->MPIrank == 0) {
             domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
         }
