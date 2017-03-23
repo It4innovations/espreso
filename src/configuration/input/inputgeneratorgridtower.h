@@ -25,7 +25,7 @@ struct GridTowerConfiguration: public Configuration {
 		{ "Z", DIRECTION::Z, "Grids are placed at Z direction." }
 	}));
 
-	SUBMAPTOCONFIG(size_t, NamedGridConfiguration, grids, "list of grids");
+	SUBMAPTOCONFIG(size_t, NamedGridConfiguration, grids, "list of grids", "0", "Configuration of grid with index '0'");
 };
 
 }

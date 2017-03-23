@@ -24,7 +24,7 @@ struct PhysicsSolverBase: public Configuration {
 template <class TConvergence>
 struct PhysicsSolver: public PhysicsSolverBase {
 
-	SUBMAPTOCONFIG(size_t, LoadStepSettings<TConvergence>, load_steps_settings, "Detail settings for each load step.");
+	SUBMAPTOCONFIG(size_t, LoadStepSettings<TConvergence>, load_steps_settings, "Detail settings for each load step.", "1", "Description of load step '1'");
 };
 
 }

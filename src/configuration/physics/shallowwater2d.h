@@ -42,9 +42,9 @@ struct ShallowWater2DConfiguration: public Configuration {
 	SUBCONFIG(ESPRESOSolver, espreso, "Internal FETI solver options.");
 	SUBCONFIG(HypreSolver  , hypre  , "Multigrid solver setting.");
 
-	SUBMAPTOMAP(size_t, std::string, std::string, momentum, "Momentum");
+	SUBMAPTOMAP(size_t, std::string, std::string, momentum, "Momentum", "1", "Momentum setting for load step '1'", "<REGION>", "<EXPRESSION>");
 
-	SUBMAPTOCONFIG(std::string, ShallowWater2DMaterial, materials, "Material description.");
+	SUBMAPTOCONFIG(std::string, ShallowWater2DMaterial, materials, "Material description.", "<MATERIAL_NAME>", "Material description");
 	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "<REGION>", "<MATERIAL_NAME>");
 
 	PARAMETER(bool, post_process, "Turn on/off results post processing.", true);

@@ -56,19 +56,20 @@ struct AdvectionDiffusion2DConfiguration: public Configuration {
 	SUBCONFIG(ESPRESOSolver, espreso, "Internal FETI solver options.");
 	SUBCONFIG(HypreSolver  , hypre  , "Multigrid solver setting.");
 
-	SUBMAPTOMAP(size_t, std::string, std::string, heat_flux, "Heat flux");
-	SUBMAPTOMAP(size_t, std::string, std::string, heat_flow, "Heat flow");
+	SUBMAPTOMAP(size_t, std::string, std::string, heat_flux, "Heat flux", "1", "Heat flux settings for load step '1'", "<REGION>", "<EXPRESSION>");
+	SUBMAPTOMAP(size_t, std::string, std::string, heat_flow, "Heat flow", "1", "Heat flow settings for load step '1'", "<REGION>", "<EXPRESSION>");
 
-	SUBMAPTOMAPTOCONFIG(size_t, std::string, AdvectionDiffusionConvection, convection, "Region with convective heat flux");
+	SUBMAPTOMAPTOCONFIG(size_t, std::string, AdvectionDiffusionConvection, convection, "Region with convective heat flux",
+			"<REGION_NAME>", "Convection for a given region", "1", "Settings for load step '1'");
 
-	SUBMAP(std::string, std::string, initial_temperature , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
+	SUBMAP(std::string, std::string, initial_temperature , "Regions initial temperature", "<REGION>", "<EXPRESSION>");
 
-	SUBMAPTOMAP(size_t, std::string, std::string, temperature        , "Temperature");
-	SUBMAPTOMAP(size_t, std::string, std::string, heat_source        , "Heat source");
-	SUBMAPTOMAP(size_t, std::string, std::string, translation_motions, "Translation motion");
-	SUBMAPTOMAP(size_t, std::string, std::string, thickness          , "Thicness");
+	SUBMAPTOMAP(size_t, std::string, std::string, temperature        , "Temperature"       , "1", "Temperature settings for load step '1'", "<REGION>", "<EXPRESSION>");
+	SUBMAPTOMAP(size_t, std::string, std::string, heat_source        , "Heat source"       , "1", "Heat source settings for load step '1'", "<REGION>", "<EXPRESSION>");
+	SUBMAPTOMAP(size_t, std::string, std::string, translation_motions, "Translation motion", "1", "Translation motion settings for load step '1'", "<REGION>", "<EXPRESSION>");
+	SUBMAPTOMAP(size_t, std::string, std::string, thickness          , "Thickness"         , "1", "Thickness settings for load step '1'", "<REGION>", "<EXPRESSION>");
 
-	SUBMAPTOCONFIG(std::string, AdvectionDiffusion2DMaterial, materials, "Material description.");
+	SUBMAPTOCONFIG(std::string, AdvectionDiffusion2DMaterial, materials, "Material description.", "<MATERIAL_NAME>", "Material description");
 	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "<REGION>", "<MATERIAL_NAME>");
 
 	PARAMETER(bool, post_process, "Turn on/off results post processing.", true);
