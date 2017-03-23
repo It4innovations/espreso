@@ -177,6 +177,7 @@ void AdvectionDiffusion3D::makeStiffnessMatricesRegular()
 			ESINFO(GLOBAL_ERROR) << "Implement fix point regularization for advection diffusion 3D";
 			break;
 		case config::solver::REGULARIZATIONalternative::NULL_PIVOTS:
+            std::cout << "HOOVNOO" <<std::endl;
 			K[subdomain].RemoveLower();
 			algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], R2[subdomain], RegMat[subdomain], subdomain);
 			break;
