@@ -30,6 +30,9 @@
 	std::map<type1, std::map<type2, type3> > name = mapToMapToBaseType<type1, type2, type3>::create(#name, description, this, dParameter1, dDescription, dParameter2, dValue, #type3)
 
 
+#define SUBMULTIMAP(type1, type2, name, description, dParameter, dValue) \
+	std::multimap<type1, type2> name = multimapToBaseType<type1, type2>::create(#name, description, this, dParameter, dValue, #type2)
+
 
 namespace espreso {
 
@@ -318,6 +321,65 @@ struct mapToBaseType: public Configuration {
 	{
 		if (!copy) {
 			std::for_each(dummy.begin(), dummy.end(), [] (ParameterBase * p) { delete p; });
+		}
+	}
+};
+
+template <typename Tparameter, typename Tvalue>
+struct multimapToBaseType: public Configuration {
+	std::multimap<Tparameter, Tvalue> *map;
+	std::string dParameter;
+	Tvalue dummyHolder;
+	std::vector<ParameterBase*> dummy;
+
+	static std::multimap<Tparameter, Tvalue> create(
+			const std::string &name, const std::string &description, Configuration* conf,
+			const std::string &dParameter, const Tvalue &dValue, const std::string &type)
+	{
+		std::multimap<Tparameter, Tvalue> configuration;
+		multimapToBaseType<Tparameter, Tvalue> *subconf = new multimapToBaseType<Tparameter, Tvalue>();
+		conf->subconfigurations[name] = subconf;
+		conf->orderedSubconfiguration.push_back(subconf);
+		conf->toDelete.push_back(subconf);
+		subconf->map = &configuration;
+		subconf->name = name;
+		subconf->description = description;
+		subconf->dummyHolder = dValue;
+		subconf->dummy.push_back(new ValueHolder<Tvalue>(dParameter, "Accepts list of (possible same) parameters of the following type: " + dParameter, subconf->dummyHolder, subconf->dummyHolder, type));
+		return configuration;
+	}
+
+	bool set(const std::string &parameter, const std::string &value)
+	{
+		Tparameter par;
+		ValueHolder<Tparameter> pholder(parameter, "", par, par, "");
+		if (!pholder.set(parameter)) {
+			return false;
+		}
+		Tvalue val;
+		ValueHolder<Tvalue> vholder(value, "", val, val, "");
+		if (!vholder.set(value)) {
+			return false;
+		}
+		auto it = map->insert(std::make_pair(pholder.value, vholder.value));
+		orderedParameters.push_back(new ValueHolder<Tvalue>(parameter, "Parameter value", it->second, it->second, ""));
+		return true;
+	}
+
+	virtual const std::vector<ParameterBase*>& storeParameters() const
+	{
+		if (orderedParameters.size()) {
+			return orderedParameters;
+		} else {
+			return dummy;
+		}
+	}
+
+	~multimapToBaseType()
+	{
+		if (!copy) {
+			std::for_each(dummy.begin(), dummy.end(), [] (ParameterBase * p) { delete p; });
+			std::for_each(orderedParameters.begin(), orderedParameters.end(), [] (ParameterBase * p) { delete p; });
 		}
 	}
 };

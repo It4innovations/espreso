@@ -39,6 +39,8 @@ struct OutputConfiguration: public Configuration {
 
 	PARAMETER(double, domain_shrink_ratio   , "All domains are shrunk by this ratio (effective only for COLLECTED=FALSE)."   , .95);
 	PARAMETER(double, cluster_shrink_ratio  , "All clusters are shrunk by this ratio (effective only for COLLECTED=FALSE)."  , .9);
+
+	SUBMULTIMAP(std::string, std::string, monitoring, "Results statistics in some regions. OPERATION = { AVERAGE, MIN, MAX }", "<REGION>", "<OPERATION> <VARIABLE>");
 };
 
 }

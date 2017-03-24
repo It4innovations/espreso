@@ -25,6 +25,7 @@
 #include "../../output/resultstore/vtkxmlascii.h"
 #include "../../output/resultstore/vtkxmlbinary.h"
 #include "../../output/resultstore/catalyst.h"
+#include "../../output/monitoring/monitoring.h"
 
 namespace espreso {
 
@@ -47,6 +48,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 	Assembler::compose(configuration, instance, *mesh);
 
 	store = new output::ResultStoreList(configuration.output);
+	store->add(new output::Monitoring(configuration.output, mesh, "monitors.txt"));
 
 	if (configuration.output.catalyst) {
 		store->add(new output::Catalyst(configuration.output, mesh, "results"));

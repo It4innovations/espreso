@@ -43,15 +43,16 @@ def build(ctx):
         use    = "espreso_includes"
     )
 
+    sources = ctx.path.ant_glob('*.cpp') + ctx.path.ant_glob('resultstore/*.cpp') + ctx.path.ant_glob('monitoring/**/*.cpp')
     if ctx.env.VTK:
         ctx.objects(
-            source = ctx.path.ant_glob('*.cpp') + ctx.path.ant_glob('resultstore/*.cpp') + ctx.path.ant_glob('resultstore/libvtk/*.cpp'),
+            source = sources + ctx.path.ant_glob('resultstore/libvtk/*.cpp'),
             target = "resultstore",
             use    = "espreso_includes"
         )
     else:
         ctx.objects(
-            source = ctx.path.ant_glob('*.cpp') + ctx.path.ant_glob('resultstore/*.cpp') + ctx.path.ant_glob('resultstore/espreso/*.cpp'),
+            source = sources + ctx.path.ant_glob('resultstore/espreso/*.cpp'),
             target = "resultstore",
             use    = "espreso_includes"
         )
