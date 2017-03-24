@@ -389,12 +389,12 @@ void LinearSolver::setup_InitClusterAndSolver( )
 
 
 	number_of_subdomains_per_cluster = instance->K.size();
-	std::vector<int> domain_list(number_of_subdomains_per_cluster, 0);
+	std::vector<eslocal> domain_list(number_of_subdomains_per_cluster, 0);
 	for (int i = 0; i < number_of_subdomains_per_cluster; i++) {
 		domain_list[i] = i;
 	}
 	cluster->cluster_global_index = environment->MPIrank + 1;
-	cluster->my_neighs = std::vector<int>(instance->neighbours.begin(), instance->neighbours.end());
+	cluster->my_neighs = std::vector<eslocal>(instance->neighbours.begin(), instance->neighbours.end());
 	cluster->mtype = instance->K[0].mtype; // TODO: refactor
 	switch (cluster->mtype) {
 	case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:

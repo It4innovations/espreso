@@ -19,8 +19,7 @@ class ClusterGPU: public ClusterBase
 
 public:
 	// Constructor
-	ClusterGPU(const ESPRESOSolver &configuration, eslocal cluster_index): ClusterBase(configuration, cluster_index) {};
-	ClusterGPU(const ESPRESOSolver &configuration): ClusterBase(configuration) {};
+	ClusterGPU(const ESPRESOSolver &configuration, Instance *instance_in): ClusterBase(configuration, instance_in) { }
 	~ClusterGPU();
 
 	void Create_SC_perDomain( bool USE_FLOAT );

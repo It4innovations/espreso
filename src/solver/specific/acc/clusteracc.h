@@ -14,15 +14,11 @@ class ClusterAcc: public ClusterBase
 {
 
 public:
-	// Constructor
-	ClusterAcc(const ESPRESOSolver &configuration, eslocal cluster_index): ClusterBase(configuration, cluster_index) {
-        this->deleteMatrices = false;
-        this->NUM_MICS = 2;
-    };
-	ClusterAcc(const ESPRESOSolver &configuration): ClusterBase(configuration) {
-        this->deleteMatrices = false;
-        this->NUM_MICS = 2;
-    };
+	ClusterAcc(const ESPRESOSolver &configuration, Instance *instance_in): ClusterBase(configuration, instance_in)
+	{
+			this->deleteMatrices = false;
+			this->NUM_MICS = 2;
+	}
 
     virtual ~ClusterAcc();
 
