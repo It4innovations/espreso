@@ -366,12 +366,12 @@ void SparseMatrixPack::CopyToMIC( ) {
 
     this->copiedToMIC = true;
     if ( !config::solver::LOAD_BALANCING ) {
-        _mm_free( this->matrix_values );
-        _mm_free( this->rowInd );
-        _mm_free( this->colInd );
-        this->matrix_values = NULL;
-        this->rowInd = NULL; 
-        this->colInd = NULL;
+    //    _mm_free( this->matrix_values );
+    //    _mm_free( this->rowInd );
+    //    _mm_free( this->colInd );
+    //    this->matrix_values = NULL;
+    //    this->rowInd = NULL; 
+    //    this->colInd = NULL;
     }
 }
 

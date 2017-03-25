@@ -235,6 +235,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
                 dataSize += currDataSize;
             }
         }
+        std::cout << "TOTAL BYTES " << dataSize * sizeof(double) << std::endl;
 
         // it is necessary to subtract numCPUDomains AFTER setting offset!
         offset += matrixPerPack[i];
@@ -755,13 +756,27 @@ void ClusterAcc::SetupKsolvers ( ) {
         }
 
         domains[d].domain_prim_size = domains[d].Kplus.cols;
+        //TODO: Hot Fix - needs to be done better
+        if ( !SYMMETRIC_SYSTEM ) {
+            // 11 = Real and unsymmetric matrix
+            domains[d].Kplus.mtype = 11;
+        } else {
+            // 2 = Real and symmetric positive definite
+            domains[d].Kplus.mtype = 2;
+        }
+        //TODO: else stokes = -2 = Real and symmetric indefinite
+
+        if ( d == 0 && config::env::MPIrank == 0) {
+            domains[d].Kplus.msglvl = 0;
+        }
+
 
         if ( d == 0 && config::env::MPIrank == 0) {
             domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
         }
     }
     if (!USE_KINV) {
-
+std::cout << "START" << std::endl;
         double MICr = 1.0;
 
         eslocal *matrixPerPack = new eslocal[ this->acc_per_MPI ];
@@ -805,7 +820,7 @@ void ClusterAcc::SetupKsolvers ( ) {
             this->SparseKPack[ omp_get_thread_num() ].FactorizeMIC();
         }
         
-
+std::cout << "END" << std::endl;
 /*
         // send matrices to Xeon Phi
         eslocal nMatrices = domains.size();

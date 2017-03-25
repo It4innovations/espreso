@@ -207,7 +207,6 @@ void AdvectionDiffusion3D::makeStiffnessMatricesRegular()
 			RegMat[subdomain].ConvertToCOO(1);
 			break;
 		case config::solver::REGULARIZATIONalternative::NULL_PIVOTS:
-            std::cout << "HOOVNOO" <<std::endl;
 			K[subdomain].RemoveLower();
 			algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], R2[subdomain], RegMat[subdomain], subdomain);
 			break;
