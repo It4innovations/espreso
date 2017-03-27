@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-struct Solver;
+struct SolverBase;
 struct Physics;
 struct Instance;
 class LinearSolver;
@@ -31,7 +31,7 @@ struct Factory {
 
 	double norm() const;
 
-	std::vector<Solver*> loadSteps;
+	std::vector<SolverBase*> loadSteps;
 	output::ResultStoreList* store;
 
 	OldInstance *instance;
@@ -40,7 +40,7 @@ struct Factory {
 private:
 	void meshPreprocessing(const OutputConfiguration &configuration);
 
-	std::vector<Solver*> _solvers;
+	std::vector<SolverBase*> _solvers;
 	std::vector<Physics*> _physics;
 	std::vector<Instance*> _instances;
 	std::vector<LinearSolver*> _linearSolvers;

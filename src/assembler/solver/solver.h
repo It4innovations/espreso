@@ -6,20 +6,18 @@
 #include <vector>
 #include <string>
 
+#include "solverbase.h"
 #include "../instance.h"
 
 namespace espreso {
 
-struct Step;
-class Mesh;
 class Physics;
 class LinearSolver;
 namespace output { class Store; }
-class TimeEval;
 class SparseMatrix;
 
 
-class Solver
+class Solver: public SolverBase
 {
 public:
 	Solver(
@@ -37,8 +35,6 @@ public:
 	virtual void solve(Step &step) =0;
 	virtual void postprocess(Step &step) =0;
 	virtual void finalize(Step &step) =0;
-
-	const std::string& name() const { return _name; }
 
 	virtual ~Solver();
 
@@ -82,12 +78,8 @@ protected:
 	void storeSolution(const Step &step);
 	void storeSubSolution(const Step &step);
 
-	std::string _name;
-	Mesh *_mesh;
 	output::Store* _store;
 	Matrices _restriction;
-
-	TimeEval *_timeStatistics;
 };
 
 }

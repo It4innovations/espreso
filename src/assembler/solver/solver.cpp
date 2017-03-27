@@ -26,15 +26,14 @@ Solver::Solver(
 		LinearSolver* linearSolver,
 		output::Store* store,
 		Matrices restriction)
-: physics(physics), instance(physics->instance()), linearSolver(linearSolver), _name(name), _mesh(mesh), _store(store), _restriction(~restriction)
+: SolverBase(name, physics->name(), mesh), physics(physics), instance(physics->instance()), linearSolver(linearSolver), _store(store), _restriction(~restriction)
 {
-	_timeStatistics = new TimeEval(physics->name() + " solved by " + _name + " solver overall timing");
-	_timeStatistics->totalTime.startWithBarrier();
+
 }
 
 Solver::~Solver()
 {
-	delete _timeStatistics;
+
 }
 
 static std::string mNames(espreso::Matrices matrices)
