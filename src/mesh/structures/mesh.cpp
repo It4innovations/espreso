@@ -1883,29 +1883,41 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 	// neighbour x data
 	std::vector<std::vector<esglobal> > rBuffer(neighbours.size());
 
+	size_t prevDOFsSize = 0;
+	if (elements.size()) {
+		prevDOFsSize = elements[0]->DOFsDomainsCounters().size() / elements[0]->clusters().size();
+	}
+
 	// Compute send buffers
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 
-			elements[e]->DOFsDomainsCounters().resize(DOFs.size() * elements[e]->clusters().size(), -1);
-			size_t cluster = std::lower_bound(elements[e]->clusters().begin(), elements[e]->clusters().end(), environment->MPIrank) - elements[e]->clusters().begin();
-			for (size_t i = 0; i < DOFs.size(); i++) {
-				elements[e]->DOFsDomainsCounters()[cluster * DOFs.size() + i] = elements[e]->numberOfLocalDomainsWithDOF(i);
+			eslocal cluster = 0;
+			elements[e]->DOFsDomainsCounters().reserve(elements[e]->DOFsDomainsCounters().size() + DOFs.size() * elements[e]->clusters().size());
+			for (size_t c = 0; c < elements[e]->clusters().size(); c++) {
+				elements[e]->DOFsDomainsCounters().insert(elements[e]->DOFsDomainsCounters().begin() + (c + 1) * prevDOFsSize + c * DOFs.size(), DOFs.size(), -1);
+				if (elements[e]->clusters()[c] == environment->MPIrank) {
+					cluster = c;
+					for (size_t i = prevDOFsSize; i < prevDOFsSize + DOFs.size(); i++) {
+						elements[e]->DOFsDomainsCounters()[c * (prevDOFsSize + DOFs.size()) + i] = elements[e]->numberOfLocalDomainsWithDOF(i);
+					}
+				}
 			}
+
 			if (elements[e]->clusters().size() > 1) {
-				for (auto c = elements[e]->clusters().begin(); c != elements[e]->clusters().end(); ++c) {
-					if (*c == environment->MPIrank) {
+				for (size_t c = 0; c < elements[e]->clusters().size(); c++) {
+					if (elements[e]->clusters()[c] == environment->MPIrank) {
 						continue;
 					}
 
-					sBuffer[t][n2i(*c)].push_back(elements[e]->vtkCode());
+					sBuffer[t][n2i(elements[e]->clusters()[c])].push_back(elements[e]->vtkCode());
 					for (size_t n = 0; n < elements[e]->coarseNodes(); n++) {
-						sBuffer[t][n2i(*c)].push_back(l2g[elements[e]->node(n)]);
+						sBuffer[t][n2i(elements[e]->clusters()[c])].push_back(l2g[elements[e]->node(n)]);
 					}
 
-					for (size_t i = 0; i < DOFs.size(); i++) {
-						sBuffer[t][n2i(*c)].push_back(elements[e]->DOFsDomainsCounters()[cluster * DOFs.size() + i]);
+					for (size_t i = prevDOFsSize; i < prevDOFsSize + DOFs.size(); i++) {
+						sBuffer[t][n2i(elements[e]->clusters()[c])].push_back(elements[e]->DOFsDomainsCounters()[cluster * (prevDOFsSize + DOFs.size()) + i]);
 					}
 				}
 			}
@@ -1974,12 +1986,16 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 		for (size_t e = 0, offset = 0; e < nElements[n].size(); e++) {
 			auto it = std::lower_bound(elements.begin(), elements.end(), nElements[n][e], [&] (Element *el1, Element *el2) { return *el1 < *el2; });
 			if (it != elements.end() && **it == *(nElements[n][e])) {
-				(*it)->clusterOffsets().resize((*it)->clusters().size());
+
 				size_t cluster = std::lower_bound((*it)->clusters().begin(), (*it)->clusters().end(), neighbours[n]) - (*it)->clusters().begin();
+
 				for (size_t dof = 0; dof < DOFs.size(); dof++) {
-					(*it)->DOFsDomainsCounters()[cluster * DOFs.size() + dof] = nElements[n][e]->DOFsDomainsCounters()[dof];
+					(*it)->DOFsDomainsCounters()[cluster * (prevDOFsSize + DOFs.size()) + prevDOFsSize + dof] = nElements[n][e]->DOFsDomainsCounters()[dof];
 				}
-				(*it)->clusterOffsets()[cluster] = offset++;
+				if ((*it)->clusterOffsets().size() == 0) {
+					(*it)->clusterOffsets().resize((*it)->clusters().size());
+					(*it)->clusterOffsets()[cluster] = offset++;
+				}
 			}
 		}
 	}
@@ -1999,8 +2015,8 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 			if (elements[e]->clusters().size() > 1) {
 				std::vector<eslocal> &counters = elements[e]->DOFsDomainsCounters();
 				for (size_t c = 0; c < elements[e]->clusters().size(); c++) {
-					if (std::all_of(counters.begin() + c * DOFs.size(), counters.begin() + (c + 1) * DOFs.size(), [] (eslocal &c) { return c == -1; })) {
-						counters.erase(counters.begin() + c * DOFs.size(), counters.begin() + (c + 1) * DOFs.size());
+					if (std::all_of(counters.begin() + c * (prevDOFsSize + DOFs.size()), counters.begin() + (c + 1) * (prevDOFsSize + DOFs.size()), [] (eslocal &c) { return c == -1; })) {
+						counters.erase(counters.begin() + c * (prevDOFsSize + DOFs.size()), counters.begin() + (c + 1) * (prevDOFsSize + DOFs.size()));
 						elements[e]->clusters().erase(elements[e]->clusters().begin() + c--);
 					}
 				}
