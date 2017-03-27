@@ -17,7 +17,7 @@ public:
 	ClusterAcc(const ESPRESOSolver &configuration, Instance *instance_in): ClusterBase(configuration, instance_in)
 	{
 			this->deleteMatrices = false;
-			this->NUM_MICS = 2;
+			this->NUM_MICS = configuration.N_MICS;
 	}
 
     virtual ~ClusterAcc();
@@ -26,15 +26,19 @@ public:
     void Create_Kinv_perDomain();
 	void SetupKsolvers ( );
     void CreateDirichletPrec( Instance *instance );
+    void multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in);
+
+    // sets affinity of processes on accelerators
+    void SetAcceleratorAffinity();
 
 //private:
 
     // packed matrices
     SEQ_VECTOR<DenseMatrixPack> B1KplusPacks;
-    
-    // number of accelerators
-    eslocal NUM_MICS;
 
+    // packed matrices for sparse solve on MIC
+    SEQ_VECTOR<SparseMatrixPack> SparseKPack;
+    
     // global solver for offloading all domains to Xeon Phi
     SEQ_VECTOR<SparseSolverAcc> solver;
 
@@ -56,8 +60,20 @@ public:
     // vector of indices of domains on the host
     SEQ_VECTOR<eslocal> hostPreconditioners;
 
+    // number of MPI processes per node
+    eslocal MPI_per_node;
 
+    // number of MPI processes per accelerator
+    eslocal MPI_per_acc;
+    
+    // number of accelerators per MPI process
+    eslocal acc_per_MPI;
 
+    // id of devices to offload to
+    SEQ_VECTOR<eslocal> myTargets;
+
+    // local rank on the accelerator
+    eslocal acc_rank;
 
     bool deleteMatrices;
 };

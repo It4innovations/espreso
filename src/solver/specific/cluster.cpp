@@ -1418,6 +1418,9 @@ void ClusterBase::CreateSa() {
 
 
 		if (environment->print_matrices) {
+			std::ofstream osSa(Logging::prepareFile("Salfa_regMat"));
+			osSa << _tmpSparseMat;
+			osSa.close();
 			std::ofstream osSa(Logging::prepareFile("Salfa_reg"));
 			osSa << Salfa;
 			osSa.close();

@@ -16,7 +16,10 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 
         time_eval.timeEvents[0].start();
 
-        eslocal maxDevNumber = numDevices;
+       // eslocal maxDevNumber = numDevices;
+        eslocal maxDevNumber = cluster.acc_per_MPI;
+
+
 
         // *** Part 1.1 - prepare vectors for FETI operator with SC
         // at first - work with domains assigned to MICs
@@ -62,10 +65,10 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
             cluster.domains[domN].B1Kplus.DenseMatVec( cluster.domains[domN].compressed_tmp2, cluster.domains[domN].compressed_tmp);
         }
 
-        for ( eslocal i = 0 ; i < numDevices; ++i ) {
+        for ( eslocal i = 0 ; i < maxDevNumber; ++i ) {
             cluster.B1KplusPacks[ i ].DenseMatsVecsRestCPU( 'N' );    
             long start = (long) (cluster.B1KplusPacks[i].getNMatrices()*cluster.B1KplusPacks[i].getMICratio());
-			#pragma omp parallel for
+#pragma omp parallel for
             for (  long d = start ; d < cluster.B1KplusPacks[i].getNMatrices(); ++d ) {
                 cluster.B1KplusPacks[i].GetY(d, cluster.domains[cluster.accDomains[i].at(d)].compressed_tmp);
             }
@@ -127,7 +130,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
             double r = cluster.B1KplusPacks[0].getMICratio();
             double MICtime = cluster.B1KplusPacks[0].getElapsedTime();
             double newRatio = (r * CPUtime) / (r * CPUtime + MICtime * (1 - r));
-            //std::cout << "TEST " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
+            std::cout << "TEST " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
 
 #pragma omp parallel num_threads( maxDevNumber )
             {
@@ -139,15 +142,20 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
     }
 
     if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
+//        #pragma omp parallel num_threads( numDevices  )
+            {
+//                cluster.B1KplusPacks[omp_get_thread_num()].setMICratio( 0.1 );
+            }
+ 
         // classical FETI on MIC using Schur
         time_eval.timeEvents[0].start();
         time_eval.timeEvents[0].end();
         time_eval.timeEvents[1].start();
-        eslocal maxDevNumber = numDevices;
+        eslocal maxDevNumber = cluster.acc_per_MPI;
         // *** Part 1.1 - prepare vectors for FETI operator with SC
         // at first - work with domains assigned to MICs
         for ( eslocal i = 0; i < maxDevNumber; i++ ) {
-			#pragma omp parallel for
+#pragma omp parallel for 
             for (eslocal d = 0; d < cluster.accDomains[i].size(); d++) {
                 eslocal domN = cluster.accDomains[i].at(d);
                 for ( eslocal j = 0; j < cluster.domains[domN].lambda_map_sub_local.size(); j++ ) {
@@ -157,32 +165,32 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
         }
 
         // *** Part 1.2 work with domains staying on CPU
-		#pragma omp parallel for
+        #pragma omp parallel for
         for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
             eslocal domN = cluster.hostDomains.at(d);
             for ( eslocal j = 0; j < cluster.domains[domN].lambda_map_sub_local.size(); j++ ) {
                 cluster.domains[domN].compressed_tmp2[j] = x_in[ cluster.domains[domN].lambda_map_sub_local[j]];
             }
         }
-        //#pragma omp parallel num_threads( maxDevNumber )
-        //        {
+        #pragma omp parallel num_threads( maxDevNumber )
+                 {
         //            // start async. computation on MICs
-        for (int mic=0; mic<maxDevNumber; mic++)            
-            if (cluster.accDomains[mic].size() > 0) {
-                cluster.B1KplusPacks[ mic ].DenseMatsVecsMIC_Start( 'N' );
-            }
-        //        }
+        //for (int mic=0; mic<maxDevNumber; mic++)            
+            if (cluster.accDomains[omp_get_thread_num()].size() > 0) {
+                cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Start( 'N' );
+             }
+                }
         // meanwhile compute the same for domains staying on CPU
         double startCPU = Measure::time();
-		#pragma omp parallel for
+#pragma omp parallel for 
         for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
             eslocal domN = cluster.hostDomains.at(d);
             cluster.domains[domN].B1Kplus.DenseMatVec( cluster.domains[domN].compressed_tmp2, cluster.domains[domN].compressed_tmp);
         }
-        for ( eslocal i = 0 ; i < numDevices; ++i ) {
+        for ( eslocal i = 0 ; i < maxDevNumber; ++i ) {
             cluster.B1KplusPacks[ i ].DenseMatsVecsRestCPU( 'N' );    
             long start = (long) (cluster.B1KplusPacks[i].getNMatrices()*cluster.B1KplusPacks[i].getMICratio());
-			#pragma omp parallel for
+#pragma omp parallel for
             for (  long d = start; d < cluster.B1KplusPacks[i].getNMatrices(); ++d ) {
                 cluster.B1KplusPacks[i].GetY(d, cluster.domains[cluster.accDomains[i].at(d)].compressed_tmp);
             }
@@ -190,18 +198,18 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
         double CPUtime = Measure::time() - startCPU;
         // *** Part 5 - Finalize transfers of the result of the FETI SC operator
         // from MICs back to CPU
-        //#pragma omp parallel num_threads( maxDevNumber )
-        //        {
+        #pragma omp parallel num_threads( maxDevNumber )
+              {
         // synchronize computation
-        for (int mic=0 ; mic < maxDevNumber; mic++)
-            if (cluster.accDomains[mic].size() > 0) {
-                cluster.B1KplusPacks[ mic ].DenseMatsVecsMIC_Sync(  );
+        //for (int mic=0 ; mic < maxDevNumber; mic++)
+            if (cluster.accDomains[omp_get_thread_num()].size() > 0) {
+                cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Sync(  );
             }
-        //        }
+                }
         // extract the result from MICs
         for ( eslocal i = 0; i < maxDevNumber; i++ ) {
-            long end = (long) (cluster.B1KplusPacks[i].getNMatrices()*cluster.B1KplusPacks[i].getMICratio());
-			#pragma omp parallel for
+            long end = (long) (cluster.B1KplusPacks[i].getNMatrices()*cluster.B1KplusPacks[i].getMICratio()); 
+#pragma omp parallel for
             for ( eslocal d = 0 ; d < end; ++d ) {
                 cluster.B1KplusPacks[i].GetY(d, cluster.domains[cluster.accDomains[i].at(d)].compressed_tmp);
             }
@@ -218,13 +226,17 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
         }
 
         if ( configuration.load_balancing ) {
-            // update the ratio between the cpu and mic
-            double r = cluster.B1KplusPacks[0].getMICratio();
-            double MICtime = cluster.B1KplusPacks[0].getElapsedTime();
-            double newRatio = (r * CPUtime) / (r * CPUtime + MICtime * (1 - r));
-            std::cout << "TEST " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
-#pragma omp parallel num_threads( maxDevNumber )
+            #pragma omp parallel num_threads( maxDevNumber )
             {
+// update the ratio between the cpu and mic
+            double r = cluster.B1KplusPacks[omp_get_thread_num()].getMICratio();
+            double MICtime = cluster.B1KplusPacks[omp_get_thread_num()].getElapsedTime();
+            double newRatio = (r * CPUtime) / (r * CPUtime + MICtime * (1 - r));
+            if (omp_get_thread_num() == 0)
+            {
+            std::cout << "LB: " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
+            }
+
                 cluster.B1KplusPacks[omp_get_thread_num()].setMICratio( newRatio );
             }
         }
@@ -245,45 +257,38 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
         }
         time_eval.timeEvents[0].end();
 
+        eslocal maxDevNumber = cluster.acc_per_MPI;
+
         time_eval.timeEvents[1].start();
         if (cluster.USE_HFETI == 0) {
             //cilk_for (eslocal d = 0; d < cluster.domains.size(); d++) {
-            eslocal nMatrices = cluster.domains.size(); 
-            SEQ_VECTOR<SEQ_VECTOR<double>**> vectorsPerAcc;
-            vectorsPerAcc.reserve(configuration.N_MICS);
-            SEQ_VECTOR<eslocal> nVecPerMIC;
-            nVecPerMIC.resize(configuration.N_MICS);
+            
 
-            for (eslocal i = 0; i < configuration.N_MICS; i++) {
-                nVecPerMIC[i] = nMatrices / configuration.N_MICS;
-            }
-
-            for (eslocal i = 0 ; i < nMatrices % configuration.N_MICS; i++ ) {
-                nVecPerMIC[i]++;
-            }
-
-            eslocal offset = 0;
-            for (eslocal i = 0; i < configuration.N_MICS; i++) {
-                vectorsPerAcc[i] = new SEQ_VECTOR<double>*[ nVecPerMIC[ i ] ];
-                for (eslocal j = offset; j < offset + nVecPerMIC[ i ]; j++) {
-                    (vectorsPerAcc[i])[j - offset] = &(cluster.x_prim_cluster1[j]); 
+            for ( eslocal i = 0; i < maxDevNumber; ++i ) {
+                #pragma omp parallel for
+                for ( eslocal d = 0 ; d < cluster.accDomains[i].size(); ++d ) {
+                    eslocal domN = cluster.accDomains[i].at(d);
+                    for ( eslocal  j = 0 ; j < cluster.domains[domN].K.cols; ++j) {
+                        cluster.SparseKPack[i].SetX(d, j,cluster.x_prim_cluster1[domN].at(j));
+                    }
                 }
-                offset += nVecPerMIC[i];
-                //     cluster.solver[i].Solve(vectorsPerAcc[i]);
             }
-
-#pragma omp parallel num_threads(configuration.N_MICS)
+#pragma omp parallel num_threads( maxDevNumber )
             {
                 eslocal myAcc = omp_get_thread_num();
-                cluster.solver[myAcc].Solve(vectorsPerAcc[myAcc]);
-                delete [] vectorsPerAcc[myAcc];
+                cluster.SparseKPack[ myAcc ].SolveMIC_Start();
+                cluster.SparseKPack[ myAcc ].SolveMIC_Sync();
+                for (eslocal i = 0 ; i < cluster.accDomains[ myAcc ].size(); ++i) {
+                     eslocal domN = cluster.accDomains[myAcc].at(i);
+                    cluster.SparseKPack[myAcc].GetY(i,cluster.x_prim_cluster1[domN]);
+                }
             }
             //for(eslocal i = 0; i < cluster.domains.size(); i++)
             //cluster.domains[i].multKplusLocal(cluster.x_prim_cluster1[i]);
             // }
         } else {
             // TODO NOT YET IMPLEMENTED ON MIC
-            cluster.multKplusGlobal_l(cluster.x_prim_cluster1);
+            cluster.multKplusGlobal_l_Acc(cluster.x_prim_cluster1);
         }
         time_eval.timeEvents[1].end();
 
@@ -316,7 +321,7 @@ void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
 
     time_eval.timeEvents[0].start();
 
-	#pragma omp parallel for
+#pragma omp parallel for
     for (eslocal d = 0; d < cluster.domains.size(); d++) {
         SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
         for (eslocal i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
@@ -354,8 +359,9 @@ void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
 
     if ( USE_PREC == ESPRESO_PRECONDITIONER::DIRICHLET ||
             USE_PREC == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET ) {
-        for ( eslocal mic = 0 ; mic < configuration.N_MICS ; ++mic ) {
-			#pragma omp parallel for
+        //for ( eslocal mic = 0 ; mic < config::solver::N_MICS ; ++mic ) {
+            for ( eslocal mic = 0 ; mic < cluster.acc_per_MPI ; ++mic ) {
+#pragma omp parallel for
             for ( eslocal d = 0; d < cluster.accPreconditioners[mic].size(); ++d) {
                 eslocal domN = cluster.accPreconditioners[mic].at(d);
                 for ( eslocal j = 0; j < cluster.domains[domN].B1t_Dir_perm_vec.size(); j++ ) {
@@ -364,7 +370,8 @@ void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
             }
         }
 
-#pragma omp parallel num_threads( configuration.N_MICS )
+//#pragma omp parallel num_threads( config::solver::N_MICS )
+#pragma omp parallel num_threads( cluster.acc_per_MPI )
         {
             if (cluster.accPreconditioners[ omp_get_thread_num() ].size( ) > 0 ) {
                 cluster.DirichletPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Start( 'N' );
@@ -372,23 +379,27 @@ void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
         }
         // meanwhile compute the same for domains staying on CPU
         double startCPU = Measure::time();
-		#pragma omp parallel for
-        for (eslocal d = 0; d < cluster.hostPreconditioners.size(); ++d ) {
+        #pragma omp parallel for
+        for (eslocal d = 0; d <
+                cluster.hostPreconditioners.size(); ++d ) {
             eslocal domN = cluster.hostPreconditioners.at(d);
             cluster.domains[domN].Prec.DenseMatVec(cluster.x_prim_cluster1[domN], cluster.x_prim_cluster2[domN],'N');
         }
         
-        for ( eslocal mic = 0 ; mic < configuration.N_MICS; ++mic ) {
-            cluster.DirichletPacks[ mic ].DenseMatsVecsRestCPU( 'N' );    
+        // for ( eslocal mic = 0 ; mic < config::solver::N_MICS; ++mic ) {
+          for ( eslocal mic = 0 ; mic < cluster.acc_per_MPI; ++mic ) {
+
+             cluster.DirichletPacks[ mic ].DenseMatsVecsRestCPU( 'N' );    
             long start = (long) (cluster.DirichletPacks[mic].getNMatrices()*cluster.DirichletPacks[mic].getMICratio());
-			#pragma omp parallel for
+#pragma omp parallel for
             for (  long d = start ; d < cluster.DirichletPacks[mic].getNMatrices(); ++d ) {
                 cluster.DirichletPacks[mic].GetY(d, cluster.x_prim_cluster2[ cluster.accPreconditioners[ mic ].at(d) ] );
             }
         }
         double CPUtime = Measure::time() - startCPU;
 
-#pragma omp parallel num_threads( configuration.N_MICS )
+//#pragma omp parallel num_threads( config::solver::N_MICS )
+#pragma omp parallel num_threads( cluster.acc_per_MPI )
         {
             // synchronize computation
             if (cluster.accPreconditioners[omp_get_thread_num()].size() > 0) {
@@ -396,22 +407,23 @@ void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
             }
         }
         // extract the result from MICs
-        for ( eslocal mic = 0; mic < configuration.N_MICS; ++mic ) {
+        for ( eslocal mic = 0; mic < cluster.acc_per_MPI; ++mic ) {
             long end = (long) (cluster.DirichletPacks[mic].getNMatrices()*cluster.DirichletPacks[mic].getMICratio());
-			#pragma omp parallel for
+#pragma omp parallel for 
             for ( eslocal d = 0 ; d < end; ++d ) {
                 cluster.DirichletPacks[mic].GetY(d, cluster.x_prim_cluster2[ cluster.accPreconditioners[ mic ].at( d ) ] );
             }
         }
         
-        if ( configuration.load_balancing ) {
+        if ( config::solver::LOAD_BALANCING_PREC ) {
             // update the ratio between the cpu and mic
             double r = cluster.DirichletPacks[0].getMICratio();
             double MICtime = cluster.DirichletPacks[0].getElapsedTime();
             double newRatio = (r * CPUtime) / (r * CPUtime + MICtime * (1 - r));
             std::cout << "TEST " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
 
-#pragma omp parallel num_threads( configuration.N_MICS )
+//#pragma omp parallel num_threads( config::solver::N_MICS )
+#pragma omp parallel num_threads( cluster.acc_per_MPI )
             {
                 cluster.DirichletPacks[omp_get_thread_num()].setMICratio( newRatio );
             }

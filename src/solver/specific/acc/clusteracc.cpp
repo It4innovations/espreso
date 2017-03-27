@@ -15,7 +15,33 @@ ClusterAcc::~ClusterAcc() {
     }
 }
 
-void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
+void ClusterAcc::SetAcceleratorAffinity() {
+
+    //        	Logical to Physical Processor Mapping
+    //        	? Hardware:
+    //        	? Physical Cores are 0..60
+    //        	? Logical Cores are 0..243
+    //        	? Mapping is not what you are used to!
+    //        	? Logical Core 0 maps to Physical core 60, thread context 0
+    //        	? Logical Core 1 maps to Physical core 0, thread context 0
+    //        	? Logical Core 2 maps to Physical core 0, thread context 1
+    //        	? Logical Core 3 maps to Physical core 0, thread context 2
+    //        	? Logical Core 4 maps to Physical core 0, thread context 3
+    //        	? Logical Core 5 maps to Physical core 1, thread context 0
+    //        	? ...
+    //        	? Logical Core 240 maps to Physical core 59, thread context 3
+    //        	? Logical Core 241 maps to Physical core 60, thread context 1
+    //        	? Logical Core 242 maps to Physical core 60, thread context 2
+    //        	? Logical Core 243 maps to Physical core 60, thread context 3
+    //        	? OpenMP threads start binding to logical core 1, not logical core 0
+    //        	? For compact mapping 240 OpenMP threads are mapped to the first 60 cores
+    //        	? No contention for the core containing logical core 0 ? the core that the O/S uses most
+    //        	? But for scatter and balanced mappings, contention for logical core 0 begins at 61 threads
+    //        	? Not much performance impact unless O/S is very busy
+    //        	? Best to avoid core 60 for offload jobs & MPI jobs with compute/communication overlap
+    //        	? KMP_PLACE_THREADS limits the range of cores & thread contexts
+    //        	? E.g., KMP_PLACE_THREADS=60c,2c with KMP_AFFINITY=compact and OMP_NUM_THREADS=120 places 2
+    //        	threads on each of the first 60 cores
 
     ESINFO(PROGRESS3) << "Creating Local Schur complements";
 
@@ -59,117 +85,133 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     MPI_Comm_rank(_currentNode, &_MPInodeRank);
     MPI_Comm_size(_currentNode, &_MPInodeSize);
     MPI_Comm_split(MPI_COMM_WORLD, _MPInodeRank, _MPIglobalRank, &_storingProcs);
+
+    this->MPI_per_node = _MPInodeSize;
     // END - detect how many MPI processes is running per node
-    ESINFO(PROGRESS3) << "MPI ranks per node: " << _MPInodeSize;
-    //TODO:
-    int accelerators_per_node = 2;
-    int target;
-    
-    if (_MPInodeRank < (_MPInodeSize/2)) //  .../accelerators_per_node
-        target = 0;
-    else
-        target = 1;
+    ESINFO(PROGRESS2) << "MPI ranks per node: " << _MPInodeSize;
+
+    int nMICs = config::solver::N_MICS;
+
+    if ( _MPInodeSize > nMICs && nMICs % 2 == 0 && _MPInodeSize % nMICs == 0 ) {
+        // the case when there is more MPInodeSize = 2*k*nMICs
+        this->MPI_per_acc = _MPInodeSize / nMICs;
+        this->acc_per_MPI = 1;
+        this->myTargets.reserve( 1 );
+        this->myTargets.push_back( _MPInodeRank / MPI_per_acc );
+        this->acc_rank = _MPInodeRank % this->MPI_per_acc;
+    } else if ( nMICs % _MPInodeSize == 0 ) {
+        // the case when 2*k*MPInodeSize = nMICS
+        this->MPI_per_acc = 1;
+        this->acc_per_MPI = nMICs / _MPInodeSize;
+        this->myTargets.reserve( this->acc_per_MPI );
+        for ( eslocal i = 0; i < acc_per_MPI ; ++i ) {
+            this->myTargets.push_back( _MPInodeRank * acc_per_MPI + i );    
+        }
+        this->acc_rank = 0;
+    } else if ( nMICs == 1 && _MPInodeSize > 1 ) {
+        this->MPI_per_acc = _MPInodeSize;
+        this->acc_per_MPI = 1;
+        this->myTargets.reserve( 1 );
+        this->myTargets.push_back( 0 );
+        this->acc_rank = _MPInodeRank;
+    } else {
+        ESINFO(PROGRESS2) << "Incorrect number of MPI processes per accelerator!" << _MPInodeSize;  
+    }
+    for (int  i = 0 ; i < myTargets.size() ; ++i ) std::cout << myTargets.at(i) << " " ;
     // Set process placement on Xeon Phi
-    int ranks_per_node = _MPInodeSize;
-    int rank = _MPInodeRank % (_MPInodeSize/2); //  .../accelerators_per_node
-    for (eslocal i = 0; i < configuration.N_MICS; ++i) {
+       std::cout << this->myTargets.size() << std::endl;
+    //for (eslocal i = 0; i < this->myTargets.size(); ++i) {
+    #pragma omp parallel num_threads( acc_per_MPI )
+    {
         int used_core_num = 0;
         int first_core = 0;
         int last_core = 0;
-        // TODO: #pragma offload target(mic:i)
-#pragma offload target(mic:target)
+        int target = myTargets.at(omp_get_thread_num());
+        int MPIperAcc = this->MPI_per_acc;
+        int rank = this->acc_rank;
+        std::cout << "target " << target << std::endl;
+#pragma offload target(mic:target) 
         {
-            //        	Logical to Physical Processor Mapping
-            //        	? Hardware:
-            //        	? Physical Cores are 0..60
-            //        	? Logical Cores are 0..243
-            //        	? Mapping is not what you are used to!
-            //        	? Logical Core 0 maps to Physical core 60, thread context 0
-            //        	? Logical Core 1 maps to Physical core 0, thread context 0
-            //        	? Logical Core 2 maps to Physical core 0, thread context 1
-            //        	? Logical Core 3 maps to Physical core 0, thread context 2
-            //        	? Logical Core 4 maps to Physical core 0, thread context 3
-            //        	? Logical Core 5 maps to Physical core 1, thread context 0
-            //        	? ...
-            //        	? Logical Core 240 maps to Physical core 59, thread context 3
-            //        	? Logical Core 241 maps to Physical core 60, thread context 1
-            //        	? Logical Core 242 maps to Physical core 60, thread context 2
-            //        	? Logical Core 243 maps to Physical core 60, thread context 3
-            //        	? OpenMP threads start binding to logical core 1, not logical core 0
-            //        	? For compact mapping 240 OpenMP threads are mapped to the first 60 cores
-            //        	? No contention for the core containing logical core 0 ? the core that the O/S uses most
-            //        	? But for scatter and balanced mappings, contention for logical core 0 begins at 61 threads
-            //        	? Not much performance impact unless O/S is very busy
-            //        	? Best to avoid core 60 for offload jobs & MPI jobs with compute/communication overlap
-            //        	? KMP_PLACE_THREADS limits the range of cores & thread contexts
-            //        	? E.g., KMP_PLACE_THREADS=60c,2c with KMP_AFFINITY=compact and OMP_NUM_THREADS=120 places 2
-            //        	threads on each of the first 60 cores
-            cpu_set_t my_set;        /* Define your cpu_set bit mask. */
-            CPU_ZERO(&my_set);       /* Initialize it all to 0, i.e. no CPUs selected. */
+            cpu_set_t my_set;        // Define cpu_set bit mask. 
+            CPU_ZERO(&my_set);       // Initialize it all to 0
             int cores = sysconf(_SC_NPROCESSORS_ONLN); // for Xeon Phi 7120 - results is 244
-            cores = (cores / 4 ) - 1; // keep core for system and remove effect of hyperthreading
-            //std::cout << sysconf(_SC_NPROCESSORS_ONLN) << " Cores\n";//std::thread::hardware_concurrency() << "Cores \n";
-            int cores_per_rank = accelerators_per_node * cores/ranks_per_node;
-            for (int i = 0; i < cores_per_rank; i++) {
+            cores = ( cores / 4 ) - 1; // keep core for system and remove effect of hyperthreading
+            int cores_per_rank = cores / MPIperAcc;
+            std::cout << "cores: "<<cores << std::endl;
+            std::cout << "cores_per_rank: " << cores_per_rank << std::endl;
+
+            //omp_set_num_threads((cores_per_rank)*4);
+            for (int i = 0; i < cores_per_rank ; i++) {
                 if (i == 0) {
-                    first_core = 1*(cores_per_rank)*rank + 1*i;
+                    //first_core = 1*(cores_per_rank)*rank + 1*i;
+                    first_core = cores_per_rank*rank + 1;
                 }
                 last_core = 1*(cores_per_rank)*rank + 1*i;
-                int core = 1 + 4*(cores_per_rank)*rank + 4*i;
-                CPU_SET(core, &my_set);     /* set the bit that represents core 7. */
+                //int core = 1 + 4*(cores_per_rank)*rank + 4*i;
+
+                int core =1+  4*cores_per_rank*rank + 4*i;
+                for (int j = 0 ; j < 4; j++ ) {
+                    std::cout << target << " " << rank << " " << _MPInodeRank << " " << core << std::endl;
+                    CPU_SET(core , &my_set);     /* set the bit that represents core 7. */
+                    core++;
+                }
                 used_core_num++;
-            }
-            omp_set_num_threads(cores_per_rank-0);
+            }   
+
             sched_setaffinity(0, sizeof(cpu_set_t), &my_set); /* Set affinity of tihs process to */
+            omp_set_num_threads(4*cores_per_rank);
             /* the defined mask, i.e. only 7. */
         }
         //ESINFO(PROGRESS3)
         std::cout << "Global MPI rank: " << _MPIglobalRank << " - Node MPI rank: " << _MPInodeRank << " uses: " << used_core_num << " Xeon Phi processing cores of accelerator #" << target <<" (from " << first_core << " to " << last_core <<  ")\n";
     }
 
+}
 
+void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     // Ratio of work done on MIC
     double MICr = 1.0;
     if ( configuration.load_balancing ) {
         MICr = 0.1;
     }
-
     // First, get the available memory on coprocessors (in bytes)
     double usableRAM = 0.9;
-    long micMem[configuration.N_MICS];
-    for (eslocal i = 0; i < configuration.N_MICS; ++i) {
+    long *micMem = new long[ this->acc_per_MPI ];
+
+    int target = 0;
+    for (eslocal i = 0; i < this->acc_per_MPI; ++i) {
         long currentMem = 0;
-//#pragma offload target(mic:i)
+        target = this->myTargets.at(i);
 #pragma offload target(mic:target)
         {
             long pages = sysconf(_SC_AVPHYS_PAGES);
             long page_size = sysconf(_SC_PAGE_SIZE);
             currentMem = pages * page_size;
         }
-        micMem[i] = currentMem;
+        micMem[i] = currentMem / this->MPI_per_acc;
     }
 
 
-    #pragma omp parallel for
-for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
+#pragma omp parallel for
+    for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
         domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
     }
 
     // compute sizes of data to be offloaded to MIC
-    eslocal maxDevNumber = configuration.N_MICS;
-    eslocal matrixPerPack[configuration.N_MICS];
-    for (eslocal i = 0 ; i < configuration.N_MICS; ++i) {
-        matrixPerPack[i] = domains.size() / maxDevNumber;
+    eslocal *matrixPerPack = new eslocal[this->acc_per_MPI];
+
+    for (eslocal i = 0 ; i < this->acc_per_MPI; ++i) {
+        matrixPerPack[i] = domains.size() / this->acc_per_MPI;
     }
-    for (eslocal i = 0 ; i < domains.size() % maxDevNumber; ++i) {
+    for (eslocal i = 0 ; i < domains.size() % this->acc_per_MPI; ++i) {
         matrixPerPack[i]++;
     }
     eslocal offset = 0;
     bool symmetric = true;
-    this->B1KplusPacks.resize( maxDevNumber );
-    this->accDomains.resize( maxDevNumber );
+    this->B1KplusPacks.resize( this->acc_per_MPI );
+    this->accDomains.resize( this->acc_per_MPI );
 
-    for ( int i = 0; i < maxDevNumber; i++ )
+    for ( int i = 0; i < this->acc_per_MPI; i++ )
     {
         long dataSize = 0;
         long currDataSize = 0;
@@ -195,6 +237,7 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
                 dataSize += currDataSize;
             }
         }
+        std::cout << "TOTAL BYTES " << dataSize * sizeof(double) << std::endl;
 
         // it is necessary to subtract numCPUDomains AFTER setting offset!
         offset += matrixPerPack[i];
@@ -215,10 +258,13 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
         }
     }
 
+    delete [] micMem;
+
     bool assembleOnCPU = true;
     if ( assembleOnCPU ) {
         // iterate over available MICs and assemble their domains on CPU
-        for (eslocal i = 0 ; i < configuration.N_MICS ; ++i) {
+        for (eslocal i = 0 ; i < this->acc_per_MPI ; ++i) {
+            target = this->myTargets.at(i);
             this->B1KplusPacks[i].AllocateVectors( );
             this->B1KplusPacks[i].SetDevice( target );
 #pragma omp parallel for
@@ -237,10 +283,10 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
             }
         }
 
-    #pragma omp parallel num_threads(configuration.N_MICS)
-    {
-         this->B1KplusPacks[omp_get_thread_num()].CopyToMIC();
-    }
+#pragma omp parallel num_threads(this->acc_per_MPI)
+        {
+            this->B1KplusPacks[omp_get_thread_num()].CopyToMIC();
+        }
 
 #pragma omp parallel for
         for (eslocal d = 0; d < hostDomains.size(); ++d) {
@@ -291,7 +337,8 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
             }
         }
     }
-
+    
+    delete [] matrixPerPack;
 
     /*
        cilk_for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
@@ -341,49 +388,49 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
     offset += matrixPerPack;
     }
 
-    #pragma omp parallel for
-	for  (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
+#pragma omp parallel for
+for  (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
 
-    if (cluster_global_index == 1) cout << "."; // << i ;
+if (cluster_global_index == 1) cout << "."; // << i ;
 
-    SparseSolverCPU tmpsps;
-    if ( i == 0 && cluster_global_index == 1) tmpsps.msglvl = 1;
-    tmpsps.Create_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B1Kplus, false, 1 );
+SparseSolverCPU tmpsps;
+if ( i == 0 && cluster_global_index == 1) tmpsps.msglvl = 1;
+tmpsps.Create_SC_w_Mat( domains[i].K, domains[i].B1t_comp_dom, domains[i].B1Kplus, false, 1 );
 
-    if (USE_FLOAT){
-    domains[i].B1Kplus.ConvertDenseToDenseFloat( 1 );
-    domains[i].B1Kplus.USE_FLOAT = true;
-    }
-
-    this->B1KplusPacks[ dom2dev[ i ] ].AddDenseMatrix( i - offsets[dom2dev[i]], &(domains[i].B1Kplus.dense_values[0]) );
-    domains[i].B1Kplus.Clear();
-
-    }
-
-    delete [] dom2dev;
-    delete [] offsets;
-    if (this->NUM_MICS == 0) {
-    this->B1KplusPacks[0].AllocateVectors( );
-    }
-    for (eslocal i = 0; i < this->NUM_MICS ; i++ ) {
-        this->B1KplusPacks[i].AllocateVectors( );
-        this->B1KplusPacks[i].SetDevice( i );
-        this->B1KplusPacks[i].CopyToMIC();
-    }
-
-    #pragma omp parallel for
-	for  (eslocal i = 0; i < domains_in_global_index.size(); i++ )
-        domains[i].B1t_comp_dom.Clear();
-
-    if (cluster_global_index == 1)
-        cout << endl;
-    */
+if (USE_FLOAT){
+domains[i].B1Kplus.ConvertDenseToDenseFloat( 1 );
+domains[i].B1Kplus.USE_FLOAT = true;
 }
+
+this->B1KplusPacks[ dom2dev[ i ] ].AddDenseMatrix( i - offsets[dom2dev[i]], &(domains[i].B1Kplus.dense_values[0]) );
+domains[i].B1Kplus.Clear();
+
+}
+
+delete [] dom2dev;
+delete [] offsets;
+if (this->NUM_MICS == 0) {
+this->B1KplusPacks[0].AllocateVectors( );
+}
+for (eslocal i = 0; i < this->NUM_MICS ; i++ ) {
+    this->B1KplusPacks[i].AllocateVectors( );
+    this->B1KplusPacks[i].SetDevice( i );
+    this->B1KplusPacks[i].CopyToMIC();
+}
+
+#pragma omp parallel for
+for  (eslocal i = 0; i < domains_in_global_index.size(); i++ )
+domains[i].B1t_comp_dom.Clear();
+
+if (cluster_global_index == 1)
+    cout << endl;
+    */
+    }
 
 void ClusterAcc::Create_Kinv_perDomain() {
 
-    #pragma omp parallel for
-for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
+#pragma omp parallel for
+    for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
         domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
 
     ESINFO(PROGRESS3) << "Creating B1*K+*B1t on Xeon Phi accelerator";
@@ -431,8 +478,8 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
 
     ESINFO(PROGRESS3) << "Creating B1*K+*B1t : ";
 
-    #pragma omp parallel for
-for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
+#pragma omp parallel for
+    for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
 
         domains[i].KplusF.msglvl = 0;
 
@@ -474,8 +521,8 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
     }
 
 
-    #pragma omp parallel for
-for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
+#pragma omp parallel for
+    for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
         domains[i].B1t_comp_dom.Clear();
 
     //	std::cout << "This function is obsolete - use Create_SC_perDomain" << std::endl;
@@ -673,8 +720,8 @@ for (eslocal i = 0; i < domains_in_global_index.size(); i++ )
 void ClusterAcc::SetupKsolvers ( ) {
     // this part is for setting CPU pardiso, temporarily until everything is
     // solved on MIC
-	#pragma omp parallel for
-	for (eslocal d = 0; d < domains.size(); d++) {
+#pragma omp parallel for
+    for (eslocal d = 0; d < domains.size(); d++) {
 
         // Import of Regularized matrix K into Kplus (Sparse Solver)
 		switch (configuration.Ksolver) {
@@ -710,11 +757,73 @@ void ClusterAcc::SetupKsolvers ( ) {
             domains[d].Kplus.MPIrank = environment->MPIrank;
         }
 
-        if ( d == 0 && environment->MPIrank == 0) {
+        domains[d].domain_prim_size = domains[d].Kplus.cols;
+        //TODO: Hot Fix - needs to be done better
+        if ( !SYMMETRIC_SYSTEM ) {
+            // 11 = Real and unsymmetric matrix
+            domains[d].Kplus.mtype = 11;
+        } else {
+            // 2 = Real and symmetric positive definite
+            domains[d].Kplus.mtype = 2;
+        }
+        //TODO: else stokes = -2 = Real and symmetric indefinite
+
+        if ( d == 0 && config::env::MPIrank == 0) {
+            domains[d].Kplus.msglvl = 0;
+        }
+
+
+        if ( d == 0 && config::env::MPIrank == 0) {
             domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
         }
     }
     if (!USE_KINV) {
+std::cout << "START" << std::endl;
+        double MICr = 1.0;
+
+        eslocal *matrixPerPack = new eslocal[ this->acc_per_MPI ];
+
+        for ( eslocal i = 0; i < this->acc_per_MPI; ++i ) {
+            matrixPerPack[i] = domains.size() / this->acc_per_MPI;    
+        }
+        for ( eslocal i = 0 ; i < domains.size() % this->acc_per_MPI; ++i ) {
+            matrixPerPack[i]++;
+        }
+
+        eslocal offset = 0; 
+        this->SparseKPack.resize( this->acc_per_MPI );
+        this->accDomains.resize( this->acc_per_MPI );
+        this->matricesPerAcc.reserve( this->acc_per_MPI );
+
+        for ( int i = 0; i < this->acc_per_MPI; ++i ) {
+            this->matricesPerAcc[ i ] = new SparseMatrix*[ matrixPerPack[ i ] ];
+            for ( int j = offset; j < offset + matrixPerPack[ i ]; ++j ) {
+                accDomains[ i ].push_back( j );       
+                this->matricesPerAcc[ i ][ j - offset ] = &(domains[j].K);
+            }
+            
+            offset += matrixPerPack[ i ];
+
+            this->SparseKPack[ i ].AddMatrices( this->matricesPerAcc[ i ], 
+                matrixPerPack[ i ], this->myTargets.at( i ) );
+            this->SparseKPack[ i ].setMICratio( MICr );
+
+            if ( config::solver::LOAD_BALANCING ) {
+                this->SparseKPack[ i ].enableLoadBalancing( );
+            } else {
+                this->SparseKPack[ i ].disableLoadBalancing( );
+            }
+        }
+
+        #pragma omp parallel num_threads( acc_per_MPI )
+        {
+            this->SparseKPack[ omp_get_thread_num() ].AllocateVectors();
+            this->SparseKPack[ omp_get_thread_num() ].CopyToMIC();
+            this->SparseKPack[ omp_get_thread_num() ].FactorizeMIC();
+        }
+        
+std::cout << "END" << std::endl;
+/*
         // send matrices to Xeon Phi
         eslocal nMatrices = domains.size();
         this->matricesPerAcc.reserve(configuration.N_MICS);
@@ -747,156 +856,110 @@ void ClusterAcc::SetupKsolvers ( ) {
 
 
         deleteMatrices = true  ;
+        */
     }
 }
 
 void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
     // Prepare matrix pack
 
-    // detect how many MPI processes is running per node
-    int _MPIglobalRank;
-    int _MPIglobalSize;
-    int _MPInodeRank;
-    int _MPInodeSize;
-    std::string _nodeName;
-    MPI_Comm _currentNode;
-    MPI_Comm _storingProcs;
-    MPI_Comm_rank(MPI_COMM_WORLD, &_MPIglobalRank);
-    MPI_Comm_size(MPI_COMM_WORLD, &_MPIglobalSize);
-    int color;
-    int length;
-    std::vector<char> name(MPI_MAX_PROCESSOR_NAME);
-    MPI_Get_processor_name(name.data(), &length);
-    _nodeName = std::string(name.begin(), name.begin() + length);
-    std::vector<int> rCounts(_MPIglobalSize);
-    std::vector<int> rDispl(_MPIglobalSize);
-    std::vector<int> colors(_MPIglobalSize);
-    std::vector<char> names;
-    MPI_Gather(&length, sizeof(int), MPI_BYTE, rCounts.data(), sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
-    for (size_t i = 1; i < rCounts.size(); i++) {
-        rDispl[i] += rDispl[i - 1] + rCounts[i - 1];
-    }
-    names.resize(rDispl.back() + rCounts.back());
-    MPI_Gatherv(name.data(), length * sizeof(char), MPI_BYTE, names.data(), rCounts.data(), rDispl.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
-    std::map<std::string, size_t> nodes;
-    for (size_t i = 0; i < _MPIglobalSize; i++) {
-        std::string str(names.begin() + rDispl[i], names.begin() + rDispl[i] + rCounts[i]);
-        auto it = nodes.find(str);
-        if (it == nodes.end()) {
-            size_t s = nodes.size();
-            nodes[str] = s;
-        }
-        colors[i] = nodes[str];
-    }
-    MPI_Scatter(colors.data(), sizeof(int), MPI_BYTE, &color, sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
-    MPI_Comm_split(MPI_COMM_WORLD, color, _MPIglobalRank, &_currentNode);
-    MPI_Comm_rank(_currentNode, &_MPInodeRank);
-    MPI_Comm_size(_currentNode, &_MPInodeSize);
-    MPI_Comm_split(MPI_COMM_WORLD, _MPInodeRank, _MPIglobalRank, &_storingProcs);
-    // END - detect how many MPI processes is running per node
-    ESINFO(PROGRESS3) << "MPI ranks per node: " << _MPInodeSize;
-    //TODO:
-    int accelerators_per_node = 2;
-    int target;
-    
-    if (_MPInodeRank < (_MPInodeSize/2)) //  .../accelerators_per_node
-        target = 0;
-    else
-        target = 1;
-    // Set process placement on Xeon Phi
-    int ranks_per_node = _MPInodeSize;
-    int rank = _MPInodeRank % (_MPInodeSize/2); //  .../accelerators_per_node
-    for (eslocal i = 0; i < configuration.N_MICS; ++i) {
-        int used_core_num = 0;
-        int first_core = 0;
-        int last_core = 0;
-        // TODO: #pragma offload target(mic:i)
-#pragma offload target(mic:target)
-        {
-            //        	Logical to Physical Processor Mapping
-            //        	? Hardware:
-            //        	? Physical Cores are 0..60
-            //        	? Logical Cores are 0..243
-            //        	? Mapping is not what you are used to!
-            //        	? Logical Core 0 maps to Physical core 60, thread context 0
-            //        	? Logical Core 1 maps to Physical core 0, thread context 0
-            //        	? Logical Core 2 maps to Physical core 0, thread context 1
-            //        	? Logical Core 3 maps to Physical core 0, thread context 2
-            //        	? Logical Core 4 maps to Physical core 0, thread context 3
-            //        	? Logical Core 5 maps to Physical core 1, thread context 0
-            //        	? ...
-            //        	? Logical Core 240 maps to Physical core 59, thread context 3
-            //        	? Logical Core 241 maps to Physical core 60, thread context 1
-            //        	? Logical Core 242 maps to Physical core 60, thread context 2
-            //        	? Logical Core 243 maps to Physical core 60, thread context 3
-            //        	? OpenMP threads start binding to logical core 1, not logical core 0
-            //        	? For compact mapping 240 OpenMP threads are mapped to the first 60 cores
-            //        	? No contention for the core containing logical core 0 ? the core that the O/S uses most
-            //        	? But for scatter and balanced mappings, contention for logical core 0 begins at 61 threads
-            //        	? Not much performance impact unless O/S is very busy
-            //        	? Best to avoid core 60 for offload jobs & MPI jobs with compute/communication overlap
-            //        	? KMP_PLACE_THREADS limits the range of cores & thread contexts
-            //        	? E.g., KMP_PLACE_THREADS=60c,2c with KMP_AFFINITY=compact and OMP_NUM_THREADS=120 places 2
-            //        	threads on each of the first 60 cores
-            cpu_set_t my_set;        /* Define your cpu_set bit mask. */
-            CPU_ZERO(&my_set);       /* Initialize it all to 0, i.e. no CPUs selected. */
-            int cores = sysconf(_SC_NPROCESSORS_ONLN); // for Xeon Phi 7120 - results is 244
-            cores = (cores / 4 ) - 1; // keep core for system and remove effect of hyperthreading
-            //std::cout << sysconf(_SC_NPROCESSORS_ONLN) << " Cores\n";//std::thread::hardware_concurrency() << "Cores \n";
-            int cores_per_rank = accelerators_per_node * cores/ranks_per_node;
-            for (int i = 0; i < cores_per_rank; i++) {
-                if (i == 0) {
-                    first_core = 1*(cores_per_rank)*rank + 1*i;
-                }
-                last_core = 1*(cores_per_rank)*rank + 1*i;
-                int core = 1 + 4*(cores_per_rank)*rank + 4*i;
-                CPU_SET(core, &my_set);     /* set the bit that represents core 7. */
-                used_core_num++;
-            }
-            omp_set_num_threads(cores_per_rank-0);
-            sched_setaffinity(0, sizeof(cpu_set_t), &my_set); /* Set affinity of tihs process to */
-            /* the defined mask, i.e. only 7. */
-        }
-        //ESINFO(PROGRESS3)
-        std::cout << "Global MPI rank: " << _MPIglobalRank << " - Node MPI rank: " << _MPInodeRank << " uses: " << used_core_num << " Xeon Phi processing cores of accelerator #" << target <<" (from " << first_core << " to " << last_core <<  ")\n";
-    }
+//    int _MPIglobalRank;
+//    int _MPIglobalSize;
+//    int _MPInodeRank;
+//    int _MPInodeSize;
+//    std::string _nodeName;
+//    MPI_Comm _currentNode;
+//    MPI_Comm _storingProcs;
+//    MPI_Comm_rank(MPI_COMM_WORLD, &_MPIglobalRank);
+//    MPI_Comm_size(MPI_COMM_WORLD, &_MPIglobalSize);
+//    int color;
+//    int length;
+//    std::vector<char> name(MPI_MAX_PROCESSOR_NAME);
+//    MPI_Get_processor_name(name.data(), &length);
+//    _nodeName = std::string(name.begin(), name.begin() + length);
+//    std::vector<int> rCounts(_MPIglobalSize);
+//    std::vector<int> rDispl(_MPIglobalSize);
+//    std::vector<int> colors(_MPIglobalSize);
+//    std::vector<char> names;
+//    MPI_Gather(&length, sizeof(int), MPI_BYTE, rCounts.data(), sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
+//    for (size_t i = 1; i < rCounts.size(); i++) {
+//        rDispl[i] += rDispl[i - 1] + rCounts[i - 1];
+//    }
+//    names.resize(rDispl.back() + rCounts.back());
+//    MPI_Gatherv(name.data(), length * sizeof(char), MPI_BYTE, names.data(), rCounts.data(), rDispl.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+//    std::map<std::string, size_t> nodes;
+//    for (size_t i = 0; i < _MPIglobalSize; i++) {
+//        std::string str(names.begin() + rDispl[i], names.begin() + rDispl[i] + rCounts[i]);
+//        auto it = nodes.find(str);
+//        if (it == nodes.end()) {
+//            size_t s = nodes.size();
+//            nodes[str] = s;
+//        }
+//        colors[i] = nodes[str];
+//    }
+//    MPI_Scatter(colors.data(), sizeof(int), MPI_BYTE, &color, sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
+//    MPI_Comm_split(MPI_COMM_WORLD, color, _MPIglobalRank, &_currentNode);
+//    MPI_Comm_rank(_currentNode, &_MPInodeRank);
+//    MPI_Comm_size(_currentNode, &_MPInodeSize);
+//    MPI_Comm_split(MPI_COMM_WORLD, _MPInodeRank, _MPIglobalRank, &_storingProcs);
+//    // END - detect how many MPI processes is running per node
+//    ESINFO(PROGRESS2) << "MPI ranks per node: " << _MPInodeSize;
+//    //TODO:
+//    int accelerators_per_node = config::solver::N_MICS;
+//    int target;
+//
+//    if (_MPInodeRank < (_MPInodeSize/2)) //  .../accelerators_per_node
+//        target = 0;
+//    else
+//        target = 1;
+//
+//    if (accelerators_per_node == 1) target = 0;
+//
+//    int acc_per_MPI = 1;
+//    // Set process placement on Xeon Phi
+//    int ranks_per_node = _MPInodeSize;
+//    //int rank = _MPInodeRank % (_MPInodeSize/2); //  .../accelerators_per_node
+//    int rank = _MPInodeRank % (_MPInodeSize/accelerators_per_node);
+//
 
     // Ratio of work done on MIC
     double MICr = 1.0;
-    if ( configuration.load_balancing ) {
+    if ( config::solver::LOAD_BALANCING_PREC ) {
         MICr = 0.1;
     }
 
     // First, get the available memory on coprocessors (in bytes)
     double usableRAM = 0.9;
-    long micMem[configuration.N_MICS];
-    for (eslocal i = 0; i < configuration.N_MICS; ++i) {
+    long *micMem = new long[this->acc_per_MPI];
+
+    int target = 0;
+    for (eslocal i = 0; i < this->acc_per_MPI; ++i) {
         long currentMem = 0;
-//#pragma offload target(mic:i)
+        target = this->myTargets.at(i);
 #pragma offload target(mic:target)
         {
             long pages = sysconf(_SC_AVPHYS_PAGES);
             long page_size = sysconf(_SC_PAGE_SIZE);
             currentMem = pages * page_size;
         }
-        micMem[i] = currentMem;
+        micMem[i] = currentMem / this->MPI_per_acc;
     }
 
     // compute sizes of data to be offloaded to MIC
-    eslocal maxDevNumber = configuration.N_MICS;
-    eslocal matrixPerPack[configuration.N_MICS];
-    for (eslocal i = 0 ; i < configuration.N_MICS; ++i) {
-        matrixPerPack[i] = domains.size() / maxDevNumber;
+    eslocal *matrixPerPack = new eslocal[this->acc_per_MPI];
+
+    for (eslocal i = 0 ; i < this->acc_per_MPI; ++i) {
+        matrixPerPack[i] = domains.size() / this->acc_per_MPI;
     }
-    for (eslocal i = 0 ; i < domains.size() % maxDevNumber; ++i) {
+    for (eslocal i = 0 ; i < domains.size() % this->acc_per_MPI; ++i) {
         matrixPerPack[i]++;
     }
     eslocal offset = 0;
     bool symmetric = true;
-    this->DirichletPacks.resize( maxDevNumber );
-    this->accPreconditioners.resize( maxDevNumber );
+    this->DirichletPacks.resize( this->acc_per_MPI );
+    this->accPreconditioners.resize( this->acc_per_MPI );
 
-    for ( int i = 0; i < maxDevNumber; i++ )
+    for ( int i = 0; i < this->acc_per_MPI; i++ )
     {
         long dataSize = 0;
         long currDataSize = 0;
@@ -943,13 +1006,15 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
         }
     }
 
+    delete [] micMem;
+    delete [] matrixPerPack;
 
-    for (eslocal mic = 0 ; mic < configuration.N_MICS ; ++mic ) {
+    for (eslocal mic = 0 ; mic < this->acc_per_MPI ; ++mic ) {
+         target = this->myTargets.at(mic);
         this->DirichletPacks[mic].AllocateVectors( );
-//        this->DirichletPacks[mic].SetDevice( mic );
         this->DirichletPacks[mic].SetDevice( target );        
 
-		#pragma omp parallel for
+#pragma omp parallel for
         for (eslocal j = 0; j < accPreconditioners[mic].size(); ++j ) {
             eslocal d = accPreconditioners[mic].at(j);
             SEQ_VECTOR <eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
@@ -1123,15 +1188,15 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
         }
     }
 
-#pragma omp parallel num_threads(configuration.N_MICS)
+#pragma omp parallel num_threads(this->acc_per_MPI)
     {
         this->DirichletPacks[omp_get_thread_num()].CopyToMIC();
     }
 
 
     // finish the blocks held on CPU
-	#pragma omp parallel for
-    for (size_t j = 0; j < hostPreconditioners.size(); ++j ) {
+#pragma omp parallel for
+    for (eslocal j = 0; j < hostPreconditioners.size(); ++j ) {
         eslocal d = hostPreconditioners.at(j);
         SEQ_VECTOR <eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
         SEQ_VECTOR <eslocal> perm_vec_full ( instance->K[d].rows );
@@ -1300,3 +1365,178 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
 
     ESINFO(PROGRESS3);   
 }
+
+
+
+void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
+
+	//ESINFO(PROGRESS2) << "K+ multiply HFETI";
+	mkl_set_num_threads(1);
+
+	cluster_time.totalTime.start();
+
+	vec_fill_time.start();
+	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
+	vec_fill_time.end();
+
+	// loop over domains in the cluster
+	loop_1_1_time.start();
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++)
+	{
+		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
+		if (SYMMETRIC_SYSTEM) {
+			domains[d].Kplus_R.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
+		} else {
+			domains[d].Kplus_R2.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
+		}
+	}
+	loop_1_1_time.end();
+
+	loop_1_2_time.start();
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++)
+	{
+		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
+		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+
+		for (eslocal i = e0_start; i < e0_end; i++ )
+			vec_e0[i] = - tm3[d][i - e0_start];
+	}
+
+
+	for (size_t d = 0; d < domains.size(); d++)
+		for (eslocal i = 0; i < domains[d].B0Kplus_comp.rows; i++)
+			vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
+
+	// end loop over domains
+	loop_1_2_time.end();
+
+	mkl_set_num_threads(PAR_NUM_THREADS);
+	clusCP_time.start();
+
+
+	clus_F0_1_time.start();
+	F0.Solve(vec_g0, tm1[0], 0, 0);
+	clus_F0_1_time.end();
+
+	clus_G0_time.start();
+	if (SYMMETRIC_SYSTEM) {
+		G0.MatVec(tm1[0], tm2[0], 'N');
+	} else {
+		G02.MatVec(tm1[0], tm2[0], 'N');
+	}
+
+	clus_G0_time.end();
+
+	#pragma omp parallel for
+for (size_t i = 0; i < vec_e0.size(); i++)
+		tm2[0][i] = tm2[0][i] - vec_e0[i];
+
+	 clus_Sa_time.start();
+
+	switch (config::solver::SASOLVER) {
+	case config::solver::SASOLVERalternative::CPU_SPARSE:
+		Sa.Solve(tm2[0], vec_alfa, 0, 0);
+		break;
+	case config::solver::SASOLVERalternative::CPU_DENSE:
+		Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
+		break;
+	case config::solver::SASOLVERalternative::ACC_DENSE:
+		Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Not implemented S alfa solver.";
+	}
+
+	 clus_Sa_time.end();
+
+	 clus_G0t_time.start();
+	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
+	 clus_G0t_time.end();
+
+	#pragma omp parallel for
+for (size_t i = 0; i < vec_g0.size(); i++)
+		tm1[0][i] = vec_g0[i] - tm1[0][i];
+
+
+	clus_F0_2_time.start();
+	F0.Solve(tm1[0], vec_lambda,0,0);
+	clus_F0_2_time.end();
+
+	clusCP_time.end();
+
+	// Kplus_x
+	mkl_set_num_threads(1);
+	loop_2_1_time.start();
+
+    // accelerator stuff
+    eslocal maxDevNumber = this->acc_per_MPI;
+
+	#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++)
+	{
+		eslocal domain_size = domains[d].domain_prim_size;
+
+		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0);
+		for (size_t i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+			tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
+		domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
+
+		for (eslocal i = 0; i < domain_size; i++)
+			tm1[d][i] = x_in[d][i] - tm1[d][i];
+   } 
+
+    for ( eslocal i = 0; i < maxDevNumber; ++i ) {
+        #pragma omp parallel for 
+        for ( eslocal d = 0 ; d < accDomains[i].size(); ++d ) {
+            eslocal domN = accDomains[i].at(d);
+            for ( eslocal j = 0 ; j < domains[domN].K.cols; ++j ) {
+                SparseKPack[i].SetX(d, j, tm1[domN].at(j));   
+            }
+        }
+    }
+    #pragma omp parallel num_threads( maxDevNumber ) 
+    {
+        eslocal myAcc = omp_get_thread_num();
+        SparseKPack[ myAcc ].SolveMIC_Start();
+        
+
+    }
+
+	//	domains[d].multKplusLocal(tm1[d] , tm2[d]);
+
+#pragma omp parallel for 
+for (size_t d = 0; d < domains.size(); d++) {
+		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
+		eslocal domain_size = domains[d].domain_prim_size;
+
+		domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
+}
+
+    #pragma omp parallel num_threads( maxDevNumber ) 
+    {
+        eslocal myAcc = omp_get_thread_num();
+        SparseKPack[ myAcc ].SolveMIC_Sync();
+        for (eslocal i = 0 ; i < accDomains[ myAcc ].size(); ++i) {
+            eslocal domN = accDomains[myAcc].at(i);
+            SparseKPack[myAcc].GetY(i,tm2[domN]);
+        }
+
+    }
+
+
+
+#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++) {
+		eslocal domain_size = domains[d].domain_prim_size;
+
+		for (eslocal i = 0; i < domain_size; i++)
+			x_in[d][i] = tm2[d][i] + tm3[d][i];
+
+	}
+	loop_2_1_time.end();
+
+	cluster_time.totalTime.end();
+}
+

@@ -48,7 +48,8 @@ def configure(ctx):
         link_MKL()
         ctx.check_lib("ifcore")
         ctx.env.append_unique("LIB", [ "ifcore" ])
-        ctx.env.append_unique("LINKFLAGS", ["-offload-option,mic,ld,-L{0}/lib/mic -lmkl_intel_ilp64  -lmkl_core -lmkl_intel_thread ".format(os.environ['MKLROOT']) ])
+        ctx.env.append_unique("LINKFLAGS",
+        ["-offload-option,mic,ld,-L{0}/lib/mic -lmkl_intel_ilp64 -lmkl_core -lmkl_sequential ".format(os.environ['MKLROOT']) ])
 
 
     if ctx.env.SOLVER == "CUDA" or ctx.env.SOLVER == "CUDA_7":
@@ -93,7 +94,8 @@ def build(ctx):
             "specific/acc/clusteracc.cpp",
             "specific/acc/itersolveracc.cpp",
             "specific/acc/DenseMatrixPack.cpp",
-            "specific/cpu/DenseSolverMKL.cpp")
+            "specific/cpu/DenseSolverMKL.cpp",
+            "specific/acc/SparseMatrixPack.cpp")
 
     if ctx.env.SOLVER == "CUDA":
         sources = source_files + (
