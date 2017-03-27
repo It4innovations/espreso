@@ -48,8 +48,9 @@ Factory::Factory(const GlobalConfiguration &configuration)
 	Assembler::compose(configuration, instance, *mesh);
 
 	store = new output::ResultStoreList(configuration.output);
-	store->add(new output::Monitoring(configuration.output, mesh, "monitors.txt"));
-
+	if (configuration.output.monitoring.size()) {
+		store->add(new output::Monitoring(configuration.output, mesh, "monitors.txt"));
+	}
 	if (configuration.output.catalyst) {
 		store->add(new output::Catalyst(configuration.output, mesh, "results"));
 	}
