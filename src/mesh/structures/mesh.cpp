@@ -1813,7 +1813,7 @@ static std::vector<size_t> fillUniformDOFs(
 			elements[i]->DOFsIndices().reserve(elements[i]->DOFsIndices().size() + DOFs.size() * elements[i]->domains().size());
 
 			for (size_t d = 0; d < elements[i]->domains().size(); d++) {
-				elements[i]->DOFsIndices().insert(elements[i]->DOFsIndices().begin() + (d + 1) * prevDOFsSize + d * (prevDOFsSize + DOFs.size()), DOFs.size(), __HAS_DOF__);
+				elements[i]->DOFsIndices().insert(elements[i]->DOFsIndices().begin() + (d + 1) * prevDOFsSize + d * DOFs.size(), DOFs.size(), __HAS_DOF__);
 				threadOffset[elements[i]->domains()[d]]++;
 			}
 		}
