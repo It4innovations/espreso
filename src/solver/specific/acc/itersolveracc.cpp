@@ -415,12 +415,12 @@ void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
             }
         }
         
-        if ( config::solver::LOAD_BALANCING_PREC ) {
+        if ( configuration.load_balancing_preconditioner ) {
             // update the ratio between the cpu and mic
             double r = cluster.DirichletPacks[0].getMICratio();
             double MICtime = cluster.DirichletPacks[0].getElapsedTime();
             double newRatio = (r * CPUtime) / (r * CPUtime + MICtime * (1 - r));
-            std::cout << "TEST " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
+            // std::cout << "TEST " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
 
 //#pragma omp parallel num_threads( config::solver::N_MICS )
 #pragma omp parallel num_threads( cluster.acc_per_MPI )

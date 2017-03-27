@@ -90,7 +90,7 @@ void ClusterAcc::SetAcceleratorAffinity() {
     // END - detect how many MPI processes is running per node
     ESINFO(PROGRESS2) << "MPI ranks per node: " << _MPInodeSize;
 
-    int nMICs = config::solver::N_MICS;
+    int nMICs = configuration.N_MICS;
 
     if ( _MPInodeSize > nMICs && nMICs % 2 == 0 && _MPInodeSize % nMICs == 0 ) {
         // the case when there is more MPInodeSize = 2*k*nMICs
@@ -208,7 +208,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     }
     eslocal offset = 0;
     bool symmetric = true;
-    this->B1KplusPacks.resize( this->acc_per_MPI );
+    this->B1KplusPacks.resize( this->acc_per_MPI, DenseMatrixPack(configuration) );
     this->accDomains.resize( this->acc_per_MPI );
 
     for ( int i = 0; i < this->acc_per_MPI; i++ )
@@ -444,7 +444,7 @@ void ClusterAcc::Create_Kinv_perDomain() {
     eslocal matrixPerPack = domains.size() / maxDevNumber;
     eslocal offset = 0;
     bool symmetric = true;
-    this->B1KplusPacks.resize( maxDevNumber );
+    this->B1KplusPacks.resize( maxDevNumber, DenseMatrixPack(configuration) );
     eslocal * dom2dev = new eslocal[ domains.size() ];
     eslocal * offsets = new eslocal[maxDevNumber];
 
@@ -768,12 +768,12 @@ void ClusterAcc::SetupKsolvers ( ) {
         }
         //TODO: else stokes = -2 = Real and symmetric indefinite
 
-        if ( d == 0 && config::env::MPIrank == 0) {
+        if ( d == 0 && environment->MPIrank == 0) {
             domains[d].Kplus.msglvl = 0;
         }
 
 
-        if ( d == 0 && config::env::MPIrank == 0) {
+        if ( d == 0 && environment->MPIrank == 0) {
             domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
         }
     }
@@ -791,7 +791,7 @@ std::cout << "START" << std::endl;
         }
 
         eslocal offset = 0; 
-        this->SparseKPack.resize( this->acc_per_MPI );
+        this->SparseKPack.resize( this->acc_per_MPI, SparseMatrixPack(configuration) );
         this->accDomains.resize( this->acc_per_MPI );
         this->matricesPerAcc.reserve( this->acc_per_MPI );
 
@@ -808,7 +808,7 @@ std::cout << "START" << std::endl;
                 matrixPerPack[ i ], this->myTargets.at( i ) );
             this->SparseKPack[ i ].setMICratio( MICr );
 
-            if ( config::solver::LOAD_BALANCING ) {
+            if ( configuration.load_balancing ) {
                 this->SparseKPack[ i ].enableLoadBalancing( );
             } else {
                 this->SparseKPack[ i ].disableLoadBalancing( );
@@ -924,7 +924,7 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
 
     // Ratio of work done on MIC
     double MICr = 1.0;
-    if ( config::solver::LOAD_BALANCING_PREC ) {
+    if ( configuration.load_balancing_preconditioner ) {
         MICr = 0.1;
     }
 
@@ -956,7 +956,7 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
     }
     eslocal offset = 0;
     bool symmetric = true;
-    this->DirichletPacks.resize( this->acc_per_MPI );
+    this->DirichletPacks.resize( this->acc_per_MPI, DenseMatrixPack(configuration) );
     this->accPreconditioners.resize( this->acc_per_MPI );
 
     for ( int i = 0; i < this->acc_per_MPI; i++ )
@@ -1435,14 +1435,14 @@ for (size_t i = 0; i < vec_e0.size(); i++)
 
 	 clus_Sa_time.start();
 
-	switch (config::solver::SASOLVER) {
-	case config::solver::SASOLVERalternative::CPU_SPARSE:
+	switch (configuration.SAsolver) {
+	case ESPRESO_SASOLVER::CPU_SPARSE:
 		Sa.Solve(tm2[0], vec_alfa, 0, 0);
 		break;
-	case config::solver::SASOLVERalternative::CPU_DENSE:
+	case ESPRESO_SASOLVER::CPU_DENSE:
 		Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
 		break;
-	case config::solver::SASOLVERalternative::ACC_DENSE:
+	case ESPRESO_SASOLVER::ACC_DENSE:
 		Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
 		break;
 	default:

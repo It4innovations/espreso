@@ -2,7 +2,8 @@
 
 namespace espreso {
 
-    SparseMatrixPack::SparseMatrixPack() {
+    SparseMatrixPack::SparseMatrixPack(const ESPRESOSolver &configuration)
+    : configuration(configuration) {
 
         this->device = 0;
 
@@ -38,9 +39,10 @@ namespace espreso {
     }
 
     SparseMatrixPack::SparseMatrixPack(
+            const ESPRESOSolver &configuration,
             long maxNMatrices,
             int device
-            ) {
+            ): configuration(configuration) {
 
         this->device = device;
 
@@ -112,7 +114,7 @@ this->totalCols = 0;
 
 */
 
-SparseMatrixPack::SparseMatrixPack( const SparseMatrixPack& orig ) {
+/*SparseMatrixPack::SparseMatrixPack( const SparseMatrixPack& orig ) {
 
     this->device = orig.device;
 
@@ -145,7 +147,7 @@ SparseMatrixPack::SparseMatrixPack( const SparseMatrixPack& orig ) {
     this->elapsedTime = orig.elapsedTime;
 
     this->copiedToMIC = orig.copiedToMIC;
-}
+}*/
 
 SparseMatrixPack::~SparseMatrixPack() {
     // free the MIC's memory
@@ -365,7 +367,7 @@ void SparseMatrixPack::CopyToMIC( ) {
     in( this : length(0) alloc_if( 0 ) free_if( 0 ) )
 
     this->copiedToMIC = true;
-    if ( !config::solver::LOAD_BALANCING ) {
+    if ( !configuration.load_balancing ) {
     //    _mm_free( this->matrix_values );
     //    _mm_free( this->rowInd );
     //    _mm_free( this->colInd );

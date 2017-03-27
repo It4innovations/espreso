@@ -18,6 +18,8 @@ public:
 	{
 			this->deleteMatrices = false;
 			this->NUM_MICS = configuration.N_MICS;
+			SetAcceleratorAffinity();
+			std::cout << "MICS: " << this->NUM_MICS << "\n";
 	}
 
     virtual ~ClusterAcc();
@@ -74,6 +76,8 @@ public:
 
     // local rank on the accelerator
     eslocal acc_rank;
+
+    eslocal NUM_MICS;
 
     bool deleteMatrices;
 };

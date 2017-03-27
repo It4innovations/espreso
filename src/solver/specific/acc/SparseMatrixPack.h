@@ -18,13 +18,13 @@ namespace espreso {
         public:
 
         // Default constructor
-        SparseMatrixPack();
+        SparseMatrixPack( const ESPRESOSolver &configuration);
 
         // Constructor
-        SparseMatrixPack( long maxNMatrices, int device = 0 );
+        SparseMatrixPack( const ESPRESOSolver &configuration, long maxNMatrices, int device = 0 );
 
         // Copy constructor
-        SparseMatrixPack( const SparseMatrixPack& orig );
+        // SparseMatrixPack( const SparseMatrixPack& orig );
 
         // Destructor
         ~SparseMatrixPack();
@@ -125,6 +125,9 @@ namespace espreso {
         private:
 
 #pragma offload_attribute(push,target(mic))
+
+        ESPRESOSolver configuration;
+
         // MIC number
         int device;
 

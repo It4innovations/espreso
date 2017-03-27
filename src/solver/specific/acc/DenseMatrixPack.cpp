@@ -1,8 +1,11 @@
 #include "DenseMatrixPack.h"
 
+#include "../../../basis/logging/logging.h"
+
 namespace espreso {
 
-    DenseMatrixPack::DenseMatrixPack() {
+    DenseMatrixPack::DenseMatrixPack(const ESPRESOSolver &configuration)
+    : configuration(configuration) {
 
         this->device = 0;
 
@@ -33,10 +36,11 @@ namespace espreso {
     }
 
     DenseMatrixPack::DenseMatrixPack(
+            const ESPRESOSolver &configuration,
             long maxNMatrices,
             long preallocSize,
             int device
-            ) {
+            ): configuration(configuration) {
 
         this->device = device;
 
@@ -103,8 +107,9 @@ namespace espreso {
         this->totalCols = 0;
     }
 
-    DenseMatrixPack::DenseMatrixPack( const DenseMatrixPack& orig ) {
+/*    DenseMatrixPack::DenseMatrixPack( const DenseMatrixPack& orig ) {
 
+	this->configuration = configuration;
         this->device = orig.device;
 
         this->maxNMatrices = orig.maxNMatrices;
@@ -130,7 +135,7 @@ namespace espreso {
         this->mic_y_out = orig.mic_y_out;
         this->MICratio = orig.MICratio;
         this->elapsedTime = orig.elapsedTime;
-    }
+    }*/
 
     DenseMatrixPack::~DenseMatrixPack() {
         // free the MIC's memory
