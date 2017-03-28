@@ -114,8 +114,9 @@ this->totalCols = 0;
 
 */
 
-/*SparseMatrixPack::SparseMatrixPack( const SparseMatrixPack& orig ) {
+SparseMatrixPack::SparseMatrixPack( const SparseMatrixPack& orig ) {
 
+    this->configuration = orig.configuration;
     this->device = orig.device;
 
     this->maxNMatrices = orig.maxNMatrices;
@@ -147,7 +148,9 @@ this->totalCols = 0;
     this->elapsedTime = orig.elapsedTime;
 
     this->copiedToMIC = orig.copiedToMIC;
-}*/
+    this->elapsedTime = new double[1];
+    this->elapsedTime[0] = orig.elapsedTime[0];
+}
 
 SparseMatrixPack::~SparseMatrixPack() {
     // free the MIC's memory

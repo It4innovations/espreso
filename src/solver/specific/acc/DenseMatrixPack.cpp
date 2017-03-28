@@ -107,7 +107,7 @@ namespace espreso {
         this->totalCols = 0;
     }
 
-/*    DenseMatrixPack::DenseMatrixPack( const DenseMatrixPack& orig ) {
+    DenseMatrixPack::DenseMatrixPack( const DenseMatrixPack& orig ) {
 
 	this->configuration = configuration;
         this->device = orig.device;
@@ -135,7 +135,10 @@ namespace espreso {
         this->mic_y_out = orig.mic_y_out;
         this->MICratio = orig.MICratio;
         this->elapsedTime = orig.elapsedTime;
-    }*/
+
+        this->elapsedTime = new double[1];
+        this->elapsedTime[0] = orig.elapsedTime[0];
+    }
 
     DenseMatrixPack::~DenseMatrixPack() {
         // free the MIC's memory

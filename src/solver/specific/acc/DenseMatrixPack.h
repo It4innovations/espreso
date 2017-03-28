@@ -23,7 +23,7 @@ namespace espreso {
         DenseMatrixPack( const ESPRESOSolver &configuration, long maxNMatrices, long preallocSize, int device = 0 );
 
         // Copy constructor
-        // DenseMatrixPack( const DenseMatrixPack& orig );
+        DenseMatrixPack( const DenseMatrixPack& orig );
 
         // Destructor
         ~DenseMatrixPack();

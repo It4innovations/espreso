@@ -24,7 +24,7 @@ namespace espreso {
         SparseMatrixPack( const ESPRESOSolver &configuration, long maxNMatrices, int device = 0 );
 
         // Copy constructor
-        // SparseMatrixPack( const SparseMatrixPack& orig );
+        SparseMatrixPack( const SparseMatrixPack& orig );
 
         // Destructor
         ~SparseMatrixPack();

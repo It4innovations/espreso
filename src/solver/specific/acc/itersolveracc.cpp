@@ -130,7 +130,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
             double r = cluster.B1KplusPacks[0].getMICratio();
             double MICtime = cluster.B1KplusPacks[0].getElapsedTime();
             double newRatio = (r * CPUtime) / (r * CPUtime + MICtime * (1 - r));
-            std::cout << "TEST " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
+            //std::cout << "TEST " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
 
 #pragma omp parallel num_threads( maxDevNumber )
             {
@@ -234,7 +234,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
             double newRatio = (r * CPUtime) / (r * CPUtime + MICtime * (1 - r));
             if (omp_get_thread_num() == 0)
             {
-            std::cout << "LB: " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
+            //std::cout << "LB: " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
             }
 
                 cluster.B1KplusPacks[omp_get_thread_num()].setMICratio( newRatio );
@@ -387,12 +387,14 @@ void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
         }
         
         // for ( eslocal mic = 0 ; mic < config::solver::N_MICS; ++mic ) {
+ //       std::cout << cluster.acc_per_MPI <<std::endl;
           for ( eslocal mic = 0 ; mic < cluster.acc_per_MPI; ++mic ) {
 
              cluster.DirichletPacks[ mic ].DenseMatsVecsRestCPU( 'N' );    
-            long start = (long) (cluster.DirichletPacks[mic].getNMatrices()*cluster.DirichletPacks[mic].getMICratio());
-#pragma omp parallel for
-            for (  long d = start ; d < cluster.DirichletPacks[mic].getNMatrices(); ++d ) {
+            eslocal start = (long) (cluster.DirichletPacks[mic].getNMatrices()*cluster.DirichletPacks[mic].getMICratio());
+//            std::cout << start << " " << cluster.DirichletPacks[mic].getNMatrices() << " " << cluster.DirichletPacks[mic].getMICratio() << std::endl ;
+//#pragma omp parallel for schedule(static)
+            for (  eslocal d = start ; d < cluster.DirichletPacks[mic].getNMatrices(); ++d ) {
                 cluster.DirichletPacks[mic].GetY(d, cluster.x_prim_cluster2[ cluster.accPreconditioners[ mic ].at(d) ] );
             }
         }
