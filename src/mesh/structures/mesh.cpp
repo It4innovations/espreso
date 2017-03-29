@@ -786,11 +786,11 @@ void Mesh::loadProperty(
 				Esutils::removeDuplicity(nodes);
 
 				#pragma omp parallel for
-				for (size_t p = 0; p < this->parts(); p++) {
-					for (size_t e = this->getPartition()[p]; e < this->getPartition()[p + 1]; e++) {
+				for (size_t d = 0; d < this->parts(); d++) {
+					for (size_t e = this->getPartition()[d]; e < this->getPartition()[d + 1]; e++) {
 						Element *face = _elements[e]->addFace(nodes);
 						if (face != NULL) {
-							faces[p].push_back(face);
+							faces[d].push_back(face);
 						}
 					}
 				}
