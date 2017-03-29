@@ -83,7 +83,24 @@ void Loader::fill()
 	regions(mesh._evaluators, mesh._regions, mesh._elements, mesh._faces, mesh._edges, mesh._nodes);
 
 	for (size_t r = 0; r < mesh._regions.size(); r++) {
-		ESINFO(OVERVIEW) << "Loaded region '" << mesh._regions[r]->name << "' of size " << Info::sumValue(mesh._regions[r]->elements().size());
+		std::string type;
+		if (mesh._regions[r]->elements().size()) {
+			switch (mesh._regions[r]->elements()[0]->type()) {
+			case Element::Type::VOLUME:
+				type = "volumes";
+				break;
+			case Element::Type::PLANE:
+				type = "planes";
+				break;
+			case Element::Type::LINE:
+				type = "lines";
+				break;
+			case Element::Type::POINT:
+				type = "points";
+				break;
+			}
+		}
+		ESINFO(OVERVIEW) << "Loaded region '" << mesh._regions[r]->name << "' of " << Info::sumValue(mesh._regions[r]->elements().size()) << " " << type;
 	}
 
 	for (size_t r = 0; r < mesh._regions.size(); r++) {
