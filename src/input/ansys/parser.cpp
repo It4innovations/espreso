@@ -724,7 +724,16 @@ void WorkbenchParser::esel()
 		ESINFO(DETAILS) << "WB: CLEAR SELECTION";
 		return;
 	}
-	if (params[1].compare(0, 3, "s") == 0 && params[2].compare(0, 3, "type")) {
+	if (params[1].compare(0, 4, "none") == 0) {
+		_selectedRegion.clear();
+		ESINFO(DETAILS) << "WB: CLEAR SELECTION";
+		return;
+	}
+	if (params[1].compare(0, 1, "a") == 0) {
+		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Skip selection of material: " << _line;
+		return;
+	}
+	if (params[1].compare(0, 1, "s") == 0 && params[2].compare(0, 4, "type")) {
 		_selectedRegion = params[4];
 		ESINFO(DETAILS) << "WB: SELECT ELEMENTS REGION " << params[4];
 		return;
