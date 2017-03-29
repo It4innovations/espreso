@@ -730,16 +730,20 @@ void WorkbenchParser::esel()
 		return;
 	}
 	if (params[1].compare(0, 1, "a") == 0) {
-		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Skip selection of material: " << _line;
+		ESINFO(OVERVIEW) << Info::TextColor::YELLOW << "Skip selection of material: " << _line;
 		return;
 	}
-	if (params[1].compare(0, 1, "s") == 0 && params[2].compare(0, 4, "type")) {
+	if (params[1].compare(0, 1, "s") == 0 && params[2].compare(0, 3, "mat") == 0) {
+		ESINFO(OVERVIEW) << Info::TextColor::YELLOW << "Skip selection of material: " << _line;
+		return;
+	}
+	if (params[1].compare(0, 1, "s") == 0 && params[2].compare(0, 4, "type") == 0) {
 		_selectedRegion = params[4];
 		ESINFO(DETAILS) << "WB: SELECT ELEMENTS REGION " << params[4];
 		return;
 	}
 
-	ESINFO(GLOBAL_ERROR) << "Not implemented esel option '" << params[1] << "'";
+	ESINFO(GLOBAL_ERROR) << "Not implemented esel option '" << _line << "'";
 }
 
 
