@@ -5,6 +5,7 @@
 #include "../sparsesolver.h"
 #include "mkl_pardiso.h"
 #include "DenseMatrixPack.h"
+#include "SparseMatrixPack.h"
 
 namespace espreso {
 
@@ -23,6 +24,7 @@ public:
 	void ImportMatrices_wo_Copy(SparseMatrix ** A, eslocal nMatrices, eslocal mic = 0 );
 
 	void Factorization(const std::string &str);
+    void Factorization(const std::string &str, SparseMatrixPack & factors_out);
 	void Clear();
 	void SetThreaded() {};
 
@@ -114,6 +116,8 @@ public:
 
 	// Matrices
 	//SparseMatrix m_A;
+
+    SparseMatrix ** A;
 
 	// for in-place solve
 	// std::vector <double> tmp_sol;

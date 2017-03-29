@@ -287,7 +287,6 @@ void SparseSolverMKL::SetThreaded() {
 }
 
 int SparseSolverMKL::Factorization(const std::string &str) {
-
 	double ddum;			/* Double dummy */
 	MKL_INT idum;			/* Integer dummy. */
 

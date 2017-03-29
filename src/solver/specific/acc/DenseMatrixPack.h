@@ -1,6 +1,6 @@
 
 #include "../../generic/utils.h"
-
+#include "../../../configuration/solver/espreso.h"
 
 
 using std::vector;
@@ -17,10 +17,10 @@ namespace espreso {
         public:
 
         // Default constructor
-        DenseMatrixPack();
+        DenseMatrixPack( const ESPRESOSolver &configuration);
 
         // Constructor
-        DenseMatrixPack( long maxNMatrices, long preallocSize, int device = 0 );
+        DenseMatrixPack( const ESPRESOSolver &configuration, long maxNMatrices, long preallocSize, int device = 0 );
 
         // Copy constructor
         DenseMatrixPack( const DenseMatrixPack& orig );
@@ -278,6 +278,8 @@ double * getMic_y_out() {
 
 */
 private:
+
+ESPRESOSolver configuration;
 
 // MIC number
 int device;

@@ -88,6 +88,7 @@ struct ESPRESOSolver: public Configuration {
 
 	PARAMETER(size_t, N_MICS, "Number of MIC accelerators", 2);
 	PARAMETER(bool, load_balancing, "Load balancing of MIC accelerators", true);
+	PARAMETER(bool, load_balancing_preconditioner, "Load balancing of Dirichlet preconditioner", true);
 
 	PARAMETER(size_t, time_steps, "Number of time steps for transient problems", 1);
 };

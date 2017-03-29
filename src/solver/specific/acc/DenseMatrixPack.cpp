@@ -1,8 +1,11 @@
 #include "DenseMatrixPack.h"
 
+#include "../../../basis/logging/logging.h"
+
 namespace espreso {
 
-    DenseMatrixPack::DenseMatrixPack() {
+    DenseMatrixPack::DenseMatrixPack(const ESPRESOSolver &configuration)
+    : configuration(configuration) {
 
         this->device = 0;
 
@@ -33,10 +36,11 @@ namespace espreso {
     }
 
     DenseMatrixPack::DenseMatrixPack(
+            const ESPRESOSolver &configuration,
             long maxNMatrices,
             long preallocSize,
             int device
-            ) {
+            ): configuration(configuration) {
 
         this->device = device;
 
@@ -105,6 +109,7 @@ namespace espreso {
 
     DenseMatrixPack::DenseMatrixPack( const DenseMatrixPack& orig ) {
 
+	this->configuration = configuration;
         this->device = orig.device;
 
         this->maxNMatrices = orig.maxNMatrices;
@@ -130,6 +135,9 @@ namespace espreso {
         this->mic_y_out = orig.mic_y_out;
         this->MICratio = orig.MICratio;
         this->elapsedTime = orig.elapsedTime;
+
+        this->elapsedTime = new double[1];
+        this->elapsedTime[0] = orig.elapsedTime[0];
     }
 
     DenseMatrixPack::~DenseMatrixPack() {
@@ -312,7 +320,7 @@ namespace espreso {
 
 #endif
         this->copiedToMIC = true;
-        if ( !loadBalancing ) { // TODO: check correctness
+        if ( !this->loadBalancing ) {
             free(this->matrices);
             this->matrices = NULL;
         }
@@ -380,7 +388,6 @@ namespace espreso {
         double beta  = 0.0;
         eslocal one = 1;
         long start = (long) (MICratio * nMatrices); 
-
 #pragma omp parallel for //schedule(dynamic,10)
         for ( long i = start ; i < nMatrices; i++ ) {
             if ( !packed[i] ) {
@@ -468,6 +475,7 @@ namespace espreso {
                 eslocal one = 1;
                 long nIters = (long) (nMatrices*MICratio);
                 double start = omp_get_wtime();
+                int nth;
 #pragma omp parallel for schedule(dynamic)
                 for ( long i = 0 ; i < nIters; i++ ) {
                     if ( !packed[i] ) {
@@ -483,7 +491,7 @@ namespace espreso {
                     }
                 }
                 elapsedTime[0] = omp_get_wtime() - start;
-            }
+             }
     }
 
     void DenseMatrixPack::DenseMatsVecsMIC_Sync( ) {
