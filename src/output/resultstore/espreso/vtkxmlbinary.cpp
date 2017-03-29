@@ -21,7 +21,7 @@ VTKXMLBinary::~VTKXMLBinary()
 
 struct Base64Decoder {
 
-	static constexpr const char base64char[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	static std::string base64char;
 
 	char buffer[3] = { 0, 0, 0 };
 	int bufferSize = 0;
@@ -80,6 +80,8 @@ private:
 		_os << ((len == 3 ? base64char[(data[2] & 0x3F)] : '='));
 	}
 };
+
+std::string Base64Decoder::base64char = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 template <typename TType>
 static void storeData(std::ofstream &os, const std::string &type, const std::string &name, size_t components, const std::vector<std::vector<TType> > &data)
