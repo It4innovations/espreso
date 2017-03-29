@@ -49,6 +49,8 @@ public:
 	size_t coarseNodes() const { return Tetrahedron4NodesCount; }
 	size_t gaussePoints() const { return Tetrahedron10GPCount; }
 
+	Element* addFace(const std::vector<eslocal> &nodes);
+
 	const std::vector<eslocal>& faceNodes(size_t index) const { return Tetrahedron10::_facesNodes[index]; }
 	const std::vector<eslocal>& edgeNodes(size_t index) const { return Tetrahedron10::_edgesNodes[index]; }
 

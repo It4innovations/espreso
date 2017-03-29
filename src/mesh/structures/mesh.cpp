@@ -28,6 +28,7 @@
 #include "../elements/plane/unknownplane.h"
 
 #include "../elements/element.h"
+#include "elementtypes.h"
 
 #include "metis.h"
 #include "../../configuration/environment.h"
@@ -635,7 +636,70 @@ void Mesh::computePlaneCorners(size_t number, bool onVertices, bool onEdges)
 	computeCornersOnEdges(number, onVertices, onEdges);
 }
 
-static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &evaluators, const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, bool distributeToNodes)
+template<typename MergeFunction>
+static void uniqueWithMerge(std::vector<Element*> &elements, MergeFunction merge)
+{
+	if (elements.size() == 0) {
+		return;
+	}
+
+	auto it = elements.begin();
+	auto last = it;
+	while (++it != elements.end()) {
+		if (!(**last == **it)) {
+			*(++last) = *it;
+		} else { // Merge two edges
+			if (last != it) {
+				merge(*last, *it);
+				delete *it;
+			}
+		}
+	}
+	elements.resize(++last - elements.begin());
+}
+
+template<typename MergeFunction>
+static std::vector<Element*> mergeElements(size_t threads, std::vector<std::vector<Element*> > &elements, MergeFunction merge)
+{
+	std::vector<Element*> result;
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		std::sort(elements[t].begin(), elements[t].end(), [] (const Element* e1, const Element* e2) { return *e1 < *e2; });
+		uniqueWithMerge(elements[t], merge);
+	}
+
+	std::vector<std::vector<Element*> > divided;
+	std::vector<std::vector<Element*> > merged;
+
+	divided.swap(elements);
+	while (divided.size() > 1) {
+		divided.resize(divided.size() + divided.size() % 2); // keep the size even
+		merged.resize(divided.size() / 2);
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < merged.size(); t++) {
+			merged[t].resize(divided[2 * t].size() + divided[2 * t + 1].size());
+			std::merge(
+					divided[2 * t    ].begin(), divided[2 * t    ].end(),
+					divided[2 * t + 1].begin(), divided[2 * t + 1].end(),
+					merged[t].begin(), [] (const Element* e1, const Element* e2) { return *e1 < *e2; });
+			uniqueWithMerge(merged[t], merge);
+		}
+		divided.swap(merged);
+		merged.clear();
+	}
+
+	result.swap(divided[0]);
+	return result;
+}
+
+void Mesh::loadProperty(
+		size_t loadStep,
+		const std::map<std::string, std::string> &regions,
+		const std::vector<std::string> &parameters,
+		const std::vector<Property> &properties,
+		ElementType type)
 {
 	auto getValue = [] (const std::vector<std::string> &values, const std::string &parameter) -> std::string {
 		for (size_t i = 0; i < values.size(); i++) {
@@ -650,7 +714,7 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 	};
 
 	auto n2i = [ & ] (size_t neighbour) {
-		return std::lower_bound(mesh.neighbours().begin(), mesh.neighbours().end(), neighbour) - mesh.neighbours().begin();
+		return std::lower_bound(_neighbours.begin(), _neighbours.end(), neighbour) - _neighbours.begin();
 	};
 
 	auto distribute = [] (std::vector<Element*> &elements, Property property, Evaluator *evaluator, Region *region) {
@@ -666,7 +730,7 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 	};
 
 	for (auto it = regions.begin(); it != regions.end(); ++it) {
-		Region *region = mesh.region(it->first);
+		Region *region = this->region(it->first);
 		region->settings.resize(loadStep + 1);
 		std::vector<std::string> values = Parser::split(it->second, ",");
 
@@ -678,24 +742,26 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 
 			if (!StringCompare::contains(value, { "x", "y", "z", "TEMPERATURE" })) {
 				Expression expr(value, {});
-				evaluators.push_back(new ConstEvaluator(expr.evaluate({}), properties[p]));
+				_evaluators.push_back(new ConstEvaluator(expr.evaluate({}), properties[p]));
 			} else {
-				evaluators.push_back(new CoordinatesEvaluator(value, mesh.coordinates(), properties[p]));
+				_evaluators.push_back(new CoordinatesEvaluator(value, *_coordinates, properties[p]));
 			}
 
-			std::vector<std::vector<esglobal> > boundaryNodes(mesh.neighbours().size());
-			std::vector<std::vector<esglobal> > neighboursNodes(mesh.neighbours().size());
-			if (distributeToNodes) {
+			std::vector<std::vector<esglobal> > boundaryNodes(_neighbours.size());
+			std::vector<std::vector<esglobal> > neighboursNodes(_neighbours.size());
+			if (type == ElementType::NODES) {
 				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for LOAD STEP " << loadStep + 1 << " for nodes of region '" << region->name << "'";
+			} else if (type == ElementType::FACES) {
+				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for LOAD STEP " << loadStep + 1 << " for faces of region '" << region->name << "'";
 			} else {
 				ESINFO(OVERVIEW) << "Set " << properties[p] << " to '" << value << "' for LOAD STEP " << loadStep + 1 << " for region '" << region->name << "'";
 			}
 
-			if (distributeToNodes && region->elements().size() && region->elements()[0]->nodes() > 1) {
+			if (type == ElementType::NODES && region->elements().size() && region->elements()[0]->nodes() > 1) {
 				std::vector<Element*> nodes;
 				for (size_t i = 0; i < region->elements().size(); i++) {
 					for (size_t n = 0; n < region->elements()[i]->nodes(); n++) {
-						nodes.push_back(mesh.nodes()[region->elements()[i]->node(n)]);
+						nodes.push_back(_nodes[region->elements()[i]->node(n)]);
 					}
 				}
 				std::sort(nodes.begin(), nodes.end());
@@ -703,52 +769,115 @@ static void _loadProperty(Mesh &mesh, size_t loadStep, std::vector<Evaluator*> &
 				for (size_t n = 0; n < nodes.size(); n++) {
 					for (size_t c = 0; c < nodes[n]->clusters().size(); c++) {
 						if (nodes[n]->clusters()[c] != environment->MPIrank) {
-							boundaryNodes[n2i(nodes[n]->clusters()[c])].push_back(mesh.coordinates().globalIndex(nodes[n]->node(0)));
+							boundaryNodes[n2i(nodes[n]->clusters()[c])].push_back(_coordinates->globalIndex(nodes[n]->node(0)));
 						}
 					}
 				}
-				distribute(nodes, properties[p], evaluators.back(), region);
+				distribute(nodes, properties[p], _evaluators.back(), region);
+			} else if (type == ElementType::FACES && region->elements().size() && region->elements()[0]->type() != espreso::Element::Type::PLANE) {
+				std::vector<std::vector<Element*> > faces(this->parts());
+				std::vector<eslocal> nodes;
+				for (size_t i = 0; i < region->elements().size(); i++) {
+					for (size_t n = 0; n < region->elements()[i]->nodes(); n++) {
+						nodes.push_back(region->elements()[i]->node(n));
+					}
+				}
+				std::sort(nodes.begin(), nodes.end());
+				Esutils::removeDuplicity(nodes);
+
+				#pragma omp parallel for
+				for (size_t p = 0; p < this->parts(); p++) {
+					for (size_t e = this->getPartition()[p]; e < this->getPartition()[p + 1]; e++) {
+						Element *face = _elements[e]->addFace(nodes);
+						if (face != NULL) {
+							faces[p].push_back(face);
+						}
+					}
+				}
+
+				std::vector<Element*> mfaces = mergeElements(this->parts(), faces, [] (Element* e1, Element *e2) {
+					e1->parentElements().insert(e1->parentElements().end(), e2->parentElements().begin(), e2->parentElements().end());
+					for (size_t e = 0; e < e2->parentElements().size(); e++) {
+						for (size_t i = 0; i < e2->parentElements()[e]->faces(); i++) {
+							if (e2->parentElements()[0]->face(i) != NULL && *(e1) == *(e2->parentElements()[e]->face(i))) {
+								e2->parentElements()[e]->setFace(i, e1);
+								break;
+							}
+						}
+					}
+				});
+				std::vector<std::vector<Element*> > tmp = { _faces, mfaces };
+
+				_faces = mergeElements(2, tmp, [] (Element* e1, Element *e2) {
+					e1->parentElements().insert(e1->parentElements().end(), e2->parentElements().begin(), e2->parentElements().end());
+					for (size_t e = 0; e < e2->parentElements().size(); e++) {
+						for (size_t i = 0; i < e2->parentElements()[e]->faces(); i++) {
+							if (e2->parentElements()[0]->face(i) != NULL && *(e1) == *(e2->parentElements()[e]->face(i))) {
+								e2->parentElements()[e]->setFace(i, e1);
+								break;
+							}
+						}
+					}
+				});
+				mapFacesToClusters();
+				mapFacesToDomains();
+				fillParentFacesToNodes();
+
+				region->elements() = mfaces;
+				distribute(region->elements(), properties[p], _evaluators.back(), region);
 			} else {
-				distribute(region->elements(), properties[p], evaluators.back(), region);
+				distribute(region->elements(), properties[p], _evaluators.back(), region);
 			}
 
-			if (distributeToNodes) {
-				if (!Communication::exchangeUnknownSize(boundaryNodes, neighboursNodes, mesh.neighbours())) {
+			if (type == ElementType::NODES) {
+				if (!Communication::exchangeUnknownSize(boundaryNodes, neighboursNodes, _neighbours)) {
 					ESINFO(ERROR) << "problem while synchronization of nodes regions.";
 				}
-				for (size_t n = 0; n < mesh.neighbours().size(); n++) {
+				for (size_t n = 0; n < _neighbours.size(); n++) {
 					for (size_t i = 0; i < neighboursNodes[n].size(); i++) {
-						mesh.nodes()[mesh.coordinates().clusterIndex(neighboursNodes[n][i])]->regions().push_back(region);
+						_nodes[_coordinates->clusterIndex(neighboursNodes[n][i])]->regions().push_back(region);
 					}
 				}
 			}
 
-			region->settings[loadStep][properties[p]].push_back(evaluators.back());
+			region->settings[loadStep][properties[p]].push_back(_evaluators.back());
 		}
 	}
 }
 
-void Mesh::loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep) {
-
-	_loadProperty(*this, loadStep, _evaluators, regions, parameters, properties, false);
+void Mesh::loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep)
+{
+	loadProperty(loadStep, regions, parameters, properties, ElementType::ELEMENTS);
 }
 
 void Mesh::loadNodeProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep)
 {
-	_loadProperty(*this, loadStep, _evaluators, regions, parameters, properties, true);
+	loadProperty(loadStep, regions, parameters, properties, ElementType::NODES);
+}
+
+void Mesh::loadFaceProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep)
+{
+	loadProperty(loadStep, regions, parameters, properties, ElementType::FACES);
 }
 
 void Mesh::loadProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties)
 {
 	for (auto it = property.begin(); it != property.end(); ++it) {
-		_loadProperty(*this, it->first - 1, _evaluators, it->second, parameters, properties, false);
+		loadProperty(it->first - 1, it->second, parameters, properties, ElementType::ELEMENTS);
 	}
 }
 
 void Mesh::loadNodeProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties)
 {
 	for (auto it = property.begin(); it != property.end(); ++it) {
-		_loadProperty(*this, it->first - 1, _evaluators, it->second, parameters, properties, true);
+		loadProperty(it->first - 1, it->second, parameters, properties, ElementType::NODES);
+	}
+}
+
+void Mesh::loadFaceProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties)
+{
+	for (auto it = property.begin(); it != property.end(); ++it) {
+		loadProperty(it->first - 1, it->second, parameters, properties, ElementType::FACES);
 	}
 }
 
@@ -895,62 +1024,6 @@ bool Mesh::hasProperty(size_t domain, Property property, size_t loadStep)
 	return loadStep < _properties[domain].size() && _properties[domain][loadStep].count(property);
 }
 
-template<typename MergeFunction>
-static void uniqueWithMerge(std::vector<Element*> &elements, MergeFunction merge)
-{
-	if (elements.size() == 0) {
-		return;
-	}
-
-	auto it = elements.begin();
-	auto last = it;
-	while (++it != elements.end()) {
-		if (!(**last == **it)) {
-			*(++last) = *it;
-		} else { // Merge two edges
-			merge(*last, *it);
-			delete *it;
-		}
-	}
-	elements.resize(++last - elements.begin());
-}
-
-template<typename MergeFunction>
-static std::vector<Element*> mergeElements(size_t threads, std::vector<size_t> &distribution, std::vector<std::vector<Element*> > &elements, MergeFunction merge)
-{
-	std::vector<Element*> result;
-
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		std::sort(elements[t].begin(), elements[t].end(), [] (const Element* e1, const Element* e2) { return *e1 < *e2; });
-		uniqueWithMerge(elements[t], merge);
-	}
-
-	std::vector<std::vector<Element*> > divided;
-	std::vector<std::vector<Element*> > merged;
-
-	divided.swap(elements);
-	while (divided.size() > 1) {
-		divided.resize(divided.size() + divided.size() % 2); // keep the size even
-		merged.resize(divided.size() / 2);
-
-		#pragma omp parallel for
-		for (size_t t = 0; t < merged.size(); t++) {
-			merged[t].resize(divided[2 * t].size() + divided[2 * t + 1].size());
-			std::merge(
-					divided[2 * t    ].begin(), divided[2 * t    ].end(),
-					divided[2 * t + 1].begin(), divided[2 * t + 1].end(),
-					merged[t].begin(), [] (const Element* e1, const Element* e2) { return *e1 < *e2; });
-			uniqueWithMerge(merged[t], merge);
-		}
-		divided.swap(merged);
-		merged.clear();
-	}
-
-	result.swap(divided[0]);
-	return result;
-}
-
 void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* edge)> filter)
 {
 	size_t threads = environment->OMP_NUM_THREADS;
@@ -975,7 +1048,7 @@ void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> 
 		}
 	}
 
-	std::vector<Element*> created = mergeElements(threads, distribution, edges, [] (Element* e1, Element *e2) {
+	std::vector<Element*> created = mergeElements(threads, edges, [] (Element* e1, Element *e2) {
 		e1->parentElements().insert(e1->parentElements().end(), e2->parentElements().begin(), e2->parentElements().end());
 		for (size_t e = 0; e < e2->parentElements().size(); e++) {
 			for (size_t i = 0; i < e2->parentElements()[e]->edges(); i++) {
@@ -1017,7 +1090,7 @@ void Mesh::fillFacesFromElements(std::function<bool(const std::vector<Element*> 
 		}
 	}
 
-	std::vector<Element*> created = mergeElements(threads, distribution, faces, [] (Element* e1, Element *e2) {
+	std::vector<Element*> created = mergeElements(threads, faces, [] (Element* e1, Element *e2) {
 		e1->parentElements().push_back(e2->parentElements().back()); // Face can be only between two elements
 		for (size_t i = 0; i < e2->parentElements()[0]->faces(); i++) {
 			if (e2->parentElements()[0]->face(i) != NULL && *e1 == *e2->parentElements()[0]->face(i)) {
@@ -1148,7 +1221,7 @@ void Mesh::fillEdgesFromFaces(std::function<bool(const std::vector<Element*> &fa
 		}
 	}
 
-	_edges = mergeElements(threads, distribution, edges, [] (Element* e1, Element *e2) {
+	_edges = mergeElements(threads, edges, [] (Element* e1, Element *e2) {
 		e1->parentElements().insert(e1->parentElements().end(), e2->parentElements().begin(), e2->parentElements().end());
 		for (size_t e = 0; e < e2->parentElements().size(); e++) {
 			for (size_t i = 0; i < e2->parentElements()[e]->edges(); i++) {

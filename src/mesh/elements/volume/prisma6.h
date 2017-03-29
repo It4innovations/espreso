@@ -49,6 +49,8 @@ public:
 	size_t coarseNodes() const { return Prisma6NodesCount; }
 	size_t gaussePoints() const { return Prisma6GPCount; }
 
+	Element* addFace(const std::vector<eslocal> &nodes);
+
 	const std::vector<eslocal>& faceNodes(size_t index) const { return Prisma6::_facesNodes[index]; }
 	const std::vector<eslocal>& edgeNodes(size_t index) const { return Prisma6::_edgesNodes[index]; }
 

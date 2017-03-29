@@ -404,6 +404,26 @@ size_t Hexahedron20::fillFaces()
 	return filled;
 }
 
+Element* Hexahedron20::addFace(const std::vector<eslocal> &nodes)
+{
+	for (size_t f = 0; f < faces(); f++) {
+		size_t found;
+		for (found = 0; found < _facesNodes[f].size(); found++) {
+			if (!std::binary_search(nodes.begin(), nodes.end(), _indices[_facesNodes[f][found]])) {
+				break;
+			}
+		}
+		if (found == _facesNodes[f].size()) {
+			eslocal triangle[Square8NodesCount];
+			for (size_t n = 0; n < Square8NodesCount; n++) {
+				triangle[n] = _indices[_facesNodes[f][n]];
+			}
+			return addUniqueFace<Square8>(triangle, _faces.size(), Square4NodesCount);
+		}
+	}
+	return NULL;
+}
+
 Hexahedron20::Hexahedron20(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {

@@ -273,6 +273,26 @@ size_t Tetrahedron4::fillFaces()
 	return filled;
 }
 
+Element* Tetrahedron4::addFace(const std::vector<eslocal> &nodes)
+{
+	for (size_t f = 0; f < faces(); f++) {
+		size_t found;
+		for (found = 0; found < _facesNodes[f].size(); found++) {
+			if (!std::binary_search(nodes.begin(), nodes.end(), _indices[_facesNodes[f][found]])) {
+				break;
+			}
+		}
+		if (found == _facesNodes[f].size()) {
+			eslocal triangle[Triangle3NodesCount];
+			for (size_t n = 0; n < Triangle3NodesCount; n++) {
+				triangle[n] = _indices[_facesNodes[f][n]];
+			}
+			return addUniqueFace<Triangle3>(triangle, _faces.size(), Triangle3NodesCount);
+		}
+	}
+	return NULL;
+}
+
 Tetrahedron4::Tetrahedron4(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {

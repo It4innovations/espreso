@@ -45,6 +45,8 @@ public:
 		return _faceNodes;
 	}
 
+	Element* addFace(const std::vector<eslocal> &nodes) { return NULL; }
+
 	const std::vector<DenseMatrix>& facedN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(ERROR) << "Unknown volume has no base functions for face."; exit(1); }
 	const std::vector<DenseMatrix>& faceN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(ERROR) << "Unknown volume has no base functions for face."; exit(1); }
 	const std::vector<DenseMatrix>& edgedN(size_t index, ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(ERROR) << "Unknown volume has no base functions for edge."; exit(1); }

@@ -34,6 +34,8 @@ public:
 		_edges.push_back(edge);
 	}
 
+	Element* addFace(const std::vector<eslocal> &nodes) { return NULL; }
+
 	const std::vector<eslocal>& faceNodes(size_t index) const
 	{
 		static std::vector<eslocal> _facesNodes;

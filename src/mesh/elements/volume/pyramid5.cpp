@@ -241,6 +241,34 @@ size_t Pyramid5::fillFaces()
 	return filled;
 }
 
+Element* Pyramid5::addFace(const std::vector<eslocal> &nodes)
+{
+	for (size_t f = 0; f < faces(); f++) {
+		size_t found;
+		for (found = 0; found < _facesNodes[f].size(); found++) {
+			if (!std::binary_search(nodes.begin(), nodes.end(), _indices[_facesNodes[f][found]])) {
+				break;
+			}
+		}
+		if (found == _facesNodes[f].size()) {
+			if (f == 0) {
+				eslocal triangle[Square4NodesCount];
+				for (size_t n = 0; n < Square4NodesCount; n++) {
+					triangle[n] = _indices[_facesNodes[f][n]];
+				}
+				return addUniqueFace<Square4>(triangle, _faces.size(), Triangle3NodesCount);
+			} else {
+				eslocal triangle[Triangle3NodesCount];
+				for (size_t n = 0; n < Triangle3NodesCount; n++) {
+					triangle[n] = _indices[_facesNodes[f][n]];
+				}
+				return addUniqueFace<Triangle3>(triangle, _faces.size(), Triangle3NodesCount);
+			}
+		}
+	}
+	return NULL;
+}
+
 Pyramid5::Pyramid5(const eslocal *indices, eslocal n, const eslocal *params)
 {
 	switch (n) {

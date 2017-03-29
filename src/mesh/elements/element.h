@@ -204,6 +204,8 @@ public:
 	virtual void addFace(Element* face) = 0;
 	virtual void addEdge(Element* edge) = 0;
 
+	virtual Element* addFace(const std::vector<eslocal> &nodes) = 0;
+
 	void rotateOutside(const Element* parent, const Coordinates &coordinates, Point &normal) const;
 
 	bool hasProperty(Property property, size_t step) const;
@@ -222,29 +224,31 @@ protected:
 
 
 	template <class TEdge>
-	void addUniqueEdge(eslocal *line, size_t filled, size_t coarseSize)
+	Element* addUniqueEdge(const eslocal *line, size_t filled, size_t coarseSize)
 	{
 		for (size_t i = 0; i < filled; i++) {
 			if (std::is_permutation(edge(i)->indices(), edge(i)->indices() + coarseSize, line)) {
-				return;
+				return this->edge(i);
 			}
 		}
 		Element *e = new TEdge(line);
 		addEdge(e);
 		e->addParent(this);
+		return e;
 	}
 
 	template <class TFace>
-	void addUniqueFace(eslocal *face, size_t filled, size_t coarseSize)
+	Element* addUniqueFace(const eslocal *face, size_t filled, size_t coarseSize)
 	{
 		for (size_t i = 0; i < filled; i++) {
 			if (std::is_permutation(this->face(i)->indices(), this->face(i)->indices() + coarseSize, face)) {
-				return;
+				return this->face(i);
 			}
 		}
 		Element *f = new TFace(face);
 		addFace(f);
 		f->addParent(this);
+		return f;
 	}
 
 	std::vector<Region*> _regions;

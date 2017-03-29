@@ -19,6 +19,7 @@ class Material;
 class Region;
 class Element;
 enum class Property;
+enum class ElementType;
 
 namespace input {
 class Loader;
@@ -55,8 +56,11 @@ public:
 
 	void loadProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep = 0);
 	void loadNodeProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep = 0);
+	void loadFaceProperty(const std::map<std::string, std::string> &regions, const std::vector<std::string> &parameters, const std::vector<Property> &properties, size_t loadStep = 0);
+
 	void loadProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
 	void loadNodeProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
+	void loadFaceProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties);
 
 	void removeDuplicateRegions();
 	void fillDomainsSettings();
@@ -147,6 +151,13 @@ protected:
 	void mapFacesToDomains();
 	void mapEdgesToDomains();
 	void mapNodesToDomains();
+
+	void loadProperty(
+			size_t loadStep,
+			const std::map<std::string, std::string> &regions,
+			const std::vector<std::string> &parameters,
+			const std::vector<Property> &properties,
+			ElementType type);
 
 	std::vector<eslocal> getPartition(size_t begin, size_t end, eslocal parts) const;
 	std::vector<eslocal> getPartition(const std::vector<Element*> &elements, size_t begin, size_t end, eslocal parts) const;

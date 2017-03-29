@@ -93,16 +93,16 @@ void AdvectionDiffusion3D::prepareMeshStructures()
 
 	_mesh.loadProperty(_configuration.translation_motions, { "X", "Y", "Z" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y, Property::TRANSLATION_MOTION_Z });
 	_mesh.loadProperty(_configuration.heat_source        , { }     , { Property::HEAT_SOURCE });
-	_mesh.loadProperty(_configuration.heat_flux          , { }     , { Property::HEAT_FLUX });
-	_mesh.loadProperty(_configuration.heat_flow          , { }     , { Property::HEAT_FLOW });
+	_mesh.loadFaceProperty(_configuration.heat_flux      , { }     , { Property::HEAT_FLUX });
+	_mesh.loadFaceProperty(_configuration.heat_flow      , { }     , { Property::HEAT_FLOW });
 
 	for (auto it = _configuration.convection.begin(); it != _configuration.convection.end(); ++it) {
 		std::map<std::string, std::string> values;
 		for (auto regions = it->second.begin(); regions != it->second.end(); ++regions) {
 			values[regions->first] = regions->second->external_temperature;
-			_mesh.loadProperty(values, { }, { Property::EXTERNAL_TEMPERATURE });
+			_mesh.loadFaceProperty(values, { }, { Property::EXTERNAL_TEMPERATURE });
 			values[regions->first] = regions->second->heat_transfer_coefficient;
-			_mesh.loadProperty(values, { }, { Property::HEAT_TRANSFER_COEFFICIENT });
+			_mesh.loadFaceProperty(values, { }, { Property::HEAT_TRANSFER_COEFFICIENT });
 		}
 	}
 

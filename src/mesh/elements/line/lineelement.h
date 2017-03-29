@@ -36,6 +36,8 @@ public:
 	void addFace(Element* face) { ESINFO(GLOBAL_ERROR) << "Line element has no face"; }
 	void addEdge(Element* edge) { ESINFO(GLOBAL_ERROR) << "Line element has no edge"; }
 
+	Element* addFace(const std::vector<eslocal> &nodes) { return NULL; }
+
 	const std::vector<eslocal>& faceNodes(size_t index) const
 	{
 		static std::vector<eslocal> _facesNodes;
