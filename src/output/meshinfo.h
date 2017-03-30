@@ -24,6 +24,7 @@ class MeshInfo {
 public:
 
 	enum InfoMode: int {
+		EMPTY              = 0,
 		PREPARE            = 1 << 0,
 		SEPARATE_BODIES    = 1 << 1,
 		SEPARATE_MATERIALS = 1 << 2

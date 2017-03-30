@@ -41,7 +41,7 @@ public:
 	virtual ~ResultStore();
 
 protected:
-	ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path, MeshInfo::InfoMode mode = MeshInfo::InfoMode::PREPARE);
+	ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path, MeshInfo::InfoMode mode = MeshInfo::EMPTY);
 
 	virtual std::string store(const std::string &name, const RegionData &regionData) =0;
 
@@ -51,6 +51,7 @@ protected:
 	const Mesh *_mesh;
 	std::string _path;
 
+	MeshInfo::InfoMode _mode;
 	MeshInfo* _meshInfo;
 	std::vector<std::pair<Step, std::vector<std::string>> > _solutions;
 	std::vector<std::pair<Step, std::vector<std::string>> > _settings;

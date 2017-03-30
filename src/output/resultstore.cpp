@@ -44,6 +44,7 @@ ResultStore::ResultStore(const OutputConfiguration &output, const Mesh *mesh, co
 			_meshInfo = new DistributedInfo(_mesh, _configuration.domain_shrink_ratio, _configuration.cluster_shrink_ratio, mode);
 		}
 	}
+	_mode = mode | MeshInfo::InfoMode::PREPARE;
 }
 
 ResultStore::~ResultStore()
@@ -92,6 +93,13 @@ void ResultStore::storeSettings(size_t steps)
 
 void ResultStore::storeSettings(const std::vector<size_t> &steps)
 {
+	if (_meshInfo == NULL) {
+		if (_configuration.collected) {
+			_meshInfo = new CollectedInfo(_mesh, _mode);
+		} else {
+			_meshInfo = new DistributedInfo(_mesh, _configuration.domain_shrink_ratio, _configuration.cluster_shrink_ratio, _mode);
+		}
+	}
 	Step step;
 	std::vector<std::string> files;
 
@@ -144,6 +152,14 @@ void ResultStore::storeValues(const std::string &name, size_t dimension, const s
 
 void ResultStore::storeSolution(const Step &step, const std::vector<Solution*> &solution)
 {
+	if (_meshInfo == NULL) {
+		if (_configuration.collected) {
+			_meshInfo = new CollectedInfo(_mesh, _mode);
+		} else {
+			_meshInfo = new DistributedInfo(_mesh, _configuration.domain_shrink_ratio, _configuration.cluster_shrink_ratio, _mode);
+		}
+	}
+
 	_meshInfo->addSolution(solution);
 	std::vector<std::string> files = store("solution", step, _meshInfo);
 	_meshInfo->clearData();
@@ -169,6 +185,14 @@ void ResultStore::finalize()
 
 void ResultStore::storeFETIData(const Step &step, const Instance &instance)
 {
+	if (_meshInfo == NULL) {
+		if (_configuration.collected) {
+			_meshInfo = new CollectedInfo(_mesh, _mode);
+		} else {
+			_meshInfo = new DistributedInfo(_mesh, _configuration.domain_shrink_ratio, _configuration.cluster_shrink_ratio, _mode);
+		}
+	}
+
 	storeElementInfo(step);
 	storeFixPoints(step);
 	storeCorners(step);
