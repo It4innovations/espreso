@@ -63,13 +63,44 @@ SHALLOW_WATER_2D {
     B0_TYPE             CORNERS;
   }
 
+  PHYSICS_SOLVER {
+    LOAD_STEPS          1;
+
+    LOAD_STEPS_SETTINGS {
+      1 {
+        TYPE    TRANSIENT;
+        MODE       LINEAR;
+        DURATION_TIME  10;
+
+        TRANSIENT_SOLVER {
+          TIME_STEP   .05;
+        }
+      }
+    }
+  }
+
   MOMENTUM {
+    # close water to 'box'
     1 {
       LEFT    X 0, Y 0;
       RIGHT   X 0, Y 0;
       TOP     X 0, Y 0;
       BOTTOM  X 0, Y 0;
     }
+  }
+
+  BOTTOM_TOPOGRAPHY {
+    1 {
+      ALL_ELEMENTS  -1;
+    }
+  }
+
+  INITIAL_WATER_LEVEL {
+    ALL_ELEMENTS   2.5 * exp(-((x - 5) * (x - 5) + (y - 5) * (y - 5)) / 2.25);
+  }
+
+  INITIAL_WATER_SPEED {
+    ALL_ELEMENTS   X 0, Y 0;
   }
 
   MATERIALS {
