@@ -28,10 +28,9 @@ ESPRESOBinaryFormat::ESPRESOBinaryFormat(const Mesh &mesh, const std::string &pa
 		std::stringstream ssDir;
 		ssDir << ss.str() << "/" << p + _mesh.parts() * environment->MPIrank;
 		out = system(ssDir.str().c_str());
-	}
-
-	if (out) {
-		ESINFO(ERROR) << "Cannot create output directory";
+		if (out) {
+			ESINFO(ERROR) << "Cannot create output directory '" << _path << "/" << p + _mesh.parts() * environment->MPIrank << "'";
+		}
 	}
 
 	metafile();
@@ -62,6 +61,9 @@ void ESPRESOBinaryFormat::coordinates()
 		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/coordinates.dat";
 
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
+		if (!os.is_open()) {
+			ESINFO(ERROR) << "Cannot open file '" << ss.str() << "'";
+		}
 
 		size = _mesh.coordinates().localSize(p);
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
@@ -88,6 +90,9 @@ void ESPRESOBinaryFormat::elements()
 		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/elements.dat";
 
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
+		if (!os.is_open()) {
+			ESINFO(ERROR) << "Cannot open file '" << ss.str() << "'";
+		}
 
 		// elements
 		size = parts[p + 1] - parts[p];
@@ -108,6 +113,9 @@ void ESPRESOBinaryFormat::materials()
 		std::stringstream ss;
 		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/materials.dat";
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
+		if (!os.is_open()) {
+			ESINFO(ERROR) << "Cannot open file '" << ss.str() << "'";
+		}
 
 		eslocal size = _mesh.materials().size();
 		os.write(reinterpret_cast<const char*>(&size), sizeof(eslocal));
@@ -173,6 +181,9 @@ void ESPRESOBinaryFormat::regions()
 		std::stringstream ss;
 		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/regions.dat";
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
+		if (!os.is_open()) {
+			ESINFO(ERROR) << "Cannot open file '" << ss.str() << "'";
+		}
 
 		eslocal size;
 		std::vector<Element*> faces;
@@ -408,6 +419,9 @@ void ESPRESOBinaryFormat::boundaries()
 		std::stringstream ss;
 		ss << _path << "/" << p + _mesh.parts() * environment->MPIrank << "/boundaries.dat";
 		os.open(ss.str().c_str(), std::ofstream::binary | std::ofstream::trunc);
+		if (!os.is_open()) {
+			ESINFO(ERROR) << "Cannot open file '" << ss.str() << "'";
+		}
 
 		eslocal domain, size;
 
