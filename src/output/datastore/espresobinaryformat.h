@@ -14,6 +14,7 @@ namespace output {
 class ESPRESOBinaryFormat {
 
 public:
+	static void prepareDirectories(const std::string &path, size_t parts);
 	static void store(const Mesh &mesh, const std::string &path);
 
 protected:

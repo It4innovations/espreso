@@ -15,10 +15,16 @@ int main(int argc, char** argv)
 	MPI_Init(&argc, &argv);
 	GlobalConfiguration configuration(&argc, &argv);
 
+	size_t parts;
+	std::stringstream directoryTree(configuration.decomposer.parts);
+	while (directoryTree >> parts) {
+		std::stringstream path;
+		path << configuration.decomposer.prefix << parts * environment->MPIsize;
+		output::ESPRESOBinaryFormat::prepareDirectories(path.str(), parts);
+	}
+
 	Factory factory(configuration);
 	std::stringstream decomposition(configuration.decomposer.parts);
-
-	size_t parts;
 	while (decomposition >> parts) {
 		std::stringstream path;
 		path << configuration.decomposer.prefix << parts * environment->MPIsize;

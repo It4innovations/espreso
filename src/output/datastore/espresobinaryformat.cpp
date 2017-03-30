@@ -13,6 +13,21 @@
 
 using namespace espreso::output;
 
+void ESPRESOBinaryFormat::prepareDirectories(const std::string &path, size_t parts)
+{
+	std::stringstream ss;
+	ss << "mkdir -p " << path;
+	int out = system(ss.str().c_str());
+	for (size_t p = 0; p < parts; p++) {
+		std::stringstream ssDir;
+		ssDir << ss.str() << "/" << p + parts * environment->MPIrank;
+		out = system(ssDir.str().c_str());
+		if (out) {
+			ESINFO(ERROR) << "Cannot create output directory '" << path << "/" << p + parts * environment->MPIrank << "'";
+		}
+	}
+}
+
 void ESPRESOBinaryFormat::store(const Mesh &mesh, const std::string &path)
 {
 	ESPRESOBinaryFormat(mesh, path);
@@ -21,18 +36,6 @@ void ESPRESOBinaryFormat::store(const Mesh &mesh, const std::string &path)
 ESPRESOBinaryFormat::ESPRESOBinaryFormat(const Mesh &mesh, const std::string &path)
 : _mesh(mesh), _path(path)
 {
-	std::stringstream ss;
-	ss << "mkdir -p " << _path;
-	int out = system(ss.str().c_str());
-	for (size_t p = 0; p < _mesh.parts(); p++) {
-		std::stringstream ssDir;
-		ssDir << ss.str() << "/" << p + _mesh.parts() * environment->MPIrank;
-		out = system(ssDir.str().c_str());
-		if (out) {
-			ESINFO(ERROR) << "Cannot create output directory '" << _path << "/" << p + _mesh.parts() * environment->MPIrank << "'";
-		}
-	}
-
 	metafile();
 	coordinates();
 	elements();
