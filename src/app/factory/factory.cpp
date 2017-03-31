@@ -49,7 +49,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 	store = new output::ResultStoreList(configuration.output);
 	if (configuration.output.monitoring.size()) {
-		store->add(new output::Monitoring(configuration.output, mesh, "monitors.txt"));
+		store->add(new output::Monitoring(configuration.output, mesh, "monitors.emr"));
 	}
 	if (configuration.output.catalyst) {
 		store->add(new output::Catalyst(configuration.output, mesh, "results"));

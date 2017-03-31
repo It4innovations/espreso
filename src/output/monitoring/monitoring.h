@@ -17,7 +17,8 @@ namespace output {
 enum class Operation {
 	AVERAGE,
 	MIN,
-	MAX
+	MAX,
+	NORM
 };
 
 struct Monitor {
@@ -41,9 +42,12 @@ public:
 	void storeSolution(const Step &step, const std::vector<Solution*> &solution);
 	void finalize();
 
+	static char delimiter;
+
 protected:
 	const Mesh *_mesh;
 	std::ofstream _os;
+
 
 	std::vector<Monitor> _monitors;
 };

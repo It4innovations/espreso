@@ -25,3 +25,4 @@ libespreso/apitest
 libs*/*
 tools/*
 results/*
+*.emr

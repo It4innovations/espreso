@@ -10,9 +10,11 @@
 
 using namespace espreso::output;
 
+char Monitoring::delimiter = ';';
+
 static espreso::output::Operation getOperation(const std::string &name)
 {
-	if (espreso::StringCompare::caseInsensitiveEq(name, "AVERAGE")) {
+	if (espreso::StringCompare::caseInsensitiveEq(name, "AVG")) {
 		return espreso::output::Operation::AVERAGE;
 	}
 	if (espreso::StringCompare::caseInsensitiveEq(name, "MIN")) {
@@ -20,6 +22,9 @@ static espreso::output::Operation getOperation(const std::string &name)
 	}
 	if (espreso::StringCompare::caseInsensitiveEq(name, "MAX")) {
 		return espreso::output::Operation::MAX;
+	}
+	if (espreso::StringCompare::caseInsensitiveEq(name, "NORM")) {
+		return espreso::output::Operation::NORM;
 	}
 
 	ESINFO(espreso::GLOBAL_ERROR) << "Unknown operation " << name << "\n";
@@ -87,45 +92,43 @@ Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh, cons
 
 	size_t rowHeaderSize = 19;
 
-	_os << std::string(length + _monitors.size() + 1 + rowHeaderSize, '-') << "\n";
-	_os << std::string(rowHeaderSize, ' ') << "|";
+	_os << "\n";
+	_os << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter;
 	for (size_t i = 0; i < _monitors.size(); i++) {
-		_os << center(_monitors[i].region->name, _monitors[i].printSize) << "|";
+		_os << center(_monitors[i].region->name, _monitors[i].printSize) << delimiter;
 	}
 	_os << "\n";
 
-	_os << right("step", 9) << right("substep", 9) << " |";
+	_os << right("step", 9) << delimiter << right("substep", 9) << delimiter;
 	for (size_t i = 0; i < _monitors.size(); i++) {
 		std::stringstream ss;
 		ss << _monitors[i].property;
-		_os << center(ss.str(), _monitors[i].printSize) << "|";
+		_os << center(ss.str(), _monitors[i].printSize) << delimiter;
 	}
 	_os << "\n";
 
-	_os << std::string(rowHeaderSize, ' ') << "|";
+	_os << std::string(9, ' ') << delimiter << std::string(9, ' ') << delimiter;
 	for (size_t i = 0; i < _monitors.size(); i++) {
 		switch (_monitors[i].operation) {
-		case Operation::AVERAGE: _os << center("<AVERAGE>", _monitors[i].printSize) << "|"; break;
-		case Operation::MIN:     _os << center("<MIN>"    , _monitors[i].printSize) << "|"; break;
-		case Operation::MAX:     _os << center("<MAX>"    , _monitors[i].printSize) << "|"; break;
+		case Operation::AVERAGE: _os << center("<AVERAGE>", _monitors[i].printSize) << delimiter; break;
+		case Operation::MIN:     _os << center("<MIN>"    , _monitors[i].printSize) << delimiter; break;
+		case Operation::MAX:     _os << center("<MAX>"    , _monitors[i].printSize) << delimiter; break;
+		case Operation::NORM:    _os << center("<NORM>"   , _monitors[i].printSize) << delimiter; break;
 		}
 	}
-	_os << "\n";
-
-	_os << std::string(length + _monitors.size() + 1 + rowHeaderSize, '-') << "\n";
+	_os << "\n\n";
 }
 
 void Monitoring::storeSolution(const Step &step, const std::vector<Solution*> &solution)
 {
-	_os << right(std::to_string(step.step), 9);
-	_os << right(std::to_string(step.substep), 9);
-	_os << " |";
+	_os << right(std::to_string(step.step), 8) << " " << delimiter;
+	_os << right(std::to_string(step.substep), 8) << " " << delimiter;
 
 	for (size_t i = 0; i < _monitors.size(); i++) {
 		double value; // TODO: get required value
 		std::stringstream ss;
 		ss << std::scientific << value;
-		_os << center(ss.str(), _monitors[i].printSize) << "|";
+		_os << center(ss.str(), _monitors[i].printSize) << delimiter;
 	}
 	_os << "\n";
 
