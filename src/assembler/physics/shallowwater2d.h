@@ -15,6 +15,8 @@ struct ShallowWater2D: public Physics2D
 
 	MatrixType getMatrixType(const Step &step, size_t domain) const;
 
+	std::vector<size_t> solutions() const { return { 0 }; }
+
 	void prepareTotalFETI();
 
 	void processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;

@@ -77,7 +77,12 @@ void Solver::storeData(const Step &step, std::vector<std::vector<double> > &vect
 
 void Solver::storeSolution(const Step &step)
 {
-	_store->storeSolution(step, instance->solutions);
+	std::vector<Solution*> solutions;
+	for (size_t i = 0; i < physics->solutions().size(); i++) {
+		solutions.push_back(instance->solutions[physics->solutions()[i]]);
+	}
+
+	_store->storeSolution(step, solutions);
 }
 
 void Solver::storeSubSolution(const Step &step)

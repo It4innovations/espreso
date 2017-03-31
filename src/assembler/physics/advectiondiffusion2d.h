@@ -13,6 +13,8 @@ struct NewAdvectionDiffusion2D: public Physics2D
 {
 	NewAdvectionDiffusion2D(Mesh *mesh, Instance *instance, const AdvectionDiffusion2DConfiguration &configuration);
 
+	std::vector<size_t> solutions() const { return { 0 }; }
+
 	MatrixType getMatrixType(const Step &step, size_t domain) const;
 
 	void prepareTotalFETI();
