@@ -31,6 +31,11 @@ void Catalyst::storeSettings(const std::vector<size_t> &steps)
 
 }
 
+void Catalyst::storeFETIData(const Step &step, const Instance &instance)
+{
+
+}
+
 void Catalyst::storeSolution(const Step &step, const std::vector<Solution*> &solution)
 {
 

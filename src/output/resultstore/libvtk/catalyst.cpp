@@ -66,26 +66,30 @@ void Catalyst::storeSettings(const std::vector<size_t> &steps)
 	// only solution can be stored by catalyst
 }
 
+void Catalyst::storeFETIData(const Step &step, const Instance &instance)
+{
+	// only solution can be stored by catalyst
+}
+
 void Catalyst::storeSolution(const Step &step, const std::vector<Solution*> &solution)
 {
-	if (step.step == 0 && step.substep == 0 && step.iteration == 0) {
-		vtkSmartPointer<vtkIntArray> scale = vtkSmartPointer<vtkIntArray>::New();
-		scale->SetNumberOfComponents(1);
-		scale->SetName("scale");
-		scale->InsertNextValue(2);
-		vtkSmartPointer<vtkStringArray> label = vtkSmartPointer<vtkStringArray>::New();
-		label->SetNumberOfComponents(1);
-		label->SetName("label");
-		label->InsertNextValue(solution.front()->name);
+	vtkSmartPointer<vtkIntArray> scale = vtkSmartPointer<vtkIntArray>::New();
+	scale->SetNumberOfComponents(1);
+	scale->SetName("scale");
+	scale->InsertNextValue(2);
+	vtkSmartPointer<vtkStringArray> label = vtkSmartPointer<vtkStringArray>::New();
+	label->SetNumberOfComponents(1);
+	label->SetName("label");
+	label->InsertNextValue(solution.front()->name);
 
-		_fieldData->AddArray(scale);
-		_fieldData->AddArray(label);
-		_dataDescription->SetUserData(_fieldData);
-	}
+	_fieldData->AddArray(scale);
+	_fieldData->AddArray(label);
+	_dataDescription->SetUserData(_fieldData);
 
-	DataArrays data;
-	addData(data, solution);
-	_dataDescription->SetTimeData(step.iteration, step.iteration);
+	_meshInfo->addSolution(solution);
+	addData(_meshInfo->region(0));
+
+	_dataDescription->SetTimeData(step.substep, step.substep);
 	_dataDescription->GetInputDescriptionByName("input")->SetGrid(_VTKGrid);
 	_processor->CoProcess(_dataDescription);
 	sleep(_configuration.sleep);
