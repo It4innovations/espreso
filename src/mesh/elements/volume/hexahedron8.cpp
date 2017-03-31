@@ -210,11 +210,11 @@ Element* Hexahedron8::addFace(const std::vector<eslocal> &nodes)
 			}
 		}
 		if (found == _facesNodes[f].size()) {
-			eslocal triangle[Square4NodesCount];
+			eslocal square[Square4NodesCount];
 			for (size_t n = 0; n < Square4NodesCount; n++) {
-				triangle[n] = _indices[_facesNodes[f][n]];
+				square[n] = _indices[_facesNodes[f][n]];
 			}
-			return addUniqueFace<Square4>(triangle, _faces.size(), Square4NodesCount);
+			return addUniqueFace<Square4>(square, _faces.size(), Square4NodesCount);
 		}
 	}
 	return NULL;

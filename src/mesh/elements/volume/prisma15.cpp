@@ -395,7 +395,7 @@ Element* Prisma15::addFace(const std::vector<eslocal> &nodes)
 				for (size_t n = 0; n < Square8NodesCount; n++) {
 					triangle[n] = _indices[_facesNodes[f][n]];
 				}
-				return addUniqueFace<Square8>(triangle, _faces.size(), Triangle3NodesCount);
+				return addUniqueFace<Square8>(triangle, _faces.size(), Square4NodesCount);
 			} else {
 				eslocal triangle[Triangle6NodesCount];
 				for (size_t n = 0; n < Triangle6NodesCount; n++) {

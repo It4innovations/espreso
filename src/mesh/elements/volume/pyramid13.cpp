@@ -369,11 +369,11 @@ Element* Pyramid13::addFace(const std::vector<eslocal> &nodes)
 		}
 		if (found == _facesNodes[f].size()) {
 			if (f == 0) {
-				eslocal triangle[Square8NodesCount];
+				eslocal square[Square8NodesCount];
 				for (size_t n = 0; n < Square8NodesCount; n++) {
-					triangle[n] = _indices[_facesNodes[f][n]];
+					square[n] = _indices[_facesNodes[f][n]];
 				}
-				return addUniqueFace<Square8>(triangle, _faces.size(), Triangle3NodesCount);
+				return addUniqueFace<Square8>(square, _faces.size(), Square4NodesCount);
 			} else {
 				eslocal triangle[Triangle6NodesCount];
 				for (size_t n = 0; n < Triangle6NodesCount; n++) {
