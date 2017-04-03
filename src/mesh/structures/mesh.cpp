@@ -1895,6 +1895,7 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 
 			eslocal cluster = 0;
 			elements[e]->DOFsDomainsCounters().reserve(elements[e]->DOFsDomainsCounters().size() + DOFs.size() * elements[e]->clusters().size());
+			elements[e]->numberOfGlobalDomains(elements[e]->domains().size());
 			for (size_t c = 0; c < elements[e]->clusters().size(); c++) {
 				elements[e]->DOFsDomainsCounters().insert(elements[e]->DOFsDomainsCounters().begin() + (c + 1) * prevDOFsSize + c * DOFs.size(), DOFs.size(), -1);
 				if (elements[e]->clusters()[c] == environment->MPIrank) {
@@ -1916,6 +1917,7 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 						sBuffer[t][n2i(elements[e]->clusters()[c])].push_back(l2g[elements[e]->node(n)]);
 					}
 
+					sBuffer[t][n2i(elements[e]->clusters()[c])].push_back(elements[e]->domains().size());
 					for (size_t i = prevDOFsSize; i < prevDOFsSize + DOFs.size(); i++) {
 						sBuffer[t][n2i(elements[e]->clusters()[c])].push_back(elements[e]->DOFsDomainsCounters()[cluster * (prevDOFsSize + DOFs.size()) + i]);
 					}
@@ -1976,6 +1978,7 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 				})->local;
 			}
 
+			nElements[n].back()->numberOfGlobalDomains(rBuffer[n][p++]);
 			nElements[n].back()->DOFsDomainsCounters() = std::vector<eslocal>(&rBuffer[n][p], &rBuffer[n][p] + DOFs.size());
 			p += DOFs.size();
 		}
@@ -1989,6 +1992,7 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 
 				size_t cluster = std::lower_bound((*it)->clusters().begin(), (*it)->clusters().end(), neighbours[n]) - (*it)->clusters().begin();
 
+				(*it)->numberOfGlobalDomains((*it)->numberOfGlobalDomains() + nElements[n][e]->numberOfGlobalDomains());
 				for (size_t dof = 0; dof < DOFs.size(); dof++) {
 					(*it)->DOFsDomainsCounters()[cluster * (prevDOFsSize + DOFs.size()) + prevDOFsSize + dof] = nElements[n][e]->DOFsDomainsCounters()[dof];
 				}

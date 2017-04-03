@@ -194,6 +194,9 @@ public:
 		return n;
 	}
 
+	void numberOfGlobalDomains(size_t size) { _domainsCounters = size; }
+	size_t numberOfGlobalDomains() const { return _domainsCounters; }
+
 	bool inDomain(eslocal domain)
 	{
 		auto it = std::lower_bound(_domains.begin(), _domains.end(), domain);
@@ -260,6 +263,7 @@ protected:
 	std::vector<eslocal> _DOFsIndices;
 	std::vector<eslocal> _DOFsDomainsCounters;
 	std::vector<eslocal> _clusterOffsets;
+	size_t _domainsCounters;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Element &e)
