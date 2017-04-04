@@ -22,6 +22,7 @@
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
 #include "../../mesh/structures/material.h"
+#include "../../mesh/structures/elementtypes.h"
 #include "../../mesh/settings/evaluator.h"
 
 #include "espresobinaryformat.h"
@@ -198,13 +199,14 @@ void ESPRESOBinaryFormat::regions(
 	is.read(reinterpret_cast<char *>(&size), sizeof(eslocal));
 	for (eslocal i = 0; i < size; i++) {
 		if (i > 1) {
-			regions.push_back(new Region());
+			regions.push_back(new Region(ElementType::NODES));
 			eslocal length;
 			is.read(reinterpret_cast<char *>(&length), sizeof(eslocal));
 			char *buffer = new char[length];
 			is.read(buffer, length);
 			regions.back()->name = std::string(buffer, buffer + length);
 			delete[] buffer;
+			is.read(reinterpret_cast<char *>(&regions.back()->eType), sizeof(ElementType));
 		}
 
 		eslocal steps;

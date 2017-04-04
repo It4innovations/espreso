@@ -101,6 +101,7 @@ public:
 
 	const std::vector<int>& neighbours() const { return _neighbours; }
 	const std::vector<Region*>& regions() const { return _regions; }
+	const std::vector<Region*>& monitoredRegions() const { return _monitoredRegions; }
 	const std::vector<Material*>& materials() const { return _materials; }
 	const std::vector<Evaluator*>& evaluators() const { return _evaluators; }
 
@@ -121,6 +122,7 @@ public:
 	void synchronizeRegionOrder();
 
 	Region* region(const std::string &name) const;
+	void addMonitoredRegion(Region* region) const;
 
 	bool isContinuous() const { return _continuous; }
 
@@ -206,6 +208,9 @@ protected:
 
 	/** @brief list of mesh regions*/
 	std::vector<Region*> _regions;
+
+	/** @brief list of regions that are monitored*/
+	mutable std::vector<Region*> _monitoredRegions;
 
 	/** @brief list of settings for each domain and load step*/
 	std::vector<std::vector<std::set<Property> > > _properties;

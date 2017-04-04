@@ -43,9 +43,9 @@ Mesh::Mesh(): _continuous(true), _elements(0)
 	_bodies = { 0, 0 };
 	_partPtrs = { 0, 0 };
 
-	_regions.push_back(new Region(_elements));
+	_regions.push_back(new Region(ElementType::ELEMENTS, _elements));
 	_regions.back()->name = "ALL_ELEMENTS";
-	_regions.push_back(new Region(_nodes));
+	_regions.push_back(new Region(ElementType::NODES, _nodes));
 	_regions.back()->name = "ALL_NODES";
 }
 
@@ -889,6 +889,13 @@ Region* Mesh::region(const std::string &name) const
 	}
 	ESINFO(GLOBAL_ERROR) << "Unknown region '" << name << "'";
 	exit(EXIT_FAILURE);
+}
+
+void Mesh::addMonitoredRegion(Region* region) const
+{
+	_monitoredRegions.push_back(region);
+	std::sort(_monitoredRegions.begin(), _monitoredRegions.end());
+	Esutils::removeDuplicity(_monitoredRegions);
 }
 
 std::vector<std::vector<Region*> > Mesh::getRegionsWithProperties(const std::vector<Region*> &regions, size_t loadStep, const std::vector<Property> &properties)

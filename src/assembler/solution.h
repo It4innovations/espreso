@@ -6,6 +6,8 @@
 #include <vector>
 #include <string>
 
+#include "statistic.h"
+
 namespace espreso {
 
 enum class Property;
@@ -14,8 +16,8 @@ enum class ElementType;
 
 struct Solution {
 
-	Solution(const std::string &name, ElementType eType, const std::vector<Property> &properties, const std::vector<std::vector<double> > &data);
-	Solution(const std::string &name, ElementType eType, const std::vector<Property> &properties);
+	Solution(const Mesh &mesh, const std::string &name, ElementType eType, const std::vector<Property> &properties, const std::vector<std::vector<double> > &data);
+	Solution(const Mesh &mesh, const std::string &name, ElementType eType, const std::vector<Property> &properties);
 
 	inline double get(Property property, eslocal domain, eslocal index) const
 	{
@@ -27,15 +29,22 @@ struct Solution {
 		return data[domain][index * properties + propertyOffset];
 	}
 
+	bool hasProperty(Property property) const;
+	void computeStatisticalData();
+	double getStatisticalData(Property property, StatisticalData data, const Region *region) const;
+
 	std::string name;
 	ElementType eType;
 	size_t properties;
 	const std::vector<std::vector<double> > &data;
+
 protected:
 	std::vector<int> _offset;
 
 	// when no data are provided, store it here
 	std::vector<std::vector<double> > _data;
+
+	mutable Statistic _statistic;
 };
 
 }

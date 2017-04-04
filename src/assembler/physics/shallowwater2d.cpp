@@ -121,6 +121,6 @@ void ShallowWater2D::processSolution(const Step &step)
 		delete _instance->solutions[0];
 	}
 
-	_instance->solutions[0] = new Solution("temperature", ElementType::NODES, pointDOFs(), _instance->primalSolution);
+	_instance->solutions[0] = new Solution(*_mesh, "temperature", ElementType::NODES, pointDOFs(), _instance->primalSolution);
 }
 

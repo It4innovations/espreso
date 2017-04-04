@@ -14,6 +14,7 @@
 #include "../mesh/elements/line/line2.h"
 #include "../mesh/structures/coordinates.h"
 #include "../mesh/structures/mesh.h"
+#include "../mesh/structures/elementtypes.h"
 #include "../mesh/structures/region.h"
 #include "../mesh/settings/property.h"
 
@@ -141,7 +142,7 @@ void ResultStore::storeValues(const std::string &name, size_t dimension, const s
 		props.push_back(Property::DISPLACEMENT_Z);
 	}
 
-	solution.push_back(new Solution(name, eType, props, values));
+	solution.push_back(new Solution(*_mesh, name, eType, props, values));
 	storeSolution(step, solution);
 	delete solution.back();
 	if (!environment->MPIrank) {
@@ -219,7 +220,7 @@ void ResultStore::storeFixPoints(const Step &step)
 	std::sort(fixPoints.begin(), fixPoints.end());
 	Esutils::removeDuplicity(fixPoints);
 
-	Region region(fixPoints);
+	Region region(ElementType::NODES, fixPoints);
 
 	MeshInfo *info = _meshInfo->deriveRegion(&region);
 	std::vector<std::string> files = store("fix_points", step, info);
@@ -231,7 +232,7 @@ void ResultStore::storeCorners(const Step &step)
 {
 	std::vector<Element*> corners = _mesh->corners();
 
-	Region region(corners);
+	Region region(ElementType::NODES, corners);
 
 	MeshInfo *info = _meshInfo->deriveRegion(&region);
 	std::vector<std::string> files = store("corners", step, info);

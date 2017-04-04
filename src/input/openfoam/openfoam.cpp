@@ -5,6 +5,7 @@
 #include "../../mesh/elements/plane/triangle3.h"
 
 #include "../../mesh/structures/mesh.h"
+#include "../../mesh/structures/elementtypes.h"
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
 
@@ -187,7 +188,7 @@ void OpenFOAM::regions(
 		solveParseError((*it).readEntry("startFace", startFace));
 
 		if ((*it).getName().find("procBoundary") != 0) {
-			regions.push_back(new Region());
+			regions.push_back(new Region(ElementType::FACES));
 			Region *region = regions[regions.size() - 1];
 			region->name = (*it).getName();
 			region->elements().resize(nFaces);
@@ -201,7 +202,7 @@ void OpenFOAM::regions(
 		solveParseError(parse(cellZonesFile.getTokenizer(), _cellZones));
 
 		for (auto cellZone : _cellZones) {
-			regions.push_back(new Region());
+			regions.push_back(new Region(ElementType::ELEMENTS));
 			Region *region = regions[regions.size() - 1];
 			region->name = cellZone.getName();
 			for (auto index : cellZone.elementIndexes()) {
@@ -215,7 +216,7 @@ void OpenFOAM::regions(
 		std::vector<FaceZone> _faceZones;
 		solveParseError(parse(faceZonesFile.getTokenizer(), _faceZones));
 		for (auto faceZone : _faceZones) {
-			regions.push_back(new Region());
+			regions.push_back(new Region(ElementType::FACES));
 			Region *region = regions[regions.size() - 1];
 			region->name = faceZone.getName();
 			for (auto index : faceZone.elementIndexes()) {
@@ -229,7 +230,7 @@ void OpenFOAM::regions(
 		std::vector<PointZone> _pointZones;
 		solveParseError(parse(pointZonesFile.getTokenizer(), _pointZones));
 		for (auto pointZone : _pointZones) {
-			regions.push_back(new Region());
+			regions.push_back(new Region(ElementType::NODES));
 			Region *region = regions[regions.size() - 1];
 			region->name = pointZone.getName();
 			for (auto index : pointZone.elementIndexes()) {

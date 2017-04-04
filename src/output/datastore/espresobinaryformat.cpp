@@ -8,6 +8,7 @@
 #include "../../mesh/structures/material.h"
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
+#include "../../mesh/structures/elementtypes.h"
 #include "../../mesh/elements/element.h"
 #include "../../mesh/settings/evaluator.h"
 
@@ -240,6 +241,7 @@ void ESPRESOBinaryFormat::regions()
 				eslocal length = _mesh.regions()[i]->name.size();
 				os.write(reinterpret_cast<const char *>(&length), sizeof(eslocal));
 				os.write(_mesh.regions()[i]->name.c_str(), _mesh.regions()[i]->name.size());
+				os.write(reinterpret_cast<const char *>(&_mesh.regions()[i]->eType), sizeof(ElementType));
 			}
 			size = _mesh.regions()[i]->settings.size();
 			os.write(reinterpret_cast<const char *>(&size), sizeof(eslocal));

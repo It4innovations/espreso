@@ -85,7 +85,7 @@ bool Communication::receiveUpperUnknownSize(const std::vector<std::vector<Ttype>
 	}
 
 	int flag;
-	size_t counter = 0;
+	size_t counter = std::lower_bound(neighbours.begin(), neighbours.end(), environment->MPIrank) - neighbours.begin();
 	MPI_Status status;
 	while (counter < neighbours.size()) {
 		MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);

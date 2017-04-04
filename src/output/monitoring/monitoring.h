@@ -11,21 +11,15 @@ namespace espreso {
 class Mesh;
 class Region;
 enum class Property;
+enum StatisticalData: int;
 
 namespace output {
-
-enum class Operation {
-	AVERAGE,
-	MIN,
-	MAX,
-	NORM
-};
 
 struct Monitor {
 	size_t printSize;
 	Region* region;
 	Property property;
-	Operation operation;
+	StatisticalData statistics;
 };
 
 class Monitoring: public Store {

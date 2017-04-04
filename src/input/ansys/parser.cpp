@@ -1,5 +1,6 @@
 
 #include "parser.h"
+#include "../../mesh/structures/elementtypes.h"
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/material.h"
@@ -172,7 +173,7 @@ void WorkbenchParser::nblock(Coordinates &coordinates)
 
 void WorkbenchParser::eblock(std::vector<Element*> &elements, std::vector<Region*> &regions, std::vector<Element*> &faces, std::vector<Element*> &edges)
 {
-	regions.push_back(new Region());
+	regions.push_back(new Region(ElementType::ELEMENTS));
 
 	int MATERIAL = 0, ETYPE = 1, CONSTANT = 2, COORDINATES, NODES, PARAM_SIZE = 6, NODE_SIZE;
 	bool SOLID = true;
@@ -267,6 +268,18 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements, std::vector<Region
 		}
 		regions.back()->elements().push_back(e);
 	}
+	switch (regions.back()->elements().back()->type()) {
+	case Element::Type::VOLUME:
+		regions.back()->eType = ElementType::ELEMENTS;
+		break;
+	case Element::Type::PLANE:
+		regions.back()->eType = ElementType::FACES;
+		break;
+	case Element::Type::LINE:
+		regions.back()->eType = ElementType::EDGES;
+		break;
+	}
+
 	regions.back()->name = std::to_string(values[ETYPE]);
 	bodyCounter++;
 }
@@ -407,7 +420,7 @@ void WorkbenchParser::cmblock(std::vector<Element*> &elements, std::vector<Regio
 	std::vector<std::string> params = divide(_line);
 
 	params[1] = Parser::strip(params[1]);
-	regions.push_back(new Region());
+	regions.push_back(new Region(ElementType::NODES));
 	regions.back()->name = params[1];
 	std::vector<Element*> &region = regions.back()->elements();
 	if (params[2].compare(0, 4, "NODE") == 0) {

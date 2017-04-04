@@ -10,6 +10,7 @@
 #include "../../mesh/elements/point/unknownpoint.h"
 #include "../../mesh/elements/point/dof.h"
 
+#include "../../mesh/structures/elementtypes.h"
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
@@ -117,7 +118,7 @@ void API::elements(const std::vector<eslocal> &eType, std::vector<std::vector<es
 void API::dirichlet(size_t dirichletSize, eslocal *dirichletIndices, double *dirichletValues)
 {
 	_mesh._evaluators.push_back(new ArrayEvaluator("dirichletAPI", dirichletSize, dirichletIndices, dirichletValues, _offset, Property::UNKNOWN));
-	_mesh._regions.push_back(new Region());
+	_mesh._regions.push_back(new Region(ElementType::NODES));
 
 	_mesh._regions.back()->name = "DIRICHLET";
 	_mesh._regions.back()->settings.resize(1);

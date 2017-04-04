@@ -6,6 +6,7 @@
 #include "../primitives/block.h"
 #include "../../../mesh/structures/region.h"
 #include "../../../mesh/structures/mesh.h"
+#include "../../../mesh/structures/elementtypes.h"
 #include "../../../mesh/structures/coordinates.h"
 
 #include "../elements/3D/hexahedron20.h"
@@ -299,9 +300,9 @@ void Sphere::regions(
 {
 	for (auto it = _sphere.nodes.begin(); it != _sphere.nodes.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
-			regions.push_back(new Region(nodes));
+			regions.push_back(new Region(ElementType::NODES, nodes));
 		} else {
-			regions.push_back(new Region());
+			regions.push_back(new Region(ElementType::NODES));
 			BlockBorder border(it->second);
 			_block->region(nodes, regions.back(), border, 0);
 		}
@@ -311,7 +312,7 @@ void Sphere::regions(
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
 			ESINFO(GLOBAL_ERROR) << "Implement region of all edges.";
 		} else {
-			regions.push_back(new Region());
+			regions.push_back(new Region(ElementType::EDGES));
 			BlockBorder border(it->second);
 			_block->region(nodes, regions.back(), border, 1);
 			edges.insert(edges.end(), regions.back()->elements().begin(), regions.back()->elements().end());
@@ -322,7 +323,7 @@ void Sphere::regions(
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
 			ESINFO(GLOBAL_ERROR) << "Implement region of all faces.";
 		} else {
-			regions.push_back(new Region());
+			regions.push_back(new Region(ElementType::FACES));
 			BlockBorder border(it->second);
 			_block->region(nodes, regions.back(), border, 2);
 			faces.insert(faces.end(), regions.back()->elements().begin(), regions.back()->elements().end());
@@ -332,9 +333,9 @@ void Sphere::regions(
 
 	for (auto it = _sphere.elements.begin(); it != _sphere.elements.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
-			regions.push_back(new Region(elements));
+			regions.push_back(new Region(ElementType::ELEMENTS, elements));
 		} else {
-			regions.push_back(new Region());
+			regions.push_back(new Region(ElementType::ELEMENTS));
 			BlockBorder border(it->second);
 			_block->region(elements, regions.back(), border, 3);
 		}

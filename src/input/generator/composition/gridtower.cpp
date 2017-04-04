@@ -5,6 +5,7 @@
 #include "../../../configuration/input/inputgeneratorgridtower.h"
 
 #include "../../../mesh/structures/mesh.h"
+#include "../../../mesh/structures/elementtypes.h"
 #include "../primitives/block.h"
 
 #include "mpi.h"
@@ -240,7 +241,7 @@ void GridTower::regions(
 		for (auto r = it->second->nodes.begin(); r != it->second->nodes.end(); ++r) {
 			auto it = std::find_if(regions.begin(), regions.end(), [&] (const Region *region) { return region->name.compare(r->first) == 0; });
 			if (it == mesh.regions().end()) {
-				regions.push_back(new Region());
+				regions.push_back(new Region(ElementType::NODES));
 				regions.back()->name = r->first;
 			}
 		}

@@ -8,6 +8,18 @@
 
 using namespace espreso;
 
+Region::Region(ElementType eType)
+: eType(eType), area(0), _destroy(true)
+{
+	_elements = new std::vector<Element*>();
+}
+
+Region::Region(ElementType eType, std::vector<Element*> &element)
+: eType(eType), area(0), _elements(&element), _destroy(false)
+{
+
+}
+
 void Region::computeArea(const Coordinates &coordinates) const
 {
 	double A = 0;
