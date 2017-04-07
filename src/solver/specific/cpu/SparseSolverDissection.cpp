@@ -32,7 +32,7 @@ SparseSolverDissection::SparseSolverDissection(){
 	mtype = 2; 			/* Real symmetric positive definite decommatrix */
 
     // Symbolic refactorization settings
-    decomposer = 2; // 0 for SCOTCH, 1 for METIS, 2 for TRIDIAG(Cuthill-McKee)
+    decomposer = 1; // 0 for SCOTCH, 1 for METIS, 2 for TRIDIAG(Cuthill-McKee)
     eps_pivot = 1.e-2; // pivot threshold
     nb_levels = -1; // number of level of dissection //-1 (automatic)
     scaling = 2; //0;
@@ -165,6 +165,20 @@ void SparseSolverDissection::ImportMatrix(espreso::SparseMatrix & A) {
 	nnz		= A.nnz;
 	m_Kplus_size = A.rows;
 
+	switch (A.mtype) {
+	case espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+		mtype = 2;
+		break;
+	case espreso::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+		mtype = -2;
+		break;
+	case espreso::MatrixType::REAL_UNSYMMETRIC:
+		mtype = 11;
+		is_whole = true;
+		is_sym = false;
+		break;
+	}
+
 	CSR_I_row_indices_size = A.CSR_I_row_indices.size();
 	CSR_J_col_indices_size = A.CSR_J_col_indices.size();
 	CSR_V_values_size	   = A.CSR_V_values.size();
@@ -285,6 +299,20 @@ void SparseSolverDissection::ImportMatrix_wo_Copy(espreso::SparseMatrix & A) {
 	nnz		= A.nnz;
 	m_Kplus_size = A.rows;
 
+	switch (A.mtype) {
+	case espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+		mtype = 2;
+		break;
+	case espreso::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+		mtype = -2;
+		break;
+	case espreso::MatrixType::REAL_UNSYMMETRIC:
+		mtype = 11;
+		is_whole = true;
+		is_sym = false;
+		break;
+	}
+
 	CSR_I_row_indices_size = A.CSR_I_row_indices.size();
 	CSR_J_col_indices_size = A.CSR_J_col_indices.size();
 	CSR_V_values_size	   = A.CSR_V_values.size();
@@ -311,6 +339,45 @@ void SparseSolverDissection::ImportMatrix_wo_Copy(espreso::SparseMatrix & A) {
 	}
 
 	import_with_copy = false;
+}
+
+void SparseSolverDissection::ExportMatrix(espreso::SparseMatrix & A) {
+
+	switch (mtype) {
+	case 2:
+		A.mtype = espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+		A.type = 'S';
+		break;
+	case -2:
+		A.mtype = espreso::MatrixType::REAL_SYMMETRIC_INDEFINITE;
+		A.type = 'S';
+		break;
+	case 11:
+		A.mtype = espreso::MatrixType::REAL_UNSYMMETRIC;
+		A.type = 'G';
+		break;
+	}
+
+	A.rows = rows;
+	A.cols = cols;
+	A.nnz = nnz;
+
+	A.CSR_V_values.clear();
+	A.CSR_V_values.insert(A.CSR_V_values.end(), &CSR_V_values[0], &CSR_V_values[CSR_V_values_size]);
+
+	A.CSR_I_row_indices.resize(CSR_I_row_indices_size);
+	A.CSR_J_col_indices.resize(CSR_J_col_indices_size);
+
+	// Index base from 0 to 1
+	for (int i = 0; i < CSR_I_row_indices_size; ++i)
+	{
+		A.CSR_I_row_indices[i] = CSR_I_row_indices[i] + 1;
+	}
+
+	for (int i = 0; i < CSR_J_col_indices_size; ++i)
+	{
+		A.CSR_J_col_indices[i] = CSR_J_col_indices[i] + 1;
+	}
 }
 
 void SparseSolverDissection::SetThreaded() {
@@ -525,6 +592,12 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 		bool is_scaling = true;
 
 		sol = rhs;
+
+
+		// Alternative multiple RHS solve
+//		for(eslocal i=0; i< n_rhs; i++) {
+//			dslv->SolveSingle(&sol[i*rows], projection, is_trans, is_scaling);
+//		}
 
 		dslv->SolveMulti(&sol.front(), n_rhs, projection, is_trans, is_scaling);
 	}

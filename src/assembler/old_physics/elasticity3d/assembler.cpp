@@ -1,3 +1,5 @@
+// Just for testing to get matrix kernel using dissection
+//#include "SparseSolverDissection.h"
 
 #include "../../old_physics/elasticity3d/assembler.h"
 
@@ -569,22 +571,44 @@ static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::ve
 		VALS.push_back( p.y);
 	}
 
+
 	SparseMatrix N;
+
+
+//#define OLD_WAY
+
+// old bad way
+#ifdef OLD_WAY
+	// Output in N
 	Nt.MatTranspose( N );
 	RegMat.MatMat(Nt, 'N', N);
 	RegMat.MatTranspose();
 	RegMat.RemoveLower();
 	RegMat.mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 
-//	SparseSolverCPU NtN;
-	SparseSolverMKL NtN;
+	SparseSolverCPU NtN;
 	NtN.ImportMatrix(RegMat);
 	RegMat.Clear();
 
 	NtN.Factorization("Create RegMat");
+	// Output in Nt
 	NtN.SolveMat_Sparse(Nt);
 	NtN.Clear();
+#else
+	Nt.MatTranspose();
+	Nt.ConvertCSRToDense(1);
+	Nt.GramSchmidtOrtho();
+	Nt.ConvertDenseToCSR(1);
+	Nt.MatTranspose();
 
+	// Output in N
+	Nt.MatTranspose( N );
+	N.ConvertCSRToDense(1);
+	N.GramSchmidtOrtho();
+	N.ConvertDenseToCSR(1);
+#endif
+
+	// output in RegMat
 	RegMat.MatMat(N, 'N', Nt);
 	RegMat.MatScale(K.getDiagonalMaximum());
 }
@@ -622,13 +646,26 @@ void Elasticity3D::makeStiffnessMatricesRegular()
 	for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
 		switch (_solverConfiguration.regularization) {
 		case REGULARIZATION::FIX_POINTS:
+		{
 			analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
 			analyticsRegMat(K[subdomain], RegMat[subdomain], _mesh.fixPoints(subdomain), _mesh.coordinates(), subdomain);
 			K[subdomain].RemoveLower();
 			RegMat[subdomain].RemoveLower();
+
+// Just for testing to get matrix kernel using dissection
+//			SparseSolverDissection diss;
+//			diss.ImportMatrix(K[subdomain]);
+//			diss.Factorization("Factorize K wo RegMat");
+//			eslocal kernel_dimension = diss.dslv->kern_dimension();
+//			SEQ_VECTOR <double> kernel_vectors(kernel_dimension * diss.rows, 0);
+//			diss.dslv->GetKernelVectors(&kernel_vectors.front());
+
 			K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
 			RegMat[subdomain].ConvertToCOO(1);
+			//RegMat[subdomain].ConvertToCOO(0);
+
 			break;
+		}
 		case REGULARIZATION::NULL_PIVOTS:
 			K[subdomain].RemoveLower();
 			algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain);

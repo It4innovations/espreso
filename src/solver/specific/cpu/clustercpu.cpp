@@ -1,3 +1,5 @@
+// Just for testing to get the matrix kernel using dissection
+// #include <Driver/DissectionSolver.hpp>
 
 #include "clustercpu.h"
 
@@ -82,6 +84,9 @@ void ClusterCPU::SetupKsolvers ( ) {
 
 		domains[d].enable_SP_refinement = true;
 
+	// Just for testing to get the matrix kernel using dissection
+//	domains[d].K.MatAddInPlace(domains[d]._RegMat, 'N', -1);
+
         // Import of Regularized matrix K into Kplus (Sparse Solver)
     	switch (configuration.Ksolver) {
 		case ESPRESO_KSOLVER::DIRECT_DP:
@@ -111,6 +116,12 @@ void ClusterCPU::SetupKsolvers ( ) {
             domains[d].Kplus.keep_factors = true;
             if (configuration.Ksolver != ESPRESO_KSOLVER::ITERATIVE) {
                 domains[d].Kplus.Factorization (ss.str());
+
+                // Just for testing to get the matrix kernel using dissection
+//                eslocal kernel_dimension = domains[d].Kplus.dslv->kern_dimension();
+//                SEQ_VECTOR <double> kernel_vectors(kernel_dimension * domains[d].Kplus.rows, 0);
+//                domains[d].Kplus.dslv->GetKernelVectors(&kernel_vectors.front());
+
             }
         } else {
             domains[d].Kplus.keep_factors = false;
