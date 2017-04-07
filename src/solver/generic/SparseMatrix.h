@@ -101,23 +101,22 @@ public:
 
 
 	//Members
+	eslocal  SaveMatrixInCOO(string filename);
+	eslocal  SaveMatrixBinInCOO(string filename);
+	eslocal  SaveMatrixBinInCSR(string filename);
 
 	//void LoadMatrixInCOO(string filename, char matrix_type_G_for_general_S_for_symmetric);
 	//void LoadMatrix(string filename, char matrix_type_G_for_general_S_for_symmetric);
-	eslocal  LoadMatrixBinInCOO(string filename, char matrix_type_G_for_general_S_for_symmetric);
-
-	eslocal  SaveMatrixBinInCOO(string filename);
-
 	eslocal  LoadMatrixBin(string filename, char matrix_type_G_for_general_S_for_symmetric);
 	eslocal  LoadMatrixBin(string filename, char matrix_type_G_for_general_S_for_symmetric, eslocal clearCOO_1_keep_COO_0 );
+	eslocal  LoadMatrixBinInCOO(string filename, char matrix_type_G_for_general_S_for_symmetric);
+	eslocal  LoadMatrixBinInCSR(string filename, char matrix_type_G_for_general_S_for_symmetric);
 
 	void ConvertToCSR();
 	void ConvertToCSR( eslocal clearCOO_1_keep_COO_0 );
 	void ConvertToCSRwithSort( eslocal clearCOO_1_keep_COO_0 );
 
 	void ConvertToCOO( eslocal clearCSR_1_keep_CSR_0 );
-
-
 
 	void ConvertCSRToDense( eslocal clearCSR_1_keep_CSR_0 );
 	void ConvertDenseToCSR( eslocal clearDense_1_keep_Dense_0 );

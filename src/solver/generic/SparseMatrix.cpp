@@ -559,16 +559,6 @@ void SparseMatrix::Clear() {
 	uplo = 0;
 	extern_lda = 0;
 
-	I_row_indices.clear();
-	J_col_indices.clear();
-	V_values.clear();
-
-	CSR_I_row_indices.clear();
-	CSR_J_col_indices.clear();
-	CSR_V_values.clear();
-
-	dense_values.clear();
-
 	SEQ_VECTOR<eslocal>().swap( I_row_indices );
 	SEQ_VECTOR<eslocal>().swap( J_col_indices );
 	SEQ_VECTOR<double>().swap( V_values );
@@ -586,9 +576,62 @@ void SparseMatrix::Clear() {
 	//d_x_in		   = NULL:
 }
 
+eslocal  SparseMatrix::SaveMatrixInCOO(string filename) {
+
+	std::ofstream out(filename.c_str());
+
+	if ( out.is_open() ) {
+		out << *this;
+		out.close();
+		return 0;
+	} else {
+		ESINFO(ERROR) << "Matrix file " << filename << " cannot be created ! ";
+		return -1;
+	}
+}
+
+eslocal  SparseMatrix::SaveMatrixBinInCSR(string filename) {
+
+	SparseMatrix s = *this;
+	if (s.J_col_indices.size()) {
+		s.ConvertToCSR(1);
+	}
+	if (s.dense_values.size()) {
+		s.ConvertDenseToCSR(1);
+	}
+
+	std::ofstream out (filename.c_str(), std::ios::out | std::ios::binary);
+
+	if ( out.is_open() ) {
+		//write parameters
+		out << "%% rows;cols;nnz;type" << endl;
+		out << s.rows << ";" << s.cols << ";" << s.nnz << ";" << s.type << endl;
+
+		out.write((char*)&s.CSR_I_row_indices[0], s.CSR_I_row_indices.size() * sizeof(eslocal));
+		out.write((char*)&s.CSR_J_col_indices[0], s.CSR_J_col_indices.size() * sizeof(eslocal));
+		out.write((char*)&s.CSR_V_values[0], s.CSR_V_values.size() * sizeof(double));
+
+		out.close();
+		return 0;
+
+	} else {
+		ESINFO(ERROR) << "Matrix file " << filename << " cannot be created ! ";
+		return -1;
+	}
+
+}
+
 eslocal  SparseMatrix::SaveMatrixBinInCOO(string filename) {
 
-	//ConvertToCSR(0);
+	// Prepared for fix
+//	SparseMatrix s = *this;
+//	if (s.CSR_J_col_indices.size()) {
+//		s.ConvertToCOO(1);
+//	}
+//	if (s.dense_values.size()) {
+//		s.ConvertDenseToCSR(1);
+//		s.ConvertToCOO(1);
+//	}
 
 	std::ofstream out (filename.c_str(), std::ios::out | std::ios::binary);
 
@@ -597,9 +640,16 @@ eslocal  SparseMatrix::SaveMatrixBinInCOO(string filename) {
 		out << "%% rows;cols;nnz;type" << endl;
 		out << rows << ";" << cols << ";" << nnz << ";" << type << endl;
 
+		// Is not COO but CSR! Left for possible compatibility issues
 		out.write((char*)&CSR_I_row_indices[0], CSR_I_row_indices.size() * sizeof(eslocal));
 		out.write((char*)&CSR_J_col_indices[0], CSR_J_col_indices.size() * sizeof(eslocal));
 		out.write((char*)&CSR_V_values[0], CSR_V_values.size() * sizeof(double));
+
+		// Prepared for fix
+//		out << s.rows << ";" << s.cols << ";" << s.nnz << ";" << s.type << endl;
+//		out.write((char*)&s.I_row_indices[0], s.I_row_indices.size() * sizeof(eslocal));
+//		out.write((char*)&s.J_col_indices[0], s.J_col_indices.size() * sizeof(eslocal));
+//		out.write((char*)&s.V_values[0], s.V_values.size() * sizeof(double));
 
 		out.close();
 		return 0;
@@ -623,6 +673,8 @@ eslocal SparseMatrix::LoadMatrixBinInCOO(string filename, char matrix_type_G_for
 		char delim = ';';
 		string line, field;
 
+		// Throw away the label "%% rows;cols;nnz;type"
+		getline(in,line);
 		// Get parameters
 		getline(in,line);
 		stringstream paramss(line);
@@ -645,6 +697,55 @@ eslocal SparseMatrix::LoadMatrixBinInCOO(string filename, char matrix_type_G_for
 
 		V_values.resize(nnz);
 		in.read((char*) &V_values[0], nnz*sizeof(double));
+
+		in.close();
+
+		return 0;
+
+	} else {
+
+		ESINFO(ERROR) << "Matrix file " << filename << " not found ! ";
+		return -1;
+
+	}
+}
+
+eslocal SparseMatrix::LoadMatrixBinInCSR(string filename, char matrix_type_G_for_general_S_for_symmetric) {
+
+	type = matrix_type_G_for_general_S_for_symmetric;
+	mtype = MatrixType::REAL_UNSYMMETRIC;
+
+	ifstream in (filename.c_str(), std::ios::binary);
+
+	if ( in.is_open() ) {
+
+		char delim = ';';
+		string line, field;
+
+		// Throw away the label "%% rows;cols;nnz;type"
+		getline(in,line);
+		// Get parameters
+		getline(in,line);
+		stringstream paramss(line);
+
+		getline(paramss,field,delim);
+		rows = atoi(field.c_str());		// get num of rows
+
+		getline(paramss,field,delim);
+		cols = atoi(field.c_str());		// get num of columns
+
+		getline(paramss,field,delim);
+		nnz  = atoi(field.c_str());		// get num of non zero elements
+
+		// Get data
+		CSR_I_row_indices.resize(rows+1);
+		in.read((char*) &CSR_I_row_indices[0], (rows+1)*sizeof(eslocal));
+
+		CSR_J_col_indices.resize(nnz);
+		in.read((char*) &CSR_J_col_indices[0], nnz*sizeof(eslocal));
+
+		CSR_V_values.resize(nnz);
+		in.read((char*) &CSR_V_values[0], nnz*sizeof(double));
 
 		in.close();
 
@@ -870,20 +971,13 @@ void SparseMatrix::ConvertToCOO( eslocal clearCSR_1_keep_CSR_0 ) {
 	mkl_dcsrcoo		   ( job,           &rows,       &CSR_V_values[0],  &CSR_J_col_indices[0],  &CSR_I_row_indices[0],  &nnz,           &V_values[0],  &I_row_indices[0],  &J_col_indices[0],  &info );
 
 	if (clearCSR_1_keep_CSR_0 == 1 ) {
-
-		CSR_V_values.clear();
-		CSR_I_row_indices.clear();
-		CSR_J_col_indices.clear();
-
 		SEQ_VECTOR<eslocal>().swap( CSR_I_row_indices );
 		SEQ_VECTOR<eslocal>().swap( CSR_J_col_indices );
 		SEQ_VECTOR<double>().swap( CSR_V_values );
-
 	}
 
 	// m	INTEGER. Number of rows of the matrix A.
 	// n	INTEGER. Number of columns of the matrix A.
-
 }
 
 
@@ -925,10 +1019,6 @@ void SparseMatrix::ConvertCSRToDense( eslocal clearCSR_1_keep_CSR_0 ) {
 		&info);
 
 	if (clearCSR_1_keep_CSR_0 == 1) {
-		CSR_I_row_indices.clear();
-		CSR_J_col_indices.clear();
-		CSR_V_values.clear();
-
 		SEQ_VECTOR<eslocal>().swap( CSR_I_row_indices );
 		SEQ_VECTOR<eslocal>().swap( CSR_J_col_indices );
 		SEQ_VECTOR<double>().swap( CSR_V_values );
@@ -1007,7 +1097,6 @@ void SparseMatrix::ConvertDenseToCSR( eslocal clearDense_1_keep_Dense_0 ){
 	nnz	= nnzmax; //POZOR  CSR_V_values.size();
 
 	if (clearDense_1_keep_Dense_0 == 1) {
-		dense_values.clear();
 		SEQ_VECTOR<double>().swap( dense_values );
 	}
 
