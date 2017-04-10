@@ -921,8 +921,227 @@ void SparseSolverDissection::Create_SC( espreso::SparseMatrix & SC_out, MKL_INT 
 void SparseSolverDissection::Create_SC_w_Mat( espreso::SparseMatrix & K_in, espreso::SparseMatrix & B_in, espreso::SparseMatrix & SC_out,
 								    bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {
 
-	printf("Method Create_SC_w_Mat is not implemented yet.\n");
-	exit(1);
+//	printf("Method Create_SC_w_Mat is not implemented yet.\n");
+//	exit(1);
+
+	//int msglvl = 0;
+
+	// *** Prepare matrix
+
+	espreso::SparseMatrix K_sc1;
+	espreso::SparseMatrix Sc_eye;
+	espreso::SparseMatrix K_b_tmp;
+
+	K_b_tmp = B_in;
+	K_b_tmp.MatTranspose();
+
+	Sc_eye.CreateEye(K_b_tmp.rows, 0.0, 0, K_b_tmp.cols);
+
+	K_sc1 = K_in;
+	K_sc1.MatTranspose();
+	K_sc1.MatAppend(K_b_tmp);
+	K_sc1.MatTranspose();
+	K_sc1.MatAppend(Sc_eye);
+
+
+	// *** END - Prepare matrix
+
+
+
+	/* Internal solver memory pointer pt, */
+	/* 32-bit: int pt[64]; 64-bit: long int pt[64] */
+	/* or void *pt[64] should be OK on both architectures */
+	void *pt[64];
+
+	/* Pardiso control parameters. */
+	MKL_INT 	iparm[64];
+	MKL_INT 	maxfct, mnum, phase, error;
+
+	/* Auxiliary variables. */
+	MKL_INT 	i;
+	double 		ddum;			/* Double dummy */
+	MKL_INT 	idum;			/* Integer dummy. */
+
+	/* -------------------------------------------------------------------- */
+	/* .. Setup Pardiso control parameters. */
+	/* -------------------------------------------------------------------- */
+	for (i = 0; i < 64; i++) {
+		iparm[i] = 0;
+	}
+
+	/* -------------------------------------------------------------------- */
+	/* .. Initialize the internal solver memory pointer. This is only */
+	/* necessary for the FIRST call of the PARDISO solver. */
+	/* -------------------------------------------------------------------- */
+	for (i = 0; i < 64; i++)
+		pt[i] = 0;
+
+	//MKL_INT 	mtype = 2;
+	switch (K_in.mtype) {
+	case espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+		mtype = 2;
+		break;
+	case espreso::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+		mtype = -2;
+		break;
+	case espreso::MatrixType::REAL_UNSYMMETRIC:
+		mtype = 11;
+		break;
+	}
+
+	/* Numbers of processors, value of OMP_NUM_THREADS */
+	if (isThreaded) {
+		/* Numbers of processors, value of OMP_NUM_THREADS */
+		MKL_INT num_procs = Esutils::getEnv<MKL_INT>("SOLVER_NUM_THREADS");
+	    iparm[2] = num_procs;
+	} else {
+		iparm[2] = 1;
+	}
+
+//	iparm[0] = 1;		/* No solver default */
+//	iparm[1] = 2;		/* Fill-in reordering from METIS */
+//	iparm[2]			/* Numbers of processors, value of OMP_NUM_THREADS */
+//	iparm[2] = 8;		/* Not used in MKL PARDISO */
+//	iparm[3] = 0;		/* No iterative-direct algorithm */
+//	iparm[4] = 0;		/* No user fill-in reducing permutation */
+//	iparm[5] = 0;		/* Write solution into x */
+//	iparm[6] = 0;		/* Not in use */
+//	iparm[7] = 0;		/* Max numbers of iterative refinement steps */
+//	iparm[8] = 0;		/* Not in use */
+//	iparm[9] = 13;		/* Perturb the pivot elements with 1E-13 */
+//	iparm[10] = 0;		/* Use nonsymmetric permutation and scaling MPS */
+//	iparm[11] = 0;		/* Not in use */
+//	iparm[12] = 0;		/* Maximum weighted matching algorithm is switched-off */
+//						/* (default for symmetric). Try iparm[12] = 1 in case of inappropriate accuracy */
+//	iparm[13] = 0;		/* Output: Number of perturbed pivots */
+//	iparm[14] = 0;		/* Not in use */
+//	iparm[15] = 0;		/* Not in use */
+//	iparm[16] = 0;		/* Not in use */
+//	iparm[17] = -1;		/* Output: Number of nonzeros in the factor LU */
+//	iparm[18] = -1;		/* Output: Mflops for LU factorization */
+//	iparm[19] = 0;		/* Output: Numbers of CG Iterations */
+//
+//	maxfct = 1;			/* Maximum number of numerical factorizations. */
+//	mnum   = 1;			/* Which factorization to use. */
+//	//msglvl = 0;			/* Supress printing statistical information */
+//	error  = 0;			/* Initialize error flag */
+
+
+
+
+    iparm[1-1] = 1;         /* No solver default */
+    iparm[2-1] = 2;         /* Fill-in reordering from METIS */
+    iparm[10-1] = 8; //13   /* Perturb the pivot elements with 1E-13 */
+    iparm[11-1] = 0;        /* Use nonsymmetric permutation and scaling MPS */
+    iparm[13-1] = 0;        /* Maximum weighted matching algorithm is switched-off (default for symmetric). Try iparm[12] = 1 in case of inappropriate accuracy */
+    iparm[14-1] = 0;        /* Output: Number of perturbed pivots */
+    iparm[18-1] = -1;       /* Output: Number of nonzeros in the factor LU */
+    iparm[19-1] = -1;       /* Output: Mflops for LU factorization */
+    iparm[36-1] = 1;        /* Use Schur complement */
+
+    maxfct = 1;           /* Maximum number of numerical factorizations. */
+    mnum = 1;             /* Which factorization to use. */
+    //msglvl = 1;           /* Print statistical information in file */
+    error = 0;            /* Initialize error flag */
+
+    /* -------------------------------------------------------------------- */
+    /* .. Reordering and Symbolic Factorization. This step also allocates   */
+    /* all memory that is necessary for the factorization.                  */
+    /* -------------------------------------------------------------------- */
+
+    std::vector <MKL_INT> perm (K_sc1.rows,0);
+    for (MKL_INT i = K_in.rows; i < K_sc1.rows; i++)
+    	perm[i] = 1;
+
+    MKL_INT nrhs = 0;
+
+//    phase = 11;
+//    PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+//        		&K_sc1.rows,
+//				&K_sc1.CSR_V_values[0], &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0],
+//				&perm[0], &nrhs, iparm, &msglvl, &ddum, &ddum, &error);
+//
+//    if ( error != 0 )
+//    {
+//    	printf ("\nERROR during symbolic factorization: %d", error);
+//    	exit(1);
+//    }
+
+
+    /* -------------------------------------------------------------------- */
+    /* .. Numerical factorization. */
+    /* -------------------------------------------------------------------- */
+	SC_out.dense_values.resize(K_b_tmp.rows * K_b_tmp.rows);
+    phase = 12;
+    PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+			&K_sc1.rows,
+			&K_sc1.CSR_V_values[0], &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0],
+			&perm[0], &nrhs,
+			iparm, &msglvl, &ddum, &SC_out.dense_values[0], &error);
+
+    for (size_t i = 0; i < SC_out.dense_values.size(); i++) {
+    	SC_out.dense_values[i] = (-1.0)*SC_out.dense_values[i];
+    }
+
+    if ( error != 0 )
+	{
+		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
+		osK << K_sc1;
+		osK.close();
+
+		ESINFO(ERROR) << "ERROR during numerical factorization: " << error;
+		exit (2);
+	} else {
+		initialized = true;
+	}
+
+	/* -------------------------------------------------------------------- */
+	/* .. Termination and release of memory. */
+	/* -------------------------------------------------------------------- */
+	phase = -1;           /* Release internal memory. */
+	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
+			&K_sc1.rows, &ddum, &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0], &idum, &nrhs,
+			 iparm, &msglvl, &ddum, &ddum, &error);
+
+	initialized = false;
+
+    /* -------------------------------------------------------------------- */
+    /* ..  allocate memory for the Schur-complement and copy it there.      */
+    /* -------------------------------------------------------------------- */
+
+    SC_out.cols = K_b_tmp.rows;
+    SC_out.rows = K_b_tmp.rows;
+    SC_out.type = 'G';
+
+//    SC_out.ConvertDenseToCSR(1);
+
+//    if (msglvl == 1)
+//    	SpyText(SC_out);
+
+    if (generate_symmetric_sc_1_generate_general_sc_0 == 1) {
+    	//SC_out.RemoveLower();
+    	SC_out.RemoveLowerDense();
+    	SC_out.type = 'S';
+    }
+
+
+//    // Finalize shape of the SC
+//    if (generate_symmetric_sc_1_generate_general_sc_0 == 0) {
+//
+//		SC_out.type = 'G';
+//
+//		SparseMatrix SC_tmp;
+//		SC_tmp = SC_out;
+//		SC_tmp.SetDiagonalOfSymmetricMatrix(0.0);
+//		SC_tmp.MatTranspose();
+//
+//		SC_out.MatAddInPlace(SC_tmp,'N',1.0);
+//
+//    }
+//
+//	SC_out.MatScale(-1.0);
+//	//SC_out.ConvertCSRToDense(0);
+
 }
 
 void SparseSolverDissection::Create_non_sym_SC_w_Mat( espreso::SparseMatrix & K_in, espreso::SparseMatrix & B1_in, espreso::SparseMatrix & B0_in, espreso::SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {
