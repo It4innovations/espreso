@@ -1,0 +1,29 @@
+sudo: false
+
+language: cpp
+comiler:
+ - gcc
+ - clang
+
+addons:
+ apt:
+  packages:
+   - cmake
+   - doxygen
+   - graphviz
+
+env:
+ global:
+   secure: "WmR/YKPiHUgHJyOjq1Et+5wlGKobareTj2USp5erIH5/iQaNvky/3g//S5DulzIzegCSBiPonkoHryELlWSi0Aeykd1bkElrxQNqQWs1soCnQ259hq585EhDshNXa6V9BZg6NMlBG6qZEzyr0rwvqdF46s97DeGCepURmU+KBto="
+
+branches:
+ except:
+  - gh-pages 
+
+script:
+ - mkdir build && cd build && cmake ../ && make
+ - make test
+
+after_success:
+ - cd ..
+ - cd doc && ./gh_pages.sh

@@ -1,0 +1,7 @@
+# Eclipse stuff
+.cproject
+.project
+.settings
+
+doc/html
+build
