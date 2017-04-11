@@ -21,9 +21,10 @@
 #include "../../mesh/elements/element.h"
 #include "../../output/resultstorelist.h"
 
-#include "../../output/resultstore/vtklegacy.h"
-#include "../../output/resultstore/vtkxmlascii.h"
-#include "../../output/resultstore/vtkxmlbinary.h"
+//#include "../../output/resultstore/vtklegacy.h"
+//#include "../../output/resultstore/vtkxmlascii.h"
+//#include "../../output/resultstore/vtkxmlbinary.h"
+#include "../../output/resultstore/asyncstore.h"
 #include "../../output/resultstore/catalyst.h"
 #include "../../output/monitoring/monitoring.h"
 
@@ -32,6 +33,18 @@ namespace espreso {
 Factory::Factory(const GlobalConfiguration &configuration)
 : store(NULL), instance(NULL), mesh(new Mesh()), _newAssembler(false)
 {
+	if (configuration.output.results || configuration.output.settings)
+		// Create the async store before splitting the ranks with the dispatcher
+		_asyncStore = new output::AsyncStore(configuration.output);
+	else
+		_asyncStore = 0L;
+
+	_dispatcher.init();
+	_isWorker = _dispatcher.dispatch();
+
+	if (!_isWorker)
+		return;
+
 	input::Loader::load(configuration, *mesh, configuration.env.MPIrank, configuration.env.MPIsize);
 
 	if (configuration.physics == PHYSICS::SHALLOW_WATER_2D) {
@@ -57,13 +70,10 @@ Factory::Factory(const GlobalConfiguration &configuration)
 	if (configuration.output.results || configuration.output.settings) {
 		switch (configuration.output.format) {
 		case OUTPUT_FORMAT::VTK_LEGACY:
-			store->add(new output::VTKLegacy(configuration.output, mesh, "results"));
-			break;
 		case OUTPUT_FORMAT::VTK_XML_ASCII:
-			store->add(new output::VTKXMLASCII(configuration.output, mesh, "results"));
-			break;
 		case OUTPUT_FORMAT::VTK_XML_BINARY:
-			store->add(new output::VTKXMLBinary(configuration.output, mesh, "results"));
+			_asyncStore->init(mesh, "results");
+			store->add(_asyncStore);
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: add OUTPUT_FORMAT to factory.";
@@ -129,6 +139,9 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 void Factory::meshPreprocessing(const OutputConfiguration &configuration)
 {
+	if (!_isWorker)
+		return;
+
 	for (size_t i = 0; i < _physics.size(); i++) {
 
 		switch (_linearSolvers.front()->configuration.method) {
@@ -166,8 +179,17 @@ void Factory::meshPreprocessing(const OutputConfiguration &configuration)
 void Factory::finalize()
 {
 	// Detele store while finalizing because of Catalyst
-	store->finalize();
+	if (store) {
+		store->finalize();
+	}
+
+	_dispatcher.finalize();
 	delete store;
+
+	if (!store) {
+		// No store was setup, we need to delete the _asyncStore by ourself
+		delete _asyncStore;
+	}
 }
 
 Factory::~Factory()
@@ -187,6 +209,9 @@ Factory::~Factory()
 
 void Factory::solve()
 {
+	if (!_isWorker)
+		return;
+
 	if (!_newAssembler) {
 		instance->init();
 		instance->solve(_solution);
@@ -206,6 +231,9 @@ void Factory::solve()
 
 void Factory::check(const Results &configuration)
 {
+	if (!_isWorker)
+		return;
+
 	double epsilon = 1e-2;
 
 	auto norm = [&] () {
@@ -258,6 +286,9 @@ void Factory::check(const Results &configuration)
 
 double Factory::norm() const
 {
+	if (!_isWorker)
+		return 0.0;
+
 	double n = 0, sum = 0;
 	for (size_t i = 0; i < _solution.size(); i++) {
 		for (size_t j = 0; j < _solution[i].size(); j++) {

@@ -3,6 +3,7 @@
 #define APP_FACTORY_FACTORY_H_
 
 #include <vector>
+#include "async/Dispatcher.h"
 
 namespace espreso {
 
@@ -10,7 +11,10 @@ struct SolverBase;
 struct Physics;
 struct Instance;
 class LinearSolver;
-namespace output { class ResultStoreList; }
+namespace output {
+class AsyncStore;
+class ResultStoreList;
+}
 
 
 struct GlobalConfiguration;
@@ -48,6 +52,19 @@ private:
 	bool _newAssembler;
 
 	std::vector<std::vector<double> > _solution;
+
+	/**
+	 * We always create the async store (even if the output is not enabled).
+	 * This is a drawback of the ASYNC library but required to get synchronization
+	 * right.
+	 */
+	output::AsyncStore* _asyncStore;
+
+	/** The dispatcher for the I/O ranks */
+	async::Dispatcher _dispatcher;
+
+	/** False is this rank is only used for I/O */
+	bool _isWorker;
 };
 
 }
