@@ -143,6 +143,255 @@ void LinearSolver::setup_LocalSchurComplement() {
 
 }
 
+void LinearSolver::createCMat() {
+
+
+	//int d = 0;
+
+
+	cluster->SetupPreconditioner();
+
+	SEQ_VECTOR<SparseMatrix> Ml_per_dom (cluster->domains.size());
+	SEQ_VECTOR<SparseMatrix> Ml_fin_pd  (cluster->domains.size());
+
+	SEQ_VECTOR<SparseMatrix> Bdec   (cluster->domains.size());
+	SEQ_VECTOR<SparseMatrix> Btdec  (cluster->domains.size());
+
+
+
+	for (size_t d = 0; d < cluster->domains.size(); d++) {
+
+
+		cluster->domains[d].B1 = instance->B1[d];
+
+		SparseMatrix Prec = cluster->domains[d].Prec;
+
+		Prec.ConvertDenseToCSR(1);
+
+
+		SparseMatrix Bt = cluster->domains[d].B1t_DirPr;
+		SparseMatrix B;
+		Bt.MatTranspose(B);
+
+		Bdec[d] = B;
+		Bdec[d].ConvertToCOO(1);
+
+		Btdec[d] = Bt;
+		Btdec[d].ConvertToCOO(1);
+
+		//std::cout << Bt.SpyText();
+
+		SparseMatrix Tmp  = Prec;
+
+		//std::cout << Tmp.SpyText();
+
+		SparseMatrix Tmp2 = Tmp;
+		Tmp2.SetDiagonalOfSymmetricMatrix(0.0);
+		Tmp2.MatTranspose();
+		//std::cout << Tmp2.SpyText();
+
+
+		Tmp.MatAddInPlace(Tmp2,'N',1.0);
+		//std::cout << Tmp.SpyText();
+
+		SparseMatrix TmpBt, Ml;
+
+		TmpBt.MatMat(Tmp,'N',Bt);
+		//std::cout << TmpBt.SpyText();
+
+		Ml.MatMat(B,'N',TmpBt);
+		//std::cout << Ml.SpyText();
+
+
+		//Decompress matrix
+		Ml.ConvertToCOO(1);
+
+		eslocal dl_size = cluster->my_lamdas_indices.size();
+		Ml.rows = dl_size;
+		Ml.cols = dl_size;
+
+
+		for (eslocal i = 0; i < Ml.I_row_indices.size(); i++) {
+			eslocal I 		= Ml.I_row_indices[i] - 1;
+			eslocal J 		= Ml.J_col_indices[i] - 1;
+			eslocal I_dec   = cluster->domains[d].lambda_map_sub_local[I] + 1;
+			eslocal J_dec   = cluster->domains[d].lambda_map_sub_local[J] + 1;
+			Ml.I_row_indices[i] = I_dec;
+			Ml.J_col_indices[i] = J_dec;
+
+		}
+
+		Ml.ConvertToCSR(1);
+		Ml_per_dom[d].swap(Ml);
+
+		Bdec[d].rows = dl_size;
+		Btdec[d].cols = dl_size;
+		for (eslocal i = 0; i < Bdec[d].I_row_indices.size(); i++) {
+			eslocal I     = Bdec[d].I_row_indices[i] - 1;
+			eslocal I_dec = cluster->domains[d].lambda_map_sub_local[I] + 1;
+
+			Bdec[d].I_row_indices[i]  = I_dec;
+			Btdec[d].J_col_indices[i] = I_dec;
+		}
+		Bdec[d].ConvertToCSR(1);
+		Btdec[d].ConvertToCSR(1);
+
+	}
+
+	//TODO: can be done as log N
+	SparseMatrix Ml_per_cluster;
+	Ml_per_cluster = Ml_per_dom[0];
+	for (size_t d = 1; d < cluster->domains.size(); d++) {
+		Ml_per_cluster.MatAddInPlace(Ml_per_dom[d],'N',1.0);
+	}
+
+	std::cout << Ml_per_cluster.SpyText();
+
+	for (size_t d = 0; d < cluster->domains.size(); d++) {
+		std::cout <<Bdec[d].SpyText();
+		std::cout <<Btdec[d].SpyText();
+
+		SparseMatrix tmp;
+		tmp.MatMat(Ml_per_cluster,'N',Bdec[d]);
+		Ml_fin_pd[d].MatMat(Btdec[d],'N',tmp);
+
+
+		std::cout << Ml_fin_pd[d].SpyText();
+
+
+
+		SparseMatrix Prec = cluster->domains[d].Prec;
+		Prec.ConvertDenseToCSR(1);
+		SparseMatrix Tmp2 = Prec;
+		Tmp2.SetDiagonalOfSymmetricMatrix(0.0);
+		Tmp2.MatTranspose();
+		Prec.MatAddInPlace(Tmp2,'N',1.0);
+
+
+
+		SparseMatrix A = Prec;
+		A.type = 'G';
+		SparseMatrix B = Ml_fin_pd[d];
+		B.type = 'G';
+
+		A.ConvertCSRToDense(0);
+		B.ConvertCSRToDense(0);
+
+		SEQ_VECTOR <double> alphar(A.rows);
+		SEQ_VECTOR <double> alphai(A.rows);
+		SEQ_VECTOR <double> beta(A.rows);
+		SEQ_VECTOR <double> vl(A.rows * A.rows);
+		SEQ_VECTOR <double> vr(A.rows * A.rows);
+
+		SEQ_VECTOR <double> w(A.rows);
+
+		eslocal n = A.rows;
+
+//		// lapack_int
+//		LAPACKE_dggev(
+//				LAPACK_COL_MAJOR, 	//int matrix_layout,
+//				'V', 				// char jobvl, - If jobvl = 'V', the    left      generalized eigenvectors are computed.
+//				'V', 				// char jobvr, - If jobvr = 'V', the    right     generalized eigenvectors are computed.
+//				n, 					// lapack_int n,
+//				&A.dense_values[0], // double* a,
+//				n, 					// lapack_int lda,
+//				&B.dense_values[0], // double* b,
+//				n, 					// lapack_int ldb,
+//				&alphar[0], 		// double* alphar,
+//				&alphai[0], 		// double* alphai,
+//				&beta[0],			// double* beta,
+//				&vl[0], 			// double* vl,
+//				n, 					// lapack_int ldvl,
+//				&vr[0], 			// double* vr,
+//				n);					// lapack_int ldvr );
+
+
+
+
+
+		int info = 0;
+		info = LAPACKE_dsyev (
+				LAPACK_COL_MAJOR, //int matrix_layout,
+				'N', // char jobz,
+				'U', // char uplo,
+				n, // lapack_int n,
+				&A.dense_values[0], //float* a,
+				n, //lapack_int lda,
+				&w[0]); //float* w);
+
+
+		info = 0;
+		info = LAPACKE_dsyev (
+				LAPACK_COL_MAJOR, //int matrix_layout,
+				'N', // char jobz,
+				'U', // char uplo,
+				n, // lapack_int n,
+				&B.dense_values[0], //float* a,
+				n, //lapack_int lda,
+				&w[0]); //float* w);
+
+
+		info = 0;
+		info = LAPACKE_dsygv (
+				LAPACK_COL_MAJOR, //int matrix_layout,
+				1, //lapack_int itype - itype = 1, the problem type is A*x = lambda*B*x;
+				'V', //char jobz, - If jobz = 'V', then compute eigenvalues and eigenvectors.
+				'U', // char uplo,
+				n, // lapack_int n,
+				&A.dense_values[0], // float* a,
+				n, // lapack_int lda,
+				&B.dense_values[0], // float* b,
+				n, // lapack_int ldb,
+				&w[0]); //float* w);
+
+
+		int xxx = 0;
+
+//		std::copy(vl.begin(), vl.end(), std::ostream_iterator<char>(std::cout, " "));
+
+
+
+	}
+
+	exit(0);
+
+
+
+	SEQ_VECTOR<double> y_out, x_in;
+
+	#pragma omp parallel for
+	for (size_t d = 0; d < cluster->domains.size(); d++) {
+
+		SEQ_VECTOR < double > x_in_tmp ( cluster->domains[d].B1_comp_dom.rows, 0.0 );
+
+		for (size_t i = 0; i < cluster->domains[d].lambda_map_sub_local.size(); i++)
+			x_in_tmp[i] = x_in[ cluster->domains[d].lambda_map_sub_local[i]] * cluster->domains[d].B1_scale_vec[i]; // includes B1 scaling
+
+		cluster->domains[d].B1t_DirPr.MatVec (x_in_tmp, cluster->x_prim_cluster1[d], 'N');
+		//cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+		cluster->domains[d].Prec.DenseMatVec(cluster->x_prim_cluster1[d], cluster->x_prim_cluster2[d],'N');
+
+
+
+	}
+
+
+
+	std::fill( cluster->compressed_tmp.begin(), cluster->compressed_tmp.end(), 0.0);
+	SEQ_VECTOR < double > y_out_tmp;
+	for (size_t d = 0; d < cluster->domains.size(); d++) {
+		y_out_tmp.resize( cluster->domains[d].B1_comp_dom.rows );
+
+
+		cluster->domains[d].B1t_DirPr.MatVec (cluster->x_prim_cluster2[d], y_out_tmp, 'T', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+
+	}
+
+	//solver->All_Reduce_lambdas_compB(cluster, cluster->compressed_tmp, y_out);
+
+
+}
+
 void LinearSolver::setup_Preconditioner() {
 // Load Matrix K, Regularization
 		TimeEvent timeRegKproc(string("Solver - Setup preconditioners")); timeRegKproc.start();
@@ -472,6 +721,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 
 	}
 
+
 	//mkl_cbwr_set(MKL_CBWR_COMPATIBLE);
 
 	// Overall Linear Solver Time measurement structure
@@ -481,6 +731,9 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 
 	// *** Initialize the Cluster and Solver structures
 	setup_InitClusterAndSolver();
+
+
+
 
 
 	// *** Setup B0 matrix
@@ -522,6 +775,13 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 	if (cluster->USE_HFETI == 1 && configuration.regularization == REGULARIZATION::NULL_PIVOTS) {
 		setup_CreateG_GGt_CompressG();
 	}
+
+
+	createCMat();
+
+	exit(0);
+
+
 
 
 	// Cleanup of unnecessary objects
