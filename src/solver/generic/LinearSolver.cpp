@@ -17,7 +17,10 @@ LinearSolver::LinearSolver(Instance *instance, const ESPRESOSolver &configuratio
   configuration(configuration),
   physics(NULL),
   constraints(NULL),
-  timeEvalMain("ESPRESO Solver Overal Timing") {
+  timeEvalMain("ESPRESO Solver Overal Timing"),
+  cluster(NULL),
+  solver(NULL)
+{
 }
 
 
@@ -41,6 +44,12 @@ LinearSolver::~LinearSolver() {
 // make full initialization of solver
 void LinearSolver::init()
 {
+	if (cluster != NULL) {
+		delete cluster;
+	}
+	if (solver != NULL) {
+		delete solver;
+	}
 	cluster = new Cluster(configuration, instance);
 	solver  = new IterSolver(configuration);
 	init(instance->neighbours);
