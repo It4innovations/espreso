@@ -4041,6 +4041,52 @@ for (size_t i = 0; i < x_in.size(); i++)
 
 }
 
+
+
+void IterSolverBase::Projector_l_inv_compG ( TimeEval & time_eval, Cluster & cluster, SparseMatrix & X_in, SparseMatrix & Y_out ) {
+
+	Y_out.Clear();
+	Y_out.type = 'G';
+	Y_out.rows = X_in.rows;
+	Y_out.cols = X_in.cols;
+	Y_out.nnz  = X_in.dense_values.size();
+
+	for (int i = 0; i < X_in.cols; i++) {
+
+		std::vector<double> tmp_pr_in  (X_in.dense_values.begin() + i*X_in.rows,  X_in.dense_values.begin() + (i+1)*X_in.rows);
+		std::vector<double> tmp_pr_out (tmp_pr_in.size(), 0 );
+
+		Projector_l_inv_compG(timeEvalProj, cluster, tmp_pr_in, tmp_pr_out, 0  );
+
+		Y_out.dense_values.insert(Y_out.dense_values.end(), tmp_pr_out.begin(), tmp_pr_out.end());
+	}
+
+}
+
+
+void IterSolverBase::apply_A_l_Mat( TimeEval & time_eval, Cluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out) {
+
+
+	Y_out.Clear();
+	Y_out.type = 'G';
+	Y_out.rows = X_in.rows;
+	Y_out.cols = X_in.cols;
+	Y_out.nnz  = X_in.dense_values.size();
+
+	for (int i = 0; i < X_in.cols; i++) {
+
+		std::vector<double> tmp_pr_in  (X_in.dense_values.begin() + i*X_in.rows,  X_in.dense_values.begin() + (i+1)*X_in.rows);
+		std::vector<double> tmp_pr_out (tmp_pr_in.size(), 0 );
+
+		apply_A_l_comp_dom_B(timeEvalProj, cluster, tmp_pr_in, tmp_pr_out);
+
+		Y_out.dense_values.insert(Y_out.dense_values.end(), tmp_pr_out.begin(), tmp_pr_out.end());
+	}
+
+
+
+}
+
 void IterSolverBase::Projector_l_inv_compG (TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
 {
 
@@ -4096,12 +4142,8 @@ void IterSolverBase::Projector_l_inv_compG (TimeEval & time_eval, Cluster & clus
 
 	time_eval.timeEvents[0].end();
 
-	//TODO: Pocitam s tim, ze kazdy cluster ma stejny ocet domen
 	//TODO: Udelat poradne
 	time_eval.timeEvents[1].start();
-	//	MPI_Allgather(&d_local[0], d_local_size, MPI_DOUBLE,
-	//		&d_mpi[0], d_local_size, MPI_DOUBLE,
-	//		MPI_COMM_WORLD);
 
 	SEQ_VECTOR<int> ker_size_per_clusters(cluster.NUMBER_OF_CLUSTERS, 0);
 	MPI_Allgather(&d_local_size, 1, MPI_INT, &ker_size_per_clusters[0], 1, MPI_INT, MPI_COMM_WORLD );
@@ -4117,35 +4159,30 @@ void IterSolverBase::Projector_l_inv_compG (TimeEval & time_eval, Cluster & clus
 
 	time_eval.timeEvents[1].end();
 
-	time_eval.timeEvents[2].start();
+	 time_eval.timeEvents[2].start();
 	if (cluster.GGtinvM.cols == 0)
 		;
 	else
 		cluster.GGtinvM.DenseMatVec(d_mpi, d_local, 'T');
+	 time_eval.timeEvents[2].end();
 
-	time_eval.timeEvents[2].end();
-
-	time_eval.timeEvents[3].start();
-	//MPI_Scatter( &d_mpi[0],      d_local_size, MPI_DOUBLE,
-	//	&d_local[0], d_local_size, MPI_DOUBLE,
-	//	mpi_root, MPI_COMM_WORLD);
+	time_eval.timeEvents[3].start(); 	//MPI_Scatter( &d_mpi[0],      d_local_size, MPI_DOUBLE, 	//	&d_local[0], d_local_size, MPI_DOUBLE, 	//	mpi_root, MPI_COMM_WORLD);
 	time_eval.timeEvents[3].end();
 
 	if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 2 || output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 3) {
 		y_out = d_local; // for RBM amplitudes calculation
 	} else {
 
-		time_eval.timeEvents[4].start();
-		//cluster.G1t_comp.MatVec(d_local, cluster.compressed_tmp, 'N'); SUPER POZOR
+		 time_eval.timeEvents[4].start();
 		if (cluster.G1_comp.nnz > 0)
 			cluster.G1_comp.MatVec(d_local, cluster.compressed_tmp, 'T');
 		else
 			std::fill (cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
-		time_eval.timeEvents[4].end();
+		 time_eval.timeEvents[4].end();
 
-		time_eval.timeEvents[5].start();
+		 time_eval.timeEvents[5].start();
 		All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, y_out);
-		time_eval.timeEvents[5].end();
+		 time_eval.timeEvents[5].end();
 
 		if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 0) {
 			#pragma omp parallel for
@@ -4154,8 +4191,6 @@ void IterSolverBase::Projector_l_inv_compG (TimeEval & time_eval, Cluster & clus
 		}
 
 	}
-
-	//	}
 
 	time_eval.totalTime.end();
 }

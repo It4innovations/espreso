@@ -1187,6 +1187,93 @@ void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> &
 }
 
 
+void SparseMatrix::DenseMatMat(SparseMatrix & A_in, char trans_A, SparseMatrix & B_in, char trans_B) {
+
+
+//	C := alpha*op(A)*op(B) + beta*C,
+//	where:
+//
+//	op(X) is one of op(X) = X, or op(X) = XT, or op(X) = XH,
+//
+//	alpha and beta are scalars,
+//
+//	A, B and C are matrices:
+//
+//	op(A) is an m-by-k matrix,
+//
+//	op(B) is a k-by-n matrix,
+//
+//	C is an m-by-n matrix.
+
+	CBLAS_TRANSPOSE tA, tB;
+	CBLAS_LAYOUT Layout = CblasColMajor;
+
+	double alpha = 1.0;
+	double beta  = 0.0;
+
+	eslocal lda, ldb, ldc;
+	eslocal m, n, k;
+
+	//    A is an m-by-k matrix,
+	//    B is a  k-by-n matrix,
+	//    C is an m-by-n matrix.
+
+	m = A_in.rows;
+	k = A_in.cols;
+	n = B_in.cols;
+
+	if (A_in.cols != B_in.rows )
+		std::cout << "GEMM error - matrix dimension mismatch" << std::endl;
+
+	this->Clear();
+
+	this->rows =  m;
+	this->cols =  n;
+	this->type = 'G';
+
+	ldc = m;
+
+	this->dense_values.resize(ldc*n);
+
+
+	if (trans_A == 'T') {
+		tA  = CblasTrans;
+		lda = k;
+	} else {
+		tA  = CblasNoTrans;
+		lda = m;
+	}
+
+	if (trans_B == 'T') {
+		tB  = CblasTrans;
+		ldb = n;
+	} else {
+		tB  = CblasNoTrans;
+		ldb = k;
+	}
+
+	cblas_dgemm (
+			Layout, 	//	const CBLAS_LAYOUT Layout,
+			tA, 		//	const CBLAS_TRANSPOSE transa,
+			tB, 		//	const CBLAS_TRANSPOSE transb,
+			m, 			// 	const MKL_INT m,
+			n, 			//	const MKL_INT n,
+			k, 			//	const MKL_INT k,
+			alpha,		// 	const float alpha,
+			&A_in.dense_values[0], 	// const float *a,
+			lda, 		// 	const MKL_INT lda,
+			&B_in.dense_values[0], // const float *b,
+			ldb,		// 	const MKL_INT ldb,
+			beta, 		//	const float beta,
+			&this->dense_values[0], // float *c,
+			ldc			//	const MKL_INT ldc
+			);
+
+
+
+}
+
+
 void SparseMatrix::DenseMatVecCUDA_w_Copy(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index) {
 #ifdef CUDA
 
