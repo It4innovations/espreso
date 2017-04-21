@@ -2369,6 +2369,7 @@ for (size_t d = 0; d < domains.size(); d++) {				// MFETI
 //		domains[d].up0 = x_prim_cluster[d];
 //	}
 
+	vec_b_compressed.clear();
 	vec_b_compressed.resize(my_lamdas_indices.size(), 0.0);
 
 	SEQ_VECTOR < double > y_out_tmp (domains[0].B1_comp_dom.rows);
