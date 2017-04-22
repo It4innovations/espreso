@@ -545,9 +545,14 @@ void LaplaceSteklovPoincare::makeStiffnessMatricesRegular()
 				if (singularK[subdomain]) {
 					analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain, matrixSize[subdomain]);
 					analyticsRegMat(K[subdomain], RegMat[subdomain]);
+
+					//TODO: lubos note - BEM4I - remove lower
 					K[subdomain].RemoveLower();
 					RegMat[subdomain].RemoveLower();
 					K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
+
+					//K[subdomain].ConvertCSRToDense(0);
+
 					RegMat[subdomain].ConvertToCOO(1);
 				} else {
 					R1[subdomain].rows = 0;
@@ -658,6 +663,8 @@ void LaplaceSteklovPoincare::composeSubdomain(size_t subdomain)
 	K[subdomain].nnz  = _boundaryIndices[subdomain].size() * _boundaryIndices[subdomain].size();
 	K[subdomain].type = 'G';
 	K[subdomain].dense_values.resize(K[subdomain].nnz);
+	K[subdomain].mtype = espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+
 	bem4i::getLaplaceSteklovPoincare(
 			K[subdomain].dense_values.data(),
 			(eslocal)_boundaryIndices[subdomain].size(),
@@ -666,8 +673,11 @@ void LaplaceSteklovPoincare::composeSubdomain(size_t subdomain)
 			elements.data(),
 			3, 3, 0);
 
+	//TODO: BEM4I Lubos note
 	K[subdomain].ConvertDenseToCSR(1);
 	K[subdomain].MatTranspose();
+
+
 
 #endif
 

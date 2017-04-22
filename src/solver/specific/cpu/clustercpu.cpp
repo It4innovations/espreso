@@ -120,10 +120,10 @@ void ClusterCPU::SetupKsolvers ( ) {
         //TODO: Hot Fix - needs to be done better
         if ( !SYMMETRIC_SYSTEM ) {
             // 11 = Real and unsymmetric matrix
-            domains[d].Kplus.mtype = 11;
+            domains[d].Kplus.mtype = 11; //espreso::MatrixType::REAL_UNSYMMETRIC; //11;
         } else {
             // 2 = Real and symmetric positive definite
-            domains[d].Kplus.mtype = 2;
+            domains[d].Kplus.mtype = 2; //espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE; //2;
         }
         //TODO: else stokes = -2 = Real and symmetric indefinite
 
