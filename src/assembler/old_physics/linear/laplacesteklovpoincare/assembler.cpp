@@ -551,7 +551,7 @@ void LaplaceSteklovPoincare::makeStiffnessMatricesRegular()
 					RegMat[subdomain].RemoveLower();
 					K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
 
-					//K[subdomain].ConvertCSRToDense(0);
+					K[subdomain].ConvertCSRToDense(1);
 
 					RegMat[subdomain].ConvertToCOO(1);
 				} else {

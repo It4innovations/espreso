@@ -184,7 +184,14 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 		dual_solution_out = cluster.x_prim_cluster1;
 
 		for (size_t d = 0; d < cluster.domains.size(); d++) {
+
+
+#ifdef ESBEM
+			cluster.domains[d].K.DenseMatVec(primal_solution_out[d], cluster.x_prim_cluster2[d],'N');
+#else
 			cluster.domains[d].K.MatVec(primal_solution_out[d], cluster.x_prim_cluster2[d],'N');
+#endif
+
 			if (cluster.domains[d]._RegMat.nnz > 0) {
 				cluster.domains[d]._RegMat.MatVecCOO(primal_solution_out[d], cluster.x_prim_cluster2[d],'N', 1.0, -1.0); // K*u
 			}

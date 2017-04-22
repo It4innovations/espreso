@@ -155,9 +155,11 @@ public:
 
 //	SparseSolverAcc Kplus;
 
+#ifdef ESBEM
+	DenseSolverCPU Kplus;
+#else
 	SparseSolverCPU Kplus;
-	//DenseSolverCPU Kplus;
-
+#endif
 
 	SparseSolverCPU KplusF;
 	SEQ_VECTOR <double> vec_c;

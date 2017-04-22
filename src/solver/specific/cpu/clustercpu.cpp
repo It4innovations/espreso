@@ -118,6 +118,16 @@ void ClusterCPU::SetupKsolvers ( ) {
         }
 
         //TODO: Hot Fix - needs to be done better
+#ifdef ESBEM
+        if ( !SYMMETRIC_SYSTEM ) {
+            // 11 = Real and unsymmetric matrix
+            domains[d].Kplus.mtype = espreso::MatrixType::REAL_UNSYMMETRIC; //11;
+        } else {
+            // 2 = Real and symmetric positive definite
+            domains[d].Kplus.mtype = espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE; //2;
+        }
+        //TODO: else stokes = -2 = Real and symmetric indefinite
+#else
         if ( !SYMMETRIC_SYSTEM ) {
             // 11 = Real and unsymmetric matrix
             domains[d].Kplus.mtype = 11; //espreso::MatrixType::REAL_UNSYMMETRIC; //11;
@@ -126,6 +136,7 @@ void ClusterCPU::SetupKsolvers ( ) {
             domains[d].Kplus.mtype = 2; //espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE; //2;
         }
         //TODO: else stokes = -2 = Real and symmetric indefinite
+#endif
 
         if ( d == 0 && environment->MPIrank == 0) {
         	domains[d].Kplus.msglvl = 0;
@@ -163,6 +174,11 @@ void ClusterCPU::CreateDirichletPrec( Instance *instance ) {
         perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
 
         SparseMatrix K_modif = instance->K[d];
+#ifdef ESBEM
+//TODO: Alex - da se nejak spocist Dir prec z dense matic K ??
+        K_modif.ConvertDenseToCSR(1);
+#endif
+
         SparseMatrix RegMatCRS = instance->RegMat[d];
         RegMatCRS.ConvertToCSRwithSort(0);
         K_modif.MatAddInPlace(RegMatCRS,'N',-1);
