@@ -2506,6 +2506,9 @@ void ClusterBase::CreateDirichletPrec(Instance *instance)
 		perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
 
 		SparseMatrix K_modif = instance->K[d];
+#ifdef ESBEM
+		K_modif.ConvertToCSR(1);
+#endif
 		SparseMatrix RegMatCRS = instance->RegMat[d];
 		RegMatCRS.ConvertToCSRwithSort(0);
 		K_modif.MatAddInPlace(RegMatCRS, 'N', -1);

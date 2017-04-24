@@ -503,7 +503,13 @@ static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat)
 
 	RegMat.I_row_indices.push_back(1);
 	RegMat.J_col_indices.push_back(1);
-	RegMat.V_values.push_back(K.getDiagonalMaximum());
+	double max = -1e10;
+	for (size_t i = 0; i < K.rows && i < K.cols; i++) {
+		if (max < K.dense_values[i * K.cols + i]) {
+			max = K.dense_values[i * K.cols + i];
+		}
+	}
+	RegMat.V_values.push_back(max);
 	RegMat.ConvertToCSR(1);
 }
 
@@ -546,12 +552,14 @@ void LaplaceSteklovPoincare::makeStiffnessMatricesRegular()
 					analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain, matrixSize[subdomain]);
 					analyticsRegMat(K[subdomain], RegMat[subdomain]);
 
-					//TODO: lubos note - BEM4I - remove lower
-					K[subdomain].RemoveLower();
+//					K[subdomain].RemoveLower();
+//					RegMat[subdomain].RemoveLower();
+//					K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
+//
+//					K[subdomain].ConvertCSRToDense(1);
+					K[subdomain].dense_values[0] += RegMat[subdomain].CSR_V_values.front();
+					K[subdomain].RemoveLowerDense();
 					RegMat[subdomain].RemoveLower();
-					K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
-
-					K[subdomain].ConvertCSRToDense(1);
 
 					RegMat[subdomain].ConvertToCOO(1);
 				} else {
@@ -573,6 +581,7 @@ void LaplaceSteklovPoincare::makeStiffnessMatricesRegular()
 			}
 			break;
 		case REGULARIZATION::NULL_PIVOTS:
+			ESINFO(GLOBAL_ERROR) << "Do not use regularization from NULL PIVOTS!";
 			switch (mtype) {
 			case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 				K[subdomain].RemoveLower();
@@ -597,6 +606,7 @@ void LaplaceSteklovPoincare::composeSubdomain(size_t subdomain)
 
 #ifndef ESBEM
 
+	ESINFO(GLOBAL_ERROR) << "BEM4I is not linked!. Copy BEM4I library to tools/bem4i";
 	_K.resize(matrixSize[subdomain], matrixSize[subdomain]);
 	f[subdomain].resize(matrixSize[subdomain]);
 
@@ -674,8 +684,8 @@ void LaplaceSteklovPoincare::composeSubdomain(size_t subdomain)
 			3, 3, 0);
 
 	//TODO: BEM4I Lubos note
-	K[subdomain].ConvertDenseToCSR(1);
-	K[subdomain].MatTranspose();
+	// K[subdomain].ConvertDenseToCSR(1);
+	// K[subdomain].MatTranspose();
 
 
 
