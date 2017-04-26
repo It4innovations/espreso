@@ -1222,8 +1222,8 @@ void SparseMatrix::DenseMatMat(SparseMatrix & A_in, char trans_A, SparseMatrix &
 	k = A_in.cols;
 	n = B_in.cols;
 
-	if (A_in.cols != B_in.rows )
-		std::cout << "GEMM error - matrix dimension mismatch" << std::endl;
+//	if (A_in.cols != B_in.rows )
+//		std::cout << "GEMM error - matrix dimension mismatch" << std::endl;
 
 	this->Clear();
 

@@ -98,7 +98,9 @@ void IterSolverBase::Solve_singular ( Cluster & cluster,
 		Solve_PipeCG_singular_dom( cluster, in_right_hand_side_primal );
 		break;
 	case ESPRESO_ITERATIVE_SOLVER::orthogonalPCG:
-		Solve_full_ortho_CG_singular_dom (cluster, in_right_hand_side_primal );
+		//Solve_full_ortho_CG_singular_dom (cluster, in_right_hand_side_primal );
+		//TODO
+		Solve_full_ortho_CG_singular_dom_geneo(cluster, in_right_hand_side_primal);
 		break;
 	case ESPRESO_ITERATIVE_SOLVER::GMRES:
 		Solve_GMRES_singular_dom (cluster, in_right_hand_side_primal );
@@ -1932,6 +1934,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
 	// *** END - Preslocal out the timing for the iteration loop ***********************************
 
 }
+
 void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
@@ -3426,7 +3429,761 @@ for (size_t i = 0; i < r_l.size(); i++) {
 
 void IterSolverBase::CreateConjProjector(Cluster & cluster) {
 
+
+	//int d = 0;
+
+
+	cluster.SetupPreconditioner();
+
+	SEQ_VECTOR<SparseMatrix> Ml_per_dom (cluster.domains.size());
+	SEQ_VECTOR<SparseMatrix> Ml_fin_pd  (cluster.domains.size());
+
+	SEQ_VECTOR<SparseMatrix> Bdec   (cluster.domains.size());
+	SEQ_VECTOR<SparseMatrix> Btdec  (cluster.domains.size());
+
+
+
+	for (size_t d = 0; d < cluster.domains.size(); d++) {
+
+
+		cluster.domains[d].B1 = cluster.instance->B1[d];
+
+		SparseMatrix B1full = cluster.instance->B1[d];
+		B1full.ConvertToCSR(0);
+
+		SparseMatrix B1tfull = cluster.instance->B1[d];
+		B1tfull.ConvertToCSR(0);
+		B1tfull.MatTranspose();
+
+		SparseMatrix PrecFull = cluster.domains[d].Prec;
+
+		PrecFull.ConvertDenseToCSR(1);
+
+
+		SparseMatrix Bt = cluster.domains[d].B1t_DirPr;
+		SparseMatrix B;
+		Bt.MatTranspose(B);
+
+		Bdec[d] = B;
+		Bdec[d].ConvertToCOO(1);
+
+		Btdec[d] = Bt;
+		Btdec[d].ConvertToCOO(1);
+
+		SparseMatrix Tmp  = PrecFull;
+		Tmp.SetDiagonalOfSymmetricMatrix(0.0);
+		Tmp.MatTranspose();
+		PrecFull.MatAddInPlace(Tmp,'N',1.0);
+		PrecFull.ConvertToCOO(1);
+		PrecFull.type='G';
+
+		SEQ_VECTOR <eslocal> prec_map_vec;
+		prec_map_vec = cluster.domains[d].B1t_Dir_perm_vec;
+
+		for (eslocal i = 0; i < PrecFull.I_row_indices.size(); i++) {
+			PrecFull.I_row_indices[i] = prec_map_vec[PrecFull.I_row_indices[i]-1];
+			PrecFull.J_col_indices[i] = prec_map_vec[PrecFull.J_col_indices[i]-1];
+		}
+
+		PrecFull.rows = cluster.domains[d].B1.cols;
+		PrecFull.cols = cluster.domains[d].B1.cols;
+		PrecFull.ConvertToCSR(0);
+
+		SparseMatrix TmpBt, Ml;
+
+		TmpBt.MatMat(PrecFull,'N',B1tfull);
+		Ml.MatMat(B1full,'N',TmpBt);
+		//std::cout << Ml.SpyText();
+
+
+		//Decompress matrix
+		Ml.ConvertToCOO(0);
+
+//		eslocal dl_size = cluster->my_lamdas_indices.size();
+//		Ml.rows = dl_size;
+//		Ml.cols = dl_size;
+//
+//
+//		for (eslocal i = 0; i < Ml.I_row_indices.size(); i++) {
+//			eslocal I 		= Ml.I_row_indices[i] - 1;
+//			eslocal J 		= Ml.J_col_indices[i] - 1;
+//			eslocal I_dec   = cluster->domains[d].lambda_map_sub_local[I] + 1;
+//			eslocal J_dec   = cluster->domains[d].lambda_map_sub_local[J] + 1;
+//			Ml.I_row_indices[i] = I_dec;
+//			Ml.J_col_indices[i] = J_dec;
+//
+//		}
+//
+//		Ml.ConvertToCSR(1);
+		Ml_per_dom[d].swap(Ml);
+//
+//		Bdec[d].rows = dl_size;
+//		Btdec[d].cols = dl_size;
+//		for (eslocal i = 0; i < Bdec[d].I_row_indices.size(); i++) {
+//			eslocal I     = Bdec[d].I_row_indices[i] - 1;
+//			eslocal I_dec = cluster->domains[d].lambda_map_sub_local[I] + 1;
+//
+//			Bdec[d].I_row_indices[i]  = I_dec;
+//			Btdec[d].J_col_indices[i] = I_dec;
+//		}
+//		Bdec[d].ConvertToCSR(1);
+//		Btdec[d].ConvertToCSR(1);
+
+	}
+
+	//TODO: can be done as log N
+	SparseMatrix Ml_per_cluster;
+	Ml_per_cluster = Ml_per_dom[0];
+	for (size_t d = 1; d < cluster.domains.size(); d++) {
+		Ml_per_cluster.MatAddInPlace(Ml_per_dom[d],'N',1.0);
+	}
+
+	SparseMatrix C_per_cluster;
+
+	std::cout << Ml_per_cluster.SpyText();
+
+	for (size_t d = 0; d < cluster.domains.size(); d++) {
+
+		SparseMatrix B1tfull = cluster.instance->B1[d];
+		SparseMatrix B1full;
+
+		B1tfull.ConvertToCSR(1);
+		B1tfull.MatTranspose();
+		Esutils::removeDuplicity(B1tfull.CSR_I_row_indices);
+		B1tfull.rows = B1tfull.CSR_I_row_indices.size() - 1;
+
+		B1full = B1tfull;
+		B1tfull.ConvertToCOO(0);
+		B1full.MatTranspose();
+		B1full.ConvertToCOO(0);
+
+		SparseMatrix tmp;
+		tmp.MatMat(Ml_per_cluster,'N',B1full);
+		Ml_fin_pd[d].MatMat(B1tfull,'N',tmp);
+		std::cout << Ml_fin_pd[d].SpyText();
+		Ml_fin_pd[d].ConvertToCOO(0);
+
+		SparseMatrix Prec = cluster.domains[d].Prec;
+		Prec.ConvertDenseToCSR(1);
+		SparseMatrix Tmp2 = Prec;
+		Tmp2.SetDiagonalOfSymmetricMatrix(0.0);
+		Tmp2.MatTranspose();
+		Prec.MatAddInPlace(Tmp2,'N',1.0);
+		Prec.type='G';
+
+		SparseMatrix A = Prec;
+		A.type = 'G';
+		SparseMatrix B = Ml_fin_pd[d];
+		B.type = 'G';
+
+		A.ConvertCSRToDense(0);
+		B.ConvertCSRToDense(0);
+
+
+
+
+//		SparseMatrix Ab = A;
+//		SparseMatrix Bb = B;
+//
+//		int info = 0;
+//		info = LAPACKE_dsyev (
+//				LAPACK_COL_MAJOR, //int matrix_layout,
+//				'N', // char jobz,
+//				'U', // char uplo,
+//				n, // lapack_int n,
+//				&Ab.dense_values[0], //float* a,
+//				n, //lapack_int lda,
+//				&w[0]); //float* w);
+//
+//
+//		info = 0;
+//		info = LAPACKE_dsyev (
+//				LAPACK_COL_MAJOR, //int matrix_layout,
+//				'N', // char jobz,
+//				'U', // char uplo,
+//				n, // lapack_int n,
+//				&Bb.dense_values[0], //float* a,
+//				n, //lapack_int lda,
+//				&w[0]); //float* w);
+//
+//		SparseMatrix Ac = A;
+//		SparseMatrix Bc = B;
+//
+//		info = 0;
+//		info = LAPACKE_dsygv (
+//				LAPACK_COL_MAJOR, //int matrix_layout,
+//				1, //lapack_int itype - itype = 1, the problem type is A*x = lambda*B*x;
+//				'V', //char jobz, - If jobz = 'V', then compute eigenvalues and eigenvectors.
+//				'U', // char uplo,
+//				n, // lapack_int n,
+//				&Ac.dense_values[0], // float* a,
+//				n, // lapack_int lda,
+//				&Bc.dense_values[0], // float* b,
+//				n, // lapack_int ldb,
+//				&w[0]); //float* w);
+//
+//		std:fill(w.begin(), w.end(), 0.0);
+
+
+
+		int il = 1; // first eigen value to be calculated
+		int iv = 4; // last  eigen value to be calculated
+
+
+		int eig_n = (iv-il+1);
+		eslocal n = A.rows;
+		SEQ_VECTOR <double> w (eig_n);				// eigen values storage
+		SEQ_VECTOR <double> eig_vectors (eig_n*n);	// eigen vectors storage
+		SEQ_VECTOR <int> ifail (n);				// dummy
+		SEQ_VECTOR <int> m (n);					// dummy
+		double tmpd;								// dummy
+		double abstol = 0.0;						// dummy
+
+
+
+		int info = 0;
+		info = LAPACKE_dsygvx (
+				LAPACK_COL_MAJOR, 	// int matrix_layout,
+				1, 					//lapack_int itype,
+				'V', 				//char jobz,
+				'I', 				//char range,
+				'U', 				//char uplo,
+				n, 					//lapack_int n,
+				&A.dense_values[0], //double* a,
+				n, 					//lapack_int lda,
+				&B.dense_values[0], //double* b,
+				n, 					//lapack_int ldb,
+				tmpd, 				//double vl,
+				tmpd, 				//double vu,
+				il, 				//lapack_int il,
+				iv, 				//lapack_int iu,
+				abstol, 			//double abstol,
+				&m[0],				//lapack_int* m,
+				&w[0],				//double* w,
+				&eig_vectors[0], 	//double* z,
+				n, 					//lapack_int ldz,
+				&ifail[0]); 		//lapack_int* ifail);
+
+            int xx = 10;
+
+            int copy_ind_begin = 0;
+            for (int i = 0; i < eig_n; i++) {
+        		if ( w[i] > 1e-10 ) {
+        			copy_ind_begin = n*(i);
+        			break;
+        		}
+        	}
+
+            SparseMatrix Vi;
+            Vi.dense_values = std::vector<double> (eig_vectors.begin() + copy_ind_begin, eig_vectors.end() );
+            Vi.type = 'G';
+            Vi.nnz  = Vi.dense_values.size();
+            Vi.rows = n;
+			Vi.cols = eig_n - (copy_ind_begin/n);
+			Vi.ConvertDenseToCSR(0);
+
+			SparseMatrix BtVi;
+			BtVi.MatMat(B1full,'N',Vi);
+			BtVi.MatTranspose();
+
+			C_per_cluster.MatAppend(BtVi);
+
+	}
+
+	C_per_cluster.MatTranspose();
+	C_per_cluster.ConvertCSRToDense(0);
+
+	SparseMatrix CP_per_cluster;
+	SparseMatrix CPt_per_cluster;
+	SparseMatrix ACP_per_cluster;
+
+	Projector_l_inv_compG(timeEvalProj, cluster, C_per_cluster, CP_per_cluster );
+
+	apply_A_l_Mat (timeEvalAppa, cluster, CP_per_cluster, ACP_per_cluster);
+
+	SparseMatrix Proj_per_cluster;
+	SparseMatrix Proj_per_cluster2;
+
+	SparseMatrix Proj_per_cluster_sp;
+
+	CPt_per_cluster = CP_per_cluster;
+	CP_per_cluster.ConvertDenseToCSR(0);
+
+	CPt_per_cluster.ConvertDenseToCSR(1);
+	CPt_per_cluster.MatTranspose();
+	CPt_per_cluster.ConvertCSRToDense(1);
+
+	Proj_per_cluster.DenseMatMat(CPt_per_cluster,'N',ACP_per_cluster,'N');
+
+	Proj_per_cluster2.DenseMatMat(CP_per_cluster,'T',ACP_per_cluster,'N'); // TODO : DGEMM nefunguje s transpose turned on - needs to be fixed
+
+	ACP_per_cluster.ConvertDenseToCSR(0);
+	CPt_per_cluster.ConvertDenseToCSR(0);
+
+	Proj_per_cluster_sp.MatMat(CPt_per_cluster,'N',ACP_per_cluster);
+	Proj_per_cluster_sp.ConvertCSRToDense(0);
+
+
+	Proj_per_cluster.RemoveLowerDense();
+	Proj_per_cluster.mtype = espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+
+	DenseSolverMKL ProjSolver;
+
+	ProjSolver.ImportMatrix(Proj_per_cluster);
+
+	ProjSolver.Factorization("Geneo projector factorization");
+
+	// *** Pass objects to cluster
+	cluster.CFCt.ImportMatrix(Proj_per_cluster);
+	cluster.CFCt.Factorization("Geneo projector factorization");
+	cluster.C   = CP_per_cluster;
+	cluster.Ct  = CPt_per_cluster;
+
+
+
 }
+
+
+void IterSolverBase::ConjProj(  Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
+
+	SEQ_VECTOR <double> tmp_x_in, tmp1, tmp2, tmp3, tmp4;
+
+	tmp_x_in = x_in;
+
+	tmp1.resize(x_in.size(), 0.0);
+	tmp2.resize(x_in.size(), 0.0);
+	tmp3.resize(x_in.size(), 0.0);
+	tmp4.resize(x_in.size(), 0.0);
+
+	apply_A_l_comp_dom_B(timeEvalAppa, cluster, tmp_x_in, tmp1);
+
+	cluster.Ct.DenseMatVec(tmp1,tmp2);
+
+	cluster.CFCt.Solve(tmp2,tmp3,1);
+
+	cluster.C.DenseMatVec(tmp3, tmp4);
+
+	for (size_t i = 0; i < x_in.size(); i++)
+		y_out[i] = x_in[i] - tmp4[i];
+
+}
+
+
+void IterSolverBase::ConjProj_t(Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
+
+	SEQ_VECTOR <double> tmp_x_in, tmp1, tmp2, tmp3, tmp4;
+
+	tmp_x_in = x_in;
+
+	tmp1.resize(x_in.size(), 0.0);
+	tmp2.resize(x_in.size(), 0.0);
+	tmp3.resize(x_in.size(), 0.0);
+	tmp4.resize(x_in.size(), 0.0);
+
+	cluster.Ct.DenseMatVec(tmp_x_in,tmp1);
+
+	cluster.CFCt.Solve(tmp1,tmp2,1);
+
+	cluster.C.DenseMatVec(tmp2, tmp3);
+
+	apply_A_l_comp_dom_B(timeEvalAppa, cluster, tmp3, tmp4);
+
+	for (size_t i = 0; i < x_in.size(); i++)
+		y_out[i] = x_in[i] - tmp4[i];
+
+}
+
+
+
+void IterSolverBase::ConjProj_lambda0(  Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
+
+	SEQ_VECTOR <double> tmp_x_in, tmp1, tmp2;
+
+	tmp1.resize(x_in.size(), 0.0);
+	tmp2.resize(x_in.size(), 0.0);
+
+	cluster.Ct.  DenseMatVec(x_in, tmp1);
+	cluster.CFCt.Solve		(tmp1, tmp2, 	1);
+	cluster.C.   DenseMatVec(tmp2, y_out);
+
+}
+
+
+
+
+
+void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
+	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
+{
+/*####################################################################################################
+#                              C G      F U L L    O R T H O G O N A L                               #
+//##################################################################################################*/
+//
+
+	std::cout << "\n\n Geneo \n\n";
+
+	size_t dl_size = cluster.my_lamdas_indices.size();
+
+	SEQ_VECTOR <double> x_l (dl_size, 0);
+	SEQ_VECTOR <double> x_0 (dl_size, 0);
+
+	SEQ_VECTOR <double> Ax_l(dl_size, 0);
+	SEQ_VECTOR <double> Ax_0(dl_size, 0);
+
+
+	SEQ_VECTOR <double> g_l(dl_size, 0);
+	SEQ_VECTOR <double> g_0(dl_size, 0);
+
+	SEQ_VECTOR <double> Pg_l(dl_size, 0);
+	SEQ_VECTOR <double> MPg_l(dl_size, 0);
+	SEQ_VECTOR <double> z_l(dl_size, 0);
+	SEQ_VECTOR <double> _z_l(dl_size, 0);
+	SEQ_VECTOR <double> w_l(dl_size, 0);
+	SEQ_VECTOR <double> _w_l(dl_size, 0);
+	SEQ_VECTOR <double> Aw_l(dl_size, 0);
+	SEQ_VECTOR <double> PAw_l(dl_size, 0);
+	SEQ_VECTOR <double> b_l(dl_size, 0);
+	SEQ_VECTOR <double> v_tmp_l(dl_size, 0);
+
+	SEQ_VECTOR <double> d_H(CG_max_iter, 0);
+	SEQ_VECTOR <double> e_H(CG_max_iter, 0);
+
+	double rho_l;
+	double rho_l_prew = 1;
+	double norm_l;
+	double tol;
+	double ztg;
+	double wtAw;
+	int cnt_iter=0;
+
+	cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );	// prava strana dualu
+	cluster.CreateVec_d_perCluster ( in_right_hand_side_primal );	// e - vektor tuhych pohybu
+
+	// *** Combine vectors b from all clusters ************************************
+	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
+
+
+	if (USE_GGtINV == 1) {
+		Projector_l_inv_compG( timeEvalProj, cluster, cluster.vec_d, x_0, 1 );
+	} else {
+		Projector_l_compG	 ( timeEvalProj, cluster, cluster.vec_d, x_0, 1 );
+	}
+
+	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_0, Ax_0);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
+
+	#pragma omp parallel for
+	for (size_t i = 0; i < g_l.size(); i++){
+		g_0[i] = Ax_0[i] - b_l[i];
+	}
+
+	ConjProj_lambda0(cluster, g_0, g_0);
+
+
+
+
+	SparseMatrix W_l;
+	W_l.type = 'G';
+	W_l.rows = dl_size;
+	W_l.cols = 0;
+
+
+	SparseMatrix AW_l;
+	AW_l.type = 'G';
+	AW_l.rows = dl_size;
+	AW_l.cols = 0;
+
+	SEQ_VECTOR <double> Gamma_l  	(CG_max_iter, 0);
+	SEQ_VECTOR <double> _Gamma_l 	(CG_max_iter, 0);
+	SEQ_VECTOR <double> WtAW_l	 	(CG_max_iter, 0);
+
+
+
+	// *** Ax = apply_A(CLUSTER,Bt,x); ********************************************
+	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
+
+	double norm_prim_fl = 0.0;
+	double norm_prim_fg = 0.0;
+	for (size_t d = 0; d < cluster.domains.size(); d++){
+		norm_prim_fl += cluster.domains[d].norm_f;
+	}
+
+	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	norm_prim_fg = sqrt(norm_prim_fg);
+
+	// *** g = Ax - b *************************************************************
+	#pragma omp parallel for
+	for (size_t i = 0; i < g_l.size(); i++){
+		g_l[i] = Ax_l[i] - b_l[i];
+	}
+
+	ConjProj_t(cluster, g_l,  g_l);
+
+	switch (USE_PREC) {
+	case ESPRESO_PRECONDITIONER::DIRICHLET:
+
+		proj1_time.start();
+		if (USE_GGtINV == 1) {
+			Projector_l_inv_compG( timeEvalProj, cluster, g_l, Pg_l, 0 );
+		} else {
+			Projector_l_compG		  ( timeEvalProj, cluster, g_l, Pg_l, 0 );
+		}
+		proj1_time.end();
+
+		// Scale
+
+		prec_time.start();
+		apply_prec_comp_dom_B(timeEvalPrec, cluster, Pg_l, z_l);
+		prec_time.end();
+
+		// Re-Scale
+
+		proj2_time.start();
+		if (USE_GGtINV == 1) {
+			Projector_l_inv_compG( timeEvalProj, cluster, z_l, w_l, 0 );
+		} else {
+			Projector_l_compG		  ( timeEvalProj, cluster, z_l, w_l, 0 );
+		}
+		proj2_time.end();
+
+		break;
+
+	default:
+		ESINFO(GLOBAL_ERROR) << "FETI Geneo requires dirichlet preconditioner.";
+	}
+
+
+
+	// *** Calculate the stop condition *******************************************
+	// TODO: update
+	//tol = epsilon * parallel_norm_compressed(cluster, Pg_l);
+	tol = sqrt (parallel_ddot_compressed(cluster, Pg_l, z_l) );
+
+	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+	int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	std::string indent = "   ";
+
+	auto spaces = [] (int count) {
+		std::stringstream ss;
+		for (int i = 0; i < count; i++) {
+			ss << " ";
+		}
+		return ss.str();
+	};
+
+	ESINFO(CONVERGENCE)
+		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+		<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
+		<< spaces(indent.size() + 4) << "r" << spaces(4)
+		<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
+		<< spaces(indent.size()) << "time[s]";
+
+	// *** END - Calculate the stop condition *******************************************
+
+
+
+
+
+	// *** Start the CG iteration loop ********************************************
+	for (int iter = 1; iter < CG_max_iter; iter++) {
+
+		timing.totalTime.start();
+
+		cnt_iter = iter - 1;
+
+		W_l.dense_values.insert(W_l.dense_values.end(), w_l.begin(), w_l.end());
+		W_l.nnz += w_l.size();
+		W_l.cols++;
+
+		appA_time.start();
+		apply_A_l_comp_dom_B(timeEvalAppa, cluster, w_l, Aw_l);
+		appA_time.end();
+
+		ConjProj_t(cluster, Aw_l, Aw_l);
+
+		AW_l.dense_values.insert(AW_l.dense_values.end(), Aw_l.begin(), Aw_l.end());
+		AW_l.nnz += Aw_l.size();
+		AW_l.cols++;
+
+		wtAw = parallel_ddot_compressed(cluster, w_l, Aw_l);
+		WtAW_l[iter-1] = wtAw;
+
+		ztg = parallel_ddot_compressed(cluster, z_l, Pg_l);
+
+
+		rho_l = -ztg/wtAw;
+
+
+		if (iter == 1)
+		{
+			d_H[iter-1] = -1.0/rho_l;
+		}
+		else
+		{
+			d_H[iter-1] = -(Gamma_l[iter-1]/rho_l_prew + 1.0/rho_l);
+			e_H[iter-2] = sqrt(Gamma_l[iter-1])/rho_l_prew;
+		}
+
+
+		rho_l_prew = rho_l;
+
+
+		Projector_l_inv_compG(timeEvalProj, cluster, Aw_l, PAw_l, 0);
+
+		#pragma omp parallel for
+		for (size_t i = 0; i < x_l.size(); i++) {
+			x_l[i] = x_l[i] + rho_l * w_l[i];
+			Pg_l[i] += PAw_l[i] * rho_l;
+		}
+		//ztg_prew = ztg;
+
+
+
+		switch (USE_PREC) {
+		case ESPRESO_PRECONDITIONER::DIRICHLET:
+
+			// Scale
+
+			prec_time.start();
+			apply_prec_comp_dom_B(timeEvalPrec, cluster, Pg_l, z_l);
+			prec_time.end();
+
+			// Re-Scale
+
+			proj2_time.start();
+			if (USE_GGtINV == 1) {
+				Projector_l_inv_compG( timeEvalProj, cluster, z_l, w_l, 0 );
+			} else {
+				Projector_l_compG		  ( timeEvalProj, cluster, z_l, w_l, 0 );
+			}
+			proj2_time.end();
+
+			break;
+
+		default:
+			ESINFO(GLOBAL_ERROR) << "FETI Geneo requires dirichlet preconditioner.";
+		}
+
+		// filtering duplicit Lambda entries
+		#pragma omp parallel for
+		for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
+			_w_l[i] = w_l[i] * cluster.my_lamdas_ddot_filter[i];
+		}
+
+		AW_l.DenseMatVec(_w_l,_Gamma_l,'T');
+
+		#pragma omp parallel for
+		for (eslocal i = 0; i < iter; i++) {
+			_Gamma_l[i] /= -WtAW_l[i];
+		}
+
+		MPI_Allreduce( &_Gamma_l[0], &Gamma_l[0], iter, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		W_l.DenseMatVec(Gamma_l,v_tmp_l);
+
+		#pragma omp parallel for
+		for (size_t i = 0; i < x_l.size(); i++) {
+			w_l[i] = w_l[i] +  v_tmp_l[i];
+		}
+
+		norm_time.start();
+		norm_l = sqrt (parallel_ddot_compressed(cluster, Pg_l, z_l) ); // parallel_norm_compressed(cluster, Pg_l);
+		norm_time.end();
+
+		timing.totalTime.end();
+
+		ESINFO(CONVERGENCE)
+		<< indent << std::setw(iterationWidth) << iter + 1
+		<< indent << std::fixed << std::setprecision(precision) <<  tol
+		<< indent << std::scientific << std::setprecision(3) << norm_l
+		<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
+		<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
+
+		// *** Stop condition ******************************************************************
+		if (norm_l < epsilon)
+			break;
+
+	} // end of CG iterations
+
+
+	// EIGENVALUES AND EIGENVECTORS OF LANCZOS MATRIX
+	// Evaluation of cond(P*F*P) is limited by 1000 iter.
+	// Tridiagonal Lanczos' matrix is assembled at each node.
+	bool cond_numb_FETI_operator=true;
+	if (cnt_iter>0 && cnt_iter<1000 && cond_numb_FETI_operator && environment->MPIrank==0){
+		char JOBZ = 'N';
+		double *Z = new double[cnt_iter];
+		eslocal ldz = cnt_iter;
+		LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt_iter, &d_H[0], &e_H[0], Z, ldz);
+		ESINFO(DETAILS) << "cond(P*F*P) = " << d_H[0]/d_H[cnt_iter-1]  ;
+		delete [] Z;
+	}
+
+
+	// *** save solution - in dual and amplitudes *********************************************
+
+	ConjProj(cluster, x_l, x_l);
+
+
+	#pragma omp parallel for
+	for (size_t i = 0; i < x_l.size(); i++) {
+		x_l[i] = x_l[i] + x_0[i] + g_0[i];
+		Pg_l[i] = -Pg_l[i];
+	}
+
+	dual_soultion_compressed_parallel   = x_l;
+	dual_residuum_compressed_parallel   = Pg_l;
+
+
+	if (USE_GGtINV == 1) {
+		Projector_l_inv_compG ( timeEvalProj, cluster, Pg_l, amplitudes, 2 );
+	} else {
+		Projector_l_compG	  ( timeEvalProj, cluster, Pg_l, amplitudes, 2 );
+	}
+	// *** end - save solution - in dual and amplitudes ***************************************
+
+
+	// *** Preslocal out the timing for the iteration loop ***************************************
+
+	switch (USE_PREC) {
+	case ESPRESO_PRECONDITIONER::LUMPED:
+	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
+	case ESPRESO_PRECONDITIONER::DIRICHLET:
+	case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
+	case ESPRESO_PRECONDITIONER::MAGIC:
+		timing.addEvent(proj1_time);
+		timing.addEvent(prec_time );
+		timing.addEvent(proj2_time);
+		break;
+	case ESPRESO_PRECONDITIONER::NONE:
+		timing.addEvent(proj_time);
+		break;
+	default:
+		ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+	}
+
+	timing.addEvent(appA_time );
+	timing.addEvent(ddot_beta);
+	timing.addEvent(ddot_alpha);
+
+	// *** END - Preslocal out the timing for the iteration loop ***********************************
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // *** Coarse problem routines *******************************************
@@ -4082,7 +4839,7 @@ void IterSolverBase::apply_A_l_Mat( TimeEval & time_eval, Cluster & cluster, Spa
 		std::vector<double> tmp_pr_in  (X_in.dense_values.begin() + i*X_in.rows,  X_in.dense_values.begin() + (i+1)*X_in.rows);
 		std::vector<double> tmp_pr_out (tmp_pr_in.size(), 0 );
 
-		apply_A_l_comp_dom_B(timeEvalProj, cluster, tmp_pr_in, tmp_pr_out);
+		apply_A_l_comp_dom_B(timeEvalAppa, cluster, tmp_pr_in, tmp_pr_out);
 
 		Y_out.dense_values.insert(Y_out.dense_values.end(), tmp_pr_out.begin(), tmp_pr_out.end());
 	}

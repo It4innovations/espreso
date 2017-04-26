@@ -143,6 +143,12 @@ using std::make_pair;
         SparseMatrix GGtinvM;
         SEQ_VECTOR <double> GGtinvV;
 
+        // Matrices and solvers for Conj. projector
+        SparseMatrix C;
+        SparseMatrix Ct;
+        DenseSolverMKL  CFCt;
+
+
         // Matrices and vectors of the cluster
         SparseMatrix G0;
         SparseMatrix G02;

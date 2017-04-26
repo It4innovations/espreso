@@ -431,7 +431,7 @@ void LinearSolver::createCMat() {
 
 	Proj_per_cluster.DenseMatMat(CPt_per_cluster,'N',ACP_per_cluster,'N');
 
-	Proj_per_cluster2.DenseMatMat(CP_per_cluster,'T',ACP_per_cluster,'N');
+	Proj_per_cluster2.DenseMatMat(CP_per_cluster,'T',ACP_per_cluster,'N'); // TODO : DGEMM nefunguje s transpose turned on - needs to be fixed
 
 	ACP_per_cluster.ConvertDenseToCSR(0);
 	CPt_per_cluster.ConvertDenseToCSR(0);
@@ -875,10 +875,12 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 		setup_CreateG_GGt_CompressG();
 	}
 
+	// Setup Conj Projector
+	solver->CreateConjProjector(*cluster);
 
-	createCMat();
-
-	exit(0);
+//	createCMat();
+//
+//	exit(0);
 
 
 
