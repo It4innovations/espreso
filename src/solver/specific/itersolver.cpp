@@ -3424,6 +3424,10 @@ for (size_t i = 0; i < r_l.size(); i++) {
 
 }
 
+void IterSolverBase::CreateConjProjector(Cluster & cluster) {
+
+}
+
 
 // *** Coarse problem routines *******************************************
 void IterSolverBase::CreateGGt( Cluster & cluster )

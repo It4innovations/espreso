@@ -151,6 +151,11 @@ public:
 	void Projector_l_inv_compG( TimeEval & time_eval, Cluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out );
 	void Projector_l_inv_compG_d( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
 
+
+	void CreateConjProjector(Cluster & cluster);
+
+
+
 	// *** Apply A embers - moved to children
 	virtual void apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) =0;
 
