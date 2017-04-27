@@ -14,10 +14,16 @@ namespace espreso {
 namespace input {
 
 
+enum class Pattern {
+	CHESSBOARD_WHITE,
+	CHESSBOARD_BLACK
+};
+
 class BlockGenerator: public ClusterGenerator {
 
 public:
 	virtual void region(const std::vector<Element*> &elements, Region *region, const BlockBorder &border, size_t dimension) =0;
+	virtual void pattern(const std::vector<Element*> &elements, Region *region, const Triple<size_t> &offset, const Triple<size_t> &size, Pattern pattern) =0;
 	virtual ~BlockGenerator() {};
 
 	BlockSetting block;
@@ -39,6 +45,7 @@ public:
 	void uniformCorners(const std::vector<Element*> &nodes, std::vector<Element*> &corners, size_t number, bool point, bool edge, bool face);
 
 	void region(const std::vector<Element*> &elements, Region *region, const BlockBorder &border, size_t dimension);
+	void pattern(const std::vector<Element*> &elements, Region *region, const Triple<size_t> &offset, const Triple<size_t> &size, Pattern pattern);
 
 private:
 	void forEachElement(const Triple<size_t> &start, const Triple<size_t> &end, std::function<void(std::vector<eslocal> &indices)> operation);
