@@ -365,6 +365,49 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region *regi
 	}
 }
 
+template <class TElement>
+void Block<TElement>::pattern(const std::vector<Element*> &elements, Region *region, const Triple<size_t> &offset, const Triple<size_t> &size, Pattern pattern)
+{
+	Triple<size_t> divisor(size * block.elements * block.domains / 2);
+	Triple<size_t> modulo;
+
+	divisor.z = divisor.z ? divisor.z : 1;
+
+	Triple<size_t> domain, element, begin, index;
+	begin = offset * block.elements * block.domains;
+
+	size_t color;
+	switch (pattern) {
+	case Pattern::CHESSBOARD_BLACK:
+		color = 1;
+		break;
+	case Pattern::CHESSBOARD_WHITE:
+		color = 0;
+		break;
+	}
+	size_t eindex = 0;
+	for (domain.z = 0; domain.z < block.domains.z; domain.z++) {
+		for (domain.y = 0; domain.y < block.domains.y; domain.y++) {
+			for (domain.x = 0; domain.x < block.domains.x; domain.x++) {
+
+				for (element.z = 0; element.z < block.elements.z; element.z++) {
+					for (element.y = 0; element.y < block.elements.y; element.y++) {
+						for (element.x = 0; element.x < block.elements.x; element.x++, eindex++) {
+
+							index = begin + domain * block.elements + element;
+							if ((index / divisor).sum() % 2 == color) {
+								region->elements().push_back(elements[eindex]);
+							}
+
+						}
+					}
+				}
+
+			}
+		}
+	}
+}
+
 }
 }
 

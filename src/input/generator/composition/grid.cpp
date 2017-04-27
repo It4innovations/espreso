@@ -288,6 +288,12 @@ void Grid::regions(
 	for (auto it = _grid.elements.begin(); it != _grid.elements.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq("all", it->second)) {
 			regions.push_back(new Region(ElementType::ELEMENTS, elements));
+		} else if (StringCompare::caseInsensitiveEq("chessboard_white", it->second)) {
+			regions.push_back(new Region(ElementType::ELEMENTS));
+			_block->pattern(elements, regions.back(), _clusterOffset, _settings.blocks * _settings.clusters, Pattern::CHESSBOARD_WHITE);
+		} else if (StringCompare::caseInsensitiveEq("chessboard_black", it->second)) {
+			regions.push_back(new Region(ElementType::ELEMENTS));
+			_block->pattern(elements, regions.back(), _clusterOffset, _settings.blocks * _settings.clusters, Pattern::CHESSBOARD_BLACK);
 		} else {
 			regions.push_back(new Region(ElementType::ELEMENTS));
 			BlockBorder border(it->second);
