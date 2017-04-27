@@ -3627,7 +3627,7 @@ void IterSolverBase::CreateConjProjector(Cluster & cluster) {
 
 
 		int il = 1; // first eigen value to be calculated
-		int iv = 4; // last  eigen value to be calculated
+		int iv = 8; // last  eigen value to be calculated
 
 
 		int eig_n = (iv-il+1);
@@ -3826,13 +3826,16 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 
 	SEQ_VECTOR <double> x_l (dl_size, 0);
 	SEQ_VECTOR <double> x_0 (dl_size, 0);
+	SEQ_VECTOR <double> x_1 (dl_size, 0);
 
 	SEQ_VECTOR <double> Ax_l(dl_size, 0);
 	SEQ_VECTOR <double> Ax_0(dl_size, 0);
 
 
-	SEQ_VECTOR <double> g_l(dl_size, 0);
-	SEQ_VECTOR <double> g_0(dl_size, 0);
+	SEQ_VECTOR <double> r_l(dl_size, 0);
+	SEQ_VECTOR <double> r_0(dl_size, 0);
+	SEQ_VECTOR <double> r_tmp(dl_size, 0);
+
 
 	SEQ_VECTOR <double> Pg_l(dl_size, 0);
 	SEQ_VECTOR <double> MPg_l(dl_size, 0);
@@ -3845,8 +3848,8 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 	SEQ_VECTOR <double> b_l(dl_size, 0);
 	SEQ_VECTOR <double> v_tmp_l(dl_size, 0);
 
-	SEQ_VECTOR <double> d_H(CG_max_iter, 0);
-	SEQ_VECTOR <double> e_H(CG_max_iter, 0);
+//	SEQ_VECTOR <double> d_H(CG_max_iter, 0);
+//	SEQ_VECTOR <double> e_H(CG_max_iter, 0);
 
 	double rho_l;
 	double rho_l_prew = 1;
@@ -3854,6 +3857,14 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 	double tol;
 	double ztg;
 	double wtAw;
+
+	double delta, gamma, fi;
+	SEQ_VECTOR <double> delta_l	 	(CG_max_iter, 0);
+//	SEQ_VECTOR <double> gamma_l	 	(CG_max_iter, 0);
+	SEQ_VECTOR <double> fi_l	 	(CG_max_iter, 0);
+	SEQ_VECTOR <double> fi_g	 	(CG_max_iter, 0);
+
+
 	int cnt_iter=0;
 
 	cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );	// prava strana dualu
@@ -3861,7 +3872,6 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 
 	// *** Combine vectors b from all clusters ************************************
 	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
-
 
 	if (USE_GGtINV == 1) {
 		Projector_l_inv_compG( timeEvalProj, cluster, cluster.vec_d, x_0, 1 );
@@ -3872,14 +3882,13 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_0, Ax_0);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
 
 	#pragma omp parallel for
-	for (size_t i = 0; i < g_l.size(); i++){
-		g_0[i] = Ax_0[i] - b_l[i];
+	for (size_t i = 0; i < r_0.size(); i++){
+		r_0[i] =  b_l[i] - Ax_0[i];
 	}
 
-	ConjProj_lambda0(cluster, g_0, g_0);
+	ConjProj_lambda0(cluster, r_0, x_1);
 
-
-
+	ConjProj_t(cluster, r_0, r_0);
 
 	SparseMatrix W_l;
 	W_l.type = 'G';
@@ -3896,43 +3905,21 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 	SEQ_VECTOR <double> _Gamma_l 	(CG_max_iter, 0);
 	SEQ_VECTOR <double> WtAW_l	 	(CG_max_iter, 0);
 
-
-
-	// *** Ax = apply_A(CLUSTER,Bt,x); ********************************************
-	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
-
-	double norm_prim_fl = 0.0;
-	double norm_prim_fg = 0.0;
-	for (size_t d = 0; d < cluster.domains.size(); d++){
-		norm_prim_fl += cluster.domains[d].norm_f;
-	}
-
-	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-	norm_prim_fg = sqrt(norm_prim_fg);
-
-	// *** g = Ax - b *************************************************************
-	#pragma omp parallel for
-	for (size_t i = 0; i < g_l.size(); i++){
-		g_l[i] = Ax_l[i] - b_l[i];
-	}
-
-	ConjProj_t(cluster, g_l,  g_l);
-
 	switch (USE_PREC) {
 	case ESPRESO_PRECONDITIONER::DIRICHLET:
 
 		proj1_time.start();
 		if (USE_GGtINV == 1) {
-			Projector_l_inv_compG( timeEvalProj, cluster, g_l, Pg_l, 0 );
+			Projector_l_inv_compG( timeEvalProj, cluster, r_0, r_l, 0 );
 		} else {
-			Projector_l_compG		  ( timeEvalProj, cluster, g_l, Pg_l, 0 );
+			Projector_l_compG		  ( timeEvalProj, cluster, r_0, r_l, 0 );
 		}
 		proj1_time.end();
 
 		// Scale
 
 		prec_time.start();
-		apply_prec_comp_dom_B(timeEvalPrec, cluster, Pg_l, z_l);
+		apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, z_l);
 		prec_time.end();
 
 		// Re-Scale
@@ -3954,11 +3941,17 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 
 
 	// *** Calculate the stop condition *******************************************
-	// TODO: update
-	//tol = epsilon * parallel_norm_compressed(cluster, Pg_l);
-	tol = sqrt (parallel_ddot_compressed(cluster, Pg_l, z_l) );
 
-	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
+	ConjProj(cluster, r_l, r_tmp );
+	double tol1 = epsilon * parallel_norm_compressed(cluster, r_tmp);
+	double tol2 = epsilon * parallel_norm_compressed(cluster, b_l);
+
+	if (tol1 < tol2 )
+		tol = tol1;
+	else
+		tol = tol2;
+
+	int precision      = ceil(log(1 / epsilon) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
 	std::string indent = "   ";
 
@@ -3981,18 +3974,15 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 
 
 
+	W_l.dense_values.insert(W_l.dense_values.end(), w_l.begin(), w_l.end());
+	W_l.nnz += w_l.size();
+	W_l.cols++;
 
 
 	// *** Start the CG iteration loop ********************************************
-	for (int iter = 1; iter < CG_max_iter; iter++) {
+	for (int iter = 0; iter < CG_max_iter; iter++) {
 
 		timing.totalTime.start();
-
-		cnt_iter = iter - 1;
-
-		W_l.dense_values.insert(W_l.dense_values.end(), w_l.begin(), w_l.end());
-		W_l.nnz += w_l.size();
-		W_l.cols++;
 
 		appA_time.start();
 		apply_A_l_comp_dom_B(timeEvalAppa, cluster, w_l, Aw_l);
@@ -4004,39 +3994,18 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 		AW_l.nnz += Aw_l.size();
 		AW_l.cols++;
 
-		wtAw = parallel_ddot_compressed(cluster, w_l, Aw_l);
-		WtAW_l[iter-1] = wtAw;
-
-		ztg = parallel_ddot_compressed(cluster, z_l, Pg_l);
-
-
-		rho_l = -ztg/wtAw;
-
-
-		if (iter == 1)
-		{
-			d_H[iter-1] = -1.0/rho_l;
-		}
-		else
-		{
-			d_H[iter-1] = -(Gamma_l[iter-1]/rho_l_prew + 1.0/rho_l);
-			e_H[iter-2] = sqrt(Gamma_l[iter-1])/rho_l_prew;
-		}
-
-
-		rho_l_prew = rho_l;
+		delta = parallel_ddot_compressed(cluster, w_l, Aw_l);
+		delta_l[iter] = delta;
+		gamma = parallel_ddot_compressed(cluster, z_l, r_l);
 
 
 		Projector_l_inv_compG(timeEvalProj, cluster, Aw_l, PAw_l, 0);
 
 		#pragma omp parallel for
 		for (size_t i = 0; i < x_l.size(); i++) {
-			x_l[i] = x_l[i] + rho_l * w_l[i];
-			Pg_l[i] += PAw_l[i] * rho_l;
+			x_l[i] = x_l[i] + gamma/delta_l[iter] *   w_l[i];
+			r_l[i] = r_l[i] - gamma/delta_l[iter] * PAw_l[i];
 		}
-		//ztg_prew = ztg;
-
-
 
 		switch (USE_PREC) {
 		case ESPRESO_PRECONDITIONER::DIRICHLET:
@@ -4044,7 +4013,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 			// Scale
 
 			prec_time.start();
-			apply_prec_comp_dom_B(timeEvalPrec, cluster, Pg_l, z_l);
+			apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, z_l);
 			prec_time.end();
 
 			// Re-Scale
@@ -4063,80 +4032,76 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 			ESINFO(GLOBAL_ERROR) << "FETI Geneo requires dirichlet preconditioner.";
 		}
 
+
 		// filtering duplicit Lambda entries
 		#pragma omp parallel for
 		for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
 			_w_l[i] = w_l[i] * cluster.my_lamdas_ddot_filter[i];
 		}
-
-		AW_l.DenseMatVec(_w_l,_Gamma_l,'T');
+		AW_l.DenseMatVec(_w_l,fi_l ,'T');
 
 		#pragma omp parallel for
-		for (eslocal i = 0; i < iter; i++) {
-			_Gamma_l[i] /= -WtAW_l[i];
+		for (eslocal i = 0; i <= iter; i++) {
+			fi_g[i] = fi_l[i] / delta_l[i];
 		}
 
-		MPI_Allreduce( &_Gamma_l[0], &Gamma_l[0], iter, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-		W_l.DenseMatVec(Gamma_l,v_tmp_l);
+		MPI_Allreduce( &fi_g[0], &fi_l[0], iter + 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		W_l.DenseMatVec(fi_l,v_tmp_l);
 
 		#pragma omp parallel for
 		for (size_t i = 0; i < x_l.size(); i++) {
-			w_l[i] = w_l[i] +  v_tmp_l[i];
+			w_l[i] = w_l[i] -  v_tmp_l[i];
 		}
 
+		W_l.dense_values.insert(W_l.dense_values.end(), w_l.begin(), w_l.end());
+		W_l.nnz += w_l.size();
+		W_l.cols++;
+
+
 		norm_time.start();
-		norm_l = sqrt (parallel_ddot_compressed(cluster, Pg_l, z_l) ); // parallel_norm_compressed(cluster, Pg_l);
+		norm_l = sqrt (parallel_ddot_compressed(cluster, r_l, z_l) );
 		norm_time.end();
 
 		timing.totalTime.end();
 
 		ESINFO(CONVERGENCE)
 		<< indent << std::setw(iterationWidth) << iter + 1
-		<< indent << std::fixed << std::setprecision(precision) <<  tol
-		<< indent << std::scientific << std::setprecision(3) << norm_l
+		<< indent << std::fixed << std::setprecision(precision) 	<< norm_l / tol * epsilon
+		<< indent << std::scientific << std::setprecision(3) 		<< norm_l
 		<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
-		<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
+		<< indent << std::fixed << std::setprecision(5) 			<< timing.totalTime.getLastStat();
 
 		// *** Stop condition ******************************************************************
-		if (norm_l < epsilon)
+		if (norm_l < tol)
 			break;
 
 	} // end of CG iterations
-
-
-	// EIGENVALUES AND EIGENVECTORS OF LANCZOS MATRIX
-	// Evaluation of cond(P*F*P) is limited by 1000 iter.
-	// Tridiagonal Lanczos' matrix is assembled at each node.
-	bool cond_numb_FETI_operator=true;
-	if (cnt_iter>0 && cnt_iter<1000 && cond_numb_FETI_operator && environment->MPIrank==0){
-		char JOBZ = 'N';
-		double *Z = new double[cnt_iter];
-		eslocal ldz = cnt_iter;
-		LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt_iter, &d_H[0], &e_H[0], Z, ldz);
-		ESINFO(DETAILS) << "cond(P*F*P) = " << d_H[0]/d_H[cnt_iter-1]  ;
-		delete [] Z;
-	}
-
 
 	// *** save solution - in dual and amplitudes *********************************************
 
 	ConjProj(cluster, x_l, x_l);
 
-
 	#pragma omp parallel for
 	for (size_t i = 0; i < x_l.size(); i++) {
-		x_l[i] = x_l[i] + x_0[i] + g_0[i];
-		Pg_l[i] = -Pg_l[i];
+		x_l[i] = x_l[i] + x_0[i] + x_1[i];
 	}
 
+	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
+
+	#pragma omp parallel for
+	for (size_t i = 0; i < x_l.size(); i++){
+		r_l[i] =  b_l[i] - Ax_l[i];
+	}
+
+
 	dual_soultion_compressed_parallel   = x_l;
-	dual_residuum_compressed_parallel   = Pg_l;
+	dual_residuum_compressed_parallel   = r_l;
 
 
 	if (USE_GGtINV == 1) {
-		Projector_l_inv_compG ( timeEvalProj, cluster, Pg_l, amplitudes, 2 );
+		Projector_l_inv_compG ( timeEvalProj, cluster, r_l, amplitudes, 2 );
 	} else {
-		Projector_l_compG	  ( timeEvalProj, cluster, Pg_l, amplitudes, 2 );
+		Projector_l_compG	  ( timeEvalProj, cluster, r_l, amplitudes, 2 );
 	}
 	// *** end - save solution - in dual and amplitudes ***************************************
 
