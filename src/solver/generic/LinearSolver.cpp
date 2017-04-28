@@ -876,14 +876,10 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 	}
 
 	// Setup Conj Projector
-	solver->CreateConjProjector(*cluster);
 
-//	createCMat();
-//
-//	exit(0);
-
-
-
+	if ( configuration.conj_projector == CONJ_PROJECTOR::GENEO ) {
+		solver->CreateConjProjector(*cluster);
+	}
 
 	// Cleanup of unnecessary objects
 	// TODO: This can be a problem in some cases - need to be verified

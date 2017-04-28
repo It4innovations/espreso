@@ -98,9 +98,7 @@ void IterSolverBase::Solve_singular ( Cluster & cluster,
 		Solve_PipeCG_singular_dom( cluster, in_right_hand_side_primal );
 		break;
 	case ESPRESO_ITERATIVE_SOLVER::orthogonalPCG:
-		//Solve_full_ortho_CG_singular_dom (cluster, in_right_hand_side_primal );
-		//TODO
-		Solve_full_ortho_CG_singular_dom_geneo(cluster, in_right_hand_side_primal);
+		Solve_full_ortho_CG_singular_dom (cluster, in_right_hand_side_primal );
 		break;
 	case ESPRESO_ITERATIVE_SOLVER::GMRES:
 		Solve_GMRES_singular_dom (cluster, in_right_hand_side_primal );
@@ -111,6 +109,13 @@ void IterSolverBase::Solve_singular ( Cluster & cluster,
 	case ESPRESO_ITERATIVE_SOLVER::QPCE:
 		Solve_QPCE_singular_dom(cluster, in_right_hand_side_primal );
 		break;
+	case ESPRESO_ITERATIVE_SOLVER::orthogonalPCG_CP:
+		Solve_full_ortho_CG_singular_dom_geneo(cluster, in_right_hand_side_primal);
+		break;
+	case ESPRESO_ITERATIVE_SOLVER::PCG_CP:
+		ESINFO(GLOBAL_ERROR) << "Regular CG with conjugate projector not implemented yet";
+		break;
+
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unknown CG solver";
 	}
@@ -1464,7 +1469,19 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 	}
 
 	// *** Calculate the stop condition *******************************************
-	tol = epsilon * parallel_norm_compressed(cluster, u_l);
+	//tol = epsilon * parallel_norm_compressed(cluster, u_l);
+
+	double tol1 = epsilon * parallel_norm_compressed(cluster, u_l);
+	double tol2 = epsilon * parallel_norm_compressed(cluster, b_l);
+
+	if (tol1 < tol2 )
+		tol = tol1;
+	else
+		tol = tol2;
+
+
+
+
 
 	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
@@ -1478,21 +1495,22 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 		return ss.str();
 	};
 
-	double min_tol = 1e-12;
-	if (tol < min_tol) {
-		ESINFO(CONVERGENCE) << Info::TextColor::RED << "The NORM is fulfilled.";
-	} else {
+//	double min_tol = 1e-12;
+//	if (tol < min_tol) {
+//		ESINFO(CONVERGENCE) << Info::TextColor::RED << "The NORM is fulfilled.";
+//	} else {
 		ESINFO(CONVERGENCE)
 			<< spaces(indent.size() + iterationWidth - 4) << "iter"
 			<< spaces(indent.size() + precision - 3) << "|r|" << spaces(2)
 			<< spaces(indent.size() + 4) << "r" << spaces(4)
 			<< spaces(indent.size() + (precision + 2) / 2 + (precision + 2) % 2 - 1) << "e" << spaces(precision / 2)
 			<< spaces(indent.size()) << "time[s]";
-	}
+//	}
 
 	// *** Start the CG iteration loop ********************************************
-	for (int iter = 0; tol > min_tol && iter < CG_max_iter; iter++) {
 
+	//for (int iter = 0; tol > min_tol && iter < CG_max_iter; iter++) {
+	for (int iter = 0; iter < CG_max_iter; iter++) {
 		timing.totalTime.start();
 
 		#pragma omp parallel for
@@ -3529,7 +3547,11 @@ void IterSolverBase::CreateConjProjector(Cluster & cluster) {
 //		Bdec[d].ConvertToCSR(1);
 //		Btdec[d].ConvertToCSR(1);
 
+		std::cout << ".";
+
 	}
+
+	std::cout << std::endl;
 
 	//TODO: can be done as log N
 	SparseMatrix Ml_per_cluster;
@@ -3540,7 +3562,7 @@ void IterSolverBase::CreateConjProjector(Cluster & cluster) {
 
 	SparseMatrix C_per_cluster;
 
-	std::cout << Ml_per_cluster.SpyText();
+	//std::cout << Ml_per_cluster.SpyText();
 
 	for (size_t d = 0; d < cluster.domains.size(); d++) {
 
@@ -3560,7 +3582,7 @@ void IterSolverBase::CreateConjProjector(Cluster & cluster) {
 		SparseMatrix tmp;
 		tmp.MatMat(Ml_per_cluster,'N',B1full);
 		Ml_fin_pd[d].MatMat(B1tfull,'N',tmp);
-		std::cout << Ml_fin_pd[d].SpyText();
+		//std::cout << Ml_fin_pd[d].SpyText();
 		Ml_fin_pd[d].ConvertToCOO(0);
 
 		SparseMatrix Prec = cluster.domains[d].Prec;
@@ -3626,8 +3648,10 @@ void IterSolverBase::CreateConjProjector(Cluster & cluster) {
 
 
 
-		int il = 1; // first eigen value to be calculated
-		int iv = 8; // last  eigen value to be calculated
+		int il = cluster.domains[d].Kplus_R.cols; 								// first eigen value to be calculated
+		int iv = cluster.domains[d].Kplus_R.cols + configuration.GENEO_SIZE;	// last  eigen value to be calculated
+
+		std::cout << "FETI Geneo eigen vectors from " << il << " to " << iv << std::endl;
 
 
 		int eig_n = (iv-il+1);
@@ -3688,7 +3712,14 @@ void IterSolverBase::CreateConjProjector(Cluster & cluster) {
 
 			C_per_cluster.MatAppend(BtVi);
 
+
+			std::cout << ".";
+
 	}
+
+	std::cout << std::endl;
+
+	std::cout << "1" << std::endl;
 
 	C_per_cluster.MatTranspose();
 	C_per_cluster.ConvertCSRToDense(0);
@@ -3697,7 +3728,11 @@ void IterSolverBase::CreateConjProjector(Cluster & cluster) {
 	SparseMatrix CPt_per_cluster;
 	SparseMatrix ACP_per_cluster;
 
+	std::cout << "2" << std::endl;
+
 	Projector_l_inv_compG(timeEvalProj, cluster, C_per_cluster, CP_per_cluster );
+
+	std::cout << "3" << std::endl;
 
 	apply_A_l_Mat (timeEvalAppa, cluster, CP_per_cluster, ACP_per_cluster);
 
@@ -3713,9 +3748,13 @@ void IterSolverBase::CreateConjProjector(Cluster & cluster) {
 	CPt_per_cluster.MatTranspose();
 	CPt_per_cluster.ConvertCSRToDense(1);
 
+	std::cout << "4" << std::endl;
+
 	Proj_per_cluster.DenseMatMat(CPt_per_cluster,'N',ACP_per_cluster,'N');
 
 	Proj_per_cluster2.DenseMatMat(CP_per_cluster,'T',ACP_per_cluster,'N'); // TODO : DGEMM nefunguje s transpose turned on - needs to be fixed
+
+	std::cout << "5" << std::endl;
 
 	ACP_per_cluster.ConvertDenseToCSR(0);
 	CPt_per_cluster.ConvertDenseToCSR(0);
@@ -3727,11 +3766,15 @@ void IterSolverBase::CreateConjProjector(Cluster & cluster) {
 	Proj_per_cluster.RemoveLowerDense();
 	Proj_per_cluster.mtype = espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 
+	std::cout << "6" << std::endl;
+
 	DenseSolverMKL ProjSolver;
 
 	ProjSolver.ImportMatrix(Proj_per_cluster);
 
 	ProjSolver.Factorization("Geneo projector factorization");
+
+	std::cout << "7" << std::endl;
 
 	// *** Pass objects to cluster
 	cluster.CFCt.ImportMatrix(Proj_per_cluster);
@@ -3810,8 +3853,6 @@ void IterSolverBase::ConjProj_lambda0(  Cluster & cluster, SEQ_VECTOR<double> & 
 
 
 
-
-
 void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
@@ -3820,7 +3861,11 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 //##################################################################################################*/
 //
 
-	std::cout << "\n\n Geneo \n\n";
+	std::cout << "\n\n Full orthogonal with restart and conjugate projector \n";
+
+	if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
+		std::cout << " - using GENEO \n";
+	}
 
 	size_t dl_size = cluster.my_lamdas_indices.size();
 
@@ -3864,8 +3909,12 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 	SEQ_VECTOR <double> fi_l	 	(CG_max_iter, 0);
 	SEQ_VECTOR <double> fi_g	 	(CG_max_iter, 0);
 
+	bool update = true;
 
 	int cnt_iter=0;
+
+	eslocal restart_iter = 0;
+
 
 	cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );	// prava strana dualu
 	cluster.CreateVec_d_perCluster ( in_right_hand_side_primal );	// e - vektor tuhych pohybu
@@ -3886,9 +3935,10 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 		r_0[i] =  b_l[i] - Ax_0[i];
 	}
 
-	ConjProj_lambda0(cluster, r_0, x_1);
-
-	ConjProj_t(cluster, r_0, r_0);
+	if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
+		ConjProj_lambda0(cluster, r_0, x_1);
+		ConjProj_t(cluster, r_0, r_0);
+	}
 
 	SparseMatrix W_l;
 	W_l.type = 'G';
@@ -3942,8 +3992,15 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 
 	// *** Calculate the stop condition *******************************************
 
-	ConjProj(cluster, r_l, r_tmp );
-	double tol1 = epsilon * parallel_norm_compressed(cluster, r_tmp);
+	double tol1;
+	if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
+		ConjProj(cluster, r_l, r_tmp );
+		tol1 = epsilon * parallel_norm_compressed(cluster, r_tmp);
+	}
+	else{
+		tol1 = epsilon * parallel_norm_compressed(cluster, r_l);
+	}
+
 	double tol2 = epsilon * parallel_norm_compressed(cluster, b_l);
 
 	if (tol1 < tol2 )
@@ -3978,9 +4035,10 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 	W_l.nnz += w_l.size();
 	W_l.cols++;
 
+	eslocal iter = 0;
 
 	// *** Start the CG iteration loop ********************************************
-	for (int iter = 0; iter < CG_max_iter; iter++) {
+	for (int t_iter = 0; t_iter < CG_max_iter; t_iter++) {
 
 		timing.totalTime.start();
 
@@ -3988,7 +4046,9 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 		apply_A_l_comp_dom_B(timeEvalAppa, cluster, w_l, Aw_l);
 		appA_time.end();
 
-		ConjProj_t(cluster, Aw_l, Aw_l);
+		if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
+			ConjProj_t(cluster, Aw_l, Aw_l);
+		}
 
 		AW_l.dense_values.insert(AW_l.dense_values.end(), Aw_l.begin(), Aw_l.end());
 		AW_l.nnz += Aw_l.size();
@@ -4040,23 +4100,119 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 		}
 		AW_l.DenseMatVec(_w_l,fi_l ,'T');
 
-		#pragma omp parallel for
-		for (eslocal i = 0; i <= iter; i++) {
-			fi_g[i] = fi_l[i] / delta_l[i];
+//		std::cout << std::endl;
+//		for (int i = 0; i < AW_l.cols; i++) {
+//			std::cout << fabs (fi_l[i]) << ", ";
+//		}
+//		std::cout << std::endl;
+
+		update = true;
+		if ( iter > configuration.RESTART_ITER) {
+
+			double fi_last = fabs( fi_l[iter - 1] );
+			for (eslocal i = 0; i < iter - 1; i++) {
+				if ( fabs (fi_l[i]) < fi_last ) {
+					update = false;
+				}
+
+			}
 		}
 
-		MPI_Allreduce( &fi_g[0], &fi_l[0], iter + 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-		W_l.DenseMatVec(fi_l,v_tmp_l);
 
-		#pragma omp parallel for
-		for (size_t i = 0; i < x_l.size(); i++) {
-			w_l[i] = w_l[i] -  v_tmp_l[i];
+		if (update) {
+
+			#pragma omp parallel for
+			for (eslocal i = 0; i <= iter; i++) {
+				fi_g[i] = fi_l[i] / delta_l[i];
+			}
+
+			MPI_Allreduce( &fi_g[0], &fi_l[0], iter + 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+			W_l.DenseMatVec(fi_l,v_tmp_l);
+
+			#pragma omp parallel for
+			for (size_t i = 0; i < x_l.size(); i++) {
+				w_l[i] = w_l[i] -  v_tmp_l[i];
+			}
+
+			W_l.dense_values.insert(W_l.dense_values.end(), w_l.begin(), w_l.end());
+			W_l.nnz += w_l.size();
+			W_l.cols++;
+
+
+			iter++;
+
+		} else {
+
+			iter = 0;
+
+			ESINFO(CONVERGENCE) << "Restarting orthogonalization ... ";
+
+			// Restart W_l
+			W_l.dense_values.clear();
+			W_l.nnz  = 0;
+			W_l.cols = 0;
+
+			// Restart AW_l
+			AW_l.dense_values.clear();
+			AW_l.nnz  = 0;
+			AW_l.cols = 0;
+
+			#pragma omp parallel for
+			for (size_t i = 0; i < r_0.size(); i++){
+				x_0[i] =  x_0[i] + x_l[i];
+				x_l[i] = 0.0;
+			}
+
+			apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_0, Ax_0);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
+
+			#pragma omp parallel for
+			for (size_t i = 0; i < r_0.size(); i++){
+				r_0[i] =  b_l[i] - Ax_0[i];
+			}
+
+			if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
+				ConjProj_lambda0(cluster, r_0, x_1);
+				ConjProj_t(cluster, r_0, r_0);
+			}
+
+			switch (USE_PREC) {
+			case ESPRESO_PRECONDITIONER::DIRICHLET:
+
+				proj1_time.start();
+				if (USE_GGtINV == 1) {
+					Projector_l_inv_compG( timeEvalProj, cluster, r_0, r_l, 0 );
+				} else {
+					Projector_l_compG		  ( timeEvalProj, cluster, r_0, r_l, 0 );
+				}
+				proj1_time.end();
+
+				// Scale
+
+				prec_time.start();
+				apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, z_l);
+				prec_time.end();
+
+				// Re-Scale
+
+				proj2_time.start();
+				if (USE_GGtINV == 1) {
+					Projector_l_inv_compG( timeEvalProj, cluster, z_l, w_l, 0 );
+				} else {
+					Projector_l_compG		  ( timeEvalProj, cluster, z_l, w_l, 0 );
+				}
+				proj2_time.end();
+
+				break;
+
+			default:
+				ESINFO(GLOBAL_ERROR) << "FETI Geneo requires dirichlet preconditioner.";
+			}
+
+			W_l.dense_values.insert(W_l.dense_values.end(), w_l.begin(), w_l.end());
+			W_l.nnz += w_l.size();
+			W_l.cols++;
+
 		}
-
-		W_l.dense_values.insert(W_l.dense_values.end(), w_l.begin(), w_l.end());
-		W_l.nnz += w_l.size();
-		W_l.cols++;
-
 
 		norm_time.start();
 		norm_l = sqrt (parallel_ddot_compressed(cluster, r_l, z_l) );
@@ -4065,7 +4221,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 		timing.totalTime.end();
 
 		ESINFO(CONVERGENCE)
-		<< indent << std::setw(iterationWidth) << iter + 1
+		<< indent << std::setw(iterationWidth) << iter
 		<< indent << std::fixed << std::setprecision(precision) 	<< norm_l / tol * epsilon
 		<< indent << std::scientific << std::setprecision(3) 		<< norm_l
 		<< indent << std::fixed << std::setprecision(precision - 1) << epsilon
@@ -4079,7 +4235,9 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 
 	// *** save solution - in dual and amplitudes *********************************************
 
-	ConjProj(cluster, x_l, x_l);
+	if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
+		ConjProj(cluster, x_l, x_l);
+	}
 
 	#pragma omp parallel for
 	for (size_t i = 0; i < x_l.size(); i++) {

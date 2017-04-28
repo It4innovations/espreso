@@ -23,7 +23,11 @@ enum class ESPRESO_ITERATIVE_SOLVER {
 	/// BICGSTAB
 	BICGSTAB = 4,
 	/// QPCE
-	QPCE = 5
+	QPCE = 5,
+	/// FETI Geneo with full ortogonalization CG
+	orthogonalPCG_CP = 6,
+	/// FETI Geneo with regular CG
+	PCG_CP = 7
 };
 
 enum class ESPRESO_PRECONDITIONER {
@@ -39,6 +43,13 @@ enum class ESPRESO_PRECONDITIONER {
 	SUPER_DIRICHLET = 4,
 	/// Lubos's preconditioner
 	MAGIC = 5
+};
+
+enum class CONJ_PROJECTOR {
+	/// No conj projector
+	NONE = 0,
+	/// Randomly found null pivots of stiffness matrix
+	GENEO = 1
 };
 
 enum class REGULARIZATION {
