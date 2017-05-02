@@ -110,6 +110,7 @@ void Solver::updateMatrices(const Step &step, Matrices matrices, const std::vect
 
 	TimeEvent time(std::string(solution.size() ? "Updates" : "Assembles") + " matrices " + mNames(matrices) + " by " + physics->name()); time.start();
 	physics->updateMatrix(step, matrices, solution);
+	storeData(step, physics->instance()->K, "origK", "original stiffness matrices K");
 	time.endWithBarrier(); _timeStatistics->addEvent(time);
 }
 
