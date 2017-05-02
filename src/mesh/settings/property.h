@@ -34,6 +34,15 @@ enum class Property : int {
 	HEAT_TRANSFER_COEFFICIENT,
 	EXTERNAL_TEMPERATURE,
 
+	WALL_HEIGHT,
+	TILT_ANGLE,
+	DIAMETER,
+	PLATE_LENGTH,
+	FLUID_VELOCITY,
+	PLATE_DISTANCE,
+	LENGTH,
+	ABSOLUTE_PRESSURE,
+
 	THERMAL_RESISTANCE,
 	SURFACE_TEMPERATURE,
 	LAYER_THICKNESS,
@@ -76,6 +85,15 @@ inline std::ostream& operator<<(std::ostream& os, const Property& property)
 		case Property::HEAT_FLUX: return os << "HEAT_FLUX";
 		case Property::HEAT_TRANSFER_COEFFICIENT: return os << "HEAT_TRANSFER_COEFFICIENT";
 		case Property::EXTERNAL_TEMPERATURE: return os << "EXTERNAL_TEMPERATURE";
+
+		case Property::WALL_HEIGHT: return os << "WALL_HEIGHT";
+		case Property::TILT_ANGLE: return os << "TILT_ANGLE";
+		case Property::DIAMETER: return os << "DIAMETER";
+		case Property::PLATE_LENGTH: return os << "PLATE_LENGTH";
+		case Property::FLUID_VELOCITY: return os << "FLUID_VELOCITY";
+		case Property::PLATE_DISTANCE: return os << "PLATE_DISTANCE";
+		case Property::LENGTH: return os << "LENGTH";
+		case Property::ABSOLUTE_PRESSURE: return os << "ABSOLUTE_PRESSURE";
 
 		case Property::THERMAL_RESISTANCE: return os << "THERMAL_RESISTANCE";
 		case Property::LAYER_THICKNESS: return os << "LAYER_THICKNESS";

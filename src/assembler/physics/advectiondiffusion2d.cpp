@@ -62,6 +62,23 @@ void NewAdvectionDiffusion2D::prepareTotalFETI()
 			_mesh->loadProperty(values, { }, { Property::EXTERNAL_TEMPERATURE });
 			values[regions->first] = regions->second->heat_transfer_coefficient;
 			_mesh->loadProperty(values, { }, { Property::HEAT_TRANSFER_COEFFICIENT });
+
+			values[regions->first] = regions->second->wall_height;
+			_mesh->loadProperty(values, { }, { Property::WALL_HEIGHT });
+			values[regions->first] = regions->second->tilt_angle;
+			_mesh->loadProperty(values, { }, { Property::TILT_ANGLE });
+			values[regions->first] = regions->second->diameter;
+			_mesh->loadProperty(values, { }, { Property::DIAMETER });
+			values[regions->first] = regions->second->plate_length;
+			_mesh->loadProperty(values, { }, { Property::PLATE_LENGTH });
+			values[regions->first] = regions->second->fluid_velocity;
+			_mesh->loadProperty(values, { }, { Property::FLUID_VELOCITY });
+			values[regions->first] = regions->second->plate_distance;
+			_mesh->loadProperty(values, { }, { Property::PLATE_DISTANCE });
+			values[regions->first] = regions->second->length;
+			_mesh->loadProperty(values, { }, { Property::LENGTH });
+			values[regions->first] = regions->second->absolute_pressure;
+			_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
 		}
 	}
 
@@ -407,6 +424,86 @@ void NewAdvectionDiffusion2D::processFace(const Step &step, Matrices matrices, c
 	ESINFO(ERROR) << "Advection diffusion 2D cannot process face";
 }
 
+static double computeHTC(const AdvectionDiffusionConvection &convection, const Element *e, size_t node, size_t step, double temp)
+{
+//	e->getProperty(Property::HEAT_TRANSFER_COEFFICIENT, node, step, 0);
+//	e->getProperty(Property::WALL_HEIGHT, node, step, 0);
+//	e->getProperty(Property::TILT_ANGLE, node, step, 0);
+//	e->getProperty(Property::DIAMETER, node, step, 0);
+//	e->getProperty(Property::PLATE_LENGTH, node, step, 0);
+//	e->getProperty(Property::FLUID_VELOCITY, node, step, 0);
+//	e->getProperty(Property::PLATE_DISTANCE, node, step, 0);
+//	e->getProperty(Property::LENGTH, node, step, 0);
+
+	double htc = 0;
+	switch (convection.type) {
+	case espreso::CONVECTION_TYPE::USER:
+		htc = e->getProperty(Property::HEAT_TRANSFER_COEFFICIENT, node, step, 0);
+		break;
+	case espreso::CONVECTION_TYPE::EXTERNAL_NATURAL:
+
+		switch (convection.variant) {
+		case espreso::CONVECTION_VARIANT::INCLINED_WALL: {
+			htc = e->getProperty(Property::WALL_HEIGHT, node, step, 0);
+		} break;
+		case espreso::CONVECTION_VARIANT::VERTICAL_WALL:
+			break;
+		default:
+			ESINFO(ERROR) << "Invalid convection variant for EXTERNAL_NATURAL.";
+		}
+
+		break;
+	case espreso::CONVECTION_TYPE::INTERNAL_NATURAL:
+		break;
+	case espreso::CONVECTION_TYPE::EXTERNAL_FORCED:
+		break;
+	case espreso::CONVECTION_TYPE::INTERNAL_FORCED:
+
+		switch (convection.variant) {
+		case espreso::CONVECTION_VARIANT::TUBE: {
+
+			double rho, dynamic_viscosity, heat_capacity, thermal_conductivity;
+			switch (convection.fluid) {
+			case espreso::CONVECTION_FLUID::AIR:
+				rho = 1;
+				dynamic_viscosity = 1;
+				heat_capacity = 1;
+				thermal_conductivity = 1;
+				break;
+			case espreso::CONVECTION_FLUID::WATER:
+				rho = 1000;
+				dynamic_viscosity = 1;
+				heat_capacity = 1;
+				thermal_conductivity = 1;
+				break;
+			case espreso::CONVECTION_FLUID::OIL:
+				rho = 1;
+				dynamic_viscosity = 1;
+				heat_capacity = 1;
+				thermal_conductivity = 1;
+				break;
+			}
+
+			double Re = rho * e->getProperty(Property::FLUID_VELOCITY, node, step, 0) * e->getProperty(Property::DIAMETER, node, step, 0) / dynamic_viscosity;
+			double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
+			double n = temp < e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step, 0) ? 0.3 : 0.4;
+			htc = thermal_conductivity / e->getProperty(Property::DIAMETER, node, step, 0);
+			if (Re <= 2500) {
+				htc *= 3.66;
+			} else {
+				htc *= 0.027 * pow(Re, .8) * pow(Pr, n) * pow(dynamic_viscosity / dynamic_viscosity, 0.14);
+			}
+		} break;
+		default:
+			ESINFO(ERROR) << "Invalid convection variant for INTERNAL_FORCED.";
+		}
+
+		break;
+	}
+
+	return htc;
+}
+
 void NewAdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step) ||
@@ -456,6 +553,18 @@ void NewAdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, c
 	const std::vector<DenseMatrix> &N = e->N();
 	const std::vector<double> &weighFactor = e->weighFactor();
 
+
+	AdvectionDiffusionConvection *convection = NULL;
+	auto stepit = _configuration.convection.find(step.step + 1);
+	if (stepit != _configuration.convection.end()) {
+		for (size_t r = 0; convection == NULL && r < e->regions().size(); r++) {
+			auto regionit = stepit->second.find(e->regions()[r]->name);
+			if (regionit != stepit->second.end()) {
+				convection = regionit->second;
+			}
+		}
+	}
+
 	for (size_t n = 0; n < e->nodes(); n++) {
 		coordinates(n, 0) = _mesh->coordinates()[e->node(n)].x;
 		coordinates(n, 1) = _mesh->coordinates()[e->node(n)].y;
@@ -466,7 +575,7 @@ void NewAdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, c
 			temp = 0;
 		}
 		T(n, 0) = temp;
-		htc(n, 0) = e->getProperty(Property::HEAT_TRANSFER_COEFFICIENT, n, step.step, 0);
+		htc(n, 0) = convection != NULL ? computeHTC(*convection, e, n, step.step, temp) : 0;
 		q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.step, 0) - temp);
 		q(n, 0) += e->getProperty(Property::HEAT_FLOW, n, step.step, 0) / area;
 		q(n, 0) += e->getProperty(Property::HEAT_FLUX, n, step.step, 0);
