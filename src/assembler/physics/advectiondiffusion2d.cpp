@@ -424,6 +424,124 @@ void NewAdvectionDiffusion2D::processFace(const Step &step, Matrices matrices, c
 	ESINFO(ERROR) << "Advection diffusion 2D cannot process face";
 }
 
+static void convectionMatParameters(const AdvectionDiffusionConvection &convection, const Element *e, size_t node, size_t step, double temp, double T_EXT, double &rho, double &dynamic_viscosity, double &dynamic_viscosity_T, double &heat_capacity, double &thermal_conductivity )
+{
+
+
+	double  gas_constant;
+
+	switch (convection.fluid) {
+	case espreso::CONVECTION_FLUID::AIR:{
+
+
+		gas_constant = 286.9;
+		rho = (e->getProperty(Property::ABSOLUTE_PRESSURE, node, step, 0)) / (gas_constant * T_EXT);
+
+
+		if ((T_EXT >=200) && (T_EXT <= 1600)){
+			heat_capacity = 1047.63657-0.372589265*T_EXT+9.45304214E-4*pow(T_EXT,2.0)-6.02409443E-7*pow(T_EXT,3.0)+1.2858961E-10*pow(T_EXT,4.0);
+		}else if (T_EXT < 200){
+			heat_capacity = 1047.63657-0.372589265*200.0+9.45304214E-4*pow(200.0,2.0)-6.02409443E-7*pow(200.0,3.0)+1.2858961E-10*pow(200.0,4.0);
+		}else if (T_EXT > 1600){
+			heat_capacity = 1047.63657-0.372589265*1600.0+9.45304214E-4*pow(1600.0,2.0)-6.02409443E-7*pow(1600.0,3.0)+1.2858961E-10*pow(1600.0,4.0);
+		}
+
+		if ((T_EXT >=200) && (T_EXT <= 1600)){
+			thermal_conductivity = -0.00227583562+1.15480022E-4*T_EXT-7.90252856E-8*pow(T_EXT,2.0)+4.11702505E-11*pow(T_EXT,3.0)-7.43864331E-15*pow(T_EXT,4.0);
+		}else if (T_EXT < 200){
+			thermal_conductivity = -0.00227583562+1.15480022E-4*200.0-7.90252856E-8*pow(200.0,2.0)+4.11702505E-11*pow(200.0,3.0)-7.43864331E-15*pow(200.0,4.0);
+		}else if (T_EXT > 1600){
+			thermal_conductivity =  -0.00227583562+1.15480022E-4*1600.0-7.90252856E-8*pow(1600.0,2.0)+4.11702505E-11*pow(1600.0,3.0)-7.43864331E-15*pow(1600.0,4.0);
+		}
+
+		if ((T_EXT >=200) && (T_EXT <= 1600)){
+		dynamic_viscosity = -8.38278E-7 + 8.35717342E-8 * T_EXT - 7.69429583E-11 * pow(T_EXT,2.0) + 4.6437266E-14 * pow(T_EXT,3.0) - 1.06585607E-17 * pow(T_EXT,4.0);
+		}else if (T_EXT < 200){
+			dynamic_viscosity = -8.38278E-7 + 8.35717342E-8 * 200.0 - 7.69429583E-11 * pow(200.0,2.0) + 4.6437266E-14 * pow(200.0,3.0) - 1.06585607E-17 * pow(200.0,4.0);
+		}else if (T_EXT > 1600){
+			dynamic_viscosity = -8.38278E-7 + 8.35717342E-8 * 1600.0 - 7.69429583E-11 * pow(1600.0,2.0) + 4.6437266E-14 * pow(1600.0,3.0) - 1.06585607E-17 * pow(1600.0,4.0);
+		}
+
+
+		if ((temp >=200) && (temp <= 1600)){
+			dynamic_viscosity_T = -8.38278E-7 + 8.35717342E-8 * temp - 7.69429583E-11 * pow(temp,2.0) + 4.6437266E-14 * pow(temp,3.0) - 1.06585607E-17 * pow(temp,4.0);
+		}else if (temp < 200){
+			dynamic_viscosity_T = -8.38278E-7 + 8.35717342E-8 * 200.0 - 7.69429583E-11 * pow(200.0,2.0) + 4.6437266E-14 * pow(200.0,3.0) - 1.06585607E-17 * pow(200.0,4.0);
+		}else if (temp > 1600){
+			dynamic_viscosity_T = -8.38278E-7 + 8.35717342E-8 * 1600.0 - 7.69429583E-11 * pow(1600.0,2.0) + 4.6437266E-14 * pow(1600.0,3.0) - 1.06585607E-17 * pow(1600.0,4.0);
+		}
+
+	}break;
+	case espreso::CONVECTION_FLUID::WATER:{
+
+		if ((T_EXT >=273) && (T_EXT <= 283)){
+			rho = 972.7584 + 0.2084 *T_EXT - 4.0E-4 * pow(T_EXT,2.0);
+		}else if((T_EXT >283) && (T_EXT <= 373)){
+			rho = 345.28 + 5.749816 * T_EXT - 0.0157244 * pow(T_EXT,2.0) + 1.264375E-5 * pow(T_EXT,3.0);
+		}else if (T_EXT < 273){
+			rho = 972.7584 + 0.2084 *273.0 - 4.0E-4 * pow(273.0,2.0);
+		}else if (T_EXT > 373){
+			rho = 345.28 + 5.749816 * 373.0 - 0.0157244 * pow(373.0,2.0) + 1.264375E-5 * pow(373.0,3.0);
+		}
+
+
+		if ((T_EXT >= 265) && (T_EXT <= 293)){
+			dynamic_viscosity = 5.948859 - 0.08236196 * T_EXT + 4.287142E-4 * pow(T_EXT,2.0) - 9.938045E-7 * pow(T_EXT,3.0) + 8.65316E-10 * pow(T_EXT,4.0);
+		}else if((T_EXT >293) && (T_EXT <= 353)){
+			dynamic_viscosity = 	0.410191 - 0.004753985 * T_EXT + 2.079795E-5 * pow(T_EXT,2.0) - 4.061698E-8 *  pow(T_EXT,3.0) + 2.983925E-11 * pow(T_EXT,4.0);
+		}else if((T_EXT >353) && (T_EXT <= 423)){
+			dynamic_viscosity = 0.03625638 - 3.265463E-4 * T_EXT + 1.127139E-6 * pow(T_EXT,2.0) - 1.75363E-9 * pow(T_EXT,3.0) + 1.033976E-12 * pow(T_EXT,4.0);
+		}else if (T_EXT < 265){
+			dynamic_viscosity = 5.948859 - 0.08236196 * 265.0 + 4.287142E-4 * pow(265.0,2.0) - 9.938045E-7 * pow(265.0,3.0) + 8.65316E-10 * pow(265.0,4.0);
+		}else if (T_EXT > 423){
+			dynamic_viscosity = 0.03625638 - 3.265463E-4 * 423.0 + 1.127139E-6 * pow(423.0,2.0) - 1.75363E-9 * pow(423.0,3.0) + 1.033976E-12 * pow(423.0,4.0);
+		}
+
+
+		if ((T_EXT >= 275) && (T_EXT <= 370)){
+			thermal_conductivity = -0.9003748 + 0.008387698 * T_EXT - 1.118205E-5 * pow(T_EXT,2.0);
+		}else if (T_EXT < 275){
+			thermal_conductivity = -0.9003748 + 0.008387698 * 275.0 - 1.118205E-5 * pow(275.0,2.0);
+		}else if (T_EXT > 370){
+			thermal_conductivity = -0.9003748 + 0.008387698 * 370.0 - 1.118205E-5 * pow(370.0,2.0);
+		}
+
+		if ((T_EXT >= 293) && (T_EXT <= 373)){
+			heat_capacity = 4035.841 + 0.492312 * T_EXT;
+		}else if (T_EXT < 293){
+			heat_capacity = 4035.841 + 0.492312 * 293;
+		}else if (T_EXT > 373){
+			heat_capacity = 4035.841 + 0.492312 * 373;
+		}
+
+
+		if ((temp >= 265) && (temp <= 293)){
+			dynamic_viscosity_T = 5.948859 - 0.08236196 * temp + 4.287142E-4 * pow(temp,2.0) - 9.938045E-7 * pow(temp,3.0) + 8.65316E-10 * pow(temp,4.0);
+		}else if((temp >293) && (temp <= 353)){
+			dynamic_viscosity_T = 	0.410191 - 0.004753985 * temp + 2.079795E-5 * pow(temp,2.0) - 4.061698E-8 *  pow(temp,3.0) + 2.983925E-11 * pow(temp,4.0);
+		}else if((temp >353) && (temp <= 423)){
+			dynamic_viscosity_T = 0.03625638 - 3.265463E-4 * temp + 1.127139E-6 * pow(temp,2.0) - 1.75363E-9 * pow(temp,3.0) + 1.033976E-12 * pow(temp,4.0);
+		}else if (temp < 265){
+			dynamic_viscosity_T = 5.948859 - 0.08236196 * 265.0 + 4.287142E-4 * pow(265.0,2.0) - 9.938045E-7 * pow(265.0,3.0) + 8.65316E-10 * pow(265.0,4.0);
+		}else if (temp > 423){
+			dynamic_viscosity_T = 0.03625638 - 3.265463E-4 * 423.0 + 1.127139E-6 * pow(423.0,2.0) - 1.75363E-9 * pow(423.0,3.0) + 1.033976E-12 * pow(423.0,4.0);
+		}
+
+	}break;
+	case espreso::CONVECTION_FLUID::ENGINE_OIL:{
+
+	}break;
+	case espreso::CONVECTION_FLUID::TRANSFORMER_OIL:{
+
+	}break;
+	default:
+		ESINFO(ERROR) << "Invalid convection fluid type.";
+	}
+
+
+}
+
+
 static double computeHTC(const AdvectionDiffusionConvection &convection, const Element *e, size_t node, size_t step, double temp)
 {
 //	e->getProperty(Property::HEAT_TRANSFER_COEFFICIENT, node, step, 0);
@@ -442,34 +560,17 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 	}break;
 	case espreso::CONVECTION_TYPE::EXTERNAL_NATURAL:{
 
-		double T_AVG, g, gas_constant, rho, dynamic_viscosity, heat_capacity, thermal_conductivity;
+		double T_AVG, g, rho, dynamic_viscosity, heat_capacity, thermal_conductivity, dynamic_viscosity_T;
 
 		T_AVG = (e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0) + temp) / 2.0;
 		g = 9.81;
-		switch (convection.fluid) {
-		case espreso::CONVECTION_FLUID::AIR:{
 
-			gas_constant = 286.9;
-			rho = (e->getProperty(Property::ABSOLUTE_PRESSURE, node, step, 0)) / (gas_constant * T_AVG);
-			heat_capacity = 1002.5 + 275e-6 * pow((T_AVG - 200), 2.0);
-			thermal_conductivity = 0.02626 * pow(T_AVG / 300, 0.8646);
-			dynamic_viscosity = (1.458e-6 * pow(T_AVG, 1.5)) / (T_AVG + 110.4);
-		}break;
-		case espreso::CONVECTION_FLUID::WATER:{
-
-			rho = 765.33 + 1.8142 * T_AVG - 0.0035 * pow(T_AVG, 2);
-			heat_capacity = 28.07 - 0.2817 * T_AVG + 1.25e-3 * pow(T_AVG, 2.0) - 2.48e-6 * pow(T_AVG, 3.0) + 1.857e-9 * pow(T_AVG, 4.0);
-			thermal_conductivity = -0.5752 + 6.397e-3 * T_AVG - 8.151e-6 * pow(T_AVG, 2.0);
-			dynamic_viscosity = 9.67e-2 - 8.207e-4 * T_AVG + 2.344e-6 * pow(T_AVG, 2.0) - 2.244e-9 * pow(T_AVG, 3.0);
-		}break;
-		default:
-			ESINFO(ERROR) << "Invalid convection fluid type.";
-		}
+		convectionMatParameters(convection, e, node, step, temp, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
 
 		switch (convection.variant) {
 		case espreso::CONVECTION_VARIANT::INCLINED_WALL: {
 
-			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * ( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::WALL_HEIGHT, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::WALL_HEIGHT, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
 			double tilt_angle = e->getProperty(Property::TILT_ANGLE, node, step,	0) * M_PI / 180.0;
 			if (RaL <= 1e9) {
 				htc = (thermal_conductivity	/ e->getProperty(Property::WALL_HEIGHT, node, step, 0)) * (0.68 + (0.67 * cos(tilt_angle) * pow(RaL,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
@@ -480,7 +581,7 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 		}break;
 		case espreso::CONVECTION_VARIANT::VERTICAL_WALL: {
 
-			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * ( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::WALL_HEIGHT, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::WALL_HEIGHT, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
 
 			if (RaL <= 1e9) {
 				htc = (thermal_conductivity	/ e->getProperty(Property::WALL_HEIGHT, node, step, 0)) * (0.68 + (0.67 * pow(RaL,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
@@ -491,7 +592,7 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 		}break;
         case espreso::CONVECTION_VARIANT::HORIZONTAL_PLATE_UP:{
 
-			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * ( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::LENGTH, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::LENGTH, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
 
 			if (temp > e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step, 0)){
 
@@ -507,7 +608,7 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 		}break;
 		case espreso::CONVECTION_VARIANT::HORIZONTAL_PLATE_DOWN:{
 
-			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * ( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::LENGTH, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::LENGTH, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
 
 			if (temp <= e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step, 0)){
 
@@ -522,7 +623,7 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 		}break;
 		case espreso::CONVECTION_VARIANT::HORIZONTAL_CYLINDER:{
 
-			double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * ( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::DIAMETER, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::DIAMETER, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
 			double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
 
 			if ( RaD > 10e12 ){
@@ -535,7 +636,7 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 		}break;
 		case espreso::CONVECTION_VARIANT::SPHERE:{
 
-			double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * ( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::DIAMETER, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::DIAMETER, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
 			double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
 
 			if ( RaD > 10e11 || Pr < 0.7 ){
@@ -553,33 +654,18 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 
 	case espreso::CONVECTION_TYPE::INTERNAL_NATURAL:{
 
-		double T_AVG, g, gas_constant, rho, dynamic_viscosity, heat_capacity, thermal_conductivity;
+		double T_AVG, g, rho, dynamic_viscosity, heat_capacity, thermal_conductivity,dynamic_viscosity_T;
 
 		T_AVG = (e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0) + temp) / 2.0;
 		g = 9.81;
-		switch (convection.fluid) {
-		case espreso::CONVECTION_FLUID::AIR:{
-			gas_constant = 286.9;
-			rho = (e->getProperty(Property::ABSOLUTE_PRESSURE, node, step, 0)) / (gas_constant * T_AVG);
-			heat_capacity = 1002.5 + 275e-6 * pow((T_AVG - 200), 2.0);
-			thermal_conductivity = 0.02626 * pow(T_AVG / 300, 0.8646);
-			dynamic_viscosity = (1.458e-6 * pow(T_AVG, 1.5)) / (T_AVG + 110.4);
-		}break;
-		case espreso::CONVECTION_FLUID::WATER:{
-			rho = 765.33 + 1.8142 * T_AVG - 0.0035 * pow(T_AVG, 2);
-			heat_capacity = 28.07 - 0.2817 * T_AVG + 1.25e-3 * pow(T_AVG, 2.0) - 2.48e-6 * pow(T_AVG, 3.0) + 1.857e-9 * pow(T_AVG, 4.0);
-			thermal_conductivity = -0.5752 + 6.397e-3 * T_AVG - 8.151e-6 * pow(T_AVG, 2.0);
-			dynamic_viscosity = 9.67e-2 - 8.207e-4 * T_AVG + 2.344e-6 * pow(T_AVG, 2.0) - 2.244e-9 * pow(T_AVG, 3.0);
-		}break;
-		default:
-			ESINFO(ERROR) << "Invalid convection fluid type.";
-		}
+
+		convectionMatParameters(convection, e, node, step, temp, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
 
 		switch (convection.variant) {
 		case espreso::CONVECTION_VARIANT::PARALLEL_PLATES: {
 
 			double H_L = e->getProperty(Property::WALL_HEIGHT, node, step, 0) / e->getProperty(Property::LENGTH, node, step, 0);
-			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * ( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::LENGTH, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::LENGTH, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
 
 			if (( RaL < H_L ) && (temp >  e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  )){
 
@@ -587,7 +673,7 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 
 			}else{
 
-				double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * ( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::LENGTH, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+				double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::LENGTH, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
 
 				if (RaL <= 1e9) {
 					htc = (thermal_conductivity	/ e->getProperty(Property::LENGTH, node, step, 0)) * (0.68 + (0.67 * pow(RaL,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
@@ -598,14 +684,14 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 
 		}break;
 		case espreso::CONVECTION_VARIANT::CIRCULAR_TUBE: {
-			double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * ( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::DIAMETER, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::DIAMETER, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
 			double H_D = e->getProperty(Property::WALL_HEIGHT, node, step, 0) / e->getProperty(Property::DIAMETER, node, step, 0);
 
 			if ( RaD < H_D ){
 				htc = thermal_conductivity / e->getProperty(Property::WALL_HEIGHT, node, step, 0) * ( 1.0 / 128.0 ) * RaD;
 			}else{
 
-				double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * ( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::DIAMETER, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+				double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::DIAMETER, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
 				if (RaD <= 1e9) {
 					htc = (thermal_conductivity	/ e->getProperty(Property::DIAMETER, node, step, 0)) * (0.68 + (0.67 * pow(RaD,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
 				} else {
@@ -624,27 +710,12 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 			switch (convection.variant) {
 			case espreso::CONVECTION_VARIANT::AVERAGE_PLATE: {
 
-				double T_AVG, g, gas_constant, rho, dynamic_viscosity, heat_capacity, thermal_conductivity;
+				double T_AVG, g, rho, dynamic_viscosity, heat_capacity, thermal_conductivity,dynamic_viscosity_T;
 
 				T_AVG = (e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0) + temp) / 2.0;
 				g = 9.81;
-				switch (convection.fluid) {
-				case espreso::CONVECTION_FLUID::AIR:{
-					gas_constant = 286.9;
-					rho = (e->getProperty(Property::ABSOLUTE_PRESSURE, node, step, 0)) / (gas_constant * T_AVG);
-					heat_capacity = 1002.5 + 275e-6 * pow((T_AVG - 200), 2.0);
-					thermal_conductivity = 0.02626 * pow(T_AVG / 300, 0.8646);
-					dynamic_viscosity = (1.458e-6 * pow(T_AVG, 1.5)) / (T_AVG + 110.4);
-				}break;
-				case espreso::CONVECTION_FLUID::WATER:{
-					rho = 765.33 + 1.8142 * T_AVG - 0.0035 * pow(T_AVG, 2.0);
-					heat_capacity = 28.07 - 0.2817 * T_AVG + 1.25e-3 * pow(T_AVG, 2.0) - 2.48e-6 * pow(T_AVG, 3.0) + 1.857e-9 * pow(T_AVG, 4.0);
-					thermal_conductivity = -0.5752 + 6.397e-3 * T_AVG - 8.151e-6 * pow(T_AVG, 2.0);
-					dynamic_viscosity = 9.67e-2 - 8.207e-4 * T_AVG + 2.344e-6 * pow(T_AVG, 2.0) - 2.244e-9 * pow(T_AVG, 3.0);
-				}break;
-				default:
-					ESINFO(ERROR) << "Invalid convection fluid type.";
-				}
+
+				convectionMatParameters(convection, e, node, step, temp, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
 
 				double Re = rho	* e->getProperty(Property::FLUID_VELOCITY, node, step, 0) * e->getProperty(Property::LENGTH, node, step, 0)	/ dynamic_viscosity;
 				double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
@@ -666,32 +737,9 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 			switch (convection.variant) {
 			case espreso::CONVECTION_VARIANT::TUBE: {
 
-				double T_EXT, gas_constant, rho, dynamic_viscosity,	dynamic_viscosity_T, heat_capacity, thermal_conductivity;
-				switch (convection.fluid) {
-				case espreso::CONVECTION_FLUID::AIR:{
+				double T_EXT, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity;
 
-					T_EXT = e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step, 0);
-					gas_constant = 286.9;
-					rho = (e->getProperty(Property::ABSOLUTE_PRESSURE, node, step, 0)) / (gas_constant * T_EXT);
-					heat_capacity = 1002.5 + 275e-6 * pow((T_EXT - 200), 2.0);
-					thermal_conductivity = 0.02626 * pow(T_EXT / 300, 0.8646);
-					dynamic_viscosity = (1.458e-6 * pow(T_EXT, 1.5)) / (T_EXT + 110.4);
-					dynamic_viscosity_T = (1.458e-6 * pow(temp, 1.5)) / (temp + 110.4);
-
-				}break;
-				case espreso::CONVECTION_FLUID::WATER:{
-
-					T_EXT = e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step, 0);
-					rho = 765.33 + 1.8142 * T_EXT - 0.0035 * pow(T_EXT, 2.0);
-					heat_capacity = 28.07 - 0.2817 * T_EXT + 1.25e-3 * pow(T_EXT, 2.0) - 2.48e-6 * pow(T_EXT, 3.0) + 1.857e-9 * pow(T_EXT, 4.0);
-					thermal_conductivity = -0.5752 + 6.397e-3 * T_EXT - 8.151e-6 * pow(T_EXT, 2.0);
-					dynamic_viscosity = 9.67e-2 - 8.207e-4 * T_EXT + 2.344e-6 * pow(T_EXT, 2.0) - 2.244e-9 * pow(T_EXT, 3.0);
-					dynamic_viscosity_T = 9.67e-2 - 8.207e-4 * temp + 2.344e-6 * pow(temp, 2.0) - 2.244e-9 * pow(temp, 3.0);
-
-				}break;
-				default:
-					ESINFO(ERROR) << "Invalid convection fluid type.";
-				}
+				convectionMatParameters(convection, e, node, step, temp, T_EXT, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
 
 				double Re = rho	* e->getProperty(Property::FLUID_VELOCITY, node, step, 0) * e->getProperty(Property::DIAMETER, node, step, 0) / dynamic_viscosity;
 				double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
@@ -783,7 +831,7 @@ void NewAdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, c
 		if (solution.size()) {
 			temp = solution[0]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(n), e->domains().front()));
 		} else {
-			temp = 0;
+			temp = e->getProperty(Property::INITIAL_TEMPERATURE, n, step.step, 273.15 + 20);
 		}
 		T(n, 0) = temp;
 		htc(n, 0) = convection != NULL ? computeHTC(*convection, e, n, step.step, temp) : 0;

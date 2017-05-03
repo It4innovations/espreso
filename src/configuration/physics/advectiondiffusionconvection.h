@@ -30,6 +30,8 @@ enum class CONVECTION_VARIANT {
 enum class CONVECTION_FLUID {
 	AIR,
 	WATER,
+	ENGINE_OIL,
+	TRANSFORMER_OIL,
 };
 
 struct AdvectionDiffusionConvection: public Configuration {
@@ -69,6 +71,8 @@ struct AdvectionDiffusionConvection: public Configuration {
 	OPTION(CONVECTION_FLUID, fluid, "Fluid type", CONVECTION_FLUID::AIR, OPTIONS({
 		{ "AIR"  , CONVECTION_FLUID::AIR  , "Air." },
 		{ "WATER", CONVECTION_FLUID::WATER, "Water." },
+		{ "ENGINE_OIL", CONVECTION_FLUID::ENGINE_OIL, "Engine oil." },
+		{ "TRANSFORMER_OIL", CONVECTION_FLUID::TRANSFORMER_OIL, "Transformer oil." },
 	}));
 
 	PARAMETER(std::string, absolute_pressure, "Pressure.", "0");
