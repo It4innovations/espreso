@@ -56,8 +56,8 @@ void NewAdvectionDiffusion2D::prepareTotalFETI()
 	_mesh->loadProperty(_configuration.heat_flow          , { }         , { Property::HEAT_FLOW });
 
 	for (auto it = _configuration.convection.begin(); it != _configuration.convection.end(); ++it) {
-		std::map<std::string, std::string> values;
 		for (auto regions = it->second.begin(); regions != it->second.end(); ++regions) {
+			std::map<std::string, std::string> values;
 			values[regions->first] = regions->second->external_temperature;
 			_mesh->loadProperty(values, { }, { Property::EXTERNAL_TEMPERATURE });
 			values[regions->first] = regions->second->heat_transfer_coefficient;
