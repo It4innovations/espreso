@@ -30,30 +30,29 @@ enum class CONVECTION_VARIANT {
 enum class CONVECTION_FLUID {
 	AIR,
 	WATER,
-	OIL
 };
 
 struct AdvectionDiffusionConvection: public Configuration {
 
 	OPTION(CONVECTION_TYPE, type, "Convection type", CONVECTION_TYPE::USER, OPTIONS({
 		{ "USER"            , CONVECTION_TYPE::USER            , "User defined convection." },
-		{ "EXTERNAL_NATURAL", CONVECTION_TYPE::EXTERNAL_NATURAL, "..." },
-		{ "INTERNAL_NATURAL", CONVECTION_TYPE::INTERNAL_NATURAL, "..." },
-		{ "EXTERNAL_FORCED" , CONVECTION_TYPE::EXTERNAL_FORCED , "..." },
-		{ "INTERNAL_FORCED" , CONVECTION_TYPE::INTERNAL_FORCED , "..." }
+		{ "EXTERNAL_NATURAL", CONVECTION_TYPE::EXTERNAL_NATURAL, "External natural convection" },
+		{ "INTERNAL_NATURAL", CONVECTION_TYPE::INTERNAL_NATURAL, "Internal natural convection" },
+		{ "EXTERNAL_FORCED" , CONVECTION_TYPE::EXTERNAL_FORCED , "External forced convection" },
+		{ "INTERNAL_FORCED" , CONVECTION_TYPE::INTERNAL_FORCED , "Internal forced convection" }
 	}));
 
 	OPTION(CONVECTION_VARIANT, variant, "Type variant", CONVECTION_VARIANT::VERTICAL_WALL, OPTIONS({
-		{ "VERTICAL_WALL"        , CONVECTION_VARIANT::VERTICAL_WALL        , "User defined convection." },
-		{ "INCLINED_WALL"        , CONVECTION_VARIANT::INCLINED_WALL        , "..." },
-		{ "HORIZONTAL_CYLINDER"  , CONVECTION_VARIANT::HORIZONTAL_CYLINDER  , "..." },
-		{ "SPHERE"               , CONVECTION_VARIANT::SPHERE               , "..." },
-		{ "HORIZONTAL_PLATE_UP"  , CONVECTION_VARIANT::HORIZONTAL_PLATE_UP  , "..." },
-		{ "HORIZONTAL_PLATE_DOWN", CONVECTION_VARIANT::HORIZONTAL_PLATE_DOWN, "..." },
-		{ "AVERAGE_PLATE"        , CONVECTION_VARIANT::AVERAGE_PLATE        , "..." },
-		{ "PARALLEL_PLATES"      , CONVECTION_VARIANT::PARALLEL_PLATES      , "..." },
-		{ "CIRCULAR_TUBE"        , CONVECTION_VARIANT::CIRCULAR_TUBE        , "..." },
-		{ "TUBE"                 , CONVECTION_VARIANT::TUBE                 , "..." }
+		{ "VERTICAL_WALL"        , CONVECTION_VARIANT::VERTICAL_WALL        , "External natural convection - vertical wall" },
+		{ "INCLINED_WALL"        , CONVECTION_VARIANT::INCLINED_WALL        , "External natural convection - inclined wall" },
+		{ "HORIZONTAL_CYLINDER"  , CONVECTION_VARIANT::HORIZONTAL_CYLINDER  , "External natural convection - long horizontal cylinder" },
+		{ "SPHERE"               , CONVECTION_VARIANT::SPHERE               , "External natural convection - sphere" },
+		{ "HORIZONTAL_PLATE_UP"  , CONVECTION_VARIANT::HORIZONTAL_PLATE_UP  , "External natural convection - parallel plate, upside" },
+		{ "HORIZONTAL_PLATE_DOWN", CONVECTION_VARIANT::HORIZONTAL_PLATE_DOWN, "External natural convection - parallel plate, downside" },
+		{ "AVERAGE_PLATE"        , CONVECTION_VARIANT::AVERAGE_PLATE        , "External forced convection - plate averaged transfer coefficient" },
+		{ "PARALLEL_PLATES"      , CONVECTION_VARIANT::PARALLEL_PLATES      , "Internal natural convection - parallel plates" },
+		{ "CIRCULAR_TUBE"        , CONVECTION_VARIANT::CIRCULAR_TUBE        , "Internal natural convection - circular tube" },
+		{ "TUBE"                 , CONVECTION_VARIANT::TUBE                 , "Internal forced convection - isothermal tube" }
 	}));
 
 	PARAMETER(std::string, heat_transfer_coefficient, "Heat transfer coefficient.", "0");
@@ -70,7 +69,6 @@ struct AdvectionDiffusionConvection: public Configuration {
 	OPTION(CONVECTION_FLUID, fluid, "Fluid type", CONVECTION_FLUID::AIR, OPTIONS({
 		{ "AIR"  , CONVECTION_FLUID::AIR  , "Air." },
 		{ "WATER", CONVECTION_FLUID::WATER, "Water." },
-		{ "OIL"  , CONVECTION_FLUID::OIL  , "Oil." }
 	}));
 
 	PARAMETER(std::string, absolute_pressure, "Pressure.", "0");
