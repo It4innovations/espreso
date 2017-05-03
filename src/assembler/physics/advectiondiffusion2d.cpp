@@ -469,23 +469,23 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 		switch (convection.variant) {
 		case espreso::CONVECTION_VARIANT::INCLINED_WALL: {
 
-			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * ( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::LENGTH, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * ( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::WALL_HEIGHT, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
 			double tilt_angle = e->getProperty(Property::TILT_ANGLE, node, step,	0) * M_PI / 180.0;
 			if (RaL <= 1e9) {
-				htc = (thermal_conductivity	/ e->getProperty(Property::LENGTH, node, step, 0)) * (0.68 + (0.67 * cos(tilt_angle) * pow(RaL,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
+				htc = (thermal_conductivity	/ e->getProperty(Property::WALL_HEIGHT, node, step, 0)) * (0.68 + (0.67 * cos(tilt_angle) * pow(RaL,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
 			} else {
-				htc = (thermal_conductivity	/ e->getProperty(Property::LENGTH, node, step, 0)) * pow(0.825 + (0.387 * pow(RaL,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
+				htc = (thermal_conductivity	/ e->getProperty(Property::WALL_HEIGHT, node, step, 0)) * pow(0.825 + (0.387 * pow(RaL,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
 			}
 
 		}break;
 		case espreso::CONVECTION_VARIANT::VERTICAL_WALL: {
 
-			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * ( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::LENGTH, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * ( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::WALL_HEIGHT, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
 
 			if (RaL <= 1e9) {
-				htc = (thermal_conductivity	/ e->getProperty(Property::LENGTH, node, step, 0)) * (0.68 + (0.67 * pow(RaL,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
+				htc = (thermal_conductivity	/ e->getProperty(Property::WALL_HEIGHT, node, step, 0)) * (0.68 + (0.67 * pow(RaL,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
 			} else {
-				htc = (thermal_conductivity	/ e->getProperty(Property::LENGTH, node, step, 0)) * pow(0.825 + (0.387 * pow(RaL,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
+				htc = (thermal_conductivity	/ e->getProperty(Property::WALL_HEIGHT, node, step, 0)) * pow(0.825 + (0.387 * pow(RaL,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
 			}
 
 		}break;
