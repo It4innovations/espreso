@@ -82,6 +82,16 @@ void NewAdvectionDiffusion2D::prepareTotalFETI()
 		}
 	}
 
+	for (auto it = _configuration.diffuse_radiation.begin(); it != _configuration.diffuse_radiation.end(); ++it) {
+		for (auto regions = it->second.begin(); regions != it->second.end(); ++regions) {
+			std::map<std::string, std::string> values;
+			values[regions->first] = regions->second->external_temperature;
+			_mesh->loadProperty(values, { }, { Property::EXTERNAL_TEMPERATURE });
+			values[regions->first] = regions->second->emissivity;
+			_mesh->loadProperty(values, { }, { Property::EMISSIVITY });
+		}
+	}
+
 	for (size_t r = 0; r < _mesh->regions().size(); r++) {
 		for (size_t i = 0; i < _mesh->regions()[r]->settings.size(); i++) {
 			if (_mesh->regions()[r]->settings[i].count(Property::HEAT_FLOW)) {
@@ -883,9 +893,8 @@ void NewAdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, c
 		return;
 	}
 
-	DenseMatrix coordinates(e->nodes(), 2), dND(1, 2), q(e->nodes(), 1), htc(e->nodes(), 1), thickness(e->nodes(), 1), flow(e->nodes(), 1);
-	DenseMatrix T(e->nodes(), 1);
-	DenseMatrix gpQ(1, 1), gpHtc(1, 1), gpThickness(1, 1), gpFlow(1, 1);
+	DenseMatrix coordinates(e->nodes(), 2), dND(1, 2), q(e->nodes(), 1), htc(e->nodes(), 1), thickness(e->nodes(), 1), flow(e->nodes(), 1), emiss(e->nodes(), 1);
+	DenseMatrix gpQ(1, 1), gpHtc(1, 1), gpThickness(1, 1), gpFlow(1, 1), gpEmiss(1, 1);
 
 	double area = 1, temp;
 	eslocal Ksize = e->nodes();
@@ -914,11 +923,11 @@ void NewAdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, c
 
 
 	AdvectionDiffusionConvection *convection = NULL;
-	auto stepit = _configuration.convection.find(step.step + 1);
-	if (stepit != _configuration.convection.end()) {
+	auto stepitc = _configuration.convection.find(step.step + 1);
+	if (stepitc != _configuration.convection.end()) {
 		for (size_t r = 0; convection == NULL && r < e->regions().size(); r++) {
-			auto regionit = stepit->second.find(e->regions()[r]->name);
-			if (regionit != stepit->second.end()) {
+			auto regionit = stepitc->second.find(e->regions()[r]->name);
+			if (regionit != stepitc->second.end()) {
 				convection = regionit->second;
 			}
 		}
@@ -933,11 +942,14 @@ void NewAdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, c
 		} else {
 			temp = e->getProperty(Property::INITIAL_TEMPERATURE, n, step.step, 273.15 + 20);
 		}
-		T(n, 0) = temp;
 		htc(n, 0) = convection != NULL ? computeHTC(*convection, e, n, step.step, temp) : 0;
 		q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.step, 0) - temp);
+		emiss(n, 0) = CONST_Stefan_Boltzmann * e->getProperty(Property::EMISSIVITY, n, step.step, 0);
+		q(n, 0) += emiss(n, 0) * (pow(e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.step, 0), 4) - pow(temp, 4));
 		q(n, 0) += e->getProperty(Property::HEAT_FLOW, n, step.step, 0) / area;
 		q(n, 0) += e->getProperty(Property::HEAT_FLUX, n, step.step, 0);
+
+		emiss(n, 0) *= 4 * temp * temp * temp;
 
 		thickness(n, 0) = e->getProperty(Property::THICKNESS, n, step.step, 1);
 		q(n, 0) *= thickness(n, 0);
@@ -949,8 +961,11 @@ void NewAdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, c
 		gpQ.multiply(N[gp], q);
 		if (e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step)) {
 			gpHtc.multiply(N[gp], htc);
+			gpEmiss.multiply(N[gp], emiss);
 			gpThickness.multiply(N[gp], thickness);
+
 			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpHtc(0, 0) * gpThickness(0, 0), 1, true);
+			Ke.multiply(N[gp], N[gp], weighFactor[gp] * J * gpEmiss(0, 0) * gpThickness(0, 0), 1, true);
 		}
 		for (eslocal i = 0; i < Ksize; i++) {
 			fe(i, 0) += J * weighFactor[gp] * N[gp](0, i % e->nodes()) * gpQ(0, 0);

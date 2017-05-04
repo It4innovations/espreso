@@ -7,6 +7,7 @@
 #include "solver.h"
 #include "../solver.h"
 #include "advectiondiffusionconvection.h"
+#include "advectiondiffusionradiation.h"
 #include "advectiondiffusionsolver.h"
 
 namespace espreso {
@@ -61,6 +62,8 @@ struct AdvectionDiffusion2DConfiguration: public Configuration {
 
 	SUBMAPTOMAPTOCONFIG(size_t, std::string, AdvectionDiffusionConvection, convection, "Region with convective heat flux",
 			"<REGION_NAME>", "Convection for a given region", "1", "Settings for load step '1'");
+	SUBMAPTOMAPTOCONFIG(size_t, std::string, AdvectionDiffusionRadiation, diffuse_radiation, "Region with diffuse radiation",
+			"<REGION_NAME>", "Diffuse radiation for a given region", "1", "Settings for load step '1'");
 
 	SUBMAP(std::string, std::string, initial_temperature , "Regions initial temperature", "<REGION>", "<EXPRESSION>");
 

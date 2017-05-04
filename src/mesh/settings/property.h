@@ -6,6 +6,8 @@
 
 namespace espreso {
 
+#define CONST_Stefan_Boltzmann 5.6703e-8
+
 enum class Property : int {
 	UNKNOWN, // API has unknown properties
 	DISPLACEMENT_X,
@@ -33,6 +35,7 @@ enum class Property : int {
 	HEAT_FLUX,
 	HEAT_TRANSFER_COEFFICIENT,
 	EXTERNAL_TEMPERATURE,
+	EMISSIVITY,
 
 	WALL_HEIGHT,
 	TILT_ANGLE,
