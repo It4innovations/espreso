@@ -1221,13 +1221,22 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 
 	#pragma omp parallel for
 	for  (size_t p = 0; p < instance.domains; p++) {
+		size_t row = 0;
 		for (size_t i = 0; i < part.size() - 1; i++) {
 			const std::vector<eslocal> &domains = el[part[i]]->domains();
+			if (domains[0] < instance.domains / 2 && instance.domains / 2 <= domains[1]) {
+				continue;
+			}
+			if (p < instance.domains / 2 && domains[0] < instance.domains / 2) {
+				row++;
+			}
+			if (instance.domains / 2 <= p && instance.domains / 2 <= domains[0]) {
+				row++;
+			}
 			int sign = domains[0] == (eslocal)p ? 1 : domains[1] == (eslocal)p ? -1 : 0;
 			if (sign == 0) {
 				continue;
 			}
-
 
 			std::vector<Element*> nodesOnInterface;
 			for (size_t e = part[i]; e < part[i + 1]; e++) {
@@ -1241,7 +1250,7 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 			for (eslocal col = 0; col < instance.N1[domains[0]].cols; col++) {
 				for (size_t n = 0; n < nodesOnInterface.size(); n++) {
 					for (size_t dof = 0; dof < DOFsOffsets.size(); dof++) {
-						instance.B0[p].I_row_indices.push_back(i * instance.N1[0].cols + col + 1);
+						instance.B0[p].I_row_indices.push_back(row * instance.N1[0].cols + col);
 						instance.B0[p].J_col_indices.push_back(nodesOnInterface[n]->DOFIndex(p, dof) + 1);
 						instance.B0[p].V_values.push_back(sign * instance.N1[domains[0]].dense_values[instance.N1[domains[0]].rows * col + nodesOnInterface[n]->DOFIndex(domains[0], DOFsOffsets[dof])]);
 					}
@@ -1256,6 +1265,13 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 		instance.B0subdomainsMap[p].reserve(instance.B0[p].nnz);
 		for (eslocal i = instance.B0subdomainsMap[p].size(); i < instance.B0[p].nnz; i++) {
 			instance.B0subdomainsMap[p].push_back(instance.B0[p].I_row_indices[i] - 1);
+		}
+	}
+	for  (size_t p = 0; p < instance.domains; p++) {
+		if (p < instance.domains / 2) {
+			instance.clustersMap[p] = 0;
+		} else {
+			instance.clustersMap[p] = 1;
 		}
 	}
 }
