@@ -4657,7 +4657,8 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	SparseMatrix GGt_l;
 	SparseMatrix GGt_Mat_tmp;
 	SparseSolverCPU GGt_tmp;
-//	SparseSolverMKL GGt_tmp;
+	DenseSolverCPU GGt_tmp_dense;
+	eslocal GGt_rows;
 
     /* Numbers of processors, value of OMP_NUM_THREADS */
 	int num_procs = environment->PAR_NUM_THREADS;
@@ -4802,6 +4803,10 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	//Show GGt matrix structure in the solver LOG
 	ESINFO(EXHAUSTIVE) << GGt_Mat_tmp.SpyText();
 
+	// Use dense solver for small GGt matrix (Dissection SPS fix)
+	bool use_GGt_dense = false;
+	if(GGt_Mat_tmp.rows < 12) use_GGt_dense = true;
+
 	// Entering data parallel region for single, in this case GGt matrix, we want MKL/Solver to run multi-threaded
 	MKL_Set_Num_Threads(PAR_NUM_THREADS);
 
@@ -4827,30 +4832,43 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 //		GGt_Mat_tmp.mtype = MatrixType::REAL_UNSYMMETRIC;
 //	}
 	GGt_Mat_tmp.mtype = cluster.mtype;
+	GGt_rows = GGt_Mat_tmp.rows;
 
-	GGt_tmp.ImportMatrix_wo_Copy (GGt_Mat_tmp);
+	if(use_GGt_dense){
+		GGt_Mat_tmp.ConvertCSRToDense(0);
+		GGt_tmp_dense.ImportMatrix_wo_Copy (GGt_Mat_tmp);
+	} else {
+		GGt_tmp.ImportMatrix_wo_Copy (GGt_Mat_tmp);
+	}
+
 	 importGGt_time.end(); importGGt_time.printStatMPI(); preproc_timing.addEvent(importGGt_time);
 
 	//GGt_Mat_tmp.Clear();
 
 	 TimeEvent GGtFactor_time("GGT Factorization time"); GGtFactor_time.start();
-	 GGt_tmp.SetThreaded();
 	 std::stringstream ss;
 	 ss << "Create GGt_inv_dist-> rank: " << environment->MPIrank;
-	GGt_tmp.Factorization(ss.str());
+
+	 if(use_GGt_dense){
+		 GGt_tmp_dense.SetThreaded();
+		 GGt_tmp_dense.Factorization(ss.str());
+	 } else {
+		 GGt_tmp.SetThreaded();
+		 GGt_tmp.Factorization(ss.str());
+	 }
 	 GGtFactor_time.end();
 	 //GGtFactor_time.printLastStatMPIPerNode();
 	 GGtFactor_time.printStatMPI(); preproc_timing.addEvent(GGtFactor_time);
 
 	 TimeEvent GGT_rhs_time("Time to create InitialCondition for get GGTINV"); GGT_rhs_time.start();
 	//TODO: tady pocitam s tim, ze mam stejny pocet domen na cluster
-	SEQ_VECTOR <double> rhs             (cluster.G1.rows * GGt_tmp.rows, 0.0);
-	cluster.GGtinvM.dense_values.resize (cluster.G1.rows * GGt_tmp.rows, 0.0);
+	SEQ_VECTOR <double> rhs             (cluster.G1.rows * GGt_rows, 0.0);
+	cluster.GGtinvM.dense_values.resize (cluster.G1.rows * GGt_rows, 0.0);
 	//cluster.GGtinvV.resize    (cluster.G1.rows * GGt_tmp.rows, 0.0);
 
 	//TODO: tady pocitam s tim, ze mam stejny pocet domen na cluster
 	for (eslocal i = 0; i < cluster.G1.rows; i++) {
-		eslocal index = (GGt_tmp.rows * i) + i + global_ker_size;// + (cluster.G1.rows * mpi_rank);
+		eslocal index = (GGt_rows * i) + i + global_ker_size;// + (cluster.G1.rows * mpi_rank);
 		rhs[index] = 1;
 	}
 	GGT_rhs_time.end(); GGT_rhs_time.printStatMPI(); preproc_timing.addEvent(GGT_rhs_time);
@@ -4859,23 +4877,36 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 
 	if (cluster.G1.rows > 0) {
 		//GGt_tmp.Solve(rhs, cluster.GGtinvV, cluster.G1.rows);
-		GGt_tmp.Solve(rhs, cluster.GGtinvM.dense_values, cluster.G1.rows);
+		if(use_GGt_dense){
+			GGt_tmp_dense.Solve(rhs, cluster.GGtinvM.dense_values, cluster.G1.rows);
+		} else {
+			GGt_tmp.Solve(rhs, cluster.GGtinvM.dense_values, cluster.G1.rows);
+		}
 	} else {
 		;
 	}
 
 	//cluster.GGtinvM.dense_values = cluster.GGtinvV;
 	cluster.GGtinvM.cols 		 = cluster.G1.rows;
-	cluster.GGtinvM.rows	 	 = GGt_tmp.rows;
+	cluster.GGtinvM.rows	 	 = GGt_rows;
     cluster.GGtinvM.type 		 = 'G';
 
-	GGtsize  = GGt_tmp.cols;
-	GGt.cols = GGt_tmp.cols;
-	GGt.rows = GGt_tmp.rows;
-	GGt.nnz  = GGt_tmp.nnz;
+    if(use_GGt_dense){
+    	GGtsize  = GGt_tmp_dense.m_cols;
+    	GGt.cols = GGt_tmp_dense.m_cols;
+    	GGt.rows = GGt_tmp_dense.m_rows;
+    	GGt.nnz  = GGt_tmp_dense.m_nnz;
 
-	GGt_tmp.msglvl = 0;
-	GGt_tmp.Clear();
+    	GGt_tmp_dense.Clear();
+    } else {
+  	   	GGtsize  = GGt_tmp.cols;
+    	GGt.cols = GGt_tmp.cols;
+    	GGt.rows = GGt_tmp.rows;
+    	GGt.nnz  = GGt_tmp.nnz;
+
+    	GGt_tmp.msglvl = 0;
+    	GGt_tmp.Clear();
+    }
 
 	 GGt_solve_time.end(); GGt_solve_time.printStatMPI(); preproc_timing.addEvent(GGt_solve_time);
 

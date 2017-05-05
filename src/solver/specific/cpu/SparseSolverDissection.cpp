@@ -39,7 +39,6 @@ SparseSolverDissection::SparseSolverDissection(){
     kernel_detection_all = true; //false; // is singular?
     min_nodes = 256; // not set
     dslv = NULL;
-    // dslv_fl = NULL;
     diss_verbose = false;
     fp = stdout;
     called = 0;
@@ -58,6 +57,8 @@ SparseSolverDissection::SparseSolverDissection(){
 	m_Kplus_size = 0;
 
 #ifdef DEBUG
+	// fp = fopen("diss_log_wcp.txt", "w");
+	fp = stderr;
 	diss_verbose = true;
 	int vers, rela, patc;
 	SCOTCH_version(&vers, &rela, &patc);
@@ -144,16 +145,6 @@ void SparseSolverDissection::Clear() {
 void SparseSolverDissection::ImportMatrix(espreso::SparseMatrix & A) {
 
 	USE_FLOAT = false;
-
-	// num_procs = 1;
-	called = 0;
-
-	#ifdef DEBUG
-		// fp = fopen("diss_log_cp.txt", "w");
-		fp = stderr;
-	#endif
-
-	dslv = new DissectionSolver<double>(num_procs, diss_verbose, called, fp);
 
 	// mkl_set_num_threads();
 	is_whole = false;
@@ -280,16 +271,6 @@ void SparseSolverDissection::ImportMatrix_wo_Copy(espreso::SparseMatrix & A) {
 
 	USE_FLOAT = false;
 
-	// num_procs = 1;
-	called = 0;
-
-	#ifdef DEBUG
-		// fp = fopen("diss_log_wcp.txt", "w");
-		fp = stderr;
-	#endif
-
-	dslv = new DissectionSolver<double>(num_procs, diss_verbose, called, fp);
-
 	is_whole = false;
 	is_sym = true;
 	upper_flag = true;
@@ -403,32 +384,14 @@ int SparseSolverDissection::Factorization(const std::string &str) {
 		// 	upper_flag, is_whole, decomposer, nb_levels, min_nodes);
 	} else {
 
+		dslv = new DissectionSolver<double>(num_procs, diss_verbose, called, fp);
+
 		dslv->SymbolicFact(rows,(MKL_INT *) CSR_I_row_indices,(MKL_INT *) CSR_J_col_indices, is_sym, upper_flag, is_whole, decomposer, nb_levels, min_nodes);
 		
 		// dslv->SaveMMMatrix(1, CSR_V_values);
 	}
 
-	if (error != 0)
-	{
-    return error;
-		espreso::SparseMatrix s;
-		s.rows = rows;
-		s.cols = cols;
-		s.type = 'S';
-		s.nnz = nnz;
-		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
-		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
-		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
-
-		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
-		osK << s;
-		osK.close();
-
-		ESINFO(ERROR) << error << " during symbolic factorization";
-		exit (EXIT_FAILURE);
-	} else {
-		initialized = true;
-	}
+	initialized = true;
 
 	/* -------------------------------------------------------------------- */
 	/* .. Numerical factorization. */
@@ -442,27 +405,8 @@ int SparseSolverDissection::Factorization(const std::string &str) {
 		dslv->NumericFact(called, (double *) CSR_V_values, scaling, eps_pivot, kernel_detection_all);
 	}
 
-	if (error != 0)
-	{
-		return error;
-		espreso::SparseMatrix s;
-		s.rows = rows;
-		s.cols = cols;
-		s.type = 'S';
-		s.nnz = nnz;
-		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
-		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
-		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
+	m_factorized = 1;
 
-		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
-		osK << s;
-		osK.close();
-
-		ESINFO(ERROR) << error << " during numerical factorization";
-		exit (EXIT_FAILURE);
-	} else {
-		m_factorized = 1;
-	}
 	//TODO:
 	if (USE_FLOAT) {
 		tmp_sol_fl1.resize(m_Kplus_size);
@@ -471,12 +415,7 @@ int SparseSolverDissection::Factorization(const std::string &str) {
 		tmp_sol.resize(m_Kplus_size); // - POZOR mozna se musi odkomentovat kvuli alokaci tmp_sol
 	}
 
-//	eslocal kernel_dimension = dslv->kern_dimension();
-//	SEQ_VECTOR <double> kernel_vectors(cols * rows, 0);
-//	dslv->GetKernelVectors(&kernel_vectors.front());
-
-
-  return 0;
+	return 0;
 }
 
 void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs_sol) {
@@ -488,7 +427,6 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		// for (eslocal i = 0; i < m_Kplus_size; i++)
 		// 	tmp_sol_fl1[i] = (float)rhs_sol[i];
 	}
-
 
 	if (!initialized) {
 		std::stringstream ss;
@@ -519,30 +457,11 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		// 		   2 - SP semi D
 	}
 
-	if (error != 0)
-	{
-		espreso::SparseMatrix s;
-		s.rows = rows;
-		s.cols = cols;
-		s.type = 'S';
-		s.nnz = nnz;
-		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
-		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
-		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
-
-		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
-		osK << s;
-		osK.close();
-
-		ESINFO(ERROR) << "ERROR during solution: " << error;
-		exit (3);
-	}
-
 	if (!keep_factors) {
 		/* -------------------------------------------------------------------- */
 		/* .. Termination and release of memory. */
 		/* -------------------------------------------------------------------- */
-		MKL_INT nRhs = 1;
+		dslv->NumericFree();
 		
 		initialized = false;
 	}
@@ -553,8 +472,6 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		// for (eslocal i = 0; i < m_Kplus_size; i++)
 		// 	rhs_sol[i] = (double)tmp_sol_fl1[i];
 	}
-
-
 }
 
 void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT n_rhs) {
@@ -593,7 +510,6 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 
 		sol = rhs;
 
-
 		// Alternative multiple RHS solve
 //		for(eslocal i=0; i< n_rhs; i++) {
 //			dslv->SolveSingle(&sol[i*rows], projection, is_trans, is_scaling);
@@ -602,30 +518,11 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 		dslv->SolveMulti(&sol.front(), n_rhs, projection, is_trans, is_scaling);
 	}
 
-	if (error != 0)
-	{
-		espreso::SparseMatrix s;
-		s.rows = rows;
-		s.cols = cols;
-		s.type = 'S';
-		s.nnz = nnz;
-		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
-		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
-		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
-
-		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
-		osK << s;
-		osK.close();
-
-		ESINFO(ERROR) << "ERROR during solution: " << error;
-		exit (3);
-	}
-
 	if (!keep_factors) {
 		/* -------------------------------------------------------------------- */
 		/* .. Termination and release of memory. */
 		/* -------------------------------------------------------------------- */
-		MKL_INT nRhs = 1;
+		dslv->NumericFree();
 		
 		initialized = false;
 	}
@@ -637,7 +534,6 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 		// for (eslocal i = 0; i < n_rhs * m_Kplus_size; i++)
 		// 	sol[i] = (double)tmp_out[i];
 	}
-
 }
 
 void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT rhs_start_index, MKL_INT sol_start_index) {
@@ -669,39 +565,20 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 		bool projection = true;
 		bool is_trans = false;
 		bool is_scaling = true;
-		dslv->SolveSingle(&rhs[rhs_start_index], projection, is_trans, is_scaling);
 
+		copy(&rhs[rhs_start_index], &rhs[rhs_start_index + rows], &sol[sol_start_index]);
+
+		dslv->SolveSingle(&sol[sol_start_index], projection, is_trans, is_scaling);
 	}
-
-	if (error != 0)
-	{
-		espreso::SparseMatrix s;
-		s.rows = rows;
-		s.cols = cols;
-		s.type = 'S';
-		s.nnz = nnz;
-		s.CSR_I_row_indices = std::vector<eslocal>(CSR_I_row_indices, CSR_I_row_indices + CSR_I_row_indices_size);
-		s.CSR_J_col_indices = std::vector<eslocal>(CSR_J_col_indices, CSR_J_col_indices + CSR_J_col_indices_size);
-		s.CSR_V_values = std::vector<double>(CSR_V_values, CSR_V_values + CSR_V_values_size);
-
-		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
-		osK << s;
-		osK.close();
-
-		ESINFO(ERROR) << "ERROR during solution: " << error;
-		exit (3);
-	}
-
 
 	if (!keep_factors) {
 		/* -------------------------------------------------------------------- */
 		/* .. Termination and release of memory. */
 		/* -------------------------------------------------------------------- */
-		MKL_INT nRhs = 1;
+		dslv->NumericFree();
 		
 		initialized = false;
 	}
-
 
 	if( USE_FLOAT ) {
 		printf("Method Solve for float is not implemented yet - float not available in Dissection solver.\n");
@@ -709,7 +586,6 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 		// for (eslocal i = 0; i < m_Kplus_size; i++)
 		// 	sol[i + sol_start_index] = (double)tmp_sol_fl2[i];
 	}
-
 }
 
 void SparseSolverDissection::SolveMat_Sparse( espreso::SparseMatrix & A) {
@@ -913,241 +789,168 @@ void SparseSolverDissection::SolveMatF( espreso::SparseMatrix & A_in, espreso::S
 
 void SparseSolverDissection::Create_SC( espreso::SparseMatrix & SC_out, MKL_INT sc_size, bool isThreaded ) {
 
-	printf("Method Create_SC is not implemented yet.\n");
-	exit(1);
-}
+	SparseMatrix K_modif;
+	SparseMatrix K_rr;
+	SparseMatrix K_rs;
+	SparseMatrix K_sr;
+	SparseMatrix KsrInvKrrKrs;
 
+	ExportMatrix(K_modif); // memory inefficient
+
+	eslocal i_start = 0;
+	eslocal nonsing_size = K_modif.rows - sc_size - i_start;
+	eslocal j_start = nonsing_size;
+
+	K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
+
+	if (mtype == 2){ // symmetric system
+		K_rr.mtype = espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+        K_rs.MatTranspose(K_sr);
+	} else { // unsymmetric system
+		K_sr.getSubBlockmatrix_rs(K_modif,K_sr,j_start,sc_size,i_start, nonsing_size);
+	}
+
+	SC_out.getSubDiagBlockmatrix(K_modif,SC_out,nonsing_size,sc_size);
+
+	// K_rs =    inv(K_rr) * K_rs          (classical Dirichlet precond. assembled by own - not via PardisoSC routine)
+	K_rr.getSubDiagBlockmatrix(K_modif,K_rr,i_start, nonsing_size);
+
+	SparseSolverDissection K_rr_solver;
+	K_rr_solver.ImportMatrix_wo_Copy(K_rr);
+	K_rr_solver.SolveMat_Dense(K_rs);
+
+	KsrInvKrrKrs.MatMat(K_sr,'N',K_rs);
+	SC_out.MatAddInPlace(KsrInvKrrKrs,'N',-1);
+
+    // TODO - changed for AD-system
+    if ( mtype == 11){
+      SC_out.type = 'G';
+      SC_out.MatTranspose();
+    }
+    else
+    {
+      SC_out.RemoveLower();
+      SC_out.type = 'S';
+    }
+
+	if (msglvl) {
+		ESINFO(EXHAUSTIVE) << SC_out.SpyText();
+	}
+
+//    if (generate_symmetric_sc_1_generate_general_sc_0 == 1) {
+//    	SC_out.RemoveLower();
+//    }
+}
 
 void SparseSolverDissection::Create_SC_w_Mat( espreso::SparseMatrix & K_in, espreso::SparseMatrix & B_in, espreso::SparseMatrix & SC_out,
 								    bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {
-
-//	printf("Method Create_SC_w_Mat is not implemented yet.\n");
-//	exit(1);
-
-	//int msglvl = 0;
-
-	// *** Prepare matrix
-
 	espreso::SparseMatrix K_sc1;
-	espreso::SparseMatrix Sc_eye;
 	espreso::SparseMatrix K_b_tmp;
 
-	K_b_tmp = B_in;
-	K_b_tmp.MatTranspose();
+	SparseSolverDissection K_sc1_solver;
+	K_sc1_solver.ImportMatrix_wo_Copy(K_in);
+	if(isThreaded)
+		K_sc1_solver.SetThreaded();
+	K_sc1_solver.SolveMat_Dense(B_in, K_b_tmp);
 
-	Sc_eye.CreateEye(K_b_tmp.rows, 0.0, 0, K_b_tmp.cols);
+	SC_out.MatMat(B_in,'T',K_b_tmp);
 
-	K_sc1 = K_in;
-	K_sc1.MatTranspose();
-	K_sc1.MatAppend(K_b_tmp);
-	K_sc1.MatTranspose();
-	K_sc1.MatAppend(Sc_eye);
+	//SC_out.MatScale(-1.0);
 
+	SC_out.type = 'G';
 
-	// *** END - Prepare matrix
-
-
-
-	/* Internal solver memory pointer pt, */
-	/* 32-bit: int pt[64]; 64-bit: long int pt[64] */
-	/* or void *pt[64] should be OK on both architectures */
-	void *pt[64];
-
-	/* Pardiso control parameters. */
-	MKL_INT 	iparm[64];
-	MKL_INT 	maxfct, mnum, phase, error;
-
-	/* Auxiliary variables. */
-	MKL_INT 	i;
-	double 		ddum;			/* Double dummy */
-	MKL_INT 	idum;			/* Integer dummy. */
-
-	/* -------------------------------------------------------------------- */
-	/* .. Setup Pardiso control parameters. */
-	/* -------------------------------------------------------------------- */
-	for (i = 0; i < 64; i++) {
-		iparm[i] = 0;
+	if (msglvl) {
+		ESINFO(EXHAUSTIVE) << SC_out.SpyText();
 	}
 
-	/* -------------------------------------------------------------------- */
-	/* .. Initialize the internal solver memory pointer. This is only */
-	/* necessary for the FIRST call of the PARDISO solver. */
-	/* -------------------------------------------------------------------- */
-	for (i = 0; i < 64; i++)
-		pt[i] = 0;
+	SC_out.ConvertCSRToDense(1);
 
-	//MKL_INT 	mtype = 2;
-	switch (K_in.mtype) {
-	case espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-		mtype = 2;
-		break;
-	case espreso::MatrixType::REAL_SYMMETRIC_INDEFINITE:
-		mtype = -2;
-		break;
-	case espreso::MatrixType::REAL_UNSYMMETRIC:
-		mtype = 11;
-		break;
+	if (generate_symmetric_sc_1_generate_general_sc_0 == 1) {
+		//SC_out.RemoveLower();
+		SC_out.RemoveLowerDense();
+		SC_out.type = 'S';
 	}
-
-	/* Numbers of processors, value of OMP_NUM_THREADS */
-	if (isThreaded) {
-		/* Numbers of processors, value of OMP_NUM_THREADS */
-		MKL_INT num_procs = Esutils::getEnv<MKL_INT>("SOLVER_NUM_THREADS");
-	    iparm[2] = num_procs;
-	} else {
-		iparm[2] = 1;
-	}
-
-//	iparm[0] = 1;		/* No solver default */
-//	iparm[1] = 2;		/* Fill-in reordering from METIS */
-//	iparm[2]			/* Numbers of processors, value of OMP_NUM_THREADS */
-//	iparm[2] = 8;		/* Not used in MKL PARDISO */
-//	iparm[3] = 0;		/* No iterative-direct algorithm */
-//	iparm[4] = 0;		/* No user fill-in reducing permutation */
-//	iparm[5] = 0;		/* Write solution into x */
-//	iparm[6] = 0;		/* Not in use */
-//	iparm[7] = 0;		/* Max numbers of iterative refinement steps */
-//	iparm[8] = 0;		/* Not in use */
-//	iparm[9] = 13;		/* Perturb the pivot elements with 1E-13 */
-//	iparm[10] = 0;		/* Use nonsymmetric permutation and scaling MPS */
-//	iparm[11] = 0;		/* Not in use */
-//	iparm[12] = 0;		/* Maximum weighted matching algorithm is switched-off */
-//						/* (default for symmetric). Try iparm[12] = 1 in case of inappropriate accuracy */
-//	iparm[13] = 0;		/* Output: Number of perturbed pivots */
-//	iparm[14] = 0;		/* Not in use */
-//	iparm[15] = 0;		/* Not in use */
-//	iparm[16] = 0;		/* Not in use */
-//	iparm[17] = -1;		/* Output: Number of nonzeros in the factor LU */
-//	iparm[18] = -1;		/* Output: Mflops for LU factorization */
-//	iparm[19] = 0;		/* Output: Numbers of CG Iterations */
-//
-//	maxfct = 1;			/* Maximum number of numerical factorizations. */
-//	mnum   = 1;			/* Which factorization to use. */
-//	//msglvl = 0;			/* Supress printing statistical information */
-//	error  = 0;			/* Initialize error flag */
-
-
-
-
-    iparm[1-1] = 1;         /* No solver default */
-    iparm[2-1] = 2;         /* Fill-in reordering from METIS */
-    iparm[10-1] = 8; //13   /* Perturb the pivot elements with 1E-13 */
-    iparm[11-1] = 0;        /* Use nonsymmetric permutation and scaling MPS */
-    iparm[13-1] = 0;        /* Maximum weighted matching algorithm is switched-off (default for symmetric). Try iparm[12] = 1 in case of inappropriate accuracy */
-    iparm[14-1] = 0;        /* Output: Number of perturbed pivots */
-    iparm[18-1] = -1;       /* Output: Number of nonzeros in the factor LU */
-    iparm[19-1] = -1;       /* Output: Mflops for LU factorization */
-    iparm[36-1] = 1;        /* Use Schur complement */
-
-    maxfct = 1;           /* Maximum number of numerical factorizations. */
-    mnum = 1;             /* Which factorization to use. */
-    //msglvl = 1;           /* Print statistical information in file */
-    error = 0;            /* Initialize error flag */
-
-    /* -------------------------------------------------------------------- */
-    /* .. Reordering and Symbolic Factorization. This step also allocates   */
-    /* all memory that is necessary for the factorization.                  */
-    /* -------------------------------------------------------------------- */
-
-    std::vector <MKL_INT> perm (K_sc1.rows,0);
-    for (MKL_INT i = K_in.rows; i < K_sc1.rows; i++)
-    	perm[i] = 1;
-
-    MKL_INT nrhs = 0;
-
-//    phase = 11;
-//    PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-//        		&K_sc1.rows,
-//				&K_sc1.CSR_V_values[0], &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0],
-//				&perm[0], &nrhs, iparm, &msglvl, &ddum, &ddum, &error);
-//
-//    if ( error != 0 )
-//    {
-//    	printf ("\nERROR during symbolic factorization: %d", error);
-//    	exit(1);
-//    }
-
-
-    /* -------------------------------------------------------------------- */
-    /* .. Numerical factorization. */
-    /* -------------------------------------------------------------------- */
-	SC_out.dense_values.resize(K_b_tmp.rows * K_b_tmp.rows);
-    phase = 12;
-    PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-			&K_sc1.rows,
-			&K_sc1.CSR_V_values[0], &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0],
-			&perm[0], &nrhs,
-			iparm, &msglvl, &ddum, &SC_out.dense_values[0], &error);
-
-    for (size_t i = 0; i < SC_out.dense_values.size(); i++) {
-    	SC_out.dense_values[i] = (-1.0)*SC_out.dense_values[i];
-    }
-
-    if ( error != 0 )
-	{
-		std::ofstream osK(Logging::prepareFile("ERROR").c_str());
-		osK << K_sc1;
-		osK.close();
-
-		ESINFO(ERROR) << "ERROR during numerical factorization: " << error;
-		exit (2);
-	} else {
-		initialized = true;
-	}
-
-	/* -------------------------------------------------------------------- */
-	/* .. Termination and release of memory. */
-	/* -------------------------------------------------------------------- */
-	phase = -1;           /* Release internal memory. */
-	PARDISO (pt, &maxfct, &mnum, &mtype, &phase,
-			&K_sc1.rows, &ddum, &K_sc1.CSR_I_row_indices[0], &K_sc1.CSR_J_col_indices[0], &idum, &nrhs,
-			 iparm, &msglvl, &ddum, &ddum, &error);
-
-	initialized = false;
-
-    /* -------------------------------------------------------------------- */
-    /* ..  allocate memory for the Schur-complement and copy it there.      */
-    /* -------------------------------------------------------------------- */
-
-    SC_out.cols = K_b_tmp.rows;
-    SC_out.rows = K_b_tmp.rows;
-    SC_out.type = 'G';
-
-//    SC_out.ConvertDenseToCSR(1);
-
-//    if (msglvl == 1)
-//    	SpyText(SC_out);
-
-    if (generate_symmetric_sc_1_generate_general_sc_0 == 1) {
-    	//SC_out.RemoveLower();
-    	SC_out.RemoveLowerDense();
-    	SC_out.type = 'S';
-    }
-
-
-//    // Finalize shape of the SC
-//    if (generate_symmetric_sc_1_generate_general_sc_0 == 0) {
-//
-//		SC_out.type = 'G';
-//
-//		SparseMatrix SC_tmp;
-//		SC_tmp = SC_out;
-//		SC_tmp.SetDiagonalOfSymmetricMatrix(0.0);
-//		SC_tmp.MatTranspose();
-//
-//		SC_out.MatAddInPlace(SC_tmp,'N',1.0);
-//
-//    }
-//
-//	SC_out.MatScale(-1.0);
-//	//SC_out.ConvertCSRToDense(0);
-
 }
 
 void SparseSolverDissection::Create_non_sym_SC_w_Mat( espreso::SparseMatrix & K_in, espreso::SparseMatrix & B1_in, espreso::SparseMatrix & B0_in, espreso::SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {
 
 	printf("Method Create_non_sym_SC_w_Mat is not implemented yet.\n");
 	exit(1);
+}
+
+void SparseSolverDissection::GetKernelVectors(SEQ_VECTOR <double> & kern_vec, eslocal & kern_dim) {
+
+	// After factorization, with singular matrix
+	if (!initialized) {
+		std::stringstream ss;
+		ss << "Get Kernel -> rank: " << environment->MPIrank;
+		Factorization(ss.str());
+	}
+
+	kern_dim = dslv->kern_dimension();
+	kern_vec.resize(kern_dim * rows);
+	dslv->GetKernelVectors(&kern_vec.front());
+
+#if 0
+	// Test the obtained kernel vectors
+	// Test 1
+	// A*r = 0
+	ESINFO(PROGRESS1) << "Dissection kernel test 1: 'A*r = 0'";
+	SEQ_VECTOR <double> r(kern_dim * rows, -1.0);
+	SparseMatrix K_sing;
+	ExportMatrix(K_sing);
+
+	for(eslocal i = 0; i < kern_dim; i++) {
+		K_sing.MatVec(kern_vec, r, 'N', i*rows, i*rows);
+		double norm_r = 0.0;
+		for(int j = i*rows; j < i*rows+rows; j++) {
+			norm_r += r[j] * r[j];
+		}
+		norm_r = sqrt(norm_r);
+		ESINFO(PROGRESS1) << "||r" << i << "|| = " << norm_r;
+	}
+
+	// Test 2
+	// ||K * R|| / (||K|| * ||R||)
+	SparseMatrix R;
+	R.dense_values = kern_vec;
+	R.cols = kern_dim;
+	R.rows = kern_vec.size() / kern_dim;
+
+	double norm_K_R = K_sing.getNorm_K_R(K_sing,R,'N');
+
+	double norm_R = 0.0;
+	for(int i = 0; i < R.dense_values.size(); i++) {
+		norm_R += R.dense_values[i] * R.dense_values[i];
+	}
+	norm_R = sqrt(norm_R);
+
+	K_sing.ConvertCSRToDense(0);
+	double norm_K = 0.0;
+	for(int i = 0; i < K_sing.dense_values.size(); i++) {
+		norm_K += K_sing.dense_values[i] * K_sing.dense_values[i];
+	}
+	norm_K = sqrt(norm_K);
+
+	double test2 = norm_K_R / (norm_K * norm_R);
+	ESINFO(PROGRESS1) << "\nDissection kernel test 2: '||K * R|| / (||K|| * ||R||)'";
+	ESINFO(PROGRESS1) << test2;
+
+	// Test 3
+	// R^T * R = identity
+	SparseMatrix I;
+	R.ConvertDenseToCSR(0);
+	I.MatMat(R, 'T', R);
+	ESINFO(PROGRESS1) << "\nDissection kernel test 3: 'R^T * R = I'";
+	ESINFO(PROGRESS1) << I;
+
+	// Test 4
+	// ||K * R|| / max(diag(K))
+	double max_diag_K = K_sing.getDiagonalMaximum();
+	double test4 = norm_K_R / max_diag_K;
+	ESINFO(PROGRESS1) << "Dissection kernel test 4: '||K * R|| / max(diag(K))'";
+	ESINFO(PROGRESS1) << test4 << "\n";
+#endif
 }
 
 

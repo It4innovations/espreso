@@ -77,16 +77,25 @@ for (size_t i = 0; i < domains_in_global_index.size(); i++ )
 
 void ClusterCPU::SetupKsolvers ( ) {
 
-
-
-    #pragma omp parallel for
+   	#pragma omp parallel for
 	for (size_t d = 0; d < domains.size(); d++) {
 
 		domains[d].enable_SP_refinement = true;
+#if 0
+		// Just for testing to get the matrix kernel using dissection
+		domains[d]._RegMat.ConvertToCSR(0);
+		domains[d].K.MatAddInPlace(domains[d]._RegMat, 'N', -1.0);
 
-	// Just for testing to get the matrix kernel using dissection
-//	domains[d].K.MatAddInPlace(domains[d]._RegMat, 'N', -1);
+		domains[d].Kplus.ImportMatrix_wo_Copy(domains[d].K);
+		domains[d].Kplus.Factorization ("Dissection - kernel");
+		SEQ_VECTOR <double> kern_vect;
+		eslocal kern_dim = 0;
+		domains[d].Kplus.GetKernelVectors(kern_vect, kern_dim);
 
+		domains[d].Kplus.Clear();
+		domains[d].K.MatAddInPlace(domains[d]._RegMat, 'N', 1.0);
+		domains[d]._RegMat.ConvertToCOO(1);
+#endif
         // Import of Regularized matrix K into Kplus (Sparse Solver)
     	switch (configuration.Ksolver) {
 		case ESPRESO_KSOLVER::DIRECT_DP:
@@ -116,12 +125,6 @@ void ClusterCPU::SetupKsolvers ( ) {
             domains[d].Kplus.keep_factors = true;
             if (configuration.Ksolver != ESPRESO_KSOLVER::ITERATIVE) {
                 domains[d].Kplus.Factorization (ss.str());
-
-                // Just for testing to get the matrix kernel using dissection
-//                eslocal kernel_dimension = domains[d].Kplus.dslv->kern_dimension();
-//                SEQ_VECTOR <double> kernel_vectors(kernel_dimension * domains[d].Kplus.rows, 0);
-//                domains[d].Kplus.dslv->GetKernelVectors(&kernel_vectors.front());
-
             }
         } else {
             domains[d].Kplus.keep_factors = false;

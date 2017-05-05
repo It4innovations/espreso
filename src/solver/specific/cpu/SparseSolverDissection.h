@@ -58,8 +58,9 @@ public:
 	void SolveCG(SparseMatrix & A_in, std::vector <double> & rhs, std::vector <double> & sol);
 	void SolveCG(SparseMatrix & A_in, std::vector <double> & rhs_sol);
 
+	void GetKernelVectors(SEQ_VECTOR <double> & kern_vec, eslocal & kern_dim);
+
 	DissectionSolver<double, double, double, double, double, double> * dslv;
-	// DissectionSolver<float> * dslv_fl;
 	FILE *fp;
 	int called;
 	double eps_pivot;
