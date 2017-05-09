@@ -172,6 +172,8 @@ void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Ele
 				material->get(p)->evaluate(e->node(node), step.step, temp + h) -
 				material->get(p)->evaluate(e->node(node), step.step, temp - h)
 				) / (2 * h);
+
+
 	};
 
 	switch (material->getModel(PHYSICS::ADVECTION_DIFFUSION_2D)) {
@@ -392,10 +394,10 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 		}
 		if (matrices & (Matrices::K | Matrices::R)) {
 			if (_configuration.tangent_matrix_correction) {
-				BT.multiply(e->dN()[gp], T);
+				BT.multiply(dND, T);
 				BTN.multiply(BT, e->N()[gp]);
 				CDBTN.multiply(CDe, BTN);
-				tangentK.multiply(e->dN()[gp], CDBTN, 1, 1, true);
+				tangentK.multiply(dND, CDBTN,  detJ * e->weighFactor()[gp] * gpThickness(0, 0), 1, true);
 			}
 			Ke.multiply(dND, Ce * dND, detJ * e->weighFactor()[gp] * gpThickness(0, 0), 1, true);
 			Ke.multiply(e->N()[gp], b_e, detJ * e->weighFactor()[gp], 1, true);
@@ -943,7 +945,14 @@ void NewAdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, c
 			temp = e->getProperty(Property::INITIAL_TEMPERATURE, n, step.step, 273.15 + 20);
 		}
 		htc(n, 0) = convection != NULL ? computeHTC(*convection, e, n, step.step, temp) : 0;
-		q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.step, 0) - temp);
+
+
+		if (solution.size()) {
+			q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.step, 0) - temp);
+		} else {
+			q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.step, 0));
+		}
+
 		emiss(n, 0) = CONST_Stefan_Boltzmann * e->getProperty(Property::EMISSIVITY, n, step.step, 0);
 		q(n, 0) += emiss(n, 0) * (pow(e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.step, 0), 4) - pow(temp, 4));
 		q(n, 0) += e->getProperty(Property::HEAT_FLOW, n, step.step, 0) / area;

@@ -1462,7 +1462,7 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 	}
 
 	// *** Calculate the stop condition *******************************************
-	tol = epsilon * parallel_norm_compressed(cluster, u_l);
+	tol = epsilon * std::max(parallel_norm_compressed(cluster, u_l),parallel_norm_compressed(cluster, b_l));
 
 	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));
