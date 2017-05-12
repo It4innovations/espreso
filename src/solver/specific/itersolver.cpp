@@ -4171,7 +4171,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 			}
 
 			if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
-				ConjProj_lambda0(cluster, r_0, x_1);
+				ConjProj_lambda0(cluster, r_0, x_l);
 				ConjProj_t(cluster, r_0, r_0);
 			}
 
