@@ -37,11 +37,11 @@ void NewtonRhapson::run(Step &step)
 
 void NewtonRhapson::init(Step &step)
 {
+	step.internalForceReduction = _configuration.stepping == NonLinearSolverBase::STEPPINGG::TRUE ? 1.0 / _configuration.substeps : 1;
+
 	assembleMatrices(step, Matrices::K | Matrices::f);
-	size_t substeps = _configuration.stepping == NonLinearSolverBase::STEPPINGG::TRUE ? _configuration.substeps : 1;
-	multiply(instance->f, (step.substep + 1) / (double)substeps, "f *= step /steps");
 	composeGluing(step, Matrices::B1);
-	multiply(instance->B1c, (step.substep + 1) / (double)substeps, "B1c *= step /steps");
+	multiply(instance->B1c, step.internalForceReduction, "B1c *= step /steps");
 	regularizeMatrices(step, Matrices::K);
 	composeGluing(step, Matrices::B0);
 }
@@ -74,6 +74,7 @@ void NewtonRhapson::solve(Step &step)
 
 	size_t substeps = _configuration.stepping == NonLinearSolverBase::STEPPINGG::TRUE ? _configuration.substeps : 1;
 	for (step.substep = 0; step.substep < substeps; step.substep++) {
+		step.internalForceReduction = (step.substep + 1) / (double)substeps;
 
 		ESINFO(CONVERGENCE) <<  " ";
 		ESINFO(CONVERGENCE) <<  "**** LOAD_STEP " << step.step + 1 << " SUBSTEP "<< step.substep + 1 << " START";
@@ -105,7 +106,6 @@ void NewtonRhapson::solve(Step &step)
 			} else {
 				updateMatrices(step, Matrices::K | Matrices::f | Matrices::R, physics->instance()->solutions);
 			}
-			multiply(instance->f, (step.substep + 1) / (double)substeps, "f *= step /steps");
 
 			if (_configuration.line_search) {
 				F_ext = physics->instance()->f;
@@ -145,7 +145,7 @@ void NewtonRhapson::solve(Step &step)
 			}
 
 			composeGluing(step, Matrices::B1);
-			multiply(instance->B1c, (step.substep + 1) / (double)substeps, "f *= step /steps");
+			multiply(instance->B1c, step.internalForceReduction, "B1c *= internal force reduction");
 			subtractDirichlet();
 			regularizeMatrices(step, Matrices::K);
 

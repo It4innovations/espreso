@@ -4,6 +4,7 @@
 #include "../../basis/utilities/utils.h"
 #include "../../basis/utilities/communication.h"
 #include "../instance.h"
+#include "../step.h"
 
 #include "../../mesh/elements/element.h"
 #include "../../mesh/structures/mesh.h"
@@ -82,7 +83,7 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, c
 	for (eslocal e = _mesh->getPartition()[domain]; e < _mesh->getPartition()[domain + 1]; e++) {
 		processElement(step, matrices, _mesh->elements()[e], Ke, Me, Re, fe, solution);
 		fillDOFsIndices(_mesh->elements()[e], domain, DOFs);
-		insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, domain);
+		insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, step, domain, false);
 	}
 
 	Me.resize(0, 0);
@@ -91,7 +92,7 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, c
 		if (_mesh->faces()[i]->inDomain(domain)) {
 			processFace(step, matrices, _mesh->faces()[i], Ke, Me, Re, fe, solution);
 			fillDOFsIndices(_mesh->faces()[i], domain, DOFs);
-			insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, domain);
+			insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, step, domain, true);
 		}
 	}
 
@@ -99,7 +100,7 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, c
 		if (_mesh->edges()[i]->inDomain(domain)) {
 			processEdge(step, matrices, _mesh->edges()[i], Ke, Me, Re, fe, solution);
 			fillDOFsIndices(_mesh->edges()[i], domain, DOFs);
-			insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, domain);
+			insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, step, domain, true);
 		}
 	}
 
@@ -159,12 +160,19 @@ void Physics::fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslo
 	}
 }
 
-void Physics::insertElementToDomain(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, const std::vector<eslocal> &DOFs, const DenseMatrix &Ke, const DenseMatrix &Me, const DenseMatrix &Re, const DenseMatrix &fe, size_t domain)
+void Physics::insertElementToDomain(
+		SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M,
+		const std::vector<eslocal> &DOFs,
+		const DenseMatrix &Ke, const DenseMatrix &Me, const DenseMatrix &Re, const DenseMatrix &fe,
+		const Step &step, size_t domain, bool isBOundaryCondition)
 {
+	double RHSreduction = step.internalForceReduction;
+	double Kreduction = isBOundaryCondition ? RHSreduction : 1;
+
 	if (Ke.rows() == DOFs.size() && Ke.columns() == DOFs.size()) {
 		for (size_t r = 0; r < DOFs.size(); r++) {
 			for (size_t c = 0; c < DOFs.size(); c++) {
-				K(DOFs[r], DOFs[c]) = Ke(r, c);
+				K(DOFs[r], DOFs[c]) = Kreduction * Ke(r, c);
 			}
 		}
 	} else {
@@ -202,7 +210,7 @@ void Physics::insertElementToDomain(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix
 
 	if (fe.rows() == DOFs.size() && fe.columns() == 1) {
 		for (size_t r = 0; r < DOFs.size(); r++) {
-			_instance->f[domain][DOFs[r]] += fe(r, 0);
+			_instance->f[domain][DOFs[r]] += RHSreduction * fe(r, 0);
 		}
 	} else {
 		if (fe.rows() != 0 || fe.columns() != 0) {

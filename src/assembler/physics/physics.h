@@ -61,7 +61,11 @@ struct Physics {
 	virtual void processSolution(const Step &step) =0;
 
 	virtual void fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslocal> &DOFs) const;
-	virtual void insertElementToDomain(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, const std::vector<eslocal> &DOFs, const DenseMatrix &Ke, const DenseMatrix &Me, const DenseMatrix &Re, const DenseMatrix &fe, size_t domain);
+	virtual void insertElementToDomain(
+			SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M,
+			const std::vector<eslocal> &DOFs,
+			const DenseMatrix &Ke, const DenseMatrix &Me, const DenseMatrix &Re, const DenseMatrix &fe,
+			const Step &step, size_t domain, bool isBoundaryCondition);
 
 	virtual void makeStiffnessMatricesRegular(REGULARIZATION regularization);
 	virtual void analyticRegularization(size_t domain) =0;
