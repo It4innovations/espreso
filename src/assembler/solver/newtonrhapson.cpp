@@ -57,6 +57,10 @@ void NewtonRhapson::solve(Step &step)
 		ESINFO(GLOBAL_ERROR) << "It is not possible to turn off the both 'temperature' and 'heat' convergence.";
 	}
 
+
+	double epsilon_cgm = linearSolver->configuration.epsilon;
+	double epsilon_err = 1;
+
 	runLinearSolver(step);
 	processSolution(step);
 	storeSubSolution(step);
@@ -82,6 +86,8 @@ void NewtonRhapson::solve(Step &step)
 		double heatResidual;
 		double heatResidual_first = 0;
 		double heatResidual_second = 0;
+
+
 
 		while (
 			step.iteration++ < _configuration.max_iterations ){
@@ -148,6 +154,27 @@ void NewtonRhapson::solve(Step &step)
 			} else {
 				updateLinearSolver(step, Matrices::K | Matrices::f | Matrices::B1c);
 			}
+
+
+			if (_configuration.adaptive_precision){
+
+             if (step.iteration > 1){
+            	 epsilon_err = temperatureResidual_first/temperatureResidual_second;
+            	 epsilon_cgm = std::min(_configuration.r_tol *epsilon_err ,_configuration.c_fact * epsilon_cgm );
+
+             }
+             ESINFO(CONVERGENCE) <<  "    ADAPTIVE PRECISION = " << epsilon_cgm <<   " EPS_ERR = " << epsilon_err ;
+             *const_cast<double*>(&linearSolver->configuration.epsilon) = epsilon_cgm;
+
+			//	precision_= *const_cast<double*>(&linearSolver->configuration.epsilon) / step.iteration ;
+
+			//	if (precision_ < 1e-9){
+			//		*const_cast<double*>(&linearSolver->configuration.epsilon)=1e-9;
+			//	}else{
+			//		*const_cast<double*>(&linearSolver->configuration.epsilon) = precision_;
+			//	}
+			}
+
 			runLinearSolver(step);
 
 			ESINFO(CONVERGENCE) <<  "    LINEAR_SOLVER_OUTPUT: SOLVER = " << "PCG" <<   " N_ITERATIONS = " << "1" << "  " ;
