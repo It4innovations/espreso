@@ -58,27 +58,107 @@ void NewAdvectionDiffusion2D::prepareTotalFETI()
 	for (auto it = _configuration.convection.begin(); it != _configuration.convection.end(); ++it) {
 		for (auto regions = it->second.begin(); regions != it->second.end(); ++regions) {
 			std::map<std::string, std::string> values;
+
 			values[regions->first] = regions->second->external_temperature;
 			_mesh->loadProperty(values, { }, { Property::EXTERNAL_TEMPERATURE });
-			values[regions->first] = regions->second->heat_transfer_coefficient;
-			_mesh->loadProperty(values, { }, { Property::HEAT_TRANSFER_COEFFICIENT });
 
-			values[regions->first] = regions->second->wall_height;
-			_mesh->loadProperty(values, { }, { Property::WALL_HEIGHT });
-			values[regions->first] = regions->second->tilt_angle;
-			_mesh->loadProperty(values, { }, { Property::TILT_ANGLE });
-			values[regions->first] = regions->second->diameter;
-			_mesh->loadProperty(values, { }, { Property::DIAMETER });
-			values[regions->first] = regions->second->plate_length;
-			_mesh->loadProperty(values, { }, { Property::PLATE_LENGTH });
-			values[regions->first] = regions->second->fluid_velocity;
-			_mesh->loadProperty(values, { }, { Property::FLUID_VELOCITY });
-			values[regions->first] = regions->second->plate_distance;
-			_mesh->loadProperty(values, { }, { Property::PLATE_DISTANCE });
-			values[regions->first] = regions->second->length;
-			_mesh->loadProperty(values, { }, { Property::LENGTH });
-			values[regions->first] = regions->second->absolute_pressure;
-			_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
+			switch (regions->second->type) {
+			case CONVECTION_TYPE::USER:
+				values[regions->first] = regions->second->heat_transfer_coefficient;
+				_mesh->loadProperty(values, { }, { Property::HEAT_TRANSFER_COEFFICIENT });
+				break;
+			case CONVECTION_TYPE::EXTERNAL_NATURAL:
+
+				switch (regions->second->variant) {
+				case CONVECTION_VARIANT::VERTICAL_WALL:
+					values[regions->first] = regions->second->wall_height;
+					_mesh->loadProperty(values, { }, { Property::WALL_HEIGHT });
+					values[regions->first] = regions->second->absolute_pressure;
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
+					break;
+				case CONVECTION_VARIANT::INCLINED_WALL:
+					values[regions->first] = regions->second->wall_height;
+					_mesh->loadProperty(values, { }, { Property::WALL_HEIGHT });
+					values[regions->first] = regions->second->tilt_angle;
+					_mesh->loadProperty(values, { }, { Property::TILT_ANGLE });
+					values[regions->first] = regions->second->absolute_pressure;
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
+					break;
+				case CONVECTION_VARIANT::HORIZONTAL_CYLINDER:
+					values[regions->first] = regions->second->diameter;
+					_mesh->loadProperty(values, { }, { Property::DIAMETER });
+					values[regions->first] = regions->second->absolute_pressure;
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
+					break;
+				case CONVECTION_VARIANT::SPHERE:
+					values[regions->first] = regions->second->diameter;
+					_mesh->loadProperty(values, { }, { Property::DIAMETER });
+					values[regions->first] = regions->second->absolute_pressure;
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
+					break;
+				case CONVECTION_VARIANT::HORIZONTAL_PLATE_UP:
+				case CONVECTION_VARIANT::HORIZONTAL_PLATE_DOWN:
+					values[regions->first] = regions->second->length;
+					_mesh->loadProperty(values, { }, { Property::LENGTH });
+					values[regions->first] = regions->second->absolute_pressure;
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
+					break;
+				default:
+					break;
+				}
+
+				break;
+			case CONVECTION_TYPE::EXTERNAL_FORCED:
+
+				switch (regions->second->variant) {
+				case CONVECTION_VARIANT::AVERAGE_PLATE:
+					values[regions->first] = regions->second->length;
+					_mesh->loadProperty(values, { }, { Property::LENGTH });
+					values[regions->first] = regions->second->fluid_velocity;
+					_mesh->loadProperty(values, { }, { Property::FLUID_VELOCITY });
+					values[regions->first] = regions->second->absolute_pressure;
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
+					break;
+				default:
+					break;
+				}
+
+				break;
+			case CONVECTION_TYPE::INTERNAL_NATURAL:
+
+				switch (regions->second->variant) {
+				case CONVECTION_VARIANT::CIRCULAR_TUBE:
+					values[regions->first] = regions->second->diameter;
+					_mesh->loadProperty(values, { }, { Property::DIAMETER });
+					values[regions->first] = regions->second->wall_height;
+					_mesh->loadProperty(values, { }, { Property::WALL_HEIGHT });
+					values[regions->first] = regions->second->absolute_pressure;
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
+					break;
+				default:
+					break;
+				}
+
+				break;
+			case CONVECTION_TYPE::INTERNAL_FORCED:
+
+				switch (regions->second->variant) {
+				case CONVECTION_VARIANT::TUBE:
+					values[regions->first] = regions->second->diameter;
+					_mesh->loadProperty(values, { }, { Property::DIAMETER });
+					values[regions->first] = regions->second->fluid_velocity;
+					_mesh->loadProperty(values, { }, { Property::FLUID_VELOCITY });
+					values[regions->first] = regions->second->absolute_pressure;
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
+					break;
+				default:
+					break;
+				}
+
+				break;
+
+			}
+
 		}
 	}
 
