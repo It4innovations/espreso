@@ -17,6 +17,7 @@ public:
 			LinearSolver* linearSolver,
 			output::Store* store,
 			const NonLinearSolverBase &configuration,
+			double duration,
 			Matrices restriction = Matrices::NONE);
 
 	virtual void run(Step &step);

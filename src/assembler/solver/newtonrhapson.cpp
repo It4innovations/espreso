@@ -18,8 +18,9 @@ NewtonRhapson::NewtonRhapson(
 		LinearSolver* linearSolver,
 		output::Store* store,
 		const NonLinearSolverBase &configuration,
+		double duration,
 		Matrices restriction)
-: Solver("NEWTON RHAPSON", mesh, physics, linearSolver, store, restriction), _configuration(configuration)
+: Solver("NEWTON RHAPSON", mesh, physics, linearSolver, store, duration, restriction), _configuration(configuration)
 {
 
 }
@@ -74,6 +75,7 @@ void NewtonRhapson::solve(Step &step)
 
 	size_t substeps = _configuration.stepping == NonLinearSolverBase::STEPPINGG::TRUE ? _configuration.substeps : 1;
 	for (step.substep = 0; step.substep < substeps; step.substep++) {
+		step.currentTime += _duration / substeps;
 		step.internalForceReduction = (step.substep + 1) / (double)substeps;
 
 		ESINFO(CONVERGENCE) <<  " ";
@@ -88,10 +90,7 @@ void NewtonRhapson::solve(Step &step)
 		double heatResidual_first = 0;
 		double heatResidual_second = 0;
 
-
-
-		while (
-			step.iteration++ < _configuration.max_iterations ){
+		while (step.iteration++ < _configuration.max_iterations) {
 
 			cumiter +=1;
 			if (!_configuration.convergenceParameters().checkResidual()) {
@@ -210,9 +209,8 @@ void NewtonRhapson::solve(Step &step)
 				}
 			}
 
-
-			processSolution(step);
 			storeSubSolution(step);
+			processSolution(step);
 		}
 		if (_configuration.convergenceParameters().checkResidual()) {
 			ESINFO(CONVERGENCE) <<  " >> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION " << step.iteration ;
@@ -221,7 +219,6 @@ void NewtonRhapson::solve(Step &step)
 		}
 		ESINFO(CONVERGENCE) <<  " >> SUBSTEP " << step.substep + 1 << " IS DONE /" << " CUMULATIVE ITERATION NUMBER = " << cumiter + 1 ;
 		ESINFO(CONVERGENCE) <<  " ";
-
 	}
 	step.substep = substeps - 1;
 }

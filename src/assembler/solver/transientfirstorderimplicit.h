@@ -29,7 +29,6 @@ public:
 
 protected:
 	const TransientSolver &_configuration;
-	double _duration;
 };
 
 }

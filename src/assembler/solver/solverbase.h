@@ -17,17 +17,19 @@ class TimeEval;
 class SolverBase
 {
 public:
-	SolverBase(const std::string &name, const std::string &physicsName, Mesh *mesh);
+	SolverBase(const std::string &name, const std::string &physicsName, Mesh *mesh, double duration);
 
 	virtual void run(Step &step) =0;
 
 	const std::string& name() const { return _name; }
+	double duration() const { return _duration; }
 
 	virtual ~SolverBase();
 
 protected:
 	std::string _name;
 	Mesh *_mesh;
+	double _duration;
 
 	TimeEval *_timeStatistics;
 };

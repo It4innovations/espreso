@@ -25,8 +25,9 @@ Solver::Solver(
 		Physics* physics,
 		LinearSolver* linearSolver,
 		output::Store* store,
+		double duration,
 		Matrices restriction)
-: SolverBase(name, physics->name(), mesh), physics(physics), instance(physics->instance()), linearSolver(linearSolver), _store(store), _restriction(~restriction)
+: SolverBase(name, physics->name(), mesh, duration), physics(physics), instance(physics->instance()), linearSolver(linearSolver), _store(store), _restriction(~restriction)
 {
 
 }

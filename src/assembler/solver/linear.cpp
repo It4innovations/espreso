@@ -12,8 +12,9 @@ Linear::Linear(
 		Physics* physics,
 		LinearSolver* linearSolver,
 		output::Store* store,
+		double duration,
 		Matrices restriction)
-: Solver("STEADY STATE", mesh, physics, linearSolver, store, restriction)
+: Solver("STEADY STATE", mesh, physics, linearSolver, store, duration, restriction)
 {
 
 }

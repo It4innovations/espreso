@@ -57,11 +57,21 @@ ResultStore::~ResultStore()
 
 std::vector<std::string> ResultStore::store(const std::string &name, const Step &step, const MeshInfo *meshInfo)
 {
-	std::string root = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep) });
+	std::string root;
+	if (_configuration.iterations) {
+		root = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), "iteration" + std::to_string(step.iteration)});
+	} else {
+		root = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep) });
+	}
 	std::vector<std::string> files;
 
 	if (meshInfo->distributed()) {
-		std::string prefix = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), std::to_string(environment->MPIrank) });
+		std::string prefix;
+		if (_configuration.iterations) {
+			prefix = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), "iteration" + std::to_string(step.iteration), std::to_string(environment->MPIrank) });
+		} else {
+			prefix = Esutils::createDirectory({ "results", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), std::to_string(environment->MPIrank) });
+		}
 		for (size_t r = 0; r < meshInfo->regions(); r++) {
 			store(prefix + name + std::to_string(r), meshInfo->region(r));
 			if (!environment->MPIrank) {

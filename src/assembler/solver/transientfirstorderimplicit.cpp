@@ -19,8 +19,8 @@ TransientFirstOrderImplicit::TransientFirstOrderImplicit(
 		output::Store* store,
 		const TransientSolver &configuration,
 		double duration)
-: Solver("TRANSIENT FIRST ORDER IMPLICIT", mesh, physics, linearSolver, store, Matrices::NONE),
-  _configuration(configuration), _duration(duration)
+: Solver("TRANSIENT FIRST ORDER IMPLICIT", mesh, physics, linearSolver, store, duration, Matrices::NONE),
+  _configuration(configuration)
 {
 
 }

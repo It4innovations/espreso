@@ -40,7 +40,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		_physics.push_back(new ShallowWater2D(mesh, _instances.front(), configuration.shallow_water_2D));
 		_linearSolvers.push_back(new LinearSolver(_instances.front(), configuration.shallow_water_2D.espreso));
 
-		loadSteps.push_back(new Linear(mesh, _physics.front(),  _linearSolvers.front(), store));
+		loadSteps.push_back(new Linear(mesh, _physics.front(),  _linearSolvers.front(), store, 1));
 		meshPreprocessing(configuration.output);
 		return;
 	}
@@ -80,22 +80,22 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		for (size_t i = 1; i <= configuration.advection_diffusion_2D.physics_solver.load_steps; i++) {
 			auto it = configuration.advection_diffusion_2D.physics_solver.load_steps_settings.find(i);
 			if (it == configuration.advection_diffusion_2D.physics_solver.load_steps_settings.end()) {
-				loadSteps.push_back(new Linear(mesh, _physics.front(),  _linearSolvers.front(), store));
+				loadSteps.push_back(new Linear(mesh, _physics.front(),  _linearSolvers.front(), store, it->second->duration_time));
 				break;
 			}
 			LoadStepSettings<AdvectionDiffusionNonLinearConvergence> *loadStepSettings = it->second;
 
 			if (loadStepSettings->type == LoadStepSettingsBase::TYPE::STEADY_STATE) {
 				if (loadStepSettings->mode == LoadStepSettingsBase::MODE::LINEAR) {
-					loadSteps.push_back(new Linear(mesh, _physics.front(), _linearSolvers.front(), store));
+					loadSteps.push_back(new Linear(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->duration_time));
 				}
 				if (loadStepSettings->mode == LoadStepSettingsBase::MODE::NONLINEAR) {
 					switch (loadStepSettings->nonlinear_solver.method) {
 					case NonLinearSolverBase::METHOD::NEWTON_RHAPSON:
-						loadSteps.push_back(new NewtonRhapson(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->nonlinear_solver));
+						loadSteps.push_back(new NewtonRhapson(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->nonlinear_solver, loadStepSettings->duration_time));
 						break;
 					case NonLinearSolverBase::METHOD::MODIFIED_NEWTON_RHAPSON:
-						loadSteps.push_back(new NewtonRhapson(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->nonlinear_solver));
+						loadSteps.push_back(new NewtonRhapson(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->nonlinear_solver, loadStepSettings->duration_time));
 						break;
 					default:
 						ESINFO(GLOBAL_ERROR) << "Not implemented non-linear solver method";
@@ -192,10 +192,12 @@ void Factory::solve()
 	} else {
 		Step step;
 		Logging::step = &step;
+		double currentTime = 0;
 		for (size_t loadStep = 0; loadStep < loadSteps.size(); loadStep++) {
 			step.step = loadStep;
 			loadSteps[loadStep]->run(step);
 			_solution = _instances.front()->primalSolution;
+			step.currentTime = currentTime += loadSteps[loadStep]->duration();
 		}
 	}
 }
