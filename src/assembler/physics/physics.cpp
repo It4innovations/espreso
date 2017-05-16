@@ -288,6 +288,24 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOpe
 		ESINFO(GLOBAL_ERROR) << "Not implemented sumSquares restriction";
 	}
 
+	auto skip = [&] (size_t dof, size_t n) {
+		switch (restriction) {
+		case SumRestriction::DIRICHLET:
+			if (!_mesh->commonRegion(restricted[dof], _mesh->nodes()[n]->regions())) {
+				return true;
+			}
+			break;
+		case SumRestriction::NON_DIRICHLET:
+			if (_mesh->commonRegion(restricted[dof], _mesh->nodes()[n]->regions())) {
+				return true;
+			}
+			break;
+		case SumRestriction::NONE:
+			break;
+		}
+		return false;
+	};
+
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		double tSum = 0;
@@ -307,20 +325,8 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOpe
 					incompleteData[t].insert(incompleteData[t].end(), pointDOFs().size(), 0);
 					for (auto d = _mesh->nodes()[n]->domains().begin(); d != _mesh->nodes()[n]->domains().end(); ++d) {
 						for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
-							switch (restriction) {
-							case SumRestriction::DIRICHLET:
-								if (!_mesh->commonRegion(restricted[dof], _mesh->nodes()[n]->regions())) {
-									break;
-								}
-							case SumRestriction::NON_DIRICHLET:
-								if (_mesh->commonRegion(restricted[dof], _mesh->nodes()[n]->regions())) {
-									break;
-								}
-							case SumRestriction::NONE:
-								if (_mesh->nodes()[n]->DOFIndex(*d, dof) >= 0) {
-									incompleteData[t][incompleteData[t].size() - pointDOFs().size() + dof] += data[*d][_mesh->nodes()[n]->DOFIndex(*d, dof)];
-								}
-								break;
+							if (!skip(dof, n) && _mesh->nodes()[n]->DOFIndex(*d, dof) >= 0) {
+								incompleteData[t][incompleteData[t].size() - pointDOFs().size() + dof] += data[*d][_mesh->nodes()[n]->DOFIndex(*d, dof)];
 							}
 						}
 					}
@@ -334,20 +340,8 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOpe
 					sBuffer[t][n2i(cluster)].resize(sBuffer[t][n2i(cluster)].size() + pointDOFs().size());
 					for (auto d = _mesh->nodes()[n]->domains().begin(); d != _mesh->nodes()[n]->domains().end(); ++d) {
 						for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
-							switch (restriction) {
-							case SumRestriction::DIRICHLET:
-								if (!_mesh->commonRegion(restricted[dof], _mesh->nodes()[n]->regions())) {
-									break;
-								}
-							case SumRestriction::NON_DIRICHLET:
-								if (_mesh->commonRegion(restricted[dof], _mesh->nodes()[n]->regions())) {
-									break;
-								}
-							case SumRestriction::NONE:
-								if (_mesh->nodes()[n]->DOFIndex(*d, dof) >= 0) {
-									sBuffer[t][n2i(cluster)][sBuffer[t][n2i(cluster)].size() - pointDOFs().size() + dof] += data[*d][_mesh->nodes()[n]->DOFIndex(*d, dof)];
-								}
-								break;
+							if (!skip(dof, n) && _mesh->nodes()[n]->DOFIndex(*d, dof) >= 0) {
+								sBuffer[t][n2i(cluster)][sBuffer[t][n2i(cluster)].size() - pointDOFs().size() + dof] += data[*d][_mesh->nodes()[n]->DOFIndex(*d, dof)];
 							}
 						}
 					}
@@ -356,21 +350,9 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOpe
 				for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
 					double sum = 0;
 					for (auto d = _mesh->nodes()[n]->domains().begin(); d != _mesh->nodes()[n]->domains().end(); ++d) {
-						switch (restriction) {
-						case SumRestriction::DIRICHLET:
-							if (!_mesh->commonRegion(restricted[dof], _mesh->nodes()[n]->regions())) {
-								break;
-							}
-						case SumRestriction::NON_DIRICHLET:
-							if (_mesh->commonRegion(restricted[dof], _mesh->nodes()[n]->regions())) {
-								break;
-							}
-						case SumRestriction::NONE:
-							if (_mesh->nodes()[n]->DOFIndex(*d, dof) >= 0) {
+							if (!skip(dof, n) && _mesh->nodes()[n]->DOFIndex(*d, dof) >= 0) {
 								sum += data[*d][_mesh->nodes()[n]->DOFIndex(*d, dof)];
 							}
-							break;
-						}
 					}
 					switch (operation) {
 					case SumOperation::AVERAGE:
