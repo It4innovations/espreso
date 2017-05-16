@@ -362,7 +362,7 @@ void CollectedInfo::addSolution(const std::vector<Solution*> &solution)
 					}
 
 					eslocal d = std::lower_bound(_mesh->getPartition().begin(), _mesh->getPartition().end(), e + 1) - _mesh->getPartition().begin() - 1;
-					for (size_t p = 0; p < solution[i]->properties; p++) {
+					for (size_t p = 0; p < solution[i]->properties.size(); p++) {
 						rData[regionOffset][t].push_back(solution[i]->get(p, d, e - _mesh->getPartition()[d]));
 					}
 
@@ -376,12 +376,12 @@ void CollectedInfo::addSolution(const std::vector<Solution*> &solution)
 
 				std::vector<double> *collected = new std::vector<double>();
 				status = status && Communication::gatherUnknownSize(sData[r], *collected);
-				_regions[r].data.elementDataDouble[solution[i]->name] = std::make_pair(solution[i]->properties, collected);
+				_regions[r].data.elementDataDouble[solution[i]->name] = std::make_pair(solution[i]->properties.size(), collected);
 			}
 		}
 
 		if (solution[i]->eType == ElementType::NODES) {
-			std::vector<double> sData(solution[i]->properties * _mesh->nodes().size());
+			std::vector<double> sData(solution[i]->properties.size() * _mesh->nodes().size());
 
 			std::vector<size_t> distribution = Esutils::getDistribution(threads, _mesh->nodes().size());
 			#pragma omp parallel for
@@ -389,8 +389,8 @@ void CollectedInfo::addSolution(const std::vector<Solution*> &solution)
 				for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
 
 					for (auto d = _mesh->nodes()[n]->domains().begin(); d != _mesh->nodes()[n]->domains().end(); ++d) {
-						for (size_t p = 0; p < solution[i]->properties; p++) {
-							sData[n * solution[i]->properties + p] += solution[i]->get(p, *d, _mesh->coordinates().localIndex(n, *d));
+						for (size_t p = 0; p < solution[i]->properties.size(); p++) {
+							sData[n * solution[i]->properties.size() + p] += solution[i]->get(p, *d, _mesh->coordinates().localIndex(n, *d));
 						}
 					}
 				}
@@ -401,19 +401,19 @@ void CollectedInfo::addSolution(const std::vector<Solution*> &solution)
 
 			for (size_t r = 0; r < _regions.size(); r++) {
 				std::vector<double> *averaged = new std::vector<double>();
-				_regions[r].data.pointDataDouble[solution[i]->name] = std::make_pair(solution[i]->properties, averaged);
-				averaged->resize(_cIndices[r].size() * solution[i]->properties);
+				_regions[r].data.pointDataDouble[solution[i]->name] = std::make_pair(solution[i]->properties.size(), averaged);
+				averaged->resize(_cIndices[r].size() * solution[i]->properties.size());
 
 				std::vector<size_t> distribution = Esutils::getDistribution(threads, _cIndices[r].size());
 				#pragma omp parallel for
 				for (size_t t = 0; t < threads; t++) {
 					for (size_t id = distribution[t]; id < distribution[t + 1]; id++) {
 
-						for (size_t p = 0; p < solution[i]->properties; p++) {
+						for (size_t p = 0; p < solution[i]->properties.size(); p++) {
 							for (esglobal j = _cIndices[r][id] ? _globalIDsMap[_cIndices[r][id] - 1] : 0; j < _globalIDsMap[_cIndices[r][id]]; j++) {
-								(*averaged)[id * solution[i]->properties + p] += collected[_globalIDs[j] * solution[i]->properties + p];
+								(*averaged)[id * solution[i]->properties.size() + p] += collected[_globalIDs[j] * solution[i]->properties.size() + p];
 							}
-							(*averaged)[id * solution[i]->properties + p] /= _globalIDsMultiplicity[_cIndices[r][id]];
+							(*averaged)[id * solution[i]->properties.size() + p] /= _globalIDsMultiplicity[_cIndices[r][id]];
 						}
 
 					}

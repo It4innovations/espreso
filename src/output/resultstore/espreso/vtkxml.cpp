@@ -64,7 +64,7 @@ void VTKXML::addData(const RegionData &regionData)
 
 	for (size_t i = 0; i < regionData.solutions.size(); i++) {
 		if (regionData.solutions[i]->eType == ElementType::NODES) {
-			storePointData(regionData.solutions[i]->name, regionData.solutions[i]->properties, regionData.solutions[i]->data);
+			storePointData(regionData.solutions[i]->name, regionData.solutions[i]->properties.size(), regionData.solutions[i]->data);
 		}
 	}
 	(*_os) << "  </PointData>\n";
@@ -79,7 +79,7 @@ void VTKXML::addData(const RegionData &regionData)
 	}
 	for (size_t i = 0; i < regionData.solutions.size(); i++) {
 		if (regionData.solutions[i]->eType == ElementType::ELEMENTS) {
-			storeCellData(regionData.solutions[i]->name, regionData.solutions[i]->properties, regionData.solutions[i]->data);
+			storeCellData(regionData.solutions[i]->name, regionData.solutions[i]->properties.size(), regionData.solutions[i]->data);
 		}
 	}
 	(*_os) << "  </CellData>\n";

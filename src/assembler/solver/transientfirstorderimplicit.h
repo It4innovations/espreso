@@ -28,6 +28,19 @@ public:
 	virtual void finalize(Step &step);
 
 protected:
+	static size_t offset;
+	static size_t step;
+
+	enum SolutionIndex: size_t {
+		SOLUTION   = 0,
+		DELTA      = 1,
+		VELOCITY   = 2,
+		X          = 3,
+		Y          = 4,
+
+		SIZE       = 3
+	};
+
 	const TransientSolver &_configuration;
 };
 

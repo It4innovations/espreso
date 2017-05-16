@@ -47,6 +47,10 @@ void ShallowWater2D::analyticRegularization(size_t domain)
 	ESINFO(GLOBAL_ERROR) << "Implement analytic regularization";
 }
 
+void ShallowWater2D::preprocessData(const Step &step)
+{
+
+}
 
 void ShallowWater2D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {

@@ -319,23 +319,23 @@ void DistributedInfo::addSolution(const std::vector<Solution*> &solution)
 
 		for (size_t s = 0; s < solution.size(); s++) {
 
-			std::vector<double> *rData = new std::vector<double>(solution[s]->properties * _regions[r].coordinates.size() / 3);
+			std::vector<double> *rData = new std::vector<double>(solution[s]->properties.size() * _regions[r].coordinates.size() / 3);
 
 			#pragma omp parallel for
 			for (size_t d = 0; d < _mesh->parts(); d++) {
 				for (size_t i = 0; i < _cIndices[r][d].size(); i++) {
-					for (size_t p = 0; p < solution[s]->properties; p++) {
-						(*rData)[solution[s]->properties * (i + _cOffset[r][d]) + p] = solution[s]->get(p, d, _mesh->coordinates().localIndex(_cIndices[r][d][i], d));
+					for (size_t p = 0; p < solution[s]->properties.size(); p++) {
+						(*rData)[solution[s]->properties.size() * (i + _cOffset[r][d]) + p] = solution[s]->get(p, d, _mesh->coordinates().localIndex(_cIndices[r][d][i], d));
 					}
 				}
 			}
 
 			switch (solution[s]->eType) {
 			case ElementType::ELEMENTS:
-				_regions[r].data.elementDataDouble[solution[s]->name] = std::make_pair(solution[s]->properties, rData);
+				_regions[r].data.elementDataDouble[solution[s]->name] = std::make_pair(solution[s]->properties.size(), rData);
 				break;
 			case ElementType::NODES:
-				_regions[r].data.pointDataDouble[solution[s]->name] = std::make_pair(solution[s]->properties, rData);
+				_regions[r].data.pointDataDouble[solution[s]->name] = std::make_pair(solution[s]->properties.size(), rData);
 				break;
 			default:
 				ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: cannot store this type solution.";

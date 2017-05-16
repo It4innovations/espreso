@@ -21,6 +21,8 @@
 
 using namespace espreso;
 
+size_t NewAdvectionDiffusion2D::offset = -1;
+
 NewAdvectionDiffusion2D::NewAdvectionDiffusion2D(Mesh *mesh, Instance *instance, const AdvectionDiffusion2DConfiguration &configuration)
 : Physics2D("ADVECTION DIFFUSION 2D", mesh, instance), _configuration(configuration)
 {
@@ -214,6 +216,26 @@ void NewAdvectionDiffusion2D::analyticRegularization(size_t domain)
 	_instance->RegMat[domain].ConvertToCSR(1);
 }
 
+void NewAdvectionDiffusion2D::preprocessData(const Step &step)
+{
+	if (offset != -1) {
+		return;
+	}
+	offset = _instance->solutions.size();
+	_instance->solutions.resize(offset + SolutionIndex::SIZE);
+	_instance->primalSolution.resize(_mesh->parts());
+
+	#pragma omp parallel for
+	for (size_t p = 0; p < _mesh->parts(); p++) {
+		_instance->primalSolution[p].reserve(pointDOFs().size() * _mesh->coordinates().localSize(p));
+		for (size_t n = 0; n < _mesh->coordinates().localSize(p); n++) {
+			_instance->primalSolution[p].push_back(_mesh->nodes()[_mesh->coordinates().clusterIndex(n, p)]->getProperty(Property::INITIAL_TEMPERATURE, 0, step.step, 273.15 + 20));
+		}
+	}
+
+	_instance->solutions[offset + SolutionIndex::TEMPERATURE] = new Solution(*_mesh, "temperature", ElementType::NODES, pointDOFs(), _instance->primalSolution);
+}
+
 void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD) const
 {
 	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
@@ -340,11 +362,7 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 	}
 
 	for (size_t i = 0; i < e->nodes(); i++) {
-		if (solution.size()) {
-			temp = solution[0]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(i), e->domains().front()));
-		} else {
-			temp = e->getProperty(Property::INITIAL_TEMPERATURE, i, step.step, 273.15 + 20);
-		}
+		temp = solution[offset + SolutionIndex::TEMPERATURE]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(i), e->domains().front()));
 		T(i, 0) = temp;
 		coordinates(i, 0) = _mesh->coordinates()[e->node(i)].x;
 		coordinates(i, 1) = _mesh->coordinates()[e->node(i)].y;
@@ -1019,15 +1037,11 @@ void NewAdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, c
 		coordinates(n, 0) = _mesh->coordinates()[e->node(n)].x;
 		coordinates(n, 1) = _mesh->coordinates()[e->node(n)].y;
 
-		if (solution.size()) {
-			temp = solution[0]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(n), e->domains().front()));
-		} else {
-			temp = e->getProperty(Property::INITIAL_TEMPERATURE, n, step.step, 273.15 + 20);
-		}
+		temp = solution[offset + SolutionIndex::TEMPERATURE]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(n), e->domains().front()));
 		htc(n, 0) = convection != NULL ? computeHTC(*convection, e, n, step.step, temp) : 0;
 
 
-		if (solution.size()) {
+		if (step.isInitial()) {
 			q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.step, 0) - temp);
 		} else {
 			q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.step, 0));
@@ -1069,11 +1083,6 @@ void NewAdvectionDiffusion2D::processNode(const Step &step, Matrices matrices, c
 
 void NewAdvectionDiffusion2D::processSolution(const Step &step)
 {
-	_instance->solutions.resize(1, NULL);
-	if (_instance->solutions[0] != NULL) {
-		delete _instance->solutions[0];
-	}
 
-	_instance->solutions[0] = new Solution(*_mesh, "temperature", ElementType::NODES, pointDOFs(), _instance->primalSolution);
 }
 

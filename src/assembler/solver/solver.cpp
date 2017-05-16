@@ -92,9 +92,14 @@ void Solver::storeSubSolution(const Step &step)
 	}
 }
 
-void Solver::assembleMatrices(const Step &step, Matrices matrices)
+void Solver::preprocessData(const Step &step)
 {
-	updateMatrices(step, matrices, {});
+	physics->preprocessData(step);
+}
+
+void Solver::updateMatrices(const Step &step, Matrices matrices)
+{
+	updateMatrices(step, matrices, instance->solutions);
 }
 
 void Solver::updateMatrices(const Step &step, Matrices matrices, const std::vector<Solution*> &solution)

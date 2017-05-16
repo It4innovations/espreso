@@ -21,13 +21,15 @@ struct Solution {
 
 	inline double get(Property property, eslocal domain, eslocal index) const
 	{
-		return data[domain][index * properties + _offset[static_cast<int>(property)]];
+		return data[domain][index * properties.size() + _offset[static_cast<int>(property)]];
 	}
 
 	inline double get(size_t propertyOffset, eslocal domain, eslocal index) const
 	{
-		return data[domain][index * properties + propertyOffset];
+		return data[domain][index * properties.size() + propertyOffset];
 	}
+
+	std::vector<std::vector<double> >& innerData() { return _data; }
 
 	bool hasProperty(Property property) const;
 	void computeStatisticalData();
@@ -35,7 +37,7 @@ struct Solution {
 
 	std::string name;
 	ElementType eType;
-	size_t properties;
+	std::vector<Property> properties;
 	const std::vector<std::vector<double> > &data;
 
 protected:

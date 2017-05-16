@@ -34,13 +34,16 @@ void NewtonRhapson::run(Step &step)
 	solve(step);
 	postprocess(step);
 	finalize(step);
+
+	instance->clear();
 }
 
 void NewtonRhapson::init(Step &step)
 {
 	step.internalForceReduction = _configuration.stepping == NonLinearSolverBase::STEPPINGG::TRUE ? 1.0 / _configuration.substeps : 1;
 
-	assembleMatrices(step, Matrices::K | Matrices::f);
+	preprocessData(step);
+	updateMatrices(step, Matrices::K | Matrices::f);
 	composeGluing(step, Matrices::B1);
 	multiply(instance->B1c, step.internalForceReduction, "B1c *= step /steps");
 	regularizeMatrices(step, Matrices::K);
@@ -231,7 +234,7 @@ void NewtonRhapson::postprocess(Step &step)
 
 void NewtonRhapson::finalize(Step &step)
 {
-	finalizeLinearSolver(step);
+
 }
 
 

@@ -314,7 +314,7 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 		ESINFO(CONVERGENCE) << " **** Karush-Kuhn-Tucker-conditions ****     ";
 
 
-		ESINFO(CONVERGENCE) << " Solution norm: norm(K*u - f + Bt*Lambda) =      				" << std::setw(6) << KKT1_norm_cluster_global / KKT1_norm_cluster_global2;
+		ESINFO(CONVERGENCE) << " Solution norm: norm(K*u - f + Bt*Lambda) =      				" << std::setw(6) << (KKT1_norm_cluster_global2 ? KKT1_norm_cluster_global / KKT1_norm_cluster_global2 :KKT1_norm_cluster_global);
 
 		ESINFO(CONVERGENCE) << " Equality constraints: norm(Be*u - ce) =					" << std::setw(6) << norm_Beu / norm_ce;
 
@@ -1462,7 +1462,7 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 	}
 
 	// *** Calculate the stop condition *******************************************
-	tol = epsilon * std::max(parallel_norm_compressed(cluster, u_l),parallel_norm_compressed(cluster, b_l));
+	tol = epsilon * parallel_norm_compressed(cluster, u_l);
 
 	int precision = ceil(log(1 / epsilon) / log(10)) + 1;
 	int iterationWidth = ceil(log(CG_max_iter) / log(10));

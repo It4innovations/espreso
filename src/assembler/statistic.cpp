@@ -59,7 +59,7 @@ Statistic::Statistic(StatisticalData statistics, Operation operation, ElementTyp
 	_dataSize = getDataSize(mesh, data, eType);
 }
 
-Statistic::Statistic(ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data)
+Statistic::Statistic(ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data, size_t dataSize)
 : _statistics(StatisticalData::MIN | StatisticalData::MAX | StatisticalData::AVERAGE | StatisticalData::NORM), _operation(Operation::AVERAGE), _eType(eType), _computed(false), _mesh(mesh), _data(data)
 {
 	for (size_t r = 0; r < _mesh.monitoredRegions().size(); r++) {
@@ -68,7 +68,7 @@ Statistic::Statistic(ElementType eType, const Mesh &mesh, const std::vector<std:
 		}
 	}
 
-	_dataSize = getDataSize(mesh, data, eType);
+	_dataSize = dataSize;
 	_offsets.resize(_dataSize);
 	std::iota(_offsets.begin(), _offsets.end(), 0);
 }

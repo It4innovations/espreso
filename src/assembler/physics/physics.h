@@ -44,6 +44,8 @@ struct Physics {
 	virtual void prepareHybridTotalFETIWithCorners() =0;
 	virtual void prepareHybridTotalFETIWithKernels() =0;
 
+	virtual void preprocessData(const Step &step) =0;
+
 	virtual void assembleMatrix(const Step &step, Matrices matrices);
 	virtual void assembleMatrix(const Step &step, Matrices matrices, size_t domain);
 	virtual void assembleMatrix(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe);

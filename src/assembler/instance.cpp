@@ -147,6 +147,60 @@ Instance::Instance(Instance &other, Matrices &share)
 	}
 }
 
+void Instance::clear()
+{
+	K.clear();
+	K.resize(domains);
+	N1.clear();
+	N1.resize(domains);
+	N2.clear();
+	N2.resize(domains);
+	RegMat.clear();
+	RegMat.resize(domains);
+
+	M.clear();
+	M.resize(domains);
+	R.clear();
+	R.resize(domains);
+	f.clear();
+	f.resize(domains);
+
+	B0.clear();
+	B0.resize(domains);
+	B0subdomainsMap.clear();
+	B0subdomainsMap.resize(domains);
+
+	B1.clear();
+	B1.resize(domains);
+	B1subdomainsMap.clear();
+	B1subdomainsMap.resize(domains);
+	B1duplicity.clear();
+	B1duplicity.resize(domains);
+	B1c.clear();
+	B1c.resize(domains);
+	LB.clear();
+	LB.resize(domains);
+
+	inequality.clear();
+	inequality.resize(domains);
+	inequalityC.clear();
+	inequalityC.resize(domains);
+
+	block.resize(3);
+
+	for (size_t d = 0; d < domains; d++) {
+		B0[d].rows = 0;
+		B0[d].cols = 0;
+		B0[d].nnz = 0;
+		B0[d].type = 'G';
+
+		B1[d].rows = 0;
+		B1[d].cols = 0;
+		B1[d].nnz = 0;
+		B1[d].type = 'G';
+	}
+}
+
 Instance::~Instance()
 {
 	for (size_t i = 0; i < solutions.size(); i++) {
