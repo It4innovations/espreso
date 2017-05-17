@@ -1043,7 +1043,7 @@ void NewAdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, c
 		htc(n, 0) = convection != NULL ? computeHTC(*convection, e, n, step.step, temp) : 0;
 
 
-		if (step.isInitial()) {
+		if (step.iteration) {
 			q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.step, 0) - temp);
 		} else {
 			q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.step, 0));
