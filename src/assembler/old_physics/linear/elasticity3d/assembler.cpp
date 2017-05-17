@@ -44,7 +44,7 @@ std::vector<Property> LinearElasticity3D::midPointDOFs = { Property::DISPLACEMEN
 
 LinearElasticity3D::LinearElasticity3D(Mesh &mesh, Constraints &constraints, const LinearElasticity3DConfiguration &configuration)
 : LinearPhysics(
-		mesh, constraints, configuration.espreso,
+		mesh, constraints, configuration.physics_solver.load_steps_settings.at(1)->espreso,
 		MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 		elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
   _configuration(configuration) {};

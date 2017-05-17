@@ -36,11 +36,11 @@ void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 
 		options[FETI4I_SUBDOMAINS] = configuration.esdata.domains;
 
-		options[FETI4I_ITERATIONS] = configuration.linear_elasticity_3D.espreso.iterations;
-		options[FETI4I_FETI_METHOD] = static_cast<int>(configuration.linear_elasticity_3D.espreso.method);
-		options[FETI4I_PRECONDITIONER] = static_cast<int>(configuration.linear_elasticity_3D.espreso.preconditioner);
-		options[FETI4I_CGSOLVER] = static_cast<int>(configuration.linear_elasticity_3D.espreso.solver);
-		options[FETI4I_N_MICS] = configuration.linear_elasticity_3D.espreso.N_MICS;
+		options[FETI4I_ITERATIONS] = configuration.linear_elasticity_3D.physics_solver.load_steps_settings.at(1)->espreso.iterations;
+		options[FETI4I_FETI_METHOD] = static_cast<int>(configuration.linear_elasticity_3D.physics_solver.load_steps_settings.at(1)->espreso.method);
+		options[FETI4I_PRECONDITIONER] = static_cast<int>(configuration.linear_elasticity_3D.physics_solver.load_steps_settings.at(1)->espreso.preconditioner);
+		options[FETI4I_CGSOLVER] = static_cast<int>(configuration.linear_elasticity_3D.physics_solver.load_steps_settings.at(1)->espreso.solver);
+		options[FETI4I_N_MICS] = configuration.linear_elasticity_3D.physics_solver.load_steps_settings.at(1)->espreso.N_MICS;
 
 		options[FETI4I_VERBOSE_LEVEL] = environment->verbose_level;
 		options[FETI4I_TESTING_LEVEL] = environment->testing_level;
@@ -71,7 +71,7 @@ void FETI4ISetDefaultRealOptions(FETI4IReal* options)
 	if (is.good()) {
 		espreso::GlobalConfiguration configuration("espreso.ecf");
 
-		options[FETI4I_EPSILON] = configuration.linear_elasticity_3D.espreso.epsilon;
+		options[FETI4I_EPSILON] = configuration.linear_elasticity_3D.physics_solver.load_steps_settings.at(1)->espreso.epsilon;
 		environment = DataHolder::environment;
 	} else {
 		ESPRESOSolver solver;

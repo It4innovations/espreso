@@ -58,14 +58,23 @@ GENERATOR {
 
 LINEAR_ELASTICITY_2D {
 
-  SOLVER_LIBRARY   ESPRESO;
+  PHYSICS_SOLVER {
+    LOAD_STEPS          1;
 
-  ESPRESO {
+    LOAD_STEPS_SETTINGS {
+      1 {
+        TYPE        STEADY_STATE;
+        MODE              LINEAR;
+        SOLVER_LIBRARY   ESPRESO;
 
-    METHOD              [ARG7];
-    SOLVER                 PCG;
-    PRECONDITIONER      LUMPED;
-    REGULARIZATION NULL_PIVOTS;
+        ESPRESO {
+          METHOD              [ARG7];
+          SOLVER                 PCG;
+          PRECONDITIONER      LUMPED;
+          REGULARIZATION NULL_PIVOTS;
+        }
+      }
+    }
   }
 
   MATERIALS {

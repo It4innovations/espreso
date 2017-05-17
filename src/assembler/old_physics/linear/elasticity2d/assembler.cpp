@@ -36,7 +36,7 @@ LinearElasticity2D::ELEMENT_BEHAVIOUR LinearElasticity2D::elementBehaviour = ELE
 
 LinearElasticity2D::LinearElasticity2D(Mesh &mesh, Constraints &constraints, const LinearElasticity2DConfiguration &configuration)
 : LinearPhysics(
-		mesh, constraints, configuration.espreso,
+		mesh, constraints, configuration.physics_solver.load_steps_settings.at(1)->espreso,
 		MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 		elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
   _configuration(configuration) {};

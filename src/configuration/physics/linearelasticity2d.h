@@ -5,6 +5,8 @@
 #include "../material/coordinatesystem.h"
 #include "../material/holder.h"
 #include "../solver.h"
+#include "solver.h"
+#include "linearelasticitysolver.h"
 
 namespace espreso {
 
@@ -36,13 +38,7 @@ struct LinearElasticity2DConfiguration: public Configuration {
 		PLANE_STRESS_WITH_THICKNESS = 3
 	};
 
-	OPTION(SOLVER_LIBRARY, solver_library, "Linear solver used for computing a system.", SOLVER_LIBRARY::ESPRESO, OPTIONS({
-		{ "ESPRESO", SOLVER_LIBRARY::ESPRESO, "ESPRESO solver [FETI methods]" },
-		{ "HYPRE"  , SOLVER_LIBRARY::HYPRE  , "Hypre solver [multigrid methods]" },
-	}));
-
-	SUBCONFIG(ESPRESOSolver, espreso, "Internal FETI solver options.");
-	SUBCONFIG(HypreSolver  , hypre  , "Multigrid solver setting.");
+	SUBCONFIG(PhysicsSolver<LinearElasticityNonLinearConvergence>, physics_solver, "Settings of physics solver.");
 
 	OPTION(ELEMENT_BEHAVIOUR, element_behaviour, "The type elements.", ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS, OPTIONS({
 		{ "PLAIN_STRAIN"               , ELEMENT_BEHAVIOUR::PLANE_STRAIN, "Strain element." },

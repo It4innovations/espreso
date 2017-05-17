@@ -57,16 +57,25 @@ GENERATOR {
 
 ADVECTION_DIFFUSION_2D {
 
-  SOLVER_LIBRARY   ESPRESO;
+  PHYSICS_SOLVER {
+    LOAD_STEPS          1;
 
-  ESPRESO {
+    LOAD_STEPS_SETTINGS {
+      1 {
+        TYPE        STEADY_STATE;
+        MODE              LINEAR;
+        SOLVER_LIBRARY   ESPRESO;
 
-    METHOD           TOTAL_FETI;
-    SOLVER                GMRES;
-    PRECONDITIONER       LUMPED;
-    REGULARIZATION  NULL_PIVOTS;
-    ITERATIONS             1000;
-    EPSILON                1e-8;
+        ESPRESO {
+          METHOD           TOTAL_FETI;
+          SOLVER                GMRES;
+          PRECONDITIONER       LUMPED;
+          REGULARIZATION  NULL_PIVOTS;
+          ITERATIONS             1000;
+          EPSILON                1e-8;
+        }
+      }
+    }
   }
 
   STABILIZATION CAU;

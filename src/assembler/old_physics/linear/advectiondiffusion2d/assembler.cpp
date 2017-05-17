@@ -34,14 +34,14 @@ std::vector<Property> AdvectionDiffusion2D::midPointDOFs = { Property::TEMPERATU
 
 AdvectionDiffusion2D::AdvectionDiffusion2D(Mesh &mesh, Constraints &constraints, const AdvectionDiffusion2DConfiguration &configuration)
 : LinearPhysics(
-		mesh, constraints, configuration.espreso,
+		mesh, constraints, configuration.physics_solver.load_steps_settings.at(1)->espreso,
 		MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 		elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
   _configuration(configuration)
 {
 	if (_configuration.translation_motions.size()) {
 		mtype = MatrixType::REAL_UNSYMMETRIC;
-		if (configuration.espreso.regularization == REGULARIZATION::FIX_POINTS) {
+		if (configuration.physics_solver.load_steps_settings.at(1)->espreso.regularization == REGULARIZATION::FIX_POINTS) {
 			ESINFO(GLOBAL_ERROR) << "Set regularization to NULL_PIVOTS";
 		}
 	}
