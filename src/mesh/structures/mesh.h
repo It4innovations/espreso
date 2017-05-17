@@ -88,6 +88,7 @@ public:
 	std::vector<std::vector<Region*> > getRegionsWithProperties(size_t loadStep, const std::vector<Property> &properties) const;
 	static std::vector<std::vector<Region*> > getRegionsWithProperties(const std::vector<Region*> &regions, size_t loadStep, const std::vector<Property> &properties);
 	static bool commonRegion(const std::vector<Region*> &v1, const std::vector<Region*> &v2);
+	const std::vector<Property>& propertyGroup(Property property) const;
 
 	const std::vector<std::vector<Element*> >& fixPoints() const { return _fixPoints; }
 	const std::vector<Element*>& fixPoints(size_t part) const { return _fixPoints[part]; }
@@ -214,6 +215,9 @@ protected:
 
 	/** @brief list of settings for each domain and load step*/
 	std::vector<std::vector<std::set<Property> > > _properties;
+
+	/** @brief groups defining which properties should be printed together */
+	std::map<Property, std::vector<Property> > _propertyGroups;
 
 	/** @brief number of load steps */
 	size_t _steps;

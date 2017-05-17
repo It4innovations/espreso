@@ -694,6 +694,15 @@ static std::vector<Element*> mergeElements(size_t threads, std::vector<std::vect
 	return result;
 }
 
+const std::vector<Property>& Mesh::propertyGroup(Property property) const
+{
+	auto it = _propertyGroups.find(property);
+	if (it == _propertyGroups.end()) {
+		ESINFO(ERROR) << "ESPRESO internal error: request for unknown property group.";
+	}
+	return it->second;
+}
+
 void Mesh::loadProperty(
 		size_t loadStep,
 		const std::map<std::string, std::string> &regions,
@@ -701,6 +710,9 @@ void Mesh::loadProperty(
 		const std::vector<Property> &properties,
 		ElementType type)
 {
+	for (size_t i = 0; i < properties.size(); i++) {
+		_propertyGroups[properties[i]] = properties;
+	}
 	auto getValue = [] (const std::vector<std::string> &values, const std::string &parameter) -> std::string {
 		for (size_t i = 0; i < values.size(); i++) {
 			std::vector<std::string> args = Parser::split(Parser::strip(values[i]), " ");

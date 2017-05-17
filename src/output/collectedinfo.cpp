@@ -297,6 +297,11 @@ void CollectedInfo::addSettings(size_t step)
 		return;
 	}
 	for (auto it = region->settings[step].begin(); it != region->settings[step].end(); ++it) {
+		const std::vector<Property> &pGroup = _mesh->propertyGroup(it->first);
+		if (pGroup.front() != it->first) {
+			continue;
+		}
+
 		std::vector<std::vector<double> > sValues(_regions.size());
 
 		for (size_t e = 0; e < region->elements().size(); e++) {
@@ -308,12 +313,14 @@ void CollectedInfo::addSettings(size_t step)
 				regionOffset += region->elements()[e]->param(Element::Params::MATERIAL);
 			}
 
-			sValues[regionOffset].push_back(0);
-			for (size_t n = 0; n < region->elements()[e]->nodes(); n++) {
-				sValues[regionOffset].back() += region->elements()[e]->sumProperty(it->first, n, step, 0);
+			for (auto p = pGroup.begin(); p != pGroup.end(); ++p) {
+				sValues[regionOffset].push_back(0);
+				for (size_t n = 0; n < region->elements()[e]->nodes(); n++) {
+					sValues[regionOffset].back() += region->elements()[e]->sumProperty(*p, n, step, 0);
+				}
+				sValues[regionOffset].back() /= region->elements()[e]->nodes();
+				sValues[regionOffset].insert(sValues[regionOffset].end(), region->elements()[e]->domains().size() - 1, sValues[regionOffset].back());
 			}
-			sValues[regionOffset].back() /= region->elements()[e]->nodes();
-			sValues[regionOffset].insert(sValues[regionOffset].end(), region->elements()[e]->domains().size() - 1, sValues[regionOffset].back());
 		}
 
 		for (size_t r = 0; r < _regions.size(); r++) {
@@ -324,7 +331,7 @@ void CollectedInfo::addSettings(size_t step)
 
 			std::stringstream ss;
 			ss << it->first;
-			_regions[r].data.elementDataDouble[ss.str()] = std::make_pair(1, values);
+			_regions[r].data.elementDataDouble[ss.str().substr(0, ss.str().find_last_of("_"))] = std::make_pair(pGroup.size(), values);
 		}
 	}
 }

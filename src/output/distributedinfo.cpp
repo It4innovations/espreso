@@ -280,15 +280,21 @@ void DistributedInfo::addSettings(size_t step)
 
 	size_t bodies    = _mode & InfoMode::SEPARATE_BODIES    ? _mesh->bodies()           : 1;
 	size_t materials = _mode & InfoMode::SEPARATE_MATERIALS ? _mesh->materials().size() : 1;
+	double value;
 
 	for (auto it = region->settings[step].begin(); it != region->settings[step].end(); ++it) {
+		const std::vector<Property> &pGroup = _mesh->propertyGroup(it->first);
+		if (pGroup.front() != it->first) {
+			continue;
+		}
+
 		std::vector<std::vector<double>*> rData;
 
 		for (size_t r = 0; r < _regions.size(); r++) {
 			rData.push_back(new std::vector<double>());
-			rData.back()->reserve(_regions[r].elementsTypes.size());
+			rData.back()->reserve(pGroup.size() * _regions[r].elementsTypes.size());
 			std::stringstream ss; ss << it->first;
-			_regions[r].data.elementDataDouble[ss.str()] = std::make_pair(1, rData.back());
+			_regions[r].data.elementDataDouble[ss.str().substr(0, ss.str().find_last_of("_"))] = std::make_pair(pGroup.size(), rData.back());
 		}
 
 		for (size_t e = 0; e < region->elements().size(); e++) {
@@ -300,14 +306,16 @@ void DistributedInfo::addSettings(size_t step)
 				regionOffset += region->elements()[e]->param(Element::Params::MATERIAL);
 			}
 
-			double value = 0;
-			for (size_t n = 0; n < region->elements()[e]->nodes(); n++) {
-				value += region->elements()[e]->sumProperty(it->first, n, step, 0);
-			}
-			value /= region->elements()[e]->nodes();
+			for (auto p = pGroup.begin(); p != pGroup.end(); ++p) {
+				value = 0;
+				for (size_t n = 0; n < region->elements()[e]->nodes(); n++) {
+					value += region->elements()[e]->sumProperty(*p, n, step, 0);
+				}
+				value /= region->elements()[e]->nodes();
 
-			for (auto d = region->elements()[e]->domains().begin(); d != region->elements()[e]->domains().end(); ++d) {
-				rData[regionOffset]->push_back(value);
+				for (auto d = region->elements()[e]->domains().begin(); d != region->elements()[e]->domains().end(); ++d) {
+					rData[regionOffset]->push_back(value);
+				}
 			}
 		}
 	}
