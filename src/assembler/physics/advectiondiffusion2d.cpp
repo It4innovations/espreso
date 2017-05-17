@@ -58,52 +58,53 @@ void NewAdvectionDiffusion2D::prepareTotalFETI()
 	_mesh->loadProperty(_configuration.heat_flow          , { }         , { Property::HEAT_FLOW });
 
 	for (auto it = _configuration.convection.begin(); it != _configuration.convection.end(); ++it) {
+		size_t loadStep = it->first - 1;
 		for (auto regions = it->second.begin(); regions != it->second.end(); ++regions) {
 			std::map<std::string, std::string> values;
 
 			values[regions->first] = regions->second->external_temperature;
-			_mesh->loadProperty(values, { }, { Property::EXTERNAL_TEMPERATURE });
+			_mesh->loadProperty(values, { }, { Property::EXTERNAL_TEMPERATURE }, loadStep);
 
 			switch (regions->second->type) {
 			case CONVECTION_TYPE::USER:
 				values[regions->first] = regions->second->heat_transfer_coefficient;
-				_mesh->loadProperty(values, { }, { Property::HEAT_TRANSFER_COEFFICIENT });
+				_mesh->loadProperty(values, { }, { Property::HEAT_TRANSFER_COEFFICIENT }, loadStep);
 				break;
 			case CONVECTION_TYPE::EXTERNAL_NATURAL:
 
 				switch (regions->second->variant) {
 				case CONVECTION_VARIANT::VERTICAL_WALL:
 					values[regions->first] = regions->second->wall_height;
-					_mesh->loadProperty(values, { }, { Property::WALL_HEIGHT });
+					_mesh->loadProperty(values, { }, { Property::WALL_HEIGHT }, loadStep);
 					values[regions->first] = regions->second->absolute_pressure;
-					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
 					break;
 				case CONVECTION_VARIANT::INCLINED_WALL:
 					values[regions->first] = regions->second->wall_height;
-					_mesh->loadProperty(values, { }, { Property::WALL_HEIGHT });
+					_mesh->loadProperty(values, { }, { Property::WALL_HEIGHT }, loadStep);
 					values[regions->first] = regions->second->tilt_angle;
-					_mesh->loadProperty(values, { }, { Property::TILT_ANGLE });
+					_mesh->loadProperty(values, { }, { Property::TILT_ANGLE }, loadStep);
 					values[regions->first] = regions->second->absolute_pressure;
-					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
 					break;
 				case CONVECTION_VARIANT::HORIZONTAL_CYLINDER:
 					values[regions->first] = regions->second->diameter;
-					_mesh->loadProperty(values, { }, { Property::DIAMETER });
+					_mesh->loadProperty(values, { }, { Property::DIAMETER }, loadStep);
 					values[regions->first] = regions->second->absolute_pressure;
-					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
 					break;
 				case CONVECTION_VARIANT::SPHERE:
 					values[regions->first] = regions->second->diameter;
-					_mesh->loadProperty(values, { }, { Property::DIAMETER });
+					_mesh->loadProperty(values, { }, { Property::DIAMETER }, loadStep);
 					values[regions->first] = regions->second->absolute_pressure;
-					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
 					break;
 				case CONVECTION_VARIANT::HORIZONTAL_PLATE_UP:
 				case CONVECTION_VARIANT::HORIZONTAL_PLATE_DOWN:
 					values[regions->first] = regions->second->length;
-					_mesh->loadProperty(values, { }, { Property::LENGTH });
+					_mesh->loadProperty(values, { }, { Property::LENGTH }, loadStep);
 					values[regions->first] = regions->second->absolute_pressure;
-					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
 					break;
 				default:
 					break;
@@ -115,11 +116,11 @@ void NewAdvectionDiffusion2D::prepareTotalFETI()
 				switch (regions->second->variant) {
 				case CONVECTION_VARIANT::AVERAGE_PLATE:
 					values[regions->first] = regions->second->length;
-					_mesh->loadProperty(values, { }, { Property::LENGTH });
+					_mesh->loadProperty(values, { }, { Property::LENGTH }, loadStep);
 					values[regions->first] = regions->second->fluid_velocity;
-					_mesh->loadProperty(values, { }, { Property::FLUID_VELOCITY });
+					_mesh->loadProperty(values, { }, { Property::FLUID_VELOCITY }, loadStep);
 					values[regions->first] = regions->second->absolute_pressure;
-					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
 					break;
 				default:
 					break;
@@ -131,11 +132,11 @@ void NewAdvectionDiffusion2D::prepareTotalFETI()
 				switch (regions->second->variant) {
 				case CONVECTION_VARIANT::CIRCULAR_TUBE:
 					values[regions->first] = regions->second->diameter;
-					_mesh->loadProperty(values, { }, { Property::DIAMETER });
+					_mesh->loadProperty(values, { }, { Property::DIAMETER }, loadStep);
 					values[regions->first] = regions->second->wall_height;
-					_mesh->loadProperty(values, { }, { Property::WALL_HEIGHT });
+					_mesh->loadProperty(values, { }, { Property::WALL_HEIGHT }, loadStep);
 					values[regions->first] = regions->second->absolute_pressure;
-					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
 					break;
 				default:
 					break;
@@ -147,11 +148,11 @@ void NewAdvectionDiffusion2D::prepareTotalFETI()
 				switch (regions->second->variant) {
 				case CONVECTION_VARIANT::TUBE:
 					values[regions->first] = regions->second->diameter;
-					_mesh->loadProperty(values, { }, { Property::DIAMETER });
+					_mesh->loadProperty(values, { }, { Property::DIAMETER }, loadStep);
 					values[regions->first] = regions->second->fluid_velocity;
-					_mesh->loadProperty(values, { }, { Property::FLUID_VELOCITY });
+					_mesh->loadProperty(values, { }, { Property::FLUID_VELOCITY }, loadStep);
 					values[regions->first] = regions->second->absolute_pressure;
-					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
 					break;
 				default:
 					break;
@@ -165,12 +166,13 @@ void NewAdvectionDiffusion2D::prepareTotalFETI()
 	}
 
 	for (auto it = _configuration.diffuse_radiation.begin(); it != _configuration.diffuse_radiation.end(); ++it) {
+		size_t loadStep = it->first - 1;
 		for (auto regions = it->second.begin(); regions != it->second.end(); ++regions) {
 			std::map<std::string, std::string> values;
 			values[regions->first] = regions->second->external_temperature;
-			_mesh->loadProperty(values, { }, { Property::EXTERNAL_TEMPERATURE });
+			_mesh->loadProperty(values, { }, { Property::EXTERNAL_TEMPERATURE }, loadStep);
 			values[regions->first] = regions->second->emissivity;
-			_mesh->loadProperty(values, { }, { Property::EMISSIVITY });
+			_mesh->loadProperty(values, { }, { Property::EMISSIVITY }, loadStep);
 		}
 	}
 
