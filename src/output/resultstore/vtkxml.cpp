@@ -95,7 +95,11 @@ void VTKXML::linkSteps(const std::string &name, const std::vector<std::pair<Step
 	os << "<Collection>\n";
 	for (size_t i = 0; i < steps.size(); i++) {
 		for (size_t j = 0; j < steps[i].second.size(); j++) {
-			os << "  <DataSet timestep=\"" << steps[i].first.currentTime << "\" file=\"" << steps[i].second[j] << "\"/>\n";
+			std::string rName = steps[i].second[j].substr(
+					steps[i].second[j].find_last_of("/") + 1,
+					steps[i].second[j].find_last_of("0123456789") - steps[i].second[j].find_last_of("/") - 1
+					);
+			os << "  <DataSet timestep=\"" << steps[i].first.currentTime << "\" name=\"" << rName << "\" file=\"" << steps[i].second[j] << "\"/>\n";
 		}
 	}
 	os << "</Collection>\n";
