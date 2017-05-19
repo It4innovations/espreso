@@ -94,7 +94,7 @@ Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh, cons
 		return;
 	}
 
-	_os.open(path);
+	_os.open(Logging::outputRoot() + "/" + path);
 	if (!_os.is_open()) {
 		ESINFO(GLOBAL_ERROR) << "Cannot open file " << path << "\n";
 	}

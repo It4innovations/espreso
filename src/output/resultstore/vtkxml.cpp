@@ -88,7 +88,7 @@ void VTKXML::linkSteps(const std::string &name, const std::vector<std::pair<Step
 {
 	std::ofstream os;
 
-	os.open(name + ".pvd", std::ios::out | std::ios::trunc);
+	os.open(Logging::outputRoot() + "/" + name + ".pvd", std::ios::out | std::ios::trunc);
 
 	os << "<?xml version=\"1.0\"?>\n";
 	os << "<VTKFile type=\"Collection\" version=\"0.1\" byte_order=\"LittleEndian\">\n";
@@ -99,7 +99,8 @@ void VTKXML::linkSteps(const std::string &name, const std::vector<std::pair<Step
 					steps[i].second[j].find_last_of("/") + 1,
 					steps[i].second[j].find_last_of("0123456789") - steps[i].second[j].find_last_of("/") - 1
 					);
-			os << "  <DataSet timestep=\"" << steps[i].first.currentTime << "\" name=\"" << rName << "\" file=\"" << steps[i].second[j] << "\"/>\n";
+			std::string rPath = steps[i].second[j].substr(Logging::outputRoot().size() + 1);
+			os << "  <DataSet timestep=\"" << steps[i].first.currentTime << "\" name=\"" << rName << "\" file=\"" << rPath << "\"/>\n";
 		}
 	}
 	os << "</Collection>\n";

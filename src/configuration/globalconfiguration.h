@@ -28,8 +28,8 @@ enum class INPUT {
 
 struct GlobalConfiguration: public Configuration {
 
-	GlobalConfiguration(const std::string &file) { Reader::read(*this, file); Reader::set(this->env); }
-	GlobalConfiguration(int *argc, char ***argv) { Reader::read(*this, argc, argv); Reader::set(this->env); }
+	GlobalConfiguration(const std::string &file) { Reader::read(*this, file); Reader::set(this->env, this->output); }
+	GlobalConfiguration(int *argc, char ***argv) { Reader::read(*this, argc, argv); Reader::set(this->env, this->output); }
 
 	void print() { Reader::print(*this); }
 	void store() { Reader::store(*this, { ".*" }); }

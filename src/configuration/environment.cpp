@@ -32,7 +32,7 @@ Environment::Environment(): executable("espreso")
 	PAR_NUM_THREADS    = ParameterHolder::create<size_t>("PAR_NUM_THREADS"   , "Number of parallel threads"     , PAR_NUM_THREADS   , Esutils::getEnv<size_t>("PAR_NUM_THREADS")   , "size_t", this);
 	CILK_NWORKERS      = ParameterHolder::create<size_t>("CILK_NWORKERS"     , "Number of cilk++ threads"       , CILK_NWORKERS     , Esutils::getEnv<size_t>("CILK_NWORKERS")     , "size_t", this);
 
-	log_dir = ParameterHolder::create<std::string>("log_dir", "Log directory", log_dir, "log", "std::string", this);
+	log_dir = ParameterHolder::create<std::string>("log_dir", "Log directory", log_dir, "debug", "std::string", this);
 
 	verbose_level = ParameterHolder::create<size_t>("verbose_level", "Verbose level [0-3]", verbose_level, 1, "size_t", this);
 	testing_level = ParameterHolder::create<size_t>("testing_level", "Testing level [0-3]", testing_level, 0, "size_t", this);

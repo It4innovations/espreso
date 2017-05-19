@@ -5,6 +5,7 @@
 #include "../../assembler/old_physics/precomputed/singular/assembler.h"
 #include "../../configuration/input/input.h"
 #include "../../configuration/globalconfiguration.h"
+#include "../../configuration/output.h"
 #include "../../input/api/api.h"
 
 espreso::Environment* espreso::DataHolder::environment;
@@ -113,7 +114,8 @@ static void FETI4ISetIntegerOptions(espreso::ESPRESOInput &input, espreso::ESPRE
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'PRINT_MATRICES' to " << options[FETI4I_PRINT_MATRICES];
 	}
 	solver.regularization = REGULARIZATION::NULL_PIVOTS;
-	Reader::set(*environment);
+	OutputConfiguration output;
+	Reader::set(*environment, output);
 }
 
 static void FETI4ISetRealOptions(espreso::ESPRESOSolver &solver, FETI4IReal* options)
@@ -130,7 +132,8 @@ void FETI4ICreateStiffnessMatrix(
 {
 	MPI_Comm_rank(MPI_COMM_WORLD, &environment->MPIrank);
 	MPI_Comm_size(MPI_COMM_WORLD, &environment->MPIsize);
-	Reader::set(*environment);
+	OutputConfiguration output;
+	Reader::set(*environment, output);
 
 	DataHolder::timeStatistics.totalTime.startWithBarrier();
 	TimeEvent event("Add element");

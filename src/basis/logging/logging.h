@@ -228,10 +228,15 @@ protected:
 class Logging {
 
 public:
+	static std::string outputRoot();
 	static std::string prepareFile(const std::string &name);
 	static std::string prepareFile(size_t subdomain, const std::string &name);
 
-	static std::string output;
+	static std::string path;
+	static std::string name;
+	static time_t time;
+	static std::string debug;
+	static std::ofstream log;
 	static Step *step;
 	static int rank;
 };
