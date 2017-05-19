@@ -2,6 +2,8 @@
 import os
 import subprocess
 
+from waflib import Logs
+
 def check_libraries(ctx):
     def check_library(type, name, library):
         env = ctx.env
@@ -50,17 +52,13 @@ def read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_att
         else:
             ctx.msg("Settings " + attribute + " to ", value)
 
-    # Load default configuration
-    if ctx.options.cray:
-        read_config(open("build.config.cray", "r"))
-    elif ctx.options.debug:
-        read_config(open("build.config.debug", "r"))
-    else:
-        read_config(open("build.config.default", "r"))
-
     # Load user specific configuration
     if os.path.isfile("build.config"):
         read_config(open("build.config", "r"))
+    else:
+        Logs.error("Compilation error: unknown 'build.config' file.")
+        Logs.error("Choose the appropriate one from 'build' directory - e.g.: cp build/build.config.icpc build.config")
+        exit()
 
     # Load configuration specified while the project configuration
     for attribute, description, type, value in espreso_attributes + compilers + compiler_attributes:
