@@ -15,7 +15,7 @@
 using namespace espreso;
 
 size_t TransientFirstOrderImplicit::offset = -1;
-size_t TransientFirstOrderImplicit::step = -1;
+size_t TransientFirstOrderImplicit::lastStep = -1;
 
 TransientFirstOrderImplicit::TransientFirstOrderImplicit(
 		Mesh *mesh,
@@ -58,6 +58,7 @@ void TransientFirstOrderImplicit::run(Step &step)
 	preprocessData(step);
 
 	if (offset == -1) {
+		lastStep = step.step;
 		offset = instance->solutions.size();
 		instance->solutions.push_back(new Solution(*_mesh, "trans_U" , ElementType::NODES, physics->pointDOFs()));
 		instance->solutions.push_back(new Solution(*_mesh, "trans_dU", ElementType::NODES, physics->pointDOFs()));
@@ -73,13 +74,19 @@ void TransientFirstOrderImplicit::run(Step &step)
 	std::vector<std::vector<double> > y      = instance->solutions[offset + SolutionIndex::Y]->innerData();
 
 	u = instance->primalSolution;
+	if (lastStep + 1 != step.step) {
+		lastStep = step.step;
+		for (size_t i = 0; i < v.size(); i++) {
+			std::fill(v[i].begin(), v[i].end(), 0);
+		}
+	}
 
 	double startTime = step.currentTime;
 	step.timeStep = _configuration.time_step;
 	step.currentTime += step.timeStep;
 
-	for (step.substep = 0; step.currentTime < startTime + _duration; step.substep++) {
-		ESINFO(PROGRESS2) << _name << " iteration " << step.substep + 1;
+	for (step.substep = 0; step.currentTime <= startTime + _duration + 1e-8; step.substep++) {
+		ESINFO(PROGRESS2) << _name << " iteration " << step.substep + 1 << "[" << step.currentTime << "s]";
 		if (step.substep == 0) {
 			updateMatrices(step, Matrices::K | Matrices::M | Matrices::f);
 			composeGluing(step, Matrices::B1 | Matrices::B0); // TODO: B0 without kernels

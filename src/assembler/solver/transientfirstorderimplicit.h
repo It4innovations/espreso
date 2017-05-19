@@ -29,7 +29,7 @@ public:
 
 protected:
 	static size_t offset;
-	static size_t step;
+	static size_t lastStep;
 
 	enum SolutionIndex: size_t {
 		SOLUTION   = 0,
