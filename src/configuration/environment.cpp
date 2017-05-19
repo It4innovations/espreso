@@ -39,6 +39,7 @@ Environment::Environment(): executable("espreso")
 	measure_level = ParameterHolder::create<size_t>("measure_level", "Measure level [0-3]", measure_level, 0, "size_t", this);
 
 	print_matrices = ParameterHolder::create<bool>("print_matrices", "Print assembler matrices", print_matrices, false, "bool", this);
+	remove_old_results = ParameterHolder::create<bool>("remove_old_results", "Keep only the last results", remove_old_results, false, "bool", this);
 
 	environment = this;
 }

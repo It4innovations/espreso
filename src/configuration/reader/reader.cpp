@@ -178,6 +178,9 @@ void Reader::copyInputData()
 		Logging::log.open(Logging::outputRoot() + "/" + Logging::name + ".log", std::ofstream::app);
 		return;
 	} else {
+		if (environment->remove_old_results && Logging::path.compare(".")) {
+			system(("rm -fr " + Logging::path).c_str());
+		}
 		if (system(("mkdir -p " + Logging::outputRoot()).c_str())) {
 			ESINFO(ERROR) << "Cannot create output directory\n";
 		}

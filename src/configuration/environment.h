@@ -28,6 +28,7 @@ struct Environment: public Configuration {
 	size_t measure_level;
 
 	bool print_matrices;
+	bool remove_old_results;
 };
 
 extern Environment *environment;
