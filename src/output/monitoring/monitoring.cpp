@@ -147,6 +147,7 @@ void Monitoring::storeSolution(const Step &step, const std::vector<Solution*> &s
 		for (size_t s = 0; s < solution.size(); s++) {
 			if (solution[s]->hasProperty(_monitors[i].property)) {
 				value = solution[s]->getStatisticalData(_monitors[i].property, _monitors[i].statistics, _monitors[i].region);
+				break;
 			}
 		}
 
