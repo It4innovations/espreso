@@ -86,6 +86,8 @@ class TestCaseCreator:
         omit = re.compile(omit)
         examples = []
         for root, subFolders, files in os.walk(folder):
+            if "results" in root.split("/"):
+                continue
             if not skip(files):
                 for file in files:
                     if file.endswith(ext) and not omit.match(file):
