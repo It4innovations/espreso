@@ -24,7 +24,9 @@ struct ESPRESOSolver: public Configuration {
 		{ "ORTHOGONALPCG", ESPRESO_ITERATIVE_SOLVER::orthogonalPCG, "Full ortogonalization PCG." },
 		{ "GMRES"        , ESPRESO_ITERATIVE_SOLVER::GMRES        , "GMRES - allows non-symmetric systems." },
 		{ "BICGSTAB"     , ESPRESO_ITERATIVE_SOLVER::BICGSTAB     , "BICGSTAB - allows non-symmetric systems." },
-		{ "QPCE"         , ESPRESO_ITERATIVE_SOLVER::QPCE         , "QPCE - allows contact." }
+		{ "QPCE"         , ESPRESO_ITERATIVE_SOLVER::QPCE         , "QPCE - allows contact." },
+		{ "ORTHOGONALPCG_CP"     , ESPRESO_ITERATIVE_SOLVER::orthogonalPCG_CP, "Full ortogonal CG with conjugate projector." },
+		{ "PCG_PC"       , ESPRESO_ITERATIVE_SOLVER::PCG_CP       , "FETI GENEO - Regular CG with conjugate projector." }
 	}));
 
 	OPTION(ESPRESO_PRECONDITIONER, preconditioner, "Preconditioner", ESPRESO_PRECONDITIONER::LUMPED, OPTIONS({
@@ -40,6 +42,17 @@ struct ESPRESOSolver: public Configuration {
 		{ "FIX_POINTS" , REGULARIZATION::FIX_POINTS , "From fix points." },
 		{ "NULL_PIVOTS", REGULARIZATION::NULL_PIVOTS, "Random null pivots." }
 	}));
+
+
+	OPTION(CONJ_PROJECTOR, conj_projector, "Type of conjugate projector", CONJ_PROJECTOR::NONE, OPTIONS({
+		{ "NONE" , CONJ_PROJECTOR::NONE , "No conjugate projector is used." },
+		{ "GENEO", CONJ_PROJECTOR::GENEO, "FETI GENEO conjugate projector is used." }
+	}));
+
+	PARAMETER(size_t, GENEO_SIZE,   "Number of eigen vectors for GENEO coarse problem per subdomain", 6);
+	PARAMETER(size_t, RESTART_ITER, "Number of iterations after which a restart is enabled", 10);
+
+
 
 	PARAMETER(bool, redundant_lagrange, "If true, each pair of DOF are glued", true);
 	PARAMETER(bool, scaling, "If true, Lagrange multiplicators are weighted according a value in the stiffness matrix", true);
