@@ -366,9 +366,9 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region *regi
 }
 
 template <class TElement>
-void Block<TElement>::pattern(const std::vector<Element*> &elements, Region *region, const Triple<size_t> &offset, const Triple<size_t> &size, Pattern pattern)
+void Block<TElement>::pattern(const std::vector<Element*> &elements, Region *region, const Triple<size_t> &offset, const Triple<size_t> &size, Pattern pattern, size_t psize)
 {
-	Triple<size_t> divisor(size * block.elements * block.domains / 2);
+	Triple<size_t> divisor(size * block.elements * block.domains / psize);
 	Triple<size_t> modulo;
 
 	divisor.z = divisor.z ? divisor.z : 1;
@@ -392,11 +392,13 @@ void Block<TElement>::pattern(const std::vector<Element*> &elements, Region *reg
 
 				for (element.z = 0; element.z < block.elements.z; element.z++) {
 					for (element.y = 0; element.y < block.elements.y; element.y++) {
-						for (element.x = 0; element.x < block.elements.x; element.x++, eindex++) {
+						for (element.x = 0; element.x < block.elements.x; element.x++, eindex += TElement::subelements) {
 
 							index = begin + domain * block.elements + element;
 							if ((index / divisor).sum() % 2 == color) {
-								region->elements().push_back(elements[eindex]);
+								for (size_t e = 0; e < TElement::subelements; e++) {
+									region->elements().push_back(elements[eindex + e]);
+								}
 							}
 
 						}
