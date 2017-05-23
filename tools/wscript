@@ -132,6 +132,9 @@ def configure(ctx):
     else:
         ctx.env.LIBEXT = ".so"
 
+    if (os.path.isdir(ctx.ROOT + "/tools/bem4i")):
+        ctx.env.append_unique("DEFINES", [ "ESBEM" ])
+
 def build(ctx):
     if ctx.env.EXTERNAL_LIBRARIES:
         return
@@ -147,5 +150,12 @@ def build(ctx):
         build_qd(ctx)
         ctx.add_group()
         build_dissection(ctx)
+
+    if (os.path.isdir(ctx.ROOT + "/tools/bem4i")):
+        ctx.objects(
+            source = ('bem4i/esbem.cpp'),
+            target = "bem",
+            use    = "espreso_includes"
+        )
 
 

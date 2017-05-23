@@ -302,6 +302,9 @@ void ClusterBase::SetupPreconditioner ( ) {
 	switch (configuration.preconditioner) {
 	case ESPRESO_PRECONDITIONER::LUMPED:
 		// nothing needs to be done
+#ifdef ESBEM
+		ESINFO(GLOBAL_ERROR) << "Memory efficient Lumped not possible for BEM, used fast Lumped --> MAGIC (or 5)";
+#endif
 		break;
 	case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
 		// nothing needs to be done
@@ -316,9 +319,20 @@ void ClusterBase::SetupPreconditioner ( ) {
 		#pragma omp parallel for
 		for (size_t d = 0; d < domains.size(); d++) {
 			if (domains[d]._RegMat.nnz > 0) {
+#ifdef ESBEM
+				domains[d]._RegMat.ConvertToCSR(1);
+				domains[d].K.ConvertDenseToCSR(0);
+				domains[d].Prec.MatAdd(domains[d].K, domains[d]._RegMat, 'N', -1);
+				SEQ_VECTOR<eslocal>().swap( domains[d].K.CSR_I_row_indices );
+				SEQ_VECTOR<eslocal>().swap( domains[d].K.CSR_J_col_indices );
+				SEQ_VECTOR<double>().swap( domains[d].K.CSR_V_values );
+
+				domains[d]._RegMat.ConvertToCOO(1);
+#else
 				domains[d]._RegMat.ConvertToCSR(1);
 				domains[d].Prec.MatAdd(domains[d].K, domains[d]._RegMat, 'N', -1);
 				domains[d]._RegMat.ConvertToCOO(1);
+#endif
 			} else {
 				domains[d].Prec = domains[d].K;
 			}
@@ -2493,6 +2507,9 @@ void ClusterBase::CreateDirichletPrec(Instance *instance)
 		perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
 
 		SparseMatrix K_modif = instance->K[d];
+#ifdef ESBEM
+		K_modif.ConvertToCSR(1);
+#endif
 		SparseMatrix RegMatCRS = instance->RegMat[d];
 		RegMatCRS.ConvertToCSRwithSort(0);
 		K_modif.MatAddInPlace(RegMatCRS, 'N', -1);

@@ -166,10 +166,14 @@ int DenseSolverMKL::Factorization(const std::string &str) {
 }
 
 void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
+	Solve(rhs_sol,1);
+}
+
+void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol, MKL_INT n_rhs) {
 
 	char U = 'U';
 	eslocal info = 0;
-	m_nRhs = 1;
+	m_nRhs = n_rhs;
 
 
 
@@ -327,8 +331,89 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol
 
 void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT rhs_start_index, MKL_INT sol_start_index) {
 
-	printf("DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT rhs_start_index, MKL_INT sol_start_index) not implemented yet.\n");
-	exit(1);
+	eslocal sol_size = this->m_cols;
+
+	char U = 'U';
+	eslocal info = 0;
+	eslocal m_nRhs = 1;
+	eslocal n_rhs  = 1;
+
+	switch (mtype) {
+	case espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+		if (USE_FLOAT) {
+
+			tmp_sol_fl.resize(sol_size);
+
+			for (size_t i = 0; i < sol_size; i++)
+				tmp_sol_fl[i] = (float)rhs[rhs_start_index+i];
+
+			ssptrs( &U, &m_rows, &n_rhs, &m_dense_values_fl[0], &m_ipiv[0], &tmp_sol_fl[0], &m_rows, &info );
+
+			for (size_t i = 0; i < sol_size; i++)
+				sol[sol_start_index+i] = (double)tmp_sol_fl[i];
+
+		} else {
+
+			for (size_t i = 0; i < sol_size; i++)
+				sol [sol_start_index + i] = rhs [rhs_start_index + i];
+
+			dsptrs( &U, &m_rows, &n_rhs, &m_dense_values[0], &m_ipiv[0], &sol[sol_start_index], &m_rows, &info );
+		}
+
+		break;
+	case espreso::MatrixType::REAL_SYMMETRIC_INDEFINITE:
+
+		if (USE_FLOAT) {
+			sol.resize(rhs.size());
+			tmp_sol_fl.resize(rhs.size());
+
+			for (size_t i = 0; i < rhs.size(); i++)
+				tmp_sol_fl[i] = (float)rhs[i];
+
+			ssptrs( &U, &m_rows, &n_rhs, &m_dense_values_fl[0], &m_ipiv[0], &tmp_sol_fl[0], &m_rows, &info );
+
+			for (size_t i = 0; i < rhs.size(); i++)
+				sol[i] = (double)tmp_sol_fl[i];
+		} else {
+			sol = rhs;
+			dsptrs( &U, &m_rows, &n_rhs, &m_dense_values[0], &m_ipiv[0], &sol[0], &m_rows, &info );
+		}
+
+		break;
+	case espreso::MatrixType::REAL_UNSYMMETRIC:
+
+		char trans = 'N';
+
+		if (USE_FLOAT) {
+			sol.resize(rhs.size());
+			tmp_sol_fl.resize(rhs.size());
+
+			for (size_t i = 0; i < rhs.size(); i++)
+				tmp_sol_fl[i] = (float)rhs[i];
+
+			//ssptrs( &U, &m_rows, &n_rhs, &m_dense_values_fl[0], &m_ipiv[0], &tmp_sol_fl[0], &m_rows, &info );
+			sgetrs(       &trans, &m_rows, &m_nRhs, &m_dense_values_fl[0], &m_rows, &m_ipiv[0], &tmp_sol_fl[0], &m_nRhs, &info);
+
+
+			for (size_t i = 0; i < rhs.size(); i++)
+				sol[i] = (double)tmp_sol_fl[i];
+		} else {
+			sol = rhs;
+			//dsptrs( &U, &m_rows, &n_rhs, &m_dense_values[0], &m_ipiv[0], &sol[0], &m_rows, &info );
+			//dgetrs(      trans,       n,    nrhs,                  a,     lda,       ipiv,       b,     ldb,  info )
+			dgetrs(       &trans, &m_rows, &m_nRhs, &m_dense_values[0], &m_rows, &m_ipiv[0], &sol[0], &m_rows, &info);
+
+		}
+
+		break;
+	}
+
+
+
+	//Solve(rhs, sol, 1);
+
+	//printf("DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT rhs_start_index, MKL_INT sol_start_index) not implemented yet.\n");
+	//exit(1);
 
 }
 
@@ -401,4 +486,118 @@ void DenseSolverMKL::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::Spa
 	tmpM.Clear();
 
 }
+
+void DenseSolverMKL::SolveMat_Dense( espreso::SparseMatrix & A ) {
+	SolveMat_Dense(A, A);
+}
+
+void DenseSolverMKL::SolveMat_Dense( espreso::SparseMatrix & A_in, espreso::SparseMatrix & B_out ) {
+
+	SEQ_VECTOR<double> rhs;
+	//SEQ_VECTOR<double> sol;
+
+	MKL_INT job[8];
+	job[0] = 1; // if job(1)=1, the rectangular matrix A is restored from the CSR format.
+	job[1] = 1; // if job(2)=1, one-based indexing for the rectangular matrix A is used.
+	job[2] = 1; // if job(3)=1, one-based indexing for the matrix in CSR format is used.
+	job[3] = 2; // If job(4)=2, adns is a whole matrix A.
+
+	job[4] = 0; // job(5)=nzmax - maximum number of the non-zero elements allowed if job(1)=0.
+	job[5] = 0; // job(6) - job indicator for conversion to CSR format.
+	// If job(6)=0, only array ia is generated for the output storage.
+	// If job(6)>0, arrays acsr, ia, ja are generated for the output storage.
+	job[6] = 0; //
+	job[7] = 0; //
+
+	MKL_INT m = A_in.rows;
+	MKL_INT n = A_in.cols;
+	MKL_INT nRhs = A_in.cols;
+
+	rhs.reserve(3 * m*n);
+	rhs.resize(m * n);
+	//sol.resize(m * n);
+
+	MKL_INT lda  = m;
+	MKL_INT info;
+
+
+	// Convert input matrix (InitialCondition) to dense format
+
+	//void mkl_ddnscsr (
+	//	int *job,
+	//	int *m, int *n,
+	//	double *Adns, int *lda,
+	//	double *Acsr, int *AJ, int *AI,
+	//	int *info);
+
+	mkl_ddnscsr (
+		job,
+		&m, &n,
+		&rhs[0], &lda,
+		&A_in.CSR_V_values[0], &A_in.CSR_J_col_indices[0], &A_in.CSR_I_row_indices[0],
+		&info);
+
+	// Solve with multiple right hand sides
+	Solve(rhs, nRhs);
+	//rhs.clear();
+
+	// Convert solution matrix (SOL) to sparse format - find nnz step
+	job[0] = 0; // If job(1)=0, the rectangular matrix A is converted to the CSR format;
+	job[1] = 1; // if job(2)=1, one-based indexing for the rectangular matrix A is used.
+	job[2] = 1; // if job(3)=1, one-based indexing for the matrix in CSR format is used.
+	job[3] = 2; // If job(4)=2, adns is a whole matrix A.
+
+	job[4] = 1; // job(5)=nzmax - maximum number of the non-zero elements allowed if job(1)=0.
+	job[5] = 0; // job(6) - job indicator for conversion to CSR format.
+	// If job(6)=0, only array ia is generated for the output storage.
+	// If job(6)>0, arrays acsr, ia, ja are generated for the output storage.
+	job[6] = 0; //
+	job[7] = 0; //
+
+	//Adns = &sol[0];
+
+	B_out.CSR_I_row_indices.resize(m + 1);
+	B_out.CSR_J_col_indices.resize(1);
+	B_out.CSR_V_values.resize(1);
+
+	//Acsr = &B_out.CSR_V_values[0];
+	//AJ   = &B_out.CSR_J_col_indices[0];
+	//AI   = &B_out.CSR_I_row_indices[0];
+
+	mkl_ddnscsr (
+		job,
+		&m, &n,
+		&rhs[0], &lda,
+		&B_out.CSR_V_values[0], &B_out.CSR_J_col_indices[0], &B_out.CSR_I_row_indices[0],
+		&info);
+
+	// Convert solution matrix (SOL) to sparse format - convert step
+	MKL_INT nnzmax = B_out.CSR_I_row_indices[m];//-1;
+
+	B_out.CSR_J_col_indices.resize(nnzmax);
+	B_out.CSR_V_values.resize(nnzmax);
+
+	job[4] = nnzmax; // job(5) = nzmax - maximum number of the non-zero elements allowed if job(1)=0.
+	job[5] = 1; // job(6) - job indicator for conversion to CSR format.
+	// If job(6)=0, only array ia is generated for the output storage.
+	// If job(6)>0, arrays acsr, ia, ja are generated for the output storage.
+
+	mkl_ddnscsr (
+		job,
+		&m, &n,
+		&rhs[0], &lda,
+		&B_out.CSR_V_values[0], &B_out.CSR_J_col_indices[0], &B_out.CSR_I_row_indices[0],
+		&info);
+
+	//sol.clear();
+
+	// Setup parameters for output matrix
+	B_out.cols	= A_in.cols;
+	B_out.rows	= A_in.rows;
+	B_out.nnz	= B_out.CSR_V_values.size();
+	B_out.type	= 'G';
+
+
+}
+
 
