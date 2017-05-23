@@ -32,7 +32,7 @@ void Prisma6::addElements(std::vector<Element*> &elements, const eslocal indices
 
 void Prisma6::addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdge edge)
 {
-	ESINFO(GLOBAL_ERROR) << "Implement addEdges for HEXA20";
+	ESINFO(GLOBAL_ERROR) << "Implement addEdges for PRISMA6";
 }
 
 void Prisma6::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)
