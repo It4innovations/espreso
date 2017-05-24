@@ -285,12 +285,47 @@ void CollectedInfo::addGeneralInfo()
 
 void CollectedInfo::addSettings(size_t step)
 {
-	size_t bodies    = _mode & InfoMode::SEPARATE_BODIES    ? _mesh->bodies()           : 1;
 	size_t materials = _mode & InfoMode::SEPARATE_MATERIALS ? _mesh->materials().size() : 1;
 
 	const Region *region = _region;
 	if (region == NULL) {
 		region = _mesh->regions()[0];
+	}
+
+	if (region->elements().size() && region->elements()[0]->params()) {
+		std::vector<std::vector<eslocal>> sMaterialData(_regions.size()), sBodyData(_regions.size());
+
+		for (size_t e = 0; e < region->elements().size(); e++) {
+			size_t regionOffset = 0, material = -1, body = -1;
+			body = region->elements()[e]->param(Element::Params::BODY);
+			if (_mode & InfoMode::SEPARATE_BODIES) {
+				regionOffset += body * materials;
+			}
+			material = region->elements()[e]->param(Element::Params::MATERIAL);
+			if (_mode & InfoMode::SEPARATE_MATERIALS) {
+				regionOffset += material;
+			}
+
+			sMaterialData[regionOffset].push_back(material);
+			sBodyData[regionOffset].push_back(body);
+		}
+
+		for (size_t r = 0; r < _regions.size(); r++) {
+			std::vector<eslocal> *values = new std::vector<eslocal>();
+			if (!Communication::gatherUnknownSize(sMaterialData[r], *values)) {
+				ESINFO(ERROR) << "ESPRESO internal error while collecting region data values.";
+			}
+
+			_regions[r].data.elementDataInteger["material"] = std::make_pair(1, values);
+		}
+		for (size_t r = 0; r < _regions.size(); r++) {
+			std::vector<eslocal> *values = new std::vector<eslocal>();
+			if (!Communication::gatherUnknownSize(sBodyData[r], *values)) {
+				ESINFO(ERROR) << "ESPRESO internal error while collecting region data values.";
+			}
+
+			_regions[r].data.elementDataInteger["body"] = std::make_pair(1, values);
+		}
 	}
 
 	if (region->settings.size() <= step) {
@@ -319,7 +354,6 @@ void CollectedInfo::addSettings(size_t step)
 					sValues[regionOffset].back() += region->elements()[e]->sumProperty(*p, n, step, 0);
 				}
 				sValues[regionOffset].back() /= region->elements()[e]->nodes();
-				sValues[regionOffset].insert(sValues[regionOffset].end(), region->elements()[e]->domains().size() - 1, sValues[regionOffset].back());
 			}
 		}
 
@@ -345,7 +379,6 @@ void CollectedInfo::addSolution(const std::vector<Solution*> &solution)
 	bool status = true;
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	size_t bodies    = _mode & InfoMode::SEPARATE_BODIES    ? _mesh->bodies()           : 1;
 	size_t materials = _mode & InfoMode::SEPARATE_MATERIALS ? _mesh->materials().size() : 1;
 
 	for (size_t i = 0; i < solution.size(); i++) {

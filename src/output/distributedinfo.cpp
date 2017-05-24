@@ -217,7 +217,6 @@ void DistributedInfo::addGeneralInfo()
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: general info can be added only to region with all elements.";
 	}
 
-	size_t bodies    = _mode & InfoMode::SEPARATE_BODIES    ? _mesh->bodies()           : 1;
 	size_t materials = _mode & InfoMode::SEPARATE_MATERIALS ? _mesh->materials().size() : 1;
 
 	std::vector<std::vector<eslocal>*> pointIDcluster;
@@ -274,12 +273,43 @@ void DistributedInfo::addSettings(size_t step)
 		region = _mesh->regions()[0];
 	}
 
+	size_t materials = _mode & InfoMode::SEPARATE_MATERIALS ? _mesh->materials().size() : 1;
+
+	if (region->elements().size() && region->elements()[0]->params()) {
+		std::vector<std::vector<eslocal>*> materialData, bodyData;
+
+		for (size_t r = 0; r < _regions.size(); r++) {
+			materialData.push_back(new std::vector<eslocal>());
+			bodyData.push_back(new std::vector<eslocal>());
+		}
+
+		for (size_t e = 0; e < region->elements().size(); e++) {
+			size_t regionOffset = 0, material = -1, body = -1;
+			body = region->elements()[e]->param(Element::Params::BODY);
+			if (_mode & InfoMode::SEPARATE_BODIES) {
+				regionOffset += body * materials;
+			}
+			material = region->elements()[e]->param(Element::Params::MATERIAL);
+			if (_mode & InfoMode::SEPARATE_MATERIALS) {
+				regionOffset += material;
+			}
+
+			for (auto d = region->elements()[e]->domains().begin(); d != region->elements()[e]->domains().end(); ++d) {
+				materialData[regionOffset]->push_back(material);
+				bodyData[regionOffset]->push_back(body);
+			}
+		}
+
+		for (size_t r = 0; r < _regions.size(); r++) {
+			_regions[r].data.elementDataInteger["material"] = std::make_pair(1, materialData[r]);
+			_regions[r].data.elementDataInteger["body"] = std::make_pair(1, bodyData[r]);
+		}
+	}
+
 	if (region->settings.size() <= step) {
 		return;
 	}
 
-	size_t bodies    = _mode & InfoMode::SEPARATE_BODIES    ? _mesh->bodies()           : 1;
-	size_t materials = _mode & InfoMode::SEPARATE_MATERIALS ? _mesh->materials().size() : 1;
 	double value;
 
 	for (auto it = region->settings[step].begin(); it != region->settings[step].end(); ++it) {
