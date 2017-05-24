@@ -85,6 +85,8 @@ public:
 	void ImportMatrix_fl(SparseMatrix & A);
 	void ImportMatrix_wo_Copy(SparseMatrix & A);
 
+	void ImportMatrix_wo_Copy_fl(SparseMatrix & A) {};
+
 	int Factorization(const std::string &str);
 	void Clear();
 	void SetThreaded();
@@ -93,6 +95,17 @@ public:
 	void Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT rhs_start_index, MKL_INT sol_start_index);
 	void Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT n_rhs );
 	void Solve( SEQ_VECTOR <double> & rhs_sol);
+
+	void SolveMat_Sparse( SparseMatrix & A );
+	void SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out );
+	void SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, char T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed );
+
+	void SolveMat_Dense( SparseMatrix & A_in_out );
+	void SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out );
+
+	void SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol, SEQ_VECTOR <double> & initial_guess);
+	void SolveCG(SparseMatrix & A_in, std::vector <double> & rhs, std::vector <double> & sol);
+	void SolveCG(SparseMatrix & A_in, std::vector <double> & rhs_sol);
 };
 
 }

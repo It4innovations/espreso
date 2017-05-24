@@ -3665,8 +3665,8 @@ void IterSolverBase::CreateConjProjector(Cluster & cluster) {
 		eslocal n = A.rows;
 		SEQ_VECTOR <double> w (eig_n);				// eigen values storage
 		SEQ_VECTOR <double> eig_vectors (eig_n*n);	// eigen vectors storage
-		SEQ_VECTOR <int> ifail (n);				// dummy
-		SEQ_VECTOR <int> m (n);					// dummy
+		SEQ_VECTOR <eslocal> ifail (n);				// dummy
+		SEQ_VECTOR <eslocal> m (n);					// dummy
 		double tmpd;								// dummy
 		double abstol = 0.0;						// dummy
 

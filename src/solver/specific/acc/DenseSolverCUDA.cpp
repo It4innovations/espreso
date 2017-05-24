@@ -375,3 +375,45 @@ void DenseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 	printf("DenseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT rhs_start_index, MKL_INT sol_start_index) not implemented yet.\n");
 	exit(1);
 }
+
+
+void DenseSolverCUDA::SolveMat_Sparse( SparseMatrix & A )
+{
+	ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
+}
+
+void DenseSolverCUDA::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out )
+{
+	ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
+}
+
+void DenseSolverCUDA::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, char T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed )
+{
+	ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
+}
+
+void DenseSolverCUDA::SolveMat_Dense( SparseMatrix & A_in_out )
+{
+	ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
+}
+
+void DenseSolverCUDA::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out )
+{
+	ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
+}
+
+void DenseSolverCUDA::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol, SEQ_VECTOR <double> & initial_guess)
+{
+	ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
+}
+
+void DenseSolverCUDA::SolveCG(SparseMatrix & A_in, std::vector <double> & rhs, std::vector <double> & sol)
+{
+	ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
+}
+
+void DenseSolverCUDA::SolveCG(SparseMatrix & A_in, std::vector <double> & rhs_sol)
+{
+	ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
+}
+
