@@ -414,7 +414,16 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region *regi
 
 	case 3: { // Volume
 
-		ESINFO(ERROR) << "Implement selection of volume";
+		switch (dimension) {
+		case 0:
+		case 1:
+		case 2:
+			ESINFO(ERROR) << "Cannot select the interval.";
+			break;
+		case 3:
+			pickElements(elements, region, bborder);
+			break;
+		}
 	} break;
 
 	}
