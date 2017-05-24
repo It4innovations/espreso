@@ -3905,10 +3905,14 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 
 	double rho_l;
 	double rho_l_prew = 1;
-	double norm_l;
+	double norm_l = 1e33;
+	double norm_l_new;
+	bool norm_decrease = true;
 	double tol;
 	double ztg;
 	double wtAw;
+	int N_ITER=0 ;
+
 
 	double delta, gamma, fi;
 	SEQ_VECTOR <double> delta_l	 	(CG_max_iter, 0);
@@ -3919,6 +3923,8 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 	bool update = true;
 
 	int cnt_iter=0;
+
+	int restart_num = 0;
 
 	eslocal restart_iter = 0;
 
@@ -4049,6 +4055,8 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 
 		timing.totalTime.start();
 
+		N_ITER +=1;
+
 		appA_time.start();
 		apply_A_l_comp_dom_B(timeEvalAppa, cluster, w_l, Aw_l);
 		appA_time.end();
@@ -4071,8 +4079,11 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 		#pragma omp parallel for
 		for (size_t i = 0; i < x_l.size(); i++) {
 			x_l[i] = x_l[i] + gamma/delta_l[iter] *   w_l[i];
-			r_l[i] = r_l[i] - gamma/delta_l[iter] * PAw_l[i];
+
+            r_l[i] = r_l[i] - gamma/delta_l[iter] * PAw_l[i];
+
 		}
+
 
 		switch (USE_PREC) {
 		case ESPRESO_PRECONDITIONER::DIRICHLET:
@@ -4117,12 +4128,16 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 		if ( iter > configuration.RESTART_ITER) {
 
 			double fi_last = fabs( fi_l[iter - 1] );
-			for (eslocal i = 0; i < iter - 1; i++) {
-				if ( fabs (fi_l[i]) < fi_last ) {
-					update = false;
-				}
+			if (restart_num < configuration.NUM_RESTARTS){
+				for (eslocal i = 0; i < iter - 1; i++) {
 
-			}
+					if (!norm_decrease){
+						if ( fabs (fi_l[i]) < fi_last ) {
+							update = false;
+						}
+					}
+				}
+		    }
 		}
 
 
@@ -4151,6 +4166,9 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 		} else {
 
 			iter = 0;
+
+			restart_num += 1;
+
 
 			ESINFO(CONVERGENCE) << "Restarting orthogonalization ... ";
 
@@ -4222,7 +4240,17 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 		}
 
 		norm_time.start();
-		norm_l = sqrt (parallel_ddot_compressed(cluster, r_l, z_l) );
+		norm_l_new = sqrt (parallel_ddot_compressed(cluster, r_l, z_l) );
+
+		if (iter > 2) {
+			if (norm_l > norm_l_new){
+				norm_decrease = true;
+			}else{
+				norm_decrease = false;
+			}
+		}
+
+		norm_l = norm_l_new;
 		norm_time.end();
 
 		timing.totalTime.end();
@@ -4240,6 +4268,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 
 	} // end of CG iterations
 
+	ESINFO(CONVERGENCE) << "FULL CG Stop after " << N_ITER << " Ïterations";
 	// *** save solution - in dual and amplitudes *********************************************
 
 	if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {

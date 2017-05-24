@@ -51,6 +51,7 @@ struct ESPRESOSolver: public Configuration {
 
 	PARAMETER(size_t, GENEO_SIZE,   "Number of eigen vectors for GENEO coarse problem per subdomain", 6);
 	PARAMETER(size_t, RESTART_ITER, "Number of iterations after which a restart is enabled", 10);
+	PARAMETER(size_t, NUM_RESTARTS, "Number of restarts in iteration proces", 8);
 
 
 
