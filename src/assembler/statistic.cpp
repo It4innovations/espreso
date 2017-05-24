@@ -63,10 +63,6 @@ Statistic::Statistic(StatisticalData statistics, Operation operation, ElementTyp
 Statistic::Statistic(ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data, size_t dataSize)
 : _statistics(StatisticalData::MIN | StatisticalData::MAX | StatisticalData::AVERAGE | StatisticalData::NORM), _operation(Operation::AVERAGE), _eType(eType), _computed(false), _mesh(mesh), _data(data)
 {
-	if (_eType != ElementType::NODES) {
-		ESINFO(GLOBAL_ERROR) << "Implement monitoring non-node elements.";
-	}
-
 	for (size_t r = 0; r < _mesh.monitoredRegions().size(); r++) {
 		_selection.push_back(_mesh.monitoredRegions()[r]);
 	}
@@ -108,6 +104,11 @@ void Statistic::compute()
 	if (!_selection.size()) {
 		return;
 	}
+
+	if (_eType != ElementType::NODES) {
+		ESINFO(GLOBAL_ERROR) << "Implement monitoring non-node elements.";
+	}
+
 	auto n2i = [ & ] (size_t neighbour) {
 		return std::lower_bound(_mesh.neighbours().begin(), _mesh.neighbours().end(), neighbour) - _mesh.neighbours().begin();
 	};
