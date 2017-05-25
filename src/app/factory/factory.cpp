@@ -240,7 +240,7 @@ void Factory::check(const Results &configuration)
 				for (size_t n = 0; n < mesh->coordinates().localSize(p); n++) {
 					eslocal index = mesh->coordinates().localToCluster(p)[n];
 					ESTEST(EVALUATION)
-						<< (fabs(evaluator.evaluate(mesh->coordinates()[index]) - _solution[p][mesh->nodes()[index]->DOFIndex(p, DOF)]) > epsilon ? TEST_FAILED : TEST_PASSED)
+						<< (fabs(evaluator.evaluate(index, 0, 0, 0, 0) - _solution[p][mesh->nodes()[index]->DOFIndex(p, DOF)]) > epsilon ? TEST_FAILED : TEST_PASSED)
 						<< "Incorrect " << property << " of the solution.";
 				}
 			}

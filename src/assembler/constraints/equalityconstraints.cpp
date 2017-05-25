@@ -44,7 +44,7 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 						continue;
 					}
 					const std::vector<eslocal>& indices = nodes[i]->DOFsIndices();
-					double value = nodes[i]->getProperty(DOFs[dof], 0, loadStep, 0);
+					double value = nodes[i]->getProperty(DOFs[dof], 0, loadStep, 0, 0, 0);
 					for(size_t d = 0; d < nodes[i]->domains().size(); d++) {
 						if (indices[d * DOFs.size() + dof] != -1) {
 							dirichlet[nodes[i]->domains()[d]][t].push_back(indices[d * DOFs.size() + dof] + 1);
@@ -738,6 +738,8 @@ void EqualityConstraints::insertDirichletToB1(Instance &instance, const Step &st
 
 	std::vector<std::vector<Region*> > fixedRegions = Mesh::getRegionsWithProperties(regions, step.step, DOFs);
 
+	double temp = 0; // irrelevant -> set to zero
+
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
@@ -747,7 +749,7 @@ void EqualityConstraints::insertDirichletToB1(Instance &instance, const Step &st
 					if (!withRedundantMultiplier && nodes[i]->clusters()[0] != environment->MPIrank) {
 						continue;
 					}
-					double value = nodes[i]->getProperty(DOFs[dof], 0, step.step, 0);
+					double value = nodes[i]->getProperty(DOFs[dof], 0, step.step, step.currentTime, temp, 0);
 					for(size_t d = 0; d < nodes[i]->domains().size(); d++) {
 						if (nodes[i]->DOFIndex(nodes[i]->domains()[d], DOFsOffsets[dof]) != -1) {
 							dirichlet[nodes[i]->domains()[d]][t].push_back(nodes[i]->DOFIndex(nodes[i]->domains()[d], DOFsOffsets[dof]) + 1);

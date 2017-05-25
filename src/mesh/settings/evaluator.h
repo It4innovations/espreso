@@ -29,7 +29,7 @@ public:
 	static Evaluator* create(std::ifstream &is, const Coordinates &coordinates);
 
 	virtual Evaluator* copy() const { return new Evaluator(*this); }
-	virtual double evaluate(eslocal index, size_t timeStep = 1, double temperature = 0, double pressure = 0, double velocity = 0) const { return 0; }
+	virtual double evaluate(eslocal index, double time = 0, double temperature = 0, double pressure = 0, double velocity = 0) const { return 0; }
 	virtual double evaluate(const Point &p) const { return 0; }
 	virtual const std::string& name() const { return _name; }
 	virtual ~Evaluator() {};
@@ -51,7 +51,7 @@ public:
 	ConstEvaluator(std::ifstream &is, Property property);
 
 	virtual Evaluator* copy() const { return new ConstEvaluator(*this); }
-	double inline evaluate(eslocal index, size_t timeStep, double temperature, double pressure, double velocity) const { return _value; }
+	double inline evaluate(eslocal index, double time, double temperature, double pressure, double velocity) const { return _value; }
 	double inline evaluate(const Point &p) const { return _value; }
 
 	virtual void store(std::ofstream& os);
@@ -72,7 +72,7 @@ protected:
 	ExpressionEvaluator(std::ifstream &is, std::vector<std::string> variables, Property property);
 
 	virtual Evaluator* copy() const =0;
-	virtual inline double evaluate(eslocal index, size_t timeStep, double temperature, double pressure, double velocity) const =0;
+	virtual inline double evaluate(eslocal index, double time, double temperature, double pressure, double velocity) const =0;
 	virtual inline double evaluate(const Point &p) const =0;
 
 	std::vector<Expression> _expression;
@@ -86,12 +86,13 @@ public:
 	CoordinatesEvaluator(std::ifstream &is, const Coordinates &coordinates, Property property);
 
 	virtual Evaluator* copy() const { return new CoordinatesEvaluator(*this); }
-	double inline evaluate(eslocal index, size_t timeStep, double temperature, double pressure, double velocity) const
+	double inline evaluate(eslocal index, double time, double temperature, double pressure, double velocity) const
 	{
 		_values[omp_get_thread_num()][0] = _coordinates[index].x;
 		_values[omp_get_thread_num()][1] = _coordinates[index].y;
 		_values[omp_get_thread_num()][2] = _coordinates[index].z;
 		_values[omp_get_thread_num()][3] = temperature;
+		_values[omp_get_thread_num()][4] = time;
 		return _expression[omp_get_thread_num()].evaluate(_values[omp_get_thread_num()]);
 	}
 
@@ -101,6 +102,7 @@ public:
 		_values[omp_get_thread_num()][1] = p.y;
 		_values[omp_get_thread_num()][2] = p.z;
 		_values[omp_get_thread_num()][3] = 0;
+		_values[omp_get_thread_num()][4] = 0;
 		return _expression[omp_get_thread_num()].evaluate(_values[omp_get_thread_num()]);
 	}
 
@@ -130,14 +132,14 @@ public:
 	TableEvaluator(std::ifstream &is, Property property);
 
 	virtual Evaluator* copy() const { return new TableEvaluator(*this); }
-	virtual inline double evaluate(eslocal index, size_t timeStep, double temperature, double pressure, double velocity) const
+	virtual inline double evaluate(eslocal index, double time, double temperature, double pressure, double velocity) const
 	{
 		std::vector<size_t> cell(_dimension);
 
 		for (size_t i = 0; i < _dimension; i++) {
 			switch (_properties[i]) {
 			case TableProperty::TIME:
-				cell[i] = std::find(_axis[i].begin(), _axis[i].end(), timeStep) - _axis[i].begin();
+				cell[i] = std::find(_axis[i].begin(), _axis[i].end(), time) - _axis[i].begin();
 				break;
 			case TableProperty::TEMPERATURE:
 				cell[i] = std::find(_axis[i].begin(), _axis[i].end(), temperature) - _axis[i].begin();
@@ -169,7 +171,7 @@ public:
 	TableInterpolationEvaluator(std::ifstream &is, Property property);
 
 	virtual Evaluator* copy() const { return new TableInterpolationEvaluator(*this); }
-	virtual inline double evaluate(eslocal index, size_t timeStep, double temperature, double pressure, double velocity) const
+	virtual inline double evaluate(eslocal index, double time, double temperature, double pressure, double velocity) const
 	{
 		if (temperature < _table[0].first) {
 			return _table[0].second;
@@ -202,7 +204,7 @@ public:
 	void addIndex(eslocal index, eslocal value);
 
 	virtual Evaluator* copy() const { return new ArrayEvaluator(*this); }
-	virtual inline double evaluate(eslocal index, size_t timeStep, double temperature, double pressure, double velocity) const
+	virtual inline double evaluate(eslocal index, double time, double temperature, double pressure, double velocity) const
 	{
 		auto it = std::lower_bound(_indices.begin(), _indices.end(), index);
 		if (it != _indices.end() && *it == index) {

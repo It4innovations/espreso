@@ -421,7 +421,7 @@ void LinearElasticity3D::assembleStiffnessMatrix(const Element* e, DenseMatrix &
 	std::vector<Property> forces = { Property::FORCE_X, Property::FORCE_Y, Property::FORCE_Z };
 	for (size_t n = 0; n < e->nodes(); n++) {
 		for (size_t dof = 0; dof < pointDOFs.size(); dof++) {
-			fe[n * pointDOFs.size() + dof] = e->sumProperty(forces[dof],n, 0, 0);
+			fe[n * pointDOFs.size() + dof] = e->sumProperty(forces[dof],n, 0, 0, 0, 0);
 		}
 	}
 }
@@ -482,7 +482,7 @@ void LinearElasticity3D::composeSubdomain(size_t subdomain)
 	for (size_t n = 0; n < _mesh.coordinates().localSize(subdomain); n++) {
 		Element *node = _mesh.nodes()[_mesh.coordinates().clusterIndex(n, subdomain)];
 		for (size_t dof = 0; dof < pointDOFs.size(); dof++) {
-			f[subdomain][node->DOFIndex(subdomain, dof)] += node->sumProperty(forces[dof], 0, 0, 0) / node->numberOfGlobalDomainsWithDOF(dof);
+			f[subdomain][node->DOFIndex(subdomain, dof)] += node->sumProperty(forces[dof], 0, 0, 0, 0, 0) / node->numberOfGlobalDomainsWithDOF(dof);
 		}
 	}
 

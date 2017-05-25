@@ -339,7 +339,7 @@ void DistributedInfo::addSettings(size_t step)
 			for (auto p = pGroup.begin(); p != pGroup.end(); ++p) {
 				value = 0;
 				for (size_t n = 0; n < region->elements()[e]->nodes(); n++) {
-					value += region->elements()[e]->sumProperty(*p, n, step, 0);
+					value += region->elements()[e]->sumProperty(*p, n, step, 0, 0, 0);
 				}
 				value /= region->elements()[e]->nodes();
 

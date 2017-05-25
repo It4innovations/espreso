@@ -374,12 +374,12 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 			ESINFO(ERROR) << "Linear elasticity 3D not supports set material model";
 		}
 
-		matInitT(i, 0) = element->getProperty(Property::INITIAL_TEMPERATURE, i, 0, 0);
-		matT(i, 0) = element->getProperty(Property::TEMPERATURE, i, 0, matInitT(i, 0));
+		matInitT(i, 0) = element->getProperty(Property::INITIAL_TEMPERATURE, i, 0, 0, 0, 0);
+		matT(i, 0) = element->getProperty(Property::TEMPERATURE, i, 0, 0, 0, matInitT(i, 0));
 
-		inertia(i, 0) = element->sumProperty(Property::ACCELERATION_X, i, 0, 0);
-		inertia(i, 1) = element->sumProperty(Property::ACCELERATION_Y, i, 0, 0);
-		inertia(i, 2) = element->sumProperty(Property::ACCELERATION_Z, i, 0, 0);
+		inertia(i, 0) = element->sumProperty(Property::ACCELERATION_X, i, 0, 0, 0, 0);
+		inertia(i, 1) = element->sumProperty(Property::ACCELERATION_Y, i, 0, 0, 0, 0);
+		inertia(i, 2) = element->sumProperty(Property::ACCELERATION_Z, i, 0, 0, 0, 0);
 
 		coordinates(i, 0) = mesh.coordinates()[element->node(i)].x;
 		coordinates(i, 1) = mesh.coordinates()[element->node(i)].y;
@@ -445,7 +445,7 @@ static void processFace(std::vector<double> &fe, const espreso::Mesh &mesh, cons
 		coordinates(n, 1) = mesh.coordinates()[face->node(n)].y;
 		coordinates(n, 2) = mesh.coordinates()[face->node(n)].z;
 
-		P(n, 0) = face->getProperty(Property::PRESSURE, n, 0, 0);
+		P(n, 0) = face->getProperty(Property::PRESSURE, n, 0, 0, 0, 0);
 	}
 
 	eslocal Ksize = 3 * face->nodes();
@@ -610,7 +610,7 @@ void Elasticity3D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, st
 	std::vector<Property> forces = { Property::FORCE_X, Property::FORCE_Y, Property::FORCE_Z };
 	for (size_t n = 0; n < e->nodes(); n++) {
 		for (size_t dof = 0; dof < pointDOFs.size(); dof++) {
-			fe[n * pointDOFs.size() + dof] = e->sumProperty(forces[dof], n, 0, 0) / _mesh.nodes()[e->node(n)]->domains().size();
+			fe[n * pointDOFs.size() + dof] = e->sumProperty(forces[dof], n, 0, 0, 0, 0) / _mesh.nodes()[e->node(n)]->domains().size();
 		}
 	}
 }
@@ -685,7 +685,7 @@ void Elasticity3D::composeSubdomain(size_t subdomain)
 	for (size_t n = 0; n < _mesh.coordinates().localSize(subdomain); n++) {
 		Element *node = _mesh.nodes()[_mesh.coordinates().clusterIndex(n, subdomain)];
 		for (size_t dof = 0; dof < pointDOFs.size(); dof++) {
-			f[subdomain][node->DOFIndex(subdomain, dof)] += node->sumProperty(forces[dof], 0, 0, 0) / node->numberOfGlobalDomainsWithDOF(dof);
+			f[subdomain][node->DOFIndex(subdomain, dof)] += node->sumProperty(forces[dof], 0, 0, 0, 0, 0) / node->numberOfGlobalDomainsWithDOF(dof);
 		}
 	}
 
@@ -744,8 +744,8 @@ static void postProcessElement(std::vector<double> &stress, std::vector<double> 
 			ESINFO(ERROR) << "Linear elasticity 3D not supports set material model";
 		}
 
-		matInitT(i, 0) = element->getProperty(Property::INITIAL_TEMPERATURE, i, 0, 0);
-		matT(i, 0) = element->getProperty(Property::TEMPERATURE, i, 0, matInitT(i, 0));
+		matInitT(i, 0) = element->getProperty(Property::INITIAL_TEMPERATURE, i, 0, 0, 0, 0);
+		matT(i, 0) = element->getProperty(Property::TEMPERATURE, i, 0, 0, 0, matInitT(i, 0));
 
 		coordinates(i, 0) = mesh.coordinates()[element->node(i)].x;
 		coordinates(i, 1) = mesh.coordinates()[element->node(i)].y;

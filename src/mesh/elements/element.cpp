@@ -58,7 +58,7 @@ bool Element::hasProperty(Property property, size_t step) const
 	return false;
 }
 
-double Element::sumProperty(Property property, eslocal node, size_t step, double defaultValue) const
+double Element::sumProperty(Property property, eslocal node, size_t step, double time, double temperature, double defaultValue) const
 {
 	double result = 0;
 	bool set = false;
@@ -67,7 +67,7 @@ double Element::sumProperty(Property property, eslocal node, size_t step, double
 			auto it = _regions[i]->settings[step].find(property);
 			if (it != _regions[i]->settings[step].end()) {
 				for (size_t j = 0; j < it->second.size(); j++) {
-					result += it->second[j]->evaluate(this->node(node));
+					result += it->second[j]->evaluate(this->node(node), time, temperature);
 				}
 				set = true;
 			}
@@ -77,7 +77,7 @@ double Element::sumProperty(Property property, eslocal node, size_t step, double
 	return set ? result : defaultValue;
 }
 
-double Element::getProperty(Property property, eslocal node, size_t step, double defaultValue) const
+double Element::getProperty(Property property, eslocal node, size_t step, double time, double temperature, double defaultValue) const
 {
 	for (size_t i = 0; i < _regions.size(); i++) {
 		if (step < _regions[i]->settings.size()) {
@@ -85,7 +85,7 @@ double Element::getProperty(Property property, eslocal node, size_t step, double
 			if (it == _regions[i]->settings[step].end()) {
 				continue;
 			}
-			return it->second.back()->evaluate(this->node(node));
+			return it->second.back()->evaluate(this->node(node), time, temperature);
 		}
 	}
 

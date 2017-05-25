@@ -351,7 +351,7 @@ void CollectedInfo::addSettings(size_t step)
 			for (auto p = pGroup.begin(); p != pGroup.end(); ++p) {
 				sValues[regionOffset].push_back(0);
 				for (size_t n = 0; n < region->elements()[e]->nodes(); n++) {
-					sValues[regionOffset].back() += region->elements()[e]->sumProperty(*p, n, step, 0);
+					sValues[regionOffset].back() += region->elements()[e]->sumProperty(*p, n, step, 0, 0, 0);
 				}
 				sValues[regionOffset].back() /= region->elements()[e]->nodes();
 			}

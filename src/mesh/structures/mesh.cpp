@@ -764,7 +764,7 @@ void Mesh::loadProperty(
 				continue;
 			}
 
-			if (!StringCompare::contains(value, { "x", "y", "z", "TEMPERATURE" })) {
+			if (!StringCompare::contains(value, { "x", "y", "z", "TEMPERATURE", "TIME" })) {
 				Expression expr(value, {});
 				_evaluators.push_back(new ConstEvaluator(expr.evaluate({}), properties[p]));
 			} else {

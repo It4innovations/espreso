@@ -173,12 +173,12 @@ static void processEdge(DenseMatrix &Ke, std::vector<double> &fe, const espreso:
 		coordinates(n, 0) = mesh.coordinates()[edge->node(n)].x;
 		coordinates(n, 1) = mesh.coordinates()[edge->node(n)].y;
 
-		htc(n, 0) = edge->getProperty(Property::HEAT_TRANSFER_COEFFICIENT, n, 0, 0);
-		q(n, 0) += htc(n, 0) * edge->getProperty(Property::EXTERNAL_TEMPERATURE, n, 0, 0);
-		q(n, 0) += edge->getProperty(Property::HEAT_FLOW, n, 0, 0) / area;
-		q(n, 0) += edge->getProperty(Property::HEAT_FLUX, n, 0, 0);
+		htc(n, 0) = edge->getProperty(Property::HEAT_TRANSFER_COEFFICIENT, n, 0, 0, 0, 0);
+		q(n, 0) += htc(n, 0) * edge->getProperty(Property::EXTERNAL_TEMPERATURE, n, 0, 0, 0, 0);
+		q(n, 0) += edge->getProperty(Property::HEAT_FLOW, n, 0, 0, 0, 0) / area;
+		q(n, 0) += edge->getProperty(Property::HEAT_FLUX, n, 0, 0, 0, 0);
 
-		thickness(n, 0) = edge->getProperty(Property::THICKNESS, n, 0, 1);
+		thickness(n, 0) = edge->getProperty(Property::THICKNESS, n, 0, 0, 0, 1);
 		q(n, 0) *= thickness(n, 0);
 	}
 
@@ -222,22 +222,22 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 	coordinates.resize(element->nodes(), 2);
 	for (size_t i = 0; i < element->nodes(); i++) {
-		temp = element->getProperty(Property::INITIAL_TEMPERATURE, i, timeStep, 273.15 + 20);
+		temp = element->getProperty(Property::INITIAL_TEMPERATURE, i, timeStep, 0, 0, 273.15 + 20);
 		const Point &p = mesh.coordinates()[element->node(i)];
 		coordinates(i, 0) = p.x;
 		coordinates(i, 1) = p.y;
-		thickness(i, 0) = element->getProperty(Property::THICKNESS, i, timeStep, 1);
+		thickness(i, 0) = element->getProperty(Property::THICKNESS, i, timeStep, 0, 0, 1);
 		U(i, 0) =
-				element->getProperty(Property::TRANSLATION_MOTION_X, i, timeStep, 0) *
-				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i), timeStep, temp) *
-				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(element->node(i), timeStep, temp) *
+				element->getProperty(Property::TRANSLATION_MOTION_X, i, timeStep, 0, 0, 0) *
+				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i), timeStep, 0, 0, temp) *
+				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(element->node(i), timeStep, 0, 0, temp) *
 				thickness(i, 0);
 		U(i, 1) =
-				element->getProperty(Property::TRANSLATION_MOTION_Y, i, timeStep, 0) *
+				element->getProperty(Property::TRANSLATION_MOTION_Y, i, timeStep, 0, 0, 0) *
 				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i), timeStep, temp) *
 				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(element->node(i), timeStep, temp) *
 				thickness(i, 0);
-		f(0, i) = element->sumProperty(Property::HEAT_SOURCE, i, timeStep, 0) * thickness(i, 0);
+		f(0, i) = element->sumProperty(Property::HEAT_SOURCE, i, timeStep, 0, 0, 0) * thickness(i, 0);
 
 		switch (material->getModel(PHYSICS::ADVECTION_DIFFUSION_2D)) {
 		case MATERIAL_MODEL::ISOTROPIC:
@@ -411,7 +411,7 @@ void AdvectionDiffusion2D::assembleStiffnessMatrix(const Element* e, DenseMatrix
 	}
 
 	for (size_t n = 0; n < e->nodes(); n++) {
-		fe[n] = e->sumProperty(Property::TEMPERATURE, n, 0, 0) / _mesh.nodes()[e->node(n)]->domains().size();
+		fe[n] = e->sumProperty(Property::TEMPERATURE, n, 0, 0, 0, 0) / _mesh.nodes()[e->node(n)]->domains().size();
 	}
 }
 
@@ -564,18 +564,18 @@ static void postProcessElement(std::vector<double> &gradient, std::vector<double
 
 	coordinates.resize(element->nodes(), 2);
 	for (size_t i = 0; i < element->nodes(); i++) {
-		temp = element->getProperty(Property::INITIAL_TEMPERATURE, i, timeStep, 273.15 + 20);
+		temp = element->getProperty(Property::INITIAL_TEMPERATURE, i, timeStep, 0, 0, 273.15 + 20);
 		const Point &p = mesh.coordinates()[element->node(i)];
 		coordinates(i, 0) = p.x;
 		coordinates(i, 1) = p.y;
-		thickness(i, 0) = element->getProperty(Property::THICKNESS, i, timeStep, 1);
+		thickness(i, 0) = element->getProperty(Property::THICKNESS, i, timeStep, 0, 0, 1);
 		U(i, 0) =
-				element->getProperty(Property::TRANSLATION_MOTION_X, i, timeStep, 0) *
+				element->getProperty(Property::TRANSLATION_MOTION_X, i, timeStep, 0, 0, 0) *
 				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i), timeStep, temp) *
 				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(element->node(i), timeStep, temp) *
 				thickness(i, 0);
 		U(i, 1) =
-				element->getProperty(Property::TRANSLATION_MOTION_Y, i, timeStep, 0) *
+				element->getProperty(Property::TRANSLATION_MOTION_Y, i, timeStep, 0, 0, 0) *
 				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i), timeStep, temp) *
 				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(element->node(i), timeStep, temp) *
 				thickness(i, 0);
