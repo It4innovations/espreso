@@ -45,15 +45,6 @@ std::string VTKXML::linkClusters(const std::string &root, const std::string &nam
 	for (auto it = regionData.data.pointDataDouble.begin(); it != regionData.data.pointDataDouble.end(); ++it) {
 		os << "      <PDataArray type=\"Float64\" Name=\"" << it->first << "\" format=\"" << format() << "\" NumberOfComponents=\"" << it->second.first << "\"/>\n";
 	}
-	for (size_t i = 0; i < regionData.solutions.size(); i++) {
-		if (regionData.solutions[i]->eType == ElementType::NODES) {
-			size_t size = 0;
-			for (size_t p = 0; p < regionData.solutions[i]->data.size(); p++) {
-				size += regionData.solutions[i]->data[p].size();
-			}
-			os << "      <PDataArray type=\"Float64\" Name=\"" << regionData.solutions[i]->name << "\" format=\"" << format() << "\" NumberOfComponents=\"" << regionData.solutions[i]->properties.size() << "\"/>\n";
-		}
-	}
 	os << "    </PPointData>\n";
 	os << "\n";
 
@@ -63,15 +54,6 @@ std::string VTKXML::linkClusters(const std::string &root, const std::string &nam
 	}
 	for (auto it = regionData.data.elementDataDouble.begin(); it != regionData.data.elementDataDouble.end(); ++it) {
 		os << "      <PDataArray type=\"Float64\" Name=\"" << it->first << "\" format=\"" << format() << "\" NumberOfComponents=\"" << it->second.first << "\"/>\n";
-	}
-	for (size_t i = 0; i < regionData.solutions.size(); i++) {
-		if (regionData.solutions[i]->eType == ElementType::ELEMENTS) {
-			size_t size = 0;
-			for (size_t p = 0; p < regionData.solutions[i]->data.size(); p++) {
-				size += regionData.solutions[i]->data[p].size();
-			}
-			os << "      <PDataArray type=\"Float64\" Name=\"" << regionData.solutions[i]->name << "\" format=\"" << format() << "\" NumberOfComponents=\"" << regionData.solutions[i]->properties.size() << "\"/>\n";
-		}
 	}
 	os << "    </PCellData>\n";
 	os << "\n";

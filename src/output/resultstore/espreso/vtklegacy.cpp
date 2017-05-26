@@ -61,20 +61,6 @@ static void storeData(std::ofstream &os, const std::vector<Ttype> &data, size_t 
 	os << "\n";
 }
 
-template <typename Ttype>
-static void storeData(std::ofstream &os, const std::vector<std::vector<Ttype> > &data, size_t scalarSize)
-{
-	for (size_t p = 0; p < data.size(); p++) {
-		for (size_t i = 0; i < data[p].size(); i++) {
-			os << data[p][i] << " ";
-			if ((i || p) && i % scalarSize == 0) {
-				os << "\n";
-			}
-		}
-	}
-	os << "\n";
-}
-
 std::string VTKLegacy::store(const std::string &name, const RegionData &regionData)
 {
 	std::ofstream os;
@@ -95,23 +81,6 @@ std::string VTKLegacy::store(const std::string &name, const RegionData &regionDa
 		storeData(os, *it->second.second, it->second.first);
 	}
 
-	for (size_t i = 0; i < regionData.solutions.size(); i++) {
-		if (regionData.solutions[i]->eType != ElementType::ELEMENTS) {
-			continue;
-		}
-		size_t scalarSize = 0;
-		for (size_t p = 0; p < regionData.solutions[i]->data.size(); p++) {
-			scalarSize += regionData.solutions[i]->data[p].size();
-		}
-		if (scalarSize % regionData.elementsTypes.size() != 0) {
-			ESINFO(ERROR) << "ESPRESO internal error: wrong solution elements data size.";
-		}
-		scalarSize /= regionData.elementsTypes.size();
-
-		os << "SCALARS " << regionData.solutions[i]->name << " double " << scalarSize << "\n";
-		os << "LOOKUP_TABLE default\n";
-		storeData(os, regionData.solutions[i]->data, scalarSize);
-	}
 
 	size_t coordinateSize = regionData.coordinates.size() / 3;
 	os << "POINT_DATA " << coordinateSize << "\n";
@@ -125,24 +94,6 @@ std::string VTKLegacy::store(const std::string &name, const RegionData &regionDa
 		os << "SCALARS " << it->first << " double " << it->second.first << "\n";
 		os << "LOOKUP_TABLE default\n";
 		storeData(os, *it->second.second, it->second.first);
-	}
-
-	for (size_t i = 0; i < regionData.solutions.size(); i++) {
-		if (regionData.solutions[i]->eType != ElementType::NODES) {
-			continue;
-		}
-		size_t scalarSize = 0;
-		for (size_t p = 0; p < regionData.solutions[i]->data.size(); p++) {
-			scalarSize += regionData.solutions[i]->data[p].size();
-		}
-		if (scalarSize % (regionData.coordinates.size() / 3) != 0) {
-			ESINFO(ERROR) << "ESPRESO internal error: wrong solution elements data size.";
-		}
-		scalarSize /= (regionData.coordinates.size() / 3);
-
-		os << "SCALARS " << regionData.solutions[i]->name << " double " << scalarSize << "\n";
-		os << "LOOKUP_TABLE default\n";
-		storeData(os, regionData.solutions[i]->data, scalarSize);
 	}
 
 	return name + ".vtk";

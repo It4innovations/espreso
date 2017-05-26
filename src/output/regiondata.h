@@ -27,12 +27,14 @@ struct RegionData {
 	std::vector<eslocal> elements;  // n11, n12, n13, ..., n21, n22, n23, ...
 
 	DataArrays data;
-	std::vector<Solution*> solutions;
 
 	std::vector<std::string> pointDataNames() const;
 	std::vector<std::string> cellDataNames() const;
 
 	void clearData();
+
+	void pack(std::vector<char> &data) const;
+	void unpack(char* &data);
 };
 
 }

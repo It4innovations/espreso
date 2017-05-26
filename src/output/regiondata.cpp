@@ -1,5 +1,7 @@
 
-#include "meshinfo.h"
+#include <cstring>
+
+#include "regiondata.h"
 
 #include "../assembler/solution.h"
 #include "../mesh/structures/elementtypes.h"
@@ -41,11 +43,6 @@ std::vector<std::string> RegionData::pointDataNames() const
 	for (auto it = data.pointDataInteger.begin(); it != data.pointDataInteger.end(); ++it) {
 		names.push_back(it->first);
 	}
-	for (size_t i = 0; i < solutions.size(); i++) {
-		if (solutions[i]->eType == ElementType::NODES) {
-			names.push_back(solutions[i]->name);
-		}
-	}
 	return names;
 }
 
@@ -58,25 +55,23 @@ std::vector<std::string> RegionData::cellDataNames() const
 	for (auto it = data.elementDataInteger.begin(); it != data.elementDataInteger.end(); ++it) {
 		names.push_back(it->first);
 	}
-	for (size_t i = 0; i < solutions.size(); i++) {
-		if (solutions[i]->eType == ElementType::ELEMENTS) {
-			names.push_back(solutions[i]->name);
-		}
-	}
 	return names;
 }
 
 void RegionData::clearData()
 {
 	data.clear();
-	solutions.clear();
 }
 
-void MeshInfo::clearData()
+void RegionData::pack(std::vector<char> &data) const
 {
-	for (size_t r = 0; r < _regions.size(); r++) {
-		_regions[r].clearData();
-	}
+
 }
+
+void RegionData::unpack(char* &data)
+{
+
+}
+
 
 

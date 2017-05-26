@@ -31,16 +31,10 @@ protected:
 	virtual void linkSteps(const std::string &name, const std::vector<std::pair<Step, std::vector<std::string> > > &steps);
 
 	virtual std::string format() =0;
-	virtual void storePointData(const std::string &name, size_t components, const std::vector<std::vector<int> > &data) =0;
-	virtual void storePointData(const std::string &name, size_t components, const std::vector<std::vector<long> > &data) =0;
-	virtual void storePointData(const std::string &name, size_t components, const std::vector<std::vector<double> > &data) =0;
 	virtual void storePointData(const std::string &name, size_t components, const std::vector<int> &data) =0;
 	virtual void storePointData(const std::string &name, size_t components, const std::vector<long> &data) =0;
 	virtual void storePointData(const std::string &name, size_t components, const std::vector<double> &data) =0;
 
-	virtual void storeCellData(const std::string &name, size_t components, const std::vector<std::vector<int> > &data) =0;
-	virtual void storeCellData(const std::string &name, size_t components, const std::vector<std::vector<long> > &data) =0;
-	virtual void storeCellData(const std::string &name, size_t components, const std::vector<std::vector<double> > &data) =0;
 	virtual void storeCellData(const std::string &name, size_t components, const std::vector<int> &data) =0;
 	virtual void storeCellData(const std::string &name, size_t components, const std::vector<long> &data) =0;
 	virtual void storeCellData(const std::string &name, size_t components, const std::vector<double> &data) =0;
