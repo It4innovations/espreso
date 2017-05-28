@@ -209,6 +209,7 @@ public:
 
 	virtual Element* addFace(const std::vector<eslocal> &nodes) = 0;
 
+	bool isFaceSwapped(const Element* face) const;
 	void rotateOutside(const Element* parent, const Coordinates &coordinates, Point &normal) const;
 
 	bool hasProperty(Property property, size_t step) const;

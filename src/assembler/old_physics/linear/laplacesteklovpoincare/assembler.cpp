@@ -80,6 +80,7 @@ void LaplaceSteklovPoincare::prepareMeshStructures()
 
 	_mesh.computeFacesOnDomainsSurface();
 
+	#pragma omp parallel for
 	for (size_t p = 0; p < _mesh.parts(); p++) {
 		for (size_t i = 0; i < _mesh.faces().size(); i++) {
 			if (std::find(_mesh.faces()[i]->domains().begin(), _mesh.faces()[i]->domains().end(), p) != _mesh.faces()[i]->domains().end()) {
@@ -88,10 +89,11 @@ void LaplaceSteklovPoincare::prepareMeshStructures()
 				}
 			}
 		}
-
 		std::sort(_boundaryIndices[p].begin(), _boundaryIndices[p].end());
 		Esutils::removeDuplicity(_boundaryIndices[p]);
+	}
 
+	for (size_t p = 0; p < _mesh.parts(); p++) {
 		for (size_t i = 0; i < _boundaryIndices[p].size(); i++) {
 			Element *node = _mesh.nodes()[_boundaryIndices[p][i]];
 			size_t d = std::lower_bound(node->domains().begin(), node->domains().end(), p) - node->domains().begin();
@@ -606,7 +608,7 @@ void LaplaceSteklovPoincare::composeSubdomain(size_t subdomain)
 
 #ifndef ESBEM
 
-	ESINFO(GLOBAL_ERROR) << "BEM4I is not linked!. Copy BEM4I library to tools/bem4i";
+	ESINFO(GLOBAL_ERROR) << "BEM4I is not linked!. Copy BEM4I library to tools/bem4i and re-configure ESPRESO.";
 	_K.resize(matrixSize[subdomain], matrixSize[subdomain]);
 	f[subdomain].resize(matrixSize[subdomain]);
 
@@ -654,10 +656,23 @@ void LaplaceSteklovPoincare::composeSubdomain(size_t subdomain)
 	std::vector<eslocal> elements;
 	std::vector<double> coordinates;
 
+	size_t node;
+	Element* parent;
 	for (size_t i = 0; i < _mesh.faces().size(); i++) {
 		if (std::find(_mesh.faces()[i]->domains().begin(), _mesh.faces()[i]->domains().end(), subdomain) != _mesh.faces()[i]->domains().end()) {
+			for (size_t p = 0; p < _mesh.faces()[i]->parentElements().size(); p++) {
+				if (_mesh.faces()[i]->parentElements()[p]->domains().front() == subdomain) {
+					parent = _mesh.faces()[i]->parentElements()[p];
+					break;
+				}
+			}
 			for (size_t n = 0; n < _mesh.faces()[i]->nodes(); n++) {
-				elements.push_back(std::lower_bound(_boundaryIndices[subdomain].begin(), _boundaryIndices[subdomain].end(), _mesh.faces()[i]->node(n)) - _boundaryIndices[subdomain].begin());
+				if (parent->isFaceSwapped(_mesh.faces()[i])) {
+					node = _mesh.faces()[i]->nodes() - 1 - n;
+				} else {
+					node = n;
+				}
+				elements.push_back(std::lower_bound(_boundaryIndices[subdomain].begin(), _boundaryIndices[subdomain].end(), _mesh.faces()[i]->node(node)) - _boundaryIndices[subdomain].begin());
 			}
 		}
 	}

@@ -29,6 +29,30 @@ void Element::store(std::ofstream& os, const Coordinates &coordinates, size_t pa
 	}
 }
 
+bool Element::isFaceSwapped(const Element* face) const
+{
+	size_t matches = 0;
+	for (size_t f = 0; f < this->faces(); f++) {
+		const std::vector<eslocal>& faceNodes = this->faceNodes(f);
+
+		if (face->nodes() != faceNodes.size()) {
+			continue;
+		}
+
+		matches = 0;
+		for (; matches < faceNodes.size(); matches++) {
+			if (indices()[faceNodes[matches]] != face->node(matches)) {
+				break;
+			}
+		}
+		if (matches == faceNodes.size()) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 void Element::rotateOutside(const Element* parent, const Coordinates &coordinates, Point &normal) const
 {
 	Point eMid(0, 0, 0), mid(0, 0, 0);
