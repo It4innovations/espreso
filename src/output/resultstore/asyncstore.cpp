@@ -81,7 +81,6 @@ void AsyncStore::finalize()
 	if (_finalized)
 		return;
 
-	std::cout << "AsyncStore::finalize()" << std::endl;
 	// Wait for the last I/O call to finish
 	wait();
 
