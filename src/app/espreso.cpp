@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 	factory.check(configuration.results);
 	factory.finalize();
 
-	MPI_Barrier(environment->MPICommunicator);
+	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();
 
 	return 0;

@@ -24,6 +24,7 @@
 //#include "../../output/resultstore/vtklegacy.h"
 //#include "../../output/resultstore/vtkxmlascii.h"
 //#include "../../output/resultstore/vtkxmlbinary.h"
+
 #include "../../output/resultstore/asyncstore.h"
 #include "../../output/resultstore/catalyst.h"
 #include "../../output/monitoring/monitoring.h"
@@ -40,7 +41,12 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		_asyncStore = 0L;
 
 	_dispatcher.init();
+	environment->MPICommunicator = _dispatcher.commWorld();
+	MPI_Comm_rank(environment->MPICommunicator, &environment->MPIrank);
+	MPI_Comm_size(environment->MPICommunicator, &environment->MPIsize);
+
 	_isWorker = _dispatcher.dispatch();
+
 
 	if (!_isWorker)
 		return;

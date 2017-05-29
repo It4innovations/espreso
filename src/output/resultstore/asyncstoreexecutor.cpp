@@ -31,11 +31,16 @@ void AsyncStoreExecutor::execInit(const async::ExecInfo &info, const OutputConfi
 void AsyncStoreExecutor::exec(const async::ExecInfo &info, const Param &param)
 {
 	// Extract data
-	std::string name(static_cast<const char*>(info.buffer(0)));
+
 
 	const char* regionBuffer = static_cast<const char*>(info.buffer(1));
-	RegionData r;
-	r.unpack(regionBuffer);
 
-	_store->store(name, r);
+	for (size_t i = 0; i < info.bufferSize(0) / 1024; i++) {
+		std::string name(static_cast<const char*>(info.buffer(0) + i * 1024));
+
+		RegionData r;
+		r.unpack(regionBuffer);
+
+		_store->store(name, r);
+	}
 }
