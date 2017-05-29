@@ -2,11 +2,14 @@
 #ifndef SRC_OUTPUT_RESULTSTORE_ASYNCSTOREEXECUTOR_H_
 #define SRC_OUTPUT_RESULTSTORE_ASYNCSTOREEXECUTOR_H_
 
-#include "../store.h"
+#include "../resultstore.h"
 #include "async/ExecInfo.h"
 
 namespace espreso {
 namespace output {
+
+struct Param
+{ };
 
 class AsyncStoreExecutor {
 
@@ -16,7 +19,7 @@ public:
 
 	void execInit(const async::ExecInfo &info, const OutputConfiguration &config);
 
-	void exec(const async::ExecInfo &info, const Step &step);
+	void exec(const async::ExecInfo &info, const Param &param);
 
 	void finalize()
 	{
@@ -26,7 +29,7 @@ public:
 
 private:
 	/** The real store */
-	Store* _store;
+	ResultStore* _store;
 };
 
 }

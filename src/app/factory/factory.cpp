@@ -35,7 +35,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 {
 	if (configuration.output.results || configuration.output.settings)
 		// Create the async store before splitting the ranks with the dispatcher
-		_asyncStore = new output::AsyncStore(configuration.output);
+		_asyncStore = new output::AsyncStore(configuration.output, mesh, "results");
 	else
 		_asyncStore = 0L;
 
@@ -72,7 +72,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		case OUTPUT_FORMAT::VTK_LEGACY:
 		case OUTPUT_FORMAT::VTK_XML_ASCII:
 		case OUTPUT_FORMAT::VTK_XML_BINARY:
-			_asyncStore->init(mesh, "results");
+			_asyncStore->init(mesh);
 			store->add(_asyncStore);
 			break;
 		default:

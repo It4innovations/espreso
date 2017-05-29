@@ -40,13 +40,12 @@ public:
 
 	virtual ~ResultStore();
 
-protected:
-	ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path, MeshInfo::InfoMode mode = MeshInfo::EMPTY);
-
 	virtual std::string store(const std::string &name, const RegionData &regionData) =0;
-
 	virtual std::string linkClusters(const std::string &root, const std::string &name, const RegionData &regionData) =0;
 	virtual void linkSteps(const std::string &name, const std::vector<std::pair<Step, std::vector<std::string> > > &steps) =0;
+
+protected:
+	ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path, MeshInfo::InfoMode mode = MeshInfo::EMPTY);
 
 	const Mesh *_mesh;
 	std::string _path;

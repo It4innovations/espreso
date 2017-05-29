@@ -2,7 +2,7 @@
 #ifndef SRC_OUTPUT_RESULTSTORE_ASYNCSTORE_H_
 #define SRC_OUTPUT_RESULTSTORE_ASYNCSTORE_H_
 
-#include "store.h"
+#include "resultstore.h"
 #include "asyncstoreexecutor.h"
 #include "../../assembler/step.h"
 #include "async/Module.h"
@@ -13,24 +13,23 @@ class Mesh;
 
 namespace output {
 
-class AsyncStore : public Store, private async::Module<AsyncStoreExecutor, OutputConfiguration, Step> {
+class AsyncStore : public ResultStore, private async::Module<AsyncStoreExecutor, OutputConfiguration, Param> {
 
 public:
-	AsyncStore(const OutputConfiguration &configuration): Store(configuration), _finalized(false) {};
-	virtual ~AsyncStore() {};
+	AsyncStore(const OutputConfiguration &configuration, const Mesh *mesh, const std::string &path, MeshInfo::InfoMode mode = MeshInfo::EMPTY)
+		: ResultStore(configuration, mesh, path, mode), _finalized(false), _bufferSize(0), _headerStore(0L) {};
+	virtual ~AsyncStore() { delete _headerStore; };
 
 	/** Called by ASYNC on all ranks, needs to set at least the executor */
-	void setUp() { std::cout << "setUp" << std::endl; setExecutor(_executor); };
+	void setUp() { setExecutor(_executor); };
 
-	void init(const Mesh *mesh, const std::string &path);
+	void init(const Mesh *mesh);
 
-	virtual void storeSettings(const Step &step) {};
-	virtual void storeSettings(size_t steps) {};
-	virtual void storeSettings(const std::vector<size_t> &steps) {};
+	virtual std::string store(const std::string &name, const RegionData &regionData);
 
-	virtual void storeFETIData(const Step &step, const Instance &instance) {};
+	virtual std::string linkClusters(const std::string &root, const std::string &name, const RegionData &regionData);
+	virtual void linkSteps(const std::string &name, const std::vector<std::pair<Step, std::vector<std::string> > > &steps);
 
-	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution) {};
 	virtual void finalize();
 
 	/** Called by ASYNC on all ranks, needs to finalize the executor */
@@ -41,6 +40,12 @@ private:
 	AsyncStoreExecutor _executor;
 
 	bool _finalized;
+
+	/** Size of the packed data */
+	size_t _bufferSize;
+
+	/** A result store that stores header files */
+	ResultStore* _headerStore;
 };
 
 }
