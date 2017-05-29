@@ -43,7 +43,7 @@ MeshInfo* CollectedInfo::deriveRegion(const Region *region) const
 
 MeshInfo* CollectedInfo::copyWithoutMesh() const
 {
-	CollectedInfo* copy = new CollectedInfo(_mesh);
+	CollectedInfo* copy = new CollectedInfo(_mesh, _mode & ~MeshInfo::PREPARE);
 	copy->_regions.push_back(RegionData());
 	return copy;
 }
