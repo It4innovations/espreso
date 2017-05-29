@@ -1259,7 +1259,7 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 		}
 
 
-		instance.B0[p].rows = instance.N1[0].cols * (part.size() - 1);
+		instance.B0[p].rows = instance.N1[0].cols * row;
 		instance.B0[p].cols = instance.domainDOFCount[p];
 		instance.B0[p].nnz = instance.B0[p].I_row_indices.size();
 		instance.B0subdomainsMap[p].reserve(instance.B0[p].nnz);
