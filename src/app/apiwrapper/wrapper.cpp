@@ -130,8 +130,8 @@ void FETI4ICreateStiffnessMatrix(
 		FETI4IInt		type,
 		FETI4IInt		indexBase)
 {
-	MPI_Comm_rank(MPI_COMM_WORLD, &environment->MPIrank);
-	MPI_Comm_size(MPI_COMM_WORLD, &environment->MPIsize);
+	MPI_Comm_rank(environment->MPICommunicator, &environment->MPIrank);
+	MPI_Comm_size(environment->MPICommunicator, &environment->MPIsize);
 	OutputConfiguration output;
 	Reader::set(*environment, output);
 

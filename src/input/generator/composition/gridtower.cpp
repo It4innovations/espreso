@@ -43,7 +43,7 @@ GridTower::GridTower(const GridTowerConfiguration &configuration, Mesh &mesh, si
 	size_t gridPointsCounter = _clusterIndexBegin == index ? _grid->pointCount() : 0;
 
 	std::vector<size_t> counters(size);
-	MPI_Allgather(&gridPointsCounter, sizeof(size_t), MPI_BYTE, counters.data(), sizeof(size_t), MPI_BYTE, MPI_COMM_WORLD);
+	MPI_Allgather(&gridPointsCounter, sizeof(size_t), MPI_BYTE, counters.data(), sizeof(size_t), MPI_BYTE, environment->MPICommunicator);
 	for (size_t i = 0; i < _clusterIndexBegin; i++) {
 		_gridPointsIDOffset += counters[i];
 	}

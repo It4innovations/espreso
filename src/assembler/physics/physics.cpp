@@ -429,7 +429,7 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOpe
 		csum += tSum;
 	}
 
-	MPI_Allreduce(&csum, &gsum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce(&csum, &gsum, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 	return gsum;
 }
 

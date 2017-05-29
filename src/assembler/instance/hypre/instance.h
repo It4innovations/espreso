@@ -19,7 +19,7 @@ public:
 	HypreInstance(const TConfiguration &configuration, const OutputConfiguration &output, Mesh &mesh): OldInstance(mesh),
 	_output(output),
 	_configuration(configuration.physics_solver.load_steps_settings.at(1)->hypre),
-	feiPtr(MPI_COMM_WORLD),
+	feiPtr(environment->MPICommunicator),
 	_constrains(configuration.physics_solver.load_steps_settings.at(1)->espreso, mesh),
 	_physics(mesh, _constrains, configuration),
 	_store(output, &mesh, "results")

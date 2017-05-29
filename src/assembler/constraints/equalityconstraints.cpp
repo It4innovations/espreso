@@ -517,23 +517,23 @@ void EqualityConstraints::insertMortarGluingToB1(Constraints &constraints, const
 	}
 
 	if (environment->MPIrank) {
-		MPI_Send(buffer.data(), buffer.size() * sizeof(int), MPI_BYTE, 0, 0, MPI_COMM_WORLD);
-		MPI_Send(masterCoordinates.data(), masterCoordinates.size() * sizeof(Point_3D), MPI_BYTE, 0, 1, MPI_COMM_WORLD);
+		MPI_Send(buffer.data(), buffer.size() * sizeof(int), MPI_BYTE, 0, 0, environment->MPICommunicator);
+		MPI_Send(masterCoordinates.data(), masterCoordinates.size() * sizeof(Point_3D), MPI_BYTE, 0, 1, environment->MPICommunicator);
 	} else {
 		MPI_Status status;
 		int size;
 
 		// ELEMENTS
-		MPI_Probe(1, 0, MPI_COMM_WORLD, &status);
+		MPI_Probe(1, 0, environment->MPICommunicator, &status);
 		MPI_Get_count(&status, MPI_BYTE, &size);
 		buffer.resize(size / sizeof(int));
-		MPI_Recv(buffer.data(), size, MPI_BYTE, status.MPI_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+		MPI_Recv(buffer.data(), size, MPI_BYTE, status.MPI_SOURCE, status.MPI_TAG, environment->MPICommunicator, MPI_STATUSES_IGNORE);
 
 		// COORDINATES
-		MPI_Probe(1, 1, MPI_COMM_WORLD, &status);
+		MPI_Probe(1, 1, environment->MPICommunicator, &status);
 		MPI_Get_count(&status, MPI_BYTE, &size);
 		masterCoordinates.resize(size / sizeof(Point_3D));
-		MPI_Recv(masterCoordinates.data(), size, MPI_BYTE, status.MPI_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+		MPI_Recv(masterCoordinates.data(), size, MPI_BYTE, status.MPI_SOURCE, status.MPI_TAG, environment->MPICommunicator, MPI_STATUSES_IGNORE);
 
 		for (size_t i = 0; i < buffer.size(); i++) {
 			masterElements.push_back(std::vector<int>());

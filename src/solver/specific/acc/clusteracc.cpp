@@ -53,8 +53,8 @@ void ClusterAcc::SetAcceleratorAffinity() {
     std::string _nodeName;
     MPI_Comm _currentNode;
     MPI_Comm _storingProcs;
-    MPI_Comm_rank(MPI_COMM_WORLD, &_MPIglobalRank);
-    MPI_Comm_size(MPI_COMM_WORLD, &_MPIglobalSize);
+    MPI_Comm_rank(environment->MPICommunicator, &_MPIglobalRank);
+    MPI_Comm_size(environment->MPICommunicator, &_MPIglobalSize);
     int color;
     int length;
     std::vector<char> name(MPI_MAX_PROCESSOR_NAME);
@@ -64,12 +64,12 @@ void ClusterAcc::SetAcceleratorAffinity() {
     std::vector<int> rDispl(_MPIglobalSize);
     std::vector<int> colors(_MPIglobalSize);
     std::vector<char> names;
-    MPI_Gather(&length, sizeof(int), MPI_BYTE, rCounts.data(), sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
+    MPI_Gather(&length, sizeof(int), MPI_BYTE, rCounts.data(), sizeof(int), MPI_BYTE, 0, environment->MPICommunicator);
     for (size_t i = 1; i < rCounts.size(); i++) {
         rDispl[i] += rDispl[i - 1] + rCounts[i - 1];
     }
     names.resize(rDispl.back() + rCounts.back());
-    MPI_Gatherv(name.data(), length * sizeof(char), MPI_BYTE, names.data(), rCounts.data(), rDispl.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(name.data(), length * sizeof(char), MPI_BYTE, names.data(), rCounts.data(), rDispl.data(), MPI_BYTE, 0, environment->MPICommunicator);
     std::map<std::string, size_t> nodes;
     for (size_t i = 0; i < _MPIglobalSize; i++) {
         std::string str(names.begin() + rDispl[i], names.begin() + rDispl[i] + rCounts[i]);
@@ -80,11 +80,11 @@ void ClusterAcc::SetAcceleratorAffinity() {
         }
         colors[i] = nodes[str];
     }
-    MPI_Scatter(colors.data(), sizeof(int), MPI_BYTE, &color, sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
-    MPI_Comm_split(MPI_COMM_WORLD, color, _MPIglobalRank, &_currentNode);
+    MPI_Scatter(colors.data(), sizeof(int), MPI_BYTE, &color, sizeof(int), MPI_BYTE, 0, environment->MPICommunicator);
+    MPI_Comm_split(environment->MPICommunicator, color, _MPIglobalRank, &_currentNode);
     MPI_Comm_rank(_currentNode, &_MPInodeRank);
     MPI_Comm_size(_currentNode, &_MPInodeSize);
-    MPI_Comm_split(MPI_COMM_WORLD, _MPInodeRank, _MPIglobalRank, &_storingProcs);
+    MPI_Comm_split(environment->MPICommunicator, _MPInodeRank, _MPIglobalRank, &_storingProcs);
 
     this->MPI_per_node = _MPInodeSize;
     // END - detect how many MPI processes is running per node
@@ -870,8 +870,8 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
 //    std::string _nodeName;
 //    MPI_Comm _currentNode;
 //    MPI_Comm _storingProcs;
-//    MPI_Comm_rank(MPI_COMM_WORLD, &_MPIglobalRank);
-//    MPI_Comm_size(MPI_COMM_WORLD, &_MPIglobalSize);
+//    MPI_Comm_rank(environment->MPICommunicator, &_MPIglobalRank);
+//    MPI_Comm_size(environment->MPICommunicator, &_MPIglobalSize);
 //    int color;
 //    int length;
 //    std::vector<char> name(MPI_MAX_PROCESSOR_NAME);
@@ -881,12 +881,12 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
 //    std::vector<int> rDispl(_MPIglobalSize);
 //    std::vector<int> colors(_MPIglobalSize);
 //    std::vector<char> names;
-//    MPI_Gather(&length, sizeof(int), MPI_BYTE, rCounts.data(), sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
+//    MPI_Gather(&length, sizeof(int), MPI_BYTE, rCounts.data(), sizeof(int), MPI_BYTE, 0, environment->MPICommunicator);
 //    for (size_t i = 1; i < rCounts.size(); i++) {
 //        rDispl[i] += rDispl[i - 1] + rCounts[i - 1];
 //    }
 //    names.resize(rDispl.back() + rCounts.back());
-//    MPI_Gatherv(name.data(), length * sizeof(char), MPI_BYTE, names.data(), rCounts.data(), rDispl.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+//    MPI_Gatherv(name.data(), length * sizeof(char), MPI_BYTE, names.data(), rCounts.data(), rDispl.data(), MPI_BYTE, 0, environment->MPICommunicator);
 //    std::map<std::string, size_t> nodes;
 //    for (size_t i = 0; i < _MPIglobalSize; i++) {
 //        std::string str(names.begin() + rDispl[i], names.begin() + rDispl[i] + rCounts[i]);
@@ -897,11 +897,11 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
 //        }
 //        colors[i] = nodes[str];
 //    }
-//    MPI_Scatter(colors.data(), sizeof(int), MPI_BYTE, &color, sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
-//    MPI_Comm_split(MPI_COMM_WORLD, color, _MPIglobalRank, &_currentNode);
+//    MPI_Scatter(colors.data(), sizeof(int), MPI_BYTE, &color, sizeof(int), MPI_BYTE, 0, environment->MPICommunicator);
+//    MPI_Comm_split(environment->MPICommunicator, color, _MPIglobalRank, &_currentNode);
 //    MPI_Comm_rank(_currentNode, &_MPInodeRank);
 //    MPI_Comm_size(_currentNode, &_MPInodeSize);
-//    MPI_Comm_split(MPI_COMM_WORLD, _MPInodeRank, _MPIglobalRank, &_storingProcs);
+//    MPI_Comm_split(environment->MPICommunicator, _MPInodeRank, _MPIglobalRank, &_storingProcs);
 //    // END - detect how many MPI processes is running per node
 //    ESINFO(PROGRESS2) << "MPI ranks per node: " << _MPInodeSize;
 //    //TODO:

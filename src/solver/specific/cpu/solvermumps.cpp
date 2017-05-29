@@ -22,7 +22,7 @@ using namespace espreso;
 ***********************/
 #define JOB_INIT -1			   /**< id%JOB value for MUMPS instance - initialize instance. */
 #define JOB_END -2			   /**< id%JOB value for MUMPS instance - terminate instance. */
-#define USE_COMM_WORLD -987654 /**< MPI_COMM_WORLD for MUMPS instance.  */
+#define USE_COMM_WORLD -987654 /**< environment->MPICommunicator for MUMPS instance.  */
 
 /************************************************************************************************
 *   DEFINE MACROS   *

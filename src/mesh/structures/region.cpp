@@ -5,6 +5,7 @@
 #include "../elements/element.h"
 #include "../structures/coordinates.h"
 #include "../../basis/matrices/denseMatrix.h"
+#include "../../configuration/environment.h"
 
 using namespace espreso;
 
@@ -53,7 +54,7 @@ void Region::computeArea(const Coordinates &coordinates) const
 		}
 	}
 
-	MPI_Allreduce(&A, &area, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce(&A, &area, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 }
 
 Region::~Region()

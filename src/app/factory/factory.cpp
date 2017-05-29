@@ -216,7 +216,7 @@ void Factory::check(const Results &configuration)
 			}
 		}
 
-		MPI_Allreduce(&n, &sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		MPI_Allreduce(&n, &sum, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 		return sqrt(sum);
 	};
 
@@ -265,7 +265,7 @@ double Factory::norm() const
 		}
 	}
 
-	MPI_Allreduce(&n, &sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce(&n, &sum, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 	return sqrt(sum);
 }
 

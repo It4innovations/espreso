@@ -352,7 +352,7 @@ void Statistic::compute()
 
 	for (size_t r = 0; r < _selection.size(); r++) {
 		for (size_t i = 0; i < _offsets.size(); i++) {
-			MPI_Bcast(_results[r][i].data(), _results[r][i].size() * sizeof(double), MPI_BYTE, 0, MPI_COMM_WORLD);
+			MPI_Bcast(_results[r][i].data(), _results[r][i].size() * sizeof(double), MPI_BYTE, 0, environment->MPICommunicator);
 		}
 	}
 }

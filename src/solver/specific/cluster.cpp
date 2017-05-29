@@ -93,7 +93,7 @@ void ClusterBase::SetClusterPC( ) { // SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lamb
 	SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub = instance->B1clustersMap;
 
 	//// *** Set up the dual size ********************************************************
-	int MPIrank; 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+	int MPIrank; 	MPI_Comm_rank(environment->MPICommunicator, &MPIrank);
 	dual_size = domains[0].B1.rows;
 
 	if (USE_HFETI == 1) {
@@ -355,7 +355,7 @@ void ClusterBase::SetClusterHFETI () {
 		HFETI_prec_timing.totalTime.start();
 
 		int MPIrank;
-		MPI_Comm_rank (MPI_COMM_WORLD, &MPIrank);
+		MPI_Comm_rank (environment->MPICommunicator, &MPIrank);
 		ESINFO(PROGRESS3) << "HFETI preprocessing start";
 
 		TimeEvent B0_time("Compress B0 per cluster");
@@ -951,7 +951,7 @@ for (size_t d = 0; d < domains.size(); d++)
 //void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 //
 //	//eslocal MPIrank;
-//	//MPI_Comm_rank (MPI_COMM_WORLD, &MPIrank);
+//	//MPI_Comm_rank (environment->MPICommunicator, &MPIrank);
 //	//if (MPIrank == 0 ) { cout << "MultKplusGlobal - Cilk workers = " << __cilkrts_get_nworkers()      << endl; }
 //	//if (MPIrank == 0 ) { cout << "MultKplusGlobal - Cilk workers = " << __cilkrts_get_total_workers() << endl; }
 //	//
@@ -1195,7 +1195,7 @@ void ClusterBase::CreateF0() {
 
 	mkl_set_num_threads(1);
 
-	int MPIrank; MPI_Comm_rank (MPI_COMM_WORLD, &MPIrank);
+	int MPIrank; MPI_Comm_rank (environment->MPICommunicator, &MPIrank);
 
 	SEQ_VECTOR <SparseMatrix> tmpF0v (domains.size());
 
@@ -1347,7 +1347,7 @@ void ClusterBase::CreateSa() {
 
 
 	MKL_Set_Num_Threads(PAR_NUM_THREADS);
-	int MPIrank; MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
+	int MPIrank; MPI_Comm_rank(environment->MPICommunicator, &MPIrank);
 
 	SparseMatrix Salfa; SparseMatrix tmpM;
 
@@ -1668,7 +1668,7 @@ void ClusterBase::Create_G_perCluster() {
 	G1_1_mem.startWithoutBarrier(GetProcessMemory_u());
 
 	int MPIrank;
-	MPI_Comm_rank (MPI_COMM_WORLD, &MPIrank);
+	MPI_Comm_rank (environment->MPICommunicator, &MPIrank);
 
 	PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
 	PAR_VECTOR < SparseMatrix > tmp_Mat2 (domains.size());
@@ -1975,7 +1975,7 @@ void ClusterBase::Create_G1_perCluster() {
 		//Gtmpt.ConvertToCOO(0);
 
 		int MPIrank;
-		MPI_Comm_rank (MPI_COMM_WORLD, &MPIrank);
+		MPI_Comm_rank (environment->MPICommunicator, &MPIrank);
 
 		PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
 		#pragma omp parallel for

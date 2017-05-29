@@ -163,16 +163,16 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	ESINFO(PROGRESS3) << Info::plain() << " Domains on CPU : " << domains_on_CPU << "\n";
 
 	std::vector <int> on_gpu (environment->MPIsize, 0);
-	MPI_Gather(&domains_on_GPU,1,MPI_INT,&on_gpu[0],1,MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Gather(&domains_on_GPU,1,MPI_INT,&on_gpu[0],1,MPI_INT, 0, environment->MPICommunicator);
 
 	std::vector <int> on_cpu (environment->MPIsize, 0);
-	MPI_Gather(&domains_on_CPU,1,MPI_INT,&on_cpu[0],1,MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Gather(&domains_on_CPU,1,MPI_INT,&on_cpu[0],1,MPI_INT, 0, environment->MPICommunicator);
 
 	std::vector <int> don_gpu (environment->MPIsize, 0);
-	MPI_Gather(&DOFs_GPU,1,MPI_INT,&don_gpu[0],1,MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Gather(&DOFs_GPU,1,MPI_INT,&don_gpu[0],1,MPI_INT, 0, environment->MPICommunicator);
 
 	std::vector <int> don_cpu (environment->MPIsize, 0);
-	MPI_Gather(&DOFs_CPU,1,MPI_INT,&don_cpu[0],1,MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Gather(&DOFs_CPU,1,MPI_INT,&don_cpu[0],1,MPI_INT, 0, environment->MPICommunicator);
 
 
 	for (eslocal i = 0; i < environment->MPIsize; i++) {

@@ -15,8 +15,8 @@ template <class TPhysics, class TConfiguration>
 void HypreInstance<TPhysics, TConfiguration>::init()
 {
 	int rank, size;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
+	MPI_Comm_rank(environment->MPICommunicator, &rank);
+	MPI_Comm_size(environment->MPICommunicator, &size);
 	MPI_Status stat;
 //------------------------------------------------------------------------------
 	_physics.prepareMeshStructures();
@@ -233,7 +233,7 @@ if(rank==TEST)	std::cout << "  > FILL STIFFNESS\n";
 	for (size_t i = 0; i < _mesh.elements().size(); i++)
 		feiPtr.sumInElem(elemBlkID, i, elemConn[i], elemStiff[i], &rhs[i*elements[i]->nodes()*DOFs.size()], elemFormat);
 
-if(rank==TEST)	std::cout << "  > LOAD COMPLETE\n"; MPI_Barrier(MPI_COMM_WORLD);
+if(rank==TEST)	std::cout << "  > LOAD COMPLETE\n"; MPI_Barrier(environment->MPICommunicator);
 	// Finish the FEI load phase
 	feiPtr.loadComplete();
 
@@ -280,7 +280,7 @@ template <class TPhysics, class TConfiguration>
 void HypreInstance<TPhysics, TConfiguration>::solve(std::vector<std::vector<double> > &solution)
 {
 	int rank;
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	MPI_Comm_rank(environment->MPICommunicator, &rank);
 //------------------------------------------------------------------------------
 // SET SOLVER PARAMS
 	const int DOFsize = _physics.pointDOFs.size();
