@@ -43,7 +43,6 @@ void ClusterAcc::SetAcceleratorAffinity() {
     //        	? E.g., KMP_PLACE_THREADS=60c,2c with KMP_AFFINITY=compact and OMP_NUM_THREADS=120 places 2
     //        	threads on each of the first 60 cores
 
-    ESINFO(PROGRESS3) << "Creating Local Schur complements";
 
     // detect how many MPI processes is running per node
     int _MPIglobalRank;
@@ -170,6 +169,8 @@ void ClusterAcc::SetAcceleratorAffinity() {
 
 void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     // Ratio of work done on MIC
+
+    ESINFO(PROGRESS3) << "Creating Local Schur complements";
     double MICr = 1.0;
     if ( configuration.load_balancing ) {
         MICr = 0.1;
