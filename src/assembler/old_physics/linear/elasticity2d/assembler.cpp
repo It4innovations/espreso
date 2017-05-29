@@ -36,7 +36,7 @@ LinearElasticity2D::ELEMENT_BEHAVIOUR LinearElasticity2D::elementBehaviour = ELE
 
 LinearElasticity2D::LinearElasticity2D(Mesh &mesh, Constraints &constraints, const LinearElasticity2DConfiguration &configuration)
 : LinearPhysics(
-		mesh, constraints, configuration.espreso,
+		mesh, constraints, configuration.physics_solver.load_steps_settings.at(1)->espreso,
 		MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 		elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
   _configuration(configuration) {};
@@ -269,11 +269,11 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 		matMI(i, 0) = material->get(MATERIAL_PARAMETER::POISSON_RATIO_XY)->evaluate(element->node(i));
 		matTE(i, 0) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_X)->evaluate(element->node(i));
 		matTE(i, 1) = material->get(MATERIAL_PARAMETER::THERMAL_EXPANSION_Y)->evaluate(element->node(i));
-		matInitT(i, 0) = element->getProperty(Property::INITIAL_TEMPERATURE, i, 0, 0);
-		matT(i, 0) = element->getProperty(Property::TEMPERATURE, i, 0, matInitT(i, 0));
-		inertia(i, 0) = element->sumProperty(Property::ACCELERATION_X, i, 0, 0);
-		inertia(i, 1) = element->sumProperty(Property::ACCELERATION_Y, i, 0, 0);
-		matThickness(i, 0) = element->getProperty(Property::THICKNESS, i, 0, 1);
+		matInitT(i, 0) = element->getProperty(Property::INITIAL_TEMPERATURE, i, 0, 0, 0, 0);
+		matT(i, 0) = element->getProperty(Property::TEMPERATURE, i, 0, 0, 0, matInitT(i, 0));
+		inertia(i, 0) = element->sumProperty(Property::ACCELERATION_X, i, 0, 0, 0, 0);
+		inertia(i, 1) = element->sumProperty(Property::ACCELERATION_Y, i, 0, 0, 0, 0);
+		matThickness(i, 0) = element->getProperty(Property::THICKNESS, i, 0, 0, 0, 1);
 
 		coordinates(i, 0) = mesh.coordinates()[element->node(i)].x;
 		coordinates(i, 1) = mesh.coordinates()[element->node(i)].y;
@@ -358,8 +358,8 @@ static void processEdge(std::vector<double> &fe, const espreso::Mesh &mesh, cons
 	for (size_t n = 0; n < edge->nodes(); n++) {
 		coordinates(n, 0) = mesh.coordinates()[edge->node(n)].x;
 		coordinates(n, 1) = mesh.coordinates()[edge->node(n)].y;
-		P(n, 0) = edge->getProperty(Property::PRESSURE, n, 0, 0);
-		matThickness(n, 0) = edge->getProperty(Property::THICKNESS, n, 0, 1);
+		P(n, 0) = edge->getProperty(Property::PRESSURE, n, 0, 0, 0, 0);
+		matThickness(n, 0) = edge->getProperty(Property::THICKNESS, n, 0, 0, 0, 1);
 	}
 
 	eslocal Ksize = 2 * edge->nodes();
@@ -506,7 +506,7 @@ void LinearElasticity2D::assembleStiffnessMatrix(const Element* e, DenseMatrix &
 	std::vector<Property> forces = { Property::FORCE_X, Property::FORCE_Y };
 	for (size_t n = 0; n < e->nodes(); n++) {
 		for (size_t dof = 0; dof < pointDOFs.size(); dof++) {
-			fe[n * pointDOFs.size() + dof] = e->sumProperty(forces[dof], n, 0, 0) / _mesh.nodes()[e->node(n)]->domains().size();
+			fe[n * pointDOFs.size() + dof] = e->sumProperty(forces[dof], n, 0, 0, 0, 0) / _mesh.nodes()[e->node(n)]->domains().size();
 		}
 	}
 }

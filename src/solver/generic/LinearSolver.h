@@ -47,7 +47,7 @@ public:
 
 	void CheckSolution( std::vector < std::vector < double > > & prim_solution );
 
-
+	void createCMat();
 
 
 

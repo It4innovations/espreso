@@ -290,15 +290,41 @@ void Grid::regions(
 			regions.push_back(new Region(ElementType::ELEMENTS, elements));
 		} else if (StringCompare::caseInsensitiveEq("chessboard_white", it->second)) {
 			regions.push_back(new Region(ElementType::ELEMENTS));
-			_block->pattern(elements, regions.back(), _clusterOffset, _settings.blocks * _settings.clusters, Pattern::CHESSBOARD_WHITE);
+			_block->pattern(elements, regions.back(), _clusterOffset, _settings.blocks * _settings.clusters, Pattern::CHESSBOARD_WHITE, _grid.chessboard_size);
 		} else if (StringCompare::caseInsensitiveEq("chessboard_black", it->second)) {
 			regions.push_back(new Region(ElementType::ELEMENTS));
-			_block->pattern(elements, regions.back(), _clusterOffset, _settings.blocks * _settings.clusters, Pattern::CHESSBOARD_BLACK);
+			_block->pattern(elements, regions.back(), _clusterOffset, _settings.blocks * _settings.clusters, Pattern::CHESSBOARD_BLACK, _grid.chessboard_size);
+		} else if (StringCompare::caseInsensitiveEq("not_selected", it->second)) {
+			// skip and process after all regions are set
+			continue;
 		} else {
 			regions.push_back(new Region(ElementType::ELEMENTS));
 			BlockBorder border(it->second);
 			_block->region(elements, regions.back(), border, 3);
 		}
 		regions.back()->name = it->first;
+	}
+	for (auto it = _grid.elements.begin(); it != _grid.elements.end(); ++it) {
+		if (StringCompare::caseInsensitiveEq("not_selected", it->second)) {
+			std::vector<Element*> all(mesh.elements()), selected;
+			for (size_t r = 2; r < regions.size(); r++) {
+				if (regions[r]->eType == ElementType::ELEMENTS) {
+					selected.insert(selected.end(), regions[r]->elements().begin(), regions[r]->elements().end());
+				}
+			}
+			std::sort(all.begin(), all.end());
+			std::sort(selected.begin(), selected.end());
+			Esutils::removeDuplicity(selected);
+
+			regions.push_back(new Region(ElementType::ELEMENTS));
+			for (size_t e = 0, sindex = 0; e < all.size(); e++) {
+				if (all[e] == selected[sindex]) {
+					sindex++;
+				} else {
+					regions.back()->elements().push_back(all[e]);
+				}
+			}
+			regions.back()->name = it->first;
+		}
 	}
 }

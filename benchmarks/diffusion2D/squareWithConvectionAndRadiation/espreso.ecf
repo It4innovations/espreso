@@ -56,23 +56,21 @@ GENERATOR {
 
 ADVECTION_DIFFUSION_2D {
 
-  SOLVER_LIBRARY        ESPRESO;
-
-  ESPRESO {
-
-    METHOD           TOTAL_FETI;
-    SOLVER                  PCG;
-    PRECONDITIONER    DIRICHLET;
-    REGULARIZATION   FIX_POINTS;
-  }
-
   PHYSICS_SOLVER {
     LOAD_STEPS          1;
 
     LOAD_STEPS_SETTINGS {
       1 {
-        TYPE     STEADY_STATE;
-        MODE        NONLINEAR;
+        TYPE       STEADY_STATE;
+        MODE          NONLINEAR;
+        SOLVER_LIBRARY  ESPRESO;
+
+        ESPRESO {
+          METHOD           TOTAL_FETI;
+          SOLVER                  PCG;
+          PRECONDITIONER    DIRICHLET;
+          REGULARIZATION   FIX_POINTS;
+        }
 
         NONLINEAR_SOLVER {
           METHOD   NEWTON_RHAPSON;

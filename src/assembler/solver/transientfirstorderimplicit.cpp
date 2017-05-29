@@ -6,11 +6,16 @@
 
 #include "../step.h"
 #include "../instance.h"
+#include "../solution.h"
+#include "../../mesh/structures/elementtypes.h"
 #include "../physics/physics.h"
 #include "../../basis/logging/logging.h"
 #include "../../basis/logging/constants.h"
 
 using namespace espreso;
+
+size_t TransientFirstOrderImplicit::offset = -1;
+size_t TransientFirstOrderImplicit::lastStep = -1;
 
 TransientFirstOrderImplicit::TransientFirstOrderImplicit(
 		Mesh *mesh,
@@ -19,8 +24,8 @@ TransientFirstOrderImplicit::TransientFirstOrderImplicit(
 		output::Store* store,
 		const TransientSolver &configuration,
 		double duration)
-: Solver("TRANSIENT FIRST ORDER IMPLICIT", mesh, physics, linearSolver, store, Matrices::NONE),
-  _configuration(configuration), _duration(duration)
+: Solver("TRANSIENT FIRST ORDER IMPLICIT", mesh, physics, linearSolver, store, duration, Matrices::NONE),
+  _configuration(configuration)
 {
 
 }
@@ -50,39 +55,54 @@ void TransientFirstOrderImplicit::run(Step &step)
 		ESINFO(GLOBAL_ERROR) << "Not supported first order implicit solver method.";
 	}
 
-	std::vector<std::vector<double> > u(instance->domains), deltaU(instance->domains);
-	std::vector<std::vector<double> > v(instance->domains);
-	std::vector<std::vector<double> > x(instance->domains), y(instance->domains);
+	preprocessData(step);
 
-	for (size_t d = 0; d < instance->domains; d++) {
-		u[d].resize(instance->domainDOFCount[d]);
-		deltaU[d].resize(instance->domainDOFCount[d]);
-		v[d].resize(instance->domainDOFCount[d]);
-		x[d].resize(instance->domainDOFCount[d]);
-		y[d].resize(instance->domainDOFCount[d]);
+	if (offset == -1) {
+		lastStep = step.step;
+		offset = instance->solutions.size();
+		instance->solutions.push_back(new Solution(*_mesh, "trans_U" , ElementType::NODES, physics->pointDOFs()));
+		instance->solutions.push_back(new Solution(*_mesh, "trans_dU", ElementType::NODES, physics->pointDOFs()));
+		instance->solutions.push_back(new Solution(*_mesh, "trans_V" , ElementType::NODES, physics->pointDOFs()));
+		instance->solutions.push_back(new Solution(*_mesh, "trans_X" , ElementType::NODES, physics->pointDOFs()));
+		instance->solutions.push_back(new Solution(*_mesh, "trans_Y" , ElementType::NODES, physics->pointDOFs()));
+	}
+
+	std::vector<std::vector<double> > &u     = instance->solutions[offset + SolutionIndex::SOLUTION]->innerData();
+	std::vector<std::vector<double> > deltaU = instance->solutions[offset + SolutionIndex::DELTA]->innerData();
+	std::vector<std::vector<double> > v      = instance->solutions[offset + SolutionIndex::VELOCITY]->innerData();
+	std::vector<std::vector<double> > x      = instance->solutions[offset + SolutionIndex::X]->innerData();
+	std::vector<std::vector<double> > y      = instance->solutions[offset + SolutionIndex::Y]->innerData();
+
+	u = instance->primalSolution;
+	if (lastStep + 1 != step.step) {
+		lastStep = step.step;
+		for (size_t i = 0; i < v.size(); i++) {
+			std::fill(v[i].begin(), v[i].end(), 0);
+		}
 	}
 
 	double startTime = step.currentTime;
 	step.timeStep = _configuration.time_step;
 	step.currentTime += step.timeStep;
 
-	for (step.substep = 0; step.currentTime < startTime + _duration; step.substep++) {
-		ESINFO(PROGRESS2) << _name << " iteration " << step.substep + 1;
-		if (step.substep) {
-			updateMatrices(step, Matrices::K | Matrices::M | Matrices::f, instance->solutions);
+	for (step.substep = 0; step.currentTime <= startTime + _duration + 1e-8; step.substep++) {
+		ESINFO(PROGRESS2) << _name << " iteration " << step.substep + 1 << "[" << step.currentTime << "s]";
+		if (step.substep == 0) {
+			updateMatrices(step, Matrices::K | Matrices::M | Matrices::f);
+			composeGluing(step, Matrices::B1 | Matrices::B0); // TODO: B0 without kernels
+			sum(instance->K, 1 / (alpha * _configuration.time_step), instance->M, "K += (1 / " + ASCII::alpha + ASCII::DELTA + "t) * M");
 		} else {
-			assembleMatrices(step, Matrices::K | Matrices::M | Matrices::f);
+			updateMatrices(step, Matrices::f);
+			composeGluing(step, Matrices::B1); // TODO: B0 without kernels
 		}
-		composeGluing(step, Matrices::B1 | Matrices::B0); // TODO: B0 without kernels
 
-		sum(instance->K, 1 / (alpha * _configuration.time_step), instance->M, "K += (1 / " + ASCII::alpha + ASCII::DELTA + "t) * M");
 		sum(x, 1 / (alpha * _configuration.time_step), u, (1 - alpha) / alpha, v, "x = (1 / " + ASCII::alpha + ASCII::DELTA + ") * u + (1 - " + ASCII::alpha + ") / " + ASCII::alpha + " * v");
 
 		multiply(y, instance->M, x, "y = M * x");
 		sum(instance->f, 1, instance->f, 1, y, "f += y");
 
 		if (step.substep) {
-			updateLinearSolver(step, Matrices::K | Matrices::M | Matrices::f | Matrices::B1c);
+			updateLinearSolver(step, Matrices::f | Matrices::B1c);
 		} else {
 			initLinearSolver(step);
 		}
@@ -95,7 +115,6 @@ void TransientFirstOrderImplicit::run(Step &step)
 		storeSolution(step);
 		step.currentTime += step.timeStep;
 	}
-	finalizeLinearSolver(step);
 }
 
 void TransientFirstOrderImplicit::init(Step &step)

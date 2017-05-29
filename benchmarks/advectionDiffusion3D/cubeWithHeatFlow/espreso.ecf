@@ -57,14 +57,23 @@ GENERATOR {
 
 ADVECTION_DIFFUSION_3D {
 
-  SOLVER_LIBRARY      ESPRESO;
+  PHYSICS_SOLVER {
+    LOAD_STEPS          1;
 
-  ESPRESO {
+    LOAD_STEPS_SETTINGS {
+      1 {
+        TYPE        STEADY_STATE;
+        MODE              LINEAR;
+        SOLVER_LIBRARY   ESPRESO;
 
-    METHOD           TOTAL_FETI;
-    SOLVER                GMRES;
-    PRECONDITIONER    DIRICHLET;
-    REGULARIZATION  NULL_PIVOTS;
+        ESPRESO {
+          METHOD           TOTAL_FETI;
+          SOLVER                GMRES;
+          PRECONDITIONER    DIRICHLET;
+          REGULARIZATION  NULL_PIVOTS;
+        }
+      }
+    }
   }
 
   STABILIZATION CAU;

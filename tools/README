@@ -1,17 +1,16 @@
 If there is a problem with builded external libraries, rebuild the following libraries and copy them to "espreso/libs" directory:
 
 METIS:
-	libmetis32.so -> METIS with 32b integers
-	libmetis64.so -> METIS with 64b integers
+	libmetis
 
 SCOTCH:
-	libesmumps.a
-	libscotch.a
-	libscotcherr.a
+	libesmumps
+	libscotch
+	libscotcherr
 
 MUMPS:
-	libdmumps.a
-	libpmiseq.a
-	libmumps_common.a
-	libpord.a
+	libdmumps
+	libpmiseq
+	libmumps_common
+	libpord
 

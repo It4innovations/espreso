@@ -94,7 +94,7 @@ Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh, cons
 		return;
 	}
 
-	_os.open(path);
+	_os.open(Logging::outputRoot() + "/" + path);
 	if (!_os.is_open()) {
 		ESINFO(GLOBAL_ERROR) << "Cannot open file " << path << "\n";
 	}
@@ -147,6 +147,7 @@ void Monitoring::storeSolution(const Step &step, const std::vector<Solution*> &s
 		for (size_t s = 0; s < solution.size(); s++) {
 			if (solution[s]->hasProperty(_monitors[i].property)) {
 				value = solution[s]->getStatisticalData(_monitors[i].property, _monitors[i].statistics, _monitors[i].region);
+				break;
 			}
 		}
 

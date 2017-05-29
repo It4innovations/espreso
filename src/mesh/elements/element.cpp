@@ -29,6 +29,30 @@ void Element::store(std::ofstream& os, const Coordinates &coordinates, size_t pa
 	}
 }
 
+bool Element::isFaceSwapped(const Element* face) const
+{
+	size_t matches = 0;
+	for (size_t f = 0; f < this->faces(); f++) {
+		const std::vector<eslocal>& faceNodes = this->faceNodes(f);
+
+		if (face->nodes() != faceNodes.size()) {
+			continue;
+		}
+
+		matches = 0;
+		for (; matches < faceNodes.size(); matches++) {
+			if (indices()[faceNodes[matches]] != face->node(matches)) {
+				break;
+			}
+		}
+		if (matches == faceNodes.size()) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 void Element::rotateOutside(const Element* parent, const Coordinates &coordinates, Point &normal) const
 {
 	Point eMid(0, 0, 0), mid(0, 0, 0);
@@ -58,7 +82,7 @@ bool Element::hasProperty(Property property, size_t step) const
 	return false;
 }
 
-double Element::sumProperty(Property property, eslocal node, size_t step, double defaultValue) const
+double Element::sumProperty(Property property, eslocal node, size_t step, double time, double temperature, double defaultValue) const
 {
 	double result = 0;
 	bool set = false;
@@ -67,7 +91,7 @@ double Element::sumProperty(Property property, eslocal node, size_t step, double
 			auto it = _regions[i]->settings[step].find(property);
 			if (it != _regions[i]->settings[step].end()) {
 				for (size_t j = 0; j < it->second.size(); j++) {
-					result += it->second[j]->evaluate(this->node(node));
+					result += it->second[j]->evaluate(this->node(node), time, temperature);
 				}
 				set = true;
 			}
@@ -77,7 +101,7 @@ double Element::sumProperty(Property property, eslocal node, size_t step, double
 	return set ? result : defaultValue;
 }
 
-double Element::getProperty(Property property, eslocal node, size_t step, double defaultValue) const
+double Element::getProperty(Property property, eslocal node, size_t step, double time, double temperature, double defaultValue) const
 {
 	for (size_t i = 0; i < _regions.size(); i++) {
 		if (step < _regions[i]->settings.size()) {
@@ -85,7 +109,7 @@ double Element::getProperty(Property property, eslocal node, size_t step, double
 			if (it == _regions[i]->settings[step].end()) {
 				continue;
 			}
-			return it->second.back()->evaluate(this->node(node));
+			return it->second.back()->evaluate(this->node(node), time, temperature);
 		}
 	}
 

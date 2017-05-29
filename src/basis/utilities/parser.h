@@ -65,8 +65,16 @@ struct StringCompare {
 	}
 
 	static bool contains(const std::string &s, const std::vector<std::string> &variables) {
+		std::string lower = s;
+		for (size_t i = 0; i < lower.size(); i++) {
+			lower[i] = std::tolower(lower[i]);
+		}
 		for (size_t v = 0; v < variables.size(); v++) {
-			if (s.find(variables[v]) != std::string::npos) {
+			std::string lvariable = variables[v];
+			for (size_t i = 0; i < lvariable.size(); i++) {
+				lvariable[i] = std::tolower(lvariable[i]);
+			}
+			if (lower.find(lvariable) != std::string::npos) {
 				return true;
 			}
 		}

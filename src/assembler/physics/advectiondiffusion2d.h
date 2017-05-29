@@ -19,6 +19,7 @@ struct NewAdvectionDiffusion2D: public Physics2D
 
 	void prepareTotalFETI();
 
+	void preprocessData(const Step &step);
 	void processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
 	void processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
 	void processEdge(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
@@ -54,6 +55,14 @@ struct NewAdvectionDiffusion2D: public Physics2D
 	}
 
 protected:
+	enum SolutionIndex: size_t {
+		TEMPERATURE = 0,
+
+		SIZE        = 1
+	};
+
+	static size_t offset;
+
 	void assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD) const;
 
 	const AdvectionDiffusion2DConfiguration &_configuration;

@@ -54,25 +54,23 @@ OUTPUT {
 
 ADVECTION_DIFFUSION_2D {
 
-  SOLVER_LIBRARY   ESPRESO;
-
-  ESPRESO {
-
-    METHOD           TOTAL_FETI;
-    SOLVER                  PCG;
-    PRECONDITIONER    DIRICHLET;
-    REGULARIZATION   FIX_POINTS;
-    B0_TYPE             CORNERS;
-  }
-
   PHYSICS_SOLVER {
     LOAD_STEPS          1;
     INTERPOLATION  LINEAR;
     LOAD_STEPS_SETTINGS {
       1 {
-        TYPE   TRANSIENT;
-        MODE      LINEAR;
-        DURATION_TIME  2;
+        TYPE           TRANSIENT;
+        MODE              LINEAR;
+        DURATION_TIME          2;
+        SOLVER_LIBRARY   ESPRESO;
+
+        ESPRESO {
+          METHOD           TOTAL_FETI;
+          SOLVER                  PCG;
+          PRECONDITIONER    DIRICHLET;
+          REGULARIZATION   FIX_POINTS;
+          B0_TYPE             CORNERS;
+        }
 
         TRANSIENT_SOLVER {
           METHOD    CRANK_NICOLSON;

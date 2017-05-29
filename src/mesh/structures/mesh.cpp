@@ -694,6 +694,15 @@ static std::vector<Element*> mergeElements(size_t threads, std::vector<std::vect
 	return result;
 }
 
+const std::vector<Property>& Mesh::propertyGroup(Property property) const
+{
+	auto it = _propertyGroups.find(property);
+	if (it == _propertyGroups.end()) {
+		ESINFO(ERROR) << "ESPRESO internal error: request for unknown property group.";
+	}
+	return it->second;
+}
+
 void Mesh::loadProperty(
 		size_t loadStep,
 		const std::map<std::string, std::string> &regions,
@@ -701,6 +710,9 @@ void Mesh::loadProperty(
 		const std::vector<Property> &properties,
 		ElementType type)
 {
+	for (size_t i = 0; i < properties.size(); i++) {
+		_propertyGroups[properties[i]] = properties;
+	}
 	auto getValue = [] (const std::vector<std::string> &values, const std::string &parameter) -> std::string {
 		for (size_t i = 0; i < values.size(); i++) {
 			std::vector<std::string> args = Parser::split(Parser::strip(values[i]), " ");
@@ -729,6 +741,18 @@ void Mesh::loadProperty(
 		}
 	};
 
+	auto distributeNodes = [&] (std::vector<eslocal> &nodes, Property property, Evaluator *evaluator, Region *region) {
+		size_t threads = environment->OMP_NUM_THREADS;
+		std::vector<size_t> distribution = Esutils::getDistribution(threads, nodes.size());
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
+				_nodes[nodes[n]]->regions().push_back(region);
+			}
+		}
+	};
+
 	for (auto it = regions.begin(); it != regions.end(); ++it) {
 		Region *region = this->region(it->first);
 		region->settings.resize(loadStep + 1);
@@ -740,7 +764,7 @@ void Mesh::loadProperty(
 				continue;
 			}
 
-			if (!StringCompare::contains(value, { "x", "y", "z", "TEMPERATURE" })) {
+			if (!StringCompare::contains(value, { "x", "y", "z", "TEMPERATURE", "TIME" })) {
 				Expression expr(value, {});
 				_evaluators.push_back(new ConstEvaluator(expr.evaluate({}), properties[p]));
 			} else {
@@ -825,8 +849,19 @@ void Mesh::loadProperty(
 
 				region->elements() = mfaces;
 				distribute(region->elements(), properties[p], _evaluators.back(), region);
+				distributeNodes(nodes, properties[p], _evaluators.back(), region);
 			} else {
+				std::vector<eslocal> nodes;
+				for (size_t i = 0; i < region->elements().size(); i++) {
+					for (size_t n = 0; n < region->elements()[i]->nodes(); n++) {
+						nodes.push_back(region->elements()[i]->node(n));
+					}
+				}
+				std::sort(nodes.begin(), nodes.end());
+				Esutils::removeDuplicity(nodes);
+
 				distribute(region->elements(), properties[p], _evaluators.back(), region);
+				distributeNodes(nodes, properties[p], _evaluators.back(), region);
 			}
 
 			if (type == ElementType::NODES) {
@@ -893,9 +928,12 @@ Region* Mesh::region(const std::string &name) const
 
 void Mesh::addMonitoredRegion(Region* region) const
 {
+	for (size_t r = 0; r < _monitoredRegions.size(); r++) {
+		if (_monitoredRegions[r] == region) {
+			return;
+		}
+	}
 	_monitoredRegions.push_back(region);
-	std::sort(_monitoredRegions.begin(), _monitoredRegions.end());
-	Esutils::removeDuplicity(_monitoredRegions);
 }
 
 std::vector<std::vector<Region*> > Mesh::getRegionsWithProperties(const std::vector<Region*> &regions, size_t loadStep, const std::vector<Property> &properties)

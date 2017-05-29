@@ -285,7 +285,6 @@ void CollectedInfo::addGeneralInfo()
 
 void CollectedInfo::addSettings(size_t step)
 {
-	size_t bodies    = _mode & InfoMode::SEPARATE_BODIES    ? _mesh->bodies()           : 1;
 	size_t materials = _mode & InfoMode::SEPARATE_MATERIALS ? _mesh->materials().size() : 1;
 
 	const Region *region = _region;
@@ -293,10 +292,51 @@ void CollectedInfo::addSettings(size_t step)
 		region = _mesh->regions()[0];
 	}
 
+	if (region->elements().size() && region->elements()[0]->params()) {
+		std::vector<std::vector<eslocal>> sMaterialData(_regions.size()), sBodyData(_regions.size());
+
+		for (size_t e = 0; e < region->elements().size(); e++) {
+			size_t regionOffset = 0, material = -1, body = -1;
+			body = region->elements()[e]->param(Element::Params::BODY);
+			if (_mode & InfoMode::SEPARATE_BODIES) {
+				regionOffset += body * materials;
+			}
+			material = region->elements()[e]->param(Element::Params::MATERIAL);
+			if (_mode & InfoMode::SEPARATE_MATERIALS) {
+				regionOffset += material;
+			}
+
+			sMaterialData[regionOffset].push_back(material);
+			sBodyData[regionOffset].push_back(body);
+		}
+
+		for (size_t r = 0; r < _regions.size(); r++) {
+			std::vector<eslocal> *values = new std::vector<eslocal>();
+			if (!Communication::gatherUnknownSize(sMaterialData[r], *values)) {
+				ESINFO(ERROR) << "ESPRESO internal error while collecting region data values.";
+			}
+
+			_regions[r].data.elementDataInteger["material"] = std::make_pair(1, values);
+		}
+		for (size_t r = 0; r < _regions.size(); r++) {
+			std::vector<eslocal> *values = new std::vector<eslocal>();
+			if (!Communication::gatherUnknownSize(sBodyData[r], *values)) {
+				ESINFO(ERROR) << "ESPRESO internal error while collecting region data values.";
+			}
+
+			_regions[r].data.elementDataInteger["body"] = std::make_pair(1, values);
+		}
+	}
+
 	if (region->settings.size() <= step) {
 		return;
 	}
 	for (auto it = region->settings[step].begin(); it != region->settings[step].end(); ++it) {
+		const std::vector<Property> &pGroup = _mesh->propertyGroup(it->first);
+		if (pGroup.front() != it->first) {
+			continue;
+		}
+
 		std::vector<std::vector<double> > sValues(_regions.size());
 
 		for (size_t e = 0; e < region->elements().size(); e++) {
@@ -308,12 +348,13 @@ void CollectedInfo::addSettings(size_t step)
 				regionOffset += region->elements()[e]->param(Element::Params::MATERIAL);
 			}
 
-			sValues[regionOffset].push_back(0);
-			for (size_t n = 0; n < region->elements()[e]->nodes(); n++) {
-				sValues[regionOffset].back() += region->elements()[e]->sumProperty(it->first, n, step, 0);
+			for (auto p = pGroup.begin(); p != pGroup.end(); ++p) {
+				sValues[regionOffset].push_back(0);
+				for (size_t n = 0; n < region->elements()[e]->nodes(); n++) {
+					sValues[regionOffset].back() += region->elements()[e]->sumProperty(*p, n, step, 0, 0, 0);
+				}
+				sValues[regionOffset].back() /= region->elements()[e]->nodes();
 			}
-			sValues[regionOffset].back() /= region->elements()[e]->nodes();
-			sValues[regionOffset].insert(sValues[regionOffset].end(), region->elements()[e]->domains().size() - 1, sValues[regionOffset].back());
 		}
 
 		for (size_t r = 0; r < _regions.size(); r++) {
@@ -324,7 +365,7 @@ void CollectedInfo::addSettings(size_t step)
 
 			std::stringstream ss;
 			ss << it->first;
-			_regions[r].data.elementDataDouble[ss.str()] = std::make_pair(1, values);
+			_regions[r].data.elementDataDouble[ss.str().substr(0, ss.str().find_last_of("_"))] = std::make_pair(pGroup.size(), values);
 		}
 	}
 }
@@ -338,7 +379,6 @@ void CollectedInfo::addSolution(const std::vector<Solution*> &solution)
 	bool status = true;
 	size_t threads = environment->OMP_NUM_THREADS;
 
-	size_t bodies    = _mode & InfoMode::SEPARATE_BODIES    ? _mesh->bodies()           : 1;
 	size_t materials = _mode & InfoMode::SEPARATE_MATERIALS ? _mesh->materials().size() : 1;
 
 	for (size_t i = 0; i < solution.size(); i++) {
@@ -362,7 +402,7 @@ void CollectedInfo::addSolution(const std::vector<Solution*> &solution)
 					}
 
 					eslocal d = std::lower_bound(_mesh->getPartition().begin(), _mesh->getPartition().end(), e + 1) - _mesh->getPartition().begin() - 1;
-					for (size_t p = 0; p < solution[i]->properties; p++) {
+					for (size_t p = 0; p < solution[i]->properties.size(); p++) {
 						rData[regionOffset][t].push_back(solution[i]->get(p, d, e - _mesh->getPartition()[d]));
 					}
 
@@ -376,12 +416,12 @@ void CollectedInfo::addSolution(const std::vector<Solution*> &solution)
 
 				std::vector<double> *collected = new std::vector<double>();
 				status = status && Communication::gatherUnknownSize(sData[r], *collected);
-				_regions[r].data.elementDataDouble[solution[i]->name] = std::make_pair(solution[i]->properties, collected);
+				_regions[r].data.elementDataDouble[solution[i]->name] = std::make_pair(solution[i]->properties.size(), collected);
 			}
 		}
 
 		if (solution[i]->eType == ElementType::NODES) {
-			std::vector<double> sData(solution[i]->properties * _mesh->nodes().size());
+			std::vector<double> sData(solution[i]->properties.size() * _mesh->nodes().size());
 
 			std::vector<size_t> distribution = Esutils::getDistribution(threads, _mesh->nodes().size());
 			#pragma omp parallel for
@@ -389,8 +429,8 @@ void CollectedInfo::addSolution(const std::vector<Solution*> &solution)
 				for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
 
 					for (auto d = _mesh->nodes()[n]->domains().begin(); d != _mesh->nodes()[n]->domains().end(); ++d) {
-						for (size_t p = 0; p < solution[i]->properties; p++) {
-							sData[n * solution[i]->properties + p] += solution[i]->get(p, *d, _mesh->coordinates().localIndex(n, *d));
+						for (size_t p = 0; p < solution[i]->properties.size(); p++) {
+							sData[n * solution[i]->properties.size() + p] += solution[i]->get(p, *d, _mesh->coordinates().localIndex(n, *d));
 						}
 					}
 				}
@@ -401,19 +441,19 @@ void CollectedInfo::addSolution(const std::vector<Solution*> &solution)
 
 			for (size_t r = 0; r < _regions.size(); r++) {
 				std::vector<double> *averaged = new std::vector<double>();
-				_regions[r].data.pointDataDouble[solution[i]->name] = std::make_pair(solution[i]->properties, averaged);
-				averaged->resize(_cIndices[r].size() * solution[i]->properties);
+				_regions[r].data.pointDataDouble[solution[i]->name] = std::make_pair(solution[i]->properties.size(), averaged);
+				averaged->resize(_cIndices[r].size() * solution[i]->properties.size());
 
 				std::vector<size_t> distribution = Esutils::getDistribution(threads, _cIndices[r].size());
 				#pragma omp parallel for
 				for (size_t t = 0; t < threads; t++) {
 					for (size_t id = distribution[t]; id < distribution[t + 1]; id++) {
 
-						for (size_t p = 0; p < solution[i]->properties; p++) {
+						for (size_t p = 0; p < solution[i]->properties.size(); p++) {
 							for (esglobal j = _cIndices[r][id] ? _globalIDsMap[_cIndices[r][id] - 1] : 0; j < _globalIDsMap[_cIndices[r][id]]; j++) {
-								(*averaged)[id * solution[i]->properties + p] += collected[_globalIDs[j] * solution[i]->properties + p];
+								(*averaged)[id * solution[i]->properties.size() + p] += collected[_globalIDs[j] * solution[i]->properties.size() + p];
 							}
-							(*averaged)[id * solution[i]->properties + p] /= _globalIDsMultiplicity[_cIndices[r][id]];
+							(*averaged)[id * solution[i]->properties.size() + p] /= _globalIDsMultiplicity[_cIndices[r][id]];
 						}
 
 					}

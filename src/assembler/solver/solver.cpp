@@ -25,8 +25,9 @@ Solver::Solver(
 		Physics* physics,
 		LinearSolver* linearSolver,
 		output::Store* store,
+		double duration,
 		Matrices restriction)
-: SolverBase(name, physics->name(), mesh), physics(physics), instance(physics->instance()), linearSolver(linearSolver), _store(store), _restriction(~restriction)
+: SolverBase(name, physics->name(), mesh, duration), physics(physics), instance(physics->instance()), linearSolver(linearSolver), _store(store), _restriction(~restriction)
 {
 
 }
@@ -91,9 +92,14 @@ void Solver::storeSubSolution(const Step &step)
 	}
 }
 
-void Solver::assembleMatrices(const Step &step, Matrices matrices)
+void Solver::preprocessData(const Step &step)
 {
-	updateMatrices(step, matrices, {});
+	physics->preprocessData(step);
+}
+
+void Solver::updateMatrices(const Step &step, Matrices matrices)
+{
+	updateMatrices(step, matrices, instance->solutions);
 }
 
 void Solver::updateMatrices(const Step &step, Matrices matrices, const std::vector<Solution*> &solution)

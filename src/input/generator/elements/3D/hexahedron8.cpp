@@ -25,7 +25,7 @@ void Hexahedron8::addElements(std::vector<Element*> &elements, const eslocal ind
 
 void Hexahedron8::addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdge edge)
 {
-	ESINFO(GLOBAL_ERROR) << "Implement addEdges for HEXA20";
+	ESINFO(GLOBAL_ERROR) << "Implement addEdges for HEXA8";
 }
 
 void Hexahedron8::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)

@@ -33,6 +33,7 @@ public:
 	MeshInfo(const Mesh *mesh, InfoMode mode): _mesh(mesh), _mode(mode), _region(NULL) {};
 	MeshInfo(const Mesh *mesh, const Region *region, InfoMode mode): _mesh(mesh), _mode(mode), _region(region) {};
 
+
 	size_t regions() const { return _regions.size(); }
 	const RegionData& region(size_t r) const { return _regions[r]; }
 
@@ -45,11 +46,16 @@ public:
 	virtual void addSolution(const std::vector<Solution*> &solution) =0;
 	virtual void addGeneralInfo() = 0;
 
-	void clearData();
-
 	virtual bool isShrunk() const =0;
 	virtual bool distributed() const =0;
 	virtual Point shrink(const Point &p, eslocal domain) const =0;
+
+	void clearData()
+	{
+		for (size_t r = 0; r < _regions.size(); r++) {
+			_regions[r].clearData();
+		}
+	}
 
 protected:
 	const Mesh *_mesh;

@@ -17,16 +17,10 @@ public:
 protected:
 	virtual std::string format() { return "binary"; }
 
-	virtual void storePointData(const std::string &name, size_t points, const std::vector<std::vector<int> > &data);
-	virtual void storePointData(const std::string &name, size_t points, const std::vector<std::vector<long> > &data);
-	virtual void storePointData(const std::string &name, size_t points, const std::vector<std::vector<double> > &data);
 	virtual void storePointData(const std::string &name, size_t points, const std::vector<int> &data);
 	virtual void storePointData(const std::string &name, size_t points, const std::vector<long> &data);
 	virtual void storePointData(const std::string &name, size_t points, const std::vector<double> &data);
 
-	virtual void storeCellData(const std::string &name, size_t cells, const std::vector<std::vector<int> > &data);
-	virtual void storeCellData(const std::string &name, size_t cells, const std::vector<std::vector<long> > &data);
-	virtual void storeCellData(const std::string &name, size_t cells, const std::vector<std::vector<double> > &data);
 	virtual void storeCellData(const std::string &name, size_t cells, const std::vector<int> &data);
 	virtual void storeCellData(const std::string &name, size_t cells, const std::vector<long> &data);
 	virtual void storeCellData(const std::string &name, size_t cells, const std::vector<double> &data);

@@ -4,6 +4,7 @@
 
 #include "nonlinearsolver.h"
 #include "transientsolver.h"
+#include "../solver.h"
 
 namespace espreso {
 
@@ -28,6 +29,14 @@ struct LoadStepSettingsBase: public Configuration {
 		{ "LINEAR"   , MODE::LINEAR   , "Linear." },
 		{ "NONLINEAR", MODE::NONLINEAR, "Non-linear." },
 	}));
+
+	OPTION(SOLVER_LIBRARY, solver_library, "Linear solver used for computing a system.", SOLVER_LIBRARY::ESPRESO, OPTIONS({
+		{ "ESPRESO", SOLVER_LIBRARY::ESPRESO, "ESPRESO solver [FETI methods]" },
+		{ "HYPRE"  , SOLVER_LIBRARY::HYPRE  , "Hypre solver [multigrid methods]" },
+	}));
+
+	SUBCONFIG(ESPRESOSolver, espreso, "Internal FETI solver options.");
+	SUBCONFIG(HypreSolver  , hypre  , "Multigrid solver setting.");
 
 	PARAMETER(double, duration_time, "Duration time of the load step.", 1);
 

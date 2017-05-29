@@ -70,6 +70,8 @@ struct Triple {
 		return *this;
 	}
 
+	bool operator==(const Triple<Ttype> &p) { return x == p.x && y == p.y && z == p.z; }
+
 	Ttype sum() const { return x + y + z; }
 	Ttype mul() const { return x * y * z; }
 

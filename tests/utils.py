@@ -86,6 +86,8 @@ class TestCaseCreator:
         omit = re.compile(omit)
         examples = []
         for root, subFolders, files in os.walk(folder):
+            if "results" in root.split("/"):
+                continue
             if not skip(files):
                 for file in files:
                     if file.endswith(ext) and not omit.match(file):
@@ -251,6 +253,7 @@ class Espreso:
         check(result, error, "install")
 
     def run_program(self, program, cwd="", config={}, args=[]):
+        config["ENV::REMOVE_OLD_RESULTS"] = "1"
         program += [ str(x) for x in args ]
         for key, value in config.items():
             program += [ "--{0}={1}".format(key, value) ]

@@ -2,6 +2,7 @@
 
 #include "../generic/SparseMatrix.h"
 #include "../specific/sparsesolvers.h"
+#include "../specific/densesolvers.h"
 
 #include <omp.h>
 #include "mpi.h"
@@ -153,7 +154,12 @@ public:
 	SEQ_VECTOR <eslocal> lambda_map_sub_local;
 
 //	SparseSolverAcc Kplus;
+
+#ifdef ESBEM
+	DenseSolverCPU Kplus;
+#else
 	SparseSolverCPU Kplus;
+#endif
 
 	SparseSolverCPU KplusF;
 	SEQ_VECTOR <double> vec_c;

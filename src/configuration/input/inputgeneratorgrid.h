@@ -62,7 +62,9 @@ struct GridConfiguration: public Configuration {
 	SUBMAP(std::string, std::string, nodes, "List of nodes regions.", "<REGION_NAME>", "<INTERVAL / PATTERN[ALL]>");
 	SUBMAP(std::string, std::string, edges, "List of edges regions.", "<REGION_NAME>", "<INTERVAL / PATTERN[ALL]>");
 	SUBMAP(std::string, std::string, faces, "List of faces regions.", "<REGION_NAME>", "<INTERVAL / PATTERN[ALL]>");
-	SUBMAP(std::string, std::string, elements, "List of elements regions.", "<REGION_NAME>", "<INTERVAL / PATTERN[ALL;CHESSBOARD_WHITE;CHESSBOARD_BLACK]>");
+	SUBMAP(std::string, std::string, elements, "List of elements regions.", "<REGION_NAME>", "<INTERVAL / PATTERN[ALL;CHESSBOARD_WHITE;CHESSBOARD_BLACK;NOT_SELECTED]>");
+
+	PARAMETER(size_t, chessboard_size, "Number of squares of chessboard in one direction", 2);
 };
 
 }

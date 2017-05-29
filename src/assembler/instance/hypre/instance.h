@@ -18,9 +18,9 @@ struct HypreInstance: public OldInstance
 public:
 	HypreInstance(const TConfiguration &configuration, const OutputConfiguration &output, Mesh &mesh): OldInstance(mesh),
 	_output(output),
-	_configuration(configuration.hypre),
+	_configuration(configuration.physics_solver.load_steps_settings.at(1)->hypre),
 	feiPtr(MPI_COMM_WORLD),
-	_constrains(configuration.espreso, mesh),
+	_constrains(configuration.physics_solver.load_steps_settings.at(1)->espreso, mesh),
 	_physics(mesh, _constrains, configuration),
 	_store(output, &mesh, "results")
 	{
@@ -61,7 +61,7 @@ struct HypreInstance: public OldInstance
 {
 public:
 	HypreInstance(const TConfiguration &configuration, const OutputConfiguration &output, Mesh &mesh)
-	: OldInstance(mesh), _configuration(configuration.hypre), _constrains(configuration.espreso, mesh), _physics(mesh, _constrains, configuration)
+	: OldInstance(mesh), _configuration(configuration.physics_solver.load_steps_settings.at(1)->hypre), _constrains(configuration.physics_solver.load_steps_settings.at(1)->espreso, mesh), _physics(mesh, _constrains, configuration)
 	{
 		ESINFO(GLOBAL_ERROR) << "HYPRE is not linked! Specify HYPRE::INCLUDE and HYPRE::LIBPATH";
 	}

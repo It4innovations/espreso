@@ -26,6 +26,7 @@ public:
 			Physics* physics,
 			LinearSolver* linearSolver,
 			output::Store* store,
+			double duration,
 			Matrices restriction);
 
 	virtual void run(Step &step) =0;
@@ -43,7 +44,8 @@ public:
 	LinearSolver* linearSolver;
 
 protected:
-	void assembleMatrices(const Step &step, Matrices matrices);
+	void preprocessData(const Step &step);
+	void updateMatrices(const Step &step, Matrices matrices);
 	void updateMatrices(const Step &step, Matrices matrices, const std::vector<Solution*> &solution);
 
 	/// z = a * x + b + y

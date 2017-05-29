@@ -209,11 +209,12 @@ public:
 
 	virtual Element* addFace(const std::vector<eslocal> &nodes) = 0;
 
+	bool isFaceSwapped(const Element* face) const;
 	void rotateOutside(const Element* parent, const Coordinates &coordinates, Point &normal) const;
 
 	bool hasProperty(Property property, size_t step) const;
-	double sumProperty(Property property, eslocal node, size_t step, double defaultValue) const;
-	double getProperty(Property property, eslocal node, size_t step, double defaultValue) const;
+	double sumProperty(Property property, eslocal node, size_t step, double time, double temperature, double defaultValue) const;
+	double getProperty(Property property, eslocal node, size_t step, double time, double temperature, double defaultValue) const;
 
 protected:
 	virtual Element* copy() const =0;

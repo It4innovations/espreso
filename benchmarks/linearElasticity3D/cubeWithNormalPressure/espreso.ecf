@@ -64,14 +64,24 @@ GENERATOR { # ESPRESO internal mesh generator.
 
 LINEAR_ELASTICITY_3D {
 
-  SOLVER_LIBRARY   ESPRESO;
+  PHYSICS_SOLVER {
+    LOAD_STEPS          1;
 
-  ESPRESO {
+    LOAD_STEPS_SETTINGS {
+      1 {
+        TYPE        STEADY_STATE;
+        MODE              LINEAR;
+        SOLVER_LIBRARY   ESPRESO;
 
-    METHOD          TOTAL_FETI;
-    SOLVER                 PCG;
-    PRECONDITIONER      LUMPED;
-    REGULARIZATION NULL_PIVOTS;
+        ESPRESO {
+
+          METHOD          TOTAL_FETI;
+          SOLVER                 PCG;
+          PRECONDITIONER      LUMPED;
+          REGULARIZATION NULL_PIVOTS;
+        }
+      }
+    }
   }
 
   MATERIALS { # Vector of materials (counterd from 1).

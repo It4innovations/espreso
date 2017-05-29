@@ -2,6 +2,7 @@
 #include "equalityconstraints.h"
 
 #include "../instance.h"
+#include "../step.h"
 
 #include "../../basis/utilities/utils.h"
 #include "../../basis/utilities/communication.h"
@@ -43,7 +44,7 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 						continue;
 					}
 					const std::vector<eslocal>& indices = nodes[i]->DOFsIndices();
-					double value = nodes[i]->getProperty(DOFs[dof], 0, loadStep, 0);
+					double value = nodes[i]->getProperty(DOFs[dof], 0, loadStep, 0, 0, 0);
 					for(size_t d = 0; d < nodes[i]->domains().size(); d++) {
 						if (indices[d * DOFs.size() + dof] != -1) {
 							dirichlet[nodes[i]->domains()[d]][t].push_back(indices[d * DOFs.size() + dof] + 1);
@@ -726,10 +727,8 @@ void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std:
 	}
 }
 
-void EqualityConstraints::insertDirichletToB1(Instance &instance, const std::vector<Region*> &regions, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs, const std::vector<size_t> &DOFsOffsets, bool withRedundantMultiplier)
+void EqualityConstraints::insertDirichletToB1(Instance &instance, const Step &step, const std::vector<Region*> &regions, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs, const std::vector<size_t> &DOFsOffsets, bool withRedundantMultiplier)
 {
-	size_t loadStep = 0;
-
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, nodes.size());
 
@@ -737,7 +736,9 @@ void EqualityConstraints::insertDirichletToB1(Instance &instance, const std::vec
 	std::vector<std::vector<std::vector<esglobal> > > dirichlet(instance.domains, std::vector<std::vector<esglobal> >(threads));
 	std::vector<std::vector<std::vector<double> > > dirichletValues(instance.domains, std::vector<std::vector<double> >(threads));
 
-	std::vector<std::vector<Region*> > fixedRegions = Mesh::getRegionsWithProperties(regions, loadStep, DOFs);
+	std::vector<std::vector<Region*> > fixedRegions = Mesh::getRegionsWithProperties(regions, step.step, DOFs);
+
+	double temp = 0; // irrelevant -> set to zero
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -748,7 +749,7 @@ void EqualityConstraints::insertDirichletToB1(Instance &instance, const std::vec
 					if (!withRedundantMultiplier && nodes[i]->clusters()[0] != environment->MPIrank) {
 						continue;
 					}
-					double value = nodes[i]->getProperty(DOFs[dof], 0, loadStep, 0);
+					double value = nodes[i]->getProperty(DOFs[dof], 0, step.step, step.currentTime, temp, 0);
 					for(size_t d = 0; d < nodes[i]->domains().size(); d++) {
 						if (nodes[i]->DOFIndex(nodes[i]->domains()[d], DOFsOffsets[dof]) != -1) {
 							dirichlet[nodes[i]->domains()[d]][t].push_back(nodes[i]->DOFIndex(nodes[i]->domains()[d], DOFsOffsets[dof]) + 1);
@@ -832,10 +833,8 @@ void EqualityConstraints::insertDirichletToB1(Instance &instance, const std::vec
 }
 
 
-std::vector<esglobal> EqualityConstraints::computeLambdasID(Instance &instance, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<size_t> &DOFsOffsets, bool withRedundantMultiplier)
+std::vector<esglobal> EqualityConstraints::computeLambdasID(Instance &instance, const Step &step, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<size_t> &DOFsOffsets, bool withRedundantMultiplier)
 {
-	size_t loadStep = 0;
-
 	std::vector<esglobal> lambdasID(elements.size() * DOFs.size(), -1);
 
 	auto n2i = [ & ] (size_t neighbour) {
@@ -850,7 +849,7 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Instance &instance, 
 	std::vector<std::vector<std::vector<esglobal> > > sLambdas(threads, std::vector<std::vector<esglobal> >(neighbours.size()));
 	std::vector<std::vector<std::vector<std::pair<esglobal, esglobal> > > > rLambdas(threads, std::vector<std::vector<std::pair<esglobal,esglobal> > >(neighbours.size()));
 
-	std::vector<std::vector<Region*> > skippedRegions = Mesh::getRegionsWithProperties(regions, loadStep, DOFs);
+	std::vector<std::vector<Region*> > skippedRegions = Mesh::getRegionsWithProperties(regions, step.step, DOFs);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -945,13 +944,13 @@ std::vector<esglobal> EqualityConstraints::computeLambdasID(Instance &instance, 
 }
 
 
-void EqualityConstraints::insertElementGluingToB1(Instance &instance, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<size_t> &DOFsOffsets, bool withRedundantMultiplier, bool withScaling)
+void EqualityConstraints::insertElementGluingToB1(Instance &instance, const Step &step, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<size_t> &DOFsOffsets, bool withRedundantMultiplier, bool withScaling)
 {
 	auto n2i = [ & ] (size_t neighbour) {
 		return std::lower_bound(neighbours.begin(), neighbours.end(), neighbour) - neighbours.begin();
 	};
 
-	std::vector<esglobal> lambdasID = computeLambdasID(instance, neighbours, regions, elements, DOFs, DOFsOffsets, withRedundantMultiplier);
+	std::vector<esglobal> lambdasID = computeLambdasID(instance, step, neighbours, regions, elements, DOFs, DOFsOffsets, withRedundantMultiplier);
 
 	std::vector<eslocal> permutation(lambdasID.size());
 	std::iota(permutation.begin(), permutation.end(), 0);

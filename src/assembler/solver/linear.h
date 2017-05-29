@@ -14,6 +14,7 @@ public:
 			Physics* physics,
 			LinearSolver* linearSolver,
 			output::Store* store,
+			double duration,
 			Matrices restriction = Matrices::NONE);
 
 	virtual void run(Step &step);

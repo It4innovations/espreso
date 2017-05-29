@@ -12,8 +12,9 @@ Linear::Linear(
 		Physics* physics,
 		LinearSolver* linearSolver,
 		output::Store* store,
+		double duration,
 		Matrices restriction)
-: Solver("STEADY STATE", mesh, physics, linearSolver, store, restriction)
+: Solver("STEADY STATE", mesh, physics, linearSolver, store, duration, restriction)
 {
 
 }
@@ -27,12 +28,14 @@ void Linear::run(Step &step)
 	preprocess(step);
 	solve(step);
 	postprocess(step);
-	finalize(step);
+
+	instance->clear();
 }
 
 void Linear::init(Step &step)
 {
-	assembleMatrices(step, Matrices::M | Matrices::K | Matrices::f);
+	preprocessData(step);
+	updateMatrices(step, Matrices::M | Matrices::K | Matrices::f);
 	composeGluing(step, Matrices::B1);
 	regularizeMatrices(step, Matrices::K);
 	composeGluing(step, Matrices::B0);

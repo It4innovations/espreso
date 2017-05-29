@@ -106,7 +106,7 @@ void Pyramid13::addElements(std::vector<Element*> &elements, const eslocal indic
 
 void Pyramid13::addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdge edge)
 {
-	ESINFO(GLOBAL_ERROR) << "Implement addEdges for HEXA20";
+	ESINFO(GLOBAL_ERROR) << "Implement addEdges for PYRAMID13";
 }
 
 void Pyramid13::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)

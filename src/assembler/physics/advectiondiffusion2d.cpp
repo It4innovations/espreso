@@ -21,6 +21,8 @@
 
 using namespace espreso;
 
+size_t NewAdvectionDiffusion2D::offset = -1;
+
 NewAdvectionDiffusion2D::NewAdvectionDiffusion2D(Mesh *mesh, Instance *instance, const AdvectionDiffusion2DConfiguration &configuration)
 : Physics2D("ADVECTION DIFFUSION 2D", mesh, instance), _configuration(configuration)
 {
@@ -56,39 +58,121 @@ void NewAdvectionDiffusion2D::prepareTotalFETI()
 	_mesh->loadProperty(_configuration.heat_flow          , { }         , { Property::HEAT_FLOW });
 
 	for (auto it = _configuration.convection.begin(); it != _configuration.convection.end(); ++it) {
+		size_t loadStep = it->first - 1;
 		for (auto regions = it->second.begin(); regions != it->second.end(); ++regions) {
 			std::map<std::string, std::string> values;
-			values[regions->first] = regions->second->external_temperature;
-			_mesh->loadProperty(values, { }, { Property::EXTERNAL_TEMPERATURE });
-			values[regions->first] = regions->second->heat_transfer_coefficient;
-			_mesh->loadProperty(values, { }, { Property::HEAT_TRANSFER_COEFFICIENT });
 
-			values[regions->first] = regions->second->wall_height;
-			_mesh->loadProperty(values, { }, { Property::WALL_HEIGHT });
-			values[regions->first] = regions->second->tilt_angle;
-			_mesh->loadProperty(values, { }, { Property::TILT_ANGLE });
-			values[regions->first] = regions->second->diameter;
-			_mesh->loadProperty(values, { }, { Property::DIAMETER });
-			values[regions->first] = regions->second->plate_length;
-			_mesh->loadProperty(values, { }, { Property::PLATE_LENGTH });
-			values[regions->first] = regions->second->fluid_velocity;
-			_mesh->loadProperty(values, { }, { Property::FLUID_VELOCITY });
-			values[regions->first] = regions->second->plate_distance;
-			_mesh->loadProperty(values, { }, { Property::PLATE_DISTANCE });
-			values[regions->first] = regions->second->length;
-			_mesh->loadProperty(values, { }, { Property::LENGTH });
-			values[regions->first] = regions->second->absolute_pressure;
-			_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE });
+			values[regions->first] = regions->second->external_temperature;
+			_mesh->loadProperty(values, { }, { Property::EXTERNAL_TEMPERATURE }, loadStep);
+
+			switch (regions->second->type) {
+			case CONVECTION_TYPE::USER:
+				values[regions->first] = regions->second->heat_transfer_coefficient;
+				_mesh->loadProperty(values, { }, { Property::HEAT_TRANSFER_COEFFICIENT }, loadStep);
+				break;
+			case CONVECTION_TYPE::EXTERNAL_NATURAL:
+
+				switch (regions->second->variant) {
+				case CONVECTION_VARIANT::VERTICAL_WALL:
+					values[regions->first] = regions->second->wall_height;
+					_mesh->loadProperty(values, { }, { Property::WALL_HEIGHT }, loadStep);
+					values[regions->first] = regions->second->absolute_pressure;
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
+					break;
+				case CONVECTION_VARIANT::INCLINED_WALL:
+					values[regions->first] = regions->second->wall_height;
+					_mesh->loadProperty(values, { }, { Property::WALL_HEIGHT }, loadStep);
+					values[regions->first] = regions->second->tilt_angle;
+					_mesh->loadProperty(values, { }, { Property::TILT_ANGLE }, loadStep);
+					values[regions->first] = regions->second->absolute_pressure;
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
+					break;
+				case CONVECTION_VARIANT::HORIZONTAL_CYLINDER:
+					values[regions->first] = regions->second->diameter;
+					_mesh->loadProperty(values, { }, { Property::DIAMETER }, loadStep);
+					values[regions->first] = regions->second->absolute_pressure;
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
+					break;
+				case CONVECTION_VARIANT::SPHERE:
+					values[regions->first] = regions->second->diameter;
+					_mesh->loadProperty(values, { }, { Property::DIAMETER }, loadStep);
+					values[regions->first] = regions->second->absolute_pressure;
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
+					break;
+				case CONVECTION_VARIANT::HORIZONTAL_PLATE_UP:
+				case CONVECTION_VARIANT::HORIZONTAL_PLATE_DOWN:
+					values[regions->first] = regions->second->length;
+					_mesh->loadProperty(values, { }, { Property::LENGTH }, loadStep);
+					values[regions->first] = regions->second->absolute_pressure;
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
+					break;
+				default:
+					break;
+				}
+
+				break;
+			case CONVECTION_TYPE::EXTERNAL_FORCED:
+
+				switch (regions->second->variant) {
+				case CONVECTION_VARIANT::AVERAGE_PLATE:
+					values[regions->first] = regions->second->length;
+					_mesh->loadProperty(values, { }, { Property::LENGTH }, loadStep);
+					values[regions->first] = regions->second->fluid_velocity;
+					_mesh->loadProperty(values, { }, { Property::FLUID_VELOCITY }, loadStep);
+					values[regions->first] = regions->second->absolute_pressure;
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
+					break;
+				default:
+					break;
+				}
+
+				break;
+			case CONVECTION_TYPE::INTERNAL_NATURAL:
+
+				switch (regions->second->variant) {
+				case CONVECTION_VARIANT::CIRCULAR_TUBE:
+					values[regions->first] = regions->second->diameter;
+					_mesh->loadProperty(values, { }, { Property::DIAMETER }, loadStep);
+					values[regions->first] = regions->second->wall_height;
+					_mesh->loadProperty(values, { }, { Property::WALL_HEIGHT }, loadStep);
+					values[regions->first] = regions->second->absolute_pressure;
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
+					break;
+				default:
+					break;
+				}
+
+				break;
+			case CONVECTION_TYPE::INTERNAL_FORCED:
+
+				switch (regions->second->variant) {
+				case CONVECTION_VARIANT::TUBE:
+					values[regions->first] = regions->second->diameter;
+					_mesh->loadProperty(values, { }, { Property::DIAMETER }, loadStep);
+					values[regions->first] = regions->second->fluid_velocity;
+					_mesh->loadProperty(values, { }, { Property::FLUID_VELOCITY }, loadStep);
+					values[regions->first] = regions->second->absolute_pressure;
+					_mesh->loadProperty(values, { }, { Property::ABSOLUTE_PRESSURE }, loadStep);
+					break;
+				default:
+					break;
+				}
+
+				break;
+
+			}
+
 		}
 	}
 
 	for (auto it = _configuration.diffuse_radiation.begin(); it != _configuration.diffuse_radiation.end(); ++it) {
+		size_t loadStep = it->first - 1;
 		for (auto regions = it->second.begin(); regions != it->second.end(); ++regions) {
 			std::map<std::string, std::string> values;
 			values[regions->first] = regions->second->external_temperature;
-			_mesh->loadProperty(values, { }, { Property::EXTERNAL_TEMPERATURE });
+			_mesh->loadProperty(values, { }, { Property::EXTERNAL_TEMPERATURE }, loadStep);
 			values[regions->first] = regions->second->emissivity;
-			_mesh->loadProperty(values, { }, { Property::EMISSIVITY });
+			_mesh->loadProperty(values, { }, { Property::EMISSIVITY }, loadStep);
 		}
 	}
 
@@ -134,6 +218,26 @@ void NewAdvectionDiffusion2D::analyticRegularization(size_t domain)
 	_instance->RegMat[domain].ConvertToCSR(1);
 }
 
+void NewAdvectionDiffusion2D::preprocessData(const Step &step)
+{
+	if (offset != -1) {
+		return;
+	}
+	offset = _instance->solutions.size();
+	_instance->solutions.resize(offset + SolutionIndex::SIZE);
+	_instance->primalSolution.resize(_mesh->parts());
+
+	#pragma omp parallel for
+	for (size_t p = 0; p < _mesh->parts(); p++) {
+		_instance->primalSolution[p].reserve(pointDOFs().size() * _mesh->coordinates().localSize(p));
+		for (size_t n = 0; n < _mesh->coordinates().localSize(p); n++) {
+			_instance->primalSolution[p].push_back(_mesh->nodes()[_mesh->coordinates().clusterIndex(n, p)]->getProperty(Property::INITIAL_TEMPERATURE, 0, step.step, step.currentTime, 0, 273.15 + 20));
+		}
+	}
+
+	_instance->solutions[offset + SolutionIndex::TEMPERATURE] = new Solution(*_mesh, "temperature", ElementType::NODES, pointDOFs(), _instance->primalSolution);
+}
+
 void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD) const
 {
 	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
@@ -169,14 +273,16 @@ void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Ele
 
 	auto derivation = [&] (MATERIAL_PARAMETER p, double h) {
 		return (
-				material->get(p)->evaluate(e->node(node), step.step, temp + h) -
-				material->get(p)->evaluate(e->node(node), step.step, temp - h)
+				material->get(p)->evaluate(e->node(node), step.currentTime, temp + h) -
+				material->get(p)->evaluate(e->node(node), step.currentTime, temp - h)
 				) / (2 * h);
+
+
 	};
 
 	switch (material->getModel(PHYSICS::ADVECTION_DIFFUSION_2D)) {
 	case MATERIAL_MODEL::ISOTROPIC:
-		C(0, 0) = C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.step, temp);
+		C(0, 0) = C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.currentTime, temp);
 		C(0, 1) = C(1, 0) = 0;
 		if (_configuration.tangent_matrix_correction) {
 			_CD(0, 0) = _CD(1, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, temp / 1e4);
@@ -184,8 +290,8 @@ void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Ele
 		}
 		break;
 	case MATERIAL_MODEL::DIAGONAL:
-		C(0, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.step, temp);
-		C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.step, temp);
+		C(0, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.currentTime, temp);
+		C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.currentTime, temp);
 		C(0, 1) = C(1, 0) = 0;
 		if (_configuration.tangent_matrix_correction) {
 			_CD(0, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, temp / 1e4);
@@ -194,9 +300,9 @@ void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Ele
 		}
 		break;
 	case MATERIAL_MODEL::SYMMETRIC:
-		C(0, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.step, temp);
-		C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.step, temp);
-		C(1, 0) = C(0, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(node), step.step, temp);
+		C(0, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.currentTime, temp);
+		C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.currentTime, temp);
+		C(1, 0) = C(0, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(node), step.currentTime, temp);
 		if (_configuration.tangent_matrix_correction) {
 			_CD(0, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, temp / 1e4);
 			_CD(1, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY, temp / 1e4);
@@ -204,10 +310,10 @@ void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Ele
 		}
 		break;
 	case MATERIAL_MODEL::ANISOTROPIC:
-		C(0, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.step, temp);
-		C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.step, temp);
-		C(0, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(node), step.step, temp);
-		C(1, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX)->evaluate(e->node(node), step.step, temp);
+		C(0, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX)->evaluate(e->node(node), step.currentTime, temp);
+		C(1, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY)->evaluate(e->node(node), step.currentTime, temp);
+		C(0, 1) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XY)->evaluate(e->node(node), step.currentTime, temp);
+		C(1, 0) = material->get(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX)->evaluate(e->node(node), step.currentTime, temp);
 		if (_configuration.tangent_matrix_correction) {
 			_CD(0, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, temp / 1e4);
 			_CD(1, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY, temp / 1e4);
@@ -258,23 +364,19 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 	}
 
 	for (size_t i = 0; i < e->nodes(); i++) {
-		if (solution.size()) {
-			temp = solution[0]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(i), e->domains().front()));
-		} else {
-			temp = e->getProperty(Property::INITIAL_TEMPERATURE, i, step.step, 273.15 + 20);
-		}
+		temp = solution[offset + SolutionIndex::TEMPERATURE]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(i), e->domains().front()));
 		T(i, 0) = temp;
 		coordinates(i, 0) = _mesh->coordinates()[e->node(i)].x;
 		coordinates(i, 1) = _mesh->coordinates()[e->node(i)].y;
-		thickness(i, 0) = e->getProperty(Property::THICKNESS, i, step.step, 1);
+		thickness(i, 0) = e->getProperty(Property::THICKNESS, i, step.step, step.currentTime, temp, 1);
 		m(i, 0) =
-				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(e->node(i), step.step, temp) *
-				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(e->node(i), step.step, temp) *
+				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(e->node(i), step.currentTime, temp) *
+				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(e->node(i), step.currentTime, temp) *
 				thickness(i, 0);
 
-		U(i, 0) = e->getProperty(Property::TRANSLATION_MOTION_X, i, step.step, 0) * m(i, 0);
-		U(i, 1) = e->getProperty(Property::TRANSLATION_MOTION_Y, i, step.step, 0) * m(i, 0);
-		f(i, 0) = e->sumProperty(Property::HEAT_SOURCE, i, step.step, 0) * thickness(i, 0);
+		U(i, 0) = e->getProperty(Property::TRANSLATION_MOTION_X, i, step.step, step.currentTime, temp, 0) * m(i, 0);
+		U(i, 1) = e->getProperty(Property::TRANSLATION_MOTION_Y, i, step.step, step.currentTime, temp, 0) * m(i, 0);
+		f(i, 0) = e->sumProperty(Property::HEAT_SOURCE, i, step.step, step.currentTime, temp, 0) * thickness(i, 0);
 		assembleMaterialMatrix(step, e, i, temp, K, CD);
 	}
 
@@ -392,10 +494,10 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 		}
 		if (matrices & (Matrices::K | Matrices::R)) {
 			if (_configuration.tangent_matrix_correction) {
-				BT.multiply(e->dN()[gp], T);
+				BT.multiply(dND, T);
 				BTN.multiply(BT, e->N()[gp]);
 				CDBTN.multiply(CDe, BTN);
-				tangentK.multiply(e->dN()[gp], CDBTN, 1, 1, true);
+				tangentK.multiply(dND, CDBTN,  detJ * e->weighFactor()[gp] * gpThickness(0, 0), 1, true);
 			}
 			Ke.multiply(dND, Ce * dND, detJ * e->weighFactor()[gp] * gpThickness(0, 0), 1, true);
 			Ke.multiply(e->N()[gp], b_e, detJ * e->weighFactor()[gp], 1, true);
@@ -434,7 +536,7 @@ void NewAdvectionDiffusion2D::processFace(const Step &step, Matrices matrices, c
 	ESINFO(ERROR) << "Advection diffusion 2D cannot process face";
 }
 
-static void convectionMatParameters(const AdvectionDiffusionConvection &convection, const Element *e, size_t node, size_t step, double temp, double T_EXT, double &rho, double &dynamic_viscosity, double &dynamic_viscosity_T, double &heat_capacity, double &thermal_conductivity )
+static void convectionMatParameters(const AdvectionDiffusionConvection &convection, const Element *e, size_t node, Step step, double temp, double T_EXT, double &rho, double &dynamic_viscosity, double &dynamic_viscosity_T, double &heat_capacity, double &thermal_conductivity )
 {
 
 
@@ -445,7 +547,7 @@ static void convectionMatParameters(const AdvectionDiffusionConvection &convecti
 
 
 		gas_constant = 286.9;
-		rho = (e->getProperty(Property::ABSOLUTE_PRESSURE, node, step, 0)) / (gas_constant * T_EXT);
+		rho = (e->getProperty(Property::ABSOLUTE_PRESSURE, node, step.step, step.currentTime, T_EXT, 0)) / (gas_constant * T_EXT);
 
 
 		if ((T_EXT >=200) && (T_EXT <= 1600)){
@@ -615,9 +717,9 @@ static void convectionMatParameters(const AdvectionDiffusionConvection &convecti
 		}else if ((T_EXT > 293) && (T_EXT <= 373 )){
 			heat_capacity = -13408.1491 + 123.044152 * T_EXT - 0.335401786 * pow(T_EXT,2.0) + 3.125E-4 * pow(T_EXT,3.0);
 		}else if (T_EXT < 223){
-			heat_capacity = heat_capacity = -117056.38 + 1816.76208 * 223.0 - 10.305786 * pow(223.0,2.0) + 0.0256691919 * pow(223.0,3.0) - 2.36742424E-5 * pow(223.0,4.0);
+			heat_capacity = -117056.38 + 1816.76208 * 223.0 - 10.305786 * pow(223.0,2.0) + 0.0256691919 * pow(223.0,3.0) - 2.36742424E-5 * pow(223.0,4.0);
 		}else if (T_EXT > 373){
-			heat_capacity = heat_capacity = -13408.1491 + 123.044152 * 373.0 - 0.335401786 * pow(373.0,2.0) + 3.125E-4 * pow(373.0,3.0);
+			heat_capacity = -13408.1491 + 123.044152 * 373.0 - 0.335401786 * pow(373.0,2.0) + 3.125E-4 * pow(373.0,3.0);
 		}
 
 
@@ -626,9 +728,9 @@ static void convectionMatParameters(const AdvectionDiffusionConvection &convecti
 		}else if ((T_EXT > 273) && (T_EXT <= 373 )){
 			dynamic_viscosity = 91.4524999 - 1.33227058 * T_EXT + 0.00777680216 * pow(T_EXT,2.0) - 2.27271368E-5 *  pow(T_EXT,3.0) + 3.32419673E-8 * pow(T_EXT,4.0) - 1.94631023E-11 * pow(T_EXT,5.0);
 		}else if (T_EXT < 243){
-			dynamic_viscosity = dynamic_viscosity = 4492.20229 - 64.7408879 * 243.0 + 0.349900959 * pow(243.0,2.0) - 8.40477E-4 * pow(243.0,3.0) + 7.57041667E-7 * pow(243.0,4.0);
+			dynamic_viscosity = 4492.20229 - 64.7408879 * 243.0 + 0.349900959 * pow(243.0,2.0) - 8.40477E-4 * pow(243.0,3.0) + 7.57041667E-7 * pow(243.0,4.0);
 		}else if (T_EXT > 373){
-			dynamic_viscosity = dynamic_viscosity = 91.4524999 - 1.33227058 * 373.0 + 0.00777680216 * pow(373.0,2.0) - 2.27271368E-5 *  pow(373.0,3.0) + 3.32419673E-8 * pow(373.0,4.0) - 1.94631023E-11 * pow(373.0,5.0);
+			dynamic_viscosity = 91.4524999 - 1.33227058 * 373.0 + 0.00777680216 * pow(373.0,2.0) - 2.27271368E-5 *  pow(373.0,3.0) + 3.32419673E-8 * pow(373.0,4.0) - 1.94631023E-11 * pow(373.0,5.0);
 
 		}
 
@@ -637,9 +739,9 @@ static void convectionMatParameters(const AdvectionDiffusionConvection &convecti
 		}else if ((temp > 273) && (temp <= 373 )){
 			dynamic_viscosity_T = 91.4524999 - 1.33227058 * temp + 0.00777680216 * pow(temp,2.0) - 2.27271368E-5 *  pow(temp,3.0) + 3.32419673E-8 * pow(temp,4.0) - 1.94631023E-11 * pow(temp,5.0);
 		}else if (temp < 243){
-			dynamic_viscosity_T = dynamic_viscosity = 4492.20229 - 64.7408879 * 243.0 + 0.349900959 * pow(243.0,2.0) - 8.40477E-4 * pow(243.0,3.0) + 7.57041667E-7 * pow(243.0,4.0);
+			dynamic_viscosity_T = 4492.20229 - 64.7408879 * 243.0 + 0.349900959 * pow(243.0,2.0) - 8.40477E-4 * pow(243.0,3.0) + 7.57041667E-7 * pow(243.0,4.0);
 		}else if (temp > 373){
-			dynamic_viscosity_T = dynamic_viscosity = 91.4524999 - 1.33227058 * 373.0 + 0.00777680216 * pow(373.0,2.0) - 2.27271368E-5 *  pow(373.0,3.0) + 3.32419673E-8 * pow(373.0,4.0) - 1.94631023E-11 * pow(373.0,5.0);
+			dynamic_viscosity_T = 91.4524999 - 1.33227058 * 373.0 + 0.00777680216 * pow(373.0,2.0) - 2.27271368E-5 *  pow(373.0,3.0) + 3.32419673E-8 * pow(373.0,4.0) - 1.94631023E-11 * pow(373.0,5.0);
 
 		}
 
@@ -652,7 +754,7 @@ static void convectionMatParameters(const AdvectionDiffusionConvection &convecti
 }
 
 
-static double computeHTC(const AdvectionDiffusionConvection &convection, const Element *e, size_t node, size_t step, double temp)
+static double computeHTC(const AdvectionDiffusionConvection &convection, const Element *e, size_t node, Step step, double temp)
 {
 //	e->getProperty(Property::HEAT_TRANSFER_COEFFICIENT, node, step, 0);
 //	e->getProperty(Property::WALL_HEIGHT, node, step, 0);
@@ -666,13 +768,13 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 	double htc = 0;
 	switch (convection.type) {
 	case espreso::CONVECTION_TYPE::USER:{
-		htc = e->getProperty(Property::HEAT_TRANSFER_COEFFICIENT, node, step, 0);
+		htc = e->getProperty(Property::HEAT_TRANSFER_COEFFICIENT, node, step.step, step.currentTime, temp, 0);
 	}break;
 	case espreso::CONVECTION_TYPE::EXTERNAL_NATURAL:{
 
 		double T_AVG, g, rho, dynamic_viscosity, heat_capacity, thermal_conductivity, dynamic_viscosity_T;
 
-		T_AVG = (e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0) + temp) / 2.0;
+		T_AVG = (e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step.step, step.currentTime, temp, 0) + temp) / 2.0;
 		g = 9.81;
 
 		convectionMatParameters(convection, e, node, step, temp, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
@@ -680,60 +782,60 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 		switch (convection.variant) {
 		case espreso::CONVECTION_VARIANT::INCLINED_WALL: {
 
-			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::WALL_HEIGHT, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
-			double tilt_angle = e->getProperty(Property::TILT_ANGLE, node, step,	0) * M_PI / 180.0;
+			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step.step, step.currentTime, temp, 0)  ) * pow(e->getProperty(Property::WALL_HEIGHT, node, step.step, step.currentTime, temp, 0), 3.0) / ( thermal_conductivity * dynamic_viscosity);
+			double tilt_angle = e->getProperty(Property::TILT_ANGLE, node, step.step, step.currentTime, temp, 0) * M_PI / 180.0;
 			if (RaL <= 1e9) {
-				htc = (thermal_conductivity	/ e->getProperty(Property::WALL_HEIGHT, node, step, 0)) * (0.68 + (0.67 * cos(tilt_angle) * pow(RaL,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
+				htc = (thermal_conductivity	/ e->getProperty(Property::WALL_HEIGHT, node, step.step, step.currentTime, temp, 0)) * (0.68 + (0.67 * cos(tilt_angle) * pow(RaL,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
 			} else {
-				htc = (thermal_conductivity	/ e->getProperty(Property::WALL_HEIGHT, node, step, 0)) * pow(0.825 + (0.387 * pow(RaL,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
+				htc = (thermal_conductivity	/ e->getProperty(Property::WALL_HEIGHT, node, step.step, step.currentTime, temp, 0)) * pow(0.825 + (0.387 * pow(RaL,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
 			}
 
 		}break;
 		case espreso::CONVECTION_VARIANT::VERTICAL_WALL: {
 
-			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::WALL_HEIGHT, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step.step, step.currentTime, temp, 0)) * pow(e->getProperty(Property::WALL_HEIGHT, node, step.step, step.currentTime, temp, 0), 3.0)/ ( thermal_conductivity * dynamic_viscosity);
 
 			if (RaL <= 1e9) {
-				htc = (thermal_conductivity	/ e->getProperty(Property::WALL_HEIGHT, node, step, 0)) * (0.68 + (0.67 * pow(RaL,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
+				htc = (thermal_conductivity	/ e->getProperty(Property::WALL_HEIGHT, node, step.step, step.currentTime, temp, 0)) * (0.68 + (0.67 * pow(RaL,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
 			} else {
-				htc = (thermal_conductivity	/ e->getProperty(Property::WALL_HEIGHT, node, step, 0)) * pow(0.825 + (0.387 * pow(RaL,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
+				htc = (thermal_conductivity	/ e->getProperty(Property::WALL_HEIGHT, node, step.step, step.currentTime, temp, 0)) * pow(0.825 + (0.387 * pow(RaL,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
 			}
 
 		}break;
-        case espreso::CONVECTION_VARIANT::HORIZONTAL_PLATE_UP:{
+		case espreso::CONVECTION_VARIANT::HORIZONTAL_PLATE_UP:{
 
-			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::LENGTH, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step.step, step.currentTime, temp, 0)) * pow(e->getProperty(Property::LENGTH, node, step.step, step.currentTime, temp, 0), 3.0)/ ( thermal_conductivity * dynamic_viscosity);
 
-			if (temp > e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step, 0)){
+			if (temp > e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step.step, step.currentTime, temp, 0)){
 
 				if (RaL <= 1e7) {
-					htc = thermal_conductivity / e->getProperty(Property::LENGTH, node, step, 0) * 0.54 * pow(RaL,0.25);
+					htc = thermal_conductivity / e->getProperty(Property::LENGTH, node, step.step, step.currentTime, temp, 0) * 0.54 * pow(RaL,0.25);
 				}else{
-					htc = thermal_conductivity / e->getProperty(Property::LENGTH, node, step, 0) * 0.15 * pow(RaL,1.0/3.0);
+					htc = thermal_conductivity / e->getProperty(Property::LENGTH, node, step.step, step.currentTime, temp, 0) * 0.15 * pow(RaL,1.0/3.0);
 				}
 			}else{
-				htc = thermal_conductivity / e->getProperty(Property::LENGTH, node, step, 0) * 0.27 * pow(RaL,0.25);
+				htc = thermal_conductivity / e->getProperty(Property::LENGTH, node, step.step, step.currentTime, temp, 0) * 0.27 * pow(RaL,0.25);
 			}
 
 		}break;
 		case espreso::CONVECTION_VARIANT::HORIZONTAL_PLATE_DOWN:{
 
-			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::LENGTH, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step.step, step.currentTime, temp, 0)) *pow(e->getProperty(Property::LENGTH, node, step.step, step.currentTime, temp, 0), 3.0)/ ( thermal_conductivity * dynamic_viscosity);
 
-			if (temp <= e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step, 0)){
+			if (temp <= e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step.step, step.currentTime, temp, 0)){
 
 				if (RaL <= 1e7) {
-					htc = thermal_conductivity / e->getProperty(Property::LENGTH, node, step, 0) * 0.54 * pow(RaL,0.25);
+					htc = thermal_conductivity / e->getProperty(Property::LENGTH, node, step.step, step.currentTime, temp, 0) * 0.54 * pow(RaL,0.25);
 				}else{
-					htc = thermal_conductivity / e->getProperty(Property::LENGTH, node, step, 0) * 0.15 * pow(RaL,1.0/3.0);
+					htc = thermal_conductivity / e->getProperty(Property::LENGTH, node, step.step, step.currentTime, temp, 0) * 0.15 * pow(RaL,1.0/3.0);
 				}
 			}else{
-				htc = thermal_conductivity / e->getProperty(Property::LENGTH, node, step, 0) * 0.27 * pow(RaL,0.25);
+				htc = thermal_conductivity / e->getProperty(Property::LENGTH, node, step.step, step.currentTime, temp, 0) * 0.27 * pow(RaL,0.25);
 			}
 		}break;
 		case espreso::CONVECTION_VARIANT::HORIZONTAL_CYLINDER:{
 
-			double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::DIAMETER, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step.step, step.currentTime, temp, 0)) * pow(e->getProperty(Property::DIAMETER, node, step.step, step.currentTime, temp, 0), 3.0)/ ( thermal_conductivity * dynamic_viscosity);
 			double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
 
 			if ( RaD > 10e12 ){
@@ -741,12 +843,12 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 				ESINFO(ERROR) << "Validated only for RaD <= 10e12 ";
 			}
 
-			htc = thermal_conductivity / e->getProperty(Property::DIAMETER, node, step, 0) * pow( 0.6 + ( 0.387*pow(RaD,1.0/6.0)/ pow( 1 + pow( 0.559/Pr, 9.0/16.0), 8.0/27.0) ) ,2.0);
+			htc = thermal_conductivity / e->getProperty(Property::DIAMETER, node, step.step, step.currentTime, temp, 0) * pow( 0.6 + ( 0.387*pow(RaD,1.0/6.0)/ pow( 1 + pow( 0.559/Pr, 9.0/16.0), 8.0/27.0) ) ,2.0);
 
 		}break;
 		case espreso::CONVECTION_VARIANT::SPHERE:{
 
-			double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::DIAMETER, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step.step, step.currentTime, temp, 0)) * pow(e->getProperty(Property::DIAMETER, node, step.step, step.currentTime, temp, 0), 3.0) / ( thermal_conductivity * dynamic_viscosity);
 			double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
 
 			if ( RaD > 10e11 || Pr < 0.7 ){
@@ -754,7 +856,7 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 				ESINFO(ERROR) << "Validated only for RaD <= 10e11 and Pr >= 0.7 ";
 			}
 
-			htc = thermal_conductivity / e->getProperty(Property::DIAMETER, node, step, 0) * pow( 2.0 + ( 0.589*pow(RaD,0.25)/ pow( 1 + pow( 0.469/Pr, 9.0/16.0), 4.0/9.0) ) ,2.0);
+			htc = thermal_conductivity / e->getProperty(Property::DIAMETER, node, step.step, step.currentTime, temp, 0) * pow(2.0 + ( 0.589*pow(RaD,0.25)/ pow( 1 + pow( 0.469/Pr, 9.0/16.0), 4.0/9.0) ) ,2.0);
 
 		}break;
 		default:
@@ -766,7 +868,7 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 
 		double T_AVG, g, rho, dynamic_viscosity, heat_capacity, thermal_conductivity,dynamic_viscosity_T;
 
-		T_AVG = (e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0) + temp) / 2.0;
+		T_AVG = (e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step.step, step.currentTime, temp, 0) + temp) / 2.0;
 		g = 9.81;
 
 		convectionMatParameters(convection, e, node, step, temp, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
@@ -774,44 +876,44 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 		switch (convection.variant) {
 		case espreso::CONVECTION_VARIANT::PARALLEL_PLATES: {
 
-			double H_L = e->getProperty(Property::WALL_HEIGHT, node, step, 0) / e->getProperty(Property::LENGTH, node, step, 0);
-			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::LENGTH, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double H_L = e->getProperty(Property::WALL_HEIGHT, node, step.step, step.currentTime, temp, 0) / e->getProperty(Property::LENGTH, node, step.step, step.currentTime, temp, 0);
+			double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs(temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step.step, step.currentTime, temp, 0)  ) * pow(e->getProperty(Property::LENGTH, node, step.step, step.currentTime, temp, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
 
-			if (( RaL < H_L ) && (temp >  e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  )){
+			if (( RaL < H_L ) && (temp >  e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step.step, step.currentTime, temp, 0)  )){
 
-				htc = thermal_conductivity / e->getProperty(Property::WALL_HEIGHT, node, step, 0) * ( 1.0 / 24.0 ) * RaL;
+				htc = thermal_conductivity / e->getProperty(Property::WALL_HEIGHT, node, step.step, step.currentTime, temp, 0) * ( 1.0 / 24.0 ) * RaL;
 
 			}else{
 
-				double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::LENGTH, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+				double RaL = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step.step, step.currentTime, temp, 0)  ) * pow(e->getProperty(Property::LENGTH, node, step.step, step.currentTime, temp, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
 
 				if (RaL <= 1e9) {
-					htc = (thermal_conductivity	/ e->getProperty(Property::LENGTH, node, step, 0)) * (0.68 + (0.67 * pow(RaL,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
+					htc = (thermal_conductivity	/ e->getProperty(Property::LENGTH, node, step.step, step.currentTime, temp, 0)) * (0.68 + (0.67 * pow(RaL,0.25)) / (pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
 				} else {
-					htc = (thermal_conductivity	/ e->getProperty(Property::LENGTH, node, step, 0)) * pow(0.825 + (0.387 * pow(RaL,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
+					htc = (thermal_conductivity	/ e->getProperty(Property::LENGTH, node, step.step, step.currentTime, temp, 0)) * pow(0.825 + (0.387 * pow(RaL,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
 				}
 			}
 
 		}break;
 		case espreso::CONVECTION_VARIANT::CIRCULAR_TUBE: {
-			double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::DIAMETER, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
-			double H_D = e->getProperty(Property::WALL_HEIGHT, node, step, 0) / e->getProperty(Property::DIAMETER, node, step, 0);
+			double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step.step, step.currentTime, temp, 0)  ) * pow(e->getProperty(Property::DIAMETER, node, step.step, step.currentTime, temp, 0), 3.0)/ ( thermal_conductivity * dynamic_viscosity);
+			double H_D = e->getProperty(Property::WALL_HEIGHT, node, step.step, step.currentTime, temp, 0) / e->getProperty(Property::DIAMETER, node, step.step, step.currentTime, temp, 0);
 
 			if ( RaD < H_D ){
-				htc = thermal_conductivity / e->getProperty(Property::WALL_HEIGHT, node, step, 0) * ( 1.0 / 128.0 ) * RaD;
+				htc = thermal_conductivity / e->getProperty(Property::WALL_HEIGHT, node, step.step, step.currentTime, temp, 0) * ( 1.0 / 128.0 ) * RaD;
 			}else{
 
-				double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0)  ) *pow(e->getProperty(Property::DIAMETER, node, step, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
+				double RaD = pow(rho,2)	* g * (1/T_AVG) * heat_capacity * std::fabs( temp - e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step.step, step.currentTime, temp, 0)  ) * pow(e->getProperty(Property::DIAMETER, node, step.step, step.currentTime, temp, 0),3.0)/ ( thermal_conductivity * dynamic_viscosity);
 				if (RaD <= 1e9) {
-					htc = (thermal_conductivity	/ e->getProperty(Property::DIAMETER, node, step, 0)) * (0.68 + (0.67 * pow(RaD,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
+					htc = (thermal_conductivity	/ e->getProperty(Property::DIAMETER, node, step.step, step.currentTime, temp, 0)) * (0.68 + (0.67 * pow(RaD,0.25))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),4.0/9.0)) );
 				} else {
-					htc = (thermal_conductivity	/ e->getProperty(Property::DIAMETER, node, step, 0)) * pow(0.825 + (0.387 * pow(RaD,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
+					htc = (thermal_conductivity	/ e->getProperty(Property::DIAMETER, node, step.step, step.currentTime, temp, 0)) * pow(0.825 + (0.387 * pow(RaD,1.0/6.0))/(pow( 1+ pow((0.492 * thermal_conductivity)/(dynamic_viscosity * heat_capacity),9.0/16.0),8.0/27.0)),2 );
 				}
 			}
 
 		}break;
-	   	default:
-		   ESINFO(ERROR) << "Invalid convection variant for INTERNAL_NATURAL.";
+		default:
+			ESINFO(ERROR) << "Invalid convection variant for INTERNAL_NATURAL.";
 		}
 	}break;
 
@@ -822,17 +924,17 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 
 				double T_AVG, g, rho, dynamic_viscosity, heat_capacity, thermal_conductivity,dynamic_viscosity_T;
 
-				T_AVG = (e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step,	0) + temp) / 2.0;
+				T_AVG = (e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step.step, step.currentTime, temp, 0) + temp) / 2.0;
 				g = 9.81;
 
 				convectionMatParameters(convection, e, node, step, temp, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
 
-				double Re = rho	* e->getProperty(Property::FLUID_VELOCITY, node, step, 0) * e->getProperty(Property::LENGTH, node, step, 0)	/ dynamic_viscosity;
+				double Re = rho	* e->getProperty(Property::FLUID_VELOCITY, node, step.step, step.currentTime, temp, 0) * e->getProperty(Property::LENGTH, node, step.step, step.currentTime, temp, 0) / dynamic_viscosity;
 				double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
 				if (Re <= 5e5) {
-					htc = 2	* (thermal_conductivity	/ e->getProperty(Property::LENGTH, node, step, 0)) * ((0.3387 * pow(Pr, 1.0 / 3.0) * pow(Re, 0.5)) / (pow(1 + pow(0.0468 / Pr, 2.0 / 3.0), 0.25)));
+					htc = 2	* (thermal_conductivity	/ e->getProperty(Property::LENGTH, node, step.step, step.currentTime, temp, 0)) * ((0.3387 * pow(Pr, 1.0 / 3.0) * pow(Re, 0.5)) / (pow(1 + pow(0.0468 / Pr, 2.0 / 3.0), 0.25)));
 				} else {
-					htc = 2	* (thermal_conductivity	/ e->getProperty(Property::LENGTH, node, step, 0)) * pow(Pr, 1.0 / 3.0)	* (0.037 * pow(Re, 0.8) - 871);
+					htc = 2	* (thermal_conductivity	/ e->getProperty(Property::LENGTH, node, step.step, step.currentTime, temp, 0)) * pow(Pr, 1.0 / 3.0)	* (0.037 * pow(Re, 0.8) - 871);
 				}
 
 			}break;
@@ -851,10 +953,10 @@ static double computeHTC(const AdvectionDiffusionConvection &convection, const E
 
 				convectionMatParameters(convection, e, node, step, temp, T_EXT, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
 
-				double Re = rho	* e->getProperty(Property::FLUID_VELOCITY, node, step, 0) * e->getProperty(Property::DIAMETER, node, step, 0) / dynamic_viscosity;
+				double Re = rho * e->getProperty(Property::FLUID_VELOCITY, node, step.step, step.currentTime, temp, 0) * e->getProperty(Property::DIAMETER, node, step.step, step.currentTime, temp, 0) / dynamic_viscosity;
 				double Pr = dynamic_viscosity * heat_capacity / thermal_conductivity;
-				double n = temp	< e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step, 0) ? 0.3 : 0.4;
-				htc = thermal_conductivity / e->getProperty(Property::DIAMETER, node, step, 0);
+				double n = temp < e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step.step, step.currentTime, temp, 0) ? 0.3 : 0.4;
+				htc = thermal_conductivity / e->getProperty(Property::DIAMETER, node, step.step, step.currentTime, temp, 0);
 				if (Re <= 2500) {
 					htc *= 3.66;
 				} else {
@@ -937,21 +1039,24 @@ void NewAdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, c
 		coordinates(n, 0) = _mesh->coordinates()[e->node(n)].x;
 		coordinates(n, 1) = _mesh->coordinates()[e->node(n)].y;
 
-		if (solution.size()) {
-			temp = solution[0]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(n), e->domains().front()));
+		temp = solution[offset + SolutionIndex::TEMPERATURE]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(n), e->domains().front()));
+		htc(n, 0) = convection != NULL ? computeHTC(*convection, e, n, step, temp) : 0;
+
+
+		if (step.iteration) {
+			q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.step, step.currentTime, temp, 0) - temp);
 		} else {
-			temp = e->getProperty(Property::INITIAL_TEMPERATURE, n, step.step, 273.15 + 20);
+			q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.step, step.currentTime, temp, 0));
 		}
-		htc(n, 0) = convection != NULL ? computeHTC(*convection, e, n, step.step, temp) : 0;
-		q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.step, 0) - temp);
-		emiss(n, 0) = CONST_Stefan_Boltzmann * e->getProperty(Property::EMISSIVITY, n, step.step, 0);
-		q(n, 0) += emiss(n, 0) * (pow(e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.step, 0), 4) - pow(temp, 4));
-		q(n, 0) += e->getProperty(Property::HEAT_FLOW, n, step.step, 0) / area;
-		q(n, 0) += e->getProperty(Property::HEAT_FLUX, n, step.step, 0);
+
+		emiss(n, 0) = CONST_Stefan_Boltzmann * e->getProperty(Property::EMISSIVITY, n, step.step, step.currentTime, temp, 0);
+		q(n, 0) += emiss(n, 0) * (pow(e->getProperty(Property::EXTERNAL_TEMPERATURE, n, step.step, step.currentTime, temp, 0), 4) - pow(temp, 4));
+		q(n, 0) += e->getProperty(Property::HEAT_FLOW, n, step.step, step.currentTime, temp, 0) / area;
+		q(n, 0) += e->getProperty(Property::HEAT_FLUX, n, step.step, step.currentTime, temp, 0);
 
 		emiss(n, 0) *= 4 * temp * temp * temp;
 
-		thickness(n, 0) = e->getProperty(Property::THICKNESS, n, step.step, 1);
+		thickness(n, 0) = e->getProperty(Property::THICKNESS, n, step.step, step.currentTime, temp, 1);
 		q(n, 0) *= thickness(n, 0);
 	}
 
@@ -980,11 +1085,6 @@ void NewAdvectionDiffusion2D::processNode(const Step &step, Matrices matrices, c
 
 void NewAdvectionDiffusion2D::processSolution(const Step &step)
 {
-	_instance->solutions.resize(1, NULL);
-	if (_instance->solutions[0] != NULL) {
-		delete _instance->solutions[0];
-	}
 
-	_instance->solutions[0] = new Solution(*_mesh, "temperature", ElementType::NODES, pointDOFs(), _instance->primalSolution);
 }
 

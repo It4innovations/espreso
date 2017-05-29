@@ -217,7 +217,6 @@ void DistributedInfo::addGeneralInfo()
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: general info can be added only to region with all elements.";
 	}
 
-	size_t bodies    = _mode & InfoMode::SEPARATE_BODIES    ? _mesh->bodies()           : 1;
 	size_t materials = _mode & InfoMode::SEPARATE_MATERIALS ? _mesh->materials().size() : 1;
 
 	std::vector<std::vector<eslocal>*> pointIDcluster;
@@ -274,21 +273,58 @@ void DistributedInfo::addSettings(size_t step)
 		region = _mesh->regions()[0];
 	}
 
+	size_t materials = _mode & InfoMode::SEPARATE_MATERIALS ? _mesh->materials().size() : 1;
+
+	if (region->elements().size() && region->elements()[0]->params()) {
+		std::vector<std::vector<eslocal>*> materialData, bodyData;
+
+		for (size_t r = 0; r < _regions.size(); r++) {
+			materialData.push_back(new std::vector<eslocal>());
+			bodyData.push_back(new std::vector<eslocal>());
+		}
+
+		for (size_t e = 0; e < region->elements().size(); e++) {
+			size_t regionOffset = 0, material = -1, body = -1;
+			body = region->elements()[e]->param(Element::Params::BODY);
+			if (_mode & InfoMode::SEPARATE_BODIES) {
+				regionOffset += body * materials;
+			}
+			material = region->elements()[e]->param(Element::Params::MATERIAL);
+			if (_mode & InfoMode::SEPARATE_MATERIALS) {
+				regionOffset += material;
+			}
+
+			for (auto d = region->elements()[e]->domains().begin(); d != region->elements()[e]->domains().end(); ++d) {
+				materialData[regionOffset]->push_back(material);
+				bodyData[regionOffset]->push_back(body);
+			}
+		}
+
+		for (size_t r = 0; r < _regions.size(); r++) {
+			_regions[r].data.elementDataInteger["material"] = std::make_pair(1, materialData[r]);
+			_regions[r].data.elementDataInteger["body"] = std::make_pair(1, bodyData[r]);
+		}
+	}
+
 	if (region->settings.size() <= step) {
 		return;
 	}
 
-	size_t bodies    = _mode & InfoMode::SEPARATE_BODIES    ? _mesh->bodies()           : 1;
-	size_t materials = _mode & InfoMode::SEPARATE_MATERIALS ? _mesh->materials().size() : 1;
+	double value;
 
 	for (auto it = region->settings[step].begin(); it != region->settings[step].end(); ++it) {
+		const std::vector<Property> &pGroup = _mesh->propertyGroup(it->first);
+		if (pGroup.front() != it->first) {
+			continue;
+		}
+
 		std::vector<std::vector<double>*> rData;
 
 		for (size_t r = 0; r < _regions.size(); r++) {
 			rData.push_back(new std::vector<double>());
-			rData.back()->reserve(_regions[r].elementsTypes.size());
+			rData.back()->reserve(pGroup.size() * _regions[r].elementsTypes.size());
 			std::stringstream ss; ss << it->first;
-			_regions[r].data.elementDataDouble[ss.str()] = std::make_pair(1, rData.back());
+			_regions[r].data.elementDataDouble[ss.str().substr(0, ss.str().find_last_of("_"))] = std::make_pair(pGroup.size(), rData.back());
 		}
 
 		for (size_t e = 0; e < region->elements().size(); e++) {
@@ -300,14 +336,16 @@ void DistributedInfo::addSettings(size_t step)
 				regionOffset += region->elements()[e]->param(Element::Params::MATERIAL);
 			}
 
-			double value = 0;
-			for (size_t n = 0; n < region->elements()[e]->nodes(); n++) {
-				value += region->elements()[e]->sumProperty(it->first, n, step, 0);
-			}
-			value /= region->elements()[e]->nodes();
+			for (auto p = pGroup.begin(); p != pGroup.end(); ++p) {
+				value = 0;
+				for (size_t n = 0; n < region->elements()[e]->nodes(); n++) {
+					value += region->elements()[e]->sumProperty(*p, n, step, 0, 0, 0);
+				}
+				value /= region->elements()[e]->nodes();
 
-			for (auto d = region->elements()[e]->domains().begin(); d != region->elements()[e]->domains().end(); ++d) {
-				rData[regionOffset]->push_back(value);
+				for (auto d = region->elements()[e]->domains().begin(); d != region->elements()[e]->domains().end(); ++d) {
+					rData[regionOffset]->push_back(value);
+				}
 			}
 		}
 	}
@@ -319,23 +357,23 @@ void DistributedInfo::addSolution(const std::vector<Solution*> &solution)
 
 		for (size_t s = 0; s < solution.size(); s++) {
 
-			std::vector<double> *rData = new std::vector<double>(solution[s]->properties * _regions[r].coordinates.size() / 3);
+			std::vector<double> *rData = new std::vector<double>(solution[s]->properties.size() * _regions[r].coordinates.size() / 3);
 
 			#pragma omp parallel for
 			for (size_t d = 0; d < _mesh->parts(); d++) {
 				for (size_t i = 0; i < _cIndices[r][d].size(); i++) {
-					for (size_t p = 0; p < solution[s]->properties; p++) {
-						(*rData)[solution[s]->properties * (i + _cOffset[r][d]) + p] = solution[s]->get(p, d, _mesh->coordinates().localIndex(_cIndices[r][d][i], d));
+					for (size_t p = 0; p < solution[s]->properties.size(); p++) {
+						(*rData)[solution[s]->properties.size() * (i + _cOffset[r][d]) + p] = solution[s]->get(p, d, _mesh->coordinates().localIndex(_cIndices[r][d][i], d));
 					}
 				}
 			}
 
 			switch (solution[s]->eType) {
 			case ElementType::ELEMENTS:
-				_regions[r].data.elementDataDouble[solution[s]->name] = std::make_pair(solution[s]->properties, rData);
+				_regions[r].data.elementDataDouble[solution[s]->name] = std::make_pair(solution[s]->properties.size(), rData);
 				break;
 			case ElementType::NODES:
-				_regions[r].data.pointDataDouble[solution[s]->name] = std::make_pair(solution[s]->properties, rData);
+				_regions[r].data.pointDataDouble[solution[s]->name] = std::make_pair(solution[s]->properties.size(), rData);
 				break;
 			default:
 				ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: cannot store this type solution.";

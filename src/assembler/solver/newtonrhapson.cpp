@@ -18,8 +18,9 @@ NewtonRhapson::NewtonRhapson(
 		LinearSolver* linearSolver,
 		output::Store* store,
 		const NonLinearSolverBase &configuration,
+		double duration,
 		Matrices restriction)
-: Solver("NEWTON RHAPSON", mesh, physics, linearSolver, store, restriction), _configuration(configuration)
+: Solver("NEWTON RHAPSON", mesh, physics, linearSolver, store, duration, restriction), _configuration(configuration)
 {
 
 }
@@ -33,15 +34,18 @@ void NewtonRhapson::run(Step &step)
 	solve(step);
 	postprocess(step);
 	finalize(step);
+
+	instance->clear();
 }
 
 void NewtonRhapson::init(Step &step)
 {
-	assembleMatrices(step, Matrices::K | Matrices::f);
-	size_t substeps = _configuration.stepping == NonLinearSolverBase::STEPPINGG::TRUE ? _configuration.substeps : 1;
-	multiply(instance->f, (step.substep + 1) / (double)substeps, "f *= step /steps");
+	step.internalForceReduction = _configuration.stepping == NonLinearSolverBase::STEPPINGG::TRUE ? 1.0 / _configuration.substeps : 1;
+
+	preprocessData(step);
+	updateMatrices(step, Matrices::K | Matrices::f);
 	composeGluing(step, Matrices::B1);
-	multiply(instance->B1c, (step.substep + 1) / (double)substeps, "B1c *= step /steps");
+	multiply(instance->B1c, step.internalForceReduction, "B1c *= step /steps");
 	regularizeMatrices(step, Matrices::K);
 	composeGluing(step, Matrices::B0);
 }
@@ -57,6 +61,10 @@ void NewtonRhapson::solve(Step &step)
 		ESINFO(GLOBAL_ERROR) << "It is not possible to turn off the both 'temperature' and 'heat' convergence.";
 	}
 
+
+	double epsilon_cgm = linearSolver->configuration.epsilon;
+	double epsilon_err = 1;
+
 	runLinearSolver(step);
 	processSolution(step);
 	storeSubSolution(step);
@@ -70,6 +78,8 @@ void NewtonRhapson::solve(Step &step)
 
 	size_t substeps = _configuration.stepping == NonLinearSolverBase::STEPPINGG::TRUE ? _configuration.substeps : 1;
 	for (step.substep = 0; step.substep < substeps; step.substep++) {
+		step.currentTime += _duration / substeps;
+		step.internalForceReduction = (step.substep + 1) / (double)substeps;
 
 		ESINFO(CONVERGENCE) <<  " ";
 		ESINFO(CONVERGENCE) <<  "**** LOAD_STEP " << step.step + 1 << " SUBSTEP "<< step.substep + 1 << " START";
@@ -83,8 +93,7 @@ void NewtonRhapson::solve(Step &step)
 		double heatResidual_first = 0;
 		double heatResidual_second = 0;
 
-		while (
-			step.iteration++ < _configuration.max_iterations ){
+		while (step.iteration++ < _configuration.max_iterations) {
 
 			cumiter +=1;
 			if (!_configuration.convergenceParameters().checkResidual()) {
@@ -99,7 +108,6 @@ void NewtonRhapson::solve(Step &step)
 			} else {
 				updateMatrices(step, Matrices::K | Matrices::f | Matrices::R, physics->instance()->solutions);
 			}
-			multiply(instance->f, (step.substep + 1) / (double)substeps, "f *= step /steps");
 
 			if (_configuration.line_search) {
 				F_ext = physics->instance()->f;
@@ -139,7 +147,7 @@ void NewtonRhapson::solve(Step &step)
 			}
 
 			composeGluing(step, Matrices::B1);
-			multiply(instance->B1c, (step.substep + 1) / (double)substeps, "f *= step /steps");
+			multiply(instance->B1c, step.internalForceReduction, "B1c *= internal force reduction");
 			subtractDirichlet();
 			regularizeMatrices(step, Matrices::K);
 
@@ -148,6 +156,27 @@ void NewtonRhapson::solve(Step &step)
 			} else {
 				updateLinearSolver(step, Matrices::K | Matrices::f | Matrices::B1c);
 			}
+
+
+			if (_configuration.adaptive_precision){
+
+             if (step.iteration > 1){
+            	 epsilon_err = temperatureResidual_first/temperatureResidual_second;
+            	 epsilon_cgm = std::min(_configuration.r_tol *epsilon_err ,_configuration.c_fact * epsilon_cgm );
+
+             }
+             ESINFO(CONVERGENCE) <<  "    ADAPTIVE PRECISION = " << epsilon_cgm <<   " EPS_ERR = " << epsilon_err ;
+             *const_cast<double*>(&linearSolver->configuration.epsilon) = epsilon_cgm;
+
+			//	precision_= *const_cast<double*>(&linearSolver->configuration.epsilon) / step.iteration ;
+
+			//	if (precision_ < 1e-9){
+			//		*const_cast<double*>(&linearSolver->configuration.epsilon)=1e-9;
+			//	}else{
+			//		*const_cast<double*>(&linearSolver->configuration.epsilon) = precision_;
+			//	}
+			}
+
 			runLinearSolver(step);
 
 			ESINFO(CONVERGENCE) <<  "    LINEAR_SOLVER_OUTPUT: SOLVER = " << "PCG" <<   " N_ITERATIONS = " << "1" << "  " ;
@@ -183,9 +212,8 @@ void NewtonRhapson::solve(Step &step)
 				}
 			}
 
-
-			processSolution(step);
 			storeSubSolution(step);
+			processSolution(step);
 		}
 		if (_configuration.convergenceParameters().checkResidual()) {
 			ESINFO(CONVERGENCE) <<  " >> SOLUTION CONVERGED AFTER EQUILIBRIUM ITERATION " << step.iteration ;
@@ -194,7 +222,6 @@ void NewtonRhapson::solve(Step &step)
 		}
 		ESINFO(CONVERGENCE) <<  " >> SUBSTEP " << step.substep + 1 << " IS DONE /" << " CUMULATIVE ITERATION NUMBER = " << cumiter + 1 ;
 		ESINFO(CONVERGENCE) <<  " ";
-
 	}
 	step.substep = substeps - 1;
 }
@@ -207,7 +234,7 @@ void NewtonRhapson::postprocess(Step &step)
 
 void NewtonRhapson::finalize(Step &step)
 {
-	finalizeLinearSolver(step);
+
 }
 
 

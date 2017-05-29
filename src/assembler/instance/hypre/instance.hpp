@@ -172,7 +172,7 @@ if(rank==TEST)	std::cout << "  > FILL BC\n";
 		if (nodes[i]->hasProperty(Property::TEMPERATURE, 0))
 		{
 			const Point &p = _mesh.coordinates()[BCEid[i]];
-			gamma[i][0] = nodes[BCEid[i]]->getProperty(Property::TEMPERATURE, BCEid[i], 0, 0);
+			gamma[i][0] = nodes[BCEid[i]]->getProperty(Property::TEMPERATURE, BCEid[i], 0, 0, 0, 0);
 		}
 	}
 	

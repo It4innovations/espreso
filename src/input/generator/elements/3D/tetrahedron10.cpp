@@ -94,7 +94,7 @@ void Tetrahedron10::addElements(std::vector<Element*> &elements, const eslocal i
 
 void Tetrahedron10::addEdges(std::vector<Element*> &edges, const eslocal indices[], CubeEdge edge)
 {
-	ESINFO(GLOBAL_ERROR) << "Implement addEdges for HEXA20";
+	ESINFO(GLOBAL_ERROR) << "Implement addEdges for TETRAHEDRON10";
 }
 
 void Tetrahedron10::addFaces(std::vector<Element*> &faces, const eslocal indices[], CubeFace face)

@@ -33,6 +33,8 @@ struct Instance {
 	Instance(Instance &other, Matrices &share);
 	~Instance();
 
+	void clear();
+
 	size_t domains;
 	std::vector<size_t> &domainDOFCount;
 	std::vector<Property> &properties;

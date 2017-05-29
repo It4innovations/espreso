@@ -31,7 +31,7 @@ public:
 	};
 
 	Statistic(StatisticalData statistics, Operation operation, ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data, const std::vector<size_t> &offsets, const std::vector<Region*> &selection);
-	Statistic(ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data);
+	Statistic(ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data, size_t dataSize);
 
 	void compute();
 	double get(const Region* region, size_t offset, StatisticalData statistics);

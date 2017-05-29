@@ -45,15 +45,6 @@ std::string VTKXML::linkClusters(const std::string &root, const std::string &nam
 	for (auto it = regionData.data.pointDataDouble.begin(); it != regionData.data.pointDataDouble.end(); ++it) {
 		os << "      <PDataArray type=\"Float64\" Name=\"" << it->first << "\" format=\"" << format() << "\" NumberOfComponents=\"" << it->second.first << "\"/>\n";
 	}
-	for (size_t i = 0; i < regionData.solutions.size(); i++) {
-		if (regionData.solutions[i]->eType == ElementType::NODES) {
-			size_t size = 0;
-			for (size_t p = 0; p < regionData.solutions[i]->data.size(); p++) {
-				size += regionData.solutions[i]->data[p].size();
-			}
-			os << "      <PDataArray type=\"Float64\" Name=\"" << regionData.solutions[i]->name << "\" format=\"" << format() << "\" NumberOfComponents=\"" << regionData.solutions[i]->properties << "\"/>\n";
-		}
-	}
 	os << "    </PPointData>\n";
 	os << "\n";
 
@@ -63,15 +54,6 @@ std::string VTKXML::linkClusters(const std::string &root, const std::string &nam
 	}
 	for (auto it = regionData.data.elementDataDouble.begin(); it != regionData.data.elementDataDouble.end(); ++it) {
 		os << "      <PDataArray type=\"Float64\" Name=\"" << it->first << "\" format=\"" << format() << "\" NumberOfComponents=\"" << it->second.first << "\"/>\n";
-	}
-	for (size_t i = 0; i < regionData.solutions.size(); i++) {
-		if (regionData.solutions[i]->eType == ElementType::ELEMENTS) {
-			size_t size = 0;
-			for (size_t p = 0; p < regionData.solutions[i]->data.size(); p++) {
-				size += regionData.solutions[i]->data[p].size();
-			}
-			os << "      <PDataArray type=\"Float64\" Name=\"" << regionData.solutions[i]->name << "\" format=\"" << format() << "\" NumberOfComponents=\"" << regionData.solutions[i]->properties << "\"/>\n";
-		}
 	}
 	os << "    </PCellData>\n";
 	os << "\n";
@@ -88,14 +70,19 @@ void VTKXML::linkSteps(const std::string &name, const std::vector<std::pair<Step
 {
 	std::ofstream os;
 
-	os.open(name + ".pvd", std::ios::out | std::ios::trunc);
+	os.open(Logging::outputRoot() + "/" + name + ".pvd", std::ios::out | std::ios::trunc);
 
 	os << "<?xml version=\"1.0\"?>\n";
 	os << "<VTKFile type=\"Collection\" version=\"0.1\" byte_order=\"LittleEndian\">\n";
 	os << "<Collection>\n";
 	for (size_t i = 0; i < steps.size(); i++) {
 		for (size_t j = 0; j < steps[i].second.size(); j++) {
-			os << "  <DataSet timestep=\"" << steps[i].first.currentTime << "\" file=\"" << steps[i].second[j] << "\"/>\n";
+			std::string rName = steps[i].second[j].substr(
+					steps[i].second[j].find_last_of("/") + 1,
+					steps[i].second[j].find_last_of("0123456789") - steps[i].second[j].find_last_of("/") - 1
+					);
+			std::string rPath = steps[i].second[j].substr(Logging::outputRoot().size() + 1);
+			os << "  <DataSet timestep=\"" << steps[i].first.currentTime << "\" name=\"" << rName << "\" file=\"" << rPath << "\"/>\n";
 		}
 	}
 	os << "</Collection>\n";

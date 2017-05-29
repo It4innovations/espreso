@@ -44,6 +44,7 @@ static size_t getDataSize(const espreso::Mesh &mesh, const std::vector<std::vect
 					ESINFO(ERROR) << "ESPRESO internal error: invalid statistic data - size of domain data is not the same for all domains.";
 				}
 				dataSize = data[p].size() / (mesh.getPartition()[p + 1] - mesh.getPartition()[p]);
+				break;
 			default:
 				break;
 		}
@@ -59,16 +60,14 @@ Statistic::Statistic(StatisticalData statistics, Operation operation, ElementTyp
 	_dataSize = getDataSize(mesh, data, eType);
 }
 
-Statistic::Statistic(ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data)
+Statistic::Statistic(ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data, size_t dataSize)
 : _statistics(StatisticalData::MIN | StatisticalData::MAX | StatisticalData::AVERAGE | StatisticalData::NORM), _operation(Operation::AVERAGE), _eType(eType), _computed(false), _mesh(mesh), _data(data)
 {
 	for (size_t r = 0; r < _mesh.monitoredRegions().size(); r++) {
-		if (_mesh.monitoredRegions()[r]->eType == _eType) {
-			_selection.push_back(_mesh.monitoredRegions()[r]);
-		}
+		_selection.push_back(_mesh.monitoredRegions()[r]);
 	}
 
-	_dataSize = getDataSize(mesh, data, eType);
+	_dataSize = dataSize;
 	_offsets.resize(_dataSize);
 	std::iota(_offsets.begin(), _offsets.end(), 0);
 }
@@ -80,8 +79,7 @@ double Statistic::get(const Region* region, size_t offset, StatisticalData stati
 	}
 	size_t index = std::find(_selection.begin(), _selection.end(), region) - _selection.begin();
 	if (index == _selection.size() || !StringCompare::caseInsensitiveEq(_selection[index]->name, region->name)) {
-		ESINFO(ERROR) << "Cannot compute statistic for region '" << region->name << "'. The region elements do not have the requested property.";
-
+		ESINFO(ERROR) << "Cannot compute statistic for region '" << region->name << "'. Elements of the region do not have the requested property.";
 	}
 
 	if (!(statistics & _statistics)) {
@@ -106,6 +104,11 @@ void Statistic::compute()
 	if (!_selection.size()) {
 		return;
 	}
+
+	if (_eType != ElementType::NODES) {
+		ESINFO(GLOBAL_ERROR) << "Implement monitoring non-node elements.";
+	}
+
 	auto n2i = [ & ] (size_t neighbour) {
 		return std::lower_bound(_mesh.neighbours().begin(), _mesh.neighbours().end(), neighbour) - _mesh.neighbours().begin();
 	};
@@ -137,7 +140,15 @@ void Statistic::compute()
 	if (!_regions[0] && !_regions[1]) {
 		for (size_t r = 0; r < _mesh.regions().size(); r++) {
 			if (_regions[r]) {
-				_elements.insert(_elements.end(), _mesh.regions()[r]->elements().begin(), _mesh.regions()[r]->elements().end());
+				if (_mesh.regions()[r]->eType != ElementType::NODES) {
+					for (size_t e = 0; e < _mesh.regions()[r]->elements().size(); e++) {
+						for (size_t n = 0; n < _mesh.regions()[r]->elements()[e]->nodes(); n++) {
+							_elements.push_back(_mesh.nodes()[_mesh.regions()[r]->elements()[e]->node(n)]);
+						}
+					}
+				} else {
+					_elements.insert(_elements.end(), _mesh.regions()[r]->elements().begin(), _mesh.regions()[r]->elements().end());
+				}
 			}
 		}
 		std::sort(_elements.begin(), _elements.end());
@@ -317,7 +328,7 @@ void Statistic::compute()
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error while gathering global statistic.";
 	}
 
-	for (size_t r = 0; r < environment->MPIsize && !environment->MPIrank; r++) {
+	for (int r = 0; r < environment->MPIsize && !environment->MPIrank; r++) {
 		for (size_t i = 0, offset = 0; i < _offsets.size(); i++) {
 			for (size_t s = 0; s < _selection.size(); s++, offset++) {
 				_results[s][i][0] = std::min(_results[s][i][0], gData[r * cData.size() + initData.size() * offset + 0]);

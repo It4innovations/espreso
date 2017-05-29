@@ -42,7 +42,7 @@ std::vector<Property> AdvectionDiffusion3D::midPointDOFs = { Property::TEMPERATU
 
 AdvectionDiffusion3D::AdvectionDiffusion3D(Mesh &mesh, Constraints &constraints, const AdvectionDiffusion3DConfiguration &configuration)
 : LinearPhysics(
-		mesh, constraints, configuration.espreso,
+		mesh, constraints, configuration.physics_solver.load_steps_settings.at(1)->espreso,
 		MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE,
 		elementDOFs, faceDOFs, edgeDOFs, pointDOFs, midPointDOFs),
   _configuration(configuration)
@@ -205,10 +205,10 @@ static void processEdge(DenseMatrix &Ke, std::vector<double> &fe, const espreso:
 		coordinates(n, 0) = mesh.coordinates()[edge->node(n)].x;
 		coordinates(n, 1) = mesh.coordinates()[edge->node(n)].y;
 		coordinates(n, 2) = mesh.coordinates()[edge->node(n)].z;
-		htc(n, 0) = edge->getProperty(Property::HEAT_TRANSFER_COEFFICIENT, n, 0, 0);
-		q(n, 0) += htc(n, 0) * edge->getProperty(Property::EXTERNAL_TEMPERATURE, n, 0, 0);
-		q(n, 0) += edge->getProperty(Property::HEAT_FLOW, n, 0, 0) / area;
-		q(n, 0) += edge->getProperty(Property::HEAT_FLUX, n, 0, 0);
+		htc(n, 0) = edge->getProperty(Property::HEAT_TRANSFER_COEFFICIENT, n, 0, 0, 0, 0);
+		q(n, 0) += htc(n, 0) * edge->getProperty(Property::EXTERNAL_TEMPERATURE, n, 0, 0, 0, 0);
+		q(n, 0) += edge->getProperty(Property::HEAT_FLOW, n, 0, 0, 0, 0) / area;
+		q(n, 0) += edge->getProperty(Property::HEAT_FLUX, n, 0, 0, 0, 0);
 	}
 
 	for (size_t gp = 0; gp < edge->gaussePoints(); gp++) {
@@ -244,10 +244,10 @@ static void processFace(DenseMatrix &Ke, std::vector<double> &fe, const espreso:
 		coordinates(n, 0) = mesh.coordinates()[face->node(n)].x;
 		coordinates(n, 1) = mesh.coordinates()[face->node(n)].y;
 		coordinates(n, 2) = mesh.coordinates()[face->node(n)].z;
-		htc(n, 0) = face->getProperty(Property::HEAT_TRANSFER_COEFFICIENT, n, 0, 0);
-		q(n, 0) += htc(n, 0) * face->getProperty(Property::EXTERNAL_TEMPERATURE, n, 0, 0);
-		q(n, 0) += face->getProperty(Property::HEAT_FLOW, n, 0, 0) / area;
-		q(n, 0) += face->getProperty(Property::HEAT_FLUX, n, 0, 0);
+		htc(n, 0) = face->getProperty(Property::HEAT_TRANSFER_COEFFICIENT, n, 0, 0, 0, 0);
+		q(n, 0) += htc(n, 0) * face->getProperty(Property::EXTERNAL_TEMPERATURE, n, 0, 0, 0, 0);
+		q(n, 0) += face->getProperty(Property::HEAT_FLOW, n, 0, 0, 0, 0) / area;
+		q(n, 0) += face->getProperty(Property::HEAT_FLUX, n, 0, 0, 0, 0);
 	}
 
 	for (size_t gp = 0; gp < face->gaussePoints(); gp++) {
@@ -287,24 +287,24 @@ static void processElement(DenseMatrix &Ke, std::vector<double> &fe, const espre
 
 	coordinates.resize(element->nodes(), 3);
 	for (size_t i = 0; i < element->nodes(); i++) {
-		temp = element->getProperty(Property::INITIAL_TEMPERATURE, i, timeStep, 273.15 + 20);
+		temp = element->getProperty(Property::INITIAL_TEMPERATURE, i, timeStep, 0, 0, 273.15 + 20);
 		const Point &p = mesh.coordinates()[element->node(i)];
 		coordinates(i, 0) = p.x;
 		coordinates(i, 1) = p.y;
 		coordinates(i, 2) = p.z;
 		U(i, 0) =
-				element->getProperty(Property::TRANSLATION_MOTION_X, i, timeStep, 0) *
+				element->getProperty(Property::TRANSLATION_MOTION_X, i, timeStep, 0, 0, 0) *
 				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i), timeStep, temp) *
 				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(element->node(i), timeStep, temp);
 		U(i, 1) =
-				element->getProperty(Property::TRANSLATION_MOTION_Y, i, timeStep, 0) *
+				element->getProperty(Property::TRANSLATION_MOTION_Y, i, timeStep, 0, 0, 0) *
 				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i), timeStep, temp) *
 				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(element->node(i), timeStep, temp);
 		U(i, 2) =
-				element->getProperty(Property::TRANSLATION_MOTION_Z, i, timeStep, 0) *
+				element->getProperty(Property::TRANSLATION_MOTION_Z, i, timeStep, 0, 0, 0) *
 				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i), timeStep, temp) *
 				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(element->node(i), timeStep, temp);
-		f(0, i) = element->sumProperty(Property::HEAT_SOURCE, i, timeStep, 0);
+		f(0, i) = element->sumProperty(Property::HEAT_SOURCE, i, timeStep, 0, 0, 0);
 
 		switch (material->getModel(PHYSICS::ADVECTION_DIFFUSION_3D)) {
 		case MATERIAL_MODEL::ISOTROPIC:
@@ -646,21 +646,21 @@ static void postProcessElement(std::vector<double> &gradient, std::vector<double
 	DenseMatrix matFlux(3, 1), matGradient(3, 1);
 
 	for (size_t i = 0; i < element->nodes(); i++) {
-		temp = element->getProperty(Property::INITIAL_TEMPERATURE, i, timeStep, 273.15 + 20);
+		temp = element->getProperty(Property::INITIAL_TEMPERATURE, i, timeStep, 0, 0, 273.15 + 20);
 		const Point &p = mesh.coordinates()[element->node(i)];
 		coordinates(i, 0) = p.x;
 		coordinates(i, 1) = p.y;
 		coordinates(i, 2) = p.z;
 		U(i, 0) =
-				element->getProperty(Property::TRANSLATION_MOTION_X, i, timeStep, 0) *
+				element->getProperty(Property::TRANSLATION_MOTION_X, i, timeStep, 0, 0, 0) *
 				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i), timeStep, temp) *
 				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(element->node(i), timeStep, temp);
 		U(i, 1) =
-				element->getProperty(Property::TRANSLATION_MOTION_Y, i, timeStep, 0) *
+				element->getProperty(Property::TRANSLATION_MOTION_Y, i, timeStep, 0, 0, 0) *
 				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i), timeStep, temp) *
 				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(element->node(i), timeStep, temp);
 		U(i, 2) =
-				element->getProperty(Property::TRANSLATION_MOTION_Z, i, timeStep, 0) *
+				element->getProperty(Property::TRANSLATION_MOTION_Z, i, timeStep, 0, 0, 0) *
 				material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(element->node(i), timeStep, temp) *
 				material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(element->node(i), timeStep, temp);
 

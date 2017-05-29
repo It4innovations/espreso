@@ -262,6 +262,58 @@ void Block<TElement>::boundaries(std::vector<Element*> &nodes, const std::vector
 }
 
 template <class TElement>
+void Block<TElement>::pickElements(const std::vector<Element*> &elements, Region *region, const BlockBorder &border)
+{
+	Triple<size_t> nelements = block.elements * block.domains;
+	Triple<size_t> estart = (((border.start - block.start) / (block.end - block.start)) * nelements).ceil();
+	Triple<size_t> eend = (((border.end - block.start) / (block.end - block.start)) * nelements).floor();
+
+	if (estart == eend) {
+		return;
+	}
+
+	auto correct = [] (size_t &s, size_t &e) {
+		if (s == e) { if (s == 0) { e++; } else { s--; } }
+	};
+
+	auto isIn = [&] (const Triple<size_t> &index) {
+		return
+				estart.x <= index.x && index.x < eend.x &&
+				estart.y <= index.y && index.y < eend.y &&
+				estart.z <= index.z && index.z < eend.z;
+	};
+
+	correct(estart.x, eend.x);
+	correct(estart.y, eend.y);
+	correct(estart.z, eend.z);
+
+	Triple<size_t> domain, element;
+
+	size_t eindex = 0;
+	for (domain.z = 0; domain.z < block.domains.z; domain.z++) {
+		for (domain.y = 0; domain.y < block.domains.y; domain.y++) {
+			for (domain.x = 0; domain.x < block.domains.x; domain.x++) {
+
+				for (element.z = 0; element.z < block.elements.z; element.z++) {
+					for (element.y = 0; element.y < block.elements.y; element.y++) {
+						for (element.x = 0; element.x < block.elements.x; element.x++, eindex += TElement::subelements) {\
+
+							if (isIn(domain * block.elements + element)) {
+								for (size_t e = 0; e < TElement::subelements; e++) {
+									region->elements().push_back(elements[eindex + e]);
+								}
+							}
+
+						}
+					}
+				}
+
+			}
+		}
+	}
+}
+
+template <class TElement>
 void Block<TElement>::region(const std::vector<Element*> &elements, Region *region, const BlockBorder &border, size_t dimension)
 {
 	if (!border.intersect(block)) {
@@ -352,6 +404,9 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region *regi
 				TElement::addFaces(region->elements(), indices.data(), face);
 			});
 			break;
+		case 3:
+			pickElements(elements, region, bborder);
+			break;
 		default:
 			ESINFO(ERROR) << "Cannot select element of dimension " << dimension << " on 2D plane.";
 		}
@@ -359,16 +414,25 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region *regi
 
 	case 3: { // Volume
 
-		ESINFO(ERROR) << "Implement selection of volume";
+		switch (dimension) {
+		case 0:
+		case 1:
+		case 2:
+			ESINFO(ERROR) << "Cannot select the interval.";
+			break;
+		case 3:
+			pickElements(elements, region, bborder);
+			break;
+		}
 	} break;
 
 	}
 }
 
 template <class TElement>
-void Block<TElement>::pattern(const std::vector<Element*> &elements, Region *region, const Triple<size_t> &offset, const Triple<size_t> &size, Pattern pattern)
+void Block<TElement>::pattern(const std::vector<Element*> &elements, Region *region, const Triple<size_t> &offset, const Triple<size_t> &size, Pattern pattern, size_t psize)
 {
-	Triple<size_t> divisor(size * block.elements * block.domains / 2);
+	Triple<size_t> divisor(size * block.elements * block.domains / psize);
 	Triple<size_t> modulo;
 
 	divisor.z = divisor.z ? divisor.z : 1;
@@ -392,11 +456,13 @@ void Block<TElement>::pattern(const std::vector<Element*> &elements, Region *reg
 
 				for (element.z = 0; element.z < block.elements.z; element.z++) {
 					for (element.y = 0; element.y < block.elements.y; element.y++) {
-						for (element.x = 0; element.x < block.elements.x; element.x++, eindex++) {
+						for (element.x = 0; element.x < block.elements.x; element.x++, eindex += TElement::subelements) {
 
 							index = begin + domain * block.elements + element;
 							if ((index / divisor).sum() % 2 == color) {
-								region->elements().push_back(elements[eindex]);
+								for (size_t e = 0; e < TElement::subelements; e++) {
+									region->elements().push_back(elements[eindex + e]);
+								}
 							}
 
 						}

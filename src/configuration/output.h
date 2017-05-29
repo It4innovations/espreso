@@ -22,6 +22,8 @@ struct OutputConfiguration: public Configuration {
 		{ "ENSIGHT"       , OUTPUT_FORMAT::ENSIGHT       , "EnSight files" }
 	}));
 
+	PARAMETER(std::string, path, "Path to output files.", "results");
+
 	PARAMETER(bool, compression, "Compression - needs VTK library", true);
 	PARAMETER(double, decimation, "Decimation - needs VTK library", 0);
 

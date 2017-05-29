@@ -5,6 +5,8 @@
 #include "../material/coordinatesystem.h"
 #include "../material/holder.h"
 #include "../solver.h"
+#include "solver.h"
+#include "linearelasticitysolver.h"
 
 namespace espreso {
 
@@ -61,13 +63,7 @@ struct LinearElasticity3DMaterial: public Configuration {
 
 struct LinearElasticity3DConfiguration: public Configuration {
 
-	OPTION(SOLVER_LIBRARY, solver_library, "Linear solver used for computing a system.", SOLVER_LIBRARY::ESPRESO, OPTIONS({
-		{ "ESPRESO", SOLVER_LIBRARY::ESPRESO, "ESPRESO solver [FETI methods]" },
-		{ "HYPRE"  , SOLVER_LIBRARY::HYPRE  , "Hypre solver [multigrid methods]" },
-	}));
-
-	SUBCONFIG(ESPRESOSolver, espreso, "Internal FETI solver options.");
-	SUBCONFIG(HypreSolver  , hypre  , "Multigrid solver setting.");
+	SUBCONFIG(PhysicsSolver<LinearElasticityNonLinearConvergence>, physics_solver, "Settings of physics solver.");
 
 	SUBMAP(std::string, std::string, displacement       , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
 	SUBMAP(std::string, std::string, normal_presure     , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");

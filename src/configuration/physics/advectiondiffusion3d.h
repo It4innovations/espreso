@@ -4,7 +4,7 @@
 
 #include "../material/coordinatesystem.h"
 #include "../material/holder.h"
-#include "../solver.h"
+#include "solver.h"
 #include "advectiondiffusionconvection.h"
 #include "advectiondiffusionsolver.h"
 
@@ -49,15 +49,7 @@ struct AdvectionDiffusion3DConfiguration: public Configuration {
 	}));
 	PARAMETER(double, sigma, "Inconsistent stabilization parameters.", 0);
 
-	SUBCONFIG(AdvectionDiffusionSolver, physics_solver, "Settings of physics solver.");
-
-	OPTION(SOLVER_LIBRARY, solver_library, "Linear solver used for computing a system.", SOLVER_LIBRARY::ESPRESO, OPTIONS({
-		{ "ESPRESO", SOLVER_LIBRARY::ESPRESO, "ESPRESO solver [FETI methods]" },
-		{ "HYPRE"  , SOLVER_LIBRARY::HYPRE  , "Hypre solver [multigrid methods]" },
-	}));
-
-	SUBCONFIG(ESPRESOSolver, espreso, "Internal FETI solver options.");
-	SUBCONFIG(HypreSolver  , hypre  , "Multigrid solver setting.");
+	SUBCONFIG(PhysicsSolver<AdvectionDiffusionNonLinearConvergence>, physics_solver, "Settings of physics solver.");
 
 	SUBMAPTOMAP(size_t, std::string, std::string, heat_flux, "Heat flux", "1", "Heat flux settings for load step '1'", "<REGION>", "<EXPRESSION>");
 	SUBMAPTOMAP(size_t, std::string, std::string, heat_flow, "Heat flow", "1", "Heat flow settings for load step '1'", "<REGION>", "<EXPRESSION>");
@@ -76,6 +68,8 @@ struct AdvectionDiffusion3DConfiguration: public Configuration {
 	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "<REGION>", "<MATERIAL_NAME>");
 
 	PARAMETER(bool, post_process, "Turn on/off results post processing.", true);
+
+	PARAMETER(bool, bem4i, "Assemble matrices using BEM4I library.", false);
 };
 
 }

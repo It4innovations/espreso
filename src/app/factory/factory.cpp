@@ -40,7 +40,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		_physics.push_back(new ShallowWater2D(mesh, _instances.front(), configuration.shallow_water_2D));
 		_linearSolvers.push_back(new LinearSolver(_instances.front(), configuration.shallow_water_2D.espreso));
 
-		loadSteps.push_back(new Linear(mesh, _physics.front(),  _linearSolvers.front(), store));
+		loadSteps.push_back(new Linear(mesh, _physics.front(),  _linearSolvers.front(), store, 1));
 		meshPreprocessing(configuration.output);
 		return;
 	}
@@ -49,7 +49,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 	store = new output::ResultStoreList(configuration.output);
 	if (configuration.output.monitoring.size()) {
-		store->add(new output::Monitoring(configuration.output, mesh, "monitors.emr"));
+		store->add(new output::Monitoring(configuration.output, mesh, Logging::name + ".emr"));
 	}
 	if (configuration.output.catalyst) {
 		store->add(new output::Catalyst(configuration.output, mesh, "results"));
@@ -75,27 +75,27 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		_newAssembler = true;
 		_instances.push_back(new Instance(mesh->parts(), mesh->neighbours()));
 		_physics.push_back(new NewAdvectionDiffusion2D(mesh, _instances.front(), configuration.advection_diffusion_2D));
-		_linearSolvers.push_back(new LinearSolver(_instances.front(), configuration.advection_diffusion_2D.espreso));
+		_linearSolvers.push_back(new LinearSolver(_instances.front(), configuration.advection_diffusion_2D.physics_solver.load_steps_settings.at(1)->espreso));
 
 		for (size_t i = 1; i <= configuration.advection_diffusion_2D.physics_solver.load_steps; i++) {
 			auto it = configuration.advection_diffusion_2D.physics_solver.load_steps_settings.find(i);
 			if (it == configuration.advection_diffusion_2D.physics_solver.load_steps_settings.end()) {
-				loadSteps.push_back(new Linear(mesh, _physics.front(),  _linearSolvers.front(), store));
+				loadSteps.push_back(new Linear(mesh, _physics.front(),  _linearSolvers.front(), store, 1));
 				break;
 			}
 			LoadStepSettings<AdvectionDiffusionNonLinearConvergence> *loadStepSettings = it->second;
 
 			if (loadStepSettings->type == LoadStepSettingsBase::TYPE::STEADY_STATE) {
 				if (loadStepSettings->mode == LoadStepSettingsBase::MODE::LINEAR) {
-					loadSteps.push_back(new Linear(mesh, _physics.front(), _linearSolvers.front(), store));
+					loadSteps.push_back(new Linear(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->duration_time));
 				}
 				if (loadStepSettings->mode == LoadStepSettingsBase::MODE::NONLINEAR) {
 					switch (loadStepSettings->nonlinear_solver.method) {
 					case NonLinearSolverBase::METHOD::NEWTON_RHAPSON:
-						loadSteps.push_back(new NewtonRhapson(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->nonlinear_solver));
+						loadSteps.push_back(new NewtonRhapson(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->nonlinear_solver, loadStepSettings->duration_time));
 						break;
 					case NonLinearSolverBase::METHOD::MODIFIED_NEWTON_RHAPSON:
-						loadSteps.push_back(new NewtonRhapson(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->nonlinear_solver));
+						loadSteps.push_back(new NewtonRhapson(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->nonlinear_solver, loadStepSettings->duration_time));
 						break;
 					default:
 						ESINFO(GLOBAL_ERROR) << "Not implemented non-linear solver method";
@@ -177,7 +177,9 @@ Factory::~Factory()
 	}
 	delete mesh;
 
-	std::for_each(loadSteps.begin(), loadSteps.end(), [] (SolverBase* solver) { delete solver; });
+	std::for_each(loadSteps.begin(), loadSteps.end(), [] (SolverBase* solver) {
+		delete solver;
+	});
 	std::for_each(_physics.begin(), _physics.end(), [] (Physics* physics) { delete physics; });
 	std::for_each(_instances.begin(), _instances.end(), [] (Instance* instance) { delete instance; });
 	std::for_each(_linearSolvers.begin(), _linearSolvers.end(), [] (LinearSolver* linearSolver) { delete linearSolver; });
@@ -192,10 +194,12 @@ void Factory::solve()
 	} else {
 		Step step;
 		Logging::step = &step;
+		double currentTime = 0;
 		for (size_t loadStep = 0; loadStep < loadSteps.size(); loadStep++) {
 			step.step = loadStep;
 			loadSteps[loadStep]->run(step);
 			_solution = _instances.front()->primalSolution;
+			step.currentTime = currentTime += loadSteps[loadStep]->duration();
 		}
 	}
 }
@@ -236,7 +240,7 @@ void Factory::check(const Results &configuration)
 				for (size_t n = 0; n < mesh->coordinates().localSize(p); n++) {
 					eslocal index = mesh->coordinates().localToCluster(p)[n];
 					ESTEST(EVALUATION)
-						<< (fabs(evaluator.evaluate(mesh->coordinates()[index]) - _solution[p][mesh->nodes()[index]->DOFIndex(p, DOF)]) > epsilon ? TEST_FAILED : TEST_PASSED)
+						<< (fabs(evaluator.evaluate(index, 0, 0, 0, 0) - _solution[p][mesh->nodes()[index]->DOFIndex(p, DOF)]) > epsilon ? TEST_FAILED : TEST_PASSED)
 						<< "Incorrect " << property << " of the solution.";
 				}
 			}

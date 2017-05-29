@@ -5,12 +5,18 @@
 #include <stack>
 #include <functional>
 #include <regex>
+#include <unistd.h>
 
-#include "../basis/logging/logging.h"
-#include "../configuration/environment.h"
+#include "mpi.h"
+
+#include "../../basis/logging/logging.h"
+#include "../environment.h"
+#include "../output.h"
 #include "tokenizer.h"
 
 using namespace espreso;
+
+std::string Reader::configurationFile = "espreso.ecf";
 
 static struct option long_options[] = {
 		{"config",  required_argument, 0, 'c'},
@@ -139,6 +145,9 @@ void Reader::_read(Configuration &configuration, int* argc, char ***argv)
 		nameless.push_back(std::string((*argv)[optind++]));
 	}
 
+	Logging::name = confFile.substr(0, confFile.find_first_of("."));
+	configurationFile = confFile;
+
 	_read(configuration, confFile, nameless);
 
 	optind = 0;
@@ -160,6 +169,36 @@ void Reader::_read(Configuration &configuration, int* argc, char ***argv)
 			break;
 		}
 	}
+}
+
+void Reader::copyInputData()
+{
+	if (environment->MPIrank) {
+		MPI_Barrier(MPI_COMM_WORLD);
+		Logging::log.open(Logging::outputRoot() + "/" + Logging::name + ".log", std::ofstream::app);
+		return;
+	} else {
+		if (environment->remove_old_results && Logging::path.compare(".")) {
+			system(("rm -fr " + Logging::path).c_str());
+		}
+		if (system(("mkdir -p " + Logging::outputRoot()).c_str())) {
+			ESINFO(ERROR) << "Cannot create output directory\n";
+		}
+		MPI_Barrier(MPI_COMM_WORLD);
+	}
+
+	Logging::log.open(Logging::outputRoot() + "/" + Logging::name + ".log", std::ofstream::app);
+
+	int error = remove(std::string(Logging::path + "/" + "last").c_str());
+	error = symlink(("../" + Logging::outputRoot()).c_str(), std::string(Logging::path + "/" + "last").c_str());
+	if (error) {
+		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Something wrong happens with creating link to last output directory.";
+	}
+
+	std::ifstream src(configurationFile.c_str(), std::ios::binary);
+	std::ofstream dst((Logging::outputRoot() + "/" + configurationFile).c_str(), std::ios::binary);
+
+	dst << src.rdbuf();
 }
 
 void Reader::_read(Configuration &configuration, const std::string &file, const std::vector<std::string> &args)
@@ -318,13 +357,15 @@ void Reader::_read(Configuration &configuration, const std::string &file, const 
 	}
 }
 
-void Reader::set(const Environment &env)
+void Reader::set(const Environment &env, const OutputConfiguration &output)
 {
 	Test::setLevel(env.testing_level);
 	Info::setLevel(env.verbose_level, env.testing_level);
 	Measure::setLevel(env.measure_level);
-	Logging::output = env.log_dir;
+	Logging::path = output.path;
+	Logging::debug = env.log_dir;
 	Logging::rank = env.MPIrank;
+	copyInputData();
 }
 
 static void printConfiguration(const Configuration &configuration, size_t indent)

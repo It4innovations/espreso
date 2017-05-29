@@ -18,10 +18,10 @@ struct LinearInstance: public OldInstance
 {
 	LinearInstance(const TConfiguration &configuration, const OutputConfiguration &output, Mesh &mesh): OldInstance(mesh),
 	_output(output),
-	_configuration(configuration.espreso),
-	_constrains(configuration.espreso, mesh),
+	_configuration(configuration.physics_solver.load_steps_settings.at(1)->espreso),
+	_constrains(configuration.physics_solver.load_steps_settings.at(1)->espreso, mesh),
 	_physics(mesh, _constrains, configuration),
-	_linearSolver(configuration.espreso, _physics, _constrains),
+	_linearSolver(configuration.physics_solver.load_steps_settings.at(1)->espreso, _physics, _constrains),
 	_store(_output, &mesh, "results")
 	{
 		_timeStatistics.totalTime.startWithBarrier();

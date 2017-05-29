@@ -62,11 +62,6 @@ void VTKXML::addData(const RegionData &regionData)
 		storePointData(it->first, it->second.first, *it->second.second);
 	}
 
-	for (size_t i = 0; i < regionData.solutions.size(); i++) {
-		if (regionData.solutions[i]->eType == ElementType::NODES) {
-			storePointData(regionData.solutions[i]->name, regionData.solutions[i]->properties, regionData.solutions[i]->data);
-		}
-	}
 	(*_os) << "  </PointData>\n";
 
 	(*_os) << "  <CellData>\n";
@@ -76,11 +71,6 @@ void VTKXML::addData(const RegionData &regionData)
 
 	for (auto it = regionData.data.elementDataDouble.begin(); it != regionData.data.elementDataDouble.end(); ++it) {
 		storeCellData(it->first, it->second.first, *it->second.second);
-	}
-	for (size_t i = 0; i < regionData.solutions.size(); i++) {
-		if (regionData.solutions[i]->eType == ElementType::ELEMENTS) {
-			storeCellData(regionData.solutions[i]->name, regionData.solutions[i]->properties, regionData.solutions[i]->data);
-		}
 	}
 	(*_os) << "  </CellData>\n";
 }
