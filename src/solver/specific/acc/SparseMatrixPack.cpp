@@ -486,7 +486,6 @@ void SparseMatrixPack::FactorizeMIC( ) {
                 iparm[i][28-1] = 0;
                 iparm[i][36-1] = 0;        /* Use Schur complement */
 
-
                 pardiso (pt[i], &maxfct, &mnum, &mtype, &phase,
                         &rows[i], matrix_values_mic + offsets[i], 
                         rowInd_mic + rowOffsets[i], colInd_mic + colOffsets[i], perm[i], 

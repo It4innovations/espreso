@@ -116,10 +116,7 @@ void ClusterAcc::SetAcceleratorAffinity() {
     } else {
         ESINFO(PROGRESS2) << "Incorrect number of MPI processes per accelerator!" << _MPInodeSize;  
     }
-    //for (int  i = 0 ; i < myTargets.size() ; ++i ) std::cout << myTargets.at(i) << " " ;
-    // Set process placement on Xeon Phi
-    //  std::cout << this->myTargets.size() << std::endl;
-    //for (eslocal i = 0; i < this->myTargets.size(); ++i) {
+
     #pragma omp parallel num_threads( acc_per_MPI )
     {
         int used_core_num = 0;
@@ -128,7 +125,7 @@ void ClusterAcc::SetAcceleratorAffinity() {
         int target = myTargets.at(omp_get_thread_num());
         int MPIperAcc = this->MPI_per_acc;
         int rank = this->acc_rank;
-        // std::cout << "target " << target << std::endl;
+
 #pragma offload target(mic:target) 
         {
             cpu_set_t my_set;        // Define cpu_set bit mask. 
@@ -136,10 +133,7 @@ void ClusterAcc::SetAcceleratorAffinity() {
             int cores = sysconf(_SC_NPROCESSORS_ONLN); // for Xeon Phi 7120 - results is 244
             cores = ( cores / 4 ) - 1; // keep core for system and remove effect of hyperthreading
             int cores_per_rank = cores / MPIperAcc;
-            // std::cout << "cores: "<<cores << std::endl;
-            // std::cout << "cores_per_rank: " << cores_per_rank << std::endl;
 
-            //omp_set_num_threads((cores_per_rank)*4);
             for (int i = 0; i < cores_per_rank ; i++) {
                 if (i == 0) {
                     //first_core = 1*(cores_per_rank)*rank + 1*i;
@@ -150,7 +144,6 @@ void ClusterAcc::SetAcceleratorAffinity() {
 
                 int core =1+  4*cores_per_rank*rank + 4*i;
                 for (int j = 0 ; j < 4; j++ ) {
-                    // std::cout << target << " " << rank << " " << _MPInodeRank << " " << core << std::endl;
                     CPU_SET(core , &my_set);     /* set the bit that represents core 7. */
                     core++;
                 }
@@ -161,8 +154,6 @@ void ClusterAcc::SetAcceleratorAffinity() {
             omp_set_num_threads(4*cores_per_rank);
             /* the defined mask, i.e. only 7. */
         }
-        //ESINFO(PROGRESS3)
-        // std::cout << "Global MPI rank: " << _MPIglobalRank << " - Node MPI rank: " << _MPInodeRank << " uses: " << used_core_num << " Xeon Phi processing cores of accelerator #" << target <<" (from " << first_core << " to " << last_core <<  ")\n";
     }
 
 }
@@ -238,7 +229,6 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
                 dataSize += currDataSize;
             }
         }
-        //std::cout << "TOTAL BYTES " << dataSize * sizeof(double) << std::endl;
 
         // it is necessary to subtract numCPUDomains AFTER setting offset!
         offset += matrixPerPack[i];
@@ -279,7 +269,6 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
                 memcpy(matrixPointer, &(domains[domN].B1Kplus.dense_values[0]),
                         this->B1KplusPacks[i].getDataLength(j) * sizeof(double) );
                 SEQ_VECTOR<double>().swap(  domains[domN].B1Kplus.dense_values);
-                //domains[domN].B1Kplus.Clear();
                 ESINFO(PROGRESS3) << Info::plain() << ".";
             }
         }

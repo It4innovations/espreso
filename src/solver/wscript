@@ -41,6 +41,7 @@ def configure(ctx):
 
 
     if ctx.env.SOLVER == "MIC":
+        mkl = ("mkl_intel_lp64", "mkl_intel_ilp64")[ctx.env.INT_WIDTH == 64]
         for lib in [ "imf", "intlc", "svml", "irng" ]:
             ctx.check_lib(lib)
             ctx.env.append_unique("LIB", [ lib ])
@@ -48,8 +49,7 @@ def configure(ctx):
         link_MKL()
         ctx.check_lib("ifcore")
         ctx.env.append_unique("LIB", [ "ifcore" ])
-        ctx.env.append_unique("LINKFLAGS",
-        ["-qoffload-option,mic,ld,-L{0}/lib/mic -lmkl_intel_lp64 -lmkl_core -lmkl_sequential ".format(os.environ['MKLROOT']) ])
+        ctx.env.append_unique("LINKFLAGS", ["-qoffload-option,mic,ld,-L{0}/lib/mic -l{1} -lmkl_core -lmkl_sequential ".format(os.environ['MKLROOT'], mkl) ])
 
 
     if ctx.env.SOLVER == "CUDA" or ctx.env.SOLVER == "CUDA_7":
