@@ -15,8 +15,8 @@
 using namespace espreso::output;
 
 
-VTKXML::VTKXML(const OutputConfiguration &output, const Mesh *mesh, const std::string &path)
-: ResultStore(output, mesh, path), _VTKGrid(NULL), _writer(NULL), _os(NULL)
+VTKXML::VTKXML(const OutputConfiguration &output, const Mesh *mesh, const std::string &path, MeshInfo::InfoMode mode)
+: ResultStore(output, mesh, path, mode), _VTKGrid(NULL), _writer(NULL), _os(NULL)
 {
 
 }

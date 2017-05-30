@@ -11,7 +11,7 @@ namespace output {
 class VTKXMLASCII: public VTKXML {
 
 public:
-	VTKXMLASCII(const OutputConfiguration &output, const Mesh *mesh, const std::string &path);
+	VTKXMLASCII(const OutputConfiguration &output, const Mesh *mesh, const std::string &path, MeshInfo::InfoMode mode = MeshInfo::EMPTY);
 	virtual ~VTKXMLASCII();
 
 protected:
