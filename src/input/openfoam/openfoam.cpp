@@ -256,35 +256,46 @@ void OpenFOAM::neighbours(std::vector<Element*> &nodes, std::vector<int> &neighb
 	int neighbProcNo = 0;
 	int lastNeighbProcNo = -1;
 
-	for (std::vector<Dictionary>::iterator it = boundary.begin(); it != boundary.end(); ++it) {
-		eslocal nFaces = 0;
-		solveParseError((*it).readEntry("nFaces", nFaces));
-		eslocal startFace = 0;
-		solveParseError((*it).readEntry("startFace", startFace));
-
-		if ((*it).getName().find("procBoundary") == 0) {
-			solveParseError((*it).readEntry("myProcNo", myProcNo));
-			if (myProcNo != _rank) {
-				ESINFO(GLOBAL_ERROR) << "Boundary for rank: " << myProcNo << ", but opened in process: " << _rank;
-			}
-			solveParseError((*it).readEntry("neighbProcNo", neighbProcNo));
-
-			if (lastNeighbProcNo < _rank && _rank < neighbProcNo) {
-				for (size_t n = 0; n < nodes.size(); n++) {
-					nodes[n]->clusters().push_back(_rank);
-				}
-			}
-
-			for (eslocal i = startFace; i < startFace + nFaces; i++) {
-				for (size_t n = 0; n < faces[i]->nodes(); n++) {
-					if (!nodes[faces[i]->node(n)]->clusters().size() || nodes[faces[i]->node(n)]->clusters().back() != neighbProcNo) {
-						nodes[faces[i]->node(n)]->clusters().push_back(neighbProcNo);
-					}
-				}
-			}
-
-			lastNeighbProcNo = neighbProcNo;
+	std::vector<Dictionary*> sortedBoundary;
+	for (size_t i = 0; i < boundary.size(); i++) {
+		if (boundary[i].getName().find("procBoundary") == 0) {
+			sortedBoundary.push_back(&boundary[i]);
 		}
+	}
+	std::sort(sortedBoundary.begin(), sortedBoundary.end(), [&] (Dictionary *d1, Dictionary *d2) {
+		int neigh1, neigh2;
+		solveParseError(d1->readEntry("neighbProcNo", neigh1));
+		solveParseError(d2->readEntry("neighbProcNo", neigh2));
+		return neigh1 < neigh2;
+	});
+
+	for (auto it = sortedBoundary.begin(); it != sortedBoundary.end(); ++it) {
+		eslocal nFaces = 0;
+		solveParseError((*it)->readEntry("nFaces", nFaces));
+		eslocal startFace = 0;
+		solveParseError((*it)->readEntry("startFace", startFace));
+
+		solveParseError((*it)->readEntry("myProcNo", myProcNo));
+		if (myProcNo != _rank) {
+			ESINFO(GLOBAL_ERROR) << "Boundary for rank: " << myProcNo << ", but opened in process: " << _rank;
+		}
+		solveParseError((*it)->readEntry("neighbProcNo", neighbProcNo));
+
+		if (lastNeighbProcNo < _rank && _rank < neighbProcNo) {
+			for (size_t n = 0; n < nodes.size(); n++) {
+				nodes[n]->clusters().push_back(_rank);
+			}
+		}
+
+		for (eslocal i = startFace; i < startFace + nFaces; i++) {
+			for (size_t n = 0; n < faces[i]->nodes(); n++) {
+				if (!nodes[faces[i]->node(n)]->clusters().size() || nodes[faces[i]->node(n)]->clusters().back() != neighbProcNo) {
+					nodes[faces[i]->node(n)]->clusters().push_back(neighbProcNo);
+				}
+			}
+		}
+
+		lastNeighbProcNo = neighbProcNo;
 	}
 
 	if (lastNeighbProcNo < _rank) {
