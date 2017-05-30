@@ -4,7 +4,7 @@
  *
  * @author Sebastian Rettenberger <sebastian.rettenberger@tum.de>
  *
- * @copyright Copyright (c) 2016, Technische Universitaet Muenchen.
+ * @copyright Copyright (c) 2016-2017, Technische Universitaet Muenchen.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -135,6 +135,15 @@ public:
 	 * @return The id of the buffer
 	 */
 	virtual unsigned int addBuffer(const void* buffer, size_t size, bool clone = false) = 0;
+	
+	/**
+	 * Resize an existing buffer
+	 * 
+	 * @param id The id of the buffer
+	 * @param buffer The new original memory location
+	 * @param size The new size
+	 */
+	virtual void resizeBuffer(unsigned int id, const void* buffer, size_t size) = 0;
 
 	/**
 	 * Frees all memory allocated for the buffer.
@@ -206,10 +215,7 @@ protected:
 
 		if (size && allocate) {
 			if (m_alignment > 0) {
-				// Make the allocated buffer size a multiple of m_alignment
-				size_t allocBufferSize = (size + m_alignment - 1) / m_alignment;
-				allocBufferSize *= m_alignment;
-
+				const size_t allocBufferSize = allocSize(size);
 				int ret = posix_memalign(&buffer.buffer, m_alignment, allocBufferSize);
 				if (ret)
 					logError() << "Could not allocate buffer" << ret;
@@ -223,6 +229,30 @@ protected:
 		assert(m_buffer.size() == numBuffers());
 
 		return m_buffer.size()-1;
+	}
+	
+	void _resizeBuffer(unsigned int id, const void* origin, size_t size)
+	{
+		assert(id < numBuffers());
+		if (origin && m_buffer[id].origin)
+			m_buffer[id].origin = origin;
+		
+		if (async::ExecInfo::bufferSize(id) == size)
+			return;
+		
+		async::ExecInfo::_resizeBuffer(id, size);
+		
+		if (size && m_buffer[id].buffer) {
+			if (m_alignment > 0) {
+				const size_t allocBufferSize = allocSize(size);
+				free(m_buffer[id].buffer);
+				int ret = posix_memalign(&m_buffer[id].buffer, m_alignment, allocBufferSize);
+				if (ret)
+					logError() << "Could not allocate buffer" << ret;
+			} else {
+				m_buffer[id].buffer = realloc(m_buffer[id].buffer, size);
+			}
+		}
 	}
 
 	/**
@@ -268,6 +298,19 @@ protected:
 
 		m_finalized = true;
 		return true;
+	}
+	
+private:
+	/**
+	 * Compute the allocated size depending on the requested size
+	 */
+	size_t allocSize(size_t size)
+	{
+		// Make the allocated buffer size a multiple of m_alignment
+		size_t allocBufferSize = (size + m_alignment - 1) / m_alignment;
+		allocBufferSize *= m_alignment;
+		
+		return allocBufferSize;
 	}
 
 private:

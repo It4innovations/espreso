@@ -79,6 +79,17 @@ public:
 		MPIBase<Executor, InitParameter, Parameter>::addBuffer(buffer, size, clone);
 		return Base<Executor, InitParameter, Parameter>::_addBuffer(buffer, size, false);
 	}
+	
+	void resizeBuffer(unsigned int id, const void* buffer, size_t size)
+	{
+		if (!Base<Executor, InitParameter, Parameter>::origin(id)) {
+			// Resize the managed buffer
+			MPIBase<Executor, InitParameter, Parameter>::scheduler().resizeManagedBuffer(
+				Base<Executor, InitParameter, Parameter>::bufferSize(id), size);
+		}
+		
+		MPIBase<Executor, InitParameter, Parameter>::resizeBuffer(id, buffer, size);
+	}
 
 	void removeBuffer(unsigned int id)
 	{

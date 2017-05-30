@@ -83,7 +83,7 @@ private:
 		bool sync;
 
 		/** Offsets for all tasks */
-		const unsigned long* offsets;
+		unsigned long* offsets;
 
 		/** Next writing position for all tasks */
 		size_t* positions;
@@ -245,6 +245,19 @@ protected:
 
 		return _addBuffer(buffer, size, clone, sync);
 	}
+	
+	void resizeBuffer(unsigned int id, const void* buffer, size_t size)
+	{
+		assert(m_scheduler);
+		assert(!m_scheduler->isExecutor());
+		
+		// Resize the buffer on the compute node
+		Base<Executor, InitParameter, Parameter>::_resizeBuffer(id, buffer, size);
+		
+		m_scheduler->resizeBuffer(m_id, id);
+		
+		_resizeBuffer(id, buffer, size);
+	}
 
 	bool isClone(unsigned int id) const
 	{
@@ -365,6 +378,59 @@ private:
 		}
 
 		return Base<Executor, InitParameter, Parameter>::numBuffers()-1;
+	}
+	
+	void _resizeBuffer(unsigned int id)
+	{
+		_resizeBuffer(id, 0L, 0);
+	}
+	
+	void _resizeBuffer(unsigned int id, const void* buffer, size_t size)
+	{
+		if (!m_scheduler->isExecutor()) {
+			if (m_buffer[id].clone && m_scheduler->groupRank() != 0)
+				size = 0;
+		}
+
+		int executorRank = m_scheduler->groupSize()-1;
+
+		// Compute buffer size and offsets
+		unsigned long* bufferOffsets = 0L;
+		if (m_scheduler->isExecutor()) {
+			assert(size == 0);
+
+			bufferOffsets = m_executorBuffer[id].offsets;
+		}
+
+		MPI_Gather(&size, 1, MPI_UNSIGNED_LONG, bufferOffsets,
+				1, MPI_UNSIGNED_LONG, executorRank, m_scheduler->privateGroupComm());
+		
+		if (m_scheduler->isExecutor()) {
+			// Compute total size, offsets and buffer chunks
+			size = 0;
+			unsigned int bufferChunks = 0;
+			for (int i = 0; i < m_scheduler->groupSize()-1; i++) {
+				// Compute offsets from the size
+				unsigned long bufSize = bufferOffsets[i];
+				bufferOffsets[i] = size;
+
+				if (bufSize > 0) {
+					// Increment the total buffer size
+					size += bufSize;
+
+					if (!m_executorBuffer[id].sync)
+						// Increment the number of buffer chunks
+						bufferChunks += (bufSize + m_maxSend - 1) / m_maxSend;
+				}
+			}
+
+			m_numBufferChunks += bufferChunks - m_executorBuffer[id].bufferChunks;
+
+			// Resize the buffer
+			ThreadBase<Executor, InitParameter, Parameter>::resizeBuffer(id, 0L, size);
+
+			m_executorBuffer[id].bufferChunks = bufferChunks;
+		}
 	}
 
 	void _removeBuffer(unsigned int id)

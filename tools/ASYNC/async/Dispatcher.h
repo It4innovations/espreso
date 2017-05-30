@@ -89,6 +89,7 @@ public:
 	 * Use this to overwrite the group size set from the environment variable
 	 *
 	 * @param groupSize The group size (excl. the MPI executor)
+	 * @deprecated Use {@link Config::setGroupSize}
 	 */
 	void setGroupSize(unsigned int groupSize)
 	{

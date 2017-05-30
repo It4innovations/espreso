@@ -4,7 +4,7 @@
  *
  * @author Sebastian Rettenberger <sebastian.rettenberger@tum.de>
  *
- * @copyright Copyright (c) 2016, Technische Universitaet Muenchen.
+ * @copyright Copyright (c) 2016-2017, Technische Universitaet Muenchen.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -216,6 +216,35 @@ public:
 
 		TS_ASSERT_EQUALS(*reinterpret_cast<const int*>(async.buffer(0)), 32);
 	}
+	
+	void testResizeBuffer()
+	{
+		Executor<TestThread> executor(this);
+
+		async::as::Thread<Executor<TestThread>, Parameter, Parameter> async;
+		async.setExecutor(executor);
+
+		int buffer1 = 1;
+		TS_ASSERT_EQUALS(async.addBuffer(&buffer1, sizeof(int)), 0);
+		TS_ASSERT_EQUALS(async.numBuffers(), 1);
+		TS_ASSERT_EQUALS(async.bufferSize(0), sizeof(int));
+		
+		async.sendBuffer(0, sizeof(int));
+		TS_ASSERT_EQUALS(*static_cast<const int*>(async.buffer(0)), 1);
+		
+		async.wait();
+		
+		int buffer2[2] = {2, 3};
+		async.resizeBuffer(0, buffer2, 2*sizeof(int));
+		TS_ASSERT_EQUALS(async.bufferSize(0), 2*sizeof(int));
+		
+		async.sendBuffer(0, 2*sizeof(int));
+		
+		const int* p = static_cast<const int*>(async.buffer(0));
+		
+		TS_ASSERT_EQUALS(p[0], 2);
+		TS_ASSERT_EQUALS(p[1], 3);
+	}
 
 	void testRemoveBuffer()
 	{
@@ -238,7 +267,6 @@ public:
 
 		async.removeBuffer(0);
 		TS_ASSERT_EQUALS(async.buffer(0), static_cast<const void*>(0L));
-		logInfo() << async.buffer(1);
 		TS_ASSERT_DIFFERS(async.buffer(1), static_cast<const void*>(0L));
 
 		async.sendBuffer(1, sizeof(int));
@@ -246,8 +274,6 @@ public:
 		async.call(parameter);
 
 		async.wait();
-
-		logInfo() << async.buffer(1);
 
 		async.removeBuffer(1);
 		TS_ASSERT_EQUALS(async.buffer(1), static_cast<const void*>(0L));
@@ -311,5 +337,34 @@ public:
 		async2.wait();
 
 		TS_ASSERT_EQUALS(m_value, 42+13);
+	}
+	
+	void testAddBuffer()
+	{
+		Executor<TestThread> executor(this);
+
+		async::as::Thread<Executor<TestThread>, Parameter, Parameter> async1;
+		async1.setExecutor(executor);
+
+		async1.wait();
+		
+		// Add buffer during send phase
+		int buffer = 40;
+		TS_ASSERT_EQUALS(async1.addBuffer(&buffer, sizeof(int)), 0);
+
+		async1.sendBuffer(0, sizeof(int));
+		TS_ASSERT_EQUALS(*reinterpret_cast<const int*>(async1.buffer(0)), 40);
+
+		Parameter parameter;
+		parameter.value = 42;
+		async1.call(parameter);
+		
+		// Add buffer during call phase
+		int buffer2;
+		TS_ASSERT_EQUALS(async1.addBuffer(&buffer2, sizeof(int)), 1);
+
+		async1.wait();
+
+		TS_ASSERT_EQUALS(m_value, 42);
 	}
 };

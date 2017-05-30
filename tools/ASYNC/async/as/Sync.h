@@ -69,6 +69,11 @@ public:
 	{
 		return Base<Executor, InitParameter, Parameter>::_addBuffer(buffer, size, buffer == 0L);
 	}
+	
+	void resizeBuffer(unsigned int id, const void* buffer, size_t size)
+	{
+		Base<Executor, InitParameter, Parameter>::_resizeBuffer(id, buffer, size);
+	}
 
 	const void* buffer(unsigned int id) const
 	{

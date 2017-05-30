@@ -109,6 +109,11 @@ public:
 	{
 		return m_async->addBuffer(buffer, size, clone);
 	}
+	
+	void resizeBuffer(unsigned int id, const void* buffer, size_t size)
+	{
+		m_async->resizeBuffer(id, buffer, size);
+	}
 
 	void removeBuffer(unsigned int id)
 	{

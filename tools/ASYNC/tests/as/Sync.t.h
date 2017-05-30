@@ -102,6 +102,28 @@ public:
 
 		async.wait();
 	}
+	
+	void testResizeBuffer()
+	{
+		Executor<TestSync> executor(this);
+
+		async::as::Sync<Executor<TestSync>, Parameter, Parameter> async;
+		async.setExecutor(executor);
+
+		int buffer1 = 1;
+		TS_ASSERT_EQUALS(async.addBuffer(&buffer1, sizeof(int)), 0);
+		TS_ASSERT_EQUALS(async.numBuffers(), 1);
+
+		TS_ASSERT_EQUALS(async.bufferSize(0), sizeof(int));
+
+		async.wait();
+		
+		int buffer2[2] = {2, 3};
+		
+		async.resizeBuffer(0, buffer2, 2*sizeof(int));
+		TS_ASSERT_EQUALS(async.bufferSize(0), 2*sizeof(int));
+		TS_ASSERT_EQUALS(*static_cast<const int*>(async.buffer(0)), 2);
+	}
 
 	void testRemoveBuffer()
 	{

@@ -56,44 +56,96 @@ enum Mode
 	MPI
 };
 
+/**
+ * @warning Overwriting the default values from the environment is only allowed
+ *  before any other ASYNC class is created. Otherwise the behavior is undefined.
+ */
 class Config
 {
+private:
+	Mode m_mode;
+	
+	int m_pinCore;
+	
+	unsigned int m_groupSize;
+	
+	bool m_asyncCopy;
+	
+	size_t m_alignment;
+	
+private:
+	Config()
+		: m_mode(str2mode(utils::Env::get<const char*>("ASYNC_MODE", "SYNC"))),
+		m_pinCore(utils::Env::get<int>("ASYNC_PIN_CORE", -1)),
+		m_groupSize(m_mode == MPI ? utils::Env::get("ASYNC_GROUP_SIZE", 64) : 1),
+		m_asyncCopy(utils::Env::get<int>("ASYNC_MPI_COPY", 0)),
+		m_alignment(utils::Env::get<size_t>("ASYNC_BUFFER_ALIGNMENT", 0))
+	{ }
+	
 public:
 	static Mode mode()
 	{
-		static const Mode mode = str2mode(utils::Env::get<const char*>("ASYNC_MODE", "SYNC"));
-		return mode;
+		return instance().m_mode;
 	}
 
 	static int getPinCore()
 	{
-		return utils::Env::get<int>("ASYNC_PIN_CORE", -1);
+		return instance().m_pinCore;
 	}
 
 	static unsigned int groupSize()
 	{
-		if (mode() != MPI)
-			return 1;
-
-		return utils::Env::get("ASYNC_GROUP_SIZE", 64);
+		return instance().m_groupSize;
 	}
 
 	static bool useAsyncCopy()
 	{
-		return utils::Env::get<int>("ASYNC_MPI_COPY", 0);
+		return instance().m_asyncCopy;
 	}
 
 	static size_t alignment()
 	{
-		return utils::Env::get<size_t>("ASYNC_BUFFER_ALIGNMENT", 0);
+		return instance().m_alignment;
 	}
 
 	static size_t maxSend()
 	{
 		return utils::Env::get<size_t>("ASYNC_MPI_MAX_SEND", 1UL<<30);
 	}
+	
+	static void setMode(Mode mode)
+	{
+		instance().m_mode = mode;
+	}
+	
+	static void setPinCore(int pinCore)
+	{
+		instance().m_pinCore = pinCore;
+	}
+	
+	static void setUseAsyncCopy(bool useAsyncCopy)
+	{
+		instance().m_asyncCopy = useAsyncCopy;
+	}
+	
+	static void setGroupSize(unsigned int groupSize)
+	{
+		if (instance().mode() == MPI)
+			instance().m_groupSize = groupSize;
+	}
+	
+	static void setAlignment(size_t alignment)
+	{
+		instance().m_alignment = alignment;
+	}
 
 private:
+	static Config& instance()
+	{
+		static Config config;
+		return config;
+	}
+	
 	static Mode str2mode(const char* mode)
 	{
 		std::string strMode(mode);

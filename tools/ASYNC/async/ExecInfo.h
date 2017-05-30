@@ -4,7 +4,7 @@
  *
  * @author Sebastian Rettenberger <sebastian.rettenberger@tum.de>
  *
- * @copyright Copyright (c) 2016, Technische Universitaet Muenchen.
+ * @copyright Copyright (c) 2016-2017, Technische Universitaet Muenchen.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -84,6 +84,12 @@ protected:
 	void _addBuffer(size_t size)
 	{
 		m_bufferSize.push_back(size);
+	}
+	
+	void _resizeBuffer(unsigned int id, size_t size)
+	{
+		assert(id < numBuffers());
+		m_bufferSize[id] = size;
 	}
 
 	void _removeBuffer(unsigned int id)

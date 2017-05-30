@@ -48,6 +48,7 @@
 
 struct Param
 {
+	int step;
 };
 
 class Module : private async::Module<Module, Param, Param>
@@ -149,7 +150,7 @@ public:
 		addBuffer(&cloneBuffer, sizeof(int), true);
 
 		long addCloneSyncBuffer = 2;
-		addBuffer(&addCloneSyncBuffer, sizeof(long), true);
+		addSyncBuffer(&addCloneSyncBuffer, sizeof(long), true);
 
 		addBuffer(0L, 2*sizeof(int));
 
@@ -226,6 +227,106 @@ private:
 			for (unsigned int i = 0; i < managedBufferSize/sizeof(int); i++) {
 				TS_ASSERT_EQUALS(*(static_cast<const int*>(buffer(4))+i), 5);
 			}
+		}
+	}
+};
+
+
+
+class ResizeBufferModule : private async::Module<ResizeBufferModule, Param, Param>
+{
+public:
+	unsigned int m_buffer0Size[2];
+	unsigned int m_buffer1Size[2];
+
+public:
+	ResizeBufferModule()
+	{
+	}
+
+	void run()
+	{
+		init();
+
+		int buffer0 = 42;
+		addBuffer(&buffer0, sizeof(int));
+
+		int buffer1[2] = {1, 2};
+		addBuffer(buffer1, 2*sizeof(int), true);
+
+		Param param;
+		callInit(param);
+
+		wait();
+
+		sendBuffer(0, sizeof(int));
+		sendBuffer(1, 2*sizeof(int));
+
+		param.step = 0;
+		call(param);
+
+		if (async::Config::mode() == async::MPI) {
+			// Set the params on non-executors
+			_exec(param, false);
+		}
+
+		wait();
+		
+		int buffer2[2] = {4, 3};
+		resizeBuffer(0, buffer2, 2*sizeof(int));
+		
+		resizeBuffer(1, buffer1, sizeof(int));
+		
+		sendBuffer(0);
+		sendBuffer(1);
+		
+		param.step = 1;
+		call(param);
+
+		if (async::Config::mode() == async::MPI) {
+			// Set the params on non-executors
+			_exec(param, false);
+		}
+		
+		wait();
+
+		finalize();
+	}
+
+	void execInit(const Param &param)
+	{
+	}
+
+	void exec(const async::ExecInfo &info, const Param &param)
+	{
+		_exec(param);
+	}
+
+	void setUp()
+	{
+		setExecutor(*this);
+	}
+
+	void tearDown()
+	{
+	}
+
+private:
+	void _exec(const Param &param, bool isExecutor = true)
+	{
+		m_buffer0Size[param.step] = bufferSize(0);
+		m_buffer1Size[param.step] = bufferSize(1);
+		switch (param.step) {
+		case 0:
+			TS_ASSERT_EQUALS(*static_cast<const int*>(buffer(0)), 42);
+			TS_ASSERT_EQUALS(*static_cast<const int*>(buffer(1)), 1);
+			TS_ASSERT_EQUALS(*(static_cast<const int*>(buffer(1))+1), 2);
+			break;
+		case 1:
+			TS_ASSERT_EQUALS(*static_cast<const int*>(buffer(0)), 4);
+			TS_ASSERT_EQUALS(*(static_cast<const int*>(buffer(0))+1), 3);
+			TS_ASSERT_EQUALS(*static_cast<const int*>(buffer(1)), 1);
+			break;
 		}
 	}
 };
@@ -390,6 +491,31 @@ public:
 		TS_ASSERT_EQUALS(module.m_bufferSize, bufferSize);
 		TS_ASSERT_EQUALS(module.m_cloneBufferSize, cloneBufferSize);
 		TS_ASSERT_EQUALS(module.m_cloneSyncBufferSize, cloneSyncBufferSize);
+	}
+
+	void testResizeBuffer()
+	{
+		async::Dispatcher dispatcher;
+
+		ResizeBufferModule module;
+
+		dispatcher.init();
+
+		if (dispatcher.dispatch())
+			module.run();
+
+		unsigned int bufferSize = sizeof(int);
+
+		if (dispatcher.isExecutor() && async::Config::mode() == async::MPI) {
+			bufferSize *= m_size-1;
+		}
+
+		dispatcher.finalize();
+
+		TS_ASSERT_EQUALS(module.m_buffer0Size[0], bufferSize);
+		TS_ASSERT_EQUALS(module.m_buffer0Size[1], 2*bufferSize);
+		TS_ASSERT_EQUALS(module.m_buffer1Size[0], 2*sizeof(int));
+		TS_ASSERT_EQUALS(module.m_buffer1Size[1], sizeof(int));
 	}
 
 	void testRemoveBuffer()

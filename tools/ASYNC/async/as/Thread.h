@@ -87,20 +87,37 @@ public:
 	{
 		ThreadBase<Executor, InitParameter, Parameter>::setExecutor(executor);
 
-		const int numCores = get_nprocs();
+		cpu_set_t oldCpuMask;
+		ThreadBase<Executor, InitParameter, Parameter>::getAffinity(oldCpuMask);
+		const int numCores = CPU_COUNT(&oldCpuMask); // Number of cores we have available
 
 		int core = async::Config::getPinCore();
 		if (core < 0)
 			core = numCores + core;
 
 		if (core < 0 || core >= numCores) {
-			logWarning() << "Skipping async thread pining, invalid core id" << core << "specified";
+			logWarning() << "Skipping async thread pining, invalid core" << core << "specified. Available cores:" << numCores;
 			return;
 		}
-
+		
+		// Get the real core
+		const int totalCores = get_nprocs();
+		int realCore = -1;
+		while (core >= 0) {
+			realCore++;
+			if (CPU_ISSET(realCore, &oldCpuMask))
+				core--;
+			
+			if (realCore >= totalCores)
+				logError() << "Pinning failed. Not enough cores available.";
+		}
+		
+		logDebug() << "Pinning executor to core" << realCore;
+		
 		cpu_set_t cpuMask;
 		CPU_ZERO(&cpuMask);
-		CPU_SET(core, &cpuMask);
+		CPU_SET(realCore, &cpuMask);
+		
 		ThreadBase<Executor, InitParameter, Parameter>::setAffinity(cpuMask);
 	}
 

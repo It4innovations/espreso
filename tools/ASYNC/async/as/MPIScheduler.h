@@ -131,6 +131,8 @@ private:
 	 * @param sync True if the buffer is send sychronized
 	 */
 	virtual void _addBuffer(bool sync) = 0;
+	
+	virtual void _resizeBuffer(unsigned int id) = 0;
 
 	virtual void _removeBuffer(unsigned int id) = 0;
 
@@ -332,6 +334,12 @@ public:
 
 					readyTasks[id]++;
 					break;
+				case RESIZE_TAG:
+					MPI_Recv(&bufferId, 1, MPI_UNSIGNED, status.MPI_SOURCE, status.MPI_TAG,
+						m_privateGroupComm, MPI_STATUS_IGNORE);
+					
+					readyTasks[id]++;
+					break;
 				case REMOVE_TAG:
 					MPI_Recv(&bufferId, 1, MPI_UNSIGNED, status.MPI_SOURCE, status.MPI_TAG,
 						m_privateGroupComm, MPI_STATUS_IGNORE);
@@ -394,6 +402,10 @@ public:
 			case ADD_TAG:
 				MPI_Barrier(m_privateGroupComm);
 				m_asyncCalls[id]->_addBuffer(sync);
+				break;
+			case RESIZE_TAG:
+				MPI_Barrier(m_privateGroupComm);
+				m_asyncCalls[id]->_resizeBuffer(bufferId);
 				break;
 			case REMOVE_TAG:
 				MPI_Barrier(m_privateGroupComm);
@@ -494,6 +506,17 @@ private:
 			m_groupSize-1, id*NUM_TAGS+ADD_TAG+NUM_STATIC_TAGS,
 			m_privateGroupComm);
 
+		MPI_Barrier(m_privateGroupComm);
+	}
+	
+	void resizeBuffer(int id, unsigned int bufferId)
+	{
+		assert(id >= 0);
+		
+		MPI_Send(&bufferId, 1, MPI_UNSIGNED,
+			m_groupSize-1, id*NUM_TAGS+RESIZE_TAG+NUM_STATIC_TAGS,
+			m_privateGroupComm);
+		
 		MPI_Barrier(m_privateGroupComm);
 	}
 
@@ -629,13 +652,33 @@ private:
 		if (m_managedBuffer.size() < size)
 			m_managedBuffer.resize(size);
 	}
-
+	
+	void resizeManagedBuffer(size_t oldSize, size_t newSize)
+	{
+		assert(oldSize != newSize);
+		
+		m_managedBufferCounter[newSize]++;
+		m_managedBufferCounter.at(oldSize)--;
+		if (m_managedBufferCounter.at(oldSize) == 0)
+			m_managedBufferCounter.erase(oldSize);
+		if (m_managedBuffer.size() == oldSize) {
+			if (newSize > oldSize)
+				m_managedBuffer.resize(newSize);
+			else {
+				std::map<size_t, unsigned int>::const_reverse_iterator it
+					= m_managedBufferCounter.rbegin();
+				assert(it != m_managedBufferCounter.rend());
+				m_managedBuffer.resize(it->first);
+			}
+		}
+	}
+	
 	void removeManagedBuffer(size_t size)
 	{
 		m_managedBufferCounter.at(size)--;
 		if (m_managedBufferCounter.at(size) == 0) {
 			m_managedBufferCounter.erase(size);
-			if (m_managedBuffer.size() >= size) {
+			if (m_managedBuffer.size() == size) {
 				// Last element removed that required this size
 				std::map<size_t, unsigned int>::const_reverse_iterator it
 					= m_managedBufferCounter.rbegin();
@@ -660,12 +703,13 @@ private:
 	static const int NUM_STATIC_TAGS = KILL_TAG + 1;
 
 	static const int ADD_TAG = 0;
-	static const int REMOVE_TAG = 1;
-	static const int INIT_TAG = 2;
-	static const int BUFFER_TAG = 3;
-	static const int PARAM_TAG = 4;
-	static const int WAIT_TAG = 5;
-	static const int FINALIZE_TAG = 6;
+	static const int RESIZE_TAG = 1;
+	static const int REMOVE_TAG = 2;
+	static const int INIT_TAG = 3;
+	static const int BUFFER_TAG = 4;
+	static const int PARAM_TAG = 5;
+	static const int WAIT_TAG = 6;
+	static const int FINALIZE_TAG = 7;
 	/** The number of tags required for each async module */
 	static const int NUM_TAGS = FINALIZE_TAG + 1;
 };

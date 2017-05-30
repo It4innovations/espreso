@@ -4,7 +4,7 @@
  *
  * @author Sebastian Rettenberger <sebastian.rettenberger@tum.de>
  *
- * @copyright Copyright (c) 2016, Technische Universitaet Muenchen.
+ * @copyright Copyright (c) 2016-2017, Technische Universitaet Muenchen.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -61,6 +61,7 @@ struct MPITest {
 	typedef async::as::MPI<Executor, InitParameter, Parameter> type;
 };
 #endif // ASYNC_MPI_COPY
+
 
 /**
  * Setup for large buffer testing
@@ -468,7 +469,7 @@ public:
 			TS_ASSERT_LESS_THAN_EQUALS(4, m_buffers.size());
 			TS_ASSERT_LESS_THAN_EQUALS(m_buffers.size(), 8);
 			for (std::vector<int>::const_iterator i = m_buffers.begin();
-					i != m_buffers.end(); i++) {
+					i != m_buffers.end(); ++i) {
 				TS_ASSERT_LESS_THAN_EQUALS(3, *i);
 				TS_ASSERT_LESS_THAN_EQUALS(*i, 4);
 			}
@@ -491,6 +492,119 @@ public:
 
 			async.call(parameter);
 
+			async.wait();
+		}
+	}
+
+	void testResizeBuffer()
+	{
+		Executor<TestMPI> executor(this);
+
+		MPITest<Executor<TestMPI>, Parameter, Parameter>::type async;
+		async.setScheduler(*m_scheduler);
+
+		async.setExecutor(executor);
+		m_async = &async;
+
+		if (m_scheduler->isExecutor()) {
+			m_scheduler->loop();
+			
+			std::vector<int> buffers;
+			if (m_rank == 2) {
+				buffers.push_back(3);
+				buffers.push_back(3);
+				buffers.push_back(4); buffers.push_back(5); buffers.push_back(6);
+				buffers.push_back(4); buffers.push_back(5); buffers.push_back(6);
+				buffers.push_back(9);
+				buffers.push_back(9);
+				
+				buffers.push_back(4); buffers.push_back(5);
+				buffers.push_back(4); buffers.push_back(5);
+				buffers.push_back(4); buffers.push_back(5); buffers.push_back(6);
+				buffers.push_back(4); buffers.push_back(5); buffers.push_back(6);
+				buffers.push_back(9);
+				buffers.push_back(9);
+				
+				buffers.push_back(4); buffers.push_back(5);
+				buffers.push_back(4); buffers.push_back(5);
+				buffers.push_back(10);
+				buffers.push_back(10);
+				buffers.push_back(9);
+				buffers.push_back(9);
+				
+				buffers.push_back(4); buffers.push_back(5);
+				buffers.push_back(4); buffers.push_back(5);
+				buffers.push_back(10);
+				buffers.push_back(10);
+				buffers.push_back(20); buffers.push_back(21);
+				buffers.push_back(20); buffers.push_back(21);
+			} else {
+				buffers.push_back(3);
+				buffers.push_back(4); buffers.push_back(5); buffers.push_back(6);
+				buffers.push_back(9);
+				
+				buffers.push_back(4); buffers.push_back(5);
+				buffers.push_back(4); buffers.push_back(5); buffers.push_back(6);
+				buffers.push_back(9);
+				
+				buffers.push_back(4); buffers.push_back(5);
+				buffers.push_back(10);
+				buffers.push_back(9);
+				
+				buffers.push_back(4); buffers.push_back(5);
+				buffers.push_back(10);
+				buffers.push_back(20); buffers.push_back(21);
+			}
+			
+			TS_ASSERT_EQUALS(m_buffers.size(), buffers.size());
+			
+			for (size_t i = 0; i < m_buffers.size(); i++) {
+				TS_ASSERT_EQUALS(m_buffers[i], buffers[i]);
+			}
+		} else {
+			int buffer0 = 3;
+			async.addSyncBuffer(&buffer0, sizeof(int));
+
+			int buffer1[3] = {4, 5, 6};
+			async.addBuffer(buffer1, 3*sizeof(int));
+			
+			int buffer2 = 9;
+			async.addBuffer(&buffer2, sizeof(int));
+
+			async.sendBuffer(0, sizeof(int));
+			async.sendBuffer(1, 3*sizeof(int));
+			async.sendBuffer(2, sizeof(int));
+
+			Parameter parameter;
+			async.callInit(parameter);
+
+			async.wait();
+
+			int buffer3[2] = {4, 5};
+			async.resizeBuffer(0, buffer3, 2*sizeof(int));
+
+			async.sendBuffer(0, 2*sizeof(int));
+
+			async.call(parameter);
+
+			async.wait();
+			
+			int buffer4 = 10;
+			async.resizeBuffer(1, &buffer4, sizeof(int));
+			
+			async.sendBuffer(1, sizeof(int));
+
+			async.call(parameter);
+
+			async.wait();
+			
+			int buffer5[2] = {20, 21};
+			async.resizeBuffer(2, buffer5, 2*sizeof(int));
+			
+			async.sendBuffer(2, 2*sizeof(int));
+			
+			async.call(parameter);
+			
 			async.wait();
 		}
 	}

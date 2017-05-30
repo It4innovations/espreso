@@ -135,6 +135,26 @@ public:
 
 		return id;
 	}
+	
+	void resizeBuffer(unsigned int id, const void* buffer, size_t size)
+	{
+		assert(id < m_buffer.size());
+		
+		int requests = m_buffer[id].requests;
+		if (requests > 0) {
+			m_buffer[id].requests = (size + MPIBase<Executor, InitParameter, Parameter>::maxSend() - 1)
+				/ MPIBase<Executor, InitParameter, Parameter>::maxSend();
+			
+			requests = m_buffer[id].requests - requests;
+		}
+		
+		if (requests > 0)
+			m_asyncRequests.insert(m_asyncRequests.end(), requests*2, MPI_REQUEST_NULL);
+		else if (requests < 0)
+			m_asyncRequests.erase(m_asyncRequests.end()+requests*2, m_asyncRequests.end());
+		
+		MPIBase<Executor, InitParameter, Parameter>::resizeBuffer(id, buffer, size);
+	}
 
 	void removeBuffer(unsigned int id)
 	{

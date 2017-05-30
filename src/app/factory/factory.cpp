@@ -34,6 +34,11 @@ namespace espreso {
 Factory::Factory(const GlobalConfiguration &configuration)
 : store(NULL), instance(NULL), mesh(new Mesh()), _newAssembler(false)
 {
+	// Configure the asynchronous library
+	//async::Config::setMode(async::MPI);
+	async::Config::setGroupSize(32);
+	//async::Config::setUseAsyncCopy(true);
+
 	if (configuration.output.results || configuration.output.settings)
 		// Create the async store before splitting the ranks with the dispatcher
 		_asyncStore = new output::AsyncStore(configuration.output, mesh, "results");

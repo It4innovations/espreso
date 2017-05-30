@@ -82,6 +82,7 @@ endfunction( add_serial_cxx_test )
 add_subdirectory( as )
 
 # Add tests
+add_serial_cxx_test( TestConfig ${CMAKE_CURRENT_SOURCE_DIR}/Config.t.h )
 add_serial_cxx_test( TestDispatcher ${CMAKE_CURRENT_SOURCE_DIR}/Dispatcher.t.h )
 add_serial_cxx_test( TestModuleSync ${CMAKE_CURRENT_SOURCE_DIR}/Module.t.h )
 set_tests_properties( TestModuleSync PROPERTIES ENVIRONMENT "ASYNC_MODE=SYNC" )
