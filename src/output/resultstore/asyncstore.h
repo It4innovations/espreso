@@ -25,6 +25,7 @@ public:
 
 	void init(const Mesh *mesh);
 
+	virtual std::vector<std::string> store(const std::string &name, const Step &step, const MeshInfo *meshInfo);
 	virtual std::string store(const std::string &name, const RegionData &regionData);
 
 	virtual std::string linkClusters(const std::string &root, const std::string &name, const RegionData &regionData);

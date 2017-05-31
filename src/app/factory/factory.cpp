@@ -34,11 +34,13 @@ namespace espreso {
 Factory::Factory(const GlobalConfiguration &configuration)
 : store(NULL), instance(NULL), mesh(new Mesh()), _newAssembler(false)
 {
+	_asyncStore = NULL;
+	async::Config::setMode(async::SYNC);
 	if (configuration.output.results) {
 		if (configuration.output.mode != OUTPUT_MODE::SYNC && (configuration.output.settings || configuration.output.FETI_data)) {
 			ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Storing of SETTINGS or FETI_DATA is implemented only for OUTPUT::MODE==SYNC. Hence, output is synchronized!";
-			_asyncStore = NULL;
-			async::Config::setMode(async::SYNC);
+		} else if (configuration.output.collected) {
+			ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Storing COLLECTED output is implemented only for OUTPUT::MODE==SYNC. Hence, output is synchronized!";
 		} else {
 			// Configure the asynchronous library
 			switch (configuration.output.mode) {

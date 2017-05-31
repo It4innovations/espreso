@@ -1,4 +1,5 @@
 
+#include <cstring>
 #include <cassert>
 #include <iostream>
 #include "asyncstoreexecutor.h"
@@ -30,17 +31,19 @@ void AsyncStoreExecutor::execInit(const async::ExecInfo &info, const OutputConfi
 
 void AsyncStoreExecutor::exec(const async::ExecInfo &info, const Param &param)
 {
-	// Extract data
-
-
 	const char* regionBuffer = static_cast<const char*>(info.buffer(1));
-
 	for (size_t i = 0; i < info.bufferSize(0) / 1024; i++) {
-		std::string name(static_cast<const char*>(info.buffer(0) + i * 1024));
+		std::string names(static_cast<const char*>(info.buffer(0) + i * 1024));
+		std::vector<std::string> name = Parser::split(names, ";");
 
-		RegionData r;
-		r.unpack(regionBuffer);
+		size_t regions;
+		memcpy(&regions, regionBuffer, sizeof(size_t));
+		regionBuffer += sizeof(size_t);
+		for (size_t r = 0; r < regions; r++) {
+			RegionData region;
+			region.unpack(regionBuffer);
 
-		_store->store(name, r);
+			_store->store(name[r], region);
+		}
 	}
 }

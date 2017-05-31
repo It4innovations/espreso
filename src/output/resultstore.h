@@ -23,6 +23,9 @@ struct RegionData;
 
 class ResultStore: public Store {
 
+	friend class AsyncStore;
+	friend class AsyncStoreExecutor;
+
 public:
 	const OutputConfiguration& configuration() const { return _configuration; }
 
@@ -40,12 +43,13 @@ public:
 
 	virtual ~ResultStore();
 
+protected:
+	ResultStore(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode = MeshInfo::EMPTY);
+
+	virtual std::vector<std::string> store(const std::string &name, const Step &step, const MeshInfo *meshInfo);
 	virtual std::string store(const std::string &name, const RegionData &regionData) =0;
 	virtual std::string linkClusters(const std::string &root, const std::string &name, const RegionData &regionData) =0;
 	virtual void linkSteps(const std::string &name, const std::vector<std::pair<Step, std::vector<std::string> > > &steps) =0;
-
-protected:
-	ResultStore(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode = MeshInfo::EMPTY);
 
 	const Mesh *_mesh;
 
@@ -56,8 +60,6 @@ protected:
 	std::vector<std::pair<Step, std::vector<std::string> > > _FETIdata;
 
 private:
-	std::vector<std::string> store(const std::string &name, const Step &step, const MeshInfo *meshInfo);
-
 	void storeElementInfo(const Step &step);
 	void storeFixPoints(const Step &step);
 	void storeCorners(const Step &step);
