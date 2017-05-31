@@ -112,8 +112,6 @@ public:
 				logError() << "Pinning failed. Not enough cores available.";
 		}
 		
-		logDebug() << "Pinning executor to core" << realCore;
-		
 		cpu_set_t cpuMask;
 		CPU_ZERO(&cpuMask);
 		CPU_SET(realCore, &cpuMask);
