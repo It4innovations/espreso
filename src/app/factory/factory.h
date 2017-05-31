@@ -60,9 +60,6 @@ private:
 
 	/** The dispatcher for the I/O ranks */
 	async::Dispatcher _dispatcher;
-
-	/** False is this rank is only used for I/O */
-	bool _isWorker;
 };
 
 }

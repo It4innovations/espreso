@@ -21,7 +21,11 @@
 #include "../../mesh/elements/element.h"
 #include "../../output/resultstorelist.h"
 
+
 #include "../../output/resultstore/asyncstore.h"
+#include "../../output/resultstore/vtklegacy.h"
+#include "../../output/resultstore/vtkxmlascii.h"
+#include "../../output/resultstore/vtkxmlbinary.h"
 #include "../../output/resultstore/catalyst.h"
 #include "../../output/monitoring/monitoring.h"
 
@@ -30,27 +34,47 @@ namespace espreso {
 Factory::Factory(const GlobalConfiguration &configuration)
 : store(NULL), instance(NULL), mesh(new Mesh()), _newAssembler(false)
 {
-	// Configure the asynchronous library
-	//async::Config::setMode(async::MPI);
-	async::Config::setGroupSize(32);
-	//async::Config::setUseAsyncCopy(true);
+	if (configuration.output.results) {
+		if (configuration.output.mode != OUTPUT_MODE::SYNC && (configuration.output.settings || configuration.output.FETI_data)) {
+			ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Storing of SETTINGS or FETI_DATA is implemented only for OUTPUT::MODE==SYNC. Hence, output is synchronized!";
+			_asyncStore = NULL;
+			async::Config::setMode(async::SYNC);
+		} else {
+			// Configure the asynchronous library
+			switch (configuration.output.mode) {
+			case OUTPUT_MODE::SYNC:
+				async::Config::setMode(async::SYNC);
+				break;
+			case OUTPUT_MODE::THREAD:
+				async::Config::setMode(async::THREAD);
+				break;
+			case OUTPUT_MODE::MPI:
+				if (environment->MPIsize == 1) {
+					ESINFO(GLOBAL_ERROR) << "Invalid number of MPI processes. OUTPUT::MODE==MPI required at least two MPI processes.";
+				}
+				if (configuration.output.output_node_group_size == 0) {
+					ESINFO(GLOBAL_ERROR) << "OUTPUT::OUTPUT_NODE_GROUP_SIZE cannot be 0.";
+				}
+				async::Config::setMode(async::MPI);
+				async::Config::setGroupSize(configuration.output.output_node_group_size);
+				_dispatcher.setGroupSize(configuration.output.output_node_group_size);
+				// async::Config::setUseAsyncCopy(true);
+				break;
+			}
 
-	if (configuration.output.results || configuration.output.settings)
-		// Create the async store before splitting the ranks with the dispatcher
-		_asyncStore = new output::AsyncStore(configuration.output, mesh);
-	else
-		_asyncStore = 0L;
+			_asyncStore = new output::AsyncStore(configuration.output, mesh);
+		}
+	}
+
 
 	_dispatcher.init();
 	environment->MPICommunicator = _dispatcher.commWorld();
 	MPI_Comm_rank(environment->MPICommunicator, &environment->MPIrank);
 	MPI_Comm_size(environment->MPICommunicator, &environment->MPIsize);
 
-	_isWorker = _dispatcher.dispatch();
-
-
-	if (!_isWorker)
+	if (!_dispatcher.dispatch()) {
 		return;
+	}
 
 	input::Loader::load(configuration, *mesh, configuration.env.MPIrank, configuration.env.MPIsize);
 
@@ -75,17 +99,24 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		store->add(new output::Catalyst(configuration.output, mesh));
 	}
 	if (configuration.output.results || configuration.output.settings) {
-		switch (configuration.output.format) {
-		case OUTPUT_FORMAT::VTK_LEGACY:
-		case OUTPUT_FORMAT::VTK_XML_ASCII:
-		case OUTPUT_FORMAT::VTK_XML_BINARY:
+		if (_asyncStore != NULL) {
 			_asyncStore->init(mesh);
 			store->add(_asyncStore);
-			break;
-		default:
-			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: add OUTPUT_FORMAT to factory.";
+		} else {
+			switch (configuration.output.format) {
+			case OUTPUT_FORMAT::VTK_LEGACY:
+				store->add(new output::VTKLegacy(configuration.output, mesh));
+				break;
+			case OUTPUT_FORMAT::VTK_XML_ASCII:
+				store->add(new output::VTKXMLASCII(configuration.output, mesh));
+				break;
+			case OUTPUT_FORMAT::VTK_XML_BINARY:
+				store->add(new output::VTKXMLBinary(configuration.output, mesh));
+				break;
+			default:
+				ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: add OUTPUT_FORMAT to factory.";
+			}
 		}
-
 	}
 
 	if (configuration.physics == PHYSICS::ADVECTION_DIFFUSION_2D && configuration.advection_diffusion_2D.newassembler) {
@@ -146,8 +177,9 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 void Factory::meshPreprocessing(const OutputConfiguration &configuration)
 {
-	if (!_isWorker)
+	if (_dispatcher.isExecutor()) {
 		return;
+	}
 
 	for (size_t i = 0; i < _physics.size(); i++) {
 
@@ -216,8 +248,9 @@ Factory::~Factory()
 
 void Factory::solve()
 {
-	if (!_isWorker)
+	if (_dispatcher.isExecutor()) {
 		return;
+	}
 
 	if (!_newAssembler) {
 		instance->init();
@@ -238,8 +271,9 @@ void Factory::solve()
 
 void Factory::check(const Results &configuration)
 {
-	if (!_isWorker)
+	if (_dispatcher.isExecutor()) {
 		return;
+	}
 
 	double epsilon = 1e-2;
 
