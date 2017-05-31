@@ -371,7 +371,7 @@ void ResultStore::storeLambdas(const Step &step, const Instance &instance)
 					}
 					b = rPoints[(*it)[2]][index];
 				} else {
-					auto lit = std::lower_bound(lambdaMap.begin(), lambdaMap.end(), std::make_pair(instance.B1[d].I_row_indices[i], -1));
+					auto lit = std::lower_bound(lambdaMap.begin(), lambdaMap.end(), std::make_pair(instance.B1[d].I_row_indices[i], (eslocal)-1));
 					if (lit == lambdaMap.end()) {
 						ESINFO(ERROR) << "Incorrect B1 lambdas.";
 					}
