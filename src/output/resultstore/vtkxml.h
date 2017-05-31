@@ -18,7 +18,7 @@ public:
 	virtual ~VTKXML();
 
 protected:
-	VTKXML(const OutputConfiguration &output, const Mesh *mesh, const std::string &path, MeshInfo::InfoMode mode = MeshInfo::EMPTY);
+	VTKXML(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode = MeshInfo::EMPTY);
 
 	virtual std::string store(const std::string &name, const RegionData &regionData);
 

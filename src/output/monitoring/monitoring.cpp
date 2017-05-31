@@ -69,7 +69,7 @@ std::string right(const std::string &value, size_t size)
 	return ret;
 }
 
-Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh, const std::string &path)
+Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
 : Store(output), _mesh(mesh)
 {
 	size_t length = 0;
@@ -94,9 +94,9 @@ Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh, cons
 		return;
 	}
 
-	_os.open(Logging::outputRoot() + "/" + path);
+	_os.open(Logging::outputRoot() + "/" + Logging::name + ".emr");
 	if (!_os.is_open()) {
-		ESINFO(GLOBAL_ERROR) << "Cannot open file " << path << "\n";
+		ESINFO(GLOBAL_ERROR) << "Cannot open file for storing monitor report\n";
 	}
 
 	_os << "\n";

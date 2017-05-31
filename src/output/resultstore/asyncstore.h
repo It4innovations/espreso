@@ -16,8 +16,8 @@ namespace output {
 class AsyncStore : public ResultStore, private async::Module<AsyncStoreExecutor, OutputConfiguration, Param> {
 
 public:
-	AsyncStore(const OutputConfiguration &configuration, const Mesh *mesh, const std::string &path, MeshInfo::InfoMode mode = MeshInfo::EMPTY)
-		: ResultStore(configuration, mesh, path, mode), _finalized(false), _bufferSize(0), _headerStore(0L) {};
+	AsyncStore(const OutputConfiguration &configuration, const Mesh *mesh, MeshInfo::InfoMode mode = MeshInfo::EMPTY)
+		: ResultStore(configuration, mesh, mode), _finalized(false), _bufferSize(0), _headerStore(0L) {};
 	virtual ~AsyncStore() { delete _headerStore; };
 
 	/** Called by ASYNC on all ranks, needs to set at least the executor */

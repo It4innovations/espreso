@@ -10,7 +10,7 @@ namespace output {
 class VTKLegacy: public ResultStore {
 
 public:
-	VTKLegacy(const OutputConfiguration &output, const Mesh *mesh, const std::string &path, MeshInfo::InfoMode mode = MeshInfo::EMPTY);
+	VTKLegacy(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode = MeshInfo::EMPTY);
 	virtual ~VTKLegacy() {};
 
 protected:

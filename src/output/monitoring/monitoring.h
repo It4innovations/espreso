@@ -25,7 +25,7 @@ struct Monitor {
 class Monitoring: public Store {
 
 public:
-	Monitoring(const OutputConfiguration &output, const Mesh *mesh, const std::string &path);
+	Monitoring(const OutputConfiguration &output, const Mesh *mesh);
 
 	void storeSettings(const Step &step) {};
 	void storeSettings(size_t steps) {};

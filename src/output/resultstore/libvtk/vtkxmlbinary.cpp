@@ -16,8 +16,8 @@
 
 using namespace espreso::output;
 
-VTKXMLBinary::VTKXMLBinary(const OutputConfiguration &output, const Mesh *mesh, const std::string &path, MeshInfo::InfoMode mode)
-: VTKXML(output, mesh, path, mode)
+VTKXMLBinary::VTKXMLBinary(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode)
+: VTKXML(output, mesh, mode)
 {
 	_writer = vtkXMLUnstructuredGridWriter::New();
 	_writer->SetDataModeToBinary();

@@ -11,7 +11,7 @@ namespace output {
 class VTKXMLBinary: public VTKXML {
 
 public:
-	VTKXMLBinary(const OutputConfiguration &output, const Mesh *mesh, const std::string &path, MeshInfo::InfoMode mode = MeshInfo::EMPTY);
+	VTKXMLBinary(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode = MeshInfo::EMPTY);
 	virtual ~VTKXMLBinary();
 
 protected:

@@ -29,8 +29,8 @@
 
 using namespace espreso::output;
 
-ResultStore::ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path, MeshInfo::InfoMode mode)
-: Store(output), _mesh(mesh), _path(path), _meshInfo(NULL)
+ResultStore::ResultStore(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode)
+: Store(output), _mesh(mesh), _meshInfo(NULL)
 {
 	if (_configuration.separate_bodies) {
 		mode = mode | MeshInfo::SEPARATE_BODIES;

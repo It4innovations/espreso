@@ -22,7 +22,7 @@ public:
 	feiPtr(environment->MPICommunicator),
 	_constrains(configuration.physics_solver.load_steps_settings.at(1)->espreso, mesh),
 	_physics(mesh, _constrains, configuration),
-	_store(output, &mesh, "results")
+	_store(output, &mesh)
 	{
 		_timeStatistics.totalTime.startWithBarrier();
 	}

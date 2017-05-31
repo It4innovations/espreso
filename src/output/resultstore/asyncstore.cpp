@@ -20,13 +20,13 @@ void AsyncStore::init(const Mesh *mesh)
 
 	switch (configuration().format) {
 	case espreso::OUTPUT_FORMAT::VTK_LEGACY:
-		_headerStore = new VTKLegacy(configuration(), 0L, "");
+		_headerStore = new VTKLegacy(configuration(), 0L);
 		break;
 	case espreso::OUTPUT_FORMAT::VTK_XML_ASCII:
-		_headerStore = new VTKXMLASCII(configuration(), 0L, "");
+		_headerStore = new VTKXMLASCII(configuration(), 0L);
 		break;
 	case espreso::OUTPUT_FORMAT::VTK_XML_BINARY:
-		_headerStore = new VTKXMLBinary(configuration(), 0L, "");
+		_headerStore = new VTKXMLBinary(configuration(), 0L);
 		break;
 	default:
 		assert(false);

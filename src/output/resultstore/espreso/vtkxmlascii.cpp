@@ -6,8 +6,8 @@
 
 using namespace espreso::output;
 
-VTKXMLASCII::VTKXMLASCII(const OutputConfiguration &output, const Mesh *mesh, const std::string &path, MeshInfo::InfoMode mode)
-: VTKXML(output, mesh, path, mode)
+VTKXMLASCII::VTKXMLASCII(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode)
+: VTKXML(output, mesh, mode)
 {
 
 }

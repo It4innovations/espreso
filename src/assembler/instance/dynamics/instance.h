@@ -20,7 +20,7 @@ public:
 	_constrains(mesh),
 	_physics(mesh, _constrains),
 	_linearSolver(_physics, _constrains),
-	_store(output, mesh, "results"),
+	_store(output, mesh),
 	 _time(0)
 	{
 		_timeStatistics.totalTime.startWithBarrier();

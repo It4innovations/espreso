@@ -15,13 +15,13 @@ void AsyncStoreExecutor::execInit(const async::ExecInfo &info, const OutputConfi
 
 	switch (config.format) {
 	case espreso::OUTPUT_FORMAT::VTK_LEGACY:
-		_store = new VTKLegacy(config, 0L, "");
+		_store = new VTKLegacy(config, 0L);
 		break;
 	case espreso::OUTPUT_FORMAT::VTK_XML_ASCII:
-		_store = new VTKXMLASCII(config, 0L, "");
+		_store = new VTKXMLASCII(config, 0L);
 		break;
 	case espreso::OUTPUT_FORMAT::VTK_XML_BINARY:
-		_store = new VTKXMLBinary(config, 0L, "");
+		_store = new VTKXMLBinary(config, 0L);
 		break;
 	default:
 		assert(false);

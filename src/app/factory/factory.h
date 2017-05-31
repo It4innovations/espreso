@@ -33,8 +33,6 @@ struct Factory {
 
 	void check(const Results &configuration);
 
-	double norm() const;
-
 	std::vector<SolverBase*> loadSteps;
 	output::ResultStoreList* store;
 

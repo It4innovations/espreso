@@ -45,10 +45,9 @@ public:
 	virtual void linkSteps(const std::string &name, const std::vector<std::pair<Step, std::vector<std::string> > > &steps) =0;
 
 protected:
-	ResultStore(const OutputConfiguration &output, const Mesh *mesh, const std::string &path, MeshInfo::InfoMode mode = MeshInfo::EMPTY);
+	ResultStore(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode = MeshInfo::EMPTY);
 
 	const Mesh *_mesh;
-	std::string _path;
 
 	MeshInfo::InfoMode _mode;
 	MeshInfo* _meshInfo;

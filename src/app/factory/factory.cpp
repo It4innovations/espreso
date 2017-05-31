@@ -21,10 +21,6 @@
 #include "../../mesh/elements/element.h"
 #include "../../output/resultstorelist.h"
 
-//#include "../../output/resultstore/vtklegacy.h"
-//#include "../../output/resultstore/vtkxmlascii.h"
-//#include "../../output/resultstore/vtkxmlbinary.h"
-
 #include "../../output/resultstore/asyncstore.h"
 #include "../../output/resultstore/catalyst.h"
 #include "../../output/monitoring/monitoring.h"
@@ -41,7 +37,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 	if (configuration.output.results || configuration.output.settings)
 		// Create the async store before splitting the ranks with the dispatcher
-		_asyncStore = new output::AsyncStore(configuration.output, mesh, "results");
+		_asyncStore = new output::AsyncStore(configuration.output, mesh);
 	else
 		_asyncStore = 0L;
 
@@ -73,10 +69,10 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 	store = new output::ResultStoreList(configuration.output);
 	if (configuration.output.monitoring.size()) {
-		store->add(new output::Monitoring(configuration.output, mesh, Logging::name + ".emr"));
+		store->add(new output::Monitoring(configuration.output, mesh));
 	}
 	if (configuration.output.catalyst) {
-		store->add(new output::Catalyst(configuration.output, mesh, "results"));
+		store->add(new output::Catalyst(configuration.output, mesh));
 	}
 	if (configuration.output.results || configuration.output.settings) {
 		switch (configuration.output.format) {
@@ -293,22 +289,6 @@ void Factory::check(const Results &configuration)
 		evaluateProperty(configuration.temperature   , Property::TEMPERATURE   , DOF);
 		evaluateProperty(configuration.pressure      , Property::PRESSURE      , DOF);
 	};
-}
-
-double Factory::norm() const
-{
-	if (!_isWorker)
-		return 0.0;
-
-	double n = 0, sum = 0;
-	for (size_t i = 0; i < _solution.size(); i++) {
-		for (size_t j = 0; j < _solution[i].size(); j++) {
-			n += _solution[i][j] * _solution[i][j];
-		}
-	}
-
-	MPI_Allreduce(&n, &sum, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
-	return sqrt(sum);
 }
 
 }
