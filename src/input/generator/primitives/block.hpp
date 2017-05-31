@@ -375,7 +375,9 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region *regi
 			});
 			break;
 		default:
-			ESINFO(ERROR) << "Cannot select element of dimension " << dimension << " on 1D line.";
+			if (border.dimension() == bborder.dimension()) {
+				ESINFO(ERROR) << "Cannot select element of dimension " << dimension << " on 1D line.";
+			}
 		}
 	} break;
 
