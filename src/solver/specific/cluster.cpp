@@ -37,7 +37,8 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 
 	domains.reserve(number_of_subdomains);
 	for (eslocal d = 0; d < number_of_subdomains; d++) {
-		domains.push_back( (Domain(configuration, instance, d, USE_HFETI)) );
+		//domains.push_back( (Domain(configuration, instance, d, USE_HFETI)) );
+		domains.push_back( (Domain(configuration, instance, subdomains_global_indices[d], USE_HFETI)) );
 	}
 
 	#pragma omp parallel for
@@ -45,13 +46,16 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 		domains[d].SetDomain();
 	}
 
-	if (USE_HFETI == 1) {
-		for (eslocal i = 0; i < number_of_subdomains; i++)						// HFETI
-			domains_in_global_index[i] = subdomains_global_indices[i] + 1;		// HFETI; [+1] -> domain numbering in espreso is from 1
-	} else {
-		for (eslocal i = 0; i < number_of_subdomains; i++)						// MFETI
-			domains_in_global_index[i] = subdomains_global_indices[i] + 1;		// MFETI; [+1] -> domain numbering in espreso is from 1
-	}
+	for (eslocal i = 0; i < number_of_subdomains; i++)
+		domains_in_global_index[i] = subdomains_global_indices[i];
+
+//	if (USE_HFETI == 1) {
+//		for (eslocal i = 0; i < number_of_subdomains; i++)						// HFETI
+//			domains_in_global_index[i] = subdomains_global_indices[i] + 1;		// HFETI; [+1] -> domain numbering in espreso is from 1
+//	} else {
+//		for (eslocal i = 0; i < number_of_subdomains; i++)						// MFETI
+//			domains_in_global_index[i] = subdomains_global_indices[i] + 1;		// MFETI; [+1] -> domain numbering in espreso is from 1
+//	}
 
 
 	//// *** Alocate temporarly vectors for Temporary vectors for Apply_A function *********
@@ -86,14 +90,7 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 
 	}
 
-}
-
-void ClusterBase::SetClusterPC( ) { // SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub ) {
-
-	SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub = instance->B1clustersMap;
-
 	//// *** Set up the dual size ********************************************************
-	int MPIrank; 	MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 	dual_size = domains[0].B1.rows;
 
 	if (USE_HFETI == 1) {
@@ -118,6 +115,15 @@ void ClusterBase::SetClusterPC( ) { // SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lamb
 		// *** END - Alocate temporarly vectors for inter-cluster processing *****************
 	}
 
+
+
+}
+
+void ClusterBase::SetClusterPC( ) { // SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub ) {
+
+	SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub = instance->B1clustersMap;
+
+	int MPIrank = environment->MPIrank;	//MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
 
 	//// *** Detection of affinity of lag. multipliers to specific subdomains **************
 	//// *** - will be used to compress vectors and matrices for higher efficiency
@@ -2280,6 +2286,7 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 
 	SEQ_VECTOR <eslocal> kerindices (domains.size() + 1, 0);
 	kerindices[0] = 0;
+
 	for (size_t k = 1; k < kerindices.size(); k++) {
 		kerindices[k] = kerindices[k-1] + domains[k-1].Kplus_R.cols;
 	}
@@ -2303,17 +2310,17 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 		if ( USE_HFETI == 1) {
 			for (size_t d = 0; d < domains.size(); d++) {
 				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
-					domains[d].Kplus_R .DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
+					domains[d].Kplus_R .DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
 				} else {
-					domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
+					domains[d].Kplus_Rb.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
 				}
 			}
 		} else {
 			for (size_t d = 0; d < domains.size(); d++) {											// MFETI
 				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
-					domains[d].Kplus_R. DenseMatVec(f[d], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
+					domains[d].Kplus_R. DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
 				} else {
-					domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
+					domains[d].Kplus_Rb.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
 				}
 			}
 		}
@@ -2323,17 +2330,17 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 		if ( USE_HFETI == 1) {
 			for (size_t d = 0; d < domains.size(); d++) {
 				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
-					domains[d].Kplus_R2 .DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
+					domains[d].Kplus_R2 .DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
 				} else {
-					domains[d].Kplus_Rb2.DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
+					domains[d].Kplus_Rb2.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
 				}
 			}
 		} else {
 			for (size_t d = 0; d < domains.size(); d++) {											// MFETI
 				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
-					domains[d].Kplus_R2. DenseMatVec(f[d], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
+					domains[d].Kplus_R2. DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
 				} else {
-					domains[d].Kplus_Rb2.DenseMatVec(f[d], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
+					domains[d].Kplus_Rb2.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
 				}
 			}
 		}
@@ -2350,15 +2357,16 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 void ClusterBase::CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )  {
 
 	SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster ( domains.size() );
+
 	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++) {
-		x_prim_cluster[d] = f[d];
+	for (size_t d = 0; d < domains.size(); d++) {
+		x_prim_cluster[d] = f[domains[d].domain_global_index];
 	}
 
 	if (USE_HFETI == 0) {
 		#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++) {				// MFETI
-			domains[d].multKplusLocal( x_prim_cluster[d] );
+		for (size_t d = 0; d < domains.size(); d++) {				// MFETI
+				domains[d].multKplusLocal( x_prim_cluster[d] );
 		}
 	} else {
 		multKplusGlobal_l( x_prim_cluster );						// HFETI

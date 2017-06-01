@@ -335,66 +335,119 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 	}
 }
 
-void IterSolverBase::MakeSolution_Primal_singular_parallel ( Cluster & cluster,
+void IterSolverBase::MakeSolution_Primal_singular_parallel (
+		Cluster & cluster,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out )  {
 
-	//primal_solution_parallel.clear();
 	primal_solution_out.clear();
 
 	// R * mu
 	SEQ_VECTOR<SEQ_VECTOR<double> > R_mu_prim_cluster;
 
+
+//	if (numClusters == 1) {
+//		cluster.
+//	} else {
+//		for (int c = 0; c < numClusters; c++) {
+//			(*clusters)[c]->
+//		}
+//	}
+
 	int amp_offset = 0;
-	for (size_t d = 0; d < cluster.domains.size(); d++) {
-		SEQ_VECTOR <double > tmp (cluster.domains[d].domain_prim_size);
-		if (USE_HFETI == 1) {
+	if (numClusters == 1) {
+		for (size_t d = 0; d < cluster.domains.size(); d++) {
+			SEQ_VECTOR <double > tmp (cluster.domains[d].domain_prim_size);
 
-			if ( configuration.regularization == REGULARIZATION::FIX_POINTS )
-				cluster.domains[d].Kplus_R.DenseMatVec(amplitudes, tmp, 'N', 0, 0);
-		  	else
-		  		cluster.domains[d].Kplus_Rb.DenseMatVec(amplitudes, tmp, 'N', 0, 0);
+			if (USE_HFETI == 1) {
+				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
+					cluster.domains[d].Kplus_R .DenseMatVec(amplitudes, tmp, 'N', amp_offset, 0);
+				} else {
+					cluster.domains[d].Kplus_Rb.DenseMatVec(amplitudes, tmp, 'N', amp_offset, 0);
+				}
+			} else {
+				cluster.domains[d].Kplus_R.DenseMatVec(     amplitudes, tmp, 'N', amp_offset, 0);
+				amp_offset += cluster.domains[d].Kplus_R.cols;
+			}
 
-	} else {
-		//cluster.domains[d].Kplus_R.DenseMatVec(amplitudes, tmp, 'N', d * cluster.domains[d].Kplus_R.cols, 0);
-		cluster.domains[d].Kplus_R.DenseMatVec(amplitudes, tmp, 'N', amp_offset, 0);
-		amp_offset += cluster.domains[d].Kplus_R.cols;
-	}
-		R_mu_prim_cluster.push_back(tmp);
-	}
+			R_mu_prim_cluster.push_back(tmp);
+		}
+	} else { // multiple clusters
+		R_mu_prim_cluster.resize(cluster.domains.size());
+		for (int c = 0; c < numClusters; c++) {
+			//			(*clusters)[c]->
+			for (size_t d = 0; d < (*clusters)[c]->domains.size(); d++) {
+				SEQ_VECTOR <double > tmp ((*clusters)[c]->domains[d].domain_prim_size);
+
+				if (USE_HFETI == 1) {
+					if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
+						(*clusters)[c]->domains[d].Kplus_R .DenseMatVec(amplitudes, tmp, 'N', amp_offset, 0);
+					} else {
+						(*clusters)[c]->domains[d].Kplus_Rb.DenseMatVec(amplitudes, tmp, 'N', amp_offset, 0);
+					}
+				} else {
+					ESINFO(GLOBAL_ERROR) << "Multiple clusters is possible to use only with the Hybrid TFETI solver.";
+				}
+
+				R_mu_prim_cluster[ (*clusters)[c]->domains[d].domain_global_index ].swap(tmp);
+			} // end domain loop
+			amp_offset += (*clusters)[c]->G1_comp.rows;
+		} // end cluster loop
+	} // end multiple cllusters
+
 
 	for (size_t d = 0; d < cluster.domains.size(); d++) {
 		SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
 		SEQ_VECTOR < double > tmp      ( cluster.domains[d].domain_prim_size  );
 
-		for (size_t i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
+		for (size_t i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
 			x_in_tmp[i] = dual_soultion_compressed_parallel[ cluster.domains[d].lambda_map_sub_local[i]];
+		}
 
 		cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, tmp, 'T');
 
-		for (size_t i = 0; i < tmp.size(); i++)
+		for (size_t i = 0; i < tmp.size(); i++) {
 			tmp[i] = in_right_hand_side_primal[d][i] - tmp[i];
-			//tmp[i] = cluster.domains[d].f[i] - tmp[i];
+		}
 
-		//primal_solution_parallel.push_back(tmp);
 		primal_solution_out.push_back(tmp);
 	}
 
+
+
+
 	if ( cluster.USE_HFETI == 0) {
-		for (size_t d = 0; d < cluster.domains.size(); d++)
+		for (size_t d = 0; d < cluster.domains.size(); d++) {
 			cluster.domains[d].multKplusLocal(primal_solution_out[d]);
-			//cluster.domains[d].multKplusLocal(primal_solution_parallel[d]);
-	} else  {
-		//cluster.multKplusGlobal_l(primal_solution_parallel);
-		cluster.multKplusGlobal_l(primal_solution_out);
+		}
+	} else {
+    	if (numClusters == 1) {
+    		cluster.multKplusGlobal_l(primal_solution_out);
+    	} else {
+    		for (int c = 0; c < numClusters; c++) {
+    			SEQ_VECTOR < SEQ_VECTOR <double> > prim_tmp ((*clusters)[c]->domains.size());
+    			for (int d = 0; d < (*clusters)[c]->domains.size(); d++) {
+    				prim_tmp[d].swap( primal_solution_out[ (*clusters)[c]->domains[d].domain_global_index ] );
+    			}
+
+    			(*clusters)[c]->multKplusGlobal_l(prim_tmp);
+
+    			for (int d = 0; d < (*clusters)[c]->domains.size(); d++) {
+    				// primal_solution_out[ (*clusters)[c]->domains[d].domain_global_index ].swap(prim_tmp[d]);
+    				prim_tmp[d].swap( primal_solution_out[ (*clusters)[c]->domains[d].domain_global_index ] );
+    			}
+
+    		}
+    	}
+
 	}
 
- 	for (size_t d = 0; d < cluster.domains.size(); d++) {
-		//for (size_t i = 0; i < primal_solution_parallel[d].size()	; i++) {
- 		for (size_t i = 0; i < primal_solution_out[d].size()	; i++) {
- 			primal_solution_out[d][i] = primal_solution_out[d][i] + R_mu_prim_cluster[d][i];
-			//primal_solution_parallel[d][i] = primal_solution_parallel[d][i] + R_mu_prim_cluster[d][i];
-			//primal_solution_parallel[d][i] = cluster.domains[d].up0[i] + R_mu_prim_cluster[d][i];
+
+
+
+	for (size_t d = 0; d < cluster.domains.size(); d++) {
+		for (size_t i = 0; i < primal_solution_out[d].size()	; i++) {
+			primal_solution_out[d][i] = primal_solution_out[d][i] + R_mu_prim_cluster[d][i];
 		}
 	}
 
@@ -1401,8 +1454,23 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 	double norm_l;
 	double tol;
 
-	cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );
-	cluster.CreateVec_d_perCluster ( in_right_hand_side_primal );
+	if (numClusters == 1) {
+		cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );
+		cluster.CreateVec_d_perCluster ( in_right_hand_side_primal );
+	} else {
+		cluster.vec_d.clear();
+		cluster.vec_b_compressed.clear();
+		cluster.vec_b_compressed.resize(dl_size, 0.0);
+		for (int c = 0; c < numClusters; c++) {
+			(*clusters)[c]->CreateVec_b_perCluster ( in_right_hand_side_primal );
+			for (int i=0; i<dl_size; i++) {
+				cluster.vec_b_compressed[i] += (*clusters)[c]->vec_b_compressed[i];
+			}
+			(*clusters)[c]->CreateVec_d_perCluster ( in_right_hand_side_primal );
+			cluster.vec_d.insert(cluster.vec_d.end(), (*clusters)[c]->vec_d.begin(), (*clusters)[c]->vec_d.end());
+		}
+	}
+
 
 	// *** CG start ***************************************************************
 
@@ -3775,7 +3843,7 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 			} else {
 				GGt_l.MatMatT(cluster.G2, cluster.G1);
 			}
-                        GGt_l.MatTranspose(); 
+            GGt_l.MatTranspose();
 		   GxGtMatMat.end(); GxGtMatMat.printStatMPI(); preproc_timing.addEvent(GxGtMatMat);
 	 }
 	 //GxGtMatMat.PrintLastStatMPI_PerNode(0.0);
@@ -3786,9 +3854,7 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 	int global_ker_size = 0;
 
 	SEQ_VECTOR<int> global_ker_sizes;
-	global_ker_sizes.resize(cluster.NUMBER_OF_CLUSTERS, 0);
-
-
+	global_ker_sizes.resize(environment->MPIsize, 0); //   cluster.NUMBER_OF_CLUSTERS, 0);
 
 	MPI_Exscan(&local_ker_size, &global_ker_size, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 	MPI_Allgather(&global_ker_size, 1, MPI_INT, &global_ker_sizes[0],1, MPI_INT, MPI_COMM_WORLD);

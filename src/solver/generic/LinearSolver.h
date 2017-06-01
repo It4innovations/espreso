@@ -66,6 +66,10 @@ private:
 	bool 	SINGULAR;
 
 	Cluster *cluster;
+
+	SEQ_VECTOR <Cluster*> clusters;
+
+	int numClusters;
 	IterSolver *solver;
 
 	void setup_HTFETI();

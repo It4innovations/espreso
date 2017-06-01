@@ -47,6 +47,9 @@ public:
 	// *** Main cluster object associated with iteration solver
 	// Cluster & cluster;
 
+	int numClusters;
+	SEQ_VECTOR <Cluster*> *clusters;
+
 	// *** solver variables
 	SEQ_VECTOR <double> dual_soultion_decompressed_parallel;
 	SEQ_VECTOR <double> dual_soultion_compressed_parallel;
@@ -58,7 +61,7 @@ public:
 	// Coarse problem variables
 	SparseMatrix	GGt_Mat;
 	SparseSolverCPU	GGt;
-	eslocal 				GGtsize;
+	eslocal 		GGtsize;
 
 	// *** Setup variables
 	eslocal  USE_DYNAMIC;
