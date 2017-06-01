@@ -348,6 +348,8 @@ bool copiedToMIC;
 // whether to use load balancing between host and MIC  
 bool loadBalancing;
 
+// signal for asynchronous computing 
+int s1;
 
 #pragma offload_attribute(push,target(mic))
 // ratio of work during mv multiplication 

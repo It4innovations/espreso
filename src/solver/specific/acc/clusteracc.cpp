@@ -164,7 +164,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     ESINFO(PROGRESS3) << "Creating Local Schur complements";
     double MICr = 1.0;
     if ( configuration.load_balancing ) {
-        MICr = 0.9;
+        MICr = 0.1;
     }
     // First, get the available memory on coprocessors (in bytes)
     double usableRAM = 0.9;

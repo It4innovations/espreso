@@ -134,7 +134,6 @@ namespace espreso {
         this->mic_x_in = orig.mic_x_in;
         this->mic_y_out = orig.mic_y_out;
         this->MICratio = orig.MICratio;
-        this->elapsedTime = orig.elapsedTime;
 
         this->elapsedTime = new double[1];
         this->elapsedTime[0] = orig.elapsedTime[0];
@@ -388,7 +387,7 @@ namespace espreso {
         double beta  = 0.0;
         eslocal one = 1;
         long start = (long) (MICratio * nMatrices); 
-#pragma omp parallel for schedule(dynamic,1)
+#pragma omp parallel for // schedule(dynamic,1)
         for ( long i = start ; i < nMatrices; i++ ) {
             if ( !packed[i] ) {
                 dgemv(&T_for_transpose_N_for_not_transpose,
@@ -454,7 +453,11 @@ namespace espreso {
             char T_for_transpose_N_for_not_transpose
             ) {
         long nMatrices = this->nMatrices;
-#pragma offload target(mic:device) if(1) signal(mic_y_out) \
+        s1 = 1;
+        #pragma offload_transfer target(mic:device)  \
+        in( this->mic_x_in :length(0) alloc_if(0) free_if(0) ) 
+
+#pragma offload target(mic:device) signal(&this->s1)  \
         in( this->mic_x_in :length(totalCols) alloc_if(0) free_if(0) ) \
         in( matrices_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr) \
         in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
@@ -466,7 +469,8 @@ namespace espreso {
         in( packed : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
         in( mic_y_out : length( 0 ) alloc_if( 0 ) free_if( 0 )  ) \
         in( MICratio ) \
-        in( elapsedTime : length(0) alloc_if(0) free_if(0) )  in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
+        in( elapsedTime : length(0) alloc_if(0) free_if(0) ) \
+        in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
             {
                 double alpha = 1.0;
                 double beta  = 0.0;
@@ -474,7 +478,7 @@ namespace espreso {
                 long nIters = (long) (nMatrices*MICratio);
                 double start = omp_get_wtime();
                 int nth;
-#pragma omp parallel for schedule(dynamic)
+#pragma omp parallel for //schedule(dynamic,1)
                 for ( long i = 0 ; i < nIters; i++ ) {
                     if ( !packed[i] ) {
                         dgemv(&T_for_transpose_N_for_not_transpose,
@@ -493,7 +497,7 @@ namespace espreso {
     }
 
     void DenseMatrixPack::DenseMatsVecsMIC_Sync( ) {
-#pragma offload_wait target(mic:device) wait(mic_y_out)
+ #pragma offload_wait target(mic:device) wait(&this->s1)
 #pragma offload_transfer target(mic:device) \
         out(mic_y_out : length( totalCols ) alloc_if( 0 ) free_if( 0 ) ) \
         out( elapsedTime : length(1) alloc_if(0) free_if(0) )
