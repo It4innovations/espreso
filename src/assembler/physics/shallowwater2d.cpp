@@ -21,7 +21,7 @@
 using namespace espreso;
 
 ShallowWater2D::ShallowWater2D(Mesh *mesh, Instance *instance, const ShallowWater2DConfiguration &configuration)
-: Physics2D("ADVECTION DIFFUSION 2D", mesh, instance), _configuration(configuration)
+: Physics("ADVECTION DIFFUSION 2D", mesh, instance), _configuration(configuration)
 {
 
 }

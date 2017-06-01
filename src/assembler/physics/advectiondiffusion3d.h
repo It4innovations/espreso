@@ -1,21 +1,21 @@
 
-#ifndef SRC_ASSEMBLER_PHYSICS_ADVECTIONDIFFUSION2D_H_
-#define SRC_ASSEMBLER_PHYSICS_ADVECTIONDIFFUSION2D_H_
+#ifndef SRC_ASSEMBLER_PHYSICS_ADVECTIONDIFFUSION3D_H_
+#define SRC_ASSEMBLER_PHYSICS_ADVECTIONDIFFUSION3D_H_
 
-#include "physics2d.h"
+#include "physics3d.h"
 #include "advectiondiffusion.h"
 
 namespace espreso {
 
-enum class Property;
-struct AdvectionDiffusion2DConfiguration;
+struct AdvectionDiffusion3DConfiguration;
 
-struct NewAdvectionDiffusion2D: public AdvectionDiffusion, public Physics2D
+struct NewAdvectionDiffusion3D: public AdvectionDiffusion, public Physics3D
 {
-	NewAdvectionDiffusion2D(Mesh *mesh, Instance *instance, const AdvectionDiffusion2DConfiguration &configuration);
+	NewAdvectionDiffusion3D(Mesh *mesh, Instance *instance, const AdvectionDiffusion3DConfiguration &configuration);
 
 	void prepareTotalFETI();
 
+	void preprocessData(const Step &step);
 	void processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
 	void processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
 	void processEdge(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
@@ -25,11 +25,10 @@ struct NewAdvectionDiffusion2D: public AdvectionDiffusion, public Physics2D
 protected:
 	void assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD) const;
 
-	const AdvectionDiffusion2DConfiguration &_configuration;
+	const AdvectionDiffusion3DConfiguration &_configuration;
 };
 
 }
 
 
-
-#endif /* SRC_ASSEMBLER_PHYSICS_ADVECTIONDIFFUSION2D_H_ */
+#endif /* SRC_ASSEMBLER_PHYSICS_ADVECTIONDIFFUSION3D_H_ */

@@ -6,9 +6,12 @@
 
 namespace espreso {
 
-struct Physics2D: public Physics {
+struct Physics2D: public virtual Physics {
 
-	Physics2D(const std::string &name, Mesh *mesh, Instance *instance);
+	Physics2D() : Physics("", NULL, NULL) // skipped because Physics is inherited virtually
+	{
+
+	}
 
 	double determinant2x2(double *values) const
 	{
