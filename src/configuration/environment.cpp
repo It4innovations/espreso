@@ -14,9 +14,11 @@ Environment::Environment(): executable("espreso")
 {
 	int initialized;
 	MPI_Initialized(&initialized);
+
+	MPICommunicator = MPI_COMM_WORLD;
 	if (initialized) {
-		MPI_Comm_rank(MPI_COMM_WORLD, &MPIrank);
-		MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+		MPI_Comm_rank(MPICommunicator, &MPIrank);
+		MPI_Comm_size(MPICommunicator, &MPIsize);
 	}
 
 	char *var = getenv("_");

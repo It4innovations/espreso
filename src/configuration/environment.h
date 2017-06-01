@@ -2,6 +2,7 @@
 #ifndef SRC_CONFIGURATION_ENVIRONMENT_H_
 #define SRC_CONFIGURATION_ENVIRONMENT_H_
 
+#include "mpi.h"
 #include "../configuration/configuration.h"
 
 namespace espreso {
@@ -12,6 +13,7 @@ struct Environment: public Configuration {
 
 	int MPIrank = 0;
 	int MPIsize = 1;
+	MPI_Comm MPICommunicator;
 
 	std::string executable;
 

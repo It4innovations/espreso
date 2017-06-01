@@ -2,6 +2,7 @@
 #ifndef SRC_OUTPUT_STORE_H_
 #define SRC_OUTPUT_STORE_H_
 
+#include <cstddef>
 #include <vector>
 
 namespace espreso {

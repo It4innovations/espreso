@@ -57,8 +57,8 @@ IterSolverBase::IterSolverBase(const ESPRESOSolver &configuration):
 	timeEvalProj.addEvent(proj_Gx);
 	timeEvalProj.addEvent(proj_allred);
 
-	MPI_Comm_rank (MPI_COMM_WORLD, &mpi_rank);	/* get current process id */
-	MPI_Comm_size (MPI_COMM_WORLD, &mpi_size);	/* get number of processes */
+	MPI_Comm_rank (environment->MPICommunicator, &mpi_rank);	/* get current process id */
+	MPI_Comm_size (environment->MPICommunicator, &mpi_size);	/* get number of processes */
 	mpi_root = 0;
 
 }
@@ -221,10 +221,10 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 
 		}
 
-		MPI_Allreduce( &KKT1_norm_cluster_local, &KKT1_norm_cluster_global, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		MPI_Allreduce( &KKT1_norm_cluster_local, &KKT1_norm_cluster_global, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 		KKT1_norm_cluster_global = sqrt(KKT1_norm_cluster_global);
 
-		MPI_Allreduce( &KKT1_norm_cluster_local2, &KKT1_norm_cluster_global2, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		MPI_Allreduce( &KKT1_norm_cluster_local2, &KKT1_norm_cluster_global2, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 		KKT1_norm_cluster_global2 = sqrt(KKT1_norm_cluster_global2);
 
 		//ESINFO(CONVERGENCE) << " KKT1 norm:              " << std::setw(6) << KKT1_norm_cluster_global / KKT1_norm_cluster_global2;
@@ -300,15 +300,15 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 			}
 		}
 
-		MPI_Allreduce( &max_Bn_l, &max_Bn_l_g, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+		MPI_Allreduce( &max_Bn_l, &max_Bn_l_g, 1, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
 		max_Bn_l_g = fabs(max_Bn_l_g);
 
-		MPI_Allreduce( &lambda_n_max, &lambda_n_max_g, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+		MPI_Allreduce( &lambda_n_max, &lambda_n_max_g, 1, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
 		if (fabs(lambda_n_max_g) < 10e-8)
 			lambda_n_max_g += 1.0;
 
 
-		MPI_Allreduce( &lambda_n_max_2, &lambda_n_max_2_g, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+		MPI_Allreduce( &lambda_n_max_2, &lambda_n_max_2_g, 1, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
 		lambda_n_max_2_g = fabs(lambda_n_max_2_g);
 
 		norm_ce  = parallel_norm_compressed(cluster, ce_l);
@@ -575,7 +575,7 @@ void IterSolverBase::proj_gradient ( SEQ_VECTOR <double> & x,
 //
 //	norm_x_l = fabs(norm_x_l);
 //
-//	MPI_Allreduce(&norm_x_l, &norm_x, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+//	MPI_Allreduce(&norm_x_l, &norm_x, 1, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
 
 	for ( size_t i=0; i< x.size(); i++ )
 	{
@@ -984,13 +984,13 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 				   }
 				}
 
-				MPI_Allreduce(&cnt_l, &cnt, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+				MPI_Allreduce(&cnt_l, &cnt, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
 
 				if (cnt == 0) {
 					alpha_f = INFINITY;
 				} else {
 					alpha_f_l = *std::min_element( tmp.begin(), tmp.begin() + cnt_l );
-					MPI_Allreduce(&alpha_f_l, &alpha_f, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+					MPI_Allreduce(&alpha_f_l, &alpha_f, 1, MPI_DOUBLE, MPI_MIN, environment->MPICommunicator);
 				}
 
 				if (alpha_cg <= alpha_f){
@@ -1367,8 +1367,8 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 //		cnt_l = cnt_l + _free[k];
 //		dnt_l = dnt_l + !_free[k];
 //	}
-//	MPI_Allreduce(&cnt_l, &cnt, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-//	MPI_Allreduce(&dnt_l, &dnt, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+//	MPI_Allreduce(&cnt_l, &cnt, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
+//	MPI_Allreduce(&dnt_l, &dnt, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
 
 
 	ESINFO(CONVERGENCE) << "---------------------------------------------------------------------------------------------------";
@@ -1458,8 +1458,8 @@ void IterSolverBase::Solve_RegCG_singular_dom ( Cluster & cluster,
 	for (size_t d = 0; d < cluster.domains.size(); d++)
 		norm_prim_fl += cluster.domains[d].norm_f;
 
-	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-	//MPI_Reduce   (&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
+	//MPI_Reduce   (&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, 0, environment->MPICommunicator);
 	norm_prim_fg = sqrt(norm_prim_fg);
 
 
@@ -1632,8 +1632,8 @@ for (size_t i = 0; i < p_l.size(); i++)
 		//for (eslocal d = 0; d < cluster.domains.size(); d++)
 		//	norm_prim_l += cluster.domains[d].norm_c;
 
-		//MPI_Allreduce(&norm_prim_l, &norm_prim_g, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-		////MPI_Reduce(&norm_prim_l, &norm_prim_g, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+		//MPI_Allreduce(&norm_prim_l, &norm_prim_g, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
+		////MPI_Reduce(&norm_prim_l, &norm_prim_g, 1, MPI_DOUBLE, MPI_SUM, 0, environment->MPICommunicator);
 		//norm_prim_g = sqrt(norm_prim_g);
 
 
@@ -1769,7 +1769,7 @@ void IterSolverBase::Solve_new_CG_singular_dom ( Cluster & cluster,
 		norm_prim_fl += cluster.domains[d].norm_f;
   }
 
-	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 	norm_prim_fg = sqrt(norm_prim_fg);
 
 	// *** g = Ax - b *************************************************************
@@ -2035,7 +2035,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
 		norm_prim_fl += cluster.domains[d].norm_f;
   }
 
-	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 	norm_prim_fg = sqrt(norm_prim_fg);
 
 	// *** g = Ax - b *************************************************************
@@ -2178,7 +2178,7 @@ for (eslocal i = 0; i < iter; i++) {
         _Gamma_l[i] /= -WtAW_l[i];
       }
 
-	    MPI_Allreduce( &_Gamma_l[0], &Gamma_l[0], iter, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	    MPI_Allreduce( &_Gamma_l[0], &Gamma_l[0], iter, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
       W_l.DenseMatVec(Gamma_l,v_tmp_l);
 
 		  #pragma omp parallel for
@@ -2375,7 +2375,7 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 		norm_prim_fl += cluster.domains[d].norm_f;
   }
 
-	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 	norm_prim_fg = sqrt(norm_prim_fg);
 
 	// *** g = Ax - b *************************************************************
@@ -2788,7 +2788,7 @@ void IterSolverBase::Solve_BICGSTAB_singular_dom ( Cluster & cluster,
 		norm_prim_fl += cluster.domains[d].norm_f;
   }
 
-	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 	norm_prim_fg = sqrt(norm_prim_fg);
 
 	// *** g = Ax - b *************************************************************
@@ -4148,7 +4148,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 				fi_g[i] = fi_l[i] / delta_l[i];
 			}
 
-			MPI_Allreduce( &fi_g[0], &fi_l[0], iter + 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+			MPI_Allreduce( &fi_g[0], &fi_l[0], iter + 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 			W_l.DenseMatVec(fi_l,v_tmp_l);
 
 			#pragma omp parallel for
@@ -4393,7 +4393,7 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 			}
 		}
 
-		MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Barrier(environment->MPICommunicator);
 
 		count_cv += mpi_size/li;
 
@@ -4466,7 +4466,7 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 		GGtsize = GGt.cols;
 
 
-	MPI_Bcast( & GGtsize, 1, esglobal_mpi, 0, MPI_COMM_WORLD);
+	MPI_Bcast( & GGtsize, 1, esglobal_mpi, 0, environment->MPICommunicator);
 
 
 #if TIME_MEAS >= 1
@@ -4574,7 +4574,7 @@ for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
 			}
 		}
 
-		MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Barrier(environment->MPICommunicator);
 
 		GGt_l.Clear();
 
@@ -4710,12 +4710,12 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 
 
 
-	MPI_Exscan(&local_ker_size, &global_ker_size, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-	MPI_Allgather(&global_ker_size, 1, MPI_INT, &global_ker_sizes[0],1, MPI_INT, MPI_COMM_WORLD);
+	MPI_Exscan(&local_ker_size, &global_ker_size, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
+	MPI_Allgather(&global_ker_size, 1, MPI_INT, &global_ker_sizes[0],1, MPI_INT, environment->MPICommunicator);
 
 	int global_GGt_size = 0;
 
-	MPI_Allreduce(&local_ker_size, &global_GGt_size, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce(&local_ker_size, &global_GGt_size, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
 
 	for (size_t i = 0; i < GGt_l.CSR_J_col_indices.size(); i++) {
 		GGt_l.CSR_J_col_indices[i] += global_ker_size; //mpi_rank * cluster.G1.rows;
@@ -4785,7 +4785,7 @@ void IterSolverBase::CreateGGt_inv_dist( Cluster & cluster )
 			}
 		}
 
-		MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Barrier(environment->MPICommunicator);
 
 		GGt_l.Clear();
 
@@ -4910,7 +4910,7 @@ void IterSolverBase::Projector_l_compG (TimeEval & time_eval, Cluster & cluster,
 	time_eval.timeEvents[1].start();
 	MPI_Gather(&d_local[0], d_local_size, MPI_DOUBLE,
 		&d_mpi[0], d_local_size, MPI_DOUBLE,
-		mpi_root, MPI_COMM_WORLD);
+		mpi_root, environment->MPICommunicator);
 	time_eval.timeEvents[1].end();
 
 
@@ -4931,7 +4931,7 @@ void IterSolverBase::Projector_l_compG (TimeEval & time_eval, Cluster & cluster,
 	time_eval.timeEvents[3].start();
 	MPI_Scatter( &d_mpi[0],      d_local_size, MPI_DOUBLE,
 		&d_local[0], d_local_size, MPI_DOUBLE,
-		mpi_root, MPI_COMM_WORLD);
+		mpi_root, environment->MPICommunicator);
 	time_eval.timeEvents[3].end();
 
 	if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 2) {
@@ -5066,7 +5066,7 @@ void IterSolverBase::Projector_l_inv_compG (TimeEval & time_eval, Cluster & clus
 	time_eval.timeEvents[1].start();
 
 	SEQ_VECTOR<int> ker_size_per_clusters(cluster.NUMBER_OF_CLUSTERS, 0);
-	MPI_Allgather(&d_local_size, 1, MPI_INT, &ker_size_per_clusters[0], 1, MPI_INT, MPI_COMM_WORLD );
+	MPI_Allgather(&d_local_size, 1, MPI_INT, &ker_size_per_clusters[0], 1, MPI_INT, environment->MPICommunicator );
 
 	SEQ_VECTOR<int> displs (cluster.NUMBER_OF_CLUSTERS, 0);
 	displs[0] = 0;
@@ -5074,7 +5074,7 @@ void IterSolverBase::Projector_l_inv_compG (TimeEval & time_eval, Cluster & clus
 		displs[i] = displs[i-1] + ker_size_per_clusters[i-1];
 	}
 
-	MPI_Allgatherv(&d_local[0], d_local_size, MPI_DOUBLE, &d_mpi[0], &ker_size_per_clusters[0], &displs[0], MPI_DOUBLE, MPI_COMM_WORLD);
+	MPI_Allgatherv(&d_local[0], d_local_size, MPI_DOUBLE, &d_mpi[0], &ker_size_per_clusters[0], &displs[0], MPI_DOUBLE, environment->MPICommunicator);
 	// TODO: END
 
 	time_eval.timeEvents[1].end();
@@ -5086,7 +5086,7 @@ void IterSolverBase::Projector_l_inv_compG (TimeEval & time_eval, Cluster & clus
 		cluster.GGtinvM.DenseMatVec(d_mpi, d_local, 'T');
 	 time_eval.timeEvents[2].end();
 
-	time_eval.timeEvents[3].start(); 	//MPI_Scatter( &d_mpi[0],      d_local_size, MPI_DOUBLE, 	//	&d_local[0], d_local_size, MPI_DOUBLE, 	//	mpi_root, MPI_COMM_WORLD);
+	time_eval.timeEvents[3].start(); 	//MPI_Scatter( &d_mpi[0],      d_local_size, MPI_DOUBLE, 	//	&d_local[0], d_local_size, MPI_DOUBLE, 	//	mpi_root, environment->MPICommunicator);
 	time_eval.timeEvents[3].end();
 
 	if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 2 || output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 3) {
@@ -5135,7 +5135,7 @@ void IterSolverBase::Projector_l_inv_compG_d (TimeEval & time_eval, Cluster & cl
 	time_eval.timeEvents[1].start();
 	MPI_Allgather(&d_local[0], d_local_size, MPI_DOUBLE,
 		&d_mpi[0], d_local_size, MPI_DOUBLE,
-		MPI_COMM_WORLD);
+		environment->MPICommunicator);
 	time_eval.timeEvents[1].end();
 
 	time_eval.timeEvents[2].start();
@@ -5151,7 +5151,7 @@ void IterSolverBase::Projector_l_inv_compG_d (TimeEval & time_eval, Cluster & cl
 	time_eval.timeEvents[3].start();
 	//MPI_Scatter( &d_mpi[0],      d_local_size, MPI_DOUBLE,
 	//	&d_local[0], d_local_size, MPI_DOUBLE,
-	//	mpi_root, MPI_COMM_WORLD);
+	//	mpi_root, environment->MPICommunicator);
 	time_eval.timeEvents[3].end();
 
 	if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 2) {
@@ -5209,22 +5209,22 @@ void   SendMatrix2  ( eslocal rank, eslocal source_rank, SparseMatrix & A_in, es
 		send_par_buf[3] = A_in.type;
 
 #ifdef XE6
-		MPI_Send(send_par_buf, 4, esglobal_mpi, dest_rank, param_tag, MPI_COMM_WORLD);
-		MPI_Send(&A_in.CSR_I_row_indices[0], A_in.rows + 1, esglobal_mpi, dest_rank, I_row_tag, MPI_COMM_WORLD );
-		MPI_Send(&A_in.CSR_J_col_indices[0], A_in.nnz,      esglobal_mpi, dest_rank, J_col_tag, MPI_COMM_WORLD );
-		MPI_Send(&A_in.CSR_V_values[0],      A_in.nnz,   MPI_DOUBLE, dest_rank, V_val_tag, MPI_COMM_WORLD );
+		MPI_Send(send_par_buf, 4, esglobal_mpi, dest_rank, param_tag, environment->MPICommunicator);
+		MPI_Send(&A_in.CSR_I_row_indices[0], A_in.rows + 1, esglobal_mpi, dest_rank, I_row_tag, environment->MPICommunicator );
+		MPI_Send(&A_in.CSR_J_col_indices[0], A_in.nnz,      esglobal_mpi, dest_rank, J_col_tag, environment->MPICommunicator );
+		MPI_Send(&A_in.CSR_V_values[0],      A_in.nnz,   MPI_DOUBLE, dest_rank, V_val_tag, environment->MPICommunicator );
 #else
-		MPI_Isend(send_par_buf, 4, esglobal_mpi, dest_rank, param_tag, MPI_COMM_WORLD, & request);
-		MPI_Isend(&A_in.CSR_I_row_indices[0], A_in.rows + 1, esglobal_mpi, dest_rank, I_row_tag, MPI_COMM_WORLD, & request);
-		MPI_Isend(&A_in.CSR_J_col_indices[0], A_in.nnz,      esglobal_mpi, dest_rank, J_col_tag, MPI_COMM_WORLD, & request);
-		MPI_Isend(&A_in.CSR_V_values[0],      A_in.nnz,   MPI_DOUBLE, dest_rank, V_val_tag, MPI_COMM_WORLD, & request);
+		MPI_Isend(send_par_buf, 4, esglobal_mpi, dest_rank, param_tag, environment->MPICommunicator, & request);
+		MPI_Isend(&A_in.CSR_I_row_indices[0], A_in.rows + 1, esglobal_mpi, dest_rank, I_row_tag, environment->MPICommunicator, & request);
+		MPI_Isend(&A_in.CSR_J_col_indices[0], A_in.nnz,      esglobal_mpi, dest_rank, J_col_tag, environment->MPICommunicator, & request);
+		MPI_Isend(&A_in.CSR_V_values[0],      A_in.nnz,   MPI_DOUBLE, dest_rank, V_val_tag, environment->MPICommunicator, & request);
 #endif
 
 	}
 
 	if (rank == dest_rank) {
 		eslocal recv_par_buf[4];
-		MPI_Recv(recv_par_buf, 4, esglobal_mpi, source_rank, param_tag, MPI_COMM_WORLD, & status);
+		MPI_Recv(recv_par_buf, 4, esglobal_mpi, source_rank, param_tag, environment->MPICommunicator, & status);
 		B_out.cols = recv_par_buf[0];
 		B_out.rows = recv_par_buf[1];
 		B_out.nnz  = recv_par_buf[2];
@@ -5234,13 +5234,13 @@ void   SendMatrix2  ( eslocal rank, eslocal source_rank, SparseMatrix & A_in, es
 		B_out.CSR_J_col_indices.resize(B_out.nnz);
 		B_out.CSR_V_values.     resize(B_out.nnz);
 
-		MPI_Recv(&B_out.CSR_I_row_indices[0], B_out.rows + 1, esglobal_mpi,    source_rank, I_row_tag, MPI_COMM_WORLD, & status );
-		MPI_Recv(&B_out.CSR_J_col_indices[0], B_out.nnz,      esglobal_mpi,    source_rank, J_col_tag, MPI_COMM_WORLD, & status );
-		MPI_Recv(&B_out.CSR_V_values[0],      B_out.nnz,      MPI_DOUBLE, source_rank, V_val_tag, MPI_COMM_WORLD, & status );
+		MPI_Recv(&B_out.CSR_I_row_indices[0], B_out.rows + 1, esglobal_mpi,    source_rank, I_row_tag, environment->MPICommunicator, & status );
+		MPI_Recv(&B_out.CSR_J_col_indices[0], B_out.nnz,      esglobal_mpi,    source_rank, J_col_tag, environment->MPICommunicator, & status );
+		MPI_Recv(&B_out.CSR_V_values[0],      B_out.nnz,      MPI_DOUBLE, source_rank, V_val_tag, environment->MPICommunicator, & status );
 	}
 
 #ifdef WIN32
-	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Barrier(environment->MPICommunicator);
 #endif
 }
 
@@ -5258,11 +5258,11 @@ void   SendMatrix  ( eslocal rank, eslocal source_rank, SparseMatrix & A_in, esl
 		send_par_buf[2] = A_in.nnz;
 		send_par_buf[3] = A_in.type;
 
-		MPI_Isend(send_par_buf, 		   				  4, 	esglobal_mpi, 	dest_rank, tag, MPI_COMM_WORLD, &request[0] );
+		MPI_Isend(send_par_buf, 		   				  4, 	esglobal_mpi, 	dest_rank, tag, environment->MPICommunicator, &request[0] );
 		if (A_in.nnz > 0) {
-			MPI_Isend(&A_in.CSR_I_row_indices[0], A_in.rows + 1, 	esglobal_mpi, 	dest_rank, tag, MPI_COMM_WORLD, &request[1] );
-			MPI_Isend(&A_in.CSR_J_col_indices[0], A_in.nnz,      	esglobal_mpi, 	dest_rank, tag, MPI_COMM_WORLD, &request[2] );
-			MPI_Isend(&A_in.CSR_V_values[0],      A_in.nnz,   		MPI_DOUBLE, 	dest_rank, tag, MPI_COMM_WORLD, &request[3] );
+			MPI_Isend(&A_in.CSR_I_row_indices[0], A_in.rows + 1, 	esglobal_mpi, 	dest_rank, tag, environment->MPICommunicator, &request[1] );
+			MPI_Isend(&A_in.CSR_J_col_indices[0], A_in.nnz,      	esglobal_mpi, 	dest_rank, tag, environment->MPICommunicator, &request[2] );
+			MPI_Isend(&A_in.CSR_V_values[0],      A_in.nnz,   		MPI_DOUBLE, 	dest_rank, tag, environment->MPICommunicator, &request[3] );
 			MPI_Waitall( 4 , &request[0], MPI_STATUSES_IGNORE);
 		} else {
 			// Empty matrix
@@ -5276,7 +5276,7 @@ void   SendMatrix  ( eslocal rank, eslocal source_rank, SparseMatrix & A_in, esl
 		SEQ_VECTOR < MPI_Request > request ( 3 );
 		eslocal recv_par_buf[4];
 
-		MPI_Recv(recv_par_buf, 4, esglobal_mpi, source_rank, tag, MPI_COMM_WORLD, & status);
+		MPI_Recv(recv_par_buf, 4, esglobal_mpi, source_rank, tag, environment->MPICommunicator, & status);
 		B_out.cols = recv_par_buf[0];
 		B_out.rows = recv_par_buf[1];
 		B_out.nnz  = recv_par_buf[2];
@@ -5287,9 +5287,9 @@ void   SendMatrix  ( eslocal rank, eslocal source_rank, SparseMatrix & A_in, esl
 			B_out.CSR_J_col_indices.resize(B_out.nnz);
 			B_out.CSR_V_values.     resize(B_out.nnz);
 
-			MPI_Irecv(&B_out.CSR_I_row_indices[0], B_out.rows + 1, esglobal_mpi,    source_rank, tag, MPI_COMM_WORLD, &request[0] );
-			MPI_Irecv(&B_out.CSR_J_col_indices[0], B_out.nnz,      esglobal_mpi,    source_rank, tag, MPI_COMM_WORLD, &request[1] );
-			MPI_Irecv(&B_out.CSR_V_values[0],      B_out.nnz,      MPI_DOUBLE,      source_rank, tag, MPI_COMM_WORLD, &request[2] );
+			MPI_Irecv(&B_out.CSR_I_row_indices[0], B_out.rows + 1, esglobal_mpi,    source_rank, tag, environment->MPICommunicator, &request[0] );
+			MPI_Irecv(&B_out.CSR_J_col_indices[0], B_out.nnz,      esglobal_mpi,    source_rank, tag, environment->MPICommunicator, &request[1] );
+			MPI_Irecv(&B_out.CSR_V_values[0],      B_out.nnz,      MPI_DOUBLE,      source_rank, tag, environment->MPICommunicator, &request[2] );
 
 			MPI_Waitall( 3 , &request[0], MPI_STATUSES_IGNORE);
 		}
@@ -5301,7 +5301,7 @@ void   SendMatrix  ( eslocal rank, eslocal source_rank, SparseMatrix & A_in, esl
 void   SendMatrix ( SparseMatrix & A_in, eslocal dest_rank ) {
 
 	int rank;
-	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+	MPI_Comm_rank (environment->MPICommunicator, &rank);
 
 
 	eslocal param_tag = 1;
@@ -5318,26 +5318,26 @@ void   SendMatrix ( SparseMatrix & A_in, eslocal dest_rank ) {
 	send_par_buf[3] = A_in.type;
 
 //#ifdef XE6
-//		MPI_Send(send_par_buf, 4, esglobal_mpi, dest_rank, param_tag, MPI_COMM_WORLD);
-//		MPI_Send(&A_in.CSR_I_row_indices[0], A_in.rows + 1, esglobal_mpi, dest_rank, I_row_tag, MPI_COMM_WORLD );
-//		MPI_Send(&A_in.CSR_J_col_indices[0], A_in.nnz,      esglobal_mpi, dest_rank, J_col_tag, MPI_COMM_WORLD );
-//		MPI_Send(&A_in.CSR_V_values[0],      A_in.nnz,   MPI_DOUBLE, dest_rank, V_val_tag, MPI_COMM_WORLD );
+//		MPI_Send(send_par_buf, 4, esglobal_mpi, dest_rank, param_tag, environment->MPICommunicator);
+//		MPI_Send(&A_in.CSR_I_row_indices[0], A_in.rows + 1, esglobal_mpi, dest_rank, I_row_tag, environment->MPICommunicator );
+//		MPI_Send(&A_in.CSR_J_col_indices[0], A_in.nnz,      esglobal_mpi, dest_rank, J_col_tag, environment->MPICommunicator );
+//		MPI_Send(&A_in.CSR_V_values[0],      A_in.nnz,   MPI_DOUBLE, dest_rank, V_val_tag, environment->MPICommunicator );
 //#else
-		MPI_Isend(send_par_buf, 4, esglobal_mpi, dest_rank, param_tag, MPI_COMM_WORLD, & request);
-		MPI_Isend(&A_in.CSR_I_row_indices[0], A_in.rows + 1, esglobal_mpi, dest_rank, I_row_tag, MPI_COMM_WORLD, & request);
-		MPI_Isend(&A_in.CSR_J_col_indices[0], A_in.nnz,      esglobal_mpi, dest_rank, J_col_tag, MPI_COMM_WORLD, & request);
-		MPI_Isend(&A_in.CSR_V_values[0],      A_in.nnz,   MPI_DOUBLE, dest_rank, V_val_tag, MPI_COMM_WORLD, & request);
+		MPI_Isend(send_par_buf, 4, esglobal_mpi, dest_rank, param_tag, environment->MPICommunicator, & request);
+		MPI_Isend(&A_in.CSR_I_row_indices[0], A_in.rows + 1, esglobal_mpi, dest_rank, I_row_tag, environment->MPICommunicator, & request);
+		MPI_Isend(&A_in.CSR_J_col_indices[0], A_in.nnz,      esglobal_mpi, dest_rank, J_col_tag, environment->MPICommunicator, & request);
+		MPI_Isend(&A_in.CSR_V_values[0],      A_in.nnz,   MPI_DOUBLE, dest_rank, V_val_tag, environment->MPICommunicator, & request);
 //#endif
 
 #ifdef WIN32
-//	MPI_Barrier(MPI_COMM_WORLD);
+//	MPI_Barrier(environment->MPICommunicator);
 #endif
 }
 
 void   RecvMatrix ( SparseMatrix & B_out, eslocal source_rank) {
 
 	int rank;
-	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+	MPI_Comm_rank (environment->MPICommunicator, &rank);
 
 
 	eslocal param_tag = 1;
@@ -5348,7 +5348,7 @@ void   RecvMatrix ( SparseMatrix & B_out, eslocal source_rank) {
 	MPI_Status status;
 
 	eslocal recv_par_buf[4];
-	MPI_Recv(recv_par_buf, 4, esglobal_mpi, source_rank, param_tag, MPI_COMM_WORLD, & status);
+	MPI_Recv(recv_par_buf, 4, esglobal_mpi, source_rank, param_tag, environment->MPICommunicator, & status);
 	B_out.cols = recv_par_buf[0];
 	B_out.rows = recv_par_buf[1];
 	B_out.nnz  = recv_par_buf[2];
@@ -5358,13 +5358,13 @@ void   RecvMatrix ( SparseMatrix & B_out, eslocal source_rank) {
 	B_out.CSR_J_col_indices.resize(B_out.nnz);
 	B_out.CSR_V_values.     resize(B_out.nnz);
 
-	MPI_Recv(&B_out.CSR_I_row_indices[0], B_out.rows + 1, esglobal_mpi,    source_rank, I_row_tag, MPI_COMM_WORLD, & status );
-	MPI_Recv(&B_out.CSR_J_col_indices[0], B_out.nnz,      esglobal_mpi,    source_rank, J_col_tag, MPI_COMM_WORLD, & status );
-	MPI_Recv(&B_out.CSR_V_values[0],      B_out.nnz,      MPI_DOUBLE, source_rank, V_val_tag, MPI_COMM_WORLD, & status );
+	MPI_Recv(&B_out.CSR_I_row_indices[0], B_out.rows + 1, esglobal_mpi,    source_rank, I_row_tag, environment->MPICommunicator, & status );
+	MPI_Recv(&B_out.CSR_J_col_indices[0], B_out.nnz,      esglobal_mpi,    source_rank, J_col_tag, environment->MPICommunicator, & status );
+	MPI_Recv(&B_out.CSR_V_values[0],      B_out.nnz,      MPI_DOUBLE, source_rank, V_val_tag, environment->MPICommunicator, & status );
 
 
 #ifdef WIN32
-	//MPI_Barrier(MPI_COMM_WORLD);
+	//MPI_Barrier(environment->MPICommunicator);
 #endif
 }
 
@@ -5388,7 +5388,7 @@ void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, S
 		send_par_buf[neigh_i][2] = A_in.nnz;
 		send_par_buf[neigh_i][3] = (eslocal)A_in.type;
 
-		MPI_Isend(&send_par_buf[neigh_i][0],  4, 				esglobal_mpi, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 0] );
+		MPI_Isend(&send_par_buf[neigh_i][0],  4, 				esglobal_mpi, 	dest_rank, tag, environment->MPICommunicator, &request[7 * neigh_i + 0] );
 
 	}
 
@@ -5398,7 +5398,7 @@ void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, S
 		recv_par_buf[neigh_i].resize(4);
 		eslocal source_rank = neighbor_ranks[neigh_i];
 
-		MPI_Recv(&recv_par_buf[neigh_i][0], 4, esglobal_mpi, source_rank, tag, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Recv(&recv_par_buf[neigh_i][0], 4, esglobal_mpi, source_rank, tag, environment->MPICommunicator, MPI_STATUS_IGNORE);
 
 		B_out[neigh_i].cols = recv_par_buf[neigh_i][0];
 		B_out[neigh_i].rows = recv_par_buf[neigh_i][1];
@@ -5417,12 +5417,12 @@ void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, S
 		eslocal tag = 1;
 
 		if (A_in.rows) {
-			MPI_Isend(A_in.CSR_I_row_indices.data(), A_in.rows + 1, 	esglobal_mpi, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 1] );
+			MPI_Isend(A_in.CSR_I_row_indices.data(), A_in.rows + 1, 	esglobal_mpi, 	dest_rank, tag, environment->MPICommunicator, &request[7 * neigh_i + 1] );
 		} else {
-			MPI_Isend(A_in.CSR_I_row_indices.data(),             0, 	esglobal_mpi, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 1] );
+			MPI_Isend(A_in.CSR_I_row_indices.data(),             0, 	esglobal_mpi, 	dest_rank, tag, environment->MPICommunicator, &request[7 * neigh_i + 1] );
 		}
-		MPI_Isend(A_in.CSR_J_col_indices.data(), A_in.nnz,      	esglobal_mpi, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 2] );
-		MPI_Isend(A_in.CSR_V_values.data(),      A_in.nnz,   		MPI_DOUBLE, 	dest_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 3] );
+		MPI_Isend(A_in.CSR_J_col_indices.data(), A_in.nnz,      	esglobal_mpi, 	dest_rank, tag, environment->MPICommunicator, &request[7 * neigh_i + 2] );
+		MPI_Isend(A_in.CSR_V_values.data(),      A_in.nnz,   		MPI_DOUBLE, 	dest_rank, tag, environment->MPICommunicator, &request[7 * neigh_i + 3] );
 
 	}
 
@@ -5433,12 +5433,12 @@ void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, S
 		eslocal tag = 1;
 
 		if (B_out[neigh_i].rows) {
-			MPI_Irecv(&B_out[neigh_i].CSR_I_row_indices[0], B_out[neigh_i].rows + 1, esglobal_mpi,    source_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 4] );
+			MPI_Irecv(&B_out[neigh_i].CSR_I_row_indices[0], B_out[neigh_i].rows + 1, esglobal_mpi,    source_rank, tag, environment->MPICommunicator, &request[7 * neigh_i + 4] );
 		} else {
-			MPI_Irecv(&B_out[neigh_i].CSR_I_row_indices[0],                       0, esglobal_mpi,    source_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 4] );
+			MPI_Irecv(&B_out[neigh_i].CSR_I_row_indices[0],                       0, esglobal_mpi,    source_rank, tag, environment->MPICommunicator, &request[7 * neigh_i + 4] );
 		}
-		MPI_Irecv(&B_out[neigh_i].CSR_J_col_indices[0], B_out[neigh_i].nnz,      esglobal_mpi,    source_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 5] );
-		MPI_Irecv(&B_out[neigh_i].CSR_V_values[0],      B_out[neigh_i].nnz,      MPI_DOUBLE,      source_rank, tag, MPI_COMM_WORLD, &request[7 * neigh_i + 6] );
+		MPI_Irecv(&B_out[neigh_i].CSR_J_col_indices[0], B_out[neigh_i].nnz,      esglobal_mpi,    source_rank, tag, environment->MPICommunicator, &request[7 * neigh_i + 5] );
+		MPI_Irecv(&B_out[neigh_i].CSR_V_values[0],      B_out[neigh_i].nnz,      MPI_DOUBLE,      source_rank, tag, environment->MPICommunicator, &request[7 * neigh_i + 6] );
 	}
 
 	MPI_Waitall(7 * neighbor_ranks.size(), &request[0], MPI_STATUSES_IGNORE);
@@ -5453,7 +5453,7 @@ void   BcastMatrix ( eslocal rank, eslocal mpi_root, eslocal source_rank, Sparse
 		send_par_buf[0] = A.cols; send_par_buf[1] = A.rows; send_par_buf[2] = A.nnz; send_par_buf[3] = A.type;
 	}
 
-	MPI_Bcast(send_par_buf, 4, esglobal_mpi, source_rank, MPI_COMM_WORLD);
+	MPI_Bcast(send_par_buf, 4, esglobal_mpi, source_rank, environment->MPICommunicator);
 
 	if (rank != source_rank) {
 		A.cols = send_par_buf[0]; A.rows = send_par_buf[1]; A.nnz  = send_par_buf[2]; A.type = send_par_buf[3];
@@ -5464,9 +5464,9 @@ void   BcastMatrix ( eslocal rank, eslocal mpi_root, eslocal source_rank, Sparse
 
 	if (A.nnz > 0) {
 
-		MPI_Bcast(&A.CSR_I_row_indices[0], A.rows + 1, esglobal_mpi, source_rank, MPI_COMM_WORLD);
-		MPI_Bcast(&A.CSR_J_col_indices[0], A.nnz,      esglobal_mpi, source_rank, MPI_COMM_WORLD);
-		MPI_Bcast(&A.CSR_V_values[0],      A.nnz,   MPI_DOUBLE, source_rank, MPI_COMM_WORLD);
+		MPI_Bcast(&A.CSR_I_row_indices[0], A.rows + 1, esglobal_mpi, source_rank, environment->MPICommunicator);
+		MPI_Bcast(&A.CSR_J_col_indices[0], A.nnz,      esglobal_mpi, source_rank, environment->MPICommunicator);
+		MPI_Bcast(&A.CSR_V_values[0],      A.nnz,   MPI_DOUBLE, source_rank, environment->MPICommunicator);
 
 	}
 }
@@ -5491,29 +5491,29 @@ void   All_Reduce_lambdas_compB2( Cluster & cluster, SEQ_VECTOR<double> & x_in, 
 		MPI_Sendrecv(
 			&cluster.my_comm_lambdas[neigh_i][0], cluster.my_comm_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag,
 			&cluster.my_recv_lambdas[neigh_i][0], cluster.my_recv_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag,
-			MPI_COMM_WORLD, &mpi_stat[neigh_i] );
+			environment->MPICommunicator, &mpi_stat[neigh_i] );
 	}
 
 	//for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
 	//	size_t b_size = cluster.my_comm_lambdas[neigh_i].size();
-	//	MPI_Isend(&b_size,                              1                                      , esglobal_mpi   , cluster.my_neighs[neigh_i], tag + 100, MPI_COMM_WORLD, &mpi_req[neigh_i] );
-	//	MPI_Isend(&cluster.my_comm_lambdas[neigh_i][0], cluster.my_comm_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag,       MPI_COMM_WORLD, &mpi_req[neigh_i] );
+	//	MPI_Isend(&b_size,                              1                                      , esglobal_mpi   , cluster.my_neighs[neigh_i], tag + 100, environment->MPICommunicator, &mpi_req[neigh_i] );
+	//	MPI_Isend(&cluster.my_comm_lambdas[neigh_i][0], cluster.my_comm_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag,       environment->MPICommunicator, &mpi_req[neigh_i] );
 	//
 	//}
 
 	//for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
 	//	size_t r_size = 0;
-	//	MPI_Recv(&r_size                             ,                                       1, esglobal_mpi   , cluster.my_neighs[neigh_i], tag + 100, MPI_COMM_WORLD, &mpi_stat[neigh_i] );
+	//	MPI_Recv(&r_size                             ,                                       1, esglobal_mpi   , cluster.my_neighs[neigh_i], tag + 100, environment->MPICommunicator, &mpi_stat[neigh_i] );
 	//	if (r_size != cluster.my_recv_lambdas[neigh_i].size()) cout << "Error - different buffer size " << endl;
-	//	MPI_Recv(&cluster.my_recv_lambdas[neigh_i][0], cluster.my_recv_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag      , MPI_COMM_WORLD, &mpi_stat[neigh_i] );
+	//	MPI_Recv(&cluster.my_recv_lambdas[neigh_i][0], cluster.my_recv_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag      , environment->MPICommunicator, &mpi_stat[neigh_i] );
 	//}
 
 #ifdef XE6
-	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Barrier(environment->MPICommunicator);
 #endif
 
 #ifdef WIN32
-	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Barrier(environment->MPICommunicator);
 #endif
 
 	delete [] mpi_req;
@@ -5547,12 +5547,12 @@ void   All_Reduce_lambdas_compB( Cluster & cluster, SEQ_VECTOR<double> & x_in, S
 
 	for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
 		MPI_Isend(
-			&cluster.my_comm_lambdas[neigh_i][0], cluster.my_comm_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag, MPI_COMM_WORLD, &request[ 0                        + neigh_i] );
+			&cluster.my_comm_lambdas[neigh_i][0], cluster.my_comm_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag, environment->MPICommunicator, &request[ 0                        + neigh_i] );
 	}
 
 	for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
 		MPI_Irecv(
-			&cluster.my_recv_lambdas[neigh_i][0], cluster.my_recv_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag, MPI_COMM_WORLD, &request[ cluster.my_neighs.size() + neigh_i] );
+			&cluster.my_recv_lambdas[neigh_i][0], cluster.my_recv_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag, environment->MPICommunicator, &request[ cluster.my_neighs.size() + neigh_i] );
 	}
 
 	MPI_Waitall( 2 * cluster.my_neighs.size(), &request[0], MPI_STATUSES_IGNORE);
@@ -5593,7 +5593,7 @@ double parallel_norm_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_v
 	for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++)
 		wl = wl + (input_vector[i] * input_vector[i] * cluster.my_lamdas_ddot_filter[i]);
 
-	MPI_Allreduce( &wl, &wg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce( &wl, &wg, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 	double norm_l = sqrt(wg);
 
 	return norm_l;
@@ -5608,7 +5608,7 @@ double parallel_ddot_compressed_double( Cluster & cluster, double * input_vector
 		a1 = a1 + (input_vector1[i] * input_vector2[i] * cluster.my_lamdas_ddot_filter[i]);
 	}
 
-	MPI_Allreduce( &a1, &a1g, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce( &a1, &a1g, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 
 	return a1g;
 }
@@ -5622,7 +5622,7 @@ double parallel_ddot_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_v
 		a1 = a1 + (input_vector1[i] * input_vector2[i] * cluster.my_lamdas_ddot_filter[i]);
 	}
 
-	MPI_Allreduce( &a1, &a1g, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce( &a1, &a1g, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 
 	return a1g;
 }
@@ -5645,13 +5645,13 @@ void   parallel_ddot_compressed_non_blocking( Cluster & cluster,
 
 
 #ifdef WIN32
-	MPI_Barrier(MPI_COMM_WORLD);
-	MPI_Allreduce( &send_buf[0], &output[0], 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Barrier(environment->MPICommunicator);
+	MPI_Allreduce( &send_buf[0], &output[0], 3, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 #else
 #ifdef USE_MPI_3
-	MPI_Iallreduce( &send_buf[0], &output[0], 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD, mpi_req);
+	MPI_Iallreduce( &send_buf[0], &output[0], 3, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator, mpi_req);
 #else
-	MPI_Allreduce( &send_buf[0], &output[0], 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce( &send_buf[0], &output[0], 3, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 #endif
 #endif
 
@@ -5674,13 +5674,13 @@ void   parallel_ddot_compressed_non_blocking( Cluster & cluster,
 
 
 #ifdef WIN32
-	MPI_Barrier(MPI_COMM_WORLD);
-	MPI_Allreduce( &send_buf[0], &output[0], 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Barrier(environment->MPICommunicator);
+	MPI_Allreduce( &send_buf[0], &output[0], 2, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 #else
 #ifdef USE_MPI_3
-	MPI_Iallreduce( &send_buf[0], &output[0], 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD, mpi_req);
+	MPI_Iallreduce( &send_buf[0], &output[0], 2, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator, mpi_req);
 #else
-	MPI_Allreduce( &send_buf[0], &output[0], 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Allreduce( &send_buf[0], &output[0], 2, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 #endif
 #endif
 

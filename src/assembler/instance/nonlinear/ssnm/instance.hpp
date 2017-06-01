@@ -75,7 +75,7 @@ void SemiSmoothNewtonMethod<TPhysics, TConfiguration>::solve(std::vector<std::ve
 		}
 		double localSum[2] = { std::accumulate(n_prev.begin(), n_prev.end(), 0), std::accumulate(n_curr.begin(), n_curr.end(), 0) };
 		double globalSum[2];
-		MPI_Allreduce(localSum, globalSum, 2, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		MPI_Allreduce(localSum, globalSum, 2, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 		return sqrt(globalSum[0]) / sqrt(globalSum[1]);
 	};
 

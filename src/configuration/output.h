@@ -13,6 +13,12 @@ enum class OUTPUT_FORMAT {
 	ENSIGHT = 3
 };
 
+enum class OUTPUT_MODE {
+	SYNC,
+	THREAD,
+	MPI,
+};
+
 struct OutputConfiguration: public Configuration {
 
 	OPTION(OUTPUT_FORMAT, format, "Format - only LEGACY format is supported without VTK library", OUTPUT_FORMAT::VTK_XML_ASCII, OPTIONS({
@@ -21,6 +27,14 @@ struct OutputConfiguration: public Configuration {
 		{ "VTK_XML_BINARY", OUTPUT_FORMAT::VTK_XML_BINARY, "*.vtu files in binary format" },
 		{ "ENSIGHT"       , OUTPUT_FORMAT::ENSIGHT       , "EnSight files" }
 	}));
+
+	OPTION(OUTPUT_MODE, mode, "Mode of ASYNC library", OUTPUT_MODE::THREAD, OPTIONS({
+		{ "SYNC"  , OUTPUT_MODE::SYNC  , "Storing is synchronized." },
+		{ "THREAD", OUTPUT_MODE::THREAD, "Storing is performed by the last thread." },
+		{ "MPI"   , OUTPUT_MODE::MPI   , "Storing is forwarded to I/O MPI nodes according to OUTPUT_NODE_GROUP_SIZE." },
+	}));
+
+	PARAMETER(size_t, output_node_group_size, "Max number of compution nodes for one output node.", 7);
 
 	PARAMETER(std::string, path, "Path to output files.", "results");
 

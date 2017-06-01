@@ -2323,12 +2323,12 @@ void Mesh::checkNeighbours()
 	std::vector<int> counters(environment->MPIsize);
 	std::vector<int> displacements;
 
-	MPI_Gather(&nSize, 1, MPI_INT, counters.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Gather(&nSize, 1, MPI_INT, counters.data(), 1, MPI_INT, 0, environment->MPICommunicator);
 	for (size_t i = 0; i < counters.size(); i++) {
 		displacements.push_back(displacements.size() ? displacements.back() + counters[i - 1] : 0);
 		neighbours.resize(neighbours.size() + counters[i]);
 	}
-	MPI_Gatherv(_neighbours.data(), _neighbours.size(), MPI_INT, neighbours.data(), counters.data(), displacements.data(), MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Gatherv(_neighbours.data(), _neighbours.size(), MPI_INT, neighbours.data(), counters.data(), displacements.data(), MPI_INT, 0, environment->MPICommunicator);
 
 	for (int r = 0; r < environment->MPIsize; r++) {
 		for (int n = displacements[r]; n < displacements[r] + counters[r]; n++) {
@@ -2349,13 +2349,13 @@ void Mesh::checkNeighbours()
 	}
 	nSize = sClusters.size();
 
-	MPI_Gather(&nSize, 1, MPI_INT, counters.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Gather(&nSize, 1, MPI_INT, counters.data(), 1, MPI_INT, 0, environment->MPICommunicator);
 	for (size_t i = 0; i < counters.size(); i++) {
 		displacements.push_back(displacements.size() ? displacements.back() + counters[i - 1] : 0);
 		rClusters.resize(rClusters.size() + counters[i]);
 		counters[i] *= sizeof(esglobal);
 	}
-	MPI_Gatherv(sClusters.data(), sizeof(esglobal) * sClusters.size(), MPI_BYTE, rClusters.data(), counters.data(), displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+	MPI_Gatherv(sClusters.data(), sizeof(esglobal) * sClusters.size(), MPI_BYTE, rClusters.data(), counters.data(), displacements.data(), MPI_BYTE, 0, environment->MPICommunicator);
 
 	std::vector<std::vector<int> > nodes;
 	for (size_t n = 0; n < rClusters.size(); ) {
@@ -2415,7 +2415,7 @@ void Mesh::checkRegions(const std::vector<Element*> &elements)
 	int rSize = _regions.size();
 	std::vector<int> sizes(environment->MPIsize);
 
-	MPI_Gather(&rSize, 1, MPI_INT, sizes.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Gather(&rSize, 1, MPI_INT, sizes.data(), 1, MPI_INT, 0, environment->MPICommunicator);
 	if (!std::all_of(sizes.begin(), sizes.end(), [&] (int size) { return size == rSize; })) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO INTERNAL ERROR: The same regions have to be set for all processes.";
 	}
@@ -2423,12 +2423,12 @@ void Mesh::checkRegions(const std::vector<Element*> &elements)
 	std::vector<char> regions;
 	for (size_t r = 0; r < _regions.size(); r++) {
 		rSize = _regions[r]->name.size();
-		MPI_Gather(&rSize, 1, MPI_INT, sizes.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+		MPI_Gather(&rSize, 1, MPI_INT, sizes.data(), 1, MPI_INT, 0, environment->MPICommunicator);
 		if (!std::all_of(sizes.begin(), sizes.end(), [&] (int size) { return size == rSize; })) {
 			ESINFO(GLOBAL_ERROR) << "ESPRESO INTERNAL ERROR: regions have not the same names on all processes.";
 		}
 		regions.resize(rSize * environment->MPIsize);
-		MPI_Gather(_regions[r]->name.c_str(), rSize, MPI_BYTE, regions.data(), rSize, MPI_BYTE, 0, MPI_COMM_WORLD);
+		MPI_Gather(_regions[r]->name.c_str(), rSize, MPI_BYTE, regions.data(), rSize, MPI_BYTE, 0, environment->MPICommunicator);
 		if (!environment->MPIrank) {
 			for (int i = 0; i < environment->MPIsize; i++) {
 				std::string str(regions.begin() + i * rSize, regions.begin() + (i + 1) * rSize);
@@ -2462,13 +2462,13 @@ void Mesh::checkRegions(const std::vector<Element*> &elements)
 
 	rSize = sRegions.size();
 
-	MPI_Gather(&rSize, 1, MPI_INT, sizes.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Gather(&rSize, 1, MPI_INT, sizes.data(), 1, MPI_INT, 0, environment->MPICommunicator);
 	for (size_t i = 0; i < sizes.size(); i++) {
 		displacements.push_back(displacements.size() ? displacements.back() + sizes[i - 1] : 0);
 		rRegions.resize(rRegions.size() + sizes[i]);
 		sizes[i] *= sizeof(esglobal);
 	}
-	MPI_Gatherv(sRegions.data(), sizeof(esglobal) * sRegions.size(), MPI_BYTE, rRegions.data(), sizes.data(), displacements.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
+	MPI_Gatherv(sRegions.data(), sizeof(esglobal) * sRegions.size(), MPI_BYTE, rRegions.data(), sizes.data(), displacements.data(), MPI_BYTE, 0, environment->MPICommunicator);
 
 	std::vector<std::vector<int> > nodes;
 	for (size_t n = 0; n < rRegions.size(); ) {

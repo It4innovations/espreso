@@ -367,7 +367,7 @@ double Solver::lineSearch(const std::vector<std::vector<double> > &U, std::vecto
 			#pragma omp atomic
 			cmul += dmul;
 		}
-		MPI_Allreduce(&cmul, &gmul, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		MPI_Allreduce(&cmul, &gmul, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 		return gmul;
 	};
 
@@ -433,7 +433,7 @@ double Solver::maxAbsValue(const std::vector<std::vector<double> > &v) const
 	}
 
 	double gmax;
-	MPI_Allreduce(&max, &gmax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+	MPI_Allreduce(&max, &gmax, 1, MPI_DOUBLE, MPI_MAX, environment->MPICommunicator);
 	return gmax;
 }
 

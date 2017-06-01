@@ -82,7 +82,7 @@ static size_t packedDataSize(const std::map<std::string, std::pair<size_t, std::
 }
 
 template <typename TType>
-static void packVector(char* &p, std::vector<char> &packedData, const std::vector<TType> &vector)
+static void packVector(char* &p, const std::vector<TType> &vector)
 {
 	size_t datasize = vector.size();
 	memcpy(p, &datasize, sizeof(size_t));
@@ -92,7 +92,7 @@ static void packVector(char* &p, std::vector<char> &packedData, const std::vecto
 }
 
 template <typename TType>
-static void packData(char* &p, std::vector<char> &packedData, const std::map<std::string, std::pair<size_t, std::vector<TType>* > > &data)
+static void packData(char* &p, const std::map<std::string, std::pair<size_t, std::vector<TType>* > > &data)
 {
 	size_t datasize = data.size();
 	memcpy(p, &datasize, sizeof(size_t));
@@ -118,7 +118,7 @@ static void packData(char* &p, std::vector<char> &packedData, const std::map<std
 }
 
 template <typename TType>
-static void unpackVector(char* &p, std::vector<TType> &vector)
+static void unpackVector(const char* &p, std::vector<TType> &vector)
 {
 	size_t datasize;
 	memcpy(&datasize, p, sizeof(size_t));
@@ -129,7 +129,7 @@ static void unpackVector(char* &p, std::vector<TType> &vector)
 }
 
 template <typename TType>
-static void unpackData(char* &p, std::map<std::string, std::pair<size_t, std::vector<TType>* > > &data)
+static void unpackData(const char* &p, std::map<std::string, std::pair<size_t, std::vector<TType>* > > &data)
 {
 	size_t vectors;
 	memcpy(&vectors, p, sizeof(size_t));
@@ -155,7 +155,7 @@ static void unpackData(char* &p, std::map<std::string, std::pair<size_t, std::ve
 	}
 }
 
-void RegionData::pack(std::vector<char> &data) const
+size_t RegionData::packedSize() const
 {
 	size_t size = 0;
 
@@ -169,21 +169,33 @@ void RegionData::pack(std::vector<char> &data) const
 	size += packedDataSize(this->data.elementDataDouble);
 	size += packedDataSize(this->data.elementDataInteger);
 
+	return size;
+}
+
+void RegionData::pack(char* data) const
+{
+	packVector(data, coordinates);
+	packVector(data, elementsTypes);
+	packVector(data, elementsNodes);
+	packVector(data, elements);
+
+	packData(data, this->data.pointDataDouble);
+	packData(data, this->data.pointDataInteger);
+	packData(data, this->data.elementDataDouble);
+	packData(data, this->data.elementDataInteger);
+}
+
+void RegionData::pack(std::vector<char> &data) const
+{
+	size_t size = packedSize();
+
 	data.resize(data.size() + size);
 	char *p = data.data() + data.size() - size;
 
-	packVector(p, data, coordinates);
-	packVector(p, data, elementsTypes);
-	packVector(p, data, elementsNodes);
-	packVector(p, data, elements);
-
-	packData(p, data, this->data.pointDataDouble);
-	packData(p, data, this->data.pointDataInteger);
-	packData(p, data, this->data.elementDataDouble);
-	packData(p, data, this->data.elementDataInteger);
+	pack(p);
 }
 
-void RegionData::unpack(char* &data)
+void RegionData::unpack(const char* &data)
 {
 	coordinates.clear();
 	elementsTypes.clear();

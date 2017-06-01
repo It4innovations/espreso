@@ -21,6 +21,8 @@
 #include "../../mesh/elements/element.h"
 #include "../../output/resultstorelist.h"
 
+
+#include "../../output/resultstore/asyncstore.h"
 #include "../../output/resultstore/vtklegacy.h"
 #include "../../output/resultstore/vtkxmlascii.h"
 #include "../../output/resultstore/vtkxmlbinary.h"
@@ -32,6 +34,50 @@ namespace espreso {
 Factory::Factory(const GlobalConfiguration &configuration)
 : store(NULL), instance(NULL), mesh(new Mesh()), _newAssembler(false)
 {
+	_asyncStore = NULL;
+	async::Config::setMode(async::SYNC);
+	if (configuration.output.results) {
+		if (configuration.output.mode != OUTPUT_MODE::SYNC && (configuration.output.settings || configuration.output.FETI_data)) {
+			ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Storing of SETTINGS or FETI_DATA is implemented only for OUTPUT::MODE==SYNC. Hence, output is synchronized!";
+		} else if (configuration.output.collected) {
+			ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Storing COLLECTED output is implemented only for OUTPUT::MODE==SYNC. Hence, output is synchronized!";
+		} else {
+			// Configure the asynchronous library
+			switch (configuration.output.mode) {
+			case OUTPUT_MODE::SYNC:
+				async::Config::setMode(async::SYNC);
+				break;
+			case OUTPUT_MODE::THREAD:
+				async::Config::setMode(async::THREAD);
+				break;
+			case OUTPUT_MODE::MPI:
+				if (environment->MPIsize == 1) {
+					ESINFO(GLOBAL_ERROR) << "Invalid number of MPI processes. OUTPUT::MODE==MPI required at least two MPI processes.";
+				}
+				if (configuration.output.output_node_group_size == 0) {
+					ESINFO(GLOBAL_ERROR) << "OUTPUT::OUTPUT_NODE_GROUP_SIZE cannot be 0.";
+				}
+				async::Config::setMode(async::MPI);
+				async::Config::setGroupSize(configuration.output.output_node_group_size);
+				_dispatcher.setGroupSize(configuration.output.output_node_group_size);
+				// async::Config::setUseAsyncCopy(true);
+				break;
+			}
+
+			_asyncStore = new output::AsyncStore(configuration.output, mesh);
+		}
+	}
+
+
+	_dispatcher.init();
+	environment->MPICommunicator = _dispatcher.commWorld();
+	MPI_Comm_rank(environment->MPICommunicator, &environment->MPIrank);
+	MPI_Comm_size(environment->MPICommunicator, &environment->MPIsize);
+
+	if (!_dispatcher.dispatch()) {
+		return;
+	}
+
 	input::Loader::load(configuration, *mesh, configuration.env.MPIrank, configuration.env.MPIsize);
 
 	if (configuration.physics == PHYSICS::SHALLOW_WATER_2D) {
@@ -49,26 +95,30 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 	store = new output::ResultStoreList(configuration.output);
 	if (configuration.output.monitoring.size()) {
-		store->add(new output::Monitoring(configuration.output, mesh, Logging::name + ".emr"));
+		store->add(new output::Monitoring(configuration.output, mesh));
 	}
 	if (configuration.output.catalyst) {
-		store->add(new output::Catalyst(configuration.output, mesh, "results"));
+		store->add(new output::Catalyst(configuration.output, mesh));
 	}
 	if (configuration.output.results || configuration.output.settings) {
-		switch (configuration.output.format) {
-		case OUTPUT_FORMAT::VTK_LEGACY:
-			store->add(new output::VTKLegacy(configuration.output, mesh, "results"));
-			break;
-		case OUTPUT_FORMAT::VTK_XML_ASCII:
-			store->add(new output::VTKXMLASCII(configuration.output, mesh, "results"));
-			break;
-		case OUTPUT_FORMAT::VTK_XML_BINARY:
-			store->add(new output::VTKXMLBinary(configuration.output, mesh, "results"));
-			break;
-		default:
-			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: add OUTPUT_FORMAT to factory.";
+		if (_asyncStore != NULL) {
+			_asyncStore->init(mesh);
+			store->add(_asyncStore);
+		} else {
+			switch (configuration.output.format) {
+			case OUTPUT_FORMAT::VTK_LEGACY:
+				store->add(new output::VTKLegacy(configuration.output, mesh));
+				break;
+			case OUTPUT_FORMAT::VTK_XML_ASCII:
+				store->add(new output::VTKXMLASCII(configuration.output, mesh));
+				break;
+			case OUTPUT_FORMAT::VTK_XML_BINARY:
+				store->add(new output::VTKXMLBinary(configuration.output, mesh));
+				break;
+			default:
+				ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: add OUTPUT_FORMAT to factory.";
+			}
 		}
-
 	}
 
 	if (configuration.physics == PHYSICS::ADVECTION_DIFFUSION_2D && configuration.advection_diffusion_2D.newassembler) {
@@ -129,6 +179,10 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 void Factory::meshPreprocessing(const OutputConfiguration &configuration)
 {
+	if (_dispatcher.isExecutor()) {
+		return;
+	}
+
 	for (size_t i = 0; i < _physics.size(); i++) {
 
 		switch (_linearSolvers.front()->configuration.method) {
@@ -166,8 +220,17 @@ void Factory::meshPreprocessing(const OutputConfiguration &configuration)
 void Factory::finalize()
 {
 	// Detele store while finalizing because of Catalyst
-	store->finalize();
+	if (store) {
+		store->finalize();
+	}
+
+	_dispatcher.finalize();
 	delete store;
+
+	if (!store) {
+		// No store was setup, we need to delete the _asyncStore by ourself
+		delete _asyncStore;
+	}
 }
 
 Factory::~Factory()
@@ -187,6 +250,10 @@ Factory::~Factory()
 
 void Factory::solve()
 {
+	if (_dispatcher.isExecutor()) {
+		return;
+	}
+
 	if (!_newAssembler) {
 		instance->init();
 		instance->solve(_solution);
@@ -206,6 +273,10 @@ void Factory::solve()
 
 void Factory::check(const Results &configuration)
 {
+	if (_dispatcher.isExecutor()) {
+		return;
+	}
+
 	double epsilon = 1e-2;
 
 	auto norm = [&] () {
@@ -216,7 +287,7 @@ void Factory::check(const Results &configuration)
 			}
 		}
 
-		MPI_Allreduce(&n, &sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		MPI_Allreduce(&n, &sum, 1, MPI_DOUBLE, MPI_SUM, environment->MPICommunicator);
 		return sqrt(sum);
 	};
 
@@ -254,19 +325,6 @@ void Factory::check(const Results &configuration)
 		evaluateProperty(configuration.temperature   , Property::TEMPERATURE   , DOF);
 		evaluateProperty(configuration.pressure      , Property::PRESSURE      , DOF);
 	};
-}
-
-double Factory::norm() const
-{
-	double n = 0, sum = 0;
-	for (size_t i = 0; i < _solution.size(); i++) {
-		for (size_t j = 0; j < _solution[i].size(); j++) {
-			n += _solution[i][j] * _solution[i][j];
-		}
-	}
-
-	MPI_Allreduce(&n, &sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-	return sqrt(sum);
 }
 
 }

@@ -17,7 +17,7 @@ struct SemiSmoothNewtonMethod: public OldInstance
 	_physics(mesh, _constraints),
 	_linearSolver(configuration.espreso, _physics, _constraints),
 	_prevSolution(mesh.parts()),
-	_store(_output, mesh, "results")
+	_store(_output, mesh)
 	{
 		_timeStatistics.totalTime.startWithBarrier();
 	};

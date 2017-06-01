@@ -33,8 +33,10 @@ struct RegionData {
 
 	void clearData();
 
+	size_t packedSize() const;
+	void pack(char* data) const;
 	void pack(std::vector<char> &data) const;
-	void unpack(char* &data);
+	void unpack(const char* &data);
 };
 
 }

@@ -1,0 +1,6 @@
+[submodule "submodules/utils"]
+	path = submodules/utils
+	url = https://github.com/TUM-I5/utils.git
+[submodule "submodules/cxxtest"]
+	path = submodules/cxxtest
+	url = https://github.com/CxxTest/cxxtest.git

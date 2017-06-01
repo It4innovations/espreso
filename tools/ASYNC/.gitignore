@@ -1,0 +1,12 @@
+# Build directory
+build/
+build_*/
+
+# Eclipse files
+.cproject
+.project
+.settings/
+
+# KDevelop
+.kdev4/
+*.kdev4

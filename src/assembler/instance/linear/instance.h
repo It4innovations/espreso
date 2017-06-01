@@ -22,7 +22,7 @@ struct LinearInstance: public OldInstance
 	_constrains(configuration.physics_solver.load_steps_settings.at(1)->espreso, mesh),
 	_physics(mesh, _constrains, configuration),
 	_linearSolver(configuration.physics_solver.load_steps_settings.at(1)->espreso, _physics, _constrains),
-	_store(_output, &mesh, "results")
+	_store(_output, &mesh)
 	{
 		_timeStatistics.totalTime.startWithBarrier();
 	};

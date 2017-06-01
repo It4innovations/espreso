@@ -14,8 +14,8 @@
 
 using namespace espreso::output;
 
-VTKXMLASCII::VTKXMLASCII(const OutputConfiguration &output, const Mesh *mesh, const std::string &path)
-: VTKXML(output, mesh, path)
+VTKXMLASCII::VTKXMLASCII(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode)
+: VTKXML(output, mesh, mode)
 {
 	_writer = vtkXMLUnstructuredGridWriter::New();
 	_writer->SetDataModeToAscii();

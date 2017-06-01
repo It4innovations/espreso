@@ -353,7 +353,7 @@ void ESPRESOBinaryFormat::boundaries()
 //	std::vector<MPI_Request> req(mesh.neighbours().size());
 //
 //	for (size_t n = 0; n < mesh.neighbours().size(); n++) {
-//		MPI_Isend(sBuffer[0][n].data(), sizeof(esglobal) * sBuffer[0][n].size(), MPI_BYTE, mesh.neighbours()[n], 0, MPI_COMM_WORLD, req.data() + n);
+//		MPI_Isend(sBuffer[0][n].data(), sizeof(esglobal) * sBuffer[0][n].size(), MPI_BYTE, mesh.neighbours()[n], 0, environment->MPICommunicator, req.data() + n);
 //	}
 //
 //	auto n2i = [ & ] (size_t neighbour) {
@@ -363,12 +363,12 @@ void ESPRESOBinaryFormat::boundaries()
 //	int flag, counter = 0;
 //	MPI_Status status;
 //	while (counter < mesh.neighbours().size()) {
-//		MPI_Iprobe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &flag, &status);
+//		MPI_Iprobe(MPI_ANY_SOURCE, 0, environment->MPICommunicator, &flag, &status);
 //		if (flag) {
 //			int count;
 //			MPI_Get_count(&status, MPI_BYTE, &count);
 //			rBuffer[n2i(status.MPI_SOURCE)].resize(count / sizeof(esglobal));
-//			MPI_Recv(rBuffer[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+//			MPI_Recv(rBuffer[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
 //			counter++;
 //		}
 //	}

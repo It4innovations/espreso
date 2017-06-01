@@ -174,7 +174,7 @@ void Reader::_read(Configuration &configuration, int* argc, char ***argv)
 void Reader::copyInputData()
 {
 	if (environment->MPIrank) {
-		MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Barrier(environment->MPICommunicator);
 		Logging::log.open(Logging::outputRoot() + "/" + Logging::name + ".log", std::ofstream::app);
 		return;
 	} else {
@@ -184,7 +184,7 @@ void Reader::copyInputData()
 		if (system(("mkdir -p " + Logging::outputRoot()).c_str())) {
 			ESINFO(ERROR) << "Cannot create output directory\n";
 		}
-		MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Barrier(environment->MPICommunicator);
 	}
 
 	Logging::log.open(Logging::outputRoot() + "/" + Logging::name + ".log", std::ofstream::app);

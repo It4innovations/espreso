@@ -73,7 +73,7 @@ MeshInfo* DistributedInfo::deriveRegion(const Region *region) const
 
 MeshInfo* DistributedInfo::copyWithoutMesh() const
 {
-	DistributedInfo *copy = new DistributedInfo(_mesh, _domainShrinkRatio, _clusterShrinkRatio);
+	DistributedInfo *copy = new DistributedInfo(_mesh, _domainShrinkRatio, _clusterShrinkRatio, _mode & ~MeshInfo::PREPARE);
 	copy->_domainsCenters = _domainsCenters;
 	copy->_clusterCenter = _clusterCenter;
 	copy->_regions.push_back(RegionData());

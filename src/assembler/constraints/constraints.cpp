@@ -80,10 +80,10 @@ size_t Constraints::synchronizeOffsets(size_t &offset)
 
 	MPI_Op op;
 	MPI_Op_create(offsetSum, 1, &op);
-	MPI_Exscan(&size, &offset, sizeof(size_t), MPI_BYTE, op, MPI_COMM_WORLD);
+	MPI_Exscan(&size, &offset, sizeof(size_t), MPI_BYTE, op, environment->MPICommunicator);
 
 	size = offset + size;
-	MPI_Bcast(&size, sizeof(size_t), MPI_BYTE, environment->MPIsize - 1, MPI_COMM_WORLD);
+	MPI_Bcast(&size, sizeof(size_t), MPI_BYTE, environment->MPIsize - 1, environment->MPICommunicator);
 	if (environment->MPIrank == 0) {
 		offset = 0;
 	}

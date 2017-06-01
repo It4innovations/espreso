@@ -150,8 +150,8 @@ void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esl
 	std::vector<size_t> sizes(neighbours.size());
 
 	for (size_t n = 0; n < neighbours.size(); n++) {
-		MPI_Isend(&size           , sizeof(size_t), MPI_BYTE, neighbours[n], 0, MPI_COMM_WORLD, req.data() + 2 * n);
-		MPI_Irecv(sizes.data() + n, sizeof(size_t), MPI_BYTE, neighbours[n], 0, MPI_COMM_WORLD, req.data() + 2 * n + 1);
+		MPI_Isend(&size           , sizeof(size_t), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + 2 * n);
+		MPI_Irecv(sizes.data() + n, sizeof(size_t), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + 2 * n + 1);
 	}
 	MPI_Waitall(2 * neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
 
@@ -163,11 +163,11 @@ void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esl
 	}
 
 	for (size_t n = 0; n < neighbours.size(); n++) {
-		MPI_Isend(sBuffer.data(),        size * sizeof(eslocal), MPI_BYTE, neighbours[n], 0, MPI_COMM_WORLD, req.data() + 2 * n);
-		MPI_Irecv(rBuffer[n].data(), sizes[n] * sizeof(eslocal), MPI_BYTE, neighbours[n], 0, MPI_COMM_WORLD, req.data() + 2 * n + 1);
+		MPI_Isend(sBuffer.data(),        size * sizeof(eslocal), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + 2 * n);
+		MPI_Irecv(rBuffer[n].data(), sizes[n] * sizeof(eslocal), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + 2 * n + 1);
 	}
 	MPI_Waitall(2 * neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
-	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Barrier(environment->MPICommunicator);
 
 	size_t threads = environment->OMP_NUM_THREADS;
 	std::vector<size_t> distribution = Esutils::getDistribution(threads, size);
@@ -231,22 +231,22 @@ void API::clusterBoundaries(std::vector<int> &neighbours, size_t size, const esl
 	}
 
 	for (size_t n = 0; n < neighbours.size(); n++) {
-		MPI_Isend(sDirichlet[n].data(), sizeof(std::pair<esglobal, double>) * sDirichlet[n].size(), MPI_BYTE, neighbours[n], 0, MPI_COMM_WORLD, requests.data() + n);
+		MPI_Isend(sDirichlet[n].data(), sizeof(std::pair<esglobal, double>) * sDirichlet[n].size(), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, requests.data() + n);
 	}
 
 	size_t counter = 0;
 	MPI_Status status;
 	while (counter < neighbours.size()) {
-		MPI_Probe(MPI_ANY_SOURCE, 0, MPI_COMM_WORLD, &status);
+		MPI_Probe(MPI_ANY_SOURCE, 0, environment->MPICommunicator, &status);
 		int count;
 		MPI_Get_count(&status, MPI_BYTE, &count);
 		rDirichlet[n2i(status.MPI_SOURCE)].resize(count / sizeof(std::pair<esglobal, double>));
-		MPI_Recv(rDirichlet[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+		MPI_Recv(rDirichlet[n2i(status.MPI_SOURCE)].data(), count, MPI_BYTE, status.MPI_SOURCE, 0, environment->MPICommunicator, MPI_STATUS_IGNORE);
 		counter++;
 	}
 
 	MPI_Waitall(neighbours.size(), req.data(), MPI_STATUSES_IGNORE);
-	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Barrier(environment->MPICommunicator);
 
 	for (size_t n = 0; n < neighbours.size(); n++) {
 	for (size_t i = 0; i < rDirichlet[n].size(); i++) {

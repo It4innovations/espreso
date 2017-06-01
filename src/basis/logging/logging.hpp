@@ -1,5 +1,6 @@
 
 #include "mpi.h"
+#include "../../configuration/environment.h"
 
 #include "logging.h"
 
@@ -9,10 +10,10 @@ template<typename Tvalue>
 static void gather(const Tvalue &value, Tvalue &min, Tvalue &max, Tvalue &total)
 {
 	int MPIsize;
-	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+	MPI_Comm_size(environment->MPICommunicator, &MPIsize);
 	typename std::vector<Tvalue> values(MPIsize);
 
-	MPI_Gather(&value, sizeof(Tvalue), MPI_BYTE, values.data(), sizeof(Tvalue), MPI_BYTE, 0, MPI_COMM_WORLD);
+	MPI_Gather(&value, sizeof(Tvalue), MPI_BYTE, values.data(), sizeof(Tvalue), MPI_BYTE, 0, environment->MPICommunicator);
 
 	min = max = value;
 	total = 0;
@@ -27,10 +28,10 @@ template<typename Tvalue>
 static void gather(const std::pair<Tvalue, Tvalue> &value, Tvalue &min, Tvalue &max)
 {
 	int MPIsize;
-	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+	MPI_Comm_size(environment->MPICommunicator, &MPIsize);
 	typename std::vector<std::pair<Tvalue, Tvalue> > values(MPIsize);
 
-	MPI_Gather(&value, 2 * sizeof(Tvalue), MPI_BYTE, values.data(), 2 * sizeof(Tvalue), MPI_BYTE, 0, MPI_COMM_WORLD);
+	MPI_Gather(&value, 2 * sizeof(Tvalue), MPI_BYTE, values.data(), 2 * sizeof(Tvalue), MPI_BYTE, 0, environment->MPICommunicator);
 
 	min = value.first;
 	max = value.second;
@@ -45,7 +46,7 @@ template<typename Tvalue>
 std::string Info::sumValue(const Tvalue &value)
 {
 	int MPIsize;
-	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+	MPI_Comm_size(environment->MPICommunicator, &MPIsize);
 	Tvalue min, max, total;
 	gather(value, min, max, total);
 
@@ -59,7 +60,7 @@ template<typename Tvalue>
 std::string Info::averageValue(const Tvalue &value)
 {
 	int MPIsize;
-	MPI_Comm_size(MPI_COMM_WORLD, &MPIsize);
+	MPI_Comm_size(environment->MPICommunicator, &MPIsize);
 	Tvalue min, max, total;
 	gather(value, min, max, total);
 
