@@ -39,6 +39,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
         // *** Part 1.2 work with domains staying on CPU
         #pragma omp parallel for
         for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
+
             eslocal domN = cluster.hostDomains.at(d);
             for ( eslocal j = 0; j < cluster.domains[domN].lambda_map_sub_local.size(); j++ ) {
                 cluster.domains[domN].compressed_tmp2[j] = x_in[ cluster.domains[domN].lambda_map_sub_local[j]];
@@ -46,8 +47,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
             // *** Part 2.2 - prepare vectors for HFETI operator on CPU
             cluster.domains[domN].B1_comp_dom.MatVec (cluster.domains[domN].compressed_tmp2, cluster.x_prim_cluster1[domN], 'T');
         }
-
-        // *** Part 3 - execute FETI SC operator 
+       // *** Part 3 - execute FETI SC operator 
         // spawn the computation on MICs
 #pragma omp parallel num_threads( maxDevNumber )
         {
@@ -56,11 +56,13 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
                 cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Start( 'N' );
             }
         }
-
+ 
+         //omp_set_num_threads(24);
         // meanwhile compute the same for domains staying on CPU
         double startCPU = Measure::time();
         #pragma omp parallel for
         for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
+
             eslocal domN = cluster.hostDomains.at(d);
             cluster.domains[domN].B1Kplus.DenseMatVec( cluster.domains[domN].compressed_tmp2, cluster.domains[domN].compressed_tmp);
         }
@@ -70,21 +72,25 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
             long start = (long) (cluster.B1KplusPacks[i].getNMatrices()*cluster.B1KplusPacks[i].getMICratio());
 #pragma omp parallel for
             for (  long d = start ; d < cluster.B1KplusPacks[i].getNMatrices(); ++d ) {
+
                 cluster.B1KplusPacks[i].GetY(d, cluster.domains[cluster.accDomains[i].at(d)].compressed_tmp);
             }
         }
-
         time_eval.timeEvents[0].end();
 
+
+        
+std::cout << "Start"<<std::endl;
         // *** Part 4 - Execute HTFETI operator
         // perform simultaneous computation on CPU
         time_eval.timeEvents[1].start();
         cluster.multKplusGlobal_Kinv( cluster.x_prim_cluster1 );
         time_eval.timeEvents[1].end();
 
+std::cout << "end"<<std::endl;
+
         time_eval.timeEvents[2].start();
         double CPUtime = Measure::time() - startCPU;
-
         // *** Part 5 - Finalize transfers of the result of the FETI SC operator
         // from MICs back to CPU
 #pragma omp parallel num_threads( maxDevNumber )
@@ -94,7 +100,6 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
                 cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Sync(  );
             }
         }
-
         // extract the result from MICs
         for ( eslocal i = 0; i < maxDevNumber; i++ ) {
             long end = (long) (cluster.B1KplusPacks[i].getNMatrices()*cluster.B1KplusPacks[i].getMICratio());
@@ -102,6 +107,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
                 cluster.B1KplusPacks[i].GetY(d, cluster.domains[cluster.accDomains[i].at(d)].compressed_tmp);
             }
         }
+
 
         // *** Part 6 - Lambda values, results of the FETI SC operator, are
         // combined back into single lambda vector per cluster -
@@ -130,7 +136,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
             double r = cluster.B1KplusPacks[0].getMICratio();
             double MICtime = cluster.B1KplusPacks[0].getElapsedTime();
             double newRatio = (r * CPUtime) / (r * CPUtime + MICtime * (1 - r));
-            //std::cout << "TEST " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
+            std::cout << "TEST " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
 
 #pragma omp parallel num_threads( maxDevNumber )
             {

@@ -388,7 +388,7 @@ namespace espreso {
         double beta  = 0.0;
         eslocal one = 1;
         long start = (long) (MICratio * nMatrices); 
-#pragma omp parallel for //schedule(dynamic,10)
+#pragma omp parallel for schedule(dynamic,1)
         for ( long i = start ; i < nMatrices; i++ ) {
             if ( !packed[i] ) {
                 dgemv(&T_for_transpose_N_for_not_transpose,
@@ -454,7 +454,7 @@ namespace espreso {
             char T_for_transpose_N_for_not_transpose
             ) {
         long nMatrices = this->nMatrices;
-#pragma offload target(mic:device) if(1) \
+#pragma offload target(mic:device) if(1) signal(mic_y_out) \
         in( this->mic_x_in :length(totalCols) alloc_if(0) free_if(0) ) \
         in( matrices_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr) \
         in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
@@ -466,9 +466,7 @@ namespace espreso {
         in( packed : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
         in( mic_y_out : length( 0 ) alloc_if( 0 ) free_if( 0 )  ) \
         in( MICratio ) \
-        in( elapsedTime : length(0) alloc_if(0) free_if(0) ) \ 
-        signal( mic_y_out )\
-            in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
+        in( elapsedTime : length(0) alloc_if(0) free_if(0) )  in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
             {
                 double alpha = 1.0;
                 double beta  = 0.0;

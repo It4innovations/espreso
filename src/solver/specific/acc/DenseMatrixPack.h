@@ -48,6 +48,13 @@ namespace espreso {
         void AllocateVectors() {
             mic_x_in = ( double * ) malloc( totalCols * sizeof( double ) );
             mic_y_out = ( double * ) malloc( totalRows * sizeof( double ) );
+            for (long i = 0 ; i < totalCols; ++i ) {
+                mic_x_in[i] = 0.0;
+            }
+            for (long i = 0 ; i < totalRows; ++i ) {
+                mic_y_out[i] = 0.0;
+            }
+
         }
 
         // Sends matrices to MIC, preallocates data for input/ouptut vectors
