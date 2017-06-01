@@ -1224,13 +1224,13 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 		size_t row = 0;
 		for (size_t i = 0; i < part.size() - 1; i++) {
 			const std::vector<eslocal> &domains = el[part[i]]->domains();
-			if (domains[0] < instance.domains / 2 && instance.domains / 2 <= domains[1]) {
+			if (domains[0] < instance.domains / (environment->MPIrank + 1) && instance.domains / (environment->MPIrank + 1) <= domains[1]) {
 				continue;
 			}
-			if (p < instance.domains / 2 && domains[0] < instance.domains / 2) {
+			if (p < instance.domains / (environment->MPIrank + 1) && domains[0] < instance.domains / (environment->MPIrank + 1)) {
 				row++;
 			}
-			if (instance.domains / 2 <= p && instance.domains / 2 <= domains[0]) {
+			if (instance.domains / (environment->MPIrank + 1) <= p && instance.domains / (environment->MPIrank + 1) <= domains[0]) {
 				row++;
 			}
 			int sign = domains[0] == (eslocal)p ? 1 : domains[1] == (eslocal)p ? -1 : 0;
@@ -1268,11 +1268,7 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 		}
 	}
 	for  (size_t p = 0; p < instance.domains; p++) {
-		if (p < instance.domains / 2) {
-			instance.clustersMap[p] = 0;
-		} else {
-			instance.clustersMap[p] = 1;
-		}
+		instance.clustersMap[p] = p / (instance.domains / (environment->MPIrank + 1));
 	}
 }
 
