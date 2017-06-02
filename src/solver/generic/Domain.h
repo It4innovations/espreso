@@ -115,7 +115,6 @@ public:
 	// Domain specific variables
 	eslocal domain_global_index;
 	eslocal domain_prim_size;
-	eslocal USE_DYNAMIC;
 	eslocal USE_KINV;
 	eslocal USE_HFETI;
 	eslocal isOnACC;
@@ -163,6 +162,7 @@ public:
 
 	SparseMatrix R;
 	SparseMatrix T;
+	SparseMatrix IminusRRt;
 
 	// Matrix and coeficient for regularization
 

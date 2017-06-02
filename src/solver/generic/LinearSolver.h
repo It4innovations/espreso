@@ -62,9 +62,6 @@ public:
 private:
 
 	eslocal number_of_subdomains_per_cluster;
-
-	bool 	SINGULAR;
-
 	Cluster *cluster;
 
 	SEQ_VECTOR <Cluster*> clusters;

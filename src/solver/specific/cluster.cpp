@@ -78,7 +78,6 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 		domains[d].domain_global_index 	= domains_in_global_index[d];
 		domains[d].USE_KINV    	 		= USE_KINV;
 		domains[d].USE_HFETI   	 		= USE_HFETI;
-		domains[d].USE_DYNAMIC 	 		= USE_DYNAMIC;
 		domains[d].domain_index  		= d;
 		domains[d].isOnACC  			= 0;
 

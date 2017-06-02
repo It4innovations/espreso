@@ -110,7 +110,6 @@ using std::make_pair;
 
         // Cluster specific variables
         eslocal cluster_global_index;
-        eslocal USE_DYNAMIC;
         eslocal USE_KINV;
         eslocal USE_HFETI;
         eslocal SUBDOM_PER_CLUSTER;

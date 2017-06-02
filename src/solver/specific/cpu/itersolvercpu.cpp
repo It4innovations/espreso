@@ -166,7 +166,7 @@ void IterSolverCPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 
 }
 
-void IterSolverCPU::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out ) {
+void IterSolverCPU::Apply_Prec( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out ) {
 
 	time_eval.totalTime.start();
 

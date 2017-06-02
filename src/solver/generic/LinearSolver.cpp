@@ -44,6 +44,7 @@ LinearSolver::LinearSolver(const ESPRESOSolver &configuration, OldPhysics &physi
 }
 
 LinearSolver::~LinearSolver() {
+
 	delete cluster;
 
 	for (eslocal c = 0; c < clusters.size(); c++) {
@@ -79,10 +80,9 @@ void LinearSolver::init()
 	}
 
 	solver->numClusters = numClusters;
-	solver->clusters = &clusters;
+	solver->clusters    = &clusters;
 
 	init(instance->neighbours);
-
 
 }
 
@@ -109,7 +109,7 @@ void LinearSolver::update(Matrices matrices)
 		}
 
 		solver->numClusters = numClusters;
-		solver->clusters = &clusters;
+		solver->clusters    = &clusters;
 
 		init(instance->neighbours);
 
@@ -143,12 +143,12 @@ void LinearSolver::update(Matrices matrices)
 	}
 
 	// TODO: remove full re-initialization
-//	delete cluster;
-//	delete solver;
-//	cluster = new Cluster(configuration);
-//	solver = new IterSolver(configuration);
-//	setup();
-//	init(instance->neighbours);
+	//	delete cluster;
+	//	delete solver;
+	//	cluster = new Cluster(configuration);
+	//	solver = new IterSolver(configuration);
+	//	setup();
+	//	init(instance->neighbours);
 }
 
 // run solver and store primal and dual solution
@@ -183,6 +183,7 @@ void LinearSolver::setup_HTFETI() {
 
 void LinearSolver::setup_LocalSchurComplement() {
 // Computation of the Local Schur Complements
+//TODO: update for multiple clusters
 
 	if (cluster->USE_KINV == 1) {
 			TimeEvent KSCMem(string("Solver - SC asm. w PARDISO-SC mem [MB]")); KSCMem.startWithoutBarrier(GetProcessMemory_u());
@@ -213,13 +214,13 @@ void LinearSolver::setup_Preconditioner() {
 		TimeEvent KregMem(string("Solver - Setup preconditioners mem. [MB]")); KregMem.startWithoutBarrier(GetProcessMemory_u());
 		ESINFO(PROGRESS3) << "Setup preconditioners";
 
-	if (numClusters == 1) {
-		cluster->SetupPreconditioner();
-	} else {
-		for (eslocal c = 0; c < clusters.size(); c++) {
-			clusters[c]->SetupPreconditioner();
+		if (numClusters == 1) {
+			cluster->SetupPreconditioner();
+		} else {
+			for (eslocal c = 0; c < clusters.size(); c++) {
+				clusters[c]->SetupPreconditioner();
+			}
 		}
-	}
 
 		KregMem.endWithoutBarrier(GetProcessMemory_u()); //KregMem.printLastStatMPIPerNode();
 
@@ -235,13 +236,13 @@ void LinearSolver::setup_FactorizationOfStiffnessMatrices() {
 		TimeEvent KFactMem(string("Solver - K factorization mem. [MB]")); KFactMem.startWithoutBarrier(GetProcessMemory_u());
 		ESINFO(PROGRESS3) << "Factorize K";
 
-	if (numClusters == 1) {
-		cluster->SetupKsolvers();
-	} else {
-		for (eslocal c = 0; c < clusters.size(); c++) {
-			clusters[c]->SetupKsolvers();
+		if (numClusters == 1) {
+			cluster->SetupKsolvers();
+		} else {
+			for (eslocal c = 0; c < clusters.size(); c++) {
+				clusters[c]->SetupKsolvers();
+			}
 		}
-	}
 
 		KFactMem.endWithoutBarrier(GetProcessMemory_u()); //KFactMem.printLastStatMPIPerNode();
 		ESLOG(MEMORY) << "After K solver setup process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
@@ -321,11 +322,27 @@ void LinearSolver::setup_SetDirichletBoundaryConditions() {
 		TimeEvent timeSetInitialCondition(string("Solver - Set Dirichlet Boundary Condition"));
 		timeSetInitialCondition.start();
 
-	#pragma omp parallel for
-	for (int d = 0; d < number_of_subdomains_per_cluster; d++) {
-		cluster->domains[d].vec_c = instance->B1c[d];
-		cluster->domains[d].vec_lb = instance->LB[d];
-	}
+//		#pragma omp parallel for
+//		for (int d = 0; d < number_of_subdomains_per_cluster; d++) {
+//			cluster->domains[d].vec_c = instance->B1c[d];
+//			cluster->domains[d].vec_lb = instance->LB[d];
+//		}
+
+		if (numClusters == 1) {
+			#pragma omp parallel for
+			for (int d = 0; d < cluster->domains.size(); d++) {
+				cluster->domains[d].vec_c = instance->B1c[d];
+				cluster->domains[d].vec_lb = instance->LB[d];
+			}
+		} else {
+			for (eslocal c = 0; c < clusters.size(); c++) {
+				for (int d = 0; d < clusters[c]->domains.size(); d++) {
+					clusters[c]->domains[d].vec_c = instance->B1c[d];
+					clusters[c]->domains[d].vec_lb = instance->LB[d];
+				}
+			}
+		}
+
 
 		timeSetInitialCondition.endWithBarrier();
 		timeEvalMain.addEvent(timeSetInitialCondition);
@@ -347,14 +364,14 @@ void LinearSolver::setup_CreateDirichletPreconditioner() {
 
 void LinearSolver::setup_CreateG_GGt_CompressG() {
 
-		TimeEvent timeSolPrec(string("Solver - FETI Preprocessing")); timeSolPrec.start();
+		 TimeEvent timeSolPrec(string("Solver - FETI Preprocessing")); timeSolPrec.start();
 
 		ESLOG(MEMORY) << "Solver Preprocessing - HFETI with regularization from K matrix";
 		ESLOG(MEMORY) << "process " << environment->MPIrank << " uses "<< Measure::processMemory() << " MB";
 		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-		TimeEvent G1_perCluster_time("Setup G1 per Cluster time   - preprocessing"); G1_perCluster_time.start();
-		TimeEvent G1_perCluster_mem("Setup G1 per Cluster memory - preprocessing"); G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
+		 TimeEvent G1_perCluster_time("Setup G1 per Cluster time   - preprocessing"); G1_perCluster_time.start();
+		 TimeEvent G1_perCluster_mem("Setup G1 per Cluster memory - preprocessing"); G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
 
 
 		// *** Multiple clusters support ********************************************
@@ -371,22 +388,22 @@ void LinearSolver::setup_CreateG_GGt_CompressG() {
 		G1_perCluster_time.end(); G1_perCluster_time.printStatMPI();
 		G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
 
-		ESLOG(MEMORY) << "Created G1 per cluster";
-		ESLOG(MEMORY) << "Before HFETI create GGt process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
-		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+		 ESLOG(MEMORY) << "Created G1 per cluster";
+		 ESLOG(MEMORY) << "Before HFETI create GGt process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-		TimeEvent solver_Preprocessing_time("Setup GGt time   - preprocessing"); solver_Preprocessing_time.start();
-		TimeEvent solver_Preprocessing_mem("Setup GGt memory - preprocessing"); solver_Preprocessing_mem.start();
-	solver->Preprocessing(*cluster);
-		solver_Preprocessing_time.end(); solver_Preprocessing_time.printStatMPI();
-		solver_Preprocessing_mem.end();  solver_Preprocessing_mem.printStatMPI();
+		 TimeEvent solver_Preprocessing_time("Setup GGt time   - preprocessing"); solver_Preprocessing_time.start();
+		 TimeEvent solver_Preprocessing_mem("Setup GGt memory - preprocessing"); solver_Preprocessing_mem.start();
+		solver->Preprocessing(*cluster);
+		 solver_Preprocessing_time.end(); solver_Preprocessing_time.printStatMPI();
+		 solver_Preprocessing_mem.end();  solver_Preprocessing_mem.printStatMPI();
 
-		ESLOG(MEMORY) << "Create GGtInv";
-		ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
-		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+		 ESLOG(MEMORY) << "Create GGtInv";
+		 ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-		TimeEvent solver_G1comp_time("Setup G1 compression time   - preprocessing"); solver_G1comp_time.start();
-		TimeEvent solver_G1comp_mem("Setup G1 compression memory - preprocessing");  solver_G1comp_mem.start();
+		 TimeEvent solver_G1comp_time("Setup G1 compression time   - preprocessing"); solver_G1comp_time.start();
+		 TimeEvent solver_G1comp_mem("Setup G1 compression memory - preprocessing");  solver_G1comp_mem.start();
 
 		if (numClusters == 1) {
 			cluster->Compress_G1(); // Compression of Matrix G1 to work with compressed lambda vectors
@@ -397,13 +414,13 @@ void LinearSolver::setup_CreateG_GGt_CompressG() {
 			}
 		}
 
-		solver_G1comp_time.end(); solver_G1comp_time.printStatMPI();
-		solver_G1comp_mem.end();  solver_G1comp_mem.printStatMPI();
-		ESLOG(MEMORY) << "G1 compression";
-		ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
-		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+		 solver_G1comp_time.end(); solver_G1comp_time.printStatMPI();
+		 solver_G1comp_mem.end();  solver_G1comp_mem.printStatMPI();
+		 ESLOG(MEMORY) << "G1 compression";
+		 ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-		timeSolPrec.endWithBarrier(); timeEvalMain.addEvent(timeSolPrec);
+		 timeSolPrec.endWithBarrier(); timeEvalMain.addEvent(timeSolPrec);
 
 
 }
@@ -438,22 +455,7 @@ void LinearSolver::setup_InitClusterAndSolver( )
 
 	TimeEvent timeSetClust(string("Solver - Set cluster")); timeSetClust.start();
 
-
-	// ***************************************************************************************************************************
 	// Cluster structure  setup
-	cluster->USE_DYNAMIC = 0;
-	SINGULAR = true; // TODO: refactor
-	if (instance != NULL) {
-		cluster->USE_DYNAMIC = 1;
-		SINGULAR = false; // TODO: refactor
-		for (size_t d = 0; d < instance->domains; d++) {
-			if (instance->N1[d].cols) {
-				cluster->USE_DYNAMIC = 0;
-				SINGULAR = true; // TODO: refactor
-				break;
-			}
-		}
-	}
 	switch (configuration.method) {
 	case ESPRESO_METHOD::TOTAL_FETI:
 		cluster->USE_HFETI = false;
@@ -464,37 +466,19 @@ void LinearSolver::setup_InitClusterAndSolver( )
 	default:
 		ESINFO(GLOBAL_ERROR) << "Unsupported FETI METHOD";
 	}
-	cluster->USE_KINV = configuration.use_schur_complement ? 1 : 0;
+
+	cluster->USE_KINV 			= configuration.use_schur_complement ? 1 : 0;
 	cluster->SUBDOM_PER_CLUSTER = number_of_subdomains_per_cluster;
 	cluster->NUMBER_OF_CLUSTERS = environment->MPIsize;
-	cluster->PAR_NUM_THREADS = environment->PAR_NUM_THREADS;
+	cluster->PAR_NUM_THREADS 	= environment->PAR_NUM_THREADS;
 	cluster->SOLVER_NUM_THREADS = environment->SOLVER_NUM_THREADS;
 
-
-	eslocal GUSE_DYNAMIC = 0;
 	int global_numClusters;
 
 	MPI_Allreduce(&numClusters, &global_numClusters, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
 	// *** Multiple clusters support ********************************************
 	for (eslocal c = 0; c < numClusters; c++) {
-		clusters[c]->USE_DYNAMIC = 0;
-		SINGULAR = true; // TODO: refactor
-		if (instance != NULL) {
-			clusters[c]->USE_DYNAMIC = 1;
-			SINGULAR = false; // TODO: refactor
-			for (size_t d = 0; d < instance->domains; d++) {
-				if (instance->N1[d].cols) {
-					clusters[c]->USE_DYNAMIC = 0;
-					SINGULAR = true; // TODO: refactor
-					break;
-				}
-			}
-		}
-
-		if (clusters[c]->USE_DYNAMIC == 1)
-			GUSE_DYNAMIC = 1;
-
 		switch (configuration.method) {
 		case ESPRESO_METHOD::TOTAL_FETI:
 			clusters[c]->USE_HFETI = false;
@@ -505,12 +489,11 @@ void LinearSolver::setup_InitClusterAndSolver( )
 		default:
 			ESINFO(GLOBAL_ERROR) << "Unsupported FETI METHOD";
 		}
-		clusters[c]->USE_KINV = configuration.use_schur_complement ? 1 : 0;
+
+		clusters[c]->USE_KINV 			= configuration.use_schur_complement ? 1 : 0;
 		clusters[c]->SUBDOM_PER_CLUSTER = number_of_subdomains_per_cluster;
-
-		clusters[c]->NUMBER_OF_CLUSTERS = global_numClusters; //environment->MPIsize;				//TODO: MPC Fix - not true anymore
-
-		clusters[c]->PAR_NUM_THREADS = environment->PAR_NUM_THREADS;
+		clusters[c]->NUMBER_OF_CLUSTERS = global_numClusters;
+		clusters[c]->PAR_NUM_THREADS 	= environment->PAR_NUM_THREADS;
 		clusters[c]->SOLVER_NUM_THREADS = environment->SOLVER_NUM_THREADS;
 	}
 	// *** END - Multiple clusters support ********************************************
@@ -538,7 +521,7 @@ void LinearSolver::setup_InitClusterAndSolver( )
 	}
 
 	solver->USE_KINV = configuration.use_schur_complement ? 1 : 0; // cluster->USE_KINV;
-	solver->USE_DYNAMIC = GUSE_DYNAMIC; //TODO: flag per MPI process // cluster->USE_DYNAMIC;
+
 
 	solver->PAR_NUM_THREADS = environment->PAR_NUM_THREADS;
 	solver->SOLVER_NUM_THREADS = environment->SOLVER_NUM_THREADS;
@@ -761,7 +744,7 @@ void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,
 	 	 TimeEvent timeSolCG(string("Solver - CG Solver runtime"));
 	 	 timeSolCG.start();
 
-	 solver->Solve_singular    ( *cluster, f_vec, prim_solution, dual_solution );
+	 solver->Solve    ( *cluster, f_vec, prim_solution, dual_solution );
 
 	 	 timeSolCG.endWithBarrier();
 	 	 timeEvalMain.addEvent(timeSolCG);

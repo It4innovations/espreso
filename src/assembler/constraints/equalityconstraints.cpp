@@ -1220,7 +1220,8 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 	part.push_back(el.size());
 
 	for  (size_t p = 0; p < instance.domains; p++) {
-		instance.clustersMap[p] = p / (instance.domains / (environment->MPIrank + 1));
+		//instance.clustersMap[p] = p / (instance.domains / (environment->MPIrank + 1));
+		instance.clustersMap[p] = (eslocal)(p / (instance.domains / pow(2,(environment->MPIrank))));
 	}
 
 	#pragma omp parallel for
@@ -1231,7 +1232,9 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 			if (instance.clustersMap[domains[0]] != instance.clustersMap[domains[1]]) {
 				continue;
 			}
-			if (instance.clustersMap[domains[0]] == p / (instance.domains / (environment->MPIrank + 1))) {
+
+			//if (instance.clustersMap[domains[0]] == p / (instance.domains /  (environment->MPIrank + 1))) {
+			if   (instance.clustersMap[domains[0]] == (eslocal)(p / (instance.domains / pow(2,environment->MPIrank)))) {
 				row++;
 			}
 			int sign = domains[0] == (eslocal)p ? 1 : domains[1] == (eslocal)p ? -1 : 0;
