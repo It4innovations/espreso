@@ -83,6 +83,8 @@ struct ESPRESOSolver: public Configuration {
 		{ "SYMMETRIC", MATRIX_STORAGE::SYMMETRIC, "Store only triangle." }
 	}));
 
+	PARAMETER(bool, mp_pseudoinverse, "Moore-Penrose Inverse for FETI Solvers.", false);
+
 	PARAMETER(bool, combine_sc_and_spds, "Combine usage of SC for Accelerator and sparse direct solver for CPU.", true);
 	PARAMETER(bool, keep_factors, "Keep factors between iterations.", true);
 
