@@ -1219,18 +1219,19 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 	}
 	part.push_back(el.size());
 
+	for  (size_t p = 0; p < instance.domains; p++) {
+		instance.clustersMap[p] = p / (instance.domains / (environment->MPIrank + 1));
+	}
+
 	#pragma omp parallel for
 	for  (size_t p = 0; p < instance.domains; p++) {
 		size_t row = 0;
 		for (size_t i = 0; i < part.size() - 1; i++) {
 			const std::vector<eslocal> &domains = el[part[i]]->domains();
-			if (domains[0] < instance.domains / (environment->MPIrank + 1) && instance.domains / (environment->MPIrank + 1) <= domains[1]) {
+			if (instance.clustersMap[domains[0]] != instance.clustersMap[domains[1]]) {
 				continue;
 			}
-			if (p < instance.domains / (environment->MPIrank + 1) && domains[0] < instance.domains / (environment->MPIrank + 1)) {
-				row++;
-			}
-			if (instance.domains / (environment->MPIrank + 1) <= p && instance.domains / (environment->MPIrank + 1) <= domains[0]) {
+			if (instance.clustersMap[domains[0]] == p / (instance.domains / (environment->MPIrank + 1))) {
 				row++;
 			}
 			int sign = domains[0] == (eslocal)p ? 1 : domains[1] == (eslocal)p ? -1 : 0;
@@ -1266,9 +1267,6 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 		for (eslocal i = instance.B0subdomainsMap[p].size(); i < instance.B0[p].nnz; i++) {
 			instance.B0subdomainsMap[p].push_back(instance.B0[p].I_row_indices[i] - 1);
 		}
-	}
-	for  (size_t p = 0; p < instance.domains; p++) {
-		instance.clustersMap[p] = p / (instance.domains / (environment->MPIrank + 1));
 	}
 }
 
