@@ -43,26 +43,67 @@ void NewAdvectionDiffusion3D::assembleMaterialMatrix(const Step &step, const Ele
 		return M_PI * degree / 180;
 	};
 
-//	double cos, sin;
-//	switch (material->coordination().type) {
-//	case MaterialCoordination::Type::CARTESIAN:
-//		cos = std::cos(d2r(material->coordination().rotation[2]->evaluate(e->node(node))));
-//		sin = std::sin(d2r(material->coordination().rotation[2]->evaluate(e->node(node))));
-//		break;
-//	case MaterialCoordination::Type::CYLINDRICAL: {
-//		Point origin(material->coordination().center[0]->evaluate(e->node(node)), material->coordination().center[1]->evaluate(e->node(node)), 0);
-//		const Point &p = _mesh->coordinates()[e->node(node)];
-//		double rotation = std::atan2((p.y - origin.y), (p.x - origin.x));
-//		cos = std::cos(rotation);
-//		sin = std::sin(rotation);
-//		break;
-//	}
-//	}
+	Point sin, cos;
+	switch (material->coordination().type) {
+	case MaterialCoordination::Type::CARTESIAN:
+
+		cos.x = std::cos(d2r(material->coordination().rotation[0]->evaluate(e->node(node))));
+		cos.y = std::cos(d2r(material->coordination().rotation[1]->evaluate(e->node(node))));
+		cos.z = std::cos(d2r(material->coordination().rotation[2]->evaluate(e->node(node))));
+
+		sin.x = std::sin(d2r(material->coordination().rotation[0]->evaluate(e->node(node))));
+		sin.y = std::sin(d2r(material->coordination().rotation[1]->evaluate(e->node(node))));
+		sin.z = std::sin(d2r(material->coordination().rotation[2]->evaluate(e->node(node))));
+
+		break;
+
+	case MaterialCoordination::Type::CYLINDRICAL: {
+
+		Point origin(material->coordination().center[0]->evaluate(e->node(node)), material->coordination().center[1]->evaluate(e->node(node)), 0);
+		const Point &p = _mesh->coordinates()[e->node(node)];
+		double rotation = std::atan2((p.y - origin.y), (p.x - origin.x));
+
+		cos.x = 1.0;
+		cos.y = 1.0;
+		cos.z = std::cos(rotation);
+
+		sin.x = 0.0;
+		sin.y = 0.0;
+		sin.z = std::sin(rotation);
+
+	} break;
+
+	case MaterialCoordination::Type::SPHERICAL: {
+
+		Point origin(
+				material->coordination().center[0]->evaluate(e->node(node)),
+				material->coordination().center[1]->evaluate(e->node(node)),
+				material->coordination().center[2]->evaluate(e->node(node)));
+
+		const Point &p = _mesh->coordinates()[e->node(node)];
+
+		double fi = std::atan2((p.y - origin.y), (p.x - origin.x));
+		double r = std::sqrt(pow((p.x - origin.x), 2) + pow((p.y - origin.y), 2) + pow((p.z - origin.z), 2));
+		double xi = std::acos((p.z - origin.z) / r);
+
+		cos.x = 1.0;
+		cos.y = std::cos(xi);
+		cos.z = std::cos(fi);
+
+		sin.x = 0.0;
+		sin.y = std::sin(xi);
+		sin.z = std::sin(fi);
+
+	} break;
+
+	}
+
 
 	DenseMatrix TCT(3, 3), T(3, 3), C(3, 3), _CD, TCDT;
-	T(0, 0) = T(1, 1) = T(2, 2) = 1;
-//	T(0, 0) =  cos; T(0, 1) = sin;
-//	T(1, 0) = -sin; T(1, 1) = cos;
+
+	T(0, 0) = cos.y * cos.z;                          T(0, 1) = -cos.y * sin.z;                          T(0, 2) =  sin.y;
+	T(1, 0) = cos.x * sin.z + cos.z * sin.x * sin.y;  T(1, 1) =  cos.x * cos.z - sin.x * sin.y * sin.z;  T(1, 2) = -cos.y * sin.x;
+	T(2, 0) = sin.x * sin.z - cos.x * cos.z * sin.y;  T(2, 1) =  cos.z * sin.x + cos.x * sin.y * sin.z;  T(2, 2) =  cos.x * cos.y;
 
 	if (_configuration.tangent_matrix_correction) {
 		_CD.resize(3, 3);
