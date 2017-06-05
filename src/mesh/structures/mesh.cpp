@@ -1938,6 +1938,12 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 
+			if (elements[e]->nodes() == 1 && elements[e]->parentElements().size() == 0) {
+				// mesh generator can generate dangling nodes -> skip them
+				elements[e]->clusters().clear();
+				continue;
+			}
+
 			eslocal cluster = 0;
 			elements[e]->DOFsDomainsCounters().reserve(elements[e]->DOFsDomainsCounters().size() + DOFs.size() * elements[e]->clusters().size());
 			elements[e]->numberOfGlobalDomains(elements[e]->domains().size());
@@ -2043,8 +2049,8 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 				}
 				if ((*it)->clusterOffsets().size() == 0) {
 					(*it)->clusterOffsets().resize((*it)->clusters().size());
-					(*it)->clusterOffsets()[cluster] = offset++;
 				}
+				(*it)->clusterOffsets()[cluster] = offset++;
 			}
 		}
 	}

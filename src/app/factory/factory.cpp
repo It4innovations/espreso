@@ -169,7 +169,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 							case TransientSolver::METHOD::CRANK_NICOLSON:
 							case TransientSolver::METHOD::GALERKIN:
 							case TransientSolver::METHOD::BACKWARD_DIFF:
-								loadSteps.push_back(new TransientFirstOrderImplicit(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->transient_solver, loadStepSettings->duration_time));
+								loadSteps.push_back(new TransientFirstOrderImplicit(mesh, _physics.back(), _linearSolvers.back(), store, loadStepSettings->transient_solver, loadStepSettings->duration_time));
 								break;
 							default:
 								ESINFO(GLOBAL_ERROR) << "Not implemented transient solver linear method.";
