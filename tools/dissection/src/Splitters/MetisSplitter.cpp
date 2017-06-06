@@ -129,7 +129,7 @@ MetisSplitter(unsigned dim,
 # ifdef DEBUG
   options[METIS_OPTION_DBGLVL   ] = 255;/* Full debug */  
 # else
-  options[METIS_OPTION_DBGLVL   ] = METIS_DBG_TIME; /* only time profiling */  
+  options[METIS_OPTION_DBGLVL   ] = 0; //METIS_DBG_TIME; /* only time profiling */  
 # endif
 //  Opt [0] = 0 ;	/* use defaults */
 //  Opt [1] = 3 ;	/* matching type */

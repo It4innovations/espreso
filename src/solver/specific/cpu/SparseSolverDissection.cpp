@@ -40,7 +40,7 @@ SparseSolverDissection::SparseSolverDissection(){
     min_nodes = 256; // not set
     dslv = NULL;
     diss_verbose = false;
-    fp = stdout;
+    fp = fopen("/dev/null", "w"); //stdout; // stdout or stderr will cause an error in python benchmarks script
     called = 0;
 
     MPIrank = 0;
@@ -58,7 +58,7 @@ SparseSolverDissection::SparseSolverDissection(){
 
 #ifdef DEBUG
 	// fp = fopen("diss_log_wcp.txt", "w");
-	fp = stderr;
+	fp = stderr; // stdout or stderr will cause an error in python benchmarks script
 	diss_verbose = true;
 	int vers, rela, patc;
 	SCOTCH_version(&vers, &rela, &patc);
@@ -844,8 +844,12 @@ void SparseSolverDissection::Create_SC( espreso::SparseMatrix & SC_out, MKL_INT 
 
 void SparseSolverDissection::Create_SC_w_Mat( espreso::SparseMatrix & K_in, espreso::SparseMatrix & B_in, espreso::SparseMatrix & SC_out,
 								    bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {
-	espreso::SparseMatrix K_sc1;
-	espreso::SparseMatrix K_b_tmp;
+
+	// |  K_in      B_in |
+	// | (B_in)t     0   |
+
+	SparseMatrix K_sc1;
+	SparseMatrix K_b_tmp;
 
 	SparseSolverDissection K_sc1_solver;
 	K_sc1_solver.ImportMatrix_wo_Copy(K_in);
@@ -874,8 +878,39 @@ void SparseSolverDissection::Create_SC_w_Mat( espreso::SparseMatrix & K_in, espr
 
 void SparseSolverDissection::Create_non_sym_SC_w_Mat( espreso::SparseMatrix & K_in, espreso::SparseMatrix & B1_in, espreso::SparseMatrix & B0_in, espreso::SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 ) {
 
-	printf("Method Create_non_sym_SC_w_Mat is not implemented yet.\n");
-	exit(1);
+	// |  K_in      B1_in |
+	// | (B0_in)t     0   |
+
+	ESINFO(PROGRESS1) << K_in.SpyText();
+	ESINFO(PROGRESS1) << B1_in.SpyText();
+	ESINFO(PROGRESS1) << B0_in.SpyText();
+
+	SparseMatrix K_sc1;
+	SparseMatrix K_b_tmp;
+
+	SparseSolverDissection K_sc1_solver;
+	K_sc1_solver.ImportMatrix_wo_Copy(K_in);
+	if(isThreaded)
+		K_sc1_solver.SetThreaded();
+	K_sc1_solver.SolveMat_Dense(B1_in, K_b_tmp);
+
+	SC_out.MatMat(B0_in,'T',K_b_tmp);
+
+	//SC_out.MatScale(-1.0);
+
+	SC_out.type = 'G';
+
+	if (msglvl) {
+		ESINFO(EXHAUSTIVE) << SC_out.SpyText();
+	}
+
+	SC_out.ConvertCSRToDense(0);
+
+	if (generate_symmetric_sc_1_generate_general_sc_0 == 1) {
+		SC_out.RemoveLowerDense();
+		SC_out.RemoveLower();
+		SC_out.type = 'S';
+	}
 }
 
 void SparseSolverDissection::GetKernelVectors(SEQ_VECTOR <double> & kern_vec, eslocal & kern_dim) {
