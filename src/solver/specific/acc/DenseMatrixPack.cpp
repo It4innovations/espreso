@@ -32,6 +32,7 @@ namespace espreso {
 
         this->copiedToMIC = false;
         this->MICratio = 1.0;
+        this->transLength = 0;
         this->elapsedTime = new double[1];
     }
 
@@ -69,6 +70,7 @@ namespace espreso {
 
         this->copiedToMIC = false;
         this->MICratio = 1.0;
+        this->transLength = 0;
         this->elapsedTime = new double[1];
     }
 
@@ -134,6 +136,7 @@ namespace espreso {
         this->mic_x_in = orig.mic_x_in;
         this->mic_y_out = orig.mic_y_out;
         this->MICratio = orig.MICratio;
+        this->transLength = orig.transLength;
 
         this->elapsedTime = new double[1];
         this->elapsedTime[0] = orig.elapsedTime[0];
@@ -457,7 +460,7 @@ namespace espreso {
         #pragma offload_transfer target(mic:device)  \
         in( this->mic_x_in :length(0) alloc_if(0) free_if(0) ) 
 
-#pragma offload target(mic:device) signal(&this->s1)  \
+#pragma offload target(mic:device)  \
         in( this->mic_x_in :length(totalCols) alloc_if(0) free_if(0) ) \
         in( matrices_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr) \
         in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
@@ -469,6 +472,7 @@ namespace espreso {
         in( packed : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
         in( mic_y_out : length( 0 ) alloc_if( 0 ) free_if( 0 )  ) \
         in( MICratio ) \
+        out( transLength ) \ 
         in( elapsedTime : length(0) alloc_if(0) free_if(0) ) \
         in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
             {
@@ -478,6 +482,7 @@ namespace espreso {
                 long nIters = (long) (nMatrices*MICratio);
                 double start = omp_get_wtime();
                 int nth;
+                transLength = 0;
 #pragma omp parallel for //schedule(dynamic,1)
                 for ( long i = 0 ; i < nIters; i++ ) {
                     if ( !packed[i] ) {
@@ -491,15 +496,17 @@ namespace espreso {
                                 rows[i], 1.0, matrices_mic + offsets[i], mic_x_in + colOffsets[i],
                                 1, 0.0, mic_y_out + rowOffsets[i], 1);
                     }
+                    #pragma omp atomic
+                    transLength += cols[i];
                 }
                 elapsedTime[0] = omp_get_wtime() - start;
              }
     }
 
     void DenseMatrixPack::DenseMatsVecsMIC_Sync( ) {
- #pragma offload_wait target(mic:device) wait(&this->s1)
+// #pragma offload_wait target(mic:device) 
 #pragma offload_transfer target(mic:device) \
-        out(mic_y_out : length( totalCols ) alloc_if( 0 ) free_if( 0 ) ) \
+        out(mic_y_out : length( transLength ) alloc_if( 0 ) free_if( 0 ) ) \
         out( elapsedTime : length(1) alloc_if(0) free_if(0) )
 
     }

@@ -50,16 +50,18 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
         // *** Part 3 - execute FETI SC operator 
         // spawn the computation on MICs
         double CPUtime;
-        int maxThreads = omp_get_max_threads();
+        double * MICtime = new double[maxDevNumber];
 #pragma omp parallel num_threads( maxDevNumber + 1 )
         {
             if (omp_get_thread_num() < maxDevNumber) 
             {
+                MICtime[ omp_get_thread_num() ] = Measure::time();
                 // start async. computation on MICs
                 if (cluster.accDomains[omp_get_thread_num()].size() > 0) {
                     cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Start( 'N' );
                      cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Sync(  );
                 }
+                MICtime[ omp_get_thread_num() ] = Measure::time() - MICtime[ omp_get_thread_num() ];
             } else {
                 // meanwhile compute the same for domains staying on CPU
                 double startCPU = Measure::time();
@@ -96,16 +98,15 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
                 CPUtime = Measure::time() - startCPU;
                 // *** Part 5 - Finalize transfers of the result of the FETI SC operator
                 // from MICs back to CPU
-#pragma omp parallel num_threads(maxDevNumber)
-                {
-                    // synchronize computation
-                    if (cluster.accDomains[omp_get_thread_num()].size() > 0) {
-                      //  cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Sync(  );
-                    }
-                }
+//#pragma omp parallel num_threads(maxDevNumber)
+//                {
+//                    // synchronize computation
+//                    if (cluster.accDomains[omp_get_thread_num()].size() > 0) {
+//                      //  cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Sync(  );
+//                    }
+//                }
             }
         }
-        omp_set_num_threads(maxThreads);
         // extract the result from MICs
         for ( eslocal i = 0; i < maxDevNumber; i++ ) {
             long end = (long) (cluster.B1KplusPacks[i].getNMatrices()*cluster.B1KplusPacks[i].getMICratio());
@@ -138,20 +139,20 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
                 cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i];
         }
         if ( configuration.load_balancing ) {
+            #pragma omp parallel num_threads( maxDevNumber )            
+            {
             // update the ratio between the cpu and mic
             double r = cluster.B1KplusPacks[0].getMICratio();
-            double MICtime = cluster.B1KplusPacks[0].getElapsedTime();
-            double newRatio = (r * CPUtime) / (r * CPUtime + MICtime * (1 - r));
-            std::cout << "TEST " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
-
-#pragma omp parallel num_threads( maxDevNumber )
-            {
-                cluster.B1KplusPacks[omp_get_thread_num()].setMICratio( newRatio );
-            }
+            //double MICtime = cluster.B1KplusPacks[0].getElapsedTime();
+            double newRatio = (r * CPUtime) / (r * CPUtime +  MICtime[omp_get_thread_num() ]  * (1 - r));
+            std::cout << "TEST " << r << " " <<  CPUtime<< " "  <<  MICtime[0 ]  << " " << newRatio << std::endl;
+            cluster.B1KplusPacks[omp_get_thread_num()].setMICratio( newRatio );
         }
 
-        time_eval.timeEvents[2].end();
     }
+
+    time_eval.timeEvents[2].end();
+    }    
 
     if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
         //        #pragma omp parallel num_threads( numDevices  )
@@ -188,16 +189,62 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
         double CPUtime;
         int maxThreads = omp_get_max_threads();
 
+//#pragma omp parallel 
+//#pragma omp single
+//        {
+//
+//                for (eslocal mic = 0 ; mic < maxDevNumber; ++mic) {
+//#pragma omp task
+//            {
+//                //            // start async. computation on MICs
+//                if (cluster.accDomains[mic].size() > 0) {
+//                    cluster.B1KplusPacks[ mic ].DenseMatsVecsMIC_Start( 'N' );
+//                    cluster.B1KplusPacks[ mic ].DenseMatsVecsMIC_Sync(  );
+//                   }
+//                }
+//            }
+//#pragma omp task
+//            {
+//                // meanwhile compute the same for domains staying on CPU
+//
+//                double startCPU = Measure::time();
+//#pragma omp parallel for 
+//                for (eslocal d = 0; d < cluster.hostDomains.size(); ++d ) {
+//                    eslocal domN = cluster.hostDomains.at(d);
+//                    cluster.domains[domN].B1Kplus.DenseMatVec( cluster.domains[domN].compressed_tmp2, cluster.domains[domN].compressed_tmp);
+//                }
+//                for ( eslocal i = 0 ; i < maxDevNumber; ++i ) {
+//                    cluster.B1KplusPacks[ i ].DenseMatsVecsRestCPU( 'N' );    
+//                    long start = (long) (cluster.B1KplusPacks[i].getNMatrices()*cluster.B1KplusPacks[i].getMICratio());
+//#pragma omp parallel for
+//                    for (  long d = start; d < cluster.B1KplusPacks[i].getNMatrices(); ++d ) {
+//                        cluster.B1KplusPacks[i].GetY(d, cluster.domains[cluster.accDomains[i].at(d)].compressed_tmp);
+//                    }
+//                }
+//#pragma omp critical
+//                CPUtime = Measure::time() - startCPU;
+//                // *** Part 5 - Finalize transfers of the result of the FETI SC operator
+//                // from MICs back to CPU
+//
+//            }
+//            }
+
+
+double * MICtime = new double[maxDevNumber];
+
+
 #pragma omp parallel num_threads( maxDevNumber + 1 )
         {
             if (omp_get_thread_num() < maxDevNumber)  
             {
                 //            // start async. computation on MICs
+                MICtime[ omp_get_thread_num() ] = Measure::time();
                 if (cluster.accDomains[omp_get_thread_num()].size() > 0) {
                     cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Start( 'N' );
                     cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Sync(  );
 
                 }
+                MICtime[ omp_get_thread_num() ] = Measure::time() - MICtime[ omp_get_thread_num() ];
             } else {
                 // meanwhile compute the same for domains staying on CPU
                 omp_set_nested(1);
@@ -220,16 +267,18 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
                 CPUtime = Measure::time() - startCPU;
                 // *** Part 5 - Finalize transfers of the result of the FETI SC operator
                 // from MICs back to CPU
+
+            }
+
 //             if (omp_get_thread_num() < maxDevNumber)
-//#pragma omp parallel num_threads(maxDevNumber)
+////#pragma omp parallel num_threads(maxDevNumber)
 //                {
-                    // synchronize computation
-                    //for (int mic=0 ; mic < maxDevNumber; mic++)
+//                    // synchronize computation
+//                    //for (int mic=0 ; mic < maxDevNumber; mic++)
 //                    if (cluster.accDomains[omp_get_thread_num()].size() > 0) {
-////                        cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Sync(  );
+//                        cluster.B1KplusPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Sync(  );
 //                    }
 //                }
-            }
             }
 
         
@@ -259,11 +308,11 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
             {
                 // update the ratio between the cpu and mic
                 double r = cluster.B1KplusPacks[omp_get_thread_num()].getMICratio();
-                double MICtime = cluster.B1KplusPacks[omp_get_thread_num()].getElapsedTime();
-                double newRatio = (r * CPUtime) / (r * CPUtime + MICtime * (1 - r));
+//                double MICtime = cluster.B1KplusPacks[omp_get_thread_num()].getElapsedTime();
+                double newRatio = (r * CPUtime) / (r * CPUtime + MICtime[omp_get_thread_num() ] * (1 - r));
                 if (omp_get_thread_num() == 0)
                 {
-                    std::cout << "LB: " << r << " " <<  CPUtime<< " "  << MICtime << " " << newRatio << std::endl;
+                    std::cout << "LB: " << r << " " <<  CPUtime<< " "  << MICtime[0] << " " << newRatio << std::endl;
                 }
 
                 cluster.B1KplusPacks[omp_get_thread_num()].setMICratio( newRatio );

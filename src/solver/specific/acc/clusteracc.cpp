@@ -117,6 +117,49 @@ void ClusterAcc::SetAcceleratorAffinity() {
         ESINFO(PROGRESS2) << "Incorrect number of MPI processes per accelerator!" << _MPInodeSize;  
     }
 
+//for (int i = 0; i < acc_per_MPI; ++i) {
+//    #pragma omp parallel
+//    {
+//        int used_core_num = 0;
+//        int first_core = 0;
+//        int last_core = 0;
+//        int target = myTargets.at(i);
+//        int MPIperAcc = this->MPI_per_acc;
+//        int rank = this->acc_rank;
+//
+//#pragma offload target(mic:target) 
+//        {
+//            cpu_set_t my_set;        // Define cpu_set bit mask. 
+//            CPU_ZERO(&my_set);       // Initialize it all to 0
+//            int cores = sysconf(_SC_NPROCESSORS_ONLN); // for Xeon Phi 7120 - results is 244
+//            cores = ( cores / 4 ) - 1; // keep core for system and remove effect of hyperthreading
+//            int cores_per_rank = cores / MPIperAcc;
+//
+//            for (int i = 0; i < cores_per_rank ; i++) {
+//                if (i == 0) {
+//                    //first_core = 1*(cores_per_rank)*rank + 1*i;
+//                    first_core = cores_per_rank*rank + 1;
+//                }
+//                last_core = 1*(cores_per_rank)*rank + 1*i;
+//                //int core = 1 + 4*(cores_per_rank)*rank + 4*i;
+//
+//                int core =1+  4*cores_per_rank*rank + 4*i;
+//                for (int j = 0 ; j < 4; j++ ) {
+//                    CPU_SET(core , &my_set);     /* set the bit that represents core 7. */
+//                    core++;
+//                }
+//                used_core_num++;
+//            }   
+//
+//            sched_setaffinity(0, sizeof(cpu_set_t), &my_set); /* Set affinity of tihs process to */
+//            omp_set_num_threads(4*cores_per_rank);
+//            /* the defined mask, i.e. only 7. */
+//        }
+//    }
+//}
+
+
+
     #pragma omp parallel num_threads( acc_per_MPI )
     {
         int used_core_num = 0;
@@ -167,7 +210,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         MICr = 0.1;
     }
     // First, get the available memory on coprocessors (in bytes)
-    double usableRAM = 0.9;
+    double usableRAM = 0.85;
     long *micMem = new long[ this->acc_per_MPI ];
 
     int target = 0;

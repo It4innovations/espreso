@@ -356,6 +356,8 @@ int s1;
 double MICratio;
 // time for one mv
 double *  elapsedTime;
+// length of data to be transferred
+eslocal transLength;
 #pragma offload_attribute(pop)
 };
 
