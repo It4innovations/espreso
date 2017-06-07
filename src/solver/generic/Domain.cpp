@@ -12,10 +12,11 @@ Domain::Domain(const ESPRESOSolver &configuration, Instance *instance_in, esloca
 		instance(instance_in),
 
 		K(instance_in->K[domain_index_in]),
-		_RegMat(instance_in->RegMat[domain_index_in]),
 
 		Kplus_R(instance_in->N1[domain_index_in]),
 		Kplus_R2(instance_in->N2[domain_index_in]),
+
+		_RegMat(instance_in->RegMat[domain_index_in]),
 
 		f(instance_in->f[domain_index_in]),
 		vec_c(instance_in->B1c[domain_index_in]),

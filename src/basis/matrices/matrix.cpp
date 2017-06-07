@@ -1,10 +1,10 @@
 #include "matrix.h"
 
-using namespace espreso;
+namespace espreso {
 
 NonZeroValue Matrix::nonZero;
 
-std::ostream& espreso::operator<<(std::ostream& os, const Matrix &m)
+std::ostream& operator<<(std::ostream& os, const Matrix &m)
 {
 	for (size_t i = 0; i < m.rows(); i++) {
 		for (size_t j = 0; j < m.columns(); j++) {
@@ -14,4 +14,6 @@ std::ostream& espreso::operator<<(std::ostream& os, const Matrix &m)
 	}
 	os << std::endl;
 	return os;
+}
+
 }

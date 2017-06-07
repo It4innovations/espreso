@@ -278,6 +278,8 @@ void WorkbenchParser::eblock(std::vector<Element*> &elements, std::vector<Region
 	case Element::Type::LINE:
 		regions.back()->eType = ElementType::EDGES;
 		break;
+	default:
+		break;
 	}
 
 	regions.back()->name = std::to_string(values[ETYPE]);

@@ -262,7 +262,7 @@ void ResultStore::storeDirichlet(const Step &step, const Instance &instance)
 		Point point;
 
 		for (size_t d = 0; d < instance.domains; d++) {
-			for (size_t i = 0; i < instance.B1[d].I_row_indices.size() && instance.B1[d].I_row_indices[i] <= instance.block[Instance::CONSTRAINT::DIRICHLET]; i++) {
+			for (size_t i = 0; i < instance.B1[d].I_row_indices.size() && instance.B1[d].I_row_indices[i] <= (eslocal)instance.block[Instance::CONSTRAINT::DIRICHLET]; i++) {
 				const Element *e = _mesh->getDOFsElement(d, instance.B1[d].J_col_indices[i] - 1);
 				if (e->DOFOffset(d, instance.B1[d].J_col_indices[i] - 1) != p) {
 					continue;
@@ -313,7 +313,7 @@ void ResultStore::storeLambdas(const Step &step, const Instance &instance)
 		for (size_t d = 0; d < instance.domains; d++) {
 			auto start = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[Instance::CONSTRAINT::DIRICHLET]);
 			auto end = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[Instance::CONSTRAINT::DIRICHLET] + instance.block[Instance::CONSTRAINT::EQUALITY_CONSTRAINTS]);
-			for (size_t i = start - instance.B1[d].I_row_indices.begin(); i < end - instance.B1[d].I_row_indices.begin(); i++) {
+			for (eslocal i = start - instance.B1[d].I_row_indices.begin(); i < end - instance.B1[d].I_row_indices.begin(); i++) {
 				auto it = std::lower_bound(instance.B1clustersMap.begin(), instance.B1clustersMap.end(), instance.B1[d].I_row_indices[i] - 1, [&] (const std::vector<esglobal> &v, esglobal i) {
 					return v[0] < i;
 				});
@@ -353,7 +353,7 @@ void ResultStore::storeLambdas(const Step &step, const Instance &instance)
 		for (size_t d = 0, offset = 0; d < instance.domains; d++) {
 			auto start = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[Instance::CONSTRAINT::DIRICHLET]);
 			auto end = std::upper_bound(instance.B1[d].I_row_indices.begin(), instance.B1[d].I_row_indices.end(), instance.block[Instance::CONSTRAINT::DIRICHLET] + instance.block[Instance::CONSTRAINT::EQUALITY_CONSTRAINTS]);
-			for (size_t i = start - instance.B1[d].I_row_indices.begin(); i < end - instance.B1[d].I_row_indices.begin(); i++) {
+			for (eslocal i = start - instance.B1[d].I_row_indices.begin(); i < end - instance.B1[d].I_row_indices.begin(); i++) {
 				auto it = std::lower_bound(instance.B1clustersMap.begin(), instance.B1clustersMap.end(), instance.B1[d].I_row_indices[i] - 1, [&] (const std::vector<esglobal> &v, esglobal i) {
 					return v[0] < i;
 				});

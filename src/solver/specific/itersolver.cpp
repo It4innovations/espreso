@@ -3505,7 +3505,7 @@ void IterSolverBase::CreateConjProjector(Cluster & cluster) {
 		SEQ_VECTOR <eslocal> prec_map_vec;
 		prec_map_vec = cluster.domains[d].B1t_Dir_perm_vec;
 
-		for (eslocal i = 0; i < PrecFull.I_row_indices.size(); i++) {
+		for (size_t i = 0; i < PrecFull.I_row_indices.size(); i++) {
 			PrecFull.I_row_indices[i] = prec_map_vec[PrecFull.I_row_indices[i]-1];
 			PrecFull.J_col_indices[i] = prec_map_vec[PrecFull.J_col_indices[i]-1];
 		}
@@ -3672,8 +3672,7 @@ void IterSolverBase::CreateConjProjector(Cluster & cluster) {
 
 
 
-		int info = 0;
-		info = LAPACKE_dsygvx (
+		LAPACKE_dsygvx (
 				LAPACK_COL_MAJOR, 	// int matrix_layout,
 				1, 					//lapack_int itype,
 				'V', 				//char jobz,
@@ -3694,8 +3693,6 @@ void IterSolverBase::CreateConjProjector(Cluster & cluster) {
 				&eig_vectors[0], 	//double* z,
 				n, 					//lapack_int ldz,
 				&ifail[0]); 		//lapack_int* ifail);
-
-            int xx = 10;
 
             int copy_ind_begin = 0;
             for (int i = 0; i < eig_n; i++) {

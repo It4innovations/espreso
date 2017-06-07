@@ -950,7 +950,7 @@ void SparseMatrix::ConvertDenseToCSR( eslocal clearDense_1_keep_Dense_0 ){
 
 	double *data = dense_values.data();
 
-	if (type == 'S' && rows * cols != dense_values.size()) {
+	if (type == 'S' && rows * cols != (eslocal)dense_values.size()) {
 		// mkl_ddnscsr needs full dense matrix
 		values.reserve(rows * cols);
 		for (eslocal r = 0, begin = 0; r < rows; begin += ++r) {

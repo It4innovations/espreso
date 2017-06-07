@@ -811,7 +811,7 @@ void Mesh::loadProperty(
 
 				#pragma omp parallel for
 				for (size_t d = 0; d < this->parts(); d++) {
-					for (size_t e = this->getPartition()[d]; e < this->getPartition()[d + 1]; e++) {
+					for (eslocal e = this->getPartition()[d]; e < this->getPartition()[d + 1]; e++) {
 						Element *face = _elements[e]->addFace(nodes);
 						if (face != NULL) {
 							faces[d].push_back(face);

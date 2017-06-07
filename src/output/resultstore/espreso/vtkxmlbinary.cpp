@@ -31,7 +31,7 @@ struct Base64Decoder {
 	{
 		size_t i = 0;
 		if (bufferSize) {
-			if (sizeof(Ttype) >= 3 - bufferSize) {
+			if ((int)sizeof(Ttype) >= 3 - bufferSize) {
 				memcpy(buffer + bufferSize, &data, 3 - bufferSize);
 				store(buffer, 3);
 				i = 3 - bufferSize;

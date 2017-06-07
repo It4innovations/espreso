@@ -506,7 +506,7 @@ static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat)
 	RegMat.I_row_indices.push_back(1);
 	RegMat.J_col_indices.push_back(1);
 	double max = -1e10;
-	for (size_t i = 0; i < K.rows && i < K.cols; i++) {
+	for (eslocal i = 0; i < K.rows && i < K.cols; i++) {
 		if (max < K.dense_values[i * K.cols + i]) {
 			max = K.dense_values[i * K.cols + i];
 		}

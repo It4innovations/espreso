@@ -344,17 +344,17 @@ void DenseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol
 
 			tmp_sol_fl.resize(sol_size);
 
-			for (size_t i = 0; i < sol_size; i++)
+			for (eslocal i = 0; i < sol_size; i++)
 				tmp_sol_fl[i] = (float)rhs[rhs_start_index+i];
 
 			ssptrs( &U, &m_rows, &n_rhs, &m_dense_values_fl[0], &m_ipiv[0], &tmp_sol_fl[0], &m_rows, &info );
 
-			for (size_t i = 0; i < sol_size; i++)
+			for (eslocal i = 0; i < sol_size; i++)
 				sol[sol_start_index+i] = (double)tmp_sol_fl[i];
 
 		} else {
 
-			for (size_t i = 0; i < sol_size; i++)
+			for (eslocal i = 0; i < sol_size; i++)
 				sol [sol_start_index + i] = rhs [rhs_start_index + i];
 
 			dsptrs( &U, &m_rows, &n_rhs, &m_dense_values[0], &m_ipiv[0], &sol[sol_start_index], &m_rows, &info );

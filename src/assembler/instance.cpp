@@ -63,11 +63,11 @@ Instance::Instance(size_t domains, const std::vector<int> &neighbours)
 
 Instance::Instance(Instance &other, Matrices &share)
 : domains(other.domains),
+  domainDOFCount(share & Matrices::K ? other.domainDOFCount :_domainDOFCount),
   properties(other.properties),
   neighbours(other.neighbours),
 
   // shared K -> also share kernels and regularization matrix
-  domainDOFCount(share & Matrices::K ? other.domainDOFCount :_domainDOFCount),
   K(share & Matrices::K ? other.K : _K),
   N1(share & Matrices::K ? other.N1 : _N1),
   N2(share & Matrices::K ? other.N2 : _N2),

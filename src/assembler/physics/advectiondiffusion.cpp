@@ -220,7 +220,7 @@ void AdvectionDiffusion::analyticRegularization(size_t domain)
 
 void AdvectionDiffusion::preprocessData(const Step &step)
 {
-	if (offset != -1) {
+	if (offset != (size_t)-1) {
 		return;
 	}
 	offset = _instance->solutions.size();

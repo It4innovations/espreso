@@ -180,7 +180,7 @@ void CollectedInfo::prepare(const std::vector<Element*> &region)
 			size_t begin = distribution[t] ? _regions[r].elementsNodes[distribution[t] - 1] : 0;
 			for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 
-				for (size_t n = begin; n < _regions[r].elementsNodes[i]; n++) {
+				for (eslocal n = begin; n < _regions[r].elementsNodes[i]; n++) {
 					rNodes[t].push_back(_regions[r].elements[n]);
 				}
 				begin = _regions[r].elementsNodes[i];

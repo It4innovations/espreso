@@ -58,6 +58,8 @@ void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Ele
 		sin = std::sin(rotation);
 		break;
 	}
+	default:
+		ESINFO(ERROR) << "Invalid material type (SPHERICAL for 2D).";
 	}
 
 	DenseMatrix TCT(2, 2), T(2, 2), C(2, 2), _CD, TCDT;

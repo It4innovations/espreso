@@ -33,7 +33,7 @@ void AsyncStoreExecutor::exec(const async::ExecInfo &info, const Param &param)
 {
 	const char* regionBuffer = static_cast<const char*>(info.buffer(1));
 	for (size_t i = 0; i < info.bufferSize(0) / 1024; i++) {
-		std::string names(static_cast<const char*>(info.buffer(0) + i * 1024));
+		std::string names(static_cast<const char*>((char*)info.buffer(0) + i * 1024));
 		std::vector<std::string> name = Parser::split(names, ";");
 
 		size_t regions;
