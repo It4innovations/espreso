@@ -5,36 +5,36 @@
 namespace espreso {
 
     DenseMatrixPack::DenseMatrixPack(const ESPRESOSolver &configuration)
-    : configuration(configuration) {
+        : configuration(configuration) {
 
-        this->device = 0;
+            this->device = 0;
 
-        this->maxNMatrices = 0;
-        this->preallocSize = 0;
+            this->maxNMatrices = 0;
+            this->preallocSize = 0;
 
-        // preallocate data structures
-        this->matrices = NULL;
-        this->rows = NULL;
-        this->cols = NULL;
-        this->offsets = NULL;
-        this->rowOffsets = NULL;
-        this->colOffsets = NULL;
-        this->lengths =NULL;
-        this->packed = NULL;
+            // preallocate data structures
+            this->matrices = NULL;
+            this->rows = NULL;
+            this->cols = NULL;
+            this->offsets = NULL;
+            this->rowOffsets = NULL;
+            this->colOffsets = NULL;
+            this->lengths =NULL;
+            this->packed = NULL;
 
-        this->nMatrices = 0;
-        this->freeSpace = 0;
-        this->totalRows = 0;
-        this->totalCols = 0;
+            this->nMatrices = 0;
+            this->freeSpace = 0;
+            this->totalRows = 0;
+            this->totalCols = 0;
 
-        this->mic_x_in = NULL;
-        this->mic_y_out = NULL;
+            this->mic_x_in = NULL;
+            this->mic_y_out = NULL;
 
-        this->copiedToMIC = false;
-        this->MICratio = 1.0;
-        this->transLength = 0;
-        this->elapsedTime = new double[1];
-    }
+            this->copiedToMIC = false;
+            this->MICratio = 1.0;
+            this->transLength = 0;
+            this->elapsedTime = new double[1];
+        }
 
     DenseMatrixPack::DenseMatrixPack(
             const ESPRESOSolver &configuration,
@@ -111,7 +111,7 @@ namespace espreso {
 
     DenseMatrixPack::DenseMatrixPack( const DenseMatrixPack& orig ) {
 
-	this->configuration = configuration;
+        this->configuration = configuration;
         this->device = orig.device;
 
         this->maxNMatrices = orig.maxNMatrices;
@@ -409,12 +409,17 @@ namespace espreso {
     void DenseMatrixPack::DenseMatsVecsMIC(
             char T_for_transpose_N_for_not_transpose
             ) {
-#ifdef MIC
+        long nMatrices = this->nMatrices;
+        long inSize = 0;
+        long outSize = 0;
+        for ( eslocal i = 0 ; i < (long) (nMatrices*MICratio); ++i ) {
+            inSize += cols[i];
+            outSize += rows[i];
+        }
 
-
-#pragma offload target(mic:device) if(1) \
-        in( matrices_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr ) \
-        in( mic_x_in : length( totalCols ) alloc_if( 0 ) free_if( 0 ) ) \
+#pragma offload target(mic:device) \
+        in( this->mic_x_in :length(inSize) alloc_if(0) free_if(0) ) \
+        in( matrices_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr) \
         in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
         in( cols : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
         in( offsets : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
@@ -422,18 +427,21 @@ namespace espreso {
         in( colOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
         in( lengths : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
         in( packed : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-        out( mic_y_out : length( totalRows ) alloc_if( 0 ) free_if( 0 ) ) \
-        in( this : length(0) alloc_if( 0 ) free_if( 0 ) )
+        in( mic_y_out : length( 0 ) alloc_if( 0 ) free_if( 0 )  ) \
+        in( MICratio ) \
+        in( elapsedTime : length(0) alloc_if(0) free_if(0) ) \
+        in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+        out(mic_y_out : length( outSize ) alloc_if( 0 ) free_if( 0 ) ) \
+        out( elapsedTime : length(1) alloc_if(0) free_if(0) )
         {
             double alpha = 1.0;
             double beta  = 0.0;
             eslocal one = 1;
-
-            //  omp_set_num_threads(24);
-
-#pragma omp parallel for //schedule(dynamic,10)
-            for ( eslocal i = 0 ; i < nMatrices; i++ ) {
-
+            long nIters = (long) (nMatrices*MICratio);
+            double start = omp_get_wtime();
+            int nth;
+#pragma omp parallel for //schedule(dynamic,1)
+            for ( long i = 0 ; i < nIters; i++ ) {
                 if ( !packed[i] ) {
                     dgemv(&T_for_transpose_N_for_not_transpose,
                             &(rows[i]), &(cols[i]),
@@ -446,9 +454,8 @@ namespace espreso {
                             1, 0.0, mic_y_out + rowOffsets[i], 1);
                 }
             }
+            elapsedTime[0] = omp_get_wtime() - start;
         }
-
-#endif
 
     }
 
@@ -456,12 +463,13 @@ namespace espreso {
             char T_for_transpose_N_for_not_transpose
             ) {
         long nMatrices = this->nMatrices;
-        s1 = 1;
-        #pragma offload_transfer target(mic:device)  \
-        in( this->mic_x_in :length(0) alloc_if(0) free_if(0) ) 
+        long inSize = 0;
+        for ( eslocal i = 0 ; i < (long) (nMatrices*MICratio); ++i ) {
+            inSize += cols[i];
+        }
 
-#pragma offload target(mic:device)  \
-        in( this->mic_x_in :length(totalCols) alloc_if(0) free_if(0) ) \
+#pragma offload target(mic:device) signal(this->mic_y_out) \
+        in( this->mic_x_in :length(inSize) alloc_if(0) free_if(0) ) \
         in( matrices_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr) \
         in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
         in( cols : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
@@ -471,10 +479,9 @@ namespace espreso {
         in( lengths : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
         in( packed : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
         in( mic_y_out : length( 0 ) alloc_if( 0 ) free_if( 0 )  ) \
-        in( MICratio ) \
-        out( transLength ) \ 
+        in( MICratio ) \ 
         in( elapsedTime : length(0) alloc_if(0) free_if(0) ) \
-        in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
+            in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
             {
                 double alpha = 1.0;
                 double beta  = 0.0;
@@ -482,7 +489,6 @@ namespace espreso {
                 long nIters = (long) (nMatrices*MICratio);
                 double start = omp_get_wtime();
                 int nth;
-                transLength = 0;
 #pragma omp parallel for //schedule(dynamic,1)
                 for ( long i = 0 ; i < nIters; i++ ) {
                     if ( !packed[i] ) {
@@ -496,17 +502,20 @@ namespace espreso {
                                 rows[i], 1.0, matrices_mic + offsets[i], mic_x_in + colOffsets[i],
                                 1, 0.0, mic_y_out + rowOffsets[i], 1);
                     }
-                    #pragma omp atomic
-                    transLength += cols[i];
                 }
                 elapsedTime[0] = omp_get_wtime() - start;
-             }
+            }
     }
 
     void DenseMatrixPack::DenseMatsVecsMIC_Sync( ) {
-// #pragma offload_wait target(mic:device) 
-#pragma offload_transfer target(mic:device) \
-        out(mic_y_out : length( transLength ) alloc_if( 0 ) free_if( 0 ) ) \
+
+        long outSize = 0;
+        for ( eslocal i = 0 ; i < (long) (nMatrices*MICratio); ++i ) {
+            outSize += cols[i];
+        }
+
+#pragma offload_transfer target(mic:device) wait(this->mic_y_out) \
+        out(mic_y_out : length( outSize ) alloc_if( 0 ) free_if( 0 ) ) \
         out( elapsedTime : length(1) alloc_if(0) free_if(0) )
 
     }

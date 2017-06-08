@@ -207,7 +207,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     ESINFO(PROGRESS3) << "Creating Local Schur complements";
     double MICr = 1.0;
     if ( configuration.load_balancing ) {
-        MICr = 0.1;
+        MICr = 0.9;
     }
     // First, get the available memory on coprocessors (in bytes)
     double usableRAM = 0.85;
@@ -491,11 +491,11 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
     // Ratio of work done on MIC
     double MICr = 1.0;
     if ( configuration.load_balancing_preconditioner ) {
-        MICr = 0.1;
+        MICr = 0.9;
     }
 
     // First, get the available memory on coprocessors (in bytes)
-    double usableRAM = 0.9;
+    double usableRAM = 0.85;
     long *micMem = new long[this->acc_per_MPI];
 
     int target = 0;
