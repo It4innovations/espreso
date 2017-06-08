@@ -63,8 +63,8 @@ PARDISO::STLIBPATH =
 
 CUDA::CXXFLAGS = -DDEVICE_ID=0 -DSTREAM_NUM=16 -DSHARE_SC
 CUDA::LINKFLAGS =
-CUDA::INCLUDES = /usr/local/cuda-7.5/include
-CUDA::LIBPATH = /usr/local/cuda-7.5/lib64
+CUDA::INCLUDES = /usr/local/cuda/include
+CUDA::LIBPATH = /usr/local/cuda/lib64
 CUDA::STLIBPATH =
 
 CUDA_7::CXXFLAGS =
