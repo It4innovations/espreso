@@ -39,7 +39,7 @@ struct FETI4IStructInstance {
 namespace espreso {
 
 struct DataHolder {
-	static Environment *environment;
+	static Environment environment;
 	static std::list<FETI4IStructMatrix*> matrices;
 	static std::list<FETI4IStructInstance*> instances;
 	static TimeEval timeStatistics;
