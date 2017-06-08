@@ -82,17 +82,23 @@ void NewAdvectionDiffusion3D::assembleMaterialMatrix(const Step &step, const Ele
 
 		const Point &p = _mesh->coordinates()[e->node(node)];
 
-		double fi = std::atan2((p.y - origin.y), (p.x - origin.x));
+		double azimut = std::atan2((p.y - origin.y), (p.x - origin.x));
 		double r = std::sqrt(pow((p.x - origin.x), 2) + pow((p.y - origin.y), 2) + pow((p.z - origin.z), 2));
-		double xi = std::acos((p.z - origin.z) / r);
+		double elevation = 0.0;
+
+		if (r < 1e-12) {
+			elevation = 0.0;
+		} else {
+			elevation = std::atan2(std::sqrt(pow((p.z - origin.z), 2) + pow((p.x - origin.x), 2)), (p.y - origin.y));
+		}
 
 		cos.x = 1.0;
-		cos.y = std::cos(xi);
-		cos.z = std::cos(fi);
+		cos.y = std::cos(elevation);
+		cos.z = std::cos(azimut);
 
 		sin.x = 0.0;
-		sin.y = std::sin(xi);
-		sin.z = std::sin(fi);
+		sin.y = std::sin(elevation);
+		sin.z = std::sin(azimut);
 
 	} break;
 
@@ -101,9 +107,9 @@ void NewAdvectionDiffusion3D::assembleMaterialMatrix(const Step &step, const Ele
 
 	DenseMatrix TCT(3, 3), T(3, 3), C(3, 3), _CD, TCDT;
 
-	T(0, 0) = cos.y * cos.z;                          T(0, 1) = -cos.y * sin.z;                          T(0, 2) =  sin.y;
-	T(1, 0) = cos.x * sin.z + cos.z * sin.x * sin.y;  T(1, 1) =  cos.x * cos.z - sin.x * sin.y * sin.z;  T(1, 2) = -cos.y * sin.x;
-	T(2, 0) = sin.x * sin.z - cos.x * cos.z * sin.y;  T(2, 1) =  cos.z * sin.x + cos.x * sin.y * sin.z;  T(2, 2) =  cos.x * cos.y;
+	T(0, 0) = cos.y * cos.z;                         T(0, 1) = cos.y * sin.z;                         T(0, 2) = -sin.y;
+	T(1, 0) = cos.z * sin.x * sin.y - cos.x * sin.z; T(1, 1) = cos.x * cos.z + sin.x * sin.y * sin.z; T(1, 2) = cos.y * sin.x;
+	T(2, 0) = sin.x*sin.z+cos.x*cos.z*sin.y;         T(2, 1) = cos.x * sin.y*sin.z-cos.z*sin.x;       T(2, 2) = cos.x * cos.y;
 
 	if (_configuration.tangent_matrix_correction) {
 		_CD.resize(3, 3);
