@@ -1,0 +1,10 @@
+
+INSTALL INSTRUCTIONS:
+
+1. $ cp install/build.config.* build.config
+
+2. update build.config in appropriate way
+
+3. $ ./waf configure
+
+4. $ ./waf install
