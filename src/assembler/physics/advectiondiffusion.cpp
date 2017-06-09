@@ -45,6 +45,15 @@ MatrixType AdvectionDiffusion::getMatrixType(const Step &step, size_t domain) co
 
 void AdvectionDiffusion::prepareTotalFETI()
 {
+	for (size_t s = 1; s <= _configuration.physics_solver.load_steps; s++) {
+		if (
+				_configuration.temperature.find(s) == _configuration.temperature.end() &&
+				_configuration.convection.find(s) == _configuration.convection.end()) {
+
+			ESINFO(GLOBAL_ERROR) << "Invalid boundary conditions for ADVECTION DIFFUSION - missing temperature or convection.";
+		}
+	}
+
 	_instance->domainDOFCount = _mesh->assignUniformDOFsIndicesToNodes(_instance->domainDOFCount, pointDOFs(), _nodesDOFsOffsets);
 	_instance->properties = pointDOFs();
 	_mesh->computeNodesDOFsCounters(pointDOFs());

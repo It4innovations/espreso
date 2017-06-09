@@ -123,7 +123,7 @@ void EqualityConstraints::insertDirichletToB1(Constraints &constraints, const st
 	}
 
 	ESINFO(EXHAUSTIVE) << "Lambdas with Dirichlet in B1: " << constraints.B1[0].rows;
-	// ESTEST(MANDATORY) << "ESPRESO requires some nodes with Dirichlet condition." << (globalDirichletSize == 0 ? TEST_FAILED : TEST_PASSED);
+	ESTEST(MANDATORY) << "ESPRESO requires some nodes with Dirichlet condition." << (globalDirichletSize == 0 ? TEST_FAILED : TEST_PASSED);
 }
 
 std::vector<esglobal> EqualityConstraints::computeLambdasID(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs)
@@ -829,7 +829,6 @@ void EqualityConstraints::insertDirichletToB1(Instance &instance, const Step &st
 	}
 
 	ESINFO(EXHAUSTIVE) << "Lambdas with Dirichlet in B1: " << instance.B1[0].rows;
-	ESTEST(MANDATORY) << "ESPRESO requires some nodes with Dirichlet condition." << (globalDirichletSize == 0 ? TEST_FAILED : TEST_PASSED);
 }
 
 
