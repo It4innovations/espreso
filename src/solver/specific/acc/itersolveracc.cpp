@@ -65,8 +65,8 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
                 if (cluster.accDomains[ thread ].size() > 0) {
                     // *** Part 5 - Assign threads for communication with MIC
                     // Multiply on MIC with the FETI SC operator and transfer from MICs back to CPU
-                    cluster.B1KplusPacks[ thread ].DenseMatsVecsMIC_Start( 'N' );
-                    cluster.B1KplusPacks[ thread ].DenseMatsVecsMIC_Sync(  );
+                    cluster.B1KplusPacks[ thread ].DenseMatsVecsMIC( 'N' );
+//                    cluster.B1KplusPacks[ thread ].DenseMatsVecsMIC_Sync(  );
                 }
                 MICtime[ thread ] = Measure::time() - MICtime[ thread ];
             } else {
@@ -208,8 +208,8 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
                 if (cluster.accDomains[ thread ].size() > 0) {
                     // *** Part 5 - Perform computation on MIC and transfer data to
                     // CPU
-                    cluster.B1KplusPacks[ thread ].DenseMatsVecsMIC_Start( 'N' );
-                    cluster.B1KplusPacks[ thread ].DenseMatsVecsMIC_Sync(  );
+                    cluster.B1KplusPacks[ thread ].DenseMatsVecsMIC( 'N' );
+//                    cluster.B1KplusPacks[ thread ].DenseMatsVecsMIC_Sync(  );
 
                 }
                 MICtime[ thread ] = Measure::time() - MICtime[ thread ];
@@ -439,7 +439,7 @@ void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
                 for ( eslocal mic = 0 ; mic < maxDevNumber; ++mic ) {
                     cluster.DirichletPacks[ mic ].DenseMatsVecsRestCPU( 'N' );    
                     long start = (long) (cluster.DirichletPacks[mic].getNMatrices()*cluster.DirichletPacks[mic].getMICratio());
-#pragma omp parallel// for schedule(static)
+#pragma omp parallel
                     for (  eslocal d = start ; d < cluster.DirichletPacks[mic].getNMatrices(); ++d ) {
                         cluster.DirichletPacks[mic].GetY(d, cluster.x_prim_cluster2[ cluster.accPreconditioners[ mic ].at(d) ] );
                     }
@@ -452,45 +452,6 @@ void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
             omp_set_nested( 0 );
         }
         omp_set_num_threads( maxThreads );
-
-        //        //#pragma omp parallel num_threads( config::solver::N_MICS )
-        //#pragma omp parallel num_threads( cluster.acc_per_MPI )
-        //        {
-        //            if (cluster.accPreconditioners[ omp_get_thread_num() ].size( ) > 0 ) {
-        //                cluster.DirichletPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Start( 'N' );
-        //            }
-        //        }
-        //        // meanwhile compute the same for domains staying on CPU
-        //        double startCPU = Measure::time();
-        //#pragma omp parallel for
-        //        for (eslocal d = 0; d <
-        //                cluster.hostPreconditioners.size(); ++d ) {
-        //            eslocal domN = cluster.hostPreconditioners.at(d);
-        //            cluster.domains[domN].Prec.DenseMatVec(cluster.x_prim_cluster1[domN], cluster.x_prim_cluster2[domN],'N');
-        //        }
-        //
-        //        // for ( eslocal mic = 0 ; mic < config::solver::N_MICS; ++mic ) {
-        //        //       std::cout << cluster.acc_per_MPI <<std::endl;
-        //        for ( eslocal mic = 0 ; mic < cluster.acc_per_MPI; ++mic ) {
-        //
-        //            cluster.DirichletPacks[ mic ].DenseMatsVecsRestCPU( 'N' );    
-        //            eslocal start = (long) (cluster.DirichletPacks[mic].getNMatrices()*cluster.DirichletPacks[mic].getMICratio());
-        //            //            std::cout << start << " " << cluster.DirichletPacks[mic].getNMatrices() << " " << cluster.DirichletPacks[mic].getMICratio() << std::endl ;
-        //            //#pragma omp parallel for schedule(static)
-        //            for (  eslocal d = start ; d < cluster.DirichletPacks[mic].getNMatrices(); ++d ) {
-        //                cluster.DirichletPacks[mic].GetY(d, cluster.x_prim_cluster2[ cluster.accPreconditioners[ mic ].at(d) ] );
-        //            }
-        //        }
-        //        double CPUtime = Measure::time() - startCPU;
-        //
-        //        //#pragma omp parallel num_threads( config::solver::N_MICS )
-        //#pragma omp parallel num_threads( cluster.acc_per_MPI )
-        //        {
-        //            // synchronize computation
-        //            if (cluster.accPreconditioners[omp_get_thread_num()].size() > 0) {
-        //                cluster.DirichletPacks[ omp_get_thread_num() ].DenseMatsVecsMIC_Sync(  );
-        //            }
-        //        }
 
         // extract the result from MICs
         for ( eslocal mic = 0; mic < cluster.acc_per_MPI; ++mic ) {

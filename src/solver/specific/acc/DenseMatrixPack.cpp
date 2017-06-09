@@ -14,6 +14,7 @@ namespace espreso {
 
             // preallocate data structures
             this->matrices = NULL;
+            this->matrices_fl = NULL;
             this->rows = NULL;
             this->cols = NULL;
             this->offsets = NULL;
@@ -29,18 +30,21 @@ namespace espreso {
 
             this->mic_x_in = NULL;
             this->mic_y_out = NULL;
+            this->mic_x_in_fl = NULL;
+            this->mic_y_out_fl = NULL;
 
             this->copiedToMIC = false;
             this->MICratio = 1.0;
-            this->transLength = 0;
             this->elapsedTime = new double[1];
+            this->USE_FLOAT = false;
         }
 
     DenseMatrixPack::DenseMatrixPack(
             const ESPRESOSolver &configuration,
             long maxNMatrices,
             long preallocSize,
-            int device
+            int device, 
+            bool USE_FLOAT
             ): configuration(configuration) {
 
         this->device = device;
@@ -49,7 +53,11 @@ namespace espreso {
         this->preallocSize = preallocSize;
 
         // preallocate data structures
-        this->matrices = ( double * ) malloc( preallocSize * sizeof( double ) );
+        if (!USE_FLOAT) {
+            this->matrices = ( double * ) malloc( preallocSize * sizeof( double ) );
+        } else {
+            this->matrices_fl = ( float * ) malloc( preallocSize * sizeof( float ) );
+        }
         this->rows = ( eslocal * ) malloc( maxNMatrices * sizeof( eslocal ) );
         this->cols = ( eslocal * ) malloc( maxNMatrices * sizeof( eslocal ) );
         this->offsets = ( long * ) malloc( maxNMatrices * sizeof( long ) );
@@ -67,17 +75,25 @@ namespace espreso {
 
         this->mic_x_in = NULL;
         this->mic_y_out = NULL;
+        this->mic_x_in_fl = NULL;
+        this->mic_y_out_fl = NULL;
 
         this->copiedToMIC = false;
         this->MICratio = 1.0;
-        this->transLength = 0;
         this->elapsedTime = new double[1];
+        this->USE_FLOAT = USE_FLOAT;
     }
 
-    void DenseMatrixPack::Resize( long maxNMatrices, long preallocSize ) {
+    void DenseMatrixPack::Resize( long maxNMatrices, long preallocSize, bool USE_FLOAT ) {
+
+        this->USE_FLOAT = USE_FLOAT;
 
         if (this->preallocSize != 0) {
-            free( this->matrices );
+            if (!USE_FLOAT) {
+                free( this->matrices );
+            } else {
+                free( this->matrices_fl );
+            }
             free( this->rows );
             free( this->cols );
             free( this->offsets );
@@ -91,7 +107,11 @@ namespace espreso {
         this->preallocSize = preallocSize;
 
         // preallocate data structures
-        this->matrices = ( double * ) malloc( preallocSize * sizeof( double ) );
+        if ( !USE_FLOAT ) {
+            this->matrices = ( double * ) malloc( preallocSize * sizeof( double ) ); 
+        } else {
+            this->matrices_fl = ( float * ) malloc( preallocSize * sizeof( float ) ); 
+        }
         this->rows = ( eslocal * ) malloc( maxNMatrices * sizeof( eslocal ) );
         this->cols = ( eslocal * ) malloc( maxNMatrices * sizeof( eslocal ) );
         this->offsets = ( long * ) malloc( maxNMatrices * sizeof( long ) );
@@ -107,6 +127,7 @@ namespace espreso {
         this->colOffsets[ 0 ] = 0;
         this->totalRows = 0;
         this->totalCols = 0;
+
     }
 
     DenseMatrixPack::DenseMatrixPack( const DenseMatrixPack& orig ) {
@@ -120,6 +141,8 @@ namespace espreso {
         // preallocate data structures
         this->matrices = orig.matrices;
         this->matrices_mic = orig.matrices_mic;
+        this->matrices_fl = orig.matrices_fl;
+        this->matrices_mic_fl = orig.matrices_mic_fl;
         this->rows = orig.rows;
         this->cols = orig.cols;
         this->offsets = orig.offsets;
@@ -135,11 +158,13 @@ namespace espreso {
 
         this->mic_x_in = orig.mic_x_in;
         this->mic_y_out = orig.mic_y_out;
+        this->mic_x_in_fl = orig.mic_x_in_fl;
+        this->mic_y_out_fl = orig.mic_y_out_fl;
         this->MICratio = orig.MICratio;
-        this->transLength = orig.transLength;
 
         this->elapsedTime = new double[1];
         this->elapsedTime[0] = orig.elapsedTime[0];
+        this->USE_FLOAT = orig.USE_FLOAT;
     }
 
     DenseMatrixPack::~DenseMatrixPack() {
@@ -152,13 +177,25 @@ namespace espreso {
             nocopy( rowOffsets : alloc_if( 0 ) free_if(1) ) \
             nocopy( colOffsets : alloc_if( 0 ) free_if(1) ) \
             nocopy( lengths : alloc_if( 0 ) free_if( 1 ) ) \
-            nocopy( mic_x_in : alloc_if( 0 ) free_if( 1 ) ) \
-            nocopy( mic_y_out : alloc_if( 0 ) free_if( 1 ) ) \
             nocopy( elapsedTime : alloc_if( 0 ) free_if( 1 ) )
+            if (!USE_FLOAT) {
+#pragma offload_transfer target(mic:device) \
+                nocopy( mic_x_in : alloc_if( 0 ) free_if( 1 ) ) \
+                nocopy( mic_y_out : alloc_if( 0 ) free_if( 1 ) )
+            } else {
+#pragma offload_transfer target(mic:device) \
+                nocopy( mic_x_in_fl : alloc_if( 0 ) free_if( 1 ) ) \
+                nocopy( mic_y_out_fl : alloc_if( 0 ) free_if( 1 ) ) 
+            }
+
+
         }
+
 
         if (this->matrices != NULL )
             free( this->matrices );
+        if (this->matrices_fl != NULL ) 
+            free( this->matrices_fl );
         if (this->rows != NULL )
             free( this->rows );
         if (this->cols != NULL )
@@ -177,10 +214,16 @@ namespace espreso {
             free( this->mic_x_in );
         if (this->mic_y_out != NULL )
             free( this->mic_y_out );
+        if ( this->mic_x_in_fl != NULL )
+            free( this->mic_x_in_fl);
+        if (this->mic_y_out_fl != NULL )
+            free( this->mic_y_out_fl );
+
         if (this->elapsedTime != NULL) 
             delete [] elapsedTime;
 
         this->matrices = NULL;
+        this->matrices_fl = NULL;
         this->rows = NULL;
         this->cols = NULL;
         this->offsets = NULL;
@@ -190,6 +233,9 @@ namespace espreso {
         this->packed = NULL;
         this->mic_x_in = NULL;
         this->mic_y_out = NULL;
+        this->mic_x_in_fl = NULL;
+        this->mic_y_out_fl = NULL;
+
     }
 
     void DenseMatrixPack::SetDevice(
@@ -202,6 +248,12 @@ namespace espreso {
             eslocal matrix
             ) {
         return this->matrices + this->offsets[matrix];
+    }
+
+    float * DenseMatrixPack::getMatrixPointer_fl(
+            eslocal matrix
+            ) {
+        return this->matrices_fl + this->offsets[matrix];
     }
 
     void DenseMatrixPack::PreparePack(
@@ -252,15 +304,30 @@ namespace espreso {
         }
         long size = this->lengths[i];
 
-        if ( !this->packed[i] ) {
-            memcpy( this->matrices + this->offsets[ i ],
-                    matrixData, sizeof( double ) * size );
-        } else {
-            for (long j = 0; j < this->cols[ i ]; j++ ) {
-                long pos = ((double)( 1.0 +j ))*((double) j)/2.0;
-                memcpy( this->matrices + this->offsets[ i ] + pos,
-                        matrixData + j * this->rows[ i ], sizeof( double ) * (j+1) );
+
+        if (!USE_FLOAT) {
+            if ( !this->packed[i] ) {
+                memcpy( this->matrices + this->offsets[ i ],
+                        matrixData, sizeof( double ) * size );
+            } else {
+                for (long j = 0; j < this->cols[ i ]; j++ ) {
+                    long pos = ((double)( 1.0 +j ))*((double) j)/2.0;
+                    memcpy( this->matrices + this->offsets[ i ] + pos,
+                            matrixData + j * this->rows[ i ], sizeof( double ) * (j+1) );
+                }
             }
+        } else {
+            if ( !this->packed[i] ) {
+                memcpy( this->matrices_fl + this->offsets[ i ],
+                        matrixData, sizeof( float ) * size );
+            } else {
+                for (long j = 0; j < this->cols[ i ]; j++ ) {
+                    long pos = ((double)( 1.0 +j ))*((double) j)/2.0;
+                    memcpy( this->matrices_fl + this->offsets[ i ] + pos,
+                            matrixData + j * this->rows[ i ], sizeof( float ) * (j+1) );
+                }
+            }
+
         }
     }
 
@@ -269,10 +336,10 @@ namespace espreso {
             long position,
             double value
             ) {
-        if ( this->mic_x_in != NULL ) {
+        if ( !USE_FLOAT ) {
             this->mic_x_in[position + this->colOffsets[ vector ]] = value;
         } else {
-            ESINFO(ERROR) << "Could not set vector element. Vector not yet allocated.";
+            this->mic_x_in_fl[position + this->colOffsets[ vector ]] = (float) value;
         }
     }
 
@@ -280,34 +347,52 @@ namespace espreso {
             long vector,
             std::SEQ_VECTOR <double> & y
             ) {
-        if ( this->mic_y_out != NULL ) {
-            memcpy( &(y[0]), this->mic_y_out + this->rowOffsets[ vector ],
-                    this->rows[vector] * sizeof( double ) );
-            //std::cout << this->rows[vector] << " "<< y.size() << std::endl;
-            //for (int i = 0 ; i < y.size(); i++) {
-            //  std::cout << "nastavuju" << i << std::endl;
-            //  y[i] = 1.0;
-            //}
+        if ( this->mic_y_out != NULL || this->mic_y_out_fl != NULL) {
+            if (!USE_FLOAT) {
+                memcpy( &(y[0]), this->mic_y_out + this->rowOffsets[ vector ],
+                        this->rows[vector] * sizeof( double ) );
+            } else {
+                for (eslocal i = 0 ; i < this->rows[vector]; ++i) {
+                    y[i] = (double) this->mic_y_out_fl[i + this->rowOffsets[ vector ]];
+                }
+            }
         } else {
             ESINFO(ERROR) << "Could not copy vector. Vector not yet allocated.";
         }
     }
 
     void DenseMatrixPack::CopyToMIC( ) {
-#ifdef MIC
-        long matrixLength = preallocSize - freeSpace;
-        double * tmp_pointer;
-        // allocate targetptr array on MIC
-#pragma offload_transfer target(mic:device) \
-        nocopy(tmp_pointer : length( matrixLength) alloc_if(1) free_if(0) targetptr) \
-        in(this : alloc_if(1) free_if(0))
 
-        // preallocated input/output buffers
-        //mic_x_in = ( double * ) malloc( totalCols * sizeof( double ) );
-        //mic_y_out = ( double * ) malloc( totalRows * sizeof( double ) );
-        this->matrices_mic = tmp_pointer;
+        long matrixLength = preallocSize - freeSpace;
+        if (!USE_FLOAT) {
+            double * tmp_pointer;
+            // allocate targetptr array on MIC
+#pragma offload_transfer target(mic:device) \
+            nocopy(tmp_pointer : length( matrixLength) alloc_if(1) free_if(0) targetptr) \
+            in(this : alloc_if(1) free_if(0))
+
+            this->matrices_mic = tmp_pointer;
+
+#pragma offload_transfer target(mic:device) \
+            in( matrices : length( matrixLength ) into(matrices_mic) alloc_if( 0 ) free_if( 0 ) targetptr ) \
+            in( mic_x_in : length( totalCols ) alloc_if( 1 ) free_if( 0 ) ) \
+            in( mic_y_out : length( totalRows ) alloc_if( 1 ) free_if( 0 ) )
+        } else {
+            float * tmp_pointer;
+            // allocate targetptr array on MIC
+#pragma offload_transfer target(mic:device) \
+            nocopy(tmp_pointer : length( matrixLength) alloc_if(1) free_if(0) targetptr) \
+            in(this : alloc_if(1) free_if(0))
+
+            this->matrices_mic_fl = tmp_pointer;
+
+#pragma offload_transfer target(mic:device) \
+            in( matrices_fl : length( matrixLength ) into(matrices_mic_fl) alloc_if( 0 ) free_if( 0 ) targetptr ) \
+            in( mic_x_in_fl : length( totalCols ) alloc_if( 1 ) free_if( 0 ) ) \
+            in( mic_y_out_fl : length( totalRows ) alloc_if( 1 ) free_if( 0 ) )
+        }
+
 #pragma offload_transfer target(mic:device) if(1) \
-        in( matrices : length( matrixLength ) into(matrices_mic) alloc_if( 0 ) free_if( 0 ) targetptr ) \
         in( rows : length( nMatrices ) alloc_if( 1 ) free_if( 0 ) ) \
         in( cols : length( nMatrices ) alloc_if( 1 ) free_if( 0 ) ) \
         in( offsets : length( nMatrices ) alloc_if( 1 ) free_if( 0 ) ) \
@@ -315,99 +400,122 @@ namespace espreso {
         in( colOffsets : length( nMatrices ) alloc_if( 1 ) free_if(0) ) \
         in( lengths : length( nMatrices ) alloc_if( 1 ) free_if( 0 ) ) \
         in( packed : length( nMatrices ) alloc_if( 1 ) free_if( 0 ) ) \
-        in( mic_x_in : length( totalCols ) alloc_if( 1 ) free_if( 0 ) ) \
-        in( mic_y_out : length( totalRows ) alloc_if( 1 ) free_if( 0 ) ) \
         in( elapsedTime : length( 1 ) alloc_if( 1 ) free_if( 0 ) ) \
         in( this : length(0) alloc_if( 0 ) free_if( 0 ) )
 
-#endif
+        // in the case of load balancing the cpu arrays have to be kept
         this->copiedToMIC = true;
         if ( !this->loadBalancing ) {
-            free(this->matrices);
-            this->matrices = NULL;
+            if (!USE_FLOAT) {
+                free(this->matrices);
+                this->matrices = NULL;
+            } else {
+                free(this->matrices_fl);
+                this->matrices_fl = NULL;
+            }
         }
-    }
-
-    void DenseMatrixPack::DenseMatsVecs(
-            char T_for_transpose_N_for_not_transpose
-            ) {
-
-        double alpha = 1.0;
-        double beta  = 0.0;
-        eslocal one = 1;
-
-        omp_set_num_threads(24);
-
-#pragma omp parallel for //schedule(dynamic,10)
-        for ( long i = 0 ; i < nMatrices; i++ ) {
-            //TODO:uncoment to fix
-            //        if ( !packed[i] ) {
-            //        dgemv(&T_for_transpose_N_for_not_transpose,
-            //  				&(rows[i]), &(cols[i]),
-            //  				&alpha, matrices + offsets[i], &(rows[i]),
-            //  				mic_x_in + colOffsets[i], &one,
-            //  				&beta, mic_y_out + rowOffsets[i], &one);
-            //        } else {
-            //  				cblas_dspmv(CblasColMajor, CblasUpper,
-            //  					rows[i], 1.0, matrices + offsets[i], mic_x_in + colOffsets[i],
-            //            1, 0.0, mic_y_out + rowOffsets[i], 1);
-            //        }
-        }
-
-
     }
 
     void DenseMatrixPack::DenseMatsVecsCPU(
             long start,
             long end,
-            char T_for_transpose_N_for_not_transpose
+            char T_for_transpose_N_for_not_transpose,
+            double alpha,
+            double beta
             ) {
-        double alpha = 1.0;
-        double beta  = 0.0;
         eslocal one = 1;
+        CBLAS_TRANSPOSE trans = CblasNoTrans;
+        if (T_for_transpose_N_for_not_transpose == 'T') {
+            trans = CblasTrans;
+        }
 
-#pragma omp parallel for //schedule(dynamic,10)
+#pragma omp parallel for 
         for ( long i = start ; i < end; i++ ) {
             if ( !packed[i] ) {
-                dgemv(&T_for_transpose_N_for_not_transpose,
-                        &(rows[i]), &(cols[i]),
-                        &alpha, matrices + offsets[i], &(rows[i]),
-                        mic_x_in + colOffsets[i], &one,
-                        &beta, mic_y_out + rowOffsets[i], &one);
+                if (!USE_FLOAT) {
+                    cblas_dgemv(CblasColMajor, trans, rows[i], cols[i], 
+                            alpha, matrices + offsets[i], rows[i],
+                            mic_x_in + colOffsets[i], 1, 
+                            beta, mic_y_out + rowOffsets[i], 1);
+                    //                    dgemv(&T_for_transpose_N_for_not_transpose,
+                    //                            &(rows[i]), &(cols[i]),
+                    //                            &alpha, matrices + offsets[i], &(rows[i]),
+                    //                            mic_x_in + colOffsets[i], &one,
+                    //                            &beta, mic_y_out + rowOffsets[i], &one);
+                } else {
+                    cblas_sgemv(CblasColMajor, trans, rows[i], cols[i], 
+                            (float) alpha, matrices_fl + offsets[i], rows[i],
+                            mic_x_in_fl + colOffsets[i], 1, 
+                            (float) beta, mic_y_out_fl + rowOffsets[i], 1);
+                }
             } else {
-                cblas_dspmv(CblasColMajor, CblasUpper,
-                        rows[i], 1.0, matrices + offsets[i], mic_x_in + colOffsets[i],
-                        1, 0.0, mic_y_out + rowOffsets[i], 1);
+                if (!USE_FLOAT) {
+                    cblas_dspmv(CblasColMajor, CblasUpper,
+                            rows[i], (float) alpha, matrices + offsets[i], mic_x_in + colOffsets[i],
+                            1, (float) beta, mic_y_out + rowOffsets[i], 1);
+                } else {
+                    cblas_sspmv(CblasColMajor, CblasUpper,
+                            rows[i],(float) alpha, matrices_fl + offsets[i], mic_x_in_fl + colOffsets[i],
+                            1, (float) beta, mic_y_out_fl + rowOffsets[i], 1);
+
+                }
             }
         }
     }
 
 
     void DenseMatrixPack::DenseMatsVecsRestCPU(
-            char T_for_transpose_N_for_not_transpose
+            char T_for_transpose_N_for_not_transpose,
+            double alpha,
+            double beta
             ) {
-        double alpha = 1.0;
-        double beta  = 0.0;
         eslocal one = 1;
+        CBLAS_TRANSPOSE trans = CblasNoTrans;
+        if (T_for_transpose_N_for_not_transpose == 'T') {
+            trans = CblasTrans;
+        }
+
         long start = (long) (MICratio * nMatrices); 
 #pragma omp parallel for // schedule(dynamic,1)
         for ( long i = start ; i < nMatrices; i++ ) {
             if ( !packed[i] ) {
-                dgemv(&T_for_transpose_N_for_not_transpose,
-                        &(rows[i]), &(cols[i]),
-                        &alpha, matrices + offsets[i], &(rows[i]),
-                        mic_x_in + colOffsets[i], &one,
-                        &beta, mic_y_out + rowOffsets[i], &one);
+                if (!USE_FLOAT) {
+                    cblas_dgemv(CblasColMajor, trans, rows[i], cols[i], 
+                            alpha, matrices + offsets[i], rows[i],
+                            mic_x_in + colOffsets[i], 1, 
+                            beta, mic_y_out + rowOffsets[i], 1);
+
+                    //                    dgemv(&T_for_transpose_N_for_not_transpose,
+                    //                        &(rows[i]), &(cols[i]),
+                    //                        &alpha, matrices + offsets[i], &(rows[i]),
+                    //                        mic_x_in + colOffsets[i], &one,
+                    //                        &beta, mic_y_out + rowOffsets[i], &one);
+                } else {
+                    cblas_sgemv(CblasColMajor, trans, rows[i], cols[i], 
+                            (float) alpha, matrices_fl + offsets[i], rows[i],
+                            mic_x_in_fl + colOffsets[i], 1, 
+                            (float) beta, mic_y_out_fl + rowOffsets[i], 1);
+
+                }
             } else {
-                cblas_dspmv(CblasColMajor, CblasUpper,
-                        rows[i], 1.0, matrices + offsets[i], mic_x_in + colOffsets[i],
-                        1, 0.0, mic_y_out + rowOffsets[i], 1);
+                if (!USE_FLOAT) {
+                    cblas_dspmv(CblasColMajor, CblasUpper,
+                            rows[i], (float) alpha, matrices + offsets[i], mic_x_in + colOffsets[i],
+                            1, (float) beta, mic_y_out + rowOffsets[i], 1);
+                } else {
+                    cblas_sspmv(CblasColMajor, CblasUpper,
+                            rows[i],(float) alpha, matrices_fl + offsets[i], mic_x_in_fl + colOffsets[i],
+                            1, (float) beta, mic_y_out_fl + rowOffsets[i], 1);
+
+                }
             }
         }
     }
 
     void DenseMatrixPack::DenseMatsVecsMIC(
-            char T_for_transpose_N_for_not_transpose
+            char T_for_transpose_N_for_not_transpose, 
+            double alpha, 
+            double beta
             ) {
         long nMatrices = this->nMatrices;
         long inSize = 0;
@@ -417,74 +525,34 @@ namespace espreso {
             outSize += rows[i];
         }
 
+        CBLAS_TRANSPOSE trans = CblasNoTrans;
+        if (T_for_transpose_N_for_not_transpose == 'T') {
+            trans = CblasTrans;
+        }
+
+        if (!USE_FLOAT) {
+
+            //            if (beta != 0.0) {
+#pragma offload_transfer target(mic:device) \
+            in( mic_y_out : length(outSize) alloc_if( 0 ) free_if( 0 ) )
+            //          }
+
 #pragma offload target(mic:device) \
-        in( this->mic_x_in :length(inSize) alloc_if(0) free_if(0) ) \
-        in( matrices_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr) \
-        in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-        in( cols : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-        in( offsets : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-        in( rowOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
-        in( colOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
-        in( lengths : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-        in( packed : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-        in( mic_y_out : length( 0 ) alloc_if( 0 ) free_if( 0 )  ) \
-        in( MICratio ) \
-        in( elapsedTime : length(0) alloc_if(0) free_if(0) ) \
-        in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-        out(mic_y_out : length( outSize ) alloc_if( 0 ) free_if( 0 ) ) \
-        out( elapsedTime : length(1) alloc_if(0) free_if(0) )
-        {
-            double alpha = 1.0;
-            double beta  = 0.0;
-            eslocal one = 1;
-            long nIters = (long) (nMatrices*MICratio);
-            double start = omp_get_wtime();
-            int nth;
-#pragma omp parallel for //schedule(dynamic,1)
-            for ( long i = 0 ; i < nIters; i++ ) {
-                if ( !packed[i] ) {
-                    dgemv(&T_for_transpose_N_for_not_transpose,
-                            &(rows[i]), &(cols[i]),
-                            &alpha, matrices_mic + offsets[i], &(rows[i]),
-                            mic_x_in + colOffsets[i], &one,
-                            &beta, mic_y_out + rowOffsets[i], &one);
-                } else {
-                    cblas_dspmv(CblasColMajor, CblasUpper,
-                            rows[i], 1.0, matrices_mic + offsets[i], mic_x_in + colOffsets[i],
-                            1, 0.0, mic_y_out + rowOffsets[i], 1);
-                }
-            }
-            elapsedTime[0] = omp_get_wtime() - start;
-        }
-
-    }
-
-    void DenseMatrixPack::DenseMatsVecsMIC_Start(
-            char T_for_transpose_N_for_not_transpose
-            ) {
-        long nMatrices = this->nMatrices;
-        long inSize = 0;
-        for ( eslocal i = 0 ; i < (long) (nMatrices*MICratio); ++i ) {
-            inSize += cols[i];
-        }
-
-#pragma offload target(mic:device) signal(this->mic_y_out) \
-        in( this->mic_x_in :length(inSize) alloc_if(0) free_if(0) ) \
-        in( matrices_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr) \
-        in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-        in( cols : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-        in( offsets : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-        in( rowOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
-        in( colOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
-        in( lengths : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-        in( packed : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-        in( mic_y_out : length( 0 ) alloc_if( 0 ) free_if( 0 )  ) \
-        in( MICratio ) \ 
-        in( elapsedTime : length(0) alloc_if(0) free_if(0) ) \
-            in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
+            in( this->mic_x_in :length(inSize) alloc_if(0) free_if(0) ) \
+            in( matrices_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr) \
+            in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( cols : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( offsets : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( rowOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
+            in( colOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
+            in( lengths : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( packed : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( MICratio ) \
+            in( elapsedTime : length(0) alloc_if(0) free_if(0) ) \
+            in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            out(mic_y_out : length( outSize ) alloc_if( 0 ) free_if( 0 ) ) \
+            out( elapsedTime : length(1) alloc_if(0) free_if(0) )
             {
-                double alpha = 1.0;
-                double beta  = 0.0;
                 eslocal one = 1;
                 long nIters = (long) (nMatrices*MICratio);
                 double start = omp_get_wtime();
@@ -492,31 +560,199 @@ namespace espreso {
 #pragma omp parallel for //schedule(dynamic,1)
                 for ( long i = 0 ; i < nIters; i++ ) {
                     if ( !packed[i] ) {
-                        dgemv(&T_for_transpose_N_for_not_transpose,
-                                &(rows[i]), &(cols[i]),
-                                &alpha, matrices_mic + offsets[i], &(rows[i]),
-                                mic_x_in + colOffsets[i], &one,
-                                &beta, mic_y_out + rowOffsets[i], &one);
+                        cblas_dgemv(CblasColMajor, trans, rows[i], cols[i], 
+                                alpha, matrices_mic + offsets[i], rows[i],
+                                mic_x_in + colOffsets[i], 1, 
+                                beta, mic_y_out + rowOffsets[i], 1);
+
+                        //                                            dgemv(&T_for_transpose_N_for_not_transpose,
+                        //                                                    &(rows[i]), &(cols[i]),
+                        //                                                    &alpha, matrices_mic + offsets[i], &(rows[i]),
+                        //                                                    mic_x_in + colOffsets[i], &one,
+                        //                                                    &beta, mic_y_out + rowOffsets[i], &one);
                     } else {
                         cblas_dspmv(CblasColMajor, CblasUpper,
-                                rows[i], 1.0, matrices_mic + offsets[i], mic_x_in + colOffsets[i],
-                                1, 0.0, mic_y_out + rowOffsets[i], 1);
+                                rows[i], alpha, matrices_mic + offsets[i], mic_x_in + colOffsets[i],
+                                1, beta, mic_y_out + rowOffsets[i], 1);
                     }
                 }
                 elapsedTime[0] = omp_get_wtime() - start;
             }
+        } else {
+
+            if (beta != 0.0) {
+#pragma offload_transfer target(mic:device) \
+                in( mic_y_out_fl : length(outSize) alloc_if( 0 ) free_if( 0 ) )
+            }
+
+#pragma offload target(mic:device) \
+            in( this->mic_x_in_fl :length(inSize) alloc_if(0) free_if(0) ) \
+            in( matrices_mic_fl : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr) \
+            in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( cols : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( offsets : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( rowOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
+            in( colOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
+            in( lengths : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( packed : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( MICratio ) \
+            in( elapsedTime : length(0) alloc_if(0) free_if(0) ) \
+            in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            out(mic_y_out_fl : length( outSize ) alloc_if( 0 ) free_if( 0 ) ) \
+            out( elapsedTime : length(1) alloc_if(0) free_if(0) )
+            {
+                eslocal one = 1;
+                long nIters = (long) (nMatrices*MICratio);
+                double start = omp_get_wtime();
+                int nth;
+#pragma omp parallel for //schedule(dynamic,1)
+                for ( long i = 0 ; i < nIters; i++ ) {
+                    if ( !packed[i] ) {
+                        cblas_sgemv(CblasColMajor, trans, rows[i], cols[i], 
+                                (float) alpha, matrices_mic_fl + offsets[i], rows[i],
+                                mic_x_in_fl + colOffsets[i], 1, 
+                                (float) beta, mic_y_out_fl + rowOffsets[i], 1);
+
+                        //                    dgemv(&T_for_transpose_N_for_not_transpose,
+                        //                            &(rows[i]), &(cols[i]),
+                        //                            &alpha, matrices_mic + offsets[i], &(rows[i]),
+                        //                            mic_x_in + colOffsets[i], &one,
+                        //                            &beta, mic_y_out + rowOffsets[i], &one);
+                    } else {
+                        cblas_sspmv(CblasColMajor, CblasUpper,
+                                rows[i], alpha, matrices_mic_fl + offsets[i], mic_x_in_fl + colOffsets[i],
+                                1, beta, mic_y_out_fl + rowOffsets[i], 1);
+                    }
+                }
+                elapsedTime[0] = omp_get_wtime() - start;
+            }
+        }
+    }
+
+    void DenseMatrixPack::DenseMatsVecsMIC_Start(
+            char T_for_transpose_N_for_not_transpose,
+            double alpha,
+            double beta
+            ) {
+        long nMatrices = this->nMatrices;
+        long inSize = 0;
+        long outSize =  0;
+        for ( eslocal i = 0 ; i < (long) (nMatrices*MICratio); ++i ) {
+            inSize += cols[i];
+            outSize += rows[i];
+        }
+
+        CBLAS_TRANSPOSE trans = CblasNoTrans;
+        if (T_for_transpose_N_for_not_transpose == 'T') {
+            trans = CblasTrans;
+        }
+
+
+
+        if (!USE_FLOAT) {
+            if ( beta!=0.0 ) {
+#pragma offload_transfer target(mic:device) \
+                out( mic_y_out : length(outSize) alloc_if( 0 ) free_if( 0 ) )
+            }
+
+#pragma offload target(mic:device) signal(this->mic_y_out) \
+            in( this->mic_x_in :length(inSize) alloc_if(0) free_if(0) ) \
+            in( matrices_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr) \
+            in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( cols : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( offsets : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( rowOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
+            in( colOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
+            in( lengths : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( packed : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( mic_y_out : length( 0 ) alloc_if( 0 ) free_if( 0 )  ) \
+            in( MICratio ) \ 
+            in( elapsedTime : length(0) alloc_if(0) free_if(0) ) \
+                in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
+                {
+                    eslocal one = 1;
+                    long nIters = (long) (nMatrices*MICratio);
+                    double start = omp_get_wtime();
+                    int nth;
+#pragma omp parallel for //schedule(dynamic,1)
+                    for ( long i = 0 ; i < nIters; i++ ) {
+                        if ( !packed[i] ) {
+                            cblas_dgemv(CblasColMajor, trans, rows[i], cols[i], 
+                                    alpha, matrices_mic + offsets[i], rows[i],
+                                    mic_x_in + colOffsets[i], 1, 
+                                    beta, mic_y_out + rowOffsets[i], 1);
+                        } else {
+                            cblas_dspmv(CblasColMajor, CblasUpper,
+                                    rows[i], alpha, matrices_mic + offsets[i], mic_x_in + colOffsets[i],
+                                    1, beta, mic_y_out + rowOffsets[i], 1);
+                        }
+                    }
+                    elapsedTime[0] = omp_get_wtime() - start;
+                }
+        } else {
+            if ( beta!=0.0 ) {
+#pragma offload_transfer target(mic:device) \
+                out( mic_y_out_fl : length(outSize) alloc_if( 0 ) free_if( 0 ) )
+            }
+
+#pragma offload target(mic:device) signal(this->mic_y_out) \
+            in( this->mic_x_in_fl :length(inSize) alloc_if(0) free_if(0) ) \
+            in( matrices_mic_fl : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr) \
+            in( rows : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( cols : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( offsets : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( rowOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
+            in( colOffsets : length( 0 ) alloc_if( 0 ) free_if(0) ) \
+            in( lengths : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( packed : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
+            in( mic_y_out_fl : length( 0 ) alloc_if( 0 ) free_if( 0 )  ) \
+            in( MICratio ) \ 
+            in( elapsedTime : length(0) alloc_if(0) free_if(0) ) \
+                in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) )
+                {
+                    eslocal one = 1;
+                    long nIters = (long) (nMatrices*MICratio);
+                    double start = omp_get_wtime();
+                    int nth;
+#pragma omp parallel for //schedule(dynamic,1)
+                    for ( long i = 0 ; i < nIters; i++ ) {
+                        if ( !packed[i] ) {
+                            cblas_sgemv(CblasColMajor, trans, rows[i], cols[i], 
+                                    (float) alpha, matrices_mic_fl + offsets[i], rows[i],
+                                    mic_x_in_fl + colOffsets[i], 1, 
+                                    (float) beta, mic_y_out_fl + rowOffsets[i], 1);
+
+                        } else {
+                            cblas_sspmv(CblasColMajor, CblasUpper,
+                                    rows[i], alpha, matrices_mic_fl + offsets[i], mic_x_in_fl + colOffsets[i],
+                                    1, beta, mic_y_out_fl + rowOffsets[i], 1);
+                        }
+                    }
+                    elapsedTime[0] = omp_get_wtime() - start;
+                }
+
+
+
+        }
     }
 
     void DenseMatrixPack::DenseMatsVecsMIC_Sync( ) {
 
+        long inSize = 0;
         long outSize = 0;
         for ( eslocal i = 0 ; i < (long) (nMatrices*MICratio); ++i ) {
             outSize += cols[i];
         }
-
+        if (!USE_FLOAT) {
 #pragma offload_transfer target(mic:device) wait(this->mic_y_out) \
-        out(mic_y_out : length( outSize ) alloc_if( 0 ) free_if( 0 ) ) \
-        out( elapsedTime : length(1) alloc_if(0) free_if(0) )
+            out(mic_y_out : length( outSize ) alloc_if( 0 ) free_if( 0 ) ) \
+            out( elapsedTime : length(1) alloc_if(0) free_if(0) )
+        } else {
+#pragma offload_transfer target(mic:device) wait(this->mic_y_out_fl) \
+            out(mic_y_out_fl : length( outSize ) alloc_if( 0 ) free_if( 0 ) ) \
+            out( elapsedTime : length(1) alloc_if(0) free_if(0) )
+
+        }
 
     }
 }

@@ -210,7 +210,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         MICr = 0.9;
     }
     // First, get the available memory on coprocessors (in bytes)
-    double usableRAM = 0.85;
+    double usableRAM = 0.8;
     long *micMem = new long[ this->acc_per_MPI ];
 
     int target = 0;
@@ -242,9 +242,11 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         matrixPerPack[i]++;
     }
     eslocal offset = 0;
-    bool symmetric = true;
+    bool symmetric = SYMMETRIC_SYSTEM;
     this->B1KplusPacks.resize( this->acc_per_MPI, DenseMatrixPack(configuration) );
     this->accDomains.resize( this->acc_per_MPI );
+
+    eslocal scalarSize = (USE_FLOAT) ? sizeof(float) : sizeof(double);
 
     for ( int i = 0; i < this->acc_per_MPI; i++ )
     {
@@ -261,7 +263,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
                 currDataSize = ( ( 1.0 + ( double ) domains[j].B1t_comp_dom.cols ) *
                         ( ( double ) domains[j].B1t_comp_dom.cols ) / 2.0 );
             }
-            long dataInBytes = (currDataSize + dataSize) * sizeof(double);
+            long dataInBytes = (currDataSize + dataSize) * scalarSize;
             if (MICFull || (dataInBytes > usableRAM * micMem[i])) {
                 // when no more memory is available at MIC leave domain on CPU
                 MICFull = true;
@@ -277,7 +279,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         offset += matrixPerPack[i];
         matrixPerPack[i] -= numCPUDomains;
 
-        this->B1KplusPacks[i].Resize( matrixPerPack[i], dataSize );
+        this->B1KplusPacks[i].Resize( matrixPerPack[i], dataSize, USE_FLOAT );
         this->B1KplusPacks[i].setMICratio( MICr );
 
         if ( configuration.load_balancing ) {
@@ -304,14 +306,28 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 #pragma omp parallel for
             for (eslocal j = 0 ; j < accDomains[i].size() ; ++j) {
                 eslocal domN = accDomains[i].at(j);
-                double * matrixPointer = this->B1KplusPacks[i].getMatrixPointer(j);
                 SparseMatrix tmpB;
                 domains[domN].B1_comp_dom.MatTranspose(tmpB);
                 SparseSolverCPU tmpsps;
                 tmpsps.Create_SC_w_Mat( domains[domN].K, tmpB, domains[domN].B1Kplus, false, symmetric);
-                memcpy(matrixPointer, &(domains[domN].B1Kplus.dense_values[0]),
-                        this->B1KplusPacks[i].getDataLength(j) * sizeof(double) );
-                SEQ_VECTOR<double>().swap(  domains[domN].B1Kplus.dense_values);
+                if (!USE_FLOAT) {
+
+                    double * matrixPointer = this->B1KplusPacks[i].getMatrixPointer(domN);
+                    memcpy(matrixPointer, &(domains[domN].B1Kplus.dense_values[0]),
+                        this->B1KplusPacks[i].getDataLength(domN) * sizeof(double) );
+                    SEQ_VECTOR<double>().swap(  domains[domN].B1Kplus.dense_values);
+                } else {
+
+                    float * matrixPointer = this->B1KplusPacks[i].getMatrixPointer_fl(domN) ;
+                    domains[domN].B1Kplus.ConvertDenseToDenseFloat( 1 );
+                    //for (eslocal k = 0; k << this->B1KplusPacks[i].getDataLength(j); ++k) {
+                    //    matrixPointer[k] = domains[domN].B1Kplus.dense_values_fl[k];                 
+                    //    }
+                     memcpy(matrixPointer, &(domains[domN].B1Kplus.dense_values_fl[0]),
+                        this->B1KplusPacks[i].getDataLength(domN) * sizeof(float) );
+                    SEQ_VECTOR<float>().swap(  domains[domN].B1Kplus.dense_values_fl);
+
+                }
                 ESINFO(PROGRESS3) << Info::plain() << ".";
             }
         }
@@ -330,6 +346,10 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
             domains[domN].B1_comp_dom.MatTranspose(TmpB);
             SparseSolverCPU tmpsps;
             tmpsps.Create_SC_w_Mat( domains[domN].K, TmpB, domains[domN].B1Kplus, false, symmetric);
+            if (USE_FLOAT) {
+                domains[domN].B1Kplus.ConvertDenseToDenseFloat(1);
+                domains[domN].B1Kplus.USE_FLOAT = true;
+            }
         }
 
     } else {
@@ -495,7 +515,7 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
     }
 
     // First, get the available memory on coprocessors (in bytes)
-    double usableRAM = 0.85;
+    double usableRAM = 0.8;
     long *micMem = new long[this->acc_per_MPI];
 
     int target = 0;
@@ -521,7 +541,7 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
         matrixPerPack[i]++;
     }
     eslocal offset = 0;
-    bool symmetric = true;
+    bool symmetric = SYMMETRIC_SYSTEM;
     this->DirichletPacks.resize( this->acc_per_MPI, DenseMatrixPack(configuration) );
     this->accPreconditioners.resize( this->acc_per_MPI );
 
