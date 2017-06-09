@@ -18,7 +18,7 @@ namespace espreso {
         public:
 
         // Default constructor
-        SparseMatrixPack( const ESPRESOSolver &configuration);
+        SparseMatrixPack( const ESPRESOSolver &configuration, bool USE_FLOAT = false);
 
         // Constructor
         SparseMatrixPack( const ESPRESOSolver &configuration, long maxNMatrices, int device = 0 );
@@ -55,8 +55,13 @@ namespace espreso {
                 );
 
         void AllocateVectors() {
-            mic_x_in = ( double * ) _mm_malloc( x_in_dim * sizeof( double ), 64 );
-            mic_y_out = ( double * ) _mm_malloc( y_out_dim * sizeof( double ), 64 );
+            if (!USE_FLOAT) {
+                mic_x_in = ( double * ) _mm_malloc( x_in_dim * sizeof( double ), 64 );
+                mic_y_out = ( double * ) _mm_malloc( y_out_dim * sizeof( double ), 64 );
+            } else {
+                mic_x_in_fl = ( float * ) _mm_malloc( x_in_dim * sizeof( float ), 64 );
+                mic_y_out_fl = ( float * ) _mm_malloc( y_out_dim * sizeof( float ), 64 );
+               }
         }
 
         // Sends matrices to MIC, preallocates data for input/ouptut vectors
@@ -146,6 +151,12 @@ namespace espreso {
         // array of matrix values on MIC (targetptr)
         double * matrix_values_mic;
 
+        // array of matrix values in float
+        float * matrix_values_fl;
+
+        // array of matrix values on MIC in float (targetptr)
+        float * matrix_values_mic_fl;
+
         // array of indices of rows
         eslocal * rowInd;
 
@@ -200,6 +211,12 @@ namespace espreso {
         // output buffer on MIC
         double * mic_y_out;
 
+        // input buffer on MIC in float
+        float * mic_x_in_fl;
+
+        // output buffer on MIC in float
+        float * mic_y_out_fl;
+
         // are data copied to MIC
         bool copiedToMIC;
 
@@ -224,6 +241,10 @@ namespace espreso {
         double MICratio;
         // time for one mv
         double *  elapsedTime;
+
+        // whether to use float for computation
+        bool USE_FLOAT;
+
 #pragma offload_attribute(pop)
     };
 

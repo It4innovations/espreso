@@ -431,7 +431,9 @@ void ClusterAcc::SetupKsolvers ( ) {
         }
 
         eslocal offset = 0; 
-        this->SparseKPack.resize( this->acc_per_MPI, SparseMatrixPack(configuration) );
+        bool use_float = (configuration.Ksolver == ESPRESO_KSOLVER::DIRECT_SP);
+
+        this->SparseKPack.resize( this->acc_per_MPI, SparseMatrixPack(configuration, use_float) );
         this->accDomains.resize( this->acc_per_MPI );
         this->matricesPerAcc.reserve( this->acc_per_MPI );
 
