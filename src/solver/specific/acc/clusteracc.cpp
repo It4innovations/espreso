@@ -117,50 +117,50 @@ void ClusterAcc::SetAcceleratorAffinity() {
         ESINFO(PROGRESS2) << "Incorrect number of MPI processes per accelerator!" << _MPInodeSize;  
     }
 
-//for (int i = 0; i < acc_per_MPI; ++i) {
-//    #pragma omp parallel
-//    {
-//        int used_core_num = 0;
-//        int first_core = 0;
-//        int last_core = 0;
-//        int target = myTargets.at(i);
-//        int MPIperAcc = this->MPI_per_acc;
-//        int rank = this->acc_rank;
-//
-//#pragma offload target(mic:target) 
-//        {
-//            cpu_set_t my_set;        // Define cpu_set bit mask. 
-//            CPU_ZERO(&my_set);       // Initialize it all to 0
-//            int cores = sysconf(_SC_NPROCESSORS_ONLN); // for Xeon Phi 7120 - results is 244
-//            cores = ( cores / 4 ) - 1; // keep core for system and remove effect of hyperthreading
-//            int cores_per_rank = cores / MPIperAcc;
-//
-//            for (int i = 0; i < cores_per_rank ; i++) {
-//                if (i == 0) {
-//                    //first_core = 1*(cores_per_rank)*rank + 1*i;
-//                    first_core = cores_per_rank*rank + 1;
-//                }
-//                last_core = 1*(cores_per_rank)*rank + 1*i;
-//                //int core = 1 + 4*(cores_per_rank)*rank + 4*i;
-//
-//                int core =1+  4*cores_per_rank*rank + 4*i;
-//                for (int j = 0 ; j < 4; j++ ) {
-//                    CPU_SET(core , &my_set);     /* set the bit that represents core 7. */
-//                    core++;
-//                }
-//                used_core_num++;
-//            }   
-//
-//            sched_setaffinity(0, sizeof(cpu_set_t), &my_set); /* Set affinity of tihs process to */
-//            omp_set_num_threads(4*cores_per_rank);
-//            /* the defined mask, i.e. only 7. */
-//        }
-//    }
-//}
+    //for (int i = 0; i < acc_per_MPI; ++i) {
+    //    #pragma omp parallel
+    //    {
+    //        int used_core_num = 0;
+    //        int first_core = 0;
+    //        int last_core = 0;
+    //        int target = myTargets.at(i);
+    //        int MPIperAcc = this->MPI_per_acc;
+    //        int rank = this->acc_rank;
+    //
+    //#pragma offload target(mic:target) 
+    //        {
+    //            cpu_set_t my_set;        // Define cpu_set bit mask. 
+    //            CPU_ZERO(&my_set);       // Initialize it all to 0
+    //            int cores = sysconf(_SC_NPROCESSORS_ONLN); // for Xeon Phi 7120 - results is 244
+    //            cores = ( cores / 4 ) - 1; // keep core for system and remove effect of hyperthreading
+    //            int cores_per_rank = cores / MPIperAcc;
+    //
+    //            for (int i = 0; i < cores_per_rank ; i++) {
+    //                if (i == 0) {
+    //                    //first_core = 1*(cores_per_rank)*rank + 1*i;
+    //                    first_core = cores_per_rank*rank + 1;
+    //                }
+    //                last_core = 1*(cores_per_rank)*rank + 1*i;
+    //                //int core = 1 + 4*(cores_per_rank)*rank + 4*i;
+    //
+    //                int core =1+  4*cores_per_rank*rank + 4*i;
+    //                for (int j = 0 ; j < 4; j++ ) {
+    //                    CPU_SET(core , &my_set);     /* set the bit that represents core 7. */
+    //                    core++;
+    //                }
+    //                used_core_num++;
+    //            }   
+    //
+    //            sched_setaffinity(0, sizeof(cpu_set_t), &my_set); /* Set affinity of tihs process to */
+    //            omp_set_num_threads(4*cores_per_rank);
+    //            /* the defined mask, i.e. only 7. */
+    //        }
+    //    }
+    //}
 
 
 
-    #pragma omp parallel num_threads( acc_per_MPI )
+#pragma omp parallel num_threads( acc_per_MPI )
     {
         int used_core_num = 0;
         int first_core = 0;
@@ -296,104 +296,64 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 
     delete [] micMem;
 
-    bool assembleOnCPU = true;
-    if ( assembleOnCPU ) {
-        // iterate over available MICs and assemble their domains on CPU
-        for (eslocal i = 0 ; i < this->acc_per_MPI ; ++i) {
-            target = this->myTargets.at(i);
-            this->B1KplusPacks[i].AllocateVectors( );
-            this->B1KplusPacks[i].SetDevice( target );
+    // iterate over available MICs and assemble their domains on CPU
+    for (eslocal i = 0 ; i < this->acc_per_MPI ; ++i) {
+        target = this->myTargets.at(i);
+        this->B1KplusPacks[i].AllocateVectors( );
+        this->B1KplusPacks[i].SetDevice( target );
 #pragma omp parallel for
-            for (eslocal j = 0 ; j < accDomains[i].size() ; ++j) {
-                eslocal domN = accDomains[i].at(j);
-                SparseMatrix tmpB;
-                domains[domN].B1_comp_dom.MatTranspose(tmpB);
-                SparseSolverCPU tmpsps;
-                tmpsps.Create_SC_w_Mat( domains[domN].K, tmpB, domains[domN].B1Kplus, false, symmetric);
-                if (!USE_FLOAT) {
-
-                    double * matrixPointer = this->B1KplusPacks[i].getMatrixPointer(domN);
-                    memcpy(matrixPointer, &(domains[domN].B1Kplus.dense_values[0]),
-                        this->B1KplusPacks[i].getDataLength(domN) * sizeof(double) );
-                    SEQ_VECTOR<double>().swap(  domains[domN].B1Kplus.dense_values);
-                } else {
-
-                    float * matrixPointer = this->B1KplusPacks[i].getMatrixPointer_fl(domN) ;
-                    domains[domN].B1Kplus.ConvertDenseToDenseFloat( 1 );
-                    //for (eslocal k = 0; k << this->B1KplusPacks[i].getDataLength(j); ++k) {
-                    //    matrixPointer[k] = domains[domN].B1Kplus.dense_values_fl[k];                 
-                    //    }
-                     memcpy(matrixPointer, &(domains[domN].B1Kplus.dense_values_fl[0]),
-                        this->B1KplusPacks[i].getDataLength(domN) * sizeof(float) );
-                    SEQ_VECTOR<float>().swap(  domains[domN].B1Kplus.dense_values_fl);
-
-                }
-                ESINFO(PROGRESS3) << Info::plain() << ".";
-            }
-        }
-
-#pragma omp parallel num_threads(this->acc_per_MPI)
-        {
-            this->B1KplusPacks[omp_get_thread_num()].CopyToMIC();
-        }
-
-#pragma omp parallel for
-        for (eslocal d = 0; d < hostDomains.size(); ++d) {
-
-            ESINFO(PROGRESS3) << Info::plain() << "*";
-            eslocal domN = hostDomains.at(d);
-            SparseMatrix TmpB;
-            domains[domN].B1_comp_dom.MatTranspose(TmpB);
+        for (eslocal j = 0 ; j < accDomains[i].size() ; ++j) {
+            eslocal domN = accDomains[i].at(j);
+            SparseMatrix tmpB;
+            domains[domN].B1_comp_dom.MatTranspose(tmpB);
             SparseSolverCPU tmpsps;
-            tmpsps.Create_SC_w_Mat( domains[domN].K, TmpB, domains[domN].B1Kplus, false, symmetric);
-            if (USE_FLOAT) {
-                domains[domN].B1Kplus.ConvertDenseToDenseFloat(1);
-                domains[domN].B1Kplus.USE_FLOAT = true;
-            }
-        }
+            tmpsps.Create_SC_w_Mat( domains[domN].K, tmpB, domains[domN].B1Kplus, false, symmetric);
+            if (!USE_FLOAT) {
 
-    } else {
-#pragma omp parallel
-        {
-            if ((accDomains[omp_get_thread_num()].size()>0) && (omp_get_thread_num() < configuration.N_MICS)) {
-                // the first configuration.N_MICS threads will communicate with MICs
-                // now copy data to MIC and assemble Schur complements
-                int  i = omp_get_thread_num();
-                this->B1KplusPacks[i].AllocateVectors( );
-                this->B1KplusPacks[i].SetDevice( i );
-                SparseSolverAcc tmpsps_mic;
-                SparseMatrix** K = new SparseMatrix*[matrixPerPack[i]];
-                SparseMatrix** B = new SparseMatrix*[matrixPerPack[i]];
-
-                for (eslocal j = 0; j < accDomains[i].size(); ++j) {
-                    K[j] = &(domains[accDomains[i].at(j)].K);
-                    B[j] = &(domains[accDomains[i].at(j)].B1t_comp_dom);
-                }
-                this->B1KplusPacks[i].CopyToMIC();
-                tmpsps_mic.Create_SC_w_Mat( K, B, this->B1KplusPacks[i], accDomains[i].size(),  0, i);
+                double * matrixPointer = this->B1KplusPacks[i].getMatrixPointer(j);
+                memcpy(matrixPointer, &(domains[domN].B1Kplus.dense_values[0]),
+                        this->B1KplusPacks[i].getDataLength(j) * sizeof(double) );
+                SEQ_VECTOR<double>().swap(  domains[domN].B1Kplus.dense_values);
             } else {
-                // the remaining threads will assemble SC on CPU if necessary
-#pragma omp single nowait
-                {
-                    for (eslocal d = 0; d < hostDomains.size(); ++d) {
-#pragma omp task
-                        {
-                            //std::cout << ".";
-                            eslocal domN = hostDomains.at(d);
-                            SparseMatrix TmpB;
-                            domains[domN].B1_comp_dom.MatTranspose(TmpB);
-                            SparseSolverCPU tmpsps;
-                            tmpsps.Create_SC_w_Mat( domains[domN].K, TmpB, domains[domN].B1Kplus, false, 0);
-                        }
-                    }
-                }
+
+                float * matrixPointer = this->B1KplusPacks[i].getMatrixPointer_fl(j) ;
+                domains[domN].B1Kplus.ConvertDenseToDenseFloat( 1 );
+                //for (eslocal k = 0; k << this->B1KplusPacks[i].getDataLength(j); ++k) {
+                //    matrixPointer[k] = domains[domN].B1Kplus.dense_values_fl[k];                 
+                //    }
+                memcpy(matrixPointer, &(domains[domN].B1Kplus.dense_values_fl[0]),
+                        this->B1KplusPacks[i].getDataLength(j) * sizeof(float) );
+                SEQ_VECTOR<float>().swap(  domains[domN].B1Kplus.dense_values_fl);
+
             }
+            ESINFO(PROGRESS3) << Info::plain() << ".";
         }
     }
-    
+
+#pragma omp parallel num_threads(this->acc_per_MPI)
+    {
+        this->B1KplusPacks[omp_get_thread_num()].CopyToMIC();
+    }
+
+#pragma omp parallel for
+    for (eslocal d = 0; d < hostDomains.size(); ++d) {
+
+        ESINFO(PROGRESS3) << Info::plain() << "*";
+        eslocal domN = hostDomains.at(d);
+        SparseMatrix TmpB;
+        domains[domN].B1_comp_dom.MatTranspose(TmpB);
+        SparseSolverCPU tmpsps;
+        tmpsps.Create_SC_w_Mat( domains[domN].K, TmpB, domains[domN].B1Kplus, false, symmetric);
+        if (USE_FLOAT) {
+            domains[domN].B1Kplus.ConvertDenseToDenseFloat(1);
+            domains[domN].B1Kplus.USE_FLOAT = true;
+        }
+    }
+
+
     delete [] matrixPerPack;
 
-        }
+}
 
 
 
@@ -405,26 +365,26 @@ void ClusterAcc::SetupKsolvers ( ) {
     for (eslocal d = 0; d < domains.size(); d++) {
 
         // Import of Regularized matrix K into Kplus (Sparse Solver)
-		switch (configuration.Ksolver) {
-		case ESPRESO_KSOLVER::DIRECT_DP:
-			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
-			break;
-		case ESPRESO_KSOLVER::ITERATIVE:
-			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
-			break;
-		case ESPRESO_KSOLVER::DIRECT_SP:
-			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
-			break;
-		case ESPRESO_KSOLVER::DIRECT_MP:
-			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
-			break;
-//		case 4:
-//			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
-//			break;
-		default:
-			ESINFO(ERROR) << "Invalid KSOLVER value.";
-			exit(EXIT_FAILURE);
-		}
+        switch (configuration.Ksolver) {
+            case ESPRESO_KSOLVER::DIRECT_DP:
+                domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
+                break;
+            case ESPRESO_KSOLVER::ITERATIVE:
+                domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
+                break;
+            case ESPRESO_KSOLVER::DIRECT_SP:
+                domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+                break;
+            case ESPRESO_KSOLVER::DIRECT_MP:
+                domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+                break;
+                //		case 4:
+                //			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+                //			break;
+            default:
+                ESINFO(ERROR) << "Invalid KSOLVER value.";
+                exit(EXIT_FAILURE);
+        }
 
         if (configuration.keep_factors) {
             std::stringstream ss;
@@ -481,11 +441,11 @@ void ClusterAcc::SetupKsolvers ( ) {
                 accDomains[ i ].push_back( j );       
                 this->matricesPerAcc[ i ][ j - offset ] = &(domains[j].K);
             }
-            
+
             offset += matrixPerPack[ i ];
 
             this->SparseKPack[ i ].AddMatrices( this->matricesPerAcc[ i ], 
-                matrixPerPack[ i ], this->myTargets.at( i ) );
+                    matrixPerPack[ i ], this->myTargets.at( i ) );
             this->SparseKPack[ i ].setMICratio( MICr );
 
             if ( configuration.load_balancing ) {
@@ -495,14 +455,14 @@ void ClusterAcc::SetupKsolvers ( ) {
             }
         }
 
-        #pragma omp parallel num_threads( acc_per_MPI )
+#pragma omp parallel num_threads( acc_per_MPI )
         {
             this->SparseKPack[ omp_get_thread_num() ].AllocateVectors();
             this->SparseKPack[ omp_get_thread_num() ].CopyToMIC();
             this->SparseKPack[ omp_get_thread_num() ].FactorizeMIC();
         }
         delete [] matrixPerPack;
-        
+
     }
 }
 
@@ -596,7 +556,7 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
     delete [] matrixPerPack;
 
     for (eslocal mic = 0 ; mic < this->acc_per_MPI ; ++mic ) {
-         target = this->myTargets.at(mic);
+        target = this->myTargets.at(mic);
         this->DirichletPacks[mic].AllocateVectors( );
         this->DirichletPacks[mic].SetDevice( target );        
 
@@ -956,125 +916,125 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
 
 void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 
-	//ESINFO(PROGRESS2) << "K+ multiply HFETI";
-	mkl_set_num_threads(1);
+    //ESINFO(PROGRESS2) << "K+ multiply HFETI";
+    mkl_set_num_threads(1);
 
-	cluster_time.totalTime.start();
+    cluster_time.totalTime.start();
 
-	vec_fill_time.start();
-	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
-	vec_fill_time.end();
+    vec_fill_time.start();
+    fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
+    vec_fill_time.end();
 
-	// loop over domains in the cluster
-	loop_1_1_time.start();
-	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++)
-	{
-		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
-		if (SYMMETRIC_SYSTEM) {
-			domains[d].Kplus_R.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
-		} else {
-			domains[d].Kplus_R2.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
-		}
-	}
-	loop_1_1_time.end();
+    // loop over domains in the cluster
+    loop_1_1_time.start();
+#pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++)
+    {
+        domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
+        if (SYMMETRIC_SYSTEM) {
+            domains[d].Kplus_R.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
+        } else {
+            domains[d].Kplus_R2.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
+        }
+    }
+    loop_1_1_time.end();
 
-	loop_1_2_time.start();
-	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++)
-	{
-		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+    loop_1_2_time.start();
+#pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++)
+    {
+        eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
+        eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
 
-		for (eslocal i = e0_start; i < e0_end; i++ )
-			vec_e0[i] = - tm3[d][i - e0_start];
-	}
-
-
-	for (size_t d = 0; d < domains.size(); d++)
-		for (eslocal i = 0; i < domains[d].B0Kplus_comp.rows; i++)
-			vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
-
-	// end loop over domains
-	loop_1_2_time.end();
-
-	mkl_set_num_threads(PAR_NUM_THREADS);
-	clusCP_time.start();
+        for (eslocal i = e0_start; i < e0_end; i++ )
+            vec_e0[i] = - tm3[d][i - e0_start];
+    }
 
 
-	clus_F0_1_time.start();
-	F0.Solve(vec_g0, tm1[0], 0, 0);
-	clus_F0_1_time.end();
+    for (size_t d = 0; d < domains.size(); d++)
+        for (eslocal i = 0; i < domains[d].B0Kplus_comp.rows; i++)
+            vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
 
-	clus_G0_time.start();
-	if (SYMMETRIC_SYSTEM) {
-		G0.MatVec(tm1[0], tm2[0], 'N');
-	} else {
-		G02.MatVec(tm1[0], tm2[0], 'N');
-	}
+    // end loop over domains
+    loop_1_2_time.end();
 
-	clus_G0_time.end();
-
-	#pragma omp parallel for
-for (size_t i = 0; i < vec_e0.size(); i++)
-		tm2[0][i] = tm2[0][i] - vec_e0[i];
-
-	 clus_Sa_time.start();
-
-	switch (configuration.SAsolver) {
-	case ESPRESO_SASOLVER::CPU_SPARSE:
-		Sa.Solve(tm2[0], vec_alfa, 0, 0);
-		break;
-	case ESPRESO_SASOLVER::CPU_DENSE:
-		Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
-		break;
-	case ESPRESO_SASOLVER::ACC_DENSE:
-		Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
-		break;
-	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented S alfa solver.";
-	}
-
-	 clus_Sa_time.end();
-
-	 clus_G0t_time.start();
-	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
-	 clus_G0t_time.end();
-
-	#pragma omp parallel for
-for (size_t i = 0; i < vec_g0.size(); i++)
-		tm1[0][i] = vec_g0[i] - tm1[0][i];
+    mkl_set_num_threads(PAR_NUM_THREADS);
+    clusCP_time.start();
 
 
-	clus_F0_2_time.start();
-	F0.Solve(tm1[0], vec_lambda,0,0);
-	clus_F0_2_time.end();
+    clus_F0_1_time.start();
+    F0.Solve(vec_g0, tm1[0], 0, 0);
+    clus_F0_1_time.end();
 
-	clusCP_time.end();
+    clus_G0_time.start();
+    if (SYMMETRIC_SYSTEM) {
+        G0.MatVec(tm1[0], tm2[0], 'N');
+    } else {
+        G02.MatVec(tm1[0], tm2[0], 'N');
+    }
 
-	// Kplus_x
-	mkl_set_num_threads(1);
-	loop_2_1_time.start();
+    clus_G0_time.end();
+
+#pragma omp parallel for
+    for (size_t i = 0; i < vec_e0.size(); i++)
+        tm2[0][i] = tm2[0][i] - vec_e0[i];
+
+    clus_Sa_time.start();
+
+    switch (configuration.SAsolver) {
+        case ESPRESO_SASOLVER::CPU_SPARSE:
+            Sa.Solve(tm2[0], vec_alfa, 0, 0);
+            break;
+        case ESPRESO_SASOLVER::CPU_DENSE:
+            Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
+            break;
+        case ESPRESO_SASOLVER::ACC_DENSE:
+            Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
+            break;
+        default:
+            ESINFO(GLOBAL_ERROR) << "Not implemented S alfa solver.";
+    }
+
+    clus_Sa_time.end();
+
+    clus_G0t_time.start();
+    G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
+    clus_G0t_time.end();
+
+#pragma omp parallel for
+    for (size_t i = 0; i < vec_g0.size(); i++)
+        tm1[0][i] = vec_g0[i] - tm1[0][i];
+
+
+    clus_F0_2_time.start();
+    F0.Solve(tm1[0], vec_lambda,0,0);
+    clus_F0_2_time.end();
+
+    clusCP_time.end();
+
+    // Kplus_x
+    mkl_set_num_threads(1);
+    loop_2_1_time.start();
 
     // accelerator stuff
     eslocal maxDevNumber = this->acc_per_MPI;
 
-	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++)
-	{
-		eslocal domain_size = domains[d].domain_prim_size;
+#pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++)
+    {
+        eslocal domain_size = domains[d].domain_prim_size;
 
-		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0);
-		for (size_t i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
-			tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
-		domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
+        SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0);
+        for (size_t i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+            tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
+        domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
 
-		for (eslocal i = 0; i < domain_size; i++)
-			tm1[d][i] = x_in[d][i] - tm1[d][i];
-   } 
+        for (eslocal i = 0; i < domain_size; i++)
+            tm1[d][i] = x_in[d][i] - tm1[d][i];
+    } 
 
     for ( eslocal i = 0; i < maxDevNumber; ++i ) {
-        #pragma omp parallel for 
+#pragma omp parallel for 
         for ( eslocal d = 0 ; d < accDomains[i].size(); ++d ) {
             eslocal domN = accDomains[i].at(d);
             for ( eslocal j = 0 ; j < domains[domN].K.cols; ++j ) {
@@ -1082,25 +1042,25 @@ for (size_t d = 0; d < domains.size(); d++)
             }
         }
     }
-    #pragma omp parallel num_threads( maxDevNumber ) 
+#pragma omp parallel num_threads( maxDevNumber ) 
     {
         eslocal myAcc = omp_get_thread_num();
         SparseKPack[ myAcc ].SolveMIC_Start();
-        
+
 
     }
 
-	//	domains[d].multKplusLocal(tm1[d] , tm2[d]);
+    //	domains[d].multKplusLocal(tm1[d] , tm2[d]);
 
 #pragma omp parallel for 
-for (size_t d = 0; d < domains.size(); d++) {
-		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-		eslocal domain_size = domains[d].domain_prim_size;
+    for (size_t d = 0; d < domains.size(); d++) {
+        eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
+        eslocal domain_size = domains[d].domain_prim_size;
 
-		domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
-}
+        domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
+    }
 
-    #pragma omp parallel num_threads( maxDevNumber ) 
+#pragma omp parallel num_threads( maxDevNumber ) 
     {
         eslocal myAcc = omp_get_thread_num();
         SparseKPack[ myAcc ].SolveMIC_Sync();
@@ -1114,15 +1074,15 @@ for (size_t d = 0; d < domains.size(); d++) {
 
 
 #pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++) {
-		eslocal domain_size = domains[d].domain_prim_size;
+    for (size_t d = 0; d < domains.size(); d++) {
+        eslocal domain_size = domains[d].domain_prim_size;
 
-		for (eslocal i = 0; i < domain_size; i++)
-			x_in[d][i] = tm2[d][i] + tm3[d][i];
+        for (eslocal i = 0; i < domain_size; i++)
+            x_in[d][i] = tm2[d][i] + tm3[d][i];
 
-	}
-	loop_2_1_time.end();
+    }
+    loop_2_1_time.end();
 
-	cluster_time.totalTime.end();
+    cluster_time.totalTime.end();
 }
 
