@@ -148,7 +148,7 @@ void OpenFOAM::elements(std::vector<size_t> &bodies, std::vector<Element*> &elem
 
 	for (std::vector<ElementBuilder*>::iterator it = elementBuilders.begin(); it != elementBuilders.end(); ++it) {
 		Element *element = NULL;
-		solveParseError((*it)->createElement(element));
+		solveParseError((*it)->createElement(element, mesh.coordinates()));
 		if (element == NULL) {
 			ESINFO(GLOBAL_ERROR) << "Unrecognized element form face: " << (*it) << "\n";
 		} else {

@@ -1,13 +1,11 @@
 
 #include "elementbuilder.h"
+#include "../../../mesh/structures/coordinates.h"
 #include "../../../mesh/elements/volume/hexahedron8.h"
-#include "../../../mesh/elements/volume/hexahedron20.h"
+#include "../../../mesh/elements/volume/hexahedron8.h"
 #include "../../../mesh/elements/volume/tetrahedron4.h"
-#include "../../../mesh/elements/volume/tetrahedron10.h"
 #include "../../../mesh/elements/volume/prisma6.h"
-#include "../../../mesh/elements/volume/prisma15.h"
 #include "../../../mesh/elements/volume/pyramid5.h"
-#include "../../../mesh/elements/volume/pyramid13.h"
 
 using namespace espreso::input;
 
@@ -18,24 +16,24 @@ ElementBuilder::~ElementBuilder() {
 
 }
 
-ParseError* ElementBuilder::createElement(Element *&element) {
+ParseError* ElementBuilder::createElement(Element *&element, const Coordinates &coordinates) {
 
-	std::set< eslocal > coordinates;
+	std::set< eslocal > nodes;
 	int numberOfSquares = 0;
 	eslocal indicies[8];
 	std::vector<eslocal> params(Element::PARAMS_SIZE);
 
 	for (std::list<Face* >::iterator  it = selectedFaces.begin(); it != selectedFaces.end(); ++it) {
 		Face *face = *it;
-		coordinates.insert(face->p[0]);
-		coordinates.insert(face->p[1]);
-		coordinates.insert(face->p[2]);
+		nodes.insert(face->p[0]);
+		nodes.insert(face->p[1]);
+		nodes.insert(face->p[2]);
 		if (face->numberOfPoints == 4) {
-			coordinates.insert(face->p[3]);
+			nodes.insert(face->p[3]);
 			numberOfSquares++;
 		}
 	}
-	if (coordinates.size() == 4) {
+	if (nodes.size() == 4) {
 		//Tetrahedron4
 		if (selectedFaces.size() != 4) {
 			std::stringstream ss;
@@ -51,22 +49,31 @@ ParseError* ElementBuilder::createElement(Element *&element) {
 		Face* firstFace = selectedFaces.front();
 		selectedFaces.pop_front();
 
-		coordinates.erase(firstFace->p[0]);
-		coordinates.erase(firstFace->p[1]);
-		coordinates.erase(firstFace->p[2]);
+		nodes.erase(firstFace->p[0]);
+		nodes.erase(firstFace->p[1]);
+		nodes.erase(firstFace->p[2]);
 
+		Point
+			v1 = coordinates[firstFace->p[1]] - coordinates[firstFace->p[0]],
+			v2 = coordinates[firstFace->p[2]] - coordinates[firstFace->p[0]];
+		Point normal = Point::cross(v1, v2);
+
+		if (normal * (coordinates[*(nodes.begin())] - coordinates[firstFace->p[0]]) < 0) {
+			indicies[1] = firstFace->p[0];
+			indicies[2] = firstFace->p[2];
+		} else {
+			indicies[1] = firstFace->p[2];
+			indicies[2] = firstFace->p[0];
+		}
 		indicies[0] = firstFace->p[1];
-		indicies[1] = firstFace->p[0];
-		indicies[2] = firstFace->p[2];
-		indicies[3] = indicies[2];
-		indicies[4] = *(coordinates.begin());
+		indicies[3] = *(nodes.begin());
 
-		element = new Tetrahedron4(indicies, 8, params.data());
+		element = new Tetrahedron4(indicies, 4, params.data());
 
-	} else if (coordinates.size() == 5) {
+	} else if (nodes.size() == 5) {
 		if (selectedFaces.size() != 5) {
 			std::stringstream ss;
-			ss << "Element with 5 unique coordinates can not have " << selectedFaces.size() << " faces.";
+			ss << "Element with 5 unique nodes can not have " << selectedFaces.size() << " faces.";
 			return new ParseError(ss.str(), "ElementBuilder");
 		}
 		if (numberOfSquares != 1) {
@@ -83,22 +90,22 @@ ParseError* ElementBuilder::createElement(Element *&element) {
 			}
 		}
 
-		coordinates.erase(firstFace->p[0]);
-		coordinates.erase(firstFace->p[1]);
-		coordinates.erase(firstFace->p[2]);
-		coordinates.erase(firstFace->p[3]);
+		nodes.erase(firstFace->p[0]);
+		nodes.erase(firstFace->p[1]);
+		nodes.erase(firstFace->p[2]);
+		nodes.erase(firstFace->p[3]);
 
 		indicies[0] = firstFace->p[0];
 		indicies[1] = firstFace->p[3];
 		indicies[2] = firstFace->p[2];
 		indicies[3] = firstFace->p[1];
-		indicies[4] = *(coordinates.begin());
+		indicies[4] = *(nodes.begin());
 		element = new Pyramid5(indicies, 8, params.data());
 
-	} else if (coordinates.size() == 6) {
+	} else if (nodes.size() == 6) {
 		if (selectedFaces.size() != 5) {
 			std::stringstream ss;
-			ss << "Element with 6 unique coordinates can not have " << selectedFaces.size() << " faces.";
+			ss << "Element with 6 unique nodes can not have " << selectedFaces.size() << " faces.";
 			return new ParseError(ss.str(), "ElementBuilder");
 		}
 		if (numberOfSquares != 3) {
@@ -135,10 +142,10 @@ ParseError* ElementBuilder::createElement(Element *&element) {
 		indicies[7] = indicies[6];
 		element = new Prisma6(indicies, 8, params.data());
 
-	} else if (coordinates.size() == 8) {
+	} else if (nodes.size() == 8) {
 		if (selectedFaces.size() != 6) {
 			std::stringstream ss;
-			ss << "Element with 8 unique coordinates can not have " << selectedFaces.size() << " faces.";
+			ss << "Element with 8 unique nodes can not have " << selectedFaces.size() << " faces.";
 			return new ParseError(ss.str(), "ElementBuilder");
 		}
 		if (numberOfSquares != 6) {
@@ -161,7 +168,7 @@ ParseError* ElementBuilder::createElement(Element *&element) {
 		element = new Hexahedron8(indicies, 8, params.data());
 	} else {
 		std::stringstream ss;
-		ss << "Element with " << coordinates.size() << " coordinates is not supported.";
+		ss << "Element with " << nodes.size() << " coordinates is not supported.";
 		return new ParseError(ss.str(), "ElementBuilder");
 	}
 	return NULL;
