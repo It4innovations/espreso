@@ -48,7 +48,9 @@ void AdvectionDiffusion::prepareTotalFETI()
 	for (size_t s = 1; s <= _configuration.physics_solver.load_steps; s++) {
 		if (
 				_configuration.temperature.find(s) == _configuration.temperature.end() &&
-				_configuration.convection.find(s) == _configuration.convection.end()) {
+				_configuration.convection.find(s) == _configuration.convection.end() &&
+				!_mesh->hasProperty(Property::TEMPERATURE, s - 1) &&
+				!_mesh->hasProperty(Property::EXTERNAL_TEMPERATURE, s - 1)) {
 
 			ESINFO(GLOBAL_ERROR) << "Invalid boundary conditions for ADVECTION DIFFUSION - missing temperature or convection.";
 		}

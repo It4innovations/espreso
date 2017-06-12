@@ -64,7 +64,8 @@ public:
 
 	void removeDuplicateRegions();
 	void fillDomainsSettings();
-	bool hasProperty(size_t domain, Property property, size_t loadStep);
+	bool hasProperty(size_t domain, Property property, size_t loadStep) const;
+	bool hasProperty(Property property, size_t loadStep) const;
 
 	template<typename TMaterial>
 	void loadMaterials(const std::map<std::string, TMaterial*> &materials, const std::map<std::string, std::string> &sets)

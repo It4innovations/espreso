@@ -1064,9 +1064,19 @@ void Mesh::fillDomainsSettings()
 	}
 }
 
-bool Mesh::hasProperty(size_t domain, Property property, size_t loadStep)
+bool Mesh::hasProperty(size_t domain, Property property, size_t loadStep) const
 {
 	return loadStep < _properties[domain].size() && _properties[domain][loadStep].count(property);
+}
+
+bool Mesh::hasProperty(Property property, size_t loadStep) const
+{
+	for (size_t r = 0; r < _regions.size(); r++) {
+		if (loadStep < _regions[r]->settings.size() && _regions[r]->settings[loadStep].find(property) != _regions[r]->settings[loadStep].end()) {
+			return true;
+		}
+	}
+	return false;
 }
 
 void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* edge)> filter)
