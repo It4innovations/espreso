@@ -443,8 +443,93 @@ void NewAdvectionDiffusion2D::processNode(const Step &step, Matrices matrices, c
 
 }
 
+void NewAdvectionDiffusion2D::postProcessElement(const Step &step, const Element *e, std::vector<Solution*> &solution)
+{
+	DenseMatrix Ce(2, 2), coordinates, J(2, 2), invJ(2, 2), dND, temp(e->nodes(), 1);
+	double detJ, m, norm_u_e, h_e;
+	DenseMatrix U(e->nodes(), 2), K(e->nodes(), 4), gpK(1, 4), CD;
+	DenseMatrix u(1, 2), matFlux(2, 1), matGradient(2, 1);
+
+	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
+
+	coordinates.resize(e->nodes(), 2);
+
+	for (size_t i = 0; i < e->nodes(); i++) {
+		temp(i, 0) = solution[offset + SolutionIndex::TEMPERATURE]->get(Property::TEMPERATURE, e->domains().front(), _mesh->coordinates().localIndex(e->node(i), e->domains().front()));
+		coordinates(i, 0) = _mesh->coordinates()[e->node(i)].x;
+		coordinates(i, 1) = _mesh->coordinates()[e->node(i)].y;
+		m =
+			material->get(MATERIAL_PARAMETER::DENSITY)->evaluate(e->node(i), step.currentTime, temp(i, 0)) *
+			material->get(MATERIAL_PARAMETER::HEAT_CAPACITY)->evaluate(e->node(i), step.currentTime, temp(i, 0));
+
+		U(i, 0) = e->getProperty(Property::TRANSLATION_MOTION_X, i, step.step, step.currentTime, temp(i, 0), 0) * m;
+		U(i, 1) = e->getProperty(Property::TRANSLATION_MOTION_Y, i, step.step, step.currentTime, temp(i, 0), 0) * m;
+
+		assembleMaterialMatrix(step, e, i, temp(i, 0), K, CD);
+	}
+
+	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
+		u.multiply(e->N()[gp], U, 1, 0);
+
+		J.multiply(e->dN()[gp], coordinates);
+		detJ = determinant2x2(J.values());
+		inverse2x2(J.values(), invJ.values(), detJ);
+
+		gpK.multiply(e->N()[gp], K);
+
+		Ce(0, 0) = gpK(0, 0);
+		Ce(1, 1) = gpK(0, 1);
+		Ce(0, 1) = gpK(0, 2);
+		Ce(1, 0) = gpK(0, 3);
+
+		dND.multiply(invJ, e->dN()[gp]);
+
+		 norm_u_e = u.norm();
+		 h_e = 0;
+
+		if (norm_u_e != 0) {
+			DenseMatrix b_e(1, e->nodes());
+			b_e.multiply(u, dND, 1, 0);
+			h_e = 2 * norm_u_e / b_e.norm();
+		}
+
+		Ce(0, 0) += _configuration.sigma * h_e * norm_u_e;
+		Ce(1, 1) += _configuration.sigma * h_e * norm_u_e;
+
+		matGradient.multiply(dND, temp, 1, 1);
+		matFlux.multiply(Ce, dND * temp, 1, 1);
+	}
+
+	solution[offset + SolutionIndex::GRADIENT]->innerData()[e->domains().front()].push_back(matGradient(0, 0) / e->gaussePoints());
+	solution[offset + SolutionIndex::GRADIENT]->innerData()[e->domains().front()].push_back(matGradient(1, 0) / e->gaussePoints());
+
+	solution[offset + SolutionIndex::FLUX]->innerData()[e->domains().front()].push_back(matFlux(0, 0) / e->gaussePoints());
+	solution[offset + SolutionIndex::FLUX]->innerData()[e->domains().front()].push_back(matFlux(1, 0) / e->gaussePoints());
+}
+
 void NewAdvectionDiffusion2D::processSolution(const Step &step)
 {
+	if (!_configuration.post_process) {
+		return;
+	}
 
+	if (_instance->solutions[offset + SolutionIndex::GRADIENT] == NULL) {
+		_instance->solutions[offset + SolutionIndex::GRADIENT] = new Solution(*_mesh, "gradient", ElementType::ELEMENTS, { Property::GRADIENT_X, Property::GRADIENT_Y });
+	}
+	if (_instance->solutions[offset + SolutionIndex::FLUX] == NULL) {
+		_instance->solutions[offset + SolutionIndex::FLUX] = new Solution(*_mesh, "flux", ElementType::ELEMENTS, { Property::FLUX_X, Property::FLUX_Y });
+	}
+
+	for (size_t p = 0; p < _mesh->parts(); p++) {
+		_instance->solutions[offset + SolutionIndex::GRADIENT]->innerData()[p].clear();
+		_instance->solutions[offset + SolutionIndex::FLUX]->innerData()[p].clear();
+	}
+
+	#pragma omp parallel for
+	for (size_t p = 0; p < _mesh->parts(); p++) {
+		for (size_t e = _mesh->getPartition()[p]; e < _mesh->getPartition()[p + 1]; e++) {
+			postProcessElement(step, _mesh->elements()[e], _instance->solutions);
+		}
+	}
 }
 

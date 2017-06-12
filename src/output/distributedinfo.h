@@ -37,8 +37,10 @@ protected:
 
 	// region x domain x indices
 	std::vector<std::vector<std::vector<eslocal> > > _cIndices;
+	std::vector<std::vector<std::vector<eslocal> > > _cElements;
 	// region x domain offset
-	std::vector<std::vector<size_t> > _cOffset;
+	std::vector<std::vector<size_t> > _cIOffset;
+	std::vector<std::vector<size_t> > _cEOffset;
 
 private:
 	void prepare(const std::vector<Element*> &region, InfoMode mode);

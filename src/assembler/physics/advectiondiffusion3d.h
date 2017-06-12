@@ -23,6 +23,7 @@ struct NewAdvectionDiffusion3D: public AdvectionDiffusion, public Physics3D
 
 protected:
 	void assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD) const;
+	void postProcessElement(const Step &step, const Element *e, std::vector<Solution*> &solution);
 
 	const AdvectionDiffusion3DConfiguration &_configuration;
 };

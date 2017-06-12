@@ -14,7 +14,7 @@ struct AdvectionDiffusion: public virtual Physics
 {
 	AdvectionDiffusion(const AdvectionDiffusionConfiguration &configuration);
 
-	virtual std::vector<size_t> solutions() const { return { offset + SolutionIndex::TEMPERATURE }; }
+	virtual std::vector<size_t> solutions() const;
 
 	virtual MatrixType getMatrixType(const Step &step, size_t domain) const;
 	virtual void prepareTotalFETI();
@@ -52,8 +52,10 @@ struct AdvectionDiffusion: public virtual Physics
 protected:
 	enum SolutionIndex: size_t {
 		TEMPERATURE = 0,
+		GRADIENT    = 1,
+		FLUX        = 2,
 
-		SIZE        = 1
+		SIZE        = 3
 	};
 
 	static size_t offset;

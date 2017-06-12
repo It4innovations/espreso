@@ -37,6 +37,14 @@ enum class Property : int {
 	EXTERNAL_TEMPERATURE,
 	EMISSIVITY,
 
+	GRADIENT_X,
+	GRADIENT_Y,
+	GRADIENT_Z,
+
+	FLUX_X,
+	FLUX_Y,
+	FLUX_Z,
+
 	WALL_HEIGHT,
 	TILT_ANGLE,
 	DIAMETER,
@@ -88,6 +96,15 @@ inline std::ostream& operator<<(std::ostream& os, const Property& property)
 		case Property::HEAT_FLUX: return os << "HEAT_FLUX";
 		case Property::HEAT_TRANSFER_COEFFICIENT: return os << "HEAT_TRANSFER_COEFFICIENT";
 		case Property::EXTERNAL_TEMPERATURE: return os << "EXTERNAL_TEMPERATURE";
+		case Property::EMISSIVITY: return os << "EMISSIVITY";
+
+		case Property::GRADIENT_X: return os << "GRADIENT_X";
+		case Property::GRADIENT_Y: return os << "GRADIENT_Y";
+		case Property::GRADIENT_Z: return os << "GRADIENT_Z";
+
+		case Property::FLUX_X: return os << "FLUX_X";
+		case Property::FLUX_Y: return os << "FLUX_Y";
+		case Property::FLUX_Z: return os << "FLUX_Z";
 
 		case Property::WALL_HEIGHT: return os << "WALL_HEIGHT";
 		case Property::TILT_ANGLE: return os << "TILT_ANGLE";
@@ -105,7 +122,7 @@ inline std::ostream& operator<<(std::ostream& os, const Property& property)
 		case Property::OBSTACLE: return os << "OBSTACLE";
 		case Property::NORMAL_DIRECTION: return os << "NORMAL_DIRECTION";
 		case Property::NONMATCHING_ELEMENT: return os << "NONMATCHING_ELEMENT";
-		default: return os;
+		default: return os << "UNNAMED";
 	}
 }
 

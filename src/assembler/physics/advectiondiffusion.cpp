@@ -233,7 +233,7 @@ void AdvectionDiffusion::preprocessData(const Step &step)
 		return;
 	}
 	offset = _instance->solutions.size();
-	_instance->solutions.resize(offset + SolutionIndex::SIZE);
+	_instance->solutions.resize(offset + SolutionIndex::SIZE, NULL);
 	_instance->primalSolution.resize(_mesh->parts());
 
 	#pragma omp parallel for
@@ -245,6 +245,18 @@ void AdvectionDiffusion::preprocessData(const Step &step)
 	}
 
 	_instance->solutions[offset + SolutionIndex::TEMPERATURE] = new Solution(*_mesh, "temperature", ElementType::NODES, pointDOFs(), _instance->primalSolution);
+}
+
+std::vector<size_t> AdvectionDiffusion::solutions() const
+{
+	std::vector<size_t> results = { offset + SolutionIndex::TEMPERATURE };
+	if (_instance->solutions[offset + SolutionIndex::GRADIENT] != NULL) {
+		results.push_back(offset + SolutionIndex::GRADIENT);
+	}
+	if (_instance->solutions[offset + SolutionIndex::FLUX] != NULL) {
+		results.push_back(offset + SolutionIndex::FLUX);
+	}
+	return results;
 }
 
 
