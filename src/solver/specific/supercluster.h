@@ -100,9 +100,9 @@ public:
 
 			// MPI calls to get total number of compute clusters - not superclusters
 			int global_numClusters = 0;
-			MPI_Allreduce(&numClusters, &global_numClusters, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+			MPI_Allreduce(&numClusters, &global_numClusters, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
 			int glob_clust_index = 0;
-			MPI_Exscan(&numClusters, &glob_clust_index, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+			MPI_Exscan(&numClusters, &glob_clust_index, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
 
 
 			for (eslocal c = 0; c < numClusters; c++) {

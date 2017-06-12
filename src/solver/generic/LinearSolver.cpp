@@ -170,7 +170,7 @@ void LinearSolver::setup_LocalSchurComplement() {
 }
 
 void LinearSolver::createCMat() {
-
+/*
 
 	//int d = 0;
 
@@ -509,7 +509,7 @@ void LinearSolver::createCMat() {
 
 	//solver->All_Reduce_lambdas_compB(cluster, cluster->compressed_tmp, y_out);
 
-
+*/
 }
 
 void LinearSolver::setup_Preconditioner() {
@@ -727,7 +727,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 	// Setup Conj Projector
 
 	if ( configuration.conj_projector == CONJ_PROJECTOR::GENEO ) {
-		solver->CreateConjProjector(*cluster);
+		// solver->CreateConjProjector(*cluster);
 	}
 
 	// Cleanup of unnecessary objects
@@ -798,7 +798,7 @@ void LinearSolver::CheckSolution( vector < vector < double > > & prim_solution )
 //	TimeEvent max_sol_ev ("Max solution value "); max_sol_ev.startWithoutBarrier(0.0); max_sol_ev.endWithoutBarrier(max_v);
 //
 //	double max_vg;
-//	MPI_Reduce(&max_v, &max_vg, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD );
+//	MPI_Reduce(&max_v, &max_vg, 1, MPI_DOUBLE, MPI_MAX, 0, environment->MPICommunicator );
 //	ESINFO(DETAILS) << "Maxvalue in solution = " << std::setprecision(12) << max_vg;
 
 	//max_sol_ev.printLastStatMPIPerNode(max_vg);

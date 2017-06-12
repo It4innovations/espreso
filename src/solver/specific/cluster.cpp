@@ -2088,7 +2088,7 @@ void ClusterBase::Create_G_perSubdomain (SparseMatrix &R_in, SparseMatrix &B_in,
 //		//Gtmpt.ConvertToCOO(0);
 //
 //		int MPIrank;
-//		MPI_Comm_rank (MPI_COMM_WORLD, &MPIrank);
+//		MPI_Comm_rank (environment->MPICommunicator, &MPIrank);
 //
 //		PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
 //		#pragma omp parallel for

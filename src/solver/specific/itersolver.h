@@ -195,6 +195,7 @@ public:
 	void Solve_BICGSTAB_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 	void Solve_new_CG_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 	void Solve_PipeCG_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	void Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal);
 
 //	// *** Dynamic solvers
 //	void Solve_RegCG_nonsingular  ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel);

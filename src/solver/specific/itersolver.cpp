@@ -115,9 +115,9 @@ void IterSolverBase::Solve ( SuperCluster & cluster,
 	case ESPRESO_ITERATIVE_SOLVER::QPCE:
 		Solve_QPCE_singular_dom(cluster, in_right_hand_side_primal );
 		break;
-	case ESPRESO_ITERATIVE_SOLVER::orthogonalPCG_CP:
-		Solve_full_ortho_CG_singular_dom_geneo(cluster, in_right_hand_side_primal);
-		break;
+//	case ESPRESO_ITERATIVE_SOLVER::orthogonalPCG_CP:
+//		Solve_full_ortho_CG_singular_dom_geneo(cluster, in_right_hand_side_primal);
+//		break;
 	case ESPRESO_ITERATIVE_SOLVER::PCG_CP:
 		ESINFO(GLOBAL_ERROR) << "Regular CG with conjugate projector not implemented yet";
 		break;
@@ -209,8 +209,8 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( SuperCluster & clus
 			cluster.domains[d]->K.MatVec(primal_solution_out[d], *cluster.x_prim_cluster2[d],'N');
 #endif
 
-			if (cluster.domains[d]._RegMat.nnz > 0) {
-				cluster.domains[d]._RegMat.MatVecCOO(primal_solution_out[d], cluster.x_prim_cluster2[d],'N', 1.0, -1.0); // K*u
+			if (cluster.domains[d]->_RegMat.nnz > 0) {
+				cluster.domains[d]->_RegMat.MatVecCOO(primal_solution_out[d], *cluster.x_prim_cluster2[d],'N', 1.0, -1.0); // K*u
 			}
 
 		}
@@ -3459,7 +3459,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 }
 
 void IterSolverBase::CreateConjProjector(Cluster & cluster) {
-
+/*
 
 	//int d = 0;
 
@@ -3793,12 +3793,13 @@ void IterSolverBase::CreateConjProjector(Cluster & cluster) {
 	cluster.Ct  = CPt_per_cluster;
 
 
-
+*/
 }
 
 
 void IterSolverBase::ConjProj(  Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
 
+	/*
 	SEQ_VECTOR <double> tmp_x_in, tmp1, tmp2, tmp3, tmp4;
 
 	tmp_x_in = x_in;
@@ -3818,12 +3819,13 @@ void IterSolverBase::ConjProj(  Cluster & cluster, SEQ_VECTOR<double> & x_in, SE
 
 	for (size_t i = 0; i < x_in.size(); i++)
 		y_out[i] = x_in[i] - tmp4[i];
-
+*/
 }
 
 
 void IterSolverBase::ConjProj_t(Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
 
+/*
 	SEQ_VECTOR <double> tmp_x_in, tmp1, tmp2, tmp3, tmp4;
 
 	tmp_x_in = x_in;
@@ -3843,13 +3845,13 @@ void IterSolverBase::ConjProj_t(Cluster & cluster, SEQ_VECTOR<double> & x_in, SE
 
 	for (size_t i = 0; i < x_in.size(); i++)
 		y_out[i] = x_in[i] - tmp4[i];
-
+*/
 }
 
 
 
 void IterSolverBase::ConjProj_lambda0(  Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
-
+/*
 	SEQ_VECTOR <double> tmp_x_in, tmp1, tmp2;
 
 	tmp1.resize(x_in.size(), 0.0);
@@ -3858,18 +3860,20 @@ void IterSolverBase::ConjProj_lambda0(  Cluster & cluster, SEQ_VECTOR<double> & 
 	cluster.Ct.  DenseMatVec(x_in, tmp1);
 	cluster.CFCt.Solve		(tmp1, tmp2, 	1);
 	cluster.C.   DenseMatVec(tmp2, y_out);
-
+*/
 }
 
 
 
-void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
+void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 /*####################################################################################################
 #                              C G      F U L L    O R T H O G O N A L                               #
 //##################################################################################################*/
 //
+
+/*
 
 	std::cout << "\n\n Full orthogonal with restart and conjugate projector \n";
 
@@ -4327,7 +4331,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( Cluster & cluster,
 	timing.addEvent(ddot_alpha);
 
 	// *** END - Preslocal out the timing for the iteration loop ***********************************
-
+*/
 }
 
 
@@ -4402,7 +4406,7 @@ void IterSolverBase::CreateGGt( SuperCluster & cluster )
 //			}
 //		}
 //
-//		MPI_Barrier(MPI_COMM_WORLD);
+//		MPI_Barrier(environment->MPICommunicator);
 //
 //		count_cv += mpi_size/li;
 //
@@ -4475,7 +4479,7 @@ void IterSolverBase::CreateGGt( SuperCluster & cluster )
 //		GGtsize = GGt.cols;
 //
 //
-//	MPI_Bcast( & GGtsize, 1, esglobal_mpi, 0, MPI_COMM_WORLD);
+//	MPI_Bcast( & GGtsize, 1, esglobal_mpi, 0, environment->MPICommunicator);
 //
 //
 //#if TIME_MEAS >= 1
@@ -4549,9 +4553,9 @@ void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 	SEQ_VECTOR<int> global_ker_sizes;
 	global_ker_sizes.resize(environment->MPIsize, 0);
 
-	MPI_Exscan(&local_ker_size, &global_ker_size, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-	MPI_Allgather(&global_ker_size, 1, MPI_INT, &global_ker_sizes[0],1, MPI_INT, MPI_COMM_WORLD);
-	MPI_Allreduce(&local_ker_size, &global_GGt_size, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+	MPI_Exscan(&local_ker_size, &global_ker_size, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
+	MPI_Allgather(&global_ker_size, 1, MPI_INT, &global_ker_sizes[0],1, MPI_INT, environment->MPICommunicator);
+	MPI_Allreduce(&local_ker_size, &global_GGt_size, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
 
 	for (size_t i = 0; i < GGt_l.CSR_J_col_indices.size(); i++) {
 		GGt_l.CSR_J_col_indices[i] += global_ker_size;
@@ -4713,7 +4717,7 @@ void IterSolverBase::Projector (TimeEval & time_eval, SuperCluster & cluster, SE
 //	 time_eval.timeEvents[1].start();
 //	MPI_Gather(&d_local[0], d_local_size, MPI_DOUBLE,
 //		&d_mpi[0], d_local_size, MPI_DOUBLE,
-//		mpi_root, MPI_COMM_WORLD);
+//		mpi_root, environment->MPICommunicator);
 //	 time_eval.timeEvents[1].end();
 //
 //	time_eval.timeEvents[2].start();
@@ -4725,7 +4729,7 @@ void IterSolverBase::Projector (TimeEval & time_eval, SuperCluster & cluster, SE
 //	time_eval.timeEvents[3].start();
 //	MPI_Scatter( &d_mpi[0],      d_local_size, MPI_DOUBLE,
 //		&d_local[0], d_local_size, MPI_DOUBLE,
-//		mpi_root, MPI_COMM_WORLD);
+//		mpi_root, environment->MPICommunicator);
 //	time_eval.timeEvents[3].end();
 //
 //	if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 2) {
@@ -4833,7 +4837,7 @@ void IterSolverBase::Projector_Inv (TimeEval & time_eval, SuperCluster & cluster
 	//TODO: Udelat poradne
 	 time_eval.timeEvents[1].start();
 	SEQ_VECTOR<int> ker_size_per_clusters(environment->MPIsize,0);
-	MPI_Allgather(&d_local_size, 1, MPI_INT, &ker_size_per_clusters[0], 1, MPI_INT, MPI_COMM_WORLD );
+	MPI_Allgather(&d_local_size, 1, MPI_INT, &ker_size_per_clusters[0], 1, MPI_INT, environment->MPICommunicator );
 
 	SEQ_VECTOR<int> displs (environment->MPIsize,0);
 	displs[0] = 0;
@@ -4855,7 +4859,7 @@ void IterSolverBase::Projector_Inv (TimeEval & time_eval, SuperCluster & cluster
 	 time_eval.timeEvents[2].end();
 
 	 time_eval.timeEvents[3].start();
-	//MPI_Scatter( &d_mpi[0],      d_local_size, MPI_DOUBLE, &d_local[0], d_local_size, MPI_DOUBLE, mpi_root, MPI_COMM_WORLD);
+	//MPI_Scatter( &d_mpi[0],      d_local_size, MPI_DOUBLE, &d_local[0], d_local_size, MPI_DOUBLE, mpi_root, environment->MPICommunicator);
 	 time_eval.timeEvents[3].end();
 
 	if (output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 == 2
@@ -5203,29 +5207,29 @@ void   BcastMatrix ( eslocal rank, eslocal mpi_root, eslocal source_rank, Sparse
 //		MPI_Sendrecv(
 //			&cluster.my_comm_lambdas[neigh_i][0], cluster.my_comm_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag,
 //			&cluster.my_recv_lambdas[neigh_i][0], cluster.my_recv_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag,
-//			MPI_COMM_WORLD, &mpi_stat[neigh_i] );
+//			environment->MPICommunicator, &mpi_stat[neigh_i] );
 //	}
 //
 //	//for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
 //	//	size_t b_size = cluster.my_comm_lambdas[neigh_i].size();
-//	//	MPI_Isend(&b_size,                              1                                      , esglobal_mpi   , cluster.my_neighs[neigh_i], tag + 100, MPI_COMM_WORLD, &mpi_req[neigh_i] );
-//	//	MPI_Isend(&cluster.my_comm_lambdas[neigh_i][0], cluster.my_comm_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag,       MPI_COMM_WORLD, &mpi_req[neigh_i] );
+//	//	MPI_Isend(&b_size,                              1                                      , esglobal_mpi   , cluster.my_neighs[neigh_i], tag + 100, environment->MPICommunicator, &mpi_req[neigh_i] );
+//	//	MPI_Isend(&cluster.my_comm_lambdas[neigh_i][0], cluster.my_comm_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag,       environment->MPICommunicator, &mpi_req[neigh_i] );
 //	//
 //	//}
 //
 //	//for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
 //	//	size_t r_size = 0;
-//	//	MPI_Recv(&r_size                             ,                                       1, esglobal_mpi   , cluster.my_neighs[neigh_i], tag + 100, MPI_COMM_WORLD, &mpi_stat[neigh_i] );
+//	//	MPI_Recv(&r_size                             ,                                       1, esglobal_mpi   , cluster.my_neighs[neigh_i], tag + 100, environment->MPICommunicator, &mpi_stat[neigh_i] );
 //	//	if (r_size != cluster.my_recv_lambdas[neigh_i].size()) cout << "Error - different buffer size " << endl;
-//	//	MPI_Recv(&cluster.my_recv_lambdas[neigh_i][0], cluster.my_recv_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag      , MPI_COMM_WORLD, &mpi_stat[neigh_i] );
+//	//	MPI_Recv(&cluster.my_recv_lambdas[neigh_i][0], cluster.my_recv_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag      , environment->MPICommunicator, &mpi_stat[neigh_i] );
 //	//}
 //
 //#ifdef XE6
-//	MPI_Barrier(MPI_COMM_WORLD);
+//	MPI_Barrier(environment->MPICommunicator);
 //#endif
 //
 //#ifdef WIN32
-//	MPI_Barrier(MPI_COMM_WORLD);
+//	MPI_Barrier(environment->MPICommunicator);
 //#endif
 //
 //	delete [] mpi_req;
