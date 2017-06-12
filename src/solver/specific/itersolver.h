@@ -26,10 +26,12 @@ using std::make_pair;
 #include "../generic/SparseMatrix.h"
 #include "sparsesolvers.h"
 #include "clusters.h"
-
+#include "supercluster.h"
 #include "../generic/utils.h"
 
 namespace espreso {
+
+//class SuperCluster;
 
 class IterSolverBase
 {
@@ -44,10 +46,8 @@ public:
 	int  mpi_root;
 	int  mpi_size;
 
-	// *** Main cluster object associated with iteration solver
-	// Cluster & cluster;
-
-	int numClusters;
+	//TODO delete
+	int  numClusters;
 	SEQ_VECTOR <Cluster*> *clusters;
 
 	// *** solver variables
@@ -143,29 +143,29 @@ public:
 	virtual ~IterSolverBase() {};
 
 	// *** Coarse problem related members
-	void CreateGGt    ( Cluster & cluster ); //, int mpi_rank, int mpi_root, int mpi_size, SparseSolverCPU & GGt );
-	void CreateGGt_Inv  ( Cluster & cluster );
-	void CreateGGt_Inv_old( Cluster & cluster );
+	void CreateGGt    ( SuperCluster & cluster ); //, int mpi_rank, int mpi_root, int mpi_size, SparseSolverCPU & GGt );
+	void CreateGGt_Inv  ( SuperCluster & cluster );
+	void CreateGGt_Inv_old( SuperCluster & cluster );
 
 	// *** Projectors
-	void Projector    ( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 ); // int mpi_rank, SparseSolverCPU & GGt,
-	void Projector_Inv( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
-	void Projector_Inv_old( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
+	void Projector    ( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 ); // int mpi_rank, SparseSolverCPU & GGt,
+	void Projector_Inv( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
+	void Projector_Inv_old( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal  output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0 );
 
 	// *** Apply A embers - moved to children
-	virtual void apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) =0;
+	virtual void apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) =0;
 
 	// *** Apply preconditioner
-	virtual void Apply_Prec( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out );
+	virtual void Apply_Prec( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out );
 
 	// *** Public functions
-	void Preprocessing  ( Cluster & cluster );
+	void Preprocessing  ( SuperCluster & cluster );
 
-	void Solve     ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel, SEQ_VECTOR < SEQ_VECTOR <double> > & out_dual_solution_parallel );
+	void Solve     ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel, SEQ_VECTOR < SEQ_VECTOR <double> > & out_dual_solution_parallel );
 
 
 	// *** Power Method - Estimation of maximum eigenvalue of matrix
-	double Solve_power_method ( Cluster & cluster, double tol, eslocal maxit, eslocal method);
+	double Solve_power_method ( SuperCluster & cluster, double tol, eslocal maxit, eslocal method);
 
 	//  *** Projected gradient and its components
 	void proj_gradient ( SEQ_VECTOR <double> & x,SEQ_VECTOR <double> & g, SEQ_VECTOR <double> & lb,
@@ -174,15 +174,15 @@ public:
 
 
 
-	void Solve_QPCE_singular_dom  ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	void Solve_QPCE_singular_dom  ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 
 	// *** CG solvers
-	void Solve_RegCG  ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
-	void Solve_full_ortho_CG_singular_dom ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
-	void Solve_GMRES_singular_dom ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
-	void Solve_BICGSTAB_singular_dom ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal ); 
-	void Solve_new_CG_singular_dom ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
-	void Solve_PipeCG_singular_dom ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	void Solve_RegCG  ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	void Solve_full_ortho_CG_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	void Solve_GMRES_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	void Solve_BICGSTAB_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	void Solve_new_CG_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	void Solve_PipeCG_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 
 //	// *** Dynamic solvers
 //	void Solve_RegCG_nonsingular  ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel);
@@ -190,13 +190,15 @@ public:
 
 
 	// *** Functions related to getting solution from the solver
-	void GetSolution_Dual_singular_parallel ( Cluster & cluster, SEQ_VECTOR <double> & dual_solution_out, SEQ_VECTOR<double> & amplitudes_out );
-	void GetResiduum_Dual_singular_parallel ( Cluster & cluster, SEQ_VECTOR <double> & dual_residuum_out );
+	void GetSolution_Dual_singular_parallel ( SuperCluster & cluster, SEQ_VECTOR <double> & dual_solution_out, SEQ_VECTOR<double> & amplitudes_out );
+	void GetResiduum_Dual_singular_parallel ( SuperCluster & cluster, SEQ_VECTOR <double> & dual_residuum_out );
 
-	void MakeSolution_Primal_singular_parallel ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out );
-	void GetSolution_Primal_singular_parallel  ( Cluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out, SEQ_VECTOR < SEQ_VECTOR <double> > & dual_solution_out );
+	void MakeSolution_Primal_singular_parallel ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out );
+	void GetSolution_Primal_singular_parallel  ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out, SEQ_VECTOR < SEQ_VECTOR <double> > & dual_solution_out );
 
 };
+
+
 
 //Utilities
 
@@ -211,21 +213,21 @@ void ExchangeMatrices (SparseMatrix & A_in, SEQ_VECTOR <SparseMatrix> & B_out, S
 
 void BcastMatrix(eslocal  rank, eslocal  mpi_root, eslocal  source_rank, SparseMatrix & A);
 
-void All_Reduce_lambdas_compB( Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out );
-void All_Reduce_lambdas_compB2( Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out );
+void All_Reduce_lambdas_compB( SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out );
+//void All_Reduce_lambdas_compB2( Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out );
 
-void All_Reduce_lambdas      ( Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out ); // POZOR - musi jit pryc
+void All_Reduce_lambdas      ( SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out ); // POZOR - musi jit pryc
 
-void compress_lambda_vector(Cluster & cluster, SEQ_VECTOR <double> & decompressed_vec_lambda);
+void compress_lambda_vector(SuperCluster & cluster, SEQ_VECTOR <double> & decompressed_vec_lambda);
 
-void decompress_lambda_vector(Cluster & cluster, SEQ_VECTOR <double> & compressed_vec_lambda);
+void decompress_lambda_vector(SuperCluster & cluster, SEQ_VECTOR <double> & compressed_vec_lambda);
 
-double parallel_norm_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_vector );
+double parallel_norm_compressed( SuperCluster & cluster, SEQ_VECTOR<double> & input_vector );
 
-double parallel_ddot_compressed_double( Cluster & cluster, double *input_vector1, double *input_vector2 );
-double parallel_ddot_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_vector1, SEQ_VECTOR<double> & input_vector2 );
+double parallel_ddot_compressed_double( SuperCluster & cluster, double *input_vector1, double *input_vector2 );
+double parallel_ddot_compressed( SuperCluster & cluster, SEQ_VECTOR<double> & input_vector1, SEQ_VECTOR<double> & input_vector2 );
 
-void parallel_ddot_compressed_non_blocking( Cluster & cluster,
+void parallel_ddot_compressed_non_blocking( SuperCluster & cluster,
 	SEQ_VECTOR<double> & input_vector_1a, SEQ_VECTOR<double> & input_vector_1b,
 	SEQ_VECTOR<double> & input_vector_2a, SEQ_VECTOR<double> & input_vector_2b,
 	SEQ_VECTOR<double> & input_norm_vec,
@@ -233,7 +235,7 @@ void parallel_ddot_compressed_non_blocking( Cluster & cluster,
 	SEQ_VECTOR <double> & output,
 	SEQ_VECTOR <double> & send_buf) ;
 
-void parallel_ddot_compressed_non_blocking( Cluster & cluster,
+void parallel_ddot_compressed_non_blocking( SuperCluster & cluster,
 	SEQ_VECTOR<double> & input_vector_1a, SEQ_VECTOR<double> & input_vector_1b,
 	SEQ_VECTOR<double> & input_vector_2a, SEQ_VECTOR<double> & input_vector_2b,
 	MPI_Request * mpi_req,

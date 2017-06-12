@@ -63,7 +63,10 @@ IterSolverBase::IterSolverBase(const ESPRESOSolver &configuration):
 
 }
 
-void IterSolverBase::Preprocessing ( Cluster & cluster )
+
+
+
+void IterSolverBase::Preprocessing ( SuperCluster & cluster )
 {
 	// Coarse problem - Make GGt
 
@@ -85,7 +88,9 @@ void IterSolverBase::Preprocessing ( Cluster & cluster )
 
 }
 
-void IterSolverBase::Solve ( Cluster & cluster,
+
+
+void IterSolverBase::Solve ( SuperCluster & cluster,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_dual_solution_parallel)
@@ -130,14 +135,14 @@ void IterSolverBase::Solve ( Cluster & cluster,
 }
 
 
-void IterSolverBase::GetResiduum_Dual_singular_parallel    ( Cluster & cluster, SEQ_VECTOR <double> & dual_residuum_out ) {
+void IterSolverBase::GetResiduum_Dual_singular_parallel    ( SuperCluster & cluster, SEQ_VECTOR <double> & dual_residuum_out ) {
 
 	dual_residuum_out = dual_residuum_compressed_parallel;
 	cluster.decompress_lambda_vector( dual_residuum_out );
 
 }
 
-void IterSolverBase::GetSolution_Dual_singular_parallel    ( Cluster & cluster, SEQ_VECTOR <double> & dual_solution_out, SEQ_VECTOR<double> & amplitudes_out ) {
+void IterSolverBase::GetSolution_Dual_singular_parallel    ( SuperCluster & cluster, SEQ_VECTOR <double> & dual_solution_out, SEQ_VECTOR<double> & amplitudes_out ) {
 
 	cluster.decompress_lambda_vector( dual_solution_out );
 	dual_solution_out = dual_soultion_compressed_parallel;
@@ -146,14 +151,12 @@ void IterSolverBase::GetSolution_Dual_singular_parallel    ( Cluster & cluster, 
 
 }
 
-void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
+void IterSolverBase::GetSolution_Primal_singular_parallel  ( SuperCluster & cluster,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & dual_solution_out) {
 
 	MakeSolution_Primal_singular_parallel(cluster, in_right_hand_side_primal, primal_solution_out );
-	//primal_solution_out = primal_solution_parallel;
-
 
 	// KKT conditions
 	// TODO: OPTIMIZATION
@@ -177,31 +180,38 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 		// KKT 1
 
 		for (size_t d = 0; d < cluster.domains.size(); d++) {
-			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows, 0.0 );
-			for (size_t i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-				x_in_tmp[i] = dual_soultion_compressed_parallel[ cluster.domains[d].lambda_map_sub_local[i]]; // * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling
-			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T'); // Bt*lambda
+			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d]->B1_comp_dom.rows, 0.0 );
+			for (size_t i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++)
+				x_in_tmp[i] = dual_soultion_compressed_parallel[ cluster.domains[d]->lambda_map_sub_local[i]]; // * cluster.domains[d].B1_scale_vec[i]; // includes B1 scaling
+			cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'T'); // Bt*lambda
 		}
-		dual_solution_out = cluster.x_prim_cluster1;
+
+		dual_solution_out.clear();
+		dual_solution_out.resize(cluster.x_prim_cluster1.size());
+
+		for (size_t d = 0; d < cluster.x_prim_cluster1.size(); d++) {
+			dual_solution_out[d] = *cluster.x_prim_cluster1[d];
+		}
+		//dual_solution_out = cluster.x_prim_cluster1;
 
 		for (size_t d = 0; d < cluster.domains.size(); d++) {
-			cluster.domains[d].K.MatVec(primal_solution_out[d], cluster.x_prim_cluster2[d],'N');
-			if (cluster.domains[d]._RegMat.nnz > 0) {
-				cluster.domains[d]._RegMat.MatVecCOO(primal_solution_out[d], cluster.x_prim_cluster2[d],'N', 1.0, -1.0); // K*u
+			cluster.domains[d]->K.MatVec(primal_solution_out[d], *cluster.x_prim_cluster2[d],'N');
+			if (cluster.domains[d]->_RegMat.nnz > 0) {
+				cluster.domains[d]->_RegMat.MatVecCOO(primal_solution_out[d], *cluster.x_prim_cluster2[d],'N', 1.0, -1.0); // K*u
 			}
 
 		}
 
 		for (size_t d = 0; d < cluster.domains.size(); d++) {
 			for (size_t pi = 0; pi < primal_solution_out[d].size(); pi++ ) {
-				cluster.x_prim_cluster1[d][pi] =   in_right_hand_side_primal[d][pi]
-										         - cluster.x_prim_cluster1[d][pi];		// f - Bt*lambda
+				(*cluster.x_prim_cluster1[d])[pi] = in_right_hand_side_primal[d][pi]
+										          - (*cluster.x_prim_cluster1[d])[pi];		// f - Bt*lambda
 
 
-				KKT1_norm2[d] += cluster.x_prim_cluster1[d][pi] * cluster.x_prim_cluster1[d][pi]; // norm (f - Bt*lambda)
+				KKT1_norm2[d] += (*cluster.x_prim_cluster1[d])[pi] * (*cluster.x_prim_cluster1[d])[pi]; // norm (f - Bt*lambda)
 
-				cluster.x_prim_cluster1[d][pi] = cluster.x_prim_cluster2[d][pi] - cluster.x_prim_cluster1[d][pi]; // K*u - (f - bt*lambda)
-				KKT1_norm[d] += cluster.x_prim_cluster1[d][pi] * cluster.x_prim_cluster1[d][pi]; // norm (K*u - (f - bt*lambda))
+				(*cluster.x_prim_cluster1[d])[pi] = (*cluster.x_prim_cluster2[d])[pi] - (*cluster.x_prim_cluster1[d])[pi]; // K*u - (f - bt*lambda)
+				KKT1_norm[d] += (*cluster.x_prim_cluster1[d])[pi] * (*cluster.x_prim_cluster1[d])[pi]; // norm (K*u - (f - bt*lambda))
 			}
 			KKT1_norm_cluster_local += KKT1_norm[d];
 			KKT1_norm_cluster_local2 += KKT1_norm2[d];
@@ -251,10 +261,10 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 			cluster.compressed_tmp[i] = 0.0;
 
 		for (size_t d = 0; d < cluster.domains.size(); d++) {
-			SEQ_VECTOR <double> tmp_dual(cluster.domains[d].B1_comp_dom.rows, 0.0);
-			cluster.domains[d].B1_comp_dom.MatVec (primal_solution_out[d], tmp_dual, 'N', 0, 0, 0.0);
-			for (size_t i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
-				cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += tmp_dual[i];
+			SEQ_VECTOR <double> tmp_dual(cluster.domains[d]->B1_comp_dom.rows, 0.0);
+			cluster.domains[d]->B1_comp_dom.MatVec (primal_solution_out[d], tmp_dual, 'N', 0, 0, 0.0);
+			for (size_t i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++) {
+				cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += tmp_dual[i];
 				//Bu_l[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.x_prim_cluster1[d][i];
 			}
 		}
@@ -337,7 +347,7 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( Cluster & cluster,
 }
 
 void IterSolverBase::MakeSolution_Primal_singular_parallel (
-		Cluster & cluster,
+		SuperCluster & cluster,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out )  {
 
@@ -346,106 +356,49 @@ void IterSolverBase::MakeSolution_Primal_singular_parallel (
 	// R * mu
 	SEQ_VECTOR<SEQ_VECTOR<double> > R_mu_prim_cluster;
 
-
-//	if (numClusters == 1) {
-//		cluster.
-//	} else {
-//		for (int c = 0; c < numClusters; c++) {
-//			(*clusters)[c]->
-//		}
-//	}
-
 	int amp_offset = 0;
-	if (numClusters == 1) {
-		for (size_t d = 0; d < cluster.domains.size(); d++) {
-			SEQ_VECTOR <double > tmp (cluster.domains[d].domain_prim_size);
+	R_mu_prim_cluster.resize(cluster.domains.size());
+
+	for (int c = 0; c < cluster.clusters.size(); c++) {
+		for (size_t d = 0; d < cluster.clusters[c].domains.size(); d++) {
+			SEQ_VECTOR <double > tmp (cluster.clusters[c].domains[d].domain_prim_size);
 
 			if (USE_HFETI == 1) {
 				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
-					cluster.domains[d].Kplus_R .DenseMatVec(amplitudes, tmp, 'N', amp_offset, 0);
+					cluster.clusters[c].domains[d].Kplus_R .DenseMatVec(amplitudes, tmp, 'N', amp_offset, 0);
 				} else {
-					cluster.domains[d].Kplus_Rb.DenseMatVec(amplitudes, tmp, 'N', amp_offset, 0);
+					cluster.clusters[c].domains[d].Kplus_Rb.DenseMatVec(amplitudes, tmp, 'N', amp_offset, 0);
 				}
 			} else {
-				cluster.domains[d].Kplus_R.DenseMatVec(     amplitudes, tmp, 'N', amp_offset, 0);
-				amp_offset += cluster.domains[d].Kplus_R.cols;
+				cluster.domains[d]->Kplus_R.DenseMatVec(     amplitudes, tmp, 'N', amp_offset, 0);
+				amp_offset += cluster.domains[d]->Kplus_R.cols;
 			}
 
-			R_mu_prim_cluster.push_back(tmp);
-		}
-	} else { // multiple clusters
-		R_mu_prim_cluster.resize(cluster.domains.size());
-		for (int c = 0; c < numClusters; c++) {
-			//			(*clusters)[c]->
-			for (size_t d = 0; d < (*clusters)[c]->domains.size(); d++) {
-				SEQ_VECTOR <double > tmp ((*clusters)[c]->domains[d].domain_prim_size);
-
-				if (USE_HFETI == 1) {
-					if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
-						(*clusters)[c]->domains[d].Kplus_R .DenseMatVec(amplitudes, tmp, 'N', amp_offset, 0);
-					} else {
-						(*clusters)[c]->domains[d].Kplus_Rb.DenseMatVec(amplitudes, tmp, 'N', amp_offset, 0);
-					}
-				} else {
-					ESINFO(GLOBAL_ERROR) << "Multiple clusters is possible to use only with the Hybrid TFETI solver.";
-				}
-
-				R_mu_prim_cluster[ (*clusters)[c]->domains[d].domain_global_index ].swap(tmp);
-			} // end domain loop
-			amp_offset += (*clusters)[c]->G1_comp.rows;
-		} // end cluster loop
-	} // end multiple cllusters
+			R_mu_prim_cluster[ cluster.clusters[c].domains[d].domain_global_index ].swap(tmp);
+		} // end domain loop
+		if (USE_HFETI == 1) { amp_offset += cluster.clusters[c].G1.rows;}
+	} // end cluster loop
 
 
 	for (size_t d = 0; d < cluster.domains.size(); d++) {
-		SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
-		SEQ_VECTOR < double > tmp      ( cluster.domains[d].domain_prim_size  );
+		SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d]->B1_comp_dom.rows );
+		SEQ_VECTOR < double > tmp      ( cluster.domains[d]->domain_prim_size  );
 
-		for (size_t i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
-			x_in_tmp[i] = dual_soultion_compressed_parallel[ cluster.domains[d].lambda_map_sub_local[i]];
+		for (size_t i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++) {
+			x_in_tmp[i] = dual_soultion_compressed_parallel[ cluster.domains[d]->lambda_map_sub_local[i]];
 		}
 
-		cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, tmp, 'T');
+		cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, tmp, 'T');
 
 		for (size_t i = 0; i < tmp.size(); i++) {
 			tmp[i] = in_right_hand_side_primal[d][i] - tmp[i];
 		}
-
 		primal_solution_out.push_back(tmp);
 	}
 
+	cluster.multKplus(primal_solution_out);
 
-
-
-	if ( cluster.USE_HFETI == 0) {
-		for (size_t d = 0; d < cluster.domains.size(); d++) {
-			cluster.domains[d].multKplusLocal(primal_solution_out[d]);
-		}
-	} else {
-    	if (numClusters == 1) {
-    		cluster.multKplusGlobal_l(primal_solution_out);
-    	} else {
-    		for (int c = 0; c < numClusters; c++) {
-    			SEQ_VECTOR < SEQ_VECTOR <double> > prim_tmp ((*clusters)[c]->domains.size());
-    			for (int d = 0; d < (*clusters)[c]->domains.size(); d++) {
-    				prim_tmp[d].swap( primal_solution_out[ (*clusters)[c]->domains[d].domain_global_index ] );
-    			}
-
-    			(*clusters)[c]->multKplusGlobal_l(prim_tmp);
-
-    			for (int d = 0; d < (*clusters)[c]->domains.size(); d++) {
-    				// primal_solution_out[ (*clusters)[c]->domains[d].domain_global_index ].swap(prim_tmp[d]);
-    				prim_tmp[d].swap( primal_solution_out[ (*clusters)[c]->domains[d].domain_global_index ] );
-    			}
-
-    		}
-    	}
-
-	}
-
-
-
-
+	#pragma omp parallel for
 	for (size_t d = 0; d < cluster.domains.size(); d++) {
 		for (size_t i = 0; i < primal_solution_out[d].size()	; i++) {
 			primal_solution_out[d][i] = primal_solution_out[d][i] + R_mu_prim_cluster[d][i];
@@ -456,7 +409,7 @@ void IterSolverBase::MakeSolution_Primal_singular_parallel (
 
 
 // POWER Method
-double IterSolverBase::Solve_power_method ( Cluster & cluster, double tol, eslocal maxit, eslocal method)
+double IterSolverBase::Solve_power_method ( SuperCluster & cluster, double tol, eslocal maxit, eslocal method)
 {
 	size_t dl_size = cluster.my_lamdas_indices.size();
 	double norm_V_0 = 0;
@@ -639,7 +592,7 @@ void IterSolverBase::proj_gradient ( SEQ_VECTOR <double> & x,
 
 
 // QPCE is a variant of the algorithm SMALBE   (SemiMonotonous Augmented Lagrangians with Bound and Equality constraints)
-void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
+void IterSolverBase::Solve_QPCE_singular_dom ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 
@@ -1426,7 +1379,7 @@ void IterSolverBase::Solve_QPCE_singular_dom ( Cluster & cluster,
 
 
 
-void IterSolverBase::Solve_RegCG ( Cluster & cluster,
+void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 
@@ -1455,23 +1408,8 @@ void IterSolverBase::Solve_RegCG ( Cluster & cluster,
 	double norm_l;
 	double tol;
 
-	if (numClusters == 1) {
-		cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );
-		cluster.CreateVec_d_perCluster ( in_right_hand_side_primal );
-	} else {
-		cluster.vec_d.clear();
-		cluster.vec_b_compressed.clear();
-		cluster.vec_b_compressed.resize(dl_size, 0.0);
-		for (int c = 0; c < numClusters; c++) {
-			(*clusters)[c]->CreateVec_b_perCluster ( in_right_hand_side_primal );
-			for (int i=0; i<dl_size; i++) {
-				cluster.vec_b_compressed[i] += (*clusters)[c]->vec_b_compressed[i];
-			}
-			(*clusters)[c]->CreateVec_d_perCluster ( in_right_hand_side_primal );
-			cluster.vec_d.insert(cluster.vec_d.end(), (*clusters)[c]->vec_d.begin(), (*clusters)[c]->vec_d.end());
-		}
-	}
-
+	cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );
+	cluster.CreateVec_d_perCluster ( in_right_hand_side_primal );
 
 	// *** CG start ***************************************************************
 
@@ -1511,7 +1449,7 @@ void IterSolverBase::Solve_RegCG ( Cluster & cluster,
 	double norm_prim_fl = 0.0;
 	double norm_prim_fg = 0.0;
 	for (size_t d = 0; d < cluster.domains.size(); d++)
-		norm_prim_fl += cluster.domains[d].norm_f;
+		norm_prim_fl += cluster.domains[d]->norm_f;
 
 	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 	//MPI_Reduce   (&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -1563,7 +1501,7 @@ void IterSolverBase::Solve_RegCG ( Cluster & cluster,
 		timing.totalTime.start();
 
 		#pragma omp parallel for
-for (size_t i = 0; i < r_l.size(); i++) {
+		for (size_t i = 0; i < r_l.size(); i++) {
 			wp_l[i] = w_l[i];				//	wp = w;
 			yp_l[i] = y_l[i];				//	yp = y
 		}
@@ -1606,7 +1544,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 			proj_time.end();
 
 			#pragma omp parallel for
-for (size_t i = 0; i < w_l.size(); i++)
+			for (size_t i = 0; i < w_l.size(); i++)
 				y_l[i] = w_l[i];
 
 			break;
@@ -1684,7 +1622,7 @@ for (size_t i = 0; i < p_l.size(); i++)
 
 		//------------------------------------------
 		#pragma omp parallel for
-for (size_t i = 0; i < x_l.size(); i++) {
+		 for (size_t i = 0; i < x_l.size(); i++) {
 			x_l[i] = x_l[i] + alpha_l * p_l[i];
 			r_l[i] = r_l[i] - alpha_l * Ap_l[i];
 		}
@@ -1748,7 +1686,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
 
 }
 
-void IterSolverBase::Solve_new_CG_singular_dom ( Cluster & cluster,
+void IterSolverBase::Solve_new_CG_singular_dom ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 /*####################################################################################################
@@ -1808,7 +1746,7 @@ void IterSolverBase::Solve_new_CG_singular_dom ( Cluster & cluster,
 	double norm_prim_fl = 0.0;
 	double norm_prim_fg = 0.0;
 	for (size_t d = 0; d < cluster.domains.size(); d++){
-		norm_prim_fl += cluster.domains[d].norm_f;
+		norm_prim_fl += cluster.domains[d]->norm_f;
   }
 
 	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -2001,7 +1939,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
 	// *** END - Preslocal out the timing for the iteration loop ***********************************
 
 }
-void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
+void IterSolverBase::Solve_full_ortho_CG_singular_dom ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 /*####################################################################################################
@@ -2073,7 +2011,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( Cluster & cluster,
 	double norm_prim_fl = 0.0;
 	double norm_prim_fg = 0.0;
 	for (size_t d = 0; d < cluster.domains.size(); d++){
-		norm_prim_fl += cluster.domains[d].norm_f;
+		norm_prim_fl += cluster.domains[d]->norm_f;
   }
 
 	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -2319,7 +2257,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
 
 }
 
-void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
+void IterSolverBase::Solve_GMRES_singular_dom ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 /*####################################################################################################
@@ -2413,7 +2351,7 @@ void IterSolverBase::Solve_GMRES_singular_dom ( Cluster & cluster,
 	double norm_prim_fl = 0.0;
 	double norm_prim_fg = 0.0;
 	for (size_t d = 0; d < cluster.domains.size(); d++){
-		norm_prim_fl += cluster.domains[d].norm_f;
+		norm_prim_fl += cluster.domains[d]->norm_f;
   }
 
 	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -2769,7 +2707,7 @@ for (size_t i = 0; i < g_l.size(); i++){
 
 } //  Solve_GMRES_singular_dom
 //
-void IterSolverBase::Solve_BICGSTAB_singular_dom ( Cluster & cluster,
+void IterSolverBase::Solve_BICGSTAB_singular_dom ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 /*####################################################################################################
@@ -2826,7 +2764,7 @@ void IterSolverBase::Solve_BICGSTAB_singular_dom ( Cluster & cluster,
 	double norm_prim_fl = 0.0;
 	double norm_prim_fg = 0.0;
 	for (size_t d = 0; d < cluster.domains.size(); d++){
-		norm_prim_fl += cluster.domains[d].norm_f;
+		norm_prim_fl += cluster.domains[d]->norm_f;
   }
 
 	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -3171,7 +3109,7 @@ for (size_t i = 0; i < g_l.size(); i++){
 
 
 
-void IterSolverBase::Solve_PipeCG_singular_dom ( Cluster & cluster,
+void IterSolverBase::Solve_PipeCG_singular_dom ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
 {
 
@@ -3495,7 +3433,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 
 
 // *** Coarse problem routines *******************************************
-void IterSolverBase::CreateGGt( Cluster & cluster )
+void IterSolverBase::CreateGGt( SuperCluster & cluster )
 
 {
 
@@ -3633,12 +3571,12 @@ void IterSolverBase::CreateGGt( Cluster & cluster )
 
 }
 
-void IterSolverBase::CreateGGt_Inv_old( Cluster & cluster )
+void IterSolverBase::CreateGGt_Inv_old( SuperCluster & cluster )
 {
 	// To be removed
 }
 
-void IterSolverBase::CreateGGt_Inv( Cluster & cluster )
+void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 {
 
 	// temp variables
@@ -3831,7 +3769,7 @@ void IterSolverBase::CreateGGt_Inv( Cluster & cluster )
 
 
 // *** Projector routines ************************************************
-void IterSolverBase::Projector (TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
+void IterSolverBase::Projector (TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
 {
 
 	ESINFO(GLOBAL_ERROR) << "Projector with factorized GGt matrix is not supported in current version";
@@ -3900,7 +3838,7 @@ void IterSolverBase::Projector (TimeEval & time_eval, Cluster & cluster, SEQ_VEC
 
 }
 
-void IterSolverBase::Projector_Inv (TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
+void IterSolverBase::Projector_Inv (TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
 {
 
 	 time_eval.totalTime.start();
@@ -3931,17 +3869,20 @@ void IterSolverBase::Projector_Inv (TimeEval & time_eval, Cluster & cluster, SEQ
 
 	//TODO: Udelat poradne
 	 time_eval.timeEvents[1].start();
-	SEQ_VECTOR<int> ker_size_per_clusters(cluster.NUMBER_OF_CLUSTERS, 0);
+	SEQ_VECTOR<int> ker_size_per_clusters(environment->MPIsize,0);
 	MPI_Allgather(&d_local_size, 1, MPI_INT, &ker_size_per_clusters[0], 1, MPI_INT, MPI_COMM_WORLD );
-	SEQ_VECTOR<int> displs (cluster.NUMBER_OF_CLUSTERS, 0);
+
+	SEQ_VECTOR<int> displs (environment->MPIsize,0);
 	displs[0] = 0;
+
 	for (size_t i=1; i<displs.size(); ++i) {
 		displs[i] = displs[i-1] + ker_size_per_clusters[i-1];
 	}
 	MPI_Allgatherv(&d_local[0], d_local_size, MPI_DOUBLE, &d_mpi[0], &ker_size_per_clusters[0], &displs[0], MPI_DOUBLE, MPI_COMM_WORLD);
+
+	time_eval.timeEvents[1].end();
 	// TODO: END
 
-	 time_eval.timeEvents[1].end();
 	 time_eval.timeEvents[2].start();
 
 	if (cluster.GGtinvM.cols != 0) {
@@ -3980,12 +3921,12 @@ void IterSolverBase::Projector_Inv (TimeEval & time_eval, Cluster & cluster, SEQ
 	 time_eval.totalTime.end();
 }
 
-void IterSolverBase::Projector_Inv_old (TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
+void IterSolverBase::Projector_Inv_old (TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
 {
 	//TODO - To be completely removed
 }
 
-void IterSolverBase::Apply_Prec( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out )
+void IterSolverBase::Apply_Prec( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out )
 {
 	// implemeted in itersolvercpu, gpu and acc
 }
@@ -4277,67 +4218,67 @@ void   BcastMatrix ( eslocal rank, eslocal mpi_root, eslocal source_rank, Sparse
 	}
 }
 
-void   All_Reduce_lambdas_compB2( Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out )
-{
+//void   All_Reduce_lambdas_compB2( Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out )
+//{
+//
+//	for (size_t i = 0; i < cluster.my_comm_lambdas_indices_comp.size(); i++) {
+//		for (size_t j = 0; j < cluster.my_comm_lambdas_indices_comp[i].size(); j++) {
+//			cluster.my_comm_lambdas[i][j] = x_in[cluster.my_comm_lambdas_indices_comp[i][j]];
+//		}
+//	}
+//
+//
+//	MPI_Request * mpi_req  = new MPI_Request [cluster.my_neighs.size()];
+//	MPI_Status  * mpi_stat = new MPI_Status  [cluster.my_neighs.size()];
+//
+//	cluster.iter_cnt_comm++;
+//	eslocal tag = cluster.iter_cnt_comm;
+//
+//	for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
+//		MPI_Sendrecv(
+//			&cluster.my_comm_lambdas[neigh_i][0], cluster.my_comm_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag,
+//			&cluster.my_recv_lambdas[neigh_i][0], cluster.my_recv_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag,
+//			MPI_COMM_WORLD, &mpi_stat[neigh_i] );
+//	}
+//
+//	//for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
+//	//	size_t b_size = cluster.my_comm_lambdas[neigh_i].size();
+//	//	MPI_Isend(&b_size,                              1                                      , esglobal_mpi   , cluster.my_neighs[neigh_i], tag + 100, MPI_COMM_WORLD, &mpi_req[neigh_i] );
+//	//	MPI_Isend(&cluster.my_comm_lambdas[neigh_i][0], cluster.my_comm_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag,       MPI_COMM_WORLD, &mpi_req[neigh_i] );
+//	//
+//	//}
+//
+//	//for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
+//	//	size_t r_size = 0;
+//	//	MPI_Recv(&r_size                             ,                                       1, esglobal_mpi   , cluster.my_neighs[neigh_i], tag + 100, MPI_COMM_WORLD, &mpi_stat[neigh_i] );
+//	//	if (r_size != cluster.my_recv_lambdas[neigh_i].size()) cout << "Error - different buffer size " << endl;
+//	//	MPI_Recv(&cluster.my_recv_lambdas[neigh_i][0], cluster.my_recv_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag      , MPI_COMM_WORLD, &mpi_stat[neigh_i] );
+//	//}
+//
+//#ifdef XE6
+//	MPI_Barrier(MPI_COMM_WORLD);
+//#endif
+//
+//#ifdef WIN32
+//	MPI_Barrier(MPI_COMM_WORLD);
+//#endif
+//
+//	delete [] mpi_req;
+//	delete [] mpi_stat;
+//
+//	y_out = x_in; // POZOR pozor
+//	for (size_t i = 0; i < cluster.my_comm_lambdas_indices_comp.size(); i++) {
+//		for (size_t j = 0; j < cluster.my_comm_lambdas_indices_comp[i].size(); j++) {
+//			y_out[cluster.my_comm_lambdas_indices_comp[i][j]] += cluster.my_recv_lambdas[i][j];
+//		}
+//	}
+//
+//
+//
+//}
 
-	for (size_t i = 0; i < cluster.my_comm_lambdas_indices_comp.size(); i++) {
-		for (size_t j = 0; j < cluster.my_comm_lambdas_indices_comp[i].size(); j++) {
-			cluster.my_comm_lambdas[i][j] = x_in[cluster.my_comm_lambdas_indices_comp[i][j]];
-		}
-	}
 
-
-	MPI_Request * mpi_req  = new MPI_Request [cluster.my_neighs.size()];
-	MPI_Status  * mpi_stat = new MPI_Status  [cluster.my_neighs.size()];
-
-	cluster.iter_cnt_comm++;
-	eslocal tag = cluster.iter_cnt_comm;
-
-	for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
-		MPI_Sendrecv(
-			&cluster.my_comm_lambdas[neigh_i][0], cluster.my_comm_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag,
-			&cluster.my_recv_lambdas[neigh_i][0], cluster.my_recv_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag,
-			MPI_COMM_WORLD, &mpi_stat[neigh_i] );
-	}
-
-	//for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
-	//	size_t b_size = cluster.my_comm_lambdas[neigh_i].size();
-	//	MPI_Isend(&b_size,                              1                                      , esglobal_mpi   , cluster.my_neighs[neigh_i], tag + 100, MPI_COMM_WORLD, &mpi_req[neigh_i] );
-	//	MPI_Isend(&cluster.my_comm_lambdas[neigh_i][0], cluster.my_comm_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag,       MPI_COMM_WORLD, &mpi_req[neigh_i] );
-	//
-	//}
-
-	//for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
-	//	size_t r_size = 0;
-	//	MPI_Recv(&r_size                             ,                                       1, esglobal_mpi   , cluster.my_neighs[neigh_i], tag + 100, MPI_COMM_WORLD, &mpi_stat[neigh_i] );
-	//	if (r_size != cluster.my_recv_lambdas[neigh_i].size()) cout << "Error - different buffer size " << endl;
-	//	MPI_Recv(&cluster.my_recv_lambdas[neigh_i][0], cluster.my_recv_lambdas[neigh_i].size(), MPI_DOUBLE, cluster.my_neighs[neigh_i], tag      , MPI_COMM_WORLD, &mpi_stat[neigh_i] );
-	//}
-
-#ifdef XE6
-	MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
-#ifdef WIN32
-	MPI_Barrier(MPI_COMM_WORLD);
-#endif
-
-	delete [] mpi_req;
-	delete [] mpi_stat;
-
-	y_out = x_in; // POZOR pozor
-	for (size_t i = 0; i < cluster.my_comm_lambdas_indices_comp.size(); i++) {
-		for (size_t j = 0; j < cluster.my_comm_lambdas_indices_comp[i].size(); j++) {
-			y_out[cluster.my_comm_lambdas_indices_comp[i][j]] += cluster.my_recv_lambdas[i][j];
-		}
-	}
-
-
-
-}
-
-
-void   All_Reduce_lambdas_compB( Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out )
+void   All_Reduce_lambdas_compB( SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out )
 {
 
 	for (size_t i = 0; i < cluster.my_comm_lambdas_indices_comp.size(); i++) {
@@ -4348,7 +4289,7 @@ void   All_Reduce_lambdas_compB( Cluster & cluster, SEQ_VECTOR<double> & x_in, S
 
 	SEQ_VECTOR < MPI_Request > request ( 2 * cluster.my_neighs.size() );
 
-	cluster.iter_cnt_comm++;
+	//cluster.iter_cnt_comm++;
 	eslocal tag = 1;
 
 	for (size_t neigh_i = 0; neigh_i < cluster.my_neighs.size(); neigh_i++ ) {
@@ -4372,7 +4313,7 @@ void   All_Reduce_lambdas_compB( Cluster & cluster, SEQ_VECTOR<double> & x_in, S
 
 }
 
-void   compress_lambda_vector  ( Cluster & cluster, SEQ_VECTOR <double> & decompressed_vec_lambda)
+void   compress_lambda_vector  ( SuperCluster & cluster, SEQ_VECTOR <double> & decompressed_vec_lambda)
 {
 	//compress vector for CG in main loop
 	for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++)
@@ -4381,9 +4322,9 @@ void   compress_lambda_vector  ( Cluster & cluster, SEQ_VECTOR <double> & decomp
 	decompressed_vec_lambda.resize(cluster.my_lamdas_indices.size());
 }
 
-void   decompress_lambda_vector( Cluster & cluster, SEQ_VECTOR <double> & compressed_vec_lambda)
+void   decompress_lambda_vector( SuperCluster & cluster, SEQ_VECTOR <double> & compressed_vec_lambda)
 {
-	SEQ_VECTOR <double> decompressed_vec_lambda (cluster.domains[0].B1.rows,0);
+	SEQ_VECTOR <double> decompressed_vec_lambda (cluster.domains[0]->B1.rows,0); //TODO : needs fix
 
 	for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++)
 		decompressed_vec_lambda[cluster.my_lamdas_indices[i]] = compressed_vec_lambda[i];
@@ -4391,7 +4332,7 @@ void   decompress_lambda_vector( Cluster & cluster, SEQ_VECTOR <double> & compre
 	compressed_vec_lambda = decompressed_vec_lambda;
 }
 
-double parallel_norm_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_vector )
+double parallel_norm_compressed( SuperCluster & cluster, SEQ_VECTOR<double> & input_vector )
 {
 
 	double wl = 0; double wg = 0;
@@ -4406,7 +4347,7 @@ double parallel_norm_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_v
 }
 
 
-double parallel_ddot_compressed_double( Cluster & cluster, double * input_vector1, double * input_vector2 )
+double parallel_ddot_compressed_double( SuperCluster & cluster, double * input_vector1, double * input_vector2 )
 {
 	double a1 = 0; double a1g = 0;
 
@@ -4420,7 +4361,7 @@ double parallel_ddot_compressed_double( Cluster & cluster, double * input_vector
 }
 
 
-double parallel_ddot_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_vector1, SEQ_VECTOR<double> & input_vector2 )
+double parallel_ddot_compressed( SuperCluster & cluster, SEQ_VECTOR<double> & input_vector1, SEQ_VECTOR<double> & input_vector2 )
 {
 	double a1 = 0; double a1g = 0;
 
@@ -4433,7 +4374,7 @@ double parallel_ddot_compressed( Cluster & cluster, SEQ_VECTOR<double> & input_v
 	return a1g;
 }
 
-void   parallel_ddot_compressed_non_blocking( Cluster & cluster,
+void   parallel_ddot_compressed_non_blocking( SuperCluster & cluster,
 	SEQ_VECTOR<double> & input_vector_1a, SEQ_VECTOR<double> & input_vector_1b,
 	SEQ_VECTOR<double> & input_vector_2a, SEQ_VECTOR<double> & input_vector_2b,
 	SEQ_VECTOR<double> & input_norm_vec,
@@ -4464,7 +4405,7 @@ void   parallel_ddot_compressed_non_blocking( Cluster & cluster,
 }
 
 
-void   parallel_ddot_compressed_non_blocking( Cluster & cluster,
+void   parallel_ddot_compressed_non_blocking( SuperCluster & cluster,
 	SEQ_VECTOR<double> & input_vector_1a, SEQ_VECTOR<double> & input_vector_1b,
 	SEQ_VECTOR<double> & input_vector_2a, SEQ_VECTOR<double> & input_vector_2b,
 

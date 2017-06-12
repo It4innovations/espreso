@@ -8,14 +8,14 @@ using namespace espreso;
 void ClusterCPU::Create_SC_perDomain(bool USE_FLOAT) {
 
     #pragma omp parallel for
-for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
+	for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
         domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
     }
 
     ESINFO(PROGRESS3) << "Creating B1*K+*B1t : using Pardiso SC";
 
     #pragma omp parallel for
-for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
+    for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
         SparseSolverCPU tmpsps;
         if ( i == 0 && cluster_global_index == 1) {
             tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
@@ -32,19 +32,20 @@ for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
 
 
     #pragma omp parallel for
-for (size_t i = 0; i < domains_in_global_index.size(); i++ )
+    for (size_t i = 0; i < domains_in_global_index.size(); i++ )
         domains[i].B1t_comp_dom.Clear();
-}
+	}
 
 void ClusterCPU::Create_Kinv_perDomain() {
-    #pragma omp parallel for
-for (size_t i = 0; i < domains_in_global_index.size(); i++ )
+
+	#pragma omp parallel for
+	for (size_t i = 0; i < domains_in_global_index.size(); i++ )
         domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
 
     ESINFO(PROGRESS3) << "Creating B1*K+*B1t";
 
     #pragma omp parallel for
-for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
+    for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
 
         domains[i].KplusF.msglvl = 0;
 
@@ -68,9 +69,9 @@ for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
     ESINFO(PROGRESS3);
 
     #pragma omp parallel for
-for (size_t i = 0; i < domains_in_global_index.size(); i++ )
-        domains[i].B1t_comp_dom.Clear();
-}
+	for (size_t i = 0; i < domains_in_global_index.size(); i++ )
+			domains[i].B1t_comp_dom.Clear();
+	}
 
 
 void ClusterCPU::SetupKsolvers ( ) {
@@ -139,172 +140,165 @@ void ClusterCPU::SetupKsolvers ( ) {
 
 void ClusterCPU::CreateDirichletPrec( Instance *instance ) {
 
-	#pragma omp parallel for
-    for (size_t d = 0; d < instance->K.size(); d++) {
-        SEQ_VECTOR <eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
-        SEQ_VECTOR <eslocal> perm_vec_full ( instance->K[d].rows );
-        SEQ_VECTOR <eslocal> perm_vec_diff ( instance->K[d].rows );
+#pragma omp parallel for
+for (size_t d = 0; d < domains.size(); d++) {
+//for (size_t d = 0; d < instance->K.size(); d++) {
 
-        SEQ_VECTOR <eslocal> I_row_indices_p (instance->K[d].nnz);
-        SEQ_VECTOR <eslocal> J_col_indices_p (instance->K[d].nnz);
+	SEQ_VECTOR<eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
+	SEQ_VECTOR<eslocal> perm_vec_full(instance->K[domains[d].domain_global_index].rows);// (instance->K[d].rows);
+	SEQ_VECTOR<eslocal> perm_vec_diff(instance->K[domains[d].domain_global_index].rows);// (instance->K[d].rows);
 
-        for (size_t i = 0; i < perm_vec.size(); i++) {
-            perm_vec[i] = perm_vec[i] - 1;
-        }
+	SEQ_VECTOR<eslocal> I_row_indices_p(instance->K[domains[d].domain_global_index].nnz);// (instance->K[d].nnz);
+	SEQ_VECTOR<eslocal> J_col_indices_p(instance->K[domains[d].domain_global_index].nnz);// (instance->K[d].nnz);
 
-        for (size_t i = 0; i < perm_vec_full.size(); i++) {
-            perm_vec_full[i] = i;
-        }
+	for (size_t i = 0; i < perm_vec.size(); i++) {
+		perm_vec[i] = perm_vec[i] - 1;
+	}
 
-        auto it = std::set_difference( perm_vec_full.begin(), perm_vec_full.end(), perm_vec.begin(), perm_vec.end(), perm_vec_diff.begin() );
-        perm_vec_diff.resize(it - perm_vec_diff.begin());
+	for (size_t i = 0; i < perm_vec_full.size(); i++) {
+		perm_vec_full[i] = i;
+	}
 
-        perm_vec_full = perm_vec_diff;
-        perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
+	auto it = std::set_difference(perm_vec_full.begin(), perm_vec_full.end(), perm_vec.begin(), perm_vec.end(), perm_vec_diff.begin());
+	perm_vec_diff.resize(it - perm_vec_diff.begin());
 
-        SparseMatrix K_modif = instance->K[d];
-        SparseMatrix RegMatCRS = instance->RegMat[d];
-        RegMatCRS.ConvertToCSRwithSort(0);
-        K_modif.MatAddInPlace(RegMatCRS,'N',-1);
-        // K_modif.RemoveLower();
+	perm_vec_full = perm_vec_diff;
+	perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
 
-        SEQ_VECTOR <SEQ_VECTOR<eslocal >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<eslocal >(2, 1));
-        eslocal offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
+	SparseMatrix K_modif = instance->K[domains[d].domain_global_index]; //[d];
+	SparseMatrix RegMatCRS = instance->RegMat[domains[d].domain_global_index]; //[d];
+	RegMatCRS.ConvertToCSRwithSort(0);
+	K_modif.MatAddInPlace(RegMatCRS, 'N', -1);
+	// K_modif.RemoveLower();
 
-        for (eslocal i = 0; i < K_modif.rows;i++){
-            vec_I1_i2[i][0] = perm_vec_full[i];
-            vec_I1_i2[i][1] = i; // position to create reverse permutation
-        }
+	SEQ_VECTOR<SEQ_VECTOR<eslocal >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<eslocal >(2, 1));
+	eslocal offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
 
-        std::sort(vec_I1_i2.begin(), vec_I1_i2.end(), [](const SEQ_VECTOR <eslocal >& a, const SEQ_VECTOR<eslocal>& b) { return a[0] < b[0]; });
+	for (eslocal i = 0; i < K_modif.rows; i++) {
+		vec_I1_i2[i][0] = perm_vec_full[i];
+		vec_I1_i2[i][1] = i; // position to create reverse permutation
+	}
 
-        // permutations made on matrix in COO format
-        K_modif.ConvertToCOO(0);
-        eslocal I_index,J_index;
-        bool unsymmetric=!SYMMETRIC_SYSTEM;
-        for (eslocal i = 0;i<K_modif.nnz;i++){
-            I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
-            J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
-            if (unsymmetric || I_index<=J_index){
-                I_row_indices_p[i]=I_index;
-                J_col_indices_p[i]=J_index;
-            }
-            else{
-                I_row_indices_p[i]=J_index;
-                J_col_indices_p[i]=I_index;
-            }
-        }
-        for (eslocal i = 0; i<K_modif.nnz;i++){
-            K_modif.I_row_indices[i] = I_row_indices_p[i];
-            K_modif.J_col_indices[i] = J_col_indices_p[i];
-        }
-        K_modif.ConvertToCSRwithSort(1);
-        {
-            if (environment->print_matrices) {
-                std::ofstream osS(Logging::prepareFile(d, "K_modif"));
-                osS << K_modif;
-                osS.close();
-            }
-        }
+	std::sort(vec_I1_i2.begin(), vec_I1_i2.end(), [](const SEQ_VECTOR <eslocal >& a, const SEQ_VECTOR<eslocal>& b) {return a[0] < b[0];});
 
+	// permutations made on matrix in COO format
+	K_modif.ConvertToCOO(0);
+	eslocal I_index, J_index;
+	bool unsymmetric = !SYMMETRIC_SYSTEM;
+	for (eslocal i = 0; i < K_modif.nnz; i++) {
+		I_index = vec_I1_i2[K_modif.I_row_indices[i] - offset][1] + offset;
+		J_index = vec_I1_i2[K_modif.J_col_indices[i] - offset][1] + offset;
+		if (unsymmetric || I_index <= J_index) {
+			I_row_indices_p[i] = I_index;
+			J_col_indices_p[i] = J_index;
+		} else {
+			I_row_indices_p[i] = J_index;
+			J_col_indices_p[i] = I_index;
+		}
+	}
+	for (eslocal i = 0; i < K_modif.nnz; i++) {
+		K_modif.I_row_indices[i] = I_row_indices_p[i];
+		K_modif.J_col_indices[i] = J_col_indices_p[i];
+	}
+	K_modif.ConvertToCSRwithSort(1);
+	{
+		if (environment->print_matrices) {
+			std::ofstream osS(Logging::prepareFile(d, "K_modif"));
+			osS << K_modif;
+			osS.close();
+		}
+	}
 
-        // ------------------------------------------------------------------------------------------------------------------
-        bool diagonalized_K_rr = configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET;
-        //        PRECONDITIONER==NONE              - 0
-        //        PRECONDITIONER==LUMPED            - 1
-        //        PRECONDITIONER==WEIGHT_FUNCTION   - 2
-        //        PRECONDITIONER==DIRICHLET         - 3
-        //        PRECONDITIONER==SUPER_DIRICHLET   - 4
-        //        
-        //        When next line is uncomment, var. PRECONDITIONER==DIRICHLET and PRECONDITIONER==SUPER_DIRICHLET provide identical preconditioner.
-        //        bool diagonalized_K_rr = false
-        // ------------------------------------------------------------------------------------------------------------------
+	// ------------------------------------------------------------------------------------------------------------------
+	bool diagonalized_K_rr = configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET;
+	//        PRECONDITIONER==NONE              - 0
+	//        PRECONDITIONER==LUMPED            - 1
+	//        PRECONDITIONER==WEIGHT_FUNCTION   - 2
+	//        PRECONDITIONER==DIRICHLET         - 3
+	//        PRECONDITIONER==SUPER_DIRICHLET   - 4
+	//
+	//        When next line is uncomment, var. PRECONDITIONER==DIRICHLET and PRECONDITIONER==SUPER_DIRICHLET provide identical preconditioner.
+	//        bool diagonalized_K_rr = false
+	// ------------------------------------------------------------------------------------------------------------------
 
-        eslocal sc_size = perm_vec.size();
+	eslocal sc_size = perm_vec.size();
 
-        if (sc_size == instance->K[d].rows) {
-            domains[d].Prec = instance->K[d];
-            domains[d].Prec.ConvertCSRToDense(1);
-            // if physics.K[d] does not contain inner DOF
-        } else {
+	if (sc_size == instance->K[domains[d].domain_global_index].rows) {
+		domains[d].Prec = instance->K[domains[d].domain_global_index];
+		domains[d].Prec.ConvertCSRToDense(1);
+		// if physics.K[d] does not contain inner DOF
+	} else {
 
-            if ( configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET) {
-                SparseSolverCPU createSchur;
-                //          createSchur.msglvl=1;
-                eslocal sc_size = perm_vec.size();
-                createSchur.ImportMatrix_wo_Copy(K_modif);
-                createSchur.Create_SC(domains[d].Prec, sc_size,false);
-                domains[d].Prec.ConvertCSRToDense(1);
-            }
-            else
-            {
-                SparseMatrix K_rr;
-                SparseMatrix K_rs;
-                SparseMatrix K_sr;
-                SparseMatrix KsrInvKrrKrs; 
+		if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET) {
+			SparseSolverCPU createSchur;
+//          createSchur.msglvl=1;
+			eslocal sc_size = perm_vec.size();
+			createSchur.ImportMatrix_wo_Copy(K_modif);
+			createSchur.Create_SC(domains[d].Prec, sc_size, false);
+			domains[d].Prec.ConvertCSRToDense(1);
+		} else {
+			SparseMatrix K_rr;
+			SparseMatrix K_rs;
+			SparseMatrix K_sr;
+			SparseMatrix KsrInvKrrKrs;
 
-                eslocal i_start = 0;
-                eslocal nonsing_size = K_modif.rows - sc_size - i_start;
-                eslocal j_start = nonsing_size;
+			eslocal i_start = 0;
+			eslocal nonsing_size = K_modif.rows - sc_size - i_start;
+			eslocal j_start = nonsing_size;
 
-                K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
+			K_rs.getSubBlockmatrix_rs(K_modif, K_rs, i_start, nonsing_size, j_start, sc_size);
 
-                if (SYMMETRIC_SYSTEM){
-                    K_rs.MatTranspose(K_sr);
-                }
-                else
-                {
-                    K_sr.getSubBlockmatrix_rs(K_modif,K_sr,j_start,sc_size,i_start, nonsing_size);
-                }
+			if (SYMMETRIC_SYSTEM) {
+				K_rs.MatTranspose(K_sr);
+			} else {
+				K_sr.getSubBlockmatrix_rs(K_modif, K_sr, j_start, sc_size, i_start, nonsing_size);
+			}
 
-                domains[d].Prec.getSubDiagBlockmatrix(K_modif,domains[d].Prec,nonsing_size,sc_size);
-                SEQ_VECTOR <double> diagonals;
-                SparseSolverCPU K_rr_solver;
+			domains[d].Prec.getSubDiagBlockmatrix(K_modif, domains[d].Prec, nonsing_size, sc_size);
+			SEQ_VECTOR<double> diagonals;
+			SparseSolverCPU K_rr_solver;
 
-                // K_rs is replaced by:
-                // a) K_rs = 1/diag(K_rr) * K_rs          (simplified Dirichlet precond.)
-                // b) K_rs =    inv(K_rr) * K_rs          (classical Dirichlet precond. assembled by own - not via PardisoSC routine)
-                if (diagonalized_K_rr){
-                    diagonals = K_modif.getDiagonal();
-                    // diagonals is obtained directly from K_modif (not from K_rr to avoid assembling) thanks to its structure
-                    //      K_modif = [K_rr, K_rs]
-                    //                [K_sr, K_ss]
-                    // 
-                    for (eslocal i = 0; i < K_rs.rows; i++) {
-                        for (eslocal j = K_rs.CSR_I_row_indices[i]; j < K_rs.CSR_I_row_indices[i + 1]; j++) {
-                            K_rs.CSR_V_values[j - offset] /= diagonals[i];
-                        }
-                    }
-                }
-                else
-                {
-                    K_rr.getSubDiagBlockmatrix(K_modif,K_rr,i_start, nonsing_size);
-                    K_rr_solver.ImportMatrix_wo_Copy(K_rr);
-                    //            K_rr_solver.msglvl = 1;
-                    K_rr_solver.SolveMat_Dense(K_rs);
-                }
+			// K_rs is replaced by:
+			// a) K_rs = 1/diag(K_rr) * K_rs          (simplified Dirichlet precond.)
+			// b) K_rs =    inv(K_rr) * K_rs          (classical Dirichlet precond. assembled by own - not via PardisoSC routine)
+			if (diagonalized_K_rr) {
+				diagonals = K_modif.getDiagonal();
+				// diagonals is obtained directly from K_modif (not from K_rr to avoid assembling) thanks to its structure
+				//      K_modif = [K_rr, K_rs]
+				//                [K_sr, K_ss]
+				//
+				for (eslocal i = 0; i < K_rs.rows; i++) {
+					for (eslocal j = K_rs.CSR_I_row_indices[i]; j < K_rs.CSR_I_row_indices[i + 1]; j++) {
+						K_rs.CSR_V_values[j - offset] /= diagonals[i];
+					}
+				}
+			} else {
+				K_rr.getSubDiagBlockmatrix(K_modif, K_rr, i_start, nonsing_size);
+				K_rr_solver.ImportMatrix_wo_Copy(K_rr);
+//            K_rr_solver.msglvl = 1;
+				K_rr_solver.SolveMat_Dense(K_rs);
+			}
 
-                KsrInvKrrKrs.MatMat(K_sr,'N',K_rs);
-                domains[d].Prec.MatAddInPlace(KsrInvKrrKrs,'N',-1);
-                //          if (!diagonalized_K_rr){
-                //				    domains[d].Prec.ConvertCSRToDense(1);
-                //          }
-            }
+			KsrInvKrrKrs.MatMat(K_sr, 'N', K_rs);
+			domains[d].Prec.MatAddInPlace(KsrInvKrrKrs, 'N', -1);
+//          if (!diagonalized_K_rr){
+//				    cluster.domains[d].Prec.ConvertCSRToDense(1);
+//          }
+		}
 
-        }
+	}
 
-        if (environment->print_matrices) {
-            std::ofstream osS(Logging::prepareFile(d, "S"));
-            SparseMatrix SC =  domains[d].Prec;
-            if ( configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET){
-                SC.ConvertDenseToCSR(1);
-            }
-            osS << SC;
-            osS.close();
-        }
+	if (environment->print_matrices) {
+		std::ofstream osS(Logging::prepareFile(d, "S"));
+		SparseMatrix SC = domains[d].Prec;
+		if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET) {
+			SC.ConvertDenseToCSR(1);
+		}
+		osS << SC;
+		osS.close();
+	}
 
-        ESINFO(PROGRESS3) << Info::plain() << ".";
-    }
-    ESINFO(PROGRESS3);
+	ESINFO(PROGRESS3) << Info::plain() << ".";
 
+}
 }

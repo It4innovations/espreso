@@ -51,6 +51,7 @@ enum InfoEvent {
 	PROGRESS3,
 	LIBRARIES,
 	VERBOSE_LEVEL3
+
 };
 
 enum MeasureEvent {
@@ -65,7 +66,9 @@ enum MeasureEvent {
 
 	MEMORY,
 	CHECKPOINT3,
-	MEASURE_LEVEL3
+	MEASURE_LEVEL3,
+
+	CLUSTER
 };
 
 struct OutputConfiguration;

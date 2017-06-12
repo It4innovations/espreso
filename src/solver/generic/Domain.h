@@ -47,7 +47,7 @@ public:
 	void multKplusLocalCore( SEQ_VECTOR <double> & x_in_y_out);
 
     const ESPRESOSolver &configuration;
-	Instance *instance;
+	Instance 		    *instance;
 
 	SparseMatrix &K;
 
