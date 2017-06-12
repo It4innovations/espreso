@@ -53,20 +53,15 @@ ParseError* ElementBuilder::createElement(Element *&element, const Coordinates &
 		nodes.erase(firstFace->p[1]);
 		nodes.erase(firstFace->p[2]);
 
-		Point
-			v1 = coordinates[firstFace->p[1]] - coordinates[firstFace->p[0]],
-			v2 = coordinates[firstFace->p[2]] - coordinates[firstFace->p[0]];
-		Point normal = Point::cross(v1, v2);
-
-		if (normal * (coordinates[*(nodes.begin())] - coordinates[firstFace->p[0]]) < 0) {
-			indicies[1] = firstFace->p[0];
-			indicies[2] = firstFace->p[2];
-		} else {
-			indicies[1] = firstFace->p[2];
-			indicies[2] = firstFace->p[0];
-		}
 		indicies[0] = firstFace->p[1];
+		indicies[1] = firstFace->p[2];
+		indicies[2] = firstFace->p[0];
 		indicies[3] = *(nodes.begin());
+
+		Point normal = Point::cross(coordinates[indicies[1]] - coordinates[indicies[0]], coordinates[indicies[2]] - coordinates[indicies[0]]);
+		if (normal * (coordinates[indicies[3]] - coordinates[indicies[0]]) < 0) {
+			std::swap(indicies[1], indicies[2]);
+		}
 
 		element = new Tetrahedron4(indicies, 4, params.data());
 
@@ -100,7 +95,13 @@ ParseError* ElementBuilder::createElement(Element *&element, const Coordinates &
 		indicies[2] = firstFace->p[2];
 		indicies[3] = firstFace->p[1];
 		indicies[4] = *(nodes.begin());
-		element = new Pyramid5(indicies, 8, params.data());
+
+		Point normal = Point::cross(coordinates[indicies[1]] - coordinates[indicies[0]], coordinates[indicies[2]] - coordinates[indicies[0]]);
+		if (normal * (coordinates[indicies[4]] - coordinates[indicies[0]]) < 0) {
+			std::swap(indicies[1], indicies[3]);
+		}
+
+		element = new Pyramid5(indicies, 5, params.data());
 
 	} else if (nodes.size() == 6) {
 		if (selectedFaces.size() != 5) {
@@ -135,12 +136,18 @@ ParseError* ElementBuilder::createElement(Element *&element, const Coordinates &
 		indicies[0] = firstFace->p[1];
 		indicies[1] = firstFace->p[0];
 		indicies[2] = firstFace->p[2];
-		indicies[3] = indicies[2];
-		PARSE_GUARD(nextPoint(indicies[3], indicies[0], indicies[4]));
-		PARSE_GUARD(nextPoint(indicies[0], indicies[1], indicies[5]));
-		PARSE_GUARD(nextPoint(indicies[1], indicies[2], indicies[6]));
-		indicies[7] = indicies[6];
-		element = new Prisma6(indicies, 8, params.data());
+		PARSE_GUARD(nextPoint(indicies[2], indicies[0], indicies[3]));
+		PARSE_GUARD(nextPoint(indicies[0], indicies[1], indicies[4]));
+		PARSE_GUARD(nextPoint(indicies[1], indicies[2], indicies[5]));
+
+		Point normal = Point::cross(coordinates[indicies[1]] - coordinates[indicies[0]], coordinates[indicies[2]] - coordinates[indicies[0]]);
+		if (normal * (coordinates[indicies[3]] - coordinates[indicies[0]]) < 0) {
+			std::swap(indicies[0], indicies[3]);
+			std::swap(indicies[1], indicies[4]);
+			std::swap(indicies[2], indicies[5]);
+		}
+
+		element = new Prisma6(indicies, 6, params.data());
 
 	} else if (nodes.size() == 8) {
 		if (selectedFaces.size() != 6) {
@@ -165,6 +172,25 @@ ParseError* ElementBuilder::createElement(Element *&element, const Coordinates &
 		PARSE_GUARD(nextPoint(indicies[0], indicies[1], indicies[5]));
 		PARSE_GUARD(nextPoint(indicies[1], indicies[2], indicies[6]));
 		PARSE_GUARD(nextPoint(indicies[2], indicies[3], indicies[7]));
+
+		Point center, centerup, centerdown;
+		for (size_t i = 0; i < 4; i++) {
+			centerup += coordinates[indicies[i]];
+			centerdown += coordinates[indicies[i + 4]];
+		}
+		center = (centerup + centerdown) / 8.0;
+		centerdown /= 4.0;
+		centerup /= 4.0;
+
+		Point normala = Point::cross(coordinates[indicies[1]] - coordinates[indicies[0]], coordinates[indicies[2]] - coordinates[indicies[0]]);
+		Point normalb = Point::cross(coordinates[indicies[2]] - coordinates[indicies[0]], coordinates[indicies[3]] - coordinates[indicies[0]]);
+		if (((normala + normalb) / 2.0) * (centerup - centerdown) >= 0) {
+			std::swap(indicies[0], indicies[4]);
+			std::swap(indicies[1], indicies[5]);
+			std::swap(indicies[2], indicies[6]);
+			std::swap(indicies[3], indicies[7]);
+		}
+
 		element = new Hexahedron8(indicies, 8, params.data());
 	} else {
 		std::stringstream ss;

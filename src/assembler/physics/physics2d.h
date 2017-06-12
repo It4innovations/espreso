@@ -15,7 +15,12 @@ struct Physics2D: public virtual Physics {
 
 	double determinant2x2(double *values) const
 	{
-		return values[0] * values[3] - values[1] * values[2];
+		double det = values[0] * values[3] - values[1] * values[2];
+		if (det < 0) {
+			printf("nonpositive determinant\n");
+			exit(0);
+		}
+		return det;
 	}
 
 	void inverse2x2(const double *m, double *inv, double det) const

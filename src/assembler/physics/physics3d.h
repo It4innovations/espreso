@@ -15,13 +15,18 @@ struct Physics3D: public virtual Physics {
 
 	double determinant3x3(double *values) const
 	{
-		return
+		double det =
 			+ values[0] * values[4] * values[8]
 			+ values[1] * values[5] * values[6]
 			+ values[2] * values[3] * values[7]
 			- values[2] * values[4] * values[6]
 			- values[1] * values[3] * values[8]
 			- values[0] * values[5] * values[7];
+		if (det < 0) {
+			printf("nonpositive determinant\n");
+			exit(0);
+		}
+		return det;
 	}
 
 	void inverse3x3(const double *m, double *inv, double det) const
