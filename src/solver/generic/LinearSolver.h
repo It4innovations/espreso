@@ -9,6 +9,7 @@
 #define SOLVER_GENERIC_LINEARSOLVER_H_
 
 #include "../specific/itersolvers.h"
+//#include "../specific/superclusters.h"
 
 #include "../../assembler/constraints/constraints.h"
 #include "../../assembler/old_physics/assembler.h"
@@ -49,11 +50,10 @@ public:
 
 	void createCMat();
 
-
-
 	Instance *instance;
 	const ESPRESOSolver &configuration;
-	TimeEval timeEvalMain; //(string("ESPRESO Solver Overal Timing"));
+
+	TimeEval timeEvalMain;
 
 	// TODO: to be removed
 	OldPhysics  *physics;
@@ -61,24 +61,17 @@ public:
 
 private:
 
-	eslocal number_of_subdomains_per_cluster;
-
-	bool 	SINGULAR;
-
-	Cluster *cluster;
-	IterSolver *solver;
+	SuperCluster *cluster;
+	IterSolver   *solver;
 
 	void setup_HTFETI();
+
 	void setup_LocalSchurComplement();
 	void setup_Preconditioner();
 	void setup_FactorizationOfStiffnessMatrices();
-	void setup_KernelMatrices();
-	void setup_B1Matrices();
-	void setup_B0Matrices();
 	void setup_SetDirichletBoundaryConditions();
-	void setup_CreateDirichletPreconditioner();
+
 	void setup_CreateG_GGt_CompressG();
-	void setup_SetupCommunicationLayer();
 	void setup_InitClusterAndSolver();
 };
 

@@ -12,6 +12,58 @@
 
 using namespace espreso;
 
+
+// #define MEAS_DISSABLED
+
+// #define MPIBARRIER  ; //MPI_Barrier(MPI_COMM_WORLD);
+#define MPIBARRIER  MPI_Barrier(MPI_COMM_WORLD);
+
+#ifdef MEAS_DISSABLED
+
+TimeEvent::TimeEvent(std::string name){};
+
+void TimeEvent::start(){};
+void TimeEvent::startWithBarrier(){};
+void TimeEvent::startWithoutBarrier(){};
+
+void TimeEvent::start(double time){};
+void TimeEvent::startWithBarrier(double time){};
+void TimeEvent::startWithoutBarrier(double time){};
+
+void TimeEvent::end(){};
+void TimeEvent::endWithBarrier(){};
+void TimeEvent::endWithoutBarrier(){};
+
+void TimeEvent::end(double time){};
+void TimeEvent::endWithBarrier(double time){};
+void TimeEvent::endWithoutBarrier(double time){};
+
+void TimeEvent::reset(){};
+
+void TimeEvent::printStat(double totalTime){};
+void TimeEvent::printLastStat(double totalTime){};
+double TimeEvent::getLastStat(double totalTime){return 0.0;};
+
+void TimeEvent::printStatMPI(double totalTime){};
+void TimeEvent::printLastStatMPI(double totalTime){};
+void TimeEvent::printLastStatMPIPerNode(double totalTime){};
+
+void TimeEvent::evaluate(){};
+void TimeEvent::evaluateMPI(){};
+
+TimeEval::TimeEval(std::string name):
+	totalTime(TimeEvent(name + std::string("- Total "))),
+	remainingTime(TimeEvent(name + std::string("- Remaining "))),
+	evalName(name)
+{
+}
+
+void TimeEval::addEvent(TimeEvent &timeEvent){};
+void TimeEval::printStats(){};
+void TimeEval::printStatsMPI(){};
+
+#else
+
 TimeEvent::TimeEvent(std::string name)
 {
 	eventName   = name;
@@ -19,6 +71,8 @@ TimeEvent::TimeEvent(std::string name)
 	val_length  = 12;
 	reset();
 }
+
+
 
 void TimeEvent::reset() {
 	eventCount = 0;
@@ -51,7 +105,7 @@ void TimeEvent::start(double time) {
 }
 
 void TimeEvent::startWithBarrier(double time) {
-	MPI_Barrier(environment->MPICommunicator);
+	MPIBARRIER;
 	startWithoutBarrier(time);
 }
 
@@ -68,7 +122,7 @@ void TimeEvent::start() {
 }
 
 void TimeEvent::startWithBarrier() {
-	MPI_Barrier(environment->MPICommunicator);
+	MPIBARRIER;
 	startWithoutBarrier();
 }
 
@@ -86,7 +140,7 @@ void TimeEvent::end() {
 }
 
 void TimeEvent::endWithBarrier() {
-	MPI_Barrier(environment->MPICommunicator);
+	MPIBARRIER;
 	endWithoutBarrier();
 }
 
@@ -104,7 +158,7 @@ void TimeEvent::end(double time) {
 }
 
 void TimeEvent::endWithBarrier(double time) {
-	MPI_Barrier(environment->MPICommunicator);
+	MPIBARRIER;
 	endWithoutBarrier(time);
 }
 
@@ -149,14 +203,14 @@ void TimeEvent::evaluate() {
 void TimeEvent::evaluateMPI() {
 	evaluate();
 
-	MPI_Reduce(&avgTime, &g_avgTime, 1, MPI_DOUBLE, MPI_SUM, 0, environment->MPICommunicator);
+	MPI_Reduce(&avgTime, &g_avgTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	g_avgTime = g_avgTime / environment->MPIsize;
 
-	MPI_Reduce(&sumTime, &g_sumTime, 1, MPI_DOUBLE, MPI_SUM, 0, environment->MPICommunicator);
+	MPI_Reduce(&sumTime, &g_sumTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	g_sumTime = g_sumTime / environment->MPIsize;
 
-	MPI_Reduce(&minTime, &g_minTime, 1, MPI_DOUBLE, MPI_MIN, 0, environment->MPICommunicator);
-	MPI_Reduce(&maxTime, &g_maxTime, 1, MPI_DOUBLE, MPI_MAX, 0, environment->MPICommunicator);
+	MPI_Reduce(&minTime, &g_minTime, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&maxTime, &g_maxTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 }
 
 
@@ -192,7 +246,6 @@ double TimeEvent::getLastStat(double totalTime) {
 
 void TimeEvent::printStatMPI(double totalTime) {
 	evaluateMPI();
-
 	ESLOG(SUMMARY)
 		<< std::setw(name_length) << std::left << eventName
 		<< " avg.: " << std::setw(val_length) << std::fixed << g_avgTime
@@ -211,11 +264,11 @@ void TimeEvent::printLastStatMPI(double totalTime) {
 	}
 	double d_time = eventTime.back();
 
-	MPI_Reduce(&d_time, &g_avgTime, 1, MPI_DOUBLE, MPI_SUM, 0, environment->MPICommunicator);
+	MPI_Reduce(&d_time, &g_avgTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	g_avgTime = g_avgTime / environment->MPIsize;
 
-	MPI_Reduce(&d_time, &g_minTime, 1, MPI_DOUBLE, MPI_MIN, 0, environment->MPICommunicator);
-	MPI_Reduce(&d_time, &g_maxTime, 1, MPI_DOUBLE, MPI_MAX, 0, environment->MPICommunicator);
+	MPI_Reduce(&d_time, &g_minTime, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&d_time, &g_maxTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
 	ESLOG(SUMMARY)
 		<< std::setw(name_length) << std::left << eventName
@@ -238,13 +291,13 @@ void TimeEvent::printLastStatMPIPerNode(double totalTime)
 		d_all_times.resize(1);
 	}
 
-	MPI_Gather(&d_time, 1, MPI_DOUBLE, &d_all_times[0], 1, MPI_DOUBLE, 0, environment->MPICommunicator);
+	MPI_Gather(&d_time, 1, MPI_DOUBLE, &d_all_times[0], 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-	MPI_Reduce(&d_time, &g_avgTime, 1, MPI_DOUBLE, MPI_SUM, 0, environment->MPICommunicator);
+	MPI_Reduce(&d_time, &g_avgTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 	g_avgTime= g_avgTime / environment->MPIsize;
 
-	MPI_Reduce(&d_time, &g_minTime, 1, MPI_DOUBLE, MPI_MIN, 0, environment->MPICommunicator);
-	MPI_Reduce(&d_time, &g_maxTime, 1, MPI_DOUBLE, MPI_MAX, 0, environment->MPICommunicator);
+	MPI_Reduce(&d_time, &g_minTime, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+	MPI_Reduce(&d_time, &g_maxTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
 	ESLOG(SUMMARY)
 		<< std::setw(name_length) << std::left << eventName
@@ -319,9 +372,7 @@ void TimeEval::printStatsMPI() {
 	ESLOG(SUMMARY) << separator(separator_size, '*');
 }
 
-
-
-
+#endif
 
 
 

@@ -37,22 +37,14 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 
 	domains.reserve(number_of_subdomains);
 	for (eslocal d = 0; d < number_of_subdomains; d++) {
-		domains.push_back( (Domain(configuration, instance, d, USE_HFETI)) );
+		domains.push_back( (Domain(configuration, instance, subdomains_global_indices[d], USE_HFETI)) );
 	}
 
 	#pragma omp parallel for
-	for (eslocal d = 0; d < number_of_subdomains; d++ ) {
+	for (eslocal d = 0; d < domains.size(); d++ ) {
 		domains[d].SetDomain();
+		domains_in_global_index[d] = subdomains_global_indices[d];
 	}
-
-	if (USE_HFETI == 1) {
-		for (eslocal i = 0; i < number_of_subdomains; i++)						// HFETI
-			domains_in_global_index[i] = subdomains_global_indices[i] + 1;		// HFETI; [+1] -> domain numbering in espreso is from 1
-	} else {
-		for (eslocal i = 0; i < number_of_subdomains; i++)						// MFETI
-			domains_in_global_index[i] = subdomains_global_indices[i] + 1;		// MFETI; [+1] -> domain numbering in espreso is from 1
-	}
-
 
 	//// *** Alocate temporarly vectors for Temporary vectors for Apply_A function *********
 	//// *** - temporary vectors for work primal domain size *******************************
@@ -60,9 +52,7 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 	x_prim_cluster2.resize( domains.size() );
 	x_prim_cluster3.resize( domains.size() );
 
-
 	// *** Init all domains of the cluster ********************************************
-
 	#pragma omp parallel for
 	for (eslocal d = 0; d < number_of_subdomains; d++ ) {
 
@@ -71,13 +61,11 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
     	x_prim_cluster2[d].resize( domains[d].domain_prim_size );
     	x_prim_cluster3[d].resize( domains[d].domain_prim_size );
 
-		domains[d].domain_global_index 	= domains_in_global_index[d];
+		domains[d].domain_global_index 	= subdomains_global_indices[d];
 		domains[d].USE_KINV    	 		= USE_KINV;
 		domains[d].USE_HFETI   	 		= USE_HFETI;
-		domains[d].USE_DYNAMIC 	 		= USE_DYNAMIC;
 		domains[d].domain_index  		= d;
 		domains[d].isOnACC  			= 0;
-
 
 		// Verbose level for K_plus
 		if ( d == 0 && environment->MPIrank == 0) {
@@ -86,14 +74,7 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 
 	}
 
-}
-
-void ClusterBase::SetClusterPC( ) { // SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub ) {
-
-	SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub = instance->B1clustersMap;
-
 	//// *** Set up the dual size ********************************************************
-	int MPIrank; 	MPI_Comm_rank(environment->MPICommunicator, &MPIrank);
 	dual_size = domains[0].B1.rows;
 
 	if (USE_HFETI == 1) {
@@ -118,6 +99,122 @@ void ClusterBase::SetClusterPC( ) { // SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lamb
 		// *** END - Alocate temporarly vectors for inter-cluster processing *****************
 	}
 
+	#pragma omp parallel for
+	for (size_t d = 0; d < domains.size(); d++ ) {
+		if (USE_KINV == 1 ) {
+			domains[d].compressed_tmp.resize( domains[d].B1.I_row_indices.size(), 0);
+			domains[d].compressed_tmp2.resize( domains[d].B1.I_row_indices.size(), 0);
+		} else {
+			domains[d].compressed_tmp.resize( 1, 0);
+			domains[d].compressed_tmp2.resize( 1, 0);
+		}
+	}
+
+
+	// local comm layer insode cluster
+
+	SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub = instance->B1clustersMap;
+
+	SEQ_VECTOR <eslocal> l_my_lamdas_indices ( lambda_map_sub.size() );
+	for (size_t i = 0; i < lambda_map_sub.size(); i++)
+		l_my_lamdas_indices[i] = lambda_map_sub[i][0];
+
+	compressed_tmp    .resize( l_my_lamdas_indices.size(), 0 );	// TODO: might not be necessary
+
+	// mapping/compression vector for domains
+	#pragma omp parallel for
+	for (size_t d = 0; d < domains.size(); d++) {
+		for (size_t j = 0; j < domains[d].lambda_map_sub.size(); j++) {
+			domains[d].my_lamdas_map_indices.insert(make_pair(domains[d].lambda_map_sub[j] ,j));
+		}
+	}
+
+	#pragma omp parallel for
+	for (size_t d = 0; d < domains.size(); d++) {
+		if (domains[d].lambda_map_sub.size() > 0 ) {
+			size_t i = 0;
+			size_t j = 0;
+			do
+			{
+				eslocal big_index   = l_my_lamdas_indices[i];
+				eslocal small_index = domains[d].lambda_map_sub[j];
+
+				if (big_index >  small_index) j++;
+
+				if (big_index  < small_index) i++;
+
+				if (big_index == small_index) {
+					domains[d].lambda_map_sub_local.push_back(i);
+					i++; j++;
+				}
+
+
+			} while ( i < l_my_lamdas_indices.size() && j < domains[d].lambda_map_sub.size() );
+		}
+	}
+	//// *** END - Detection of affinity of lag. multipliers to specific subdomains ***************
+
+
+	//// *** Compression of Matrix B1 to work with compressed lambda vectors *****************
+//	ESLOG(MEMORY) << "B1 compression";
+//	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+//	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+
+	#pragma omp parallel for
+	for (size_t d = 0; d < domains.size(); d++ ) {
+
+		domains[d].B1_comp_dom.I_row_indices = domains[d].B1.I_row_indices;
+		domains[d].B1_comp_dom.J_col_indices = domains[d].B1.J_col_indices;
+		domains[d].B1_comp_dom.V_values      = domains[d].B1.V_values;
+
+		domains[d].B1_comp_dom.rows = domains[d].B1.rows;
+		domains[d].B1_comp_dom.cols = domains[d].B1.cols;
+		domains[d].B1_comp_dom.nnz  = domains[d].B1.nnz;
+		domains[d].B1_comp_dom.type = domains[d].B1.type;
+
+		for (size_t j = 0; j < domains[d].B1_comp_dom.I_row_indices.size(); j++ ) {
+			eslocal tmp_new = domains[d].my_lamdas_map_indices[domains[d].B1_comp_dom.I_row_indices [j] - 1] + 1;  // +1 means --> numbering from 1 in matrices
+			domains[d].B1_comp_dom.I_row_indices [j] = tmp_new;
+		}
+
+		domains[d].B1_comp_dom.rows = domains[d].lambda_map_sub.size();
+		domains[d].B1_comp_dom.ConvertToCSRwithSort( 1 );
+
+		if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET ||
+        configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET) {
+
+			domains[d].B1_comp_dom.MatTranspose(domains[d].B1t_DirPr);
+			Esutils::removeDuplicity(domains[d].B1t_DirPr.CSR_I_row_indices);
+			domains[d].B1t_DirPr.rows = domains[d].B1t_DirPr.CSR_I_row_indices.size() - 1;
+
+			domains[d].B1t_Dir_perm_vec = domains[d].B1_comp_dom.CSR_J_col_indices;
+			std::sort(domains[d].B1t_Dir_perm_vec.begin(), domains[d].B1t_Dir_perm_vec.end());
+			Esutils::removeDuplicity(domains[d].B1t_Dir_perm_vec);
+
+		}
+
+//		if (configuration.regularization == REGULARIZATION::FIX_POINTS) {
+//			domains[i].B1.Clear();
+//		}
+
+		domains[d].B1t.Clear();
+		domains[d].my_lamdas_map_indices.clear();
+
+	}
+	//// *** END - Compression of Matrix B1 to work with compressed lambda vectors *************
+
+
+	ESLOG(MEMORY) << "Lambdas end";
+	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+
+}
+
+void ClusterBase::SetClusterPC( ) {
+
+	SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub = instance->B1clustersMap;
+
+	int MPIrank = environment->MPIrank;
 
 	//// *** Detection of affinity of lag. multipliers to specific subdomains **************
 	//// *** - will be used to compress vectors and matrices for higher efficiency
@@ -126,13 +223,12 @@ void ClusterBase::SetClusterPC( ) { // SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lamb
 	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-
 	my_lamdas_indices.resize( lambda_map_sub.size() );
 	for (size_t i = 0; i < lambda_map_sub.size(); i++)
 		my_lamdas_indices[i] = lambda_map_sub[i][0];
 
 
-	SEQ_VECTOR< SEQ_VECTOR <eslocal> > lambdas_per_subdomain ( domains.size() * NUMBER_OF_CLUSTERS );
+	SEQ_VECTOR< SEQ_VECTOR <eslocal> > lambdas_per_subdomain ( domains.size() * environment->MPIsize);
 	my_lamdas_ddot_filter.resize( lambda_map_sub.size(), 0.0 );
 	for (size_t i = 0; i < lambda_map_sub.size(); i++) {
 		if ( lambda_map_sub[i].size() > 2 ) {
@@ -166,20 +262,11 @@ void ClusterBase::SetClusterPC( ) { // SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lamb
 
 	//ESLOG(MEMORY) << "2 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 
-	compressed_tmp    .resize( my_lamdas_indices.size(), 0 );
-	//compressed_tmp2   .resize( my_lamdas_indices.size(), 0 );
+//	compressed_tmp    .resize( my_lamdas_indices.size(), 0 );
+//	//compressed_tmp2   .resize( my_lamdas_indices.size(), 0 );
 
 	//ESLOG(MEMORY) << "3 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++ )
-		if (USE_KINV == 1 ) {
-			domains[d].compressed_tmp.resize( domains[d].B1.I_row_indices.size(), 0);
-			domains[d].compressed_tmp2.resize( domains[d].B1.I_row_indices.size(), 0);
-		} else {
-			domains[d].compressed_tmp.resize( 1, 0);
-			domains[d].compressed_tmp2.resize( 1, 0);
-		}
 
 	// mapping/compression vector for cluster
 	for (size_t i = 0; i <my_lamdas_indices.size(); i++)
@@ -187,42 +274,42 @@ void ClusterBase::SetClusterPC( ) { // SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lamb
 
 	//ESLOG(MEMORY) << "5 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 
-	// mapping/compression vector for domains
-	#pragma omp parallel for
-	for (size_t i = 0; i < domains.size(); i++) {
-		for (size_t j = 0; j < domains[i].lambda_map_sub.size(); j++) {
-			domains[i].my_lamdas_map_indices.insert(make_pair(domains[i].lambda_map_sub[j] ,j));
-		}
-	}
+//	// mapping/compression vector for domains
+//	#pragma omp parallel for
+//	for (size_t i = 0; i < domains.size(); i++) {
+//		for (size_t j = 0; j < domains[i].lambda_map_sub.size(); j++) {
+//			domains[i].my_lamdas_map_indices.insert(make_pair(domains[i].lambda_map_sub[j] ,j));
+//		}
+//	}
 
 	//ESLOG(MEMORY) << "6 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++) {
-
-            if (domains[d].lambda_map_sub.size() > 0 ) {
-
-            	size_t i = 0;
-            	size_t j = 0;
-				do
-				{
-					eslocal big_index   = my_lamdas_indices[i];
-					eslocal small_index = domains[d].lambda_map_sub[j];
-
-					if (big_index >  small_index) j++;
-
-					if (big_index  < small_index) i++;
-
-					if (big_index == small_index) {
-						domains[d].lambda_map_sub_local.push_back(i);
-						i++; j++;
-					}
-
-
-				} while ( i < my_lamdas_indices.size() && j < domains[d].lambda_map_sub.size() );
-            }
-        }
-	//// *** END - Detection of affinity of lag. multipliers to specific subdomains ***************
+//	#pragma omp parallel for
+//	for (size_t d = 0; d < domains.size(); d++) {
+//
+//            if (domains[d].lambda_map_sub.size() > 0 ) {
+//
+//            	size_t i = 0;
+//            	size_t j = 0;
+//				do
+//				{
+//					eslocal big_index   = my_lamdas_indices[i];
+//					eslocal small_index = domains[d].lambda_map_sub[j];
+//
+//					if (big_index >  small_index) j++;
+//
+//					if (big_index  < small_index) i++;
+//
+//					if (big_index == small_index) {
+//						domains[d].lambda_map_sub_local.push_back(i);
+//						i++; j++;
+//					}
+//
+//
+//				} while ( i < my_lamdas_indices.size() && j < domains[d].lambda_map_sub.size() );
+//            }
+//        }
+//	//// *** END - Detection of affinity of lag. multipliers to specific subdomains ***************
 
 	//ESLOG(MEMORY) << "7 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 
@@ -240,60 +327,60 @@ void ClusterBase::SetClusterPC( ) { // SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lamb
 	//ESLOG(MEMORY) << "8 process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 
 
-	//// *** Compression of Matrix B1 to work with compressed lambda vectors *****************
-	ESLOG(MEMORY) << "B1 compression";
-	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
-	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
-
-	#pragma omp parallel for
-	for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
-
-		domains[i].B1_comp_dom.I_row_indices = domains[i].B1.I_row_indices;
-		domains[i].B1_comp_dom.J_col_indices = domains[i].B1.J_col_indices;
-		domains[i].B1_comp_dom.V_values      = domains[i].B1.V_values;
-
-		domains[i].B1_comp_dom.rows = domains[i].B1.rows;
-		domains[i].B1_comp_dom.cols = domains[i].B1.cols;
-		domains[i].B1_comp_dom.nnz  = domains[i].B1.nnz;
-		domains[i].B1_comp_dom.type = domains[i].B1.type;
-
-		for (size_t j = 0; j < domains[i].B1_comp_dom.I_row_indices.size(); j++ ) {
-			eslocal tmp_new = domains[i].my_lamdas_map_indices[domains[i].B1_comp_dom.I_row_indices [j] - 1] + 1;  // numbering from 1 in matrix
-			domains[i].B1_comp_dom.I_row_indices [j] = tmp_new;									                   // j + 1; // numbering matrix from 1
-		}
-
-		domains[i].B1_comp_dom.rows = domains[i].lambda_map_sub.size();
-		domains[i].B1_comp_dom.ConvertToCSRwithSort( 1 );
-
-		if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET || 
-        configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET) {
-			domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_DirPr);
-			Esutils::removeDuplicity(domains[i].B1t_DirPr.CSR_I_row_indices);
-//			auto last = std::unique(domains[i].B1t_DirPr.CSR_I_row_indices.begin(), domains[i].B1t_DirPr.CSR_I_row_indices.end());
-//			domains[i].B1t_DirPr.CSR_I_row_indices.erase(last, domains[i].B1t_DirPr.CSR_I_row_indices.end());
-			domains[i].B1t_DirPr.rows = domains[i].B1t_DirPr.CSR_I_row_indices.size() - 1;
-
-			domains[i].B1t_Dir_perm_vec = domains[i].B1_comp_dom.CSR_J_col_indices;
-			std::sort(domains[i].B1t_Dir_perm_vec.begin(), domains[i].B1t_Dir_perm_vec.end());
-			Esutils::removeDuplicity(domains[i].B1t_Dir_perm_vec);
-//			last = std::unique(domains[i].B1t_Dir_perm_vec.begin(), domains[i].B1t_Dir_perm_vec.end());
-//			domains[i].B1t_Dir_perm_vec.erase(last, domains[i].B1t_Dir_perm_vec.end() );
-		}
-
-//		if (configuration.regularization == REGULARIZATION::FIX_POINTS) {
-//			domains[i].B1.Clear();
+//	//// *** Compression of Matrix B1 to work with compressed lambda vectors *****************
+//	ESLOG(MEMORY) << "B1 compression";
+//	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+//	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//
+//	#pragma omp parallel for
+//	for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
+//
+//		domains[i].B1_comp_dom.I_row_indices = domains[i].B1.I_row_indices;
+//		domains[i].B1_comp_dom.J_col_indices = domains[i].B1.J_col_indices;
+//		domains[i].B1_comp_dom.V_values      = domains[i].B1.V_values;
+//
+//		domains[i].B1_comp_dom.rows = domains[i].B1.rows;
+//		domains[i].B1_comp_dom.cols = domains[i].B1.cols;
+//		domains[i].B1_comp_dom.nnz  = domains[i].B1.nnz;
+//		domains[i].B1_comp_dom.type = domains[i].B1.type;
+//
+//		for (size_t j = 0; j < domains[i].B1_comp_dom.I_row_indices.size(); j++ ) {
+//			eslocal tmp_new = domains[i].my_lamdas_map_indices[domains[i].B1_comp_dom.I_row_indices [j] - 1] + 1;  // numbering from 1 in matrix
+//			domains[i].B1_comp_dom.I_row_indices [j] = tmp_new;									               // j + 1; // numbering matrix from 1
 //		}
-
-		domains[i].B1t.Clear();
-		domains[i].my_lamdas_map_indices.clear();
-
-	}
-	//// *** END - Compression of Matrix B1 to work with compressed lambda vectors *************
-
-
-	ESLOG(MEMORY) << "Lambdas end";
-	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
-	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//
+//		domains[i].B1_comp_dom.rows = domains[i].lambda_map_sub.size();
+//		domains[i].B1_comp_dom.ConvertToCSRwithSort( 1 );
+//
+//		if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET ||
+//        configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET) {
+//			domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_DirPr);
+//			Esutils::removeDuplicity(domains[i].B1t_DirPr.CSR_I_row_indices);
+////			auto last = std::unique(domains[i].B1t_DirPr.CSR_I_row_indices.begin(), domains[i].B1t_DirPr.CSR_I_row_indices.end());
+////			domains[i].B1t_DirPr.CSR_I_row_indices.erase(last, domains[i].B1t_DirPr.CSR_I_row_indices.end());
+//			domains[i].B1t_DirPr.rows = domains[i].B1t_DirPr.CSR_I_row_indices.size() - 1;
+//
+//			domains[i].B1t_Dir_perm_vec = domains[i].B1_comp_dom.CSR_J_col_indices;
+//			std::sort(domains[i].B1t_Dir_perm_vec.begin(), domains[i].B1t_Dir_perm_vec.end());
+//			Esutils::removeDuplicity(domains[i].B1t_Dir_perm_vec);
+////			last = std::unique(domains[i].B1t_Dir_perm_vec.begin(), domains[i].B1t_Dir_perm_vec.end());
+////			domains[i].B1t_Dir_perm_vec.erase(last, domains[i].B1t_Dir_perm_vec.end() );
+//		}
+//
+////		if (configuration.regularization == REGULARIZATION::FIX_POINTS) {
+////			domains[i].B1.Clear();
+////		}
+//
+//		domains[i].B1t.Clear();
+//		domains[i].my_lamdas_map_indices.clear();
+//
+//	}
+//	//// *** END - Compression of Matrix B1 to work with compressed lambda vectors *************
+//
+//
+//	ESLOG(MEMORY) << "Lambdas end";
+//	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
+//	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 }
 
@@ -351,56 +438,53 @@ void ClusterBase::SetClusterHFETI () {
 	// *** Create Matrices and allocate vectors for Hybrid FETI **************************
 	if (USE_HFETI == 1) {
 
-		TimeEval HFETI_prec_timing (" HFETI - preprocessing timing");
-		HFETI_prec_timing.totalTime.start();
+		if (domains.size() > 1) {
 
-		int MPIrank;
-		MPI_Comm_rank (environment->MPICommunicator, &MPIrank);
-		ESINFO(PROGRESS3) << "HFETI preprocessing start";
+			TimeEval HFETI_prec_timing (" HFETI - preprocessing timing");
+			if (Measure::report(CLUSTER)) { HFETI_prec_timing.totalTime.start(); };
 
-		TimeEvent B0_time("Compress B0 per cluster");
-		B0_time.start();
+			ESINFO(PROGRESS3) << "HFETI preprocessing start";
 
-		CompressB0();
+			TimeEvent B0_time("Compress B0 per cluster");
+			if (Measure::report(CLUSTER)) { B0_time.start(); };
 
-		B0_time.end();
-		B0_time.printStatMPI();
-		HFETI_prec_timing.addEvent(B0_time);
+			CompressB0();
 
+			if (Measure::report(CLUSTER)) { B0_time.end(); B0_time.printStatMPI(); HFETI_prec_timing.addEvent(B0_time); }
 
-		TimeEvent G0_time("Create G0 per cluster");
-		G0_time.start();
+			TimeEvent G0_time("Create G0 per cluster");
+			if (Measure::report(CLUSTER)) { G0_time.start(); }
 
-		CreateG0();
-		vec_g0.resize(G0.cols);
-		vec_e0.resize(G0.rows);
+			CreateG0();
 
-		G0_time.end();
-		G0_time.printStatMPI();
-		HFETI_prec_timing.addEvent(G0_time);
+			if (Measure::report(CLUSTER)) { G0_time.end(); 	G0_time.printStatMPI();	HFETI_prec_timing.addEvent(G0_time); }
 
 
-		TimeEvent F0_time("Create F0 per cluster");
-		F0_time.start();
+			TimeEvent F0_time("Create F0 per cluster");
+			if (Measure::report(CLUSTER)) { F0_time.start();}
 
-		CreateF0();
-		vec_lambda.resize(F0.m_Kplus_size);
+			CreateF0();
 
-		F0_time.end();
-		HFETI_prec_timing.addEvent(F0_time);
+			if (Measure::report(CLUSTER)) { F0_time.end(); HFETI_prec_timing.addEvent(F0_time); }
 
 
-		TimeEvent Sa_time("Create Salfa per cluster");
-		Sa_time.start();
+			TimeEvent Sa_time("Create Salfa per cluster");
+			if (Measure::report(CLUSTER)) { Sa_time.start(); }
 
-		CreateSa();
-		vec_alfa.resize(Sa.m_Kplus_size);
+			CreateSa();
 
-		Sa_time.end();
-		HFETI_prec_timing.addEvent(Sa_time);
+			if (Measure::report(CLUSTER)) { Sa_time.end(); HFETI_prec_timing.addEvent(Sa_time); }
 
-		HFETI_prec_timing.totalTime.end();
-		HFETI_prec_timing.printStatsMPI();
+			if (Measure::report(CLUSTER)) { HFETI_prec_timing.totalTime.end(); HFETI_prec_timing.printStatsMPI(); }
+
+		} else {
+
+			//ESINFO(ALWAYS) << Info::TextColor::YELLOW
+			std::cout << "Cluster " << cluster_global_index << " on MPI rank " << environment->MPIrank << " has only one domain -> Using TFETI" << std::endl;
+			USE_HFETI = 0;
+
+		}
+
 
 	}
 	// *** END - Create Matrices for Hybrid FETI *****************************************
@@ -529,17 +613,17 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 	//ESINFO(PROGRESS3) << "K+ multiply HFETI";
 	mkl_set_num_threads(1);
 
-	cluster_time.totalTime.start();
+	if (Measure::report(CLUSTER)) { cluster_time.totalTime.start(); }
 
-	vec_fill_time.start();
+	if (Measure::report(CLUSTER)) { vec_fill_time.start(); }
 	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
 	//fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
-	vec_fill_time.end();
+	if (Measure::report(CLUSTER)) { vec_fill_time.end(); }
 
 	// loop over domains in the cluster
-	loop_1_1_time.start();
+	if (Measure::report(CLUSTER)) { loop_1_1_time.start(); }
 	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++)
+	for (size_t d = 0; d < domains.size(); d++)
 	{
 		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
 		if (SYMMETRIC_SYSTEM) {
@@ -548,11 +632,11 @@ for (size_t d = 0; d < domains.size(); d++)
 			domains[d].Kplus_R2.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
 		}
 	}
-	loop_1_1_time.end();
+	if (Measure::report(CLUSTER)) { loop_1_1_time.end();}
 
-	loop_1_2_time.start();
+	if (Measure::report(CLUSTER)) { loop_1_2_time.start(); }
 	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++)
+	for (size_t d = 0; d < domains.size(); d++)
 	{
 
 		SEQ_VECTOR <eslocal> kerindices (domains.size() + 1, 0);
@@ -577,40 +661,40 @@ for (size_t d = 0; d < domains.size(); d++)
 			vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
 
 	// end loop over domains
-	loop_1_2_time.end();
+	if (Measure::report(CLUSTER)) { loop_1_2_time.end(); }
 
 	mkl_set_num_threads(PAR_NUM_THREADS);
-	clusCP_time.start();
+	if (Measure::report(CLUSTER)) { clusCP_time.start(); }
 
 
 //	for (int i = 0; i < vec_g0.size(); i++)
 //	printf (       "Test probe 1: %d norm = %1.30f \n", i, vec_g0[i] );
 
-	clus_F0_1_time.start();
+	if (Measure::report(CLUSTER)) { clus_F0_1_time.start(); }
 	F0.Solve(vec_g0, tm1[0], 0, 0);
-	clus_F0_1_time.end();
+	if (Measure::report(CLUSTER)) { clus_F0_1_time.end(); }
 
 //	for (int i = 0; i < tm1[0].size(); i++)
 //	printf (       "Test probe 2: %d norm = %1.30f \n", i, tm1[0][i] );
 
-	clus_G0_time.start();
+	if (Measure::report(CLUSTER)) { clus_G0_time.start(); }
 	if (SYMMETRIC_SYSTEM) {
 		G0.MatVec(tm1[0], tm2[0], 'N');
 	} else {
 		G02.MatVec(tm1[0], tm2[0], 'N');
 	}
 
-	clus_G0_time.end();
+	if (Measure::report(CLUSTER)) { clus_G0_time.end(); }
 
 //	for (int i = 0; i < tm1[0].size(); i++)
 //	printf (       "Test probe 3: %d norm = %1.30f \n", i, tm1[0][i] );
 
 	#pragma omp parallel for
-for (size_t i = 0; i < vec_e0.size(); i++)
+	for (size_t i = 0; i < vec_e0.size(); i++)
 		tm2[0][i] = tm2[0][i] - vec_e0[i];
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
-	 clus_Sa_time.start();
+	if (Measure::report(CLUSTER)) { clus_Sa_time.start(); }
 //#ifdef SPARSE_SA
 //	 Sa.Solve(tm2[0], vec_alfa,0,0);
 //#else
@@ -633,37 +717,37 @@ for (size_t i = 0; i < vec_e0.size(); i++)
 	}
 
 
-	 clus_Sa_time.end();
+	if (Measure::report(CLUSTER)) { clus_Sa_time.end(); }
 
 //		for (int i = 0; i < vec_alfa.size(); i++)
 //		printf (       "Test probe 4: %d norm = %1.30f \n", i, vec_alfa[i] );
 
-	 clus_G0t_time.start();
+	if (Measure::report(CLUSTER)) { clus_G0t_time.start(); }
 	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
-	 clus_G0t_time.end();
+	if (Measure::report(CLUSTER)) {clus_G0t_time.end(); }
 
 //		for (int i = 0; i < tm1[0].size(); i++)
 //		printf (       "Test probe 5: %d norm = %1.30f \n", i, tm1[0][i] );
 
 	#pragma omp parallel for
-for (size_t i = 0; i < vec_g0.size(); i++)
+	for (size_t i = 0; i < vec_g0.size(); i++)
 		tm1[0][i] = vec_g0[i] - tm1[0][i];
 
 
-	clus_F0_2_time.start();
+	if (Measure::report(CLUSTER)) { clus_F0_2_time.start(); }
 	F0.Solve(tm1[0], vec_lambda,0,0);
-	clus_F0_2_time.end();
+	if (Measure::report(CLUSTER)) { clus_F0_2_time.end(); }
 
-	clusCP_time.end();
+	if (Measure::report(CLUSTER)) { clusCP_time.end(); }
 
 //	for (int i = 0; i < vec_lambda.size(); i++)
 //	printf (       "Test probe 6: %d norm = %1.30f \n", i, vec_lambda[i] );
 
 	// Kplus_x
 	mkl_set_num_threads(1);
-	loop_2_1_time.start();
+	if (Measure::report(CLUSTER)) { loop_2_1_time.start(); }
 	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++)
+	for (size_t d = 0; d < domains.size(); d++)
 	{
 		eslocal domain_size = domains[d].domain_prim_size;
 
@@ -695,34 +779,34 @@ for (size_t d = 0; d < domains.size(); d++)
 		//ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
 	//ESINFO(PROGRESS3);
-	loop_2_1_time.end();
+	if (Measure::report(CLUSTER)) { loop_2_1_time.end(); }
 
-	cluster_time.totalTime.end();
+	if (Measure::report(CLUSTER)) { cluster_time.totalTime.end(); }
 }
 
 void ClusterBase::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 
 	mkl_set_num_threads(1);
-	cluster_time.totalTime.start();
+	if (Measure::report(CLUSTER)) { cluster_time.totalTime.start(); }
 
-	vec_fill_time.start();
+	if (Measure::report(CLUSTER)) { vec_fill_time.start(); }
 	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
 	//fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
-	vec_fill_time.end();
+	if (Measure::report(CLUSTER)) { vec_fill_time.end(); }
 
 	// loop over domains in the cluster
-	loop_1_1_time.start();
+	if (Measure::report(CLUSTER)) { loop_1_1_time.start(); }
 	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++)
+	for (size_t d = 0; d < domains.size(); d++)
 	{
    		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
 		domains[d].Kplus_R.     DenseMatVec(x_in[d], tm3[d], 'T');		// e0
 	}
-	loop_1_1_time.end();
+	if (Measure::report(CLUSTER)) { loop_1_1_time.end(); }
 
-	loop_1_2_time.start();
+	if (Measure::report(CLUSTER)) { loop_1_2_time.start(); }
 	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++)
+	for (size_t d = 0; d < domains.size(); d++)
 	{
 		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
 		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
@@ -736,26 +820,26 @@ for (size_t d = 0; d < domains.size(); d++)
 			vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
 
 	// end loop over domains
-	loop_1_2_time.end();
+	if (Measure::report(CLUSTER)) { loop_1_2_time.end(); }
 
 	mkl_set_num_threads(PAR_NUM_THREADS);
-	clusCP_time.start();
+	if (Measure::report(CLUSTER)) { clusCP_time.start(); }
 
-	clus_F0_1_time.start();
+	if (Measure::report(CLUSTER)) { clus_F0_1_time.start(); }
 	F0.Solve(vec_g0, tm1[0], 0, 0);
-	clus_F0_1_time.end();
+	if (Measure::report(CLUSTER)) { clus_F0_1_time.end(); }
 
-	clus_G0_time.start();
+	if (Measure::report(CLUSTER)) { clus_G0_time.start(); }
 	G0.MatVec(tm1[0], tm2[0], 'N');
-	clus_G0_time.end();
+	if (Measure::report(CLUSTER)) { clus_G0_time.end(); }
 
 	#pragma omp parallel for
-for (size_t i = 0; i < vec_e0.size(); i++) {
+	for (size_t i = 0; i < vec_e0.size(); i++) {
 		tm2[0][i] = tm2[0][i] - vec_e0[i];
 	}
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
-	 clus_Sa_time.start();
+	if (Measure::report(CLUSTER)) { clus_Sa_time.start(); }
 // #ifdef SPARSE_SA
 //    Sa.Solve(tm2[0], vec_alfa,0,0);
 // #else
@@ -777,30 +861,30 @@ for (size_t i = 0; i < vec_e0.size(); i++) {
 		ESINFO(GLOBAL_ERROR) << "Not implemented S alfa solver.";
 	}
 
-     clus_Sa_time.end();
+	if (Measure::report(CLUSTER)) { clus_Sa_time.end(); }
 
-	 clus_G0t_time.start();
+	if (Measure::report(CLUSTER)) { clus_G0t_time.start(); }
 	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
-	 clus_G0t_time.end();
+	if (Measure::report(CLUSTER)) { clus_G0t_time.end(); }
 
 	#pragma omp parallel for
-for (size_t i = 0; i < vec_g0.size(); i++) {
+	for (size_t i = 0; i < vec_g0.size(); i++) {
 		tm1[0][i] = vec_g0[i] - tm1[0][i];
 	}
 
 
-	clus_F0_2_time.start();
+	if (Measure::report(CLUSTER)) { clus_F0_2_time.start(); }
 	F0.Solve(tm1[0], vec_lambda,0,0);
-	clus_F0_2_time.end();
+	if (Measure::report(CLUSTER)) { clus_F0_2_time.end(); }
 
-	clusCP_time.end();
+	if (Measure::report(CLUSTER)) { clusCP_time.end(); }
 
 
 	// Kplus_x
 	mkl_set_num_threads(1);
-	loop_2_1_time.start();
+	if (Measure::report(CLUSTER)) { loop_2_1_time.start(); }
 	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++)
+	for (size_t d = 0; d < domains.size(); d++)
 	{
 		eslocal domain_size = domains[d].domain_prim_size;
 
@@ -817,36 +901,36 @@ for (size_t d = 0; d < domains.size(); d++)
 			x_in[d][i] = tm2[d][i] + tm3[d][i];
 
 	}
-	loop_2_1_time.end();
+	if (Measure::report(CLUSTER)) { loop_2_1_time.end(); }
 
-	cluster_time.totalTime.end();
+	if (Measure::report(CLUSTER)) { cluster_time.totalTime.end(); }
 }
 
 void ClusterBase::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 
 	mkl_set_num_threads(1);
-	cluster_time.totalTime.start();
+	if (Measure::report(CLUSTER)) { cluster_time.totalTime.start(); }
 
-	vec_fill_time.start();
+	if (Measure::report(CLUSTER)) { vec_fill_time.start(); }
 	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
 	//fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
-	vec_fill_time.end();
+	if (Measure::report(CLUSTER)) { vec_fill_time.end(); }
 
 	// loop over domains in the cluster
-	loop_1_1_time.start();
+	if (Measure::report(CLUSTER)) { loop_1_1_time.start(); }
 	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++)
+	for (size_t d = 0; d < domains.size(); d++)
 	{
    		//domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);				// g0 - with comp B0Kplus
 		//domains[d].Kplus_R.     DenseMatVec(x_in[d], tm3[d], 'T');		// e0
 		domains[d].B0KplusB1_comp .DenseMatVec(x_in[d], tm2[d], 'N');		// g0 - with comp B0Kplus
 		domains[d].Kplus_R_B1_comp.DenseMatVec(x_in[d], tm3[d], 'N');		// e0
 	}
-	loop_1_1_time.end();
+	if (Measure::report(CLUSTER)) { loop_1_1_time.end(); }
 
-	loop_1_2_time.start();
+	if (Measure::report(CLUSTER)) { loop_1_2_time.start(); }
 	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++)
+	for (size_t d = 0; d < domains.size(); d++)
 	{
 		eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
 		eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
@@ -860,25 +944,25 @@ for (size_t d = 0; d < domains.size(); d++)
 			vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
 
 	// end loop over domains
-	loop_1_2_time.end();
+	if (Measure::report(CLUSTER)) { loop_1_2_time.end(); }
 
 	mkl_set_num_threads(PAR_NUM_THREADS);
-	clusCP_time.start();
+	if (Measure::report(CLUSTER)) { clusCP_time.start(); }
 
-	clus_F0_1_time.start();
+	if (Measure::report(CLUSTER)) { clus_F0_1_time.start(); }
 	F0.Solve(vec_g0, tm1[0], 0, 0);
-	clus_F0_1_time.end();
+	if (Measure::report(CLUSTER)) { clus_F0_1_time.end(); }
 
-	clus_G0_time.start();
+	if (Measure::report(CLUSTER)) { clus_G0_time.start(); }
 	G0.MatVec(tm1[0], tm2[0], 'N');
-	clus_G0_time.end();
+	if (Measure::report(CLUSTER)) { clus_G0_time.end(); }
 
 	#pragma omp parallel for
-for (size_t i = 0; i < vec_e0.size(); i++)
+	for (size_t i = 0; i < vec_e0.size(); i++)
 		tm2[0][i] = tm2[0][i] - vec_e0[i];
 	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
-	clus_Sa_time.start();
+	if (Measure::report(CLUSTER)) { clus_Sa_time.start(); }
 //	Sa.Solve(tm2[0], vec_alfa,0,0);
 
 	switch (configuration.SAsolver) {
@@ -895,30 +979,30 @@ for (size_t i = 0; i < vec_e0.size(); i++)
 		ESINFO(GLOBAL_ERROR) << "Not implemented S alfa solver.";
 	}
 
-	clus_Sa_time.end();
+	if (Measure::report(CLUSTER)) { clus_Sa_time.end(); }
 
-	clus_G0t_time.start();
+	if (Measure::report(CLUSTER)) { clus_G0t_time.start(); }
 	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
-	clus_G0t_time.end();
+	if (Measure::report(CLUSTER)) { clus_G0t_time.end(); }
 
 	#pragma omp parallel for
-for (size_t i = 0; i < vec_g0.size(); i++) {
+	for (size_t i = 0; i < vec_g0.size(); i++) {
 		tm1[0][i] = vec_g0[i] - tm1[0][i];
 	}
 
 
-	clus_F0_2_time.start();
+	if (Measure::report(CLUSTER)) { clus_F0_2_time.start(); }
 	F0.Solve(tm1[0], vec_lambda,0,0);
-	clus_F0_2_time.end();
+	if (Measure::report(CLUSTER)) { clus_F0_2_time.end(); }
 
-	clusCP_time.end();
+	if (Measure::report(CLUSTER)) { clusCP_time.end(); }
 
 
 	// Kplus_x
 	mkl_set_num_threads(1);
-	loop_2_1_time.start();
+	if (Measure::report(CLUSTER)) { loop_2_1_time.start(); }
 	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++)
+	for (size_t d = 0; d < domains.size(); d++)
 	{
 		eslocal domain_size = domains[d].domain_prim_size;
 
@@ -941,9 +1025,9 @@ for (size_t d = 0; d < domains.size(); d++)
 			x_in[d][i] = tm2[d][i] + tm3[d][i];
 
 	}
-	loop_2_1_time.end();
+	if (Measure::report(CLUSTER)) { loop_2_1_time.end(); }
 
-	cluster_time.totalTime.end();
+	if (Measure::report(CLUSTER)) { cluster_time.totalTime.end(); }
 }
 
 
@@ -1185,13 +1269,15 @@ void ClusterBase::CreateG0() {
 		osG0.close();
 	}
 
+	vec_g0.resize(G0.cols);
+	vec_e0.resize(G0.rows);
 
 }
 
 void ClusterBase::CreateF0() {
 
 	 TimeEval F0_timing (" HFETI - F0 preprocessing timing");
-	 F0_timing.totalTime.start();
+	 if (Measure::report(CLUSTER)) { F0_timing.totalTime.start(); }
 
 	mkl_set_num_threads(1);
 
@@ -1202,7 +1288,7 @@ void ClusterBase::CreateF0() {
 	ESINFO(PROGRESS3) << "HFETI - Create F0";
 
 	 TimeEvent solve_F0_time("B0 compression; F0 multiple InitialCondition solve");
-	 solve_F0_time.start();
+	 if (Measure::report(CLUSTER)) { solve_F0_time.start(); }
 
 	#pragma omp parallel for
 	for (size_t d = 0; d < domains.size(); d++) {
@@ -1274,16 +1360,16 @@ void ClusterBase::CreateF0() {
 
 	ESINFO(PROGRESS3);
 
-	 solve_F0_time.end();
-	 solve_F0_time.printStatMPI();
-	 F0_timing.addEvent(solve_F0_time);
+	if (Measure::report(CLUSTER)) { solve_F0_time.end(); }
+	if (Measure::report(CLUSTER)) { solve_F0_time.printStatMPI(); }
+	if (Measure::report(CLUSTER)) {F0_timing.addEvent(solve_F0_time);}
 
-	 TimeEvent reduction_F0_time("F0 reduction time");
-	 reduction_F0_time.start();
+	TimeEvent reduction_F0_time("F0 reduction time");
+	if (Measure::report(CLUSTER)) {reduction_F0_time.start();}
 
 	for (size_t j = 1; j < tmpF0v.size(); j *= 2) {
 		#pragma omp parallel for
-for (size_t i = 0; i <= tmpF0v.size() / (2 * j); i++) {
+		for (size_t i = 0; i <= tmpF0v.size() / (2 * j); i++) {
 			if (i * 2 * j + j < tmpF0v.size()) {
 				tmpF0v[i * 2 * j].MatAddInPlace( tmpF0v[i * 2 * j + j], 'N', 1.0 );
 				tmpF0v[i * 2 * j + j].Clear();
@@ -1299,10 +1385,11 @@ for (size_t i = 0; i <= tmpF0v.size() / (2 * j); i++) {
 		osF0.close();
 	}
 
-	 reduction_F0_time.end(); reduction_F0_time.printStatMPI(); F0_timing.addEvent(reduction_F0_time);
+	if (Measure::report(CLUSTER)) { reduction_F0_time.end(); reduction_F0_time.printStatMPI(); F0_timing.addEvent(reduction_F0_time); }
 
 
-	 TimeEvent fact_F0_time("B0 Kplus Factorization "); fact_F0_time.start();
+	TimeEvent fact_F0_time("B0 Kplus Factorization ");
+	if (Measure::report(CLUSTER)) { fact_F0_time.start();}
 
 	mkl_set_num_threads(PAR_NUM_THREADS);
 
@@ -1327,17 +1414,22 @@ for (size_t i = 0; i <= tmpF0v.size() / (2 * j); i++) {
 
 	if (MPIrank == 0) F0.msglvl = 0;
 
-	 fact_F0_time.end(); fact_F0_time.printStatMPI(); F0_timing.addEvent(fact_F0_time);
+	if (Measure::report(CLUSTER)) {fact_F0_time.end(); fact_F0_time.printStatMPI(); F0_timing.addEvent(fact_F0_time);}
 
-	F0_timing.totalTime.end();
-	F0_timing.printStatsMPI();
+	if (Measure::report(CLUSTER)) { F0_timing.totalTime.end(); }
+	//TODO: Need fix - for detailed measurements
+//	if (min_numClusters_per_MPI > cluster_local_index)
+//		F0_timing.printStatsMPI();
 
 	// *** POZOR **************************************************************
 	#pragma omp parallel for
-for (size_t d = 0; d<domains.size(); d++) {
+	for (size_t d = 0; d<domains.size(); d++) {
 		domains[d].B0.Clear();
 		domains[d].B0t.Clear();
 	}
+
+	vec_lambda.resize(F0.m_Kplus_size);
+
 };
 
 void ClusterBase::CreateSa() {
@@ -1351,16 +1443,21 @@ void ClusterBase::CreateSa() {
 
 	SparseMatrix Salfa; SparseMatrix tmpM;
 
-	TimeEval Sa_timing (" HFETI - Salfa preprocessing timing"); Sa_timing.totalTime.start();
+	TimeEval Sa_timing (" HFETI - Salfa preprocessing timing");
+	if (Measure::report(CLUSTER)) { Sa_timing.totalTime.start(); }
 
-	TimeEvent G0trans_Sa_time("G0 transpose"); G0trans_Sa_time.start();
+	TimeEvent G0trans_Sa_time("G0 transpose");
+	if (Measure::report(CLUSTER)) { G0trans_Sa_time.start(); }
+
 	SparseMatrix G0t;
 	SparseMatrix G02t;
 
 	G0.MatTranspose(G0t);
-	G0trans_Sa_time.end(); G0trans_Sa_time.printStatMPI(); Sa_timing.addEvent(G0trans_Sa_time);
+	if (Measure::report(CLUSTER)) { G0trans_Sa_time.end(); G0trans_Sa_time.printStatMPI(); Sa_timing.addEvent(G0trans_Sa_time); }
 
-	TimeEvent G0solve_Sa_time("SolveMatF with G0t as InitialCondition"); G0solve_Sa_time.start();
+	TimeEvent G0solve_Sa_time("SolveMatF with G0t as InitialCondition");
+	if (Measure::report(CLUSTER)) { G0solve_Sa_time.start(); }
+
 	if (!PARDISO_SC) {
 		if (MPIrank == 0) {
 			F0_fast.msglvl = Info::report(LIBRARIES) ? 1 : 0;
@@ -1391,15 +1488,16 @@ void ClusterBase::CreateSa() {
 
 	Salfa.mtype = this->mtype;
 	F0_Mat.Clear();
-	G0solve_Sa_time.end(); G0solve_Sa_time.printStatMPI(); Sa_timing.addEvent(G0solve_Sa_time);
+	if (Measure::report(CLUSTER)) { G0solve_Sa_time.end(); G0solve_Sa_time.printStatMPI(); Sa_timing.addEvent(G0solve_Sa_time); }
 
-	TimeEvent SaMatMat_Sa_time("Salfa = MatMat G0 * solution "); SaMatMat_Sa_time.start();
+	TimeEvent SaMatMat_Sa_time("Salfa = MatMat G0 * solution ");
+	if (Measure::report(CLUSTER)) { SaMatMat_Sa_time.start(); }
 	if (!PARDISO_SC) {
 		Salfa.MatMat(G0, 'N', tmpM);
 		Salfa.RemoveLower();
 		tmpM.Clear();
 	}
-	SaMatMat_Sa_time.end(); SaMatMat_Sa_time.printStatMPI(); Sa_timing.addEvent(SaMatMat_Sa_time);
+	if (Measure::report(CLUSTER)) { SaMatMat_Sa_time.end(); SaMatMat_Sa_time.printStatMPI(); Sa_timing.addEvent(SaMatMat_Sa_time); }
 
 
 	// Regularization of Sa from NULL PIVOTS
@@ -1573,7 +1671,8 @@ void ClusterBase::CreateSa() {
 
 		// TODO: GENERALIZE
 		// Regularization of Salfa from FIX points
-		TimeEvent reg_Sa_time("Salfa regularization "); reg_Sa_time.start();
+		TimeEvent reg_Sa_time("Salfa regularization ");
+		if (Measure::report(CLUSTER)) { reg_Sa_time.start(); }
 
 		SparseMatrix N, Nt, NNt;
 
@@ -1596,7 +1695,7 @@ void ClusterBase::CreateSa() {
 		Salfa.mtype = this->mtype;
 		// End regularization of Salfa
 
-		reg_Sa_time.end(); reg_Sa_time.printStatMPI(); Sa_timing.addEvent(reg_Sa_time);
+		if (Measure::report(CLUSTER)) { reg_Sa_time.end(); reg_Sa_time.printStatMPI(); Sa_timing.addEvent(reg_Sa_time); }
 	}
 	// END of Sa regularization part
 
@@ -1610,7 +1709,9 @@ void ClusterBase::CreateSa() {
 
 	switch (configuration.SAsolver) {
 	case ESPRESO_SASOLVER::CPU_SPARSE: {
-		TimeEvent fact_Sa_time("Salfa factorization "); fact_Sa_time.start();
+		TimeEvent fact_Sa_time("Salfa factorization ");
+		if (Measure::report(CLUSTER)) { fact_Sa_time.start(); }
+
 		if (MPIrank == 0)  {
 			Sa.msglvl = 1;
 		}
@@ -1619,22 +1720,26 @@ void ClusterBase::CreateSa() {
 		if (MPIrank == 0) {
 			Sa.msglvl = 0;
 		}
-		fact_Sa_time.end(); fact_Sa_time.printStatMPI(); Sa_timing.addEvent(fact_Sa_time);
+		if (Measure::report(CLUSTER)) { fact_Sa_time.end(); } //fact_Sa_time.printStatMPI(); }
+		if (Measure::report(CLUSTER)) { Sa_timing.addEvent(fact_Sa_time); }
 		break;
 	}
 	case ESPRESO_SASOLVER::CPU_DENSE: {
-		TimeEvent factd_Sa_time("Salfa factorization - dense "); factd_Sa_time.start();
+		TimeEvent factd_Sa_time("Salfa factorization - dense ");
+		if (Measure::report(CLUSTER)) { factd_Sa_time.start(); }
 
 		Salfa.ConvertCSRToDense(1);
 
 		Sa_dense_cpu.ImportMatrix(Salfa);
 		Sa_dense_cpu.Factorization("Salfa - dense ");
 
-		factd_Sa_time.end(); factd_Sa_time.printStatMPI(); Sa_timing.addEvent(factd_Sa_time);
+		if (Measure::report(CLUSTER)) { factd_Sa_time.end(); }//factd_Sa_time.printStatMPI();
+		if (Measure::report(CLUSTER)) { Sa_timing.addEvent(factd_Sa_time); }
 		break;
 	}
 	case ESPRESO_SASOLVER::ACC_DENSE: {
-		TimeEvent factd_Sa_time("Salfa factorization - dense "); factd_Sa_time.start();
+		TimeEvent factd_Sa_time("Salfa factorization - dense ");
+		if (Measure::report(CLUSTER)) {factd_Sa_time.start();}
 
 		//TODO: This works only for CuSolver
 		//TODO: Radim Vavrik
@@ -1645,7 +1750,8 @@ void ClusterBase::CreateSa() {
 		Sa_dense_acc.ImportMatrix(Salfa);
 		Sa_dense_acc.Factorization("Salfa - dense ");
 
-		factd_Sa_time.end(); factd_Sa_time.printStatMPI(); Sa_timing.addEvent(factd_Sa_time);
+		if (Measure::report(CLUSTER)) { factd_Sa_time.end(); } //factd_Sa_time.printStatMPI();
+		if (Measure::report(CLUSTER)) { Sa_timing.addEvent(factd_Sa_time); }
 		break;
 	}
 	default:
@@ -1654,8 +1760,13 @@ void ClusterBase::CreateSa() {
 
 	Sa.m_Kplus_size = Salfa.cols;
 
-	Sa_timing.totalTime.end(); Sa_timing.printStatsMPI();
+	if (Measure::report(CLUSTER)) { Sa_timing.totalTime.end(); }
+//TODO: Need fix - for detailed measurements
+//	Sa_timing.printStatsMPI();
 	MKL_Set_Num_Threads(1);
+
+	vec_alfa.resize(Sa.m_Kplus_size);
+
 }
 
 void ClusterBase::Create_G_perCluster() {
@@ -1663,9 +1774,9 @@ void ClusterBase::Create_G_perCluster() {
 	SparseMatrix tmpM;
 
 	TimeEvent G1_1_time ("Create G1 per clust t. : MatMat+MatTrans ");
-	G1_1_time.start();
+	if (Measure::report(CLUSTER)) { G1_1_time.start(); }
 	TimeEvent G1_1_mem  ("Create G1 per clust mem: MatMat+MatTrans ");
-	G1_1_mem.startWithoutBarrier(GetProcessMemory_u());
+	if (Measure::report(CLUSTER)) { G1_1_mem.startWithoutBarrier(GetProcessMemory_u()); }
 
 	int MPIrank;
 	MPI_Comm_rank (environment->MPICommunicator, &MPIrank);
@@ -1715,30 +1826,31 @@ void ClusterBase::Create_G_perCluster() {
 
 			Rt.ConvertCSRToDense(1);
 			//Create_G1_perSubdomain(Rt, domains[j].B1, tmp_Mat[j]);
-			Create_G1_perSubdomain(Rt, B, tmp_Mat[j]);
+			Create_G_perSubdomain(Rt, B, tmp_Mat[j]);
 
 			if (!SYMMETRIC_SYSTEM) {
 				Rt2.ConvertCSRToDense(1);
 				//Create_G1_perSubdomain(Rt2, domains[j].B1, tmp_Mat2[j]);
-				Create_G1_perSubdomain(Rt2, B, tmp_Mat2[j]);
+				Create_G_perSubdomain(Rt2, B, tmp_Mat2[j]);
 			}
 
 	 	} // END: if
 
 	} //end cilk for
 
-	G1_1_time.end();
-	G1_1_time.printStatMPI();
-	//G1_1_time.printLastStatMPIPerNode();
-	G1_1_mem.endWithoutBarrier(GetProcessMemory_u());
-	G1_1_mem.printStatMPI();
-	//G1_1_mem.printLastStatMPIPerNode();
-
+	if (Measure::report(CLUSTER)) {
+		G1_1_time.end();
+		G1_1_time.printStatMPI();
+		//G1_1_time.printLastStatMPIPerNode();
+		G1_1_mem.endWithoutBarrier(GetProcessMemory_u());
+		G1_1_mem.printStatMPI();
+		//G1_1_mem.printLastStatMPIPerNode();
+	}
 	//G1_1_mem.printLastStatMPIPerNode();
 	TimeEvent G1_2_time ("Create G1 per clust t. : Par.red.+MatAdd ");
-	G1_2_time.start();
+	if (Measure::report(CLUSTER)) { G1_2_time.start(); }
 	TimeEvent G1_2_mem  ("Create G1 per clust mem: Par.red.+MatAdd ");
-	G1_2_mem.startWithoutBarrier(GetProcessMemory_u());
+	if (Measure::report(CLUSTER)) { G1_2_mem.startWithoutBarrier(GetProcessMemory_u()); }
 
 	for (size_t j = 1; j < tmp_Mat.size(); j *= 2) {
 		#pragma omp parallel for
@@ -1765,13 +1877,14 @@ void ClusterBase::Create_G_perCluster() {
 		}
 	}
 
-	G1_2_time.end();
-	G1_2_time.printStatMPI();
-	//G1_2_time.printLastStatMPIPerNode();
-
-	G1_2_mem.endWithoutBarrier(GetProcessMemory_u());
-	G1_2_mem.printStatMPI();
-	//G1_2_mem.printLastStatMPIPerNode();
+	if (Measure::report(CLUSTER)) {
+		G1_2_time.end();
+		G1_2_time.printStatMPI();
+		//G1_2_time.printLastStatMPIPerNode();
+		G1_2_mem.endWithoutBarrier(GetProcessMemory_u());
+		G1_2_mem.printStatMPI();
+		//G1_2_mem.printLastStatMPIPerNode();
+	}
 
 	// Save resulting matrix G1
 	G1.swap( tmp_Mat[0] );
@@ -1791,7 +1904,7 @@ void ClusterBase::Create_G_perCluster() {
 
 }
 
-void ClusterBase::Create_G1_perSubdomain (SparseMatrix &R_in, SparseMatrix &B_in, SparseMatrix &G_out) {
+void ClusterBase::Create_G_perSubdomain (SparseMatrix &R_in, SparseMatrix &B_in, SparseMatrix &G_out) {
 
 	if (B_in.nnz > 0) {
 
@@ -1859,399 +1972,399 @@ void ClusterBase::Create_G1_perSubdomain (SparseMatrix &R_in, SparseMatrix &B_in
 
 }
 
-void ClusterBase::Create_G1_perCluster() {
-
-	SparseMatrix tmpM;
-
-	if (USE_HFETI == 1) {
-		//G1 = G1 + trans(B1 * domains[d].Kplus_R) for all domains
-		//for (eslocal d = 0; d < domains.size(); d++)
-		//{
-		//	tmpM.MatMat( domains[d].B1, 'N', domains[d].Kplus_R);
-		//	G1.MatAddInPlace( tmpM, 'N', 1.0 );
-		//	tmpM.Clear();
-		//}
-		//G1.MatTranspose();
-
-		//// OK - but sequential
-		//for (eslocal d = 0; d < domains.size(); d++)					//HFETI
-		//{
-		//	tmpM.MatMat( domains[d].B1t, 'T', domains[d].Kplus_R);
-		//	G1.MatAddInPlace( tmpM, 'N', 1.0 );
-		//	tmpM.Clear();
-		//}
-		//G1.MatTranspose();
-
-
-
-
-		//eslocal threads = 24;
-		//eslocal n_domains = domains.size();
-		//vector < SparseMatrix > tmp_Mat (threads);
-		//cilk_for (eslocal t = 0; t < threads; t++ ) {
-		//	for (eslocal i = t*(n_domains/threads+1); i < (t+1)*(n_domains/threads+1); i++ ) {
-		//		if (i < n_domains) {
-		//			SparseMatrix tmpM_l;
-		//			//tmpM_l.MatMat( domains[i].Kplus_R, 'T', domains[i].B1t);
-		//			tmpM_l.MatMat( domains[i].B1t, 'T', domains[i].Kplus_R);
-		//			tmpM_l.MatTranspose();
-		//			tmp_Mat[t].MatAddInPlace( tmpM_l, 'N', 1.0 );
-		//		}
-		//	}
-		//}
-
-		TimeEvent G1_1_time ("Create G1 per clust t. : MatMat+MatTrans ");
-		G1_1_time.start();
-		TimeEvent G1_1_mem  ("Create G1 per clust mem: MatMat+MatTrans ");
-		G1_1_mem.startWithoutBarrier(GetProcessMemory_u());
-
-
-		//SparseMatrix Rt;
-		//SparseMatrix B;
-		//
-		//domains[0].Kplus_R.MatTranspose(Rt);
-		//B = domains[0].B1;
-		//Rt.ConvertCSRToDense(0);
-		//
-		//vector < vector < double > > tmpG (B.nnz, vector <double> (Rt.rows,0));
-		//vector <eslocal > G_I_row_indices;
-		//G_I_row_indices.resize(B.nnz);
-
-		//eslocal indx = 0;
-		//for (eslocal r = 0; r < Rt.rows; r++)
-		//	tmpG[indx][r] += B.V_values[0] * Rt.dense_values[Rt.rows * (B.J_col_indices[0]-1) + r];
-		//
-		//G_I_row_indices[indx] = B.I_row_indices[0];
-
-		//for (eslocal i = 1; i < B.I_row_indices.size(); i++) {
-		//
-		//	if (B.I_row_indices[i-1] != B.I_row_indices[i])
-		//		indx++;
-
-		//	for (eslocal r = 0; r < Rt.rows; r++)
-		//		tmpG[indx][r] += B.V_values[i] * Rt.dense_values[Rt.rows * (B.J_col_indices[i]-1) + r];
-		//
-		//	G_I_row_indices[indx] = B.I_row_indices[i];
-		//}
-		//
-		//G_I_row_indices.resize(indx+1);
-		//tmpG.resize(indx+1);
-
-		//vector <int>    G_I; G_I.reserve( tmpG.size() * tmpG[0].size());
-		//vector <int>    G_J; G_J.reserve( tmpG.size() * tmpG[0].size());
-		//vector <double> G_V; G_V.reserve( tmpG.size() * tmpG[0].size());
-
-		//for (eslocal i = 0; i < tmpG.size(); i++) {
-		//	for (eslocal j = 0; j < tmpG[i].size(); j++){
-		//		if (tmpG[i][j] != 0) {
-		//			G_I.push_back(G_I_row_indices[i]);
-		//			G_J.push_back(j+1);
-		//			G_V.push_back(tmpG[i][j]);
-		//		}
-		//	}
-		//}
-
-		//SparseMatrix Gcoo;
-		//Gcoo.I_row_indices = G_J; //G_I;
-		//Gcoo.J_col_indices = G_I; //G_J;
-		//Gcoo.V_values      = G_V;
-		//Gcoo.cols = B.rows; //R.cols;
-		//Gcoo.rows = Rt.rows; //B.rows;
-		//Gcoo.nnz  = G_I.size();
-		//Gcoo.type = 'G';
-		//
-		//Gcoo.ConvertToCSRwithSort(1);
-
-
-
-
-		//SparseMatrix Gtmp;
-		//SparseMatrix Gtmpt;
-		//
-		//Gtmp.MatMat( domains[0].B1t, 'T', domains[0].Kplus_R);
-		//Gtmp.MatTranspose(Gtmpt);
-		//
-		//Gtmp.ConvertToCOO(0);
-		//Gtmpt.ConvertToCOO(0);
-
-		int MPIrank;
-		MPI_Comm_rank (environment->MPICommunicator, &MPIrank);
-
-		PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
-		#pragma omp parallel for
-for (size_t j = 0; j < tmp_Mat.size(); j++) {
-			// V1
-			//tmp_Mat[j].MatMat( domains[j].B1t, 'T', domains[j].Kplus_R);
-			//tmp_Mat[j].MatTranspose();
-
-			// V2 - not cool
-			//tmp_Mat[j].MatMatSorted( domains[j].Kplus_R, 'T', domains[j].B1t); // - pozor mooooc pomale a MKL rutina zere mooooooc pameti
-
-			// V3
-			SparseMatrix Gcoo;
-			if (domains[j].B1.nnz > 0) {
-
-				SparseMatrix Rt;
-				SparseMatrix B;
-
-				switch (configuration.regularization) {
-				case REGULARIZATION::FIX_POINTS:
-					Rt = domains[j].Kplus_R;
-					Rt.ConvertDenseToCSR(1);
-					Rt.MatTranspose();
-					//domains[j].Kplus_R.MatTranspose(Rt);
-					break;
-				case REGULARIZATION::NULL_PIVOTS:
-					Rt = domains[j].Kplus_Rb;
-					Rt.ConvertDenseToCSR(1);
-					Rt.MatTranspose();
-					//domains[j].Kplus_Rb.MatTranspose(Rt);
-					break;
-				default:
-					ESINFO(GLOBAL_ERROR) << "Not implemented regularization.";
-				}
-
-				//Rt = domains[j].Kplus_R;
-				//Rt.MatTranspose();
-
-				Rt.ConvertCSRToDense(1);
-				B = domains[j].B1;
-
-				SEQ_VECTOR < SEQ_VECTOR < double > > tmpG (B.nnz, SEQ_VECTOR <double> (Rt.rows,0));
-				SEQ_VECTOR <eslocal > G_I_row_indices;
-				G_I_row_indices.resize(B.nnz);
-
-				eslocal indx = 0;
-				for (eslocal r = 0; r < Rt.rows; r++)
-					tmpG[indx][r] += B.V_values[0] * Rt.dense_values[Rt.rows * (B.J_col_indices[0]-1) + r];
-
-				G_I_row_indices[indx] = B.I_row_indices[0];
-
-				for (size_t i = 1; i < B.I_row_indices.size(); i++) {
-
-					if (B.I_row_indices[i-1] != B.I_row_indices[i])
-						indx++;
-
-					for (eslocal r = 0; r < Rt.rows; r++)
-						tmpG[indx][r] += B.V_values[i] * Rt.dense_values[Rt.rows * (B.J_col_indices[i]-1) + r];
-
-					G_I_row_indices[indx] = B.I_row_indices[i];
-				}
-
-				G_I_row_indices.resize(indx+1);
-				tmpG.resize(indx+1);
-
-				SEQ_VECTOR <eslocal>    G_I; G_I.reserve( tmpG.size() * tmpG[0].size());
-				SEQ_VECTOR <eslocal>    G_J; G_J.reserve( tmpG.size() * tmpG[0].size());
-				SEQ_VECTOR <double> G_V; G_V.reserve( tmpG.size() * tmpG[0].size());
-
-				for (size_t i = 0; i < tmpG.size(); i++) {
-					for (size_t j = 0; j < tmpG[i].size(); j++){
-						if (tmpG[i][j] != 0) {
-							G_I.push_back(G_I_row_indices[i]);
-							G_J.push_back(j+1);
-							G_V.push_back(tmpG[i][j]);
-						}
-					}
-				}
-
-
-
-
-				Gcoo.I_row_indices = G_J; //G_I;
-				Gcoo.J_col_indices = G_I; //G_J;
-				Gcoo.V_values      = G_V;
-				Gcoo.cols = B.rows; //R.cols;
-				Gcoo.rows = Rt.rows; //B.rows;
-				Gcoo.nnz  = G_I.size();
-				Gcoo.type = 'G';
-
-				Gcoo.ConvertToCSRwithSort(1);
-
-			} else {
-				Gcoo.cols = domains[j].B1.rows;
-				if (configuration.regularization == REGULARIZATION::FIX_POINTS) {
-					Gcoo.rows = domains[j].Kplus_R.rows;
-				} else {
-					Gcoo.rows = domains[j].Kplus_Rb.rows;
-				}
-				Gcoo.I_row_indices.resize(1,0);
-				Gcoo.J_col_indices.resize(1,0);
-				Gcoo.V_values.resize(0,0);
-
-				Gcoo.nnz  = 0;
-				Gcoo.type = 'G';
-
-				Gcoo.ConvertToCSRwithSort(1);
-			}
-
-			tmp_Mat[j] = Gcoo;
-
-			// END - V3
-
-			//if (MPIrank == 0)
-			//	cout << j << endl;
-
-		}
-
-		G1_1_time.end();
-		G1_1_time.printStatMPI();
-		//G1_1_time.printLastStatMPIPerNode();
-		G1_1_mem.endWithoutBarrier(GetProcessMemory_u());
-		G1_1_mem.printStatMPI();
-		//G1_1_mem.printLastStatMPIPerNode();
-
-		TimeEvent G1_2_time ("Create G1 per clust t. : Par.red.+MatAdd ");
-		G1_2_time.start();
-		TimeEvent G1_2_mem  ("Create G1 per clust mem: Par.red.+MatAdd ");
-		G1_2_mem.startWithoutBarrier(GetProcessMemory_u());
-
-		for (size_t j = 1; j < tmp_Mat.size(); j *= 2) {
-			#pragma omp parallel for
-for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
-				if (i * 2 * j + j < tmp_Mat.size()) {
-					tmp_Mat[i * 2 * j].MatAddInPlace(tmp_Mat[i * 2 * j + j], 'N', 1.0 ); //  MFETI - MatAppend(tmp_Mat[i + j]);
-					tmp_Mat[i * 2 * j + j].Clear();
-				}
-			}
-		}
-
-		G1_2_time.end();
-		G1_2_time.printStatMPI();
-		//G1_2_time.printLastStatMPIPerNode();
-
-		G1_2_mem.endWithoutBarrier(GetProcessMemory_u());
-		G1_2_mem.printStatMPI();
-		//G1_2_mem.printLastStatMPIPerNode();
-
-		G1 = tmp_Mat[0];
-		tmp_Mat[0].Clear();
-		//G1.MatTranspose();
-
-
-	} else {
-
-		PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
-		#pragma omp parallel for
-for (size_t j = 0; j < domains.size(); j++) {
-
-			// V1
-			//tmp_Mat[j].MatMat( domains[j].B1t, 'T', domains[j].Kplus_R);
-			//tmp_Mat[j].MatTranspose();
-
-			// V2
-			//tmp_Mat[j].MatMat( domains[j].Kplus_R, 'T', domains[j].B1t);
-
-			// V3
-			SparseMatrix Rt;
-			SparseMatrix B;
-
-			switch (configuration.regularization) {
-			case REGULARIZATION::FIX_POINTS:
-				Rt = domains[j].Kplus_R;
-				Rt.ConvertDenseToCSR(1);
-				Rt.MatTranspose();
-				//domains[j].Kplus_R.MatTranspose(Rt);
-				break;
-			case REGULARIZATION::NULL_PIVOTS:
-				Rt = domains[j].Kplus_Rb;
-				Rt.ConvertDenseToCSR(1);
-				Rt.MatTranspose();
-				//domains[j].Kplus_Rb.MatTranspose(Rt);
-				break;
-			default:
-				ESINFO(GLOBAL_ERROR) << "Not implemented regularization.";
-			}
-
-			Rt.ConvertCSRToDense(1);
-			B = domains[j].B1;
-
-			SEQ_VECTOR < SEQ_VECTOR < double > > tmpG (B.nnz, SEQ_VECTOR <double> (Rt.rows,0));
-			SEQ_VECTOR <eslocal > G_I_row_indices;
-			G_I_row_indices.resize(B.nnz);
-
-			eslocal indx = 0;
-			for (eslocal r = 0; r < Rt.rows; r++)
-				tmpG[indx][r] += B.V_values[0] * Rt.dense_values[Rt.rows * (B.J_col_indices[0]-1) + r];
-
-			G_I_row_indices[indx] = B.I_row_indices[0];
-
-			for (size_t i = 1; i < B.I_row_indices.size(); i++) {
-
-				if (B.I_row_indices[i-1] != B.I_row_indices[i])
-					indx++;
-
-				for (eslocal r = 0; r < Rt.rows; r++)
-					tmpG[indx][r] += B.V_values[i] * Rt.dense_values[Rt.rows * (B.J_col_indices[i]-1) + r];
-
-				G_I_row_indices[indx] = B.I_row_indices[i];
-			}
-
-			G_I_row_indices.resize(indx+1);
-			tmpG.resize(indx+1);
-
-			SEQ_VECTOR <eslocal>    G_I; G_I.reserve( tmpG.size() * tmpG[0].size());
-			SEQ_VECTOR <eslocal>    G_J; G_J.reserve( tmpG.size() * tmpG[0].size());
-			SEQ_VECTOR <double> G_V; G_V.reserve( tmpG.size() * tmpG[0].size());
-
-			for (size_t i = 0; i < tmpG.size(); i++) {
-				for (size_t j = 0; j < tmpG[i].size(); j++){
-					if (tmpG[i][j] != 0) {
-						G_I.push_back(G_I_row_indices[i]);
-						G_J.push_back(j+1);
-						G_V.push_back(tmpG[i][j]);
-					}
-				}
-			}
-
-			SparseMatrix Gcoo;
-			Gcoo.I_row_indices = G_J; //G_I;
-			Gcoo.J_col_indices = G_I; //G_J;
-			Gcoo.V_values      = G_V;
-			Gcoo.cols = B.rows; //R.cols;
-			Gcoo.rows = Rt.rows; //B.rows;
-			Gcoo.nnz  = G_I.size();
-			Gcoo.type = 'G';
-
-			Gcoo.ConvertToCSRwithSort(1);
-
-			tmp_Mat[j] = Gcoo;
-
-		}
-
-		for (size_t j = 1; j < tmp_Mat.size(); j *= 2) {
-			#pragma omp parallel for
-for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
-				if (i * 2 * j + j < tmp_Mat.size()) {
-					tmp_Mat[i * 2 * j].MatAppend(tmp_Mat[i * 2 * j + j]);
-					tmp_Mat[i * 2 * j + j].Clear();
-				}
-			}
-		}
-		G1.MatAppend(tmp_Mat[0]);
-		//for (eslocal d = 0; d < domains.size(); d++)					//MFETI
-		//{
-		//	//tmpM.MatMat( domains[d].B1, 'N', domains[d].Kplus_R);
-		//	tmpM.MatMat( domains[d].B1t, 'T', domains[d].Kplus_R);
-		//	tmpM.MatTranspose();
-		//	G1.MatAppend(tmpM);
-		//	tmpM.Clear();
-		//}
-	}
-
-	// for both MFETI and HFETI
-	for (size_t i = 0; i < G1.CSR_V_values.size(); i++) {
-		G1.CSR_V_values[i] = -1.0 * G1.CSR_V_values[i];
-	}
-
-
-//	std::stringstream ss;
-//	ss << "G" << ".txt";
-//	std::ofstream os(ss.str().c_str());
-//	os << G1;
-//	os.close();
-
-}
+//void ClusterBase::Create_G1_perCluster() {
+//
+//	SparseMatrix tmpM;
+//
+//	if (USE_HFETI == 1) {
+//		//G1 = G1 + trans(B1 * domains[d].Kplus_R) for all domains
+//		//for (eslocal d = 0; d < domains.size(); d++)
+//		//{
+//		//	tmpM.MatMat( domains[d].B1, 'N', domains[d].Kplus_R);
+//		//	G1.MatAddInPlace( tmpM, 'N', 1.0 );
+//		//	tmpM.Clear();
+//		//}
+//		//G1.MatTranspose();
+//
+//		//// OK - but sequential
+//		//for (eslocal d = 0; d < domains.size(); d++)					//HFETI
+//		//{
+//		//	tmpM.MatMat( domains[d].B1t, 'T', domains[d].Kplus_R);
+//		//	G1.MatAddInPlace( tmpM, 'N', 1.0 );
+//		//	tmpM.Clear();
+//		//}
+//		//G1.MatTranspose();
+//
+//
+//
+//
+//		//eslocal threads = 24;
+//		//eslocal n_domains = domains.size();
+//		//vector < SparseMatrix > tmp_Mat (threads);
+//		//cilk_for (eslocal t = 0; t < threads; t++ ) {
+//		//	for (eslocal i = t*(n_domains/threads+1); i < (t+1)*(n_domains/threads+1); i++ ) {
+//		//		if (i < n_domains) {
+//		//			SparseMatrix tmpM_l;
+//		//			//tmpM_l.MatMat( domains[i].Kplus_R, 'T', domains[i].B1t);
+//		//			tmpM_l.MatMat( domains[i].B1t, 'T', domains[i].Kplus_R);
+//		//			tmpM_l.MatTranspose();
+//		//			tmp_Mat[t].MatAddInPlace( tmpM_l, 'N', 1.0 );
+//		//		}
+//		//	}
+//		//}
+//
+//		TimeEvent G1_1_time ("Create G1 per clust t. : MatMat+MatTrans ");
+//		G1_1_time.start();
+//		TimeEvent G1_1_mem  ("Create G1 per clust mem: MatMat+MatTrans ");
+//		G1_1_mem.startWithoutBarrier(GetProcessMemory_u());
+//
+//
+//		//SparseMatrix Rt;
+//		//SparseMatrix B;
+//		//
+//		//domains[0].Kplus_R.MatTranspose(Rt);
+//		//B = domains[0].B1;
+//		//Rt.ConvertCSRToDense(0);
+//		//
+//		//vector < vector < double > > tmpG (B.nnz, vector <double> (Rt.rows,0));
+//		//vector <eslocal > G_I_row_indices;
+//		//G_I_row_indices.resize(B.nnz);
+//
+//		//eslocal indx = 0;
+//		//for (eslocal r = 0; r < Rt.rows; r++)
+//		//	tmpG[indx][r] += B.V_values[0] * Rt.dense_values[Rt.rows * (B.J_col_indices[0]-1) + r];
+//		//
+//		//G_I_row_indices[indx] = B.I_row_indices[0];
+//
+//		//for (eslocal i = 1; i < B.I_row_indices.size(); i++) {
+//		//
+//		//	if (B.I_row_indices[i-1] != B.I_row_indices[i])
+//		//		indx++;
+//
+//		//	for (eslocal r = 0; r < Rt.rows; r++)
+//		//		tmpG[indx][r] += B.V_values[i] * Rt.dense_values[Rt.rows * (B.J_col_indices[i]-1) + r];
+//		//
+//		//	G_I_row_indices[indx] = B.I_row_indices[i];
+//		//}
+//		//
+//		//G_I_row_indices.resize(indx+1);
+//		//tmpG.resize(indx+1);
+//
+//		//vector <int>    G_I; G_I.reserve( tmpG.size() * tmpG[0].size());
+//		//vector <int>    G_J; G_J.reserve( tmpG.size() * tmpG[0].size());
+//		//vector <double> G_V; G_V.reserve( tmpG.size() * tmpG[0].size());
+//
+//		//for (eslocal i = 0; i < tmpG.size(); i++) {
+//		//	for (eslocal j = 0; j < tmpG[i].size(); j++){
+//		//		if (tmpG[i][j] != 0) {
+//		//			G_I.push_back(G_I_row_indices[i]);
+//		//			G_J.push_back(j+1);
+//		//			G_V.push_back(tmpG[i][j]);
+//		//		}
+//		//	}
+//		//}
+//
+//		//SparseMatrix Gcoo;
+//		//Gcoo.I_row_indices = G_J; //G_I;
+//		//Gcoo.J_col_indices = G_I; //G_J;
+//		//Gcoo.V_values      = G_V;
+//		//Gcoo.cols = B.rows; //R.cols;
+//		//Gcoo.rows = Rt.rows; //B.rows;
+//		//Gcoo.nnz  = G_I.size();
+//		//Gcoo.type = 'G';
+//		//
+//		//Gcoo.ConvertToCSRwithSort(1);
+//
+//
+//
+//
+//		//SparseMatrix Gtmp;
+//		//SparseMatrix Gtmpt;
+//		//
+//		//Gtmp.MatMat( domains[0].B1t, 'T', domains[0].Kplus_R);
+//		//Gtmp.MatTranspose(Gtmpt);
+//		//
+//		//Gtmp.ConvertToCOO(0);
+//		//Gtmpt.ConvertToCOO(0);
+//
+//		int MPIrank;
+//		MPI_Comm_rank (MPI_COMM_WORLD, &MPIrank);
+//
+//		PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
+//		#pragma omp parallel for
+//for (size_t j = 0; j < tmp_Mat.size(); j++) {
+//			// V1
+//			//tmp_Mat[j].MatMat( domains[j].B1t, 'T', domains[j].Kplus_R);
+//			//tmp_Mat[j].MatTranspose();
+//
+//			// V2 - not cool
+//			//tmp_Mat[j].MatMatSorted( domains[j].Kplus_R, 'T', domains[j].B1t); // - pozor mooooc pomale a MKL rutina zere mooooooc pameti
+//
+//			// V3
+//			SparseMatrix Gcoo;
+//			if (domains[j].B1.nnz > 0) {
+//
+//				SparseMatrix Rt;
+//				SparseMatrix B;
+//
+//				switch (configuration.regularization) {
+//				case REGULARIZATION::FIX_POINTS:
+//					Rt = domains[j].Kplus_R;
+//					Rt.ConvertDenseToCSR(1);
+//					Rt.MatTranspose();
+//					//domains[j].Kplus_R.MatTranspose(Rt);
+//					break;
+//				case REGULARIZATION::NULL_PIVOTS:
+//					Rt = domains[j].Kplus_Rb;
+//					Rt.ConvertDenseToCSR(1);
+//					Rt.MatTranspose();
+//					//domains[j].Kplus_Rb.MatTranspose(Rt);
+//					break;
+//				default:
+//					ESINFO(GLOBAL_ERROR) << "Not implemented regularization.";
+//				}
+//
+//				//Rt = domains[j].Kplus_R;
+//				//Rt.MatTranspose();
+//
+//				Rt.ConvertCSRToDense(1);
+//				B = domains[j].B1;
+//
+//				SEQ_VECTOR < SEQ_VECTOR < double > > tmpG (B.nnz, SEQ_VECTOR <double> (Rt.rows,0));
+//				SEQ_VECTOR <eslocal > G_I_row_indices;
+//				G_I_row_indices.resize(B.nnz);
+//
+//				eslocal indx = 0;
+//				for (eslocal r = 0; r < Rt.rows; r++)
+//					tmpG[indx][r] += B.V_values[0] * Rt.dense_values[Rt.rows * (B.J_col_indices[0]-1) + r];
+//
+//				G_I_row_indices[indx] = B.I_row_indices[0];
+//
+//				for (size_t i = 1; i < B.I_row_indices.size(); i++) {
+//
+//					if (B.I_row_indices[i-1] != B.I_row_indices[i])
+//						indx++;
+//
+//					for (eslocal r = 0; r < Rt.rows; r++)
+//						tmpG[indx][r] += B.V_values[i] * Rt.dense_values[Rt.rows * (B.J_col_indices[i]-1) + r];
+//
+//					G_I_row_indices[indx] = B.I_row_indices[i];
+//				}
+//
+//				G_I_row_indices.resize(indx+1);
+//				tmpG.resize(indx+1);
+//
+//				SEQ_VECTOR <eslocal>    G_I; G_I.reserve( tmpG.size() * tmpG[0].size());
+//				SEQ_VECTOR <eslocal>    G_J; G_J.reserve( tmpG.size() * tmpG[0].size());
+//				SEQ_VECTOR <double> G_V; G_V.reserve( tmpG.size() * tmpG[0].size());
+//
+//				for (size_t i = 0; i < tmpG.size(); i++) {
+//					for (size_t j = 0; j < tmpG[i].size(); j++){
+//						if (tmpG[i][j] != 0) {
+//							G_I.push_back(G_I_row_indices[i]);
+//							G_J.push_back(j+1);
+//							G_V.push_back(tmpG[i][j]);
+//						}
+//					}
+//				}
+//
+//
+//
+//
+//				Gcoo.I_row_indices = G_J; //G_I;
+//				Gcoo.J_col_indices = G_I; //G_J;
+//				Gcoo.V_values      = G_V;
+//				Gcoo.cols = B.rows; //R.cols;
+//				Gcoo.rows = Rt.rows; //B.rows;
+//				Gcoo.nnz  = G_I.size();
+//				Gcoo.type = 'G';
+//
+//				Gcoo.ConvertToCSRwithSort(1);
+//
+//			} else {
+//				Gcoo.cols = domains[j].B1.rows;
+//				if (configuration.regularization == REGULARIZATION::FIX_POINTS) {
+//					Gcoo.rows = domains[j].Kplus_R.rows;
+//				} else {
+//					Gcoo.rows = domains[j].Kplus_Rb.rows;
+//				}
+//				Gcoo.I_row_indices.resize(1,0);
+//				Gcoo.J_col_indices.resize(1,0);
+//				Gcoo.V_values.resize(0,0);
+//
+//				Gcoo.nnz  = 0;
+//				Gcoo.type = 'G';
+//
+//				Gcoo.ConvertToCSRwithSort(1);
+//			}
+//
+//			tmp_Mat[j] = Gcoo;
+//
+//			// END - V3
+//
+//			//if (MPIrank == 0)
+//			//	cout << j << endl;
+//
+//		}
+//
+//		G1_1_time.end();
+//		G1_1_time.printStatMPI();
+//		//G1_1_time.printLastStatMPIPerNode();
+//		G1_1_mem.endWithoutBarrier(GetProcessMemory_u());
+//		G1_1_mem.printStatMPI();
+//		//G1_1_mem.printLastStatMPIPerNode();
+//
+//		TimeEvent G1_2_time ("Create G1 per clust t. : Par.red.+MatAdd ");
+//		G1_2_time.start();
+//		TimeEvent G1_2_mem  ("Create G1 per clust mem: Par.red.+MatAdd ");
+//		G1_2_mem.startWithoutBarrier(GetProcessMemory_u());
+//
+//		for (size_t j = 1; j < tmp_Mat.size(); j *= 2) {
+//			#pragma omp parallel for
+//for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
+//				if (i * 2 * j + j < tmp_Mat.size()) {
+//					tmp_Mat[i * 2 * j].MatAddInPlace(tmp_Mat[i * 2 * j + j], 'N', 1.0 ); //  MFETI - MatAppend(tmp_Mat[i + j]);
+//					tmp_Mat[i * 2 * j + j].Clear();
+//				}
+//			}
+//		}
+//
+//		G1_2_time.end();
+//		G1_2_time.printStatMPI();
+//		//G1_2_time.printLastStatMPIPerNode();
+//
+//		G1_2_mem.endWithoutBarrier(GetProcessMemory_u());
+//		G1_2_mem.printStatMPI();
+//		//G1_2_mem.printLastStatMPIPerNode();
+//
+//		G1 = tmp_Mat[0];
+//		tmp_Mat[0].Clear();
+//		//G1.MatTranspose();
+//
+//
+//	} else {
+//
+//		PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
+//		#pragma omp parallel for
+//for (size_t j = 0; j < domains.size(); j++) {
+//
+//			// V1
+//			//tmp_Mat[j].MatMat( domains[j].B1t, 'T', domains[j].Kplus_R);
+//			//tmp_Mat[j].MatTranspose();
+//
+//			// V2
+//			//tmp_Mat[j].MatMat( domains[j].Kplus_R, 'T', domains[j].B1t);
+//
+//			// V3
+//			SparseMatrix Rt;
+//			SparseMatrix B;
+//
+//			switch (configuration.regularization) {
+//			case REGULARIZATION::FIX_POINTS:
+//				Rt = domains[j].Kplus_R;
+//				Rt.ConvertDenseToCSR(1);
+//				Rt.MatTranspose();
+//				//domains[j].Kplus_R.MatTranspose(Rt);
+//				break;
+//			case REGULARIZATION::NULL_PIVOTS:
+//				Rt = domains[j].Kplus_Rb;
+//				Rt.ConvertDenseToCSR(1);
+//				Rt.MatTranspose();
+//				//domains[j].Kplus_Rb.MatTranspose(Rt);
+//				break;
+//			default:
+//				ESINFO(GLOBAL_ERROR) << "Not implemented regularization.";
+//			}
+//
+//			Rt.ConvertCSRToDense(1);
+//			B = domains[j].B1;
+//
+//			SEQ_VECTOR < SEQ_VECTOR < double > > tmpG (B.nnz, SEQ_VECTOR <double> (Rt.rows,0));
+//			SEQ_VECTOR <eslocal > G_I_row_indices;
+//			G_I_row_indices.resize(B.nnz);
+//
+//			eslocal indx = 0;
+//			for (eslocal r = 0; r < Rt.rows; r++)
+//				tmpG[indx][r] += B.V_values[0] * Rt.dense_values[Rt.rows * (B.J_col_indices[0]-1) + r];
+//
+//			G_I_row_indices[indx] = B.I_row_indices[0];
+//
+//			for (size_t i = 1; i < B.I_row_indices.size(); i++) {
+//
+//				if (B.I_row_indices[i-1] != B.I_row_indices[i])
+//					indx++;
+//
+//				for (eslocal r = 0; r < Rt.rows; r++)
+//					tmpG[indx][r] += B.V_values[i] * Rt.dense_values[Rt.rows * (B.J_col_indices[i]-1) + r];
+//
+//				G_I_row_indices[indx] = B.I_row_indices[i];
+//			}
+//
+//			G_I_row_indices.resize(indx+1);
+//			tmpG.resize(indx+1);
+//
+//			SEQ_VECTOR <eslocal>    G_I; G_I.reserve( tmpG.size() * tmpG[0].size());
+//			SEQ_VECTOR <eslocal>    G_J; G_J.reserve( tmpG.size() * tmpG[0].size());
+//			SEQ_VECTOR <double> G_V; G_V.reserve( tmpG.size() * tmpG[0].size());
+//
+//			for (size_t i = 0; i < tmpG.size(); i++) {
+//				for (size_t j = 0; j < tmpG[i].size(); j++){
+//					if (tmpG[i][j] != 0) {
+//						G_I.push_back(G_I_row_indices[i]);
+//						G_J.push_back(j+1);
+//						G_V.push_back(tmpG[i][j]);
+//					}
+//				}
+//			}
+//
+//			SparseMatrix Gcoo;
+//			Gcoo.I_row_indices = G_J; //G_I;
+//			Gcoo.J_col_indices = G_I; //G_J;
+//			Gcoo.V_values      = G_V;
+//			Gcoo.cols = B.rows; //R.cols;
+//			Gcoo.rows = Rt.rows; //B.rows;
+//			Gcoo.nnz  = G_I.size();
+//			Gcoo.type = 'G';
+//
+//			Gcoo.ConvertToCSRwithSort(1);
+//
+//			tmp_Mat[j] = Gcoo;
+//
+//		}
+//
+//		for (size_t j = 1; j < tmp_Mat.size(); j *= 2) {
+//			#pragma omp parallel for
+//			for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
+//				if (i * 2 * j + j < tmp_Mat.size()) {
+//					tmp_Mat[i * 2 * j].MatAppend(tmp_Mat[i * 2 * j + j]);
+//					tmp_Mat[i * 2 * j + j].Clear();
+//				}
+//			}
+//		}
+//		G1.MatAppend(tmp_Mat[0]);
+//		//for (eslocal d = 0; d < domains.size(); d++)					//MFETI
+//		//{
+//		//	//tmpM.MatMat( domains[d].B1, 'N', domains[d].Kplus_R);
+//		//	tmpM.MatMat( domains[d].B1t, 'T', domains[d].Kplus_R);
+//		//	tmpM.MatTranspose();
+//		//	G1.MatAppend(tmpM);
+//		//	tmpM.Clear();
+//		//}
+//	}
+//
+//	// for both MFETI and HFETI
+//	for (size_t i = 0; i < G1.CSR_V_values.size(); i++) {
+//		G1.CSR_V_values[i] = -1.0 * G1.CSR_V_values[i];
+//	}
+//
+//
+////	std::stringstream ss;
+////	ss << "G" << ".txt";
+////	std::ofstream os(ss.str().c_str());
+////	os << G1;
+////	os.close();
+//
+//}
 
 void ClusterBase::Compress_G1() {
 
@@ -2294,6 +2407,7 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 
 	SEQ_VECTOR <eslocal> kerindices (domains.size() + 1, 0);
 	kerindices[0] = 0;
+
 	for (size_t k = 1; k < kerindices.size(); k++) {
 		kerindices[k] = kerindices[k-1] + domains[k-1].Kplus_R.cols;
 	}
@@ -2317,17 +2431,17 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 		if ( USE_HFETI == 1) {
 			for (size_t d = 0; d < domains.size(); d++) {
 				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
-					domains[d].Kplus_R .DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
+					domains[d].Kplus_R .DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
 				} else {
-					domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
+					domains[d].Kplus_Rb.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
 				}
 			}
 		} else {
 			for (size_t d = 0; d < domains.size(); d++) {											// MFETI
 				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
-					domains[d].Kplus_R. DenseMatVec(f[d], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
+					domains[d].Kplus_R. DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
 				} else {
-					domains[d].Kplus_Rb.DenseMatVec(f[d], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
+					domains[d].Kplus_Rb.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
 				}
 			}
 		}
@@ -2337,17 +2451,17 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 		if ( USE_HFETI == 1) {
 			for (size_t d = 0; d < domains.size(); d++) {
 				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
-					domains[d].Kplus_R2 .DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
+					domains[d].Kplus_R2 .DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
 				} else {
-					domains[d].Kplus_Rb2.DenseMatVec(f[d], vec_d, 'T', 0, 0         , 1.0 );
+					domains[d].Kplus_Rb2.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
 				}
 			}
 		} else {
 			for (size_t d = 0; d < domains.size(); d++) {											// MFETI
 				if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
-					domains[d].Kplus_R2. DenseMatVec(f[d], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
+					domains[d].Kplus_R2. DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
 				} else {
-					domains[d].Kplus_Rb2.DenseMatVec(f[d], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
+					domains[d].Kplus_Rb2.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
 				}
 			}
 		}
@@ -2364,15 +2478,16 @@ void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )
 void ClusterBase::CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )  {
 
 	SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster ( domains.size() );
+
 	#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++) {
-		x_prim_cluster[d] = f[d];
+	for (size_t d = 0; d < domains.size(); d++) {
+		x_prim_cluster[d] = f[domains[d].domain_global_index];
 	}
 
 	if (USE_HFETI == 0) {
 		#pragma omp parallel for
-for (size_t d = 0; d < domains.size(); d++) {				// MFETI
-			domains[d].multKplusLocal( x_prim_cluster[d] );
+		for (size_t d = 0; d < domains.size(); d++) {				// MFETI
+				domains[d].multKplusLocal( x_prim_cluster[d] );
 		}
 	} else {
 		multKplusGlobal_l( x_prim_cluster );						// HFETI
@@ -2383,8 +2498,8 @@ for (size_t d = 0; d < domains.size(); d++) {				// MFETI
 //		domains[d].up0 = x_prim_cluster[d];
 //	}
 
-	vec_b_compressed.clear();
-	vec_b_compressed.resize(my_lamdas_indices.size(), 0.0);
+//	vec_b_compressed.clear();
+//	vec_b_compressed.resize(my_lamdas_indices.size(), 0.0);
 
 	SEQ_VECTOR < double > y_out_tmp (domains[0].B1_comp_dom.rows);
 
@@ -2395,8 +2510,6 @@ for (size_t d = 0; d < domains.size(); d++) {				// MFETI
 		for (size_t i = 0; i < domains[d].lambda_map_sub_local.size(); i++)
 			vec_b_compressed[ domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i] - domains[d].vec_c[i];
 
-		//for (eslocal i = 0; lambda_map_sub_local.size(); i++)
-		//	vec_b_compressed[i] -= domains[d].vec_c[i];
 	}
 
 }
@@ -2404,7 +2517,7 @@ for (size_t d = 0; d < domains.size(); d++) {				// MFETI
 
 void ClusterBase::CreateVec_c_perCluster( SEQ_VECTOR <double> & vec_c_out )  {
 
-	vec_c_out.resize(my_lamdas_indices.size(), 0.0);
+	//vec_c_out.resize(my_lamdas_indices.size(), 0.0);
 
 	for (size_t d = 0; d < domains.size(); d++) {
 		for (size_t i = 0; i < domains[d].lambda_map_sub_local.size(); i++) {
@@ -2417,7 +2530,7 @@ void ClusterBase::CreateVec_c_perCluster( SEQ_VECTOR <double> & vec_c_out )  {
 
 void ClusterBase::CreateVec_lb_perCluster( SEQ_VECTOR <double> & vec_lb_out )  {
 
-	vec_lb_out.resize(my_lamdas_indices.size(), -std::numeric_limits<double>::infinity());
+	//vec_lb_out.resize(my_lamdas_indices.size(), -std::numeric_limits<double>::infinity());
 
 	for (size_t d = 0; d < domains.size(); d++) {
 		for (size_t i = 0; i < domains[d].lambda_map_sub_local.size(); i++){
@@ -2484,13 +2597,15 @@ void ClusterBase::B1_comp_MatVecSum( SEQ_VECTOR < SEQ_VECTOR <double> > & x_in, 
 void ClusterBase::CreateDirichletPrec(Instance *instance)
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < instance->K.size(); d++) {
-		SEQ_VECTOR<eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
-		SEQ_VECTOR<eslocal> perm_vec_full(instance->K[d].rows);
-		SEQ_VECTOR<eslocal> perm_vec_diff(instance->K[d].rows);
+	//for (size_t d = 0; d < instance->K.size(); d++) {
+	for (size_t d = 0; d < domains.size(); d++) {
 
-		SEQ_VECTOR<eslocal> I_row_indices_p(instance->K[d].nnz);
-		SEQ_VECTOR<eslocal> J_col_indices_p(instance->K[d].nnz);
+		SEQ_VECTOR<eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
+		SEQ_VECTOR<eslocal> perm_vec_full(instance->K[domains[d].domain_global_index].rows);// (instance->K[d].rows);
+		SEQ_VECTOR<eslocal> perm_vec_diff(instance->K[domains[d].domain_global_index].rows);// (instance->K[d].rows);
+
+		SEQ_VECTOR<eslocal> I_row_indices_p(instance->K[domains[d].domain_global_index].nnz);// (instance->K[d].nnz);
+		SEQ_VECTOR<eslocal> J_col_indices_p(instance->K[domains[d].domain_global_index].nnz);// (instance->K[d].nnz);
 
 		for (size_t i = 0; i < perm_vec.size(); i++) {
 			perm_vec[i] = perm_vec[i] - 1;
@@ -2506,11 +2621,11 @@ void ClusterBase::CreateDirichletPrec(Instance *instance)
 		perm_vec_full = perm_vec_diff;
 		perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
 
-		SparseMatrix K_modif = instance->K[d];
+		SparseMatrix K_modif = instance->K[domains[d].domain_global_index]; //[d];
 #ifdef ESBEM
 		K_modif.ConvertToCSR(1);
 #endif
-		SparseMatrix RegMatCRS = instance->RegMat[d];
+		SparseMatrix RegMatCRS = instance->RegMat[domains[d].domain_global_index]; //[d];
 		RegMatCRS.ConvertToCSRwithSort(0);
 		K_modif.MatAddInPlace(RegMatCRS, 'N', -1);
 		// K_modif.RemoveLower();
@@ -2567,8 +2682,8 @@ void ClusterBase::CreateDirichletPrec(Instance *instance)
 
 		eslocal sc_size = perm_vec.size();
 
-		if (sc_size == instance->K[d].rows) {
-			domains[d].Prec = instance->K[d];
+		if (sc_size == instance->K[domains[d].domain_global_index].rows) {
+			domains[d].Prec = instance->K[domains[d].domain_global_index];
 			domains[d].Prec.ConvertCSRToDense(1);
 			// if physics.K[d] does not contain inner DOF
 		} else {

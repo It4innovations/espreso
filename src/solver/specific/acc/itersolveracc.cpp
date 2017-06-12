@@ -315,7 +315,7 @@ for (eslocal d = 0; d < cluster.domains.size(); d++) {
 
 }
 
-void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out ) {
+void IterSolverAcc::Apply_Prec( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out ) {
 
     time_eval.totalTime.start();
 
