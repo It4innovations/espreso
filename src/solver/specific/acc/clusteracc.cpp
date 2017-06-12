@@ -1057,7 +1057,6 @@ void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in,
         if ( thread < maxDevNumber ) {
             MICtime[ thread ] = Measure::time();
             SparseKPack[ thread ].SolveMIC();
-            //SparseKPack[ thread ].SolveMIC_Sync();
             eslocal end = (eslocal) accDomains[ thread ].size() * 
                 SparseKPack[thread].getMICratio();
             for (eslocal i = 0 ; i < end; ++i) {
@@ -1097,18 +1096,6 @@ void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in,
         omp_set_nested( 0 );
     }
     omp_set_num_threads( maxThreads );
-
-//#pragma omp parallel num_threads( maxDevNumber ) 
-//    {
-//        eslocal myAcc = omp_get_thread_num();
-//        for (eslocal i = 0 ; i < accDomains[ myAcc ].size(); ++i) {
-//            eslocal domN = accDomains[myAcc].at(i);
-//            SparseKPack[myAcc].GetY(i,tm2[domN]);
-//        }
-//
-//    }
-
-
 
 #pragma omp parallel for
     for (size_t d = 0; d < domains.size(); d++) {
