@@ -9,7 +9,7 @@ before_script:
   - source /opt/intel/bin/compilervars.sh intel64
   - . env/paths.default
   - . env/threading.default 5
-  - cp build/build.config.icpc build.config
+  - cp install/build.config.icpc build.config
 
 after_script:
   - ./waf distclean
