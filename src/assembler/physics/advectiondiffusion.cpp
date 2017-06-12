@@ -666,6 +666,8 @@ double AdvectionDiffusion::computeHTC(
 
 				double T_EXT, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity;
 
+				T_EXT = e->getProperty(Property::EXTERNAL_TEMPERATURE, node, step.step, step.currentTime, temp, 0);
+
 				convectionMatParameters(convection, e, node, step, temp, T_EXT, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity );
 
 				double Re = rho * e->getProperty(Property::FLUID_VELOCITY, node, step.step, step.currentTime, temp, 0) * e->getProperty(Property::DIAMETER, node, step.step, step.currentTime, temp, 0) / dynamic_viscosity;
