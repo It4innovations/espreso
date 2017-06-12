@@ -610,8 +610,17 @@ void SparseMatrixPack::FactorizeMIC( ) {
     }
 }
 
-void SparseMatrixPack::SolveMIC_Start( 
+void SparseMatrixPack::SolveMIC( 
         ) {
+
+    long nMatrices = this->nMatrices;
+    long inSize = 0;
+    long outSize =  0;
+    for ( eslocal i = 0 ; i < (long) (nMatrices*MICratio); ++i ) {
+        inSize += cols[i];
+        outSize += rows[i];
+    }
+
     if (!USE_FLOAT) {
 #pragma offload target( mic : device ) \
         in( matrix_values_mic : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr ) \
@@ -630,51 +639,59 @@ void SparseMatrixPack::SolveMIC_Start(
         in( dparm : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
         in( error : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
         in( perm : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-        in( mic_x_in : length( x_in_dim ) alloc_if( 0 ) free_if( 0 ) ) \
+        in( mic_x_in : length( inSize ) alloc_if( 0 ) free_if( 0 ) ) \
         in( mic_y_out : length( 0 ) alloc_if(0 ) free_if( 0 ) ) \
-        in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-        signal( mic_y_out )
-        {
+        out( mic_x_in : into( mic_y_out ) length( outSize ) alloc_if( 0 ) free_if( 0 ) ) \
+        out( elapsedTime : length( 1 ) alloc_if( 0 ) free_if( 0 ) ) \ 
+        in( MICratio ) \
+            in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) 
+            //        signal( mic_y_out )
+            {
 
-            double ddum     = 0;
-            MKL_INT idum    = 0; 
-            MKL_INT n_rhs   = 1;
-            MKL_INT msglvl  = 0;
-            MKL_INT mnum    = 1;
-            MKL_INT maxfct  = 1;
-            MKL_INT mtype   = 2;
+                // load balancing
+                eslocal nIters = (eslocal) (nMatrices * MICratio);
+                double start = omp_get_wtime();
 
-            /* -------------------------------------------------------------------- */
-            /* .. Back substitution and iterative refinement. */
-            /* -------------------------------------------------------------------- */
+                double ddum     = 0;
+                MKL_INT idum    = 0; 
+                MKL_INT n_rhs   = 1;
+                MKL_INT msglvl  = 0;
+                MKL_INT mnum    = 1;
+                MKL_INT maxfct  = 1;
+                MKL_INT mtype   = 2;
+
+                /* -------------------------------------------------------------------- */
+                /* .. Back substitution and iterative refinement. */
+                /* -------------------------------------------------------------------- */
 
 #pragma omp parallel 
-            {
-                eslocal myPhase = 33;
+                {
+                    eslocal myPhase = 33;
 #pragma omp for 
-                for (eslocal i = 0; i < nMatrices; i++) {
-                    MKL_INT ip5backup = iparm[i][5];
-                    iparm[i][ 6 - 1 ] = 1;
-                    double * out =  mic_y_out + y_out_offsets[i]; 
-                    pardiso ( pt[i], &maxfct, &mnum, &mtype, &myPhase,
-                            &rows[i], matrix_values_mic + offsets[i],
-                            rowInd_mic + rowOffsets[i], colInd_mic + colOffsets[i], 
-                            &idum, &n_rhs, iparm[i], &msglvl, mic_x_in + x_in_offsets[i], 
-                            out, &error[i] );
-                    iparm[i][5] = ip5backup;
+                    for (eslocal i = 0; i < nIters; i++) {
+                        MKL_INT ip5backup = iparm[i][5];
+                        iparm[i][ 6 - 1 ] = 1;
+                        double * out =  mic_y_out + y_out_offsets[i]; 
+                        pardiso ( pt[i], &maxfct, &mnum, &mtype, &myPhase,
+                                &rows[i], matrix_values_mic + offsets[i],
+                                rowInd_mic + rowOffsets[i], colInd_mic + colOffsets[i], 
+                                &idum, &n_rhs, iparm[i], &msglvl, mic_x_in + x_in_offsets[i], 
+                                out, &error[i] );
+                        iparm[i][5] = ip5backup;
+                    }
                 }
-            }
-            bool err = false;
-            for (eslocal i = 0; i < nMatrices; i++) {
-                if (error[i]!=0) {
-                    err = true;
+                bool err = false;
+                for (eslocal i = 0; i < nIters; i++) {
+                    if (error[i]!=0) {
+                        err = true;
+                    }
                 }
+                if (err)
+                {
+                    exit (3);
+                }
+                elapsedTime[0] = omp_get_wtime() - start;
             }
-            if (err)
-            {
-                exit (3);
-            }
-        }
     } else {
 #pragma offload target( mic : device ) \
         in( matrix_values_mic_fl : length( 0 ) alloc_if( 0 ) free_if( 0 ) targetptr ) \
@@ -693,52 +710,59 @@ void SparseMatrixPack::SolveMIC_Start(
         in( dparm : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
         in( error : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
         in( perm : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-        in( mic_x_in_fl : length( x_in_dim ) alloc_if( 0 ) free_if( 0 ) ) \
+        in( mic_x_in_fl : length( inSize ) alloc_if( 0 ) free_if( 0 ) ) \
         in( mic_y_out_fl : length( 0 ) alloc_if(0 ) free_if( 0 ) ) \
-        in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) \
-        signal( mic_y_out_fl )
-        {
+        out( mic_x_in_fl : into(mic_y_out_fl) length( outSize ) alloc_if( 0 ) free_if( 0 ) ) \
+        in( MICratio ) \ 
+        out( elapsedTime : length( 1 ) alloc_if( 0 ) free_if( 0 ) ) \ 
+            in( this : length( 0 ) alloc_if( 0 ) free_if( 0 ) ) // \ signal( mic_y_out_fl )
+            {
+                // load balancing
+                eslocal nIters = (eslocal) ( nMatrices * MICratio );
 
-            double ddum     = 0;
-            MKL_INT idum    = 0; 
-            MKL_INT n_rhs   = 1;
-            MKL_INT msglvl  = 0;
-            MKL_INT mnum    = 1;
-            MKL_INT maxfct  = 1;
-            MKL_INT mtype   = 2;
+                double start = omp_get_wtime();
 
-            /* -------------------------------------------------------------------- */
-            /* .. Back substitution and iterative refinement. */
-            /* -------------------------------------------------------------------- */
+                double ddum     = 0;
+                MKL_INT idum    = 0; 
+                MKL_INT n_rhs   = 1;
+                MKL_INT msglvl  = 0;
+                MKL_INT mnum    = 1;
+                MKL_INT maxfct  = 1;
+                MKL_INT mtype   = 2;
+
+                /* -------------------------------------------------------------------- */
+                /* .. Back substitution and iterative refinement. */
+                /* -------------------------------------------------------------------- */
 
 #pragma omp parallel 
-            {
-                eslocal myPhase = 33;
+                {
+                    eslocal myPhase = 33;
 #pragma omp for 
-                for (eslocal i = 0; i < nMatrices; i++) {
-                    MKL_INT ip5backup = iparm[i][5];
-                    iparm[i][ 6 - 1 ] = 1;
-                    iparm[i][28 - 1 ] = 1;
-                    float * out =  mic_y_out_fl + y_out_offsets[i]; 
-                    pardiso ( pt[i], &maxfct, &mnum, &mtype, &myPhase,
-                            &rows[i], matrix_values_mic_fl + offsets[i],
-                            rowInd_mic + rowOffsets[i], colInd_mic + colOffsets[i], 
-                            &idum, &n_rhs, iparm[i], &msglvl, mic_x_in_fl + x_in_offsets[i], 
-                            out, &error[i] );
-                    iparm[i][5] = ip5backup;
+                    for (eslocal i = 0; i < nIters; i++) {
+                        MKL_INT ip5backup = iparm[i][5];
+                        iparm[i][ 6 - 1 ] = 1;
+                        iparm[i][28 - 1 ] = 1;
+                        float * out =  mic_y_out_fl + y_out_offsets[i]; 
+                        pardiso ( pt[i], &maxfct, &mnum, &mtype, &myPhase,
+                                &rows[i], matrix_values_mic_fl + offsets[i],
+                                rowInd_mic + rowOffsets[i], colInd_mic + colOffsets[i], 
+                                &idum, &n_rhs, iparm[i], &msglvl, mic_x_in_fl + x_in_offsets[i], 
+                                out, &error[i] );
+                        iparm[i][5] = ip5backup;
+                    }
                 }
-            }
-            bool err = false;
-            for (eslocal i = 0; i < nMatrices; i++) {
-                if (error[i]!=0) {
-                    err = true;
+                bool err = false;
+                for (eslocal i = 0; i < nIters; i++) {
+                    if (error[i]!=0) {
+                        err = true;
+                    }
                 }
+                if (err)
+                {
+                    exit (3);
+                }
+                elapsedTime[0] = omp_get_wtime() - start;
             }
-            if (err)
-            {
-                exit (3);
-            }
-        }
 
     }
 }
@@ -746,14 +770,15 @@ void SparseMatrixPack::SolveMIC_Start(
 void SparseMatrixPack::SolveMIC_Sync( 
         ) {
     if (!USE_FLOAT) {
-#pragma offload_wait target( mic : device ) wait( mic_y_out ) 
+        //#pragma offload_wait target( mic : device )  wait( mic_y_out ) 
 #pragma offload_transfer target( mic : device ) \
-    out( mic_x_in : into(mic_y_out) length( y_out_dim ) alloc_if( 0 ) free_if( 0 ) )
+        out( mic_x_in : into(mic_y_out) length( y_out_dim ) alloc_if( 0 ) free_if( 0 ) ) \
+        out( elapsedTime : length(1) alloc_if(0) free_if(0) )
     } else {
- #pragma offload_wait target( mic : device ) wait( mic_y_out_fl ) 
+        // #pragma offload_wait target( mic : device ) wait( mic_y_out_fl ) 
 #pragma offload_transfer target( mic : device ) \
-    out( mic_x_in_fl : into(mic_y_out_fl) length( y_out_dim ) alloc_if( 0 ) free_if( 0 ) )
-       
+        out( mic_x_in_fl : into(mic_y_out_fl) length( y_out_dim ) alloc_if( 0 ) free_if( 0 ) ) \
+        out( elapsedTime : length(1) alloc_if(0) free_if(0) )
     }
 }
 

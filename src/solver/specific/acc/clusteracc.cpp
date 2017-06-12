@@ -410,16 +410,12 @@ void ClusterAcc::SetupKsolvers ( ) {
         //TODO: else stokes = -2 = Real and symmetric indefinite
 
         if ( d == 0 && environment->MPIrank == 0) {
-            domains[d].Kplus.msglvl = 0;
+        //    domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
         }
-
-
-        if ( d == 0 && environment->MPIrank == 0) {
-            domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
-        }
+domains[d].Kplus.msglvl = 0;
     }
     if (!USE_KINV) {
-        double MICr = 1.0;
+        double MICr = 0.9;
 
         eslocal *matrixPerPack = new eslocal[ this->acc_per_MPI ];
 
@@ -916,7 +912,9 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
 
 
 
-void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
+void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in, 
+    double & CPUtime, 
+    double * MICtime ) {
 
     //ESINFO(PROGRESS2) << "K+ multiply HFETI";
     mkl_set_num_threads(1);
@@ -1044,34 +1042,71 @@ void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
             }
         }
     }
-#pragma omp parallel num_threads( maxDevNumber ) 
-    {
-        eslocal myAcc = omp_get_thread_num();
-        SparseKPack[ myAcc ].SolveMIC_Start();
 
+    int maxThreads = omp_get_max_threads();
+    bool resetNested = false;
 
+    if ( omp_get_nested() == 0 ) {
+        omp_set_nested(1);
+        resetNested = true;
     }
 
-    //	domains[d].multKplusLocal(tm1[d] , tm2[d]);
+#pragma omp parallel num_threads( maxDevNumber + 1 ) 
+    {
+        int thread = omp_get_thread_num();
+        if ( thread < maxDevNumber ) {
+            MICtime[ thread ] = Measure::time();
+            SparseKPack[ thread ].SolveMIC();
+            //SparseKPack[ thread ].SolveMIC_Sync();
+            eslocal end = (eslocal) accDomains[ thread ].size() * 
+                SparseKPack[thread].getMICratio();
+            for (eslocal i = 0 ; i < end; ++i) {
+                eslocal domN = accDomains[ thread ].at( i );
+                SparseKPack[thread].GetY( i, tm2[domN] );
+            }
+            MICtime[ thread ] = Measure::time() - MICtime[ thread ];
+        } else {
+            omp_set_num_threads( maxThreads - maxDevNumber );     
 
+            double startCPU = Measure::time();
+
+            for ( eslocal i = 0; i < maxDevNumber; ++i ) {
+                eslocal start = (eslocal) (SparseKPack[ i ].getNMatrices() * 
+                    SparseKPack[ i ].getMICratio());
+#pragma omp parallel for
+                for (eslocal d = start; d < SparseKPack[ i ].getNMatrices(); ++d ) {
+                    eslocal domN = accDomains[ i ].at( d );
+                    domains[ domN ].multKplusLocal(tm1[domN], tm2[ domN ]);
+                }
+            }
+
+        
 #pragma omp parallel for 
-    for (size_t d = 0; d < domains.size(); d++) {
-        eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-        eslocal domain_size = domains[d].domain_prim_size;
+            for (size_t d = 0; d < domains.size(); d++) {
+                eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
+                eslocal domain_size = domains[d].domain_prim_size;
 
-        domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
-    }
+                domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
+            }
 
-#pragma omp parallel num_threads( maxDevNumber ) 
-    {
-        eslocal myAcc = omp_get_thread_num();
-        SparseKPack[ myAcc ].SolveMIC_Sync();
-        for (eslocal i = 0 ; i < accDomains[ myAcc ].size(); ++i) {
-            eslocal domN = accDomains[myAcc].at(i);
-            SparseKPack[myAcc].GetY(i,tm2[domN]);
+            CPUtime = Measure::time() - startCPU;
         }
-
     }
+    
+    if ( resetNested ) {
+        omp_set_nested( 0 );
+    }
+    omp_set_num_threads( maxThreads );
+
+//#pragma omp parallel num_threads( maxDevNumber ) 
+//    {
+//        eslocal myAcc = omp_get_thread_num();
+//        for (eslocal i = 0 ; i < accDomains[ myAcc ].size(); ++i) {
+//            eslocal domN = accDomains[myAcc].at(i);
+//            SparseKPack[myAcc].GetY(i,tm2[domN]);
+//        }
+//
+//    }
 
 
 

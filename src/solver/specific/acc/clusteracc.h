@@ -28,7 +28,9 @@ public:
     void Create_Kinv_perDomain();
 	void SetupKsolvers ( );
     void CreateDirichletPrec( Instance *instance );
-    void multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in);
+    void multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in, 
+        double & CPUtime, 
+        double * MICtime );
 
     // sets affinity of processes on accelerators
     void SetAcceleratorAffinity();

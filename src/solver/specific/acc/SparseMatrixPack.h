@@ -67,8 +67,8 @@ namespace espreso {
         // Sends matrices to MIC, preallocates data for input/ouptut vectors
         void CopyToMIC();
 
-        // Solves the system using matices in pack on mic - start of async. c.
-        void SolveMIC_Start( );
+        // Solves the system using matices in pack on mic
+        void SolveMIC( );
 
         // Factorizes matrices copied to the coprocessor
         void FactorizeMIC( );
