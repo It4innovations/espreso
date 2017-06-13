@@ -15,7 +15,7 @@ Environment::Environment(): executable("espreso")
 	int initialized;
 	MPI_Initialized(&initialized);
 
-	MPICommunicator = environment->MPICommunicator;
+	MPICommunicator = MPI_COMM_WORLD;
 	if (initialized) {
 		MPI_Comm_rank(MPICommunicator, &MPIrank);
 		MPI_Comm_size(MPICommunicator, &MPIsize);
