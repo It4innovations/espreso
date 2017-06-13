@@ -466,6 +466,9 @@ domains[d].Kplus.msglvl = 0;
 
 void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
 
+    bool USE_FLOAT = ( configuration.schur_precision == FLOAT_PRECISION::SINGLE ||
+        configuration.Ksolver == ESPRESO_KSOLVER::DIRECT_SP );
+
     // Ratio of work done on MIC
     double MICr = 1.0;
     if ( configuration.load_balancing_preconditioner ) {
@@ -503,6 +506,8 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
     this->DirichletPacks.resize( this->acc_per_MPI, DenseMatrixPack(configuration) );
     this->accPreconditioners.resize( this->acc_per_MPI );
 
+    eslocal scalarSize = (USE_FLOAT) ? sizeof(float) : sizeof(double);
+
     for ( int i = 0; i < this->acc_per_MPI; i++ )
     {
         long dataSize = 0;
@@ -519,7 +524,7 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
                 currDataSize = ( ( 1.0 + ( double ) size ) *
                         ( ( double ) size ) / 2.0 );
             }
-            long dataInBytes = (currDataSize + dataSize) * sizeof(double);
+            long dataInBytes = (currDataSize + dataSize) * scalarSize;
             if (MICFull || (dataInBytes > usableRAM * micMem[i])) {
                 // when no more memory is available at MIC leave domain on CPU
                 MICFull = true;
@@ -535,7 +540,7 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
         offset += matrixPerPack[i];
         matrixPerPack[i] -= numCPUDomains;
 
-        this->DirichletPacks[i].Resize( matrixPerPack[i], dataSize );
+        this->DirichletPacks[i].Resize( matrixPerPack[i], dataSize, USE_FLOAT );
         this->DirichletPacks[i].setMICratio( MICr );
 
         if ( configuration.load_balancing_preconditioner ) {
@@ -724,10 +729,16 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
             }
 
             // insert matrix to MatrixPack and delete it
+            if (!USE_FLOAT) {
             double * matrixPointer = this->DirichletPacks[mic].getMatrixPointer( j );
             memcpy( matrixPointer, &( domains[ d ].Prec.dense_values[ 0 ] ), 
                     this->DirichletPacks[ mic ].getDataLength( j ) * sizeof( double ) );
             SEQ_VECTOR<double>().swap( domains[d].Prec.dense_values );
+            } else {
+               float * matrixPointer = this->DirichletPacks[mic].getMatrixPointer_fl( j );
+                domains[d].Prec.ConvertDenseToDenseFloat( 1 );
+                memcpy( matrixPointer, &(domains[d].Prec.dense_values_fl[0]), this->DirichletPacks[ mic ].getDataLength(j) * sizeof(float) );
+            }
             ESINFO(PROGRESS3) << Info::plain() << ".";
         }
     }
@@ -902,6 +913,11 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
             }
             osS << SC;
             osS.close();
+        }
+
+        if (USE_FLOAT) {
+            domains[d].Prec.ConvertDenseToDenseFloat( 1 );
+            domains[d].Prec.USE_FLOAT = true;
         }
 
         ESINFO(PROGRESS3) << Info::plain() << ".";

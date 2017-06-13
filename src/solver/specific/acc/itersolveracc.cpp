@@ -11,12 +11,21 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
     // number of Xeon Phi devices 
     eslocal numDevices = configuration.N_MICS;
 
+    double CPUtime;
+    int maxThreads = omp_get_max_threads();
+    eslocal maxDevNumber = cluster.acc_per_MPI;
+    double * MICtime = new double[ maxDevNumber ];
+    bool resetNested = false;
+    if (omp_get_nested() == 0 ) {
+        omp_set_nested(1);
+        resetNested = true;
+    }
+
     if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
         // HFETI on MIC using Schur
 
         time_eval.timeEvents[0].start();
 
-        eslocal maxDevNumber = cluster.acc_per_MPI;
 
         // *** Part 1.1 - prepare vectors for FETI operator with SC
         // at first - work with domains assigned to MICs
@@ -46,15 +55,6 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
         }
         // *** Part 3 - execute FETI SC operator 
         // spawn the computation on MICs
-        double CPUtime;
-        double * MICtime = new double[maxDevNumber];
-        int maxThreads = omp_get_max_threads();
-        bool resetNested = false;
-        if (omp_get_nested() == 0 ) {
-            omp_set_nested(1);
-            resetNested = true;
-        }
-
 #pragma omp parallel num_threads( maxDevNumber + 1 )
         {
             int thread = omp_get_thread_num();
@@ -155,7 +155,6 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 
         }
         time_eval.timeEvents[2].end();
-        delete [] MICtime;
     }    
 
     if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
@@ -165,7 +164,6 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
         time_eval.timeEvents[0].end();
 
         time_eval.timeEvents[1].start();
-        eslocal maxDevNumber = cluster.acc_per_MPI;
         // *** Part 1.1 - prepare vectors for FETI operator with SC
         // at first - work with domains assigned to MICs
         for ( eslocal i = 0; i < maxDevNumber; i++ ) {
@@ -186,17 +184,6 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
                 cluster.domains[domN].compressed_tmp2[j] = x_in[ cluster.domains[domN].lambda_map_sub_local[j]];
             }
         }
-
-        double CPUtime;
-        int maxThreads = omp_get_max_threads();
-        double * MICtime = new double[maxDevNumber];
-        bool resetNested = false;
-
-        if (omp_get_nested() == 0 ) {
-            omp_set_nested(1);
-            resetNested = true;
-        }
-
 
 #pragma omp parallel num_threads( maxDevNumber + 1 )
         {
@@ -276,7 +263,6 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
         }
         time_eval.timeEvents[2].end();
 
-        delete [] MICtime;
     }
 
 
@@ -291,13 +277,6 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
             //cluster.x_prim_cluster2[d] = cluster.x_prim_cluster1[d]; // POZOR zbytecne kopirovani // prim norm
         }
         time_eval.timeEvents[0].end();
-
-        eslocal maxDevNumber = cluster.acc_per_MPI;
-
-        double CPUtime;
-        int maxThreads = omp_get_max_threads();
-        double * MICtime = new double[ maxDevNumber ];
-        bool resetNested = false;
 
         if ( omp_get_nested() == 0 ) {
             omp_set_nested( 1 ); 
@@ -324,9 +303,9 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
                 int thread = omp_get_thread_num();
 
                 if ( thread < maxDevNumber ) {
+                    // designate threads for MIC computation/communication
                     MICtime[ thread ] = Measure::time();
                     cluster.SparseKPack[ thread ].SolveMIC();
-                    //cluster.SparseKPack[ thread ].SolveMIC_Sync();
                     eslocal end = (eslocal) cluster.accDomains[ thread ].size() * cluster.SparseKPack[thread].getMICratio();
                     for (eslocal i = 0 ; i < end; ++i) {
                         eslocal domN = cluster.accDomains[ thread ].at(i);
@@ -334,6 +313,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
                     }
                     MICtime[ thread ] = Measure::time() - MICtime[ thread ];
                 } else {
+                    // the remaining threads work on CPU
                     omp_set_num_threads( maxThreads - maxDevNumber );
 
                     double startCPU = Measure::time();
@@ -348,10 +328,6 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
                     CPUtime = Measure::time() - startCPU; 
                 }
             }
-
-            //for(eslocal i = 0; i < cluster.domains.size(); i++)
-            //cluster.domains[i].multKplusLocal(cluster.x_prim_cluster1[i]);
-            // }
         } else {
             cluster.multKplusGlobal_l_Acc(cluster.x_prim_cluster1, CPUtime, MICtime);
         }
@@ -395,6 +371,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
 
     }
 
+    delete [] MICtime;
     time_eval.timeEvents[3].start();
     All_Reduce_lambdas_compB(cluster, cluster.compressed_tmp, y_out);
     time_eval.timeEvents[3].end();

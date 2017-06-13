@@ -109,208 +109,91 @@ namespace espreso {
         // Multiplies input vectors with matrices in pack on mic - sync.
         void DenseMatsVecsMIC_Sync( );
 
+        // sets a value in vector number vector on position position 
         void SetX(
                 long vector,
                 long position,
                 double value
                 );
 
+        // returns vector number vector as a reference
         void GetY(
                 long vector,
                 std::SEQ_VECTOR <double> & y
                 );
 
+        // sets a MIC device an instance of this object uses
         void SetDevice(
                 int device
                 );
 
+        // returns a MIC device an instance of this object uses
         int getDevice() {
             return device;
         }
 
+        // returns true if the necessary data has been copied to MIC
         bool areDataOnMIC() {
             return this->copiedToMIC;  
         }
 
+        // returns a pointer to internal matrix array
         double * getMatrixPointer( 
                 eslocal matrix
                 );
 
+        // returns a pointer to internal single precision matrix array
         float * getMatrixPointer_fl( 
                 eslocal matrix
                 );
 
-
+        // returns lenght of data
         long getDataLength(
                 eslocal matrix
                 ) {
             return this->lengths[matrix];
         }
 
+        // for load balancing: sets a ratio of work done using MIC
         void setMICratio( 
                 double MICratio
                 ) {
             this->MICratio = MICratio; 
         }
 
+        // for load balancing: returns a ratio of work done using MIC
         double getMICratio() {
             return MICratio;    
         }
 
+        // returns a number of matrices in the pack
         long getNMatrices() {
             return this->nMatrices;
         }
 
+        // enables load balancing between host and coprocessor
         void enableLoadBalancing() {
             this->loadBalancing = true;
         }
+
+        // disables load balancing between host and coprocessor
         void disableLoadBalancing() {
             this->loadBalancing = false;
         }
+
+        // returns true if load balancing is enabled
         bool getLoadBalancing() {
             return this->loadBalancing;
         }
 
+        // returns time for computation on MIC
         double getElapsedTime() {
             return this->elapsedTime[0];
         }
 
+        // whether to use single precision
         bool USE_FLOAT;
 
-        /*
-           void setDevice(int device) {
-           this->device = device;
-           }
-
-           long getMaxNMatrices() {
-           return this->maxNMatrices;
-           }
-
-           void setMaxNMatrices(long maxNMatrices) {
-           this->maxNMatrices = maxNMatrices;
-           }
-
-           long getNMatrices() {
-           return this->nMatrices;
-           }
-
-           void setNMatrices(long nMatrices) {
-           this->nMatrices = nMatrices;
-           }
-
-           void setPreallocSize(long preallocSize) {
-           this->preallocSize = preallocSize;
-           }
-
-           long getPreallocSize() {
-           return this->preallocSize;
-           }
-
-           void setFreeSpace(long freeSpace) {
-           this->freeSpace = freeSpace;
-           }
-
-           long getFreeSpace() {
-           return this->freeSpace;
-           }
-
-           void setMatrices(double * matrices) {
-           this->matrices = matrices;
-           }
-
-           double * getMatrices() {
-           return this->matrices;
-           }
-
-           void setRows(int * rows) {
-           this->rows = rows;
-           }
-
-           int * getRows() {
-           return this->rows;
-           }
-
-           void setCols(int * cols) {
-           this->cols = cols;
-           }
-
-           int * getCols() {
-           return this->cols;
-           }
-
-           void setTotalRows(long totalRows) {
-           this->totalRows = totalRows;
-           }
-
-           long getTotalRows() {
-           return this->totalRows;
-           }
-
-           void setTotalCols(long totalCols) {
-           this->totalCols = totalCols;
-    }
-
-    long getTotalCols() {
-        return this->totalCols;
-    }
-
-    void setOffsets(long * offsets) {
-        this->offsets = offsets;
-    }
-
-    long * getOffsets() {
-        return this->offsets;
-    }
-
-    void setRowOffsets(long * rowOffsets) {
-        this->rowOffsets = rowOffsets;
-    }
-
-    long * getRowOffsets() {
-        return this->rowOffsets;
-    }
-
-    void setColOffsets(long * colOffsets) {
-        this->colOffsets = colOffsets;
-    }
-
-    long * getColOffsets() {
-        return this->colOffsets;
-    }
-
-    void setLengths(long * lenghts) {
-        this->lengths = lengths;
-    }
-
-    long * getLengths() {
-        return this->lengths;
-    }
-
-    void setPacked(bool * packed) {
-        this->packed = packed;
-    }
-
-    bool* getPacked() {
-        return this->packed;
-    }
-
-    void setMic_x_in(double * mic_x_in) {
-        this->mic_x_in = mic_x_in;
-    }
-
-    double * getMic_x_in() {
-        return this->mic_x_in;
-    }
-
-    void setMic_y_out(double * mic_y_out) {
-        this->mic_y_out = mic_y_out;
-    }
-
-    double * getMic_y_out() {
-        return this->mic_y_out;
-    }
-
-    */
         private:
 
         ESPRESOSolver configuration;
