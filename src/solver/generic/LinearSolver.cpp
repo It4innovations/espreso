@@ -40,11 +40,11 @@ LinearSolver::LinearSolver(const ESPRESOSolver &configuration, OldPhysics &physi
 LinearSolver::~LinearSolver() {
 
 	if (cluster != NULL) {
-		;//delete cluster;
+		delete cluster;
 	}
 
 	if (solver != NULL) {
-		;//delete solver;
+		delete solver;
 	}
 }
 
