@@ -33,8 +33,8 @@ LinearSolver::LinearSolver(const ESPRESOSolver &configuration, OldPhysics &physi
   physics(&physics),
   constraints(&constraints)
 {
-//	cluster  = new SuperCluster(configuration, instance);
-//	solver = new IterSolver(configuration);
+	cluster  = new SuperCluster(configuration, instance);
+	solver = new IterSolver(configuration);
 }
 
 LinearSolver::~LinearSolver() {
@@ -672,8 +672,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 		constraints->inequalityC.swap(instance->inequalityC);
 
 		cluster->instance  = instance;
-		//SCluster->instance = instance;
-
+		cluster->init();
 	}
 
 
