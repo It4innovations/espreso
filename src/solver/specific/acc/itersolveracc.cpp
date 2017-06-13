@@ -436,7 +436,7 @@ void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
         }
 
         double CPUtime;
-        eslocal maxDevNumber = configuration.N_MICS;
+        eslocal maxDevNumber = cluster.acc_per_MPI;
         double * MICtime = new double[maxDevNumber];
         int maxThreads = omp_get_max_threads();
         bool resetNested = false;
@@ -469,7 +469,7 @@ void IterSolverAcc::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
                 for ( eslocal mic = 0 ; mic < maxDevNumber; ++mic ) {
                     cluster.DirichletPacks[ mic ].DenseMatsVecsRestCPU( 'N' );    
                     eslocal start = (eslocal) (cluster.DirichletPacks[mic].getNMatrices()*cluster.DirichletPacks[mic].getMICratio());
-#pragma omp parallel
+#pragma omp parallel for
                     for (  eslocal d = start ; d < cluster.DirichletPacks[mic].getNMatrices(); ++d ) {
                         cluster.DirichletPacks[mic].GetY(d, cluster.x_prim_cluster2[ cluster.accPreconditioners[ mic ].at(d) ] );
                     }
