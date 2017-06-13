@@ -157,7 +157,7 @@ void IterSolverCPU::apply_prec_comp_dom_B( TimeEval & time_eval, Cluster & clust
 			break;
 		case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
 			cluster.domains[d].B1t_DirPr.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
-			cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+//			cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
 			break;
 		case ESPRESO_PRECONDITIONER::MAGIC:
 			cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');

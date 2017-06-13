@@ -653,7 +653,8 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
                 // if physics.K[d] does not contain inner DOF
             } else {
 
-                if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET) {
+                if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET || 
+                        configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET ) {
                     SparseSolverCPU createSchur;
                     //          createSchur.msglvl=1;
                     eslocal sc_size = perm_vec.size();
@@ -721,7 +722,8 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
             if (environment->print_matrices) {
                 std::ofstream osS(Logging::prepareFile(d, "S"));
                 SparseMatrix SC =  domains[d].Prec;
-                if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET){
+                if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET || 
+                        configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET ){
                     SC.ConvertDenseToCSR(1);
                 }
                 osS << SC;

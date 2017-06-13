@@ -19,15 +19,20 @@ public:
 			this->deleteMatrices = false;
 			this->NUM_MICS = configuration.N_MICS;
 			SetAcceleratorAffinity();
-			std::cout << "MICS: " << this->NUM_MICS << "\n";
+			ESINFO( DETAILS ) << "MICS: " << this->NUM_MICS;
 	}
 
     virtual ~ClusterAcc();
 
+    // creates Schur complement matrices
 	void Create_SC_perDomain( bool USE_FLOAT );
-    void Create_Kinv_perDomain();
+
+    // factorizes stiffness matrices
 	void SetupKsolvers ( );
+
+    // assembles Dirichlet preconditioner
     void CreateDirichletPrec( Instance *instance );
+
     void multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in, 
         double & CPUtime, 
         double * MICtime );
