@@ -6,6 +6,7 @@
 #include "generator/generator.h"
 
 #include "../mesh/elements/element.h"
+#include "../mesh/structures/elementtypes.h"
 #include "../mesh/structures/mesh.h"
 #include "../mesh/structures/region.h"
 #include "../mesh/settings/evaluator.h"
@@ -84,21 +85,21 @@ void Loader::fill()
 
 	for (size_t r = 0; r < mesh._regions.size(); r++) {
 		std::string type;
-		if (mesh._regions[r]->elements().size()) {
-			switch (mesh._regions[r]->elements()[0]->type()) {
-			case Element::Type::VOLUME:
-				type = "volumes";
-				break;
-			case Element::Type::PLANE:
-				type = "planes";
-				break;
-			case Element::Type::LINE:
-				type = "lines";
-				break;
-			case Element::Type::POINT:
-				type = "points";
-				break;
-			}
+		switch (mesh._regions[r]->eType) {
+		case ElementType::ELEMENTS:
+			type = "elements";
+			break;
+		case ElementType::FACES:
+			type = "faces";
+			break;
+		case ElementType::EDGES:
+			type = "edges";
+			break;
+		case ElementType::NODES:
+			type = "nodes";
+			break;
+		default:
+			ESINFO(ERROR) << "ESPRESO internal error: loader not recognizes element type of region " << mesh._regions[r]->name;
 		}
 		ESINFO(OVERVIEW) << "Loaded region '" << mesh._regions[r]->name << "' of " << Info::sumValue(mesh._regions[r]->elements().size()) << " " << type;
 	}
