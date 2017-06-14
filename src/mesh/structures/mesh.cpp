@@ -970,6 +970,11 @@ bool Mesh::commonRegion(const std::vector<Region*> &v1, const std::vector<Region
 	return false;
 }
 
+void Mesh::materialNotFound(const std::string &name)
+{
+	ESINFO(GLOBAL_ERROR) << "Invalid .ecf file: material " << name << " is not set.";
+}
+
 void Mesh::loadMaterial(Region *region, size_t index, const std::string &name, const Configuration &configuration)
 {
 	#pragma omp parallel for
