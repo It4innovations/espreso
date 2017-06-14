@@ -33,7 +33,7 @@ def configure(ctx):
 
 
     if ctx.env.SOLVER == "PARDISO":
-    	pardiso = pardiso500-INTEL1301-X86-64
+        pardiso = "pardiso500-INTEL1301-X86-64"
         ctx.check_lib(pardiso, [ "mkl_intel_lp64", "mkl_core", "mkl_intel_thread", "ifcore" ])
         ctx.env.append_unique("LIB", [ pardiso ]) # PARDISO needs to be linked before MKL
         link_MKL()
