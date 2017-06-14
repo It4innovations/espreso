@@ -292,45 +292,44 @@ void CollectedInfo::addSettings(size_t step)
 		region = _mesh->regions()[0];
 	}
 
-	if (region->elements().size() && region->elements()[0]->params()) {
-		std::vector<std::vector<eslocal>> sMaterialData(_regions.size()), sBodyData(_regions.size());
+	std::vector<std::vector<eslocal>> sMaterialData(_regions.size()), sBodyData(_regions.size());
 
-		for (size_t e = 0; e < region->elements().size(); e++) {
-			size_t regionOffset = 0, material = -1, body = -1;
+	for (size_t e = 0; e < region->elements().size(); e++) {
+		size_t regionOffset = 0, material = -1, body = -1;
+		if ((_mode & InfoMode::SEPARATE_BODIES) && region->elements()[e]->params()) {
 			body = region->elements()[e]->param(Element::Params::BODY);
-			if (_mode & InfoMode::SEPARATE_BODIES) {
-				regionOffset += body * materials;
-			}
+			regionOffset += body * materials;
+		}
+		if ((_mode & InfoMode::SEPARATE_MATERIALS) && region->elements()[e]->params()) {
 			material = region->elements()[e]->param(Element::Params::MATERIAL);
-			if (_mode & InfoMode::SEPARATE_MATERIALS) {
-				regionOffset += material;
-			}
-
-			sMaterialData[regionOffset].push_back(material);
-			sBodyData[regionOffset].push_back(body);
+			regionOffset += material;
 		}
 
-		for (size_t r = 0; r < _regions.size(); r++) {
-			std::vector<eslocal> *values = new std::vector<eslocal>();
-			if (!Communication::gatherUnknownSize(sMaterialData[r], *values)) {
-				ESINFO(ERROR) << "ESPRESO internal error while collecting region data values.";
-			}
+		sMaterialData[regionOffset].push_back(material);
+		sBodyData[regionOffset].push_back(body);
+	}
 
-			_regions[r].data.elementDataInteger["material"] = std::make_pair(1, values);
+	for (size_t r = 0; r < _regions.size(); r++) {
+		std::vector<eslocal> *values = new std::vector<eslocal>();
+		if (!Communication::gatherUnknownSize(sMaterialData[r], *values)) {
+			ESINFO(ERROR) << "ESPRESO internal error while collecting region data values.";
 		}
-		for (size_t r = 0; r < _regions.size(); r++) {
-			std::vector<eslocal> *values = new std::vector<eslocal>();
-			if (!Communication::gatherUnknownSize(sBodyData[r], *values)) {
-				ESINFO(ERROR) << "ESPRESO internal error while collecting region data values.";
-			}
 
-			_regions[r].data.elementDataInteger["body"] = std::make_pair(1, values);
+		_regions[r].data.elementDataInteger["material"] = std::make_pair(1, values);
+	}
+	for (size_t r = 0; r < _regions.size(); r++) {
+		std::vector<eslocal> *values = new std::vector<eslocal>();
+		if (!Communication::gatherUnknownSize(sBodyData[r], *values)) {
+			ESINFO(ERROR) << "ESPRESO internal error while collecting region data values.";
 		}
+
+		_regions[r].data.elementDataInteger["body"] = std::make_pair(1, values);
 	}
 
 	if (region->settings.size() <= step) {
 		return;
 	}
+
 	for (auto it = region->settings[step].begin(); it != region->settings[step].end(); ++it) {
 		const std::vector<Property> &pGroup = _mesh->propertyGroup(it->first);
 		if (pGroup.front() != it->first) {
