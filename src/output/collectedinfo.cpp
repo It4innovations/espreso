@@ -137,9 +137,7 @@ void CollectedInfo::prepare(const std::vector<Element*> &region)
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
 			for (size_t n = 0; n < region[i]->nodes(); n++) {
-				if (_mesh->nodes()[region[i]->node(n)]->clusters().front() == environment->MPIrank) {
-					sIDs[t].push_back(_mesh->coordinates().globalIndex(region[i]->node(n)));
-				}
+				sIDs[t].push_back(_mesh->coordinates().globalIndex(region[i]->node(n)));
 			}
 		}
 	}
