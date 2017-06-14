@@ -55,6 +55,7 @@ struct GridConfiguration: public Configuration {
 	PARAMETER(double, elements_y, "Number of elements in y-direction of each domain.", 5);
 	PARAMETER(double, elements_z, "Number of elements in z-direction of each domain.", 5);
 
+	PARAMETER(bool, random_partition, "Randomize the numbre of domains on cluster.", false);
 	PARAMETER(bool, uniform_decomposition, "Grid is uniformly decomposed", true);
 
 	SUBMAP(size_t, bool, blocks, "List of grid blocks [<INDEX> <VALUE>]. Where value indicate if a block will be generated.", "0", true);

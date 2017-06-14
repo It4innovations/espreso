@@ -146,6 +146,10 @@ void ResultStore::storeValues(const std::string &name, size_t dimension, const s
 	if (dimension == 1) {
 		props.push_back(Property::TEMPERATURE);
 	}
+	if (dimension == 2) {
+		props.push_back(Property::DISPLACEMENT_X);
+		props.push_back(Property::DISPLACEMENT_Y);
+	}
 	if (dimension == 3) {
 		props.push_back(Property::DISPLACEMENT_X);
 		props.push_back(Property::DISPLACEMENT_Y);

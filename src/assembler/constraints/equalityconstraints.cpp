@@ -1217,15 +1217,28 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 	}
 	part.push_back(el.size());
 
+	for  (size_t p = 0; p < instance.domains; p++) {
+		// instance.clustersMap[p] = p / (instance.domains / (environment->MPIrank + 1));
+		instance.clustersMap[p] = 0; //(eslocal)(p / (instance.domains / pow(2,(environment->MPIrank))));
+	}
+
 	#pragma omp parallel for
 	for  (size_t p = 0; p < instance.domains; p++) {
+		size_t row = 0;
 		for (size_t i = 0; i < part.size() - 1; i++) {
 			const std::vector<eslocal> &domains = el[part[i]]->domains();
+			if (instance.clustersMap[domains[0]] != instance.clustersMap[domains[1]]) {
+				continue;
+			}
+
+			// if (instance.clustersMap[domains[0]] == p / (instance.domains /  (environment->MPIrank + 1))) {
+			if (instance.clustersMap[domains[0]] == 0) { //(eslocal)(p / (instance.domains / pow(2,environment->MPIrank)))) {
+				row++;
+			}
 			int sign = domains[0] == (eslocal)p ? 1 : domains[1] == (eslocal)p ? -1 : 0;
 			if (sign == 0) {
 				continue;
 			}
-
 
 			std::vector<Element*> nodesOnInterface;
 			for (size_t e = part[i]; e < part[i + 1]; e++) {
@@ -1239,7 +1252,7 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 			for (eslocal col = 0; col < instance.N1[domains[0]].cols; col++) {
 				for (size_t n = 0; n < nodesOnInterface.size(); n++) {
 					for (size_t dof = 0; dof < DOFsOffsets.size(); dof++) {
-						instance.B0[p].I_row_indices.push_back(i * instance.N1[0].cols + col + 1);
+						instance.B0[p].I_row_indices.push_back(row * instance.N1[0].cols + col);
 						instance.B0[p].J_col_indices.push_back(nodesOnInterface[n]->DOFIndex(p, dof) + 1);
 						instance.B0[p].V_values.push_back(sign * instance.N1[domains[0]].dense_values[instance.N1[domains[0]].rows * col + nodesOnInterface[n]->DOFIndex(domains[0], DOFsOffsets[dof])]);
 					}
@@ -1248,7 +1261,7 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 		}
 
 
-		instance.B0[p].rows = instance.N1[0].cols * (part.size() - 1);
+		instance.B0[p].rows = instance.N1[0].cols * row;
 		instance.B0[p].cols = instance.domainDOFCount[p];
 		instance.B0[p].nnz = instance.B0[p].I_row_indices.size();
 		instance.B0subdomainsMap[p].reserve(instance.B0[p].nnz);
