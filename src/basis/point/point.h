@@ -77,6 +77,11 @@ public:
 		return Point(x * xscalar, y * xscalar, z * xscalar);
 	}
 
+	double operator*(const Point &p) const
+	{
+		return x * p.x + y * p.y + z * p.z;
+	}
+
 	const Point operator/(const Point &p) const
 	{
 		return Point(x / p.x, y / p.y, z / p.z);

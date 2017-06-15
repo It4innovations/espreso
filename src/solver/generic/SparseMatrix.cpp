@@ -950,7 +950,7 @@ void SparseMatrix::ConvertDenseToCSR( eslocal clearDense_1_keep_Dense_0 ){
 
 	double *data = dense_values.data();
 
-	if (type == 'S' && rows * cols != dense_values.size()) {
+	if (type == 'S' && rows * cols != (eslocal)dense_values.size()) {
 		// mkl_ddnscsr needs full dense matrix
 		values.reserve(rows * cols);
 		for (eslocal r = 0, begin = 0; r < rows; begin += ++r) {
@@ -1059,18 +1059,22 @@ void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> &
 
 
 void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose ) {
-	DenseMatVec(x_in, y_out, T_for_transpose_N_for_not_transpose, 0, 0, 0.0);
+	DenseMatVec(x_in, y_out, T_for_transpose_N_for_not_transpose, 0, 0, 0.0, 1.0);
 }
 
 void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index) {
-	DenseMatVec(x_in, y_out, T_for_transpose_N_for_not_transpose, x_in_vector_start_index, 0, 0.0);
+	DenseMatVec(x_in, y_out, T_for_transpose_N_for_not_transpose, x_in_vector_start_index, 0, 0.0, 1.0);
 }
 
 void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index, eslocal y_out_vector_start_index) {
-	DenseMatVec(x_in, y_out, T_for_transpose_N_for_not_transpose, x_in_vector_start_index, y_out_vector_start_index, 0.0);
+	DenseMatVec(x_in, y_out, T_for_transpose_N_for_not_transpose, x_in_vector_start_index, y_out_vector_start_index, 0.0, 1.0);
 }
 
 void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index, eslocal y_out_vector_start_index, double beta) {
+	DenseMatVec(x_in, y_out, T_for_transpose_N_for_not_transpose, x_in_vector_start_index, y_out_vector_start_index, beta, 1.0);
+}
+
+void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose, eslocal x_in_vector_start_index, eslocal y_out_vector_start_index, double beta, double alpha) {
 
 
 	// void cblas_dgemv
@@ -1082,7 +1086,7 @@ void SparseMatrix::DenseMatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> &
 
 	// y := alpha*A*x + beta*y,
 
-	double alpha = 1.0;
+	//double alpha = 1.0;
 	//double beta  = 0.0;
 	eslocal lda = rows;
 
@@ -2557,6 +2561,22 @@ double SparseMatrix::getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_form
 #endif
 }
 
+
+
+void SparseMatrix::Mat_MP_Inverse(SparseMatrix &R_in, SparseMatrix &A_in) {
+
+	SparseMatrix R, RtA, RRtA;
+
+	//TODO: implement check
+	R = R_in;
+	R.ConvertDenseToCSR(1);
+
+	RtA.MatMat (R, 'T', A_in);
+	RRtA.MatMat(R, 'N', RtA );
+
+	this->MatAdd(A_in,RRtA,'N',-1.0);
+
+}
 //
 
 void SparseMatrix::GramSchmidtOrtho(){

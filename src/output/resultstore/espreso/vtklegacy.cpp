@@ -43,7 +43,7 @@ static void storeMesh(std::ofstream &os, const espreso::output::RegionData &regi
 	os << "\n";
 
 	os << "CELL_TYPES " << regionData.elementsTypes.size() << "\n";
-	for (size_t e = 0, p = 0; e < regionData.elementsTypes.size(); e++) {
+	for (size_t e = 0; e < regionData.elementsTypes.size(); e++) {
 		os << regionData.elementsTypes[e] << "\n";
 	}
 	os << "\n";

@@ -88,8 +88,6 @@ Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
 		length += _monitors.back().printSize;
 	}
 
-	size_t rowHeaderSize = 19;
-
 	if (environment->MPIrank) {
 		return;
 	}
@@ -121,6 +119,7 @@ Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
 		case StatisticalData::MIN:     _os << center("<MIN>"    , _monitors[i].printSize) << delimiter; break;
 		case StatisticalData::MAX:     _os << center("<MAX>"    , _monitors[i].printSize) << delimiter; break;
 		case StatisticalData::NORM:    _os << center("<NORM>"   , _monitors[i].printSize) << delimiter; break;
+		default: break;
 		}
 	}
 	_os << "\n\n";

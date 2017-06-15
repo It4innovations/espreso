@@ -9,6 +9,7 @@
 namespace espreso {
 
 class Element;
+class Coordinates;
 
 namespace input {
 
@@ -41,7 +42,7 @@ public:
 	}
 	size_t getNumberOfFaces() { return selectedFaces.size();}
 
-	ParseError* createElement(Element *&elements);
+	ParseError* createElement(Element *&elements, const Coordinates &coordinates);
 
 	/** List of pairs: Face, owner */
 	std::list< Face* > selectedFaces;

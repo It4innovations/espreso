@@ -261,7 +261,9 @@ void Mesh::partitiate(size_t parts)
 	_DOFtoElement.clear();
 	_fixPoints.clear();
 	_corners.clear();
+	mapFacesToClusters();
 	mapFacesToDomains();
+	mapEdgesToClusters();
 	mapEdgesToDomains();
 	mapNodesToDomains();
 	mapCoordinatesToDomains();
@@ -811,7 +813,7 @@ void Mesh::loadProperty(
 
 				#pragma omp parallel for
 				for (size_t d = 0; d < this->parts(); d++) {
-					for (size_t e = this->getPartition()[d]; e < this->getPartition()[d + 1]; e++) {
+					for (eslocal e = this->getPartition()[d]; e < this->getPartition()[d + 1]; e++) {
 						Element *face = _elements[e]->addFace(nodes);
 						if (face != NULL) {
 							faces[d].push_back(face);
@@ -970,6 +972,11 @@ bool Mesh::commonRegion(const std::vector<Region*> &v1, const std::vector<Region
 	return false;
 }
 
+void Mesh::materialNotFound(const std::string &name)
+{
+	ESINFO(GLOBAL_ERROR) << "Invalid .ecf file: material " << name << " is not set.";
+}
+
 void Mesh::loadMaterial(Region *region, size_t index, const std::string &name, const Configuration &configuration)
 {
 	#pragma omp parallel for
@@ -1064,9 +1071,19 @@ void Mesh::fillDomainsSettings()
 	}
 }
 
-bool Mesh::hasProperty(size_t domain, Property property, size_t loadStep)
+bool Mesh::hasProperty(size_t domain, Property property, size_t loadStep) const
 {
 	return loadStep < _properties[domain].size() && _properties[domain][loadStep].count(property);
+}
+
+bool Mesh::hasProperty(Property property, size_t loadStep) const
+{
+	for (size_t r = 0; r < _regions.size(); r++) {
+		if (loadStep < _regions[r]->settings.size() && _regions[r]->settings[loadStep].find(property) != _regions[r]->settings[loadStep].end()) {
+			return true;
+		}
+	}
+	return false;
 }
 
 void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* edge)> filter)
@@ -1636,8 +1653,10 @@ void Mesh::mapFacesToClusters()
 			if (_faces[f]->parentElements().size() == 1) { // Only faces with one element can have more clusters
 				if (std::all_of(_faces[f]->indices(), _faces[f]->indices() + _faces[f]->coarseNodes(), [&] (eslocal i) { return _nodes[i]->clusters().size() > 1; })) {
 					setCluster(_faces[f], _nodes);
+					continue;
 				}
 			}
+			_faces[f]->clusters() = { environment->MPIrank };
 		}
 	}
 }
@@ -1652,6 +1671,8 @@ void Mesh::mapEdgesToClusters()
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 			if (std::all_of(_edges[e]->indices(), _edges[e]->indices() + _edges[e]->coarseNodes(), [&] (eslocal i) { return _nodes[i]->clusters().size() > 1; })) {
 				setCluster(_edges[e], _nodes);
+			} else {
+				_edges[e]->clusters() = { environment->MPIrank };
 			}
 		}
 	}
@@ -1938,6 +1959,12 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 
+			if (elements[e]->nodes() == 1 && elements[e]->parentElements().size() == 0) {
+				// mesh generator can generate dangling nodes -> skip them
+				elements[e]->clusters().clear();
+				continue;
+			}
+
 			eslocal cluster = 0;
 			elements[e]->DOFsDomainsCounters().reserve(elements[e]->DOFsDomainsCounters().size() + DOFs.size() * elements[e]->clusters().size());
 			elements[e]->numberOfGlobalDomains(elements[e]->domains().size());
@@ -2043,8 +2070,8 @@ static void computeDOFsCounters(std::vector<Element*> &elements, const std::vect
 				}
 				if ((*it)->clusterOffsets().size() == 0) {
 					(*it)->clusterOffsets().resize((*it)->clusters().size());
-					(*it)->clusterOffsets()[cluster] = offset++;
 				}
+				(*it)->clusterOffsets()[cluster] = offset++;
 			}
 		}
 	}

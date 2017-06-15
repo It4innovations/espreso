@@ -23,7 +23,7 @@
 using namespace espreso::output;
 
 Catalyst::Catalyst(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode)
-: VTKXMLASCII(output, mesh, path, mode)
+: VTKXMLASCII(output, mesh, mode)
 {
 	_processor = vtkCPProcessor::New();
 	_dataDescription = vtkCPDataDescription::New();

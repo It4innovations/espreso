@@ -4,17 +4,18 @@
 #include "../../assembler/step.h"
 #include "../../assembler/instance.h"
 
-#include "../../assembler/solver/linear.h"
 #include "../../assembler/solver/newtonrhapson.h"
 
 #include "../../assembler/solver/transientfirstorderimplicit.h"
 #include "../../assembler/physics/advectiondiffusion2d.h"
+#include "../../assembler/physics/advectiondiffusion3d.h"
 #include "../../assembler/physics/shallowwater2d.h"
 #include "../../solver/generic/LinearSolver.h"
 #include "../../input/loader.h"
 #include "../../assembler/assembler.h"
 #include "../../assembler/instance/instance.h"
 #include "../../assembler/old_physics/assembler.h"
+#include "../../assembler/solver/linear.h"
 #include "../../configuration/globalconfiguration.h"
 #include "../../mesh/structures/mesh.h"
 #include "../../mesh/settings/evaluator.h"
@@ -121,58 +122,83 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		}
 	}
 
-	if (configuration.physics == PHYSICS::ADVECTION_DIFFUSION_2D && configuration.advection_diffusion_2D.newassembler) {
+	if ((configuration.physics == PHYSICS::ADVECTION_DIFFUSION_2D && configuration.advection_diffusion_2D.newassembler) ||
+		(configuration.physics == PHYSICS::ADVECTION_DIFFUSION_3D && configuration.advection_diffusion_3D.newassembler)) {
+
+		auto AdvectionDiffusionFactory = [&] (const AdvectionDiffusionConfiguration &ADC) {
+			for (size_t i = 1; i <= ADC.physics_solver.load_steps; i++) {
+				auto it = ADC.physics_solver.load_steps_settings.find(i);
+				if (it == ADC.physics_solver.load_steps_settings.end()) {
+					ESINFO(GLOBAL_ERROR) << "Invalid configuration file. Fill LOAD_STEPS_SETTINGS for LOAD_STEP=" << i << ".";
+				}
+				_linearSolvers.push_back(new LinearSolver(_instances.front(), it->second->espreso));
+
+				LoadStepSettings<AdvectionDiffusionNonLinearConvergence> *loadStepSettings = it->second;
+
+				switch (loadStepSettings->type) {
+					case LoadStepSettingsBase::TYPE::STEADY_STATE:
+
+						switch (loadStepSettings->mode) {
+
+						case LoadStepSettingsBase::MODE::LINEAR:
+							loadSteps.push_back(new Linear(mesh, _physics.back(), _linearSolvers.back(), store, loadStepSettings->duration_time));
+							break;
+
+						case LoadStepSettingsBase::MODE::NONLINEAR:
+							switch (loadStepSettings->nonlinear_solver.method) {
+							case NonLinearSolverBase::METHOD::NEWTON_RHAPSON:
+							case NonLinearSolverBase::METHOD::MODIFIED_NEWTON_RHAPSON:
+								loadSteps.push_back(new NewtonRhapson(mesh, _physics.back(), _linearSolvers.back(), store, loadStepSettings->nonlinear_solver, loadStepSettings->duration_time));
+								break;
+							default:
+								ESINFO(GLOBAL_ERROR) << "Not implemented non-linear solver method";
+							}
+							break;
+
+						default:
+							ESINFO(GLOBAL_ERROR) << "Not implemented non-linear solver method for steady state solver.";
+						}
+						break;
+
+					case LoadStepSettingsBase::TYPE::TRANSIENT:
+
+						switch (loadStepSettings->mode) {
+
+						case LoadStepSettingsBase::MODE::LINEAR:
+							switch (loadStepSettings->transient_solver.method) {
+							case TransientSolver::METHOD::CRANK_NICOLSON:
+							case TransientSolver::METHOD::GALERKIN:
+							case TransientSolver::METHOD::BACKWARD_DIFF:
+								loadSteps.push_back(new TransientFirstOrderImplicit(mesh, _physics.back(), _linearSolvers.back(), store, loadStepSettings->transient_solver, loadStepSettings->duration_time));
+								break;
+							default:
+								ESINFO(GLOBAL_ERROR) << "Not implemented transient solver linear method.";
+							}
+							break;
+
+						default:
+							ESINFO(GLOBAL_ERROR) << "Not implemented non-linear solver method for transient solver.";
+						}
+						break;
+
+					default:
+						ESINFO(GLOBAL_ERROR) << "Not implemented physics solver type.";
+				}
+			}
+		};
+
 		_newAssembler = true;
 		_instances.push_back(new Instance(mesh->parts(), mesh->neighbours()));
-		_physics.push_back(new NewAdvectionDiffusion2D(mesh, _instances.front(), configuration.advection_diffusion_2D));
-		_linearSolvers.push_back(new LinearSolver(_instances.front(), configuration.advection_diffusion_2D.physics_solver.load_steps_settings.at(1)->espreso));
 
-		for (size_t i = 1; i <= configuration.advection_diffusion_2D.physics_solver.load_steps; i++) {
-			auto it = configuration.advection_diffusion_2D.physics_solver.load_steps_settings.find(i);
-			if (it == configuration.advection_diffusion_2D.physics_solver.load_steps_settings.end()) {
-				loadSteps.push_back(new Linear(mesh, _physics.front(),  _linearSolvers.front(), store, 1));
-				break;
-			}
-			LoadStepSettings<AdvectionDiffusionNonLinearConvergence> *loadStepSettings = it->second;
-
-			if (loadStepSettings->type == LoadStepSettingsBase::TYPE::STEADY_STATE) {
-				if (loadStepSettings->mode == LoadStepSettingsBase::MODE::LINEAR) {
-					loadSteps.push_back(new Linear(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->duration_time));
-				}
-				if (loadStepSettings->mode == LoadStepSettingsBase::MODE::NONLINEAR) {
-					switch (loadStepSettings->nonlinear_solver.method) {
-					case NonLinearSolverBase::METHOD::NEWTON_RHAPSON:
-						loadSteps.push_back(new NewtonRhapson(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->nonlinear_solver, loadStepSettings->duration_time));
-						break;
-					case NonLinearSolverBase::METHOD::MODIFIED_NEWTON_RHAPSON:
-						loadSteps.push_back(new NewtonRhapson(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->nonlinear_solver, loadStepSettings->duration_time));
-						break;
-					default:
-						ESINFO(GLOBAL_ERROR) << "Not implemented non-linear solver method";
-					}
-				}
-			}
-			if (loadStepSettings->type == LoadStepSettingsBase::TYPE::TRANSIENT) {
-				if (loadStepSettings->mode == LoadStepSettingsBase::MODE::LINEAR) {
-					switch (loadStepSettings->transient_solver.method) {
-					case TransientSolver::METHOD::CRANK_NICOLSON:
-					case TransientSolver::METHOD::GALERKIN:
-					case TransientSolver::METHOD::BACKWARD_DIFF:
-						loadSteps.push_back(new TransientFirstOrderImplicit(mesh, _physics.front(), _linearSolvers.front(), store, loadStepSettings->transient_solver, loadStepSettings->duration_time));
-						break;
-					case TransientSolver::METHOD::FORWARD_DIFF:
-						ESINFO(GLOBAL_ERROR) << "Not implemented transient solver method.";
-						break;
-					default:
-						ESINFO(GLOBAL_ERROR) << "Not implemented transient solver method";
-					}
-				}
-			}
-
-			if (i != loadSteps.size()) {
-				ESINFO(GLOBAL_ERROR) << "Not implemented Physics solver";
-			}
+		if (configuration.physics == PHYSICS::ADVECTION_DIFFUSION_2D) {
+			_physics.push_back(new NewAdvectionDiffusion2D(mesh, _instances.front(), configuration.advection_diffusion_2D));
+			AdvectionDiffusionFactory(configuration.advection_diffusion_2D);
 		}
+		if (configuration.physics == PHYSICS::ADVECTION_DIFFUSION_3D) {
+			_physics.push_back(new NewAdvectionDiffusion3D(mesh, _instances.front(), configuration.advection_diffusion_3D));
+			AdvectionDiffusionFactory(configuration.advection_diffusion_3D);
+		}
+
 		meshPreprocessing(configuration.output);
 	}
 }

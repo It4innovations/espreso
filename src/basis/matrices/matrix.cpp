@@ -1,6 +1,6 @@
 #include "matrix.h"
 
-using namespace espreso;
+namespace espreso {
 
 NonZeroValue Matrix::nonZero;
 
@@ -14,4 +14,6 @@ std::ostream& operator<<(std::ostream& os, const Matrix &m)
 	}
 	os << std::endl;
 	return os;
+}
+
 }

@@ -98,12 +98,14 @@ void DistributedInfo::prepare(const std::vector<Element*> &region, InfoMode mode
 	}
 
 	_cIndices = std::vector<std::vector<std::vector<eslocal> > >(_regions.size(), std::vector<std::vector<eslocal> >(_mesh->parts()));
+	_cElements = std::vector<std::vector<std::vector<eslocal> > >(_regions.size(), std::vector<std::vector<eslocal> >(_mesh->parts()));
 
 	size_t threads = environment->OMP_NUM_THREADS;
 
 	// (body * material) x domain x threads x indices
 	std::vector<std::vector<std::vector<std::vector<eslocal> > > >
 	cIndices(bodies * materials, std::vector<std::vector<std::vector<eslocal> > >(_mesh->parts(), std::vector<std::vector<eslocal> >(threads))),
+	cElement(bodies * materials, std::vector<std::vector<std::vector<eslocal> > >(_mesh->parts(), std::vector<std::vector<eslocal> >(threads))),
 	eIndices(bodies * materials, std::vector<std::vector<std::vector<eslocal> > >(_mesh->parts(), std::vector<std::vector<eslocal> >(threads))),
 	eNodes  (bodies * materials, std::vector<std::vector<std::vector<eslocal> > >(_mesh->parts(), std::vector<std::vector<eslocal> >(threads))),
 	eTypes  (bodies * materials, std::vector<std::vector<std::vector<eslocal> > >(_mesh->parts(), std::vector<std::vector<eslocal> >(threads)));
@@ -127,6 +129,7 @@ void DistributedInfo::prepare(const std::vector<Element*> &region, InfoMode mode
 					cIndices[regionOffset][*d][t].push_back(region[e]->node(n));
 					eIndices[regionOffset][*d][t].push_back(region[e]->node(n));
 				}
+				cElement[regionOffset][*d][t].push_back(e - _mesh->getPartition()[*d]);
 			}
 		}
 	}
@@ -136,11 +139,14 @@ void DistributedInfo::prepare(const std::vector<Element*> &region, InfoMode mode
 		for (size_t r = 0; r < _regions.size(); r++) {
 			for (size_t t = 1; t < threads; t++) {
 				cIndices[r][p][0].insert(cIndices[r][p][0].end(), cIndices[r][p][t].begin(), cIndices[r][p][t].end());
+				cElement[r][p][0].insert(cElement[r][p][0].end(), cElement[r][p][t].begin(), cElement[r][p][t].end());
 			}
 			std::sort(cIndices[r][p][0].begin(), cIndices[r][p][0].end());
 			Esutils::removeDuplicity(cIndices[r][p][0]);
 			_cIndices[r][p] = cIndices[r][p][0];
+			_cElements[r][p].swap(cElement[r][p][0]);
 		}
+
 	}
 
 	// (body * material) x domain x coordinates
@@ -148,7 +154,8 @@ void DistributedInfo::prepare(const std::vector<Element*> &region, InfoMode mode
 			bodies * materials, std::vector<std::vector<double> >(_mesh->parts())
 	);
 
-	_cOffset.resize(_regions.size());
+	_cIOffset.resize(_regions.size());
+	_cEOffset.resize(_regions.size());
 	for (size_t r = 0; r < _regions.size(); r++) {
 
 		#pragma omp parallel for
@@ -159,18 +166,21 @@ void DistributedInfo::prepare(const std::vector<Element*> &region, InfoMode mode
 			}
 		}
 
-		_cOffset[r].resize(_mesh->parts());
+		_cIOffset[r].resize(_mesh->parts());
+		_cEOffset[r].resize(_mesh->parts());
 		for (size_t p = 0; p < _mesh->parts(); p++) {
 			_regions[r].coordinates.insert(_regions[r].coordinates.end(), cValues[r][p].begin(), cValues[r][p].end());
-			_cOffset[r][p] = cValues[r][p].size() / 3;
+			_cIOffset[r][p] = cValues[r][p].size() / 3;
+			_cEOffset[r][p] = _cElements[r][p].size();
 		}
-		Esutils::sizesToOffsets(_cOffset[r]);
+		Esutils::sizesToOffsets(_cIOffset[r]);
+		Esutils::sizesToOffsets(_cEOffset[r]);
 
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			for (size_t p = 0; p < _mesh->parts(); p++) {
 				for (size_t i = 0; i < eIndices[r][p][t].size(); i++) {
-					eIndices[r][p][t][i] = _cOffset[r][p] + std::lower_bound(_cIndices[r][p].begin(), _cIndices[r][p].end(), eIndices[r][p][t][i]) - _cIndices[r][p].begin();
+					eIndices[r][p][t][i] = _cIOffset[r][p] + std::lower_bound(_cIndices[r][p].begin(), _cIndices[r][p].end(), eIndices[r][p][t][i]) - _cIndices[r][p].begin();
 				}
 			}
 		}
@@ -249,11 +259,11 @@ void DistributedInfo::addGeneralInfo()
 			elementID[regionOffset]->push_back(e);
 			for (size_t n = 0; n < region[e]->nodes(); n++) {
 				eslocal index = std::lower_bound(_cIndices[regionOffset][*d].begin(), _cIndices[regionOffset][*d].end(), region[e]->node(n)) - _cIndices[regionOffset][*d].begin();
-				(*pointIDcluster[regionOffset])[index + _cOffset[regionOffset][*d]] = region[e]->node(n);
-				(*pointIDglobal[regionOffset])[index + _cOffset[regionOffset][*d]] = _mesh->coordinates().globalIndex((*pointIDcluster[regionOffset])[index + _cOffset[regionOffset][*d]]);
+				(*pointIDcluster[regionOffset])[index + _cIOffset[regionOffset][*d]] = region[e]->node(n);
+				(*pointIDglobal[regionOffset])[index + _cIOffset[regionOffset][*d]] = _mesh->coordinates().globalIndex((*pointIDcluster[regionOffset])[index + _cIOffset[regionOffset][*d]]);
 
 				for (auto c = _mesh->nodes()[region[e]->node(n)]->clusters().begin(); c != _mesh->nodes()[region[e]->node(n)]->clusters().end(); ++c) {
-					(*_regions[regionOffset].data.pointDataInteger["cluster" + std::to_string(*c)].second)[index + _cOffset[regionOffset][*d]] = 1;
+					(*_regions[regionOffset].data.pointDataInteger["cluster" + std::to_string(*c)].second)[index + _cIOffset[regionOffset][*d]] = 1;
 				}
 			}
 		}
@@ -354,27 +364,43 @@ void DistributedInfo::addSettings(size_t step)
 void DistributedInfo::addSolution(const std::vector<Solution*> &solution)
 {
 	for (size_t r = 0; r < _regions.size(); r++) {
-
 		for (size_t s = 0; s < solution.size(); s++) {
 
-			std::vector<double> *rData = new std::vector<double>(solution[s]->properties.size() * _regions[r].coordinates.size() / 3);
-
-			#pragma omp parallel for
-			for (size_t d = 0; d < _mesh->parts(); d++) {
-				for (size_t i = 0; i < _cIndices[r][d].size(); i++) {
-					for (size_t p = 0; p < solution[s]->properties.size(); p++) {
-						(*rData)[solution[s]->properties.size() * (i + _cOffset[r][d]) + p] = solution[s]->get(p, d, _mesh->coordinates().localIndex(_cIndices[r][d][i], d));
-					}
-				}
-			}
+			std::vector<double> *rData;
 
 			switch (solution[s]->eType) {
-			case ElementType::ELEMENTS:
+			case ElementType::ELEMENTS: {
+
+				rData = new std::vector<double>(solution[s]->properties.size() * _regions[r].elementsTypes.size());
+
+				#pragma omp parallel for
+				for (size_t d = 0; d < _mesh->parts(); d++) {
+					for (size_t i = 0; i < _cElements[r][d].size(); i++) {
+						for (size_t p = 0; p < solution[s]->properties.size(); p++) {
+							(*rData)[solution[s]->properties.size() * (i + _cEOffset[r][d]) + p] = solution[s]->get(p, d, _cElements[r][d][i]);
+						}
+					}
+				}
+
 				_regions[r].data.elementDataDouble[solution[s]->name] = std::make_pair(solution[s]->properties.size(), rData);
-				break;
-			case ElementType::NODES:
+
+			} break;
+			case ElementType::NODES: {
+
+				rData = new std::vector<double>(solution[s]->properties.size() * _regions[r].coordinates.size() / 3);
+
+				#pragma omp parallel for
+				for (size_t d = 0; d < _mesh->parts(); d++) {
+					for (size_t i = 0; i < _cIndices[r][d].size(); i++) {
+						for (size_t p = 0; p < solution[s]->properties.size(); p++) {
+							(*rData)[solution[s]->properties.size() * (i + _cIOffset[r][d]) + p] = solution[s]->get(p, d, _mesh->coordinates().localIndex(_cIndices[r][d][i], d));
+						}
+					}
+				}
+
 				_regions[r].data.pointDataDouble[solution[s]->name] = std::make_pair(solution[s]->properties.size(), rData);
-				break;
+
+			} break;
 			default:
 				ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: cannot store this type solution.";
 			}

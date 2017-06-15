@@ -40,6 +40,8 @@ struct Instance {
 	std::vector<Property> &properties;
 	std::vector<int> neighbours;
 
+	std::vector<eslocal> clustersMap;
+
 	std::vector<SparseMatrix> &K, &N1, &N2, &RegMat;
 	std::vector<SparseMatrix> &M;
 	std::vector<std::vector<double> > &R, &f;

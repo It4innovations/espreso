@@ -83,49 +83,72 @@ using std::make_pair;
         ClusterBase(const ESPRESOSolver &configuration, Instance *instance_in):
         	configuration(configuration),
 			instance(instance_in),
-            cluster_time("Cluster Timing "),
 
-            vec_fill_time("Reseting vec_g0 and vec_e0"),
-            loop_1_1_time("Loop 1: Kplus-sv, B0-mv, KpluR-mv"),
-            loop_1_2_time("Loop 1: vec_e0 and vec_g0"),
+			cluster_time	("Cluster Timing "),
 
-            clusCP_time("Cluster CP - F0,GO,Sa,G0t,F0 "),
-            clus_F0_1_time("F0 solve - 1st "),
-            clus_F0_2_time("F0 solve - 2nd "),
-            clus_G0_time("G0  Mult "),
-            clus_G0t_time("G0t Mult "),
-            clus_Sa_time("Sa solve "),
+            vec_fill_time	("Reseting vec_g0 and vec_e0"),
+            loop_1_1_time	("Loop 1: Kplus-sv, B0-mv, KpluR-mv"),
+            loop_1_2_time	("Loop 1: vec_e0 and vec_g0"),
 
-            loop_2_1_time("Loop2: Kplus-sv, B0-mv, Kplus-mv")
+            clusCP_time		("Cluster CP - F0,GO,Sa,G0t,F0 "),
+            clus_F0_1_time	("F0 solve - 1st "),
+            clus_F0_2_time	("F0 solve - 2nd "),
+            clus_G0_time	("G0  Mult "),
+            clus_G0t_time	("G0t Mult "),
+            clus_Sa_time	("Sa solve "),
+
+            loop_2_1_time	("Loop2: Kplus-sv, B0-mv, Kplus-mv")
         {
-            iter_cnt_comm = 0;
+            ;
         }
 
 
         virtual ~ClusterBase() {};
 
+        ClusterBase(const ClusterBase &other):
+        	configuration(other.configuration),
+        	instance(other.instance),
+
+			cluster_time	("Cluster Timing "),
+
+			vec_fill_time	("Reseting vec_g0 and vec_e0"),
+            loop_1_1_time	("Loop 1: Kplus-sv, B0-mv, KpluR-mv"),
+            loop_1_2_time	("Loop 1: vec_e0 and vec_g0"),
+
+            clusCP_time		("Cluster CP - F0,GO,Sa,G0t,F0 "),
+            clus_F0_1_time	("F0 solve - 1st "),
+            clus_F0_2_time	("F0 solve - 2nd "),
+            clus_G0_time	("G0  Mult "),
+            clus_G0t_time	("G0t Mult "),
+            clus_Sa_time	("Sa solve "),
+
+            loop_2_1_time	("Loop2: Kplus-sv, B0-mv, Kplus-mv"){
+
+        }
+
+
         const ESPRESOSolver &configuration;
         Instance *instance;
 
-
         // Cluster specific variables
         eslocal cluster_global_index;
-        eslocal USE_DYNAMIC;
+        eslocal cluster_local_index;
+        eslocal min_numClusters_per_MPI;
+
+
         eslocal USE_KINV;
         eslocal USE_HFETI;
-        eslocal SUBDOM_PER_CLUSTER;
-        eslocal NUMBER_OF_CLUSTERS;
         eslocal PAR_NUM_THREADS;
         eslocal SOLVER_NUM_THREADS;
-        bool SYMMETRIC_SYSTEM;
+        bool 	SYMMETRIC_SYSTEM;
         MatrixType mtype;
 
         eslocal dual_size;
         string data_directory;
 
         // List of Domains
-        SEQ_VECTOR <eslocal>	domains_in_global_index;
-        PAR_VECTOR <Domain> domains;
+        SEQ_VECTOR <eslocal> domains_in_global_index;
+        PAR_VECTOR <Domain>  domains;
 
         eslocal x_clust_size;
         SEQ_VECTOR <eslocal> x_clust_domain_map_vec;
@@ -205,9 +228,9 @@ using std::make_pair;
         void CreateF0();
         void CreateSa();
 
-        void Create_G1_perCluster();
+//        void Create_G1_perCluster();
         void Create_G_perCluster();
-        void Create_G1_perSubdomain ( SparseMatrix &R_in, SparseMatrix &B_in, SparseMatrix &G_out );
+        void Create_G_perSubdomain ( SparseMatrix &R_in, SparseMatrix &B_in, SparseMatrix &G_out );
 
 
         void Compress_G1();
@@ -265,8 +288,6 @@ using std::make_pair;
 	TimeEvent clus_Sa_time;
 
 	TimeEvent loop_2_1_time;
-
-	eslocal iter_cnt_comm;
 
 };
 

@@ -64,14 +64,19 @@ public:
 
 	void removeDuplicateRegions();
 	void fillDomainsSettings();
-	bool hasProperty(size_t domain, Property property, size_t loadStep);
+	bool hasProperty(size_t domain, Property property, size_t loadStep) const;
+	bool hasProperty(Property property, size_t loadStep) const;
 
 	template<typename TMaterial>
 	void loadMaterials(const std::map<std::string, TMaterial*> &materials, const std::map<std::string, std::string> &sets)
 	{
 		size_t index = 0;
 		for (auto it = sets.begin(); it != sets.end(); ++it, index++) {
-			loadMaterial(this->region(it->first), index, it->second, *materials.find(it->second)->second);
+			if (materials.find(it->second) == materials.end()) {
+				materialNotFound(it->second);
+			} else {
+				loadMaterial(this->region(it->first), index, it->second, *materials.find(it->second)->second);
+			}
 		}
 		checkMaterials();
 	}
@@ -155,6 +160,7 @@ protected:
 	void mapEdgesToDomains();
 	void mapNodesToDomains();
 
+	void materialNotFound(const std::string &name);
 	void loadProperty(
 			size_t loadStep,
 			const std::map<std::string, std::string> &regions,

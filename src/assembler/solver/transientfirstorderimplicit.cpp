@@ -57,7 +57,7 @@ void TransientFirstOrderImplicit::run(Step &step)
 
 	preprocessData(step);
 
-	if (offset == -1) {
+	if (offset == (size_t)-1) {
 		lastStep = step.step;
 		offset = instance->solutions.size();
 		instance->solutions.push_back(new Solution(*_mesh, "trans_U" , ElementType::NODES, physics->pointDOFs()));

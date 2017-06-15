@@ -6,11 +6,6 @@
 
 using namespace espreso;
 
-Physics2D::Physics2D(const std::string &name, Mesh *mesh, Instance *instance): Physics(name, mesh, instance)
-{
-
-}
-
 void Physics2D::prepareHybridTotalFETIWithCorners()
 {
 	prepareTotalFETI();

@@ -1,4 +1,6 @@
 
+#include <random>
+
 #include "grid.h"
 
 #include "../../../configuration/environment.h"
@@ -206,13 +208,20 @@ void Grid::elements(std::vector<size_t> &bodies, std::vector<Element*> &elements
 
 bool Grid::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &partsPtrs, std::vector<std::vector<Element*> > &fixPoints, std::vector<Element*> &corners)
 {
+	size_t parts = _settings.domains.mul();
 	if (_settings.uniformDecomposition) {
-		_block->uniformPartition(partsPtrs, _settings.domains.mul());
+		_block->uniformPartition(partsPtrs, parts);
 		_block->uniformFixPoints(nodes, fixPoints);
 		_block->uniformCorners(nodes, corners, 1, true, true, true);
 		return true;
 	} else {
-		mesh.partitiate(_settings.domains.mul());
+		if (_grid.random_partition) {
+			std::random_device rd;
+			std::mt19937 gen(rd());
+			std::uniform_int_distribution<> dis(0, parts);
+			parts += dis(gen) - parts / 2;
+		}
+		mesh.partitiate(parts);
 		return false;
 	}
 }
