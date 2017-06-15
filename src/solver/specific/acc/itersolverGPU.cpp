@@ -7,9 +7,12 @@ using namespace espreso;
 
 // *** Action of K+ routines *********************************************
 
-void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
+void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
        time_eval.totalTime.start();
 
+       ESINFO(ERROR) << "Implement apply_A_l_comp_dom_B.";
+       // TODO: implement
+       /*
 	if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
 		time_eval.timeEvents[0].start();
 
@@ -297,7 +300,7 @@ for (eslocal d = 0; d < cluster.domains.size(); d++)
 	time_eval.timeEvents[3].end();
 
 	time_eval.totalTime.end();
-
+*/
 }
 
 
