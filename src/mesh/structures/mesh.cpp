@@ -261,7 +261,9 @@ void Mesh::partitiate(size_t parts)
 	_DOFtoElement.clear();
 	_fixPoints.clear();
 	_corners.clear();
+	mapFacesToClusters();
 	mapFacesToDomains();
+	mapEdgesToClusters();
 	mapEdgesToDomains();
 	mapNodesToDomains();
 	mapCoordinatesToDomains();
@@ -1651,8 +1653,10 @@ void Mesh::mapFacesToClusters()
 			if (_faces[f]->parentElements().size() == 1) { // Only faces with one element can have more clusters
 				if (std::all_of(_faces[f]->indices(), _faces[f]->indices() + _faces[f]->coarseNodes(), [&] (eslocal i) { return _nodes[i]->clusters().size() > 1; })) {
 					setCluster(_faces[f], _nodes);
+					continue;
 				}
 			}
+			_faces[f]->clusters() = { environment->MPIrank };
 		}
 	}
 }
@@ -1667,6 +1671,8 @@ void Mesh::mapEdgesToClusters()
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 			if (std::all_of(_edges[e]->indices(), _edges[e]->indices() + _edges[e]->coarseNodes(), [&] (eslocal i) { return _nodes[i]->clusters().size() > 1; })) {
 				setCluster(_edges[e], _nodes);
+			} else {
+				_edges[e]->clusters() = { environment->MPIrank };
 			}
 		}
 	}
