@@ -5,9 +5,9 @@
 using namespace espreso;
 // *** Action of K+ routines *********************************************
 
-void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
+void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
     time_eval.totalTime.start();
-
+/*
     // number of Xeon Phi devices 
     eslocal numDevices = configuration.N_MICS;
 
@@ -377,11 +377,11 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, Cluster & cluste
     time_eval.timeEvents[3].end();
 
     time_eval.totalTime.end();
-
+*/
 }
 
 void IterSolverAcc::Apply_Prec( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out ) {
-
+/*
     time_eval.totalTime.start();
 
     time_eval.timeEvents[0].start();
@@ -549,5 +549,5 @@ void IterSolverAcc::Apply_Prec( TimeEval & time_eval, Cluster & cluster, SEQ_VEC
 
 
     time_eval.totalTime.end();
-
-    }
+*/
+}
