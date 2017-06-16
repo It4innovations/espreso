@@ -121,9 +121,7 @@ static void FETI4ISetIntegerOptions(espreso::ESPRESOInput &input, espreso::ESPRE
 
 static void FETI4ISetRealOptions(espreso::ESPRESOSolver &solver, FETI4IReal* options)
 {
-	if (!solver.parameters["epsilon"]->set(std::to_string(options[FETI4I_EPSILON]))) {
-		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'EPSILON' to " << options[FETI4I_EPSILON];
-	}
+	solver.epsilon = options[FETI4I_EPSILON];
 }
 
 void FETI4ICreateStiffnessMatrix(
