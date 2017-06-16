@@ -1022,7 +1022,7 @@ void Mesh::fillDomainsSettings()
 	_properties.resize(parts());
 
 	for (size_t r = 0; r < _regions.size(); r++) {
-		std::max(_steps, _regions[r]->settings.size());
+		_steps = std::max(_steps, _regions[r]->settings.size());
 	}
 
 	auto addProperties = [&] (const std::vector<eslocal> &domains, size_t region) {

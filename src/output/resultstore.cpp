@@ -116,6 +116,7 @@ void ResultStore::storeSettings(const std::vector<size_t> &steps)
 
 	for (size_t i = 0; i < steps.size(); i++) {
 		step.step = steps[i];
+		step.currentTime = i;
 
 		_meshInfo->addSettings(i);
 		files = store("mesh", step, _meshInfo);
@@ -128,6 +129,7 @@ void ResultStore::storeSettings(const std::vector<size_t> &steps)
 		region = _meshInfo->deriveRegion(_mesh->regions()[r]);
 		for (size_t i = 0; i < steps.size(); i++) {
 			step.step = steps[i];
+			step.currentTime = i;
 
 			region->addSettings(i);
 			files = store(_mesh->regions()[r]->name, step, region);
