@@ -52,7 +52,7 @@ void AdvectionDiffusion::prepareTotalFETI()
 				!_mesh->hasProperty(Property::TEMPERATURE, s - 1) &&
 				!_mesh->hasProperty(Property::EXTERNAL_TEMPERATURE, s - 1)) {
 
-			ESINFO(GLOBAL_ERROR) << "Invalid boundary conditions for ADVECTION DIFFUSION - missing temperature or convection.";
+			ESINFO(GLOBAL_ERROR) << "Invalid boundary conditions for ADVECTION DIFFUSION - missing temperature or convection for LOAD_STEP=" << s;
 		}
 	}
 
