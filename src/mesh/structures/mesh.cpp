@@ -757,7 +757,9 @@ void Mesh::loadProperty(
 
 	for (auto it = regions.begin(); it != regions.end(); ++it) {
 		Region *region = this->region(it->first);
-		region->settings.resize(loadStep + 1);
+		if (region->settings.size() < loadStep + 1) {
+			region->settings.resize(loadStep + 1);
+		}
 		std::vector<std::string> values = Parser::split(it->second, ",");
 
 		for (size_t p = 0; p < properties.size(); p++) {
