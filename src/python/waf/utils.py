@@ -57,7 +57,7 @@ def read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_att
         read_config(open("build.config", "r"))
     else:
         Logs.error("Compilation error: unknown 'build.config' file.")
-        Logs.error("Choose the appropriate one from 'build' directory - e.g.: cp build/build.config.icpc build.config")
+        Logs.error("Choose the appropriate one from 'install' directory - e.g.: cp install/build.config.icpc build.config")
         exit()
 
     # Load configuration specified while the project configuration
