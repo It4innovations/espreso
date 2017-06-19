@@ -690,10 +690,28 @@ void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std:
 	}
 	part.push_back(el.size());
 
+	std::vector<eslocal> rowIndex;
+	std::vector<eslocal> clusterRowIndex(constraints.continuityMap.size(), 1);
+	for (size_t i = 0; i < part.size() - 1; i++) {
+		const std::vector<eslocal> &domains = el[part[i]]->domains();
+		if (constraints.continuityMap[domains[0]] == constraints.continuityMap[domains[1]]) {
+			eslocal master = kernel[domains[0]].cols > kernel[domains[1]].cols ? domains[0] : domains[1];
+			eslocal rows = kernel[master].cols > 0 ? kernel[master].cols : 1;
+			rowIndex.push_back(clusterRowIndex[constraints.continuityMap[domains[0]]]);
+			clusterRowIndex[constraints.continuityMap[domains[0]]] += rows;
+		} else {
+			rowIndex.push_back(-1);
+		}
+	}
+
 	#pragma omp parallel for
 	for  (size_t p = 0; p < constraints._mesh.parts(); p++) {
 		for (size_t i = 0; i < part.size() - 1; i++) {
 			const std::vector<eslocal> &domains = el[part[i]]->domains();
+			if (constraints.continuityMap[domains[0]] != constraints.continuityMap[domains[1]]) {
+				continue;
+			}
+
 			int sign = domains[0] == (eslocal)p ? 1 : domains[1] == (eslocal)p ? -1 : 0;
 			if (sign == 0) {
 				continue;
@@ -708,17 +726,25 @@ void EqualityConstraints::insertKernelsToB0(Constraints &constraints, const std:
 			Esutils::removeDuplicity(interfaceDOFs);
 
 			size_t DOFIndex = 0;
-			for (eslocal col = 0; col < kernel[domains[0]].cols; col++) {
+			eslocal master = kernel[domains[0]].cols > kernel[domains[1]].cols ? domains[0] : domains[1];
+			if (kernel[master].cols == 0) {
 				for (size_t n = 0; n < interfaceDOFs.size(); n++) {
-					constraints.B0[p].I_row_indices.push_back(i * kernel[0].cols + col + 1);
+					constraints.B0[p].I_row_indices.push_back(rowIndex[i]);
 					constraints.B0[p].J_col_indices.push_back(DOFs[interfaceDOFs[n]]->DOFIndex(p, DOFIndex) + 1);
-					constraints.B0[p].V_values.push_back(sign * kernel[domains[0]].dense_values[kernel[domains[0]].rows * col + DOFs[interfaceDOFs[n]]->DOFIndex(domains[0], DOFIndex)]);
+					constraints.B0[p].V_values.push_back(sign);
+				}
+			} else {
+				for (eslocal col = 0; col < kernel[master].cols; col++) {
+					for (size_t n = 0; n < interfaceDOFs.size(); n++) {
+						constraints.B0[p].I_row_indices.push_back(rowIndex[i] + col);
+						constraints.B0[p].J_col_indices.push_back(DOFs[interfaceDOFs[n]]->DOFIndex(p, DOFIndex) + 1);
+						constraints.B0[p].V_values.push_back(sign * kernel[master].dense_values[kernel[master].rows * col + DOFs[interfaceDOFs[n]]->DOFIndex(master, DOFIndex)]);
+					}
 				}
 			}
 		}
 
-
-		constraints.B0[p].rows = kernel[0].cols * (part.size() - 1);
+		constraints.B0[p].rows = clusterRowIndex[constraints.continuityMap[p]] - 1;
 		constraints.B0[p].nnz = constraints.B0[p].I_row_indices.size();
 		constraints.B0subdomainsMap[p].reserve(constraints.B0[p].nnz);
 		for (eslocal i = constraints.B0subdomainsMap[p].size(); i < constraints.B0[p].nnz; i++) {

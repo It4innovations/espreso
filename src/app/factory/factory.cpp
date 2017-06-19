@@ -216,9 +216,6 @@ void Factory::meshPreprocessing(const OutputConfiguration &configuration)
 			_physics[i]->prepareTotalFETI();
 			break;
 		case ESPRESO_METHOD::HYBRID_FETI:
-			if (_linearSolvers.back()->configuration.method == ESPRESO_METHOD::HYBRID_FETI && !mesh->isContinuous()) {
-				ESINFO(GLOBAL_ERROR) << "Do not use HYBRID FETI for non-continuous clusters.";
-			}
 			switch (_linearSolvers.back()->configuration.B0_type) {
 			case B0_TYPE::CORNERS:
 				_physics[i]->prepareHybridTotalFETIWithCorners();

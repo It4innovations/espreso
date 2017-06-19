@@ -37,6 +37,8 @@ void Constraints::initMatrices(const std::vector<size_t> &columns)
 		B1[p].nnz = 0;
 		B1[p].type = 'G';
 	}
+
+	continuityMap = _mesh.getContinuityPartition();
 }
 
 void Constraints::save()

@@ -648,6 +648,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 {
 	if (physics != NULL) {
 		instance = new Instance(physics->K.size(), neighbours);
+		instance->clustersMap = constraints->continuityMap;
 
 		physics->K.swap(instance->K);
 		for (size_t i = 0; i < physics->K.size(); i++) {

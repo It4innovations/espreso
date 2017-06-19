@@ -132,6 +132,7 @@ void Loader::fill()
 
 	TimeEvent tPartition("partition"); tPartition.start();
 	if (partitiate(mesh._nodes, mesh._partPtrs, mesh._fixPoints, mesh._corners)) { // manual partition -> map elements to the domains
+		mesh._continuousPartId.resize(mesh.parts(), 0);
 		mesh.mapElementsToDomains();
 		mesh.mapFacesToClusters();
 		mesh.mapFacesToDomains();

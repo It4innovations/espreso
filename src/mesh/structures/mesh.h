@@ -131,6 +131,7 @@ public:
 	void addMonitoredRegion(Region* region) const;
 
 	bool isContinuous() const { return _continuous; }
+	const std::vector<eslocal>& getContinuityPartition() const { return _continuousPartId; }
 
 	void checkNeighbours();
 	void storeNodeData(const std::string &name, std::function<void (std::ofstream &os, const Element* e)> store);
@@ -185,6 +186,8 @@ protected:
 
 	/** @brief Mesh is only one continuous object */
 	bool _continuous;
+
+	std::vector<eslocal> _continuousPartId;
 
 	/// Elements of the mesh.
 	std::vector<Element*> _elements;

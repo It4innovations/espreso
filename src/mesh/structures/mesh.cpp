@@ -212,6 +212,8 @@ static std::vector<eslocal> continuousReorder(std::vector<Element*> &elements, s
 
 void Mesh::partitiate(size_t parts)
 {
+	_continuousPartId.clear();
+	_continuousPartId.resize(parts, 0);
 	if (parts == 1 && this->parts() == 1) {
 		_partPtrs = { 0, (eslocal)_elements.size() };
 		mapElementsToDomains();
@@ -274,6 +276,8 @@ void Mesh::partitiate(size_t parts)
 
 void APIMesh::partitiate(size_t parts)
 {
+	_continuousPartId.clear();
+	_continuousPartId.resize(parts, 0);
 	if (parts == 1 && this->parts() == 1) {
 		_partPtrs = { 0, (eslocal)_elements.size() };
 		mapElementsToDomains();
@@ -283,7 +287,9 @@ void APIMesh::partitiate(size_t parts)
 		if (blocks.size() == 2) {
 			ePartition = getPartition(0, _elements.size(), parts);
 		} else {
+			printf("NONCONTINUITY %d\n", environment->MPIrank);
 			_continuous = false;
+			_continuousPartId.clear();
 			double averageDomainSize = _elements.size() / (double)parts;
 			std::vector<size_t> bPart(blocks.size() - 1);
 			size_t bParts = 0;
@@ -305,6 +311,7 @@ void APIMesh::partitiate(size_t parts)
 				std::for_each(bPartition.begin(), bPartition.end(), [&] (eslocal &e) { e += bParts; });
 				ePartition.insert(ePartition.end(), bPartition.begin(), bPartition.end());
 				bParts += bPart[0];
+				_continuousPartId.insert(_continuousPartId.end(), bPart[b], b);
 			}
 		};
 

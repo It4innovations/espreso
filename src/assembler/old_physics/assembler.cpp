@@ -39,7 +39,6 @@ _solverConfiguration(configuration)
 	singularK.resize(_mesh.parts(), true);
 	if (_solverConfiguration.method == ESPRESO_METHOD::HYBRID_FETI) {
 		ESTEST(MANDATORY) << "Do not use HYBRID FETI for clusters with 1 domain." << (_mesh.parts() > 1 ? TEST_PASSED : TEST_FAILED);
-		ESTEST(MANDATORY) << "Do not use HYBRID FETI for non-continuous clusters." << (_mesh.isContinuous() ? TEST_PASSED : TEST_FAILED);
 	}
 }
 

@@ -43,6 +43,8 @@ struct Constraints
 
 	std::vector<size_t> block;
 
+	std::vector<eslocal> continuityMap;
+
 	Constraints(const ESPRESOSolver &configuration, Mesh &mesh);
 	void initMatrices(const std::vector<size_t> &columns);
 	void save();
