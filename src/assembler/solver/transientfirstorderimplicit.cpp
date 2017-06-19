@@ -115,6 +115,7 @@ void TransientFirstOrderImplicit::run(Step &step)
 		storeSolution(step);
 		step.currentTime += step.timeStep;
 	}
+	finalizeLinearSolver(step);
 }
 
 void TransientFirstOrderImplicit::init(Step &step)

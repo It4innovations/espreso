@@ -28,6 +28,7 @@ void Linear::run(Step &step)
 	preprocess(step);
 	solve(step);
 	postprocess(step);
+	finalize(step);
 
 	instance->clear();
 }

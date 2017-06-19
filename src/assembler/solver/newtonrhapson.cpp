@@ -234,7 +234,7 @@ void NewtonRhapson::postprocess(Step &step)
 
 void NewtonRhapson::finalize(Step &step)
 {
-
+	finalizeLinearSolver(step);
 }
 
 
