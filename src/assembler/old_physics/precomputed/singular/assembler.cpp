@@ -40,11 +40,14 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &Reg
 
 void SingularSystem::makeStiffnessMatricesRegular()
 {
+	ESINFO(PROGRESS3) << "Make stiffness matrices regular.";
 	#pragma omp parallel for
 	for  (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
 		K[subdomain].RemoveLower();
 		algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain, _solverConfiguration.SC_SIZE);
+		ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
+	ESINFO(PROGRESS3);
 }
 
 void SingularSystem::assembleB1()
