@@ -64,6 +64,8 @@ void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 		options[FETI4I_TESTING_LEVEL] = environment->testing_level;
 		options[FETI4I_MEASURE_LEVEL] = environment->measure_level;
 		options[FETI4I_PRINT_MATRICES] = environment->print_matrices;
+
+		options[FETI4I_SC_SIZE] = solver.SC_SIZE;
 	}
 }
 
@@ -102,6 +104,9 @@ static void FETI4ISetIntegerOptions(espreso::ESPRESOInput &input, espreso::ESPRE
 	if (!solver.parameters["N_MICS"]->set(std::to_string(options[FETI4I_N_MICS]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'N_MICS' to " << options[FETI4I_N_MICS];
 	}
+	if (!solver.parameters["sc_size"]->set(std::to_string(options[FETI4I_SC_SIZE]))) {
+		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'SC_SIZE' to " << options[FETI4I_SC_SIZE];
+	}
 	if (!environment->parameters["verbose_level"]->set(std::to_string(options[FETI4I_VERBOSE_LEVEL]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'VERBOSE_LEVEL' to " << options[FETI4I_VERBOSE_LEVEL];
 	}
@@ -114,6 +119,7 @@ static void FETI4ISetIntegerOptions(espreso::ESPRESOInput &input, espreso::ESPRE
 	if (!environment->parameters["print_matrices"]->set(std::to_string(options[FETI4I_PRINT_MATRICES]))) {
 		ESINFO(GLOBAL_ERROR) << "Cannot set parameter 'PRINT_MATRICES' to " << options[FETI4I_PRINT_MATRICES];
 	}
+
 	solver.regularization = REGULARIZATION::NULL_PIVOTS;
 	OutputConfiguration output;
 	Reader::set(*environment, output);
