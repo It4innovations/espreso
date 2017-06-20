@@ -9,8 +9,7 @@ Source files are located in the ``src`` directory which has the following struct
  - **app** - final applications and factory for loading the problem from input parameters
  - **assembler** - matrix assemblers for the solver
  - **basis** - general classes for parameters loading, logging, etc.
- - **catalyst** - Paraview Catalyst interface
- - **config** - the main ESPRESO configuration file
+ - **configuration** - the main ESPRESO configuration files
  - **include** - headers of the third party libraries
  - **input** - ESPRESO mesh loaders
  - **mesh** - main classes for mesh processing and problem description

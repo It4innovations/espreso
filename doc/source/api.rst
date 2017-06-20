@@ -107,7 +107,7 @@ the element matrices can be added by the ``FETI4IAddElement`` method (line 28).
 The ESPRESO settings are defined by an array of integers and an array of floating point values (lines 31, 32).
 These arrays have to be passed to the ``FETI4ICreateInstance`` method. 
 User should setup the ESPRESO to the default values by calling the ``FETI4ISetDefaultIntegerOptions`` and ``FETI4ISetDefaultRealOptions`` functions.
-Then it can change any of the parameters to the required value (see the `complete list <parameters.html>`__ for the description of the parameters).
+Then it can change any of the parameters to the required value.
 
 
 The stiffness matrix and other required data structures are passed to the ESPRESO solver
@@ -123,6 +123,7 @@ The problem can be solved by the ``FETI4ISolve`` method (line 49).
 The solution is then saved to the vector that needs to be preallocated (line 46).
 
 The data holders should be destroyed by calling the ``FETI4IDestroy`` method.
+
 
 .. note::
 

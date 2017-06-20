@@ -21,6 +21,4 @@ Documentation of the library ESPRESO
    examples
 
    structure
-   parameters
-
 

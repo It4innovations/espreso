@@ -18,6 +18,7 @@ This is the default settings for ESPRESO and no changes of the build scripts are
   for users: $ git clone https://github.com/It4innovations/espreso.git
   for developers (with access to IT4I private repository): $ git clone git@code.it4i.cz:mec059/espreso.git
   $ cd espreso
+  $ cp install/build.config.icpc build.config
   $ ./waf configure
   $ ./waf install
 
@@ -30,11 +31,8 @@ The first part is the same as for the 32-bit version::
   $ cd espreso
 
 ESPRESO is a 32-bit solver by default.
-To enable the 64-bit integer support, the ``build.config`` has to be modified (See `configuration <installation.html#configuration>`__). ::
-
-  $ cp build.config.default build.config
-
-Now change the INT_WIDTH value in the build.config to: INT_WIDTH = 64, configure and install the ESPRESO: ::
+To enable the 64-bit integer support, the ``build.config`` has to be modified (See `configuration <installation.html#configuration>`__).
+Change the INT_WIDTH value in the build.config to: INT_WIDTH = 64, configure and install the ESPRESO: ::
 
   $ ./waf configure
   $ ./waf install
@@ -43,10 +41,10 @@ Now change the INT_WIDTH value in the build.config to: INT_WIDTH = 64, configure
 Enabling the Intel Xeon Phi Acceleration
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This procedure is designed for the IT4Innovations Salomon cluster.  
+This procedure is designed for the IT4Innovations Salomon cluster.
 
 Enabling the hardware acceleration of the ESPRESO on a cluster with accelerators requires these steps:
-  1. Load the appropriate modules - set the environment 
+  1. Load the appropriate modules - set the environment (use env/modules.salomon script)
   2. Change the build.config script
   3. Configure and install
 
@@ -55,7 +53,7 @@ The user has to connect to the accelerated node in order to be able to compile t
 
   $ cd espreso (or whereever the ESPRESO is cloned from the Git)
   $ . env/modules.salomon
-  $ cp build.config.default build.config
+  $ cp build.config.icpc build.config
 
 Now change the value of the ``SOLVER`` in the build.config to: SOLVER = MIC and configure and build the ESPRESO: ::
 
@@ -81,7 +79,8 @@ The following example shows the installation on ``CSC Sisu`` Cray XC40 supercomp
   for users: $ git clone https://github.com/It4innovations/espreso.git
   for developers (with access to IT4I private repository): $ git clone git@code.it4i.cz:mec059/espreso.git
   $ cd espreso
-  $ ./waf configure --cray
+  $ cp install/build.config.cray build.config
+  $ ./waf configure
   $ ./waf install
 
 
@@ -95,6 +94,7 @@ The following examples assumes that ESPRESO is already installed: ::
   $ git clone https://code.it4i.cz/mec059/elmer.git src
 
   $ mkdir build
+  $ cd build
   $ FETI4I_ROOT=${PATH_TO_ESPRESO}/libespreso cmake -DWITH_ELMERGUI:BOOL=FALSE -DWITH_MPI:BOOL=TRUE -DWITH_FETI4I:BOOL=TRUE -DCMAKE_INSTALL_PREFIX=../ ../src/
   $ make install
 
@@ -118,26 +118,23 @@ Linear elasticity problem from meshgenerator
 
 This example generates a cube that is fixed on the bottom plane and only the gravity force is applied ::
 
-  $ mpirun -n 8 ./espreso -p examples/meshgenerator/cube_elasticity_fixed_bottom.txt HEXA8 2 2 2  5 5 5  8 8 8
+  $ mpirun -n 8 ./espreso -c benchmarks/linearElasticity3D/cubeInGravityField/espreso.ecf HEXA8 2 2 2  5 5 5  8 8 8
 
-Where: 
+Where:
   - generator creates 8 (2x2x2) clusters
   - each cluster contains 125 (5x5x5) subdomains
   - each subdomain constains 512 (8x8x8) hexahedron elements
-
-Detailed description of the generator parameters can be found in the ``cube_elasticity_fixed_bottom.txt`` example file.
-
-Other examples for generator are in the ``examples/meshgenerator/`` directory.
 
 
 Ansys Workbench example
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 The Ansys Workbench database file can be solved by one MPI process only.
-To use more compute nodes the problem has to be decomposed into multiple parts. Then the solver can run in parallel: ::
+To use more compute nodes the problem has to be decomposed into multiple parts.
+Example can be found in: ::
 
-  $ ./decomposer workbench_test_case.dat decomposition 4
-  $ mpirun -n 4 ./espreso -i esdata -p decomposition4/
+  tests/examples/input/workbench/
+
 
 
 
