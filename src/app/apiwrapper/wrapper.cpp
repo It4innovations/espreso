@@ -42,7 +42,7 @@ void FETI4ISetDefaultIntegerOptions(FETI4IInt* options)
 		options[FETI4I_PRECONDITIONER] = static_cast<int>(configuration.linear_elasticity_3D.physics_solver.load_steps_settings.at(1)->espreso.preconditioner);
 		options[FETI4I_CGSOLVER] = static_cast<int>(configuration.linear_elasticity_3D.physics_solver.load_steps_settings.at(1)->espreso.solver);
 		options[FETI4I_N_MICS] = configuration.linear_elasticity_3D.physics_solver.load_steps_settings.at(1)->espreso.N_MICS;
-
+		options[FETI4I_SC_SIZE] = configuration.linear_elasticity_3D.physics_solver.load_steps_settings.at(1)->espreso.SC_SIZE;
 
 		options[FETI4I_VERBOSE_LEVEL] = environment->verbose_level;
 		options[FETI4I_TESTING_LEVEL] = environment->testing_level;
