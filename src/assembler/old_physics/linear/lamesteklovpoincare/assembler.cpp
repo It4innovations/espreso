@@ -179,12 +179,12 @@ static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat, const std::ve
 	RegMat.MatScale(K.getDiagonalMaximum());
 }
 
-static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &RegMat, SparseMatrix &R, size_t subdomain)
+static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &RegMat, SparseMatrix &R, size_t subdomain, size_t scSize)
 {
 	double norm;
 	eslocal defect;
 
-	K.get_kernel_from_K(K, RegMat, R, norm, defect, subdomain);
+	K.get_kernel_from_K(K, RegMat, R, norm, defect, subdomain, scSize);
 }
 
 void LameSteklovPoincare::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, std::vector<double> &fe, std::vector<eslocal> &dofs) const
@@ -271,7 +271,7 @@ void LameSteklovPoincare::composeSubdomain(size_t subdomain)
 		break;
 	case REGULARIZATION::NULL_PIVOTS:
 		K[subdomain].RemoveLower();
-		algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain);
+		algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain, _solverConfiguration.SC_SIZE);
 		break;
 	}
 }

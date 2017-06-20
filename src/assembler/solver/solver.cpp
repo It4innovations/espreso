@@ -210,7 +210,7 @@ void Solver::regularizeMatrices(const Step &step, Matrices matrices)
 	ESINFO(PROGRESS2) << physics->name() << " regularizes matrices: " << mNames(matrices);
 
 	TimeEvent time("Regularization of matrices " + mNames(matrices) + " by " + physics->name()); time.start();
-	physics->makeStiffnessMatricesRegular(linearSolver->configuration.regularization);
+	physics->makeStiffnessMatricesRegular(linearSolver->configuration.regularization, linearSolver->configuration.SC_SIZE);
 	time.endWithBarrier(); _timeStatistics->addEvent(time);
 }
 

@@ -69,7 +69,7 @@ struct Physics {
 			const DenseMatrix &Ke, const DenseMatrix &Me, const DenseMatrix &Re, const DenseMatrix &fe,
 			const Step &step, size_t domain, bool isBoundaryCondition);
 
-	virtual void makeStiffnessMatricesRegular(REGULARIZATION regularization);
+	virtual void makeStiffnessMatricesRegular(REGULARIZATION regularization, size_t scSize);
 	virtual void analyticRegularization(size_t domain) =0;
 
 	virtual void assembleB1(const Step &step, bool withRedundantMultipliers, bool withScaling);

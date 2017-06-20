@@ -30,12 +30,12 @@ void SingularSystem::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, 
 	ESINFO(GLOBAL_ERROR) << "Implement assembleStiffnessMatrix";
 }
 
-static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &RegMat, SparseMatrix &R, size_t subdomain)
+static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &RegMat, SparseMatrix &R, size_t subdomain, size_t scSize)
 {
 	double norm;
 	eslocal defect;
 
-	K.get_kernel_from_K(K, RegMat, R, norm, defect, subdomain);
+	K.get_kernel_from_K(K, RegMat, R, norm, defect, subdomain, scSize);
 }
 
 void SingularSystem::makeStiffnessMatricesRegular()
@@ -43,7 +43,7 @@ void SingularSystem::makeStiffnessMatricesRegular()
 	#pragma omp parallel for
 	for  (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
 		K[subdomain].RemoveLower();
-		algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain);
+		algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain, _solverConfiguration.SC_SIZE);
 	}
 }
 

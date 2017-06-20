@@ -3570,9 +3570,10 @@ static ESPRESOTest testUpperTriangle(SparseMatrix &K)
 }
 
 void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
-      SparseMatrix &Kplus_R,double &norm_KR_d_pow_2_approx, eslocal &defect_d,eslocal d_sub){
+      SparseMatrix &Kplus_R,double &norm_KR_d_pow_2_approx, eslocal &defect_d,eslocal d_sub, size_t scSize){
 
 	ESTEST(SIMPLE) << "Get kernel needs upper triangular matrix" << testUpperTriangle(K);
+	SC_SIZE = scSize;
 //
 // Routine calculates kernel Kplus_R of K satisfied euqality K * Kplus_R = O,
 // where O is zero matrix, and it makes the matrix K non-singular (K_reg)
@@ -4522,7 +4523,9 @@ if (defect_K_in == 0){
 
 void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regMat,
       SparseMatrix &Kplus_R,SparseMatrix &Kplus_Rl,
-      double &norm_KR_d_pow_2_approx, eslocal &defect_d,eslocal d_sub){
+      double &norm_KR_d_pow_2_approx, eslocal &defect_d,eslocal d_sub, size_t scSize){
+
+	SC_SIZE = scSize;
 //
 // Routine calculates kernel Kplus_R of K satisfied euqality K * Kplus_R = O,
 // where O is zero matrix, and it makes the matrix K non-singular (K_reg)

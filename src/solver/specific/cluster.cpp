@@ -1522,9 +1522,9 @@ void ClusterBase::CreateSa() {
 		eslocal tmp_int;
 		SparseMatrix TSak, _tmpSparseMat;
 		if (SYMMETRIC_SYSTEM) {
-			Salfa.get_kernel_from_K(Salfa,_tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1);
+			Salfa.get_kernel_from_K(Salfa,_tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
 		} else {
-			Salfa.get_kernels_from_nonsym_K(Salfa, _tmpSparseMat, Kernel_Sa, Kernel_Sa2, tmp_double, tmp_int, -1);
+			Salfa.get_kernels_from_nonsym_K(Salfa, _tmpSparseMat, Kernel_Sa, Kernel_Sa2, tmp_double, tmp_int, -1, configuration.SC_SIZE);
 		}
 		TSak.Clear();
 

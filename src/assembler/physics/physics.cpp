@@ -219,7 +219,7 @@ void Physics::insertElementToDomain(
 	}
 }
 
-void Physics::makeStiffnessMatricesRegular(REGULARIZATION regularization)
+void Physics::makeStiffnessMatricesRegular(REGULARIZATION regularization, size_t scSize)
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < _instance->domains; d++) {
@@ -239,11 +239,11 @@ void Physics::makeStiffnessMatricesRegular(REGULARIZATION regularization)
 				eslocal defect;
 
 			case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-				_instance->K[d].get_kernel_from_K(_instance->K[d], _instance->RegMat[d], _instance->N1[d], norm, defect, d);
+				_instance->K[d].get_kernel_from_K(_instance->K[d], _instance->RegMat[d], _instance->N1[d], norm, defect, d, scSize);
 				break;
 
 			case MatrixType::REAL_UNSYMMETRIC:
-				_instance->K[d].get_kernels_from_nonsym_K(_instance->K[d], _instance->RegMat[d], _instance->N1[d], _instance->N2[d], norm, defect, d);
+				_instance->K[d].get_kernels_from_nonsym_K(_instance->K[d], _instance->RegMat[d], _instance->N1[d], _instance->N2[d], norm, defect, d, scSize);
 				break;
 
 			default:

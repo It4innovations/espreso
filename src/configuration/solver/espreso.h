@@ -102,6 +102,8 @@ struct ESPRESOSolver: public Configuration {
 	PARAMETER(bool, combine_sc_and_spds, "Combine usage of SC for Accelerator and sparse direct solver for CPU.", true);
 	PARAMETER(bool, keep_factors, "Keep factors between iterations.", true);
 
+	PARAMETER(size_t, SC_SIZE, "The size of null pivots for analytics regularization", 200);
+
 	PARAMETER(size_t, N_MICS, "Number of MIC accelerators", 2);
 	PARAMETER(bool, load_balancing, "Load balancing of MIC accelerators", true);
 	PARAMETER(bool, load_balancing_preconditioner, "Load balancing of Dirichlet preconditioner", true);

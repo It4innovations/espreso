@@ -515,21 +515,21 @@ static void analyticsRegMat(SparseMatrix &K, SparseMatrix &RegMat)
 	RegMat.ConvertToCSR(1);
 }
 
-static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &R1, SparseMatrix &R2, SparseMatrix &RegMat, size_t subdomain)
+static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &R1, SparseMatrix &R2, SparseMatrix &RegMat, size_t subdomain, size_t scSize)
 {
 	double norm;
 	eslocal defect;
 
-	K.get_kernels_from_nonsym_K(K, RegMat, R1, R2, norm, defect, subdomain);
+	K.get_kernels_from_nonsym_K(K, RegMat, R1, R2, norm, defect, subdomain, scSize);
 }
 
 
-static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &R, SparseMatrix &RegMat, size_t subdomain)
+static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &R, SparseMatrix &RegMat, size_t subdomain, size_t scSize)
 {
 	double norm;
 	eslocal defect;
 
-	K.get_kernel_from_K(K, RegMat, R, norm, defect, subdomain);
+	K.get_kernel_from_K(K, RegMat, R, norm, defect, subdomain, scSize);
 
 }
 
@@ -587,10 +587,10 @@ void LaplaceSteklovPoincare::makeStiffnessMatricesRegular()
 			switch (mtype) {
 			case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 				K[subdomain].RemoveLower();
-				algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], RegMat[subdomain], subdomain);
+				algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], RegMat[subdomain], subdomain, _solverConfiguration.SC_SIZE);
 				break;
 			case MatrixType::REAL_UNSYMMETRIC:
-				algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], R2[subdomain], RegMat[subdomain], subdomain);
+				algebraicKernelsAndRegularization(K[subdomain], R1[subdomain], R2[subdomain], RegMat[subdomain], subdomain, _solverConfiguration.SC_SIZE);
 				break;
 			default:
 				ESINFO(ERROR) << "Unknown matrix type for regularization.";
