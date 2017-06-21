@@ -223,7 +223,9 @@ void Mesh::partitiate(size_t parts)
 		if (blocks.size() == 2) {
 			ePartition = getPartition(0, _elements.size(), parts);
 		} else {
+			printf("NONCONTINUITY %d (%ld blocks)\n", environment->MPIrank, blocks.size() - 1);
 			_continuous = false;
+			_continuousPartId.clear();
 			double averageDomainSize = _elements.size() / (double)parts;
 			std::vector<size_t> bPart(blocks.size() - 1);
 			size_t bParts = 0;
@@ -244,8 +246,10 @@ void Mesh::partitiate(size_t parts)
 				std::vector<eslocal> bPartition = getPartition(blocks[b], blocks[b + 1], bPart[b]);
 				std::for_each(bPartition.begin(), bPartition.end(), [&] (eslocal &e) { e += bParts; });
 				ePartition.insert(ePartition.end(), bPartition.begin(), bPartition.end());
-				bParts += bPart[0];
+				bParts += bPart[b];
+				_continuousPartId.insert(_continuousPartId.end(), bPart[b], b);
 			}
+			parts = bParts;
 		};
 
 		_partPtrs = std::vector<eslocal>(parts + 1, 0);
@@ -287,7 +291,7 @@ void APIMesh::partitiate(size_t parts)
 		if (blocks.size() == 2) {
 			ePartition = getPartition(0, _elements.size(), parts);
 		} else {
-			printf("NONCONTINUITY %d\n", environment->MPIrank);
+			printf("NONCONTINUITY %d (%ld blocks)\n", environment->MPIrank, blocks.size() - 1);
 			_continuous = false;
 			_continuousPartId.clear();
 			double averageDomainSize = _elements.size() / (double)parts;
@@ -310,9 +314,10 @@ void APIMesh::partitiate(size_t parts)
 				std::vector<eslocal> bPartition = getPartition(blocks[b], blocks[b + 1], bPart[b]);
 				std::for_each(bPartition.begin(), bPartition.end(), [&] (eslocal &e) { e += bParts; });
 				ePartition.insert(ePartition.end(), bPartition.begin(), bPartition.end());
-				bParts += bPart[0];
+				bParts += bPart[b];
 				_continuousPartId.insert(_continuousPartId.end(), bPart[b], b);
 			}
+			parts = bParts;
 		};
 
 		_partPtrs = std::vector<eslocal>(parts + 1, 0);
