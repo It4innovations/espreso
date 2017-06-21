@@ -241,6 +241,11 @@ void Mesh::partitiate(size_t parts)
 				(*std::max_element(bPart.begin(), bPart.end()))--;
 				bParts--;
 			}
+			for (size_t b = 0; b < bPart.size(); b++) {
+				if (bPart[b] == 0) {
+					bPart[b]++;
+				}
+			}
 			bParts = 0;
 			for (size_t b = 0; b < blocks.size() - 1; b++) {
 				std::vector<eslocal> bPartition = getPartition(blocks[b], blocks[b + 1], bPart[b]);
@@ -280,6 +285,11 @@ void Mesh::partitiate(size_t parts)
 
 void APIMesh::partitiate(size_t parts)
 {
+	if (_elements.size() / parts < parts / 10.0) {
+		parts = _elements.size() / 20;
+		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "WARNINK: Too small domains. ESPRESO change DOMAINS=" << parts;
+	}
+
 	_continuousPartId.clear();
 	_continuousPartId.resize(parts, 0);
 	if (parts == 1 && this->parts() == 1) {
@@ -308,6 +318,11 @@ void APIMesh::partitiate(size_t parts)
 			while (bParts > parts) {
 				(*std::max_element(bPart.begin(), bPart.end()))--;
 				bParts--;
+			}
+			for (size_t b = 0; b < bPart.size(); b++) {
+				if (bPart[b] == 0) {
+					bPart[b]++;
+				}
 			}
 			bParts = 0;
 			for (size_t b = 0; b < blocks.size() - 1; b++) {
