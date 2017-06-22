@@ -40,6 +40,10 @@ public:
     // sets affinity of processes on accelerators
     void SetAcceleratorAffinity();
 
+    // for usage within supercluster - performs only a first part w/o
+    // multiplication
+    void multKplusGlobal_l_prepare_Acc( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in); 
+
 //private:
 
     // packed matrices

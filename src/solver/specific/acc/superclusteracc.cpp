@@ -1,11 +1,10 @@
-
-#include "clusteracc.h"
+#include "superclusteracc.h"
 
 #include "../../../assembler/instance.h"
 
 using namespace espreso;
 
-ClusterAcc::~ClusterAcc() {
+SuperClusterAcc::~SuperClusterAcc() {
     if (this->deleteMatrices) {
         for (eslocal i = 0; i < configuration.N_MICS; i++) {
             if (matricesPerAcc[i]) {
@@ -15,7 +14,8 @@ ClusterAcc::~ClusterAcc() {
     }
 }
 
-void ClusterAcc::SetAcceleratorAffinity() {
+
+void SuperClusterAcc::SetAcceleratorAffinity() {
 
     //        	Logical to Physical Processor Mapping
     //        	? Hardware:
@@ -117,49 +117,6 @@ void ClusterAcc::SetAcceleratorAffinity() {
         ESINFO(PROGRESS2) << "Incorrect number of MPI processes per accelerator!" << _MPInodeSize;  
     }
 
-    //for (int i = 0; i < acc_per_MPI; ++i) {
-    //    #pragma omp parallel
-    //    {
-    //        int used_core_num = 0;
-    //        int first_core = 0;
-    //        int last_core = 0;
-    //        int target = myTargets.at(i);
-    //        int MPIperAcc = this->MPI_per_acc;
-    //        int rank = this->acc_rank;
-    //
-    //#pragma offload target(mic:target) 
-    //        {
-    //            cpu_set_t my_set;        // Define cpu_set bit mask. 
-    //            CPU_ZERO(&my_set);       // Initialize it all to 0
-    //            int cores = sysconf(_SC_NPROCESSORS_ONLN); // for Xeon Phi 7120 - results is 244
-    //            cores = ( cores / 4 ) - 1; // keep core for system and remove effect of hyperthreading
-    //            int cores_per_rank = cores / MPIperAcc;
-    //
-    //            for (int i = 0; i < cores_per_rank ; i++) {
-    //                if (i == 0) {
-    //                    //first_core = 1*(cores_per_rank)*rank + 1*i;
-    //                    first_core = cores_per_rank*rank + 1;
-    //                }
-    //                last_core = 1*(cores_per_rank)*rank + 1*i;
-    //                //int core = 1 + 4*(cores_per_rank)*rank + 4*i;
-    //
-    //                int core =1+  4*cores_per_rank*rank + 4*i;
-    //                for (int j = 0 ; j < 4; j++ ) {
-    //                    CPU_SET(core , &my_set);     /* set the bit that represents core 7. */
-    //                    core++;
-    //                }
-    //                used_core_num++;
-    //            }   
-    //
-    //            sched_setaffinity(0, sizeof(cpu_set_t), &my_set); /* Set affinity of tihs process to */
-    //            omp_set_num_threads(4*cores_per_rank);
-    //            /* the defined mask, i.e. only 7. */
-    //        }
-    //    }
-    //}
-
-
-
 #pragma omp parallel num_threads( acc_per_MPI )
     {
         int used_core_num = 0;
@@ -201,7 +158,8 @@ void ClusterAcc::SetAcceleratorAffinity() {
 
 }
 
-void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
+
+void SuperClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     // Ratio of work done on MIC
 
     ESINFO(PROGRESS3) << "Creating Local Schur complements";
@@ -228,8 +186,8 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 
 
 #pragma omp parallel for
-    for (eslocal i = 0; i < domains_in_global_index.size(); i++ ) {
-        domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_comp_dom);
+    for (eslocal i = 0; i < number_of_subdomains_per_supercluster; i++ ) {
+        domains[i]->B1_comp_dom.MatTranspose(domains[i]->B1t_comp_dom);
     }
 
     // compute sizes of data to be offloaded to MIC
@@ -257,11 +215,11 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 
         for ( int j = offset; j < offset + matrixPerPack[i]; j++ ) {
             if (!symmetric) {
-                currDataSize = domains[j].B1t_comp_dom.cols * domains[j].B1t_comp_dom.cols;
+                currDataSize = domains[j]->B1t_comp_dom.cols * domains[j]->B1t_comp_dom.cols;
             } else {
                 // isPacked => is symmetric
-                currDataSize = ( ( 1.0 + ( double ) domains[j].B1t_comp_dom.cols ) *
-                        ( ( double ) domains[j].B1t_comp_dom.cols ) / 2.0 );
+                currDataSize = ( ( 1.0 + ( double ) domains[j]->B1t_comp_dom.cols ) *
+                        ( ( double ) domains[j]->B1t_comp_dom.cols ) / 2.0 );
             }
             long dataInBytes = (currDataSize + dataSize) * scalarSize;
             if (MICFull || (dataInBytes > usableRAM * micMem[i])) {
@@ -289,8 +247,8 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         }
 
         for ( eslocal j = 0; j < matrixPerPack[i]; ++j ) {
-            this->B1KplusPacks[ i ].PreparePack( j, domains[accDomains[i].at(j)].B1t_comp_dom.cols,
-                    domains[accDomains[i].at(j)].B1t_comp_dom.cols, symmetric );
+            this->B1KplusPacks[ i ].PreparePack( j, domains[accDomains[i].at(j)]->B1t_comp_dom.cols,
+                    domains[accDomains[i].at(j)]->B1t_comp_dom.cols, symmetric );
         }
     }
 
@@ -305,25 +263,25 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         for (eslocal j = 0 ; j < accDomains[i].size() ; ++j) {
             eslocal domN = accDomains[i].at(j);
             SparseMatrix tmpB;
-            domains[domN].B1_comp_dom.MatTranspose(tmpB);
+            domains[domN]->B1_comp_dom.MatTranspose(tmpB);
             SparseSolverCPU tmpsps;
-            tmpsps.Create_SC_w_Mat( domains[domN].K, tmpB, domains[domN].B1Kplus, false, symmetric);
+            tmpsps.Create_SC_w_Mat( domains[domN]->K, tmpB, domains[domN]->B1Kplus, false, symmetric);
             if (!USE_FLOAT) {
 
                 double * matrixPointer = this->B1KplusPacks[i].getMatrixPointer(j);
-                memcpy(matrixPointer, &(domains[domN].B1Kplus.dense_values[0]),
+                memcpy(matrixPointer, &(domains[domN]->B1Kplus.dense_values[0]),
                         this->B1KplusPacks[i].getDataLength(j) * sizeof(double) );
-                SEQ_VECTOR<double>().swap(  domains[domN].B1Kplus.dense_values);
+                SEQ_VECTOR<double>().swap(  domains[domN]->B1Kplus.dense_values);
             } else {
 
                 float * matrixPointer = this->B1KplusPacks[i].getMatrixPointer_fl(j) ;
-                domains[domN].B1Kplus.ConvertDenseToDenseFloat( 1 );
+                domains[domN]->B1Kplus.ConvertDenseToDenseFloat( 1 );
                 //for (eslocal k = 0; k << this->B1KplusPacks[i].getDataLength(j); ++k) {
                 //    matrixPointer[k] = domains[domN].B1Kplus.dense_values_fl[k];                 
                 //    }
-                memcpy(matrixPointer, &(domains[domN].B1Kplus.dense_values_fl[0]),
+                memcpy(matrixPointer, &(domains[domN]->B1Kplus.dense_values_fl[0]),
                         this->B1KplusPacks[i].getDataLength(j) * sizeof(float) );
-                SEQ_VECTOR<float>().swap(  domains[domN].B1Kplus.dense_values_fl);
+                SEQ_VECTOR<float>().swap(  domains[domN]->B1Kplus.dense_values_fl);
 
             }
             ESINFO(PROGRESS3) << Info::plain() << ".";
@@ -341,12 +299,12 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
         ESINFO(PROGRESS3) << Info::plain() << "*";
         eslocal domN = hostDomains.at(d);
         SparseMatrix TmpB;
-        domains[domN].B1_comp_dom.MatTranspose(TmpB);
+        domains[domN]->B1_comp_dom.MatTranspose(TmpB);
         SparseSolverCPU tmpsps;
-        tmpsps.Create_SC_w_Mat( domains[domN].K, TmpB, domains[domN].B1Kplus, false, symmetric);
+        tmpsps.Create_SC_w_Mat( domains[domN]->K, TmpB, domains[domN]->B1Kplus, false, symmetric);
         if (USE_FLOAT) {
-            domains[domN].B1Kplus.ConvertDenseToDenseFloat(1);
-            domains[domN].B1Kplus.USE_FLOAT = true;
+            domains[domN]->B1Kplus.ConvertDenseToDenseFloat(1);
+            domains[domN]->B1Kplus.USE_FLOAT = true;
         }
     }
 
@@ -356,8 +314,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 }
 
 
-
-void ClusterAcc::SetupKsolvers ( ) {
+void SuperClusterAcc::SetupKsolvers ( ) {
     // this part is for setting CPU pardiso, temporarily until everything is
     // solved on MIC
 #pragma omp parallel for
@@ -366,16 +323,16 @@ void ClusterAcc::SetupKsolvers ( ) {
         // Import of Regularized matrix K into Kplus (Sparse Solver)
         switch (configuration.Ksolver) {
             case ESPRESO_KSOLVER::DIRECT_DP:
-                domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
+                domains[d]->Kplus.ImportMatrix_wo_Copy (domains[d]->K);
                 break;
             case ESPRESO_KSOLVER::ITERATIVE:
-                domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
+                domains[d]->Kplus.ImportMatrix_wo_Copy (domains[d]->K);
                 break;
             case ESPRESO_KSOLVER::DIRECT_SP:
-                domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+                domains[d]->Kplus.ImportMatrix_fl(domains[d]->K);
                 break;
             case ESPRESO_KSOLVER::DIRECT_MP:
-                domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+                domains[d]->Kplus.ImportMatrix_fl(domains[d]->K);
                 break;
                 //		case 4:
                 //			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
@@ -388,33 +345,33 @@ void ClusterAcc::SetupKsolvers ( ) {
         if (configuration.keep_factors) {
             std::stringstream ss;
             ss << "init -> rank: " << environment->MPIrank << ", subdomain: " << d;
-            domains[d].Kplus.keep_factors = true;
+            domains[d]->Kplus.keep_factors = true;
             if (configuration.Ksolver != ESPRESO_KSOLVER::ITERATIVE) {
-                domains[d].Kplus.Factorization (ss.str());
+                domains[d]->Kplus.Factorization (ss.str());
             }
         } else {
-            domains[d].Kplus.keep_factors = false;
-            domains[d].Kplus.MPIrank = environment->MPIrank;
+            domains[d]->Kplus.keep_factors = false;
+            domains[d]->Kplus.MPIrank = environment->MPIrank;
         }
 
-        domains[d].domain_prim_size = domains[d].Kplus.cols;
+        domains[d]->domain_prim_size = domains[d]->Kplus.cols;
         //TODO: Hot Fix - needs to be done better
         if ( !SYMMETRIC_SYSTEM ) {
             // 11 = Real and unsymmetric matrix
-            domains[d].Kplus.mtype = 11;
+            domains[d]->Kplus.mtype = 11;
         } else {
             // 2 = Real and symmetric positive definite
-            domains[d].Kplus.mtype = 2;
+            domains[d]->Kplus.mtype = 2;
         }
         //TODO: else stokes = -2 = Real and symmetric indefinite
 
         if ( d == 0 && environment->MPIrank == 0) {
-        //    domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+            //    domains[d]->Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
         }
-domains[d].Kplus.msglvl = 0;
+        domains[d]->Kplus.msglvl = 0;
     }
     if (!USE_KINV) {
-        double MICr = 0.9;
+        double MICr = 0.8;
 
         eslocal *matrixPerPack = new eslocal[ this->acc_per_MPI ];
 
@@ -436,7 +393,7 @@ domains[d].Kplus.msglvl = 0;
             this->matricesPerAcc[ i ] = new SparseMatrix*[ matrixPerPack[ i ] ];
             for ( int j = offset; j < offset + matrixPerPack[ i ]; ++j ) {
                 accDomains[ i ].push_back( j );       
-                this->matricesPerAcc[ i ][ j - offset ] = &(domains[j].K);
+                this->matricesPerAcc[ i ][ j - offset ] = &(domains[j]->K);
             }
 
             offset += matrixPerPack[ i ];
@@ -463,10 +420,23 @@ domains[d].Kplus.msglvl = 0;
     }
 }
 
-void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
+
+void SuperClusterAcc::SetupPreconditioner() {
+
+    if ( configuration.preconditioner != ESPRESO_PRECONDITIONER::DIRICHLET ) {
+        for ( eslocal c = 0; c < clusters.size(); ++c ) {
+            clusters[ c ].SetupPreconditioner();
+        }
+    } else {
+        CreateDirichletPrec( instance ); 
+    }
+}
+
+
+void SuperClusterAcc::CreateDirichletPrec( Instance *instance ) {
 
     bool USE_FLOAT = ( configuration.schur_precision == FLOAT_PRECISION::SINGLE ||
-        configuration.Ksolver == ESPRESO_KSOLVER::DIRECT_SP );
+            configuration.Ksolver == ESPRESO_KSOLVER::DIRECT_SP );
 
     // Ratio of work done on MIC
     double MICr = 1.0;
@@ -515,7 +485,7 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
         eslocal numCPUDomains = 0;
 
         for ( int j = offset; j < offset + matrixPerPack[i]; j++ ) {
-            eslocal size = domains[j].B1t_Dir_perm_vec.size();
+            eslocal size = domains[j]->B1t_Dir_perm_vec.size();
             if (!symmetric) {
                 currDataSize = size * size;
             } else {
@@ -549,8 +519,8 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
         }
 
         for ( eslocal j = 0; j < matrixPerPack[i]; ++j ) {
-            this->DirichletPacks[ i ].PreparePack( j, domains[accPreconditioners[i].at(j)].B1t_Dir_perm_vec.size(),
-                    domains[accPreconditioners[i].at(j)].B1t_Dir_perm_vec.size(), symmetric );
+            this->DirichletPacks[ i ].PreparePack( j, domains[accPreconditioners[i].at(j)]->B1t_Dir_perm_vec.size(),
+                    domains[accPreconditioners[i].at(j)]->B1t_Dir_perm_vec.size(), symmetric );
         }
     }
 
@@ -565,7 +535,7 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
 #pragma omp parallel for
         for (eslocal j = 0; j < accPreconditioners[mic].size(); ++j ) {
             eslocal d = accPreconditioners[mic].at(j);
-            SEQ_VECTOR <eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
+            SEQ_VECTOR <eslocal> perm_vec = domains[d]->B1t_Dir_perm_vec;
             SEQ_VECTOR <eslocal> perm_vec_full ( instance->K[d].rows );
             SEQ_VECTOR <eslocal> perm_vec_diff ( instance->K[d].rows );
 
@@ -647,8 +617,8 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
             eslocal sc_size = perm_vec.size();
 
             if (sc_size == instance->K[d].rows) {
-                domains[d].Prec = instance->K[d];
-                domains[d].Prec.ConvertCSRToDense(1);
+                domains[d]->Prec = instance->K[d];
+                domains[d]->Prec.ConvertCSRToDense(1);
                 // if physics.K[d] does not contain inner DOF
             } else {
 
@@ -658,8 +628,8 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
                     //          createSchur.msglvl=1;
                     eslocal sc_size = perm_vec.size();
                     createSchur.ImportMatrix_wo_Copy(K_modif);
-                    createSchur.Create_SC(domains[d].Prec, sc_size,false);
-                    domains[d].Prec.ConvertCSRToDense(1);
+                    createSchur.Create_SC(domains[d]->Prec, sc_size,false);
+                    domains[d]->Prec.ConvertCSRToDense(1);
                 }
                 else
                 {
@@ -682,7 +652,7 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
                         K_sr.getSubBlockmatrix_rs(K_modif,K_sr,j_start,sc_size,i_start, nonsing_size);
                     }
 
-                    domains[d].Prec.getSubDiagBlockmatrix(K_modif,domains[d].Prec,nonsing_size,sc_size);
+                    domains[d]->Prec.getSubDiagBlockmatrix(K_modif,domains[d]->Prec,nonsing_size,sc_size);
                     SEQ_VECTOR <double> diagonals;
                     SparseSolverCPU K_rr_solver;
 
@@ -710,7 +680,7 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
                     }
 
                     KsrInvKrrKrs.MatMat(K_sr,'N',K_rs);
-                    domains[d].Prec.MatAddInPlace(KsrInvKrrKrs,'N',-1);
+                    domains[d]->Prec.MatAddInPlace(KsrInvKrrKrs,'N',-1);
                     //          if (!diagonalized_K_rr){
                     //				    domains[d].Prec.ConvertCSRToDense(1);
                     //          }
@@ -720,7 +690,7 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
 
             if (environment->print_matrices) {
                 std::ofstream osS(Logging::prepareFile(d, "S"));
-                SparseMatrix SC =  domains[d].Prec;
+                SparseMatrix SC =  domains[d]->Prec;
                 if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET || 
                         configuration.preconditioner == ESPRESO_PRECONDITIONER::SUPER_DIRICHLET ){
                     SC.ConvertDenseToCSR(1);
@@ -731,14 +701,14 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
 
             // insert matrix to MatrixPack and delete it
             if (!USE_FLOAT) {
-            double * matrixPointer = this->DirichletPacks[mic].getMatrixPointer( j );
-            memcpy( matrixPointer, &( domains[ d ].Prec.dense_values[ 0 ] ), 
-                    this->DirichletPacks[ mic ].getDataLength( j ) * sizeof( double ) );
-            SEQ_VECTOR<double>().swap( domains[d].Prec.dense_values );
+                double * matrixPointer = this->DirichletPacks[mic].getMatrixPointer( j );
+                memcpy( matrixPointer, &( domains[ d ]->Prec.dense_values[ 0 ] ), 
+                        this->DirichletPacks[ mic ].getDataLength( j ) * sizeof( double ) );
+                SEQ_VECTOR<double>().swap( domains[d]->Prec.dense_values );
             } else {
-               float * matrixPointer = this->DirichletPacks[mic].getMatrixPointer_fl( j );
-                domains[d].Prec.ConvertDenseToDenseFloat( 1 );
-                memcpy( matrixPointer, &(domains[d].Prec.dense_values_fl[0]), this->DirichletPacks[ mic ].getDataLength(j) * sizeof(float) );
+                float * matrixPointer = this->DirichletPacks[mic].getMatrixPointer_fl( j );
+                domains[d]->Prec.ConvertDenseToDenseFloat( 1 );
+                memcpy( matrixPointer, &(domains[d]->Prec.dense_values_fl[0]), this->DirichletPacks[ mic ].getDataLength(j) * sizeof(float) );
             }
             ESINFO(PROGRESS3) << Info::plain() << ".";
         }
@@ -754,7 +724,7 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
 #pragma omp parallel for
     for (eslocal j = 0; j < hostPreconditioners.size(); ++j ) {
         eslocal d = hostPreconditioners.at(j);
-        SEQ_VECTOR <eslocal> perm_vec = domains[d].B1t_Dir_perm_vec;
+        SEQ_VECTOR <eslocal> perm_vec = domains[d]->B1t_Dir_perm_vec;
         SEQ_VECTOR <eslocal> perm_vec_full ( instance->K[d].rows );
         SEQ_VECTOR <eslocal> perm_vec_diff ( instance->K[d].rows );
 
@@ -836,8 +806,8 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
         eslocal sc_size = perm_vec.size();
 
         if (sc_size == instance->K[d].rows) {
-            domains[d].Prec = instance->K[d];
-            domains[d].Prec.ConvertCSRToDense(1);
+            domains[d]->Prec = instance->K[d];
+            domains[d]->Prec.ConvertCSRToDense(1);
             // if physics.K[d] does not contain inner DOF
         } else {
 
@@ -846,8 +816,8 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
                 //          createSchur.msglvl=1;
                 eslocal sc_size = perm_vec.size();
                 createSchur.ImportMatrix_wo_Copy(K_modif);
-                createSchur.Create_SC(domains[d].Prec, sc_size,false);
-                domains[d].Prec.ConvertCSRToDense(1);
+                createSchur.Create_SC(domains[d]->Prec, sc_size,false);
+                domains[d]->Prec.ConvertCSRToDense(1);
             }
             else
             {
@@ -870,7 +840,7 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
                     K_sr.getSubBlockmatrix_rs(K_modif,K_sr,j_start,sc_size,i_start, nonsing_size);
                 }
 
-                domains[d].Prec.getSubDiagBlockmatrix(K_modif,domains[d].Prec,nonsing_size,sc_size);
+                domains[d]->Prec.getSubDiagBlockmatrix(K_modif,domains[d]->Prec,nonsing_size,sc_size);
                 SEQ_VECTOR <double> diagonals;
                 SparseSolverCPU K_rr_solver;
 
@@ -898,9 +868,9 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
                 }
 
                 KsrInvKrrKrs.MatMat(K_sr,'N',K_rs);
-                domains[d].Prec.MatAddInPlace(KsrInvKrrKrs,'N',-1);
+                domains[d]->Prec.MatAddInPlace(KsrInvKrrKrs,'N',-1);
                 //          if (!diagonalized_K_rr){
-                //				    domains[d].Prec.ConvertCSRToDense(1);
+                //				    domains[d]->Prec.ConvertCSRToDense(1);
                 //          }
             }
 
@@ -908,7 +878,7 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
 
         if (environment->print_matrices) {
             std::ofstream osS(Logging::prepareFile(d, "S"));
-            SparseMatrix SC =  domains[d].Prec;
+            SparseMatrix SC =  domains[d]->Prec;
             if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET){
                 SC.ConvertDenseToCSR(1);
             }
@@ -917,8 +887,8 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
         }
 
         if (USE_FLOAT) {
-            domains[d].Prec.ConvertDenseToDenseFloat( 1 );
-            domains[d].Prec.USE_FLOAT = true;
+            domains[d]->Prec.ConvertDenseToDenseFloat( 1 );
+            domains[d]->Prec.USE_FLOAT = true;
         }
 
         ESINFO(PROGRESS3) << Info::plain() << ".";
@@ -928,134 +898,35 @@ void ClusterAcc::CreateDirichletPrec( Instance *instance ) {
 }
 
 
-
-void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in, 
-    double & CPUtime, 
-    double * MICtime ) {
-
-    //ESINFO(PROGRESS2) << "K+ multiply HFETI";
-    mkl_set_num_threads(1);
-
-    cluster_time.totalTime.start();
-
-    vec_fill_time.start();
-    fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
-    vec_fill_time.end();
-
-    // loop over domains in the cluster
-    loop_1_1_time.start();
-#pragma omp parallel for
-    for (size_t d = 0; d < domains.size(); d++)
-    {
-        domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
-        if (SYMMETRIC_SYSTEM) {
-            domains[d].Kplus_R.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
-        } else {
-            domains[d].Kplus_R2.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
-        }
-    }
-    loop_1_1_time.end();
-
-    loop_1_2_time.start();
-#pragma omp parallel for
-    for (size_t d = 0; d < domains.size(); d++)
-    {
-        eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-        eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
-
-        for (eslocal i = e0_start; i < e0_end; i++ )
-            vec_e0[i] = - tm3[d][i - e0_start];
-    }
+void SuperClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> *> & x_in, 
+        double & CPUtime, 
+        double * MICtime ) {
 
 
-    for (size_t d = 0; d < domains.size(); d++)
-        for (eslocal i = 0; i < domains[d].B0Kplus_comp.rows; i++)
-            vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
+    SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster;
+    x_prim_cluster.resize(number_of_subdomains_per_supercluster);
 
-    // end loop over domains
-    loop_1_2_time.end();
+		for (int c = 0; c < numClusters; c++) {
 
-    mkl_set_num_threads(PAR_NUM_THREADS);
-    clusCP_time.start();
+			for (int d = 0; d < clusters[c].domains.size(); d++)
+				x_prim_cluster[d].swap( *x_in[clusters[c].domains[d].domain_global_index] );
 
+            clusters[c].multKplusGlobal_l_prepare_Acc( x_prim_cluster );
 
-    clus_F0_1_time.start();
-    F0.Solve(vec_g0, tm1[0], 0, 0);
-    clus_F0_1_time.end();
+			for (int d = 0; d < clusters[c].domains.size(); d++)
+				(*x_in[clusters[c].domains[d].domain_global_index]).swap( x_prim_cluster[d] );
 
-    clus_G0_time.start();
-    if (SYMMETRIC_SYSTEM) {
-        G0.MatVec(tm1[0], tm2[0], 'N');
-    } else {
-        G02.MatVec(tm1[0], tm2[0], 'N');
-    }
-
-    clus_G0_time.end();
-
-#pragma omp parallel for
-    for (size_t i = 0; i < vec_e0.size(); i++)
-        tm2[0][i] = tm2[0][i] - vec_e0[i];
-
-    clus_Sa_time.start();
-
-    switch (configuration.SAsolver) {
-        case ESPRESO_SASOLVER::CPU_SPARSE:
-            Sa.Solve(tm2[0], vec_alfa, 0, 0);
-            break;
-        case ESPRESO_SASOLVER::CPU_DENSE:
-            Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
-            break;
-        case ESPRESO_SASOLVER::ACC_DENSE:
-            Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
-            break;
-        default:
-            ESINFO(GLOBAL_ERROR) << "Not implemented S alfa solver.";
-    }
-
-    clus_Sa_time.end();
-
-    clus_G0t_time.start();
-    G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
-    clus_G0t_time.end();
-
-#pragma omp parallel for
-    for (size_t i = 0; i < vec_g0.size(); i++)
-        tm1[0][i] = vec_g0[i] - tm1[0][i];
+		}
 
 
-    clus_F0_2_time.start();
-    F0.Solve(tm1[0], vec_lambda,0,0);
-    clus_F0_2_time.end();
-
-    clusCP_time.end();
-
-    // Kplus_x
-    mkl_set_num_threads(1);
-    loop_2_1_time.start();
-
-    // accelerator stuff
     eslocal maxDevNumber = this->acc_per_MPI;
-
-#pragma omp parallel for
-    for (size_t d = 0; d < domains.size(); d++)
-    {
-        eslocal domain_size = domains[d].domain_prim_size;
-
-        SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0);
-        for (size_t i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
-            tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
-        domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
-
-        for (eslocal i = 0; i < domain_size; i++)
-            tm1[d][i] = x_in[d][i] - tm1[d][i];
-    } 
 
     for ( eslocal i = 0; i < maxDevNumber; ++i ) {
 #pragma omp parallel for 
         for ( eslocal d = 0 ; d < accDomains[i].size(); ++d ) {
             eslocal domN = accDomains[i].at(d);
-            for ( eslocal j = 0 ; j < domains[domN].K.cols; ++j ) {
-                SparseKPack[i].SetX(d, j, tm1[domN].at(j));   
+            for ( eslocal j = 0 ; j < domains[domN]->K.cols; ++j ) {
+                SparseKPack[i].SetX(d, j, (*tm1[domN]).at(j));   
             }
         }
     }
@@ -1068,6 +939,7 @@ void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in,
         resetNested = true;
     }
 
+
 #pragma omp parallel num_threads( maxDevNumber + 1 ) 
     {
         int thread = omp_get_thread_num();
@@ -1078,7 +950,7 @@ void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in,
                 SparseKPack[thread].getMICratio();
             for (eslocal i = 0 ; i < end; ++i) {
                 eslocal domN = accDomains[ thread ].at( i );
-                SparseKPack[thread].GetY( i, tm2[domN] );
+                SparseKPack[thread].GetY( i, *tm2[domN] );
             }
             MICtime[ thread ] = Measure::time() - MICtime[ thread ];
         } else {
@@ -1088,27 +960,38 @@ void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in,
 
             for ( eslocal i = 0; i < maxDevNumber; ++i ) {
                 eslocal start = (eslocal) (SparseKPack[ i ].getNMatrices() * 
-                    SparseKPack[ i ].getMICratio());
+                        SparseKPack[ i ].getMICratio());
 #pragma omp parallel for
                 for (eslocal d = start; d < SparseKPack[ i ].getNMatrices(); ++d ) {
                     eslocal domN = accDomains[ i ].at( d );
-                    domains[ domN ].multKplusLocal(tm1[domN], tm2[ domN ]);
+                    domains[ domN ]->multKplusLocal(*tm1[domN], *tm2[ domN ]);
+                }
+            }
+            
+            for ( eslocal c = 0; c < numClusters; ++c ) {
+                #pragma omp parallel for
+                for ( eslocal d = 0; d < clusters[c].domains.size(); ++d ) {
+                    eslocal e0_start = d*clusters[c].domains[d].Kplus_R.cols;
+                    eslocal domain_size = clusters[c].domains[d].domain_prim_size;
+
+                    clusters[c].domains[d].Kplus_R.DenseMatVec( clusters[c].vec_alfa, 
+                        *tm3[clusters[c].domains[d].domain_global_index], 'N', e0_start);
                 }
             }
 
-        
-#pragma omp parallel for 
-            for (size_t d = 0; d < domains.size(); d++) {
-                eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-                eslocal domain_size = domains[d].domain_prim_size;
 
-                domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
-            }
+//#pragma omp parallel for 
+//            for (size_t d = 0; d < domains.size(); d++) {
+//                eslocal e0_start	=  d	* domains[d]->Kplus_R.cols;
+//                eslocal domain_size = domains[d]->domain_prim_size;
+//
+//                domains[d]->Kplus_R.DenseMatVec(vec_alfa, *tm3[d],'N', e0_start);
+//            }
 
             CPUtime = Measure::time() - startCPU;
         }
     }
-    
+
     if ( resetNested ) {
         omp_set_nested( 0 );
     }
@@ -1116,134 +999,143 @@ void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in,
 
 #pragma omp parallel for
     for (size_t d = 0; d < domains.size(); d++) {
-        eslocal domain_size = domains[d].domain_prim_size;
+        eslocal domain_size = domains[d]->domain_prim_size;
 
         for (eslocal i = 0; i < domain_size; i++)
-            x_in[d][i] = tm2[d][i] + tm3[d][i];
+        {
+            (*x_in[d])[i] = (*tm2[d])[i] + (*tm3[d])[i];
+        }
 
     }
-    loop_2_1_time.end();
 
-    cluster_time.totalTime.end();
 }
 
-void ClusterAcc::multKplusGlobal_l_prepare_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 
-    //ESINFO(PROGRESS2) << "K+ multiply HFETI";
-    mkl_set_num_threads(1);
+void SuperClusterAcc::init() {
+    numClusters 							= 1 + *std::max_element(instance->clustersMap.begin(), instance->clustersMap.end());
+    number_of_subdomains_per_supercluster 	= instance->K.size();
 
-//    cluster_time.totalTime.start();
+    x_prim_cluster1.resize( number_of_subdomains_per_supercluster );
+    x_prim_cluster2.resize( number_of_subdomains_per_supercluster );
+    x_prim_cluster3.resize( number_of_subdomains_per_supercluster );
+    tm1.resize( number_of_subdomains_per_supercluster );
+    tm2.resize( number_of_subdomains_per_supercluster );
+    tm3.resize( number_of_subdomains_per_supercluster );
 
-    vec_fill_time.start();
-    fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
-    vec_fill_time.end();
-
-    // loop over domains in the cluster
-    loop_1_1_time.start();
-#pragma omp parallel for
-    for (size_t d = 0; d < domains.size(); d++)
-    {
-        domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
-        if (SYMMETRIC_SYSTEM) {
-            domains[d].Kplus_R.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
-        } else {
-            domains[d].Kplus_R2.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
-        }
-    }
-    loop_1_1_time.end();
-
-    loop_1_2_time.start();
-#pragma omp parallel for
-    for (size_t d = 0; d < domains.size(); d++)
-    {
-        eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
-        eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
-
-        for (eslocal i = e0_start; i < e0_end; i++ )
-            vec_e0[i] = - tm3[d][i - e0_start];
+    domains.resize(number_of_subdomains_per_supercluster);
+    for (eslocal c = 0; c < numClusters; c++) {
+        clusters.push_back( Cluster(configuration, instance));
     }
 
-
-    for (size_t d = 0; d < domains.size(); d++)
-        for (eslocal i = 0; i < domains[d].B0Kplus_comp.rows; i++)
-            vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
-
-    // end loop over domains
-    loop_1_2_time.end();
-
-    mkl_set_num_threads(PAR_NUM_THREADS);
-    clusCP_time.start();
-
-
-    clus_F0_1_time.start();
-    F0.Solve(vec_g0, tm1[0], 0, 0);
-    clus_F0_1_time.end();
-
-    clus_G0_time.start();
-    if (SYMMETRIC_SYSTEM) {
-        G0.MatVec(tm1[0], tm2[0], 'N');
-    } else {
-        G02.MatVec(tm1[0], tm2[0], 'N');
-    }
-
-    clus_G0_time.end();
-
-#pragma omp parallel for
-    for (size_t i = 0; i < vec_e0.size(); i++)
-        tm2[0][i] = tm2[0][i] - vec_e0[i];
-
-    clus_Sa_time.start();
-
-    switch (configuration.SAsolver) {
-        case ESPRESO_SASOLVER::CPU_SPARSE:
-            Sa.Solve(tm2[0], vec_alfa, 0, 0);
+    switch (configuration.method) {
+        case ESPRESO_METHOD::TOTAL_FETI:
+            USE_HFETI = false;
             break;
-        case ESPRESO_SASOLVER::CPU_DENSE:
-            Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
-            break;
-        case ESPRESO_SASOLVER::ACC_DENSE:
-            Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
+        case ESPRESO_METHOD::HYBRID_FETI:
+            USE_HFETI = true;
             break;
         default:
-            ESINFO(GLOBAL_ERROR) << "Not implemented S alfa solver.";
+            ESINFO(GLOBAL_ERROR) << "Unsupported FETI METHOD";
     }
 
-    clus_Sa_time.end();
+    USE_KINV 			= configuration.use_schur_complement ? 1 : 0;
+    PAR_NUM_THREADS 	= environment->PAR_NUM_THREADS;
+    SOLVER_NUM_THREADS  = environment->SOLVER_NUM_THREADS;
 
-    clus_G0t_time.start();
-    G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
-    clus_G0t_time.end();
+    for (eslocal c = 0; c < numClusters; c++) {
+        clusters[c].USE_HFETI 			= USE_HFETI;
+        clusters[c].USE_KINV 			= USE_KINV;
+        clusters[c].PAR_NUM_THREADS 	= PAR_NUM_THREADS;
+        clusters[c].SOLVER_NUM_THREADS  = SOLVER_NUM_THREADS;
+    }
 
-#pragma omp parallel for
-    for (size_t i = 0; i < vec_g0.size(); i++)
-        tm1[0][i] = vec_g0[i] - tm1[0][i];
+
+    //			std::vector<eslocal> domain_list(number_of_subdomains_per_supercluster, 0);
+    //			for (int i = 0; i < number_of_subdomains_per_supercluster; i++) {
+    //				domain_list[i] = i;
+    //			}
 
 
-    clus_F0_2_time.start();
-    F0.Solve(tm1[0], vec_lambda,0,0);
-    clus_F0_2_time.end();
+    mtype 	  = instance->K[0].mtype; // TODO: WARNING - Needs to be fixed
 
-    clusCP_time.end();
+    switch (mtype) {
+        case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+            SYMMETRIC_SYSTEM = true;
+            break;
+        case MatrixType::REAL_SYMMETRIC_INDEFINITE:
+            SYMMETRIC_SYSTEM = true;
+            break;
+        case MatrixType::REAL_UNSYMMETRIC:
+            SYMMETRIC_SYSTEM = false;
+            break;
+        default:
+            ESINFO(GLOBAL_ERROR) << "Unknown matrix type";
+    }
 
-    // Kplus_x
-    mkl_set_num_threads(1);
-    loop_2_1_time.start();
 
-    // accelerator stuff
-    eslocal maxDevNumber = this->acc_per_MPI;
+    // MPI calls to get total number of compute clusters - not superclusters
+    int global_numClusters = 0;
+    MPI_Allreduce(&numClusters, &global_numClusters, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
+    int glob_clust_index = 0;
+    MPI_Exscan(&numClusters, &glob_clust_index, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
 
-#pragma omp parallel for
-    for (size_t d = 0; d < domains.size(); d++)
-    {
-        eslocal domain_size = domains[d].domain_prim_size;
 
-        SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0);
-        for (size_t i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
-            tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
-        domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
+    for (eslocal c = 0; c < numClusters; c++) {
 
-        for (eslocal i = 0; i < domain_size; i++)
-            tm1[d][i] = x_in[d][i] - tm1[d][i];
-    } 
+        eslocal number_of_subdomains_per_cluster = 0;
+        std::vector<eslocal> domain_list;
+        for (eslocal i = 0; i < instance->clustersMap.size(); i++) {
+            if (instance->clustersMap[i] == c) {
+                number_of_subdomains_per_cluster++;
+                domain_list.push_back(i);
+            }
+        }
+
+        clusters[c].cluster_global_index = glob_clust_index + c + 1;
+        clusters[c].cluster_local_index  = c;
+        //clusters[c]->my_neighs = std::vector<eslocal>(instance->neighbours.begin(), instance->neighbours.end());
+        clusters[c].mtype = mtype; // TODO: WARNING - Needs to be fixed
+
+        switch (clusters[c].mtype) {
+            case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+                clusters[c].SYMMETRIC_SYSTEM = true;
+                break;
+            case MatrixType::REAL_SYMMETRIC_INDEFINITE:
+                clusters[c].SYMMETRIC_SYSTEM = true;
+                break;
+            case MatrixType::REAL_UNSYMMETRIC:
+                clusters[c].SYMMETRIC_SYSTEM = false;
+                break;
+            default:
+                ESINFO(GLOBAL_ERROR) << "Unknown matrix type";
+        }
+
+        // Init all compute clusters - communication layer and respective buffers are not allocated
+        clusters[c].InitClusterPC(&domain_list[0], number_of_subdomains_per_cluster);
+
+        // Get an original mapping of the subdomains
+        for (int d = 0; d < clusters[c].domains.size(); d++) {
+            domains[clusters[c].domains[d].domain_global_index] = & clusters[c].domains[d];
+            x_prim_cluster1[clusters[c].domains[d].domain_global_index] = & clusters[c].x_prim_cluster1[d];
+            x_prim_cluster2[clusters[c].domains[d].domain_global_index] = & clusters[c].x_prim_cluster2[d];
+            x_prim_cluster3[clusters[c].domains[d].domain_global_index] = & clusters[c].x_prim_cluster3[d];
+            tm1[clusters[c].domains[d].domain_global_index] = & clusters[c].tm1[d];
+            tm2[clusters[c].domains[d].domain_global_index] = & clusters[c].tm2[d];
+            tm3[clusters[c].domains[d].domain_global_index] = & clusters[c].tm3[d];
+        }
+
+    }
+
+
+    // Setup communication layer of the supercluster
+    MPIrank   = environment->MPIrank;
+    my_neighs = std::vector<eslocal>(instance->neighbours.begin(), instance->neighbours.end());
+    SetupCommunicationLayer();
+
+
+
+
+    //TODO - Fix and remove
 }
+
 
