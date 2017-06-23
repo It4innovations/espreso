@@ -2,7 +2,9 @@
 
 #include "../../../assembler/instance.h"
 
-void init() {
+using namespace espreso;
+
+void SuperClusterCPU::init() {
 		numClusters 							= 1 + *std::max_element(instance->clustersMap.begin(), instance->clustersMap.end());
 		number_of_subdomains_per_supercluster 	= instance->K.size();
 

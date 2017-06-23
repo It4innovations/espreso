@@ -379,8 +379,8 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
     time_eval.totalTime.end();
 
 }
-/*
-void IterSolverAcc::Apply_Prec( TimeEval & time_eval, Cluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out ) {
+
+void IterSolverAcc::Apply_Prec( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out ) {
 
 //    time_eval.totalTime.start();
 
@@ -394,25 +394,25 @@ void IterSolverAcc::Apply_Prec( TimeEval & time_eval, Cluster & cluster, SEQ_VEC
 
         switch (USE_PREC) {
             case ESPRESO_PRECONDITIONER::LUMPED:
-                cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
-                cluster.domains[d]->K.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
-                cluster.domains[d]->_RegMat.MatVecCOO(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N', -1.0);
+                cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'T');
+                cluster.domains[d]->K.MatVec( *cluster.x_prim_cluster1[d], *cluster.x_prim_cluster2[d],'N');
+                cluster.domains[d]->_RegMat.MatVecCOO( *cluster.x_prim_cluster1[d], *cluster.x_prim_cluster2[d],'N', -1.0);
                 break;
             case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
-                cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster2[d], 'T');
+                cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster2[d], 'T');
                 break;
             case ESPRESO_PRECONDITIONER::DIRICHLET:
-                cluster.domains[d]->B1t_DirPr.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
-                //cluster.domains[d].Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
-                //cluster.domains[d].Prec.DenseMatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+                cluster.domains[d]->B1t_DirPr.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'N');
+                //cluster.domains[d]->Prec.MatVec( *cluster.x_prim_cluster1[d], *cluster.x_prim_cluster2[d],'N');
+                //cluster.domains[d]->Prec.DenseMatVec( *cluster.x_prim_cluster1[d], *cluster.x_prim_cluster2[d],'N');
                 break;
             case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-                cluster.domains[d]->B1t_DirPr.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'N');
-       //         cluster.domains[d]->Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+                cluster.domains[d]->B1t_DirPr.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'N');
+       //         cluster.domains[d]->Prec.MatVec( *cluster.x_prim_cluster1[d], *cluster.x_prim_cluster2[d],'N');
                 break;
             case ESPRESO_PRECONDITIONER::MAGIC:
-                cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
-                cluster.domains[d]->Prec.MatVec(cluster.x_prim_cluster1[d], cluster.x_prim_cluster2[d],'N');
+                cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'T');
+                cluster.domains[d]->Prec.MatVec( *cluster.x_prim_cluster1[d], *cluster.x_prim_cluster2[d],'N');
                 break;
             case ESPRESO_PRECONDITIONER::NONE:
                 break;
@@ -430,7 +430,7 @@ void IterSolverAcc::Apply_Prec( TimeEval & time_eval, Cluster & cluster, SEQ_VEC
             for ( eslocal d = 0; d < cluster.accPreconditioners[mic].size(); ++d) {
                 eslocal domN = cluster.accPreconditioners[mic].at(d);
                 for ( eslocal j = 0; j < cluster.domains[domN]->B1t_Dir_perm_vec.size(); j++ ) {
-                    cluster.DirichletPacks[mic].SetX(d, j, ( cluster.x_prim_cluster1[ domN ] )[ j ] );
+                    cluster.DirichletPacks[mic].SetX(d, j, ( *cluster.x_prim_cluster1[ domN ] )[ j ] );
                 }
             }
         }
@@ -463,7 +463,7 @@ void IterSolverAcc::Apply_Prec( TimeEval & time_eval, Cluster & cluster, SEQ_VEC
 #pragma omp parallel for
                 for (eslocal d = 0; d < cluster.hostPreconditioners.size(); ++d ) {
                     eslocal domN = cluster.hostPreconditioners.at(d);
-                    cluster.domains[domN]->Prec.DenseMatVec(cluster.x_prim_cluster1[domN], cluster.x_prim_cluster2[domN],'N');
+                    cluster.domains[domN]->Prec.DenseMatVec( *cluster.x_prim_cluster1[domN], *cluster.x_prim_cluster2[domN],'N');
                 }
 
                 for ( eslocal mic = 0 ; mic < maxDevNumber; ++mic ) {
@@ -471,7 +471,7 @@ void IterSolverAcc::Apply_Prec( TimeEval & time_eval, Cluster & cluster, SEQ_VEC
                     eslocal start = (eslocal) (cluster.DirichletPacks[mic].getNMatrices()*cluster.DirichletPacks[mic].getMICratio());
 #pragma omp parallel for
                     for (  eslocal d = start ; d < cluster.DirichletPacks[mic].getNMatrices(); ++d ) {
-                        cluster.DirichletPacks[mic].GetY(d, cluster.x_prim_cluster2[ cluster.accPreconditioners[ mic ].at(d) ] );
+                        cluster.DirichletPacks[mic].GetY(d, *cluster.x_prim_cluster2[ cluster.accPreconditioners[ mic ].at(d) ] );
                     }
                 }
                 CPUtime = Measure::time() - startCPU;
@@ -488,7 +488,7 @@ void IterSolverAcc::Apply_Prec( TimeEval & time_eval, Cluster & cluster, SEQ_VEC
             eslocal end = (eslocal) (cluster.DirichletPacks[mic].getNMatrices()*cluster.DirichletPacks[mic].getMICratio());
 #pragma omp parallel for 
             for ( eslocal d = 0 ; d < end; ++d ) {
-                cluster.DirichletPacks[mic].GetY(d, cluster.x_prim_cluster2[ cluster.accPreconditioners[ mic ].at( d ) ] );
+                cluster.DirichletPacks[mic].GetY(d, *cluster.x_prim_cluster2[ cluster.accPreconditioners[ mic ].at( d ) ] );
             }
         }
 
@@ -521,14 +521,14 @@ void IterSolverAcc::Apply_Prec( TimeEval & time_eval, Cluster & cluster, SEQ_VEC
             case ESPRESO_PRECONDITIONER::LUMPED:
             case ESPRESO_PRECONDITIONER::WEIGHT_FUNCTION:
             case ESPRESO_PRECONDITIONER::MAGIC:
-                cluster.domains[d]-.B1_comp_dom.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+                cluster.domains[d]->B1_comp_dom.MatVec (*cluster.x_prim_cluster2[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
                 break;
                 //TODO  check if MatVec is correct (DenseMatVec!!!) 
             case ESPRESO_PRECONDITIONER::DIRICHLET:
-                cluster.domains[d]->B1t_DirPr.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'T', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+                cluster.domains[d]->B1t_DirPr.MatVec (*cluster.x_prim_cluster2[d], y_out_tmp, 'T', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
                 break;
             case ESPRESO_PRECONDITIONER::SUPER_DIRICHLET:
-                cluster.domains[d]->B1t_DirPr.MatVec (cluster.x_prim_cluster2[d], y_out_tmp, 'T', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+                cluster.domains[d]->B1t_DirPr.MatVec (*cluster.x_prim_cluster2[d], y_out_tmp, 'T', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
                 break;
             case ESPRESO_PRECONDITIONER::NONE:
                 break;
@@ -540,7 +540,7 @@ void IterSolverAcc::Apply_Prec( TimeEval & time_eval, Cluster & cluster, SEQ_VEC
         for (eslocal i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++)
             cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += y_out_tmp[i] * cluster.domains[d]->B1_scale_vec[i]; // includes B1 scaling
     }
-    time_eval.timeEvents[0].end();
+//    time_eval.timeEvents[0].end();
 
 
 //    time_eval.timeEvents[1].start();
@@ -548,7 +548,7 @@ void IterSolverAcc::Apply_Prec( TimeEval & time_eval, Cluster & cluster, SEQ_VEC
 //    time_eval.timeEvents[1].end();
 
 
-    time_eval.totalTime.end();
+    //time_eval.totalTime.end();
 
 }
-*/
+
