@@ -214,6 +214,7 @@ void NewAdvectionDiffusion3D::assembleMaterialMatrix(const Step &step, const Ele
 void NewAdvectionDiffusion3D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	bool CAU = _configuration.stabilization == AdvectionDiffusion3DConfiguration::STABILIZATION::CAU;
+	bool tangentCorrection = (matrices & Matrices::K) && _configuration.tangent_matrix_correction && step.iteration;
 
 	DenseMatrix Ce(3, 3), coordinates, J(3, 3), invJ(3, 3), dND;
 	double detJ, temp;
@@ -229,7 +230,7 @@ void NewAdvectionDiffusion3D::processElement(const Step &step, Matrices matrices
 
 	coordinates.resize(e->nodes(), 3);
 
-	if (_configuration.tangent_matrix_correction) {
+	if (tangentCorrection) {
 		CD.resize(e->nodes(), 9);
 		CDe.resize(3, 3);
 	}
@@ -249,7 +250,7 @@ void NewAdvectionDiffusion3D::processElement(const Step &step, Matrices matrices
 		U(i, 2) = e->getProperty(Property::TRANSLATION_MOTION_Z, i, step.step, step.currentTime, temp, 0) * m(i, 0);
 
 		f(i, 0) = e->sumProperty(Property::HEAT_SOURCE, i, step.step, step.currentTime, temp, 0);
-		assembleMaterialMatrix(step, e, i, temp, K, CD, _configuration.tangent_matrix_correction);
+		assembleMaterialMatrix(step, e, i, temp, K, CD, tangentCorrection);
 	}
 
 	eslocal Ksize = e->nodes();
@@ -275,7 +276,7 @@ void NewAdvectionDiffusion3D::processElement(const Step &step, Matrices matrices
 		fe = 0;
 	}
 
-	if (_configuration.tangent_matrix_correction) {
+	if (tangentCorrection) {
 		tangentK.resize(Ksize, Ksize);
 	}
 
@@ -290,7 +291,7 @@ void NewAdvectionDiffusion3D::processElement(const Step &step, Matrices matrices
 		inverse3x3(J.values(), invJ.values(), detJ);
 
 		gpK.multiply(e->N()[gp], K);
-		if (_configuration.tangent_matrix_correction) {
+		if (tangentCorrection) {
 			gpCD.multiply(e->N()[gp], CD);
 			CDe(0, 0) = gpCD(0, 0);
 			CDe(1, 1) = gpCD(0, 1);
@@ -375,7 +376,7 @@ void NewAdvectionDiffusion3D::processElement(const Step &step, Matrices matrices
 			Me.multiply(e->N()[gp], e->N()[gp], detJ * gpM(0, 0) * e->weighFactor()[gp], 1, true);
 		}
 		if (matrices & (Matrices::K | Matrices::R)) {
-			if (_configuration.tangent_matrix_correction) {
+			if (tangentCorrection) {
 				BT.multiply(dND, T);
 				BTN.multiply(BT, e->N()[gp]);
 				CDBTN.multiply(CDe, BTN);
@@ -408,7 +409,7 @@ void NewAdvectionDiffusion3D::processElement(const Step &step, Matrices matrices
 		}
 	}
 
-	if ((matrices & Matrices::K) && _configuration.tangent_matrix_correction) {
+	if (tangentCorrection) {
 		Ke += tangentK;
 	}
 }

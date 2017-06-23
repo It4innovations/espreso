@@ -29,7 +29,7 @@ AdvectionDiffusion::AdvectionDiffusion(const AdvectionDiffusionConfiguration &co
 
 MatrixType AdvectionDiffusion::getMatrixType(const Step &step, size_t domain) const
 {
-	if (_configuration.tangent_matrix_correction) {
+	if (step.iteration && _configuration.tangent_matrix_correction) {
 		return MatrixType::REAL_UNSYMMETRIC;
 	}
 	if (
