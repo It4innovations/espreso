@@ -141,7 +141,7 @@ void NewAdvectionDiffusion3D::assembleMaterialMatrix(const Step &step, const Ele
 			_CD(0, 0) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_XX, temp / 1e4);
 			_CD(1, 1) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YY, temp / 1e4);
 			_CD(2, 2) = derivation(MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_ZZ, temp / 1e4);
-			C(0, 1) = C(0, 2) = C(1, 0) = C(1, 2) = C(2, 0) = C(2, 1) = 0;
+			_CD(0, 1) = _CD(0, 2) = _CD(1, 0) = _CD(1, 2) = _CD(2, 0) = _CD(2, 1) = 0;
 		}
 		break;
 	case MATERIAL_MODEL::SYMMETRIC:
