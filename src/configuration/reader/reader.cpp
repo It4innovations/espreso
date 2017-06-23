@@ -145,7 +145,9 @@ void Reader::_read(Configuration &configuration, int* argc, char ***argv)
 		nameless.push_back(std::string((*argv)[optind++]));
 	}
 
-	Logging::name = confFile.substr(0, confFile.find_first_of("."));
+	size_t start = confFile.find_last_of("/") + 1;
+	size_t end   = confFile.find_last_of(".");
+	Logging::name = confFile.substr(start, end - start);
 	configurationFile = confFile;
 
 	_read(configuration, confFile, nameless);
@@ -196,7 +198,7 @@ void Reader::copyInputData()
 	}
 
 	std::ifstream src(configurationFile.c_str(), std::ios::binary);
-	std::ofstream dst((Logging::outputRoot() + "/" + configurationFile).c_str(), std::ios::binary);
+	std::ofstream dst((Logging::outputRoot() + "/" + configurationFile.substr(configurationFile.find_last_of("/") + 1)).c_str(), std::ios::binary);
 
 	dst << src.rdbuf();
 }
