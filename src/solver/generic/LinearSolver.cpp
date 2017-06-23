@@ -124,6 +124,13 @@ void LinearSolver::update(Matrices matrices)
 // run solver and store primal and dual solution
 void LinearSolver::run()
 {
+	if (
+			std::any_of(instance->K.begin(), instance->K.end(), [] (const SparseMatrix &K) { return K.mtype == MatrixType::REAL_UNSYMMETRIC; }) &&
+			configuration.solver != ESPRESO_ITERATIVE_SOLVER::GMRES &&
+			configuration.solver != ESPRESO_ITERATIVE_SOLVER::BICGSTAB) {
+
+		ESINFO(ERROR) << "Invalid Linear Solver configuration: Only GMRES and BICGSTAB can solve unsymmetric system.";
+	}
 	Solve(instance->f, instance->primalSolution, instance->dualSolution);
 }
 
