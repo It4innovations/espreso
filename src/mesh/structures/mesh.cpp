@@ -212,6 +212,7 @@ static std::vector<eslocal> continuousReorder(std::vector<Element*> &elements, s
 
 void Mesh::partitiate(size_t parts)
 {
+	ESTEST(MANDATORY) << "Number of domains cannot be " << parts << (parts == 0 ? TEST_FAILED : TEST_PASSED);
 	_continuousPartId.clear();
 	_continuousPartId.resize(parts, 0);
 	if (parts == 1 && this->parts() == 1) {
@@ -285,6 +286,7 @@ void Mesh::partitiate(size_t parts)
 
 void APIMesh::partitiate(size_t parts)
 {
+	ESTEST(MANDATORY) << "Number of domains cannot be " << parts << (parts == 0 ? TEST_FAILED : TEST_PASSED);
 	if (_elements.size() / parts < parts / 10.0) {
 		parts = _elements.size() / 20;
 		ESINFO(ALWAYS) << Info::TextColor::YELLOW << "WARNINK: Too small domains. ESPRESO change DOMAINS=" << parts;
