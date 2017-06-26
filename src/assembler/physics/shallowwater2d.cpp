@@ -31,6 +31,16 @@ MatrixType ShallowWater2D::getMatrixType(const Step &step, size_t domain) const
 	return MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 }
 
+bool ShallowWater2D::isMatrixTimeDependent(const Step &step) const
+{
+	return true;
+}
+
+bool ShallowWater2D::isMatrixTemperatureDependent(const Step &step) const
+{
+	return true;
+}
+
 void ShallowWater2D::prepareTotalFETI()
 {
 	_instance->domainDOFCount = _mesh->assignUniformDOFsIndicesToNodes(_instance->domainDOFCount, pointDOFs(), _nodesDOFsOffsets);

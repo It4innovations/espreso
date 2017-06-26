@@ -37,6 +37,9 @@ public:
 	Property& property() { return _property; }
 	const Property& property() const { return _property; }
 
+	virtual bool isTimeDependent() const { return false; }
+	virtual bool isTemperatureDependent() const { return false; }
+
 	virtual void store(std::ofstream& os);
 
 protected:
@@ -106,10 +109,14 @@ public:
 		return _expression[omp_get_thread_num()].evaluate(_values[omp_get_thread_num()]);
 	}
 
+	bool isTimeDependent() const { return _timeDependency; }
+	bool isTemperatureDependent() const { return _temperatureDependency; }
+
 	virtual void store(std::ofstream& os);
 
 private:
 	const Coordinates &_coordinates;
+	bool _timeDependency, _temperatureDependency;
 };
 
 class TableEvaluator: public Evaluator {
@@ -155,6 +162,9 @@ public:
 		return _table[_dimension > 0 ? cell[0] : 0][_dimension > 1 ? cell[1] : 0][_dimension > 2 ? cell[2] : 0];
 	}
 
+	bool isTimeDependent() const { return std::any_of(_properties.begin(), _properties.end(), [] (const TableProperty &p) { return p == TableProperty::TIME; }); }
+	bool isTemperatureDependent() const { return std::any_of(_properties.begin(), _properties.end(), [] (const TableProperty &p) { return p == TableProperty::TEMPERATURE; }); }
+
 	virtual void store(std::ofstream& os);
 
 protected:
@@ -185,6 +195,9 @@ public:
 		}
 		return _table.back().second;
 	}
+
+	bool isTimeDependent() const { return false; }
+	bool isTemperatureDependent() const { return true; }
 
 	virtual void store(std::ofstream& os);
 

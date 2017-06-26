@@ -95,13 +95,15 @@ ExpressionEvaluator::ExpressionEvaluator(std::ifstream &is, std::vector<std::str
 CoordinatesEvaluator::CoordinatesEvaluator(const std::string &expression, const Coordinates &coordinates, Property property)
 : ExpressionEvaluator(expression, { "x", "y", "z", "TEMPERATURE", "TIME" }, property), _coordinates(coordinates)
 {
-
+	_timeDependency = StringCompare::contains(expression, { "TIME" });
+	_temperatureDependency = StringCompare::contains(expression, { "TEMPERATURE" });
 }
 
 CoordinatesEvaluator::CoordinatesEvaluator(std::ifstream &is, const Coordinates &coordinates, Property property)
 : ExpressionEvaluator(is, { "x", "y", "z", "TEMPERATURE", "TIME" }, property), _coordinates(coordinates)
 {
-
+	_timeDependency = StringCompare::contains(_expression[0].expression(), { "TIME" });
+	_temperatureDependency = StringCompare::contains(_expression[0].expression(), { "TEMPERATURE" });
 }
 
 void CoordinatesEvaluator::store(std::ofstream& os)

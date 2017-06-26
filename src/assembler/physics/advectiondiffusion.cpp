@@ -43,6 +43,32 @@ MatrixType AdvectionDiffusion::getMatrixType(const Step &step, size_t domain) co
 	}
 }
 
+bool AdvectionDiffusion::isMatrixTimeDependent(const Step &step) const
+{
+	return _mesh->isAnyPropertyTimeDependent({
+		Property::TEMPERATURE,
+		Property::THICKNESS,
+		Property::HEAT_SOURCE,
+		Property::HEAT_FLUX,
+		Property::HEAT_FLOW,
+
+		Property::EXTERNAL_TEMPERATURE,
+		Property::HEAT_TRANSFER_COEFFICIENT,
+		Property::WALL_HEIGHT,
+		Property::ABSOLUTE_PRESSURE,
+		Property::TILT_ANGLE,
+		Property::DIAMETER,
+		Property::LENGTH,
+		Property::FLUID_VELOCITY,
+		Property::EMISSIVITY
+	}, step.step);
+}
+
+bool AdvectionDiffusion::isMatrixTemperatureDependent(const Step &step) const
+{
+	return true;
+}
+
 void AdvectionDiffusion::prepareTotalFETI()
 {
 	for (size_t s = 1; s <= _configuration.physics_solver.load_steps; s++) {
@@ -65,9 +91,9 @@ void AdvectionDiffusion::prepareTotalFETI()
 	_mesh->loadNodeProperty(_configuration.temperature    , { }, { Property::TEMPERATURE });
 	_mesh->loadNodeProperty(_configuration.thickness      , { }, { Property::THICKNESS });
 
-	_mesh->loadProperty(_configuration.heat_source        , { }         , { Property::HEAT_SOURCE });
-	_mesh->loadProperty(_configuration.heat_flux          , { }         , { Property::HEAT_FLUX });
-	_mesh->loadProperty(_configuration.heat_flow          , { }         , { Property::HEAT_FLOW });
+	_mesh->loadProperty(_configuration.heat_source        , { }, { Property::HEAT_SOURCE });
+	_mesh->loadProperty(_configuration.heat_flux          , { }, { Property::HEAT_FLUX });
+	_mesh->loadProperty(_configuration.heat_flow          , { }, { Property::HEAT_FLOW });
 
 	for (auto it = _configuration.convection.begin(); it != _configuration.convection.end(); ++it) {
 		size_t loadStep = it->first - 1;

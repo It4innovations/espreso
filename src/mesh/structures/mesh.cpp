@@ -1115,6 +1115,42 @@ bool Mesh::hasProperty(Property property, size_t loadStep) const
 	return false;
 }
 
+bool Mesh::isPropertyTimeDependent(Property property, size_t loadStep) const
+{
+	for (size_t r = 0; r < _regions.size(); r++) {
+		if (loadStep < _regions[r]->settings.size()) {
+			auto it = _regions[r]->settings[loadStep].find(property);
+			if (it != _regions[r]->settings[loadStep].end()) {
+				return std::any_of(it->second.begin(), it->second.end(), [] (const Evaluator *e) { return e->isTimeDependent(); });
+			}
+		}
+	}
+	return false;
+}
+
+bool Mesh::isPropertyTemperatureDependent(Property property, size_t loadStep) const
+{
+	for (size_t r = 0; r < _regions.size(); r++) {
+		if (loadStep < _regions[r]->settings.size()) {
+			auto it = _regions[r]->settings[loadStep].find(property);
+			if (it != _regions[r]->settings[loadStep].end()) {
+				return std::any_of(it->second.begin(), it->second.end(), [] (const Evaluator *e) { return e->isTemperatureDependent(); });
+			}
+		}
+	}
+	return false;
+}
+
+bool Mesh::isAnyPropertyTimeDependent(const std::vector<Property> &properties, size_t loadStep) const
+{
+	return std::any_of(properties.begin(), properties.end(), [&] (Property p) { return isPropertyTimeDependent(p, loadStep); });
+}
+
+bool Mesh::isAnyPropertyTemperatureDependent(const std::vector<Property> &properties, size_t loadStep) const
+{
+	return std::any_of(properties.begin(), properties.end(), [&] (Property p) { return isPropertyTemperatureDependent(p, loadStep); });
+}
+
 void Mesh::fillEdgesFromElements(std::function<bool(const std::vector<Element*> &nodes, const Element* edge)> filter)
 {
 	size_t threads = environment->OMP_NUM_THREADS;

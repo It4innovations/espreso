@@ -55,6 +55,8 @@ struct Physics {
 	virtual void updateMatrix(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution);
 
 	virtual MatrixType getMatrixType(const Step &step, size_t domain) const =0;
+	virtual bool isMatrixTimeDependent(const Step &step) const =0;
+	virtual bool isMatrixTemperatureDependent(const Step &step) const =0;
 
 	virtual void processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const =0;
 	virtual void processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const =0;

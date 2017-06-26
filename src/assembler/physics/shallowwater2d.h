@@ -14,6 +14,8 @@ struct ShallowWater2D: public Physics2D
 	ShallowWater2D(Mesh *mesh, Instance *instance, const ShallowWater2DConfiguration &configuration);
 
 	MatrixType getMatrixType(const Step &step, size_t domain) const;
+	bool isMatrixTimeDependent(const Step &step) const;
+	bool isMatrixTemperatureDependent(const Step &step) const;
 
 	std::vector<size_t> solutions() const { return { 0 }; }
 
