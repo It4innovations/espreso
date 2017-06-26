@@ -11,6 +11,8 @@ struct Step;
 struct Solution;
 struct Instance;
 struct OutputConfiguration;
+enum class ElementType;
+enum class Property;
 
 namespace output {
 
@@ -26,6 +28,7 @@ public:
 	virtual void storeFETIData(const Step &step, const Instance &instance) =0;
 
 	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution) =0;
+	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties) =0;
 	virtual void finalize() =0;
 
 	virtual ~Store() {};

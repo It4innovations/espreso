@@ -287,7 +287,6 @@ std::vector<size_t> AdvectionDiffusion::solutions() const
 	return results;
 }
 
-
 void AdvectionDiffusion::convectionMatParameters(
 		const AdvectionDiffusionConvection &convection, const Element *e, size_t node, Step step,
 		double temp, double T_EXT,

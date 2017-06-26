@@ -13,6 +13,7 @@
 #include "../mesh/structures/region.h"
 
 #include "../assembler/solution.h"
+#include "../assembler/step.h"
 
 #include <numeric>
 
@@ -357,6 +358,59 @@ void DistributedInfo::addSettings(size_t step)
 					rData[regionOffset]->push_back(value);
 				}
 			}
+		}
+	}
+}
+
+void DistributedInfo::addProperty(const Step &step, ElementType eType, Property property)
+{
+	const std::vector<Property> &pGroup = _mesh->propertyGroup(property);
+	if (pGroup.front() != property) {
+		return;
+	}
+
+	std::stringstream ss; ss << property;
+	std::string name = ss.str().substr(0, ss.str().find_last_of("_"));
+
+	for (size_t r = 0; r < _regions.size(); r++) {
+
+		std::vector<double> *rData;
+
+		switch (eType) {
+		case ElementType::ELEMENTS: {
+
+			rData = new std::vector<double>(pGroup.size() * _regions[r].elementsTypes.size());
+
+			#pragma omp parallel for
+			for (size_t d = 0; d < _mesh->parts(); d++) {
+				for (size_t i = 0; i < _cElements[r][d].size(); i++) {
+					for (size_t p = 0; p < pGroup.size(); p++) {
+						(*rData)[pGroup.size() * (i + _cEOffset[r][d]) + p] = _mesh->elements()[_cElements[r][d][i]]->sumProperty(pGroup[p], 0, step.step, step.currentTime, 0, 0);
+					}
+				}
+			}
+
+			_regions[r].data.elementDataDouble[name] = std::make_pair(pGroup.size(), rData);
+
+		} break;
+		case ElementType::NODES: {
+
+			rData = new std::vector<double>(pGroup.size() * _regions[r].coordinates.size() / 3);
+
+			#pragma omp parallel for
+			for (size_t d = 0; d < _mesh->parts(); d++) {
+				for (size_t i = 0; i < _cIndices[r][d].size(); i++) {
+					for (size_t p = 0; p < pGroup.size(); p++) {
+						(*rData)[pGroup.size() * (i + _cIOffset[r][d]) + p] = _mesh->nodes()[_cIndices[r][d][i]]->sumProperty(pGroup[p], 0, step.step, step.currentTime, 0, 0);
+					}
+				}
+			}
+
+			_regions[r].data.pointDataDouble[name] = std::make_pair(pGroup.size(), rData);
+
+		} break;
+		default:
+			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: cannot store this type solution.";
 		}
 	}
 }

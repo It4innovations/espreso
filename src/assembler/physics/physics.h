@@ -12,6 +12,7 @@ namespace espreso {
 struct Step;
 enum Matrices : int;
 enum class MatrixType;
+enum class ElementType;
 template<typename TIndices> class SparseVVPMatrix;
 class DenseMatrix;
 class Element;
@@ -39,6 +40,7 @@ struct Physics {
 	const std::string& name() const { return _name; }
 
 	virtual std::vector<size_t> solutions() const =0;
+	virtual std::vector<std::pair<ElementType, Property> > properties() const =0;
 
 	virtual void prepareTotalFETI() =0;
 	virtual void prepareHybridTotalFETIWithCorners() =0;

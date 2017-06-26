@@ -39,11 +39,7 @@ ResultStore::ResultStore(const OutputConfiguration &output, const Mesh *mesh, Me
 		mode = mode | MeshInfo::SEPARATE_MATERIALS;
 	}
 	if (mode & MeshInfo::InfoMode::PREPARE) {
-		if (_configuration.collected) {
-			_meshInfo = new CollectedInfo(_mesh, mode);
-		} else {
-			_meshInfo = new DistributedInfo(_mesh, _configuration.domain_shrink_ratio, _configuration.cluster_shrink_ratio, mode);
-		}
+		prepare();
 	}
 	_mode = mode | MeshInfo::InfoMode::PREPARE;
 }
@@ -52,6 +48,17 @@ ResultStore::~ResultStore()
 {
 	if (_meshInfo != NULL) {
 		delete _meshInfo;
+	}
+}
+
+void ResultStore::prepare()
+{
+	if (_meshInfo == NULL) {
+		if (_configuration.collected) {
+			_meshInfo = new CollectedInfo(_mesh, _mode);
+		} else {
+			_meshInfo = new DistributedInfo(_mesh, _configuration.domain_shrink_ratio, _configuration.cluster_shrink_ratio, _mode);
+		}
 	}
 }
 
@@ -104,13 +111,7 @@ void ResultStore::storeSettings(size_t steps)
 
 void ResultStore::storeSettings(const std::vector<size_t> &steps)
 {
-	if (_meshInfo == NULL) {
-		if (_configuration.collected) {
-			_meshInfo = new CollectedInfo(_mesh, _mode);
-		} else {
-			_meshInfo = new DistributedInfo(_mesh, _configuration.domain_shrink_ratio, _configuration.cluster_shrink_ratio, _mode);
-		}
-	}
+	prepare();
 	Step step;
 	std::vector<std::string> files;
 
@@ -169,15 +170,23 @@ void ResultStore::storeValues(const std::string &name, size_t dimension, const s
 
 void ResultStore::storeSolution(const Step &step, const std::vector<Solution*> &solution)
 {
-	if (_meshInfo == NULL) {
-		if (_configuration.collected) {
-			_meshInfo = new CollectedInfo(_mesh, _mode);
-		} else {
-			_meshInfo = new DistributedInfo(_mesh, _configuration.domain_shrink_ratio, _configuration.cluster_shrink_ratio, _mode);
-		}
-	}
+	prepare();
 
 	_meshInfo->addSolution(solution);
+	std::vector<std::string> files = store("solution", step, _meshInfo);
+	_meshInfo->clearData();
+
+	_solutions.push_back(std::make_pair(step, files));
+}
+
+void ResultStore::storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties)
+{
+	prepare();
+
+	_meshInfo->addSolution(solution);
+	for (auto p = properties.begin(); p != properties.end(); ++p) {
+		_meshInfo->addProperty(step, p->first, p->second);
+	}
 	std::vector<std::string> files = store("solution", step, _meshInfo);
 	_meshInfo->clearData();
 

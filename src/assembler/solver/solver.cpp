@@ -82,7 +82,7 @@ void Solver::storeSolution(const Step &step)
 		solutions.push_back(instance->solutions[physics->solutions()[i]]);
 	}
 
-	_store->storeSolution(step, solutions);
+	_store->storeSolution(step, solutions, physics->properties());
 }
 
 void Solver::storeSubSolution(const Step &step)

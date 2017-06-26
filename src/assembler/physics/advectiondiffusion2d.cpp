@@ -35,6 +35,23 @@ void NewAdvectionDiffusion2D::prepareTotalFETI()
 	AdvectionDiffusion::prepareTotalFETI();
 }
 
+std::vector<std::pair<ElementType, Property> > NewAdvectionDiffusion2D::properties() const
+{
+	for (size_t s = 0; s < _mesh->steps(); s++) {
+		if (
+				_mesh->isPropertyTimeDependent(Property::TRANSLATION_MOTION_X, s) ||
+				_mesh->isPropertyTimeDependent(Property::TRANSLATION_MOTION_Y, s)) {
+
+			return {
+				{ ElementType::NODES, Property::TRANSLATION_MOTION_X },
+				{ ElementType::NODES, Property::TRANSLATION_MOTION_Y }
+			};
+		}
+	}
+
+	return {};
+}
+
 
 void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
 {

@@ -15,7 +15,6 @@ namespace espreso {
 class Element;
 class Mesh;
 class Region;
-enum class ElementType;
 
 namespace output {
 
@@ -39,6 +38,7 @@ public:
 	virtual void storeFETIData(const Step &step, const Instance &instance);
 
 	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution);
+	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties);
 	virtual void finalize();
 
 	virtual ~ResultStore();
@@ -60,6 +60,7 @@ protected:
 	std::vector<std::pair<Step, std::vector<std::string> > > _FETIdata;
 
 private:
+	void prepare();
 	void storeElementInfo(const Step &step);
 	void storeFixPoints(const Step &step);
 	void storeCorners(const Step &step);

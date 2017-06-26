@@ -40,6 +40,11 @@ public:
 		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeSolution(step, solution); } );
 	}
 
+	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties)
+	{
+		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeSolution(step, solution, properties); } );
+	}
+
 	virtual void finalize()
 	{
 		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->finalize(); } );

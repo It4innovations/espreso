@@ -933,6 +933,9 @@ void Mesh::loadProperty(const std::map<size_t, std::map<std::string, std::string
 	for (auto it = property.begin(); it != property.end(); ++it) {
 		loadProperty(it->first - 1, it->second, parameters, properties, ElementType::ELEMENTS);
 	}
+	for (size_t i = 0; i < properties.size(); i++) {
+		_propertyGroups[properties[i]] = properties;
+	}
 }
 
 void Mesh::loadNodeProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties)
@@ -940,12 +943,18 @@ void Mesh::loadNodeProperty(const std::map<size_t, std::map<std::string, std::st
 	for (auto it = property.begin(); it != property.end(); ++it) {
 		loadProperty(it->first - 1, it->second, parameters, properties, ElementType::NODES);
 	}
+	for (size_t i = 0; i < properties.size(); i++) {
+		_propertyGroups[properties[i]] = properties;
+	}
 }
 
 void Mesh::loadFaceProperty(const std::map<size_t, std::map<std::string, std::string> > &property, const std::vector<std::string> &parameters, const std::vector<Property> &properties)
 {
 	for (auto it = property.begin(); it != property.end(); ++it) {
 		loadProperty(it->first - 1, it->second, parameters, properties, ElementType::FACES);
+	}
+	for (size_t i = 0; i < properties.size(); i++) {
+		_propertyGroups[properties[i]] = properties;
 	}
 }
 

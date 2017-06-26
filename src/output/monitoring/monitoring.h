@@ -34,6 +34,10 @@ public:
 	void storeFETIData(const Step &step, const Instance &instance) {};
 
 	void storeSolution(const Step &step, const std::vector<Solution*> &solution);
+	void storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties)
+	{
+		storeSolution(step, solution);
+	}
 	void finalize();
 
 	static char delimiter;

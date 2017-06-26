@@ -20,6 +20,7 @@ struct CollectedInfo: public MeshInfo {
 	MeshInfo* copyWithoutMesh() const;
 
 	void addSettings(size_t step);
+	void addProperty(const Step &step, ElementType eType, Property property);
 	void addSolution(const std::vector<Solution*> &solution);
 	void addGeneralInfo();
 

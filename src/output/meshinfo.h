@@ -14,6 +14,9 @@ class Mesh;
 struct Region;
 struct Solution;
 struct Point;
+struct Step;
+enum class ElementType;
+enum class Property;
 
 namespace output {
 
@@ -43,6 +46,7 @@ public:
 	virtual ~MeshInfo() {};
 
 	virtual void addSettings(size_t step) =0;
+	virtual void addProperty(const Step &step, ElementType eType, Property property) =0;
 	virtual void addSolution(const std::vector<Solution*> &solution) =0;
 	virtual void addGeneralInfo() = 0;
 

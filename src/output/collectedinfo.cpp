@@ -15,6 +15,7 @@
 #include "../mesh/structures/elementtypes.h"
 
 #include "../assembler/solution.h"
+#include "../assembler/step.h"
 
 #include <numeric>
 
@@ -364,6 +365,107 @@ void CollectedInfo::addSettings(size_t step)
 			ss << it->first;
 			_regions[r].data.elementDataDouble[ss.str().substr(0, ss.str().find_last_of("_"))] = std::make_pair(pGroup.size(), values);
 		}
+	}
+}
+
+void CollectedInfo::addProperty(const Step &step, ElementType eType, Property property)
+{
+	if (_region != NULL) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: cannot store solution.";
+	}
+
+	const std::vector<Property> &pGroup = _mesh->propertyGroup(property);
+	if (pGroup.front() != property) {
+		return;
+	}
+
+	std::stringstream ss; ss << property;
+	std::string name = ss.str().substr(0, ss.str().find_last_of("_"));
+
+	bool status = true;
+	size_t threads = environment->OMP_NUM_THREADS;
+
+	size_t materials = _mode & InfoMode::SEPARATE_MATERIALS ? _mesh->materials().size() : 1;
+
+	if (eType == ElementType::ELEMENTS) {
+		std::vector<std::vector<double> > sData(_regions.size());
+
+		std::vector<std::vector<std::vector<double> > > rData(_regions.size(), std::vector<std::vector<double> >(threads));
+		std::vector<size_t> distribution = Esutils::getDistribution(threads, _mesh->elements().size());
+
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
+				size_t regionOffset = 0;
+				if ((_mode & InfoMode::SEPARATE_BODIES) && _mesh->elements()[e]->params()) {
+					regionOffset += _mesh->elements()[e]->param(Element::Params::BODY) * materials;
+				}
+				if ((_mode & InfoMode::SEPARATE_MATERIALS) && _mesh->elements()[e]->params()) {
+					regionOffset += _mesh->elements()[e]->param(Element::Params::MATERIAL);
+				}
+
+				eslocal d = std::lower_bound(_mesh->getPartition().begin(), _mesh->getPartition().end(), e + 1) - _mesh->getPartition().begin() - 1;
+				for (size_t p = 0; p < pGroup.size(); p++) {
+					rData[regionOffset][t].push_back(_mesh->elements()[e]->sumProperty(pGroup[p], 0, step.step, step.currentTime, 0, 0));
+				}
+
+			}
+		}
+
+		for (size_t r = 0; r < _regions.size(); r++) {
+			for (size_t t = 0; t < threads; t++) {
+				sData[r].insert(sData[r].end(), rData[r][t].begin(), rData[r][t].end());
+			}
+
+			std::vector<double> *collected = new std::vector<double>();
+			status = status && Communication::gatherUnknownSize(sData[r], *collected);
+			_regions[r].data.elementDataDouble[name] = std::make_pair(pGroup.size(), collected);
+		}
+	}
+
+	if (eType == ElementType::NODES) {
+		std::vector<double> sData(pGroup.size() * _mesh->nodes().size());
+
+		std::vector<size_t> distribution = Esutils::getDistribution(threads, _mesh->nodes().size());
+		#pragma omp parallel for
+		for (size_t t = 0; t < threads; t++) {
+			for (size_t n = distribution[t]; n < distribution[t + 1]; n++) {
+
+				for (auto d = _mesh->nodes()[n]->domains().begin(); d != _mesh->nodes()[n]->domains().end(); ++d) {
+					for (size_t p = 0; p < pGroup.size(); p++) {
+						sData[n * pGroup.size() + p] += _mesh->nodes()[n]->sumProperty(pGroup[p], 0, step.step, step.currentTime, 0, 0);
+					}
+				}
+			}
+		}
+
+		std::vector<double> collected;
+		status = status && Communication::gatherUnknownSize(sData, collected);
+
+		for (size_t r = 0; r < _regions.size(); r++) {
+			std::vector<double> *averaged = new std::vector<double>();
+			_regions[r].data.pointDataDouble[name] = std::make_pair(pGroup.size(), averaged);
+			averaged->resize(_cIndices[r].size() * pGroup.size());
+
+			std::vector<size_t> distribution = Esutils::getDistribution(threads, _cIndices[r].size());
+			#pragma omp parallel for
+			for (size_t t = 0; t < threads; t++) {
+				for (size_t id = distribution[t]; id < distribution[t + 1]; id++) {
+
+					for (size_t p = 0; p < pGroup.size(); p++) {
+						for (esglobal j = _cIndices[r][id] ? _globalIDsMap[_cIndices[r][id] - 1] : 0; j < _globalIDsMap[_cIndices[r][id]]; j++) {
+							(*averaged)[id * pGroup.size() + p] += collected[_globalIDs[j] * pGroup.size() + p];
+						}
+						(*averaged)[id * pGroup.size() + p] /= _globalIDsMultiplicity[_cIndices[r][id]];
+					}
+
+				}
+			}
+		}
+	}
+
+	if (!status) {
+		ESINFO(ERROR) << "ESPRESO internal error while collection solution.";
 	}
 }
 
