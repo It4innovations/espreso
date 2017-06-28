@@ -383,8 +383,8 @@ void IterSolverBase::MakeSolution_Primal_singular_parallel (
 					cluster.clusters[c].domains[d].Kplus_Rb.DenseMatVec(amplitudes, tmp, 'N', amp_offset, 0);
 				}
 			} else {
-				cluster.domains[d]->Kplus_R.DenseMatVec(     amplitudes, tmp, 'N', amp_offset, 0);
-				amp_offset += cluster.domains[d]->Kplus_R.cols;
+				cluster.clusters[c].domains[d].Kplus_R.DenseMatVec(     amplitudes, tmp, 'N', amp_offset, 0);
+				amp_offset += cluster.clusters[c].domains[d].Kplus_R.cols;
 			}
 
 			R_mu_prim_cluster[ cluster.clusters[c].domains[d].domain_global_index ].swap(tmp);
