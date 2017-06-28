@@ -18,7 +18,7 @@ namespace output {
 struct Monitor {
 	size_t printSize;
 	Region* region;
-	Property property;
+	std::vector<Property> properties;
 	StatisticalData statistics;
 };
 
@@ -48,6 +48,9 @@ protected:
 
 
 	std::vector<Monitor> _monitors;
+
+private:
+	std::vector<Property> getProperties(const std::string &name);
 };
 
 }

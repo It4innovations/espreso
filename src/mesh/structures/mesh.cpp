@@ -734,6 +734,13 @@ const std::vector<Property>& Mesh::propertyGroup(Property property) const
 	return it->second;
 }
 
+void Mesh::addPropertyGroup(const std::vector<Property> &properties)
+{
+	for (size_t i = 0; i < properties.size(); i++) {
+		_propertyGroups[properties[i]] = properties;
+	}
+}
+
 void Mesh::loadProperty(
 		size_t loadStep,
 		const std::map<std::string, std::string> &regions,
@@ -741,9 +748,7 @@ void Mesh::loadProperty(
 		const std::vector<Property> &properties,
 		ElementType type)
 {
-	for (size_t i = 0; i < properties.size(); i++) {
-		_propertyGroups[properties[i]] = properties;
-	}
+	addPropertyGroup(properties);
 	auto getValue = [] (const std::vector<std::string> &values, const std::string &parameter) -> std::string {
 		for (size_t i = 0; i < values.size(); i++) {
 			std::vector<std::string> args = Parser::split(Parser::strip(values[i]), " ");

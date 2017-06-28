@@ -33,7 +33,7 @@ struct Solution {
 
 	bool hasProperty(Property property) const;
 	void computeStatisticalData();
-	double getStatisticalData(Property property, StatisticalData data, const Region *region) const;
+	double getStatisticalData(const std::vector<Property> &property, StatisticalData data, const Region *region) const;
 
 	std::string name;
 	ElementType eType;

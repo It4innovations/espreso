@@ -126,6 +126,8 @@ inline std::ostream& operator<<(std::ostream& os, const Property& property)
 	}
 }
 
+std::istream& operator>>(std::istream& is, Property &property);
+
 }
 
 #endif /* SRC_MESH_SETTINGS_PROPERTY_H_ */

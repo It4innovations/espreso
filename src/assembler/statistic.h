@@ -10,6 +10,7 @@ namespace espreso {
 class Mesh;
 class Region;
 enum class ElementType;
+enum class Property;
 
 enum StatisticalData: int {
 	MIN     = 1 << 0,
@@ -22,24 +23,27 @@ enum StatisticalData: int {
 class Statistic {
 
 public:
-
-
 	// how to treat data distributed to more domains
 	enum class Operation: int {
 		SUM,
 		AVERAGE
 	};
 
-	Statistic(StatisticalData statistics, Operation operation, ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data, const std::vector<size_t> &offsets, const std::vector<Region*> &selection);
-	Statistic(ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data, size_t dataSize);
+	Statistic(ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data, const std::vector<Property> &properties);
 
 	void compute();
 	double get(const Region* region, size_t offset, StatisticalData statistics);
+	double getMagnitude(const Region* region, StatisticalData statistics)
+	{
+		return get(region, _dataSize, statistics);
+	}
 
 private:
+	void computeNodes();
+	void computeElements();
+
 	// region x offset x data
 	std::vector<std::vector<std::vector<double> > > _results;
-	StatisticalData _statistics;
 	Operation _operation;
 	ElementType _eType;
 	size_t _dataSize;
@@ -47,18 +51,8 @@ private:
 
 	const Mesh &_mesh;
 	const std::vector<std::vector<double> > &_data;
-	std::vector<size_t> _offsets;
 	std::vector<Region*> _selection;
 };
-
-inline constexpr StatisticalData  operator& (StatisticalData  d1, StatisticalData  d2) { return StatisticalData( static_cast<int>(d1) & static_cast<int>(d2)); }
-inline constexpr StatisticalData  operator| (StatisticalData  d1, StatisticalData  d2) { return StatisticalData( static_cast<int>(d1) | static_cast<int>(d2)); }
-inline constexpr StatisticalData  operator^ (StatisticalData  d1, StatisticalData  d2) { return StatisticalData( static_cast<int>(d1) ^ static_cast<int>(d2)); }
-inline constexpr StatisticalData  operator~ (StatisticalData  d1)                      { return StatisticalData(~static_cast<int>(d1)                       ); }
-
-inline const     StatisticalData& operator&=(StatisticalData &d1, StatisticalData &d2) { return d1 = d1 & d2; }
-inline const     StatisticalData& operator|=(StatisticalData &d1, StatisticalData &d2) { return d1 = d1 | d2; }
-inline const     StatisticalData& operator^=(StatisticalData &d1, StatisticalData &d2) { return d1 = d1 ^ d2; }
 
 }
 

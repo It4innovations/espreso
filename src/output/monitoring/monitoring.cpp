@@ -33,25 +33,6 @@ static espreso::StatisticalData getStatistics(const std::string &name)
 	return espreso::StatisticalData::AVERAGE;
 }
 
-static espreso::Property getProperty(const std::string &name)
-{
-	if (espreso::StringCompare::caseInsensitiveEq(name, "DISPLACEMENT_X")) {
-		return espreso::Property::DISPLACEMENT_X;
-	}
-	if (espreso::StringCompare::caseInsensitiveEq(name, "DISPLACEMENT_Y")) {
-		return espreso::Property::DISPLACEMENT_Y;
-	}
-	if (espreso::StringCompare::caseInsensitiveEq(name, "DISPLACEMENT_Z")) {
-		return espreso::Property::DISPLACEMENT_Z;
-	}
-	if (espreso::StringCompare::caseInsensitiveEq(name, "TEMPERATURE")) {
-		return espreso::Property::TEMPERATURE;
-	}
-
-	ESINFO(espreso::GLOBAL_ERROR) << "Cannot monitor " << name << "\n";
-	return espreso::Property::UNKNOWN;
-}
-
 std::string center(const std::string &value, size_t size)
 {
 	std::string ret;
@@ -69,6 +50,25 @@ std::string right(const std::string &value, size_t size)
 	return ret;
 }
 
+std::vector<espreso::Property> Monitoring::getProperties(const std::string &name)
+{
+	for (auto p = _mesh->propertyGroups().begin(); p != _mesh->propertyGroups().end(); ++p) {
+		if (p->second.size() > 1) {
+			std::stringstream ss; ss << p->first;
+			std::string pname = ss.str().substr(0, ss.str().find_last_of("_"));
+			if (StringCompare::caseInsensitiveEq(pname, name)) {
+				return p->second;
+			}
+		}
+	}
+
+	std::stringstream ss(name);
+	espreso::Property property;
+	ss >> property;
+
+	return { property };
+}
+
 Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
 : Store(output), _mesh(mesh)
 {
@@ -83,7 +83,7 @@ Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
 			ESINFO(GLOBAL_ERROR) << "Invalid monitoring format: use <REGION> <OPERATION> <VALUE>.";
 		}
 		_monitors.back().statistics = getStatistics(args[0]);
-		_monitors.back().property = getProperty(args[1]);
+		_monitors.back().properties = getProperties(args[1]);
 		_monitors.back().printSize = std::max(std::max((size_t)10, it->first.size()), std::max(args[0].size(), args[1].size()) + 2) + 4;
 		length += _monitors.back().printSize;
 	}
@@ -107,7 +107,12 @@ Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
 	_os << right("step", 9) << delimiter << right("substep", 9) << delimiter;
 	for (size_t i = 0; i < _monitors.size(); i++) {
 		std::stringstream ss;
-		ss << _monitors[i].property;
+		if (_monitors[i].properties.size() > 1) {
+			std::stringstream ssp; ssp << _monitors[i].properties[0];
+			ss << ssp.str().substr(0, ssp.str().find_last_of("_"));
+		} else {
+			ss << _monitors[i].properties[0];
+		}
 		_os << center(ss.str(), _monitors[i].printSize) << delimiter;
 	}
 	_os << "\n";
@@ -129,7 +134,7 @@ void Monitoring::storeSolution(const Step &step, const std::vector<Solution*> &s
 {
 	for (size_t i = 0; i < _monitors.size(); i++) {
 		for (size_t s = 0; s < solution.size(); s++) {
-			if (solution[s]->hasProperty(_monitors[i].property)) {
+			if (solution[s]->hasProperty(_monitors[i].properties[0])) {
 				solution[s]->computeStatisticalData();
 			}
 		}
@@ -144,8 +149,8 @@ void Monitoring::storeSolution(const Step &step, const std::vector<Solution*> &s
 	for (size_t i = 0; i < _monitors.size(); i++) {
 		double value;
 		for (size_t s = 0; s < solution.size(); s++) {
-			if (solution[s]->hasProperty(_monitors[i].property)) {
-				value = solution[s]->getStatisticalData(_monitors[i].property, _monitors[i].statistics, _monitors[i].region);
+			if (solution[s]->hasProperty(_monitors[i].properties[0])) {
+				value =  solution[s]->getStatisticalData(_monitors[i].properties, _monitors[i].statistics, _monitors[i].region);
 				break;
 			}
 		}

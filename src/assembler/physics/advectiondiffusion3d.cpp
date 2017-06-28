@@ -32,6 +32,9 @@ void NewAdvectionDiffusion3D::prepareTotalFETI()
 	_mesh->loadProperty(_configuration.translation_motions, { "X", "Y", "Z" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y, Property::TRANSLATION_MOTION_Z });
 	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
 
+	_mesh->addPropertyGroup({ Property::FLUX_X, Property::FLUX_Y, Property::FLUX_Z });
+	_mesh->addPropertyGroup({ Property::GRADIENT_X, Property::GRADIENT_Y, Property::GRADIENT_Z });
+
 	AdvectionDiffusion::prepareTotalFETI();
 }
 

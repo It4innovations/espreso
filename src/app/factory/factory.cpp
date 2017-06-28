@@ -95,9 +95,6 @@ Factory::Factory(const GlobalConfiguration &configuration)
 	Assembler::compose(configuration, instance, *mesh);
 
 	store = new output::ResultStoreList(configuration.output);
-	if (configuration.output.monitoring.size()) {
-		store->add(new output::Monitoring(configuration.output, mesh));
-	}
 	if (configuration.output.catalyst) {
 		store->add(new output::Catalyst(configuration.output, mesh));
 	}
@@ -200,6 +197,10 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		}
 
 		meshPreprocessing(configuration.output);
+	}
+
+	if (configuration.output.monitoring.size()) {
+		store->add(new output::Monitoring(configuration.output, mesh));
 	}
 }
 
