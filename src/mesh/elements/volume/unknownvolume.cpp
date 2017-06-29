@@ -24,7 +24,7 @@ size_t UnknownVolume::fillFaces()
 			std::sort(ind0.begin(), ind0.end());
 			std::sort(ind1.begin(), ind1.end());
 			auto it = std::set_intersection(ind0.begin(), ind0.end(), ind1.begin(), ind1.end(), intersection.begin());
-			if (it - intersection.begin() > nCommon()) {
+			if (it - intersection.begin() >= nCommon()) {
 				_faceNodes.push_back(std::vector<eslocal>(intersection.begin(), it));
 			}
 		}

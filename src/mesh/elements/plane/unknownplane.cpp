@@ -22,7 +22,7 @@ size_t UnknownPlane::fillEdges()
 			std::sort(ind0.begin(), ind0.end());
 			std::sort(ind1.begin(), ind1.end());
 			auto it = std::set_intersection(ind0.begin(), ind0.end(), ind1.begin(), ind1.end(), intersection.begin());
-			if (it - intersection.begin() > nCommon()) {
+			if (it - intersection.begin() >= nCommon()) {
 				_edgeNodes.push_back(std::vector<eslocal>(intersection.begin(), it));
 			}
 		}
