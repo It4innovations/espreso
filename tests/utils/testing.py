@@ -5,7 +5,8 @@ import sys
 import re
 import shutil
 
-ESPRESO_TESTS = os.path.dirname(os.path.abspath(__file__))
+ESPRESO_UTILS = os.path.dirname(os.path.abspath(__file__))
+ESPRESO_TESTS = os.path.dirname(ESPRESO_UTILS)
 ESPRESO_ROOT = os.path.dirname(ESPRESO_TESTS)
 EXAMPLES = os.path.join(ESPRESO_TESTS, "examples")
 

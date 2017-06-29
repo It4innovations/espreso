@@ -1,8 +1,13 @@
 
-from utils import *
-import unittest
+import os
+import sys
 
+ESPRESO_TESTS = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.join(ESPRESO_TESTS, "utils"))
+
+from testing import *
+import unittest
 
 class ESPRESOSolver(unittest.TestCase):
 
