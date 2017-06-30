@@ -160,13 +160,12 @@ void NewtonRhapson::solve(Step &step)
 
 			if (_configuration.adaptive_precision){
 
-             if (step.iteration > 1){
-            	 epsilon_err = temperatureResidual_first/temperatureResidual_second;
-            	 epsilon_cgm = std::min(_configuration.r_tol *epsilon_err ,_configuration.c_fact * epsilon_cgm );
-
-             }
-             ESINFO(CONVERGENCE) <<  "    ADAPTIVE PRECISION = " << epsilon_cgm <<   " EPS_ERR = " << epsilon_err ;
-             *const_cast<double*>(&linearSolver->configuration.epsilon) = epsilon_cgm;
+				if (step.iteration > 1) {
+					epsilon_err = temperatureResidual_first / temperatureResidual_second;
+					epsilon_cgm = std::min(_configuration.r_tol * epsilon_err, _configuration.c_fact * epsilon_cgm);
+				}
+				ESINFO(CONVERGENCE) << "    ADAPTIVE PRECISION = " << epsilon_cgm << " EPS_ERR = " << epsilon_err;
+				*const_cast<double*>(&linearSolver->configuration.epsilon) = epsilon_cgm;
 
 			//	precision_= *const_cast<double*>(&linearSolver->configuration.epsilon) / step.iteration ;
 

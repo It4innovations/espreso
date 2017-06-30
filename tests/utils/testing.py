@@ -136,48 +136,6 @@ class Iterator:
             result[self.keys[i]] = self.items[self.keys[i]][self.pointers[i]]
         return result
 
-class RunInfo:
-
-    def __init__(self, output):
-        self._iterations = 0
-        self._precision = 1
-        self._oscilated = False
-        self._max_oscilation = 0
-
-        norm = 2
-        min = 2
-        for line in output.split("\n"):
-            if line.find("CONVERGENCE:") != -1:
-                try:
-                    self._iterations = int(line.split()[1])
-                except ValueError:
-                    continue
-                if norm < float(line.split()[2]):
-                    self._oscilated = True
-                norm = float(line.split()[2])
-                if min > norm:
-                    min = norm
-                if min < norm:
-                    self._max_oscilation = norm / min
-
-        self._precision = norm
-
-    def iterations(self, min, max=None):
-        if self._iterations < min:
-            raise EspresoError("Unexpected number of iterations: {0}".format(self._iterations))
-        if max is not None and self._iterations > max:
-            raise EspresoError("Number of iterations is too high: {0}".format(self._iterations))
-
-    def precision(self, precision):
-        if self._precision > precision:
-            raise EspresoError("Example not convergated to a requested precision ({0} > {1}".format(self._precision, precision))
-
-    def oscilation(self, allowed, max=None):
-        if not allowed and self._oscilated:
-            raise EspresoError("Not allowed oscilation")
-        if max is not None and self._max_oscilation > max:
-            raise EspresoError("Oscilation {0} is higher than {1}".format(self._max_oscilation, max))
-
 class EspresoError:
 
     program = []
@@ -252,6 +210,123 @@ class Espreso:
         check(result, error, "configure")
         result, error = self.waf(["install"])
         check(result, error, "install")
+
+    def get_processes(self, ecf):
+        def get_path(section):
+            in_section = False
+            for line in open(ecf, 'r'):
+                if section in line.upper():
+                    in_section = True
+                if in_section and "PATH" in line.upper():
+                    return line.split()[1].strip(";")
+
+        def get_value(value):
+            if value.startswith("[") and value.endswith("]"):
+                return variables[value]
+            return value
+
+        variables = {}
+        variable = False
+        default_arg = False
+        for line in open(ecf, 'r'):
+            if "INPUT" in line.upper():
+                input = line.split()[1].strip(";")
+
+            if variable and "}" in line:
+                variable = False
+            if variable:
+                variables["[" + line.split()[0].strip() + "]"] = line.split()[1].strip()
+            if "VARIABLES" in line.upper():
+                variable = True
+
+            if default_arg and "}" in line:
+                default_arg = False
+            if default_arg and len(line.strip()):
+                variables["[ARG" + line.split()[0].strip() + "]"] = line.split()[1].strip(";")
+            if "DEFAULT_ARGS" in line.upper():
+                default_arg = True
+
+        if input.upper() == "GENERATOR":
+            in_generator = 0
+            in_tower = 0
+            tower = False
+            sphere = False
+            multiplier = 1
+            proc_index = 0
+            parrents = 0
+            for line in open(ecf, 'r'):
+                if in_generator and "{" in line:
+                    in_generator += 1
+                if in_tower and "{" in line:
+                    in_tower += 1
+                if "GENERATOR" in line.upper():
+                    in_generator = 1
+                if in_generator and "GRIDS" in line.upper():
+                    in_tower = 1
+                if in_generator and "}" in line:
+                    in_generator -= 1
+                if in_tower and "}" in line:
+                    in_tower -= 1
+                if in_generator and "GRID" in line.upper():
+                    procs = [ (1, 1, 1) ]
+                if in_generator and "GRID_TOWER" in line.upper():
+                    procs = [ ]
+                    tower = True
+                if in_generator and "SPHERE" in line.upper():
+                    procs = [ (1, 1, 1) ]
+                    sphere = True
+                    multiplier = 6
+
+                if in_generator and in_tower and len(line.strip()) and line.split()[0].isdigit():
+                    proc_index = int(line.split()[0])
+                    if proc_index >= len(procs):
+                        if proc_index != len(procs):
+                            EspresoError("Not supported format of *ecf test file. Default GRIDS settings.")
+                        procs.append((1, 1, 1))
+                if in_generator and "CLUSTERS_X" in line.upper():
+                    procs[proc_index] = (int(get_value(line.split()[1].strip(";"))), procs[proc_index][1], procs[proc_index][2])
+                if in_generator and "CLUSTERS_Y" in line.upper():
+                    procs[proc_index] = (procs[proc_index][0], int(get_value(line.split()[1].strip(";"))), procs[proc_index][2])
+                if in_generator and "CLUSTERS_Z" in line.upper():
+                    procs[proc_index] = (procs[proc_index][0], procs[proc_index][1], int(get_value(line.split()[1].strip(";"))))
+                if sphere and "CLUSTERS" in line.upper():
+                    procs[proc_index] = (int(get_value(line.split()[1].strip(";"))), procs[proc_index][1], procs[proc_index][2])
+                if sphere and "LAYERS" in line.upper():
+                    procs[proc_index] = (procs[proc_index][0], int(get_value(line.split()[1].strip(";"))), procs[proc_index][2])
+
+            return multiplier * sum(i[0] * i[1] * i[2] for i in procs)
+
+        if input.upper() == "OPENFOAM":
+            return len(glob.glob(get_path("OPENFOAM") + "/processor*"))
+
+        if input.upper() == "ANSYS":
+            return 1
+
+        if input.upper() == "ESDATA":
+            return len(filter(os.path.isdir, glob.glob(get_path("ESDATA") + "/*")))
+
+    def compare_monitors(self, emr1, emr2):
+        def compare(v1, v2):
+            if v1 != v2 and abs(float(v1) - float(v2)) > 1e-4 and abs((float(v1) - float(v2)) / float(v1)) > 1e-3:
+                raise EspresoError(
+                    "various monitored results" +
+                    "[" + table1[0][column] + "::" + table1[1][column] + "::" + table1[2][column] + "]" +
+                    "[step " + table1[row][0] + "][substep " + table1[row][1] + "]" +
+                    " -> " + v1 + " != " + v2
+                )
+
+        def create_table(emr):
+            return [ [ value.strip() for value in line.split(";") ] for line in open(emr, "r").readlines() if len(line.strip()) ]
+
+        table1 = create_table(emr1)
+        table2 = create_table(emr2)
+
+        if len(table1[0]) != len(table2[1]):
+            raise EspresoError("various monitored properties")
+
+        for row, (row1, row2) in enumerate(zip(table1, table2)):
+            for column, (value1, value2) in enumerate(zip(row1, row2)):
+                compare(value1, value2)
 
     def run_program(self, program, cwd="", config={}, args=[]):
         config["ENV::REMOVE_OLD_RESULTS"] = "1"
