@@ -177,7 +177,7 @@ void Statistic::computeNodes()
 	}
 
 	// MIN, MAX, AVERAGE, NORM, SQUARES, ELEMENTS
-	std::vector<double> initData = { std::numeric_limits<double>::max(), std::numeric_limits<double>::min(), 0, 0, 0, 0 };
+	std::vector<double> initData = { std::numeric_limits<double>::max(), -std::numeric_limits<double>::max(), 0, 0, 0, 0 };
 
 	// thread x region x offsets x data
 	std::vector<std::vector<std::vector<std::vector<double> > > > tData(threads, std::vector<std::vector<std::vector<double> > >(_selection.size(), std::vector<std::vector<double> >(_dataSize + 1, initData)));
@@ -300,7 +300,7 @@ void Statistic::computeNodes()
 void Statistic::computeElements()
 {
 	// MIN, MAX, AVERAGE, NORM, SQUARES, ELEMENTS
-	std::vector<double> initData = { std::numeric_limits<double>::max(), std::numeric_limits<double>::min(), 0, 0, 0, 0 };
+	std::vector<double> initData = { std::numeric_limits<double>::max(), -std::numeric_limits<double>::max(), 0, 0, 0, 0 };
 
 	// part x region x offsets x data
 	std::vector<std::vector<std::vector<std::vector<double> > > > tData(_mesh.parts(), std::vector<std::vector<std::vector<double> > >(_selection.size(), std::vector<std::vector<double> >(_dataSize + 1, initData)));
