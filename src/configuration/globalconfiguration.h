@@ -28,8 +28,8 @@ enum class INPUT {
 
 struct GlobalConfiguration: public Configuration {
 
-	GlobalConfiguration(const std::string &file) { Reader::read(*this, file); Reader::set(this->env, this->output); }
-	GlobalConfiguration(int *argc, char ***argv) { Reader::read(*this, argc, argv); Reader::set(this->env, this->output); }
+	GlobalConfiguration(const std::string &file) { Reader::read(*this, file, this->default_args, this->variables); Reader::set(this->env, this->output); }
+	GlobalConfiguration(int *argc, char ***argv) { Reader::read(*this, argc, argv, this->default_args, this->variables); Reader::set(this->env, this->output); }
 
 	void print() { Reader::print(*this); }
 	void store() { Reader::store(*this, { ".*" }); }
@@ -51,6 +51,9 @@ struct GlobalConfiguration: public Configuration {
 		{ "SHALLOW_WATER_2D"       , PHYSICS::SHALLOW_WATER_2D       , "2D shallow water"},
 		{ "STOKES"                 , PHYSICS::STOKES                 , "Stokes"}
 	}));
+
+	SUBMAP(size_t, std::string, default_args, "List of default values for arguments - [ARG*].", "0", "1");
+	SUBMAP(std::string, std::string, variables, "List of variables usable in *.ecf file.", "VAR1", "x * y");
 
 	SUBCONFIG(Environment        , env         , "Environment dependent variables (set by ./env/threading.* scripts).");
 	SUBCONFIG(OutputConfiguration, output      , "Output settings.");

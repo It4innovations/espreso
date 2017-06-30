@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 namespace espreso {
 
@@ -15,8 +16,18 @@ struct OutputConfiguration;
 class Reader {
 
 public:
-	static void read(Configuration &configuration, const std::string &file) { _read(configuration, file, {}); }
-	static void read(Configuration &configuration, int* argc, char ***argv) { _read(configuration, argc, argv); }
+	static void read(
+			Configuration &configuration,
+			const std::string &file,
+			const std::map<size_t, std::string> &defaultArgs = {},
+			const std::map<std::string, std::string> &variables = {}) { _read(configuration, file, {}, defaultArgs, variables); }
+
+	static void read(
+			Configuration &configuration,
+			int* argc,
+			char ***argv,
+			const std::map<size_t, std::string> &defaultArgs = {},
+			const std::map<std::string, std::string> &variables = {}) { _read(configuration, argc, argv, defaultArgs, variables); }
 
 	static void set(const Environment &env, const OutputConfiguration &output);
 
@@ -27,8 +38,19 @@ public:
 private:
 	static std::string configurationFile;
 
-	static void _read(Configuration &configuration, const std::string &file, const std::vector<std::string> &args);
-	static void _read(Configuration &configuration, int* argc, char ***argv);
+	static void _read(
+			Configuration &configuration,
+			const std::string &file,
+			const std::vector<std::string> &args,
+			const std::map<size_t, std::string> &defaultArgs,
+			const std::map<std::string, std::string> &variables);
+
+	static void _read(
+			Configuration &configuration,
+			int* argc,
+			char ***argv,
+			const std::map<size_t, std::string> &defaultArgs,
+			const std::map<std::string, std::string> &variables);
 };
 
 }

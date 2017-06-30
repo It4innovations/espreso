@@ -39,7 +39,12 @@ static std::string uppercase(const std::string &str) {
 	return upper;
 };
 
-void Reader::_read(Configuration &configuration, int* argc, char ***argv)
+void Reader::_read(
+		Configuration &configuration,
+		int* argc,
+		char ***argv,
+		const std::map<size_t, std::string> &defaultArgs,
+		const std::map<std::string, std::string> &variables)
 {
 	environment->executable = *argv[0];
 	int option_index, option;
@@ -150,7 +155,7 @@ void Reader::_read(Configuration &configuration, int* argc, char ***argv)
 	Logging::name = confFile.substr(start, end - start);
 	configurationFile = confFile;
 
-	_read(configuration, confFile, nameless);
+	_read(configuration, confFile, nameless, defaultArgs, variables);
 
 	optind = 0;
 	while ((option = getopt_long(*argc, *argv, "c:dhvtm", opts.data(), &option_index)) != -1) {
@@ -203,7 +208,12 @@ void Reader::copyInputData()
 	dst << src.rdbuf();
 }
 
-void Reader::_read(Configuration &configuration, const std::string &file, const std::vector<std::string> &args)
+void Reader::_read(
+		Configuration &configuration,
+		const std::string &file,
+		const std::vector<std::string> &args,
+		const std::map<size_t, std::string> &defaultArgs,
+		const std::map<std::string, std::string> &variables)
 {
 	std::vector<std::string> prefix;
 	std::vector<std::string> values;
@@ -227,13 +237,19 @@ void Reader::_read(Configuration &configuration, const std::string &file, const 
 		case Tokenizer::Token::LINK:
 		{
 			std::string value = tokenStack.top()->value();
+			for (auto it = variables.begin(); it != variables.end(); ++it) {
+				if (StringCompare::caseInsensitiveEq(it->first, value)) {
+					value = it->second;
+					break;
+				}
+			}
 			if (value.size() > 4 && StringCompare::caseInsensitiveSuffix(value, ".ecf")) {
 				tokenStack.push(new Tokenizer(value));
 				break;
 			}
 			if (value.size() > 2 && StringCompare::caseInsensitivePreffix("ARG", value)) {
 				std::stringstream ss(std::string(value.begin() + 3, value.end()));
-				size_t index = args.size();
+				size_t index;
 				ss >> index;
 				if (!ss.fail() && ss.eof() && index < args.size()) {
 					values.push_back(args[index]);
@@ -244,13 +260,18 @@ void Reader::_read(Configuration &configuration, const std::string &file, const 
 					if (index < args.size()) {
 						ESINFO(GLOBAL_ERROR) << "Invalid argument '" << value << "'";
 					} else {
-						correctlyLoaded = false;
-						if (values.size()) {
-							std::string parameter;
-							std::for_each(prefix.begin(), prefix.end(), [&] (const std::string &s) { parameter += s + "::"; });
-							arguments[index].push_back(parameter + values.front());
+						auto ait = defaultArgs.find(index);
+						if (ait != defaultArgs.end()) {
+							values.push_back(ait->second);
 						} else {
-							ESINFO(GLOBAL_ERROR) << "parameter cannot be the [ARG].\n" << tokenStack.top()->lastLines(2);
+							correctlyLoaded = false;
+							if (values.size()) {
+								std::string parameter;
+								std::for_each(prefix.begin(), prefix.end(), [&] (const std::string &s) { parameter += s + "::"; });
+								arguments[index].push_back(parameter + values.front());
+							} else {
+								ESINFO(GLOBAL_ERROR) << "parameter cannot be the [ARG].\n" << tokenStack.top()->lastLines(2);
+							}
 						}
 					}
 				}
