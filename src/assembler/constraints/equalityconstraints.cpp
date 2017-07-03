@@ -1222,7 +1222,7 @@ void EqualityConstraints::insertCornersGluingToB0(Instance &instance, const std:
 	ESINFO(EXHAUSTIVE) << "Average number of lambdas in B0 is " << Info::averageValue(lambdas);
 }
 
-void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std::vector<Element*> &elements, const std::vector<Element*> &nodes, const std::vector<size_t> &DOFsOffsets)
+void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std::vector<Element*> &elements, const std::vector<Element*> &nodes, const std::vector<size_t> &DOFsOffsets, const std::vector<SparseMatrix> &kernels)
 {
 	std::vector<Element*> el(elements);
 
@@ -1248,8 +1248,8 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 	for (size_t i = 0; i < part.size() - 1; i++) {
 		const std::vector<eslocal> &domains = el[part[i]]->domains();
 		if (instance.clustersMap[domains[0]] == instance.clustersMap[domains[1]]) {
-			eslocal master = instance.N1[domains[0]].cols > instance.N1[domains[1]].cols ? domains[0] : domains[1];
-			eslocal rows = instance.N1[master].cols > 0 ? instance.N1[master].cols : 1;
+			eslocal master = kernels[domains[0]].cols > kernels[domains[1]].cols ? domains[0] : domains[1];
+			eslocal rows = kernels[master].cols > 0 ? kernels[master].cols : 1;
 			rowIndex.push_back(clusterRowIndex[instance.clustersMap[domains[0]]]);
 			clusterRowIndex[instance.clustersMap[domains[0]]] += rows;
 		} else {
@@ -1279,8 +1279,8 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 			std::sort(nodesOnInterface.begin(), nodesOnInterface.end());
 			Esutils::removeDuplicity(nodesOnInterface);
 
-			eslocal master = instance.N1[domains[0]].cols > instance.N1[domains[1]].cols ? domains[0] : domains[1];
-			if (instance.N1[master].cols == 0) {
+			eslocal master = kernels[domains[0]].cols > kernels[domains[1]].cols ? domains[0] : domains[1];
+			if (kernels[master].cols == 0) {
 				for (size_t n = 0; n < nodesOnInterface.size(); n++) {
 					for (size_t dof = 0; dof < DOFsOffsets.size(); dof++) {
 						instance.B0[p].I_row_indices.push_back(rowIndex[i]);
@@ -1289,12 +1289,12 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 					}
 				}
 			} else {
-				for (eslocal col = 0; col < instance.N1[master].cols; col++) {
+				for (eslocal col = 0; col < kernels[master].cols; col++) {
 					for (size_t n = 0; n < nodesOnInterface.size(); n++) {
 						for (size_t dof = 0; dof < DOFsOffsets.size(); dof++) {
 							instance.B0[p].I_row_indices.push_back(rowIndex[i] + col);
 							instance.B0[p].J_col_indices.push_back(nodesOnInterface[n]->DOFIndex(p, dof) + 1);
-							instance.B0[p].V_values.push_back(sign * instance.N1[master].dense_values[instance.N1[master].rows * col + nodesOnInterface[n]->DOFIndex(master, DOFsOffsets[dof])]);
+							instance.B0[p].V_values.push_back(sign * kernels[master].dense_values[kernels[master].rows * col + nodesOnInterface[n]->DOFIndex(master, DOFsOffsets[dof])]);
 						}
 					}
 				}

@@ -61,11 +61,14 @@ void LinearSolver::init()
 		delete solver;
 	}
 
+	instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
+	if (configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
+		instance->assembleB0(configuration.B0_type, instance->N1);
+	}
 	solver  = new IterSolver	(configuration);
 	cluster = new SuperCluster	(configuration, instance);
 
 	init(instance->neighbours);
-
 }
 
 // make partial initialization according to updated matrices
@@ -79,6 +82,7 @@ void LinearSolver::update(Matrices matrices)
 		delete cluster;
 		delete solver;
 
+		instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
 		cluster = new SuperCluster(configuration, instance);
 		solver  = new IterSolver(configuration);
 
@@ -102,6 +106,9 @@ void LinearSolver::update(Matrices matrices)
 
 	if (matrices & Matrices::B0) {
 		// HFETI preprocessing
+		if (configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
+			instance->assembleB0(configuration.B0_type, instance->N1);
+		}
 		setup_HTFETI();
 	}
 

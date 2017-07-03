@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <vector>
 #include <fstream>
+#include <functional>
 
 namespace espreso {
 
@@ -35,9 +36,8 @@ struct Instance {
 	Instance(Instance &other, Matrices &share);
 	~Instance();
 
-	void computeKernels(REGULARIZATION regularization);
-	void assembleB0(B0_TYPE type);
-	//void (*computeKernels)(REGULARIZATION regularization);
+	void computeKernels(REGULARIZATION regularization, size_t scSize) { computeKernelsCallback(regularization, scSize); }
+	void assembleB0(B0_TYPE type, const std::vector<SparseMatrix> &kernels) { assembleB0Callback(type, kernels); }
 
 	void clear();
 
@@ -81,8 +81,9 @@ struct Instance {
 
 	std::vector<Solution*> solutions;
 
+	std::function<void(REGULARIZATION regularization, size_t scSize)> computeKernelsCallback;
+	std::function<void(B0_TYPE type, const std::vector<SparseMatrix> &kernels)> assembleB0Callback;
 private:
-	void _dummyComputeKernels(REGULARIZATION regularization);
 
 	std::vector<SparseMatrix> _K, _M, _N1, _N2, _RegMat;
 	std::vector<std::vector<double> > _R, _f;

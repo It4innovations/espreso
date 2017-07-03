@@ -35,7 +35,7 @@ struct Physics2D: public virtual Physics {
 	void prepareHybridTotalFETIWithCorners();
 	void prepareHybridTotalFETIWithKernels();
 	void assembleB0FromCorners(const Step &step);
-	void assembleB0FromKernels(const Step &step);
+	void assembleB0FromKernels(const Step &step, const std::vector<SparseMatrix> &kernels);
 };
 
 }

@@ -147,21 +147,14 @@ Instance::Instance(Instance &other, Matrices &share)
 	if (!((share & Matrices::B1c) & (share & Matrices::K))) {
 		B1duplicity.resize(domains);
 	}
-}
 
-void Instance::computeKernels(REGULARIZATION regularization)
-{
+	computeKernelsCallback = [] (REGULARIZATION regularization, size_t scSize) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernels is empty function. Fill it in assembler.";
+	};
 
-}
-
-void Instance::assembleB0(B0_TYPE type)
-{
-
-}
-
-void Instance::_dummyComputeKernels(REGULARIZATION regularization)
-{
-	ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernels is empty function. Fill it in assembler.";
+	assembleB0Callback = [] (B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: assembleB0 is empty function. Fill it in assembler.";
+	};
 }
 
 void Instance::clear()

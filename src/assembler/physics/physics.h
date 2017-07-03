@@ -19,6 +19,7 @@ class Element;
 class Mesh;
 class Instance;
 class Solution;
+class SparseMatrix;
 namespace store { class ResultStore; }
 
 enum class REGULARIZATION;
@@ -78,7 +79,7 @@ struct Physics {
 
 	virtual void assembleB1(const Step &step, bool withRedundantMultipliers, bool withScaling);
 	virtual void assembleB0FromCorners(const Step &step) =0;
-	virtual void assembleB0FromKernels(const Step &step) =0;
+	virtual void assembleB0FromKernels(const Step &step, const std::vector<SparseMatrix> &kernels) =0;
 
 	virtual double sumSquares(const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction = SumRestriction::NONE, size_t loadStep = 0) const;
 

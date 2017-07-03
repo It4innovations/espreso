@@ -23,9 +23,9 @@ void Physics3D::assembleB0FromCorners(const Step &step)
 	EqualityConstraints::insertCornersGluingToB0(*_instance, _mesh->corners(), _nodesDOFsOffsets);
 }
 
-void Physics3D::assembleB0FromKernels(const Step &step)
+void Physics3D::assembleB0FromKernels(const Step &step, const std::vector<SparseMatrix> &kernels)
 {
-	EqualityConstraints::insertKernelsGluingToB0(*_instance, _mesh->faces(), _mesh->nodes(), _nodesDOFsOffsets);
+	EqualityConstraints::insertKernelsGluingToB0(*_instance, _mesh->faces(), _mesh->nodes(), _nodesDOFsOffsets, kernels);
 }
 
 

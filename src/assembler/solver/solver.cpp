@@ -207,11 +207,14 @@ void Solver::regularizeMatrices(const Step &step, Matrices matrices)
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: invalid matrices passed to Solver::regularizeMatrices.";
 	}
 
-	ESINFO(PROGRESS2) << physics->name() << " regularizes matrices: " << mNames(matrices);
+	instance->computeKernelsCallback = [&] (REGULARIZATION regularization, size_t scSize) {
 
-	TimeEvent time("Regularization of matrices " + mNames(matrices) + " by " + physics->name()); time.start();
-	physics->makeStiffnessMatricesRegular(linearSolver->configuration.regularization, linearSolver->configuration.SC_SIZE);
-	time.endWithBarrier(); _timeStatistics->addEvent(time);
+		ESINFO(PROGRESS2) << physics->name() << " regularizes matrices: " << mNames(Matrices::K);
+
+		TimeEvent time("Regularization of matrices " + mNames(Matrices::K) + " by " + physics->name()); time.start();
+		physics->makeStiffnessMatricesRegular(regularization, scSize);
+		time.endWithBarrier(); _timeStatistics->addEvent(time);
+	};
 }
 
 void Solver::composeGluing(const Step &step, Matrices matrices)
@@ -219,36 +222,35 @@ void Solver::composeGluing(const Step &step, Matrices matrices)
 	if (matrices & ~(Matrices::B0 | Matrices::B1)) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: invalid matrices passed to Solver::composeGluing.";
 	}
-	if (linearSolver->configuration.method == ESPRESO_METHOD::TOTAL_FETI) {
-		matrices &= ~(Matrices::B0);
-	}
 	if (!matrices) {
 		return;
 	}
 
-	ESINFO(PROGRESS2) << "Compose gluing matrices " << mNames(matrices) << "for " << physics->name();
-
-	TimeEvent time("Composition of gluing matrices" + mNames(matrices) + "for " + physics->name()); time.start();
-	if (matrices & Matrices::B0) {
-		// TODO: create update method
+	instance->assembleB0Callback = [&] (B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
+		ESINFO(PROGRESS2) << "Compose gluing matrices " << mNames( Matrices::B0) << "for " << physics->name();
+		TimeEvent time("Composition of gluing matrices" + mNames(Matrices::B0) + "for " + physics->name()); time.start();
 		physics->instance()->B0.clear();
 		physics->instance()->B0.resize(physics->instance()->domains);
 		for (size_t d = 0; d < physics->instance()->domains; d++) {
 			physics->instance()->B0[d].type = 'G';
 			physics->instance()->B0subdomainsMap[d].clear();
 		}
-		switch (linearSolver->configuration.B0_type) {
+		switch (type) {
 		case B0_TYPE::CORNERS:
 			physics->assembleB0FromCorners(step);
 			break;
 		case B0_TYPE::KERNELS:
-			physics->assembleB0FromKernels(step);
+			physics->assembleB0FromKernels(step, kernels);
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Unknown type of B0";
 		}
-	}
+		time.endWithBarrier(); _timeStatistics->addEvent(time);
+	};
+
 	if (matrices & Matrices::B1) {
+		ESINFO(PROGRESS2) << "Compose gluing matrices " << mNames( Matrices::B1) << "for " << physics->name();
+		TimeEvent time("Composition of gluing matrices" + mNames(Matrices::B1) + "for " + physics->name()); time.start();
 		// TODO: create update method
 		physics->instance()->B1.clear();
 		physics->instance()->B1.resize(physics->instance()->domains);
@@ -266,8 +268,9 @@ void Solver::composeGluing(const Step &step, Matrices matrices)
 		physics->instance()->block.clear();
 		physics->instance()->block.resize(3, 0);
 		physics->assembleB1(step, linearSolver->configuration.redundant_lagrange, linearSolver->configuration.scaling);
+		time.endWithBarrier(); _timeStatistics->addEvent(time);
 	}
-	time.endWithBarrier(); _timeStatistics->addEvent(time);
+
 }
 
 void Solver::processSolution(const Step &step)
