@@ -169,22 +169,22 @@ void Elasticity3D::assembleB1()
 
 void Elasticity3D::assembleB0()
 {
-	if (_solverConfiguration.method == ESPRESO_METHOD::HYBRID_FETI) {
-		switch (_solverConfiguration.B0_type) {
+	this->assembleB0Callback = [&] (B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
+		switch (type) {
 		case B0_TYPE::CORNERS:
 			EqualityConstraints::insertDomainGluingToB0(_constraints, _mesh.corners(), pointDOFs);
 			break;
 		case B0_TYPE::KERNELS:
-			EqualityConstraints::insertKernelsToB0(_constraints, _mesh.faces(), pointDOFs, R1);
+			EqualityConstraints::insertKernelsToB0(_constraints, _mesh.faces(), pointDOFs, kernels);
 			break;
 		case B0_TYPE::COMBINED:
-			EqualityConstraints::insertKernelsToB0(_constraints, _mesh.faces(), pointDOFs, R1);
+			EqualityConstraints::insertKernelsToB0(_constraints, _mesh.faces(), pointDOFs, kernels);
 			EqualityConstraints::insertDomainGluingToB0(_constraints, _mesh.corners(), pointDOFs);
 			break;
 		default:
 			ESINFO(GLOBAL_ERROR) << "Not implemented construction of B0";
 		}
-	}
+	};
 }
 
 static double determinant3x3(DenseMatrix &m)
@@ -642,36 +642,38 @@ void Elasticity3D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, st
 
 void Elasticity3D::makeStiffnessMatricesRegular()
 {
-	#pragma omp parallel for
-	for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
-		switch (_solverConfiguration.regularization) {
-		case REGULARIZATION::FIX_POINTS:
-		{
-			analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
-			analyticsRegMat(K[subdomain], RegMat[subdomain], _mesh.fixPoints(subdomain), _mesh.coordinates(), subdomain);
-			K[subdomain].RemoveLower();
-			RegMat[subdomain].RemoveLower();
+	this->computeKernelsCallback = [&] (REGULARIZATION regularization, size_t scSize) {
+		#pragma omp parallel for
+		for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+			switch (_solverConfiguration.regularization) {
+			case REGULARIZATION::FIX_POINTS:
+			{
+				analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
+				analyticsRegMat(K[subdomain], RegMat[subdomain], _mesh.fixPoints(subdomain), _mesh.coordinates(), subdomain);
+				K[subdomain].RemoveLower();
+				RegMat[subdomain].RemoveLower();
 
-// Just for testing to get matrix kernel using dissection
-//			SparseSolverDissection diss;
-//			diss.ImportMatrix(K[subdomain]);
-//			diss.Factorization("Factorize K wo RegMat");
-//			eslocal kernel_dimension = diss.dslv->kern_dimension();
-//			SEQ_VECTOR <double> kernel_vectors(kernel_dimension * diss.rows, 0);
-//			diss.dslv->GetKernelVectors(&kernel_vectors.front());
+		// Just for testing to get matrix kernel using dissection
+		//			SparseSolverDissection diss;
+		//			diss.ImportMatrix(K[subdomain]);
+		//			diss.Factorization("Factorize K wo RegMat");
+		//			eslocal kernel_dimension = diss.dslv->kern_dimension();
+		//			SEQ_VECTOR <double> kernel_vectors(kernel_dimension * diss.rows, 0);
+		//			diss.dslv->GetKernelVectors(&kernel_vectors.front());
 
-			K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
-			RegMat[subdomain].ConvertToCOO(1);
-			//RegMat[subdomain].ConvertToCOO(0);
+				K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
+				RegMat[subdomain].ConvertToCOO(1);
+				//RegMat[subdomain].ConvertToCOO(0);
 
-			break;
+				break;
+			}
+			case REGULARIZATION::NULL_PIVOTS:
+				K[subdomain].RemoveLower();
+				algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain, scSize);
+				break;
+			}
 		}
-		case REGULARIZATION::NULL_PIVOTS:
-			K[subdomain].RemoveLower();
-			algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain, _solverConfiguration.SC_SIZE);
-			break;
-		}
-	}
+	};
 }
 
 void Elasticity3D::composeSubdomain(size_t subdomain)

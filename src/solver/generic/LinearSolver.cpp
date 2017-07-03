@@ -663,6 +663,8 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 {
 	if (physics != NULL) {
 		instance = new Instance(physics->K.size(), neighbours);
+		instance->computeKernelsCallback = physics->computeKernelsCallback;
+		instance->assembleB0Callback = physics->assembleB0Callback;
 		instance->clustersMap = constraints->continuityMap;
 
 		physics->K.swap(instance->K);
@@ -670,9 +672,16 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 			instance->K[i].mtype = physics->mtype;
 		}
 
-		physics->R1.swap(instance->N1);
-		physics->R2.swap(instance->N2);
-		physics->RegMat.swap(instance->RegMat);
+		instance->computeKernelsCallback = [&] (REGULARIZATION regularization, size_t scSize) {
+			physics->K.swap(instance->K);
+			physics->computeKernelsCallback(regularization, scSize);
+			physics->K.swap(instance->K);
+			physics->R1.swap(instance->N1);
+			physics->R2.swap(instance->N2);
+			physics->RegMat.swap(instance->RegMat);
+		};
+
+		instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
 
 		constraints->B1.swap(instance->B1);
 		constraints->B1c.swap(instance->B1c);
@@ -680,8 +689,15 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 		constraints->B1clustersMap.swap(instance->B1clustersMap);
 		constraints->B1duplicity.swap(instance->B1duplicity);
 
-		constraints->B0.swap(instance->B0);
-		constraints->B0subdomainsMap.swap(instance->B0subdomainsMap);
+		if (configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
+			instance->assembleB0Callback = [&] (B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
+				physics->assembleB0Callback(type, kernels);
+				constraints->B0.swap(instance->B0);
+				constraints->B0subdomainsMap.swap(instance->B0subdomainsMap);
+			};
+
+			instance->assembleB0(configuration.B0_type, instance->N1);
+		}
 
 		constraints->LB.swap(instance->LB);
 		constraints->inequality.swap(instance->inequality);

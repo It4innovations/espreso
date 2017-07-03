@@ -40,14 +40,16 @@ static void algebraicKernelsAndRegularization(SparseMatrix &K, SparseMatrix &Reg
 
 void SingularSystem::makeStiffnessMatricesRegular()
 {
-	ESINFO(PROGRESS3) << "Make stiffness matrices regular.";
-	#pragma omp parallel for
-	for  (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
-		K[subdomain].RemoveLower();
-		algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain, _solverConfiguration.SC_SIZE);
-		ESINFO(PROGRESS3) << Info::plain() << ".";
-	}
-	ESINFO(PROGRESS3);
+	this->computeKernelsCallback = [&] (REGULARIZATION regularization, size_t scSize) {
+		ESINFO(PROGRESS3) << "Make stiffness matrices regular.";
+		#pragma omp parallel for
+		for  (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+			K[subdomain].RemoveLower();
+			algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain, scSize);
+			ESINFO(PROGRESS3) << Info::plain() << ".";
+		}
+		ESINFO(PROGRESS3);
+	};
 }
 
 void SingularSystem::assembleB1()
@@ -58,9 +60,9 @@ void SingularSystem::assembleB1()
 
 void SingularSystem::assembleB0()
 {
-	if (_solverConfiguration.method == ESPRESO_METHOD::HYBRID_FETI) {
-		EqualityConstraints::insertKernelsToB0(_constraints, _apimesh.faces(), _apimesh.DOFs(), R1);
-	}
+	this->assembleB0Callback = [&] (B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
+		EqualityConstraints::insertKernelsToB0(_constraints, _apimesh.faces(), _apimesh.DOFs(), kernels);
+	};
 }
 
 void SingularSystem::composeSubdomain(size_t subdomain)

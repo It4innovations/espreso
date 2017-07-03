@@ -132,18 +132,18 @@ void Elasticity2D::assembleB1()
 
 void Elasticity2D::assembleB0()
 {
-	if (_solverConfiguration.method == ESPRESO_METHOD::HYBRID_FETI) {
+	this->assembleB0Callback = [&] (B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
 		switch (_solverConfiguration.B0_type) {
 		case B0_TYPE::CORNERS:
 			EqualityConstraints::insertDomainGluingToB0(_constraints, _mesh.corners(), pointDOFs);
 			break;
 		case B0_TYPE::KERNELS:
-			EqualityConstraints::insertKernelsToB0(_constraints, _mesh.edges(), pointDOFs, R1);
+			EqualityConstraints::insertKernelsToB0(_constraints, _mesh.edges(), pointDOFs, kernels);
 			break;
 		default:
 			break;
 		}
-	}
+	};
 }
 
 static double determinant2x2(DenseMatrix &m)
@@ -547,22 +547,25 @@ void Elasticity2D::assembleStiffnessMatrix(const Element* e, DenseMatrix &Ke, st
 
 void Elasticity2D::makeStiffnessMatricesRegular()
 {
-	for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
-		switch (_solverConfiguration.regularization) {
-		case REGULARIZATION::FIX_POINTS:
-			analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
-			analyticsRegMat(K[subdomain], RegMat[subdomain], _mesh.fixPoints(subdomain), _mesh.coordinates(), subdomain);
-			K[subdomain].RemoveLower();
-			RegMat[subdomain].RemoveLower();
-			K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
-			RegMat[subdomain].ConvertToCOO(1);
-			break;
-		case REGULARIZATION::NULL_PIVOTS:
-			K[subdomain].RemoveLower();
-			algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain, _solverConfiguration.SC_SIZE);
-			break;
+	this->computeKernelsCallback = [&] (REGULARIZATION regularization, size_t scSize) {
+		#pragma omp parallel for
+		for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+			switch (_solverConfiguration.regularization) {
+			case REGULARIZATION::FIX_POINTS:
+				analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
+				analyticsRegMat(K[subdomain], RegMat[subdomain], _mesh.fixPoints(subdomain), _mesh.coordinates(), subdomain);
+				K[subdomain].RemoveLower();
+				RegMat[subdomain].RemoveLower();
+				K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
+				RegMat[subdomain].ConvertToCOO(1);
+				break;
+			case REGULARIZATION::NULL_PIVOTS:
+				K[subdomain].RemoveLower();
+				algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain, scSize);
+				break;
+			}
 		}
-	}
+	};
 }
 
 void Elasticity2D::composeSubdomain(size_t subdomain)
