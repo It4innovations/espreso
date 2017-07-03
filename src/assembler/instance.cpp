@@ -149,6 +149,21 @@ Instance::Instance(Instance &other, Matrices &share)
 	}
 }
 
+void Instance::computeKernels(REGULARIZATION regularization)
+{
+
+}
+
+void Instance::assembleB0(B0_TYPE type)
+{
+
+}
+
+void Instance::_dummyComputeKernels(REGULARIZATION regularization)
+{
+	ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernels is empty function. Fill it in assembler.";
+}
+
 void Instance::clear()
 {
 	K.clear();

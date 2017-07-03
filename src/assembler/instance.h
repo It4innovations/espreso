@@ -11,6 +11,8 @@ namespace espreso {
 enum class Property;
 class SparseMatrix;
 class Solution;
+enum class REGULARIZATION;
+enum class B0_TYPE;
 
 enum Matrices : int {
 	NONE        = 0,
@@ -32,6 +34,10 @@ struct Instance {
 	Instance(size_t domains, const std::vector<int> &neighbours);
 	Instance(Instance &other, Matrices &share);
 	~Instance();
+
+	void computeKernels(REGULARIZATION regularization);
+	void assembleB0(B0_TYPE type);
+	//void (*computeKernels)(REGULARIZATION regularization);
 
 	void clear();
 
@@ -76,6 +82,8 @@ struct Instance {
 	std::vector<Solution*> solutions;
 
 private:
+	void _dummyComputeKernels(REGULARIZATION regularization);
+
 	std::vector<SparseMatrix> _K, _M, _N1, _N2, _RegMat;
 	std::vector<std::vector<double> > _R, _f;
 
