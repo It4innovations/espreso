@@ -3,7 +3,7 @@
     \author Atsushi. Suzuki, Laboratoire Jacques-Louis Lions
     \date   Jun. 20th 2014
     \date   Jul. 12th 2015
-    \date   Feb. 29th 2016
+    \date   Nov. 30th 2016
 */
 
 // This file is part of Dissection
@@ -13,6 +13,32 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
+// Linking Dissection statically or dynamically with other modules is making
+// a combined work based on Disssection. Thus, the terms and conditions of 
+// the GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of Dissection give you 
+// permission to combine Dissection program with free software programs or 
+// libraries that are released under the GNU LGPL and with independent modules 
+// that communicate with Dissection solely through the Dissection-fortran 
+// interface. You may copy and distribute such a system following the terms of 
+// the GNU GPL for Dissection and the licenses of the other code concerned, 
+// provided that you include the source code of that other code when and as
+// the GNU GPL requires distribution of source code and provided that you do 
+// not modify the Dissection-fortran interface.
+//
+// Note that people who make modified versions of Dissection are not obligated 
+// to grant this special exception for their modified versions; it is their
+// choice whether to do so. The GNU General Public License gives permission to 
+// release a modified version without this exception; this exception also makes
+// it possible to release a modified version which carries forward this
+// exception. If you modify the Dissection-fortran interface, this exception 
+// does not apply to your modified version of Dissection, and you must remove 
+// this exception when you distribute your modified version.
+//
+// This exception is an additional permission under section 7 of the GNU 
+// General Public License, version 3 ("GPLv3")
+//
 // Dissection is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,6 +46,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Dissection.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 #include "Driver/C_KernDetect.hpp"
 #include "Algebra/ColumnMatrix.hpp"
@@ -918,15 +945,15 @@ bool ComputeDimKernel(int *n0, bool *flag_2x2, const T *a_, const int n,
     }
   }
   if (verbose) {
-    fprintf(fp, "machine eps = %s\n", tostring<U>(eps_machine).c_str());
+    fprintf(fp, "%s %d : machine eps = %s\n", __FILE__, __LINE__,
+	    tostring<U>(eps_machine).c_str());
   }
   a0.copy(a1);
-  //  for (int i = 0; i < n_dim * n_dim; i++) {
-  //    a0[i] = a1[i];
-  //  }
+  //
   n1 = hqr_pivot<T, U>(n_dim, a0.addrCoefs(), permute);
   if (verbose) {
-    fprintf(fp, "dimension of the image deteced by d_hqr_pivot() is %d\n", n1);
+    fprintf(fp, "%s %d dimension of the image deteced by d_hqr_pivot() is %d\n",
+	    __FILE__, __LINE__, n1);
   }
   for (int i = 0; i < n1; i++) {
     aa_diag[i] = a0(i, i);
@@ -937,7 +964,7 @@ bool ComputeDimKernel(int *n0, bool *flag_2x2, const T *a_, const int n,
     for (int i = 0; i < n_dim; i++) {
       fprintf(fp, "%d : ", i); 
       for (int j = 0; j < n_dim; j++) {
-	fprintf(fp, "%.6e ", blas_abs<T, double>(a0(i, j)));
+	fprintf(fp, "%s ", tostring<T>(aa_diag[i]).c_str());
       }
       fprintf(fp, "\n");
     }
@@ -945,8 +972,8 @@ bool ComputeDimKernel(int *n0, bool *flag_2x2, const T *a_, const int n,
     fprintf(fp, "%s %d : diagonal entries of QR factorization\n",
 	    __FILE__, __LINE__);
     for (int i = 0; i < n_dim; i++) {
-      fprintf(fp, "%d : %d %.16e\n", i, permute[i],
-	      blas_abs<T, double>(aa_diag[i]));
+      fprintf(fp, "%d : %d %s\n", i, permute[i],
+	      tostring<T>(aa_diag[i]).c_str());
     }
 #endif
   } // if (verbose)
@@ -976,8 +1003,8 @@ bool ComputeDimKernel(int *n0, bool *flag_2x2, const T *a_, const int n,
   }
 
   if (verbose) {
-    fprintf(fp, "aug_diff = %s esp = %.12e\n", tostring<U>(aug_diff).c_str(),
-	    eps_piv);
+    fprintf(fp, "%s %d : aug_diff = %s esp = %.12e\n",
+	    __FILE__, __LINE__, tostring<U>(aug_diff).c_str(), eps_piv);
   }
   for (int i = (dim_augkern - 1); i < (n2 - 1); i++) {
     if (rr[i] < (aug_diff * U(eps_piv))) {
@@ -1051,7 +1078,8 @@ bool ComputeDimKernel(int *n0, bool *flag_2x2, const T *a_, const int n,
   delete [] permute_d;
   delete [] permute_q;
   if (verbose) {
-    fprintf(fp, "dimension of the kernel is %d\n", nn0);
+    fprintf(fp, "%s %d : dimension of the kernel is %d\n",
+	    __FILE__, __LINE__, nn0);
   }
   *n0 = nn0;
   *flag_2x2 = false;
@@ -1157,18 +1185,16 @@ bool VerifyDimKernel(int *nn0_,
   // question: eps_machine is ok?  : 06 Jan.2013 
   // => jump between diagonal is within double precision : 27 Jan.2013
   if (verbose) {
-    fprintf(fp, "permutation : ");
+    fprintf(fp, "%s %d : permutation : ", __FILE__, __LINE__);
     for (int i = 0; i < n_dim; i++) {
       fprintf(fp, "%d ", permute_q[i]);
     }
     fprintf(fp, "\n");
   }
-#if 0
+#if 0 // for debugging
   for (int i = 0; i < n_dim; i++) {
-    for (int j = 0; j <=i; j++) {
-      fprintf(fp, "%.8e ", blas_abs<T, double>(a_fact[i + j * n_dim]));
-    }
-    fprintf(fp, "\n");
+    fprintf(fp, "%d : %s\n",
+	    i, tostring<T>(a_fact[i * (n_dim + 1)]).c_str());
   }
 #endif
 #if 0
@@ -1448,7 +1474,7 @@ bool ComputeDimKernel(int *n0, bool *flag_2x2, const double *a_, const int n,
   vector<int> kernel_dim;
   double pivot_ref, pivot_ref_q;
                    // machine epsilon for double : from float.h by the compiler
-  const double machine_eps0 = machine_epsilon<double>(); //DBL_EPSILON;
+  const double machine_eps0 = machine_epsilon<double, double>(); //DBL_EPSILON;
   int *pivot_width = new int[n_dim];
   int *permute_d = new int[n_dim];
   int *permute_q = new int[n_dim];

@@ -2,6 +2,7 @@
     \brief  to call grpah decomposer : METIS
     \author Xavier Juvigny, ONERA
     \date   Jul.  2nd 2012
+    \date   Nov. 30th 2016
 */
 
 // This file is part of Dissection
@@ -11,6 +12,32 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
+// Linking Dissection statically or dynamically with other modules is making
+// a combined work based on Disssection. Thus, the terms and conditions of 
+// the GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of Dissection give you 
+// permission to combine Dissection program with free software programs or 
+// libraries that are released under the GNU LGPL and with independent modules 
+// that communicate with Dissection solely through the Dissection-fortran 
+// interface. You may copy and distribute such a system following the terms of 
+// the GNU GPL for Dissection and the licenses of the other code concerned, 
+// provided that you include the source code of that other code when and as
+// the GNU GPL requires distribution of source code and provided that you do 
+// not modify the Dissection-fortran interface.
+//
+// Note that people who make modified versions of Dissection are not obligated 
+// to grant this special exception for their modified versions; it is their
+// choice whether to do so. The GNU General Public License gives permission to 
+// release a modified version without this exception; this exception also makes
+// it possible to release a modified version which carries forward this
+// exception. If you modify the Dissection-fortran interface, this exception 
+// does not apply to your modified version of Dissection, and you must remove 
+// this exception when you distribute your modified version.
+//
+// This exception is an additional permission under section 7 of the GNU 
+// General Public License, version 3 ("GPLv3")
+//
 // Dissection is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -18,6 +45,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Dissection.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 // ============================================================
 // ==     Implementation of splitter using Metis library     ==
@@ -65,10 +93,10 @@ MetisSplitter(unsigned dim,
 	      int*& ptOnDomains, int*& sizeOfDomains,
 	      bool checkData, const bool verbose, FILE *fp)
 {
+#ifdef NO_METIS
   if (verbose) {
     fprintf(stderr, "%s %d : Metis is not linked\n", __FILE__, __LINE__);
   }
-#ifdef NO_METIS
   return false;
 #else
   /** Check inputs */
@@ -101,7 +129,7 @@ MetisSplitter(unsigned dim,
 # ifdef DEBUG
   options[METIS_OPTION_DBGLVL   ] = 255;/* Full debug */  
 # else
-  options[METIS_OPTION_DBGLVL   ] = METIS_DBG_TIME; /* only time profiling */  
+  options[METIS_OPTION_DBGLVL   ] = 0; //METIS_DBG_TIME; /* only time profiling */  
 # endif
 //  Opt [0] = 0 ;	/* use defaults */
 //  Opt [1] = 3 ;	/* matching type */
@@ -138,6 +166,7 @@ MetisSplitter(unsigned dim,
   /** This metis subroutine make dissection with some history
       in sizes array
   */
+#if 1
   int err = METIS_NodeNDP(nvtxs, xadj, adjncy, NULL, 
 			  idx_t(nbDoms), options, 
 			  iperm, perm, sizes);
@@ -150,6 +179,37 @@ MetisSplitter(unsigned dim,
       else
 	fprintf(fp, "\t Other error in Metis\n");
   }
+#if 0
+  FILE *fpp;
+  fpp = fopen("metis.data", "w");
+  fprintf(fpp, "%d %d\n", dim, nbDoms);
+  for (int i = 0; i < dim; i++) {
+    fprintf(fpp, "%d\n", perm[i]);
+  }
+  for (int i = 0; i < dim; i++) {
+    fprintf(fpp, "%d\n", iperm[i]);
+  }
+  for (int i = 0; i < (2 * nbDoms - 1) ; i++) {
+    fprintf(fpp, "%d\n", sizes[i]);
+  }
+  fclose(fpp);
+#endif
+#else
+  FILE *fpp;
+  int itmp, jtmp;
+  fpp = fopen("metis.data", "r");
+  fscanf(fpp, "%d %d", &itmp, &jtmp);
+  for (int i = 0; i < dim; i++) {
+    fscanf(fpp, "%d", &perm[i]);
+  }
+  for (int i = 0; i < dim; i++) {
+    fscanf(fpp, "%d", &iperm[i]);
+  }
+  for (int i = 0; i < (2 * nbDoms - 1) ; i++) {
+    fscanf(fpp, "%d", &sizes[i]);
+  }
+  fclose(fpp);
+#endif
   //  TRACE("Finish to split ;)\n");
 
   nbDoms = nbDoms*2-1;

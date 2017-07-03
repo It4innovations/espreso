@@ -3,7 +3,7 @@
     \author Atsushi Suzuki, Laboratoire Jacques-Louis Lions
     \date   Apr. 22th 2013
     \date   Jul. 12th 2015
-    \date   Feb. 29th 2016
+    \date   Nov. 30th 2016
 */
 
 // This file is part of Dissection
@@ -13,6 +13,32 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
+// Linking Dissection statically or dynamically with other modules is making
+// a combined work based on Disssection. Thus, the terms and conditions of 
+// the GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of Dissection give you 
+// permission to combine Dissection program with free software programs or 
+// libraries that are released under the GNU LGPL and with independent modules 
+// that communicate with Dissection solely through the Dissection-fortran 
+// interface. You may copy and distribute such a system following the terms of 
+// the GNU GPL for Dissection and the licenses of the other code concerned, 
+// provided that you include the source code of that other code when and as
+// the GNU GPL requires distribution of source code and provided that you do 
+// not modify the Dissection-fortran interface.
+//
+// Note that people who make modified versions of Dissection are not obligated 
+// to grant this special exception for their modified versions; it is their
+// choice whether to do so. The GNU General Public License gives permission to 
+// release a modified version without this exception; this exception also makes
+// it possible to release a modified version which carries forward this
+// exception. If you modify the Dissection-fortran interface, this exception 
+// does not apply to your modified version of Dissection, and you must remove 
+// this exception when you distribute your modified version.
+//
+// This exception is an additional permission under section 7 of the GNU 
+// General Public License, version 3 ("GPLv3")
+//
 // Dissection is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,6 +46,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Dissection.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 #include "Driver/C_threads_tasks.hpp"
 #include "Driver/C_Dsub.hpp"
@@ -51,8 +78,10 @@ DissectionQueue<T, U>::DissectionQueue(Dissection::Tree *btree,
   _queue_fwbw_allocated(false)
 {
   const int nb_level = _btree->NumberOfLevels();
+  _nb_level = nb_level;
   const int level_last = nb_level - 1;
   const int nb_doms = _btree->NumberOfSubdomains(); //(1U<<(level_last+1))-1
+  _nb_doms = nb_doms;
   const int nb_doms_dense = (1U << level_last) - 1;
   const int nb_doms_sparse = (1U << level_last);
 
@@ -152,6 +181,18 @@ DissectionQueue<T, U>::~DissectionQueue()
 {
   //  const int nb_level = _btree->NumberOfLevels();
   //  const int num_threads = _num_threads;
+#if 0
+  for (list<C_task *>::iterator it = _queue_dummy.begin();
+       it != _queue_dummy.end(); ++it) {
+    fprintf(stderr, "%s %d : %s\n", __FILE__, __LINE__, (*it)->task_name);
+    C_dummy_arg *arg = (C_dummy_arg *)(*it)->func_arg;
+    delete arg;
+    (*it)->func_arg = NULL;
+    delete (*it);
+    (*it) = NULL;
+  }
+  _queue_dummy.clear();
+#endif
   erase_queue();
   erase_queue_fwbw();
   // set up working arrays for C_Dsub
@@ -170,7 +211,6 @@ DissectionQueue<T, U>::~DissectionQueue()
   //  delete [] _tasks_fillSym;
   delete [] _child_contribs;
   delete [] _pivots;
-
   // nullify the pointer
   _btree = NULL;
   delete _dissectionRuntime;
@@ -277,7 +317,8 @@ generate_queue(vector<DissectionMatrix<T, U>* >& dM,
       
       dM[j]->ChildContrib(_child_contribs, 
 			  _btree,
-			  dM);
+			  dM,
+			  &_fp);
     } // loop : d
     
     for (int d = 1; d < begdom; d++) {
@@ -301,8 +342,9 @@ generate_queue(vector<DissectionMatrix<T, U>* >& dM,
 		      false, // all sparse matrix parts need to be done
 		      _tasks_Dsub[level_last][(*it)], 
 		      _child_contribs[(*it)],
-		      (vector<C_task*> *)NULL,
+		      (vector<C_task*> *)NULL, // _tasks_DSymmGEMM
 		      (vector<int> *)NULL,
+		      false,
 		      _tasks_DFillSym,
 		      _tasks_SparseLocalSchur, 
 		      (vector<C_task*> *)NULL,
@@ -322,7 +364,6 @@ generate_queue(vector<DissectionMatrix<T, U>* >& dM,
   vector<list<int> >* tasks_DTRSMScale_parents_index = new vector<list<int> >[nb_doms_dense];
   vector<int>* tasks_DTRSMScale_ptr = new vector<int>[nb_doms_dense];
   vector<int>* tasks_DSymmGEMM_indcol = new vector<int>[nb_doms_dense];
-  //  vector<int>* tasks_deallocLocalSchur_indcol = new vector<int>[nb_doms_dense];
 
   for (int level = (level_last - 1); level >= 0; level--) {
     int itmp;
@@ -334,7 +375,7 @@ generate_queue(vector<DissectionMatrix<T, U>* >& dM,
     const int enddom = begdom * 2;
     for (int d = begdom; d < enddom; d++) {
       const int j = _btree->selfIndex(d);
-      
+
       const int num_row_b = dM[j]->diagBlock().num_blocks();
       int num_tasks_ldlt;
       num_tasks_ldlt = (num_row_b * (num_row_b + 1) * (num_row_b + 2)) / 6;
@@ -373,10 +414,12 @@ generate_queue(vector<DissectionMatrix<T, U>* >& dM,
 				      &_pivots[_children[j][0]],
 				      &_pivots[_children[j][1]],
 				      task_p,
+				      isChldrnAlgnd,
 				      _verbose,
 				      &_fp);
-      itmp = EraseNullParents(_tasks_DFullLDLt[j]);
-
+      if (itmp > 1) {
+	itmp = EraseNullParents(_tasks_DFullLDLt[j]);
+      }
 #ifdef DEBUG_PREPARE_THREAD
       cout << j << " : "
 	   << " generated queue : C_DFullLDLt = " << j
@@ -387,7 +430,7 @@ generate_queue(vector<DissectionMatrix<T, U>* >& dM,
       if (level > 0) {
 	vector<C_task *> &task_pp = _tasks_Dsub[level + 1][j];
 	
-	dM[j]->C_DTRSMScale_queue(_tasks_DTRSMScale[j],
+	itmp = dM[j]->C_DTRSMScale_queue(_tasks_DTRSMScale[j],
 				  tasks_DTRSMScale_parents_index[j],
 				  tasks_DTRSMScale_index[j],
 				  tasks_DTRSMScale_indcol[j],
@@ -399,16 +442,16 @@ generate_queue(vector<DissectionMatrix<T, U>* >& dM,
 				  task_pp,
 				  _verbose,
 				  &_fp);
-	itmp = EraseNullParents(_tasks_DTRSMScale[j]);
-#if 1
-	dM[j]->C_DTRSMScale_rearrange(_tasks_DTRSMScale[j],
-				      tasks_DTRSMScale_parents_index[j],
-				      tasks_DTRSMScale_index[j],
-				      tasks_DTRSMScale_indcol[j],
-				      tasks_DTRSMScale_ptr[j],
-				      _verbose,
-				      _fp);
-#endif
+	if (itmp > 1) {
+	  itmp = EraseNullParents(_tasks_DTRSMScale[j]);
+	  dM[j]->C_DTRSMScale_rearrange(_tasks_DTRSMScale[j],
+					tasks_DTRSMScale_parents_index[j],
+					tasks_DTRSMScale_index[j],
+					tasks_DTRSMScale_indcol[j],
+					tasks_DTRSMScale_ptr[j],
+					_verbose,
+					_fp);
+	}
       }
 #ifdef DEBUG_PREPARE_THREAD
       cout << j << " : "
@@ -445,7 +488,7 @@ generate_queue(vector<DissectionMatrix<T, U>* >& dM,
       vector<int> &tasks_q_ptr = (isEven ? tasks_DTRSMScale_ptr[j - 1] :
 				     null_idx);
 
-      dM[j]->C_DGEMM_local_queue(_tasks_DSymmGEMM[j],
+      itmp = dM[j]->C_DGEMM_local_queue(_tasks_DSymmGEMM[j],
 				 tasks_DSymmGEMM_indcol[j],
 				 upper1,
 				 lower1,
@@ -464,7 +507,9 @@ generate_queue(vector<DissectionMatrix<T, U>* >& dM,
 				 (vector<C_task *>*)NULL,
 				 _verbose,
 				 &_fp);
-      itmp = EraseNullParents(_tasks_DSymmGEMM[j]);
+      if (itmp > 1 ) {
+	itmp = EraseNullParents(_tasks_DSymmGEMM[j]);
+      }
       dM[j]->C_deallocLocalSchur_queue(_tasks_deallocLocalSchur[j],
 				       tasks_deallocLocalSchur_indcol[j],
 				       _verbose,
@@ -480,7 +525,8 @@ generate_queue(vector<DissectionMatrix<T, U>* >& dM,
       
       dM[j]->ChildContrib(_child_contribs, 
 			  _btree,
-			  dM);
+			  dM,
+			  &_fp);
 	
     } // loop : d(j)
     
@@ -502,8 +548,10 @@ generate_queue(vector<DissectionMatrix<T, U>* >& dM,
 			dM[child_id1]->isAlignedFather()) ? 
 		       true : false);
 	  if (_verbose) {
-	    fprintf(_fp, "father_id = %d children_id = %d %d skip_flag = %s\n", 
-		    (*it), child_id0, child_id1, 
+	    fprintf(_fp,
+		    "%s %d : father_id = %d children_id = %d %d skip_flag = %s\n",
+		    __FILE__, __LINE__, 
+		    ((*it) + 1), (child_id0 + 1), (child_id1 + 1), 
 		    skip_flag ? "true" : "false");
 	  }
 	}
@@ -514,6 +562,7 @@ generate_queue(vector<DissectionMatrix<T, U>* >& dM,
 		      _child_contribs[(*it)],
 		      _tasks_DSymmGEMM,
 		      tasks_DSymmGEMM_indcol,
+		      true,
 		      (vector<C_task*> *)NULL, // _tasks_DFillSym,
 		      (vector<C_task*>*)NULL,
 		      &_tasks_Dsub[level + 1][(*it)],
@@ -815,6 +864,7 @@ generate_queue(vector<DissectionMatrix<T, U>* >& dM,
 				     _queue_static,
 				     _queue_dynamic,
 				     queue_null,
+     //				     _queue_dummy,
 				     _btree,
 				     _children,
 				     _tasks_SparseSymb,
@@ -836,6 +886,10 @@ generate_queue(vector<DissectionMatrix<T, U>* >& dM,
 
   queue_null.sort(compare_task_name);
   queue_null.unique();
+#if 0
+  _queue_dummy.sort(compare_task_name); // to avoid multiple copies for safty
+  _queue_dummy.unique();
+#endif
 // #define DEBUG_QUEUE_NULL
 #ifdef DEBUG_QUEUE_NULL
   fprintf(_fp, "%s %d : NULL queues : ", __FILE__, __LINE__);
@@ -1010,6 +1064,7 @@ generate_queue_fwbw(vector<DissectionMatrix<T, U>*>& dM,
 				 indVals,
 				 _btree->getDiagLoc2Glob(d));
       string task_name = "a : " + to_string(d);
+      *(arg->ops_complexity) = (long)dim;
       C_task *task = new C_task(C_SPARSESYMFW,
 				task_name,
 				(void *)arg,
@@ -1032,38 +1087,52 @@ generate_queue_fwbw(vector<DissectionMatrix<T, U>*>& dM,
       const int dd0 = d - begdom;
       const int d0 = _btree->selfIndex(d);
       const int n_diag = _btree->sizeOfDomain(d);
-      C_Dsub_FwBw_arg<T> *arg = 
-	new C_Dsub_FwBw_arg<T>(dim,
-			    _nrhs,
-			    n_diag,
-			    true,
-			    level_last,
-			    _btree,
-			    &_diag_contribs[d0],
-			    _x,
-			    _yi[d0],
-			    _zi,
-			    _btree->getDiagLoc2Glob(d));
-      string task_name = "i : " + to_string(d);
-      C_task *task = new C_task(C_DSUB_FWBW,
-				task_name,
-				(void *)arg,
-				C_Dsub_FwBw<T>,
-				1, 
-				0,
-				arg->ops_complexity);
-      //task->func(task->func_arg);
-      task->parallel_max = enddom;
-      task->parallel_id = dd0;
-      const int begdom0 = 1U << level_last;
-      for (list<diag_contribution>::const_iterator it = _diag_contribs[d0].begin();
-	   it != _diag_contribs[d0].end(); ++it) {
-	const int child_id = (*it).child_id;
-	if (_btree->nodeLayer(child_id) == level_last) {
-	  task->parents->push_back(tasks_a[child_id - begdom0]); 
-  	}
+      if (n_diag == 0) {
+	string task_name = ("i dummy : " + to_string(d));
+	C_dummy_arg *arg = new C_dummy_arg(_verbose, &_fp, d);
+	tasks_i[dd0] = new C_task(C_DUMMY,
+				  task_name,
+				  (void *)arg,
+				  C_dummy,
+				  1, // atomic_size,
+				  0, // atomic_id,
+				  arg->ops_complexity);
       }
-      tasks_i[dd0] = task;
+      else {
+	C_Dsub_FwBw_arg<T> *arg = 
+	  new C_Dsub_FwBw_arg<T>(dim,
+				 _nrhs,
+				 n_diag,
+				 true,
+				 level_last,
+				 _btree,
+				 &_diag_contribs[d0],
+				 _x,
+				 _yi[d0],
+				 _zi,
+				 _btree->getDiagLoc2Glob(d));
+	string task_name = "i : " + to_string(d);
+	*(arg->ops_complexity) = (long)n_diag;
+	C_task *task = new C_task(C_DSUB_FWBW,
+				  task_name,
+				  (void *)arg,
+				  C_Dsub_FwBw<T>,
+				  1, 
+				  0,
+				  arg->ops_complexity);
+	//task->func(task->func_arg);
+	task->parallel_max = enddom;
+	task->parallel_id = dd0;
+	const int begdom0 = 1U << level_last;
+	for (list<diag_contribution>::const_iterator it = _diag_contribs[d0].begin();
+	     it != _diag_contribs[d0].end(); ++it) {
+	  const int child_id = (*it).child_id;
+	  if (_btree->nodeLayer(child_id) == level_last) {
+	    task->parents->push_back(tasks_a[child_id - begdom0]); 
+	  }
+	}
+	tasks_i[dd0] = task;
+      }
     }         // loop : d
   }
 // forward substitution of dense part
@@ -1083,130 +1152,147 @@ generate_queue_fwbw(vector<DissectionMatrix<T, U>*>& dM,
       const int dd0 = d - begdom;
       const int d0 = _btree->selfIndex(d);
       const int n_diag = _btree->sizeOfDomain(d);
+      //      fprintf(stderr, "%s %d : %d %d\n", __FILE__, __LINE__, d, n_diag);
       const int n_offdiag = _btree->sizeOfFathersStrips(d); 
       SquareBlockMatrix<T> &Diag = dM[d0]->diagBlock();
       //      const int *permute = Diag.getPermute().getAddr();
       { // closure of tasks_de
 	const int num_block = Diag.num_blocks();
-	tasks_de[level][dd0].resize((num_block * (num_block + 1)) / 2);
-	for (int k = 0; k < num_block; k++) {
-	  const int kk = Diag.IndexBlock(k);
-	  const int ncol = Diag.nrowBlock(k);
-	  C_DenseFwBw_arg<T> *arg = 
-	    new C_DenseFwBw_arg<T>(_isSym,
-				   false,  // isBackward
-				   (int)dim,
-				   _isTrans,
-				   _nrhs,
-				   (int)n_diag,
-				   (int)ncol, // size (i, k) block : nrow x ncol
-				   (int)k,
-				   (int)kk,
-				   _xi[d0],
-				   _wi[d0],
-				   _yi[d0],
-				   (T **)NULL,
-				   dM[d0]->addrdiagBlock(),
-				   (k == 0),  // isFirstBlock
-				   (k == (num_block - 1)), // isLastBlock
-				   (int *)NULL,
-				   _verbose,
-				   &_fp);
-	  string task_name = "d : " + to_string(d) + " : " + to_string(k);
-	  C_task *task = new C_task(C_DENSE_SYMFW_DIAG,
-				    task_name,
-				    (void *)arg,
-				    C_DenseFwBw_diag<T>,
-				    1, 
-				    0,
-				    arg->ops_complexity);
-	  if (k == 0) {
-	    task->parallel_max = 1;
-	    task->parallel_id = 0;
-	    tasks_de[level][dd0][0] = task;
-	    if (level == (level_last - 1)) {
-	      task->parents->push_back(tasks_i[d0]); //
-	    }
-	    else {
-	      task->parents->push_back(tasks_j[level + 1][d0]);
-	    }
-	  }
-	  else {
-	    task->parallel_max = num_block - k;
-	    task->parallel_id = 0;
-	    task->atomic_size = 2;
-	    task->atomic_id = 1;
-	    int ipos;
-	    // depending on e_{k k-1} 
-	    ipos = 2 + num_block * (k - 1) - ((k - 1) * k) / 2 + k - 1;
-	    task->parents->push_back(tasks_de[level][dd0][ipos - 1]); //
-	    tasks_de[level][dd0][ipos] = task;
-	    for (int m = 0; m < (k - 1); m++) {
-	      ipos = num_block * m + k + 1 - (m * (m + 1)) / 2;
-	      task->parents->push_back(tasks_de[level][dd0][ipos]); //
-	    }
-	  }
-// updating of lower blocks xi[d0] + ii are independent among i
-	  for (int i = (k + 1); i < num_block; i++) {
-	    const int ii = Diag.IndexBlock(i);
-	    const int nrow = Diag.nrowBlock(i);
-	    C_DenseFwBwOffdiag_arg<T> *arg = 
-	      new C_DenseFwBwOffdiag_arg<T>(_isSym ? true : false,  //trans
-					    true,  //isLower
-					    (int)dim,
-					    _isTrans,
-					    _nrhs,
-					    (int)n_diag,
-					    (int)n_diag,
-					    (int)n_diag, //ldc
-					    (int)nrow,
-					    (int)ncol,
-					    _wi[d0],
-					    kk, // ii
-					    _yi[d0], //
-					    _xi[d0], //
-					    ii, // jj
-					    dM[d0]->addrdiagBlock(),
-  					    i,  // i_block
-					    k,  // j_block
-					    _none, // alpha,
-					    _one); // beta
-	    string task_name = ("e : " + to_string(d) + " : " + to_string(k)
-				 + " " + to_string(i));
-	    C_task *task = new C_task(C_DENSE_SYMFW_OFFDIAG,
+	if (n_diag == 0) {
+	  tasks_de[level][dd0].resize(1);
+	  string task_name = ("d dummy : " + to_string(d));
+	  C_dummy_arg *arg = new C_dummy_arg(_verbose, &_fp, d);
+	  tasks_de[level][dd0][0] = new C_task(C_DUMMY,
+					       task_name,
+					       (void *)arg,
+					       C_dummy,
+					       1, // atomic_size,
+					       0, // atomic_id,
+					       arg->ops_complexity);
+	}
+	else {
+	  tasks_de[level][dd0].resize((num_block * (num_block + 1)) / 2);
+	  for (int k = 0; k < num_block; k++) {
+	    const int kk = Diag.IndexBlock(k);
+	    const int ncol = Diag.nrowBlock(k);
+	    C_DenseFwBw_arg<T> *arg = 
+	      new C_DenseFwBw_arg<T>(_isSym,
+				     false,  // isBackward
+				     (int)dim,
+				     _isTrans,
+				     _nrhs,
+				     (int)n_diag,
+				     (int)ncol, // 
+				     (int)k,
+				     (int)kk,
+				     _xi[d0],
+				     _wi[d0],
+				     _yi[d0],
+				     (T **)NULL,
+				     dM[d0]->addrdiagBlock(),
+				     (k == 0),  // isFirstBlock
+				     (k == (num_block - 1)), // isLastBlock
+				     (int *)NULL,
+				     _verbose,
+				     &_fp);
+	    string task_name = "d : " + to_string(d) + " : " + to_string(k);
+	    *(arg->ops_complexity) = (long)n_diag;
+	    C_task *task = new C_task(C_DENSE_SYMFW_DIAG,
 				      task_name,
 				      (void *)arg,
-				      C_DenseFwBw_offdiag<T>,
+				      C_DenseFwBw_diag<T>,
 				      1, 
 				      0,
 				      arg->ops_complexity);
-	    task->parallel_max = num_block - (k + 1);
-	    task->parallel_id = i - (k + 1);
-	    int ipos;
-	    // depending on d_{k-1}
-	    if (k > 0) {
-	      ipos = num_block * (k - 1) + i + 1 - ((k - 1) * k) / 2;
-	      task->parents->push_back(tasks_de[level][dd0][ipos]);
-	    }
-	    if (k > 0) {
-	      ipos = 2 + num_block * (k - 1) - ((k - 1) * k) / 2 + k - 1;
+	    if (k == 0) {
+	      task->parallel_max = 1;
+	      task->parallel_id = 0;
+	      tasks_de[level][dd0][0] = task;
+	      if (level == (level_last - 1)) {
+		task->parents->push_back(tasks_i[d0]); //
+	      }
+	      else {
+		task->parents->push_back(tasks_j[level + 1][d0]);
+	      }
 	    }
 	    else {
-	      ipos = 0;
-	    }
-	    task->parents->push_back(tasks_de[level][dd0][ipos]);
-	    if (i == (k + 1)) {
-	      task->atomic_size = 2; // 
-	      task->atomic_id = 0;   //
-	      ipos = 2 + num_block * k - (k * (k + 1)) / 2 + k - 1;
+	      task->parallel_max = num_block - k;
+	      task->parallel_id = 0;
+	      task->atomic_size = 2;
+	      task->atomic_id = 1;
+	      int ipos;
+	      // depending on e_{k k-1} 
+	      ipos = 2 + num_block * (k - 1) - ((k - 1) * k) / 2 + k - 1;
+	      task->parents->push_back(tasks_de[level][dd0][ipos - 1]); //
 	      tasks_de[level][dd0][ipos] = task;
+	      for (int m = 0; m < (k - 1); m++) {
+		ipos = num_block * m + k + 1 - (m * (m + 1)) / 2;
+		task->parents->push_back(tasks_de[level][dd0][ipos]); //
+	      }
 	    }
-	    else { // i > (k + 1)
-	      ipos = num_block * k + i + 1 - (k * (k + 1)) / 2;	      
-	      tasks_de[level][dd0][ipos] = task;
-	    }  // if (i == (k + 1))
-	  } // loop : i
-	} // loop : k
+// updating of lower blocks xi[d0] + ii are independent among i
+	    for (int i = (k + 1); i < num_block; i++) {
+	      const int ii = Diag.IndexBlock(i);
+	      const int nrow = Diag.nrowBlock(i);
+	      C_DenseFwBwOffdiag_arg<T> *arg = 
+		new C_DenseFwBwOffdiag_arg<T>(_isSym ? true : false,  //trans
+					      true,  //isLower
+					      (int)dim,
+					      _isTrans,
+					      _nrhs,
+					      (int)n_diag,
+					      (int)n_diag,
+					      (int)n_diag, //ldc
+					      (int)nrow,
+					      (int)ncol,
+					      _wi[d0],
+					      kk, // ii
+					      _yi[d0], //
+					      _xi[d0], //
+					      ii, // jj
+					      dM[d0]->addrdiagBlock(),
+					      i,  // i_block
+					      k,  // j_block
+					      _none, // alpha,
+					      _one); // beta
+	      string task_name = ("e : " + to_string(d) + " : " + to_string(k)
+				  + " " + to_string(i));
+	      *(arg->ops_complexity) = (long)dim;
+	      C_task *task = new C_task(C_DENSE_SYMFW_OFFDIAG,
+					task_name,
+					(void *)arg,
+					C_DenseFwBw_offdiag<T>,
+					1, 
+					0,
+					arg->ops_complexity);
+	      task->parallel_max = num_block - (k + 1);
+	      task->parallel_id = i - (k + 1);
+	      int ipos;
+	      // depending on d_{k-1}
+	      if (k > 0) {
+		ipos = num_block * (k - 1) + i + 1 - ((k - 1) * k) / 2;
+		task->parents->push_back(tasks_de[level][dd0][ipos]);
+	      }
+	      if (k > 0) {
+		ipos = 2 + num_block * (k - 1) - ((k - 1) * k) / 2 + k - 1;
+	      }
+	      else {
+		ipos = 0;
+	      }
+	      task->parents->push_back(tasks_de[level][dd0][ipos]);
+	      if (i == (k + 1)) {
+		task->atomic_size = 2; // 
+		task->atomic_id = 0;   //
+		ipos = 2 + num_block * k - (k * (k + 1)) / 2 + k - 1;
+		tasks_de[level][dd0][ipos] = task;
+	      }
+	      else { // i > (k + 1)
+		ipos = num_block * k + i + 1 - (k * (k + 1)) / 2;	      
+		tasks_de[level][dd0][ipos] = task;
+	      }  // if (i == (k + 1))
+	    } // loop : i
+	  } // loop : k
+	} // if (n_diag == 0) 
       }   // closure of tasks_de
       if (level > 0) {
 	//	const int num_block = Diag.num_blocks(); //
@@ -1216,62 +1302,77 @@ generate_queue_fwbw(vector<DissectionMatrix<T, U>*>& dM,
 	    (_isSym ? dM[d0]->addrupperBlock() : dM[d0]->addrlowerBlock());
 	RectBlockMatrix<T> *lowerblock = dM[d0]->addrupperBlock();
 	const int num_block_c = upperblock->num_blocks_c();
-	tasks_k[level][dd0].resize(num_block_r * num_block_c);
+	if (n_diag == 0) {
+	  tasks_k[level][dd0].resize(1);
+	  string task_name = ("k dummy : " + to_string(d));
+	  C_dummy_arg *arg = new C_dummy_arg(_verbose, &_fp, d);
+	  tasks_k[level][dd0][0] = new C_task(C_DUMMY,
+					      task_name,
+					      (void *)arg,
+					      C_dummy,
+					      1, // atomic_size,
+					      0, // atomic_id,
+					      arg->ops_complexity);
+	}
+	else {
+	  tasks_k[level][dd0].resize(num_block_r * num_block_c);
 
 	//	const double alpha = 1.0;
-	for (int i = 0; i < num_block_r; i++) {
-	  const int ii = Diag.IndexBlock(i);
-	  const int nrow = Diag.nrowBlock(i);
-	  const T beta = (i == 0) ? _zero : _one;
-  
-	  for (int j = 0; j < num_block_c; j++) {
-	    const int jj = upperblock->IndexBlock_c(j); // j * SIZE_B1;
-	    const int ncol = upperblock->ncolBlock(j);
-	    C_StripsFwBwOffdiag_arg<T> *arg = 
-	      new C_StripsFwBwOffdiag_arg<T>(true,  // isLower
-					     (int)dim,
-					     _isTrans,
-					     _nrhs,
-					     (int)n_diag,
-					     (int)n_diag,
-					     (int)n_offdiag,
-					     (int)ncol, // refering to upper
-					     (int)nrow,
-					     _wi[d0],
-					     ii, // ii,
-					     _zi[d0],
-					     jj, // jj,
-					     upperblock,
-					     lowerblock, // for _isTrans == true
-					     i, 
-					     j,
-					     _one, // alpha,
-					     beta);
-	    string task_name = ("k : " + to_string(d) + " : " + to_string(i)
-				+  " " + to_string(j));
-	  C_task *task = new C_task(C_STRIPS_SYMFW_OFFDIAG,
-				    task_name,
-				    (void *)arg,
+	  for (int i = 0; i < num_block_r; i++) {
+	    const int ii = Diag.IndexBlock(i);
+	    const int nrow = Diag.nrowBlock(i);
+	    const T beta = (i == 0) ? _zero : _one;
+	    
+	    for (int j = 0; j < num_block_c; j++) {
+	      const int jj = upperblock->IndexBlock_c(j); // j * SIZE_B1;
+	      const int ncol = upperblock->ncolBlock(j);
+	      C_StripsFwBwOffdiag_arg<T> *arg = 
+		new C_StripsFwBwOffdiag_arg<T>(true,  // isLower
+					       (int)dim,
+					       _isTrans,
+					       _nrhs,
+					       (int)n_diag,
+					       (int)n_diag,
+					       (int)n_offdiag,
+					       (int)ncol, // refering to upper
+					       (int)nrow,
+					       _wi[d0],
+					       ii, // ii,
+					       _zi[d0],
+					       jj, // jj,
+					       upperblock,
+					       lowerblock, 
+					       i, 
+					       j,
+					       _one, // alpha,
+					       beta);
+	      string task_name = ("k : " + to_string(d) + " : " + to_string(i)
+				  +  " " + to_string(j));
+	      *(arg->ops_complexity) = (long)n_diag;
+	      C_task *task = new C_task(C_STRIPS_SYMFW_OFFDIAG,
+					task_name,
+					(void *)arg,
 				    C_StripsFwBw_offdiag<T>,
-				    1, 
-				    0,
-				    arg->ops_complexity);
-	  task->parallel_max = num_block_c;  // sequential among i
-	  task->parallel_id = j;             // parallel among j
-	  int ipos;
-	  if (i == 0) {
-	    task->parents->push_back(tasks_de[level][dd0][0]);
-	  }
-	  else {
-	    ipos = 2 + num_block_r * (i - 1) - ((i - 1) * i) / 2 + i - 1;
-	    task->parents->push_back(tasks_de[level][dd0][ipos]);
-	    ipos = (i - 1) * num_block_c + j;
-	    task->parents->push_back(tasks_k[level][dd0][ipos]);
-	  }
-	  ipos = i * num_block_c + j;
-	  tasks_k[level][dd0][ipos] = task;
-	  } // loop : j
-	}   // loop : i
+					1, 
+					0,
+					arg->ops_complexity);
+	      task->parallel_max = num_block_c;  // sequential among i
+	      task->parallel_id = j;             // parallel among j
+	      int ipos;
+	      if (i == 0) {
+		task->parents->push_back(tasks_de[level][dd0][0]);
+	      }
+	      else {
+		ipos = 2 + num_block_r * (i - 1) - ((i - 1) * i) / 2 + i - 1;
+		task->parents->push_back(tasks_de[level][dd0][ipos]);
+		ipos = (i - 1) * num_block_c + j;
+		task->parents->push_back(tasks_k[level][dd0][ipos]);
+	      }
+	      ipos = i * num_block_c + j;
+	      tasks_k[level][dd0][ipos] = task;
+	    } // loop : j
+	  }   // loop : i
+	}
       }     // if (level > 0)
       // solving D y = x
     } // loop : d
@@ -1283,47 +1384,62 @@ generate_queue_fwbw(vector<DissectionMatrix<T, U>*>& dM,
       for (int d = begdom; d < enddom; d++) {   // to be parallelized 
 	const int dd0 = d - begdom;
 	const int d0 = _btree->selfIndex(d);
-	C_Dsub_FwBw_arg<T> *arg = 
-	  new C_Dsub_FwBw_arg<T>(dim,
-			      _nrhs,
-			      -1, // n_diag
-			      false,                // access_global
-			      level,
-			      _btree,
-			      &_diag_contribs[d0],
-			      (T **)NULL,      // x
-			      _yi[d0],
-			      _zi,
-			      _btree->getDiagLoc2Glob(d));
-	string task_name = "j : " + to_string(level) + " : " + to_string(d);
-	C_task *task = new C_task(C_DSUB_FWBW,
-				  task_name,
-				  (void *)arg,
-				  C_Dsub_FwBw<T>,
-				  1, 
-				  0,
-				  arg->ops_complexity);
-	//      task->func(task->func_arg);
-	task->parallel_max = enddom;
-	task->parallel_id = d0;
-	task->parents->push_back(tasks_i[dd0]);
-	for (list<diag_contribution>::const_iterator it = _diag_contribs[d0].begin();
-	     it != _diag_contribs[d0].end(); ++it) {
-	  if ((*it).diag_strip.size() > 0) {      // to avoid null contribution
-	    const int child_id = (*it).child_id;
-	    if (_btree->nodeLayer(child_id) == level) {
-	      const int child_id0 = _btree->selfIndex(child_id);
-	      RectBlockMatrix<T> *upperblock = dM[child_id0]->addrupperBlock();
-	      const int num_block_r = upperblock->num_blocks_r();
-	      const int num_block_c = upperblock->num_blocks_c();
-	      for (int j = 0; j < num_block_c; j++) {
-		int ipos = (num_block_r - 1) * num_block_c + j;
-		task->parents->push_back(tasks_k[0][child_id0][ipos]);
-	      }
-	    } // if (_btree->nodeLayer(child_id) == level)
-	  }  // (if (*it).diag_strip.size() > 0) 
+	const int n_diag = _btree->sizeOfDomain(d);
+	if (n_diag == 0) {
+	  string task_name = ("j dummy : " + to_string(d));
+	  C_dummy_arg *arg = new C_dummy_arg(_verbose, &_fp, d);
+	  tasks_j[level][dd0] = new C_task(C_DUMMY,
+					       task_name,
+					       (void *)arg,
+					       C_dummy,
+					       1, // atomic_size,
+					       0, // atomic_id,
+					       arg->ops_complexity);
+	}
+	else {
+	  C_Dsub_FwBw_arg<T> *arg = 
+	    new C_Dsub_FwBw_arg<T>(dim,
+				   _nrhs,
+				   -1, // n_diag
+				   false,                // access_global
+				   level,
+				   _btree,
+				   &_diag_contribs[d0],
+				   (T **)NULL,      // x
+				   _yi[d0],
+				   _zi,
+				   _btree->getDiagLoc2Glob(d));
+	  string task_name = "j : " + to_string(level) + " : " + to_string(d);
+	  *(arg->ops_complexity) = (long)dim;
+	  C_task *task = new C_task(C_DSUB_FWBW,
+				    task_name,
+				    (void *)arg,
+				    C_Dsub_FwBw<T>,
+				    1, 
+				    0,
+				    arg->ops_complexity);
+	  //      task->func(task->func_arg);
+	  task->parallel_max = enddom;
+	  task->parallel_id = d0;
+	  task->parents->push_back(tasks_i[dd0]);
+	  for (list<diag_contribution>::const_iterator it = _diag_contribs[d0].begin();
+	       it != _diag_contribs[d0].end(); ++it) {
+	    if ((*it).diag_strip.size() > 0) {      // to avoid null contribution
+	      const int child_id = (*it).child_id;
+	      if (_btree->nodeLayer(child_id) == level) {
+		const int child_id0 = _btree->selfIndex(child_id);
+		RectBlockMatrix<T> *upperblock = dM[child_id0]->addrupperBlock();
+		const int num_block_r = upperblock->num_blocks_r();
+		const int num_block_c = upperblock->num_blocks_c();
+		for (int j = 0; j < num_block_c; j++) {
+		  int ipos = (num_block_r - 1) * num_block_c + j;
+		  task->parents->push_back(tasks_k[0][child_id0][ipos]);
+		}
+	      } // if (_btree->nodeLayer(child_id) == level)
+	    }  // (if (*it).diag_strip.size() > 0) 
+	  }         // loop : it
 	  tasks_j[level][dd0] = task;
-	}         // loop : it
+	}
       }  // loop : d
     }
   }   // loop : level
@@ -1347,213 +1463,263 @@ generate_queue_fwbw(vector<DissectionMatrix<T, U>*>& dM,
       const int n_offdiag = _btree->sizeOfFathersStrips(d); 
       SquareBlockMatrix<T> &Diag = dM[d0]->diagBlock();
       if (level > 0) {
-	C_Dfill_FwBw_arg<T> *arg = 
-	  new C_Dfill_FwBw_arg<T>(_nrhs,
-			       d,
-			       level,
-			       _btree,
-			       (int)n_offdiag,
-			       _yi,
-			       _zi[d0]);
-	string task_name = "h : " + to_string(d);
-	C_task *task = new C_task(C_DENSE_SYMFILL,
-				  task_name,
-				  (void *)arg,
-				  C_Dfill_FwBw<T>,
-				  1, 
-				  0,
-				  arg->ops_complexity);
-	task->parallel_max = enddom - 1;
-	task->parallel_id = dd0;
-	task->parents->clear();
-	for (int ll = (level - 1); ll >= 0; ll--) {
-	  const int father_id = _btree->nthfatherIndex(d, (level - ll));
-	  const int father_id0 = _btree->selfIndex(father_id);
-	  const Dissection::SetOfStrips &diag = _btree->getFathersStrips(d)[ll];
-	  if (diag.numberOfIndices() > 0) {
-	    const int ipos = tasks_fg[0][father_id0].size() - 1; // the last
-	    C_task *task_parent = tasks_fg[0][father_id0][ipos];
-	    bool flag = false;
-	    for (list<C_task *>::const_iterator it = task->parents->begin();
-		 it != task->parents->end(); ++it) {
-	      if ((*it) == task_parent) {
-		flag = true;
-		break;
-	      }
-	    } // loop : it
-	    if (flag == false) {
-	      task->parents->push_back(task_parent);
-	    }
-	  }
+	if (n_diag == 0) {
+	  string task_name = ("h dummy : " + to_string(d));
+	  C_dummy_arg *arg = new C_dummy_arg(_verbose, &_fp, d);
+	  tasks_h[level][dd0] = new C_task(C_DUMMY,
+					       task_name,
+					       (void *)arg,
+					       C_dummy,
+					       1, // atomic_size,
+					       0, // atomic_id,
+					       arg->ops_complexity);
 	}
-	tasks_h[level][dd0] = task;
-	const int num_block_r = Diag.num_blocks();
-	tasks_l[level][dd0].resize(num_block_r);
-	for (int i = 0; i < num_block_r; i++) {
-	  const int ii = Diag.IndexBlock(i);
-	  const int nrow = Diag.nrowBlock(i);
-	  C_StripsFwBwOffdiag_arg<T> *arg = 
-	    new C_StripsFwBwOffdiag_arg<T>(false, // isLower
-					   (int)dim,
-					   _isTrans,
-					   _nrhs,
-					   (int)n_diag,
-					   (int)n_offdiag,
-					   (int)n_diag,
-					   (int)nrow,
-					   (int)n_offdiag,
-					   _zi[d0],
-					   0, // ii,
-					   _xi[d0],
-					   ii, // jj,
-					   dM[d0]->addrupperBlock(),
-					   dM[d0]->addrlowerBlock(),
-					   0, 
-					   i,
-					   _none, //alpha,
-					   _one); // beta);
-	  string task_name = "l : " + to_string(d) + " : " + to_string(i);
-	  C_task *task = new C_task(C_STRIPS_SYMFW_OFFDIAG,
+	else {
+	  C_Dfill_FwBw_arg<T> *arg = 
+	    new C_Dfill_FwBw_arg<T>(_nrhs,
+				    d,
+				    level,
+				    _btree,
+				    (int)n_offdiag,
+				    _yi,
+				    _zi[d0]);
+	  string task_name = "h : " + to_string(d);
+	  *(arg->ops_complexity) = (long)n_offdiag;
+	  C_task *task = new C_task(C_DENSE_SYMFILL,
 				    task_name,
 				    (void *)arg,
-				    C_StripsFwBw_offdiag<T>,
+				    C_Dfill_FwBw<T>,
 				    1, 
 				    0,
 				    arg->ops_complexity);
-	  int ipos;
-	  task->parents->push_back(tasks_h[level][dd0]);
-	  const int father_id = _btree->fatherIndex(d);
-	  const int father_id0 = _btree->selfIndex(father_id);
-	  ipos = tasks_fg[0][father_id0].size() - 1; // the last of tasks_fg
-	  task->parents->push_back(tasks_fg[0][father_id0][ipos]);
-	  tasks_l[level][dd0][i] = task;
-	} // loop : i
+	  task->parallel_max = enddom - 1;
+	  task->parallel_id = dd0;
+	  task->parents->clear();
+	  for (int ll = (level - 1); ll >= 0; ll--) {
+	    const int father_id = _btree->nthfatherIndex(d, (level - ll));
+	    const int father_id0 = _btree->selfIndex(father_id);
+	    const Dissection::SetOfStrips &diag = _btree->getFathersStrips(d)[ll];
+	    if (diag.numberOfIndices() > 0) {
+	      const int ipos = tasks_fg[0][father_id0].size() - 1; // the last
+	      C_task *task_parent = tasks_fg[0][father_id0][ipos];
+	      bool flag = false;
+	      for (list<C_task *>::const_iterator it = task->parents->begin();
+		   it != task->parents->end(); ++it) {
+		if ((*it) == task_parent) {
+		  flag = true;
+		  break;
+		}
+	      } // loop : it
+	      if (flag == false) {
+		task->parents->push_back(task_parent);
+	      }
+	    }
+	  }
+	  tasks_h[level][dd0] = task;
+	}
+	const int num_block_r = Diag.num_blocks();
+	if (n_diag == 0) {
+	  tasks_l[level][dd0].resize(1);
+	  string task_name = ("l dummy : " + to_string(d));
+	  C_dummy_arg *arg = new C_dummy_arg(_verbose, &_fp, d);
+	  tasks_l[level][dd0][0] = new C_task(C_DUMMY,
+					       task_name,
+					       (void *)arg,
+					       C_dummy,
+					       1, // atomic_size,
+					       0, // atomic_id,
+					       arg->ops_complexity);
+	}
+	else {
+	  tasks_l[level][dd0].resize(num_block_r);
+	  for (int i = 0; i < num_block_r; i++) {
+	    const int ii = Diag.IndexBlock(i);
+	    const int nrow = Diag.nrowBlock(i);
+	    C_StripsFwBwOffdiag_arg<T> *arg = 
+	      new C_StripsFwBwOffdiag_arg<T>(false, // isLower
+					     (int)dim,
+					     _isTrans,
+					     _nrhs,
+					     (int)n_diag,
+					     (int)n_offdiag,
+					     (int)n_diag,
+					     (int)nrow,
+					     (int)n_offdiag,
+					     _zi[d0],
+					     0, // ii,
+					     _xi[d0],
+					     ii, // jj,
+					     dM[d0]->addrupperBlock(),
+					     dM[d0]->addrlowerBlock(),
+					     0, 
+					     i,
+					     _none, //alpha,
+					     _one); // beta);
+	    string task_name = "l : " + to_string(d) + " : " + to_string(i);
+	    *(arg->ops_complexity) = (long)n_diag;
+	    C_task *task = new C_task(C_STRIPS_SYMFW_OFFDIAG,
+				      task_name,
+				      (void *)arg,
+				      C_StripsFwBw_offdiag<T>,
+				      1, 
+				      0,
+				      arg->ops_complexity);
+	    int ipos;
+	    task->parents->push_back(tasks_h[level][dd0]);
+	    const int father_id = _btree->fatherIndex(d);
+	    const int father_id0 = _btree->selfIndex(father_id);
+	    ipos = tasks_fg[0][father_id0].size() - 1; // the last of tasks_fg
+	    if (ipos >= 0) {
+	      task->parents->push_back(tasks_fg[0][father_id0][ipos]);
+	    }
+	    tasks_l[level][dd0][i] = task;
+	  } // loop : i
+	} // if (n_diag == 0)
       } // if (level > 0)
       {
 	SquareBlockMatrix<T> &Diag = dM[d0]->diagBlock();
 	const int num_block = Diag.num_blocks();
-	tasks_fg[level][dd0].resize((num_block * (num_block + 1)) / 2);
-	int k0 = 0;
-	for (int k = (num_block - 1); k >= 0; k--, k0++) {
-	  const int kk = Diag.IndexBlock(k);
-	  const int ncol = Diag.nrowBlock(k);
-	  C_DenseFwBw_arg<T> *arg = 
-	    new C_DenseFwBw_arg<T>(_isSym, 
-				   true,  // isBackward
-				   (int)dim,
-				   _isTrans,
-				   _nrhs,
-				   (int)n_diag,
-				   (int)ncol, // 
-				   (int)k,
-				   (int)kk,
-				   _xi[d0],
-				   (T **)NULL,
-				   _yi[d0], //
-				   (k == 0) ? _x : (T **)NULL,
-				   dM[d0]->addrdiagBlock(),
-				   (k == 0), // isFirstBlock
-				   (k == (num_block - 1)), // isLastBlock
-				   (k == 0) ? _btree->getDiagLoc2Glob(d) : (int *)NULL,
-				   _verbose,
-				   &_fp);
-	  string task_name = "f : "  + to_string(d) + " : " + to_string(k);
-	  C_task *task = new C_task(C_DENSE_SYMFW_DIAG,
-				    task_name,
-				    (void *)arg,
-				    C_DenseFwBw_diag<T>,
-				    1, 
-				    0,
-				    arg->ops_complexity);
-	  if (k0 == 0) {
-	    task->parallel_max = 1;
-	    task->parallel_id = 0;
-	    tasks_fg[level][dd0][0] = task;
-	    if (level == 0){ 
-	      const int ipos = tasks_de[0][0].size() - 1; // the last of the fw
-	      task->parents->push_back(tasks_de[0][0][ipos]); 
-	    }
-	    else {
-	      task->parents->push_back(tasks_l[0][d0][k]);
-	    }
-	  }
-	  else {
-	    task->parallel_max = num_block - k0;
-	    task->parallel_id = 0;
-	    task->atomic_size = 2;
-	    task->atomic_id = 1;
-	    int ipos;
-	    ipos = 2 + num_block * (k0 - 1) - ((k0 - 1) * k0) / 2 + k0 - 1;
-	     task->parents->push_back(tasks_fg[level][dd0][ipos - 1]); //
-	     tasks_fg[level][dd0][ipos] = task;
-	     for (int m = 0; m < (k0 - 1); m++) {
-	       ipos = num_block * m + k0 + 1 - (m * (m + 1)) / 2;	 
-	       task->parents->push_back(tasks_fg[level][dd0][ipos]); //
-	     }
-	  }
-	  int i0 = k0 + 1; // a trick to use the same formula to count ipos
-	  for (int i = (k - 1); i >= 0; i--, i0++) {
-	    const int ii = Diag.IndexBlock(i);
-	    const int nrow = Diag.nrowBlock(i); // SIZE_B1; // ?
-	    C_DenseFwBwOffdiag_arg<T> *arg = 
-	      new C_DenseFwBwOffdiag_arg<T>(false, // trans
-					    false, // isLower
-					    (int)dim,
-					    _isTrans,
-					    _nrhs,
-					    (int)n_diag,
-					    (int)n_diag,
-					    (int)n_diag,
-					    (int)nrow, 
-					    (int)ncol, 
-					    _xi[d0],
-					    kk, // ii
-					    _xi[d0],
-					    _xi[d0], // (double **)NULL,
-					    ii, // jj
-					    dM[d0]->addrdiagBlock(),
-					    i,  // i_block
-					    k,  // j_block
-					    _none, // alpha,
-					    _one); //beta);
-	    string task_name = ("g : " + to_string(d) + " : " + to_string(k)
-				 + " " + to_string(i));
-	    C_task *task = new C_task(C_DENSE_SYMFW_OFFDIAG,
+	if (n_diag == 0) {
+	  tasks_fg[level][dd0].resize(1);
+	  string task_name = ("d dummy : " + to_string(d));
+	  C_dummy_arg *arg = new C_dummy_arg(_verbose, &_fp, d);
+	  tasks_fg[level][dd0][0] = new C_task(C_DUMMY,
+					       task_name,
+					       (void *)arg,
+					       C_dummy,
+					       1, // atomic_size,
+					       0, // atomic_id,
+					       arg->ops_complexity);
+
+	}
+	else {
+	  tasks_fg[level][dd0].resize((num_block * (num_block + 1)) / 2);
+	  int k0 = 0;
+	  for (int k = (num_block - 1); k >= 0; k--, k0++) {
+	    const int kk = Diag.IndexBlock(k);
+	    const int ncol = Diag.nrowBlock(k);
+	    C_DenseFwBw_arg<T> *arg = 
+	      new C_DenseFwBw_arg<T>(_isSym, 
+				     true,  // isBackward
+				     (int)dim,
+				     _isTrans,
+				     _nrhs,
+				     (int)n_diag,
+				     (int)ncol, // 
+				     (int)k,
+				     (int)kk,
+				     _xi[d0],
+				     (T **)NULL,
+				     _yi[d0], //
+				     (k == 0) ? _x : (T **)NULL,
+				     dM[d0]->addrdiagBlock(),
+				     (k == 0), // isFirstBlock
+				     (k == (num_block - 1)), // isLastBlock
+				     (k == 0) ? _btree->getDiagLoc2Glob(d) : (int *)NULL,
+				     _verbose,
+				     &_fp);
+	    string task_name = "f : "  + to_string(d) + " : " + to_string(k);
+	    *(arg->ops_complexity) = (long)dim;
+	    C_task *task = new C_task(C_DENSE_SYMFW_DIAG,
 				      task_name,
 				      (void *)arg,
-				      C_DenseFwBw_offdiag<T>,
+				      C_DenseFwBw_diag<T>,
 				      1, 
 				      0,
 				      arg->ops_complexity);
-	    if (level > 0) {
-	      task->parents->push_back(tasks_l[0][d0][i]);
-	    }
-	    task->parallel_max = num_block - (k0 + 1);
-	    int ipos;
-	    if (k0 > 0) {
-	      ipos = num_block * (k0 - 1) + i0 + 1 - ((k0 - 1) * k0) / 2; 
-	      task->parents->push_back(tasks_fg[level][dd0][ipos]);
-	    }
-	    if (k0 > 0) {
-	      ipos = 2 + num_block * (k0 - 1) - ((k0 - 1) * k0) / 2 + k0 - 1;
+	    if (k0 == 0) {
+	      task->parallel_max = 1;
+	      task->parallel_id = 0;
+	      tasks_fg[level][dd0][0] = task;
+	      if (level == 0){ 
+		const int ipos = tasks_de[0][0].size() - 1; //the last of the fw
+		if (ipos >= 0) {
+		  task->parents->push_back(tasks_de[0][0][ipos]);
+		}
+	      }
+	      else {
+		task->parents->push_back(tasks_l[0][d0][k]);
+	      }
 	    }
 	    else {
-	      ipos = 0;
-	    }
-	    task->parents->push_back(tasks_fg[level][dd0][ipos]);
-	    if (i0 == (k0 + 1)) {
+	      task->parallel_max = num_block - k0;
 	      task->parallel_id = 0;
-	      task->atomic_size = 2; // 
-	      task->atomic_id = 0;   //
-	      ipos = 2 + num_block * k0 - (k0 * (k0 + 1)) / 2 + k0 - 1;
+	      task->atomic_size = 2;
+	      task->atomic_id = 1;
+	      int ipos;
+	      ipos = 2 + num_block * (k0 - 1) - ((k0 - 1) * k0) / 2 + k0 - 1;
+	      task->parents->push_back(tasks_fg[level][dd0][ipos - 1]); //
+	      tasks_fg[level][dd0][ipos] = task;
+	      for (int m = 0; m < (k0 - 1); m++) {
+		ipos = num_block * m + k0 + 1 - (m * (m + 1)) / 2;	 
+		task->parents->push_back(tasks_fg[level][dd0][ipos]); //
+	      }
 	    }
-	    else { // i0 > (k0 + 1)
-	      task->parallel_id = i - (k0 + 1);
-	      ipos = num_block * k0 + i0 + 1 - (k0 * (k0 + 1)) / 2;	      
-	    }
-	    tasks_fg[level][dd0][ipos] = task;
-	  } // loop : i
-	} // loop : k
+	    int i0 = k0 + 1; // a trick to use the same formula to count ipos
+	    for (int i = (k - 1); i >= 0; i--, i0++) {
+	      const int ii = Diag.IndexBlock(i);
+	      const int nrow = Diag.nrowBlock(i); // SIZE_B1; // ?
+	      C_DenseFwBwOffdiag_arg<T> *arg = 
+		new C_DenseFwBwOffdiag_arg<T>(false, // trans
+					      false, // isLower
+					      (int)dim,
+					      _isTrans,
+					      _nrhs,
+					      (int)n_diag,
+					      (int)n_diag,
+					      (int)n_diag,
+					      (int)nrow, 
+					      (int)ncol, 
+					      _xi[d0],
+					      kk, // ii
+					      _xi[d0],
+					      _xi[d0], // (double **)NULL,
+					      ii, // jj
+					      dM[d0]->addrdiagBlock(),
+					      i,  // i_block
+					      k,  // j_block
+					      _none, // alpha,
+					      _one); //beta);
+	      string task_name = ("g : " + to_string(d) + " : " + to_string(k)
+				  + " " + to_string(i));
+	      *(arg->ops_complexity) = (long)dim;
+	      C_task *task = new C_task(C_DENSE_SYMFW_OFFDIAG,
+					task_name,
+					(void *)arg,
+					C_DenseFwBw_offdiag<T>,
+					1, 
+					0,
+					arg->ops_complexity);
+	      if (level > 0) {
+		task->parents->push_back(tasks_l[0][d0][i]);
+	      }
+	      task->parallel_max = num_block - (k0 + 1);
+	      int ipos;
+	      if (k0 > 0) {
+		ipos = num_block * (k0 - 1) + i0 + 1 - ((k0 - 1) * k0) / 2; 
+		task->parents->push_back(tasks_fg[level][dd0][ipos]);
+	      }
+	      if (k0 > 0) {
+		ipos = 2 + num_block * (k0 - 1) - ((k0 - 1) * k0) / 2 + k0 - 1;
+	      }
+	      else {
+		ipos = 0;
+	      }
+	      task->parents->push_back(tasks_fg[level][dd0][ipos]);
+	      if (i0 == (k0 + 1)) {
+		task->parallel_id = 0;
+		task->atomic_size = 2; // 
+		task->atomic_id = 0;   //
+		ipos = 2 + num_block * k0 - (k0 * (k0 + 1)) / 2 + k0 - 1;
+	      }
+	      else { // i0 > (k0 + 1)
+		task->parallel_id = i - (k0 + 1);
+		ipos = num_block * k0 + i0 + 1 - (k0 * (k0 + 1)) / 2;	      
+	      }
+	      tasks_fg[level][dd0][ipos] = task;
+	    } // loop : i
+	  } // loop : k
+	} // if (n_diag == 0)
       }
     } // loop : d
   }   // loop : level
@@ -1587,6 +1753,7 @@ generate_queue_fwbw(vector<DissectionMatrix<T, U>*>& dM,
 				 offdiag.indVals,
 				 offdiag.indVals_unsym);
       string task_name = "b : " + to_string(d);
+      *(arg->ops_complexity) = (long)dim;
       C_task *task = new C_task(C_SPARSESYMBW,
 				task_name,
 				(void *)arg,
@@ -1601,7 +1768,7 @@ generate_queue_fwbw(vector<DissectionMatrix<T, U>*>& dM,
 	const int father_id0 = _btree->selfIndex(father_id);
 	const Dissection::SetOfStrips &diag = _btree->getFathersStrips(d)[ll];
 	const int ipos = tasks_fg[0][father_id0].size() - 1;
-	if (diag.numberOfIndices() > 0) {
+	if ((diag.numberOfIndices() > 0) && (ipos >= 0)) {
 	  task->parents->push_back(tasks_fg[0][father_id0][ipos]);
 	}
       }
@@ -2143,7 +2310,6 @@ void DissectionQueue<complex<quadruple>, quadruple>::erase_queue(void);
 template<typename T, typename U>
 void DissectionQueue<T, U>::erase_queue_fwbw(void)
 {
-  const int nb_doms = _btree->NumberOfSubdomains();
   if (_verbose) {
     fprintf(_fp, "%s %d : void QueueRuntime::erase_queue_fwbw(void)",
 	    __FILE__, __LINE__);
@@ -2151,7 +2317,7 @@ void DissectionQueue<T, U>::erase_queue_fwbw(void)
   if (_queue_fwbw_allocated) {
   delete [] _diag_contribs;
   delete _x;
-  for (int d = 1; d <= nb_doms; d++) {
+  for (int d = 1; d <= _nb_doms; d++) {
     const int d0 = _btree->selfIndex(d);
     delete _xi[d0];
     delete _yi[d0];

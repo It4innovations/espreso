@@ -159,9 +159,10 @@ public:
 	    num_threads);
    }
     _dslv = new uint64_t;
-    diss_init(*_dslv, 1, num_threads, ((verbosity > 0) ? 1 : 0)); // real matrix
+    diss_init(*_dslv, 0, 1, 0, num_threads, ((verbosity > 0) ? 1 : 0)); 
+    // real matrix, with double precision factorization, # of threads
     const int decomposer = (strategy_ % 100) / 10;
-    const int scaling = strategy_ % 10;
+    const int scaling = strategy_ == 0 ? 2 : strategy_ % 10;
     // sym + lower + isWhole = 1 + 2 + 4
     const int sym = (strategy_ / 100) ? 5 : 0;
 
@@ -194,7 +195,7 @@ public:
 	  }
 	}
       }
-      if (verbosity > 0) {
+      if (verbosity > 10) {
 	cout << "m = " << m << " dim = " << dim << endl;
       }
     }
@@ -210,7 +211,7 @@ public:
 			       _new2old,
 			       (int *)A.lg, (int *)A.cl, (double *)A.a);
     delete [] old2new;
-    if (verbosity > 0) {
+    if (verbosity > 10) {
       cout << "nnz " << nnz << endl;
     }
     _ptrows0 = new int[_dim0 + 1];
@@ -231,7 +232,7 @@ public:
     }
     nnz1 = copy_CSR<double>(_ptrows1, indcol_tmp, coef_tmp, _dim0, 
 			    indcols_tmp, coefs_tmp, _dim0, dim);
-    if (verbosity > 0) {
+    if (verbosity > 10) {
       cout << "nnz1 " << nnz1 << endl;
     }
     _indcols1 = new int[nnz1];
@@ -338,9 +339,10 @@ public:
     }
 
     _dslv = new uint64_t;
-    diss_init(*_dslv, 2, num_threads, ((verbosity > 0) ? 1 : 0)); // real matrix
+    diss_init(*_dslv, 0, 2, 0, num_threads, ((verbosity > 0) ? 1 : 0)); // 
+    // complex matrix, with double precision factorization, # of threads
     const int decomposer = (strategy_ % 100) / 10;
-    const int scaling = strategy_ % 10;
+    const int scaling = strategy_ == 0 ? 2 : strategy_ % 10;
     // sym + lower + isWhole = 1 + 2 + 4
     const int sym = (strategy_ / 100) ? 5 : 0;
 

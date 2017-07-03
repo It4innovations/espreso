@@ -3,7 +3,7 @@
     \author Atsushi Suzuki, Laboratoire Jacques-Louis Lions
     \date   Jun. 20th 2014
     \date   Jul. 12th 2015
-    \date   Feb. 29th 2016
+    \date   Nov. 30th 2016
 */
 
 // This file is part of Dissection
@@ -13,6 +13,32 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
+// Linking Dissection statically or dynamically with other modules is making
+// a combined work based on Disssection. Thus, the terms and conditions of 
+// the GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of Dissection give you 
+// permission to combine Dissection program with free software programs or 
+// libraries that are released under the GNU LGPL and with independent modules 
+// that communicate with Dissection solely through the Dissection-fortran 
+// interface. You may copy and distribute such a system following the terms of 
+// the GNU GPL for Dissection and the licenses of the other code concerned, 
+// provided that you include the source code of that other code when and as
+// the GNU GPL requires distribution of source code and provided that you do 
+// not modify the Dissection-fortran interface.
+//
+// Note that people who make modified versions of Dissection are not obligated 
+// to grant this special exception for their modified versions; it is their
+// choice whether to do so. The GNU General Public License gives permission to 
+// release a modified version without this exception; this exception also makes
+// it possible to release a modified version which carries forward this
+// exception. If you modify the Dissection-fortran interface, this exception 
+// does not apply to your modified version of Dissection, and you must remove 
+// this exception when you distribute your modified version.
+//
+// This exception is an additional permission under section 7 of the GNU 
+// General Public License, version 3 ("GPLv3")
+//
 // Dissection is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,6 +46,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Dissection.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 # ifndef _DRIVER_DISSECTIONMATRIX_
 # define _DRIVER_DISSECTIONMATRIX_
@@ -80,12 +107,12 @@ public:
       _nrow = im._nrow;
       _ncol_offdiag = im._ncol_offdiag;
       _nop = im._nop;
-      _diag = im._daig->clone();
+      _diag = im._diag->clone();
       if (!_isSym) {
 	_lower->copy(*im._lower);
       }
       _upper->copy(*im._upper);
-      _isSym = im._is_Sym; 
+      _isSym = im._isSym; 
       _localSchur = &im.localSchurBlock();
       _factorize_LDLt = im._factorize_LDLt;
       //      _factorize_LDLt_diag = im._factorize_LDLt_diag;
@@ -172,10 +199,11 @@ public:
 			double *pivot0,
 			double *pivot1,
 			vector<C_task*>& task_p,
+			const bool isChldrnAlgnd,
 			const bool verbose,
 			FILE **fp);
 
-  void C_DTRSMScale_queue(vector<C_task*> &queue,
+  int C_DTRSMScale_queue(vector<C_task*> &queue,
 			  vector<list<int> > &queue_parents_index,
 			  vector<int> &queue_index,
 			  vector<int>& indcol,
@@ -196,7 +224,7 @@ public:
 			      const bool verbose,
 			      FILE *fp);
   
-  void C_DGEMM_local_queue(vector<C_task*> &queue,
+  int C_DGEMM_local_queue(vector<C_task*> &queue,
 			   vector<int> &indcol,
 			   RectBlockMatrix<T> *upper1,
 			   RectBlockMatrix<T> *lower1,
@@ -222,7 +250,8 @@ public:
 
   void ChildContrib(list<child_contribution<T> > *child_contribs,
 		    Dissection::Tree *btree,
-		    vector<DissectionMatrix<T, U>* >& dissectionMatrix);
+		    vector<DissectionMatrix<T, U>* >& dissectionMatrix,
+		    FILE **fp);
 
   void deallocLower_queue(C_task*& queue,
 			  bool isSym,

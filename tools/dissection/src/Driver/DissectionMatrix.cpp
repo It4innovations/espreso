@@ -3,7 +3,7 @@
     \author Atsushi Suzuki, Laboratoire Jacques-Louis Lions
     \date   Jun. 20th 2014
     \date   Jul. 12th 2015
-    \date   Feb. 29th 2016
+    \date   Nov. 30th 2016
 */
 
 // This file is part of Dissection
@@ -13,6 +13,32 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
+// Linking Dissection statically or dynamically with other modules is making
+// a combined work based on Disssection. Thus, the terms and conditions of 
+// the GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of Dissection give you 
+// permission to combine Dissection program with free software programs or 
+// libraries that are released under the GNU LGPL and with independent modules 
+// that communicate with Dissection solely through the Dissection-fortran 
+// interface. You may copy and distribute such a system following the terms of 
+// the GNU GPL for Dissection and the licenses of the other code concerned, 
+// provided that you include the source code of that other code when and as
+// the GNU GPL requires distribution of source code and provided that you do 
+// not modify the Dissection-fortran interface.
+//
+// Note that people who make modified versions of Dissection are not obligated 
+// to grant this special exception for their modified versions; it is their
+// choice whether to do so. The GNU General Public License gives permission to 
+// release a modified version without this exception; this exception also makes
+// it possible to release a modified version which carries forward this
+// exception. If you modify the Dissection-fortran interface, this exception 
+// does not apply to your modified version of Dissection, and you must remove 
+// this exception when you distribute your modified version.
+//
+// This exception is an additional permission under section 7 of the GNU 
+// General Public License, version 3 ("GPLv3")
+//
 // Dissection is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,6 +46,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Dissection.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 #include "Driver/DissectionMatrix.hpp"
 #include "Algebra/SparseRenumbering.hpp"
@@ -41,6 +68,9 @@ DissectionMatrix<T, U>::DissectionMatrix(Dissection::Tree *btree,
   _level = btree->nodeLayer(_nb);
   _nrow = btree->sizeOfDomain(_nb);
   _ncol_offdiag = btree->sizeOfFathersStrips(_nb);
+  if (_nrow == 0) {
+    _ncol_offdiag = 0;  // for safety
+  }
   // no need to be allocated through the whole process
   //  
   //  _loc2glob_diag = btree->getDiagLoc2Glob(_nb);
@@ -64,7 +94,7 @@ DissectionMatrix<T, U>::DissectionMatrix(Dissection::Tree *btree,
       _tridiag[i] = new TridiagBlockMatrix<T,U>(_nrow, SIZE_B1, _isSym, nb,
 						verbose, fp);
     }
-      // the value of the last pivot and singluar nodes to be stored in _diag
+    // the value of the last pivot and singluar nodes to be stored in _diag
     _diag = new SquareBlockMatrix<T>;
     _upper->init(_nrow, _ncol_offdiag, SIZE_B1, 0);
     _upper->allocate();      
@@ -77,23 +107,40 @@ DissectionMatrix<T, U>::DissectionMatrix(Dissection::Tree *btree,
   }
   else {
     _islast = false;
-    _diag = new SquareBlockMatrix<T>(_nrow, SIZE_B1, _isSym);
+    if (_nrow > 0) {
+      _diag = new SquareBlockMatrix<T>(_nrow, SIZE_B1, _isSym);
+    }
+    else {
+      _diag = new SquareBlockMatrix<T>(); // dummy
+    }
     _tridiag = (TridiagBlockMatrix<T,U> **)NULL;
     if (_nb > 1) {
-      int b_id = btree->brotherIndex(_nb);
-      const int ll = _level - 1;
-      const Dissection::SetOfStrips& f0 = btree->getFathersStrips(_nb)[ll];
-      const Dissection::SetOfStrips& f1 = btree->getFathersStrips(b_id)[ll];
       int ntmp = 0;
-      _alignedFather = false;
-      if ((f0.numberOfStrips() == 1) && (f0.numberOfStrips() == 1)) {
-	Dissection::SetOfStrips::const_iterator it0 = f0.begin();
-	Dissection::SetOfStrips::const_iterator it1 = f1.begin();
-	if (((*it0).begin_src == (*it1).begin_src) &&
-	    ((*it0).width == (*it1).width)) {
-	  _alignedFather = true;
-	  ntmp = f0.numberOfIndices();
+      if (_nrow > 0) {
+	const int b_id = btree->brotherIndex(_nb);
+	const int ll = _level - 1;
+	const Dissection::SetOfStrips& f0 =
+	  btree->getFathersStrips(_nb)[ll];
+	const Dissection::SetOfStrips& f1 =
+	  btree->getFathersStrips(b_id)[ll];
+	_alignedFather = false;
+	if ((btree->sizeOfDomain(b_id) > 0) &&
+	    (f0.numberOfStrips() == 1) && (f0.numberOfStrips() == 1)) {
+	  Dissection::SetOfStrips::const_iterator it0 = f0.begin();
+	  Dissection::SetOfStrips::const_iterator it1 = f1.begin();
+	  if (((*it0).begin_src == (*it1).begin_src) &&
+	      ((*it0).width == (*it1).width)) {
+	    _alignedFather = true;
+	    ntmp = f0.numberOfIndices();
+	  }
 	}
+      }
+      else {
+	_alignedFather = false; // the other brother is treaed as nonaligned
+      }
+      if (!_alignedFather) {
+      	fprintf(fp, "%s %d : %d : %s\n", __FILE__, __LINE__,
+      		_nb, (_alignedFather ? "aligned" : "nonaligned"));
       }
       _upper->init(_nrow, _ncol_offdiag, SIZE_B1, ntmp);
       _upper->allocate();      
@@ -109,10 +156,12 @@ DissectionMatrix<T, U>::DissectionMatrix(Dissection::Tree *btree,
   _factorize_LDLt = new ColumnMatrix<T>; //new T*;     
   //  _factorize_LDLt_diag = new ColumnMatrix<T>; // new T*;
   if (verbose) {
-    fprintf(fp, "%s %d : %d : nrow : %d = %d + %d num_blocks : %d = %d + %d\n",
+    fprintf(fp,
+	    "%s %d : %d : nrow : %d : %d = %d + %d num_blocks : %d = %d + %d\n",
 	    __FILE__,
 	    __LINE__,
 	    _nb,
+	    _nrow,
 	    _ncol_offdiag, 
 	    _localSchur->dimension0(),
 	    _localSchur->dimension1(),
@@ -435,7 +484,9 @@ void DissectionMatrix<T, U>::C_FillMatrix_queue(vector<C_task*>& queue,
     // -1L is used for initialization of the array <=> dependecy 
     long ops;
     if (_level > 0) {
-      ops = _csr_offdiag->nnz == 0 ? (-1L) : (long)_csr_offdiag->nnz;
+      // replace -1L by 1L : 29 Nov.2016 Atsushi
+      //      ops = _csr_offdiag->nnz == 0 ? (-1L) : (long)_csr_offdiag->nnz;
+      ops = _csr_offdiag->nnz == 0 ? 1L : (long)_csr_offdiag->nnz;
     }
     else {
       ops = 0L;
@@ -538,6 +589,7 @@ int DissectionMatrix<T, U>::C_DFullLDLt_queue(vector<C_task*>& queue,
 					      double *pivot0,
 					      double *pivot1,
 					      vector<C_task*>& task_p,
+					      const bool isChldrnAlgnd,
 					      const bool verbose,
 					      FILE **fp)
 {
@@ -546,7 +598,9 @@ int DissectionMatrix<T, U>::C_DFullLDLt_queue(vector<C_task*>& queue,
 
   const int num_block = _diag->num_blocks();
   int num_tasks1;
-  int jpos;
+  int ipos, jpos;
+  int parent_id;
+
   if (_level == 0) {
     num_tasks1 = ((num_block - 1) * num_block * (num_block + 1) / 6 +
 		  num_block);
@@ -555,10 +609,24 @@ int DissectionMatrix<T, U>::C_DFullLDLt_queue(vector<C_task*>& queue,
     num_tasks1 = 0;
   }
 
-  int ipos;
-  int parent_id;
+  if (n == 0) {
+    queue.resize(1);
+    string task_name = ("a dummy : " +
+			to_string(_level) + " : " +to_string(_nb));
+    C_dummy_arg *arg = new C_dummy_arg(verbose, fp, _nb);
+    //    *(arg->ops_complexity) = (-1L);
+    queue[0] = new C_task(C_DUMMY,
+			  task_name,
+			  (void *)arg,
+			  C_dummy,
+			  1, // atomic_size,
+			  0, // atomic_id,
+			  arg->ops_complexity);
+    queue[0]->parents->clear();
+    task_ptr.clear();
+    return 1;
+  }
   int atomic_size, atomic_id;
-
   //  int *ptr;
   if (_level == 0) {
     task_ptr.resize(2 * num_block + 1);
@@ -745,7 +813,7 @@ int DissectionMatrix<T, U>::C_DFullLDLt_queue(vector<C_task*>& queue,
 	
 	if (k == 0) {
 	 	// depndency on dgemm/dsub of previous factorization level
-	  if (_isSym) {
+	  if (_isSym || !isChldrnAlgnd) {
 	    const int jtmp = ((j + 1) * (j + 2)) / 2;
 	    queue[ipos]->parents->push_back(task_p[jtmp]);
 	  }
@@ -820,10 +888,18 @@ int DissectionMatrix<T, U>::C_DFullLDLt_queue(vector<C_task*>& queue,
 	  queue[ipos]->parallel_max = ((num_block - k - 1) *
 				       (num_block - k)) / 2 - 1;
 	  queue[ipos]->parallel_id = (j * (j + 1)) / 2 + i - 1 ;
+#if 0
+	  fprintf(stderr, "%s %d : %d/", __FILE__, __LINE__, (int)task_p.size());
+	  for (vector<C_task *>::iterator jt = task_p.begin();
+	       jt != task_p.end(); ++jt) {
+	    fprintf(stderr, "%s/", (*jt)->task_name);
+	  }
+	  fprintf(stderr, "\n");
+#endif
 	  if (k == 0) {
 	    // depndency on dgemm/dsub of previous factorization level
 	    // (i + 1)-th row, (j + 1)-th column
-	    if (_isSym) {
+	    if (_isSym || !isChldrnAlgnd) {
 	      const int jtmp = ((j + 1) * (j + 2)) / 2 + i + 1;
 	      queue[ipos]->parents->push_back(task_p[jtmp]);
 	    } 
@@ -922,9 +998,14 @@ int DissectionMatrix<T, U>::C_DFullLDLt_queue(vector<C_task*>& queue,
 	if (k == 0) {
 	  // depndency on dgemm/dsub of previous factorization level
 	  // (j + 1)-th row, (j + 1)-th column
-	  const int jtmp = (_isSym ? (((j + 1) * (j + 2)) / 2 + j + 1) :
-			    (((j + 1) * (j + 1)) + 2 * j + 2));
-	  queue[ipos]->parents->push_back(task_p[jtmp]);
+	  if (_isSym || !isChldrnAlgnd) {
+	    const int jtmp = ((j + 1) * (j + 2)) / 2 + j + 1;
+	    queue[ipos]->parents->push_back(task_p[jtmp]);
+	  }
+	  else {
+	    const int jtmp = (j + 1) * (j + 1) + 2 * j + 2;
+	    queue[ipos]->parents->push_back(task_p[jtmp]);
+	  }
 	}
 	else {
 	  //	if (k > 0) {
@@ -1104,6 +1185,7 @@ C_DFullLDLt_queue(vector<C_task*>& queue,
 		  double *pivot0,
 		  double *pivot1,
 		  vector<C_task*>& task_p,
+	          const bool isChldrnAlgnd,
 		  const bool verbose,
 		  FILE **fp);
 
@@ -1120,6 +1202,7 @@ C_DFullLDLt_queue(vector<C_task*>& queue,
 		  double *pivot0,
 		  double *pivot1,
 		  vector<C_task*>& task_p,
+	          const bool isChldrnAlgnd,
 		  const bool verbose,
 		  FILE **fp);
 
@@ -1136,6 +1219,7 @@ C_DFullLDLt_queue(vector<C_task*>& queue,
 		  double *pivot0,
 		  double *pivot1,
 		  vector<C_task*>& task_p,
+	          const bool isChldrnAlgnd,
 		  const bool verbose,
 		  FILE **fp);
 
@@ -1152,12 +1236,13 @@ C_DFullLDLt_queue(vector<C_task*>& queue,
 		  double *pivot0,
 		  double *pivot1,
 		  vector<C_task*>& task_p,
+                  const bool isChldrnAlgnd,
 		  const bool verbose,
 		  FILE **fp);
 //
 
 template<typename T, typename U>
-void DissectionMatrix<T, U>::
+int DissectionMatrix<T, U>::
 C_DTRSMScale_queue(vector<C_task*> &queue,
 		   vector<list<int> > &qparents_index,
 		   vector<int> &queue_index,
@@ -1177,6 +1262,22 @@ C_DTRSMScale_queue(vector<C_task*> &queue,
   const int task_p_offset = (num_block * (num_block + 1)) / 2;
   const int num_block_col = _upper->num_blocks_c(); //
   vector<int> &singidx = singIdx();
+  if (nrow == 0) {
+    queue.resize(1);
+    string task_name = ("du dummy : " +
+			to_string(_level) + " : " +to_string(_nb));
+    C_dummy_arg *arg = new C_dummy_arg(verbose, fp, _nb);
+    //    *(arg->ops_complexity) = (-1L);
+    queue[0] = new C_task(C_DUMMY,
+			  task_name,
+			  (void *)arg,
+			  C_dummy,
+			  1, // atomic_size,
+			  0, // atomic_id,
+			  arg->ops_complexity);
+    queue[0]->parents->clear();
+    return 1;
+  }
   itmp = ((num_block * (num_block + 1)) / 2) * num_block_col;
   if (!_isSym) {
     itmp *= 2;
@@ -1463,10 +1564,11 @@ C_DTRSMScale_queue(vector<C_task*> &queue,
     }
   }
 #endif
+  return queue.size();
 }
 
 template
-void DissectionMatrix<double, double>::
+int DissectionMatrix<double, double>::
 C_DTRSMScale_queue(vector<C_task*> &queue,
 		   vector<list<int> > &qparents_index,
 		   vector<int> &queue_index,
@@ -1481,7 +1583,7 @@ C_DTRSMScale_queue(vector<C_task*> &queue,
 		   FILE **fp);
 
 template
-void DissectionMatrix<complex<double>, double>::
+int DissectionMatrix<complex<double>, double>::
 C_DTRSMScale_queue(vector<C_task*> &queue,
 		   vector<list<int> > &qparents_index,
 		   vector<int> &queue_index,
@@ -1496,7 +1598,7 @@ C_DTRSMScale_queue(vector<C_task*> &queue,
 		   FILE **fp);
 
 template
-void DissectionMatrix<quadruple, quadruple>::
+int DissectionMatrix<quadruple, quadruple>::
 C_DTRSMScale_queue(vector<C_task*> &queue,
 		   vector<list<int> > &qparents_index,
 		   vector<int> &queue_index,
@@ -1511,7 +1613,7 @@ C_DTRSMScale_queue(vector<C_task*> &queue,
 		   FILE **fp);
 
 template
-void DissectionMatrix<complex<quadruple>, quadruple>::
+int DissectionMatrix<complex<quadruple>, quadruple>::
 C_DTRSMScale_queue(vector<C_task*> &queue,
 		   vector<list<int> > &qparents_index,
 		   vector<int> &queue_index,
@@ -1913,7 +2015,7 @@ C_DTRSMScale_rearrange(vector<C_task*> &queue,
 //
 
 template<typename T, typename U>
-void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
+int DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 						 vector<int> &indcol,
 						 RectBlockMatrix<T> *upper1,
 						 RectBlockMatrix<T> *lower1,
@@ -1939,6 +2041,23 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
   const int num_block0 = _localSchur->num_blocks0(); 
   const int num_block1 = num_block - num_block0;
   int queue_size;
+  if (nrow == 0 && _level != 0) {
+    queue.resize(1);
+    string task_name = ("f dummy : " +
+			to_string(_level) + " : " +to_string(_nb));
+    fprintf(*fp, "%s %d : %s\n", __FILE__, __LINE__, task_name.c_str());
+    C_dummy_arg *arg = new C_dummy_arg(verbose, fp, _nb);
+    // *(arg->ops_complexity) = (-1L);
+    queue[0] = new C_task(C_DUMMY,
+			  task_name,
+			  (void *)arg,
+			  C_dummy,
+			  1,  // atomic_size
+			  0,  // atomic_id
+			  arg->ops_complexity);
+    queue[0]->parents->clear();
+    return 1;
+  }
   queue_size = (_isSym ? ((num_block * (num_block + 1)) / 2) : 
               		  (num_block * num_block));
 
@@ -1966,8 +2085,8 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 	  const long ops = (isSkip ? 0L :   // flag to skip the dependency
 			    (block_nrowl * block_ncoll * nrowwl * 2L));
 	  string task_name = ("F " + to_string(i) + " " + to_string(j)
-	                     + " : " + to_string(_level) + " : "
-	                     + to_string(_nb));
+			      + " : " + to_string(_level) + " : "
+			      + to_string(_nb));
 	  DSchurGEMM_two_arg<T> *arg = 
 	    new DSchurGEMM_two_arg<T>(_isSym,
 				      false, // isTrans
@@ -1994,26 +2113,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 				   arg->ops_complexity);
 	  queue[ipos]->fp = &(arg->fp);
 	  if(!isSkip) {
-#ifdef SHORT_DEPENDENCY
-	    for (int m = 0; m < (task_p_ptr.size() - 1); m++) {
-	      int mm, nn;
-	      mm = _isSym ? task_p_ptr[m] : (2 * task_p_ptr[m] + 1); // lower
-	      nn = task_p_indcol[mm] * pncol_block + i;
-	      queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	      mm = _isSym ? task_p_ptr[m] : (2 * task_p_ptr[m]);  // upper
-	      nn = task_p_indcol[mm] * pncol_block + j;
-	      queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	    }
-	    for (int m = 0; m < (task_q_ptr.size() - 1); m++) {
-	      int mm, nn;
-	      mm = _isSym ? task_q_ptr[m] : (2 * task_q_ptr[m] + 1); // lower
-	      nn = task_q_indcol[mm] * qncol_block + i;
-	      queue[ipos]->parents->push_back(task_q[task_q_index[nn]]);
-	      mm = _isSym ? task_q_ptr[m] : (2 * task_q_ptr[m]);  // upper
-	      nn = task_q_indcol[mm] * qncol_block + j;
-	      queue[ipos]->parents->push_back(task_q[task_q_index[nn]]);
-	    }
-#else
 	    const int mmp = task_p_ptr.size() - 1;
 	    const int mmq = task_q_ptr.size() - 1;
 	    if (_isSym) {
@@ -2052,7 +2151,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 	      const int ktmp = (j * (j + 1)) / 2 + i;  // diagonal block DSUB
 	      queue[ipos]->parents->push_back((*task_s)[ktmp]);
 	    }
-#endif
 	  } // if (!isSkip)
 	} // if (isDirect)
 	else {
@@ -2082,17 +2180,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 				   0,              // atomic_id
 				   arg->ops_complexity);
 	  queue[ipos]->fp = &(arg->fp);
-#if 0
-	  for (int m = 0; m < (task_p_ptr.size() - 1); m++) {
-	    int mm, nn;
-	    mm = _isSym ? task_p_ptr[m] : (2 * task_p_ptr[m] + 1); // lower
-	    nn = task_p_indcol[mm] * pncol_block + i;
-	    queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	    mm = _isSym ? task_p_ptr[m] : (2 * task_p_ptr[m]);  // upper
-	    nn = task_p_indcol[mm] * pncol_block + j;
-	    queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	  }
-#else
 	  const int mmp = task_p_ptr.size() - 1;
 	  if (_isSym) {
 	    for (int m = 0; m < task_p_ptr[mmp]; m++) {
@@ -2112,7 +2199,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 	      queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
 	    }
 	  }
-#endif
 	} // else if (isDirect)
 	queue[ipos]->parents->unique();
 	queue[ipos]->parallel_max = parallel_max0;
@@ -2205,17 +2291,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 				   0, 
 				   arg->ops_complexity); 
 	  queue[ipos]->fp = &(arg->fp);
-#ifdef SHORT_DEPENDENCY
-	  for (int m = 0; m < (task_p_ptr.size() - 1); m++) {
-	    int mm, nn;
-	    mm = 2 * task_p_ptr[m]; // upper
-	    nn = task_p_indcol[mm] * pncol_block + i;
-	    queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	    mm = 2 * task_p_ptr[m] + 1;  // lower
-	    nn = task_p_indcol[mm] * pncol_block + j;
-	      queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	  }
-#else
 	  const int mmp = task_p_ptr.size() - 1;
 	  for (int m = 0; m < task_p_ptr[mmp]; m++) {
 	    int nn;
@@ -2224,7 +2299,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 	    nn = task_p_indcol[2 * m] * pncol_block + i;       // upper
 	    queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
 	  }
-#endif
 	} // else if (isDirect)
 	queue[ipos]->parents->unique();
 	queue[ipos]->parallel_max = parallel_max0;
@@ -2272,30 +2346,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 				 arg->ops_complexity);
 	queue[ipos]->fp = &(arg->fp);
 	if(!isSkip) {
-#ifdef SHORT_DEPENDENCY
-	  for (int m = 0; m < (task_p_ptr.size() - 1); m++) {
-	    int mm, nn;
-	    mm = _isSym ? task_p_ptr[m] : (2 * task_p_ptr[m]); // upper
-	    nn = task_p_indcol[mm] * pncol_block + j;
-	    queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	    if (!_isSym) {
-	      mm = 2 * task_p_ptr[m] + 1;  // lower
-	      nn = task_p_indcol[mm] * pncol_block + j;
-	      queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	    }
-	  }
-	  for (int m = 0; m < (task_q_ptr.size() - 1); m++) {
-	    int mm, nn;
-	    mm = _isSym ? task_q_ptr[m] : (2 * task_q_ptr[m]); // upper
-	    nn = task_q_indcol[mm] * qncol_block + j;
-	    queue[ipos]->parents->push_back(task_q[task_q_index[nn]]);
-	    if(!_isSym) {
-	      mm = 2 * task_q_ptr[m] + 1;  // lower
-	      nn = task_q_indcol[mm] * qncol_block + j;
-	      queue[ipos]->parents->push_back(task_q[task_q_index[nn]]);
-	    }
-	  }
-#else
 	  const int mmp = task_p_ptr.size() - 1;
 	  const int mmq = task_q_ptr.size() - 1;
 	  if (_isSym) {
@@ -2327,19 +2377,9 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 	    }
 	  }
 	  if (task_s != NULL) {
-#if 0
-	    fprintf(stderr, "%s %d : #task_s[] = %d : ", __FILE__, __LINE__,
-		    task_s->size());
-	    for (vector<C_task *>::const_iterator it = task_s->begin(); 
-		 it != task_s->end(); ++it) {
-	      fprintf(stderr, "%s ", (*it)->task_name);
-	    }
-	    fprintf(stderr, "\n");
-#endif
 	    const int ktmp = (j * (j + 1)) / 2 + j;   // diagonal block DSUB
 	    queue[ipos]->parents->push_back((*task_s)[ktmp]);
 	  }
-#endif
 	}
       }  // if (isDirect) 
       else {
@@ -2370,19 +2410,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 				 0,              // atomic_id
 				 arg->ops_complexity);  
 	queue[ipos]->fp = &(arg->fp);
-#ifdef SHORT_DEPENDENCY
-	for (int m = 0; m < (task_p_ptr.size() - 1); m++) {
-	  int mm, nn;
-	  mm = _isSym ? task_p_ptr[m] : (2 * task_p_ptr[m]); // upper
-	  nn = task_p_indcol[mm] * pncol_block + j;
-	  queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	  if (!_isSym) {
-	    mm = 2 * task_p_ptr[m] + 1;  // lower
-	    nn = task_p_indcol[mm] * pncol_block + j;
-	    queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	  }
-	}
-#else
 	const int mmp = task_p_ptr.size() - 1;
 	if (_isSym) {
 	  for (int m = 0; m < task_p_ptr[mmp]; m++) {
@@ -2400,7 +2427,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 	    queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
 	  }
 	}
-#endif
       } // else if (isDirect)
       queue[ipos]->parents->unique();
       queue[ipos]->parallel_max = parallel_max0;
@@ -2441,17 +2467,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 				 0,              // atomic_id
 				 arg->ops_complexity); 
 	queue[ipos]->fp = &(arg->fp);
-#ifdef SHORT_DEPENDENCY
-	for (int m = 0; m < (task_p_ptr.size() - 1); m++) {
-	  int mm, nn;
-	  mm = _isSym ? task_p_ptr[m] : (2 * task_p_ptr[m]); // upper
-	  nn = task_p_indcol[mm] * pncol_block + j;
-	  queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	  mm = _isSym ? task_p_ptr[m] : (2 * task_p_ptr[m] + 1);  // lower
-	  nn = task_p_indcol[mm] * pncol_block + i;
-	  queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	}
-#else
 	const int mmp = task_p_ptr.size() - 1;
 	if (_isSym) {
 	  for (int m = 0; m < task_p_ptr[mmp]; m++) {
@@ -2471,7 +2486,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 	    queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
 	  }
 	}
-#endif
 	queue[ipos]->parents->sort(compare_task_name);
 	queue[ipos]->parents->unique();
 	queue[ipos]->parallel_max = parallel_max1;
@@ -2506,17 +2520,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 				 0,              // atomic_id
 				 arg->ops_complexity);
 	queue[ipos]->fp = &(arg->fp);
-#ifdef SHORT_DEPENDENCY
-	for (int m = 0; m < (task_p_ptr.size() - 1); m++) {
-	  int mm, nn;
-	  mm = _isSym ? task_p_ptr[m] : (2 * task_p_ptr[m]); // upper
-	  nn = task_p_indcol[mm] * pncol_block + i;
-	  queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	  mm = _isSym ? task_p_ptr[m] : (2 * task_p_ptr[m] + 1);  // lower
-	  nn = task_p_indcol[mm] * pncol_block + j;
-	  queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	}
-#else
 	const int mmp = task_p_ptr.size() - 1;
 	for (int m = 0; m < task_p_ptr[mmp]; m++) {
 	  int nn;
@@ -2525,7 +2528,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 	  nn = task_p_indcol[2 * m] * pncol_block + i;       // upper
 	  queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
 	}
-#endif
 	queue[ipos]->parents->sort(compare_task_name);
 	queue[ipos]->parents->unique();
 	queue[ipos]->parallel_max = parallel_max1;
@@ -2545,7 +2547,7 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 	const long ops = block_nrowl * block_ncoll * nrowl * 2L;
 	string task_name = ("f " + to_string(i) + " " + to_string(j)
 			    + " : " + to_string(_level) + " : "
-			    + to_string(_nb));	
+			    + to_string(_nb));
 	DSchurGEMM_arg<T> *arg = 
 	  new DSchurGEMM_arg<T>(_isSym,
 				false, // isTrans
@@ -2567,17 +2569,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 				 0,              // atomic_id
 				 arg->ops_complexity);
 	queue[ipos]->fp = &(arg->fp); 
-#ifdef SHORT_DEPENDENCY
-	for (int m = 0; m < (task_p_ptr.size() - 1); m++) {
-	  int mm, nn;
-	  mm = _isSym ? task_p_ptr[m] : (2 * task_p_ptr[m]); // upper
-	  nn = task_p_indcol[mm] * pncol_block + j;
-	  queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	  mm = _isSym ? task_p_ptr[m] : (2 * task_p_ptr[m] + 1);  // lower
-	  nn = task_p_indcol[mm] * pncol_block + i;
-	  queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	}
-#else
 	const int mmp = task_p_ptr.size() - 1;
 	if (_isSym) {
 	  for (int m = 0; m < task_p_ptr[mmp]; m++) {
@@ -2597,7 +2588,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 	    queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
 	  }
 	}
-#endif
 	queue[ipos]->parents->sort(compare_task_name);
 	queue[ipos]->parents->unique();
 	queue[ipos]->parallel_max = parallel_max2;
@@ -2632,17 +2622,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 				 0,              // atomic_id
 				 arg->ops_complexity);
 	queue[ipos]->fp = &(arg->fp);
-#ifdef SHORT_DEPENDENCY
-	for (int m = 0; m < (task_p_ptr.size() - 1); m++) {
-	  int mm, nn;
-	  mm = _isSym ? task_p_ptr[m] : (2 * task_p_ptr[m]); // upper
-	  nn = task_p_indcol[mm] * pncol_block + i;
-	  queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	  mm = _isSym ? task_p_ptr[m] : (2 * task_p_ptr[m] + 1);  // lower
-	  nn = task_p_indcol[mm] * pncol_block + j;
-	  queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	}
-#else
 	const int mmp = task_p_ptr.size() - 1;
 	for (int m = 0; m < task_p_ptr[mmp]; m++) {
 	  int nn;
@@ -2651,7 +2630,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 	  nn = task_p_indcol[2 * m] * pncol_block + i;       // upper
 	  queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
 	}
-#endif
 	queue[ipos]->parents->sort(compare_task_name);
 	queue[ipos]->parents->unique();
 	queue[ipos]->parallel_max = parallel_max2;
@@ -2667,8 +2645,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
       string task_name = ("f " + to_string(j) + " " + to_string(j)
 			  + " : " + to_string(_level) + " : "
 			  + to_string(_nb));
-      //      char *task_name_cstr = new char[task_name.str().size() + 1];
-      //      strcpy(task_name_cstr, task_name.str().c_str());
       const long nrowl = (long)nrow;
       const long block_ncoll = (long)_localSchur->ncolBlock(j, j);
       const long ops = (_isSym ? 
@@ -2695,17 +2671,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 			       0,              // atomic_id
 			       arg->ops_complexity);
       queue[ipos]->fp = &(arg->fp); 
-#ifdef SHORT_DEPENDENCY
-      for (int m = 0; m < (task_p_ptr.size() - 1); m++) {
-	int mm, nn;
-	mm = _isSym ? task_p_ptr[m] : (2 * task_p_ptr[m]); // upper
-	nn = task_p_indcol[mm] * pncol_block + j;
-	queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-	mm = _isSym ? task_p_ptr[m] : (2 * task_p_ptr[m] + 1);  // lower
-	nn = task_p_indcol[mm] * pncol_block + j;
-	queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
-      }
-#else
       const int mmp = task_p_ptr.size() - 1;
       if (_isSym) {
 	for (int m = 0; m < task_p_ptr[mmp]; m++) {
@@ -2723,7 +2688,6 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
 	  queue[ipos]->parents->push_back(task_p[task_p_index[nn]]);
 	}
       }
-#endif
       queue[ipos]->parents->sort(compare_task_name);
       queue[ipos]->parents->unique();
       queue[ipos]->parallel_max = parallel_max2;
@@ -2733,24 +2697,11 @@ void DissectionMatrix<T, U>::C_DGEMM_local_queue(vector<C_task*> &queue,
       ipos++;
     } 
   } // loop : j
-#if 0
-  for (vector<C_task *>::const_iterator it = queue.begin(); it != queue.end(); ++it) {
-    fprintf(stderr, "%s : %d / %d : %d parents : ", 
-	    (*it)->task_name, 
-	    (*it)->parallel_id,
-	    (*it)->parallel_max,
-	    (*it)->parents->size());
-    for (list<C_task*>::const_iterator jt = (*it)->parents->begin(); 
-	 jt != (*it)->parents->end(); ++jt) {
-      fprintf(stderr, "%s : ", (*jt)->task_name);
-    }
-    fprintf(stderr, "\n");
-  }
-#endif
+  return queue.size();
 }
 
 template
-void DissectionMatrix<double, double>::
+int DissectionMatrix<double, double>::
 C_DGEMM_local_queue(vector<C_task*> &queue,
 		    vector<int> &indcol,
 		    RectBlockMatrix<double> *upper1,
@@ -2771,7 +2722,7 @@ C_DGEMM_local_queue(vector<C_task*> &queue,
 		    FILE **fp);
 
 template
-void DissectionMatrix<complex<double>, double>::
+int DissectionMatrix<complex<double>, double>::
 C_DGEMM_local_queue(vector<C_task*> &queue,
 		    vector<int> &indcol,
 		    RectBlockMatrix<complex<double> > *upper1,
@@ -2792,7 +2743,7 @@ C_DGEMM_local_queue(vector<C_task*> &queue,
 		    FILE **fp);
 
 template
-void DissectionMatrix<quadruple, quadruple>::
+int DissectionMatrix<quadruple, quadruple>::
 C_DGEMM_local_queue(vector<C_task*> &queue,
 		    vector<int> &indcol,
 		    RectBlockMatrix<quadruple> *upper1,
@@ -2813,7 +2764,7 @@ C_DGEMM_local_queue(vector<C_task*> &queue,
 		    FILE **fp);
 
 template
-void DissectionMatrix<complex<quadruple>, quadruple>::
+int DissectionMatrix<complex<quadruple>, quadruple>::
 C_DGEMM_local_queue(vector<C_task*> &queue,
 		    vector<int> &indcol,
 		    RectBlockMatrix<complex<quadruple> > *upper1,
@@ -3053,7 +3004,8 @@ template<typename T, typename U>
 void DissectionMatrix<T, U>::
 ChildContrib(list<child_contribution<T> > *child_contribs,
 	     Dissection::Tree *btree,
-	     vector<DissectionMatrix<T, U>* >& dM)
+	     vector<DissectionMatrix<T, U>* >& dM,
+	     FILE **fp)
 {
 #if 0
   cout << "** strips : _nb = " << _nb << endl;
@@ -3066,6 +3018,9 @@ ChildContrib(list<child_contribution<T> > *child_contribs,
     list<index_strip> offdiag;
     const int father_id = btree->nthfatherIndex(_nb, (_level - 1 - ll) + 1);
     const Dissection::SetOfStrips &diag_xj = btree->getFathersStrips(_nb)[ll];
+    int father_id0 = btree->selfIndex(father_id);
+    DissectionMatrix &fatherM = *dM[father_id0];
+
     for (Dissection::SetOfStrips::const_iterator it = diag_xj.begin();
 	 it != diag_xj.end(); ++it) {
       // destination is in dense matrix, then without offest 
@@ -3125,16 +3080,6 @@ ChildContrib(list<child_contribution<T> > *child_contribs,
 	    break;
 	  }
 	}
-#if 0  // verbose
-	if (!found) {
-	  cerr << "distnation strip is not found : " 
-	       << (*itc).begin_dst << " : " << (*itc).begin_src
-	       << " : " << (*itc).width << " / "
-	       << (*itf).begin_dst << " : " << (*itf).begin_src
-	       << " : " << (*itf).width
-	       << endl;
-	}
-#endif
 	offdiag.push_back(index_strip(((*itf).begin_src + 
 				       offset_offdiagf_src +
 				       offset),
@@ -3143,7 +3088,7 @@ ChildContrib(list<child_contribution<T> > *child_contribs,
 				      (*itc).width));
       }
       offset_offdiagc_src += offdiag_xjc.numberOfIndices();
-    }
+    } //loop : ll
 
     //    cout << "** father_id = " << father_id << endl;
 #if 0
@@ -3177,10 +3122,18 @@ ChildContrib(list<child_contribution<T> > *child_contribs,
     }
     cout << endl;
 #endif
-    int father_id0 = btree->selfIndex(father_id);
-    DissectionMatrix &fatherM = *dM[father_id0];
+    
     list<child_contribution<T> > &tmp = child_contribs[father_id0];
-
+    if (fatherM.nrow() == 0 || _nrow == 0) {
+      fprintf(*fp, "%s %d : %d/%d %d/%d %d %d:%d\n",
+	      __FILE__, __LINE__,
+	      _nrow, _nb, fatherM.nrow(), father_id, ll,
+	      (int)diag.size(), (int)offdiag.size());
+      diag.clear();
+      if (_nrow == 0) {
+	offdiag.clear();
+      }
+    }
     int child_id = btree->selfIndex(_nb);
     tmp.push_back(child_contribution<T>(child_id,
 					fatherM.nrow(),
@@ -3188,7 +3141,6 @@ ChildContrib(list<child_contribution<T> > *child_contribs,
 					diag, 
 					offdiag,
 					fatherM.addrdiagBlock(),
-					// fatherM.diagBlock().addrCoefs_pt(), 
 					fatherM.addrupperBlock(),
 					(!_isSym) ? fatherM.addrlowerBlock() : (RectBlockMatrix<T> *)NULL,
 					_ncol_offdiag,
@@ -3200,25 +3152,29 @@ template
 void DissectionMatrix<double, double>::
 ChildContrib(list<child_contribution<double> > *child_contribs,
 	     Dissection::Tree *btree,
-	     vector<DissectionMatrix<double>* >& dM);
+	     vector<DissectionMatrix<double>* >& dM,
+	     FILE **fp);
 
 template
 void DissectionMatrix<complex<double>, double>::
 ChildContrib(list<child_contribution<complex<double> > > *child_contribs,
 	     Dissection::Tree *btree,
-	     vector<DissectionMatrix<complex<double>, double>* >& dM);
+	     vector<DissectionMatrix<complex<double>, double>* >& dM,
+	     FILE **fp);
 
 template
 void DissectionMatrix<quadruple, quadruple>::
 ChildContrib(list<child_contribution<quadruple> > *child_contribs,
 	     Dissection::Tree *btree,
-	     vector<DissectionMatrix<quadruple>* >& dM);
+	     vector<DissectionMatrix<quadruple>* >& dM,
+	     FILE **fp);
 
 template
 void DissectionMatrix<complex<quadruple>, quadruple>::
 ChildContrib(list<child_contribution<complex<quadruple> > > *child_contribs,
 	     Dissection::Tree *btree,
-	     vector<DissectionMatrix<complex<quadruple>, quadruple>* >& dM);
+	     vector<DissectionMatrix<complex<quadruple>, quadruple>* >& dM,
+	     FILE **fp);
 //
 
 template<typename T, typename U> 

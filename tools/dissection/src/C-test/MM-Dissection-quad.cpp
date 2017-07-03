@@ -37,7 +37,6 @@
 #include <sstream>
 #include <fstream>
 #include <complex>
-#include "qd/dd_real.h"
 #include "Compiler/arithmetic.hpp"
 
 using namespace std;
@@ -237,7 +236,7 @@ void copy_CSR(int *indcols, int *ptrows, T* coefs, int nrow,
 	fprintf(stderr, "zero is added to diagonal : %d\n", i);
 	ptrows[i + 1] = ptrows[i] + itmp + 1;
 	indcols[ptrows[i + 1] - 1] = i;
-	coefs[ptrows[i + 1] - 1] = T(0);
+	coefs[ptrows[i + 1] - 1] = zero;
       }
     }
     std::list<int>::iterator it = ind_cols_tmp[i].begin();

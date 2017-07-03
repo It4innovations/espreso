@@ -15,6 +15,10 @@
 
 PHYSICS LINEAR_ELASTICITY_3D;
 
+ENV {
+    PRINT_MATRICES 1;
+}
+
 GENERATOR { # ESPRESO internal mesh generator.
 
   SHAPE GRID;

@@ -3,7 +3,7 @@
     \author Atsushi Suzuki, Laboratoire Jacques-Louis Lions
     \date   Apr. 22th 2013            
     \date   Jul. 12th 2015
-    \date   Feb. 29th 2016
+    \date   Nov. 30th 2016
 */
 
 // This file is part of Dissection
@@ -13,13 +13,40 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
+// Linking Dissection statically or dynamically with other modules is making
+// a combined work based on Disssection. Thus, the terms and conditions of 
+// the GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of Dissection give you 
+// permission to combine Dissection program with free software programs or 
+// libraries that are released under the GNU LGPL and with independent modules 
+// that communicate with Dissection solely through the Dissection-fortran 
+// interface. You may copy and distribute such a system following the terms of 
+// the GNU GPL for Dissection and the licenses of the other code concerned, 
+// provided that you include the source code of that other code when and as
+// the GNU GPL requires distribution of source code and provided that you do 
+// not modify the Dissection-fortran interface.
+//
+// Note that people who make modified versions of Dissection are not obligated 
+// to grant this special exception for their modified versions; it is their
+// choice whether to do so. The GNU General Public License gives permission to 
+// release a modified version without this exception; this exception also makes
+// it possible to release a modified version which carries forward this
+// exception. If you modify the Dissection-fortran interface, this exception 
+// does not apply to your modified version of Dissection, and you must remove 
+// this exception when you distribute your modified version.
+//
+// This exception is an additional permission under section 7 of the GNU 
+// General Public License, version 3 ("GPLv3")
+//
 // Dissection is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with Disection.  If not, see <http://www.gnu.org/licenses/>.
+// along with Dissection.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 #include "Driver/C_threads_tasks.hpp"
 #include "Driver/C_KernDetect.hpp"
@@ -305,8 +332,10 @@ void C_dfull_gauss_b(void *arg_)
     }
   }
   if (verbose && (nn0 > 0)) {
-    fprintf(fp, "%s %d : nd = %d : block = %d : %d / %d\n",
-	    __FILE__, __LINE__, arg->nb, arg->id_block, nn0, nrow);
+       fprintf(fp,
+	       "%s %d : nd = %d : level = %d block = %d null = %d / %d\n",
+	       __FILE__, __LINE__, arg->nb,  arg->id_level, arg->id_block,
+	       nn0, nrow);
   }
   // permute_block is defined by Fortran array, i.e. takes index starting 1
   for (int i = i1; i < i1 + nrow; i++) {
@@ -843,8 +872,8 @@ void C_dupdateb_Schur_offdiag_t(void *arg_)
   const int b_size = arg->b_size;
   SquareBlockMatrix<T> &D = *(arg->D);
   
-  const int i1 = D.IndexBlock(arg->i1_block); //arg->i1_block * SIZE_B1;
-  const int ii = D.IndexBlock(arg->ii_block); //arg->ii_block * SIZE_B1;
+  const int i1 = D.IndexBlock(arg->i1_block); // arg->i1_block * SIZE_B1;
+  const int ii = D.IndexBlock(arg->ii_block); // arg->ii_block * SIZE_B1;
   const int jj = D.IndexBlock(arg->jj_block); // arg->jj_block * SIZE_B1;
   FILE *fp = *(arg->fp);
   const bool verbose = arg->verbose;

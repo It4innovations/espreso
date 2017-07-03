@@ -3,7 +3,7 @@
     \author Atsushi Suzuki, Laboratoire Jacques-Louis Lions
     \date   Jun. 20th 2014
     \date   Jul. 12th 2015
-    \date   Feb. 29th 2016
+    \date   Nov. 30th 2016
 */
 
 // This file is part of Dissection
@@ -13,6 +13,32 @@
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
+// Linking Dissection statically or dynamically with other modules is making
+// a combined work based on Disssection. Thus, the terms and conditions of 
+// the GNU General Public License cover the whole combination.
+//
+// As a special exception, the copyright holders of Dissection give you 
+// permission to combine Dissection program with free software programs or 
+// libraries that are released under the GNU LGPL and with independent modules 
+// that communicate with Dissection solely through the Dissection-fortran 
+// interface. You may copy and distribute such a system following the terms of 
+// the GNU GPL for Dissection and the licenses of the other code concerned, 
+// provided that you include the source code of that other code when and as
+// the GNU GPL requires distribution of source code and provided that you do 
+// not modify the Dissection-fortran interface.
+//
+// Note that people who make modified versions of Dissection are not obligated 
+// to grant this special exception for their modified versions; it is their
+// choice whether to do so. The GNU General Public License gives permission to 
+// release a modified version without this exception; this exception also makes
+// it possible to release a modified version which carries forward this
+// exception. If you modify the Dissection-fortran interface, this exception 
+// does not apply to your modified version of Dissection, and you must remove 
+// this exception when you distribute your modified version.
+//
+// This exception is an additional permission under section 7 of the GNU 
+// General Public License, version 3 ("GPLv3")
+//
 // Dissection is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -20,6 +46,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Dissection.  If not, see <http://www.gnu.org/licenses/>.
+//
 
 #include "Driver/QueueRuntime.hpp"
 
@@ -55,7 +82,7 @@
 #define DEBUG_CHECKPARENTS_DONE 
 #endif
 
-#define DEBUG_THREAD_TIME
+//#define DEBUG_THREAD_TIME
 //#define DEBUG_EXEC_THREAD
 #define DEBUG_DEADLOCK
 
@@ -202,6 +229,7 @@ int IndexTask(vector<C_task *> &queue, int pos)
 void copytask_list2seq(list<C_task_seq*> &queue_static,
 		       list<C_task_seq*> queue_lists,
 		       list<C_task *> &queue_null,
+//		       list<C_task *> &queue_dummy,
 		       string task_name,
 		       int task_id, 
 		       int mutex_id,
@@ -217,12 +245,19 @@ void copytask_list2seq(list<C_task_seq*> &queue_static,
   int num_tasks = 0;
   for (list<C_task_seq*>::const_iterator it = queue_lists.begin();
        it != queue_lists.end(); ++it) {
-    int itmp = 0;
+    //    int itmp = 0;
     for (int j = (*it)->begin; j < (*it)->end; j++) {
       if (*((*(*it)->queue)[j]->ops_complexity) != 0L) {//cf. -1L : 16 Sep.2014
 	num_tasks++;
-    	itmp++;
+//    	itmp++;
       }
+#if 0
+      else if (*((*(*it)->queue)[j]->ops_complexity) == (-1L)) {
+	fprintf(stderr, "%s %d : copytask_list2seq() dummy task = %s\n",
+		__FILE__, __LINE__, (*(*it)->queue)[j]->task_name);
+	queue_dummy.push_back((*(*it)->queue)[j]);
+      }
+#endif
       else {
 	(*(*it)->queue)[j]->status = TASK_DONE;
 #ifdef DEBUG_NULL_TASK
@@ -250,9 +285,12 @@ void copytask_list2seq(list<C_task_seq*> &queue_static,
     for (int j = (*it)->begin; j < (*it)->end; j++) {
       if (*((*(*it)->queue)[j]->ops_complexity) != 0L) { //cf. -1L : 16 Sep.2014
 	(*tasks_tmp)[k++] = (*(*it)->queue)[j];
-	nops += *((*(*it)->queue)[j]->ops_complexity);
+	if (*((*(*it)->queue)[j]->ops_complexity) > 0L) {
+	  nops += *((*(*it)->queue)[j]->ops_complexity);
+	}
       }
-      else {
+#if 0
+      else if (*((*(*it)->queue)[j]->ops_complexity) == 0L) {
 	(*(*it)->queue)[j]->status = TASK_DONE;
 #ifdef DEBUG_NULL_TASK
 	fprintf(stderr, "%s %d : copytask_list2seq() null task = %s\n",
@@ -260,6 +298,7 @@ void copytask_list2seq(list<C_task_seq*> &queue_static,
 #endif
 	queue_null.push_back((*(*it)->queue)[j]);
       }
+#endif
     }
   }
   C_task_seq* seq_tmp = new C_task_seq(task_id,
@@ -279,6 +318,7 @@ void copytask_list2seq(list<C_task_seq*> &queue_static,
 void task_assign_diag1(list<C_task_seq*> * &queue_static,
 		       vector<C_task *>* &tasks_queue,
 		       list<C_task *> &queue_null,
+     //		       list<C_task *> &queue_dummy,
 		       vector<int> &nrow_DFullLDLt,
 		       vector<bool> &isMergedDTRSM,
 		       string queue_symbol,
@@ -522,6 +562,7 @@ void task_assign_diag1(list<C_task_seq*> * &queue_static,
       copytask_list2seq(queue_static[p],
 			queue_lists[p],
 			queue_null,
+			//			queue_dummy,
 			task_name,
 			queue_id,
 			p,
@@ -572,6 +613,7 @@ void task_assign_diag1(list<C_task_seq*> * &queue_static,
 void task_assign_diag2(list<C_task_seq*> *&queue_static,
 		       vector<C_task *>* &tasks_queue, 
 		       list<C_task *> &queue_null,
+		       //		       list<C_task *> &queue_dummy,
 		       vector<bool> &isMergedDTRSM,
 		       string queue_symbol,
 		       int queue_id,
@@ -728,6 +770,7 @@ void task_assign_diag2(list<C_task_seq*> *&queue_static,
       copytask_list2seq(queue_static[p],
 			queue_lists[p],
 			queue_null,
+//			queue_dummy,
 			task_name,
 			queue_id,
 			p,
@@ -779,6 +822,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
 				  list<C_task_seq*>* & queue_static_,
 				  vector<C_task_seq *>* &queue_dynamic_,
 				  list<C_task *> &queue_null_,
+  //				  list<C_task *> &queue_dummy_,
 				  Dissection::Tree* btree,
 				  vector<int>* children,
 				  vector<C_task *>* tasks_SparseSymb,
@@ -932,6 +976,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
     copytask_list2seq(queue_dynamic[level_last],
 		      queue_tmp0,
 		      queue_null_,
+     //		      queue_dummy_,
 		      task_name,
 		      C_SPARSESOLVER, // C_FILLMATRIX1,
 		      0,               // shared by all threads
@@ -985,6 +1030,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
 	copytask_list2seq(_queue_static[p],
 			  queue_lists[p],
 			  queue_null_,
+  //			  queue_dummy_,
 			  task_name,
 			  C_SPARSENUMFACT,
 			  p,
@@ -1027,6 +1073,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
       copytask_list2seq(*queue_dynamic0,
 			queue_tmp0,
 			queue_null_,
+//			queue_dummy_,
 			task_name,
 			C_SPARSELOCALSCHUR, // C_SPARSELOCALSCHUR1 
 			0,               // shared by all threads
@@ -1097,6 +1144,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
 	copytask_list2seq(_queue_static[p],
 			  queue_lists[p],
 			  queue_null_,
+  //			  queue_dummy_,
 			  task_name,
 			  C_FILLMATRIX,
 			  p,
@@ -1163,6 +1211,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
 	copytask_list2seq(queue_dynamic[level_last],
 			  queue_tmp0,
 			  queue_null_,
+  //			  queue_dummy_,
 			  task_name,
 			  C_FILLMATRIX, // C_FILLMATRIX1,
 			  0,               // shared by all threads
@@ -1235,6 +1284,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
 	  copytask_list2seq(queue_dynamic[level],
 			    queue_tmp0,
 			    queue_null_,
+ //			    queue_dummy_,
 			    task_name,
 			    C_DTRSM1,
 			    0,               // shared by all threads
@@ -1294,6 +1344,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
 	  copytask_list2seq(queue_dynamic[level],
 			    queue_tmp0,
 			    queue_null_,
+ //			    queue_dummy_,
 			    task_name,
 			    C_DGEMM1,
 			    0,                // shared by all threads
@@ -1331,6 +1382,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
       copytask_list2seq(queue_dynamic[level],
 			queue_tmp0,
 			queue_null_,
+//			queue_dummy_,
 			task_name,
 			C_DEALLOCATE1,
 			0,               // shared by all threads
@@ -1401,6 +1453,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
 	copytask_list2seq(queue_dynamic[level],
 			  queue_tmp0,
 			  queue_null_,
+  //			  queue_dummy_,
 			  task_name,
 			  C_DSUB1,
 			  0,               // shared by all threads
@@ -1439,6 +1492,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
       copytask_list2seq(queue_dynamic2[level],
 			queue_tmp0,
 			queue_null_,
+//			queue_dummy_,
 			task_name,
 			C_DEALLOCATE1,
 			0,               // shared by all threads
@@ -1480,6 +1534,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
       copytask_list2seq(queue_dynamic2[level],
 			queue_tmp0,
 			queue_null_,
+//			queue_dummy_,
 			task_name,
 			C_DEALLOCATE1,
 			0,               // shared by all threads
@@ -1595,6 +1650,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
       task_assign_diag1(_queue_static,
 			tasks_DTRSMScale,
 			queue_null_,
+//			queue_dummy_,
 			nrow_DFullLDLt,
 			isMergedDTRSM,
 			"q",
@@ -1652,6 +1708,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
 	    copytask_list2seq(queue_dynamic1[level],
 			      queue_tmp2,
 			      queue_null_,
+     //			      queue_dummy_,
 			      task_name,
 			      C_DTRSM,
 			      0,               // shared by all threads
@@ -1688,6 +1745,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
       task_assign_diag1(_queue_static,
 			tasks_DGEMM,
 			queue_null_,
+//			queue_dummy_,
 			null_idx, // not used
 			isMergedDTRSM,
 			"r",
@@ -1709,6 +1767,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
       task_assign_diag2(_queue_static,
 			tasks_Dsub[level + 1],
 			queue_null_,
+//			queue_dummy_,
 			isMergedDTRSM,
 			//tasks_DFullLDLt,
 			"s",
@@ -1797,6 +1856,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
 	  copytask_list2seq(queue_tmp3,
 			    queue_tmp2,
 			    queue_null_,
+    //			    queue_dummy_,
 			    (*it)->task_name,
 			    (*it)->task_id,
 			    jj,
@@ -1829,6 +1889,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
 	    copytask_list2seq(queue_tmp3,
 			      queue_tmp2,
 			      queue_null_,
+     //			      queue_dummy_,
 			      (*it)->task_name,
 			      (*it)->task_id,
 			      0,
@@ -1876,6 +1937,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
 	    copytask_list2seq(_queue_static[p],
 			      queue_lists[p],
 			      queue_null_,
+     //			      queue_dummy_,
 			      task_name,
 			      C_DFULL,
 			      p,
@@ -1988,6 +2050,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
 	    copytask_list2seq(_queue_static[p],
 			      queue_lists[p],
 			      queue_null_,
+     //			      queue_dummy_,
 			      task_name,
 			      C_DTRSM,
 			      p,
@@ -2010,6 +2073,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
 	    copytask_list2seq(queue_dynamic1[level],
 			      queue_tmp2,
 			      queue_null_,
+     //			      queue_dummy_,
 			      task_name,
 			      C_DTRSM,
 			      0,               // shared by all threads
@@ -2100,6 +2164,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
 	    copytask_list2seq(_queue_static[p],
 			      queue_lists[p],
 			      queue_null_,
+     //			      queue_dummy_,
 			      task_name,
 			      C_DGEMM,
 			      p,
@@ -2168,6 +2233,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
 	  copytask_list2seq(_queue_static[p],
 			    queue_lists[p],
 			    queue_null_,
+   //			    queue_dummy_,
 			    task_name, 
 			    C_DSUB,
 			    p,
@@ -2242,6 +2308,7 @@ void QueueRuntime::generate_queue(C_task_seq* &queue_symb_,
 	  copytask_list2seq(_queue_static[p],
 			    queue_lists[p],
 			    queue_null_,
+    //			    queue_dummy_,
 			    task_name, 
 			    C_DFULL,
 			    p,
@@ -2835,8 +2902,15 @@ void QueueRuntime::exec_num_fact(const int called)
 	 list<C_task *>& parents = *(queue[j]->parents);
 	 list<C_task *>& parents_work = *(queue[j]->parents_work);
 	 if (parents_work.size() == 0) {
+#ifdef SX_ACE 
+	   for (list<C_task *>::const_iterator lt = parents.begin();
+		lt != parents.end(); ++lt) {
+	     parents_work.push_back(*lt);
+	   }
+#else // SX-ACE C++ rev 110 with C++98/03 does not understand back_insertera
 	   std::copy(parents.begin(), parents.end(), 
 		     back_inserter(parents_work));
+#endif
 	 }
 #if 0   // verify task name with printing single/parallel task sequence
 	 else {
@@ -2860,7 +2934,14 @@ void QueueRuntime::exec_num_fact(const int called)
        list<C_task *>& parents = *(queue[j]->parents);
        list<C_task *>& parents_work = *(queue[j]->parents_work);
        if (parents_work.size() == 0) {
-	 std::copy(parents.begin(), parents.end(), back_inserter(parents_work));     
+#ifdef SX_ACE
+	   for (list<C_task *>::const_iterator lt = parents.begin();
+		lt != parents.end(); ++lt) {
+	     parents_work.push_back(*lt);
+	   }
+#else // SX-ACE C++ rev 110 with C++98/03 does not understand back_inserter
+	 std::copy(parents.begin(), parents.end(), back_inserter(parents_work));
+#endif     
        }
 #if 0    // verify task name with printing single/parallel task sequence
        else {
@@ -5668,7 +5749,14 @@ void QueueRuntime::exec_fwbw()
       (*it)->status = TASK_WAITING;  // reset status
       (*it)->quit_queue = false;
       if (parents_work.size() == 0) {
+#ifdef SX_ACE
+	   for (list<C_task *>::const_iterator lt = parents.begin();
+		lt != parents.end(); ++lt) {
+	     parents_work.push_back(*lt);
+	   }
+#else // SX-ACE C++ rev 110 with C++98/03 does not understand back_inserter
 	std::copy(parents.begin(), parents.end(), back_inserter(parents_work));
+#endif
       }
       (*it)->broadcast_deadlock = 0;
     }    // loop : it

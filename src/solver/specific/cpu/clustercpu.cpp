@@ -1,3 +1,5 @@
+// Just for testing to get the matrix kernel using dissection
+// #include <Driver/DissectionSolver.hpp>
 
 #include "clustercpu.h"
 
@@ -76,13 +78,25 @@ void ClusterCPU::Create_Kinv_perDomain() {
 
 void ClusterCPU::SetupKsolvers ( ) {
 
-
-
-    #pragma omp parallel for
+   	#pragma omp parallel for
 	for (size_t d = 0; d < domains.size(); d++) {
 
 		domains[d].enable_SP_refinement = true;
+#if 0
+		// Just for testing to get the matrix kernel using dissection
+		domains[d]._RegMat.ConvertToCSR(0);
+		domains[d].K.MatAddInPlace(domains[d]._RegMat, 'N', -1.0);
 
+		domains[d].Kplus.ImportMatrix_wo_Copy(domains[d].K);
+		domains[d].Kplus.Factorization ("Dissection - kernel");
+		SEQ_VECTOR <double> kern_vect;
+		eslocal kern_dim = 0;
+		domains[d].Kplus.GetKernelVectors(kern_vect, kern_dim);
+
+		domains[d].Kplus.Clear();
+		domains[d].K.MatAddInPlace(domains[d]._RegMat, 'N', 1.0);
+		domains[d]._RegMat.ConvertToCOO(1);
+#endif
         // Import of Regularized matrix K into Kplus (Sparse Solver)
     	switch (configuration.Ksolver) {
 		case ESPRESO_KSOLVER::DIRECT_DP:

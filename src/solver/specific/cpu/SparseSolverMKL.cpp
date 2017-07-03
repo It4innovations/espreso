@@ -279,6 +279,36 @@ void SparseSolverMKL::ImportMatrix_wo_Copy(espreso::SparseMatrix & A) {
 
 }
 
+void SparseSolverMKL::ExportMatrix(espreso::SparseMatrix & A) {
+
+	switch (mtype) {
+	case 2:
+		A.mtype = espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+		A.type = 'S';
+		break;
+	case -2:
+		A.mtype = espreso::MatrixType::REAL_SYMMETRIC_INDEFINITE;
+		A.type = 'S';
+		break;
+	case 11:
+		A.mtype = espreso::MatrixType::REAL_UNSYMMETRIC;
+		A.type = 'G';
+		break;
+	}
+
+	A.rows = rows;
+	A.cols = cols;
+	A.nnz = nnz;
+
+	A.CSR_I_row_indices.clear();
+	A.CSR_J_col_indices.clear();
+	A.CSR_V_values.clear();
+
+	A.CSR_I_row_indices.insert(A.CSR_I_row_indices.end(), &CSR_I_row_indices[0], &CSR_I_row_indices[CSR_I_row_indices_size]);
+	A.CSR_J_col_indices.insert(A.CSR_J_col_indices.end(), &CSR_J_col_indices[0], &CSR_J_col_indices[CSR_J_col_indices_size]);
+	A.CSR_V_values.insert(A.CSR_V_values.end(), &CSR_V_values[0], &CSR_V_values[CSR_V_values_size]);
+}
+
 void SparseSolverMKL::SetThreaded() {
 
 	/* Numbers of processors, value of OMP_NUM_THREADS */

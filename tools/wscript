@@ -96,7 +96,7 @@ def build_qd(ctx):
         params += " --enable-shared=yes"
 
     ctx(
-        rule    = "cd {0}; ./configure {1}; make".format(path, params),
+        rule    = "cd {0}; make clean; ./configure {1}; make".format(path, params),
         always  = True,
         name    = "build qd library"
     )
