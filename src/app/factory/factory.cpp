@@ -9,6 +9,7 @@
 #include "../../assembler/solver/transientfirstorderimplicit.h"
 #include "../../assembler/physics/advectiondiffusion2d.h"
 #include "../../assembler/physics/advectiondiffusion3d.h"
+#include "../../assembler/physics/structuralmechanics2d.h"
 #include "../../assembler/physics/shallowwater2d.h"
 #include "../../solver/generic/LinearSolver.h"
 #include "../../input/loader.h"
@@ -194,6 +195,81 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		if (configuration.physics == PHYSICS::ADVECTION_DIFFUSION_3D) {
 			_physics.push_back(new NewAdvectionDiffusion3D(mesh, _instances.front(), configuration.advection_diffusion_3D));
 			AdvectionDiffusionFactory(configuration.advection_diffusion_3D);
+		}
+
+		meshPreprocessing(configuration.output);
+	}
+
+	if (configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_2D || configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {
+
+		auto StructuralMechanicsFactory = [&] (const StructuralMechanicsConfiguration &SMC) {
+			for (size_t i = 1; i <= SMC.physics_solver.load_steps; i++) {
+				auto it = SMC.physics_solver.load_steps_settings.find(i);
+				if (it == SMC.physics_solver.load_steps_settings.end()) {
+					ESINFO(GLOBAL_ERROR) << "Invalid configuration file. Fill LOAD_STEPS_SETTINGS for LOAD_STEP=" << i << ".";
+				}
+				_linearSolvers.push_back(new LinearSolver(_instances.front(), it->second->espreso));
+
+				LoadStepSettings<StructuralMechanicsNonLinearConvergence> *loadStepSettings = it->second;
+
+				switch (loadStepSettings->type) {
+					case LoadStepSettingsBase::TYPE::STEADY_STATE:
+
+						switch (loadStepSettings->mode) {
+
+						case LoadStepSettingsBase::MODE::LINEAR:
+							loadSteps.push_back(new Linear(mesh, _physics.back(), _linearSolvers.back(), store, loadStepSettings->duration_time));
+							break;
+
+						case LoadStepSettingsBase::MODE::NONLINEAR:
+							switch (loadStepSettings->nonlinear_solver.method) {
+							case NonLinearSolverBase::METHOD::NEWTON_RHAPSON:
+							case NonLinearSolverBase::METHOD::MODIFIED_NEWTON_RHAPSON:
+								loadSteps.push_back(new NewtonRhapson(mesh, _physics.back(), _linearSolvers.back(), store, loadStepSettings->nonlinear_solver, loadStepSettings->duration_time));
+								break;
+							default:
+								ESINFO(GLOBAL_ERROR) << "Not implemented non-linear solver method";
+							}
+							break;
+
+						default:
+							ESINFO(GLOBAL_ERROR) << "Not implemented non-linear solver method for steady state solver.";
+						}
+						break;
+
+					case LoadStepSettingsBase::TYPE::TRANSIENT:
+
+						switch (loadStepSettings->mode) {
+
+						case LoadStepSettingsBase::MODE::LINEAR:
+							switch (loadStepSettings->transient_solver.method) {
+							case TransientSolver::METHOD::CRANK_NICOLSON:
+							case TransientSolver::METHOD::GALERKIN:
+							case TransientSolver::METHOD::BACKWARD_DIFF:
+								loadSteps.push_back(new TransientFirstOrderImplicit(mesh, _physics.back(), _linearSolvers.back(), store, loadStepSettings->transient_solver, loadStepSettings->duration_time));
+								break;
+							default:
+								ESINFO(GLOBAL_ERROR) << "Not implemented transient solver linear method.";
+							}
+							break;
+
+						default:
+							ESINFO(GLOBAL_ERROR) << "Not implemented non-linear solver method for transient solver.";
+						}
+						break;
+
+					default:
+						ESINFO(GLOBAL_ERROR) << "Not implemented physics solver type.";
+				}
+			}
+		};
+
+		_newAssembler = true;
+		_instances.push_back(new Instance(mesh->parts(), mesh->neighbours()));
+
+		if (configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_2D) {
+			_physics.push_back(new StructuralMechanics2D(mesh, _instances.front(), configuration.structural_mechanics_2D));
+			StructuralMechanicsFactory(configuration.structural_mechanics_2D);
 		}
 
 		meshPreprocessing(configuration.output);

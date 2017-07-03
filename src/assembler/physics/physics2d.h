@@ -3,6 +3,7 @@
 #define SRC_ASSEMBLER_PHYSICS_PHYSICS2D_H_
 
 #include "physics.h"
+#include <cstring>
 
 namespace espreso {
 
@@ -17,7 +18,7 @@ struct Physics2D: public virtual Physics {
 	{
 		double det = values[0] * values[3] - values[1] * values[2];
 		if (det < 0) {
-			printf("nonpositive determinant\n");
+			printf("negative determinant\n");
 			exit(0);
 		}
 		return det;
@@ -31,6 +32,39 @@ struct Physics2D: public virtual Physics {
 		inv[2] = - detJx * m[2];
 		inv[3] =   detJx * m[0];
 	}
+
+	// source dX, dY
+
+	// target::
+	// dX   0
+	//  0  dY
+	// dY  dX
+	void distribute3x2(double *target, double *source, size_t rows, size_t columns) const
+	{
+		memcpy(target                               , source          , sizeof(double) * columns);
+		memcpy(target + 2 * rows * columns + columns, source          , sizeof(double) * columns);
+
+		memcpy(target + 1 * rows * columns + columns, source + columns, sizeof(double) * columns);
+		memcpy(target + 2 * rows * columns          , source + columns, sizeof(double) * columns);
+	}
+
+	// source dX, dY
+
+	// target::
+	// dX   0
+	//  0  dY
+	//  0  0
+	// dY  dX
+	void distribute4x2(double *target, double *source, size_t rows, size_t columns) const
+	{
+		memcpy(target                               , source          , sizeof(double) * columns);
+		memcpy(target + 3 * rows * columns + columns, source          , sizeof(double) * columns);
+
+		memcpy(target + 1 * rows * columns + columns, source + columns, sizeof(double) * columns);
+		memcpy(target + 3 * rows * columns          , source + columns, sizeof(double) * columns);
+	}
+
+
 
 	void prepareHybridTotalFETIWithCorners();
 	void prepareHybridTotalFETIWithKernels();

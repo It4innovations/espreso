@@ -6,11 +6,27 @@
 #include "../material/holder.h"
 #include "solver.h"
 #include "../solver.h"
+#include "nonlinearsolver.h"
 #include "advectiondiffusionconvection.h"
 #include "advectiondiffusionradiation.h"
-#include "advectiondiffusionsolver.h"
 
 namespace espreso {
+
+struct AdvectionDiffusionNonLinearConvergence: public NonLinearConvergence {
+
+	virtual bool checkSolution() const { return temperature; }
+	virtual bool checkResidual() const { return heat; }
+
+	virtual double requestedSolution() const { return temperature_residual; }
+	virtual double requestedResidual() const { return heat_residual; }
+
+	PARAMETER(bool, temperature, "Turn on/off temperature residual check.", true);
+	PARAMETER(bool, heat       , "Turn on/off heat residual check."       , false);
+
+	PARAMETER(double, temperature_residual, "Requested temperature residual", 1e-3);
+	PARAMETER(double, heat_residual       , "Requested heat residual"       , 1e-3);
+};
+
 
 struct AdvectionDiffusionConfiguration: public Configuration {
 
@@ -43,7 +59,6 @@ struct AdvectionDiffusionConfiguration: public Configuration {
 	SUBMAPTOMAP(size_t, std::string, std::string, temperature        , "Temperature"       , "1", "Temperature settings for load step '1'", "<REGION>", "<EXPRESSION>");
 	SUBMAPTOMAP(size_t, std::string, std::string, heat_source        , "Heat source"       , "1", "Heat source settings for load step '1'", "<REGION>", "<EXPRESSION>");
 	SUBMAPTOMAP(size_t, std::string, std::string, translation_motions, "Translation motion", "1", "Translation motion settings for load step '1'", "<REGION>", "<EXPRESSION>");
-	SUBMAPTOMAP(size_t, std::string, std::string, thickness          , "Thickness"         , "1", "Thickness settings for load step '1'", "<REGION>", "<EXPRESSION>");
 
 	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "<REGION>", "<MATERIAL_NAME>");
 

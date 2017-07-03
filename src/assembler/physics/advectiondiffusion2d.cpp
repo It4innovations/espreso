@@ -29,6 +29,7 @@ NewAdvectionDiffusion2D::NewAdvectionDiffusion2D(Mesh *mesh, Instance *instance,
 
 void NewAdvectionDiffusion2D::prepareTotalFETI()
 {
+	_mesh->loadNodeProperty(_configuration.thickness      , { }         , { Property::THICKNESS });
 	_mesh->loadProperty(_configuration.translation_motions, { "X", "Y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
 	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
 
@@ -163,7 +164,7 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 	bool CAU = _configuration.stabilization == AdvectionDiffusion2DConfiguration::STABILIZATION::CAU;
 	bool tangentCorrection = (matrices & Matrices::K) && _configuration.tangent_matrix_correction && step.iteration;
 
-	DenseMatrix Ce(2, 2), coordinates, J(2, 2), invJ(2, 2), dND;
+	DenseMatrix Ce(2, 2), coordinates(e->nodes(), 2), J(2, 2), invJ(2, 2), dND;
 	double detJ, temp;
 	DenseMatrix f(e->nodes(), 1);
 	DenseMatrix U(e->nodes(), 2);
@@ -174,8 +175,6 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 	DenseMatrix tangentK, BT, BTN, gpCD, CD, CDBTN, CDe;
 
 	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
-
-	coordinates.resize(e->nodes(), 2);
 
 	if (tangentCorrection) {
 		CD.resize(e->nodes(), 4);

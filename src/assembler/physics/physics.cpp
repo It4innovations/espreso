@@ -153,8 +153,8 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, const Element *e
 void Physics::fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslocal> &DOFs) const
 {
 	DOFs.resize(e->nodes() * pointDOFsOffsets().size());
-	for (size_t n = 0, i = 0; n < e->nodes(); n++) {
-		for (size_t dof = 0; dof < pointDOFsOffsets().size(); dof++, i++) {
+	for (size_t dof = 0, i = 0; dof < pointDOFsOffsets().size(); dof++) {
+		for (size_t n = 0; n < e->nodes(); n++, i++) {
 			DOFs[i] = _mesh->nodes()[e->node(n)]->DOFIndex(domain, pointDOFsOffsets()[dof]);
 		}
 	}

@@ -12,6 +12,8 @@
 #include "material/holder.h"
 #include "physics/advectiondiffusion2d.h"
 #include "physics/advectiondiffusion3d.h"
+#include "physics/structuralmechanics2d.h"
+#include "physics/structuralmechanics3d.h"
 #include "physics/linearelasticity2d.h"
 #include "physics/linearelasticity3d.h"
 #include "physics/shallowwater2d.h"
@@ -48,6 +50,8 @@ struct GlobalConfiguration: public Configuration {
 		{ "TRANSIENT_ELASTICITY_3D", PHYSICS::TRANSIENT_ELASTICITY_3D, "3D transient elasticity." },
 		{ "ADVECTION_DIFFUSION_2D" , PHYSICS::ADVECTION_DIFFUSION_2D , "2D advection diffusion"},
 		{ "ADVECTION_DIFFUSION_3D" , PHYSICS::ADVECTION_DIFFUSION_3D , "3D advection diffusion"},
+		{ "STRUCTURAL_MECHANICS_2D", PHYSICS::STRUCTURAL_MECHANICS_2D, "2D structural mechanics"},
+		{ "STRUCTURAL_MECHANICS_3D", PHYSICS::STRUCTURAL_MECHANICS_3D, "3D structural mechanics"},
 		{ "SHALLOW_WATER_2D"       , PHYSICS::SHALLOW_WATER_2D       , "2D shallow water"},
 		{ "STOKES"                 , PHYSICS::STOKES                 , "Stokes"}
 	}));
@@ -63,11 +67,13 @@ struct GlobalConfiguration: public Configuration {
 	SUBCONFIG(ESPRESOInput       , openfoam    , "Mesh description in OpenFOAM format.");
 	SUBCONFIG(ESPRESOInput       , esdata      , "Mesh description in ESPRESO internal binary format.");
 
-	SUBCONFIG(LinearElasticity2DConfiguration  , linear_elasticity_2D  , "2D Linear elasticity solver.");
-	SUBCONFIG(LinearElasticity3DConfiguration  , linear_elasticity_3D  , "3D Linear elasticity solver.");
-	SUBCONFIG(AdvectionDiffusion2DConfiguration, advection_diffusion_2D, "2D advection diffusiuon solver.");
-	SUBCONFIG(AdvectionDiffusion3DConfiguration, advection_diffusion_3D, "3D advection diffusiuon solver.");
-	SUBCONFIG(ShallowWater2DConfiguration      , shallow_water_2D      , "2D shallow water solver.");
+	SUBCONFIG(LinearElasticity2DConfiguration   , linear_elasticity_2D   , "2D Linear elasticity solver.");
+	SUBCONFIG(LinearElasticity3DConfiguration   , linear_elasticity_3D   , "3D Linear elasticity solver.");
+	SUBCONFIG(AdvectionDiffusion2DConfiguration , advection_diffusion_2D , "2D advection diffusiuon solver.");
+	SUBCONFIG(AdvectionDiffusion3DConfiguration , advection_diffusion_3D , "3D advection diffusiuon solver.");
+	SUBCONFIG(StructuralMechanics2DConfiguration, structural_mechanics_2D, "2D structural mechanics solver.");
+	SUBCONFIG(StructuralMechanics3DConfiguration, structural_mechanics_3D, "3D structural mechanics solver.");
+	SUBCONFIG(ShallowWater2DConfiguration       , shallow_water_2D       , "2D shallow water solver.");
 
 	SUBCONFIG(Results, results, "Expected output results.");
 

@@ -6,8 +6,7 @@
 #include "../material/holder.h"
 #include "solver.h"
 #include "../solver.h"
-#include "advectiondiffusionconvection.h"
-#include "advectiondiffusionsolver.h"
+#include "advectiondiffusion.h"
 
 namespace espreso {
 

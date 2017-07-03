@@ -27,6 +27,7 @@ struct AdvectionDiffusion2DMaterial: public Configuration {
 
 struct AdvectionDiffusion2DConfiguration: public AdvectionDiffusionConfiguration {
 
+	SUBMAPTOMAP(size_t, std::string, std::string, thickness, "Thickness", "1", "Thickness settings for load step '1'", "<REGION>", "<EXPRESSION>");
 	SUBMAPTOCONFIG(std::string, AdvectionDiffusion2DMaterial, materials, "Material description.", "<MATERIAL_NAME>", "Material description");
 
 };

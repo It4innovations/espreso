@@ -21,6 +21,7 @@ class Mesh;
 void Assembler::compose(const GlobalConfiguration &configuration, OldInstance* &instance, Mesh &mesh)
 {
 	switch (configuration.physics) {
+	case PHYSICS::STRUCTURAL_MECHANICS_2D:
 	case PHYSICS::LINEAR_ELASTICITY_2D:
 		switch (configuration.linear_elasticity_2D.physics_solver.load_steps_settings.at(1)->solver_library) {
 		case SOLVER_LIBRARY::ESPRESO:
@@ -31,6 +32,7 @@ void Assembler::compose(const GlobalConfiguration &configuration, OldInstance* &
 			break;
 		};
 		break;
+	case PHYSICS::STRUCTURAL_MECHANICS_3D:
 	case PHYSICS::LINEAR_ELASTICITY_3D:
 		switch (configuration.linear_elasticity_3D.physics_solver.load_steps_settings.at(1)->solver_library) {
 		case SOLVER_LIBRARY::ESPRESO:
