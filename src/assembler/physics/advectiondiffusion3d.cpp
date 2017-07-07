@@ -637,9 +637,11 @@ void NewAdvectionDiffusion3D::processEdge(const Step &step, Matrices matrices, c
 
 void NewAdvectionDiffusion3D::processNode(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
-	ESINFO(ERROR) << "Implement process node for AdvectionDiffusion3D.";
+	Ke.resize(0, 0);
+	Me.resize(0, 0);
+	Re.resize(0, 0);
+	fe.resize(0, 0);
 }
-
 
 void NewAdvectionDiffusion3D::postProcessElement(const Step &step, const Element *e, std::vector<Solution*> &solution)
 {

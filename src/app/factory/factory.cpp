@@ -10,6 +10,7 @@
 #include "../../assembler/physics/advectiondiffusion2d.h"
 #include "../../assembler/physics/advectiondiffusion3d.h"
 #include "../../assembler/physics/structuralmechanics2d.h"
+#include "../../assembler/physics/structuralmechanics3d.h"
 #include "../../assembler/physics/shallowwater2d.h"
 #include "../../solver/generic/LinearSolver.h"
 #include "../../input/loader.h"
@@ -270,6 +271,11 @@ Factory::Factory(const GlobalConfiguration &configuration)
 		if (configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_2D) {
 			_physics.push_back(new StructuralMechanics2D(mesh, _instances.front(), configuration.structural_mechanics_2D));
 			StructuralMechanicsFactory(configuration.structural_mechanics_2D);
+		}
+
+		if (configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {
+			_physics.push_back(new StructuralMechanics3D(mesh, _instances.front(), configuration.structural_mechanics_3D));
+			StructuralMechanicsFactory(configuration.structural_mechanics_3D);
 		}
 
 		meshPreprocessing(configuration.output);

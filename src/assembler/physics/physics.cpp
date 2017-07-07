@@ -8,6 +8,7 @@
 
 #include "../../mesh/elements/element.h"
 #include "../../mesh/structures/mesh.h"
+#include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
 
 #include "../constraints/equalityconstraints.h"
@@ -102,6 +103,12 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, c
 			fillDOFsIndices(_mesh->edges()[i], domain, DOFs);
 			insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, step, domain, true);
 		}
+	}
+
+	for (size_t i = 0; i < _mesh->coordinates().localSize(domain); i++) {
+		processNode(step, matrices, _mesh->nodes()[_mesh->coordinates().clusterIndex(i, domain)], Ke, Me, Re, fe, solution);
+		fillDOFsIndices(_mesh->nodes()[_mesh->coordinates().clusterIndex(i, domain)], domain, DOFs);
+		insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, step, domain, true);
 	}
 
 	// TODO: make it direct

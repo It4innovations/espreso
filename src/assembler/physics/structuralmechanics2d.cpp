@@ -301,10 +301,10 @@ void StructuralMechanics2D::processElement(const Step &step, Matrices matrices, 
 		gpThickness.multiply(e->N()[gp], thickness);
 		gpK.multiply(e->N()[gp], K);
 		dND.multiply(invJ, e->dN()[gp]);
+		gpDens.multiply(e->N()[gp], dens);
 
 		if (matrices & Matrices::f) {
 			gpTE.multiply(e->N()[gp], TE);
-			gpDens.multiply(e->N()[gp], dens);
 			gpInertia.multiply(e->N()[gp], inertia);
 			XY.multiply(e->N()[gp], coordinates);
 		}
@@ -427,7 +427,7 @@ void StructuralMechanics2D::processEdge(const Step &step, Matrices matrices, con
 	DenseMatrix coordinates(e->nodes(), 2), dND(1, 2), P(e->nodes(), 1), normal(2, 1), matThickness(e->nodes(), 1), XY(1, 2);
 	DenseMatrix gpP(1, 1), gpQ(1, 2), gpThickness(1, 1);
 
-	eslocal Ksize = 2 * e->nodes();
+	eslocal Ksize = pointDOFs().size() * e->nodes();
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
 	Re.resize(0, 0);
@@ -441,8 +441,8 @@ void StructuralMechanics2D::processEdge(const Step &step, Matrices matrices, con
 	for (size_t n = 0; n < e->nodes(); n++) {
 		coordinates(n, 0) = _mesh->coordinates()[e->node(n)].x;
 		coordinates(n, 1) = _mesh->coordinates()[e->node(n)].y;
-		P(n, 0) = e->getProperty(Property::PRESSURE, n, 0, 0, 0, 0);
-		matThickness(n, 0) = e->getProperty(Property::THICKNESS, n, 0, 0, 0, 1);
+		P(n, 0) = e->getProperty(Property::PRESSURE, n, step.step, step.currentTime, 0, 0);
+		matThickness(n, 0) = e->getProperty(Property::THICKNESS, n, step.step, step.currentTime, 0, 1);
 	}
 
 	for (size_t gp = 0; gp < e->gaussePoints(); gp++) {
@@ -479,6 +479,19 @@ void StructuralMechanics2D::processEdge(const Step &step, Matrices matrices, con
 
 void StructuralMechanics2D::processNode(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
+	if (
+			e->hasProperty(Property::FORCE_X, step.step) ||
+			e->hasProperty(Property::FORCE_Y, step.step)) {
+
+		Ke.resize(0, 0);
+		Me.resize(0, 0);
+		Re.resize(0, 0);
+		fe.resize(pointDOFs().size(), 0);
+
+		fe(0, 0) = e->sumProperty(Property::FORCE_X, 0, step.step, step.currentTime, 0, 0);
+		fe(1, 0) = e->sumProperty(Property::FORCE_Y, 0, step.step, step.currentTime, 0, 0);
+		return;
+	}
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
 	Re.resize(0, 0);
