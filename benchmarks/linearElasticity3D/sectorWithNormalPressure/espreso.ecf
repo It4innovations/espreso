@@ -14,7 +14,7 @@
 |-------------------------  INPUT/OUTPUT DEFINITION --------------------------|
 
 
-PHYSICS LINEAR_ELASTICITY_3D;
+PHYSICS STRUCTURAL_MECHANICS_3D;
 
 GENERATOR { # ESPRESO internal mesh generator.
 
@@ -68,7 +68,7 @@ GENERATOR { # ESPRESO internal mesh generator.
   }
 }
 
-LINEAR_ELASTICITY_3D {
+STRUCTURAL_MECHANICS_3D {
 
   PHYSICS_SOLVER {
     LOAD_STEPS          1;
@@ -104,14 +104,18 @@ LINEAR_ELASTICITY_3D {
   }
 
   DISPLACEMENT {
-    X0 X 0;
-    X1 Y 0;
-    Z0 Z 0;
-    Z1 Z 0;
+    1 {
+      X0 X 0;
+      X1 Y 0;
+      Z0 Z 0;
+      Z1 Z 0;
+    }
   }
 
   NORMAL_PRESURE {
-    Y0 7538461538.465456;
-    Y1 5923076923.08;
+    1 {
+      Y0 7538461538.465456;
+      Y1 5923076923.08;
+    }
   }
 }

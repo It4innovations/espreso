@@ -13,7 +13,7 @@
 |*****************************************************************************|
 |-------------------------  INPUT/OUTPUT DEFINITION --------------------------|
 
-PHYSICS LINEAR_ELASTICITY_2D;
+PHYSICS STRUCTURAL_MECHANICS_2D;
 
 GENERATOR {
 
@@ -56,7 +56,7 @@ GENERATOR {
   }
 }
 
-LINEAR_ELASTICITY_2D {
+STRUCTURAL_MECHANICS_2D {
 
   PHYSICS_SOLVER {
     LOAD_STEPS          1;
@@ -94,13 +94,17 @@ LINEAR_ELASTICITY_2D {
   }
 
   DISPLACEMENT {
-    Y0 Y 0;
-    X0 X 0;
+    1 {
+      Y0 Y 0;
+      X0 X 0;
+    }
   }
 
   NORMAL_PRESURE {
-    Y1 "70 * 2.1e11 / 5200";
-    X1 "70 * 2.1e11 / 5200";
+    1 {
+      Y1 "70 * 2.1e11 / 5200";
+      X1 "70 * 2.1e11 / 5200";
+    }
   }
 }
 
