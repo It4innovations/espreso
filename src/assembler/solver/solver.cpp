@@ -214,6 +214,10 @@ void Solver::regularizeMatrices(const Step &step, Matrices matrices)
 		TimeEvent time("Regularization of matrices " + mNames(Matrices::K) + " by " + physics->name()); time.start();
 		physics->makeStiffnessMatricesRegular(regularization, scSize);
 		time.endWithBarrier(); _timeStatistics->addEvent(time);
+
+		storeData(step, physics->instance()->N1, "N1", "N1");
+		storeData(step, physics->instance()->N2, "N2", "N2");
+		storeData(step, physics->instance()->RegMat, "RegMat", "RegMat");
 	};
 }
 
@@ -246,6 +250,8 @@ void Solver::composeGluing(const Step &step, Matrices matrices)
 			ESINFO(GLOBAL_ERROR) << "Unknown type of B0";
 		}
 		time.endWithBarrier(); _timeStatistics->addEvent(time);
+
+		storeData(step, physics->instance()->B0, "B0", "B0");
 	};
 
 	if (matrices & Matrices::B1) {
@@ -290,15 +296,9 @@ void Solver::initLinearSolver(const Step &step)
 	storeData(step, physics->instance()->R, "R", "residual forces R");
 	storeData(step, physics->instance()->f, "f", "right-hand side");
 
-	storeData(step, physics->instance()->N1, "N1", "N1");
-	storeData(step, physics->instance()->N2, "N2", "N2");
-	storeData(step, physics->instance()->RegMat, "RegMat", "RegMat");
-
 	storeData(step, physics->instance()->B1, "B1", "B1");
 	storeData(step, physics->instance()->B1c, "B1c", "B1c");
 	storeData(step, physics->instance()->B1duplicity, "B1duplicity", "B1duplicity");
-
-	storeData(step, physics->instance()->B0, "B0", "B0");
 
 	ESINFO(PROGRESS2) << "Initialization of linear solver";
 
@@ -314,15 +314,9 @@ void Solver::updateLinearSolver(const Step &step, Matrices matrices)
 	storeData(step, physics->instance()->R, "R", "residual forces R");
 	storeData(step, physics->instance()->f, "f", "right-hand side");
 
-	storeData(step, physics->instance()->N1, "N1", "N1");
-	storeData(step, physics->instance()->N2, "N2", "N2");
-	storeData(step, physics->instance()->RegMat, "RegMat", "RegMat");
-
 	storeData(step, physics->instance()->B1, "B1", "B1");
 	storeData(step, physics->instance()->B1c, "B1c", "B1c");
 	storeData(step, physics->instance()->B1duplicity, "B1duplicity", "B1duplicity");
-
-	storeData(step, physics->instance()->B0, "B0", "B0");
 
 	ESINFO(PROGRESS2) << "Updating of linear solver";
 
