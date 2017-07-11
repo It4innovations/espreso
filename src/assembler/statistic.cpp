@@ -85,9 +85,9 @@ void Statistic::computeNodes()
 	};
 
 	std::vector<Element*> _elements;
-	const std::vector<Element*> &elements = std::binary_search(_selection.begin(), _selection.end(), _mesh.regions()[1]) ? _mesh.nodes() : _elements;
+	const std::vector<Element*> &elements = std::find(_selection.begin(), _selection.end(), _mesh.regions()[1]) != _selection.end() ? _mesh.nodes() : _elements;
 
-	if (!std::binary_search(_selection.begin(), _selection.end(), _mesh.regions()[1])) {
+	if (std::find(_selection.begin(), _selection.end(), _mesh.regions()[1]) == _selection.end()) {
 		for (size_t s = 0; s < _selection.size(); s++) {
 			if (_selection[s]->eType != ElementType::NODES) {
 				for (size_t e = 0; e < _selection[s]->elements().size(); e++) {
@@ -185,6 +185,7 @@ void Statistic::computeNodes()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<double> value(_dataSize + 1);
+		std::vector<Region*> eregions;
 
 		for (size_t e = distribution[t]; e < distribution[t + 1]; e++) {
 
@@ -223,9 +224,22 @@ void Statistic::computeNodes()
 			}
 			value[_dataSize] = std::sqrt(value[_dataSize]);
 
+			eregions.clear();
+			eregions.insert(eregions.end(), elements[e]->regions().begin(), elements[e]->regions().end());
+			std::for_each(elements[e]->parentElements().begin(), elements[e]->parentElements().end(), [&] (Element *parent) {
+				eregions.insert(eregions.end(), parent->regions().begin(), parent->regions().end());
+			});
+			std::for_each(elements[e]->parentFaces().begin(), elements[e]->parentFaces().end(), [&] (Element *parent) {
+				eregions.insert(eregions.end(), parent->regions().begin(), parent->regions().end());
+			});
+			std::for_each(elements[e]->parentEdges().begin(), elements[e]->parentEdges().end(), [&] (Element *parent) {
+				eregions.insert(eregions.end(), parent->regions().begin(), parent->regions().end());
+			});
+			std::sort(eregions.begin(), eregions.end());
+			Esutils::removeDuplicity(eregions);
 			for (size_t i = 0; i <= _dataSize; i++) {
 				for (size_t r = 0; r < _selection.size(); r++) {
-					if (std::binary_search(elements[e]->regions().begin(), elements[e]->regions().end(), _selection[r])) {
+					if (std::binary_search(eregions.begin(), eregions.end(), _selection[r])) {
 						tData[t][r][i][0] = std::min(tData[t][r][i][0], value[i]);
 						tData[t][r][i][1] = std::max(tData[t][r][i][1], value[i]);
 						tData[t][r][i][2] += value[i];
