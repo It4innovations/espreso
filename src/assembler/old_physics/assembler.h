@@ -56,6 +56,7 @@ struct OldPhysics {
 	std::vector<bool> singularK;
 
 	std::function<void(REGULARIZATION regularization, size_t scSize)> computeKernelsCallback;
+	std::function<void(REGULARIZATION regularization, size_t scSize, size_t domain)> computeKernelCallback;
 	std::function<void(B0_TYPE type, const std::vector<SparseMatrix> &kernels)> assembleB0Callback;
 
 	OldPhysics(Mesh &mesh,

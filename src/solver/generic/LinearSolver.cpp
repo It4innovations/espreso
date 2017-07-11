@@ -682,6 +682,15 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 			physics->RegMat.swap(instance->RegMat);
 		};
 
+		instance->computeKernelCallback = [&] (REGULARIZATION regularization, size_t scSize, size_t domain) {
+			physics->K[domain].swap(instance->K[domain]);
+			physics->computeKernelCallback(regularization, scSize, domain);
+			physics->K[domain].swap(instance->K[domain]);
+			physics->R1[domain].swap(instance->N1[domain]);
+			physics->R2[domain].swap(instance->N2[domain]);
+			physics->RegMat[domain].swap(instance->RegMat[domain]);
+		};
+
 		//instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
 
 		constraints->B1.swap(instance->B1);

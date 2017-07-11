@@ -42,7 +42,6 @@ Domain::Domain(const ESPRESOSolver &configuration, Instance *instance_in, esloca
 
 		Kplus_R(instance_in->N1[domain_index_in]),
 		Kplus_R2(instance_in->N2[domain_index_in]),
-
 		_RegMat(instance_in->RegMat[domain_index_in]),
 
 		B0(instance_in->B0[domain_index_in]),
@@ -52,29 +51,40 @@ Domain::Domain(const ESPRESOSolver &configuration, Instance *instance_in, esloca
 		vec_lb(instance_in->LB[domain_index_in])
 
 {
-		domain_prim_size = K.cols;
-		domain_index 	 = domain_index_in;
-		USE_HFETI 		 = USE_HTFETI_in;
-		isOnACC          = 0;
+		domain_prim_size 	= K.cols;
+		domain_global_index = domain_index_in;
+		USE_HFETI 		 	= USE_HTFETI_in;
+		isOnACC          	= 0;
 }
 
 void Domain::SetDomain() {
 
 	std::cout << "Printing domain : " << domain_global_index <<  " " << domain_index << std::endl;
 
-	Kplus.ImportMatrix(K); //  _wo_Copy(K);
-	Kplus.Factorization ("Dissection - kernel");
 
-	instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_index); //TODO: Lubos = should be "domain_global_index" needs fix
+#if defined(SOLVER_DISSECTION)
 
-	//instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
+	//instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index);
+
+	Kplus.ImportMatrix_wo_Copy(K);
+	Kplus.Factorization ("K matrix");
+
+	// Dissection
+	Kplus_R.Clear();
+	Kplus.GetKernel(Kplus_R);
+	Kplus_R.ConvertDenseToCSR(0);
+	// END - Dissection
+
+#else
+
+	instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index);
+
+	Kplus.ImportMatrix_wo_Copy(K);
+	Kplus.Factorization ("K matrix");
+
+#endif
 
 
-//	// Dissection
-//	Kplus_R.Clear();
-//	Kplus.GetKernel(Kplus_R);
-//	Kplus_R.ConvertDenseToCSR(0);
-//	// END - Dissection
 
 
 

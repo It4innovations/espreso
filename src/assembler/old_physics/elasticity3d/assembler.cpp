@@ -674,6 +674,42 @@ void Elasticity3D::makeStiffnessMatricesRegular()
 			}
 		}
 	};
+
+
+
+	this->computeKernelCallback = [&] (REGULARIZATION regularization, size_t scSize, size_t subdomain) {
+//		#pragma omp parallel for
+//		for (size_t subdomain = 0; subdomain < K.size(); subdomain++) {
+			switch (_solverConfiguration.regularization) {
+			case REGULARIZATION::FIX_POINTS:
+			{
+				analyticsKernels(R1[subdomain], _mesh.coordinates(), subdomain);
+				analyticsRegMat(K[subdomain], RegMat[subdomain], _mesh.fixPoints(subdomain), _mesh.coordinates(), subdomain);
+				K[subdomain].RemoveLower();
+				RegMat[subdomain].RemoveLower();
+
+		// Just for testing to get matrix kernel using dissection
+		//			SparseSolverDissection diss;
+		//			diss.ImportMatrix(K[subdomain]);
+		//			diss.Factorization("Factorize K wo RegMat");
+		//			eslocal kernel_dimension = diss.dslv->kern_dimension();
+		//			SEQ_VECTOR <double> kernel_vectors(kernel_dimension * diss.rows, 0);
+		//			diss.dslv->GetKernelVectors(&kernel_vectors.front());
+
+				K[subdomain].MatAddInPlace(RegMat[subdomain], 'N', 1);
+				RegMat[subdomain].ConvertToCOO(1);
+				//RegMat[subdomain].ConvertToCOO(0);
+
+				break;
+			}
+			case REGULARIZATION::NULL_PIVOTS:
+				K[subdomain].RemoveLower();
+				algebraicKernelsAndRegularization(K[subdomain], RegMat[subdomain], R1[subdomain], subdomain, scSize);
+				break;
+			}
+//		}
+	};
+
 }
 
 void Elasticity3D::composeSubdomain(size_t subdomain)

@@ -38,12 +38,21 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 	domains.reserve(number_of_subdomains);
 	for (eslocal d = 0; d < number_of_subdomains; d++) {
 		domains.push_back( (Domain(configuration, instance, subdomains_global_indices[d], USE_HFETI)) );
+		domains[d].domain_index = d;
+
+		// Verbose level for K_plus
+		if ( d == 0 && environment->MPIrank == 0) {
+			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+		}
 	}
+
+
+
 
 	#pragma omp parallel for
 	for (eslocal d = 0; d < domains.size(); d++ ) {
-		domains[d].SetDomain();
 		domains_in_global_index[d] = subdomains_global_indices[d];
+		domains[d].SetDomain();
 	}
 
 	//// *** Alocate temporarly vectors for Temporary vectors for Apply_A function *********
@@ -61,7 +70,7 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
     	x_prim_cluster2[d].resize( domains[d].domain_prim_size );
     	x_prim_cluster3[d].resize( domains[d].domain_prim_size );
 
-		domains[d].domain_global_index 	= subdomains_global_indices[d];
+
 		domains[d].USE_KINV    	 		= USE_KINV;
 		domains[d].USE_HFETI   	 		= USE_HFETI;
 		domains[d].domain_index  		= d;
@@ -69,7 +78,7 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 
 		// Verbose level for K_plus
 		if ( d == 0 && environment->MPIrank == 0) {
-			domains[d].Kplus.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+			domains[d].Kplus.msglvl = 0;
 		}
 
 	}
