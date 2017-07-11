@@ -5,6 +5,8 @@
 #include <cstddef>
 #include <vector>
 
+#include "step.h"
+
 namespace espreso {
 
 class Mesh;
@@ -31,7 +33,7 @@ public:
 
 	Statistic(ElementType eType, const Mesh &mesh, const std::vector<std::vector<double> > &data, const std::vector<Property> &properties);
 
-	void compute();
+	void compute(const Step &step);
 	double get(const Region* region, size_t offset, StatisticalData statistics);
 	double getMagnitude(const Region* region, StatisticalData statistics)
 	{
@@ -48,6 +50,7 @@ private:
 	ElementType _eType;
 	size_t _dataSize;
 	bool _computed;
+	Step _step;
 
 	const Mesh &_mesh;
 	const std::vector<std::vector<double> > &_data;

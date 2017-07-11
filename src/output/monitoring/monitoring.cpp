@@ -135,7 +135,7 @@ void Monitoring::storeSolution(const Step &step, const std::vector<Solution*> &s
 	for (size_t i = 0; i < _monitors.size(); i++) {
 		for (size_t s = 0; s < solution.size(); s++) {
 			if (solution[s]->hasProperty(_monitors[i].properties[0])) {
-				solution[s]->computeStatisticalData();
+				solution[s]->computeStatisticalData(step);
 			}
 		}
 	}

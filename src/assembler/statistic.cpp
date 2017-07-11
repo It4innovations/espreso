@@ -56,11 +56,12 @@ double Statistic::get(const Region* region, size_t offset, StatisticalData stati
 	}
 }
 
-void Statistic::compute()
+void Statistic::compute(const Step &step)
 {
-	if (_computed) {
+	if (step == _step && _computed) {
 		return;
 	}
+	_step = step;
 	_computed = true;
 	if (!_selection.size()) {
 		return;

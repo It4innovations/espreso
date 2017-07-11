@@ -7,6 +7,7 @@
 #include <string>
 
 #include "statistic.h"
+#include "step.h"
 
 namespace espreso {
 
@@ -32,7 +33,7 @@ struct Solution {
 	std::vector<std::vector<double> >& innerData() { return _data; }
 
 	bool hasProperty(Property property) const;
-	void computeStatisticalData();
+	void computeStatisticalData(const Step &step);
 	double getStatisticalData(const std::vector<Property> &property, StatisticalData data, const Region *region) const;
 
 	std::string name;

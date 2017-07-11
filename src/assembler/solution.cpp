@@ -43,9 +43,9 @@ bool Solution::hasProperty(Property property) const
 	return _offset[static_cast<int>(property)] != -1;
 }
 
-void Solution::computeStatisticalData()
+void Solution::computeStatisticalData(const Step &step)
 {
-	_statistic.compute();
+	_statistic.compute(step);
 }
 
 double Solution::getStatisticalData(const std::vector<Property> &properties, StatisticalData data, const Region *region) const
