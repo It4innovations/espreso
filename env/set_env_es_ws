@@ -1,7 +1,7 @@
 #source /opt/intel/parallel_studio_xe_2017.0.014/bin/psxevars.sh intel64 
-source /opt/intel/compilers_and_libraries_2017.1.132/linux/bin/compilervars.sh intel64
+source /opt/intel/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64
 
-source /opt/intel/impi/2017.1.132/bin64/mpivars.sh
+source /opt/intel/impi/2017.3.196/bin64/mpivars.sh
 
 
 export MKL_NUM_THREADS=1

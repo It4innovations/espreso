@@ -5196,6 +5196,11 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
       S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
 //      S.printMatCSR("K_ss");
       K_rr_solver.ImportMatrix_wo_Copy(K_rr);
+
+//      std::stringstream matrix_name;
+//      matrix_name << typeid(K_rr_solver).name() << "_K_rr";
+//      K_rr_solver.SaveMatrixInCSR(matrix_name.str());
+
 //      K_rr.printMatCSR("K_rr");
       K_rr_solver.mtype = 11;
       K_rr_solver.msglvl= 0;
@@ -5210,7 +5215,6 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //        ose00.close();
 //      }
       int error_K_rr = K_rr_solver.Factorization(ss.str());
-
 
       if (error_K_rr){
         // K  ------------------------------------------------------------------------

@@ -8,6 +8,7 @@ LIBS     = $(ROOT)/libs
 CXX     = icpc
 
 CCFLAGS = -O3 -restrict -DCLOCK_GETTIME -DDD_REAL -DBLAS_MKL -DINT_WIDTH=$(INT_WIDTH) -I$(SRC) -I$(INCLUDES)
+#CCFLAGS = -O2 -g -restrict -DCLOCK_GETTIME -DDD_REAL -DBLAS_MKL -DINT_WIDTH=$(INT_WIDTH) -I$(SRC) -I$(INCLUDES)
 
 ifeq ($(LIBTYPE), SHARED)
   LD       = icpc

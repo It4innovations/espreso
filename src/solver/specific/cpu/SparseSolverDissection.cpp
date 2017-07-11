@@ -15,6 +15,7 @@ using namespace espreso;
 
 SparseSolverDissection::SparseSolverDissection(){
 
+	use_dense_solver = false;
 	keep_factors=true;
 	initialized = false;
 	USE_FLOAT = false;
@@ -146,15 +147,14 @@ void SparseSolverDissection::ImportMatrix(espreso::SparseMatrix & A) {
 
 	USE_FLOAT = false;
 
-	// mkl_set_num_threads();
-	is_whole = false;
-	is_sym = true;
-	upper_flag = true;
-
 	rows	= A.rows;
 	cols	= A.cols;
 	nnz		= A.nnz;
 	m_Kplus_size = A.rows;
+
+	is_whole = false;
+	is_sym = true;
+	upper_flag = true;
 
 	switch (A.mtype) {
 	case espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -168,6 +168,18 @@ void SparseSolverDissection::ImportMatrix(espreso::SparseMatrix & A) {
 		is_whole = true;
 		is_sym = false;
 		break;
+	}
+
+	import_with_copy = true;
+
+	if(rows < 12) {
+		SparseMatrix A_tmp = A;
+		A_tmp.ConvertCSRToDense(1);
+
+		use_dense_solver = true;
+		dense_solver.ImportMatrix(A_tmp);
+
+		return;
 	}
 
 	CSR_I_row_indices_size = A.CSR_I_row_indices.size();
@@ -192,8 +204,6 @@ void SparseSolverDissection::ImportMatrix(espreso::SparseMatrix & A) {
 	{
 		CSR_J_col_indices[i] -= 1;
 	}
-
-	import_with_copy = true;
 
 }
 
@@ -271,14 +281,14 @@ void SparseSolverDissection::ImportMatrix_wo_Copy(espreso::SparseMatrix & A) {
 
 	USE_FLOAT = false;
 
-	is_whole = false;
-	is_sym = true;
-	upper_flag = true;
-
 	rows	= A.rows;
 	cols	= A.cols;
 	nnz		= A.nnz;
 	m_Kplus_size = A.rows;
+
+	is_whole = false;
+	is_sym = true;
+	upper_flag = true;
 
 	switch (A.mtype) {
 	case espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -292,6 +302,18 @@ void SparseSolverDissection::ImportMatrix_wo_Copy(espreso::SparseMatrix & A) {
 		is_whole = true;
 		is_sym = false;
 		break;
+	}
+
+	import_with_copy = false;
+
+	if(rows < 12) {
+		SparseMatrix A_tmp = A;
+		A_tmp.ConvertCSRToDense(1);
+
+		use_dense_solver = true;
+		dense_solver.ImportMatrix(A_tmp);
+
+		return;
 	}
 
 	CSR_I_row_indices_size = A.CSR_I_row_indices.size();
@@ -318,8 +340,6 @@ void SparseSolverDissection::ImportMatrix_wo_Copy(espreso::SparseMatrix & A) {
 	{
 		CSR_J_col_indices[i] -= 1;
 	}
-
-	import_with_copy = false;
 }
 
 void SparseSolverDissection::ExportMatrix(espreso::SparseMatrix & A) {
@@ -365,6 +385,9 @@ void SparseSolverDissection::SetThreaded() {
 
 	/* Numbers of processors, value of OMP_NUM_THREADS */
 	num_procs = Esutils::getEnv<int>("SOLVER_NUM_THREADS");
+
+	if(use_dense_solver)
+		dense_solver.SetThreaded();
 }
 
 int SparseSolverDissection::Factorization(const std::string &str) {
@@ -375,6 +398,14 @@ int SparseSolverDissection::Factorization(const std::string &str) {
 	/* -------------------------------------------------------------------- */
 
 	ESINFO(PROGRESS3) << Info::plain() << "f";
+
+	if(use_dense_solver) {
+		dense_solver.Factorization(str);
+		initialized = true;
+		m_factorized = 1;
+
+		return 0;
+	}
 
 	if (USE_FLOAT) {
 		printf("Method Factorization for float is not implemented - float not available in Dissection solver.\n");
@@ -434,7 +465,13 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		Factorization(ss.str());
 	}
 
-	MKL_INT n_rhs = 1;
+	eslocal n_rhs = 1;
+
+	if(use_dense_solver) {
+		dense_solver.Solve(rhs_sol);
+
+		return;
+	}
 
 	/* -------------------------------------------------------------------- */
 	/* .. Back substitution and iterative refinement. */
@@ -474,9 +511,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs_sol) {
 	}
 }
 
-void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT n_rhs) {
-
-	SEQ_VECTOR <float> tmp_in, tmp_out;
+void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, eslocal n_rhs) {
 
 	if( USE_FLOAT ) {
 		printf("Method Solve for float is not implemented yet - float not available in Dissection solver.\n");
@@ -494,6 +529,14 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 		ss << "Solve -> rank: " << environment->MPIrank;
 		Factorization(ss.str());
 	}
+
+	if(use_dense_solver) {
+		dense_solver.Solve(rhs, sol, n_rhs);
+
+		return;
+	}
+
+	SEQ_VECTOR <float> tmp_in, tmp_out;
 
 	/* -------------------------------------------------------------------- */
 	/* .. Back substitution and iterative refinement. */
@@ -550,6 +593,12 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 		std::stringstream ss;
 		ss << "Solve -> rank: " << environment->MPIrank;
 		Factorization(ss.str());
+	}
+
+	if(use_dense_solver) {
+		dense_solver.Solve(rhs, sol, rhs_start_index, sol_start_index);
+
+		return;
 	}
 
 	/* -------------------------------------------------------------------- */
@@ -1077,6 +1126,31 @@ void SparseSolverDissection::GetKernelVectors(SEQ_VECTOR <double> & kern_vec, es
 	ESINFO(PROGRESS1) << "Dissection kernel test 4: '||K * R|| / max(diag(K))'";
 	ESINFO(PROGRESS1) << test4 << "\n";
 #endif
+}
+
+void SparseSolverDissection::SaveMatrixInCSR(string filename) {
+
+	std::ofstream out(filename.c_str());
+
+	if ( out.is_open() ) {
+		out.precision(9);
+		out << "I\n";
+		for(eslocal i=0; i<CSR_I_row_indices_size; i++){
+			out << CSR_I_row_indices[i] << "\n";
+		}
+
+		out << "J\n";
+		for(eslocal i=0; i<CSR_J_col_indices_size; i++){
+			out << CSR_J_col_indices[i] << "\n";
+		}
+		out << "V\n";
+		for(eslocal i=0; i<CSR_V_values_size; i++){
+			out << CSR_V_values[i] << "\n";
+		}
+		out.close();
+	} else {
+		ESINFO(ERROR) << "Matrix file " << filename << " cannot be created ! ";
+	}
 }
 
 

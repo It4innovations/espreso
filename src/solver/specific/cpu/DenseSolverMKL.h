@@ -1,7 +1,9 @@
 #ifndef DENSE_SOLVER_MKL_H_
 #define DENSE_SOLVER_MKL_H_
 
-#include "mkl.h"
+//#include "mkl.h"
+
+#include "mkl_lapack.h"
 
 #include "../densesolver.h"
 

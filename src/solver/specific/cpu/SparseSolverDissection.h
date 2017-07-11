@@ -2,6 +2,8 @@
 #ifndef SOLVER_SPECIFIC_CPU_SOLVERDISSECTION_H_
 #define SOLVER_SPECIFIC_CPU_SOLVERDISSECTION_H_
 
+#include "../densesolvers.h"
+
 #include "../sparsesolver.h"
 
 #include "mkl_pardiso.h"
@@ -61,6 +63,8 @@ public:
 	void GetKernelVectors(SEQ_VECTOR <double> & kern_vec, eslocal & kern_dim);
 	void GetKernel(SparseMatrix &R);
 
+	void SaveMatrixInCSR(string filename);
+
 	DissectionSolver<double, double, double, double, double, double> * dslv;
 	FILE *fp;
 	int called;
@@ -68,6 +72,9 @@ public:
 	int scaling;
 	bool kernel_detection_all;
 	bool diss_verbose;
+
+	bool use_dense_solver;
+	DenseSolverCPU dense_solver;
 
 	bool initialized;
 	bool keep_factors;

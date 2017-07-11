@@ -50,6 +50,8 @@ public:
 	void SolveCG(SparseMatrix & A_in, std::vector <double> & rhs, std::vector <double> & sol);
 	void SolveCG(SparseMatrix & A_in, std::vector <double> & rhs_sol);
 
+	void SaveMatrixInCSR(string filename);
+
 	bool initialized;
 	bool keep_factors;
 	bool import_with_copy;

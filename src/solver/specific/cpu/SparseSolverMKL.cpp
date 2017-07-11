@@ -1660,6 +1660,30 @@ void SparseSolverMKL::Create_non_sym_SC_w_Mat( espreso::SparseMatrix & K_in, esp
 
 }
 
+void SparseSolverMKL::SaveMatrixInCSR(string filename) {
+
+	std::ofstream out(filename.c_str());
+
+	if ( out.is_open() ) {
+		out << "I\n";
+		for(eslocal i=0; i<CSR_I_row_indices_size; i++){
+			out << CSR_I_row_indices[i] << "\n";
+		}
+
+		out << "J\n";
+		for(eslocal i=0; i<CSR_J_col_indices_size; i++){
+			out << CSR_J_col_indices[i] << "\n";
+		}
+		out << "V\n";
+		for(eslocal i=0; i<CSR_V_values_size; i++){
+			out << CSR_V_values[i] << "\n";
+		}
+		out.close();
+	} else {
+		ESINFO(ERROR) << "Matrix file " << filename << " cannot be created ! ";
+	}
+}
+
 
 #include <stdio.h>
 #include "mkl_rci.h"
