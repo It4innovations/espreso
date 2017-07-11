@@ -4505,7 +4505,7 @@ void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 	SparseMatrix 			G1t_l;
 	SparseMatrix 			GGt_l;
 	SparseMatrix 			GGt_Mat_tmp;
-	SparseSolverCPU 		GGt_tmp;
+	SparseSolverMKL 		GGt_tmp;
 
     /* Numbers of processors, value of OMP_NUM_THREADS */
 	int num_procs     = environment->PAR_NUM_THREADS;

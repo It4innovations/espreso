@@ -4032,14 +4032,16 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
     }
 //
     if (permutVectorActive==1){
-      srand(time(NULL));
+      //srand(time(NULL));
+      srand(0);
 
       if (fixing_nodes_or_dof==0){
         random_shuffle ( permVec.begin(), permVec.end() );
       }
       else
       {
-        std::srand(std::time(0));
+        //std::srand(std::time(0));
+    	  std::srand(0);
         std::random_shuffle ( permVec.begin(), permVec.begin()+n_nodsSub);
         for (eslocal i=n_nodsSub;i>0;i--){
           for (eslocal j=0;j<dofPerNode;j++){
@@ -4055,7 +4057,8 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
       // random permutation
       n_mv = 0;                     // n_mv = size(unique(tmp_vec_s)) has to be equal to sc_size
       cnt_permut_vec=0;
-      srand(time(NULL));
+      //srand(time(NULL));
+      srand(0);
       // loop controls, if series 'tmp_vec_s' with unique integers has suffisciant dimension.
       // If not, missing numbers are added and checked again.
       do {
@@ -4152,7 +4155,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
   elapsed_secs[4] = double(time1 - begin_time) ;
 #endif
 //
-  SparseSolverCPU K_rr_solver;
+  SparseSolverMKL K_rr_solver;
   std::stringstream ss;
   bool SC_via_K_rr=true;
 //
@@ -4212,7 +4215,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
       S.RemoveLower();
     }
     else{
-      SparseSolverCPU createSchur;
+      SparseSolverMKL createSchur;
       // TODO PARDISO_SC provides factor K_rr.
       // if SC_via_K_rr=false,  factorization is made redundantly later.
       createSchur.ImportMatrix(K_modif);
@@ -4477,7 +4480,7 @@ if (defect_K_in == 0){
     NtN_Mat.MatMat( Nt,'N',N );
     NtN_Mat.MatTranspose();
     NtN_Mat.RemoveLower();
-    SparseSolverCPU NtN;
+    SparseSolverMKL NtN;
     NtN.ImportMatrix(NtN_Mat);
     NtN_Mat.Clear();
     std::stringstream sss;
@@ -5178,7 +5181,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
   elapsed_secs[4] = double(time1 - begin_time) ;
 #endif
 //
-  SparseSolverCPU K_rr_solver;
+  SparseSolverMKL K_rr_solver;
   std::stringstream ss;
   bool SC_via_K_rr=true;
 //
@@ -5252,7 +5255,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //      S.RemoveLower();
     }
     else{
-      SparseSolverCPU createSchur;
+      SparseSolverMKL createSchur;
       // TODO PARDISO_SC provides factor K_rr.
       // if SC_via_K_rr=false,  factorization is made redundantly later.
       createSchur.ImportMatrix(K_modif);
@@ -5675,7 +5678,7 @@ if (defect_K_in == 0){
     if (use_invNtN_in_regMat){
       Nl.MatTranspose( Nlt );
       NtNl.MatMat( Nt,'N',Nl );
-      SparseSolverCPU inv_NtNl;
+      SparseSolverMKL inv_NtNl;
       inv_NtNl.ImportMatrix_wo_Copy(NtNl);
       //NtNl.Clear();
       inv_NtNl.Factorization(sss.str());

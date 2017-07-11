@@ -148,6 +148,10 @@ Instance::Instance(Instance &other, Matrices &share)
 		B1duplicity.resize(domains);
 	}
 
+	computeKernelCallback = [] (REGULARIZATION regularization, size_t scSize, size_t domain) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernel is empty function. Fill it in assembler.";
+	};
+
 	computeKernelsCallback = [] (REGULARIZATION regularization, size_t scSize) {
 		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernels is empty function. Fill it in assembler.";
 	};

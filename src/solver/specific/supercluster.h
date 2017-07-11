@@ -140,6 +140,7 @@ public:
 		int glob_clust_index = 0;
 		MPI_Exscan(&numClusters, &glob_clust_index, 1, MPI_INT, MPI_SUM, environment->MPICommunicator);
 
+		//instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
 
 		for (eslocal c = 0; c < numClusters; c++) {
 
@@ -214,11 +215,45 @@ public:
 		 TimeEval HFETI_prec_timing (" HFETI - preprocessing timing");
 		 HFETI_prec_timing.totalTime.start();
 
-		 TimeEvent B0_time("Compress B0 per cluster"); B0_time.start();
+		 TimeEvent B0_time("Create and Compress B0 per cluster"); B0_time.start();
+
+//		 instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
+
+		 instance->assembleB0(configuration.B0_type, instance->N1);
+
+//#pragma omp parallel for
+//for (size_t d = 0; d < domains.size(); d++) {
+//	domains[d]->multKplusLocal(*x_in[d]);
+//}
+
 		for (eslocal c = 0; c < clusters.size(); c++) {
 			if (clusters[c].domains.size() > 1) clusters[c].CompressB0();
 		}
 		 B0_time.end(); B0_time.printStatMPI(); HFETI_prec_timing.addEvent(B0_time);
+
+		 for (eslocal c = 0; c < clusters.size(); c++) {
+
+			 // *** Alocate temporarly vectors for inter-cluster processing *********************
+			 // *** - based on uncompressed matrix B0
+			 clusters[c].tm1.resize(clusters[c].domains.size());
+			 clusters[c].tm2.resize(clusters[c].domains.size());
+			 clusters[c].tm3.resize(clusters[c].domains.size());
+
+			 eslocal max_tmp_vec_size;
+			#pragma omp parallel for
+			 for (size_t d = 0; d < clusters[c].domains.size(); d++) {
+
+				 max_tmp_vec_size = clusters[c].domains[d].B0.cols;
+				 if (clusters[c].domains[d].B0.rows > clusters[c].domains[d].B0.cols)
+					 max_tmp_vec_size = clusters[c].domains[d].B0.rows;
+
+				 clusters[c].tm1[d].resize( max_tmp_vec_size );
+				 clusters[c].tm2[d].resize( max_tmp_vec_size );
+				 clusters[c].tm3[d].resize( max_tmp_vec_size );
+			 }
+
+		 }
+
 
 		 TimeEvent G0_time("Create G0 per cluster"); G0_time.start();
 		for (eslocal c = 0; c < clusters.size(); c++) {

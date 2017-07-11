@@ -7,6 +7,33 @@
 
 using namespace espreso;
 
+
+void storeData(SparseMatrix matrices, const std::string &name, const std::string &description, int d)
+{
+	if (environment->print_matrices) {
+		ESINFO(ALWAYS) << Info::TextColor::BLUE << "Storing " << description;
+		//for (size_t d = 0; d < matrices.size(); d++) {
+			std::ofstream os(Logging::prepareFile(d, name));
+			os << matrices;
+			os.close();
+		//}
+	}
+}
+
+void storeData(vector<double> vectors, const std::string &name, const std::string &description, int d)
+{
+	if (environment->print_matrices) {
+		ESINFO(ALWAYS) << Info::TextColor::BLUE << "Storing " << description;
+		//for (size_t d = 0; d < vectors.size(); d++) {
+			std::ofstream os(Logging::prepareFile(d, name));
+			for (int i = 0; i < vectors.size(); i++) {
+				os << vectors[i] << std::endl;
+			}
+			os.close();
+		//}
+	}
+}
+
 Domain::Domain(const ESPRESOSolver &configuration, Instance *instance_in, eslocal domain_index_in, eslocal USE_HTFETI_in):
 		configuration(configuration),
 		instance(instance_in),
@@ -17,6 +44,8 @@ Domain::Domain(const ESPRESOSolver &configuration, Instance *instance_in, esloca
 		Kplus_R2(instance_in->N2[domain_index_in]),
 
 		_RegMat(instance_in->RegMat[domain_index_in]),
+
+		B0(instance_in->B0[domain_index_in]),
 
 		f(instance_in->f[domain_index_in]),
 		vec_c(instance_in->B1c[domain_index_in]),
@@ -30,6 +59,85 @@ Domain::Domain(const ESPRESOSolver &configuration, Instance *instance_in, esloca
 }
 
 void Domain::SetDomain() {
+
+	std::cout << "Printing domain : " << domain_global_index <<  " " << domain_index << std::endl;
+
+	Kplus.ImportMatrix(K); //  _wo_Copy(K);
+	Kplus.Factorization ("Dissection - kernel");
+
+	instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_index); //TODO: Lubos = should be "domain_global_index" needs fix
+
+	//instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
+
+
+//	// Dissection
+//	Kplus_R.Clear();
+//	Kplus.GetKernel(Kplus_R);
+//	Kplus_R.ConvertDenseToCSR(0);
+//	// END - Dissection
+
+
+
+//	Kplus_R.ConvertDenseToCSR(0);
+//
+//	std::cout << K.SpyText();
+//	std::cout << Kplus_R.SpyText();
+//
+//	storeData(K,"K_dom_","K_dom",domain_global_index);
+//
+// 	storeData(Kplus_R,              "R_dom_a",       "R_dom_a",       domain_index);
+//	storeData(Kplus_R.dense_values, "R_dom_a_dense", "R_dom_a_dense", domain_index);
+//
+//	std::cout << "Norm K_R alex = " << K.getNorm_K_R(K,Kplus_R,'N') << "\n";
+//
+//	_RegMat.ConvertToCSR(0);
+//	K.MatAddInPlace(_RegMat,'N',-1.0);
+//
+//	std::cout << "Norm K_R alex = " << K.getNorm_K_R(K,Kplus_R,'N') << "\n";
+//
+//	SparseMatrix Kfull;
+//	Kfull = K;
+//	Kfull.MatTranspose();
+//	Kfull.SetDiagonalOfSymmetricMatrix(0.0);
+//	Kfull.MatAddInPlace(K,'N',1.0);
+//	Kfull.type='G';
+//	std::cout << Kfull.SpyText();
+//
+//
+//	SparseMatrix TMa;
+//	TMa.MatMat(Kfull,'T',Kplus_R);
+//	storeData(TMa,              "KtimesRa",       "KtimesRa",       domain_index);
+//
+//	Kplus.ImportMatrix(K); //  _wo_Copy(K);
+//	Kplus.Factorization ("Dissection - kernel");
+//
+//
+//
+////	Kplus_R.Clear();
+////	Kplus.GetKernel(Kplus_R);
+////	Kplus_R.ConvertDenseToCSR(0);
+//
+//
+//	std::cout << "Norm K_R diss = " << K.getNorm_K_R(K,Kplus_R,'N') << "\n";
+//
+//	K.MatAddInPlace(_RegMat,'N',+1.0);
+//
+//	SparseMatrix TM;
+//	TM.MatMat(Kfull,'T',Kplus_R);
+//	storeData(TM,              "KtimesR",       "KtimesR",       domain_index);
+//
+//
+////	std::cout << K.SpyText();
+////	std::cout << Kplus_R.SpyText();
+//
+//
+//
+// 	storeData(Kplus_R,              "R_dom_",      "R_dom",       domain_index);
+//	storeData(Kplus_R.dense_values, "R_dom_dense", "R_dom_dense", domain_index);
+
+
+
+
 
 	//Kernel setup
 	Kplus_Rb  = Kplus_R;
@@ -45,14 +153,13 @@ void Domain::SetDomain() {
 	B1_scale_vec = instance->B1duplicity[domain_index];
 	lambda_map_sub = instance->B1subdomainsMap[domain_index];
 
-
 	// HTFETI Section
 	//USE_HFETI = USE_HTFETI_in;
-	if (USE_HFETI == 1) {
-		B0 = instance->B0[domain_index];
-		B0.type = 'G';
-		B0.ConvertToCSRwithSort(1);
-	}
+//	if (USE_HFETI == 1) {
+//		B0 = instance->B0[domain_index];
+//		B0.type = 'G';
+//		B0.ConvertToCSRwithSort(1);
+//	}
 
 
 }

@@ -61,7 +61,7 @@ void LinearSolver::init()
 		delete solver;
 	}
 
-	instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
+	//instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
 	if (configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
 		instance->assembleB0(configuration.B0_type, instance->N1);
 	}
@@ -82,7 +82,7 @@ void LinearSolver::update(Matrices matrices)
 		delete cluster;
 		delete solver;
 
-		instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
+		//instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
 		cluster = new SuperCluster(configuration, instance);
 		solver  = new IterSolver(configuration);
 
@@ -670,6 +670,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 		physics->K.swap(instance->K);
 		for (size_t i = 0; i < physics->K.size(); i++) {
 			instance->K[i].mtype = physics->mtype;
+			instance->K[i].RemoveLower();
 		}
 
 		instance->computeKernelsCallback = [&] (REGULARIZATION regularization, size_t scSize) {
@@ -681,7 +682,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 			physics->RegMat.swap(instance->RegMat);
 		};
 
-		instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
+		//instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
 
 		constraints->B1.swap(instance->B1);
 		constraints->B1c.swap(instance->B1c);
@@ -696,7 +697,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 				constraints->B0subdomainsMap.swap(instance->B0subdomainsMap);
 			};
 
-			instance->assembleB0(configuration.B0_type, instance->N1);
+			//instance->assembleB0(configuration.B0_type, instance->N1);
 		}
 
 		constraints->LB.swap(instance->LB);

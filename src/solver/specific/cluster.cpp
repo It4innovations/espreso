@@ -77,27 +77,27 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 	//// *** Set up the dual size ********************************************************
 	dual_size = domains[0].B1.rows;
 
-	if (USE_HFETI == 1) {
-
-		// *** Alocate temporarly vectors for inter-cluster processing *********************
-		// *** - based on uncompressed matrix B0
-		tm1.resize(domains.size());
-		tm2.resize(domains.size());
-		tm3.resize(domains.size());
-
-		#pragma omp parallel for
-		for (size_t d = 0; d < domains.size(); d++) {
-			eslocal max_tmp_vec_size = domains[d].B0.cols;
-
-			if (domains[d].B0.rows > domains[d].B0.cols)
-				max_tmp_vec_size = domains[d].B0.rows;
-
-			tm1[d].resize( max_tmp_vec_size );
-			tm2[d].resize( max_tmp_vec_size );
-			tm3[d].resize( max_tmp_vec_size );
-		}
-		// *** END - Alocate temporarly vectors for inter-cluster processing *****************
-	}
+//	if (USE_HFETI == 1) {
+//
+//		// *** Alocate temporarly vectors for inter-cluster processing *********************
+//		// *** - based on uncompressed matrix B0
+//		tm1.resize(domains.size());
+//		tm2.resize(domains.size());
+//		tm3.resize(domains.size());
+//
+//		#pragma omp parallel for
+//		for (size_t d = 0; d < domains.size(); d++) {
+//			eslocal max_tmp_vec_size = domains[d].B0.cols;
+//
+//			if (domains[d].B0.rows > domains[d].B0.cols)
+//				max_tmp_vec_size = domains[d].B0.rows;
+//
+//			tm1[d].resize( max_tmp_vec_size );
+//			tm2[d].resize( max_tmp_vec_size );
+//			tm3[d].resize( max_tmp_vec_size );
+//		}
+//		// *** END - Alocate temporarly vectors for inter-cluster processing *****************
+//	}
 
 	#pragma omp parallel for
 	for (size_t d = 0; d < domains.size(); d++ ) {
@@ -1178,6 +1178,13 @@ void ClusterBase::CompressB0() {
 
 	#pragma omp parallel for
 	for (size_t d = 0; d < domains.size(); d++) {
+
+		//TODO: Need fix - dual copy - prepisuju data asembleru
+		domains[d].B0 = instance->B0[domains[d].domain_global_index];
+		domains[d].B0.type = 'G';
+		domains[d].B0.ConvertToCSRwithSort(1);
+
+
 		domains[d].B0.MatTranspose(domains[d].B0t);
 		domains[d].B0_comp = domains[d].B0;
 
@@ -1304,7 +1311,7 @@ void ClusterBase::CreateF0() {
 				&& (configuration.Ksolver == ESPRESO_KSOLVER::DIRECT_SP
 				|| configuration.Ksolver == ESPRESO_KSOLVER::DIRECT_MP )
 			) {
-			SparseSolverCPU Ktmp;
+			SparseSolverMKL Ktmp;
 			Ktmp.ImportMatrix_wo_Copy(domains[d].K);
 			std::stringstream ss;
 			ss << "Create F0 -> rank: " << environment->MPIrank << ", subdomain: " << d;
@@ -1466,7 +1473,7 @@ void ClusterBase::CreateSa() {
 		F0_fast.SolveMatF(G0t,tmpM, true);
 		if (MPIrank == 0) F0_fast.msglvl = 0;
 	} else {
-		SparseSolverCPU tmpsps;
+		SparseSolverMKL tmpsps;
 		if (MPIrank == 0) {
 			tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 		}
@@ -1551,6 +1558,8 @@ void ClusterBase::CreateSa() {
 				SparseMatrix tR;
 
 				SEQ_VECTOR < eslocal > rows_inds (Kernel_Sa.cols);
+
+				//TODO: Tady to asi neni dobre pro singu/regu
 				for (int i = 0; i < Kernel_Sa.cols; i++)
 					rows_inds[i] = 1 + d * Kernel_Sa.cols + i;
 

@@ -179,10 +179,10 @@ using std::make_pair;
         SparseMatrix F0_Mat;
         SparseMatrix B0Kplus;
 
-        SparseSolverCPU F0;
+        SparseSolverMKL F0;
         SparseSolverCPU F0_fast;
 
-        SparseSolverCPU Sa;
+        SparseSolverMKL Sa;
 
         DenseSolverCPU 	Sa_dense_cpu;
         DenseSolverAcc  Sa_dense_acc;

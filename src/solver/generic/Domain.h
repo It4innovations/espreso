@@ -105,7 +105,7 @@ public:
 #ifdef ESBEM
 	DenseSolverCPU Kplus;
 #else
-	SparseSolverCPU Kplus;
+	SparseSolverMKL Kplus;
 #endif
 
 	SparseSolverCPU KplusF;

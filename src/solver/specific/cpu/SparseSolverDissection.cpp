@@ -913,6 +913,28 @@ void SparseSolverDissection::Create_non_sym_SC_w_Mat( espreso::SparseMatrix & K_
 	}
 }
 
+void SparseSolverDissection::GetKernel(SparseMatrix &R) {
+
+	// After factorization, with singular matrix
+	if (!initialized) {
+		std::stringstream ss;
+		ss << "Get Kernel -> rank: " << environment->MPIrank;
+		Factorization(ss.str());
+	}
+
+	eslocal kern_dim = dslv->kern_dimension();
+	R.dense_values.resize(kern_dim * rows);
+
+	dslv->GetKernelVectors(&R.dense_values.front());
+
+	R.type = 'G';
+	R.nnz  = kern_dim * cols;
+
+	R.cols = kern_dim;
+	R.rows = rows;
+
+}
+
 void SparseSolverDissection::GetKernelVectors(SEQ_VECTOR <double> & kern_vec, eslocal & kern_dim) {
 
 	// After factorization, with singular matrix

@@ -78,87 +78,87 @@ void ClusterCPU::Create_Kinv_perDomain() {
 
 void ClusterCPU::SetupKsolvers ( ) {
 
-   	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++) {
-
-		domains[d].enable_SP_refinement = true;
-#if 0
-		// Just for testing to get the matrix kernel using dissection
-		domains[d]._RegMat.ConvertToCSR(0);
-		domains[d].K.MatAddInPlace(domains[d]._RegMat, 'N', -1.0);
-
-		domains[d].Kplus.ImportMatrix_wo_Copy(domains[d].K);
-		domains[d].Kplus.Factorization ("Dissection - kernel");
-		SEQ_VECTOR <double> kern_vect;
-		eslocal kern_dim = 0;
-		domains[d].Kplus.GetKernelVectors(kern_vect, kern_dim);
-
-		domains[d].Kplus.Clear();
-		domains[d].K.MatAddInPlace(domains[d]._RegMat, 'N', 1.0);
-		domains[d]._RegMat.ConvertToCOO(1);
-#endif
-        // Import of Regularized matrix K into Kplus (Sparse Solver)
-    	switch (configuration.Ksolver) {
-		case ESPRESO_KSOLVER::DIRECT_DP:
-			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
-			break;
-		case ESPRESO_KSOLVER::ITERATIVE:
-			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
-			break;
-		case ESPRESO_KSOLVER::DIRECT_SP:
-			domains[d].Kplus.ImportMatrix_wo_Copy_fl(domains[d].K);
-			break;
-		case ESPRESO_KSOLVER::DIRECT_MP:
-			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
-			break;
-//		case 4:
+//   	#pragma omp parallel for
+//	for (size_t d = 0; d < domains.size(); d++) {
+//
+//		domains[d].enable_SP_refinement = true;
+//#if 0
+//		// Just for testing to get the matrix kernel using dissection
+//		domains[d]._RegMat.ConvertToCSR(0);
+//		domains[d].K.MatAddInPlace(domains[d]._RegMat, 'N', -1.0);
+//
+//		domains[d].Kplus.ImportMatrix_wo_Copy(domains[d].K);
+//		domains[d].Kplus.Factorization ("Dissection - kernel");
+//		SEQ_VECTOR <double> kern_vect;
+//		eslocal kern_dim = 0;
+//		domains[d].Kplus.GetKernelVectors(kern_vect, kern_dim);
+//
+//		domains[d].Kplus.Clear();
+//		domains[d].K.MatAddInPlace(domains[d]._RegMat, 'N', 1.0);
+//		domains[d]._RegMat.ConvertToCOO(1);
+//#endif
+//        // Import of Regularized matrix K into Kplus (Sparse Solver)
+//    	switch (configuration.Ksolver) {
+//		case ESPRESO_KSOLVER::DIRECT_DP:
+//			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
+//			break;
+//		case ESPRESO_KSOLVER::ITERATIVE:
+//			domains[d].Kplus.ImportMatrix_wo_Copy (domains[d].K);
+//			break;
+//		case ESPRESO_KSOLVER::DIRECT_SP:
+//			domains[d].Kplus.ImportMatrix_wo_Copy_fl(domains[d].K);
+//			break;
+//		case ESPRESO_KSOLVER::DIRECT_MP:
 //			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
 //			break;
-		default:
-			ESINFO(ERROR) << "Invalid KSOLVER value.";
-		}
-
-        //domains[d].Kplus.mtype = -2;
-
-        if (configuration.keep_factors) {
-            std::stringstream ss;
-            ss << "init -> rank: " << environment->MPIrank << ", subdomain: " << d;
-            domains[d].Kplus.keep_factors = true;
-            if (configuration.Ksolver != ESPRESO_KSOLVER::ITERATIVE) {
-                domains[d].Kplus.Factorization (ss.str());
-            }
-        } else {
-            domains[d].Kplus.keep_factors = false;
-            domains[d].Kplus.MPIrank = environment->MPIrank;
-        }
-
-        //TODO: Hot Fix - needs to be done better
-#ifdef ESBEM
-        if ( !SYMMETRIC_SYSTEM ) {
-            // 11 = Real and unsymmetric matrix
-            domains[d].Kplus.mtype = espreso::MatrixType::REAL_UNSYMMETRIC; //11;
-        } else {
-            // 2 = Real and symmetric positive definite
-            domains[d].Kplus.mtype = espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE; //2;
-        }
-        //TODO: else stokes = -2 = Real and symmetric indefinite
-#else
-        if ( !SYMMETRIC_SYSTEM ) {
-            // 11 = Real and unsymmetric matrix
-            domains[d].Kplus.mtype = 11; //espreso::MatrixType::REAL_UNSYMMETRIC; //11;
-        } else {
-            // 2 = Real and symmetric positive definite
-            domains[d].Kplus.mtype = 2; //espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE; //2;
-        }
-        //TODO: else stokes = -2 = Real and symmetric indefinite
-#endif
-
-        if ( d == 0 && environment->MPIrank == 0) {
-        	domains[d].Kplus.msglvl = 0;
-        }
-        ESINFO(PROGRESS3) << Info::plain() << ".";
-    }
-    ESINFO(PROGRESS3);
+////		case 4:
+////			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+////			break;
+//		default:
+//			ESINFO(ERROR) << "Invalid KSOLVER value.";
+//		}
+//
+//        //domains[d].Kplus.mtype = -2;
+//
+//        if (configuration.keep_factors) {
+//            std::stringstream ss;
+//            ss << "init -> rank: " << environment->MPIrank << ", subdomain: " << d;
+//            domains[d].Kplus.keep_factors = true;
+//            if (configuration.Ksolver != ESPRESO_KSOLVER::ITERATIVE) {
+//                domains[d].Kplus.Factorization (ss.str());
+//            }
+//        } else {
+//            domains[d].Kplus.keep_factors = false;
+//            domains[d].Kplus.MPIrank = environment->MPIrank;
+//        }
+//
+//        //TODO: Hot Fix - needs to be done better
+//#ifdef ESBEM
+//        if ( !SYMMETRIC_SYSTEM ) {
+//            // 11 = Real and unsymmetric matrix
+//            domains[d].Kplus.mtype = espreso::MatrixType::REAL_UNSYMMETRIC; //11;
+//        } else {
+//            // 2 = Real and symmetric positive definite
+//            domains[d].Kplus.mtype = espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE; //2;
+//        }
+//        //TODO: else stokes = -2 = Real and symmetric indefinite
+//#else
+//        if ( !SYMMETRIC_SYSTEM ) {
+//            // 11 = Real and unsymmetric matrix
+//            domains[d].Kplus.mtype = 11; //espreso::MatrixType::REAL_UNSYMMETRIC; //11;
+//        } else {
+//            // 2 = Real and symmetric positive definite
+//            domains[d].Kplus.mtype = 2; //espreso::MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE; //2;
+//        }
+//        //TODO: else stokes = -2 = Real and symmetric indefinite
+//#endif
+//
+//        if ( d == 0 && environment->MPIrank == 0) {
+//        	domains[d].Kplus.msglvl = 0;
+//        }
+//        ESINFO(PROGRESS3) << Info::plain() << ".";
+//    }
+//    ESINFO(PROGRESS3);
 
 }
 
