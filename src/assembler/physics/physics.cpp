@@ -223,37 +223,41 @@ void Physics::makeStiffnessMatricesRegular(REGULARIZATION regularization, size_t
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < _instance->domains; d++) {
-
-		switch (regularization) {
-
-		case REGULARIZATION::FIX_POINTS:
-			analyticRegularization(d);
-			_instance->RegMat[d].RemoveLower();
-			_instance->K[d].MatAddInPlace(_instance->RegMat[d], 'N', 1);
-			_instance->RegMat[d].ConvertToCOO(1);
-			break;
-
-		case REGULARIZATION::NULL_PIVOTS:
-			switch (_instance->K[d].mtype) {
-				double norm;
-				eslocal defect;
-
-			case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-				_instance->K[d].get_kernel_from_K(_instance->K[d], _instance->RegMat[d], _instance->N1[d], norm, defect, d, scSize);
-				break;
-
-			case MatrixType::REAL_UNSYMMETRIC:
-				_instance->K[d].get_kernels_from_nonsym_K(_instance->K[d], _instance->RegMat[d], _instance->N1[d], _instance->N2[d], norm, defect, d, scSize);
-				break;
-
-			default:
-				ESINFO(ERROR) << "Unknown matrix type for regularization.";
-			}
-			break;
-		}
+		makeStiffnessMatrixRegular(regularization, scSize, d);
 		ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
 	ESINFO(PROGRESS3);
+}
+
+void Physics::makeStiffnessMatrixRegular(REGULARIZATION regularization, size_t scSize, size_t domain)
+{
+	switch (regularization) {
+
+	case REGULARIZATION::FIX_POINTS:
+		analyticRegularization(domain);
+		_instance->RegMat[domain].RemoveLower();
+		_instance->K[domain].MatAddInPlace(_instance->RegMat[domain], 'N', 1);
+		_instance->RegMat[domain].ConvertToCOO(1);
+		break;
+
+	case REGULARIZATION::NULL_PIVOTS:
+		switch (_instance->K[domain].mtype) {
+			double norm;
+			eslocal defect;
+
+		case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+			_instance->K[domain].get_kernel_from_K(_instance->K[domain], _instance->RegMat[domain], _instance->N1[domain], norm, defect, domain, scSize);
+			break;
+
+		case MatrixType::REAL_UNSYMMETRIC:
+			_instance->K[domain].get_kernels_from_nonsym_K(_instance->K[domain], _instance->RegMat[domain], _instance->N1[domain], _instance->N2[domain], norm, defect, domain, scSize);
+			break;
+
+		default:
+			ESINFO(ERROR) << "Unknown matrix type for regularization.";
+		}
+		break;
+	}
 }
 
 double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction, size_t loadStep) const

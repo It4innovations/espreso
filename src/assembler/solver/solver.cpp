@@ -219,6 +219,10 @@ void Solver::regularizeMatrices(const Step &step, Matrices matrices)
 		storeData(step, physics->instance()->N2, "N2", "N2");
 		storeData(step, physics->instance()->RegMat, "RegMat", "RegMat");
 	};
+
+	instance->computeKernelCallback = [&] (REGULARIZATION regularization, size_t scSize, size_t domain) {
+		physics->makeStiffnessMatrixRegular(regularization, scSize, domain);
+	};
 }
 
 void Solver::composeGluing(const Step &step, Matrices matrices)

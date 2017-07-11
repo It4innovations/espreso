@@ -36,6 +36,7 @@ struct Instance {
 	Instance(Instance &other, Matrices &share);
 	~Instance();
 
+	void computeKernel(REGULARIZATION regularization, size_t scSize, size_t domain) { computeKernelCallback(regularization, scSize, domain); }
 	void computeKernels(REGULARIZATION regularization, size_t scSize) { computeKernelsCallback(regularization, scSize); }
 	void assembleB0(B0_TYPE type, const std::vector<SparseMatrix> &kernels) { assembleB0Callback(type, kernels); }
 
@@ -82,6 +83,7 @@ struct Instance {
 	std::vector<Solution*> solutions;
 
 	std::function<void(REGULARIZATION regularization, size_t scSize)> computeKernelsCallback;
+	std::function<void(REGULARIZATION regularization, size_t scSize, size_t domain)> computeKernelCallback;
 	std::function<void(B0_TYPE type, const std::vector<SparseMatrix> &kernels)> assembleB0Callback;
 private:
 
