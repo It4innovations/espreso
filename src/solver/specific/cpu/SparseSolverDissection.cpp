@@ -5,6 +5,7 @@
 
 #include <Driver/DissectionSolver.hpp>
 
+//#define DEBUG
 #ifdef DEBUG
 	extern"C" {
 	#include <scotch.h>
@@ -59,7 +60,7 @@ SparseSolverDissection::SparseSolverDissection(){
 
 #ifdef DEBUG
 	// fp = fopen("diss_log_wcp.txt", "w");
-	fp = stderr; // stdout or stderr will cause an error in python benchmarks script
+	fp = stdout; // stdout or stderr will cause an error in python benchmarks script
 	diss_verbose = true;
 	int vers, rela, patc;
 	SCOTCH_version(&vers, &rela, &patc);
@@ -1058,7 +1059,7 @@ void SparseSolverDissection::GetKernelVectors(SEQ_VECTOR <double> & kern_vec, es
 	// After factorization, with singular matrix
 	if (!initialized) {
 		std::stringstream ss;
-		ss << "Get Kernel -> rank: " << environment->MPIrank;
+		ss << "Get Kernel R -> rank: " << environment->MPIrank;
 		Factorization(ss.str());
 	}
 
@@ -1066,8 +1067,9 @@ void SparseSolverDissection::GetKernelVectors(SEQ_VECTOR <double> & kern_vec, es
 	kern_vec.resize(kern_dim * rows);
 	dslv->GetKernelVectors(&kern_vec.front());
 
-#if 1
-	// Test the obtained kernel vectors
+#if 0
+	// Test the obtained kernel R vectors
+
 	// Test 1
 	// A*r = 0
 	ESINFO(PROGRESS1) << "Dissection kernel test 1: 'A*r = 0'";
@@ -1125,6 +1127,34 @@ void SparseSolverDissection::GetKernelVectors(SEQ_VECTOR <double> & kern_vec, es
 	double test4 = norm_K_R / max_diag_K;
 	ESINFO(PROGRESS1) << "Dissection kernel test 4: '||K * R|| / max(diag(K))'";
 	ESINFO(PROGRESS1) << test4 << "\n";
+#endif
+}
+
+void SparseSolverDissection::GetTransKernelVectors(SEQ_VECTOR <double> & kern_t_vec, eslocal & kern_dim) {
+
+	// After factorization, with singular matrix
+	if (!initialized) {
+		std::stringstream ss;
+		ss << "Get Kernel N -> rank: " << environment->MPIrank;
+		Factorization(ss.str());
+	}
+
+	// check if ComputeTransposedKernels is necessary
+	// eslocal result = dslv->ComputeTransposedKernels();
+
+	kern_dim = dslv->kern_dimension();
+	kern_t_vec.resize(kern_dim * rows);
+
+	dslv->GetTransKernelVectors(&kern_t_vec.front());
+
+#if 0
+	// Test the obtained kernel N vectors
+	//	Test 1
+	//	K^T * N = O (or N^T * K = O)
+	// K otestovani staci vynasobit nove jadro N puvodni matici K, ale transponovanou
+
+	// TODO
+
 #endif
 }
 
