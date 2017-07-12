@@ -65,16 +65,16 @@ struct LinearElasticity3DConfiguration: public Configuration {
 
 	SUBCONFIG(PhysicsSolver<LinearElasticityNonLinearConvergence>, physics_solver, "Settings of physics solver.");
 
-	SUBMAP(std::string, std::string, displacement       , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, normal_presure     , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, initial_temperature, "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, temperature        , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, acceleration       , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, obstacle           , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
-	SUBMAP(std::string, std::string, normal_direction   , "<REGION> <EXPRESSION>;", "<REGION>", "<EXPRESSION>");
+	SUBMAP(std::string, std::string, displacement       , "REGION EXPRESSION;", "REGION", "EXPRESSION");
+	SUBMAP(std::string, std::string, normal_presure     , "REGION EXPRESSION;", "REGION", "EXPRESSION");
+	SUBMAP(std::string, std::string, initial_temperature, "REGION EXPRESSION;", "REGION", "EXPRESSION");
+	SUBMAP(std::string, std::string, temperature        , "REGION EXPRESSION;", "REGION", "EXPRESSION");
+	SUBMAP(std::string, std::string, acceleration       , "REGION EXPRESSION;", "REGION", "EXPRESSION");
+	SUBMAP(std::string, std::string, obstacle           , "REGION EXPRESSION;", "REGION", "EXPRESSION");
+	SUBMAP(std::string, std::string, normal_direction   , "REGION EXPRESSION;", "REGION", "EXPRESSION");
 
-	SUBMAPTOCONFIG(std::string, LinearElasticity3DMaterial, materials, "Material description.", "<MATERIAL_NAME>", "Material description");
-	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "<REGION>", "<MATERIAL_NAME>");
+	SUBMAPTOCONFIG(std::string, LinearElasticity3DMaterial, materials, "Material description.", "MATERIAL", "Material description");
+	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "REGION", "MATERIAL");
 
 	PARAMETER(bool, post_process, "Turn on/off results post processing.", true);
 };

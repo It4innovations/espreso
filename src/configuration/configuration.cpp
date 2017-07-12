@@ -7,19 +7,25 @@
 
 using namespace espreso;
 
-ParameterBase::ParameterBase(const std::string &name, const std::string &description, const std::string &allowedValue)
-: name(name), description(description), allowedValue(allowedValue)
+ParameterBase::ParameterBase(const std::string &name, const std::string &description)
+: name(name), description(description)
 {
 
 }
 
-size_t ParameterBase::index() const
+Parameter::Parameter(const std::string &name, const std::string &description, const std::string &allowedValue)
+: ParameterBase(name, description), allowedValue(allowedValue)
+{
+
+}
+
+size_t Parameter::index() const
 {
 	ESINFO(ERROR) << "Call index of non-indexable parameter";
 	return 0;
 }
 
-ParameterBase::~ParameterBase()
+Parameter::~Parameter()
 {
 
 }
@@ -30,13 +36,12 @@ Configuration::Configuration(): copy(false)
 }
 
 Configuration::Configuration(const Configuration &other)
-: copy(true),
+: ParameterBase(other.name, other.description),
+  copy(true),
   parameters(other.parameters),
   subconfigurations(other.subconfigurations),
   orderedParameters(other.orderedParameters),
-  orderedSubconfiguration(other.orderedSubconfiguration),
-  name(other.name),
-  description(other.description)
+  orderedSubconfiguration(other.orderedSubconfiguration)
 {
 
 }

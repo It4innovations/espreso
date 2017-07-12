@@ -16,10 +16,10 @@ struct AdvectionDiffusion2DMaterial: public Configuration {
 	PARAMETER(MaterialParam<MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_YX>, KYX    , "Termal conductivity YX.", {"1"});
 
 	OPTION(MATERIAL_MODEL, model, "Material model", MATERIAL_MODEL::ISOTROPIC, OPTIONS({
-		{ "ISOTROPIC"  , MATERIAL_MODEL::ISOTROPIC  , "Isotropic." },
-		{ "DIAGONAL"   , MATERIAL_MODEL::DIAGONAL   , "Diagonal." },
-		{ "SYMMETRIC"  , MATERIAL_MODEL::SYMMETRIC  , "Symmetric." },
-		{ "ANISOTROPIC", MATERIAL_MODEL::ANISOTROPIC, "Anisotropic." }
+		{ "ISOTROPIC"  , MATERIAL_MODEL::ISOTROPIC  , { "KXX" }, "Isotropic." },
+		{ "DIAGONAL"   , MATERIAL_MODEL::DIAGONAL   , { "KXX", "KYY" }, "Diagonal." },
+		{ "SYMMETRIC"  , MATERIAL_MODEL::SYMMETRIC  , { "KXX", "KYY", "KXY" }, "Symmetric." },
+		{ "ANISOTROPIC", MATERIAL_MODEL::ANISOTROPIC, { "KXX", "KYY", "KXY", "KYX" }, "Anisotropic." }
 	}));
 
 	SUBCONFIG(CoordinateSystem, coordinate_system, "Element coordinate system.");
@@ -27,8 +27,8 @@ struct AdvectionDiffusion2DMaterial: public Configuration {
 
 struct AdvectionDiffusion2DConfiguration: public AdvectionDiffusionConfiguration {
 
-	SUBMAPTOMAP(size_t, std::string, std::string, thickness, "Thickness", "1", "Thickness settings for load step '1'", "<REGION>", "<EXPRESSION>");
-	SUBMAPTOCONFIG(std::string, AdvectionDiffusion2DMaterial, materials, "Material description.", "<MATERIAL_NAME>", "Material description");
+	SUBMAPTOMAP(size_t, std::string, std::string, thickness, "Thickness", "TIME_STEP", "Thickness settings for the load step", "REGION", "EXPRESSION");
+	SUBMAPTOCONFIG(std::string, AdvectionDiffusion2DMaterial, materials, "Material description.", "MATERIAL", "Material description");
 
 };
 

@@ -20,33 +20,33 @@ struct LoadStepSettingsBase: public Configuration {
 		NONLINEAR
 	};
 
-	OPTION(TYPE, type, "Solver type", TYPE::STEADY_STATE, OPTIONS({
-		{ "STEADY_STATE", TYPE::STEADY_STATE, "Steady state." },
-		{ "TRANSIENT"   , TYPE::TRANSIENT   , "Transient." },
-	}));
-
-	OPTION(MODE, mode, "Solver mode", MODE::LINEAR, OPTIONS({
-		{ "LINEAR"   , MODE::LINEAR   , "Linear." },
-		{ "NONLINEAR", MODE::NONLINEAR, "Non-linear." },
-	}));
-
-	OPTION(SOLVER_LIBRARY, solver_library, "Linear solver used for computing a system.", SOLVER_LIBRARY::ESPRESO, OPTIONS({
-		{ "ESPRESO", SOLVER_LIBRARY::ESPRESO, "ESPRESO solver [FETI methods]" },
-		{ "HYPRE"  , SOLVER_LIBRARY::HYPRE  , "Hypre solver [multigrid methods]" },
-	}));
-
 	SUBCONFIG(ESPRESOSolver, espreso, "Internal FETI solver options.");
 	SUBCONFIG(HypreSolver  , hypre  , "Multigrid solver setting.");
 
 	PARAMETER(double, duration_time, "Duration time of the load step.", 1);
 
 	SUBCONFIG(TransientSolver, transient_solver, "Transient configuration for each load step.");
+
+	OPTION(TYPE, type, "Solver type", TYPE::STEADY_STATE, OPTIONS({
+		{ "STEADY_STATE", TYPE::STEADY_STATE, "Steady state." },
+		{ "TRANSIENT"   , TYPE::TRANSIENT   , { "transient_solver" }, "Transient." },
+	}));
+
+	OPTION(SOLVER_LIBRARY, solver_library, "Linear solver used for computing a system.", SOLVER_LIBRARY::ESPRESO, OPTIONS({
+		{ "ESPRESO", SOLVER_LIBRARY::ESPRESO, { "espreso" }, "ESPRESO solver [FETI methods]" },
+		{ "HYPRE"  , SOLVER_LIBRARY::HYPRE  , { "hypre" }, "Hypre solver [multigrid methods]" },
+	}));
 };
 
 template<class TConvergence>
 struct LoadStepSettings: public LoadStepSettingsBase {
 
 	SUBCONFIG(NonLinearSolver<TConvergence>, nonlinear_solver, "Transient configuration for each load step.");
+
+	OPTION(MODE, mode, "Solver mode", MODE::LINEAR, OPTIONS({
+		{ "LINEAR"   , MODE::LINEAR   , "Linear." },
+		{ "NONLINEAR", MODE::NONLINEAR, { "nonlinear_solver" }, "Non-linear." },
+	}));
 };
 
 }

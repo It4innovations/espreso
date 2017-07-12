@@ -29,15 +29,15 @@ struct StructuralMechanicsConfiguration: public Configuration {
 
 	SUBCONFIG(PhysicsSolver<StructuralMechanicsNonLinearConvergence>, physics_solver, "Settings of physics solver.");
 
-	SUBMAPTOMAP(size_t, std::string, std::string, displacement       , "Displacement"       , "1", "Displacement settings for load step '1'", "<REGION>", "<EXPRESSION>");
-	SUBMAPTOMAP(size_t, std::string, std::string, normal_presure     , "Normal presure"     , "1", "Normal presure settings for load step '1'", "<REGION>", "<EXPRESSION>");
-	SUBMAPTOMAP(size_t, std::string, std::string, initial_temperature, "Initial temperature", "1", "Initial temperature settings for load step '1'", "<REGION>", "<EXPRESSION>");
-	SUBMAPTOMAP(size_t, std::string, std::string, temperature        , "Temperature"        , "1", "Temperature settings for load step '1'", "<REGION>", "<EXPRESSION>");
-	SUBMAPTOMAP(size_t, std::string, std::string, acceleration       , "Acceleration"       , "1", "Acceleration settings for load step '1'", "<REGION>", "<EXPRESSION>");
-	SUBMAPTOMAP(size_t, std::string, std::string, obstacle           , "Obstacle"           , "1", "Obstacles for load step '1'", "<REGION>", "<EXPRESSION>");
-	SUBMAPTOMAP(size_t, std::string, std::string, normal_direction   , "Normal Direction"   , "1", "Normal Direction of obstacle settings for load step '1'", "<REGION>", "<EXPRESSION>");
+	SUBMAPTOMAP(size_t, std::string, std::string, displacement       , "Displacement"       , "TIME_STEP", "Displacement settings for the load step", "REGION", "EXPRESSION");
+	SUBMAPTOMAP(size_t, std::string, std::string, normal_presure     , "Normal presure"     , "TIME_STEP", "Normal presure settings for the load step", "REGION", "EXPRESSION");
+	SUBMAPTOMAP(size_t, std::string, std::string, initial_temperature, "Initial temperature", "TIME_STEP", "Initial temperature settings for the load step", "REGION", "EXPRESSION");
+	SUBMAPTOMAP(size_t, std::string, std::string, temperature        , "Temperature"        , "TIME_STEP", "Temperature settings for the load step", "REGION", "EXPRESSION");
+	SUBMAPTOMAP(size_t, std::string, std::string, acceleration       , "Acceleration"       , "TIME_STEP", "Acceleration settings for the load step", "REGION", "EXPRESSION");
+	SUBMAPTOMAP(size_t, std::string, std::string, obstacle           , "Obstacle"           , "TIME_STEP", "Obstacles for the load step", "REGION", "EXPRESSION");
+	SUBMAPTOMAP(size_t, std::string, std::string, normal_direction   , "Normal Direction"   , "TIME_STEP", "Normal Direction of obstacle settings for the load step", "REGION", "EXPRESSION");
 
-	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "<REGION>", "<MATERIAL_NAME>");
+	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "REGION", "MATERIAL");
 
 	PARAMETER(bool, post_process, "Turn on/off results post processing.", true);
 

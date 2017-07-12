@@ -16,11 +16,11 @@ struct MaterialParam {
 };
 
 template <MATERIAL_PARAMETER TParameter>
-struct ValueHolder<MaterialParam<TParameter> >: public ParameterBase {
+struct ValueHolder<MaterialParam<TParameter> >: public Parameter {
 	MaterialParam<TParameter> &value;
 
 	ValueHolder(const std::string &name, const std::string &description, MaterialParam<TParameter> &value, MaterialParam<TParameter> defaultValue, const std::string &type)
-	: ParameterBase(name, description, "*"), value(value) {};
+	: Parameter(name, description, "*"), value(value) {};
 
 	bool set(const std::string &value)
 	{
@@ -34,6 +34,8 @@ struct ValueHolder<MaterialParam<TParameter> >: public ParameterBase {
 	}
 
 	size_t index() const { return (size_t)TParameter; }
+
+	std::string XMLAttributeType() const { return "string"; }
 };
 
 }

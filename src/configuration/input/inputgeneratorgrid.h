@@ -58,12 +58,12 @@ struct GridConfiguration: public Configuration {
 	PARAMETER(bool, random_partition, "Randomize the numbre of domains on cluster.", false);
 	PARAMETER(bool, uniform_decomposition, "Grid is uniformly decomposed", true);
 
-	SUBMAP(size_t, bool, blocks, "List of grid blocks [<INDEX> <VALUE>]. Where value indicate if a block will be generated.", "0", true);
+	SUBMAP(size_t, bool, blocks, "List of grid blocks [INDEX VALUE]. Where value indicate if a block will be generated.", "BLOCK", true);
 
-	SUBMAP(std::string, std::string, nodes, "List of nodes regions.", "<REGION_NAME>", "<INTERVAL / PATTERN[ALL]>");
-	SUBMAP(std::string, std::string, edges, "List of edges regions.", "<REGION_NAME>", "<INTERVAL / PATTERN[ALL]>");
-	SUBMAP(std::string, std::string, faces, "List of faces regions.", "<REGION_NAME>", "<INTERVAL / PATTERN[ALL]>");
-	SUBMAP(std::string, std::string, elements, "List of elements regions.", "<REGION_NAME>", "<INTERVAL / PATTERN[ALL;CHESSBOARD_WHITE;CHESSBOARD_BLACK;NOT_SELECTED]>");
+	SUBMAP(std::string, std::string, nodes, "List of nodes regions.", "REGION", "INTERVAL / PATTERN[ALL]");
+	SUBMAP(std::string, std::string, edges, "List of edges regions.", "REGION", "INTERVAL / PATTERN[ALL]");
+	SUBMAP(std::string, std::string, faces, "List of faces regions.", "REGION", "INTERVAL / PATTERN[ALL]");
+	SUBMAP(std::string, std::string, elements, "List of elements regions.", "REGION", "INTERVAL / PATTERN[ALL;CHESSBOARD_WHITE;CHESSBOARD_BLACK;NOT_SELECTED]");
 
 	PARAMETER(size_t, chessboard_size, "Number of squares of chessboard in one direction", 2);
 };

@@ -59,7 +59,7 @@ struct StructuralMechanics3DMaterial: public Configuration {
 
 struct StructuralMechanics3DConfiguration: public StructuralMechanicsConfiguration {
 
-	SUBMAPTOCONFIG(std::string, StructuralMechanics3DMaterial, materials, "Material description.", "<MATERIAL_NAME>", "Material description");
+	SUBMAPTOCONFIG(std::string, StructuralMechanics3DMaterial, materials, "Material description.", "MATERIAL", "Material description");
 };
 
 }

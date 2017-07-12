@@ -41,9 +41,9 @@ struct StructuralMechanics2DConfiguration: public StructuralMechanicsConfigurati
 		{ "PLANE_STRESS_WITH_THICKNESS", ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS , "Stress element with thickness." },
 	}));
 
-	SUBMAPTOMAP(size_t, std::string, std::string, angular_velocity, "Angular velocity", "1", "Angular velocity settings for load step '1'", "<REGION>", "<EXPRESSION>");
-	SUBMAPTOMAP(size_t, std::string, std::string, thickness, "Thickness", "1", "Thickness settings for load step '1'", "<REGION>", "<EXPRESSION>");
-	SUBMAPTOCONFIG(std::string, StructuralMechanics2DMaterial, materials, "Material description.", "<MATERIAL_NAME>", "Material description");
+	SUBMAPTOMAP(size_t, std::string, std::string, angular_velocity, "Angular velocity", "TIME_STEP", "Angular velocity settings for the load step", "REGION", "EXPRESSION");
+	SUBMAPTOMAP(size_t, std::string, std::string, thickness, "Thickness", "TIME_STEP", "Thickness settings for the load step", "REGION", "EXPRESSION");
+	SUBMAPTOCONFIG(std::string, StructuralMechanics2DMaterial, materials, "Material description.", "MATERIAL", "Material description");
 };
 
 }

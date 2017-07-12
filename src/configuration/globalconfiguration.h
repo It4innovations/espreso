@@ -36,28 +36,8 @@ struct GlobalConfiguration: public Configuration {
 	void print() { Reader::print(*this); }
 	void store() { Reader::store(*this, { ".*" }); }
 
-	OPTION(INPUT, input, "test input", INPUT::GENERATOR, OPTIONS({
-			{ "WORKBENCH", INPUT::WORKBENCH, "Ansys Workbench input file" },
-			{ "OPENFOAM", INPUT::OPENFOAM, "OpenFOAM input format" },
-			{ "ESDATA", INPUT::ESDATA, "ESPRESO binary format" },
-			{ "GENERATOR", INPUT::GENERATOR, "ESPRESO internal generator" }
-	}));
-
-	OPTION(PHYSICS, physics, "Used physics", PHYSICS::LINEAR_ELASTICITY_3D, OPTIONS({
-		{ "LINEAR_ELASTICITY_2D"   , PHYSICS::LINEAR_ELASTICITY_2D   , "2D linear elasticity." },
-		{ "LINEAR_ELASTICITY_3D"   , PHYSICS::LINEAR_ELASTICITY_3D   , "3D linear elasticity." },
-		{ "TRANSIENT_ELASTICITY_2D", PHYSICS::TRANSIENT_ELASTICITY_2D, "2D transient elasticity." },
-		{ "TRANSIENT_ELASTICITY_3D", PHYSICS::TRANSIENT_ELASTICITY_3D, "3D transient elasticity." },
-		{ "ADVECTION_DIFFUSION_2D" , PHYSICS::ADVECTION_DIFFUSION_2D , "2D advection diffusion"},
-		{ "ADVECTION_DIFFUSION_3D" , PHYSICS::ADVECTION_DIFFUSION_3D , "3D advection diffusion"},
-		{ "STRUCTURAL_MECHANICS_2D", PHYSICS::STRUCTURAL_MECHANICS_2D, "2D structural mechanics"},
-		{ "STRUCTURAL_MECHANICS_3D", PHYSICS::STRUCTURAL_MECHANICS_3D, "3D structural mechanics"},
-		{ "SHALLOW_WATER_2D"       , PHYSICS::SHALLOW_WATER_2D       , "2D shallow water"},
-		{ "STOKES"                 , PHYSICS::STOKES                 , "Stokes"}
-	}));
-
-	SUBMAP(size_t, std::string, default_args, "List of default values for arguments - [ARG*].", "0", "1");
-	SUBMAP(std::string, std::string, variables, "List of variables usable in *.ecf file.", "VAR1", "x * y");
+	SUBMAP(size_t, std::string, default_args, "List of default values for arguments - [ARG*].", "ARG", "EXPRESSION");
+	SUBMAP(std::string, std::string, variables, "List of variables usable in *.ecf file.", "VARIABLE", "EXPRESSION");
 
 	SUBCONFIG(Environment        , env         , "Environment dependent variables (set by ./env/threading.* scripts).");
 	SUBCONFIG(OutputConfiguration, output      , "Output settings.");
@@ -78,6 +58,23 @@ struct GlobalConfiguration: public Configuration {
 	SUBCONFIG(Results, results, "Expected output results.");
 
 	SUBCONFIG(Decomposer, decomposer, "./decomposer configuration");
+
+	OPTION(INPUT, input, "test input", INPUT::GENERATOR, OPTIONS({
+			{ "WORKBENCH", INPUT::WORKBENCH, { "workbench" }, "Ansys Workbench input file" },
+			{ "OPENFOAM", INPUT::OPENFOAM, { "openfoam" }, "OpenFOAM input format" },
+			{ "ESDATA", INPUT::ESDATA, { "esdata" }, "ESPRESO binary format" },
+			{ "GENERATOR", INPUT::GENERATOR, { "generator" }, "ESPRESO internal generator" }
+	}));
+
+	OPTION(PHYSICS, physics, "Used physics", PHYSICS::LINEAR_ELASTICITY_3D, OPTIONS({
+		{ "LINEAR_ELASTICITY_2D"   , PHYSICS::LINEAR_ELASTICITY_2D   , { "linear_elasticity_2D" }, "2D linear elasticity." },
+		{ "LINEAR_ELASTICITY_3D"   , PHYSICS::LINEAR_ELASTICITY_3D   , { "linear_elasticity_3D" }, "3D linear elasticity." },
+		{ "ADVECTION_DIFFUSION_2D" , PHYSICS::ADVECTION_DIFFUSION_2D , { "advection_diffusion_2D" }, "2D advection diffusion"},
+		{ "ADVECTION_DIFFUSION_3D" , PHYSICS::ADVECTION_DIFFUSION_3D , { "advection_diffusion_3D" }, "3D advection diffusion"},
+		{ "STRUCTURAL_MECHANICS_2D", PHYSICS::STRUCTURAL_MECHANICS_2D, { "structural_mechanics_2D" }, "2D structural mechanics"},
+		{ "STRUCTURAL_MECHANICS_3D", PHYSICS::STRUCTURAL_MECHANICS_3D, { "structural_mechanics_3D" }, "3D structural mechanics"},
+		{ "SHALLOW_WATER_2D"       , PHYSICS::SHALLOW_WATER_2D       , { "shallow_water_2D" }, "2D shallow water"}
+	}));
 };
 
 }
