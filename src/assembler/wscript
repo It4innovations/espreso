@@ -2,6 +2,7 @@
 import os
 import sys
 import glob
+from inspect import getsourcefile
 
 def configure(ctx):
     ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env["HYPRE::INCLUDE"] ])
@@ -63,7 +64,10 @@ def configure(ctx):
 def build(ctx):
     base = ctx.path.ant_glob(['constraints/**/*.cpp', 'instance/*.cpp', 'old_physics/*.cpp', '*.cpp'])
     library = ctx.path.ant_glob(['instance/precomputed/**/*.cpp', 'old_physics/precomputed/**/*.cpp'])
-    rest = list(set(ctx.path.ant_glob(['**/*.cpp'])) - set(base + library))
+    rest = map(
+            lambda path: os.path.relpath(path.abspath(), os.path.dirname(getsourcefile(lambda:0))),
+            list(set(ctx.path.ant_glob(['**/*.cpp'])) - set(base + library)))
+    rest.sort()
 
     ctx.objects(
         source = base,
