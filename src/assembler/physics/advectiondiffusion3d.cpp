@@ -21,13 +21,13 @@
 
 using namespace espreso;
 
-NewAdvectionDiffusion3D::NewAdvectionDiffusion3D(Mesh *mesh, Instance *instance, const AdvectionDiffusion3DConfiguration &configuration)
+AdvectionDiffusion3D::AdvectionDiffusion3D(Mesh *mesh, Instance *instance, const AdvectionDiffusion3DConfiguration &configuration)
 : Physics("ADVECTION DIFFUSION 3D", mesh, instance), AdvectionDiffusion(configuration), _configuration(configuration)
 {
 
 }
 
-void NewAdvectionDiffusion3D::prepareTotalFETI()
+void AdvectionDiffusion3D::prepareTotalFETI()
 {
 	_mesh->loadProperty(_configuration.translation_motions, { "X", "Y", "Z" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y, Property::TRANSLATION_MOTION_Z });
 	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
@@ -38,7 +38,7 @@ void NewAdvectionDiffusion3D::prepareTotalFETI()
 	AdvectionDiffusion::prepareTotalFETI();
 }
 
-std::vector<std::pair<ElementType, Property> > NewAdvectionDiffusion3D::properties() const
+std::vector<std::pair<ElementType, Property> > AdvectionDiffusion3D::properties() const
 {
 	for (size_t s = 0; s < _mesh->steps(); s++) {
 		if (
@@ -57,7 +57,7 @@ std::vector<std::pair<ElementType, Property> > NewAdvectionDiffusion3D::properti
 	return {};
 }
 
-void NewAdvectionDiffusion3D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
+void AdvectionDiffusion3D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
 {
 	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
 
@@ -233,7 +233,7 @@ void NewAdvectionDiffusion3D::assembleMaterialMatrix(const Step &step, const Ele
 	K(node, 8) = TCT(2, 1);
 }
 
-void NewAdvectionDiffusion3D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void AdvectionDiffusion3D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	bool CAU = _configuration.stabilization == AdvectionDiffusion3DConfiguration::STABILIZATION::CAU;
 	bool tangentCorrection = (matrices & Matrices::K) && _configuration.tangent_matrix_correction && step.iteration;
@@ -436,7 +436,7 @@ void NewAdvectionDiffusion3D::processElement(const Step &step, Matrices matrices
 	}
 }
 
-void NewAdvectionDiffusion3D::processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void AdvectionDiffusion3D::processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step) ||
 		e->hasProperty(Property::HEAT_FLOW, step.step) ||
@@ -537,7 +537,7 @@ void NewAdvectionDiffusion3D::processFace(const Step &step, Matrices matrices, c
 	}
 }
 
-void NewAdvectionDiffusion3D::processEdge(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void AdvectionDiffusion3D::processEdge(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step) ||
 		e->hasProperty(Property::HEAT_FLOW, step.step) ||
@@ -635,7 +635,7 @@ void NewAdvectionDiffusion3D::processEdge(const Step &step, Matrices matrices, c
 	}
 }
 
-void NewAdvectionDiffusion3D::processNode(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void AdvectionDiffusion3D::processNode(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	Ke.resize(0, 0);
 	Me.resize(0, 0);
@@ -643,7 +643,7 @@ void NewAdvectionDiffusion3D::processNode(const Step &step, Matrices matrices, c
 	fe.resize(0, 0);
 }
 
-void NewAdvectionDiffusion3D::postProcessElement(const Step &step, const Element *e, std::vector<Solution*> &solution)
+void AdvectionDiffusion3D::postProcessElement(const Step &step, const Element *e, std::vector<Solution*> &solution)
 {
 	DenseMatrix Ce(3, 3), coordinates, J(3, 3), invJ(3, 3), dND, temp(e->nodes(), 1);
 	double detJ, m, norm_u_e, h_e;
@@ -717,7 +717,7 @@ void NewAdvectionDiffusion3D::postProcessElement(const Step &step, const Element
 	solution[offset + SolutionIndex::FLUX]->innerData()[e->domains().front()].push_back(matFlux(2, 0) / e->gaussePoints());
 }
 
-void NewAdvectionDiffusion3D::processSolution(const Step &step)
+void AdvectionDiffusion3D::processSolution(const Step &step)
 {
 	if (!_configuration.post_process) {
 		return;

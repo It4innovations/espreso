@@ -61,22 +61,21 @@ def configure(ctx):
         ctx.env.append_unique("DEFINES", [ "HAVE_MORTAR" ])
 
 def build(ctx):
-    base = ctx.path.ant_glob(['constraints/**/*.cpp', 'instance/*.cpp', 'old_physics/*.cpp'])
+    base = ctx.path.ant_glob(['constraints/**/*.cpp', 'instance/*.cpp', 'old_physics/*.cpp', '*.cpp'])
     library = ctx.path.ant_glob(['instance/precomputed/**/*.cpp', 'old_physics/precomputed/**/*.cpp'])
     rest = list(set(ctx.path.ant_glob(['**/*.cpp'])) - set(base + library))
 
     ctx.objects(
         source = base,
         target = "assembler_base",
-        use    = "espreso_includes"
     )
     ctx.objects(
         source = library,
         target = "assembler_api",
-        use    = "espreso_includes assembler_base"
+        use    = "assembler_base"
     )
     ctx.objects(
         source = rest,
         target = "assembler",
-        use    = "espreso_includes assembler_base"
+        use    = "assembler_base"
     )

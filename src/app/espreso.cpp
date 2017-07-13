@@ -16,7 +16,7 @@ static void signalHandler(int signal)
 		ESINFO(ERROR) << "Invalid memory reference";
 		break;
 	case SIGFPE:
-		ESINFO(ERROR) << "Errorneous arithmetic operation";
+		ESINFO(ERROR) << "Erroneous arithmetic operation";
 		break;
 	}
 }
@@ -36,7 +36,6 @@ int main(int argc, char **argv)
 	Factory factory(configuration);
 
 	factory.solve();
-	factory.check(configuration.results);
 	factory.finalize();
 
 	MPI_Barrier(environment->MPICommunicator);

@@ -10,14 +10,14 @@
 |*****************************************************************************|
 
 INPUT OPENFOAM;
-PHYSICS LINEAR_ELASTICITY_3D;
+PHYSICS STRUCTURAL_MECHANICS_3D;
 
 OPENFOAM {
   PATH    .;
   DOMAINS 2;
 }
 
-LINEAR_ELASTICITY_3D {
+STRUCTURAL_MECHANICS_3D {
 
   PHYSICS_SOLVER {
     LOAD_STEPS          1;
@@ -38,11 +38,15 @@ LINEAR_ELASTICITY_3D {
   }
 
   DISPLACEMENT {
-    inner_convection X 0, Y 0, Z 0;
+    1 {
+      inner_convection X 0, Y 0, Z 0;
+    }
   }
 
   NORMAL_PRESURE {
-    outer_convection 10000;
+    1 {
+      outer_convection 10000;
+    }
   }
 
   MATERIALS {

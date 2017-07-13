@@ -10,7 +10,7 @@
 |*****************************************************************************|
 
 INPUT ESDATA;
-PHYSICS LINEAR_ELASTICITY_3D;
+PHYSICS STRUCTURAL_MECHANICS_3D;
 
 WORKBENCH {
   PATH    workbench.dat;
@@ -22,7 +22,7 @@ ESDATA {
   DOMAINS        2;
 }
 
-LINEAR_ELASTICITY_3D {
+STRUCTURAL_MECHANICS_3D {
 
   PHYSICS_SOLVER {
     LOAD_STEPS          1;

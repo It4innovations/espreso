@@ -42,8 +42,6 @@ struct AdvectionDiffusionConfiguration: public Configuration {
 	PARAMETER(double, sigma, "Inconsistent stabilization parameters.", 0);
 	PARAMETER(bool, tangent_matrix_correction, "Add derivation matrix to stiffness matrix.", 0);
 
-	PARAMETER(bool, newassembler, "New version of assembler.", 1);
-
 	SUBCONFIG(PhysicsSolver<AdvectionDiffusionNonLinearConvergence>, physics_solver, "Settings of physics solver.");
 
 	SUBMAPTOMAP(size_t, std::string, std::string, heat_flux, "Heat flux", "TIME_STEP", "Heat flux settings for the load step", "REGION", "EXPRESSION");

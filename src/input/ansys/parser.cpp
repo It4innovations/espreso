@@ -295,8 +295,8 @@ void WorkbenchParser::mp(std::vector<Material*> &materials, Evaluator *evaluator
 		materials.push_back(new Material(_mesh.coordinates()));
 		materials.back()->setModel(PHYSICS::ADVECTION_DIFFUSION_2D, MATERIAL_MODEL::ISOTROPIC);
 		materials.back()->setModel(PHYSICS::ADVECTION_DIFFUSION_3D, MATERIAL_MODEL::ISOTROPIC);
-		materials.back()->setModel(PHYSICS::LINEAR_ELASTICITY_2D, MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC);
-		materials.back()->setModel(PHYSICS::LINEAR_ELASTICITY_3D, MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC);
+		materials.back()->setModel(PHYSICS::STRUCTURAL_MECHANICS_2D, MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC);
+		materials.back()->setModel(PHYSICS::STRUCTURAL_MECHANICS_3D, MATERIAL_MODEL::LINEAR_ELASTIC_ISOTROPIC);
 	}
 	mNumber--;
 
@@ -326,8 +326,8 @@ void WorkbenchParser::mp(std::vector<Material*> &materials, Evaluator *evaluator
 	};
 
 	auto setModelLE = [&] (MATERIAL_MODEL model) {
-		materials[mNumber]->setModel(PHYSICS::LINEAR_ELASTICITY_2D, model);
-		materials[mNumber]->setModel(PHYSICS::LINEAR_ELASTICITY_3D, model);
+		materials[mNumber]->setModel(PHYSICS::STRUCTURAL_MECHANICS_2D, model);
+		materials[mNumber]->setModel(PHYSICS::STRUCTURAL_MECHANICS_3D, model);
 	};
 
 	auto skip = [&] (const std::string &name) {

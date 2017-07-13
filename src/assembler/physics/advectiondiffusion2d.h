@@ -10,9 +10,9 @@ namespace espreso {
 enum class Property;
 struct AdvectionDiffusion2DConfiguration;
 
-struct NewAdvectionDiffusion2D: public AdvectionDiffusion, public Physics2D
+struct AdvectionDiffusion2D: public AdvectionDiffusion, public Physics2D
 {
-	NewAdvectionDiffusion2D(Mesh *mesh, Instance *instance, const AdvectionDiffusion2DConfiguration &configuration);
+	AdvectionDiffusion2D(Mesh *mesh, Instance *instance, const AdvectionDiffusion2DConfiguration &configuration);
 
 	void prepareTotalFETI();
 

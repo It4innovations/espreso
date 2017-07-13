@@ -14,8 +14,6 @@
 #include "physics/advectiondiffusion3d.h"
 #include "physics/structuralmechanics2d.h"
 #include "physics/structuralmechanics3d.h"
-#include "physics/linearelasticity2d.h"
-#include "physics/linearelasticity3d.h"
 #include "physics/shallowwater2d.h"
 #include "reader/reader.h"
 
@@ -47,8 +45,6 @@ struct GlobalConfiguration: public Configuration {
 	SUBCONFIG(ESPRESOInput       , openfoam    , "Mesh description in OpenFOAM format.");
 	SUBCONFIG(ESPRESOInput       , esdata      , "Mesh description in ESPRESO internal binary format.");
 
-	SUBCONFIG(LinearElasticity2DConfiguration   , linear_elasticity_2D   , "2D Linear elasticity solver.");
-	SUBCONFIG(LinearElasticity3DConfiguration   , linear_elasticity_3D   , "3D Linear elasticity solver.");
 	SUBCONFIG(AdvectionDiffusion2DConfiguration , advection_diffusion_2D , "2D advection diffusiuon solver.");
 	SUBCONFIG(AdvectionDiffusion3DConfiguration , advection_diffusion_3D , "3D advection diffusiuon solver.");
 	SUBCONFIG(StructuralMechanics2DConfiguration, structural_mechanics_2D, "2D structural mechanics solver.");
@@ -66,9 +62,7 @@ struct GlobalConfiguration: public Configuration {
 			{ "GENERATOR", INPUT::GENERATOR, { "generator" }, "ESPRESO internal generator" }
 	}));
 
-	OPTION(PHYSICS, physics, "Used physics", PHYSICS::LINEAR_ELASTICITY_3D, OPTIONS({
-		{ "LINEAR_ELASTICITY_2D"   , PHYSICS::LINEAR_ELASTICITY_2D   , { "linear_elasticity_2D" }, "2D linear elasticity." },
-		{ "LINEAR_ELASTICITY_3D"   , PHYSICS::LINEAR_ELASTICITY_3D   , { "linear_elasticity_3D" }, "3D linear elasticity." },
+	OPTION(PHYSICS, physics, "Used physics", PHYSICS::STRUCTURAL_MECHANICS_3D, OPTIONS({
 		{ "ADVECTION_DIFFUSION_2D" , PHYSICS::ADVECTION_DIFFUSION_2D , { "advection_diffusion_2D" }, "2D advection diffusion"},
 		{ "ADVECTION_DIFFUSION_3D" , PHYSICS::ADVECTION_DIFFUSION_3D , { "advection_diffusion_3D" }, "3D advection diffusion"},
 		{ "STRUCTURAL_MECHANICS_2D", PHYSICS::STRUCTURAL_MECHANICS_2D, { "structural_mechanics_2D" }, "2D structural mechanics"},

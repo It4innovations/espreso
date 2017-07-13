@@ -10,14 +10,14 @@
 |*****************************************************************************|
 
 INPUT OPENFOAM;
-PHYSICS LINEAR_ELASTICITY_3D;
+PHYSICS STRUCTURAL_MECHANICS_3D;
 
 OPENFOAM {
   PATH    .;
   DOMAINS 2;
 }
 
-LINEAR_ELASTICITY_3D {
+STRUCTURAL_MECHANICS_3D {
 
   PHYSICS_SOLVER {
     LOAD_STEPS          1;
@@ -38,15 +38,21 @@ LINEAR_ELASTICITY_3D {
   }
 
   DISPLACEMENT {
-    fixedWalls X 0, Y 0, Z 0;
+    1 {
+      fixedWalls X 0, Y 0, Z 0;
+    }
   }
 
   NORMAL_PRESURE {
-    movingWall 100;
+    1 {
+      movingWall 100;
+    }
   }
 
   TEMPERATURE {
-    frontAndBack 30;
+    1 {
+      frontAndBack 30;
+    }
   }
   
   MATERIALS {

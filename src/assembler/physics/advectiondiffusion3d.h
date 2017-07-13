@@ -9,9 +9,9 @@ namespace espreso {
 
 struct AdvectionDiffusion3DConfiguration;
 
-struct NewAdvectionDiffusion3D: public AdvectionDiffusion, public Physics3D
+struct AdvectionDiffusion3D: public AdvectionDiffusion, public Physics3D
 {
-	NewAdvectionDiffusion3D(Mesh *mesh, Instance *instance, const AdvectionDiffusion3DConfiguration &configuration);
+	AdvectionDiffusion3D(Mesh *mesh, Instance *instance, const AdvectionDiffusion3DConfiguration &configuration);
 
 	void prepareTotalFETI();
 

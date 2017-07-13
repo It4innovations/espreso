@@ -4,7 +4,7 @@
 #include "../configuration/globalconfiguration.h"
 #include "../mesh/structures/mesh.h"
 #include "../mesh/structures/coordinates.h"
-#include "factory/factory.h"
+#include "../input/loader.h"
 #include "../basis/logging/logging.hpp"
 #include "../output/datastore/espresobinaryformat.h"
 
@@ -23,24 +23,24 @@ int main(int argc, char** argv)
 		output::ESPRESOBinaryFormat::prepareDirectories(path.str(), parts);
 	}
 
-	Factory factory(configuration);
+	Mesh mesh;
+	input::Loader::load(configuration, mesh, configuration.env.MPIrank, configuration.env.MPIsize);
 	std::stringstream decomposition(configuration.decomposer.parts);
 	while (decomposition >> parts) {
 		std::stringstream path;
 		path << configuration.decomposer.prefix << parts * environment->MPIsize;
 
-		factory.mesh->partitiate(parts);
+		mesh.partitiate(parts);
 		ESINFO(ALWAYS) << "Mesh partitiated to " << parts * environment->MPIsize << " parts";
-		std::vector<size_t> sizes(factory.mesh->parts());
-		for (size_t p = 0; p < factory.mesh->parts(); p++) {
-			sizes[p] = factory.mesh->coordinates().localSize(p);
+		std::vector<size_t> sizes(mesh.parts());
+		for (size_t p = 0; p < mesh.parts(); p++) {
+			sizes[p] = mesh.coordinates().localSize(p);
 		}
 		ESINFO(ALWAYS) << "Nodes in domains: " << Info::averageValues(sizes);
-		output::ESPRESOBinaryFormat::store(*factory.mesh, path.str());
+		output::ESPRESOBinaryFormat::store(mesh, path.str());
 		ESINFO(ALWAYS) << "Mesh partitiated to " << parts * environment->MPIsize << " parts saved";
 	}
 
-	factory.finalize();
 	MPI_Finalize();
 }
 

@@ -39,8 +39,7 @@ def build(ctx):
 
     ctx.objects(
         source = ctx.path.ant_glob('datastore/**/*.cpp'),
-        target = "datastore",
-        use    = "espreso_includes"
+        target = "datastore"
     )
 
     sources = ctx.path.ant_glob('*.cpp') + ctx.path.ant_glob('resultstore/*.cpp') + ctx.path.ant_glob('monitoring/**/*.cpp')

@@ -20,7 +20,6 @@ class ResultStoreList;
 struct GlobalConfiguration;
 struct OutputConfiguration;
 struct Results;
-struct OldInstance;
 struct Mesh;
 
 struct Factory {
@@ -31,12 +30,8 @@ struct Factory {
 	void solve();
 	void finalize();
 
-	void check(const Results &configuration);
-
 	std::vector<SolverBase*> loadSteps;
 	output::ResultStoreList* store;
-
-	OldInstance *instance;
 	Mesh *mesh;
 
 private:
@@ -46,8 +41,6 @@ private:
 	std::vector<Physics*> _physics;
 	std::vector<Instance*> _instances;
 	std::vector<LinearSolver*> _linearSolvers;
-
-	bool _newAssembler;
 
 	std::vector<std::vector<double> > _solution;
 
