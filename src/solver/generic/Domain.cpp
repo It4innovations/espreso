@@ -72,21 +72,26 @@ void Domain::SetDomain() {
 	// Dissection
 	Kplus_R.Clear();
 	Kplus.GetKernel(Kplus_R);
+	Kplus_R.GramSchmidtOrtho();
+
 	Kplus_R.ConvertDenseToCSR(0);
 	// END - Dissection
 
-	storeData(Kplus_R,              "R_dom_",      "R_dom",       domain_index);
-	storeData(Kplus_R.dense_values, "R_dom_dense", "R_dom_dense", domain_index);
+//	storeData(Kplus_R,              "R_dom_",      "R_dom",       domain_index);
+//	storeData(Kplus_R.dense_values, "R_dom_dense", "R_dom_dense", domain_index);
 
-	Kplus_R.Clear();
-
-	instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index);
-
-	Kplus.ImportMatrix(K); //_wo_Copy(K);
-	Kplus.Factorization ("K matrix");
-
-	storeData(Kplus_R,              "R_dom_a",       "R_dom_a",       domain_index);
-	storeData(Kplus_R.dense_values, "R_dom_a_dense", "R_dom_a_dense", domain_index);
+//	Kplus_R.Clear();
+//
+//	instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index);
+//
+//	Kplus.ImportMatrix(K); //_wo_Copy(K);
+//	Kplus.Factorization ("K matrix");
+//
+//	Kplus_R.GramSchmidtOrtho();
+//	Kplus_R.ConvertDenseToCSR(0);
+//
+//	storeData(Kplus_R,              "R_dom_a",       "R_dom_a",       domain_index);
+//	storeData(Kplus_R.dense_values, "R_dom_a_dense", "R_dom_a_dense", domain_index);
 
 
 

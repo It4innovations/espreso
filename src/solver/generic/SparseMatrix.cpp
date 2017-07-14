@@ -4612,7 +4612,6 @@ if (defect_K_in == 0){
 #endif
 }
 
-
 void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regMat,
       SparseMatrix &Kplus_R,SparseMatrix &Kplus_Rl,
       double &norm_KR_d_pow_2_approx, eslocal &defect_d,eslocal d_sub, size_t scSize){

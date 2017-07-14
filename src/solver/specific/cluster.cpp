@@ -11,6 +11,7 @@
 
 using namespace espreso;
 
+
 void ClusterBase::ShowTiming()  {
 
 	cluster_time.addEvent(vec_fill_time);
@@ -1329,10 +1330,40 @@ void ClusterBase::CreateF0() {
 			domains[d].B0Kplus = domains[d].B0Kplus_comp;
 		} else {
 			// F0 uses same precision as K
-
 			if (SYMMETRIC_SYSTEM) {
-				domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
-				domains[d].B0Kplus = domains[d].B0Kplus_comp;
+				if(configuration.mp_pseudoinverse) {
+					domains[d].Kplus_R.ConvertDenseToCSR(0);
+
+					SparseMatrix tmR, tmR2;
+					SparseMatrix B0tm;
+
+					B0tm = domains[d].B0t_comp;
+					tmR.MatMat(domains[d].Kplus_R,'T', domains[d].B0t_comp);
+					tmR2.MatMat(domains[d].Kplus_R,'N',tmR);
+					B0tm.MatAddInPlace(tmR2,'N', -1.0);
+
+					domains[d].Kplus.SolveMat_Dense(B0tm, domains[d].B0Kplus_comp);
+
+					tmR.Clear();
+					tmR2.Clear();
+					B0tm.Clear();
+					B0tm = domains[d].B0Kplus_comp;
+					tmR.MatMat(domains[d].Kplus_R,'T', domains[d].B0Kplus_comp);
+					tmR2.MatMat(domains[d].Kplus_R,'N',tmR);
+					B0tm.MatAddInPlace(tmR2,'N', -1.0);
+
+					domains[d].B0Kplus = B0tm;
+					domains[d].B0Kplus_comp = B0tm;
+
+					storeData(domains[d].B0Kplus_comp, "B0Kplus_comp_DISS_Kern_", "B0Kplus_comp", d);
+
+
+				} else {
+					domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
+					domains[d].B0Kplus = domains[d].B0Kplus_comp;
+
+//					ESINFO(PROGRESS1) << domains[d].B0t_comp.SpyText();
+				}
 			} else {
 				//TODO: The Klus.Solve - does not have to be called twice here - can be done with Transpose
 				//TODO: Alex
@@ -1523,10 +1554,15 @@ void ClusterBase::CreateSa() {
 		SparseMatrix Kernel_Sa2;
 		ESINFO(PROGRESS3) << "Salfa - regularization from matrix";
 
-		//SparseMatrix GGt;
-		//GGt.MatMat(G0,'N',G0t);
-		//GGt.RemoveLower();
-		//GGt.get_kernel_from_K(GGt, Kernel_Sa);
+
+//		double tmp_double;
+//		eslocal tmp_int;
+//		SparseMatrix TSak, _tmpSparseMat;
+
+//		SparseMatrix GGt;
+//		GGt.MatMat(G0,'N',G0t);
+//		GGt.RemoveLower();
+//		GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
 
 		if (environment->print_matrices) {
 			std::ofstream osSa(Logging::prepareFile("Salfa"));
@@ -1561,7 +1597,7 @@ void ClusterBase::CreateSa() {
 			osSa.close();
 		}
 
-
+// Correction
 		if (SYMMETRIC_SYSTEM) {
 			for (size_t d = 0; d < domains.size(); d++) {
 				SparseMatrix tR;
@@ -1575,6 +1611,21 @@ void ClusterBase::CreateSa() {
 				tR.CreateMatFromRowsFromMatrix_NewSize(Kernel_Sa,rows_inds);
 
 				SparseMatrix TmpR;
+
+//				storeData(domains[d].Kplus_R, "R_dom_cor_", "R_dom_cor", d);
+//
+//				// ||K * R|| / max(diag(K))
+//				double norm_K_R = domains[d].K.getNorm_K_R(domains[d].K,domains[d].Kplus_R,'N');
+//				double max_diag_K = domains[d].K.getDiagonalMaximum();
+//				double test4 = norm_K_R / max_diag_K;
+//				ESINFO(PROGRESS1) << "Dissection kernel test 4: '||K * R|| / max(diag(K))'";
+//				ESINFO(PROGRESS1) << test4 << "\n";
+
+//				double norm_K_Rb = domains[d].K.getNorm_K_R(domains[d].K,domains[d].Kplus_Rb,'N');
+//
+//				double norm_G0_Kernel_Sa = G0.getNorm_K_R(G0,Kernel_Sa,'N');
+
+
 				domains[d].Kplus_R.ConvertDenseToCSR(0);
 				TmpR.MatMat( domains[d].Kplus_R, 'N', tR );
 
@@ -1584,6 +1635,24 @@ void ClusterBase::CreateSa() {
 					domains[d].Kplus_Rb = TmpR;
 					domains[d].Kplus_Rb.ConvertCSRToDense(0);
 				}
+
+				// Kernel correction Test
+//				SparseMatrix Kfull;
+//				Kfull = domains[d].K;
+//				Kfull.MatTranspose();
+//				Kfull.SetDiagonalOfSymmetricMatrix(0.0);
+//				Kfull.MatAddInPlace(domains[d].K,'N',1.0);
+//				Kfull.type='G';
+//				std::cout << Kfull.SpyText();
+//
+//				SparseMatrix KKplus_Rb;
+//				SparseMatrix Kplus_Rbt;
+//				domains[d].Kplus_Rb.MatTranspose(Kplus_Rbt);
+
+				//KKplus_Rb.MatMat(domains[d].K, 'N', domains[d].Kplus_Rb);
+//				KKplus_Rb.MatMat(domains[d].K, 'N', domains[d].Kplus_R);
+//
+//				std::cout << KKplus_Rb.SpyText();
 
 			}
 		} else { // NON SYMMETRIC SYSTEMS

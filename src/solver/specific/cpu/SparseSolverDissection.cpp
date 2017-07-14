@@ -484,7 +484,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		
 	} else {
 
-		bool projection = true;
+		bool projection = false;
 		bool is_trans = false;
 		bool is_scaling = true;
 		dslv->SolveSingle(&rhs_sol.front(), projection, is_trans, is_scaling);
@@ -548,7 +548,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 		exit(1);
 
 	} else {
-		bool projection = true;
+		bool projection = false;
 		bool is_trans = false;
 		bool is_scaling = true;
 
@@ -612,7 +612,7 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 
 	} else {
 
-		bool projection = true;
+		bool projection = false;
 		bool is_trans = false;
 		bool is_scaling = true;
 
