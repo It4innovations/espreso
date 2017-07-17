@@ -18,7 +18,7 @@ void ClusterCPU::Create_SC_perDomain(bool USE_FLOAT) {
 
     #pragma omp parallel for
     for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
-        SparseSolverCPU tmpsps;
+        SparseSolverMKL tmpsps;
         if ( i == 0 && cluster_global_index == 1) {
             tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
         }
@@ -259,7 +259,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 	} else {
 
 		if (configuration.preconditioner == ESPRESO_PRECONDITIONER::DIRICHLET) {
-			SparseSolverCPU createSchur;
+			SparseSolverMKL createSchur;
 //          createSchur.msglvl=1;
 			eslocal sc_size = perm_vec.size();
 			createSchur.ImportMatrix_wo_Copy(K_modif);
@@ -285,7 +285,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 
 			domains[d].Prec.getSubDiagBlockmatrix(K_modif, domains[d].Prec, nonsing_size, sc_size);
 			SEQ_VECTOR<double> diagonals;
-			SparseSolverCPU K_rr_solver;
+			SparseSolverMKL K_rr_solver;
 
 			// K_rs is replaced by:
 			// a) K_rs = 1/diag(K_rr) * K_rs          (simplified Dirichlet precond.)

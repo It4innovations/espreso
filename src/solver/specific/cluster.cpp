@@ -11,7 +11,6 @@
 
 using namespace espreso;
 
-
 void ClusterBase::ShowTiming()  {
 
 	cluster_time.addEvent(vec_fill_time);
@@ -1355,7 +1354,6 @@ void ClusterBase::CreateF0() {
 					domains[d].B0Kplus = B0tm;
 					domains[d].B0Kplus_comp = B0tm;
 
-					storeData(domains[d].B0Kplus_comp, "B0Kplus_comp_DISS_Kern_", "B0Kplus_comp", d);
 
 
 				} else {
@@ -1554,32 +1552,55 @@ void ClusterBase::CreateSa() {
 		SparseMatrix Kernel_Sa2;
 		ESINFO(PROGRESS3) << "Salfa - regularization from matrix";
 
+		double tmp_double;
+		eslocal tmp_int;
+		SparseMatrix _tmpSparseMat;
 
-//		double tmp_double;
-//		eslocal tmp_int;
-//		SparseMatrix TSak, _tmpSparseMat;
+		if (SYMMETRIC_SYSTEM) {
+			if (1) {
+				SparseMatrix N, Nt, NNt;
 
-//		SparseMatrix GGt;
-//		GGt.MatMat(G0,'N',G0t);
-//		GGt.RemoveLower();
-//		GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
+				for (size_t i = 0; i < domains.size(); i++) {
+					SparseMatrix Eye;
+					Eye.CreateEye(domains[i].Kplus_R.cols);
+					N.MatAppend(Eye);
+					Nt.MatAppend(Eye);
+				}
+
+				Nt.MatTranspose();
+				NNt.MatMat(N, 'N', Nt);
+				NNt.RemoveLower();
+
+				double ro = Salfa.GetMeanOfDiagonalOfSymmetricMatrix();
+				ro = 0.5 * ro;
+
+				Salfa.MatAddInPlace(NNt,'N', ro);
+			} else {
+				// Salfa regularization
+				Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
+				_tmpSparseMat.Clear();
+
+			}
+
+			SparseMatrix GGt;
+			GGt.MatMat(G0,'N',G0t);
+			GGt.RemoveLower();
+			GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
+		} else {
+			Salfa.get_kernels_from_nonsym_K(Salfa, _tmpSparseMat, Kernel_Sa, Kernel_Sa2, tmp_double, tmp_int, -1, configuration.SC_SIZE);
+			_tmpSparseMat.Clear();
+
+			SparseMatrix GGt;
+			GGt.MatMat(G0,'N',G0t);
+			GGt.RemoveLower();
+			GGt.get_kernels_from_nonsym_K(GGt, _tmpSparseMat, Kernel_Sa, Kernel_Sa2, tmp_double, tmp_int, -1, configuration.SC_SIZE);
+		}
 
 		if (environment->print_matrices) {
 			std::ofstream osSa(Logging::prepareFile("Salfa"));
 			osSa << Salfa;
 			osSa.close();
 		}
-
-		double tmp_double;
-		eslocal tmp_int;
-		SparseMatrix TSak, _tmpSparseMat;
-		if (SYMMETRIC_SYSTEM) {
-			Salfa.get_kernel_from_K(Salfa,_tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
-		} else {
-			Salfa.get_kernels_from_nonsym_K(Salfa, _tmpSparseMat, Kernel_Sa, Kernel_Sa2, tmp_double, tmp_int, -1, configuration.SC_SIZE);
-		}
-		TSak.Clear();
-
 
 		if (environment->print_matrices) {
 			std::ofstream osSa(Logging::prepareFile("Salfa_reg"));
@@ -1611,21 +1632,6 @@ void ClusterBase::CreateSa() {
 				tR.CreateMatFromRowsFromMatrix_NewSize(Kernel_Sa,rows_inds);
 
 				SparseMatrix TmpR;
-
-//				storeData(domains[d].Kplus_R, "R_dom_cor_", "R_dom_cor", d);
-//
-//				// ||K * R|| / max(diag(K))
-//				double norm_K_R = domains[d].K.getNorm_K_R(domains[d].K,domains[d].Kplus_R,'N');
-//				double max_diag_K = domains[d].K.getDiagonalMaximum();
-//				double test4 = norm_K_R / max_diag_K;
-//				ESINFO(PROGRESS1) << "Dissection kernel test 4: '||K * R|| / max(diag(K))'";
-//				ESINFO(PROGRESS1) << test4 << "\n";
-
-//				double norm_K_Rb = domains[d].K.getNorm_K_R(domains[d].K,domains[d].Kplus_Rb,'N');
-//
-//				double norm_G0_Kernel_Sa = G0.getNorm_K_R(G0,Kernel_Sa,'N');
-
-
 				domains[d].Kplus_R.ConvertDenseToCSR(0);
 				TmpR.MatMat( domains[d].Kplus_R, 'N', tR );
 
@@ -1635,28 +1641,8 @@ void ClusterBase::CreateSa() {
 					domains[d].Kplus_Rb = TmpR;
 					domains[d].Kplus_Rb.ConvertCSRToDense(0);
 				}
-
-				// Kernel correction Test
-//				SparseMatrix Kfull;
-//				Kfull = domains[d].K;
-//				Kfull.MatTranspose();
-//				Kfull.SetDiagonalOfSymmetricMatrix(0.0);
-//				Kfull.MatAddInPlace(domains[d].K,'N',1.0);
-//				Kfull.type='G';
-//				std::cout << Kfull.SpyText();
-//
-//				SparseMatrix KKplus_Rb;
-//				SparseMatrix Kplus_Rbt;
-//				domains[d].Kplus_Rb.MatTranspose(Kplus_Rbt);
-
-				//KKplus_Rb.MatMat(domains[d].K, 'N', domains[d].Kplus_Rb);
-//				KKplus_Rb.MatMat(domains[d].K, 'N', domains[d].Kplus_R);
-//
-//				std::cout << KKplus_Rb.SpyText();
-
 			}
 		} else { // NON SYMMETRIC SYSTEMS
-
 
 			SparseMatrix LAMN_RHS;
 			LAMN_RHS.MatMat(G02, 'T', Kernel_Sa2);

@@ -59,12 +59,12 @@ Domain::Domain(const ESPRESOSolver &configuration, Instance *instance_in, esloca
 
 void Domain::SetDomain() {
 
-	std::cout << "Printing domain : " << domain_global_index <<  " " << domain_index << std::endl;
+//	std::cout << "Printing domain : " << domain_global_index <<  " " << domain_index << std::endl;
 
 
 #if defined(SOLVER_DISSECTION)
 
-	//instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index);
+//	instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index);
 
 	Kplus.ImportMatrix(K); //_wo_Copy(K);
 	Kplus.Factorization ("K matrix");

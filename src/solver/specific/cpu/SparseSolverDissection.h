@@ -73,6 +73,7 @@ public:
 	int scaling;
 	bool kernel_detection_all;
 	bool diss_verbose;
+	bool projection;
 
 	bool use_dense_solver;
 	DenseSolverCPU dense_solver;

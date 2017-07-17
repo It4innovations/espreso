@@ -44,6 +44,7 @@ SparseSolverDissection::SparseSolverDissection(){
     diss_verbose = false;
     fp = fopen("/dev/null", "w"); //stdout; // stdout or stderr will cause an error in python benchmarks script
     called = 0;
+    projection = false;
 
     MPIrank = 0;
 	num_procs = 1;
@@ -483,8 +484,6 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs_sol) {
 		exit(1);
 		
 	} else {
-
-		bool projection = false;
 		bool is_trans = false;
 		bool is_scaling = true;
 		dslv->SolveSingle(&rhs_sol.front(), projection, is_trans, is_scaling);
@@ -548,7 +547,6 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 		exit(1);
 
 	} else {
-		bool projection = false;
 		bool is_trans = false;
 		bool is_scaling = true;
 
@@ -611,8 +609,6 @@ void SparseSolverDissection::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <doubl
 		exit(1);
 
 	} else {
-
-		bool projection = false;
 		bool is_trans = false;
 		bool is_scaling = true;
 
@@ -983,31 +979,27 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R) {
 	R.cols = kern_dim;
 	R.rows = rows;
 
-
-
-
-#if 1
-
+#if 0
 	SEQ_VECTOR <double> kern_vec;
 	kern_vec = R.dense_values;
 
 	// Test the obtained kernel vectors
 	// Test 1
 	// A*r = 0
-	ESINFO(PROGRESS1) << "Dissection kernel test 1: 'A*r = 0'";
-	SEQ_VECTOR <double> r(kern_dim * rows, -1.0);
+//	ESINFO(PROGRESS1) << "Dissection kernel test 1: 'A*r = 0'";
+//	SEQ_VECTOR <double> r(kern_dim * rows, -1.0);
 	SparseMatrix K_sing;
 	ExportMatrix(K_sing);
-
-	for(eslocal i = 0; i < kern_dim; i++) {
-		K_sing.MatVec(kern_vec, r, 'N', i*rows, i*rows);
-		double norm_r = 0.0;
-		for(int j = i*rows; j < i*rows+rows; j++) {
-			norm_r += r[j] * r[j];
-		}
-		norm_r = sqrt(norm_r);
-		ESINFO(PROGRESS1) << "||r" << i << "|| = " << norm_r;
-	}
+//
+//	for(eslocal i = 0; i < kern_dim; i++) {
+//		K_sing.MatVec(kern_vec, r, 'N', i*rows, i*rows);
+//		double norm_r = 0.0;
+//		for(int j = i*rows; j < i*rows+rows; j++) {
+//			norm_r += r[j] * r[j];
+//		}
+//		norm_r = sqrt(norm_r);
+//		ESINFO(PROGRESS1) << "||r" << i << "|| = " << norm_r;
+//	}
 
 	// Test 2
 	// ||K * R|| / (||K|| * ||R||)
@@ -1015,40 +1007,42 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R) {
 	Rr.dense_values = kern_vec;
 	Rr.cols = kern_dim;
 	Rr.rows = kern_vec.size() / kern_dim;
-
+//
 	double norm_K_R = K_sing.getNorm_K_R(K_sing,Rr,'N');
-
-	double norm_R = 0.0;
-	for(int i = 0; i < Rr.dense_values.size(); i++) {
-		norm_R += Rr.dense_values[i] * Rr.dense_values[i];
-	}
-	norm_R = sqrt(norm_R);
-
-	K_sing.ConvertCSRToDense(0);
-	double norm_K = 0.0;
-	for(int i = 0; i < K_sing.dense_values.size(); i++) {
-		norm_K += K_sing.dense_values[i] * K_sing.dense_values[i];
-	}
-	norm_K = sqrt(norm_K);
-
-	double test2 = norm_K_R / (norm_K * norm_R);
-	ESINFO(PROGRESS1) << "\nDissection kernel test 2: '||K * R|| / (||K|| * ||R||)'";
-	ESINFO(PROGRESS1) << test2;
+//
+//	double norm_R = 0.0;
+//	for(int i = 0; i < Rr.dense_values.size(); i++) {
+//		norm_R += Rr.dense_values[i] * Rr.dense_values[i];
+//	}
+//	norm_R = sqrt(norm_R);
+//
+//	K_sing.ConvertCSRToDense(0);
+//	double norm_K = 0.0;
+//	for(int i = 0; i < K_sing.dense_values.size(); i++) {
+//		norm_K += K_sing.dense_values[i] * K_sing.dense_values[i];
+//	}
+//	norm_K = sqrt(norm_K);
+//
+//	double test2 = norm_K_R / (norm_K * norm_R);
+//	ESINFO(PROGRESS1) << "\nDissection kernel test 2: '||K * R|| / (||K|| * ||R||)'";
+//	ESINFO(PROGRESS1) << test2;
 
 	// Test 3
 	// R^T * R = identity
-	SparseMatrix I;
-	Rr.ConvertDenseToCSR(0);
-	I.MatMat(Rr, 'T', Rr);
-	ESINFO(PROGRESS1) << "\nDissection kernel test 3: 'R^T * R = I'";
-	ESINFO(PROGRESS1) << I;
+//	SparseMatrix I;
+//	Rr.ConvertDenseToCSR(0);
+//	I.MatMat(Rr, 'T', Rr);
+//	ESINFO(PROGRESS1) << "\nDissection kernel test 3: 'R^T * R = I'";
+//	ESINFO(PROGRESS1) << I;
 
 	// Test 4
 	// ||K * R|| / max(diag(K))
 	double max_diag_K = K_sing.getDiagonalMaximum();
 	double test4 = norm_K_R / max_diag_K;
-	ESINFO(PROGRESS1) << "Dissection kernel test 4: '||K * R|| / max(diag(K))'";
-	ESINFO(PROGRESS1) << test4 << "\n";
+//	ESINFO(PROGRESS1) << "Dissection kernel test 4: '||K * R|| / max(diag(K))'";
+//	ESINFO(PROGRESS1) << test4 << "\n";
+	cout << "Dissection kernel test 4: '||K * R|| / max(diag(K))'";
+	cout << test4 << "\n";
 #endif
 
 
