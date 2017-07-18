@@ -69,7 +69,7 @@ void Domain::SetDomain() {
 		//TODO: Modify for non-symmetric systems with two kernels
 		Kplus.ImportMatrix_wo_Copy(K);
 		Kplus.Factorization ("K matrix");
-		Kplus.GetKernel(Kplus_R); // TODO: Kplus.GetKernels(Kplus_R, Kplus_R2) - upravit na tuto funkci - v sym. pripade bude Kplus_R2 prazdna
+		Kplus.GetKernel(Kplus_R, Kplus_R2);
 	}
 
 // *** Debug only code ***

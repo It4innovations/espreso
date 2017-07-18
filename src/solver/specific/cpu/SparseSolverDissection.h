@@ -60,9 +60,9 @@ public:
 	void SolveCG(SparseMatrix & A_in, std::vector <double> & rhs, std::vector <double> & sol);
 	void SolveCG(SparseMatrix & A_in, std::vector <double> & rhs_sol);
 
-	void GetKernelVectors(SEQ_VECTOR <double> & kern_vec, eslocal & kern_dim);
-	void GetTransKernelVectors(SEQ_VECTOR <double> & kern_t_vec, eslocal & kern_dim);
-	void GetKernel(SparseMatrix &R);
+//	void GetKernelVectors(SEQ_VECTOR <double> & kern_vec, eslocal & kern_dim);
+//	void GetTransKernelVectors(SEQ_VECTOR <double> & kern_t_vec, eslocal & kern_dim);
+	void GetKernel(SparseMatrix &R, SparseMatrix &R2);
 
 	void SaveMatrixInCSR(string filename);
 

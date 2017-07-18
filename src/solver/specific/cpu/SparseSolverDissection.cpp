@@ -959,7 +959,7 @@ void SparseSolverDissection::Create_non_sym_SC_w_Mat( espreso::SparseMatrix & K_
 	}
 }
 
-void SparseSolverDissection::GetKernel(SparseMatrix &R) {
+void SparseSolverDissection::GetKernel(SparseMatrix &R, SparseMatrix &R2) {
 
 	// After factorization, with singular matrix
 	if (!initialized) {
@@ -969,8 +969,8 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R) {
 	}
 
 	eslocal kern_dim = dslv->kern_dimension();
-	R.dense_values.resize(kern_dim * rows);
 
+	R.dense_values.resize(kern_dim * rows);
 	dslv->GetKernelVectors(&R.dense_values.front());
 
 	R.type = 'G';
@@ -978,6 +978,17 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R) {
 
 	R.cols = kern_dim;
 	R.rows = rows;
+
+	if(!is_sym) {
+		R2.dense_values.resize(kern_dim * rows);
+		dslv->GetTransKernelVectors(&R2.dense_values.front());
+
+		R2.type = 'G';
+		R2.nnz  = kern_dim * cols;
+
+		R2.cols = kern_dim;
+		R2.rows = rows;
+	}
 
 #if 0
 	SEQ_VECTOR <double> kern_vec;
@@ -1048,109 +1059,109 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R) {
 
 }
 
-void SparseSolverDissection::GetKernelVectors(SEQ_VECTOR <double> & kern_vec, eslocal & kern_dim) {
-
-	// After factorization, with singular matrix
-	if (!initialized) {
-		std::stringstream ss;
-		ss << "Get Kernel R -> rank: " << environment->MPIrank;
-		Factorization(ss.str());
-	}
-
-	kern_dim = dslv->kern_dimension();
-	kern_vec.resize(kern_dim * rows);
-	dslv->GetKernelVectors(&kern_vec.front());
-
-#if 0
-	// Test the obtained kernel R vectors
-
-	// Test 1
-	// A*r = 0
-	ESINFO(PROGRESS1) << "Dissection kernel test 1: 'A*r = 0'";
-	SEQ_VECTOR <double> r(kern_dim * rows, -1.0);
-	SparseMatrix K_sing;
-	ExportMatrix(K_sing);
-
-	for(eslocal i = 0; i < kern_dim; i++) {
-		K_sing.MatVec(kern_vec, r, 'N', i*rows, i*rows);
-		double norm_r = 0.0;
-		for(int j = i*rows; j < i*rows+rows; j++) {
-			norm_r += r[j] * r[j];
-		}
-		norm_r = sqrt(norm_r);
-		ESINFO(PROGRESS1) << "||r" << i << "|| = " << norm_r;
-	}
-
-	// Test 2
-	// ||K * R|| / (||K|| * ||R||)
-	SparseMatrix R;
-	R.dense_values = kern_vec;
-	R.cols = kern_dim;
-	R.rows = kern_vec.size() / kern_dim;
-
-	double norm_K_R = K_sing.getNorm_K_R(K_sing,R,'N');
-
-	double norm_R = 0.0;
-	for(int i = 0; i < R.dense_values.size(); i++) {
-		norm_R += R.dense_values[i] * R.dense_values[i];
-	}
-	norm_R = sqrt(norm_R);
-
-	K_sing.ConvertCSRToDense(0);
-	double norm_K = 0.0;
-	for(int i = 0; i < K_sing.dense_values.size(); i++) {
-		norm_K += K_sing.dense_values[i] * K_sing.dense_values[i];
-	}
-	norm_K = sqrt(norm_K);
-
-	double test2 = norm_K_R / (norm_K * norm_R);
-	ESINFO(PROGRESS1) << "\nDissection kernel test 2: '||K * R|| / (||K|| * ||R||)'";
-	ESINFO(PROGRESS1) << test2;
-
-	// Test 3
-	// R^T * R = identity
-	SparseMatrix I;
-	R.ConvertDenseToCSR(0);
-	I.MatMat(R, 'T', R);
-	ESINFO(PROGRESS1) << "\nDissection kernel test 3: 'R^T * R = I'";
-	ESINFO(PROGRESS1) << I;
-
-	// Test 4
-	// ||K * R|| / max(diag(K))
-	double max_diag_K = K_sing.getDiagonalMaximum();
-	double test4 = norm_K_R / max_diag_K;
-	ESINFO(PROGRESS1) << "Dissection kernel test 4: '||K * R|| / max(diag(K))'";
-	ESINFO(PROGRESS1) << test4 << "\n";
-#endif
-}
-
-void SparseSolverDissection::GetTransKernelVectors(SEQ_VECTOR <double> & kern_t_vec, eslocal & kern_dim) {
-
-	// After factorization, with singular matrix
-	if (!initialized) {
-		std::stringstream ss;
-		ss << "Get Kernel N -> rank: " << environment->MPIrank;
-		Factorization(ss.str());
-	}
-
-	// check if ComputeTransposedKernels is necessary
-	// eslocal result = dslv->ComputeTransposedKernels();
-
-	kern_dim = dslv->kern_dimension();
-	kern_t_vec.resize(kern_dim * rows);
-
-	dslv->GetTransKernelVectors(&kern_t_vec.front());
-
-#if 0
-	// Test the obtained kernel N vectors
-	//	Test 1
-	//	K^T * N = O (or N^T * K = O)
-	// K otestovani staci vynasobit nove jadro N puvodni matici K, ale transponovanou
-
-	// TODO
-
-#endif
-}
+//void SparseSolverDissection::GetKernelVectors(SEQ_VECTOR <double> & kern_vec, eslocal & kern_dim) {
+//
+//	// After factorization, with singular matrix
+//	if (!initialized) {
+//		std::stringstream ss;
+//		ss << "Get Kernel R -> rank: " << environment->MPIrank;
+//		Factorization(ss.str());
+//	}
+//
+//	kern_dim = dslv->kern_dimension();
+//	kern_vec.resize(kern_dim * rows);
+//	dslv->GetKernelVectors(&kern_vec.front());
+//
+//#if 0
+//	// Test the obtained kernel R vectors
+//
+//	// Test 1
+//	// A*r = 0
+//	ESINFO(PROGRESS1) << "Dissection kernel test 1: 'A*r = 0'";
+//	SEQ_VECTOR <double> r(kern_dim * rows, -1.0);
+//	SparseMatrix K_sing;
+//	ExportMatrix(K_sing);
+//
+//	for(eslocal i = 0; i < kern_dim; i++) {
+//		K_sing.MatVec(kern_vec, r, 'N', i*rows, i*rows);
+//		double norm_r = 0.0;
+//		for(int j = i*rows; j < i*rows+rows; j++) {
+//			norm_r += r[j] * r[j];
+//		}
+//		norm_r = sqrt(norm_r);
+//		ESINFO(PROGRESS1) << "||r" << i << "|| = " << norm_r;
+//	}
+//
+//	// Test 2
+//	// ||K * R|| / (||K|| * ||R||)
+//	SparseMatrix R;
+//	R.dense_values = kern_vec;
+//	R.cols = kern_dim;
+//	R.rows = kern_vec.size() / kern_dim;
+//
+//	double norm_K_R = K_sing.getNorm_K_R(K_sing,R,'N');
+//
+//	double norm_R = 0.0;
+//	for(int i = 0; i < R.dense_values.size(); i++) {
+//		norm_R += R.dense_values[i] * R.dense_values[i];
+//	}
+//	norm_R = sqrt(norm_R);
+//
+//	K_sing.ConvertCSRToDense(0);
+//	double norm_K = 0.0;
+//	for(int i = 0; i < K_sing.dense_values.size(); i++) {
+//		norm_K += K_sing.dense_values[i] * K_sing.dense_values[i];
+//	}
+//	norm_K = sqrt(norm_K);
+//
+//	double test2 = norm_K_R / (norm_K * norm_R);
+//	ESINFO(PROGRESS1) << "\nDissection kernel test 2: '||K * R|| / (||K|| * ||R||)'";
+//	ESINFO(PROGRESS1) << test2;
+//
+//	// Test 3
+//	// R^T * R = identity
+//	SparseMatrix I;
+//	R.ConvertDenseToCSR(0);
+//	I.MatMat(R, 'T', R);
+//	ESINFO(PROGRESS1) << "\nDissection kernel test 3: 'R^T * R = I'";
+//	ESINFO(PROGRESS1) << I;
+//
+//	// Test 4
+//	// ||K * R|| / max(diag(K))
+//	double max_diag_K = K_sing.getDiagonalMaximum();
+//	double test4 = norm_K_R / max_diag_K;
+//	ESINFO(PROGRESS1) << "Dissection kernel test 4: '||K * R|| / max(diag(K))'";
+//	ESINFO(PROGRESS1) << test4 << "\n";
+//#endif
+//}
+//
+//void SparseSolverDissection::GetTransKernelVectors(SEQ_VECTOR <double> & kern_t_vec, eslocal & kern_dim) {
+//
+//	// After factorization, with singular matrix
+//	if (!initialized) {
+//		std::stringstream ss;
+//		ss << "Get Kernel N -> rank: " << environment->MPIrank;
+//		Factorization(ss.str());
+//	}
+//
+//	// check if ComputeTransposedKernels is necessary
+//	// eslocal result = dslv->ComputeTransposedKernels();
+//
+//	kern_dim = dslv->kern_dimension();
+//	kern_t_vec.resize(kern_dim * rows);
+//
+//	dslv->GetTransKernelVectors(&kern_t_vec.front());
+//
+//#if 0
+//	// Test the obtained kernel N vectors
+//	//	Test 1
+//	//	K^T * N = O (or N^T * K = O)
+//	// K otestovani staci vynasobit nove jadro N puvodni matici K, ale transponovanou
+//
+//	// TODO
+//
+//#endif
+//}
 
 void SparseSolverDissection::SaveMatrixInCSR(string filename) {
 
