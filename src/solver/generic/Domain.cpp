@@ -59,27 +59,24 @@ Domain::Domain(const ESPRESOSolver &configuration, Instance *instance_in, esloca
 
 void Domain::SetDomain() {
 
-//	std::cout << "Printing domain : " << domain_global_index <<  " " << domain_index << std::endl;
-
-
 #if defined(SOLVER_DISSECTION)
 
-//	instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index);
+	if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
+		instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index);
+		Kplus.ImportMatrix_wo_Copy(K);
+		Kplus.Factorization ("K matrix");
+	} else {
+		//TODO: Modify for non-symmetric systems with two kernels
+		Kplus.ImportMatrix_wo_Copy(K);
+		Kplus.Factorization ("K matrix");
+		Kplus.GetKernel(Kplus_R); // TODO: Kplus.GetKernels(Kplus_R, Kplus_R2) - upravit na tuto funkci - v sym. pripade bude Kplus_R2 prazdna
+	}
 
-	Kplus.ImportMatrix(K); //_wo_Copy(K);
-	Kplus.Factorization ("K matrix");
-
-	// Dissection
-	Kplus_R.Clear();
-	Kplus.GetKernel(Kplus_R);
-	Kplus_R.GramSchmidtOrtho();
-
-	Kplus_R.ConvertDenseToCSR(0);
-	// END - Dissection
-
+// *** Debug only code ***
+//
 //	storeData(Kplus_R,              "R_dom_",      "R_dom",       domain_index);
 //	storeData(Kplus_R.dense_values, "R_dom_dense", "R_dom_dense", domain_index);
-
+//
 //	Kplus_R.Clear();
 //
 //	instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index);
@@ -93,19 +90,29 @@ void Domain::SetDomain() {
 //	storeData(Kplus_R,              "R_dom_a",       "R_dom_a",       domain_index);
 //	storeData(Kplus_R.dense_values, "R_dom_a_dense", "R_dom_a_dense", domain_index);
 
-
-
 #else
 
-	instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index);
 
-	Kplus.ImportMatrix_wo_Copy(K);
-	Kplus.Factorization ("K matrix");
+	if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
+		instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index);
+		Kplus.ImportMatrix_wo_Copy(K);
+		Kplus.Factorization ("K matrix");
+	} else {
+
+		// TODO: Change MKL solver so that it can extract kernels inside the object
+		//Kplus.ImportMatrix_wo_Copy(K);
+		//Kplus.Factorization ("K matrix");
+		//Kplus.GetKernel(Kplus_R); // TODO: Kplus.GetKernels(Kplus_R, Kplus_R2) - upravit na tuto funkci - v sym. pripade bude Kplus_R2 prazdna
+
+		// TODO: Temporary solution before MKL solver is updated
+		instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index);
+		Kplus.ImportMatrix_wo_Copy(K);
+		Kplus.Factorization ("K matrix");
+	}
+
+
 
 #endif
-
-
-
 
 
 //	Kplus_R.ConvertDenseToCSR(0);
@@ -166,14 +173,19 @@ void Domain::SetDomain() {
 //	storeData(Kplus_R.dense_values, "R_dom_dense", "R_dom_dense", domain_index);
 
 
+	// *** Kernel setup
+	if ( configuration.orthogonal_K_kernels ) {
+		Kplus_R.GramSchmidtOrtho();
+		if (Kplus_R2.nnz > 0)
+			Kplus_R2.GramSchmidtOrtho();
+	}
 
-
-
-	//Kernel setup
 	Kplus_Rb  = Kplus_R;
 	Kplus_Rb2 = Kplus_R2;
+	// *** END - Kernel setup
 
-	//Constraints and Dirichlet boundary condition
+
+	// *** Constraints and Dirichlet boundary condition
 	B1 = instance->B1[domain_index];
 	B1.type = 'G';
 	B1t = B1;
@@ -182,15 +194,7 @@ void Domain::SetDomain() {
 
 	B1_scale_vec = instance->B1duplicity[domain_index];
 	lambda_map_sub = instance->B1subdomainsMap[domain_index];
-
-	// HTFETI Section
-	//USE_HFETI = USE_HTFETI_in;
-//	if (USE_HFETI == 1) {
-//		B0 = instance->B0[domain_index];
-//		B0.type = 'G';
-//		B0.ConvertToCSRwithSort(1);
-//	}
-
+	// *** END - Constraints and Dirichlet boundary condition
 
 }
 

@@ -1445,9 +1445,9 @@ void ClusterBase::CreateF0() {
 	F0_Mat.mtype = mtype;
 	F0.ImportMatrix(F0_Mat);
 
-	bool PARDISO_SC = true;
-	if (!PARDISO_SC)
-		F0_fast.ImportMatrix(F0_Mat);
+//	bool PARDISO_SC = true;
+//	if (!PARDISO_SC)
+//		F0_fast.ImportMatrix(F0_Mat);
 
 	//F0_Mat.Clear();
 	F0.SetThreaded();
@@ -1479,74 +1479,60 @@ void ClusterBase::CreateF0() {
 
 void ClusterBase::CreateSa() {
 
-	bool PARDISO_SC = true;
-	bool get_kernel_from_mesh = configuration.regularization == REGULARIZATION::FIX_POINTS;
+	 TimeEval Sa_timing (" HFETI - Salfa preprocessing timing"); if (Measure::report(CLUSTER)) { Sa_timing.totalTime.start(); }
 
+//	bool PARDISO_SC = true;
+	bool get_kernel_from_mesh = configuration.regularization == REGULARIZATION::FIX_POINTS;
+	int  MPIrank = environment->MPIrank;
 
 	MKL_Set_Num_Threads(PAR_NUM_THREADS);
-	int MPIrank; MPI_Comm_rank(environment->MPICommunicator, &MPIrank);
 
-	SparseMatrix Salfa; SparseMatrix tmpM;
 
-	TimeEval Sa_timing (" HFETI - Salfa preprocessing timing");
-	if (Measure::report(CLUSTER)) { Sa_timing.totalTime.start(); }
+	SparseMatrix Salfa, tmpM;
 
-	TimeEvent G0trans_Sa_time("G0 transpose");
-	if (Measure::report(CLUSTER)) { G0trans_Sa_time.start(); }
 
+	 TimeEvent G0trans_Sa_time("G0 transpose"); if (Measure::report(CLUSTER)) { G0trans_Sa_time.start(); }
 	SparseMatrix G0t;
 	SparseMatrix G02t;
-
 	G0.MatTranspose(G0t);
-	if (Measure::report(CLUSTER)) { G0trans_Sa_time.end(); G0trans_Sa_time.printStatMPI(); Sa_timing.addEvent(G0trans_Sa_time); }
-
-	TimeEvent G0solve_Sa_time("SolveMatF with G0t as InitialCondition");
-	if (Measure::report(CLUSTER)) { G0solve_Sa_time.start(); }
-
-	if (!PARDISO_SC) {
-		if (MPIrank == 0) {
-			F0_fast.msglvl = Info::report(LIBRARIES) ? 1 : 0;
-		}
-		//SolaveMatF is obsolete - use Schur Complement Instead
-		F0_fast.SolveMatF(G0t,tmpM, true);
-		if (MPIrank == 0) F0_fast.msglvl = 0;
-	} else {
-		SparseSolverMKL tmpsps;
-		if (MPIrank == 0) {
-			tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
-		}
-
-		if (SYMMETRIC_SYSTEM) {
-			tmpsps.Create_SC_w_Mat( F0_Mat, G0t, Salfa, true, 0 );
-			Salfa.ConvertDenseToCSR(1);
-			Salfa.RemoveLower();
-		} else {
-			G02.MatTranspose(G02t);
-			tmpsps.Create_non_sym_SC_w_Mat( F0_Mat, G0t, G02t, Salfa, true, 0 );
-			//TODO: SC je dive transponopvany
-			//Salfa.ConvertDenseToCSR(1);
-			//Salfa.MatTranspose();
-		}
-
-		if (MPIrank == 0) tmpsps.msglvl = 0;
+	if (!SYMMETRIC_SYSTEM) {
+		G02.MatTranspose(G02t);
 	}
+	 if (Measure::report(CLUSTER)) { G0trans_Sa_time.end(); G0trans_Sa_time.printStatMPI(); Sa_timing.addEvent(G0trans_Sa_time); }
+
+
+	 TimeEvent G0solve_Sa_time("SolveMatF with G0t as InitialCondition"); if (Measure::report(CLUSTER)) { G0solve_Sa_time.start(); }
+	SparseSolverMKL Salfa_SC_solver;
+	if (MPIrank == 0) Salfa_SC_solver.msglvl = Info::report(LIBRARIES) ? 1 : 0;
+	if (SYMMETRIC_SYSTEM) {
+		Salfa_SC_solver.Create_SC_w_Mat( F0_Mat, G0t, Salfa, true, 0 );
+		Salfa.ConvertDenseToCSR(1);
+		Salfa.RemoveLower();
+	} else {
+		Salfa_SC_solver.Create_non_sym_SC_w_Mat( F0_Mat, G0t, G02t, Salfa, true, 0 );
+		//TODO: SC je dive transponopvany
+		//Salfa.ConvertDenseToCSR(1);
+		//Salfa.MatTranspose();
+	}
+	 if (Measure::report(CLUSTER)) { G0solve_Sa_time.end(); G0solve_Sa_time.printStatMPI(); Sa_timing.addEvent(G0solve_Sa_time); }
 
 	Salfa.mtype = this->mtype;
 	F0_Mat.Clear();
-	if (Measure::report(CLUSTER)) { G0solve_Sa_time.end(); G0solve_Sa_time.printStatMPI(); Sa_timing.addEvent(G0solve_Sa_time); }
 
-	TimeEvent SaMatMat_Sa_time("Salfa = MatMat G0 * solution ");
-	if (Measure::report(CLUSTER)) { SaMatMat_Sa_time.start(); }
-	if (!PARDISO_SC) {
-		Salfa.MatMat(G0, 'N', tmpM);
-		Salfa.RemoveLower();
-		tmpM.Clear();
-	}
-	if (Measure::report(CLUSTER)) { SaMatMat_Sa_time.end(); SaMatMat_Sa_time.printStatMPI(); Sa_timing.addEvent(SaMatMat_Sa_time); }
+//	if (!PARDISO_SC) {
+//		if (MPIrank == 0) { F0_fast.msglvl = Info::report(LIBRARIES) ? 1 : 0; }
+//
+//		//SolaveMatF is obsolete - use Schur Complement Instead
+//		F0_fast.SolveMatF(G0t,tmpM, true);
+//		if (MPIrank == 0) F0_fast.msglvl = 0;
+//
+//		Salfa.MatMat(G0, 'N', tmpM);
+//		Salfa.RemoveLower();
+//		tmpM.Clear();
+//	}
 
-
-	// Regularization of Sa from NULL PIVOTS
-	if (!get_kernel_from_mesh) {
+	// *** Regularization of Sa from NULL PIVOTS
+	if ( configuration.regularization == REGULARIZATION::NULL_PIVOTS ) {
 
 		SparseMatrix Kernel_Sa;
 		SparseMatrix Kernel_Sa2;
@@ -1554,47 +1540,221 @@ void ClusterBase::CreateSa() {
 
 		double tmp_double;
 		eslocal tmp_int;
-		SparseMatrix _tmpSparseMat;
+		SparseMatrix _tmpSparseMat; // Regularization matrix for Salfa
 
 		if (SYMMETRIC_SYSTEM) {
-			if (1) {
-				SparseMatrix N, Nt, NNt;
 
-				for (size_t i = 0; i < domains.size(); i++) {
-					SparseMatrix Eye;
-					Eye.CreateEye(domains[i].Kplus_R.cols);
-					N.MatAppend(Eye);
-					Nt.MatAppend(Eye);
+			int regularization_type = 1;
+
+			switch (regularization_type) { //(configuration.SAsolver) {
+
+				case 0: { //ESPRESO_SASOLVER::CPU_DENSE: {
+					// *** Get kernel from GGt - faster as GGt is very sparse matrix - works only for symmetric systems
+					//  - kernel G0*G0t is used as regularization matrix for Salfa - needs to be scaled as values of G0*G0t are 10^10 smaller than values of Salfa
+					SparseMatrix GGt;
+					GGt.MatMat(G0,'N',G0t);
+					GGt.RemoveLower();
+					GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, 1000000, configuration.SC_SIZE);
+					_tmpSparseMat.ConvertToCSR(1);
+					// *** END - Get kernel from GGt - faster as GGt is very sparse matrix - works only for symmetric systems
+					break;
 				}
 
-				Nt.MatTranspose();
-				NNt.MatMat(N, 'N', Nt);
-				NNt.RemoveLower();
+				case 1: { //ESPRESO_SASOLVER::CPU_SPARSE: {
+					// *** Get kernel from Salfa - slower as Salfa is dense and takes more resources to find kernel
+					Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
+					// *** END - Get kernel from Salfa
+					break;
+				}
 
-				double ro = Salfa.GetMeanOfDiagonalOfSymmetricMatrix();
-				ro = 0.5 * ro;
+				case 2: { //ESPRESO_SASOLVER::ACC_DENSE: {
+					//TODO: Musi se zkonzultovat s Alexem - nefunguje na 100%
 
-				Salfa.MatAddInPlace(NNt,'N', ro);
-			} else {
-				// Salfa regularization
-				Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
-				_tmpSparseMat.Clear();
+					// *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
+
+					// *** Make regularization matrix from kernels - warning - output is dense matrix -- as it is added to the dense Salfa who gives a fuck
+
+					SparseMatrix GGt;
+					GGt.MatMat(G0,'N',G0t);
+					GGt.RemoveLower();
+
+//#if defined(SOLVER_DISSECTION)
+//					SparseSolverCPU GGt_solver;
+//					GGt_solver.ImportMatrix_wo_Copy(GGt);
+//					GGt_solver.Factorization ("G0G0t matrix");
+//					GGt_solver.GetKernel(Kernel_Sa); // TODO: Kplus.GetKernels(Kernel_Sa, Kernel_Sa2) - upravit na tuto funkci - v sym. pripade bude Kernel_Sa2 prazdna
+//#else
+					GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
+//#endif
+
+					SparseMatrix Kernel_Sat;
+					Kernel_Sa.MatTranspose(Kernel_Sat);
+					_tmpSparseMat.MatMat(Kernel_Sa, 'N',Kernel_Sat);
+					_tmpSparseMat.RemoveLower();
+					// *** END - Make regularization matrix from kernels
+					break;
+				}
+
+				case 3: { //ESPRESO_SASOLVER::ACC_DENSE: {
+					//TODO: Musi se zkonzultovat s Alexem - nefunguje na 100%
+
+					// *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
+
+					// *** Make regularization matrix from kernels - warning - output is dense matrix -- as it is added to the dense Salfa who gives a fuck
+
+//#if defined(SOLVER_DISSECTION)
+//					SparseSolverCPU GGt_solver;
+//					GGt_solver.ImportMatrix_wo_Copy(Salfa);
+//					GGt_solver.Factorization ("Salfa matrix");
+//					GGt_solver.GetKernel(Kernel_Sa); // TODO: Kplus.GetKernels(Kernel_Sa, Kernel_Sa2) - upravit na tuto funkci - v sym. pripade bude Kernel_Sa2 prazdna
+//#else
+					Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
+//#endif
+
+					SparseMatrix Kernel_Sat;
+					Kernel_Sa.MatTranspose(Kernel_Sat);
+					_tmpSparseMat.MatMat(Kernel_Sa, 'N',Kernel_Sat);
+					_tmpSparseMat.RemoveLower();
+					// *** END - Make regularization matrix from kernels
+					break;
+				}
+
+				default:
+					ESINFO(GLOBAL_ERROR) << "Unknown method for symmetric Salfa regularization";
 
 			}
 
-			SparseMatrix GGt;
-			GGt.MatMat(G0,'N',G0t);
-			GGt.RemoveLower();
-			GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
-		} else {
-			Salfa.get_kernels_from_nonsym_K(Salfa, _tmpSparseMat, Kernel_Sa, Kernel_Sa2, tmp_double, tmp_int, -1, configuration.SC_SIZE);
-			_tmpSparseMat.Clear();
 
-			SparseMatrix GGt;
-			GGt.MatMat(G0,'N',G0t);
-			GGt.RemoveLower();
-			GGt.get_kernels_from_nonsym_K(GGt, _tmpSparseMat, Kernel_Sa, Kernel_Sa2, tmp_double, tmp_int, -1, configuration.SC_SIZE);
+			// *** Actuall Regularization of Salfa using regularization matrix
+			double ro = Salfa.GetMeanOfDiagonalOfSymmetricMatrix();
+			Salfa.MatAddInPlace(_tmpSparseMat,'N', ro);
+			// *** END - Actuall Regularization of Salfa using regularization matrix
+
+
+
+//			if (1 == 1) {
+//				// *** Get kernel from GGt - faster as GGt is very sparse matrix - works only for symmetric systems
+//				//  - kernel G0*G0t is used as regularization matrix for Salfa - needs to be scaled as values of G0*G0t are 10^10 smaller than values of Salfa
+//				SparseMatrix GGt;
+//				GGt.MatMat(G0,'N',G0t);
+//				GGt.RemoveLower();
+//				GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, 1000000, configuration.SC_SIZE);
+//				_tmpSparseMat.ConvertToCSR(1);
+//				// *** END - Get kernel from GGt - faster as GGt is very sparse matrix - works only for symmetric systems
+//			} else {
+//				// *** Get kernel from Salfa - slower as Salfa is dense and takes more resources to find kernel
+//				Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
+//				// *** END - Get kernel from Salfa
+//			}
+//
+//			// *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
+//			if (1 == 0) {
+//				// *** Make regularization matrix from kernels - warning - output is dense matrix -- as it is added to the dense Salfa who gives a fuck
+//				Kernel_Sa.Clear();
+//				_tmpSparseMat.Clear();
+//				SparseMatrix Kernel_Sat;
+//				Kernel_Sa.MatTranspose(Kernel_Sat);
+//				_tmpSparseMat.MatMat(Kernel_Sa, 'N',Kernel_Sat);
+//				_tmpSparseMat.RemoveLower();
+//				// *** END - Make regularization matrix from kernels
+//			}
+//
+//			// *** Regularization of Salfa
+//			double ro = Salfa.GetMeanOfDiagonalOfSymmetricMatrix();
+//			Salfa.MatAddInPlace(_tmpSparseMat,'N', ro);
+//			// *** END - Regularization of Salfa
+
 		}
+
+		if (!SYMMETRIC_SYSTEM) {
+
+
+			int regularization_type = 1;
+
+			switch (regularization_type) { //(configuration.SAsolver) {
+
+				case 0: { //ESPRESO_SASOLVER::CPU_DENSE: {
+					ESINFO(GLOBAL_ERROR) << "For non-symmetric systems G0*G0t cannot be used for regularization of Salfa - use direct regularization of Salfa";
+
+					// TODO: Alex prozatim nevi jak spocist regularizacni matici pro nesym. system z GGt
+
+					//			SparseMatrix GGt;
+					//			GGt.MatMat(G0,'N',G0t);
+					//			GGt.RemoveLower();
+					//			GGt.get_kernels_from_nonsym_K(GGt, _tmpSparseMat, Kernel_Sa, Kernel_Sa2, tmp_double, tmp_int, -1, configuration.SC_SIZE);
+
+					break;
+				}
+
+				case 1: { //ESPRESO_SASOLVER::CPU_SPARSE: {
+					// *** Get kernel from Salfa - slower as Salfa is dense and takes more resources to find kernel
+					Salfa.get_kernels_from_nonsym_K(Salfa, _tmpSparseMat, Kernel_Sa, Kernel_Sa2, tmp_double, tmp_int, -1, configuration.SC_SIZE);
+					// *** END - Get kernel from Salfa
+					break;
+				}
+
+				case 2: { //ESPRESO_SASOLVER::ACC_DENSE: {
+					// *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
+					ESINFO(GLOBAL_ERROR) << "This type of Salfa regularization for nonsymmetric systems is not implemented yet";
+
+					// *** Make regularization matrix from kernels - warning - output is dense matrix -- as it is added to the dense Salfa who gives a fuck
+
+//					SparseMatrix GGt;
+//					GGt.MatMat(G0,'N',G0t);
+//					GGt.RemoveLower();
+//
+////#if defined(SOLVER_DISSECTION)
+////					SparseSolverCPU GGt_solver;
+////					GGt_solver.ImportMatrix_wo_Copy(GGt);
+////					GGt_solver.Factorization ("G0G0t matrix");
+////					GGt_solver.GetKernel(Kernel_Sa); // TODO: Kplus.GetKernels(Kernel_Sa, Kernel_Sa2) - upravit na tuto funkci - v sym. pripade bude Kernel_Sa2 prazdna
+////#else
+//					GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
+////#endif
+//
+//					SparseMatrix Kernel_Sat;
+//					Kernel_Sa.MatTranspose(Kernel_Sat);
+//					_tmpSparseMat.MatMat(Kernel_Sa, 'N',Kernel_Sat);
+//					_tmpSparseMat.RemoveLower();
+					// *** END - Make regularization matrix from kernels
+
+					break;
+				}
+
+				case 3: {//ESPRESO_SASOLVER::ACC_DENSE: {
+					// *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
+					ESINFO(GLOBAL_ERROR) << "This type of Salfa regularization for nonsymmetric systems is not implemented yet";
+
+//					// *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
+//
+//					// *** Make regularization matrix from kernels - warning - output is dense matrix -- as it is added to the dense Salfa who gives a fuck
+//
+////#if defined(SOLVER_DISSECTION)
+////					SparseSolverCPU GGt_solver;
+////					GGt_solver.ImportMatrix_wo_Copy(Salfa);
+////					GGt_solver.Factorization ("Salfa matrix");
+////					GGt_solver.GetKernel(Kernel_Sa); // TODO: Kplus.GetKernels(Kernel_Sa, Kernel_Sa2) - upravit na tuto funkci - v sym. pripade bude Kernel_Sa2 prazdna
+////#else
+//					Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.SC_SIZE);
+////#endif
+//
+//					SparseMatrix Kernel_Sat;
+//					Kernel_Sa.MatTranspose(Kernel_Sat);
+//					_tmpSparseMat.MatMat(Kernel_Sa, 'N',Kernel_Sat);
+//					_tmpSparseMat.RemoveLower();
+//					// *** END - Make regularization matrix from kernels
+
+					break;
+				}
+
+				default:
+					ESINFO(GLOBAL_ERROR) << "Unknown method for symmetric Salfa regularization";
+
+			}
+
+
+		}
+		// *** END - Regularization of Sa from NULL PIVOTS
 
 		if (environment->print_matrices) {
 			std::ofstream osSa(Logging::prepareFile("Salfa"));
@@ -1607,18 +1767,20 @@ void ClusterBase::CreateSa() {
 			osSa << Salfa;
 			osSa.close();
 		}
+
 		if (environment->print_matrices) {
 			std::ofstream osSa(Logging::prepareFile("Kernel_Sa"));
 			osSa << Kernel_Sa;
 			osSa.close();
 		}
+
 		if (environment->print_matrices) {
 			std::ofstream osSa(Logging::prepareFile("Kernel_Sa2"));
 			osSa << Kernel_Sa2;
 			osSa.close();
 		}
 
-// Correction
+		// *** Kernel (Kplus_R and Kplus_R2) correction for HTFETI method
 		if (SYMMETRIC_SYSTEM) {
 			for (size_t d = 0; d < domains.size(); d++) {
 				SparseMatrix tR;
@@ -1642,7 +1804,10 @@ void ClusterBase::CreateSa() {
 					domains[d].Kplus_Rb.ConvertCSRToDense(0);
 				}
 			}
-		} else { // NON SYMMETRIC SYSTEMS
+		}
+
+
+		if (!SYMMETRIC_SYSTEM) {
 
 			SparseMatrix LAMN_RHS;
 			LAMN_RHS.MatMat(G02, 'T', Kernel_Sa2);
@@ -1663,7 +1828,6 @@ void ClusterBase::CreateSa() {
 				osSa << LAMN;
 				osSa.close();
 			}
-
 
 			for (size_t d = 0; d < domains.size(); d++) {
 
@@ -1739,13 +1903,20 @@ void ClusterBase::CreateSa() {
 			}
 
 		}
+		// *** Kernel (Kplu_R and Kplus_R2) correction for HTFETI method
 
-	} else {
+	}
+
+	// *** END - Regularization of Sa from NULL PIVOTS
+
+
+	if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
+
+		// *** Regularization of Salfa from FIX points
 
 		// TODO: GENERALIZE
-		// Regularization of Salfa from FIX points
-		TimeEvent reg_Sa_time("Salfa regularization ");
-		if (Measure::report(CLUSTER)) { reg_Sa_time.start(); }
+
+		 TimeEvent reg_Sa_time("Salfa regularization "); if (Measure::report(CLUSTER)) { reg_Sa_time.start(); }
 
 		SparseMatrix N, Nt, NNt;
 
@@ -1764,14 +1935,13 @@ void ClusterBase::CreateSa() {
 		ro = 0.5 * ro;
 
 		Salfa.MatAddInPlace(NNt,'N', ro);
-		// TODO: not general
 		Salfa.mtype = this->mtype;
-		// End regularization of Salfa
 
-		if (Measure::report(CLUSTER)) { reg_Sa_time.end(); reg_Sa_time.printStatMPI(); Sa_timing.addEvent(reg_Sa_time); }
+		 if (Measure::report(CLUSTER)) { reg_Sa_time.end(); reg_Sa_time.printStatMPI(); Sa_timing.addEvent(reg_Sa_time); }
+
+		// *** END - Regularization of Salfa from FIX points
+
 	}
-	// END of Sa regularization part
-
 
 	if (environment->print_matrices) {
 		SparseMatrix tmpSa = Salfa;
@@ -1779,65 +1949,76 @@ void ClusterBase::CreateSa() {
 		osSa <<  tmpSa;
 		osSa.close();
 	}
+	// *** END - Sa regularization
 
+
+	// *** Salfa import into dense|sparse|acc solver and factorization
 	switch (configuration.SAsolver) {
-	case ESPRESO_SASOLVER::CPU_SPARSE: {
-		TimeEvent fact_Sa_time("Salfa factorization ");
-		if (Measure::report(CLUSTER)) { fact_Sa_time.start(); }
 
-		if (MPIrank == 0)  {
-			Sa.msglvl = 1;
+		// Default settings and fastest for CPU
+		case ESPRESO_SASOLVER::CPU_DENSE: {
+			TimeEvent factd_Sa_time("Salfa factorization - dense ");
+			if (Measure::report(CLUSTER)) { factd_Sa_time.start(); }
+
+			Salfa.ConvertCSRToDense(1);
+
+			Sa_dense_cpu.ImportMatrix(Salfa);
+			Sa_dense_cpu.Factorization("Salfa - dense ");
+
+			if (Measure::report(CLUSTER)) { factd_Sa_time.end(); }//factd_Sa_time.printStatMPI();
+			if (Measure::report(CLUSTER)) { Sa_timing.addEvent(factd_Sa_time); }
+			break;
 		}
-		Sa.ImportMatrix(Salfa);
-		Sa.Factorization("salfa");
-		if (MPIrank == 0) {
-			Sa.msglvl = 0;
+
+		case ESPRESO_SASOLVER::CPU_SPARSE: {
+			TimeEvent fact_Sa_time("Salfa factorization ");
+			if (Measure::report(CLUSTER)) { fact_Sa_time.start(); }
+
+			if (MPIrank == 0)  {
+				Sa.msglvl = 1;
+			}
+			Sa.ImportMatrix(Salfa);
+			Sa.Factorization("salfa");
+			if (MPIrank == 0) {
+				Sa.msglvl = 0;
+			}
+			if (Measure::report(CLUSTER)) { fact_Sa_time.end(); } //fact_Sa_time.printStatMPI(); }
+			if (Measure::report(CLUSTER)) { Sa_timing.addEvent(fact_Sa_time); }
+			break;
 		}
-		if (Measure::report(CLUSTER)) { fact_Sa_time.end(); } //fact_Sa_time.printStatMPI(); }
-		if (Measure::report(CLUSTER)) { Sa_timing.addEvent(fact_Sa_time); }
-		break;
+
+		case ESPRESO_SASOLVER::ACC_DENSE: {
+			TimeEvent factd_Sa_time("Salfa factorization - dense ");
+			if (Measure::report(CLUSTER)) {factd_Sa_time.start();}
+
+			//TODO: This works only for CuSolver
+			//TODO: Radim Vavrik
+			Salfa.type = 'G'; // for cuSolver only
+			Salfa.ConvertCSRToDense(1);
+			Salfa.type = 'S'; //for cuSolver only
+
+			Sa_dense_acc.ImportMatrix(Salfa);
+			Sa_dense_acc.Factorization("Salfa - dense ");
+
+			if (Measure::report(CLUSTER)) { factd_Sa_time.end(); } //factd_Sa_time.printStatMPI();
+			if (Measure::report(CLUSTER)) { Sa_timing.addEvent(factd_Sa_time); }
+			break;
+		}
+
+		default:
+			ESINFO(GLOBAL_ERROR) << "Not implemented Salfa solver.";
+
 	}
-	case ESPRESO_SASOLVER::CPU_DENSE: {
-		TimeEvent factd_Sa_time("Salfa factorization - dense ");
-		if (Measure::report(CLUSTER)) { factd_Sa_time.start(); }
+	// *** END - Salfa import into dense|sparse|acc solver and factorization
 
-		Salfa.ConvertCSRToDense(1);
-
-		Sa_dense_cpu.ImportMatrix(Salfa);
-		Sa_dense_cpu.Factorization("Salfa - dense ");
-
-		if (Measure::report(CLUSTER)) { factd_Sa_time.end(); }//factd_Sa_time.printStatMPI();
-		if (Measure::report(CLUSTER)) { Sa_timing.addEvent(factd_Sa_time); }
-		break;
-	}
-	case ESPRESO_SASOLVER::ACC_DENSE: {
-		TimeEvent factd_Sa_time("Salfa factorization - dense ");
-		if (Measure::report(CLUSTER)) {factd_Sa_time.start();}
-
-		//TODO: This works only for CuSolver
-		//TODO: Radim Vavrik
-		Salfa.type = 'G'; // for cuSolver only
-		Salfa.ConvertCSRToDense(1);
-		Salfa.type = 'S'; //for cuSolver only
-
-		Sa_dense_acc.ImportMatrix(Salfa);
-		Sa_dense_acc.Factorization("Salfa - dense ");
-
-		if (Measure::report(CLUSTER)) { factd_Sa_time.end(); } //factd_Sa_time.printStatMPI();
-		if (Measure::report(CLUSTER)) { Sa_timing.addEvent(factd_Sa_time); }
-		break;
-	}
-	default:
-		ESINFO(GLOBAL_ERROR) << "Not implemented S alfa solver.";
-	}
-
-	Sa.m_Kplus_size = Salfa.cols;
 
 	if (Measure::report(CLUSTER)) { Sa_timing.totalTime.end(); }
-//TODO: Need fix - for detailed measurements
-//	Sa_timing.printStatsMPI();
+
+	//TODO: Need fix - for detailed measurements
+	//	Sa_timing.printStatsMPI();
 	MKL_Set_Num_Threads(1);
 
+	Sa.m_Kplus_size = Salfa.cols;
 	vec_alfa.resize(Sa.m_Kplus_size);
 
 }

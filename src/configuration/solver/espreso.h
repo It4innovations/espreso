@@ -53,7 +53,7 @@ struct ESPRESOSolver: public Configuration {
 	PARAMETER(size_t, RESTART_ITER, "Number of iterations after which a restart is enabled", 10);
 	PARAMETER(size_t, NUM_RESTARTS, "Number of restarts in iteration proces", 8);
 
-
+	PARAMETER(bool, orthogonal_K_kernels, "If true, kernels of the stiffness matrices (K) will orthogonalized using Gram-Schmidt orthogonalization", false);
 
 	PARAMETER(bool, redundant_lagrange, "If true, each pair of DOF are glued", true);
 	PARAMETER(bool, scaling, "If true, Lagrange multiplicators are weighted according a value in the stiffness matrix", true);
