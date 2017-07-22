@@ -3,8 +3,8 @@ import os
 import glob
 
 def configure(ctx):
-    ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env["VTK::INCLUDE"] ])
-    ctx.env.append_unique("LIBPATH", ctx.env["VTK::LIBPATH"])
+    ctx.env.append_unique("CXXFLAGS", [ "-I" + include for include in ctx.env["CATALYST::INCLUDE"] ])
+    ctx.env.append_unique("LIBPATH", ctx.env["CATALYST::LIBPATH"])
 
     includes = []
     for file in glob.glob(ctx.path.abspath() + "/resultstore/libvtk/*.cpp"):
@@ -13,25 +13,25 @@ def configure(ctx):
                 if line.find("#include \"vtk") != -1:
                     includes += [ line ]
 
-    ctx.env.VTK = ctx.check_cc(
+    ctx.env.CATALYST = ctx.check_cc(
         fragment    = "{0}int main() {{ return 0; }}\n".format("".join(includes)),
         mandatory   = False,
         execute     = False,
-        msg         = "Checking for VTK headers",
-        errmsg      = "not found - set path to VTK headers (parameter VTK::INCLUDE)",
+        msg         = "Checking for CATALYST headers",
+        errmsg      = "not found - set path to CATALYST headers (parameter CATALYST::INCLUDE)",
         okmsg       = "found"
     )
 
     vtklibs = []
-    if len(ctx.env["VTK::LIBPATH"]) == 1:
-        vtklibs = [ lib.split('/')[-1][3:-3] for lib in glob.glob(ctx.env["VTK::LIBPATH"][0] + "/*.so") ]
+    if len(ctx.env["CATALYST::LIBPATH"]) == 1:
+        vtklibs = [ lib.split('/')[-1][3:-3] for lib in glob.glob(ctx.env["CATALYST::LIBPATH"][0] + "/*.so") ]
 
-    ctx.start_msg("Checking for VTK libraries")
-    if len(vtklibs): # Improve testing VTK libraries
+    ctx.start_msg("Checking for CATALYST libraries")
+    if len(vtklibs): # Improve testing CATALYST libraries
         ctx.end_msg("found")
     else:
-        ctx.end_msg("not found - set path to VTK libraries (parameter VTK::LIBPATH)", color='YELLOW')
-        ctx.env.VTK = False
+        ctx.end_msg("not found - set path to CATALYST libraries (parameter CATALYST::LIBPATH)", color='YELLOW')
+        ctx.env.CATALYST = False
 
     ctx.env.append_unique("LIB", vtklibs)
 
@@ -43,7 +43,7 @@ def build(ctx):
     )
 
     sources = ctx.path.ant_glob('*.cpp') + ctx.path.ant_glob('resultstore/*.cpp') + ctx.path.ant_glob('monitoring/**/*.cpp')
-    if ctx.env.VTK:
+    if ctx.env.CATALYST:
         ctx.objects(
             source = sources + ctx.path.ant_glob('resultstore/libvtk/*.cpp'),
             target = "resultstore",
