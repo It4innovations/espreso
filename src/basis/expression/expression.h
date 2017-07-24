@@ -11,6 +11,8 @@ class Expression {
 
 public:
 
+	static bool isValid(const std::string &str, std::vector<std::string> variables);
+
 	Expression(const std::string &str, std::vector<std::string> variables);
 	Expression(const Expression &other);
 	Expression& operator=(const Expression &other);
