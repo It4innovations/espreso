@@ -93,6 +93,7 @@ def build(ctx):
             "specific/cpu/SparseSolverMKL.cpp",
             "specific/acc/mic.cpp",
             "specific/acc/clusteracc.cpp",
+            "specific/acc/superclusteracc.cpp",
             "specific/acc/itersolveracc.cpp",
             "specific/acc/DenseMatrixPack.cpp",
             "specific/cpu/DenseSolverMKL.cpp",
@@ -119,12 +120,14 @@ def build(ctx):
         sources = source_files + (
             "specific/cpu/solvermumps.cpp",
             "specific/cpu/clustercpu.cpp",
+            "specific/cpu/superclustercpu.cpp", 
             "specific/cpu/itersolvercpu.cpp")
 
     if ctx.env.SOLVER == "PARDISO":
         sources = source_files + (
             "specific/cpu/solverpardiso.cpp",
             "specific/cpu/clustercpu.cpp",
+            "specific/cpu/superclustercpu.cpp", 
             "specific/cpu/itersolvercpu.cpp",
             "specific/cpu/DenseSolverMKL.cpp")
 
@@ -132,6 +135,7 @@ def build(ctx):
         sources = source_files + (
             "specific/cpu/SparseSolverMKL.cpp",
             "specific/cpu/clustercpu.cpp",
+            "specific/cpu/superclustercpu.cpp",
             "specific/cpu/itersolvercpu.cpp",
             "specific/cpu/DenseSolverMKL.cpp")
 
@@ -139,6 +143,7 @@ def build(ctx):
         sources = source_files + (
             "specific/cpu/SparseSolverDissection.cpp",
             "specific/cpu/clustercpu.cpp",
+            "specific/cpu/superclustercpu.cpp", 
             "specific/cpu/itersolvercpu.cpp",
             "specific/cpu/DenseSolverMKL.cpp")
 

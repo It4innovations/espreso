@@ -9,53 +9,53 @@
 #define SRC_SOLVER_SPECIFIC_SUPERCLUSTERS_H_
 
 #if defined(SOLVER_MKL)
-#include "supercluster.h"//"cpu/clustercpu.h"
+#include "cpu/superclustercpu.h"
 
 namespace espreso {
-	;//typedef ClusterCPU	Cluster;
+	typedef SuperClusterCPU	SuperCluster;
 }
 
 
 #elif defined(SOLVER_PARDISO)
-#include "supercluster.h"//"cpu/clustercpu.h"
+#include "cpu/superclustercpu.h"
 
 namespace espreso {
-	;//typedef ClusterCPU	Cluster;
+	typedef SuperClusterCPU	SuperCluster;
 }
 
 #elif defined(SOLVER_MUMPS)
-#include "supercluster.h"//"cpu/clustercpu.h"
+#include "cpu/superclustercpu.h"
 
 namespace espreso {
-	;//typedef ClusterCPU	Cluster;
+	typedef SuperClusterCPU	SuperCluster;
 }
 
 #elif defined(SOLVER_MIC)
-#include "supercluster.h"//"cpu/clustercpu.h"
+#include "acc/superclusteracc.h"
 
 namespace espreso {
-	;//typedef ClusterCPU	Cluster;
+	typedef SuperClusterAcc	SuperCluster;
 }
 
 #elif defined(SOLVER_CUDA)
-#include "supercluster.h"//"cpu/clustercpu.h"
+#include "cpu/superclustercpu.h"
 
 namespace espreso {
-	;//typedef ClusterCPU	Cluster;
+	typedef SuperClusterCPU	SuperCluster;
 }
 
 #elif defined(SOLVER_CUDA_7)
-#include "supercluster.h"//"cpu/clustercpu.h"
+#include "cpu/superclustercpu.h"
 
 namespace espreso {
-	;//typedef ClusterCPU	Cluster;
+	typedef SuperClusterCPU	SuperCluster;
 }
 
 #elif defined(SOLVER_DISSECTION)
-#include "supercluster.h"//"cpu/clustercpu.h"
+#include "cpu/superclustercpu.h"
 
 namespace espreso {
-	;//typedef ClusterCPU	Cluster;
+	typedef SuperClusterCPU	SuperCluster;
 }
 
 

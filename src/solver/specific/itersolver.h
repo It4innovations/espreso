@@ -26,7 +26,7 @@ using std::make_pair;
 #include "../generic/SparseMatrix.h"
 #include "sparsesolvers.h"
 #include "clusters.h"
-#include "supercluster.h"
+#include "superclusters.h"
 #include "../generic/utils.h"
 
 namespace espreso {
