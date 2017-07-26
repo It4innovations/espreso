@@ -88,6 +88,7 @@ void TransientFirstOrderImplicit::run(Step &step)
 
 	for (step.substep = 0; step.currentTime <= startTime + _duration + 1e-8; step.substep++) {
 		ESINFO(PROGRESS2) << _name << " iteration " << step.substep + 1 << "[" << step.currentTime << "s]";
+		setEmptyRegularization(step, Matrices::K);
 		if (step.substep == 0 || timeDependent) {
 			updateMatrices(step, Matrices::K | Matrices::M | Matrices::f);
 			composeGluing(step, Matrices::B1 | Matrices::B0); // TODO: B0 without kernels

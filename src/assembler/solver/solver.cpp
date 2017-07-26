@@ -238,6 +238,25 @@ void Solver::regularizeMatrices(const Step &step, Matrices matrices)
 	};
 }
 
+void Solver::setEmptyRegularization(const Step &step, Matrices matrices)
+{
+	if (matrices & ~(Matrices::K)) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: invalid matrices passed to Solver::regularizeMatrices.";
+	}
+
+	instance->computeKernelsCallback = [&] (REGULARIZATION regularization, size_t scSize) {
+		storeData(step, physics->instance()->N1, "N1", "N1");
+		storeData(step, physics->instance()->N2, "N2", "N2");
+		storeData(step, physics->instance()->RegMat, "RegMat", "RegMat");
+	};
+
+	instance->computeKernelCallback = [&] (REGULARIZATION regularization, size_t scSize, size_t domain) {
+		storeData(step, physics->instance()->N1[domain], domain, "N1", "N1[" + std::to_string(domain) + "]");
+		storeData(step, physics->instance()->N2[domain], domain, "N2", "N2[" + std::to_string(domain) + "]");
+		storeData(step, physics->instance()->RegMat[domain], domain, "RegMat", "RegMat[" + std::to_string(domain) + "]");
+	};
+}
+
 void Solver::composeGluing(const Step &step, Matrices matrices)
 {
 	if (matrices & ~(Matrices::B0 | Matrices::B1)) {

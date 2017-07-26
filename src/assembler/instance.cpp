@@ -60,6 +60,18 @@ Instance::Instance(size_t domains, const std::vector<int> &neighbours)
 		B1[d].nnz = 0;
 		B1[d].type = 'G';
 	}
+
+	computeKernelCallback = [] (REGULARIZATION regularization, size_t scSize, size_t domain) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernel is empty function. Fill it in assembler.";
+	};
+
+	computeKernelsCallback = [] (REGULARIZATION regularization, size_t scSize) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: computeKernels is empty function. Fill it in assembler.";
+	};
+
+	assembleB0Callback = [] (B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
+		ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: assembleB0 is empty function. Fill it in assembler.";
+	};
 }
 
 Instance::Instance(Instance &other, Matrices &share)

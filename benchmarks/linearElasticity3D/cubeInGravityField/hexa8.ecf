@@ -32,10 +32,6 @@ DEFAULT_ARGS {
   9   6;
 }
 
-ENV {
-    PRINT_MATRICES 1;
-}
-
 GENERATOR { # ESPRESO internal mesh generator.
 
   SHAPE GRID;

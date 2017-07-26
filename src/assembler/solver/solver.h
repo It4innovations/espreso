@@ -64,6 +64,7 @@ protected:
 
 	void composeGluing(const Step &step, Matrices matrices);
 	void regularizeMatrices(const Step &step, Matrices matrices);
+	void setEmptyRegularization(const Step &step, Matrices matrices);
 	void processSolution(const Step &step);
 
 	void initLinearSolver(const Step &step);
