@@ -392,11 +392,13 @@ void AdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, cons
 
 	for (size_t r = 0; r < e->regions().size(); r++) {
 		if (step.step < e->regions()[r]->settings.size() && e->regions()[r]->settings[step.step].count(Property::HEAT_FLOW)) {
-			Ke.resize(Ksize, Ksize);
-			Ke = 0;
 			area = e->regions()[r]->area;
 			break;
 		}
+	}
+	if (e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step)) {
+		Ke.resize(Ksize, Ksize);
+		Ke = 0;
 	}
 
 	const std::vector<DenseMatrix> &dN = e->dN();
