@@ -11,7 +11,7 @@ using std::endl;
 using std::left;
 using std::fixed;
 
-#include <dmumps_c.h>
+// #include <dmumps_c.h>
 
 
 #pragma once
@@ -28,7 +28,7 @@ public:
 	//Destructor
 	~SparseSolverCUDA();
 
-	DMUMPS_STRUC_C id;
+	// DMUMPS_STRUC_C id;
 
 	bool 		initialized;
 	bool 		keep_factors;
