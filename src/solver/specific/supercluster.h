@@ -239,11 +239,10 @@ public:
 			 clusters[c].tm2.resize(clusters[c].domains.size());
 			 clusters[c].tm3.resize(clusters[c].domains.size());
 
-			 eslocal max_tmp_vec_size;
 			#pragma omp parallel for
 			 for (size_t d = 0; d < clusters[c].domains.size(); d++) {
 
-				 max_tmp_vec_size = clusters[c].domains[d].B0.cols;
+				 eslocal max_tmp_vec_size = clusters[c].domains[d].B0.cols;
 				 if (clusters[c].domains[d].B0.rows > clusters[c].domains[d].B0.cols)
 					 max_tmp_vec_size = clusters[c].domains[d].B0.rows;
 

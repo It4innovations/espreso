@@ -75,7 +75,7 @@ LINEAR_ELASTICITY_3D {
 
         ESPRESO {
 
-          METHOD         HYBRID_FETI;
+          METHOD          TOTAL_FETI;
           SOLVER                 PCG;
           PRECONDITIONER      LUMPED;
           REGULARIZATION NULL_PIVOTS;
