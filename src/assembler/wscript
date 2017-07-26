@@ -64,6 +64,5 @@ def configure(ctx):
 def build(ctx):
     ctx.objects(
         source = ctx.path.ant_glob('**/*.cpp'),
-        target = "assembler",
-        use    = "assembler_base"
+        target = "assembler"
     )
