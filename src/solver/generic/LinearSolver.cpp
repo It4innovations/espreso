@@ -76,7 +76,7 @@ void LinearSolver::update(Matrices matrices)
 {
 	// TODO update appropriate solver objects and stop steeling matrices! :)
 
-	if (matrices & Matrices::K) {
+	if (matrices & (Matrices::K | Matrices::N)) {
 		// factorization and preconditioners and HFETI preprocessing
 
 		delete cluster;
@@ -88,36 +88,38 @@ void LinearSolver::update(Matrices matrices)
 
 		init(instance->neighbours);
 
-	}
+	} else {
 
-	if (matrices & (Matrices::N | Matrices::B1)) { // N is kernel of matrix K
-		// updateGGt();
-		setup_CreateG_GGt_CompressG();
-	}
-
-	if (matrices & (Matrices::B1c | Matrices::f)) {
-		// update dual RHS
-		//for f:
-		// - updated by solve
-
-		//for B1c:
-		setup_SetDirichletBoundaryConditions();
-	}
-
-	if (matrices & Matrices::B0) {
-		// HFETI preprocessing
-		if (configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
-			instance->assembleB0(configuration.B0_type, instance->N1);
+		if (matrices & Matrices::B1) { // N is kernel of matrix K
+			// updateGGt();
+			setup_CreateG_GGt_CompressG();
 		}
-		setup_HTFETI();
-	}
 
-	if (matrices & Matrices::B1duplicity) {
-		// update duplicity vector
-		#pragma omp parallel for
-		for (eslocal d = 0; d < cluster->domains.size(); d++) {
-			cluster->domains[d]->B1_scale_vec = instance->B1duplicity[d];
+		if (matrices & (Matrices::B1c | Matrices::f)) {
+			// update dual RHS
+			//for f:
+			// - updated by solve
+
+			//for B1c:
+			setup_SetDirichletBoundaryConditions();
 		}
+
+		if (matrices & Matrices::B0) {
+			// HFETI preprocessing
+			if (configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
+				instance->assembleB0(configuration.B0_type, instance->N1);
+			}
+			setup_HTFETI();
+		}
+
+		if (matrices & Matrices::B1duplicity) {
+			// update duplicity vector
+			#pragma omp parallel for
+			for (eslocal d = 0; d < cluster->domains.size(); d++) {
+				cluster->domains[d]->B1_scale_vec = instance->B1duplicity[d];
+			}
+		}
+
 	}
 
 	// TODO: remove full re-initialization
