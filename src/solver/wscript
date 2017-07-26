@@ -120,14 +120,12 @@ def build(ctx):
         sources = source_files + (
             "specific/cpu/solvermumps.cpp",
             "specific/cpu/clustercpu.cpp",
-            "specific/cpu/superclustercpu.cpp", 
             "specific/cpu/itersolvercpu.cpp")
 
     if ctx.env.SOLVER == "PARDISO":
         sources = source_files + (
             "specific/cpu/solverpardiso.cpp",
             "specific/cpu/clustercpu.cpp",
-            "specific/cpu/superclustercpu.cpp", 
             "specific/cpu/itersolvercpu.cpp",
             "specific/cpu/DenseSolverMKL.cpp")
 
@@ -143,7 +141,6 @@ def build(ctx):
             "specific/cpu/SparseSolverDissection.cpp",
             "specific/cpu/SparseSolverMKL.cpp",
             "specific/cpu/clustercpu.cpp",
-            "specific/cpu/superclustercpu.cpp", 
             "specific/cpu/itersolvercpu.cpp",
             "specific/cpu/DenseSolverMKL.cpp")
 
