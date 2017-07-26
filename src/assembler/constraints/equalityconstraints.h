@@ -26,7 +26,7 @@ struct EqualityConstraints
 	static void insertElementGluingToB1(Instance &instance, const Step &step, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<size_t> &DOFsOffsets, bool withRedundantMultiplier, bool withScaling);
 
 	static void insertCornersGluingToB0(Instance &instance, const std::vector<Element*> &elements, const std::vector<size_t> &DOFsOffsets);
-	static void insertKernelsGluingToB0(Instance &instance, const std::vector<Element*> &elements, const std::vector<Element*> &nodes, const std::vector<size_t> &DOFsOffsets, const std::vector<SparseMatrix> &kernels);
+	static void insertKernelsGluingToB0(Instance &instance, const std::vector<Element*> &elements, const std::vector<Element*> &DOFsSource, const std::vector<size_t> &DOFsOffsets, const std::vector<SparseMatrix> &kernels, bool getDOFsSourceIndicesFromElement = false);
 
 protected:
 	static std::vector<esglobal> computeLambdasID(Constraints &constraints, const std::vector<Element*> &elements, const std::vector<Property> &DOFs);

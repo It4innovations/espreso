@@ -1222,7 +1222,7 @@ void EqualityConstraints::insertCornersGluingToB0(Instance &instance, const std:
 	ESINFO(EXHAUSTIVE) << "Average number of lambdas in B0 is " << Info::averageValue(lambdas);
 }
 
-void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std::vector<Element*> &elements, const std::vector<Element*> &nodes, const std::vector<size_t> &DOFsOffsets, const std::vector<SparseMatrix> &kernels)
+void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std::vector<Element*> &elements, const std::vector<Element*> &DOFsSource, const std::vector<size_t> &DOFsOffsets, const std::vector<SparseMatrix> &kernels, bool getDOFsSourceIndicesFromElement)
 {
 	std::vector<Element*> el(elements);
 
@@ -1270,31 +1270,37 @@ void EqualityConstraints::insertKernelsGluingToB0(Instance &instance, const std:
 				continue;
 			}
 
-			std::vector<Element*> nodesOnInterface;
+			std::vector<Element*> DOFsOnInterface;
 			for (size_t e = part[i]; e < part[i + 1]; e++) {
-				for (size_t n = 0; n < el[e]->nodes(); n++) {
-					nodesOnInterface.push_back(nodes[el[e]->node(n)]);
+				if (getDOFsSourceIndicesFromElement) {
+					for (size_t n = 0; n < el[e]->DOFsIndices().size(); n++) {
+						DOFsOnInterface.push_back(DOFsSource[el[e]->DOFsIndices()[n]]);
+					}
+				} else {
+					for (size_t n = 0; n < el[e]->nodes(); n++) {
+						DOFsOnInterface.push_back(DOFsSource[el[e]->node(n)]);
+					}
 				}
 			}
-			std::sort(nodesOnInterface.begin(), nodesOnInterface.end());
-			Esutils::removeDuplicity(nodesOnInterface);
+			std::sort(DOFsOnInterface.begin(), DOFsOnInterface.end());
+			Esutils::removeDuplicity(DOFsOnInterface);
 
 			eslocal master = kernels[domains[0]].cols > kernels[domains[1]].cols ? domains[0] : domains[1];
 			if (kernels[master].cols == 0) {
-				for (size_t n = 0; n < nodesOnInterface.size(); n++) {
+				for (size_t n = 0; n < DOFsOnInterface.size(); n++) {
 					for (size_t dof = 0; dof < DOFsOffsets.size(); dof++) {
 						instance.B0[p].I_row_indices.push_back(rowIndex[i]);
-						instance.B0[p].J_col_indices.push_back(nodesOnInterface[n]->DOFIndex(p, dof) + 1);
+						instance.B0[p].J_col_indices.push_back(DOFsOnInterface[n]->DOFIndex(p, dof) + 1);
 						instance.B0[p].V_values.push_back(sign);
 					}
 				}
 			} else {
 				for (eslocal col = 0; col < kernels[master].cols; col++) {
-					for (size_t n = 0; n < nodesOnInterface.size(); n++) {
+					for (size_t n = 0; n < DOFsOnInterface.size(); n++) {
 						for (size_t dof = 0; dof < DOFsOffsets.size(); dof++) {
 							instance.B0[p].I_row_indices.push_back(rowIndex[i] + col);
-							instance.B0[p].J_col_indices.push_back(nodesOnInterface[n]->DOFIndex(p, dof) + 1);
-							instance.B0[p].V_values.push_back(sign * kernels[master].dense_values[kernels[master].rows * col + nodesOnInterface[n]->DOFIndex(master, DOFsOffsets[dof])]);
+							instance.B0[p].J_col_indices.push_back(DOFsOnInterface[n]->DOFIndex(p, dof) + 1);
+							instance.B0[p].V_values.push_back(sign * kernels[master].dense_values[kernels[master].rows * col + DOFsOnInterface[n]->DOFIndex(master, DOFsOffsets[dof])]);
 						}
 					}
 				}

@@ -11,10 +11,10 @@ namespace espreso {
 class UnknownLine: public LineElement
 {
 public:
-	UnknownLine(const std::vector<Element*> &nodes, std::vector<eslocal> &indices, std::vector<eslocal> &DOFs, std::vector<double> &stiffnessMatrix)
-	: _nodes(nodes), _indices(indices), _DOFs(DOFs), _stiffnessMatrix(stiffnessMatrix) {};
+	UnknownLine(const std::vector<Element*> &nodes, std::vector<eslocal> &indices, std::vector<eslocal> &DOFsIndices, std::vector<double> &stiffnessMatrix)
+	: _nodes(nodes), _indices(indices), _stiffnessMatrix(stiffnessMatrix) { _DOFsIndices = DOFsIndices; }
 	UnknownLine(const std::vector<Element*> &nodes, std::vector<eslocal> &indices, std::vector<double> &stiffnessMatrix)
-	: _nodes(nodes), _indices(indices), _DOFs(_DOFsIndices), _stiffnessMatrix(stiffnessMatrix) {};
+	: _nodes(nodes), _indices(indices), _stiffnessMatrix(stiffnessMatrix) { }
 	Element* copy() const { return new UnknownLine(*this); }
 
 	eslocal nCommon() const { return _indices.size() > 4 ? 3 : 2; }
@@ -24,8 +24,6 @@ public:
 	size_t coarseNodes() const { return _indices.size(); }
 	size_t gaussePoints() const { ESINFO(GLOBAL_ERROR) << "Unknown line has no gausse points."; return 0; }
 
-	std::vector<eslocal>& DOFsIndices() { return _DOFs; }
-	const std::vector<eslocal>& DOFsIndices() const { return _DOFs; }
 	const std::vector<double>& stiffnessMatrix() const { return _stiffnessMatrix; }
 
 	const std::vector<DenseMatrix>& dN(ElementPointType type = ElementPointType::GAUSSE_POINT) const { ESINFO(GLOBAL_ERROR) << "Unknown element has no base functions"; exit(EXIT_FAILURE); }
@@ -50,7 +48,6 @@ protected:
 private:
 	const std::vector<Element*> &_nodes;
 	std::vector<eslocal> &_indices;
-	std::vector<eslocal> &_DOFs;
 	std::vector<double> &_stiffnessMatrix;
 };
 

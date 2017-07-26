@@ -1,12 +1,21 @@
 
 #include "wrapper.h"
 #include "../../../libespreso/feti4i.h"
-#include "../../assembler/instance/precomputed/instance.h"
-#include "../../assembler/old_physics/precomputed/singular/assembler.h"
+
+#include "../../assembler/physics/precomputed.h"
+#include "../../assembler/solver/linear.h"
+#include "../../assembler/step.h"
+#include "../../assembler/solution.h"
+
+#include "../../output/resultstorelist.h"
+
 #include "../../configuration/input/input.h"
 #include "../../configuration/globalconfiguration.h"
 #include "../../configuration/output.h"
 #include "../../input/api/api.h"
+
+#include "../../mesh/structures/mesh.h"
+#include "../../solver/generic/LinearSolver.h"
 
 espreso::Environment espreso::DataHolder::environment;
 std::list<FETI4IStructMatrix*> espreso::DataHolder::matrices;
@@ -16,15 +25,23 @@ espreso::TimeEval espreso::DataHolder::timeStatistics("API total time");
 using namespace espreso;
 
 FETI4IStructInstance::FETI4IStructInstance(FETI4IStructMatrix &matrix, eslocal *l2g, size_t size)
-: instance(NULL)
+: instance(NULL), physics(NULL), linearSolver(NULL), solver(NULL)
 {
+	output = new OutputConfiguration;
+	store = new output::ResultStoreList(*output);
 	mesh = new APIMesh(l2g, size);
 	configuration = new ESPRESOSolver();
-};
+}
 
 FETI4IStructInstance::~FETI4IStructInstance()
 {
 	if (instance != NULL) { delete instance; }
+	if (physics != NULL) { delete physics; }
+	if (linearSolver != NULL) { delete linearSolver; }
+	if (solver != NULL) { delete solver; }
+
+	delete store;
+	delete output;
 	delete mesh;
 	delete configuration;
 }
@@ -209,13 +226,23 @@ void FETI4ICreateInstance(
 			neighClusters,
 			size, l2g);
 
-	DataHolder::instances.back()->instance = new PrecomputedInstance<SingularSystem>(
-			*DataHolder::instances.back()->configuration,
-			*DataHolder::instances.back()->mesh,
-			(espreso::MatrixType)matrix->type, rhs, size);
-
-	DataHolder::instances.back()->instance->init();
 	*instance = DataHolder::instances.back();
+
+	DataHolder::instances.back()->instance = new Instance(DataHolder::instances.back()->mesh->parts(), DataHolder::instances.back()->mesh->neighbours());
+	DataHolder::instances.back()->physics = new Precomputed(DataHolder::instances.back()->mesh, DataHolder::instances.back()->instance, (espreso::MatrixType)matrix->type, rhs, size);
+	DataHolder::instances.back()->linearSolver = new LinearSolver(DataHolder::instances.back()->instance, *DataHolder::instances.back()->configuration);
+	DataHolder::instances.back()->solver = new Linear(DataHolder::instances.back()->mesh, DataHolder::instances.back()->physics, DataHolder::instances.back()->linearSolver, DataHolder::instances.back()->store, 1);
+
+	switch (DataHolder::instances.back()->configuration->method) {
+	case ESPRESO_METHOD::TOTAL_FETI:
+		DataHolder::instances.back()->physics->prepareTotalFETI();
+		break;
+	case ESPRESO_METHOD::HYBRID_FETI:
+		DataHolder::instances.back()->physics->prepareHybridTotalFETIWithKernels();
+		break;
+	default:
+		ESINFO(ERROR) << "API request unknown FETI method.";
+	}
 
 	event.endWithBarrier(); DataHolder::timeStatistics.addEvent(event);
 }
@@ -227,12 +254,11 @@ void FETI4ISolve(
 {
 	TimeEvent event("Solve FETI4I instance"); event.startWithBarrier();
 
-	std::vector<std::vector<double> > solutions(1);
-	solutions[0] = std::vector<double>(solution, solution + solution_size);
-	instance->instance->solve(solutions);
-	memcpy(solution, &solutions[0][0], solution_size * sizeof(double));
+	Step step;
+	Logging::step = &step;
+	instance->solver->run(step);
 
-	instance->instance->finalize();
+	memcpy(solution, instance->instance->solutions[espreso::Precomputed::SolutionIndex::MERGED]->data[0].data(), solution_size * sizeof(double));
 
 	event.endWithBarrier(); DataHolder::timeStatistics.addEvent(event);
 	DataHolder::timeStatistics.totalTime.endWithBarrier();

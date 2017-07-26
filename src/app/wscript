@@ -68,7 +68,7 @@ def build(ctx):
     ctx.lib(
         source       = "apiwrapper/wrapper.cpp",
         target       = "feti4i",
-        use          = "basis config mesh api_in solver assembler_api",
+        use          = "basis config mesh api_in solver assembler assembler_api",
         install_path = ctx.ROOT + "/libespreso"
     )
 

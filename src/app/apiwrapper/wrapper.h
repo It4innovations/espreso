@@ -10,9 +10,17 @@
 
 namespace espreso {
 struct Environment;
-class OldInstance;
+class Instance;
+class Physics;
+class SolverBase;
 class APIMesh;
+class OutputConfiguration;
 class ESPRESOSolver;
+class LinearSolver;
+
+namespace output {
+class ResultStoreList;
+}
 }
 
 struct FETI4IStructMatrix {
@@ -31,8 +39,14 @@ struct FETI4IStructInstance {
 	FETI4IStructInstance(FETI4IStructMatrix &matrix, eslocal *l2g, size_t size);
 	~FETI4IStructInstance();
 
-	espreso::OldInstance *instance;
+	espreso::Instance *instance;
+	espreso::Physics * physics;
+	espreso::LinearSolver *linearSolver;
+	espreso::output::ResultStoreList *store;
+	espreso::SolverBase *solver;
+
 	espreso::APIMesh *mesh;
+	espreso::OutputConfiguration *output;
 	espreso::ESPRESOSolver *configuration;
 };
 

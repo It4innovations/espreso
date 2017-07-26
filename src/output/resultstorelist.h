@@ -2,6 +2,8 @@
 #ifndef SRC_OUTPUT_RESULTSTORELIST_H_
 #define SRC_OUTPUT_RESULTSTORELIST_H_
 
+#include <algorithm>
+
 #include "store.h"
 
 namespace espreso {
