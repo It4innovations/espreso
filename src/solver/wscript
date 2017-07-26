@@ -135,7 +135,6 @@ def build(ctx):
         sources = source_files + (
             "specific/cpu/SparseSolverMKL.cpp",
             "specific/cpu/clustercpu.cpp",
-            "specific/cpu/superclustercpu.cpp",
             "specific/cpu/itersolvercpu.cpp",
             "specific/cpu/DenseSolverMKL.cpp")
 

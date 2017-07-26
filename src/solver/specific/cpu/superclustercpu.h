@@ -11,13 +11,7 @@ class SuperClusterCPU : public SuperClusterBase
     public:
 
     SuperClusterCPU( const ESPRESOSolver & configuration, Instance *instance_in ):
-        SuperClusterBase( configuration, instance_in ) {
-            if (instance_in != NULL) {
-                init();
-            }
-    }
-
-    void init();
+        SuperClusterBase( configuration, instance_in ) { }
 
 	void Create_SC_perDomain(bool USE_FLOAT) {
 		//bool
