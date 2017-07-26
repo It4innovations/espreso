@@ -135,7 +135,7 @@ void Monitoring::storeSolution(const Step &step, const std::vector<Solution*> &s
 	for (size_t i = 0; i < _monitors.size(); i++) {
 		for (size_t s = 0; s < solution.size(); s++) {
 			if (solution[s]->hasProperty(_monitors[i].properties[0])) {
-				solution[s]->computeStatisticalData();
+				solution[s]->computeStatisticalData(step);
 			}
 		}
 	}
@@ -148,11 +148,16 @@ void Monitoring::storeSolution(const Step &step, const std::vector<Solution*> &s
 
 	for (size_t i = 0; i < _monitors.size(); i++) {
 		double value;
+		bool found = false;
 		for (size_t s = 0; s < solution.size(); s++) {
 			if (solution[s]->hasProperty(_monitors[i].properties[0])) {
-				value =  solution[s]->getStatisticalData(_monitors[i].properties, _monitors[i].statistics, _monitors[i].region);
+				value = solution[s]->getStatisticalData(_monitors[i].properties, _monitors[i].statistics, _monitors[i].region);
+				found = true;
 				break;
 			}
+		}
+		if (!found) {
+			ESINFO(GLOBAL_ERROR) << "Request for unknown property: " << _monitors[i].properties[0];
 		}
 
 		std::stringstream ss;

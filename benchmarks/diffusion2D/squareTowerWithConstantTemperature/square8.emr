@@ -1,0 +1,6 @@
+
+         ;         ;  ALL_ELEMENTS  ;  ALL_ELEMENTS  ;  ALL_ELEMENTS  ;  ALL_ELEMENTS  ;  ALL_ELEMENTS  ;  ALL_ELEMENTS  ;  ALL_ELEMENTS  ;  ALL_ELEMENTS  ;  ALL_ELEMENTS  ;  ALL_ELEMENTS  ;  ALL_ELEMENTS  ;  ALL_ELEMENTS  ;    ALL_NODES    ;    ALL_NODES    ;    ALL_NODES    ;    ALL_NODES    ;
+     step;  substep;      FLUX      ;     FLUX_X     ;     FLUX_Y     ;      FLUX      ;     FLUX_X     ;     FLUX_Y     ;    GRADIENT    ;   GRADIENT_X   ;   GRADIENT_Y   ;    GRADIENT    ;   GRADIENT_X   ;   GRADIENT_Y   ;   TEMPERATURE   ;   TEMPERATURE   ;   TEMPERATURE   ;   TEMPERATURE   ;
+         ;         ;      <MAX>     ;      <MAX>     ;      <MAX>     ;      <MIN>     ;      <MIN>     ;      <MIN>     ;      <MAX>     ;      <MAX>     ;      <MAX>     ;      <MIN>     ;      <MIN>     ;      <MIN>     ;      <MAX>      ;      <MIN>      ;    <AVERAGE>    ;      <NORM>     ;
+
+       1 ;       1 ;  1.000000e-03  ;  1.000000e-03  ;  3.794594e-10  ;  9.999999e-04  ;  9.999999e-04  ;  -3.800625e-10 ;  1.000000e+02  ;  1.000000e+02  ;  3.794594e-07  ;  9.999999e+01  ;  9.999999e+01  ;  -3.800625e-07 ;   3.000000e+02  ;   1.000000e+02  ;   2.000000e+02  ;   6.145612e+04  ;

@@ -1,0 +1,165 @@
+|*****************************************************************************|
+|-----------------------------------------------------------------------------|
+|                                      |                                      |
+|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
+|                                      |   http://espreso.it4i.cz             |
+|-----------------------------------------------------------------------------|
+|  Case Description: Heat flux set on the right edge                          |
+|                                                                             |
+|-----------------------------------------------------------------------------|
+|*****************************************************************************|
+
+INPUT GENERATOR;
+PHYSICS ADVECTION_DIFFUSION_3D;
+
+DEFAULT_ARGS {
+  0   PYRAMID13;
+
+  1   2;
+  2   2;
+  3   1;
+
+  4   1;
+  5   2;
+  6   4;
+
+  7   8;
+  8   4;
+  9   4;
+}
+
+GENERATOR {
+
+  SHAPE GRID;
+
+  GRID {
+    UNIFORM_DECOMPOSITION 1;
+
+    ELEMENT_TYPE   [ARG0];
+
+    LENGTH_X            1;
+    LENGTH_Y            1;
+    LENGTH_Z            1;
+
+    BLOCKS_X            1;
+    BLOCKS_Y            1;
+    BLOCKS_Z            1;
+
+    CLUSTERS_X     [ARG1];
+    CLUSTERS_Y     [ARG2];
+    CLUSTERS_Z     [ARG3];
+
+    DOMAINS_X      [ARG4];
+    DOMAINS_Y      [ARG5];
+    DOMAINS_Z      [ARG6];
+
+    ELEMENTS_X     [ARG7];
+    ELEMENTS_Y     [ARG8];
+    ELEMENTS_Z     [ARG9];
+
+    NODES { # List of nodes regions.
+      Z0 "<0, 1> <0, 1> <0, 0>";
+      Y0 "<0, 1> <0, 0> <0, 1>";
+      X0 "<0, 0> <0, 1> <0, 1>";
+      Y1 "<0, 1> <1, 1> <0, 1>";
+      X1 "<1, 1> <0, 1> <0, 1>";
+    }
+
+    FACES { # List of faces regions.
+      Z1 "<0, 1> <0, 1> <1, 1>";
+    }
+  }
+}
+
+ADVECTION_DIFFUSION_3D {
+
+  PHYSICS_SOLVER {
+    LOAD_STEPS          1;
+
+    LOAD_STEPS_SETTINGS {
+      1 {
+        TYPE        STEADY_STATE;
+        MODE              LINEAR;
+        SOLVER_LIBRARY   ESPRESO;
+
+        ESPRESO {
+          METHOD                TOTAL_FETI;
+          SOLVER                       PCG;
+          PRECONDITIONER   WEIGHT_FUNCTION;
+          REGULARIZATION       NULL_PIVOTS;
+          ITERATIONS                   200;
+          EPSILON                     1e-8;
+        }
+      }
+    }
+  }
+
+  STABILIZATION CAU;
+  SIGMA           0;
+
+  TEMPERATURE {
+    1 {
+      X0   300;
+      X1   300;
+      Y0   300;
+      Y1   300;
+      Z0   300;
+    }
+  }
+
+  CONVECTION {
+    1 {
+      Z1 {
+        HEAT_TRANSFER_COEFFICIENT  2;
+        EXTERNAL_TEMPERATURE       1000;
+      }
+    }
+  }
+
+  MATERIALS {
+
+    1 {
+      MODEL ISOTROPIC;
+
+      DENSITY 1;
+      KXX     1;
+      KXY     1;
+      Cp      1;
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS 1;
+  }
+}
+
+OUTPUT {
+  MONITORING {
+    ALL_NODES MAX  TEMPERATURE;
+    ALL_NODES MIN  TEMPERATURE;
+    ALL_NODES AVG  TEMPERATURE;
+    ALL_NODES NORM TEMPERATURE;
+
+    ALL_ELEMENTS MAX FLUX;
+    ALL_ELEMENTS MAX FLUX_X;
+    ALL_ELEMENTS MAX FLUX_Y;
+    ALL_ELEMENTS MAX FLUX_Z;
+
+    ALL_ELEMENTS MIN FLUX;
+    ALL_ELEMENTS MIN FLUX_X;
+    ALL_ELEMENTS MIN FLUX_Y;
+    ALL_ELEMENTS MIN FLUX_Z;
+
+    ALL_ELEMENTS AVG GRADIENT;
+    ALL_ELEMENTS AVG GRADIENT_X;
+    ALL_ELEMENTS AVG GRADIENT_Y;
+    ALL_ELEMENTS AVG GRADIENT_Z;
+
+    ALL_ELEMENTS MIN GRADIENT;
+    ALL_ELEMENTS MAX GRADIENT_X;
+    ALL_ELEMENTS MAX GRADIENT_Y;
+    ALL_ELEMENTS MAX GRADIENT_Z;
+  }
+}
+
+

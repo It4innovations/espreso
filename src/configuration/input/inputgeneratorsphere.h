@@ -35,10 +35,10 @@ struct SphereConfiguration: public Configuration {
 
 	PARAMETER(bool, uniform_decomposition, "Grid is uniformly decomposed", true);
 
-	SUBMAP(std::string, std::string, nodes, "List of nodes regions.", "<REGION_NAME>", "<INTERVAL / PATTERN[ALL]>");
-	SUBMAP(std::string, std::string, edges, "List of edges regions.", "<REGION_NAME>", "<INTERVAL / PATTERN[ALL]>");
-	SUBMAP(std::string, std::string, faces, "List of faces regions.", "<REGION_NAME>", "<INTERVAL / PATTERN[ALL]>");
-	SUBMAP(std::string, std::string, elements, "List of elements regions.", "<REGION_NAME>", "<INTERVAL / PATTERN[ALL]>");
+	SUBMAP(std::string, std::string, nodes, "List of nodes regions.", "REGION", "INTERVAL / PATTERN[ALL]");
+	SUBMAP(std::string, std::string, edges, "List of edges regions.", "REGION", "INTERVAL / PATTERN[ALL]");
+	SUBMAP(std::string, std::string, faces, "List of faces regions.", "REGION", "INTERVAL / PATTERN[ALL]");
+	SUBMAP(std::string, std::string, elements, "List of elements regions.", "REGION", "INTERVAL / PATTERN[ALL]");
 };
 
 }

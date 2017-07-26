@@ -33,10 +33,10 @@ using std::make_pair;
 
 namespace espreso {
 
-class SuperCluster
+class SuperClusterBase
 {
 public:
-	SuperCluster(const ESPRESOSolver &configuration, Instance *instance_in):
+	SuperClusterBase(const ESPRESOSolver &configuration, Instance *instance_in):
     	configuration(configuration),
 		instance(instance_in)
 	{
@@ -45,7 +45,7 @@ public:
 		}
 	}
 
-	~SuperCluster() {
+	~SuperClusterBase() {
 		clusters.clear();
 		domains.clear();
 		x_prim_cluster1.clear();
@@ -279,31 +279,6 @@ public:
 
 
 	}
-
-	void SetupPreconditioner() {
-		for (eslocal c = 0; c < clusters.size(); c++) {
-			clusters[c].SetupPreconditioner();
-		}
-	}
-
-	void SetupKsolvers () {
-		for (eslocal c = 0; c < clusters.size(); c++) {
-			clusters[c].SetupKsolvers();
-		}
-	}
-
-	void Create_SC_perDomain(bool USE_FLOAT) {
-		//bool
-		USE_FLOAT = false;
-		if (configuration.schur_precision == FLOAT_PRECISION::SINGLE) {
-			USE_FLOAT = true;
-		}
-
-		for (eslocal c = 0; c < clusters.size(); c++) {
-			clusters[c].Create_SC_perDomain(USE_FLOAT);
-		}
-	}
-
 
 	SparseMatrix G1, G1_comp;
 	SparseMatrix G2, G2_comp;

@@ -11,6 +11,8 @@ struct Step {
 
 	bool isInitial() const { return step == 0 && substep == 0 && iteration == 0; }
 
+	bool operator==(const Step &other) const { return other.step == step && other.substep == substep && other.iteration == iteration; }
+
 	size_t step;
 	size_t substep;
 	size_t iteration;

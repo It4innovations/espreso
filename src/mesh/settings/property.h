@@ -27,6 +27,9 @@ enum class Property : int {
 	ACCELERATION_X,
 	ACCELERATION_Y,
 	ACCELERATION_Z,
+	ANGULAR_VELOCITY_X,
+	ANGULAR_VELOCITY_Y,
+	ANGULAR_VELOCITY_Z,
 	HEAT_SOURCE,
 	TRANSLATION_MOTION_X,
 	TRANSLATION_MOTION_Y,
@@ -88,6 +91,9 @@ inline std::ostream& operator<<(std::ostream& os, const Property& property)
 		case Property::ACCELERATION_X: return os << "ACCELERATION_X";
 		case Property::ACCELERATION_Y: return os << "ACCELERATION_Y";
 		case Property::ACCELERATION_Z: return os << "ACCELERATION_Z";
+		case Property::ANGULAR_VELOCITY_X: return os << "ANGULAR_VELOCITY_X";
+		case Property::ANGULAR_VELOCITY_Y: return os << "ANGULAR_VELOCITY_Y";
+		case Property::ANGULAR_VELOCITY_Z: return os << "ANGULAR_VELOCITY_Z";
 		case Property::HEAT_SOURCE: return os << "HEAT_SOURCE";
 		case Property::HEAT_FLOW: return os << "HEAT_FLOW";
 		case Property::TRANSLATION_MOTION_X: return os << "TRANSLATION_MOTION_X";

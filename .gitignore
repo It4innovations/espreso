@@ -9,6 +9,7 @@ build*
 doc/html/*
 doc/xml/*
 espreso
+espresogui
 decomposer
 libespreso/apitest
 libs*/*

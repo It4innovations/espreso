@@ -1,0 +1,160 @@
+|*****************************************************************************|
+|-----------------------------------------------------------------------------|
+|                                      |                                      |
+|     EPRESO CONFIGURATION FILE        |   ESPRESO Version:   1.0             |
+|                                      |   http://espreso.it4i.cz             |
+|-----------------------------------------------------------------------------|
+|  Case Description: ESPRESO GENERATOR - CUBE with displacement-z equal to 1  |
+|                                                                             |
+|-----------------------------------------------------------------------------|
+|*****************************************************************************|
+                                                                               
+                                                                               
+|*****************************************************************************|
+|-------------------------  INPUT/OUTPUT DEFINITION --------------------------|
+
+INPUT GENERATOR;
+PHYSICS STRUCTURAL_MECHANICS_3D;
+
+DEFAULT_ARGS {
+  0   PRISMA6;
+
+  1   2;
+  2   2;
+  3   1;
+
+  4   3;
+  5   1;
+  6   2;
+
+  7   2;
+  8   6;
+  9   6;
+}
+GENERATOR { # ESPRESO internal mesh generator.
+
+  SHAPE GRID;
+
+  GRID { # Detailed specification of grid shape.
+
+    UNIFORM_DECOMPOSITION 0;
+
+    ELEMENT_TYPE [ARG0];
+
+    START_X 0;
+    START_Y 0;
+    START_Z 0;
+    LENGTH_X 100;
+    LENGTH_Y 100;
+    LENGTH_Z 100;
+
+    CLUSTERS_X [ARG1];
+    CLUSTERS_Y [ARG2];
+    CLUSTERS_Z [ARG3];
+
+    DOMAINS_X [ARG4];
+    DOMAINS_Y [ARG5];
+    DOMAINS_Z [ARG6];
+
+    ELEMENTS_X [ARG7];
+    ELEMENTS_Y [ARG8];
+    ELEMENTS_Z [ARG9];
+
+    NODES { # List of nodes regions.
+      Z0 "<0, 100> <0, 100> <0, 0>";
+      Y0 "<0, 100> <0, 0> <0, 100>";
+      X0 "<0, 0> <0, 100> <0, 100>";
+    }
+
+    FACES { # List of faces regions.
+      Z1 "<0, 100> <0, 100> <100, 100>";
+      Y1 "<0, 100> <100, 100> <0, 100>";
+      X1 "<100, 100> <0, 100> <0, 100>";
+    }
+
+    ELEMENTS {
+      E_ALL ALL;
+    }
+  }
+}
+
+STRUCTURAL_MECHANICS_3D {
+
+  PHYSICS_SOLVER {
+    LOAD_STEPS          1;
+
+    LOAD_STEPS_SETTINGS {
+      1 {
+        TYPE        STEADY_STATE;
+        MODE              LINEAR;
+        SOLVER_LIBRARY   ESPRESO;
+
+        ESPRESO {
+
+          METHOD          TOTAL_FETI;
+          SOLVER                 PCG;
+          PRECONDITIONER      LUMPED;
+          REGULARIZATION NULL_PIVOTS;
+          EPSILON               1e-8;
+        }
+      }
+    }
+  }
+
+  MATERIALS { # Vector of materials (counterd from 1).
+
+    1 { # First configuration settings.
+
+      DENSITY 7850;
+      MIXY     0.3;
+      EX    2.1e11;
+
+      MODEL LINEAR_ELASTIC_ISOTROPIC;
+    }
+  }
+
+  MATERIAL_SET {
+    E_ALL 1;
+  }
+
+  DISPLACEMENT {
+    1 {
+      Z0 Z 0;
+      Y0 Y 0;
+      X0 X 0;
+    }
+  }
+
+  NORMAL_PRESURE {
+    1 {
+      Z1     "70 * 2.1e11 / 5200";
+      Y1 "3 * 70 * 2.1e11 / 5200 / 7";
+      X1 "3 * 70 * 2.1e11 / 5200 / 7";
+    }
+  }
+}
+
+OUTPUT {
+  MONITORING {
+    ALL_NODES MIN   DISPLACEMENT;
+    ALL_NODES MAX   DISPLACEMENT;
+    ALL_NODES AVG   DISPLACEMENT;
+    ALL_NODES NORM  DISPLACEMENT;
+
+    ALL_NODES MIN   DISPLACEMENT_X;
+    ALL_NODES MAX   DISPLACEMENT_X;
+    ALL_NODES AVG   DISPLACEMENT_X;
+    ALL_NODES NORM  DISPLACEMENT_X;
+
+    ALL_NODES MIN   DISPLACEMENT_Y;
+    ALL_NODES MAX   DISPLACEMENT_Y;
+    ALL_NODES AVG   DISPLACEMENT_Y;
+    ALL_NODES NORM  DISPLACEMENT_Y;
+
+    ALL_NODES MIN   DISPLACEMENT_Z;
+    ALL_NODES MAX   DISPLACEMENT_Z;
+    ALL_NODES AVG   DISPLACEMENT_Z;
+    ALL_NODES NORM  DISPLACEMENT_Z;
+  }
+}
+

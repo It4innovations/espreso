@@ -26,17 +26,17 @@ struct PhysicsSolver: public PhysicsSolverBase {
 
 	PhysicsSolver()
 	{
-		// there is always at least load step 1
+		// there is always at least the load step
 		load_steps_settings[1] = new LoadStepSettings<TConvergence>();
 	}
 
 	~PhysicsSolver()
 	{
-		// there is always at least load step 1
+		// there is always at least the load step
 		delete load_steps_settings[1];
 	}
 
-	SUBMAPTOCONFIG(size_t, LoadStepSettings<TConvergence>, load_steps_settings, "Detail settings for each load step.", "1", "Description of load step '1'");
+	SUBMAPTOCONFIG(size_t, LoadStepSettings<TConvergence>, load_steps_settings, "Detail settings for each load step.", "TIME_STEP", "Description of the load step");
 };
 
 }

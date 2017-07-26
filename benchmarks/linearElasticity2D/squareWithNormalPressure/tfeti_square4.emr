@@ -1,0 +1,6 @@
+
+         ;         ;     ALL_NODES    ;     ALL_NODES    ;     ALL_NODES    ;     ALL_NODES    ;      ALL_NODES     ;      ALL_NODES     ;      ALL_NODES     ;      ALL_NODES     ;      ALL_NODES     ;      ALL_NODES     ;      ALL_NODES     ;      ALL_NODES     ;
+     step;  substep;   DISPLACEMENT   ;   DISPLACEMENT   ;   DISPLACEMENT   ;   DISPLACEMENT   ;   DISPLACEMENT_X   ;   DISPLACEMENT_X   ;   DISPLACEMENT_X   ;   DISPLACEMENT_X   ;   DISPLACEMENT_Y   ;   DISPLACEMENT_Y   ;   DISPLACEMENT_Y   ;   DISPLACEMENT_Y   ;
+         ;         ;       <MIN>      ;       <MAX>      ;     <AVERAGE>    ;      <NORM>      ;        <MIN>       ;        <MAX>       ;      <AVERAGE>     ;       <NORM>       ;        <MIN>       ;        <MAX>       ;      <AVERAGE>     ;       <NORM>       ;
+
+       1 ;       1 ;   8.276050e-07   ;   1.332624e+00   ;   7.219717e-01   ;   9.329006e+01   ;    -9.423081e-01   ;    7.379205e-07    ;    -4.711539e-01   ;    6.596604e+01    ;    -9.423080e-01   ;    7.405769e-07    ;    -4.711538e-01   ;    6.596603e+01    ;

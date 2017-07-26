@@ -357,7 +357,6 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 
 
 
-//TODO:
 void ClusterAcc::SetupKsolvers ( ) {
     // this part is for setting CPU pardiso, temporarily until everything is
     // solved on MIC
@@ -1126,5 +1125,125 @@ void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in,
     loop_2_1_time.end();
 
     cluster_time.totalTime.end();
+}
+
+void ClusterAcc::multKplusGlobal_l_prepare_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
+
+    //ESINFO(PROGRESS2) << "K+ multiply HFETI";
+    mkl_set_num_threads(1);
+
+//    cluster_time.totalTime.start();
+
+    vec_fill_time.start();
+    fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
+    vec_fill_time.end();
+
+    // loop over domains in the cluster
+    loop_1_1_time.start();
+#pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++)
+    {
+        domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
+        if (SYMMETRIC_SYSTEM) {
+            domains[d].Kplus_R.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
+        } else {
+            domains[d].Kplus_R2.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
+        }
+    }
+    loop_1_1_time.end();
+
+    loop_1_2_time.start();
+#pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++)
+    {
+        eslocal e0_start	=  d	* domains[d].Kplus_R.cols;
+        eslocal e0_end		= (d+1) * domains[d].Kplus_R.cols;
+
+        for (eslocal i = e0_start; i < e0_end; i++ )
+            vec_e0[i] = - tm3[d][i - e0_start];
+    }
+
+
+    for (size_t d = 0; d < domains.size(); d++)
+        for (eslocal i = 0; i < domains[d].B0Kplus_comp.rows; i++)
+            vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
+
+    // end loop over domains
+    loop_1_2_time.end();
+
+    mkl_set_num_threads(PAR_NUM_THREADS);
+    clusCP_time.start();
+
+
+    clus_F0_1_time.start();
+    F0.Solve(vec_g0, tm1[0], 0, 0);
+    clus_F0_1_time.end();
+
+    clus_G0_time.start();
+    if (SYMMETRIC_SYSTEM) {
+        G0.MatVec(tm1[0], tm2[0], 'N');
+    } else {
+        G02.MatVec(tm1[0], tm2[0], 'N');
+    }
+
+    clus_G0_time.end();
+
+#pragma omp parallel for
+    for (size_t i = 0; i < vec_e0.size(); i++)
+        tm2[0][i] = tm2[0][i] - vec_e0[i];
+
+    clus_Sa_time.start();
+
+    switch (configuration.SAsolver) {
+        case ESPRESO_SASOLVER::CPU_SPARSE:
+            Sa.Solve(tm2[0], vec_alfa, 0, 0);
+            break;
+        case ESPRESO_SASOLVER::CPU_DENSE:
+            Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
+            break;
+        case ESPRESO_SASOLVER::ACC_DENSE:
+            Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
+            break;
+        default:
+            ESINFO(GLOBAL_ERROR) << "Not implemented S alfa solver.";
+    }
+
+    clus_Sa_time.end();
+
+    clus_G0t_time.start();
+    G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
+    clus_G0t_time.end();
+
+#pragma omp parallel for
+    for (size_t i = 0; i < vec_g0.size(); i++)
+        tm1[0][i] = vec_g0[i] - tm1[0][i];
+
+
+    clus_F0_2_time.start();
+    F0.Solve(tm1[0], vec_lambda,0,0);
+    clus_F0_2_time.end();
+
+    clusCP_time.end();
+
+    // Kplus_x
+    mkl_set_num_threads(1);
+    loop_2_1_time.start();
+
+    // accelerator stuff
+    eslocal maxDevNumber = this->acc_per_MPI;
+
+#pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++)
+    {
+        eslocal domain_size = domains[d].domain_prim_size;
+
+        SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0);
+        for (size_t i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+            tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
+        domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
+
+        for (eslocal i = 0; i < domain_size; i++)
+            tm1[d][i] = x_in[d][i] - tm1[d][i];
+    } 
 }
 

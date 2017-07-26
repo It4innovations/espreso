@@ -89,7 +89,6 @@ void AdvectionDiffusion::prepareTotalFETI()
 	_mesh->loadProperty(_configuration.initial_temperature, { }, { Property::INITIAL_TEMPERATURE });
 
 	_mesh->loadNodeProperty(_configuration.temperature    , { }, { Property::TEMPERATURE });
-	_mesh->loadNodeProperty(_configuration.thickness      , { }, { Property::THICKNESS });
 
 	_mesh->loadProperty(_configuration.heat_source        , { }, { Property::HEAT_SOURCE });
 	_mesh->loadProperty(_configuration.heat_flux          , { }, { Property::HEAT_FLUX });

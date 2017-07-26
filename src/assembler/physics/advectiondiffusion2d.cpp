@@ -21,14 +21,15 @@
 
 using namespace espreso;
 
-NewAdvectionDiffusion2D::NewAdvectionDiffusion2D(Mesh *mesh, Instance *instance, const AdvectionDiffusion2DConfiguration &configuration)
+AdvectionDiffusion2D::AdvectionDiffusion2D(Mesh *mesh, Instance *instance, const AdvectionDiffusion2DConfiguration &configuration)
 : Physics("ADVECTION DIFFUSION 2D", mesh, instance), AdvectionDiffusion(configuration), _configuration(configuration)
 {
 
 }
 
-void NewAdvectionDiffusion2D::prepareTotalFETI()
+void AdvectionDiffusion2D::prepareTotalFETI()
 {
+	_mesh->loadNodeProperty(_configuration.thickness      , { }         , { Property::THICKNESS });
 	_mesh->loadProperty(_configuration.translation_motions, { "X", "Y" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y });
 	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
 
@@ -38,7 +39,7 @@ void NewAdvectionDiffusion2D::prepareTotalFETI()
 	AdvectionDiffusion::prepareTotalFETI();
 }
 
-std::vector<std::pair<ElementType, Property> > NewAdvectionDiffusion2D::properties() const
+std::vector<std::pair<ElementType, Property> > AdvectionDiffusion2D::properties() const
 {
 	for (size_t s = 0; s < _mesh->steps(); s++) {
 		if (
@@ -56,7 +57,7 @@ std::vector<std::pair<ElementType, Property> > NewAdvectionDiffusion2D::properti
 }
 
 
-void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
+void AdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Element *e, eslocal node, double temp, DenseMatrix &K, DenseMatrix &CD, bool tangentCorrection) const
 {
 	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
 
@@ -158,12 +159,12 @@ void NewAdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Ele
 	K(node, 3) = TCT(1, 0);
 }
 
-void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void AdvectionDiffusion2D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	bool CAU = _configuration.stabilization == AdvectionDiffusion2DConfiguration::STABILIZATION::CAU;
 	bool tangentCorrection = (matrices & Matrices::K) && _configuration.tangent_matrix_correction && step.iteration;
 
-	DenseMatrix Ce(2, 2), coordinates, J(2, 2), invJ(2, 2), dND;
+	DenseMatrix Ce(2, 2), coordinates(e->nodes(), 2), J(2, 2), invJ(2, 2), dND;
 	double detJ, temp;
 	DenseMatrix f(e->nodes(), 1);
 	DenseMatrix U(e->nodes(), 2);
@@ -174,8 +175,6 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 	DenseMatrix tangentK, BT, BTN, gpCD, CD, CDBTN, CDe;
 
 	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
-
-	coordinates.resize(e->nodes(), 2);
 
 	if (tangentCorrection) {
 		CD.resize(e->nodes(), 4);
@@ -350,13 +349,13 @@ void NewAdvectionDiffusion2D::processElement(const Step &step, Matrices matrices
 	}
 }
 
-void NewAdvectionDiffusion2D::processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void AdvectionDiffusion2D::processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	ESINFO(ERROR) << "Advection diffusion 2D cannot process face";
 }
 
 
-void NewAdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void AdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	if (!(e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step) ||
 		e->hasProperty(Property::HEAT_FLOW, step.step) ||
@@ -459,12 +458,15 @@ void NewAdvectionDiffusion2D::processEdge(const Step &step, Matrices matrices, c
 	}
 }
 
-void NewAdvectionDiffusion2D::processNode(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
+void AdvectionDiffusion2D::processNode(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
-
+	Ke.resize(0, 0);
+	Me.resize(0, 0);
+	Re.resize(0, 0);
+	fe.resize(0, 0);
 }
 
-void NewAdvectionDiffusion2D::postProcessElement(const Step &step, const Element *e, std::vector<Solution*> &solution)
+void AdvectionDiffusion2D::postProcessElement(const Step &step, const Element *e, std::vector<Solution*> &solution)
 {
 	DenseMatrix Ce(2, 2), coordinates, J(2, 2), invJ(2, 2), dND, temp(e->nodes(), 1);
 	double detJ, m, norm_u_e, h_e;
@@ -528,7 +530,7 @@ void NewAdvectionDiffusion2D::postProcessElement(const Step &step, const Element
 	solution[offset + SolutionIndex::FLUX]->innerData()[e->domains().front()].push_back(matFlux(1, 0) / e->gaussePoints());
 }
 
-void NewAdvectionDiffusion2D::processSolution(const Step &step)
+void AdvectionDiffusion2D::processSolution(const Step &step)
 {
 	if (!_configuration.post_process) {
 		return;

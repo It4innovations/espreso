@@ -6,7 +6,7 @@
 #module load zlib/1.2.8-intel-2016.01
 #module load CMake/3.3.1-intel-2016.01
 
-ml load zlib/1.2.11-GCCcore-6.3.0
 ml load CMake/3.7.2-intel-2017a
 ml load intel/2017a
 ml load tbb/4.4.2.152
+ml load Qt5

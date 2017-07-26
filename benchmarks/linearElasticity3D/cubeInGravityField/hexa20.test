@@ -1,3 +1,0 @@
-PROCS = 4
-ARGS = HEXA20 2 2 1  3 1 2  2 6 6
-NORM = 13.7326

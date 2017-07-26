@@ -1,0 +1,141 @@
+|*****************************************************************************|
+|-----------------------------------------------------------------------------|
+|                                      |                                      |
+|     EPRESO CONFIGURATION FILE        |   ESPRESO Version:   1.0             |
+|                                      |   http://espreso.it4i.cz             |
+|-----------------------------------------------------------------------------|
+| Case Description: ESPRESO GENERATOR - SQUARE with displacement-z equal to 1 |
+|                                                                             |
+|-----------------------------------------------------------------------------|
+|*****************************************************************************|
+                                                                               
+                                                                               
+|*****************************************************************************|
+|-------------------------  INPUT/OUTPUT DEFINITION --------------------------|
+
+INPUT GENERATOR;
+PHYSICS STRUCTURAL_MECHANICS_2D;
+
+DEFAULT_ARGS {
+  0   SQUARE4;
+
+  1   2;
+  2   2;
+  3   3;
+  4   2;
+  5  20;
+  6  30;
+}
+
+GENERATOR {
+
+  SHAPE GRID;
+
+  GRID {
+
+    UNIFORM_DECOMPOSITION 0;
+
+    ELEMENT_TYPE [ARG0];
+
+    START_X 0;
+    START_Y 0;
+    START_Z 0;
+    LENGTH_X 100;
+    LENGTH_Y 100;
+    LENGTH_Z 100;
+
+    CLUSTERS_X   [ARG1];
+    CLUSTERS_Y   [ARG2];
+    CLUSTERS_Z        1;
+
+    DOMAINS_X    [ARG3];
+    DOMAINS_Y    [ARG4];
+    DOMAINS_Z         1;
+
+    ELEMENTS_X   [ARG5];
+    ELEMENTS_Y   [ARG6];
+    ELEMENTS_Z        1;
+
+    NODES {
+      Y0 "<0, 100> <0, 0> <0, 0>";
+      X0 "<0, 0> <0, 100> <0, 0>";
+    }
+
+    EDGES {
+      Y1 "<0, 100> <100, 100> <0, 0>";
+      X1 "<100, 100> <0, 100> <0, 0>";
+    }
+  }
+}
+
+STRUCTURAL_MECHANICS_2D {
+
+  PHYSICS_SOLVER {
+    LOAD_STEPS          1;
+
+    LOAD_STEPS_SETTINGS {
+      1 {
+        TYPE        STEADY_STATE;
+        MODE              LINEAR;
+        SOLVER_LIBRARY   ESPRESO;
+
+        ESPRESO {
+          METHOD          TOTAL_FETI;
+          SOLVER                 PCG;
+          PRECONDITIONER      LUMPED;
+          REGULARIZATION NULL_PIVOTS;
+        }
+      }
+    }
+  }
+
+  MATERIALS {
+
+    1 {
+
+      DENSITY 7850;
+      MI       0.3;
+      EX    2.1e11;
+
+      MODEL LINEAR_ELASTIC_ISOTROPIC;
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS 1;
+  }
+
+  DISPLACEMENT {
+    1 {
+      Y0 Y 0;
+      X0 X 0;
+    }
+  }
+
+  NORMAL_PRESURE {
+    1 {
+      Y1 "70 * 2.1e11 / 5200";
+      X1 "70 * 2.1e11 / 5200";
+    }
+  }
+}
+
+OUTPUT {
+  MONITORING {
+    ALL_NODES MIN   DISPLACEMENT;
+    ALL_NODES MAX   DISPLACEMENT;
+    ALL_NODES AVG   DISPLACEMENT;
+    ALL_NODES NORM  DISPLACEMENT;
+
+    ALL_NODES MIN   DISPLACEMENT_X;
+    ALL_NODES MAX   DISPLACEMENT_X;
+    ALL_NODES AVG   DISPLACEMENT_X;
+    ALL_NODES NORM  DISPLACEMENT_X;
+
+    ALL_NODES MIN   DISPLACEMENT_Y;
+    ALL_NODES MAX   DISPLACEMENT_Y;
+    ALL_NODES AVG   DISPLACEMENT_Y;
+    ALL_NODES NORM  DISPLACEMENT_Y;
+  }
+}
+

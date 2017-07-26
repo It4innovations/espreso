@@ -16,15 +16,16 @@ enum class GENERATOR_SHAPE {
 
 struct ESPRESOGenerator: public Configuration {
 
-	OPTION(GENERATOR_SHAPE, shape, "Generated shape", GENERATOR_SHAPE::GRID, OPTIONS({
-		{ "GRID"      , GENERATOR_SHAPE::GRID      , "Rectangular grid with empty spaces." },
-		{ "GRID_TOWER", GENERATOR_SHAPE::GRID_TOWER, "Tower of rectangular grids." },
-		{ "SPHERE"    , GENERATOR_SHAPE::SPHERE    , "Hollow sphere." }
-	}));
-
 	SUBCONFIG(GridConfiguration     , grid      , "Detailed specification of grid shape.");
 	SUBCONFIG(GridTowerConfiguration, grid_tower, "Detailed specification of grid tower.");
 	SUBCONFIG(SphereConfiguration   , sphere    , "Detailed specification of spherical shape.");
+
+
+	OPTION(GENERATOR_SHAPE, shape, "Generated shape", GENERATOR_SHAPE::GRID, OPTIONS({
+		{ "GRID"      , GENERATOR_SHAPE::GRID      , { "grid" }, "Rectangular grid with empty spaces." },
+		{ "GRID_TOWER", GENERATOR_SHAPE::GRID_TOWER, { "grid_tower" }, "Tower of rectangular grids." },
+		{ "SPHERE"    , GENERATOR_SHAPE::SPHERE    , { "sphere" }, "Hollow sphere." }
+	}));
 };
 
 }

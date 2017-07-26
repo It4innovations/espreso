@@ -6,7 +6,6 @@
 
 namespace espreso {
 
-enum class Property;
 struct AdvectionDiffusionConfiguration;
 struct AdvectionDiffusionConvection;
 

@@ -1,10 +1,32 @@
 
 #include "expression.h"
+#include "../logging/logging.h"
 
 using namespace espreso;
 
+bool Expression::isValid(const std::string &str, std::vector<std::string> variables)
+{
+	std::vector<double> values(variables.size());
+
+	exprtk::symbol_table<double> symbol_table;
+	exprtk::expression<double> expression;
+	exprtk::parser<double> parser;
+
+	for (size_t i = 0; i < variables.size(); i++) {
+		symbol_table.add_variable(variables[i], values[i]);
+	}
+	symbol_table.add_constants();
+	expression.register_symbol_table(symbol_table);
+
+	return parser.compile(str, expression);
+}
+
 void Expression::parse()
 {
+	if (!isValid(_str, _variables)) {
+		ESINFO(GLOBAL_ERROR) << "Invalid expression: '" << _str << "'";
+	}
+
 	_values.resize(_variables.size());
 	for (size_t i = 0; i < _variables.size(); i++) {
 		_symbol_table.add_variable(_variables[i], _values[i]);

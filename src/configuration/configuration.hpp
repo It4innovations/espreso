@@ -40,17 +40,19 @@ template <typename Tvalue>
 struct Option {
 	std::string name;
 	std::string description;
+	std::vector<std::string> enables;
 	Tvalue value;
 
 	Option(const std::string &name, Tvalue value, const std::string &description): name(name), description(description), value(value) {}
+	Option(const std::string &name, Tvalue value, const std::vector<std::string> &enables, const std::string &description): name(name), description(description), enables(enables), value(value) {}
 };
 
 template <typename Ttype>
-struct ValueHolder: public ParameterBase {
+struct ValueHolder: public Parameter {
 	Ttype &value;
 
 	ValueHolder(const std::string &name, const std::string &description, Ttype &value, Ttype defaultValue, const std::string &type)
-	: ParameterBase(name, description, type), value(value) { value = defaultValue; }
+	: Parameter(name, description, type), value(value) { value = defaultValue; }
 
 	bool set(const std::string &value)
 	{
@@ -65,6 +67,8 @@ struct ValueHolder: public ParameterBase {
 		ss << value;
 		return ss.str();
 	}
+
+	std::string XMLAttributeType() const { return allowedValue; }
 };
 
 template <>
@@ -89,11 +93,11 @@ inline bool ValueHolder<bool>::set(const std::string &value)
 }
 
 template <>
-struct ValueHolder<std::string>: public ParameterBase {
+struct ValueHolder<std::string>: public Parameter {
 	std::string &value;
 
 	ValueHolder(const std::string &name, const std::string &description, std::string &value, const std::string &defaultValue, const std::string &type)
-	: ParameterBase(name, description, "*"), value(value) { };
+	: Parameter(name, description, "*"), value(value) { };
 
 	bool set(const std::string &value)
 	{
@@ -105,16 +109,18 @@ struct ValueHolder<std::string>: public ParameterBase {
 	{
 		return value;
 	}
+
+	std::string XMLAttributeType() const { return "string"; }
 };
 
 
 template <typename Ttype>
-struct OptionsHolder: public ParameterBase {
+struct OptionsHolder: public Parameter {
 	Ttype &value;
 	std::vector<Option<Ttype> > options;
 
 	OptionsHolder(const std::string &name, const std::string &description, Ttype &value, Ttype defaultValue, std::vector<Option<Ttype> > options)
-	: ParameterBase(name, description, ""), value(value), options(options)
+	: Parameter(name, description, ""), value(value), options(options)
 	{
 		if (options.size()) {
 			std::for_each(options.begin(), options.end() - 1, [&] (Option<Ttype> &option) { allowedValue += option.name + ", "; });
@@ -153,6 +159,27 @@ struct OptionsHolder: public ParameterBase {
 	}
 
 	size_t index() const { return (size_t)value; }
+
+	std::string XMLAttributeType() const { return "enum"; }
+
+	void XMLChildsElements(std::ostream &os, size_t indent) const
+	{
+		auto spaces = [] (size_t size) {
+			std::stringstream _indent;
+			for (size_t i = 0; i < size; i++) {
+				_indent << " ";
+			}
+			return _indent.str();
+		};
+		for (size_t i = 0; i < options.size(); i++) {
+			os << spaces(indent) << "<item name=\"" << options[i].name << "\">\n";
+			os << spaces(indent + 2) << "<description>" << options[i].description << "</description>\n";
+			for (size_t j = 0; j < options[i].enables.size(); j++) {
+				os << spaces(indent + 2) << "<enables>" << options[i].enables[j] << "</enables>\n";
+			}
+			os << spaces(indent) << "</item>\n";
+		}
+	}
 };
 
 template <typename Tparameter, typename Tvalue>
@@ -207,6 +234,11 @@ struct mapToConfiguration: public Configuration {
 			return dummy;
 		}
 	}
+
+	virtual const Configuration* configurationPattern() const
+	{
+		return dummy[0];
+	}
 };
 
 template <typename Tparameter1, typename Tparameter2, typename Tvalue>
@@ -260,6 +292,11 @@ struct mapToMapToConfiguration: public Configuration {
 			return dummy;
 		}
 	}
+
+	virtual const Configuration* configurationPattern() const
+	{
+		return dummy[0];
+	}
 };
 
 template <typename Tparameter, typename Tvalue>
@@ -267,7 +304,7 @@ struct mapToBaseType: public Configuration {
 	std::map<Tparameter, Tvalue> *map;
 	std::string dParameter;
 	Tvalue dummyHolder;
-	std::vector<ParameterBase*> dummy;
+	std::vector<Parameter*> dummy;
 
 	static std::map<Tparameter, Tvalue> create(
 			const std::string &name, const std::string &description, Configuration* conf,
@@ -308,7 +345,7 @@ struct mapToBaseType: public Configuration {
 		}
 	}
 
-	virtual const std::vector<ParameterBase*>& storeParameters() const
+	virtual const std::vector<Parameter*>& storeParameters() const
 	{
 		if (orderedParameters.size()) {
 			return orderedParameters;
@@ -317,10 +354,15 @@ struct mapToBaseType: public Configuration {
 		}
 	}
 
+	virtual const Parameter* parameterPattern() const
+	{
+		return dummy[0];
+	}
+
 	~mapToBaseType()
 	{
 		if (!copy) {
-			std::for_each(dummy.begin(), dummy.end(), [] (ParameterBase * p) { delete p; });
+			std::for_each(dummy.begin(), dummy.end(), [] (Parameter * p) { delete p; });
 		}
 	}
 };
@@ -330,7 +372,7 @@ struct multimapToBaseType: public Configuration {
 	std::multimap<Tparameter, Tvalue> *map;
 	std::string dParameter;
 	Tvalue dummyHolder;
-	std::vector<ParameterBase*> dummy;
+	std::vector<Parameter*> dummy;
 
 	static std::multimap<Tparameter, Tvalue> create(
 			const std::string &name, const std::string &description, Configuration* conf,
@@ -366,7 +408,7 @@ struct multimapToBaseType: public Configuration {
 		return true;
 	}
 
-	virtual const std::vector<ParameterBase*>& storeParameters() const
+	virtual const std::vector<Parameter*>& storeParameters() const
 	{
 		if (orderedParameters.size()) {
 			return orderedParameters;
@@ -375,11 +417,16 @@ struct multimapToBaseType: public Configuration {
 		}
 	}
 
+	virtual const Parameter* parameterPattern() const
+	{
+		return dummy[0];
+	}
+
 	~multimapToBaseType()
 	{
 		if (!copy) {
-			std::for_each(dummy.begin(), dummy.end(), [] (ParameterBase * p) { delete p; });
-			std::for_each(orderedParameters.begin(), orderedParameters.end(), [] (ParameterBase * p) { delete p; });
+			std::for_each(dummy.begin(), dummy.end(), [] (Parameter * p) { delete p; });
+			std::for_each(orderedParameters.begin(), orderedParameters.end(), [] (Parameter * p) { delete p; });
 		}
 	}
 };
@@ -434,6 +481,11 @@ struct mapToMapToBaseType: public Configuration {
 			return dummy;
 		}
 	}
+
+	virtual const Configuration* configurationPattern() const
+	{
+		return dummy[0];
+	}
 };
 
 
@@ -441,7 +493,7 @@ struct ParameterHolder {
 	template <typename Ttype>
 	static Ttype create(const std::string &name, const std::string &description, Ttype &value, Ttype defaultValue, const std::string &type, Configuration* configuration)
 	{
-		ParameterBase *parameter = new ValueHolder<Ttype>(name, description, value, defaultValue, type);
+		Parameter *parameter = new ValueHolder<Ttype>(name, description, value, defaultValue, type);
 		configuration->parameters[name] = parameter;
 		configuration->orderedParameters.push_back(parameter);
 		return defaultValue;
@@ -450,7 +502,7 @@ struct ParameterHolder {
 	template <typename Ttype>
 	static Ttype create(const std::string &name, const std::string &description, Ttype &value, Ttype defaultValue, std::vector<Option<Ttype> > options, Configuration* configuration)
 	{
-		ParameterBase *parameter = new OptionsHolder<Ttype>(name, description, value, defaultValue, options);
+		Parameter *parameter = new OptionsHolder<Ttype>(name, description, value, defaultValue, options);
 		configuration->parameters[name] = parameter;
 		configuration->orderedParameters.push_back(parameter);
 		return defaultValue;

@@ -51,7 +51,7 @@ void Reader::_read(
 	std::string options("c:dhvtm");
 
 	std::vector<struct option> opts;
-	std::vector<std::pair<std::string, ParameterBase*> > parameters;
+	std::vector<std::pair<std::string, Parameter*> > parameters;
 	std::vector<std::string> nameless;
 
 	std::function<void(const Configuration &conf, std::vector<std::string> path)>
@@ -394,7 +394,7 @@ void Reader::set(const Environment &env, const OutputConfiguration &output)
 static void printConfiguration(const Configuration &configuration, size_t indent)
 {
 	for (size_t i = 0; i < configuration.orderedParameters.size(); i++) {
-		ParameterBase *parameter = configuration.orderedParameters[i];
+		Parameter *parameter = configuration.orderedParameters[i];
 		ESINFO(ALWAYS) << spaces(indent) << uppercase(parameter->name) << " = " << parameter->get();
 	}
 
@@ -405,10 +405,53 @@ static void printConfiguration(const Configuration &configuration, size_t indent
 	}
 }
 
+static void storeConfigurationAsXML(std::ofstream &xml, const Configuration &configuration, size_t indent)
+{
+	if (configuration.parameterPattern() != NULL) {
+		const Parameter *parameter = configuration.parameterPattern();
+
+		xml << spaces(indent) << "<pattern type=\"parameter\">\n";
+		xml << spaces(indent) << "<description>" << parameter->description << "</description>\n";
+		xml << spaces(indent) << "<parameter>" << parameter->name << "</parameter>\n";
+		xml << spaces(indent) << "<value>" << parameter->XMLAttributeType() << "</value>\n";
+		xml << spaces(indent) << "</pattern>\n";
+	} else {
+		for (size_t i = 0; i < configuration.orderedParameters.size(); i++) {
+			const Parameter *parameter = configuration.orderedParameters[i];
+
+			xml << spaces(indent) << "<parameter name=\"" << parameter->name << "\" type=\"" << parameter->XMLAttributeType() << "\">\n";
+			xml << spaces(indent) << "<description>" << parameter->description << "</description>\n";
+			parameter->XMLChildsElements(xml, indent);
+			xml << spaces(indent) << "</parameter>\n";
+		}
+	}
+
+	if (configuration.configurationPattern() != NULL) {
+		const Configuration *subconfiguration = configuration.configurationPattern();
+
+		xml << spaces(indent) << "<pattern type=\"subconfiguration\">\n";
+		xml << spaces(indent) << "<description>" << subconfiguration->description << "</description>\n";
+		xml << spaces(indent) << "<parameter>" << subconfiguration->name << "</parameter>\n";
+		xml << spaces(indent) << "<subconfiguration>\n";
+		storeConfigurationAsXML(xml, *subconfiguration, indent + 2);
+		xml << spaces(indent) << "</subconfiguration>\n";
+		xml << spaces(indent) << "</pattern>\n";
+	} else {
+		for (size_t i = 0; i < configuration.orderedSubconfiguration.size(); i++) {
+			const Configuration *subconfiguration = configuration.orderedSubconfiguration[i];
+
+			xml << spaces(indent) << "<subconfiguration name=\"" << subconfiguration->name << "\">\n";
+			xml << spaces(indent) << "<description>" << subconfiguration->description << "</description>\n";
+			storeConfigurationAsXML(xml, *subconfiguration, indent + 2);
+			xml << spaces(indent) << "</subconfiguration>\n";
+		}
+	}
+}
+
 static void storeConfiguration(std::ofstream &os, const Configuration &configuration, size_t indent, std::vector<std::regex> &patterns)
 {
 	for (size_t i = 0; i < configuration.storeParameters().size(); i++) {
-		ParameterBase *parameter = configuration.storeParameters()[i];
+		Parameter *parameter = configuration.storeParameters()[i];
 		os << "\n" << spaces(indent) << "# " << parameter->description << " [" << parameter->allowedValue << "]\n";
 		os << spaces(indent) << uppercase(parameter->name) << " " << parameter->get() << ";\n";
 	}
@@ -459,6 +502,12 @@ void Reader::store(const Configuration &configuration, const std::vector<std::st
 
 	storeConfiguration(os, configuration, 0, patterns);
 	ESINFO(ALWAYS) << "configuration stored to 'espreso.ecf.default'";
+
+	std::ofstream xml("espreso.ecf.xml");
+	xml << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+	xml << "<root>\n";
+	storeConfigurationAsXML(xml, configuration, 2);
+	xml << "</root>\n";
 }
 
 

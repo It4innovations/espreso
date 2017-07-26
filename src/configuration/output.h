@@ -23,7 +23,7 @@ struct OutputConfiguration: public Configuration {
 
 	OPTION(OUTPUT_FORMAT, format, "Format - only LEGACY format is supported without VTK library", OUTPUT_FORMAT::VTK_XML_ASCII, OPTIONS({
 		{ "VTK_LEGACY"    , OUTPUT_FORMAT::VTK_LEGACY    , "*.vtk files" },
-		{ "VTK_XML_ASCII"    , OUTPUT_FORMAT::VTK_XML_ASCII    , "*.vtu files in ASCII format" },
+		{ "VTK_XML_ASCII" , OUTPUT_FORMAT::VTK_XML_ASCII , "*.vtu files in ASCII format" },
 		{ "VTK_XML_BINARY", OUTPUT_FORMAT::VTK_XML_BINARY, "*.vtu files in binary format" },
 		{ "ENSIGHT"       , OUTPUT_FORMAT::ENSIGHT       , "EnSight files" }
 	}));
@@ -56,7 +56,7 @@ struct OutputConfiguration: public Configuration {
 	PARAMETER(double, domain_shrink_ratio   , "All domains are shrunk by this ratio (effective only for COLLECTED=FALSE)."   , .95);
 	PARAMETER(double, cluster_shrink_ratio  , "All clusters are shrunk by this ratio (effective only for COLLECTED=FALSE)."  , .9);
 
-	SUBMULTIMAP(std::string, std::string, monitoring, "Results statistics in some regions. OPERATION = { AVERAGE, MIN, MAX }", "<REGION>", "<OPERATION> <VARIABLE>");
+	SUBMULTIMAP(std::string, std::string, monitoring, "Results statistics in some regions. OPERATION = { AVERAGE, MIN, MAX }", "REGION", "<OPERATION> <VARIABLE>");
 };
 
 }

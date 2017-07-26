@@ -23,10 +23,10 @@ struct AdvectionDiffusion3DMaterial: public Configuration {
 	PARAMETER(MaterialParam<MATERIAL_PARAMETER::THERMAL_CONDUCTIVITY_ZY>, KZY    , "Termal conductivity ZY.", {"1"});
 
 	OPTION(MATERIAL_MODEL, model, "Material model", MATERIAL_MODEL::ISOTROPIC, OPTIONS({
-		{ "ISOTROPIC"  , MATERIAL_MODEL::ISOTROPIC  , "Isotropic." },
-		{ "DIAGONAL"   , MATERIAL_MODEL::DIAGONAL   , "Diagonal." },
-		{ "SYMMETRIC"  , MATERIAL_MODEL::SYMMETRIC  , "Symmetric." },
-		{ "ANISOTROPIC", MATERIAL_MODEL::ANISOTROPIC, "Anisotropic." }
+		{ "ISOTROPIC"  , MATERIAL_MODEL::ISOTROPIC  , { "KXX" }, "Isotropic." },
+		{ "DIAGONAL"   , MATERIAL_MODEL::DIAGONAL   , { "KXX", "KYY", "KZZ" }, "Diagonal." },
+		{ "SYMMETRIC"  , MATERIAL_MODEL::SYMMETRIC  , { "KXX", "KYY", "KZZ", "KXY", "KXZ", "KYZ" }, "Symmetric." },
+		{ "ANISOTROPIC", MATERIAL_MODEL::ANISOTROPIC, { "KXX", "KYY", "KZZ", "KXY", "KXZ", "KYZ", "KYX", "KZX", "KZY" }, "Anisotropic." }
 	}));
 
 	SUBCONFIG(CoordinateSystem, coordinate_system, "Element coordinate system.");
@@ -34,7 +34,7 @@ struct AdvectionDiffusion3DMaterial: public Configuration {
 
 struct AdvectionDiffusion3DConfiguration: public AdvectionDiffusionConfiguration {
 
-	SUBMAPTOCONFIG(std::string, AdvectionDiffusion3DMaterial, materials, "Material description.", "<MATERIAL_NAME>", "Material description");
+	SUBMAPTOCONFIG(std::string, AdvectionDiffusion3DMaterial, materials, "Material description.", "MATERIAL", "Material description");
 };
 
 }

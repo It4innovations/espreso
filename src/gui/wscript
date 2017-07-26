@@ -1,0 +1,29 @@
+
+def configure(ctx):
+    try:
+        ctx.load("compiler_cxx qt5")
+        ctx.env.QT = True
+    except ctx.errors.ConfigurationError:
+        ctx.env.QT = False
+
+def build(ctx):
+    if not ctx.env.QT:
+        return
+
+    ctx.objects(
+        source = ctx.path.ant_glob("**/*.ui"),
+        target = "ui"
+    )
+
+    ctx(
+        features = "qt5 cxx cxxprogram",
+        source   = ctx.path.ant_glob("**/*.cpp"),
+        moc      = ctx.path.ant_glob("**/*.h"),
+
+        use      = "ui basis config",
+        uselib   = "QT5CORE QT5GUI QT5WIDGETS",
+        includes = ".",
+
+        target   = "espresogui",
+        install_path = ctx.ROOT
+    )

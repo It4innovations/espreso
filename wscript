@@ -31,8 +31,7 @@ solvers = [ "MKL", "PARDISO", "CUDA", "CUDA_7", "MIC", "MUMPS", "DISSECTION" ]
 
 third_party = [
     ("HYPRE", "Multigrid external solver.", "string", "PATH"),
-    ("VTK", "Improve output: different formats, compression, decimation.", "string", "PATH"),
-    ("PARAVIEW", "Allows to show results in real time.", "string", "PATH"),
+    ("CATALYST", "Allows real-time visualization.", "string", "PATH"),
     ("MORTAR", "Assembler for mortar interface", "string", "PATH"),
 ]
 
@@ -116,14 +115,23 @@ def configure(ctx):
     ctx.setenv("api", ctx.all_envs["espreso"].derive());
     ctx.recurse("libespreso")
 
-    if not ctx.env.VTK:
-        Logs.warn("VTK library was not founded. ESPRESO supports only VTK legacy format!")
+    ctx.setenv("gui", ctx.all_envs["espreso"].derive());
+    ctx.recurse("src/gui")
 
-    if not ctx.env.HYPRE:
-        Logs.warn("HYPRE library was not founded. ESPRESO does not support HYPRE solver!")
+    optional_libraries = [
+        (ctx.env.QT, "QT5", "GUI"),
+        (ctx.env.CATALYST, "Paraview Catalyst", "real-time visualization"),
+        (ctx.env.HYPRE, "HYPRE", "multigrid linear solver"),
+        (ctx.env.MORTAR, "MORTAR", "gluing of non-matching grids"),
+    ]
 
-    if not ctx.env.MORTAR:
-        Logs.warn("MORTAR library was not founded. ESPRESO does not support gluing of non-matching grids!")
+    not_found = (lib for lib in optional_libraries if not lib[0])
+
+    if not all(lib[0] for lib in optional_libraries):
+        ctx.msg("", "")
+        ctx.msg("Not found optional libraries", "ESPRESO not supports", color="RED")
+        for status, lib, purpose in not_found:
+            ctx.msg("  " + lib, purpose, color="NORMAL")
 
 def build(ctx):
 
@@ -154,8 +162,13 @@ def build(ctx):
     ctx.env = ctx.all_envs["api"]
     ctx.recurse("libespreso")
 
+    ctx.env = ctx.all_envs["gui"]
+    ctx.recurse("src/gui")
+
 def options(opt):
     opt.parser.formatter.max_help_position = 32
+
+    opt.load("compiler_cxx qt5")
 
     def add_option(group, attribute, description, type, choices):
         if type == "choice":

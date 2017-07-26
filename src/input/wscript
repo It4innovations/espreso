@@ -15,6 +15,5 @@ def build(ctx):
 
     ctx.objects(
         source = ctx.path.ant_glob('*.cpp'),
-        target = "loader",
-        use    = "espreso_includes"
+        target = "loader"
     )

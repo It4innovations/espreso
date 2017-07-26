@@ -8,6 +8,7 @@
 
 #include "../../mesh/elements/element.h"
 #include "../../mesh/structures/mesh.h"
+#include "../../mesh/structures/coordinates.h"
 #include "../../mesh/structures/region.h"
 
 #include "../constraints/equalityconstraints.h"
@@ -104,6 +105,12 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, c
 		}
 	}
 
+	for (size_t i = 0; i < _mesh->coordinates().localSize(domain); i++) {
+		processNode(step, matrices, _mesh->nodes()[_mesh->coordinates().clusterIndex(i, domain)], Ke, Me, Re, fe, solution);
+		fillDOFsIndices(_mesh->nodes()[_mesh->coordinates().clusterIndex(i, domain)], domain, DOFs);
+		insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, step, domain, true);
+	}
+
 	// TODO: make it direct
 	if (matrices & Matrices::K) {
 		SparseCSRMatrix<eslocal> csrK = _K;
@@ -153,8 +160,8 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, const Element *e
 void Physics::fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslocal> &DOFs) const
 {
 	DOFs.resize(e->nodes() * pointDOFsOffsets().size());
-	for (size_t n = 0, i = 0; n < e->nodes(); n++) {
-		for (size_t dof = 0; dof < pointDOFsOffsets().size(); dof++, i++) {
+	for (size_t dof = 0, i = 0; dof < pointDOFsOffsets().size(); dof++) {
+		for (size_t n = 0; n < e->nodes(); n++, i++) {
 			DOFs[i] = _mesh->nodes()[e->node(n)]->DOFIndex(domain, pointDOFsOffsets()[dof]);
 		}
 	}

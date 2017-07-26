@@ -27,8 +27,8 @@ MORTAR::LIBPATH =    # PATH to mortar library
 HYPRE::INCLUDE =    # Path to Hypre headers
 HYPRE::LIBPATH =    # PATH to Hypre library
 
-VTK::INCLUDE =    # Path to VTK headers
-VTK::LIBPATH =    # Path to VTK libraries
+CATALYST::INCLUDE =    # Path to CATALYST headers
+CATALYST::LIBPATH =    # Path to CATALYST libraries
 
 METISLIB = metis		# Name of METIS library for 32b version.
 #METISLIB = metis-64     # 64b version of METIS

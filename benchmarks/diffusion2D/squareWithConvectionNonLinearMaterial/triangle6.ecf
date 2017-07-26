@@ -1,0 +1,168 @@
+|*****************************************************************************|
+|-----------------------------------------------------------------------------|
+|                                      |                                      |
+|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
+|                                      |   http://espreso.it4i.cz             |
+|-----------------------------------------------------------------------------|
+|  Case Description: Heat convection set on the right edge                    |
+|                                                                             |
+|-----------------------------------------------------------------------------|
+|*****************************************************************************|
+
+INPUT GENERATOR;
+PHYSICS ADVECTION_DIFFUSION_2D;
+
+DEFAULT_ARGS {
+  0   TRIANGLE6;
+
+  1   2;
+  2   2;
+  3   3;
+  4   2;
+  5  20;
+  6  30;
+}
+
+GENERATOR {
+
+  SHAPE GRID;
+
+  GRID {
+    UNIFORM_DECOMPOSITION 1;
+
+    ELEMENT_TYPE   [ARG0];
+
+    LENGTH_X            1;
+    LENGTH_Y            1;
+    LENGTH_Z            1;
+
+    BLOCKS_X            1;
+    BLOCKS_Y            1;
+    BLOCKS_Z            1;
+
+    CLUSTERS_X     [ARG1];
+    CLUSTERS_Y     [ARG2];
+    CLUSTERS_Z          1;
+
+    DOMAINS_X      [ARG3];
+    DOMAINS_Y      [ARG4];
+    DOMAINS_Z           1;
+
+    ELEMENTS_X     [ARG5];
+    ELEMENTS_Y     [ARG6];
+    ELEMENTS_Z          1;
+
+    NODES {
+        LEFT   "<0, 1) <0, 0> <0, 0>";
+        TOP    "<0, 0> (0, 1) <0, 0>";
+
+        BOTTOM "<1, 1> <0, 1> <0, 0>";
+    }
+
+    EDGES {
+        RIGHT  "<0, 1> <1, 1> <0, 0>";
+    }
+  }
+}
+
+ADVECTION_DIFFUSION_2D {
+
+  PHYSICS_SOLVER {
+    LOAD_STEPS          1;
+
+    LOAD_STEPS_SETTINGS {
+      1 {
+        TYPE        STEADY_STATE;
+        MODE           NONLINEAR;
+        SOLVER_LIBRARY   ESPRESO;
+
+        ESPRESO {
+          METHOD           TOTAL_FETI;
+          SOLVER                  PCG;
+          PRECONDITIONER    DIRICHLET;
+          REGULARIZATION   FIX_POINTS;
+          EPSILON                1e-8;
+        }
+
+        NONLINEAR_SOLVER {
+          METHOD   NEWTON_RHAPSON;
+          LINE_SEARCH       FALSE;
+          STEPPING          FALSE;
+          SUBSTEPS              1;
+          CONVERGENCE_PARAMETERS {
+            TEMPERATURE           TRUE;
+            TEMPERATURE_RESIDUAL  1e-3;
+
+            HEAT                 FALSE;
+            HEAT_RESIDUAL         1e-3;
+          }
+        }
+      }
+    }
+  }
+
+  STABILIZATION CAU;
+  SIGMA          0;
+
+  INITIAL_TEMPERATURE {
+    ALL_ELEMENTS  2;
+  }
+
+  TEMPERATURE {
+    1 {
+      LEFT   500;
+      TOP    300;
+      BOTTOM 300;
+    }
+  }
+
+  CONVECTION {
+    1 {
+      RIGHT {
+        HEAT_TRANSFER_COEFFICIENT  1;
+        EXTERNAL_TEMPERATURE       1000;
+      }
+    }
+  }
+
+  MATERIALS {
+
+    1 {
+      MODEL ISOTROPIC;
+
+      DENSITY 1;
+      KXX     2 + 5 * (TEMPERATURE/50) * (TEMPERATURE/50);
+      Cp      1;
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS 1;
+  }
+}
+
+OUTPUT {
+  MONITORING {
+    ALL_NODES MAX  TEMPERATURE;
+    ALL_NODES MIN  TEMPERATURE;
+    ALL_NODES AVG  TEMPERATURE;
+    ALL_NODES NORM TEMPERATURE;
+
+    ALL_ELEMENTS MAX FLUX;
+    ALL_ELEMENTS MAX FLUX_X;
+    ALL_ELEMENTS MAX FLUX_Y;
+
+    ALL_ELEMENTS MIN FLUX;
+    ALL_ELEMENTS MIN FLUX_X;
+    ALL_ELEMENTS MIN FLUX_Y;
+
+    ALL_ELEMENTS MAX GRADIENT;
+    ALL_ELEMENTS MAX GRADIENT_X;
+    ALL_ELEMENTS MAX GRADIENT_Y;
+
+    ALL_ELEMENTS MIN GRADIENT;
+    ALL_ELEMENTS MIN GRADIENT_X;
+    ALL_ELEMENTS MIN GRADIENT_Y;
+  }
+}
+

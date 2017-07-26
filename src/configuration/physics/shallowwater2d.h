@@ -6,8 +6,7 @@
 #include "../material/holder.h"
 #include "solver.h"
 #include "../solver.h"
-#include "advectiondiffusionconvection.h"
-#include "advectiondiffusionsolver.h"
+#include "advectiondiffusion.h"
 
 namespace espreso {
 
@@ -42,10 +41,10 @@ struct ShallowWater2DConfiguration: public Configuration {
 	SUBCONFIG(ESPRESOSolver, espreso, "Internal FETI solver options.");
 	SUBCONFIG(HypreSolver  , hypre  , "Multigrid solver setting.");
 
-	SUBMAPTOMAP(size_t, std::string, std::string, momentum, "Momentum", "1", "Momentum setting for load step '1'", "<REGION>", "<EXPRESSION>");
+	SUBMAPTOMAP(size_t, std::string, std::string, momentum, "Momentum", "TIME_STEP", "Momentum setting for the load step", "REGION", "EXPRESSION");
 
-	SUBMAPTOCONFIG(std::string, ShallowWater2DMaterial, materials, "Material description.", "<MATERIAL_NAME>", "Material description");
-	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "<REGION>", "<MATERIAL_NAME>");
+	SUBMAPTOCONFIG(std::string, ShallowWater2DMaterial, materials, "Material description.", "MATERIAL", "Material description");
+	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "REGION", "MATERIAL");
 
 	PARAMETER(bool, post_process, "Turn on/off results post processing.", true);
 
