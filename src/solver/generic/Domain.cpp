@@ -92,7 +92,6 @@ void Domain::SetDomain() {
 
 #else
 
-
 	if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
 		instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index);
 		Kplus.ImportMatrix_wo_Copy(K);

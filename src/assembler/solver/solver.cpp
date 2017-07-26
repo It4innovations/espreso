@@ -51,6 +51,16 @@ static std::string mNames(espreso::Matrices matrices)
 	std::string(matrices & espreso::Matrices::dual   ? "Dual "   : "");
 }
 
+void Solver::storeData(const Step &step, SparseMatrix &matrix, size_t domain, const std::string &name, const std::string &description)
+{
+	if (environment->print_matrices) {
+		ESINFO(ALWAYS) << Info::TextColor::BLUE << "Storing " << description;
+		std::ofstream os(Logging::prepareFile(domain, name));
+		os << matrix;
+		os.close();
+	}
+}
+
 void Solver::storeData(const Step &step, std::vector<SparseMatrix> &matrices, const std::string &name, const std::string &description)
 {
 	if (environment->print_matrices) {
@@ -222,6 +232,9 @@ void Solver::regularizeMatrices(const Step &step, Matrices matrices)
 
 	instance->computeKernelCallback = [&] (REGULARIZATION regularization, size_t scSize, size_t domain) {
 		physics->makeStiffnessMatrixRegular(regularization, scSize, domain);
+		storeData(step, physics->instance()->N1[domain], domain, "N1", "N1[" + std::to_string(domain) + "]");
+		storeData(step, physics->instance()->N2[domain], domain, "N2", "N2[" + std::to_string(domain) + "]");
+		storeData(step, physics->instance()->RegMat[domain], domain, "RegMat", "RegMat[" + std::to_string(domain) + "]");
 	};
 }
 

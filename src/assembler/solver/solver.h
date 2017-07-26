@@ -75,6 +75,7 @@ protected:
 
 	double maxAbsValue(const std::vector<std::vector<double> > &v) const;
 
+	void storeData(const Step &step, SparseMatrix &matrix, size_t domain, const std::string &name, const std::string &description);
 	void storeData(const Step &step, std::vector<SparseMatrix> &matrices, const std::string &name, const std::string &description);
 	void storeData(const Step &step, std::vector<std::vector<double> > &vectors, const std::string &name, const std::string &description);
 	void storeSolution(const Step &step);
