@@ -11,8 +11,6 @@
 #include "../specific/itersolvers.h"
 //#include "../specific/superclusters.h"
 
-#include "../../assembler/constraints/constraints.h"
-#include "../../assembler/old_physics/assembler.h"
 #include "../../assembler/instance.h"
 
 
@@ -24,7 +22,6 @@ class LinearSolver {
 public:
 
 	LinearSolver(Instance *instance, const ESPRESOSolver &configuration);
-	LinearSolver(const ESPRESOSolver &configuration, OldPhysics &physics, Constraints &constraints); // to be removed
 
 	void init();
 
@@ -54,10 +51,6 @@ public:
 	const ESPRESOSolver &configuration;
 
 	TimeEval timeEvalMain;
-
-	// TODO: to be removed
-	OldPhysics  *physics;
-	Constraints *constraints;
 
 private:
 

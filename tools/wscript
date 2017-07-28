@@ -132,8 +132,19 @@ def configure(ctx):
     else:
         ctx.env.LIBEXT = ".so"
 
-    if (os.path.isdir(ctx.ROOT + "/tools/bem4i")):
-        ctx.env.append_unique("DEFINES", [ "ESBEM" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-I" + ctx.ROOT + "/" + include for include in ctx.env["BEM4I::PATH"] ])
+
+    ctx.env.BEM4I = ctx.check_cc(
+        fragment    = "#include \"esbem.h\"\nint main() {{ return 0; }}\n",
+        mandatory   = False,
+        execute     = False,
+        msg         = "Checking for BEM4I sources",
+        errmsg      = "not found - set path to BEM4I sources (parameter BEM4I::PATH)",
+        okmsg       = "found"
+    )
+
+    if ctx.env.BEM4I:
+        ctx.env.append_unique("DEFINES", [ "BEM4I" ])
 
 def build(ctx):
     if ctx.env.EXTERNAL_LIBRARIES:
@@ -151,7 +162,7 @@ def build(ctx):
         ctx.add_group()
         build_dissection(ctx)
 
-    if (os.path.isdir(ctx.ROOT + "/tools/bem4i")):
+    if ctx.env.BEM4I:
         ctx.objects(
             source = ('bem4i/esbem.cpp'),
             target = "bem",

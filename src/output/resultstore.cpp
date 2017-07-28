@@ -97,26 +97,14 @@ std::vector<std::string> ResultStore::store(const std::string &name, const Step 
 	return files;
 }
 
-void ResultStore::storeSettings(const Step &step)
-{
-	storeSettings(std::vector<size_t>{ step.step });
-}
-
 void ResultStore::storeSettings(size_t steps)
-{
-	std::vector<size_t> _steps(steps);
-	std::iota(_steps.begin(), _steps.end(), 0);
-	storeSettings(_steps);
-}
-
-void ResultStore::storeSettings(const std::vector<size_t> &steps)
 {
 	prepare();
 	Step step;
 	std::vector<std::string> files;
 
-	for (size_t i = 0; i < steps.size(); i++) {
-		step.step = steps[i];
+	for (size_t i = 0; i < steps; i++) {
+		step.step = i;
 		step.currentTime = i;
 
 		_meshInfo->addSettings(i);
@@ -128,8 +116,8 @@ void ResultStore::storeSettings(const std::vector<size_t> &steps)
 	MeshInfo *region;
 	for (size_t r = 2; r < _mesh->regions().size(); r++) {
 		region = _meshInfo->deriveRegion(_mesh->regions()[r]);
-		for (size_t i = 0; i < steps.size(); i++) {
-			step.step = steps[i];
+		for (size_t i = 0; i < steps; i++) {
+			step.step = i;
 			step.currentTime = i;
 
 			region->addSettings(i);
@@ -139,44 +127,6 @@ void ResultStore::storeSettings(const std::vector<size_t> &steps)
 		}
 		delete region;
 	}
-}
-
-void ResultStore::storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType)
-{
-	Step step;
-	std::vector<Solution*> solution;
-	std::vector<Property> props;
-	if (dimension == 1) {
-		props.push_back(Property::TEMPERATURE);
-	}
-	if (dimension == 2) {
-		props.push_back(Property::DISPLACEMENT_X);
-		props.push_back(Property::DISPLACEMENT_Y);
-	}
-	if (dimension == 3) {
-		props.push_back(Property::DISPLACEMENT_X);
-		props.push_back(Property::DISPLACEMENT_Y);
-		props.push_back(Property::DISPLACEMENT_Z);
-	}
-
-	solution.push_back(new Solution(*_mesh, name, eType, props, values));
-	storeSolution(step, solution);
-	delete solution.back();
-	if (!environment->MPIrank) {
-		linkSteps("solution", _solutions);
-	}
-	_solutions.clear();
-}
-
-void ResultStore::storeSolution(const Step &step, const std::vector<Solution*> &solution)
-{
-	prepare();
-
-	_meshInfo->addSolution(solution);
-	std::vector<std::string> files = store("solution", step, _meshInfo);
-	_meshInfo->clearData();
-
-	_solutions.push_back(std::make_pair(step, files));
 }
 
 void ResultStore::storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties)

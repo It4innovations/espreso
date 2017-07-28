@@ -17,17 +17,7 @@ public:
 
 	void add(Store *rs) { _results.push_back(rs); }
 
-	virtual void storeSettings(const Step &step)
-	{
-		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeSettings(step); } );
-	}
-
 	virtual void storeSettings(size_t steps)
-	{
-		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeSettings(steps); } );
-	}
-
-	virtual void storeSettings(const std::vector<size_t> &steps)
 	{
 		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeSettings(steps); } );
 	}
@@ -35,11 +25,6 @@ public:
 	virtual void storeFETIData(const Step &step, const Instance &instance)
 	{
 		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeFETIData(step, instance); } );
-	}
-
-	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution)
-	{
-		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeSolution(step, solution); } );
 	}
 
 	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties)

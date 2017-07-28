@@ -145,6 +145,34 @@ bool Communication::broadcastUnknownSize(std::vector<Ttype> &buffer)
 	return true;
 }
 
+template <typename Ttype>
+static void offsetSum(void *in, void *out, int *len, MPI_Datatype *datatype)
+{
+	*(static_cast<Ttype*>(out)) += *(static_cast<Ttype*>(in));
+}
+
+template <typename Ttype>
+Ttype Communication::exscan(Ttype &value)
+{
+	size_t size = value;
+	if (environment->MPIsize == 1) {
+		value = 0;
+		return size;
+	}
+
+	MPI_Op op;
+	MPI_Op_create(offsetSum<Ttype>, 1, &op);
+	MPI_Exscan(&size, &value, sizeof(size_t), MPI_BYTE, op, environment->MPICommunicator);
+
+	size = value + size;
+	MPI_Bcast(&size, sizeof(size_t), MPI_BYTE, environment->MPIsize - 1, environment->MPICommunicator);
+	if (environment->MPIrank == 0) {
+		value = 0;
+	}
+
+	return size;
+}
+
 }
 
 

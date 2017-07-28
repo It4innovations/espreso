@@ -38,6 +38,8 @@ public:
 	Square8(std::ifstream &is);
 	Element* copy() const { return new Square8(*this); }
 
+	std::vector<std::vector<eslocal> > triangularize() const;
+
 	eslocal nCommon() const { return Square8CommonNodes; }
 	eslocal vtkCode() const { return Square8VTKCode; }
 

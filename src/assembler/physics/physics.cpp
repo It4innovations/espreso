@@ -87,29 +87,7 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, c
 		insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, step, domain, false);
 	}
 
-	Me.resize(0, 0);
-	Re.resize(0, 0);
-	for (size_t i = 0; i < _mesh->faces().size(); i++) {
-		if (_mesh->faces()[i]->domains().front() == domain && _mesh->faces()[i]->clusters().front() == environment->MPIrank) {
-			processFace(step, matrices, _mesh->faces()[i], Ke, Me, Re, fe, solution);
-			fillDOFsIndices(_mesh->faces()[i], domain, DOFs);
-			insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, step, domain, true);
-		}
-	}
-
-	for (size_t i = 0; i < _mesh->edges().size(); i++) {
-		if (_mesh->edges()[i]->domains().front() == domain && _mesh->edges()[i]->clusters().front() == environment->MPIrank) {
-			processEdge(step, matrices, _mesh->edges()[i], Ke, Me, Re, fe, solution);
-			fillDOFsIndices(_mesh->edges()[i], domain, DOFs);
-			insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, step, domain, true);
-		}
-	}
-
-	for (size_t i = 0; i < _mesh->coordinates().localSize(domain); i++) {
-		processNode(step, matrices, _mesh->nodes()[_mesh->coordinates().clusterIndex(i, domain)], Ke, Me, Re, fe, solution);
-		fillDOFsIndices(_mesh->nodes()[_mesh->coordinates().clusterIndex(i, domain)], domain, DOFs);
-		insertElementToDomain(_K, _M, DOFs, Ke, Me, Re, fe, step, domain, true);
-	}
+	assembleBoundaryConditions(_K, _M, step, matrices, domain, solution);
 
 	// TODO: make it direct
 	if (matrices & Matrices::K) {
@@ -122,7 +100,34 @@ void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, c
 		_instance->M[domain] = csrM;
 		_instance->M[domain].mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 	}
+}
 
+void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution)
+{
+	DenseMatrix Ke, fe, Me(0, 0), Re(0, 0);
+	std::vector<eslocal> DOFs;
+
+	for (size_t i = 0; i < _mesh->faces().size(); i++) {
+		if (_mesh->faces()[i]->domains().front() == domain && _mesh->faces()[i]->clusters().front() == environment->MPIrank) {
+			processFace(step, matrices, _mesh->faces()[i], Ke, Me, Re, fe, solution);
+			fillDOFsIndices(_mesh->faces()[i], domain, DOFs);
+			insertElementToDomain(K, M, DOFs, Ke, Me, Re, fe, step, domain, true);
+		}
+	}
+
+	for (size_t i = 0; i < _mesh->edges().size(); i++) {
+		if (_mesh->edges()[i]->domains().front() == domain && _mesh->edges()[i]->clusters().front() == environment->MPIrank) {
+			processEdge(step, matrices, _mesh->edges()[i], Ke, Me, Re, fe, solution);
+			fillDOFsIndices(_mesh->edges()[i], domain, DOFs);
+			insertElementToDomain(K, M, DOFs, Ke, Me, Re, fe, step, domain, true);
+		}
+	}
+
+	for (size_t i = 0; i < _mesh->coordinates().localSize(domain); i++) {
+		processNode(step, matrices, _mesh->nodes()[_mesh->coordinates().clusterIndex(i, domain)], Ke, Me, Re, fe, solution);
+		fillDOFsIndices(_mesh->nodes()[_mesh->coordinates().clusterIndex(i, domain)], domain, DOFs);
+		insertElementToDomain(K, M, DOFs, Ke, Me, Re, fe, step, domain, true);
+	}
 }
 
 void Physics::assembleMatrix(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe)

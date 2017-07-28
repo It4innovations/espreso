@@ -398,7 +398,7 @@ void ClusterBase::SetupPreconditioner ( ) {
 	switch (configuration.preconditioner) {
 	case ESPRESO_PRECONDITIONER::LUMPED:
 		// nothing needs to be done
-#ifdef ESBEM
+#ifdef BEM4I_TO_BE_REMOVED
 		ESINFO(GLOBAL_ERROR) << "Memory efficient Lumped not possible for BEM, used fast Lumped --> MAGIC (or 5)";
 #endif
 		break;
@@ -415,7 +415,7 @@ void ClusterBase::SetupPreconditioner ( ) {
 		#pragma omp parallel for
 		for (size_t d = 0; d < domains.size(); d++) {
 			if (domains[d]._RegMat.nnz > 0) {
-#ifdef ESBEM
+#ifdef BEM4I_TO_BE_REMOVED
 				domains[d]._RegMat.ConvertToCSR(1);
 				domains[d].K.ConvertDenseToCSR(0);
 				domains[d].Prec.MatAdd(domains[d].K, domains[d]._RegMat, 'N', -1);
@@ -2876,7 +2876,7 @@ void ClusterBase::CreateDirichletPrec(Instance *instance)
 		perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
 
 		SparseMatrix K_modif = instance->K[domains[d].domain_global_index]; //[d];
-#ifdef ESBEM
+#ifdef BEM4I_TO_BE_REMOVED
 		K_modif.ConvertToCSR(1);
 #endif
 		SparseMatrix RegMatCRS = instance->RegMat[domains[d].domain_global_index]; //[d];

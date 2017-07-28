@@ -28,17 +28,10 @@ class ResultStore: public Store {
 public:
 	const OutputConfiguration& configuration() const { return _configuration; }
 
-	// TODO: remove it after removing old physics
-	void storeValues(const std::string &name, size_t dimension, const std::vector<std::vector<double> > &values, ElementType eType);
-
-	virtual void storeSettings(const Step &step);
 	virtual void storeSettings(size_t steps);
-	virtual void storeSettings(const std::vector<size_t> &steps);
-
 	virtual void storeFETIData(const Step &step, const Instance &instance);
-
-	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution);
 	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties);
+
 	virtual void finalize();
 
 	virtual ~ResultStore();

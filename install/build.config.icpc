@@ -28,6 +28,8 @@ HYPRE::LIBPATH = #/opt/hypre/lib   # PATH to Hypre library
 CATALYST::INCLUDE = #/opt/paraview-5.1/include/ # Path to Paraview headers
 CATALYST::LIBPATH = #/opt/paraview-5.1/lib # Path to Paraview libraries
 
+BEM4I::PATH =    # Path to BEM4I sources
+
 # Next lines are ignored if BUILD_TOOLS == 0
 METISLIB = metis		# Name of METIS library
 

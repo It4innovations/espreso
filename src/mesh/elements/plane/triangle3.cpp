@@ -148,6 +148,15 @@ std::vector<eslocal> Triangle3::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
+std::vector<std::vector<eslocal> > Triangle3::triangularize() const
+{
+	std::vector<std::vector<eslocal> > triangles;
+
+	triangles.push_back({ _indices[0], _indices[1], _indices[2] });
+
+	return triangles;
+}
+
 size_t Triangle3::fillEdges()
 {
 	eslocal line[Line2NodesCount];

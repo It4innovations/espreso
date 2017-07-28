@@ -26,6 +26,9 @@ struct Communication {
 
 	template <typename Ttype>
 	static bool broadcastUnknownSize(std::vector<Ttype> &buffer);
+
+	template <typename Ttype>
+	static Ttype exscan(Ttype &value);
 };
 
 

@@ -8,8 +8,6 @@
 #include "LinearSolver.h"
 #include "../../basis/utilities/utils.h"
 
-
-
 //#include <Eigen/Dense>
 //using Eigen::MatrixXd;
 
@@ -19,23 +17,9 @@ LinearSolver::LinearSolver(Instance *instance, const ESPRESOSolver &configuratio
 : instance(instance),
   configuration(configuration),
   timeEvalMain("ESPRESO Solver Overal Timing"),
-  physics(NULL),
-  constraints(NULL),
   cluster(NULL),
   solver(NULL)
 {
-}
-
-
-LinearSolver::LinearSolver(const ESPRESOSolver &configuration, OldPhysics &physics, Constraints &constraints)
-: instance(NULL),
-  configuration(configuration),
-  timeEvalMain("ESPRESO Solver Overal Timing"),
-  physics(&physics),
-  constraints(&constraints)
-{
-	cluster  = new SuperCluster(configuration, instance);
-	solver = new IterSolver(configuration);
 }
 
 LinearSolver::~LinearSolver() {
@@ -141,6 +125,7 @@ void LinearSolver::run()
 
 		ESINFO(ERROR) << "Invalid Linear Solver configuration: Only GMRES and BICGSTAB can solve unsymmetric system.";
 	}
+
 	Solve(instance->f, instance->primalSolution, instance->dualSolution);
 }
 
@@ -663,63 +648,6 @@ void LinearSolver::setup_InitClusterAndSolver( )
 // TODO: const parameters
 void LinearSolver::init(const std::vector<int> &neighbours)
 {
-	if (physics != NULL) {
-		instance = new Instance(physics->K.size(), neighbours);
-		instance->computeKernelsCallback = physics->computeKernelsCallback;
-		instance->assembleB0Callback = physics->assembleB0Callback;
-		instance->clustersMap = constraints->continuityMap;
-
-		physics->K.swap(instance->K);
-		for (size_t i = 0; i < physics->K.size(); i++) {
-			instance->K[i].mtype = physics->mtype;
-			instance->K[i].RemoveLower();
-		}
-
-		instance->computeKernelsCallback = [&] (REGULARIZATION regularization, size_t scSize) {
-			physics->K.swap(instance->K);
-			physics->computeKernelsCallback(regularization, scSize);
-			physics->K.swap(instance->K);
-			physics->R1.swap(instance->N1);
-			physics->R2.swap(instance->N2);
-			physics->RegMat.swap(instance->RegMat);
-		};
-
-		instance->computeKernelCallback = [&] (REGULARIZATION regularization, size_t scSize, size_t domain) {
-			physics->K[domain].swap(instance->K[domain]);
-			physics->computeKernelCallback(regularization, scSize, domain);
-			physics->K[domain].swap(instance->K[domain]);
-			physics->R1[domain].swap(instance->N1[domain]);
-			physics->R2[domain].swap(instance->N2[domain]);
-			physics->RegMat[domain].swap(instance->RegMat[domain]);
-		};
-
-		//instance->computeKernels(configuration.regularization, configuration.SC_SIZE);
-
-		constraints->B1.swap(instance->B1);
-		constraints->B1c.swap(instance->B1c);
-		constraints->B1subdomainsMap.swap(instance->B1subdomainsMap);
-		constraints->B1clustersMap.swap(instance->B1clustersMap);
-		constraints->B1duplicity.swap(instance->B1duplicity);
-
-		if (configuration.method == ESPRESO_METHOD::HYBRID_FETI) {
-			instance->assembleB0Callback = [&] (B0_TYPE type, const std::vector<SparseMatrix> &kernels) {
-				physics->assembleB0Callback(type, kernels);
-				constraints->B0.swap(instance->B0);
-				constraints->B0subdomainsMap.swap(instance->B0subdomainsMap);
-			};
-
-			//instance->assembleB0(configuration.B0_type, instance->N1);
-		}
-
-		constraints->LB.swap(instance->LB);
-		constraints->inequality.swap(instance->inequality);
-		constraints->inequalityC.swap(instance->inequalityC);
-
-		cluster->instance  = instance;
-		cluster->init();
-	}
-
-
 	//mkl_cbwr_set(MKL_CBWR_COMPATIBLE);
 
 	// Overall Linear Solver Time measurement structure

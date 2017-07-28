@@ -30,6 +30,8 @@ HYPRE::LIBPATH =    # PATH to Hypre library
 CATALYST::INCLUDE =    # Path to CATALYST headers
 CATALYST::LIBPATH =    # Path to CATALYST libraries
 
+BEM4I::PATH =    # Path to BEM4I sources
+
 METISLIB = metis		# Name of METIS library for 32b version.
 #METISLIB = metis-64     # 64b version of METIS
 

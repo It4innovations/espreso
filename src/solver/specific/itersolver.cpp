@@ -203,7 +203,7 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( SuperCluster & clus
 
 		for (size_t d = 0; d < cluster.domains.size(); d++) {
 
-#ifdef ESBEM
+#ifdef BEM4I_TO_BE_REMOVED
 			cluster.domains[d]->K.DenseMatVec(primal_solution_out[d], *cluster.x_prim_cluster2[d],'N');
 #else
 			cluster.domains[d]->K.MatVec(primal_solution_out[d], *cluster.x_prim_cluster2[d],'N');

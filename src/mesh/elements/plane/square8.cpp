@@ -141,6 +141,20 @@ std::vector<eslocal> Square8::getNeighbours(size_t nodeIndex) const
 	return result;
 }
 
+std::vector<std::vector<eslocal> > Square8::triangularize() const
+{
+	std::vector<std::vector<eslocal> > triangles;
+
+	triangles.push_back({ _indices[0], _indices[4], _indices[7] });
+	triangles.push_back({ _indices[1], _indices[5], _indices[4] });
+	triangles.push_back({ _indices[2], _indices[6], _indices[5] });
+	triangles.push_back({ _indices[3], _indices[7], _indices[6] });
+	triangles.push_back({ _indices[4], _indices[5], _indices[6] });
+	triangles.push_back({ _indices[4], _indices[6], _indices[7] });
+
+	return triangles;
+}
+
 size_t Square8::fillEdges()
 {
 	eslocal line[Line3NodesCount];

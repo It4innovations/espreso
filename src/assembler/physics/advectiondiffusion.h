@@ -61,6 +61,8 @@ protected:
 
 	static size_t offset;
 
+	void computeInitialTemperature(const Step &step, std::vector<std::vector<double> > &data);
+
 	double computeHTC(
 			const AdvectionDiffusionConvection &convection, const Element *e, size_t node, Step step,
 			double temp) const;

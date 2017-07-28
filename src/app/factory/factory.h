@@ -19,7 +19,6 @@ class ResultStoreList;
 
 struct GlobalConfiguration;
 struct OutputConfiguration;
-struct Results;
 struct Mesh;
 
 struct Factory {

@@ -125,6 +125,8 @@ struct Physics {
 	Instance *_instance;
 
 protected:
+	virtual void assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution);
+
 	std::vector<size_t> _nodesDOFsOffsets;
 	std::vector<size_t> _midNodesDOFsOffsets;
 	std::vector<size_t> _edgesDOFsOffsets;

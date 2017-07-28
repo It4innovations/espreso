@@ -236,12 +236,12 @@ void AdvectionDiffusion::analyticRegularization(size_t domain)
 		return;
 	}
 
-	_instance->N1[domain].rows = _mesh->coordinates().localSize(domain);
+	_instance->N1[domain].rows = _instance->K[domain].rows;
 	_instance->N1[domain].cols = 1;
 	_instance->N1[domain].nnz = _instance->N1[domain].rows * _instance->N1[domain].cols;
 	_instance->N1[domain].type = 'G';
 
-	_instance->N1[domain].dense_values.resize(_instance->N1[domain].nnz, 1 / sqrt(_mesh->coordinates().localSize(domain)));
+	_instance->N1[domain].dense_values.resize(_instance->N1[domain].nnz, 1 / sqrt(_instance->K[domain].rows));
 
 	_instance->RegMat[domain].rows = _instance->K[domain].rows;
 	_instance->RegMat[domain].cols = _instance->K[domain].cols;
@@ -254,6 +254,19 @@ void AdvectionDiffusion::analyticRegularization(size_t domain)
 	_instance->RegMat[domain].ConvertToCSR(1);
 }
 
+void AdvectionDiffusion::computeInitialTemperature(const Step &step, std::vector<std::vector<double> > &data)
+{
+	data.resize(_mesh->parts());
+
+	#pragma omp parallel for
+	for (size_t p = 0; p < _mesh->parts(); p++) {
+		data[p].reserve(pointDOFs().size() * _mesh->coordinates().localSize(p));
+		for (size_t n = 0; n < _mesh->coordinates().localSize(p); n++) {
+			data[p].push_back(_mesh->nodes()[_mesh->coordinates().clusterIndex(n, p)]->getProperty(Property::INITIAL_TEMPERATURE, 0, step.step, step.currentTime, 0, 273.15 + 20));
+		}
+	}
+}
+
 void AdvectionDiffusion::preprocessData(const Step &step)
 {
 	if (offset != (size_t)-1) {
@@ -261,16 +274,8 @@ void AdvectionDiffusion::preprocessData(const Step &step)
 	}
 	offset = _instance->solutions.size();
 	_instance->solutions.resize(offset + SolutionIndex::SIZE, NULL);
-	_instance->primalSolution.resize(_mesh->parts());
 
-	#pragma omp parallel for
-	for (size_t p = 0; p < _mesh->parts(); p++) {
-		_instance->primalSolution[p].reserve(pointDOFs().size() * _mesh->coordinates().localSize(p));
-		for (size_t n = 0; n < _mesh->coordinates().localSize(p); n++) {
-			_instance->primalSolution[p].push_back(_mesh->nodes()[_mesh->coordinates().clusterIndex(n, p)]->getProperty(Property::INITIAL_TEMPERATURE, 0, step.step, step.currentTime, 0, 273.15 + 20));
-		}
-	}
-
+	computeInitialTemperature(step, _instance->primalSolution);
 	_instance->solutions[offset + SolutionIndex::TEMPERATURE] = new Solution(*_mesh, "temperature", ElementType::NODES, pointDOFs(), _instance->primalSolution);
 }
 

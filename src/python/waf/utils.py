@@ -63,9 +63,9 @@ def read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_att
     # Load configuration specified while the project configuration
     for attribute, description, type, value in espreso_attributes + compilers + compiler_attributes:
         read_attribute(attribute, type)
-    for attribute, description, type, value in third_party:
-        read_attribute(attribute + "::INCLUDE", type)
-        read_attribute(attribute + "::LIBPATH", type)
+    for attribute, description, type, value, params in third_party:
+        for param in params:
+            read_attribute(attribute + "::" + param, type)
 
     for attribute, description, type, value in compiler_attributes:
         read_attribute("SOLVER::" + attribute, type)
@@ -85,9 +85,9 @@ def read_configuration(ctx, espreso_attributes, solvers, compilers, compiler_att
     for attribute, description, type, value in compiler_attributes:
         print_attribute(attribute, type, ctx.env[attribute])
 
-    for attribute, description, type, value in third_party:
-        print_attribute(attribute + "::INCLUDE", "string", ctx.env[attribute + "::INCLUDE"])
-        print_attribute(attribute + "::LIBPATH", "string", ctx.env[attribute + "::LIBPATH"])
+    for attribute, description, type, value, params in third_party:
+        for param in params:
+            print_attribute(attribute + "::" + param, "string", ctx.env[attribute + "::" + param])
 
     for attribute, description, type, value in compiler_attributes:
         print_attribute("SOLVER::" + attribute, type, ctx.env["SOLVER::" + attribute])

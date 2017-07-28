@@ -157,7 +157,7 @@ void Monitoring::storeSolution(const Step &step, const std::vector<Solution*> &s
 			}
 		}
 		if (!found) {
-			ESINFO(GLOBAL_ERROR) << "Request for unknown property: " << _monitors[i].properties[0];
+			ESINFO(GLOBAL_ERROR) << "ESPRESO monitor error: request for unknown property: " << _monitors[i].properties[0];
 		}
 
 		std::stringstream ss;

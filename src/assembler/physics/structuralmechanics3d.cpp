@@ -19,7 +19,7 @@
 using namespace espreso;
 
 StructuralMechanics3D::StructuralMechanics3D(Mesh *mesh, Instance *instance, const StructuralMechanics3DConfiguration &configuration)
-: Physics("STRUCTURAL MECHANICS 2D", mesh, instance), StructuralMechanics(configuration), _configuration(configuration)
+: Physics("STRUCTURAL MECHANICS 3D", mesh, instance), StructuralMechanics(configuration), _configuration(configuration)
 {
 
 }

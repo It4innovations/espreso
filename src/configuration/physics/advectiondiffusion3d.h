@@ -3,6 +3,7 @@
 #define SRC_CONFIGURATION_PHYSICS_ADVECTIONDIFFUSION3D_H_
 
 #include "advectiondiffusion.h"
+#include "discretization.h"
 
 namespace espreso {
 
@@ -35,6 +36,11 @@ struct AdvectionDiffusion3DMaterial: public Configuration {
 struct AdvectionDiffusion3DConfiguration: public AdvectionDiffusionConfiguration {
 
 	SUBMAPTOCONFIG(std::string, AdvectionDiffusion3DMaterial, materials, "Material description.", "MATERIAL", "Material description");
+
+	OPTION(DISCRETIZATION, discretization, "Discretization type", DISCRETIZATION::FEM, OPTIONS({
+		{ "FEM", DISCRETIZATION::FEM, "Finite element method." },
+		{ "BEM", DISCRETIZATION::BEM, "Boundary element method." }
+	}));
 };
 
 }

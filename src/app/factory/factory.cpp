@@ -10,6 +10,8 @@
 #include "../../assembler/solver/transientfirstorderimplicit.h"
 #include "../../assembler/physics/advectiondiffusion2d.h"
 #include "../../assembler/physics/advectiondiffusion3d.h"
+#include "../../assembler/physics/lamesteklovpoincare3d.h"
+#include "../../assembler/physics/laplacesteklovpoincare3d.h"
 #include "../../assembler/physics/structuralmechanics2d.h"
 #include "../../assembler/physics/structuralmechanics3d.h"
 #include "../../assembler/physics/shallowwater2d.h"
@@ -18,8 +20,6 @@
 
 #include "../../configuration/globalconfiguration.h"
 #include "../../mesh/structures/mesh.h"
-#include "../../mesh/settings/evaluator.h"
-#include "../../mesh/elements/element.h"
 
 #include "../../output/resultstorelist.h"
 #include "../../output/resultstore/asyncstore.h"
@@ -117,7 +117,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 	if (configuration.physics == PHYSICS::ADVECTION_DIFFUSION_2D || configuration.physics == PHYSICS::ADVECTION_DIFFUSION_3D) {
 
-		auto AdvectionDiffusionFactory = [&] (const AdvectionDiffusionConfiguration &ADC) {
+		auto AdvectionDiffusionFactory = [&] (const AdvectionDiffusionConfiguration &ADC, bool BEMdiscretization) {
 			for (size_t i = 1; i <= ADC.physics_solver.load_steps; i++) {
 				auto it = ADC.physics_solver.load_steps_settings.find(i);
 				if (it == ADC.physics_solver.load_steps_settings.end()) {
@@ -137,6 +137,9 @@ Factory::Factory(const GlobalConfiguration &configuration)
 							break;
 
 						case LoadStepSettingsBase::MODE::NONLINEAR:
+							if (BEMdiscretization) {
+								ESINFO(GLOBAL_ERROR) << "BEM discretization support only LINEAR STEADY STATE physics solver.";
+							}
 							switch (loadStepSettings->nonlinear_solver.method) {
 							case NonLinearSolverBase::METHOD::NEWTON_RHAPSON:
 							case NonLinearSolverBase::METHOD::MODIFIED_NEWTON_RHAPSON:
@@ -154,6 +157,9 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 					case LoadStepSettingsBase::TYPE::TRANSIENT:
 
+						if (BEMdiscretization) {
+							ESINFO(GLOBAL_ERROR) << "BEM discretization support only LINEAR STEADY STATE physics solver.";
+						}
 						switch (loadStepSettings->mode) {
 
 						case LoadStepSettingsBase::MODE::LINEAR:
@@ -183,11 +189,21 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 		if (configuration.physics == PHYSICS::ADVECTION_DIFFUSION_2D) {
 			_physics.push_back(new AdvectionDiffusion2D(mesh, _instances.front(), configuration.advection_diffusion_2D));
-			AdvectionDiffusionFactory(configuration.advection_diffusion_2D);
+			AdvectionDiffusionFactory(configuration.advection_diffusion_2D, false);
 		}
 		if (configuration.physics == PHYSICS::ADVECTION_DIFFUSION_3D) {
-			_physics.push_back(new AdvectionDiffusion3D(mesh, _instances.front(), configuration.advection_diffusion_3D));
-			AdvectionDiffusionFactory(configuration.advection_diffusion_3D);
+			switch (configuration.advection_diffusion_3D.discretization) {
+			case DISCRETIZATION::FEM:
+				_physics.push_back(new AdvectionDiffusion3D(mesh, _instances.front(), configuration.advection_diffusion_3D));
+				AdvectionDiffusionFactory(configuration.advection_diffusion_3D, false);
+				break;
+			case DISCRETIZATION::BEM:
+				_physics.push_back(new LaplaceSteklovPoincare3D(mesh, _instances.front(), configuration.advection_diffusion_3D));
+				AdvectionDiffusionFactory(configuration.advection_diffusion_3D, true);
+				break;
+			default:
+				ESINFO(GLOBAL_ERROR) << "Unknown DISCRETIZATION";
+			}
 		}
 
 		meshPreprocessing(configuration.output);
@@ -195,7 +211,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 	if (configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_2D || configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {
 
-		auto StructuralMechanicsFactory = [&] (const StructuralMechanicsConfiguration &SMC) {
+		auto StructuralMechanicsFactory = [&] (const StructuralMechanicsConfiguration &SMC, bool BEMdiscretization) {
 			for (size_t i = 1; i <= SMC.physics_solver.load_steps; i++) {
 				auto it = SMC.physics_solver.load_steps_settings.find(i);
 				if (it == SMC.physics_solver.load_steps_settings.end()) {
@@ -215,6 +231,9 @@ Factory::Factory(const GlobalConfiguration &configuration)
 							break;
 
 						case LoadStepSettingsBase::MODE::NONLINEAR:
+							if (BEMdiscretization) {
+								ESINFO(GLOBAL_ERROR) << "BEM discretization support only LINEAR STEADY STATE physics solver.";
+							}
 							switch (loadStepSettings->nonlinear_solver.method) {
 							case NonLinearSolverBase::METHOD::NEWTON_RHAPSON:
 							case NonLinearSolverBase::METHOD::MODIFIED_NEWTON_RHAPSON:
@@ -232,6 +251,9 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 					case LoadStepSettingsBase::TYPE::TRANSIENT:
 
+						if (BEMdiscretization) {
+							ESINFO(GLOBAL_ERROR) << "BEM discretization support only LINEAR STEADY STATE physics solver.";
+						}
 						switch (loadStepSettings->mode) {
 
 						case LoadStepSettingsBase::MODE::LINEAR:
@@ -261,12 +283,22 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 		if (configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_2D) {
 			_physics.push_back(new StructuralMechanics2D(mesh, _instances.front(), configuration.structural_mechanics_2D));
-			StructuralMechanicsFactory(configuration.structural_mechanics_2D);
+			StructuralMechanicsFactory(configuration.structural_mechanics_2D, false);
 		}
 
 		if (configuration.physics == PHYSICS::STRUCTURAL_MECHANICS_3D) {
-			_physics.push_back(new StructuralMechanics3D(mesh, _instances.front(), configuration.structural_mechanics_3D));
-			StructuralMechanicsFactory(configuration.structural_mechanics_3D);
+			switch (configuration.structural_mechanics_3D.discretization) {
+			case DISCRETIZATION::FEM:
+				_physics.push_back(new StructuralMechanics3D(mesh, _instances.front(), configuration.structural_mechanics_3D));
+				StructuralMechanicsFactory(configuration.structural_mechanics_3D, false);
+				break;
+			case DISCRETIZATION::BEM:
+				_physics.push_back(new LameSteklovPoincare3D(mesh, _instances.front(), configuration.structural_mechanics_3D));
+				StructuralMechanicsFactory(configuration.structural_mechanics_3D, true);
+				break;
+			default:
+				ESINFO(GLOBAL_ERROR) << "Unknown DISCRETIZATION";
+			}
 		}
 
 		meshPreprocessing(configuration.output);

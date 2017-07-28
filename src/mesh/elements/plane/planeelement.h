@@ -12,6 +12,8 @@ class PlaneElement: public Element
 public:
 	Type type() const { return Type::PLANE; }
 
+	virtual std::vector<std::vector<eslocal> > triangularize() const=0;
+
 	eslocal param(Params param) const { return _params[param]; }
 	void setParam(Params param, eslocal value) { _params[param] = value; }
 	size_t params() const { return _params.size(); }

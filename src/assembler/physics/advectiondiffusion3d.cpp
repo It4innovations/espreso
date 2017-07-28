@@ -525,6 +525,7 @@ void AdvectionDiffusion3D::processFace(const Step &step, Matrices matrices, cons
 		Point v1(dND(1, 0), dND(1, 1), dND(1, 2));
 		Point va = Point::cross(v1, v2);
 		double J = va.norm();
+
 		gpQ.multiply(N[gp], q);
 		if (e->hasProperty(Property::EXTERNAL_TEMPERATURE, step.step)) {
 			gpHtc.multiply(N[gp], htc);

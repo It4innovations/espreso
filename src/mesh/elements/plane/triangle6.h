@@ -38,6 +38,8 @@ public:
 	Triangle6(std::ifstream &is);
 	Element* copy() const { return new Triangle6(*this); }
 
+	std::vector<std::vector<eslocal> > triangularize() const;
+
 	eslocal nCommon() const { return Triangle6CommonNodes; }
 	eslocal vtkCode() const { return Triangle6VTKCode; }
 

@@ -102,7 +102,7 @@ public:
 
 //	SparseSolverAcc Kplus;
 
-#ifdef ESBEM
+#ifdef BEM4I_TO_BE_REMOVED
 	DenseSolverCPU Kplus;
 #else
 	SparseSolverCPU Kplus;

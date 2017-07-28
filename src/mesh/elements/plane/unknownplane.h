@@ -17,6 +17,8 @@ public:
 	: _nodes(nodes), _indices(indices), _stiffnessMatrix(stiffnessMatrix) {};
 	Element* copy() const { return new UnknownPlane(*this); }
 
+	std::vector<std::vector<eslocal> > triangularize() const { ESINFO(ERROR) << "Cannot triangularize unknown plane"; exit(EXIT_FAILURE); }
+
 	eslocal nCommon() const { return _indices.size() > 4 ? 3 : 2; }
 	eslocal vtkCode() const { return UnknownPlaneVTKCode; }
 

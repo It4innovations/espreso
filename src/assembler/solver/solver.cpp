@@ -98,7 +98,7 @@ void Solver::storeSolution(const Step &step)
 void Solver::storeSubSolution(const Step &step)
 {
 	if (_store->configuration().iterations) {
-		_store->storeSolution(step, instance->solutions);
+		_store->storeSolution(step, instance->solutions, {});
 	}
 }
 

@@ -3,6 +3,7 @@
 #define SRC_CONFIGURATION_PHYSICS_STRUCTURALMECHANICS3D_H_
 
 #include "structuralmechanics.h"
+#include "discretization.h"
 
 namespace espreso {
 
@@ -60,6 +61,11 @@ struct StructuralMechanics3DMaterial: public Configuration {
 struct StructuralMechanics3DConfiguration: public StructuralMechanicsConfiguration {
 
 	SUBMAPTOCONFIG(std::string, StructuralMechanics3DMaterial, materials, "Material description.", "MATERIAL", "Material description");
+
+	OPTION(DISCRETIZATION, discretization, "Discretization type", DISCRETIZATION::FEM, OPTIONS({
+		{ "FEM", DISCRETIZATION::FEM, "Finite element method." },
+		{ "BEM", DISCRETIZATION::BEM, "Boundary element method." }
+	}));
 };
 
 }

@@ -37,6 +37,8 @@ public:
 	Square4(std::ifstream &is);
 	Element* copy() const { return new Square4(*this); }
 
+	std::vector<std::vector<eslocal> > triangularize() const;
+
 	eslocal nCommon() const { return Square4CommonNodes; }
 	eslocal vtkCode() const { return Square4VTKCode; }
 

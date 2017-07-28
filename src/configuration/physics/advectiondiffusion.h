@@ -61,8 +61,6 @@ struct AdvectionDiffusionConfiguration: public Configuration {
 	SUBMAP(std::string, std::string, material_set, "Assign materials to regions", "REGION", "MATERIAL");
 
 	PARAMETER(bool, post_process, "Turn on/off results post processing.", true);
-
-	PARAMETER(bool, bem4i, "Assemble matrices using BEM4I library.", false);
 };
 
 }

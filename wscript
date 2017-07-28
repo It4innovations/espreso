@@ -30,9 +30,10 @@ compiler_attributes = [
 solvers = [ "MKL", "PARDISO", "CUDA", "CUDA_7", "MIC", "MUMPS", "DISSECTION" ]
 
 third_party = [
-    ("HYPRE", "Multigrid external solver.", "string", "PATH"),
-    ("CATALYST", "Allows real-time visualization.", "string", "PATH"),
-    ("MORTAR", "Assembler for mortar interface", "string", "PATH"),
+    ("HYPRE", "multigrid external solver.", "string", "PATH", [ "INCLUDE", "LIBPATH" ]),
+    ("CATALYST", "Catalyst. Allows real-time visualization.", "string", "PATH", [ "INCLUDE", "LIBPATH" ]),
+    ("MORTAR", "assembler for mortar interface.", "string", "PATH", [ "INCLUDE", "LIBPATH" ]),
+    ("BEM4I", "assembler for boundary element discretization.", "string", "PATH", [ "PATH" ]),
 ]
 
 espreso_attributes = [
@@ -41,7 +42,7 @@ espreso_attributes = [
     ("LIBTYPE", "ESPRESO is built to libraries of specified type.", "choice", [ "SHARED", "STATIC" ]),
     ("SOLVER", "ESPRESO internal solver. Default: MKL", "choice", solvers),
     ("BUILD_TOOLS", "ESPRESO try to compile external tools. If the compilation is not successful set this attribute to 0 and build tools manually.", "choice", [ "0", "1" ]),
-    ("METISLIB", "Name of METIS library.", "string", "name"),
+    ("METISLIB", "Name of METIS library.", "string", "name")
 ]
 
 from waflib.Configure import conf
@@ -123,6 +124,7 @@ def configure(ctx):
         (ctx.env.CATALYST, "Paraview Catalyst", "real-time visualization"),
         (ctx.env.HYPRE, "HYPRE", "multigrid linear solver"),
         (ctx.env.MORTAR, "MORTAR", "gluing of non-matching grids"),
+        (ctx.env.BEM4I, "BEM4I", "boundary element discretization")
     ]
 
     not_found = (lib for lib in optional_libraries if not lib[0])
@@ -217,19 +219,14 @@ def options(opt):
             type, choices
         )
 
-    for library, description, type, choices in third_party:
-        add_option(
-            opt.add_option_group("Third party libraries"),
-            library + "::INCLUDE",
-            description + "[PATH to headers]",
-            type, choices
-        )
-        add_option(
-            opt.add_option_group("Third party libraries"),
-            library + "::LIBPATH",
-            description + "[PATH to libraries]",
-            type, choices
-        )
+    for library, description, type, choices, params in third_party:
+        for param in params:
+            add_option(
+                opt.add_option_group("Third party libraries"),
+                library + "::" + param,
+                param + " directory for " + description,
+                type, choices
+            )
 
     system = opt.add_option_group("Systems")
     system.add_option(

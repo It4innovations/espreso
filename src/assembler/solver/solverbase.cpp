@@ -2,6 +2,7 @@
 #include "solverbase.h"
 
 #include "../../basis/logging/timeeval.h"
+#include <iostream>
 
 using namespace espreso;
 

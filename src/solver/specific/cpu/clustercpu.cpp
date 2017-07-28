@@ -133,7 +133,7 @@ void ClusterCPU::SetupKsolvers ( ) {
 //        }
 //
 //        //TODO: Hot Fix - needs to be done better
-//#ifdef ESBEM
+//#ifdef BEM4I_TO_BE_REMOVED
 //        if ( !SYMMETRIC_SYSTEM ) {
 //            // 11 = Real and unsymmetric matrix
 //            domains[d].Kplus.mtype = espreso::MatrixType::REAL_UNSYMMETRIC; //11;
@@ -191,7 +191,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 	perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
 
 	SparseMatrix K_modif = instance->K[domains[d].domain_global_index]; //[d];
-#ifdef ESBEM
+#ifdef BEM4I_TO_BE_REMOVED
 //TODO: Alex - da se nejak spocist Dir prec z dense matic K ??
         K_modif.ConvertDenseToCSR(1);
 #endif
