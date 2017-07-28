@@ -55,18 +55,6 @@ CUDA64:
     - ./waf configure --SOLVER=CUDA --INT_WIDTH=64
     - ./waf install -j8
 
-PARDISO32:
-  stage: tests
-  only:
-    - triggers
-  script:
-    - ./waf configure --SOLVER=PARDISO --INT_WIDTH=32 --LIBPATH=/opt/pardiso/
-    - ./waf install -j8
-    - export PARDISOLICMESSAGE=1
-    - echo $PARDISO_LICENCE > pardiso.lic
-    - export PARDISO_LIC_PATH=$PWD
-    - export LD_LIBRARY_PATH=/opt/pardiso/:$LD_LIBRARY_PATH
-
 STATIC_LIBRARY:
   stage: tests
   only:
@@ -77,14 +65,6 @@ STATIC_LIBRARY:
     - python tests/benchmarks.py
     - python tests/input.py
     - python tests/solver.py
-
-HYPRE:
-  stage: tests
-  only:
-    - triggers
-  script:
-    - ./waf configure --HYPRE::INCLUDE=/opt/hypre/include --HYPRE::LIBPATH=/opt/hypre/lib
-    - ./waf install -j8
 
 CATALYST:
   stage: tests
