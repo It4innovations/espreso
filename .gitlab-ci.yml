@@ -105,5 +105,4 @@ GITHUB:
     - if ! git remote | grep release > /dev/null; then
         git remote add release git@github.com:It4innovations/espreso.git;
       fi
-    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
     - git push release master
