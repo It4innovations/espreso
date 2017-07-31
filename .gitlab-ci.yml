@@ -55,6 +55,27 @@ CUDA64:
     - ./waf configure --SOLVER=CUDA --INT_WIDTH=64
     - ./waf install -j8
 
+DISSECTION32:
+  stage: tests
+  only:
+    - triggers
+  script:
+    - ./waf configure --SOLVER=DISSECTION --INT_WIDTH=32
+    - ./waf install -j8
+    - python tests/solver.py
+    - python tests/input.py
+    - python tests/benchmarks.py
+       benchmarks/diffusion2D/squareTowerWithConstantTemperature
+       benchmarks/diffusion2D/squareWithConstantTemperature
+       benchmarks/diffusion2D/squareWithConvection
+       benchmarks/diffusion2D/squareWithConvectionAndRadiation
+       benchmarks/diffusion2D/squareWithHeatFlow
+       benchmarks/diffusion2D/squareWithHeatFlux
+       benchmarks/diffusion3D
+       benchmarks/linearElasticity2D
+       benchmarks/linearElasticity3D
+       benchmarks/transient
+
 STATIC_LIBRARY:
   stage: tests
   only:
