@@ -7,7 +7,8 @@
 namespace espreso {
 
 struct Step {
-	Step(): step(0), substep(0), iteration(0), internalForceReduction(1), currentTime(0), timeStep(0) {}
+	Step(): step(0), substep(0), iteration(0), internalForceReduction(1), currentTime(0), timeStep(0),
+			timeIntegrationConstantM(0), timeIntegrationConstantK(1) {}
 
 	bool isInitial() const { return step == 0 && substep == 0 && iteration == 0; }
 
@@ -21,6 +22,8 @@ struct Step {
 
 	double currentTime;
 	double timeStep; // difference between current and previous time
+	double timeIntegrationConstantM;
+	double timeIntegrationConstantK;
 };
 
 }

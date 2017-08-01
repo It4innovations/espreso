@@ -204,11 +204,11 @@ void AdvectionDiffusion2D::processElement(const Step &step, Matrices matrices, c
 	Me.resize(0, 0);
 	Re.resize(0, 0);
 	fe.resize(0, 0);
-	if (matrices & (Matrices::K | Matrices::R)) {
+	if ((matrices & Matrices::K) || ((matrices & Matrices::R) && step.timeIntegrationConstantK != 0)) {
 		Ke.resize(Ksize, Ksize);
 		Ke = 0;
 	}
-	if (matrices & Matrices::M) {
+	if ((matrices & Matrices::M) || ((matrices & Matrices::R) && step.timeIntegrationConstantM != 0)) {
 		Me.resize(Ksize, Ksize);
 		Me = 0;
 	}
@@ -307,7 +307,7 @@ void AdvectionDiffusion2D::processElement(const Step &step, Matrices matrices, c
 		Ce(0, 0) += _configuration.sigma * h_e * norm_u_e;
 		Ce(1, 1) += _configuration.sigma * h_e * norm_u_e;
 
-		if (matrices & Matrices::M) {
+		if (matrices & (Matrices::M | Matrices::R)) {
 			Me.multiply(e->N()[gp], e->N()[gp], detJ * gpM(0, 0) * e->weighFactor()[gp], 1, true);
 		}
 		if (matrices & (Matrices::K | Matrices::R)) {
@@ -338,9 +338,13 @@ void AdvectionDiffusion2D::processElement(const Step &step, Matrices matrices, c
 	}
 
 	if (matrices & Matrices::R) {
-		Re.multiply(Ke, T);
+		Re.multiply(Ke, T, step.timeIntegrationConstantK, 0);
+		Re.multiply(Me, T, step.timeIntegrationConstantM, 1);
 		if (!(matrices & Matrices::K)) {
 			Ke.resize(0, 0);
+		}
+		if (!(matrices & Matrices::M)) {
+			Me.resize(0, 0);
 		}
 	}
 

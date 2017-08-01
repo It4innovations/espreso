@@ -7,6 +7,7 @@
 #include "../../assembler/solver/linear.h"
 #include "../../assembler/solver/newtonrhapson.h"
 
+#include "../../assembler/solver/nonlineartransient.h"
 #include "../../assembler/solver/transientfirstorderimplicit.h"
 #include "../../assembler/physics/advectiondiffusion2d.h"
 #include "../../assembler/physics/advectiondiffusion3d.h"
@@ -174,6 +175,17 @@ Factory::Factory(const GlobalConfiguration &configuration)
 							}
 							break;
 
+						case LoadStepSettingsBase::MODE::NONLINEAR:
+							switch (loadStepSettings->transient_solver.method) {
+							case TransientSolver::METHOD::CRANK_NICOLSON:
+							case TransientSolver::METHOD::GALERKIN:
+							case TransientSolver::METHOD::BACKWARD_DIFF:
+								loadSteps.push_back(new NonlinearTransient(mesh, _physics.back(), _linearSolvers.back(), store, loadStepSettings->transient_solver, loadStepSettings->duration_time));
+								break;
+							default:
+								ESINFO(GLOBAL_ERROR) << "Not implemented transient solver nonlinear method.";
+							}
+							break;
 						default:
 							ESINFO(GLOBAL_ERROR) << "Not implemented non-linear solver method for transient solver.";
 						}
