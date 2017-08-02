@@ -15,9 +15,6 @@
 #include "../../basis/matrices/sparseCSRMatrix.h"
 #include "../../solver/generic/SparseMatrix.h"
 
-// DELETE
-#include "../../basis/utilities/utils.h"
-
 using namespace espreso;
 
 Precomputed::Precomputed(Mesh *mesh, Instance *instance, MatrixType type, double *rhs, size_t rhsSize)

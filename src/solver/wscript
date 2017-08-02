@@ -4,7 +4,7 @@ source_files = (
    "generic/Domain.cpp",
    "generic/SparseMatrix.cpp",
    "generic/utils.cpp",
-   "generic/LinearSolver.cpp",
+   "generic/FETISolver.cpp",
    "specific/cluster.cpp",
    "specific/itersolver.cpp"
 )

@@ -16,7 +16,7 @@ class SolverBase;
 class APIMesh;
 class OutputConfiguration;
 class ESPRESOSolver;
-class LinearSolver;
+class FETISolver;
 
 namespace output {
 class ResultStoreList;
@@ -41,7 +41,7 @@ struct FETI4IStructInstance {
 
 	espreso::Instance *instance;
 	espreso::Physics * physics;
-	espreso::LinearSolver *linearSolver;
+	espreso::FETISolver *linearSolver;
 	espreso::output::ResultStoreList *store;
 	espreso::SolverBase *solver;
 

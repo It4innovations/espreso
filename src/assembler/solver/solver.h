@@ -12,7 +12,7 @@
 namespace espreso {
 
 class Physics;
-class LinearSolver;
+class FETISolver;
 namespace output { class Store; }
 class SparseMatrix;
 
@@ -24,7 +24,7 @@ public:
 			const std::string &name,
 			Mesh *mesh,
 			Physics* physics,
-			LinearSolver* linearSolver,
+			FETISolver* linearSolver,
 			output::Store* store,
 			double duration,
 			Matrices restriction);
@@ -41,7 +41,7 @@ public:
 
 	Physics* physics;
 	Instance* instance;
-	LinearSolver* linearSolver;
+	FETISolver* linearSolver;
 
 protected:
 	void preprocessData(const Step &step);

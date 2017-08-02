@@ -8,6 +8,7 @@
 #ifndef SOLVER_GENERIC_LINEARSOLVER_H_
 #define SOLVER_GENERIC_LINEARSOLVER_H_
 
+#include "../../linearsolver/linearsolver.h"
 #include "../specific/itersolvers.h"
 //#include "../specific/superclusters.h"
 
@@ -18,17 +19,17 @@ namespace espreso {
 
 struct Instance;
 
-class LinearSolver {
+class FETISolver: public LinearSolver {
 public:
 
-	LinearSolver(Instance *instance, const ESPRESOSolver &configuration);
+	FETISolver(Instance *instance, const ESPRESOSolver &configuration);
 
 	void init();
 
 	void update(Matrices matrices);
-	void run();
+	void solve();
 
-	virtual ~LinearSolver();
+	virtual ~FETISolver();
 
 //	void setup();
 
@@ -41,7 +42,7 @@ public:
 
 	void Postprocessing ();
 
-	void finilize();
+	void finalize();
 
 	void CheckSolution( std::vector < std::vector < double > > & prim_solution );
 

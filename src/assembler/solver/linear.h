@@ -12,7 +12,7 @@ public:
 	Linear(
 			Mesh *mesh,
 			Physics* physics,
-			LinearSolver* linearSolver,
+			FETISolver* linearSolver,
 			output::Store* store,
 			double duration,
 			Matrices restriction = Matrices::NONE);

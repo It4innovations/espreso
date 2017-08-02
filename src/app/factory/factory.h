@@ -10,7 +10,7 @@ namespace espreso {
 struct SolverBase;
 struct Physics;
 struct Instance;
-class LinearSolver;
+class FETISolver;
 namespace output {
 class AsyncStore;
 class ResultStoreList;
@@ -39,7 +39,7 @@ private:
 	std::vector<SolverBase*> _solvers;
 	std::vector<Physics*> _physics;
 	std::vector<Instance*> _instances;
-	std::vector<LinearSolver*> _linearSolvers;
+	std::vector<FETISolver*> _linearSolvers;
 
 	std::vector<std::vector<double> > _solution;
 

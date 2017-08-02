@@ -13,9 +13,9 @@
 
 #include "../../mesh/structures/mesh.h"
 #include "../../output/resultstore.h"
+#include "../../solver/generic/FETISolver.h"
 
 #include "../../solver/generic/SparseMatrix.h"
-#include "../../solver/generic/LinearSolver.h"
 
 using namespace espreso;
 
@@ -23,7 +23,7 @@ Solver::Solver(
 		const std::string &name,
 		Mesh *mesh,
 		Physics* physics,
-		LinearSolver* linearSolver,
+		FETISolver* linearSolver,
 		output::Store* store,
 		double duration,
 		Matrices restriction)
@@ -370,7 +370,7 @@ void Solver::runLinearSolver(const Step &step)
 	ESINFO(PROGRESS2) << "Solve system";
 
 	TimeEvent timeSolve("Linear Solver - runtime"); timeSolve.start();
-	linearSolver->run();
+	linearSolver->solve();
 	timeSolve.endWithBarrier(); _timeStatistics->addEvent(timeSolve);
 }
 
@@ -378,7 +378,7 @@ void Solver::finalizeLinearSolver(const Step &step)
 {
 	ESINFO(PROGRESS2) << "Finalize " << _name << " solver";
 
-	linearSolver->finilize();
+	linearSolver->finalize();
 
 	_store->finalize();
 

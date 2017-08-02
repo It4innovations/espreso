@@ -5,15 +5,15 @@
  *      Author: lriha
  */
 //#include <Driver/DissectionSolver.hpp>
-#include "LinearSolver.h"
 #include "../../basis/utilities/utils.h"
+#include "FETISolver.h"
 
 //#include <Eigen/Dense>
 //using Eigen::MatrixXd;
 
 using namespace espreso;
 
-LinearSolver::LinearSolver(Instance *instance, const ESPRESOSolver &configuration)
+FETISolver::FETISolver(Instance *instance, const ESPRESOSolver &configuration)
 : instance(instance),
   configuration(configuration),
   timeEvalMain("ESPRESO Solver Overal Timing"),
@@ -22,7 +22,7 @@ LinearSolver::LinearSolver(Instance *instance, const ESPRESOSolver &configuratio
 {
 }
 
-LinearSolver::~LinearSolver() {
+FETISolver::~FETISolver() {
 
 	if (cluster != NULL) {
 		delete cluster;
@@ -35,7 +35,7 @@ LinearSolver::~LinearSolver() {
 
 
 // make full initialization of solver
-void LinearSolver::init()
+void FETISolver::init()
 {
 	if (cluster != NULL) {
 		delete cluster;
@@ -56,7 +56,7 @@ void LinearSolver::init()
 }
 
 // make partial initialization according to updated matrices
-void LinearSolver::update(Matrices matrices)
+void FETISolver::update(Matrices matrices)
 {
 	// TODO update appropriate solver objects and stop steeling matrices! :)
 
@@ -116,7 +116,7 @@ void LinearSolver::update(Matrices matrices)
 }
 
 // run solver and store primal and dual solution
-void LinearSolver::run()
+void FETISolver::solve()
 {
 	if (
 			std::any_of(instance->K.begin(), instance->K.end(), [] (const SparseMatrix &K) { return K.mtype == MatrixType::REAL_UNSYMMETRIC; }) &&
@@ -130,7 +130,7 @@ void LinearSolver::run()
 }
 
 
-void LinearSolver::setup_HTFETI() {
+void FETISolver::setup_HTFETI() {
 // Setup Hybrid FETI part of the solver
 
 	if (cluster->USE_HFETI == 1) {
@@ -147,7 +147,7 @@ void LinearSolver::setup_HTFETI() {
 	}
 }
 
-void LinearSolver::setup_LocalSchurComplement() {
+void FETISolver::setup_LocalSchurComplement() {
 // Computation of the Local Schur Complements
 //TODO: update for multiple clusters
 
@@ -171,7 +171,7 @@ void LinearSolver::setup_LocalSchurComplement() {
 
 }
 
-void LinearSolver::createCMat() {
+void FETISolver::createCMat() {
 /*
 
 	//int d = 0;
@@ -514,7 +514,7 @@ void LinearSolver::createCMat() {
 */
 }
 
-void LinearSolver::setup_Preconditioner() {
+void FETISolver::setup_Preconditioner() {
 // Load Matrix K, Regularization
 		 TimeEvent timeRegKproc(string("Solver - Setup preconditioners")); timeRegKproc.start();
 		 ESLOG(MEMORY) << "Before - Setup preconditioners - process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
@@ -533,7 +533,7 @@ void LinearSolver::setup_Preconditioner() {
 		 timeEvalMain.addEvent(timeRegKproc);
 }
 
-void LinearSolver::setup_FactorizationOfStiffnessMatrices() {
+void FETISolver::setup_FactorizationOfStiffnessMatrices() {
 // K Factorization
 		 TimeEvent timeSolKproc(string("Solver - K factorization")); timeSolKproc.start();
 		 TimeEvent KFactMem(string("Solver - K factorization mem. [MB]")); KFactMem.startWithoutBarrier(GetProcessMemory_u());
@@ -549,7 +549,7 @@ void LinearSolver::setup_FactorizationOfStiffnessMatrices() {
 }
 
 
-void LinearSolver::setup_SetDirichletBoundaryConditions() {
+void FETISolver::setup_SetDirichletBoundaryConditions() {
 // Set Dirichlet Boundary Condition
 
 		 TimeEvent timeSetInitialCondition(string("Solver - Set Dirichlet Boundary Condition"));
@@ -565,7 +565,7 @@ void LinearSolver::setup_SetDirichletBoundaryConditions() {
 		 timeEvalMain.addEvent(timeSetInitialCondition);
 }
 
-void LinearSolver::setup_CreateG_GGt_CompressG() {
+void FETISolver::setup_CreateG_GGt_CompressG() {
 
 		 TimeEvent timeSolPrec(string("Solver - FETI Preprocessing")); timeSolPrec.start();
 
@@ -615,7 +615,7 @@ void LinearSolver::setup_CreateG_GGt_CompressG() {
 
 
 
-void LinearSolver::setup_InitClusterAndSolver( )
+void FETISolver::setup_InitClusterAndSolver( )
 {
 
 	cluster->SetupCommunicationLayer();
@@ -646,7 +646,7 @@ void LinearSolver::setup_InitClusterAndSolver( )
 }
 
 // TODO: const parameters
-void LinearSolver::init(const std::vector<int> &neighbours)
+void FETISolver::init(const std::vector<int> &neighbours)
 {
 	//mkl_cbwr_set(MKL_CBWR_COMPATIBLE);
 
@@ -715,7 +715,7 @@ void LinearSolver::init(const std::vector<int> &neighbours)
 
 }
 
-void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,
+void FETISolver::Solve( std::vector < std::vector < double > >  & f_vec,
 		                  std::vector < std::vector < double > >  & prim_solution)
 {
 
@@ -723,7 +723,7 @@ void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,
 	Solve(f_vec, prim_solution, dual_solution);
 }
 
-void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,
+void FETISolver::Solve( std::vector < std::vector < double > >  & f_vec,
 		                  std::vector < std::vector < double > >  & prim_solution,
 		                  std::vector < std::vector < double > > & dual_solution) {
 
@@ -737,11 +737,11 @@ void LinearSolver::Solve( std::vector < std::vector < double > >  & f_vec,
 
 }
 
-void LinearSolver::Postprocessing( ) {
+void FETISolver::Postprocessing( ) {
 
 }
 
-void LinearSolver::finilize() {
+void FETISolver::finalize() {
 
 	// Show Linear Solver Runtime Evaluation
 	solver->preproc_timing.printStatsMPI();
@@ -758,7 +758,7 @@ void LinearSolver::finilize() {
 	 timeEvalMain.printStatsMPI();
 }
 
-void LinearSolver::CheckSolution( vector < vector < double > > & prim_solution ) {
+void FETISolver::CheckSolution( vector < vector < double > > & prim_solution ) {
     // *** Solutin correctnes test **********************************************************************************************
 
 	//	double max_v = 0.0;
@@ -777,6 +777,6 @@ void LinearSolver::CheckSolution( vector < vector < double > > & prim_solution )
 
 }
 
-void LinearSolver::Preprocessing( std::vector < std::vector < eslocal > > & lambda_map_sub) {
+void FETISolver::Preprocessing( std::vector < std::vector < eslocal > > & lambda_map_sub) {
 
 }

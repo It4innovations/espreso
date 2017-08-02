@@ -14,7 +14,7 @@ public:
 	TransientFirstOrderImplicit(
 			Mesh *mesh,
 			Physics* physics,
-			LinearSolver* linearSolver,
+			FETISolver* linearSolver,
 			output::Store* store,
 			const TransientSolver &configuration,
 			double duration);

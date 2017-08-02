@@ -20,7 +20,7 @@ size_t TransientFirstOrderImplicit::lastStep = -1;
 TransientFirstOrderImplicit::TransientFirstOrderImplicit(
 		Mesh *mesh,
 		Physics* physics,
-		LinearSolver* linearSolver,
+		FETISolver* linearSolver,
 		output::Store* store,
 		const TransientSolver &configuration,
 		double duration)

@@ -8,14 +8,14 @@
 #include "../../basis/utilities/utils.h"
 #include "../../basis/logging/constants.h"
 #include "../../configuration/physics/nonlinearsolver.h"
-#include "../../solver/generic/LinearSolver.h"
+#include "../../solver/generic/FETISolver.h"
 
 using namespace espreso;
 
 NewtonRhapson::NewtonRhapson(
 		Mesh *mesh,
 		Physics* physics,
-		LinearSolver* linearSolver,
+		FETISolver* linearSolver,
 		output::Store* store,
 		const NonLinearSolverBase &configuration,
 		double duration,

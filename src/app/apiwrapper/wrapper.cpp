@@ -15,7 +15,7 @@
 #include "../../input/api/api.h"
 
 #include "../../mesh/structures/mesh.h"
-#include "../../solver/generic/LinearSolver.h"
+#include "../../solver/generic/FETISolver.h"
 
 espreso::Environment espreso::DataHolder::environment;
 std::list<FETI4IStructMatrix*> espreso::DataHolder::matrices;
@@ -230,7 +230,7 @@ void FETI4ICreateInstance(
 
 	DataHolder::instances.back()->instance = new Instance(DataHolder::instances.back()->mesh->parts(), DataHolder::instances.back()->mesh->neighbours());
 	DataHolder::instances.back()->physics = new Precomputed(DataHolder::instances.back()->mesh, DataHolder::instances.back()->instance, (espreso::MatrixType)matrix->type, rhs, size);
-	DataHolder::instances.back()->linearSolver = new LinearSolver(DataHolder::instances.back()->instance, *DataHolder::instances.back()->configuration);
+	DataHolder::instances.back()->linearSolver = new FETISolver(DataHolder::instances.back()->instance, *DataHolder::instances.back()->configuration);
 	DataHolder::instances.back()->solver = new Linear(DataHolder::instances.back()->mesh, DataHolder::instances.back()->physics, DataHolder::instances.back()->linearSolver, DataHolder::instances.back()->store, 1);
 
 	switch (DataHolder::instances.back()->configuration->method) {

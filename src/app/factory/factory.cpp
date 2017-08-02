@@ -16,7 +16,6 @@
 #include "../../assembler/physics/structuralmechanics2d.h"
 #include "../../assembler/physics/structuralmechanics3d.h"
 #include "../../assembler/physics/shallowwater2d.h"
-#include "../../solver/generic/LinearSolver.h"
 #include "../../input/loader.h"
 
 #include "../../configuration/globalconfiguration.h"
@@ -29,6 +28,7 @@
 #include "../../output/resultstore/vtkxmlbinary.h"
 #include "../../output/resultstore/catalyst.h"
 #include "../../output/monitoring/monitoring.h"
+#include "../../solver/generic/FETISolver.h"
 
 namespace espreso {
 
@@ -84,7 +84,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 	if (configuration.physics == PHYSICS::SHALLOW_WATER_2D) {
 		_instances.push_back(new Instance(mesh->parts(), mesh->neighbours()));
 		_physics.push_back(new ShallowWater2D(mesh, _instances.front(), configuration.shallow_water_2D));
-		_linearSolvers.push_back(new LinearSolver(_instances.front(), configuration.shallow_water_2D.espreso));
+		_linearSolvers.push_back(new FETISolver(_instances.front(), configuration.shallow_water_2D.espreso));
 
 		loadSteps.push_back(new Linear(mesh, _physics.front(),  _linearSolvers.front(), store, 1));
 		meshPreprocessing(configuration.output);
@@ -124,7 +124,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 				if (it == ADC.physics_solver.load_steps_settings.end()) {
 					ESINFO(GLOBAL_ERROR) << "Invalid configuration file. Fill LOAD_STEPS_SETTINGS for LOAD_STEP=" << i << ".";
 				}
-				_linearSolvers.push_back(new LinearSolver(_instances.front(), it->second->espreso));
+				_linearSolvers.push_back(new FETISolver(_instances.front(), it->second->espreso));
 
 				LoadStepSettings<AdvectionDiffusionNonLinearConvergence> *loadStepSettings = it->second;
 
@@ -229,7 +229,7 @@ Factory::Factory(const GlobalConfiguration &configuration)
 				if (it == SMC.physics_solver.load_steps_settings.end()) {
 					ESINFO(GLOBAL_ERROR) << "Invalid configuration file. Fill LOAD_STEPS_SETTINGS for LOAD_STEP=" << i << ".";
 				}
-				_linearSolvers.push_back(new LinearSolver(_instances.front(), it->second->espreso));
+				_linearSolvers.push_back(new FETISolver(_instances.front(), it->second->espreso));
 
 				LoadStepSettings<StructuralMechanicsNonLinearConvergence> *loadStepSettings = it->second;
 
@@ -381,7 +381,7 @@ Factory::~Factory()
 	std::for_each(loadSteps.begin(), loadSteps.end(), [] (SolverBase* solver) { delete solver; });
 	std::for_each(_physics.begin(), _physics.end(), [] (Physics* physics) { delete physics; });
 	std::for_each(_instances.begin(), _instances.end(), [] (Instance* instance) { delete instance; });
-	std::for_each(_linearSolvers.begin(), _linearSolvers.end(), [] (LinearSolver* linearSolver) { delete linearSolver; });
+	std::for_each(_linearSolvers.begin(), _linearSolvers.end(), [] (FETISolver* linearSolver) { delete linearSolver; });
 }
 
 void Factory::solve()

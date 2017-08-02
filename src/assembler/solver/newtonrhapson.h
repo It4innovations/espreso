@@ -14,7 +14,7 @@ public:
 	NewtonRhapson(
 			Mesh *mesh,
 			Physics* physics,
-			LinearSolver* linearSolver,
+			FETISolver* linearSolver,
 			output::Store* store,
 			const NonLinearSolverBase &configuration,
 			double duration,
