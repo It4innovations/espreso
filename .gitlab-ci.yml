@@ -105,4 +105,6 @@ GITHUB:
     - if ! git remote | grep release > /dev/null; then
         git remote add release git@github.com:It4innovations/espreso.git;
       fi
+    - git checkout master
+    - git pull origin master
     - git push release master
