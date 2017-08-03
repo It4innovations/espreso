@@ -14,8 +14,8 @@ before_script:
 after_script:
   - ./waf distclean
   - rm -fr libs*
-  - rm espreso
-  - rm decomposer
+  - rm -f espreso
+  - rm -f decomposer
 
 MKL32:
   stage: tests
