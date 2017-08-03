@@ -16,15 +16,15 @@ class ESPRESOInput(unittest.TestCase):
     espreso = Espreso()
 
     def openfoam(self, path, file):
-        config = { "ENV::TESTING_LEVEL": 0, "ENV::VERBOSE_LEVEL": 0, "ENV::MEASURE_LEVEL": 0, "OUTPUT::RESULTS": 0 }
+        config = { "ENV::TESTING_LEVEL": 0, "ENV::VERBOSE_LEVEL": 0, "ENV::MEASURE_LEVEL": 0, "OUTPUT::SOLUTION": 0 }
         self.espreso.run(len(glob.glob(path + "/processor*")), path, config)
 
     def workbench(self, path, file):
-        config = { "ENV::TESTING_LEVEL": 0, "ENV::VERBOSE_LEVEL": 0, "ENV::MEASURE_LEVEL": 0, "OUTPUT::RESULTS": 0 }
+        config = { "ENV::TESTING_LEVEL": 0, "ENV::VERBOSE_LEVEL": 0, "ENV::MEASURE_LEVEL": 0, "OUTPUT::SOLUTION": 0 }
         self.espreso.run(1, path, config)
 
     def espresoBinary(self, path, file):
-        config = { "ENV::TESTING_LEVEL": 0, "ENV::VERBOSE_LEVEL": 0, "ENV::MEASURE_LEVEL": 0, "OUTPUT::RESULTS": 0 }
+        config = { "ENV::TESTING_LEVEL": 0, "ENV::VERBOSE_LEVEL": 0, "ENV::MEASURE_LEVEL": 0, "OUTPUT::SOLUTION": 0 }
         self.espreso.decompose(path)
         for input in glob.glob(path + "/ESDATA_*"):
             self.espreso.run(len(filter(os.path.isdir, glob.glob(input + "/*"))), path, config, [input])

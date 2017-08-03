@@ -11,7 +11,7 @@ struct LameSteklovPoincare3D: public BoundaryBased3D, public StructuralMechanics
 {
 	LameSteklovPoincare3D(Mesh *mesh, Instance *instance, const StructuralMechanics3DConfiguration &configuration);
 
-	void prepareTotalFETI();
+	void prepare();
 	void prepareHybridTotalFETIWithKernels();
 
 	virtual void preprocessData(const Step &step);

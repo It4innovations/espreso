@@ -65,7 +65,7 @@ void ResultStore::prepare()
 std::vector<std::string> ResultStore::store(const std::string &name, const Step &step, const MeshInfo *meshInfo)
 {
 	std::string root;
-	if (_configuration.iterations) {
+	if (_configuration.subsolution) {
 		root = Esutils::createDirectory({ Logging::outputRoot(), "PRE_POST_DATA", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), "iteration" + std::to_string(step.iteration)});
 	} else {
 		root = Esutils::createDirectory({ Logging::outputRoot(), "PRE_POST_DATA", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep) });
@@ -74,7 +74,7 @@ std::vector<std::string> ResultStore::store(const std::string &name, const Step 
 
 	if (meshInfo->distributed()) {
 		std::string prefix;
-		if (_configuration.iterations) {
+		if (_configuration.subsolution) {
 			prefix = Esutils::createDirectory({ Logging::outputRoot(), "PRE_POST_DATA", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), "iteration" + std::to_string(step.iteration), std::to_string(environment->MPIrank) });
 		} else {
 			prefix = Esutils::createDirectory({ Logging::outputRoot(), "PRE_POST_DATA", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), std::to_string(environment->MPIrank) });
@@ -99,6 +99,10 @@ std::vector<std::string> ResultStore::store(const std::string &name, const Step 
 
 void ResultStore::storeSettings(size_t steps)
 {
+	if (!_configuration.settings) {
+		return;
+	}
+
 	prepare();
 	Step step;
 	std::vector<std::string> files;
@@ -129,8 +133,19 @@ void ResultStore::storeSettings(size_t steps)
 	}
 }
 
+void ResultStore::storeSubSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties)
+{
+	if (_configuration.subsolution) {
+		storeSolution(step, solution, properties);
+	}
+}
+
 void ResultStore::storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties)
 {
+	if (!_configuration.solution) {
+		return;
+	}
+
 	prepare();
 
 	_meshInfo->addSolution(solution);
@@ -161,6 +176,9 @@ void ResultStore::finalize()
 
 void ResultStore::storeFETIData(const Step &step, const Instance &instance)
 {
+	if (!_configuration.FETI_data) {
+		return;
+	}
 	if (_meshInfo == NULL) {
 		if (_configuration.collected) {
 			_meshInfo = new CollectedInfo(_mesh, _mode);

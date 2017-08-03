@@ -13,7 +13,7 @@ struct AdvectionDiffusion3D: public AdvectionDiffusion, public Physics3D
 {
 	AdvectionDiffusion3D(Mesh *mesh, Instance *instance, const AdvectionDiffusion3DConfiguration &configuration);
 
-	virtual void prepareTotalFETI();
+	virtual void prepare();
 
 	virtual std::vector<std::pair<ElementType, Property> > propertiesToStore() const;
 

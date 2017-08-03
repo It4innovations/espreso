@@ -146,7 +146,7 @@ public:
 
 			eslocal number_of_subdomains_per_cluster = 0;
 			std::vector<eslocal> domain_list;
-			for (eslocal i = 0; i < instance->clustersMap.size(); i++) {
+			for (size_t i = 0; i < instance->clustersMap.size(); i++) {
 				if (instance->clustersMap[i] == c) {
 					number_of_subdomains_per_cluster++;
 					domain_list.push_back(i);
@@ -176,7 +176,7 @@ public:
 			clusters[c].InitClusterPC(&domain_list[0], number_of_subdomains_per_cluster);
 
 			// Get an original mapping of the subdomains
-			for (int d = 0; d < clusters[c].domains.size(); d++) {
+			for (size_t d = 0; d < clusters[c].domains.size(); d++) {
 				domains[clusters[c].domains[d].domain_global_index] = & clusters[c].domains[d];
 				x_prim_cluster1[clusters[c].domains[d].domain_global_index] = & clusters[c].x_prim_cluster1[d];
 				x_prim_cluster2[clusters[c].domains[d].domain_global_index] = & clusters[c].x_prim_cluster2[d];
@@ -204,7 +204,7 @@ public:
 //			clusters[c].SetClusterHFETI();
 //		}
 
-		for (eslocal c = 0; c < clusters.size(); c++) {
+		for (size_t c = 0; c < clusters.size(); c++) {
 			if (clusters[c].domains.size() == 1) {
 				//ESINFO(ALWAYS) << Info::TextColor::YELLOW
 				std::cout << "Cluster " << clusters[c].cluster_global_index << " on MPI rank " << environment->MPIrank << " has only one domain -> Using TFETI" << std::endl;
@@ -226,12 +226,12 @@ public:
 //	domains[d]->multKplusLocal(*x_in[d]);
 //}
 
-		for (eslocal c = 0; c < clusters.size(); c++) {
+		for (size_t c = 0; c < clusters.size(); c++) {
 			if (clusters[c].domains.size() > 1) clusters[c].CompressB0();
 		}
 		 B0_time.end(); B0_time.printStatMPI(); HFETI_prec_timing.addEvent(B0_time);
 
-		 for (eslocal c = 0; c < clusters.size(); c++) {
+		 for (size_t c = 0; c < clusters.size(); c++) {
 
 			 // *** Alocate temporarly vectors for inter-cluster processing *********************
 			 // *** - based on uncompressed matrix B0
@@ -255,20 +255,20 @@ public:
 
 
 		 TimeEvent G0_time("Create G0 per cluster"); G0_time.start();
-		for (eslocal c = 0; c < clusters.size(); c++) {
+		for (size_t c = 0; c < clusters.size(); c++) {
 			if (clusters[c].domains.size() > 1) clusters[c].CreateG0();
 		}
 		 G0_time.end(); G0_time.printStatMPI(); HFETI_prec_timing.addEvent(G0_time);
 
 
 		 TimeEvent F0_time("Create F0 per cluster"); F0_time.start();
-		for (eslocal c = 0; c < clusters.size(); c++) {
+		for (size_t c = 0; c < clusters.size(); c++) {
 			if (clusters[c].domains.size() > 1) clusters[c].CreateF0();
 		}
 		 F0_time.end(); HFETI_prec_timing.addEvent(F0_time);
 
 		 TimeEvent Sa_time("Create Salfa per cluster"); Sa_time.start();
-		for (eslocal c = 0; c < clusters.size(); c++) {
+		for (size_t c = 0; c < clusters.size(); c++) {
 			if (clusters[c].domains.size() > 1) clusters[c].CreateSa();
 		}
 		 Sa_time.end(); HFETI_prec_timing.addEvent(Sa_time);
@@ -452,7 +452,7 @@ public:
 		vec_b_compressed.resize(dual_size, 0.0);
 
 
-		for (int c = 0; c < numClusters; c++) {
+		for (eslocal c = 0; c < numClusters; c++) {
 			clusters[c].vec_b_compressed.clear();
 			clusters[c].vec_b_compressed.resize(dual_size, 0.0);
 			clusters[c].CreateVec_b_perCluster ( f );
@@ -468,7 +468,7 @@ public:
 		//TODO: Need check
 		vec_lb_out.clear();
 		vec_lb_out.resize(my_lamdas_indices.size(), -std::numeric_limits<double>::infinity());
-		for (int c = 0; c < numClusters; c++) {
+		for (eslocal c = 0; c < numClusters; c++) {
 			clusters[c].CreateVec_lb_perCluster ( vec_lb_out );
 		}
 
@@ -478,7 +478,7 @@ public:
 		//TODO: Need check
 		vec_c_out.clear();
 		vec_c_out.resize(my_lamdas_indices.size(), 0.0);
-		for (int c = 0; c < numClusters; c++) {
+		for (eslocal c = 0; c < numClusters; c++) {
 			clusters[c].CreateVec_c_perCluster ( vec_c_out );
 		}
 	}
@@ -493,9 +493,9 @@ public:
 		SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster;
 		x_prim_cluster.resize(number_of_subdomains_per_supercluster);
 
-		for (int c = 0; c < numClusters; c++) {
+		for (eslocal c = 0; c < numClusters; c++) {
 
-			for (int d = 0; d < clusters[c].domains.size(); d++)
+			for (size_t d = 0; d < clusters[c].domains.size(); d++)
 				x_prim_cluster[d].swap( *x_in[clusters[c].domains[d].domain_global_index] );
 
 			if (clusters[c].USE_HFETI == 1) {
@@ -504,7 +504,7 @@ public:
 				clusters[c].domains[0].multKplusLocal(x_prim_cluster[0]); // FIX for cases where HTFETI cluster has only one subdomain
 			}
 
-			for (int d = 0; d < clusters[c].domains.size(); d++)
+			for (size_t d = 0; d < clusters[c].domains.size(); d++)
 				(*x_in[clusters[c].domains[d].domain_global_index]).swap( x_prim_cluster[d] );
 
 		}
@@ -516,8 +516,8 @@ public:
 		SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster;
 		x_prim_cluster.resize(number_of_subdomains_per_supercluster);
 
-		for (int c = 0; c < numClusters; c++) {
-			for (int d = 0; d < clusters[c].domains.size(); d++)
+		for (eslocal c = 0; c < numClusters; c++) {
+			for (size_t d = 0; d < clusters[c].domains.size(); d++)
 				x_prim_cluster[d].swap( x_in[clusters[c].domains[d].domain_global_index] );
 
 			if (clusters[c].USE_HFETI == 1) {
@@ -526,7 +526,7 @@ public:
 				clusters[c].domains[0].multKplusLocal(x_prim_cluster[0]); // FIX for cases where HTFETI cluster has only one subdomain
 			}
 
-			for (int d = 0; d < clusters[c].domains.size(); d++)
+			for (size_t d = 0; d < clusters[c].domains.size(); d++)
 				x_in[clusters[c].domains[d].domain_global_index].swap ( x_prim_cluster[d] );
 		}
 	}
@@ -536,14 +536,14 @@ public:
 		SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster;
 		x_prim_cluster.resize(number_of_subdomains_per_supercluster);
 
-		for (int c = 0; c < numClusters; c++) {
+		for (eslocal c = 0; c < numClusters; c++) {
 
-			for (int d = 0; d < clusters[c].domains.size(); d++)
+			for (size_t d = 0; d < clusters[c].domains.size(); d++)
 				x_prim_cluster[d].swap( *x_in[clusters[c].domains[d].domain_global_index] );
 
 			clusters[c].multKplusGlobal_Kinv( x_prim_cluster );
 
-			for (int d = 0; d < clusters[c].domains.size(); d++)
+			for (size_t d = 0; d < clusters[c].domains.size(); d++)
 				(*x_in[clusters[c].domains[d].domain_global_index]).swap( x_prim_cluster[d] );
 
 		}
@@ -555,13 +555,13 @@ public:
 		SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster;
 		x_prim_cluster.resize(number_of_subdomains_per_supercluster);
 
-		for (int c = 0; c < numClusters; c++) {
-			for (int d = 0; d < clusters[c].domains.size(); d++)
+		for (eslocal c = 0; c < numClusters; c++) {
+			for (size_t d = 0; d < clusters[c].domains.size(); d++)
 				x_prim_cluster[d].swap( x_in[clusters[c].domains[d].domain_global_index] );
 
 			clusters[c].multKplusGlobal_Kinv( x_prim_cluster );
 
-			for (int d = 0; d < clusters[c].domains.size(); d++)
+			for (size_t d = 0; d < clusters[c].domains.size(); d++)
 				x_in[clusters[c].domains[d].domain_global_index].swap ( x_prim_cluster[d] );
 		}
 	}

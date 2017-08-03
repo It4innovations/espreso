@@ -27,7 +27,7 @@ AdvectionDiffusion3D::AdvectionDiffusion3D(Mesh *mesh, Instance *instance, const
 
 }
 
-void AdvectionDiffusion3D::prepareTotalFETI()
+void AdvectionDiffusion3D::prepare()
 {
 	_mesh->loadProperty(_configuration.translation_motions, { "X", "Y", "Z" }, { Property::TRANSLATION_MOTION_X, Property::TRANSLATION_MOTION_Y, Property::TRANSLATION_MOTION_Z });
 	_mesh->loadMaterials(_configuration.materials, _configuration.material_set);
@@ -35,7 +35,7 @@ void AdvectionDiffusion3D::prepareTotalFETI()
 	_mesh->addPropertyGroup({ Property::FLUX_X, Property::FLUX_Y, Property::FLUX_Z });
 	_mesh->addPropertyGroup({ Property::GRADIENT_X, Property::GRADIENT_Y, Property::GRADIENT_Z });
 
-	AdvectionDiffusion::prepareTotalFETI();
+	AdvectionDiffusion::prepare();
 }
 
 std::vector<std::pair<ElementType, Property> > AdvectionDiffusion3D::propertiesToStore() const
@@ -713,13 +713,13 @@ void AdvectionDiffusion3D::postProcessElement(const Step &step, const Element *e
 		matFlux.multiply(Ce, dND * temp, 1, 1);
 	}
 
-	solution[offset + SolutionIndex::GRADIENT]->innerData()[e->domains().front()].push_back(matGradient(0, 0) / e->gaussePoints());
-	solution[offset + SolutionIndex::GRADIENT]->innerData()[e->domains().front()].push_back(matGradient(1, 0) / e->gaussePoints());
-	solution[offset + SolutionIndex::GRADIENT]->innerData()[e->domains().front()].push_back(matGradient(2, 0) / e->gaussePoints());
+	solution[offset + SolutionIndex::GRADIENT]->data[e->domains().front()].push_back(matGradient(0, 0) / e->gaussePoints());
+	solution[offset + SolutionIndex::GRADIENT]->data[e->domains().front()].push_back(matGradient(1, 0) / e->gaussePoints());
+	solution[offset + SolutionIndex::GRADIENT]->data[e->domains().front()].push_back(matGradient(2, 0) / e->gaussePoints());
 
-	solution[offset + SolutionIndex::FLUX]->innerData()[e->domains().front()].push_back(matFlux(0, 0) / e->gaussePoints());
-	solution[offset + SolutionIndex::FLUX]->innerData()[e->domains().front()].push_back(matFlux(1, 0) / e->gaussePoints());
-	solution[offset + SolutionIndex::FLUX]->innerData()[e->domains().front()].push_back(matFlux(2, 0) / e->gaussePoints());
+	solution[offset + SolutionIndex::FLUX]->data[e->domains().front()].push_back(matFlux(0, 0) / e->gaussePoints());
+	solution[offset + SolutionIndex::FLUX]->data[e->domains().front()].push_back(matFlux(1, 0) / e->gaussePoints());
+	solution[offset + SolutionIndex::FLUX]->data[e->domains().front()].push_back(matFlux(2, 0) / e->gaussePoints());
 }
 
 void AdvectionDiffusion3D::processSolution(const Step &step)
@@ -736,8 +736,8 @@ void AdvectionDiffusion3D::processSolution(const Step &step)
 	}
 
 	for (size_t p = 0; p < _mesh->parts(); p++) {
-		_instance->solutions[offset + SolutionIndex::GRADIENT]->innerData()[p].clear();
-		_instance->solutions[offset + SolutionIndex::FLUX]->innerData()[p].clear();
+		_instance->solutions[offset + SolutionIndex::GRADIENT]->data[p].clear();
+		_instance->solutions[offset + SolutionIndex::FLUX]->data[p].clear();
 	}
 
 	#pragma omp parallel for

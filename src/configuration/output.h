@@ -41,9 +41,9 @@ struct OutputConfiguration: public Configuration {
 	PARAMETER(bool, compression, "Compression - needs VTK library", true);
 	PARAMETER(double, decimation, "Decimation - needs VTK library", 0);
 
-	PARAMETER(bool, results, "Save results", true);
+	PARAMETER(bool, solution, "Save final results", true);
+	PARAMETER(bool, subsolution, "Save all results", false);
 	PARAMETER(bool, settings, "Save also input parameters", false);
-	PARAMETER(bool, iterations, "Save results for all iterations", false);
 	PARAMETER(bool, FETI_data, "Save FETI data (decomposition, fix points, gluing, etc...)", false);
 
 	PARAMETER(bool, catalyst, "Allow live visualization", false);

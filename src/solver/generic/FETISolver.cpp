@@ -99,7 +99,7 @@ void FETISolver::update(Matrices matrices)
 		if (matrices & Matrices::B1duplicity) {
 			// update duplicity vector
 			#pragma omp parallel for
-			for (eslocal d = 0; d < cluster->domains.size(); d++) {
+			for (size_t d = 0; d < cluster->domains.size(); d++) {
 				cluster->domains[d]->B1_scale_vec = instance->B1duplicity[d];
 			}
 		}
@@ -556,7 +556,7 @@ void FETISolver::setup_SetDirichletBoundaryConditions() {
 		 timeSetInitialCondition.start();
 
 		#pragma omp parallel for
-		for (int d = 0; d < cluster->domains.size(); d++) {
+		for (size_t d = 0; d < cluster->domains.size(); d++) {
 			cluster->domains[d]->vec_c  = instance->B1c[d];
 			cluster->domains[d]->vec_lb = instance->LB[d];
 		}

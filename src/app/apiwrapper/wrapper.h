@@ -12,7 +12,9 @@ namespace espreso {
 struct Environment;
 class Instance;
 class Physics;
-class SolverBase;
+class TimeStepSolver;
+class LoadStepSolver;
+class Assembler;
 class APIMesh;
 class OutputConfiguration;
 class ESPRESOSolver;
@@ -43,7 +45,9 @@ struct FETI4IStructInstance {
 	espreso::Physics * physics;
 	espreso::FETISolver *linearSolver;
 	espreso::output::ResultStoreList *store;
-	espreso::SolverBase *solver;
+	espreso::Assembler *assembler;
+	espreso::TimeStepSolver *timeStepSolver;
+	espreso::LoadStepSolver *loadStepSolver;
 
 	espreso::APIMesh *mesh;
 	espreso::OutputConfiguration *output;

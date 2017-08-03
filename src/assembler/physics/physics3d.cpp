@@ -8,22 +8,22 @@ using namespace espreso;
 
 void Physics3D::prepareHybridTotalFETIWithCorners()
 {
-	prepareTotalFETI();
+	prepare();
 	_mesh->computeVolumeCorners(1, true, true, false);
 }
 
 void Physics3D::prepareHybridTotalFETIWithKernels()
 {
-	prepareTotalFETI();
+	prepare();
 	_mesh->computeFacesSharedByDomains();
 }
 
-void Physics3D::assembleB0FromCorners(const Step &step)
+void Physics3D::assembleB0FromCorners()
 {
 	EqualityConstraints::insertCornersGluingToB0(*_instance, _mesh->corners(), _nodesDOFsOffsets);
 }
 
-void Physics3D::assembleB0FromKernels(const Step &step, const std::vector<SparseMatrix> &kernels)
+void Physics3D::assembleB0FromKernels(const std::vector<SparseMatrix> &kernels)
 {
 	EqualityConstraints::insertKernelsGluingToB0(*_instance, _mesh->faces(), _mesh->nodes(), _nodesDOFsOffsets, kernels);
 }

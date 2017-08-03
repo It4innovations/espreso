@@ -37,16 +37,16 @@ LaplaceSteklovPoincare3D::LaplaceSteklovPoincare3D(Mesh *mesh, Instance *instanc
 	}
 }
 
-void LaplaceSteklovPoincare3D::prepareTotalFETI()
+void LaplaceSteklovPoincare3D::prepare()
 {
-	AdvectionDiffusion3D::prepareTotalFETI();
+	AdvectionDiffusion3D::prepare();
 	extractBoundaryNodes();
 }
 
 void LaplaceSteklovPoincare3D::prepareHybridTotalFETIWithKernels()
 {
 	// extraction of boundary nodes compute all faces on domains. Hence, no face computation is needed
-	prepareTotalFETI();
+	prepare();
 }
 
 void LaplaceSteklovPoincare3D::preprocessData(const Step &step)
@@ -56,7 +56,7 @@ void LaplaceSteklovPoincare3D::preprocessData(const Step &step)
 		_instance->solutions.resize(offset + SolutionIndex::SIZE, NULL);
 
 		_instance->solutions[offset + SolutionIndex::TEMPERATURE] = new Solution(*_mesh, "temperature", ElementType::NODES, pointDOFs());
-		computeInitialTemperature(step, _instance->solutions[offset + SolutionIndex::TEMPERATURE]->innerData());
+		computeInitialTemperature(step, _instance->solutions[offset + SolutionIndex::TEMPERATURE]->data);
 	}
 
 	if (BEMOffset == -1) {
@@ -109,9 +109,9 @@ void LaplaceSteklovPoincare3D::processSolution(const Step &step)
 	// TODO: get solution for all nodes from BEM library
 	#pragma omp parallel for
 	for (size_t p = 0; p < _mesh->parts(); p++) {
-		std::fill(_instance->solutions[offset + SolutionIndex::TEMPERATURE]->innerData()[p].begin(), _instance->solutions[offset + SolutionIndex::TEMPERATURE]->innerData()[p].end(), 0);
+		std::fill(_instance->solutions[offset + SolutionIndex::TEMPERATURE]->data[p].begin(), _instance->solutions[offset + SolutionIndex::TEMPERATURE]->data[p].end(), 0);
 		for (size_t i = 0; i < _boundaryIndices[p].size(); i++) {
-			_instance->solutions[offset + SolutionIndex::TEMPERATURE]->innerData()[p][_mesh->coordinates().localIndex(_boundaryIndices[p][i], p)] = _instance->primalSolution[p][i];
+			_instance->solutions[offset + SolutionIndex::TEMPERATURE]->data[p][_mesh->coordinates().localIndex(_boundaryIndices[p][i], p)] = _instance->primalSolution[p][i];
 		}
 	}
 }

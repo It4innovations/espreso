@@ -14,7 +14,7 @@ struct AdvectionDiffusion2D: public AdvectionDiffusion, public Physics2D
 {
 	AdvectionDiffusion2D(Mesh *mesh, Instance *instance, const AdvectionDiffusion2DConfiguration &configuration);
 
-	void prepareTotalFETI();
+	void prepare();
 
 	virtual std::vector<std::pair<ElementType, Property> > propertiesToStore() const;
 

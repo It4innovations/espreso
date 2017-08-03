@@ -48,7 +48,7 @@ bool Precomputed::isMatrixTemperatureDependent(const Step &step) const
 	return false;
 }
 
-void Precomputed::prepareTotalFETI()
+void Precomputed::prepare()
 {
 	_instance->domainDOFCount = dynamic_cast<APIMesh*>(_mesh)->distributeDOFsToDomains(_instance->domainDOFCount);
 	dynamic_cast<APIMesh*>(_mesh)->computeDOFsDOFsCounters();
@@ -56,7 +56,7 @@ void Precomputed::prepareTotalFETI()
 
 void Precomputed::prepareHybridTotalFETIWithKernels()
 {
-	prepareTotalFETI();
+	prepare();
 	dynamic_cast<APIMesh*>(_mesh)->computeFacesSharedByDomains();
 }
 
@@ -109,7 +109,7 @@ void Precomputed::assembleB1(const Step &step, bool withRedundantMultipliers, bo
 	EqualityConstraints::insertElementGluingToB1(*_instance, step, _mesh->neighbours(), _mesh->regions(), dynamic_cast<APIMesh*>(_mesh)->DOFs(), { Property::UNKNOWN }, { 0 }, withRedundantMultipliers, withScaling);
 }
 
-void Precomputed::assembleB0FromKernels(const Step &step, const std::vector<SparseMatrix> &kernels)
+void Precomputed::assembleB0FromKernels(const std::vector<SparseMatrix> &kernels)
 {
 	EqualityConstraints::insertKernelsGluingToB0(*_instance, _mesh->faces(), dynamic_cast<APIMesh*>(_mesh)->DOFs(), { 0 }, kernels, true);
 }
@@ -141,7 +141,7 @@ void Precomputed::prepareHybridTotalFETIWithCorners()
 	ESINFO(ERROR) << "Cannot compute corners. Use HYBRID FETI with kernels.";
 }
 
-void Precomputed::assembleB0FromCorners(const Step &step)
+void Precomputed::assembleB0FromCorners()
 {
 	ESINFO(ERROR) << "Cannot compute corners. Use HYBRID FETI with kernels.";
 }

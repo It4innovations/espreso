@@ -20,19 +20,19 @@ class SuperClusterCPU : public SuperClusterBase
 			USE_FLOAT = true;
 		}
 
-		for (eslocal c = 0; c < clusters.size(); c++) {
+		for (size_t c = 0; c < clusters.size(); c++) {
 			clusters[c].Create_SC_perDomain(USE_FLOAT);
 		}
 	}
 
     void SetupKsolvers () {
-		for (eslocal c = 0; c < clusters.size(); c++) {
+		for (size_t c = 0; c < clusters.size(); c++) {
 			clusters[c].SetupKsolvers();
 		}
 	}
     
     void SetupPreconditioner() {
-		for (eslocal c = 0; c < clusters.size(); c++) {
+		for (size_t c = 0; c < clusters.size(); c++) {
 			clusters[c].SetupPreconditioner();
 		}
 	}

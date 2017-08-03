@@ -72,7 +72,6 @@ std::vector<espreso::Property> Monitoring::getProperties(const std::string &name
 Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
 : Store(output), _mesh(mesh)
 {
-	size_t length = 0;
 	_monitors.reserve(_configuration.monitoring.size());
 	for (auto it = _configuration.monitoring.begin(); it != _configuration.monitoring.end(); ++it) {
 		_monitors.push_back(Monitor());
@@ -85,7 +84,6 @@ Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
 		_monitors.back().statistics = getStatistics(args[0]);
 		_monitors.back().properties = getProperties(args[1]);
 		_monitors.back().printSize = std::max(std::max((size_t)10, it->first.size()), std::max(args[0].size(), args[1].size()) + 2) + 4;
-		length += _monitors.back().printSize;
 	}
 
 	if (environment->MPIrank) {
@@ -130,7 +128,7 @@ Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
 	_os << "\n\n";
 }
 
-void Monitoring::storeSolution(const Step &step, const std::vector<Solution*> &solution)
+void Monitoring::storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties)
 {
 	for (size_t i = 0; i < _monitors.size(); i++) {
 		for (size_t s = 0; s < solution.size(); s++) {

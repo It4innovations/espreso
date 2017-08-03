@@ -24,7 +24,7 @@ StructuralMechanics3D::StructuralMechanics3D(Mesh *mesh, Instance *instance, con
 
 }
 
-void StructuralMechanics3D::prepareTotalFETI()
+void StructuralMechanics3D::prepare()
 {
 	_mesh->loadProperty(_configuration.displacement    , { "X", "Y", "Z" }     , { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y, Property::DISPLACEMENT_Z });
 	_mesh->loadProperty(_configuration.acceleration    , { "X", "Y", "Z" }     , { Property::ACCELERATION_X, Property::ACCELERATION_Y, Property::ACCELERATION_Z });
@@ -39,7 +39,7 @@ void StructuralMechanics3D::prepareTotalFETI()
 		}
 	}
 
-	StructuralMechanics::prepareTotalFETI();
+	StructuralMechanics::prepare();
 }
 
 

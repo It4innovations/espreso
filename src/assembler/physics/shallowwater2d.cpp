@@ -41,7 +41,7 @@ bool ShallowWater2D::isMatrixTemperatureDependent(const Step &step) const
 	return true;
 }
 
-void ShallowWater2D::prepareTotalFETI()
+void ShallowWater2D::prepare()
 {
 	_instance->domainDOFCount = _mesh->assignUniformDOFsIndicesToNodes(_instance->domainDOFCount, pointDOFs(), _nodesDOFsOffsets);
 	_mesh->computeNodesDOFsCounters(pointDOFs());

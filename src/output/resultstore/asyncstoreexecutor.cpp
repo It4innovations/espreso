@@ -12,7 +12,7 @@ using namespace espreso::output;
 
 void AsyncStoreExecutor::execInit(const async::ExecInfo &info, const OutputConfiguration &config)
 {
-	assert(config.results || config.settings);
+	assert(config.solution || config.settings);
 
 	switch (config.format) {
 	case espreso::OUTPUT_FORMAT::VTK_LEGACY:

@@ -24,7 +24,7 @@ StructuralMechanics2D::StructuralMechanics2D(Mesh *mesh, Instance *instance, con
 
 }
 
-void StructuralMechanics2D::prepareTotalFETI()
+void StructuralMechanics2D::prepare()
 {
 	_mesh->loadNodeProperty(_configuration.thickness   , { }              , { Property::THICKNESS });
 	_mesh->loadProperty(_configuration.displacement    , { "X", "Y" }     , { Property::DISPLACEMENT_X, Property::DISPLACEMENT_Y });
@@ -41,7 +41,7 @@ void StructuralMechanics2D::prepareTotalFETI()
 		}
 	}
 
-	StructuralMechanics::prepareTotalFETI();
+	StructuralMechanics::prepare();
 }
 
 

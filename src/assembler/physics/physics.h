@@ -24,18 +24,18 @@ namespace store { class ResultStore; }
 
 enum class REGULARIZATION;
 
+enum class SumOperation {
+	SUM,
+	AVERAGE
+};
+
+enum class SumRestriction {
+	NONE,
+	DIRICHLET,
+	NON_DIRICHLET
+};
+
 struct Physics {
-
-	enum class SumOperation {
-		SUM,
-		AVERAGE
-	};
-
-	enum class SumRestriction {
-		NONE,
-		DIRICHLET,
-		NON_DIRICHLET
-	};
 
 	Physics(const std::string &name, Mesh *mesh, Instance *instance);
 	const std::string& name() const { return _name; }
@@ -43,7 +43,7 @@ struct Physics {
 	virtual std::vector<size_t> solutionsIndicesToStore() const =0;
 	virtual std::vector<std::pair<ElementType, Property> > propertiesToStore() const =0;
 
-	virtual void prepareTotalFETI() =0;
+	virtual void prepare() =0;
 	virtual void prepareHybridTotalFETIWithCorners() =0;
 	virtual void prepareHybridTotalFETIWithKernels() =0;
 
@@ -68,8 +68,8 @@ struct Physics {
 	virtual void analyticRegularization(size_t domain) =0;
 
 	virtual void assembleB1(const Step &step, bool withRedundantMultipliers, bool withScaling);
-	virtual void assembleB0FromCorners(const Step &step) =0;
-	virtual void assembleB0FromKernels(const Step &step, const std::vector<SparseMatrix> &kernels) =0;
+	virtual void assembleB0FromCorners() =0;
+	virtual void assembleB0FromKernels(const std::vector<SparseMatrix> &kernels) =0;
 
 	virtual double sumSquares(const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction = SumRestriction::NONE, size_t loadStep = 0) const;
 

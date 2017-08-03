@@ -9,7 +9,7 @@
 
 using namespace espreso;
 
-Solution::Solution(const Mesh &mesh, const std::string &name, ElementType eType, const std::vector<Property> &properties, const std::vector<std::vector<double> > &data)
+Solution::Solution(const Mesh &mesh, const std::string &name, ElementType eType, const std::vector<Property> &properties, std::vector<std::vector<double> > &data)
 : name(name), eType(eType), properties(properties), data(data), _offset(static_cast<int>(Property::SIZE), -1), _statistic(eType, mesh, data, properties)
 {
 	for (size_t p = 0; p < properties.size(); p++) {
@@ -35,6 +35,13 @@ Solution::Solution(const Mesh &mesh, const std::string &name, ElementType eType,
 		default:
 			ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: invalid solution element type.";
 		}
+	}
+}
+
+void Solution::fill(double value)
+{
+	for (size_t p = 0; p < _data.size(); p++) {
+		std::fill(_data[p].begin(), _data[p].end(), value);
 	}
 }
 

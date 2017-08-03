@@ -11,7 +11,7 @@ struct LaplaceSteklovPoincare3D: public BoundaryBased3D, public AdvectionDiffusi
 {
 	LaplaceSteklovPoincare3D(Mesh *mesh, Instance *instance, const AdvectionDiffusion3DConfiguration &configuration);
 
-	void prepareTotalFETI();
+	void prepare();
 	void prepareHybridTotalFETIWithKernels();
 
 	virtual void preprocessData(const Step &step);

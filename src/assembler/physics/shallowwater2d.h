@@ -20,7 +20,7 @@ struct ShallowWater2D: public Physics2D
 	std::vector<size_t> solutionsIndicesToStore() const { return { 0 }; }
 	std::vector<std::pair<ElementType, Property> > propertiesToStore() const { return {}; }
 
-	void prepareTotalFETI();
+	void prepare();
 
 	void preprocessData(const Step &step);
 	void processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;

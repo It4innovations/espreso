@@ -3,7 +3,9 @@
 #include "../../../libespreso/feti4i.h"
 
 #include "../../assembler/physics/precomputed.h"
-#include "../../assembler/solver/linear.h"
+#include "../../assembler/physicssolver/assembler.h"
+#include "../../assembler/physicssolver/timestep/linear.h"
+#include "../../assembler/physicssolver/loadstep/steadystate.h"
 #include "../../assembler/step.h"
 #include "../../assembler/solution.h"
 
@@ -25,7 +27,7 @@ espreso::TimeEval espreso::DataHolder::timeStatistics("API total time");
 using namespace espreso;
 
 FETI4IStructInstance::FETI4IStructInstance(FETI4IStructMatrix &matrix, eslocal *l2g, size_t size)
-: instance(NULL), physics(NULL), linearSolver(NULL), solver(NULL)
+: instance(NULL), physics(NULL), linearSolver(NULL), assembler(NULL), timeStepSolver(NULL), loadStepSolver(NULL)
 {
 	output = new OutputConfiguration;
 	store = new output::ResultStoreList(*output);
@@ -38,7 +40,9 @@ FETI4IStructInstance::~FETI4IStructInstance()
 	if (instance != NULL) { delete instance; }
 	if (physics != NULL) { delete physics; }
 	if (linearSolver != NULL) { delete linearSolver; }
-	if (solver != NULL) { delete solver; }
+	if (assembler != NULL) { delete assembler; }
+	if (timeStepSolver != NULL) { delete timeStepSolver; }
+	if (loadStepSolver != NULL) { delete loadStepSolver; }
 
 	delete store;
 	delete output;
@@ -231,11 +235,18 @@ void FETI4ICreateInstance(
 	DataHolder::instances.back()->instance = new Instance(DataHolder::instances.back()->mesh->parts(), DataHolder::instances.back()->mesh->neighbours());
 	DataHolder::instances.back()->physics = new Precomputed(DataHolder::instances.back()->mesh, DataHolder::instances.back()->instance, (espreso::MatrixType)matrix->type, rhs, size);
 	DataHolder::instances.back()->linearSolver = new FETISolver(DataHolder::instances.back()->instance, *DataHolder::instances.back()->configuration);
-	DataHolder::instances.back()->solver = new Linear(DataHolder::instances.back()->mesh, DataHolder::instances.back()->physics, DataHolder::instances.back()->linearSolver, DataHolder::instances.back()->store, 1);
+	DataHolder::instances.back()->assembler = new Assembler(
+			*DataHolder::instances.back()->instance,
+			*DataHolder::instances.back()->physics,
+			*DataHolder::instances.back()->mesh,
+			*DataHolder::instances.back()->store,
+			*DataHolder::instances.back()->linearSolver);
+	DataHolder::instances.back()->timeStepSolver = new LinearTimeStep(*DataHolder::instances.back()->assembler);
+	DataHolder::instances.back()->loadStepSolver = new SteadyStateSolver(*DataHolder::instances.back()->timeStepSolver, 1);
 
 	switch (DataHolder::instances.back()->configuration->method) {
 	case ESPRESO_METHOD::TOTAL_FETI:
-		DataHolder::instances.back()->physics->prepareTotalFETI();
+		DataHolder::instances.back()->physics->prepare();
 		break;
 	case ESPRESO_METHOD::HYBRID_FETI:
 		DataHolder::instances.back()->physics->prepareHybridTotalFETIWithKernels();
@@ -256,7 +267,7 @@ void FETI4ISolve(
 
 	Step step;
 	Logging::step = &step;
-	instance->solver->run(step);
+	instance->loadStepSolver->run(step);
 
 	memcpy(solution, instance->instance->solutions[espreso::Precomputed::SolutionIndex::MERGED]->data[0].data(), solution_size * sizeof(double));
 

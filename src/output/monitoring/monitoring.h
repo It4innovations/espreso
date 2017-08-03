@@ -27,17 +27,11 @@ class Monitoring: public Store {
 public:
 	Monitoring(const OutputConfiguration &output, const Mesh *mesh);
 
-	void storeSettings(const Step &step) {};
 	void storeSettings(size_t steps) {};
-	void storeSettings(const std::vector<size_t> &steps) {};
-
 	void storeFETIData(const Step &step, const Instance &instance) {};
+	void storeSubSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties) {};
 
-	void storeSolution(const Step &step, const std::vector<Solution*> &solution);
-	void storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties)
-	{
-		storeSolution(step, solution);
-	}
+	void storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties);
 	void finalize();
 
 	static char delimiter;

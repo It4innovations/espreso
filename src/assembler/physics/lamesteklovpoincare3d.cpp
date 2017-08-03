@@ -34,16 +34,16 @@ LameSteklovPoincare3D::LameSteklovPoincare3D(Mesh *mesh, Instance *instance, con
 #endif
 }
 
-void LameSteklovPoincare3D::prepareTotalFETI()
+void LameSteklovPoincare3D::prepare()
 {
-	StructuralMechanics3D::prepareTotalFETI();
+	StructuralMechanics3D::prepare();
 	extractBoundaryNodes();
 }
 
 void LameSteklovPoincare3D::prepareHybridTotalFETIWithKernels()
 {
 	// extraction of boundary nodes compute all faces on domains. Hence, no face computation is needed
-	prepareTotalFETI();
+	prepare();
 }
 
 void LameSteklovPoincare3D::preprocessData(const Step &step)
@@ -116,10 +116,10 @@ void LameSteklovPoincare3D::processSolution(const Step &step)
 	// TODO: get solution for all nodes from BEM library
 	#pragma omp parallel for
 	for (size_t p = 0; p < _mesh->parts(); p++) {
-		std::fill(_instance->solutions[offset + SolutionIndex::DISPLACEMENT]->innerData()[p].begin(), _instance->solutions[offset + SolutionIndex::DISPLACEMENT]->innerData()[p].end(), 0);
+		std::fill(_instance->solutions[offset + SolutionIndex::DISPLACEMENT]->data[p].begin(), _instance->solutions[offset + SolutionIndex::DISPLACEMENT]->data[p].end(), 0);
 		for (size_t i = 0; i < _boundaryIndices[p].size(); i++) {
 			for (size_t dof = 0; dof < pointDOFs().size(); dof++) {
-				_instance->solutions[offset + SolutionIndex::DISPLACEMENT]->innerData()[p][pointDOFs().size() * _mesh->coordinates().localIndex(_boundaryIndices[p][i], p) + dof] = _instance->primalSolution[p][pointDOFs().size() * i + dof];
+				_instance->solutions[offset + SolutionIndex::DISPLACEMENT]->data[p][pointDOFs().size() * _mesh->coordinates().localIndex(_boundaryIndices[p][i], p) + dof] = _instance->primalSolution[p][pointDOFs().size() * i + dof];
 			}
 		}
 	}

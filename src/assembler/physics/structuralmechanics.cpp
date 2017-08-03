@@ -58,7 +58,7 @@ bool StructuralMechanics::isMatrixTemperatureDependent(const Step &step) const
 	}, step.step);
 }
 
-void StructuralMechanics::prepareTotalFETI()
+void StructuralMechanics::prepare()
 {
 	for (size_t s = 1; s <= _configuration.physics_solver.load_steps; s++) {
 		if (

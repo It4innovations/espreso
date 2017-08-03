@@ -29,6 +29,11 @@ public:
 	void update(Matrices matrices);
 	void solve();
 
+	bool applyB1Scaling() const { return configuration.scaling; }
+	bool applyB1LagrangeRedundancy() const { return configuration.redundant_lagrange; }
+
+	double& precision() { return configuration.epsilon; }
+
 	virtual ~FETISolver();
 
 //	void setup();
@@ -49,7 +54,7 @@ public:
 	void createCMat();
 
 	Instance *instance;
-	const ESPRESOSolver &configuration;
+	ESPRESOSolver configuration;
 
 	TimeEval timeEvalMain;
 

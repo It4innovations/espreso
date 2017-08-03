@@ -41,7 +41,7 @@ void AsyncStore::init(const Mesh *mesh)
 std::vector<std::string> AsyncStore::store(const std::string &name, const Step &step, const MeshInfo *meshInfo)
 {
 	std::string root;
-	if (_configuration.iterations) {
+	if (_configuration.subsolution) {
 		root = Esutils::createDirectory({ Logging::outputRoot(), "PRE_POST_DATA", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), "iteration" + std::to_string(step.iteration)});
 	} else {
 		root = Esutils::createDirectory({ Logging::outputRoot(), "PRE_POST_DATA", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep) });
@@ -50,7 +50,7 @@ std::vector<std::string> AsyncStore::store(const std::string &name, const Step &
 
 	if (meshInfo->distributed()) {
 		std::string prefix;
-		if (_configuration.iterations) {
+		if (_configuration.subsolution) {
 			prefix = Esutils::createDirectory({ Logging::outputRoot(), "PRE_POST_DATA", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), "iteration" + std::to_string(step.iteration), std::to_string(environment->MPIrank) });
 		} else {
 			prefix = Esutils::createDirectory({ Logging::outputRoot(), "PRE_POST_DATA", "step" + std::to_string(step.step), "substep" + std::to_string(step.substep), std::to_string(environment->MPIrank) });

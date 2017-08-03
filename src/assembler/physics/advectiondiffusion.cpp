@@ -69,7 +69,7 @@ bool AdvectionDiffusion::isMatrixTemperatureDependent(const Step &step) const
 	return true;
 }
 
-void AdvectionDiffusion::prepareTotalFETI()
+void AdvectionDiffusion::prepare()
 {
 	for (size_t s = 1; s <= _configuration.physics_solver.load_steps; s++) {
 		if (

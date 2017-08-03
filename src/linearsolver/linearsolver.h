@@ -13,6 +13,11 @@ public:
 	virtual void solve() =0;
 	virtual void finalize() =0;
 
+	virtual bool applyB1Scaling() const { return false; }
+	virtual bool applyB1LagrangeRedundancy() const { return false; }
+
+	virtual double& precision() =0;
+
 	virtual ~LinearSolver() {}
 };
 
