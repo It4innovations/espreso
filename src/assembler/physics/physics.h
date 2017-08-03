@@ -49,10 +49,6 @@ struct Physics {
 
 	virtual void preprocessData(const Step &step) =0;
 
-	virtual void assembleMatrix(const Step &step, Matrices matrices);
-	virtual void assembleMatrix(const Step &step, Matrices matrices, size_t domain);
-	virtual void assembleMatrix(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe);
-
 	virtual void updateMatrix(const Step &step, Matrices matrices, const std::vector<Solution*> &solution);
 	virtual void updateMatrix(const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution);
 	virtual void updateMatrix(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution);
@@ -66,13 +62,6 @@ struct Physics {
 	virtual void processEdge(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const =0;
 	virtual void processNode(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const =0;
 	virtual void processSolution(const Step &step) =0;
-
-	virtual void fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslocal> &DOFs) const;
-	virtual void insertElementToDomain(
-			SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M,
-			const std::vector<eslocal> &DOFs,
-			const DenseMatrix &Ke, const DenseMatrix &Me, const DenseMatrix &Re, const DenseMatrix &fe,
-			const Step &step, size_t domain, bool isBoundaryCondition);
 
 	virtual void makeStiffnessMatricesRegular(REGULARIZATION regularization, size_t scSize);
 	virtual void makeStiffnessMatrixRegular(REGULARIZATION regularization, size_t scSize, size_t domains);
@@ -119,13 +108,19 @@ struct Physics {
 
 	Instance* instance() { return _instance; }
 
-//protected:
+protected:
+	virtual void fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslocal> &DOFs) const;
+	virtual void insertElementToDomain(
+			SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M,
+			const std::vector<eslocal> &DOFs,
+			const DenseMatrix &Ke, const DenseMatrix &Me, const DenseMatrix &Re, const DenseMatrix &fe,
+			const Step &step, size_t domain, bool isBoundaryCondition);
+
+	virtual void assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution);
+
 	std::string _name;
 	Mesh *_mesh;
 	Instance *_instance;
-
-protected:
-	virtual void assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPMatrix<eslocal> &M, const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution);
 
 	std::vector<size_t> _nodesDOFsOffsets;
 	std::vector<size_t> _midNodesDOFsOffsets;

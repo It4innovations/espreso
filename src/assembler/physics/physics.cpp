@@ -28,11 +28,6 @@ Physics::Physics(const std::string &name, Mesh *mesh, Instance *instance)
 
 }
 
-void Physics::assembleMatrix(const Step &step, Matrices matrix)
-{
-	updateMatrix(step, matrix, {});
-}
-
 void Physics::updateMatrix(const Step &step, Matrices matrix, const std::vector<Solution*> &solution)
 {
 	#pragma omp parallel for
@@ -53,11 +48,6 @@ void Physics::updateMatrix(const Step &step, Matrices matrix, const std::vector<
 		ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
 	ESINFO(PROGRESS3);
-}
-
-void Physics::assembleMatrix(const Step &step, Matrices matrices, size_t domain)
-{
-	updateMatrix(step, matrices, domain, {});
 }
 
 void Physics::updateMatrix(const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution)
@@ -128,11 +118,6 @@ void Physics::assembleBoundaryConditions(SparseVVPMatrix<eslocal> &K, SparseVVPM
 		fillDOFsIndices(_mesh->nodes()[_mesh->coordinates().clusterIndex(i, domain)], domain, DOFs);
 		insertElementToDomain(K, M, DOFs, Ke, Me, Re, fe, step, domain, true);
 	}
-}
-
-void Physics::assembleMatrix(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe)
-{
-	updateMatrix(step, matrices, e, Ke, Me, Re, fe, {});
 }
 
 void Physics::updateMatrix(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution)
