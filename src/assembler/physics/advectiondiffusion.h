@@ -13,7 +13,7 @@ struct AdvectionDiffusion: public virtual Physics
 {
 	AdvectionDiffusion(const AdvectionDiffusionConfiguration &configuration);
 
-	virtual std::vector<size_t> solutions() const;
+	virtual std::vector<size_t> solutionsIndicesToStore() const;
 
 	virtual MatrixType getMatrixType(const Step &step, size_t domain) const;
 	virtual bool isMatrixTimeDependent(const Step &step) const;

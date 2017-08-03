@@ -40,8 +40,8 @@ struct Physics {
 	Physics(const std::string &name, Mesh *mesh, Instance *instance);
 	const std::string& name() const { return _name; }
 
-	virtual std::vector<size_t> solutions() const =0;
-	virtual std::vector<std::pair<ElementType, Property> > properties() const =0;
+	virtual std::vector<size_t> solutionsIndicesToStore() const =0;
+	virtual std::vector<std::pair<ElementType, Property> > propertiesToStore() const =0;
 
 	virtual void prepareTotalFETI() =0;
 	virtual void prepareHybridTotalFETIWithCorners() =0;

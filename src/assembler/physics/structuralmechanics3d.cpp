@@ -161,7 +161,7 @@ void StructuralMechanics3D::analyticRegularization(size_t domain)
 	_instance->RegMat[domain].MatScale(_instance->K[domain].getDiagonalMaximum());
 }
 
-std::vector<std::pair<ElementType, Property> > StructuralMechanics3D::properties() const
+std::vector<std::pair<ElementType, Property> > StructuralMechanics3D::propertiesToStore() const
 {
 	return {};
 }

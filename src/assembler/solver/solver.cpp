@@ -88,11 +88,11 @@ void Solver::storeData(const Step &step, std::vector<std::vector<double> > &vect
 void Solver::storeSolution(const Step &step)
 {
 	std::vector<Solution*> solutions;
-	for (size_t i = 0; i < physics->solutions().size(); i++) {
-		solutions.push_back(instance->solutions[physics->solutions()[i]]);
+	for (size_t i = 0; i < physics->solutionsIndicesToStore().size(); i++) {
+		solutions.push_back(instance->solutions[physics->solutionsIndicesToStore()[i]]);
 	}
 
-	_store->storeSolution(step, solutions, physics->properties());
+	_store->storeSolution(step, solutions, physics->propertiesToStore());
 }
 
 void Solver::storeSubSolution(const Step &step)

@@ -23,12 +23,12 @@ Precomputed::Precomputed(Mesh *mesh, Instance *instance, MatrixType type, double
 
 }
 
-std::vector<size_t> Precomputed::solutions() const
+std::vector<size_t> Precomputed::solutionsIndicesToStore() const
 {
 	return { };
 }
 
-std::vector<std::pair<ElementType, Property> > Precomputed::properties() const
+std::vector<std::pair<ElementType, Property> > Precomputed::propertiesToStore() const
 {
 	return { };
 }

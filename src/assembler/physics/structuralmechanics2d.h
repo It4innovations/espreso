@@ -13,7 +13,7 @@ struct StructuralMechanics2D: public StructuralMechanics, public Physics2D
 {
 	StructuralMechanics2D(Mesh *mesh, Instance *instance, const StructuralMechanics2DConfiguration &configuration);
 
-	virtual std::vector<std::pair<ElementType, Property> > properties() const;
+	virtual std::vector<std::pair<ElementType, Property> > propertiesToStore() const;
 
 	void prepareTotalFETI();
 	void analyticRegularization(size_t domain);

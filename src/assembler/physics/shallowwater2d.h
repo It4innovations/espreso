@@ -17,8 +17,8 @@ struct ShallowWater2D: public Physics2D
 	bool isMatrixTimeDependent(const Step &step) const;
 	bool isMatrixTemperatureDependent(const Step &step) const;
 
-	std::vector<size_t> solutions() const { return { 0 }; }
-	std::vector<std::pair<ElementType, Property> > properties() const { return {}; }
+	std::vector<size_t> solutionsIndicesToStore() const { return { 0 }; }
+	std::vector<std::pair<ElementType, Property> > propertiesToStore() const { return {}; }
 
 	void prepareTotalFETI();
 

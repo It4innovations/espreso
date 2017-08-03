@@ -279,7 +279,7 @@ void AdvectionDiffusion::preprocessData(const Step &step)
 	_instance->solutions[offset + SolutionIndex::TEMPERATURE] = new Solution(*_mesh, "temperature", ElementType::NODES, pointDOFs(), _instance->primalSolution);
 }
 
-std::vector<size_t> AdvectionDiffusion::solutions() const
+std::vector<size_t> AdvectionDiffusion::solutionsIndicesToStore() const
 {
 	std::vector<size_t> results = { offset + SolutionIndex::TEMPERATURE };
 	if (_instance->solutions[offset + SolutionIndex::GRADIENT] != NULL) {

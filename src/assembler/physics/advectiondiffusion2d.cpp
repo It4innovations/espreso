@@ -39,7 +39,7 @@ void AdvectionDiffusion2D::prepareTotalFETI()
 	AdvectionDiffusion::prepareTotalFETI();
 }
 
-std::vector<std::pair<ElementType, Property> > AdvectionDiffusion2D::properties() const
+std::vector<std::pair<ElementType, Property> > AdvectionDiffusion2D::propertiesToStore() const
 {
 	for (size_t s = 0; s < _mesh->steps(); s++) {
 		if (

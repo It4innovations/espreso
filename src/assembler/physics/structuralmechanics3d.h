@@ -13,7 +13,7 @@ struct StructuralMechanics3D: public StructuralMechanics, public Physics3D
 {
 	StructuralMechanics3D(Mesh *mesh, Instance *instance, const StructuralMechanics3DConfiguration &configuration);
 
-	virtual std::vector<std::pair<ElementType, Property> > properties() const;
+	virtual std::vector<std::pair<ElementType, Property> > propertiesToStore() const;
 
 	void prepareTotalFETI();
 	void analyticRegularization(size_t domain);

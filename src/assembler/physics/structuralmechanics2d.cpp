@@ -132,7 +132,7 @@ void StructuralMechanics2D::analyticRegularization(size_t domain)
 	_instance->RegMat[domain].MatScale(_instance->K[domain].getDiagonalMaximum());
 }
 
-std::vector<std::pair<ElementType, Property> > StructuralMechanics2D::properties() const
+std::vector<std::pair<ElementType, Property> > StructuralMechanics2D::propertiesToStore() const
 {
 	return {};
 }

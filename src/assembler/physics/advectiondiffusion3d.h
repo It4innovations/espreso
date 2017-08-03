@@ -15,7 +15,7 @@ struct AdvectionDiffusion3D: public AdvectionDiffusion, public Physics3D
 
 	virtual void prepareTotalFETI();
 
-	virtual std::vector<std::pair<ElementType, Property> > properties() const;
+	virtual std::vector<std::pair<ElementType, Property> > propertiesToStore() const;
 
 	virtual void processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
 	virtual void processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
