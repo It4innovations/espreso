@@ -35,6 +35,7 @@ public:
 	virtual ~Mesh();
 
 	virtual void partitiate(size_t parts);
+	virtual void partitiateNoncontinuously(size_t parts, size_t noncontinuousParts);
 	void computeFixPoints(size_t number);
 	void computeVolumeCorners(size_t number, bool onVertices, bool onEdges, bool onFaces);
 	void computePlaneCorners(size_t number, bool onVertices, bool onEdges);

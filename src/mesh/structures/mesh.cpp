@@ -210,6 +210,86 @@ static std::vector<eslocal> continuousReorder(std::vector<Element*> &elements, s
 	return partPtrs;
 }
 
+void Mesh::partitiateNoncontinuously(size_t parts, size_t noncontinuousParts)
+{
+	ESTEST(MANDATORY) << "Number of domains cannot be " << parts << (parts == 0 ? TEST_FAILED : TEST_PASSED);
+	_continuousPartId.clear();
+	_continuousPartId.resize(parts, 0);
+	if (parts == 1 && this->parts() == 1) {
+		_partPtrs = { 0, (eslocal)_elements.size() };
+		mapElementsToDomains();
+	} else {
+		size_t blockSize = _elements.size() / noncontinuousParts;
+		std::vector<eslocal> blocks;
+		for (size_t b = 0; b < noncontinuousParts; b++) {
+			std::vector<eslocal> reorder = continuousReorder(_elements, b * blockSize, b + 1 == noncontinuousParts ? _elements.size() : (b + 1) * blockSize);
+			blocks.insert(blocks.end(), reorder.begin(), reorder.end() - 1);
+		}
+		blocks.push_back(_elements.size());
+		std::vector<eslocal> ePartition;
+		if (blocks.size() == 2) {
+			ePartition = getPartition(0, _elements.size(), parts);
+		} else {
+			ESINFO(ALWAYS) << "NONCONTINUITY" << environment->MPIrank << " (" << blocks.size() - 1 << ").";
+			_continuous = false;
+			_continuousPartId.clear();
+			double averageDomainSize = _elements.size() / (double)parts;
+			std::vector<size_t> bPart(blocks.size() - 1);
+			size_t bParts = 0;
+			for (size_t b = 0; b < blocks.size() - 1; b++) {
+				bPart[b] = std::round((blocks[b + 1] - blocks[b]) / averageDomainSize);
+				bParts += bPart[b];
+			}
+			while (bParts < parts) {
+				(*std::max_element(bPart.begin(), bPart.end()))++;
+				bParts++;
+			}
+			while (bParts > parts) {
+				(*std::max_element(bPart.begin(), bPart.end()))--;
+				bParts--;
+			}
+			for (size_t b = 0; b < bPart.size(); b++) {
+				if (bPart[b] == 0) {
+					bPart[b]++;
+				}
+			}
+			bParts = 0;
+			for (size_t b = 0; b < blocks.size() - 1; b++) {
+				std::vector<eslocal> bPartition = getPartition(blocks[b], blocks[b + 1], bPart[b]);
+				std::for_each(bPartition.begin(), bPartition.end(), [&] (eslocal &e) { e += bParts; });
+				ePartition.insert(ePartition.end(), bPartition.begin(), bPartition.end());
+				bParts += bPart[b];
+				_continuousPartId.insert(_continuousPartId.end(), bPart[b], b);
+			}
+			parts = bParts;
+		};
+
+		_partPtrs = std::vector<eslocal>(parts + 1, 0);
+		for (size_t i = 0; i < _elements.size(); i++) {
+			_elements[i]->domains().clear();
+			_elements[i]->domains().push_back(ePartition[i]);
+			_partPtrs[ePartition[i]]++;
+		}
+
+		std::sort(_elements.begin(), _elements.end(), [] (const Element* e1, const Element* e2) { return e1->domains()[0] < e2->domains()[0]; });
+		ESTEST(MANDATORY) << "subdomain without element" << (std::any_of(_partPtrs.begin(), _partPtrs.end() - 1, [] (eslocal size) { return size == 0; }) ? TEST_FAILED : TEST_PASSED);
+		Esutils::sizesToOffsets(_partPtrs);
+	}
+
+	_DOFtoElement.clear();
+	_fixPoints.clear();
+	_corners.clear();
+	mapFacesToClusters();
+	mapFacesToDomains();
+	mapEdgesToClusters();
+	mapEdgesToDomains();
+	mapNodesToDomains();
+	mapCoordinatesToDomains();
+	if (_properties.size()) {
+		fillDomainsSettings();
+	}
+}
+
 void Mesh::partitiate(size_t parts)
 {
 	ESTEST(MANDATORY) << "Number of domains cannot be " << parts << (parts == 0 ? TEST_FAILED : TEST_PASSED);
@@ -224,7 +304,7 @@ void Mesh::partitiate(size_t parts)
 		if (blocks.size() == 2) {
 			ePartition = getPartition(0, _elements.size(), parts);
 		} else {
-			printf("NONCONTINUITY %d (%ld blocks)\n", environment->MPIrank, blocks.size() - 1);
+			ESINFO(ALWAYS) << "NONCONTINUITY" << environment->MPIrank << " (" << blocks.size() - 1 << ").";
 			_continuous = false;
 			_continuousPartId.clear();
 			double averageDomainSize = _elements.size() / (double)parts;
@@ -303,7 +383,7 @@ void APIMesh::partitiate(size_t parts)
 		if (blocks.size() == 2) {
 			ePartition = getPartition(0, _elements.size(), parts);
 		} else {
-			printf("NONCONTINUITY %d (%ld blocks)\n", environment->MPIrank, blocks.size() - 1);
+			ESINFO(ALWAYS) << "NONCONTINUITY" << environment->MPIrank << " (" << blocks.size() - 1 << ").";
 			_continuous = false;
 			_continuousPartId.clear();
 			double averageDomainSize = _elements.size() / (double)parts;

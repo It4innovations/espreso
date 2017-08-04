@@ -221,7 +221,11 @@ bool Grid::partitiate(const std::vector<Element*> &nodes, std::vector<eslocal> &
 			std::uniform_int_distribution<> dis(0, parts);
 			parts += dis(gen) - parts / 2;
 		}
-		mesh.partitiate(parts);
+		if (_grid.noncontinuous.find(_clusterIndex) != _grid.noncontinuous.end()) {
+			mesh.partitiateNoncontinuously(parts, _grid.noncontinuous.find(_clusterIndex)->second);
+		} else {
+			mesh.partitiate(parts);
+		}
 		return false;
 	}
 }
