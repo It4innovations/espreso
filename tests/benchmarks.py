@@ -18,7 +18,7 @@ class ESPRESOBenchmarks(unittest.TestCase):
         self.espreso.run(
             self.espreso.get_processes(os.path.join(path, file)),
             path,
-            { "c": file, "ENV::TESTING_LEVEL": 0, "ENV::VERBOSE_LEVEL": 0, "ENV::MEASURE_LEVEL": 0, "OUTPUT::RESULTS": 0 }
+            { "config": file, "ENV::TESTING_LEVEL": 0, "ENV::VERBOSE_LEVEL": 0, "ENV::MEASURE_LEVEL": 0, "OUTPUT::RESULTS": 0 }
         )
 
         self.espreso.compare_monitors(
