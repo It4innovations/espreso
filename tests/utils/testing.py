@@ -141,7 +141,7 @@ class EspresoError:
     program = []
 
     def __init__(self, error):
-        raise Exception("{0}\nProgram: {1}".format(error, self.program))
+        raise Exception("{0}\nProgram: {1}".format(error, " ".join(self.program)))
 
 class Espreso:
 
