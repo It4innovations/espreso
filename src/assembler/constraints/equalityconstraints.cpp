@@ -62,7 +62,7 @@ void EqualityConstraints::insertDirichletToB1(const Step &step, bool withRedunda
 					if (!withRedundantMultiplier && _gluedElements[i]->clusters()[0] != environment->MPIrank) {
 						continue;
 					}
-					double value = _gluedElements[i]->getProperty(_gluedDOFs[dof], 0, step.step, step.currentTime, temp, 0);
+					double value = step.internalForceReduction * _gluedElements[i]->getProperty(_gluedDOFs[dof], 0, step.step, step.currentTime, temp, 0);
 					for(size_t d = 0; d < _gluedElements[i]->domains().size(); d++) {
 						if (_gluedElements[i]->DOFIndex(_gluedElements[i]->domains()[d], _gluedDOFsMeshOffsets[dof]) != -1) {
 							dirichlet[_gluedElements[i]->domains()[d]][t].push_back(_gluedElements[i]->DOFIndex(_gluedElements[i]->domains()[d], _gluedDOFsMeshOffsets[dof]) + 1);

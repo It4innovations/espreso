@@ -218,19 +218,6 @@ void Assembler::multiply(std::vector<std::vector<double> > &y, std::vector<Spars
 	});
 }
 
-/// x = a * x
-void Assembler::multiply(std::vector<std::vector<double> > &x, double a, const std::string &description)
-{
-	timeWrapper("compute: " + description, [&] () {
-		#pragma omp parallel for
-		for (size_t d = 0; d < x.size(); d++) {
-			for (size_t i = 0; i < x[d].size(); i++) {
-				x[d][i] *= a;
-			}
-		}
-	});
-}
-
 double Assembler::sumSquares(const Step &step, const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction, const std::string &description)
 {
 	double result;

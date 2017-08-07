@@ -91,7 +91,7 @@ ADVECTION_DIFFUSION_2D {
           SUBSTEPS              3;
           CONVERGENCE_PARAMETERS {
             TEMPERATURE           TRUE;
-            TEMPERATURE_RESIDUAL  1e-3;
+            TEMPERATURE_RESIDUAL  1e-5;
 
             HEAT                 FALSE;
             HEAT_RESIDUAL         1e-3;

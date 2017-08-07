@@ -103,7 +103,6 @@ void NewtonRhapson::solve(Step &step, LoadStepSolver &loadStepSolver)
 		}
 
 		updatedMatrices |= loadStepSolver.reassembleStructuralMatrices(step, Matrices::B1); // TODO: reassemble only B1c
-		_assembler.multiply(_assembler.instance.B1c, step.internalForceReduction, "B1c *= internal force reduction"); // TODO: Assemble B1c directly with internal force reduction
 		_assembler.subtractPrimalSolutionFromDirichlet();
 
 		if (_configuration.adaptive_precision) {
