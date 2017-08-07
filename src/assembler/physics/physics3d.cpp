@@ -18,15 +18,5 @@ void Physics3D::prepareHybridTotalFETIWithKernels()
 	_mesh->computeFacesSharedByDomains();
 }
 
-void Physics3D::assembleB0FromCorners()
-{
-	EqualityConstraints::insertCornersGluingToB0(*_instance, _mesh->corners(), _nodesDOFsOffsets);
-}
-
-void Physics3D::assembleB0FromKernels(const std::vector<SparseMatrix> &kernels)
-{
-	EqualityConstraints::insertKernelsGluingToB0(*_instance, _mesh->faces(), _mesh->nodes(), _nodesDOFsOffsets, kernels);
-}
-
 
 

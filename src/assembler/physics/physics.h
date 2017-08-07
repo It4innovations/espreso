@@ -18,6 +18,7 @@ class DenseMatrix;
 class Element;
 class Mesh;
 class Instance;
+class EqualityConstraints;
 class Solution;
 class SparseMatrix;
 namespace store { class ResultStore; }
@@ -68,12 +69,12 @@ struct Physics {
 	virtual void analyticRegularization(size_t domain) =0;
 
 	virtual void assembleB1(const Step &step, bool withRedundantMultipliers, bool withScaling);
-	virtual void assembleB0FromCorners() =0;
-	virtual void assembleB0FromKernels(const std::vector<SparseMatrix> &kernels) =0;
+	virtual void assembleB0FromCorners();
+	virtual void assembleB0FromKernels(const std::vector<SparseMatrix> &kernels);
 
 	virtual double sumSquares(const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction = SumRestriction::NONE, size_t loadStep = 0) const;
 
-	virtual ~Physics() {}
+	virtual ~Physics();
 
 	virtual const std::vector<Property>& pointDOFs() const =0;
 	virtual const std::vector<Property>& midPointDOFs() const =0;
@@ -106,8 +107,6 @@ struct Physics {
 		return _elementsDOFsOffsets;
 	}
 
-	Instance* instance() { return _instance; }
-
 protected:
 	virtual void fillDOFsIndices(const Element *e, eslocal domain, std::vector<eslocal> &DOFs) const;
 	virtual void insertElementToDomain(
@@ -121,6 +120,7 @@ protected:
 	std::string _name;
 	Mesh *_mesh;
 	Instance *_instance;
+	EqualityConstraints *_equalityConstraints;
 
 	std::vector<size_t> _nodesDOFsOffsets;
 	std::vector<size_t> _midNodesDOFsOffsets;

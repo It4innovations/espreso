@@ -5,6 +5,7 @@
 #include "../step.h"
 #include "../instance.h"
 #include "../solution.h"
+#include "../constraints/equalityconstraints.h"
 
 #include "../../mesh/settings/property.h"
 #include "../../mesh/settings/evaluator.h"
@@ -24,7 +25,7 @@ using namespace espreso;
 AdvectionDiffusion3D::AdvectionDiffusion3D(Mesh *mesh, Instance *instance, const AdvectionDiffusion3DConfiguration &configuration)
 : Physics("ADVECTION DIFFUSION 3D", mesh, instance), AdvectionDiffusion(configuration), _configuration(configuration)
 {
-
+	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, _mesh->nodes(), _mesh->faces(), pointDOFs(), pointDOFsOffsets());
 }
 
 void AdvectionDiffusion3D::prepare()

@@ -23,9 +23,16 @@
 using namespace espreso;
 
 Physics::Physics(const std::string &name, Mesh *mesh, Instance *instance)
-: _name(name), _mesh(mesh), _instance(instance)
+: _name(name), _mesh(mesh), _instance(instance), _equalityConstraints(NULL) // initialized in a particular physics
 {
 
+}
+
+Physics::~Physics()
+{
+	if (_equalityConstraints != NULL) {
+		delete _equalityConstraints;
+	}
 }
 
 void Physics::updateMatrix(const Step &step, Matrices matrix, const std::vector<Solution*> &solution)
@@ -436,8 +443,18 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOpe
 
 void Physics::assembleB1(const Step &step, bool withRedundantMultipliers, bool withScaling)
 {
-	EqualityConstraints::insertDirichletToB1(*_instance, step, _mesh->regions(), _mesh->nodes(), pointDOFs(), _nodesDOFsOffsets, withRedundantMultipliers);
-	EqualityConstraints::insertElementGluingToB1(*_instance, step, _mesh->neighbours(), _mesh->regions(), _mesh->nodes(), pointDOFs(), _nodesDOFsOffsets, withRedundantMultipliers, withScaling);
+	_equalityConstraints->insertDirichletToB1(step, withRedundantMultipliers);
+	_equalityConstraints->insertElementGluingToB1(step, withRedundantMultipliers, withScaling);
+}
+
+void Physics::assembleB0FromCorners()
+{
+	_equalityConstraints->insertCornersGluingToB0();
+}
+
+void Physics::assembleB0FromKernels(const std::vector<SparseMatrix> &kernels)
+{
+	_equalityConstraints->insertKernelsGluingToB0(kernels);
 }
 
 

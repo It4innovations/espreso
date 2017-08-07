@@ -36,8 +36,6 @@ struct StructuralMechanics: public virtual Physics
 		return elementDOFs;
 	}
 
-	virtual ~StructuralMechanics() {}
-
 protected:
 	enum SolutionIndex: size_t {
 		DISPLACEMENT = 0,

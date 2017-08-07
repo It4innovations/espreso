@@ -20,7 +20,7 @@ using namespace espreso;
 Precomputed::Precomputed(Mesh *mesh, Instance *instance, MatrixType type, double *rhs, size_t rhsSize)
 : Physics("API", mesh, instance), _mtype(type), _rhs(rhs), _rhsSize(rhsSize)
 {
-
+	_equalityConstraints = new EqualityConstraints(*_instance, *_mesh, dynamic_cast<APIMesh*>(_mesh)->DOFs(), _mesh->faces(), pointDOFs(), pointDOFsOffsets(), true);
 }
 
 std::vector<size_t> Precomputed::solutionsIndicesToStore() const
@@ -101,17 +101,6 @@ void Precomputed::updateMatrix(const Step &step, Matrices matrices, size_t domai
 			_instance->f[domain][DOFs[i]->DOFIndex(domain, 0)] = _rhs[i] / DOFs[i]->domains().size();
 		}
 	}
-}
-
-void Precomputed::assembleB1(const Step &step, bool withRedundantMultipliers, bool withScaling)
-{
-	EqualityConstraints::insertDirichletToB1(*_instance, step, _mesh->regions(), dynamic_cast<APIMesh*>(_mesh)->DOFs(), { Property::UNKNOWN }, { 0 }, withRedundantMultipliers);
-	EqualityConstraints::insertElementGluingToB1(*_instance, step, _mesh->neighbours(), _mesh->regions(), dynamic_cast<APIMesh*>(_mesh)->DOFs(), { Property::UNKNOWN }, { 0 }, withRedundantMultipliers, withScaling);
-}
-
-void Precomputed::assembleB0FromKernels(const std::vector<SparseMatrix> &kernels)
-{
-	EqualityConstraints::insertKernelsGluingToB0(*_instance, _mesh->faces(), dynamic_cast<APIMesh*>(_mesh)->DOFs(), { 0 }, kernels, true);
 }
 
 void Precomputed::preprocessData(const Step &step)

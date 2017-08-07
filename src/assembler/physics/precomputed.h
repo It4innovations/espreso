@@ -34,9 +34,7 @@ struct Precomputed: public virtual Physics
 	void analyticRegularization(size_t domain);
 
 	void updateMatrix(const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution);
-	void assembleB1(const Step &step, bool withRedundantMultipliers, bool withScaling);
 	void assembleB0FromCorners();
-	void assembleB0FromKernels(const std::vector<SparseMatrix> &kernels);
 
 	void processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;
 	void processFace(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const;

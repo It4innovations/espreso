@@ -9,6 +9,7 @@ namespace espreso {
 
 class Element;
 class Region;
+class Mesh;
 enum class Property;
 class Instance;
 struct Step;
@@ -16,14 +17,31 @@ class SparseMatrix;
 
 struct EqualityConstraints
 {
-	static void insertDirichletToB1(Instance &instance, const Step &step, const std::vector<Region*> &regions, const std::vector<Element*> &nodes, const std::vector<Property> &DOFs, const std::vector<size_t> &DOFsOffsets, bool withRedundantMultiplier);
-	static void insertElementGluingToB1(Instance &instance, const Step &step, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<size_t> &DOFsOffsets, bool withRedundantMultiplier, bool withScaling);
+	EqualityConstraints(
+			Instance &instance,
+			const Mesh &mesh,
+			const std::vector<Element*> &gluedElements,
+			const std::vector<Element*> &gluedInterfaceElements,
+			const std::vector<Property> &gluedDOFs,
+			const std::vector<size_t> &gluedDOFsMeshOffsets,
+			bool interfaceElementContainsGluedDOFs = false);
 
-	static void insertCornersGluingToB0(Instance &instance, const std::vector<Element*> &elements, const std::vector<size_t> &DOFsOffsets);
-	static void insertKernelsGluingToB0(Instance &instance, const std::vector<Element*> &elements, const std::vector<Element*> &DOFsSource, const std::vector<size_t> &DOFsOffsets, const std::vector<SparseMatrix> &kernels, bool getDOFsSourceIndicesFromElement = false);
+	void insertDirichletToB1(const Step &step, bool withRedundantMultiplier);
+	void insertElementGluingToB1(const Step &step, bool withRedundantMultiplier, bool withScaling);
+
+	void insertCornersGluingToB0();
+	void insertKernelsGluingToB0(const std::vector<SparseMatrix> &kernels);
 
 protected:
-	static std::vector<esglobal> computeLambdasID(Instance &instance, const Step &step, const std::vector<int> &neighbours, const std::vector<Region*> &regions, const std::vector<Element*> &elements, const std::vector<Property> &DOFs, const std::vector<size_t> &DOFsOffsets, bool withRedundantMultiplier);
+	std::vector<esglobal> computeLambdasID(const Step &step, bool withRedundantMultiplier);
+
+	Instance &_instance;
+	const Mesh &_mesh;
+	const std::vector<Element*> &_gluedElements;
+	const std::vector<Element*> &_gluedInterfaceElements;
+	const std::vector<Property> &_gluedDOFs;
+	const std::vector<size_t> &_gluedDOFsMeshOffsets;
+	bool _interfaceElementContainsGluedDOFs;
 };
 
 }
