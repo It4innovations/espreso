@@ -27,7 +27,7 @@
 #include "../basis/utilities/utils.h"
 #include "../basis/utilities/communication.h"
 
-using namespace espreso::output;
+using namespace espreso;
 
 ResultStore::ResultStore(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode)
 : Store(output), _mesh(mesh), _meshInfo(NULL)

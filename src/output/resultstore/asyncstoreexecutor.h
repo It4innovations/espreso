@@ -6,7 +6,6 @@
 #include "async/ExecInfo.h"
 
 namespace espreso {
-namespace output {
 
 struct Param
 { };
@@ -32,7 +31,6 @@ private:
 	ResultStore* _store;
 };
 
-}
 }
 
 #endif /* SRC_OUTPUT_RESULTSTORE_ASYNCSTOREEXECUTOR_H_ */

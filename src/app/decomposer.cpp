@@ -20,7 +20,7 @@ int main(int argc, char** argv)
 	while (directoryTree >> parts) {
 		std::stringstream path;
 		path << configuration.decomposer.prefix << parts * environment->MPIsize;
-		output::ESPRESOBinaryFormat::prepareDirectories(path.str(), parts);
+		ESPRESOBinaryFormat::prepareDirectories(path.str(), parts);
 	}
 
 	Mesh mesh;
@@ -37,7 +37,7 @@ int main(int argc, char** argv)
 			sizes[p] = mesh.coordinates().localSize(p);
 		}
 		ESINFO(ALWAYS) << "Nodes in domains: " << Info::averageValues(sizes);
-		output::ESPRESOBinaryFormat::store(mesh, path.str());
+		ESPRESOBinaryFormat::store(mesh, path.str());
 		ESINFO(ALWAYS) << "Mesh partitiated to " << parts * environment->MPIsize << " parts saved";
 	}
 

@@ -12,7 +12,7 @@
 #include "asyncstore.h"
 
 
-using namespace espreso::output;
+using namespace espreso;
 
 void AsyncStore::init(const Mesh *mesh)
 {

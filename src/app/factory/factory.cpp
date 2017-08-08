@@ -29,7 +29,7 @@
 namespace espreso {
 
 Factory::Factory(const GlobalConfiguration &configuration)
-: _mesh(new Mesh()), _storeList(new output::ResultStoreList(configuration.output))
+: _mesh(new Mesh()), _storeList(new ResultStoreList(configuration.output))
 {
 	initAsync(configuration.output);
 
@@ -94,7 +94,7 @@ void Factory::initAsync(const OutputConfiguration &configuration)
 				break;
 			}
 
-			_asyncStore = new output::AsyncStore(configuration, _mesh);
+			_asyncStore = new AsyncStore(configuration, _mesh);
 		}
 	}
 }
@@ -102,7 +102,7 @@ void Factory::initAsync(const OutputConfiguration &configuration)
 void Factory::setOutput(const OutputConfiguration &configuration)
 {
 	if (configuration.catalyst) {
-		_storeList->add(new output::Catalyst(configuration, _mesh));
+		_storeList->add(new Catalyst(configuration, _mesh));
 	}
 	if (configuration.solution || configuration.settings) {
 		if (_asyncStore != NULL) {
@@ -111,13 +111,13 @@ void Factory::setOutput(const OutputConfiguration &configuration)
 		} else {
 			switch (configuration.format) {
 			case OUTPUT_FORMAT::VTK_LEGACY:
-				_storeList->add(new output::VTKLegacy(configuration, _mesh));
+				_storeList->add(new VTKLegacy(configuration, _mesh));
 				break;
 			case OUTPUT_FORMAT::VTK_XML_ASCII:
-				_storeList->add(new output::VTKXMLASCII(configuration, _mesh));
+				_storeList->add(new VTKXMLASCII(configuration, _mesh));
 				break;
 			case OUTPUT_FORMAT::VTK_XML_BINARY:
-				_storeList->add(new output::VTKXMLBinary(configuration, _mesh));
+				_storeList->add(new VTKXMLBinary(configuration, _mesh));
 				break;
 			default:
 				ESINFO(GLOBAL_ERROR) << "ESPRESO internal error: add OUTPUT_FORMAT to factory.";
@@ -125,7 +125,7 @@ void Factory::setOutput(const OutputConfiguration &configuration)
 		}
 	}
 	if (configuration.monitoring.size()) {
-		_storeList->add(new output::Monitoring(configuration, _mesh));
+		_storeList->add(new Monitoring(configuration, _mesh));
 	}
 
 	if (configuration.settings) {

@@ -15,17 +15,16 @@ struct LinearSolver;
 class TimeEval;
 class SparseMatrix;
 class Solution;
+class Store;
 enum Matrices: int;
 enum class ElementType;
 enum class SumOperation;
 enum class SumRestriction;
 
-namespace output { class Store; }
-
 class Assembler {
 
 public:
-	Assembler(Instance &instance, Physics &physics, Mesh &mesh, output::Store &store, LinearSolver &linearSolver);
+	Assembler(Instance &instance, Physics &physics, Mesh &mesh, Store &store, LinearSolver &linearSolver);
 	~Assembler();
 
 	void preprocessData(const Step &step);
@@ -63,7 +62,7 @@ public:
 	Instance &instance;
 	Physics &physics;
 	Mesh &mesh;
-	output::Store &store;
+	Store &store;
 	LinearSolver &linearSolver;
 
 protected:

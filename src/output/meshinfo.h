@@ -18,8 +18,6 @@ struct Step;
 enum class ElementType;
 enum class Property;
 
-namespace output {
-
 class MeshInfo {
 
 	friend class ResultStore;
@@ -96,7 +94,6 @@ inline MeshInfo::InfoMode& operator&=(MeshInfo::InfoMode &m1, const MeshInfo::In
 	return m1;
 }
 
-}
 }
 
 

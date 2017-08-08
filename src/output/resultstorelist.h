@@ -7,7 +7,6 @@
 #include "store.h"
 
 namespace espreso {
-namespace output {
 
 class ResultStoreList: public Store {
 
@@ -46,7 +45,6 @@ protected:
 	std::vector<Store*> _results;
 };
 
-}
 }
 
 #endif /* SRC_OUTPUT_RESULTSTORELIST_H_ */

@@ -9,8 +9,6 @@ namespace espreso {
 
 class Element;
 
-namespace output {
-
 struct CollectedInfo: public MeshInfo {
 
 	CollectedInfo(const Mesh *mesh, InfoMode mode = InfoMode::PREPARE);
@@ -42,7 +40,6 @@ private:
 
 };
 
-}
 }
 
 

@@ -10,7 +10,7 @@
 
 #include "../../configuration/environment.h"
 
-using namespace espreso::output;
+using namespace espreso;
 
 char Monitoring::delimiter = ';';
 

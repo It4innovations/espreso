@@ -9,8 +9,6 @@ namespace espreso {
 
 class Mesh;
 
-namespace output {
-
 class ESPRESOBinaryFormat {
 
 public:
@@ -32,7 +30,6 @@ protected:
 };
 
 
-}
 }
 
 

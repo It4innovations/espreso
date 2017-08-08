@@ -4,7 +4,7 @@
 #include <fstream>
 
 
-using namespace espreso::output;
+using namespace espreso;
 
 VTKXMLASCII::VTKXMLASCII(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode)
 : VTKXML(output, mesh, mode)

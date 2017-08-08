@@ -10,7 +10,7 @@
 
 #include "../vtkxml.h"
 
-using namespace espreso::output;
+using namespace espreso;
 
 VTKXML::VTKXML(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode)
 : ResultStore(output, mesh, mode), _VTKGrid(NULL), _writer(NULL), _os(NULL)

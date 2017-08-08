@@ -8,7 +8,7 @@
 #include "vtkxmlbinary.h"
 #include "../../configuration/output.h"
 
-using namespace espreso::output;
+using namespace espreso;
 
 void AsyncStoreExecutor::execInit(const async::ExecInfo &info, const OutputConfiguration &config)
 {

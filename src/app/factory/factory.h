@@ -14,11 +14,9 @@ class Assembler;
 class TimeStepSolver;
 class LoadStepSolver;
 class Mesh;
-namespace output {
 class Store;
 class AsyncStore;
 class ResultStoreList;
-}
 
 struct GlobalConfiguration;
 struct OutputConfiguration;
@@ -32,7 +30,7 @@ public:
 	void preprocessMesh();
 	virtual size_t loadSteps() const =0;
 
-	virtual LoadStepSolver* getLoadStepSolver(size_t step, Mesh *mesh, output::Store *store) =0;
+	virtual LoadStepSolver* getLoadStepSolver(size_t step, Mesh *mesh, Store *store) =0;
 
 	template<class TLoadStepSettings>
 	const TLoadStepSettings& getLoadStepsSettings(size_t step, const std::map<size_t, TLoadStepSettings*> &setting) const
@@ -74,7 +72,7 @@ protected:
 	FactoryLoader* createFactoryLoader(const GlobalConfiguration &configuration);
 
 	Mesh *_mesh;
-	output::ResultStoreList* _storeList;
+	ResultStoreList* _storeList;
 	FactoryLoader *_loader;
 	std::vector<LoadStepSolver*> _loadSteps;
 
@@ -83,7 +81,7 @@ protected:
 	 * This is a drawback of the ASYNC library but required to get synchronization
 	 * right.
 	 */
-	output::AsyncStore* _asyncStore;
+	AsyncStore* _asyncStore;
 
 	/** The dispatcher for the I/O ranks */
 	async::Dispatcher _dispatcher;

@@ -16,8 +16,6 @@ class Element;
 class Mesh;
 class Region;
 
-namespace output {
-
 struct RegionData;
 
 class ResultStore: public Store {
@@ -64,7 +62,6 @@ private:
 
 };
 
-}
 }
 
 #endif /* SRC_OUTPUT_RESULTSTORE_H_ */

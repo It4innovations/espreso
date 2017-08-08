@@ -9,8 +9,6 @@ namespace espreso {
 
 class Element;
 
-namespace output {
-
 struct DistributedInfo: public MeshInfo {
 
 	DistributedInfo(const Mesh *mesh, double domainShrinkRatio, double clusterShrinkRatio, InfoMode mode = InfoMode::PREPARE);
@@ -47,7 +45,6 @@ private:
 	void prepare(const std::vector<Element*> &region, InfoMode mode);
 };
 
-}
 }
 
 

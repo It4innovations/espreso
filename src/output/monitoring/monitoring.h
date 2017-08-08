@@ -13,8 +13,6 @@ class Region;
 enum class Property;
 enum StatisticalData: int;
 
-namespace output {
-
 struct Monitor {
 	size_t printSize;
 	Region* region;
@@ -47,7 +45,6 @@ private:
 	std::vector<Property> getProperties(const std::string &name);
 };
 
-}
 }
 
 

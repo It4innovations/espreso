@@ -49,7 +49,7 @@ size_t StructuralMechanicsFactory::loadSteps() const
 	return _configuration.physics_solver.load_steps;
 }
 
-LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, Mesh *mesh, output::Store *store)
+LoadStepSolver* StructuralMechanicsFactory::getLoadStepSolver(size_t step, Mesh *mesh, Store *store)
 {
 	const LoadStepSettings<StructuralMechanicsNonLinearConvergence> &settings = getLoadStepsSettings(step, _configuration.physics_solver.load_steps_settings);
 

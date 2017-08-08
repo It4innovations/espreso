@@ -14,8 +14,6 @@ struct OutputConfiguration;
 enum class ElementType;
 enum class Property;
 
-namespace output {
-
 class Store {
 
 public:
@@ -36,7 +34,6 @@ protected:
 	const OutputConfiguration &_configuration;
 };
 
-}
 }
 
 #endif /* SRC_OUTPUT_STORE_H_ */

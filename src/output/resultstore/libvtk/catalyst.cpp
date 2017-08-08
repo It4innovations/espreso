@@ -20,7 +20,7 @@
 #include "vtkIntArray.h"
 #include "vtkStringArray.h"
 
-using namespace espreso::output;
+using namespace espreso;
 
 Catalyst::Catalyst(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode)
 : VTKXMLASCII(output, mesh, mode)

@@ -9,7 +9,7 @@
 #include "../../../assembler/solution.h"
 #include "../../../basis/logging/logging.h"
 
-using namespace espreso::output;
+using namespace espreso;
 
 VTKLegacy::VTKLegacy(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode)
 : ResultStore(output, mesh, mode)
@@ -17,7 +17,7 @@ VTKLegacy::VTKLegacy(const OutputConfiguration &output, const Mesh *mesh, MeshIn
 
 }
 
-static void storeMesh(std::ofstream &os, const espreso::output::RegionData &regionData)
+static void storeMesh(std::ofstream &os, const espreso::RegionData &regionData)
 {
 	os << "# vtk DataFile Version 4.0\n";
 	os << "ESPRESO output\n";

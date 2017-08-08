@@ -51,7 +51,7 @@ size_t AdvectionDiffusionFactory::loadSteps() const
 	return _configuration.physics_solver.load_steps;
 }
 
-LoadStepSolver* AdvectionDiffusionFactory::getLoadStepSolver(size_t step, Mesh *mesh, output::Store *store)
+LoadStepSolver* AdvectionDiffusionFactory::getLoadStepSolver(size_t step, Mesh *mesh, Store *store)
 {
 	const LoadStepSettings<AdvectionDiffusionNonLinearConvergence> &settings = getLoadStepsSettings(step, _configuration.physics_solver.load_steps_settings);
 

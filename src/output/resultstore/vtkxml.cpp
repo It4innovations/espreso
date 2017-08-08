@@ -9,7 +9,7 @@
 #include "../../mesh/structures/elementtypes.h"
 #include "../regiondata.h"
 
-using namespace espreso::output;
+using namespace espreso;
 
 std::string VTKXML::store(const std::string &name, const RegionData &regionData)
 {

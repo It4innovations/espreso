@@ -36,7 +36,7 @@ static std::string mNames(espreso::Matrices matrices, const std::string &prefix 
 	std::string(matrices & espreso::Matrices::dual        ? prefix + "Dual "        : "");
 }
 
-Assembler::Assembler(Instance &instance, Physics &physics, Mesh &mesh, output::Store &store, LinearSolver &linearSolver)
+Assembler::Assembler(Instance &instance, Physics &physics, Mesh &mesh, Store &store, LinearSolver &linearSolver)
 : instance(instance), physics(physics), mesh(mesh), store(store), linearSolver(linearSolver), _timeStatistics(new TimeEval("Physics solver timing"))
 {
 	_timeStatistics->totalTime.startWithBarrier();

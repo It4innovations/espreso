@@ -10,8 +10,6 @@ namespace espreso {
 
 struct Solution;
 
-namespace output {
-
 struct DataArrays {
 	std::map<std::string, std::pair<size_t, std::vector<eslocal>* > > pointDataInteger, elementDataInteger;
 	std::map<std::string, std::pair<size_t, std::vector<double>* > > pointDataDouble, elementDataDouble;
@@ -39,7 +37,6 @@ struct RegionData {
 	void unpack(const char* &data);
 };
 
-}
 }
 
 

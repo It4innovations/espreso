@@ -6,8 +6,6 @@
 
 namespace espreso {
 
-namespace output {
-
 class VTKXMLBinary: public VTKXML {
 
 public:
@@ -26,7 +24,6 @@ protected:
 	virtual void storeCellData(const std::string &name, size_t cells, const std::vector<double> &data);
 };
 
-}
 }
 
 #endif /* SRC_OUTPUT_RESULTSTORE_VTKXMLBINARY_H_ */

@@ -14,7 +14,7 @@
 #include "vtkUnstructuredGrid.h"
 #include "vtkXMLUnstructuredGridWriter.h"
 
-using namespace espreso::output;
+using namespace espreso;
 
 VTKXMLBinary::VTKXMLBinary(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode)
 : VTKXML(output, mesh, mode)

@@ -17,7 +17,7 @@
 
 #include <numeric>
 
-using namespace espreso::output;
+using namespace espreso;
 
 static std::vector<espreso::Point> computeDomainsCenters(const espreso::Mesh *mesh)
 {

@@ -8,7 +8,6 @@ class vtkUnstructuredGrid;
 class vtkXMLWriter;
 
 namespace espreso {
-namespace output {
 
 struct DataArrays;
 
@@ -46,7 +45,6 @@ protected:
 	std::ofstream *_os;
 };
 
-}
 }
 
 

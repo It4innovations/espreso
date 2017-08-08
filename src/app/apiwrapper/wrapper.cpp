@@ -30,7 +30,7 @@ FETI4IStructInstance::FETI4IStructInstance(FETI4IStructMatrix &matrix, eslocal *
 : instance(NULL), physics(NULL), linearSolver(NULL), assembler(NULL), timeStepSolver(NULL), loadStepSolver(NULL)
 {
 	output = new OutputConfiguration;
-	store = new output::ResultStoreList(*output);
+	store = new ResultStoreList(*output);
 	mesh = new APIMesh(l2g, size);
 	configuration = new ESPRESOSolver();
 }

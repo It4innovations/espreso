@@ -11,8 +11,6 @@ namespace espreso {
 
 class Mesh;
 
-namespace output {
-
 class AsyncStore : public ResultStore, private async::Module<AsyncStoreExecutor, OutputConfiguration, Param> {
 
 public:
@@ -49,7 +47,6 @@ private:
 	ResultStore* _headerStore;
 };
 
-}
 }
 
 #endif /* SRC_OUTPUT_RESULTSTORE_ASYNCSTORE_H_ */

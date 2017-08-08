@@ -10,8 +10,6 @@ class vtkFieldData;
 
 namespace espreso {
 
-namespace output {
-
 class Catalyst: public VTKXMLASCII {
 
 public:
@@ -31,7 +29,6 @@ protected:
 	vtkFieldData *_fieldData;
 };
 
-}
 }
 
 

@@ -19,7 +19,7 @@
 
 #include <numeric>
 
-using namespace espreso::output;
+using namespace espreso;
 
 CollectedInfo::CollectedInfo(const Mesh *mesh, InfoMode mode)
 : MeshInfo(mesh, mode)

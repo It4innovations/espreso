@@ -3,7 +3,7 @@
 
 #include "../../../basis/logging/logging.h"
 
-using namespace espreso::output;
+using namespace espreso;
 
 Catalyst::Catalyst(const OutputConfiguration &output, const Mesh *mesh, MeshInfo::InfoMode mode)
 : VTKXMLASCII(output, mesh, mode & ~MeshInfo::PREPARE), _processor(NULL), _dataDescription(NULL), _fieldData(NULL)

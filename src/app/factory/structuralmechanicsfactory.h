@@ -17,7 +17,7 @@ public:
 	StructuralMechanicsFactory(const StructuralMechanics3DConfiguration &configuration, Mesh *mesh);
 
 	size_t loadSteps() const;
-	LoadStepSolver* getLoadStepSolver(size_t step, Mesh *mesh, output::Store *store);
+	LoadStepSolver* getLoadStepSolver(size_t step, Mesh *mesh, Store *store);
 
 protected:
 	const StructuralMechanicsConfiguration &_configuration;

@@ -5,7 +5,6 @@
 #include "../resultstore.h"
 
 namespace espreso {
-namespace output {
 
 class VTKLegacy: public ResultStore {
 
@@ -21,7 +20,6 @@ protected:
 	virtual void linkSteps(const std::string &name, const std::vector<std::pair<Step, std::vector<std::string> > > &steps) {};
 };
 
-}
 }
 
 

@@ -6,7 +6,7 @@
 #include "../assembler/solution.h"
 #include "../mesh/structures/elementtypes.h"
 
-using namespace espreso::output;
+using namespace espreso;
 
 DataArrays::~DataArrays()
 {

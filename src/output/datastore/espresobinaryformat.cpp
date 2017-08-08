@@ -12,7 +12,7 @@
 #include "../../mesh/elements/element.h"
 #include "../../mesh/settings/evaluator.h"
 
-using namespace espreso::output;
+using namespace espreso;
 
 void ESPRESOBinaryFormat::prepareDirectories(const std::string &path, size_t parts)
 {
