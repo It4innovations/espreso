@@ -19,7 +19,7 @@ PseudoTimeStepping::PseudoTimeStepping(TimeStepSolver &timeStepSolver, const Non
 
 Matrices PseudoTimeStepping::updateStructuralMatrices(Step &step, Matrices matrices)
 {
-	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::f | Matrices::R | Matrices::B1);
+	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::f | Matrices::R | Matrices::B1 | Matrices::B1c | Matrices::B1duplicity);
 
 //	TODO: ??
 //	if (step.substep && !_timeDependent) {

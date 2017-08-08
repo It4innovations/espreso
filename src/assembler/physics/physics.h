@@ -68,7 +68,8 @@ struct Physics {
 	virtual void makeStiffnessMatrixRegular(REGULARIZATION regularization, size_t scSize, size_t domains);
 	virtual void analyticRegularization(size_t domain) =0;
 
-	virtual void assembleB1(const Step &step, bool withRedundantMultipliers, bool withScaling);
+	virtual void assembleB1(const Step &step, bool withRedundantMultipliers, bool withGluing, bool withScaling);
+	virtual void updateDirichletInB1(const Step &step, bool withRedundantMultipliers);
 	virtual void assembleB0FromCorners();
 	virtual void assembleB0FromKernels(const std::vector<SparseMatrix> &kernels);
 

@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <cstddef>
+#include <functional>
 
 namespace espreso {
 
@@ -27,12 +28,17 @@ struct EqualityConstraints
 			bool interfaceElementContainsGluedDOFs = false);
 
 	void insertDirichletToB1(const Step &step, bool withRedundantMultiplier);
+	void updateDirichletValuesInB1(const Step &step, bool withRedundantMultiplier);
 	void insertElementGluingToB1(const Step &step, bool withRedundantMultiplier, bool withScaling);
 
 	void insertCornersGluingToB0();
 	void insertKernelsGluingToB0(const std::vector<SparseMatrix> &kernels);
 
 protected:
+	void goThroughDirichlet(
+			size_t threads, const std::vector<size_t> &distribution,
+			const Step &step, bool withRedundantMultiplier,
+			std::function<void(size_t thread, eslocal domain, eslocal DOF, double value)> fnc);
 	std::vector<esglobal> computeLambdasID(const Step &step, bool withRedundantMultiplier);
 
 	Instance &_instance;

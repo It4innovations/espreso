@@ -441,10 +441,17 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOpe
 	return gsum;
 }
 
-void Physics::assembleB1(const Step &step, bool withRedundantMultipliers, bool withScaling)
+void Physics::assembleB1(const Step &step, bool withRedundantMultipliers, bool withGluing, bool withScaling)
 {
 	_equalityConstraints->insertDirichletToB1(step, withRedundantMultipliers);
-	_equalityConstraints->insertElementGluingToB1(step, withRedundantMultipliers, withScaling);
+	if (withGluing) {
+		_equalityConstraints->insertElementGluingToB1(step, withRedundantMultipliers, withScaling);
+	}
+}
+
+void Physics::updateDirichletInB1(const Step &step, bool withRedundantMultipliers)
+{
+	_equalityConstraints->updateDirichletValuesInB1(step, withRedundantMultipliers);
 }
 
 void Physics::assembleB0FromCorners()

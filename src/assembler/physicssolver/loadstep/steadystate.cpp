@@ -17,7 +17,7 @@ SteadyStateSolver::SteadyStateSolver(TimeStepSolver &timeStepSolver, double dura
 
 Matrices SteadyStateSolver::updateStructuralMatrices(Step &step, Matrices matrices)
 {
-	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::f | Matrices::R | Matrices::B1);
+	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::f | Matrices::R | Matrices::B1 | Matrices::B1c | Matrices::B1duplicity);
 
 	return reassembleStructuralMatrices(step, updatedMatrices);
 }

@@ -28,7 +28,6 @@ void NewtonRhapson::solve(Step &step, LoadStepSolver &loadStepSolver)
 	}
 
 	Matrices updatedMatrices;
-	bool updateStructuralMatrices = _configuration.method == NonLinearSolverBase::METHOD::NEWTON_RHAPSON;
 	double &solverPrecision = _assembler.linearSolver.precision();
 	double solverPrecisionError = 1;
 
@@ -54,7 +53,7 @@ void NewtonRhapson::solve(Step &step, LoadStepSolver &loadStepSolver)
 		}
 
 		_solution = _assembler.instance.primalSolution;
-		if (updateStructuralMatrices) {
+		if (_configuration.method == NonLinearSolverBase::METHOD::NEWTON_RHAPSON) {
 			updatedMatrices = loadStepSolver.updateStructuralMatrices(step, Matrices::K | Matrices::M | Matrices::f | Matrices::R);
 		} else {
 			updatedMatrices = loadStepSolver.updateStructuralMatrices(step, Matrices::f | Matrices::R);
@@ -102,8 +101,12 @@ void NewtonRhapson::solve(Step &step, LoadStepSolver &loadStepSolver)
 			}
 		}
 
-		updatedMatrices |= loadStepSolver.reassembleStructuralMatrices(step, Matrices::B1); // TODO: reassemble only B1c
-		_assembler.subtractPrimalSolutionFromDirichlet();
+		if (updatedMatrices & Matrices::K) {
+			updatedMatrices |= loadStepSolver.reassembleStructuralMatrices(step, Matrices::B1c | Matrices::B1duplicity);
+		} else {
+			updatedMatrices |= loadStepSolver.reassembleStructuralMatrices(step, Matrices::B1c);
+		}
+		_assembler.addToDirichletInB1(-1, _assembler.instance.primalSolution);
 
 		if (_configuration.adaptive_precision) {
 			if (step.iteration > 1) {

@@ -21,18 +21,19 @@ using namespace espreso;
 static std::string mNames(espreso::Matrices matrices, const std::string &prefix = "")
 {
 	return
-	std::string(matrices & espreso::Matrices::K      ? prefix + "K "     : "") +
-	std::string(matrices & espreso::Matrices::N      ? prefix + "N1 "    : "") +
-	std::string(matrices & espreso::Matrices::N      ? prefix + "N2 "    : "") +
-	std::string(matrices & espreso::Matrices::N      ? prefix + "RegMat ": "") +
-	std::string(matrices & espreso::Matrices::M      ? prefix + "M "      : "") +
-	std::string(matrices & espreso::Matrices::R      ? prefix + "R "      : "") +
-	std::string(matrices & espreso::Matrices::f      ? prefix + "f "      : "") +
-	std::string(matrices & espreso::Matrices::B0     ? prefix + "B0 "     : "") +
-	std::string(matrices & espreso::Matrices::B1     ? prefix + "B1 "     : "") +
-	std::string(matrices & espreso::Matrices::B1c    ? prefix + "B1c "    : "") +
-	std::string(matrices & espreso::Matrices::primal ? prefix + "Primal " : "") +
-	std::string(matrices & espreso::Matrices::dual   ? prefix + "Dual "   : "");
+	std::string(matrices & espreso::Matrices::K           ? prefix + "K "           : "") +
+	std::string(matrices & espreso::Matrices::N           ? prefix + "N1 "          : "") +
+	std::string(matrices & espreso::Matrices::N           ? prefix + "N2 "          : "") +
+	std::string(matrices & espreso::Matrices::N           ? prefix + "RegMat "      : "") +
+	std::string(matrices & espreso::Matrices::M           ? prefix + "M "           : "") +
+	std::string(matrices & espreso::Matrices::R           ? prefix + "R "           : "") +
+	std::string(matrices & espreso::Matrices::f           ? prefix + "f "           : "") +
+	std::string(matrices & espreso::Matrices::B0          ? prefix + "B0 "          : "") +
+	std::string(matrices & espreso::Matrices::B1          ? prefix + "B1 "          : "") +
+	std::string(matrices & espreso::Matrices::B1c         ? prefix + "B1c "         : "") +
+	std::string(matrices & espreso::Matrices::B1duplicity ? prefix + "B1duplicity " : "") +
+	std::string(matrices & espreso::Matrices::primal      ? prefix + "Primal "      : "") +
+	std::string(matrices & espreso::Matrices::dual        ? prefix + "Dual "        : "");
 }
 
 Assembler::Assembler(Instance &instance, Physics &physics, Mesh &mesh, output::Store &store, LinearSolver &linearSolver)
@@ -60,7 +61,6 @@ void Assembler::updateMatrices(const Step &step, Matrices matrices)
 	}
 
 	Matrices structural = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R);
-	Matrices gluing = matrices & (Matrices::B1);
 
 	if (structural) {
 		timeWrapper("update " + mNames(structural), [&] () {
@@ -68,8 +68,9 @@ void Assembler::updateMatrices(const Step &step, Matrices matrices)
 		});
 	}
 
-	if (gluing) {
-		timeWrapper("update " + mNames(gluing), [&] () {
+	// TODO: create a function to update only B1 duplicity
+	if (matrices & (Matrices::B1 | Matrices::B1duplicity)) {
+		timeWrapper("update " + mNames(Matrices::B1), [&] () {
 			// TODO: create update method
 			instance.B1.clear();
 			instance.B1.resize(instance.domains);
@@ -86,8 +87,14 @@ void Assembler::updateMatrices(const Step &step, Matrices matrices)
 			}
 			instance.block.clear();
 			instance.block.resize(3, 0);
-			physics.assembleB1(step, linearSolver.applyB1LagrangeRedundancy(), linearSolver.applyB1Scaling());
+			physics.assembleB1(step, linearSolver.applyB1LagrangeRedundancy(), linearSolver.glueDomainsByLagrangeMultipliers(), linearSolver.applyB1Scaling());
 
+		});
+	}
+
+	if (matrices & Matrices::B1c) {
+		timeWrapper("update " + mNames(Matrices::B1c), [&] () {
+			physics.updateDirichletInB1(step, linearSolver.applyB1LagrangeRedundancy());
 		});
 	}
 }
@@ -106,7 +113,7 @@ void Assembler::solve(const Step &step, Matrices updatedMatrices)
 	Matrices solverMatrices = Matrices::K | Matrices::M | Matrices::f | Matrices::B1;
 	storeWrapper(mNames(solverMatrices), solverMatrices);
 
-	timeWrapper("update linear solver", [&] () {
+	timeWrapper("update linear solver: " + mNames(updatedMatrices), [&] () {
 		linearSolver.update(updatedMatrices);
 	});
 
@@ -227,7 +234,7 @@ double Assembler::sumSquares(const Step &step, const std::vector<std::vector<dou
 	return result;
 }
 
-void Assembler::subtractPrimalSolutionFromDirichlet()
+void Assembler::addToDirichletInB1(double a, const std::vector<std::vector<double> > &x)
 {
 	timeWrapper("subtract primal solution from dirichlet", [&] () {
 		#pragma omp parallel for
@@ -236,7 +243,7 @@ void Assembler::subtractPrimalSolutionFromDirichlet()
 				if (instance.B1[d].I_row_indices[j] > (eslocal)instance.block[Instance::CONSTRAINT::DIRICHLET]) {
 					break;
 				}
-				instance.B1c[d][j] -= instance.primalSolution[d][instance.B1[d].J_col_indices[j] - 1];
+				instance.B1c[d][j] += a * x[d][instance.B1[d].J_col_indices[j] - 1];
 			}
 		}
 	});

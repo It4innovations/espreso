@@ -56,7 +56,7 @@ public:
 	void multiply(std::vector<std::vector<double> > &y, std::vector<SparseMatrix> &A, std::vector<std::vector<double> > &x, const std::string &description);
 
 	double sumSquares(const Step &step, const std::vector<std::vector<double> > &data, SumOperation operation, SumRestriction restriction, const std::string &description);
-	void subtractPrimalSolutionFromDirichlet();
+	void addToDirichletInB1(double a, const std::vector<std::vector<double> > &x);
 	double maxAbsValue(const std::vector<std::vector<double> > &v, const std::string &description);
 	double lineSearch(const Step &step, const std::vector<std::vector<double> > &U, std::vector<std::vector<double> > &deltaU, std::vector<std::vector<double> > &F_ext);
 

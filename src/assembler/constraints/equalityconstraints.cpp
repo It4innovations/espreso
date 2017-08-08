@@ -40,14 +40,11 @@ EqualityConstraints::EqualityConstraints(
 
 }
 
-void EqualityConstraints::insertDirichletToB1(const Step &step, bool withRedundantMultiplier)
+void EqualityConstraints::goThroughDirichlet(
+		size_t threads, const std::vector<size_t> &distribution,
+		const Step &step, bool withRedundantMultiplier,
+		std::function<void(size_t thread, eslocal domain, eslocal DOF, double value)> addFnc)
 {
-	size_t threads = environment->OMP_NUM_THREADS;
-	std::vector<size_t> distribution = Esutils::getDistribution(threads, _gluedElements.size());
-
-	// part x thread x Dirichlet
-	std::vector<std::vector<std::vector<esglobal> > > dirichlet(_instance.domains, std::vector<std::vector<esglobal> >(threads));
-	std::vector<std::vector<std::vector<double> > > dirichletValues(_instance.domains, std::vector<std::vector<double> >(threads));
 
 	std::vector<std::vector<Region*> > fixedRegions = _mesh.getRegionsWithProperties(step.step, _gluedDOFs);
 
@@ -65,8 +62,7 @@ void EqualityConstraints::insertDirichletToB1(const Step &step, bool withRedunda
 					double value = step.internalForceReduction * _gluedElements[i]->getProperty(_gluedDOFs[dof], 0, step.step, step.currentTime, temp, 0);
 					for(size_t d = 0; d < _gluedElements[i]->domains().size(); d++) {
 						if (_gluedElements[i]->DOFIndex(_gluedElements[i]->domains()[d], _gluedDOFsMeshOffsets[dof]) != -1) {
-							dirichlet[_gluedElements[i]->domains()[d]][t].push_back(_gluedElements[i]->DOFIndex(_gluedElements[i]->domains()[d], _gluedDOFsMeshOffsets[dof]) + 1);
-							dirichletValues[_gluedElements[i]->domains()[d]][t].push_back(value);
+							addFnc(t, _gluedElements[i]->domains()[d], _gluedElements[i]->DOFIndex(_gluedElements[i]->domains()[d], _gluedDOFsMeshOffsets[dof]), value);
 						}
 						if (!withRedundantMultiplier) {
 							break;
@@ -77,7 +73,21 @@ void EqualityConstraints::insertDirichletToB1(const Step &step, bool withRedunda
 
 		}
 	}
+}
 
+void EqualityConstraints::insertDirichletToB1(const Step &step, bool withRedundantMultiplier)
+{
+	size_t threads = environment->OMP_NUM_THREADS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _gluedElements.size());
+
+	// part x thread x Dirichlet
+	std::vector<std::vector<std::vector<esglobal> > > dirichlet(_instance.domains, std::vector<std::vector<esglobal> >(threads));
+	std::vector<std::vector<std::vector<double> > > dirichletValues(_instance.domains, std::vector<std::vector<double> >(threads));
+
+	goThroughDirichlet(threads, distribution, step, withRedundantMultiplier, [&] (size_t thread, eslocal domain, eslocal DOF, double value) {
+		dirichlet[domain][thread].push_back(DOF + 1);
+		dirichletValues[domain][thread].push_back(value);
+	});
 
 	std::vector<size_t> dirichletSizes(_instance.domains);
 	#pragma omp parallel for
@@ -142,6 +152,28 @@ void EqualityConstraints::insertDirichletToB1(const Step &step, bool withRedunda
 	}
 
 	ESINFO(EXHAUSTIVE) << "Lambdas with Dirichlet in B1: " << _instance.B1[0].rows;
+}
+
+void EqualityConstraints::updateDirichletValuesInB1(const Step &step, bool withRedundantMultiplier)
+{
+	size_t threads = environment->OMP_NUM_THREADS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _gluedElements.size());
+
+	// part x thread x Dirichlet
+	std::vector<std::vector<std::vector<double> > > dirichletValues(_instance.domains, std::vector<std::vector<double> >(threads));
+
+	goThroughDirichlet(threads, distribution, step, withRedundantMultiplier, [&] (size_t thread, eslocal domain, eslocal DOF, double value) {
+		dirichletValues[domain][thread].push_back(value);
+	});
+
+	#pragma omp parallel for
+	for (size_t d = 0; d < _instance.domains; d++) {
+		size_t offset = 0;
+		for (size_t t = 0; t < threads; t++) {
+			std::copy(dirichletValues[d][t].begin(), dirichletValues[d][t].end(), _instance.B1c[d].begin() + offset);
+			offset += dirichletValues[d][t].size();
+		}
+	}
 }
 
 std::vector<esglobal> EqualityConstraints::computeLambdasID(const Step &step, bool withRedundantMultiplier)

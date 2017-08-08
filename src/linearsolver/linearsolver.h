@@ -13,8 +13,9 @@ public:
 	virtual void solve() =0;
 	virtual void finalize() =0;
 
-	virtual bool applyB1Scaling() const { return false; }
-	virtual bool applyB1LagrangeRedundancy() const { return false; }
+	virtual bool glueDomainsByLagrangeMultipliers() const =0;
+	virtual bool applyB1Scaling() const =0;
+	virtual bool applyB1LagrangeRedundancy() const =0;
 
 	virtual double& precision() =0;
 
