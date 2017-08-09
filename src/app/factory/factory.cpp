@@ -29,7 +29,7 @@
 namespace espreso {
 
 Factory::Factory(const GlobalConfiguration &configuration)
-: _mesh(new Mesh()), _storeList(new ResultStoreList(configuration.output))
+: _mesh(new Mesh()), _storeList(new ResultStoreList(configuration.output)), _loader(NULL)
 {
 	initAsync(configuration.output);
 
@@ -233,9 +233,9 @@ void Factory::finalize()
 
 Factory::~Factory()
 {
-	delete _mesh;
-	delete _loader;
-	delete _storeList;
+	if (_mesh != NULL) { delete _mesh; };
+	if (_loader != NULL) { delete _loader; };
+	if (_storeList != NULL) { delete _storeList; };
 }
 
 void FactoryLoader::printError(const std::string &error) const
