@@ -212,7 +212,7 @@ struct mapToConfiguration: public Configuration {
 		Tparameter param;
 		ValueHolder<Tparameter> pholder(parameter, "", param, param, "");
 		if (!pholder.set(parameter)) {
-			ESINFO(GLOBAL_ERROR) << "Invalid object type of object '" << name << "'";
+			ESINFO(GLOBAL_ERROR) << "CONFIGURATION '" << Parser::uppercase(name) << "' cannot parse parameter '" << parameter << "'.";
 		}
 
 		if (map->find(param) == map->end()) {
@@ -273,7 +273,7 @@ struct mapToMapToConfiguration: public Configuration {
 		Tparameter1 param;
 		ValueHolder<Tparameter1> pholder(parameter, "", param, param, "");
 		if (!pholder.set(parameter)) {
-			ESINFO(GLOBAL_ERROR) << "Invalid object type of object '" << name << "'";
+			ESINFO(GLOBAL_ERROR) << "CONFIGURATION '" << Parser::uppercase(name) << "' cannot parse parameter '" << parameter << "'.";
 		}
 
 		if (submap.find(param) == submap.end()) {
@@ -463,7 +463,7 @@ struct mapToMapToBaseType: public Configuration {
 		Tparameter1 param;
 		ValueHolder<Tparameter1> pholder(parameter, "", param, param, "");
 		if (!pholder.set(parameter)) {
-			ESINFO(GLOBAL_ERROR) << "Invalid object type of object '" << name << "'";
+			ESINFO(GLOBAL_ERROR) << "CONFIGURATION '" << Parser::uppercase(name) << "' cannot parse parameter '" << parameter << "'.";
 		}
 
 		if (submap.find(param) == submap.end()) {

@@ -3,6 +3,12 @@
 
 using namespace espreso;
 
+std::string Parser::uppercase(const std::string &str) {
+	std::string upper = str;
+	for (auto & c: upper) { c = toupper(c); }
+	return upper;
+};
+
 std::string Parser::strip(const std::string &line)
 {
 	std::string result(line);

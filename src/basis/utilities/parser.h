@@ -99,6 +99,8 @@ public:
 	static std::string getValue(const std::string &line, const std::string &separator = "=");
 	static bool contains(const std::string &line, const std::string &separator);
 
+	static std::string uppercase(const std::string &str);
+
 	static std::string strip(const std::string &line);
 	static std::vector<std::string> split(const std::string &line, const std::string &separator);
 };

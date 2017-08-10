@@ -33,12 +33,6 @@ static std::string spaces(size_t size) {
 	return _indent.str();
 };
 
-static std::string uppercase(const std::string &str) {
-	std::string upper = str;
-	for (auto & c: upper) { c = toupper(c); }
-	return upper;
-};
-
 void Reader::_read(
 		Configuration &configuration,
 		int* argc,
@@ -59,10 +53,10 @@ void Reader::_read(
 		for (auto it = conf.parameters.begin(); it != conf.parameters.end(); ++it) {
 			std::string prefix;
 			std::for_each(path.begin(), path.end(), [&] (const std::string &p) { prefix += p + "::"; });
-			parameters.push_back(std::make_pair(prefix + uppercase(it->first), it->second));
+			parameters.push_back(std::make_pair(prefix + Parser::uppercase(it->first), it->second));
 		}
 		for (auto it = conf.subconfigurations.begin(); it != conf.subconfigurations.end(); ++it) {
-			path.push_back(uppercase(it->first));
+			path.push_back(Parser::uppercase(it->first));
 			recurse(*it->second, path);
 			path.pop_back();
 		}
@@ -395,11 +389,11 @@ static void printConfiguration(const Configuration &configuration, size_t indent
 {
 	for (size_t i = 0; i < configuration.orderedParameters.size(); i++) {
 		Parameter *parameter = configuration.orderedParameters[i];
-		ESINFO(ALWAYS) << spaces(indent) << uppercase(parameter->name) << " = " << parameter->get();
+		ESINFO(ALWAYS) << spaces(indent) << Parser::uppercase(parameter->name) << " = " << parameter->get();
 	}
 
 	for (size_t i = 0; i < configuration.orderedSubconfiguration.size(); i++) {
-		ESINFO(ALWAYS) << spaces(indent) << uppercase(configuration.orderedSubconfiguration[i]->name) << " {";
+		ESINFO(ALWAYS) << spaces(indent) << Parser::uppercase(configuration.orderedSubconfiguration[i]->name) << " {";
 		printConfiguration(*configuration.orderedSubconfiguration[i], indent + 2);
 		ESINFO(ALWAYS) << spaces(indent) << "}";
 	}
@@ -453,7 +447,7 @@ static void storeConfiguration(std::ofstream &os, const Configuration &configura
 	for (size_t i = 0; i < configuration.storeParameters().size(); i++) {
 		Parameter *parameter = configuration.storeParameters()[i];
 		os << "\n" << spaces(indent) << "# " << parameter->description << " [" << parameter->allowedValue << "]\n";
-		os << spaces(indent) << uppercase(parameter->name) << " " << parameter->get() << ";\n";
+		os << spaces(indent) << Parser::uppercase(parameter->name) << " " << parameter->get() << ";\n";
 	}
 
 	for (size_t i = 0; i < configuration.storeConfigurations().size(); i++) {
@@ -463,7 +457,7 @@ static void storeConfiguration(std::ofstream &os, const Configuration &configura
 			return sm.size();
 		})) {
 
-			os << "\n" << spaces(indent) << uppercase(configuration.storeConfigurations()[i]->name) << " { ";
+			os << "\n" << spaces(indent) << Parser::uppercase(configuration.storeConfigurations()[i]->name) << " { ";
 			os << "# " << configuration.storeConfigurations()[i]->description << "\n";
 			std::vector<std::regex> all = { std::regex(".*") };
 			storeConfiguration(os, *configuration.storeConfigurations()[i], indent + 2, all);
