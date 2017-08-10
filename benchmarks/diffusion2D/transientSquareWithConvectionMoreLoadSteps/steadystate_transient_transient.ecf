@@ -1,0 +1,196 @@
+|*****************************************************************************|
+|-----------------------------------------------------------------------------|
+|                                      |                                      |
+|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
+|                                      |   http://espreso.it4i.cz             |
+|-----------------------------------------------------------------------------|
+|  Case Description: Heat transfer in simple wall - constant temperature      |
+|                                                                             |
+|-----------------------------------------------------------------------------|
+|*****************************************************************************|
+
+INPUT GENERATOR;
+PHYSICS ADVECTION_DIFFUSION_2D;
+
+DEFAULT_ARGS {
+  0   2;
+  1   2;
+
+  2   3;
+  3   2;
+
+  4  20;
+  5  30;
+}
+
+GENERATOR {
+
+  SHAPE GRID;
+
+  GRID {
+    UNIFORM_DECOMPOSITION 0;
+
+    ELEMENT_TYPE   square4;
+
+    LENGTH_X            1;
+    LENGTH_Y            1;
+    LENGTH_Z            1;
+
+    BLOCKS_X            1;
+    BLOCKS_Y            1;
+    BLOCKS_Z            1;
+
+    CLUSTERS_X     [ARG0];
+    CLUSTERS_Y     [ARG1];
+    CLUSTERS_Z          1;
+
+    DOMAINS_X      [ARG2];
+    DOMAINS_Y      [ARG3];
+    DOMAINS_Z           1;
+
+    ELEMENTS_X     [ARG4];
+    ELEMENTS_Y     [ARG5];
+    ELEMENTS_Z          1;
+
+    NODES {
+        TOP    "<0, 1> <1 ,1> <0, 0>";
+        BOTTOM "<0, 1> <0 ,0> <0, 0>";
+    }
+
+    EDGES {
+        LEFT   "<0, 0> <0, 1> <0, 0>";
+        RIGHT  "<1, 1> <0, 1> <0, 0>";
+    }
+  }
+}
+
+ADVECTION_DIFFUSION_2D {
+
+  POST_PROCESS 1;
+
+  PHYSICS_SOLVER {
+    LOAD_STEPS          3;
+
+    LOAD_STEPS_SETTINGS {
+      1 {
+        TYPE              STEADY_STATE;
+        MODE                    LINEAR;
+        DURATION_TIME                1;
+
+        SOLVER_LIBRARY         ESPRESO;
+        ESPRESO {
+          METHOD           HYBRID_FETI;
+          SOLVER                   PCG;
+          PRECONDITIONER     DIRICHLET;
+          REGULARIZATION   NULL_PIVOTS;
+          EPSILON                 1e-8;
+          ITERATIONS               100;
+        }
+      }
+
+      2 {
+        TYPE                 TRANSIENT;
+        MODE                    LINEAR;
+        DURATION_TIME              0.1;
+
+        SOLVER_LIBRARY         ESPRESO;
+        ESPRESO {
+          METHOD            TOTAL_FETI;
+          SOLVER                   PCG;
+          PRECONDITIONER     DIRICHLET;
+          EPSILON                 1e-8;
+          ITERATIONS               100;
+        }
+
+        TRANSIENT_SOLVER {
+          METHOD        CRANK_NICOLSON;
+          TIME_STEP              0.005;
+        }
+      }
+
+      3 {
+        TYPE                 TRANSIENT;
+        MODE                    LINEAR;
+        DURATION_TIME              0.1;
+        
+        SOLVER_LIBRARY         ESPRESO;
+        ESPRESO {
+          METHOD            TOTAL_FETI;
+          SOLVER                   PCG;
+          PRECONDITIONER     DIRICHLET;
+          EPSILON                 1e-8;
+          ITERATIONS               100;
+        }
+
+        TRANSIENT_SOLVER {
+          METHOD        CRANK_NICOLSON;
+          TIME_STEP              0.005;
+        } 
+      }
+    }
+  }
+
+
+  INITIAL_TEMPERATURE {
+    ALL_ELEMENTS  293.15;   // [K]
+  }
+
+  TEMPERATURE {
+    1 {
+      TOP    530;
+      BOTTOM 293.15; 
+    }
+
+    2 {
+      TOP    530;
+      BOTTOM 293.15; 
+    }
+
+    3 {
+      TOP    530;
+      BOTTOM 293.15; 
+    }
+  }
+
+  CONVECTION {
+    2 {
+      RIGHT {
+        TYPE                       USER;
+        HEAT_TRANSFER_COEFFICIENT    12;  
+        EXTERNAL_TEMPERATURE       1200;     // Ambient temperature [K]
+      }
+    }
+
+    3 {
+      LEFT {
+        TYPE                       USER;
+        HEAT_TRANSFER_COEFFICIENT    12;
+        EXTERNAL_TEMPERATURE       1200;     // Ambient temperature [K]
+      }
+    }
+  }
+
+
+  MATERIALS {
+    MAT_01 {
+      MODEL    ISOTROPIC;
+      KXX      2;   // [W m-1 K-1]
+      DENSITY  1;   // [kg/m3]
+      CP       1;   // [J/(kg . K)]
+    }
+  }
+
+  MATERIAL_SET{ 
+    ALL_ELEMENTS MAT_01;
+  }
+
+}
+
+OUTPUT {
+  MONITORING {
+    ALL_NODES MAX TEMPERATURE;
+    ALL_NODES MIN TEMPERATURE;
+    ALL_NODES AVG TEMPERATURE;
+  }
+}
+
