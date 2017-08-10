@@ -20,6 +20,11 @@ std::string LoadStepSolver::description() const
 	return _description;
 }
 
+double LoadStepSolver::duration() const
+{
+	return _duration;
+}
+
 void LoadStepSolver::initLoadStep(Step &step)
 {
 	if (step.step == 0) {

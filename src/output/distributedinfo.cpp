@@ -277,7 +277,7 @@ void DistributedInfo::addGeneralInfo()
 	}
 }
 
-void DistributedInfo::addSettings(size_t step)
+void DistributedInfo::addSettings(const Step &step)
 {
 	const Region *region = _region;
 	if (region == NULL) {
@@ -317,13 +317,13 @@ void DistributedInfo::addSettings(size_t step)
 		}
 	}
 
-	if (region->settings.size() <= step) {
+	if (region->settings.size() <= step.step) {
 		return;
 	}
 
 	double value;
 
-	for (auto it = region->settings[step].begin(); it != region->settings[step].end(); ++it) {
+	for (auto it = region->settings[step.step].begin(); it != region->settings[step.step].end(); ++it) {
 		const std::vector<Property> &pGroup = _mesh->propertyGroup(it->first);
 		if (pGroup.front() != it->first) {
 			continue;
@@ -350,7 +350,7 @@ void DistributedInfo::addSettings(size_t step)
 			for (auto p = pGroup.begin(); p != pGroup.end(); ++p) {
 				value = 0;
 				for (size_t n = 0; n < region->elements()[e]->nodes(); n++) {
-					value += region->elements()[e]->sumProperty(*p, n, step, 0, 0, 0);
+					value += region->elements()[e]->sumProperty(*p, n, step.step, step.currentTime, 0, 0);
 				}
 				value /= region->elements()[e]->nodes();
 

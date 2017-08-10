@@ -16,9 +16,9 @@ public:
 
 	void add(Store *rs) { _results.push_back(rs); }
 
-	virtual void storeSettings(size_t steps)
+	virtual void storeSettings(const Step &step)
 	{
-		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeSettings(steps); } );
+		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeSettings(step); } );
 	}
 
 	virtual void storeFETIData(const Step &step, const Instance &instance)

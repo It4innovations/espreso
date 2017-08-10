@@ -282,7 +282,7 @@ void CollectedInfo::addGeneralInfo()
 
 }
 
-void CollectedInfo::addSettings(size_t step)
+void CollectedInfo::addSettings(const Step &step)
 {
 	size_t materials = _mode & InfoMode::SEPARATE_MATERIALS ? _mesh->materials().size() : 1;
 
@@ -325,11 +325,11 @@ void CollectedInfo::addSettings(size_t step)
 		_regions[r].data.elementDataInteger["body"] = std::make_pair(1, values);
 	}
 
-	if (region->settings.size() <= step) {
+	if (region->settings.size() <= step.step) {
 		return;
 	}
 
-	for (auto it = region->settings[step].begin(); it != region->settings[step].end(); ++it) {
+	for (auto it = region->settings[step.step].begin(); it != region->settings[step.step].end(); ++it) {
 		const std::vector<Property> &pGroup = _mesh->propertyGroup(it->first);
 		if (pGroup.front() != it->first) {
 			continue;
@@ -349,7 +349,7 @@ void CollectedInfo::addSettings(size_t step)
 			for (auto p = pGroup.begin(); p != pGroup.end(); ++p) {
 				sValues[regionOffset].push_back(0);
 				for (size_t n = 0; n < region->elements()[e]->nodes(); n++) {
-					sValues[regionOffset].back() += region->elements()[e]->sumProperty(*p, n, step, 0, 0, 0);
+					sValues[regionOffset].back() += region->elements()[e]->sumProperty(*p, n, step.step, step.currentTime, 0, 0);
 				}
 				sValues[regionOffset].back() /= region->elements()[e]->nodes();
 			}

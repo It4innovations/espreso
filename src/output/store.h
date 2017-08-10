@@ -19,7 +19,7 @@ class Store {
 public:
 	const OutputConfiguration& configuration() const { return _configuration; }
 
-	virtual void storeSettings(size_t steps) =0;
+	virtual void storeSettings(const Step &step) =0;
 	virtual void storeFETIData(const Step &step, const Instance &instance) =0;
 	virtual void storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties) =0;
 	virtual void storeSubSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties) =0;

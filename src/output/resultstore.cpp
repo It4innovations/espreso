@@ -97,38 +97,29 @@ std::vector<std::string> ResultStore::store(const std::string &name, const Step 
 	return files;
 }
 
-void ResultStore::storeSettings(size_t steps)
+void ResultStore::storeSettings(const Step &step)
 {
 	if (!_configuration.settings) {
 		return;
 	}
 
 	prepare();
-	Step step;
 	std::vector<std::string> files;
 
-	for (size_t i = 0; i < steps; i++) {
-		step.step = i;
-		step.currentTime = i;
-
-		_meshInfo->addSettings(i);
-		files = store("mesh", step, _meshInfo);
-		_meshInfo->clearData();
-		_settings.push_back(std::make_pair(step, files));
-	}
+	_meshInfo->addSettings(step);
+	files = store("mesh", step, _meshInfo);
+	_meshInfo->clearData();
+	_settings.push_back(std::make_pair(step, files));
 
 	MeshInfo *region;
 	for (size_t r = 2; r < _mesh->regions().size(); r++) {
 		region = _meshInfo->deriveRegion(_mesh->regions()[r]);
-		for (size_t i = 0; i < steps; i++) {
-			step.step = i;
-			step.currentTime = i;
 
-			region->addSettings(i);
-			files = store(_mesh->regions()[r]->name, step, region);
-			region->clearData();
-			_settings.push_back(std::make_pair(step, files));
-		}
+		region->addSettings(step);
+		files = store(_mesh->regions()[r]->name, step, region);
+		region->clearData();
+		_settings.push_back(std::make_pair(step, files));
+
 		delete region;
 	}
 }

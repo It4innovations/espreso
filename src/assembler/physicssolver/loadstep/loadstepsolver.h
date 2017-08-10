@@ -23,6 +23,7 @@ public:
 	void run(Step &step);
 
 	std::string description() const;
+	double duration() const;
 
 protected:
 	virtual Matrices updateStructuralMatrices(Step &step, Matrices matrices) =0;
