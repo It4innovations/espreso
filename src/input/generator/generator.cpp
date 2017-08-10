@@ -9,6 +9,8 @@
 
 using namespace espreso::input;
 
+double Generator::precision = 1e-4;
+
 void Generator::generate(const ESPRESOGenerator &configuration, Mesh &mesh, size_t index, size_t size)
 {
 	switch (configuration.shape) {

@@ -3,6 +3,7 @@
 
 #include "../../../mesh/structures/region.h"
 #include "../../../basis/utilities/utils.h"
+#include "../generator.h"
 
 #include <numeric>
 
@@ -20,7 +21,10 @@ void Block<TElement>::points(std::vector<Point> &points)
 	for (size_t z = 0; z < nodes.z; z++) {
 		for (size_t y = 0; y < nodes.y; y++) {
 			for (size_t x = 0; x < nodes.x; x++) {
-				p = { block.start.x + x * step.x, block.start.y + y * step.y, block.start.z + z * step.z };
+				p = {
+						Generator::precision * (block.start.x + x * step.x),
+						Generator::precision * (block.start.y + y * step.y),
+						Generator::precision * (block.start.z + z * step.z)};
 				points.push_back(Point(block.projection.x(p), block.projection.y(p), block.projection.z(p), block.rotation.x(p), block.rotation.y(p), block.rotation.z(p)));
 			}
 		}
@@ -316,83 +320,104 @@ void Block<TElement>::pickElements(const std::vector<Element*> &elements, Region
 template <class TElement>
 void Block<TElement>::region(const std::vector<Element*> &elements, Region *region, const BlockBorder &border, size_t dimension)
 {
-	if (!border.intersect(block)) {
+	BlockBorder intersection = border.intersect(block);
+	if (intersection.dimension() > 3) {
 		return;
 	}
-	BlockBorder bborder = border;
-	if (bborder.start.x < block.start.x) { bborder.start.x = block.start.x; bborder.excludeStart.x = false; }
-	if (bborder.start.y < block.start.y) { bborder.start.y = block.start.y; bborder.excludeStart.y = false; }
-	if (bborder.start.z < block.start.z) { bborder.start.z = block.start.z; bborder.excludeStart.z = false; }
-	if (bborder.end.x > block.end.x) { bborder.end.x = block.end.x; bborder.excludeEnd.x = false; }
-	if (bborder.end.y > block.end.y) { bborder.end.y = block.end.y; bborder.excludeEnd.y = false; }
-	if (bborder.end.z > block.end.z) { bborder.end.z = block.end.z; bborder.excludeEnd.z = false; }
 
-	Triple<size_t> cnodes = block.domains * block.elements * (Triple<size_t>(TElement::subnodes) - 1) + 1;
-	Triple<double> step = (block.end - block.start) / cnodes.steps();
-	Triple<size_t> elems = block.domains * block.elements;
-	Triple<double> estep = (block.end - block.start) / Triple<double>(elems.x, elems.y, elems.z);
+	Triple<size_t> beginElement, endElement = block.domains * block.elements;
+	Triple<size_t> minNode, maxNode = block.domains * block.elements * (Triple<size_t>(TElement::subnodes) - 1);
+	Triple<size_t> lastNode = maxNode;
 
-	Triple<double> offsetMin = (bborder.start - block.start) / step;
-	Triple<double> offsetMax = (bborder.end - block.start) / step;
-	Triple<size_t> start = ((bborder.start - block.start) / estep).floor();
-	Triple<size_t> end = ((bborder.end - block.start) / estep).ceil();
+	// project intersection to interval <0, 1>
+	Triple<double> istart = (Triple<double>)(intersection.start - block.start) / (block.end - block.start);
+	Triple<double> iend   = (Triple<double>)(intersection.end - block.start) / (block.end - block.start);
 
-	if (offsetMin.x == std::round(offsetMin.x)) { offsetMin.x = std::round(offsetMin.x) + (bborder.excludeStart.x ? 1 : 0); }
-	if (offsetMin.y == std::round(offsetMin.y)) { offsetMin.y = std::round(offsetMin.y) + (bborder.excludeStart.y ? 1 : 0); }
-	if (offsetMin.z == std::round(offsetMin.z)) { offsetMin.z = std::round(offsetMin.z) + (bborder.excludeStart.z ? 1 : 0); }
+	// get start, end node
+	Triple<double> nStart = istart * (maxNode - minNode);
+	Triple<double> nEnd   = iend   * (maxNode - minNode);
+	// shrink interval to the closest nodes
+	minNode = nStart.ceil();
+	maxNode = nEnd.floor();
 
-	if (offsetMax.x == std::round(offsetMax.x)) { offsetMax.x = std::round(offsetMax.x) - (bborder.excludeEnd.x ? 1 : 0); }
-	if (offsetMax.y == std::round(offsetMax.y)) { offsetMax.y = std::round(offsetMax.y) - (bborder.excludeEnd.y ? 1 : 0); }
-	if (offsetMax.z == std::round(offsetMax.z)) { offsetMax.z = std::round(offsetMax.z) - (bborder.excludeEnd.z ? 1 : 0); }
+	// If interval is open, checks whether min, max node should be modev
+	Triple<double> cStart = nStart.ceil();
+	Triple<double> fEnd   = nEnd.floor();
+	nStart = (nStart / Generator::precision).ceil();
+	nEnd   = (nEnd   / Generator::precision).floor();
 
-	Triple<size_t> minOffset = offsetMin.ceil();
-	Triple<size_t> maxOffset = offsetMax.floor();
+	if (intersection.excludeStart.x && cStart.x / Generator::precision == nStart.x) { minNode.x++; }
+	if (intersection.excludeStart.y && cStart.y / Generator::precision == nStart.y) { minNode.y++; }
+	if (intersection.excludeStart.z && cStart.z / Generator::precision == nStart.z) { minNode.z++; }
+	if (intersection.excludeEnd.x && fEnd.x / Generator::precision == nEnd.x) { maxNode.x--; }
+	if (intersection.excludeEnd.y && fEnd.y / Generator::precision == nEnd.y) { maxNode.y--; }
+	if (intersection.excludeEnd.z && fEnd.z / Generator::precision == nEnd.z) { maxNode.z--; }
 
-	switch (bborder.dimension()) {
+	// No matter what above happen, neighbor nodes have to match! Check it again
+	if (intersection.start.x == block.start.x) { minNode.x = intersection.excludeStart.x ? 1 : 0; }
+	if (intersection.start.y == block.start.y) { minNode.y = intersection.excludeStart.y ? 1 : 0; }
+	if (intersection.start.z == block.start.z) { minNode.z = intersection.excludeStart.z ? 1 : 0; }
+	if (intersection.end.x == block.end.x) { maxNode.x = intersection.excludeEnd.x ? lastNode.x - 1 : lastNode.x; }
+	if (intersection.end.y == block.end.y) { maxNode.y = intersection.excludeEnd.y ? lastNode.y - 1 : lastNode.y; }
+	if (intersection.end.z == block.end.z) { maxNode.z = intersection.excludeEnd.z ? lastNode.z - 1 : lastNode.z; }
+
+	Triple<size_t> enodes = Triple<size_t>(TElement::subnodes);
+	if (enodes.z == 1) { enodes.z++; }
+
+	// Add only elements that have included more that one node
+	beginElement = minNode / (enodes - 1);
+	endElement = ((Triple<double>)(maxNode) / (enodes - 1)).ceil();
+
+	// There is still change to miss all nodes by interval.
+	if (minNode.x > maxNode.x) { return; }
+	if (minNode.y > maxNode.y) { return; }
+	if (minNode.z > maxNode.z) { return; }
+
+	switch (intersection.dimension()) {
 
 	case 0:   // Point
 	case 1: { // Line
 
-		CubeEdge edge = bborder.getEdge(block);
+		CubeEdge edge = intersection.getEdge(block);
 		switch (dimension) {
 		case 0:
-			forEachElement(start, end,
+			forEachElement(beginElement, endElement,
 			[&] (std::vector<eslocal> &indices) {
 				TElement::pickNodes(elements, region->elements(), indices.data(), edge);
 			},
 			[&] (Triple<size_t> &offset) {
-				offset.x = offset.x < minOffset.x ? minOffset.x : maxOffset.x < offset.x ? maxOffset.x : offset.x;
-				offset.y = offset.y < minOffset.y ? minOffset.y : maxOffset.y < offset.y ? maxOffset.y : offset.y;
-				offset.z = offset.z < minOffset.z ? minOffset.z : maxOffset.z < offset.z ? maxOffset.z : offset.z;
+				offset.x = offset.x < minNode.x ? minNode.x : maxNode.x < offset.x ? maxNode.x : offset.x;
+				offset.y = offset.y < minNode.y ? minNode.y : maxNode.y < offset.y ? maxNode.y : offset.y;
+				offset.z = offset.z < minNode.z ? minNode.z : maxNode.z < offset.z ? maxNode.z : offset.z;
 			});
 			std::sort(region->elements().begin(), region->elements().end());
 			Esutils::removeDuplicity(region->elements());
 			break;
 		case 1:
-			forEachElement(start, end,
+			forEachElement(beginElement, endElement,
 			[&] (std::vector<eslocal> &indices) {
 				TElement::addEdges(region->elements(), indices.data(), edge);
 			});
 			break;
 		default:
-			if (border.dimension() == bborder.dimension()) {
+			if (border.dimension() == intersection.dimension()) {
 				ESINFO(ERROR) << "Cannot select element of dimension " << dimension << " on 1D line.";
 			}
 		}
 	} break;
 
 	case 2: { // Face
-		CubeFace face = bborder.getFace(block);
+		CubeFace face = intersection.getFace(block);
 		switch (dimension) {
 		case 0:
-			forEachElement(start, end,
+			forEachElement(beginElement, endElement,
 			[&] (std::vector<eslocal> &indices) {
 				TElement::pickNodes(elements, region->elements(), indices.data(), face);
 			},
 			[&] (Triple<size_t> &offset) {
-				offset.x = offset.x < minOffset.x ? minOffset.x : maxOffset.x < offset.x ? maxOffset.x : offset.x;
-				offset.y = offset.y < minOffset.y ? minOffset.y : maxOffset.y < offset.y ? maxOffset.y : offset.y;
-				offset.z = offset.z < minOffset.z ? minOffset.z : maxOffset.z < offset.z ? maxOffset.z : offset.z;
+				offset.x = offset.x < minNode.x ? minNode.x : maxNode.x < offset.x ? maxNode.x : offset.x;
+				offset.y = offset.y < minNode.y ? minNode.y : maxNode.y < offset.y ? maxNode.y : offset.y;
+				offset.z = offset.z < minNode.z ? minNode.z : maxNode.z < offset.z ? maxNode.z : offset.z;
 			});
 			std::sort(region->elements().begin(), region->elements().end());
 			Esutils::removeDuplicity(region->elements());
@@ -401,13 +426,13 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region *regi
 			ESINFO(ERROR) << "Implement selection of edges on face";
 			break;
 		case 2:
-			forEachElement(start, end,
+			forEachElement(beginElement, endElement,
 			[&] (std::vector<eslocal> &indices) {
 				TElement::addFaces(region->elements(), indices.data(), face);
 			});
 			break;
 		case 3:
-			pickElements(elements, region, bborder);
+			pickElements(elements, region, intersection);
 			break;
 		default:
 			ESINFO(ERROR) << "Cannot select element of dimension " << dimension << " on 2D plane.";
@@ -423,7 +448,7 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region *regi
 			ESINFO(ERROR) << "Cannot select the interval.";
 			break;
 		case 3:
-			pickElements(elements, region, bborder);
+			pickElements(elements, region, intersection);
 			break;
 		}
 	} break;

@@ -6,6 +6,7 @@
 #include "../../../configuration/environment.h"
 #include "../../../configuration/input/inputgeneratorgrid.h"
 #include "../primitives/block.h"
+#include "../generator.h"
 #include "../../../mesh/structures/region.h"
 #include "../../../mesh/structures/mesh.h"
 #include "../../../mesh/structures/elementtypes.h"
@@ -48,8 +49,11 @@ GridSettings::GridSettings(const GridConfiguration &configuration)
 	domains  = Triple<size_t>(configuration.domains_x, configuration.domains_y, configuration.domains_z);
 	elements = Triple<size_t>(configuration.elements_x, configuration.elements_y, configuration.elements_z);
 
-	start = Triple<double>(configuration.start_x, configuration.start_y, configuration.start_z);
-	end   = Triple<double>(configuration.start_x + configuration.length_x, configuration.start_y + configuration.length_y, configuration.start_z + configuration.length_z);
+	start = Triple<esglobal>(configuration.start_x / Generator::precision, configuration.start_y / Generator::precision, configuration.start_z / Generator::precision);
+	end   = Triple<esglobal>(
+			(configuration.start_x + configuration.length_x) / Generator::precision,
+			(configuration.start_y + configuration.length_y) / Generator::precision,
+			(configuration.start_z + configuration.length_z) / Generator::precision);
 
 	for (auto it = configuration.blocks.begin(); it != configuration.blocks.end(); ++it) {
 		if (it->first >= nonempty.size()) {
@@ -93,69 +97,69 @@ Grid::Grid(const GridConfiguration &configuration, Mesh &mesh, size_t index, siz
 					BlockSetting block;
 					block.domains  = _settings.domains;
 					block.elements = _settings.elements;
-					block.start = _settings.start + (_settings.end - _settings.start) / _settings.clusters * offset;
-					block.end   = _settings.start + (_settings.end - _settings.start) / _settings.clusters * (offset + 1);
+					block.start = _settings.start + ((_settings.end - _settings.start) / (Triple<double>)_settings.clusters * offset).round();
+					block.end   = _settings.start + ((_settings.end - _settings.start) / (Triple<double>)_settings.clusters * (offset + 1)).round();
 					block.projection = _settings.projection;
 					block.rotation = _settings.rotation;
 					switch (_settings.etype) {
 					case ELEMENT_TYPE::HEXA8:
-						_block = new Block<Hexahedron8>(mesh, block);
+						_block = new Block<Hexahedron8>(block);
 						_subnodes = Hexahedron8::subnodes;
 						element = "hexahedrons";
 						break;
 					case ELEMENT_TYPE::HEXA20:
-						_block = new Block<Hexahedron20>(mesh, block);
+						_block = new Block<Hexahedron20>(block);
 						_subnodes = Hexahedron20::subnodes;
 						element = "hexahedrons with midnodes";
 						break;
 					case ELEMENT_TYPE::TETRA4:
-						_block = new Block<Tetrahedron4>(mesh, block);
+						_block = new Block<Tetrahedron4>(block);
 						_subnodes = Tetrahedron4::subnodes;
 						element = "tetrahedrons";
 						break;
 					case ELEMENT_TYPE::TETRA10:
-						_block = new Block<Tetrahedron10>(mesh, block);
+						_block = new Block<Tetrahedron10>(block);
 						_subnodes = Tetrahedron10::subnodes;
 						element = "tetrahedrons with midnodes";
 						break;
 					case ELEMENT_TYPE::PRISMA6:
-						_block = new Block<Prisma6>(mesh, block);
+						_block = new Block<Prisma6>(block);
 						_subnodes = Prisma6::subnodes;
 						element = "prismas";
 						break;
 					case ELEMENT_TYPE::PRISMA15:
-						_block = new Block<Prisma15>(mesh, block);
+						_block = new Block<Prisma15>(block);
 						_subnodes = Prisma15::subnodes;
 						element = "prismas with midnodes";
 						break;
 					case ELEMENT_TYPE::PYRAMID5:
-						_block = new Block<Pyramid5>(mesh, block);
+						_block = new Block<Pyramid5>(block);
 						_subnodes = Pyramid5::subnodes;
 						element = "pyramids";
 						break;
 					case ELEMENT_TYPE::PYRAMID13:
-						_block = new Block<Pyramid13>(mesh, block);
+						_block = new Block<Pyramid13>(block);
 						_subnodes = Pyramid13::subnodes;
 						element = "pyramids with midnodes";
 						break;
 
 					case ELEMENT_TYPE::SQUARE4:
-						_block = new Block<Square4>(mesh, block);
+						_block = new Block<Square4>(block);
 						_subnodes = Square4::subnodes;
 						element = "squares";
 						break;
 					case ELEMENT_TYPE::SQUARE8:
-						_block = new Block<Square8>(mesh, block);
+						_block = new Block<Square8>(block);
 						_subnodes = Square8::subnodes;
 						element = "squares with midnodes";
 						break;
 					case ELEMENT_TYPE::TRIANGLE3:
-						_block = new Block<Triangle3>(mesh, block);
+						_block = new Block<Triangle3>(block);
 						_subnodes = Triangle3::subnodes;
 						element = "triangles";
 						break;
 					case ELEMENT_TYPE::TRIANGLE6:
-						_block = new Block<Triangle6>(mesh, block);
+						_block = new Block<Triangle6>(block);
 						_subnodes = Triangle6::subnodes;
 						element = "triangles with midnodes";
 						break;

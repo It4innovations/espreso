@@ -23,7 +23,7 @@ struct GridSettings {
 
 	ELEMENT_TYPE etype;
 
-	Triple<double> start, end;
+	Triple<esglobal> start, end;
 	Triple<size_t> blocks, clusters, domains, elements;
 	Triple<Expression> projection, rotation;
 

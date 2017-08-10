@@ -24,6 +24,9 @@ struct Triple {
 	Triple(const Triple<TOther> &p): x(p.x), y(p.y), z(p.z) {};
 
 	template <typename TOther>
+	operator Triple<TOther>() { return Triple<TOther>(x, y, z); }
+
+	template <typename TOther>
 	Triple<Ttype> operator+(TOther v) const { return Triple<Ttype>(x + v, y + v, z + v); }
 
 	template <typename TOther>
@@ -43,6 +46,8 @@ struct Triple {
 
 	template <typename TOther>
 	Triple<Ttype> operator*(const Triple<TOther> &p) const { return Triple<Ttype>(x * p.x, y * p.y, z * p.z); }
+
+	Triple<double> operator/(const Triple<double> &p) const { return Triple<double>(x / p.x, y / p.y, z / p.z); }
 
 	template <typename TOther>
 	Triple<Ttype> operator/(const Triple<TOther> &p) const { return Triple<Ttype>(x / p.x, y / p.y, z / p.z); }

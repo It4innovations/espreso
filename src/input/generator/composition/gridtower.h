@@ -39,7 +39,7 @@ protected:
 	size_t _clusterIndexEnd;
 	size_t _gridIndex;
 	size_t _gridPointsIDOffset;
-	Triple<double> _gridPointsOffset;
+	Triple<esglobal> _gridPointsOffset;
 
 	size_t _index;
 	size_t _size;

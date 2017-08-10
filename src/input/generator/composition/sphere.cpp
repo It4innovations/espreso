@@ -4,6 +4,7 @@
 
 #include "../../../configuration/input/inputgeneratorsphere.h"
 #include "../primitives/block.h"
+#include "../generator.h"
 #include "../../../mesh/structures/region.h"
 #include "../../../mesh/structures/mesh.h"
 #include "../../../mesh/structures/elementtypes.h"
@@ -63,8 +64,8 @@ Sphere::Sphere(const SphereConfiguration &configuration, Mesh &mesh, size_t inde
 	_col = ((_index % (_settings.clusters * _settings.clusters)) / _settings.clusters);
 	_layer = _index / (6 * _settings.clusters * _settings.clusters);
 
-	block.start = Triple<double>( _row      / (double)_settings.clusters,  _col      / (double)_settings.clusters,  _layer      / (double)_settings.layers);
-	block.end   = Triple<double>((_row + 1) / (double)_settings.clusters, (_col + 1) / (double)_settings.clusters, (_layer + 1) / (double)_settings.layers);
+	block.start = Triple<esglobal>( _row      / _settings.clusters / Generator::precision,  _col      / _settings.clusters / Generator::precision,  _layer      / _settings.layers / Generator::precision);
+	block.end   = Triple<esglobal>((_row + 1) / _settings.clusters / Generator::precision, (_col + 1) / _settings.clusters / Generator::precision, (_layer + 1) / _settings.layers / Generator::precision);
 
 	switch ((index / (_settings.clusters * _settings.clusters)) % 6) {
 	case 0:
@@ -115,42 +116,42 @@ Sphere::Sphere(const SphereConfiguration &configuration, Mesh &mesh, size_t inde
 
 	switch (_settings.etype) {
 	case ELEMENT_TYPE::HEXA8:
-		_block = new Block<Hexahedron8>(mesh, block);
+		_block = new Block<Hexahedron8>(block);
 		_subnodes = Hexahedron8::subnodes;
 		element = "hexahedrons";
 		break;
 	case ELEMENT_TYPE::HEXA20:
-		_block = new Block<Hexahedron20>(mesh, block);
+		_block = new Block<Hexahedron20>(block);
 		_subnodes = Hexahedron20::subnodes;
 		element = "hexahedrons with midnodes";
 		break;
 	case ELEMENT_TYPE::TETRA4:
-		_block = new Block<Tetrahedron4>(mesh, block);
+		_block = new Block<Tetrahedron4>(block);
 		_subnodes = Tetrahedron4::subnodes;
 		element = "tetrahedrons";
 		break;
 	case ELEMENT_TYPE::TETRA10:
-		_block = new Block<Tetrahedron10>(mesh, block);
+		_block = new Block<Tetrahedron10>(block);
 		_subnodes = Tetrahedron10::subnodes;
 		element = "tetrahedrons with midnodes";
 		break;
 	case ELEMENT_TYPE::PRISMA6:
-		_block = new Block<Prisma6>(mesh, block);
+		_block = new Block<Prisma6>(block);
 		_subnodes = Prisma6::subnodes;
 		element = "prismas";
 		break;
 	case ELEMENT_TYPE::PRISMA15:
-		_block = new Block<Prisma15>(mesh, block);
+		_block = new Block<Prisma15>(block);
 		_subnodes = Prisma15::subnodes;
 		element = "prismas with midnodes";
 		break;
 	case ELEMENT_TYPE::PYRAMID5:
-		_block = new Block<Pyramid5>(mesh, block);
+		_block = new Block<Pyramid5>(block);
 		_subnodes = Pyramid5::subnodes;
 		element = "pyramids";
 		break;
 	case ELEMENT_TYPE::PYRAMID13:
-		_block = new Block<Pyramid13>(mesh, block);
+		_block = new Block<Pyramid13>(block);
 		_subnodes = Pyramid13::subnodes;
 		element = "pyramids with midnodes";
 		break;

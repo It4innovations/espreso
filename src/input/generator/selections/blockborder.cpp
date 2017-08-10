@@ -2,6 +2,7 @@
 
 #include "blockborder.h"
 #include "../primitives/blocksetting.h"
+#include "../generator.h"
 
 #include "../../../basis/logging/logging.h"
 #include "../../../basis/utilities/parser.h"
@@ -58,12 +59,16 @@ BlockBorder::BlockBorder(const std::string &interval)
 
 	excludeStart = Triple<bool>(_excludeStart[0], _excludeStart[1], _excludeStart[2]);
 	excludeEnd = Triple<bool>(_excludeEnd[0], _excludeEnd[1], _excludeEnd[2]);
-	start = Triple<double>(_start[0], _start[1], _start[2]);
-	end = Triple<double>(_end[0], _end[1], _end[2]);
+	start = (Triple<double>(_start[0] / Generator::precision, _start[1] / Generator::precision, _start[2] / Generator::precision)).round();
+	end = (Triple<double>(_end[0] / Generator::precision, _end[1] / Generator::precision, _end[2] / Generator::precision)).round();
 }
 
 size_t BlockBorder::dimension() const
 {
+	if (start.x == end.x && (excludeStart.x || excludeEnd.x)) { return -1; }
+	if (start.y == end.y && (excludeStart.y || excludeEnd.y)) { return -1; }
+	if (start.z == end.z && (excludeStart.z || excludeEnd.z)) { return -1; }
+
 	size_t dimension = 3;
 	if (start.x == end.x) { dimension--; }
 	if (start.y == end.y) { dimension--; }
@@ -71,46 +76,29 @@ size_t BlockBorder::dimension() const
 	return dimension;
 }
 
-bool BlockBorder::intersect(const BlockSetting &block) const
+BlockBorder BlockBorder::intersect(const BlockSetting &block) const
 {
-	auto eq = [&] (const double &a, const double &b) {
-		return a < b + epsilon && a > b - epsilon ? true : false;
-	};
-	auto lo = [&] (const double &a, const double &b) {
-		return a < b - epsilon ? true : false;
-	};
+	BlockBorder intersection(*this);
 
-	if (lo(end.x, block.start.x) || (eq(end.x, block.start.x) && excludeEnd.x)) {
-		return false;
-	}
+	if (intersection.start.x < block.start.x) { intersection.start.x = block.start.x; intersection.excludeStart.x = false; }
+	if (intersection.start.y < block.start.y) { intersection.start.y = block.start.y; intersection.excludeStart.y = false; }
+	if (intersection.start.z < block.start.z) { intersection.start.z = block.start.z; intersection.excludeStart.z = false; }
 
-	if (lo(block.end.x, start.x) || (eq(block.end.x, start.x) && excludeStart.x)) {
-		return false;
-	}
+	if (intersection.end.x > block.end.x) { intersection.end.x = block.end.x; intersection.excludeEnd.x = false; }
+	if (intersection.end.y > block.end.y) { intersection.end.y = block.end.y; intersection.excludeEnd.y = false; }
+	if (intersection.end.z > block.end.z) { intersection.end.z = block.end.z; intersection.excludeEnd.z = false; }
 
-	if (lo(end.y, block.start.y) || (eq(end.y, block.start.y) && excludeEnd.y)) {
-		return false;
-	}
+	if (intersection.end.x < intersection.start.x) { intersection.end.x = intersection.start.x; intersection.excludeStart.x = true; }
+	if (intersection.end.y < intersection.start.y) { intersection.end.y = intersection.start.y; intersection.excludeStart.y = true; }
+	if (intersection.end.z < intersection.start.z) { intersection.end.z = intersection.start.z; intersection.excludeStart.z = true; }
 
-	if (lo(block.end.y, start.y) || (eq(block.end.y, start.y) && excludeStart.y)) {
-		return false;
-	}
-
-	if (lo(end.z, block.start.z) || (eq(end.z, block.start.z) && excludeEnd.z)) {
-		return false;
-	}
-
-	if (lo(block.end.z, start.z) || (eq(block.end.z, start.z) && excludeStart.z)) {
-		return false;
-	}
-
-	return true;
+	return intersection;
 }
 
 CubeEdge BlockBorder::getEdge(const BlockSetting &block) const
 {
-	auto eq = [&] (const double &a, const double &b) {
-		return a < b + epsilon && a > b - epsilon ? true : false;
+	auto eq = [&] (const esglobal &a, const esglobal &b) {
+		return a == b;
 	};
 
 	size_t fixed_x = (start.x == end.x) ? 1 : 0;
@@ -182,7 +170,7 @@ CubeEdge BlockBorder::getEdge(const BlockSetting &block) const
 CubeFace BlockBorder::getFace(const BlockSetting &block) const
 {
 	auto eq = [&] (const double &a, const double &b) {
-		return a < b + epsilon && a > b - epsilon ? true : false;
+		return a == b;
 	};
 
 	size_t fixed_x = (start.x == end.x) ? 1 : 0;

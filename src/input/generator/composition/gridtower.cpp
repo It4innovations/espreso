@@ -7,6 +7,7 @@
 #include "../../../mesh/structures/mesh.h"
 #include "../../../mesh/structures/elementtypes.h"
 #include "../primitives/block.h"
+#include "../generator.h"
 
 #include "mpi.h"
 
@@ -22,7 +23,7 @@ GridTower::GridTower(const GridTowerConfiguration &configuration, Mesh &mesh, si
 : Loader(mesh), _gridTower(configuration), _grid(NULL), _gridPointsIDOffset(0), _index(index), _size(size)
 {
 	size_t gridIndex = 0, firstCluster = 0, lastCluster = 0;
-	Triple<double> gridPointsOffset(0, 0, 0);
+	Triple<esglobal> gridPointsOffset(0, 0, 0);
 	for (auto it = _gridTower.grids.begin(); it != _gridTower.grids.end(); ++it, gridIndex++) {
 		lastCluster += it->second->clusters_x * it->second->clusters_y * it->second->clusters_z;
 		if (firstCluster <= _index && _index < lastCluster) {
@@ -33,7 +34,7 @@ GridTower::GridTower(const GridTowerConfiguration &configuration, Mesh &mesh, si
 			_gridPointsOffset = gridPointsOffset;
 		}
 		firstCluster = lastCluster;
-		gridPointsOffset += Triple<double>(it->second->length_x, it->second->length_y, it->second->length_z);
+		gridPointsOffset += Triple<esglobal>(it->second->length_x / Generator::precision, it->second->length_y / Generator::precision, it->second->length_z / Generator::precision);
 	}
 
 	if (lastCluster != size) {

@@ -28,14 +28,14 @@ public:
 
 	BlockSetting block;
 protected:
-	BlockGenerator(Mesh &mesh, const BlockSetting &block): block(block) {};
+	BlockGenerator(const BlockSetting &block): block(block) {};
 };
 
 template <class TElement>
 class Block: public BlockGenerator {
 
 public:
-	Block(Mesh &mesh, const BlockSetting &block): BlockGenerator(mesh, block) {};
+	Block(const BlockSetting &block): BlockGenerator(block) {};
 
 	void points(std::vector<Point> &points);
 	void elements(std::vector<Element*> &elements, size_t body);

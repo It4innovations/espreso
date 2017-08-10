@@ -14,6 +14,8 @@ namespace input {
 struct Generator {
 
 	static void generate(const ESPRESOGenerator &configuration, Mesh &mesh, size_t index, size_t size);
+
+	static double precision;
 };
 }
 }
