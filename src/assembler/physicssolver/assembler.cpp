@@ -148,7 +148,6 @@ void Assembler::finalize()
 {
 	timeWrapper("finalize", [&] () {
 		linearSolver.finalize();
-		store.finalize();
 		_timeStatistics->totalTime.endWithBarrier();
 		_timeStatistics->printStatsMPI();
 	});
@@ -358,6 +357,14 @@ void Assembler::setRegularizationCallback()
 
 void Assembler::setEmptyRegularizationCallback()
 {
+	instance.N1.clear();
+	instance.N2.clear();
+	instance.RegMat.clear();
+
+	instance.N1.resize(instance.domains);
+	instance.N2.resize(instance.domains);
+	instance.RegMat.resize(instance.domains);
+
 	instance.computeKernelsCallback = [&] (REGULARIZATION regularization, size_t scSize) {
 		storeWrapper(mNames(Matrices::N), Matrices::N);
 	};

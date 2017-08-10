@@ -60,6 +60,7 @@ void Factory::solve()
 	for (step.step = 0; step.step < _loadSteps.size(); step.step++) {
 		_loadSteps[step.step]->run(step);
 	}
+	_storeList->finalize();
 }
 
 void Factory::initAsync(const OutputConfiguration &configuration)

@@ -11,8 +11,7 @@ using namespace espreso;
 SteadyStateSolver::SteadyStateSolver(TimeStepSolver &timeStepSolver, double duration)
 : LoadStepSolver("STEADY STATE", timeStepSolver, duration)
 {
-	_assembler.setRegularizationCallback();
-	_assembler.setB0Callback();
+
 }
 
 Matrices SteadyStateSolver::updateStructuralMatrices(Step &step, Matrices matrices)

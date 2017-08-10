@@ -25,6 +25,8 @@ void LoadStepSolver::initLoadStep(Step &step)
 	if (step.step == 0) {
 		_assembler.preprocessData(step);
 	}
+	_assembler.setRegularizationCallback();
+	_assembler.setB0Callback();
 }
 
 bool LoadStepSolver::hasNextTimeStep(Step &step)
@@ -48,7 +50,7 @@ void LoadStepSolver::run(Step &step)
 	initLoadStep(step);
 	while (hasNextTimeStep(step)) {
 		runNextTimeStep(step);
-		ESINFO(PROGRESS1) << description() << " SOLVER: time step " << step.substep + 1 << "[" << step.currentTime << "s] finished.";
+		ESINFO(PROGRESS1) << description() << " SOLVER: load step " << step.step << ", time step " << step.substep + 1 << "[" << step.currentTime << "s] finished.";
 		step.substep++;
 		step.iteration = 0;
 	}

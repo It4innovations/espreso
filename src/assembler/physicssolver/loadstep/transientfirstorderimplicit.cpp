@@ -18,8 +18,7 @@ std::vector<Solution*> TransientFirstOrderImplicit::solutions;
 TransientFirstOrderImplicit::TransientFirstOrderImplicit(TimeStepSolver &timeStepSolver, const TransientSolver &configuration, double duration)
 : LoadStepSolver("TRANSIENT", timeStepSolver, duration), _configuration(configuration), _alpha(0), _timeDependent(true)
 {
-	_assembler.setEmptyRegularizationCallback();
-	_assembler.setB0Callback();
+
 }
 
 Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Step &step, Matrices matrices)
@@ -68,6 +67,9 @@ Matrices TransientFirstOrderImplicit::reassembleStructuralMatrices(Step &step, M
 void TransientFirstOrderImplicit::initLoadStep(Step &step)
 {
 	LoadStepSolver::initLoadStep(step);
+
+	_assembler.setEmptyRegularizationCallback();
+	_assembler.setB0Callback();
 
 	_timeDependent = _assembler.physics.isMatrixTimeDependent(step);
 
