@@ -119,13 +119,10 @@ void NewtonRhapson::solve(Step &step, LoadStepSolver &loadStepSolver)
 		_assembler.solve(step, updatedMatrices);
 		ESINFO(CONVERGENCE) <<  "    LINEAR_SOLVER_OUTPUT: SOLVER = " << "PCG" <<   " N_ITERATIONS = " << "1" << "  " ;
 
-		if (_configuration.line_search && step.iteration > 1) {
+		if (_configuration.line_search) {
 			maxSolutionValue =_assembler.maxAbsValue(_assembler.instance.primalSolution, "max = |solution|");
 			alpha = _assembler.lineSearch(step, _solution, _assembler.instance.primalSolution, _f_ext);
 			ESINFO(CONVERGENCE) << "    LINE_SEARCH_OUTPUT: " << "PARAMETER = " << alpha << "  MAX_DOF_INCREMENT = " << maxSolutionValue << "  SCALED_MAX_INCREMENT = " << alpha * maxSolutionValue;
-		} else if (_configuration.line_search && step.iteration == 1){
-			maxSolutionValue =_assembler.maxAbsValue(_assembler.instance.primalSolution, "max = |solution|");
-			ESINFO(CONVERGENCE) << "    LINE_SEARCH_OUTPUT: " << "PARAMETER = 1" << "  MAX_DOF_INCREMENT = " << maxSolutionValue << "  SCALED_MAX_INCREMENT = " << maxSolutionValue ;
 		}
 		if (_configuration.convergenceParameters().checkSolution()) {
 			temperatureResidual_first = sqrt(_assembler.sumSquares(step, _assembler.instance.primalSolution, SumOperation::AVERAGE, SumRestriction::NONE, "|delta U|"));

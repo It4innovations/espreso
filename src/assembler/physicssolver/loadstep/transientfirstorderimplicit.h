@@ -26,7 +26,6 @@ protected:
 
 	const TransientSolver &_configuration;
 	double _alpha;
-	bool _timeDependent;
 
 	static size_t loadStep;
 	static std::vector<Solution*> solutions;

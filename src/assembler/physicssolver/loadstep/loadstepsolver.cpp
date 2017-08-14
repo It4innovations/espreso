@@ -4,13 +4,15 @@
 
 #include "../../step.h"
 #include "../assembler.h"
+#include "../../physics/physics.h"
 
 #include "../../../basis/logging/logging.h"
 
 using namespace espreso;
 
 LoadStepSolver::LoadStepSolver(const std::string &description, TimeStepSolver &timeStepSolver, double duration)
-: _description(description), _timeStepSolver(timeStepSolver), _assembler(timeStepSolver._assembler), _duration(duration), _startTime(0), _precision(1e-6)
+: _description(description), _timeStepSolver(timeStepSolver), _assembler(timeStepSolver._assembler), _duration(duration),
+  _startTime(0), _precision(1e-8), _timeDependent(true), _tempDependent(true)
 {
 
 }
@@ -32,6 +34,9 @@ void LoadStepSolver::initLoadStep(Step &step)
 	}
 	_assembler.setRegularizationCallback();
 	_assembler.setB0Callback();
+
+	_timeDependent = _assembler.physics.isMatrixTimeDependent(step);
+	_timeDependent = _assembler.physics.isMatrixTemperatureDependent(step);
 }
 
 bool LoadStepSolver::hasNextTimeStep(Step &step)
@@ -55,7 +60,7 @@ void LoadStepSolver::run(Step &step)
 	initLoadStep(step);
 	while (hasNextTimeStep(step)) {
 		runNextTimeStep(step);
-		ESINFO(PROGRESS1) << description() << " SOLVER: load step " << step.step << ", time step " << step.substep + 1 << "[" << step.currentTime << "s] finished.";
+		ESINFO(PROGRESS1) << description() << " SOLVER: load step " << step.step + 1 << ", time step " << step.substep + 1 << " [" << step.currentTime << "s] finished.";
 		step.substep++;
 		step.iteration = 0;
 	}

@@ -6,7 +6,6 @@
 #include "../../step.h"
 #include "../../instance.h"
 #include "../../solution.h"
-#include "../../physics/physics.h"
 #include "../../../mesh/structures/elementtypes.h"
 #include "../../../configuration/physics/transientsolver.h"
 
@@ -16,19 +15,20 @@ size_t TransientFirstOrderImplicit::loadStep = 0;
 std::vector<Solution*> TransientFirstOrderImplicit::solutions;
 
 TransientFirstOrderImplicit::TransientFirstOrderImplicit(TimeStepSolver &timeStepSolver, const TransientSolver &configuration, double duration)
-: LoadStepSolver("TRANSIENT", timeStepSolver, duration), _configuration(configuration), _alpha(0), _timeDependent(true)
+: LoadStepSolver("TRANSIENT", timeStepSolver, duration), _configuration(configuration), _alpha(0)
 {
-
+	if (configuration.time_step < 1e-7) {
+		ESINFO(GLOBAL_ERROR) << "Set time step for TRANSIENT solver greater than 1e-7.";
+	}
 }
 
 Matrices TransientFirstOrderImplicit::updateStructuralMatrices(Step &step, Matrices matrices)
 {
 	Matrices updatedMatrices = matrices & (Matrices::K | Matrices::M | Matrices::f | Matrices::R | Matrices::B1 | Matrices::B1c | Matrices::B1duplicity);
 
-//	TODO: ??
-//	if (step.substep && !_timeDependent) {
-//		updatedMatrices &= (Matrices::f | Matrices::B1); // TODO: update only B1c
-//	}
+	if (step.substep && !_timeDependent && !_tempDependent) {
+		updatedMatrices &= (Matrices::f | Matrices::B1c);
+	}
 
 	return reassembleStructuralMatrices(step, updatedMatrices);
 }
@@ -70,8 +70,6 @@ void TransientFirstOrderImplicit::initLoadStep(Step &step)
 
 	_assembler.setEmptyRegularizationCallback();
 	_assembler.setB0Callback();
-
-	_timeDependent = _assembler.physics.isMatrixTimeDependent(step);
 
 	switch (_configuration.method) {
 	case TransientSolver::METHOD::CRANK_NICOLSON:
