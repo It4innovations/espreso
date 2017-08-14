@@ -71,6 +71,7 @@ struct TimeEval
 	TimeEval(std::string name);
 
 	void addEvent(TimeEvent &timeEvent);
+	void addPointerToEvent(TimeEvent *timeEvent);
 	void printStats();
 	void printStatsMPI();
 
@@ -81,6 +82,7 @@ struct TimeEval
 
 	std::string eventName;
 	std::vector<TimeEvent> timeEvents;
+	std::vector<TimeEvent*> ptimeEvents;
 
 };
 

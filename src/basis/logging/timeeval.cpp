@@ -332,6 +332,11 @@ void TimeEval::addEvent(TimeEvent &timeEvent) {
 	timeEvents.push_back(timeEvent);
 }
 
+void TimeEval::addPointerToEvent(TimeEvent *timeEvent)
+{
+	ptimeEvents.push_back(timeEvent);
+}
+
 void TimeEval::printStats() {
 	totalTime.evaluate();
 
@@ -363,6 +368,11 @@ void TimeEval::printStatsMPI() {
 	for (size_t i = 0; i < timeEvents.size(); i++) {
 		timeEvents[i].printStatMPI(totalTime.g_avgTime);
 		sum_avg_time += timeEvents[i].avgTime;
+	}
+
+	for (size_t i = 0; i < ptimeEvents.size(); i++) {
+		ptimeEvents[i]->printStatMPI(totalTime.g_avgTime);
+		sum_avg_time += ptimeEvents[i]->avgTime;
 	}
 
 	ESLOG(SUMMARY) << separator(separator_size, '-');

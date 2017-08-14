@@ -4,6 +4,7 @@
 
 #include <functional>
 #include <vector>
+#include <map>
 
 namespace espreso {
 
@@ -13,6 +14,7 @@ struct Physics;
 class Mesh;
 struct LinearSolver;
 class TimeEval;
+class TimeEvent;
 class SparseMatrix;
 class Solution;
 class Store;
@@ -76,6 +78,7 @@ protected:
 	void storeWrapper(const std::string &name, std::vector<std::vector<double> > &data);
 
 	TimeEval *_timeStatistics;
+	std::map<std::string, TimeEvent*> _timeEvents;
 };
 
 }

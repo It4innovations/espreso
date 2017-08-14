@@ -45,6 +45,9 @@ Assembler::Assembler(Instance &instance, Physics &physics, Mesh &mesh, Store &st
 Assembler::~Assembler()
 {
 	delete _timeStatistics;
+	for (auto it = _timeEvents.begin(); it != _timeEvents.end(); ++it) {
+		delete it->second;
+	}
 }
 
 void Assembler::preprocessData(const Step &step)
@@ -148,9 +151,9 @@ void Assembler::finalize()
 {
 	timeWrapper("finalize", [&] () {
 		linearSolver.finalize();
-		_timeStatistics->totalTime.endWithBarrier();
-		_timeStatistics->printStatsMPI();
 	});
+	_timeStatistics->totalTime.endWithBarrier();
+	_timeStatistics->printStatsMPI();
 }
 
 Solution* Assembler::addSolution(const std::string &name, ElementType eType)
@@ -408,9 +411,17 @@ void Assembler::timeWrapper(const std::string &action, std::function<void(void)>
 
 	ESINFO(PROGRESS2) << fulldesc;
 
-	TimeEvent time(fulldesc); time.start();
+	TimeEvent *event;
+	if (_timeEvents.find(fulldesc) != _timeEvents.end()) {
+		event = _timeEvents[fulldesc];
+	} else {
+		_timeEvents[fulldesc] = event = new TimeEvent(fulldesc);
+		_timeStatistics->addPointerToEvent(event);
+	}
+
+	event->start();
 	operations();
-	time.endWithBarrier(); _timeStatistics->addEvent(time);
+	event->endWithBarrier();
 }
 
 template<typename TType>
