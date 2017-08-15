@@ -44,7 +44,7 @@ void StructuralMechanics3D::prepare()
 }
 
 
-void StructuralMechanics3D::analyticRegularization(size_t domain)
+void StructuralMechanics3D::analyticRegularization(size_t domain, bool ortogonalCluster)
 {
 	if (_instance->K[domain].mtype != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
 		ESINFO(ERROR) << "Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set REGULARIZATION = NULL_PIVOTS";

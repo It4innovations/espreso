@@ -135,7 +135,7 @@ void Precomputed::assembleB0FromCorners()
 	ESINFO(ERROR) << "Cannot compute corners. Use HYBRID FETI with kernels.";
 }
 
-void Precomputed::analyticRegularization(size_t domain)
+void Precomputed::analyticRegularization(size_t domain, bool ortogonalCluster)
 {
 	ESINFO(ERROR) << "Cannot compute analytic regularization of not PRECOMPUTED physics. Set REGULARIZATION = NULL_PIVOTS";
 }

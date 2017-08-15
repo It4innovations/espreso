@@ -20,7 +20,7 @@ struct AdvectionDiffusion: public virtual Physics
 	virtual bool isMatrixTemperatureDependent(const Step &step) const;
 	virtual void prepare();
 	virtual void preprocessData(const Step &step);
-	virtual void analyticRegularization(size_t domain);
+	virtual void analyticRegularization(size_t domain, bool ortogonalCluster);
 
 	const std::vector<Property>& pointDOFs() const
 	{

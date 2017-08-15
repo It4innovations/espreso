@@ -31,7 +31,7 @@ struct Precomputed: public virtual Physics
 	void prepareHybridTotalFETIWithKernels();
 	void preprocessData(const Step &step);
 
-	void analyticRegularization(size_t domain);
+	void analyticRegularization(size_t domain, bool ortogonalCluster);
 
 	void updateMatrix(const Step &step, Matrices matrices, size_t domain, const std::vector<Solution*> &solution);
 	void assembleB0FromCorners();

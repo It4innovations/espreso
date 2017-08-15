@@ -1519,6 +1519,12 @@ void ClusterBase::CreateSa() {
 	Salfa.mtype = this->mtype;
 	F0_Mat.Clear();
 
+	if (environment->print_matrices) {
+		std::ofstream osSa(Logging::prepareFile("Salfa"));
+		osSa << Salfa;
+		osSa.close();
+	}
+
 //	if (!PARDISO_SC) {
 //		if (MPIrank == 0) { F0_fast.msglvl = Info::report(LIBRARIES) ? 1 : 0; }
 //
@@ -1757,18 +1763,6 @@ void ClusterBase::CreateSa() {
 		// *** END - Regularization of Sa from NULL PIVOTS
 
 		if (environment->print_matrices) {
-			std::ofstream osSa(Logging::prepareFile("Salfa"));
-			osSa << Salfa;
-			osSa.close();
-		}
-
-		if (environment->print_matrices) {
-			std::ofstream osSa(Logging::prepareFile("Salfa_reg"));
-			osSa << Salfa;
-			osSa.close();
-		}
-
-		if (environment->print_matrices) {
 			std::ofstream osSa(Logging::prepareFile("Kernel_Sa"));
 			osSa << Kernel_Sa;
 			osSa.close();
@@ -1942,15 +1936,14 @@ void ClusterBase::CreateSa() {
 		// *** END - Regularization of Salfa from FIX points
 
 	}
-
-	if (environment->print_matrices) {
-		SparseMatrix tmpSa = Salfa;
-		std::ofstream osSa(Logging::prepareFile("Sa"));
-		osSa <<  tmpSa;
-		osSa.close();
-	}
 	// *** END - Sa regularization
 
+
+	if (environment->print_matrices) {
+		std::ofstream osSa(Logging::prepareFile("Salfa_reg"));
+		osSa << Salfa;
+		osSa.close();
+	}
 
 	// *** Salfa import into dense|sparse|acc solver and factorization
 	switch (configuration.SAsolver) {

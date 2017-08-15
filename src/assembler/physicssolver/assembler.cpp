@@ -342,17 +342,17 @@ double Assembler::lineSearch(const Step &step, const std::vector<std::vector<dou
 
 void Assembler::setRegularizationCallback()
 {
-	instance.computeKernelsCallback = [&] (REGULARIZATION regularization, size_t scSize) {
+	instance.computeKernelsCallback = [&] (REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
 
 		timeWrapper("regularize " + mNames(Matrices::K), [&] () {
-			physics.makeStiffnessMatricesRegular(regularization, scSize);
+			physics.makeStiffnessMatricesRegular(regularization, scSize, ortogonalCluster);
 		});
 
 		storeWrapper(mNames(Matrices::N), Matrices::N);
 	};
 
-	instance.computeKernelCallback = [&] (REGULARIZATION regularization, size_t scSize, size_t domain) {
-		physics.makeStiffnessMatrixRegular(regularization, scSize, domain);
+	instance.computeKernelCallback = [&] (REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
+		physics.makeStiffnessMatrixRegular(regularization, scSize, domain, ortogonalCluster);
 
 		storeWrapper(mNames(Matrices::N) + "[domain " + std::to_string(domain) + "]", Matrices::N, domain);
 	};
@@ -368,11 +368,11 @@ void Assembler::setEmptyRegularizationCallback()
 	instance.N2.resize(instance.domains);
 	instance.RegMat.resize(instance.domains);
 
-	instance.computeKernelsCallback = [&] (REGULARIZATION regularization, size_t scSize) {
+	instance.computeKernelsCallback = [&] (REGULARIZATION regularization, size_t scSize, bool ortogonalCluster) {
 		storeWrapper(mNames(Matrices::N), Matrices::N);
 	};
 
-	instance.computeKernelCallback = [&] (REGULARIZATION regularization, size_t scSize, size_t domain) {
+	instance.computeKernelCallback = [&] (REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster) {
 		storeWrapper(mNames(Matrices::N) + "[domain " + std::to_string(domain) + "]", Matrices::N, domain);
 	};
 }

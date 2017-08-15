@@ -226,7 +226,7 @@ void AdvectionDiffusion::prepare()
 	_mesh->fillDomainsSettings();
 }
 
-void AdvectionDiffusion::analyticRegularization(size_t domain)
+void AdvectionDiffusion::analyticRegularization(size_t domain, bool ortogonalCluster)
 {
 	if (_instance->K[domain].mtype != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
 		ESINFO(ERROR) << "Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set REGULARIZATION = NULL_PIVOTS";
@@ -236,12 +236,23 @@ void AdvectionDiffusion::analyticRegularization(size_t domain)
 		return;
 	}
 
+	double value;
+	if (ortogonalCluster) {
+		size_t nSum = 0;
+		for (size_t d = 0; d < _instance->domains; d++) {
+			nSum += _instance->K[d].rows;
+		}
+		value = 1 / sqrt(nSum);
+	} else {
+		value = 1 / sqrt(_instance->K[domain].rows);
+	}
+
 	_instance->N1[domain].rows = _instance->K[domain].rows;
 	_instance->N1[domain].cols = 1;
 	_instance->N1[domain].nnz = _instance->N1[domain].rows * _instance->N1[domain].cols;
 	_instance->N1[domain].type = 'G';
 
-	_instance->N1[domain].dense_values.resize(_instance->N1[domain].nnz, 1 / sqrt(_instance->K[domain].rows));
+	_instance->N1[domain].dense_values.resize(_instance->N1[domain].nnz, value);
 
 	_instance->RegMat[domain].rows = _instance->K[domain].rows;
 	_instance->RegMat[domain].cols = _instance->K[domain].cols;

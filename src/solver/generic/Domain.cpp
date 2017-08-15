@@ -62,7 +62,7 @@ void Domain::SetDomain() {
 #if defined(SOLVER_DISSECTION)
 
 	if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
-		instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index);
+		instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index, configuration.method == ESPRESO_METHOD::HYBRID_FETI);
 		Kplus.ImportMatrix_wo_Copy(K);
 		Kplus.Factorization ("K matrix");
 	} else {
@@ -79,7 +79,7 @@ void Domain::SetDomain() {
 //
 //	Kplus_R.Clear();
 //
-//	instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index);
+//	instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index, configuration.method == ESPRESO_METHOD::HYBRID_FETI);
 //
 //	Kplus.ImportMatrix(K); //_wo_Copy(K);
 //	Kplus.Factorization ("K matrix");
@@ -93,7 +93,7 @@ void Domain::SetDomain() {
 #else
 
 	if ( configuration.regularization == REGULARIZATION::FIX_POINTS ) {
-		instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index);
+		instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index, configuration.method == ESPRESO_METHOD::HYBRID_FETI);
 		Kplus.ImportMatrix_wo_Copy(K);
 		Kplus.Factorization ("K matrix");
 	} else {
@@ -104,7 +104,7 @@ void Domain::SetDomain() {
 		//Kplus.GetKernel(Kplus_R); // TODO: Kplus.GetKernels(Kplus_R, Kplus_R2) - upravit na tuto funkci - v sym. pripade bude Kplus_R2 prazdna
 
 		// TODO: Temporary solution before MKL solver is updated
-		instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index);
+		instance->computeKernel(configuration.regularization, configuration.SC_SIZE, domain_global_index, configuration.method == ESPRESO_METHOD::HYBRID_FETI);
 		Kplus.ImportMatrix_wo_Copy(K);
 		Kplus.Factorization ("K matrix");
 	}

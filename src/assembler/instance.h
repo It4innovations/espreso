@@ -36,8 +36,8 @@ struct Instance {
 	Instance(Instance &other, Matrices &share);
 	~Instance();
 
-	void computeKernel(REGULARIZATION regularization, size_t scSize, size_t domain) { computeKernelCallback(regularization, scSize, domain); }
-	void computeKernels(REGULARIZATION regularization, size_t scSize) { computeKernelsCallback(regularization, scSize); }
+	void computeKernel(REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster = false) { computeKernelCallback(regularization, scSize, domain, ortogonalCluster); }
+	void computeKernels(REGULARIZATION regularization, size_t scSize, bool ortogonalCluster = false) { computeKernelsCallback(regularization, scSize, ortogonalCluster); }
 	void assembleB0(B0_TYPE type, const std::vector<SparseMatrix> &kernels) { assembleB0Callback(type, kernels); }
 
 	void clear();
@@ -82,8 +82,8 @@ struct Instance {
 
 	std::vector<Solution*> solutions;
 
-	std::function<void(REGULARIZATION regularization, size_t scSize)> computeKernelsCallback;
-	std::function<void(REGULARIZATION regularization, size_t scSize, size_t domain)> computeKernelCallback;
+	std::function<void(REGULARIZATION regularization, size_t scSize, bool ortogonalCluster)> computeKernelsCallback;
+	std::function<void(REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster)> computeKernelCallback;
 	std::function<void(B0_TYPE type, const std::vector<SparseMatrix> &kernels)> assembleB0Callback;
 private:
 

@@ -223,22 +223,22 @@ void Physics::insertElementToDomain(
 	}
 }
 
-void Physics::makeStiffnessMatricesRegular(REGULARIZATION regularization, size_t scSize)
+void Physics::makeStiffnessMatricesRegular(REGULARIZATION regularization, size_t scSize, bool ortogonalCluster)
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < _instance->domains; d++) {
-		makeStiffnessMatrixRegular(regularization, scSize, d);
+		makeStiffnessMatrixRegular(regularization, scSize, d, ortogonalCluster);
 		ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
 	ESINFO(PROGRESS3);
 }
 
-void Physics::makeStiffnessMatrixRegular(REGULARIZATION regularization, size_t scSize, size_t domain)
+void Physics::makeStiffnessMatrixRegular(REGULARIZATION regularization, size_t scSize, size_t domain, bool ortogonalCluster)
 {
 	switch (regularization) {
 
 	case REGULARIZATION::FIX_POINTS:
-		analyticRegularization(domain);
+		analyticRegularization(domain, ortogonalCluster);
 		_instance->RegMat[domain].RemoveLower();
 		_instance->K[domain].MatAddInPlace(_instance->RegMat[domain], 'N', 1);
 		_instance->RegMat[domain].ConvertToCOO(1);
