@@ -1,17 +1,18 @@
 
 #include "instance.h"
 
+#include "../mesh/structures/mesh.h"
 #include "../solver/generic/SparseMatrix.h"
 #include "solution.h"
 
 using namespace espreso;
 
-Instance::Instance(size_t domains, const std::vector<int> &neighbours)
-: domains(domains),
+Instance::Instance(const Mesh &mesh)
+: domains(mesh.parts()),
   domainDOFCount(_domainDOFCount),
   properties(_properties),
-  neighbours(neighbours),
-  clustersMap(domains),
+  neighbours(mesh.neighbours()),
+  clustersMap(mesh.getContinuityPartition()),
   K(_K), N1(_N1), N2(_N2), RegMat(_RegMat),
   M(_M),
   R(_R), f(_f),
@@ -79,7 +80,7 @@ Instance::Instance(Instance &other, Matrices &share)
   domainDOFCount(share & Matrices::K ? other.domainDOFCount :_domainDOFCount),
   properties(other.properties),
   neighbours(other.neighbours),
-  clustersMap(domains),
+  clustersMap(other.clustersMap),
 
   // shared K -> also share kernels and regularization matrix
   K(share & Matrices::K ? other.K : _K),

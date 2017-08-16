@@ -24,14 +24,14 @@ using namespace espreso;
 AdvectionDiffusionFactory::AdvectionDiffusionFactory(const AdvectionDiffusion2DConfiguration &configuration, Mesh *mesh)
 : _configuration(configuration), _bem(false)
 {
-	_instances.push_back(new Instance(mesh->parts(), mesh->neighbours()));
+	_instances.push_back(new Instance(*mesh));
 	_physics.push_back(new AdvectionDiffusion2D(mesh, _instances.front(), configuration));
 }
 
 AdvectionDiffusionFactory::AdvectionDiffusionFactory(const AdvectionDiffusion3DConfiguration &configuration, Mesh *mesh)
 : _configuration(configuration), _bem(false)
 {
-	_instances.push_back(new Instance(mesh->parts(), mesh->neighbours()));
+	_instances.push_back(new Instance(*mesh));
 
 	switch (configuration.discretization) {
 	case DISCRETIZATION::FEM:

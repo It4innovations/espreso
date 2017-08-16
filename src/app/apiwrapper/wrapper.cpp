@@ -232,7 +232,7 @@ void FETI4ICreateInstance(
 
 	*instance = DataHolder::instances.back();
 
-	DataHolder::instances.back()->instance = new Instance(DataHolder::instances.back()->mesh->parts(), DataHolder::instances.back()->mesh->neighbours());
+	DataHolder::instances.back()->instance = new Instance(*DataHolder::instances.back()->mesh);
 	DataHolder::instances.back()->physics = new Precomputed(DataHolder::instances.back()->mesh, DataHolder::instances.back()->instance, (espreso::MatrixType)matrix->type, rhs, size);
 	DataHolder::instances.back()->linearSolver = new FETISolver(DataHolder::instances.back()->instance, *DataHolder::instances.back()->configuration);
 	DataHolder::instances.back()->assembler = new Assembler(

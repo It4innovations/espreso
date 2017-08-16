@@ -3,6 +3,7 @@
 #define SRC_ASSEMBLER_PHYSICS_STRUCTURALMECHANICS_H_
 
 #include "physics.h"
+#include "../../basis/point/point.h"
 
 namespace espreso {
 
@@ -46,6 +47,15 @@ protected:
 	static size_t offset;
 
 	const StructuralMechanicsConfiguration &_configuration;
+
+	// to handle with non-continuous partition
+	std::vector<Point> _clusterCenter;
+	std::vector<Point> _clusterNorm;
+	std::vector<size_t> _clusterNodes;
+
+	std::vector<Point> _domainCenter;
+	std::vector<Point> _domainNorm;
+	std::vector<size_t> _domainNodes;
 };
 
 }

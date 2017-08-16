@@ -43,6 +43,52 @@ void StructuralMechanics2D::prepare()
 	}
 
 	StructuralMechanics::prepare();
+
+	size_t clusters = *std::max_element(_mesh->getContinuityPartition().begin(), _mesh->getContinuityPartition().end()) + 1;
+	_clusterCenter.resize(clusters);
+	_clusterNorm.resize(clusters);
+	_clusterNodes.resize(clusters);
+
+	_domainCenter.resize(_mesh->parts());
+	_domainNorm.resize(_mesh->parts());
+	_domainNodes.resize(_mesh->parts());
+
+	#pragma omp parallel for
+	for (size_t p = 0; p < _mesh->parts(); p++) {
+		Point center;
+		for (size_t n = 0; n < _mesh->coordinates().localSize(p); n++) {
+			center += _mesh->coordinates().get(n, p);
+		}
+		_domainCenter[p] = center;
+	}
+
+	for (size_t p = 0; p < _mesh->parts(); p++) {
+		_clusterCenter[_mesh->getContinuityPartition()[p]] += _domainCenter[p];
+		_domainNodes[p] = _mesh->coordinates().localSize(p);
+		_domainCenter[p] = _domainCenter[p] / _domainNodes[p];
+		_clusterNodes[_mesh->getContinuityPartition()[p]] += _domainNodes[p];
+	}
+	for (size_t c = 0; c < clusters; c++) {
+		_clusterCenter[c] /= _clusterNodes[c];
+	}
+
+	std::vector<double> cNorm(_mesh->parts());
+
+	#pragma omp parallel for
+	for (size_t p = 0; p < _mesh->parts(); p++) {
+		double norm = 0, cNorm = 0;
+		for (size_t n = 0; n < _mesh->coordinates().localSize(p); n++) {
+			Point dp = _mesh->coordinates().get(n, p) - _domainCenter[p];
+			norm += dp.x * dp.x + dp.y * dp.y;
+			Point cp = _mesh->coordinates().get(n, p) - _clusterCenter[_mesh->getContinuityPartition()[p]];
+			cNorm += cp.x * cp.x + cp.y * cp.y;
+		}
+		_domainNorm[p].x = std::sqrt(norm);
+		_clusterNorm[_mesh->getContinuityPartition()[p]].x += cNorm;
+	}
+	for (size_t c = 0; c < clusters; c++) {
+		_clusterNorm[c].x = std::sqrt(_clusterNorm[c].x);
+	}
 }
 
 
@@ -54,8 +100,18 @@ void StructuralMechanics2D::analyticRegularization(size_t domain, bool ortogonal
 
 	ESTEST(MANDATORY) << "Too few FIX POINTS: " << _mesh->fixPoints(domain).size() << (_mesh->fixPoints(domain).size() > 3 ? TEST_PASSED : TEST_FAILED);
 
-	size_t nodes = _mesh->coordinates().localSize(domain);
-	_instance->N1[domain].rows = 2 * nodes;
+	Point center; size_t np; double norm;
+	if (ortogonalCluster) {
+		center = _clusterCenter[_mesh->getContinuityPartition()[domain]];
+		np = _clusterNodes[_mesh->getContinuityPartition()[domain]];
+		norm = _clusterNorm[_mesh->getContinuityPartition()[domain]].x;
+	} else {
+		center = _domainCenter[domain];
+		np = _domainNodes[domain];
+		norm = _domainNorm[domain].x;
+	}
+
+	_instance->N1[domain].rows = 2 * _mesh->coordinates().localSize(domain);
 	_instance->N1[domain].cols = 3;
 	_instance->N1[domain].nnz = _instance->N1[domain].rows * _instance->N1[domain].cols;
 	_instance->N1[domain].type = 'G';
@@ -64,16 +120,16 @@ void StructuralMechanics2D::analyticRegularization(size_t domain, bool ortogonal
 
 	for (size_t c = 0; c < 2; c++) {
 		std::vector<double> kernel = { 0, 0 };
-		kernel[c] = 1;
-		for (size_t i = 0; i < nodes; i++) {
+		kernel[c] = 1 / std::sqrt(np);
+		for (size_t i = 0; i < _mesh->coordinates().localSize(domain); i++) {
 			_instance->N1[domain].dense_values.insert(_instance->N1[domain].dense_values.end(), kernel.begin(), kernel.end());
 		}
 	}
 
 	for (size_t i = 0; i < _mesh->coordinates().localSize(domain); i++) {
 		const Point &p = _mesh->coordinates().get(i, domain);
-		_instance->N1[domain].dense_values.push_back(-p.y);
-		_instance->N1[domain].dense_values.push_back( p.x);
+		_instance->N1[domain].dense_values.push_back(-(p.y - center.y) / norm);
+		_instance->N1[domain].dense_values.push_back( (p.x - center.x) / norm);
 	}
 
 	SparseMatrix Nt; // CSR matice s DOFY

@@ -12,6 +12,7 @@ namespace espreso {
 enum class Property;
 class SparseMatrix;
 class Solution;
+class Mesh;
 enum class REGULARIZATION;
 enum class B0_TYPE;
 
@@ -32,7 +33,7 @@ enum Matrices : int {
 
 struct Instance {
 
-	Instance(size_t domains, const std::vector<int> &neighbours);
+	Instance(const Mesh &mesh);
 	Instance(Instance &other, Matrices &share);
 	~Instance();
 

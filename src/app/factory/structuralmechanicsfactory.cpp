@@ -22,14 +22,14 @@ using namespace espreso;
 StructuralMechanicsFactory::StructuralMechanicsFactory(const StructuralMechanics2DConfiguration &configuration, Mesh *mesh)
 : _configuration(configuration), _bem(false)
 {
-	_instances.push_back(new Instance(mesh->parts(), mesh->neighbours()));
+	_instances.push_back(new Instance(*mesh));
 	_physics.push_back(new StructuralMechanics2D(mesh, _instances.front(), configuration));
 }
 
 StructuralMechanicsFactory::StructuralMechanicsFactory(const StructuralMechanics3DConfiguration &configuration, Mesh *mesh)
 : _configuration(configuration), _bem(false)
 {
-	_instances.push_back(new Instance(mesh->parts(), mesh->neighbours()));
+	_instances.push_back(new Instance(*mesh));
 
 	switch (configuration.discretization) {
 	case DISCRETIZATION::FEM:

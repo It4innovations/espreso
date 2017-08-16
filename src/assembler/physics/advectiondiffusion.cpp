@@ -240,7 +240,9 @@ void AdvectionDiffusion::analyticRegularization(size_t domain, bool ortogonalClu
 	if (ortogonalCluster) {
 		size_t nSum = 0;
 		for (size_t d = 0; d < _instance->domains; d++) {
-			nSum += _instance->K[d].rows;
+			if (_mesh->getContinuityPartition()[d] == _mesh->getContinuityPartition()[domain]) {
+				nSum += _instance->K[d].rows;
+			}
 		}
 		value = 1 / sqrt(nSum);
 	} else {

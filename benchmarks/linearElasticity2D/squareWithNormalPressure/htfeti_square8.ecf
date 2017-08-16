@@ -83,7 +83,7 @@ STRUCTURAL_MECHANICS_2D {
           METHOD         HYBRID_FETI;
           SOLVER                 PCG;
           PRECONDITIONER      LUMPED;
-          REGULARIZATION NULL_PIVOTS;
+          REGULARIZATION  FIX_POINTS;
           EPSILON               1e-8;
         }
       }
