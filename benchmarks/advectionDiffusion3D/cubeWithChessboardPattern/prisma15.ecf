@@ -1,0 +1,151 @@
+|*****************************************************************************|
+|-----------------------------------------------------------------------------|
+|                                      |                                      |
+|     ESPRESO CONFIGURATION FILE       |   ESPRESO Version:   1.0             |
+|                                      |   http://espreso.it4i.cz             |
+|-----------------------------------------------------------------------------|
+|  Case Description: homogenous problem with constant advection term          |
+|                                                                             |
+|-----------------------------------------------------------------------------|
+|*****************************************************************************|
+
+INPUT GENERATOR;
+PHYSICS ADVECTION_DIFFUSION_3D;
+
+DEFAULT_ARGS {
+  0   3;
+  1   2;
+  2   1;
+
+  3   1;
+  4   2;
+  5   3;
+
+  6   5;
+  7   5;
+  8   5;
+}
+
+GENERATOR {
+
+  SHAPE GRID;
+
+  GRID {
+    UNIFORM_DECOMPOSITION 1;
+
+    ELEMENT_TYPE    PRISMA15;
+
+    LENGTH_X            1;
+    LENGTH_Y            1;
+    LENGTH_Z            1;
+
+    BLOCKS_X            1;
+    BLOCKS_Y            1;
+    BLOCKS_Z            1;
+
+    CLUSTERS_X     [ARG0];
+    CLUSTERS_Y     [ARG1];
+    CLUSTERS_Z     [ARG2];
+
+    DOMAINS_X      [ARG3];
+    DOMAINS_Y      [ARG4];
+    DOMAINS_Z      [ARG5];
+
+    ELEMENTS_X     [ARG6];
+    ELEMENTS_Y     [ARG7];
+    ELEMENTS_Z     [ARG8];
+
+    NODES { # List of nodes regions.
+      Z0 "<0, 1> <0, 1> <0, 0>";
+      Y0 "<0, 1> <0, 0> <0, 1>";
+      X0 "<0, 0> <0, 1> <0, 1>";
+    }
+
+    ELEMENTS {
+      WHITE  CHESSBOARD_WHITE;
+      BLACK  NOT_SELECTED;
+    }
+
+    CHESSBOARD_SIZE 2;
+  }
+}
+
+ADVECTION_DIFFUSION_3D {
+
+  PHYSICS_SOLVER {
+    LOAD_STEPS          1;
+
+    LOAD_STEPS_SETTINGS {
+      1 {
+        TYPE        STEADY_STATE;
+        MODE              LINEAR;
+        SOLVER_LIBRARY   ESPRESO;
+
+        ESPRESO {
+          METHOD           TOTAL_FETI;
+          SOLVER             BICGSTAB;
+          PRECONDITIONER    DIRICHLET;
+          REGULARIZATION  NULL_PIVOTS;
+          EPSILON                1e-8;
+          ITERATIONS             1000;
+        }
+      }
+    }
+  }
+
+  STABILIZATION CAU;
+  SIGMA           0;
+
+  TEMPERATURE {
+    1 {
+      X0 300;
+      Y0 300;
+      Z0 300;
+    }
+  }
+
+  HEAT_SOURCE {
+    1 {
+      ALL_ELEMENTS 1e8;
+    }
+  }
+
+  TRANSLATION_MOTIONS {
+    1 {
+      ALL_ELEMENTS  X 50, Y 50, Z 50;
+    }
+  }
+
+  MATERIALS {
+
+    1 {
+      MODEL ISOTROPIC;
+
+      DENSITY  7850;
+      KXX         5;
+      Cp         40;
+    }
+
+    2 {
+      MODEL ISOTROPIC;
+ 
+      DENSITY  7850;
+      KXX        10;
+      Cp         50;
+    }
+  }
+
+  MATERIAL_SET {
+    WHITE 1;
+    BLACK 2;
+  }
+}
+
+OUTPUT {
+  MONITORING {
+    ALL_NODES MAX TEMPERATURE;
+    ALL_NODES MIN TEMPERATURE;
+    ALL_NODES AVG TEMPERATURE;
+    ALL_NODES NORM TEMPERATURE;
+  }
+}
