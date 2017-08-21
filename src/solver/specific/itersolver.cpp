@@ -115,9 +115,9 @@ void IterSolverBase::Solve ( SuperCluster & cluster,
 	case ESPRESO_ITERATIVE_SOLVER::QPCE:
 		Solve_QPCE_singular_dom(cluster, in_right_hand_side_primal );
 		break;
-//	case ESPRESO_ITERATIVE_SOLVER::orthogonalPCG_CP:
-//		Solve_full_ortho_CG_singular_dom_geneo(cluster, in_right_hand_side_primal);
-//		break;
+	case ESPRESO_ITERATIVE_SOLVER::orthogonalPCG_CP:
+		Solve_full_ortho_CG_singular_dom_geneo(cluster, in_right_hand_side_primal);
+		break;
 	case ESPRESO_ITERATIVE_SOLVER::PCG_CP:
 		ESINFO(GLOBAL_ERROR) << "Regular CG with conjugate projector not implemented yet";
 		break;
@@ -3873,7 +3873,6 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 //##################################################################################################*/
 //
 
-/*
 
 	std::cout << "\n\n Full orthogonal with restart and conjugate projector \n";
 
@@ -3943,9 +3942,9 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
 
 	if (USE_GGtINV == 1) {
-		Projector_l_inv_compG( timeEvalProj, cluster, cluster.vec_d, x_0, 1 );
+		Projector_Inv( timeEvalProj, cluster, cluster.vec_d, x_0, 1 );
 	} else {
-		Projector_l_compG	 ( timeEvalProj, cluster, cluster.vec_d, x_0, 1 );
+		Projector( timeEvalProj, cluster, cluster.vec_d, x_0, 1 );
 	}
 
 	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_0, Ax_0);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
@@ -3955,10 +3954,10 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 		r_0[i] =  b_l[i] - Ax_0[i];
 	}
 
-	if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
-		ConjProj_lambda0(cluster, r_0, x_1);
-		ConjProj_t(cluster, r_0, r_0);
-	}
+//	if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
+//		ConjProj_lambda0(cluster, r_0, x_1);
+//		ConjProj_t(cluster, r_0, r_0);
+//	}
 
 	SparseMatrix W_l;
 	W_l.type = 'G';
@@ -3980,25 +3979,25 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 
 		proj1_time.start();
 		if (USE_GGtINV == 1) {
-			Projector_l_inv_compG( timeEvalProj, cluster, r_0, r_l, 0 );
+			Projector_Inv( timeEvalProj, cluster, r_0, r_l, 0 );
 		} else {
-			Projector_l_compG		  ( timeEvalProj, cluster, r_0, r_l, 0 );
+			Projector		  ( timeEvalProj, cluster, r_0, r_l, 0 );
 		}
 		proj1_time.end();
 
 		// Scale
 
 		prec_time.start();
-		apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, z_l);
+		Apply_Prec(timeEvalPrec, cluster, r_l, z_l);
 		prec_time.end();
 
 		// Re-Scale
 
 		proj2_time.start();
 		if (USE_GGtINV == 1) {
-			Projector_l_inv_compG( timeEvalProj, cluster, z_l, w_l, 0 );
+			Projector_Inv( timeEvalProj, cluster, z_l, w_l, 0 );
 		} else {
-			Projector_l_compG		  ( timeEvalProj, cluster, z_l, w_l, 0 );
+			Projector		  ( timeEvalProj, cluster, z_l, w_l, 0 );
 		}
 		proj2_time.end();
 
@@ -4013,13 +4012,13 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 	// *** Calculate the stop condition *******************************************
 
 	double tol1;
-	if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
-		ConjProj(cluster, r_l, r_tmp );
-		tol1 = epsilon * parallel_norm_compressed(cluster, r_tmp);
-	}
-	else{
+//	if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
+//		ConjProj(cluster, r_l, r_tmp );
+//		tol1 = epsilon * parallel_norm_compressed(cluster, r_tmp);
+//	}
+//	else{
 		tol1 = epsilon * parallel_norm_compressed(cluster, r_l);
-	}
+//	}
 
 	double tol2 = epsilon * parallel_norm_compressed(cluster, b_l);
 
@@ -4068,9 +4067,9 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 		apply_A_l_comp_dom_B(timeEvalAppa, cluster, w_l, Aw_l);
 		appA_time.end();
 
-		if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
-			ConjProj_t(cluster, Aw_l, Aw_l);
-		}
+//		if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
+//			ConjProj_t(cluster, Aw_l, Aw_l);
+//		}
 
 		AW_l.dense_values.insert(AW_l.dense_values.end(), Aw_l.begin(), Aw_l.end());
 		AW_l.nnz += Aw_l.size();
@@ -4081,7 +4080,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 		gamma = parallel_ddot_compressed(cluster, z_l, r_l);
 
 
-		Projector_l_inv_compG(timeEvalProj, cluster, Aw_l, PAw_l, 0);
+		Projector_Inv(timeEvalProj, cluster, Aw_l, PAw_l, 0);
 
 		#pragma omp parallel for
 		for (size_t i = 0; i < x_l.size(); i++) {
@@ -4098,16 +4097,16 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 			// Scale
 
 			prec_time.start();
-			apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, z_l);
+			Apply_Prec(timeEvalPrec, cluster, r_l, z_l);
 			prec_time.end();
 
 			// Re-Scale
 
 			proj2_time.start();
 			if (USE_GGtINV == 1) {
-				Projector_l_inv_compG( timeEvalProj, cluster, z_l, w_l, 0 );
+				Projector_Inv( timeEvalProj, cluster, z_l, w_l, 0 );
 			} else {
-				Projector_l_compG		  ( timeEvalProj, cluster, z_l, w_l, 0 );
+				Projector		  ( timeEvalProj, cluster, z_l, w_l, 0 );
 			}
 			proj2_time.end();
 
@@ -4202,35 +4201,35 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 				r_0[i] =  b_l[i] - Ax_0[i];
 			}
 
-			if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
-				ConjProj_lambda0(cluster, r_0, x_l);
-				ConjProj_t(cluster, r_0, r_0);
-			}
+//			if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
+//				ConjProj_lambda0(cluster, r_0, x_l);
+//				ConjProj_t(cluster, r_0, r_0);
+//			}
 
 			switch (USE_PREC) {
 			case ESPRESO_PRECONDITIONER::DIRICHLET:
 
 				proj1_time.start();
 				if (USE_GGtINV == 1) {
-					Projector_l_inv_compG( timeEvalProj, cluster, r_0, r_l, 0 );
+					Projector_Inv(timeEvalProj, cluster, r_0, r_l, 0 );
 				} else {
-					Projector_l_compG		  ( timeEvalProj, cluster, r_0, r_l, 0 );
+					Projector		  ( timeEvalProj, cluster, r_0, r_l, 0 );
 				}
 				proj1_time.end();
 
 				// Scale
 
 				prec_time.start();
-				apply_prec_comp_dom_B(timeEvalPrec, cluster, r_l, z_l);
+				Apply_Prec(timeEvalPrec, cluster, r_l, z_l);
 				prec_time.end();
 
 				// Re-Scale
 
 				proj2_time.start();
 				if (USE_GGtINV == 1) {
-					Projector_l_inv_compG( timeEvalProj, cluster, z_l, w_l, 0 );
+					Projector_Inv( timeEvalProj, cluster, z_l, w_l, 0 );
 				} else {
-					Projector_l_compG		  ( timeEvalProj, cluster, z_l, w_l, 0 );
+					Projector		  ( timeEvalProj, cluster, z_l, w_l, 0 );
 				}
 				proj2_time.end();
 
@@ -4278,9 +4277,9 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 	ESINFO(CONVERGENCE) << "FULL CG Stop after " << N_ITER << " Ïterations";
 	// *** save solution - in dual and amplitudes *********************************************
 
-	if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
-		ConjProj(cluster, x_l, x_l);
-	}
+//	if (configuration.conj_projector == CONJ_PROJECTOR::GENEO) {
+//		ConjProj(cluster, x_l, x_l);
+//	}
 
 	#pragma omp parallel for
 	for (size_t i = 0; i < x_l.size(); i++) {
@@ -4300,9 +4299,9 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 
 
 	if (USE_GGtINV == 1) {
-		Projector_l_inv_compG ( timeEvalProj, cluster, r_l, amplitudes, 2 );
+		Projector_Inv ( timeEvalProj, cluster, r_l, amplitudes, 2 );
 	} else {
-		Projector_l_compG	  ( timeEvalProj, cluster, r_l, amplitudes, 2 );
+		Projector	  ( timeEvalProj, cluster, r_l, amplitudes, 2 );
 	}
 	// *** end - save solution - in dual and amplitudes ***************************************
 
@@ -4331,7 +4330,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 	timing.addEvent(ddot_alpha);
 
 	// *** END - Preslocal out the timing for the iteration loop ***********************************
-*/
+
 }
 
 
