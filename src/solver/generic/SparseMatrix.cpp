@@ -4289,6 +4289,9 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 
 if (defect_K_in == 0){
 
+	regMat = SparseMatrix();
+	Kplus_R = SparseMatrix();
+
 	    regMat.rows = 0;
 	    regMat.cols = 0;
 	    regMat.nnz= 0; 
@@ -5360,10 +5363,13 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 
 if (defect_K_in == 0){
+	regMat = SparseMatrix();
+	Kplus_R = SparseMatrix();
+	Kplus_Rl = SparseMatrix();
 
 	    regMat.rows = 0;
 	    regMat.cols = 0;
-	    regMat.nnz= 0; 
+	    regMat.nnz= 0;
 //      regMat.ConvertToCOO(1);
 
 	    Kplus_R.rows = 0;
