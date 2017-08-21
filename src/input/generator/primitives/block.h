@@ -50,7 +50,7 @@ public:
 private:
 	void forEachElement(const Triple<size_t> &start, const Triple<size_t> &end, std::function<void(std::vector<eslocal> &indices)> operation);
 	void forEachElement(const Triple<size_t> &start, const Triple<size_t> &end, std::function<void(std::vector<eslocal> &indices)> operation, std::function<void(Triple<size_t> &offset)> restriction);
-	void pickElements(const std::vector<Element*> &elements, Region *region, const BlockBorder &border);
+	void pickElements(const Triple<size_t> &start, const Triple<size_t> &end, const std::vector<Element*> &elements, Region *region);
 };
 
 }

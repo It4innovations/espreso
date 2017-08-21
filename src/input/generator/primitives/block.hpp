@@ -266,41 +266,23 @@ void Block<TElement>::boundaries(std::vector<Element*> &nodes, const std::vector
 }
 
 template <class TElement>
-void Block<TElement>::pickElements(const std::vector<Element*> &elements, Region *region, const BlockBorder &border)
+void Block<TElement>::pickElements(const Triple<size_t> &start, const Triple<size_t> &end, const std::vector<Element*> &elements, Region *region)
 {
-	Triple<size_t> nelements = block.elements * block.domains;
-	Triple<size_t> estart = (((border.start - block.start) / (block.end - block.start)) * nelements).ceil();
-	Triple<size_t> eend = (((border.end - block.start) / (block.end - block.start)) * nelements).floor();
-
-	if (estart == eend) {
-		return;
-	}
-
-	auto correct = [] (size_t &s, size_t &e) {
-		if (s == e) { if (s == 0) { e++; } else { s--; } }
-	};
-
 	auto isIn = [&] (const Triple<size_t> &index) {
 		return
-				estart.x <= index.x && index.x < eend.x &&
-				estart.y <= index.y && index.y < eend.y &&
-				estart.z <= index.z && index.z < eend.z;
+				start.x <= index.x && index.x < end.x &&
+				start.y <= index.y && index.y < end.y &&
+				start.z <= index.z && index.z < end.z;
 	};
 
-	correct(estart.x, eend.x);
-	correct(estart.y, eend.y);
-	correct(estart.z, eend.z);
-
-	Triple<size_t> domain, element;
-
-	size_t eindex = 0;
+	Triple<size_t> domain, element; size_t eindex = 0;
 	for (domain.z = 0; domain.z < block.domains.z; domain.z++) {
 		for (domain.y = 0; domain.y < block.domains.y; domain.y++) {
 			for (domain.x = 0; domain.x < block.domains.x; domain.x++) {
 
 				for (element.z = 0; element.z < block.elements.z; element.z++) {
 					for (element.y = 0; element.y < block.elements.y; element.y++) {
-						for (element.x = 0; element.x < block.elements.x; element.x++, eindex += TElement::subelements) {\
+						for (element.x = 0; element.x < block.elements.x; element.x++, eindex += TElement::subelements) {
 
 							if (isIn(domain * block.elements + element)) {
 								for (size_t e = 0; e < TElement::subelements; e++) {
@@ -367,6 +349,9 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region *regi
 	// Add only elements that have included more that one node
 	beginElement = minNode / (enodes - 1);
 	endElement = ((Triple<double>)(maxNode) / (enodes - 1)).ceil();
+	if (TElement::subnodes[2] == 1) {
+		endElement.z++;
+	}
 
 	// There is still change to miss all nodes by interval.
 	if (minNode.x > maxNode.x) { return; }
@@ -432,7 +417,7 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region *regi
 			});
 			break;
 		case 3:
-			pickElements(elements, region, intersection);
+			pickElements(beginElement, endElement, elements, region);
 			break;
 		default:
 			ESINFO(ERROR) << "Cannot select element of dimension " << dimension << " on 2D plane.";
@@ -448,7 +433,7 @@ void Block<TElement>::region(const std::vector<Element*> &elements, Region *regi
 			ESINFO(ERROR) << "Cannot select the interval.";
 			break;
 		case 3:
-			pickElements(elements, region, intersection);
+			pickElements(beginElement, endElement, elements, region);
 			break;
 		}
 	} break;
