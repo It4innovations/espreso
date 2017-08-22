@@ -52,8 +52,22 @@ void StructuralMechanics3D::analyticRegularization(size_t domain, bool ortogonal
 
 	ESTEST(MANDATORY) << "Too few FIX POINTS: " << _mesh->fixPoints(domain).size() << (_mesh->fixPoints(domain).size() > 3 ? TEST_PASSED : TEST_FAILED);
 
-	size_t nodes = _mesh->coordinates().localSize(domain);
-	_instance->N1[domain].rows = 3 * nodes;
+	Point center = _dCenter[domain], norm = _dNorm[domain];
+	double r44 = _dr44[domain], r45 = _dr45[domain], r46 = _dr46[domain], r55 = _dr55[domain], r56 = _dr56[domain];
+	size_t np = _dNp[domain];
+
+	if (ortogonalCluster) {
+		size_t cluster = _mesh->getContinuityPartition()[domain];
+		center = _cCenter[cluster], norm = _cNorm[cluster];
+		r44 = _cr44[cluster], r45 = _cr45[cluster], r46 = _cr46[cluster], r55 = _cr55[cluster], r56 = _cr56[cluster];
+		np = _cNp[cluster];
+	} else {
+		center = _dCenter[domain], norm = _dNorm[domain];
+		r44 = _dr44[domain], r45 = _dr45[domain], r46 = _dr46[domain], r55 = _dr55[domain], r56 = _dr56[domain];
+		np = _dNp[domain];
+	}
+
+	_instance->N1[domain].rows = 3 * _mesh->coordinates().localSize(domain);
 	_instance->N1[domain].cols = 6;
 	_instance->N1[domain].nnz = _instance->N1[domain].rows * _instance->N1[domain].cols;
 	_instance->N1[domain].type = 'G';
@@ -62,33 +76,32 @@ void StructuralMechanics3D::analyticRegularization(size_t domain, bool ortogonal
 
 	for (size_t c = 0; c < 3; c++) {
 		std::vector<double> kernel = { 0, 0, 0 };
-		kernel[c] = 1;
-		for (size_t i = 0; i < nodes; i++) {
+		kernel[c] = 1 / std::sqrt(np);
+		for (size_t i = 0; i < _mesh->coordinates().localSize(domain); i++) {
 			_instance->N1[domain].dense_values.insert(_instance->N1[domain].dense_values.end(), kernel.begin(), kernel.end());
 		}
 	}
 
 	for (size_t i = 0; i < _mesh->coordinates().localSize(domain); i++) {
-		const Point &p = _mesh->coordinates().get(i, domain);
-		_instance->N1[domain].dense_values.push_back(-p.y);
-		_instance->N1[domain].dense_values.push_back( p.x);
-		_instance->N1[domain].dense_values.push_back(   0);
+		Point p = _mesh->coordinates().get(i, domain) - center;
+		_instance->N1[domain].dense_values.push_back(-p.y / norm.x);
+		_instance->N1[domain].dense_values.push_back( p.x / norm.x);
+		_instance->N1[domain].dense_values.push_back(             0);
 	}
 
 	for (size_t i = 0; i < _mesh->coordinates().localSize(domain); i++) {
-		const Point &p = _mesh->coordinates().get(i, domain);
-		_instance->N1[domain].dense_values.push_back(-p.z);
-		_instance->N1[domain].dense_values.push_back(   0);
-		_instance->N1[domain].dense_values.push_back( p.x);
+		Point p = _mesh->coordinates().get(i, domain) - center;
+		_instance->N1[domain].dense_values.push_back((-p.z - r45 / r44 * (-p.y / norm.x)) / norm.y);
+		_instance->N1[domain].dense_values.push_back((   0 - r45 / r44 * ( p.x / norm.x)) / norm.y);
+		_instance->N1[domain].dense_values.push_back(( p.x - r45 / r44 * (   0 / norm.x)) / norm.y);
 	}
 
 	for (size_t i = 0; i < _mesh->coordinates().localSize(domain); i++) {
-		const Point &p = _mesh->coordinates().get(i, domain);
-		_instance->N1[domain].dense_values.push_back(   0);
-		_instance->N1[domain].dense_values.push_back(-p.z);
-		_instance->N1[domain].dense_values.push_back( p.y);
+		Point p = _mesh->coordinates().get(i, domain) - center;
+		_instance->N1[domain].dense_values.push_back((   0 - r56 / r55 * ((-p.z - r45 / r44 * (-p.y / norm.x)) / norm.y) - r46 / r44 * (-p.y / norm.x)) / norm.z);
+		_instance->N1[domain].dense_values.push_back((-p.z - r56 / r55 * ((   0 - r45 / r44 * ( p.x / norm.x)) / norm.y) - r46 / r44 * ( p.x / norm.x)) / norm.z);
+		_instance->N1[domain].dense_values.push_back(( p.y - r56 / r55 * (( p.x - r45 / r44 * (   0 / norm.x)) / norm.y) - r46 / r44 * (   0 / norm.x)) / norm.z);
 	}
-
 
 	SparseMatrix Nt; // CSR matice s DOFY
 	Nt.rows = 6;

@@ -49,13 +49,13 @@ protected:
 	const StructuralMechanicsConfiguration &_configuration;
 
 	// to handle with non-continuous partition
-	std::vector<Point> _clusterCenter;
-	std::vector<Point> _clusterNorm;
-	std::vector<size_t> _clusterNodes;
+	std::vector<Point> _cCenter, _cNorm;
+	std::vector<double> _cr44, _cr45, _cr46, _cr55, _cr56;
+	std::vector<size_t> _cNp;
 
-	std::vector<Point> _domainCenter;
-	std::vector<Point> _domainNorm;
-	std::vector<size_t> _domainNodes;
+	std::vector<Point> _dCenter, _dNorm;
+	std::vector<double> _dr44, _dr45, _dr46, _dr55, _dr56;
+	std::vector<size_t> _dNp;
 };
 
 }

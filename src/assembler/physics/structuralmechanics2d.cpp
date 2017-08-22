@@ -43,52 +43,6 @@ void StructuralMechanics2D::prepare()
 	}
 
 	StructuralMechanics::prepare();
-
-	size_t clusters = *std::max_element(_mesh->getContinuityPartition().begin(), _mesh->getContinuityPartition().end()) + 1;
-	_clusterCenter.resize(clusters);
-	_clusterNorm.resize(clusters);
-	_clusterNodes.resize(clusters);
-
-	_domainCenter.resize(_mesh->parts());
-	_domainNorm.resize(_mesh->parts());
-	_domainNodes.resize(_mesh->parts());
-
-	#pragma omp parallel for
-	for (size_t p = 0; p < _mesh->parts(); p++) {
-		Point center;
-		for (size_t n = 0; n < _mesh->coordinates().localSize(p); n++) {
-			center += _mesh->coordinates().get(n, p);
-		}
-		_domainCenter[p] = center;
-	}
-
-	for (size_t p = 0; p < _mesh->parts(); p++) {
-		_clusterCenter[_mesh->getContinuityPartition()[p]] += _domainCenter[p];
-		_domainNodes[p] = _mesh->coordinates().localSize(p);
-		_domainCenter[p] = _domainCenter[p] / _domainNodes[p];
-		_clusterNodes[_mesh->getContinuityPartition()[p]] += _domainNodes[p];
-	}
-	for (size_t c = 0; c < clusters; c++) {
-		_clusterCenter[c] /= _clusterNodes[c];
-	}
-
-	std::vector<double> cNorm(_mesh->parts());
-
-	#pragma omp parallel for
-	for (size_t p = 0; p < _mesh->parts(); p++) {
-		double norm = 0, cNorm = 0;
-		for (size_t n = 0; n < _mesh->coordinates().localSize(p); n++) {
-			Point dp = _mesh->coordinates().get(n, p) - _domainCenter[p];
-			norm += dp.x * dp.x + dp.y * dp.y;
-			Point cp = _mesh->coordinates().get(n, p) - _clusterCenter[_mesh->getContinuityPartition()[p]];
-			cNorm += cp.x * cp.x + cp.y * cp.y;
-		}
-		_domainNorm[p].x = std::sqrt(norm);
-		_clusterNorm[_mesh->getContinuityPartition()[p]].x += cNorm;
-	}
-	for (size_t c = 0; c < clusters; c++) {
-		_clusterNorm[c].x = std::sqrt(_clusterNorm[c].x);
-	}
 }
 
 
@@ -102,13 +56,13 @@ void StructuralMechanics2D::analyticRegularization(size_t domain, bool ortogonal
 
 	Point center; size_t np; double norm;
 	if (ortogonalCluster) {
-		center = _clusterCenter[_mesh->getContinuityPartition()[domain]];
-		np = _clusterNodes[_mesh->getContinuityPartition()[domain]];
-		norm = _clusterNorm[_mesh->getContinuityPartition()[domain]].x;
+		center = _cCenter[_mesh->getContinuityPartition()[domain]];
+		np = _cNp[_mesh->getContinuityPartition()[domain]];
+		norm = _cNorm[_mesh->getContinuityPartition()[domain]].x;
 	} else {
-		center = _domainCenter[domain];
-		np = _domainNodes[domain];
-		norm = _domainNorm[domain].x;
+		center = _dCenter[domain];
+		np = _dNp[domain];
+		norm = _dNorm[domain].x;
 	}
 
 	_instance->N1[domain].rows = 2 * _mesh->coordinates().localSize(domain);
