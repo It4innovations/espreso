@@ -239,7 +239,7 @@ void AdvectionDiffusion3D::processElement(const Step &step, Matrices matrices, c
 	bool CAU = _configuration.stabilization == AdvectionDiffusion3DConfiguration::STABILIZATION::CAU;
 	bool tangentCorrection = (matrices & Matrices::K) && _configuration.tangent_matrix_correction && step.iteration;
 
-	DenseMatrix Ce(3, 3), coordinates, J(3, 3), invJ(3, 3), dND;
+	DenseMatrix Ce(3, 3), coordinates(e->nodes(), 3), J(3, 3), invJ(3, 3), dND;
 	double detJ, temp;
 	DenseMatrix f(e->nodes(), 1);
 	DenseMatrix U(e->nodes(), 3);
@@ -250,8 +250,6 @@ void AdvectionDiffusion3D::processElement(const Step &step, Matrices matrices, c
 	DenseMatrix tangentK, BT, BTN, gpCD, CD, CDBTN, CDe;
 
 	const Material* material = _mesh->materials()[e->param(Element::MATERIAL)];
-
-	coordinates.resize(e->nodes(), 3);
 
 	if (tangentCorrection) {
 		CD.resize(e->nodes(), 9);
@@ -282,11 +280,11 @@ void AdvectionDiffusion3D::processElement(const Step &step, Matrices matrices, c
 	Me.resize(0, 0);
 	Re.resize(0, 0);
 	fe.resize(0, 0);
-	if (matrices & (Matrices::K | Matrices::R)) {
+	if ((matrices & Matrices::K) || ((matrices & Matrices::R) && step.timeIntegrationConstantK != 0)) {
 		Ke.resize(Ksize, Ksize);
 		Ke = 0;
 	}
-	if (matrices & Matrices::M) {
+	if ((matrices & Matrices::M) || ((matrices & Matrices::R) && step.timeIntegrationConstantM != 0)) {
 		Me.resize(Ksize, Ksize);
 		Me = 0;
 	}
@@ -395,7 +393,7 @@ void AdvectionDiffusion3D::processElement(const Step &step, Matrices matrices, c
 		Ce(1, 1) += _configuration.sigma * h_e * norm_u_e;
 		Ce(2, 2) += _configuration.sigma * h_e * norm_u_e;
 
-		if (matrices & Matrices::M) {
+		if (matrices & (Matrices::M | Matrices::R)) {
 			Me.multiply(e->N()[gp], e->N()[gp], detJ * gpM(0, 0) * e->weighFactor()[gp], 1, true);
 		}
 		if (matrices & (Matrices::K | Matrices::R)) {
@@ -426,9 +424,13 @@ void AdvectionDiffusion3D::processElement(const Step &step, Matrices matrices, c
 	}
 
 	if (matrices & Matrices::R) {
-		Re.multiply(Ke, T);
+		Re.multiply(Ke, T, step.timeIntegrationConstantK, 0);
+		Re.multiply(Me, T, step.timeIntegrationConstantM, 1);
 		if (!(matrices & Matrices::K)) {
 			Ke.resize(0, 0);
+		}
+		if (!(matrices & Matrices::M)) {
+			Me.resize(0, 0);
 		}
 	}
 
