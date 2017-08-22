@@ -237,7 +237,7 @@ void AdvectionDiffusion3D::assembleMaterialMatrix(const Step &step, const Elemen
 void AdvectionDiffusion3D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	bool CAU = _configuration.stabilization == AdvectionDiffusion3DConfiguration::STABILIZATION::CAU;
-	bool tangentCorrection = (matrices & Matrices::K) && _configuration.tangent_matrix_correction && step.iteration;
+	bool tangentCorrection = (matrices & Matrices::K) && step.tangentMatrixCorrection;
 
 	DenseMatrix Ce(3, 3), coordinates(e->nodes(), 3), J(3, 3), invJ(3, 3), dND;
 	double detJ, temp;

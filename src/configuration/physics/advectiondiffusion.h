@@ -40,7 +40,6 @@ struct AdvectionDiffusionConfiguration: public Configuration {
 		{ "CAU" , STABILIZATION::CAU , "CAU stabilization." },
 	}));
 	PARAMETER(double, sigma, "Inconsistent stabilization parameters.", 0);
-	PARAMETER(bool, tangent_matrix_correction, "Add derivation matrix to stiffness matrix.", 0);
 
 	SUBCONFIG(PhysicsSolver<AdvectionDiffusionNonLinearConvergence>, physics_solver, "Settings of physics solver.");
 

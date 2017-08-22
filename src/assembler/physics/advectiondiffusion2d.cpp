@@ -163,7 +163,7 @@ void AdvectionDiffusion2D::assembleMaterialMatrix(const Step &step, const Elemen
 void AdvectionDiffusion2D::processElement(const Step &step, Matrices matrices, const Element *e, DenseMatrix &Ke, DenseMatrix &Me, DenseMatrix &Re, DenseMatrix &fe, const std::vector<Solution*> &solution) const
 {
 	bool CAU = _configuration.stabilization == AdvectionDiffusion2DConfiguration::STABILIZATION::CAU;
-	bool tangentCorrection = (matrices & Matrices::K) && _configuration.tangent_matrix_correction && step.iteration;
+	bool tangentCorrection = (matrices & Matrices::K) && step.tangentMatrixCorrection;
 
 	DenseMatrix Ce(2, 2), coordinates(e->nodes(), 2), J(2, 2), invJ(2, 2), dND;
 	double detJ, temp;

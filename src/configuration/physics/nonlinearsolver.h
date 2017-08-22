@@ -43,6 +43,7 @@ struct NonLinearSolverBase: public Configuration {
 
 	PARAMETER(size_t, max_iterations, "Allowed number of iterations.", 15);
 	PARAMETER(bool, line_search, "Set line search.", false);
+	PARAMETER(bool, tangent_matrix_correction, "Add derivation matrix to stiffness matrix.", 0);
 	PARAMETER(size_t, substeps, "Number of loading substeps.", 1);
 	PARAMETER(bool, adaptive_precision, "Adaptive inner precision control", false);
 	PARAMETER(double, r_tol, "Parameter for decrease outer precision  ", 0.1);

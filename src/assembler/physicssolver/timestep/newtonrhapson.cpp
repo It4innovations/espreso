@@ -43,10 +43,12 @@ void NewtonRhapson::solve(Step &step, LoadStepSolver &loadStepSolver)
 
 
 	step.iteration = 0;
+	step.tangentMatrixCorrection = false;
 	_assembler.solve(step, loadStepSolver.updateStructuralMatrices(step, Matrices::K | Matrices::M | Matrices::f | Matrices::B1));
 	_assembler.processSolution(step);
 	_assembler.storeSubSolution(step);
 
+	step.tangentMatrixCorrection = _configuration.tangent_matrix_correction;
 	while (step.iteration++ < _configuration.max_iterations) {
 		if (!_configuration.convergenceParameters().checkResidual()) {
 			ESINFO(CONVERGENCE) << "\n >> EQUILIBRIUM ITERATION " << step.iteration + 1 << " IN SUBSTEP "  << step.substep + 1;
