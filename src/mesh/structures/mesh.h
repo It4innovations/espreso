@@ -36,6 +36,7 @@ public:
 
 	virtual void partitiate(size_t parts);
 	virtual void partitiateNoncontinuously(size_t parts, size_t noncontinuousParts);
+	virtual void repartitiate(size_t parts, std::vector<size_t> &domainDOFCount, std::vector<std::vector<eslocal> > &previousDOFMap, std::vector<std::vector<eslocal> > &previousDomainMap);
 	void computeFixPoints(size_t number);
 	void computeVolumeCorners(size_t number, bool onVertices, bool onEdges, bool onFaces);
 	void computePlaneCorners(size_t number, bool onVertices, bool onEdges);
@@ -125,6 +126,7 @@ public:
 	std::vector<size_t> assignUniformDOFsIndicesToFaces(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets);
 	std::vector<size_t> assignUniformDOFsIndicesToElements(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets);
 
+	void clearNodesDOFsCounters();
 	void computeNodesDOFsCounters(const std::vector<Property> &DOFs);
 	void computeEdgesDOFsCounters(const std::vector<Property> &DOFs);
 	void computeFacesDOFsCounters(const std::vector<Property> &DOFs);

@@ -67,6 +67,9 @@ void Factory::initAsync(const OutputConfiguration &configuration)
 {
 	_asyncStore = NULL;
 	async::Config::setMode(async::SYNC);
+	if (configuration.mode == OUTPUT_MODE::SYNC) {
+		return;
+	}
 	if (configuration.solution || configuration.settings) {
 		if (configuration.mode != OUTPUT_MODE::SYNC && (configuration.settings || configuration.FETI_data)) {
 			ESINFO(ALWAYS) << Info::TextColor::YELLOW << "Storing of SETTINGS or FETI_DATA is implemented only for OUTPUT::MODE==SYNC. Hence, output is synchronized!";

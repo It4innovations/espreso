@@ -19,6 +19,7 @@ struct StructuralMechanics: public virtual Physics
 	virtual bool isMatrixTimeDependent(const Step &step) const;
 	virtual bool isMatrixTemperatureDependent(const Step &step) const;
 	virtual void prepare();
+	virtual void updateMesh(const std::vector<std::vector<eslocal> > &previousDOFMap, const std::vector<std::vector<eslocal> > &previousDomainMap);
 	virtual void preprocessData(const Step &step);
 
 	const std::vector<Property>& edgeDOFs() const

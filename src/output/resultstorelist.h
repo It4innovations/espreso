@@ -16,6 +16,11 @@ public:
 
 	void add(Store *rs) { _results.push_back(rs); }
 
+	virtual void updateMesh()
+	{
+		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->updateMesh(); } );
+	}
+
 	virtual void storeSettings(const Step &step)
 	{
 		std::for_each(_results.begin(), _results.end(), [&] (Store *rs) { rs->storeSettings(step); } );

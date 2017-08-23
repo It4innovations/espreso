@@ -13,6 +13,8 @@
 #include "../../basis/logging/logging.h"
 #include "../../basis/utilities/utils.h"
 #include "../../mesh/structures/elementtypes.h"
+#include "../../mesh/structures/mesh.h"
+#include "../../mesh/elements/element.h"
 
 #include "mpi.h"
 
@@ -48,6 +50,48 @@ Assembler::~Assembler()
 	for (auto it = _timeEvents.begin(); it != _timeEvents.end(); ++it) {
 		delete it->second;
 	}
+}
+
+void Assembler::changeMeshPartition(size_t parts, std::vector<std::vector<eslocal> > &previousDOFMap, std::vector<std::vector<eslocal> > &previousDomainMap)
+{
+	timeWrapper("change mesh partition", [&] () {
+		mesh.repartitiate(parts, instance.domainDOFCount, previousDOFMap, previousDomainMap);
+		instance.domains = mesh.parts();
+		instance.clear();
+		instance.clustersMap = mesh.getContinuityPartition();
+		transformDomainsData(previousDOFMap, previousDomainMap, instance.primalSolution);
+		physics.updateMesh(previousDOFMap, previousDomainMap);
+		store.updateMesh();
+	});
+}
+
+void Assembler::transformDomainsData(const std::vector<std::vector<eslocal> > &previousDOFMap, const std::vector<std::vector<eslocal> > &previousDomainMap, std::vector<std::vector<double> > &data)
+{
+	timeWrapper("transform domain data", [&] () {
+		std::vector<std::vector<double> > newdata;
+
+		for (size_t p = 0; p < mesh.parts(); p++) {
+			newdata.push_back(std::vector<double>(instance.domainDOFCount[p]));
+		}
+
+		size_t DOFs = physics.pointDOFs().size();
+		for (size_t n = 0; n < mesh.nodes().size(); n++) {
+
+			for (auto dit = mesh.nodes()[n]->domains().begin(); dit != mesh.nodes()[n]->domains().end(); dit++) {
+				for (size_t dof = 0; dof < physics.pointDOFs().size(); dof++) {
+
+					for (auto prevdit = previousDomainMap[n].begin(); prevdit != previousDomainMap[n].end(); prevdit++) {
+						size_t offset = DOFs * (prevdit - previousDomainMap[n].begin());
+						for (auto prevdof = previousDOFMap[n].begin() + offset; prevdof != previousDOFMap[n].begin() + offset + physics.pointDOFs().size(); prevdof++) {
+							newdata[*dit][mesh.nodes()[n]->DOFIndex(*dit, dof)] += data[*prevdit][*prevdof] / previousDomainMap[n].size();
+						}
+					}
+				}
+			}
+
+		}
+		data = newdata;
+	});
 }
 
 void Assembler::preprocessData(const Step &step)

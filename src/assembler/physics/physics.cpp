@@ -464,4 +464,8 @@ void Physics::assembleB0FromKernels(const std::vector<SparseMatrix> &kernels)
 	_equalityConstraints->insertKernelsGluingToB0(kernels);
 }
 
+void Physics::updateMesh(const std::vector<std::vector<eslocal> > &previousDOFMap, const std::vector<std::vector<eslocal> > &previousDomainMap)
+{
+	ESINFO(GLOBAL_ERROR) << "Implement update mesh method for a given physics.";
+}
 

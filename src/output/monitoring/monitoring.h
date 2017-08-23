@@ -25,6 +25,7 @@ class Monitoring: public Store {
 public:
 	Monitoring(const OutputConfiguration &output, const Mesh *mesh);
 
+	void updateMesh();
 	void storeSettings(const Step &step) {};
 	void storeFETIData(const Step &step, const Instance &instance) {};
 	void storeSubSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties) {};

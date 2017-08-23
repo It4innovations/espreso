@@ -226,6 +226,23 @@ void AdvectionDiffusion::prepare()
 	_mesh->fillDomainsSettings();
 }
 
+void AdvectionDiffusion::updateMesh(const std::vector<std::vector<eslocal> > &previousDOFMap, const std::vector<std::vector<eslocal> > &previousDomainMap)
+{
+	_mesh->clearNodesDOFsCounters();
+	_mesh->computeNodesDOFsCounters(pointDOFs());
+
+	_mesh->fillDomainsSettings();
+
+	if (_instance->solutions[offset + SolutionIndex::GRADIENT] != NULL) {
+		delete _instance->solutions[offset + SolutionIndex::GRADIENT];
+		_instance->solutions[offset + SolutionIndex::GRADIENT] = NULL;
+	}
+	if (_instance->solutions[offset + SolutionIndex::FLUX] != NULL) {
+		delete _instance->solutions[offset + SolutionIndex::FLUX];
+		_instance->solutions[offset + SolutionIndex::FLUX] = NULL;
+	}
+}
+
 void AdvectionDiffusion::analyticRegularization(size_t domain, bool ortogonalCluster)
 {
 	if (_instance->K[domain].mtype != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {

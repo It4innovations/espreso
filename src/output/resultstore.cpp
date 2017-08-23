@@ -51,6 +51,12 @@ ResultStore::~ResultStore()
 	}
 }
 
+void ResultStore::updateMesh()
+{
+	delete _meshInfo;
+	_meshInfo = NULL;
+}
+
 void ResultStore::prepare()
 {
 	if (_meshInfo == NULL) {

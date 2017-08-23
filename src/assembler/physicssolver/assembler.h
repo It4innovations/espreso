@@ -29,6 +29,9 @@ public:
 	Assembler(Instance &instance, Physics &physics, Mesh &mesh, Store &store, LinearSolver &linearSolver);
 	~Assembler();
 
+	void changeMeshPartition(size_t parts, std::vector<std::vector<eslocal> > &previousDOFMap, std::vector<std::vector<eslocal> > &previousDomainMap);
+	void transformDomainsData(const std::vector<std::vector<eslocal> > &previousDOFMap, const std::vector<std::vector<eslocal> > &previousDomainMap,  std::vector<std::vector<double> > &data);
+
 	void preprocessData(const Step &step);
 	void updateMatrices(const Step &step, Matrices matrices);
 	void processSolution(const Step &step);

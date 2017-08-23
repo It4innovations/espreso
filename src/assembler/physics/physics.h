@@ -47,6 +47,7 @@ struct Physics {
 	virtual void prepare() =0;
 	virtual void prepareHybridTotalFETIWithCorners() =0;
 	virtual void prepareHybridTotalFETIWithKernels() =0;
+	virtual void updateMesh(const std::vector<std::vector<eslocal> > &previousDOFMap, const std::vector<std::vector<eslocal> > &previousDomainMap);
 
 	virtual void preprocessData(const Step &step) =0;
 

@@ -128,6 +128,11 @@ Monitoring::Monitoring(const OutputConfiguration &output, const Mesh *mesh)
 	_os << "\n\n";
 }
 
+void Monitoring::updateMesh()
+{
+	// probably empty?
+}
+
 void Monitoring::storeSolution(const Step &step, const std::vector<Solution*> &solution, const std::vector<std::pair<ElementType, Property> > &properties)
 {
 	for (size_t i = 0; i < _monitors.size(); i++) {

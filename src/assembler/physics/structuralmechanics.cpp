@@ -256,6 +256,11 @@ void StructuralMechanics::prepare()
 	}
 }
 
+void StructuralMechanics::updateMesh(const std::vector<std::vector<eslocal> > &previousDOFMap, const std::vector<std::vector<eslocal> > &previousDomainMap)
+{
+
+}
+
 void StructuralMechanics::preprocessData(const Step &step)
 {
 	if (offset != (size_t)-1) {

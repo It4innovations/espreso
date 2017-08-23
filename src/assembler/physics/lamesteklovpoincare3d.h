@@ -13,6 +13,7 @@ struct LameSteklovPoincare3D: public BoundaryBased3D, public StructuralMechanics
 
 	void prepare();
 	void prepareHybridTotalFETIWithKernels();
+	void updateMesh(const std::vector<std::vector<eslocal> > &previousDOFMap, const std::vector<std::vector<eslocal> > &previousDomainMap);
 
 	virtual void preprocessData(const Step &step);
 

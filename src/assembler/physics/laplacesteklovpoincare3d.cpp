@@ -43,6 +43,11 @@ void LaplaceSteklovPoincare3D::prepare()
 	extractBoundaryNodes();
 }
 
+void LaplaceSteklovPoincare3D::updateMesh(const std::vector<std::vector<eslocal> > &previousDOFMap, const std::vector<std::vector<eslocal> > &previousDomainMap)
+{
+
+}
+
 void LaplaceSteklovPoincare3D::prepareHybridTotalFETIWithKernels()
 {
 	// extraction of boundary nodes compute all faces on domains. Hence, no face computation is needed

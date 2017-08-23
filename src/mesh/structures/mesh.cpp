@@ -1945,6 +1945,66 @@ static void fillDOFsOffsets(std::vector<Property> &allDOFsOffsets, const std::ve
 	}
 }
 
+void Mesh::repartitiate(size_t parts, std::vector<size_t> &domainDOFCount, std::vector<std::vector<eslocal> > &previousDOFMap, std::vector<std::vector<eslocal> > &previousDomainMap)
+{
+	previousDOFMap.clear();
+	previousDomainMap.clear();
+	for (size_t n = 0; n < _nodes.size(); n++) {
+		previousDOFMap.push_back(_nodes[n]->DOFsIndices());
+		previousDomainMap.push_back(_nodes[n]->domains());
+		_nodes[n]->DOFsIndices().clear();
+	}
+
+	partitiate(parts);
+
+	// TODO: DOFs in edges, faces, elements
+	size_t threads = environment->OMP_NUM_THREADS;
+	std::vector<size_t> distribution = Esutils::getDistribution(threads, _nodes.size());
+
+	size_t DOFSize = _nodesDOFsOffsets.size();
+	std::vector<size_t> offsets(parts);
+	std::vector<size_t> DOFs(DOFSize);
+	std::iota(DOFs.begin(), DOFs.end(), 0);
+
+	// domains x DOFs x (threads + 1)
+	std::vector<std::vector<std::vector<size_t> > > threadsOffsets(parts, std::vector<std::vector<size_t> >(DOFSize, std::vector<size_t>(threads + 1)));
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		std::vector<std::vector<size_t> > threadOffset(parts, std::vector<size_t>(DOFSize, 0));
+		for (size_t i = distribution[t]; i < distribution[t + 1]; i++) {
+			_nodes[i]->DOFsIndices().reserve(DOFSize * _nodes[i]->domains().size());
+
+			_nodes[i]->DOFsIndices().insert(_nodes[i]->DOFsIndices().begin(), _nodes[i]->domains().size() * DOFSize, __WITHOUT_DOF__);
+			for (size_t d = 0; d < _nodes[i]->domains().size(); d++) {
+				for (size_t dof = 0; dof < DOFSize; dof++) {
+					if (previousDOFMap[i][dof] != __WITHOUT_DOF__) {
+						_nodes[i]->DOFsIndices()[d * DOFSize + dof] = __HAS_DOF__;
+						threadOffset[_nodes[i]->domains()[d]][dof]++;
+					}
+				}
+			}
+		}
+
+		for (size_t p = 0; p < parts; p++) {
+			for (size_t d = 0; d < DOFSize; d++) {
+				threadsOffsets[p][d][t] = threadOffset[p][d];
+			}
+		}
+	}
+
+	std::vector<size_t> sizes(parts);
+	for (size_t p = 0; p < parts; p++) {
+		for (size_t d = 0; d < DOFSize; d++) {
+			sizes[p] += Esutils::sizesToOffsets(threadsOffsets[p][d]);
+		}
+	}
+	domainDOFCount = sizes;
+
+	_DOFtoElement.clear();
+	setDOFsIndices(_nodes, _DOFtoElement, parts, DOFSize, DOFs, offsets, threadsOffsets);
+}
+
 std::vector<size_t> Mesh::assignVariousDOFsIndicesToNodes(const std::vector<size_t> &offsets, const std::vector<Property> &DOFs, std::vector<size_t> &DOFsOffsets)
 {
 	auto findDOF = [&] (const std::vector<Property> &DOFs, size_t &added, std::vector<bool> &addDOF) {
@@ -2277,6 +2337,13 @@ void Mesh::computeEdgesDOFsCounters(const std::vector<Property> &DOFs)
 void Mesh::computeFacesDOFsCounters(const std::vector<Property> &DOFs)
 {
 	computeDOFsCounters(_faces, DOFs, _neighbours, _coordinates->_globalIndex, _coordinates->_globalMapping);
+}
+
+void Mesh::clearNodesDOFsCounters()
+{
+	for (size_t e = 0; e < _nodes.size(); e++) {
+		_nodes[e]->DOFsDomainsCounters().clear();
+	}
 }
 
 void APIMesh::computeDOFsDOFsCounters()

@@ -113,6 +113,15 @@ void TransientFirstOrderImplicit::runNextTimeStep(Step &step)
 		step.currentTime = _startTime + _duration;
 	}
 	step.timeStep = step.currentTime - last;
+
+	std::vector<std::vector<eslocal> > previousDOFMapping, previousDomainMap;
+	_assembler.changeMeshPartition(step.substep % 8 + 1, previousDOFMapping, previousDomainMap);
+	_assembler.transformDomainsData(previousDOFMapping, previousDomainMap, solutions[SolutionIndex::U]->data);
+	_assembler.transformDomainsData(previousDOFMapping, previousDomainMap, solutions[SolutionIndex::dU]->data);
+	_assembler.transformDomainsData(previousDOFMapping, previousDomainMap, solutions[SolutionIndex::V]->data);
+	_assembler.transformDomainsData(previousDOFMapping, previousDomainMap, solutions[SolutionIndex::X]->data);
+	_assembler.transformDomainsData(previousDOFMapping, previousDomainMap, solutions[SolutionIndex::Y]->data);
+
 	processTimeStep(step);
 }
 
