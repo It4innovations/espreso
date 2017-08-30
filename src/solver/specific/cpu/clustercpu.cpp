@@ -1,6 +1,11 @@
 // Just for testing to get the matrix kernel using dissection
 // #include <Driver/DissectionSolver.hpp>
 
+#ifdef READEX_LEVEL_1
+#include <readex.h>
+#include <readex_regions.h>
+#endif
+
 #include "clustercpu.h"
 
 #include "../../../assembler/instance.h"
@@ -8,6 +13,10 @@
 using namespace espreso;
 
 void ClusterCPU::Create_SC_perDomain(bool USE_FLOAT) {
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Cluster_CreateLSC, "Cluster--CreateLSC", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 
     #pragma omp parallel for
 	for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
@@ -36,7 +45,11 @@ void ClusterCPU::Create_SC_perDomain(bool USE_FLOAT) {
     #pragma omp parallel for
     for (size_t i = 0; i < domains_in_global_index.size(); i++ )
         domains[i].B1t_comp_dom.Clear();
-	}
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Cluster_CreateLSC);
+#endif
+
+}
 
 void ClusterCPU::Create_Kinv_perDomain() {
 
@@ -77,6 +90,10 @@ void ClusterCPU::Create_Kinv_perDomain() {
 
 
 void ClusterCPU::SetupKsolvers ( ) {
+//#ifdef READEX_LEVEL_1
+//	READEX_REGION_START(REG_Cluster_Kfactorization, "Cluster--Kfactorization", SCOREP_USER_REGION_TYPE_COMMON);
+//#endif
+
 
 //   	#pragma omp parallel for
 //	for (size_t d = 0; d < domains.size(); d++) {
@@ -160,6 +177,9 @@ void ClusterCPU::SetupKsolvers ( ) {
 //    }
 //    ESINFO(PROGRESS3);
 
+//#ifdef READEX_LEVEL_1
+//	READEX_REGION_START(REG_Cluster_Kfactorization, "Cluster--Kfactorization", SCOREP_USER_REGION_TYPE_COMMON);
+//#endif
 }
 
 

@@ -1,3 +1,7 @@
+#ifdef READEX_LEVEL_1
+#include <readex.h>
+#include <readex_regions.h>
+#endif
 
 #include "itersolvercpu.h"
 
@@ -6,6 +10,10 @@ using namespace espreso;
 // *** Action of K+ routines *********************************************
 
 void IterSolverCPU::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Apply_A, "Apply_A", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 
 	 time_eval.totalTime.start();
 
@@ -110,9 +118,17 @@ void IterSolverCPU::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
 
      time_eval.totalTime.end();
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Apply_A);
+#endif
+
 }
 
 void IterSolverCPU::Apply_Prec( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out ) {
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Apply_Prec, "Apply_Prec", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 
 	 time_eval.totalTime.start();
 
@@ -193,6 +209,10 @@ void IterSolverCPU::Apply_Prec( TimeEval & time_eval, SuperCluster & cluster, SE
 
 
 	 time_eval.totalTime.end();
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Apply_Prec);
+#endif
 
 }
 

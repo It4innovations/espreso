@@ -6,6 +6,11 @@
 
 #include "../../basis/utilities/utils.h"
 
+#ifdef READEX_LEVEL_1
+#include <readex.h>
+#include <readex_regions.h>
+#endif
+
 using namespace espreso;
 
 IterSolverBase::IterSolverBase(const ESPRESOSolver &configuration):
@@ -96,6 +101,10 @@ void IterSolverBase::Solve ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_dual_solution_parallel)
 {
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START( REG_Solve_RegCG, "Solve_RegCG", SCOREP_USER_REGION_TYPE_COMMON );
+#endif
+
 	switch (configuration.solver) {
 	case ESPRESO_ITERATIVE_SOLVER::PCG:
 		Solve_RegCG ( cluster, in_right_hand_side_primal );
@@ -136,8 +145,9 @@ void IterSolverBase::Solve ( SuperCluster & cluster,
 
 	 postproc_timing.totalTime.endWithBarrier();
 
-
-
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Solve_RegCG);
+#endif
 
 }
 
@@ -364,6 +374,10 @@ void IterSolverBase::MakeSolution_Primal_singular_parallel (
 		SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & primal_solution_out )  {
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_IterSolver_MakeSolution, "IterSolver_MakeSolution", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
+
 	primal_solution_out.clear();
 
 	// R * mu
@@ -417,6 +431,10 @@ void IterSolverBase::MakeSolution_Primal_singular_parallel (
 			primal_solution_out[d][i] = primal_solution_out[d][i] + R_mu_prim_cluster[d][i];
 		}
 	}
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_IterSolver_MakeSolution);
+#endif
 
 }
 
@@ -1522,8 +1540,17 @@ void IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 
 	// *** Start the CG iteration loop ********************************************
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_RegCG_AllIterations, "RegCG-AllIterations", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
+
 	//for (int iter = 0; tol > min_tol && iter < CG_max_iter; iter++) {
 	for (int iter = 0; iter < CG_max_iter; iter++) {
+
+#ifdef READEX_LEVEL_1
+		READEX_REGION_START(REG_RegCG_OneIteration, "RegCG-OneIteration", SCOREP_USER_REGION_TYPE_LOOP);
+#endif
+
 		timing.totalTime.start();
 
 		#pragma omp parallel for
@@ -1597,6 +1624,7 @@ for (size_t i = 0; i < y_l.size(); i++)
 for (size_t i = 0; i < p_l.size(); i++)
 				p_l[i] = y_l[i] + beta_l * p_l[i];			// p = y + beta * p;
 
+
 		}
 
 
@@ -1667,11 +1695,17 @@ for (size_t i = 0; i < p_l.size(); i++)
 			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
 
 		// *** Stop condition ******************************************************************
+#ifdef READEX_LEVEL_1
+		READEX_REGION_STOP(REG_RegCG_OneIteration);
+#endif
 		if (norm_l < tol)
 			break;
 
 	} // end of CG iterations
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_RegCG_AllIterations);
+#endif
 
 	// *** save solution - in dual and amplitudes *********************************************
 	dual_soultion_compressed_parallel   = x_l;
@@ -1717,7 +1751,7 @@ void IterSolverBase::Solve_new_CG_singular_dom ( SuperCluster & cluster,
 {
 /*####################################################################################################
 #                            C G   -   N E W    I M P L E M E N T A T I O N                          # 
-//##################################################################################################*/
+####################################################################################################*/
 //
 	size_t dl_size = cluster.my_lamdas_indices.size();
 
@@ -1971,7 +2005,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom ( SuperCluster & cluster,
 {
 /*####################################################################################################
 #                              C G      F U L L    O R T H O G O N A L                               # 
-//##################################################################################################*/
+####################################################################################################*/
 //
 	size_t dl_size = cluster.my_lamdas_indices.size();
 
@@ -2289,7 +2323,7 @@ void IterSolverBase::Solve_GMRES_singular_dom ( SuperCluster & cluster,
 {
 /*####################################################################################################
 #                                            G M R E S                                               # 
-//##################################################################################################*/
+####################################################################################################*/
 //
 
 	size_t dl_size = cluster.my_lamdas_indices.size();
@@ -2739,7 +2773,7 @@ void IterSolverBase::Solve_BICGSTAB_singular_dom ( SuperCluster & cluster,
 {
 /*####################################################################################################
 #                                         B I C G S T A B                                            # 
-//##################################################################################################*/
+####################################################################################################*/
 //
 //  FLAG_SOLUTION =  0;   solution found to the tolerance
 //  FLAG_SOLUTION =  1;   no convergence for for given tolerance
@@ -3870,7 +3904,7 @@ void IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clu
 {
 /*####################################################################################################
 #                              C G      F U L L    O R T H O G O N A L                               #
-//##################################################################################################*/
+####################################################################################################*/
 //
 
 
@@ -4498,6 +4532,10 @@ void IterSolverBase::CreateGGt_Inv_old( SuperCluster & cluster )
 void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 {
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Create_GGT_Inv, "Create_GGT_Inv", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
+
 	// temp variables
 	vector < SparseMatrix > G_neighs   ( cluster.my_neighs.size() );
 	vector < SparseMatrix > GGt_neighs ( cluster.my_neighs.size() );
@@ -4510,6 +4548,10 @@ void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 	int num_procs     = environment->PAR_NUM_THREADS;
 	GGt_tmp.iparm[2]  = num_procs;
 
+#ifdef READEX_LEVEL_2
+	READEX_REGION_START(REG_Create_GGT_Inv_Exchange_local_GGt_MPI, "Create_GGT_Inv--Exchange_local_GGt_MPI", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
+
 	 TimeEvent SaRGlocal("Exchange local G1 matrices to neighs. "); SaRGlocal.start();
 	if (cluster.SYMMETRIC_SYSTEM)  {
 		ExchangeMatrices(cluster.G1, G_neighs, cluster.my_neighs);
@@ -4518,12 +4560,19 @@ void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 	}
 	 SaRGlocal.end(); SaRGlocal.printStatMPI(); preproc_timing.addEvent(SaRGlocal);
 
+#ifdef READEX_LEVEL_2
+	READEX_REGION_STOP(REG_Create_GGT_Inv_Exchange_local_GGt_MPI);
+#endif
+
 	 TimeEvent Gt_l_trans("Local G1 matrix transpose to create Gt "); Gt_l_trans.start();
 	if (cluster.USE_HFETI == 0) {
 		cluster.G1.MatTranspose(G1t_l);
 	}
 	 Gt_l_trans.end(); Gt_l_trans.printStatMPI(); preproc_timing.addEvent(Gt_l_trans);
 
+#ifdef READEX_LEVEL_2
+	READEX_REGION_START(REG_Create_GGT_Inv_G1_MatMat_MatAdd, "Create_GGT_Inv--G1_MatMat+MatAdd", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 
 	 if (cluster.SYMMETRIC_SYSTEM)  {
 		  TimeEvent GxGtMatMat("Local G1 x G1t MatMat "); GxGtMatMat.start();
@@ -4584,6 +4633,14 @@ void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 	}
 	 GGtLocAsm.end(); GGtLocAsm.printStatMPI(); preproc_timing.addEvent(GGtLocAsm);
 
+#ifdef READEX_LEVEL_2
+	READEX_REGION_STOP(REG_Create_GGT_Inv_G1_MatMat_MatAdd);
+#endif
+
+#ifdef READEX_LEVEL_2
+	READEX_REGION_START(REG_Create_GGT_Inv_CollectGGtPiecesToMaster, "Create_GGT_Inv--CollectGGtPiecesToMaster", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
+
 	 // Collecting pieces of GGt from all clusters to master (MPI rank 0) node - using binary tree reduction
 	 TimeEvent collectGGt_time("Collect GGt pieces to master"); 	collectGGt_time.start();
 	int count_cv_l = 0;
@@ -4638,6 +4695,10 @@ void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 	BcastMatrix(mpi_rank, mpi_root, mpi_root, GGt_Mat_tmp);
 	 GGt_bcast_time.end(); GGt_bcast_time.printStatMPI(); preproc_timing.addEvent(GGt_bcast_time);
 
+#ifdef READEX_LEVEL_2
+	READEX_REGION_STOP(REG_Create_GGT_Inv_CollectGGtPiecesToMaster);
+#endif
+
 	// *** Calculating inverse GGt matrix in distributed fashion ***********************************************************
 	// Create Sparse Direct solver for GGt
 	if (mpi_rank == mpi_root) {
@@ -4649,12 +4710,20 @@ void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 	GGt_tmp.ImportMatrix_wo_Copy (GGt_Mat_tmp);
 	 importGGt_time.end(); importGGt_time.printStatMPI(); preproc_timing.addEvent(importGGt_time);
 
+#ifdef READEX_LEVEL_2
+	READEX_REGION_START(REG_Create_GGT_Inv_GGt_Factorization, "Create_GGT_Inv--GGt_Factorization", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
+
 	 TimeEvent GGtFactor_time("GGT Factorization time"); GGtFactor_time.start();
 	GGt_tmp.SetThreaded();
 	std::stringstream ss;
 	ss << "Create GGt_inv_dist-> rank: " << environment->MPIrank;
 	GGt_tmp.Factorization(ss.str());
 	 GGtFactor_time.end(); GGtFactor_time.printStatMPI(); preproc_timing.addEvent(GGtFactor_time);
+
+#ifdef READEX_LEVEL_2
+	READEX_REGION_STOP(REG_Create_GGT_Inv_GGt_Factorization);
+#endif
 
 	 TimeEvent GGT_rhs_time("Time to create InitialCondition for get GGTINV"); GGT_rhs_time.start();
 	SEQ_VECTOR <double> rhs             (cluster.G1.rows * GGt_tmp.rows, 0.0);
@@ -4664,6 +4733,10 @@ void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 		rhs[index] = 1;
 	}
 	 GGT_rhs_time.end(); GGT_rhs_time.printStatMPI(); preproc_timing.addEvent(GGT_rhs_time);
+
+#ifdef READEX_LEVEL_2
+	READEX_REGION_START(REG_Create_GGT_Inv_GGt_Solve, "Create_GGT_Inv--GGt_Solve", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 
 	 TimeEvent GGt_solve_time("Running solve to get stripe(s) of GGtINV"); GGt_solve_time.start();
 	if (cluster.G1.rows > 0) {
@@ -4684,7 +4757,15 @@ void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 
 	 GGt_solve_time.end(); GGt_solve_time.printStatMPI(); preproc_timing.addEvent(GGt_solve_time);
 
+#ifdef READEX_LEVEL_2
+	READEX_REGION_STOP(REG_Create_GGT_Inv_GGt_Solve);
+#endif
+
 	MKL_Set_Num_Threads(1);
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Create_GGT_Inv);
+#endif
 }
 
 
@@ -4808,6 +4889,10 @@ void IterSolverBase::apply_A_l_Mat( TimeEval & time_eval, Cluster & cluster, Spa
 void IterSolverBase::Projector_Inv (TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,
 {
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Projector_Inv, "Projector_Inv", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
+
 	 time_eval.totalTime.start();
 	eslocal d_local_size = cluster.G1_comp.rows;
 	SEQ_VECTOR<double> d_local( d_local_size );
@@ -4833,6 +4918,10 @@ void IterSolverBase::Projector_Inv (TimeEval & time_eval, SuperCluster & cluster
 
 	 time_eval.timeEvents[0].end();
 
+#ifdef READEX_LEVEL_2
+	READEX_REGION_START(REG_Projector_Inv_AllGather, "Projector_Inv--AllGather", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
+
 	//TODO: Udelat poradne
 	 time_eval.timeEvents[1].start();
 	SEQ_VECTOR<int> ker_size_per_clusters(environment->MPIsize,0);
@@ -4848,6 +4937,14 @@ void IterSolverBase::Projector_Inv (TimeEval & time_eval, SuperCluster & cluster
 	// TODO: END
 
 	time_eval.timeEvents[1].end();
+
+#ifdef READEX_LEVEL_2
+	READEX_REGION_STOP(REG_Projector_Inv_AllGather);
+#endif
+
+#ifdef READEX_LEVEL_2
+	READEX_REGION_START(REG_Projector_Inv_DenseMatVec, "Projector_Inv--DenseMatVec", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 	// TODO: END
 
 	 time_eval.timeEvents[2].start();
@@ -4856,6 +4953,10 @@ void IterSolverBase::Projector_Inv (TimeEval & time_eval, SuperCluster & cluster
 		cluster.GGtinvM.DenseMatVec(d_mpi, d_local, 'T');
 	}
 	 time_eval.timeEvents[2].end();
+
+#ifdef READEX_LEVEL_2
+	READEX_REGION_STOP(REG_Projector_Inv_DenseMatVec);
+#endif
 
 	 time_eval.timeEvents[3].start();
 	//MPI_Scatter( &d_mpi[0],      d_local_size, MPI_DOUBLE, &d_local[0], d_local_size, MPI_DOUBLE, mpi_root, environment->MPICommunicator);
@@ -4887,6 +4988,11 @@ void IterSolverBase::Projector_Inv (TimeEval & time_eval, SuperCluster & cluster
 	}
 
 	time_eval.totalTime.end();
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Projector_Inv);
+#endif
+
 }
 
 void IterSolverBase::Projector_Inv_old (TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out, eslocal output_in_kerr_dim_2_input_in_kerr_dim_1_inputoutput_in_dual_dim_0) // eslocal mpi_rank, SparseSolverCPU & GGt,

@@ -11,6 +11,11 @@
 //#include <Eigen/Dense>
 //using Eigen::MatrixXd;
 
+#ifdef READEX_LEVEL_1
+#include <readex.h>
+#include <readex_regions.h>
+#endif
+
 using namespace espreso;
 
 FETISolver::FETISolver(Instance *instance, const ESPRESOSolver &configuration)
@@ -648,6 +653,10 @@ void FETISolver::setup_InitClusterAndSolver( )
 // TODO: const parameters
 void FETISolver::init(const std::vector<int> &neighbours)
 {
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_FETISolver_Init, "FETISolver--Init", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
+
 	//mkl_cbwr_set(MKL_CBWR_COMPATIBLE);
 
 	// Overall Linear Solver Time measurement structure
@@ -678,11 +687,19 @@ void FETISolver::init(const std::vector<int> &neighbours)
 		setup_CreateG_GGt_CompressG();
 	}
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_FETISolver_Create_Dirichlet_Prec, "FETISolver--Create_Dirichlet_Prec", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
+
 	// *** setup all preconditioners
 	setup_Preconditioner();
 
 	// *** Computation of the Schur Complement
 	setup_LocalSchurComplement();
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_FETISolver_Create_Dirichlet_Prec);
+#endif
 
 	// *** K Factorization
 	setup_FactorizationOfStiffnessMatrices();
@@ -713,6 +730,10 @@ void FETISolver::init(const std::vector<int> &neighbours)
 	ESLOG(MEMORY) << "End of preprocessing - process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_FETISolver_Init);
+#endif
+
 }
 
 void FETISolver::Solve( std::vector < std::vector < double > >  & f_vec,
@@ -726,6 +747,9 @@ void FETISolver::Solve( std::vector < std::vector < double > >  & f_vec,
 void FETISolver::Solve( std::vector < std::vector < double > >  & f_vec,
 		                  std::vector < std::vector < double > >  & prim_solution,
 		                  std::vector < std::vector < double > > & dual_solution) {
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_FETISolver_Solve, "FETISolver--Solve", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 
 	 	 TimeEvent timeSolCG(string("Solver - CG Solver runtime"));
 	 	 timeSolCG.start();
@@ -735,6 +759,9 @@ void FETISolver::Solve( std::vector < std::vector < double > >  & f_vec,
 	 	 timeSolCG.endWithBarrier();
 	 	 timeEvalMain.addEvent(timeSolCG);
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_FETISolver_Solve);
+#endif
 }
 
 void FETISolver::Postprocessing( ) {
@@ -778,5 +805,13 @@ void FETISolver::CheckSolution( vector < vector < double > > & prim_solution ) {
 }
 
 void FETISolver::Preprocessing( std::vector < std::vector < eslocal > > & lambda_map_sub) {
+/*
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_FETISolver_Preprocessing, "FETISolver--Preprocessing", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_FETISolver_Preprocessing);
+#endif
+*/
 }

@@ -4,6 +4,11 @@
 #include "../../assembler/instance.h"
 #include "../../basis/utilities/utils.h"
 
+#ifdef READEX_LEVEL_1
+#include <readex.h>
+#include <readex_regions.h>
+#endif
+
 //#define SPARSE_SA
 
 // *******************************************************************
@@ -221,6 +226,10 @@ void ClusterBase::InitClusterPC( eslocal * subdomains_global_indices, eslocal nu
 
 void ClusterBase::SetClusterPC( ) {
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Cluster_SetClusterPC, "Cluster--SetClusterPC", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
+
 	SEQ_VECTOR <SEQ_VECTOR <eslocal> > & lambda_map_sub = instance->B1clustersMap;
 
 	int MPIrank = environment->MPIrank;
@@ -391,6 +400,10 @@ void ClusterBase::SetClusterPC( ) {
 //	ESLOG(MEMORY) << "process " << environment->MPIrank << " uses " << Measure::processMemory() << " MB";
 //	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Cluster_SetClusterPC);
+#endif
+
 }
 
 void ClusterBase::SetupPreconditioner ( ) {
@@ -445,6 +458,11 @@ void ClusterBase::SetupPreconditioner ( ) {
 
 void ClusterBase::SetClusterHFETI () {
 	// *** Create Matrices and allocate vectors for Hybrid FETI **************************
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Cluster_HFETIpreprocessing, "Cluster--HFETIpreprocessing", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
+
 	if (USE_HFETI == 1) {
 
 		if (domains.size() > 1) {
@@ -494,8 +512,12 @@ void ClusterBase::SetClusterHFETI () {
 
 		}
 
-
 	}
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Cluster_HFETIpreprocessing);
+#endif
+
 	// *** END - Create Matrices for Hybrid FETI *****************************************
 }
 
@@ -1303,6 +1325,10 @@ void ClusterBase::CreateF0() {
 
 	ESINFO(PROGRESS3) << "HFETI - Create F0";
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Cluster_CreateF0_AssembleF0, "Cluster--CreateF0-AssembleF0", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
+
 	 TimeEvent solve_F0_time("B0 compression; F0 multiple InitialCondition solve");
 	 if (Measure::report(CLUSTER)) { solve_F0_time.start(); }
 
@@ -1438,6 +1464,14 @@ void ClusterBase::CreateF0() {
 
 	mkl_set_num_threads(PAR_NUM_THREADS);
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Cluster_CreateF0_AssembleF0);
+#endif
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Cluster_CreateF0_FactF0, "Cluster--CreateF0-FactF0", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
+
 	if (SYMMETRIC_SYSTEM) {
 		F0_Mat.RemoveLower();
 	}
@@ -1461,6 +1495,10 @@ void ClusterBase::CreateF0() {
 
 	if (Measure::report(CLUSTER)) {fact_F0_time.end(); fact_F0_time.printStatMPI(); F0_timing.addEvent(fact_F0_time);}
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Cluster_CreateF0_FactF0);
+#endif
+
 	if (Measure::report(CLUSTER)) { F0_timing.totalTime.end(); }
 	//TODO: Need fix - for detailed measurements
 //	if (min_numClusters_per_MPI > cluster_local_index)
@@ -1478,6 +1516,10 @@ void ClusterBase::CreateF0() {
 };
 
 void ClusterBase::CreateSa() {
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Cluster_CreateSa, "Cluster--CreateSa", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 
 	 TimeEval Sa_timing (" HFETI - Salfa preprocessing timing"); if (Measure::report(CLUSTER)) { Sa_timing.totalTime.start(); }
 
@@ -1500,6 +1542,9 @@ void ClusterBase::CreateSa() {
 	}
 	 if (Measure::report(CLUSTER)) { G0trans_Sa_time.end(); G0trans_Sa_time.printStatMPI(); Sa_timing.addEvent(G0trans_Sa_time); }
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Cluster_CreateSa_SolveF0vG0, "Cluster--CreateSa-SolveF0vG0", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 
 	 TimeEvent G0solve_Sa_time("SolveMatF with G0t as InitialCondition"); if (Measure::report(CLUSTER)) { G0solve_Sa_time.start(); }
 	SparseSolverMKL Salfa_SC_solver;
@@ -1536,6 +1581,14 @@ void ClusterBase::CreateSa() {
 //		Salfa.RemoveLower();
 //		tmpM.Clear();
 //	}
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Cluster_CreateSa_SolveF0vG0);
+#endif
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Cluster_CreateSa_SaReg, "Cluster--CreateSa-SaReg", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 
 	// *** Regularization of Sa from NULL PIVOTS
 	if ( configuration.regularization == REGULARIZATION::NULL_PIVOTS ) {
@@ -1938,6 +1991,13 @@ void ClusterBase::CreateSa() {
 	}
 	// *** END - Sa regularization
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Cluster_CreateSa_SaReg);
+#endif
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Cluster_CreateSa_SaFactorization, "Cluster--CreateSa-SaFactorization", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 
 	if (environment->print_matrices) {
 		std::ofstream osSa(Logging::prepareFile("Salfa_reg"));
@@ -2014,9 +2074,21 @@ void ClusterBase::CreateSa() {
 	Sa.m_Kplus_size = Salfa.cols;
 	vec_alfa.resize(Sa.m_Kplus_size);
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Cluster_CreateSa_SaFactorization);
+#endif
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Cluster_CreateSa);
+#endif
+
 }
 
 void ClusterBase::Create_G_perCluster() {
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Cluster_CreateG1_perCluster, "Cluster--CreateG1-perCluster", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 
 	SparseMatrix tmpM;
 
@@ -2148,6 +2220,10 @@ void ClusterBase::Create_G_perCluster() {
 		}
 
 	}
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Cluster_CreateG1_perCluster);
+#endif
 
 }
 

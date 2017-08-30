@@ -19,6 +19,10 @@
 #include "../../basis/matrices/sparseCSRMatrix.h"
 #include "../../configuration/solver/espresooptions.h"
 
+#ifdef READEX_LEVEL_1
+#include <readex.h>
+#include <readex_regions.h>
+#endif
 
 using namespace espreso;
 
@@ -443,10 +447,16 @@ double Physics::sumSquares(const std::vector<std::vector<double> > &data, SumOpe
 
 void Physics::assembleB1(const Step &step, bool withRedundantMultipliers, bool withGluing, bool withScaling)
 {
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Assembler_Assemble_B1, "Assembler--Assemble-B1", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 	_equalityConstraints->insertDirichletToB1(step, withRedundantMultipliers);
 	if (withGluing) {
 		_equalityConstraints->insertElementGluingToB1(step, withRedundantMultipliers, withScaling);
 	}
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Assembler_Assemble_B1);
+#endif
 }
 
 void Physics::updateDirichletInB1(const Step &step, bool withRedundantMultipliers)
@@ -456,7 +466,13 @@ void Physics::updateDirichletInB1(const Step &step, bool withRedundantMultiplier
 
 void Physics::assembleB0FromCorners()
 {
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Assembler_Assemble_B0, "Assembler--Assemble-B0", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 	_equalityConstraints->insertCornersGluingToB0();
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Assembler_Assemble_B0);
+#endif
 }
 
 void Physics::assembleB0FromKernels(const std::vector<SparseMatrix> &kernels)

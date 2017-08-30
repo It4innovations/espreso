@@ -25,6 +25,10 @@
 
 #include "../../solver/generic/FETISolver.h"
 
+#ifdef READEX_LEVEL_1
+#include <readex.h>
+#include <readex_regions.h>
+#endif
 
 namespace espreso {
 
@@ -50,6 +54,9 @@ Factory::Factory(const GlobalConfiguration &configuration)
 
 void Factory::solve()
 {
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_instance_solve, "instance_solve", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 	if (_dispatcher.isExecutor()) {
 		return;
 	}
@@ -61,6 +68,9 @@ void Factory::solve()
 		_loadSteps[step.step]->run(step);
 	}
 	_storeList->finalize();
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_instance_solve);
+#endif
 }
 
 void Factory::initAsync(const OutputConfiguration &configuration)
@@ -200,6 +210,10 @@ void Factory::loadPhysics(const GlobalConfiguration &configuration)
 
 void FactoryLoader::preprocessMesh()
 {
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_instance_PrepareMesh, "instance--PrepareMesh", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
+
 	// TODO: generalize it !!
 
 	for (size_t i = 0; i < _physics.size(); i++) {
@@ -224,6 +238,9 @@ void FactoryLoader::preprocessMesh()
 			ESINFO(GLOBAL_ERROR) << "Unknown FETI method";
 		}
 	}
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_instance_PrepareMesh);
+#endif
 }
 
 void Factory::finalize()

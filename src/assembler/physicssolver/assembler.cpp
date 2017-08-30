@@ -18,6 +18,11 @@
 
 #include "mpi.h"
 
+#ifdef READEX_LEVEL_1
+#include <readex.h>
+#include <readex_regions.h>
+#endif
+
 using namespace espreso;
 
 static std::string mNames(espreso::Matrices matrices, const std::string &prefix = "")
@@ -103,6 +108,10 @@ void Assembler::preprocessData(const Step &step)
 
 void Assembler::updateMatrices(const Step &step, Matrices matrices)
 {
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Assembler_AssembleStiffnesMatrices, "Assembler--AssembleStiffnesMatrices", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
+
 	if (!matrices) {
 		return;
 	}
@@ -144,6 +153,9 @@ void Assembler::updateMatrices(const Step &step, Matrices matrices)
 			physics.updateDirichletInB1(step, linearSolver.applyB1LagrangeRedundancy());
 		});
 	}
+#ifdef READEX_LEVEL_1
+		READEX_REGION_STOP(REG_Assembler_AssembleStiffnesMatrices);
+#endif
 }
 
 void Assembler::processSolution(const Step &step)
@@ -156,6 +168,10 @@ void Assembler::processSolution(const Step &step)
 
 void Assembler::solve(const Step &step, Matrices updatedMatrices)
 {
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Assembler_SolverInit, "Assembler--SolverInit", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 	store.storeFETIData(step, instance);
 	Matrices solverMatrices = Matrices::K | Matrices::M | Matrices::f | Matrices::B1;
 	storeWrapper(mNames(solverMatrices), solverMatrices);
@@ -164,13 +180,27 @@ void Assembler::solve(const Step &step, Matrices updatedMatrices)
 		linearSolver.update(updatedMatrices);
 	});
 
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Assembler_SolverInit);
+#endif
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Assembler_SolverSolve, "Assembler--SolverSolve", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 	timeWrapper("run linear solver", [&] () {
 		linearSolver.solve();
 	});
+
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Assembler_SolverSolve);
+#endif
 }
 
 void Assembler::storeSolution(const Step &step)
 {
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Assembler_SaveResults, "Assembler--SaveResults", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
 	timeWrapper("store solution", [&] () {
 		std::vector<Solution*> solutions;
 		for (size_t i = 0; i < physics.solutionsIndicesToStore().size(); i++) {
@@ -178,6 +208,9 @@ void Assembler::storeSolution(const Step &step)
 		}
 		store.storeSolution(step, solutions, physics.propertiesToStore());
 	});
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Assembler_SaveResults);
+#endif
 }
 
 void Assembler::storeSubSolution(const Step &step)
@@ -488,6 +521,10 @@ bool Assembler::checkForStore(const std::string &name)
 
 void Assembler::storeMatrices(Matrices matrices, size_t domain)
 {
+#ifdef READEX_LEVEL_1
+	READEX_REGION_START(REG_Assembler_SaveMatricesToFile, "Assembler--SaveMatricesToFile", SCOREP_USER_REGION_TYPE_COMMON);
+#endif
+
 	auto storeMatrix = [&] (std::vector<SparseMatrix> &data, Matrices matrix, const std::string &name) {
 		if (matrices & matrix) {
 			storeData(data[domain], domain, name);
@@ -513,6 +550,9 @@ void Assembler::storeMatrices(Matrices matrices, size_t domain)
 	storeVector(instance.B1duplicity, (Matrices::B1 | Matrices::B1duplicity), "B1duplicity");
 	storeVector(instance.primalSolution, Matrices::primal, "solution");
 	storeVector(instance.dualSolution, Matrices::dual, "dualSolution");
+#ifdef READEX_LEVEL_1
+	READEX_REGION_STOP(REG_Assembler_SaveMatricesToFile);
+#endif
 }
 
 void Assembler::storeWrapper(const std::string &name, Matrices matrices)
