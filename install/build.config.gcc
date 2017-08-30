@@ -37,8 +37,8 @@ METISLIB = metis		# Name of METIS library
 #..............................................................................
 # Set global compiler attributes
 
-CXXFLAGS = -fcilkplus -openmp -std=c++11 -O2 -DTM_BLOCK_START -DTM_BLOCK_END
-LINKFLAGS = -openmp
+CXXFLAGS =  -fopenmp -std=c++11 -O2 -DTM_BLOCK_START -DTM_BLOCK_END
+LINKFLAGS = -fopenmp
 INCLUDES =
 LIBPATH =
 STLIBPATH =
