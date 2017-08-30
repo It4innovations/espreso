@@ -9,6 +9,10 @@
 #include "../../../mesh/structures/elementtypes.h"
 #include "../../../configuration/physics/transientsolver.h"
 
+#ifdef USE_ATP
+#include "atplib.h"
+#endif
+
 using namespace espreso;
 
 size_t TransientFirstOrderImplicit::loadStep = 0;
@@ -114,6 +118,10 @@ void TransientFirstOrderImplicit::runNextTimeStep(Step &step)
 	}
 	step.timeStep = step.currentTime - last;
 
+
+#ifdef USE_ATP
+	atp_init_collection();
+#endif
 	std::vector<std::vector<eslocal> > previousDOFMapping, previousDomainMap;
 	_assembler.changeMeshPartition(step.substep % 8 + 1, previousDOFMapping, previousDomainMap);
 	_assembler.transformDomainsData(previousDOFMapping, previousDomainMap, solutions[SolutionIndex::U]->data);

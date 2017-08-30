@@ -1,0 +1,8 @@
+module use /projects/p_readex/modules
+module load readex-rrl/rrl-2017-08-22-gcc6.3.0-bullxmpi
+module load zlib
+module load mkl
+
+# mkl modules not add path to env - adding is done manualy
+export CPATH=$MKL_INC:$CPATH
+export LIBRARY_PATH=$MKL_LIB:$LIBRARY_PATH
