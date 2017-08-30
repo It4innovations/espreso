@@ -2,7 +2,7 @@
 #ifndef SRC_OUTPUT_RESULTSTORE_ASYNCSTORE_H_
 #define SRC_OUTPUT_RESULTSTORE_ASYNCSTORE_H_
 
-#include "resultstore.h"
+#include "../resultstore.h"
 #include "asyncstoreexecutor.h"
 #include "../../assembler/step.h"
 #include "async/Module.h"

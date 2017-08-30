@@ -1,7 +1,7 @@
 
 #include <iostream>
 
-#include "logging/logging.h"
+#include "../../basis/logging/logging.h"
 #include "../../configuration/output.h"
 #include "../../configuration/environment.h"
 #include "../basis/utilities/utils.h"
