@@ -126,6 +126,7 @@ def check_environment(ctx):
 
     ctx.check_cc(fragment="int main(){return 0;}", msg="Build simple program", errmsg="fail - check build parameters")
     check_headers(ctx)
+    ctx.check(fragment="int main(){return 0;}", msg="Link simple program", errmsg="fail - check link parameters")
     check_libraries(ctx)
 
 
