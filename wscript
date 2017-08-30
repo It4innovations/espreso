@@ -92,7 +92,7 @@ def configure(ctx):
     if ctx.env.BUILD_TOOLS == "1":
         ctx.recurse("tools")
 
-    for header in [ "mpi.h", "mkl.h", "cilk/cilk.h", "omp.h", "tbb/mutex.h" ]:
+    for header in [ "mpi.h", "mkl.h", "cilk/cilk.h", "omp.h" ]: #, "tbb/mutex.h" ]:
         ctx.check_header(header)
 
     # recurse to basic parts

@@ -17,9 +17,9 @@
 //#include <cilk/cilk.h>
 //#include <cilk/cilk_api.h>
 
-#include <tbb/mutex.h>
-#include "tbb/parallel_sort.h"
-#include "tbb/tbb.h"
+//#include <tbb/mutex.h>
+//#include "tbb/parallel_sort.h"
+//#include "tbb/tbb.h"
 
 #include <string>
 #include <sstream>
