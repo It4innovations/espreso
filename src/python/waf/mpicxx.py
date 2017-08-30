@@ -8,7 +8,7 @@ from waflib.Tools import ccroot,ar
 from waflib.Configure import conf
 @conf
 def find_mpicxx(conf):
-	cxx=conf.find_program(['mpic++','mpicxx'],var='CXX')
+	cxx=conf.find_program(['mpic++','mpicxx'])
 	conf.get_cc_version(cxx,gcc=True)
 	conf.env.CXX_NAME='gcc'
 @conf
