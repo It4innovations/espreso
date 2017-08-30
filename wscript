@@ -1,9 +1,14 @@
 
+# encoding=utf8
+
 VERSION = 15
 
 import commands
 import sys
 import os
+
+reload(sys)
+sys.setdefaultencoding('utf8')
 
 from waflib import Logs
 
