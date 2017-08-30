@@ -26,8 +26,8 @@
 #include "../../solver/generic/FETISolver.h"
 
 #ifdef READEX_LEVEL_1
-#include <readex.h>
-#include <readex_regions.h>
+#include "readex.h"
+#include "readex_regions.h"
 #endif
 
 namespace espreso {
