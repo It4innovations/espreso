@@ -13,7 +13,8 @@ static void gather(const Tvalue &value, Tvalue &min, Tvalue &max, Tvalue &total)
 	MPI_Comm_size(environment->MPICommunicator, &MPIsize);
 	typename std::vector<Tvalue> values(MPIsize);
 
-	MPI_Gather(&value, sizeof(Tvalue), MPI_BYTE, values.data(), sizeof(Tvalue), MPI_BYTE, 0, environment->MPICommunicator);
+	// bullxmpi violate MPI standard (cast away constness)
+	MPI_Gather(const_cast<Tvalue*>(&value), sizeof(Tvalue), MPI_BYTE, values.data(), sizeof(Tvalue), MPI_BYTE, 0, environment->MPICommunicator);
 
 	min = max = value;
 	total = 0;
@@ -31,7 +32,8 @@ static void gather(const std::pair<Tvalue, Tvalue> &value, Tvalue &min, Tvalue &
 	MPI_Comm_size(environment->MPICommunicator, &MPIsize);
 	typename std::vector<std::pair<Tvalue, Tvalue> > values(MPIsize);
 
-	MPI_Gather(&value, 2 * sizeof(Tvalue), MPI_BYTE, values.data(), 2 * sizeof(Tvalue), MPI_BYTE, 0, environment->MPICommunicator);
+	// bullxmpi violate MPI standard (cast away constness)
+	MPI_Gather(const_cast<std::pair<Tvalue, Tvalue>*>(&value), 2 * sizeof(Tvalue), MPI_BYTE, values.data(), 2 * sizeof(Tvalue), MPI_BYTE, 0, environment->MPICommunicator);
 
 	min = value.first;
 	max = value.second;

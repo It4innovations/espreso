@@ -15,7 +15,8 @@ bool Communication::exchangeUnknownSize(const std::vector<std::vector<Ttype> > &
 
 	std::vector<MPI_Request> req(neighbours.size());
 	for (size_t n = 0; n < neighbours.size(); n++) {
-		MPI_Isend(sBuffer[n].data(), sizeof(Ttype) * sBuffer[n].size(), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + n);
+		// bullxmpi violate MPI standard (cast away constness)
+		MPI_Isend(const_cast<Ttype*>(sBuffer[n].data()), sizeof(Ttype) * sBuffer[n].size(), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + n);
 	}
 
 	int flag;
@@ -43,7 +44,8 @@ bool Communication::receiveLowerKnownSize(const std::vector<std::vector<Ttype> >
 	std::vector<MPI_Request> req(neighbours.size());
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		if (neighbours[n] > environment->MPIrank) {
-			MPI_Isend(sBuffer[n].data(), sizeof(Ttype) * sBuffer[n].size(), MPI_BYTE, neighbours[n], 1, environment->MPICommunicator, req.data() + n);
+			// bullxmpi violate MPI standard (cast away constness)
+			MPI_Isend(const_cast<Ttype*>(sBuffer[n].data()), sizeof(Ttype) * sBuffer[n].size(), MPI_BYTE, neighbours[n], 1, environment->MPICommunicator, req.data() + n);
 		}
 		if (neighbours[n] < environment->MPIrank) {
 			MPI_Irecv(rBuffer[n].data(), sizeof(Ttype) * rBuffer[n].size(), MPI_BYTE, neighbours[n], 1, environment->MPICommunicator, req.data() + n);
@@ -60,7 +62,8 @@ bool Communication::receiveUpperKnownSize(const std::vector<std::vector<Ttype> >
 	std::vector<MPI_Request> req(neighbours.size());
 	for (size_t n = 0; n < neighbours.size(); n++) {
 		if (neighbours[n] < environment->MPIrank) {
-			MPI_Isend(sBuffer[n].data(), sizeof(Ttype) * sBuffer[n].size(), MPI_BYTE, neighbours[n], 1, environment->MPICommunicator, req.data() + n);
+			// bullxmpi violate MPI standard (cast away constness)
+			MPI_Isend(const_cast<Ttype*>(sBuffer[n].data()), sizeof(Ttype) * sBuffer[n].size(), MPI_BYTE, neighbours[n], 1, environment->MPICommunicator, req.data() + n);
 		}
 		if (neighbours[n] > environment->MPIrank) {
 			MPI_Irecv(rBuffer[n].data(), sizeof(Ttype) * rBuffer[n].size(), MPI_BYTE, neighbours[n], 1, environment->MPICommunicator, req.data() + n);
@@ -81,7 +84,8 @@ bool Communication::receiveUpperUnknownSize(const std::vector<std::vector<Ttype>
 	size_t rSize = 0;
 	std::vector<MPI_Request> req(neighbours.size());
 	for (size_t n = 0; n < neighbours.size() && neighbours[n] < environment->MPIrank; n++) {
-		MPI_Isend(sBuffer[n].data(), sizeof(Ttype) * sBuffer[n].size(), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + rSize++);
+		// bullxmpi violate MPI standard (cast away constness)
+		MPI_Isend(const_cast<Ttype*>(sBuffer[n].data()), sizeof(Ttype) * sBuffer[n].size(), MPI_BYTE, neighbours[n], 0, environment->MPICommunicator, req.data() + rSize++);
 	}
 
 	int flag;
@@ -126,7 +130,8 @@ bool Communication::gatherUnknownSize(const std::vector<Ttype> &sBuffer, std::ve
 		rBuffer.resize(size / sizeof(Ttype));
 	}
 
-	MPI_Gatherv(sBuffer.data(), sBuffer.size() * sizeof(Ttype), MPI_BYTE, rBuffer.data(), rSizes.data(), rOffsets.data(), MPI_BYTE, 0, environment->MPICommunicator);
+	// bullxmpi violate MPI standard (cast away constness)
+	MPI_Gatherv(const_cast<Ttype*>(sBuffer.data()), sBuffer.size() * sizeof(Ttype), MPI_BYTE, rBuffer.data(), rSizes.data(), rOffsets.data(), MPI_BYTE, 0, environment->MPICommunicator);
 
 	offsets.resize(environment->MPIsize);
 	for (size_t i = 0; i < rOffsets.size(); i++) {

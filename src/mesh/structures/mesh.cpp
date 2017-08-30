@@ -2683,7 +2683,8 @@ void Mesh::checkRegions(const std::vector<Element*> &elements)
 			ESINFO(GLOBAL_ERROR) << "ESPRESO INTERNAL ERROR: regions have not the same names on all processes.";
 		}
 		regions.resize(rSize * environment->MPIsize);
-		MPI_Gather(_regions[r]->name.c_str(), rSize, MPI_BYTE, regions.data(), rSize, MPI_BYTE, 0, environment->MPICommunicator);
+		// bullxmpi violate MPI standard (cast away constness)
+		MPI_Gather(const_cast<char*>(_regions[r]->name.c_str()), rSize, MPI_BYTE, regions.data(), rSize, MPI_BYTE, 0, environment->MPICommunicator);
 		if (!environment->MPIrank) {
 			for (int i = 0; i < environment->MPIsize; i++) {
 				std::string str(regions.begin() + i * rSize, regions.begin() + (i + 1) * rSize);
