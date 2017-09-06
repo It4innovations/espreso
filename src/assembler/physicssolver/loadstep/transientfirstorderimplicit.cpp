@@ -9,6 +9,8 @@
 #include "../../../mesh/structures/elementtypes.h"
 #include "../../../configuration/physics/transientsolver.h"
 
+#include "../../../solver/generic/FETISolver.h"
+
 #ifdef USE_ATP
 #include "atplib.h"
 #endif
@@ -118,17 +120,25 @@ void TransientFirstOrderImplicit::runNextTimeStep(Step &step)
 	}
 	step.timeStep = step.currentTime - last;
 
-
+// call some ATP function to test compiling and linking
 #ifdef USE_ATP
 	atp_init_collection();
 #endif
-	std::vector<std::vector<eslocal> > previousDOFMapping, previousDomainMap;
-	_assembler.changeMeshPartition(step.substep % 8 + 1, previousDOFMapping, previousDomainMap);
-	_assembler.transformDomainsData(previousDOFMapping, previousDomainMap, solutions[SolutionIndex::U]->data);
-	_assembler.transformDomainsData(previousDOFMapping, previousDomainMap, solutions[SolutionIndex::dU]->data);
-	_assembler.transformDomainsData(previousDOFMapping, previousDomainMap, solutions[SolutionIndex::V]->data);
-	_assembler.transformDomainsData(previousDOFMapping, previousDomainMap, solutions[SolutionIndex::X]->data);
-	_assembler.transformDomainsData(previousDOFMapping, previousDomainMap, solutions[SolutionIndex::Y]->data);
+
+	// CODE FOR RE-PARTITIONING
+//	std::vector<std::vector<eslocal> > previousDOFMapping, previousDomainMap;
+//	_assembler.changeMeshPartition(step.substep % 8 + 1, previousDOFMapping, previousDomainMap);
+//	_assembler.transformDomainsData(previousDOFMapping, previousDomainMap, solutions[SolutionIndex::U]->data);
+//	_assembler.transformDomainsData(previousDOFMapping, previousDomainMap, solutions[SolutionIndex::dU]->data);
+//	_assembler.transformDomainsData(previousDOFMapping, previousDomainMap, solutions[SolutionIndex::V]->data);
+//	_assembler.transformDomainsData(previousDOFMapping, previousDomainMap, solutions[SolutionIndex::X]->data);
+//	_assembler.transformDomainsData(previousDOFMapping, previousDomainMap, solutions[SolutionIndex::Y]->data);
+	// END OF CODE FOR RE-PARTITIONING
+
+	// CODE FOR CHANGE PRECONDITIONER
+	int preconditioner = step.substep % 4;
+	dynamic_cast<FETISolver&>(_assembler.linearSolver).configuration.preconditioner = static_cast<ESPRESO_PRECONDITIONER>(preconditioner);
+	// END OF CODE FOR CHANGE PRECONDITIONER
 
 	processTimeStep(step);
 }
