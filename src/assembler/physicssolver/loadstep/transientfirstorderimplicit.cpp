@@ -132,16 +132,30 @@ void TransientFirstOrderImplicit::runNextTimeStep(Step &step)
 	// END OF CODE FOR RE-PARTITIONING
 
 	// CODE FOR CHANGE PRECONDITIONER
-	int preconditioner = step.substep % 4;
+
 // READEX ATP code
 #ifdef USE_ATP
-        ATP_PARAM_DECLARE("PRECOND",ATP_PARAM_TYPE_RANGE, 0, NULL);  
-        int precond_values[3] = {0,3,1};
-        ATP_PARAM_ADD_VALUES("PRECOND", precond_values, 3, NULL);
-        ATP_PARAM_GET("PRECOND", &preconditioner, NULL);
+	int preconditioner = step.substep % 4;
+	ATP_PARAM_DECLARE("PRECOND",ATP_PARAM_TYPE_RANGE, 0, NULL);
+	int precond_values[3] = {0,3,1};
+	ATP_PARAM_ADD_VALUES("PRECOND", precond_values, 3, NULL);
+	ATP_PARAM_GET("PRECOND", &preconditioner, NULL);
+dynamic_cast<FETISolver&>(_assembler.linearSolver).configuration.preconditioner = static_cast<ESPRESO_PRECONDITIONER>(preconditioner);
 #endif
-	dynamic_cast<FETISolver&>(_assembler.linearSolver).configuration.preconditioner = static_cast<ESPRESO_PRECONDITIONER>(preconditioner);
+
 	// END OF CODE FOR CHANGE PRECONDITIONER
+
+
+// READEX ATP code
+#ifdef USE_ATP
+	int solver = step.substep % 5;
+	ATP_PARAM_DECLARE("PRECOND",ATP_PARAM_TYPE_RANGE, 0, NULL);
+	int solver_values[3] = {0,4,1};
+	ATP_PARAM_ADD_VALUES("PRECOND", solver_values, 3, NULL);
+	ATP_PARAM_GET("PRECOND", &solver, NULL);
+	dynamic_cast<FETISolver&>(_assembler.linearSolver).configuration.solver = static_cast<ESPRESO_ITERATIVE_SOLVER>(solver);
+#endif
+
 
 	processTimeStep(step);
 }
