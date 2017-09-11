@@ -1,5 +1,6 @@
 module use /projects/p_readex/modules
 module load readex-rrl/rrl-2017-08-22-gcc6.3.0-bullxmpi
+module load readex-atp/atp-2017-09-07-gcc6.3.0-bullxmpi
 module load zlib
 module load mkl
 
