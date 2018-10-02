@@ -87,7 +87,7 @@ struct ECFObject: public ECFParameter {
 	virtual const void* data() const { return this; }
 
 	void forEachParameters(std::function<void(ECFParameter*)> fnc, 
-		bool onlyAllowed = true, bool includePattern = false);
+		bool onlyAllowed = true, bool includePattern = false, bool includeObjects = false);
 	void forEachParameters(std::function<void(const ECFParameter*)> fnc, 
 		bool onlyAllowed = true, bool includePattern = false) const;
 	void forEachParameters(
@@ -119,9 +119,6 @@ struct ECFObject: public ECFParameter {
 
 	ECFParameter* addSeparator();
 	ECFParameter* addSpace();
-	ECFParameter* addBlockBegin(const std::string& name);
-	ECFParameter* addBlockEnd();
-	ECFParameter* addCollapseBegin(const std::string& name);
 
 	virtual bool _setValue(const std::string &value);
 	virtual ECFParameter* _getParameter(const std::string &name);

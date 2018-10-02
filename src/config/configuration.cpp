@@ -80,19 +80,19 @@ void ECFParameter::addListener(Event event, std::function<void(const std::string
 
 ECFParameter* ECFParameter::registerAdditionalParameter(ECFParameter* parameter)
 {
-	eslog::globalerror("ESPRESO internal error: parameter '%s' cannot have additional parameters.\n", name.c_str());
+	eslog::internalFailure("parameter '%s' cannot have additional parameters.\n", name.c_str());
 	return NULL;
 }
 
 std::string ECFObject::getValue() const
 {
-	eslog::globalerror("ESPRESO internal error: calling 'get' on ECFObject.\n");
+	eslog::internalFailure("calling 'get' on ECFObject.\n");
 	return "";
 }
 
 bool ECFObject::_setValue(const std::string &value)
 {
-	eslog::globalerror("ESPRESO internal error: calling 'set' on ECFObject.\n");
+	eslog::internalFailure("calling 'set' on ECFObject.\n");
 	return false;
 }
 
@@ -158,35 +158,6 @@ ECFParameter* ECFObject::addSpace()
 	return parameters.back();
 }
 
-ECFParameter* ECFObject::addBlockBegin(const std::string& name)
-{
-	registerParameter("BEGINBLOCK", new ECFSeparator(), 
-		ECFMetaData()
-		.setdatatype({ ECFDataType::BEGINBLOCK })
-		.setname(name)
-	);
-	return parameters.back();
-}
-
-ECFParameter* ECFObject::addBlockEnd()
-{
-	registerParameter("ENDBLOCK", new ECFSeparator(), 
-		ECFMetaData()
-		.setdatatype({ ECFDataType::ENDBLOCK })
-	);
-	return parameters.back();
-}
-
-ECFParameter* ECFObject::addCollapseBegin(const std::string& name)
-{
-	registerParameter("BEGINCOLLAPSE", new ECFSeparator(), 
-		ECFMetaData()
-		.setdatatype({ ECFDataType::BEGINCOLLAPSEBLOCK })
-		.setname(name)
-	);
-	return parameters.back();
-}
-
 void ECFObject::moveLastBefore(const std::string &name)
 {
 	ECFParameter *last = parameters.back();
@@ -243,13 +214,14 @@ void ECFObject::forEachParameters(std::function<void(const ECFParameter*)> fnc, 
 	}
 }
 
-void ECFObject::forEachParameters(std::function<void(ECFParameter*)> fnc, bool onlyAllowed, bool includePattern)
+void ECFObject::forEachParameters(std::function<void(ECFParameter*)> fnc, bool onlyAllowed, bool includePattern, bool includeObjects)
 {
 	for (size_t i = 0; i < parameters.size(); i++) {
 		if (onlyAllowed && !parameters[i]->metadata.isallowed()) {
 			continue;
 		}
 		if (parameters[i]->isObject()) {
+			if (includeObjects) { fnc(parameters[i]); }
 			dynamic_cast<ECFObject*>(parameters[i])->forEachParameters(fnc, onlyAllowed, includePattern);
 		}
 		if (parameters[i]->isValue()) {
@@ -276,27 +248,24 @@ void ECFObject::forEachParameters(
 		bool includePattern
 ) const
 {
-	std::string new_prefix = prefix.empty() ? this->name : prefix + ":" + this->name;
+	std::string new_prefix = prefix.empty() ? this->name : prefix + "." + this->name;
 	for (size_t i = 0; i < parameters.size(); i++) {
 		if (onlyAllowed && !parameters[i]->metadata.isallowed()) {
 			continue;
 		}
+		fnc(parameters[i], new_prefix);
 		if (parameters[i]->isObject()) {
-			fnc(parameters[i], new_prefix);
 			dynamic_cast<const ECFObject*>(parameters[i])->forEachParameters(fnc, new_prefix, onlyAllowed, includePattern);
-		}
-		if (parameters[i]->isValue()) {
-			fnc(parameters[i], new_prefix);
 		}
 	}
 	
 	ECFParameter* pattern;
 	if (includePattern && (pattern = this->getPattern()) != NULL)
 	{
-		
 		if (pattern->isObject()) {
-			fnc(pattern, new_prefix);
-			dynamic_cast<const ECFObject*>(pattern)->forEachParameters(fnc, new_prefix, onlyAllowed, includePattern);
+			pattern->name = this->name;
+			fnc(pattern, prefix);
+			dynamic_cast<const ECFObject*>(pattern)->forEachParameters(fnc, prefix, onlyAllowed, includePattern);
 		}
 		if (pattern->isValue()) {
 			fnc(pattern, new_prefix);
