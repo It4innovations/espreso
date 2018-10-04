@@ -36,7 +36,6 @@ void ECFJSONExport::exportToStream()
 
 std::string ECFJSONExport::spaces(const int indent)
 {
-<<<<<<< HEAD
 	std::stringstream ss;
 	for (int i = 0; i < indent; i++) ss << " ";
 	return ss.str();
@@ -290,115 +289,6 @@ void ECFJSONExport::printMetaData(ECFParameter* p, const int indent)
 	// 	printKeyValuePair("visibleObjectName", "true", ind, "");
 	// else
 	// 	printKeyValuePair("visibleObjectName", "false", ind, "");
-=======
-    std::stringstream ss;
-    for (int i = 0; i < indent; i++) ss << " ";
-    return ss.str();
-}
-
-void ECFJSONExport::printKeyValuePair(const std::string& key, 
-    const std::string& val, 
-    const int indent)
-{
-    this->m_stream 
-        << this->spaces(indent) 
-        << "\"" << key << "\""
-        << ": \"" 
-        << val 
-        << "\"";
-}
-
-void ECFJSONExport::printKeyArrayPair(const std::string& key, 
-    const std::vector<std::string>& arr, const int indent, 
-    const char* itemEnclosed)
-{
-    this->m_stream
-        << this->spaces(indent)
-        << "\"" << key << "\""
-        << ": " 
-        << "[";
-    
-    std::vector<std::string> aux_arr;
-    for (auto e = arr.begin(); e != arr.end(); ++e)
-    {
-        aux_arr.push_back(itemEnclosed);
-        aux_arr.push_back(*e);
-        aux_arr.push_back(itemEnclosed);
-        aux_arr.push_back(", ");
-    }
-    if (aux_arr.size()) aux_arr.pop_back();
-    for (auto e = aux_arr.begin(); e != aux_arr.end(); ++e)
-    {
-        this->m_stream << *e;
-    }
-
-    this->m_stream << "]";
-}
-
-void ECFJSONExport::printKeyObjectPair(const std::string& key, 
-    const std::function<void(int)>& printObjContent, 
-    const int indent)
-{
-    this->m_stream << this->spaces(indent);
-    this->m_stream << "\"" << key << "\"" << ": " << "{" << std::endl;
-    
-    printObjContent(indent + 2);
-
-    this->m_stream << std::endl << spaces(indent + 2) << "}" << std::endl;
-}
-
-void ECFJSONExport::printMetaData(ECFMetaData *md, const int indent)
-{
-    int ind = indent + 2;
-
-    this->printKeyValuePair("name", md->name, ind);
-    this->m_stream << "," << std::endl;
-
-    this->printKeyArrayPair("description", md->description, ind);
-    this->m_stream << "," << std::endl;
-    
-    auto datatypesToStringVector = [&](const std::vector<ECFDataType>& dts) -> std::vector<std::string>{
-        std::vector<std::string> ret;
-        for (auto d = dts.begin(); d != dts.end(); ++d)
-        {
-            ret.push_back(this->m_datatypes[*d]);
-        }
-        return ret;
-    };
-    this->printKeyArrayPair("datatype", datatypesToStringVector(md->datatype), ind);
-    
-    this->m_stream << "," << std::endl;
-    
-    this->printKeyArrayPair("pattern", md->pattern, ind);
-
-    this->m_stream << "," << std::endl;
-
-    auto printOptions = [&] () {
-        std::vector<std::string> ret;
-        for (auto option = md->options.begin(); option != md->options.end(); ++option)
-        {
-            std::stringstream ss;
-            ss 
-                << "{ \"name\": \""
-                << option->name
-                << "\", \"description\": \""
-                << option->description
-                << "\" }";
-            ret.push_back(ss.str());
-        }
-
-        return ret;
-    };
-    this->printKeyArrayPair("options", printOptions(), ind, "");
-    
-    this->m_stream << "," << std::endl;
-    
-    this->printKeyArrayPair("variables", md->variables, ind);
-
-    this->m_stream << "," << std::endl;
-
-    this->printKeyValuePair("unit", md->unit.unit(), ind);
->>>>>>> ENH: [WEB-GUI] JSON export - SI unit metadata basic export
 }
 
 void ECFJSONExport::printValue(ECFParameter* val, const int indent)
