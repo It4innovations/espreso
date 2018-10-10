@@ -18,6 +18,16 @@ CoordinateSystemConfiguration::CoordinateSystemConfiguration(DIMENSION *D)
 {
 	type = TYPE::CARTESIAN;
 
+	REGISTER(dimension, ECFMetaData()
+				.setdescription({"Dimension"})
+				.setdatatype({ ECFDataType::OPTION })
+				.addoption(ECFOption().setname("D1").setdescription("D1"))
+				.addoption(ECFOption().setname("D2").setdescription("D2"))
+				.addoption(ECFOption().setname("D3").setdescription("D3"))
+				.addoption(ECFOption().setname("Z").setdescription("Z"))
+				.allowonly([&] () { return false; })
+				.addconstraint(ECFFalseCondition()));
+
 	REGISTER(type, ECFMetaData()
 			.setdescription({ "Type" })
 			.setdatatype({ ECFDataType::OPTION })
