@@ -1,0 +1,12 @@
+
+
+def configure(ctx):
+    pass
+
+def build(ctx):
+
+    ctx.objects(
+        source = ctx.path.ant_glob('**/*.cpp'),
+        target = "optimization",
+        use    = "espreso_includes"
+    )
