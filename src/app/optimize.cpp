@@ -15,7 +15,7 @@ int main(int argc, char **argv)
     if (rank == 0)
     {
         BoothProblem bp;
-        PSOAlgorithm pso(bp);
+        DEAlgorithm pso(bp);
         pso.run();
     }   
 

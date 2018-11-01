@@ -87,3 +87,69 @@ void PSOAlgorithm::run()
     }
 
 }
+
+DEAlgorithm::DEAlgorithm(OptimizationProblem& problem)
+: OptimizationAlgorithm(problem), 
+population(problem.population()), generations(problem.generations()),
+F(0.5f), CR(0.9f)
+{
+    srand(time(NULL));
+}
+
+void DEAlgorithm::run()
+{
+    // INITIALIZATION
+    auto specimens = PopulationGenerator::generate(this->problem);
+    for (auto s = specimens.begin(); s != specimens.end(); ++s)
+    {
+        s->push_back(this->problem.evaluate(*s));
+    }
+
+    // ALGORITHM
+    for (int g = 0; g < this->generations; g++)
+    {
+        std::cout << "GENERATION " << g << std::endl;
+
+        std::vector<std::vector<int> > new_generation;
+        new_generation.resize(this->problem.population());
+
+        for (int s = 0; s < specimens.size(); s++)
+        {
+            // MUTATION
+            const int MUTATION_PARENTS = 3;
+            std::vector<int> parents[MUTATION_PARENTS];
+            for (int p = 0; p < MUTATION_PARENTS; p++)
+            { parents[p] = specimens[ rand() % this->population ]; }
+            std::vector<int> noisy_vector;
+            noisy_vector.resize(this->problem.dimension());
+            for (int d = 0; d < this->problem.dimension(); d++)
+            {
+                noisy_vector[d] = parents[0][d] + F * (parents[1][d] - parents[2][d]);
+                if (noisy_vector[d] < this->problem.parameter(d).minValue())
+                { noisy_vector[d] = this->problem.parameter(d).minValue(); }
+                if (noisy_vector[d] > this->problem.parameter(d).maxValue())
+                { noisy_vector[d] = this->problem.parameter(d).maxValue(); }
+            }
+
+            // CROSSOVER
+            int random = rand() % this->problem.dimension();
+            std::vector<int> trial_vector = noisy_vector;
+            trial_vector[random] = 
+            ( ((float) rand()) / (float) RAND_MAX ) < CR 
+            ? trial_vector[random] : specimens[s][random];
+            trial_vector.push_back(this->problem.evaluate(trial_vector));
+
+            if (trial_vector.back() < specimens[s].back())
+            { new_generation[s] = trial_vector; }
+            else
+            { new_generation[s] = specimens[s]; }
+
+            std::cout << "UNIT ";
+            for (int d = 0; d < this->problem.dimension(); d++)
+            { std::cout << new_generation[s][d] << ", "; }
+            std::cout << " -- " << new_generation[s].back() << std::endl;
+        }
+
+        specimens = std::move(new_generation);
+    }
+}

@@ -41,6 +41,23 @@ private:
     std::vector<int> gBest;
 };
 
+class DEAlgorithm : public OptimizationAlgorithm
+{
+public:
+    DEAlgorithm(OptimizationProblem& problem);
+
+    void run() override;
+
+private:
+    const int population;
+    const int generations;
+
+    const float F;
+    const float CR;
+
+    std::vector<int> best;
+};
+
 }
 
 #endif /* SRC_OPTIMIZATION_ALGORITHM_H_ */
