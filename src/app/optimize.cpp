@@ -1,7 +1,8 @@
 #include "mpi.h"
 
-#include "../optimization/algorithm.h"
+#include <iostream>
 
+#include "../optimization/optimizer.h"
 
 using namespace espreso;
 
@@ -14,9 +15,9 @@ int main(int argc, char **argv)
 
     if (rank == 0)
     {
-        BoothProblem bp;
-        DEAlgorithm pso(bp);
-        pso.run();
+        Optimizer opt;
+        for (int i = 0; i < 100; i++)
+        { opt.set(); opt.run([&] () { std::cout << "run" << std::endl; }); }
     }   
 
     MPI_Barrier(MPI_COMM_WORLD);

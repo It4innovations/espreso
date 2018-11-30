@@ -1,0 +1,82 @@
+#ifndef SRC_OPTIMIZATION_EVOLUTION_H_
+#define SRC_OPTIMIZATION_EVOLUTION_H_
+
+#include <vector>
+
+#include "proxy.h"
+
+namespace espreso
+{
+
+class ParameterManager;
+
+class EvolutionAlgorithm
+{
+public:
+    EvolutionAlgorithm(ParameterManager& manager)
+    : m_manager(manager) {}
+    virtual ~EvolutionAlgorithm() {}
+
+    virtual std::vector<double> getCurrentSpecimen() = 0;
+    virtual void evaluateCurrentSpecimen(double value) = 0;
+
+protected:
+    std::vector<std::vector<double> > m_specimens;
+    ParameterManager& m_manager;
+};
+
+class PSOAlgorithm : public EvolutionAlgorithm
+{
+public:
+    PSOAlgorithm(ParameterManager& manager);
+
+    std::vector<double> getCurrentSpecimen() override;
+    void evaluateCurrentSpecimen(double value) override;
+
+private:
+    const int population;
+    const int dimension;
+    const int generations;
+
+    int generation;
+    std::vector<std::vector<double> >::iterator current;
+    bool isInitializing;
+
+    const double C1;
+    const double C2;
+    double w;
+    const double W_START;
+    const double W_END;
+
+    std::vector<std::vector<double> > pBest;
+    std::vector<std::vector<double> > velocity;
+    std::vector<double> gBest;
+};
+
+class DEAlgorithm : public EvolutionAlgorithm
+{
+public:
+    DEAlgorithm(ParameterManager& manager);
+
+    std::vector<double> getCurrentSpecimen() override;
+    void evaluateCurrentSpecimen(double value) override;
+
+private:
+    const int population;
+    const int dimension;
+
+    int generation;
+    bool isInitializing;
+    std::vector<std::vector<double> >::iterator current;
+    std::vector<std::vector<double> > new_generation;
+    std::vector<double> trial_vector;
+
+    const double F;
+    const double CR;
+
+    std::vector<double> best;
+};
+
+}
+
+#endif /* SRC_OPTIMIZATION_EVOLUTION_H_ */
