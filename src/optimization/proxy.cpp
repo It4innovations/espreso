@@ -51,12 +51,28 @@ std::vector<double> ParameterManager::generateConfiguration()
                 rand() % (*it)->metadata.options.size()
             );
         }
+        else if (dt == ECFDataType::BOOL)
+        {
+            configuration.push_back( rand() % 2 );
+        }
+        else 
+        {
+            std::cout 
+            << "Optimization - UNKNOWN PARAMETER DATA TYPE!" 
+            << std::endl;
+        }
     }
 
     return configuration;
 }
 
 double ParameterManager::checkParameter(int id, double value)
+{
+    this->_checkParameter_rounded(id, value);
+    // this->_checkParameter_bounds(id, value);
+}
+
+double ParameterManager::_checkParameter_rounded(int id, double value)
 {
     ECFParameter* p = this->m_params[id];
     ECFDataType dt = p->metadata.datatype.front();
@@ -93,11 +109,45 @@ double ParameterManager::checkParameter(int id, double value)
         if (opt >= size) return size - 1;
         return opt;
     }
+    else if (dt == ECFDataType::BOOL)
+    {
+        int val = (int)value;
+        if (val < 0) return 0;
+        if (val > 1) return 1;
+        return val;
+    }
     else 
     {
         return value;
     }
+}
 
+double ParameterManager::_checkParameter_bounds(int id, double value)
+{
+    ECFParameter* p = this->m_params[id];
+    ECFDataType dt = p->metadata.datatype.front();
+    
+    if (dt == ECFDataType::POSITIVE_INTEGER)
+    {
+        if (value < 1) return 1;
+    }
+    else if (dt == ECFDataType::NONNEGATIVE_INTEGER)
+    {
+        if (value < 0) return 0;
+    }
+    else if (dt == ECFDataType::OPTION || dt == ECFDataType::ENUM_FLAGS)
+    {
+        if (value < 0) return 0;
+        int size = p->metadata.options.size();
+        if (value >= size) return size - 1;
+    }
+    else if (dt == ECFDataType::BOOL)
+    {
+        if (value < 0) return 0;
+        if (value > 1) return 1;
+    }
+    
+    return value;
 }
 
 OptimizationProxy::OptimizationProxy(
@@ -130,9 +180,19 @@ void OptimizationProxy::setNextConfiguration()
                 (*it)->metadata.options[(int)configuration[p]].name
             );
         }
-        else
+        else if (dt == ECFDataType::BOOL)
+        {
+            (*it)->setValue(
+                ((int)configuration[p]) == 0 ? "FALSE" : "TRUE"
+            );
+        }
+        else if (dt == ECFDataType::FLOAT)
         {
             (*it)->setValue(std::to_string(configuration[p]));
+        }
+        else
+        {
+            (*it)->setValue(std::to_string((int)configuration[p]));
         }
     }
 }

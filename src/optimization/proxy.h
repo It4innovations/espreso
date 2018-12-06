@@ -23,6 +23,8 @@ public:
 
 private:
     std::vector<ECFParameter*>& m_params;
+    double _checkParameter_rounded(int id, double value);
+    double _checkParameter_bounds(int id, double value);
 };
 
 enum class OptimizationAlgorithm

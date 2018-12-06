@@ -39,10 +39,10 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.addoption(ECFOption().setname("pipePCG").setdescription("Pipelined PCG."))
 			.addoption(ECFOption().setname("orthogonalPCG").setdescription("Orthogonal PCG."))
 			.addoption(ECFOption().setname("GMRES").setdescription("GMRES - supports non-symmetric systems."))
-			.addoption(ECFOption().setname("BICGSTAB").setdescription("BICGSTAB - supports non-symmetric systems."))
-			.addoption(ECFOption().setname("QPCE").setdescription("QPCE"))
-			.addoption(ECFOption().setname("orthogonalPCG_CP").setdescription("FETI Geneo with full ortogonalization CG"))
-			.addoption(ECFOption().setname("PCG_CP").setdescription("FETI Geneo with regular CG")));
+			.addoption(ECFOption().setname("BICGSTAB").setdescription("BICGSTAB - supports non-symmetric systems.")));
+			// .addoption(ECFOption().setname("QPCE").setdescription("QPCE"))
+			// .addoption(ECFOption().setname("orthogonalPCG_CP").setdescription("FETI Geneo with full ortogonalization CG"))
+			// .addoption(ECFOption().setname("PCG_CP").setdescription("FETI Geneo with regular CG")));
 
 	regularization = REGULARIZATION::ANALYTIC;
 	REGISTER(regularization, ECFMetaData()

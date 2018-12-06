@@ -8,18 +8,19 @@ using namespace espreso;
 Optimizer::Optimizer() 
 : proxy(_parameters, OptimizationAlgorithm::DIFFERENTIAL_EVOLUTION)
 {
-	sphere.forEachParameters(
-		[&] (ECFParameter* p) { this->addParameter(p); }
-	);
+	// sphere.forEachParameters(
+	// 	[&] (ECFParameter* p) { this->addParameter(p); }
+	// );
 }
 
 
 void Optimizer::set()
 {
 	this->proxy.setNextConfiguration();
-	for (auto p = _parameters.begin(); p != _parameters.end(); ++p) {
-		std::cout << (*p)->name << ": " << (*p)->getValue() << "\n";
-	}
+	// for (auto p = _parameters.begin(); p != _parameters.end(); ++p) {
+	// 	std::cout << (*p)->name << ": " << (*p)->getValue() << " ";
+	// }
+	// std::cout << std::endl;
 }
 
 void Optimizer::run(std::function<void(void)> fnc)

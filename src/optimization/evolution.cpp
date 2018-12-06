@@ -1,5 +1,4 @@
 #include "evolution.h"
-#include "population.h"
 
 #include <cstdlib>
 #include <ctime>
@@ -63,6 +62,9 @@ void PSOAlgorithm::evaluateCurrentSpecimen(double value)
     if (isInitializing)
     {
         current->push_back(value);
+        std::cout << "I,";
+        for (int i = 0; i < current->size(); i++) std::cout << (*current)[i] << ",";
+        std::cout << std::endl;
         this->pBest.push_back(*current);
         if (!gBest.size()) gBest = *current;
         
@@ -91,6 +93,14 @@ void PSOAlgorithm::evaluateCurrentSpecimen(double value)
         {
             this->gBest = this->pBest[s];
         }
+
+        std::cout << "M,";
+        for (int i = 0; i < current->size(); i++) std::cout << (*current)[i] << ",";
+        std::cout << std::endl;
+
+        // std::cout << "BEST ";
+        // for (int i = 0; i < current->size(); i++) std::cout << gBest[i] << " ";
+        // std::cout << std::endl;
 
         if (++current == m_specimens.end())
         {
@@ -150,6 +160,9 @@ void DEAlgorithm::evaluateCurrentSpecimen(double value)
     if (isInitializing)
     {
         current->push_back(value);
+        std::cout << "I,";
+        for (int i = 0; i < current->size(); i++) std::cout << (*current)[i] << ",";
+        std::cout << std::endl;
         if (!this->best.size()) this->best = *current;
         if (this->best.back() > value) this->best = *current;
 
@@ -171,7 +184,11 @@ void DEAlgorithm::evaluateCurrentSpecimen(double value)
         if (this->best.back() > new_generation.back().back()) 
         { this->best = new_generation.back(); }
 
-        std::cout << "Best: " << this->best.back() << std::endl;
+        std::cout << "M,";
+        for (int i = 0; i < new_generation.back().size(); i++) std::cout << new_generation.back()[i] << ",";
+        std::cout << std::endl;
+
+        // std::cout << "Best: " << this->best.back() << std::endl;
 
         if (++current == m_specimens.end())
         {
