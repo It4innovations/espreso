@@ -68,8 +68,8 @@ std::vector<double> ParameterManager::generateConfiguration()
 
 double ParameterManager::checkParameter(int id, double value)
 {
-    this->_checkParameter_rounded(id, value);
-    // this->_checkParameter_bounds(id, value);
+    return this->_checkParameter_rounded(id, value);
+    // return this->_checkParameter_bounds(id, value);
 }
 
 double ParameterManager::_checkParameter_rounded(int id, double value)
