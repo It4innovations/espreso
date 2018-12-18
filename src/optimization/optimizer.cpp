@@ -6,7 +6,7 @@
 using namespace espreso;
 
 Optimizer::Optimizer() 
-: proxy(_parameters, OptimizationAlgorithm::DIFFERENTIAL_EVOLUTION)
+: proxy(_parameters, OptimizationAlgorithm::PARTICLE_SWARM)
 {
 	// sphere.forEachParameters(
 	// 	[&] (ECFParameter* p) { this->addParameter(p); }

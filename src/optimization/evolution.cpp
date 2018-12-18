@@ -6,8 +6,8 @@
 using namespace espreso;
 
 PSOAlgorithm::PSOAlgorithm(ParameterManager& manager) : EvolutionAlgorithm(manager), 
-population(20), dimension(manager.count()), generations(100), generation(0), 
-C1(0.1f), C2(0.2f), w(1), W_START(0.9f), W_END(0.4f), isInitializing(true)
+population(10), dimension(manager.count()), generations(9), generation(0), 
+C1(2.0f), C2(2.0f), w(1), W_START(0.9f), W_END(0.4f), isInitializing(true)
 {
     srand(time(NULL));
     for (int s = 0; s < population; s++)
@@ -50,7 +50,6 @@ std::vector<double> PSOAlgorithm::getCurrentSpecimen()
                 m_specimens[s][v_i] + velocity[s][v_i]
             );
             m_specimens[s][v_i] = new_value;
-            
         }
 
         return *current;
@@ -185,7 +184,7 @@ void DEAlgorithm::evaluateCurrentSpecimen(double value)
         { this->best = new_generation.back(); }
 
         std::cout << "M,";
-        for (int i = 0; i < new_generation.back().size(); i++) std::cout << new_generation.back()[i] << ",";
+        for (int i = 0; i < trial_vector.size(); i++) std::cout << trial_vector[i] << ",";
         std::cout << std::endl;
 
         // std::cout << "Best: " << this->best.back() << std::endl;
