@@ -93,7 +93,7 @@ void PSOAlgorithm::evaluateCurrentSpecimen(double value)
             this->gBest = this->pBest[s];
         }
 
-        std::cout << "M,";
+        std::cout << "N,";
         for (int i = 0; i < current->size(); i++) std::cout << (*current)[i] << ",";
         std::cout << std::endl;
 
@@ -111,7 +111,7 @@ void PSOAlgorithm::evaluateCurrentSpecimen(double value)
 }
 
 DEAlgorithm::DEAlgorithm(ParameterManager& manager) :
-EvolutionAlgorithm(manager), population(20), F(0.5f), CR(0.9f),
+EvolutionAlgorithm(manager), population(20), F(1.1f), CR(0.5f),
 isInitializing(true), dimension(manager.count())
 {
     srand(time(NULL));
@@ -183,8 +183,11 @@ void DEAlgorithm::evaluateCurrentSpecimen(double value)
         if (this->best.back() > new_generation.back().back()) 
         { this->best = new_generation.back(); }
 
-        std::cout << "M,";
+        std::cout << "T,";
         for (int i = 0; i < trial_vector.size(); i++) std::cout << trial_vector[i] << ",";
+        std::cout << std::endl;
+        std::cout << "N,";
+        for (int i = 0; i < new_generation.back().size(); i++) std::cout << new_generation.back()[i] << ",";
         std::cout << std::endl;
 
         // std::cout << "Best: " << this->best.back() << std::endl;
