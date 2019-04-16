@@ -77,6 +77,43 @@ private:
     std::vector<double> best;
 };
 
+class SOMAT3AAlgorithm : public EvolutionAlgorithm
+{
+public:
+    SOMAT3AAlgorithm(ParameterManager& manager);
+
+    std::vector<double> getCurrentSpecimen() override;
+    void evaluateCurrentSpecimen(double value) override;
+
+private:
+    const int population;
+    const int dimension;
+    const int migrations;
+
+    int migration;
+    bool isInitializing;
+    std::vector<std::vector<double> >::iterator current;
+    double FEs;
+    double PRT;
+    double STEP;
+
+    std::vector<std::vector<double>* > Ns;
+    std::vector<std::vector<double>* >::iterator current_N;
+
+    std::vector<double>* leader;
+    std::vector<std::vector<double> > journeys;
+    std::vector<std::vector<double> >::iterator current_journey;
+    int best_journey;
+
+    const double JUMPS;
+    const double FEs_MAX;
+    const int M;
+    const int N;
+    const int K;
+    
+    std::vector<double> best;
+};
+
 }
 
 #endif /* SRC_OPTIMIZATION_EVOLUTION_H_ */

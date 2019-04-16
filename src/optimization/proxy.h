@@ -30,7 +30,8 @@ private:
 enum class OptimizationAlgorithm
 {
     PARTICLE_SWARM,
-    DIFFERENTIAL_EVOLUTION
+    DIFFERENTIAL_EVOLUTION,
+    SOMAT3A
 };
 
 class OptimizationProxy

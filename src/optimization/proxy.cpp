@@ -214,6 +214,9 @@ void OptimizationProxy::setAlgorithm()
     case OptimizationAlgorithm::DIFFERENTIAL_EVOLUTION:
         this->m_alg = new DEAlgorithm(m_manager);
         break;
+    case OptimizationAlgorithm::SOMAT3A:
+        this->m_alg = new SOMAT3AAlgorithm(m_manager);
+        break;
 
     default:;
     }

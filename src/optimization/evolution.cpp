@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <ctime>
+#include <algorithm>
 
 using namespace espreso;
 
@@ -197,6 +198,149 @@ void DEAlgorithm::evaluateCurrentSpecimen(double value)
             current = m_specimens.begin();
             this->m_specimens = new_generation;
             new_generation.clear();
+        }
+    }
+}
+
+SOMAT3AAlgorithm::SOMAT3AAlgorithm(ParameterManager& manager) : EvolutionAlgorithm(manager),
+population(10), dimension(manager.count()), migration(0), FEs(0), PRT(0.05), STEP(0.13),
+JUMPS(14), migrations((1000 -  population) / (JUMPS * population)), 
+FEs_MAX(population * JUMPS * migrations), M(6), N(2), K(6), isInitializing(true)
+{
+    srand(time(NULL));
+    for (int s = 0; s < population; s++)
+    { m_specimens.push_back(m_manager.generateConfiguration()); }
+    this->current = m_specimens.begin();
+}
+
+std::vector<double> SOMAT3AAlgorithm::getCurrentSpecimen()
+{
+    if (isInitializing)
+    { return *current; }
+    else
+    { return *current_journey; }
+}
+
+void SOMAT3AAlgorithm::evaluateCurrentSpecimen(double value)
+{
+    auto setupMigration = [&] () 
+    {
+        this->PRT = 0.05 + 0.90 * (FEs / FEs_MAX);
+        this->STEP = 0.13 - 0.08 * (FEs / FEs_MAX);
+        std::vector<std::vector<double>* > ms;
+        auto compare = [&] (std::vector<double>* a, std::vector<double>* b)
+            { return a->back() < b->back(); };
+        for (int m = 0; m < M; m++)
+        { ms.push_back(&m_specimens[rand() % population]); }
+        std::sort(ms.begin(), ms.end(), compare);
+        this->Ns.clear();
+        for (int n = 0; n < N; n++)
+        { this->Ns.push_back(ms[n]); }
+        current_N = this->Ns.begin();
+    };
+
+    auto produceLeader = [&] ()
+    {
+        leader = &m_specimens[rand() % population];
+        for (int ki = 1; ki < K; ki++)
+        { 
+            std::vector<double> candidate = m_specimens[rand() % population];
+            leader = candidate[dimension] < (*leader)[dimension] ? &candidate : leader;
+        }
+        if (leader == *current_N)
+            return false;
+        else
+            return true;
+    };
+
+    auto produceJourneys = [&] ()
+    {
+        this->journeys.clear();
+        this->journeys.resize(JUMPS);
+
+        for (int j = 0; j < JUMPS; j++)
+        {
+            double step = j*STEP;
+            std::vector<double> PRTVector(dimension, 0);
+            for (int d = 0; d < this->dimension; d++)
+            { PRTVector[d] = 
+                static_cast<double>(rand()) / static_cast<double>(RAND_MAX) < PRT ?
+                1 : 0; }
+            std::vector<double> journey(dimension + 1, 0);
+            for (int d = 0; d < this->dimension; d++)
+            { journey[d] = (*current_N)->at(d) + 
+                ((*leader)[d] - (*current_N)->at(d)) * step * PRTVector[d]; }
+            journeys[j] = journey;
+        }
+        for (auto j = journeys.begin(); j != journeys.end(); j++)
+        { 
+            for (int d = 0; d < dimension; d++)
+            { (*j)[d] = m_manager.checkParameter(d, (*j)[d]); }
+        }
+        this->FEs += JUMPS;
+        this->current_journey = journeys.begin();
+        this->best_journey = 0;
+    };
+
+    if (isInitializing)
+    {
+        current->push_back(value);
+        std::cout << "I,";
+        for (int i = 0; i < current->size(); i++) std::cout << (*current)[i] << ",";
+        std::cout << std::endl;
+        if (!this->best.size()) this->best = *current;
+        if (this->best.back() > value) this->best = *current;
+
+        if (++current == m_specimens.end()) 
+        {
+            isInitializing = false;
+            current = m_specimens.begin();
+            setupMigration();
+
+            while (!produceLeader())
+            {
+                if (++current_N == Ns.end())
+                {
+                    this->migration++;
+                    setupMigration();
+                }
+            }
+            produceJourneys();
+        }
+    }
+    else 
+    {
+        (*this->current_journey)[dimension] = value;
+
+        std::cout << "M,";
+        for (int i = 0; i < current_journey->size(); i++) std::cout << (*current_journey)[i] << ",";
+        std::cout << std::endl;
+
+        if (value < journeys[best_journey][dimension]) 
+        { best_journey = std::distance(journeys.begin(), current_journey); }
+        if (++current_journey == journeys.end())
+        {
+            double best_journey_fitness = journeys[best_journey][dimension];
+            if (best_journey_fitness < (*current_N)->at(dimension))
+            { (*(*current_N)) = journeys[best_journey]; }
+            if (best_journey_fitness < best[dimension])
+            { best = journeys[best_journey]; }
+
+            if (++current_N == Ns.end())
+            {
+                this->migration++;
+                setupMigration();
+            }
+
+            while (!produceLeader())
+            {
+                if (++current_N == Ns.end())
+                {
+                    this->migration++;
+                    setupMigration();
+                }
+            }
+            produceJourneys();
         }
     }
 }

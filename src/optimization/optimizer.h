@@ -27,7 +27,7 @@ public:
 protected:
 	std::vector<ECFParameter*> _parameters;
 	OptimizationProxy proxy;
-	// SphereProblem sphere;
+	SphereProblem sphere;
 };
 
 }
