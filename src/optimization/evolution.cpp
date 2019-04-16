@@ -312,7 +312,7 @@ void SOMAT3AAlgorithm::evaluateCurrentSpecimen(double value)
     {
         (*this->current_journey)[dimension] = value;
 
-        std::cout << "M,";
+        std::cout << "J,";
         for (int i = 0; i < current_journey->size(); i++) std::cout << (*current_journey)[i] << ",";
         std::cout << std::endl;
 
