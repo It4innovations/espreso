@@ -25,11 +25,11 @@ void Optimizer::set()
 
 void Optimizer::run(std::function<void(void)> fnc)
 {
-	// double start = Measure::time();
-	// fnc();
-	// double end = Measure::time();
+	double start = Measure::time();
+	fnc();
+	double end = Measure::time();
 
-	// this->proxy.setConfigurationEvaluation(end - start);
+	this->proxy.setConfigurationEvaluation(end - start);
 
 	// this->proxy.setConfigurationEvaluation(sphere.evaluate());
 }
