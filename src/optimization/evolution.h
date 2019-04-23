@@ -88,7 +88,6 @@ public:
 private:
     const int population;
     const int dimension;
-    const int migrations;
 
     int migration;
     bool isInitializing;
@@ -96,6 +95,8 @@ private:
     double FEs;
     double PRT;
     double STEP;
+    const double STEP_START;
+    const double STEP_END;
 
     std::vector<std::vector<double>* > Ns;
     std::vector<std::vector<double>* >::iterator current_N;

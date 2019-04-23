@@ -203,9 +203,9 @@ void DEAlgorithm::evaluateCurrentSpecimen(double value)
 }
 
 SOMAT3AAlgorithm::SOMAT3AAlgorithm(ParameterManager& manager) : EvolutionAlgorithm(manager),
-population(10), dimension(manager.count()), migration(0), FEs(0), PRT(0.05), STEP(0.13),
-JUMPS(14), migrations((1000 -  population) / (JUMPS * population)), 
-FEs_MAX(population * JUMPS * migrations), M(6), N(2), K(6), isInitializing(true)
+population(10), dimension(manager.count()), migration(0), FEs(0), 
+JUMPS(10), FEs_MAX(1000), M(5), N(2), K(5), isInitializing(true),
+PRT(0.05), STEP_START(3.0 / JUMPS), STEP_END(1.5 / JUMPS), STEP(STEP_START)
 {
     srand(time(NULL));
     for (int s = 0; s < population; s++)
@@ -226,7 +226,7 @@ void SOMAT3AAlgorithm::evaluateCurrentSpecimen(double value)
     auto setupMigration = [&] () 
     {
         this->PRT = 0.05 + 0.90 * (FEs / FEs_MAX);
-        this->STEP = 0.13 - 0.08 * (FEs / FEs_MAX);
+        this->STEP = STEP_START - STEP_END * (FEs / FEs_MAX);
         std::vector<std::vector<double>* > ms;
         auto compare = [&] (std::vector<double>* a, std::vector<double>* b)
             { return a->back() < b->back(); };
