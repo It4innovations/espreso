@@ -80,7 +80,7 @@ private:
 class SOMAT3AAlgorithm : public EvolutionAlgorithm
 {
 public:
-    SOMAT3AAlgorithm(ParameterManager& manager);
+    SOMAT3AAlgorithm(ParameterManager& manager, int p_jumps = 10);
 
     std::vector<double> getCurrentSpecimen() override;
     void evaluateCurrentSpecimen(double value) override;

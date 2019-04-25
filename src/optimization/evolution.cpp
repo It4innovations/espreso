@@ -202,11 +202,12 @@ void DEAlgorithm::evaluateCurrentSpecimen(double value)
     }
 }
 
-SOMAT3AAlgorithm::SOMAT3AAlgorithm(ParameterManager& manager) : EvolutionAlgorithm(manager),
+SOMAT3AAlgorithm::SOMAT3AAlgorithm(ParameterManager& manager, int p_jumps) : EvolutionAlgorithm(manager),
 population(10), dimension(manager.count()), migration(0), FEs(0), 
-JUMPS(10), FEs_MAX(1000), M(5), N(2), K(5), isInitializing(true),
-PRT(0.05), STEP_START(3.0 / JUMPS), STEP_END(1.5 / JUMPS), STEP(STEP_START)
+JUMPS(p_jumps), FEs_MAX(1000), M(5), N(2), K(5), isInitializing(true),
+PRT(0.05), STEP_START(3.0 / p_jumps), STEP_END(1.5 / p_jumps)
 {
+    this->STEP = this->STEP_START;
     srand(time(NULL));
     for (int s = 0; s < population; s++)
     { m_specimens.push_back(m_manager.generateConfiguration()); }
