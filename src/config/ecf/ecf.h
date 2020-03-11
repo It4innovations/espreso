@@ -19,6 +19,27 @@
 
 namespace espreso {
 
+struct FunctionDefinition: public ECFDescription {
+
+	enum class AGGREGATOR {
+		NONE,
+		MIN,
+		MAX,
+		AVG,
+		ABSMIN,
+		ABSMAX
+	};
+
+	int loadstep;
+	std::string region;
+	AGGREGATOR aggregator;
+
+	ECFExpression function;
+
+	FunctionDefinition();
+};
+
+
 struct ECF: public ECFDescription {
 
 	enum class INPUT_TYPE {
@@ -38,6 +59,7 @@ struct ECF: public ECFDescription {
 
 	std::map<size_t, std::string> default_args;
 	std::map<std::string, std::string> variables;
+	std::map<std::string, FunctionDefinition> functions;
 
 	FETI4ILibraryConfiguration feti4ilibrary;
 

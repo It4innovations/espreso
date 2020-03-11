@@ -61,6 +61,34 @@ const PhysicsConfiguration* ECF::_getPhysics() const
 	}
 }
 
+FunctionDefinition::FunctionDefinition()
+: function({})
+{
+	loadstep = -1;
+	REGISTER(loadstep, ECFMetaData()
+			.setdescription({ "Expression is evaluated only for a given loadstep (use -1 for the last)." })
+			.setdatatype({ ECFDataType::INTEGER }));
+
+	REGISTER(region, ECFMetaData()
+			.setdescription({ "Expression is evaluated only for a given loadstep (use -1 for the last)." })
+			.setdatatype({ ECFDataType::REGION }));
+
+	aggregator = AGGREGATOR::NONE;
+	REGISTER(aggregator, ECFMetaData()
+			.setdescription({ "Variant" })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("NONE").setdescription("Define a new value for all nodes/elements."))
+			.addoption(ECFOption().setname("MIN").setdescription("Minimum across a given region."))
+			.addoption(ECFOption().setname("MAX").setdescription("Maximum across a given region."))
+			.addoption(ECFOption().setname("AVG").setdescription("Average across a given region."))
+			.addoption(ECFOption().setname("ABSMIN").setdescription("Absolute value of the minimun across a given region."))
+			.addoption(ECFOption().setname("ABSMAX").setdescription("Absolute value of the maximun across a given region.")));
+
+	REGISTER(function, ECFMetaData()
+			.setdescription({ "The function definition." })
+			.setdatatype({ ECFDataType::EXPRESSION}));
+}
+
 void ECF::_init()
 {
 	ecfdescription->name = "root";
@@ -77,6 +105,11 @@ void ECF::_init()
 			.setdescription({ "A name of variable usable in *.ecf file.", "A value of the variable." })
 			.setdatatype({ ECFDataType::STRING, ECFDataType::STRING })
 			.setpattern({ "MY_VARIABLE", "VALUE" }));
+
+	REGISTER(functions, ECFMetaData()
+			.setdescription({ "A name of a function usable in expressions.", "The function definition." })
+			.setdatatype({ ECFDataType::STRING })
+			.setpattern({ "FNC" }));
 
 	ecfdescription->addSpace();
 
