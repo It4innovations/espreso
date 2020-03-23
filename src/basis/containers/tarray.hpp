@@ -78,7 +78,7 @@ tarray<TType>& tarray<TType>::operator=(tarray<TType> &&other)
 
 template <typename TType>
 tarray<TType>::tarray(size_t threads, size_t size, TType init)
-:  _size(size), _data(NULL)
+: _size(size), _data(NULL)
 {
 	_distribution = tarray<size_t>::distribute(threads, size);
 
@@ -88,6 +88,25 @@ tarray<TType>::tarray(size_t threads, size_t size, TType init)
 		for (size_t t = 0; t < threads; t++) {
 			for (size_t i = _distribution[t]; i < _distribution[t + 1]; i++) {
 				_data[i] = init;
+			}
+		}
+	}
+}
+
+template <typename TType>
+tarray<TType>::tarray(size_t threads, size_t size, bool skipinit)
+: _size(size), _data(NULL)
+{
+	_distribution = tarray<size_t>::distribute(threads, size);
+
+	if (_size) {
+		_data = new TType[_size];
+		if (!skipinit) {
+			#pragma omp parallel for
+			for (size_t t = 0; t < threads; t++) {
+				for (size_t i = _distribution[t]; i < _distribution[t + 1]; i++) {
+					_data[i] = TType{};
+				}
 			}
 		}
 	}

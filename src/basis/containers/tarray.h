@@ -20,6 +20,7 @@ public:
 
 	tarray(size_t threads, size_t size, TType init = TType{});
 	tarray(size_t threads, const std::vector<TType> &data);
+	tarray(size_t threads, size_t size, bool skipinit);
 	tarray(const std::vector<std::vector<TType> > &data);
 	tarray(const std::vector<TType> &data);
 	tarray(const std::vector<size_t> &distribution, const std::vector<TType> &data);
