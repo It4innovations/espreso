@@ -5,7 +5,8 @@
 
 using namespace espreso;
 
-Optimizer::Optimizer(const OptimizationConfiguration& configuration) 
+
+EvolutionaryOptimizer::EvolutionaryOptimizer(const OptimizationConfiguration& configuration) 
 : proxy(_parameters, configuration)
 {
 	// sphere.forEachParameters(
@@ -14,7 +15,7 @@ Optimizer::Optimizer(const OptimizationConfiguration& configuration)
 }
 
 
-void Optimizer::set()
+void EvolutionaryOptimizer::set()
 {
 	this->proxy.setNextConfiguration();
 	// for (auto p = _parameters.begin(); p != _parameters.end(); ++p) {
@@ -23,7 +24,7 @@ void Optimizer::set()
 	// std::cout << std::endl;
 }
 
-void Optimizer::run(std::function<void(void)> fnc)
+void EvolutionaryOptimizer::run(std::function<void(void)> fnc)
 {
 	double start = Measure::time();
 	fnc();
@@ -33,5 +34,4 @@ void Optimizer::run(std::function<void(void)> fnc)
 
 	// this->proxy.setConfigurationEvaluation(sphere.evaluate());
 }
-
 

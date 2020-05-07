@@ -15,15 +15,39 @@ namespace espreso {
 class Optimizer {
 
 public:
-	Optimizer(const OptimizationConfiguration& configuration);
+	virtual ~Optimizer() {}
+	virtual void addParameter(ECFParameter* parameter)=0;
 
-	void addParameter(ECFParameter* parameter)
+	virtual void set()=0;
+	virtual void run(std::function<void(void)> fnc)=0;
+
+protected:
+	Optimizer() {}
+};
+
+class EmptyOptimizer : public Optimizer {
+
+public:
+	EmptyOptimizer() {}
+
+	void addParameter(ECFParameter* parameter) override {}
+
+	void set() override {}
+	void run(std::function<void(void)> fnc) override {}
+};
+
+class EvolutionaryOptimizer : public Optimizer {
+
+public:
+	EvolutionaryOptimizer(const OptimizationConfiguration& configuration);
+
+	void addParameter(ECFParameter* parameter) override
 	{
 		_parameters.push_back(parameter);
 	}
 
-	void set();
-	void run(std::function<void(void)> fnc);
+	void set() override;
+	void run(std::function<void(void)> fnc) override;
 
 protected:
 	std::vector<ECFParameter*> _parameters;
