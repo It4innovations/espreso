@@ -35,12 +35,12 @@ PSOConfiguration::PSOConfiguration()
 
 DEConfiguration::DEConfiguration() 
 {
-	this->F = 1.1f;
+	this->F = 0.9f;
 	REGISTER(F, ECFMetaData()
 		.setdescription({"F"})
 		.setdatatype({ECFDataType::FLOAT}));
 	
-	this->CR = 0.5f;
+	this->CR = 0.4f;
 	REGISTER(CR, ECFMetaData()
 		.setdescription({"CR"})
 		.setdatatype({ECFDataType::FLOAT}));
