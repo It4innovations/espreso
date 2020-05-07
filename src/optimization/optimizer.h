@@ -3,6 +3,7 @@
 #define SRC_OPTIMIZATION_OPTIMIZER_H_
 
 #include "../config/configuration.h"
+#include "../config/ecf/solver/optimization/optimization.h"
 #include "proxy.h"
 #include "sphereproblem.h"
 
@@ -14,7 +15,7 @@ namespace espreso {
 class Optimizer {
 
 public:
-	Optimizer();
+	Optimizer(const OptimizationConfiguration& configuration);
 
 	void addParameter(ECFParameter* parameter)
 	{

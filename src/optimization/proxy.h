@@ -4,18 +4,20 @@
 #include <vector>
 
 #include "../config/configuration.h"
+#include "../config/ecf/solver/optimization/optimization.h"
 #include "evolution.h"
 
 namespace espreso
 {
 
 class EvolutionAlgorithm;
+class OptimizationConfiguration;
 
 class ParameterManager
 {
 
 public:
-    ParameterManager(std::vector<ECFParameter*>& parameters);
+    ParameterManager(std::vector<ECFParameter*>& parameters, bool roundingImmediate = false);
 
     int count() const;
     std::vector<double> generateConfiguration();
@@ -23,15 +25,9 @@ public:
 
 private:
     std::vector<ECFParameter*>& m_params;
+    const bool m_immediate;
     double _checkParameter_rounded(int id, double value);
     double _checkParameter_bounds(int id, double value);
-};
-
-enum class OptimizationAlgorithm
-{
-    PARTICLE_SWARM,
-    DIFFERENTIAL_EVOLUTION,
-    SOMAT3A
 };
 
 class OptimizationProxy
@@ -40,7 +36,7 @@ class OptimizationProxy
 public:
     OptimizationProxy(
         std::vector<ECFParameter*>& parameters, 
-        OptimizationAlgorithm algorithm);
+        const OptimizationConfiguration& configuration);
     ~OptimizationProxy();
 
     void setNextConfiguration();
@@ -48,7 +44,7 @@ public:
 
 private:
     std::vector<ECFParameter*>& m_params;
-    OptimizationAlgorithm m_algorithm;
+    const OptimizationConfiguration& m_config;
     EvolutionAlgorithm* m_alg;
 
     const int dimension;

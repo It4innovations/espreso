@@ -28,7 +28,9 @@ protected:
 class PSOAlgorithm : public EvolutionAlgorithm
 {
 public:
-    PSOAlgorithm(ParameterManager& manager);
+    PSOAlgorithm(ParameterManager& manager, int population,
+        int generations, double C1, double C2, 
+        double W_START, double W_END);
 
     std::vector<double> getCurrentSpecimen() override;
     void evaluateCurrentSpecimen(double value) override;
@@ -56,7 +58,8 @@ private:
 class DEAlgorithm : public EvolutionAlgorithm
 {
 public:
-    DEAlgorithm(ParameterManager& manager);
+    DEAlgorithm(ParameterManager& manager, int population,
+        double F, double CR);
 
     std::vector<double> getCurrentSpecimen() override;
     void evaluateCurrentSpecimen(double value) override;

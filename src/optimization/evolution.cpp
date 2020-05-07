@@ -6,9 +6,12 @@
 
 using namespace espreso;
 
-PSOAlgorithm::PSOAlgorithm(ParameterManager& manager) : EvolutionAlgorithm(manager), 
-population(10), dimension(manager.count()), generations(9), generation(0), 
-C1(2.0f), C2(2.0f), w(1), W_START(0.9f), W_END(0.4f), isInitializing(true)
+PSOAlgorithm::PSOAlgorithm(ParameterManager& manager, int population,
+int generations, double C1, double C2, double W_START, double W_END) 
+: EvolutionAlgorithm(manager), 
+population(population), dimension(manager.count()), 
+generations(generations), generation(0), C1(C1), C2(C2), 
+w(1), W_START(W_START), W_END(W_END), isInitializing(true)
 {
     srand(time(NULL));
     for (int s = 0; s < population; s++)
@@ -111,8 +114,9 @@ void PSOAlgorithm::evaluateCurrentSpecimen(double value)
     }
 }
 
-DEAlgorithm::DEAlgorithm(ParameterManager& manager) :
-EvolutionAlgorithm(manager), population(20), F(1.1f), CR(0.5f),
+DEAlgorithm::DEAlgorithm(ParameterManager& manager, int population,
+double F, double CR) :
+EvolutionAlgorithm(manager), population(population), F(F), CR(CR),
 isInitializing(true), dimension(manager.count())
 {
     srand(time(NULL));

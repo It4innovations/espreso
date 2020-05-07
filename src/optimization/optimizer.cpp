@@ -5,8 +5,8 @@
 
 using namespace espreso;
 
-Optimizer::Optimizer() 
-: proxy(_parameters, OptimizationAlgorithm::SOMAT3A)
+Optimizer::Optimizer(const OptimizationConfiguration& configuration) 
+: proxy(_parameters, configuration)
 {
 	// sphere.forEachParameters(
 	// 	[&] (ECFParameter* p) { this->addParameter(p); }

@@ -4,8 +4,9 @@
 
 using namespace espreso;
 
-ParameterManager::ParameterManager(std::vector<ECFParameter*>& parameters)
-: m_params(parameters)
+ParameterManager::ParameterManager(std::vector<ECFParameter*>& parameters, 
+bool roundingImmediate)
+: m_params(parameters), m_immediate(roundingImmediate)
 { }
 
 int ParameterManager::count() const
@@ -68,8 +69,8 @@ std::vector<double> ParameterManager::generateConfiguration()
 
 double ParameterManager::checkParameter(int id, double value)
 {
-    return this->_checkParameter_rounded(id, value);
-    // return this->_checkParameter_bounds(id, value);
+    if (m_immediate) return this->_checkParameter_rounded(id, value);
+    else return this->_checkParameter_bounds(id, value);
 }
 
 double ParameterManager::_checkParameter_rounded(int id, double value)
@@ -152,10 +153,12 @@ double ParameterManager::_checkParameter_bounds(int id, double value)
 
 OptimizationProxy::OptimizationProxy(
     std::vector<ECFParameter*>& parameters,
-    OptimizationAlgorithm algorithm
+    const OptimizationConfiguration& configuration
 ) 
-: m_params(parameters), dimension(parameters.size()), m_manager(parameters),
-m_alg(NULL), m_algorithm(algorithm)
+: m_params(parameters), m_config(configuration), 
+dimension(parameters.size()), 
+m_manager(parameters, configuration.rounding_immediate),
+m_alg(NULL)
 {
 }
 
@@ -206,15 +209,20 @@ void OptimizationProxy::setAlgorithm()
 {
     if (this->m_alg) return;
 
-    switch(m_algorithm)
+    switch(m_config.algorithm)
     {
-    case OptimizationAlgorithm::PARTICLE_SWARM:
-        this->m_alg = new PSOAlgorithm(m_manager);
+    case OptimizationConfiguration::ALGORITHM::PARTICLE_SWARM:
+        this->m_alg = new PSOAlgorithm(m_manager, 
+            m_config.population, m_config.particle_swarm.generations,
+            m_config.particle_swarm.C1, m_config.particle_swarm.C2, 
+            m_config.particle_swarm.W_START, m_config.particle_swarm.W_END);
         break;
-    case OptimizationAlgorithm::DIFFERENTIAL_EVOLUTION:
-        this->m_alg = new DEAlgorithm(m_manager);
+    case OptimizationConfiguration::ALGORITHM::DIFFERENTIAL_EVOLUTION:
+        this->m_alg = new DEAlgorithm(m_manager, m_config.population,
+            m_config.differential_evolution.F, 
+            m_config.differential_evolution.CR);
         break;
-    case OptimizationAlgorithm::SOMAT3A:
+    case OptimizationConfiguration::ALGORITHM::SOMAT3A:
         this->m_alg = new SOMAT3AAlgorithm(m_manager);
         break;
 

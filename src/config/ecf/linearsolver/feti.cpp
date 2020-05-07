@@ -175,6 +175,9 @@ espreso::FETIConfiguration::FETIConfiguration()
 	REGISTER(load_balancing_preconditioner, ECFMetaData()
 			.setdescription({ "Load balancing of Dirichlet preconditioner" })
 			.setdatatype({ ECFDataType::BOOL }));
+
+	REGISTER(optimization, ECFMetaData()
+		.setdescription({"Autotuning of FETI parameters"}));
 }
 
 
