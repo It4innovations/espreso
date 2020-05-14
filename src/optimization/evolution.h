@@ -25,6 +25,19 @@ protected:
     ParameterManager& m_manager;
 };
 
+class RandomAlgorithm : public EvolutionAlgorithm
+{
+public:
+    RandomAlgorithm(ParameterManager& manager);
+
+    std::vector<double> getCurrentSpecimen() override;
+    void evaluateCurrentSpecimen(double value) override;
+
+private:
+    int m_dimension;
+    std::vector<double> m_last;
+};
+
 class PSOAlgorithm : public EvolutionAlgorithm
 {
 public:

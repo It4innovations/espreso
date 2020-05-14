@@ -1,17 +1,29 @@
 #include "proxy.h"
 
 #include <climits>
+#include <chrono>
 
 using namespace espreso;
 
 ParameterManager::ParameterManager(std::vector<ECFParameter*>& parameters, 
 bool roundingImmediate)
-: m_params(parameters), m_immediate(roundingImmediate)
+: m_params(parameters), m_immediate(roundingImmediate), 
+m_generator(std::chrono::system_clock::now().time_since_epoch().count())
 { }
 
 int ParameterManager::count() const
 {
     return m_params.size();
+}
+
+int ParameterManager::generateInt()
+{
+    return this->m_generator();
+}
+
+double ParameterManager::generateDouble()
+{
+    return static_cast<double>(m_generator()) / static_cast<double>(m_generator.max());
 }
 
 std::vector<double> ParameterManager::generateConfiguration()
@@ -23,38 +35,39 @@ std::vector<double> ParameterManager::generateConfiguration()
         ECFDataType dt = (*it)->metadata.datatype.front();
         if (dt == ECFDataType::INTEGER)
         {
-            configuration.push_back( (INT_MIN/2) + rand() );
+            configuration.push_back( (INT_MIN/2) + m_generator() );
         }
         else if (dt == ECFDataType::POSITIVE_INTEGER)
         {
-            configuration.push_back(rand() % RAND_MAX + 1);
+            configuration.push_back(m_generator() % m_generator.max() + 1);
         }
         else if (dt == ECFDataType::NONNEGATIVE_INTEGER)
         {
-            configuration.push_back(rand());
+            configuration.push_back(m_generator());
         }
         else if (dt == ECFDataType::FLOAT)
         {
             configuration.push_back(
-                (double)((INT_MIN/2) + rand()) 
-                + ((float) rand()) / (float) RAND_MAX
+                (double)((INT_MIN/2) + m_generator()) 
+                + (static_cast<double>(m_generator()) 
+                / static_cast<double>(m_generator.max()))
             );
         }
         else if (dt == ECFDataType::OPTION)
         {
             configuration.push_back(
-                rand() % (*it)->metadata.options.size()
+                m_generator() % (*it)->metadata.options.size()
             );
         }
         else if (dt == ECFDataType::ENUM_FLAGS)
         {
             configuration.push_back(
-                rand() % (*it)->metadata.options.size()
+                m_generator() % (*it)->metadata.options.size()
             );
         }
         else if (dt == ECFDataType::BOOL)
         {
-            configuration.push_back( rand() % 2 );
+            configuration.push_back( m_generator() % 2 );
         }
         else 
         {
@@ -225,7 +238,8 @@ void OptimizationProxy::setAlgorithm()
     case OptimizationConfiguration::ALGORITHM::SOMAT3A:
         this->m_alg = new SOMAT3AAlgorithm(m_manager);
         break;
-
+    case OptimizationConfiguration::ALGORITHM::RANDOM:
+        this->m_alg = new RandomAlgorithm(m_manager);
     default:;
     }
 }

@@ -54,7 +54,8 @@ OptimizationConfiguration::OptimizationConfiguration()
 		.setdatatype({ECFDataType::OPTION})
 		.addoption(ECFOption().setname("PARTICLE_SWARM").setdescription("Particle Swarm Optimization"))
 		.addoption(ECFOption().setname("DIFFERENTIAL_EVOLUTION").setdescription("Differential Evolution"))
-		.addoption(ECFOption().setname("SOMAT3A").setdescription("SOMAT3A")));
+		.addoption(ECFOption().setname("SOMAT3A").setdescription("SOMAT3A"))
+		.addoption(ECFOption().setname("RANDOM").setdescription("Generating random configurations")));
 	
 	this->rounding_immediate = false;
 	REGISTER(rounding_immediate, ECFMetaData()

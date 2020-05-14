@@ -37,7 +37,8 @@ struct OptimizationConfiguration : public ECFObject
 	{
 		PARTICLE_SWARM,
     	DIFFERENTIAL_EVOLUTION,
-    	SOMAT3A
+    	SOMAT3A,
+		RANDOM
 	};
 
 	ALGORITHM algorithm;

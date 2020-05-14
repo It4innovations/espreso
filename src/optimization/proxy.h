@@ -2,6 +2,7 @@
 #define SRC_OPTIMIZATION_PROXY_H_
 
 #include <vector>
+#include <random>
 
 #include "../config/configuration.h"
 #include "../config/ecf/solver/optimization/optimization.h"
@@ -20,12 +21,15 @@ public:
     ParameterManager(std::vector<ECFParameter*>& parameters, bool roundingImmediate = false);
 
     int count() const;
+    int generateInt();
+    double generateDouble();
     std::vector<double> generateConfiguration();
     double checkParameter(int id, double value);
 
 private:
     std::vector<ECFParameter*>& m_params;
     const bool m_immediate;
+    std::minstd_rand m_generator;
     double _checkParameter_rounded(int id, double value);
     double _checkParameter_bounds(int id, double value);
 };
