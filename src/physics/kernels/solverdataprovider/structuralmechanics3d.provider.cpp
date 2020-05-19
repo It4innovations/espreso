@@ -163,11 +163,11 @@ bool StructuralMechanics3DSolverDataProvider::FETI::hasKernel(esint domain)
 
 void StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster)
 {
-	for (esint d = 0; d < K.domains; ++d) {
-		if (K[d].type != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
-			eslog::error("Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set FETI_REGULARIZATION = ALGEBRAIC.\n");
-		}
-	}
+//	for (esint d = 0; d < K.domains; ++d) {
+//		if (K[d].type != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
+//			eslog::error("Cannot compute analytic regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix. Set FETI_REGULARIZATION = ALGEBRAIC.\n");
+//		}
+//	}
 
 	size_t clusters = *std::max_element(info::mesh->elements->clusters.begin(), info::mesh->elements->clusters.end()) + 1;
 
@@ -375,7 +375,10 @@ void StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K
 
 	N1.initDomains(K.domains);
 	N2.initDomains(K.domains);
+	N1.DataDecomposition::shallowCopy(&K);
+	N2.DataDecomposition::shallowCopy(&K);
 	RegMat.initDomains(K.domains);
+	RegMat.DataDecomposition::shallowCopy(&K);
 	_RegMat = new MatrixCSRFETI();
 	_RegMat->initDomains(info::mesh->elements->ndomains);
 

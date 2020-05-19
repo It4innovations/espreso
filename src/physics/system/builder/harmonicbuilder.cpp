@@ -48,6 +48,8 @@ void HarmonicBuilder::buildSystem(AssemblerData &assembler, SolverData &solver)
 		if (matrices & Builder::Request::C) {
 			solver.K->addToCombination(-step::frequency::angular, assembler.C, 0, DOFs, DOFs, 2 * DOFs);
 			solver.K->addToCombination( step::frequency::angular, assembler.C, DOFs, 0, DOFs, 2 * DOFs);
+			solver.K->addToCombination(1, assembler.CM, 0, DOFs, DOFs, 2 * DOFs);
+			solver.K->addToCombination(1, assembler.CM, DOFs, 0, DOFs, 2 * DOFs);
 		} else {
 			if (rayleighDamping) {
 				double stiffCoef = stiffnessDamping + structuralDampingCoefficient / step::frequency::angular;
@@ -149,9 +151,9 @@ void HarmonicBuilder::init(FETISystem &system)
 		system.assemblers[0].composer->kernel->solverDataProvider->feti->initKernels(
 				system.assemblers[0].K, system.assemblers[0].N1, system.assemblers[0].N2, system.assemblers[0].RegMat,
 				system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI);
-		system.solvers[0].N1.shallowCopyStructure(&system.assemblers[0].N1);
-		system.solvers[0].N2.shallowCopyStructure(&system.assemblers[0].N2);
-		system.solvers[0].RegMat.shallowCopyStructure(&system.assemblers[0].RegMat);
+		system.solvers[0].N1.uniformCombination(&system.assemblers[0].N1, &system.assemblers[0].N1, DOFs, DOFs);
+		system.solvers[0].N2.uniformCombination(&system.assemblers[0].N2, &system.assemblers[0].N2, DOFs, DOFs);
+		system.solvers[0].RegMat.uniformCombination(&system.assemblers[0].RegMat, &system.assemblers[0].RegMat, DOFs, DOFs);
 	}
 
 	if (system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI) {
@@ -213,9 +215,16 @@ void HarmonicBuilder::buildSystem(FETISystem &system)
 		system.assemblers[0].composer->kernel->solverDataProvider->feti->fillKernels(
 				system.assemblers[0].K, system.assemblers[0].N1, system.assemblers[0].N2, system.assemblers[0].RegMat,
 				system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI);
-		system.solvers[0].N1.fillData(&system.assemblers[0].N1);
-		system.solvers[0].N2.fillData(&system.assemblers[0].N2);
-		system.solvers[0].RegMat.fillData(&system.assemblers[0].RegMat);
+//		system.solvers[0].N1.fillData(&system.assemblers[0].N1);
+//		system.solvers[0].N2.fillData(&system.assemblers[0].N2);
+//		system.solvers[0].RegMat.fillData(&system.assemblers[0].RegMat);
+
+		system.solvers[0].N1.addToCombination(1, &system.assemblers[0].N1, 0, 0, DOFs, 2 * DOFs);
+		system.solvers[0].N1.addToCombination(1, &system.assemblers[0].N1, DOFs, DOFs, DOFs, 2 * DOFs);
+		system.solvers[0].N2.addToCombination(1, &system.assemblers[0].N2, 0, 0, DOFs, 2 * DOFs);
+		system.solvers[0].N2.addToCombination(1, &system.assemblers[0].N2, DOFs, DOFs, DOFs, 2 * DOFs);
+		system.solvers[0].RegMat.addToCombination(1, &system.assemblers[0].RegMat, 0, 0, DOFs, 2 * DOFs);
+		system.solvers[0].RegMat.addToCombination(1, &system.assemblers[0].RegMat, DOFs, DOFs, DOFs, 2 * DOFs);
 	}
 	for (size_t i = 0; i < system.solvers.size(); i++) {
 		if (

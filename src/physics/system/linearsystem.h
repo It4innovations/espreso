@@ -23,11 +23,11 @@ public:
 };
 
 struct AssemblerData {
-	Matrix *K, *M, *C;
+	Matrix *K, *M, *C, *CM;
 	Vectors *R, *f, *x;
 	Vectors *BC;
 
-	AssemblerData(Matrix *K, Matrix *M, Matrix *C, Vectors *R, Vectors *f, Vectors *x, Vectors *BC);
+	AssemblerData(Matrix *K, Matrix *M, Matrix *C, Matrix *CM, Vectors *R, Vectors *f, Vectors *x, Vectors *BC);
 	virtual ~AssemblerData();
 
 	virtual void print(const Builder *builder, const char* prefix, const char* suffix) =0;

@@ -124,7 +124,8 @@ void HarmonicSolver::updateStructuralMatrices()
 	Builder::Request matrices = Builder::Request::K | Builder::Request::M | Builder::Request::RBCf;
 	if (
 			(_system->builder->rayleighDamping && _system->builder->spinSoftening) ||
-			(_system->builder->coriolisDamping)) {
+			(_system->builder->coriolisDamping) ||
+			(_configuration.mass_stabilization)) {
 
 		matrices |= Builder::Request::C;
 	}

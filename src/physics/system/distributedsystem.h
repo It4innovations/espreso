@@ -14,11 +14,11 @@ namespace espreso {
 class DistributedComposer;
 
 struct DistributedAssemblerData: public AssemblerData {
-	MatrixCSRDistributed K, M, C;
+	MatrixCSRDistributed K, M, C, CM;
 	VectorsDenseDistributed R, f, x;
 	VectorsSparse BC;
 
-	DistributedAssemblerData(): AssemblerData(&K, &M, &C, &R, &f, &x, &BC) {}
+	DistributedAssemblerData(): AssemblerData(&K, &M, &C, &CM, &R, &f, &x, &BC) {}
 
 	void print(const Builder *builder, const char* prefix, const char* suffix);
 };

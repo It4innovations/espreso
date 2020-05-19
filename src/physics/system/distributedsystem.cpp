@@ -25,6 +25,10 @@ void DistributedAssemblerData::print(const Builder *builder, const char* prefix,
 		std::ofstream os(utils::prepareFile(std::string(prefix), std::string("C") + std::string(suffix)));
 		os << C;
 	}
+	if (builder->matrices & Builder::Request::C) {
+		std::ofstream os(utils::prepareFile(std::string(prefix), std::string("CM") + std::string(suffix)));
+		os << CM;
+	}
 	if (builder->matrices & Builder::Request::M) {
 		std::ofstream os(utils::prepareFile(std::string(prefix), std::string("M") + std::string(suffix)));
 		os << M;

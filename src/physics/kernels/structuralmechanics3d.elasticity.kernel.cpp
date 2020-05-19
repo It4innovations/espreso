@@ -14,6 +14,8 @@
 
 #include <cmath>
 
+#include "basis/utilities/print.h"
+
 using namespace espreso;
 
 StructuralMechanics3DKernel::StructuralMechanics3DKernel(StructuralMechanics3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration)
@@ -706,6 +708,8 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 	if (builder.matrices & Builder::Request::C) {
 		filler.Ce.resize(3 * size, 3 * size);
 		filler.Ce.fill(0);
+		filler.CMe.resize(3 * size, 3 * size);
+		filler.CMe.fill(0);
 	}
 	if (builder.matrices & (Builder::Request::M | Builder::Request::R)) {
 		filler.Me.resize(3 * size, 3 * size);
@@ -886,6 +890,42 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 
 	if (builder.spinSoftening) {
 		filler.Ke.add(-1, &Ks);
+	}
+
+	if (iterator.massStabilization) {
+		printf("mass stabilization\n");
+		auto dual = info::mesh->elements->faceNeighbors->begin() + iterator.offset;
+		auto fpointer = iterator.element->facepointers->begin();
+		auto fnodes = iterator.element->faces->begin();
+		auto doffset = std::lower_bound(info::mesh->elements->elementsDistribution.begin(), info::mesh->elements->elementsDistribution.end(), iterator.offset + 1) - info::mesh->elements->elementsDistribution.begin() - 1;
+		auto lower = info::mesh->elements->elementsDistribution[doffset] + info::mesh->elements->offset;
+		auto upper = info::mesh->elements->elementsDistribution[doffset + 1] + info::mesh->elements->offset;
+		for (auto neigh = dual->begin(); neigh != dual->end(); ++neigh, ++fpointer, ++fnodes) {
+			if (*neigh != -1) {
+				if (*neigh < lower || upper <= *neigh) {
+					double sign = 1;
+					if (*neigh < lower) {
+						sign = -1;
+					}
+					MatrixDense cc(fnodes->size(), 3);
+					for (size_t n = 0; n < fnodes->size(); ++n) {
+						cc(n, 0) = iterator.coordinates.data[3 * fnodes->at(n) + 0];
+						cc(n, 1) = iterator.coordinates.data[3 * fnodes->at(n) + 1];
+						cc(n, 2) = iterator.coordinates.data[3 * fnodes->at(n) + 2];
+					}
+					MatrixDense fdND;
+					for (size_t fgp = 0; fgp < fpointer->at(0)->dN->size(); ++fgp) {
+						fdND.multiply(fpointer->at(0)->dN->at(fgp), coordinates);
+						Point v2(fdND(0, 0), fdND(0, 1), fdND(0, 2));
+						Point v1(fdND(1, 0), fdND(1, 1), fdND(1, 2));
+						Point va = Point::cross(v1, v2);
+						double fJ = va.norm();
+						filler.CMe.multiply(fpointer->at(0)->NNN->at(fgp), fpointer->at(0)->NNN->at(fgp), sign * fpointer->at(0)->weighFactor->at(fgp) * fJ, 1, true);
+					}
+				}
+			}
+		}
+		std::cout << filler.CMe;
 	}
 
 	if (!iterator.largeDisplacement && step::type != step::TYPE::FTT && (builder.matrices & Builder::Request::R)) {

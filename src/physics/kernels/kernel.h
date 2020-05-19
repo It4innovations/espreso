@@ -27,7 +27,7 @@ public:
 		int DOFs;
 		int insertK, insertM, insertC, insertR, insertF;
 
-		MatrixDense Ke, Me, Ce;
+		MatrixDense Ke, Me, Ce, CMe;
 		VectorsDense Re, Fe;
 
 		std::function<void()> insert;

@@ -84,6 +84,8 @@ void DistributedComposer::assemble(const Builder &builder)
 					if (filler.insertC) {
 						#pragma omp atomic
 						_data->C.vals[_KPermutation[KIndex]] += filler.Ce(r, c);
+						#pragma omp atomic
+						_data->CM.vals[_KPermutation[KIndex]] += filler.CMe(r, c);
 					}
 				}
 			}

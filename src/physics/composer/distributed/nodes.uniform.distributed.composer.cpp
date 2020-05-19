@@ -264,6 +264,7 @@ void NodesUniformDistributedComposer::_buildPatterns()
 
 	_data->M.shallowCopyStructure(&_data->K);
 	_data->C.shallowCopyStructure(&_data->K);
+	_data->CM.shallowCopyStructure(&_data->K);
 
 	// TODO: share distribution with K
 	_data->f.initVectors(kernel->solutions.size());

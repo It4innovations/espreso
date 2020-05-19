@@ -44,7 +44,7 @@ struct ElasticityElementIterator: public ElementIterator {
 	double minDesignVariable;
 	double penaltyFactor;
 
-	bool harmonic;
+	bool harmonic, massStabilization;
 	bool largeDisplacement;
 
 	ElasticityElementIterator(ElasticityElementIterator *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration, int dimension, bool omitTemp=false);

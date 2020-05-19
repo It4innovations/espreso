@@ -33,11 +33,29 @@ void FETIAssemblerData::print(const Builder *builder, const char* prefix, const 
 			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("B0") + std::to_string(d)));
 			os << B0[d];
 		}
+		for (esint d = 0; d < N1.domains; ++d) {
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("N1") + std::to_string(d)));
+			os << N1[d];
+		}
+		for (esint d = 0; d < N2.domains; ++d) {
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("N2") + std::to_string(d)));
+			os << N2[d];
+		}
+		for (esint d = 0; d < RegMat.domains; ++d) {
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("RegMat") + std::to_string(d)));
+			os << RegMat[d];
+		}
 	}
 	if (builder->matrices & Builder::Request::C) {
 		for (esint d = 0; d < C.domains; ++d) {
 			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("C") + std::to_string(d) + std::string(suffix)));
 			os << C[d];
+		}
+	}
+	if (builder->matrices & Builder::Request::C) {
+		for (esint d = 0; d < CM.domains; ++d) {
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("CM") + std::to_string(d) + std::string(suffix)));
+			os << CM[d];
 		}
 	}
 	if (builder->matrices & Builder::Request::M) {
@@ -449,6 +467,18 @@ void FETISolverData::printData(const Builder *builder, const char* prefix)
 		for (esint d = 0; d < B0.domains; ++d) {
 			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("B0") + std::to_string(d)));
 			os << B0[d];
+		}
+		for (esint d = 0; d < N1.domains; ++d) {
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("N1") + std::to_string(d)));
+			os << N1[d];
+		}
+		for (esint d = 0; d < N2.domains; ++d) {
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("N2") + std::to_string(d)));
+			os << N2[d];
+		}
+		for (esint d = 0; d < RegMat.domains; ++d) {
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("RegMat") + std::to_string(d)));
+			os << RegMat[d];
 		}
 	}
 	if (builder->matrices & Builder::Request::R) {

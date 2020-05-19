@@ -15,7 +15,7 @@
 namespace espreso {
 
 struct FETIAssemblerData: public AssemblerData {
-	MatrixCSRFETI K, M, C;
+	MatrixCSRFETI K, M, C, CM;
 	VectorsDenseFETI R, f, x;
 	VectorsSparse BC;
 	VectorsSparse gapDirection, gap;
@@ -25,7 +25,7 @@ struct FETIAssemblerData: public AssemblerData {
 	MatrixCSRFETI RegMat;
 	MatrixDenseFETI N1, N2;
 
-	FETIAssemblerData(): AssemblerData(&K, &M, &C, &R, &f, &x, &BC) {}
+	FETIAssemblerData(): AssemblerData(&K, &M, &C, &CM, &R, &f, &x, &BC) {}
 
 	void print(const Builder *builder, const char* prefix, const char* suffix);
 };

@@ -99,6 +99,7 @@ void FETIComposer::assemble(const Builder &builder)
 						}
 						if (filler.insertC) {
 							_data->C[d].vals[_KPermutation[d][KIndex]] += filler.Ce(r, c);
+							_data->CM[d].vals[_KPermutation[d][KIndex]] += filler.CMe(r, c);
 						}
 					}
 				}
@@ -130,6 +131,7 @@ void FETIComposer::assemble(const Builder &builder)
 						}
 						if (filler.insertC) {
 							_data->C[d].vals[_KPermutation[d][KIndex]] += filler.Ce(r, c);
+							_data->CM[d].vals[_KPermutation[d][KIndex]] += filler.CMe(r, c);
 						}
 					}
 				}

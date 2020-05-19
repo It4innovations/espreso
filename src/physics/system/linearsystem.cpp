@@ -16,8 +16,8 @@
 
 using namespace espreso;
 
-AssemblerData::AssemblerData(Matrix *K, Matrix *M, Matrix *C, Vectors *R, Vectors *f, Vectors *x, Vectors *BC)
-: K(K), M(M), C(C), R(R), f(f), x(x), BC(BC),
+AssemblerData::AssemblerData(Matrix *K, Matrix *M, Matrix *C, Matrix *CM, Vectors *R, Vectors *f, Vectors *x, Vectors *BC)
+: K(K), M(M), C(C), CM(CM), R(R), f(f), x(x), BC(BC),
   composer(NULL)
 {
 

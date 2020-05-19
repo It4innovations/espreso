@@ -253,6 +253,7 @@ void NodesUniformFETIComposer::_buildPatterns()
 
 	_data->M.shallowCopyStructure(&_data->K);
 	_data->C.shallowCopyStructure(&_data->K);
+	_data->CM.shallowCopyStructure(&_data->K);
 	_data->R.shallowCopyStructure(&_data->f);
 	_data->x.shallowCopyStructure(&_data->f);
 	_data->x.setDuplications(DataDecomposition::DUPLICATION::DUPLICATE);

@@ -18,7 +18,9 @@ ElasticityElementIterator::ElasticityElementIterator(ElasticityElementIterator *
   designVariable(1, configuration.topology_optimization_settings.constraint.value), complianceDerivation(1, 0), compliance(1, 0),
   minDesignVariable(configuration.topology_optimization_settings.solver_settings.min_density),
   penaltyFactor(configuration.topology_optimization_settings.solver_settings.penalty_factor),
-  harmonic(configuration.type == LoadStepSolverConfiguration::TYPE::HARMONIC), largeDisplacement(configuration.large_displacement)
+  harmonic(configuration.type == LoadStepSolverConfiguration::TYPE::HARMONIC),
+  massStabilization(configuration.harmonic_solver.mass_stabilization),
+  largeDisplacement(configuration.large_displacement)
 {
 	coordinates.set(info::mesh->nodes->coordinates, info::mesh->elements->procNodes);
 
