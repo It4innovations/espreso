@@ -6,9 +6,11 @@
 using namespace espreso;
 
 ParameterManager::ParameterManager(std::vector<ECFParameter*>& parameters, 
-bool roundingImmediate)
+int population, bool roundingImmediate)
 : m_params(parameters), m_immediate(roundingImmediate), 
-m_generator(std::chrono::system_clock::now().time_since_epoch().count())
+m_generator(std::chrono::high_resolution_clock::now().time_since_epoch().count()),
+m_dist_decimal(0.0f, 1.0f), m_dist_dimension(0, parameters.size() - 1),
+m_dist_population(0, population - 1)
 { }
 
 int ParameterManager::count() const
@@ -16,15 +18,30 @@ int ParameterManager::count() const
     return m_params.size();
 }
 
-int ParameterManager::generateInt()
+int ParameterManager::generateInt(int start, int endInclusive)
 {
-    return this->m_generator();
+    std::uniform_int_distribution<int> d(start, endInclusive);
+    return d(m_generator);
 }
 
-double ParameterManager::generateDouble()
+int ParameterManager::generateSpecimenNumber()
 {
-    return static_cast<double>(m_generator()) / static_cast<double>(m_generator.max());
+    return m_dist_population(m_generator);
 }
+
+int ParameterManager::generateParameterNumber()
+{
+    return m_dist_dimension(m_generator);
+}
+
+double ParameterManager::generateDecimal()
+{
+    return m_dist_decimal(m_generator);
+}
+// double ParameterManager::generateDouble()
+// {
+//     return static_cast<double>(m_generator()) / static_cast<double>(m_generator.max());
+// }
 
 std::vector<double> ParameterManager::generateConfiguration()
 {
@@ -35,7 +52,7 @@ std::vector<double> ParameterManager::generateConfiguration()
         ECFDataType dt = (*it)->metadata.datatype.front();
         if (dt == ECFDataType::INTEGER)
         {
-            configuration.push_back( (INT_MIN/2) + m_generator() );
+            configuration.push_back( m_generator() - m_generator() );
         }
         else if (dt == ECFDataType::POSITIVE_INTEGER)
         {
@@ -48,26 +65,24 @@ std::vector<double> ParameterManager::generateConfiguration()
         else if (dt == ECFDataType::FLOAT)
         {
             configuration.push_back(
-                (double)((INT_MIN/2) + m_generator()) 
-                + (static_cast<double>(m_generator()) 
-                / static_cast<double>(m_generator.max()))
+                (double)(m_generator() - m_generator()) 
+                + generateDecimal()
             );
         }
         else if (dt == ECFDataType::OPTION)
         {
-            configuration.push_back(
-                m_generator() % (*it)->metadata.options.size()
-            );
+            std::uniform_int_distribution<int> dist(0, (*it)->metadata.options.size() - 1);
+            configuration.push_back( dist(m_generator) );
         }
         else if (dt == ECFDataType::ENUM_FLAGS)
         {
-            configuration.push_back(
-                m_generator() % (*it)->metadata.options.size()
-            );
+            std::uniform_int_distribution<int> dist(0, (*it)->metadata.options.size() - 1);
+            configuration.push_back( dist(m_generator) );
         }
         else if (dt == ECFDataType::BOOL)
         {
-            configuration.push_back( m_generator() % 2 );
+            std::uniform_int_distribution<int> dist(0, 1);
+            configuration.push_back( dist(m_generator) );
         }
         else 
         {
@@ -170,20 +185,37 @@ OptimizationProxy::OptimizationProxy(
 ) 
 : m_params(parameters), m_config(configuration), 
 dimension(parameters.size()), 
-m_manager(parameters, configuration.rounding_immediate),
-m_alg(NULL)
+m_manager(parameters, configuration.population, configuration.rounding_immediate)
 {
+    switch(m_config.algorithm)
+    {
+    case OptimizationConfiguration::ALGORITHM::PARTICLE_SWARM:
+        this->m_alg = new PSOAlgorithm(m_manager, 
+            m_config.population, m_config.particle_swarm.generations,
+            m_config.particle_swarm.C1, m_config.particle_swarm.C2, 
+            m_config.particle_swarm.W_START, m_config.particle_swarm.W_END);
+        break;
+    case OptimizationConfiguration::ALGORITHM::DIFFERENTIAL_EVOLUTION:
+        this->m_alg = new DEAlgorithm(m_manager, m_config.population,
+            m_config.differential_evolution.F, 
+            m_config.differential_evolution.CR);
+        break;
+    case OptimizationConfiguration::ALGORITHM::SOMAT3A:
+        this->m_alg = new SOMAT3AAlgorithm(m_manager);
+        break;
+    case OptimizationConfiguration::ALGORITHM::RANDOM:
+        this->m_alg = new RandomAlgorithm(m_manager);
+    default:;
+    }
 }
 
 OptimizationProxy::~OptimizationProxy()
 {
-    if (this->m_alg)
-    { delete this->m_alg; }
+    delete this->m_alg;
 }
 
 void OptimizationProxy::setNextConfiguration()
 {
-    this->setAlgorithm();
     std::vector<double> configuration = m_alg->getCurrentSpecimen();
 
     int p = 0;
@@ -216,30 +248,4 @@ void OptimizationProxy::setNextConfiguration()
 void OptimizationProxy::setConfigurationEvaluation(double value)
 {
     this->m_alg->evaluateCurrentSpecimen(value);
-}
-
-void OptimizationProxy::setAlgorithm()
-{
-    if (this->m_alg) return;
-
-    switch(m_config.algorithm)
-    {
-    case OptimizationConfiguration::ALGORITHM::PARTICLE_SWARM:
-        this->m_alg = new PSOAlgorithm(m_manager, 
-            m_config.population, m_config.particle_swarm.generations,
-            m_config.particle_swarm.C1, m_config.particle_swarm.C2, 
-            m_config.particle_swarm.W_START, m_config.particle_swarm.W_END);
-        break;
-    case OptimizationConfiguration::ALGORITHM::DIFFERENTIAL_EVOLUTION:
-        this->m_alg = new DEAlgorithm(m_manager, m_config.population,
-            m_config.differential_evolution.F, 
-            m_config.differential_evolution.CR);
-        break;
-    case OptimizationConfiguration::ALGORITHM::SOMAT3A:
-        this->m_alg = new SOMAT3AAlgorithm(m_manager);
-        break;
-    case OptimizationConfiguration::ALGORITHM::RANDOM:
-        this->m_alg = new RandomAlgorithm(m_manager);
-    default:;
-    }
 }

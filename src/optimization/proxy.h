@@ -18,18 +18,26 @@ class ParameterManager
 {
 
 public:
-    ParameterManager(std::vector<ECFParameter*>& parameters, bool roundingImmediate = false);
+    ParameterManager(std::vector<ECFParameter*>& parameters, 
+        int population, bool roundingImmediate = false);
 
     int count() const;
-    int generateInt();
-    double generateDouble();
+    int generateInt(int start, int endInclusive);
+    int generateSpecimenNumber();
+    int generateParameterNumber();
+    double generateDecimal();
     std::vector<double> generateConfiguration();
     double checkParameter(int id, double value);
 
 private:
     std::vector<ECFParameter*>& m_params;
     const bool m_immediate;
-    std::minstd_rand m_generator;
+    
+    std::mt19937 m_generator;
+    std::uniform_real_distribution<double> m_dist_decimal;
+    std::uniform_int_distribution<int> m_dist_dimension;
+    std::uniform_int_distribution<int> m_dist_population;
+
     double _checkParameter_rounded(int id, double value);
     double _checkParameter_bounds(int id, double value);
 };

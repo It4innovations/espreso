@@ -43,7 +43,7 @@ w(1), W_START(W_START), W_END(W_END), isInitializing(true)
         std::vector<double> velocity_vector;
         velocity_vector.resize(dimension);
         for (int d = 0; d < dimension; d++)
-        { velocity_vector[d] = m_manager.generateDouble(); } 
+        { velocity_vector[d] = m_manager.generateDecimal(); } 
         this->velocity[s] = velocity_vector;
     }
 }
@@ -56,8 +56,8 @@ std::vector<double> PSOAlgorithm::getCurrentSpecimen()
     }
     else 
     {
-        double r1 = m_manager.generateDouble();
-        double r2 = m_manager.generateDouble();
+        double r1 = m_manager.generateDecimal();
+        double r2 = m_manager.generateDecimal();
         int s = std::distance(m_specimens.begin(), current);
 
         for (int v_i = 0; v_i < this->dimension; v_i++)
@@ -154,7 +154,7 @@ std::vector<double> DEAlgorithm::getCurrentSpecimen()
         const int MUTATION_PARENTS = 3;
         std::vector<double> parents[MUTATION_PARENTS];
         for (int p = 0; p < MUTATION_PARENTS; p++)
-        { parents[p] = m_specimens[ m_manager.generateInt() % this->population ]; }
+        { parents[p] = m_specimens[ m_manager.generateSpecimenNumber() ]; }
         std::vector<double> noisy_vector;
         noisy_vector.resize(this->dimension);
         for (int d = 0; d < this->dimension; d++)
@@ -166,10 +166,10 @@ std::vector<double> DEAlgorithm::getCurrentSpecimen()
         }
 
         // CROSSOVER
-        int random = m_manager.generateInt() % this->dimension;
+        int random = m_manager.generateParameterNumber();
         trial_vector = noisy_vector;
         trial_vector[random] = 
-        m_manager.generateDouble() < CR 
+        m_manager.generateDecimal() < CR 
         ? trial_vector[random] : (*current)[random];
 
         return trial_vector;
@@ -252,7 +252,7 @@ void SOMAT3AAlgorithm::evaluateCurrentSpecimen(double value)
         auto compare = [&] (std::vector<double>* a, std::vector<double>* b)
             { return a->back() < b->back(); };
         for (int m = 0; m < M; m++)
-        { ms.push_back(&m_specimens[m_manager.generateInt() % population]); }
+        { ms.push_back(&m_specimens[m_manager.generateSpecimenNumber()]); }
         std::sort(ms.begin(), ms.end(), compare);
         this->Ns.clear();
         for (int n = 0; n < N; n++)
@@ -262,11 +262,11 @@ void SOMAT3AAlgorithm::evaluateCurrentSpecimen(double value)
 
     auto produceLeader = [&] ()
     {
-        leader = &m_specimens[m_manager.generateInt() % population];
+        leader = &m_specimens[m_manager.generateSpecimenNumber()];
         for (int ki = 1; ki < K; ki++)
         { 
             std::vector<double> candidate = 
-                m_specimens[m_manager.generateInt() % population];
+                m_specimens[m_manager.generateSpecimenNumber()];
             leader = 
                 candidate[dimension] < (*leader)[dimension] 
                 ? &candidate : leader;
@@ -288,7 +288,7 @@ void SOMAT3AAlgorithm::evaluateCurrentSpecimen(double value)
             std::vector<double> PRTVector(dimension, 0);
             for (int d = 0; d < this->dimension; d++)
             { PRTVector[d] = 
-                m_manager.generateDouble() < PRT ?
+                m_manager.generateDecimal() < PRT ?
                 1 : 0; }
             std::vector<double> journey(dimension + 1, 0);
             for (int d = 0; d < this->dimension; d++)

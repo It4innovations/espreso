@@ -16,7 +16,6 @@ class Optimizer {
 
 public:
 	virtual ~Optimizer() {}
-	virtual void addParameter(ECFParameter* parameter)=0;
 
 	virtual void set()=0;
 	virtual void run(std::function<void(void)> fnc)=0;
@@ -30,8 +29,6 @@ class EmptyOptimizer : public Optimizer {
 public:
 	EmptyOptimizer() {}
 
-	void addParameter(ECFParameter* parameter) override {}
-
 	void set() override {}
 	void run(std::function<void(void)> fnc) override {}
 };
@@ -39,18 +36,13 @@ public:
 class EvolutionaryOptimizer : public Optimizer {
 
 public:
-	EvolutionaryOptimizer(const OptimizationConfiguration& configuration);
-
-	void addParameter(ECFParameter* parameter) override
-	{
-		_parameters.push_back(parameter);
-	}
+	EvolutionaryOptimizer(const OptimizationConfiguration& configuration,
+		std::vector<ECFParameter*>& parameters);
 
 	void set() override;
 	void run(std::function<void(void)> fnc) override;
 
 protected:
-	std::vector<ECFParameter*> _parameters;
 	OptimizationProxy proxy;
 	SphereProblem sphere;
 };

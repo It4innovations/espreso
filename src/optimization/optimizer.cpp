@@ -6,8 +6,9 @@
 using namespace espreso;
 
 
-EvolutionaryOptimizer::EvolutionaryOptimizer(const OptimizationConfiguration& configuration) 
-: proxy(_parameters, configuration)
+EvolutionaryOptimizer::EvolutionaryOptimizer(const OptimizationConfiguration& configuration,
+	std::vector<ECFParameter*>& parameters) 
+: proxy(parameters, configuration)
 {
 	// sphere.forEachParameters(
 	// 	[&] (ECFParameter* p) { this->addParameter(p); }
