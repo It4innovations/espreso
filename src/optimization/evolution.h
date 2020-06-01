@@ -93,6 +93,32 @@ private:
     std::vector<double> best;
 };
 
+class SOMAAlgorithm : public EvolutionAlgorithm
+{
+public:
+    SOMAAlgorithm(ParameterManager& manager, int population,
+    double PRT, double STEP, double PATH_LENGTH);
+
+    std::vector<double> getCurrentSpecimen() override;
+    void evaluateCurrentSpecimen(double value) override;
+
+private:
+    const int population;
+    const int dimension;
+
+    bool isInitializing;
+    std::vector<std::vector<double> >::iterator current;
+    double PRT;
+    double STEP;
+    double PATH_LENGTH;
+
+    std::vector<std::vector<double> > journeys;
+    std::vector<std::vector<double> >::iterator current_journey;
+    int best_journey;
+    
+    std::vector<double> best;
+};
+
 class SOMAT3AAlgorithm : public EvolutionAlgorithm
 {
 public:

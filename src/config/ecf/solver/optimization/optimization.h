@@ -31,6 +31,15 @@ struct SOMAT3AConfiguration : public ECFObject
 	// TODO
 };
 
+struct SOMAConfiguration : public ECFObject
+{
+	double PRT;
+	double STEP;
+	double PATH_LENGTH;
+
+	SOMAConfiguration();
+};
+
 struct OptimizationConfiguration : public ECFObject
 {
 	enum class ALGORITHM
@@ -38,6 +47,7 @@ struct OptimizationConfiguration : public ECFObject
 		PARTICLE_SWARM,
     	DIFFERENTIAL_EVOLUTION,
     	SOMAT3A,
+		SOMA,
 		RANDOM
 	};
 
@@ -47,6 +57,7 @@ struct OptimizationConfiguration : public ECFObject
 
 	PSOConfiguration particle_swarm;
 	DEConfiguration differential_evolution;
+	SOMAConfiguration soma;
 	SOMAT3AConfiguration somat3a;
 
 	OptimizationConfiguration();

@@ -203,6 +203,10 @@ m_manager(parameters, configuration.population, configuration.rounding_immediate
     case OptimizationConfiguration::ALGORITHM::SOMAT3A:
         this->m_alg = new SOMAT3AAlgorithm(m_manager);
         break;
+    case OptimizationConfiguration::ALGORITHM::SOMA:
+        this->m_alg = new SOMAAlgorithm(m_manager, m_config.population,
+            m_config.soma.PRT, m_config.soma.STEP, m_config.soma.PATH_LENGTH);
+        break;
     case OptimizationConfiguration::ALGORITHM::RANDOM:
         this->m_alg = new RandomAlgorithm(m_manager);
     default:;

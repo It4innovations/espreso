@@ -46,6 +46,24 @@ DEConfiguration::DEConfiguration()
 		.setdatatype({ECFDataType::FLOAT}));
 }
 
+SOMAConfiguration::SOMAConfiguration()
+{
+	this->PRT = 0.3f;
+	REGISTER(PRT, ECFMetaData()
+		.setdescription({"PRT"})
+		.setdatatype({ECFDataType::FLOAT}));
+	
+	this->STEP = 0.8f;
+	REGISTER(STEP, ECFMetaData()
+		.setdescription({"STEP"})
+		.setdatatype({ECFDataType::FLOAT}));
+	
+	this->PATH_LENGTH = 3.0f;
+	REGISTER(PATH_LENGTH, ECFMetaData()
+		.setdescription({"PATH_LENGTH"})
+		.setdatatype({ECFDataType::FLOAT}));
+}
+
 OptimizationConfiguration::OptimizationConfiguration()
 {
 	this->algorithm = ALGORITHM::PARTICLE_SWARM;
@@ -55,6 +73,7 @@ OptimizationConfiguration::OptimizationConfiguration()
 		.addoption(ECFOption().setname("PARTICLE_SWARM").setdescription("Particle Swarm Optimization"))
 		.addoption(ECFOption().setname("DIFFERENTIAL_EVOLUTION").setdescription("Differential Evolution"))
 		.addoption(ECFOption().setname("SOMAT3A").setdescription("SOMAT3A"))
+		.addoption(ECFOption().setname("SOMA").setdescription("SOMA"))
 		.addoption(ECFOption().setname("RANDOM").setdescription("Generating random configurations")));
 	
 	this->rounding_immediate = false;
@@ -71,6 +90,8 @@ OptimizationConfiguration::OptimizationConfiguration()
 		.setdescription({"Particle Swarm Optimization"}));
 	REGISTER(differential_evolution, ECFMetaData()
 		.setdescription({"Differential Evolution"}));
+	REGISTER(soma, ECFMetaData()
+		.setdescription({"SOMA"}));
 	// REGISTER(somat3a, ECFMetaData()
 	// 	.setdescription({"SOMA Team-to-Team"}));
 }

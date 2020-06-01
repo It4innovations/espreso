@@ -223,6 +223,95 @@ void DEAlgorithm::evaluateCurrentSpecimen(double value)
     }
 }
 
+SOMAAlgorithm::SOMAAlgorithm(ParameterManager& manager, int population,
+    double PRT, double STEP, double PATH_LENGTH) : 
+    EvolutionAlgorithm(manager), population(population),
+    dimension(manager.count()), isInitializing(true),
+    PRT(PRT), STEP(STEP), PATH_LENGTH(PATH_LENGTH)
+{
+    for (int s = 0; s < population; s++)
+    { m_specimens.push_back(m_manager.generateConfiguration()); }
+    this->current = m_specimens.begin();
+}
+
+std::vector<double> SOMAAlgorithm::getCurrentSpecimen()
+{
+    if (isInitializing) return *current;
+    else return *current_journey;
+}
+
+void SOMAAlgorithm::evaluateCurrentSpecimen(double value)
+{
+    auto produceJourneys = [&] ()
+    {
+        this->journeys.clear();
+        const int jumps = PATH_LENGTH / STEP;
+
+        for (int j = 1; j <= jumps; j++)
+        {
+            double step = j*STEP;
+            std::vector<double> PRTVector(dimension, 0);
+            for (int d = 0; d < this->dimension; d++)
+            { PRTVector[d] = 
+                m_manager.generateDecimal() < PRT ?
+                1 : 0; }
+            std::vector<double> journey(dimension + 1, 0);
+            for (int d = 0; d < this->dimension; d++)
+            { journey[d] = current->at(d) + 
+                (best[d] - current->at(d)) * step * PRTVector[d]; }
+            journeys.push_back(journey);
+        }
+        for (auto j = journeys.begin(); j != journeys.end(); j++)
+        { 
+            for (int d = 0; d < dimension; d++)
+            { (*j)[d] = m_manager.checkParameter(d, (*j)[d]); }
+        }
+        this->current_journey = journeys.begin();
+        this->best_journey = 0;
+    };
+
+    if (isInitializing)
+    {
+        current->push_back(value);
+        std::cout << "I,";
+        for (int i = 0; i < current->size(); i++) std::cout << (*current)[i] << ",";
+        std::cout << std::endl;
+        if (!this->best.size()) this->best = *current;
+        if (this->best.back() > value) this->best = *current;
+
+        if (++current == m_specimens.end()) 
+        {
+            isInitializing = false;
+            current = m_specimens.begin();
+            produceJourneys();
+        }
+    }
+    else 
+    {
+        (*this->current_journey)[dimension] = value;
+
+        std::cout << "J,";
+        for (int i = 0; i < current_journey->size(); i++) std::cout << (*current_journey)[i] << ",";
+        std::cout << std::endl;
+
+        if (value < journeys[best_journey][dimension]) 
+        { best_journey = std::distance(journeys.begin(), current_journey); }
+        
+        if (++current_journey == journeys.end())
+        {
+            double best_journey_fitness = journeys[best_journey][dimension];
+            if (best_journey_fitness < current->at(dimension))
+            { (*current) = journeys[best_journey]; }
+            if (best_journey_fitness < best[dimension])
+            { best = journeys[best_journey]; }
+
+            if (++current == m_specimens.end()) current = m_specimens.begin();
+
+            produceJourneys();
+        }
+    }
+}
+
 SOMAT3AAlgorithm::SOMAT3AAlgorithm(ParameterManager& manager, int p_jumps) : EvolutionAlgorithm(manager),
 population(10), dimension(manager.count()), migration(0), FEs(0), 
 JUMPS(p_jumps), FEs_MAX(1000), M(5), N(2), K(5), isInitializing(true),
