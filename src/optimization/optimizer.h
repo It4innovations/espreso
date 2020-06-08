@@ -30,7 +30,7 @@ public:
 	EmptyOptimizer() {}
 
 	void set() override {}
-	void run(std::function<void(void)> fnc) override {}
+	void run(std::function<void(void)> fnc) override;
 };
 
 class EvolutionaryOptimizer : public Optimizer {
