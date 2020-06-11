@@ -125,7 +125,12 @@ void IterSolverBase::Solve ( SuperCluster & cluster,
 		iters = Solve_full_ortho_CG_singular_dom (cluster, in_right_hand_side_primal );
 		break;
 	case FETIConfiguration::ITERATIVE_SOLVER::GMRES:
-		iters = Solve_GMRES_singular_dom (cluster, in_right_hand_side_primal );
+		if (
+				configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_R ||
+				configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_K)
+			iters = Solve_GMRES_ConjProj (cluster, in_right_hand_side_primal );
+		else
+			iters = Solve_GMRES_singular_dom (cluster, in_right_hand_side_primal );
 		break;
 	case FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB:
 		iters = Solve_BICGSTAB_singular_dom(cluster, in_right_hand_side_primal );
@@ -1877,6 +1882,7 @@ int IterSolverBase::Solve_RegCG_ConjProj ( SuperCluster & cluster,
 		case FETIConfiguration::PRECONDITIONER::MAGIC:
 			proj1_time.start();
 			if (USE_GGtINV == 1) {
+				//ConjProjector_Inv2( timeEvalProj, cluster, r_l, w_l, 0 );
 				ConjProjector_Inv2( timeEvalProj, cluster, r_l, w_l, 0 );
 			} else {
 				Projector		  ( timeEvalProj, cluster, r_l, w_l, 0 );
@@ -2725,6 +2731,476 @@ for (size_t i = 0; i < x_l.size(); i++) {
 	// *** END - Presint out the timing for the iteration loop ***********************************
 	return iter + 1;
 }
+
+int IterSolverBase::Solve_GMRES_ConjProj ( SuperCluster & cluster,
+	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
+{
+/*####################################################################################################
+#                                            G M R E S                                               #
+//##################################################################################################*/
+//
+
+	size_t dl_size = cluster.my_lamdas_indices.size();
+
+	SEQ_VECTOR <double> x_l (dl_size, 0);
+	SEQ_VECTOR <double> Ax_l(dl_size, 0);
+	SEQ_VECTOR <double> g_l(dl_size, 0);
+	SEQ_VECTOR <double> Pg_l(dl_size, 0);
+	SEQ_VECTOR <double> MPg_l(dl_size, 0);
+	SEQ_VECTOR <double> Pw_l(dl_size, 0);
+	SEQ_VECTOR <double> MPw_l(dl_size, 0);
+	SEQ_VECTOR <double> z_l(dl_size, 0);
+	SEQ_VECTOR <double> v_l(dl_size, 0);
+	SEQ_VECTOR <double> w_l(dl_size, 0);
+	SEQ_VECTOR <double> Aw_l(dl_size, 0);
+        SEQ_VECTOR <double> b_l(dl_size, 0);
+        SEQ_VECTOR <double> ones(dl_size, 1);
+
+  int n_mat = CG_max_iter + 1;
+	SEQ_VECTOR <double> b_H(n_mat, 0);
+	SEQ_VECTOR <double> y_H(n_mat, 0);
+	SEQ_VECTOR <double> g_H(n_mat, 0);
+
+  double beta;
+	double norm_l;
+	double tol;
+  double c_H,s_H;
+  double norm_h;
+  int cnt_iter=0;
+  double tmp_double0;
+
+  //cblas_
+  double _alpha, _beta, _m, _n, _k, _lda, _ldb, _ldc;
+
+	cluster.CreateVec_b_perCluster ( in_right_hand_side_primal );
+	cluster.CreateVec_d_perCluster ( in_right_hand_side_primal );
+
+#ifdef FLAG_VALIDATION
+  SparseMatrix V_lt_V_l;
+  V_lt_V_l.type = 'G';
+  V_lt_V_l.rows = n_mat;
+  V_lt_V_l.cols = n_mat;
+  V_lt_V_l.dense_values.resize(n_mat*n_mat);
+#endif
+
+  SparseMatrix V_l;
+  V_l.type = 'G';
+  V_l.rows = dl_size;
+  V_l.cols = 0;
+
+  SEQ_VECTOR <double> Permut_l(n_mat*n_mat, 0);
+  SEQ_VECTOR <double> Permut_tmp_l(n_mat*n_mat, 0);
+  SEQ_VECTOR <double> P_tmp_P(n_mat*n_mat, 0);
+  SEQ_VECTOR <double> H_l(n_mat*n_mat, 0);
+  SEQ_VECTOR <double> H_l_modif(n_mat*n_mat, 0);
+#ifdef FLAG_VALIDATION
+  SEQ_VECTOR <double> tmp_H_l(n_mat*n_mat, 0);
+#endif
+
+
+
+
+
+//    apply_A_l_comp_dom_B(timeEvalAppa, cluster, ones, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
+
+
+
+  for (int i = 0 ; i < n_mat; i++){
+   Permut_l[n_mat*i + i] = 1;
+   Permut_tmp_l[n_mat*i + i] = 1;
+  }
+
+
+	// *** Combine vectors b from all clusters ************************************
+	All_Reduce_lambdas_compB(cluster, cluster.vec_b_compressed, b_l);
+
+
+	if (USE_GGtINV == 1) {
+		//Projector_Inv( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
+		ConjProjector_Inv3( timeEvalProj, cluster, b_l, x_l, 0 );
+	} else {
+		; // Projector	 ( timeEvalProj, cluster, cluster.vec_d, x_l, 1 );
+	}
+
+
+	// *** Ax = apply_A(CLUSTER,Bt,x); ********************************************
+	apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
+
+	double norm_prim_fl = 0.0;
+	double norm_prim_fg = 0.0;
+	for (size_t d = 0; d < cluster.domains.size(); d++){
+		norm_prim_fl += cluster.domains[d]->norm_f;
+  }
+
+	MPI_Allreduce(&norm_prim_fl, &norm_prim_fg, 1, MPI_DOUBLE, MPI_SUM, info::mpi::comm);
+	norm_prim_fg = sqrt(norm_prim_fg);
+
+	// *** g = Ax - b *************************************************************
+	#pragma omp parallel for
+    for (size_t i = 0; i < g_l.size(); i++){
+	  g_l[i] = Ax_l[i] - b_l[i];
+    }
+
+  switch (USE_PREC) {
+  case FETIConfiguration::PRECONDITIONER::LUMPED:
+  case FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION:
+  case FETIConfiguration::PRECONDITIONER::DIRICHLET:
+  case FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET:
+  case FETIConfiguration::PRECONDITIONER::MAGIC:
+    proj1_time.start();
+    if (USE_GGtINV == 1) {
+      // Projector_Inv( timeEvalProj, cluster, g_l, Pg_l, 0 );
+    	//ConjProjector_Inv2( timeEvalProj, cluster, g_l, Pg_l, 0 );
+    	ConjProjector_Inv( timeEvalProj, cluster, g_l, Pg_l, 0 );
+    } else {
+      ; // Projector		  ( timeEvalProj, cluster, g_l, Pg_l, 0 );
+    }
+    proj1_time.end();
+
+    // Scale
+    prec_time.start();
+    Apply_Prec(timeEvalPrec, cluster, Pg_l, MPg_l);
+    prec_time.end();
+    // Re-Scale
+
+    proj2_time.start();
+    if (USE_GGtINV == 1) {
+      // Projector_Inv( timeEvalProj, cluster, MPg_l, z_l, 0 );
+      ConjProjector_Inv( timeEvalProj, cluster, MPg_l, z_l, 0 );
+    } else {
+      ; // Projector		  ( timeEvalProj, cluster, MPg_l, z_l, 0 );
+    }
+    proj2_time.end();
+    break;
+  case FETIConfiguration::PRECONDITIONER::NONE:
+    proj_time.start();
+    if (USE_GGtINV == 1) {
+      // Projector_Inv( timeEvalProj, cluster, g_l, z_l, 0 );
+      ConjProjector_Inv( timeEvalProj, cluster, g_l, z_l, 0 );
+    } else {
+      ; // Projector		  ( timeEvalProj, cluster, g_l, z_l, 0 );
+    }
+    Pg_l = z_l;
+    proj_time.end();
+    break;
+  default:
+	  eslog::error("Not implemented preconditioner.\n");
+  }
+
+
+	// *** Calculate the stop condition *******************************************
+	//tol = precision * parallel_norm_compressed(cluster, Pg_l);
+
+    norm_l = parallel_norm_compressed(cluster, z_l);
+	tol = precision * norm_l;
+
+	// int precisionWidth = ceil(log(1 / precision) / log(10)) + 1;
+	// int iterationWidth = ceil(log(CG_max_iter) / log(10));
+	// std::string indent = "   ";
+
+//	auto spaces = [] (int count) {
+//		std::stringstream ss;
+//		for (int i = 0; i < count; i++) {
+//			ss << " ";
+//		}
+//		return ss.str();
+//	};
+
+	eslog::linearsolver("   iter      |r|       r      e      time[s]\n");
+//	ESINFO(CONVERGENCE)
+//		<< spaces(indent.size() + iterationWidth - 4) << "iter"
+//		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
+//		<< spaces(indent.size() + 4) << "r" << spaces(4)
+//		<< spaces(indent.size() + (precisionWidth + 2) / 2 + (precisionWidth + 2) % 2 - 1) << "e" << spaces(precisionWidth / 2)
+//		<< spaces(indent.size()) << "time[s]";
+
+
+
+	//norm_l = parallel_norm_compressed(cluster, Pg_l);
+
+//  ESINFO(CONVERGENCE)
+//  	<< indent << std::setw(iterationWidth) << 1
+//  	<< indent << std::fixed << std::setprecision(precisionWidth) <<  1.0000000
+//  	<< indent << std::scientific << std::setprecision(3) << norm_l
+//  	<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
+//  	<< indent << std::fixed << std::setprecision(5) ;
+  eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", 1, 1.0, norm_l, precision, 0);
+
+
+
+  // initial gradient
+  beta = sqrt(parallel_ddot_compressed(cluster, z_l, z_l));
+  // InitialCondition for system H_{i+1,i} * y{i} = b_H
+  b_H[0] = beta;
+  // set-up first basis vector   (A * V_{i} = V_{i+1} * H_{i+1,i})
+  #pragma omp parallel for
+for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
+     v_l[i] = z_l[i]/beta;
+  }
+
+
+
+  tmp_double0 = parallel_ddot_compressed(cluster, v_l, v_l);
+
+
+  V_l.dense_values.insert(V_l.dense_values.end(), v_l.begin(), v_l.end());
+  V_l.nnz+=v_l.size();
+  V_l.cols++;
+
+
+
+  auto ij= [&]( esint ii, esint jj ) -> esint
+   { return ii + n_mat*jj; };
+
+
+	// *** Start the CG iteration loop ********************************************
+  int iter = 0;
+	for (; iter < CG_max_iter; iter++) {
+
+		timing.totalTime.start();
+
+    appA_time.start();
+    apply_A_l_comp_dom_B(timeEvalAppa, cluster, v_l, w_l);
+    appA_time.end();
+
+    switch (USE_PREC) {
+    case FETIConfiguration::PRECONDITIONER::LUMPED:
+    case FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION:
+    case FETIConfiguration::PRECONDITIONER::DIRICHLET:
+	  case FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET:
+    case FETIConfiguration::PRECONDITIONER::MAGIC:
+      proj1_time.start();
+      if (USE_GGtINV == 1) {
+        // Projector_Inv( timeEvalProj, cluster, w_l, Pw_l, 0 );
+    	//ConjProjector_Inv2( timeEvalProj, cluster, w_l, Pw_l, 0 );
+    	ConjProjector_Inv( timeEvalProj, cluster, w_l, Pw_l, 0 );
+      } else {
+        ; // Projector		  ( timeEvalProj, cluster, w_l, Pw_l, 0 );
+      }
+      proj1_time.end();
+
+      // Scale
+      prec_time.start();
+      Apply_Prec(timeEvalPrec, cluster, Pw_l, MPw_l);
+      prec_time.end();
+      // Re-Scale
+
+      proj2_time.start();
+      if (USE_GGtINV == 1) {
+        // Projector_Inv( timeEvalProj, cluster, MPw_l, z_l, 0 );
+        ConjProjector_Inv( timeEvalProj, cluster, MPw_l, z_l, 0 );
+      } else {
+        ; // Projector		  ( timeEvalProj, cluster, MPw_l, z_l, 0 );
+      }
+      proj2_time.end();
+      break;
+    case FETIConfiguration::PRECONDITIONER::NONE:
+      proj_time.start();
+      if (USE_GGtINV == 1) {
+        // Projector_Inv( timeEvalProj, cluster, w_l, z_l, 0 );
+        ConjProjector_Inv( timeEvalProj, cluster, w_l, z_l, 0 );
+      } else {
+        ; // Projector		  ( timeEvalProj, cluster, w_l, z_l, 0 );
+      }
+      proj_time.end();
+      break;
+    default:
+    	eslog::error("Not implemented preconditioner.\n");
+    }
+
+//  Modified Gram-Schmidt
+    for (int k = 0;k<iter+1;k++){
+      H_l[ij(k,iter)] =parallel_ddot_compressed_double(cluster, &(V_l.dense_values[v_l.size()*k]), &(z_l[0]));
+
+      #pragma omp parallel for
+      for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
+         z_l[i] -= V_l.dense_values[v_l.size()*k + i] * H_l[ij(k,iter)];
+      }
+    }
+    H_l[ij(iter+1,iter)] = sqrt(parallel_ddot_compressed(cluster, z_l, z_l));
+
+    #pragma omp parallel for
+    for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
+      v_l[i] = z_l[i]/H_l[ij(iter+1,iter)];
+    }
+
+    V_l.dense_values.insert(V_l.dense_values.end(), v_l.begin(), v_l.end());
+    V_l.nnz+=v_l.size();
+    V_l.cols++;
+
+    // cblas set-up
+    _alpha    = 1;
+    _beta     = 0;
+    _m        = iter+1;
+    _n        = iter+1;
+    _k        = iter+1;
+    _lda      = n_mat;
+    _ldb      = n_mat;
+    _ldc      = n_mat;
+
+    // next line isn't obligatory
+    //
+    w_l.insert(w_l.begin(),&(H_l[n_mat*iter]),&(H_l[n_mat*iter+iter+2]));
+    //
+		cblas_dgemv (CblasColMajor, CblasNoTrans, _m, _n,_alpha, &(Permut_l[0]), _lda, &(w_l[0]),
+                                                  1,_beta, &(H_l_modif[n_mat*iter]), 1);
+    //
+    H_l_modif[n_mat*iter+iter+1] = H_l[n_mat*iter+iter+1];
+
+
+
+    norm_h = sqrt(H_l_modif[ij(iter+1,iter)]*H_l_modif[ij(iter+1,iter)] +
+                  H_l_modif[ij(iter,iter)]*H_l_modif[ij(iter,iter)]);
+    c_H = H_l_modif[ij(iter  ,iter)] / norm_h;
+    s_H = H_l_modif[ij(iter+1,iter)] / norm_h;
+
+
+    if (iter>0){
+      Permut_tmp_l[ij(iter-1,iter-1)] =  1;
+      Permut_tmp_l[ij(iter  ,iter-1)] =  0;
+      Permut_tmp_l[ij(iter-1,iter  )] =  0;
+      Permut_tmp_l[ij(iter  ,iter  )] =  1;
+    }
+
+    Permut_tmp_l[ij(iter  ,iter  )] =  c_H;
+    Permut_tmp_l[ij(iter+1,iter  )] = -s_H;
+    Permut_tmp_l[ij(iter  ,iter+1)] =  s_H;
+    Permut_tmp_l[ij(iter+1,iter+1)] =  c_H;
+
+    H_l_modif[ij(iter  ,iter)] =  norm_h;
+    H_l_modif[ij(iter+1,iter)] =  0;
+
+    // cblas reset
+    _m        = iter+2;
+    _n        = iter+2;
+    _k        = iter+2;
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, _m, _n, _k, _alpha,
+                      &(Permut_tmp_l[0]), _lda, &(Permut_l[0]), _ldb, _beta, &(P_tmp_P[0]), _ldc);
+
+    // TODO: Do it better!
+    for (int i = 0; i < n_mat*(iter+1)+iter+2;i++){
+      Permut_l[i] = P_tmp_P[i];
+    }
+
+	cblas_dgemv (CblasColMajor, CblasNoTrans, _m, _n,_alpha, &(Permut_l[0]), _lda, &(b_H[0]),
+                                                  1,_beta, &(g_H[0]), 1);
+
+    norm_l = fabs(g_H[iter+1]);
+
+	timing.totalTime.end();
+
+	eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 2, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
+//		ESINFO(CONVERGENCE)
+//			<< indent << std::setw(iterationWidth) << iter + 2
+//			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
+//			<< indent << std::scientific << std::setprecision(3) << norm_l
+//			<< indent << std::fixed << std::setprecision(precisionWidth - 1) << precision
+//			<< indent << std::fixed << std::setprecision(5) << timing.totalTime.getLastStat();
+
+
+
+#ifdef FLAG_VALIDATION
+    _n = iter+1;
+    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, _m, _n, _k, _alpha,
+                      &(Permut_l[0]), _lda, &(H_l[0]), _ldb, _beta, &(tmp_H_l[0]), _ldc);
+#endif
+
+    cnt_iter = iter;
+		if (norm_l < tol)
+			break;
+
+	}
+	// *** END -  the CG iteration loop ********************************************
+
+
+  for (int i = cnt_iter-1;i>=0;i-- ){
+    tmp_double0 = -g_H[i];
+    for (int j = cnt_iter-1 ; j > i ; j-- ){
+      tmp_double0-=H_l_modif[ij(i,j)] * y_H[j];
+    }
+    y_H[i] = tmp_double0 / H_l_modif[ij(i,i)];
+  }
+
+  _m = dl_size;
+  _n = cnt_iter;
+  _beta = 1;
+  _lda = dl_size;
+  cblas_dgemv (CblasColMajor, CblasNoTrans, _m, _n,_alpha, &(V_l.dense_values[0]), _lda, &(y_H[0]),
+                                                  1,_beta, &(x_l[0]), 1);
+
+
+  apply_A_l_comp_dom_B(timeEvalAppa, cluster, x_l, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
+
+  #pragma omp parallel for
+  for (size_t i = 0; i < g_l.size(); i++){
+    w_l[i] = -(Ax_l[i] - b_l[i]);
+  }
+
+
+
+    dual_soultion_compressed_parallel   = x_l;
+	dual_residuum_compressed_parallel   = w_l;
+
+	if (USE_GGtINV == 1) {
+		//Projector_Inv ( timeEvalProj, cluster, w_l, amplitudes, 2 );
+		ConjProjector_Inv ( timeEvalProj, cluster, w_l, amplitudes, 2 );
+	} else {
+		; // Projector	  ( timeEvalProj, cluster, w_l, amplitudes, 2 );
+	}
+
+#ifdef FLAG_VALIDATION
+  for (int i = 0; i<cnt_iter+1;i++){
+    for (int j = 0; j<cnt_iter+1;j++){
+      w_l.insert(w_l.begin(),&(V_l.dense_values[dl_size*i]), &(V_l.dense_values[dl_size*(i+1)]));
+      z_l.insert(  z_l.begin(),&(V_l.dense_values[dl_size*j]), &(V_l.dense_values[dl_size*(j+1)]));
+      V_lt_V_l.dense_values[i*n_mat+j] = parallel_ddot_compressed(cluster, w_l, z_l);
+    }
+  }
+#endif
+
+  dual_soultion_compressed_parallel   = x_l;
+	dual_residuum_compressed_parallel   = w_l;
+
+
+	if (USE_GGtINV == 1) {
+		// Projector_Inv ( timeEvalProj, cluster, w_l, amplitudes, 2 );
+		ConjProjector_Inv ( timeEvalProj, cluster, w_l, amplitudes, 2 );
+	} else {
+		; // Projector	  ( timeEvalProj, cluster, w_l, amplitudes, 2 );
+	}
+	std::fill(amplitudes.begin(),amplitudes.end(), 0.0);
+	// *** end - save solution - in dual and amplitudes ***************************************
+
+
+	// *** Presint out the timing for the iteration loop ***************************************
+
+	switch (USE_PREC) {
+	case FETIConfiguration::PRECONDITIONER::LUMPED:
+	case FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION:
+	case FETIConfiguration::PRECONDITIONER::DIRICHLET:
+	case FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET:
+	case FETIConfiguration::PRECONDITIONER::MAGIC:
+		timing.addEvent(proj1_time);
+		timing.addEvent(prec_time );
+		timing.addEvent(proj2_time);
+		break;
+	case FETIConfiguration::PRECONDITIONER::NONE:
+		timing.addEvent(proj_time);
+		break;
+	default:
+		eslog::error("Not implemented preconditioner.\n");
+	}
+
+	timing.addEvent(appA_time );
+	timing.addEvent(ddot_beta);
+	timing.addEvent(ddot_alpha);
+
+	// *** END - Presint out the timing for the iteration loop ***********************************
+
+	return iter + 1;
+} //  Solve_GMRES_singular_dom
+//
+
 
 int IterSolverBase::Solve_GMRES_singular_dom ( SuperCluster & cluster,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal)
@@ -5663,7 +6139,13 @@ void IterSolverBase::ConjProjector_Inv (TimeEval & time_eval, SuperCluster & clu
 	{
 		d_local = x_in;
 	} else {
-		if (cluster.SYMMETRIC_SYSTEM) {
+		if (cluster.SYMMETRIC_SYSTEM ||
+				(!cluster.SYMMETRIC_SYSTEM &&
+						( configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_R ||
+						configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_K
+						)
+				)
+			) {
 			if (cluster.G1_comp.nnz > 0) {
 
 				SEQ_VECTOR<double> x_in_tmpx;
@@ -5753,7 +6235,15 @@ void IterSolverBase::ConjProjector_Inv2 (TimeEval & time_eval, SuperCluster & cl
 	{
 		d_local = x_in;
 	} else {
-		if (cluster.SYMMETRIC_SYSTEM) {
+//		if (cluster.SYMMETRIC_SYSTEM)
+		if (cluster.SYMMETRIC_SYSTEM ||
+				(!cluster.SYMMETRIC_SYSTEM &&
+						( configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_R ||
+						configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_K
+						)
+				)
+			)
+		    {
 			if (cluster.G1_comp.nnz > 0) {
 				cluster.G1_comp.MatVec(x_in, d_local, 'N');
 			}
@@ -5833,7 +6323,15 @@ void IterSolverBase::ConjProjector_Inv3 (TimeEval & time_eval, SuperCluster & cl
 	SEQ_VECTOR<double> d_mpi  ( GGtsize );
 
 	 time_eval.timeEvents[0].start();
-	if (cluster.SYMMETRIC_SYSTEM) {
+	//if (cluster.SYMMETRIC_SYSTEM)
+	if (cluster.SYMMETRIC_SYSTEM ||
+			(!cluster.SYMMETRIC_SYSTEM &&
+					( configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_R ||
+					configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_K
+					)
+			)
+		)
+	{
 		if (cluster.G1_comp.nnz > 0) {
 			cluster.G1_comp.MatVec(x_in, d_local, 'N');
 		}

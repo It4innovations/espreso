@@ -203,6 +203,7 @@ public:
 	int Solve_RegCG_ConjProj  ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 	int Solve_full_ortho_CG_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 	int Solve_GMRES_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
+	int Solve_GMRES_ConjProj ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 	int Solve_BICGSTAB_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 	int Solve_new_CG_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
 	int Solve_PipeCG_singular_dom ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal );
