@@ -53,7 +53,7 @@ public:
 
 	void fill(double value);
 	void fillData(const Matrix *in);
-	void fillCombinedData(const Matrix *in, esint roffset, esint coffset, esint nsize, esint sumsize);
+	void fillCombinedData(const Matrix *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum);
 
 	void apply(const Vector *in, Vector *out);
 	void apply(const Vectors *in, Vectors *out);
@@ -61,7 +61,7 @@ public:
 	void scale(double alpha);
 	void add(double alpha, const Matrix *a);
 	void sum(double alpha, const Matrix *a, double beta, const Matrix *b);
-	void addToCombination(double alpha, const Matrix *in, esint roffset, esint coffset, esint nsize, esint sumsize);
+	void addToCombination(double alpha, const Matrix *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum);
 
 	void transpose();
 

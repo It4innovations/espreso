@@ -137,9 +137,9 @@ void MatrixCSR::fillData(const Matrix *in)
 	DataMatrixCSR::fillValues(_in->nnz, _in->vals);
 }
 
-void MatrixCSR::fillCombinedData(const Matrix *in, esint roffset, esint coffset, esint nsize, esint sumsize)
+void MatrixCSR::fillCombinedData(const Matrix *in, esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum)
 {
-	DataMatrixCSR::fillCombinedValues(in->downcast<MatrixCSR>(), roffset, coffset, nsize, sumsize);
+	DataMatrixCSR::fillCombinedValues(in->downcast<MatrixCSR>(), roffset, coffset, rsize, csize, rsum, csum);
 }
 
 void MatrixCSR::apply(const Vector *in, Vector *out)
@@ -190,9 +190,9 @@ void MatrixCSR::sum(double alpha, const Matrix *a, double beta, const Matrix *b)
 	MATH::vecSum(nnz, vals, alpha, _a->vals, beta, _b->vals);
 }
 
-void MatrixCSR::addToCombination(double scale, const Matrix *in, esint roffset, esint coffset, esint nsize, esint sumsize)
+void MatrixCSR::addToCombination(double scale, const Matrix *in, esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum)
 {
-	DataMatrixCSR::addToCombination(scale, in->downcast<MatrixCSR>(), roffset, coffset, nsize, sumsize);
+	DataMatrixCSR::addToCombination(scale, in->downcast<MatrixCSR>(), roffset, coffset, rsize, csize, rsum, csum);
 }
 
 void MatrixCSR::transpose()

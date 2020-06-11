@@ -46,9 +46,11 @@ struct FETISolverData: public SolverData {
 
 	FETISystemSolver solver;
 
+	int kernelDimension;
+
 	FETISolverData(FETIConfiguration &configuration)
 	: SolverData(&K, &R, &f, &x, &y, &BC, &solver),
-	  solver(configuration, *this) { }
+	  solver(configuration, *this), kernelDimension(0) { }
 
 	void buildB1();
 	void buildB0();

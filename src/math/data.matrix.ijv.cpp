@@ -162,12 +162,12 @@ void DataMatrixIJV::fill(double value)
 	}
 }
 
-void DataMatrixIJV::fillCombinedValues(const DataMatrixIJV *in, esint roffset, esint coffset, esint nsize, esint sumsize)
+void DataMatrixIJV::fillCombinedValues(const DataMatrixIJV *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum)
 {
 	eslog::internalFailure("call empty function.\n");
 }
 
-void DataMatrixIJV::addToCombination(double scale, const DataMatrixIJV *in, esint roffset, esint coffset, esint nsize, esint sumsize)
+void DataMatrixIJV::addToCombination(double scale, const DataMatrixIJV *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum)
 {
 	eslog::internalFailure("call empty function.\n");
 }

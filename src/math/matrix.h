@@ -32,7 +32,7 @@ public:
 
 	virtual void fill(double value) =0;
 	virtual void fillData(const Matrix *in) =0;
-	virtual void fillCombinedData(const Matrix *in, esint roffset, esint coffset, esint nsize, esint sumsize) =0;
+	virtual void fillCombinedData(const Matrix *in, esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum) =0;
 
 	virtual void apply(const Vector *in, Vector *out) =0;
 	virtual void apply(const Vectors *in, Vectors *out) =0;
@@ -40,7 +40,7 @@ public:
 	virtual void scale(double alpha) =0;
 	virtual void add(double alpha, const Matrix *a) =0;
 	virtual void sum(double alpha, const Matrix *a, double beta, const Matrix *b) =0;
-	virtual void addToCombination(double scale, const Matrix *in, esint roffset, esint coffset, esint nsize, esint sumsize) =0;
+	virtual void addToCombination(double scale, const Matrix *in, esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum) =0;
 
 	virtual void fillDiagonal(Vector *diagonal) const =0;
 

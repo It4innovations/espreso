@@ -45,9 +45,9 @@ public:
 	void fillPattern(esint nrows, esint *rows, esint *cols);
 	void fill(double value);
 	void fillValues(esint nnz, double *vals);
-	void fillCombinedValues(const DataMatrixCSR *in, esint roffset, esint coffset, esint nsize, esint sumsize);
+	void fillCombinedValues(const DataMatrixCSR *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum);
 
-	void addToCombination(double scale, const DataMatrixCSR *in, esint roffset, esint coffset, esint nsize, esint sumsize);
+	void addToCombination(double scale, const DataMatrixCSR *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum);
 	void fillDiagonal(DataVectorDense *diagonal) const;
 protected:
 	_DataMatrixCSR _allocated;

@@ -133,9 +133,9 @@ void MatrixIJV::fillData(const Matrix *in)
 	DataMatrixIJV::fillValues(_in->nnz, _in->vals);
 }
 
-void MatrixIJV::fillCombinedData(const Matrix *in, esint roffset, esint coffset, esint nsize, esint sumsize)
+void MatrixIJV::fillCombinedData(const Matrix *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum)
 {
-	DataMatrixIJV::fillCombinedValues(in->downcast<MatrixIJV>(), roffset, coffset, nsize, sumsize);
+	DataMatrixIJV::fillCombinedValues(in->downcast<MatrixIJV>(), roffset, coffset, rsize, csize, rsum, csum);
 }
 
 void MatrixIJV::apply(const Vector *in, Vector *out)
@@ -166,9 +166,9 @@ void MatrixIJV::sum(double alpha, const Matrix *a, double beta, const Matrix *b)
 	MATH::vecSum(nnz, vals, alpha, _a->vals, beta, _b->vals);
 }
 
-void MatrixIJV::addToCombination(double scale, const Matrix *in, esint roffset, esint coffset, esint nsize, esint sumsize)
+void MatrixIJV::addToCombination(double scale, const Matrix *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum)
 {
-	DataMatrixIJV::addToCombination(scale, in->downcast<MatrixIJV>(), roffset, coffset, nsize, sumsize);
+	DataMatrixIJV::addToCombination(scale, in->downcast<MatrixIJV>(), roffset, coffset, rsize, csize, rsum, csum);
 }
 
 void MatrixIJV::transpose()

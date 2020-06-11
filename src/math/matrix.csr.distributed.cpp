@@ -122,9 +122,9 @@ void MatrixCSRDistributed::fillData(const Matrix *in)
 	DataMatrixCSR::fillValues(_in->nnz, _in->vals);
 }
 
-void MatrixCSRDistributed::fillCombinedData(const Matrix *in, esint roffset, esint coffset, esint nsize, esint sumsize)
+void MatrixCSRDistributed::fillCombinedData(const Matrix *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum)
 {
-	DataMatrixCSR::fillCombinedValues(in->downcast<MatrixCSRDistributed>(), roffset, coffset, nsize, sumsize);
+	DataMatrixCSR::fillCombinedValues(in->downcast<MatrixCSRDistributed>(), roffset, coffset, rsize, csize, rsum, csum);
 }
 
 void MatrixCSRDistributed::apply(const Vector *in, Vector *out)
@@ -159,9 +159,9 @@ void MatrixCSRDistributed::sum(double alpha, const Matrix *a, double beta, const
 	MATH::vecSum(nnz, vals, alpha, _a->vals, beta, _b->vals);
 }
 
-void MatrixCSRDistributed::addToCombination(double scale, const Matrix *in, esint roffset, esint coffset, esint nsize, esint sumsize)
+void MatrixCSRDistributed::addToCombination(double scale, const Matrix *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum)
 {
-	DataMatrixCSR::addToCombination(scale, in->downcast<MatrixCSRDistributed>(), roffset, coffset, nsize, sumsize);
+	DataMatrixCSR::addToCombination(scale, in->downcast<MatrixCSRDistributed>(), roffset, coffset, rsize, csize, rsum, csum);
 }
 
 void MatrixCSRDistributed::fillDiagonal(Vector *diagonal) const

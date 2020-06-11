@@ -114,26 +114,26 @@ void DataMatrixDense::fillValues(double *vals)
 	memcpy(this->vals, vals, sizeof(double) * nrows * ncols);
 }
 
-void DataMatrixDense::fillCombinedValues(const DataMatrixDense *in, esint roffset, esint coffset, esint nsize, esint sumsize)
+void DataMatrixDense::fillCombinedValues(const DataMatrixDense *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum)
 {
-	for (esint r = 0; r < in->nrows / nsize; ++r) {
-		for (esint i = 0; i < nsize; ++i) {
-			for (esint c = 0; c < in->ncols / nsize; ++c) {
-				for (esint j = 0; j < nsize; ++j) {
-					vals[ncols * (r * sumsize + roffset + i) + c * sumsize + coffset + j] = in->vals[in->ncols * (r * nsize + i) + c * nsize + j];
+	for (esint r = 0; r < in->nrows / rsize; ++r) {
+		for (esint i = 0; i < rsize; ++i) {
+			for (esint c = 0; c < in->ncols / csize; ++c) {
+				for (esint j = 0; j < csize; ++j) {
+					vals[ncols * (r * rsum + roffset + i) + c * csum + coffset + j] = in->vals[in->ncols * (r * rsize + i) + c * csize + j];
 				}
 			}
 		}
 	}
 }
 
-void DataMatrixDense::addToCombination(double alpha, const DataMatrixDense *in, esint roffset, esint coffset, esint nsize, esint sumsize)
+void DataMatrixDense::addToCombination(double alpha, const DataMatrixDense *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum)
 {
-	for (esint r = 0; r < in->nrows / nsize; ++r) {
-		for (esint i = 0; i < nsize; ++i) {
-			for (esint c = 0; c < in->ncols / nsize; ++c) {
-				for (esint j = 0; j < nsize; ++j) {
-					vals[ncols * (r * sumsize + roffset + i) + c * sumsize + coffset + j] += in->vals[in->ncols * (r * nsize + i) + c * nsize + j];
+	for (esint r = 0; r < in->nrows / rsize; ++r) {
+		for (esint i = 0; i < rsize; ++i) {
+			for (esint c = 0; c < in->ncols / csize; ++c) {
+				for (esint j = 0; j < csize; ++j) {
+					vals[ncols * (r * rsum + roffset + i) + c * rsum + coffset + j] += in->vals[in->ncols * (r * rsize + i) + c * csize + j];
 				}
 			}
 		}

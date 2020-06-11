@@ -260,7 +260,7 @@ bool StructuralMechanics2DSolverDataProvider::FETI::hasKernel(esint domain)
 	return true;
 }
 
-void StructuralMechanics2DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster)
+int StructuralMechanics2DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster)
 {
 	if (info::mesh->FETIData->innerFixPoints.size() == 0) {
 
@@ -402,6 +402,7 @@ void StructuralMechanics2DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K
 			N1[d].resize(K[d].nrows, 3);
 		}
 	}
+	return 6;
 }
 
 void StructuralMechanics2DSolverDataProvider::FETI::fillKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster)

@@ -36,9 +36,9 @@ public:
 
 	void fill(double value);
 	void fillValues(double *vals);
-	void fillCombinedValues(const DataMatrixDense *in, esint roffset, esint coffset, esint nsize, esint sumsize);
+	void fillCombinedValues(const DataMatrixDense *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum);
 
-	void addToCombination(double alpha, const DataMatrixDense *in, esint roffset, esint coffset, esint nsize, esint sumsize);
+	void addToCombination(double alpha, const DataMatrixDense *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum);
 	void fillDiagonal(DataVectorDense *diagonal) const;
 
 protected:

@@ -161,7 +161,7 @@ bool StructuralMechanics3DSolverDataProvider::FETI::hasKernel(esint domain)
 	return true;
 }
 
-void StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster)
+int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster)
 {
 //	for (esint d = 0; d < K.domains; ++d) {
 //		if (K[d].type != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
@@ -375,10 +375,7 @@ void StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K
 
 	N1.initDomains(K.domains);
 	N2.initDomains(K.domains);
-	N1.DataDecomposition::shallowCopy(&K);
-	N2.DataDecomposition::shallowCopy(&K);
 	RegMat.initDomains(K.domains);
-	RegMat.DataDecomposition::shallowCopy(&K);
 	_RegMat = new MatrixCSRFETI();
 	_RegMat->initDomains(info::mesh->elements->ndomains);
 
@@ -468,6 +465,7 @@ void StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K
 			N1[d].resize(K[d].nrows, 6);
 		}
 	}
+	return 6;
 }
 
 void StructuralMechanics3DSolverDataProvider::FETI::fillKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster)

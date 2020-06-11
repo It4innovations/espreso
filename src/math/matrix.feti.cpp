@@ -158,12 +158,12 @@ void MatrixFETI::fillData(const Matrix *in)
 	}
 }
 
-void MatrixFETI::fillCombinedData(const Matrix *in, esint roffset, esint coffset, esint nsize, esint sumsize)
+void MatrixFETI::fillCombinedData(const Matrix *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum)
 {
 	const MatrixFETI *_in = in->downcast<MatrixFETI>();
 	#pragma omp parallel for
 	for (esint d = 0; d < domains; ++d) {
-		at(d)->fillCombinedData(_in->at(d), roffset, coffset, nsize, sumsize);
+		at(d)->fillCombinedData(_in->at(d), roffset, coffset, rsize, csize, rsum, csum);
 	}
 }
 
@@ -218,12 +218,12 @@ void MatrixFETI::sum(double alpha, const Matrix *a, double beta, const Matrix *b
 	}
 }
 
-void MatrixFETI::addToCombination(double alpha, const Matrix *in, esint roffset, esint coffset, esint nsize, esint sumsize)
+void MatrixFETI::addToCombination(double alpha, const Matrix *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum)
 {
 	const MatrixFETI *_in = in->downcast<MatrixFETI>();
 	#pragma omp parallel for
 	for (esint d = 0; d < domains; ++d) {
-		at(d)->addToCombination(alpha, _in->at(d), roffset, coffset, nsize, sumsize);
+		at(d)->addToCombination(alpha, _in->at(d), roffset, coffset, rsize, csize, rsum, csum);
 	}
 }
 

@@ -205,17 +205,17 @@ void DataMatrixCSR::fill(double value)
 	}
 }
 
-void DataMatrixCSR::fillCombinedValues(const DataMatrixCSR *in, esint roffset, esint coffset, esint nsize, esint sumsize)
+void DataMatrixCSR::fillCombinedValues(const DataMatrixCSR *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum)
 {
 	eslog::internalFailure("call empty function.\n");
 }
 
-void DataMatrixCSR::addToCombination(double scale, const DataMatrixCSR *in, esint roffset, esint coffset, esint nsize, esint sumsize)
+void DataMatrixCSR::addToCombination(double scale, const DataMatrixCSR *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum)
 {
 	for (esint r = 0; r < in->nrows; r++) {
 		for (esint c = 0; c < in->rows[r + 1] - in->rows[r]; c++) {
-			esint tr = sumsize * (r / nsize) + roffset + r % nsize;
-			esint rc = sumsize * (c / nsize) + coffset + c % nsize;
+			esint tr = rsum * (r / rsize) + roffset + r % rsize;
+			esint rc = csum * (c / csize) + coffset + c % csize;
 			vals[rows[tr] + rc - rows[0]] += scale * in->vals[in->rows[r] + c - in->rows[0]];
 		}
 	}

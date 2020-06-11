@@ -120,6 +120,10 @@ void DataDecomposition::deepCopyStructure(const DataDecomposition *other)
 void DataDecomposition::uniformCombination(const DataDecomposition *first, const DataDecomposition *second, int nfirst, int nsecond)
 {
 	_allocated.clear();
+	if (first->dmap == NULL && second->dmap == NULL) {
+		return; // TODO?
+	}
+
 	_allocated.alloc(first->ranks, first->nneighbors);
 	_DataDecomposition::operator=(_allocated);
 	this->rank = first->rank;

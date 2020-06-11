@@ -130,10 +130,10 @@ void MatrixDense::fillData(const Matrix *in)
 	DataMatrixDense::fillValues(_in->vals);
 }
 
-void MatrixDense::fillCombinedData(const Matrix *in, esint roffset, esint coffset, esint nsize, esint sumsize)
+void MatrixDense::fillCombinedData(const Matrix *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum)
 {
 	const MatrixDense *_in = in->downcast<MatrixDense>();
-	DataMatrixDense::fillCombinedValues(_in, roffset, coffset, nsize, sumsize);
+	DataMatrixDense::fillCombinedValues(_in, roffset, coffset, rsize, csize, rsum, csum);
 }
 
 void MatrixDense::apply(const Vector *in, Vector *out)
@@ -164,9 +164,9 @@ void MatrixDense::sum(double alpha, const Matrix *a, double beta, const Matrix *
 	MATH::vecSum(nrows * ncols, vals, alpha, _a->vals, beta, _b->vals);
 }
 
-void MatrixDense::addToCombination(double alpha, const Matrix *in, esint roffset, esint coffset, esint nsize, esint sumsize)
+void MatrixDense::addToCombination(double alpha, const Matrix *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum)
 {
-	DataMatrixDense::addToCombination(alpha, in->downcast<MatrixDense>(), roffset, coffset, nsize, sumsize);
+	DataMatrixDense::addToCombination(alpha, in->downcast<MatrixDense>(), roffset, coffset, rsize, csize, rsum, csum);
 }
 
 void MatrixDense::transpose()

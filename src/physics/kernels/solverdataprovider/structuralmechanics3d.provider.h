@@ -30,7 +30,7 @@ struct StructuralMechanics3DSolverDataProvider: public SolverDataProvider {
 		MatrixType getMatrixType(esint domain);
 
 		bool hasKernel(esint domain);
-		void initKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster);
+		int initKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster);
 		void fillKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster);
 
 		StructuralMechanicsLoadStepConfiguration &_configuration;

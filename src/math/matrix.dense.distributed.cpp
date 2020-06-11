@@ -132,9 +132,9 @@ void MatrixDenseDistributed::fillData(const Matrix *in)
 	DataMatrixDense::fillValues(_in->vals);
 }
 
-void MatrixDenseDistributed::fillCombinedData(const Matrix *in, esint roffset, esint coffset, esint nsize, esint sumsize)
+void MatrixDenseDistributed::fillCombinedData(const Matrix *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum)
 {
-	DataMatrixDense::fillCombinedValues(in->downcast<MatrixDenseDistributed>(), roffset, coffset, nsize, sumsize);
+	DataMatrixDense::fillCombinedValues(in->downcast<MatrixDenseDistributed>(), roffset, coffset, rsize, csize, rsum, csum);
 }
 
 void MatrixDenseDistributed::apply(const Vector *in, Vector *out)
@@ -165,9 +165,9 @@ void MatrixDenseDistributed::sum(double alpha, const Matrix *a, double beta, con
 	MATH::vecSum(nrows * ncols, vals, alpha, _a->vals, beta, _b->vals);
 }
 
-void MatrixDenseDistributed::addToCombination(double scale, const Matrix *in, esint roffset, esint coffset, esint nsize, esint sumsize)
+void MatrixDenseDistributed::addToCombination(double scale, const Matrix *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum)
 {
-	DataMatrixDense::addToCombination(scale, in->downcast<MatrixDenseDistributed>(), roffset, coffset, nsize, sumsize);
+	DataMatrixDense::addToCombination(scale, in->downcast<MatrixDenseDistributed>(), roffset, coffset, rsize, csize, rsum, csum);
 }
 
 void MatrixDenseDistributed::fillDiagonal(Vector *diagonal) const
