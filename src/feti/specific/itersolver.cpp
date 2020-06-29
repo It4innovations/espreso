@@ -13,6 +13,12 @@
 
 #include <sstream>
 #include <cmath>
+#include <iostream>
+
+#include "basis/utilities/sysutils.h"
+#include "basis/utilities/debugprint.h"
+#include <fstream>
+
 
 using namespace espreso;
 
@@ -2801,7 +2807,7 @@ int IterSolverBase::Solve_GMRES_ConjProj ( SuperCluster & cluster,
 
 
 
-//    apply_A_l_comp_dom_B(timeEvalAppa, cluster, ones, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
+  //  apply_A_l_comp_dom_B(timeEvalAppa, cluster, ones, Ax_l);// apply_A_l_compB(timeEvalAppa, cluster, x_l, Ax_l);
 
 
 
@@ -5651,21 +5657,21 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 
 
 	 TimeEvent SaRGlocal("Exchange local G1 matrices to neighs only. "); SaRGlocal.start();
-	if (cluster.SYMMETRIC_SYSTEM)  {
+//	if (cluster.SYMMETRIC_SYSTEM)  {
 		ExchangeMatrices(cluster.G1, G_neighs,        cluster.my_neighs);
-	} else {
-		ExchangeMatrices(cluster.G2, G_neighs, cluster.my_neighs);
-	}
+//	} else {
+//		ExchangeMatrices(cluster.G2, G_neighs, cluster.my_neighs);
+//	}
 	 SaRGlocal.end(); SaRGlocal.printStatMPI(); preproc_timing.addEvent(SaRGlocal);
 
 	 TimeEvent SaRGlocal2("Exchange local G1 matrices to neighs. of neighs. "); SaRGlocal2.start();
 	vector < SparseMatrix > G_neighs_neighs  ( neighs_of_neighs.size() );
 
-	if (cluster.SYMMETRIC_SYSTEM)  {
+//	if (cluster.SYMMETRIC_SYSTEM)  {
 		ExchangeMatrices(cluster.G1, G_neighs_neighs, neighs_of_neighs);
-	} else {
-		;//ExchangeMatrices(cluster.G2, G_neighs, cluster.my_neighs);
-	}
+//	} else {
+//		;//ExchangeMatrices(cluster.G2, G_neighs, cluster.my_neighs);
+//	}
 	 SaRGlocal2.end(); SaRGlocal2.printStatMPI(); preproc_timing.addEvent(SaRGlocal2);
 
 	 TimeEvent AppAlG1("Apply_A on local and neigh. G1 mat. "); AppAlG1.start();
@@ -5775,11 +5781,21 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 	 collectGGt_time.end(); collectGGt_time.printStatMPI(); preproc_timing.addEvent(collectGGt_time);
 
 	if (mpi_size == 1) {
-		GGt_Mat_tmp.MatMatT(cluster.G1, GA_l);
+//      GGt_Mat_tmp.MatMatT(cluster.G1, GA_l);
+      GGt_Mat_tmp.MatMatT(GA_l, cluster.G1);
 	}
 
-	GGt_Mat_tmp.RemoveLower();
-//	ESINFO(EXHAUSTIVE) << GGt_Mat_tmp.SpyText();
+//	const char* prefix = ".";
+//	std::ofstream os1(utils::prepareFile(std::string(prefix), std::string("GA_l")));
+//	os1 << GA_l;
+//	std::ofstream os2(utils::prepareFile(std::string(prefix), std::string("cluster_G1")));
+//	os2 << cluster.G1;
+//	std::ofstream os3(utils::prepareFile(std::string(prefix), std::string("GGt_Mat_tmp")));
+//	os3 << GGt_Mat_tmp;
+
+	// GGt_Mat_tmp.RemoveLower();
+//	std::cout << GGt_Mat_tmp.SpyText();
+	//	ESINFO(EXHAUSTIVE) << GGt_Mat_tmp.SpyText();
 
 	// Entering data parallel region for single, in this case GGt matrix, we want MKL/Solver to run multi-threaded
 	MKL_Set_Num_Threads(PAR_NUM_THREADS);
@@ -5791,9 +5807,9 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 
 	// *** Calculating inverse GGt matrix in distributed fashion ***********************************************************
 	// Create Sparse Direct solver for GGt
-	if (mpi_rank == mpi_root) {
-		GGt_tmp.msglvl = 0;
-	}
+//	if (mpi_rank == mpi_root) {
+//		GGt_tmp.msglvl = 1;
+//	}
 
 	 TimeEvent importGGt_time("Time to import GGt matrix into solver"); importGGt_time.start();
 	GGt_Mat_tmp.mtype = cluster.mtype;
