@@ -74,7 +74,8 @@ OptimizationConfiguration::OptimizationConfiguration()
 		.addoption(ECFOption().setname("DIFFERENTIAL_EVOLUTION").setdescription("Differential Evolution"))
 		.addoption(ECFOption().setname("SOMAT3A").setdescription("SOMAT3A"))
 		.addoption(ECFOption().setname("SOMA").setdescription("SOMA"))
-		.addoption(ECFOption().setname("RANDOM").setdescription("Generating random configurations")));
+		.addoption(ECFOption().setname("RANDOM").setdescription("Generating random configurations"))
+		.addoption(ECFOption().setname("ALL_PERMUTATIONS").setdescription("All parameter permutations")));
 	
 	this->rounding_immediate = false;
 	REGISTER(rounding_immediate, ECFMetaData()

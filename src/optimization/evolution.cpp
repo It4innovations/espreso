@@ -23,6 +23,42 @@ void RandomAlgorithm::evaluateCurrentSpecimen(double value)
     std::cout << value << std::endl;
 }
 
+AllPermutationsAlgorithm::AllPermutationsAlgorithm(ParameterManager& manager) : 
+EvolutionAlgorithm(manager), m_dimension(manager.count()), m_is_first(true)
+{
+    m_last.resize(m_dimension);
+    for (int i = 0; i < m_dimension; i++)
+    { m_last[i] = m_manager.getParameterMin(i); }
+}
+
+std::vector<double> AllPermutationsAlgorithm::getCurrentSpecimen()
+{
+    if (m_is_first) return m_last;
+
+    int carry = 1;
+    for (int i = m_dimension - 1; i > -1; i--)
+    {
+        int p = m_last[i] + carry;
+        if (p > m_manager.getParameterMax(i))
+        {
+            m_last[i] = m_manager.getParameterMin(i);
+            carry = 1;
+        }
+        else {
+            m_last[i] = p;
+            break;
+        }
+    }
+    return m_last;
+}
+
+void AllPermutationsAlgorithm::evaluateCurrentSpecimen(double value)
+{
+    std::cout << "N,";
+    for (int i = 0; i < m_dimension; i++) std::cout << m_last[i] << ",";
+    std::cout << value << std::endl;
+    this->m_is_first = false;
+}
 
 
 PSOAlgorithm::PSOAlgorithm(ParameterManager& manager, int population,

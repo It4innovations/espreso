@@ -3,6 +3,8 @@
 #include <climits>
 #include <chrono>
 
+#include "../basis/logging/logging.h"
+
 using namespace espreso;
 
 ParameterManager::ParameterManager(std::vector<ECFParameter*>& parameters, 
@@ -86,9 +88,8 @@ std::vector<double> ParameterManager::generateConfiguration()
         }
         else 
         {
-            std::cout 
-            << "Optimization - UNKNOWN PARAMETER DATA TYPE!" 
-            << std::endl;
+            ESINFO(GLOBAL_ERROR)
+            << "Optimization - UNKNOWN PARAMETER DATA TYPE!";
         }
     }
 
@@ -179,6 +180,80 @@ double ParameterManager::_checkParameter_bounds(int id, double value)
     return value;
 }
 
+double ParameterManager::getParameterMin(int id)
+{
+    ECFParameter* p = this->m_params[id];
+    ECFDataType dt = p->metadata.datatype.front();
+    
+    if (dt == ECFDataType::INTEGER)
+    {
+        return INT_MIN;
+    }
+    else if (dt == ECFDataType::POSITIVE_INTEGER)
+    {
+        return 1;
+    }
+    else if (dt == ECFDataType::NONNEGATIVE_INTEGER)
+    {
+        return 0;
+    }
+    else if (dt == ECFDataType::OPTION)
+    {
+        return 0;
+    }
+    else if (dt == ECFDataType::ENUM_FLAGS)
+    {
+        return 0;
+    }
+    else if (dt == ECFDataType::BOOL)
+    {
+        return 0;
+    }
+    else 
+    {
+        ESINFO(GLOBAL_ERROR) << "Optimizer: Unknown parameter";
+        return 0;
+    }
+}
+
+double ParameterManager::getParameterMax(int id)
+{
+    ECFParameter* p = this->m_params[id];
+    ECFDataType dt = p->metadata.datatype.front();
+    
+    if (dt == ECFDataType::INTEGER)
+    {
+        return INT_MAX;
+    }
+    else if (dt == ECFDataType::POSITIVE_INTEGER)
+    {
+        return INT_MAX;
+    }
+    else if (dt == ECFDataType::NONNEGATIVE_INTEGER)
+    {
+        return INT_MAX;
+    }
+    else if (dt == ECFDataType::OPTION)
+    {
+        int size = p->metadata.options.size();
+        return size - 1;
+    }
+    else if (dt == ECFDataType::ENUM_FLAGS)
+    {
+        int size = p->metadata.options.size();
+        return size - 1;
+    }
+    else if (dt == ECFDataType::BOOL)
+    {
+        return 1;
+    }
+    else 
+    {
+        ESINFO(GLOBAL_ERROR) << "Optimizer: Unknown parameter";
+        return 0;
+    }
+}
+
 OptimizationProxy::OptimizationProxy(
     std::vector<ECFParameter*>& parameters,
     const OptimizationConfiguration& configuration
@@ -209,6 +284,10 @@ m_manager(parameters, configuration.population, configuration.rounding_immediate
         break;
     case OptimizationConfiguration::ALGORITHM::RANDOM:
         this->m_alg = new RandomAlgorithm(m_manager);
+        break;
+    case OptimizationConfiguration::ALGORITHM::ALL_PERMUTATIONS:
+        this->m_alg = new AllPermutationsAlgorithm(m_manager);
+        break;
     default:;
     }
 }

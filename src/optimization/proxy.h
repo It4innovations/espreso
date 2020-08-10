@@ -28,6 +28,8 @@ public:
     double generateDecimal();
     std::vector<double> generateConfiguration();
     double checkParameter(int id, double value);
+    double getParameterMin(int id);
+    double getParameterMax(int id);
 
 private:
     std::vector<ECFParameter*>& m_params;

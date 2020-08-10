@@ -38,6 +38,20 @@ private:
     std::vector<double> m_last;
 };
 
+class AllPermutationsAlgorithm : public EvolutionAlgorithm
+{
+public:
+    AllPermutationsAlgorithm(ParameterManager& manager);
+
+    std::vector<double> getCurrentSpecimen() override;
+    void evaluateCurrentSpecimen(double value) override;
+
+private:
+    int m_dimension;
+    std::vector<double> m_last;
+    bool m_is_first;
+};
+
 class PSOAlgorithm : public EvolutionAlgorithm
 {
 public:

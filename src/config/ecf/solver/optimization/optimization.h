@@ -48,7 +48,8 @@ struct OptimizationConfiguration : public ECFObject
     	DIFFERENTIAL_EVOLUTION,
     	SOMAT3A,
 		SOMA,
-		RANDOM
+		RANDOM,
+		ALL_PERMUTATIONS
 	};
 
 	ALGORITHM algorithm;
