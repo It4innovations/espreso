@@ -3,25 +3,14 @@
 #include "conditions.h"
 #include "esinfo/eslog.hpp"
 
+#include <sstream>
+
 using namespace espreso;
 
-std::string SIUnit::unit() const
+Unit& Unit::add(UnitLibrary unit, int exponent)
 {
-	auto exponent = [] (const std::string &value, int exponent) {
-		if (exponent == 0) {
-			return std::string();
-		}
-		return value + std::to_string(exponent);
-	};
-
-	return
-			exponent("m", metre) +
-			exponent("kg", kilogram) +
-			exponent("s", second) +
-			exponent("A", ampere) +
-			exponent("K", kelvin) +
-			exponent("mol", mole) +
-			exponent("cd", candela);
+	this->elements.push_back({unit, exponent});
+	return *this;
 }
 
 void ECFMetaData::checkdescription(const std::string &name, size_t size) const
@@ -50,6 +39,11 @@ ECFMetaData& ECFMetaData::addconstraint(const ECFAbstractCondition &condition)
 	delete this->condition; this->condition = condition.copy(); return *this; 
 }
 
+ECFMetaData& ECFMetaData::removeconstraint() 
+{ 
+	delete this->condition; this->condition = new ECFCondition(); return *this; 
+}
+
 template <typename TType>
 static std::vector<TType> getsuffix(size_t start, const std::vector<TType> &data)
 {
@@ -69,7 +63,9 @@ ECFMetaData ECFMetaData::suffix(size_t start) const
 	return ret;
 }
 
-ECFMetaData::ECFMetaData(): visibleObjectName(false), tensor(NULL), tensor_row(-1), tensor_column(-1)
+ECFMetaData::ECFMetaData(): visibleObjectName(false), tensor(NULL), 
+tensor_row(-1), tensor_column(-1), exporting(true), range_begin(0), 
+range_end(0), gui_type(ECFGUIType::STATIC)
 {
 	condition = new ECFCondition();
 	isallowed = [] () { return true; };
@@ -83,7 +79,9 @@ ECFMetaData::ECFMetaData(const ECFMetaData &other)
   visibleObjectName(other.visibleObjectName),
   tensor(other.tensor), tensor_row(other.tensor_row),
   tensor_column(other.tensor_column), tensors(other.tensors),
-  unit(other.unit), condition(other.condition->copy()),
+  unit(other.unit), exporting(other.exporting), range_begin(other.range_begin),
+  range_end(other.range_end), gui_type(other.gui_type),
+  condition(other.condition->copy()),
   isallowed(other.isallowed), ismandatory(other.ismandatory)
 {
 
@@ -96,7 +94,9 @@ ECFMetaData::ECFMetaData(ECFMetaData &&other)
   visibleObjectName(other.visibleObjectName),
   tensor(std::move(other.tensor)), tensor_row(other.tensor_row),
   tensor_column(other.tensor_column), tensors(other.tensors),
-  unit(std::move(other.unit)), condition(other.condition),
+  unit(std::move(other.unit)), exporting(other.exporting), range_begin(other.range_begin),
+  range_end(other.range_end), gui_type(other.gui_type),
+  condition(other.condition),
   isallowed(std::move(other.isallowed)), ismandatory(std::move(other.ismandatory))
 {
 	other.condition = NULL;
@@ -116,6 +116,10 @@ ECFMetaData& ECFMetaData::operator=(const ECFMetaData &other)
 		tensor_column = other.tensor_column;
 		tensors = other.tensors;
 		unit = other.unit;
+		exporting = other.exporting;
+		range_begin = other.range_begin;
+		range_end = other.range_end;
+		gui_type = other.gui_type;
 		isallowed = other.isallowed;
 		ismandatory = other.ismandatory;
 		if (condition != NULL) {

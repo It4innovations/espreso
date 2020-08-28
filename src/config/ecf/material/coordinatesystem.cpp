@@ -33,7 +33,8 @@ CoordinateSystemConfiguration::CoordinateSystemConfiguration(DIMENSION *D)
 	REGISTER(center, ECFMetaData()
 			.setname("Position")
 			.setdescription({ "A center of the material." })
-			.displayObjectName()
+			.displayobjectname()
+			.setgroup()
 			.allowonly([&] () { return type != TYPE::CARTESIAN; })
 			.addconstraint(ECFCondition(type, ECFCondition::NOT_EQUALS, TYPE::CARTESIAN)));
 	
@@ -42,7 +43,8 @@ CoordinateSystemConfiguration::CoordinateSystemConfiguration(DIMENSION *D)
 	REGISTER(rotation, ECFMetaData()
 			.setname("Rotation")
 			.setdescription({ "A rotation of the material." })
-			.displayObjectName()
+			.displayobjectname()
+			.setgroup()
 			.allowonly([&] () { return type == TYPE::CARTESIAN; })
 			.addconstraint(ECFCondition(type, ECFCondition::EQUALS, TYPE::CARTESIAN)));
 }

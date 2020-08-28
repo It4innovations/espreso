@@ -288,6 +288,7 @@ def build(ctx):
     if ctx.env["HAVE_MATH"]:
         espreso += build(feti, "feti", [ "SOLVER", "PARDISO", "MKL" ])
 
+    ctx.program(source="src/app/ecfexport.cpp", target="ecfexport", use=checker)
     ctx.program(source="src/app/ecfchecker.cpp", target="ecfchecker", use=checker)
     ctx.program(source="src/app/mesio.cpp", target="mesio", use=mesio, stlib=ctx.options.stlibs, lib=ctx.options.libs)
     if ctx.env["HAVE_MATH"]:

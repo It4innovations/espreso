@@ -39,9 +39,24 @@ std::string ECFCondition::compose() const
 	
 	std::stringstream ss;
 
-	if (!this->prefix.empty()) { ss << this->prefix << ":"; }
-	ss << ecfparameter->name << " ";
+	// LEFT OPERAND
+	if (!this->prefix.empty()) { ss << this->prefix << "."; }
+	ss << ecfparameter->name;
 
+	// OPERATOR
+	switch (this->operation)
+	{
+	case EQUALS:
+		ss << " == ";
+		break;
+	case NOT_EQUALS:
+		ss << " != ";
+		break;
+	default:
+		ss << " == ";
+	}
+
+	// RIGHT OPERAND
 	switch (ecfparameter->metadata.datatype.front()) {
 	case ECFDataType::ENUM_FLAGS:
 		ss
@@ -49,30 +64,16 @@ std::string ECFCondition::compose() const
 			.options[
 				dynamic_cast<const EnumValue*>(value)->index() / 2
 			]
-			.name 
-		<< " ";
+			.name;
 		break;
 	case ECFDataType::OPTION:
 		ss
 		<< ecfparameter->metadata
 			.options[dynamic_cast<const EnumValue*>(value)->index()]
-			.name 
-		<< " ";
+			.name;
 		break;
 	default:
-		ss << value->tostring() << " ";
-	}
-
-	switch (this->operation)
-	{
-	case EQUALS:
-		ss << "==";
-		break;
-	case NOT_EQUALS:
-		ss << "!=";
-		break;
-	default:
-		ss << "==";
+		ss << value->tostring();
 	}
 
 	return ss.str();
@@ -99,9 +100,13 @@ void ECFConditionPair::bind(
 std::string ECFConditionPair::compose() const
 {
 	std::stringstream ss;
-	ss << this->left->compose() << " " << this->right->compose() << " ";
+	// LEFT OPERAND
+	ss << "(" << this->left->compose() << " ";
+	// OPERATOR
 	if (this->operation == AND) ss << "&&";
 	else ss << "||";
+	// RIGHT OPERAND
+	ss << " " << this->right->compose() << ")";
 
 	return ss.str();
 }

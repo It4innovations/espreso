@@ -174,43 +174,51 @@ HeatTransferLoadStepConfiguration::HeatTransferLoadStepConfiguration(DIMENSION *
 	REGISTER(temperature, ECFMetaData()
 			.setdescription({ "The name of a region.", "Temperature" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "MY_REGION", "273.15" }),
+			.setpattern({ "MY_REGION", "273.15" })
+			.setdynamic(),
 			ECFMetaData::getboundaryconditionvariables());
 	REGISTER(heat_source, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat source" })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "MY_REGION", "273.15" }),
+			.setpattern({ "MY_REGION", "273.15" })
+			.setdynamic(),
 			ECFMetaData::getboundaryconditionvariables());
 	REGISTER(translation_motions, ECFMetaData()
 			.setdescription({ "The name of a region.", "Translation motion" })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })
-			.setpattern({ "MY_REGION" }),
+			.setpattern({ "MY_REGION" })
+			.setdynamic(),
 			D, ECFMetaData::getboundaryconditionvariables(), "0");
 
 	REGISTER(heat_flux, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat flux" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "MY_REGION", "500" }),
+			.setpattern({ "MY_REGION", "500" })
+			.setdynamic(),
 			ECFMetaData::getboundaryconditionvariables());
 	REGISTER(heat_flow, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat flow" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "MY_REGION", "500" }),
+			.setpattern({ "MY_REGION", "500" })
+			.setdynamic(),
 			ECFMetaData::getboundaryconditionvariables());
 
 	REGISTER(bio_heat, ECFMetaData()
 			.setdescription({ "The name of a region.", "Bio heat" })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })
-			.setpattern({ "MY_REGION" }));
+			.setpattern({ "MY_REGION" })
+			.setdynamic());
 
 	REGISTER(convection, ECFMetaData()
 			.setdescription({ "The name of a region.", "Convection" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
-			.setpattern({ "MY_REGION" }));
+			.setpattern({ "MY_REGION" })
+			.setdynamic());
 	REGISTER(diffuse_radiation, ECFMetaData()
 			.setdescription({ "The name of a region.", "Diffuse radiation" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
-			.setpattern({ "MY_REGION" }));
+			.setpattern({ "MY_REGION" })
+			.setdynamic());
 
 	REGISTER(human_thermoregulation_system, ECFMetaData()
 			.setdescription({  "human thermoregulation system settings" }));
@@ -277,22 +285,26 @@ HeatTransferGlobalSettings::HeatTransferGlobalSettings(ECFObject *ecfdescription
 			.setdescription({ "Inconsistent stabilization" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("SUPG").setdescription("SUPG stabilization"))
-			.addoption(ECFOption().setname("CAU").setdescription("CAU stabilization")));
+			.addoption(ECFOption().setname("CAU").setdescription("CAU stabilization"))
+			.setform());
 
 	sigma = 0;
 	REGISTER(sigma, ECFMetaData()
 			.setdescription({ "Inconsistent stabilization parameter" })
-			.setdatatype({ ECFDataType::FLOAT }));
+			.setdatatype({ ECFDataType::FLOAT })
+			.setform());
 
 	init_temp_respect_bc = true;
 	REGISTER(init_temp_respect_bc, ECFMetaData()
 			.setdescription({ "Initial temperature follows BC" })
-			.setdatatype({ ECFDataType::BOOL }));
+			.setdatatype({ ECFDataType::BOOL })
+			.setform());
 
 	diffusion_split = false;
 	REGISTER(diffusion_split, ECFMetaData()
 			.setdescription({ "Thermal shock stabilization" })
-			.setdatatype({ ECFDataType::BOOL }));
+			.setdatatype({ ECFDataType::BOOL })
+			.setform());
 }
 
 HeatTransferConfiguration::HeatTransferConfiguration(DIMENSION d)
@@ -303,7 +315,8 @@ HeatTransferConfiguration::HeatTransferConfiguration(DIMENSION d)
 	REGISTER(load_steps_settings, ECFMetaData()
 			.setdescription({ "Settings for each load step", "LoadStep" })
 			.setdatatype({ ECFDataType::LOAD_STEP })
-			.setpattern({ "1" }),
+			.setpattern({ "1" })
+			.setdynamic(),
 			&dimension);
 }
 

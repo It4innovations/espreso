@@ -29,10 +29,7 @@ enum class ECFDataType {
 	TENSOR,
 	INTERVAL,
 	SPACE,
-	SEPARATOR,
-	BEGINBLOCK,
-	ENDBLOCK,
-	BEGINCOLLAPSEBLOCK
+	SEPARATOR
 };
 
 enum class DIMENSION {
@@ -54,16 +51,37 @@ struct ECFOption {
 	ECFOption() { isallowed = [] () { return true; }; }
 };
 
-struct SIUnit {
-	int metre, kilogram, second, ampere, kelvin, mole, candela;
+struct Unit {
 
-	SIUnit(): metre(0), kilogram(0), second(0), ampere(0), kelvin(0), mole(0), candela(0) {}
+	enum class UnitLibrary {
+		METRE,
+		KILOGRAM,
+		SECOND,
+		AMPERE,
+		KELVIN,
+		MOLE,
+		CANDELA,
+		PASCAL
+	};
 
-	SIUnit(int metre, int kilogram, int second, int ampere, int kelvin, int mole, int candela)
-	: metre(metre), kilogram(kilogram), second(second), ampere(ampere), kelvin(kelvin), mole(mole), candela(candela)
-	{}
+	struct UnitElement {
+		UnitLibrary unit;
+		int exponent;
+	};
 
-	std::string unit() const;
+	std::vector<UnitElement> elements;
+
+	Unit() {}
+
+	Unit& add(UnitLibrary unit, int exponent);
+};
+
+enum class ECFGUIType {
+	GROUP_BLOCK,
+	GROUP_COLLAPSED,
+	STATIC,
+	DYNAMIC,
+	FORM
 };
 
 
@@ -79,7 +97,11 @@ struct ECFMetaData {
 	int tensor_row;
 	int tensor_column;
 	std::vector<TensorConfiguration*> tensors;
-	SIUnit unit;
+	Unit unit;
+	bool exporting;
+	int range_begin;
+	int range_end;
+	ECFGUIType gui_type;
 
 	ECFAbstractCondition *condition;
 
@@ -91,16 +113,24 @@ struct ECFMetaData {
 	ECFMetaData& setdatatype(const std::vector<ECFDataType> &datatype) { this->datatype = datatype; return *this; }
 	ECFMetaData& setpattern(const std::vector<std::string> &pattern) { this->pattern = pattern; return *this; }
 	ECFMetaData& setvariables(const std::vector<std::string> &variables) { this->variables = variables; return *this; }
+	ECFMetaData& setrange(int begin, int end) { this->range_begin = begin; this->range_end = end; return *this; }
 	ECFMetaData& settensor(TensorConfiguration &tensor) { this->tensor = &tensor; return *this; }
 	ECFMetaData& settensor(TensorConfiguration &tensor, int row, int column) 
 	{ this->tensor = &tensor; this->tensor_row = row; this->tensor_column = column; return *this; }
-	ECFMetaData& registerTensor(TensorConfiguration& tensor)
+	ECFMetaData& registertensor(TensorConfiguration& tensor)
 	{ this->tensors.push_back(&tensor); return *this; }
-	ECFMetaData& setunit(const SIUnit &unit) { this->unit = unit; return *this; }
-	ECFMetaData& displayObjectName() { this->visibleObjectName = true; return *this; }
+	ECFMetaData& setunit(const Unit &unit) { this->unit = unit; return *this; }
+	ECFMetaData& setcollapsed() { this->gui_type = ECFGUIType::GROUP_COLLAPSED; return *this; }
+	ECFMetaData& displayobjectname() { this->visibleObjectName = true; return *this; }
+	ECFMetaData& noexport() { this->exporting = false; return *this; }
 	ECFMetaData& allowonly(std::function<bool(void)> isallowed) { this->isallowed = isallowed; return *this; }
 	ECFMetaData& mandatoryonly(std::function<bool(void)> ismandatory) { this->ismandatory = ismandatory; return *this; }
 	ECFMetaData& addconstraint(const ECFAbstractCondition &condition);
+	ECFMetaData& removeconstraint();
+	ECFMetaData& setdynamic() { this->gui_type = ECFGUIType::DYNAMIC; return *this; }
+	ECFMetaData& setgroup() { this->gui_type = ECFGUIType::GROUP_BLOCK; return *this; }
+	ECFMetaData& setform() { this->gui_type = ECFGUIType::FORM; return *this; }
+
 
 	ECFMetaData& addoption(const ECFOption &option) { options.push_back(option); return *this; }
 

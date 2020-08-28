@@ -45,8 +45,8 @@ struct GeneralValueHolder: public GeneralValue {
 template<>
 inline std::string GeneralValueHolder<bool>::tostring() const
 {
-	if (this->value) return "TRUE";
-	else return "FALSE";
+	if (this->value) return "1";
+	else return "0";
 }
 
 
