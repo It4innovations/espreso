@@ -59,18 +59,20 @@ std::string ECFCondition::compose() const
 	// RIGHT OPERAND
 	switch (ecfparameter->metadata.datatype.front()) {
 	case ECFDataType::ENUM_FLAGS:
-		ss
+		ss << "'"
 		<< ecfparameter->metadata
 			.options[
 				dynamic_cast<const EnumValue*>(value)->index() / 2
 			]
-			.name;
+			.name
+		<< "'";
 		break;
 	case ECFDataType::OPTION:
-		ss
+		ss << "'"
 		<< ecfparameter->metadata
 			.options[dynamic_cast<const EnumValue*>(value)->index()]
-			.name;
+			.name
+		<< "'";
 		break;
 	default:
 		ss << value->tostring();
