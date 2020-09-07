@@ -81,6 +81,7 @@ ECFMetaData::ECFMetaData(const ECFMetaData &other)
   tensor_column(other.tensor_column), tensors(other.tensors),
   unit(other.unit), exporting(other.exporting), range_begin(other.range_begin),
   range_end(other.range_end), gui_type(other.gui_type),
+  pattern_name(other.pattern_name), pattern_item_name(other.pattern_item_name),
   condition(other.condition->copy()),
   isallowed(other.isallowed), ismandatory(other.ismandatory)
 {
@@ -95,9 +96,10 @@ ECFMetaData::ECFMetaData(ECFMetaData &&other)
   tensor(std::move(other.tensor)), tensor_row(other.tensor_row),
   tensor_column(other.tensor_column), tensors(other.tensors),
   unit(std::move(other.unit)), exporting(other.exporting), range_begin(other.range_begin),
-  range_end(other.range_end), gui_type(other.gui_type),
-  condition(other.condition),
-  isallowed(std::move(other.isallowed)), ismandatory(std::move(other.ismandatory))
+  range_end(other.range_end), gui_type(other.gui_type), 
+  pattern_name(other.pattern_name), pattern_item_name(other.pattern_item_name),
+  condition(other.condition), isallowed(std::move(other.isallowed)), 
+  ismandatory(std::move(other.ismandatory))
 {
 	other.condition = NULL;
 }
@@ -120,6 +122,8 @@ ECFMetaData& ECFMetaData::operator=(const ECFMetaData &other)
 		range_begin = other.range_begin;
 		range_end = other.range_end;
 		gui_type = other.gui_type;
+		pattern_name = other.pattern_name;
+		pattern_item_name = other.pattern_item_name;
 		isallowed = other.isallowed;
 		ismandatory = other.ismandatory;
 		if (condition != NULL) {

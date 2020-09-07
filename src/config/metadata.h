@@ -102,6 +102,8 @@ struct ECFMetaData {
 	int range_begin;
 	int range_end;
 	ECFGUIType gui_type;
+	std::string pattern_name;
+	std::string pattern_item_name;
 
 	ECFAbstractCondition *condition;
 
@@ -130,6 +132,8 @@ struct ECFMetaData {
 	ECFMetaData& setdynamic() { this->gui_type = ECFGUIType::DYNAMIC; return *this; }
 	ECFMetaData& setgroup() { this->gui_type = ECFGUIType::GROUP_BLOCK; return *this; }
 	ECFMetaData& setform() { this->gui_type = ECFGUIType::FORM; return *this; }
+	ECFMetaData& setpatternname(const std::string &name) { this->pattern_name = name; return *this; }
+	ECFMetaData& setpatternitemname(const std::string &name) { this->pattern_item_name = name; return *this; }
 
 
 	ECFMetaData& addoption(const ECFOption &option) { options.push_back(option); return *this; }

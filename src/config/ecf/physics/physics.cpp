@@ -50,14 +50,17 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dim, MaterialConfi
 			.setdescription({ "The name of a material.", "Material description" })
 			.setdatatype({ ECFDataType::STRING })
 			.setpattern({ "MY_MATERIAL" })
-			.setdynamic(),
+			.setdynamic()
+			.setpatternname("Material"),
 			&dimension, physicalModel);
 
 	REGISTER(material_set, ECFMetaData()
+			.setname("Material set")
 			.setdescription({ "The name of a region.", "The name of a material." })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::MATERIAL })
 			.setpattern({ "MY_REGION", "MY_MATERIAL" })
-			.setdynamic());
+			.setdynamic()
+			.setpatternitemname("Material"));
 
 	ecfdescription->addSeparator()->metadata.noexport();
 
