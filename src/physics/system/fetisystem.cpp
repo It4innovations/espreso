@@ -426,6 +426,18 @@ void FETISolverData::printData(const Builder *builder, const char* prefix)
 			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("K") + std::to_string(d)));
 			os << K[d];
 		}
+		for (esint d = 0; d < RegMat.domains; ++d) {
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("RegMat") + std::to_string(d)));
+			os << RegMat[d];
+		}
+		for (esint d = 0; d < N1.domains; ++d) {
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("N1") + std::to_string(d)));
+			os << N1[d];
+		}
+		for (esint d = 0; d < N2.domains; ++d) {
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("N2") + std::to_string(d)));
+			os << N2[d];
+		}
 		for (esint d = 0; d < B1Dirichlet.domains; ++d) {
 			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("B1Dirichlet") + std::to_string(d)));
 			os << B1Dirichlet[d];
