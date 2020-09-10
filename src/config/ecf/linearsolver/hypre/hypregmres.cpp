@@ -38,16 +38,20 @@ HYPREGMRESConfiguration::HYPREGMRESConfiguration()
 			.addoption(ECFOption().setname("NONE").setdescription("Solver without preconditioner")));
 
 	REGISTER(boomeramg, ECFMetaData()
-			.setdescription({ "BoomerAMG settings." }));
+			.setdescription({ "BoomerAMG settings." })
+			.setcollapsed());
 
 	REGISTER(parasails, ECFMetaData()
-			.setdescription({ "ParaSails settings." }));
+			.setdescription({ "ParaSails settings." })
+			.setcollapsed());
 
 	REGISTER(euclid, ECFMetaData()
-			.setdescription({ "Euclid settings." }));
+			.setdescription({ "Euclid settings." })
+			.setcollapsed());
 
 	REGISTER(pilut, ECFMetaData()
-			.setdescription({ "Pilut settings." }));
+			.setdescription({ "Pilut settings." })
+			.setcollapsed());
 
 	solver_info = SOLVER_INFO::NO_INFO;
 	REGISTER(solver_info, ECFMetaData()

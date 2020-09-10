@@ -221,7 +221,8 @@ HeatTransferLoadStepConfiguration::HeatTransferLoadStepConfiguration(DIMENSION *
 			.setdynamic());
 
 	REGISTER(human_thermoregulation_system, ECFMetaData()
-			.setdescription({  "human thermoregulation system settings" }));
+			.setdescription({  "human thermoregulation system settings" })
+			.setcollapsed());
 
 }
 

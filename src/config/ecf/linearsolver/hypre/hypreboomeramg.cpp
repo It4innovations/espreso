@@ -174,7 +174,8 @@ HYPREBoomerAMGConfiguration::HYPREBoomerAMGConfiguration()
 			.setdatatype({ ECFDataType::BOOL }));
 
 	REGISTER(cycle_relax_type, ECFMetaData()
-			.setdescription({ "Defines the smoother at a given cycle"}));
+			.setdescription({ "Defines the smoother at a given cycle"})
+			.setcollapsed());
 
 	relax_order = 1;
 	REGISTER(relax_order, ECFMetaData()
@@ -192,7 +193,8 @@ HYPREBoomerAMGConfiguration::HYPREBoomerAMGConfiguration()
 			.setdatatype({ ECFDataType::BOOL }));	
 
 	REGISTER(cycle_sweep_spec, ECFMetaData()
-			.setdescription({ "Sets the number of sweeps at a specified cycle"}));
+			.setdescription({ "Sets the number of sweeps at a specified cycle"})
+			.setcollapsed());
 
 
 	level_relax_weight = 1.0;

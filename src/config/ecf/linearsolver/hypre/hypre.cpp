@@ -20,25 +20,32 @@ HYPREConfiguration::HYPREConfiguration()
 			.addoption(ECFOption().setname("CGNR").setdescription("Conjugate Gradient Method on the Normal Equations")));
 
 	REGISTER(boomeramg, ECFMetaData()
-		.setdescription({ "BoomerAMG settings." }));
+		.setdescription({ "BoomerAMG settings." })
+		.setcollapsed());
 
 	REGISTER(pcg, ECFMetaData()
-		.setdescription({ "PCG settings." }));
+		.setdescription({ "PCG settings." })
+		.setcollapsed());
 
 	REGISTER(gmres, ECFMetaData()
-		.setdescription({ "GMRES settings." }));
+		.setdescription({ "GMRES settings." })
+		.setcollapsed());
 
 	REGISTER(flexgmres, ECFMetaData()
-		.setdescription({ "FlexGMRES settings." }));
+		.setdescription({ "FlexGMRES settings." })
+		.setcollapsed());
 
 	REGISTER(lgmres, ECFMetaData()
-		.setdescription({ "LGMRES settings." }));
+		.setdescription({ "LGMRES settings." })
+		.setcollapsed());
 
 	REGISTER(bicgstab, ECFMetaData()
-		.setdescription({ "BiCGSTAB settings." }));
+		.setdescription({ "BiCGSTAB settings." })
+		.setcollapsed());
 
 	REGISTER(cgnr, ECFMetaData()
-		.setdescription({ "CGNR settings." }));
+		.setdescription({ "CGNR settings." })
+		.setcollapsed());
 
 }
 

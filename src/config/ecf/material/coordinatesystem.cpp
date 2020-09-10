@@ -28,7 +28,7 @@ CoordinateSystemConfiguration::CoordinateSystemConfiguration(DIMENSION *D)
 			.addoption(ECFOption().setname("CYLINDRICAL").setdescription("Cylindrical system."))
 			.addoption(ECFOption().setname("SPHERICAL").setdescription("Spherical system.").allowonly([&] () { return *dimension == DIMENSION::D3; })));
 
-	ecfdescription->addSeparator()->metadata.addconstraint(ECFCondition(type, ECFCondition::NOT_EQUALS, TYPE::CARTESIAN));
+	ecfdescription->addSeparator()->metadata.noexport();
 
 	REGISTER(center, ECFMetaData()
 			.setname("Position")
@@ -38,7 +38,7 @@ CoordinateSystemConfiguration::CoordinateSystemConfiguration(DIMENSION *D)
 			.allowonly([&] () { return type != TYPE::CARTESIAN; })
 			.addconstraint(ECFCondition(type, ECFCondition::NOT_EQUALS, TYPE::CARTESIAN)));
 	
-	ecfdescription->addSeparator()->metadata.addconstraint(ECFCondition(type, ECFCondition::EQUALS, TYPE::CARTESIAN));
+	ecfdescription->addSeparator()->metadata.noexport();
 
 	REGISTER(rotation, ECFMetaData()
 			.setname("Rotation")

@@ -55,8 +55,12 @@ TopologyOptimizationSolverSettings::TopologyOptimizationSolverSettings()
 			.setdescription({ "Penalty factor." })
 			.setdatatype({ ECFDataType::FLOAT }));
 
-	REGISTER(oc, ECFMetaData().setdescription({ "OC solver settings." }));
-	REGISTER(mma, ECFMetaData().setdescription({ "MMA solver settings." }));
+	REGISTER(oc, ECFMetaData()
+		.setdescription({ "OC solver settings." })
+		.setcollapsed());
+	REGISTER(mma, ECFMetaData()
+		.setdescription({ "MMA solver settings." })
+		.setcollapsed());
 }
 
 TopologyOptimizationConstraint::TopologyOptimizationConstraint()
@@ -76,6 +80,7 @@ TopologyOptimizationConstraint::TopologyOptimizationConstraint()
 	REGISTER(preset_regions, ECFMetaData()
 		.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::OPTION })
 		.setdescription({ "Regions with fixed design variable.", "Preset value." })
+		.setdynamic()
 		.setpattern({ "MY_REGION", "SOLID" })
 		.addoption(ECFOption().setname("SOLID").setdescription("Solid region."))
 		.addoption(ECFOption().setname("VOID").setdescription("Void region.")));
@@ -98,14 +103,24 @@ TopologyOptimizationFiltering::TopologyOptimizationFiltering()
 	REGISTER(radius, ECFMetaData()
 			.setdescription({ "Radius." })
 			.setdatatype({ ECFDataType::FLOAT }));
-	REGISTER(density, ECFMetaData().setdescription({ "Filtering density." }));
+	REGISTER(density, ECFMetaData()
+		.setdescription({ "Filtering density." })
+		.setgroup());
 }
 
 TopologyOptimizationConfiguration::TopologyOptimizationConfiguration()
 {
-	REGISTER(solver_settings, ECFMetaData().setdescription({ "Topology optimization solver settings." }));
-	REGISTER(constraint, ECFMetaData().setdescription({ "Topology optimization constraint." }));
-	REGISTER(filtering, ECFMetaData().setdescription({ "Topology optimization filtering." }));
+	REGISTER(solver_settings, ECFMetaData()
+		.setdescription({ "Topology optimization solver settings." })
+		.setcollapsed());
+	
+	REGISTER(constraint, ECFMetaData()
+		.setdescription({ "Topology optimization constraint." })
+		.setcollapsed());
+	
+	REGISTER(filtering, ECFMetaData()
+		.setdescription({ "Topology optimization filtering." })
+		.setcollapsed());
 }
 
 LoadStepSolverConfiguration::LoadStepSolverConfiguration()
@@ -148,25 +163,32 @@ LoadStepSolverConfiguration::LoadStepSolverConfiguration()
 
 	REGISTER(topology_optimization_settings, ECFMetaData()
 			.setdescription({ "Topology optimization settings." })
+			.setcollapsed()
 			.allowonly([&] () { return topology_optimization; }));
 
 	REGISTER(feti, ECFMetaData()
 			.setdescription({ "FETI solver settings" })
+			.setcollapsed()
 			.allowonly([&] () { return solver == SOLVER::FETI; }));
 	REGISTER(hypre, ECFMetaData()
 			.setdescription({ "HYPRE multigrid solver settings" })
+			.setcollapsed()
 			.allowonly([&] () { return solver == SOLVER::HYPRE; }));
 	REGISTER(mklpdss, ECFMetaData()
 			.setdescription({ "MKL parallel direct sparse solver" })
+			.noexport()
 			.allowonly([&] () { return solver == SOLVER::MKLPDSS; }));
 	REGISTER(pardiso, ECFMetaData()
 			.setdescription({ "PARDISO direct solver" })
+			.noexport()
 			.allowonly([&] () { return solver == SOLVER::PARDISO; }));
 	REGISTER(superlu, ECFMetaData()
 			.setdescription({ "SuperLU_DIST direct sparse solver" })
+			.setcollapsed()
 			.allowonly([&] () { return solver == SOLVER::SUPERLU; }));
 	REGISTER(wsmp, ECFMetaData()
 			.setdescription({ "WSMP direct sparse solver" })
+			.noexport()
 			.allowonly([&] () { return solver == SOLVER::WSMP; }));
 }
 
@@ -175,10 +197,12 @@ HeatTransferLoadStepSolverConfiguration::HeatTransferLoadStepSolverConfiguration
 {
 	REGISTER(nonlinear_solver, ECFMetaData()
 			.setdescription({ "Non-linear physics solver settings" })
+			.setgroup()
 			.allowonly([&] () { return mode == MODE::NONLINEAR; }));
 
 	REGISTER(transient_solver, ECFMetaData()
 			.setdescription({ "Transient physics solver settings" })
+			.setgroup()
 			.allowonly([&] () { return type == TYPE::TRANSIENT; }));
 }
 

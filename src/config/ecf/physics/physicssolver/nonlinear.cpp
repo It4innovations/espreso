@@ -11,7 +11,7 @@ espreso::NonLinearSolverConfiguration::NonLinearSolverConfiguration(const std::s
 			.addoption(ECFOption().setname("NEWTON_RAPHSON").setdescription("Newton-Raphson."))
 			.addoption(ECFOption().setname("MODIFIED_NEWTON_RAPHSON").setdescription("Newton-Raphson without re-assembling of stiffness matrices.")));
 
-	ecfdescription->addSpace();
+	ecfdescription->addSpace()->metadata.noexport();
 
 	check_first_residual = true;
 	check_second_residual = false;
@@ -50,7 +50,7 @@ espreso::NonLinearSolverConfiguration::NonLinearSolverConfiguration(const std::s
 			.setdescription({ "Maximum iterations" })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
-	ecfdescription->addSpace();
+	ecfdescription->addSpace()->metadata.noexport();
 
 	line_search = tangent_matrix_correction = adaptive_precision = false;
 	REGISTER(line_search, ECFMetaData()
@@ -63,7 +63,7 @@ espreso::NonLinearSolverConfiguration::NonLinearSolverConfiguration(const std::s
 			.setdescription({ "Adaptive precision" })
 			.setdatatype({ ECFDataType::BOOL }));
 
-	ecfdescription->addSpace();
+	ecfdescription->addSpace()->metadata.noexport();
 
 	r_tol = 0.1;
 	c_fact = 0.8;

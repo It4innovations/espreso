@@ -30,7 +30,8 @@ HYPRECGNRConfiguration::HYPRECGNRConfiguration()
 			.addoption(ECFOption().setname("NONE").setdescription("Solver without preconditioner")));
 
 	REGISTER(boomeramg, ECFMetaData()
-			.setdescription({ "BoomerAMG settings." }));
+			.setdescription({ "BoomerAMG settings." })
+			.setcollapsed());
 
 	solver_info = SOLVER_INFO::NO_INFO;
 	REGISTER(solver_info, ECFMetaData()

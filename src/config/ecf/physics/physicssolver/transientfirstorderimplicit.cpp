@@ -55,7 +55,7 @@ espreso::TransientFirstOrderImplicitSolverConfiguration::TransientFirstOrderImpl
 			.setdatatype({ ECFDataType::FLOAT })
 			.allowonly([&] () { return method == METHOD::USER; }));
 
-	ecfdescription->addSpace();
+	ecfdescription->addSpace()->metadata.noexport();
 
 	time_step = 0.1;
 	REGISTER(time_step, ECFMetaData()
@@ -63,7 +63,8 @@ espreso::TransientFirstOrderImplicitSolverConfiguration::TransientFirstOrderImpl
 			.setdatatype({ ECFDataType::FLOAT }));
 
 	REGISTER(auto_time_stepping, ECFMetaData()
-			.setdescription({ "Auto time stepping" }));
+			.setdescription({ "Auto time stepping" })
+			.setcollapsed());
 
 
 }
