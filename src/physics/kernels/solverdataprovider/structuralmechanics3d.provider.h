@@ -32,6 +32,7 @@ struct StructuralMechanics3DSolverDataProvider: public SolverDataProvider {
 		bool hasKernel(esint domain);
 		int initKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster);
 		void fillKernels(MatrixCSRFETI &K, MatrixCSRFETI &M, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster);
+		std::vector<Point> getWaveDirections(size_t dir_steps);
 
 		StructuralMechanicsLoadStepConfiguration &_configuration;
 		FETI(StructuralMechanicsLoadStepConfiguration &configuration): _configuration(configuration), _RegMat(NULL) {}

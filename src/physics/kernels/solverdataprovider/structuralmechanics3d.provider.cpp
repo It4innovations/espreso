@@ -189,10 +189,12 @@ int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 	_RegMat = new MatrixCSRFETI();
 	_RegMat->initDomains(info::mesh->elements->ndomains);
 
+	size_t num_directions = _configuration.feti.num_directions;
+
 	#pragma omp parallel for
 	for (esint d = 0; d < K.domains; ++d) {
 		if (hasKernel(d)) {
-			N1[d].resize(K[d].nrows, 6);
+			N1[d].resize(2 * K[d].nrows, 6 * num_directions);
 		}
 	}
 	return 6;
@@ -200,28 +202,235 @@ int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 
 void StructuralMechanics3DSolverDataProvider::FETI::fillKernels(MatrixCSRFETI &K, MatrixCSRFETI &M, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster)
 {
+	printf("fill kernels\n");
+
+	size_t num_directions = _configuration.feti.num_directions;
+/*
+	std::vector<Point> wave_directions {
+        Point{1, 0, 0},
+        Point{0, 1, 0},
+        Point{0, 0, 1},
+        Point{7.071067811865475e-01, 7.071067811865475e-01, 0.000000000000000e+00},
+        Point{7.071067811865475e-01, 0.000000000000000e+00, 7.071067811865475e-01},
+        Point{0.000000000000000e+00, 7.071067811865475e-01, 7.071067811865475e-01},
+        Point{5.773502691896258e-01, 5.773502691896258e-01, 5.773502691896258e-01}
+	};
+
+	std::vector<Point> As1 {
+        Point{0, 1, 0},
+        Point{-1, 0, 0},
+        Point{0, 1, 0},
+        Point{-7.071067811865475e-01, 7.071067811865476e-01, 0.000000000000000e+00},
+        Point{0, 1, 0},
+        Point{-7.071067811865476e-01, 4.999999999999999e-01, -5.000000000000001e-01},
+        Point{-5.773502691896258e-01, 7.886751345948129e-01, -2.113248654051872e-01}
+	};
+
+	std::vector<Point> As2 {
+        Point{0, 0, 1},
+        Point{0, 0, 1},
+        Point{-1, 0, 0},
+        Point{0, 0, 1},
+        Point{-7.071067811865475e-01, 0.000000000000000e+00, 7.071067811865476e-01},
+        Point{-7.071067811865476e-01, -5.000000000000001e-01, 4.999999999999999e-01},
+        Point{-5.773502691896258e-01, -2.113248654051872e-01, 7.886751345948129e-01}
+	};
+*/
+    std::vector<Point> wave_directions {
+        Point{1.000000, 0.000000, 0.000000},
+        Point{0.000000, 1.000000, 0.000000},
+        Point{0.000000, 0.000000, 1.000000},
+        Point{1.000000, 1.000000, 0.000000},
+        Point{1.000000, -1.000000, 0.000000},
+        Point{1.000000, 1.000000, 1.000000},
+        Point{-1.000000, 1.000000, 1.000000},
+        Point{1.000000, -1.000000, 1.000000},
+        Point{-1.000000, -1.000000, 1.000000},
+        Point{1.000000, 0.000000, 1.000000},
+        Point{-1.000000, 0.000000, 1.000000},
+        Point{0.000000, 1.000000, 1.000000},
+        Point{0.000000, -1.000000, 1.000000}
+    };
+
+    std::vector<Point> As1 {
+        Point{0.000000, 1.000000, 0.000000},
+        Point{-1.000000, 0.000000, 0.000000},
+        Point{0.000000, 1.000000, 0.000000},
+        Point{-0.707107, 0.707107, 0.000000},
+        Point{0.707107, 0.707107, 0.000000},
+        Point{-0.577350, 0.788675, -0.211325},
+        Point{0.577350, 0.788675, -0.211325},
+        Point{0.577350, 0.788675, 0.211325},
+        Point{-0.577350, 0.788675, 0.211325},
+        Point{0.000000, 1.000000, 0.000000},
+        Point{0.000000, 1.000000, 0.000000},
+        Point{-0.707107, 0.500000, -0.500000},
+        Point{0.707107, 0.500000, 0.500000}
+    };
+
+    std::vector<Point> As2 {
+        Point{0.000000, 0.000000, 1.000000},
+        Point{0.000000, 0.000000, 1.000000},
+        Point{-1.000000, 0.000000, 0.000000},
+        Point{0.000000, 0.000000, 1.000000},
+        Point{0.000000, 0.000000, 1.000000},
+        Point{-0.577350, -0.211325, 0.788675},
+        Point{0.577350, -0.211325, 0.788675},
+        Point{-0.577350, 0.211325, 0.788675},
+        Point{0.577350, 0.211325, 0.788675},
+        Point{-0.707107, 0.000000, 0.707107},
+        Point{0.707107, 0.000000, 0.707107},
+        Point{-0.707107, -0.500000, 0.500000},
+        Point{-0.707107, 0.500000, 0.500000}
+    };
+
+    double omega = 2*3.141592*100;
+//    std::FILE *fp = std::fopen("omega.txt", "r");
+//    std::fscanf(fp, "%lf", &omega);
+//    std::fclose(fp);
+    std::printf("omega = %f\n", omega);
+    //const double omega = std::sqrt(100.0) / (2*3.1415926);
+    double rho = 7850.0;
+    double nu = 0.3;
+    double E = 2e11;
+    // const double Lambda = (mu * (E - 2 * mu)) / (3 * mu - E);
+    // const double Lambda = (E * mu) / ((1.0 + mu)*(1.0 - 2.0 * mu));
+    //mu = E / (2.0*(1+mu));
+    double Lambda = E*nu / ((1.0+nu)*(1.0-2.0*nu));
+//    double mu = E*(1.0-nu) / ((1.0+nu)*(1.0-2.0*nu));
+    double mu = E / (2*(1.0+nu));
+
+    double kp = std::sqrt((rho * omega * omega) / (Lambda + 2.0 * mu));
+    double ks = std::sqrt((rho * omega * omega) / mu);
+
+    /*
+	std::printf("omega = %f\n", omega);
+	std::printf("rho = %f\n", rho);
+	std::printf("E = %f\n", E);
+    */
+    std::printf("mu = %f\n", mu);
+	std::printf("Lambda = %f\n", Lambda);
+
 	#pragma omp parallel for
 	for (esint d = 0; d < K.domains; ++d) {
 		if (hasKernel(d)) {
-			std::vector<double> kk(K[d].nrows * K[d].nrows), mm(K[d].nrows * K[d].nrows);
-			for (esint r = 0; r < K[d].nrows; ++r) {
-				for (esint c = K[d].rows[r] - 1; c < K[d].rows[r + 1] - 1; ++c) {
-					kk[r * K[d].ncols + K[d].cols[c] - 1] = K[d].vals[c];
-					mm[r * M[d].ncols + M[d].cols[c] - 1] = M[d].vals[c];
+			for (size_t i = 0; i < dnodes[d].size(); i++) {
+				Point p = info::mesh->nodes->coordinates->datatarray()[dnodes[d][i]];
+
+				for (size_t j = 0; j < num_directions; ++j) {
+					double tp = kp * (p * wave_directions[j]);
+					double ts = ks * (p * wave_directions[j]);
+
+					Point a0  = wave_directions[j];
+					Point s1 = As1[j];
+					Point s2 = As2[j];
+
+					// Re x
+					N1[d][6 * i + 0][6 * j + 0] = a0.x * std::cos(tp);
+					N1[d][6 * i + 0][6 * j + 1] = s1.x * std::cos(ts);
+					N1[d][6 * i + 0][6 * j + 2] = s2.x * std::cos(ts);
+
+					// - Im x
+					N1[d][6 * i + 0][6 * j + 3] = -a0.x * std::sin(tp);
+					N1[d][6 * i + 0][6 * j + 4] = -s1.x * std::sin(ts);
+					N1[d][6 * i + 0][6 * j + 5] = -s2.x * std::sin(ts);
+
+
+					// Re y
+					N1[d][6 * i + 1][6 * j + 0] = a0.y * std::cos(tp);
+					N1[d][6 * i + 1][6 * j + 1] = s1.y * std::cos(ts);
+					N1[d][6 * i + 1][6 * j + 2] = s2.y * std::cos(ts);
+
+					// - Im y
+					N1[d][6 * i + 1][6 * j + 3] = -a0.y * std::sin(tp);
+					N1[d][6 * i + 1][6 * j + 4] = -s1.y * std::sin(ts);
+					N1[d][6 * i + 1][6 * j + 5] = -s2.y * std::sin(ts);
+
+
+					// Re z
+					N1[d][6 * i + 2][6 * j + 0] = a0.z * std::cos(tp);
+					N1[d][6 * i + 2][6 * j + 1] = s1.z * std::cos(ts);
+					N1[d][6 * i + 2][6 * j + 2] = s2.z * std::cos(ts);
+
+					// - Im z
+					N1[d][6 * i + 2][6 * j + 3] = -a0.z * std::sin(tp);
+					N1[d][6 * i + 2][6 * j + 4] = -s1.z * std::sin(ts);
+					N1[d][6 * i + 2][6 * j + 5] = -s2.z * std::sin(ts);
+
+
+					// Im x
+					N1[d][6 * i + 3][6 * j + 0] = a0.x * std::sin(tp);
+					N1[d][6 * i + 3][6 * j + 1] = s1.x * std::sin(ts);
+					N1[d][6 * i + 3][6 * j + 2] = s2.x * std::sin(ts);
+
+					// Re x
+					N1[d][6 * i + 3][6 * j + 3] = a0.x * std::cos(tp);
+					N1[d][6 * i + 3][6 * j + 4] = s1.x * std::cos(ts);
+					N1[d][6 * i + 3][6 * j + 5] = s2.x * std::cos(ts);
+
+
+					// Im y
+					N1[d][6 * i + 4][6 * j + 0] = a0.y * std::sin(tp);
+					N1[d][6 * i + 4][6 * j + 1] = s1.y * std::sin(ts);
+					N1[d][6 * i + 4][6 * j + 2] = s2.y * std::sin(ts);
+
+					// Re y
+					N1[d][6 * i + 4][6 * j + 3] = a0.y * std::cos(tp);
+					N1[d][6 * i + 4][6 * j + 4] = s1.y * std::cos(ts);
+					N1[d][6 * i + 4][6 * j + 5] = s2.y * std::cos(ts);
+
+
+					// Im z
+					N1[d][6 * i + 5][6 * j + 0] = a0.z * std::sin(tp);
+					N1[d][6 * i + 5][6 * j + 1] = s1.z * std::sin(ts);
+					N1[d][6 * i + 5][6 * j + 2] = s2.z * std::sin(ts);
+
+					// Re z
+					N1[d][6 * i + 5][6 * j + 3] = a0.z * std::cos(tp);
+					N1[d][6 * i + 5][6 * j + 4] = s1.z * std::cos(ts);
+					N1[d][6 * i + 5][6 * j + 5] = s2.z * std::cos(ts);
 				}
 			}
-
-			int m, info, itype = 1, il = 1, iu = 6, lwork = -1, iwork = -1;
-			double abstol = 1e-6;
-			std::vector<double> work(1), E(K[d].nrows), X(K[d].nrows * 6), res(K[d].nrows);
-			std::vector<int> ifail(K[d].nrows);
-			dsygvx(&itype, "V", "I", "L", &K[d].nrows, kk.data(), &K[d].nrows, mm.data(), &K[d].nrows, NULL, NULL, &il, &iu, &abstol, &m, E.data(), X.data(), &K[d].nrows, work.data(), &lwork, &iwork, ifail.data(), &info);
-			work.resize(lwork = iwork = work.front());
-			dsygvx(&itype, "V", "I", "L", &K[d].nrows, kk.data(), &K[d].nrows, mm.data(), &K[d].nrows, NULL, NULL, &il, &iu, &abstol, &m, E.data(), X.data(), &K[d].nrows, work.data(), &lwork, &iwork, ifail.data(), &info);
-
-			N1[d].fillValues(X.data());
 		}
 	}
+}
+
+std::vector<Point> StructuralMechanics3DSolverDataProvider::FETI::getWaveDirections(size_t dir_steps)
+{
+	// number of points on the surface of the cube with a given number of steps
+	size_t num_direction_points = 6 * dir_steps * (dir_steps - 2) + 8;
+
+	std::vector<Point> wave_directions;
+	wave_directions.reserve(num_direction_points);
+
+	const double step_size = 2.0 / (dir_steps - 1);
+
+	for (size_t i = 0; i < dir_steps; ++i) {
+		for (size_t j = 0; j < dir_steps; ++j) {
+			// top
+			wave_directions.push_back(Point(-1.0 + step_size * i, -1.0 + step_size * j, 1.0));
+
+			// bottom
+			wave_directions.push_back(Point(-1.0 + step_size * i, -1.0 + step_size * j, -1.0));
+		}
+	}
+
+	// sides
+	for (size_t i = 1; i < dir_steps-1; ++i) {
+		for (size_t j = 0; j < dir_steps-1; ++j) {
+			wave_directions.push_back(Point(-1.0 + step_size * j, -1.0, -1.0 + step_size * i));
+			wave_directions.push_back(Point(1.0, -1.0 + step_size * j, -1.0 + step_size * i));
+			wave_directions.push_back(Point(1.0 - step_size * j, 1.0, -1.0 + step_size * i));
+			wave_directions.push_back(Point(-1.0, 1.0 - step_size * j, -1.0 + step_size * i));
+		}
+	}
+
+	// normalize all vectors to unit length
+	for (size_t i = 0; i < num_direction_points; ++i) {
+		wave_directions[i].normalize();
+	}
+
+	return wave_directions;
 }
 
 int StructuralMechanics3DSolverDataProvider::Hypre::numfnc()

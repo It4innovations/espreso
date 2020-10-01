@@ -111,6 +111,7 @@ struct FETIConfiguration: public ECFDescription {
 
 	double precision;
 	size_t max_iterations;
+	size_t num_directions;
 
 	METHOD method;
 	ITERATIVE_SOLVER iterative_solver;
