@@ -1,6 +1,7 @@
 
 #include "feti.h"
 #include "config/configuration.hpp"
+#include "esinfo/envinfo.h"
 
 espreso::FETIConfiguration::FETIConfiguration()
 {
@@ -31,6 +32,11 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdescription({ "Max iterations" })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
+	num_directions = 3;
+	REGISTER(num_directions, ECFMetaData()
+			 .setdescription({ "Number of plane wave directions" })
+			 .setdatatype({ ECFDataType::POSITIVE_INTEGER }));
+
 	iterative_solver = ITERATIVE_SOLVER::PCG;
 	REGISTER(iterative_solver, ECFMetaData()
 			.setdescription({ "Iterative solver" })
@@ -39,10 +45,11 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.addoption(ECFOption().setname("pipePCG").setdescription("Pipelined PCG."))
 			.addoption(ECFOption().setname("orthogonalPCG").setdescription("Orthogonal PCG."))
 			.addoption(ECFOption().setname("GMRES").setdescription("GMRES - supports non-symmetric systems."))
-			.addoption(ECFOption().setname("BICGSTAB").setdescription("BICGSTAB - supports non-symmetric systems.")));
-			// .addoption(ECFOption().setname("QPCE").setdescription("QPCE"))
-			// .addoption(ECFOption().setname("orthogonalPCG_CP").setdescription("FETI Geneo with full ortogonalization CG"))
-			// .addoption(ECFOption().setname("PCG_CP").setdescription("FETI Geneo with regular CG")));
+			.addoption(ECFOption().setname("BICGSTAB").setdescription("BICGSTAB - supports non-symmetric systems."))
+			.addoption(ECFOption().setname("QPCE").setdescription("QPCE"))
+			.addoption(ECFOption().setname("orthogonalPCG_CP").setdescription("FETI Geneo with full ortogonalization CG"))
+			.addoption(ECFOption().setname("PCG_CP").setdescription("FETI Geneo with regular CG"))
+			);
 
 	regularization = REGULARIZATION::ANALYTIC;
 	REGISTER(regularization, ECFMetaData()
@@ -50,6 +57,14 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("ANALYTIC").setdescription("Analytic regularization provided by a particular physics."))
 			.addoption(ECFOption().setname("ALGEBRAIC").setdescription("Regularization based on NULL PIVOTS.")));
+
+	regularization_version = REGULARIZATION_VERSION::FIX_POINTS;
+	REGISTER(regularization_version, ECFMetaData()
+			.setdescription({ "Regularization version." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("FIX_POINTS").setdescription(""))
+			.addoption(ECFOption().setname("EIGEN_VECTORS").setdescription("."))
+			.addoption(ECFOption().setname("WAVE_DIRECTIONS").setdescription(".")));
 
 	conjugate_projector = CONJ_PROJECTOR::NONE;
 	REGISTER(conjugate_projector, ECFMetaData()
@@ -176,12 +191,24 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdescription({ "Load balancing of Dirichlet preconditioner" })
 			.setdatatype({ ECFDataType::BOOL }));
 
-	use_optimization = false;
-	REGISTER(use_optimization, ECFMetaData()
-            .setdescription({ "Turn on autotuning of optimal parameters" })
-			.setdatatype({ ECFDataType::BOOL }));
-	REGISTER(optimization, ECFMetaData()
-		.setdescription({"Autotuning of FETI parameters"}));
+	REGISTER(auto_optimization, ECFMetaData().setdescription({ "Automatic optimization of FETI solver parameters." }));
+
+	allowed_gpu_memory_mb = -1;
+	REGISTER(allowed_gpu_memory_mb, ECFMetaData()
+			.setdescription({ "The size of GPU memory in MB that is allowed for LSC assembly to decrease #LSC on GPU" })
+			.setdatatype({ ECFDataType::INTEGER }));
+	num_info_objects = 16;
+	REGISTER(num_info_objects, ECFMetaData()
+			.setdescription({ "The number of cuSparse CSRSM2 Info objects affects the size of GPU buffers for LSC assembly" })
+			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
+	gpu_fragmentation_ratio = 1.5;
+	REGISTER(gpu_fragmentation_ratio, ECFMetaData()
+			.setdescription({ "The ratio of GPU memory allocation limit to number of domains in cluster - temporal, will be removed" })
+			.setdatatype({ ECFDataType::FLOAT }));
+	num_streams = info::env::OMP_NUM_THREADS;
+	REGISTER(num_streams, ECFMetaData()
+			.setdescription({ "The number of CUDA streams for iterative solver" })
+			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 }
 
 

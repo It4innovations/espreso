@@ -19,22 +19,14 @@ struct FETIConfiguration: public ECFDescription {
 	};
 
 	enum class ITERATIVE_SOLVER {
-		/// Projected conjugate gradients
 		PCG = 0,
-		/// Pipelined PCG
-		pipePCG = 1,
-		/// Full orthogonal PCG
+		pipePCG,
 		orthogonalPCG = 2,
-		/// GMRES
-		GMRES = 3,
-		/// BICGSTAB
-		BICGSTAB = 4,
-		/// QPCE
-		QPCE = 5,
-		/// FETI Geneo with full ortogonalization CG
-		orthogonalPCG_CP = 6,
-		/// FETI Geneo with regular CG
-		PCG_CP = 7
+		GMRES,
+		BICGSTAB,
+//		QPCE,
+//		orthogonalPCG_CP,
+//		PCG_CP
 	};
 
 	enum class PRECONDITIONER {

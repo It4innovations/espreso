@@ -14,10 +14,13 @@
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/eslog.hpp"
+#include "autoopt/optimizer.h"
 #include "mesh/mesh.h"
 #include "config/ecf/linearsolver/feti.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/utils.h"
+#include "basis/utilities/sysutils.h"
+#include "esinfo/ecfinfo.h"
 #include "timeeval.h"
 
 namespace espreso {
@@ -47,6 +50,24 @@ FETISystemSolver::FETISystemSolver(FETIConfiguration &configuration, FETISolverD
 : configuration(configuration), _data(data), _inner(NULL)
 {
 	timeEvalMain = new TimeEval("ESPRESO Solver Overall Timing");
+
+	if (configuration.auto_optimization.algorithm != AutoOptimizationConfiguration::ALGORITHM::NONE)
+	{
+		std::vector<ECFParameter*> opt_parameters;
+		opt_parameters = {
+			configuration.ecfdescription->getParameter(&configuration.preconditioner),
+			configuration.ecfdescription->getParameter(&configuration.iterative_solver),
+			configuration.ecfdescription->getParameter(&configuration.regularization),
+			configuration.ecfdescription->getParameter(&configuration.redundant_lagrange),
+			configuration.ecfdescription->getParameter(&configuration.B0_type),
+			configuration.ecfdescription->getParameter(&configuration.scaling),
+			// this->configuration.getParameter(&this->configuration.use_schur_complement)
+			configuration.ecfdescription->getParameter(&configuration.method)
+		};
+		this->optimizer = new EvolutionaryOptimizer(configuration.auto_optimization, opt_parameters);
+	} else {
+		this->optimizer = new EmptyOptimizer();
+	}
 }
 
 void FETISystemSolver::init()
@@ -60,7 +81,11 @@ void FETISystemSolver::update()
 	insertB1(_data.B1Dirichlet, _data.B1c, _data.B1Gluing, _data.B1duplication, _data.B1Inequality, _data.B1gap, _data.B1Map);
 	insertB0(_data.B0);
 	insertRHS(_data.f);
-	update(configuration);
+
+	while(!optimizer->set([&]() {
+		update(configuration);
+		return true;
+	}));
 }
 
 void FETISystemSolver::solve()
@@ -77,25 +102,30 @@ double& FETISystemSolver::precision()
 
 FETISystemSolver::~FETISystemSolver() {
 
-	_inner->solver->preproc_timing.printStatsMPI();
-	_inner->solver->timing.printStatsMPI();
-	_inner->solver->postproc_timing.printStatsMPI();
-	_inner->solver->timeEvalAppa.printStatsMPI();
-	_inner->solver->timeEvalProj.printStatsMPI();
+	if (_inner && _inner->solver) {
+		_inner->solver->preproc_timing.printStatsMPI();
+		_inner->solver->timing.printStatsMPI();
+		_inner->solver->postproc_timing.printStatsMPI();
+		_inner->solver->timeEvalAppa.printStatsMPI();
+		_inner->solver->timeEvalProj.printStatsMPI();
 
-	if ( _inner->solver->USE_PREC != FETIConfiguration::PRECONDITIONER::NONE ) {
-		_inner->solver->timeEvalPrec.printStatsMPI();
+		if ( _inner->solver->USE_PREC != FETIConfiguration::PRECONDITIONER::NONE ) {
+			_inner->solver->timeEvalPrec.printStatsMPI();
+		}
 	}
 
 	//TODO: Fix timing:  if ( cluster->USE_HFETI == 1 ) cluster->ShowTiming();
 
-	 timeEvalMain->totalTime.endWithBarrier();
-	 timeEvalMain->printStatsMPI();
+	timeEvalMain->totalTime.endWithBarrier();
+	timeEvalMain->printStatsMPI();
 
-	 delete timeEvalMain;
+	delete timeEvalMain;
 
 	if (_inner) {
 		delete _inner;
+	}
+	if (optimizer) {
+		delete optimizer;
 	}
 }
 
@@ -332,23 +362,6 @@ void FETISystemSolver::update(FETIConfiguration &configuration)
 	_inner->holder.N2.resize(info::mesh->elements->ndomains);
 	_inner->holder.RegMat.resize(info::mesh->elements->ndomains);
 
-	_inner->cluster = new SuperClusterCPU(configuration, &_inner->holder);
-	_inner->solver  = new IterSolver(configuration);
-
-	init(info::mesh->neighbors, configuration);
-}
-
-// run solver and store primal and dual solution
-void FETISystemSolver::solve(FETIConfiguration &configuration, VectorsDenseFETI &x, VectorsDenseFETI &y)
-{
-	if (
-			std::any_of(_inner->holder.K.begin(), _inner->holder.K.end(), [] (const SparseMatrix &K) { return K.mtype == MatrixType::REAL_UNSYMMETRIC; }) &&
-			configuration.iterative_solver != FETIConfiguration::ITERATIVE_SOLVER::GMRES &&
-			configuration.iterative_solver != FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB) {
-
-		eslog::error("Invalid Linear Solver configuration: Only GMRES and BICGSTAB can solve unsymmetric system.\n");
-	}
-
 	std::string type;
 	switch (configuration.method) {
 	case FETIConfiguration::METHOD::TOTAL_FETI:
@@ -405,12 +418,52 @@ void FETISystemSolver::solve(FETIConfiguration &configuration, VectorsDenseFETI 
 		break;
 	}
 
-	double start = eslog::time();
 	eslog::solver("     - ---- LINEAR SOLVER -------------------------------------------------------------- -\n");
 	eslog::solver("     - | SOLVER :: ESPRESO        TYPE :: %44s | -\n", type.c_str());
+
+	_inner->cluster = new SuperClusterCPU(configuration, &_inner->holder);
+	_inner->solver  = new IterSolver(configuration);
+
+	init(info::mesh->neighbors, configuration);
+
+	if (info::ecf->output.print_matrices > 0) {
+		eslog::storedata(" STORE MATRICES FOR FETI ITER SOLVER\n");
+		std::string prefix = utils::debugDirectory() + "/fetisolver/init";
+		_inner->cluster->printInitData(prefix.c_str(), info::ecf->output.print_matrices);
+	}
+}
+
+// run solver and store primal and dual solution
+void FETISystemSolver::solve(FETIConfiguration &configuration, VectorsDenseFETI &x, VectorsDenseFETI &y)
+{
+	if (
+			std::any_of(_inner->holder.K.begin(), _inner->holder.K.end(), [] (const SparseMatrix &K) { return K.mtype == MatrixType::REAL_UNSYMMETRIC; }) &&
+			configuration.iterative_solver != FETIConfiguration::ITERATIVE_SOLVER::GMRES &&
+			configuration.iterative_solver != FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB) {
+
+		eslog::error("Invalid Linear Solver configuration: Only GMRES and BICGSTAB can solve unsymmetric system.\n");
+	}
+
+	double start = eslog::time();
 	eslog::solver("     - | REQUESTED STOPPING CRITERIA                                      %e | -\n", configuration.precision);
 
-	Solve(_inner->holder.F, _inner->holder.primalSolution, _inner->holder.dualSolution);
+	while (!optimizer->run([&] () {
+		int ret = Solve(_inner->holder.F, _inner->holder.primalSolution, _inner->holder.dualSolution);
+		if (ret >= 0) return true;
+		
+		switch (ret)
+		{
+			case -1:
+				eslog::info("Regular CG with conjugate projector not implemented yet.\n");
+				break;
+			case -2:
+				eslog::info("FETI Geneo requires dirichlet preconditioner.\n");
+			default:
+				break;
+		}
+		return false;
+	}));
+
 
 	#pragma omp parallel for
 	for (size_t d = 0; d < _inner->holder.F.size(); ++d) {
@@ -458,7 +511,7 @@ void FETISystemSolver::setup_LocalSchurComplement(FETIConfiguration &configurati
 //		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 	} else {
 		for (size_t d = 0; d < _inner->cluster->domains.size(); d++) {
-			_inner->cluster->domains[d]->isOnACC = 0;
+			_inner->cluster->domains[d]->B1Kplus.is_on_acc = 0;
 		}
 	}
 
@@ -466,42 +519,42 @@ void FETISystemSolver::setup_LocalSchurComplement(FETIConfiguration &configurati
 
 void FETISystemSolver::setup_Preconditioner() {
 // Load Matrix K, Regularization
-		 TimeEvent timeRegKproc(string("Solver - Setup preconditioners")); timeRegKproc.start();
+		TimeEvent timeRegKproc(string("Solver - Setup preconditioners")); timeRegKproc.start();
 //		 ESLOG(MEMORY) << "Before - Setup preconditioners - process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
 //		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-		 TimeEvent KregMem(string("Solver - Setup preconditioners mem. [MB]")); KregMem.startWithoutBarrier(GetProcessMemory_u());
+		TimeEvent KregMem(string("Solver - Setup preconditioners mem. [MB]")); KregMem.startWithoutBarrier(GetProcessMemory_u());
 
-		 _inner->cluster->SetupPreconditioner();
+		_inner->cluster->SetupPreconditioner();
 
-		 KregMem.endWithoutBarrier(GetProcessMemory_u()); //KregMem.printLastStatMPIPerNode();
+		KregMem.endWithoutBarrier(GetProcessMemory_u()); //KregMem.printLastStatMPIPerNode();
 
 //		 ESLOG(MEMORY) << "After - Setup preconditioners " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
 //		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
-		 timeRegKproc.endWithBarrier();
-		 timeEvalMain->addEvent(timeRegKproc);
+		timeRegKproc.endWithBarrier();
+		timeEvalMain->addEvent(timeRegKproc);
 }
 
 void FETISystemSolver::setup_FactorizationOfStiffnessMatrices() {
 // K Factorization
-		 TimeEvent timeSolKproc(string("Solver - K factorization")); timeSolKproc.start();
-		 TimeEvent KFactMem(string("Solver - K factorization mem. [MB]")); KFactMem.startWithoutBarrier(GetProcessMemory_u());
+		TimeEvent timeSolKproc(string("Solver - K factorization")); timeSolKproc.start();
+		TimeEvent KFactMem(string("Solver - K factorization mem. [MB]")); KFactMem.startWithoutBarrier(GetProcessMemory_u());
 
-		 _inner->cluster->SetupKsolvers();
+		_inner->cluster->SetupKsolvers();
 
-		 KFactMem.endWithoutBarrier(GetProcessMemory_u()); //KFactMem.printLastStatMPIPerNode();
+		KFactMem.endWithoutBarrier(GetProcessMemory_u()); //KFactMem.printLastStatMPIPerNode();
 //		 ESLOG(MEMORY) << "After K solver setup process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
 //		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
-		 timeSolKproc.endWithBarrier();
-		 timeEvalMain->addEvent(timeSolKproc);
+		timeSolKproc.endWithBarrier();
+		timeEvalMain->addEvent(timeSolKproc);
 }
 
 
 void FETISystemSolver::setup_SetDirichletBoundaryConditions() {
 // Set Dirichlet Boundary Condition
 
-		 TimeEvent timeSetInitialCondition(string("Solver - Set Dirichlet Boundary Condition"));
-		 timeSetInitialCondition.start();
+		TimeEvent timeSetInitialCondition(string("Solver - Set Dirichlet Boundary Condition"));
+		timeSetInitialCondition.start();
 
 		#pragma omp parallel for
 		for (size_t d = 0; d < _inner->cluster->domains.size(); d++) {
@@ -509,54 +562,54 @@ void FETISystemSolver::setup_SetDirichletBoundaryConditions() {
 			_inner->cluster->domains[d]->vec_lb = _inner->holder.LB[d];
 		}
 
-		 timeSetInitialCondition.endWithBarrier();
-		 timeEvalMain->addEvent(timeSetInitialCondition);
+		timeSetInitialCondition.endWithBarrier();
+		timeEvalMain->addEvent(timeSetInitialCondition);
 }
 
 void FETISystemSolver::setup_CreateG_GGt_CompressG() {
 
-		 TimeEvent timeSolPrec(string("Solver - FETI Preprocessing")); timeSolPrec.start();
+		TimeEvent timeSolPrec(string("Solver - FETI Preprocessing")); timeSolPrec.start();
 
 //		 ESLOG(MEMORY) << "Solver Preprocessing - HFETI with regularization from K matrix";
 //		 ESLOG(MEMORY) << "process " << info::mpi::rank << " uses "<< Measure::processMemory() << " MB";
 //		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-		 TimeEvent G1_perCluster_time("Setup G1 per Cluster time   - preprocessing"); G1_perCluster_time.start();
+		TimeEvent G1_perCluster_time("Setup G1 per Cluster time   - preprocessing"); G1_perCluster_time.start();
 
-		 TimeEvent G1_perCluster_mem("Setup G1 per Cluster memory - preprocessing"); G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
-		 _inner->cluster->Create_G_perCluster();
+		TimeEvent G1_perCluster_mem("Setup G1 per Cluster memory - preprocessing"); G1_perCluster_mem.startWithoutBarrier(GetProcessMemory_u());
+		_inner->cluster->Create_G_perCluster();
 
-		 G1_perCluster_time.end(); G1_perCluster_time.printStatMPI();
-		 G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
+		G1_perCluster_time.end(); G1_perCluster_time.printStatMPI();
+		G1_perCluster_mem.endWithoutBarrier(GetProcessMemory_u()); G1_perCluster_mem.printStatMPI();
 
 //		 ESLOG(MEMORY) << "Created G1 per cluster";
 //		 ESLOG(MEMORY) << "Before HFETI create GGt process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
 //		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-		 TimeEvent solver_Preprocessing_time("Setup GGt time   - preprocessing"); solver_Preprocessing_time.start();
-		 TimeEvent solver_Preprocessing_mem("Setup GGt memory - preprocessing"); solver_Preprocessing_mem.start();
+		TimeEvent solver_Preprocessing_time("Setup GGt time   - preprocessing"); solver_Preprocessing_time.start();
+		TimeEvent solver_Preprocessing_mem("Setup GGt memory - preprocessing"); solver_Preprocessing_mem.start();
 
-		 _inner->solver->Preprocessing(*_inner->cluster);
+		_inner->solver->Preprocessing(*_inner->cluster);
 
-		 solver_Preprocessing_time.end(); solver_Preprocessing_time.printStatMPI();
-		 solver_Preprocessing_mem.end();  solver_Preprocessing_mem.printStatMPI();
+		solver_Preprocessing_time.end(); solver_Preprocessing_time.printStatMPI();
+		solver_Preprocessing_mem.end();  solver_Preprocessing_mem.printStatMPI();
 
 //		 ESLOG(MEMORY) << "Create GGtInv";
 //		 ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
 //		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-		 TimeEvent solver_G1comp_time("Setup G1 compression time   - preprocessing"); solver_G1comp_time.start();
-		 TimeEvent solver_G1comp_mem("Setup G1 compression memory - preprocessing");  solver_G1comp_mem.start();
+		TimeEvent solver_G1comp_time("Setup G1 compression time   - preprocessing"); solver_G1comp_time.start();
+		TimeEvent solver_G1comp_mem("Setup G1 compression memory - preprocessing");  solver_G1comp_mem.start();
 
-		 _inner->cluster->Compress_G1(); // Compression of Matrix G1 to work with compressed lambda vectors
+		_inner->cluster->Compress_G1(); // Compression of Matrix G1 to work with compressed lambda vectors
 
-		 solver_G1comp_time.end(); solver_G1comp_time.printStatMPI();
-		 solver_G1comp_mem.end();  solver_G1comp_mem.printStatMPI();
+		solver_G1comp_time.end(); solver_G1comp_time.printStatMPI();
+		solver_G1comp_mem.end();  solver_G1comp_mem.printStatMPI();
 //		 ESLOG(MEMORY) << "G1 compression";
 //		 ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
 //		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-		 timeSolPrec.endWithBarrier(); timeEvalMain->addEvent(timeSolPrec);
+		timeSolPrec.endWithBarrier(); timeEvalMain->addEvent(timeSolPrec);
 
 
 }
@@ -621,19 +674,25 @@ void FETISystemSolver::init(const std::vector<int> &neighbors, FETIConfiguration
 	// *** Set Dirichlet Boundary Condition
 	// setup_SetDirichletBoundaryConditions();
 
-	// *** if TFETI is used or if HTFETI and analytical kernel are used we can compute GGt here - between solution in terms of peak memory
-	if (  !(_inner->cluster->USE_HFETI == 1 && configuration.regularization == FETIConfiguration::REGULARIZATION::ALGEBRAIC)  ) {
-		setup_CreateG_GGt_CompressG();
-	}
-
-	// *** setup all preconditioners
-	setup_Preconditioner();
+	// // *** if TFETI is used or if HTFETI and analytical kernel are used we can compute GGt here - between solution in terms of peak memory
+	// if (  !(_inner->cluster->USE_HFETI == 1 && configuration.regularization == FETIConfiguration::REGULARIZATION::ALGEBRAIC)  ) {
+	// 	setup_CreateG_GGt_CompressG();
+	// }
 
 	// *** Computation of the Schur Complement
 	setup_LocalSchurComplement(configuration);
 
+	// *** setup all preconditioners
+	setup_Preconditioner();
+
 	// *** K Factorization
 	setup_FactorizationOfStiffnessMatrices();
+
+	// *** if KINV is used on GPU, we need LSC first 
+	if (  !(_inner->cluster->USE_HFETI == 1 && configuration.regularization == FETIConfiguration::REGULARIZATION::ALGEBRAIC)  ) {
+		setup_CreateG_GGt_CompressG();
+	}
+
 
 	// *** Setup Hybrid FETI part of the solver
 	setup_HTFETI();
@@ -663,26 +722,25 @@ void FETISystemSolver::init(const std::vector<int> &neighbors, FETIConfiguration
 
 }
 
-void FETISystemSolver::Solve( std::vector < std::vector < double > >  & f_vec,
-		                  std::vector < std::vector < double > >  & prim_solution)
+int FETISystemSolver::Solve( std::vector < std::vector < double > >  & f_vec,
+								std::vector < std::vector < double > >  & prim_solution)
 {
 
 	std::vector < std::vector < double > > dual_solution;
-	Solve(f_vec, prim_solution, dual_solution);
+	return Solve(f_vec, prim_solution, dual_solution);
 }
 
-void FETISystemSolver::Solve( std::vector < std::vector < double > >  & f_vec,
-		                  std::vector < std::vector < double > >  & prim_solution,
-		                  std::vector < std::vector < double > > & dual_solution) {
+int FETISystemSolver::Solve( std::vector < std::vector < double > >  & f_vec,
+								std::vector < std::vector < double > >  & prim_solution,
+								std::vector < std::vector < double > > & dual_solution) {
 
-	 	 TimeEvent timeSolCG(string("Solver - CG Solver runtime"));
-	 	 timeSolCG.start();
+	TimeEvent timeSolCG(string("Solver - CG Solver runtime"));
+	timeSolCG.start();
 
-	 	_inner->solver->Solve    ( *_inner->cluster, f_vec, prim_solution, dual_solution );
-
-	 	 timeSolCG.endWithBarrier();
-	 	 timeEvalMain->addEvent(timeSolCG);
-
+	int ret = _inner->solver->Solve    ( *_inner->cluster, f_vec, prim_solution, dual_solution );
+	timeSolCG.endWithBarrier();
+	timeEvalMain->addEvent(timeSolCG);
+	return ret;
 }
 
 void FETISystemSolver::Postprocessing( ) {
@@ -707,7 +765,7 @@ void FETISystemSolver::finalize() {
 }
 
 void FETISystemSolver::CheckSolution( vector < vector < double > > & prim_solution ) {
-    // *** Solutin correctnes test **********************************************************************************************
+	// *** Solutin correctnes test **********************************************************************************************
 
 	//	double max_v = 0.0;
 //		for (esint i = 0; i < number_of_subdomains_per_cluster; i++)
@@ -718,7 +776,7 @@ void FETISystemSolver::CheckSolution( vector < vector < double > > & prim_soluti
 //
 //	double max_vg;
 //	MPI_Reduce(&max_v, &max_vg, 1, MPI_DOUBLE, MPI_MAX, 0, info::mpi::MPICommunicator );
-//	ESINFO(DETAILS) << "Maxvalue in solution = " << std::setprecision(12) << max_vg;
+//	//ESINFO(DETAILS) << "Maxvalue in solution = " << std::setprecision(12) << max_vg;
 
 	//max_sol_ev.printLastStatMPIPerNode(max_vg);
 	// *** END - Solutin correctnes test ******************************************************************************************

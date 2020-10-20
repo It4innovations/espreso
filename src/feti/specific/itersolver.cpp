@@ -130,15 +130,15 @@ void IterSolverBase::Solve ( SuperCluster & cluster,
 	case FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB:
 		iters = Solve_BICGSTAB_singular_dom(cluster, in_right_hand_side_primal );
 		break;
-	case FETIConfiguration::ITERATIVE_SOLVER::QPCE:
-		iters = Solve_QPCE_singular_dom(cluster, in_right_hand_side_primal );
-		break;
-	case FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP:
-		iters = Solve_full_ortho_CG_singular_dom_geneo(cluster, in_right_hand_side_primal);
-		break;
-	case FETIConfiguration::ITERATIVE_SOLVER::PCG_CP:
-		eslog::error("Regular CG with conjugate projector not implemented yet.\n");
-		break;
+//	case FETIConfiguration::ITERATIVE_SOLVER::QPCE:
+//		iters = Solve_QPCE_singular_dom(cluster, in_right_hand_side_primal );
+//		break;
+//	case FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP:
+//		iters = Solve_full_ortho_CG_singular_dom_geneo(cluster, in_right_hand_side_primal);
+//		break;
+//	case FETIConfiguration::ITERATIVE_SOLVER::PCG_CP:
+//		eslog::error("Regular CG with conjugate projector not implemented yet.\n");
+//		break;
 
 	default:
 		eslog::error("Unknown CG solver.\n");
