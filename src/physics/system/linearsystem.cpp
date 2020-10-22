@@ -63,6 +63,7 @@ void LinearSystem::nextSubstep()
 
 void LinearSystem::assemble()
 {
+	_builderInit();
 	_builderReset();
 
 	assembler()->composer->assemble(*builder);
