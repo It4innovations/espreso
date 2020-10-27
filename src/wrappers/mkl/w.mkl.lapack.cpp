@@ -1,5 +1,6 @@
 
 #include "math/math.h"
+#include "esinfo/eslog.h"
 
 #ifdef HAVE_MKL
 #include "mkl_lapacke.h"
@@ -32,6 +33,20 @@ void MATH::DenseMinGeneralizedEigenVectors(esint msize, double *A, double *B, es
 	}
 	delete[] fail;
 	delete[] tmpvec;
+#endif
+}
+
+void MATH::upDense3x3EigenValuesEigenVectors(double *A, double *W, double *Z)
+{
+#ifdef HAVE_MKL
+	for(int i = 0; i < 9; ++i){
+		Z[i] = A[i];
+	}
+	esint info = LAPACKE_dsyev( LAPACK_COL_MAJOR, 'V', 'U', 3, Z, 3, W );
+	
+	if(info > 0){
+		eslog::globalerror("ESPRESO internal error: upDense3x3EigenValuesEigenVectors failed to compued eigen-values or eigen-vectors.\n");
+	}
 #endif
 }
 

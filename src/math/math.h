@@ -60,6 +60,7 @@ namespace MATH {
 	double vecNorm(esint size, double *vVals);
 
 	void upDense3x3EigenValues(double *mVals, double *eigenValues);
+	void upDense3x3EigenValuesEigenVectors(double *mVals, double *eigenValues, double *eigenVectors);
 
 	esint vecNormMaxIndex(esint size, float *vVals);
 	esint vecNormMaxIndex(esint size, double *vVals);

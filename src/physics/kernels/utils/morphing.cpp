@@ -19,8 +19,6 @@
 #include "wrappers/mpi/communication.h"
 #include "basis/utilities/utils.h"
 
-#include "math/math.h"
-
 namespace espreso {
 namespace morphing {
 
@@ -220,6 +218,9 @@ void rbf()
 	}
 }
 
+/*
+Applies the defined tranformations in the configuration file and constructs the transformed set of points
+*/
 void processMorpher(const RBFTargetTransformationConfiguration &target, int dimension, std::vector<Point> &sPoints, size_t startPoint, std::vector<double> &sDisplacement)
 {
 	size_t pointsToProcess = sPoints.size() - startPoint;
@@ -302,7 +303,8 @@ void processMorpher(const RBFTargetTransformationConfiguration &target, int dime
 
 esint prepareMatrixM(std::vector<Point> &rPoints,
 		std::vector<double> &rDisplacement,
-		int dimension, const RBFTargetConfiguration &configuration,
+		int dimension, 
+		const RBFTargetConfiguration &configuration,
 		std::vector<double> &M_values,
 		bool use_x, bool use_y, bool use_z
 ) {
@@ -352,6 +354,7 @@ esint prepareMatrixM(std::vector<Point> &rPoints,
 	if (dimension == 3 && use_z) M_values.push_back(0);
 	M_values.push_back(0);
 	realsize++;
+	
 	return realsize;
 }
 
@@ -449,6 +452,8 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 	size_t nSize = 0;
 	for(auto it = configuration.morphers.begin(); it != configuration.morphers.end(); ++it) {
 		nSize += info::mesh->bregion(it->first)->nodeInfo.size;
+		
+		// printf("	[%2d] [%s] nSize: %10d\n", info::mpi::rank, it->first.c_str(), info::mesh->bregion(it->first)->nodeInfo.size);
 	}
 
 	sPoints.reserve(nSize);
@@ -465,6 +470,7 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 		}
 		processMorpher(it->second, dimension, sPoints, prevsize, sDisplacement);
 	}
+	
 
 	if (info::mpi::rank == 0) {
 		if (configuration.external_ffd.path != "") {
@@ -486,39 +492,95 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 		}
 	}
 
+	// printf("	[%2d] nPoints: %10d, nDisplacements: %10d\n", info::mpi::rank, (int)sPoints.size(), (int)sDisplacement.size());
+	
+	// printf("	[%2d] Point[0]: [%10.8f, %10.8f, %10.8f]\n", info::mpi::rank, sPoints[0].x, sPoints[0].y, sPoints[0].z);
+	
+
 	if (!Communication::gatherUnknownSize(sPoints, rPoints)) {
 		eslog::internalFailure("gather morphed points.\n");
 	}
+	// printf("	[%2d] nPoints: %10d, nDisplacements: %10d\n", info::mpi::rank, (int)rPoints.size(), (int)rDisplacement.size());
 
 	if (!Communication::broadcastUnknownSize(rPoints)) {
 		eslog::internalFailure("broadcast points.\n");
 	}
+	// printf("	[%2d] nPoints: %10d, nDisplacements: %10d\n", info::mpi::rank, (int)rPoints.size(), (int)rDisplacement.size());
 
 	if (!Communication::gatherUnknownSize(sDisplacement, rDisplacement)) {
 		eslog::internalFailure("gather morphed displacement.\n");
 	}
+	// printf("	[%2d] nPoints: %10d, nDisplacements: %10d\n", info::mpi::rank, (int)rPoints.size(), (int)rDisplacement.size());
+	
+	// if(info::mpi::rank == 0){
+		// for(int i = 0; i < rPoints.size(); ++i){
+			// printf("	    Point[%d]: [%10.8f, %10.8f, %10.8f]\n", i, rPoints[i].x, rPoints[i].y, rPoints[i].z);
+		// }
+	// }
+	
 
+	std::vector<double> rhs_values;
 	std::vector<double> wq_values;
+	
+	std::vector<double> rhs_values_aca;
+	std::vector<double> wq_values_aca;
+	
+	double aca_eta = 2.0f;
+	double aca_eps = 1e-6;
+	esint base_tree_size = 10;
+	MorphingMatrix M_ACA(
+		sPoints,
+		sDisplacement,
+		configuration,
+		true, 
+		true, 
+		true,
+		aca_eps,
+		aca_eta,
+		base_tree_size,
+		rhs_values_aca
+	);
+	rhs_values_aca.resize(dimension * M_ACA.getNRows());
+	wq_values_aca.resize(dimension * M_ACA.getNCols());	
+	
+	// M_ACA.print();
 
+	esint itercount_aca = 0;
+	std::vector<esint> iters_dim(dimension);
+	for(esint d = 0 ; d < dimension; d++) {
+		esint mm__;
+		iters_dim[d] += MATH::SOLVER::GMRESolverInternal_ACA(
+			M_ACA,
+			&rhs_values_aca[d * M_ACA.getNRows()], 
+			&wq_values_aca[d * M_ACA.getNCols()],
+			1e-12, 
+			1000, 
+			mm__
+		);
+		itercount_aca += iters_dim[d];
+	}
+	if (info::mpi::rank == 0){
+		printf("ACA solution found in %6d iterations (%4d for x, %4d for y, %4d for z)\n", itercount_aca,iters_dim[0],iters_dim[1],iters_dim[2]);
+	}
+	
+	/*
+	std::vector<double> M_values;
+	
 	if (info::mpi::rank == 0 ||
 			(configuration.solver == MORPHING_RBF_SOLVER::ITERATIVE &&
 			 info::mpi::rank < dimension &&
 			 info::mpi::size >= dimension)) {
 
-		std::vector<double> M_values;
-		//esint rowsFromCoordinates = rPoints.size();
 		size_t M_size = rPoints.size() + dimension + 1;
 
 		size_t realSize = prepareMatrixM(rPoints, rDisplacement, dimension, configuration, M_values);
-
 		if (realSize != M_size) {
 			eslog::internalFailure("error while building matrix M.\n");
 		}
-
+		
 		switch (configuration.solver) {
 		case MORPHING_RBF_SOLVER::ITERATIVE: {
 
-			std::vector<double> rhs_values;
 
 			if (info::mpi::rank == 0) {
 
@@ -534,18 +596,26 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 						rhs_values[M_size*d + r] = 0;
 					}
 				}
+				
+				// std::vector<double> diff(rhs_values_aca);
+				// espreso::MATH::vecAdd(diff.size(), &diff[0], -1.0f, &rhs_values[0]);
+				// double err = espreso::MATH::vecDot(diff.size(), &diff[0]);
+				// double ref = espreso::MATH::vecDot(rhs_values.size(), &rhs_values[0]);
+				// printf("rhs error: %f [%%]\n", 100.0f * err / ref);
 			}
 
 			std::vector<esint> iterations;
 
 			if (info::mpi::rank == 0 && info::mpi::size < dimension) {
 				for(esint d = 0 ; d < dimension; d++) {
+					
 					esint itercount;
 					MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
 							M_size, &M_values[0],
 							&rhs_values[d * M_size], &wq_values[d * M_size],
 							configuration.solver_precision, configuration.solver_max_iter, itercount);
 					iterations.push_back(itercount);
+					
 				}
 			}else {
 
@@ -565,6 +635,7 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 							MPI_DOUBLE, 0, 0, info::mpi::comm, MPI_STATUS_IGNORE);
 
 				}
+
 				esint itercount;
 				MATH::SOLVER::GMRESUpperSymetricColumnMajorMat(
 						M_size, &M_values[0],
@@ -572,7 +643,7 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 						configuration.solver_precision, configuration.solver_max_iter, itercount);
 
 				iterations.push_back(itercount);
-
+				
 				if (info::mpi::rank == 0) {
 
 					for (int d = 1; d < dimension; d++) {
@@ -605,23 +676,17 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 				}
 				for ( ; r < M_size; r++) {
 					wq_values[M_size*d + r] = 0;
+					wq_values_new[M_size*d + r] = 0;
 				}
 			}
-
-			/*std::cout<<"Points: "<<rPoints.size()<<" - "<<rPoints<<"\n";
-
-			int count=0;
-			for(int i=0;i<M_size;i++) {
-				for(int j=0;j<=i;j++) {
-					printf("%f ", M_values[count]);
-					count++;
-				}
-				printf("\n");
-			}*/
 
 			int result= MATH::SOLVER::directUpperSymetricIndefiniteColumnMajor(
 					M_size,  &M_values[0],
 					dimension, &wq_values[0]);
+
+					
+
+					
 
 			if (result!=0) {
 
@@ -660,7 +725,7 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 				}
 
 				esint realSize = prepareMatrixM(rPoints, rDisplacement, dimension, configuration, M_values, use_x, use_y, use_z);
-
+				
 				wq_values.clear();
 				wq_values.resize(realSize*dimension);
 
@@ -671,33 +736,14 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 					}
 					for ( ; r < M_size; r++) {
 						wq_values[realSize*d + r] = 0;
+						wq_values_new[realSize*d + r] = 0;
 					}
 				}
-
-				/*std::cout << "Points: " << rPoints.size() << " - " << rPoints
-						<< "\n";
-
-				int count = 0;
-				for (int i = 0; i < realSize; i++) {
-					for (int j = 0; j <= i; j++) {
-						printf("%f ", M_values[count]);
-						count++;
-					}
-					printf("\n");
-				}
-
-				printf("WQ\n");
-				for(int d=0;d<dimension;d++) {
-					for(int i=0;i<wq_values.size()/dimension;i++) {
-						printf("%f ", wq_values[wq_values.size()/dimension*d+i]);
-					}
-					printf("\n");
-				}*/
 
 				int result= MATH::SOLVER::directUpperSymetricIndefiniteColumnMajor(
 						realSize,  &M_values[0],
 						dimension, &wq_values[0]);
-
+						
 				if (result!=0) {
 					eslog::error("ESPRESO error: Dense solver is unable to solve the system. Try iterative solver.\n");
 				}
@@ -728,11 +774,69 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 		eslog::internalFailure("broadcast WQ.\n");
 	}
 
-	esint wq_points = wq_values.size()/dimension;
+	// error of the new approach
+	if(info::mpi::rank == 0){
+		double diff_ = 0.0f;
+		double n2_ = 0.0f;
+		
+		double diff_max = 0.0f;
+		double n_max = 1.0f;
+		
+		for(esint i_ = 0; i_ < wq_values_aca.size(); ++i_){
+			double d_ = wq_values_aca[i_] - wq_values[i_];
+			diff_ += d_ * d_;
+			
+			if(std::abs(wq_values[i_]) > 0.000000005){
+				if( std::abs(d_ / wq_values[i_]) > diff_max){
+					diff_max = std::abs(d_ / wq_values[i_]);
+				}
+			}
+			
+			n2_ += wq_values[i_] * wq_values[i_];
+		}
+		
+		diff_ = std::sqrt(diff_ / n2_);
+		
+		printf("[ACA] relative error of the solution: %f [%%]\n", diff_ * 100.0f);
+	}
+	
+
+	// error of the new approach
+	if(info::mpi::rank == 0){
+		double diff_ = 0.0f;
+		double n2_ = 0.0f;
+		
+		double diff_max = 0.0f;
+		double n_max = 1.0f;
+		
+		for(esint i_ = 0; i_ < wq_values_aca.size(); ++i_){
+			double d_ = wq_values_aca[i_] - wq_values[i_];
+			diff_ += d_ * d_;
+			
+			if(std::abs(wq_values[i_]) > 0.000000005){
+				if( std::abs(d_ / wq_values[i_]) > diff_max){
+					diff_max = std::abs(d_ / wq_values[i_]);
+				}
+			}
+			
+			n2_ += wq_values[i_] * wq_values[i_];
+		}
+		
+		diff_ = std::sqrt(diff_ / n2_);
+		
+		printf("[ACA] relative error of the solution: %f [%%]\n", diff_ * 100.0f);
+	}
+	*/
+	
+
+	esint wq_points = wq_values_aca.size()/dimension;
 	esint points_size = rPoints.size();
+	
+	auto solution = wq_values_aca;
 
 	ElementsRegionStore *tregion = info::mesh->eregion(configuration.target);
 
+	//TODO possible errors below this part
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (auto n = tregion->nodes->begin(t)->begin(); n != tregion->nodes->end(t)->begin(); ++n) {
@@ -742,37 +846,37 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 			for (size_t i = 0; i < rPoints.size(); i++) {
 				double R = configuration.function.evaluator->evaluate((rPoints[i] - origin).length());
 
-				morphed.x += R * wq_values[i ];
-				morphed.y += R * wq_values[i + wq_points];
+				morphed.x += R * solution[i ];
+				morphed.y += R * solution[i + wq_points];
 				if (dimension == 3) {
-					morphed.z += R * wq_values[i + wq_points * 2];
+					morphed.z += R * solution[i + wq_points * 2];
 				}
 			}
 			if (dimension == 3) {
-				morphed.x += origin.x * wq_values[points_size + 0];
-				morphed.x += origin.y * wq_values[points_size + 1];
-				morphed.x += origin.z * wq_values[points_size + 2];
-				morphed.x +=            wq_values[points_size + 3];
+				morphed.x += origin.x * solution[points_size + 0];
+				morphed.x += origin.y * solution[points_size + 1];
+				morphed.x += origin.z * solution[points_size + 2];
+				morphed.x +=            solution[points_size + 3];
 
-				morphed.y += origin.x * wq_values[wq_points + points_size + 0];
-				morphed.y += origin.y * wq_values[wq_points + points_size + 1];
-				morphed.y += origin.z * wq_values[wq_points + points_size + 2];
-				morphed.y +=            wq_values[wq_points + points_size + 3];
+				morphed.y += origin.x * solution[wq_points + points_size + 0];
+				morphed.y += origin.y * solution[wq_points + points_size + 1];
+				morphed.y += origin.z * solution[wq_points + points_size + 2];
+				morphed.y +=            solution[wq_points + points_size + 3];
 
-				morphed.z += origin.x * wq_values[wq_points*2 + points_size + 0];
-				morphed.z += origin.y * wq_values[wq_points*2 + points_size + 1];
-				morphed.z += origin.z * wq_values[wq_points*2 + points_size + 2];
-				morphed.z +=            wq_values[wq_points*2 + points_size + 3];
+				morphed.z += origin.x * solution[wq_points*2 + points_size + 0];
+				morphed.z += origin.y * solution[wq_points*2 + points_size + 1];
+				morphed.z += origin.z * solution[wq_points*2 + points_size + 2];
+				morphed.z +=            solution[wq_points*2 + points_size + 3];
 			}
 
 			if (dimension == 2) {
-				morphed.x += origin.x * wq_values[points_size + 0];
-				morphed.x += origin.y * wq_values[points_size + 1];
-				morphed.x +=            wq_values[points_size + 2];
+				morphed.x += origin.x * solution[points_size + 0];
+				morphed.x += origin.y * solution[points_size + 1];
+				morphed.x +=            solution[points_size + 2];
 
-				morphed.y += origin.x * wq_values[wq_points + points_size + 0];
-				morphed.y += origin.y * wq_values[wq_points + points_size + 1];
-				morphed.y +=            wq_values[wq_points + points_size + 2];
+				morphed.y += origin.x * solution[wq_points + points_size + 0];
+				morphed.y += origin.y * solution[wq_points + points_size + 1];
+				morphed.y +=            solution[wq_points + points_size + 2];
 			}
 
 		}
