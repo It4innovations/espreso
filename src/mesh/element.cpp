@@ -14,6 +14,7 @@ Element::~Element()
 	if (facepointers != NULL) { delete facepointers; }
 	if (edgepointers != NULL) { delete edgepointers; }
 	if (triangles != NULL) { delete triangles; }
+	if (polygon != NULL) { delete polygon; }
 }
 
 int Element::getIndex(edata<esint> &enodes, serializededata<int, int> *subindices, serializededata<int, Element*> *subpointers, edata<esint> &subnodes)
@@ -111,6 +112,7 @@ template<> void Element::init<Element::CODE::TRIANGLE3>()
 	faces = new serializededata<int, int>(2, data);
 	facepointers = new serializededata<int, Element*>(1, epointers);
 	triangles = new serializededata<int, int>(3, tringles);
+	polygon = new std::vector<int>({0, 1, 2});
 }
 
 template<> void Element::init<Element::CODE::TRIANGLE6>()
@@ -143,6 +145,7 @@ template<> void Element::init<Element::CODE::TRIANGLE6>()
 	faces = new serializededata<int, int>(3, data);
 	facepointers = new serializededata<int, Element*>(1, epointers);
 	triangles = new serializededata<int, int>(3, tringles);
+	polygon = new std::vector<int>({0, 3, 1, 4, 2, 5});
 }
 
 template<> void Element::init<Element::CODE::SQUARE4>()
@@ -173,6 +176,7 @@ template<> void Element::init<Element::CODE::SQUARE4>()
 	faces = new serializededata<int, int>(2, lines);
 	facepointers = new serializededata<int, Element*>(1, epointers);
 	triangles = new serializededata<int, int>(3, tringles);
+	polygon = new std::vector<int>({0, 1, 2, 3});
 }
 
 template<> void Element::init<Element::CODE::SQUARE8>()
@@ -207,6 +211,7 @@ template<> void Element::init<Element::CODE::SQUARE8>()
 	faces = new serializededata<int, int>(3, data);
 	facepointers = new serializededata<int, Element*>(1, epointers);
 	triangles = new serializededata<int, int>(3, tringles);
+	polygon = new std::vector<int>({0, 4, 1, 5, 2, 6, 3, 7});
 }
 
 template<> void Element::init<Element::CODE::TETRA4>()
