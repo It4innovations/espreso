@@ -24,6 +24,16 @@ InputConfiguration::InputConfiguration()
 			.addoption(ECFOption().setname("VTK_LEGACY").setdescription("VTK Legacy format."))
 			.addoption(ECFOption().setname("NETGEN").setdescription("Neutral Netgen format.")));
 
+	omit_midpoints = false;
+	REGISTER(omit_midpoints, ECFMetaData()
+			.setdescription({ "All mid-points within elements are omitted." })
+			.setdatatype({ ECFDataType::BOOL }));
+
+	insert_midpoints = false;
+//	REGISTER(insert_midpoints, ECFMetaData()
+//			.setdescription({ "Insert mid-points to all linear elements." })
+//			.setdatatype({ ECFDataType::BOOL }));
+
 	keep_material_sets = false;
 	REGISTER(keep_material_sets, ECFMetaData()
 			.setdescription({ "Keep material sets" })

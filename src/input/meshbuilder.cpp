@@ -5,6 +5,7 @@
 #include "esinfo/eslog.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/meshinfo.h"
 #include "input/builders/sequentialinput.h"
 #include "input/builders/scatteredinput.h"
 #include "input/builders/generatedinput.h"
@@ -23,6 +24,31 @@ void MeshBuilder::build()
 	profiler::syncparam("nodes", nIDs.size());
 	profiler::syncparam("elements", eIDs.size());
 	profiler::syncparam("enodes", enodes.size());
+	if (info::ecf->input.omit_midpoints) {
+		size_t shrinked = 0;
+		for (size_t i = 0, offset = 0; i < etype.size(); ++i) {
+			if (Mesh::edata[etype[i]].nodes != Mesh::edata[etype[i]].coarseNodes) {
+				for (esint n = 0; n < Mesh::edata[etype[i]].coarseNodes; n++) {
+					enodes[shrinked + n] = enodes[offset + n];
+				}
+				offset += Mesh::edata[etype[i]].nodes;
+				shrinked += Mesh::edata[etype[i]].coarseNodes;
+				esize[i] = Mesh::edata[etype[i]].coarseNodes;
+			}
+			switch (etype[i]) {
+			case (int)Element::CODE::LINE3:     etype[i] = (int)Element::CODE::LINE2; break;
+			case (int)Element::CODE::TRIANGLE6: etype[i] = (int)Element::CODE::TRIANGLE3; break;
+			case (int)Element::CODE::SQUARE8:   etype[i] = (int)Element::CODE::SQUARE4; break;
+			case (int)Element::CODE::TETRA10:   etype[i] = (int)Element::CODE::TETRA4; break;
+			case (int)Element::CODE::PYRAMID13: etype[i] = (int)Element::CODE::PYRAMID5; break;
+			case (int)Element::CODE::PRISMA15:  etype[i] = (int)Element::CODE::PRISMA6; break;
+			case (int)Element::CODE::HEXA20:    etype[i] = (int)Element::CODE::HEXA8; break;
+			default: break;
+			}
+		}
+		enodes.resize(shrinked);
+	}
+
 	if (info::ecf->input.transformations.size()) {
 		removeDuplicates = true;
 		int instance = 1;

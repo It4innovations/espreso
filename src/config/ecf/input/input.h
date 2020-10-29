@@ -32,6 +32,7 @@ struct InputConfiguration: public ECFDescription {
 	std::string path;
 	FORMAT format;
 
+	bool omit_midpoints, insert_midpoints;
 	bool keep_material_sets;
 	bool convert_database;
 	double duplication_tolerance;
