@@ -35,7 +35,7 @@ ElementStore::ElementStore()
 
   stiffness(NULL),
 
-  bodies(0),
+  bodies(1),
   firstDomain(0),
   ndomains(1),
   nclusters(1),

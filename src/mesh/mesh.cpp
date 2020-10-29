@@ -216,7 +216,6 @@ void Mesh::setMaterials()
 void Mesh::preprocess()
 {
 	profiler::syncstart("meshing");
-	DebugOutput::mesh();
 
 	auto hasBEM = [] (const PhysicsConfiguration *physics) {
 		for (auto it = physics->discretization.begin(); it != physics->discretization.end(); ++it) {
@@ -476,21 +475,17 @@ void Mesh::preprocess()
 
 	if (info::ecf->getPhysics()->contact_interfaces) {
 		mesh::computeBodiesSurface();
-		mesh::computeSurfaceElementNeighbors(surface);
-		mesh::computeSurfaceLocations();
+		mesh::computeBodiesSurfacePlanes();
+		mesh::exchangeContactHalo();
 		mesh::findCloseElements();
-		mesh::computeContactNormals();
-		mesh::fireNormals();
-//		mesh::computeMortars();
+		mesh::computeContactInterface();
 		profiler::synccheckpoint("compute_contact_interface");
 		eslog::checkpointln("MESH: CONTACT INTERFACE COMPUTED");
 	}
 
+	DebugOutput::mesh();
 	profiler::syncend("meshing");
 	eslog::endln("MESH: PREPROCESSING FINISHED");
-
-//	MPI_Finalize();
-//	exit(0);
 }
 
 void Mesh::duplicate()

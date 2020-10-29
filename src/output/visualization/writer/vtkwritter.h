@@ -90,6 +90,24 @@ struct VTKASCIIWritter: public OutputFilePack {
 		insert(snprintf(buffer, bsize, "\n"));
 	}
 
+	void cell(int size, const esint* nodes, const esint* map)
+	{
+		insert(snprintf(buffer, bsize, "%d", size));
+		for (int n = 0; n < size; ++n) {
+			insert(snprintf(buffer, bsize, " %d", (int)map[nodes[n]]));
+		}
+		insert(snprintf(buffer, bsize, "\n"));
+	}
+
+	void cell(int size, const esint* nodes, const esint* map,  esint offset)
+	{
+		insert(snprintf(buffer, bsize, "%d", size));
+		for (int n = 0; n < size; ++n) {
+			insert(snprintf(buffer, bsize, " %d", (int)map[nodes[n]] + offset));
+		}
+		insert(snprintf(buffer, bsize, "\n"));
+	}
+
 	void type(const Element::CODE &code)
 	{
 		insert(snprintf(buffer, bsize, "%d\n", ecode(code)));
@@ -115,9 +133,9 @@ struct VTKASCIIWritter: public OutputFilePack {
 		insert(snprintf(buffer, bsize, "%s %s %s\n", type.c_str(), name.c_str(), format.c_str()));
 	}
 
-	void int32(int value)
+	void int32s(int value)
 	{
-		insert(snprintf(buffer, bsize, "%d", value));
+		insert(snprintf(buffer, bsize, "%d ", value));
 	}
 
 	void int32ln(int value)
@@ -132,7 +150,7 @@ struct VTKASCIIWritter: public OutputFilePack {
 
 	void float32ln(float value)
 	{
-		insert(snprintf(buffer, bsize, "%fln", value));
+		insert(snprintf(buffer, bsize, "%f\n", value));
 	}
 };
 }

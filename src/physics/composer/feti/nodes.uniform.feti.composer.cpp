@@ -29,6 +29,8 @@
 #include <algorithm>
 #include <numeric>
 
+#include "basis/utilities/print.h"
+
 using namespace espreso;
 
 NodesUniformFETIComposer::NodesUniformFETIComposer(const FETIConfiguration &configuration, Kernel *kernel, FETIAssemblerData *data, int DOFs)
@@ -515,27 +517,26 @@ void NodesUniformFETIComposer::_buildDirichlet()
 
 void NodesUniformFETIComposer::_buildMortars()
 {
-	esint lambda = 0;
+	esint lambdaCount = 0;
 	std::vector<std::pair<esint, esint> > lmap;
+	auto &myids = info::mesh->nodes->IDs->datatarray();
 
+	// collect my nodes in B in order to compute mortar lambdas
 	if (info::mesh->contacts->B.size()) {
-		auto cID = info::mesh->contacts->nodes->IDs->datatarray().begin();
-		auto cranks = info::mesh->contacts->nodes->ranks->begin();
 		for (auto it = info::mesh->contacts->B.begin(), prev = it; it != info::mesh->contacts->B.end(); ++it) {
-			while (*cID < it->i) {
-				++cID;
-				++cranks;
-			}
-			if (cranks->front() == info::mpi::rank && (it == info::mesh->contacts->B.begin() || prev->i != it->i)) {
-				lmap.push_back(std::make_pair(it->i, lambda++));
+			if (it == info::mesh->contacts->B.begin() || prev->i != it->i) {
+				auto nit = std::lower_bound(myids.begin() + info::mesh->nodes->uniqInfo.nhalo, myids.end(), it->i);
+				if (nit != myids.end() && *nit == it->i) {
+					lmap.push_back(std::make_pair(it->i, lambdaCount++));
+				}
 				prev = it;
 			}
 		}
 	}
 
-	esint size = Communication::exscan(lambda);
+	esint size = Communication::exscan(lambdaCount);
 	for (auto lit = lmap.begin(); lit != lmap.end(); ++lit) {
-		lit->second += lambda;
+		lit->second += lambdaCount;
 	}
 
 	std::vector<std::vector<std::pair<esint, esint>> > sLambdas(info::mesh->neighborsWithMe.size(), lmap), rLambdas(info::mesh->neighborsWithMe.size()); // pairs<noffset, lambda>
@@ -543,77 +544,154 @@ void NodesUniformFETIComposer::_buildMortars()
 		eslog::error("ESPRESO internal error: cannot exchange mortar lambdas.\n");
 	}
 
+	// lambdas <node, lambda> are sorted according to lambda in order to get correct result from FETI solver
 	std::vector<std::pair<esint, esint> > lambdas;
 	for (size_t n = 0; n < rLambdas.size(); ++n) {
 		lambdas.insert(lambdas.end(), rLambdas[n].begin(), rLambdas[n].end());
 	}
-	std::sort(lambdas.begin(), lambdas.end());
+	std::sort(lambdas.begin(), lambdas.end(), [] (const std::pair<esint, esint> &l1, const std::pair<esint, esint> &l2) { return l1.second < l2.second; });
 
 //	Communication::serialize([&] () {
 //		std::cout << info::mpi::rank << ": \n";
 //		std::cout << lambdas;
+////		auto dof = _DOFMap->begin();
+////		for (esint n = 0; n < info::mesh->nodes->size; ++n, ++dof) {
+////			std::cout << info::mesh->nodes->IDs->datatarray()[n] << "[" << info::mesh->nodes->coordinates->datatarray()[n] << "]: " << *dof << "\n";
+////		}
 //	});
 
-	std::vector<esint> didist = { 0 };
-	std::vector<DI> di;
-
-	std::vector<esint> rows, cols;
-	std::vector<double> vals;
-
-	auto lit = lambdas.begin();
-	for (auto begin = info::mesh->contacts->B.begin(), end = begin; begin != info::mesh->contacts->B.end(); begin = end) {
-		while (end != info::mesh->contacts->B.end() && begin->i == end->i) {
-			++end;
+	// found nodes that are on mortar interface -> we have exchange domain map in order to get correct decomposition
+	std::vector<esint> mids, mylambdas;
+	for (auto it = info::mesh->contacts->B.begin(); it != info::mesh->contacts->B.end(); ++it) {
+		auto nit = std::find(myids.begin(), myids.begin() + info::mesh->nodes->uniqInfo.nhalo, it->j);
+		if (nit == myids.begin() + info::mesh->nodes->uniqInfo.nhalo || *nit != it->j) {
+			nit = std::lower_bound(myids.begin() + info::mesh->nodes->uniqInfo.nhalo, myids.end(), it->j);
 		}
-		while (lit->first < begin->i) {
-			++lit;
-			if ((esint)di.size() != didist.back()) {
-				std::sort(di.begin() + didist.back(), di.end());
-				didist.push_back(di.size());
-			}
-		}
-
-		auto &myids = info::mesh->nodes->IDs->datatarray();
-		auto &cids = info::mesh->contacts->nodes->IDs->datatarray();
-		for (auto it = begin; it != end; ++it) {
-			auto nit = std::find(myids.begin(), myids.begin() + info::mesh->nodes->uniqInfo.nhalo, it->j);
-			if (nit == myids.begin() + info::mesh->nodes->uniqInfo.nhalo || *nit != it->j) {
-				nit = std::lower_bound(myids.begin() + info::mesh->nodes->uniqInfo.nhalo, myids.end(), it->j);
-			}
-			if (nit != myids.end() && *nit == it->j) {
-				auto dmap = _DOFMap->begin() + (nit - myids.begin());
-				for (auto di = dmap->begin(); di != dmap->end(); ++di) {
-					if (di->domain == info::mesh->elements->firstDomain) { // generalize for more domains per MPI
-						rows.push_back(lit->second + 1);
-						cols.push_back(di->index + 1);
-						vals.push_back(it->v / dmap->size());
-					}
-				}
-			}
-
-			auto noffset = std::lower_bound(cids.begin(), cids.end(), it->j) - cids.begin();
-			auto ranks = info::mesh->contacts->nodes->ranks->begin() + noffset;
-			for (auto r = ranks->begin(); r != ranks->end(); ++r) {
-				di.push_back(DI{ *r, 0 }); // dummy index
+		if (nit != myids.end() && *nit == it->j) {
+			mids.push_back(it->j);
+			if (mylambdas.size() == 0 || mylambdas.back() != it->i) {
+				mylambdas.push_back(it->i);
 			}
 		}
 	}
-	std::sort(di.begin() + didist.back(), di.end());
-	didist.push_back(di.size());
+	utils::sortAndRemoveDuplicates(mids);
+//	Communication::serialize([&] () {
+//		std::cout << info::mpi::rank << ": \n";
+//		std::cout << mylambdas;
+//	});
 
-	serializededata<esint, DI> *dmap = new serializededata<esint, DI>(tarray<esint>(info::env::OMP_NUM_THREADS, didist), tarray<DI>(info::env::OMP_NUM_THREADS, di));
+	std::vector<esint> sBuffer;
+	std::vector<std::vector<esint> > rBuffer(info::mesh->neighborsWithMe.size());
+	sBuffer.push_back(mids.size());
+	for (auto it = mids.begin(); it != mids.end(); ++it) {
+		auto nit = std::find(myids.begin(), myids.begin() + info::mesh->nodes->uniqInfo.nhalo, *it);
+		if (nit == myids.begin() + info::mesh->nodes->uniqInfo.nhalo || *nit != *it) {
+			nit = std::lower_bound(myids.begin() + info::mesh->nodes->uniqInfo.nhalo, myids.end(), *it);
+		}
+		if (nit != myids.end() && *nit == *it) {
+			sBuffer.push_back(*it);
+			size_t size = sBuffer.size();
+			sBuffer.push_back(0);
+			auto dmap = _DOFMap->begin() + (nit - myids.begin());
+			for (auto di = dmap->begin(); di != dmap->end(); ++di) {
+				if (_data->K.ismy(di->domain)) {
+					++sBuffer[size];
+					sBuffer.push_back(di->domain);
+					sBuffer.push_back(di->index);
+				}
+			}
+		}
+	}
+
+	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighborsWithMe)) {
+		eslog::error("ESPRESO internal error: cannot exchange mortar d-map.\n");
+	}
+
+	struct npair { esint id, n, offset; };
+	std::vector<npair> moffset;
+	for (size_t n = 0; n < rBuffer.size(); ++n) {
+		for (size_t i = 1; i < rBuffer[n].size(); i += 2 * rBuffer[n][i + 1] + 2) {
+			moffset.push_back(npair{ rBuffer[n][i], (esint)n, (esint)i });
+		}
+	}
+	std::sort(moffset.begin(), moffset.end(), [&] (const npair &i, const npair &j) {
+		if (i.id == j.id) {
+			return i.n < j.n;
+		}
+		return i.id < j.id;
+	});
+
+	std::vector<esint> didist = { 0 };
+	std::vector<DI> didata;
+
+	std::vector<std::vector<esint> > rows(info::mesh->elements->ndomains), cols(info::mesh->elements->ndomains);
+	std::vector<std::vector<double> > vals(info::mesh->elements->ndomains);
+
+	// build B1 in correct order
+	for (auto lambda = lambdas.begin(); lambda != lambdas.end(); ++lambda) {
+		if (!std::binary_search(mylambdas.begin(), mylambdas.end(), lambda->first)) {
+			continue;
+		}
+		auto begin = std::lower_bound(info::mesh->contacts->B.begin(), info::mesh->contacts->B.end(), lambda->first, [] (const ijv &b, esint nid) { return b.i < nid; });
+		auto end = begin;
+		while (end != info::mesh->contacts->B.end() && begin->i == end->i) {
+			++end;
+		}
+
+		for (auto it = begin; it != end; ++it) {
+			auto nit = std::lower_bound(moffset.begin(), moffset.end(), it->j, [&] (const npair &info, const esint &lambda) { return info.id < lambda; });
+			esint domains = 0;
+			for (auto nnit = nit; nnit != moffset.end() && nnit->id == it->j; ++nnit) {
+				domains += rBuffer[nit->n][nit->offset + 1];
+			}
+			while (nit != moffset.end() && nit->id == it->j) {
+				if (info::mesh->neighborsWithMe[nit->n] == info::mpi::rank) {
+					for (esint i = 0; i < rBuffer[nit->n][nit->offset + 1]; ++i) {
+						rows[rBuffer[nit->n][nit->offset + 2 + 2 * i] - _data->K.doffset].push_back(lambda->second + 1);
+						cols[rBuffer[nit->n][nit->offset + 2 + 2 * i] - _data->K.doffset].push_back(rBuffer[nit->n][nit->offset + 2 + 2 * i + 1] + 1);
+						vals[rBuffer[nit->n][nit->offset + 2 + 2 * i] - _data->K.doffset].push_back(it->v / domains);
+					}
+				}
+				for (esint i = 0; i < rBuffer[nit->n][nit->offset + 1]; ++i) {
+					didata.push_back(DI{ rBuffer[nit->n][nit->offset + 2 + 2 * i], rBuffer[nit->n][nit->offset + 2 + 2 * i + 1] });
+				}
+				++nit;
+			}
+		}
+		if (begin != end) {
+			std::sort(didata.begin() + didist.back(), didata.end());
+			didist.push_back(didata.size());
+		}
+	}
+
+	serializededata<esint, DI> *dmap = new serializededata<esint, DI>(tarray<esint>(info::env::OMP_NUM_THREADS, didist), tarray<DI>(info::env::OMP_NUM_THREADS, didata));
 
 //	Communication::serialize([&] () {
 //		std::cout << info::mpi::rank << "<" << info::mesh->elements->firstDomain << "> " << ": \n";
-//		for (size_t i = 0; i < rows.size(); i++) {
-//			printf("<%2d,%2d> = %8.6f\n", rows[i], cols[i], vals[i]);
+//		for (size_t n = 0; n < rows.size(); ++n) {
+//			for (size_t i = 0; i < rows[n].size(); i++) {
+//				if (i && rows[n][i] != rows[n][i - 1]) {
+//					printf("\n");
+//				}
+//				printf("%lu:%2d: <%lu:%d> = %8.6f\n", n, rows[n][i], info::mesh->elements->firstDomain + n, cols[n][i] - 1, vals[n][i]);
+//			}
+//			printf("\n");
 //		}
-//		std::cout << *dmap << "\n";
-//		std::cout << *info::mesh->nodes->coordinates << "\n";
-//		std::cout << *_DOFMap << "\n";
-//		for (esint n = 0; n < info::mesh->nodes->size; ++n) {
-//			std::cout << info::mesh->nodes->IDs->datatarray()[n] << "::" << info::mesh->nodes->coordinates->datatarray()[n] << " -> " << *(_DOFMap->begin() + n) << "\n";
-//		}
+////		for (esint n = 0; n < info::mesh->nodes->size; ++n) {
+////			std::cout << "n[" << info::mesh->nodes->IDs->datatarray()[n] << "]: " << *(_DOFMap->begin() + n) << "\n";
+////		}
+////		std::cout << *_DOFMap << "\n\n";
+//		std::cout << lambdas.size() << " vs. " << dmap->structures() << "\n";
+////		auto ddit = dmap->begin();
+////		for (auto ll = lambdas.begin(); ll != lambdas.end(); ++ll, ++ddit) {
+////			std::cout << *ll << ": " << *ddit << "\n";
+////		}
+////		std::cout << *dmap << "\n\n";
+////		std::cout << *info::mesh->nodes->coordinates << "\n";
+////		std::cout << *_DOFMap << "\n";
+////		for (esint n = 0; n < info::mesh->nodes->size; ++n) {
+////			std::cout << info::mesh->nodes->IDs->datatarray()[n] << "::" << info::mesh->nodes->coordinates->datatarray()[n] << " -> " << *(_DOFMap->begin() + n) << "\n";
+////		}
 //	});
 
 	_data->mortars.initDomains(info::mesh->elements->ndomains);
@@ -621,9 +699,11 @@ void NodesUniformFETIComposer::_buildMortars()
 				info::mpi::rank, info::mpi::size, info::mesh->neighbors.size(),
 				_data->K.distribution, info::mesh->neighbors.data(), dmap);
 
-	_data->mortars[0].resize(size, _data->K[0].ncols, vals.size());
-	_data->mortars[0].fillPattern(rows.size(), rows.data(), cols.data());
-	_data->mortars[0].fillValues(vals.size(), vals.data());
+	for (esint d = 0; d < info::mesh->elements->ndomains; ++d) {
+		_data->mortars[d].resize(size, _data->K[d].ncols, vals[d].size());
+		_data->mortars[d].fillPattern(rows[d].size(), rows[d].data(), cols[d].data());
+		_data->mortars[d].fillValues(vals[d].size(), vals[d].data());
+	}
 	_data->mortars.structureUpdated();
 
 	delete dmap;

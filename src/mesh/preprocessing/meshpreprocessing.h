@@ -23,6 +23,7 @@ void exchangeHalo();
 void exchangeElements(const std::vector<esint> &partition);
 
 void computeNodesDuplication();
+void computeBodies();
 void computeElementsFaceNeighbors();
 void computeElementsEdgeNeighbors();
 void computeElementsCenters();
@@ -48,13 +49,14 @@ void triangularizeBoundary(BoundaryRegionStore *boundary);
 
 void computeRegionsSurface();
 void computeBodiesSurface();
+void computeBodiesSurfacePlanes();
+void exchangeContactHalo();
+void findCloseElements();
 void computeSurfaceLocations();
 void computeSurfaceElementNeighbors(SurfaceStore *surface);
 void computeContactNormals();
 void fireNormals();
-void findCloseElements();
-//void clip(std::vector<Point> &p, std::vector<Point> &q, std::vector<std::vector<Point> > &res);
-//void dummyClip(std::vector<Point> &p, std::vector<Point> &q, std::vector<std::vector<Point> > &res);
+void computeContactInterface();
 
 void computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion, int elementDimension);
 

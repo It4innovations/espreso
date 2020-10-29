@@ -19,8 +19,8 @@ struct BaseFunctions: public Element {
 	virtual ~BaseFunctions();
 
 	virtual void computeReferenceCoords(const MatrixDense & vertices, const MatrixDense & points, MatrixDense & result) {}
-	void recomputeDetJ( MatrixDense& coords, MatrixDense& resdetJ, MatrixDense* points = NULL);
-	void recomputeDetJN(MatrixDense& coords, MatrixDense& resdetJ, MatrixDense& resN, MatrixDense& refPoints);
+	static void recomputeDetJ(Element *e, MatrixDense& coords, MatrixDense& resdetJ, MatrixDense* points = NULL);
+	static void recomputeDetJN(Element *e, MatrixDense& coords, MatrixDense& resdetJ, MatrixDense& resN, MatrixDense& refPoints);
 
 
 	virtual void setGaussPointsForOrder(int order) =0;

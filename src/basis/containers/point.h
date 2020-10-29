@@ -11,7 +11,8 @@ class _Point {
 public:
 	_Point(): x(0), y(0), z(0) { };
 	_Point(TType x, TType y, TType z): x(x), y(y), z(z) { };
-	_Point(const _Point &p): x(p.x), y(p.y), z(p.z) { };
+	template<typename TOther>
+	_Point(const _Point<TOther> &p): x(p.x), y(p.y), z(p.z) { };
 
 	TType& operator[](int i)
 	{
@@ -30,6 +31,12 @@ public:
 		y *= l;
 		z *= l;
 		return *this;
+	}
+
+	_Point normalize() const
+	{
+		TType l = 1.0 / length();
+		return _Point(x * l, y * l, z * l);
 	}
 
 	TType norm() const { return length(); }
@@ -89,6 +96,11 @@ public:
 	static TType cross2d(const _Point &p1, const _Point &p2)
 	{
 		return p1.x * p2.y - p1.y * p2.x;
+	}
+
+	void rodrigues(const _Point &axis, const TType &cos, const TType &sin)
+	{
+		*this = (*this) * cos + cross(axis, (*this)) * sin + (axis * (axis * (*this))) * (1 - cos);
 	}
 
 	_Point &operator*=(TType scalar)

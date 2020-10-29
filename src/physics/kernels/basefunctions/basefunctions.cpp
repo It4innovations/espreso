@@ -79,27 +79,27 @@ void BaseFunctions::created(Element &e)
 	}
 }
 
-void BaseFunctions::recomputeDetJ(MatrixDense& coords, MatrixDense& resdetJ, MatrixDense* points)
+void BaseFunctions::recomputeDetJ(Element *e, MatrixDense& coords, MatrixDense& resdetJ, MatrixDense* points)
 {
 	MatrixDense J1(1, 1), J2(2, 3), J3(3, 3);
 	double detJ = 0;
 	if (points == NULL) {
-		resdetJ.resize(1,weighFactor->size());
-		for (size_t gp = 0; gp < weighFactor->size(); gp++) {
-			switch (type) {
+		resdetJ.resize(1, e->weighFactor->size());
+		for (size_t gp = 0; gp < e->weighFactor->size(); gp++) {
+			switch (e->type) {
 			case Element::TYPE::POINT:
 				detJ = 1.0;
 				break;
 			case Element::TYPE::LINE:
-				J1.multiply((*dN)[gp], coords);
+				J1.multiply((*e->dN)[gp], coords);
 				detJ = J1.vals[0];
 				break;
 			case Element::TYPE::PLANE:
-				J2.multiply((*dN)[gp], coords);
+				J2.multiply((*e->dN)[gp], coords);
 				detJ = J2[0][0]*J2[1][1] - J2[0][1]*J2[1][0];
 				break;
 			case Element::TYPE::VOLUME:
-				J3.multiply((*dN)[gp], coords);
+				J3.multiply((*e->dN)[gp], coords);
 				detJ = MATH::determinant3x3(J3.vals);
 				break;
 			}
@@ -108,20 +108,20 @@ void BaseFunctions::recomputeDetJ(MatrixDense& coords, MatrixDense& resdetJ, Mat
 	} else {
 		resdetJ.resize(1,points->nrows);
 		for (esint p = 0; p < points->nrows; p++) {
-			switch (type) {
+			switch (e->type) {
 			case Element::TYPE::POINT:
 				detJ = 1.0;
 				break;
 			case Element::TYPE::LINE:
-				J1.multiply((*dN)[p], coords);
+				J1.multiply((*e->dN)[p], coords);
 				detJ = J1.vals[0];
 				break;
 			case Element::TYPE::PLANE:
-				J2.multiply((*dN)[p], coords);
+				J2.multiply((*e->dN)[p], coords);
 				detJ = J2[0][0]*J2[1][1] - J2[0][1]*J2[1][0];
 				break;
 			case Element::TYPE::VOLUME:
-				J3.multiply((*dN)[p], coords);
+				J3.multiply((*e->dN)[p], coords);
 				detJ = MATH::determinant3x3(J3.vals);
 				break;
 			}
@@ -130,15 +130,15 @@ void BaseFunctions::recomputeDetJ(MatrixDense& coords, MatrixDense& resdetJ, Mat
 	}
 }
 
-void BaseFunctions::recomputeDetJN(MatrixDense& coords, MatrixDense& resdetJ, MatrixDense& resN, MatrixDense& refPoints)
+void BaseFunctions::recomputeDetJN(Element *e, MatrixDense& coords, MatrixDense& resdetJ, MatrixDense& resN, MatrixDense& refPoints)
 {
 	MatrixDense J1(1, 1), J2(2, 2), J3(3, 3), t_dN;
 	double detJ = 0;
 	resdetJ.resize(1,refPoints.nrows);
-	resN.resize(nodes, refPoints.nrows);
-	t_dN.resize(2, nodes);
+	resN.resize(e->nodes, refPoints.nrows);
+	t_dN.resize(2, e->nodes);
 	for (esint p = 0; p < refPoints.nrows; p++) {
-		switch (code) {
+		switch (e->code) {
 		case Element::CODE::TRIANGLE3:
 			resN[0][p] =  1 - refPoints[p][0] - refPoints[p][1];
 			resN[1][p] = refPoints[p][0];
@@ -160,7 +160,7 @@ void BaseFunctions::recomputeDetJN(MatrixDense& coords, MatrixDense& resdetJ, Ma
 		default:
 			break;
 		}
-		switch (type) {
+		switch (e->type) {
 		case Element::TYPE::POINT:
 			detJ = 1.0;
 			break;

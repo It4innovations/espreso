@@ -11,7 +11,7 @@ struct Square4: public Element {
 	static void setBaseFunctions(Element &self);
 	void setGaussPointsForOrder(int order);
 
-	void computeReferenceCoords(const MatrixDense & vertices, const MatrixDense & points, MatrixDense & result);
+	static void computeReferenceCoords(const MatrixDense & vertices, const MatrixDense & points, MatrixDense & result);
 };
 
 }

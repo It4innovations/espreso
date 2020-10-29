@@ -336,62 +336,44 @@ void DebugOutput::surfaceFixPoints(double clusterShrinkRatio, double domainShrin
 
 void DebugOutput::contact(double clusterShrinkRatio, double domainShrinkRatio)
 {
-	if (!info::ecf->output.debug) {
+	if (!info::ecf->output.debug || info::mesh->contacts->intersections == NULL) {
 		return;
 	}
 
-	DebugOutput output(clusterShrinkRatio, 1, false);
+	DebugOutput output(clusterShrinkRatio, domainShrinkRatio, false);
 
-	esint cells = 0, gcells, points = 0, poffset, noffset, nsize;;
+	esint cells = 0, gcells, points = 0, poffset;
 	if (output._mesh.contacts->intersections != NULL) {
-		cells += output._mesh.contacts->intersections->datatarray().size();
-		points += 3 * output._mesh.contacts->intersections->datatarray().size();
+		points += output._mesh.contacts->intersections->datatarray().size();
+		cells += points / 3;
 	}
 	poffset = points;
 	points = Communication::exscan(poffset);
 	Communication::allReduce(&cells, &gcells, 1, MPITools::getType<esint>().mpitype, MPI_SUM);
 
-	output.points(points, noffset, nsize);
-	if (output._mesh.contacts->intersections != NULL) {
-		for (size_t i = 0; i < output._mesh.contacts->intersections->datatarray().size(); ++i) {
-			for (int p = 0; p < 3; ++p) {
-				Point pp = Visualization::shrink(output._mesh.contacts->intersections->datatarray()[i].p[p], output._ccenter, Point(), .95, 1);
-				output._writer.point(pp.x, pp.y, pp.z);
-			}
-		}
+	if (Visualization::isRoot()) {
+		output._writer.points(points);
 	}
-	output._writer.groupData();
-
-	esint esize = output.elements(noffset, gcells, points);
-	if (output._mesh.contacts->intersections != NULL) {
-		poffset += nsize;
-		for (size_t i = 0; i < output._mesh.contacts->intersections->datatarray().size(); ++i) {
-			esint nn[3] = { poffset++, poffset++, poffset++};
-			output._writer.cell(3, nn);
-		}
-	}
-	output._writer.groupData();
-
-	if (output._mesh.contacts->intersections != NULL) {
-		output.etypes(esize, gcells);
-		for (size_t i = 0; i < output._mesh.contacts->intersections->datatarray().size(); ++i) {
-			output._writer.type(Element::CODE::TRIANGLE3);
-		}
+	for (size_t i = 0; i < output._mesh.contacts->intersections->datatarray().size(); ++i) {
+		const Point &pp = output._mesh.contacts->intersections->datatarray()[i];
+		output._writer.point(pp.x, pp.y, pp.z);
 	}
 	output._writer.groupData();
 
 	if (Visualization::isRoot()) {
-		output._writer.celldata(esize + gcells);
-		output._writer.data("SCALARS", "MESH", "int 1");
-		output._writer.description("LOOKUP_TABLE default\n");
+		output._writer.cells(gcells, 4 * gcells);
 	}
-	for (esint e = 0; e < output._mesh.elements->size; ++e) {
-		output._writer.int32ln(1);
+	for (size_t i = 0; i < output._mesh.contacts->intersections->datatarray().size(); i += 3) {
+		esint nn[3] = { poffset++, poffset++, poffset++};
+		output._writer.cell(3, nn);
 	}
 	output._writer.groupData();
 
-	for (esint e = 0; e < cells; ++e) {
-		output._writer.int32ln(0);
+	if (Visualization::isRoot()) {
+		output._writer.celltypes(gcells);
+	}
+	for (esint i = 0; i < cells; ++i) {
+		output._writer.type(Element::CODE::TRIANGLE3);
 	}
 	output._writer.groupData();
 
@@ -423,7 +405,7 @@ void DebugOutput::surface(const char* name, double clusterShrinkRatio, double do
 	}
 
 	for (auto e = output._mesh.surface->enodes->begin(); e != output._mesh.surface->enodes->end(); ++e) {
-		output._writer.cell(e->size(), e->data(), noffset);
+		output._writer.cell(e->size(), e->data(), output._mesh.surface->nodes->datatarray().data(), noffset);
 	}
 	output._writer.groupData();
 
@@ -439,12 +421,80 @@ void DebugOutput::surface(const char* name, double clusterShrinkRatio, double do
 	output._writer.write();
 }
 
+void DebugOutput::surfacePlanes(const char* name, double clusterShrinkRatio, double domainShrinkRatio)
+{
+	if (!info::ecf->output.debug) {
+		return;
+	}
+
+	DebugOutput output(1, 1, false);
+
+	SurfaceStore *surf = output._mesh.surface;
+
+	esint psize = surf->enodes->datatarray().size() + 2 * surf->size, gpsize;
+	Communication::allReduce(&psize, &gpsize, 1, MPITools::getType<esint>().mpitype, MPI_SUM);
+	if (Visualization::isRoot()) {
+		output._writer.points(gpsize);
+	}
+	auto enodes = surf->enodes->begin();
+	auto plane = surf->plane->begin();
+	for (esint e = 0; e < surf->size; ++e, ++enodes, ++plane) {
+		Point &p = plane->at(0);
+		Point &n = plane->at(1);
+		double scale = 0.001;
+		output._writer.point(p.x, p.y, p.z);
+		output._writer.point(p.x + scale * n.x, p.y + scale * n.y, p.z + scale * n.z);
+		for (auto nn = enodes->begin(); nn != enodes->end(); ++nn) {
+			Point pn = surf->coordinates->datatarray()[*nn];
+			double distance = (pn - p) * n;
+			pn = pn - n * distance;
+			output._writer.point(pn.x, pn.y, pn.z);
+		}
+	}
+	output._writer.groupData();
+
+	esint esize = 2 * surf->size, gesize;
+	Communication::allReduce(&esize, &gesize, 1, MPITools::getType<esint>().mpitype, MPI_SUM);
+
+	if (Visualization::isRoot()) {
+		output._writer.cells(gesize, gesize + gpsize);
+	}
+	enodes = surf->enodes->begin();
+	for (esint e = 0, n = 0; e < surf->size; ++e, ++enodes) {
+		output._writer.int32s(2);
+		output._writer.int32s(n++);
+		output._writer.int32ln(n++);
+
+		output._writer.int32s(enodes->size());
+		for (auto nn = enodes->begin(); nn != enodes->end(); ++nn) {
+			output._writer.int32s(n++);
+		}
+		output._writer.push('\n');
+	}
+
+	output._writer.groupData();
+
+	if (Visualization::isRoot()) {
+		output._writer.celltypes(gesize);
+	}
+	auto epointers = surf->epointers->datatarray().begin();
+	for (esint e = 0; e < surf->size; ++e, ++epointers) {
+		output._writer.type(Element::CODE::LINE2);
+		output._writer.type((*epointers)->code);
+	}
+	output._writer.groupData();
+
+	output._writer.commitFile(output._path + std::string(name) + ".vtk");
+	output._writer.reorder();
+	output._writer.write();
+}
+
 void DebugOutput::closeElements(double clusterShrinkRatio, double domainShrinkRatio)
 {
 	if (!info::ecf->output.debug) {
 		return;
 	}
-	if (info::mesh->contacts == NULL || info::mesh->contacts->closeElements == NULL) {
+	if (info::mesh->contacts == NULL || info::mesh->contacts->localPairs == NULL) {
 		return;
 	}
 
@@ -462,99 +512,74 @@ void DebugOutput::closeElements(double clusterShrinkRatio, double domainShrinkRa
 	os << "ASCII\n";
 	os << "DATASET UNSTRUCTURED_GRID\n\n";
 
-	size_t points = info::mesh->contacts->elements->structures() + info::mesh->contacts->closeElements->datatarray().size();
-	for (size_t n = 0; n < info::mesh->contacts->gneighbors.size(); n++) {
-		points += info::mesh->contacts->gnsurface[n].size() + info::mesh->contacts->gncloseElements[n]->datatarray().size();
-	}
-
-	std::vector<Point> centers(info::mpi::size);
-	Communication::allGather(&center, centers.data(), 3, MPI_DOUBLE);
+	size_t points = info::mesh->contacts->surface->enodes->structures() + info::mesh->contacts->localPairs->datatarray().size() + info::mesh->contacts->neighPairs->datatarray().size() / 2;
 
 	os << "POINTS " << points << " float\n";
-	auto closest = info::mesh->contacts->closeElements->cbegin();
-	for (auto e = info::mesh->contacts->elements->cbegin(); e !=info::mesh->contacts->elements->cend(); ++e, ++closest) {
+	std::vector<float> distance;
+	auto enodes = info::mesh->contacts->surface->enodes->cbegin();
+	auto local = info::mesh->contacts->localPairs->cbegin();
+	auto neigh = info::mesh->contacts->neighPairs->cbegin();
+	for (esint e = 0; e < info::mesh->surface->size; ++e, ++enodes, ++local, ++neigh) {
 		Point center;
-		for (auto n = e->begin(); n != e->end(); ++n) {
-			center += *n;
+		for (auto n = enodes->begin(); n != enodes->end(); ++n) {
+			center += info::mesh->contacts->surface->coordinates->datatarray()[*n];
 		}
-		center /= e->size();
-		center = Visualization::shrink(center, center, center, clusterShrinkRatio, 1);
+		center /= enodes->size();
 		os << center.x << " " << center.y << " " << center.z << "\n";
-
-		for (auto ne = closest->begin(); ne != closest->end(); ++ne) {
-			auto ce = info::mesh->contacts->elements->cbegin() + *ne;
-
-			Point ncenter;
-			for (auto n = ce->begin(); n != ce->end(); ++n) {
-				ncenter += *n;
+		for (auto ee = local->begin(); ee != local->end(); ++ee) {
+			Point tocenter;
+			auto other = info::mesh->contacts->surface->enodes->cbegin() + *ee;
+			for (auto n = other->begin(); n != other->end(); ++n) {
+				tocenter += info::mesh->contacts->surface->coordinates->datatarray()[*n];
 			}
-			ncenter /= ce->size();
-
-			ncenter = Visualization::shrink(ncenter, center, ncenter, clusterShrinkRatio, 1);
-			ncenter = center + (ncenter - center) / 2;
-			os << ncenter.x << " " << ncenter.y << " " << ncenter.z << "\n";
+			tocenter /= other->size();
+			os << tocenter.x << " " << tocenter.y << " " << tocenter.z << "\n";
+			distance.push_back((tocenter - center).length());
+		}
+		for (auto ee = neigh->begin(); ee != neigh->end(); ++ee) {
+			Point tocenter;
+			esint nn = *ee++;
+			auto other = info::mesh->contacts->halo[nn].enodes->cbegin() + *ee;
+			for (auto n = other->begin(); n != other->end(); ++n) {
+				tocenter += info::mesh->contacts->halo[nn].coordinates->datatarray()[*n];
+			}
+			tocenter /= other->size();
+			os << tocenter.x << " " << tocenter.y << " " << tocenter.z << "\n";
+			distance.push_back((tocenter - center).length());
 		}
 	}
-
-	for (size_t n = 0; n < info::mesh->contacts->gneighbors.size(); n++) {
-		auto closest = info::mesh->contacts->gncloseElements[n]->cbegin();
-		for (size_t i = 0; i < info::mesh->contacts->gnsurface[n].size(); ++i, ++closest) {
-			auto e = info::mesh->contacts->elements->cbegin() + info::mesh->contacts->gnsurface[n][i];
-			Point center;
-			for (auto nn = e->begin(); nn != e->end(); ++nn) {
-				center += *nn;
-			}
-			center /= e->size();
-			center = Visualization::shrink(center, center, center, clusterShrinkRatio, 1);
-			os << center.x << " " << center.y << " " << center.z << "\n";
-
-			for (auto ne = closest->begin(); ne != closest->end(); ++ne) {
-				auto ce = info::mesh->contacts->gnecoords[n]->cbegin() + *ne;
-
-				Point ncenter;
-				for (auto nn = ce->begin(); nn != ce->end(); ++nn) {
-					ncenter += *nn;
-				}
-				ncenter /= ce->size();
-
-				ncenter = Visualization::shrink(ncenter, centers[info::mesh->contacts->gneighbors[n]], ncenter, clusterShrinkRatio, 1);
-				ncenter = center + (ncenter - center) / 2;
-				os << ncenter.x << " " << ncenter.y << " " << ncenter.z << "\n";
-			}
-		}
-	}
-
 	os << "\n";
 
-	size_t cells = info::mesh->contacts->closeElements->datatarray().size();
-	for (size_t n = 0; n < info::mesh->contacts->gneighbors.size(); n++) {
-		cells += info::mesh->contacts->gncloseElements[n]->datatarray().size();
-	}
+	size_t cells = info::mesh->contacts->localPairs->datatarray().size() + info::mesh->contacts->neighPairs->datatarray().size() / 2;
 
 	os << "CELLS " << cells << " " << 3 * cells << "\n";
-	esint eindex = 0, noffset;
-	for (auto e = info::mesh->contacts->closeElements->cbegin(); e != info::mesh->contacts->closeElements->cend(); ++e) {
-		noffset = 1;
-		for (auto n = e->begin(); n != e->end(); ++n, ++noffset) {
-			os << "2 " << eindex << " " << eindex + noffset << "\n";
+	esint eindex, noffset = 0;
+	local = info::mesh->contacts->localPairs->cbegin();
+	neigh = info::mesh->contacts->neighPairs->cbegin();
+	for (esint e = 0; e < info::mesh->surface->size; ++e, ++local, ++neigh) {
+		eindex = noffset++;
+		for (auto ee = local->begin(); ee != local->end(); ++ee, ++noffset) {
+			os << "2 " << eindex << " " << noffset << "\n";
 		}
-		eindex += noffset;
-	}
-	for (size_t n = 0; n < info::mesh->contacts->gneighbors.size(); n++) {
-		for (auto e = info::mesh->contacts->gncloseElements[n]->cbegin(); e != info::mesh->contacts->gncloseElements[n]->cend(); ++e) {
-			noffset = 1;
-			for (auto n = e->begin(); n != e->end(); ++n, ++noffset) {
-				os << "2 " << eindex << " " << eindex + noffset << "\n";
-			}
-			eindex += noffset;
+		for (auto ee = neigh->begin(); ee != neigh->end(); ee += 2, ++noffset) {
+			os << "2 " << eindex << " " << noffset << "\n";
 		}
 	}
+
 	os << "\n";
 
 	os << "CELL_TYPES " << cells << "\n";
 	Element::CODE ecode = Element::CODE::LINE2;
 	for (size_t n = 0; n < cells; ++n) {
 		os << VTKASCIIWritter::ecode(ecode) << "\n";
+	}
+	os << "\n";
+
+	os << "CELL_DATA " << cells << "\n";
+	os << "SCALARS DISTANCE float 1\n";
+	os << "LOOKUP_TABLE default\n";
+	for (size_t n = 0; n < cells; ++n) {
+		os << distance[n] << "\n";
 	}
 	os << "\n";
 }

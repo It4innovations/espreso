@@ -805,9 +805,9 @@ void computeElementsNeighbors(
 				hasNeighbor = hasNeighbor | intersection.size();
 			}
 			tdist.push_back(tdata.size());
-			if (!hasNeighbor && info::mesh->elements->size != 1) {
-				eslog::error("Input error: a dangling element found (the element without any neighbor).\n");
-			}
+//			if (!hasNeighbor && info::mesh->elements->size != 1) {
+//				eslog::error("Input error: a dangling element found (the element without any neighbor).\n");
+//			}
 		}
 
 		dualDistribution[t].swap(tdist);
@@ -824,10 +824,9 @@ void computeElementsNeighbors(
 
 void computeSurfaceElementNeighbors(SurfaceStore *surface)
 {
-	surface->eoffset = surface->enodes->structures();
-	surface->IDs = new serializededata<esint, esint>(1, tarray<esint>(info::env::OMP_NUM_THREADS, surface->eoffset));
-	Communication::exscan(surface->eoffset);
-	std::iota(surface->IDs->datatarray().begin(), surface->IDs->datatarray().end(), surface->eoffset);
+	// out dated
+	surface->IDs = new serializededata<esint, esint>(1, tarray<esint>(info::env::OMP_NUM_THREADS, surface->size));
+	std::iota(surface->IDs->datatarray().begin(), surface->IDs->datatarray().end(), surface->offset);
 	computeElementsNeighbors(
 			surface->nelements,
 			surface->neighbors,

@@ -187,7 +187,7 @@ void MeshBuilder::rotate(InputTransformationConfiguration &transformation, Geome
 {
 	for (int i = 0; i < transformation.instances; ++i, ++instance) {
 		double cos = std::cos(instance * M_PI * transformation.z / 180), sin = std::sin(instance * M_PI * transformation.z / 180);
-		duplicate(source, instance);
+//		duplicate(source, instance);
 		coordinates.reserve(coordinates.size() + (source.nodes.second - source.nodes.first));
 		for (size_t n = source.nodes.first; n < source.nodes.second; ++n) {
 			coordinates.push_back(Point(

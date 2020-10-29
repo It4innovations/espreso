@@ -2,6 +2,8 @@
 #ifndef SRC_MESH_STORE_SURFACESTORE_H_
 #define SRC_MESH_STORE_SURFACESTORE_H_
 
+#include "basis/containers/point.h"
+
 #include <cstddef>
 #include <vector>
 
@@ -12,7 +14,12 @@ struct Element;
 
 struct SurfaceStore {
 
+	serializededata<esint, esint>* parents;
+	serializededata<esint, esint>* body;
 	serializededata<esint, esint>* triangles;
+	serializededata<esint, esint>* nodes;
+	serializededata<esint, Point>* coordinates;
+	serializededata<esint, Point>* plane; // from coarse nodes + warping in the case of squares
 	serializededata<esint, esint>* enodes;
 
 	serializededata<esint, esint>* nelements; // only for neighbors definition
@@ -21,7 +28,9 @@ struct SurfaceStore {
 
 	std::vector<size_t> tdistribution, edistribution;
 
-	esint eoffset;
+	esint offset;
+	esint size;
+	esint totalSize;
 	serializededata<esint, Element*>* epointers;
 	std::vector<esint> ecounters;
 
