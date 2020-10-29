@@ -4,12 +4,11 @@
 #include "scatteredinput.h"
 
 #include "basis/containers/serializededata.h"
+#include "basis/structures/kdtree.h"
 #include "basis/logging/profiler.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
 #include "basis/utilities/parser.h"
-#include "basis/utilities/kdtree.h"
-
 #include "esinfo/ecfinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
@@ -1157,7 +1156,7 @@ void Input::searchDuplicateNodes(std::vector<Point> &coordinates, std::vector<es
 	double eps = info::ecf->input.duplication_tolerance;
 	std::vector<esint> duplicate(tree.permutation.size(), -1);
 
-	for (esint i = std::exp2(tree.levels); i < std::exp2(tree.levels + 1); ++i) {
+	for (esint i = std::exp2(tree.levels), first = i; i < std::exp2(tree.levels + 1); ++i) {
 		esint begin = tree.begin(i);
 		esint end = tree.end(i);
 		if (begin == end) {
@@ -1209,12 +1208,8 @@ void Input::searchDuplicateNodes(std::vector<Point> &coordinates, std::vector<es
 
 		if (tree.splitters.size() > 1) {
 			for (auto p = tree.permutation.cbegin() + begin; p != tree.permutation.cbegin() + end; ++p) {
-				if (
-						(min.x != tree.min.x && coordinates[*p].x <= min.x + eps) ||
-						(min.y != tree.min.y && coordinates[*p].y <= min.y + eps) ||
-						(min.z != tree.min.z && coordinates[*p].z <= min.z + eps)) {
-
-					traverse(1, i, p - tree.permutation.cbegin());
+				if ((coordinates[*p].x <= min.x + eps) || (coordinates[*p].y <= min.y + eps) || (coordinates[*p].z <= min.z + eps)) {
+					traverse(1, std::max(first, i), p - tree.permutation.cbegin());
 				}
 			}
 		}
