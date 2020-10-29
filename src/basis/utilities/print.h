@@ -28,11 +28,6 @@ inline std::ostream& operator<<(std::ostream& os, const Point &p) {
 	return os;
 }
 
-inline std::ostream& operator<<(std::ostream& os, const Triangle &p) {
-	os << "[" << p.p[0] << p.p[1] << p.p[2] << "]";
-	return os;
-}
-
 inline std::ostream& operator<<(std::ostream& os, const VectorDenseDistributed &v)
 {
 	for (esint i = v.nhalo; i < v.size; i++) {
