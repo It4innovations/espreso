@@ -119,12 +119,12 @@ private:
 	class iterator_base {
 
 	public:
-		bool operator< (const TIterator &other) const { return _edata._begin <  other._edata._begin; }
-		bool operator> (const TIterator &other) const { return _edata._begin >  other._edata._begin; }
-		bool operator<=(const TIterator &other) const { return _edata._begin <= other._edata._begin; }
-		bool operator>=(const TIterator &other) const { return _edata._begin >= other._edata._begin; }
-		bool operator==(const TIterator &other) const { return _edata._begin == other._edata._begin; }
-		bool operator!=(const TIterator &other) const { return _edata._begin != other._edata._begin; }
+//		bool operator< (const TIterator &other) const { return _edata._begin <  other._edata._begin; }
+//		bool operator> (const TIterator &other) const { return _edata._begin >  other._edata._begin; }
+//		bool operator<=(const TIterator &other) const { return _edata._begin <= other._edata._begin; }
+//		bool operator>=(const TIterator &other) const { return _edata._begin >= other._edata._begin; }
+		bool operator==(const TIterator &other) const { return _element == other._element && _edata._begin == other._edata._begin; }
+		bool operator!=(const TIterator &other) const { return _element != other._element || _edata._begin != other._edata._begin; }
 
 		TIterator& operator++() { return move( 1); }
 		TIterator& operator--() { return move(-1); }
