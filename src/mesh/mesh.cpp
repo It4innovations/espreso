@@ -36,6 +36,11 @@
 #include "output/resultstore.h"
 #include "output/visualization/debug.h"
 
+#include <algorithm>
+#include <numeric>
+#include <cmath>
+#include <limits>
+
 using namespace espreso;
 
 Element Mesh::edata[(int)Element::CODE::SIZE];
@@ -675,6 +680,42 @@ void Mesh::printMeshStatistics()
 		}
 	}
 
+	std::vector<float> bmin(3 * (elements->bodies + 1), std::numeric_limits<float>::max()), bmax(3 * (elements->bodies + 1), -std::numeric_limits<float>::max());
+	std::vector<esint> ecount(elements->bodies), scount(elements->bodies);
+	auto body = elements->body->datatarray().begin();
+	for (auto enodes = elements->procNodes->begin(); enodes != elements->procNodes->end(); ++enodes, ++body) {
+		++ecount[*body];
+		for (auto n = enodes->begin(); n != enodes->end(); ++n) {
+			bmin[*body * 3 + 0] = std::min(bmin[*body * 3 + 0], (float)nodes->coordinates->datatarray()[*n].x);
+			bmin[*body * 3 + 1] = std::min(bmin[*body * 3 + 1], (float)nodes->coordinates->datatarray()[*n].y);
+			bmin[*body * 3 + 2] = std::min(bmin[*body * 3 + 2], (float)nodes->coordinates->datatarray()[*n].z);
+			bmax[*body * 3 + 0] = std::max(bmax[*body * 3 + 0], (float)nodes->coordinates->datatarray()[*n].x);
+			bmax[*body * 3 + 1] = std::max(bmax[*body * 3 + 1], (float)nodes->coordinates->datatarray()[*n].y);
+			bmax[*body * 3 + 2] = std::max(bmax[*body * 3 + 2], (float)nodes->coordinates->datatarray()[*n].z);
+		}
+	}
+	for (auto b = surface->body->datatarray().begin(); b != surface->body->datatarray().end(); ++b) {
+		++scount[*b];
+	}
+
+	for (int b = 0; b < elements->bodies; ++b) {
+		bmin[elements->bodies * 3 + 0] = std::min(bmin[b * 3 + 0], bmin[elements->bodies * 3 + 0]);
+		bmin[elements->bodies * 3 + 1] = std::min(bmin[b * 3 + 1], bmin[elements->bodies * 3 + 1]);
+		bmin[elements->bodies * 3 + 2] = std::min(bmin[b * 3 + 2], bmin[elements->bodies * 3 + 2]);
+		bmax[elements->bodies * 3 + 0] = std::max(bmax[b * 3 + 0], bmax[elements->bodies * 3 + 0]);
+		bmax[elements->bodies * 3 + 1] = std::max(bmax[b * 3 + 1], bmax[elements->bodies * 3 + 1]);
+		bmax[elements->bodies * 3 + 2] = std::max(bmax[b * 3 + 2], bmax[elements->bodies * 3 + 2]);
+	}
+
+	Communication::allReduce(bmin, Communication::OP::MIN);
+	Communication::allReduce(bmax, Communication::OP::MAX);
+	Communication::allReduce(ecount, Communication::OP::SUM);
+	Communication::allReduce(scount, Communication::OP::SUM);
+
+	std::vector<esint> perm(elements->bodies);
+	std::iota(perm.begin(), perm.end(), 0);
+	std::sort(perm.begin(), perm.end(), [&] (esint i, esint j) { return ecount[i] < ecount[j]; });
+
 	switch (info::ecf->output.logger) {
 	case OutputConfiguration::LOGGER::USER:
 		eslog::info(" ====================================== MESH STATISTICS ====================================== \n");
@@ -689,7 +730,6 @@ void Mesh::printMeshStatistics()
 				eslog::info(" %*s : %16s\n", namesize, ename(etype).c_str(), Parser::stringwithcommas(elements->ecounters[etype]).c_str());
 			}
 		}
-
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n\n");
 
 		eslog::info("  %s [%3ld]%*s : %16s %16s\n", "ELEMS REGIONS SIZES", elementsRegions.size() - 1, namesize - 26, " ", Parser::stringwithcommas(nelements).c_str(), Parser::stringwithcommas(nelementsnodes).c_str());
@@ -723,8 +763,27 @@ void Mesh::printMeshStatistics()
 				eslog::info(" %*s : %16s %16s\n", namesize, boundaryRegions[r]->name.c_str(), " ", Parser::stringwithcommas(boundaryRegions[r]->nodeInfo.totalSize).c_str());
 			}
 		}
-		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n\n");
-		eslog::info("  %s%*s : %16s %16s\n", "TOTAL NUMBER OF BODIES", namesize - 23, " ", " ", Parser::stringwithcommas(elements->bodies).c_str());
+		eslog::info(" ============================================================================================= \n");
+
+		eslog::info("  %s%*s : %16s %16s %16s\n", "GEOMETRY", namesize - 26, " ", "MIN", "MAX", "LENGTH");
+		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "X-COORDINATES", bmin[elements->bodies * 3 + 0], bmax[elements->bodies * 3 + 0], bmax[elements->bodies * 3 + 0] - bmin[elements->bodies * 3 + 0]);
+		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "Y-COORDINATES", bmin[elements->bodies * 3 + 1], bmax[elements->bodies * 3 + 1], bmax[elements->bodies * 3 + 1] - bmin[elements->bodies * 3 + 1]);
+		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "Z-COORDINATES", bmin[elements->bodies * 3 + 2], bmax[elements->bodies * 3 + 2], bmax[elements->bodies * 3 + 2] - bmin[elements->bodies * 3 + 2]);
+		eslog::info(" ============================================================================================= \n");
+
+		eslog::info("  BODY %16s %16s : %16s %16s %16s\n", "ELEMENTS", "SURFACES", "X [%]", "Y [%]", "Z [%]");
+		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+		for (auto b = perm.rbegin(); b != perm.rend(); ++b) {
+			eslog::info("  %4d %16s %16s :    <%.3f-%.3f>    <%.3f-%.3f>    <%.3f-%.3f>\n",
+					b - perm.rbegin(), Parser::stringwithcommas(ecount[*b]).c_str(), Parser::stringwithcommas(scount[*b]).c_str(),
+					(bmin[(*b * 3 + 0)] - bmin[elements->bodies * 3 + 0]) / (bmax[elements->bodies * 3 + 0] - bmin[elements->bodies * 3 + 0]),
+					(bmax[(*b * 3 + 0)] - bmin[elements->bodies * 3 + 0]) / (bmax[elements->bodies * 3 + 0] - bmin[elements->bodies * 3 + 0]),
+					(bmin[(*b * 3 + 1)] - bmin[elements->bodies * 3 + 1]) / (bmax[elements->bodies * 3 + 1] - bmin[elements->bodies * 3 + 1]),
+					(bmax[(*b * 3 + 1)] - bmin[elements->bodies * 3 + 1]) / (bmax[elements->bodies * 3 + 1] - bmin[elements->bodies * 3 + 1]),
+					(bmin[(*b * 3 + 2)] - bmin[elements->bodies * 3 + 2]) / (bmax[elements->bodies * 3 + 2] - bmin[elements->bodies * 3 + 2]),
+					(bmax[(*b * 3 + 2)] - bmin[elements->bodies * 3 + 2]) / (bmax[elements->bodies * 3 + 2] - bmin[elements->bodies * 3 + 2]));
+		}
 
 		eslog::info(" ============================================================================================= \n");
 		break;

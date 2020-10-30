@@ -343,18 +343,21 @@ void computeBodies()
 		labels[b] = it != labels.end() ? it->second : b;
 	}
 
-	info::mesh->elements->bodies = 0;
-	std::vector<bool> hit(body.size(), false);
-	for (auto b = body.begin(); b != body.end(); ++b) {
-		*b = labels[*b];
-		if (boffset <= *b && *b < boffset + bodies && !hit[*b - boffset]) {
-			hit[*b - boffset] = true;
-			++info::mesh->elements->bodies;
+	std::vector<esint> ulabels;
+	for (esint b = boffset; b < boffset + bodies; ++b) {
+		if (labels[b] == b) {
+			ulabels.push_back(b);
 		}
 	}
+	Communication::allGatherUnknownSize(ulabels);
 
-	bodies = info::mesh->elements->bodies;
-	Communication::allReduce(&bodies, &info::mesh->elements->bodies, 1, MPITools::getType(info::mesh->elements->bodies).mpitype, MPI_SUM);
+	info::mesh->elements->bodies = ulabels.size();
+	for (esint b = boffset; b < boffset + bodies; ++b) {
+		labels[b] = std::lower_bound(ulabels.begin(), ulabels.end(), labels[b]) - ulabels.begin();
+	}
+	for (size_t i = 0; i < body.size(); ++i) {
+		body[i] = labels[body[i]];
+	}
 
 	if (info::mesh->elements->body == NULL) {
 		info::mesh->elements->body = new serializededata<esint, int>(1, tarray<int>(info::mesh->elements->distribution, body));
