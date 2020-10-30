@@ -49,7 +49,7 @@ void triangularizeBoundary(BoundaryRegionStore *boundary);
 
 void computeRegionsSurface();
 void computeBodiesSurface();
-void computeBodiesSurfacePlanes();
+void computeWarpedNormals(SurfaceStore * surface);
 void exchangeContactHalo();
 void findCloseElements();
 void computeSurfaceLocations();

@@ -475,7 +475,7 @@ void Mesh::preprocess()
 
 	if (info::ecf->getPhysics()->contact_interfaces) {
 		mesh::computeBodiesSurface();
-		mesh::computeBodiesSurfacePlanes();
+		mesh::computeWarpedNormals(surface);
 		mesh::exchangeContactHalo();
 		mesh::findCloseElements();
 		mesh::computeContactInterface();

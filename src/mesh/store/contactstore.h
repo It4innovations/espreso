@@ -36,40 +36,6 @@ struct ContactStore {
 	serializededata<esint, esint>* interface;
 	serializededata<esint, double>* planeData;
 
-//	double eps;
-//	size_t groupsize;
-//
-//
-//	NodeStore *nodes;
-//	serializededata<esint, Point>* elements;
-//	serializededata<esint, esint>* enodes;
-//	serializededata<esint, Element*>* epointers;
-//	serializededata<esint, Point>* enormals;
-//
-//	serializededata<esint, esint>* closeElements;
-//
-//	serializededata<esint, esint>* contactPairs;
-//	serializededata<esint, Triangle>* intersections;
-//
-//	Point boundingBox[2], globalBox[2];
-//
-//	std::vector<esint> filledCells;
-//	serializededata<esint, esint>* grid;
-//
-//	// geometric
-//	std::vector<int> gneighbors;
-//	// neighbors
-//	std::vector<std::vector<esint> > gnsurface;
-//	std::vector<serializededata<esint, Point>*> gnecoords;
-//	std::vector<serializededata<esint, esint>*> gnenodes;
-//	std::vector<serializededata<esint, Element*>*> gnepointers;
-//	std::vector<serializededata<esint, esint>*> gneIDs;
-//	std::vector<serializededata<esint, Point>*> gnenormals;
-//	std::vector<std::vector<esint> > gnfilled;
-//	std::vector<serializededata<esint, esint>*> gngrid;
-//	std::vector<serializededata<esint, esint>*> gncloseElements;
-//	std::vector<std::vector<std::vector<Point> > > gnintersection;
-
 	std::vector<ijv> B;
 
 	ContactStore(SurfaceStore *surface);

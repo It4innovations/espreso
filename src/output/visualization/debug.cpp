@@ -421,7 +421,7 @@ void DebugOutput::surface(const char* name, double clusterShrinkRatio, double do
 	output._writer.write();
 }
 
-void DebugOutput::surfacePlanes(const char* name, double clusterShrinkRatio, double domainShrinkRatio)
+void DebugOutput::warpedNormals(const char* name, double clusterShrinkRatio, double domainShrinkRatio)
 {
 	if (!info::ecf->output.debug) {
 		return;
@@ -437,10 +437,11 @@ void DebugOutput::surfacePlanes(const char* name, double clusterShrinkRatio, dou
 		output._writer.points(gpsize);
 	}
 	auto enodes = surf->enodes->begin();
-	auto plane = surf->plane->begin();
-	for (esint e = 0; e < surf->size; ++e, ++enodes, ++plane) {
-		Point &p = plane->at(0);
-		Point &n = plane->at(1);
+	auto normal = surf->normal->datatarray().begin();
+	auto center = surf->center->datatarray().begin();
+	for (esint e = 0; e < surf->size; ++e, ++enodes, ++normal, ++center) {
+		Point &p = *center;
+		Point &n = *normal;
 		double scale = 0.001;
 		output._writer.point(p.x, p.y, p.z);
 		output._writer.point(p.x + scale * n.x, p.y + scale * n.y, p.z + scale * n.z);

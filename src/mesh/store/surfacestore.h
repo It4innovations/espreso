@@ -19,8 +19,10 @@ struct SurfaceStore {
 	serializededata<esint, esint>* triangles;
 	serializededata<esint, esint>* nodes;
 	serializededata<esint, Point>* coordinates;
-	serializededata<esint, Point>* plane; // from coarse nodes + warping in the case of squares
 	serializededata<esint, esint>* enodes;
+
+	serializededata<esint, Point>* center; // from coarse nodes + warping in the case of squares
+	serializededata<esint, Point>* normal; // from coarse nodes + warping in the case of squares
 
 	serializededata<esint, esint>* nelements; // only for neighbors definition
 	serializededata<esint, esint>* IDs; // only for neighbors definition
