@@ -181,6 +181,9 @@ struct Communication {
 	static bool allGatherUnknownSize(std::vector<Ttype> &data, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
+	static bool uniqueAllGatherUnknownSize(std::vector<Ttype> &data, MPIGroup *group = MPITools::procs);
+
+	template <typename Ttype>
 	static bool broadcastUnknownSize(std::vector<Ttype> &buffer, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype, typename Tdistribution>

@@ -591,14 +591,13 @@ bool Communication::allGatherUnknownSize(std::vector<Ttype> &data, MPIGroup *gro
 		while (levels) {
 			if (rh.recurse(levels--)) {
 				if (rh.islower()) {
-					if (rh.isodd()) {
-						receive(rh.mid);
-					}
 					if (rh.ispaired()) {
 						MPI_Send(data.data(), data.size() * type.mpisize, type.mpitype, rh.twin, TAG::ALLGATHER_UNKNOWN, group->communicator);
 						profiler::checkpoint("send");
 						profiler::param("size", data.size() * type.mpisize);
 						receive(rh.twin);
+					} else {
+						receive(rh.mid);
 					}
 					data.insert(data.end(), recv.begin(), recv.end());
 					recv.clear();
@@ -638,6 +637,78 @@ bool Communication::allGatherUnknownSize(std::vector<Ttype> &data, MPIGroup *gro
 
 	rdata.swap(data);
 	profiler::syncend("comm_allgather_unknown_size");
+	return true;
+}
+
+template <typename Ttype>
+bool Communication::uniqueAllGatherUnknownSize(std::vector<Ttype> &data, MPIGroup *group)
+{
+	profiler::syncstart("comm_unique_allgather_unknown_size");
+	MPIType type(MPITools::getType<Ttype>());
+	if (type.mpisize * data.size() > 1 << 30) {
+		profiler::syncend("comm_allgather_unknown_size");
+		return false;
+	}
+
+	int left = 0;
+	int right = left + group->size;
+	int rank = left + group->rank;
+
+	std::vector<Ttype> recv, tmp;
+	RecursiveHalving rh(rank, left, right);
+	int levels = std::ceil(std::log2(group->size));
+	profiler::synccheckpoint("init_recursion");
+
+	auto receive = [&] (int rank) {
+		int recvsize;
+		MPI_Status status;
+		MPI_Probe(rank, TAG::ALLGATHER_UNKNOWN, group->communicator, &status);
+		MPI_Get_count(&status, type.mpitype, &recvsize);
+		recv.resize(recvsize / type.mpisize);
+		MPI_Recv(recv.data(), recvsize, type.mpitype, rank, TAG::ALLGATHER_UNKNOWN, group->communicator, MPI_STATUS_IGNORE);
+		profiler::checkpoint("recv");
+		profiler::param("size", recvsize * type.mpisize);
+	};
+
+	auto merge = [&] () {
+		tmp.resize(data.size() + recv.size());
+		auto end = std::set_union(data.begin(), data.end(), recv.begin(), recv.end(), tmp.begin());
+		tmp.resize(end - tmp.begin());
+		data.swap(tmp);
+	};
+
+	while (levels) {
+		if (rh.recurse(levels--)) {
+			if (rh.islower()) {
+				if (rh.ispaired()) {
+					MPI_Send(data.data(), data.size() * type.mpisize, type.mpitype, rh.twin, TAG::ALLGATHER_UNKNOWN, group->communicator);
+					profiler::checkpoint("send");
+					profiler::param("size", data.size() * type.mpisize);
+					receive(rh.twin);
+				} else {
+					receive(rh.mid);
+				}
+				merge();
+				recv.clear();
+			} else {
+				receive(rh.twin);
+				MPI_Send(data.data(), data.size() * type.mpisize, type.mpitype, rh.twin, TAG::ALLGATHER_UNKNOWN, group->communicator);
+				profiler::checkpoint("send");
+				profiler::param("size", data.size() * type.mpisize);
+				if (rh.treatodd()) {
+					MPI_Send(data.data(), data.size() * type.mpisize, type.mpitype, rh.mid - 1, TAG::ALLGATHER_UNKNOWN, group->communicator);
+					profiler::checkpoint("send");
+					profiler::param("size", data.size() * type.mpisize);
+				}
+				merge();
+				recv.clear();
+			}
+			profiler::checkpoint("merge");
+		}
+	}
+	profiler::syncend("comm_allgather_unknown_size");
+
+	profiler::syncend("comm_unique_allgather_unknown_size");
 	return true;
 }
 
