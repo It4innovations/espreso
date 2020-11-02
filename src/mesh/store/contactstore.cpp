@@ -3,13 +3,12 @@
 #include "nodestore.h"
 
 #include "basis/containers/serializededata.h"
+#include "esinfo/mpiinfo.h"
 
 using namespace espreso;
 
-ContactStore::ContactStore(SurfaceStore *surface)
-: surface(surface),
-  localPairs(NULL),
-  neighPairs(NULL),
+ContactStore::ContactStore()
+: pairs(NULL),
   intersections(NULL),
   interface(NULL),
   planeData(NULL)
@@ -19,8 +18,11 @@ ContactStore::ContactStore(SurfaceStore *surface)
 
 ContactStore::~ContactStore()
 {
-	if (localPairs) { delete localPairs; }
-	if (neighPairs) { delete neighPairs; }
+	// the last surface is the local surface
+	for (size_t i = 0; i + 1 < surfaces.size(); ++i) {
+		delete surfaces[i];
+	}
+	if (pairs) { delete pairs; }
 	if (intersections) { delete intersections; }
 	if (interface) { delete interface; }
 	if (planeData) { delete planeData; }

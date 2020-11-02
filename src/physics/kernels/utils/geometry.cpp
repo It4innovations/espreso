@@ -121,8 +121,8 @@ void assembleMortarInterface(std::vector<ijv> &B)
 		maJs.resize(0);
 		if (info::mpi::rank == printrank) std::cout << "diagonal [";
 		std::vector<Point> slCoords;
-		auto slNodesIt = info::mesh->contacts->surface->enodes->begin() + segment->at(0);
-		Element* slElement = info::mesh->contacts->surface->epointers->datatarray()[segment->at(0)];
+		auto slNodesIt = info::mesh->surface->enodes->begin() + segment->at(0);
+		Element* slElement = info::mesh->surface->epointers->datatarray()[segment->at(0)];
 
 		MatrixDense slCoordsMat(slNodesIt->size(),2);
 		dmAssembleDataForGP.reserve(5*segment->size());                               // CORRECT WITH ONDRA
@@ -130,7 +130,7 @@ void assembleMortarInterface(std::vector<ijv> &B)
 
 		slNodesSize = slElement->nodes;
 		for (auto n = slNodesIt->begin(); n != slNodesIt->end(); ++n) {
-			slJs.push_back(info::mesh->nodes->IDs->datatarray()[info::mesh->contacts->surface->nodes->datatarray()[*n]]);
+			slJs.push_back(info::mesh->nodes->IDs->datatarray()[info::mesh->surface->nodes->datatarray()[*n]]);
 			if (info::mpi::rank == printrank) std::cout << " " << slJs.back();
 		}
 		de.resize(slNodesSize,slNodesSize);
@@ -148,13 +148,13 @@ void assembleMortarInterface(std::vector<ijv> &B)
 
 		for (esint m = 0; m < segment->at(2); ++m) {
 			if (info::mpi::rank == printrank) std::cout << "  full(L) [";
-			auto maNodesIt = info::mesh->contacts->surface->enodes->begin() + segment->at(2 + 2 * m + 2);
-			Element* maElement = info::mesh->contacts->surface->epointers->datatarray()[segment->at(2 + 2 * m + 2)];
+			auto maNodesIt = info::mesh->surface->enodes->begin() + segment->at(2 + 2 * m + 2);
+			Element* maElement = info::mesh->surface->epointers->datatarray()[segment->at(2 + 2 * m + 2)];
 			MatrixDense maCoordsMat(maNodesIt->size(),2);
 			maNodesSize = maElement->nodes;
 //			auto maCoords = _mesh->contacts->gnecoords[segment->at(2 + 2 * m)]->begin() + segment->at(2 + 2 * m + 1);
 			for (auto n = maNodesIt->begin(); n != maNodesIt->end(); ++n) {
-				maJs.push_back(info::mesh->nodes->IDs->datatarray()[info::mesh->contacts->surface->nodes->datatarray()[*n]]);
+				maJs.push_back(info::mesh->nodes->IDs->datatarray()[info::mesh->surface->nodes->datatarray()[*n]]);
 				if (info::mpi::rank == printrank) std::cout << " " << maJs.back();
 			}
 			if (info::mpi::rank == printrank) std::cout << " ][";
@@ -213,13 +213,13 @@ void assembleMortarInterface(std::vector<ijv> &B)
 			esint nindex = segment->at(4 + segment->at(2) * 2 + 3 * m + 0);
 			esint offset = segment->at(4 + segment->at(2) * 2 + 3 * m + 1);
 			esint triangles = segment->at(4 + segment->at(2) * 2 + 3 * m + 2);
-			auto maNodesIt = info::mesh->contacts->halo[nindex].enodes->begin() + offset;
-			Element* maElement = info::mesh->contacts->halo[nindex].epointers->datatarray()[offset];
+			auto maNodesIt = info::mesh->contacts->surfaces[nindex]->enodes->begin() + offset;
+			Element* maElement = info::mesh->contacts->surfaces[nindex]->epointers->datatarray()[offset];
 			MatrixDense maCoordsMat(maNodesIt->size(),2);
 			maNodesSize = maElement->nodes;
 //			auto maCoords = _mesh->contacts->gnecoords[segment->at(2 + 2 * m)]->begin() + segment->at(2 + 2 * m + 1);
 			for (auto n = maNodesIt->begin(); n != maNodesIt->end(); ++n) {
-				maJs.push_back(info::mesh->contacts->halo[nindex].nodes->datatarray()[*n]);
+				maJs.push_back(info::mesh->contacts->surfaces[nindex]->nodes->datatarray()[*n]);
 				if (info::mpi::rank == printrank) std::cout << " " << maJs.back();
 			}
 			if (info::mpi::rank == printrank) std::cout << " ][";

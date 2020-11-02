@@ -492,95 +492,95 @@ void DebugOutput::warpedNormals(const char* name, double clusterShrinkRatio, dou
 
 void DebugOutput::closeElements(double clusterShrinkRatio, double domainShrinkRatio)
 {
-	if (!info::ecf->output.debug) {
-		return;
-	}
-	if (info::mesh->contacts == NULL || info::mesh->contacts->localPairs == NULL) {
-		return;
-	}
-
-	Point center;
-	for (auto n = info::mesh->nodes->coordinates->datatarray().begin(); n != info::mesh->nodes->coordinates->datatarray().end(); ++n) {
-		center += *n;
-	}
-	center /= info::mesh->nodes->size;
-
-	std::string path = utils::createDirectory({ info::ecf->outpath, "DEBUG_VISUALIZATION" });
-	std::ofstream os(path + "/closeElements" + std::to_string(info::mpi::rank) + ".vtk");
-
-	os << "# vtk DataFile Version 2.0\n";
-	os << "EXAMPLE\n";
-	os << "ASCII\n";
-	os << "DATASET UNSTRUCTURED_GRID\n\n";
-
-	size_t points = info::mesh->contacts->surface->enodes->structures() + info::mesh->contacts->localPairs->datatarray().size() + info::mesh->contacts->neighPairs->datatarray().size() / 2;
-
-	os << "POINTS " << points << " float\n";
-	std::vector<float> distance;
-	auto enodes = info::mesh->contacts->surface->enodes->cbegin();
-	auto local = info::mesh->contacts->localPairs->cbegin();
-	auto neigh = info::mesh->contacts->neighPairs->cbegin();
-	for (esint e = 0; e < info::mesh->surface->size; ++e, ++enodes, ++local, ++neigh) {
-		Point center;
-		for (auto n = enodes->begin(); n != enodes->end(); ++n) {
-			center += info::mesh->contacts->surface->coordinates->datatarray()[*n];
-		}
-		center /= enodes->size();
-		os << center.x << " " << center.y << " " << center.z << "\n";
-		for (auto ee = local->begin(); ee != local->end(); ++ee) {
-			Point tocenter;
-			auto other = info::mesh->contacts->surface->enodes->cbegin() + *ee;
-			for (auto n = other->begin(); n != other->end(); ++n) {
-				tocenter += info::mesh->contacts->surface->coordinates->datatarray()[*n];
-			}
-			tocenter /= other->size();
-			os << tocenter.x << " " << tocenter.y << " " << tocenter.z << "\n";
-			distance.push_back((tocenter - center).length());
-		}
-		for (auto ee = neigh->begin(); ee != neigh->end(); ++ee) {
-			Point tocenter;
-			esint nn = *ee++;
-			auto other = info::mesh->contacts->halo[nn].enodes->cbegin() + *ee;
-			for (auto n = other->begin(); n != other->end(); ++n) {
-				tocenter += info::mesh->contacts->halo[nn].coordinates->datatarray()[*n];
-			}
-			tocenter /= other->size();
-			os << tocenter.x << " " << tocenter.y << " " << tocenter.z << "\n";
-			distance.push_back((tocenter - center).length());
-		}
-	}
-	os << "\n";
-
-	size_t cells = info::mesh->contacts->localPairs->datatarray().size() + info::mesh->contacts->neighPairs->datatarray().size() / 2;
-
-	os << "CELLS " << cells << " " << 3 * cells << "\n";
-	esint eindex, noffset = 0;
-	local = info::mesh->contacts->localPairs->cbegin();
-	neigh = info::mesh->contacts->neighPairs->cbegin();
-	for (esint e = 0; e < info::mesh->surface->size; ++e, ++local, ++neigh) {
-		eindex = noffset++;
-		for (auto ee = local->begin(); ee != local->end(); ++ee, ++noffset) {
-			os << "2 " << eindex << " " << noffset << "\n";
-		}
-		for (auto ee = neigh->begin(); ee != neigh->end(); ee += 2, ++noffset) {
-			os << "2 " << eindex << " " << noffset << "\n";
-		}
-	}
-
-	os << "\n";
-
-	os << "CELL_TYPES " << cells << "\n";
-	Element::CODE ecode = Element::CODE::LINE2;
-	for (size_t n = 0; n < cells; ++n) {
-		os << VTKASCIIWritter::ecode(ecode) << "\n";
-	}
-	os << "\n";
-
-	os << "CELL_DATA " << cells << "\n";
-	os << "SCALARS DISTANCE float 1\n";
-	os << "LOOKUP_TABLE default\n";
-	for (size_t n = 0; n < cells; ++n) {
-		os << distance[n] << "\n";
-	}
-	os << "\n";
+//	if (!info::ecf->output.debug) {
+//		return;
+//	}
+//	if (info::mesh->contacts == NULL || info::mesh->contacts->localPairs == NULL) {
+//		return;
+//	}
+//
+//	Point center;
+//	for (auto n = info::mesh->nodes->coordinates->datatarray().begin(); n != info::mesh->nodes->coordinates->datatarray().end(); ++n) {
+//		center += *n;
+//	}
+//	center /= info::mesh->nodes->size;
+//
+//	std::string path = utils::createDirectory({ std::string(eslog::path()), "DEBUG_VISUALIZATION" });
+//	std::ofstream os(path + "/closeElements" + std::to_string(info::mpi::rank) + ".vtk");
+//
+//	os << "# vtk DataFile Version 2.0\n";
+//	os << "EXAMPLE\n";
+//	os << "ASCII\n";
+//	os << "DATASET UNSTRUCTURED_GRID\n\n";
+//
+//	size_t points = info::mesh->surface->enodes->structures() + info::mesh->contacts->localPairs->datatarray().size() + info::mesh->contacts->neighPairs->datatarray().size() / 2;
+//
+//	os << "POINTS " << points << " float\n";
+//	std::vector<float> distance;
+//	auto enodes = info::mesh->surface->enodes->cbegin();
+//	auto local = info::mesh->contacts->localPairs->cbegin();
+//	auto neigh = info::mesh->contacts->neighPairs->cbegin();
+//	for (esint e = 0; e < info::mesh->surface->size; ++e, ++enodes, ++local, ++neigh) {
+//		Point center;
+//		for (auto n = enodes->begin(); n != enodes->end(); ++n) {
+//			center += info::mesh->surface->coordinates->datatarray()[*n];
+//		}
+//		center /= enodes->size();
+//		os << center.x << " " << center.y << " " << center.z << "\n";
+//		for (auto ee = local->begin(); ee != local->end(); ++ee) {
+//			Point tocenter;
+//			auto other = info::mesh->surface->enodes->cbegin() + *ee;
+//			for (auto n = other->begin(); n != other->end(); ++n) {
+//				tocenter += info::mesh->surface->coordinates->datatarray()[*n];
+//			}
+//			tocenter /= other->size();
+//			os << tocenter.x << " " << tocenter.y << " " << tocenter.z << "\n";
+//			distance.push_back((tocenter - center).length());
+//		}
+//		for (auto ee = neigh->begin(); ee != neigh->end(); ++ee) {
+//			Point tocenter;
+//			esint nn = *ee++;
+//			auto other = info::mesh->contacts->surfaces[nn]->enodes->cbegin() + *ee;
+//			for (auto n = other->begin(); n != other->end(); ++n) {
+//				tocenter += info::mesh->contacts->surfaces[nn]->coordinates->datatarray()[*n];
+//			}
+//			tocenter /= other->size();
+//			os << tocenter.x << " " << tocenter.y << " " << tocenter.z << "\n";
+//			distance.push_back((tocenter - center).length());
+//		}
+//	}
+//	os << "\n";
+//
+//	size_t cells = info::mesh->contacts->localPairs->datatarray().size() + info::mesh->contacts->neighPairs->datatarray().size() / 2;
+//
+//	os << "CELLS " << cells << " " << 3 * cells << "\n";
+//	esint eindex, noffset = 0;
+//	local = info::mesh->contacts->localPairs->cbegin();
+//	neigh = info::mesh->contacts->neighPairs->cbegin();
+//	for (esint e = 0; e < info::mesh->surface->size; ++e, ++local, ++neigh) {
+//		eindex = noffset++;
+//		for (auto ee = local->begin(); ee != local->end(); ++ee, ++noffset) {
+//			os << "2 " << eindex << " " << noffset << "\n";
+//		}
+//		for (auto ee = neigh->begin(); ee != neigh->end(); ee += 2, ++noffset) {
+//			os << "2 " << eindex << " " << noffset << "\n";
+//		}
+//	}
+//
+//	os << "\n";
+//
+//	os << "CELL_TYPES " << cells << "\n";
+//	Element::CODE ecode = Element::CODE::LINE2;
+//	for (size_t n = 0; n < cells; ++n) {
+//		os << VTKASCIIWritter::ecode(ecode) << "\n";
+//	}
+//	os << "\n";
+//
+//	os << "CELL_DATA " << cells << "\n";
+//	os << "SCALARS DISTANCE float 1\n";
+//	os << "LOOKUP_TABLE default\n";
+//	for (size_t n = 0; n < cells; ++n) {
+//		os << distance[n] << "\n";
+//	}
+//	os << "\n";
 }

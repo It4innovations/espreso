@@ -115,7 +115,7 @@ Mesh::Mesh()
   FETIData(new FETIDataStore()),
   halo(new ElementStore()),
   surface(new SurfaceStore()), domainsSurface(new SurfaceStore()),
-  contacts(new ContactStore(surface)),
+  contacts(new ContactStore()),
 
   store(new ResultStore()),
   _withGUI(false)

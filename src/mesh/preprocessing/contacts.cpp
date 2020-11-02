@@ -202,10 +202,10 @@ void exchangeContactHalo()
 {
 	double area = info::ecf->input.contact.search_area;
 	_Point<float> box[2];
-	if (info::mesh->contacts->surface->coordinates->datatarray().size()) {
+	if (info::mesh->surface->coordinates->datatarray().size()) {
 		box[0] = box[1] = info::mesh->nodes->coordinates->datatarray()[0];
 	}
-	for (auto c = info::mesh->contacts->surface->coordinates->datatarray().begin(); c < info::mesh->contacts->surface->coordinates->datatarray().end(); ++c) {
+	for (auto c = info::mesh->surface->coordinates->datatarray().begin(); c < info::mesh->surface->coordinates->datatarray().end(); ++c) {
 		box[0].x = std::min((float)c->x, box[0].x);
 		box[0].y = std::min((float)c->y, box[0].y);
 		box[0].z = std::min((float)c->z, box[0].z);
@@ -233,19 +233,19 @@ void exchangeContactHalo()
 		}
 	}
 
-	const auto &coordinates = info::mesh->contacts->surface->coordinates->datatarray();
+	const auto &coordinates = info::mesh->surface->coordinates->datatarray();
 	std::vector<std::vector<esint> > sBuffer(info::mesh->contacts->neighbors.size()), rBuffer(info::mesh->contacts->neighbors.size());
 	for (size_t n = 0; n < info::mesh->contacts->neighbors.size(); ++n) {
 		std::vector<esint> esend, nsend;
 		const auto &min = boxes[2 * info::mesh->contacts->neighbors[n]];
 		const auto &max = boxes[2 * info::mesh->contacts->neighbors[n] + 1];
-		auto enodes = info::mesh->contacts->surface->enodes->begin();
-		for (size_t e = 0; e < info::mesh->contacts->surface->enodes->structures(); ++e, ++enodes) {
-			for (auto c = enodes->begin(); c != enodes->end(); ++c) {
+		auto enodes = info::mesh->surface->enodes->begin();
+		for (size_t e = 0; e < info::mesh->surface->enodes->structures(); ++e, ++enodes) {
+			for (auto ec = enodes->begin(); ec != enodes->end(); ++ec) {
 				if (
-						min.x - area <= coordinates[*c].x && coordinates[*c].x <= max.x + area &&
-						min.y - area <= coordinates[*c].y && coordinates[*c].y <= max.y + area &&
-						min.z - area <= coordinates[*c].z && coordinates[*c].z <= max.z + area) {
+						min.x - area <= coordinates[*ec].x && coordinates[*ec].x <= max.x + area &&
+						min.y - area <= coordinates[*ec].y && coordinates[*ec].y <= max.y + area &&
+						min.z - area <= coordinates[*ec].z && coordinates[*ec].z <= max.z + area) {
 
 					esend.push_back(e);
 					for (auto c = enodes->begin(); c != enodes->end(); ++c) {
@@ -267,18 +267,18 @@ void exchangeContactHalo()
 		// send parents and bodies
 		sBuffer[n].push_back(esend.size());
 		for (size_t e = 0; e < esend.size(); ++e) {
-			sBuffer[n].push_back(info::mesh->contacts->surface->parents->datatarray()[esend[e]]);
+			sBuffer[n].push_back(info::mesh->surface->parents->datatarray()[esend[e]]);
 		}
 		for (size_t e = 0; e < esend.size(); ++e) {
-			sBuffer[n].push_back(info::mesh->contacts->surface->body->datatarray()[esend[e]]);
+			sBuffer[n].push_back(info::mesh->surface->body->datatarray()[esend[e]]);
 		}
 		for (size_t e = 0; e < esend.size(); ++e) {
-			sBuffer[n].push_back(static_cast<int>(info::mesh->contacts->surface->epointers->datatarray()[esend[e]]->code));
+			sBuffer[n].push_back(static_cast<int>(info::mesh->surface->epointers->datatarray()[esend[e]]->code));
 		}
 
 		// send enodes in target offsets
 		sBuffer[n].push_back(esend.size() + nsize);
-		enodes = info::mesh->contacts->surface->enodes->begin();
+		enodes = info::mesh->surface->enodes->begin();
 		for (size_t e = 0, prev = 0; e < esend.size(); prev = esend[e++]) {
 			enodes += esend[e] - prev;
 			sBuffer[n].push_back(enodes->size());
@@ -290,23 +290,23 @@ void exchangeContactHalo()
 		// send planes
 		sBuffer[n].push_back(esend.size());
 		for (size_t e = 0; e < esend.size(); ++e) {
-			const auto &nn = info::mesh->contacts->surface->normal->datatarray()[esend[e]];
+			const auto &nn = info::mesh->surface->normal->datatarray()[esend[e]];
 			sBuffer[n].insert(sBuffer[n].end(), reinterpret_cast<const esint*>(&nn), reinterpret_cast<const esint*>(&nn) + sizeof(nn) / sizeof(esint));
 		}
 		for (size_t e = 0; e < esend.size(); ++e) {
-			const auto &nc = info::mesh->contacts->surface->center->datatarray()[esend[e]];
+			const auto &nc = info::mesh->surface->center->datatarray()[esend[e]];
 			sBuffer[n].insert(sBuffer[n].end(), reinterpret_cast<const esint*>(&nc), reinterpret_cast<const esint*>(&nc) + sizeof(nc) / sizeof(esint));
 		}
 
 		// send global ids
 		sBuffer[n].push_back(nsend.size());
 		for (size_t c = 0; c < nsend.size(); ++c) {
-			sBuffer[n].push_back(info::mesh->nodes->IDs->datatarray()[info::mesh->contacts->surface->nodes->datatarray()[nsend[c]]]);
+			sBuffer[n].push_back(info::mesh->nodes->IDs->datatarray()[info::mesh->surface->nodes->datatarray()[nsend[c]]]);
 		}
 
 		// send coordinates
 		for (size_t c = 0; c < nsend.size(); ++c) {
-			const auto &p = info::mesh->contacts->surface->coordinates->datatarray()[nsend[c]];
+			const auto &p = info::mesh->surface->coordinates->datatarray()[nsend[c]];
 			sBuffer[n].insert(sBuffer[n].end(), reinterpret_cast<const esint*>(&p), reinterpret_cast<const esint*>(&p) + sizeof(p) / sizeof(esint));
 		}
 	}
@@ -315,16 +315,17 @@ void exchangeContactHalo()
 		eslog::error("ESPRESO internal error: cannot exchange contact halo.\n");
 	}
 
-	info::mesh->contacts->halo.resize(info::mesh->contacts->neighbors.size());
+	info::mesh->contacts->surfaces.resize(info::mesh->contacts->neighbors.size());
 	for (size_t n = 0, i = 0; n < info::mesh->contacts->neighbors.size(); ++n, i = 0) {
+		info::mesh->contacts->surfaces[n] = new SurfaceStore();
 		// receive parents and bodies
-		info::mesh->contacts->halo[n].parents = new serializededata<esint, esint>(1, tarray<esint>(info::env::OMP_NUM_THREADS, rBuffer[n][i]));
-		memcpy(info::mesh->contacts->halo[n].parents->datatarray().data(), rBuffer[n].data() + i + 1, sizeof(esint) * rBuffer[n][i]);
-		info::mesh->contacts->halo[n].body = new serializededata<esint, esint>(1, tarray<esint>(info::env::OMP_NUM_THREADS, rBuffer[n][i]));
-		memcpy(info::mesh->contacts->halo[n].body->datatarray().data(), rBuffer[n].data() + i + 1 + rBuffer[n][i], sizeof(esint) * rBuffer[n][i]);
-		info::mesh->contacts->halo[n].epointers = new serializededata<esint, Element*>(1, tarray<Element*>(info::env::OMP_NUM_THREADS, rBuffer[n][i]));
+		info::mesh->contacts->surfaces[n]->parents = new serializededata<esint, esint>(1, tarray<esint>(info::env::OMP_NUM_THREADS, rBuffer[n][i]));
+		memcpy(info::mesh->contacts->surfaces[n]->parents->datatarray().data(), rBuffer[n].data() + i + 1, sizeof(esint) * rBuffer[n][i]);
+		info::mesh->contacts->surfaces[n]->body = new serializededata<esint, esint>(1, tarray<esint>(info::env::OMP_NUM_THREADS, rBuffer[n][i]));
+		memcpy(info::mesh->contacts->surfaces[n]->body->datatarray().data(), rBuffer[n].data() + i + 1 + rBuffer[n][i], sizeof(esint) * rBuffer[n][i]);
+		info::mesh->contacts->surfaces[n]->epointers = new serializededata<esint, Element*>(1, tarray<Element*>(info::env::OMP_NUM_THREADS, rBuffer[n][i]));
 		for (esint e = 0; e < rBuffer[n][i]; ++e) {
-			info::mesh->contacts->halo[n].epointers->datatarray()[e] = &Mesh::edata[rBuffer[n][2 * rBuffer[n][i] + e + i + 1]];
+			info::mesh->contacts->surfaces[n]->epointers->datatarray()[e] = &Mesh::edata[rBuffer[n][2 * rBuffer[n][i] + e + i + 1]];
 		}
 		i += 1 + 3 * rBuffer[n][i];
 
@@ -340,29 +341,32 @@ void exchangeContactHalo()
 			}
 			edist[0].push_back(enodes[0].size());
 		}
-		serializededata<esint, esint>::balance(edist, enodes, &info::mesh->contacts->halo[n].parents->datatarray().distribution());
-		info::mesh->contacts->halo[n].enodes = new serializededata<esint, esint>(edist, enodes);
+		serializededata<esint, esint>::balance(edist, enodes, &info::mesh->contacts->surfaces[n]->parents->datatarray().distribution());
+		info::mesh->contacts->surfaces[n]->enodes = new serializededata<esint, esint>(edist, enodes);
 
 		// receive warped normals
 		size = rBuffer[n][i];
-		info::mesh->contacts->halo[n].normal = new serializededata<esint, Point>(1, tarray<Point>(info::env::OMP_NUM_THREADS, size));
-		memcpy(info::mesh->contacts->halo[n].normal->datatarray().data(), rBuffer[n].data() + i + 1, sizeof(Point) * size);
+		info::mesh->contacts->surfaces[n]->normal = new serializededata<esint, Point>(1, tarray<Point>(info::env::OMP_NUM_THREADS, size));
+		memcpy(info::mesh->contacts->surfaces[n]->normal->datatarray().data(), rBuffer[n].data() + i + 1, sizeof(Point) * size);
 		i += 1 + size * (sizeof(Point) / sizeof(esint));
 
-		info::mesh->contacts->halo[n].center = new serializededata<esint, Point>(1, tarray<Point>(info::env::OMP_NUM_THREADS, size));
-		memcpy(info::mesh->contacts->halo[n].center->datatarray().data(), rBuffer[n].data() + i, sizeof(Point) * size);
+		info::mesh->contacts->surfaces[n]->center = new serializededata<esint, Point>(1, tarray<Point>(info::env::OMP_NUM_THREADS, size));
+		memcpy(info::mesh->contacts->surfaces[n]->center->datatarray().data(), rBuffer[n].data() + i, sizeof(Point) * size);
 		i += size * (sizeof(Point) / sizeof(esint));
 
 		// receive global ids
 		size = rBuffer[n][i];
-		info::mesh->contacts->halo[n].nodes = new serializededata<esint, esint>(1, tarray<esint>(info::env::OMP_NUM_THREADS, size));
-		memcpy(info::mesh->contacts->halo[n].nodes->datatarray().data(), rBuffer[n].data() + i + 1, sizeof(esint) * rBuffer[n][i]);
+		info::mesh->contacts->surfaces[n]->nodes = new serializededata<esint, esint>(1, tarray<esint>(info::env::OMP_NUM_THREADS, size));
+		memcpy(info::mesh->contacts->surfaces[n]->nodes->datatarray().data(), rBuffer[n].data() + i + 1, sizeof(esint) * rBuffer[n][i]);
 		i += 1 + rBuffer[n][i];
 
 		// receive coordinates
-		info::mesh->contacts->halo[n].coordinates = new serializededata<esint, Point>(1, tarray<Point>(info::env::OMP_NUM_THREADS, size));
-		memcpy(info::mesh->contacts->halo[n].coordinates->datatarray().data(), rBuffer[n].data() + i, sizeof(Point) * size);
+		info::mesh->contacts->surfaces[n]->coordinates = new serializededata<esint, Point>(1, tarray<Point>(info::env::OMP_NUM_THREADS, size));
+		memcpy(info::mesh->contacts->surfaces[n]->coordinates->datatarray().data(), rBuffer[n].data() + i, sizeof(Point) * size);
 	}
+	info::mesh->contacts->neighborsWithMe = info::mesh->contacts->neighbors;
+	info::mesh->contacts->neighborsWithMe.push_back(info::mpi::rank);
+	info::mesh->contacts->surfaces.push_back(info::mesh->surface);
 
 	eslog::checkpointln("MESH: CLOSE BOUNDARY EXCHANGED");
 }
@@ -370,35 +374,29 @@ void exchangeContactHalo()
 void findCloseElements()
 {
 	std::vector<Point> estart, eend;
+	std::vector<esint> neigh, offset = { 0 };
 
-	auto mm = [&] (const serializededata<esint, esint> *enodes, const serializededata<esint, Point> *coo, size_t &offset) {
-		for (auto e = enodes->begin(); e != enodes->end(); ++e, ++offset) {
-			estart[offset] = eend[offset] = coo->datatarray()[e->front()];
+	for (size_t n = 0; n < info::mesh->contacts->neighborsWithMe.size(); ++n) {
+		offset.push_back(offset.back() + info::mesh->contacts->surfaces[n]->enodes->structures());
+	}
+	estart.resize(offset.back());
+	eend.resize(offset.back());
+	neigh.reserve(offset.back());
+	for (size_t r = 0, offset = 0; r < info::mesh->contacts->neighborsWithMe.size(); ++r) {
+		for (auto e = info::mesh->contacts->surfaces[r]->enodes->begin(); e != info::mesh->contacts->surfaces[r]->enodes->end(); ++e, ++offset) {
+			estart[offset] = eend[offset] = info::mesh->contacts->surfaces[r]->coordinates->datatarray()[e->front()];
 			for (auto n = e->begin() + 1; n != e->end(); ++n) {
-				estart[offset].x = std::min(estart[offset].x, coo->datatarray()[*n].x);
-				estart[offset].y = std::min(estart[offset].y, coo->datatarray()[*n].y);
-				estart[offset].z = std::min(estart[offset].z, coo->datatarray()[*n].z);
-				eend[offset].x = std::max(eend[offset].x, coo->datatarray()[*n].x);
-				eend[offset].y = std::max(eend[offset].y, coo->datatarray()[*n].y);
-				eend[offset].z = std::max(eend[offset].z, coo->datatarray()[*n].z);
+				estart[offset].x = std::min(estart[offset].x, info::mesh->contacts->surfaces[r]->coordinates->datatarray()[*n].x);
+				estart[offset].y = std::min(estart[offset].y, info::mesh->contacts->surfaces[r]->coordinates->datatarray()[*n].y);
+				estart[offset].z = std::min(estart[offset].z, info::mesh->contacts->surfaces[r]->coordinates->datatarray()[*n].z);
+				eend[offset].x = std::max(eend[offset].x, info::mesh->contacts->surfaces[r]->coordinates->datatarray()[*n].x);
+				eend[offset].y = std::max(eend[offset].y, info::mesh->contacts->surfaces[r]->coordinates->datatarray()[*n].y);
+				eend[offset].z = std::max(eend[offset].z, info::mesh->contacts->surfaces[r]->coordinates->datatarray()[*n].z);
 			}
 		}
-	};
-
-	std::vector<esint> offsets;
-	size_t offset = info::mesh->contacts->surface->enodes->structures();
-	offsets.push_back(offset);
-	for (size_t n = 0; n < info::mesh->contacts->neighbors.size(); ++n) {
-		offset += info::mesh->contacts->halo[n].enodes->structures();
-		offsets.push_back(offset);
+		neigh.insert(neigh.end(), info::mesh->contacts->surfaces[r]->enodes->structures(), r);
 	}
-	estart.resize(offset);
-	eend.resize(offset);
-	offset = 0;
-	mm(info::mesh->contacts->surface->enodes, info::mesh->contacts->surface->coordinates, offset);
-	for (size_t n = 0; n < info::mesh->contacts->neighbors.size(); ++n) {
-		mm(info::mesh->contacts->halo[n].enodes, info::mesh->contacts->halo[n].coordinates, offset);
-	}
+	int myrank = info::mesh->contacts->neighborsWithMe.size() - 1;
 
 	IntervalTree tree(estart, eend);
 
@@ -407,26 +405,10 @@ void findCloseElements()
 	bool self_contact = info::ecf->input.contact.self_contact;
 	std::vector<std::pair<esint, esint> > pair;
 
-	auto o2n = [&] (esint offset) {
-		return std::lower_bound(offsets.begin(), offsets.end(), offset + 1) - offsets.begin() - 1;
-	};
-
 	auto checkangle = [&] (esint i, esint j) {
-		const Point *pi, *pj;
-		if (i < offsets.front()) {
-			pi = &info::mesh->surface->normal->datatarray()[i];
-		} else {
-			esint n = o2n(i);
-			pi = &info::mesh->contacts->halo[n].normal->datatarray()[i - offsets[n]];
-		}
-		if (j < offsets.front()) {
-			pj = &info::mesh->surface->normal->datatarray()[j];
-		} else {
-			esint n = o2n(j);
-			pj = &info::mesh->contacts->halo[n].normal->datatarray()[j - offsets[n]];
-		}
-
-		if (max_angle < (*pj) * (*pi)) { // the same direction < angle(PI / 2) == 0 < are opposite
+		const Point &pi = info::mesh->contacts->surfaces[neigh[i]]->normal->datatarray()[i - offset[neigh[i]]];
+		const Point &pj = info::mesh->contacts->surfaces[neigh[j]]->normal->datatarray()[j - offset[neigh[j]]];
+		if (max_angle < pj * pi) { // the same direction < angle(PI / 2) == 0 < are opposite
 			return false;
 		}
 		return true;
@@ -440,33 +422,23 @@ void findCloseElements()
 	};
 
 	auto checkbody = [&] (esint i, esint j) {
-		esint ibody, jbody;
-		if (i < offsets.front()) {
-			ibody = info::mesh->surface->body->datatarray()[i];
-		} else {
-			esint n = o2n(i);
-			ibody = info::mesh->contacts->halo[n].body->datatarray()[i - offsets[n]];
-		}
-		if (j < offsets.front()) {
-			jbody = info::mesh->surface->body->datatarray()[j];
-		} else {
-			esint n = o2n(j);
-			jbody = info::mesh->contacts->halo[n].body->datatarray()[j - offsets[n]];
-		}
+		esint ibody = info::mesh->contacts->surfaces[neigh[i]]->body->datatarray()[i - offset[neigh[i]]];
+		esint jbody = info::mesh->contacts->surfaces[neigh[j]]->body->datatarray()[j - offset[neigh[j]]];
+//		return ibody != jbody;
 		if (!self_contact && ibody == jbody) {
 			return false;
 		}
-		if (i < offsets.front() && j < offsets.front()) {
+		if (neigh[i] == myrank && neigh[j] == myrank) {
 			if (i < j) {
 				return ibody < jbody;
 			} else {
 				return jbody < ibody;
 			}
 		}
-		if (i < offsets.front()) {
+		if (neigh[i] == myrank) {
 			return ibody < jbody;
 		}
-		if (j < offsets.front()) {
+		if (neigh[j] == myrank) {
 			return jbody < ibody;
 		}
 		return false;
@@ -495,11 +467,11 @@ void findCloseElements()
 			auto check = [&] (esint p, esint begin, esint end) {
 				for (auto pp = tree.permutation.cbegin() + begin; pp != tree.permutation.cbegin() + end; ++pp) {
 					esint i = tree.permutation[p], j = *pp;
-					if (checkall(i, j)) {
+					if (checkall(tree.permutation[p], j)) {
 						if (i < j) {
-							pair.push_back(std::make_pair(i, j));
-						} else {
 							pair.push_back(std::make_pair(j, i));
+						} else {
+							pair.push_back(std::make_pair(i, j));
 						}
 					}
 				}
@@ -538,12 +510,11 @@ void findCloseElements()
 			// check faces within the bucket
 			for (auto left = tree.permutation.cbegin() + begin; left != tree.permutation.cbegin() + end; ++left) {
 				for (auto right = left + 1; right != tree.permutation.cbegin() + end; ++right) {
-					esint i = *left, j = *right;
-					if (checkall(i, j)) {
-						if (i < j) {
-							pair.push_back(std::make_pair(i, j));
+					if (checkall(*left, *right)) {
+						if (*left < *right) {
+							pair.push_back(std::make_pair(*right, *left));
 						} else {
-							pair.push_back(std::make_pair(j, i));
+							pair.push_back(std::make_pair(*left, *right));
 						}
 					}
 				}
@@ -553,29 +524,18 @@ void findCloseElements()
 
 	std::sort(pair.begin(), pair.end());
 
-	std::vector<esint> ldist = { 0 }, ldata, ndist = { 0 }, ndata;
-	esint e = 0;
-	for (size_t i = 0; i < pair.size() && pair[i].first < offsets.front(); ++i) {
-		while (e < pair[i].first) {
-			ldist.push_back(ldata.size());
-			ndist.push_back(ndata.size());
-			++e;
+	std::vector<esint> dist = { 0 }, data;
+	auto p = pair.begin();
+	for (esint e = 0; e < info::mesh->surface->size; ++e) {
+		while (p != pair.end() && p->first - offset[myrank] == e) {
+			data.push_back(neigh[p->second]);
+			data.push_back(p->second - offset[data.back()]);
+			++p;
 		}
-		if (pair[i].second < offsets.front()) {
-			ldata.push_back(pair[i].second);
-		} else {
-			ndata.push_back(o2n(pair[i].second));
-			ndata.push_back(pair[i].second - offsets[ndata.back()]);
-		}
-	}
-	while (e < offsets.front()) {
-		ldist.push_back(ldata.size());
-		ndist.push_back(ndata.size());
-		++e;
+		dist.push_back(data.size());
 	}
 
-	info::mesh->contacts->localPairs = new serializededata<esint, esint>(ldist, ldata);
-	info::mesh->contacts->neighPairs = new serializededata<esint, esint>(ndist, ndata);
+	info::mesh->contacts->pairs = new serializededata<esint, esint>(dist, data);
 
 	DebugOutput::closeElements(1, 1);
 	eslog::checkpointln("MESH: CLOSE ELEMENTS FOUND");
@@ -707,12 +667,11 @@ void computeContactInterface()
 	std::vector<double> planedata;
 	std::vector<esint> dist = { 0 }, data;
 
-	auto local = info::mesh->contacts->localPairs->cbegin();
-	auto neigh = info::mesh->contacts->neighPairs->cbegin();
-	auto enodes = info::mesh->contacts->surface->enodes->cbegin();
-	auto epointer = info::mesh->contacts->surface->epointers->datatarray();
-	for (esint e = 0; e < info::mesh->surface->size; ++e, ++local, ++neigh, ++enodes) {
-		if (local->size() == 0 && neigh->size() == 0) {
+	auto pairs = info::mesh->contacts->pairs->cbegin();
+	auto enodes = info::mesh->surface->enodes->cbegin();
+	auto epointer = info::mesh->surface->epointers->datatarray();
+	for (esint e = 0; e < info::mesh->surface->size; ++e, ++pairs, ++enodes) {
+		if (pairs->size() == 0) {
 			continue;
 		}
 
@@ -729,7 +688,7 @@ void computeContactInterface()
 
 		p1.clear();
 		for (auto n = epointer[e]->polygon->begin(); n != epointer[e]->polygon->end(); ++n) {
-			p1.push_back(info::mesh->contacts->surface->coordinates->datatarray()[enodes->at(*n)]);
+			p1.push_back(info::mesh->surface->coordinates->datatarray()[enodes->at(*n)]);
 			p1.back() -= pe;
 			p1.back().rodrigues(axis, cos, sin);
 			emin = std::min(emin, p1.back().z);
@@ -739,72 +698,14 @@ void computeContactInterface()
 		triangulate(p1, ptrias);
 
 		esint clips = 0;
-		for (auto other = local->begin(); other != local->end(); ++other) {
-			p2.clear();
-			double min = 1e10, max = -1e10;
-			auto onodes = info::mesh->contacts->surface->enodes->cbegin() + *other;
-			for (auto n = epointer[*other]->polygon->rbegin(); n != epointer[*other]->polygon->rend(); ++n) {
-				p2.push_back(info::mesh->contacts->surface->coordinates->datatarray()[onodes->at(*n)]);
-				p2.back() -= pe;
-				p2.back().rodrigues(axis, cos, sin);
-				min = std::min(min, p2.back().z);
-				max = std::max(max, p2.back().z);
-			}
-			if (!(max < emin - eps || emax + eps < min)) {
-				intersection.clear();
-				clip(e, ptrias, p2, intersection);
-				if (intersection.size()) {
-					if (clips == 0) {
-						data.push_back(e);
-						data.push_back(planedata.size());
-						data.push_back(0);
-						data.push_back(0);
-						for (auto pp = p1.begin(); pp != p1.end(); ++pp) {
-							planedata.push_back(pp->x);
-							planedata.push_back(pp->y);
-						}
-					}
-					++data[dist.back() + 2];
-					data.push_back(*other);
-					data.push_back(0);
-					for (auto pp = p2.rbegin(); pp != p2.rend(); ++pp) {
-						planedata.push_back(pp->x);
-						planedata.push_back(pp->y);
-					}
-					for (size_t i = 0; i < intersection.size(); i++) {
-						data.back() += intersection[i].size() - 2;
-						for (size_t j = 2; j < intersection[i].size(); j++) {
-							planedata.push_back(intersection[i][0].x);
-							planedata.push_back(intersection[i][0].y);
-							planedata.push_back(intersection[i][j - 1].x);
-							planedata.push_back(intersection[i][j - 1].y);
-							planedata.push_back(intersection[i][j].x);
-							planedata.push_back(intersection[i][j].y);
-						}
-					}
-					clips += intersection.size();
-				}
-				for (size_t i = 0; i < intersection.size(); i++) {
-					for (size_t j = 0; j < intersection[i].size(); j++) {
-						intersection[i][j].rodrigues(axis, cos, -sin);
-						intersection[i][j] += pe;
-					}
-					for (size_t j = 2; j < intersection[i].size(); j++) {
-						triangles.push_back(intersection[i][0]);
-						triangles.push_back(intersection[i][j - 1]);
-						triangles.push_back(intersection[i][j]);
-					}
-				}
-			}
-		}
-		for (auto other = neigh->begin(); other != neigh->end(); ++other) {
+		for (auto other = pairs->begin(); other != pairs->end(); ++other) {
 			esint h = *other++;
 			p2.clear();
 			double min = 1e10, max = -1e10;
-			auto onodes = info::mesh->contacts->halo[h].enodes->cbegin() + *other;
-			auto oepointer = info::mesh->contacts->halo[h].epointers->datatarray();
+			auto onodes = info::mesh->contacts->surfaces[h]->enodes->cbegin() + *other;
+			auto oepointer = info::mesh->contacts->surfaces[h]->epointers->datatarray();
 			for (auto n = oepointer[*other]->polygon->rbegin(); n != oepointer[*other]->polygon->rend(); ++n) {
-				p2.push_back(info::mesh->contacts->halo[h].coordinates->datatarray()[onodes->at(*n)]);
+				p2.push_back(info::mesh->contacts->surfaces[h]->coordinates->datatarray()[onodes->at(*n)]);
 				p2.back() -= pe;
 				p2.back().rodrigues(axis, cos, sin);
 				min = std::min(min, p2.back().z);

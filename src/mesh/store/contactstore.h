@@ -21,14 +21,10 @@ struct ijv {
 };
 
 struct ContactStore {
+	std::vector<int> neighbors, neighborsWithMe;
+	std::vector<SurfaceStore*> surfaces; // the last surface is the local surface
 
-	SurfaceStore *surface;
-
-	std::vector<int> neighbors;
-	std::vector<SurfaceStore> halo;
-
-	serializededata<esint, esint> *localPairs;
-	serializededata<esint, esint> *neighPairs;
+	serializededata<esint, esint> *pairs;
 
 	serializededata<esint, Point>* intersections;
 
@@ -38,7 +34,7 @@ struct ContactStore {
 
 	std::vector<ijv> B;
 
-	ContactStore(SurfaceStore *surface);
+	ContactStore();
 	~ContactStore();
 
 	size_t packedFullSize() const;
