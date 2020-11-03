@@ -344,7 +344,7 @@ void DebugOutput::contact(double clusterShrinkRatio, double domainShrinkRatio)
 
 	esint cells = 0, gcells, points = 0, poffset;
 	if (output._mesh.contacts->intersections != NULL) {
-		points += output._mesh.contacts->intersections->datatarray().size();
+		points += 3 * output._mesh.contacts->intersections->datatarray().size();
 		cells += points / 3;
 	}
 	poffset = points;
@@ -355,15 +355,17 @@ void DebugOutput::contact(double clusterShrinkRatio, double domainShrinkRatio)
 		output._writer.points(points);
 	}
 	for (size_t i = 0; i < output._mesh.contacts->intersections->datatarray().size(); ++i) {
-		const Point &pp = output._mesh.contacts->intersections->datatarray()[i];
-		output._writer.point(pp.x, pp.y, pp.z);
+		const Triangle &tr = output._mesh.contacts->intersections->datatarray()[i];
+		output._writer.point(tr.p[0].x, tr.p[0].y, tr.p[0].z);
+		output._writer.point(tr.p[1].x, tr.p[1].y, tr.p[1].z);
+		output._writer.point(tr.p[2].x, tr.p[2].y, tr.p[2].z);
 	}
 	output._writer.groupData();
 
 	if (Visualization::isRoot()) {
 		output._writer.cells(gcells, 4 * gcells);
 	}
-	for (size_t i = 0; i < output._mesh.contacts->intersections->datatarray().size(); i += 3) {
+	for (size_t i = 0; i < output._mesh.contacts->intersections->datatarray().size(); ++i) {
 		esint nn[3] = { poffset++, poffset++, poffset++};
 		output._writer.cell(3, nn);
 	}

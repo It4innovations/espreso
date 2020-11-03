@@ -25,6 +25,10 @@
 #include <algorithm>
 #include <map>
 #include <numeric>
+#include <unordered_set>
+#include <unordered_map>
+
+#include "basis/utilities/print.h"
 
 namespace espreso {
 namespace mesh {
@@ -424,24 +428,7 @@ void findCloseElements()
 	auto checkbody = [&] (esint i, esint j) {
 		esint ibody = info::mesh->contacts->surfaces[neigh[i]]->body->datatarray()[i - offset[neigh[i]]];
 		esint jbody = info::mesh->contacts->surfaces[neigh[j]]->body->datatarray()[j - offset[neigh[j]]];
-//		return ibody != jbody;
-		if (!self_contact && ibody == jbody) {
-			return false;
-		}
-		if (neigh[i] == myrank && neigh[j] == myrank) {
-			if (i < j) {
-				return ibody < jbody;
-			} else {
-				return jbody < ibody;
-			}
-		}
-		if (neigh[i] == myrank) {
-			return ibody < jbody;
-		}
-		if (neigh[j] == myrank) {
-			return jbody < ibody;
-		}
-		return false;
+		return self_contact || ibody != jbody;
 	};
 
 	auto checkall = [&] (esint i, esint j) {
@@ -450,6 +437,20 @@ void findCloseElements()
 				checkrange(i, j) &&
 				checkangle(i, j) &&
 				true;
+	};
+
+	auto push = [&] (esint i, esint j) {
+		if (neigh[i] == myrank && neigh[j] == myrank) {
+			pair.push_back(std::make_pair(j, i));
+			pair.push_back(std::make_pair(i, j));
+			return;
+		}
+		if (neigh[i] == myrank) {
+			pair.push_back(std::make_pair(i, j));
+		}
+		if (neigh[j] == myrank) {
+			pair.push_back(std::make_pair(j, i));
+		}
 	};
 
 	{ // traverse tree to find all close pairs
@@ -466,13 +467,8 @@ void findCloseElements()
 
 			auto check = [&] (esint p, esint begin, esint end) {
 				for (auto pp = tree.permutation.cbegin() + begin; pp != tree.permutation.cbegin() + end; ++pp) {
-					esint i = tree.permutation[p], j = *pp;
-					if (checkall(tree.permutation[p], j)) {
-						if (i < j) {
-							pair.push_back(std::make_pair(j, i));
-						} else {
-							pair.push_back(std::make_pair(i, j));
-						}
+					if (checkall(tree.permutation[p], *pp)) {
+						push(tree.permutation[p], *pp);
 					}
 				}
 			};
@@ -511,11 +507,7 @@ void findCloseElements()
 			for (auto left = tree.permutation.cbegin() + begin; left != tree.permutation.cbegin() + end; ++left) {
 				for (auto right = left + 1; right != tree.permutation.cbegin() + end; ++right) {
 					if (checkall(*left, *right)) {
-						if (*left < *right) {
-							pair.push_back(std::make_pair(*right, *left));
-						} else {
-							pair.push_back(std::make_pair(*left, *right));
-						}
+						push(*right, *left);
 					}
 				}
 			}
@@ -524,12 +516,20 @@ void findCloseElements()
 
 	std::sort(pair.begin(), pair.end());
 
+	std::unordered_map<esint, std::unordered_set<esint> > bodyPairs;
 	std::vector<esint> dist = { 0 }, data;
 	auto p = pair.begin();
 	for (esint e = 0; e < info::mesh->surface->size; ++e) {
+		esint ibody = info::mesh->surface->body->datatarray()[e];
 		while (p != pair.end() && p->first - offset[myrank] == e) {
 			data.push_back(neigh[p->second]);
 			data.push_back(p->second - offset[data.back()]);
+			esint jbody = info::mesh->contacts->surfaces[neigh[p->second]]->body->datatarray()[data.back()];
+			if (ibody < jbody) {
+				bodyPairs[ibody].insert(jbody);
+			} else {
+				bodyPairs[jbody].insert(ibody);
+			}
 			++p;
 		}
 		dist.push_back(data.size());
@@ -537,11 +537,23 @@ void findCloseElements()
 
 	info::mesh->contacts->pairs = new serializededata<esint, esint>(dist, data);
 
+	std::vector<std::pair<esint, esint> > interfaces;
+	for (auto i = bodyPairs.begin(); i != bodyPairs.end(); ++i) {
+		for (auto j = i->second.begin(); j != i->second.end(); ++j) {
+			interfaces.push_back(std::make_pair(i->first, *j));
+		}
+	}
+	std::sort(interfaces.begin(), interfaces.end());
+	Communication::uniqueAllGatherUnknownSize(interfaces);
+	for (auto i = interfaces.begin(); i != interfaces.end(); ++i) {
+		info::mesh->contacts->interfaces.push_back(Interface(i->first, i->second));
+	}
+
 	DebugOutput::closeElements(1, 1);
 	eslog::checkpointln("MESH: CLOSE ELEMENTS FOUND");
 }
 
-void triangulate(std::vector<Point> &p, std::vector<Point> &triangles)
+void triangulate(std::vector<Point> &p, std::vector<Triangle> &triangles)
 {
 	auto prev= [&] (const int &i) -> int {
 		return (i + p.size() - 1) % p.size();
@@ -551,43 +563,31 @@ void triangulate(std::vector<Point> &p, std::vector<Point> &triangles)
 	};
 
 	if (p.size() == 3) {
-		triangles = p;
+		triangles.push_back(Triangle{ p, 0, 1, 2 });
 		return;
 	}
 	if (p.size() == 4) {
 		for (int v = 0, size = p.size(); v < size; ++v) {
 			Point v1 = p[v] - p[prev(v)], v2 = p[next(v)] - p[prev(v)];
 			if (Point::cross2d(v1.normalize(), v2.normalize()) < 0) {
-				triangles.push_back(p[v]);
-				triangles.push_back(p[next(v)]);
-				triangles.push_back(p[next(next(v))]);
-				triangles.push_back(p[next(next(v))]);
-				triangles.push_back(p[prev(v)]);
-				triangles.push_back(p[v]);
+				triangles.push_back(Triangle{ p, v, next(v), next(next(v)) });
+				triangles.push_back(Triangle{ p, next(next(v)), prev(v), v });
 				return;
 			}
 		}
 		if ((p[0] - p[2]).length() < (p[1] - p[3]).length()) {
-			triangles.push_back(p[0]);
-			triangles.push_back(p[1]);
-			triangles.push_back(p[2]);
-			triangles.push_back(p[0]);
-			triangles.push_back(p[2]);
-			triangles.push_back(p[3]);
+			triangles.push_back(Triangle{ p, 0, 1, 2 });
+			triangles.push_back(Triangle{ p, 0, 2, 3 });
 		} else {
-			triangles.push_back(p[0]);
-			triangles.push_back(p[1]);
-			triangles.push_back(p[3]);
-			triangles.push_back(p[1]);
-			triangles.push_back(p[2]);
-			triangles.push_back(p[3]);
+			triangles.push_back(Triangle{ p, 0, 1, 3 });
+			triangles.push_back(Triangle{ p, 1, 2, 3 });
 		}
 		return;
 	}
 	eslog::error("ESPRESO internal error: cannot compute triangles from a polygon.\n");
 }
 
-void clip(esint id, const std::vector<Point> &trias, const std::vector<Point> &q, std::vector<std::vector<Point> > &res)
+void clip(esint id, const std::vector<Triangle> &trias, const std::vector<Point> &q, std::vector<Triangle> &res)
 {
 	double eps = 1e-10;
 	enum status { in, out, on, processed };
@@ -598,13 +598,13 @@ void clip(esint id, const std::vector<Point> &trias, const std::vector<Point> &q
 		return q0 + v * t;
 	};
 
-	for (size_t i = 0; i < trias.size(); i += 3) {
+	for (size_t i = 0; i < trias.size(); ++i) {
 		std::vector<Point> in(q), nextin;
 		auto curr = [&] (size_t i) { return (i                ) % in.size(); };
 		auto next = [&] (size_t i) { return (i + 1            ) % in.size(); };
 		auto prev = [&] (size_t i) { return (i - 1 + in.size()) % in.size(); };
 
-		Point p[3] = { trias[i], trias[i + 1], trias[i + 2] };
+		Point p[3] = { trias[i].p[0], trias[i].p[1], trias[i].p[2] };
 		Point line[3] = { (p[1] - p[0]).normalize(), (p[2] - p[1]).normalize(), (p[0] - p[2]).normalize() };
 
 		for (int c = 0; c < 3; ++c) {
@@ -629,12 +629,15 @@ void clip(esint id, const std::vector<Point> &trias, const std::vector<Point> &q
 			}
 			for (size_t j = 0; j < in.size(); ++j) {
 				if (status[j] == status::in && status[prev(j)] == status::out) {
-					nextin.push_back(crossPoint(p[c], p[(c + 1) % 3], in[prev(j)], in[j])); status[prev(j)] = status::processed;
+					nextin.push_back(crossPoint(p[c], p[(c + 1) % 3], in[prev(j)], in[j]));
+					status[prev(j)] = status::processed;
 					for (size_t k = 0; k < in.size(); ++k) {
 						if (status[curr(j + k)] == status::in || status[curr(j + k)] == status::on) {
-							nextin.push_back(in[curr(j + k)]); status[curr(j + k)] = status::processed;
+							nextin.push_back(in[curr(j + k)]);
+							status[curr(j + k)] = status::processed;
 						} else {
-							nextin.push_back(crossPoint(p[c], p[(c + 1) % 3], in[prev(j + k)], in[curr(j + k)])); status[curr(j + k)] = status::processed;
+							nextin.push_back(crossPoint(p[c], p[(c + 1) % 3], in[prev(j + k)], in[curr(j + k)]));
+							status[curr(j + k)] = status::processed;
 							break;
 						}
 					}
@@ -648,7 +651,17 @@ void clip(esint id, const std::vector<Point> &trias, const std::vector<Point> &q
 			}
 		}
 		if (in.size()) {
-			res.push_back(in);
+			std::vector<Point> _res;
+			for (size_t j = 0; j < in.size(); ++j) {
+				if (std::fabs(in[prev(j)].x - in[j].x) > 1e-6 || std::fabs(in[prev(j)].y - in[j].y) > 1e-6) {
+					_res.push_back(in[j]);
+				}
+			}
+			if (3 <= _res.size()) {
+				for (esint j = 2, size = _res.size(); j < size; j++) { // Delaunay triangulation?
+					res.push_back(Triangle{ _res, 0, j - 1, j });
+				}
+			}
 		}
 	}
 }
@@ -659,11 +672,14 @@ void computeContactInterface()
 
 	double eps = info::ecf->input.contact.search_area;
 
-	std::vector<Point> p1(20), p2(20), ptrias(60), ppp;
-	std::vector<std::vector<Point> > intersection(20);
+	struct istats { double area; esint faces; istats(): area(0), faces(0) {} };
+	std::unordered_map<esint, std::unordered_map<esint, istats> > istats;
+
+	std::vector<Point> p1(20), p2(20);
+	std::vector<Triangle> ptrias, intersection;
 	Point z(0, 0, 1);
 
-	std::vector<Point> triangles;
+	std::vector<Triangle> triangles;
 	std::vector<double> planedata;
 	std::vector<esint> dist = { 0 }, data;
 
@@ -677,9 +693,14 @@ void computeContactInterface()
 
 		const Point &pe = info::mesh->surface->center->datatarray()[e];
 		const Point &ne = info::mesh->surface->normal->datatarray()[e];
+		esint ibody = info::mesh->surface->body->datatarray()[e];
 		Point axis(0, 0, 1);
 		double sin = 0, cos = 1;
-		if (std::fabs(ne.z) < 0.999) {
+
+		if (ne.z < -0.999) {
+			axis = Point(1, 0, 0);
+			cos = -1;
+		} else if (ne.z < 0.999) {
 			axis = Point::cross(ne, z).normalize();
 			double angle = std::acos(ne.z);
 			sin = std::sin(angle); cos = std::cos(angle);
@@ -689,8 +710,8 @@ void computeContactInterface()
 		p1.clear();
 		for (auto n = epointer[e]->polygon->begin(); n != epointer[e]->polygon->end(); ++n) {
 			p1.push_back(info::mesh->surface->coordinates->datatarray()[enodes->at(*n)]);
-			p1.back() -= pe;
 			p1.back().rodrigues(axis, cos, sin);
+			p1.back() -= pe;
 			emin = std::min(emin, p1.back().z);
 			emax = std::max(emax, p1.back().z);
 		}
@@ -698,16 +719,18 @@ void computeContactInterface()
 		triangulate(p1, ptrias);
 
 		esint clips = 0;
+		std::unordered_set<esint> bodies;
 		for (auto other = pairs->begin(); other != pairs->end(); ++other) {
 			esint h = *other++;
+			esint jbody = info::mesh->contacts->surfaces[h]->body->datatarray()[*other];
 			p2.clear();
 			double min = 1e10, max = -1e10;
 			auto onodes = info::mesh->contacts->surfaces[h]->enodes->cbegin() + *other;
 			auto oepointer = info::mesh->contacts->surfaces[h]->epointers->datatarray();
 			for (auto n = oepointer[*other]->polygon->rbegin(); n != oepointer[*other]->polygon->rend(); ++n) {
 				p2.push_back(info::mesh->contacts->surfaces[h]->coordinates->datatarray()[onodes->at(*n)]);
-				p2.back() -= pe;
 				p2.back().rodrigues(axis, cos, sin);
+				p2.back() -= pe;
 				min = std::min(min, p2.back().z);
 				max = std::max(max, p2.back().z);
 			}
@@ -715,6 +738,10 @@ void computeContactInterface()
 				intersection.clear();
 				clip(e, ptrias, p2, intersection);
 				if (intersection.size()) {
+					if (bodies.count(jbody) == 0) {
+						++istats[ibody][jbody].faces;
+						bodies.insert(jbody);
+					}
 					if (clips == 0) {
 						data.push_back(e);
 						data.push_back(planedata.size());
@@ -733,29 +760,19 @@ void computeContactInterface()
 						planedata.push_back(pp->x);
 						planedata.push_back(pp->y);
 					}
+					data.back() += intersection.size();
 					for (size_t i = 0; i < intersection.size(); i++) {
-						data.back() += intersection[i].size() - 2;
-						for (size_t j = 2; j < intersection[i].size(); j++) {
-							planedata.push_back(intersection[i][0].x);
-							planedata.push_back(intersection[i][0].y);
-							planedata.push_back(intersection[i][j - 1].x);
-							planedata.push_back(intersection[i][j - 1].y);
-							planedata.push_back(intersection[i][j].x);
-							planedata.push_back(intersection[i][j].y);
+						for (int pi = 0; pi < 3; ++pi) {
+							planedata.push_back(intersection[i].p[pi].x);
+							planedata.push_back(intersection[i].p[pi].y);
 						}
 					}
 					clips += intersection.size();
 				}
 				for (size_t i = 0; i < intersection.size(); i++) {
-					for (size_t j = 0; j < intersection[i].size(); j++) {
-						intersection[i][j].rodrigues(axis, cos, -sin);
-						intersection[i][j] += pe;
-					}
-					for (size_t j = 2; j < intersection[i].size(); j++) {
-						triangles.push_back(intersection[i][0]);
-						triangles.push_back(intersection[i][j - 1]);
-						triangles.push_back(intersection[i][j]);
-					}
+					istats[ibody][jbody].area += intersection[i].area();
+					intersection[i].rotate(pe, axis, cos, -sin);
+					triangles.push_back(intersection[i]);
 				}
 			}
 		}
@@ -766,7 +783,48 @@ void computeContactInterface()
 
 	info::mesh->contacts->interface = new serializededata<esint, esint>(dist, data);
 	info::mesh->contacts->planeData = new serializededata<esint, double>(2, planedata);
-	info::mesh->contacts->intersections = new serializededata<esint, Point>(3, triangles);
+	info::mesh->contacts->intersections = new serializededata<esint, Triangle>(1, triangles);
+
+	std::vector<Interface> interfaces = info::mesh->contacts->interfaces;
+	auto comp = [] (const Interface &i, const Interface &j) {
+		if (i.from.body == j.from.body) {
+			return i.to.body < j.to.body;
+		}
+		return i.from.body < j.from.body;
+	};
+	auto size = interfaces.size();
+	std::vector<double> area(2 * size);
+	std::vector<esint> faces(2 * size);
+	for (auto i = istats.begin(); i != istats.end(); ++i) {
+		for (auto j = i->second.begin(); j != i->second.end(); ++j) {
+			auto it = std::lower_bound(interfaces.begin(), interfaces.end(), Interface(i->first, j->first), comp);
+			if (it == interfaces.end() || it->from.body != i->first || it->to.body != j->first) {
+				it = std::lower_bound(interfaces.begin(), interfaces.end(), Interface(j->first, i->first), comp);
+				auto offset = it - interfaces.begin();
+				area[offset + size] += j->second.area;
+				faces[offset + size] += j->second.faces;
+			} else {
+				auto offset = it - interfaces.begin();
+				area[offset] += j->second.area;
+				faces[offset] += j->second.faces;
+			}
+		}
+	}
+
+	Communication::allReduce(area, Communication::OP::SUM);
+	Communication::allReduce(faces, Communication::OP::SUM);
+	info::mesh->contacts->interfaces.clear();
+	for (size_t i = 0; i < interfaces.size(); ++i) {
+		if (faces[i] > 0 && faces[i + size] > 0) {
+			info::mesh->contacts->interfaces.push_back(Interface(interfaces[i].from.body, interfaces[i].to.body));
+			info::mesh->contacts->interfaces.back().from.area = area[i];
+			info::mesh->contacts->interfaces.back().from.faces = faces[i];
+			info::mesh->contacts->interfaces.back().to.area = area[i + size];
+			info::mesh->contacts->interfaces.back().to.faces = faces[i + size];
+			info::mesh->contacts->interfaces.back().setOrientation();
+		}
+	}
+	std::sort(info::mesh->contacts->interfaces.begin(), info::mesh->contacts->interfaces.end(), comp);
 
 	DebugOutput::contact(1, 1);
 	profiler::syncend("compute_contact_interface");

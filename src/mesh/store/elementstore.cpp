@@ -35,7 +35,9 @@ ElementStore::ElementStore()
 
   stiffness(NULL),
 
-  bodies(1),
+  bodiesSize(0),
+  bodiesOffset(0),
+  bodiesTotalSize(1),
   firstDomain(0),
   ndomains(1),
   nclusters(1),
@@ -72,7 +74,9 @@ size_t ElementStore::packedFullSize() const
 		packedSize += sizeof(size_t) + epointers->datatarray().size() * sizeof(int);
 	}
 
-	packedSize += utils::packedSize(bodies);
+	packedSize += utils::packedSize(bodiesSize);
+	packedSize += utils::packedSize(bodiesOffset);
+	packedSize += utils::packedSize(bodiesTotalSize);
 	packedSize += utils::packedSize(firstDomain);
 	packedSize += utils::packedSize(ndomains);
 	packedSize += utils::packedSize(domainDistribution);
@@ -122,7 +126,9 @@ void ElementStore::packFull(char* &p) const
 		utils::pack(eindices, p);
 	}
 
-	utils::pack(bodies, p);
+	utils::pack(bodiesSize, p);
+	utils::pack(bodiesOffset, p);
+	utils::pack(bodiesTotalSize, p);
 	utils::pack(firstDomain, p);
 	utils::pack(ndomains, p);
 	utils::pack(domainDistribution, p);
@@ -174,7 +180,9 @@ void ElementStore::unpackFull(const char* &p)
 		}
 	}
 
-	utils::unpack(bodies, p);
+	utils::unpack(bodiesSize, p);
+	utils::unpack(bodiesOffset, p);
+	utils::unpack(bodiesTotalSize, p);
 	utils::unpack(firstDomain, p);
 	utils::unpack(ndomains, p);
 	utils::unpack(domainDistribution, p);
@@ -203,7 +211,9 @@ size_t ElementStore::packedSize() const
 			procNodes->packedSize() +
 			sizeof(size_t) + epointers->datatarray().size() * sizeof(int) +
 			utils::packedSize(body) +
-			utils::packedSize(bodies) +
+			utils::packedSize(bodiesSize) +
+			utils::packedSize(bodiesOffset) +
+			utils::packedSize(bodiesTotalSize) +
 			utils::packedSize(firstDomain) +
 			utils::packedSize(ndomains) +
 			utils::packedSize(nclusters) +
@@ -232,7 +242,9 @@ void ElementStore::pack(char* &p) const
 		utils::pack(eindices, p);
 	}
 	utils::pack(body, p);
-	utils::pack(bodies, p);
+	utils::pack(bodiesSize, p);
+	utils::pack(bodiesOffset, p);
+	utils::pack(bodiesTotalSize, p);
 	utils::pack(firstDomain, p);
 	utils::pack(ndomains, p);
 	utils::pack(nclusters, p);
@@ -267,7 +279,9 @@ void ElementStore::unpack(const char* &p)
 		}
 	}
 	utils::unpack(body, p);
-	utils::unpack(bodies, p);
+	utils::unpack(bodiesSize, p);
+	utils::unpack(bodiesOffset, p);
+	utils::unpack(bodiesTotalSize, p);
 	utils::unpack(firstDomain, p);
 	utils::unpack(ndomains, p);
 	utils::unpack(nclusters, p);

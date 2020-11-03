@@ -58,7 +58,9 @@ struct ElementStore {
 
 	serializededata<esint, double>* stiffness;
 
-	esint bodies;
+	esint bodiesSize;
+	esint bodiesOffset;
+	esint bodiesTotalSize;
 	esint firstDomain;
 	esint ndomains;
 	std::vector<esint> domainDistribution;

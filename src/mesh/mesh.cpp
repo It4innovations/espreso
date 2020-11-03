@@ -680,8 +680,8 @@ void Mesh::printMeshStatistics()
 		}
 	}
 
-	std::vector<float> bmin(3 * (elements->bodies + 1), std::numeric_limits<float>::max()), bmax(3 * (elements->bodies + 1), -std::numeric_limits<float>::max());
-	std::vector<esint> ecount(elements->bodies), scount(elements->bodies);
+	std::vector<float> bmin(3 * (elements->bodiesTotalSize + 1), std::numeric_limits<float>::max()), bmax(3 * (elements->bodiesTotalSize + 1), -std::numeric_limits<float>::max());
+	std::vector<esint> ecount(elements->bodiesTotalSize), scount(elements->bodiesTotalSize);
 	auto body = elements->body->datatarray().begin();
 	for (auto enodes = elements->procNodes->begin(); enodes != elements->procNodes->end(); ++enodes, ++body) {
 		++ecount[*body];
@@ -698,13 +698,13 @@ void Mesh::printMeshStatistics()
 		++scount[*b];
 	}
 
-	for (int b = 0; b < elements->bodies; ++b) {
-		bmin[elements->bodies * 3 + 0] = std::min(bmin[b * 3 + 0], bmin[elements->bodies * 3 + 0]);
-		bmin[elements->bodies * 3 + 1] = std::min(bmin[b * 3 + 1], bmin[elements->bodies * 3 + 1]);
-		bmin[elements->bodies * 3 + 2] = std::min(bmin[b * 3 + 2], bmin[elements->bodies * 3 + 2]);
-		bmax[elements->bodies * 3 + 0] = std::max(bmax[b * 3 + 0], bmax[elements->bodies * 3 + 0]);
-		bmax[elements->bodies * 3 + 1] = std::max(bmax[b * 3 + 1], bmax[elements->bodies * 3 + 1]);
-		bmax[elements->bodies * 3 + 2] = std::max(bmax[b * 3 + 2], bmax[elements->bodies * 3 + 2]);
+	for (int b = 0; b < elements->bodiesTotalSize; ++b) {
+		bmin[elements->bodiesTotalSize * 3 + 0] = std::min(bmin[b * 3 + 0], bmin[elements->bodiesTotalSize * 3 + 0]);
+		bmin[elements->bodiesTotalSize * 3 + 1] = std::min(bmin[b * 3 + 1], bmin[elements->bodiesTotalSize * 3 + 1]);
+		bmin[elements->bodiesTotalSize * 3 + 2] = std::min(bmin[b * 3 + 2], bmin[elements->bodiesTotalSize * 3 + 2]);
+		bmax[elements->bodiesTotalSize * 3 + 0] = std::max(bmax[b * 3 + 0], bmax[elements->bodiesTotalSize * 3 + 0]);
+		bmax[elements->bodiesTotalSize * 3 + 1] = std::max(bmax[b * 3 + 1], bmax[elements->bodiesTotalSize * 3 + 1]);
+		bmax[elements->bodiesTotalSize * 3 + 2] = std::max(bmax[b * 3 + 2], bmax[elements->bodiesTotalSize * 3 + 2]);
 	}
 
 	Communication::allReduce(bmin, Communication::OP::MIN);
@@ -712,7 +712,7 @@ void Mesh::printMeshStatistics()
 	Communication::allReduce(ecount, Communication::OP::SUM);
 	Communication::allReduce(scount, Communication::OP::SUM);
 
-	std::vector<esint> perm(elements->bodies);
+	std::vector<esint> perm(elements->bodiesTotalSize);
 	std::iota(perm.begin(), perm.end(), 0);
 	std::sort(perm.begin(), perm.end(), [&] (esint i, esint j) { return ecount[i] < ecount[j]; });
 
@@ -767,25 +767,34 @@ void Mesh::printMeshStatistics()
 
 		eslog::info("  %s%*s : %16s %16s %16s\n", "GEOMETRY", namesize - 26, " ", "MIN", "MAX", "LENGTH");
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "X-COORDINATES", bmin[elements->bodies * 3 + 0], bmax[elements->bodies * 3 + 0], bmax[elements->bodies * 3 + 0] - bmin[elements->bodies * 3 + 0]);
-		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "Y-COORDINATES", bmin[elements->bodies * 3 + 1], bmax[elements->bodies * 3 + 1], bmax[elements->bodies * 3 + 1] - bmin[elements->bodies * 3 + 1]);
-		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "Z-COORDINATES", bmin[elements->bodies * 3 + 2], bmax[elements->bodies * 3 + 2], bmax[elements->bodies * 3 + 2] - bmin[elements->bodies * 3 + 2]);
+		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "X-COORDINATES", bmin[elements->bodiesTotalSize * 3 + 0], bmax[elements->bodiesTotalSize * 3 + 0], bmax[elements->bodiesTotalSize * 3 + 0] - bmin[elements->bodiesTotalSize * 3 + 0]);
+		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "Y-COORDINATES", bmin[elements->bodiesTotalSize * 3 + 1], bmax[elements->bodiesTotalSize * 3 + 1], bmax[elements->bodiesTotalSize * 3 + 1] - bmin[elements->bodiesTotalSize * 3 + 1]);
+		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "Z-COORDINATES", bmin[elements->bodiesTotalSize * 3 + 2], bmax[elements->bodiesTotalSize * 3 + 2], bmax[elements->bodiesTotalSize * 3 + 2] - bmin[elements->bodiesTotalSize * 3 + 2]);
 		eslog::info(" ============================================================================================= \n");
 
-		eslog::info("  BODY %16s %16s : %16s %16s %16s\n", "ELEMENTS", "SURFACES", "X [%]", "Y [%]", "Z [%]");
+		eslog::info("  BODY %16s %16s : %16s %16s %16s\n", "ELEMENTS", "FACES", "X [%]", "Y [%]", "Z [%]");
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 		for (auto b = perm.rbegin(); b != perm.rend(); ++b) {
 			eslog::info("  %4d %16s %16s :    <%.3f-%.3f>    <%.3f-%.3f>    <%.3f-%.3f>\n",
 					b - perm.rbegin(), Parser::stringwithcommas(ecount[*b]).c_str(), Parser::stringwithcommas(scount[*b]).c_str(),
-					(bmin[(*b * 3 + 0)] - bmin[elements->bodies * 3 + 0]) / (bmax[elements->bodies * 3 + 0] - bmin[elements->bodies * 3 + 0]),
-					(bmax[(*b * 3 + 0)] - bmin[elements->bodies * 3 + 0]) / (bmax[elements->bodies * 3 + 0] - bmin[elements->bodies * 3 + 0]),
-					(bmin[(*b * 3 + 1)] - bmin[elements->bodies * 3 + 1]) / (bmax[elements->bodies * 3 + 1] - bmin[elements->bodies * 3 + 1]),
-					(bmax[(*b * 3 + 1)] - bmin[elements->bodies * 3 + 1]) / (bmax[elements->bodies * 3 + 1] - bmin[elements->bodies * 3 + 1]),
-					(bmin[(*b * 3 + 2)] - bmin[elements->bodies * 3 + 2]) / (bmax[elements->bodies * 3 + 2] - bmin[elements->bodies * 3 + 2]),
-					(bmax[(*b * 3 + 2)] - bmin[elements->bodies * 3 + 2]) / (bmax[elements->bodies * 3 + 2] - bmin[elements->bodies * 3 + 2]));
+					(bmin[(*b * 3 + 0)] - bmin[elements->bodiesTotalSize * 3 + 0]) / (bmax[elements->bodiesTotalSize * 3 + 0] - bmin[elements->bodiesTotalSize * 3 + 0]),
+					(bmax[(*b * 3 + 0)] - bmin[elements->bodiesTotalSize * 3 + 0]) / (bmax[elements->bodiesTotalSize * 3 + 0] - bmin[elements->bodiesTotalSize * 3 + 0]),
+					(bmin[(*b * 3 + 1)] - bmin[elements->bodiesTotalSize * 3 + 1]) / (bmax[elements->bodiesTotalSize * 3 + 1] - bmin[elements->bodiesTotalSize * 3 + 1]),
+					(bmax[(*b * 3 + 1)] - bmin[elements->bodiesTotalSize * 3 + 1]) / (bmax[elements->bodiesTotalSize * 3 + 1] - bmin[elements->bodiesTotalSize * 3 + 1]),
+					(bmin[(*b * 3 + 2)] - bmin[elements->bodiesTotalSize * 3 + 2]) / (bmax[elements->bodiesTotalSize * 3 + 2] - bmin[elements->bodiesTotalSize * 3 + 2]),
+					(bmax[(*b * 3 + 2)] - bmin[elements->bodiesTotalSize * 3 + 2]) / (bmax[elements->bodiesTotalSize * 3 + 2] - bmin[elements->bodiesTotalSize * 3 + 2]));
 		}
-
 		eslog::info(" ============================================================================================= \n");
+
+		if (info::mesh->contacts->interfaces.size()) {
+			eslog::info("           : SPARSE SIDE (DENOTES PROJECTION PLANE) -> DENSE SIDE (PROJECTED ONTO THE PLANE)   \n");
+			eslog::info("  CONTACT  : %4s %16s %16s -> %4s %16s %16s\n", "BODY", "FACES", "AREA", "BODY", "FACES", "AREA");
+			eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+			for (auto iface = info::mesh->contacts->interfaces.begin(); iface != info::mesh->contacts->interfaces.end(); ++iface) {
+				eslog::info("           : %4d %16s %16f -> %4d %16s %16f\n", iface->from.body, Parser::stringwithcommas(iface->from.faces).c_str(), iface->from.area, iface->to.body, Parser::stringwithcommas(iface->to.faces).c_str(), iface->to.area);
+			}
+			eslog::info(" ============================================================================================= \n");
+		}
 		break;
 	case OutputConfiguration::LOGGER::PARSER:
 		eslog::info(" ====================================== MESH STATISTICS ====================================== \n");
@@ -799,7 +808,7 @@ void Mesh::printMeshStatistics()
 		for (size_t r = 1; r < boundaryRegions.size(); r++) {
 			eslog::info("mesh: region=%s, dimension=%d, elements=%d, nodes=%d\n", boundaryRegions[r]->name.c_str(), boundaryRegions[r]->dimension, boundaryRegions[r]->totalsize, boundaryRegions[r]->nodeInfo.totalSize);
 		}
-		eslog::info("mesh: bodies=%d\n", elements->bodies);
+		eslog::info("mesh: bodies=%d\n", elements->bodiesTotalSize);
 		eslog::info(" ============================================================================================= \n");
 		break;
 	}

@@ -343,15 +343,20 @@ void computeBodies()
 		labels[b] = it != labels.end() ? it->second : b;
 	}
 
+	info::mesh->elements->bodiesSize = 0;
 	std::vector<esint> ulabels;
 	for (esint b = boffset; b < boffset + bodies; ++b) {
 		if (labels[b] == b) {
 			ulabels.push_back(b);
+			++info::mesh->elements->bodiesSize;
 		}
 	}
+	std::sort(ulabels.begin(), ulabels.end());
+	info::mesh->elements->bodiesOffset = ulabels.size() ? ulabels.front() : 0;
 	Communication::allGatherUnknownSize(ulabels);
+	info::mesh->elements->bodiesOffset = std::lower_bound(ulabels.begin(), ulabels.end(), info::mesh->elements->bodiesOffset) - ulabels.begin();
 
-	info::mesh->elements->bodies = ulabels.size();
+	info::mesh->elements->bodiesTotalSize = ulabels.size();
 	for (esint b = boffset; b < boffset + bodies; ++b) {
 		labels[b] = std::lower_bound(ulabels.begin(), ulabels.end(), labels[b]) - ulabels.begin();
 	}
