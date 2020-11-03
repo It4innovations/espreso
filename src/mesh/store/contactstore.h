@@ -20,6 +20,14 @@ struct ijv {
 	bool operator!=(ijv &other) { return !(*this == other); }
 };
 
+struct Point2D {
+	double x, y;
+
+	Point2D(): x(0), y(0) {}
+	Point2D(double x, double y): x(x), y(y) {}
+	Point2D(const Point &p): x(p.x), y(p.y) {}
+};
+
 struct Triangle {
 	Point p[3];
 
@@ -27,11 +35,8 @@ struct Triangle {
 	Triangle(std::vector<Point> &p, esint p1, esint p2, esint p3): p{ p[p1], p[p2], p[p3] } { }
 	Triangle(const Point &p1, const Point &p2, const Point &p3): p{ p1, p2, p3 } { }
 
-	void rotate(const Point &center, const Point &axis, const double &cos, const double &sin)
+	void rotate(const Point &axis, const double &cos, const double &sin)
 	{
-		p[0] += center;
-		p[1] += center;
-		p[2] += center;
 		p[0].rodrigues(axis, cos, sin);
 		p[1].rodrigues(axis, cos, sin);
 		p[2].rodrigues(axis, cos, sin);
@@ -67,6 +72,32 @@ struct Interface {
 	}
 };
 
+struct SparseSegment {
+	esint element;
+	esint coordinateOffset;
+	esint denseSegments;
+	esint denseSegmentOffset;
+
+	SparseSegment()
+	: element(0), coordinateOffset(0), denseSegments(0), denseSegmentOffset(0) {}
+	SparseSegment(esint e, esint coffset, esint doffset)
+	: element(e), coordinateOffset(coffset), denseSegments(0), denseSegmentOffset(doffset) {}
+};
+
+struct DenseSegment {
+	esint neigh;
+	esint element;
+	esint coordinateOffset;
+	esint triangles;
+	esint triangleOffset;
+	esint skip;
+
+	DenseSegment()
+	: neigh(0), element(0), coordinateOffset(0), triangles(0), triangleOffset(0), skip(false) {}
+	DenseSegment(esint n, esint e, esint coffset, esint toffset)
+	: neigh(n), element(e), coordinateOffset(coffset), triangles(0), triangleOffset(toffset), skip(false) {}
+};
+
 struct ContactStore {
 	std::vector<int> neighbors, neighborsWithMe;
 	std::vector<SurfaceStore*> surfaces; // the last surface is the local surface
@@ -78,6 +109,10 @@ struct ContactStore {
 	// [ diagonal, pointer to plane data, nfull, full0[offset,ntria], full1[offset,ntria], ... ]
 	serializededata<esint, esint>* interface;
 	serializededata<esint, double>* planeData;
+
+	serializededata<esint, SparseSegment>* sparseSide;
+	serializededata<esint, DenseSegment>* denseSide;
+	serializededata<esint, Point2D>* planeCoordinates;
 
 	std::vector<Interface> interfaces;
 
