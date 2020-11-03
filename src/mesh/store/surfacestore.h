@@ -18,6 +18,7 @@ struct SurfaceStore {
 	serializededata<esint, esint>* body;
 	serializededata<esint, esint>* triangles;
 	serializededata<esint, esint>* nodes;
+	serializededata<esint, esint>* nIDs;
 	serializededata<esint, Point>* coordinates;
 	serializededata<esint, esint>* enodes;
 

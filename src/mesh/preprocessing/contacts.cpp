@@ -112,11 +112,15 @@ void computeBodiesSurface()
 	std::vector<esint> nodes(info::mesh->surface->enodes->datatarray().begin(), info::mesh->surface->enodes->datatarray().end());
 	utils::sortAndRemoveDuplicates(nodes);
 	info::mesh->surface->nodes = new serializededata<esint, esint>(1, tarray<esint>(threads, nodes));
+	info::mesh->surface->nIDs = new serializededata<esint, esint>(1, tarray<esint>(threads, nodes));
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (auto n = info::mesh->surface->enodes->datatarray().begin(t); n != info::mesh->surface->enodes->datatarray().end(t); ++n) {
 			*n = std::lower_bound(info::mesh->surface->nodes->datatarray().begin(), info::mesh->surface->nodes->datatarray().end(), *n) - info::mesh->surface->nodes->datatarray().begin();
+		}
+		for (auto n = info::mesh->surface->nIDs->datatarray().begin(t); n != info::mesh->surface->nIDs->datatarray().end(t); ++n) {
+			*n = info::mesh->nodes->IDs->datatarray()[*n];
 		}
 	}
 
@@ -305,7 +309,7 @@ void exchangeContactHalo()
 		// send global ids
 		sBuffer[n].push_back(nsend.size());
 		for (size_t c = 0; c < nsend.size(); ++c) {
-			sBuffer[n].push_back(info::mesh->nodes->IDs->datatarray()[info::mesh->surface->nodes->datatarray()[nsend[c]]]);
+			sBuffer[n].push_back(info::mesh->surface->nIDs->datatarray()[nsend[c]]);
 		}
 
 		// send coordinates
@@ -360,8 +364,8 @@ void exchangeContactHalo()
 
 		// receive global ids
 		size = rBuffer[n][i];
-		info::mesh->contacts->surfaces[n]->nodes = new serializededata<esint, esint>(1, tarray<esint>(info::env::OMP_NUM_THREADS, size));
-		memcpy(info::mesh->contacts->surfaces[n]->nodes->datatarray().data(), rBuffer[n].data() + i + 1, sizeof(esint) * rBuffer[n][i]);
+		info::mesh->contacts->surfaces[n]->nIDs = new serializededata<esint, esint>(1, tarray<esint>(info::env::OMP_NUM_THREADS, size));
+		memcpy(info::mesh->contacts->surfaces[n]->nIDs->datatarray().data(), rBuffer[n].data() + i + 1, sizeof(esint) * rBuffer[n][i]);
 		i += 1 + rBuffer[n][i];
 
 		// receive coordinates

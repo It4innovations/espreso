@@ -15,6 +15,7 @@ SurfaceStore::SurfaceStore()
   body(NULL),
   triangles(NULL),
   nodes(NULL),
+  nIDs(NULL),
   coordinates(NULL),
   enodes(NULL),
   center(NULL),
@@ -36,6 +37,7 @@ SurfaceStore::~SurfaceStore()
 	if (body != NULL) { delete body; }
 	if (triangles != NULL && triangles != enodes) { delete triangles; }
 	if (nodes != NULL) { delete nodes; }
+	if (nIDs != NULL) { delete nIDs; }
 	if (coordinates != NULL) { delete coordinates; }
 	if (enodes != NULL) { delete enodes; }
 	if (center != NULL) { delete center; }
@@ -54,6 +56,7 @@ size_t SurfaceStore::packedFullSize() const
 	packedSize += utils::packedSize(body);
 	packedSize += utils::packedSize(triangles);
 	packedSize += utils::packedSize(nodes);
+	packedSize += utils::packedSize(nIDs);
 	packedSize += utils::packedSize(coordinates);
 	packedSize += utils::packedSize(enodes);
 	packedSize += utils::packedSize(center);
@@ -83,6 +86,7 @@ void SurfaceStore::packFull(char* &p) const
 	utils::pack(body, p);
 	utils::pack(triangles, p);
 	utils::pack(nodes, p);
+	utils::pack(nIDs, p);
 	utils::pack(coordinates, p);
 	utils::pack(enodes, p);
 	utils::pack(center, p);
@@ -115,6 +119,7 @@ void SurfaceStore::unpackFull(const char* &p)
 	utils::unpack(body, p);
 	utils::unpack(triangles, p);
 	utils::unpack(nodes, p);
+	utils::unpack(nIDs, p);
 	utils::unpack(coordinates, p);
 	utils::unpack(enodes, p);
 	utils::unpack(center, p);
