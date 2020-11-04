@@ -30,6 +30,9 @@ void ECF::init(int *argc, char ***argv, const std::string &app)
 void ECF::init(const std::string &file)
 {
 	info::ecf = new ECF(file);
+	if (info::mpi::threading < MPI_THREAD_MULTIPLE) {
+		info::ecf->output.mode = OutputConfiguration::MODE::SYNC;
+	}
 }
 
 void ECF::finish()

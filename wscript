@@ -77,6 +77,16 @@ def reorder_libs(ctx):
 
     ctx.env["LIB"].sort(key=myorder)
 
+from waflib.TaskGen import feature, before_method, after_method
+@feature('qt5')
+@after_method('process_source')
+@before_method('apply_incpaths')
+def add_includes_paths(self):
+   incs = set(self.to_list(getattr(self, 'includes', '')))
+   for x in self.compiled_tasks:
+       incs.add(x.inputs[0].parent.path_from(self.path))
+   self.includes = sorted(incs)
+
 def print_available(ctx):
     def _print(msg, err, libs, color="RED"):
         libs = [lib for lib in libs if "HAVE_" + lib.upper() in ctx.env["DEFINES_" + lib.upper()]]
@@ -154,7 +164,9 @@ def configure(ctx):
         ctx.options.cxx = "icpc"
     if ctx.options.mpicxx == "mpic++":
         ctx.options.cxx = "g++"
-    ctx.load(ctx.options.cxx)
+
+    ctx.env["COMPILER_CXX"] = ctx.env["CXX"]
+    ctx.load("compiler_cxx qt5")
     ctx.env.CXX = ctx.env.LINK_CXX = ctx.env.MPI_CXX
 
     """ Set default compilers flags"""
@@ -289,7 +301,20 @@ def build(ctx):
         ctx.program(source="src/api/example.cpp", target="feti4iexample", includes="include", use="feti4i")
         ctx.lib(source="src/api/wrapper.cpp",target="feti4i", includes="include", use=espreso, stlib=ctx.options.stlibs, lib=ctx.options.libs)
 
+    ctx.objects(source=ctx.path.ant_glob("**/*.ui"), target="ui")
+    ctx(
+        features = "qt5 cxx cxxprogram",
+        source   = ctx.path.ant_glob("src/gui/**/*.cpp"),
+        moc      = ctx.path.ant_glob("src/gui/**/*.h"),
+
+        use      = [ "ui" ] + espreso,
+        uselib   = "QT5CORE QT5GUI QT5WIDGETS QT5OPENGL",
+
+        target   = "espresogui"
+    )
+
 def options(opt):
+    opt.load("compiler_cxx qt5")
     opt.compiler = opt.add_option_group("Compiler options")
     opt.decomposers = opt.add_option_group("Third party graph partition tools")
     opt.math = opt.add_option_group("Third party math libraries")
