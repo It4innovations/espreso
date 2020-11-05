@@ -76,11 +76,10 @@ void computeBoundaryRegionsArea()
 	}
 }
 
-#define MIN_SLAVE_COVER_RATIO 0.3
-#define TOLERATED_SLAVE_COVER_RATIO_FOR_DUAL_SHAPE_COEFFICIENTS_ON_WHOLE_ELEMENT 0.3
+#define TOLERATED_SLAVE_COVER_RATIO_FOR_DUAL_SHAPE_COEFFICIENTS_ON_WHOLE_ELEMENT 10 // never at this versions
 #define BE_VALUE_TRESHOLD 1e-15
 
-void assembleMortarInterface(std::vector<ijv> &B)
+void assembleMortarInterfaceOrig(std::vector<ijv> &B)
 {
 	// Popp: Mortar Methods for Computational Contact Mechanics and General Interface Problems
 	// dissertation at Technische universitat Munchen
@@ -97,8 +96,8 @@ void assembleMortarInterface(std::vector<ijv> &B)
 	auto plane = info::mesh->contacts->planeData->datatarray().begin();
 	std::vector<double> slCover(info::mesh->contacts->interface->structures(), 0.0);
 	esint segmentIndex = 0;
-	std::vector<double> me;   me.reserve(9*9);
-	std::vector<double> de;   de.reserve(9*9);
+	std::vector<double> me;
+	std::vector<double> de;
 	size_t slNodesSize = 0, maNodesSize = 0, tmpCnt;
 
 	struct dmAssembleDataForGPItem {
@@ -133,8 +132,8 @@ void assembleMortarInterface(std::vector<ijv> &B)
 			slJs.push_back(info::mesh->nodes->IDs->datatarray()[info::mesh->surface->nodes->datatarray()[*n]]);
 			if (info::mpi::rank == printrank) std::cout << " " << slJs.back();
 		}
-		de.resize(slNodesSize,slNodesSize);
-		me.resize(slNodesSize,slNodesSize);
+		de.resize(slNodesSize * slNodesSize);
+		me.resize(slNodesSize * slNodesSize);
 		if (info::mpi::rank == printrank) std::cout << " ][";
 		unsigned int tmpcount = 0;
 		for (auto n = slNodesIt->begin(); n != slNodesIt->end(); ++n, ++tmpcount, poffset += 2) {
@@ -273,6 +272,7 @@ void assembleMortarInterface(std::vector<ijv> &B)
 			maJoffset += maElement->nodes;
 //			if (info::mpi::rank == printrank) std::cout << "\n";
 		}
+
 		switch (slElement->code) {
 		case Element::CODE::TRIANGLE3: slCover[segmentIndex]/=0.5; break;
 		case Element::CODE::SQUARE4:   slCover[segmentIndex]/=4.0; break;
@@ -316,8 +316,9 @@ void assembleMortarInterface(std::vector<ijv> &B)
 			}
 			// de = me^{-1}*de == M_{e}^{-T}*D_{e}^{T} == D_{e}*M_{e}^{-1} Popp (4.57)
 			MATH::DenseMatDenseMatRowMajorSystemSolve(slNodesSize, slNodesSize, me.data(), de.data());
+
 			// remark: slJs.size() == slNodesSize
-			Be.reserve(slNodesSize*(slNodesSize+maJs.size()));
+			Be.reserve(slNodesSize * (slNodesSize + maJs.size()));
 			tmpCnt = 0;
 			for (size_t i = 0; i < slNodesSize; i++) {
 				for (size_t j = 0; j < slNodesSize; ++j, ++tmpCnt) {
@@ -351,6 +352,122 @@ void assembleMortarInterface(std::vector<ijv> &B)
 			}
 		}
 		Be.clear();
+	}
+}
+
+void assembleMortarInterface(std::vector<ijv> &B)
+{
+	Element *tElement = &info::mesh->edata[(int)Element::CODE::TRIANGLE3];
+	int tGPs = tElement->weighFactor->size();
+	MatrixDense sCoords, dCoords, tCoords, sRefCoords(3, 2), dRefCoords(3, 2);
+	MatrixDense sGpCoords(tGPs, 2), dGpCoords(tGPs, 2);
+	MatrixDense tmp, sDetJ, dDetJ, tDetJ, sN, dN;
+
+	const std::vector<SurfaceStore*> &surfaces = info::mesh->contacts->surfaces;
+
+	auto getReferenceCoords = [&] (Element *e, MatrixDense &eCoords, MatrixDense &tCoords, MatrixDense &ref) {
+		switch (e->code) { // TODO: improve for other types
+		case Element::CODE::TRIANGLE3: Triangle3::computeReferenceCoords(eCoords, tCoords, ref); break;
+		case Element::CODE::SQUARE4: Square4::computeReferenceCoords(eCoords, tCoords, ref); break;
+		default: eslog::error("ESPRESO internal error: not implemented mortar element.\n");
+		}
+	};
+
+	auto getGpCoords = [&] (MatrixDense &refCoords, MatrixDense &gpCoords) {
+		for (int gp = 0; gp < tGPs; ++gp) {
+			tmp.multiply(tElement->N->at(gp), refCoords);
+			gpCoords[gp][0] = tmp[0][0];
+			gpCoords[gp][1] = tmp[0][1];
+		}
+	};
+
+	auto *sside = info::mesh->contacts->sparseSide;
+	auto *dside = info::mesh->contacts->denseSide;
+	double *coors = info::mesh->contacts->planeCoordinates->datatarray().data()->data();
+	for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s) {
+		Element* sElement = surfaces.back()->epointers->datatarray()[s->element];
+		auto sNodes = surfaces.back()->enodes->begin() + s->element;
+		const auto &sIDs = surfaces.back()->nIDs->datatarray();
+		sCoords.set(sElement->nodes, 2, coors + 2 * s->coordinateOffset);
+
+		std::vector<double> D(sElement->nodes * sElement->nodes), M(sElement->nodes * sElement->nodes), sparse(sElement->nodes * sElement->nodes);
+		for (int dmReady = 0; dmReady <= 1; ++dmReady) {
+			for (auto d = dside->datatarray().begin() + s->denseSegmentOffset; d != dside->datatarray().begin() + s->denseSegmentOffset + s->denseSegments; ++d) {
+				if (d->skip) {
+					continue;
+				}
+
+				Element* dElement = surfaces[d->neigh]->epointers->datatarray()[d->element];
+				auto dNodes = surfaces[d->neigh]->enodes->begin() + d->element;
+				const auto &dIDs = surfaces[d->neigh]->nIDs->datatarray();
+				if (dmReady) {
+					dCoords.set(sElement->nodes, 2, coors + 2 * d->coordinateOffset);
+				}
+
+				std::vector<double> dense(sElement->nodes * dElement->nodes);
+				for (esint t = 0; t < d->triangles; ++t) {
+					tCoords.set(3, 2, coors + 2 * (d->triangleOffset + 3 * t));
+					getReferenceCoords(sElement, sCoords, tCoords, sRefCoords);
+					getGpCoords(sRefCoords, sGpCoords);
+
+					BaseFunctions::recomputeDetJ(tElement, sRefCoords, tDetJ);
+					BaseFunctions::recomputeDetJN(sElement, sCoords, sDetJ, sN, sGpCoords);
+
+					if (!dmReady) {
+					// compute De, Me for coefficients Ae of dual basis functions from formula (4.60)
+						for (int gp = 0; gp < tGPs; ++gp) {
+							double weight = tElement->weighFactor->at(gp) * tDetJ[0][gp] * sDetJ[0][gp];
+							for (int i = 0; i < sElement->nodes; i++) {
+								D[i * sElement->nodes + i] += weight * sN[i][gp];
+								M[i * sElement->nodes + i] += weight * sN[i][gp] * sN[i][gp];
+								for (int j = i + 1; j < sElement->nodes; j++) {
+									M[j * sElement->nodes + i] += weight * sN[i][gp] * sN[j][gp];
+									M[i * sElement->nodes + j] += weight * sN[i][gp] * sN[j][gp];
+								}
+							}
+						}
+					} else {
+						getReferenceCoords(dElement, dCoords, tCoords, dRefCoords);
+						getGpCoords(dRefCoords, dGpCoords);
+						BaseFunctions::recomputeDetJN(dElement, dCoords, dDetJ, dN, dGpCoords);
+						MatrixDense psi;
+						psi.multiply(D.data(), sElement->nodes, sElement->nodes, sN.nrows, sN.ncols, sN.vals);
+
+						for (int gp = 0; gp < tGPs; ++gp) {
+							double weight = tElement->weighFactor->at(gp) * tDetJ[0][gp] * sDetJ[0][gp];
+							for (int i = 0; i < sElement->nodes; i++) {
+								for (int j = 0; j < sElement->nodes; j++) {
+									sparse[i * sElement->nodes + j] += weight * sN[j][gp] * psi[i][gp];
+								}
+								for (int j = 0; j < dElement->nodes; j++) {
+									dense[i * dElement->nodes + j] -= weight * dN[j][gp] * psi[i][gp];
+								}
+							}
+						}
+					}
+				}
+				if (dmReady) {
+					for (int i = 0; i < sElement->nodes; i++) {
+						for (int j = 0; j < dElement->nodes; j++) {
+							if (std::fabs(dense[i * dElement->nodes + j]) > BE_VALUE_TRESHOLD) {
+								B.push_back(ijv(sIDs[sNodes->at(i)], dIDs[dNodes->at(j)], dense[i * dElement->nodes + j]));
+							}
+						}
+					}
+				}
+			}
+			if (!dmReady) {
+				// de = me^{-1}*de == M_{e}^{-T}*D_{e}^{T} == D_{e}*M_{e}^{-1} Popp (4.57)
+				MATH::DenseMatDenseMatRowMajorSystemSolve(sElement->nodes, sElement->nodes, M.data(), D.data());
+			}
+		}
+		for (int i = 0; i < sElement->nodes; i++) {
+			for (int j = 0; j < sElement->nodes; j++) {
+				if (std::fabs(sparse[i * sElement->nodes + j]) > BE_VALUE_TRESHOLD) {
+					B.push_back(ijv(sIDs[sNodes->at(i)], sIDs[sNodes->at(j)], sparse[i * sElement->nodes + j]));
+				}
+			}
+		}
 	}
 }
 

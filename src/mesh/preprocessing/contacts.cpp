@@ -730,11 +730,14 @@ void computeContactInterface()
 
 		setRotation(e);
 
-		double emin, emax;
+		double emin, emax, earea = 0;
 		setPolygon(plane, emin, emax, info::mesh->contacts->neighbors.size(), e);
 		triangulate(plane, planeTriangles);
+		for (size_t t = 0; t < planeTriangles.size(); ++t) {
+			earea += planeTriangles[t].area();
+		}
 
-		std::unordered_set<esint> insertedBodies;
+		std::unordered_map<esint, double> insertedBodies;
 		for (auto other = pairs->begin(); other != pairs->end(); ++other) {
 			esint neigh = *other++;
 			esint offset = *other;
@@ -762,11 +765,12 @@ void computeContactInterface()
 				}
 				if (insertedBodies.count(surfaces[neigh]->body->datatarray()[offset]) == 0) {
 					++istats[surfaces.back()->body->datatarray()[e]][surfaces[neigh]->body->datatarray()[offset]].faces;
-					insertedBodies.insert(surfaces[neigh]->body->datatarray()[offset]);
+					insertedBodies[surfaces[neigh]->body->datatarray()[offset]] = 0;
 				}
 
+				++sparse.back().denseSegments;
 				dense.push_back(DenseSegment(neigh, offset, planeCoordinates.size(), planeCoordinates.size() + projected.size()));
-				planeCoordinates.insert(planeCoordinates.end(), projected.begin(), projected.end());
+				planeCoordinates.insert(planeCoordinates.end(), projected.rbegin(), projected.rend());
 				for (size_t i = 0; i < intersection.size(); i++) {
 					++dense.back().triangles;
 					planeCoordinates.insert(planeCoordinates.end(), intersection[i].p, intersection[i].p + 3);
@@ -789,9 +793,20 @@ void computeContactInterface()
 				}
 			}
 			for (size_t i = 0; i < intersection.size(); i++) {
-				istats[surfaces.back()->body->datatarray()[e]][surfaces[neigh]->body->datatarray()[offset]].area += intersection[i].area();
+				double area = intersection[i].area();
+				istats[surfaces.back()->body->datatarray()[e]][surfaces[neigh]->body->datatarray()[offset]].area += area;
+				insertedBodies[surfaces[neigh]->body->datatarray()[offset]] += area / earea;
 				intersection[i].rotate(axis, cos, -sin);
 				triangles.push_back(intersection[i]);
+			}
+		}
+		for (auto ib = insertedBodies.begin(); ib != insertedBodies.end(); ++ib) {
+			if (ib->second < MIN_SLAVE_COVER_RATIO) {
+				for (esint d = sparse.back().denseSegmentOffset; d < sparse.back().denseSegmentOffset + sparse.back().denseSegments; ++d) {
+					if (surfaces[dense[d].neigh]->body->datatarray()[dense[d].element] == ib->first) {
+						dense[d].skip = true;
+					}
+				}
 			}
 		}
 		if (insertedBodies.size()) {

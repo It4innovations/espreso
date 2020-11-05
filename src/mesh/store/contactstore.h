@@ -9,6 +9,8 @@
 
 namespace espreso {
 
+#define MIN_SLAVE_COVER_RATIO 0.3
+
 struct ijv {
 	int i , j;
 	double v;
@@ -26,6 +28,9 @@ struct Point2D {
 	Point2D(): x(0), y(0) {}
 	Point2D(double x, double y): x(x), y(y) {}
 	Point2D(const Point &p): x(p.x), y(p.y) {}
+
+	const double* data() const { return &x; }
+	double* data() { return &x; }
 };
 
 struct Triangle {
