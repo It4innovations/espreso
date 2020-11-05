@@ -42,6 +42,11 @@ DataMatrixDense::DataMatrixDense(esint nrows, esint ncols)
 	fill(0); // TODO: remove (change kernels)
 }
 
+DataMatrixDense::DataMatrixDense(esint nrows, esint ncols, double *vals)
+{
+	set(nrows, ncols, vals);
+}
+
 DataMatrixDense::DataMatrixDense(const DataMatrixDense &other)
 {
 	deepCopy(&other);
@@ -50,6 +55,14 @@ DataMatrixDense::DataMatrixDense(const DataMatrixDense &other)
 DataMatrixDense::~DataMatrixDense()
 {
 	_allocated.clear();
+}
+
+void DataMatrixDense::set(esint nrows, esint ncols, double *vals)
+{
+	_allocated.clear();
+	this->nrows = nrows;
+	this->ncols = ncols;
+	this->vals = vals;
 }
 
 void DataMatrixDense::resize(esint nrows, esint ncols)

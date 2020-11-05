@@ -19,7 +19,6 @@ public:
 
 		double& operator[](esint col) { return vals[col]; }
 		const double& operator[](esint col) const { return vals[col]; }
-	protected:
 		double *vals;
 	};
 
@@ -34,6 +33,7 @@ public:
 
 	MatrixDense();
 	MatrixDense(esint nrows, esint ncols);
+	MatrixDense(esint nrows, esint ncols, double *vals);
 	MatrixDense(const MatrixDense &other);
 	MatrixDense(const MatrixCSR &other);
 	MatrixDense& operator=(const MatrixDense &other);
@@ -42,6 +42,7 @@ public:
 
 	MatrixDense* copy();
 
+	void set(esint nrows, esint ncols, double *vals);
 	void structureUpdated();
 	void swap(Matrix *other);
 	void shallowCopy(const Matrix *other);

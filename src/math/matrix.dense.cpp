@@ -18,6 +18,12 @@ MatrixDense::MatrixDense(esint nrows, esint ncols)
 
 }
 
+MatrixDense::MatrixDense(esint nrows, esint ncols, double *vals)
+: DataMatrixDense(nrows, ncols, vals)
+{
+
+}
+
 MatrixDense::MatrixDense(const MatrixDense &other)
 : Matrix(other), DataMatrixDense(other)
 {
@@ -67,6 +73,11 @@ MatrixDense::~MatrixDense()
 MatrixDense* MatrixDense::copy()
 {
 	return new MatrixDense();
+}
+
+void MatrixDense::set(esint nrows, esint ncols, double *vals)
+{
+	DataMatrixDense::set(nrows, ncols, vals);
 }
 
 void MatrixDense::structureUpdated()

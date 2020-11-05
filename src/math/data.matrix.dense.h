@@ -23,9 +23,11 @@ class DataMatrixDense: public _DataMatrixDense
 public:
 	DataMatrixDense();
 	DataMatrixDense(esint nrows, esint ncols);
+	DataMatrixDense(esint nrows, esint ncols, double *vals);
 	DataMatrixDense(const DataMatrixDense &other);
 	~DataMatrixDense();
 
+	void set(esint nrows, esint ncols, double *vals);
 	void resize(esint nrows, esint ncols);
 	void swap(DataMatrixDense *other);
 	void shallowCopy(const DataMatrixDense *other);
