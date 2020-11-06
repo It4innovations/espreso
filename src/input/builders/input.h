@@ -17,6 +17,8 @@ protected:
 	Input(MeshBuilder &meshData)
 	: _meshData(meshData), _eregsize(1), _nregsize(1) {}
 
+	void clip();
+
 	void balance();
 	void balanceNodes();
 	void balancePermutedNodes();

@@ -5,10 +5,13 @@
 #include "composition/gridtowergenerator.h"
 #include "composition/spheregenerator.h"
 #include "basis/logging/profiler.h"
+#include "basis/utilities/communication.h"
 #include "config/ecf/input/generator.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/eslog.h"
 #include "mesh/mesh.h"
+
+#include <numeric>
 
 using namespace espreso;
 
@@ -40,6 +43,13 @@ void MeshGenerator::load()
 	default:
 		eslog::globalerror("Not implemented mesh generator shape.\n");
 	}
+
+	esint eoffset = etype.size();
+	Communication::exscan(eoffset);
+	eIDs.resize(etype.size());
+	std::iota(eIDs.begin(), eIDs.end(), eoffset);
+	material.resize(etype.size());
+	body.resize(etype.size());
 	profiler::syncend("mesh_generator");
 }
 

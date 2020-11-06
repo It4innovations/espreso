@@ -93,6 +93,8 @@ SequentialInput::SequentialInput(MeshBuilder &mesh)
 	profiler::synccheckpoint("fill_rank");
 	eslog::checkpointln("BUILDER: RANKS FILLED");
 
+	clip();
+
 	fillNodes();
 	profiler::synccheckpoint("fill_nodes");
 	eslog::checkpointln("BUILDER: NODES FILLED");

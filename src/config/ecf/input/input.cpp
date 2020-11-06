@@ -5,6 +5,22 @@
 
 using namespace espreso;
 
+ClippingBox::ClippingBox()
+{
+	apply = false;
+	REGISTER(apply, ECFMetaData()
+			.setdescription({ "Clip the input according to the box." })
+			.setdatatype({ ECFDataType::BOOL }));
+
+	min[0] = min[1] = min[2] = max[0] = max[1] = max[2] = 0;
+	ecfdescription->registerParameter("min_x", min[0], ECFMetaData().setdescription({ "MIN.X" }).setdatatype({ ECFDataType::FLOAT }));
+	ecfdescription->registerParameter("min_y", min[1], ECFMetaData().setdescription({ "MIN.Y" }).setdatatype({ ECFDataType::FLOAT }));
+	ecfdescription->registerParameter("min_z", min[2], ECFMetaData().setdescription({ "MIN.Z" }).setdatatype({ ECFDataType::FLOAT }));
+	ecfdescription->registerParameter("max_x", max[0], ECFMetaData().setdescription({ "MAX.X" }).setdatatype({ ECFDataType::FLOAT }));
+	ecfdescription->registerParameter("max_y", max[1], ECFMetaData().setdescription({ "MAX.Y" }).setdatatype({ ECFDataType::FLOAT }));
+	ecfdescription->registerParameter("max_z", max[2], ECFMetaData().setdescription({ "MAX.Z" }).setdatatype({ ECFDataType::FLOAT }));
+}
+
 InputConfiguration::InputConfiguration()
 {
 	path = ".";
@@ -23,6 +39,8 @@ InputConfiguration::InputConfiguration()
 			.addoption(ECFOption().setname("ENSIGHT").setdescription("Ensigh Gold format."))
 			.addoption(ECFOption().setname("VTK_LEGACY").setdescription("VTK Legacy format."))
 			.addoption(ECFOption().setname("NETGEN").setdescription("Neutral Netgen format.")));
+
+	REGISTER(clipping_box, ECFMetaData().setdescription({ "Clipping box." }));
 
 	omit_midpoints = false;
 	REGISTER(omit_midpoints, ECFMetaData()

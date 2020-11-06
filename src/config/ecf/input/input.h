@@ -11,6 +11,13 @@
 
 namespace espreso {
 
+struct ClippingBox: public ECFDescription {
+	double min[3], max[3];
+	bool apply;
+
+	ClippingBox();
+};
+
 struct InputConfiguration: public ECFDescription {
 
 	enum class FORMAT {
@@ -31,6 +38,8 @@ struct InputConfiguration: public ECFDescription {
 
 	std::string path;
 	FORMAT format;
+
+	ClippingBox clipping_box;
 
 	bool omit_midpoints, insert_midpoints;
 	bool keep_material_sets;

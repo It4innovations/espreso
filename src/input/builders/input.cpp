@@ -25,6 +25,107 @@
 
 using namespace espreso;
 
+void Input::clip()
+{
+	if (info::ecf->input.clipping_box.apply) {
+		std::vector<esint> nids, rdist = { 0 }, rdata;
+		std::vector<Point> coordinates;
+		std::vector<esint> nstatus(_meshData.coordinates.size(), -1);
+		const ClippingBox &box = info::ecf->input.clipping_box;
+		for (size_t n = 0; n < _meshData.coordinates.size(); ++n) {
+			if (!(
+					_meshData.coordinates[n].x < box.min[0] || box.max[0] < _meshData.coordinates[n].x ||
+					_meshData.coordinates[n].y < box.min[1] || box.max[1] < _meshData.coordinates[n].y ||
+					_meshData.coordinates[n].z < box.min[2] || box.max[2] < _meshData.coordinates[n].z)) {
+
+				nstatus[n] = nids.size();
+				nids.push_back(_meshData.nIDs[n]);
+				coordinates.push_back(_meshData.coordinates[n]);
+				for (esint r = _meshData._nrankdist[n]; r < _meshData._nrankdist[n + 1]; ++r) {
+					rdata.push_back(_meshData._nranks[r]);
+				}
+				rdist.push_back(rdata.size());
+			}
+		}
+
+		_meshData.nIDs.swap(nids);
+		_meshData.coordinates.swap(coordinates);
+		_meshData._nrankdist.swap(rdist);
+		_meshData._nranks.swap(rdata);
+
+		for (auto rit = _meshData.nregions.begin(); rit != _meshData.nregions.end(); ++rit) {
+			std::vector<esint> rids;
+			for (size_t i = 0; i < rit->second.size(); ++i) {
+				if (nstatus[rit->second[i]] != -1) {
+					rids.push_back(nstatus[rit->second[i]]);
+				}
+			}
+			rit->second.swap(rids);
+		}
+
+		std::vector<esint> enodes, esize, eids, etype, mat, body, cNodes;
+		std::vector<esint> estatus(_meshData.esize.size(), -1);
+		for (size_t e = 0, offset = 0, type = 0, coffset, noffset; e < _meshData.esize.size(); ++e) {
+			if ((size_t)_etypeDistribution[type] <= e) {
+				++type;
+			}
+			bool clip = false;
+			coffset = cNodes.size();
+			noffset = enodes.size();
+			for (esint n = 0; n < _meshData.esize[e]; ++n) {
+				enodes.push_back(nstatus[_meshData.enodes[n + offset]]);
+				if (nstatus[_meshData.enodes[n + offset]] != -1) {
+					cNodes.push_back(nstatus[_meshData.enodes[n + offset]]);
+				} else {
+					clip = true;
+				}
+			}
+			if (clip) {
+				enodes.resize(noffset);
+			} else {
+				estatus[e] = esize.size();
+				cNodes.resize(coffset);
+				esize.push_back(_meshData.esize[e]);
+				etype.push_back(_meshData.etype[e]);
+				eids.push_back(_meshData.eIDs[e]);
+				mat.push_back(_meshData.material[e]);
+				body.push_back(_meshData.body[e]);
+			}
+			offset += _meshData.esize[e];
+		}
+
+		_meshData.eIDs.swap(eids);
+		_meshData.esize.swap(esize);
+		_meshData.etype.swap(etype);
+		_meshData.enodes.swap(enodes);
+		_meshData.material.swap(mat);
+		_meshData.body.swap(body);
+
+		if (_meshData.eIDs.size() != eids.size()) {
+			_meshData._edist.clear();
+			_etypeDistribution.clear();
+			for (int type = static_cast<int>(Element::TYPE::VOLUME); type > static_cast<int>(Element::TYPE::POINT); --type) {
+				_etypeDistribution.push_back(std::lower_bound(_meshData.etype.begin(), _meshData.etype.end(), type, [&] (int e, int type) {
+					return static_cast<int>(Mesh::edata[e].type) >= type; }) - _meshData.etype.begin()
+				);
+			}
+		}
+
+		for (auto rit = _meshData.eregions.begin(); rit != _meshData.eregions.end(); ++rit) {
+			std::vector<esint> rids;
+			for (size_t i = 0; i < rit->second.size(); ++i) {
+				if (estatus[rit->second[i]] != -1) {
+					rids.push_back(estatus[rit->second[i]]);
+				}
+			}
+			rit->second.swap(rids);
+		}
+
+		profiler::synccheckpoint("geometry_clipped");
+		eslog::checkpointln("BUILDER: GEOMETRY CLIPPED");
+	}
+}
+
 void Input::balance()
 {
 	profiler::syncstart("balance");

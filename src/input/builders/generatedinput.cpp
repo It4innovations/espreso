@@ -40,6 +40,8 @@ GeneratedInput::GeneratedInput(MeshBuilder &meshData, bool needSynchronization)
 		eslog::checkpointln("BUILDER: NODES SORTED");
 	}
 
+	clip();
+
 	fillNodes();
 	profiler::synccheckpoint("fill_nodes");
 	eslog::checkpointln("BUILDER: NODES FILLED");
