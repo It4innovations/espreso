@@ -10,8 +10,6 @@ using namespace espreso;
 ContactStore::ContactStore()
 : pairs(NULL),
   intersections(NULL),
-  interface(NULL),
-  planeData(NULL),
   sparseSide(NULL),
   denseSide(NULL),
   planeCoordinates(NULL)
@@ -27,8 +25,6 @@ ContactStore::~ContactStore()
 	}
 	if (pairs) { delete pairs; }
 	if (intersections) { delete intersections; }
-	if (interface) { delete interface; }
-	if (planeData) { delete planeData; }
 	if (sparseSide) { delete sparseSide; }
 	if (denseSide) { delete denseSide; }
 	if (planeCoordinates) { delete planeCoordinates; }

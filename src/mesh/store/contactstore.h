@@ -111,10 +111,6 @@ struct ContactStore {
 
 	serializededata<esint, Triangle>* intersections;
 
-	// [ diagonal, pointer to plane data, nfull, full0[offset,ntria], full1[offset,ntria], ... ]
-	serializededata<esint, esint>* interface;
-	serializededata<esint, double>* planeData;
-
 	serializededata<esint, SparseSegment>* sparseSide;
 	serializededata<esint, DenseSegment>* denseSide;
 	serializededata<esint, Point2D>* planeCoordinates;

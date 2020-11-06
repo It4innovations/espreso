@@ -712,8 +712,6 @@ void computeContactInterface()
 	};
 
 	std::vector<Triangle> triangles;
-	std::vector<double> planedata;
-	std::vector<esint> dist = { 0 }, data;
 
 	std::vector<esint> sdist = { 0 }, ddist = { 0 }, pdist = { 0 };
 	std::vector<SparseSegment> sparse;
@@ -752,14 +750,6 @@ void computeContactInterface()
 				if (insertedBodies.empty()) {
 					sparse.push_back(SparseSegment(e, planeCoordinates.size(), dense.size()));
 					planeCoordinates.insert(planeCoordinates.end(), plane.begin(), plane.end());
-					data.push_back(e);
-					data.push_back(planedata.size());
-					data.push_back(0);
-					data.push_back(0);
-					for (auto pp = plane.begin(); pp != plane.end(); ++pp) {
-						planedata.push_back(pp->x);
-						planedata.push_back(pp->y);
-					}
 				}
 				if (insertedBodies.count(surfaces[neigh]->body->datatarray()[offset]) == 0) {
 					++istats[surfaces.back()->body->datatarray()[e]][surfaces[neigh]->body->datatarray()[offset]].faces;
@@ -772,22 +762,6 @@ void computeContactInterface()
 				for (size_t i = 0; i < intersection.size(); i++) {
 					++dense.back().triangles;
 					planeCoordinates.insert(planeCoordinates.end(), intersection[i].p, intersection[i].p + 3);
-				}
-
-				++data[dist.back() + 3];
-				data.push_back(neigh);
-				data.push_back(*other);
-				data.push_back(0);
-				for (auto pp = projected.rbegin(); pp != projected.rend(); ++pp) {
-					planedata.push_back(pp->x);
-					planedata.push_back(pp->y);
-				}
-				data.back() += intersection.size();
-				for (size_t i = 0; i < intersection.size(); i++) {
-					for (int pi = 0; pi < 3; ++pi) {
-						planedata.push_back(intersection[i].p[pi].x);
-						planedata.push_back(intersection[i].p[pi].y);
-					}
 				}
 			}
 			for (size_t i = 0; i < intersection.size(); i++) {
@@ -812,13 +786,7 @@ void computeContactInterface()
 			ddist.push_back(dense.size());
 			pdist.push_back(planeCoordinates.size());
 		}
-		if (dist.back() != (esint)data.size()) {
-			dist.push_back(data.size());
-		}
 	}
-
-	info::mesh->contacts->interface = new serializededata<esint, esint>(dist, data);
-	info::mesh->contacts->planeData = new serializededata<esint, double>(2, planedata);
 
 	info::mesh->contacts->sparseSide = new serializededata<esint, SparseSegment>(sdist, sparse);
 	info::mesh->contacts->denseSide = new serializededata<esint, DenseSegment>(sdist, dense);
