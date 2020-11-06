@@ -28,8 +28,6 @@
 #include <unordered_set>
 #include <unordered_map>
 
-#include "basis/utilities/print.h"
-
 namespace espreso {
 namespace mesh {
 
@@ -872,18 +870,11 @@ void computeContactInterface()
 		istats[i->from.body][i->to.body].skip = false;
 	}
 
-	pairs = info::mesh->contacts->pairs->cbegin();
-	for (esint e = 0; e < info::mesh->surface->size; ++e, ++pairs) {
-		for (auto other = pairs->begin(); other != pairs->end(); other += 2) {
-			istats[surfaces.back()->body->datatarray()[e]][surfaces[*other]->body->datatarray()[*(other + 1)]].skip = false;
-		}
-	}
-
 	auto *sside = info::mesh->contacts->sparseSide;
 	auto *dside = info::mesh->contacts->denseSide;
 	for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s) {
 		for (auto d = dside->datatarray().begin() + s->denseSegmentOffset; d != dside->datatarray().begin() + s->denseSegmentOffset + s->denseSegments; ++d) {
-			d->skip = istats[surfaces.back()->body->datatarray()[s->element]][surfaces[d->neigh]->body->datatarray()[d->element]].skip;
+			d->skip = d->skip | istats[surfaces.back()->body->datatarray()[s->element]][surfaces[d->neigh]->body->datatarray()[d->element]].skip;
 		}
 	}
 

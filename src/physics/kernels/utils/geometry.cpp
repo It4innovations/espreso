@@ -414,7 +414,7 @@ void assembleMortarInterface(std::vector<ijv> &B)
 					BaseFunctions::recomputeDetJN(sElement, sCoords, sDetJ, sN, sGpCoords);
 
 					if (!dmReady) {
-					// compute De, Me for coefficients Ae of dual basis functions from formula (4.60)
+						// compute De, Me for coefficients Ae of dual basis functions from formula (4.60)
 						for (int gp = 0; gp < tGPs; ++gp) {
 							double weight = tElement->weighFactor->at(gp) * tDetJ[0][gp] * sDetJ[0][gp];
 							for (int i = 0; i < sElement->nodes; i++) {
