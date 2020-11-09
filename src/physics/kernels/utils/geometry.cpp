@@ -634,11 +634,13 @@ void computeMortars()
 //			while (end != info::mesh->contacts->B.end() && begin->i == end->i) {
 //				++end;
 //			}
+//			double sum = 0;
 //			printf("%d ->", it->i);
 //			for (auto ii = begin; ii != end; ++ii) {
-//				printf(" %d", ii->j);
+//				printf("\t%d=%f\n", ii->j, ii->v);
+//				sum += ii->v;
 //			}
-//			printf("\n");
+//			printf("sum: %f\n", sum);
 //			it = end;
 //		}
 //	});

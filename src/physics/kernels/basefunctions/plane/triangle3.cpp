@@ -84,21 +84,18 @@ void Triangle3::setBaseFunctions(Element &self)
 
 void Triangle3::computeReferenceCoords(const MatrixDense & vertices, const MatrixDense & points, MatrixDense & result)
 {
-	// a = [ a[0][0]  a[0][1]]   ainv = [ a[1][1] -a[0][1]] / det(a)
-	//     [ a[1][0]  a[1][1]]          [-a[1][0]  a[0][0]]
-	MatrixDense a(2, 2);
-	double bx, by;
+	// assume non-zero denominator
 	result.resize(points.nrows, 2);
-	a[0][0] = vertices[1][0] - vertices[0][0];   a[0][1] = vertices[1][1] - vertices[0][1];
-	a[1][0] = vertices[2][0] - vertices[0][0];   a[1][1] = vertices[2][1] - vertices[0][1];
-	double det = a[0][0] * a[1][1] - a[0][1] * a[1][0];
-	if (det > 0) {
-		for (esint i = 0; i < points.nrows; ++i) {
-			bx = points[i][0] - vertices[0][0];
-			by = points[i][1] - vertices[0][1];
-			result[i][0] = ( a[1][1] * bx - a[0][1] * by) / det;
-			result[i][1] = (-a[1][0] * bx + a[0][0] * by) / det;
-		}
+
+	double ux = vertices[1][0] - vertices[0][0], uy = vertices[1][1] - vertices[0][1];
+	double vx = vertices[2][0] - vertices[0][0], vy = vertices[2][1] - vertices[0][1];
+	double uv = ux * vx + uy * vy, uu = ux * ux + uy * uy, vv = vx * vx + vy * vy;
+	double denominator = uv * uv - uu * vv;
+	for (esint r = 0; r < points.nrows; ++r) {
+		double wx = points[r][0] - vertices[0][0], wy = points[r][1] - vertices[0][1];
+		double wu = wx * ux + wy * uy, wv = wx * vx + wy * vy;
+		result[r][0] = (uv * wv - vv * wu) / denominator;
+		result[r][1] = (uv * wu - uu * wv) / denominator;
 	}
 }
 
