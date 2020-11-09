@@ -336,17 +336,25 @@ void DebugOutput::surfaceFixPoints(double clusterShrinkRatio, double domainShrin
 
 void DebugOutput::contact(double clusterShrinkRatio, double domainShrinkRatio)
 {
-	if (!info::ecf->output.debug || info::mesh->contacts->intersections == NULL) {
+	if (!info::ecf->output.debug || info::mesh->contacts->sparseSide == NULL) {
 		return;
 	}
 
 	DebugOutput output(clusterShrinkRatio, domainShrinkRatio, false);
 
+	auto *sside = info::mesh->contacts->sparseSide;
+	auto *dside = info::mesh->contacts->denseSide;
+
 	esint cells = 0, gcells, points = 0, poffset;
-	if (output._mesh.contacts->intersections != NULL) {
-		points += 3 * output._mesh.contacts->intersections->datatarray().size();
-		cells += points / 3;
+	for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s) {
+		for (auto d = dside->datatarray().begin() + s->denseSegmentOffset; d != dside->datatarray().begin() + s->denseSegmentOffset + s->denseSegments; ++d) {
+			if (!d->skip) {
+				points += 3 * d->triangles;
+				cells += d->triangles;
+			}
+		}
 	}
+
 	poffset = points;
 	points = Communication::exscan(poffset);
 	Communication::allReduce(&cells, &gcells, 1, MPITools::getType<esint>().mpitype, MPI_SUM);
@@ -354,20 +362,36 @@ void DebugOutput::contact(double clusterShrinkRatio, double domainShrinkRatio)
 	if (Visualization::isRoot()) {
 		output._writer.points(points);
 	}
-	for (size_t i = 0; i < output._mesh.contacts->intersections->datatarray().size(); ++i) {
-		const Triangle &tr = output._mesh.contacts->intersections->datatarray()[i];
-		output._writer.point(tr.p[0].x, tr.p[0].y, tr.p[0].z);
-		output._writer.point(tr.p[1].x, tr.p[1].y, tr.p[1].z);
-		output._writer.point(tr.p[2].x, tr.p[2].y, tr.p[2].z);
+
+	esint triangle = 0;
+	for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s) {
+		for (auto d = dside->datatarray().begin() + s->denseSegmentOffset; d != dside->datatarray().begin() + s->denseSegmentOffset + s->denseSegments; ++d) {
+			if (!d->skip) {
+				for (esint t = 0; t < d->triangles; ++t) {
+					const Triangle &tr = output._mesh.contacts->intersections->datatarray()[triangle++];
+					output._writer.point(tr.p[0].x, tr.p[0].y, tr.p[0].z);
+					output._writer.point(tr.p[1].x, tr.p[1].y, tr.p[1].z);
+					output._writer.point(tr.p[2].x, tr.p[2].y, tr.p[2].z);
+				}
+			} else {
+				triangle += d->triangles;
+			}
+		}
 	}
 	output._writer.groupData();
 
 	if (Visualization::isRoot()) {
 		output._writer.cells(gcells, 4 * gcells);
 	}
-	for (size_t i = 0; i < output._mesh.contacts->intersections->datatarray().size(); ++i) {
-		esint nn[3] = { poffset++, poffset++, poffset++};
-		output._writer.cell(3, nn);
+	for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s) {
+		for (auto d = dside->datatarray().begin() + s->denseSegmentOffset; d != dside->datatarray().begin() + s->denseSegmentOffset + s->denseSegments; ++d) {
+			if (!d->skip) {
+				for (esint t = d->triangleOffset; t < d->triangleOffset + d->triangles; ++t) {
+					esint nn[3] = { poffset++, poffset++, poffset++};
+					output._writer.cell(3, nn);
+				}
+			}
+		}
 	}
 	output._writer.groupData();
 
