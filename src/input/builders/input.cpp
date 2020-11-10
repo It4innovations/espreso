@@ -860,6 +860,9 @@ void Input::fillNeighbors()
 
 void Input::fillBoundaryRegions()
 {
+	if (info::ecf->input.omit_face_sets) {
+		return;
+	}
 	profiler::syncstart("fill_boundary_regions");
 	size_t threads = info::env::OMP_NUM_THREADS;
 	size_t estart = info::mesh->dimension == 3 ? 0 : 1;

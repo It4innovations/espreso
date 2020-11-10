@@ -52,6 +52,11 @@ InputConfiguration::InputConfiguration()
 //			.setdescription({ "Insert mid-points to all linear elements." })
 //			.setdatatype({ ECFDataType::BOOL }));
 
+	omit_face_sets = false;
+	REGISTER(omit_face_sets, ECFMetaData()
+			.setdescription({ "Do not read face sets." })
+			.setdatatype({ ECFDataType::BOOL }));
+
 	keep_material_sets = false;
 	REGISTER(keep_material_sets, ECFMetaData()
 			.setdescription({ "Keep material sets" })

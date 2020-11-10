@@ -43,6 +43,7 @@ struct InputConfiguration: public ECFDescription {
 	ClippingBox clipping_box;
 
 	bool omit_midpoints, insert_midpoints;
+	bool omit_face_sets;
 	bool keep_material_sets;
 	bool convert_database;
 	double duplication_tolerance;
