@@ -694,8 +694,10 @@ void Mesh::printMeshStatistics()
 			bmax[*body * 3 + 2] = std::max(bmax[*body * 3 + 2], (float)nodes->coordinates->datatarray()[*n].z);
 		}
 	}
-	for (auto b = surface->body->datatarray().begin(); b != surface->body->datatarray().end(); ++b) {
-		++scount[*b];
+	if (surface && surface->body) {
+		for (auto b = surface->body->datatarray().begin(); b != surface->body->datatarray().end(); ++b) {
+			++scount[*b];
+		}
 	}
 
 	for (int b = 0; b < elements->bodiesTotalSize; ++b) {
@@ -776,7 +778,7 @@ void Mesh::printMeshStatistics()
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 		for (auto b = perm.rbegin(); b != perm.rend(); ++b) {
 			eslog::info("  %4d %16s %16s :    <%.3f-%.3f>    <%.3f-%.3f>    <%.3f-%.3f>\n",
-					b - perm.rbegin(), Parser::stringwithcommas(ecount[*b]).c_str(), Parser::stringwithcommas(scount[*b]).c_str(),
+					b - perm.rbegin(), Parser::stringwithcommas(ecount[*b]).c_str(), scount[*b] ? Parser::stringwithcommas(scount[*b]).c_str() : " -- ",
 					(bmin[(*b * 3 + 0)] - bmin[elements->bodiesTotalSize * 3 + 0]) / (bmax[elements->bodiesTotalSize * 3 + 0] - bmin[elements->bodiesTotalSize * 3 + 0]),
 					(bmax[(*b * 3 + 0)] - bmin[elements->bodiesTotalSize * 3 + 0]) / (bmax[elements->bodiesTotalSize * 3 + 0] - bmin[elements->bodiesTotalSize * 3 + 0]),
 					(bmin[(*b * 3 + 1)] - bmin[elements->bodiesTotalSize * 3 + 1]) / (bmax[elements->bodiesTotalSize * 3 + 1] - bmin[elements->bodiesTotalSize * 3 + 1]),
