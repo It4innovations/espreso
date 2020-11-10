@@ -758,7 +758,7 @@ void computeContactInterface()
 
 				++sparse.back().denseSegments;
 				dense.push_back(DenseSegment(neigh, offset, planeCoordinates.size(), planeCoordinates.size() + projected.size()));
-				planeCoordinates.insert(planeCoordinates.end(), projected.rbegin(), projected.rend());
+				planeCoordinates.insert(planeCoordinates.end(), projected.begin(), projected.end());
 				for (size_t i = 0; i < intersection.size(); i++) {
 					++dense.back().triangles;
 					planeCoordinates.insert(planeCoordinates.end(), intersection[i].p, intersection[i].p + 3);
