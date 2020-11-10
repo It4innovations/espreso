@@ -43,8 +43,8 @@ void Hexahedron8::setGaussPointsForOrder(int order)
 		(*dN)[i](0, 6) = 0.125 * ( (1 + s[i]) * (1 + t[i]));
 		(*dN)[i](0, 7) = 0.125 * (-(1 + s[i]) * (1 + t[i]));
 
-		(*dN)[i](1, 0)  = 0.125 * (-(1 - r[i]) * (1 - t[i]));
-		(*dN)[i](1, 1)  = 0.125 * (-(1 + r[i]) * (1 - t[i]));
+		(*dN)[i](1, 0) = 0.125 * (-(1 - r[i]) * (1 - t[i]));
+		(*dN)[i](1, 1) = 0.125 * (-(1 + r[i]) * (1 - t[i]));
 		(*dN)[i](1, 2) = 0.125 * ( (1 + r[i]) * (1 - t[i]));
 		(*dN)[i](1, 3) = 0.125 * ( (1 - r[i]) * (1 - t[i]));
 		(*dN)[i](1, 4) = 0.125 * (-(1 - r[i]) * (1 + t[i]));
@@ -71,7 +71,7 @@ void Hexahedron8::setBaseFunctions(Element &self)
 	self.dN = new std::vector<MatrixDense>(GPCount, MatrixDense(3, nodeCount));
 	self.weighFactor = new std::vector<double>(GPCount, 1);
 
-	double CsQ_scale = 0.577350269189626;
+	double CsQ_scale = 1 / std::sqrt(3);
 
 	for (unsigned int i = 0; i < GPCount; i++) {
 		double r = (i & 4) ? CsQ_scale : -CsQ_scale;
@@ -105,8 +105,8 @@ void Hexahedron8::setBaseFunctions(Element &self)
 		(*self.dN)[i](0, 7) = 0.125 * (-(1 + s) * (1 + t));
 
 		// dNs - derivation of basis function
-		(*self.dN)[i](1, 0)  = 0.125 * (-(1 - r) * (1 - t));
-		(*self.dN)[i](1, 1)  = 0.125 * (-(1 + r) * (1 - t));
+		(*self.dN)[i](1, 0) = 0.125 * (-(1 - r) * (1 - t));
+		(*self.dN)[i](1, 1) = 0.125 * (-(1 + r) * (1 - t));
 		(*self.dN)[i](1, 2) = 0.125 * ( (1 + r) * (1 - t));
 		(*self.dN)[i](1, 3) = 0.125 * ( (1 - r) * (1 - t));
 		(*self.dN)[i](1, 4) = 0.125 * (-(1 - r) * (1 + t));
