@@ -121,7 +121,7 @@ inline std::ostream& operator<<(std::ostream& os, const MatrixDense &m)
 {
 	for (esint i = 0; i < m.nrows; i++) {
 		for (esint j = 0; j < m.ncols; j++) {
-			os << m.vals[i * m.ncols + j] << " ";
+			os << std::scientific << std::showpos << m.vals[i * m.ncols + j] << " ";
 		}
 		os << std::endl;
 	}
