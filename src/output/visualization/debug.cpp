@@ -140,6 +140,51 @@ esint DebugOutput::elementsInDomains(esint noffset, esint nother, esint notherno
 	return esize;
 }
 
+void DebugOutput::data(const std::string &name, const std::vector<Point> &points, const std::vector<std::vector<esint> > &cells, const std::vector<esint> &celltypes, const std::vector<std::vector<double> > &celldata)
+{
+	std::ofstream os(name + ".vtk");
+	os << "# vtk DataFile Version 2.0\n";
+	os << "CLIP\n";
+	os << "ASCII\n";
+	os << "DATASET UNSTRUCTURED_GRID\n\n";
+
+	os << "POINTS " << points.size() << " float\n";
+	for (size_t pp = 0; pp < points.size(); ++pp) {
+		os << points[pp].x << " " << points[pp].y << " " << points[pp].z << "\n";
+	}
+	os << "\n";
+
+	esint cnodes = 0;
+	for (size_t cc = 0; cc < cells.size(); ++cc) {
+		cnodes += cells[cc].size();
+	}
+
+	os << "CELLS " << cells.size() << " " << cells.size() + cnodes << "\n";
+	for (size_t cc = 0; cc < cells.size(); ++cc) {
+		os << cells[cc].size();
+		for (size_t cn = 0; cn < cells[cc].size(); ++cn) {
+			os << " " << cells[cc][cn];
+		}
+		os << "\n";
+	}
+	os << "\n";
+
+	os << "CELL_TYPES " << celltypes.size() << "\n";
+	for (size_t cc = 0; cc < celltypes.size(); ++cc) {
+		os << celltypes[cc] << "\n";
+	}
+	os << "\n";
+
+	os << "CELL_DATA " << cells.size() << "\n";
+	os << "SCALARS DISTANCE float 1\n";
+	os << "LOOKUP_TABLE default\n";
+	for (size_t dd = 0; dd < celldata.size(); ++dd) {
+		for (size_t cd = 0; cd < celldata[dd].size(); ++cd) {
+			os << celldata[dd][cd] << "\n";
+		}
+	}
+}
+
 void DebugOutput::etypes(esint esize, esint nother)
 {
 	if (Visualization::isRoot()) {

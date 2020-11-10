@@ -13,6 +13,13 @@ class Mesh;
 
 class DebugOutput {
 public:
+	static void data(
+			const std::string &name,
+			const std::vector<Point> &points,
+			const std::vector<std::vector<esint> > &cells,
+			const std::vector<esint> &celltypes,
+			const std::vector<std::vector<double> > &celldata);
+
 	static void mesh(double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
 	static void faceNeighbors();
 	static void meshDual(std::vector<esint> &frames, std::vector<esint> &neighbors);
