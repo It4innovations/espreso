@@ -476,7 +476,7 @@ void findCloseElements()
 				(contact->surfaces[neigh[i]]->epointers->datatarray()[i - offset[neigh[i]]]->code == Element::CODE::TRIANGLE3) ||
 				(contact->surfaces[neigh[i]]->epointers->datatarray()[i - offset[neigh[i]]]->code == Element::CODE::TRIANGLE6);
 
-		auto getCode = [&] (const double &s, const double &t) {
+		auto getCode = [&] (const double &d, const double &s, const double &t) {
 			int code = 0;
 			code |= (s < 0) ? 1 : 0;
 			code |= (t < 0) ? 2 : 0;
@@ -486,23 +486,23 @@ void findCloseElements()
 				code |= (1 < s) ? 4 : 0;
 				code |= (1 < t) ? 8 : 0;
 			}
+			code |= d < -eps ? 16 : 0;
+			code |= eps < d  ? 32 : 0;
 			return code;
 		};
 
 		// cohen-sutherland
-		int code = 15;
-		double distance = eps + 1;
+		int code = 63;
 		auto jnodes = contact->surfaces[neigh[j]]->enodes->begin() + (j - offset[neigh[j]]);
 		for (auto n = jnodes->begin(); n != jnodes->end(); ++n) {
 			Point p = contact->surfaces[neigh[j]]->coordinates->datatarray()[*n];
 			double s, t, d = normal * (p - base);
-			distance = std::min(distance, std::fabs(d));
 			p -= normal * d;
 			p.getBarycentric(base, u, v, s, t);
-			code &= getCode(s, t);
+			code &= getCode(d, s, t);
 		}
 
-		return distance < eps && code == 0;
+		return code == 0;
 	};
 
 	auto checkall = [&] (esint i, esint j) {
