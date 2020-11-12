@@ -509,7 +509,7 @@ void DebugOutput::warpedNormals(const char* name, double clusterShrinkRatio, dou
 	}
 	auto enodes = surf->enodes->begin();
 	auto normal = surf->normal->datatarray().begin();
-	auto center = surf->center->datatarray().begin();
+	auto center = surf->base->datatarray().begin();
 	for (esint e = 0; e < surf->size; ++e, ++enodes, ++normal, ++center) {
 		Point &p = *center;
 		Point &n = *normal;

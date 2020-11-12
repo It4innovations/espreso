@@ -142,62 +142,84 @@ void computeWarpedNormals(SurfaceStore * surface)
 	if (surface->normal != NULL) {
 		delete surface->normal;
 	}
-	if (surface->center != NULL) {
-		delete surface->center;
+	if (surface->base != NULL) {
+		delete surface->base;
 	}
 	profiler::syncstart("compute_warped_surface_normals");
 
-	std::vector<std::vector<Point> > normal(info::env::OMP_NUM_THREADS), center(info::env::OMP_NUM_THREADS);
+	std::vector<std::vector<Point> > normal(info::env::OMP_NUM_THREADS), base(info::env::OMP_NUM_THREADS), parameters(info::env::OMP_NUM_THREADS);
 
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
 		std::vector<Point> tnormal(surface->edistribution[t + 1] - info::mesh->surface->edistribution[t]);
-		std::vector<Point> tcenter(surface->edistribution[t + 1] - info::mesh->surface->edistribution[t]);
+		std::vector<Point> tparamters(2 * (surface->edistribution[t + 1] - info::mesh->surface->edistribution[t]));
+		std::vector<Point> tbase(surface->edistribution[t + 1] - info::mesh->surface->edistribution[t]);
 
 		auto epointers = info::mesh->surface->epointers->datatarray().begin(t);
 		auto enodes = surface->enodes->begin(t);
 		for (size_t e = surface->edistribution[t], i = 0; e < surface->edistribution[t + 1]; ++e, ++i, ++epointers, ++enodes) {
 			switch ((*epointers)->code) {
-			case Element::CODE::LINE2:
-			case Element::CODE::LINE3:
-			{
-				const Point &a = surface->coordinates->datatarray()[enodes->at(0)];
-				const Point &b = surface->coordinates->datatarray()[enodes->at(1)];
-				tcenter[i] = (a + b) / 2;
-				tnormal[i] = Point(b - a).normalize();
-				std::swap(tnormal[i].x, tnormal[i].y);
-				tnormal[i].y = -tnormal[i].y;
-			} break;
+//			case Element::CODE::LINE2:
+//			case Element::CODE::LINE3:
+//			{
+//				const Point &a = surface->coordinates->datatarray()[enodes->at(0)];
+//				const Point &b = surface->coordinates->datatarray()[enodes->at(1)];
+//				tbase[i] = (a + b) / 2;
+//				tnormal[i] = Point(b - a).normalize();
+//				std::swap(tnormal[i].x, tnormal[i].y);
+//				tnormal[i].y = -tnormal[i].y;
+//			} break;
 			case Element::CODE::TRIANGLE3:
-			case Element::CODE::TRIANGLE6:
+//			case Element::CODE::TRIANGLE6:
 			{
 				const Point &a = surface->coordinates->datatarray()[enodes->at(0)];
 				const Point &b = surface->coordinates->datatarray()[enodes->at(1)];
 				const Point &c = surface->coordinates->datatarray()[enodes->at(2)];
-				tcenter[i] = (a + b + c) / 3;
-				tnormal[i] = Point::cross(b - a, c - a).normalize();
+				tbase[i] = a;
+				tparamters[2 * i] = b - a;
+				tparamters[2 * i + 1] = c - a;
+				tnormal[i] = Point::cross(tparamters[2 * i], tparamters[2 * i + 1]).normalize();
 			} break;
 			case Element::CODE::SQUARE4:
-			case Element::CODE::SQUARE8:
+//			case Element::CODE::SQUARE8:
 			{
 				const Point &a = surface->coordinates->datatarray()[enodes->at(0)];
 				const Point &b = surface->coordinates->datatarray()[enodes->at(1)];
 				const Point &c = surface->coordinates->datatarray()[enodes->at(2)];
 				const Point &d = surface->coordinates->datatarray()[enodes->at(3)];
-				tcenter[i] = (a + b + c + d) / 4;
+				Point center = (a + b + c + d) / 4;
 				tnormal[i] = Point::cross(c - a, d - b).normalize();
+				Point plane[4] = {
+						a - tnormal[i] * (tnormal[i] * (a - center)),
+						b - tnormal[i] * (tnormal[i] * (b - center)),
+						c - tnormal[i] * (tnormal[i] * (c - center)),
+						d - tnormal[i] * (tnormal[i] * (d - center))
+				};
+				Point pp[4] = { plane[1] - plane[0], plane[2] - plane[1], plane[3] - plane[2], plane[0] - plane[3] };
+				for (int v = 0; v < 4; ++v) {
+					double _s, _t;
+					plane[(v + 2) % 4].getBarycentric(plane[v], pp[v], -pp[(v + 3) % 4], _s, _t);
+					if (0 <= _s && _s <= 1 && 0 <= _t && _t <= 1) {
+						tbase[i] = plane[v];
+						tparamters[2 * i] = pp[v];
+						tparamters[2 * i + 1] = -pp[(v + 3) % 4];
+						break;
+					}
+				}
 			} break;
 			default:
-				eslog::error("ESPRESO internal error: unknown surface element.\n");
+				eslog::error("ESPRESO internal error: unknown or not implemented surface element.\n");
 			}
 		}
 
 		normal[t].swap(tnormal);
-		center[t].swap(tcenter);
+		parameters[t].swap(tparamters);
+		base[t].swap(tbase);
 	}
 
 	surface->normal = new serializededata<esint, Point>(1, normal);
-	surface->center = new serializededata<esint, Point>(1, center);
+	surface->parameters = new serializededata<esint, Point>(2, parameters);
+	surface->base = new serializededata<esint, Point>(1, base);
 
 	DebugOutput::warpedNormals("surface.planes", 1, 1);
 	eslog::checkpointln("MESH: WARPED SURFACE NORMALS COMMPUTED");
@@ -264,7 +286,7 @@ void exchangeContactHalo()
 		size_t ssize = 0, nsize = nsend.size();
 		ssize += 1 + 3 * esend.size(); // parent, body, epointer size
 		ssize += 1 + esend.size() + nsend.size(); // enodes size
-		ssize += 1 + esend.size() * (2 * sizeof(Point) / sizeof(esint)); // plane
+		ssize += 1 + esend.size() * (4 * sizeof(Point) / sizeof(esint)); // plane
 		utils::sortAndRemoveDuplicates(nsend);
 		ssize += 1 + nsend.size() * (1 + sizeof(Point) / sizeof(esint)); // ids + coordinates size
 
@@ -300,7 +322,11 @@ void exchangeContactHalo()
 			sBuffer[n].insert(sBuffer[n].end(), reinterpret_cast<const esint*>(&nn), reinterpret_cast<const esint*>(&nn) + sizeof(nn) / sizeof(esint));
 		}
 		for (size_t e = 0; e < esend.size(); ++e) {
-			const auto &nc = info::mesh->surface->center->datatarray()[esend[e]];
+			const auto &nn = info::mesh->surface->parameters->datatarray()[2 * esend[e]];
+			sBuffer[n].insert(sBuffer[n].end(), reinterpret_cast<const esint*>(&nn), reinterpret_cast<const esint*>(&nn) + 2 * sizeof(nn) / sizeof(esint));
+		}
+		for (size_t e = 0; e < esend.size(); ++e) {
+			const auto &nc = info::mesh->surface->base->datatarray()[esend[e]];
 			sBuffer[n].insert(sBuffer[n].end(), reinterpret_cast<const esint*>(&nc), reinterpret_cast<const esint*>(&nc) + sizeof(nc) / sizeof(esint));
 		}
 
@@ -356,8 +382,12 @@ void exchangeContactHalo()
 		memcpy(info::mesh->contacts->surfaces[n]->normal->datatarray().data(), rBuffer[n].data() + i + 1, sizeof(Point) * size);
 		i += 1 + size * (sizeof(Point) / sizeof(esint));
 
-		info::mesh->contacts->surfaces[n]->center = new serializededata<esint, Point>(1, tarray<Point>(info::env::OMP_NUM_THREADS, size));
-		memcpy(info::mesh->contacts->surfaces[n]->center->datatarray().data(), rBuffer[n].data() + i, sizeof(Point) * size);
+		info::mesh->contacts->surfaces[n]->parameters = new serializededata<esint, Point>(2, tarray<Point>(info::env::OMP_NUM_THREADS, 2 * size));
+		memcpy(info::mesh->contacts->surfaces[n]->parameters->datatarray().data(), rBuffer[n].data() + i, 2 * sizeof(Point) * size);
+		i += size * (2 * sizeof(Point) / sizeof(esint));
+
+		info::mesh->contacts->surfaces[n]->base = new serializededata<esint, Point>(1, tarray<Point>(info::env::OMP_NUM_THREADS, size));
+		memcpy(info::mesh->contacts->surfaces[n]->base->datatarray().data(), rBuffer[n].data() + i, sizeof(Point) * size);
 		i += size * (sizeof(Point) / sizeof(esint));
 
 		// receive global ids
@@ -379,8 +409,16 @@ void exchangeContactHalo()
 
 void findCloseElements()
 {
+	// checking
+	// 1. distance to plane defined by normal and center
+	// 2. test if any point is in coarse element defined by: base + s * parameter.u + t * parameter.v
+
+	ContactStore *contact = info::mesh->contacts;
+
 	std::vector<Point> estart, eend;
 	std::vector<esint> neigh, offset = { 0 };
+
+	double start = eslog::time(), time = eslog::time();
 
 	for (size_t n = 0; n < info::mesh->contacts->neighborsWithMe.size(); ++n) {
 		offset.push_back(offset.back() + info::mesh->contacts->surfaces[n]->enodes->structures());
@@ -392,28 +430,37 @@ void findCloseElements()
 		for (auto e = info::mesh->contacts->surfaces[r]->enodes->begin(); e != info::mesh->contacts->surfaces[r]->enodes->end(); ++e, ++offset) {
 			estart[offset] = eend[offset] = info::mesh->contacts->surfaces[r]->coordinates->datatarray()[e->front()];
 			for (auto n = e->begin() + 1; n != e->end(); ++n) {
-				estart[offset].x = std::min(estart[offset].x, info::mesh->contacts->surfaces[r]->coordinates->datatarray()[*n].x);
-				estart[offset].y = std::min(estart[offset].y, info::mesh->contacts->surfaces[r]->coordinates->datatarray()[*n].y);
-				estart[offset].z = std::min(estart[offset].z, info::mesh->contacts->surfaces[r]->coordinates->datatarray()[*n].z);
-				eend[offset].x = std::max(eend[offset].x, info::mesh->contacts->surfaces[r]->coordinates->datatarray()[*n].x);
-				eend[offset].y = std::max(eend[offset].y, info::mesh->contacts->surfaces[r]->coordinates->datatarray()[*n].y);
-				eend[offset].z = std::max(eend[offset].z, info::mesh->contacts->surfaces[r]->coordinates->datatarray()[*n].z);
+				estart[offset].x = std::min(estart[offset].x, contact->surfaces[r]->coordinates->datatarray()[*n].x);
+				estart[offset].y = std::min(estart[offset].y, contact->surfaces[r]->coordinates->datatarray()[*n].y);
+				estart[offset].z = std::min(estart[offset].z, contact->surfaces[r]->coordinates->datatarray()[*n].z);
+				eend[offset].x = std::max(eend[offset].x, contact->surfaces[r]->coordinates->datatarray()[*n].x);
+				eend[offset].y = std::max(eend[offset].y, contact->surfaces[r]->coordinates->datatarray()[*n].y);
+				eend[offset].z = std::max(eend[offset].z, contact->surfaces[r]->coordinates->datatarray()[*n].z);
 			}
 		}
-		neigh.insert(neigh.end(), info::mesh->contacts->surfaces[r]->enodes->structures(), r);
+		neigh.insert(neigh.end(), contact->surfaces[r]->enodes->structures(), r);
 	}
-	int myrank = info::mesh->contacts->neighborsWithMe.size() - 1;
+	int myrank = contact->neighborsWithMe.size() - 1;
 
 	IntervalTree tree(estart, eend);
+
+	double buildtree = eslog::time() - time;
+	time = eslog::time();
 
 	double eps = info::ecf->input.contact.search_area;
 	double max_angle = -std::cos(M_PI * info::ecf->input.contact.max_angle / 180);
 	bool self_contact = info::ecf->input.contact.self_contact;
 	std::vector<std::pair<esint, esint> > pair;
 
+	auto checkbody = [&] (esint i, esint j) {
+		esint ibody = contact->surfaces[neigh[i]]->body->datatarray()[i - offset[neigh[i]]];
+		esint jbody = contact->surfaces[neigh[j]]->body->datatarray()[j - offset[neigh[j]]];
+		return self_contact || ibody != jbody;
+	};
+
 	auto checkangle = [&] (esint i, esint j) {
-		const Point &pi = info::mesh->contacts->surfaces[neigh[i]]->normal->datatarray()[i - offset[neigh[i]]];
-		const Point &pj = info::mesh->contacts->surfaces[neigh[j]]->normal->datatarray()[j - offset[neigh[j]]];
+		const Point &pi = contact->surfaces[neigh[i]]->normal->datatarray()[i - offset[neigh[i]]];
+		const Point &pj = contact->surfaces[neigh[j]]->normal->datatarray()[j - offset[neigh[j]]];
 		if (max_angle < pj * pi) { // the same direction < angle(PI / 2) == 0 < are opposite
 			return false;
 		}
@@ -421,22 +468,47 @@ void findCloseElements()
 	};
 
 	auto checkrange = [&] (esint i, esint j) {
-		return !(
-			eend[i].x + eps < estart[j].x || eend[j].x + eps < estart[i].x ||
-			eend[i].y + eps < estart[j].y || eend[j].y + eps < estart[i].y ||
-			eend[i].z + eps < estart[j].z || eend[j].z + eps < estart[i].z);
-	};
+		Point base = contact->surfaces[neigh[i]]->base->datatarray()[i - offset[neigh[i]]];
+		Point u = contact->surfaces[neigh[i]]->parameters->datatarray()[2 * (i - offset[neigh[i]])];
+		Point v = contact->surfaces[neigh[i]]->parameters->datatarray()[2 * (i - offset[neigh[i]]) + 1];
+		Point normal = contact->surfaces[neigh[i]]->normal->datatarray()[i - offset[neigh[i]]];
+		bool istriangle =
+				(contact->surfaces[neigh[i]]->epointers->datatarray()[i - offset[neigh[i]]]->code == Element::CODE::TRIANGLE3) ||
+				(contact->surfaces[neigh[i]]->epointers->datatarray()[i - offset[neigh[i]]]->code == Element::CODE::TRIANGLE6);
 
-	auto checkbody = [&] (esint i, esint j) {
-		esint ibody = info::mesh->contacts->surfaces[neigh[i]]->body->datatarray()[i - offset[neigh[i]]];
-		esint jbody = info::mesh->contacts->surfaces[neigh[j]]->body->datatarray()[j - offset[neigh[j]]];
-		return self_contact || ibody != jbody;
+		auto getCode = [&] (const double &s, const double &t) {
+			int code = 0;
+			code |= (s < 0) ? 1 : 0;
+			code |= (t < 0) ? 2 : 0;
+			if (istriangle) {
+				code |= (1 < t + s) ? 4 : 0;
+			} else {
+				code |= (1 < s) ? 4 : 0;
+				code |= (1 < t) ? 8 : 0;
+			}
+			return code;
+		};
+
+		// cohen-sutherland
+		int code = 15;
+		double distance = eps + 1;
+		auto jnodes = contact->surfaces[neigh[j]]->enodes->begin() + (j - offset[neigh[j]]);
+		for (auto n = jnodes->begin(); n != jnodes->end(); ++n) {
+			Point p = contact->surfaces[neigh[j]]->coordinates->datatarray()[*n];
+			double s, t, d = normal * (p - base);
+			distance = std::min(distance, std::fabs(d));
+			p -= normal * d;
+			p.getBarycentric(base, u, v, s, t);
+			code &= getCode(s, t);
+		}
+
+		return distance < eps && code == 0;
 	};
 
 	auto checkall = [&] (esint i, esint j) {
 		return
 				checkbody(i, j) &&
-				checkrange(i, j) &&
+				((neigh[i] == myrank && checkrange(i, j)) || (neigh[j] == myrank && checkrange(j, i))) && // range is not commutative
 				checkangle(i, j) &&
 				true;
 	};
@@ -511,6 +583,9 @@ void findCloseElements()
 		}
 	}
 
+	double maketraversion = eslog::time() - time;
+	time = eslog::time();
+
 	std::sort(pair.begin(), pair.end());
 
 	std::unordered_map<esint, std::unordered_set<esint> > bodyPairs;
@@ -521,7 +596,7 @@ void findCloseElements()
 		while (p != pair.end() && p->first - offset[myrank] == e) {
 			data.push_back(neigh[p->second]);
 			data.push_back(p->second - offset[data.back()]);
-			esint jbody = info::mesh->contacts->surfaces[neigh[p->second]]->body->datatarray()[data.back()];
+			esint jbody = contact->surfaces[neigh[p->second]]->body->datatarray()[data.back()];
 			if (ibody < jbody) {
 				bodyPairs[ibody].insert(jbody);
 			} else {
@@ -532,7 +607,7 @@ void findCloseElements()
 		dist.push_back(data.size());
 	}
 
-	info::mesh->contacts->pairs = new serializededata<esint, esint>(dist, data);
+	contact->pairs = new serializededata<esint, esint>(dist, data);
 
 	std::vector<std::pair<esint, esint> > interfaces;
 	for (auto i = bodyPairs.begin(); i != bodyPairs.end(); ++i) {
@@ -543,8 +618,11 @@ void findCloseElements()
 	std::sort(interfaces.begin(), interfaces.end());
 	Communication::uniqueAllGatherUnknownSize(interfaces);
 	for (auto i = interfaces.begin(); i != interfaces.end(); ++i) {
-		info::mesh->contacts->interfaces.push_back(Interface(i->first, i->second));
+		contact->interfaces.push_back(Interface(i->first, i->second));
 	}
+
+	double finish = eslog::time() - time;
+	printf("prepare-pairs[%lu]: build=%fs, traverse=%fs, compose=%fs / %fs\n", pair.size(), buildtree, maketraversion, finish, eslog::time() - start);
 
 	DebugOutput::closeElements(1, 1);
 	eslog::checkpointln("MESH: CLOSE ELEMENTS FOUND");
@@ -671,8 +749,6 @@ void computeContactInterface()
 
 	const std::vector<SurfaceStore*> &surfaces = info::mesh->contacts->surfaces;
 
-	double eps = info::ecf->input.contact.search_area;
-
 	struct istats { double area; esint faces; bool skip; istats(): area(0), faces(0), skip(true) {} };
 	std::unordered_map<esint, std::unordered_map<esint, istats> > istats;
 
@@ -697,17 +773,13 @@ void computeContactInterface()
 
 	std::vector<Point> plane(20), projected(20);
 	std::vector<Triangle> planeTriangles, intersection;
-	auto setPolygon = [&] (std::vector<Point> &polygon, double &min, double &max, esint neigh, esint offset) {
+	auto setPolygon = [&] (std::vector<Point> &polygon, esint neigh, esint offset) {
 		polygon.clear();
-		min = std::numeric_limits<double>::max();
-		max = -min;
 		auto nodes = surfaces[neigh]->enodes->cbegin() + offset;
-		auto epointer = surfaces[neigh]->epointers->datatarray();
+		const auto &epointer = surfaces[neigh]->epointers->datatarray();
 		for (auto n = epointer[offset]->polygon->begin(); n != epointer[offset]->polygon->end(); ++n) {
 			polygon.push_back(surfaces[neigh]->coordinates->datatarray()[nodes->at(*n)]);
 			polygon.back().rodrigues(axis, cos, sin);
-			min = std::min(min, polygon.back().z);
-			max = std::max(max, polygon.back().z);
 		}
 	};
 
@@ -718,6 +790,8 @@ void computeContactInterface()
 	std::vector<DenseSegment> dense;
 	std::vector<Point2D> planeCoordinates;
 
+	esint scounter = 0, clips = 0, positive = 0;
+	double start = eslog::time();
 	auto pairs = info::mesh->contacts->pairs->cbegin();
 	for (esint e = 0; e < info::mesh->surface->size; ++e, ++pairs) {
 		if (pairs->size() == 0) {
@@ -726,27 +800,24 @@ void computeContactInterface()
 
 		setRotation(e);
 
-		double emin, emax, earea = 0;
-		setPolygon(plane, emin, emax, info::mesh->contacts->neighbors.size(), e);
+		double earea = 0;
+		setPolygon(plane, info::mesh->contacts->neighbors.size(), e);
 		triangulate(plane, planeTriangles);
 		for (size_t t = 0; t < planeTriangles.size(); ++t) {
 			earea += planeTriangles[t].area();
 		}
+		++scounter;
 
 		std::unordered_map<esint, double> insertedBodies;
 		for (auto other = pairs->begin(); other != pairs->end(); ++other) {
 			esint neigh = *other++;
 			esint offset = *other;
 
-			double omin, omax;
-			setPolygon(projected, omin, omax, neigh, *other);
-
-			if (omax < emin - eps || emax + eps < omin) {
-				continue;
-			}
-
+			setPolygon(projected, neigh, *other);
 			clip(planeTriangles, projected, intersection);
+			++clips;
 			if (intersection.size()) {
+				++positive;
 				if (insertedBodies.empty()) {
 					sparse.push_back(SparseSegment(e, planeCoordinates.size(), dense.size()));
 					planeCoordinates.insert(planeCoordinates.end(), plane.begin(), plane.end());
@@ -787,6 +858,8 @@ void computeContactInterface()
 			pdist.push_back(planeCoordinates.size());
 		}
 	}
+
+	printf("%d has %d sparse faces, %d / %d clips, duration: %fs\n", info::mpi::rank, scounter, positive, clips, eslog::time() - start);
 
 	info::mesh->contacts->sparseSide = new serializededata<esint, SparseSegment>(sdist, sparse);
 	info::mesh->contacts->denseSide = new serializededata<esint, DenseSegment>(sdist, dense);

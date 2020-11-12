@@ -143,6 +143,15 @@ public:
 		return *this;
 	}
 
+	void getBarycentric(const _Point& p, const _Point& u, const _Point& v, double &s, double &t) const
+	{
+		_Point w = *this - p;
+		double uu = u * u, vv = v * v, uv = u * v, wv = w * v, wu = w * u;
+		double d = uv * uv - uu * vv;
+		s = (uv * wv - vv * wu) / d;
+		t = (uv * wu - uu * wv) / d;
+	}
+
 	TType x, y, z;
 };
 

@@ -22,8 +22,12 @@ struct SurfaceStore {
 	serializededata<esint, Point>* coordinates;
 	serializededata<esint, esint>* enodes;
 
-	serializededata<esint, Point>* center; // from coarse nodes + warping in the case of squares
-	serializededata<esint, Point>* normal; // from coarse nodes + warping in the case of squares
+	// from coarse nodes + warping in the case of squares
+	// base + normal -> normal implicit definition
+	// base + parameters -> parametric definition of a wrapping polygon
+	serializededata<esint, Point>* base;
+	serializededata<esint, Point>* normal;
+	serializededata<esint, Point>* parameters;
 
 	serializededata<esint, esint>* nelements; // only for neighbors definition
 	serializededata<esint, esint>* IDs; // only for neighbors definition
