@@ -9,7 +9,7 @@
 
 namespace espreso {
 
-#define MIN_SLAVE_COVER_RATIO 0.3
+#define MIN_SLAVE_COVER_RATIO 0.001
 
 struct ijv {
 	int i , j;
