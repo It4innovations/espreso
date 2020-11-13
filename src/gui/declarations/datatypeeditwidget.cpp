@@ -1,7 +1,8 @@
+
 #include "datatypeeditwidget.h"
 #include "ui_datatypeeditwidget.h"
 
-#include "validators/validatordelegate.h"
+#include "gui/validators/validatordelegate.h"
 #include <QPair>
 #include <QDebug>
 #include <QRegularExpression>

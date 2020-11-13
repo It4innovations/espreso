@@ -304,7 +304,7 @@ def build(ctx):
     ctx.objects(source=ctx.path.ant_glob("**/*.ui"), target="ui")
     ctx(
         features = "qt5 cxx cxxprogram",
-        source   = ctx.path.ant_glob("src/gui/**/*.cpp"),
+        source   = ctx.path.ant_glob(["src/gui/**/*.cpp", "src/app/gui.cpp"]),
         moc      = ctx.path.ant_glob("src/gui/**/*.h"),
 
         use      = [ "ui" ] + espreso,

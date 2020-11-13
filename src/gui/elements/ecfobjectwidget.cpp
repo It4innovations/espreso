@@ -2,7 +2,7 @@
 #include "ecfobjectwidget.h"
 #include "ui_ecfobjectwidget.h"
 
-#include "declarations/datatypeeditwidget.h"
+#include "gui/declarations/datatypeeditwidget.h"
 
 #include <QMessageBox>
 #include <QScrollArea>

@@ -54,7 +54,7 @@ void WorkflowWidget::setData()
 
 void WorkflowWidget::createInput()
 {
-    ECFParameter* i = info::ecf->input.ecfdescription;
+    ECFParameter* i = info::ecf->ecfdescription->getParameter(&info::ecf->input_type);
     if (!this->m_inputBox_filled)
     {
         for (auto opt = i->metadata.options.begin(); opt != i->metadata.options.end(); ++opt)
@@ -84,7 +84,7 @@ void WorkflowWidget::onInputChange(int index)
         ui->inputConfigLayout->removeWidget(this->m_inputWidget);
     }
 
-    ECFParameter* input = info::ecf->input.ecfdescription;
+    ECFParameter* input = info::ecf->ecfdescription->getParameter(&info::ecf->input_type);
     input->setValue(input->metadata.options[index].name);
 
     this->m_inputWidget = new InputWidget(this->input());

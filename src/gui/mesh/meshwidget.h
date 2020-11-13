@@ -1,7 +1,7 @@
 #ifndef MESHWIDGET_H
 #define MESHWIDGET_H
 
-#include "parallel/mpimanager.h"
+#include "gui/parallel/mpimanager.h"
 
 #include <QtGui>
 #include <QOpenGLWidget>

@@ -21,12 +21,12 @@ using namespace espreso;
 
 MpiManager::MpiManager(int argc, char* argv[])
 {
-	ECF::init(&argc, &argv);
+
 }
 
 MpiManager::~MpiManager()
 {
-    Mesh::finish();
+
 }
 
 ECF* MpiManager::ecf()

@@ -18,7 +18,8 @@ using namespace espreso;
 LoadstepWidget::LoadstepWidget(size_t id, QWidget* parent) :
     ScrollECFObjectWidget(info::ecf->getPhysics()->ecfdescription, parent)
 {
-    this->m_loadstep = info::ecf->getPhysics()->ecfdescription->getParameter("load_step_settings")->getParameter(QString::number(id).toStdString());
+    auto *ph = info::ecf->getPhysics();
+    this->m_loadstep = ph->ecfdescription->getParameter("load_steps_settings")->getParameter(QString::number(id).toStdString());
     this->m_obj = static_cast<ECFObject*>(m_loadstep);
     this->m_properties = nullptr;
 }
