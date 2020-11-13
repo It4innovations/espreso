@@ -357,6 +357,8 @@ void computeBoundaryRegionsArea()
 
 void assembleMortarInterface(std::vector<ijv> &B)
 {
+	int printrank = -1;
+
 	Element *tElement = &info::mesh->edata[(int)Element::CODE::TRIANGLE3];
 	int tGPs = tElement->weighFactor->size();
 	MatrixDense sCoords, dCoords, tCoords, sRefCoords(3, 2), dRefCoords(3, 2);
@@ -389,6 +391,13 @@ void assembleMortarInterface(std::vector<ijv> &B)
 		auto sNodes = surfaces.back()->enodes->begin() + s->element;
 		const auto &sIDs = surfaces.back()->nIDs->datatarray();
 		sCoords.set(sElement->nodes, 2, coors + 2 * s->coordinateOffset);
+		if (printrank == info::mpi::rank) {
+			printf("s-%d-coords: ", s->element);
+			for (int n = 0; n < sElement->nodes; ++n) {
+				printf("<%+.4f, %+.4f>", sCoords[n][0], sCoords[n][1]);
+			}
+			printf("\n");
+		}
 
 		std::vector<double> D(sElement->nodes * sElement->nodes), M(sElement->nodes * sElement->nodes), sparse(sElement->nodes * sElement->nodes);
 		for (int dmReady = 0; dmReady <= 1; ++dmReady) {
@@ -402,7 +411,16 @@ void assembleMortarInterface(std::vector<ijv> &B)
 				const auto &dIDs = surfaces[d->neigh]->nIDs->datatarray();
 				if (dmReady) {
 					dCoords.set(sElement->nodes, 2, coors + 2 * d->coordinateOffset);
+					if (printrank == info::mpi::rank) {
+						printf("d-%d-coords: ", d->element);
+						for (int n = 0; n < dElement->nodes; ++n) {
+							printf("<%+.4f, %+.4f>", dCoords[n][0], dCoords[n][1]);
+						}
+						printf("\n");
+					}
 				}
+
+				if (printrank == info::mpi::rank) printf("assemble %d-%d\n", s->element, d->element);
 
 				std::vector<double> dense(sElement->nodes * dElement->nodes);
 				for (esint t = 0; t < d->triangles; ++t) {
@@ -430,8 +448,16 @@ void assembleMortarInterface(std::vector<ijv> &B)
 						getReferenceCoords(dElement, dCoords, tCoords, dRefCoords);
 						getGpCoords(dRefCoords, dGpCoords);
 						BaseFunctions::recomputeDetJN(dElement, dCoords, dDetJ, dN, dGpCoords);
+
+						if (printrank == info::mpi::rank) {
+							printf("\tt-%d-%d-coords: <%+.4f, %+.4f><%+.4f, %+.4f><%+.4f, %+.4f>\n", s->element, d->element, tCoords[0][0], tCoords[0][1], tCoords[1][0], tCoords[1][1], tCoords[2][0], tCoords[2][1]);
+							printf("\tt-%d-%d-s-ref-coords: <%+.4f, %+.4f><%+.4f, %+.4f><%+.4f, %+.4f>\n", s->element, d->element, sRefCoords[0][0], sRefCoords[0][1], sRefCoords[1][0], sRefCoords[1][1], sRefCoords[2][0], sRefCoords[2][1]);
+							printf("\tt-%d-%d-d-ref-coords: <%+.4f, %+.4f><%+.4f, %+.4f><%+.4f, %+.4f>\n", s->element, d->element, dRefCoords[0][0], dRefCoords[0][1], dRefCoords[1][0], dRefCoords[1][1], dRefCoords[2][0], dRefCoords[2][1]);
+						}
+
 						MatrixDense psi;
 						psi.multiply(D.data(), sElement->nodes, sElement->nodes, sN.nrows, sN.ncols, sN.vals);
+						if (printrank == info::mpi::rank) std::cout << psi;
 
 						for (int gp = 0; gp < tGPs; ++gp) {
 							double weight = tElement->weighFactor->at(gp) * tDetJ[0][gp] * sDetJ[0][gp];
@@ -450,6 +476,7 @@ void assembleMortarInterface(std::vector<ijv> &B)
 					for (int i = 0; i < sElement->nodes; i++) {
 						for (int j = 0; j < dElement->nodes; j++) {
 							if (std::fabs(dense[i * dElement->nodes + j]) > BE_VALUE_TRESHOLD) {
+								if (printrank == info::mpi::rank) printf("  <%d,%d>=%f\n", sIDs[sNodes->at(i)], dIDs[dNodes->at(j)], dense[i * dElement->nodes + j]);
 								B.push_back(ijv(sIDs[sNodes->at(i)], dIDs[dNodes->at(j)], dense[i * dElement->nodes + j]));
 							}
 						}
@@ -458,12 +485,20 @@ void assembleMortarInterface(std::vector<ijv> &B)
 			}
 			if (!dmReady) {
 				// de = me^{-1}*de == M_{e}^{-T}*D_{e}^{T} == D_{e}*M_{e}^{-1} Popp (4.57)
+				if (printrank == info::mpi::rank) {
+					std::cout << "M" << M;
+					std::cout << "D" << D;
+				}
 				MATH::DenseMatDenseMatRowMajorSystemSolve(sElement->nodes, sElement->nodes, M.data(), D.data());
+				if (printrank == info::mpi::rank) {
+					std::cout << "D" << D;
+				}
 			}
 		}
 		for (int i = 0; i < sElement->nodes; i++) {
 			for (int j = 0; j < sElement->nodes; j++) {
 				if (std::fabs(sparse[i * sElement->nodes + j]) > BE_VALUE_TRESHOLD) {
+					if (printrank == info::mpi::rank) printf("<%d,%d>=%f\n", sIDs[sNodes->at(i)], sIDs[sNodes->at(j)], sparse[i * sElement->nodes + j]);
 					B.push_back(ijv(sIDs[sNodes->at(i)], sIDs[sNodes->at(j)], sparse[i * sElement->nodes + j]));
 				}
 			}
@@ -478,22 +513,6 @@ void computeMortars()
 		assembleMortarInterface(B);
 	}
 	std::sort(B.begin(), B.end());
-
-//	Communication::serialize([&] () {
-//		printf(" == %d == (%ld) \n", info::mpi::rank, B.size());
-////		std::cout << "NEIGHS : " << info::mesh->neighbors;
-////		std::cout << "WITH ME: "<< info::mesh->neighborsWithMe;
-////		for (esint n = 0; n < info::mesh->nodes->size; ++n) {
-////			if (0.99 < info::mesh->nodes->coordinates->datatarray()[n].z && info::mesh->nodes->coordinates->datatarray()[n].z < 1.01) {
-////				std::cout << info::mesh->nodes->IDs->datatarray()[n] << ": " << info::mesh->nodes->coordinates->datatarray()[n] << "\n";
-////			}
-////		}
-////		std::cout << *info::mesh->nodes->IDs << "\n";
-////		std::cout << *_mesh->contacts->nodes->ranks << "\n";
-//		for (auto it = B.begin(); it != B.end(); ++it) {
-//			printf("<%2d,%2d> = %+8.6f\n", it->i, it->j, it->v);
-//		}
-//	});
 
 	// exchange neighbors
 	std::vector<int> neighs, neighsWithMe = info::mesh->contacts->neighbors;
@@ -544,6 +563,36 @@ void computeMortars()
 		}
 		B.resize(unique + 1);
 	}
+
+//	Communication::serialize([&] () {
+//		if (info::mpi::rank) {
+//			return;
+//		}
+//		printf(" == %d == (%ld) \n", info::mpi::rank, B.size());
+////		std::cout << "NEIGHS : " << info::mesh->neighbors;
+////		std::cout << "WITH ME: "<< info::mesh->neighborsWithMe;
+////		for (esint n = 0; n < info::mesh->nodes->size; ++n) {
+////			if (0.99 < info::mesh->nodes->coordinates->datatarray()[n].z && info::mesh->nodes->coordinates->datatarray()[n].z < 1.01) {
+////				std::cout << info::mesh->nodes->IDs->datatarray()[n] << ": " << info::mesh->nodes->coordinates->datatarray()[n] << "\n";
+////			}
+////		}
+////		std::cout << *info::mesh->nodes->IDs << "\n";
+////		std::cout << *_mesh->contacts->nodes->ranks << "\n";
+//		for (auto it = B.begin(); it != B.end(); ) {
+//			auto begin = it, end = it;
+//			while (end != B.end() && begin->i == end->i) {
+//				++end;
+//			}
+//			double sum = 0;
+//			printf(" %d ->", it->i);
+//			for (auto ii = begin; ii != end; ++ii) {
+//				printf("\t %d=%+.5f\n", ii->j, ii->v);
+//				sum += ii->v;
+//			}
+//			printf("sum: %+.5f\n= == %lu == =\n\n\n", sum, end - B.begin());
+//			it = end;
+//		}
+//	});
 
 	std::vector<esint> cIDs, crankdist;
 	std::vector<int> crankdata;
@@ -616,6 +665,9 @@ void computeMortars()
 	info::mesh->neighbors.erase(std::lower_bound(info::mesh->neighbors.begin(), info::mesh->neighbors.end(), info::mpi::rank));
 
 //	Communication::serialize([&] () {
+//		if (info::mpi::rank) {
+//			return;
+//		}
 //		printf(" == %d == (%ld) \n", info::mpi::rank, info::mesh->contacts->B.size());
 ////		std::cout << "NEIGHS : " << info::mesh->neighbors;
 ////		std::cout << "WITH ME: "<< info::mesh->neighborsWithMe;
@@ -637,10 +689,10 @@ void computeMortars()
 //			double sum = 0;
 //			printf("%d ->", it->i);
 //			for (auto ii = begin; ii != end; ++ii) {
-//				printf("\t%d=%f\n", ii->j, ii->v);
+//				printf("\t%d=%+.3f\n", ii->j, ii->v);
 //				sum += ii->v;
 //			}
-//			printf("sum: %f\n", sum);
+//			printf("sum: %+.3f\n", sum);
 //			it = end;
 //		}
 //	});
