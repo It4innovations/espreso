@@ -508,8 +508,8 @@ void findCloseElements()
 	auto checkall = [&] (esint i, esint j) {
 		return
 				checkbody(i, j) &&
-				((neigh[i] == myrank && checkrange(i, j)) || (neigh[j] == myrank && checkrange(j, i))) && // range is not commutative
 				checkangle(i, j) &&
+				((neigh[i] == myrank && checkrange(i, j)) || (neigh[j] == myrank && checkrange(j, i))) && // range is not commutative
 				true;
 	};
 
@@ -663,11 +663,11 @@ void triangulate(std::vector<Point> &face, std::vector<Triangle> &triangles)
 	eslog::error("ESPRESO internal error: cannot compute triangles from a polygon.\n");
 }
 
-void clip(const std::vector<Triangle> &triangles, const std::vector<Point> &polygon, std::vector<Triangle> &output)
+void clip(const Point &base, const std::vector<Triangle> &triangles, const std::vector<Point> &polygon, std::vector<Triangle> &output)
 {
 	double eps = 1e-10;
 	enum status { in, out, on, processed };
-	output.clear();
+	std::vector<Triangle> res;
 
 	auto crossPoint = [] (const Point &p0, const Point &p1, const Point &q0, const Point &q1) {
 		Point u = p1 - p0, v = q1 - q0, w = p0 - q0;
@@ -733,11 +733,58 @@ void clip(const std::vector<Triangle> &triangles, const std::vector<Point> &poly
 				if (std::fabs(in[prev(j)].x - in[j].x) > 1e-6 || std::fabs(in[prev(j)].y - in[j].y) > 1e-6) {
 					_res.push_back(in[j]);
 				}
+
 			}
 			if (3 <= _res.size()) {
 				for (esint j = 2, size = _res.size(); j < size; j++) { // Delaunay triangulation?
-					output.push_back(Triangle{ _res, 0, j - 1, j });
+					res.push_back(Triangle{ _res, 0, j - 1, j });
 				}
+			}
+		}
+	}
+
+
+	// remove triangles that are above the limit
+	eps = info::ecf->input.contact.search_area;
+
+	auto max = [&] (const double &z, const Point &p0, const Point &p1) { return p0 + (p1 - p0) * ((z - p0.z) / (p1.z - p0.z)); };
+
+	output.clear();
+	for (size_t t = 0; t < res.size(); ++t) {
+		bool below[3] = { res[t].p[0].z + eps < base.z, res[t].p[1].z + eps < base.z, res[t].p[2].z + eps < base.z };
+
+		if (!below[0] && !below[1] && !below[2]) {
+			output.push_back(res[t]);
+		} else if (!below[0] || !below[1] || !below[2]) {
+			int i = 0;
+			while (below[0] || !below[2]) { std::rotate(below, below + 1, below + 3); ++i; }
+			if (below[1]) {
+				output.push_back(Triangle(res[t].p[i], max(base.z - eps, res[t].p[i], res[t].p[(i + 1) % 3]), max(base.z - eps, res[t].p[i], res[t].p[(i + 2) % 3])));
+			} else {
+				Point c0 = max(base.z - eps, res[t].p[i], res[t].p[(i + 2) % 3]);
+				Point c1 = max(base.z - eps, res[t].p[i + 1], res[t].p[(i + 2) % 3]);
+				output.push_back(Triangle(res[t].p[i], res[t].p[i + 1], c0));
+				output.push_back(Triangle(res[t].p[i + 1], c1, c0));
+			}
+		}
+	}
+	output.swap(res);
+	output.clear();
+	for (size_t t = 0; t < res.size(); ++t) {
+		bool above[3] = { base.z < res[t].p[0].z - eps, base.z < res[t].p[1].z - eps, base.z < res[t].p[2].z - eps };
+
+		if (!above[0] && !above[1] && !above[2]) {
+			output.push_back(res[t]);
+		} else if (!above[0] || !above[1] || !above[2]) {
+			int i = 0;
+			while (above[0] || !above[2]) { std::rotate(above, above + 1, above + 3); ++i; }
+			if (above[1]) {
+				output.push_back(Triangle(res[t].p[i], max(base.z + eps, res[t].p[i], res[t].p[(i + 1) % 3]), max(base.z + eps, res[t].p[i], res[t].p[(i + 2) % 3])));
+			} else {
+				Point c0 = max(base.z + eps, res[t].p[i], res[t].p[(i + 2) % 3]);
+				Point c1 = max(base.z + eps, res[t].p[(i + 1) % 3], res[t].p[(i + 2) % 3]);
+				output.push_back(Triangle(res[t].p[i], res[t].p[(i + 1) % 3], c0));
+				output.push_back(Triangle(res[t].p[(i + 1) % 3], c1, c0));
 			}
 		}
 	}
@@ -802,6 +849,8 @@ void computeContactInterface()
 
 		double earea = 0;
 		setPolygon(plane, info::mesh->contacts->neighbors.size(), e);
+		Point base = info::mesh->surface->base->datatarray()[e];
+		base.rodrigues(axis, cos, sin);
 		triangulate(plane, planeTriangles);
 		for (size_t t = 0; t < planeTriangles.size(); ++t) {
 			earea += planeTriangles[t].area();
@@ -814,7 +863,7 @@ void computeContactInterface()
 			esint offset = *other;
 
 			setPolygon(projected, neigh, *other);
-			clip(planeTriangles, projected, intersection);
+			clip(base, planeTriangles, projected, intersection);
 			++clips;
 			if (intersection.size()) {
 				++positive;
@@ -862,7 +911,7 @@ void computeContactInterface()
 	printf("%d has %d sparse faces, %d / %d clips, duration: %fs\n", info::mpi::rank, scounter, positive, clips, eslog::time() - start);
 
 	info::mesh->contacts->sparseSide = new serializededata<esint, SparseSegment>(sdist, sparse);
-	info::mesh->contacts->denseSide = new serializededata<esint, DenseSegment>(sdist, dense);
+	info::mesh->contacts->denseSide = new serializededata<esint, DenseSegment>(ddist, dense);
 	info::mesh->contacts->planeCoordinates = new serializededata<esint, Point2D>(pdist, planeCoordinates);
 	info::mesh->contacts->intersections = new serializededata<esint, Triangle>(1, triangles);
 
@@ -896,7 +945,7 @@ void computeContactInterface()
 	Communication::allReduce(faces, Communication::OP::SUM);
 	info::mesh->contacts->interfaces.clear();
 	for (size_t i = 0; i < interfaces.size(); ++i) {
-		if (faces[i] > 0 && faces[i + size] > 0) {
+		if (faces[i] || faces[i + size]) {
 			info::mesh->contacts->interfaces.push_back(Interface(interfaces[i].from.body, interfaces[i].to.body));
 			info::mesh->contacts->interfaces.back().from.area = area[i];
 			info::mesh->contacts->interfaces.back().from.faces = faces[i];

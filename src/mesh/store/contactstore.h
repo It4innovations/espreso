@@ -72,7 +72,9 @@ struct Interface {
 			(1.1 * to.area < from.area) // if the number of faces is similar
 			) {
 
-			std::swap(from, to);
+			if (to.faces && to.area) {
+				std::swap(from, to);
+			}
 		}
 	}
 };
