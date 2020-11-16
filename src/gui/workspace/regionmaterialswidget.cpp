@@ -15,7 +15,7 @@ RegionMaterialsWidget::RegionMaterialsWidget(QWidget *parent) :
     ui->setupUi(this);
 
     RegionPropertyWidget* rpw = new RegionPropertyWidget("", this);
-    rpw->addProperty(static_cast<ECFObject*>(info::ecf->getPhysics()->ecfdescription));
+    rpw->addProperty(static_cast<ECFObject*>(info::ecf->getPhysics()->ecfdescription->getParameter("material_set")));
 
     ui->layout->addWidget(rpw);
 }
