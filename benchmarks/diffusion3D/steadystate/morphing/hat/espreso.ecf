@@ -2,19 +2,21 @@
 
 DEFAULT_ARGS {
   0   HEXA8;
-  1       2;
-  2       2;
+  1       1;
+  2       1;
   3       1;
-  4       1;
+
+  4       3;
   5       2;
   6       4;
-  7       8;
-  8       4;
-  9       4;
+
+  7       3;
+  8       5;
+  9       2;
 }
 
 INPUT_TYPE            GENERATOR;
-PHYSICS   HEAT_TRANSFER_3D;
+PHYSICS        HEAT_TRANSFER_3D;
 
 GENERATOR {
   SHAPE   GRID;
@@ -58,35 +60,29 @@ MESH_MORPHING {
 
   RBF {
     MY_RBF_MORPHING {
-      SOLVER            DIRECT;
+      SOLVER         	DIRECT;
       SOLVER_PRECISION   1E-07;
-      FUNCTION               R;
+      FUNCTION             R^3;
 
       TARGET      ALL_ELEMENTS;
 
       MORPHERS {
         Z0 {
-          TRANSFORMATION   SCALING;
+          TRANSFORMATION   TRANSLATION;
 
-          SCALING {
-            X   100;
-            Y   100;
-            Z   120;
-          }
-
-
-          COORDINATE_SYSTEM {
-            TYPE   CARTESIAN;
-
-            CENTER {
-              X    0;
-              Y    0;
-              Z    0;
-            }
+          TRANSLATION {
+            Z  1.25 + exp(- ( (X - 0)^2 + (Y - 0)^2) / (2 * .5^2)) / (sqrt( (2 * PI)^2 ) .5^2 );
           }
         }
+
         Z1 {
-          TRANSFORMATION   FIXED;
+          TRANSFORMATION   TRANSLATION;
+
+          TRANSLATION {
+            X        2*X;
+            Y        2*Y;
+            Z    exp(- ( (X - 0)^2 + (Y - 0)^2) / (2 * .5^2)) / (sqrt( (2 * PI)^2 ) .25^2 );
+          }
         }
       }
     }
@@ -144,26 +140,31 @@ HEAT_TRANSFER_3D {
 }
 
 OUTPUT {
-  RESULTS_STORE_FREQUENCY    EVERY_SUBSTEP;
-  MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
+  STORE_RESULTS                         ALL;
 
   MONITORING {
     1 {
       REGION    ALL_ELEMENTS;
       STATISTICS         MAX;
-      PROPERTY  RBF_MORPHING;
+      PROPERTY   TEMPERATURE;
     }
 
     2 {
       REGION    ALL_ELEMENTS;
       STATISTICS         MIN;
-      PROPERTY  RBF_MORPHING;
+      PROPERTY   TEMPERATURE;
     }
 
     3 {
       REGION    ALL_ELEMENTS;
+      STATISTICS         AVG;
+      PROPERTY  RBF_MORPHING;
+    }
+
+    4 {
+      REGION    ALL_ELEMENTS;
       STATISTICS         MAX;
-      PROPERTY   TEMPERATURE;
+      PROPERTY  RBF_MORPHING;
     }
   }
 }
