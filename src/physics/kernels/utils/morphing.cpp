@@ -24,6 +24,195 @@
 namespace espreso {
 namespace morphing {
 
+
+static void createTranslationMatrix2D(std::vector<double> &m, const double &x, const double &y)
+{
+	m.clear();
+	m.resize(9);
+	m[0 * 3 + 0] = m[1 * 3 + 1] = m[2 * 3 + 2] = 1;
+	m[0 * 3 + 2] = x;
+	m[1 * 3 + 2] = y;
+}
+
+static void createTranslationMatrix3D(std::vector<double> &m, const double &x, const double &y, const double &z)
+{
+	m.clear();
+	m.resize(16);
+	m[0 * 4 + 0] = m[1 * 4 + 1] = m[2 * 4 + 2] = m[3 * 4 + 3] = 1;
+	m[0 * 4 + 3] = x;
+	m[1 * 4 + 3] = y;
+	m[2 * 4 + 3] = z;
+}
+
+static void createScalingMatrix2D(std::vector<double> &m, const double &x, const double &y)
+{
+	m.clear();
+	m.resize(9);
+	m[0 * 3 + 0] = x;
+	m[1 * 3 + 1] = y;
+	m[2 * 3 + 2] = 1;
+}
+
+static void createScalingMatrix3D(std::vector<double> &m, const double &x, const double &y, const double &z)
+{
+	m.clear();
+	m.resize(16);
+	m[0 * 4 + 0] = x;
+	m[1 * 4 + 1] = y;
+	m[2 * 4 + 2] = z;
+	m[3 * 4 + 3] = 1;
+}
+
+static void createTranslationMatrixToCenter(const CoordinateSystemConfiguration &csystem, std::vector<double> &m)
+{
+	switch (*csystem.dimension) {
+	case DIMENSION::D3: {
+		double x,y,z;
+		csystem.center.x.evaluator->evalVector(1, Evaluator::Params(), &x);
+		csystem.center.y.evaluator->evalVector(1, Evaluator::Params(), &y);
+		csystem.center.z.evaluator->evalVector(1, Evaluator::Params(), &z);
+		createTranslationMatrix3D(m, x, y, z);
+	} break;
+	case DIMENSION::D2: {
+		double x,y;
+		csystem.center.x.evaluator->evalVector(1, Evaluator::Params(), &x);
+		csystem.center.y.evaluator->evalVector(1, Evaluator::Params(), &y);
+		createTranslationMatrix2D(m, x, y);
+	} break;
+	default:
+		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
+	}
+}
+
+
+static void createTranslationMatrixToZero(const CoordinateSystemConfiguration &csystem, std::vector<double> &m)
+{
+	switch (*csystem.dimension) {
+	case DIMENSION::D3: {
+		double x,y,z;
+		csystem.center.x.evaluator->evalVector(1, Evaluator::Params(), &x);
+		csystem.center.y.evaluator->evalVector(1, Evaluator::Params(), &y);
+		csystem.center.z.evaluator->evalVector(1, Evaluator::Params(), &z);
+		createTranslationMatrix3D(m, -x, -y, -z);
+	} break;
+	case DIMENSION::D2: {
+		double x,y;
+		csystem.center.x.evaluator->evalVector(1, Evaluator::Params(), &x);
+		csystem.center.y.evaluator->evalVector(1, Evaluator::Params(), &y);
+		createTranslationMatrix2D(m, -x, -y);
+	} break;
+	default:
+		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
+	}
+}
+
+static void multiplyTransformationMatrices(const CoordinateSystemConfiguration &csystem, std::vector<double> &left, std::vector<double> &result)
+{
+	std::vector<double> right;
+	right = result;
+	result.clear();
+	switch (*csystem.dimension) {
+	case DIMENSION::D3: {
+		result.resize(16);
+		MATH::DenseMatDenseMatRowMajorProduct(1, false, 4, 4, left.data(), false, 4, 4, right.data(), 0, result.data());
+	} break;
+	case DIMENSION::D2: {
+		result.resize(9);
+		MATH::DenseMatDenseMatRowMajorProduct(1, false, 3, 4, left.data(), false, 3, 3, right.data(), 0, result.data());
+	} break;
+	default:
+		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
+	}
+}
+
+static Point applyTransformation(const CoordinateSystemConfiguration &csystem, std::vector<double> &m, const Point &p)
+{
+	Point result;
+	switch (*csystem.dimension) {
+	case DIMENSION::D3: {
+		result.x = m[0 * 4 + 0] * p.x + m[0 * 4 + 1] * p.y + m[0 * 4 + 2] * p.z + m[0 * 4 + 3];
+		result.y = m[1 * 4 + 0] * p.x + m[1 * 4 + 1] * p.y + m[1 * 4 + 2] * p.z + m[1 * 4 + 3];
+		result.z = m[2 * 4 + 0] * p.x + m[2 * 4 + 1] * p.y + m[2 * 4 + 2] * p.z + m[2 * 4 + 3];
+		result /=  m[3 * 4 + 0] * p.x + m[3 * 4 + 1] * p.y + m[3 * 4 + 2] * p.z + m[3 * 4 + 3];
+	} break;
+	case DIMENSION::D2: {
+		result.x = m[0 * 3 + 0] * p.x + m[0 * 3 + 1] * p.y + m[0 * 3 + 2];
+		result.y = m[1 * 3 + 0] * p.x + m[1 * 3 + 1] * p.y + m[1 * 3 + 2];
+		result /=  m[2 * 3 + 0] * p.x + m[2 * 3 + 1] * p.y + m[2 * 3 + 2];
+	} break;
+	default:
+		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
+	}
+	return result;
+}
+
+
+static void createRotationMatrix(const CoordinateSystemConfiguration &csystem, std::vector<double> &m)
+{
+	auto d2r = [] (double degree) -> double { return M_PI * degree / 180; };
+
+	Point rPoint;
+	switch (*csystem.dimension) {
+	case DIMENSION::D3: {
+		csystem.rotation.x.evaluator->evalVector(1, Evaluator::Params(), &(rPoint.x));
+		csystem.rotation.y.evaluator->evalVector(1, Evaluator::Params(), &(rPoint.y));
+		csystem.rotation.z.evaluator->evalVector(1, Evaluator::Params(), &(rPoint.z));
+	} break;
+	case DIMENSION::Z:
+	case DIMENSION::D2: {
+		csystem.rotation.z.evaluator->evalVector(1, Evaluator::Params(), &(rPoint.z));
+	} break;
+	default:
+		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
+	}
+
+	switch (*csystem.dimension) {
+		case DIMENSION::D3: {
+			m.clear();
+			m.resize(16,0);
+			Point sin, cos;
+			switch (csystem.type) {
+			case CoordinateSystemConfiguration::TYPE::CARTESIAN:{
+				cos.x = std::cos(d2r(rPoint.x));
+				cos.y = std::cos(d2r(rPoint.y));
+				cos.z = std::cos(d2r(rPoint.z));
+
+				sin.x = std::sin(d2r(rPoint.x));
+				sin.y = std::sin(d2r(rPoint.y));
+				sin.z = std::sin(d2r(rPoint.z));
+			} break;
+			default:
+				eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
+			}
+			m[0 * 4 + 0] = cos.y * cos.z;                         m[0 * 4 + 1] = cos.y * sin.z;                         m[0 * 4 + 2] = -sin.y;
+			m[1 * 4 + 0] = cos.z * sin.x * sin.y - cos.x * sin.z; m[1 * 4 + 1] = cos.x * cos.z + sin.x * sin.y * sin.z; m[1 * 4 + 2] = cos.y * sin.x;
+			m[2 * 4 + 0] = sin.x * sin.z + cos.x * cos.z * sin.y; m[2 * 4 + 1] = cos.x * sin.y * sin.z - cos.z * sin.x; m[2 * 4 + 2] = cos.x * cos.y;
+			m[3 * 4 + 3] = 1;
+		} break;
+
+		case DIMENSION::Z:
+		case DIMENSION::D2: {
+			double cos = 0, sin = 0;
+			m.clear();
+			m.resize(9);
+
+			switch (csystem.type) {
+			case CoordinateSystemConfiguration::TYPE::CARTESIAN: {
+				cos = std::cos(d2r(rPoint.z));
+				sin = std::sin(d2r(rPoint.z));
+			} break;
+			default:
+				eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
+			}
+			m[0 * 3 + 0] =  cos; m[0 * 3 + 1] = sin;
+			m[1 * 3 + 0] = -sin; m[1 * 3 + 1] = cos;
+			m[2 * 3 + 2] = 1;
+		} break;
+		default:
+			eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
+	}
+}
+
 void rbf()
 {
 	for (auto it = info::ecf->mesh_morphing.rbf.begin(); it != info::ecf->mesh_morphing.rbf.end(); ++it) {
@@ -31,9 +220,8 @@ void rbf()
 	}
 }
 
-void processMorpher(const RBFTargetTransformationConfiguration &target, int dimension,
-		std::vector<Point> &sPoints, size_t startPoint, std::vector<double> &sDisplacement) {
-
+void processMorpher(const RBFTargetTransformationConfiguration &target, int dimension, std::vector<Point> &sPoints, size_t startPoint, std::vector<double> &sDisplacement)
+{
 	size_t pointsToProcess = sPoints.size() - startPoint;
 
 	switch (target.transformation) {
@@ -58,22 +246,26 @@ void processMorpher(const RBFTargetTransformationConfiguration &target, int dime
 		case MORPHING_TRANSFORMATION::SCALING: {
 
 			std::vector<double> result;
-			target.coordinate_system.createTranslationMatrixToCenter(result);
+			createTranslationMatrixToCenter(target.coordinate_system, result);
 			std::vector<double> scaling;
 			std::vector<double> sv(3);
 			sv[0] = target.scaling.x.evaluator->eval({});
 			sv[1] = target.scaling.y.evaluator->eval({});
 			sv[2] = target.scaling.z.evaluator->eval({});
-			target.coordinate_system.createScalingMatrix(scaling, sv[0]/100.0, sv[1]/100.0, sv[2]/100.0);
-			std::vector<double> TtoZero;
-			target.coordinate_system.createTranslationMatrixToZero(TtoZero);
-			target.coordinate_system.multiplyTransformationMatrices(scaling, result);
-			target.coordinate_system.multiplyTransformationMatrices(TtoZero, result);
+			switch (*target.coordinate_system.dimension) {
+			case DIMENSION::D3: createScalingMatrix3D(scaling, sv[0], sv[1], sv[2]); break;
+			case DIMENSION::D2: createScalingMatrix2D(scaling, sv[0], sv[1]); break;
+			default: break;
+			}
 
-			for(auto it = sPoints.begin()+startPoint; it!=sPoints.end(); it++) {
+			std::vector<double> TtoZero;
+			createTranslationMatrixToZero(target.coordinate_system, TtoZero);
+			multiplyTransformationMatrices(target.coordinate_system, scaling, result);
+			multiplyTransformationMatrices(target.coordinate_system, TtoZero, result);
+
+			for(auto it = sPoints.begin() + startPoint; it != sPoints.end(); it++) {
 				const Point& p1 = *it;
-				Point p2= target.coordinate_system.applyTransformation(result, p1);
-				//std::cout<<"P1 "<<p1<<" P2 "<<p2<<"\n";
+				Point p2= applyTransformation(target.coordinate_system, result, p1);
 				sDisplacement.push_back(p2.x - p1.x);
 				sDisplacement.push_back(p2.y - p1.y);
 				if (dimension == 3) {
@@ -83,27 +275,26 @@ void processMorpher(const RBFTargetTransformationConfiguration &target, int dime
 		} break;
 
 		case MORPHING_TRANSFORMATION::ROTATION: {
-
 			std::vector<double> result;
-			target.coordinate_system.createTranslationMatrixToCenter(result);
+			createTranslationMatrixToCenter(target.coordinate_system, result);
 			std::vector<double> rotation;
-			target.coordinate_system.createRotationMatrix(rotation);
+			createRotationMatrix(target.coordinate_system, rotation);
 			std::vector<double> TtoZero;
-			target.coordinate_system.createTranslationMatrixToZero(TtoZero);
-			target.coordinate_system.multiplyTransformationMatrices(rotation, result);
-			target.coordinate_system.multiplyTransformationMatrices(TtoZero, result);
+			createTranslationMatrixToZero(target.coordinate_system, TtoZero);
+			multiplyTransformationMatrices(target.coordinate_system, rotation, result);
+			multiplyTransformationMatrices(target.coordinate_system, TtoZero, result);
 
-			for(auto it = sPoints.begin()+startPoint; it!=sPoints.end(); it++) {
+			for(auto it = sPoints.begin() + startPoint; it != sPoints.end(); it++) {
 				const Point& p1 = *it;
-				Point p2= target.coordinate_system.applyTransformation(result, p1);
-				//std::cout<<"P1 "<<p1<<" P2 "<<p2<<"\n";
+				Point p2 = applyTransformation(target.coordinate_system, result, p1);
 				sDisplacement.push_back(p2.x - p1.x);
 				sDisplacement.push_back(p2.y - p1.y);
 				if (dimension == 3) {
 					sDisplacement.push_back(p2.z - p1.z);
 				}
 			}
-		}break;
+		} break;
+
 		default:
 			eslog::globalerror("ESPRESO internal error: implement mesh morphing tranformation.\n");
 	}

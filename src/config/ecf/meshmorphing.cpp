@@ -7,7 +7,7 @@
 espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfiguration(ECF *ECF)
 : dimension(DIMENSION::D3),
   offset(ECFMetaData::getboundaryconditionvariables()),
-  scaling(&dimension, { "TIME" }, "100"),
+  scaling(&dimension, ECFMetaData::getboundaryconditionvariables(), "1"),
   translation(&dimension, ECFMetaData::getboundaryconditionvariables(), "0"),
   coordinate_system(&dimension),
   override(true),
