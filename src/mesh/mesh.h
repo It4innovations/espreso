@@ -42,6 +42,11 @@ public:
 	Mesh();
 	~Mesh();
 	void preprocess();
+	void preprocessForGUI()
+	{
+		_withGUI = true;
+		preprocess();
+	}
 	void duplicate();
 	void setMaterials();
 	void printMeshStatistics();

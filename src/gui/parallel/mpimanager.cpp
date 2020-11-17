@@ -5,6 +5,7 @@
 #include "basis/utilities/communication.h"
 #include "config/ecf/ecf.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/envinfo.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
@@ -115,6 +116,7 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
 {
 	Mesh::init();
 	Mesh::load();
+	info::mesh->preprocessForGUI();
 
 	QMap<QString, QVector<float> > regions;
 
@@ -122,9 +124,23 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
     float axis_max = 1.0f;
     float axis_len = axis_max - axis_min;
 
-    float x_len = 1;
-    float y_len = 1;
-    float z_len = 1;
+    Point rmin(1e10, 1e10, 1e10), rmax(-1e10, -1e10, -1e10), min, max;
+
+    for (esint i = 0; i < info::mesh->nodes->size; i++) {
+        rmin.x = std::min(rmin.x, info::mesh->nodes->coordinates->datatarray()[i].x);
+        rmin.y = std::min(rmin.y, info::mesh->nodes->coordinates->datatarray()[i].y);
+        rmin.z = std::min(rmin.z, info::mesh->nodes->coordinates->datatarray()[i].z);
+        rmax.x = std::max(rmax.x, info::mesh->nodes->coordinates->datatarray()[i].x);
+        rmax.y = std::max(rmax.y, info::mesh->nodes->coordinates->datatarray()[i].y);
+        rmax.z = std::max(rmax.z, info::mesh->nodes->coordinates->datatarray()[i].z);
+    }
+
+    Communication::allReduce(&rmin.x, &min.x, 3, MPI_DOUBLE, MPI_MIN);
+    Communication::allReduce(&rmax.x, &max.x, 3, MPI_DOUBLE, MPI_MAX);
+
+    float x_len = max.x - min.x;
+    float y_len = max.y - min.y;
+    float z_len = max.z - min.z;
     QVector<float> axises;
     axises << x_len << y_len << z_len;
     float max_axis_len = *std::max_element(axises.begin(), axises.end());
@@ -147,9 +163,9 @@ QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
 
             for (int i = 0; i < 3; ++i) {
                 Point p = info::mesh->nodes->coordinates->datatarray()[t->at(i)];
-                float _x = transform(p.x, 0, x_len, max_axis_len, axis_len, axis_min);
-                float _y = transform(p.y, 0, y_len, max_axis_len, axis_len, axis_min);
-                float _z = transform(p.z, 0, z_len, max_axis_len, axis_len, axis_min);
+                float _x = transform(p.x, min.x, x_len, max_axis_len, axis_len, axis_min);
+                float _y = transform(p.y, min.y, y_len, max_axis_len, axis_len, axis_min);
+                float _z = transform(p.z, min.z, z_len, max_axis_len, axis_len, axis_min);
                 mesh.push_back( _x );
                 mesh.push_back( _y );
                 mesh.push_back( _z );
