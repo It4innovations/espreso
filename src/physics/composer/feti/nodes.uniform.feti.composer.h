@@ -11,7 +11,7 @@ struct FETIAssemblerData;
 class NodesUniformFETIComposer: public FETIComposer {
 
 public:
-	NodesUniformFETIComposer(FETIConfiguration &configuration, Kernel *kernel, FETIAssemblerData *data, int DOFs);
+	NodesUniformFETIComposer(const FETIConfiguration &configuration, Kernel *kernel, FETIAssemblerData *data, int DOFs);
 
 	void init();
 

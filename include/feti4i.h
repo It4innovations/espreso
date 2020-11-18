@@ -56,6 +56,25 @@ typedef struct FETI4IStructInstance* FETI4IInstance;
  Functions for manipulating with FETI4I internal structures
 ------------------------------------------------------------------------------*/
 
+/// Initialize the FETI4I library
+/**
+ * ESPRESO needs to be initialized before calling any other function.
+ * At the end of the program FETI4IFinalize should be called.
+ *
+ * @param comm an MPI communication
+ * @param verbosity a verbosity level
+ */
+void FETI4IInit(
+		MPI_Comm 		comm,
+		FETI4IInt		verbosity
+);
+
+/// Finalize the FETI4I library
+/**
+ * This function destroy all internal parameters.
+ */
+void FETI4IFinalize();
+
 /// Fill integer options to the default values
 /**
  * ESPRESO is controlled by options passed to FETI4ICreateInstance method.
@@ -84,36 +103,40 @@ void FETI4ISetDefaultRealOptions(
  * Created matrix is an empty matrix prepared for later adding of element matrices.
  *
  * @param matrix an address of a data holder
- * @param type a type of the matrix
+ * @param nodesSize a number of local nodes
+ * @param l2g a mapping of local nodes (offsets) to global nodes (ids)
  * @param indexBase a value of the first matrix index
+ * @param type a type of the matrix
+ * @param dofsPerNode a number of DOFs per each nodes
+ * @param dofsOrdering ordering of DOFs within each element (grouped by DOFs [xx.., yy.., zz..] or grouped by nodes [xyz, xyz, ...])
  */
 void FETI4ICreateStiffnessMatrix(
 		FETI4IMatrix	*matrix,
+		FETI4IInt		nodesSize,
+		FETI4IInt*		l2g,
+		FETI4IInt		indexBase,
 		FETI4IInt		type,
-		FETI4IInt		indexBase
+		FETI4IInt		dofsPerNode,
+		FETI4IInt		dofsOrdering
 );
 
 /// Adds an element to a stiffness matrix
 /**
  * Adds a new element to a stiffness matrix.
- * The method assumes symmetric stiffness element matrix.
+ * It is possible to call this method in parallel.
  *
  * @param matrix a data holder of a stiffness matrix
- * @param type a type of the element
- * @param nodesSize the number of nodes of the added element
+ * @param type a type of the element (currently only FETI4I_ETYPE_VOLUME is supported)
+ * @param size the number of nodes of the added element
  * @param nodes an array of local nodes of the element matrix
- * @param dofsSize the number of rows of square matrix
- * @param dofs an array of local DOFs of the element matrix [size]
- * @param values an array of values in row-major-order [size x size]
+ * @param stiffness stiffness values in row-major-order [(DOFs * size) x (DOFs * size)]
  */
 void FETI4IAddElement(
 		FETI4IMatrix	matrix,
 		FETI4IInt		type,
-		FETI4IInt		nodesSize,
+		FETI4IInt		size,
 		FETI4IInt*		nodes,
-		FETI4IInt		dofsSize,
-		FETI4IInt*		dofs,
-		FETI4IReal*		values
+		FETI4IReal*		stiffness
 );
 
 /*-----------------------------------------------------------------------------
@@ -128,9 +151,6 @@ void FETI4IAddElement(
  *
  * @param instance an address of a data holder of an ESPRESO instance
  * @param matrix a data holder of a stiffness matrix
- * @param size size of a right-hand side and a mapping of local DOFs to global DOFs
- * @param rhs right-hand side
- * @param l2g a mapping of local DOFs to global DOFs
  * @param neighbours_size a number of neighbours MPI ranks
  * @param neighbours an array of neighbours MPI ranks
  * @param dirichlet_size a number of DOFs with dirichlet condition
@@ -142,9 +162,6 @@ void FETI4IAddElement(
 void FETI4ICreateInstance(
 		FETI4IInstance	*instance,
 		FETI4IMatrix	matrix,
-		FETI4IInt		size,
-		FETI4IReal*		rhs,
-		FETI4IInt*		l2g,
 		FETI4IMPIInt	neighbours_size,
 		FETI4IMPIInt*	neighbours,
 		FETI4IInt		dirichlet_size,
@@ -160,12 +177,12 @@ void FETI4ICreateInstance(
  * The method gets an instance and returns the solution to a pre-allocated array
  *
  * @param instance a data holder of an ESPRESO instance
- * @param solution_size a solution size
+ * @param rhs right-hand side
  * @param solution an array where is save the solution
  */
 void FETI4ISolve(
 		FETI4IInstance	instance,          // pointer to an instance
-		FETI4IInt		solution_size,     // size of solution vector
+		FETI4IReal*		rhs,
 		FETI4IReal*		solution           // solution
 );
 
@@ -224,13 +241,6 @@ typedef enum {
 	FETI4I_FETI_METHOD,
 	FETI4I_PRECONDITIONER,
 	FETI4I_CGSOLVER,
-	FETI4I_N_MICS,
-
-	FETI4I_VERBOSE_LEVEL,
-	FETI4I_MEASURE_LEVEL,
-	FETI4I_PRINT_MATRICES,
-
-	FETI4I_SC_SIZE,
 
 	FETI4I_INTEGER_OPTIONS_SIZE
 } FETI4IIntegerOptions;
@@ -263,11 +273,20 @@ typedef enum {
  * The type corresponds with element dimension.
  */
 typedef enum {
-	FETI4I_POINT,
-	FETI4I_LINE,
-	FETI4I_PLANE,
-	FETI4I_VOLUME,
+	FETI4I_ETYPE_POINT,
+	FETI4I_ETYPE_LINE,
+	FETI4I_ETYPE_PLANE,
+	FETI4I_ETYPE_VOLUME,
 } FETI4IElementType;
+
+/// List of allowed DOFs orders
+/**
+ * The type corresponds with element dimension.
+ */
+typedef enum {
+	FETI4I_ORDER_GROUPED_NODES,
+	FETI4I_ORDER_GROUPED_DOFS
+} FETI4IDOFsOrder;
 
 #endif /* FETI4I_H_ */
 

@@ -133,6 +133,7 @@ void FETISolverData::buildB1()
 	}
 
 	// MORTAR matrices
+	esint mortarRows = 0;
 	std::vector<esint> mlambdas;
 	for (esint d = 0; d < mortars.domains; ++d) {
 		for (esint i = 0; i < mortars[d].nnz; ++i) {
@@ -146,23 +147,26 @@ void FETISolverData::buildB1()
 		VALS[d].insert(VALS[d].end(), mortars[d].vals, mortars[d].vals + mortars[d].nnz);
 	}
 
-	utils::sortAndRemoveDuplicates(mlambdas);
-	auto dmap = mortars.dmap->begin();
-	for (size_t i = 0; i < mlambdas.size(); ++i, ++dmap) {
-		B1Map.push_back(mlambdas[i]);
-		size_t size = B1Map.size();
-		B1Map.push_back(0);
-		esint roffset = 0, prev = -1;
-		for (auto di = dmap->begin(); di != dmap->end(); ++di) {
-			if (!mortars.ismy(di->domain)) {
-				while (mortars.distribution[mortars.neighbors[roffset] + 1] <= di->domain) {
-					++roffset;
+	if (mlambdas.size()) {
+		mortarRows = mortars[0].nrows;
+		utils::sortAndRemoveDuplicates(mlambdas);
+		auto dmap = mortars.dmap->begin();
+		for (size_t i = 0; i < mlambdas.size(); ++i, ++dmap) {
+			B1Map.push_back(mlambdas[i]);
+			size_t size = B1Map.size();
+			B1Map.push_back(0);
+			esint roffset = 0, prev = -1;
+			for (auto di = dmap->begin(); di != dmap->end(); ++di) {
+				if (!mortars.ismy(di->domain)) {
+					while (mortars.distribution[mortars.neighbors[roffset] + 1] <= di->domain) {
+						++roffset;
+					}
+					if (prev != roffset) {
+						++B1Map[size];
+						B1Map.push_back(mortars.neighbors[roffset]);
+					}
+					prev = roffset;
 				}
-				if (prev != roffset) {
-					++B1Map[size];
-					B1Map.push_back(mortars.neighbors[roffset]);
-				}
-				prev = roffset;
 			}
 		}
 	}
@@ -218,8 +222,8 @@ void FETISolverData::buildB1()
 		}
 	}
 
-	esint gsize = Communication::exscan(goffset) + dsize + mortars[0].nrows;
-	goffset += dsize + mortars[0].nrows;
+	esint gsize = Communication::exscan(goffset) + dsize + mortarRows;
+	goffset += dsize + mortarRows;
 
 	for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
 		for (size_t i = 0; i < sBuffer[n].size(); ++i) {

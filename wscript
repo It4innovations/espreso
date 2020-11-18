@@ -243,8 +243,10 @@ def build(ctx):
         feti = fetisources + ("src/feti/specific/cpu/SparseSolverPARDISO.cpp",)
 
     features = "cxx cxxshlib"
+    ctx.lib = ctx.shlib
     if ctx.options.static:
         features = "cxx"
+        ctx.lib = ctx.stlib
 
     def build(files, target, use=[]):
         ctx(features=features, source=files,target=target, use=use)
@@ -283,6 +285,9 @@ def build(ctx):
     ctx.program(source="src/app/mesio.cpp", target="mesio", use=mesio, stlib=ctx.options.stlibs, lib=ctx.options.libs)
     if ctx.env["HAVE_MATH"]:
         ctx.program(source="src/app/espreso.cpp",target="espreso", use=espreso, stlib=ctx.options.stlibs, lib=ctx.options.libs)
+        ctx.program(source=["src/api/apitester.cpp", "src/api/apidataprovider.cpp"], target="feti4itester", includes="include", use="feti4i")
+        ctx.program(source="src/api/example.cpp", target="feti4iexample", includes="include", use="feti4i")
+        ctx.lib(source="src/api/wrapper.cpp",target="feti4i", includes="include", use=espreso, stlib=ctx.options.stlibs, lib=ctx.options.libs)
 
 def options(opt):
     opt.compiler = opt.add_option_group("Compiler options")

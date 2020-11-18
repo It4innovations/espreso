@@ -536,6 +536,42 @@ void linkNodesAndElements(
 	eslog::checkpointln("MESH: NODES AND ELEMENTS LINKED");
 }
 
+void computeNodesDuplication()
+{
+	profiler::syncstart("compute_nodes_duplication");
+
+	if (info::mesh->nodes->ranks) {
+		delete info::mesh->nodes->ranks;
+	}
+
+	std::vector<esint> nids(info::mesh->nodes->IDs->datatarray().begin(), info::mesh->nodes->IDs->datatarray().end());
+
+	std::vector<std::vector<esint> > sBuffer(info::mesh->neighborsWithMe.size(), nids), rBuffer(info::mesh->neighborsWithMe.size());
+	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighborsWithMe)) {
+		eslog::error("ESPRESO internal error: cannot exchange nodes ids.\n");
+	}
+
+	int threads = info::env::OMP_NUM_THREADS;
+
+	std::vector<std::vector<esint> > rdist(threads), rdata(threads);
+	rdist.front().push_back(0);
+	std::vector<size_t> offset(info::mesh->neighborsWithMe.size());
+	for (size_t n = 0; n < nids.size(); ++n) {
+		for (size_t r = 0; r < info::mesh->neighborsWithMe.size(); ++r) {
+			while (offset[r] < rBuffer[r].size() && rBuffer[r][offset[r]] < nids[n]) { ++offset[r]; }
+			if (offset[r] < rBuffer[r].size() && rBuffer[r][offset[r]] == nids[n]) {
+				rdata.front().push_back(info::mesh->neighborsWithMe[r]);
+			}
+		}
+		rdist.front().push_back(rdata.front().size());
+	}
+
+	serializededata<esint, int>::balance(rdist, rdata);
+	info::mesh->nodes->ranks = new serializededata<esint, int>(rdist, rdata);
+
+	profiler::syncend("compute_nodes_duplication");
+}
+
 void exchangeHalo()
 {
 	profiler::syncstart("exchange_halo");

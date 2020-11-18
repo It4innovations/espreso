@@ -131,7 +131,7 @@ protected:
 	char prebuffer[PREBUFFER_SIZE];
 };
 
-class ProgressTerminalLogger: public ProgressLogger<ProgressTerminalLogger>, public Verbosity<ProgressTerminalLogger, 'v'> {
+class ProgressTerminalLogger: public ProgressLogger<ProgressTerminalLogger >, public Verbosity<ProgressTerminalLogger, 'v'> {
 public:
 	void initOutput()
 	{

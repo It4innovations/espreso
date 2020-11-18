@@ -22,6 +22,7 @@ void linkNodesAndElements();
 void exchangeHalo();
 void exchangeElements(const std::vector<esint> &partition);
 
+void computeNodesDuplication();
 void computeElementsFaceNeighbors();
 void computeElementsEdgeNeighbors();
 void computeElementsCenters();

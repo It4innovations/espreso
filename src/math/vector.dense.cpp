@@ -248,13 +248,34 @@ void VectorDense::toFETI(VectorFETI *other) const
 		VectorDenseFETI *_other = dynamic_cast<VectorDenseFETI*>(other);
 		esint i = 0;
 		for (auto map = _other->dmap->begin(); map != _other->dmap->end(); ++map, ++i) {
-			for (auto di = map->begin(); di != map->end(); ++di) {
-				if (_other->ismy(di->domain)) {
-					switch (_other->duplications) {
-					case DataDecomposition::DUPLICATION::DUPLICATE: _other->at(di->domain - _other->doffset)->vals[di->index] = vals[i]; break;
-					case DataDecomposition::DUPLICATION::SPLIT: _other->at(di->domain - _other->doffset)->vals[di->index] = vals[i] / map->size(); break;
+			switch (_other->duplications) {
+			case DataDecomposition::DUPLICATION::DUPLICATE: {
+				for (auto di = map->begin(); di != map->end(); ++di) {
+					if (_other->ismy(di->domain)) {
+						_other->at(di->domain - _other->doffset)->vals[di->index] = vals[i];
 					}
 				}
+			} break;
+			case DataDecomposition::DUPLICATION::SPLIT: {
+				for (auto di = map->begin(); di != map->end(); ++di) {
+					if (_other->ismy(di->domain)) {
+						_other->at(di->domain - _other->doffset)->vals[di->index] = vals[i] / map->size();
+					}
+				}
+			} break;
+			case DataDecomposition::DUPLICATION::SPLIT_DOMAINS: {
+				int size = 0;
+				for (auto di = map->begin(); di != map->end(); ++di) {
+					if (_other->ismy(di->domain)) {
+						++size;
+					}
+				}
+				for (auto di = map->begin(); di != map->end(); ++di) {
+					if (_other->ismy(di->domain)) {
+						_other->at(di->domain - _other->doffset)->vals[di->index] = vals[i] / size;
+					}
+				}
+			} break;
 			}
 		}
 	}
@@ -267,13 +288,34 @@ void VectorDense::toCombinedFETI(VectorFETI *other, esint offset, esint nsize, e
 		esint i = 0;
 		for (auto map = _other->dmap->begin(); map != _other->dmap->end(); ++map, ++i) {
 			if (offset <= i % sumsize && i % sumsize < offset + nsize) {
-				for (auto di = map->begin(); di != map->end(); ++di) {
-					if (_other->ismy(di->domain)) {
-						switch (_other->duplications) {
-						case DataDecomposition::DUPLICATION::DUPLICATE: _other->at(di->domain - _other->doffset)->vals[di->index] = vals[i / sumsize + i % nsize + offset]; break;
-						case DataDecomposition::DUPLICATION::SPLIT: _other->at(di->domain - _other->doffset)->vals[di->index] = vals[i / sumsize + i % nsize + offset] / map->size(); break;
+				switch (_other->duplications) {
+				case DataDecomposition::DUPLICATION::DUPLICATE: {
+					for (auto di = map->begin(); di != map->end(); ++di) {
+						if (_other->ismy(di->domain)) {
+							_other->at(di->domain - _other->doffset)->vals[di->index] = vals[i / sumsize + i % nsize + offset];
 						}
 					}
+				} break;
+				case DataDecomposition::DUPLICATION::SPLIT: {
+					for (auto di = map->begin(); di != map->end(); ++di) {
+						if (_other->ismy(di->domain)) {
+							_other->at(di->domain - _other->doffset)->vals[di->index] = vals[i / sumsize + i % nsize + offset] / map->size();
+						}
+					}
+				} break;
+				case DataDecomposition::DUPLICATION::SPLIT_DOMAINS: {
+					int size = 0;
+					for (auto di = map->begin(); di != map->end(); ++di) {
+						if (_other->ismy(di->domain)) {
+							++size;
+						}
+					}
+					for (auto di = map->begin(); di != map->end(); ++di) {
+						if (_other->ismy(di->domain)) {
+							_other->at(di->domain - _other->doffset)->vals[di->index] = vals[i / sumsize + i % nsize + offset] / size;
+						}
+					}
+				} break;
 				}
 			}
 		}

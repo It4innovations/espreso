@@ -36,7 +36,8 @@ class DataDecomposition: public _DataDecomposition
 public:
 	enum class DUPLICATION {
 		SPLIT,
-		DUPLICATE
+		DUPLICATE,
+		SPLIT_DOMAINS
 	};
 
 	DataDecomposition(DUPLICATION duplications);
