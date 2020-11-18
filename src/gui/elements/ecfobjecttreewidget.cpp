@@ -95,8 +95,8 @@ void ECFObjectTreeWidget::onActionEdit()
     QDialog* dialog = this->createDialog(groupIndex, param);
 
 	int res = dialog->exec();
-	QString item_name = this->dialogResult(dialog);
-	this->m_model->setData(clicked, item_name);
+	// QString item_name = this->dialogResult(dialog);
+	// this->m_model->setData(clicked, item_name);
 
 	if (res == QDialog::Accepted) this->editItemAccepted(groupIndex, clicked, param);
 	else this->editItemRejected(groupIndex, clicked, param);

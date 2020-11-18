@@ -26,7 +26,7 @@ public:
 
     void setData();
     PhysicsConfiguration* activePhysics();
-    ECFObject* input();
+    ECFObject* input(int index);
 
     virtual void save() override;
     virtual bool isValid() override;

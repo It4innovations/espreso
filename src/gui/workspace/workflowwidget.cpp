@@ -30,7 +30,7 @@ WorkflowWidget::~WorkflowWidget()
 }
 
 void WorkflowWidget::setData()
-{   
+{
     int tabs = ui->workflow->count();
     for (int i = 1; i < tabs; i++)
     {
@@ -87,14 +87,15 @@ void WorkflowWidget::onInputChange(int index)
     ECFParameter* input = info::ecf->ecfdescription->getParameter(&info::ecf->input_type);
     input->setValue(input->metadata.options[index].name);
 
-    this->m_inputWidget = new InputWidget(this->input());
+    this->m_inputWidget = new InputWidget(this->input(index));
     this->m_inputWidget->init();
     ui->inputConfigLayout->addWidget(this->m_inputWidget);
 }
 
-ECFObject* WorkflowWidget::input()
+ECFObject* WorkflowWidget::input(int index)
 {
-    return info::ecf->input.ecfdescription;
+    if (index == 0) {return info::ecf->input.ecfdescription;}
+    else {return info::ecf->generator.ecfdescription;}
 }
 
 void WorkflowWidget::createPhysicsTab()

@@ -62,12 +62,16 @@ ECFObject* PhysicsWidget::physics(int index)
     switch (index)
     {
         case 0:
-            return info::ecf->heat_transfer_2d.ecfdescription;
+            return info::ecf->thermo_elasticity_2d.ecfdescription;
         case 1:
-            return info::ecf->heat_transfer_3d.ecfdescription;
+            return info::ecf->thermo_elasticity_3d.ecfdescription;
         case 2:
-            return info::ecf->structural_mechanics_2d.ecfdescription;
+            return info::ecf->heat_transfer_2d.ecfdescription;
         case 3:
+            return info::ecf->heat_transfer_3d.ecfdescription;
+        case 4:
+            return info::ecf->structural_mechanics_2d.ecfdescription;
+        case 5:
             return info::ecf->structural_mechanics_3d.ecfdescription;
         default:
             qCritical() << tr("WorkflowWidget: Invalid index of physics!");
