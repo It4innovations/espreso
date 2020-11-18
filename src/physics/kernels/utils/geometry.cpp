@@ -456,7 +456,7 @@ void assembleMortarInterface(std::vector<ijv> &B)
 						}
 
 						MatrixDense psi;
-						psi.multiply(D.data(), sElement->nodes, sElement->nodes, sN.nrows, sN.ncols, sN.vals,1.0,0.0,true);
+						psi.multiply(D.data(), sElement->nodes, sElement->nodes, sN.nrows, sN.ncols, sN.vals, 1, 0, true);
 						if (printrank == info::mpi::rank) std::cout << psi;
 
 						for (int gp = 0; gp < tGPs; ++gp) {
