@@ -15,7 +15,7 @@ int main(int argc, char **argv)
 
 	eslog::init(new Logger<ProgressTerminalLogger>());
 
-	ECF(&argc, &argv);
+	ECF(&argc, &argv, "ecfchecker");
 	eslog::info("ECF syntax is correct\n");
 
 	info::mpi::finish();

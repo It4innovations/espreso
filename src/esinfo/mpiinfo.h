@@ -26,7 +26,7 @@ namespace mpi {
 	extern int threading;
 
 	void init(int *argc, char ***argv);
-	void set();
+	void init(MPI_Comm comm);
 	bool divide(int meshDuplication);
 	void finish();
 }

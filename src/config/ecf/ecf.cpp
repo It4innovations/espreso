@@ -3,20 +3,28 @@
 #include "config/configuration.hpp"
 #include "config/reader/reader.h"
 
+#include "basis/logging/timelogger.h"
+#include "basis/utilities/sysutils.h"
 #include "basis/utilities/communication.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/ecfinfo.h"
+#include "esinfo/systeminfo.h"
 
 using namespace espreso;
 
-void ECF::init(int *argc, char ***argv)
+void ECF::init(int *argc, char ***argv, const std::string &app)
 {
-	info::ecf = new ECF(argc, argv);
+	info::ecf = new ECF(argc, argv, app);
 	if (info::mpi::threading < MPI_THREAD_MULTIPLE) {
 		info::ecf->output.mode = OutputConfiguration::MODE::SYNC;
 	}
+}
+
+void ECF::init(const std::string &file)
+{
+	info::ecf = new ECF(file);
 }
 
 void ECF::finish()
@@ -144,21 +152,52 @@ ECF::ECF(const std::string &file)
 	fill(file);
 }
 
-ECF::ECF(int *argc, char ***argv)
+ECF::ECF(int *argc, char ***argv, const std::string &app)
 : ECF()
 {
-	fill(argc, argv);
+	fill(argc, argv, app);
 }
 
 void ECF::fill(const std::string &file)
 {
 	ecffile = file;
 	ECFReader::read(*this->ecfdescription, file, this->default_args, this->variables);
+	set();
 }
 
-void ECF::fill(int *argc, char ***argv)
+void ECF::fill(int *argc, char ***argv, const std::string &app)
 {
 	ecffile = ECFReader::read(*this->ecfdescription, argc, argv, this->default_args, this->variables);
+	exe = std::string(info::system::buildpath()) + "/" + app;
+	set();
+}
+
+void ECF::set()
+{
+	size_t namebegin = ecffile.find_last_of("/") + 1;
+	size_t nameend = ecffile.find_last_of(".");
+	name = ecffile.substr(namebegin, nameend - namebegin);
+
+	struct tm *timeinfo;
+	char datetime[80];
+	timeinfo = std::localtime(&TimeLogger::initTime);
+	std::strftime(datetime, 80, "%F-at-%Hh-%Mm-%Ss", timeinfo);
+
+	outpath = info::ecf->output.path + "/" + std::string(datetime);
+
+	if (info::mpi::grank) {
+		Communication::barrier(MPITools::global);
+	} else {
+		utils::createDirectory(info::ecf->outpath + "/PREPOSTDATA");
+		std::string symlink = info::ecf->output.path + "/last";
+		if (utils::exists(symlink)) {
+			utils::remove(symlink);
+		}
+		utils::createSymlink(datetime, symlink);
+		utils::copyFile(info::ecf->ecffile, symlink + "/" + info::ecf->name + ".ecf");
+		Communication::barrier(MPITools::global);
+	}
+	eslog::initFiles();
 }
 
 

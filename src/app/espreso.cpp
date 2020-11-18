@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 	profiler::synccheckpoint("init_loggers");
 	eslog::startln("ESPRESO: STARTED", "ESPRESO");
 
-	ECF::init(&argc, &argv);
+	ECF::init(&argc, &argv, "espreso");
 	profiler::synccheckpoint("init_configuration");
 	eslog::checkpointln("ESPRESO: CONFIGURATION READ");
 	eslog::startln("CONFIGURATION STARTED", "CONFIGURATION");
@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 	bool divided = info::mpi::divide(info::ecf->input.decomposition.mesh_duplication);
 	MPITools::init(info::ecf->input.third_party_scalability_limit);
 	profiler::synccheckpoint("divide_mpi");
-	eslog::initRunInfo(&argc, &argv, "espreso", info::ecf->ecffile.c_str(), info::ecf->output.path.c_str());
+	eslog::printRunInfo(&argc, &argv);
 	profiler::synccheckpoint("init_run_info");
 	if (!divided) {
 		eslog::globalerror("Cannot set MESH DUPLICATION: the number of MPI processes is not divisible by %d\n", info::ecf->input.decomposition.mesh_duplication);
@@ -55,6 +55,7 @@ int main(int argc, char **argv)
 	eslog::checkpointln("CONFIGURATION: RUN INFO INITIALIZED");
 
 	Mesh::init();
+	ResultStore::createAsynchronizedStore();
 	profiler::synccheckpoint("init_mesh");
 	eslog::endln("CONFIGURATION: MESH INITIALIZED");
 	eslog::checkpointln("ESPRESO: RUN INITIALIZED");
@@ -99,6 +100,7 @@ int main(int argc, char **argv)
 	profiler::syncend("espreso");
 	profiler::print(); // need to be printed before MPI_Finalize
 
+	ResultStore::destroyAsynchronizedStore();
 	Mesh::finish();
 	ECF::finish();
 	MPITools::finish();

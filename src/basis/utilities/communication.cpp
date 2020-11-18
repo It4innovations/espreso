@@ -228,10 +228,16 @@ void MPITools::init()
 	instances = new MPIGroup(info::mpi::icomm);
 	global = new MPIGroup(info::mpi::gcomm);
 	asynchronous = new MPIGroup(info::mpi::comm);
+
+	subset = new MPISubset(info::mpi::size);
+	singleton = new MPISubset(1);
 }
 
 void MPITools::init(int subsetSize)
 {
+	if (subset) { delete subset; }
+	if (singleton) { delete singleton; }
+
 	subset = new MPISubset(subsetSize);
 	singleton = new MPISubset(1);
 }

@@ -41,7 +41,7 @@ using namespace espreso;
 Dispatcher* ResultStore::_dispatcher = NULL;
 
 ResultStoreBase::ResultStoreBase(const Mesh &mesh)
-: _mesh(mesh), _path(std::string(eslog::path()) + "/"), _directory("PREPOSTDATA/"), _name(std::string(eslog::name())), _measure(Mesh::convertDatabase())
+: _mesh(mesh), _path(info::ecf->outpath + "/"), _directory("PREPOSTDATA/"), _name(info::ecf->name), _measure(Mesh::convertDatabase())
 {
 
 }
@@ -54,7 +54,7 @@ void ResultStoreBase::createOutputDirectory()
 void ResultStore::createAsynchronizedStore()
 {
 	if (info::mesh->store != NULL) {
-		eslog::globalerror("ESPRESO internal error: try to create multiple ASYNC instances.\n");
+		delete info::mesh->store;
 	}
 
 	info::mesh->store = new ResultStore();

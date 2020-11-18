@@ -26,7 +26,8 @@ struct ECF: public ECFDescription {
 		GENERATOR
 	};
 
-	static void init(int *argc, char ***argv);
+	static void init(int *argc, char ***argv, const std::string &app);
+	static void init(const std::string &file);
 	static void finish();
 
 	PhysicsConfiguration* getPhysics() { return const_cast<PhysicsConfiguration*>(_getPhysics()); }
@@ -56,12 +57,16 @@ struct ECF: public ECFDescription {
 	OutputConfiguration output;
 
 	std::string ecffile;
+	std::string exe;
+	std::string name;
+	std::string outpath;
 
 	ECF();
 	ECF(const std::string &file);
-	ECF(int *argc, char ***argv);
+	ECF(int *argc, char ***argv, const std::string &app);
 	void fill(const std::string &file);
-	void fill(int *argc, char ***argv);
+	void fill(int *argc, char ***argv, const std::string &app);
+	void set();
 
 protected:
 	void init();

@@ -28,7 +28,7 @@ DebugOutput::DebugOutput(double clusterShrinkRatio, double domainShrinkRatio, bo
 : _mesh(*info::mesh), _ccenter(Point()), _dcenters(NULL),
   _clusterShrinkRatio(clusterShrinkRatio), _domainShrinkRatio(domainShrinkRatio)
 {
-	_path = utils::createDirectory({ std::string(eslog::path()), "DEBUG_VISUALIZATION" });
+	_path = utils::createDirectory({ info::ecf->outpath, "DEBUG_VISUALIZATION" });
 
 	if (Visualization::isRoot()) {
 		_writer.description("# vtk DataFile Version 2.0\n");
@@ -454,7 +454,7 @@ void DebugOutput::closeElements(double clusterShrinkRatio, double domainShrinkRa
 	}
 	center /= info::mesh->nodes->size;
 
-	std::string path = utils::createDirectory({ std::string(eslog::path()), "DEBUG_VISUALIZATION" });
+	std::string path = utils::createDirectory({ info::ecf->outpath, "DEBUG_VISUALIZATION" });
 	std::ofstream os(path + "/closeElements" + std::to_string(info::mpi::rank) + ".vtk");
 
 	os << "# vtk DataFile Version 2.0\n";

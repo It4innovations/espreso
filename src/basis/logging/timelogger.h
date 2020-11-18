@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <vector>
+#include <ctime>
 
 namespace espreso {
 
@@ -109,8 +110,9 @@ public:
 
 	void finish();
 
+	static time_t initTime;
 protected:
-	static double initted;
+	static double initClockTime;
 	std::vector<Event> _events;
 };
 

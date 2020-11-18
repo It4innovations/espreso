@@ -30,13 +30,14 @@ int main(int argc, char **argv)
 	eslog::init(new Logger<TimeLogger, ProgressTerminalLogger, ProgressFileLogger>);
 	eslog::startln("MESIO: STARTED", "MESIO");
 
-	ECF::init(&argc, &argv);
+	ECF::init(&argc, &argv, "mesio");
 	MPITools::init(info::ecf->input.third_party_scalability_limit);
 	info::ecf->output.mode = OutputConfiguration::MODE::SYNC;
 	eslog::checkpointln("MESIO: CONFIGURATION READ");
 
-	eslog::initRunInfo(&argc, &argv, "mesio", info::ecf->ecffile.c_str(), info::ecf->output.path.c_str());
+	eslog::printRunInfo(&argc, &argv);
 	Mesh::init();
+	ResultStore::createAsynchronizedStore();
 	eslog::checkpointln("MESIO: RUN INITIALIZED");
 
 	Mesh::load();
@@ -51,6 +52,7 @@ int main(int argc, char **argv)
 	eslog::endln("MESIO: MESH STORED");
 
 	eslog::finish();
+	ResultStore::destroyAsynchronizedStore();
 	Mesh::finish();
 	MPITools::finish();
 	ECF::finish();

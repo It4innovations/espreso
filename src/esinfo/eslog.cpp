@@ -3,35 +3,18 @@
 #include "basis/logging/logger.h"
 #include "basis/logging/timelogger.h"
 #include "basis/logging/profiler.h"
-#include "basis/utilities/sysutils.h"
 #include "basis/utilities/communication.h"
+#include "basis/utilities/sysutils.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/systeminfo.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/envinfo.h"
-
-#include <ctime>
 
 namespace espreso {
 namespace eslog {
 
 char buffer[BUFFER_SIZE];
 LoggerBase *logger = NULL;
-
-const char* path()
-{
-	return logger->outputPath.c_str();
-}
-
-const char* name()
-{
-	return logger->name.c_str();
-}
-
-const char* executable()
-{
-	return logger->exe.c_str();
-}
 
 double time()
 {
@@ -51,6 +34,12 @@ void init(LoggerBase *logger)
 		logger->args[i]->rank = info::mpi::rank;
 		logger->args[i]->grank = info::mpi::grank;
 	}
+	Communication::broadcast(&TimeLogger::initTime, sizeof(time_t), MPI_BYTE, 0, MPITools::global);
+}
+
+void initFiles()
+{
+	logger->initOutput();
 }
 
 void reinit()
@@ -61,50 +50,15 @@ void reinit()
 	}
 }
 
-void initRunInfo(int *argc, char ***argv, const char* app, const char* ecf, const char* outputPath)
+void printRunInfo(int *argc, char ***argv)
 {
 	int width = 78;
 
-	time_t initTime = std::time(NULL);
-	Communication::broadcast(&initTime, sizeof(time_t), MPI_BYTE, 0, MPITools::global);
 	struct tm *timeinfo;
-	char datetime[80], date[80], time[80];
-	timeinfo = std::localtime(&initTime);
-	std::strftime(datetime, 80, "%F-at-%Hh-%Mm-%Ss", timeinfo);
+	char date[80], time[80];
+	timeinfo = std::localtime(&TimeLogger::initTime);
 	std::strftime(date, 80, "%F", timeinfo);
 	std::strftime(time, 80, "%H-%M-%S", timeinfo);
-
-	char* pwd = info::env::pwd();
-	if (pwd) {
-		logger->pwd = std::string(pwd);
-	}
-	logger->exe = std::string(info::system::buildpath()) + "/" + std::string(app);
-	logger->cmd = std::string((*argv)[0]);
-	for (int arg = 1; arg < *argc; ++arg) {
-		logger->cmd += " " + std::string((*argv)[arg]);
-	}
-	logger->ecf = std::string(ecf);
-	logger->outputRoot = std::string(outputPath);
-	logger->outputDirectory = std::string(datetime);
-	logger->outputPath = logger->outputRoot + "/" + logger->outputDirectory;
-	size_t namebegin = logger->ecf.find_last_of("/") + 1;
-	size_t nameend = logger->ecf.find_last_of(".");
-	logger->name = logger->ecf.substr(namebegin, nameend - namebegin);
-
-	if (info::mpi::grank) {
-		Communication::barrier(MPITools::global);
-		logger->initOutput();
-	} else {
-		utils::createDirectory(logger->outputPath + "/PREPOSTDATA");
-		logger->initOutput();
-		std::string symlink = logger->outputRoot + "/last";
-		if (utils::exists(symlink)) {
-			utils::remove(symlink);
-		}
-		utils::createSymlink(logger->outputDirectory, symlink);
-		utils::copyFile(logger->ecf, symlink + "/" + logger->name + ".ecf");
-		Communication::barrier(MPITools::global);
-	}
 
 	auto divide = [] (std::string &str, size_t max, const char* separator = "/") {
 		std::string backup(str);
@@ -124,11 +78,11 @@ void initRunInfo(int *argc, char ***argv, const char* app, const char* ecf, cons
 
 	std::string cxx = info::system::cxx();
 	std::string mesh = info::ecf->input.path;
-	std::string runpath(logger->pwd);
-	std::string exe(logger->exe);
-	std::string cmd(logger->cmd);
-	std::string ecffile(ecf);
-	std::string outpath(logger->outputPath);
+	std::string runpath(info::env::pwd() ? info::env::pwd() : "");
+	std::string exe(std::string(info::system::buildpath()) + "/" + info::ecf->exe);
+	std::string cmd((*argv)[0]);
+	std::string ecffile(info::ecf->ecffile);
+	std::string outpath(info::ecf->outpath);
 	if (runpath.size()) {
 		if (ecffile[0] != '/') {
 			ecffile = (runpath + "/" + ecffile);
@@ -140,7 +94,6 @@ void initRunInfo(int *argc, char ***argv, const char* app, const char* ecf, cons
 			outpath = (runpath + "/" + outpath);
 		}
 	}
-
 
 	divide(cxx, width);
 	divide(ecffile, width);

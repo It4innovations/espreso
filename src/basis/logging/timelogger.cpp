@@ -14,7 +14,8 @@
 
 using namespace espreso;
 
-double TimeLogger::initted = TimeLogger::time();
+double TimeLogger::initClockTime = TimeLogger::time();
+time_t TimeLogger::initTime = std::time(NULL);
 
 double TimeLogger::time()
 {
@@ -23,7 +24,7 @@ double TimeLogger::time()
 
 double TimeLogger::duration()
 {
-	return omp_get_wtime() - initted;
+	return omp_get_wtime() - initClockTime;
 }
 
 static void mergeEvents(void *in, void *out, int *len, MPI_Datatype *datatype)
@@ -132,7 +133,7 @@ void TimeLogger::finish()
 		case Event::START:
 			prev.push_back(events[i].data.time);
 			begin.push_back(events[i].data.time);
-			events[i].data.time -= initted;
+			events[i].data.time -= initClockTime;
 			events[i].duration.time = 0;
 			break;
 		case Event::CHECKPOINT:

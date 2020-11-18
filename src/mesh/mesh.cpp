@@ -69,7 +69,6 @@ void Mesh::init()
 	edata[static_cast<int>(Element::CODE::HEXA20   )]   .init<Element::CODE::HEXA20   >();
 
 	info::mesh = new Mesh();
-	ResultStore::createAsynchronizedStore();
 }
 
 void Mesh::load()
@@ -103,7 +102,6 @@ void Mesh::load()
 
 void Mesh::finish()
 {
-	ResultStore::destroyAsynchronizedStore();
 	delete info::mesh;
 }
 
@@ -114,7 +112,7 @@ Mesh::Mesh()
   surface(new SurfaceStore()), domainsSurface(new SurfaceStore()),
   contacts(new ContactStore(surface)),
 
-  store(NULL),
+  store(new ResultStore()),
   _withGUI(false)
 {
 	dimension = 0;

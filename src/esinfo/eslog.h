@@ -10,8 +10,9 @@ class LoggerBase;
 namespace eslog {
 
 void init(LoggerBase *logger);
+void initFiles();
 void reinit();
-void initRunInfo(int *argc, char ***argv, const char* app, const char* ecf, const char* outputPath);
+void printRunInfo(int *argc, char ***argv);
 void finish();
 
 void always();
@@ -40,9 +41,6 @@ void storedata(const char* msg);
 void error(const char* msg);
 void globalerror(const char* msg);
 
-const char* path();
-const char* name();
-const char* executable();
 double time();
 double duration();
 

@@ -276,7 +276,7 @@ void Monitoring::updateMonitors()
 	}
 
 	if (info::mpi::rank == 0) {
-		_runFile = fopen((_path + "/" + std::string(eslog::name()) + ".emr").c_str(), "w");
+		_runFile = fopen((_path + "/" + std::string(info::ecf->name.c_str()) + ".emr").c_str(), "w");
 
 		auto center = [&] (const std::string &value, int size) {
 			fprintf(_runFile, "%*s%*c", pre(value, size), value.c_str(), post(value, size), delimiter);
@@ -347,7 +347,7 @@ void Monitoring::updateSolution()
 		if (step::isFirst()) {
 			std::string fttFilePath = _path + _directory + std::to_string(step::frequency::current);
 			utils::createDirectory(fttFilePath);
-			_fttFile = fopen((fttFilePath + "/" + std::string(eslog::name()) + ".emr").c_str(), "w");
+			_fttFile = fopen((fttFilePath + "/" + std::string(info::ecf->name.c_str()) + ".emr").c_str(), "w");
 		}
 
 		// TODO:: store monitorings

@@ -2,6 +2,7 @@
 #include "progresslogger.h"
 #include "basis/utilities/sysutils.h"
 #include "esinfo/eslog.hpp"
+#include "esinfo/ecfinfo.h"
 #include "esinfo/mpiinfo.h"
 
 #include <cstdlib>
@@ -31,11 +32,11 @@ void ProgressFileLogger::setLogFile()
 	if (rank == 0) {
 		std::string outfile, errfile;
 		if (info::mpi::isize == 1) {
-			outfile = std::string(eslog::path()) + "/" + std::string(eslog::name()) + ".log";
-			errfile = std::string(eslog::path()) + "/" + std::string(eslog::name()) + ".err";
+			outfile = info::ecf->outpath + "/" + info::ecf->name + ".log";
+			errfile = info::ecf->outpath + "/" + info::ecf->name + ".err";
 		} else {
-			outfile = std::string(eslog::path()) + "/" + std::string(eslog::name()) + "." + std::to_string(info::mpi::irank) + ".log";
-			errfile = std::string(eslog::path()) + "/" + std::string(eslog::name()) + "." + std::to_string(info::mpi::irank) + ".err";
+			outfile = info::ecf->outpath + "/" + info::ecf->name + "." + std::to_string(info::mpi::irank) + ".log";
+			errfile = info::ecf->outpath + "/" + info::ecf->name + "." + std::to_string(info::mpi::irank) + ".err";
 		}
 		out = fopen(outfile.c_str(), "a");
 		if (out == NULL) {

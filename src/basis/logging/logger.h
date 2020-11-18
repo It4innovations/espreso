@@ -13,17 +13,6 @@ public:
 	int size = 0;
 	VerboseArg** args;
 
-	std::string pwd;
-	std::string exe;
-	std::string cmd;
-	std::string ecf;
-	std::string outputRoot;
-	std::string outputDirectory; // datetime
-	std::string outputPath; // root/directory
-
-	std::string name; // ecf without suffix
-	std::string logFile; // root/directory/name.log
-
 	virtual void initOutput() =0;
 	virtual void always() =0;
 	virtual void start(const char* n, const char* section) =0;

@@ -56,6 +56,8 @@ struct ElementStore {
 	serializededata<esint, esint>* faceNeighbors;
 	serializededata<esint, esint>* edgeNeighbors;
 
+	serializededata<esint, double>* stiffness;
+
 	esint bodies;
 	esint firstDomain;
 	esint ndomains;

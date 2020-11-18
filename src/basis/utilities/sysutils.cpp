@@ -4,6 +4,7 @@
 #include "esinfo/mpiinfo.h"
 #include "esinfo/stepinfo.h"
 #include "esinfo/eslog.hpp"
+#include "esinfo/ecfinfo.h"
 
 #include <execinfo.h>
 #include <dirent.h>
@@ -75,7 +76,7 @@ void copyFile(const std::string &source, const std::string &destination)
 std::string debugDirectory()
 {
 	std::stringstream path;
-	path << eslog::path() << "/DEBUG";
+	path << info::ecf->outpath << "/DEBUG";
 	path << "/loadstep" << step::loadstep;
 	path << "/substep" << step::substep;
 	path << "/iteration" << step::iteration;
@@ -124,7 +125,7 @@ std::string getStack()
 	char** functions = backtrace_symbols(stack.data(), size);
 
 	std::stringstream command;
-	command << "addr2line -sipfC -e " << std::string(eslog::executable());
+	command << "addr2line -sipfC -e " << info::ecf->exe;
 	for (size_t i = 0; i < size; i++) {
 		std::string function(functions[i]);
 		size_t begin = function.find_last_of('[') + 1;

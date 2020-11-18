@@ -22,19 +22,21 @@ using namespace espreso::info;
 void mpi::init(int *argc, char ***argv)
 {
 	MPI_Init_thread(argc, argv, MPI_THREAD_MULTIPLE, &threading);
-	set();
-}
-
-void mpi::set()
-{
-	int initialized;
-	MPI_Initialized(&initialized);
 
 	mpi::comm = MPI_COMM_WORLD;
-	if (initialized) {
-		MPI_Comm_rank(mpi::comm, &mpi::rank);
-		MPI_Comm_size(mpi::comm, &mpi::size);
-	}
+	MPI_Comm_rank(mpi::comm, &mpi::rank);
+	MPI_Comm_size(mpi::comm, &mpi::size);
+
+	mpi::grank = mpi::rank;
+	mpi::gsize = mpi::size;
+	mpi::gcomm = mpi::comm;
+}
+
+void mpi::init(MPI_Comm comm)
+{
+	mpi::comm = comm;
+	MPI_Comm_rank(mpi::comm, &mpi::rank);
+	MPI_Comm_size(mpi::comm, &mpi::size);
 
 	mpi::grank = mpi::rank;
 	mpi::gsize = mpi::size;
