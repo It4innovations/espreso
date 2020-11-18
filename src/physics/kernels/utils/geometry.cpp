@@ -456,7 +456,7 @@ void assembleMortarInterface(std::vector<ijv> &B)
 						}
 
 						MatrixDense psi;
-						psi.multiply(D.data(), sElement->nodes, sElement->nodes, sN.nrows, sN.ncols, sN.vals);
+						psi.multiply(D.data(), sElement->nodes, sElement->nodes, sN.nrows, sN.ncols, sN.vals,1.0,0.0,true);
 						if (printrank == info::mpi::rank) std::cout << psi;
 
 						for (int gp = 0; gp < tGPs; ++gp) {
@@ -484,11 +484,11 @@ void assembleMortarInterface(std::vector<ijv> &B)
 				}
 			}
 			if (!dmReady) {
-				// de = me^{-1}*de == M_{e}^{-T}*D_{e}^{T} == D_{e}*M_{e}^{-1} Popp (4.57)
 				if (printrank == info::mpi::rank) {
 					std::cout << "M" << M;
 					std::cout << "D" << D;
 				}
+				// inv(M) * D  ... need to be transposed to evaluate psi coefs !!!!
 				MATH::DenseMatDenseMatRowMajorSystemSolve(sElement->nodes, sElement->nodes, M.data(), D.data());
 				if (printrank == info::mpi::rank) {
 					std::cout << "D" << D;
