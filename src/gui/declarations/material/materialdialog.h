@@ -24,7 +24,7 @@ namespace espreso
         Q_OBJECT
 
     public:
-        explicit MaterialDialog(MaterialConfiguration* material,
+        explicit MaterialDialog(ECFObject* material,
                                 const QVector<std::string>& materialNames,
                                 QWidget *parent = 0);
         ~MaterialDialog();

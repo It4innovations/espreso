@@ -33,8 +33,14 @@ void DataSetsWidget::initMaterials()
         if (ok && mid > this->m_materials_id) this->m_materials_id = mid;
 
         ECFObject* material = static_cast<ECFObject*>(*m);
+		std::string m_name = material->getParameter("name")->getValue();
+		if (m_name.empty())
+		{
+			m_name = material->name;
+			material->getParameter("name")->setValue(m_name);
+		}
 
-        this->m_materials_names.append(material->getParameter("name")->getValue());
+        this->m_materials_names.append(m_name);
         this->m_materials_ids.append((*m)->name);
 
         QStandardItem* item = new QStandardItem(
@@ -70,10 +76,10 @@ QDialog* DataSetsWidget::createDialog(const QModelIndex& groupIndex, ECFParamete
 
     if (groupIndex.row() == 0)
     {
-        MaterialConfiguration* mc;
+        ECFObject* mc;
 
         if (param == nullptr) mc = this->newMaterial();
-        qFatal("fix me here");
+		else mc = static_cast<ECFObject*>(param);
 
         int index = this->m_materials_names.indexOf(mc->name);
         if (index >= 0)
@@ -94,7 +100,7 @@ QDialog* DataSetsWidget::createDialog(const QModelIndex& groupIndex, ECFParamete
 
 QString DataSetsWidget::dialogResult(QDialog*)
 {
-    std::string name = this->m_last_modified->name;
+    std::string name = this->m_last_modified->getParameter("name")->getValue();
 	this->m_materials_names.append(name);
 	this->m_materials_ids.append(std::to_string(this->m_materials_id - 1));
     return QString::fromStdString(name);
@@ -110,25 +116,23 @@ void DataSetsWidget::deleteItemAccepted(const QModelIndex& group, int, const QSt
 	}
 }
 
-MaterialConfiguration* DataSetsWidget::newMaterial()
+ECFObject* DataSetsWidget::newMaterial()
 {
-	qFatal("fix me here");
-	return NULL;
-//    return static_cast<MaterialConfiguration*>(
-//                this->m_materials->getParameter(std::to_string(this->m_materials_id++))
-//                );
+    return static_cast<ECFObject*>(
+		this->m_materials->getParameter(std::to_string(this->m_materials_id++))
+	);
 }
 
 void DataSetsWidget::newItemRejected(int group)
 {
     if (group == 0)
     {
-        MaterialConfiguration* tmp = this->m_last_modified;
+        ECFObject* tmp = this->m_last_modified;
         this->m_last_modified = nullptr;
         this->m_materials_id--;
 
-        qFatal("fix me");
-//        this->m_materials->dropParameter(tmp);
+        // qFatal("fix me");
+       this->m_materials->dropParameter(tmp);
     }
 }
 

@@ -18,10 +18,10 @@
 
 using namespace espreso;
 
-MaterialWidget::MaterialWidget(MaterialConfiguration* material,
+MaterialWidget::MaterialWidget(ECFObject* material,
                                const QVector<std::string>& materialNames,
                                QWidget *parent) :
-    ScrollECFObjectWidget(material->ecfdescription, parent)
+    ScrollECFObjectWidget(material, parent)
 {
     this->m_names = materialNames;
 }

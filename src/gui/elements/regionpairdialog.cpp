@@ -311,6 +311,12 @@ void RegionPairDialog::accept()
     QDialog::accept();
 }
 
+void RegionPairDialog::reject()
+{
+	this->m_region = QString::fromStdString(this->getKey());
+	QDialog::reject();
+}
+
 void RegionPairDialog::displayError(const QString& msg)
 {
     QMessageBox msgbox;

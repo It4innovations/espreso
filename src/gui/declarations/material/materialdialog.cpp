@@ -15,7 +15,7 @@
 
 using namespace espreso;
 
-MaterialDialog::MaterialDialog(MaterialConfiguration* material,
+MaterialDialog::MaterialDialog(ECFObject* material,
                                const QVector<std::string>& materialNames,
                                QWidget *parent) :
     QDialog(parent),

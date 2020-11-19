@@ -31,10 +31,10 @@ private:
     int m_materials_id = 1;
     QVector<std::string> m_materials_names;
     QVector<std::string> m_materials_ids;
-    MaterialConfiguration* m_last_modified;
+    ECFObject* m_last_modified;
 
     void initMaterials();
-    MaterialConfiguration* newMaterial();
+    ECFObject* newMaterial();
 };
 
 }

@@ -12,7 +12,7 @@ class MaterialWidget : public ScrollECFObjectWidget
 {
     Q_OBJECT
 public:
-    MaterialWidget(MaterialConfiguration* material,
+    MaterialWidget(ECFObject* material,
                    const QVector<std::string>& materialNames,
                    QWidget *parent = 0);
 
