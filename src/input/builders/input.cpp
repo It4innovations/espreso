@@ -28,7 +28,8 @@ using namespace espreso;
 void Input::clip()
 {
 	if (info::ecf->input.clipping_box.apply) {
-		std::vector<esint> nids, rdist = { 0 }, rdata;
+		std::vector<esint> nids, rdist = { 0 };
+		std::vector<int> rdata;
 		std::vector<Point> coordinates;
 		std::vector<esint> nstatus(_meshData.coordinates.size(), -1);
 		const ClippingBox &box = info::ecf->input.clipping_box;
@@ -63,7 +64,8 @@ void Input::clip()
 			rit->second.swap(rids);
 		}
 
-		std::vector<esint> enodes, esize, eids, etype, mat, body, cNodes;
+		std::vector<esint> enodes, esize, eids, cNodes;
+		std::vector<int> etype, mat, body;
 		std::vector<esint> estatus(_meshData.esize.size(), -1);
 		for (size_t e = 0, offset = 0, type = 0, coffset, noffset; e < _meshData.esize.size(); ++e) {
 			if ((size_t)_etypeDistribution[type] <= e) {
