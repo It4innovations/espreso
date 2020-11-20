@@ -85,6 +85,8 @@ void GridTowerGenerator::init(const GridTowerGeneratorConfiguration &configurati
 
 	int cluster = 0;
 	size_t nodes = 0, noffset = 0;
+
+	Triple<esint> lenght;
 	for (auto grid = configuration.grids.begin(); grid != configuration.grids.end(); ++grid) {
 		if (grid->first == _gridIndex) {
 			Triple<size_t> offset;
@@ -102,16 +104,15 @@ void GridTowerGenerator::init(const GridTowerGeneratorConfiguration &configurati
 
 						if (cluster++ == info::mpi::rank) {
 							_clusterOffset = offset;
-							Triple<esint> start = _settings.start;
-							_settings.start = start + ((_settings.end - start) / (Triple<double>)_settings.clusters * offset).round();
-							_settings.end   = start + ((_settings.end - start) / (Triple<double>)_settings.clusters * (offset + 1)).round();
+							_settings.start = _settings.start + ((_settings.end - _settings.start) / (Triple<double>)_settings.clusters * offset).round();
+							_settings.end   = _settings.start + ((_settings.end - _settings.start) / (Triple<double>)_settings.clusters * (offset + 1)).round();
 						}
 					}
 				}
 			}
 			nodes = (_settings.blocks * _settings.clusters * _settings.domains * _settings.elements * (Triple<size_t>(_block.element()->subnodes) - 1) + 1).mul();
 		}
-		int maxcluster = cluster, end;
+		int maxcluster = cluster;
 		Communication::allReduce(&maxcluster, &cluster, 1, MPI_INT, MPI_MAX);
 		noffset += nodes;
 		Communication::allReduce(&noffset, &nodes, 1, MPITools::getType<size_t>().mpitype, MPI_MAX);
@@ -119,29 +120,23 @@ void GridTowerGenerator::init(const GridTowerGeneratorConfiguration &configurati
 		if (grid->first + 1 == _gridIndex) {
 			_gridNodeOffset = noffset;
 		}
-		switch (configuration.direction) {
-		case GridTowerGeneratorConfiguration::DIRECTION::X:
-			Communication::allReduce(&_settings.end.x, &end, 1, MPI_INT, MPI_MAX);
-			if (grid->first < _gridIndex) {
-				_settings.end.x += end - _settings.start.x;
-				_settings.start.x = end;
+		if (grid->first == _gridIndex) {
+			switch (configuration.direction) {
+			case GridTowerGeneratorConfiguration::DIRECTION::X:
+					_settings.end.x += lenght.x;
+					_settings.start.x += lenght.x;
+				break;
+			case GridTowerGeneratorConfiguration::DIRECTION::Y:
+					_settings.end.y += lenght.y;
+					_settings.start.y += lenght.y;;
+				break;
+			case GridTowerGeneratorConfiguration::DIRECTION::Z:
+					_settings.end.z += lenght.z;
+					_settings.start.z += lenght.z;
+				break;
 			}
-			break;
-		case GridTowerGeneratorConfiguration::DIRECTION::Y:
-			Communication::allReduce(&_settings.end.y, &end, 1, MPI_INT, MPI_MAX);
-			if (grid->first < _gridIndex) {
-				_settings.end.y += end - _settings.start.y;
-				_settings.start.y = end;
-			}
-			break;
-		case GridTowerGeneratorConfiguration::DIRECTION::Z:
-			Communication::allReduce(&_settings.end.z, &end, 1, MPI_INT, MPI_MAX);
-			if (grid->first < _gridIndex) {
-				_settings.end.z += end - _settings.start.z;
-				_settings.start.z = end;
-			}
-			break;
 		}
+		lenght += _settings.end - _settings.start;
 	}
 
 	_settings.body = _gridIndex;
