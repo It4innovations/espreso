@@ -131,7 +131,6 @@ void DataSetsWidget::newItemRejected(int group)
         this->m_last_modified = nullptr;
         this->m_materials_id--;
 
-        // qFatal("fix me");
        this->m_materials->dropParameter(tmp);
     }
 }
