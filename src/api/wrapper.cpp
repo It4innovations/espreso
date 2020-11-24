@@ -423,11 +423,6 @@ void FETI4ISolve(
 	VectorDense f(instance->matrix->size * instance->matrix->dofs, rhs), result(instance->matrix->size * instance->matrix->dofs, solution);
 	instance->data.f[0].fillData(&f);
 	instance->solver.insertRHS(instance->data.f);
-
-	TimeBuilder builder;
-	builder.matrices = Builder::Request::KCM | Builder::Request::RBCf;
-	instance->data.printData(&builder, ("api/" + std::to_string(info::mpi::rank)).c_str());
-
 	instance->solver.solve();
 	result.fillData(&instance->data.x[0]);
 }
