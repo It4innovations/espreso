@@ -43,6 +43,7 @@ struct StructuralMechanicsGlobalSettings {
 		PLANE_STRESS_WITH_THICKNESS = 3
 	};
 
+	DIMENSION element_dimension;
 	ELEMENT_BEHAVIOUR element_behaviour;
 
 	StructuralMechanicsGlobalSettings(ECFObject *ecfdescription, DIMENSION dimension);
@@ -87,9 +88,10 @@ protected:
 
 struct StructuralMechanicsConfiguration: public PhysicsConfiguration, public StructuralMechanicsGlobalSettings {
 
+	DIMENSION dimension;
 	std::map<size_t, StructuralMechanicsLoadStepConfiguration> load_steps_settings;
 
-	StructuralMechanicsConfiguration(DIMENSION D);
+	StructuralMechanicsConfiguration(DIMENSION d);
 };
 
 }

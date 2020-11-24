@@ -140,9 +140,10 @@ protected:
 
 struct HeatTransferConfiguration: public PhysicsConfiguration, public HeatTransferGlobalSettings {
 
+	DIMENSION dimension;
 	std::map<size_t, HeatTransferLoadStepConfiguration> load_steps_settings;
 
-	HeatTransferConfiguration(DIMENSION D);
+	HeatTransferConfiguration(DIMENSION d);
 };
 
 }

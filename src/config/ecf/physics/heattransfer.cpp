@@ -158,9 +158,9 @@ HumanThermoregulationSystem::HumanThermoregulationSystem()
 			.addoption(ECFOption().setname("STANDING").setdescription("--."))
 			.addoption(ECFOption().setname("EASY_WORK").setdescription("--."))
 			.addoption(ECFOption().setname("HARD_WORK").setdescription("--."))
-		    .addoption(ECFOption().setname("WALKING_0_PRCT").setdescription("--."))
-		    .addoption(ECFOption().setname("WALKING_5_PRCT").setdescription("--."))
-		    .addoption(ECFOption().setname("WALKING_15_PRCT").setdescription("--."))
+			.addoption(ECFOption().setname("WALKING_0_PRCT").setdescription("--."))
+			.addoption(ECFOption().setname("WALKING_5_PRCT").setdescription("--."))
+			.addoption(ECFOption().setname("WALKING_15_PRCT").setdescription("--."))
 			.addoption(ECFOption().setname("TEACHER").setdescription("--")));
 }
 
@@ -295,9 +295,10 @@ HeatTransferGlobalSettings::HeatTransferGlobalSettings(ECFObject *ecfdescription
 			.setdatatype({ ECFDataType::BOOL }));
 }
 
-HeatTransferConfiguration::HeatTransferConfiguration(DIMENSION D)
-: PhysicsConfiguration(D, MaterialConfiguration::PHYSICAL_MODEL::THERMAL),
-  HeatTransferGlobalSettings(ecfdescription)
+HeatTransferConfiguration::HeatTransferConfiguration(DIMENSION d)
+: PhysicsConfiguration(d, MaterialConfiguration::PHYSICAL_MODEL::THERMAL),
+  HeatTransferGlobalSettings(ecfdescription),
+  dimension(d)
 {
 	REGISTER(load_steps_settings, ECFMetaData()
 			.setdescription({ "Settings for each load step", "LoadStep" })

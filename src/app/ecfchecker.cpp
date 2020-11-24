@@ -4,6 +4,7 @@
 #include "esinfo/systeminfo.h"
 #include "basis/logging/logger.h"
 #include "basis/logging/progresslogger.h"
+#include "basis/utilities/communication.h"
 #include "config/ecf/ecf.h"
 
 using namespace espreso;
@@ -12,6 +13,7 @@ int main(int argc, char **argv)
 {
 	info::system::setSignals();
 	info::mpi::init(&argc, &argv);
+	MPITools::init();
 
 	eslog::init(new Logger<ProgressTerminalLogger>());
 

@@ -192,21 +192,23 @@ StructuralMechanicsOutputSettings::StructuralMechanicsOutputSettings()
 }
 
 StructuralMechanicsGlobalSettings::StructuralMechanicsGlobalSettings(ECFObject *ecfdescription, DIMENSION dimension)
+: element_dimension(dimension)
 {
 	element_behaviour = ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS;
 	REGISTER(element_behaviour, ECFMetaData()
 			.setdescription({ "Physics solver type." })
 			.setdatatype({ ECFDataType::OPTION })
-			.allowonly([&] () { return dimension == DIMENSION::D2; })
+			.allowonly([&] () { return element_dimension == DIMENSION::D2; })
 			.addoption(ECFOption().setname("PLANE_STRAIN").setdescription("Plane strain."))
 			.addoption(ECFOption().setname("AXISYMMETRIC").setdescription("Axisymmetric."))
 			.addoption(ECFOption().setname("PLANE_STRESS").setdescription("Plane stress."))
 			.addoption(ECFOption().setname("PLANE_STRESS_WITH_THICKNESS").setdescription("Plane stress with thickness.")));
 }
 
-StructuralMechanicsConfiguration::StructuralMechanicsConfiguration(DIMENSION dimension)
-: PhysicsConfiguration(dimension, MaterialConfiguration::PHYSICAL_MODEL::STRUCTURAL_MECHANICS),
-  StructuralMechanicsGlobalSettings(ecfdescription, dimension)
+StructuralMechanicsConfiguration::StructuralMechanicsConfiguration(DIMENSION d)
+: PhysicsConfiguration(d, MaterialConfiguration::PHYSICAL_MODEL::STRUCTURAL_MECHANICS),
+  StructuralMechanicsGlobalSettings(ecfdescription, d),
+  dimension(d)
 {
 	REGISTER(load_steps_settings, ECFMetaData()
 			.setdescription({ "Settings for each load step.", "Load step index." })

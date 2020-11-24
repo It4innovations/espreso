@@ -21,10 +21,11 @@ ThermoElasticityLoadStepConfiguration::ThermoElasticityLoadStepConfiguration(DIM
 			.setdescription({ "Structural mechanics configuration" }));
 }
 
-ThermoElasticityConfiguration::ThermoElasticityConfiguration(DIMENSION dimension)
-: PhysicsConfiguration(dimension, (MaterialConfiguration::PHYSICAL_MODEL)(MaterialConfiguration::PHYSICAL_MODEL::THERMAL | MaterialConfiguration::PHYSICAL_MODEL::STRUCTURAL_MECHANICS)),
+ThermoElasticityConfiguration::ThermoElasticityConfiguration(DIMENSION d)
+: PhysicsConfiguration(d, (MaterialConfiguration::PHYSICAL_MODEL)(MaterialConfiguration::PHYSICAL_MODEL::THERMAL | MaterialConfiguration::PHYSICAL_MODEL::STRUCTURAL_MECHANICS)),
   HeatTransferGlobalSettings(ecfdescription),
-  StructuralMechanicsGlobalSettings(ecfdescription, dimension)
+  StructuralMechanicsGlobalSettings(ecfdescription, d),
+  dimension(d)
 {
 	REGISTER(load_steps_settings, ECFMetaData()
 			.setdescription({ "Settings for each load step", "LoadStep" })
