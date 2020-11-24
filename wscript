@@ -179,8 +179,10 @@ def configure(ctx):
 
     if ctx.options.intwidth == "32":
         ctx.env.append_unique("DEFINES", [ "esint=int", "esint_mpi=MPI_INT" ])
+        ctx.env.append_unique("DEFINES_API", [ "FETI4I_INT_WIDTH=32" ])
     if ctx.options.intwidth == "64":
         ctx.env.append_unique("DEFINES", [ "esint=long", "esint_mpi=MPI_LONG" ])
+        ctx.env.append_unique("DEFINES_API", [ "FETI4I_INT_WIDTH=64" ])
 
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-Wall" ])
     ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
@@ -300,9 +302,10 @@ def build(ctx):
     ctx.program(source="src/app/mesio.cpp", target="mesio", use=mesio, stlib=ctx.options.stlibs, lib=ctx.options.libs)
     if ctx.env["HAVE_MATH"]:
         ctx.program(source="src/app/espreso.cpp",target="espreso", use=espreso, stlib=ctx.options.stlibs, lib=ctx.options.libs)
-        ctx.program(source=["src/api/apitester.cpp", "src/api/apidataprovider.cpp"], target="feti4itester", includes="include", use="feti4i")
-        ctx.program(source="src/api/example.cpp", target="feti4iexample", includes="include", use="feti4i")
-        ctx.lib(source="src/api/wrapper.cpp",target="feti4i", includes="include", use=espreso, stlib=ctx.options.stlibs, lib=ctx.options.libs)
+
+        ctx.lib(source="src/api/wrapper.cpp",target="feti4i", includes="include", use=espreso + ["API"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
+        ctx.program(source=["src/api/apitester.cpp", "src/api/apidataprovider.cpp"], target="feti4itester", includes="include", use=espreso + ["API", "feti4i"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
+        ctx.program(source="src/api/example.cpp", target="feti4iexample", includes="include", use=espreso + ["API", "feti4i"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
 
     if ctx.options.with_gui:
         ctx.objects(source=ctx.path.ant_glob("**/*.ui"), target="ui")

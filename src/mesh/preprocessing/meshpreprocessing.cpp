@@ -553,7 +553,8 @@ void computeNodesDuplication()
 
 	int threads = info::env::OMP_NUM_THREADS;
 
-	std::vector<std::vector<esint> > rdist(threads), rdata(threads);
+	std::vector<std::vector<esint> > rdist(threads);
+	std::vector<std::vector<int> >rdata(threads);
 	rdist.front().push_back(0);
 	std::vector<size_t> offset(info::mesh->neighborsWithMe.size());
 	for (size_t n = 0; n < nids.size(); ++n) {

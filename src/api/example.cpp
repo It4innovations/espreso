@@ -31,8 +31,8 @@ int main(int argc, char **argv)
 	FETI4ISetDefaultIntegerOptions(iopts);
 	FETI4ISetDefaultRealOptions(ropts);
 
+	iopts[FETI4I_SUBDOMAINS] = 1;
 	/* SET CONFIGURATION (here we keep the default settings)
-	iopts[FETI4I_SUBDOMAINS] = 4;
 	iopts[FETI4I_MAX_ITERATIONS] = 1000;
 	iopts[FETI4I_FETI_METHOD] = 0; // 0: TOTAL FETI; 1: HYBRID FETI
 	iopts[FETI4I_PRECONDITIONER] = 3; // 0: NONE; 1: LUMPED; 2: WEIGHT; 3: DIRICHLET
