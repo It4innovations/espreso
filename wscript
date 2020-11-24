@@ -165,8 +165,11 @@ def configure(ctx):
     if ctx.options.mpicxx == "mpic++":
         ctx.options.cxx = "g++"
 
-    ctx.env["COMPILER_CXX"] = ctx.env["CXX"]
-    ctx.load("compiler_cxx qt5")
+    if ctx.options.with_gui:
+        ctx.env["COMPILER_CXX"] = ctx.env["CXX"]
+        ctx.load("compiler_cxx qt5")
+    else:
+        ctx.load(ctx.options.cxx)
     ctx.env.CXX = ctx.env.LINK_CXX = ctx.env.MPI_CXX
 
     """ Set default compilers flags"""
@@ -301,17 +304,18 @@ def build(ctx):
         ctx.program(source="src/api/example.cpp", target="feti4iexample", includes="include", use="feti4i")
         ctx.lib(source="src/api/wrapper.cpp",target="feti4i", includes="include", use=espreso, stlib=ctx.options.stlibs, lib=ctx.options.libs)
 
-    ctx.objects(source=ctx.path.ant_glob("**/*.ui"), target="ui")
-    ctx(
-        features = "qt5 cxx cxxprogram",
-        source   = ctx.path.ant_glob(["src/gui/**/*.cpp", "src/app/gui.cpp"]),
-        moc      = ctx.path.ant_glob("src/gui/**/*.h"),
+    if ctx.options.with_gui:
+        ctx.objects(source=ctx.path.ant_glob("**/*.ui"), target="ui")
+        ctx(
+            features = "qt5 cxx cxxprogram",
+            source   = ctx.path.ant_glob(["src/gui/**/*.cpp", "src/app/gui.cpp"]),
+            moc      = ctx.path.ant_glob("src/gui/**/*.h"),
 
-        use      = [ "ui" ] + espreso,
-        uselib   = "QT5CORE QT5GUI QT5WIDGETS QT5OPENGL",
+            use      = [ "ui" ] + espreso,
+            uselib   = "QT5CORE QT5GUI QT5WIDGETS QT5OPENGL",
 
-        target   = "espresogui"
-    )
+            target   = "espresogui"
+        )
 
 def options(opt):
     opt.load("compiler_cxx qt5")
@@ -377,6 +381,11 @@ def options(opt):
         action="store_true",
         default=False,
         help="ESPRESO executable file does not contain dynamic libraries (./waf --static).")
+
+    opt.compiler.add_option("--with-gui",
+        action="store_true",
+        default=False,
+        help="Build ESPRESO with GUI (Qt5 is needed).")
 
     recurse(opt)
 
