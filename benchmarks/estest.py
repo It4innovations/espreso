@@ -13,6 +13,7 @@ class ESPRESOTest:
     fast = os.getenv("FAST", False)
 
     root = os.path.dirname(os.path.dirname(__file__))
+    feti4itester = os.path.join(root, "build", "feti4itester")
     espreso = os.path.join(root, "build", "espreso")
     ecfchecker = os.path.join(root, "build", "ecfchecker")
     mpirun = [ "mpirun", "-n" ]

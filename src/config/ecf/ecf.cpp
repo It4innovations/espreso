@@ -14,6 +14,11 @@
 
 using namespace espreso;
 
+void ECF::init()
+{
+	info::ecf = new ECF();
+}
+
 void ECF::init(int *argc, char ***argv, const std::string &app)
 {
 	info::ecf = new ECF(argc, argv, app);
@@ -53,7 +58,7 @@ const PhysicsConfiguration* ECF::_getPhysics() const
 	}
 }
 
-void ECF::init()
+void ECF::_init()
 {
 	ecfdescription->name = "root";
 
@@ -138,12 +143,8 @@ ECF::ECF()
   structural_mechanics_3d(DIMENSION::D3),
   output(this)
 {
-	if (info::ecf == NULL) {
-		info::ecf = this;
-	} else {
-		eslog::globalerror("ESPRESO internal error: cannot create more ECF instances.");
-	}
-	init();
+	info::ecf = this;
+	_init();
 }
 
 ECF::ECF(const std::string &file)

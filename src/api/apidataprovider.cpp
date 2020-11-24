@@ -6,6 +6,8 @@
 #include "esinfo/systeminfo.h"
 #include "esinfo/meshinfo.h"
 
+#include "config/reader/reader.h"
+
 #include "mesh/mesh.h"
 #include "output/resultstore.h"
 
@@ -57,8 +59,9 @@ int APIDataProvider::DOFs()
 	}
 }
 
-void APIDataProvider::prepare()
+void APIDataProvider::prepare(int* argc, char ***argv)
 {
+	ECFReader::read(*info::ecf->ecfdescription, argc, argv, info::ecf->default_args, info::ecf->variables);
 	info::ecf->input.decomposition.domains = 1;
 	if (ResultStore::isComputeNode()) {
 		Mesh::load();

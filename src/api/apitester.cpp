@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 	{ // this test uses the provider to compute stiffness by espreso and compute results by API
 
 	espreso::APIDataProvider provider;
-	provider.prepare();
+	provider.prepare(&argc, &argv);
 
 	/* ----------------------*/
 	// fill stiffness matrix //

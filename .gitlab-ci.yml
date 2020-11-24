@@ -1,6 +1,8 @@
 stages:
   - build
-  - benchmarks
+  - mesio
+  - espreso
+  - feti4i
   - release
 
 before_script:
@@ -70,7 +72,7 @@ DUMMY_WRAPPERS:
     - ./waf -j8
 
 HEAT:
-  stage: benchmarks
+  stage: espreso
   only:
     - triggers
   script:
@@ -82,7 +84,7 @@ HEAT:
     - nosetests -v benchmarks/diffusion3D
 
 ELASTICITY:
-  stage: benchmarks
+  stage: espreso
   only:
     - triggers
   script:
@@ -91,8 +93,8 @@ ELASTICITY:
     - nosetests -v benchmarks/linearElasticity2D
     - nosetests -v benchmarks/linearElasticity3D
 
-FETI:
-  stage: benchmarks
+FETI_SOLVER:
+  stage: espreso
   only:
     - triggers
   script:
@@ -101,7 +103,7 @@ FETI:
     - nosetests -v benchmarks/fetisolver
 
 INPUT32:
-  stage: benchmarks
+  stage: mesio
   only:
     - triggers
   script:
@@ -110,7 +112,7 @@ INPUT32:
     - nosetests -v benchmarks/input
 
 INPUT64:
-  stage: benchmarks
+  stage: mesio
   only:
     - triggers
   script:
@@ -119,7 +121,7 @@ INPUT64:
     - nosetests -v benchmarks/input/brake
 
 OUTPUT32:
-  stage: benchmarks
+  stage: mesio
   only:
     - triggers
   script:
@@ -128,13 +130,22 @@ OUTPUT32:
     - nosetests -v benchmarks/output
 
 OUTPUT64:
-  stage: benchmarks
+  stage: mesio
   only:
     - triggers
   script:
     - ./waf configure --intwidth=64
     - ./waf -j8
     - nosetests -v benchmarks/output/brake
+
+APITEST:
+  stage: feti4i
+  only:
+    - triggers
+  script:
+    - ./waf configure
+    - ./waf -j8
+    - nosetests -v benchmarks/feti4i
 
 GITHUB:
   stage: release

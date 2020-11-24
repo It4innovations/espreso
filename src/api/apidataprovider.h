@@ -20,7 +20,7 @@ public:
 	int matrixType();
 	int DOFs();
 
-	void prepare();
+	void prepare(int* argc, char ***argv);
 	void fillMatrix(std::function<void(FETI4IInt, FETI4IInt, FETI4IInt*, FETI4IReal*)> add);
 	void fillDirichlet(std::vector<FETI4IInt> &indices, std::vector<FETI4IReal> &values);
 	void fillL2G(std::vector<FETI4IInt> &l2g);

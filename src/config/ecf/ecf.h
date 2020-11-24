@@ -26,6 +26,7 @@ struct ECF: public ECFDescription {
 		GENERATOR
 	};
 
+	static void init();
 	static void init(int *argc, char ***argv, const std::string &app);
 	static void init(const std::string &file);
 	static void finish();
@@ -69,7 +70,7 @@ struct ECF: public ECFDescription {
 	void set();
 
 protected:
-	void init();
+	void _init();
 
 	const PhysicsConfiguration* _getPhysics() const;
 };

@@ -7,6 +7,7 @@
 #include "basis/logging/timelogger.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
+#include "basis/utilities/sysutils.h"
 
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
@@ -107,7 +108,11 @@ void FETI4IInit(
 	info::mpi::init(comm);
 	MPITools::init();
 	eslog::init(new Logger<ProgressTerminalLogger>);
-	ECF::init("espreso.ecf");
+	if (utils::exists("espreso.ecf")) {
+		ECF::init("espreso.ecf");
+	} else {
+		ECF::init();
+	}
 	for (int i = 0; i < eslog::logger->size; ++i) {
 		eslog::logger->args[i]->verbosity = verbosity;
 	}
@@ -384,6 +389,8 @@ void FETI4ICreateInstance(
 			system->data.f.resizeDomain(d, rows.size() - 1);
 		}
 	}
+
+
 	system->data.x.shallowCopyStructure(&system->data.f);
 	system->data.x.setDuplications(DataDecomposition::DUPLICATION::DUPLICATE);
 	system->data.y.shallowCopyStructure(&system->data.f);
@@ -422,7 +429,6 @@ void FETI4ISolve(
 	instance->data.printData(&builder, ("api/" + std::to_string(info::mpi::rank)).c_str());
 
 	instance->solver.solve();
-
 	result.fillData(&instance->data.x[0]);
 }
 
