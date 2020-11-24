@@ -71,6 +71,14 @@ DUMMY_WRAPPERS:
     - ./waf configure
     - ./waf -j8
 
+GUI:
+  stage: build
+  only:
+    - triggers
+  script:
+    - ./waf configure --with-gui
+    - ./waf -j8
+
 HEAT:
   stage: espreso
   only:
