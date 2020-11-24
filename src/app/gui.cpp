@@ -13,6 +13,7 @@
 #include "basis/logging/progresslogger.h"
 #include "basis/logging/timelogger.h"
 #include "basis/logging/profiler.h"
+#include "basis/utilities/sysutils.h"
 
 #include "config/reader/reader.h"
 #include "config/configuration.h"
@@ -46,7 +47,7 @@ int main(int argc, char *argv[])
 	profiler::synccheckpoint("init_loggers");
 	eslog::startln("ESPRESO: STARTED", "ESPRESO");
 
-	ECF::init(&argc, &argv);
+	ECF::init(&argc, &argv, "espresogui");
 	profiler::synccheckpoint("init_configuration");
 	eslog::checkpointln("ESPRESO: CONFIGURATION READ");
 	eslog::startln("CONFIGURATION STARTED", "CONFIGURATION");
@@ -54,7 +55,7 @@ int main(int argc, char *argv[])
 	bool divided = info::mpi::divide(info::ecf->input.decomposition.mesh_duplication);
 	MPITools::init(info::mpi::size); //info::ecf->input.third_party_scalability_limit);
 	profiler::synccheckpoint("divide_mpi");
-	eslog::initRunInfo(&argc, &argv, "espreso", info::ecf->ecffile.c_str(), info::ecf->output.path.c_str());
+	eslog::printRunInfo(&argc, &argv);
 	profiler::synccheckpoint("init_run_info");
 	if (!divided) {
 		eslog::globalerror("Cannot set MESH DUPLICATION: the number of MPI processes is not divisible by %d\n", info::ecf->input.decomposition.mesh_duplication);
