@@ -142,6 +142,8 @@ def recurse(ctx):
     ctx.recurse("src/wrappers/catalyst")
 
 def configure(ctx):
+    ctx.env.with_gui = ctx.options.with_gui
+    ctx.env.static = ctx.options.static
     ctx.link_cxx = types.MethodType(link_cxx, ctx)
     def trycompiler():
         try:
@@ -165,7 +167,7 @@ def configure(ctx):
     if ctx.options.mpicxx == "mpic++":
         ctx.options.cxx = "g++"
 
-    if ctx.options.with_gui:
+    if ctx.env.with_gui:
         ctx.env["COMPILER_CXX"] = ctx.env["CXX"]
         ctx.load("compiler_cxx qt5")
     else:
@@ -261,7 +263,7 @@ def build(ctx):
 
     features = "cxx cxxshlib"
     ctx.lib = ctx.shlib
-    if ctx.options.static:
+    if ctx.env.static or ctx.options.static:
         features = "cxx"
         ctx.lib = ctx.stlib
 
@@ -307,7 +309,7 @@ def build(ctx):
         ctx.program(source=["src/api/apitester.cpp", "src/api/apidataprovider.cpp"], target="feti4itester", includes="include", use=espreso + ["API", "feti4i"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
         ctx.program(source="src/api/example.cpp", target="feti4iexample", includes="include", use=espreso + ["API", "feti4i"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
 
-    if ctx.options.with_gui:
+    if ctx.env.with_gui:
         ctx.objects(source=ctx.path.ant_glob("**/*.ui"), target="ui")
         ctx(
             features = "qt5 cxx cxxprogram",
@@ -383,7 +385,7 @@ def options(opt):
     opt.compiler.add_option("--static",
         action="store_true",
         default=False,
-        help="ESPRESO executable file does not contain dynamic libraries (./waf --static).")
+        help="ESPRESO executable file does not contain dynamic libraries.")
 
     opt.compiler.add_option("--with-gui",
         action="store_true",
