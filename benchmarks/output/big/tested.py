@@ -15,7 +15,7 @@ def teardown():
 
 @istest
 def by():
-    for processes in [1, 2]:
+    for processes in [1]:
         for writer in [ "MPI", "MPI_COLLECTIVE" ]:
                 yield run, processes, writer
 
