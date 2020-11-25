@@ -73,6 +73,10 @@ struct ElementStore {
 	std::vector<ElementsInterval> eintervals;
 	std::vector<esint> eintervalsDistribution;
 
+	std::vector<esint> bodyRegions;
+	std::vector<esint> bodyRegionsOffset;
+	std::vector<esint> bodyRegionsCounters;
+
 	std::vector<ElementData*> data;
 
 	size_t packedFullSize() const;

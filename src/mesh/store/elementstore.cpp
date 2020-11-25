@@ -89,6 +89,10 @@ size_t ElementStore::packedFullSize() const
 	packedSize += utils::packedSize(eintervals);
 	packedSize += utils::packedSize(eintervalsDistribution);
 
+	packedSize += utils::packedSize(bodyRegions);
+	packedSize += utils::packedSize(bodyRegionsOffset);
+	packedSize += utils::packedSize(bodyRegionsCounters);
+
 	packedSize += utils::packedSize(data.size());
 	for (size_t i = 0; i < data.size(); i++) {
 		packedSize += data[i]->packedSize();
@@ -140,6 +144,10 @@ void ElementStore::packFull(char* &p) const
 	utils::pack(ecounters, p);
 	utils::pack(eintervals, p);
 	utils::pack(eintervalsDistribution, p);
+
+	utils::pack(bodyRegions, p);
+	utils::pack(bodyRegionsOffset, p);
+	utils::pack(bodyRegionsCounters, p);
 
 	utils::pack(data.size(), p);
 	for (size_t i = 0; i < data.size(); i++) {
@@ -194,6 +202,10 @@ void ElementStore::unpackFull(const char* &p)
 	utils::unpack(ecounters, p);
 	utils::unpack(eintervals, p);
 	utils::unpack(eintervalsDistribution, p);
+
+	utils::unpack(bodyRegions, p);
+	utils::unpack(bodyRegionsOffset, p);
+	utils::unpack(bodyRegionsCounters, p);
 
 	size_t size;
 	utils::unpack(size, p);

@@ -370,6 +370,51 @@ void computeBodies()
 		memcpy(info::mesh->elements->body->datatarray().data(), body.data(), info::mesh->elements->size * sizeof(int));
 	}
 
+	info::mesh->elements->bodyRegions.resize(info::mesh->elements->bodiesTotalSize * info::mesh->elements->regionMaskSize);
+
+	for (esint e = 0; e < info::mesh->elements->size; ++e) {
+		int rsize = info::mesh->elements->regionMaskSize;
+		int b = info::mesh->elements->body->datatarray()[e];
+		for (int r = 0; r < rsize; ++r) {
+			info::mesh->elements->bodyRegions[rsize * b + r] |= info::mesh->elements->regions->datatarray()[rsize * e + r];
+		}
+	}
+
+	Communication::allReduce(info::mesh->elements->bodyRegions, Communication::OP::SUM);
+
+	std::vector<esint> boffsets = { 0 };
+	for (esint b = 0; b < info::mesh->elements->bodiesTotalSize; ++b) {
+		int rsize = info::mesh->elements->regionMaskSize;
+		int regions = 0;
+		for (int r = 0; r < rsize; ++r) {
+			for (size_t bit = 0; bit < 8 * sizeof(esint); ++bit) {
+				if (info::mesh->elements->bodyRegions[rsize * b + r] & ((esint)1 << bit)) {
+					++regions;
+				}
+			}
+		}
+		boffsets.push_back(boffsets.back() + regions - 1); // region ALL_ELEMENTS is not counted
+	}
+	info::mesh->elements->bodyRegionsOffset = boffsets;
+	info::mesh->elements->bodyRegionsCounters.resize(boffsets.back());
+
+	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
+		const auto &elements = info::mesh->elementsRegions[r]->elements->datatarray();
+		for (size_t e = 0; e < elements.size(); ++e) {
+			++info::mesh->elements->bodyRegionsCounters[boffsets[info::mesh->elements->body->datatarray()[elements[e]]]];
+		}
+		int maskSize = info::mesh->elements->regionMaskSize;
+		esint maskOffset = r / (8 * sizeof(esint));
+		esint bit = (esint)1 << (r % (8 * sizeof(esint)));
+		for (esint b = 0; b < info::mesh->elements->bodiesTotalSize; ++b) {
+			if (info::mesh->elements->bodyRegions[maskSize * b + maskOffset] & bit) {
+				++boffsets[b];
+			}
+		}
+	}
+
+	Communication::allReduce(info::mesh->elements->bodyRegionsCounters, Communication::OP::SUM);
+
 	profiler::syncend("mesh_bodies_found");
 	eslog::checkpointln("MESH: MESH BODIES FOUND");
 }
