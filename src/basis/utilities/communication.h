@@ -88,7 +88,7 @@ public:
 	}
 
 	static void init();
-	static void init(int subsetSize);
+	static void setSubset(int subsetSize);
 	static void reinit();
 	static void finish();
 

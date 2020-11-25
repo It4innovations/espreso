@@ -45,7 +45,8 @@ int main(int argc, char **argv)
 	eslog::startln("CONFIGURATION STARTED", "CONFIGURATION");
 
 	bool divided = info::mpi::divide(info::ecf->input.decomposition.mesh_duplication);
-	MPITools::init(info::ecf->input.third_party_scalability_limit);
+	MPITools::setSubset(info::ecf->input.third_party_scalability_limit);
+	eslog::initFiles();
 	profiler::synccheckpoint("divide_mpi");
 	eslog::printRunInfo(&argc, &argv);
 	profiler::synccheckpoint("init_run_info");

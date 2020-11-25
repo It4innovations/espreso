@@ -201,7 +201,6 @@ void ECF::set()
 		utils::copyFile(info::ecf->ecffile, symlink + "/" + info::ecf->name + ".ecf");
 		Communication::barrier(MPITools::global);
 	}
-	eslog::initFiles();
 }
 
 

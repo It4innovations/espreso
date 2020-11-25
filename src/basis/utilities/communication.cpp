@@ -233,7 +233,7 @@ void MPITools::init()
 	singleton = new MPISubset(1);
 }
 
-void MPITools::init(int subsetSize)
+void MPITools::setSubset(int subsetSize)
 {
 	if (subset) { delete subset; }
 	if (singleton) { delete singleton; }

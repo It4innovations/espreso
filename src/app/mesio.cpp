@@ -31,7 +31,8 @@ int main(int argc, char **argv)
 	eslog::startln("MESIO: STARTED", "MESIO");
 
 	ECF::init(&argc, &argv, "mesio");
-	MPITools::init(info::ecf->input.third_party_scalability_limit);
+	MPITools::setSubset(info::ecf->input.third_party_scalability_limit);
+	eslog::initFiles();
 	info::ecf->output.mode = OutputConfiguration::MODE::SYNC;
 	eslog::checkpointln("MESIO: CONFIGURATION READ");
 
