@@ -27,7 +27,6 @@ public:
 	static void innerFixPoints(double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
 	static void surfaceFixPoints(double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
 	static void closeElements(double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
-	static void contact(double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
 	static void surface(const char* name, double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
 	static void warpedNormals(const char* name, double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
 

@@ -10,6 +10,7 @@
 #include "mesh/store/elementstore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/elementsregionstore.h"
+#include "mesh/store/contactstore.h"
 
 #include <fstream>
 #include <sstream>
@@ -306,6 +307,46 @@ void EnSightGold::geometry()
 			}
 			_writer.groupData();
 		}
+	}
+
+	for (size_t i = 0; i < _mesh.contacts->interfaces.size(); ++i) {
+		if (isRoot()) {
+			_writer.description("part");
+			_writer.int32(++part);
+			_writer.description("CONTACT_" + std::to_string(_mesh.contacts->interfaces[i].from.body) + "_" + std::to_string(_mesh.contacts->interfaces[i].to.body));
+			_writer.description("coordinates");
+			_writer.int32(3 * _mesh.contacts->interfaces[i].from.triangleTotalSize);
+		}
+
+		for (int d = 0; d < 3; ++d) {
+			auto denseSide = _mesh.contacts->denseSide->begin();
+			for (auto sparse = _mesh.contacts->sparseSide->begin(); sparse != _mesh.contacts->sparseSide->end(); ++sparse, ++denseSide) {
+				if (sparse->data()->body == _mesh.contacts->interfaces[i].from.body) {
+					esint ioffset = sparse->data()->intersectionOffset;
+					for (auto dense = denseSide->begin(); dense != denseSide->end(); ioffset += dense->triangles, ++dense) {
+						if (dense->body == _mesh.contacts->interfaces[i].to.body) {
+							for (auto t = 0; t < dense->triangles; ++t) {
+								_writer.float32(_mesh.contacts->intersections->datatarray()[ioffset + t].p[0][d]);
+								_writer.float32(_mesh.contacts->intersections->datatarray()[ioffset + t].p[1][d]);
+								_writer.float32(_mesh.contacts->intersections->datatarray()[ioffset + t].p[2][d]);
+							}
+						}
+					}
+				}
+			}
+			_writer.groupData();
+		}
+		if (isRoot()) {
+			_writer.description(EnsightWriter::codetotype(static_cast<int>(Element::CODE::TRIANGLE3)));
+			_writer.int32(_mesh.contacts->interfaces[i].from.triangleTotalSize);
+		}
+		for (esint t = 0; t < _mesh.contacts->interfaces[i].from.triangleSize; ++t) {
+			_writer.enode(3 * _mesh.contacts->interfaces[i].from.triangleOffset + 3 * t + 1);
+			_writer.enode(3 * _mesh.contacts->interfaces[i].from.triangleOffset + 3 * t + 2);
+			_writer.enode(3 * _mesh.contacts->interfaces[i].from.triangleOffset + 3 * t + 3);
+			_writer.eend();
+		}
+		_writer.groupData();
 	}
 	_writer.commitFile(_path + _geometry);
 }

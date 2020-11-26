@@ -796,7 +796,7 @@ void computeContactInterface()
 
 	const std::vector<SurfaceStore*> &surfaces = info::mesh->contacts->surfaces;
 
-	struct istats { double area; esint faces; bool skip; istats(): area(0), faces(0), skip(true) {} };
+	struct istats { double area; esint faces, triangles; bool skip; istats(): area(0), faces(0), triangles(0), skip(true) {} };
 	std::unordered_map<esint, std::unordered_map<esint, istats> > istats;
 
 	Point axis;
@@ -837,8 +837,6 @@ void computeContactInterface()
 	std::vector<DenseSegment> dense;
 	std::vector<Point2D> planeCoordinates;
 
-	esint scounter = 0, clips = 0, positive = 0;
-//	double start = eslog::time();
 	auto pairs = info::mesh->contacts->pairs->cbegin();
 	for (esint e = 0; e < info::mesh->surface->size; ++e, ++pairs) {
 		if (pairs->size() == 0) {
@@ -855,7 +853,6 @@ void computeContactInterface()
 		for (size_t t = 0; t < planeTriangles.size(); ++t) {
 			earea += planeTriangles[t].area();
 		}
-		++scounter;
 
 		std::unordered_map<esint, double> insertedBodies;
 		for (auto other = pairs->begin(); other != pairs->end(); ++other) {
@@ -864,11 +861,9 @@ void computeContactInterface()
 
 			setPolygon(projected, neigh, *other);
 			clip(base, planeTriangles, projected, intersection);
-			++clips;
 			if (intersection.size()) {
-				++positive;
 				if (insertedBodies.empty()) {
-					sparse.push_back(SparseSegment(e, planeCoordinates.size(), dense.size()));
+					sparse.push_back(SparseSegment(surfaces.back()->body->datatarray()[e], e, planeCoordinates.size(), triangles.size(), dense.size()));
 					planeCoordinates.insert(planeCoordinates.end(), plane.begin(), plane.end());
 				}
 				if (insertedBodies.count(surfaces[neigh]->body->datatarray()[offset]) == 0) {
@@ -876,13 +871,14 @@ void computeContactInterface()
 					insertedBodies[surfaces[neigh]->body->datatarray()[offset]] = 0;
 				}
 
-				++sparse.back().denseSegments;
-				dense.push_back(DenseSegment(neigh, offset, planeCoordinates.size(), planeCoordinates.size() + projected.size()));
+				++sparse.back().denseSegmentEnd;
+				dense.push_back(DenseSegment(neigh, surfaces[neigh]->body->datatarray()[offset], offset, planeCoordinates.size(), planeCoordinates.size() + projected.size()));
 				planeCoordinates.insert(planeCoordinates.end(), projected.begin(), projected.end());
 				for (size_t i = 0; i < intersection.size(); i++) {
-					++dense.back().triangles;
 					planeCoordinates.insert(planeCoordinates.end(), intersection[i].p, intersection[i].p + 3);
 				}
+				dense.back().triangles += intersection.size();
+				istats[surfaces.back()->body->datatarray()[e]][surfaces[neigh]->body->datatarray()[offset]].triangles += intersection.size();
 			}
 			for (size_t i = 0; i < intersection.size(); i++) {
 				double area = intersection[i].area();
@@ -894,7 +890,7 @@ void computeContactInterface()
 		}
 		for (auto ib = insertedBodies.begin(); ib != insertedBodies.end(); ++ib) {
 			if (ib->second < MIN_SLAVE_COVER_RATIO) {
-				for (esint d = sparse.back().denseSegmentOffset; d < sparse.back().denseSegmentOffset + sparse.back().denseSegments; ++d) {
+				for (esint d = sparse.back().denseSegmentBegin; d < sparse.back().denseSegmentEnd; ++d) {
 					if (surfaces[dense[d].neigh]->body->datatarray()[dense[d].element] == ib->first) {
 						dense[d].skip = true;
 					}
@@ -907,8 +903,6 @@ void computeContactInterface()
 			pdist.push_back(planeCoordinates.size());
 		}
 	}
-
-//	printf("%d has %d sparse faces, %d / %d clips, duration: %fs\n", info::mpi::rank, scounter, positive, clips, eslog::time() - start);
 
 	info::mesh->contacts->sparseSide = new serializededata<esint, SparseSegment>(sdist, sparse);
 	info::mesh->contacts->denseSide = new serializededata<esint, DenseSegment>(ddist, dense);
@@ -925,6 +919,7 @@ void computeContactInterface()
 	auto size = interfaces.size();
 	std::vector<double> area(2 * size);
 	std::vector<esint> faces(2 * size);
+	std::vector<esint> triasum(2 * size), triaoffset(2 * size);
 	for (auto i = istats.begin(); i != istats.end(); ++i) {
 		for (auto j = i->second.begin(); j != i->second.end(); ++j) {
 			auto it = std::lower_bound(interfaces.begin(), interfaces.end(), Interface(i->first, j->first), comp);
@@ -933,24 +928,34 @@ void computeContactInterface()
 				auto offset = it - interfaces.begin();
 				area[offset + size] += j->second.area;
 				faces[offset + size] += j->second.faces;
+				triasum[offset + size] += j->second.triangles;
 			} else {
 				auto offset = it - interfaces.begin();
 				area[offset] += j->second.area;
 				faces[offset] += j->second.faces;
+				triasum[offset] += j->second.triangles;
 			}
 		}
 	}
 
 	Communication::allReduce(area, Communication::OP::SUM);
 	Communication::allReduce(faces, Communication::OP::SUM);
+	std::vector<esint> triasize = triaoffset = triasum;
+	Communication::exscan(triasum, triaoffset);
 	info::mesh->contacts->interfaces.clear();
 	for (size_t i = 0; i < interfaces.size(); ++i) {
 		if (faces[i] || faces[i + size]) {
 			info::mesh->contacts->interfaces.push_back(Interface(interfaces[i].from.body, interfaces[i].to.body));
 			info::mesh->contacts->interfaces.back().from.area = area[i];
 			info::mesh->contacts->interfaces.back().from.faces = faces[i];
+			info::mesh->contacts->interfaces.back().from.triangleOffset = triaoffset[i];
+			info::mesh->contacts->interfaces.back().from.triangleSize = triasize[i];
+			info::mesh->contacts->interfaces.back().from.triangleTotalSize = triasum[i];
 			info::mesh->contacts->interfaces.back().to.area = area[i + size];
 			info::mesh->contacts->interfaces.back().to.faces = faces[i + size];
+			info::mesh->contacts->interfaces.back().to.triangleOffset = triaoffset[i + size];
+			info::mesh->contacts->interfaces.back().to.triangleSize = triasize[i + size];
+			info::mesh->contacts->interfaces.back().to.triangleTotalSize = triasum[i + size];
 			info::mesh->contacts->interfaces.back().setOrientation();
 		}
 	}
@@ -961,14 +966,13 @@ void computeContactInterface()
 	}
 
 	auto *sside = info::mesh->contacts->sparseSide;
-	auto *dside = info::mesh->contacts->denseSide;
-	for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s) {
-		for (auto d = dside->datatarray().begin() + s->denseSegmentOffset; d != dside->datatarray().begin() + s->denseSegmentOffset + s->denseSegments; ++d) {
+	auto dside = info::mesh->contacts->denseSide->begin();
+	for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s, ++dside) {
+		for (auto d = dside->begin(); d != dside->end(); ++d) {
 			d->skip = d->skip | istats[surfaces.back()->body->datatarray()[s->element]][surfaces[d->neigh]->body->datatarray()[d->element]].skip;
 		}
 	}
 
-	DebugOutput::contact(1, 1);
 	profiler::syncend("compute_contact_interface");
 	eslog::checkpointln("MESH: CONTACT INTERFACE COMPUTED");
 }

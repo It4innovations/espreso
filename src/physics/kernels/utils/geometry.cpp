@@ -401,7 +401,7 @@ void assembleMortarInterface(std::vector<ijv> &B)
 
 		std::vector<double> D(sElement->nodes * sElement->nodes), M(sElement->nodes * sElement->nodes), sparse(sElement->nodes * sElement->nodes);
 		for (int dmReady = 0; dmReady <= 1; ++dmReady) {
-			for (auto d = dside->datatarray().begin() + s->denseSegmentOffset; d != dside->datatarray().begin() + s->denseSegmentOffset + s->denseSegments; ++d) {
+			for (auto d = dside->datatarray().begin() + s->denseSegmentBegin; d != dside->datatarray().begin() + s->denseSegmentEnd; ++d) {
 				if (d->skip) {
 					continue;
 				}

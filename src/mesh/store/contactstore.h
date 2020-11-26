@@ -54,10 +54,10 @@ struct Triangle {
 
 struct Interface {
 	struct Side {
-		esint body, faces;
+		esint body, faces, triangleOffset, triangleSize, triangleTotalSize;
 		double area;
 
-		Side(esint body): body(body), faces(0), area(0) {}
+		Side(esint body): body(body), faces(0), triangleOffset(0), triangleSize(0), triangleTotalSize(0), area(0) {}
 	};
 
 	Side from, to;
@@ -80,19 +80,22 @@ struct Interface {
 };
 
 struct SparseSegment {
+	esint body;
 	esint element;
 	esint coordinateOffset;
-	esint denseSegments;
-	esint denseSegmentOffset;
+	esint intersectionOffset;
+	esint denseSegmentBegin;
+	esint denseSegmentEnd;
 
 	SparseSegment()
-	: element(0), coordinateOffset(0), denseSegments(0), denseSegmentOffset(0) {}
-	SparseSegment(esint e, esint coffset, esint doffset)
-	: element(e), coordinateOffset(coffset), denseSegments(0), denseSegmentOffset(doffset) {}
+	: body(0), element(0), coordinateOffset(0), intersectionOffset(0), denseSegmentBegin(0), denseSegmentEnd(0) {}
+	SparseSegment(esint body, esint e, esint coffset, esint ioffset, esint doffset)
+	: body(body), element(e), coordinateOffset(coffset), intersectionOffset(ioffset), denseSegmentBegin(doffset), denseSegmentEnd(doffset) {}
 };
 
 struct DenseSegment {
 	esint neigh;
+	esint body;
 	esint element;
 	esint coordinateOffset;
 	esint triangles;
@@ -100,9 +103,9 @@ struct DenseSegment {
 	esint skip;
 
 	DenseSegment()
-	: neigh(0), element(0), coordinateOffset(0), triangles(0), triangleOffset(0), skip(false) {}
-	DenseSegment(esint n, esint e, esint coffset, esint toffset)
-	: neigh(n), element(e), coordinateOffset(coffset), triangles(0), triangleOffset(toffset), skip(false) {}
+	: neigh(0), body(0), element(0), coordinateOffset(0), triangles(0), triangleOffset(0), skip(false) {}
+	DenseSegment(esint n, esint body, esint e, esint coffset, esint toffset)
+	: neigh(n), body(body), element(e), coordinateOffset(coffset), triangles(0), triangleOffset(toffset), skip(false) {}
 };
 
 struct ContactStore {
