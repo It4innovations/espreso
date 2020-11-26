@@ -2,9 +2,10 @@
 
 DEFAULT_ARGS {
   0        HEXA8;
+  1       TETRA4;
 
-  1            7;
-  2            9;
+  2            5;
+  3            11;
 }
 
 INPUT_TYPE            GENERATOR;
@@ -19,40 +20,15 @@ GENERATOR {
 
     GRIDS {
       0 {
+        START_X                  -.5;
+        START_Y                  -.5;
+
         LENGTH_X                   1;
         LENGTH_Y                   1;
         LENGTH_Z                   1;
 
         NODES {
-          BOTTOM   <0 , 1> <0 , 1> <0 , 0>;
-        }
-
-        ELEMENT_TYPE          [ARG0];
-
-        BLOCKS_X                   1;
-        BLOCKS_Y                   1;
-        BLOCKS_Z                   1;
-
-        CLUSTERS_X                 1;
-        CLUSTERS_Y                 1;
-        CLUSTERS_Z                 1;
-
-        DOMAINS_X                  1;
-        DOMAINS_Y                  1;
-        DOMAINS_Z                  1;
-
-        ELEMENTS_X            [ARG1];
-        ELEMENTS_Y            [ARG1];
-        ELEMENTS_Z            [ARG1];
-      }
-
-      1 {
-        LENGTH_X                   1;
-        LENGTH_Y                   1;
-        LENGTH_Z                   1;
-
-        NODES {
-          TOP      <0 , 1> <0 , 1> <2 , 2>;
+          BOTTOM   <-1 , 1> <-1 , 1> <0 , 0>;
         }
 
         ELEMENT_TYPE          [ARG0];
@@ -72,7 +48,37 @@ GENERATOR {
         ELEMENTS_X            [ARG2];
         ELEMENTS_Y            [ARG2];
         ELEMENTS_Z            [ARG2];
+      }
 
+      1 {
+        START_X                  -.6;
+        START_Y                 -1.1;
+
+        LENGTH_X                   1;
+        LENGTH_Y                   1;
+        LENGTH_Z                   1;
+
+        NODES {
+          TOP      <-1 , 1> <-1 , 1> <2 , 2>;
+        }
+
+        ELEMENT_TYPE          [ARG1];
+
+        BLOCKS_X                   1;
+        BLOCKS_Y                   1;
+        BLOCKS_Z                   1;
+
+        CLUSTERS_X                 1;
+        CLUSTERS_Y                 1;
+        CLUSTERS_Z                 1;
+
+        DOMAINS_X                  1;
+        DOMAINS_Y                  1;
+        DOMAINS_Z                  1;
+
+        ELEMENTS_X            [ARG3];
+        ELEMENTS_Y            [ARG3];
+        ELEMENTS_Z            [ARG3];
       }
     }
   }
@@ -85,21 +91,11 @@ HEAT_TRANSFER_3D {
 
   MATERIALS {
     1 {
-      COORDINATE_SYSTEM {
-        TYPE     CYLINDRICAL;
-        CENTER   { X .5; Y .5; Z .5; }
-        ROTATION { X 90; }
-      }
-
       DENS   1;
       CP     1;
 
       THERMAL_CONDUCTIVITY {
-        MODEL   DIAGONAL;
-
         KXX            1;
-        KYY           10;
-        KZZ           10;
       }
     }
   }
@@ -128,6 +124,7 @@ HEAT_TRANSFER_3D {
         PRECISION            1E-08;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
+        MAX_ITERATIONS          20;
       }
 
       TEMPERATURE {
