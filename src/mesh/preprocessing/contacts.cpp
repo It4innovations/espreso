@@ -418,7 +418,7 @@ void findCloseElements()
 	std::vector<Point> estart, eend;
 	std::vector<esint> neigh, offset = { 0 };
 
-	double start = eslog::time(), time = eslog::time();
+//	double start = eslog::time(), time = eslog::time();
 
 	for (size_t n = 0; n < info::mesh->contacts->neighborsWithMe.size(); ++n) {
 		offset.push_back(offset.back() + info::mesh->contacts->surfaces[n]->enodes->structures());
@@ -444,8 +444,8 @@ void findCloseElements()
 
 	IntervalTree tree(estart, eend);
 
-	double buildtree = eslog::time() - time;
-	time = eslog::time();
+//	double buildtree = eslog::time() - time;
+//	time = eslog::time();
 
 	double eps = info::ecf->input.contact.search_area;
 	double max_angle = -std::cos(M_PI * info::ecf->input.contact.max_angle / 180);
@@ -583,8 +583,8 @@ void findCloseElements()
 		}
 	}
 
-	double maketraversion = eslog::time() - time;
-	time = eslog::time();
+//	double maketraversion = eslog::time() - time;
+//	time = eslog::time();
 
 	std::sort(pair.begin(), pair.end());
 
@@ -621,8 +621,8 @@ void findCloseElements()
 		contact->interfaces.push_back(Interface(i->first, i->second));
 	}
 
-	double finish = eslog::time() - time;
-	printf("prepare-pairs[%lu]: build=%fs, traverse=%fs, compose=%fs / %fs\n", pair.size(), buildtree, maketraversion, finish, eslog::time() - start);
+//	double finish = eslog::time() - time;
+//	printf("prepare-pairs[%lu]: build=%fs, traverse=%fs, compose=%fs / %fs\n", pair.size(), buildtree, maketraversion, finish, eslog::time() - start);
 
 	DebugOutput::closeElements(1, 1);
 	eslog::checkpointln("MESH: CLOSE ELEMENTS FOUND");
@@ -838,7 +838,7 @@ void computeContactInterface()
 	std::vector<Point2D> planeCoordinates;
 
 	esint scounter = 0, clips = 0, positive = 0;
-	double start = eslog::time();
+//	double start = eslog::time();
 	auto pairs = info::mesh->contacts->pairs->cbegin();
 	for (esint e = 0; e < info::mesh->surface->size; ++e, ++pairs) {
 		if (pairs->size() == 0) {
@@ -908,7 +908,7 @@ void computeContactInterface()
 		}
 	}
 
-	printf("%d has %d sparse faces, %d / %d clips, duration: %fs\n", info::mpi::rank, scounter, positive, clips, eslog::time() - start);
+//	printf("%d has %d sparse faces, %d / %d clips, duration: %fs\n", info::mpi::rank, scounter, positive, clips, eslog::time() - start);
 
 	info::mesh->contacts->sparseSide = new serializededata<esint, SparseSegment>(sdist, sparse);
 	info::mesh->contacts->denseSide = new serializededata<esint, DenseSegment>(ddist, dense);
