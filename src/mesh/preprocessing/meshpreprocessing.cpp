@@ -10,6 +10,7 @@
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
 #include "basis/logging/profiler.h"
+#include "basis/utilities/parser.h"
 #include "basis/utilities/communication.h"
 #include "basis/utilities/utils.h"
 
@@ -393,12 +394,15 @@ void computeBodies()
 				}
 			}
 		}
-		boffsets.push_back(boffsets.back() + regions - 1); // region ALL_ELEMENTS is not counted
+		boffsets.push_back(boffsets.back() + regions); // region ALL_ELEMENTS is not counted
 	}
 	info::mesh->elements->bodyRegionsOffset = boffsets;
 	info::mesh->elements->bodyRegionsCounters.resize(boffsets.back());
 
-	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
+	for (size_t r = 0; r < info::mesh->elementsRegions.size(); ++r) {
+		if (StringCompare::caseInsensitiveEq(info::mesh->elementsRegions[r]->name, "NAMELESS_ELEMENT_SET")) {
+			break;
+		}
 		const auto &elements = info::mesh->elementsRegions[r]->elements->datatarray();
 		for (size_t e = 0; e < elements.size(); ++e) {
 			++info::mesh->elements->bodyRegionsCounters[boffsets[info::mesh->elements->body->datatarray()[elements[e]]]];

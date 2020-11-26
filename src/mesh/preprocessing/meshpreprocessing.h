@@ -52,10 +52,7 @@ void computeBodiesSurface();
 void computeWarpedNormals(SurfaceStore * surface);
 void exchangeContactHalo();
 void findCloseElements();
-void computeSurfaceLocations();
 void computeSurfaceElementNeighbors(SurfaceStore *surface);
-void computeContactNormals();
-void fireNormals();
 void computeContactInterface();
 
 void computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion, int elementDimension);

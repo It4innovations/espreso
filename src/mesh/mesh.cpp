@@ -320,8 +320,6 @@ void Mesh::preprocess()
 	profiler::synccheckpoint("domain_decomposition");
 	eslog::checkpointln("MESH: MESH DECOMPOSED");
 
-	mesh::computeBodies();
-
 	if (info::ecf->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D || info::ecf->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D) {
 		const StructuralMechanicsConfiguration *sm;
 		int dimension;
@@ -425,8 +423,10 @@ void Mesh::preprocess()
 	profiler::synccheckpoint("arrange_element_regions");
 	mesh::arrangeBoundaryRegions();
 	profiler::synccheckpoint("arrange_boundary_regions");
-
 	eslog::checkpointln("MESH: REGIONS ARRANGED");
+
+	mesh::computeBodies();
+	eslog::checkpointln("MESH: BODIES COMPUTED");
 
 	if (forEachSteps([] (const LoadStepSolverConfiguration &step) {
 		return step.solver == LoadStepSolverConfiguration::SOLVER::FETI;
