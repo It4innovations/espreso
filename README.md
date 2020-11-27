@@ -224,11 +224,20 @@ int main(int argc, char **argv)
 
 It is possible to use GUI, instead of setting a configuration file manually. GUI is automatically generated from internal configuration structures that assures always up to date list of available parameters. Besides showing all parameters with their possible values, GUI also showes the input geometry, and elements and boundary regions. It is also possible to use GUI for generation of a configuration file.
 
-In order to built GUI, one has to configure espreso with flag *\-\-with-gui*. In that case Qt5 has to be installed.
+In order to built GUI, one has to configure espreso with flag *\-\-with-gui*. In that case, Qt5 has to be installed.
 
 ```sh
 $ ./waf configure --with-gui
 $ ./waf
+```
+
+GUI can be launched as a standard serial application or with `mpirun` in parallel.
+
+```sh
+# Serial run
+$ espresogui -c $ECF
+# Parallel run
+$ mpirun -n $N espresogui -c $ECF
 ```
 
 # Licence
