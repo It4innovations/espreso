@@ -1,7 +1,6 @@
-
 The main repository of the highly-parallel framework for engineering applications developed at IT4Innovations National Supercomputing Center (http://numbox.it4i.cz/). Main focus of the development team is to create a highly efficient parallel tools suitable for parallel machines with tens or hundreds of thousands of cores. The added value of the framework are our
- - mesh pre/post-processing tool [mesio](#MESIO) with ability to load and store various sequential unstructured mesh formats in parallel, and
- - massively parallel linear solver [espreso](#ESPRESO) based on FETI Domain Decomposition Methods, which is capable of solving problems with over a hundred billions of unknowns using thousands compute nodes.
+ - mesh pre/post-processing tool [mesio](#mesio) with ability to load and store various sequential unstructured mesh formats in parallel, and
+ - massively parallel linear solver [espreso](#espreso) based on FETI Domain Decomposition Methods, which is capable of solving problems with over a hundred billions of unknowns using thousands compute nodes.
 
 # MESIO
 Mesio is a highly-parallel loader and convertor of external unstructured meshes databases. It is composed of several commonly used algorithms that together provide a robust solution for the pre/post-processing phase of solving large-scale engineering problems ([pdf](https://doi.org/10.1109/IPDPS.2019.00084)). With mesio a user is able to use the same database file with arbitrary number of MPI processes. It allows engineers to use their favourite tools for creation of numerical models without any penalty for a parallel run.
@@ -24,9 +23,9 @@ An output database stored by mesio is also in a sequetial form for simple by a f
 # ESPRESO
 Espreso is a set of several highly-scalable solvers based on the methods of domain decomposition designed to take full advantage of today's most powerful petascale supercomputers ([pdf](https://dx.doi.org/10.1177/1094342018798452)). It contains in-house developed FETI based algorithms including the Hybrid Total FETI method suitable for parallel machines with tens or hundreds of thousands of cores.
 
-The solver also contains a general [API](#ESPRESO-API) for usage in a third party software. The API has been successfully used to connect ESPRESO with the Elmer ([pdf](https://dx.doi.org/10.1007/978-3-319-97136-0_10)). Even though ESPRESO is C++ library, the API uses plain C only. Hence, it is easy to use it with various other languages such as Fortran.
+The solver also contains a general [API](#espreso-api) for usage in a third party software. The API has been successfully used to connect ESPRESO with the Elmer ([pdf](https://dx.doi.org/10.1007/978-3-319-97136-0_10)). Even though ESPRESO is C++ library, the API uses plain C only. Hence, it is easy to use it with various other languages such as Fortran.
 
-Both mesio and espreso can be configured by [ecf](#Configuration-via-a-configuration-file) files. In addition, espreso can be also configured by a simple [GUI](#ESPRESO-GUI).
+Both mesio and espreso can be configured by [ecf](#configuration-via-a-configuration-file) files. In addition, espreso can be also configured by a simple [GUI](#espreso-gui).
 
 ---
 ---
@@ -66,7 +65,7 @@ For compilation Python-based framework [Waf](https://waf.io/book/) is used. The 
 $ ./waf configure
 $ ./waf
 ```
-The compilation process builds all libraries and executables into the *build* directory. This directory should be added to ``LD_LIBRARY_PATH`` and ``PATH`` environment variables. Then it is possible to run [mesio](#MESIO) or [espreso](#ESPRESO) by the following command:
+The compilation process builds all libraries and executables into the *build* directory. This directory should be added to ``LD_LIBRARY_PATH`` and ``PATH`` environment variables. Then it is possible to run [mesio](#mesio) or [espreso](#espreso) by the following command:
 ```sh
 $ mpirun -n $N mesio -c $ECF
 $ mpirun -n $N espreso -c $ECF
