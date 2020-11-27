@@ -743,7 +743,6 @@ void clip(const Point &base, const std::vector<Triangle> &triangles, const std::
 		}
 	}
 
-
 	// remove triangles that are above the limit
 	eps = info::ecf->input.contact.search_area;
 
@@ -762,9 +761,9 @@ void clip(const Point &base, const std::vector<Triangle> &triangles, const std::
 				output.push_back(Triangle(res[t].p[i], max(base.z - eps, res[t].p[i], res[t].p[(i + 1) % 3]), max(base.z - eps, res[t].p[i], res[t].p[(i + 2) % 3])));
 			} else {
 				Point c0 = max(base.z - eps, res[t].p[i], res[t].p[(i + 2) % 3]);
-				Point c1 = max(base.z - eps, res[t].p[i + 1], res[t].p[(i + 2) % 3]);
-				output.push_back(Triangle(res[t].p[i], res[t].p[i + 1], c0));
-				output.push_back(Triangle(res[t].p[i + 1], c1, c0));
+				Point c1 = max(base.z - eps, res[t].p[(i + 1) % 3], res[t].p[(i + 2) % 3]);
+				output.push_back(Triangle(res[t].p[i], res[t].p[(i + 1) % 3], c0));
+				output.push_back(Triangle(res[t].p[(i + 1) % 3], c1, c0));
 			}
 		}
 	}
