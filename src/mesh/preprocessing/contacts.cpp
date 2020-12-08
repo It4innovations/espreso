@@ -228,7 +228,7 @@ void computeWarpedNormals(SurfaceStore * surface)
 
 void exchangeContactHalo()
 {
-	double area = info::ecf->input.contact.search_area;
+	double area = info::ecf->input.contact_interface.search_area;
 	_Point<float> box[2];
 	if (info::mesh->surface->coordinates->datatarray().size()) {
 		box[0] = box[1] = info::mesh->nodes->coordinates->datatarray()[0];
@@ -447,9 +447,9 @@ void findCloseElements()
 //	double buildtree = eslog::time() - time;
 //	time = eslog::time();
 
-	double eps = info::ecf->input.contact.search_area;
-	double max_angle = -std::cos(M_PI * info::ecf->input.contact.max_angle / 180);
-	bool self_contact = info::ecf->input.contact.self_contact;
+	double eps = info::ecf->input.contact_interface.search_area;
+	double max_angle = -std::cos(M_PI * info::ecf->input.contact_interface.max_angle / 180);
+	bool self_contact = info::ecf->input.contact_interface.self_contact;
 	std::vector<std::pair<esint, esint> > pair;
 
 	auto checkbody = [&] (esint i, esint j) {
@@ -744,7 +744,7 @@ void clip(const Point &base, const std::vector<Triangle> &triangles, const std::
 	}
 
 	// remove triangles that are above the limit
-	eps = info::ecf->input.contact.search_area;
+	eps = info::ecf->input.contact_interface.search_area;
 
 	auto max = [&] (const double &z, const Point &p0, const Point &p1) { return p0 + (p1 - p0) * ((z - p0.z) / (p1.z - p0.z)); };
 

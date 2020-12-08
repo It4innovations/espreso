@@ -1,10 +1,10 @@
 
-#include "contact.h"
+#include "contactinterface.h"
 #include "config/configuration.hpp"
 
 using namespace espreso;
 
-ContactConfiguration::ContactConfiguration()
+ContactInterfaceConfiguration::ContactInterfaceConfiguration()
 {
 	search_area = 0.01;
 	REGISTER(search_area, ECFMetaData()

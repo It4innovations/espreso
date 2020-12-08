@@ -3,7 +3,7 @@
 #define SRC_CONFIG_ECF_INPUT_INPUT_H_
 
 #include "config/description.h"
-#include "contact.h"
+#include "contactinterface.h"
 #include "decomposition.h"
 #include "transformation.h"
 
@@ -54,7 +54,7 @@ struct InputConfiguration: public ECFDescription {
 
 	std::map<std::string, InputTransformationConfiguration> transformations;
 	DecompositionConfiguration decomposition;
-	ContactConfiguration contact;
+	ContactInterfaceConfiguration contact_interface;
 
 	InputConfiguration();
 };
