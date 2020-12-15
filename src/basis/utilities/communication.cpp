@@ -713,7 +713,11 @@ bool Communication::allReduce(void *in, void *out, size_t size, MPI_Datatype typ
 	}
 	profiler::syncstart("mpi_allreduce");
 	profiler::syncparam("size", size);
-	MPI_Allreduce(in, out, size, type, op, group->communicator);
+	if (out == NULL) {
+		MPI_Allreduce(MPI_IN_PLACE, in, size, type, op, group->communicator);
+	} else {
+		MPI_Allreduce(in, out, size, type, op, group->communicator);
+	}
 	profiler::syncend("mpi_allreduce");
 	return true;
 }

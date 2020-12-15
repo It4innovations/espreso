@@ -29,6 +29,7 @@
 #include "store/nodestore.h"
 #include "store/elementsregionstore.h"
 #include "store/boundaryregionstore.h"
+#include "store/contactinterfacestore.h"
 #include "store/surfacestore.h"
 #include "store/contactstore.h"
 #include "store/fetidatastore.h"
@@ -152,6 +153,9 @@ Mesh::~Mesh()
 	delete domainsSurface;
 	delete contacts;
 
+	for (size_t i = 0; i < contactInterfaces.size(); ++i) {
+		delete contactInterfaces[i];
+	}
 	for (size_t i = 0; i < boundaryRegions.size(); ++i) {
 		delete boundaryRegions[i];
 	}
@@ -478,7 +482,8 @@ void Mesh::preprocess()
 		}
 	}
 
-	if (info::ecf->getPhysics()->contact_interfaces) {
+	if (info::ecf->input.contact_interfaces.size()) {
+		mesh::arrangeContactInterfaces();
 		mesh::computeBodiesSurface();
 		mesh::computeWarpedNormals(surface);
 		mesh::exchangeContactHalo();
@@ -515,6 +520,10 @@ void Mesh::duplicate()
 		for (size_t i = 0; i < boundaryRegions.size(); i++) {
 			packedSize += boundaryRegions[i]->packedFullSize();
 		}
+		packedSize += utils::packedSize(contactInterfaces.size());
+		for (size_t i = 0; i < contactInterfaces.size(); i++) {
+			packedSize += contactInterfaces[i]->packedFullSize();
+		}
 
 		packedSize += FETIData->packedFullSize();
 		packedSize += halo->packedFullSize();
@@ -547,6 +556,10 @@ void Mesh::duplicate()
 		utils::pack(boundaryRegions.size(), p);
 		for (size_t i = 0; i < boundaryRegions.size(); i++) {
 			boundaryRegions[i]->packFull(p);
+		}
+		utils::pack(contactInterfaces.size(), p);
+		for (size_t i = 0; i < contactInterfaces.size(); i++) {
+			contactInterfaces[i]->packFull(p);
 		}
 
 		FETIData->packFull(p);
@@ -595,6 +608,10 @@ void Mesh::duplicate()
 		utils::unpack(size, p);
 		for (size_t i = 0; i < size; i++) {
 			boundaryRegions.push_back(new BoundaryRegionStore(p));
+		}
+		utils::unpack(size, p);
+		for (size_t i = 0; i < size; i++) {
+			contactInterfaces.push_back(new ContactInterfaceStore(p));
 		}
 
 		FETIData->unpackFull(p);
@@ -713,6 +730,11 @@ void Mesh::printMeshStatistics()
 	Communication::allReduce(bmax, Communication::OP::MAX);
 	Communication::allReduce(ecount, Communication::OP::SUM);
 	Communication::allReduce(scount, Communication::OP::SUM);
+	esint ecountTotal = 0, scountTotal = 0;
+	for (size_t i = 0; i < ecount.size(); ++i) {
+		ecountTotal += ecount[i];
+		scountTotal += scount[i];
+	}
 
 	std::vector<esint> perm(elements->bodiesTotalSize);
 	std::iota(perm.begin(), perm.end(), 0);
@@ -721,6 +743,13 @@ void Mesh::printMeshStatistics()
 	switch (info::ecf->output.logger) {
 	case OutputConfiguration::LOGGER::USER:
 		eslog::info(" ====================================== MESH STATISTICS ====================================== \n");
+		eslog::info("  %s%*s : %16s %16s %16s\n", "GEOMETRY", namesize - 26, " ", "MIN", "MAX", "LENGTH");
+		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "X-COORDINATES", bmin[elements->bodiesTotalSize * 3 + 0], bmax[elements->bodiesTotalSize * 3 + 0], bmax[elements->bodiesTotalSize * 3 + 0] - bmin[elements->bodiesTotalSize * 3 + 0]);
+		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "Y-COORDINATES", bmin[elements->bodiesTotalSize * 3 + 1], bmax[elements->bodiesTotalSize * 3 + 1], bmax[elements->bodiesTotalSize * 3 + 1] - bmin[elements->bodiesTotalSize * 3 + 1]);
+		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "Z-COORDINATES", bmin[elements->bodiesTotalSize * 3 + 2], bmax[elements->bodiesTotalSize * 3 + 2], bmax[elements->bodiesTotalSize * 3 + 2] - bmin[elements->bodiesTotalSize * 3 + 2]);
+		eslog::info(" ============================================================================================= \n");
+
 		eslog::info(" %*s : %16s %16s\n", namesize, "REGION NAME", "ELEMENTS", "NODES");
 		eslog::info(" ============================================================================================= \n");
 
@@ -767,24 +796,16 @@ void Mesh::printMeshStatistics()
 		}
 		eslog::info(" ============================================================================================= \n");
 
-		eslog::info("  %s%*s : %16s %16s %16s\n", "GEOMETRY", namesize - 26, " ", "MIN", "MAX", "LENGTH");
-		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "X-COORDINATES", bmin[elements->bodiesTotalSize * 3 + 0], bmax[elements->bodiesTotalSize * 3 + 0], bmax[elements->bodiesTotalSize * 3 + 0] - bmin[elements->bodiesTotalSize * 3 + 0]);
-		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "Y-COORDINATES", bmin[elements->bodiesTotalSize * 3 + 1], bmax[elements->bodiesTotalSize * 3 + 1], bmax[elements->bodiesTotalSize * 3 + 1] - bmin[elements->bodiesTotalSize * 3 + 1]);
-		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "Z-COORDINATES", bmin[elements->bodiesTotalSize * 3 + 2], bmax[elements->bodiesTotalSize * 3 + 2], bmax[elements->bodiesTotalSize * 3 + 2] - bmin[elements->bodiesTotalSize * 3 + 2]);
+		eslog::info("  BODY STATISTICS %22s : %16s %16s %16s\n", "ELEMENTS REGION", "ELEMENTS", "FACES", "PROPORTION");
 		eslog::info(" ============================================================================================= \n");
-
-		eslog::info("  BODY %16s %16s : %16s %16s %16s\n", "ELEMENTS", "FACES", "X [%]", "Y [%]", "Z [%]");
+		eslog::info("  %38s : %16s %16s %9d BODIES\n", elementsRegions[0]->name.c_str(), Parser::stringwithcommas(ecountTotal).c_str(), scountTotal ? Parser::stringwithcommas(scountTotal).c_str() : " -- ", info::mesh->elements->bodiesTotalSize);
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-		for (auto b = perm.rbegin(); b != perm.rend(); ++b) {
-			eslog::info("  %4d %16s %16s :    <%.3f-%.3f>    <%.3f-%.3f>    <%.3f-%.3f>\n",
-					*b, Parser::stringwithcommas(ecount[*b]).c_str(), scount[*b] ? Parser::stringwithcommas(scount[*b]).c_str() : " -- ",
-					(bmin[(*b * 3 + 0)] - bmin[elements->bodiesTotalSize * 3 + 0]) / (bmax[elements->bodiesTotalSize * 3 + 0] - bmin[elements->bodiesTotalSize * 3 + 0]),
-					(bmax[(*b * 3 + 0)] - bmin[elements->bodiesTotalSize * 3 + 0]) / (bmax[elements->bodiesTotalSize * 3 + 0] - bmin[elements->bodiesTotalSize * 3 + 0]),
-					(bmin[(*b * 3 + 1)] - bmin[elements->bodiesTotalSize * 3 + 1]) / (bmax[elements->bodiesTotalSize * 3 + 1] - bmin[elements->bodiesTotalSize * 3 + 1]),
-					(bmax[(*b * 3 + 1)] - bmin[elements->bodiesTotalSize * 3 + 1]) / (bmax[elements->bodiesTotalSize * 3 + 1] - bmin[elements->bodiesTotalSize * 3 + 1]),
-					(bmin[(*b * 3 + 2)] - bmin[elements->bodiesTotalSize * 3 + 2]) / (bmax[elements->bodiesTotalSize * 3 + 2] - bmin[elements->bodiesTotalSize * 3 + 2]),
-					(bmax[(*b * 3 + 2)] - bmin[elements->bodiesTotalSize * 3 + 2]) / (bmax[elements->bodiesTotalSize * 3 + 2] - bmin[elements->bodiesTotalSize * 3 + 2]));
+		for (size_t r = 1; r < elementsRegions.size(); r++) {
+			for (size_t b = 0; b < elementsRegions[r]->bodies.size(); ++b) {
+				int body = elementsRegions[r]->bodies[b];
+				double ratio = (double)ecount[body] / info::mesh->elements->bodyRegionsCounters[info::mesh->elements->bodyRegionsOffset[body]];
+				eslog::info("  %38s : %16s %16s %16f\n", b ? "": elementsRegions[r]->name.c_str(), Parser::stringwithcommas(ecount[body]).c_str(), scount[body] ? Parser::stringwithcommas(scount[body]).c_str() : " -- ", ratio);
+			}
 		}
 		eslog::info(" ============================================================================================= \n");
 

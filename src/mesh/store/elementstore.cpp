@@ -26,6 +26,7 @@ ElementStore::ElementStore()
   centers(NULL),
 
   body(NULL),
+  contact(NULL),
   material(NULL),
   regions(NULL),
   epointers(NULL),
@@ -63,6 +64,7 @@ size_t ElementStore::packedFullSize() const
 	packedSize += utils::packedSize(domainNodes);
 	packedSize += utils::packedSize(centers);
 	packedSize += utils::packedSize(body);
+	packedSize += utils::packedSize(contact);
 	packedSize += utils::packedSize(material);
 	packedSize += utils::packedSize(regions);
 	packedSize += utils::packedSize(faceNeighbors);
@@ -114,6 +116,7 @@ void ElementStore::packFull(char* &p) const
 	utils::pack(domainNodes, p);
 	utils::pack(centers, p);
 	utils::pack(body, p);
+	utils::pack(contact, p);
 	utils::pack(material, p);
 	utils::pack(regions, p);
 	utils::pack(faceNeighbors, p);
@@ -168,6 +171,7 @@ void ElementStore::unpackFull(const char* &p)
 	utils::unpack(domainNodes, p);
 	utils::unpack(centers, p);
 	utils::unpack(body, p);
+	utils::unpack(contact, p);
 	utils::unpack(material, p);
 	utils::unpack(regions, p);
 	utils::unpack(faceNeighbors, p);
@@ -223,6 +227,7 @@ size_t ElementStore::packedSize() const
 			procNodes->packedSize() +
 			sizeof(size_t) + epointers->datatarray().size() * sizeof(int) +
 			utils::packedSize(body) +
+			utils::packedSize(contact) +
 			utils::packedSize(bodiesSize) +
 			utils::packedSize(bodiesOffset) +
 			utils::packedSize(bodiesTotalSize) +
@@ -254,6 +259,7 @@ void ElementStore::pack(char* &p) const
 		utils::pack(eindices, p);
 	}
 	utils::pack(body, p);
+	utils::pack(contact, p);
 	utils::pack(bodiesSize, p);
 	utils::pack(bodiesOffset, p);
 	utils::pack(bodiesTotalSize, p);
@@ -291,6 +297,7 @@ void ElementStore::unpack(const char* &p)
 		}
 	}
 	utils::unpack(body, p);
+	utils::unpack(contact, p);
 	utils::unpack(bodiesSize, p);
 	utils::unpack(bodiesOffset, p);
 	utils::unpack(bodiesTotalSize, p);
@@ -384,6 +391,7 @@ ElementStore::~ElementStore()
 	if (centers != NULL) { delete centers; }
 
 	if (body != NULL) { delete body; }
+	if (contact != NULL) { delete contact; }
 	if (material != NULL) { delete material; }
 	if (regions != NULL) { delete regions; }
 	if (epointers != NULL) { delete epointers; }
@@ -425,6 +433,7 @@ void ElementStore::permute(const std::vector<esint> &permutation, const std::vec
 	if (centers != NULL) { centers->permute(permutation, distribution); }
 
 	if (body != NULL) { body->permute(permutation, distribution); }
+	if (contact != NULL) { contact->permute(permutation, distribution); }
 	if (material != NULL) { material->permute(permutation, distribution); }
 	if (regions != NULL) { regions->permute(permutation, distribution); }
 

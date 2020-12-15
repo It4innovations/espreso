@@ -54,22 +54,29 @@ public:
 		z = -z;
 	}
 
-	const _Point operator-(const _Point &p) const
+	void abs()
+	{
+		x = std::fabs(x);
+		y = std::fabs(y);
+		z = std::fabs(z);
+	}
+
+	_Point operator-(const _Point &p) const
 	{
 		return _Point(x - p.x, y - p.y, z - p.z);
 	}
 
-	const _Point operator+(const _Point &p) const
+	_Point operator+(const _Point &p) const
 	{
 		return _Point(x + p.x, y + p.y, z + p.z);
 	}
 
-	const _Point operator*(TType scalar) const
+	_Point operator*(TType scalar) const
 	{
 		return _Point(x * scalar, y * scalar, z * scalar);
 	}
 
-	const _Point operator/(TType scalar) const
+	_Point operator/(TType scalar) const
 	{
 		TType xscalar = 1. / scalar;
 		return _Point(x * xscalar, y * xscalar, z * xscalar);
@@ -80,7 +87,7 @@ public:
 		return x * p.x + y * p.y + z * p.z;
 	}
 
-	const _Point operator/(const _Point &p) const
+	_Point operator/(const _Point &p) const
 	{
 		return _Point(x / p.x, y / p.y, z / p.z);
 	}
@@ -150,6 +157,26 @@ public:
 		double d = uv * uv - uu * vv;
 		s = (uv * wv - vv * wu) / d;
 		t = (uv * wu - uu * wv) / d;
+	}
+
+	void minmax(_Point &min, _Point &max)
+	{
+		min.x = std::fmin(x, min.x);
+		min.y = std::fmin(y, min.y);
+		min.z = std::fmin(z, min.z);
+		max.x = std::fmax(x, max.x);
+		max.y = std::fmax(y, max.y);
+		max.z = std::fmax(z, max.z);
+	}
+
+	void minmax(double *min, double *max)
+	{
+		min[0] = std::fmin(x, min[0]);
+		min[1] = std::fmin(y, min[1]);
+		min[2] = std::fmin(z, min[2]);
+		max[0] = std::fmax(x, max[0]);
+		max[1] = std::fmax(y, max[1]);
+		max[2] = std::fmax(z, max[2]);
 	}
 
 	TType x, y, z;

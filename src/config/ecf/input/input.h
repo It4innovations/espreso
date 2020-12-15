@@ -54,7 +54,7 @@ struct InputConfiguration: public ECFDescription {
 
 	std::map<std::string, InputTransformationConfiguration> transformations;
 	DecompositionConfiguration decomposition;
-	ContactInterfaceConfiguration contact_interface;
+	std::map<std::string, ContactInterfaceConfiguration> contact_interfaces;
 
 	InputConfiguration();
 };

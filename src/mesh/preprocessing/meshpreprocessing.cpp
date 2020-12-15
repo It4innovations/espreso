@@ -419,6 +419,18 @@ void computeBodies()
 
 	Communication::allReduce(info::mesh->elements->bodyRegionsCounters, Communication::OP::SUM);
 
+	int maskSize = info::mesh->elements->regionMaskSize;
+
+	for (int b = 0; b < info::mesh->elements->bodiesTotalSize; ++b) {
+		for (int r = 0, rindex = 0; r < info::mesh->elements->regionMaskSize; ++r) {
+			for (size_t bit = 0; bit < 8 * sizeof(esint) && bit + r * sizeof(esint) < info::mesh->elementsRegions.size(); ++bit, ++rindex) {
+				if (rindex && (info::mesh->elements->bodyRegions[b * maskSize + r] & (1 << bit))) {
+					info::mesh->elementsRegions[rindex]->bodies.push_back(b);
+				}
+			}
+		}
+	}
+
 	profiler::syncend("mesh_bodies_found");
 	eslog::checkpointln("MESH: MESH BODIES FOUND");
 }

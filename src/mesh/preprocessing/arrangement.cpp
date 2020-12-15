@@ -874,6 +874,7 @@ void computeNodeInfo(std::vector<RegionStore*> &regions)
 
 	std::vector<std::vector<esint> > sBuffer(info::mesh->neighbors.size()), rBuffer(info::mesh->neighbors.size());
 	std::vector<size_t> prevsize(info::mesh->neighbors.size()), nsize(info::mesh->neighbors.size());
+	std::vector<double> min(3 * regions.size(), std::numeric_limits<double>::max()), max(3 * regions.size(), -std::numeric_limits<double>::max());
 	for (size_t r = 0; r < regions.size(); ++r) {
 		for (size_t n = 0; n < prevsize.size(); ++n) {
 			prevsize[n] = sBuffer[n].size();
@@ -883,6 +884,7 @@ void computeNodeInfo(std::vector<RegionStore*> &regions)
 		esint prev = 0, i = 0;
 		auto ranks = info::mesh->nodes->ranks->begin();
 		for (auto n = regions[r]->nodes->datatarray().cbegin(); n != regions[r]->nodes->datatarray().cend(); prev = *n++, ++i) {
+			info::mesh->nodes->coordinates->datatarray()[*n].minmax(min.data() + 3 * r, max.data() + 3 * r);
 			ranks += *n - prev;
 			if (i < regions[r]->nodeInfo.nhalo) {
 				int rindex = 0;
@@ -910,10 +912,14 @@ void computeNodeInfo(std::vector<RegionStore*> &regions)
 	if (!Communication::receiveLowerKnownSize(sBuffer, rBuffer, info::mesh->neighbors)) {
 		eslog::error("ESPRESO internal error: receive global offset of a given element region.\n");
 	}
+	Communication::allReduce(min, Communication::OP::MIN);
+	Communication::allReduce(max, Communication::OP::MAX);
 	profiler::synccheckpoint("exchange");
 
 	std::fill(prevsize.begin(), prevsize.end(), 0);
 	for (size_t r = 0; r < regions.size(); ++r) {
+		regions[r]->nodeInfo.min = Point(min[3 * r], min[3 * r + 1], min[3 * r + 2]);
+		regions[r]->nodeInfo.max = Point(max[3 * r], max[3 * r + 1], max[3 * r + 2]);
 		for (size_t n = 0, begin = 0; n < rBuffer.size(); ++n) {
 			if (info::mesh->neighbors[n] < info::mpi::rank) {
 				if (rBuffer[n][prevsize[n]] > 1) {

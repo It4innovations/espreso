@@ -4,13 +4,33 @@
 
 #include "config/description.h"
 
+#include <string>
+#include <vector>
+
 namespace espreso {
 
 struct ContactInterfaceConfiguration: public ECFDescription {
 
-	double search_area;
-	double max_angle;
+	enum class DETECTION {
+		ALL_BODIES,
+		BODY_LIST,
+		CONTACT_PAIR
+	};
+
+	enum class CRITERION {
+		BOUND,
+		GAP
+	};
+
+	DETECTION detection;
+	CRITERION criterion;
+
+	std::vector<std::string> body_list;
+
 	bool self_contact;
+
+	float gap;
+	float angle;
 
 	ContactInterfaceConfiguration();
 };

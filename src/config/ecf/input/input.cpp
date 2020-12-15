@@ -100,7 +100,9 @@ InputConfiguration::InputConfiguration()
 	REGISTER(decomposition, ECFMetaData()
 			.setdescription({ "Domains decomposition settings." }));
 
-	REGISTER(contact_interface, ECFMetaData()
-			.setdescription({ "Contact interface search settings." }));
+	REGISTER(contact_interfaces, ECFMetaData()
+				.setdescription({ "List of contact interfaces", "Contact interface definition" })
+				.setdatatype({ ECFDataType::STRING })
+				.setpattern({ "CONTACT_1" }));
 }
 

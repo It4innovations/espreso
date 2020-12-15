@@ -21,8 +21,7 @@ struct NodeData;
 
 struct ElementsRegionStore;
 struct BoundaryRegionStore;
-struct ElementsRegionsIntersectionStore;
-struct BoundaryRegionsIntersectionStore;
+struct ContactInterfaceStore;
 struct FETIDataStore;
 struct SurfaceStore;
 struct ContactStore;
@@ -78,6 +77,7 @@ public:
 
 	std::vector<ElementsRegionStore*> elementsRegions;
 	std::vector<BoundaryRegionStore*> boundaryRegions;
+	std::vector<ContactInterfaceStore*> contactInterfaces;
 
 	FETIDataStore *FETIData;
 

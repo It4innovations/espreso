@@ -2,6 +2,8 @@
 #ifndef SRC_MESH_STORE_NODEUNIQUENESSINFO_H_
 #define SRC_MESH_STORE_NODEUNIQUENESSINFO_H_
 
+#include "basis/containers/point.h"
+
 #include <vector>
 
 namespace espreso {
@@ -11,6 +13,8 @@ struct NodeUniquenessInfo {
 	esint offset;
 	esint size;
 	esint totalSize;
+
+	Point min, max;
 
 	std::vector<esint> position;
 

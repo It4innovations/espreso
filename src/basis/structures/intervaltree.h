@@ -32,7 +32,8 @@ public:
 		return right == 0 ? permutation.size() : splitters[right / 2].index;
 	}
 
-	void boxMin(esint interval, Point &min) {
+	void boxMin(esint interval, Point &min)
+	{
 		min = this->min;
 		esint parent = interval / 2;
 		while (parent) {
@@ -43,6 +44,20 @@ public:
 			}
 			interval = parent;
 			parent /= 2;
+		}
+	}
+
+	void traverse(size_t node, const Point &start, const Point &end, std::vector<esint> &intervals)
+	{
+		if (node < splitters.size()) {
+			if (start[splitters[node].d] < splitters[node].end) {
+				traverse(2 * node, start, end, intervals);
+			}
+			if (splitters[node].start < end[splitters[node].d]) {
+				traverse(2 * node + 1, start, end, intervals);
+			}
+		} else {
+			intervals.push_back(node);
 		}
 	}
 

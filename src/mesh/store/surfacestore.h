@@ -3,6 +3,7 @@
 #define SRC_MESH_STORE_SURFACESTORE_H_
 
 #include "basis/containers/point.h"
+#include "contactinfo.h"
 
 #include <cstddef>
 #include <vector>
@@ -15,6 +16,7 @@ struct Element;
 struct SurfaceStore {
 
 	serializededata<esint, esint>* parents;
+	serializededata<esint, ContactInfo>* contact;
 	serializededata<esint, esint>* body;
 	serializededata<esint, esint>* triangles;
 	serializededata<esint, esint>* nodes;

@@ -4,6 +4,7 @@
 
 #include "basis/containers/point.h"
 #include "elementsinterval.h"
+#include "contactinfo.h"
 #include "nameddata.h"
 
 #include <cstddef>
@@ -49,6 +50,7 @@ struct ElementStore {
 	serializededata<esint, Point>* centers;
 
 	serializededata<esint, int>* body;
+	serializededata<esint, ContactInfo>* contact;
 	serializededata<esint, int>* material;
 	serializededata<esint, esint>* regions;
 	serializededata<esint, Element*>* epointers;

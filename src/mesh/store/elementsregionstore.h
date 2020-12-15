@@ -3,6 +3,8 @@
 #define SRC_MESH_STORE_ELEMENTSREGIONSTORE_H_
 
 #include "regionstore.h"
+#include "contactinfo.h"
+
 #include <vector>
 #include <string>
 
@@ -20,6 +22,9 @@ struct ElementsRegionStore: public RegionStore {
 	std::vector<ElementsInterval> ueintervals;
 
 	SurfaceStore *surface;
+
+	std::vector<int> bodies;
+	ContactInfo contact;
 
 	size_t packedFullSize() const;
 	void packFull(char* &p) const;

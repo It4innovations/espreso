@@ -38,6 +38,7 @@ void arrangeNodes();
 void arrangeElements();
 void arrangeElementsRegions();
 void arrangeBoundaryRegions();
+void arrangeContactInterfaces();
 
 void computeNodeDomainDistribution();
 void computeLocalIndices();

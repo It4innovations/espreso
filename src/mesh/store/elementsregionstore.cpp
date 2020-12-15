@@ -40,6 +40,8 @@ size_t ElementsRegionStore::packedFullSize() const
 	packedSize += utils::packedSize(eintervals);
 	packedSize += utils::packedSize(ueintervals);
 
+	packedSize += utils::packedSize(bodies);
+	packedSize += utils::packedSize(contact);
 	return packedSize;
 }
 
@@ -50,6 +52,8 @@ void ElementsRegionStore::packFull(char* &p) const
 	utils::pack(uniqueElements, p);
 	utils::pack(eintervals, p);
 	utils::pack(ueintervals, p);
+	utils::pack(bodies, p);
+	utils::pack(contact, p);
 }
 
 void ElementsRegionStore::unpackFull(const char* &p)
@@ -59,6 +63,8 @@ void ElementsRegionStore::unpackFull(const char* &p)
 	utils::unpack(uniqueElements, p);
 	utils::unpack(eintervals, p);
 	utils::unpack(ueintervals, p);
+	utils::unpack(bodies, p);
+	utils::unpack(contact, p);
 }
 
 size_t ElementsRegionStore::packedSize() const
