@@ -47,9 +47,9 @@ public:
 		}
 	}
 
-	void traverse(size_t node, const Point &start, const Point &end, std::vector<esint> &intervals)
+	void traverse(esint node, const Point &start, const Point &end, std::vector<esint> &intervals)
 	{
-		if (node < splitters.size()) {
+		if (node < (esint)splitters.size()) {
 			if (start[splitters[node].d] < splitters[node].end) {
 				traverse(2 * node, start, end, intervals);
 			}
