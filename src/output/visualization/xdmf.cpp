@@ -11,6 +11,7 @@
 #include "mesh/mesh.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
+#include "mesh/store/contactinterfacestore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "wrappers/hdf5/w.hdf5.h"
@@ -238,7 +239,7 @@ void XDMF::updateMesh()
 	if (_measure) { eslog::startln("XDMF: STARTED", "XDMF"); }
 	profiler::syncstart("store_xdmf");
 
-	size_t rindex = 0, regions = _mesh.elementsRegions.size() + _mesh.boundaryRegions.size() - 2;
+	size_t rindex = 0, regions = _mesh.elementsRegions.size() + _mesh.boundaryRegions.size() + _mesh.contactInterfaces.size() - 2;
 	std::vector<Geometry> geometries(regions);
 	std::vector<Topology> topologies(regions);
 
@@ -275,8 +276,7 @@ void XDMF::updateMesh()
 			fillTopology(_directory + _name, _data, topologies[rindex], region, code, rindex);
 		}
 
-		for (size_t r = 1; r < _mesh.boundaryRegions.size(); ++r, ++rindex) {
-			const BoundaryRegionStore *region = _mesh.boundaryRegions[r];
+		auto boundary = [&] (const BoundaryRegionStore *region) {
 			_data->region[rindex] = _data->tree->element("Grid");
 			_data->region[rindex]->attribute("Name", region->name);
 
@@ -302,6 +302,13 @@ void XDMF::updateMesh()
 				}
 			}
 			fillTopology(_directory + _name, _data, topologies[rindex], region, code, rindex);
+		};
+
+		for (size_t r = 1; r < _mesh.boundaryRegions.size(); ++r, ++rindex) {
+			boundary(_mesh.boundaryRegions[r]);
+		}
+		for (size_t r = 0; r < _mesh.contactInterfaces.size(); ++r, ++rindex) {
+			boundary(_mesh.contactInterfaces[r]);
 		}
 //		if (_withDecomposition) {
 //			// TODO:

@@ -371,17 +371,17 @@ void computeBodies()
 		memcpy(info::mesh->elements->body->datatarray().data(), body.data(), info::mesh->elements->size * sizeof(int));
 	}
 
-	info::mesh->elements->bodyRegions.resize(info::mesh->elements->bodiesTotalSize * info::mesh->elements->regionMaskSize);
+	std::vector<esint> bodyRegions(info::mesh->elements->bodiesTotalSize * info::mesh->elements->regionMaskSize);
 
 	for (esint e = 0; e < info::mesh->elements->size; ++e) {
 		int rsize = info::mesh->elements->regionMaskSize;
 		int b = info::mesh->elements->body->datatarray()[e];
 		for (int r = 0; r < rsize; ++r) {
-			info::mesh->elements->bodyRegions[rsize * b + r] |= info::mesh->elements->regions->datatarray()[rsize * e + r];
+			bodyRegions[rsize * b + r] |= info::mesh->elements->regions->datatarray()[rsize * e + r];
 		}
 	}
 
-	Communication::allReduce(info::mesh->elements->bodyRegions, Communication::OP::SUM);
+	Communication::allReduce(bodyRegions.data(), NULL, bodyRegions.size(), MPITools::getType<esint>().mpitype, MPI_BOR);
 
 	std::vector<esint> boffsets = { 0 };
 	for (esint b = 0; b < info::mesh->elements->bodiesTotalSize; ++b) {
@@ -389,45 +389,52 @@ void computeBodies()
 		int regions = 0;
 		for (int r = 0; r < rsize; ++r) {
 			for (size_t bit = 0; bit < 8 * sizeof(esint); ++bit) {
-				if (info::mesh->elements->bodyRegions[rsize * b + r] & ((esint)1 << bit)) {
+				if (bodyRegions[rsize * b + r] & ((esint)1 << bit)) {
 					++regions;
 				}
 			}
 		}
 		boffsets.push_back(boffsets.back() + regions); // region ALL_ELEMENTS is not counted
 	}
-	info::mesh->elements->bodyRegionsOffset = boffsets;
-	info::mesh->elements->bodyRegionsCounters.resize(boffsets.back());
-
-	for (size_t r = 0; r < info::mesh->elementsRegions.size(); ++r) {
-		if (StringCompare::caseInsensitiveEq(info::mesh->elementsRegions[r]->name, "NAMELESS_ELEMENT_SET")) {
-			break;
-		}
-		const auto &elements = info::mesh->elementsRegions[r]->elements->datatarray();
-		for (size_t e = 0; e < elements.size(); ++e) {
-			++info::mesh->elements->bodyRegionsCounters[boffsets[info::mesh->elements->body->datatarray()[elements[e]]]];
-		}
-		int maskSize = info::mesh->elements->regionMaskSize;
-		esint maskOffset = r / (8 * sizeof(esint));
-		esint bit = (esint)1 << (r % (8 * sizeof(esint)));
-		for (esint b = 0; b < info::mesh->elements->bodiesTotalSize; ++b) {
-			if (info::mesh->elements->bodyRegions[maskSize * b + maskOffset] & bit) {
-				++boffsets[b];
-			}
-		}
-	}
-
-	Communication::allReduce(info::mesh->elements->bodyRegionsCounters, Communication::OP::SUM);
 
 	int maskSize = info::mesh->elements->regionMaskSize;
 
 	for (int b = 0; b < info::mesh->elements->bodiesTotalSize; ++b) {
 		for (int r = 0, rindex = 0; r < info::mesh->elements->regionMaskSize; ++r) {
 			for (size_t bit = 0; bit < 8 * sizeof(esint) && bit + r * sizeof(esint) < info::mesh->elementsRegions.size(); ++bit, ++rindex) {
-				if (rindex && (info::mesh->elements->bodyRegions[b * maskSize + r] & (1 << bit))) {
+				if (bodyRegions[b * maskSize + r] & (1 << bit)) {
 					info::mesh->elementsRegions[rindex]->bodies.push_back(b);
 				}
 			}
+		}
+	}
+
+	std::vector<esint> bcount, esum(info::mesh->elements->bodiesTotalSize), fsum(info::mesh->elements->bodiesTotalSize);
+	for (size_t r = 0; r < info::mesh->elementsRegions.size(); ++r) {
+		std::fill(esum.begin(), esum.end(), 0);
+		std::fill(fsum.begin(), fsum.end(), 0);
+		for (auto e = info::mesh->elementsRegions[r]->elements->datatarray().begin(); e != info::mesh->elementsRegions[r]->elements->datatarray().end(); ++e) {
+			int body = info::mesh->elements->body->datatarray()[*e];
+			auto neighs = info::mesh->elements->faceNeighbors->begin() + *e;
+			for (auto n = neighs->begin(); n != neighs->end(); ++n) {
+				if (*n == -1) {
+					++fsum[body];
+				}
+			}
+			++esum[body];
+		}
+		for (size_t b = 0; b < info::mesh->elementsRegions[r]->bodies.size(); ++b) {
+			bcount.push_back(esum[info::mesh->elementsRegions[r]->bodies[b]]);
+			bcount.push_back(fsum[info::mesh->elementsRegions[r]->bodies[b]]);
+		}
+	}
+
+	Communication::allReduce(bcount, Communication::OP::SUM);
+
+	for (size_t r = 0, offset = 0; r < info::mesh->elementsRegions.size(); ++r) {
+		for (size_t b = 0; b < info::mesh->elementsRegions[r]->bodies.size(); ++b) {
+			info::mesh->elementsRegions[r]->bodyElements.push_back(bcount[offset++]);
+			info::mesh->elementsRegions[r]->bodyFaces.push_back(bcount[offset++]);
 		}
 	}
 

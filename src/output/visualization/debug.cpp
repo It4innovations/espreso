@@ -379,6 +379,81 @@ void DebugOutput::surfaceFixPoints(double clusterShrinkRatio, double domainShrin
 	}
 }
 
+void DebugOutput::contact(double clusterShrinkRatio, double domainShrinkRatio)
+{
+	if (!info::ecf->output.debug || info::mesh->contacts->sparseSide == NULL) {
+		return;
+	}
+
+	DebugOutput output(clusterShrinkRatio, domainShrinkRatio, false);
+
+	auto *sside = info::mesh->contacts->sparseSide;
+	auto *dside = info::mesh->contacts->denseSide;
+
+	esint cells = 0, gcells, points = 0, poffset;
+	for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s) {
+		for (auto d = dside->datatarray().begin() + s->denseSegmentBegin; d != dside->datatarray().begin() + s->denseSegmentEnd; ++d) {
+			if (!d->skip) {
+				points += 3 * d->triangles;
+				cells += d->triangles;
+			}
+		}
+	}
+
+	poffset = points;
+	points = Communication::exscan(poffset);
+	Communication::allReduce(&cells, &gcells, 1, MPITools::getType<esint>().mpitype, MPI_SUM);
+
+	if (Visualization::isRoot()) {
+		output._writer.points(points);
+	}
+
+	esint triangle = 0;
+	for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s) {
+		for (auto d = dside->datatarray().begin() + s->denseSegmentBegin; d != dside->datatarray().begin() + s->denseSegmentEnd; ++d) {
+			if (!d->skip) {
+				for (esint t = 0; t < d->triangles; ++t) {
+					const Triangle &tr = output._mesh.contacts->intersections->datatarray()[triangle++];
+					output._writer.point(tr.p[0].x, tr.p[0].y, tr.p[0].z);
+					output._writer.point(tr.p[1].x, tr.p[1].y, tr.p[1].z);
+					output._writer.point(tr.p[2].x, tr.p[2].y, tr.p[2].z);
+				}
+			} else {
+				triangle += d->triangles;
+			}
+		}
+	}
+	output._writer.groupData();
+
+	if (Visualization::isRoot()) {
+		output._writer.cells(gcells, 4 * gcells);
+	}
+	for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s) {
+		for (auto d = dside->datatarray().begin() + s->denseSegmentBegin; d != dside->datatarray().begin() + s->denseSegmentEnd; ++d) {
+			if (!d->skip) {
+				for (esint t = d->triangleOffset; t < d->triangleOffset + d->triangles; ++t) {
+					esint nn[3] = { poffset++, poffset++, poffset++};
+					output._writer.cell(3, nn);
+				}
+			}
+		}
+	}
+	output._writer.groupData();
+
+	if (Visualization::isRoot()) {
+		output._writer.celltypes(gcells);
+	}
+	for (esint i = 0; i < cells; ++i) {
+		output._writer.type(Element::CODE::TRIANGLE3);
+	}
+	output._writer.groupData();
+
+	output._writer.commitFile(output._path + "contact.vtk");
+	output._writer.reorder();
+	output._writer.write();
+}
+
+
 void DebugOutput::surface(const char* name, double clusterShrinkRatio, double domainShrinkRatio)
 {
 	if (!info::ecf->output.debug) {

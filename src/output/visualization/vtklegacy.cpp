@@ -11,6 +11,7 @@
 #include "mesh/mesh.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
+#include "mesh/store/contactinterfacestore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/elementsregionstore.h"
 
@@ -37,7 +38,7 @@ void VTKLegacy::updateMesh()
 	_points.resize((size_t)_mesh.nodes->size * 13 * 3 + 1);
 	_esize.resize(2 * 20 + 1); // max is the largest element size
 	_ecode.resize(3 * (int)Element::CODE::SIZE + 1);
-	_cells.resize(_mesh.elementsRegions.size() + _mesh.boundaryRegions.size() - 2);
+	_cells.resize(_mesh.elementsRegions.size() + _mesh.boundaryRegions.size() + _mesh.contactInterfaces.size() - 2);
 	for (esint n = 0; n < _mesh.nodes->size; ++n) {
 		const Point &p = _mesh.nodes->coordinates->datatarray()[n];
 		sprintf(_points.data() + (size_t)n * 13 * 3, "%12.5e %12.5e %12.5e\n", p.x, p.y, p.z);
@@ -75,6 +76,14 @@ void VTKLegacy::updateMesh()
 			memcpy(_cells[index].data() + n * (intsize + sizeof(int)) + intsize, &chars, sizeof(int));
 		}
 	}
+	for (size_t r = 0; r < _mesh.contactInterfaces.size(); ++r, ++index) {
+		esint nnodes = _mesh.contactInterfaces[r]->nodes->datatarray().size();
+		_cells[index].resize(nnodes * (intsize + sizeof(int)) + 1);
+		for (esint n = 0; n < nnodes; ++n) {
+			int chars = sprintf(_cells[index].data() + n * (intsize + sizeof(int)), " %d", (int)_mesh.contactInterfaces[r]->nodeInfo.position[n]);
+			memcpy(_cells[index].data() + n * (intsize + sizeof(int)) + intsize, &chars, sizeof(int));
+		}
+	}
 	profiler::synccheckpoint("preserialize");
 
 	index = 0;
@@ -96,6 +105,12 @@ void VTKLegacy::updateMesh()
 		insertPoints(_mesh.boundaryRegions[r]);
 		insertElements(_mesh.boundaryRegions[r], _cells[index]);
 		_writer.commitFile(_path + _name + "." + _mesh.boundaryRegions[r]->name + _suffix);
+	}
+	for (size_t r = 0; r < _mesh.contactInterfaces.size(); ++r, ++index) {
+		insertHeader();
+		insertPoints(_mesh.contactInterfaces[r]);
+		insertElements(_mesh.contactInterfaces[r], _cells[index]);
+		_writer.commitFile(_path + _name + "." + _mesh.contactInterfaces[r]->name + _suffix);
 	}
 	profiler::synccheckpoint("serialize");
 	if (_measure) { eslog::checkpointln("VTK LEGACY: GEOMETRY SERIALIZED"); }

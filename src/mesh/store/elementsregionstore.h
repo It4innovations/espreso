@@ -24,6 +24,8 @@ struct ElementsRegionStore: public RegionStore {
 	SurfaceStore *surface;
 
 	std::vector<int> bodies;
+	std::vector<esint> bodyElements;
+	std::vector<esint> bodyFaces;
 	ContactInfo contact;
 
 	size_t packedFullSize() const;

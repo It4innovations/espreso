@@ -47,7 +47,11 @@ struct Triangle {
 		p[2].rodrigues(axis, cos, sin);
 	}
 
-	double area() {
+	double area() const {
+		return .5 * ((p[1].x - p[0].x) * (p[2].y - p[0].y) - (p[2].x - p[0].x) * (p[1].y - p[0].y));
+	}
+
+	static double area(const Point2D p[]) {
 		return .5 * ((p[1].x - p[0].x) * (p[2].y - p[0].y) - (p[2].x - p[0].x) * (p[1].y - p[0].y));
 	}
 };

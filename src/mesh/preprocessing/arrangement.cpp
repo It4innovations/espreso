@@ -12,6 +12,7 @@
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/boundaryregionstore.h"
+#include "mesh/store/contactinterfacestore.h"
 
 #include "basis/containers/serializededata.h"
 #include "basis/logging/profiler.h"
@@ -363,28 +364,32 @@ void arrangeBoundaryRegions()
 	profiler::syncstart("arrange_boudary_regions");
 	int threads = info::env::OMP_NUM_THREADS;
 
+	std::vector<BoundaryRegionStore*> allRegions;
+	allRegions.insert(allRegions.end(), info::mesh->boundaryRegions.begin(), info::mesh->boundaryRegions.end());
+	allRegions.insert(allRegions.end(), info::mesh->contactInterfaces.begin(), info::mesh->contactInterfaces.end());
+
 	esint eoffset = info::mesh->elements->offset;
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-		if (info::mesh->boundaryRegions[r]->nodes == NULL) {
+	for (size_t r = 0; r < allRegions.size(); r++) {
+		if (allRegions[r]->nodes == NULL) {
 			std::vector<std::vector<esint> > nodes(threads);
-			nodes[0] = std::vector<esint>(info::mesh->boundaryRegions[r]->procNodes->datatarray().begin(), info::mesh->boundaryRegions[r]->procNodes->datatarray().end());
+			nodes[0] = std::vector<esint>(allRegions[r]->procNodes->datatarray().begin(), allRegions[r]->procNodes->datatarray().end());
 			utils::sortAndRemoveDuplicates(nodes[0]);
 			serializededata<esint, esint>::balance(1, nodes);
-			info::mesh->boundaryRegions[r]->nodes = new serializededata<esint, esint>(1, nodes);
+			allRegions[r]->nodes = new serializededata<esint, esint>(1, nodes);
 		}
 	}
 
 	profiler::synccheckpoint("compute_nodes");
 
-	std::vector<RegionStore*> regions(info::mesh->boundaryRegions.begin(), info::mesh->boundaryRegions.end());
+	std::vector<RegionStore*> regions(allRegions.begin(), allRegions.end());
 	synchronizeRegionNodes(regions);
 
 	computeNodeInfo(regions);
-	info::mesh->nodes->uniqInfo = info::mesh->boundaryRegions[0]->nodeInfo;
+	info::mesh->nodes->uniqInfo = allRegions[0]->nodeInfo;
 	profiler::synccheckpoint("node_info");
 
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-		BoundaryRegionStore *store = info::mesh->boundaryRegions[r];
+	for (size_t r = 0; r < allRegions.size(); r++) {
+		BoundaryRegionStore *store = allRegions[r];
 		if (store->dimension == 0) {
 			store->procNodes = new serializededata<esint, esint>(1, tarray<esint>(threads, 0));
 			store->epointers = new serializededata<esint, Element*>(1, tarray<Element*>(threads, 0));
@@ -513,13 +518,10 @@ void arrangeBoundaryRegions()
 
 	profiler::synccheckpoint("emembership");
 
-	std::vector<int> codes(info::mesh->boundaryRegions.size()), gcodes(info::mesh->boundaryRegions.size());
-	esint bsize = 0;
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-		BoundaryRegionStore *store = info::mesh->boundaryRegions[r];
-		if (info::mesh->boundaryRegions[r]->dimension) {
-			bsize += info::mesh->boundaryRegions[r]->epointers->datatarray().size();
-
+	std::vector<int> codes(allRegions.size());
+	for (size_t r = 0; r < allRegions.size(); r++) {
+		BoundaryRegionStore *store = allRegions[r];
+		if (store->dimension) {
 			for (size_t i = 0; i < store->eintervals.size(); ++i) {
 				store->ecounters[store->eintervals[i].code] += store->eintervals[i].end - store->eintervals[i].begin;
 				codes[r] |= 1 << store->eintervals[i].code;
@@ -529,14 +531,14 @@ void arrangeBoundaryRegions()
 		}
 	}
 
-	Communication::allReduce(codes.data(), gcodes.data(), codes.size(), MPI_INT, MPI_BOR);
+	Communication::allReduce(codes.data(), NULL, codes.size(), MPI_INT, MPI_BOR);
 
 	std::vector<esint> sum, offset;
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-		BoundaryRegionStore *store = info::mesh->boundaryRegions[r];
-		if (info::mesh->boundaryRegions[r]->dimension) {
+	for (size_t r = 0; r < allRegions.size(); r++) {
+		BoundaryRegionStore *store = allRegions[r];
+		if (store->dimension) {
 			for (size_t i = 0, bitmask = 1; i < info::mesh->elements->ecounters.size(); i++, bitmask = bitmask << 1) {
-				if (gcodes[r] & bitmask) {
+				if (codes[r] & bitmask) {
 					store->size += store->ecounters[i];
 					offset.push_back(store->ecounters[i]);
 				}
@@ -549,11 +551,11 @@ void arrangeBoundaryRegions()
 	sum.resize(offset.size());
 	Communication::exscan(sum, offset);
 
-	for (size_t r = 0, j = 0; r < info::mesh->boundaryRegions.size(); r++) {
-		BoundaryRegionStore *store = info::mesh->boundaryRegions[r];
-		if (info::mesh->boundaryRegions[r]->dimension) {
+	for (size_t r = 0, j = 0; r < allRegions.size(); r++) {
+		BoundaryRegionStore *store = allRegions[r];
+		if (store->dimension) {
 			for (size_t i = 0, bitmask = 1; i < info::mesh->elements->ecounters.size(); i++, bitmask = bitmask << 1) {
-				if (gcodes[r] & bitmask) {
+				if (codes[r] & bitmask) {
 					store->eoffsets[i] = offset[j];
 					store->ecounters[i] = sum[j++];
 				}
@@ -884,6 +886,7 @@ void computeNodeInfo(std::vector<RegionStore*> &regions)
 		esint prev = 0, i = 0;
 		auto ranks = info::mesh->nodes->ranks->begin();
 		for (auto n = regions[r]->nodes->datatarray().cbegin(); n != regions[r]->nodes->datatarray().cend(); prev = *n++, ++i) {
+			info::mesh->nodes->coordinates->datatarray()[*n].minmax(min.data(), max.data()); // ALL_ELEMENTS is without nodes
 			info::mesh->nodes->coordinates->datatarray()[*n].minmax(min.data() + 3 * r, max.data() + 3 * r);
 			ranks += *n - prev;
 			if (i < regions[r]->nodeInfo.nhalo) {

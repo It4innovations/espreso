@@ -16,6 +16,7 @@ struct Element;
 struct SurfaceStore {
 
 	serializededata<esint, esint>* parents;
+	serializededata<esint, esint>* fID;
 	serializededata<esint, ContactInfo>* contact;
 	serializededata<esint, esint>* body;
 	serializededata<esint, esint>* triangles;

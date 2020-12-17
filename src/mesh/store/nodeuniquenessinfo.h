@@ -5,6 +5,7 @@
 #include "basis/containers/point.h"
 
 #include <vector>
+#include <limits>
 
 namespace espreso {
 
@@ -18,7 +19,7 @@ struct NodeUniquenessInfo {
 
 	std::vector<esint> position;
 
-	NodeUniquenessInfo(): nhalo(0), offset(0), size(0), totalSize(0) {}
+	NodeUniquenessInfo(): nhalo(0), offset(0), size(0), totalSize(0), min(std::numeric_limits<double>::max()), max(-min) {}
 };
 
 }

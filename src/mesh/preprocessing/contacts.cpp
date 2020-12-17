@@ -35,6 +35,37 @@ namespace mesh {
 
 void computeBodiesSurface()
 {
+	for (auto it = info::ecf->input.contact_interfaces.begin(); it != info::ecf->input.contact_interfaces.end(); ++it) {
+		switch (it->second.detection) {
+		case ContactInterfaceConfiguration::DETECTION::ALL_BODIES:
+			for (size_t r = 0; r < info::mesh->elementsRegions.size(); ++r) {
+				info::mesh->elementsRegions[r]->contact.gap = std::max(it->second.gap, info::mesh->elementsRegions[r]->contact.gap);
+				info::mesh->elementsRegions[r]->contact.angle = std::max(it->second.angle, info::mesh->elementsRegions[r]->contact.angle);
+				info::mesh->elementsRegions[r]->contact.self_contact |= it->second.self_contact;
+			}
+			break;
+		case ContactInterfaceConfiguration::DETECTION::BODY_LIST:
+			for (size_t b = 0; b < it->second.body_list.size(); ++b) {
+				info::mesh->eregion(it->second.body_list[b])->contact.gap = std::max(it->second.gap, info::mesh->eregion(it->second.body_list[b])->contact.gap);
+				info::mesh->eregion(it->second.body_list[b])->contact.angle = std::max(it->second.angle, info::mesh->eregion(it->second.body_list[b])->contact.angle);
+				info::mesh->eregion(it->second.body_list[b])->contact.self_contact |= it->second.self_contact;
+			}
+			break;
+		case ContactInterfaceConfiguration::DETECTION::CONTACT_PAIR:
+			eslog::error("ESPRESO internal error: implement CONTACT_PAIR detection.\n");
+			break;
+		}
+	}
+
+	info::mesh->elements->contact = new serializededata<esint, ContactInfo>(1, tarray<ContactInfo>(info::mesh->elements->epointers->datatarray().distribution(), 1, ContactInfo()));
+	for (size_t r = 0; r < info::mesh->elementsRegions.size(); ++r) {
+		for (auto e = info::mesh->elementsRegions[r]->elements->datatarray().begin(); e != info::mesh->elementsRegions[r]->elements->datatarray().end(); ++e) {
+			info::mesh->elements->contact->datatarray()[*e].gap = std::max(info::mesh->elementsRegions[r]->contact.gap, info::mesh->elements->contact->datatarray()[*e].gap);
+			info::mesh->elements->contact->datatarray()[*e].angle = std::max(info::mesh->elementsRegions[r]->contact.angle, info::mesh->elements->contact->datatarray()[*e].angle);
+			info::mesh->elements->contact->datatarray()[*e].self_contact |= info::mesh->elementsRegions[r]->contact.self_contact;
+		}
+	}
+
 	if (info::mesh->elements->faceNeighbors == NULL) {
 		computeElementsFaceNeighbors();
 	}
@@ -146,41 +177,6 @@ void computeBodiesSurface()
 
 	DebugOutput::surface("surface.bodies", 1, 1);
 	eslog::checkpointln("MESH: BODY SURFACE COMPUTED");
-}
-
-void arrangeContactInterfaces()
-{
-	for (auto it = info::ecf->input.contact_interfaces.begin(); it != info::ecf->input.contact_interfaces.end(); ++it) {
-		info::mesh->contactInterfaces.push_back(new ContactInterfaceStore(it->first));
-		switch (it->second.detection) {
-		case ContactInterfaceConfiguration::DETECTION::ALL_BODIES:
-			for (size_t r = 0; r < info::mesh->elementsRegions.size(); ++r) {
-				info::mesh->elementsRegions[r]->contact.gap = std::max(it->second.gap, info::mesh->elementsRegions[r]->contact.gap);
-				info::mesh->elementsRegions[r]->contact.angle = std::max(it->second.angle, info::mesh->elementsRegions[r]->contact.angle);
-				info::mesh->elementsRegions[r]->contact.self_contact |= it->second.self_contact;
-			}
-			break;
-		case ContactInterfaceConfiguration::DETECTION::BODY_LIST:
-			for (size_t b = 0; b < it->second.body_list.size(); ++b) {
-				info::mesh->eregion(it->second.body_list[b])->contact.gap = std::max(it->second.gap, info::mesh->eregion(it->second.body_list[b])->contact.gap);
-				info::mesh->eregion(it->second.body_list[b])->contact.angle = std::max(it->second.angle, info::mesh->eregion(it->second.body_list[b])->contact.angle);
-				info::mesh->eregion(it->second.body_list[b])->contact.self_contact |= it->second.self_contact;
-			}
-			break;
-		case ContactInterfaceConfiguration::DETECTION::CONTACT_PAIR:
-			eslog::error("ESPRESO internal error: implement CONTACT_PAIR detection.\n");
-			break;
-		}
-	}
-
-	info::mesh->elements->contact = new serializededata<esint, ContactInfo>(1, tarray<ContactInfo>(info::mesh->elements->epointers->datatarray().distribution(), 1, ContactInfo()));
-	for (size_t r = 0; r < info::mesh->elementsRegions.size(); ++r) {
-		for (auto e = info::mesh->elementsRegions[r]->elements->datatarray().begin(); e != info::mesh->elementsRegions[r]->elements->datatarray().end(); ++e) {
-			info::mesh->elements->contact->datatarray()[*e].gap = std::max(info::mesh->elementsRegions[r]->contact.gap, info::mesh->elements->contact->datatarray()[*e].gap);
-			info::mesh->elements->contact->datatarray()[*e].angle = std::max(info::mesh->elementsRegions[r]->contact.angle, info::mesh->elements->contact->datatarray()[*e].angle);
-			info::mesh->elements->contact->datatarray()[*e].self_contact |= info::mesh->elementsRegions[r]->contact.self_contact;
-		}
-	}
 }
 
 void computeWarpedNormals(SurfaceStore * surface)
@@ -332,7 +328,7 @@ void exchangeContactHalo()
 			}
 		}
 		size_t ssize = 0, nsize = nsend.size();
-		ssize += 1 + 3 * esend.size(); // parent, body, epointer size
+		ssize += 1 + 3 * esend.size(); // fID, body, epointer size
 		ssize += 1 + esend.size() + nsend.size(); // enodes size
 		ssize += 1 + esend.size() * (4 * sizeof(Point) / sizeof(esint)); // plane
 		utils::sortAndRemoveDuplicates(nsend);
@@ -340,10 +336,10 @@ void exchangeContactHalo()
 
 		sBuffer[n].reserve(ssize);
 
-		// send parents and bodies
+		// send offset and bodies
 		sBuffer[n].push_back(esend.size());
 		for (size_t e = 0; e < esend.size(); ++e) {
-			sBuffer[n].push_back(info::mesh->surface->parents->datatarray()[esend[e]]);
+			sBuffer[n].push_back(esend[e]);
 		}
 		for (size_t e = 0; e < esend.size(); ++e) {
 			sBuffer[n].push_back(info::mesh->surface->body->datatarray()[esend[e]]);
@@ -399,8 +395,8 @@ void exchangeContactHalo()
 	for (size_t n = 0, i = 0; n < info::mesh->contacts->neighbors.size(); ++n, i = 0) {
 		info::mesh->contacts->surfaces[n] = new SurfaceStore();
 		// receive parents and bodies
-		info::mesh->contacts->surfaces[n]->parents = new serializededata<esint, esint>(1, tarray<esint>(info::env::OMP_NUM_THREADS, rBuffer[n][i]));
-		memcpy(info::mesh->contacts->surfaces[n]->parents->datatarray().data(), rBuffer[n].data() + i + 1, sizeof(esint) * rBuffer[n][i]);
+		info::mesh->contacts->surfaces[n]->fID = new serializededata<esint, esint>(1, tarray<esint>(info::env::OMP_NUM_THREADS, rBuffer[n][i]));
+		memcpy(info::mesh->contacts->surfaces[n]->fID->datatarray().data(), rBuffer[n].data() + i + 1, sizeof(esint) * rBuffer[n][i]);
 		info::mesh->contacts->surfaces[n]->body = new serializededata<esint, esint>(1, tarray<esint>(info::env::OMP_NUM_THREADS, rBuffer[n][i]));
 		memcpy(info::mesh->contacts->surfaces[n]->body->datatarray().data(), rBuffer[n].data() + i + 1 + rBuffer[n][i], sizeof(esint) * rBuffer[n][i]);
 		info::mesh->contacts->surfaces[n]->epointers = new serializededata<esint, Element*>(1, tarray<Element*>(info::env::OMP_NUM_THREADS, rBuffer[n][i]));
@@ -421,7 +417,7 @@ void exchangeContactHalo()
 			}
 			edist[0].push_back(enodes[0].size());
 		}
-		serializededata<esint, esint>::balance(edist, enodes, &info::mesh->contacts->surfaces[n]->parents->datatarray().distribution());
+		serializededata<esint, esint>::balance(edist, enodes, &info::mesh->contacts->surfaces[n]->fID->datatarray().distribution());
 		info::mesh->contacts->surfaces[n]->enodes = new serializededata<esint, esint>(edist, enodes);
 
 		// receive warped normals
@@ -503,8 +499,6 @@ void findCloseElements()
 	dist.reserve(contact->surfaces.back()->size + 1);
 	data.reserve(offset.back() + contact->surfaces.back()->size);
 	std::vector<esint> nintervals, lintervals;
-
-
 
 	for (esint face = 0; face < contact->surfaces.back()->size; ++face) {
 		bool self_contact = contact->surfaces.back()->contact->datatarray()[face].self_contact;
@@ -768,9 +762,6 @@ void computeContactInterface()
 
 	const std::vector<SurfaceStore*> &surfaces = info::mesh->contacts->surfaces;
 
-	struct istats { double area; esint faces, triangles; bool skip; istats(): area(0), faces(0), triangles(0), skip(true) {} };
-	std::unordered_map<esint, std::unordered_map<esint, istats> > istats;
-
 	Point axis;
 	double cos, sin;
 	auto setRotation = [&] (esint e) {
@@ -839,7 +830,6 @@ void computeContactInterface()
 					planeCoordinates.insert(planeCoordinates.end(), plane.begin(), plane.end());
 				}
 				if (insertedBodies.count(surfaces[neigh]->body->datatarray()[offset]) == 0) {
-					++istats[surfaces.back()->body->datatarray()[e]][surfaces[neigh]->body->datatarray()[offset]].faces;
 					insertedBodies[surfaces[neigh]->body->datatarray()[offset]] = 0;
 				}
 
@@ -850,11 +840,9 @@ void computeContactInterface()
 					planeCoordinates.insert(planeCoordinates.end(), intersection[i].p, intersection[i].p + 3);
 				}
 				dense.back().triangles += intersection.size();
-				istats[surfaces.back()->body->datatarray()[e]][surfaces[neigh]->body->datatarray()[offset]].triangles += intersection.size();
 			}
 			for (size_t i = 0; i < intersection.size(); i++) {
 				double area = intersection[i].area();
-				istats[surfaces.back()->body->datatarray()[e]][surfaces[neigh]->body->datatarray()[offset]].area += area;
 				insertedBodies[surfaces[neigh]->body->datatarray()[offset]] += area / earea;
 				intersection[i].rotate(axis, cos, -sin);
 				triangles.push_back(intersection[i]);
@@ -880,6 +868,41 @@ void computeContactInterface()
 	info::mesh->contacts->denseSide = new serializededata<esint, DenseSegment>(ddist, dense);
 	info::mesh->contacts->planeCoordinates = new serializededata<esint, Point2D>(pdist, planeCoordinates);
 	info::mesh->contacts->intersections = new serializededata<esint, Triangle>(1, triangles);
+
+	profiler::syncend("compute_contact_interface");
+	eslog::checkpointln("MESH: CONTACT INTERFACE COMPUTED");
+}
+
+void arrangeContactInterfaces()
+{
+	profiler::syncstart("arrange_contact_interface");
+
+	const std::vector<SurfaceStore*> &surfaces = info::mesh->contacts->surfaces;
+
+	struct istats { double area; esint faces, triangles; bool skip; istats(): area(0), faces(0), triangles(0), skip(true) {} };
+	std::unordered_map<esint, std::unordered_map<esint, istats> > istats;
+
+	auto *sside = info::mesh->contacts->sparseSide;
+	auto *dside = info::mesh->contacts->denseSide;
+	auto &coors = info::mesh->contacts->planeCoordinates->datatarray();
+	for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s) {
+		bool add = true;
+		for (auto d = dside->datatarray().begin() + s->denseSegmentBegin; d != dside->datatarray().begin() + s->denseSegmentEnd; ++d) {
+			if (d->skip) {
+				continue;
+			}
+
+			if (add) {
+				add = false;
+				istats[s->body][d->body].faces += 1;
+			}
+			istats[s->body][d->body].triangles += d->triangles;
+
+			for (esint t = 0; t < d->triangles; ++t) {
+				istats[s->body][d->body].area += Triangle::area(coors.data() + d->triangleOffset + 3 * t);
+			}
+		}
+	}
 
 	std::vector<Interface> interfaces = info::mesh->contacts->interfaces;
 	auto comp = [] (const Interface &i, const Interface &j) {
@@ -933,20 +956,149 @@ void computeContactInterface()
 	}
 	std::sort(info::mesh->contacts->interfaces.begin(), info::mesh->contacts->interfaces.end(), comp);
 
-	for (auto i = info::mesh->contacts->interfaces.begin(); i != info::mesh->contacts->interfaces.end(); ++i) {
-		istats[i->from.body][i->to.body].skip = false;
+	std::vector<std::string> bnames(info::mesh->elements->bodiesTotalSize);
+	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
+		for (size_t b = 0; b < info::mesh->elementsRegions[r]->bodies.size(); ++b) {
+			if (bnames[info::mesh->elementsRegions[r]->bodies[b]].size()) {
+				bnames[info::mesh->elementsRegions[r]->bodies[b]] += "_";
+			}
+			bnames[info::mesh->elementsRegions[r]->bodies[b]] += info::mesh->elementsRegions[r]->name;
+		}
 	}
 
-	auto *sside = info::mesh->contacts->sparseSide;
-	auto dside = info::mesh->contacts->denseSide->begin();
-	for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s, ++dside) {
-		for (auto d = dside->begin(); d != dside->end(); ++d) {
+	esint myrank = surfaces.size() - 1;
+	std::vector<int> assigned(info::mesh->contacts->interfaces.size()), current;
+	std::vector<std::vector<esint> > sBuffer(info::mesh->contacts->neighbors.size(), std::vector<esint>(info::mesh->contacts->interfaces.size() + 1)), rBuffer(info::mesh->contacts->neighbors.size());
+
+	auto preprocess = [&] (size_t index, esint from, esint to) {
+		istats[from][to].skip = false;
+		for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s) {
+			if (s->body != from) {
+				continue;
+			}
+			for (auto d = dside->datatarray().begin() + s->denseSegmentBegin; d != dside->datatarray().begin() + s->denseSegmentEnd; ++d) {
+				if (d->body == to && d->neigh < myrank) {
+					++sBuffer[d->neigh][index];
+					sBuffer[d->neigh].push_back(surfaces[d->neigh]->fID->datatarray()[d->element]);
+				}
+			}
+		}
+	};
+
+	auto create = [&] (const std::string &name, size_t index, esint from, esint to) {
+		info::mesh->contactInterfaces.push_back(new ContactInterfaceStore("CONTACT-" + name + "-" + bnames[from] + "-" + bnames[to], index));
+
+		std::vector<esint> dist = { 0 }, data;
+		std::vector<Element*> epointer;
+
+		auto push = [&] (esint e) {
+			auto face = surfaces.back()->enodes->begin() + e;
+			epointer.push_back(surfaces.back()->epointers->datatarray()[e]);
+			for (auto n = face->begin(); n != face->end(); ++n) {
+				data.push_back(surfaces.back()->nodes->datatarray()[*n]);
+			}
+			dist.push_back(data.size());
+		};
+
+		std::vector<esint> dense;
+		for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s) {
+			if (s->body != from) {
+				continue;
+			}
+			bool addsparse = true;
+			for (auto d = dside->datatarray().begin() + s->denseSegmentBegin; d != dside->datatarray().begin() + s->denseSegmentEnd; ++d) {
+				if (d->body == to) {
+					if (addsparse) {
+						addsparse = false;
+						push(s->element);
+					}
+					if (d->neigh == myrank) {
+						dense.push_back(d->element);
+					}
+				}
+			}
+		}
+		for (size_t n = 0; n < rBuffer.size(); ++n) {
+			for (esint i = rBuffer[n][index]; i < rBuffer[n][index + 1]; ++i) {
+				dense.push_back(rBuffer[n][i]);
+			}
+		}
+		utils::sortAndRemoveDuplicates(dense);
+		for (size_t i = 0; i < dense.size(); ++i) {
+			push(dense[i]);
+		}
+
+		info::mesh->contactInterfaces.back()->dimension = 2;
+		info::mesh->contactInterfaces.back()->procNodes = new serializededata<esint, esint>(dist, data);
+		info::mesh->contactInterfaces.back()->epointers = new serializededata<esint, Element*>(1, epointer);
+	};
+
+	for (int insert = 0; insert <= 1; ++insert) {
+		for (auto it = info::ecf->input.contact_interfaces.begin(); it != info::ecf->input.contact_interfaces.end(); ++it) {
+			switch (it->second.detection) {
+			case ContactInterfaceConfiguration::DETECTION::ALL_BODIES:
+				for (size_t c = 0; c < info::mesh->contacts->interfaces.size(); ++c) {
+					if (assigned[c] == insert) {
+						if (insert) {
+							create(it->first, c, info::mesh->contacts->interfaces[c].from.body, info::mesh->contacts->interfaces[c].to.body);
+						} else {
+							preprocess(c, info::mesh->contacts->interfaces[c].from.body, info::mesh->contacts->interfaces[c].to.body);
+						}
+						assigned[c] = insert + 1;
+					}
+				}
+				break;
+			case ContactInterfaceConfiguration::DETECTION::BODY_LIST:
+				current.clear();
+				for (size_t b = 0; b < it->second.body_list.size(); ++b) {
+					const ElementsRegionStore *region = info::mesh->eregion(it->second.body_list[b]);
+					current.insert(current.end(), region->bodies.begin(), region->bodies.end());
+				}
+				utils::sortAndRemoveDuplicates(current);
+				for (size_t c = 0; c < info::mesh->contacts->interfaces.size(); ++c) {
+					if (
+							assigned[c] == insert &&
+							std::binary_search(current.begin(), current.end(), info::mesh->contacts->interfaces[c].from.body) &&
+							std::binary_search(current.begin(), current.end(), info::mesh->contacts->interfaces[c].to.body)) {
+
+						if (insert) {
+							create(it->first, c, info::mesh->contacts->interfaces[c].from.body, info::mesh->contacts->interfaces[c].to.body);
+						} else {
+							preprocess(c, info::mesh->contacts->interfaces[c].from.body, info::mesh->contacts->interfaces[c].to.body);
+						}
+						assigned[c] = insert + 1;
+					}
+				}
+				break;
+			case ContactInterfaceConfiguration::DETECTION::CONTACT_PAIR:
+				break;
+			}
+		}
+
+		if (insert == 0) {
+			for (size_t n = 0; n < sBuffer.size(); ++n) {
+				esint sum = info::mesh->contacts->interfaces.size() + 1;
+				for (size_t i = 0; i <= info::mesh->contacts->interfaces.size(); ++i) {
+					esint tmp = sBuffer[n][i];
+					sBuffer[n][i] = sum;
+					sum += tmp;
+				}
+			}
+			if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->contacts->neighbors)) {
+				eslog::error("ESPRESO internal error: cannot exchange contact faces to neighbors.\n");
+			}
+		}
+	}
+
+	for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s) {
+		for (auto d = dside->datatarray().begin() + s->denseSegmentBegin; d != dside->datatarray().begin() + s->denseSegmentEnd; ++d) {
 			d->skip = d->skip | istats[surfaces.back()->body->datatarray()[s->element]][surfaces[d->neigh]->body->datatarray()[d->element]].skip;
 		}
 	}
 
-	profiler::syncend("compute_contact_interface");
-	eslog::checkpointln("MESH: CONTACT INTERFACE COMPUTED");
+	DebugOutput::contact(1, 1);
+	profiler::syncend("arrange_contact_interface");
+	eslog::checkpointln("MESH: CONTACT INTERFACE ARRANGED");
 }
 
 }

@@ -12,6 +12,8 @@ using namespace espreso;
 
 SurfaceStore::SurfaceStore()
 : parents(NULL),
+  fID(NULL),
+  contact(NULL),
   body(NULL),
   triangles(NULL),
   nodes(NULL),
@@ -35,6 +37,8 @@ SurfaceStore::SurfaceStore()
 SurfaceStore::~SurfaceStore()
 {
 	if (parents != NULL) { delete parents; }
+	if (fID != NULL) { delete fID; }
+	if (contact != NULL) { delete contact; }
 	if (body != NULL) { delete body; }
 	if (triangles != NULL && triangles != enodes) { delete triangles; }
 	if (nodes != NULL) { delete nodes; }
@@ -55,6 +59,8 @@ size_t SurfaceStore::packedFullSize() const
 	size_t packedSize = 0;
 
 	packedSize += utils::packedSize(parents);
+	packedSize += utils::packedSize(fID);
+	packedSize += utils::packedSize(contact);
 	packedSize += utils::packedSize(body);
 	packedSize += utils::packedSize(triangles);
 	packedSize += utils::packedSize(nodes);
@@ -86,6 +92,8 @@ size_t SurfaceStore::packedFullSize() const
 void SurfaceStore::packFull(char* &p) const
 {
 	utils::pack(parents, p);
+	utils::pack(fID, p);
+	utils::pack(contact, p);
 	utils::pack(body, p);
 	utils::pack(triangles, p);
 	utils::pack(nodes, p);
@@ -120,6 +128,8 @@ void SurfaceStore::packFull(char* &p) const
 void SurfaceStore::unpackFull(const char* &p)
 {
 	utils::unpack(parents, p);
+	utils::unpack(fID, p);
+	utils::unpack(contact, p);
 	utils::unpack(body, p);
 	utils::unpack(triangles, p);
 	utils::unpack(nodes, p);
