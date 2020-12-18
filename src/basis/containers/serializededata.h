@@ -336,10 +336,10 @@ private:
 //		profiler::syncstart("permute_uniform_data");
 //		profiler::syncparam("esize", _edatasize);
 //		profiler::syncparam("elements", permutation.size());
-		std::vector<std::vector<TEData> > pdata(threads());
+		std::vector<std::vector<TEData> > pdata(distribution.size() - 1);
 
 		#pragma omp parallel for
-		for (size_t t = 0; t < threads(); t++) {
+		for (size_t t = 0; t < distribution.size() - 1; t++) {
 			for (size_t i = distribution[t]; i < distribution[t + 1]; ++i) {
 				pdata[t].insert(pdata[t].end(), _edata.data() + _edatasize * permutation[i], _edata.data() + _edatasize * (permutation[i] + 1));
 			}
@@ -355,18 +355,18 @@ private:
 //		profiler::syncstart("permute_non_uniform_data");
 //		profiler::syncparam("elements", permutation.size());
 //		profiler::syncparam("datasize", _eboundaries.back());
-		std::vector<std::vector<TEBoundaries> > pboundaries(threads());
-		std::vector<std::vector<TEData> > pdata(threads());
+		std::vector<std::vector<TEBoundaries> > pboundaries(providedDistribution.size() - 1);
+		std::vector<std::vector<TEData> > pdata(providedDistribution.size() - 1);
 		std::vector<size_t> distribution = providedDistribution;
 		if (_eboundaries.distribution().back() > distribution.back()) {
-			for (size_t t = 1; t <= threads(); t++) {
+			for (size_t t = 1; t < providedDistribution.size(); t++) {
 				distribution[t] += 1;
 			}
 		}
 
 		pboundaries.front().push_back(0);
 		#pragma omp parallel for
-		for (size_t t = 0; t < threads(); t++) {
+		for (size_t t = 0; t < providedDistribution.size() - 1; t++) {
 			for (size_t e = (t == 0 ? 1 : distribution[t]); e < distribution[t + 1]; ++e) {
 				pboundaries[t].push_back(_eboundaries.data()[permutation[e - 1] + 1] - _eboundaries.data()[permutation[e - 1]]);
 				pdata[t].insert(
