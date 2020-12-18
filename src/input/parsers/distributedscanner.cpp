@@ -115,7 +115,7 @@ void DistributedScanner::scanlines(InputFile &input)
 		std::vector<position> tfound;
 
 		size_t c = tdistribution[t];
-		if (t && *(input.begin + c - 1) != '\n') {
+		if (c && *(input.begin + c - 1) != '\n') {
 			while (c < tdistribution[t + 1] && *(input.begin + c++) != '\n'); // start at new line
 		}
 

@@ -88,7 +88,7 @@ bool EBlock::solid(const std::vector<ET> &et, AnsysCDBData &mesh)
 		std::vector<int> type, ansystype, body, mat;
 
 		auto data = first + tdistribution[t];
-		if (t && *(data - 1) != '\n') {
+		if (tdistribution[t] && *(data - 1) != '\n') {
 			while (data < first + tdistribution[t + 1] && *data++ != '\n'); // start at new line
 		}
 
@@ -305,7 +305,7 @@ bool EBlock::boundary(const std::vector<ET> &et, AnsysCDBData &mesh)
 		std::vector<int> type, ansystype, body, mat;
 
 		auto data = first + tdistribution[t];
-		if (t && *(data - 1) != '\n') {
+		if (tdistribution[t] && *(data - 1) != '\n') {
 			while (data < first + tdistribution[t + 1] && *data++ != '\n'); // start at new line
 		}
 
