@@ -34,7 +34,7 @@ mesh: region=BOTTOM, dimension=0, elements=0, nodes=36
 mesh: region=TOP, dimension=0, elements=0, nodes=120
 mesh: region=ONE, b-elements=125, b-faces=150
 mesh: region=TWO, b-elements=7986, b-faces=1452
-mesh: bodies=2
+mesh: region=ALL_ELEMENTS, bodies=2
  ============================================================================================= 
                               MIN                 MAX                 SUM           IMBALANCE 
   CLUSTERS  :                   1                   1                   2               1.000

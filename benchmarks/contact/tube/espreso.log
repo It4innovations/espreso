@@ -5,11 +5,11 @@
  == CXX                          /opt/spack/opt/spack/linux-ubuntu18.04-ivybridge/gcc-7.5.0 ==
  ==                              /openmpi-2.0.4-ehsvqamkl4p6bimf3oruqckjgmttzc5y/bin/mpic++ == 
  == CXXFLAGS                                               -fopenmp -std=c++11 -Wall -O3 -g == 
- == COMMIT                                         f19670764e285771313c5265cc5b7c55f4757aac == 
+ == COMMIT                                         da88acc3c8eeff3e1ed3d3f0c6586ee395348a3f == 
  == BINARY          /home/mec059/projects/espreso/build//home/mec059/projects/espreso/build ==
  ==                                                                                /espreso == 
  == DATE [YYYY-MM-DD]                                                            2020-12-18 == 
- == TIME [HH-MM-SS]                                                                11-42-31 == 
+ == TIME [HH-MM-SS]                                                                13-35-39 == 
  ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
  == COMMAND                                                                         espreso == 
  == MPI_COMM_WORLD                                                                        1 == 
@@ -22,56 +22,20 @@
  == RUN PATH                                                  /home/mec059/projects/espreso == 
  == ECF                   /home/mec059/projects/espreso/benchmarks/contact/tube/espreso.ecf == 
  == MESH                            /home/mec059/projects/espreso/mortars/tube_linear_S.dat == 
- == OUTPUT                  /home/mec059/projects/espreso/results/2020-12-18-at-11h-42m-31s == 
+ == OUTPUT                  /home/mec059/projects/espreso/results/2020-12-18-at-13h-35m-39s == 
  ============================================================================================= 
  ESPRESO: RUN INITIALIZED
  ESPRESO: MESH LOADED
  ESPRESO: MESH PREPROCESSED
  ====================================== MESH STATISTICS ====================================== 
- ============================================================================================= 
-  GEOMETRY                               :              MIN              MAX           LENGTH
-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  
-                           X-COORDINATES :        -0.091075         0.091343         0.182419
-                           Y-COORDINATES :        -0.091276         0.091276         0.182552
-                           Z-COORDINATES :         0.000000         0.150000         0.150000
- ============================================================================================= 
-                                              REGION NAME :         ELEMENTS            NODES
- ============================================================================================= 
-  TOTAL NUMBER OF NODES                                   :                             1,443
-  TOTAL NUMBER OF ELEMENTS                                :            2,485
-                                                   TETRA4 :            2,109
-                                                  PRISMA6 :               32
-                                                    HEXA8 :              344
-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  
-
-  ELEMS REGIONS SIZES [  2]                               :            2,485            1,443
-                                             ALL_ELEMENTS :            2,485            1,443
-                                                       A1 :              376              738
-                                                       A2 :            2,109              705
-
-  FACES REGIONS SIZES [  1]                               :            1,502              575
-                                        NAMELESS_FACE_SET :            1,502              575
-
-  EDGES REGIONS SIZES [  0]                               :                0                0
-
-  NODES REGIONS SIZES [  1]                               :                                82
-                                                ALL_NODES :                             1,443
-                                                       BC :                                82
- ============================================================================================= 
-  BODY STATISTICS        ELEMENTS REGION :         ELEMENTS            FACES       PROPORTION
- ============================================================================================= 
-                            ALL_ELEMENTS :            2,485            1,986         2 BODIES
-  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  
-                                      A1 :              376              686      BODY=REGION
-                                      A2 :            2,109            1,300      BODY=REGION
- ============================================================================================= 
-  CONTACT INTERFACES            FACES         AREA :                       FACES         AREA
- ============================================================================================= 
-                                            - - - - GENERAL, ALL_BODIES, GAP=0.001000 - - - -  
-                                                                                               
-                                                A1 :                                       A2 
-                                  264     0.045965 :                         481     0.045973
- ============================================================================================= 
+mesh: region=A1, dimension=3, elements=376, nodes=738
+mesh: region=A2, dimension=3, elements=2109, nodes=705
+mesh: region=NAMELESS_FACE_SET, dimension=2, elements=1502, nodes=575
+mesh: region=BC, dimension=0, elements=0, nodes=82
+mesh: region=ALL_ELEMENTS, bodies=2
+mesh: region=A1, b-elements=376, b-faces=686
+mesh: region=A2, b-elements=2109, b-faces=1300
+mesh: region=CONTACT-GENERAL-A1-A2, s-faces=264, s-area=0.04597, d-faces=481, d-area=0.04597
                                                                                                
  ================================== DECOMPOSITION STATISTICS ================================= 
                               MIN                 MAX                 SUM           IMBALANCE 
@@ -88,12 +52,12 @@
  ======================================== RUN FINISHED ======================================= 
  == OVERALL TIME ============================================================================= 
  ============================================ avg. [s]  < min [s] -  max [s]> [  %  ] [ imb ]   
-  ESPRESO STARTED AT                          0.007876  <0.007876 - 0.007876> [18.81] [ 1.00]
-   ESPRESO: CONFIGURATION READ                0.004477  <0.004477 - 0.004477> [13.18] [ 1.00]
-   ESPRESO: RUN INITIALIZED                   0.000404  <0.000404 - 0.000404> [ 1.19] [ 1.00]
-   ESPRESO: MESH LOADED                       0.005659  <0.005659 - 0.005659> [16.66] [ 1.00]
-   ESPRESO: MESH PREPROCESSED                 0.021550  <0.021550 - 0.021550> [63.43] [ 1.00]
-   ESPRESO: MESH STORED                       0.001868  <0.001868 - 0.001868> [ 5.50] [ 1.00]
-   ESPRESO: DATABASE CONVERTED                0.000013  <0.000013 - 0.000013> [ 0.04] [ 1.00]
-  ESPRESO TOTAL DURATION                      0.033971  <0.033971 - 0.033971> [81.12] [ 1.00]
+time: region='ESPRESO STARTED AT                        ', avg='0.008019', min='0.008019', max='0.008019', ratio='19.27', imb=' 1.00'
+time: region='ESPRESO: CONFIGURATION READ               ', avg='0.003616', min='0.003616', max='0.003616', ratio='10.78', imb=' 1.00'
+time: region='ESPRESO: RUN INITIALIZED                  ', avg='0.000422', min='0.000422', max='0.000422', ratio=' 1.26', imb=' 1.00'
+time: region='ESPRESO: MESH LOADED                      ', avg='0.007325', min='0.007325', max='0.007325', ratio='21.83', imb=' 1.00'
+time: region='ESPRESO: MESH PREPROCESSED                ', avg='0.020471', min='0.020471', max='0.020471', ratio='61.01', imb=' 1.00'
+time: region='ESPRESO: MESH STORED                      ', avg='0.001705', min='0.001705', max='0.001705', ratio=' 5.08', imb=' 1.00'
+time: region='ESPRESO: DATABASE CONVERTED               ', avg='0.000015', min='0.000015', max='0.000015', ratio=' 0.05', imb=' 1.00'
+time: region='ESPRESO TOTAL DURATION                    ', avg='0.033553', min='0.033553', max='0.033553', ratio='80.65', imb=' 1.00'
  ============================================================================================= 

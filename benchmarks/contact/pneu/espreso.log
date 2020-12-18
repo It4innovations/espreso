@@ -29,7 +29,7 @@
  ESPRESO: MESH PREPROCESSED
  ====================================== MESH STATISTICS ====================================== 
 mesh: region=NAMELESS_ELEMENT_SET, dimension=3, elements=953764, nodes=1093787
-mesh: bodies=2
+mesh: reigon=ALL_ELEMENTS, bodies=2
 mesh: region:CONTACT-GENERAL--, s-faces:8250, s-area:1561.23071, d-faces:9852, d-area:1562.51951
                                                                                                
  ================================== DECOMPOSITION STATISTICS ================================= 

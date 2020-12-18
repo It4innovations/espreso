@@ -133,7 +133,7 @@ mesh: region=SHAFT, dimension=3, elements=12325, nodes=24420
 mesh: region=SMALL_METAL_PLATES, dimension=3, elements=239, nodes=2328
 mesh: region=TORQUE_SENSOR_ADAPTER, dimension=3, elements=21391, nodes=44263
 mesh: region=NAMELESS_FACE_SET, dimension=2, elements=60846, nodes=58956
-mesh: bodies=106
+mesh: region=ALL_ELEMENTS, bodies=106
  ============================================================================================= 
                               MIN                 MAX                 SUM           IMBALANCE 
   CLUSTERS  :                   1                  25                 118              25.000

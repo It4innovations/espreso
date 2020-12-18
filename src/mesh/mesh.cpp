@@ -827,14 +827,14 @@ void Mesh::printMeshStatistics()
 		for (size_t r = 1; r < boundaryRegions.size(); r++) {
 			eslog::info("mesh: region=%s, dimension=%d, elements=%d, nodes=%d\n", boundaryRegions[r]->name.c_str(), boundaryRegions[r]->dimension, boundaryRegions[r]->totalsize, boundaryRegions[r]->nodeInfo.totalSize);
 		}
-		eslog::info("mesh: bodies=%d\n", elements->bodiesTotalSize);
+		eslog::info("mesh: region=ALL_ELEMENTS, bodies=%d\n", elements->bodiesTotalSize);
 		for (size_t r = 1; r < elementsRegions.size(); r++) {
 			for (size_t b = 0; b < elementsRegions[r]->bodies.size(); ++b) {
 				eslog::info("mesh: region=%s, b-elements=%d, b-faces=%d\n", elementsRegions[r]->name.c_str(), elementsRegions[r]->bodyElements[b], elementsRegions[r]->bodyFaces[b]);
 			}
 		}
 		for (auto it = contactInterfaces.begin(); it != contactInterfaces.end(); ++it) {
-			eslog::info("mesh: region:%s, s-faces:%d, s-area:%.5f, d-faces:%d, d-area:%.5f\n", (*it)->name.c_str(),
+			eslog::info("mesh: region=%s, s-faces=%d, s-area=%.5f, d-faces=%d, d-area=%.5f\n", (*it)->name.c_str(),
 					contacts->interfaces[(*it)->interfaceIndex].from.faces, contacts->interfaces[(*it)->interfaceIndex].from.area,
 					contacts->interfaces[(*it)->interfaceIndex].to.faces, contacts->interfaces[(*it)->interfaceIndex].to.area);
 		}
