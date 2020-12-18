@@ -1,0 +1,26 @@
+
+INPUT {
+  FORMAT                                    ANSYS_CDB;
+  PATH       /data/espreso/mesiotest/contact/tube.dat;
+
+  KEEP_MATERIAL_SETS     FALSE;
+  CONVERT_DATABASE        TRUE;
+
+  DECOMPOSITION {
+    PARALLEL_DECOMPOSER   NONE;
+  }
+
+  CONTACT_INTERFACES {
+    GENERAL {
+      DETECTION   ALL_BODIES;
+      CRITERION          GAP;
+
+      GAP              0.001;
+    }
+  }
+}
+
+OUTPUT {
+#  RESULTS_STORE_FREQUENCY NEVER;
+}
+

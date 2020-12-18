@@ -1,0 +1,99 @@
+ ESPRESO: STARTED
+ ESPRESO: CONFIGURATION READ
+ ====================================== ESPRESO RUN INFO ===================================== 
+ ============================================================================================= 
+ == CXX                          /opt/spack/opt/spack/linux-ubuntu18.04-ivybridge/gcc-7.5.0 ==
+ ==                              /openmpi-2.0.4-ehsvqamkl4p6bimf3oruqckjgmttzc5y/bin/mpic++ == 
+ == CXXFLAGS                                               -fopenmp -std=c++11 -Wall -O3 -g == 
+ == COMMIT                                         f19670764e285771313c5265cc5b7c55f4757aac == 
+ == BINARY          /home/mec059/projects/espreso/build//home/mec059/projects/espreso/build ==
+ ==                                                                                /espreso == 
+ == DATE [YYYY-MM-DD]                                                            2020-12-18 == 
+ == TIME [HH-MM-SS]                                                                11-42-31 == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == COMMAND                                                                         espreso == 
+ == MPI_COMM_WORLD                                                                        1 == 
+ == OMP_NUM_THREADS                                                                       1 == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == NUMBER OF LOADERS                                                                     1 == 
+ == NUMBER OF WRITTERS                                                                    1 == 
+ == STORING MODE                                                               SYNCHRONIZED == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == RUN PATH                                                  /home/mec059/projects/espreso == 
+ == ECF                   /home/mec059/projects/espreso/benchmarks/contact/tube/espreso.ecf == 
+ == MESH                            /home/mec059/projects/espreso/mortars/tube_linear_S.dat == 
+ == OUTPUT                  /home/mec059/projects/espreso/results/2020-12-18-at-11h-42m-31s == 
+ ============================================================================================= 
+ ESPRESO: RUN INITIALIZED
+ ESPRESO: MESH LOADED
+ ESPRESO: MESH PREPROCESSED
+ ====================================== MESH STATISTICS ====================================== 
+ ============================================================================================= 
+  GEOMETRY                               :              MIN              MAX           LENGTH
+  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  
+                           X-COORDINATES :        -0.091075         0.091343         0.182419
+                           Y-COORDINATES :        -0.091276         0.091276         0.182552
+                           Z-COORDINATES :         0.000000         0.150000         0.150000
+ ============================================================================================= 
+                                              REGION NAME :         ELEMENTS            NODES
+ ============================================================================================= 
+  TOTAL NUMBER OF NODES                                   :                             1,443
+  TOTAL NUMBER OF ELEMENTS                                :            2,485
+                                                   TETRA4 :            2,109
+                                                  PRISMA6 :               32
+                                                    HEXA8 :              344
+  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  
+
+  ELEMS REGIONS SIZES [  2]                               :            2,485            1,443
+                                             ALL_ELEMENTS :            2,485            1,443
+                                                       A1 :              376              738
+                                                       A2 :            2,109              705
+
+  FACES REGIONS SIZES [  1]                               :            1,502              575
+                                        NAMELESS_FACE_SET :            1,502              575
+
+  EDGES REGIONS SIZES [  0]                               :                0                0
+
+  NODES REGIONS SIZES [  1]                               :                                82
+                                                ALL_NODES :                             1,443
+                                                       BC :                                82
+ ============================================================================================= 
+  BODY STATISTICS        ELEMENTS REGION :         ELEMENTS            FACES       PROPORTION
+ ============================================================================================= 
+                            ALL_ELEMENTS :            2,485            1,986         2 BODIES
+  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  
+                                      A1 :              376              686      BODY=REGION
+                                      A2 :            2,109            1,300      BODY=REGION
+ ============================================================================================= 
+  CONTACT INTERFACES            FACES         AREA :                       FACES         AREA
+ ============================================================================================= 
+                                            - - - - GENERAL, ALL_BODIES, GAP=0.001000 - - - -  
+                                                                                               
+                                                A1 :                                       A2 
+                                  264     0.045965 :                         481     0.045973
+ ============================================================================================= 
+                                                                                               
+ ================================== DECOMPOSITION STATISTICS ================================= 
+                              MIN                 MAX                 SUM           IMBALANCE 
+  CLUSTERS  :                   2                   2                   2               1.000
+  DOMAINS   :                   2                   2                   2               1.000
+  ELEMENTS  :               2,485               2,485               2,485               1.000
+  NODES     :               1,443               1,443               1,443               1.000
+  NEIGHBORS :                   0                   0                   0               0.000
+  ELEMS/DOM :                 376               2,109               2,485               5.609
+ ============================================================================================= 
+ ESPRESO: MESH STORED
+ ESPRESO: DATABASE CONVERTED
+
+ ======================================== RUN FINISHED ======================================= 
+ == OVERALL TIME ============================================================================= 
+ ============================================ avg. [s]  < min [s] -  max [s]> [  %  ] [ imb ]   
+  ESPRESO STARTED AT                          0.007876  <0.007876 - 0.007876> [18.81] [ 1.00]
+   ESPRESO: CONFIGURATION READ                0.004477  <0.004477 - 0.004477> [13.18] [ 1.00]
+   ESPRESO: RUN INITIALIZED                   0.000404  <0.000404 - 0.000404> [ 1.19] [ 1.00]
+   ESPRESO: MESH LOADED                       0.005659  <0.005659 - 0.005659> [16.66] [ 1.00]
+   ESPRESO: MESH PREPROCESSED                 0.021550  <0.021550 - 0.021550> [63.43] [ 1.00]
+   ESPRESO: MESH STORED                       0.001868  <0.001868 - 0.001868> [ 5.50] [ 1.00]
+   ESPRESO: DATABASE CONVERTED                0.000013  <0.000013 - 0.000013> [ 0.04] [ 1.00]
+  ESPRESO TOTAL DURATION                      0.033971  <0.033971 - 0.033971> [81.12] [ 1.00]
+ ============================================================================================= 
