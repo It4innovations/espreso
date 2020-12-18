@@ -439,6 +439,10 @@ void XDMF::updateSolution()
 				attributes.push_back({});
 				fillGeometryAttribute(_directory + _name, _data->region[rindex], attributes.back(), _mesh.boundaryRegions[r], _mesh.nodes->data[di], _data->iteration);
 			}
+			for (size_t r = 0; r < _mesh.contactInterfaces.size(); ++r, ++rindex) {
+				attributes.push_back({});
+				fillGeometryAttribute(_directory + _name, _data->region[rindex], attributes.back(), _mesh.contactInterfaces[r], _mesh.nodes->data[di], _data->iteration);
+			}
 		}
 	}
 

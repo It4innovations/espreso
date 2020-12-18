@@ -362,14 +362,13 @@ void EnSightGold::ndata(const NamedData *data)
 			}
 		}
 
-		for (size_t r = 1; r < _mesh.boundaryRegions.size(); ++r, ++part) {
+		auto boundary = [&] (const BoundaryRegionStore *region) {
 			if (isRoot()) {
 				_writer.description("part");
 				_writer.int32(part);
 				_writer.description("coordinates");
 			}
 
-			const BoundaryRegionStore *region = _mesh.boundaryRegions[r];
 			for (int d = 0; d < data->dimension; ++d) {
 				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
 					_writer.float32(data->data[nindex * data->dimension + d]);
@@ -380,6 +379,13 @@ void EnSightGold::ndata(const NamedData *data)
 					_writer.float32(0);
 				});
 			}
+		};
+
+		for (size_t r = 1; r < _mesh.boundaryRegions.size(); ++r, ++part) {
+			boundary(_mesh.boundaryRegions[r]);
+		}
+		for (size_t r = 0; r < _mesh.contactInterfaces.size(); ++r, ++part) {
+			boundary(_mesh.contactInterfaces[r]);
 		}
 		_writer.commitFile(file.str());
 	} else {
@@ -405,17 +411,23 @@ void EnSightGold::ndata(const NamedData *data)
 				});
 			}
 
-			for (size_t r = 1; r < _mesh.boundaryRegions.size(); ++r, ++part) {
+			auto boundary = [&] (const BoundaryRegionStore *region) {
 				if (isRoot()) {
 					_writer.description("part");
 					_writer.int32(part);
 					_writer.description("coordinates");
 				}
 
-				const BoundaryRegionStore *region = _mesh.boundaryRegions[r];
 				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
 					_writer.float32(data->data[nindex * data->dimension + d]);
 				});
+			};
+
+			for (size_t r = 1; r < _mesh.boundaryRegions.size(); ++r, ++part) {
+				boundary(_mesh.boundaryRegions[r]);
+			}
+			for (size_t r = 0; r < _mesh.contactInterfaces.size(); ++r, ++part) {
+				boundary(_mesh.contactInterfaces[r]);
 			}
 			_writer.commitFile(file.str());
 		}

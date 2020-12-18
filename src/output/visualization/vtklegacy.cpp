@@ -170,20 +170,24 @@ void VTKLegacy::updateSolution()
 		_writer.commitFile(dir + name + "." + _mesh.elementsRegions[r]->name + suffix);
 	}
 
-	for (size_t r = 1; r < _mesh.boundaryRegions.size(); ++r, ++index) {
+	auto boundary = [&] (const BoundaryRegionStore *region) {
 		insertHeader();
-		insertPoints(_mesh.boundaryRegions[r]);
-		insertElements(_mesh.boundaryRegions[r], _cells[index]);
+		insertPoints(region);
+		insertElements(region, _cells[index]);
 		if (isRoot()) {
-			_writer.pointdata(_mesh.boundaryRegions[r]->nodeInfo.totalSize);
+			_writer.pointdata(region->nodeInfo.totalSize);
 		}
 		for (size_t i = 0; i < _mesh.nodes->data.size(); ++i) {
-			insertData(
-					_mesh.nodes->data[i],
-					_mesh.boundaryRegions[r]->nodeInfo.size,
-					_mesh.boundaryRegions[r]->nodes->datatarray().data() + _mesh.boundaryRegions[r]->nodeInfo.nhalo);
+			insertData(_mesh.nodes->data[i], region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo);
 		}
-		_writer.commitFile(dir + name + "." + _mesh.boundaryRegions[r]->name + suffix);
+		_writer.commitFile(dir + name + "." + region->name + suffix);
+	};
+
+	for (size_t r = 1; r < _mesh.boundaryRegions.size(); ++r, ++index) {
+		boundary(_mesh.boundaryRegions[r]);
+	}
+	for (size_t r = 0; r < _mesh.contactInterfaces.size(); ++r, ++index) {
+		boundary(_mesh.contactInterfaces[r]);
 	}
 
 	_writer.reorder();
