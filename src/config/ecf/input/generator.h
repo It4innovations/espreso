@@ -5,6 +5,7 @@
 #include "config/description.h"
 
 #include "grid.h"
+#include "gridset.h"
 #include "gridtower.h"
 #include "sphere.h"
 
@@ -12,6 +13,7 @@ namespace espreso {
 
 enum class INPUT_GENERATOR_SHAPE {
 	GRID,
+	GRID_SET,
 	GRID_TOWER,
 	SPHERE
 };
@@ -23,6 +25,7 @@ struct InputGeneratorConfiguration: public ECFDescription {
 	bool uniform_clusters, uniform_domains;
 
 	GridGeneratorConfiguration grid;
+	GridSetGeneratorConfiguration grid_set;
 	GridTowerGeneratorConfiguration grid_tower;
 	SphereGeneratorConfiguration sphere;
 

@@ -2,6 +2,7 @@
 #include "meshgenerator.h"
 
 #include "composition/gridgenerator.h"
+#include "composition/gridsetgenerator.h"
 #include "composition/gridtowergenerator.h"
 #include "composition/spheregenerator.h"
 #include "basis/logging/profiler.h"
@@ -31,6 +32,10 @@ void MeshGenerator::load()
 	case INPUT_GENERATOR_SHAPE::GRID:
 		GridGenerator::generate(_configuration.grid, *this);
 		info::mesh->preferedDomains = BlockSettings::preferedDomains(_configuration.grid);
+		break;
+	case INPUT_GENERATOR_SHAPE::GRID_SET:
+		GridSetGenerator::generate(_configuration.grid_set, *this);
+		info::mesh->preferedDomains = BlockSettings::preferedDomains(_configuration.grid_set.grids.at(GridSetGenerator::gridIndex(_configuration.grid_set)));
 		break;
 	case INPUT_GENERATOR_SHAPE::GRID_TOWER:
 		GridTowerGenerator::generate(_configuration.grid_tower, *this);

@@ -11,6 +11,7 @@ espreso::InputGeneratorConfiguration::InputGeneratorConfiguration()
 			.setdescription({ "A generated shape." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("GRID").setdescription("A rectangular grid."))
+			.addoption(ECFOption().setname("GRID_SET").setdescription("A rectangular grids in arbitrary positions."))
 			.addoption(ECFOption().setname("GRID_TOWER").setdescription("A rectangular grids in tower."))
 			.addoption(ECFOption().setname("SPHERE").setdescription("A sphere.")));
 
@@ -24,6 +25,9 @@ espreso::InputGeneratorConfiguration::InputGeneratorConfiguration()
 	REGISTER(grid, ECFMetaData()
 			.setdescription({ "Settings of grid generator." })
 			.allowonly([&] () { return shape == INPUT_GENERATOR_SHAPE::GRID; }));
+	REGISTER(grid_set, ECFMetaData()
+			.setdescription({ "Settings of independent grid set generator." })
+			.allowonly([&] () { return shape == INPUT_GENERATOR_SHAPE::GRID_SET; }));
 	REGISTER(grid_tower, ECFMetaData()
 			.setdescription({ "Settings of grid tower generator." })
 			.allowonly([&] () { return shape == INPUT_GENERATOR_SHAPE::GRID_TOWER; }));
