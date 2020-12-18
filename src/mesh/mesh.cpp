@@ -708,6 +708,7 @@ void Mesh::printMeshStatistics()
 	switch (info::ecf->output.logger) {
 	case OutputConfiguration::LOGGER::USER:
 		eslog::info(" ====================================== MESH STATISTICS ====================================== \n");
+		eslog::info(" ============================================================================================= \n");
 		eslog::info("  %s%*s : %16s %16s %16s\n", "GEOMETRY", namesize - 26, " ", "MIN", "MAX", "LENGTH");
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "X-COORDINATES", elementsRegions.front()->nodeInfo.min.x, elementsRegions.front()->nodeInfo.max.x, elementsRegions.front()->nodeInfo.max.x - elementsRegions.front()->nodeInfo.min.x);
@@ -763,33 +764,56 @@ void Mesh::printMeshStatistics()
 
 		eslog::info("  BODY STATISTICS %22s : %16s %16s %16s\n", "ELEMENTS REGION", "ELEMENTS", "FACES", "PROPORTION");
 		eslog::info(" ============================================================================================= \n");
-		eslog::info("  %38s : %16s %16s %9d BODIES\n", elementsRegions[0]->name.c_str(), Parser::stringwithcommas(ecountTotal).c_str(), Parser::stringwithcommas(scountTotal).c_str(), info::mesh->elements->bodiesTotalSize);
+		eslog::info("  %38s : %16s %16s %9d BODIES\n", elementsRegions[0]->name.c_str(), Parser::stringwithcommas(ecountTotal).c_str(), Parser::stringwithcommas(scountTotal).c_str(), elements->bodiesTotalSize);
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 		for (size_t r = 1; r < elementsRegions.size(); r++) {
 			for (size_t b = 0; b < elementsRegions[r]->bodies.size(); ++b) {
-				if (info::mesh->elementsRegions[r]->bodyElements[b] == info::mesh->elementsRegions[0]->bodyElements[elementsRegions[r]->bodies[b]] && elementsRegions[r]->bodies.size() == 1) {
+				if (elementsRegions[r]->bodyElements[b] == elementsRegions[0]->bodyElements[elementsRegions[r]->bodies[b]] && elementsRegions[r]->bodies.size() == 1) {
 					eslog::info("  %38s : %16s %16s %16s\n", b ? "" : elementsRegions[r]->name.c_str(),
-							Parser::stringwithcommas(info::mesh->elementsRegions[r]->bodyElements[b]).c_str(),
-							Parser::stringwithcommas(info::mesh->elementsRegions[r]->bodyFaces[b]).c_str(), "BODY=REGION");
+							Parser::stringwithcommas(elementsRegions[r]->bodyElements[b]).c_str(),
+							Parser::stringwithcommas(elementsRegions[r]->bodyFaces[b]).c_str(), "BODY=REGION");
 				} else {
-					double ratio = (double)info::mesh->elementsRegions[r]->bodyElements[b] / info::mesh->elementsRegions[0]->bodyElements[elementsRegions[r]->bodies[b]];
+					double ratio = (double)elementsRegions[r]->bodyElements[b] / elementsRegions[0]->bodyElements[elementsRegions[r]->bodies[b]];
 					eslog::info("  %38s : %16s %16s %16f\n", b ? "" : elementsRegions[r]->name.c_str(),
-							Parser::stringwithcommas(info::mesh->elementsRegions[r]->bodyElements[b]).c_str(),
-							Parser::stringwithcommas(info::mesh->elementsRegions[r]->bodyFaces[b]).c_str(), ratio);
+							Parser::stringwithcommas(elementsRegions[r]->bodyElements[b]).c_str(),
+							Parser::stringwithcommas(elementsRegions[r]->bodyFaces[b]).c_str(), ratio);
 				}
 			}
 		}
 		eslog::info(" ============================================================================================= \n");
 
-		if (info::mesh->contacts->interfaces.size()) {
-			eslog::info("           : SPARSE SIDE (DENOTES PROJECTION PLANE) -> DENSE SIDE (PROJECTED ONTO THE PLANE)   \n");
-			eslog::info("  CONTACT  : %4s %16s %16s -> %4s %16s %16s\n", "BODY", "FACES", "AREA", "BODY", "FACES", "AREA");
-			eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-			for (auto iface = info::mesh->contacts->interfaces.begin(); iface != info::mesh->contacts->interfaces.end(); ++iface) {
-				eslog::info("           : %4d %16s %16f -> %4d %16s %16f\n", iface->from.body, Parser::stringwithcommas(iface->from.faces).c_str(), iface->from.area, iface->to.body, Parser::stringwithcommas(iface->to.faces).c_str(), iface->to.area);
-			}
+		if (info::ecf->input.contact_interfaces.size()) {
+			eslog::info("  CONTACT INTERFACES %16s %12s : %27s %12s\n", "FACES", "AREA", "FACES", "AREA");
 			eslog::info(" ============================================================================================= \n");
 		}
+		for (auto it = info::ecf->input.contact_interfaces.begin(); it != info::ecf->input.contact_interfaces.end(); ++it) {
+			std::string interface = " - - - - " + it->first;
+			switch (it->second.detection) {
+			case ContactInterfaceConfiguration::DETECTION::ALL_BODIES: interface += ", ALL_BODIES"; break;
+			case ContactInterfaceConfiguration::DETECTION::BODY_LIST: interface += ", BODY_LIST"; break;
+			case ContactInterfaceConfiguration::DETECTION::CONTACT_PAIR: interface += ", CONTACT_PAIR"; break;
+			}
+			switch (it->second.criterion) {
+			case ContactInterfaceConfiguration::CRITERION::BOUND: interface += ", BOUND"; break;
+			case ContactInterfaceConfiguration::CRITERION::GAP: interface += ", GAP=" + std::to_string(it->second.gap); break;
+			}
+			interface += " - - - - ";
+			eslog::info(" %*s %*s \n", 36, " ", namesize, interface.c_str());
+			for (size_t i = 0; i < it->second.found_interfaces.size(); ++i) {
+				auto &iface = contacts->interfaces[contactInterfaces[it->second.found_interfaces[i]]->interfaceIndex];
+				std::vector<std::string> names = Parser::split(contactInterfaces[it->second.found_interfaces[i]]->name, "-");
+				if (names.size() <= 2) {
+					names.push_back("NAMELESS_BODY");
+				}
+				if (names.size() <= 3) {
+					names.push_back("NAMELESS_BODY");
+				}
+				eslog::info("                                                                                               \n");
+				eslog::info(" %*s %30s : %40s \n", 18, "", names[2].c_str(), names[3].c_str());
+				eslog::info("          %27s %12f : %27s %12f\n", Parser::stringwithcommas(iface.from.faces).c_str(), iface.from.area, Parser::stringwithcommas(iface.to.faces).c_str(), iface.to.area);
+			}
+		}
+		eslog::info(" ============================================================================================= \n");
 		break;
 	case OutputConfiguration::LOGGER::PARSER:
 		eslog::info(" ====================================== MESH STATISTICS ====================================== \n");
@@ -803,13 +827,17 @@ void Mesh::printMeshStatistics()
 		for (size_t r = 1; r < boundaryRegions.size(); r++) {
 			eslog::info("mesh: region=%s, dimension=%d, elements=%d, nodes=%d\n", boundaryRegions[r]->name.c_str(), boundaryRegions[r]->dimension, boundaryRegions[r]->totalsize, boundaryRegions[r]->nodeInfo.totalSize);
 		}
+		eslog::info("mesh: bodies=%d\n", elements->bodiesTotalSize);
 		for (size_t r = 1; r < elementsRegions.size(); r++) {
 			for (size_t b = 0; b < elementsRegions[r]->bodies.size(); ++b) {
-				eslog::info("mesh: region=%s, b-elements=%d, b-faces=%d\n", elementsRegions[r]->name.c_str(), info::mesh->elementsRegions[r]->bodyElements[b], info::mesh->elementsRegions[r]->bodyFaces[b]);
+				eslog::info("mesh: region=%s, b-elements=%d, b-faces=%d\n", elementsRegions[r]->name.c_str(), elementsRegions[r]->bodyElements[b], elementsRegions[r]->bodyFaces[b]);
 			}
 		}
-		eslog::info("mesh: bodies=%d\n", elements->bodiesTotalSize);
-		eslog::info(" ============================================================================================= \n");
+		for (auto it = contactInterfaces.begin(); it != contactInterfaces.end(); ++it) {
+			eslog::info("mesh: region:%s, s-faces:%d, s-area:%.5f, d-faces:%d, d-area:%.5f\n", (*it)->name.c_str(),
+					contacts->interfaces[(*it)->interfaceIndex].from.faces, contacts->interfaces[(*it)->interfaceIndex].from.area,
+					contacts->interfaces[(*it)->interfaceIndex].to.faces, contacts->interfaces[(*it)->interfaceIndex].to.area);
+		}
 		break;
 	}
 }
@@ -853,6 +881,8 @@ void Mesh::printDecompositionStatistics()
 	Communication::reduce(sum.data(), gsum.data(), total, MPITools::getType<esint>().mpitype, MPI_SUM, 0);
 
 	double imbalance;
+	eslog::info("                                                                                               \n");
+	eslog::info(" ================================== DECOMPOSITION STATISTICS ================================= \n");
 	eslog::info("                              MIN                 MAX                 SUM           IMBALANCE \n");
 	eslog::info("  CLUSTERS  : %19s %19s %19s", Parser::stringwithcommas(gmin[cluster]).c_str(), Parser::stringwithcommas(gmax[cluster]).c_str(), Parser::stringwithcommas(gsum[cluster]).c_str());
 	if ((imbalance = (double)gmax[cluster] / gmin[cluster]) > 2) {

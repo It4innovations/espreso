@@ -1040,6 +1040,7 @@ void arrangeContactInterfaces()
 				for (size_t c = 0; c < info::mesh->contacts->interfaces.size(); ++c) {
 					if (assigned[c] == insert) {
 						if (insert) {
+							it->second.found_interfaces.push_back(info::mesh->contactInterfaces.size());
 							create(it->first, c, info::mesh->contacts->interfaces[c].from.body, info::mesh->contacts->interfaces[c].to.body);
 						} else {
 							preprocess(c, info::mesh->contacts->interfaces[c].from.body, info::mesh->contacts->interfaces[c].to.body);

@@ -32,6 +32,8 @@ struct ContactInterfaceConfiguration: public ECFDescription {
 	float gap;
 	float angle;
 
+	std::vector<esint> found_interfaces;
+
 	ContactInterfaceConfiguration();
 };
 

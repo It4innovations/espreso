@@ -36,7 +36,7 @@ ContactInterfaceConfiguration::ContactInterfaceConfiguration()
 			.setdescription({ "Area for contact search algorithm." })
 			.setdatatype({ ECFDataType::FLOAT }));
 
-	angle = 80;
+	angle = 30;
 	REGISTER(angle, ECFMetaData()
 			.setdescription({ "Maximal angle between faces." })
 			.setdatatype({ ECFDataType::FLOAT }));
