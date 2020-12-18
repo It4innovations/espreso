@@ -803,6 +803,11 @@ void Mesh::printMeshStatistics()
 		for (size_t r = 1; r < boundaryRegions.size(); r++) {
 			eslog::info("mesh: region=%s, dimension=%d, elements=%d, nodes=%d\n", boundaryRegions[r]->name.c_str(), boundaryRegions[r]->dimension, boundaryRegions[r]->totalsize, boundaryRegions[r]->nodeInfo.totalSize);
 		}
+		for (size_t r = 1; r < elementsRegions.size(); r++) {
+			for (size_t b = 0; b < elementsRegions[r]->bodies.size(); ++b) {
+				eslog::info("mesh: region=%s, b-elements=%d, b-faces=%d\n", elementsRegions[r]->name.c_str(), info::mesh->elementsRegions[r]->bodyElements[b], info::mesh->elementsRegions[r]->bodyFaces[b]);
+			}
+		}
 		eslog::info("mesh: bodies=%d\n", elements->bodiesTotalSize);
 		eslog::info(" ============================================================================================= \n");
 		break;
