@@ -414,14 +414,14 @@ void computeBodies()
 		std::fill(esum.begin(), esum.end(), 0);
 		std::fill(fsum.begin(), fsum.end(), 0);
 		for (auto e = info::mesh->elementsRegions[r]->elements->datatarray().begin(); e != info::mesh->elementsRegions[r]->elements->datatarray().end(); ++e) {
-			int body = info::mesh->elements->body->datatarray()[*e];
+			int b = info::mesh->elements->body->datatarray()[*e];
 			auto neighs = info::mesh->elements->faceNeighbors->begin() + *e;
 			for (auto n = neighs->begin(); n != neighs->end(); ++n) {
 				if (*n == -1) {
-					++fsum[body];
+					++fsum[b];
 				}
 			}
-			++esum[body];
+			++esum[b];
 		}
 		for (size_t b = 0; b < info::mesh->elementsRegions[r]->bodies.size(); ++b) {
 			bcount.push_back(esum[info::mesh->elementsRegions[r]->bodies[b]]);
