@@ -274,15 +274,18 @@ void exchangeContactHalo()
 			_Point<float>( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max(),  std::numeric_limits<float>::max()),
 			_Point<float>(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max())
 	};
-	for (esint e = 0; e < info::mesh->surface->size; ++e) {
-		const Point &p = info::mesh->surface->coordinates->datatarray()[e];
+	auto enodes = info::mesh->surface->enodes->begin();
+	for (esint e = 0; e < info::mesh->surface->size; ++e, ++enodes) {
 		if (info::mesh->surface->contact->datatarray()[e].gap > 0) {
-			box[0].x = std::min((float)p.x - info::mesh->surface->contact->datatarray()[e].gap, box[0].x);
-			box[0].y = std::min((float)p.y - info::mesh->surface->contact->datatarray()[e].gap, box[0].y);
-			box[0].z = std::min((float)p.z - info::mesh->surface->contact->datatarray()[e].gap, box[0].z);
-			box[1].x = std::max((float)p.x + info::mesh->surface->contact->datatarray()[e].gap, box[1].x);
-			box[1].y = std::max((float)p.y + info::mesh->surface->contact->datatarray()[e].gap, box[1].y);
-			box[1].z = std::max((float)p.z + info::mesh->surface->contact->datatarray()[e].gap, box[1].z);
+			for (auto n = enodes->begin(); n != enodes->end(); ++n) {
+				const Point &p = info::mesh->surface->coordinates->datatarray()[*n];
+				box[0].x = std::min((float)p.x - info::mesh->surface->contact->datatarray()[e].gap, box[0].x);
+				box[0].y = std::min((float)p.y - info::mesh->surface->contact->datatarray()[e].gap, box[0].y);
+				box[0].z = std::min((float)p.z - info::mesh->surface->contact->datatarray()[e].gap, box[0].z);
+				box[1].x = std::max((float)p.x + info::mesh->surface->contact->datatarray()[e].gap, box[1].x);
+				box[1].y = std::max((float)p.y + info::mesh->surface->contact->datatarray()[e].gap, box[1].y);
+				box[1].z = std::max((float)p.z + info::mesh->surface->contact->datatarray()[e].gap, box[1].z);
+			}
 		}
 	}
 
