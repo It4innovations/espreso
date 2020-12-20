@@ -3,14 +3,17 @@ def options(opt):
     opt.math.add_option("--mkl", action="store", type="string", metavar="MKL_ROOT", default="", help="Path to MKL.")
 
 def configure(ctx):
+    # currently it seems that there is a bug in OpenMP version (use gomp + gnu_threads)
     libs = []
+    if ctx.options.cxx == "icpc":
+        libs.append("gomp")
     if ctx.options.intwidth == "32":
         libs.append("mkl_intel_lp64")
     if ctx.options.intwidth == "64":
         libs.append("mkl_intel_ilp64")
     libs.append("mkl_core")
     if ctx.options.cxx == "icpc":
-        libs.append("mkl_intel_thread")
+        libs.append("mkl_gnu_thread")
     if ctx.options.cxx == "g++":
         libs.append("mkl_gnu_thread")
 
