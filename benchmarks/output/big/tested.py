@@ -8,6 +8,7 @@ def setup():
     ESPRESOTest.path = os.path.dirname(__file__)
     ESPRESOTest.args = [ "writer" ]
     ESPRESOTest.store_results = True
+    ESPRESOTest.external = True
 
 def teardown():
     ESPRESOTest.clean("store")

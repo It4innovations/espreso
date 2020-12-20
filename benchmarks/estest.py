@@ -1,5 +1,6 @@
 
 import shutil, os, subprocess, copy
+from nose.plugins.skip import SkipTest
 
 try:
     import requests, git
@@ -29,6 +30,7 @@ class ESPRESOTest:
     processes = 4
     args = []
     store_results = False
+    external = False
 
     _program = []
 
@@ -44,6 +46,8 @@ class ESPRESOTest:
     @staticmethod
     def clean(path="results"):
         shutil.rmtree(os.path.join(ESPRESOTest.path, path), ignore_errors=True)
+        ESPRESOTest.store_results = False
+        ESPRESOTest.external = False
 
     @staticmethod
     def run_program(program):
@@ -70,6 +74,8 @@ class ESPRESOTest:
 
     @staticmethod
     def run():
+        if ESPRESOTest.external and not os.path.exists(os.path.join("data", "espreso", "mesiotest")):
+            raise SkipTest("Test depends on the external file.")
         program = copy.deepcopy(ESPRESOTest.mpirun)
         program.append(str(ESPRESOTest.processes))
         if ESPRESOTest.checker:

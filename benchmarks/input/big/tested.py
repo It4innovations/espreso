@@ -7,6 +7,7 @@ from estest import ESPRESOTest
 def setup():
     ESPRESOTest.path = os.path.dirname(__file__)
     ESPRESOTest.args = [ "loader" ]
+    ESPRESOTest.external = True
 
 def teardown():
     ESPRESOTest.clean()
