@@ -80,7 +80,7 @@ static void createTranslationMatrixToCenter(const CoordinateSystemConfiguration 
 		createTranslationMatrix2D(m, x, y);
 	} break;
 	default:
-		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
+		eslog::internalFailure("unsupported operation.\n");
 	}
 }
 
@@ -102,7 +102,7 @@ static void createTranslationMatrixToZero(const CoordinateSystemConfiguration &c
 		createTranslationMatrix2D(m, -x, -y);
 	} break;
 	default:
-		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
+		eslog::internalFailure("unsupported operation.\n");
 	}
 }
 
@@ -121,7 +121,7 @@ static void multiplyTransformationMatrices(const CoordinateSystemConfiguration &
 		MATH::DenseMatDenseMatRowMajorProduct(1, false, 3, 4, left.data(), false, 3, 3, right.data(), 0, result.data());
 	} break;
 	default:
-		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
+		eslog::internalFailure("unsupported operation.\n");
 	}
 }
 
@@ -141,7 +141,7 @@ static Point applyTransformation(const CoordinateSystemConfiguration &csystem, s
 		result /=  m[2 * 3 + 0] * p.x + m[2 * 3 + 1] * p.y + m[2 * 3 + 2];
 	} break;
 	default:
-		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
+		eslog::internalFailure("unsupported operation.\n");
 	}
 	return result;
 }
@@ -163,7 +163,7 @@ static void createRotationMatrix(const CoordinateSystemConfiguration &csystem, s
 		csystem.rotation.z.evaluator->evalVector(1, Evaluator::Params(), &(rPoint.z));
 	} break;
 	default:
-		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
+		eslog::internalFailure("unsupported operation.\n");
 	}
 
 	switch (*csystem.dimension) {
@@ -182,7 +182,7 @@ static void createRotationMatrix(const CoordinateSystemConfiguration &csystem, s
 				sin.z = std::sin(d2r(rPoint.z));
 			} break;
 			default:
-				eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
+				eslog::internalFailure("unsupported operation.\n");
 			}
 			m[0 * 4 + 0] = cos.y * cos.z;                         m[0 * 4 + 1] = cos.y * sin.z;                         m[0 * 4 + 2] = -sin.y;
 			m[1 * 4 + 0] = cos.z * sin.x * sin.y - cos.x * sin.z; m[1 * 4 + 1] = cos.x * cos.z + sin.x * sin.y * sin.z; m[1 * 4 + 2] = cos.y * sin.x;
@@ -202,14 +202,14 @@ static void createRotationMatrix(const CoordinateSystemConfiguration &csystem, s
 				sin = std::sin(d2r(rPoint.z));
 			} break;
 			default:
-				eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
+				eslog::internalFailure("unsupported operation.\n");
 			}
 			m[0 * 3 + 0] =  cos; m[0 * 3 + 1] = sin;
 			m[1 * 3 + 0] = -sin; m[1 * 3 + 1] = cos;
 			m[2 * 3 + 2] = 1;
 		} break;
 		default:
-			eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
+			eslog::internalFailure("unsupported operation.\n");
 	}
 }
 
@@ -296,7 +296,7 @@ void processMorpher(const RBFTargetTransformationConfiguration &target, int dime
 		} break;
 
 		default:
-			eslog::globalerror("ESPRESO internal error: implement mesh morphing tranformation.\n");
+			eslog::internalFailure("implement mesh morphing tranformation.\n");
 	}
 }
 
@@ -372,7 +372,7 @@ void readExternalFile(
 	auto myExpectToken =
 			[] (Tokenizer &tokenizer, Tokenizer::Token real, Tokenizer::Token expected, const std::string &expectedToken) -> void {
 				if (real!=expected) {
-					eslog::error("ESPRESO internal error: mesh morphing.\n");
+					eslog::internalFailure("mesh morphing.\n");
 				}
 			};
 	auto myConvert =
@@ -380,7 +380,7 @@ void readExternalFile(
 				size_t size;
 				double result = std::stod(tokenizer.value(), &size);
 				if (size != tokenizer.value().size()) {
-					eslog::error("ESPRESO internal error: mesh morphing.\n");
+					eslog::internalFailure("mesh morphing.\n");
 				}
 				return result;
 			};
@@ -391,7 +391,7 @@ void readExternalFile(
 				" a region name.");
 		std::string name = tokenizer.value();
 		if (external_data.find(name) != external_data.end()) {
-			eslog::error("ESPRESO internal error: mesh morphing.\n");
+			eslog::internalFailure("mesh morphing.\n");
 		}
 		token = myNextToken(tokenizer);
 		myExpectToken(tokenizer, token, Tokenizer::Token::OBJECT_OPEN,
@@ -487,15 +487,15 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 	}
 
 	if (!Communication::gatherUnknownSize(sPoints, rPoints)) {
-		eslog::error("ESPRESO internal error: gather morphed points.\n");
+		eslog::internalFailure("gather morphed points.\n");
 	}
 
 	if (!Communication::broadcastUnknownSize(rPoints)) {
-		eslog::error("ESPRESO internal error: broadcast points.\n");
+		eslog::internalFailure("broadcast points.\n");
 	}
 
 	if (!Communication::gatherUnknownSize(sDisplacement, rDisplacement)) {
-		eslog::error("ESPRESO internal error: gather morphed displacement.\n");
+		eslog::internalFailure("gather morphed displacement.\n");
 	}
 
 	std::vector<double> wq_values;
@@ -512,7 +512,7 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 		size_t realSize = prepareMatrixM(rPoints, rDisplacement, dimension, configuration, M_values);
 
 		if (realSize != M_size) {
-			eslog::error("ESPRESO internal error: error while building matrix M.\n");
+			eslog::internalFailure("error while building matrix M.\n");
 		}
 
 		switch (configuration.solver) {
@@ -720,12 +720,12 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 		} break;
 
 		default:
-			eslog::error("ESPRESO internal error: implement mesh morphing solver.\n");
+			eslog::internalFailure("implement mesh morphing solver.\n");
 		}
 	}
 
 	if (!Communication::broadcastUnknownSize(wq_values)) {
-		eslog::error("ESPRESO internal error: broadcast WQ.\n");
+		eslog::internalFailure("broadcast WQ.\n");
 	}
 
 	esint wq_points = wq_values.size()/dimension;

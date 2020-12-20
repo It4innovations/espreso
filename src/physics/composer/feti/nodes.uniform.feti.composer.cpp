@@ -176,7 +176,7 @@ void NodesUniformFETIComposer::_initDOFMap()
 	}
 
 	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, info::mesh->neighborsWithMe)) {
-		eslog::error("ESPRESO internal error: exchange uniform DOFs.\n");
+		eslog::internalFailure("exchange uniform DOFs.\n");
 	}
 
 	std::vector<esint> DOFDistribution(1);
@@ -541,7 +541,7 @@ void NodesUniformFETIComposer::_buildMortars()
 
 	std::vector<std::vector<std::pair<esint, esint>> > sLambdas(info::mesh->neighborsWithMe.size(), lmap), rLambdas(info::mesh->neighborsWithMe.size()); // pairs<noffset, lambda>
 	if (!Communication::exchangeUnknownSize(sLambdas, rLambdas, info::mesh->neighborsWithMe)) {
-		eslog::error("ESPRESO internal error: cannot exchange mortar lambdas.\n");
+		eslog::internalFailure("cannot exchange mortar lambdas.\n");
 	}
 
 	// lambdas <node, lambda> are sorted according to lambda in order to get correct result from FETI solver
@@ -604,7 +604,7 @@ void NodesUniformFETIComposer::_buildMortars()
 	}
 
 	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighborsWithMe)) {
-		eslog::error("ESPRESO internal error: cannot exchange mortar d-map.\n");
+		eslog::internalFailure("cannot exchange mortar d-map.\n");
 	}
 
 	struct npair { esint id, n, offset; };

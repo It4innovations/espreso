@@ -92,7 +92,7 @@ void computeNodeDomainDistribution()
 	}
 
 	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, info::mesh->neighborsWithMe)) {
-		eslog::error("ESPRESO internal error: exchange node domain distribution.\n");
+		eslog::internalFailure("exchange node domain distribution.\n");
 	}
 
 	std::vector<esint> domainsDistrubtion({0});

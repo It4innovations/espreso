@@ -105,7 +105,7 @@ void VectorSparse::fillData(const Vector *in)
 		DataVectorSparse::fillValues(dynamic_cast<const VectorSparse*>(in)->vals);
 		return;
 	}
-	eslog::error("ESPRESO internal error: unsupported math operation: VectorSparse->fillData(%s)\n", in->name());
+	eslog::internalFailure("unsupported math operation: VectorSparse->fillData(%s)\n", in->name());
 }
 
 void VectorSparse::fillCombinedValues(const Vector *in, esint offset, esint nsize, esint sumsize)
@@ -151,7 +151,7 @@ void VectorSparse::add(double alpha, const Vector *a)
 		}
 		return;
 	}
-	eslog::error("ESPRESO internal error: unsupported math operation: VectorSparse->add(%s)\n", a->name());
+	eslog::internalFailure("unsupported math operation: VectorSparse->add(%s)\n", a->name());
 }
 
 void VectorSparse::sum(double alpha, const Vector *a, double beta, const Vector *b)
@@ -163,12 +163,12 @@ void VectorSparse::sum(double alpha, const Vector *a, double beta, const Vector 
 
 void VectorSparse::addToCombination(double alpha, const Vector *in, esint offset, esint nsize, esint sumsize)
 {
-	eslog::error("ESPRESO internal error: not implemented method\n");
+	eslog::internalFailure("not implemented method\n");
 }
 
 double VectorSparse::norm()
 {
-	eslog::error("ESPRESO internal error: not implemented method\n");
+	eslog::internalFailure("not implemented method\n");
 	return 0;
 }
 
@@ -196,7 +196,7 @@ double VectorSparse::absmax()
 
 double VectorSparse::dot(const Vector *other)
 {
-	eslog::error("ESPRESO internal error: not implemented method\n");
+	eslog::internalFailure("not implemented method\n");
 	return 0;
 }
 

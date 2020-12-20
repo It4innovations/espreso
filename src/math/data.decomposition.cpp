@@ -165,7 +165,7 @@ void DataDecomposition::allGather(const VectorDenseFETI &in) const
 	}
 
 	if (!Communication::exchangeKnownSize(gather->send, gather->recv, gather->neighbors)) {
-		eslog::error("ESPRESO internal error: gather decomposed data.\n");
+		eslog::internalFailure("gather decomposed data.\n");
 	}
 
 	for (size_t n = 0; n < gather->rindices.size(); ++n) {

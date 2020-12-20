@@ -151,7 +151,7 @@ void MatrixCSR::apply(const Vector *in, Vector *out)
 	if (dynamic_cast<const VectorDenseDistributed*>(out)) { _out = dynamic_cast<const VectorDenseDistributed*>(out)->vals; }
 
 	if (_in == NULL || _out == NULL) {
-		eslog::error("ESPRESO internal error: unsupported math operation.\n");
+		eslog::internalFailure("unsupported math operation.\n");
 	}
 
 	switch (type) {

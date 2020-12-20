@@ -62,7 +62,7 @@ void DataSynchronization::init(const MatrixCSRDistributed *matrix)
 	}
 
 	if (!Communication::receiveUpperUnknownSize(sbuffer, rbuffer, neighbors)) {
-		eslog::error("ESPRESO internal error: receive MatrixCSRDistribution pattern.\n");
+		eslog::internalFailure("receive MatrixCSRDistribution pattern.\n");
 	}
 
 	for (size_t n = 0; n < neighbors.size(); ++n) {
@@ -95,7 +95,7 @@ void DataSynchronization::init(const VectorDenseDistributed *vector)
 	}
 
 	if (!Communication::receiveUpperUnknownSize(sbuffer, rbuffer, neighbors)) {
-		eslog::error("ESPRESO internal error: receive MatrixDenseDistributed pattern.\n");
+		eslog::internalFailure("receive MatrixDenseDistributed pattern.\n");
 	}
 
 	for (size_t n = 0; n < neighbors.size(); ++n) {
@@ -108,7 +108,7 @@ void DataSynchronization::init(const VectorDenseDistributed *vector)
 
 void DataSynchronization::init(const VectorSparseDistributed *vector)
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 }
 
 void DataSynchronization::gatherFromUpper(const MatrixCSRDistributed *matrix)
@@ -118,7 +118,7 @@ void DataSynchronization::gatherFromUpper(const MatrixCSRDistributed *matrix)
 	}
 
 	if (!Communication::receiveUpperUnknownSize(sBuffer, rBuffer, neighbors)) {
-		eslog::error("ESPRESO internal error: receive MatrixCSRDistribution data.\n");
+		eslog::internalFailure("receive MatrixCSRDistribution data.\n");
 	}
 
 	for (size_t n = 0; n < neighbors.size(); ++n) {
@@ -135,7 +135,7 @@ void DataSynchronization::gatherFromUpper(const VectorDenseDistributed *vector)
 	}
 
 	if (!Communication::receiveUpperKnownSize(sBuffer, rBuffer, neighbors)) {
-		eslog::error("ESPRESO internal error: receive VectorDenseDistributed data.\n");
+		eslog::internalFailure("receive VectorDenseDistributed data.\n");
 	}
 
 	for (size_t n = 0; n < neighbors.size(); ++n) {
@@ -147,12 +147,12 @@ void DataSynchronization::gatherFromUpper(const VectorDenseDistributed *vector)
 
 void DataSynchronization::gatherFromUpper(const VectorSparseDistributed *vector)
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 }
 
 void DataSynchronization::scatterToUpper(const MatrixCSRDistributed *matrix)
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 }
 
 void DataSynchronization::scatterToUpper(const VectorDenseDistributed *vector)
@@ -164,7 +164,7 @@ void DataSynchronization::scatterToUpper(const VectorDenseDistributed *vector)
 	}
 
 	if (!Communication::receiveLowerKnownSize(rBuffer, sBuffer, neighbors)) {
-		eslog::error("ESPRESO internal error: scatter VectorDenseDistributed data.\n");
+		eslog::internalFailure("scatter VectorDenseDistributed data.\n");
 	}
 
 	for (size_t n = 0; n < neighbors.size() && neighbors[n] < info::mpi::rank; ++n) {
@@ -174,5 +174,5 @@ void DataSynchronization::scatterToUpper(const VectorDenseDistributed *vector)
 
 void DataSynchronization::scatterToUpper(const VectorSparseDistributed *vector)
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 }

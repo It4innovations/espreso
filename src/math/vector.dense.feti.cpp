@@ -73,7 +73,7 @@ double VectorDenseFETI::norm()
 double VectorDenseFETI::max()
 {
 	if (this->duplications == DataDecomposition::DUPLICATION::SPLIT) {
-		eslog::error("ESPRESO internal error: implement max of SPLIT FETI vectors.\n");
+		eslog::internalFailure("implement max of SPLIT FETI vectors.\n");
 	}
 
 	double max = std::numeric_limits<double>::min();
@@ -92,7 +92,7 @@ double VectorDenseFETI::max()
 double VectorDenseFETI::absmax()
 {
 	if (this->duplications == DataDecomposition::DUPLICATION::SPLIT) {
-		eslog::error("ESPRESO internal error: implement max of SPLIT FETI vectors.\n");
+		eslog::internalFailure("implement max of SPLIT FETI vectors.\n");
 	}
 
 	double max = 0;

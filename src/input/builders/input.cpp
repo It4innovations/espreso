@@ -262,7 +262,7 @@ void Input::balance()
 
 	profiler::synccheckpoint("sbuffer");
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
-		eslog::error("ESPRESO internal error: distribute permuted nodes.\n");
+		eslog::internalFailure("distribute permuted nodes.\n");
 	}
 	profiler::synccheckpoint("exchange");
 
@@ -322,10 +322,10 @@ void Input::balanceNodes()
 	_nDistribution = tarray<esint>::distribute(info::mpi::size, cCurrent.back());
 
 	if (!Communication::balance(_meshData.nIDs, cCurrent, _nDistribution)) {
-		eslog::error("ESPRESO internal error: balance node IDs.\n");
+		eslog::internalFailure("balance node IDs.\n");
 	}
 	if (!Communication::balance(_meshData.coordinates, cCurrent, _nDistribution)) {
-		eslog::error("ESPRESO internal error: balance coordinates.\n");
+		eslog::internalFailure("balance coordinates.\n");
 	}
 
 	esint back = 0, max;
@@ -377,7 +377,7 @@ void Input::balancePermutedNodes()
 	}
 
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
-		eslog::error("ESPRESO internal error: distribute permuted nodes.\n");
+		eslog::internalFailure("distribute permuted nodes.\n");
 	}
 
 	_meshData.nIDs.clear();
@@ -424,22 +424,22 @@ void Input::balanceElements()
 	nTarget.resize(info::mpi::size + 1, nTarget.back());
 
 	if (!Communication::balance(_meshData.enodes, nCurrent, nTarget)) {
-		eslog::error("ESPRESO internal error: balance element nodes.\n");
+		eslog::internalFailure("balance element nodes.\n");
 	}
 	if (!Communication::balance(_meshData.esize, eCurrent, _eDistribution)) {
-		eslog::error("ESPRESO internal error: balance element sizes.\n");
+		eslog::internalFailure("balance element sizes.\n");
 	}
 	if (!Communication::balance(_meshData.eIDs, eCurrent, _eDistribution)) {
-		eslog::error("ESPRESO internal error: balance element IDs.\n");
+		eslog::internalFailure("balance element IDs.\n");
 	}
 	if (!Communication::balance(_meshData.body, eCurrent, _eDistribution)) {
-		eslog::error("ESPRESO internal error: balance element bodies.\n");
+		eslog::internalFailure("balance element bodies.\n");
 	}
 	if (!Communication::balance(_meshData.etype, eCurrent, _eDistribution)) {
-		eslog::error("ESPRESO internal error: balance element types.\n");
+		eslog::internalFailure("balance element types.\n");
 	}
 	if (!Communication::balance(_meshData.material, eCurrent, _eDistribution)) {
-		eslog::error("ESPRESO internal error: balance element materials.\n");
+		eslog::internalFailure("balance element materials.\n");
 	}
 
 	auto back = _eDistribution.back();
@@ -498,7 +498,7 @@ void Input::balancePermutedElements()
 	}
 
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
-		eslog::error("ESPRESO internal error: distribute permuted elements.\n");
+		eslog::internalFailure("distribute permuted elements.\n");
 	}
 
 	_meshData.esize.clear();
@@ -682,7 +682,7 @@ void Input::assignRegions(
 	profiler::synccheckpoint("sbuffer");
 
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
-		eslog::error("ESPRESO internal error: assign regions.\n");
+		eslog::internalFailure("assign regions.\n");
 	}
 	profiler::synccheckpoint("exchange");
 
@@ -1123,7 +1123,7 @@ void Input::removeDuplicateElements()
 	profiler::synccheckpoint("search_potential");
 
 	if (!Communication::receiveUpperUnknownSize(sBuffer, rBuffer, info::mesh->neighbors)) {
-		eslog::error("ESPRESO internal error: cannot exchange duplicated elements.\n");
+		eslog::internalFailure("cannot exchange duplicated elements.\n");
 	}
 	profiler::synccheckpoint("exchange");
 
@@ -1159,7 +1159,7 @@ void Input::removeDuplicateElements()
 	rBuffer.clear();
 	rBuffer.resize(info::mesh->neighbors.size());
 	if (!Communication::receiveLowerUnknownSize(sBuffer, rBuffer, info::mesh->neighbors)) {
-		eslog::error("ESPRESO internal error: cannot exchange duplicated elements.\n");
+		eslog::internalFailure("cannot exchange duplicated elements.\n");
 	}
 	profiler::synccheckpoint("exchange");
 

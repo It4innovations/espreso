@@ -131,7 +131,7 @@ void GMRESolverInternal(SOLVER_INTERNAL_TYPE type,
 					}
 				}
 
-				default: eslog::error("ESPRESO internal error: no such internal solver.\n");
+				default: eslog::internalFailure("no such internal solver.\n");
 			}
 			continue;
 		}

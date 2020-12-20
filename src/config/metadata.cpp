@@ -27,21 +27,21 @@ std::string SIUnit::unit() const
 void ECFMetaData::checkdescription(const std::string &name, size_t size) const
 {
 	if (description.size() != size) {
-		eslog::globalerror("ESPRESO internal error: '%s' has incorrect number of descriptions.\n", name.c_str());
+		eslog::internalFailure("'%s' has incorrect number of descriptions.\n", name.c_str());
 	}
 }
 
 void ECFMetaData::checkdatatype(const std::string &name, size_t size) const
 {
 	if (datatype.size() != size) {
-		eslog::globalerror("ESPRESO internal error: '%s' has incorrect number of datatypes.\n", name.c_str());
+		eslog::internalFailure("'%s' has incorrect number of datatypes.\n", name.c_str());
 	}
 }
 
 void ECFMetaData::checkpattern(const std::string &name, size_t size) const
 {
 	if (pattern.size() != size) {
-		eslog::globalerror("ESPRESO internal error: '%s' has incorrect number of pattern values.\n", name.c_str());
+		eslog::internalFailure("'%s' has incorrect number of pattern values.\n", name.c_str());
 	}
 }
 

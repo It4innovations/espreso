@@ -42,7 +42,7 @@ Vector* Vector::deepCopyStructure()
 
 void Vector::downcastFailed(const Vector *v, const Vector *targer) const
 {
-	eslog::error("ESPRESO internal error: cannot downcast %s into %s.\n", v->name(), targer->name());
+	eslog::internalFailure("cannot downcast %s into %s.\n", v->name(), targer->name());
 }
 
 
@@ -223,7 +223,7 @@ void Vectors::addToCombination(double alpha, const Vectors *in, esint offset, es
 
 void Vectors::downcastFailed(const Vectors *v, const Vectors *target) const
 {
-	eslog::error("ESPRESO internal error: cannot downcast %s into %s.\n", v->name(), target->name());
+	eslog::internalFailure("cannot downcast %s into %s.\n", v->name(), target->name());
 }
 
 

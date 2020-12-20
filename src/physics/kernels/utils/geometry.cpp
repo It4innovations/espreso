@@ -175,12 +175,12 @@ void computeBoundaryRegionsArea()
 //				switch (slElement->nodes) {
 //					case 3: Triangle3::computeReferenceCoords(slCoordsMat, trCoordsMat, slTrNodRefPoints); break;
 //					case 4: Square4::computeReferenceCoords(slCoordsMat, trCoordsMat, slTrNodRefPoints); break;
-//					default: eslog::error("ESPRESO internal error: not implemented mortar element.\n");
+//					default: eslog::internalFailure("not implemented mortar element.\n");
 //				}
 //				switch (maElement->nodes) {
 //					case 3: Triangle3::computeReferenceCoords(maCoordsMat, trCoordsMat, slTrNodRefPoints); break;
 //					case 4: Square4::computeReferenceCoords(maCoordsMat, trCoordsMat, maTrNodRefPoints); break;
-//					default: eslog::error("ESPRESO internal error: not implemented mortar element.\n");
+//					default: eslog::internalFailure("not implemented mortar element.\n");
 //				}
 //				for (size_t qp = 0; qp < trQps; ++qp) {
 //					tmpMatrixDense.multiply(trElement->N->at(qp), slTrNodRefPoints);
@@ -240,12 +240,12 @@ void computeBoundaryRegionsArea()
 //				switch (slElement->nodes) {
 //					case 3: Triangle3::computeReferenceCoords(slCoordsMat, trCoordsMat, slTrNodRefPoints); break;
 //					case 4: Square4::computeReferenceCoords(slCoordsMat, trCoordsMat, slTrNodRefPoints); break;
-//					default: eslog::error("ESPRESO internal error: not implemented mortar element.\n");
+//					default: eslog::internalFailure("not implemented mortar element.\n");
 //				}
 //				switch (maElement->nodes) {
 //					case 3: Triangle3::computeReferenceCoords(maCoordsMat, trCoordsMat, slTrNodRefPoints); break;
 //					case 4: Square4::computeReferenceCoords(maCoordsMat, trCoordsMat, maTrNodRefPoints); break;
-//					default: eslog::error("ESPRESO internal error: not implemented mortar element.\n");
+//					default: eslog::internalFailure("not implemented mortar element.\n");
 //				}
 //				for (size_t qp = 0; qp < trQps; ++qp) {
 //					tmpMatrixDense.multiply(trElement->N->at(qp), slTrNodRefPoints);
@@ -371,7 +371,7 @@ void assembleMortarInterface(std::vector<ijv> &B)
 		switch (e->code) { // TODO: improve for other types
 		case Element::CODE::TRIANGLE3: Triangle3::computeReferenceCoords(eCoords, tCoords, ref); break;
 		case Element::CODE::SQUARE4: Square4::computeReferenceCoords(eCoords, tCoords, ref); break;
-		default: eslog::error("ESPRESO internal error: not implemented mortar element.\n");
+		default: eslog::internalFailure("not implemented mortar element.\n");
 		}
 	};
 
@@ -518,14 +518,14 @@ void computeMortars()
 	std::vector<int> neighs, neighsWithMe = info::mesh->contacts->neighbors;
 	std::vector<std::vector<int> > rNeighs(info::mesh->neighbors.size());
 	if (!Communication::exchangeUnknownSize(info::mesh->contacts->neighbors, rNeighs, info::mesh->neighbors)) {
-		eslog::error("ESPRESO internal error: exchange mortar neighbors.\n");
+		eslog::internalFailure("exchange mortar neighbors.\n");
 	}
 	for (size_t r = 0; r < rNeighs.size(); ++r) {
 		neighsWithMe.insert(neighsWithMe.end(), rNeighs[r].begin(), rNeighs[r].end());
 	}
 	rNeighs.resize(info::mesh->contacts->neighbors.size());
 	if (!Communication::exchangeUnknownSize(info::mesh->neighbors, rNeighs, info::mesh->contacts->neighbors)) {
-		eslog::error("ESPRESO internal error: exchange mortar geometric neighbors.\n");
+		eslog::internalFailure("exchange mortar geometric neighbors.\n");
 	}
 	for (size_t r = 0; r < rNeighs.size(); ++r) {
 		neighsWithMe.insert(neighsWithMe.end(), rNeighs[r].begin(), rNeighs[r].end());
@@ -544,7 +544,7 @@ void computeMortars()
 	std::vector<std::vector<ijv> > Bs(neighs.size(), B), Br(neighs.size());
 
 	if (!Communication::exchangeUnknownSize(Bs, Br, neighs)) {
-		eslog::error("ESPRESO internal error: cannot synchronize mortars.\n");
+		eslog::internalFailure("cannot synchronize mortars.\n");
 	}
 
 	for (size_t n = 0; n < Br.size(); ++n) {
@@ -631,7 +631,7 @@ void computeMortars()
 	}
 
 	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, neighsWithMe)) {
-		eslog::error("ESPRESO internal error: cannot exchange requested mortars IDs.\n");
+		eslog::internalFailure("cannot exchange requested mortars IDs.\n");
 	}
 
 	utils::sortAndRemoveDuplicates(cIDs);

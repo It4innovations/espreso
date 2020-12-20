@@ -52,7 +52,7 @@ void computeBodiesSurface()
 			}
 			break;
 		case ContactInterfaceConfiguration::DETECTION::CONTACT_PAIR:
-			eslog::error("ESPRESO internal error: implement CONTACT_PAIR detection.\n");
+			eslog::internalFailure("implement CONTACT_PAIR detection.\n");
 			break;
 		}
 	}
@@ -250,7 +250,7 @@ void computeWarpedNormals(SurfaceStore * surface)
 				}
 			} break;
 			default:
-				eslog::error("ESPRESO internal error: unknown or not implemented surface element.\n");
+				eslog::internalFailure("unknown or not implemented surface element.\n");
 			}
 		}
 
@@ -391,7 +391,7 @@ void exchangeContactHalo()
 	}
 
 	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->contacts->neighbors)) {
-		eslog::error("ESPRESO internal error: cannot exchange contact halo.\n");
+		eslog::internalFailure("cannot exchange contact halo.\n");
 	}
 
 	info::mesh->contacts->surfaces.resize(info::mesh->contacts->neighbors.size());
@@ -633,7 +633,7 @@ void triangulate(std::vector<Point> &face, std::vector<Triangle> &triangles)
 		}
 		return;
 	}
-	eslog::error("ESPRESO internal error: cannot compute triangles from a polygon.\n");
+	eslog::internalFailure("cannot compute triangles from a polygon.\n");
 }
 
 void clip(const Point &base, const std::vector<Triangle> &triangles, const std::vector<Point> &polygon, const double &gap, std::vector<Triangle> &output)
@@ -1089,7 +1089,7 @@ void arrangeContactInterfaces()
 				}
 			}
 			if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->contacts->neighbors)) {
-				eslog::error("ESPRESO internal error: cannot exchange contact faces to neighbors.\n");
+				eslog::internalFailure("cannot exchange contact faces to neighbors.\n");
 			}
 		}
 	}

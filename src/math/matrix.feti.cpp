@@ -37,13 +37,13 @@ MatrixFETI::~MatrixFETI()
 
 Matrix* MatrixFETI::copy()
 {
-	eslog::error("ESPRESO internal error: MatrixFETI cannot be used.\n");
+	eslog::internalFailure("MatrixFETI cannot be used.\n");
 	return NULL;
 }
 
 Matrix* MatrixFETI::create()
 {
-	eslog::error("ESPRESO internal error: cannot create instance of MatrixFETI.\n");
+	eslog::internalFailure("cannot create instance of MatrixFETI.\n");
 	return NULL;
 }
 
@@ -172,7 +172,7 @@ void MatrixFETI::apply(const Vector *in, Vector *out)
 	const VectorDenseFETI *_in = in->downcast<VectorDenseFETI>();
 	VectorDenseFETI *_out = out->downcast<VectorDenseFETI>();
 	if (_in->duplications != _out->duplications) {
-		eslog::error("ESPRESO internal error: various FETI vector duplications.\n");
+		eslog::internalFailure("various FETI vector duplications.\n");
 	}
 	#pragma omp parallel for
 	for (esint d = 0; d < domains; ++d) {
@@ -238,7 +238,7 @@ void MatrixFETI::fillDiagonal(Vector *diagonal) const
 
 double MatrixFETI::norm()
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 	return 0;
 }
 

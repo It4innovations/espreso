@@ -28,7 +28,7 @@ ScatteredInput::ScatteredInput(MeshBuilder &meshData)
 	profiler::syncstart("scattered_input");
 
 	if (info::mpi::size == 1) {
-		eslog::globalerror("ESPRESO internal error: use the sequential input for building mesh on 1 MPI process.\n");
+		eslog::internalFailure("use the sequential input for building mesh on 1 MPI process.\n");
 	}
 
 	eslog::startln("BUILDER: BUILD SCATTERED MESH", "BUILDER");
@@ -210,7 +210,7 @@ void ScatteredInput::assignEBuckets()
 	profiler::synccheckpoint("unknown_nodes");
 
 	if (!Communication::allToAllWithDataSizeAndTarget(sNodes, rNodes)) {
-		eslog::error("ESPRESO internal error: ask neighbors for nodes buckets.\n");
+		eslog::internalFailure("ask neighbors for nodes buckets.\n");
 	}
 	profiler::synccheckpoint("exchange");
 
@@ -243,7 +243,7 @@ void ScatteredInput::assignEBuckets()
 	profiler::synccheckpoint("unknown_nodes_buckets");
 
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuckets, rBuckets)) {
-		eslog::error("ESPRESO internal error: return nodes buckets.\n");
+		eslog::internalFailure("return nodes buckets.\n");
 	}
 	profiler::synccheckpoint("exchange");
 
@@ -384,7 +384,7 @@ void ScatteredInput::clusterize()
 	profiler::synccheckpoint("sbuffer");
 
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
-		eslog::error("ESPRESO internal error: distribute elements according to SFC.\n");
+		eslog::internalFailure("distribute elements according to SFC.\n");
 	}
 	profiler::synccheckpoint("exchange");
 
@@ -434,7 +434,7 @@ void ScatteredInput::clusterize()
 	profiler::synccheckpoint("rbuffer");
 
 //	if (!_meshData.eIDs.size()) {
-//		eslog::error("ESPRESO internal error: a process without elements -- re-run with smaller number of MPI.\n");
+//		eslog::internalFailure("a process without elements -- re-run with smaller number of MPI.\n");
 //	}
 	auto back = _eDistribution.back();
 	if (_meshData.eIDs.size()) {
@@ -574,7 +574,7 @@ void ScatteredInput::mergeDuplicatedNodes()
 	profiler::synccheckpoint("sbuffer");
 
 	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, _sfcNeighbors)) {
-		eslog::error("ESPRESO internal error: cannot exchange potentially duplicated nodes.\n");
+		eslog::internalFailure("cannot exchange potentially duplicated nodes.\n");
 	}
 	profiler::synccheckpoint("exchange");
 
@@ -650,7 +650,7 @@ void ScatteredInput::mergeDuplicatedNodes()
 				if (it != _nIDs.end() && *it == buckets[i].first) {
 					_nBuckets[it - _nIDs.begin()] = buckets[i].second;
 				} else {
-					eslog::error("ESPRESO internal error: cannot update duplicated node bucket.\n");
+					eslog::internalFailure("cannot update duplicated node bucket.\n");
 				}
 			}
 		}
@@ -726,7 +726,7 @@ void ScatteredInput::linkup()
 	eslog::checkpointln("LINKUP: UKNOWN NODES COMPUTED");
 
 	if (!Communication::exchangeUnknownSize(sNodes, rNodes, _sfcNeighbors)) {
-		eslog::error("ESPRESO internal error: request for coordinates.\n");
+		eslog::internalFailure("request for coordinates.\n");
 	}
 	profiler::synccheckpoint("exchange_unknown");
 	eslog::checkpointln("LINKUP: UKNOWN NODES EXCHANGED");
@@ -749,13 +749,13 @@ void ScatteredInput::linkup()
 	eslog::checkpointln("LINKUP: NODES REQUESTS PROCESSED");
 
 	if (!Communication::exchangeUnknownSize(fNodes, rNodes, _sfcNeighbors)) {
-		eslog::error("ESPRESO internal error: return requested IDs.\n");
+		eslog::internalFailure("return requested IDs.\n");
 	}
 	if (!Communication::exchangeUnknownSize(fRegions, rRegions, _sfcNeighbors)) {
-		eslog::error("ESPRESO internal error: return requested node regions.\n");
+		eslog::internalFailure("return requested node regions.\n");
 	}
 	if (!Communication::exchangeUnknownSize(fCoords, rCoors, _sfcNeighbors)) {
-		eslog::error("ESPRESO internal error: return requested coordinates.\n");
+		eslog::internalFailure("return requested coordinates.\n");
 	}
 	profiler::synccheckpoint("return_requested");
 	eslog::checkpointln("LINKUP: REQUESTED NODES RETURNED");
@@ -805,7 +805,7 @@ void ScatteredInput::linkup()
 	eslog::checkpointln("LINKUP: UNKNOWN NODES PROCESSED");
 
 	if (!Communication::sendVariousTargets(sNodes, uNodes, oTargets, oSources)) {
-		eslog::error("ESPRESO internal error: request for unknown nodes.\n");
+		eslog::internalFailure("request for unknown nodes.\n");
 	}
 	profiler::synccheckpoint("ask_for_missing_holders");
 	eslog::checkpointln("LINKUP: ASKED FOR MISSING NEIGHBORS");
@@ -817,7 +817,7 @@ void ScatteredInput::linkup()
 			if (node != _nIDs.end() && *node == uNodes[t][n]) {
 				sTargets[t].push_back(std::lower_bound(_bucketsBorders.begin(), _bucketsBorders.end(), _nBuckets[node - _nIDs.begin()] + 1) - _bucketsBorders.begin() - 1);
 			} else {
-				eslog::error("ESPRESO internal error: something wrong happen during link-up phase (request for unknown node).\n");
+				eslog::internalFailure("something wrong happen during link-up phase (request for unknown node).\n");
 			}
 		}
 	}
@@ -825,7 +825,7 @@ void ScatteredInput::linkup()
 	eslog::checkpointln("LINKUP: MISSING NEIGHBORS FOUND");
 
 	if (!Communication::sendVariousTargets(sTargets, rTargets, oSources)) {
-		eslog::error("ESPRESO internal error: return requested unknown node targets.\n");
+		eslog::internalFailure("return requested unknown node targets.\n");
 	}
 	profiler::synccheckpoint("return_holders");
 	eslog::checkpointln("LINKUP: MISSING NEIGHBORS RETURNED");
@@ -864,7 +864,7 @@ void ScatteredInput::linkup()
 	eslog::checkpointln("LINKUP: MISSING NEIGHBORS ADDED");
 
 	if (!Communication::sendVariousTargets(sNodes, uNodes, oTargets, oSources)) {
-		eslog::error("ESPRESO internal error: request for unknown nodes.\n");
+		eslog::internalFailure("request for unknown nodes.\n");
 	}
 	profiler::synccheckpoint("exchange_missing");
 	eslog::checkpointln("LINKUP: ASKED FOR MISSING NODES");
@@ -880,7 +880,7 @@ void ScatteredInput::linkup()
 				fCoords[t].push_back(_meshData.coordinates[node - _meshData.nIDs.begin()]);
 				fRegions[t].insert(fRegions[t].end(), _nregions.begin() + _nregsize * (node - _meshData.nIDs.begin()), _nregions.begin() + _nregsize * (node - _meshData.nIDs.begin() + 1));
 			} else {
-				eslog::error("ESPRESO internal error: something wrong happen during link-up phase.\n");
+				eslog::internalFailure("something wrong happen during link-up phase.\n");
 			}
 		}
 	}
@@ -888,10 +888,10 @@ void ScatteredInput::linkup()
 	eslog::checkpointln("LINKUP: MISSING NODES COMPUTED");
 
 	if (!Communication::sendVariousTargets(fRegions, uRegions, oSources)) {
-		eslog::error("ESPRESO internal error: return requested unknown node regions.\n");
+		eslog::internalFailure("return requested unknown node regions.\n");
 	}
 	if (!Communication::sendVariousTargets(fCoords, uCoords, oSources)) {
-		eslog::error("ESPRESO internal error: return requested unknown coordinates.\n");
+		eslog::internalFailure("return requested unknown coordinates.\n");
 	}
 	profiler::synccheckpoint("return_missing");
 	eslog::checkpointln("LINKUP: MISSING NODES RETURNED");
@@ -1010,7 +1010,7 @@ void ScatteredInput::linkup()
 		eslog::checkpointln("LINKUP: DUPLICATED NODES PROJECTED");
 
 		if (!Communication::exchangeUnknownSize(fDuplicates, rDuplicates, _sfcNeighbors)) {
-			eslog::error("ESPRESO internal error: return duplicate nodes.\n");
+			eslog::internalFailure("return duplicate nodes.\n");
 		}
 		profiler::synccheckpoint("exchange_duplicates");
 		eslog::checkpointln("LINKUP: DUPLICATED NODES EXCHANGED");
@@ -1215,7 +1215,7 @@ void ScatteredInput::linkup()
 	eslog::checkpointln("LINKUP: NODES RANK MAP COMPUTED");
 
 	if (!Communication::exchangeUnknownSize(sRanks, rRanks, _sfcNeighbors)) {
-		eslog::error("ESPRESO internal error: exchange ranks data.\n");
+		eslog::internalFailure("exchange ranks data.\n");
 	}
 	profiler::synccheckpoint("exchange_rankmap");
 	eslog::checkpointln("LINKUP: NODES RANK MAP EXCHANGED");
@@ -1344,7 +1344,7 @@ void ScatteredInput::exchangeBoundary()
 	eslog::checkpointln("BOUNDARY: UNKNOWN NODES COMPUTED");
 
 	if (!Communication::exchangeUnknownSize(unodes, rnodes, _sfcNeighbors)) {
-		eslog::error("ESPRESO internal error: request for unknown boundary nodes.\n");
+		eslog::internalFailure("request for unknown boundary nodes.\n");
 	}
 	profiler::synccheckpoint("exchange_unknown_nodes");
 
@@ -1391,7 +1391,7 @@ void ScatteredInput::exchangeBoundary()
 	eslog::checkpointln("BOUNDARY: UNKNOWN NODES PROCESSED");
 
 	if (!Communication::exchangeUnknownSize(fLinks, rLinks, _sfcNeighbors)) {
-		eslog::error("ESPRESO internal error: return ranks of unknown boundary nodes.\n");
+		eslog::internalFailure("return ranks of unknown boundary nodes.\n");
 	}
 	profiler::synccheckpoint("exchange_links");
 	eslog::checkpointln("BOUNDARY: UNKNOWN NODES RETURNED");
@@ -1444,7 +1444,7 @@ void ScatteredInput::exchangeBoundary()
 	eslog::checkpointln("BOUNDARY: MISSING NODES COMPUTED");
 
 	if (!Communication::allGatherUnknownSize(uunodes)) {
-		eslog::error("ESPRESO internal error: allgather unknown nodes.\n");
+		eslog::internalFailure("allgather unknown nodes.\n");
 	}
 	profiler::synccheckpoint("allgather_missing_nodes");
 
@@ -1488,7 +1488,7 @@ void ScatteredInput::exchangeBoundary()
 	eslog::checkpointln("BOUNDARY: MISSING NODES FOUND");
 
 	if (!Communication::allGatherUnknownSize(rrLinks)) {
-		eslog::error("ESPRESO internal error: allgather unknown nodes links.\n");
+		eslog::internalFailure("allgather unknown nodes links.\n");
 	}
 	profiler::synccheckpoint("exchange_found_nodes");
 	eslog::checkpointln("BOUNDARY: MISSING NODES RETURNED");
@@ -1619,7 +1619,7 @@ void ScatteredInput::exchangeBoundary()
 	eslog::checkpointln("BOUNDARY: PARENT ELEMENTS FOUND");
 
 	if (!Communication::sendVariousTargets(sBoundary, rBoundary, sRanks)) {
-		eslog::error("ESPRESO internal error: exchange boundary elements.\n");
+		eslog::internalFailure("exchange boundary elements.\n");
 	}
 	profiler::synccheckpoint("exchange_boundary");
 	eslog::checkpointln("BOUNDARY: BOUNDARY EXCHANGED");

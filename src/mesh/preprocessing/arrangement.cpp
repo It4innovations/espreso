@@ -164,7 +164,7 @@ void arrangeElementsPermutation(std::vector<esint> &permutation)
 
 	int elementstypes = static_cast<int>(Element::CODE::SIZE);
 	if (elementstypes > 32) {
-		eslog::error("ESPRESO internal error: increase elements-types synchronization buffer.\n");
+		eslog::internalFailure("increase elements-types synchronization buffer.\n");
 	}
 
 	int codes = 0;
@@ -457,7 +457,7 @@ void arrangeBoundaryRegions()
 						tdata.push_back(epointer->getIndex(*enodes, epointer->faces, epointer->facepointers, *nodes));
 					}
 					if (tdata.back() < 0) {
-						eslog::error("ESPRESO internal error: cannot find sub-element index.\n");
+						eslog::internalFailure("cannot find sub-element index.\n");
 					}
 				}
 
@@ -795,7 +795,7 @@ void synchronizeRegionNodes(std::vector<RegionStore*> &regions)
 	profiler::synccheckpoint("sbuffer");
 
 	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighbors)) {
-		eslog::error("ESPRESO internal error: exchange element region nodes.\n");
+		eslog::internalFailure("exchange element region nodes.\n");
 	}
 	profiler::synccheckpoint("exchange");
 
@@ -913,7 +913,7 @@ void computeNodeInfo(std::vector<RegionStore*> &regions)
 	profiler::synccheckpoint("sbuffer");
 
 	if (!Communication::receiveLowerKnownSize(sBuffer, rBuffer, info::mesh->neighbors)) {
-		eslog::error("ESPRESO internal error: receive global offset of a given element region.\n");
+		eslog::internalFailure("receive global offset of a given element region.\n");
 	}
 	Communication::allReduce(min, Communication::OP::MIN);
 	Communication::allReduce(max, Communication::OP::MAX);

@@ -14,7 +14,7 @@ void Tetrahedron10::setGaussPointsForOrder(int order)
 {
 	std::vector<double> r, s, t, w;
 	if (!Tetrahedron::gpw(order, r, s, t, w)) {
-		eslog::globalerror("ESPRESO internal error: cannot set Gauss points for a given order.\n");
+		eslog::internalFailure("cannot set Gauss points for a given order.\n");
 	}
 
 	N->clear(); N->resize(s.size(), MatrixDense(1, nodes));

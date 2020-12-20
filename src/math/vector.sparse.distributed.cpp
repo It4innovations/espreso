@@ -138,13 +138,13 @@ double VectorSparseDistributed::norm()
 
 double VectorSparseDistributed::max()
 {
-	eslog::error("ESPRESO internal error: call empty function.");
+	eslog::internalFailure("call empty function.");
 	return 0;
 }
 
 double VectorSparseDistributed::absmax()
 {
-	eslog::error("ESPRESO internal error: call empty function.");
+	eslog::internalFailure("call empty function.");
 	return 0;
 }
 
@@ -157,7 +157,7 @@ double VectorSparseDistributed::dot(const Vector *other)
 
 void VectorSparseDistributed::averageDuplications()
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 //	DataVectorDistributed::synchronize(vals);
 }
 
@@ -183,7 +183,7 @@ Vector* VectorsSparseDistributed::create()
 
 void VectorsSparseDistributed::resize(esint nvectors, esint nnz, esint nhalo, esint nneighbors)
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 //	holder.DataVectorSparse::resize(nvectors * nnz);
 //	holder.DataVectorDistributed::resize(nhalo);
 //	_update(nvectors, nnz, nhalo);
@@ -191,7 +191,7 @@ void VectorsSparseDistributed::resize(esint nvectors, esint nnz, esint nhalo, es
 
 void VectorsSparseDistributed::fillDistribution(esint nhalo, esint *halo, esint *distribution, int *neighbors)
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 //	holder.fillDistribution(nhalo, halo, distribution);
 //	_update(nvectors, nnz, nhalo);
 }

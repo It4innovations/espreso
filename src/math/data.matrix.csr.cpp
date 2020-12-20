@@ -44,7 +44,7 @@ void _DataMatrixCSR::clear()
 
 void DataMatrixCSR::combineIndices(esint *result, esint *first, esint *second, esint *firstend, esint *secondend, esint nfirst, esint nsecond)
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 }
 
 DataMatrixCSR::DataMatrixCSR()
@@ -169,7 +169,7 @@ void DataMatrixCSR::uniformCombination(const DataMatrixCSR *first, const DataMat
 {
 // TODO: generalize
 	if (first->nrows % nfirst != 0 || second->nrows % nsecond != 0) {
-		eslog::error("ESPRESO internal error: cannot combine matrices.");
+		eslog::internalFailure("cannot combine matrices.");
 	}
 
 	int sum = nfirst + nsecond;
@@ -207,7 +207,7 @@ void DataMatrixCSR::fill(double value)
 
 void DataMatrixCSR::fillCombinedValues(const DataMatrixCSR *in, esint roffset, esint coffset, esint nsize, esint sumsize)
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 }
 
 void DataMatrixCSR::addToCombination(double scale, const DataMatrixCSR *in, esint roffset, esint coffset, esint nsize, esint sumsize)

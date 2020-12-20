@@ -93,7 +93,7 @@ void MatrixDenseDistributed::shallowCopyStructure(const Matrix *other)
 		DataDistributed::shallowCopy(_other);
 		return;
 	}
-	eslog::error("ESPRESO internal error: unsupported math operation: %s->fillData(%s).\n", name(), other->name());
+	eslog::internalFailure("unsupported math operation: %s->fillData(%s).\n", name(), other->name());
 }
 
 void MatrixDenseDistributed::deepCopy(const Matrix *other)
@@ -139,12 +139,12 @@ void MatrixDenseDistributed::fillCombinedData(const Matrix *in, esint roffset, e
 
 void MatrixDenseDistributed::apply(const Vector *in, Vector *out)
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 }
 
 void MatrixDenseDistributed::apply(const Vectors *in, Vectors *out)
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 }
 
 void MatrixDenseDistributed::scale(double alpha)

@@ -206,7 +206,7 @@ void NodesUniformDistributedComposer::_buildPatterns()
 	eslog::checkpointln("COMPOSER: FILL SEND/RECV BUFFERS");
 
 	if (!Communication::receiveUpperUnknownSize(sKBuffer, rKBuffer, info::mesh->neighbors)) {
-		eslog::error("ESPRESO internal error: exchange K pattern.\n");
+		eslog::internalFailure("exchange K pattern.\n");
 	}
 
 	for (size_t i = 0; i < rKBuffer.size(); i++) {

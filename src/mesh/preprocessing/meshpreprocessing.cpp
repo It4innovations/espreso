@@ -121,7 +121,7 @@ void computeBodies()
 		}
 
 		if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighbors)) {
-			eslog::error("ESPRESO internal error: cannot exchange bodies indices\n");
+			eslog::internalFailure("cannot exchange bodies indices\n");
 		}
 
 		dual = info::mesh->elements->faceNeighbors->cbegin();
@@ -210,7 +210,7 @@ void computeBodies()
 			sTargets.push_back(v->first); sTargets.push_back(targets[v->first]);
 		}
 		if (!Communication::exchangeUnknownSize(sTargets, rTargets, neighbors)) {
-			eslog::error("ESPRESO internal error: cannot exchange compact graph holders.\n");
+			eslog::internalFailure("cannot exchange compact graph holders.\n");
 		}
 		for (size_t n = 0; n < rTargets.size(); ++n) {
 			for (size_t i = 0; i < rTargets[n].size(); i += 2) {
@@ -246,7 +246,7 @@ void computeBodies()
 		}
 
 		if (!Communication::exchangeUnknownSize(sGraph, rGraph, neighbors)) {
-			eslog::error("ESPRESO internal error: cannot exchange compact graph.\n");
+			eslog::internalFailure("cannot exchange compact graph.\n");
 		}
 		for (size_t n = 0; n < rGraph.size(); ++n) {
 			for (size_t i = 0; i < rGraph[n].size(); ) {
@@ -306,7 +306,7 @@ void computeBodies()
 			sMap.push_back(m->first); sMap.push_back(m->second);
 		}
 		if (!Communication::exchangeUnknownSize(sMap, rMap, neighbors)) {
-			eslog::error("ESPRESO internal error: cannot exchange re-mapped vertices.\n");
+			eslog::internalFailure("cannot exchange re-mapped vertices.\n");
 		}
 		for (size_t n = 0; n < rMap.size(); ++n) {
 			for (size_t i = 0; i < rMap[n].size(); i += 2) {
@@ -548,7 +548,7 @@ void linkNodesAndElements(
 	profiler::synccheckpoint("sbuffer");
 
 	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, info::mesh->neighbors)) {
-		eslog::error("ESPRESO internal error: addLinkFromTo - exchangeUnknownSize.\n");
+		eslog::internalFailure("addLinkFromTo - exchangeUnknownSize.\n");
 	}
 	profiler::synccheckpoint("exchange");
 
@@ -624,7 +624,7 @@ void computeNodesDuplication()
 
 	std::vector<std::vector<esint> > sBuffer(info::mesh->neighborsWithMe.size(), nids), rBuffer(info::mesh->neighborsWithMe.size());
 	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighborsWithMe)) {
-		eslog::error("ESPRESO internal error: cannot exchange nodes ids.\n");
+		eslog::internalFailure("cannot exchange nodes ids.\n");
 	}
 
 	int threads = info::env::OMP_NUM_THREADS;
@@ -737,7 +737,7 @@ void exchangeHalo()
 	profiler::synccheckpoint("sbuffer");
 
 	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighbors)) {
-		eslog::error("ESPRESO internal error: exchange halo elements.\n");
+		eslog::internalFailure("exchange halo elements.\n");
 	}
 	profiler::synccheckpoint("exchange");
 
@@ -1260,7 +1260,7 @@ void computeBoundaryNodes(std::vector<esint> &externalBoundary, std::vector<esin
 	}
 
 	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighbors)) {
-		eslog::error("ESPRESO internal error: exchange external nodes.\n");
+		eslog::internalFailure("exchange external nodes.\n");
 	}
 
 	for (size_t n = 0; n < info::mesh->neighbors.size(); n++) {

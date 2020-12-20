@@ -143,7 +143,7 @@ void HarmonicSolver::runNextSubstep()
 		}
 		break;
 	default:
-		eslog::error("ESPRESO internal error: not implemented interval type.\n");
+		eslog::internalFailure("not implemented interval type.\n");
 	}
 	step::frequency::angular = 2 * M_PI * step::frequency::current;
 	_system->nextSubstep();

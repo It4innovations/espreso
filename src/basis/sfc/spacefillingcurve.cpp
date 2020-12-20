@@ -17,7 +17,7 @@ SpaceFillingCurve::SpaceFillingCurve(size_t dimension, size_t depth, size_t npoi
 : _dimension(dimension), _depth(depth), _n((size_t)1 << depth), _refinedsfc(1, std::vector<size_t>(1))
 {
 	if (_dimension != 2 && _dimension != 3) {
-		eslog::globalerror("ESPRESO internal error: incorrect mesh dimension ='%ld'.\n", _dimension);
+		eslog::globalerror("incorrect mesh dimension ='%ld'.\n", _dimension);
 	}
 	size_t threads = info::env::OMP_NUM_THREADS;
 

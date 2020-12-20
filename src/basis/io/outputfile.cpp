@@ -159,7 +159,7 @@ void OutputFilePack::reorder()
 	profiler::synccheckpoint("sbuffer");
 
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer, 0, info::mpi::size, MPITools::asynchronous)) {
-		eslog::error("ESPRESO internal error: distribute permuted nodes.\n");
+		eslog::internalFailure("cannot distribute permuted nodes.\n");
 	}
 	profiler::synccheckpoint("all_to_all");
 
@@ -191,7 +191,7 @@ void OutputFilePack::write()
 {
 	profiler::syncstart("write");
 	switch (info::ecf->output.writer) {
-	case OutputConfiguration::WRITER::POSIX: eslog::error("ESPRESO internal error: POSIX writer does not work.\n"); break;
+	case OutputConfiguration::WRITER::POSIX: eslog::internalFailure("POSIX writer does not work.\n"); break;
 	case OutputConfiguration::WRITER::MPI:
 	case OutputConfiguration::WRITER::MPI_COLLECTIVE:
 		break;

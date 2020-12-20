@@ -64,7 +64,7 @@ esint getSFCDecomposition(std::vector<esint> &partition)
 	profiler::synccheckpoint("sfc_buckets");
 
 	if (!Communication::computeSplitters(buckets, permutation, borders)) {
-		eslog::error("ESPRESO internal error: cannot compute splitters.\n");
+		eslog::internalFailure("cannot compute splitters.\n");
 	}
 	borders.back() = sfc.buckets(sfc.depth());
 //	Communication::computeSFCBalancedBorders(sfc, buckets, permutation, borders);
@@ -1103,15 +1103,15 @@ void exchangeElements(const std::vector<esint> &partition)
 	}
 
 	if (!Communication::sendVariousTargets(sElements[0], rElements, targets)) {
-		eslog::error("ESPRESO internal error: exchange elements data.\n");
+		eslog::internalFailure("exchange elements data.\n");
 	}
 
 	if (!Communication::sendVariousTargets(sNodes[0], rNodes, targets)) {
-		eslog::error("ESPRESO internal error: exchange nodes data.\n");
+		eslog::internalFailure("exchange nodes data.\n");
 	}
 
 	if (!Communication::sendVariousTargets(sBoundary[0], rBoundary, targets)) {
-		eslog::error("ESPRESO internal error: exchange boundary data.\n");
+		eslog::internalFailure("exchange boundary data.\n");
 	}
 
 	profiler::synccheckpoint("exchange");
@@ -1487,7 +1487,7 @@ void exchangeElements(const std::vector<esint> &partition)
 	eslog::checkpointln("EXCHANGE EL: POST-PROCESSING");
 
 	if (!Communication::sendVariousTargets(requestedIDs, IDrequests, IDtargets[0], sources)) {
-		eslog::error("ESPRESO internal error: exchange ID requests.\n");
+		eslog::internalFailure("exchange ID requests.\n");
 	}
 
 	for (size_t r = 0; r < IDrequests.size(); r++) {
@@ -1504,7 +1504,7 @@ void exchangeElements(const std::vector<esint> &partition)
 	}
 
 	if (!Communication::sendVariousTargets(IDrequests, receivedTargets, sources)) {
-		eslog::error("ESPRESO internal error: return ID targets.\n");
+		eslog::internalFailure("return ID targets.\n");
 	}
 
 	profiler::synccheckpoint("idrequests");
@@ -1573,7 +1573,7 @@ void exchangeElements(const std::vector<esint> &partition)
 	eslog::checkpointln("EXCHANGE EL: PROC REQUESTS");
 
 	if (!Communication::sendVariousTargets(newIDrequests[0], IDrequests, IDtargets[0], sources)) {
-		eslog::error("ESPRESO internal error: request new ID.\n");
+		eslog::internalFailure("request new ID.\n");
 	}
 
 	for (size_t r = 0; r < IDrequests.size(); r++) {
@@ -1592,7 +1592,7 @@ void exchangeElements(const std::vector<esint> &partition)
 	}
 
 	if (!Communication::sendVariousTargets(IDrequests, newIDs, sources)) {
-		eslog::error("ESPRESO internal error: return new ID.\n");
+		eslog::internalFailure("return new ID.\n");
 	}
 
 	profiler::synccheckpoint("exchange_ids");
@@ -1784,7 +1784,7 @@ void permuteElements(const std::vector<esint> &permutation, const std::vector<si
 		utils::mergeThreadedUniqueData(sHalo);
 
 		if (!Communication::exchangeUnknownSize(sHalo[0], rHalo, info::mesh->neighbors)) {
-			eslog::error("ESPRESO internal error: exchange halo element new IDs while element permutation.\n");
+			eslog::internalFailure("exchange halo element new IDs while element permutation.\n");
 		}
 	}
 	profiler::synccheckpoint("prepare");

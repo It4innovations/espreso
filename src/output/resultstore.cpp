@@ -100,7 +100,7 @@ void ResultStore::createAsynchronizedStore()
 		case OutputConfiguration::FORMAT::NETGEN:
 			executor->addResultStore(new Netgen(*info::mesh)); break;
 		default:
-			eslog::globalerror("ESPRESO internal error: implement the selected output format.\n");
+			eslog::internalFailure("implement the selected output format.\n");
 		}
 
 	}

@@ -24,13 +24,13 @@ VectorFETI::~VectorFETI()
 
 VectorFETI* VectorFETI::copy()
 {
-	eslog::error("ESPRESO internal error: VectorFETI cannot be used.\n");
+	eslog::internalFailure("VectorFETI cannot be used.\n");
 	return NULL;
 }
 
 Vector* VectorFETI::create()
 {
-	eslog::error("ESPRESO internal error: cannot create instance of VectorFETI.\n");
+	eslog::internalFailure("cannot create instance of VectorFETI.\n");
 	return NULL;
 }
 
@@ -158,7 +158,7 @@ void VectorFETI::fillData(const Vector *in)
 		dynamic_cast<const VectorSparse*>(in)->toFETI(this);
 		return;
 	}
-	eslog::error("ESPRESO internal error: unsupported math operation.\n");
+	eslog::internalFailure("unsupported math operation.\n");
 }
 
 void VectorFETI::fillCombinedValues(const Vector *in, esint offset, esint nsize, esint sumsize)
@@ -179,7 +179,7 @@ void VectorFETI::fillCombinedValues(const Vector *in, esint offset, esint nsize,
 		dynamic_cast<const VectorSparse*>(in)->toCombinedFETI(this, offset, nsize, sumsize);
 		return;
 	}
-	eslog::error("ESPRESO internal error: unsupported math operation.\n");
+	eslog::internalFailure("unsupported math operation.\n");
 }
 
 void VectorFETI::fillValuesFromCombination(const Vector *in, esint offset, esint nsize, esint sumsize)
@@ -229,25 +229,25 @@ void VectorFETI::addToCombination(double alpha, const Vector *in, esint offset, 
 
 double VectorFETI::norm()
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 	return 0;
 }
 
 double VectorFETI::max()
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 	return 0;
 }
 
 double VectorFETI::absmax()
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 	return 0;
 }
 
 double VectorFETI::dot(const Vector *other)
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 	return 0;
 }
 
@@ -263,7 +263,7 @@ VectorsFETI::~VectorsFETI()
 
 VectorsFETI* VectorsFETI::copy()
 {
-	eslog::error("ESPRESO internal error: cannot copy VectorsFETI.\n");
+	eslog::internalFailure("cannot copy VectorsFETI.\n");
 	return NULL;
 }
 
@@ -277,7 +277,7 @@ void VectorsFETI::setDuplications(DataDecomposition::DUPLICATION duplications)
 
 Vector* VectorsFETI::create()
 {
-	eslog::error("ESPRESO internal error: cannot create VectorsFETI.\n");
+	eslog::internalFailure("cannot create VectorsFETI.\n");
 	return NULL;
 }
 

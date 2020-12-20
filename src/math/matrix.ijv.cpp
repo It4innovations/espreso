@@ -200,6 +200,6 @@ double MatrixIJV::norm()
 
 void MatrixIJV::removeLower(MatrixType type)
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 }
 

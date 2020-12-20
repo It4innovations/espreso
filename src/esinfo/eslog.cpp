@@ -256,12 +256,28 @@ void storedata(const char* msg)
 	logger->output(msg, VerboseArg::COLOR::BLUE);
 }
 
-void error(const char* msg)
+void failure(const char* msg)
 {
 	logger->error(msg);
 	utils::printStack();
 	fflush(stderr);
 	exit(EXIT_FAILURE);
+}
+
+void internalFailure(const char* msg)
+{
+	logger->error("INTERNAL FAILURE: ");
+	logger->error(msg);
+	utils::printStack();
+	fflush(stderr);
+	exit(EXIT_FAILURE);
+}
+
+void error(const char* msg)
+{
+	logger->output(msg, VerboseArg::COLOR::RED);
+	fflush(stdout);
+	exit(EXIT_SUCCESS);
 }
 
 void globalerror(const char* msg)

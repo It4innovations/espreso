@@ -273,7 +273,7 @@ void OpenFOAMLoader::buildFaces()
 	}
 
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
-		eslog::error("ESPRESO internal error: distribute faces indices in regions.\n");
+		eslog::internalFailure("distribute faces indices in regions.\n");
 	}
 
 	for (auto it = eregions.begin(); it != eregions.end(); ++it) {
@@ -352,7 +352,7 @@ void OpenFOAMLoader::collectFaces()
 	std::vector<size_t> target = Communication::getDistribution(fsize.size());
 
 	if (!Communication::balance(owner, ownersDist, target)) {
-		eslog::error("ESPRESO internal error: balance faces owners.\n");
+		eslog::internalFailure("balance faces owners.\n");
 	}
 
 	for (size_t i = 0; i < target.size(); i++) {
@@ -362,7 +362,7 @@ void OpenFOAMLoader::collectFaces()
 	}
 
 	if (!Communication::balance(neighbor, neighborsDist, target)) {
-		eslog::error("ESPRESO internal error: balance faces neighbors.\n");
+		eslog::internalFailure("balance faces neighbors.\n");
 	}
 
 	size_t firstID = Communication::getDistribution(fsize.size())[info::mpi::rank];
@@ -418,7 +418,7 @@ void OpenFOAMLoader::collectFaces()
 	}
 
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
-		eslog::error("ESPRESO internal error: distribute permuted elements.\n");
+		eslog::internalFailure("distribute permuted elements.\n");
 	}
 
 	fIDs.clear();

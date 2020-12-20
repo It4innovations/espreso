@@ -204,13 +204,13 @@ void FacesEdgesUniformDistributedComposer::_initDOFMap()
 	}
 
 	if (!Communication::exchangeUnknownSize(sIDBuffer[0], rIDBuffer, info::mesh->neighbors)) {
-		eslog::error("ESPRESO internal error: exchange elements ID in faces-edges-distributed-composer.\n");
+		eslog::internalFailure("exchange elements ID in faces-edges-distributed-composer.\n");
 	}
 	if (!Communication::exchangeUnknownSize(sDistBuffer[0], rDistBuffer, info::mesh->neighbors)) {
-		eslog::error("ESPRESO internal error: exchange elements Dist in faces-edges-distributed-composer.\n");
+		eslog::internalFailure("exchange elements Dist in faces-edges-distributed-composer.\n");
 	}
 	if (!Communication::exchangeUnknownSize(sDataBuffer[0], rDataBuffer, info::mesh->neighbors)) {
-		eslog::error("ESPRESO internal error: exchange elements Data in faces-edges-distributed-composer.\n");
+		eslog::internalFailure("exchange elements Data in faces-edges-distributed-composer.\n");
 	}
 
 	#pragma omp parallel for
@@ -423,7 +423,7 @@ void FacesEdgesUniformDistributedComposer::_buildPatterns()
 	eslog::checkpointln("COMPOSER: FILL SEND/RECV BUFFERS");
 
 	if (!Communication::receiveUpperUnknownSize(sKBuffer, rKBuffer, info::mesh->neighbors)) {
-		eslog::error("ESPRESO internal error: exchange K pattern.\n");
+		eslog::internalFailure("exchange K pattern.\n");
 	}
 
 	for (size_t i = 0; i < rKBuffer.size(); i++) {

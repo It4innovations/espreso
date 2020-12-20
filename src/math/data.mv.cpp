@@ -130,7 +130,7 @@ void DataMV::apply(const MatrixCSRDistributed *matrix, const VectorDenseDistribu
 	}
 
 	if (!Communication::exchangeKnownSize(sBuffer, rBuffer, neighbors)) {
-		eslog::error("ESPRESO internal error: exchange MV data.\n");
+		eslog::internalFailure("exchange MV data.\n");
 	}
 
 	std::copy(in->vals + in->nhalo, in->vals + in->size, v.vals + in->distribution[info::mpi::rank] - minCol + 1);

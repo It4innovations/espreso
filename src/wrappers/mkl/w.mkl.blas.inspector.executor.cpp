@@ -170,7 +170,7 @@ void MATH::CSRMatCSRMatProduct(CSRHandler *C, CSRHandler *A, CSRHandler *B, bool
 void MATH::CSRTranspose(CSRHandler *A, CSRHandler *At)
 {
 #ifdef HAVE_MKL
-	eslog::error("ESPRESO internal error: cannot use 'mkl_sparse_convert_csr'. It has weird behaviour.\n");
+	eslog::internalFailure("cannot use 'mkl_sparse_convert_csr'. It has weird behaviour.\n");
 	checkStatus(mkl_sparse_convert_csr(A->inner->inspector, SPARSE_OPERATION_TRANSPOSE, &At->inner->inspector));
 #endif
 }

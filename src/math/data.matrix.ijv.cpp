@@ -44,7 +44,7 @@ void _DataMatrixIJV::clear()
 
 void DataMatrixIJV::combineIndices(esint *result, esint *first, esint *second, esint *firstend, esint *secondend, esint nfirst, esint nsecond)
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 }
 
 DataMatrixIJV::DataMatrixIJV()
@@ -136,7 +136,7 @@ void DataMatrixIJV::fillValues(esint nnz, double *vals)
 
 void DataMatrixIJV::uniformCombination(const DataMatrixIJV *first, const DataMatrixIJV *second, int nfirst, int nsecond)
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 }
 
 void DataMatrixIJV::allowUpdating()
@@ -164,17 +164,17 @@ void DataMatrixIJV::fill(double value)
 
 void DataMatrixIJV::fillCombinedValues(const DataMatrixIJV *in, esint roffset, esint coffset, esint nsize, esint sumsize)
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 }
 
 void DataMatrixIJV::addToCombination(double scale, const DataMatrixIJV *in, esint roffset, esint coffset, esint nsize, esint sumsize)
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 }
 
 void DataMatrixIJV::fillDiagonal(DataVectorDense *diagonal) const
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 }
 
 

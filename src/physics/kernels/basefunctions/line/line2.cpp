@@ -13,7 +13,7 @@ void Line2::setGaussPointsForOrder(int order)
 {
 	std::vector<double> r, w;
 	if (!Line::gpw(order, r, w)) {
-		eslog::globalerror("ESPRESO internal error: cannot ret Gaurr pointr for a given order.\n");
+		eslog::internalFailure("cannot ret Gaurr pointr for a given order.\n");
 	}
 
 	N->clear(); N->resize(r.size(), MatrixDense(1, nodes));

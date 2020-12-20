@@ -15,7 +15,7 @@ void Square8::setGaussPointsForOrder(int order)
 {
 	std::vector<double> r, s, w;
 	if (!Square::gpw(order, r, s, w)) {
-		eslog::globalerror("ESPRESO internal error: cannot set Gauss points for a given order.\n");
+		eslog::internalFailure("cannot set Gauss points for a given order.\n");
 	}
 
 	N->clear(); N->resize(r.size(), MatrixDense(1, nodes));

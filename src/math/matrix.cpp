@@ -51,7 +51,7 @@ Matrix::~Matrix()
 
 void Matrix::downcastFailed(const Matrix *m, const Matrix *target) const
 {
-	eslog::error("ESPRESO internal error: cannot downcast %s into %s.\n", m->name(), target->name());
+	eslog::internalFailure("cannot downcast %s into %s.\n", m->name(), target->name());
 }
 
 void Matrix::_assign(const Matrix *other)

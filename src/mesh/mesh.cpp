@@ -677,7 +677,7 @@ void Mesh::printMeshStatistics()
 		case Element::CODE::HEXA20: return "HEXA20";
 
 		default:
-			eslog::error("ESPRESO internal error: unknown element code.\n");
+			eslog::internalFailure("unknown element code.\n");
 			return "";
 		}
 	};

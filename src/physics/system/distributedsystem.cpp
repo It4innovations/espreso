@@ -127,7 +127,7 @@ void DistributedSolverData::setDirichlet(const Builder *builder)
 	}
 
 	if (!Communication::receiveUpperUnknownSize(sBuffer, rBuffer, info::mesh->neighbors)) {
-		eslog::error("ESPRESO internal error: synchronize dirichlet data.\n");
+		eslog::internalFailure("synchronize dirichlet data.\n");
 	}
 
 	for (size_t n = 0; n < info::mesh->neighbors.size(); n++) {

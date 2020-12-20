@@ -67,7 +67,7 @@ void FETIAssemblerData::print(const Builder *builder, const char* prefix, const 
 void FETISolverData::buildB1()
 {
 	if ((esint)info::mesh->neighbors.size() != K.nneighbors) {
-		eslog::error("ESPRESO internal error: something wrong happens with K decomposition.\n");
+		eslog::internalFailure("something wrong happens with K decomposition.\n");
 	}
 
 	B1Dirichlet.initDomains(K.domains);
@@ -232,7 +232,7 @@ void FETISolverData::buildB1()
 	}
 
 	if (!Communication::receiveLowerUnknownSize(sBuffer, rBuffer, info::mesh->neighbors)) {
-		eslog::error("ESPRESO internal error: exchange gluing offsets.\n");
+		eslog::internalFailure("exchange gluing offsets.\n");
 	}
 
 	if (K.nshared) {

@@ -56,7 +56,7 @@ espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfigurat
 			*translation.dimension = DIMENSION::D3;
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: unknown physics while set RBFTargetTransformation.");
+			eslog::internalFailure("unknown physics while set RBFTargetTransformation.");
 		}
 	});
 }

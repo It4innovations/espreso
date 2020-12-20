@@ -130,7 +130,7 @@ void VectorDenseDistributed::fillData(const Vector *in)
 			return;
 		}
 	}
-	eslog::error("ESPRESO internal error: unsupported math operation.\n");
+	eslog::internalFailure("unsupported math operation.\n");
 }
 
 void VectorDenseDistributed::fillCombinedValues(const Vector *in, esint offset, esint nsize, esint sumsize)
@@ -146,7 +146,7 @@ void VectorDenseDistributed::fillCombinedValues(const Vector *in, esint offset, 
 		return;
 	}
 
-	eslog::error("ESPRESO internal error: unsupported math operation.\n");
+	eslog::internalFailure("unsupported math operation.\n");
 }
 
 void VectorDenseDistributed::fillValuesFromCombination(const Vector *in, esint offset, esint nsize, esint sumsize)

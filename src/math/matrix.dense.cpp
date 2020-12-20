@@ -138,12 +138,12 @@ void MatrixDense::fillCombinedData(const Matrix *in, esint roffset, esint coffse
 
 void MatrixDense::apply(const Vector *in, Vector *out)
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 }
 
 void MatrixDense::apply(const Vectors *in, Vectors *out)
 {
-	eslog::error("ESPRESO internal error: call empty function.\n");
+	eslog::internalFailure("call empty function.\n");
 }
 
 void MatrixDense::scale(double alpha)

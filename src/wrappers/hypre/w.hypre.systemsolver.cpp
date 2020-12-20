@@ -167,7 +167,7 @@ static void setBoomerAMG(HYPRE_Solver &boomerAMG, HYPRESolverData &data, HYPREDa
 			HYPRE_BoomerAMGSetCoarsenType(boomerAMG, 22);
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver options.\n");
+			eslog::internalFailure("not implemented interface to the required solver options.\n");
 	}
 
 	switch (configuration.interpolation_type) {
@@ -217,7 +217,7 @@ static void setBoomerAMG(HYPRE_Solver &boomerAMG, HYPRESolverData &data, HYPREDa
 			HYPRE_BoomerAMGSetCoarsenType(boomerAMG, 14);
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver options.\n");
+			eslog::internalFailure("not implemented interface to the required solver options.\n");
 	}
 
 	HYPRE_BoomerAMGSetTruncFactor(boomerAMG, configuration.interp_trunc_factor);
@@ -232,7 +232,7 @@ static void setBoomerAMG(HYPRE_Solver &boomerAMG, HYPRESolverData &data, HYPREDa
 			HYPRE_BoomerAMGSetCycleType(boomerAMG, 2);
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver options.\n");
+			eslog::internalFailure("not implemented interface to the required solver options.\n");
 	}
 
 	HYPRE_BoomerAMGSetNumSweeps(boomerAMG, configuration.sweeps_num);
@@ -279,7 +279,7 @@ static void setBoomerAMG(HYPRE_Solver &boomerAMG, HYPRESolverData &data, HYPREDa
 				return 18;
 				break;
 			default:
-				eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver options.\n");
+				eslog::internalFailure("not implemented interface to the required solver options.\n");
 				return -1;
 		}
 	};
@@ -299,7 +299,7 @@ static void setBoomerAMG(HYPRE_Solver &boomerAMG, HYPRESolverData &data, HYPREDa
 					return 3;
 					break;
 				default:
-					eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver options.\n");
+					eslog::internalFailure("not implemented interface to the required solver options.\n");
 					return -1;
 			}
 		};
@@ -324,7 +324,7 @@ static void setBoomerAMG(HYPRE_Solver &boomerAMG, HYPRESolverData &data, HYPREDa
 					return 3;
 					break;
 				default:
-					eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver options.\n");
+					eslog::internalFailure("not implemented interface to the required solver options.\n");
 					return -1;
 			}
 		};
@@ -362,7 +362,7 @@ static void setBoomerAMG(HYPRE_Solver &boomerAMG, HYPRESolverData &data, HYPREDa
 			HYPRE_BoomerAMGSetSmoothType(boomerAMG, 9);
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver options.\n");
+			eslog::internalFailure("not implemented interface to the required solver options.\n");
 	}
 
 
@@ -381,7 +381,7 @@ static void setBoomerAMG(HYPRE_Solver &boomerAMG, HYPRESolverData &data, HYPREDa
 				return 9;
 				break;
 			default:
-				eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver options.\n");
+				eslog::internalFailure("not implemented interface to the required solver options.\n");
 				return -1;
 		}
 	};
@@ -417,7 +417,7 @@ static void setBoomerAMG(HYPRE_Solver &boomerAMG, HYPRESolverData &data, HYPREDa
 			HYPRE_BoomerAMGSetMeasureType(boomerAMG, 1);
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver options.\n");
+			eslog::internalFailure("not implemented interface to the required solver options.\n");
 	}
 
 	switch (configuration.nodal_sys_coarsening) {
@@ -440,7 +440,7 @@ static void setBoomerAMG(HYPRE_Solver &boomerAMG, HYPRESolverData &data, HYPREDa
 			HYPRE_BoomerAMGSetNodal(boomerAMG, 6);
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver options.\n");
+			eslog::internalFailure("not implemented interface to the required solver options.\n");
 	}
 
 	HYPRE_BoomerAMGSetNodalDiag(boomerAMG, configuration.nodal_diag_treatment);
@@ -467,7 +467,7 @@ static void setBoomerAMG(HYPRE_Solver &boomerAMG, HYPRESolverData &data, HYPREDa
 			HYPRE_BoomerAMGSetAggInterpType(boomerAMG, 4);
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver options.\n");
+			eslog::internalFailure("not implemented interface to the required solver options.\n");
 	}
 
 	HYPRE_BoomerAMGSetNumFunctions(boomerAMG, data.numFnc);
@@ -515,7 +515,7 @@ static void setParaSailsPreconditioner(HYPRE_Solver &parasails, const HYPREParaS
 			HYPRE_ParaSailsSetSym(parasails, 2);
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver options.\n");
+			eslog::internalFailure("not implemented interface to the required solver options.\n");
 	}
 
 	HYPRE_ParaSailsSetLoadbal(parasails, configuration.loadbal);
@@ -584,7 +584,7 @@ void HYPRESystemSolver::solve()
 			HYPRE_BoomerAMGSetPrintLevel(solver, 3);
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver options.\n");
+			eslog::internalFailure("not implemented interface to the required solver options.\n");
 		}
 
 		eslog::solver("     - | SOLVER ::   HYPRE            TYPE ::                                BOOMERAMG | -\n");
@@ -633,7 +633,7 @@ void HYPRESystemSolver::solve()
 			HYPRE_PCGSetPrintLevel(solver, 3);
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver options.\n");
+			eslog::internalFailure("not implemented interface to the required solver options.\n");
 		}
 
 		switch (configuration.pcg.preconditioner) {
@@ -669,7 +669,7 @@ void HYPRESystemSolver::solve()
 		case HYPREPCGConfiguration::PRECONDITIONER::NONE:
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
+			eslog::internalFailure("not implemented interface to the required solver.\n");
 		}
 
 		eslog::solver("     - | REQUESTED STOPPING CRITERIA                                      %e | -\n", configuration.pcg.relative_conv_tol);
@@ -704,7 +704,7 @@ void HYPRESystemSolver::solve()
 		case HYPREPCGConfiguration::PRECONDITIONER::NONE:
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
+			eslog::internalFailure("not implemented interface to the required solver.\n");
 		}
 		break;
 
@@ -732,7 +732,7 @@ void HYPRESystemSolver::solve()
 			HYPRE_GMRESSetPrintLevel(solver, 3);
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver options.\n");
+			eslog::internalFailure("not implemented interface to the required solver options.\n");
 		}
 
 		switch (configuration.gmres.preconditioner) {
@@ -761,7 +761,7 @@ void HYPRESystemSolver::solve()
 			break;
 		case HYPREGMRESConfiguration::PRECONDITIONER::NONE:
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
+			eslog::internalFailure("not implemented interface to the required solver.\n");
 		}
 
 		eslog::solver("     - | REQUESTED STOPPING CRITERIA                                      %e | -\n", configuration.gmres.relative_conv_tol);
@@ -795,7 +795,7 @@ void HYPRESystemSolver::solve()
 		case HYPREGMRESConfiguration::PRECONDITIONER::NONE:
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
+			eslog::internalFailure("not implemented interface to the required solver.\n");
 		}
 		break;
 
@@ -823,7 +823,7 @@ void HYPRESystemSolver::solve()
 			HYPRE_FlexGMRESSetPrintLevel(solver, 3);
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver options.\n");
+			eslog::internalFailure("not implemented interface to the required solver options.\n");
 		}
 
 		switch (configuration.flexgmres.preconditioner) {
@@ -853,7 +853,7 @@ void HYPRESystemSolver::solve()
 		case HYPREFlexGMRESConfiguration::PRECONDITIONER::NONE:
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
+			eslog::internalFailure("not implemented interface to the required solver.\n");
 		}
 
 		eslog::solver("     - | REQUESTED STOPPING CRITERIA                                      %e | -\n", configuration.flexgmres.relative_conv_tol);
@@ -887,7 +887,7 @@ void HYPRESystemSolver::solve()
 		case HYPREFlexGMRESConfiguration::PRECONDITIONER::NONE:
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
+			eslog::internalFailure("not implemented interface to the required solver.\n");
 		}
 		break;
 
@@ -915,7 +915,7 @@ void HYPRESystemSolver::solve()
 			HYPRE_LGMRESSetPrintLevel(solver, 3);
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver options.\n");
+			eslog::internalFailure("not implemented interface to the required solver options.\n");
 		}
 
 		switch (configuration.lgmres.preconditioner) {
@@ -944,7 +944,7 @@ void HYPRESystemSolver::solve()
 			break;
 		case HYPRELGMRESConfiguration::PRECONDITIONER::NONE:
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
+			eslog::internalFailure("not implemented interface to the required solver.\n");
 		}
 
 		eslog::solver("     - | REQUESTED STOPPING CRITERIA                                      %e | -\n", configuration.lgmres.relative_conv_tol);
@@ -977,7 +977,7 @@ void HYPRESystemSolver::solve()
 			break;
 		case HYPRELGMRESConfiguration::PRECONDITIONER::NONE:
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
+			eslog::internalFailure("not implemented interface to the required solver.\n");
 		}
 		break;
 
@@ -1004,7 +1004,7 @@ void HYPRESystemSolver::solve()
 			HYPRE_BiCGSTABSetPrintLevel(solver, 3);
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
+			eslog::internalFailure("not implemented interface to the required solver.\n");
 		}
 
 		switch (configuration.bicgstab.preconditioner) {
@@ -1034,7 +1034,7 @@ void HYPRESystemSolver::solve()
 		case HYPREBiCGSTABConfiguration::PRECONDITIONER::NONE:
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
+			eslog::internalFailure("not implemented interface to the required solver.\n");
 		}
 
 		eslog::solver("     - | REQUESTED STOPPING CRITERIA                                      %e | -\n", configuration.bicgstab.relative_conv_tol);
@@ -1067,7 +1067,7 @@ void HYPRESystemSolver::solve()
 			break;
 		case HYPREBiCGSTABConfiguration::PRECONDITIONER::NONE:
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
+			eslog::internalFailure("not implemented interface to the required solver.\n");
 		}
 		break;
 
@@ -1087,7 +1087,7 @@ void HYPRESystemSolver::solve()
 		case HYPRECGNRConfiguration::PRECONDITIONER::NONE:
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
+			eslog::internalFailure("not implemented interface to the required solver.\n");
 		}
 
 		eslog::solver("     - | REQUESTED STOPPING CRITERIA                                      %e | -\n", configuration.cgnr.relative_conv_tol);
@@ -1112,11 +1112,11 @@ void HYPRESystemSolver::solve()
 		case HYPRECGNRConfiguration::PRECONDITIONER::NONE:
 			break;
 		default:
-			eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
+			eslog::internalFailure("not implemented interface to the required solver.\n");
 		}
 		break;
 	default:
-		eslog::globalerror("ESPRESO internal error: not implemented interface to the required solver.\n");
+		eslog::internalFailure("not implemented interface to the required solver.\n");
 	}
 
 	HYPRE_IJVectorGetValues(_inner->x, _nrows, _inner->rows.data(), _data.x[0].vals + _data.x[0].nhalo);

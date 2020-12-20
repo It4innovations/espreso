@@ -52,7 +52,7 @@ void TopologyOptimization::init(LoadStepSolver *previous)
 		}
 	}
 	if (xPhys == NULL) {
-		eslog::error("ESPRESO internal error: topology optimization need DESIGN_VARIABLE.\n");
+		eslog::internalFailure("topology optimization need DESIGN_VARIABLE.\n");
 	}
 	x = xPhys->shallowCopyStructure();
 	x->fillData(xPhys);
@@ -131,7 +131,7 @@ void TopologyOptimization::runNextSubstep()
 			}
 		} break;
 		case TopologyOptimizationSolverSettings::Type::MMA: {
-			eslog::error("ESPRESO internal error: not implemented optimization type.\n");
+			eslog::internalFailure("not implemented optimization type.\n");
 		} break;
 		}
 

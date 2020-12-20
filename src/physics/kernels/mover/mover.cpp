@@ -167,7 +167,7 @@ Move<OutputElements, ElementNodeValues>::Move(const OutputElements &from, const 
 
 void Move<OutputElements, ElementNodeValues>::operator()()
 {
-//	eslog::error("ESPRESO internal error: call empty function.\n");
+//	eslog::internalFailure("call empty function.\n");
 }
 
 Move<InputCoordinates, ElementNodeValues>::Move(const InputCoordinates &from, const ElementNodeValues &to)
@@ -611,7 +611,7 @@ void Move<ElementNodeValues, OutputNodes>::operator()()
 	}
 
 	if (!Communication::exchangeKnownSize(sBuffer, rBuffer, info::mesh->neighbors)) {
-		eslog::error("ESPRESO internal error: exchange diagonal values.\n");
+		eslog::internalFailure("exchange diagonal values.\n");
 	}
 
 	nranks = info::mesh->nodes->ranks->begin();

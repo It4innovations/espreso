@@ -79,7 +79,7 @@ static LinearSystem* getSystem(LinearSystem *previous, PhysicsConfiguration &phy
 		current = system;
 	} break;
 	default:
-		eslog::globalerror("ESPRESO internal error: unknown linear solver.\n");
+		eslog::internalFailure("unknown linear solver.\n");
 	}
 
 	current->builder = new TimeBuilder();
@@ -196,7 +196,7 @@ static LinearSystem* getSystem(LinearSystem *previous, PhysicsConfiguration &phy
 		default: break;
 		} break;
 	default:
-		eslog::globalerror("ESPRESO internal error: not implemented loadatep type.\n");
+		eslog::internalFailure("not implemented loadatep type.\n");
 	}
 
 	current->init();

@@ -157,7 +157,7 @@ void VectorDense::fillData(const Vector *in)
 		}
 		return;
 	}
-	eslog::error("ESPRESO internal error: unsupported math operation: %s->fillData(%s).\n", name(), in->name());
+	eslog::internalFailure("unsupported math operation: %s->fillData(%s).\n", name(), in->name());
 }
 
 void VectorDense::fillCombinedValues(const Vector *in, esint offset, esint nsize, esint sumsize)
@@ -186,7 +186,7 @@ void VectorDense::add(double alpha, const Vector *a)
 		MATH::vecAddSparse(_a->nnz, vals, alpha, _a->indices, _a->vals);
 		return;
 	}
-	eslog::error("ESPRESO internal error: unsupported math operation.\n");
+	eslog::internalFailure("unsupported math operation.\n");
 }
 
 void VectorDense::sum(double alpha, const Vector *a, double beta, const Vector *b)

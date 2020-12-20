@@ -213,7 +213,7 @@ void SortedInput::fillCoordinates()
 	Communication::allToAllV(nodes[0], rrIDs, ssize, rsize);
 
 	if (!Communication::sendVariousTargets(sBuffer, _rankNodeMap, sRanks, _targetRanks)) {
-		eslog::error("ESPRESO internal error: exchange neighbors.\n");
+		eslog::internalFailure("exchange neighbors.\n");
 	}
 	{
 		size_t rnodesize = 0;
@@ -283,10 +283,10 @@ void SortedInput::fillCoordinates()
 	std::vector<std::vector<Point> > coordinates(sRanks.size());
 
 	if (!Communication::sendVariousTargets(backedData[0], nodeRanks, _targetRanks)) {
-		eslog::error("ESPRESO internal error: return node ranks.\n");
+		eslog::internalFailure("return node ranks.\n");
 	}
 	if (!Communication::sendVariousTargets(backedCoordinates, coordinates, _targetRanks)) {
-		eslog::error("ESPRESO internal error: return coordinates.\n");
+		eslog::internalFailure("return coordinates.\n");
 	}
 
 	size_t csize = 0;
@@ -388,7 +388,7 @@ void SortedInput::addNodeRegions()
 		}
 
 		if (!Communication::sendVariousTargets(sBuffer, rBuffer, sRanks)) {
-			eslog::error("ESPRESO internal error: exchange node region.\n");
+			eslog::internalFailure("exchange node region.\n");
 		}
 
 		sBuffer.clear();
@@ -418,7 +418,7 @@ void SortedInput::addNodeRegions()
 
 		rBuffer.clear();
 		if (!Communication::sendVariousTargets(sBuffer, rBuffer, tRanks)) {
-			eslog::error("ESPRESO internal error: exchange node region to targets.\n");
+			eslog::internalFailure("exchange node region to targets.\n");
 		}
 
 		for (size_t t = threads; t < rBuffer.size(); t++) {

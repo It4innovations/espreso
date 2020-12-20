@@ -161,7 +161,7 @@ void AbaqusLoader::scan()
 	}
 
 	if (!Communication::allGatherUnknownSize(_blockFinishs)) {
-		eslog::error("ESPRESO internal error: exchange ABAQUS block ends.\n");
+		eslog::internalFailure("exchange ABAQUS block ends.\n");
 	}
 
 	for (size_t i = 0; i < _NLists.size(); i++) {
@@ -181,19 +181,19 @@ void AbaqusLoader::scan()
 	}
 
 	if (!Communication::allGatherUnknownSize(_NLists)) {
-		eslog::error("ESPRESO internal error: exchange ABAQUS NLists.\n");
+		eslog::internalFailure("exchange ABAQUS NLists.\n");
 	}
 
 	if (!Communication::allGatherUnknownSize(_ELists)) {
-		eslog::error("ESPRESO internal error: exchange ABAQUS ELists.\n");
+		eslog::internalFailure("exchange ABAQUS ELists.\n");
 	}
 
 	if (!Communication::allGatherUnknownSize(_Esets)) {
-		eslog::error("ESPRESO internal error: exchange ABAQUS ESets.\n");
+		eslog::internalFailure("exchange ABAQUS ESets.\n");
 	}
 
 	if (!Communication::allGatherUnknownSize(_Nsets)) {
-		eslog::error("ESPRESO internal error: exchange ABAQUS NSets.\n");
+		eslog::internalFailure("exchange ABAQUS NSets.\n");
 	}
 
 	// fix distribution if EBlocks are across more processes and elements data have more lines
