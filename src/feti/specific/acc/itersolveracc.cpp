@@ -17,7 +17,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
     double * MICtime = new double[ maxDevNumber ];
     bool resetNested = false;
     if (omp_get_max_active_levels() == 1 ) {
-        omp_set_nested(1);
+        omp_set_max_active_levels(10);
         resetNested = true;
     }
 
@@ -100,7 +100,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
         }
 
         if (resetNested) {
-            omp_set_nested( 0 );
+            omp_set_max_active_levels(1);
         }
         omp_set_num_threads(maxThreads);
 
@@ -223,7 +223,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
         }
 
         if (resetNested) {
-            omp_set_nested( 0 );
+            omp_set_max_active_levels(1);
         }
         omp_set_num_threads(maxThreads);
 
@@ -279,7 +279,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
         time_eval.timeEvents[0].end();
 
         if ( omp_get_max_active_levels() == 1 ) {
-            omp_set_nested( 1 ); 
+            omp_set_max_active_levels(10); 
             resetNested = true;
         }
 
@@ -331,7 +331,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
         } 
 
         if (resetNested) {
-            omp_set_nested( 0 );
+            omp_set_max_active_levels(1);
         }
         omp_set_num_threads( maxThreads );
 
@@ -395,7 +395,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
             time_eval.timeEvents[0].end();
 
             if ( omp_get_max_active_levels() == 1 ) {
-                omp_set_nested( 1 ); 
+                omp_set_max_active_levels(10); 
                 resetNested = true;
             }
 
@@ -444,7 +444,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
             }
 
             if (resetNested) {
-                omp_set_nested( 0 );
+                omp_set_max_active_levels(1);
             }
 
 
@@ -570,7 +570,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
             bool resetNested = false;
 
             if (omp_get_max_active_levels() == 1 ) {
-                omp_set_nested(1);
+                omp_set_max_active_levels(10);
                 resetNested = true;
             }
 
@@ -607,7 +607,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
             }
 
             if (resetNested) {
-                omp_set_nested( 0 );
+                omp_set_max_active_levels(1);
             }
             omp_set_num_threads( maxThreads );
 

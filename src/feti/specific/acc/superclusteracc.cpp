@@ -935,7 +935,7 @@ void SuperClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> *> & x
     bool resetNested = false;
 
     if ( omp_get_max_active_levels() == 1 ) {
-        omp_set_nested(1);
+        omp_set_max_active_levels(10);
         resetNested = true;
     }
 
@@ -993,7 +993,7 @@ void SuperClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> *> & x
     }
 
     if ( resetNested ) {
-        omp_set_nested( 0 );
+        omp_set_max_active_levels(1);
     }
     omp_set_num_threads( maxThreads );
 
