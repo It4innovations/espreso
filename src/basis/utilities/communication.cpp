@@ -19,7 +19,7 @@
 
 using namespace espreso;
 
-#define __GAP__ 100000
+#define __GAP__ 1000
 
 MPIOperations* MPITools::operations = NULL;
 MPIGroup* MPITools::procs = NULL;
