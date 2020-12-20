@@ -16,7 +16,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
     esint maxDevNumber = cluster.acc_per_MPI;
     double * MICtime = new double[ maxDevNumber ];
     bool resetNested = false;
-    if (omp_get_nested() == 0 ) {
+    if (omp_get_max_active_levels() == 1 ) {
         omp_set_nested(1);
         resetNested = true;
     }
@@ -278,7 +278,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
         }
         time_eval.timeEvents[0].end();
 
-        if ( omp_get_nested() == 0 ) {
+        if ( omp_get_max_active_levels() == 1 ) {
             omp_set_nested( 1 ); 
             resetNested = true;
         }
@@ -394,7 +394,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
 
             time_eval.timeEvents[0].end();
 
-            if ( omp_get_nested() == 0 ) {
+            if ( omp_get_max_active_levels() == 1 ) {
                 omp_set_nested( 1 ); 
                 resetNested = true;
             }
@@ -569,7 +569,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
             int maxThreads = omp_get_max_threads();
             bool resetNested = false;
 
-            if (omp_get_nested() == 0 ) {
+            if (omp_get_max_active_levels() == 1 ) {
                 omp_set_nested(1);
                 resetNested = true;
             }
