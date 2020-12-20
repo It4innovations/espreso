@@ -28,7 +28,7 @@
  ESPRESO: MESH PREPROCESSED
  ====================================== MESH STATISTICS ====================================== 
 mesh: region=NAMELESS_ELEMENT_SET, dimension=3, elements=953764, nodes=1093787
-mesh: bodies=2
+mesh: region=ALL_ELEMENTS, bodies=2
  ============================================================================================= 
                               MIN                 MAX                 SUM           IMBALANCE 
   CLUSTERS  :                   2                   2                   2               1.000

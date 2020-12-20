@@ -128,7 +128,8 @@ class ESPRESOTest:
                     key, value = param.split("=")
                     if key == "region":
                         region = value
-                        mesh[value] = dict()
+                        if region not in mesh:
+                            mesh[value] = dict()
                     else:
                         mesh[region][key] = value
             return mesh
@@ -140,6 +141,8 @@ class ESPRESOTest:
             for key, value in data.items():
                 if region not in log2:
                     ESPRESOTest.raise_error("missing mesh region: {0}\n".format(region), output)
+                if key not in log2[region]:
+                    ESPRESOTest.raise_error("missing key='{0}' on mesh region: {1}\n".format(key, region), output)
                 if log2[region][key] != value:
                     ESPRESOTest.raise_error("invalid value on region {0}::{1} {2} != {3}\n".format(region, key, value, log2[region][key]), output)
 

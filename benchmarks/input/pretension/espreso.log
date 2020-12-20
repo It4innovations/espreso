@@ -46,7 +46,7 @@ mesh: region=PRILOZKAH2, dimension=0, elements=0, nodes=112
 mesh: region=SPOJKAD1, dimension=0, elements=0, nodes=106
 mesh: region=SPOJKAD2, dimension=0, elements=0, nodes=106
 mesh: region=SPOJKAH, dimension=0, elements=0, nodes=840
-mesh: bodies=10
+mesh: region=ALL_ELEMENTS, bodies=10
  ============================================================================================= 
                               MIN                 MAX                 SUM           IMBALANCE 
   CLUSTERS  :                  10                  10                  10               1.000

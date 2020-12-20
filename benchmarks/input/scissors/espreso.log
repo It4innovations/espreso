@@ -29,7 +29,7 @@
  ====================================== MESH STATISTICS ====================================== 
 mesh: region=_ANF__ELEM__, dimension=3, elements=104621, nodes=24739
 mesh: region=_ANF__NODE__, dimension=0, elements=0, nodes=24739
-mesh: bodies=3
+mesh: region=ALL_ELEMENTS, bodies=3
  ============================================================================================= 
                               MIN                 MAX                 SUM           IMBALANCE 
   CLUSTERS  :                   1                   2                   7               2.000
