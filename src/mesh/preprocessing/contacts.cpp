@@ -426,15 +426,15 @@ void exchangeContactHalo()
 		// receive warped normals
 		size = rBuffer[n][i];
 		info::mesh->contacts->surfaces[n]->normal = new serializededata<esint, Point>(1, tarray<Point>(info::env::OMP_NUM_THREADS, size));
-		memcpy(info::mesh->contacts->surfaces[n]->normal->datatarray().data(), rBuffer[n].data() + i + 1, sizeof(Point) * size);
+		memcpy(info::mesh->contacts->surfaces[n]->normal->datatarray().data(), reinterpret_cast<const Point*>(rBuffer[n].data() + i + 1), sizeof(Point) * size);
 		i += 1 + size * (sizeof(Point) / sizeof(esint));
 
 		info::mesh->contacts->surfaces[n]->parameters = new serializededata<esint, Point>(2, tarray<Point>(info::env::OMP_NUM_THREADS, 2 * size));
-		memcpy(info::mesh->contacts->surfaces[n]->parameters->datatarray().data(), rBuffer[n].data() + i, 2 * sizeof(Point) * size);
+		memcpy(info::mesh->contacts->surfaces[n]->parameters->datatarray().data(), reinterpret_cast<const Point*>(rBuffer[n].data() + i), 2 * sizeof(Point) * size);
 		i += size * (2 * sizeof(Point) / sizeof(esint));
 
 		info::mesh->contacts->surfaces[n]->base = new serializededata<esint, Point>(1, tarray<Point>(info::env::OMP_NUM_THREADS, size));
-		memcpy(info::mesh->contacts->surfaces[n]->base->datatarray().data(), rBuffer[n].data() + i, sizeof(Point) * size);
+		memcpy(info::mesh->contacts->surfaces[n]->base->datatarray().data(), reinterpret_cast<const Point*>(rBuffer[n].data() + i), sizeof(Point) * size);
 		i += size * (sizeof(Point) / sizeof(esint));
 
 		// receive global ids
@@ -445,7 +445,7 @@ void exchangeContactHalo()
 
 		// receive coordinates
 		info::mesh->contacts->surfaces[n]->coordinates = new serializededata<esint, Point>(1, tarray<Point>(info::env::OMP_NUM_THREADS, size));
-		memcpy(info::mesh->contacts->surfaces[n]->coordinates->datatarray().data(), rBuffer[n].data() + i, sizeof(Point) * size);
+		memcpy(info::mesh->contacts->surfaces[n]->coordinates->datatarray().data(), reinterpret_cast<const Point*>(rBuffer[n].data() + i), sizeof(Point) * size);
 	}
 	info::mesh->contacts->neighborsWithMe = info::mesh->contacts->neighbors;
 	info::mesh->contacts->neighborsWithMe.push_back(info::mpi::rank);

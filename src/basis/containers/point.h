@@ -1,5 +1,6 @@
-#ifndef SRC_BASIS_CONTAINERS__Point3D_H_
-#define SRC_BASIS_CONTAINERS__Point3D_H_
+
+#ifndef SRC_BASIS_CONTAINERS__POINT_H_
+#define SRC_BASIS_CONTAINERS__POINT_H_
 
 #include <cmath>
 
@@ -135,14 +136,6 @@ public:
 		return *this;
 	}
 
-	_Point &operator=(const _Point &p)
-	{
-		x = p.x;
-		y = p.y;
-		z = p.z;
-		return *this;
-	}
-
 	_Point &operator/=(TType scalar)
 	{
 		x /= scalar;
@@ -216,4 +209,4 @@ inline bool operator!=(const _Point<TType> &p1, const _Point<TType> &p2) {
 
 }
 
-#endif /* SRC_BASIS_CONTAINERS__Point3D_H_ */
+#endif /* SRC_BASIS_CONTAINERS__POINT_H_ */

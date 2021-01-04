@@ -584,7 +584,7 @@ void ScatteredInput::mergeDuplicatedNodes()
 		for (size_t i = 0; i < rBuffer[n].size(); ) {
 			ids.push_back(rBuffer[n][i++]);
 			Point p;
-			memcpy(&p, rBuffer[n].data() + i, sizeof(Point));
+			memcpy(&p, reinterpret_cast<const Point*>(rBuffer[n].data() + i), sizeof(Point));
 			coordinates.push_back(p);
 			i += sizeof(p) / sizeof(esint);
 			for (size_t r = 0; r < _nregsize; ++r) {
