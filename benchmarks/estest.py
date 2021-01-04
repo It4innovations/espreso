@@ -74,7 +74,7 @@ class ESPRESOTest:
 
     @staticmethod
     def run():
-        if ESPRESOTest.external and not os.path.exists(os.path.join("data", "espreso", "mesiotest")):
+        if ESPRESOTest.external and not os.path.exists(os.path.join(os.sep, "data", "espreso", "mesiotest")):
             raise SkipTest("Test depends on the external file.")
         program = copy.deepcopy(ESPRESOTest.mpirun)
         program.append(str(ESPRESOTest.processes))
