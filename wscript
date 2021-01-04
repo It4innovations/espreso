@@ -26,37 +26,36 @@ def link_cxx(self, *k, **kw):
         general["use"] = kw["use"]
 
     header = dict()
+    self.env.stash()
     if "header_name" in kw:
         header = dict(header_name=kw["header_name"], define_name="", defines=["HAVE_" + kw["name"].upper()], includes=includes)
         header.update(general)
-        header["msg"] = "Checking for {0} header ".format(kw["name"])
+        header["msg"] = "Checking for '{0}' header".format(kw["name"])
         if not self.check_cxx(**header):
+            self.env.revert()
             return False
 
         if "fragment" in kw:
-            self.env["DEFINES_" + kw["name"].upper()] = []
-            self.env["INCLUDES_" + kw["name"].upper()] = []
             test = dict(execute=True)
             test.update(header)
             inc = [ "#include <{0}>\n".format(h) for h in kw["header_name"].split() ]
             test["fragment"] = "{0}int main(int argc, char** argv) {{ {1} }}".format("".join(inc), kw["fragment"])
-            test["msg"] = "Checking for {0} settings ".format(kw["name"])
+            test["msg"] = "Checking for '{0}' settings".format(kw["name"])
             if not self.check_cxx(**test):
+                self.env.revert()
                 return False
 
-        if "libs" in kw:
-            # remove defines since libs are not checked yet
-            self.env["DEFINES_" + kw["name"].upper()] = []
-            self.env["INCLUDES_" + kw["name"].upper()] = []
-
-    libs = dict(stlib=kw["libs"], libpath=libpath, msg="Checking for {0} static library ".format(kw["name"]))
-    libs.update(general)
-    libs.update(header)
-    if not self.options.static or not self.check_cxx(**libs):
-        libs["lib"] = libs["stlib"]
-        libs.pop("stlib")
-        libs["msg"] = "Checking for {0} dynamic library ".format(kw["name"])
-        return self.check_cxx(**libs)
+    if "libs" in kw:
+        libs = dict(stlib=kw["libs"], libpath=libpath, msg="Checking for '{0}' library".format(kw["name"]))
+        libs.update(general)
+        libs.update(header)
+        if not self.options.static or not self.check_cxx(**libs):
+            libs["lib"] = libs["stlib"]
+            libs.pop("stlib")
+            libs["msg"] = "Checking for '{0}' library".format(kw["name"])
+            if not self.check_cxx(**libs):
+                self.env.revert()
+                return False
 
     return True
 
@@ -145,34 +144,19 @@ def configure(ctx):
     ctx.env.with_gui = ctx.options.with_gui
     ctx.env.static = ctx.options.static
     ctx.link_cxx = types.MethodType(link_cxx, ctx)
-    def trycompiler():
-        try:
-            ctx.find_program(ctx.options.mpicxx, var="MPI_CXX")
-        except ctx.errors.ConfigurationError:
-            return False
-        return True
+
+    ctx.msg("Setting int width to", ctx.options.intwidth)
+    ctx.msg("Setting build mode to", ctx.options.mode)
+    ctx.msg("Setting math to", ctx.options.solver)
 
     """ Set compilers """
-
-    if not trycompiler():
-        if ctx.options.mpicxx == "mpiicpc":
-            ctx.options.mpicxx = "mpic++"
-        elif ctx.options.mpicxx == "mpic++":
-            ctx.options.mpicxx = "mpiicpc"
-        if not trycompiler():
-            ctx.fatal("Cannot found MPI compiler. Set a correct one by 'mpicxx=' parameter.")
-
-    if ctx.options.mpicxx == "mpiicpc":
-        ctx.options.cxx = "icpc"
-    if ctx.options.mpicxx == "mpic++":
-        ctx.options.cxx = "g++"
-
+    ctx.find_program(ctx.options.mpicxx, var="MPICXX")
     if ctx.env.with_gui:
         ctx.env["COMPILER_CXX"] = ctx.env["CXX"]
         ctx.load("compiler_cxx qt5")
     else:
         ctx.load(ctx.options.cxx)
-    ctx.env.CXX = ctx.env.LINK_CXX = ctx.env.MPI_CXX
+    ctx.env.CXX = ctx.env.LINK_CXX = ctx.env.MPICXX
 
     """ Set default compilers flags"""
 
@@ -208,11 +192,6 @@ def configure(ctx):
         ctx.options.solver = "mkl"
         Logs.error("Cannot find PARDISO library. Set --pardiso=PATH_TO_PARDISO to use PARDISO solver")
     ctx.env["DEFINES_SOLVER"] = [ "SOLVER_" + ctx.options.solver.upper() ]
-
-    ctx.msg("Setting compiler to", ctx.options.mpicxx)
-    ctx.msg("Setting int width to", ctx.options.intwidth)
-    ctx.msg("Setting build mode to", ctx.options.mode)
-    ctx.msg("Setting solver to", ctx.options.solver)
 
     print_available(ctx)
 
@@ -333,15 +312,14 @@ def options(opt):
     opt.compiler.add_option("--mpicxx",
         action="store",
         type="string",
-        default="mpiicpc",
-        help="MPI compiler used for building of the library [default: %default]")
+        default="mpic++",
+        help="MPI compiler used for building of the library")
 
     opt.compiler.add_option("--cxx",
         action="store",
-        choices=["icpc", "g++"],
-        metavar="icpc,g++",
-        default="icpc",
-        help="C++ compiler (set it in the case of non-standard 'mpicxx' settings) [default: %default]")
+        type="string",
+        default="g++",
+        help="C++ compiler")
 
     opt.compiler.add_option("--cxxflags",
         action="store",
