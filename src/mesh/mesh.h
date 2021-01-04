@@ -26,7 +26,7 @@ struct FETIDataStore;
 struct SurfaceStore;
 struct ContactStore;
 
-class ResultStore;
+class Output;
 
 class Mesh {
 public:
@@ -93,7 +93,7 @@ public:
 
 	std::vector<const MaterialConfiguration*> materials;
 
-	ResultStore *store;
+	Output *output;
 
 	bool _withGUI;
 };

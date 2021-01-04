@@ -34,7 +34,7 @@
 #include "store/contactstore.h"
 #include "store/fetidatastore.h"
 
-#include "output/resultstore.h"
+#include "output/output.h"
 #include "output/visualization/debug.h"
 
 #include <algorithm>
@@ -118,7 +118,7 @@ Mesh::Mesh()
   surface(new SurfaceStore()), domainsSurface(new SurfaceStore()),
   contacts(new ContactStore()),
 
-  store(new ResultStore()),
+  output(new Output()),
   _withGUI(false)
 {
 	dimension = 0;
@@ -145,6 +145,9 @@ Mesh::Mesh()
 
 Mesh::~Mesh()
 {
+	// there can be unfinished store operations -> delete output at first!
+	delete output;
+
 	delete elements;
 	delete nodes;
 	delete FETIData;

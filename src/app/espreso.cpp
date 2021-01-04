@@ -17,7 +17,7 @@
 #include "config/reader/reader.h"
 #include "config/configuration.h"
 #include "mesh/mesh.h"
-#include "output/resultstore.h"
+#include "output/output.h"
 #include "physics/physicalsolver.h"
 
 using namespace espreso;
@@ -56,52 +56,48 @@ int main(int argc, char **argv)
 	eslog::checkpointln("CONFIGURATION: RUN INFO INITIALIZED");
 
 	Mesh::init();
-	ResultStore::createAsynchronizedStore();
 	profiler::synccheckpoint("init_mesh");
 	eslog::endln("CONFIGURATION: MESH INITIALIZED");
 	eslog::checkpointln("ESPRESO: RUN INITIALIZED");
 	profiler::syncend("initialization");
 
-	if (ResultStore::isComputeNode()) {
-		if (info::mpi::irank == 0) {
-			profiler::syncstart("mesh_preprocessing");
-			Mesh::load();
-			eslog::checkpointln("ESPRESO: MESH LOADED");
-			info::mesh->preprocess();
-			eslog::checkpointln("ESPRESO: MESH PREPROCESSED");
-		}
-		if (info::mpi::isize > 1) {
-			info::mesh->duplicate();
-			eslog::checkpoint("ESPRESO: MESH DUPLICATED");
-			eslog::param("COPY", info::mpi::irank);
-			eslog::ln();
-		}
-		info::mesh->printMeshStatistics();
-		info::mesh->printDecompositionStatistics();
-		profiler::syncend("mesh_preprocessing");
+	if (info::mpi::irank == 0) {
+		profiler::syncstart("mesh_preprocessing");
+		Mesh::load();
+		eslog::checkpointln("ESPRESO: MESH LOADED");
+		info::mesh->preprocess();
+		eslog::checkpointln("ESPRESO: MESH PREPROCESSED");
+	}
+	if (info::mpi::isize > 1) {
+		info::mesh->duplicate();
+		eslog::checkpoint("ESPRESO: MESH DUPLICATED");
+		eslog::param("COPY", info::mpi::irank);
+		eslog::ln();
+	}
+	info::mesh->printMeshStatistics();
+	info::mesh->printDecompositionStatistics();
+	profiler::syncend("mesh_preprocessing");
 
-		profiler::syncstart("mesh_output");
-		info::mesh->store->updateMesh();
-		if (info::ecf->output.mode == OutputConfiguration::MODE::SYNC) {
-			eslog::checkpointln("ESPRESO: MESH STORED");
-		}
-		profiler::syncend("mesh_output");
+	profiler::syncstart("mesh_output");
+	info::mesh->output->updateMesh();
+	if (info::ecf->output.mode == OutputConfiguration::MODE::SYNC) {
+		eslog::checkpointln("ESPRESO: MESH STORED");
+	}
+	profiler::syncend("mesh_output");
 
-		if (Mesh::convertDatabase()) {
-			eslog::endln("ESPRESO: DATABASE CONVERTED");
-		} else {
-			profiler::syncstart("physical_solver");
-			PhysicalSolver::run();
-			profiler::syncend("physical_solver");
-			eslog::endln("ESPRESO: SIMULATION FINISHED");
-		}
+	if (Mesh::convertDatabase()) {
+		eslog::endln("ESPRESO: DATABASE CONVERTED");
+	} else {
+		profiler::syncstart("physical_solver");
+		PhysicalSolver::run();
+		profiler::syncend("physical_solver");
+		eslog::endln("ESPRESO: SIMULATION FINISHED");
 	}
 
 	eslog::finish();
 	profiler::syncend("espreso");
 	profiler::print(); // need to be printed before MPI_Finalize
 
-	ResultStore::destroyAsynchronizedStore();
 	Mesh::finish();
 	ECF::finish();
 	MPITools::finish();

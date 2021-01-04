@@ -31,7 +31,7 @@ public:
 		std::vector<float> values;
 	};
 
-	XDMF(const Mesh &mesh);
+	XDMF();
 	~XDMF();
 
 	void updateMesh();

@@ -10,14 +10,14 @@ namespace espreso {
 class Mesh;
 
 struct STL: public Visualization {
-	STL(const Mesh &mesh);
+	STL();
 	~STL();
 
 	void updateMesh();
 	void updateSolution();
 
 protected:
-	STLBinaryWriter _writer;
+	STLBinaryOutputWriter _writer;
 };
 
 }

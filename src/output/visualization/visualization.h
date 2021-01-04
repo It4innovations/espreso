@@ -3,23 +3,23 @@
 #define SRC_OUTPUT_RESULT_VISUALIZATION_VISUALIZATION_H_
 
 #include "basis/containers/point.h"
-#include "output/resultstore.h"
+#include "output/output.h"
 
 namespace espreso {
 
 class NamedData;
 
-class Visualization: public ResultStoreBase {
+class Visualization: public OutputWriter {
 
 public:
 	static bool isRoot();
-	static bool storeStep();
 	static bool storeData(const NamedData *data);
 	static Point shrink(const Point &p, const Point &ccenter, const Point &dcenter, double cratio, double dratio);
 
+	bool storeStep();
 	void updateMonitors() {}
 
-	Visualization(const Mesh &mesh);
+	Visualization();
 	~Visualization();
 
 };

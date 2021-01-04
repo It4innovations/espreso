@@ -8,8 +8,8 @@
 
 using namespace espreso;
 
-InSitu::InSitu(const Mesh &mesh)
-: Visualization(mesh), _catalyst(NULL)
+InSitu::InSitu()
+: _catalyst(NULL)
 {
 
 }

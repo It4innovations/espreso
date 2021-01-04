@@ -7,8 +7,7 @@
 
 using namespace espreso;
 
-Visualization::Visualization(const Mesh &mesh)
-: ResultStoreBase(mesh)
+Visualization::Visualization()
 {
 	if (info::ecf->output.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
 //		createOutputDirectory();

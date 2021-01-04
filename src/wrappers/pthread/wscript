@@ -1,0 +1,6 @@
+
+def options(opt):
+    pass
+
+def configure(ctx):
+    ctx.link_cxx(name="pthread", header_name="pthread.h")

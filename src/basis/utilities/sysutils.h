@@ -23,6 +23,7 @@ void printStack();
 std::string getStack();
 
 void callusleep(int usec);
+int nprocs();
 
 }
 }

@@ -10,7 +10,7 @@ class Catalyst;
 
 struct InSitu: public Visualization {
 
-	InSitu(const Mesh &mesh);
+	InSitu();
 	~InSitu();
 
 	void updateMesh();

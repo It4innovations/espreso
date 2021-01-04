@@ -7,7 +7,7 @@
 
 namespace espreso {
 
-struct EnsightWriter {
+struct EnsightOutputWriter {
 	static std::string codetotype(int code)
 	{
 		switch (static_cast<Element::CODE>(code)) {
@@ -40,7 +40,7 @@ struct EnsightWriter {
 	}
 };
 
-struct EnsightBinaryWriter: public OutputFilePack {
+struct EnsightBinaryOutputWriter: public OutputFilePack {
 
 	void format()
 	{
@@ -74,7 +74,7 @@ struct EnsightBinaryWriter: public OutputFilePack {
 	}
 };
 
-struct EnsightASCIIWriter: public OutputFilePack {
+struct EnsightASCIIOutputWriter: public OutputFilePack {
 
 	void format()
 	{

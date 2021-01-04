@@ -7,8 +7,8 @@
 #include "wrappers/mpi/communication.h"
 #include "basis/utilities/xml.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/meshinfo.h"
 #include "esinfo/eslog.hpp"
-#include "mesh/mesh.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/contactinterfacestore.h"
@@ -83,16 +83,16 @@ static esint gettotalsize(const std::vector<esint> &ecounters, Element::CODE cod
 	return getoffset(ecounters, code);
 };
 
-static void fillGeometry(const std::string &path, XDMFData *xml, XDMF::Geometry &heavydata, const Mesh &mesh, const RegionStore *region, size_t rindex)
+static void fillGeometry(const std::string &path, XDMFData *xml, XDMF::Geometry &heavydata, const RegionStore *region, size_t rindex)
 {
-	heavydata.coordinates.reserve(region->nodeInfo.size * mesh.dimension);
+	heavydata.coordinates.reserve(region->nodeInfo.size * info::mesh->dimension);
 	for (esint n = 0, i = region->nodeInfo.nhalo; n < region->nodeInfo.size; ++n, ++i) {
-		for (int d = 0; d < mesh.dimension; ++d) {
-			heavydata.coordinates.push_back(mesh.nodes->coordinates->datatarray()[region->nodes->datatarray()[i]][d]);
+		for (int d = 0; d < info::mesh->dimension; ++d) {
+			heavydata.coordinates.push_back(info::mesh->nodes->coordinates->datatarray()[region->nodes->datatarray()[i]][d]);
 		}
 	}
 	heavydata.name = region->name + "_COORDINATES";
-	heavydata.dimension = mesh.dimension;
+	heavydata.dimension = info::mesh->dimension;
 	heavydata.offset = region->nodeInfo.offset;
 	heavydata.size = region->nodeInfo.size;
 	heavydata.totalsize = region->nodeInfo.totalSize;
@@ -101,7 +101,7 @@ static void fillGeometry(const std::string &path, XDMFData *xml, XDMF::Geometry 
 	auto reference = geometry->element("DataItem");
 	auto dataitem = xml->domain->element("DataItem");
 
-	geometry->attribute("GeometryType", mesh.dimension == 2 ? "XY" : "XYZ");
+	geometry->attribute("GeometryType", info::mesh->dimension == 2 ? "XY" : "XYZ");
 
 	reference->attribute("Reference", "XML");
 	reference->value = dataitem->ref(heavydata.name);
@@ -109,7 +109,7 @@ static void fillGeometry(const std::string &path, XDMFData *xml, XDMF::Geometry 
 	dataitem->attribute("Name", heavydata.name);
 	dataitem->attribute("DataType", "Float");
 	dataitem->attribute("Format", "HDF");
-	dataitem->attribute("Dimensions", std::to_string(region->nodeInfo.totalSize) + " " + std::to_string(mesh.dimension));
+	dataitem->attribute("Dimensions", std::to_string(region->nodeInfo.totalSize) + " " + std::to_string(info::mesh->dimension));
 	dataitem->value = path + ".h5:" + heavydata.name;
 }
 
@@ -206,8 +206,8 @@ static void fillTopologyAttribute(const std::string &path, XML::Element *xml, XD
 	fillAttribute(path, xml, heavydata, data->name, "Cell");
 }
 
-XDMF::XDMF(const Mesh &mesh)
-: Visualization(mesh), _hdf5(NULL), _xml(NULL), _data(NULL)
+XDMF::XDMF()
+: _hdf5(NULL), _xml(NULL), _data(NULL)
 {
 	if (!HDF5::islinked()) {
 		eslog::globalerror("ESPRESO run-time error: link parallel HDF5 library in order to store data in XDMF format.\n");
@@ -239,7 +239,7 @@ void XDMF::updateMesh()
 	if (_measure) { eslog::startln("XDMF: STARTED", "XDMF"); }
 	profiler::syncstart("store_xdmf");
 
-	size_t rindex = 0, regions = _mesh.elementsRegions.size() + _mesh.boundaryRegions.size() + _mesh.contactInterfaces.size() - 2;
+	size_t rindex = 0, regions = info::mesh->elementsRegions.size() + info::mesh->boundaryRegions.size() + info::mesh->contactInterfaces.size() - 2;
 	std::vector<Geometry> geometries(regions);
 	std::vector<Topology> topologies(regions);
 
@@ -250,22 +250,22 @@ void XDMF::updateMesh()
 		_data->geometry.resize(regions);
 		_data->topoloty.resize(regions);
 
-		for (size_t r = 1; r < _mesh.elementsRegions.size(); ++r, ++rindex) {
-			const ElementsRegionStore *region = _mesh.elementsRegions[r];
+		for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++rindex) {
+			const ElementsRegionStore *region = info::mesh->elementsRegions[r];
 			_data->region[rindex] = _data->tree->element("Grid");
 			_data->region[rindex]->attribute("Name", region->name);
 
-			fillGeometry(_directory + _name, _data, geometries[rindex], _mesh, region, rindex);
+			fillGeometry(_directory + _name, _data, geometries[rindex], region, rindex);
 
 			Element::CODE code = getcode(region->ecounters); // Element::CODE::SIZE is used for representation of Mixed topology
 			esint prev = 0;
-			auto element = _mesh.elements->procNodes->cbegin();
+			auto element = info::mesh->elements->procNodes->cbegin();
 			for (auto e = region->elements->datatarray().cbegin(); e != region->elements->datatarray().cend(); prev = *e++) {
 				element += *e - prev;
 				if (code == Element::CODE::SIZE) {
-					topologies[rindex].topology.push_back(XDMFWritter::ecode(_mesh.elements->epointers->datatarray()[*e]->code));
+					topologies[rindex].topology.push_back(XDMFWritter::ecode(info::mesh->elements->epointers->datatarray()[*e]->code));
 				}
-				if (_mesh.elements->epointers->datatarray()[*e]->code == Element::CODE::LINE2) {
+				if (info::mesh->elements->epointers->datatarray()[*e]->code == Element::CODE::LINE2) {
 					topologies[rindex].topology.push_back(1);
 				}
 				for (auto n = element->begin(); n != element->end(); ++n) {
@@ -280,7 +280,7 @@ void XDMF::updateMesh()
 			_data->region[rindex] = _data->tree->element("Grid");
 			_data->region[rindex]->attribute("Name", region->name);
 
-			fillGeometry(_directory + _name, _data, geometries[rindex], _mesh, region, rindex);
+			fillGeometry(_directory + _name, _data, geometries[rindex], region, rindex);
 
 			Element::CODE code = getcode(region->ecounters);
 			if (region->dimension) {
@@ -304,11 +304,11 @@ void XDMF::updateMesh()
 			fillTopology(_directory + _name, _data, topologies[rindex], region, code, rindex);
 		};
 
-		for (size_t r = 1; r < _mesh.boundaryRegions.size(); ++r, ++rindex) {
-			boundary(_mesh.boundaryRegions[r]);
+		for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r, ++rindex) {
+			boundary(info::mesh->boundaryRegions[r]);
 		}
-		for (size_t r = 0; r < _mesh.contactInterfaces.size(); ++r, ++rindex) {
-			boundary(_mesh.contactInterfaces[r]);
+		for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r, ++rindex) {
+			boundary(info::mesh->contactInterfaces[r]);
 		}
 //		if (_withDecomposition) {
 //			// TODO:
@@ -401,15 +401,15 @@ void XDMF::updateSolution()
 	size_t rindex = 0;
 	if (_data->iteration) {
 		_data->tree = _data->collection->element("Grid")->attribute("GridType","Tree");
-		for (size_t r = 1; r < _mesh.elementsRegions.size(); ++r, ++rindex) {
+		for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++rindex) {
 			_data->region[rindex] = _data->tree->element("Grid");
-			_data->region[rindex]->attribute("Name", _mesh.elementsRegions[r]->name);
+			_data->region[rindex]->attribute("Name", info::mesh->elementsRegions[r]->name);
 			_data->geometry[rindex] = _data->region[rindex]->element(_data->geometry[rindex]);
 			_data->topoloty[rindex] = _data->region[rindex]->element(_data->topoloty[rindex]);
 		}
-		for (size_t r = 1; r < _mesh.boundaryRegions.size(); ++r, ++rindex) {
+		for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r, ++rindex) {
 			_data->region[rindex] = _data->tree->element("Grid");
-			_data->region[rindex]->attribute("Name", _mesh.boundaryRegions[r]->name);
+			_data->region[rindex]->attribute("Name", info::mesh->boundaryRegions[r]->name);
 			_data->geometry[rindex] = _data->region[rindex]->element(_data->geometry[rindex]);
 			_data->topoloty[rindex] = _data->region[rindex]->element(_data->topoloty[rindex]);
 		}
@@ -417,31 +417,31 @@ void XDMF::updateSolution()
 	_data->tree->element("Time")->attribute("Value", std::to_string(step::time::current));
 
 	std::vector<XDMF::Attribute> attributes;
-	attributes.reserve(_mesh.elements->data.size() + _mesh.nodes->data.size());
-	for (size_t di = 0; di < _mesh.elements->data.size(); ++di) {
-		if (storeData(_mesh.elements->data[di])) {
+	attributes.reserve(info::mesh->elements->data.size() + info::mesh->nodes->data.size());
+	for (size_t di = 0; di < info::mesh->elements->data.size(); ++di) {
+		if (storeData(info::mesh->elements->data[di])) {
 			rindex = 0;
-			for (size_t r = 1; r < _mesh.elementsRegions.size(); ++r, ++rindex) {
+			for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++rindex) {
 				attributes.push_back({});
-				fillTopologyAttribute(_directory + _name, _data->region[rindex], attributes.back(), _mesh.elementsRegions[r], _mesh.elements->data[di], _data->iteration);
+				fillTopologyAttribute(_directory + _name, _data->region[rindex], attributes.back(), info::mesh->elementsRegions[r], info::mesh->elements->data[di], _data->iteration);
 			}
 		}
 	}
 
-	for (size_t di = 0; di < _mesh.nodes->data.size(); ++di) {
-		if (storeData(_mesh.nodes->data[di])) {
+	for (size_t di = 0; di < info::mesh->nodes->data.size(); ++di) {
+		if (storeData(info::mesh->nodes->data[di])) {
 			rindex = 0;
-			for (size_t r = 1; r < _mesh.elementsRegions.size(); ++r, ++rindex) {
+			for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++rindex) {
 				attributes.push_back({});
-				fillGeometryAttribute(_directory + _name, _data->region[rindex], attributes.back(), _mesh.elementsRegions[r], _mesh.nodes->data[di], _data->iteration);
+				fillGeometryAttribute(_directory + _name, _data->region[rindex], attributes.back(), info::mesh->elementsRegions[r], info::mesh->nodes->data[di], _data->iteration);
 			}
-			for (size_t r = 1; r < _mesh.boundaryRegions.size(); ++r, ++rindex) {
+			for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r, ++rindex) {
 				attributes.push_back({});
-				fillGeometryAttribute(_directory + _name, _data->region[rindex], attributes.back(), _mesh.boundaryRegions[r], _mesh.nodes->data[di], _data->iteration);
+				fillGeometryAttribute(_directory + _name, _data->region[rindex], attributes.back(), info::mesh->boundaryRegions[r], info::mesh->nodes->data[di], _data->iteration);
 			}
-			for (size_t r = 0; r < _mesh.contactInterfaces.size(); ++r, ++rindex) {
+			for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r, ++rindex) {
 				attributes.push_back({});
-				fillGeometryAttribute(_directory + _name, _data->region[rindex], attributes.back(), _mesh.contactInterfaces[r], _mesh.nodes->data[di], _data->iteration);
+				fillGeometryAttribute(_directory + _name, _data->region[rindex], attributes.back(), info::mesh->contactInterfaces[r], info::mesh->nodes->data[di], _data->iteration);
 			}
 		}
 	}

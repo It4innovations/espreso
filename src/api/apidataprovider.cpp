@@ -9,7 +9,7 @@
 #include "config/reader/reader.h"
 
 #include "mesh/mesh.h"
-#include "output/resultstore.h"
+#include "output/output.h"
 
 #include "physics/system/builder/timebuilder.h"
 #include "physics/kernels/heattransfer2d.kernel.h"
@@ -28,13 +28,10 @@ APIDataProvider::APIDataProvider()
 {
 	info::system::setSignals();
 	eslog::startln("ESPRESO: STARTED", "ESPRESO");
-
-	ResultStore::createAsynchronizedStore();
 }
 
 APIDataProvider::~APIDataProvider()
 {
-	ResultStore::destroyAsynchronizedStore();
 	eslog::endln("ESPRESO: FINISHED");
 }
 
@@ -63,14 +60,13 @@ void APIDataProvider::prepare(int* argc, char ***argv)
 {
 	ECFReader::read(*info::ecf->ecfdescription, argc, argv, info::ecf->default_args, info::ecf->variables);
 	info::ecf->input.decomposition.domains = 1;
-	if (ResultStore::isComputeNode()) {
-		Mesh::load();
-		info::mesh->preprocess();
-		info::mesh->printMeshStatistics();
+	Mesh::load();
+	info::mesh->preprocess();
+	info::mesh->printMeshStatistics();
 
-		info::mesh->store->updateMesh();
-		eslog::checkpointln("ESPRESO: MESH PREPARED");
-	}
+	info::mesh->output->updateMesh();
+	info::mesh->output->updateMesh();
+	eslog::checkpointln("ESPRESO: MESH PREPARED");
 
 	switch (info::ecf->physics) {
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D:
@@ -88,7 +84,7 @@ void APIDataProvider::prepare(int* argc, char ***argv)
 	default:
 		eslog::globalerror("Physical solver: not implemented physical solver.\n");
 	}
-	info::mesh->store->updateMonitors();
+	info::mesh->output->updateMonitors();
 
 	rhs.resize(DOFs() * nodesSize());
 }
@@ -165,5 +161,5 @@ void APIDataProvider::fillRHS(std::vector<FETI4IReal> &rhs)
 void APIDataProvider::storeSolution(std::vector<FETI4IReal> &solution)
 {
 	memcpy(kernel->solutions.back().vals, solution.data(), sizeof(double) * solution.size());
-	info::mesh->store->updateSolution();
+	info::mesh->output->updateSolution();
 }

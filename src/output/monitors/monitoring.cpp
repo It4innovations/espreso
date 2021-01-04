@@ -3,6 +3,7 @@
 
 #include "esinfo/ecfinfo.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/meshinfo.h"
 #include "esinfo/stepinfo.h"
 #include "esinfo/eslog.hpp"
 
@@ -57,8 +58,8 @@ bool Monitoring::storeStep()
 }
 
 
-Monitoring::Monitoring(const Mesh &mesh)
-: ResultStoreBase(mesh), _runFile(NULL), _fttFile(NULL)
+Monitoring::Monitoring()
+: _runFile(NULL), _fttFile(NULL)
 {
 
 }
@@ -83,15 +84,15 @@ void Monitoring::updateMonitors()
 		ElementsRegionStore *estore = NULL;
 		BoundaryRegionStore *bstore = NULL;
 		bool regionNotFound = true;
-		for (size_t r = 0; regionNotFound && r < _mesh.elementsRegions.size(); r++) {
-			if (StringCompare::caseInsensitiveEq(it->second.region, _mesh.elementsRegions[r]->name)) {
-				estore = _mesh.elementsRegions[r];
+		for (size_t r = 0; regionNotFound && r < info::mesh->elementsRegions.size(); r++) {
+			if (StringCompare::caseInsensitiveEq(it->second.region, info::mesh->elementsRegions[r]->name)) {
+				estore = info::mesh->elementsRegions[r];
 				regionNotFound = false;
 			}
 		}
-		for (size_t r = 0; regionNotFound && r < _mesh.boundaryRegions.size(); r++) {
-			if (StringCompare::caseInsensitiveEq(it->second.region, _mesh.boundaryRegions[r]->name)) {
-				bstore = _mesh.boundaryRegions[r];
+		for (size_t r = 0; regionNotFound && r < info::mesh->boundaryRegions.size(); r++) {
+			if (StringCompare::caseInsensitiveEq(it->second.region, info::mesh->boundaryRegions[r]->name)) {
+				bstore = info::mesh->boundaryRegions[r];
 				regionNotFound = false;
 			}
 		}
@@ -102,15 +103,15 @@ void Monitoring::updateMonitors()
 		NodeData *ndata = NULL;
 		ElementData *edata = NULL;
 		bool propertyNotFound = true;
-		for (size_t i = 0; propertyNotFound && i < _mesh.nodes->data.size(); i++) {
-			if (_mesh.nodes->data[i]->name.size()) {
-				if (!_mesh.nodes->data[i]->onlySuffixed() && StringCompare::caseInsensitiveEq(it->second.property, _mesh.nodes->data[i]->name)) {
-					ndata = _mesh.nodes->data[i];
+		for (size_t i = 0; propertyNotFound && i < info::mesh->nodes->data.size(); i++) {
+			if (info::mesh->nodes->data[i]->name.size()) {
+				if (!info::mesh->nodes->data[i]->onlySuffixed() && StringCompare::caseInsensitiveEq(it->second.property, info::mesh->nodes->data[i]->name)) {
+					ndata = info::mesh->nodes->data[i];
 					propertyNotFound = false;
 				}
-				for (int p = 0; p < _mesh.nodes->data[i]->dimension; p++) {
-					if (StringCompare::caseInsensitiveEq(it->second.property, _mesh.nodes->data[i]->name + _mesh.nodes->data[i]->suffix(p))) {
-						ndata = _mesh.nodes->data[i];
+				for (int p = 0; p < info::mesh->nodes->data[i]->dimension; p++) {
+					if (StringCompare::caseInsensitiveEq(it->second.property, info::mesh->nodes->data[i]->name + info::mesh->nodes->data[i]->suffix(p))) {
+						ndata = info::mesh->nodes->data[i];
 						propertyNotFound = false;
 						break;
 					}
@@ -119,15 +120,15 @@ void Monitoring::updateMonitors()
 
 		}
 
-		for (size_t i = 0; propertyNotFound && i < _mesh.elements->data.size(); i++) {
-			if (_mesh.elements->data[i]->name.size()) {
-				if (!_mesh.elements->data[i]->onlySuffixed() && StringCompare::caseInsensitiveEq(it->second.property, _mesh.elements->data[i]->name)) {
-					edata = _mesh.elements->data[i];
+		for (size_t i = 0; propertyNotFound && i < info::mesh->elements->data.size(); i++) {
+			if (info::mesh->elements->data[i]->name.size()) {
+				if (!info::mesh->elements->data[i]->onlySuffixed() && StringCompare::caseInsensitiveEq(it->second.property, info::mesh->elements->data[i]->name)) {
+					edata = info::mesh->elements->data[i];
 					propertyNotFound = false;
 				}
-				for (int p = 0; p < _mesh.elements->data[i]->dimension; p++) {
-					if (StringCompare::caseInsensitiveEq(it->second.property, _mesh.elements->data[i]->name + _mesh.elements->data[i]->suffix(p))) {
-						edata = _mesh.elements->data[i];
+				for (int p = 0; p < info::mesh->elements->data[i]->dimension; p++) {
+					if (StringCompare::caseInsensitiveEq(it->second.property, info::mesh->elements->data[i]->name + info::mesh->elements->data[i]->suffix(p))) {
+						edata = info::mesh->elements->data[i];
 						propertyNotFound = false;
 						break;
 					}

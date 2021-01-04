@@ -96,8 +96,7 @@ struct OutputConfiguration: public ECFDescription {
 
 	enum class MODE {
 		SYNC,
-		THREAD,
-//		MPI,
+		PTHREAD,
 	};
 
 	enum class STORE_FREQUENCY {

@@ -15,7 +15,7 @@ class BoundaryRegionStore;
 
 class VTKLegacy: public Visualization {
 public:
-	VTKLegacy(const Mesh &mesh, bool withDecomposition = true);
+	VTKLegacy(bool withDecomposition = true);
 	~VTKLegacy();
 
 	void updateMesh();

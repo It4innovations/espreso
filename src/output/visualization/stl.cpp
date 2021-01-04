@@ -5,6 +5,7 @@
 #include "basis/containers/serializededata.h"
 #include "wrappers/mpi/communication.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/meshinfo.h"
 #include "esinfo/eslog.h"
 
 #include "mesh/mesh.h"
@@ -13,8 +14,7 @@
 
 using namespace espreso;
 
-STL::STL(const Mesh &mesh)
-: Visualization(mesh)
+STL::STL()
 {
 
 }
@@ -30,7 +30,7 @@ void STL::updateMesh()
 	std::string name = _path + filename;
 
 	int size, gsize;
-	size = _mesh.surface->triangles->structures();
+	size = info::mesh->surface->triangles->structures();
 	Communication::reduce(&size, &gsize, 1, MPI_INT, MPI_SUM, 0, MPITools::asynchronous);
 
 	if (info::mpi::rank == 0) {
@@ -38,11 +38,11 @@ void STL::updateMesh()
 		_writer.storeSize(gsize);
 	}
 
-	for (auto t = _mesh.surface->triangles->cbegin(); t != _mesh.surface->triangles->cend(); ++t) {
+	for (auto t = info::mesh->surface->triangles->cbegin(); t != info::mesh->surface->triangles->cend(); ++t) {
 		Point p[3] = {
-				_mesh.nodes->coordinates->datatarray()[t->at(0)],
-				_mesh.nodes->coordinates->datatarray()[t->at(1)],
-				_mesh.nodes->coordinates->datatarray()[t->at(2)],
+				info::mesh->nodes->coordinates->datatarray()[t->at(0)],
+				info::mesh->nodes->coordinates->datatarray()[t->at(1)],
+				info::mesh->nodes->coordinates->datatarray()[t->at(2)],
 		};
 		Point n = Point::cross(p[1] - p[0], p[2] - p[0]);
 

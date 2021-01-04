@@ -33,7 +33,7 @@
 #include "kernels/structuralmechanics3d.harmonic.kernel.h"
 #include "kernels/structuralmechanics3d.tdnns.kernel.h"
 #include "kernels/utils/morphing.h"
-#include "output/resultstore.h"
+#include "output/output.h"
 
 using namespace espreso;
 
@@ -338,7 +338,7 @@ void PhysicalSolver::runSingle(PhysicalSolver &solver, TPhysics &configuration)
 		}
 
 		if (step::isInitial()) {
-			info::mesh->store->updateMonitors();
+			info::mesh->output->updateMonitors();
 		}
 
 		eslog::endln("PHYSICS BUILDER: MONITORS SET");
@@ -381,7 +381,7 @@ void PhysicalSolver::runCoupled(PhysicalSolver &first, PhysicalSolver &second, T
 		eslog::checkpointln("PHYSICS BUILDER: LOAD STEP SOLVER INITTED");
 
 		if (step::isInitial()) {
-			info::mesh->store->updateMonitors();
+			info::mesh->output->updateMonitors();
 		}
 		eslog::endln("PHYSICS BUILDER: MONITORS SET");
 
@@ -394,9 +394,9 @@ void PhysicalSolver::runCoupled(PhysicalSolver &first, PhysicalSolver &second, T
 		step::iteration = 0;
 
 		while (!step::isLast()) {
-			info::mesh->store->suppress();
+			info::mesh->output->suppress();
 			first.loadStepSolver->runNextSubstep();
-			info::mesh->store->permit();
+			info::mesh->output->permit();
 			second.loadStepSolver->runNextSubstep();
 			step::substep++;
 			step::iteration = 0;

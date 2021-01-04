@@ -5,6 +5,7 @@
 #include "wrappers/mpi/communication.h"
 #include "esinfo/eslog.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/meshinfo.h"
 #include "mesh/mesh.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
@@ -19,8 +20,8 @@
 
 using namespace espreso;
 
-EnSightGold::EnSightGold(const Mesh &mesh, bool withDecomposition)
-: Visualization(mesh), _ftt(NULL), _withDecomposition(withDecomposition)
+EnSightGold::EnSightGold(bool withDecomposition)
+: _ftt(NULL), _withDecomposition(withDecomposition)
 {
 	_geometry = _directory + _name + ".geo";
 	_fixedDataPath = _directory;
@@ -32,7 +33,7 @@ EnSightGold::~EnSightGold()
 }
 
 EnSightGold::FTT::FTT(EnSightGold *parent)
-: EnSightGold(parent->_mesh)
+: EnSightGold()
 {
 	_directory += std::to_string(step::frequency::current) + "/";
 	_name = parent->_name + ".freq." + std::to_string(step::frequency::current);
@@ -85,11 +86,11 @@ void EnSightGold::updateSolution()
 	case step::TYPE::FTT: _ftt->_times.push_back(step::ftt::time); writer = _ftt; break;
 	}
 
-	for (size_t di = 0; di < _mesh.elements->data.size(); di++) {
-		writer->edata(_mesh.elements->data[di]);
+	for (size_t di = 0; di < info::mesh->elements->data.size(); di++) {
+		writer->edata(info::mesh->elements->data[di]);
 	}
-	for (size_t di = 0; di < _mesh.nodes->data.size(); di++) {
-		writer->ndata(_mesh.nodes->data[di]);
+	for (size_t di = 0; di < info::mesh->nodes->data.size(); di++) {
+		writer->ndata(info::mesh->nodes->data[di]);
 	}
 
 	if (info::mpi::grank == 0 || (step::type == step::TYPE::FTT && info::mpi::rank == 0)) {
@@ -158,11 +159,11 @@ void EnSightGold::casefile()
 	};
 
 	if (_variables.size() == 0) {
-		for (size_t i = 0; i < _mesh.nodes->data.size(); i++) {
-			pushdata(_variables, _mesh.nodes->data[i], "node");
+		for (size_t i = 0; i < info::mesh->nodes->data.size(); i++) {
+			pushdata(_variables, info::mesh->nodes->data[i], "node");
 		}
-		for (size_t i = 0; i < _mesh.elements->data.size(); i++) {
-			pushdata(_variables, _mesh.elements->data[i], "element");
+		for (size_t i = 0; i < info::mesh->elements->data.size(); i++) {
+			pushdata(_variables, info::mesh->elements->data[i], "element");
 		}
 	}
 
@@ -225,15 +226,15 @@ void EnSightGold::geometry()
 
 		for (int d = 0; d < 3; ++d) {
 			for (esint n = 0, i = store->nodeInfo.nhalo; n < store->nodeInfo.size; ++n, ++i) {
-				_writer.float32(_mesh.nodes->coordinates->datatarray()[store->nodes->datatarray()[i]][d]);
+				_writer.float32(info::mesh->nodes->coordinates->datatarray()[store->nodes->datatarray()[i]][d]);
 			}
 			_writer.groupData();
 		}
 	};
 
 	esint part = 0;
-	for (size_t r = 1; r < _mesh.elementsRegions.size(); ++r) {
-		const ElementsRegionStore *region = _mesh.elementsRegions[r];
+	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
+		const ElementsRegionStore *region = info::mesh->elementsRegions[r];
 		if (isRoot()) {
 			_writer.description("part");
 			_writer.int32(++part);
@@ -244,14 +245,14 @@ void EnSightGold::geometry()
 		for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
 			if (region->ecounters[etype]) {
 				if (isRoot()) {
-					_writer.description(EnsightWriter::codetotype(etype));
+					_writer.description(EnsightOutputWriter::codetotype(etype));
 					_writer.int32(region->ecounters[etype]);
 				}
 
 				for (size_t i = 0; i < region->eintervals.size(); i++) {
 					if (region->eintervals[i].code == etype) {
 						for (esint e = region->eintervals[i].begin; e < region->eintervals[i].end; ++e) {
-							auto element = _mesh.elements->procNodes->cbegin() + region->elements->datatarray()[e];
+							auto element = info::mesh->elements->procNodes->cbegin() + region->elements->datatarray()[e];
 							for (auto n = element->begin(); n != element->end(); ++n) {
 								_writer.enode(region->getPosition(*n) + 1);
 							}
@@ -277,7 +278,7 @@ void EnSightGold::geometry()
 			for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
 				if (region->ecounters[etype]) {
 					if (isRoot()) {
-						_writer.description(EnsightWriter::codetotype(etype));
+						_writer.description(EnsightOutputWriter::codetotype(etype));
 						_writer.int32(region->ecounters[etype]);
 					}
 
@@ -298,7 +299,7 @@ void EnSightGold::geometry()
 			}
 		} else {
 			if (isRoot()) {
-				_writer.description(EnsightWriter::codetotype(static_cast<int>(Element::CODE::POINT1)));
+				_writer.description(EnsightOutputWriter::codetotype(static_cast<int>(Element::CODE::POINT1)));
 				_writer.int32(region->nodeInfo.totalSize);
 			}
 
@@ -309,12 +310,12 @@ void EnSightGold::geometry()
 		}
 	};
 
-	for (size_t r = 1; r < _mesh.boundaryRegions.size(); ++r) {
-		boundary(_mesh.boundaryRegions[r]);
+	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+		boundary(info::mesh->boundaryRegions[r]);
 	}
 
-	for (size_t r = 0; r < _mesh.contactInterfaces.size(); ++r) {
-		boundary(_mesh.contactInterfaces[r]);
+	for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r) {
+		boundary(info::mesh->contactInterfaces[r]);
 	}
 
 	_writer.commitFile(_path + _geometry);
@@ -342,14 +343,14 @@ void EnSightGold::ndata(const NamedData *data)
 		}
 
 		int part = 1;
-		for (size_t r = 1; r < _mesh.elementsRegions.size(); ++r, ++part) {
+		for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++part) {
 			if (isRoot()) {
 				_writer.description("part");
 				_writer.int32(part);
 				_writer.description("coordinates");
 			}
 
-			const ElementsRegionStore *region = _mesh.elementsRegions[r];
+			const ElementsRegionStore *region = info::mesh->elementsRegions[r];
 			for (int d = 0; d < data->dimension; ++d) {
 				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
 					_writer.float32(data->data[nindex * data->dimension + d]);
@@ -381,11 +382,11 @@ void EnSightGold::ndata(const NamedData *data)
 			}
 		};
 
-		for (size_t r = 1; r < _mesh.boundaryRegions.size(); ++r, ++part) {
-			boundary(_mesh.boundaryRegions[r]);
+		for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r, ++part) {
+			boundary(info::mesh->boundaryRegions[r]);
 		}
-		for (size_t r = 0; r < _mesh.contactInterfaces.size(); ++r, ++part) {
-			boundary(_mesh.contactInterfaces[r]);
+		for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r, ++part) {
+			boundary(info::mesh->contactInterfaces[r]);
 		}
 		_writer.commitFile(file.str());
 	} else {
@@ -398,14 +399,14 @@ void EnSightGold::ndata(const NamedData *data)
 			}
 
 			int part = 1;
-			for (size_t r = 1; r < _mesh.elementsRegions.size(); ++r, ++part) {
+			for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++part) {
 				if (isRoot()) {
 					_writer.description("part");
 					_writer.int32(part);
 					_writer.description("coordinates");
 				}
 
-				const ElementsRegionStore *region = _mesh.elementsRegions[r];
+				const ElementsRegionStore *region = info::mesh->elementsRegions[r];
 				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
 					_writer.float32(data->data[nindex * data->dimension + d]);
 				});
@@ -423,11 +424,11 @@ void EnSightGold::ndata(const NamedData *data)
 				});
 			};
 
-			for (size_t r = 1; r < _mesh.boundaryRegions.size(); ++r, ++part) {
-				boundary(_mesh.boundaryRegions[r]);
+			for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r, ++part) {
+				boundary(info::mesh->boundaryRegions[r]);
 			}
-			for (size_t r = 0; r < _mesh.contactInterfaces.size(); ++r, ++part) {
-				boundary(_mesh.contactInterfaces[r]);
+			for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r, ++part) {
+				boundary(info::mesh->contactInterfaces[r]);
 			}
 			_writer.commitFile(file.str());
 		}
@@ -458,25 +459,25 @@ void EnSightGold::edata(const NamedData *data)
 			_writer.description(dataname(data, 0));
 		}
 
-		for (size_t r = 1, part = 1; r < _mesh.elementsRegions.size(); ++r, ++part) {
+		for (size_t r = 1, part = 1; r < info::mesh->elementsRegions.size(); ++r, ++part) {
 			if (isRoot()) {
 				_writer.description("part");
 				_writer.int32(part);
 			}
 
 			for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
-				if (_mesh.elementsRegions[r]->ecounters[etype]) {
+				if (info::mesh->elementsRegions[r]->ecounters[etype]) {
 					if (isRoot()) {
-						_writer.description(EnsightWriter::codetotype(etype));
+						_writer.description(EnsightOutputWriter::codetotype(etype));
 					}
 
 					for (int d = 0; d < data->dimension; ++d) {
-						eiterator(_mesh.elementsRegions[r], etype, [&] (const ElementsInterval &interval, esint eindex) {
+						eiterator(info::mesh->elementsRegions[r], etype, [&] (const ElementsInterval &interval, esint eindex) {
 							_writer.float32(data->data[eindex * data->dimension + d]);
 						});
 					}
 					if (data->dimension == 2) {
-						eiterator(_mesh.elementsRegions[r], etype, [&] (const ElementsInterval &interval, esint eindex) {
+						eiterator(info::mesh->elementsRegions[r], etype, [&] (const ElementsInterval &interval, esint eindex) {
 							_writer.float32(0);
 						});
 					}
@@ -493,17 +494,17 @@ void EnSightGold::edata(const NamedData *data)
 				_writer.description(dataname(data, 0));
 			}
 
-			for (size_t r = 1, part = 1; r < _mesh.elementsRegions.size(); ++r, ++part) {
+			for (size_t r = 1, part = 1; r < info::mesh->elementsRegions.size(); ++r, ++part) {
 				if (isRoot()) {
 					_writer.description("part");
 					_writer.int32(part);
 				}
 				for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
-					if (_mesh.elementsRegions[r]->ecounters[etype]) {
+					if (info::mesh->elementsRegions[r]->ecounters[etype]) {
 						if (isRoot()) {
-							_writer.description(EnsightWriter::codetotype(etype));
+							_writer.description(EnsightOutputWriter::codetotype(etype));
 						}
-						eiterator(_mesh.elementsRegions[r], etype, [&] (const ElementsInterval &interval, esint eindex) {
+						eiterator(info::mesh->elementsRegions[r], etype, [&] (const ElementsInterval &interval, esint eindex) {
 							_writer.float32(0);
 						});
 					}
@@ -521,21 +522,21 @@ void EnSightGold::decomposition()
 		if (isRoot()) {
 			_writer.description(name);
 		}
-		for (size_t r = 1, part = 1; r < _mesh.elementsRegions.size(); ++r, ++part) {
+		for (size_t r = 1, part = 1; r < info::mesh->elementsRegions.size(); ++r, ++part) {
 			if (isRoot()) {
 				_writer.description("part");
 				_writer.int32(part);
 			}
 
 			for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
-				if (_mesh.elementsRegions[r]->ecounters[etype]) {
+				if (info::mesh->elementsRegions[r]->ecounters[etype]) {
 					if (isRoot()) {
-						_writer.description(EnsightWriter::codetotype(etype));
+						_writer.description(EnsightOutputWriter::codetotype(etype));
 					}
-					for (size_t i = 0; i < _mesh.elementsRegions[r]->eintervals.size(); i++) {
-						if (_mesh.elementsRegions[r]->eintervals[i].code == etype) {
-							for (esint e = _mesh.elementsRegions[r]->eintervals[i].begin; e < _mesh.elementsRegions[r]->eintervals[i].end; ++e) {
-								_writer.float32(callback(_mesh.elementsRegions[r]->eintervals[i], _mesh.elementsRegions[r]->elements->datatarray()[e]));
+					for (size_t i = 0; i < info::mesh->elementsRegions[r]->eintervals.size(); i++) {
+						if (info::mesh->elementsRegions[r]->eintervals[i].code == etype) {
+							for (esint e = info::mesh->elementsRegions[r]->eintervals[i].begin; e < info::mesh->elementsRegions[r]->eintervals[i].end; ++e) {
+								_writer.float32(callback(info::mesh->elementsRegions[r]->eintervals[i], info::mesh->elementsRegions[r]->elements->datatarray()[e]));
 							}
 						}
 					}
@@ -549,15 +550,15 @@ void EnSightGold::decomposition()
 	store("DOMAIN", [&] (const ElementsInterval &interval, esint eindex) {
 		return interval.domain;
 	});
-	esint cluster = _mesh.elements->gatherClustersDistribution()[info::mpi::rank];
+	esint cluster = info::mesh->elements->gatherClustersDistribution()[info::mpi::rank];
 	store("CLUSTER", [&] (const ElementsInterval &interval, esint eindex) {
-		return _mesh.elements->clusters[interval.domain - _mesh.elements->firstDomain] + cluster;
+		return info::mesh->elements->clusters[interval.domain - info::mesh->elements->firstDomain] + cluster;
 	});
 	store("MPI", [&] (const ElementsInterval &interval, esint eindex) {
 		return info::mpi::rank;
 	});
 	store("BODY", [&] (const ElementsInterval &interval, esint eindex) {
-		return _mesh.elements->body->datatarray()[eindex];
+		return info::mesh->elements->body->datatarray()[eindex];
 	});
 }
 

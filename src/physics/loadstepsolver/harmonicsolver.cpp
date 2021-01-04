@@ -13,7 +13,7 @@
 #include "physics/system/builder/builder.h"
 #include "physics/substepsolver/substepsolver.h"
 #include "config/ecf/physics/physicssolver/loadstep.h"
-#include "output/resultstore.h"
+#include "output/output.h"
 
 #include <cmath>
 #include <algorithm>

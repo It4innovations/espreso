@@ -8,7 +8,7 @@
 #include "esinfo/eslog.h"
 #include "esinfo/stepinfo.h"
 #include "esinfo/mpiinfo.h"
-#include "mesh/mesh.h"
+#include "esinfo/meshinfo.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/contactinterfacestore.h"
@@ -19,8 +19,8 @@
 
 using namespace espreso;
 
-VTKLegacy::VTKLegacy(const Mesh &mesh, bool withDecomposition)
-: Visualization(mesh), _withDecomposition(withDecomposition)
+VTKLegacy::VTKLegacy(bool withDecomposition)
+: _withDecomposition(withDecomposition)
 {
 	_suffix = ".vtk";
 }
@@ -35,12 +35,12 @@ void VTKLegacy::updateMesh()
 	if (_measure) { eslog::startln("VTK LEGACY: STARTED", "VTK LEGACY"); }
 	profiler::syncstart("store_vtk");
 
-	_points.resize((size_t)_mesh.nodes->size * 13 * 3 + 1);
+	_points.resize((size_t)info::mesh->nodes->size * 13 * 3 + 1);
 	_esize.resize(2 * 20 + 1); // max is the largest element size
 	_ecode.resize(3 * (int)Element::CODE::SIZE + 1);
-	_cells.resize(_mesh.elementsRegions.size() + _mesh.boundaryRegions.size() + _mesh.contactInterfaces.size() - 2);
-	for (esint n = 0; n < _mesh.nodes->size; ++n) {
-		const Point &p = _mesh.nodes->coordinates->datatarray()[n];
+	_cells.resize(info::mesh->elementsRegions.size() + info::mesh->boundaryRegions.size() + info::mesh->contactInterfaces.size() - 2);
+	for (esint n = 0; n < info::mesh->nodes->size; ++n) {
+		const Point &p = info::mesh->nodes->coordinates->datatarray()[n];
 		sprintf(_points.data() + (size_t)n * 13 * 3, "%12.5e %12.5e %12.5e\n", p.x, p.y, p.z);
 	}
 	for (int n = 0; n < 20; ++n) {
@@ -51,66 +51,66 @@ void VTKLegacy::updateMesh()
 	}
 
 	int index = 0, intsize = 11;
-	for (size_t r = 1; r < _mesh.elementsRegions.size(); ++r, ++index) {
-		esint nnodes = _mesh.elementsRegions[r]->nodes->datatarray().size();
-		if (_mesh.elements->size < nnodes * 5) {
-			_cells[index].resize(_mesh.nodes->size * (intsize + sizeof(int)) + 1);
+	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++index) {
+		esint nnodes = info::mesh->elementsRegions[r]->nodes->datatarray().size();
+		if (info::mesh->elements->size < nnodes * 5) {
+			_cells[index].resize(info::mesh->nodes->size * (intsize + sizeof(int)) + 1);
 			for (esint n = 0; n < nnodes; ++n) {
-				esint nn = _mesh.elementsRegions[r]->nodes->datatarray()[n];
-				int chars = sprintf(_cells[index].data() + nn * (intsize + sizeof(int)), " %d", (int)_mesh.elementsRegions[r]->nodeInfo.position[n]);
+				esint nn = info::mesh->elementsRegions[r]->nodes->datatarray()[n];
+				int chars = sprintf(_cells[index].data() + nn * (intsize + sizeof(int)), " %d", (int)info::mesh->elementsRegions[r]->nodeInfo.position[n]);
 				memcpy(_cells[index].data() + nn * (intsize + sizeof(int)) + intsize, &chars, sizeof(int));
 			}
 		} else {
 			_cells[index].resize(nnodes * (intsize + sizeof(int)) + 1);
 			for (esint n = 0; n < nnodes; ++n) {
-				int chars = sprintf(_cells[index].data() + n * (intsize + sizeof(int)), " %d", (int)_mesh.elementsRegions[r]->nodeInfo.position[n]);
+				int chars = sprintf(_cells[index].data() + n * (intsize + sizeof(int)), " %d", (int)info::mesh->elementsRegions[r]->nodeInfo.position[n]);
 				memcpy(_cells[index].data() + n * (intsize + sizeof(int)) + intsize, &chars, sizeof(int));
 			}
 		}
 	}
-	for (size_t r = 1; r < _mesh.boundaryRegions.size(); ++r, ++index) {
-		esint nnodes = _mesh.boundaryRegions[r]->nodes->datatarray().size();
+	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r, ++index) {
+		esint nnodes = info::mesh->boundaryRegions[r]->nodes->datatarray().size();
 		_cells[index].resize(nnodes * (intsize + sizeof(int)) + 1);
 		for (esint n = 0; n < nnodes; ++n) {
-			int chars = sprintf(_cells[index].data() + n * (intsize + sizeof(int)), " %d", (int)_mesh.boundaryRegions[r]->nodeInfo.position[n]);
+			int chars = sprintf(_cells[index].data() + n * (intsize + sizeof(int)), " %d", (int)info::mesh->boundaryRegions[r]->nodeInfo.position[n]);
 			memcpy(_cells[index].data() + n * (intsize + sizeof(int)) + intsize, &chars, sizeof(int));
 		}
 	}
-	for (size_t r = 0; r < _mesh.contactInterfaces.size(); ++r, ++index) {
-		esint nnodes = _mesh.contactInterfaces[r]->nodes->datatarray().size();
+	for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r, ++index) {
+		esint nnodes = info::mesh->contactInterfaces[r]->nodes->datatarray().size();
 		_cells[index].resize(nnodes * (intsize + sizeof(int)) + 1);
 		for (esint n = 0; n < nnodes; ++n) {
-			int chars = sprintf(_cells[index].data() + n * (intsize + sizeof(int)), " %d", (int)_mesh.contactInterfaces[r]->nodeInfo.position[n]);
+			int chars = sprintf(_cells[index].data() + n * (intsize + sizeof(int)), " %d", (int)info::mesh->contactInterfaces[r]->nodeInfo.position[n]);
 			memcpy(_cells[index].data() + n * (intsize + sizeof(int)) + intsize, &chars, sizeof(int));
 		}
 	}
 	profiler::synccheckpoint("preserialize");
 
 	index = 0;
-	for (size_t r = 1; r < _mesh.elementsRegions.size(); ++r, ++index) {
+	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++index) {
 		insertHeader();
-		insertPoints(_mesh.elementsRegions[r]);
-		esint ncells = insertElements(_mesh.elementsRegions[r], _cells[index]);
+		insertPoints(info::mesh->elementsRegions[r]);
+		esint ncells = insertElements(info::mesh->elementsRegions[r], _cells[index]);
 		if (_withDecomposition) {
 			if (isRoot()) {
 				_writer.celldata(ncells);
 			}
-			insertDecomposition(_mesh.elementsRegions[r]);
+			insertDecomposition(info::mesh->elementsRegions[r]);
 		}
-		_writer.commitFile(_path + _name + "." + _mesh.elementsRegions[r]->name + _suffix);
+		_writer.commitFile(_path + _name + "." + info::mesh->elementsRegions[r]->name + _suffix);
 	}
 
-	for (size_t r = 1; r < _mesh.boundaryRegions.size(); ++r, ++index) {
+	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r, ++index) {
 		insertHeader();
-		insertPoints(_mesh.boundaryRegions[r]);
-		insertElements(_mesh.boundaryRegions[r], _cells[index]);
-		_writer.commitFile(_path + _name + "." + _mesh.boundaryRegions[r]->name + _suffix);
+		insertPoints(info::mesh->boundaryRegions[r]);
+		insertElements(info::mesh->boundaryRegions[r], _cells[index]);
+		_writer.commitFile(_path + _name + "." + info::mesh->boundaryRegions[r]->name + _suffix);
 	}
-	for (size_t r = 0; r < _mesh.contactInterfaces.size(); ++r, ++index) {
+	for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r, ++index) {
 		insertHeader();
-		insertPoints(_mesh.contactInterfaces[r]);
-		insertElements(_mesh.contactInterfaces[r], _cells[index]);
-		_writer.commitFile(_path + _name + "." + _mesh.contactInterfaces[r]->name + _suffix);
+		insertPoints(info::mesh->contactInterfaces[r]);
+		insertElements(info::mesh->contactInterfaces[r], _cells[index]);
+		_writer.commitFile(_path + _name + "." + info::mesh->contactInterfaces[r]->name + _suffix);
 	}
 	profiler::synccheckpoint("serialize");
 	if (_measure) { eslog::checkpointln("VTK LEGACY: GEOMETRY SERIALIZED"); }
@@ -141,33 +141,33 @@ void VTKLegacy::updateSolution()
 	}
 
 	int index = 0;
-	for (size_t r = 1; r < _mesh.elementsRegions.size(); ++r, ++index) {
+	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++index) {
 		insertHeader();
-		insertPoints(_mesh.elementsRegions[r]);
-		esint ncells = insertElements(_mesh.elementsRegions[r], _cells[index]);
+		insertPoints(info::mesh->elementsRegions[r]);
+		esint ncells = insertElements(info::mesh->elementsRegions[r], _cells[index]);
 		if (isRoot()) {
 			_writer.celldata(ncells);
 		}
 		if (_withDecomposition) {
-			insertDecomposition(_mesh.elementsRegions[r]);
+			insertDecomposition(info::mesh->elementsRegions[r]);
 		}
-		for (size_t i = 0; i < _mesh.elements->data.size(); ++i) {
+		for (size_t i = 0; i < info::mesh->elements->data.size(); ++i) {
 			insertData(
-					_mesh.elements->data[i],
-					_mesh.elementsRegions[r]->elements->datatarray().size(),
-					_mesh.elementsRegions[r]->elements->datatarray().data());
+					info::mesh->elements->data[i],
+					info::mesh->elementsRegions[r]->elements->datatarray().size(),
+					info::mesh->elementsRegions[r]->elements->datatarray().data());
 		}
 
 		if (isRoot()) {
-			_writer.pointdata(_mesh.elementsRegions[r]->nodeInfo.totalSize);
+			_writer.pointdata(info::mesh->elementsRegions[r]->nodeInfo.totalSize);
 		}
-		for (size_t i = 0; i < _mesh.nodes->data.size(); ++i) {
+		for (size_t i = 0; i < info::mesh->nodes->data.size(); ++i) {
 			insertData(
-					_mesh.nodes->data[i],
-					_mesh.elementsRegions[r]->nodeInfo.size,
-					_mesh.elementsRegions[r]->nodes->datatarray().data() + _mesh.elementsRegions[r]->nodeInfo.nhalo);
+					info::mesh->nodes->data[i],
+					info::mesh->elementsRegions[r]->nodeInfo.size,
+					info::mesh->elementsRegions[r]->nodes->datatarray().data() + info::mesh->elementsRegions[r]->nodeInfo.nhalo);
 		}
-		_writer.commitFile(dir + name + "." + _mesh.elementsRegions[r]->name + suffix);
+		_writer.commitFile(dir + name + "." + info::mesh->elementsRegions[r]->name + suffix);
 	}
 
 	auto boundary = [&] (const BoundaryRegionStore *region) {
@@ -177,17 +177,17 @@ void VTKLegacy::updateSolution()
 		if (isRoot()) {
 			_writer.pointdata(region->nodeInfo.totalSize);
 		}
-		for (size_t i = 0; i < _mesh.nodes->data.size(); ++i) {
-			insertData(_mesh.nodes->data[i], region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo);
+		for (size_t i = 0; i < info::mesh->nodes->data.size(); ++i) {
+			insertData(info::mesh->nodes->data[i], region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo);
 		}
 		_writer.commitFile(dir + name + "." + region->name + suffix);
 	};
 
-	for (size_t r = 1; r < _mesh.boundaryRegions.size(); ++r, ++index) {
-		boundary(_mesh.boundaryRegions[r]);
+	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r, ++index) {
+		boundary(info::mesh->boundaryRegions[r]);
 	}
-	for (size_t r = 0; r < _mesh.contactInterfaces.size(); ++r, ++index) {
-		boundary(_mesh.contactInterfaces[r]);
+	for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r, ++index) {
+		boundary(info::mesh->contactInterfaces[r]);
 	}
 
 	_writer.reorder();
@@ -230,9 +230,9 @@ esint VTKLegacy::insertElements(const ElementsRegionStore *store, const std::vec
 	int intsize = 11;
 	for (auto e = store->elements->datatarray().cbegin(); e != store->elements->datatarray().cend(); ++e) {
 		esint nnodes = store->nodes->datatarray().size();
-		auto element = _mesh.elements->procNodes->cbegin() + *e;
+		auto element = info::mesh->elements->procNodes->cbegin() + *e;
 		_writer.insert(element->size() > 9 ? 2 : 1, _esize.data() + element->size() * 2 - 2);
-		if (_mesh.elements->size < nnodes * 5) {
+		if (info::mesh->elements->size < nnodes * 5) {
 			for (auto n = element->begin(); n != element->end(); ++n) {
 				int size = *reinterpret_cast<const int*>(data.data() + (intsize + sizeof(int)) * *n + intsize);
 				_writer.insert(size, data.data() + (intsize + sizeof(int)) * *n);
@@ -252,7 +252,7 @@ esint VTKLegacy::insertElements(const ElementsRegionStore *store, const std::vec
 		_writer.celltypes(store->totalsize);
 	}
 	for (auto e = store->elements->datatarray().cbegin(); e != store->elements->datatarray().cend(); ++e) {
-		_writer.insert(3, _ecode.data() + 3 * (int)_mesh.elements->epointers->datatarray()[*e]->code);
+		_writer.insert(3, _ecode.data() + 3 * (int)info::mesh->elements->epointers->datatarray()[*e]->code);
 	}
 	_writer.groupData();
 
@@ -413,9 +413,9 @@ void VTKLegacy::insertDecomposition(const ElementsRegionStore *store)
 	iterate("DOMAIN", [&] (const ElementsInterval &interval, esint eindex) {
 		return interval.domain;
 	});
-	esint cluster = _mesh.elements->gatherClustersDistribution()[info::mpi::rank];
+	esint cluster = info::mesh->elements->gatherClustersDistribution()[info::mpi::rank];
 	iterate("CLUSTER", [&] (const ElementsInterval &interval, esint eindex) {
-		return _mesh.elements->clusters[interval.domain - _mesh.elements->firstDomain] + cluster;
+		return info::mesh->elements->clusters[interval.domain - info::mesh->elements->firstDomain] + cluster;
 	});
 	iterate("MPI", [&] (const ElementsInterval &interval, esint eindex) {
 		return info::mpi::rank;

@@ -14,7 +14,7 @@
 
 #include "config/reader/reader.h"
 #include "config/configuration.h"
-#include "output/resultstore.h"
+#include "output/output.h"
 
 using namespace espreso;
 
@@ -38,7 +38,6 @@ int main(int argc, char **argv)
 
 	eslog::printRunInfo(&argc, &argv);
 	Mesh::init();
-	ResultStore::createAsynchronizedStore();
 	eslog::checkpointln("MESIO: RUN INITIALIZED");
 
 	Mesh::load();
@@ -49,11 +48,10 @@ int main(int argc, char **argv)
 	info::mesh->printMeshStatistics();
 	info::mesh->printDecompositionStatistics();
 
-	info::mesh->store->updateMesh();
+	info::mesh->output->updateMesh();
 	eslog::endln("MESIO: MESH STORED");
 
 	eslog::finish();
-	ResultStore::destroyAsynchronizedStore();
 	Mesh::finish();
 	MPITools::finish();
 	ECF::finish();

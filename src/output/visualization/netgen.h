@@ -10,7 +10,7 @@ namespace espreso {
 class Mesh;
 
 struct Netgen: public Visualization {
-	Netgen(const Mesh &mesh);
+	Netgen();
 	~Netgen();
 
 	void updateMesh();

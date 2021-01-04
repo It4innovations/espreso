@@ -115,13 +115,12 @@ OutputConfiguration::OutputConfiguration(const ECF *root)
 			.addoption(ECFOption().setname("STL_SURFACE").setdescription("Surface of bodies in STL format."))
 			.addoption(ECFOption().setname("NETGEN").setdescription("Netgen neutral format (only for tetrahedral meshes).")));
 
-	mode = MODE::THREAD;
+	mode = MODE::PTHREAD;
 	REGISTER(mode, ECFMetaData()
 			.setdescription({ "ASYNC library mode" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("SYNC").setdescription("Output is synchronized."))
-			.addoption(ECFOption().setname("THREAD").setdescription("Output is done by asynchronous thread.")));
-			//.addoption(ECFOption().setname("MPI").setdescription("Output is done by separated MPI processes.")));
+			.addoption(ECFOption().setname("PTHREAD").setdescription("Output is done by asynchronous thread.")));
 
 	writer = WRITER::MPI;
 	REGISTER(writer, ECFMetaData()

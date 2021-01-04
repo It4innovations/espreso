@@ -1,7 +1,7 @@
 
 #include "linearsystem.h"
 #include "builder/builder.h"
-#include "output/resultstore.h"
+#include "output/output.h"
 #include "physics/composer/composer.h"
 #include "physics/kernels/kernel.h"
 #include "basis/utilities/sysutils.h"
@@ -164,7 +164,7 @@ void LinearSystem::solutionChanged()
 void LinearSystem::processSolution()
 {
 	assembler()->composer->kernel->processSolution();
-	info::mesh->store->updateSolution();
+	info::mesh->output->updateSolution();
 	eslog::checkpointln("PHYSICS SOLVER: SOLUTION PROCESSED");
 }
 

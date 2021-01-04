@@ -120,7 +120,7 @@ void printRunInfo(int *argc, char ***argv)
 	eslog::info(" == NUMBER OF WRITTERS %*d == \n", width - 10, MPITools::subset->acrosssize);
 	switch (info::ecf->output.mode) {
 	case OutputConfiguration::MODE::SYNC  : eslog::info(" == STORING MODE %*s == \n", width - 4, "SYNCHRONIZED"); break;
-	case OutputConfiguration::MODE::THREAD: eslog::info(" == STORING MODE %*s == \n", width - 4, "SEPARETED THREAD"); break;
+	case OutputConfiguration::MODE::PTHREAD: eslog::info(" == STORING MODE %*s == \n", width - 4, "SEPARETED P-THREAD"); break;
 	}
 	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
 	eslog::info(" == RUN PATH %*s == \n", width, runpath.c_str());

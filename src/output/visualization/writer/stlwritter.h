@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-struct STLBinaryWriter: public OutputFilePack {
+struct STLBinaryOutputWriter: public OutputFilePack {
 
 	void storeHeader(const std::string &value)
 	{
@@ -45,7 +45,7 @@ struct STLBinaryWriter: public OutputFilePack {
 	}
 };
 
-struct STLASCIIWriter: public OutputFilePack {
+struct STLASCIIOutputWriter: public OutputFilePack {
 
 	inline void storeHeader(const std::string &name)
 	{

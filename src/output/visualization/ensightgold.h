@@ -17,7 +17,7 @@ class EnSightGold: public Visualization {
 
 	class FTT;
 public:
-	EnSightGold(const Mesh &mesh, bool withDecomposition = true);
+	EnSightGold(bool withDecomposition = true);
 	~EnSightGold();
 
 	void updateMesh();
@@ -38,7 +38,7 @@ protected:
 	std::string _fixedDataPath;
 	std::vector<std::string> _variables;
 	std::vector<double> _times;
-	EnsightBinaryWriter _writer;
+	EnsightBinaryOutputWriter _writer;
 };
 
 class EnSightGold::FTT: public EnSightGold {

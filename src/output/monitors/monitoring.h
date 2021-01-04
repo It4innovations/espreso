@@ -2,7 +2,7 @@
 #ifndef SRC_OUTPUT_RESULT_MONITORS_MONITORING_H_
 #define SRC_OUTPUT_RESULT_MONITORS_MONITORING_H_
 
-#include "output/resultstore.h"
+#include "output/output.h"
 #include "mesh/store/statisticsstore.h"
 
 #include <utility>
@@ -26,16 +26,16 @@ struct Monitor {
 	Monitor(): name("---"), property("-"), printSize(5), data(NULL) {}
 };
 
-class Monitoring: public ResultStoreBase {
+class Monitoring: public OutputWriter {
 
 public:
-	static bool storeStep();
+	bool storeStep();
 
 	void updateMesh() {}
 	void updateMonitors();
 	void updateSolution();
 
-	Monitoring(const Mesh &mesh);
+	Monitoring();
 	~Monitoring();
 	static char delimiter;
 

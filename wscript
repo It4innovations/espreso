@@ -112,7 +112,7 @@ def print_available(ctx):
     _print(
         "Available miscellaneous libraries",
         "NOT FOUND",
-        [ "async", "hdf5", "bem", "catayst" ],
+        [ "pthread", "async", "hdf5", "bem", "catayst" ],
         "YELLOW")
 
 """ Recurse to third party libraries wrappers"""
@@ -139,6 +139,7 @@ def recurse(ctx):
 
     """ Other """
     ctx.recurse("src/wrappers/async")
+    ctx.recurse("src/wrappers/pthread")
     ctx.recurse("src/wrappers/hdf5")
     ctx.recurse("src/wrappers/bem")
     ctx.recurse("src/wrappers/catalyst")
@@ -262,6 +263,7 @@ def build(ctx):
     mesio += build(ctx.path.ant_glob('src/mesh/**/*.cpp'), "mesh")
     mesio += build(ctx.path.ant_glob('src/input/**/*.cpp'), "input")
     mesio += build(ctx.path.ant_glob('src/output/**/*.cpp'), "output", [ "ASYNC" ])
+    mesio += build(ctx.path.ant_glob('src/wrappers/pthread/**/*.cpp'), "wpthread", [ "PTHREAD" ])
     mesio += build(ctx.path.ant_glob('src/wrappers/catalyst/**/*.cpp'), "wcatalyst", [ "CATALYST" ])
     mesio += build(ctx.path.ant_glob('src/wrappers/hdf5/**/*.cpp'), "whdf5", [ "HDF5" ])
     mesio += build(ctx.path.ant_glob('src/wrappers/metis/**/*.cpp'), "wmetis", [ "METIS" ])

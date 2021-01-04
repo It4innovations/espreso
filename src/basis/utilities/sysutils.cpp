@@ -13,6 +13,7 @@
 #include <sstream>
 #include <fstream>
 #include <algorithm>
+#include <sys/sysinfo.h>
 
 namespace espreso {
 namespace utils {
@@ -109,6 +110,11 @@ void listDirectory(const std::string &dir, std::vector<std::string> &files)
 void callusleep(int usec)
 {
 	usleep(usec);
+}
+
+int nprocs()
+{
+	return get_nprocs();
 }
 
 void printStack()
