@@ -112,7 +112,7 @@ def print_available(ctx):
     _print(
         "Available miscellaneous libraries",
         "NOT FOUND",
-        [ "pthread", "async", "hdf5", "bem", "catayst" ],
+        [ "pthread", "hdf5", "bem", "catayst" ],
         "YELLOW")
 
 """ Recurse to third party libraries wrappers"""
@@ -138,7 +138,6 @@ def recurse(ctx):
     ctx.recurse("src/wrappers/wsmp")
 
     """ Other """
-    ctx.recurse("src/wrappers/async")
     ctx.recurse("src/wrappers/pthread")
     ctx.recurse("src/wrappers/hdf5")
     ctx.recurse("src/wrappers/bem")
@@ -184,7 +183,6 @@ def configure(ctx):
         ctx.env.append_unique("CXXFLAGS", [ "-O0", "-g" ])
     if ctx.options.mode == "profile":
         ctx.env.append_unique("CXXFLAGS", [ "-O3" ])
-        ctx.options.without_async = True;
 
     ctx.env.append_unique("INCLUDES", "src")
     ctx.env.append_unique("DEFINES", [ "__ESMODE__="+ctx.options.mode.upper() ])
@@ -262,7 +260,7 @@ def build(ctx):
     mesio = list(checker)
     mesio += build(ctx.path.ant_glob('src/mesh/**/*.cpp'), "mesh")
     mesio += build(ctx.path.ant_glob('src/input/**/*.cpp'), "input")
-    mesio += build(ctx.path.ant_glob('src/output/**/*.cpp'), "output", [ "ASYNC" ])
+    mesio += build(ctx.path.ant_glob('src/output/**/*.cpp'), "output", [ "wpthread" ])
     mesio += build(ctx.path.ant_glob('src/wrappers/pthread/**/*.cpp'), "wpthread", [ "PTHREAD" ])
     mesio += build(ctx.path.ant_glob('src/wrappers/catalyst/**/*.cpp'), "wcatalyst", [ "CATALYST" ])
     mesio += build(ctx.path.ant_glob('src/wrappers/hdf5/**/*.cpp'), "whdf5", [ "HDF5" ])
