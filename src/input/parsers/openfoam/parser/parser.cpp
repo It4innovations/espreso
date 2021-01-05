@@ -1,7 +1,7 @@
 
 #include "parser.h"
 
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/mpiinfo.h"
 
 using namespace espreso;

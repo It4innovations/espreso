@@ -1,7 +1,7 @@
 
 #include "distributed.composer.h"
 #include "basis/containers/serializededata.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/eslog.hpp"

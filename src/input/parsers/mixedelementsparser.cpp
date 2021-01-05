@@ -1,7 +1,7 @@
 
 #include "mixedelementsparser.h"
 #include "basis/logging/profiler.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/eslog.h"
 

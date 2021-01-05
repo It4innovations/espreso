@@ -3,7 +3,7 @@
 #include "physics/system/mklpdsssystem.h"
 #include "esinfo/mpiinfo.h"
 
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/eslog.hpp"
 
 #include <vector>

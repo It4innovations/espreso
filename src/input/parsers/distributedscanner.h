@@ -6,7 +6,7 @@
 #include "basis/containers/tarray.h"
 #include "basis/io/inputfile.h"
 #include "basis/utilities/packing.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/envinfo.h"
 
 #include <string>

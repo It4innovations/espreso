@@ -9,11 +9,12 @@ def configure(ctx):
     if ctx.options.intwidth == "64":
         suffix = '_ilp64'
 
+    if ctx.env.MPI == "Intel MPI":
+        lib = prefix + "intelmpi" + suffix
+    if ctx.env.MPI == "mpich":
+        lib = prefix + "intelmpi" + suffix
+    if ctx.env.MPI == "Open MPI":
+        lib = prefix + "openmpi" + suffix
+
     if "HAVE_MKL" in ctx.env["DEFINES_MKL"]:
-        ctx.env.stash()
-        ctx.link_cxx(name="mklpdss", header_name="mkl_cluster_sparse_solver.h", use="MKL", root=ctx.options.mklpdss)
-        for lib in [ 'intelmpi', 'openmpi' ]:
-            if ctx.link_cxx(name="mklpdss", libs=prefix+lib+suffix, use="MKL", root=ctx.options.mklpdss):
-                return
-        # remove possible defines from checking the header
-        ctx.env.revert()
+        ctx.link_cxx(name="mklpdss", header_name="mkl_cluster_sparse_solver.h", libs=lib, use="MKL", root=ctx.options.mklpdss)

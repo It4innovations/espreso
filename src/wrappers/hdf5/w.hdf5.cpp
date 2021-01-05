@@ -1,6 +1,6 @@
 
 #include "w.hdf5.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/eslog.hpp"
 
 #include <string>

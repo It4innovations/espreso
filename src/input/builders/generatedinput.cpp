@@ -2,7 +2,7 @@
 #include "generatedinput.h"
 
 #include "basis/containers/serializededata.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "basis/utilities/utils.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/meshinfo.h"

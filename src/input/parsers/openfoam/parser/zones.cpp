@@ -5,7 +5,7 @@
 
 #include "basis/containers/tarray.h"
 #include "basis/utilities/parser.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
 

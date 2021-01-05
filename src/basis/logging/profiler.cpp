@@ -2,7 +2,7 @@
 #include "profiler.h"
 #include "omp.h"
 
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "basis/utilities/utils.h"
 
 #include <cstdio>

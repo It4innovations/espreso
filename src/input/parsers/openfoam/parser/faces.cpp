@@ -4,7 +4,7 @@
 #include "input/parsers/openfoam/openfoam.h"
 
 #include "basis/containers/tarray.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/envinfo.h"
 
 #include <numeric>

@@ -16,7 +16,7 @@
 #include "basis/containers/serializededata.h"
 #include "basis/sfc/hilbertcurve.h"
 #include "basis/logging/profiler.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "basis/utilities/utils.h"
 
 #include "config/ecf/input/decomposition.h"

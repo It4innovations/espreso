@@ -1,7 +1,7 @@
 
 #include "meshbuilder.h"
 #include "basis/logging/profiler.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/eslog.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/mpiinfo.h"
@@ -12,7 +12,7 @@
 
 #include <algorithm>
 
-//#include "basis/utilities/communication.h"
+//#include "wrappers/mpi/communication.h"
 //#include "basis/utilities/print.h"
 //#include <fstream>
 

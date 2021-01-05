@@ -4,7 +4,7 @@
 #include "basis/containers/allocators.h"
 #include "basis/containers/serializededata.h"
 #include "basis/logging/profiler.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "basis/utilities/xml.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/eslog.hpp"

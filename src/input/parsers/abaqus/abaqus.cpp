@@ -12,7 +12,7 @@
 #include "parser/nset.h"
 
 #include "basis/containers/tarray.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "config/ecf/input/input.h"
 
 #include "esinfo/envinfo.h"

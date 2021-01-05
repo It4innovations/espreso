@@ -9,7 +9,7 @@
 
 #include "esinfo/mpiinfo.h"
 #include "basis/containers/point.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "basis/utilities/utils.h"
 #include "mesh/element.h"
 

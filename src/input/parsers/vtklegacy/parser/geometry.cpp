@@ -1,6 +1,6 @@
 
 #include "geometry.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "basis/utilities/parser.h"
 #include "config/ecf/input/input.h"
 #include "esinfo/envinfo.h"

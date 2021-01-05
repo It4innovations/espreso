@@ -7,7 +7,7 @@
 #include "mesh/store/fetidatastore.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/utils.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"

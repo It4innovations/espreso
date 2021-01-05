@@ -9,7 +9,7 @@
 
 #include "input/meshbuilder.h"
 #include "basis/containers/tarray.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "basis/utilities/parser.h"
 #include "basis/utilities/utils.h"
 #include "esinfo/envinfo.h"

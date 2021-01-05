@@ -4,7 +4,7 @@
 #include "esinfo/systeminfo.h"
 #include "basis/logging/logger.h"
 #include "basis/logging/progresslogger.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "config/ecf/ecf.h"
 
 using namespace espreso;

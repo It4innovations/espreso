@@ -6,7 +6,7 @@
 #include "esinfo/systeminfo.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 
 #include "basis/logging/logger.h"
 #include "basis/logging/progresslogger.h"

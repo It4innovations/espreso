@@ -1,7 +1,7 @@
 
 #include "topologydata.h"
 #include "basis/containers/tarray.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/eslog.hpp"
 #include "mesh/element.h"

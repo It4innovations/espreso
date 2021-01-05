@@ -1,7 +1,7 @@
 
 #include "w.hypre.systemsolver.h"
 #include "physics/system/hypresystem.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 
 #include "esinfo/ecfinfo.h"
 #include "esinfo/mpiinfo.h"

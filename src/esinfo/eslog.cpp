@@ -3,7 +3,7 @@
 #include "basis/logging/logger.h"
 #include "basis/logging/timelogger.h"
 #include "basis/logging/profiler.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "basis/utilities/sysutils.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/systeminfo.h"

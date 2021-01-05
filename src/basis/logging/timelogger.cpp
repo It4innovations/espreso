@@ -5,7 +5,7 @@
 #include "esinfo/envinfo.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/stepinfo.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 
 #include "omp.h"
 #include <cstdio>

@@ -11,7 +11,7 @@
 #include "basis/logging/profiler.h"
 #include "basis/utilities/parser.h"
 #include "basis/utilities/packing.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 
 #include "input/builders/input.h"
 #include "input/parsers/ansyscdb/ansyscdb.h"

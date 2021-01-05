@@ -5,7 +5,7 @@
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/sysutils.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/mpiinfo.h"

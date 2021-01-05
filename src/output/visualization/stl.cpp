@@ -3,7 +3,7 @@
 
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/eslog.h"
 

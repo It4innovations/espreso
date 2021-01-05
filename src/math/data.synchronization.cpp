@@ -5,7 +5,7 @@
 #include "vector.dense.distributed.h"
 #include "esinfo/eslog.h"
 #include "esinfo/mpiinfo.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 
 using namespace espreso;
 

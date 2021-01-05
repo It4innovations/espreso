@@ -6,7 +6,7 @@
 #include "esinfo/mpiinfo.h"
 #include "esinfo/meshinfo.h"
 #include "basis/containers/serializededata.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 
 #include <cstddef>
 #include <vector>

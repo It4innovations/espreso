@@ -5,7 +5,7 @@
 #include "esinfo/meshinfo.h"
 #include "esinfo/eslog.h"
 #include "basis/utilities/utils.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "basis/containers/serializededata.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"

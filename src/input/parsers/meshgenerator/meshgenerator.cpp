@@ -6,7 +6,7 @@
 #include "composition/gridtowergenerator.h"
 #include "composition/spheregenerator.h"
 #include "basis/logging/profiler.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "config/ecf/input/generator.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/eslog.h"

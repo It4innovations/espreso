@@ -16,7 +16,7 @@
 
 #include "basis/containers/serializededata.h"
 #include "basis/logging/profiler.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "basis/utilities/utils.h"
 #include "basis/utilities/parser.h"
 #include "wrappers/metis/w.metis.h"

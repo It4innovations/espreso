@@ -1,7 +1,7 @@
 
 #include "geometrydata.h"
 #include "basis/containers/tarray.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/eslog.h"
 #include "input/parsers/xdmf/lightdata/xdmfgeometry.h"

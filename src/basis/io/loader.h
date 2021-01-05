@@ -2,7 +2,7 @@
 #ifndef SRC_BASIS_IO_LOADER_H_
 #define SRC_BASIS_IO_LOADER_H_
 
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include <cstdio>
 
 namespace espreso {

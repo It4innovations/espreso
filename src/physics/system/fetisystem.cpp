@@ -4,7 +4,7 @@
 #include "basis/utilities/utils.h"
 #include "basis/utilities/debugprint.h"
 #include "basis/utilities/sysutils.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/eslog.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/meshinfo.h"

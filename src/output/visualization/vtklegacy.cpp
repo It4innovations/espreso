@@ -3,7 +3,7 @@
 #include "writer/vtkwritter.h"
 #include "basis/containers/serializededata.h"
 #include "basis/logging/profiler.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "basis/utilities/sysutils.h"
 #include "esinfo/eslog.h"
 #include "esinfo/stepinfo.h"

@@ -1,7 +1,7 @@
 
 #include "vector.sparse.distributed.h"
 
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/eslog.h"
 #include "math.h"

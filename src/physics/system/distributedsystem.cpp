@@ -6,7 +6,7 @@
 #include "esinfo/meshinfo.h"
 #include "basis/utilities/debugprint.h"
 #include "basis/utilities/sysutils.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 
 #include "math/matrix.csr.distributed.h"
 

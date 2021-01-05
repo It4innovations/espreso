@@ -5,7 +5,7 @@
 #include "basis/logging/logger.h"
 #include "basis/logging/progresslogger.h"
 #include "basis/logging/timelogger.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "basis/utilities/utils.h"
 #include "basis/utilities/sysutils.h"
 

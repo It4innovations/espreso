@@ -16,7 +16,7 @@
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
 #include "basis/evaluator/evaluator.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "basis/utilities/utils.h"
 
 #include "math/math.h"

@@ -1,6 +1,6 @@
 
 #include "w.scotch.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/eslog.hpp"
 
 #ifdef HAVE_SCOTCH

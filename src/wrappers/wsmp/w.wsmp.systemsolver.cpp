@@ -1,6 +1,6 @@
 
 #include "w.wsmp.systemsolver.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "config/ecf/linearsolver/wsmp.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/eslog.hpp"

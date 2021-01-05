@@ -1,6 +1,6 @@
 
 #include "w.superlu.systemsolver.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "config/ecf/linearsolver/superlu.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/eslog.hpp"

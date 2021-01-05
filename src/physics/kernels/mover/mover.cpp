@@ -3,7 +3,7 @@
 #include "mover.h"
 #include "basis/containers/serializededata.h"
 #include "basis/evaluator/evaluator.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/eslog.h"

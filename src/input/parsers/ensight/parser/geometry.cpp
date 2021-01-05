@@ -1,6 +1,6 @@
 
 #include "geometry.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/eslog.h"
 #include "mesh/element.h"
 #include "input/meshbuilder.h"

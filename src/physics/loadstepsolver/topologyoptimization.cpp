@@ -2,7 +2,7 @@
 #include "topologyoptimization.h"
 #include "basis/utilities/parser.h"
 #include "basis/containers/serializededata.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "config/ecf/physics/physicssolver/loadstep.h"
 #include "esinfo/stepinfo.h"
 #include "esinfo/mpiinfo.h"

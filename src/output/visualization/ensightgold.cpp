@@ -2,7 +2,7 @@
 #include "ensightgold.h"
 #include "basis/containers/serializededata.h"
 #include "basis/logging/profiler.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/eslog.h"
 #include "esinfo/mpiinfo.h"
 #include "mesh/mesh.h"

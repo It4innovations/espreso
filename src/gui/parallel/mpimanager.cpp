@@ -2,7 +2,7 @@
 #include "mpimanager.h"
 
 #include "basis/containers/serializededata.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "config/ecf/ecf.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"

@@ -5,7 +5,7 @@
 
 #include "basis/logging/timelogger.h"
 #include "basis/utilities/sysutils.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"
 #include "esinfo/mpiinfo.h"

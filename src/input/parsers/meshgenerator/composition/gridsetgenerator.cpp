@@ -7,7 +7,7 @@
 #include "esinfo/mpiinfo.h"
 #include "esinfo/eslog.hpp"
 #include "config/ecf/input/gridset.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 
 using namespace espreso;
 

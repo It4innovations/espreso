@@ -2,7 +2,7 @@
 #ifndef SRC_BASIS_IO_WRITER_H_
 #define SRC_BASIS_IO_WRITER_H_
 
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 
 namespace espreso {
 

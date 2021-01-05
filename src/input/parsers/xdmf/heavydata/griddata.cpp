@@ -1,7 +1,7 @@
 
 #include "griddata.h"
 #include "basis/utilities/parser.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/eslog.hpp"
 #include "input/meshbuilder.h"
 #include "input/parsers/mixedelementsparser.h"

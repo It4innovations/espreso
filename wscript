@@ -117,6 +117,9 @@ def print_available(ctx):
 
 """ Recurse to third party libraries wrappers"""
 def recurse(ctx):
+    """ MPI library """
+    ctx.recurse("src/wrappers/mpi")
+
     """ Graph partition tools """
     ctx.recurse("src/wrappers/metis")
     ctx.recurse("src/wrappers/parmetis")
@@ -253,6 +256,7 @@ def build(ctx):
     checker  = build(ctx.path.ant_glob('src/esinfo/**/*.cpp'), "esinfo", [ "INFO" ])
     checker += build(ctx.path.ant_glob('src/config/**/*.cpp'), "config")
     checker += build(ctx.path.ant_glob('src/basis/**/*.cpp'), "basis")
+    checker += build(ctx.path.ant_glob('src/wrappers/mpi/**/*.cpp'), "wmpi")
 
     mesio = list(checker)
     mesio += build(ctx.path.ant_glob('src/mesh/**/*.cpp'), "mesh")

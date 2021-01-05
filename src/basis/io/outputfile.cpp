@@ -5,7 +5,7 @@
 #include "basis/containers/tarray.h"
 #include "basis/containers/allocators.h"
 #include "basis/logging/profiler.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/stepinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/ecfinfo.h"

@@ -1,7 +1,7 @@
 
 #include "basis/containers/point.h"
 #include "basis/containers/tarray.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 #include "esinfo/envinfo.h"
 
 #include <numeric>

@@ -7,7 +7,7 @@
 #include "esinfo/eslog.hpp"
 #include "config/ecf/output.h"
 #include "basis/utilities/sysutils.h"
-#include "basis/utilities/communication.h"
+#include "wrappers/mpi/communication.h"
 
 #include "executor/asyncexecutor.h"
 #include "executor/directexecutor.h"
