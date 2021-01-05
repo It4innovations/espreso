@@ -1,0 +1,25 @@
+
+def options(opt):
+    libraries = ["openmpi", "intelmpi", "mpich"]
+    opt.compiler.add_option("--mpi-lib",
+        action="store",
+        metavar=libraries,
+        choices=libraries,
+        help="Set the MPI library version. Use this option when the auto-detection mechanism fails.")
+
+def configure(ctx):
+    # Intel-MPI is based on MPICH, we need to check MPICH_VERSION after Intel-MPI 
+    libraries = dict()
+    libraries["Open MPI"] = 'printf("%d", OMPI_MAJOR_VERSION);'
+    libraries["Intel MPI"] = 'printf("%s", I_MPI_VERSION);'
+    libraries["mpich"] = 'printf("%s", "MPICH_VERSION");'
+    for lib, checker in libraries.items():
+        if ctx.check_cc(
+            mandatory   = False,
+            msg         = 'Checking for MPI version ({0})'.format(lib),
+            fragment    = '#include "mpi.h"\n int main() {{ {0} return 0; }}'.format(checker)):
+            ctx.env.MPI = lib
+            break
+        
+                
+                
