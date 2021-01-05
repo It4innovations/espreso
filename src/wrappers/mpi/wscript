@@ -8,12 +8,12 @@ def options(opt):
         help="Set the MPI library version. Use this option when the auto-detection mechanism fails.")
 
 def configure(ctx):
-    # Intel-MPI is based on MPICH, we need to check MPICH_VERSION after Intel-MPI 
-    libraries = dict()
-    libraries["Open MPI"] = 'printf("%d", OMPI_MAJOR_VERSION);'
-    libraries["Intel MPI"] = 'printf("%s", I_MPI_VERSION);'
-    libraries["mpich"] = 'printf("%s", "MPICH_VERSION");'
-    for lib, checker in libraries.items():
+    # Open MPI and Intel-MPI are based on MPICH, we need to check MPICH_VERSION at last
+    libraries = list()
+    libraries.append(("Open MPI", 'printf("%d", OMPI_MAJOR_VERSION);'))
+    libraries.append(("Intel MPI", 'printf("%s", I_MPI_VERSION);'))
+    libraries.append(("mpich", 'printf("%s", "MPICH_VERSION");'));
+    for lib, checker in libraries:
         if ctx.check_cc(
             mandatory   = False,
             msg         = 'Checking for MPI version ({0})'.format(lib),
