@@ -11,6 +11,7 @@ namespace espreso {
 
 struct NamedData {
 	static std::vector<std::string> coordinateSuffixes;
+	static std::vector<std::string> tensorSuffixes;
 	static std::vector<std::string> numberSuffixes;
 
 	enum class DataType {

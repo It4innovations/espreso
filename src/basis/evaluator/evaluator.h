@@ -2,20 +2,12 @@
 #ifndef SRC_BASIS_EVALUATOR_EVALUATOR_H_
 #define SRC_BASIS_EVALUATOR_EVALUATOR_H_
 
-#include <string>
 #include "esinfo/stepinfo.h"
 
+#include <string>
+#include <vector>
+
 namespace espreso {
-
-enum EvaluatorParameters: int {
-	VALUE       = 0, // never const
-	COORDINATE  = 1 << 0,
-	TIME        = 1 << 1,
-	FREQUENCY   = 1 << 2,
-	TEMPERATURE = 1 << 3
-
-};
-
 
 class Evaluator {
 
@@ -31,6 +23,11 @@ protected:
 
 public:
 	struct Params {
+		struct General {
+			double *val;
+			int offset, increment;
+		};
+
 		int _ncoors;
 		const double* _coors;
 		const double* _inittemp;
@@ -38,6 +35,8 @@ public:
 		const double* _disp;
 		double _time;
 		double _frequency;
+
+		std::vector<General> general;
 
 		Params(): _ncoors(0), _coors(NULL), _inittemp(NULL), _temp(NULL), _disp(NULL), _time(step::time.current), _frequency(step::frequency.current) {}
 
@@ -121,23 +120,15 @@ public:
 
 	virtual double evaluate(double r) const { return 0; }
 
-	virtual bool isConstant() const { return true; }
-	virtual bool isCoordinateDependent() const { return false; }
-	virtual bool isTimeDependent() const { return false; }
-	virtual bool isFrequencyDependent() const { return false; }
-	virtual bool isTemperatureDependent() const { return false; }
-
-	virtual bool isConstant(EvaluatorParameters parameters) const
-	{
-		return
-				(parameters != EvaluatorParameters::VALUE) &&
-				(!(parameters & EvaluatorParameters::COORDINATE)  || !isCoordinateDependent()) &&
-				(!(parameters & EvaluatorParameters::TIME)        || !isTimeDependent()) &&
-				(!(parameters & EvaluatorParameters::FREQUENCY)   || !isFrequencyDependent()) &&
-				(!(parameters & EvaluatorParameters::TEMPERATURE) || !isTemperatureDependent());
-	}
-
 	virtual std::string getEXPRTKForm() const { return ""; }
+
+	bool isConstant() const;
+	bool isCoordinateDependent() const;
+	bool isTimeDependent() const;
+	bool isFrequencyDependent() const;
+	bool isTemperatureDependent() const;
+
+	std::vector<std::string> parameters;
 };
 
 }

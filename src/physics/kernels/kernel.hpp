@@ -38,10 +38,11 @@ bool KernelExecutor<Instance>::boundaryWithSettings(size_t rindex)
 template<class Instance>
 void KernelExecutor<Instance>::processElements(const Builder &builder, InstanceFiller &filler)
 {
+	const ElementsInterval &interval = info::mesh->elements->eintervals[filler.interval];
 	auto iterator = static_cast<Instance*>(this)->iterator;
-	iterator.initKernelIterator(filler.begin);
+	iterator.initKernelIterator(interval.begin);
 
-	for (esint e = filler.begin; e < filler.end; ++e) {
+	for (esint e = interval.begin; e < interval.end; ++e) {
 		iterator.offset = e;
 		iterator.element = info::mesh->elements->epointers->datatarray()[e];
 		iterator.material = info::mesh->materials[info::mesh->elements->material->datatarray()[e]];

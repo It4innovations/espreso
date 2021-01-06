@@ -9,6 +9,7 @@ int espreso::info::env::MKL_NUM_THREADS = 1;
 int espreso::info::env::OMP_NUM_THREADS = 1;
 int espreso::info::env::SOLVER_NUM_THREADS = 1;
 int espreso::info::env::PAR_NUM_THREADS = 1;
+int espreso::info::env::threads = 1;
 
 void espreso::info::env::set()
 {
@@ -27,6 +28,7 @@ void espreso::info::env::set()
 	getEnv(PAR_NUM_THREADS   , "PAR_NUM_THREADS");
 
 	omp_set_num_threads(OMP_NUM_THREADS);
+	threads = OMP_NUM_THREADS;
 }
 
 char* espreso::info::env::pwd()

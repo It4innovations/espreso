@@ -30,11 +30,6 @@ public:
 	void evalSelectedSparse(esint size, esint increment, const esint *selection, const Params &params, double *results) const;
 	void evalSelectedDense(esint size, esint increment, const esint *selection, const Params &params, double *results) const;
 
-	bool isConstant() const { return !_timeDependency && !_temperatureDependency; }
-	bool isCoordinateDependent() const { return false; }
-	bool isTimeDependent() const { return _timeDependency; }
-	bool isTemperatureDependent() const { return _temperatureDependency; }
-
 	std::string getEXPRTKForm() const;
 
 protected:
@@ -42,7 +37,6 @@ protected:
 	std::vector<std::vector<std::vector<double> > > _table;
 	std::vector<TableProperty> _properties;
 	std::vector<std::vector<double> > _axis;
-	bool _temperatureDependency, _timeDependency;
 };
 
 }

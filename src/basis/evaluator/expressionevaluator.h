@@ -18,9 +18,9 @@ class Expression;
 class ExpressionEvaluator: public Evaluator {
 
 public:
-	static std::vector<std::string> variables() { return { "X", "Y", "Z", "INITIAL_TEMPERATURE", "TEMPERATURE", "TIME", "FREQUENCY", "R", "DISPLACEMENT" }; }
+//	static std::vector<std::string> variables() { return { "X", "Y", "Z", "INITIAL_TEMPERATURE", "TEMPERATURE", "TIME", "FREQUENCY", "R", "DISPLACEMENT" }; }
 
-	ExpressionEvaluator(const std::string &expression);
+	ExpressionEvaluator(const std::string &expression, std::vector<std::string> &variables);
 	ExpressionEvaluator(const ExpressionEvaluator &other);
 	~ExpressionEvaluator();
 
@@ -34,17 +34,10 @@ public:
 
 	double evaluate(double r) const;
 
-	bool isConstant() const { return !_coordinateDependency && !_timeDependency && !_temperatureDependency; }
-	bool isCoordinateDependent() const { return _coordinateDependency; }
-	bool isTimeDependent() const { return _timeDependency; }
-	bool isFrequencyDependent() const { return _frequencyDependency; }
-	bool isTemperatureDependent() const { return _temperatureDependency; }
-
 	std::string getEXPRTKForm() const;
 
 protected:
 	std::vector<Expression*> _expressions;
-	bool _coordinateDependency, _temperatureDependency, _timeDependency, _frequencyDependency;
 };
 
 }

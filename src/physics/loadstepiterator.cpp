@@ -1,5 +1,9 @@
 
-#include "physicalsolver.h"
+#include "loadstepiterator.h"
+
+#include "basis/expression/expression.h"
+#include "basis/evaluator/expressionevaluator.h"
+#include "basis/utilities/utils.h"
 #include "esinfo/stepinfo.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
@@ -26,14 +30,16 @@
 #include "composer/distributed/nodes.uniform.distributed.composer.h"
 #include "composer/distributed/faces.edges.uniform.distributed.composer.h"
 #include "composer/feti/nodes.uniform.feti.composer.h"
-#include "kernels/heattransfer2d.kernel.h"
-#include "kernels/heattransfer3d.kernel.h"
-#include "kernels/structuralmechanics2d.kernel.h"
-#include "kernels/structuralmechanics3d.elasticity.kernel.h"
-#include "kernels/structuralmechanics3d.harmonic.kernel.h"
-#include "kernels/structuralmechanics3d.tdnns.kernel.h"
-#include "kernels/utils/morphing.h"
+#include "physics/kernels/heattransfer.kernel.h"
+#include "physics/kernels/heattransfer2d.kernel.h"
+#include "physics/kernels/heattransfer3d.kernel.h"
+#include "physics/kernels/structuralmechanics2d.kernel.h"
+#include "physics/kernels/structuralmechanics3d.elasticity.kernel.h"
+#include "physics/kernels/structuralmechanics3d.harmonic.kernel.h"
+#include "physics/kernels/structuralmechanics3d.tdnns.kernel.h"
 #include "output/output.h"
+
+#include <algorithm>
 
 using namespace espreso;
 
@@ -41,11 +47,12 @@ static LinearSystem* getSystem(LinearSystem *previous, PhysicsConfiguration &phy
 {
 	LinearSystem *current = NULL;
 	Kernel *kernel = NULL, *pKernel = previous ? previous->assembler()->composer->kernel : NULL;
-	switch (dimension) {
-	case DIMENSION::D2: kernel = new HeatTransfer2DKernel(dynamic_cast<HeatTransfer2DKernel*>(pKernel), physics, gsettings, loadStep); break;
-	case DIMENSION::D3: kernel = new HeatTransfer3DKernel(dynamic_cast<HeatTransfer3DKernel*>(pKernel), physics, gsettings, loadStep); break;
-	default: break;
-	}
+	kernel = new HeatTransferKernel(dynamic_cast<HeatTransferKernel*>(pKernel), loadStep);
+//	switch (dimension) {
+//	case DIMENSION::D2: kernel = new HeatTransfer2DKernel(dynamic_cast<HeatTransfer2DKernel*>(pKernel), physics, gsettings, loadStep); break;
+//	case DIMENSION::D3: kernel = new HeatTransfer3DKernel(dynamic_cast<HeatTransfer3DKernel*>(pKernel), physics, gsettings, loadStep); break;
+//	default: break;
+//	}
 
 	switch (loadStep.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI: {
@@ -79,7 +86,7 @@ static LinearSystem* getSystem(LinearSystem *previous, PhysicsConfiguration &phy
 		current = system;
 	} break;
 	default:
-		eslog::internalFailure("unknown linear solver.\n");
+		eslog::globalerror("ESPRESO internal error: unknown linear solver.\n");
 	}
 
 	current->builder = new TimeBuilder();
@@ -100,15 +107,9 @@ static LinearSystem* getSystem(LinearSystem *previous, PhysicsConfiguration &phy
 	LinearSystem *current = NULL;
 	int DOFs = 0;
 	Kernel *kernel = NULL, *pKernel = previous ? previous->assembler()->composer->kernel : NULL;
-	switch (dimension) {
-	case DIMENSION::D2: DOFs = 2;
-		if (dynamic_cast<HeatTransfer2DKernel*>(pKernel)) {
-			kernel = new StructuralMechanics2DKernel(dynamic_cast<HeatTransfer2DKernel*>(pKernel), physics, gsettings, loadStep); break;
-		} else {
-			kernel = new StructuralMechanics2DKernel(dynamic_cast<StructuralMechanics2DKernel*>(pKernel), physics, gsettings, loadStep); break;
-		}
 
-		break;
+	switch (dimension) {
+	case DIMENSION::D2: DOFs = 2; kernel = new StructuralMechanics2DKernel(dynamic_cast<StructuralMechanics2DKernel*>(pKernel), physics, gsettings, loadStep); break;
 	case DIMENSION::D3: {
 		DOFs = 3;
 		if (tdnns()) {
@@ -196,7 +197,7 @@ static LinearSystem* getSystem(LinearSystem *previous, PhysicsConfiguration &phy
 		default: break;
 		} break;
 	default:
-		eslog::internalFailure("not implemented loadatep type.\n");
+		eslog::globalerror("ESPRESO internal error: not implemented loadatep type.\n");
 	}
 
 	current->init();
@@ -274,140 +275,192 @@ static LoadStepSolver* getLoadStepSolver(LoadStepSolver *previous, StructuralMec
 	return current;
 }
 
-void PhysicalSolver::run()
+
+LoadStepIterator::LoadStepIterator()
+: _loadStepSolver(NULL), _subStepSolver(NULL), _system(NULL)
+{
+
+}
+
+LoadStepIterator::~LoadStepIterator()
+{
+	if (_loadStepSolver != NULL) { delete _loadStepSolver; }
+	if (_subStepSolver != NULL) { delete _subStepSolver; }
+	if (_system != NULL) { delete _system; }
+}
+
+void LoadStepIterator::prepareExpressions()
 {
 	switch (info::ecf->physics) {
-	case PhysicsConfiguration::TYPE::THERMO_ELASTICITY_2D:
-		{ PhysicalSolver first; PhysicalSolver second; runCoupled(first, second, info::ecf->thermo_elasticity_2d); } break;
-	case PhysicsConfiguration::TYPE::THERMO_ELASTICITY_3D:
-		{ PhysicalSolver first; PhysicalSolver second; runCoupled(first, second, info::ecf->thermo_elasticity_3d); } break;
-	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D:
-		{ PhysicalSolver solver; runSingle(solver, info::ecf->heat_transfer_2d); } break;
-	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D:
-		{ PhysicalSolver solver; runSingle(solver, info::ecf->heat_transfer_3d); } break;
+	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D: HeatTransferKernel::createParameters(); break;
+	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D: HeatTransferKernel::createParameters(); break;
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D:
-		{ PhysicalSolver solver; runSingle(solver, info::ecf->structural_mechanics_2d); } break;
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
-		{ PhysicalSolver solver; runSingle(solver, info::ecf->structural_mechanics_3d); } break;
+	default: eslog::globalerror("Unknown physics.\n");
+	}
+
+	struct __param__ {
+		std::string value, replacement;
+		std::vector<std::string> parameters;
+
+		__param__(const std::string &param): value(param), replacement(value), parameters({param}) {}
+		__param__(const std::string &value, const std::vector<std::string> &parameters)
+		: value(value), parameters(parameters)
+		{
+			if (parameters.size()) {
+				replacement = "sqrt(";
+				for (auto p = parameters.begin(); p != parameters.end(); ++p) {
+					if (p != parameters.begin()) {
+						replacement += " + ";
+					}
+					replacement += *p + " * " + *p;
+				}
+				replacement += ")";
+			} else {
+				this->replacement = value;
+				this->parameters.push_back(value);
+			}
+		}
+	};
+
+	std::vector<__param__> parameters = { {"TIME"} };
+	if (info::mesh->dimension == 2) {
+		parameters.push_back({ "COORDINATE_X" });
+		parameters.push_back({ "COORDINATE_Y" });
+		parameters.push_back({ "COORDINATE", { "COORDINATE_X", "COORDINATE_Y" }});
+	}
+	if (info::mesh->dimension == 3) {
+		parameters.push_back({ "COORDINATE_X" });
+		parameters.push_back({ "COORDINATE_Y" });
+		parameters.push_back({ "COORDINATE_Z" });
+		parameters.push_back({ "COORDINATE", { "COORDINATE_X", "COORDINATE_Y", "COORDINATE_Z" }});
+	}
+
+	std::vector<const NamedData*> data;
+	data.insert(data.end(), info::mesh->nodes->data.begin(), info::mesh->nodes->data.end());
+	data.insert(data.end(), info::mesh->elements->data.begin(), info::mesh->elements->data.end());
+	for (auto it = data.begin(); it != data.end(); ++it) {
+		const NamedData *p = *it;
+		if (p->dataType == NamedData::DataType::SCALAR) {
+			parameters.push_back({p->name});
+		} else {
+			std::vector<std::string> params;
+			for (int d = 0; d < p->dimension; ++d) {
+				params.push_back(p->name + p->suffix(d));
+				parameters.push_back(params.back());
+			}
+			parameters.push_back({ p->name, params });
+		}
+	}
+
+	for (auto fnc = info::ecf->functions.begin(); fnc != info::ecf->functions.end(); ++fnc) {
+		parameters.push_back({ fnc->first });
+	}
+
+	for (auto it = ECFExpression::parametrized.begin(); it != ECFExpression::parametrized.end(); ++it) {
+		ECFExpression *expression = *it;
+		std::string upper = expression->value;
+		for (size_t i = 0; i < upper.size(); i++) {
+			upper[i] = std::toupper(upper[i]);
+		}
+
+		size_t pindex = 0;
+		std::vector<std::pair<size_t, size_t> > pindices;
+		for (auto param = parameters.begin(); param != parameters.end(); ++param, ++pindex) {
+			size_t i = 0;
+			while ((i = upper.find(param->value, i)) != std::string::npos) {
+				pindices.push_back(std::make_pair(i++, pindex));
+			}
+		}
+		std::sort(pindices.begin(), pindices.end());
+
+		for (size_t i = 1; i < pindices.size(); ++i) {
+			if (pindices[i - 1].first == pindices[i].first) {
+				if (parameters[pindices[i].second].value.size() < parameters[pindices[i - 1].second].value.size()) {
+					pindices[i] = pindices[i - 1];
+				}
+				pindices[i - 1].first = std::string::npos;
+			}
+		}
+
+		for (size_t i = 0, offset = 0; i < pindices.size(); ++i) {
+			if (pindices[i].first != std::string::npos) {
+				expression->parameters.insert(expression->parameters.end(), parameters[pindices[i].second].parameters.begin(), parameters[pindices[i].second].parameters.end());
+				expression->value.replace(pindices[i].first + offset, parameters[pindices[i].second].value.size(), parameters[pindices[i].second].replacement);
+				offset += parameters[pindices[i].second].replacement.size() - parameters[pindices[i].second].value.size();
+			}
+		}
+
+		utils::sortAndRemoveDuplicates(expression->parameters);
+
+		if (Expression::isValid(expression->value, expression->parameters)) {
+			expression->evaluator = new ExpressionEvaluator(expression->value, expression->parameters);
+		} else {
+			eslog::globalerror("PARSE ERROR: Expression '%s' cannot be evaluated.\n", expression->value.c_str());
+		}
+	}
+
+	// TODO: check circular dependency
+}
+
+bool LoadStepIterator::next()
+{
+	eslog::nextStep(step::step.loadstep + 1);
+	switch (info::ecf->physics) {
+	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D:
+		return next(info::ecf->heat_transfer_2d);
+	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D:
+		return next(info::ecf->heat_transfer_3d);
+	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D:
+		return next(info::ecf->structural_mechanics_2d);
+	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
+		return next(info::ecf->structural_mechanics_3d);
 	default:
-		eslog::globalerror("Physical solver: not implemented physical solver.\n");
+		eslog::globalerror("Unknown physics.\n");
 	}
-}
 
-PhysicalSolver::PhysicalSolver()
-: loadStepSolver(NULL), subStepSolver(NULL), system(NULL)
-{
-
-}
-
-PhysicalSolver::~PhysicalSolver()
-{
-	clear();
-}
-
-void PhysicalSolver::clear()
-{
-	if (loadStepSolver) { delete loadStepSolver; }
-	if (subStepSolver) { delete subStepSolver; }
-	if (system) { delete system; }
+	return false;
 }
 
 template <typename TPhysics>
-void PhysicalSolver::runSingle(PhysicalSolver &solver, TPhysics &configuration)
+bool LoadStepIterator::next(TPhysics &configuration)
 {
-	while (step::step.loadstep < configuration.load_steps) {
-		eslog::nextStep(step::step.loadstep + 1);
+	eslog::startln("PHYSICS BUILDER: LOAD STEP STARTED", "PHYSICS BUILDER");
 
-		eslog::startln("PHYSICS BUILDER: LOAD STEP STARTED", "PHYSICS BUILDER");
-
-		auto &loadStepSettings = configuration.load_steps_settings.at(step::step.loadstep + 1);
-
-		PhysicalSolver prev = solver;
-		solver.system = getSystem(prev.system, configuration, configuration, loadStepSettings, configuration.dimension);
-		eslog::checkpointln("PHYSICS BUILDER: LINEAR SYSTEM COMPOSED");
-
-		solver.subStepSolver = getSubStepSolver(prev.subStepSolver, loadStepSettings, solver.system);
-		eslog::checkpointln("PHYSICS BUILDER: SUBSTEP SOLVER INITTED");
-
-		solver.loadStepSolver = getLoadStepSolver(prev.loadStepSolver, loadStepSettings, solver.system, solver.subStepSolver);
-		eslog::checkpointln("PHYSICS BUILDER: LOAD STEP SOLVER INITTED");
-
-		switch(info::ecf->mesh_morphing.type) {
-		case MORPHING_TYPE::NONE: break;
-		case MORPHING_TYPE::RBF: morphing::rbf(); break;
-		}
-
-		if (step::isInitial()) {
-			info::mesh->output->updateMonitors();
-		}
-
-		eslog::endln("PHYSICS BUILDER: MONITORS SET");
-
-		eslog::checkpoint("ESPRESO: PHYSICS PREPARED");
-		eslog::param("LOADSTEP", step::step.loadstep + 1);
-		eslog::ln();
-
-		eslog::startln("PHYSICS SOLVER: STARTED", "PHYSICS SOLVER");
-		solver.loadStepSolver->run();
-		eslog::endln("PHYSICS SOLVER: FINISHED");
-
-		++step::step.loadstep;
-		eslog::checkpoint("ESPRESO: PHYSICS SOLVED");
-		eslog::param("LOADSTEP", step::step.loadstep);
-		eslog::ln();
+	auto &loadStepSettings = configuration.load_steps_settings.at(step::step.loadstep + 1);
+	if (loadStepSettings.topology_optimization && loadStepSettings.type != LoadStepSolverConfiguration::TYPE::STEADY_STATE) {
+		eslog::error("ESPRESO: not implemented feature: topology optimization can be used only for the STEADY STATE solver type.\n");
 	}
-}
 
-template <typename TPhysics>
-void PhysicalSolver::runCoupled(PhysicalSolver &first, PhysicalSolver &second, TPhysics &configuration)
-{
-	while (step::step.loadstep < configuration.load_steps) {
-		eslog::nextStep(step::step.loadstep + 1);
+	auto system = getSystem(_system, configuration, configuration, loadStepSettings, configuration.dimension);
+	eslog::checkpointln("PHYSICS BUILDER: LINEAR SYSTEM COMPOSED");
 
-		eslog::startln("PHYSICS BUILDER: LOAD STEP STARTED", "PHYSICS BUILDER");
-		auto &loadStepSettings = configuration.load_steps_settings.at(step::step.loadstep + 1);
+	auto subStepSolver = getSubStepSolver(_subStepSolver, loadStepSettings, system);
+	eslog::checkpointln("PHYSICS BUILDER: SUBSTEP SOLVER INITTED");
 
-		PhysicalSolver _first = first, _second = second;
-		first.system = getSystem(_first.system, configuration, configuration, loadStepSettings.heat_transfer, configuration.dimension);
-		second.system = getSystem(first.system, configuration, configuration, loadStepSettings.structural_mechanics, configuration.dimension);
-		eslog::checkpointln("PHYSICS BUILDER: LINEAR SYSTEM COMPOSED");
+	auto loadStepSolver = getLoadStepSolver(_loadStepSolver, loadStepSettings, system, subStepSolver);
+	eslog::checkpointln("PHYSICS BUILDER: LOAD STEP SOLVER INITTED");
 
-		first.subStepSolver = getSubStepSolver(_first.subStepSolver, loadStepSettings.heat_transfer, first.system);
-		second.subStepSolver = getSubStepSolver(_second.subStepSolver, loadStepSettings.structural_mechanics, second.system);
-		eslog::checkpointln("PHYSICS BUILDER: SUBSTEP SOLVER INITTED");
+	if (_system) { delete _system; }
+	if (_subStepSolver) { delete _subStepSolver; }
+	if (_loadStepSolver) { delete _loadStepSolver; }
 
-		first.loadStepSolver = getLoadStepSolver(_first.loadStepSolver, loadStepSettings.heat_transfer, first.system, first.subStepSolver);
-		second.loadStepSolver = getLoadStepSolver(_second.loadStepSolver, loadStepSettings.structural_mechanics, second.system, second.subStepSolver);
-		eslog::checkpointln("PHYSICS BUILDER: LOAD STEP SOLVER INITTED");
+	_system = system;
+	_subStepSolver = subStepSolver;
+	_loadStepSolver = loadStepSolver;
 
-		if (step::isInitial()) {
-			info::mesh->output->updateMonitors();
-		}
-		eslog::endln("PHYSICS BUILDER: MONITORS SET");
-
-		eslog::checkpoint("ESPRESO: PHYSICS PREPARED");
-		eslog::param("LOADSTEP", step::step.loadstep + 1);
-		eslog::ln();
-
-		eslog::startln("PHYSICS SOLVER: STARTED", "PHYSICS SOLVER");
-		step::step.substep = step::duplicate.offset;
-		step::step.iteration = 0;
-
-		while (!step::isLast()) {
-			info::mesh->output->suppress();
-			first.loadStepSolver->runNextSubstep();
-			info::mesh->output->permit();
-			second.loadStepSolver->runNextSubstep();
-			step::step.substep++;
-			step::step.iteration = 0;
-		}
-		eslog::endln("PHYSICS SOLVER: FINISHED");
-
-		++step::step.loadstep;
-		eslog::checkpoint("ESPRESO: PHYSICS SOLVED");
-		eslog::param("LOADSTEP", step::step.loadstep);
-		eslog::ln();
+	if (step::isInitial()) {
+		info::mesh->output->updateMonitors();
 	}
+	eslog::endln("PHYSICS BUILDER: MONITORS SET");
+
+	eslog::checkpoint("ESPRESO: PHYSICS PREPARED");
+	eslog::param("LOADSTEP", step::step.loadstep + 1);
+	eslog::ln();
+
+	eslog::startln("PHYSICS SOLVER: STARTED", "PHYSICS SOLVER");
+	_loadStepSolver->run();
+	eslog::endln("PHYSICS SOLVER: FINISHED");
+
+	return ++step::step.loadstep < configuration.load_steps;
 }
-
-

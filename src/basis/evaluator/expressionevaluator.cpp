@@ -9,21 +9,15 @@
 
 using namespace espreso;
 
-ExpressionEvaluator::ExpressionEvaluator(const std::string &expression)
+ExpressionEvaluator::ExpressionEvaluator(const std::string &expression, std::vector<std::string> &variables)
 {
-	size_t threads = info::env::OMP_NUM_THREADS;
-
+	parameters = variables;
 	_expressions.resize(info::env::OMP_NUM_THREADS);
 
 	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		_expressions[t] = new Expression(expression, ExpressionEvaluator::variables());
+	for (int t = 0; t < info::env::OMP_NUM_THREADS; t++) {
+		_expressions[t] = new Expression(expression, parameters);
 	}
-
-	_coordinateDependency = StringCompare::contains(expression, { "X", "Y", "Z" });
-	_timeDependency = StringCompare::contains(expression, { "TIME" });
-	_frequencyDependency = StringCompare::contains(expression, { "FREQUENCY" });
-	_temperatureDependency = StringCompare::contains(expression, { "INITIAL_TEMPERATURE", "TEMPERATURE" });
 }
 
 ExpressionEvaluator::~ExpressionEvaluator()
@@ -45,32 +39,15 @@ ExpressionEvaluator::ExpressionEvaluator(const ExpressionEvaluator &other)
 	for (size_t t = 0; t < threads; t++) {
 		_expressions[t] = new Expression(*other._expressions[t]);
 	}
-
-	_coordinateDependency = other._coordinateDependency;
-	_timeDependency = other._timeDependency;
-	_frequencyDependency = other._frequencyDependency;
-	_temperatureDependency = other._temperatureDependency;
+	parameters = other.parameters;
 }
 
 void ExpressionEvaluator::evalVector(esint size, esint increment, const Params &params, double *results) const
 {
 	int thread = omp_get_thread_num();
 	for (esint i = 0; i < size; ++i) {
-		if (params._coors != NULL) {
-			_expressions[thread]->values[0] = params._coors[i * params._ncoors + 0];
-			_expressions[thread]->values[1] = params._coors[i * params._ncoors + 1];
-			_expressions[thread]->values[2] = params._ncoors == 3 ? params._coors[i * params._ncoors + 2] : 0;
-		}
-		if (params._inittemp != NULL) {
-			_expressions[thread]->values[3] = params._inittemp[i];
-		}
-		if (params._temp != NULL) {
-			_expressions[thread]->values[4] = params._temp[i];
-		}
-		_expressions[thread]->values[5] = params._time;
-		_expressions[thread]->values[6] = params._frequency;
-		if (params._disp != NULL) {
-			_expressions[thread]->values[8] = params._disp[i];
+		for (size_t p = 0; p < params.general.size(); ++p) {
+			_expressions[thread]->values[p] = *(params.general[p].val + i * params.general[p].increment + params.general[p].offset);
 		}
 		results[i * increment] = _expressions[thread]->evaluate();
 	}
@@ -81,21 +58,8 @@ void ExpressionEvaluator::evalFiltered(esint size, esint increment, const esint 
 	int thread = omp_get_thread_num();
 	for (esint i = 0; i < size; ++i) {
 		for (esint e = distribution[elements[i]]; e < distribution[elements[i] + 1]; ++e) {
-			if (params._coors != NULL) {
-				_expressions[thread]->values[0] = params._coors[e * params._ncoors + 0];
-				_expressions[thread]->values[1] = params._coors[e * params._ncoors + 1];
-				_expressions[thread]->values[2] = params._ncoors == 3 ? params._coors[e * params._ncoors + 2] : 0;
-			}
-			if (params._inittemp != NULL) {
-				_expressions[thread]->values[3] = params._inittemp[e];
-			}
-			if (params._temp != NULL) {
-				_expressions[thread]->values[4] = params._temp[e];
-			}
-			_expressions[thread]->values[5] = params._time;
-			_expressions[thread]->values[6] = params._frequency;
-			if (params._disp != NULL) {
-				_expressions[thread]->values[8] = params._disp[i];
+			for (size_t p = 0; p < params.general.size(); ++p) {
+				_expressions[thread]->values[p] = *(params.general[p].val + e * params.general[p].increment + params.general[p].offset);
 			}
 			results[e * increment] = _expressions[thread]->evaluate();
 		}
@@ -106,21 +70,8 @@ void ExpressionEvaluator::evalSelectedSparse(esint size, esint increment, const 
 {
 	int thread = omp_get_thread_num();
 	for (esint i = 0; i < size; ++i) {
-		if (params._coors != NULL) {
-			_expressions[thread]->values[0] = params._coors[selection[i] * params._ncoors + 0];
-			_expressions[thread]->values[1] = params._coors[selection[i] * params._ncoors + 1];
-			_expressions[thread]->values[2] = params._ncoors == 3 ? params._coors[selection[i] * params._ncoors + 2] : 0;
-		}
-		if (params._inittemp != NULL) {
-			_expressions[thread]->values[3] = params._inittemp[selection[i]];
-		}
-		if (params._temp != NULL) {
-			_expressions[thread]->values[4] = params._temp[selection[i]];
-		}
-		_expressions[thread]->values[5] = params._time;
-		_expressions[thread]->values[6] = params._frequency;
-		if (params._disp != NULL) {
-			_expressions[thread]->values[8] = params._disp[i];
+		for (size_t p = 0; p < params.general.size(); ++p) {
+			_expressions[thread]->values[p] = *(params.general[p].val + selection[i] * params.general[p].increment + params.general[p].offset);
 		}
 		results[i * increment] = _expressions[thread]->evaluate();
 	}
@@ -130,22 +81,9 @@ void ExpressionEvaluator::evalSelectedDense(esint size, esint increment, const e
 {
 	int thread = omp_get_thread_num();
 	for (esint i = 0; i < size; ++i) {
-		if (params._coors != NULL) {
-			_expressions[thread]->values[0] = params._coors[selection[i] * params._ncoors + 0];
-			_expressions[thread]->values[1] = params._coors[selection[i] * params._ncoors + 1];
-			_expressions[thread]->values[2] = params._ncoors == 3 ? params._coors[selection[i] * params._ncoors + 2] : 0;
-		}
-		if (params._inittemp != NULL) {
-			_expressions[thread]->values[3] = params._inittemp[selection[i]];
-		}
-		if (params._temp != NULL) {
-			_expressions[thread]->values[4] = params._temp[selection[i]];
-		}
-		_expressions[thread]->values[5] = params._time;
-		_expressions[thread]->values[6] = params._frequency;
-		if (params._disp != NULL) {
-			_expressions[thread]->values[8] = params._disp[i];
-		}
+		for (size_t p = 0; p < params.general.size(); ++p) {
+					_expressions[thread]->values[p] = *(params.general[p].val + selection[i] * params.general[p].increment + params.general[p].offset);
+				}
 		results[selection[i] * increment] = _expressions[thread]->evaluate();
 	}
 }

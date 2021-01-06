@@ -55,10 +55,33 @@ void computeElementIntervals(const DomainStore *domains, ElementStore *elements)
 	utils::mergeThreadedUniqueData(iboundaries);
 	profiler::synccheckpoint("iboundaries");
 
+	auto addregions = [&] (esint i) {
+		auto regs = (elements->regions->begin() + i)->data();
+		std::vector<int> regions;
+		for (size_t r = 1; r < elements->regions->edataSize() * sizeof(esint); ++r) {
+			esint maskOffset = r / (8 * sizeof(esint));
+			esint bit = 1 << (r % (8 * sizeof(esint)));
+			if (regs[maskOffset] & bit) {
+				regions.push_back(r);
+			}
+		}
+		if (regions.size() == 0) {
+			elements->eintervals.back().region = 0;
+		}
+		if (regions.size() == 1) {
+			elements->eintervals.back().region = regions.front();
+		}
+		if (regions.size() > 1) {
+			elements->eintervals.back().region = -1;
+			elements->eintervals.back().regions = regions;
+		}
+	};
+
 	elements->eintervals.clear();
 	elements->eintervals.push_back(ElementsInterval(0, 0));
 	elements->eintervals.back().domain = domains->offset;
 	elements->eintervals.back().code = static_cast<int>(elements->epointers->datatarray().front()->code);
+	addregions(0);
 	elements->eintervalsDistribution.push_back(0);
 	for (size_t i = 0; i < iboundaries[0].size(); i++) {
 		elements->eintervals.back().end = iboundaries[0][i];
@@ -66,6 +89,7 @@ void computeElementIntervals(const DomainStore *domains, ElementStore *elements)
 		const std::vector<esint> &edist = domains->elements;
 		elements->eintervals.back().domain = std::lower_bound(edist.begin(), edist.end(), elements->eintervals.back().begin + 1) - edist.begin() - 1 + domains->offset;
 		elements->eintervals.back().code = static_cast<int>(elements->epointers->datatarray()[elements->eintervals.back().begin]->code);
+		addregions(elements->eintervals.back().begin);
 		if ((elements->eintervals.end() - 1)->domain != (elements->eintervals.end() - 2)->domain) {
 			elements->eintervalsDistribution.push_back(elements->eintervals.size() - 1);
 		}

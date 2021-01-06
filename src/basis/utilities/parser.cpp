@@ -81,5 +81,17 @@ std::string Parser::stringwithcommas(size_t number)
 	return result;
 };
 
+std::string Parser::join(const std::string &separator, const std::vector<std::string> &values)
+{
+	if (values.size() == 0) {
+		return "";
+	}
+	std::string result = values.front();
+	for (size_t i = 1; i < values.size(); ++i) {
+		result += separator + values[i];
+	}
+	return result;
+}
+
 
 

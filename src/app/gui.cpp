@@ -19,7 +19,7 @@
 #include "config/configuration.h"
 #include "mesh/mesh.h"
 #include "output/output.h"
-#include "physics/physicalsolver.h"
+#include "physics/loadstepiterator.h"
 
 #include "gui/parallel/mpimanager.h"
 #include "gui/workspace/workspacewindow.h"

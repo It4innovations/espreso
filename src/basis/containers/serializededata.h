@@ -314,6 +314,15 @@ public:
 		}
 	}
 
+	void updateDistribution()
+	{
+		if (_edatasize == -1) {
+			inititerators();
+		} else {
+			inititerators(_edatasize);
+		}
+	}
+
 private:
 	void inititerators()
 	{

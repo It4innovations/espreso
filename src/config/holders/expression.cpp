@@ -14,6 +14,8 @@
 
 using namespace espreso;
 
+std::vector<ECFExpression*> ECFExpression::parametrized;
+
 bool ECFExpression::forall(const std::map<std::string, ECFExpression> &parameter, std::function<bool(const ECFExpression &expr)> fnc)
 {
 	for (auto it = parameter.begin(); it != parameter.end(); ++it) {
@@ -77,13 +79,13 @@ bool ECFExpressionOptionalVector::forall(const std::map<std::string, ECFExpressi
 }
 
 ECFExpression::ECFExpression(const std::vector<std::string> &variables)
-: variables(variables), evaluator(NULL)
+: restriction(variables), evaluator(NULL)
 {
 	createEvaluator();
 }
 
 ECFExpression::ECFExpression(const std::vector<std::string> &variables, const std::string &initialValue)
-: value(initialValue), variables(variables), evaluator(NULL)
+: value(initialValue), restriction(variables), evaluator(NULL)
 {
 	createEvaluator();
 }
@@ -98,7 +100,7 @@ ECFExpression::~ECFExpression()
 ECFExpression::ECFExpression(const ECFExpression &other)
 {
 	value = other.value;
-	variables = other.variables;
+	restriction = other.restriction;
 	evaluator = NULL;
 	if (other.evaluator != NULL) {
 		evaluator = other.evaluator->copy();
@@ -109,7 +111,7 @@ ECFExpression& ECFExpression::operator=(const ECFExpression &other)
 {
 	if (this != &other) {
 		value = other.value;
-		variables = other.variables;
+		restriction = other.restriction;
 		if (evaluator != NULL) {
 			delete evaluator;
 			evaluator = NULL;
@@ -150,18 +152,13 @@ void ECFExpression::createEvaluator()
 		evaluator = new TableInterpolationEvaluator(table);
 		return;
 	}
-	if (StringCompare::contains(value, ExpressionEvaluator::variables())) {
-		if (Expression::isValid(value, variables)) {
-			evaluator = new ExpressionEvaluator(value);
-			return;
-		}
-	} else {
-		if (Expression::isValid(value, variables)) {
-			Expression expr(value, {});
-			evaluator = new ConstEvaluator(expr.evaluate());
-			return;
-		}
+	if (Expression::isValid(value, {})) {
+		Expression expr(value, {});
+		evaluator = new ConstEvaluator(expr.evaluate());
+		return;
 	}
+	// postpone processing
+	parametrized.push_back(this);
 }
 
 void ECFHarmonicExpression::init()

@@ -99,7 +99,7 @@ public:
 	std::vector<int> neighbors;
 	std::vector<int> neighborsWithMe;
 
-	std::vector<const MaterialConfiguration*> materials;
+	std::vector<MaterialConfiguration*> materials;
 	std::map<std::string, Point > orientation;
 
 	Output *output;

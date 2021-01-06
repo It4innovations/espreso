@@ -4,7 +4,8 @@
 
 using namespace espreso;
 
-std::vector<std::string> NamedData::coordinateSuffixes = { "_X", "_Y", "_Z", "_XY", "_YZ", "_XZ", "_YX", "_ZY", "ZX" };
+std::vector<std::string> NamedData::coordinateSuffixes = { "_X", "_Y", "_Z" };
+std::vector<std::string> NamedData::tensorSuffixes = { "_XX", "_YY", "_ZZ", "_XY", "_YZ", "_XZ", "_YX", "_ZY", "ZX" };
 std::vector<std::string> NamedData::numberSuffixes = { "_1ST", "_2ND", "_3RD" };
 
 NamedData::NamedData(int dimension, DataType datatype, const std::string &name)
@@ -55,6 +56,9 @@ std::string NamedData::suffix(int index) const
 	switch (dataType) {
 	case DataType::NUMBERED:
 		return numberSuffixes[index];
+	case DataType::TENSOR_ASYM:
+	case DataType::TENSOR_SYMM:
+		return tensorSuffixes[index];
 	default:
 		return coordinateSuffixes[index];
 	}

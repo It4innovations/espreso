@@ -22,6 +22,8 @@
 #include <cstddef>
 #include <cmath>
 
+#include "basis/utilities/print.h"
+
 using namespace espreso;
 
 FETIComposer::FETIComposer(const FETIConfiguration &configuration, Kernel *kernel, FETIAssemblerData *data)
@@ -68,125 +70,132 @@ void FETIComposer::assemble(const Builder &builder)
 	double insertTime = 0, assembleTime = 0;
 
 	#pragma omp parallel for
-	for  (esint d = 0; d < info::mesh->domains->size; d++) {
-		size_t KIndex = 0, RHSIndex = 0;
-		double KReduction = builder.timeIntegrationConstantK, RHSReduction = builder.internalForceReduction;
-		Kernel::InstanceFiller filler(kernel->solutions.size());
+	for (int t = 0; t < info::env::threads; ++t) {
+		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+			size_t KIndex = 0, RHSIndex = 0;
+			double KReduction = builder.timeIntegrationConstantK, RHSReduction = builder.internalForceReduction;
+			Kernel::InstanceFiller filler(kernel->solutions.size());
+			filler.K = _data->K[d].vals;
+			filler.M = _data->M[d].vals;
+			filler.C = _data->C[d].vals;
+			filler.R = _data->R[0][d].vals;
+			filler.F = _data->f[0][d].vals;
+			filler.offset = _KPermutation[d].data();
 
-		double prev, tinsertTime = 0, tassembleTime = 0;
-		switch (kernel->solverDataProvider->feti->getMatrixType(d)) {
-		case MatrixType::REAL_UNSYMMETRIC:
-			filler.insert = [&] () {
-				tassembleTime += eslog::time() - prev;
-				prev = eslog::time();
-				for (int r = 0; r < filler.DOFs; ++r, ++RHSIndex) {
-					if (filler.insertF) {
-						for (esint n = 0; n < _data->f.nvectors; n++) {
-							_data->f[n][d][_RHSPermutation[d][RHSIndex]] += RHSReduction * filler.Fe[n][r];
-						}
-					}
-					if (filler.insertR) {
-						for (esint n = 0; n < _data->R.nvectors; n++) {
-							_data->R[n][d][_RHSPermutation[d][RHSIndex]] += filler.Re[n][r];
-						}
-					}
-
-					for (int c = 0; c < filler.DOFs; ++c, ++KIndex) {
-						if (filler.insertK) {
-							_data->K[d].vals[_KPermutation[d][KIndex]] += KReduction * filler.Ke(r, c);
-						}
-						if (filler.insertM) {
-							_data->M[d].vals[_KPermutation[d][KIndex]] += filler.Me(r % filler.Me.nrows, c % filler.Me.nrows);
-						}
-						if (filler.insertC) {
-							_data->C[d].vals[_KPermutation[d][KIndex]] += filler.Ce(r, c);
-							_data->CM[d].vals[_KPermutation[d][KIndex]] += filler.CMe(r, c);
-						}
-					}
-				}
-				tinsertTime += eslog::time() - prev;
-				prev = eslog::time();
-			}; break;
-		default:
-			filler.insert = [&] () {
-				tassembleTime += eslog::time() - prev;
-				prev = eslog::time();
-				for (int r = 0; r < filler.DOFs; ++r, ++RHSIndex) {
-					if (filler.insertF) {
-						for (esint n = 0; n < _data->f.nvectors; n++) {
-							_data->f[n][d][_RHSPermutation[d][RHSIndex]] += RHSReduction * filler.Fe[n][r];
-						}
-					}
-					if (filler.insertR) {
-						for (esint n = 0; n < _data->R.nvectors; n++) {
-							_data->R[n][d][_RHSPermutation[d][RHSIndex]] += filler.Re[n][r];
-						}
-					}
-
-					for (int c = r; c < filler.DOFs; ++c, ++KIndex) {
-						if (filler.insertK) {
-							_data->K[d].vals[_KPermutation[d][KIndex]] += KReduction * filler.Ke(r, c);
-						}
-						if (filler.insertM) {
-							_data->M[d].vals[_KPermutation[d][KIndex]] += filler.Me(r % filler.Me.nrows, c % filler.Me.nrows);
-						}
-						if (filler.insertC) {
-							_data->C[d].vals[_KPermutation[d][KIndex]] += filler.Ce(r, c);
-							_data->CM[d].vals[_KPermutation[d][KIndex]] += filler.CMe(r, c);
-						}
-					}
-				}
-				tinsertTime += eslog::time() - prev;
-				prev = eslog::time();
-			}; break;
-		}
-
-		filler.begin = info::mesh->domains->elements[d];
-		filler.end = info::mesh->domains->elements[d + 1];
-
-		if (_BEMDomain[d]) {
-//			assembler->processBEMdomain(d, _data->K[d].vals);
-		} else {
-			prev = eslog::time();
-			kernel->processElements(builder, filler);
-		}
-
-		KReduction = builder.internalForceReduction;
-		filler.insertM = filler.insertC = filler.insertR = false;
-
-		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-			if (info::mesh->boundaryRegions[r]->dimension && kernel->boundaryWithSettings(r)) {
-				if (info::mesh->boundaryRegions[r]->eintervalsDistribution[d] < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]) {
-					filler.begin = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[d]].begin;
-					filler.end = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1] - 1].end;
+			double prev, tinsertTime = 0, tassembleTime = 0;
+			switch (kernel->solverDataProvider->feti->getMatrixType(d)) {
+			case MatrixType::REAL_UNSYMMETRIC:
+				filler.insert = [&] () {
+					tassembleTime += eslog::time() - prev;
 					prev = eslog::time();
-					kernel->processBoundary(builder, r, filler);
+					for (int r = 0; r < filler.DOFs; ++r, ++RHSIndex) {
+						if (filler.insertF) {
+							for (esint n = 0; n < _data->f.nvectors; n++) {
+								_data->f[n][d][_RHSPermutation[d][RHSIndex]] += RHSReduction * filler.Fe[n][r];
+							}
+						}
+						if (filler.insertR) {
+							for (esint n = 0; n < _data->R.nvectors; n++) {
+								_data->R[n][d][_RHSPermutation[d][RHSIndex]] += filler.Re[n][r];
+							}
+						}
+						for (int c = 0; c < filler.DOFs; ++c, ++KIndex) {
+							if (filler.insertK) {
+								_data->K[d].vals[_KPermutation[d][KIndex]] += KReduction * filler.Ke(r, c);
+							}
+							if (filler.insertM) {
+								_data->M[d].vals[_KPermutation[d][KIndex]] += filler.Me(r % filler.Me.nrows, c % filler.Me.nrows);
+							}
+							if (filler.insertC) {
+								_data->C[d].vals[_KPermutation[d][KIndex]] += filler.Ce(r, c);
+								_data->CM[d].vals[_KPermutation[d][KIndex]] += filler.CMe(r, c);
+							}
+						}
+					}
+					tinsertTime += eslog::time() - prev;
+					prev = eslog::time();
+				}; break;
+			default:
+				filler.insert = [&] () {
+					tassembleTime += eslog::time() - prev;
+					prev = eslog::time();
+					for (int r = 0; r < filler.DOFs; ++r, ++RHSIndex) {
+						if (filler.insertF) {
+							for (esint n = 0; n < _data->f.nvectors; n++) {
+								_data->f[n][d][_RHSPermutation[d][RHSIndex]] += RHSReduction * filler.Fe[n][r];
+							}
+						}
+						if (filler.insertR) {
+							for (esint n = 0; n < _data->R.nvectors; n++) {
+								_data->R[n][d][_RHSPermutation[d][RHSIndex]] += filler.Re[n][r];
+							}
+						}
+
+						for (int c = r; c < filler.DOFs; ++c, ++KIndex) {
+							if (filler.insertK) {
+								_data->K[d].vals[_KPermutation[d][KIndex]] += KReduction * filler.Ke(r, c);
+							}
+							if (filler.insertM) {
+								_data->M[d].vals[_KPermutation[d][KIndex]] += filler.Me(r % filler.Me.nrows, c % filler.Me.nrows);
+							}
+							if (filler.insertC) {
+								_data->C[d].vals[_KPermutation[d][KIndex]] += filler.Ce(r, c);
+								_data->CM[d].vals[_KPermutation[d][KIndex]] += filler.CMe(r, c);
+							}
+						}
+					}
+					tinsertTime += eslog::time() - prev;
+					prev = eslog::time();
+				}; break;
+			}
+
+			for (esint ii = info::mesh->elements->eintervalsDistribution[d]; ii < info::mesh->elements->eintervalsDistribution[d + 1]; ++ii) {
+				filler.interval = ii;
+				if (_BEMDomain[d]) {
+		//			assembler->processBEMdomain(d, _data->K[d].vals);
+				} else {
+					prev = eslog::time();
+					kernel->processElements(builder, filler);
 				}
 			}
-		}
-		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-			if (!info::mesh->boundaryRegions[r]->dimension && kernel->boundaryWithSettings(r)) {
-				esint prev = 0, i = 0;
-				auto dmap = info::mesh->nodes->domains->begin();
-				for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().begin(); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(); prev = *n++, ++i) {
-					dmap += *n - prev;
-					if (dmap->at(0) == d + info::mesh->domains->offset) {
-						filler.begin = i;
-						filler.end = i + 1;
+
+			KReduction = builder.internalForceReduction;
+			filler.insertM = filler.insertC = filler.insertR = false;
+
+			for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
+				if (info::mesh->boundaryRegions[r]->dimension && kernel->boundaryWithSettings(r)) {
+					if (info::mesh->boundaryRegions[r]->eintervalsDistribution[d] < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]) {
+						filler.begin = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[d]].begin;
+						filler.end = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1] - 1].end;
 						prev = eslog::time();
 						kernel->processBoundary(builder, r, filler);
 					}
 				}
 			}
-		}
+			for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
+				if (!info::mesh->boundaryRegions[r]->dimension && kernel->boundaryWithSettings(r)) {
+					esint prev = 0, i = 0;
+					auto dmap = info::mesh->nodes->domains->begin();
+					for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().begin(); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(); prev = *n++, ++i) {
+						dmap += *n - prev;
+						if (dmap->at(0) == d + info::mesh->elements->firstDomain) {
+							filler.begin = i;
+							filler.end = i + 1;
+							prev = eslog::time();
+							kernel->processBoundary(builder, r, filler);
+						}
+					}
+				}
+			}
 
-		#pragma omp atomic
-		invalid += filler.invalid;
-		#pragma omp atomic
-		assembleTime += tassembleTime;
-		#pragma omp atomic
-		insertTime += tinsertTime;
-	};
+			#pragma omp atomic
+			invalid += filler.invalid;
+			#pragma omp atomic
+			assembleTime += tassembleTime;
+			#pragma omp atomic
+			insertTime += tinsertTime;
+		}
+	}
 
 	eslog::checkpoint("ASSEMBLER: VALUES FILLED");
 	eslog::param("ASSEMBLE", assembleTime);

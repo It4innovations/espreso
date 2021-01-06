@@ -41,7 +41,6 @@ void DistributedComposer::assemble(const Builder &builder)
 
 	eslog::startln("DISTRIBUTED ASSEMBLER: STARTED", "ASSEMBLER");
 
-	size_t threads = info::env::OMP_NUM_THREADS;
 	int invalid = 0;
 
 	clearMatrices(builder.matrices, _data);
@@ -49,7 +48,7 @@ void DistributedComposer::assemble(const Builder &builder)
 	double insertTime = 0, assembleTime = 0;
 
 	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
+	for (int t = 0; t < info::env::threads; t++) {
 		size_t KIndex = _tKOffsets[t], RHSIndex = _tRHSOffsets[t];
 		double KReduction = builder.timeIntegrationConstantK, RHSReduction = builder.internalForceReduction;
 		Kernel::InstanceFiller filler(kernel->solutions.size());
@@ -93,11 +92,13 @@ void DistributedComposer::assemble(const Builder &builder)
 			prev = eslog::time();
 		};
 
-		filler.begin = info::mesh->elements->distribution.threads[t];
-		filler.end = info::mesh->elements->distribution.threads[t + 1];
-
-		prev = eslog::time();
-		kernel->processElements(builder, filler);
+		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+			for (esint ii = info::mesh->elements->eintervalsDistribution[d]; ii < info::mesh->elements->eintervalsDistribution[d + 1]; ++ii) {
+				filler.interval = ii;
+				prev = eslog::time();
+				kernel->processElements(builder, filler);
+			}
+		}
 
 		if (t == 0) {
 			eslog::checkpointln("ASSEMBLER: ELEMENTS PROCESSED");

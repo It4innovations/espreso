@@ -103,6 +103,7 @@ public:
 	static std::vector<std::string> split(const std::string &line, const std::string &separator, bool skipMultiple = true);
 
 	static std::string stringwithcommas(size_t number);
+	static std::string join(const std::string &separator, const std::vector<std::string> &values);
 };
 
 }

@@ -22,11 +22,6 @@ public:
 	void evalSelectedSparse(esint size, esint increment, const esint *selection, const Params &params, double *results) const;
 	void evalSelectedDense(esint size, esint increment, const esint *selection, const Params &params, double *results) const;
 
-	bool isConstant() const { return false; }
-	bool isCoordinateDependent() const { return false; }
-	bool isTimeDependent() const { return false; }
-	bool isTemperatureDependent() const { return true; }
-
 	std::string getEXPRTKForm() const;
 
 protected:

@@ -367,7 +367,12 @@ void computeElementsDecomposition(const ElementStore *elements, esint parts, std
 	std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) {
 		if (partition[i] == partition[j]) {
 			if (elements->epointers->datatarray()[i]->code == elements->epointers->datatarray()[j]->code) {
-				return i < j;
+				auto ireg = (elements->regions->begin() + i)->data();
+				auto jreg = (elements->regions->begin() + j)->data();
+				if (memcmp(ireg, jreg, sizeof(esint) * elements->regions->edataSize()) == 0) {
+					return i < j;
+				}
+				return memcmp(ireg, jreg, sizeof(esint) * elements->regions->edataSize()) < 0;
 			}
 			return elements->epointers->datatarray()[i]->code < elements->epointers->datatarray()[j]->code;
 		}

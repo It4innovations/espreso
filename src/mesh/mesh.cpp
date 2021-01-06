@@ -224,6 +224,7 @@ void Mesh::setMaterials()
 	materials.clear();
 	std::map<std::string, int> matindex;
 	for (auto mat = info::ecf->getPhysics()->materials.begin(); mat != info::ecf->getPhysics()->materials.end(); ++mat) {
+		mat->second.name = mat->first;
 		materials.push_back(&mat->second);
 		matindex[mat->first] = materials.size() - 1;
 	}

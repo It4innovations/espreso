@@ -13,8 +13,12 @@ TableEvaluator::TableEvaluator(
 		const std::vector<std::vector<double> > &axis)
 : _dimension(properties.size()), _table(table), _properties(properties), _axis(axis)
 {
-	_temperatureDependency = std::any_of(_properties.begin(), _properties.end(), [] (const TableProperty &p) { return p == TableProperty::TEMPERATURE; });
-	_timeDependency = std::any_of(_properties.begin(), _properties.end(), [] (const TableProperty &p) { return p == TableProperty::TIME; });
+	if (std::any_of(_properties.begin(), _properties.end(), [] (const TableProperty &p) { return p == TableProperty::TEMPERATURE; })) {
+		parameters.push_back("TEMPERATURE");
+	}
+	if (std::any_of(_properties.begin(), _properties.end(), [] (const TableProperty &p) { return p == TableProperty::TIME; })) {
+		parameters.push_back("TIME");
+	}
 }
 
 void TableEvaluator::evalVector(esint size, esint increment, const Params &params, double *results) const

@@ -19,7 +19,7 @@
 #include "config/configuration.h"
 #include "mesh/mesh.h"
 #include "output/output.h"
-#include "physics/physicalsolver.h"
+#include "physics/loadstepiterator.h"
 
 using namespace espreso;
 
@@ -96,7 +96,14 @@ int main(int argc, char **argv)
 		eslog::endln("ESPRESO: DATABASE CONVERTED");
 	} else {
 		profiler::syncstart("physical_solver");
-		PhysicalSolver::run();
+		LoadStepIterator steps;
+		steps.prepareExpressions();
+		eslog::checkpointln("ESPRESO: EXPRESSIONS CHECKED");
+		while (steps.next()) {
+			eslog::checkpoint("ESPRESO: PHYSICS SOLVED");
+			eslog::param("LOADSTEP", step::loadstep);
+			eslog::ln();
+		}
 		profiler::syncend("physical_solver");
 		eslog::endln("ESPRESO: SIMULATION FINISHED");
 	}

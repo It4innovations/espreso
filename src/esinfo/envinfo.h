@@ -11,6 +11,8 @@ namespace env {
 	extern int SOLVER_NUM_THREADS;
 	extern int PAR_NUM_THREADS;
 
+	extern int threads;
+
 	void set();
 	char* pwd();
 }

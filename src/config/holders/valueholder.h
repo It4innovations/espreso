@@ -72,7 +72,9 @@ inline bool ECFValueHolder<ECFExpression>::_setValue(const std::string &value)
 {
 	this->value.value = Parser::uppercase(value);
 	this->value.createEvaluator();
-	return this->value.evaluator != NULL;
+	// expression validity is checked later
+	//	return this->value.evaluator != NULL;
+	return true;
 }
 
 template <>
