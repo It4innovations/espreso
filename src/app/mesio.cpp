@@ -51,8 +51,8 @@ int main(int argc, char **argv)
 	info::mesh->output->updateMesh();
 	eslog::endln("MESIO: MESH STORED");
 
-	eslog::finish();
 	Mesh::finish();
+	eslog::finish();
 	MPITools::finish();
 	ECF::finish();
 

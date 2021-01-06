@@ -11,9 +11,11 @@ public:
 	class Executor {
 	public:
 		virtual void call(int tag) = 0;
+		virtual void copy(int tag) = 0;
 		virtual ~Executor() {};
 	};
 
+	Pthread();
 	Pthread(Executor *executor);
 	~Pthread();
 	void call(int tag);

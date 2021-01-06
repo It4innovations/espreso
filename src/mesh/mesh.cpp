@@ -145,7 +145,7 @@ Mesh::Mesh()
 
 Mesh::~Mesh()
 {
-	// there can be unfinished store operations -> delete output at first!
+	// we need to delete output first in order to wait for unfinished output operations
 	delete output;
 
 	delete elements;
@@ -636,6 +636,20 @@ void Mesh::duplicate()
 	delete[] buffer;
 
 	eslog::endln("MESH: DUPLICATION FINISHED");
+}
+
+void Mesh::toBuffer()
+{
+	for (size_t i = 0; i < elements->data.size(); ++i) {
+		if (elements->data[i]->name.size()) {
+			elements->data[i]->toBuffer();
+		}
+	}
+	for (size_t i = 0; i < nodes->data.size(); ++i) {
+		if (nodes->data[i]->name.size()) {
+			nodes->data[i]->toBuffer();
+		}
+	}
 }
 
 void Mesh::printMeshStatistics()

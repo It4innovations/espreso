@@ -331,7 +331,7 @@ void VTKLegacy::insertData(NamedData *data, esint nindices, esint *indices)
 				_writer.description("LOOKUP_TABLE default\n");
 			}
 			for (esint n = 0; n < nindices; ++n) {
-				_writer.float32ln(data->data[indices[n] * data->dimension + d]);
+				_writer.float32ln(data->store[indices[n] * data->dimension + d]);
 			}
 		}
 	}
@@ -343,7 +343,7 @@ void VTKLegacy::insertData(NamedData *data, esint nindices, esint *indices)
 				_writer.description("LOOKUP_TABLE default\n");
 			}
 			for (esint n = 0; n < nindices; ++n) {
-				_writer.float32ln(data->data[indices[n] * data->dimension + d]);
+				_writer.float32ln(data->store[indices[n] * data->dimension + d]);
 			}
 		}
 	}
@@ -353,9 +353,9 @@ void VTKLegacy::insertData(NamedData *data, esint nindices, esint *indices)
 			_writer.data("VECTORS", data->name, "float");
 		}
 		for (esint n = 0; n < nindices; ++n) {
-			_writer.float32s (                      data->data[indices[n] * data->dimension]);
-			_writer.float32s (data->dimension > 1 ? data->data[indices[n] * data->dimension + 1] : .0);
-			_writer.float32ln(data->dimension > 2 ? data->data[indices[n] * data->dimension + 2] : .0);
+			_writer.float32s (                      data->store[indices[n] * data->dimension]);
+			_writer.float32s (data->dimension > 1 ? data->store[indices[n] * data->dimension + 1] : .0);
+			_writer.float32ln(data->dimension > 2 ? data->store[indices[n] * data->dimension + 2] : .0);
 		}
 	}
 
@@ -364,15 +364,15 @@ void VTKLegacy::insertData(NamedData *data, esint nindices, esint *indices)
 			_writer.data("TENSORS", data->name, "float");
 		}
 		for (esint n = 0; n < nindices; ++n) {
-			_writer.float32s (data->data[indices[n] * data->dimension + 0]);
-			_writer.float32s (data->data[indices[n] * data->dimension + 3]);
-			_writer.float32s (data->data[indices[n] * data->dimension + 5]);
-			_writer.float32s (data->data[indices[n] * data->dimension + 3]);
-			_writer.float32s (data->data[indices[n] * data->dimension + 1]);
-			_writer.float32s (data->data[indices[n] * data->dimension + 4]);
-			_writer.float32s (data->data[indices[n] * data->dimension + 5]);
-			_writer.float32s (data->data[indices[n] * data->dimension + 4]);
-			_writer.float32ln(data->data[indices[n] * data->dimension + 2]);
+			_writer.float32s (data->store[indices[n] * data->dimension + 0]);
+			_writer.float32s (data->store[indices[n] * data->dimension + 3]);
+			_writer.float32s (data->store[indices[n] * data->dimension + 5]);
+			_writer.float32s (data->store[indices[n] * data->dimension + 3]);
+			_writer.float32s (data->store[indices[n] * data->dimension + 1]);
+			_writer.float32s (data->store[indices[n] * data->dimension + 4]);
+			_writer.float32s (data->store[indices[n] * data->dimension + 5]);
+			_writer.float32s (data->store[indices[n] * data->dimension + 4]);
+			_writer.float32ln(data->store[indices[n] * data->dimension + 2]);
 		}
 	}
 
@@ -381,15 +381,15 @@ void VTKLegacy::insertData(NamedData *data, esint nindices, esint *indices)
 			_writer.data("TENSORS", data->name, "float");
 		}
 		for (esint n = 0; n < nindices; ++n) {
-			_writer.float32s (data->data[indices[n] * data->dimension + 0]);
-			_writer.float32s (data->data[indices[n] * data->dimension + 3]);
-			_writer.float32s (data->data[indices[n] * data->dimension + 5]);
-			_writer.float32s (data->data[indices[n] * data->dimension + 6]);
-			_writer.float32s (data->data[indices[n] * data->dimension + 1]);
-			_writer.float32s (data->data[indices[n] * data->dimension + 4]);
-			_writer.float32s (data->data[indices[n] * data->dimension + 8]);
-			_writer.float32s (data->data[indices[n] * data->dimension + 7]);
-			_writer.float32ln(data->data[indices[n] * data->dimension + 2]);
+			_writer.float32s (data->store[indices[n] * data->dimension + 0]);
+			_writer.float32s (data->store[indices[n] * data->dimension + 3]);
+			_writer.float32s (data->store[indices[n] * data->dimension + 5]);
+			_writer.float32s (data->store[indices[n] * data->dimension + 6]);
+			_writer.float32s (data->store[indices[n] * data->dimension + 1]);
+			_writer.float32s (data->store[indices[n] * data->dimension + 4]);
+			_writer.float32s (data->store[indices[n] * data->dimension + 8]);
+			_writer.float32s (data->store[indices[n] * data->dimension + 7]);
+			_writer.float32ln(data->store[indices[n] * data->dimension + 2]);
 		}
 	}
 	_writer.groupData();

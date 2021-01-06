@@ -475,13 +475,13 @@ void ElementData::statistics(const tarray<esint> &elements, esint totalsize, Sta
 	for (auto e = elements.begin(); e != elements.end(); ++e) {
 		double value = 0;
 		for (int d = 0; d < dimension; d++) {
-			value += data[*e * dimension + d] * data[*e * dimension + d];
-			(statistics + d + doffset)->min    = std::min((statistics + d + doffset)->min, data[*e * dimension + d]);
-			(statistics + d + doffset)->max    = std::max((statistics + d + doffset)->max, data[*e * dimension + d]);
-			(statistics + d + doffset)->avg   += data[*e * dimension + d];
-			(statistics + d + doffset)->norm  += data[*e * dimension + d] * data[*e * dimension + d];
-			(statistics + d + doffset)->absmin = std::min((statistics + d + doffset)->min, std::fabs(data[*e * dimension + d]));
-			(statistics + d + doffset)->absmax = std::max((statistics + d + doffset)->max, std::fabs(data[*e * dimension + d]));
+			value += store[*e * dimension + d] * store[*e * dimension + d];
+			(statistics + d + doffset)->min    = std::min((statistics + d + doffset)->min, store[*e * dimension + d]);
+			(statistics + d + doffset)->max    = std::max((statistics + d + doffset)->max, store[*e * dimension + d]);
+			(statistics + d + doffset)->avg   += store[*e * dimension + d];
+			(statistics + d + doffset)->norm  += store[*e * dimension + d] * store[*e * dimension + d];
+			(statistics + d + doffset)->absmin = std::min((statistics + d + doffset)->min, std::fabs(store[*e * dimension + d]));
+			(statistics + d + doffset)->absmax = std::max((statistics + d + doffset)->max, std::fabs(store[*e * dimension + d]));
 		}
 		if (dataType == DataType::VECTOR) {
 			value = std::sqrt(value);

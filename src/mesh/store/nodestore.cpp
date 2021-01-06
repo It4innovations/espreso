@@ -290,13 +290,13 @@ void NodeData::statistics(const tarray<esint> &nodes, esint totalsize, Statistic
 		if (*nranks->begin() == info::mpi::rank) {
 			double value = 0;
 			for (int d = 0; d < dimension; d++) {
-				value += data[*n * dimension + d] * data[*n * dimension + d];
-				(statistics + d + doffset)->min    = std::min((statistics + d + doffset)->min, data[*n * dimension + d]);
-				(statistics + d + doffset)->max    = std::max((statistics + d + doffset)->max, data[*n * dimension + d]);
-				(statistics + d + doffset)->avg   += data[*n * dimension + d];
-				(statistics + d + doffset)->norm  += data[*n * dimension + d] * data[*n * dimension + d];
-				(statistics + d + doffset)->absmin = std::min((statistics + d + doffset)->absmin, std::fabs(data[*n * dimension + d]));
-				(statistics + d + doffset)->absmax = std::max((statistics + d + doffset)->absmax, std::fabs(data[*n * dimension + d]));
+				value += store[*n * dimension + d] * store[*n * dimension + d];
+				(statistics + d + doffset)->min    = std::min((statistics + d + doffset)->min, store[*n * dimension + d]);
+				(statistics + d + doffset)->max    = std::max((statistics + d + doffset)->max, store[*n * dimension + d]);
+				(statistics + d + doffset)->avg   += store[*n * dimension + d];
+				(statistics + d + doffset)->norm  += store[*n * dimension + d] * store[*n * dimension + d];
+				(statistics + d + doffset)->absmin = std::min((statistics + d + doffset)->absmin, std::fabs(store[*n * dimension + d]));
+				(statistics + d + doffset)->absmax = std::max((statistics + d + doffset)->absmax, std::fabs(store[*n * dimension + d]));
 			}
 			if (dataType == DataType::VECTOR) {
 				value = std::sqrt(value);

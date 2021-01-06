@@ -75,6 +75,7 @@ Pthread::~Pthread()
 void Pthread::call(int tag)
 {
 	pthread_spin_lock(&_shdata->computationLock);
+	_shdata->executor->copy(tag);
 	_shdata->tag = tag;
 	pthread_mutex_unlock(&_shdata->outputLock);
 }

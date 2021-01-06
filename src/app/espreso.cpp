@@ -94,11 +94,11 @@ int main(int argc, char **argv)
 		eslog::endln("ESPRESO: SIMULATION FINISHED");
 	}
 
+	Mesh::finish();
 	eslog::finish();
 	profiler::syncend("espreso");
 	profiler::print(); // need to be printed before MPI_Finalize
 
-	Mesh::finish();
 	ECF::finish();
 	MPITools::finish();
 	info::mpi::finish();

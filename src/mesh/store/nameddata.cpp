@@ -8,12 +8,13 @@ std::vector<std::string> NamedData::coordinateSuffixes = { "_X", "_Y", "_Z", "_X
 std::vector<std::string> NamedData::numberSuffixes = { "_1ST", "_2ND", "_3RD" };
 
 NamedData::NamedData(int dimension, DataType datatype, const std::string &name)
-: dimension(dimension), dataType(datatype), name(name), restriction(step::TYPE::TIME)
+: dimension(dimension), dataType(datatype), name(name), restriction(step::TYPE::TIME), store(data)
 {
 
 }
 
 NamedData::NamedData(const char* &packedData)
+: store(data)
 {
 	utils::unpack(dimension, packedData);
 	utils::unpack(dataType, packedData);
@@ -41,6 +42,12 @@ int NamedData::nstatistics() const
 	} else {
 		return dimension + 1;
 	}
+}
+
+void NamedData::toBuffer()
+{
+	buffer = data;
+	store = buffer;
 }
 
 std::string NamedData::suffix(int index) const

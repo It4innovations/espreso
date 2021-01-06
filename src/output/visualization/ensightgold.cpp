@@ -353,7 +353,7 @@ void EnSightGold::ndata(const NamedData *data)
 			const ElementsRegionStore *region = info::mesh->elementsRegions[r];
 			for (int d = 0; d < data->dimension; ++d) {
 				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
-					_writer.float32(data->data[nindex * data->dimension + d]);
+					_writer.float32(data->store[nindex * data->dimension + d]);
 				});
 			}
 			if (data->dimension == 2) {
@@ -372,7 +372,7 @@ void EnSightGold::ndata(const NamedData *data)
 
 			for (int d = 0; d < data->dimension; ++d) {
 				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
-					_writer.float32(data->data[nindex * data->dimension + d]);
+					_writer.float32(data->store[nindex * data->dimension + d]);
 				});
 			}
 			if (data->dimension == 2) {
@@ -408,7 +408,7 @@ void EnSightGold::ndata(const NamedData *data)
 
 				const ElementsRegionStore *region = info::mesh->elementsRegions[r];
 				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
-					_writer.float32(data->data[nindex * data->dimension + d]);
+					_writer.float32(data->store[nindex * data->dimension + d]);
 				});
 			}
 
@@ -420,7 +420,7 @@ void EnSightGold::ndata(const NamedData *data)
 				}
 
 				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
-					_writer.float32(data->data[nindex * data->dimension + d]);
+					_writer.float32(data->store[nindex * data->dimension + d]);
 				});
 			};
 
@@ -473,7 +473,7 @@ void EnSightGold::edata(const NamedData *data)
 
 					for (int d = 0; d < data->dimension; ++d) {
 						eiterator(info::mesh->elementsRegions[r], etype, [&] (const ElementsInterval &interval, esint eindex) {
-							_writer.float32(data->data[eindex * data->dimension + d]);
+							_writer.float32(data->store[eindex * data->dimension + d]);
 						});
 					}
 					if (data->dimension == 2) {

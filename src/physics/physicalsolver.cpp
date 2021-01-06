@@ -282,7 +282,7 @@ void PhysicalSolver::run()
 	case PhysicsConfiguration::TYPE::THERMO_ELASTICITY_3D:
 		{ PhysicalSolver first; PhysicalSolver second; runCoupled(first, second, info::ecf->thermo_elasticity_3d); } break;
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D:
-		{ PhysicalSolver solver; runSingle<>(solver, info::ecf->heat_transfer_2d); } break;
+		{ PhysicalSolver solver; runSingle(solver, info::ecf->heat_transfer_2d); } break;
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D:
 		{ PhysicalSolver solver; runSingle(solver, info::ecf->heat_transfer_3d); } break;
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D:

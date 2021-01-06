@@ -174,7 +174,7 @@ static void fillGeometryAttribute(const std::string &path, XML::Element *xml, XD
 	heavydata.values.reserve((data->dimension > 1 ? 3 : 1) * store->nodeInfo.size);
 	for (auto n = store->nodes->datatarray().cbegin() + store->nodeInfo.nhalo; n != store->nodes->datatarray().cend(); ++n) {
 		for (int d = 0; d < data->dimension; ++d) {
-			heavydata.values.push_back(data->data[*n * data->dimension + d]);
+			heavydata.values.push_back(data->store[*n * data->dimension + d]);
 		}
 		if (data->dimension == 2) {
 			heavydata.values.push_back(0);
@@ -195,7 +195,7 @@ static void fillTopologyAttribute(const std::string &path, XML::Element *xml, XD
 	heavydata.values.reserve((data->dimension > 1 ? 3 : 1) * store->elements->structures());
 	for (auto e = store->elements->datatarray().cbegin(); e != store->elements->datatarray().cend(); ++e) {
 		for (int d = 0; d < data->dimension; ++d) {
-			heavydata.values.push_back(data->data[*e * data->dimension + d]);
+			heavydata.values.push_back(data->store[*e * data->dimension + d]);
 
 		}
 		if (data->dimension == 2) {

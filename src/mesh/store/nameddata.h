@@ -26,7 +26,7 @@ struct NamedData {
 	std::string name;
 	step::TYPE restriction;
 
-	std::vector<double> data;
+	std::vector<double> data, buffer, &store;
 
 	NamedData(int dimension, DataType datatype, const std::string &name);
 	NamedData(const char* &packedData);
@@ -34,6 +34,8 @@ struct NamedData {
 	bool withSuffixes() const;
 	bool onlySuffixed() const;
 	int nstatistics() const;
+
+	void toBuffer();
 
 	std::string suffix(int index) const;
 

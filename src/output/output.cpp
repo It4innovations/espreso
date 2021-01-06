@@ -13,45 +13,61 @@
 #include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.h"
-#include "mesh/mesh.h"
+#include "esinfo/meshinfo.h"
 #include "wrappers/pthread/w.pthread.h"
+
+#include <vector>
 
 namespace espreso {
 
 struct OutputExecutor {
 	static const int mesh = 0, solution = 1, monitors = 2;
 
-	OutputExecutor(OutputWriter * writer): writer(writer) {}
-	virtual ~OutputExecutor() { delete writer; }
+	void insert(OutputWriter *writer)
+	{
+		writers.push_back(writer);
+	}
+
+	virtual ~OutputExecutor()
+	{
+		for (size_t i = 0; i < writers.size(); ++i) {
+			delete writers[i];
+		}
+	}
 
 	virtual void execute(int tag) = 0;
 
-	OutputWriter *writer;
+	std::vector<OutputWriter*> writers;
 };
 
 class DirectOutputExecutor: public OutputExecutor {
 public:
-	DirectOutputExecutor(OutputWriter * writer): OutputExecutor(writer) {}
-
 	virtual void execute(int tag)
 	{
-		if (tag == mesh) {
-			writer->updateMesh();
-		}
-		if (tag == solution) {
-			writer->updateSolution();
-		}
-		if (tag == monitors) {
-			writer->updateMonitors();
+		for (size_t i = 0; i < writers.size(); ++i) {
+			if (tag == mesh) {
+				writers[i]->updateMesh();
+			}
+			if (tag == solution) {
+				writers[i]->updateSolution();
+			}
+			if (tag == monitors) {
+				writers[i]->updateMonitors();
+			}
 		}
 	}
 };
 
-class AsyncOutputExecutor: public DirectOutputExecutor, public Pthread, public Pthread::Executor {
+class AsyncOutputExecutor: public DirectOutputExecutor, public Pthread::Executor, public Pthread {
 public:
-	AsyncOutputExecutor(OutputWriter * writer): DirectOutputExecutor(writer), Pthread(this)
+	AsyncOutputExecutor(): Pthread(this)
 	{
 
+	}
+
+	void copy(int tag)
+	{
+		info::mesh->toBuffer();
 	}
 
 	void call(int tag)
@@ -61,17 +77,14 @@ public:
 
 	void execute(int tag)
 	{
-		if (tag == monitors) {
-			DirectOutputExecutor::execute(tag);
-		} else {
-			Pthread::call(tag);
-		}
+		Pthread::call(tag);
 	}
 };
 
 }
 
 using namespace espreso;
+
 OutputWriter::OutputWriter()
 : _path(info::ecf->outpath + "/"), _directory("PREPOSTDATA/"), _name(info::ecf->name),
   _measure(Mesh::convertDatabase()), _allowed(true)
@@ -84,65 +97,60 @@ void OutputWriter::createOutputDirectory()
 	utils::createDirectory({ _path, _directory });
 }
 
-template <class TExecutor>
-static OutputExecutor* createWriter()
-{
-	switch (info::ecf->output.format) {
-	case OutputConfiguration::FORMAT::VTK_LEGACY:
-		return new TExecutor(new VTKLegacy(!info::ecf->input.convert_database));
-	case OutputConfiguration::FORMAT::ENSIGHT:
-		return new TExecutor(new EnSightGold(!info::ecf->input.convert_database));
-	case OutputConfiguration::FORMAT::XDMF:
-		return new TExecutor(new XDMF());
-	case OutputConfiguration::FORMAT::STL_SURFACE:
-		return new TExecutor(new STL());
-	case OutputConfiguration::FORMAT::NETGEN:
-		return new TExecutor(new Netgen());
-	default:
-		eslog::internalFailure("implement the selected output format.\n");
-		return NULL;
-	}
-}
-
 Output::Output()
+: _direct(new DirectOutputExecutor()), _async(NULL)
 {
+	if (info::ecf->output.mode != OutputConfiguration::MODE::SYNC) {
+		_async = new AsyncOutputExecutor();
+	}
 	if (info::ecf->output.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
-		switch (info::ecf->output.mode) {
-		case OutputConfiguration::MODE::SYNC: _executors.push_back(createWriter<DirectOutputExecutor>()); break;
-		case OutputConfiguration::MODE::PTHREAD: _executors.push_back(createWriter<AsyncOutputExecutor>()); break;
+		OutputWriter *writer = NULL;
+		switch (info::ecf->output.format) {
+		case OutputConfiguration::FORMAT::VTK_LEGACY: writer = new VTKLegacy(!info::ecf->input.convert_database); break;
+		case OutputConfiguration::FORMAT::ENSIGHT: writer = new EnSightGold(!info::ecf->input.convert_database); break;
+		case OutputConfiguration::FORMAT::XDMF: writer = new XDMF(); break;
+		case OutputConfiguration::FORMAT::STL_SURFACE: writer = new STL(); break;
+		case OutputConfiguration::FORMAT::NETGEN: writer = new Netgen(); break;
+		default:
+			eslog::internalFailure("implement the selected output format.\n");
 		}
+		switch (info::ecf->output.mode) {
+		case OutputConfiguration::MODE::SYNC: _direct->insert(writer); break;
+		case OutputConfiguration::MODE::PTHREAD: _async->insert(writer); break;
+		default:
+			eslog::internalFailure("implement the selected output mode.\n");
+		}
+	}
+	if (info::ecf->output.monitors_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
+		_direct->insert(new Monitoring());
 	}
 }
 
 Output::~Output()
 {
-	for (size_t i = 0; i < _executors.size(); ++i) {
-		delete _executors[i];
-	}
+	if (_direct) { delete _direct; }
+	if (_async) { delete _async; }
 }
 
 void Output::updateMesh()
 {
-	for (size_t i = 0; _allowed && i < _executors.size(); ++i) {
-		_executors[i]->execute(OutputExecutor::mesh);
-	}
+	if (_async) { _async->execute(OutputExecutor::mesh); }
+	if (_direct) { _direct->execute(OutputExecutor::mesh); }
 }
 
 void Output::updateMonitors()
 {
-	for (size_t i = 0; _allowed && i < _executors.size(); ++i) {
-		if (_executors[i]->writer->storeStep()) {
-			_executors[i]->execute(OutputExecutor::monitors);
-		}
+	if (_allowed) {
+		if (_async) { _async->execute(OutputExecutor::monitors); }
+		if (_direct) { _direct->execute(OutputExecutor::monitors); }
 	}
 }
 
 void Output::updateSolution()
 {
-	for (size_t i = 0; _allowed && i < _executors.size(); ++i) {
-		if (_executors[i]->writer->storeStep()) {
-			_executors[i]->execute(OutputExecutor::solution);
-		}
+	if (_allowed) {
+		if (_async) { _async->execute(OutputExecutor::solution); }
+		if (_direct) { _direct->execute(OutputExecutor::solution); }
 	}
 }
 

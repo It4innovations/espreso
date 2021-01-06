@@ -3,11 +3,11 @@
 #define SRC_OUTPUT_OUTPUT_H_
 
 #include <string>
-#include <vector>
 
 namespace espreso {
 
-class OutputExecutor;
+class DirectOutputExecutor;
+class AsyncOutputExecutor;
 
 class OutputWriter {
 public:
@@ -40,7 +40,8 @@ public:
 	void permit();
 
 protected:
-	std::vector<OutputExecutor*> _executors;
+	DirectOutputExecutor *_direct;
+	AsyncOutputExecutor *_async;
 };
 
 }

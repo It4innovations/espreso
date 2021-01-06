@@ -47,6 +47,7 @@ public:
 		preprocess();
 	}
 	void duplicate();
+	void toBuffer();
 	void setMaterials();
 	void printMeshStatistics();
 	void printDecompositionStatistics();
