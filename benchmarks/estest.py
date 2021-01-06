@@ -69,7 +69,7 @@ class ESPRESOTest:
             p = _popen()
             output, error = p.communicate()
 
-        return (output, error)
+        return (output.decode(), error.decode())
 
     @staticmethod
     def run():
