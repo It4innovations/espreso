@@ -18,7 +18,7 @@
 #include "config/reader/reader.h"
 #include "config/configuration.h"
 #include "mesh/mesh.h"
-#include "output/resultstore.h"
+#include "output/output.h"
 #include "physics/physicalsolver.h"
 
 #include "gui/parallel/mpimanager.h"
