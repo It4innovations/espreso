@@ -46,6 +46,7 @@ class ESPRESOTest:
     @staticmethod
     def clean(path="results"):
         shutil.rmtree(os.path.join(ESPRESOTest.path, path), ignore_errors=True)
+        ESPRESOTest.args = []
         ESPRESOTest.store_results = False
         ESPRESOTest.external = False
 
