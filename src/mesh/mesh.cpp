@@ -184,24 +184,34 @@ Mesh::~Mesh()
 
 ElementsRegionStore* Mesh::eregion(const std::string &name)
 {
-	for (size_t r = 0; r < elementsRegions.size(); r++) {
-		if (StringCompare::caseSensitiveEq(elementsRegions[r]->name, name)) {
-			return elementsRegions[r];
-		}
-	}
-	eslog::error("Unknown region of elements with name '%s'.\n", name.c_str());
-	return NULL;
+	return elementsRegions[eregionIndex(name)];
 }
 
 BoundaryRegionStore* Mesh::bregion(const std::string &name)
 {
+	return boundaryRegions[bregionIndex(name)];
+}
+
+size_t Mesh::eregionIndex(const std::string &name)
+{
+	for (size_t r = 0; r < elementsRegions.size(); r++) {
+		if (StringCompare::caseSensitiveEq(elementsRegions[r]->name, name)) {
+			return r;
+		}
+	}
+	eslog::error("Unknown region of elements with name '%s'.\n", name.c_str());
+	return 0;
+}
+
+size_t Mesh::bregionIndex(const std::string &name)
+{
 	for (size_t r = 0; r < boundaryRegions.size(); r++) {
 		if (StringCompare::caseSensitiveEq(boundaryRegions[r]->name, name)) {
-			return boundaryRegions[r];
+			return r;
 		}
 	}
 	eslog::error("Unknown boundary region '%s'\n.", name.c_str());
-	return NULL;
+	return 0;
 }
 
 bool Mesh::onAllElements(const std::string &eregion) const

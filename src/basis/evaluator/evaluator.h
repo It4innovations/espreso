@@ -128,7 +128,8 @@ public:
 	bool isFrequencyDependent() const;
 	bool isTemperatureDependent() const;
 
-	std::vector<std::string> parameters;
+	Params params;
+	std::vector<std::string> variables;
 };
 
 }

@@ -6,12 +6,12 @@ using namespace espreso;
 
 bool Evaluator::isConstant() const
 {
-	return parameters.empty();
+	return variables.empty();
 }
 
 bool Evaluator::isCoordinateDependent() const
 {
-	for (auto it = parameters.begin(); it != parameters.end(); ++it) {
+	for (auto it = variables.begin(); it != variables.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq(*it, "X") || StringCompare::caseInsensitiveEq(*it, "Y") || StringCompare::caseInsensitiveEq(*it, "Z")) {
 			return true;
 		}
@@ -21,7 +21,7 @@ bool Evaluator::isCoordinateDependent() const
 
 bool Evaluator::isTimeDependent() const
 {
-	for (auto it = parameters.begin(); it != parameters.end(); ++it) {
+	for (auto it = variables.begin(); it != variables.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq(*it, "TIME")) {
 			return true;
 		}
@@ -31,7 +31,7 @@ bool Evaluator::isTimeDependent() const
 
 bool Evaluator::isFrequencyDependent() const
 {
-	for (auto it = parameters.begin(); it != parameters.end(); ++it) {
+	for (auto it = variables.begin(); it != variables.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq(*it, "FREQUENCY")) {
 			return true;
 		}
@@ -41,7 +41,7 @@ bool Evaluator::isFrequencyDependent() const
 
 bool Evaluator::isTemperatureDependent() const
 {
-	for (auto it = parameters.begin(); it != parameters.end(); ++it) {
+	for (auto it = variables.begin(); it != variables.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq(*it, "TEMPERATURE")) {
 			return true;
 		}

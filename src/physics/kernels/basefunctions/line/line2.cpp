@@ -47,16 +47,16 @@ void Line2::setBaseFunctions(Element &self)
 	std::vector<double> s = { 1 / sqrt(3), -1 / sqrt(3) };
 
 	for (unsigned int i = 0; i < GPCount; i++) {
-		(*self.N)[i](0, 0) = (1 - s[i]) / 2.0;
-		(*self.N)[i](0, 1) = (1 + s[i]) / 2.0;
+		(*self.N)[i](0, 0) = (1 + s[i]) / 2.0;
+		(*self.N)[i](0, 1) = (1 - s[i]) / 2.0;
 	}
 
 	for (unsigned int i = 0; i < GPCount; i++) {
 		MatrixDense &m = (*self.dN)[i];
 
 		// dNs - derivation of basis function
-		m(0, 0) = -1 / 2.0;
-		m(0, 1) =  1 / 2.0;
+		m(0, 0) =  1 / 2.0;
+		m(0, 1) = -1 / 2.0;
 	}
 
 	BaseFunctions::created(self);

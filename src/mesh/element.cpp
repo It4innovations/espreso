@@ -64,6 +64,7 @@ template<> void Element::init<Element::CODE::POINT1>()
 	coarseNodes = 1;
 	nCommonFace = 1;
 	nCommonEdge = 1;
+	dimension = 0;
 }
 
 template<> void Element::init<Element::CODE::LINE2>()
@@ -74,6 +75,7 @@ template<> void Element::init<Element::CODE::LINE2>()
 	coarseNodes = 2;
 	nCommonFace = 1;
 	nCommonEdge = 1;
+	dimension = 1;
 }
 
 template<> void Element::init<Element::CODE::LINE3>()
@@ -84,6 +86,7 @@ template<> void Element::init<Element::CODE::LINE3>()
 	coarseNodes = 2;
 	nCommonFace = 1;
 	nCommonEdge = 1;
+	dimension = 1;
 }
 
 template<> void Element::init<Element::CODE::TRIANGLE3>()
@@ -94,6 +97,7 @@ template<> void Element::init<Element::CODE::TRIANGLE3>()
 	coarseNodes = 3;
 	nCommonFace = 2;
 	nCommonEdge = 1;
+	dimension = 2;
 
 	std::vector<Element*> epointers(3, &Mesh::edata[static_cast<int>(Element::CODE::LINE2)]);
 
@@ -123,6 +127,7 @@ template<> void Element::init<Element::CODE::TRIANGLE6>()
 	coarseNodes = 3;
 	nCommonFace = 3;
 	nCommonEdge = 2;
+	dimension = 2;
 
 	std::vector<Element*> epointers(3, &Mesh::edata[static_cast<int>(Element::CODE::LINE3)]);
 
@@ -156,6 +161,7 @@ template<> void Element::init<Element::CODE::SQUARE4>()
 	coarseNodes = 4;
 	nCommonFace = 3;
 	nCommonEdge = 2;
+	dimension = 2;
 
 	std::vector<Element*> epointers(4, &Mesh::edata[static_cast<int>(Element::CODE::LINE2)]);
 
@@ -187,6 +193,7 @@ template<> void Element::init<Element::CODE::SQUARE8>()
 	coarseNodes = 4;
 	nCommonFace = 3;
 	nCommonEdge = 2;
+	dimension = 2;
 
 	std::vector<Element*> epointers(4, &Mesh::edata[static_cast<int>(Element::CODE::LINE3)]);
 
@@ -222,6 +229,7 @@ template<> void Element::init<Element::CODE::TETRA4>()
 	coarseNodes = 4;
 	nCommonFace = 3;
 	nCommonEdge = 2;
+	dimension = 3;
 
 	std::vector<Element*> fpointers(4, &Mesh::edata[static_cast<int>(Element::CODE::TRIANGLE3)]);
 
@@ -257,6 +265,7 @@ template<> void Element::init<Element::CODE::TETRA10>()
 	coarseNodes = 4;
 	nCommonFace = 4;
 	nCommonEdge = 3;
+	dimension = 3;
 
 	std::vector<Element*> fpointers(4, &Mesh::edata[static_cast<int>(Element::CODE::TRIANGLE6)]);
 
@@ -293,6 +302,7 @@ template<> void Element::init<Element::CODE::PYRAMID5>()
 	coarseNodes = 5;
 	nCommonFace = 3;
 	nCommonEdge = 2;
+	dimension = 3;
 
 	std::vector<Element*> fpointers;
 	fpointers.resize(1, &Mesh::edata[static_cast<int>(Element::CODE::SQUARE4)]);
@@ -334,6 +344,7 @@ template<> void Element::init<Element::CODE::PYRAMID13>()
 	coarseNodes = 5;
 	nCommonFace = 4;
 	nCommonEdge = 3;
+	dimension = 3;
 
 	std::vector<Element*> fpointers;
 	fpointers.resize(1, &Mesh::edata[static_cast<int>(Element::CODE::SQUARE8)]);
@@ -376,6 +387,7 @@ template<> void Element::init<Element::CODE::PRISMA6>()
 	coarseNodes = 6;
 	nCommonFace = 3;
 	nCommonEdge = 2;
+	dimension = 3;
 
 	std::vector<Element*> fpointers;
 	fpointers.resize(3, &Mesh::edata[static_cast<int>(Element::CODE::SQUARE4)]);
@@ -418,6 +430,7 @@ template<> void Element::init<Element::CODE::PRISMA15>()
 	coarseNodes = 6;
 	nCommonFace = 4;
 	nCommonEdge = 3;
+	dimension = 3;
 
 	std::vector<Element*> fpointers;
 	fpointers.resize(3, &Mesh::edata[static_cast<int>(Element::CODE::SQUARE8)]);
@@ -460,6 +473,7 @@ template<> void Element::init<Element::CODE::HEXA8>()
 	coarseNodes = 8;
 	nCommonFace = 3;
 	nCommonEdge = 2;
+	dimension = 3;
 
 	std::vector<Element*> fpointers(6, &Mesh::edata[static_cast<int>(Element::CODE::SQUARE4)]);
 	std::vector<int> fpoints = {
@@ -503,6 +517,7 @@ template<> void Element::init<Element::CODE::HEXA20>()
 	coarseNodes = 8;
 	nCommonFace = 4;
 	nCommonEdge = 3;
+	dimension = 3;
 
 	std::vector<Element*> fpointers(6, &Mesh::edata[static_cast<int>(Element::CODE::SQUARE8)]);
 

@@ -30,6 +30,7 @@
 #include "composer/distributed/nodes.uniform.distributed.composer.h"
 #include "composer/distributed/faces.edges.uniform.distributed.composer.h"
 #include "composer/feti/nodes.uniform.feti.composer.h"
+#include "physics/assembler/kernels/heattransfer.kernel.opt.h"
 #include "physics/kernels/heattransfer.kernel.h"
 #include "physics/kernels/heattransfer2d.kernel.h"
 #include "physics/kernels/heattransfer3d.kernel.h"
@@ -47,12 +48,21 @@ static LinearSystem* getSystem(LinearSystem *previous, PhysicsConfiguration &phy
 {
 	LinearSystem *current = NULL;
 	Kernel *kernel = NULL, *pKernel = previous ? previous->assembler()->composer->kernel : NULL;
-	kernel = new HeatTransferKernel(dynamic_cast<HeatTransferKernel*>(pKernel), loadStep);
-//	switch (dimension) {
-//	case DIMENSION::D2: kernel = new HeatTransfer2DKernel(dynamic_cast<HeatTransfer2DKernel*>(pKernel), physics, gsettings, loadStep); break;
-//	case DIMENSION::D3: kernel = new HeatTransfer3DKernel(dynamic_cast<HeatTransfer3DKernel*>(pKernel), physics, gsettings, loadStep); break;
-//	default: break;
-//	}
+	switch (gsettings.kernel) {
+	case HeatTransferGlobalSettings::KERNEL::OLD:
+		switch (dimension) {
+		case DIMENSION::D2: kernel = new HeatTransfer2DKernel(dynamic_cast<HeatTransfer2DKernel*>(pKernel), physics, gsettings, loadStep); break;
+		case DIMENSION::D3: kernel = new HeatTransfer3DKernel(dynamic_cast<HeatTransfer3DKernel*>(pKernel), physics, gsettings, loadStep); break;
+		default: break;
+		}
+		break;
+	case HeatTransferGlobalSettings::KERNEL::NEW:
+		kernel = new HeatTransferKernel(dynamic_cast<HeatTransferKernel*>(pKernel), loadStep);
+		break;
+	case HeatTransferGlobalSettings::KERNEL::OPT:
+		kernel = new HeatTransferKernelOpt(dynamic_cast<HeatTransferKernelOpt*>(pKernel), loadStep);
+		break;
+	}
 
 	switch (loadStep.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI: {
@@ -292,8 +302,8 @@ LoadStepIterator::~LoadStepIterator()
 void LoadStepIterator::prepareExpressions()
 {
 	switch (info::ecf->physics) {
-	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D: HeatTransferKernel::createParameters(); break;
-	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D: HeatTransferKernel::createParameters(); break;
+	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D: HeatTransferKernel::createParameters(); HeatTransferKernelOpt::createParameters(); break;
+	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D: HeatTransferKernel::createParameters(); HeatTransferKernelOpt::createParameters(); break;
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D:
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
 	default: eslog::globalerror("Unknown physics.\n");

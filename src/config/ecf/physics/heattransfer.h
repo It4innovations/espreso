@@ -79,7 +79,14 @@ struct HeatTransferGlobalSettings {
 		CAU  = 1
 	};
 
+	enum class KERNEL {
+		OLD,
+		NEW,
+		OPT
+	};
+
 	STABILIZATION stabilization;
+	KERNEL kernel;
 	double sigma;
 	bool init_temp_respect_bc, diffusion_split;
 

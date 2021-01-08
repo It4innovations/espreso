@@ -289,6 +289,14 @@ HeatTransferGlobalSettings::HeatTransferGlobalSettings(ECFObject *ecfdescription
 			.addoption(ECFOption().setname("CAU").setdescription("CAU stabilization"))
 			.setform());
 
+	kernel = KERNEL::OLD;
+	REGISTER(kernel, ECFMetaData()
+			.setdescription({ "Kernel assembler" })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("OLD").setdescription("Old (hopefully) slow assembler."))
+			.addoption(ECFOption().setname("NEW").setdescription("Vectorized assembler."))
+			.addoption(ECFOption().setname("OPT").setdescription("Opt assembler.")));
+
 	sigma = 0;
 	REGISTER(sigma, ECFMetaData()
 			.setdescription({ "Inconsistent stabilization parameter" })

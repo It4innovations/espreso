@@ -14,10 +14,10 @@ TableEvaluator::TableEvaluator(
 : _dimension(properties.size()), _table(table), _properties(properties), _axis(axis)
 {
 	if (std::any_of(_properties.begin(), _properties.end(), [] (const TableProperty &p) { return p == TableProperty::TEMPERATURE; })) {
-		parameters.push_back("TEMPERATURE");
+		variables.push_back("TEMPERATURE");
 	}
 	if (std::any_of(_properties.begin(), _properties.end(), [] (const TableProperty &p) { return p == TableProperty::TIME; })) {
-		parameters.push_back("TIME");
+		variables.push_back("TIME");
 	}
 }
 

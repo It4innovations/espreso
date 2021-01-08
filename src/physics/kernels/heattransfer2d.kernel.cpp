@@ -13,6 +13,8 @@
 
 #include <cmath>
 
+#include "basis/utilities/print.h"
+
 using namespace espreso;
 
 // TODO: create file with constants
@@ -465,6 +467,7 @@ void HeatTransfer2DKernel::processEdge(const Builder &builder, HeatTransferBound
 
 	for (size_t gp = 0; gp < N.size(); gp++) {
 		dND.multiply(dN[gp], coordinates);
+		std::cout << "dND: " << dND;
 		double J = dND.norm();
 		gpQ.multiply(N[gp], q);
 
@@ -483,6 +486,8 @@ void HeatTransfer2DKernel::processEdge(const Builder &builder, HeatTransferBound
 			filler.Fe[0][i] += J * weighFactor[gp] * N[gp](0, i % filler.DOFs) * gpQ(0, 0);
 		}
 	}
+
+	std::cout << "F: " << filler.Fe[0];
 }
 
 void HeatTransfer2DKernel::elementSolution(HeatTransferElementIterator &iterator)

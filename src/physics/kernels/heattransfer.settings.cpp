@@ -93,7 +93,6 @@ HeatTransferKernel::HeatTransferKernel(HeatTransferKernel *previous, HeatTransfe
 			}
 			memcpy(w, Mesh::edata[ei->code].weighFactor->data(), sizeof(double) * nsize);
 		}
-
 	}
 
 	_invJ.addGeneralInput(_ncoordinates);
@@ -292,8 +291,8 @@ HeatTransferKernel::HeatTransferKernel(HeatTransferKernel *previous, HeatTransfe
 	if (configuration.diffuse_radiation.size()) {
 		eslog::info("  DIFFUSE RADIATION                                                                            \n");
 		for (auto it = configuration.diffuse_radiation.begin(); it != configuration.diffuse_radiation.end(); ++it) {
-			if (it->second.external_temperature.evaluator->parameters.size()) {
-				std::string params = Parser::join(", ", it->second.external_temperature.evaluator->parameters);
+			if (it->second.external_temperature.evaluator->variables.size()) {
+				std::string params = Parser::join(", ", it->second.external_temperature.evaluator->variables);
 				eslog::info("   %30s: EX. TEMP. %*s       FNC( %s )\n", it->first.c_str(), 34 - params.size(), "", params.c_str());
 			} else {
 				eslog::info("   %30s: EX. TEMP. %48g \n", it->first.c_str(), it->second.external_temperature.evaluator->eval(Evaluator::Params()));
@@ -377,8 +376,8 @@ void HeatTransferKernel::printMaterials(const std::map<std::string, std::string>
 
 void HeatTransferKernel::examineMaterialParameter(const std::string &material, const std::string &name, const ECFExpression &settings, ParameterInfo &info, int dimension)
 {
-	if (settings.evaluator->parameters.size()) {
-		std::string params = Parser::join(", ", settings.evaluator->parameters);
+	if (settings.evaluator->variables.size()) {
+		std::string params = Parser::join(", ", settings.evaluator->variables);
 		eslog::info("   %18s:  %*s       FNC( %s )\n", name.c_str(), 55 - params.size(), "", params.c_str());
 	} else {
 		eslog::info("   %18s:  %69g \n", name.c_str(), settings.evaluator->eval(Evaluator::Params()));
@@ -387,10 +386,10 @@ void HeatTransferKernel::examineMaterialParameter(const std::string &material, c
 	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		if (StringCompare::caseInsensitiveEq(info::mesh->materials[info::mesh->elements->eintervals[i].material]->name, material)) {
 			info.isset[info.dimensions * i + dimension] = true;
-			if (settings.evaluator->parameters.size()) {
+			if (settings.evaluator->variables.size()) {
 				info.isconstant[info.dimensions * i + dimension] = false;
 				info.evaluator[info.dimensions * i + dimension] = settings.evaluator;
-				insertDependency(info, settings.evaluator->parameters, i, dimension);
+				insertDependency(info, settings.evaluator->variables, i, dimension);
 			} else {
 				info.ivalues[info.dimensions * i + dimension] = settings.evaluator->eval(Evaluator::Params());
 			}
@@ -403,15 +402,15 @@ void HeatTransferKernel::examineElementParameter(const std::string &name, const 
 {
 	if (settings.size() == 1 && StringCompare::caseInsensitiveEq(settings.begin()->first, "ALL_ELEMENTS")) {
 		const Evaluator *evaluator = getevaluator(settings.begin()->second);
-		if (evaluator->parameters.size()) {
-			std::string params = Parser::join(", ", evaluator->parameters);
+		if (evaluator->variables.size()) {
+			std::string params = Parser::join(", ", evaluator->variables);
 			eslog::info("  %s:  %*s       FNC( %s )\n", name.c_str(), 65 - params.size(), "", params.c_str());
 			info.constness = ParameterInfo::Status::EXPRESSION;
 			for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 				info.isset[info.dimensions * i + dimension] = true;
 				info.isconstant[info.dimensions * i + dimension] = false;
 				info.evaluator[info.dimensions * i + dimension] = evaluator;
-				insertDependency(info, evaluator->parameters, i, dimension);
+				insertDependency(info, evaluator->variables, i, dimension);
 			}
 		} else {
 			eslog::info("  %s:  %*g \n", name.c_str(), 88 - name.size(), evaluator->eval(Evaluator::Params()));
@@ -437,8 +436,8 @@ void HeatTransferKernel::examineElementParameter(const std::string &name, const 
 				}
 				if (ms != settings.end()) {
 					const Evaluator *evaluator = getevaluator(ms->second);
-					if (evaluator->parameters.size()) {
-						std::string params = Parser::join(", ", evaluator->parameters);
+					if (evaluator->variables.size()) {
+						std::string params = Parser::join(", ", evaluator->variables);
 						eslog::info("   %30s:  %*s       FNC( %s )\n", (*reg)->name.c_str(), 43 - params.size(), "", params.c_str());
 					} else {
 						eslog::info("   %30s:  %57g \n", (*reg)->name.c_str(), evaluator->eval(Evaluator::Params()));
@@ -446,10 +445,10 @@ void HeatTransferKernel::examineElementParameter(const std::string &name, const 
 					for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 						if (info::mesh->elements->eintervals[i].region == rindex || (info::mesh->elements->eintervals[i].region == 0 && rindex == rlast)) {
 							info.isset[info.dimensions * i + dimension] = true;
-							if (evaluator->parameters.size()) {
+							if (evaluator->variables.size()) {
 								info.isconstant[info.dimensions * i + dimension] = false;
 								info.evaluator[info.dimensions * i + dimension] = evaluator;
-								insertDependency(info, evaluator->parameters, i, dimension);
+								insertDependency(info, evaluator->variables, i, dimension);
 							} else {
 								info.ivalues[info.dimensions * i + dimension] = evaluator->eval(Evaluator::Params());
 							}
@@ -464,10 +463,10 @@ void HeatTransferKernel::examineElementParameter(const std::string &name, const 
 							}
 							if (!other) {
 								info.isset[info.dimensions * i + dimension] = true;
-								if (evaluator->parameters.size()) {
+								if (evaluator->variables.size()) {
 									info.isconstant[info.dimensions * i + dimension] = false;
 									info.evaluator[info.dimensions * i + dimension] = evaluator;
-									insertDependency(info, evaluator->parameters, i, dimension);
+									insertDependency(info, evaluator->variables, i, dimension);
 								} else {
 									info.ivalues[info.dimensions * i + dimension] = evaluator->eval(Evaluator::Params());
 								}
@@ -499,12 +498,12 @@ void HeatTransferKernel::examineBoundaryParameter(const std::string &name, const
 			if (ms != settings.end()) {
 				info.isset[rindex] = true;
 				const Evaluator *evaluator = ms->second.evaluator;
-				if (evaluator->parameters.size()) {
-					std::string params = Parser::join(", ", evaluator->parameters);
+				if (evaluator->variables.size()) {
+					std::string params = Parser::join(", ", evaluator->variables);
 					eslog::info("   %30s:  %*s       FNC( %s )\n", (*reg)->name.c_str(), 43 - params.size(), "", params.c_str());
 					info.isconstant[rindex] = false;
 					info.evaluator[rindex] = evaluator;
-					insertDependency(info, evaluator->parameters, rindex);
+					insertDependency(info, evaluator->variables, rindex);
 				} else {
 					eslog::info("   %30s:  %57g \n", (*reg)->name.c_str(), evaluator->eval(Evaluator::Params()));
 					info.ivalues[rindex] = evaluator->eval(Evaluator::Params());

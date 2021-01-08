@@ -58,6 +58,7 @@ struct Element {
 	int coarseNodes;
 	int nCommonFace;
 	int nCommonEdge;
+	int dimension;
 
 	std::vector<MatrixDense> *N;
 	std::vector<MatrixDense> *NN;
@@ -78,7 +79,7 @@ struct Element {
 	std::vector<int> *polygon;
 
 	Element()
-	: type(TYPE::POINT), code(CODE::POINT1), nodes(1), coarseNodes(1), nCommonFace(1), nCommonEdge(1),
+	: type(TYPE::POINT), code(CODE::POINT1), nodes(1), coarseNodes(1), nCommonFace(1), nCommonEdge(1), dimension(0),
 	  N(NULL), NN(NULL), NNN(NULL), dN(NULL), weighFactor(NULL), nN(NULL), ndN(NULL),
 	  faces(NULL), edges(NULL), facepointers(NULL), edgepointers(NULL),
 	  triangles(NULL), polygon(NULL) {}

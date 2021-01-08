@@ -11,12 +11,12 @@ using namespace espreso;
 
 ExpressionEvaluator::ExpressionEvaluator(const std::string &expression, std::vector<std::string> &variables)
 {
-	parameters = variables;
+	this->variables = variables;
 	_expressions.resize(info::env::OMP_NUM_THREADS);
 
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; t++) {
-		_expressions[t] = new Expression(expression, parameters);
+		_expressions[t] = new Expression(expression, variables);
 	}
 }
 
@@ -39,7 +39,7 @@ ExpressionEvaluator::ExpressionEvaluator(const ExpressionEvaluator &other)
 	for (size_t t = 0; t < threads; t++) {
 		_expressions[t] = new Expression(*other._expressions[t]);
 	}
-	parameters = other.parameters;
+	variables = other.variables;
 }
 
 void ExpressionEvaluator::evalVector(esint size, esint increment, const Params &params, double *results) const

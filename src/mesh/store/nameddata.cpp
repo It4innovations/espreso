@@ -9,7 +9,7 @@ std::vector<std::string> NamedData::tensorSuffixes = { "_XX", "_YY", "_ZZ", "_XY
 std::vector<std::string> NamedData::numberSuffixes = { "_1ST", "_2ND", "_3RD" };
 
 NamedData::NamedData(int dimension, DataType datatype, const std::string &name)
-: dimension(dimension), dataType(datatype), name(name), restriction(step::TYPE::TIME), store(data)
+: dimension(dimension), version(0), dataType(datatype), name(name), restriction(step::TYPE::TIME), store(data)
 {
 
 }
@@ -18,6 +18,7 @@ NamedData::NamedData(const char* &packedData)
 : store(data)
 {
 	utils::unpack(dimension, packedData);
+	utils::unpack(version, packedData);
 	utils::unpack(dataType, packedData);
 	utils::unpack(name, packedData);
 	utils::unpack(restriction, packedData);
@@ -68,6 +69,7 @@ size_t NamedData::packedSize()
 {
 	size_t packetSize = 0;
 	packetSize += utils::packedSize(dimension);
+	packetSize += utils::packedSize(version);
 	packetSize += utils::packedSize(dataType);
 	packetSize += utils::packedSize(name);
 	packetSize += utils::packedSize(restriction);
@@ -78,6 +80,7 @@ size_t NamedData::packedSize()
 void NamedData::pack(char *&p)
 {
 	utils::pack(dimension, p);
+	utils::pack(version, p);
 	utils::pack(dataType, p);
 	utils::pack(name, p);
 	utils::pack(restriction, p);

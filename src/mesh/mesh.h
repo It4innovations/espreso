@@ -71,6 +71,9 @@ public:
 	ElementsRegionStore* eregion(const std::string &name);
 	BoundaryRegionStore* bregion(const std::string &name);
 
+	size_t eregionIndex(const std::string &name);
+	size_t bregionIndex(const std::string &name);
+
 	bool onAllElements(const std::string &eregion) const;
 
 	bool hasPhaseChange() const;

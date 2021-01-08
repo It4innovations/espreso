@@ -22,7 +22,7 @@ struct NamedData {
 		TENSOR_ASYM
 	};
 
-	int dimension;
+	int dimension, version;
 	DataType dataType;
 	std::string name;
 	step::TYPE restriction;
