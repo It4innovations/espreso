@@ -18,11 +18,7 @@ using namespace espreso;
 
 Netgen::Netgen()
 {
-	for (size_t i = 0; i < info::mesh->elements->ecounters.size(); ++i) {
-		if (info::mesh->elements->ecounters[i] && (int)i != (int)Element::CODE::TETRA4) {
-			eslog::error("Netgen writer error: only tetrahedral geometry can be stored in Netgen neutral format.\n");
-		}
-	}
+
 }
 
 Netgen::~Netgen()
@@ -32,6 +28,12 @@ Netgen::~Netgen()
 
 void Netgen::updateMesh()
 {
+	for (size_t i = 0; i < info::mesh->elements->ecounters.size(); ++i) {
+		if (info::mesh->elements->ecounters[i] && (int)i != (int)Element::CODE::TETRA4) {
+			eslog::error("Netgen writer error: only tetrahedral geometry can be stored in Netgen neutral format.\n");
+		}
+	}
+
 	if (Visualization::isRoot()) {
 		_writer.int32ln(info::mesh->nodes->uniqInfo.totalSize);
 	}
