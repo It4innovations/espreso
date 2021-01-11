@@ -131,8 +131,12 @@ class ESPRESOTest:
         def create_table(emr):
             return [ [ value.strip() for value in line.split(";") ] for line in open(emr, "r").readlines() if len(line.strip()) ]
 
+        emr = os.path.join(ESPRESOTest.path, "results", "last", ESPRESOTest.ecf.replace(".ecf", ".emr"))
+        if not os.path.isfile(emr):
+            ESPRESOTest.raise_error("Missing monitoring report '{0}'.".format(emr))
+
         table1 = create_table(os.path.join(ESPRESOTest.path, preset))
-        table2 = create_table(os.path.join(ESPRESOTest.path, "results", "last", ESPRESOTest.ecf.replace(".ecf", ".emr")))
+        table2 = create_table(emr)
 
         if len(table1) != len(table2):
             ESPRESOTest.raise_error("various time steps")
