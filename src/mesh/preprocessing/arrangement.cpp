@@ -162,32 +162,18 @@ void arrangeElementsPermutation(std::vector<esint> &permutation)
 	info::mesh->elements->eintervalsDistribution.push_back(info::mesh->elements->eintervals.size());
 	profiler::synccheckpoint("eintervals");
 
-	int elementstypes = static_cast<int>(Element::CODE::SIZE);
-	if (elementstypes > 32) {
-		eslog::internalFailure("increase elements-types synchronization buffer.\n");
-	}
-
-	int codes = 0;
 	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-		codes |= 1 << info::mesh->elements->eintervals[i].code;
 		info::mesh->elements->ecounters[info::mesh->elements->eintervals[i].code] += info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
 	}
 
-	int allcodes = 0;
-	Communication::allReduce(&codes, &allcodes, 1, MPI_INT, MPI_BOR);
-
 	std::vector<esint> sum, offset;
-	for (int i = 0, bitmask = 1; i < elementstypes; i++, bitmask = bitmask << 1) {
-		if (allcodes & bitmask) {
-			offset.push_back(info::mesh->elements->ecounters[i]);
-		}
+	for (size_t i = 0; i < info::mesh->elements->ecounters.size(); ++i) {
+		offset.push_back(info::mesh->elements->ecounters[i]);
 	}
 	sum.resize(offset.size());
 	Communication::exscan(sum, offset);
-	for (int i = 0, bitmask = 1, j = 0; i < elementstypes; i++, bitmask = bitmask << 1) {
-		if (allcodes & bitmask) {
-			info::mesh->elements->ecounters[i] = sum[j++];
-		}
+	for (size_t i = 0; i < info::mesh->elements->ecounters.size(); ++i) {
+		info::mesh->elements->ecounters[i] = sum[i];
 	}
 
 	std::vector<esint> procdist = Communication::getDistribution(info::mesh->elements->size);
@@ -303,8 +289,26 @@ void arrangeElementsRegions()
 	}
 	profiler::synccheckpoint("regions_nodes");
 
+	if (info::mesh->elementsRegions.front()->nodes->datatarray().size()) {
+		ElementsRegionStore* nameless = info::mesh->eregion("ALL_ELEMENTS");
+		info::mesh->elementsRegions.push_back(new ElementsRegionStore("NAMELESS_ELEMENT_SET"));
+		info::mesh->elementsRegions.back()->eintervals = nameless->ueintervals;
+		info::mesh->elementsRegions.back()->elements = new serializededata<esint, esint>(*nameless->uniqueElements);
+		info::mesh->elementsRegions.back()->uniqueElements = info::mesh->elementsRegions.back()->elements;
+		info::mesh->elementsRegions.back()->ecounters = nameless->ecounters;
+		info::mesh->elementsRegions.back()->nodes = new serializededata<esint, esint>(*nameless->nodes);
+	}
+
 	std::vector<RegionStore*> regions(info::mesh->elementsRegions.begin(), info::mesh->elementsRegions.end());
 	synchronizeRegionNodes(regions);
+
+	std::vector<esint> allnodes(info::mesh->nodes->IDs->datatarray().size());
+	std::iota(allnodes.begin(), allnodes.end(), 0);
+	if (info::mesh->elementsRegions.front()->nodes->datatarray().size() == 0) {
+		delete info::mesh->elementsRegions.front()->nodes;
+	}
+	info::mesh->elementsRegions.front()->nodes = new serializededata<esint, esint>(1, tarray<esint>(info::mesh->nodes->distribution, allnodes));
+	info::mesh->elementsRegions.front()->ecounters = info::mesh->elements->ecounters;
 
 	computeNodeInfo(regions);
 	profiler::synccheckpoint("node_info");
@@ -333,25 +337,6 @@ void arrangeElementsRegions()
 		}
 		info::mesh->elementsRegions[r]->offset = offset[j];
 		info::mesh->elementsRegions[r]->totalsize = sum[j++];
-	}
-
-	if (info::mesh->eregion("ALL_ELEMENTS")->nodeInfo.totalSize) {
-		ElementsRegionStore* nameless = info::mesh->eregion("ALL_ELEMENTS");
-		info::mesh->elementsRegions.push_back(new ElementsRegionStore("NAMELESS_ELEMENT_SET"));
-		info::mesh->elementsRegions.back()->size = nameless->size;
-		info::mesh->elementsRegions.back()->offset = nameless->offset;
-		info::mesh->elementsRegions.back()->totalsize = nameless->totalsize;
-		info::mesh->elementsRegions.back()->eoffsets = nameless->eoffsets;
-		info::mesh->elementsRegions.back()->ecounters = nameless->ecounters;
-		info::mesh->elementsRegions.back()->eintervals = nameless->ueintervals;
-		info::mesh->elementsRegions.back()->elements = new serializededata<esint, esint>(*nameless->uniqueElements);
-		info::mesh->elementsRegions.back()->uniqueElements = info::mesh->elementsRegions.back()->elements;
-		info::mesh->elementsRegions.back()->nodes = new serializededata<esint, esint>(*nameless->nodes);
-		info::mesh->elementsRegions.back()->nodeInfo.nhalo = nameless->nodeInfo.nhalo;
-		info::mesh->elementsRegions.back()->nodeInfo.offset = nameless->nodeInfo.offset;
-		info::mesh->elementsRegions.back()->nodeInfo.size = nameless->nodeInfo.size;
-		info::mesh->elementsRegions.back()->nodeInfo.totalSize = nameless->nodeInfo.totalSize;
-		info::mesh->elementsRegions.back()->nodeInfo.position = nameless->nodeInfo.position;
 	}
 
 	profiler::synccheckpoint("element_info");

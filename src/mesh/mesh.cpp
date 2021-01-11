@@ -750,8 +750,6 @@ void Mesh::printMeshStatistics()
 		for (size_t r = 0; r < elementsRegions.size(); r++) {
 			if (StringCompare::caseInsensitiveEq(elementsRegions[r]->name, "NAMELESS_ELEMENT_SET")) {
 				eslog::warning(" %*s : %16s %16s\n", namesize, elementsRegions[r]->name.c_str(), Parser::stringwithcommas(elementsRegions[r]->totalsize).c_str(), Parser::stringwithcommas(elementsRegions[r]->nodeInfo.totalSize).c_str());
-			} else if (StringCompare::caseInsensitiveEq(elementsRegions[r]->name, "ALL_ELEMENTS")) {
-				eslog::info(" %*s : %16s %16s\n", namesize, elementsRegions[r]->name.c_str(), Parser::stringwithcommas(elements->totalSize).c_str(), Parser::stringwithcommas(nodes->uniqInfo.totalSize).c_str());
 			} else {
 				eslog::info(" %*s : %16s %16s\n", namesize, elementsRegions[r]->name.c_str(), Parser::stringwithcommas(elementsRegions[r]->totalsize).c_str(), Parser::stringwithcommas(elementsRegions[r]->nodeInfo.totalSize).c_str());
 			}
@@ -834,18 +832,14 @@ void Mesh::printMeshStatistics()
 		break;
 	case OutputConfiguration::LOGGER::PARSER:
 		eslog::info(" ====================================== MESH STATISTICS ====================================== \n");
-		for (size_t r = 1; r < elementsRegions.size(); r++) {
-			if (StringCompare::caseInsensitiveEq(elementsRegions[r]->name, "ALL_ELEMENTS")) {
-				eslog::info("mesh: region=%s, dimension=%d, elements=%d, nodes=%d\n", elementsRegions[r]->name.c_str(), dimension, elements->totalSize, nodes->uniqInfo.totalSize);
-			} else {
-				eslog::info("mesh: region=%s, dimension=%d, elements=%d, nodes=%d\n", elementsRegions[r]->name.c_str(), dimension, elementsRegions[r]->totalsize, elementsRegions[r]->nodeInfo.totalSize);
-			}
+		for (size_t r = 0; r < elementsRegions.size(); r++) {
+			eslog::info("mesh: region=%s, dimension=%d, elements=%d, nodes=%d\n", elementsRegions[r]->name.c_str(), dimension, elementsRegions[r]->totalsize, elementsRegions[r]->nodeInfo.totalSize);
 		}
-		for (size_t r = 1; r < boundaryRegions.size(); r++) {
+		for (size_t r = 0; r < boundaryRegions.size(); r++) {
 			eslog::info("mesh: region=%s, dimension=%d, elements=%d, nodes=%d\n", boundaryRegions[r]->name.c_str(), boundaryRegions[r]->dimension, boundaryRegions[r]->totalsize, boundaryRegions[r]->nodeInfo.totalSize);
 		}
 		eslog::info("mesh: region=ALL_ELEMENTS, bodies=%d\n", elements->bodiesTotalSize);
-		for (size_t r = 1; r < elementsRegions.size(); r++) {
+		for (size_t r = 0; r < elementsRegions.size(); r++) {
 			for (size_t b = 0; b < elementsRegions[r]->bodies.size(); ++b) {
 				eslog::info("mesh: region=%s, b-elements=%d, b-faces=%d\n", elementsRegions[r]->name.c_str(), elementsRegions[r]->bodyElements[b], elementsRegions[r]->bodyFaces[b]);
 			}
