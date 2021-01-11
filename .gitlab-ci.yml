@@ -15,8 +15,7 @@ before_script:
 PYTHON:
   stage: build
   only:
-    - triggers
-      schedules
+    - schedules
   script:
     - python2 waf configure -mdebug
     - python2 waf -j8
@@ -28,8 +27,7 @@ PYTHON:
 INT32:
   stage: build
   only:
-    - triggers
-      schedules
+    - schedules
   script:
     - ./waf configure
     - ./waf -j8
@@ -38,8 +36,7 @@ INT32:
 INT64:
   stage: build
   only:
-    - triggers
-      schedules
+    - schedules
   script:
     - ./waf configure --intwidth=64
     - ./waf -j8
@@ -48,8 +45,7 @@ INT64:
 STATIC:
   stage: build
   only:
-    - triggers
-      schedules
+    - schedules
   script:
     - ./waf configure --static
     - ./waf --static --libs="dl" -j8
@@ -58,8 +54,7 @@ STATIC:
 PROFILE:
   stage: build
   only:
-    - triggers
-      schedules
+    - schedules
   script:
     - ./waf configure -mprofile
     - ./waf -j8
@@ -69,8 +64,7 @@ PROFILE:
 DUMMY_WRAPPERS:
   stage: build
   only:
-    - triggers
-      schedules
+    - schedules
   script:
     - ml purge
     - ml gcc openmpi
@@ -80,8 +74,7 @@ DUMMY_WRAPPERS:
 GUI:
   stage: build
   only:
-    - triggers
-      schedules
+    - schedules
   script:
     - ./waf configure --with-gui
     - ./waf -j8
@@ -89,8 +82,7 @@ GUI:
 HEAT:
   stage: espreso
   only:
-    - triggers
-      schedules
+    - schedules
   script:
     - ./waf configure
     - ./waf -j8
@@ -102,8 +94,7 @@ HEAT:
 ELASTICITY:
   stage: espreso
   only:
-    - triggers
-      schedules
+    - schedules
   script:
     - ./waf configure
     - ./waf -j8
@@ -113,8 +104,7 @@ ELASTICITY:
 FETI_SOLVER:
   stage: espreso
   only:
-    - triggers
-      schedules
+    - schedules
   script:
     - ./waf configure
     - ./waf -j8
@@ -123,8 +113,7 @@ FETI_SOLVER:
 INPUT32:
   stage: mesio
   only:
-    - triggers
-      schedules
+    - schedules
   script:
     - ./waf configure
     - ./waf -j8
@@ -133,8 +122,7 @@ INPUT32:
 INPUT64:
   stage: mesio
   only:
-    - triggers
-      schedules
+    - schedules
   script:
     - ./waf configure --intwidth=64
     - ./waf -j8
@@ -143,8 +131,7 @@ INPUT64:
 OUTPUT32:
   stage: mesio
   only:
-    - triggers
-      schedules
+    - schedules
   script:
     - ./waf configure
     - ./waf -j8
@@ -153,8 +140,7 @@ OUTPUT32:
 OUTPUT64:
   stage: mesio
   only:
-    - triggers
-      schedules
+    - schedules
   script:
     - ./waf configure --intwidth=64
     - ./waf -j8
@@ -163,8 +149,7 @@ OUTPUT64:
 APITEST:
   stage: feti4i
   only:
-    - triggers
-      schedules
+    - schedules
   script:
     - ./waf configure
     - ./waf -j8
@@ -173,8 +158,7 @@ APITEST:
 GITHUB:
   stage: release
   only:
-    - triggers
-      schedules
+    - schedules
   script:
     - if ! git remote | grep release > /dev/null; then
         git remote add release git@github.com:It4innovations/espreso.git;
