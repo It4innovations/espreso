@@ -89,11 +89,15 @@ void EnSightGold::updateSolution()
 	case step::TYPE::FTT: _ftt->_times.push_back(step::outftt.time); writer = _ftt; break;
 	}
 
+	size_t nvars = 0;
 	for (size_t di = 0; di < info::mesh->elements->data.size(); di++) {
-		writer->edata(info::mesh->elements->data[di]);
+		nvars += writer->edata(info::mesh->elements->data[di]);
 	}
 	for (size_t di = 0; di < info::mesh->nodes->data.size(); di++) {
-		writer->ndata(info::mesh->nodes->data[di]);
+		nvars += writer->ndata(info::mesh->nodes->data[di]);
+	}
+	if (nvars != _variables.size()) {
+		_variables.clear();
 	}
 
 	if (_step != step::outstep.loadstep || info::mpi::grank == 0 || (step::outstep.type == step::TYPE::FTT && info::mpi::rank == 0)) {
@@ -336,10 +340,10 @@ void EnSightGold::geometry()
 	_writer.commitFile(_path + _geometry);
 }
 
-void EnSightGold::ndata(const NamedData *data)
+int EnSightGold::ndata(const NamedData *data)
 {
 	if (!storeData(data)) {
-		return;
+		return 0;
 	}
 
 	auto niterator = [this] (esint size, esint *nodes, std::function<void(esint nindex)> callback) {
@@ -448,12 +452,13 @@ void EnSightGold::ndata(const NamedData *data)
 			_writer.commitFile(file.str());
 		}
 	}
+	return 1;
 }
 
-void EnSightGold::edata(const NamedData *data)
+int EnSightGold::edata(const NamedData *data)
 {
 	if (!storeData(data)) {
-		return;
+		return 0;
 	}
 
 	auto eiterator = [&] (const ElementsRegionStore *region, int etype, std::function<void(const ElementsInterval &interval, esint eindex)> callback) {
@@ -528,7 +533,7 @@ void EnSightGold::edata(const NamedData *data)
 			_writer.commitFile(file.str());
 		}
 	}
-
+	return 1;
 }
 
 void EnSightGold::decomposition()

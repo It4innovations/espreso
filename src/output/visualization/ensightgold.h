@@ -27,8 +27,8 @@ protected:
 	std::string dataname(const NamedData *data, int d);
 	void casefile();
 	void geometry();
-	void ndata(const NamedData *data);
-	void edata(const NamedData *data);
+	int ndata(const NamedData *data);
+	int edata(const NamedData *data);
 	void decomposition();
 
 	FTT *_ftt;
