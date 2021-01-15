@@ -20,7 +20,11 @@ ElasticityElementIterator::ElasticityElementIterator(ElasticityElementIterator *
   penaltyFactor(configuration.topology_optimization_settings.solver_settings.penalty_factor),
   harmonic(configuration.type == LoadStepSolverConfiguration::TYPE::HARMONIC),
   massStabilization(configuration.harmonic_solver.mass_stabilization),
-  largeDisplacement(configuration.large_displacement)
+  largeDisplacement(configuration.large_displacement),
+  configuration(configuration),
+  corotating(NULL),
+  rotationAxis(NULL),
+  fixed(NULL)
 {
 	coordinates.set(info::mesh->nodes->coordinates, info::mesh->elements->procNodes);
 

@@ -44,6 +44,19 @@ void MATH::CSRTranspose(esint rows, esint cols, esint *aRows, esint *aCols, doub
 	}
 }
 
+void MATH::DenseTranspose(esint rows, esint cols, double *vals)
+{
+	for (esint r = 0; r < rows; ++r) {
+		for (esint c = 0; c < cols; ++c) {
+			if (r < c) {
+				double tmp = vals[r * rows + c];
+				vals[r * rows + c] = vals[c * rows + r];
+				vals[c * rows + r] = tmp;
+			}
+		}
+	}
+}
+
 void MATH::CSRRemoveLower(esint rows, esint cols, esint *aRows, esint *aCols, double *aVals)
 {
 	esint indexing = aRows[0], total = 0;

@@ -1,8 +1,119 @@
 
-#include <config/ecf/ecf.h>
+#include "config/ecf/ecf.h"
 #include "config/configuration.hpp"
 
 using namespace espreso;
+
+RotorDynamicsConfiguration::RotationAxisConfiguration::RotationAxisConfiguration(DIMENSION dimension)
+: dimension(dimension), center(&this->dimension, ECFMetaData::getcoordinatevariables(), "0"), orientation(&this->dimension, ECFMetaData::getcoordinatevariables(), "0")
+{
+	REGISTER(center, ECFMetaData()
+			.setname("Center")
+			.setdescription({ "A rotation center of the rotor." }));
+
+	REGISTER(orientation, ECFMetaData()
+			.setname("Orientation.")
+			.setdescription({ "An orientation of the rotor." }));
+}
+
+RotorDynamicsConfiguration::RotationConfiguration::RotationConfiguration()
+{
+	type = TYPE::FREQUENCY_RATIO;
+	REGISTER(type, ECFMetaData()
+			.setdescription({ "Rotation configuration." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("FREQUENCY_RATIO").setdescription("Frequency ration."))
+			.addoption(ECFOption().setname("TABLE").setdescription("A list of frequencies.")));
+
+	frequency_ratio = 1;
+	REGISTER(frequency_ratio, ECFMetaData()
+			.setdescription({ "Frequency ratio" })
+			.setdatatype({ ECFDataType::FLOAT }));
+
+	REGISTER(table, ECFMetaData()
+			.setdescription({ "Requested frequencies." })
+			.setdatatype({ ECFDataType::STRING }));
+}
+
+RotorDynamicsConfiguration::CorotatingRotorConfiguration::CorotatingRotorConfiguration()
+{
+	coriolis_effect = true;
+	REGISTER(coriolis_effect, ECFMetaData()
+			.setdescription({ "Coriolis effect" })
+			.setdatatype({ ECFDataType::BOOL }));
+
+	spin_softening = true;
+	REGISTER(spin_softening, ECFMetaData()
+			.setdescription({ "Spin softening" })
+			.setdatatype({ ECFDataType::BOOL }));
+
+	rotating_damping = true;
+	REGISTER(rotating_damping, ECFMetaData()
+			.setdescription({ "Rotation damping" })
+			.setdatatype({ ECFDataType::BOOL }));
+
+	centrifugal_load = true;
+	REGISTER(centrifugal_load, ECFMetaData()
+			.setdescription({ "centrifugal load" })
+			.setdatatype({ ECFDataType::BOOL }));
+
+	REGISTER(rotation, ECFMetaData().setdescription({ "Rotation configuration." }));
+}
+
+RotorDynamicsConfiguration::CorotatingConfiguration::CorotatingConfiguration(DIMENSION dimension)
+: rotation_axis(dimension)
+{
+	REGISTER(rotors_definitions, ECFMetaData()
+			.setdescription({ "List of rotor definitions.", "Rotor definition." })
+			.setdatatype({ ECFDataType::ELEMENTS_REGION })
+			.setpattern({ "MY_REGION" }));
+
+	REGISTER(rotation_axis, ECFMetaData().setdescription({ "Rotation axis." }));
+}
+
+RotorDynamicsConfiguration::FixedRotorConfiguration::FixedRotorConfiguration(DIMENSION dimension)
+: rotation_axis(dimension)
+{
+	gyroscopic_effect = true;
+	REGISTER(gyroscopic_effect, ECFMetaData()
+			.setdescription({ "Rotation damping" })
+			.setdatatype({ ECFDataType::BOOL }));
+
+	rotating_damping = true;
+	REGISTER(rotating_damping, ECFMetaData()
+			.setdescription({ "Rotation damping" })
+			.setdatatype({ ECFDataType::BOOL }));
+
+	centrifugal_load = true;
+	REGISTER(centrifugal_load, ECFMetaData()
+			.setdescription({ "Rotation damping" })
+			.setdatatype({ ECFDataType::BOOL }));
+
+	REGISTER(rotation, ECFMetaData().setdescription({ "Rotation configuration." }));
+	REGISTER(rotation_axis, ECFMetaData().setdescription({ "Rotation axis." }));
+}
+
+RotorDynamicsConfiguration::FixedConfiguration::FixedConfiguration(DIMENSION dimension)
+{
+	REGISTER(rotors_definitions, ECFMetaData()
+			.setdescription({ "List of rotor definitions.", "Rotor definition." })
+			.setdatatype({ ECFDataType::ELEMENTS_REGION })
+			.setpattern({ "MY REGIONS" }), dimension);
+}
+
+RotorDynamicsConfiguration::RotorDynamicsConfiguration(DIMENSION dimension)
+: fixed(dimension), corotating(dimension)
+{
+	type = TYPE::FIXED;
+	REGISTER(type, ECFMetaData()
+			.setdescription({ "Rotor type." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("FIXED").setdescription("Fixed rotor."))
+			.addoption(ECFOption().setname("COROTATING").setdescription("Corotating rotor.")));
+
+	REGISTER(fixed, ECFMetaData().setdescription({ "Fixed rotor configuration." }));
+	REGISTER(corotating, ECFMetaData().setdescription({ "Corotating rotor configuration." }));
+}
 
 RotatingForceConfiguration::RotatingForceConfiguration(DIMENSION *dimension)
 : rotation_axis(dimension, ECFMetaData::getcoordinatevariables()),
@@ -50,6 +161,7 @@ NonlinerSpringConfiguration::NonlinerSpringConfiguration(DIMENSION *dimension)
 }
 
 StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfiguration(DIMENSION *dimension)
+: rotor_dynamics(*dimension)
 {
 	large_displacement = false;
 	REGISTER(large_displacement, ECFMetaData()
@@ -121,6 +233,8 @@ StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfigurati
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })
 			.setpattern({ "MY_REGION", }),
 			dimension);
+
+	REGISTER(rotor_dynamics, ECFMetaData().setdescription({ "Rotor dynamics." }));
 }
 
 bool StructuralMechanicsOutputSettings::_activated = false;

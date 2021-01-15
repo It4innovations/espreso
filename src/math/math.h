@@ -64,6 +64,8 @@ namespace MATH {
 	esint vecNormMaxIndex(esint size, float *vVals);
 	esint vecNormMaxIndex(esint size, double *vVals);
 
+	void DenseTranspose(esint rows, esint cols, double *vals);
+
 	// C = alpha * A * B + beta * C
 	void DenseMatDenseMatRowMajorProduct(
 			double alpha, bool transposeA, esint aRows, esint aCols, double* aVals,

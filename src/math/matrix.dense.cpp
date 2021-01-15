@@ -169,6 +169,11 @@ void MatrixDense::addToCombination(double alpha, const Matrix *in, esint roffset
 	DataMatrixDense::addToCombination(alpha, in->downcast<MatrixDense>(), roffset, coffset, nsize, sumsize);
 }
 
+void MatrixDense::transpose()
+{
+	MATH::DenseTranspose(nrows, ncols, vals);
+}
+
 void MatrixDense::fillDiagonal(Vector *diagonal) const
 {
 	MatrixDense::fillDiagonal(diagonal->downcast<VectorDense>());

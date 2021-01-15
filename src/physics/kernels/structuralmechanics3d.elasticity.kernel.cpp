@@ -5,6 +5,7 @@
 #include "esinfo/eslog.hpp"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
+#include "mesh/store/elementsregionstore.h"
 #include "physics/system/builder/builder.h"
 #include "basis/containers/point.h"
 #include "basis/evaluator/evaluator.h"
@@ -605,6 +606,30 @@ static void distribute9x3(double *target, const double *source, size_t rows, siz
 
 void StructuralMechanics3DKernel::processElement(const Builder &builder, const ElasticityElementIterator &iterator, InstanceFiller &filler) const
 {
+	iterator.corotating = NULL;
+	iterator.fixed = NULL;
+	for (size_t r = 0; iterator.corotating == NULL && iterator.fixed == NULL && r < info::mesh->elementsRegions.size(); r++) {
+		esint maskOffset = r / (8 * sizeof(esint));
+		esint bit = (esint)1 << (r % (8 * sizeof(esint)));
+		if (info::mesh->elements->regions->datatarray()[iterator.offset * info::mesh->elements->regionMaskSize + maskOffset] & bit) {
+			switch (iterator.configuration.rotor_dynamics.type) {
+			case RotorDynamicsConfiguration::TYPE::FIXED: {
+				auto def = iterator.configuration.rotor_dynamics.fixed.rotors_definitions.find(info::mesh->elementsRegions[r]->name);
+				if (def != iterator.configuration.rotor_dynamics.fixed.rotors_definitions.end()) {
+					iterator.fixed = &def->second;
+				}
+			} break;
+			case RotorDynamicsConfiguration::TYPE::COROTATING: {
+				auto def = iterator.configuration.rotor_dynamics.corotating.rotors_definitions.find(info::mesh->elementsRegions[r]->name);
+				if (def != iterator.configuration.rotor_dynamics.corotating.rotors_definitions.end()) {
+					iterator.corotating = &def->second;
+					iterator.rotationAxis = &iterator.configuration.rotor_dynamics.corotating.rotation_axis;
+				}
+			} break;
+			}
+		}
+	}
+
 	bool harmonic = step::type == step::TYPE::FREQUENCY || step::type == step::TYPE::FTT;
 
 	int size = iterator.element->nodes;
@@ -621,6 +646,8 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 	MatrixDense gpK(size, 36), gpTE(1, 3), gpInertia(1, 3), gpDens(1, 1);
 	MatrixDense rotation(3, 3), spin(3, 3), Ks, omegaN;
 	MatrixDense uc(3 * size, 1), us(3 * size, 1);
+	Point fixedOmega, fixedP;
+	MatrixDense tx(3, 1), ty(3, 1), tz(3, 1), G(3 * size, 3 * size), Nxr(3, 1), x, fixedR(3, 1), tztyNxr(3, 1), tytzNxr(3, 1), BB(1, size), Bx(3 * size, 3), Bxt1(3 * size, 1), Bxt2(3 * size, 1), Bxttt(3 * size, 3);
 	double detJ, te;
 
 	for (int n = 0; n < size; n++) {
@@ -672,11 +699,44 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 			break;
 		}
 	}
+	x.nrows = 3 * size;
+	x.ncols = 1;
+	x.vals = initCoordinates.vals;
 
-	if (builder.coriolisDamping) {
-		double ox = step::frequency::angular * builder.rotationAxis.x;
-		double oy = step::frequency::angular * builder.rotationAxis.y;
-		double oz = step::frequency::angular * builder.rotationAxis.z;
+	if (iterator.fixed) {
+		fixedOmega.x = iterator.fixed->rotation_axis.orientation.x.evaluator->eval(Evaluator::Params());
+		fixedOmega.y = iterator.fixed->rotation_axis.orientation.y.evaluator->eval(Evaluator::Params());
+		fixedOmega.z = iterator.fixed->rotation_axis.orientation.z.evaluator->eval(Evaluator::Params());
+		fixedOmega.normalize();
+		fixedP.x = fixedOmega.x;
+		fixedP.y = fixedOmega.y;
+		fixedR[0][0] = iterator.fixed->rotation_axis.center.x.evaluator->eval(Evaluator::Params());
+		fixedR[1][0] = iterator.fixed->rotation_axis.center.y.evaluator->eval(Evaluator::Params());
+		fixedR[2][0] = iterator.fixed->rotation_axis.center.z.evaluator->eval(Evaluator::Params());
+		double cosphi = 1, sinphi = 0, costheta = 0, sintheta = fixedOmega.z < 0 ? -1 : 1;
+		if (fixedP.norm() > 1e-9) {
+			cosphi = fixedP.x / fixedP.norm();
+			sinphi = fixedOmega.y < 0 ? - std::sqrt(1 - cosphi * cosphi) : std::sqrt(1 - cosphi * cosphi);
+			costheta = Point(cosphi, sinphi, 0) * fixedOmega;
+			sintheta = fixedOmega.z < 0 ? - std::sqrt(1 - costheta * costheta) : std::sqrt(1 - costheta * costheta);
+		}
+		tx[0][0] = cosphi * costheta;
+		tx[0][1] = sinphi * costheta;
+		tx[0][2] = sintheta;
+
+		ty[0][0] = -sinphi;
+		ty[0][1] = cosphi;
+		ty[0][2] = 0;
+
+		tz[0][0] = -cosphi * sintheta;
+		tz[0][1] = -sinphi * sintheta;
+		tz[0][2] = costheta;
+	}
+
+	if (iterator.corotating && iterator.corotating->coriolis_effect) {
+		double ox = step::frequency::angular / iterator.corotating->rotation.frequency_ratio * iterator.rotationAxis->orientation.x.evaluator->eval(Evaluator::Params());
+		double oy = step::frequency::angular / iterator.corotating->rotation.frequency_ratio * iterator.rotationAxis->orientation.y.evaluator->eval(Evaluator::Params());
+		double oz = step::frequency::angular / iterator.corotating->rotation.frequency_ratio * iterator.rotationAxis->orientation.z.evaluator->eval(Evaluator::Params());
 		rotation.fill(0);
 		rotation(0, 1) = -oz;
 		rotation(0, 2) =  oy;
@@ -686,10 +746,10 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 		rotation(2, 1) =  ox;
 	}
 
-	if (builder.spinSoftening) {
-		double ox = step::frequency::angular * builder.rotationAxis.x;
-		double oy = step::frequency::angular * builder.rotationAxis.y;
-		double oz = step::frequency::angular * builder.rotationAxis.z;
+	if (iterator.corotating && iterator.corotating->spin_softening) {
+		double ox = step::frequency::angular / iterator.corotating->rotation.frequency_ratio * iterator.rotationAxis->orientation.x.evaluator->eval(Evaluator::Params());
+		double oy = step::frequency::angular / iterator.corotating->rotation.frequency_ratio * iterator.rotationAxis->orientation.y.evaluator->eval(Evaluator::Params());
+		double oz = step::frequency::angular / iterator.corotating->rotation.frequency_ratio * iterator.rotationAxis->orientation.z.evaluator->eval(Evaluator::Params());
 		spin(0, 0) = -(oy * oy + oz * oz);
 		spin(1, 1) = -(ox * ox + oz * oz);
 		spin(2, 2) = -(ox * ox + oy * oy);
@@ -742,13 +802,13 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 		}
 
 		if (builder.matrices & Builder::Request::C) {
-			if (builder.coriolisDamping) {
+			if (iterator.corotating && iterator.corotating->coriolis_effect) {
 				omegaN.multiply(rotation, NNN[gp]);
 				filler.Ce.multiply(NNN[gp], omegaN, 2 * gpDens(0, 0) * detJ * weighFactor[gp], 1, true);
 			}
 		}
 
-		if (builder.spinSoftening) {
+		if (iterator.corotating && iterator.corotating->spin_softening) {
 			omegaN.multiply(spin, NNN[gp]);
 			Ks.multiply(NNN[gp], omegaN, gpDens(0, 0) * detJ * weighFactor[gp], 1, true);
 		}
@@ -856,6 +916,23 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 			if (step::type != step::TYPE::FTT && (builder.matrices & (Builder::Request::K | Builder::Request::R))) {
 				CB.multiply(C, B);
 				filler.Ke.multiply(B, CB, detJ * weighFactor[gp], 1, true);
+				if (iterator.fixed) {
+					B.multiply(tx, dND);
+					for (esint c = 0; c < Bx.ncols; c++) {
+						Bx[0 * Bx.ncols + 3 * c + 0] = B[c];
+						Bx[1 * Bx.ncols + 3 * c + 1] = B[c];
+						Bx[2 * Bx.ncols + 3 * c + 2] = B[c];
+					}
+					Nxr.multiply(N[gp], x);
+					Nxr.add(-1, &fixedR);
+					double tyNxr = ty[0][0] * Nxr[0][0] + ty[0][1] * Nxr[1][0] + ty[0][2] * Nxr[2][0];
+					double tzNxr = tz[0][0] * Nxr[0][0] + tz[0][1] * Nxr[1][0] + tz[0][2] * Nxr[2][0];
+					Bxt1.multiply(Bx, tz, tyNxr, 0, false, true);
+					Bxt2.multiply(Bx, ty, tzNxr, 0, false, true);
+					Bxt1.add(-1, &Bxt2);
+					Bxttt.multiply(Bxt1, tx);
+					G.multiply(Bxttt, N[gp], weighFactor[gp] * detJ * gpDens[0][0], 1);
+				}
 			}
 
 			if (step::type != step::TYPE::FTT && (builder.matrices & Builder::Request::f)) {
@@ -881,6 +958,11 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 	}
 
 	if (builder.matrices & Builder::Request::C) {
+		if (iterator.fixed) {
+			filler.Ce.add(step::frequency::angular * iterator.fixed->rotation.frequency_ratio, &G);
+			G.transpose();
+			filler.Ce.add(-step::frequency::angular * iterator.fixed->rotation.frequency_ratio, &G);
+		}
 		if (builder.rayleighDamping) {
 			double stiffDamping = builder.stiffnessDamping + builder.structuralDampingCoefficient / step::frequency::angular;
 			filler.Ce.add(step::frequency::angular * stiffDamping, &filler.Ke);
@@ -888,7 +970,7 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 		}
 	}
 
-	if (builder.spinSoftening) {
+	if (iterator.corotating && iterator.corotating->spin_softening) {
 		filler.Ke.add(-1, &Ks);
 	}
 

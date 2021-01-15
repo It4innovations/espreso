@@ -5,6 +5,8 @@
 #include "mover.h"
 #include "moverparameter.h"
 
+#include "esinfo/ecfinfo.h"
+
 namespace espreso {
 
 struct HeatTransferElementIterator;
@@ -46,6 +48,11 @@ struct ElasticityElementIterator: public ElementIterator {
 
 	bool harmonic, massStabilization;
 	bool largeDisplacement;
+
+	StructuralMechanicsLoadStepConfiguration &configuration;
+	mutable RotorDynamicsConfiguration::CorotatingRotorConfiguration *corotating;
+	mutable RotorDynamicsConfiguration::RotationAxisConfiguration *rotationAxis;
+	mutable RotorDynamicsConfiguration::FixedRotorConfiguration *fixed;
 
 	ElasticityElementIterator(ElasticityElementIterator *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration, int dimension, bool omitTemp=false);
 	ElasticityElementIterator(HeatTransferElementIterator *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration, int dimension);

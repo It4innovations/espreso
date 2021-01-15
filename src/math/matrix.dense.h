@@ -63,6 +63,8 @@ public:
 	void sum(double alpha, const Matrix *a, double beta, const Matrix *b);
 	void addToCombination(double alpha, const Matrix *in, esint roffset, esint coffset, esint nsize, esint sumsize);
 
+	void transpose();
+
 	void fillDiagonal(Vector *diagonal) const;
 
 	double norm();

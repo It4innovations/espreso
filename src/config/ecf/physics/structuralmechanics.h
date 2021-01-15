@@ -9,6 +9,67 @@ namespace espreso {
 
 struct ECF;
 
+struct RotorDynamicsConfiguration: public ECFDescription {
+	enum class TYPE {
+		FIXED,
+		COROTATING
+	};
+
+	struct RotationConfiguration: public ECFDescription {
+		enum class TYPE {
+			FREQUENCY_RATIO,
+			TABLE
+		};
+
+		TYPE type;
+		double frequency_ratio;
+		std::vector<double> table;
+
+		RotationConfiguration();
+	};
+
+	struct RotationAxisConfiguration: public ECFDescription {
+		DIMENSION dimension;
+		ECFExpressionVector center, orientation;
+
+		RotationAxisConfiguration(DIMENSION dimension);
+	};
+
+	struct CorotatingRotorConfiguration: public ECFDescription {
+		bool coriolis_effect, spin_softening, rotating_damping, centrifugal_load;
+		RotationConfiguration rotation;
+
+		CorotatingRotorConfiguration();
+	};
+
+	struct CorotatingConfiguration: public ECFDescription {
+		std::map<std::string, CorotatingRotorConfiguration> rotors_definitions;
+		RotationAxisConfiguration rotation_axis;
+
+		CorotatingConfiguration(DIMENSION dimension);
+	};
+
+	struct FixedRotorConfiguration: public ECFDescription {
+		bool gyroscopic_effect, rotating_damping, centrifugal_load;
+		RotationConfiguration rotation;
+		RotationAxisConfiguration rotation_axis;
+
+		FixedRotorConfiguration(DIMENSION dimension);
+	};
+
+	struct FixedConfiguration: public ECFDescription {
+		std::map<std::string, FixedRotorConfiguration> rotors_definitions;
+
+		FixedConfiguration(DIMENSION dimension);
+	};
+
+	TYPE type;
+	FixedConfiguration fixed;
+	CorotatingConfiguration corotating;
+
+	RotorDynamicsConfiguration(DIMENSION dimension);
+};
+
 struct RotatingForceConfiguration: public ECFDescription {
 
 	ECFExpressionVector rotation_axis;
@@ -59,6 +120,7 @@ struct StructuralMechanicsLoadStepConfiguration: public StructuralMechanicsLoadS
 	std::map<std::string, ECFExpressionOptionalVector> displacement;
 	std::map<std::string, RotatingForceConfiguration> rotating_force;
 	std::map<std::string, NonlinerSpringConfiguration> nonlinear_spring;
+	RotorDynamicsConfiguration rotor_dynamics;
 
 	StructuralMechanicsLoadStepConfiguration(DIMENSION *dimension);
 };
