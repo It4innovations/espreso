@@ -235,7 +235,7 @@ def build(ctx):
     # dirty hack
     # find better solution by waf
     ctx.env["STLIB_MARKER"] = ["-Wl,-Bstatic,--start-group"]
-    ctx.env["SHLIB_MARKER"] = ["-Wl,--end-group", "-Wl,-Bdynamic"]
+    ctx.env["SHLIB_MARKER"] = ["-Wl,--end-group" ] + ctx.env["SHLIB_MARKER"]
 
     if ctx.env["DEFINES_SOLVER"][0] == "SOLVER_MKL":
         feti = fetisources + ("src/feti/specific/cpu/SparseSolverMKL.cpp",)

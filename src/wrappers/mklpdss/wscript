@@ -17,4 +17,5 @@ def configure(ctx):
         lib = prefix + "openmpi" + suffix
 
     if "HAVE_MKL" in ctx.env["DEFINES_MKL"]:
+        ctx.env.append_unique("SHLIB_MARKER", "-Wl,--no-as-needed")
         ctx.link_cxx(name="mklpdss", header_name="mkl_cluster_sparse_solver.h", libs=lib, use="MKL", root=ctx.options.mklpdss)
