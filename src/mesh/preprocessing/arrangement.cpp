@@ -289,15 +289,13 @@ void arrangeElementsRegions()
 	}
 	profiler::synccheckpoint("regions_nodes");
 
-	if (info::mesh->elementsRegions.front()->nodes->datatarray().size()) {
-		ElementsRegionStore* nameless = info::mesh->eregion("ALL_ELEMENTS");
-		info::mesh->elementsRegions.push_back(new ElementsRegionStore("NAMELESS_ELEMENT_SET"));
-		info::mesh->elementsRegions.back()->eintervals = nameless->ueintervals;
-		info::mesh->elementsRegions.back()->elements = new serializededata<esint, esint>(*nameless->uniqueElements);
-		info::mesh->elementsRegions.back()->uniqueElements = info::mesh->elementsRegions.back()->elements;
-		info::mesh->elementsRegions.back()->ecounters = nameless->ecounters;
-		info::mesh->elementsRegions.back()->nodes = new serializededata<esint, esint>(*nameless->nodes);
-	}
+	ElementsRegionStore* nameless = info::mesh->eregion("ALL_ELEMENTS");
+	info::mesh->elementsRegions.push_back(new ElementsRegionStore("NAMELESS_ELEMENT_SET"));
+	info::mesh->elementsRegions.back()->eintervals = nameless->ueintervals;
+	info::mesh->elementsRegions.back()->elements = new serializededata<esint, esint>(*nameless->uniqueElements);
+	info::mesh->elementsRegions.back()->uniqueElements = info::mesh->elementsRegions.back()->elements;
+	info::mesh->elementsRegions.back()->ecounters = nameless->ecounters;
+	info::mesh->elementsRegions.back()->nodes = new serializededata<esint, esint>(*nameless->nodes);
 
 	std::vector<RegionStore*> regions(info::mesh->elementsRegions.begin(), info::mesh->elementsRegions.end());
 	synchronizeRegionNodes(regions);
@@ -312,6 +310,11 @@ void arrangeElementsRegions()
 
 	computeNodeInfo(regions);
 	profiler::synccheckpoint("node_info");
+
+	if (info::mesh->elementsRegions.back()->nodeInfo.totalSize == 0) {
+		delete info::mesh->elementsRegions.back(); // remove NAMELESS_ELEMENT_SET if it is empty
+		info::mesh->elementsRegions.pop_back();
+	}
 
 	std::vector<esint> sum, offset;
 	for (size_t r = 0; r < info::mesh->elementsRegions.size(); r++) {
