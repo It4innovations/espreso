@@ -2,7 +2,7 @@ This directory contains a basic set of examples for integrity testing of both me
 
 
 #### Run automatic testing
-Testing is based on tool [node](https://nose.readthedocs.io/en/latest/). One can start all tests from *benchmarks* directory by the following command:
+Testing is based on tool [nose](https://nose.readthedocs.io/en/latest/). One can start all tests from *benchmarks* directory by the following command:
 ```sh
 $ nosetests -v benchmarks
 ```
@@ -67,7 +67,7 @@ The test utilizes *ESPRESOTest* class defined in `benchmarks/estest.py` and the 
 
 ##### Example 2: test espreso with new (hypothetical) boundary condition *FOO*
 ---
-Let we have an Ansys CDB database stored in **cube.dat** and configuration file **conf.ecf** with boundary condition *FOO* defined for the heat transfer module. We create directory `foo` in `benchmarks/diffusion3D/simple` and copy files **cube.dat** and **conf.ecf** into this directory. Since the boundary condition is not dependent on any parameter, it is sufficient to run espreso at once and store produced **conf.emr** to the test directory. Similarly to the previous example, we create files `__init__.py` and `tested.py` with the following content:
+Let we have an Ansys CDB database stored in **cube.dat** and configuration file **conf.ecf** with boundary condition *FOO* defined for the heat transfer module. We create directory `foo` in `benchmarks/diffusion3D/simple` and copy files **cube.dat** and **conf.ecf** into this directory. Since the boundary condition is not dependent on any parameter, it is sufficient to run espreso at once and store produced **conf.emr** to the test directory. Similarly to the previous example, we create files `__init__.py` and `tested.py` with the following content (since the test is performed for different solvers and methods, both parameters should be set to *[ARG0]* and *[ARG1]* in the configuration file):
 ```python
 import os
 from nose.tools import istest
