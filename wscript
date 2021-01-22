@@ -316,13 +316,15 @@ def options(opt):
     opt.compiler.add_option("--mpicxx",
         action="store",
         type="string",
-        default="mpic++",
+        metavar="MPICXX",
+        default=os.getenv("MPICXX"),
         help="MPI compiler used for building of the library")
 
     opt.compiler.add_option("--cxx",
         action="store",
         type="string",
-        default="g++",
+        metavar="CXX",
+        default=os.getenv("CXX"),
         help="C++ compiler")
 
     opt.compiler.add_option("--cxxflags",

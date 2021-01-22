@@ -17,7 +17,7 @@ def configure(ctx):
         if ctx.check_cc(
             mandatory   = False,
             msg         = 'Checking for MPI version ({0})'.format(lib),
-            fragment    = '#include "mpi.h"\n int main() {{ {0} return 0; }}'.format(checker)):
+            fragment    = '#include "mpi.h"\n#include <cstdio>\n int main() {{ {0} return 0; }}'.format(checker)):
             ctx.env.MPI = lib
             break
         

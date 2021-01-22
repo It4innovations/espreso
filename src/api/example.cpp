@@ -1,6 +1,7 @@
 
 #include "feti4i.h"
 
+#include <cstdio>
 #include <vector>
 
 std::vector<FETI4IReal> stiffness();
