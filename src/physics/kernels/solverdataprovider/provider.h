@@ -32,7 +32,7 @@ struct SolverDataProvider {
 		virtual MatrixType getMatrixType(esint domain) =0;
 
 		virtual int initKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster) =0;
-		virtual void fillKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster) =0;
+		virtual void fillKernels(MatrixCSRFETI &K, MatrixCSRFETI &M, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster) =0;
 
 		virtual ~FETI() {}
 	};

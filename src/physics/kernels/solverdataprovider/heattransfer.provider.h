@@ -28,7 +28,7 @@ struct HeatTransferSolverDataProvider: public SolverDataProvider {
 
 		bool hasKernel(esint domain);
 		int initKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster);
-		void fillKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster);
+		void fillKernels(MatrixCSRFETI &K, MatrixCSRFETI &M, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster);
 
 		HeatTransferLoadStepConfiguration &_configuration;
 		FETI(HeatTransferLoadStepConfiguration &configuration): _configuration(configuration) {}

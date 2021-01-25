@@ -4,12 +4,13 @@
 #include "basis/evaluator/evaluator.h"
 #include "config/ecf/physics/structuralmechanics.h"
 #include "esinfo/meshinfo.h"
-#include "esinfo/eslog.h"
+#include "esinfo/eslog.hpp"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/fetidatastore.h"
+#include "math/math.h"
 #include "math/matrix.type.h"
 #include "math/matrix.dense.feti.h"
 #include "math/matrix.csr.feti.h"
@@ -19,6 +20,9 @@
 
 #include <cmath>
 #include <algorithm>
+
+#include "mkl.h"
+#include "mkl_solvers_ee.h"
 
 using namespace espreso;
 
@@ -169,8 +173,6 @@ int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 //		}
 //	}
 
-	printf("init kernels\n");
-
 	dnodes.resize(info::mesh->elements->ndomains);
 	auto dmap = info::mesh->nodes->domains->cbegin();
 	for (esint i = 0; i < info::mesh->nodes->size; ++i, ++dmap) {
@@ -196,39 +198,28 @@ int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 	return 6;
 }
 
-void StructuralMechanics3DSolverDataProvider::FETI::fillKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster)
+void StructuralMechanics3DSolverDataProvider::FETI::fillKernels(MatrixCSRFETI &K, MatrixCSRFETI &M, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster)
 {
-	printf("fill kernels\n");
 	#pragma omp parallel for
 	for (esint d = 0; d < K.domains; ++d) {
 		if (hasKernel(d)) {
-			for (size_t i = 0; i < dnodes[d].size(); i++) {
-				Point p = info::mesh->nodes->coordinates->datatarray()[dnodes[d][i]];
-
-				N1[d][3 * i + 0][0] = 1;
-				N1[d][3 * i + 1][0] = 0;
-				N1[d][3 * i + 2][0] = 0;
-
-				N1[d][3 * i + 0][1] = 0;
-				N1[d][3 * i + 1][1] = 1;
-				N1[d][3 * i + 2][1] = 0;
-
-				N1[d][3 * i + 0][2] = 0;
-				N1[d][3 * i + 1][2] = 0;
-				N1[d][3 * i + 2][2] = 1;
-
-				N1[d][3 * i + 0][3] = -p.y;
-				N1[d][3 * i + 1][3] =  p.x;
-				N1[d][3 * i + 2][3] =    0;
-
-				N1[d][3 * i + 0][4] = -p.z;
-				N1[d][3 * i + 1][4] =    0;
-				N1[d][3 * i + 2][4] =  p.x;
-
-				N1[d][3 * i + 0][5] =    0;
-				N1[d][3 * i + 1][5] = -p.z;
-				N1[d][3 * i + 2][5] =  p.y;
+			std::vector<double> kk(K[d].nrows * K[d].nrows), mm(K[d].nrows * K[d].nrows);
+			for (esint r = 0; r < K[d].nrows; ++r) {
+				for (esint c = K[d].rows[r] - 1; c < K[d].rows[r + 1] - 1; ++c) {
+					kk[r * K[d].ncols + K[d].cols[c] - 1] = K[d].vals[c];
+					mm[r * M[d].ncols + M[d].cols[c] - 1] = M[d].vals[c];
+				}
 			}
+
+			int m, info, itype = 1, il = 1, iu = 6, lwork = -1, iwork = -1;
+			double abstol = 1e-6;
+			std::vector<double> work(1), E(K[d].nrows), X(K[d].nrows * 6), res(K[d].nrows);
+			std::vector<int> ifail(K[d].nrows);
+			dsygvx(&itype, "V", "I", "L", &K[d].nrows, kk.data(), &K[d].nrows, mm.data(), &K[d].nrows, NULL, NULL, &il, &iu, &abstol, &m, E.data(), X.data(), &K[d].nrows, work.data(), &lwork, &iwork, ifail.data(), &info);
+			work.resize(lwork = iwork = work.front());
+			dsygvx(&itype, "V", "I", "L", &K[d].nrows, kk.data(), &K[d].nrows, mm.data(), &K[d].nrows, NULL, NULL, &il, &iu, &abstol, &m, E.data(), X.data(), &K[d].nrows, work.data(), &lwork, &iwork, ifail.data(), &info);
+
+			N1[d].fillValues(X.data());
 		}
 	}
 }

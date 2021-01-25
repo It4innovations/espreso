@@ -405,7 +405,7 @@ int StructuralMechanics2DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 	return 6;
 }
 
-void StructuralMechanics2DSolverDataProvider::FETI::fillKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster)
+void StructuralMechanics2DSolverDataProvider::FETI::fillKernels(MatrixCSRFETI &K, MatrixCSRFETI &M, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster)
 {
 	#pragma omp parallel for
 	for (esint d = 0; d < K.domains; ++d) {

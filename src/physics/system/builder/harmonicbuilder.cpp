@@ -213,7 +213,7 @@ void HarmonicBuilder::buildSystem(FETISystem &system)
 	buildSystem(system.assemblers[0], system.solvers[0]);
 	if (system.solvers[0].solver.configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
 		system.assemblers[0].composer->kernel->solverDataProvider->feti->fillKernels(
-				system.assemblers[0].K, system.assemblers[0].N1, system.assemblers[0].N2, system.assemblers[0].RegMat,
+				system.assemblers[0].K, system.assemblers[0].M, system.assemblers[0].N1, system.assemblers[0].N2, system.assemblers[0].RegMat,
 				system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI);
 //		system.solvers[0].N1.fillData(&system.assemblers[0].N1);
 //		system.solvers[0].N2.fillData(&system.assemblers[0].N2);

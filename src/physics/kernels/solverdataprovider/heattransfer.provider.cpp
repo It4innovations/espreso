@@ -157,7 +157,7 @@ int HeatTransferSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K, MatrixDe
 	return 1;
 }
 
-void HeatTransferSolverDataProvider::FETI::fillKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster)
+void HeatTransferSolverDataProvider::FETI::fillKernels(MatrixCSRFETI &K, MatrixCSRFETI &M, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster)
 {
 	#pragma omp parallel for
 	for (esint d = 0; d < K.domains; ++d) {
