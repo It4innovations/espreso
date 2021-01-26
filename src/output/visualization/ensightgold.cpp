@@ -101,6 +101,49 @@ void EnSightGold::updateSolution()
 				_times.push_back(f + step::frequency::shift);
 			}
 		}
+
+		auto spaces = [] (const std::string &label, size_t size) -> std::string {
+			if (size > label.size()) {
+				return std::string(size - label.size(), ' ');
+			}
+			return "";
+		};
+
+		auto pushdata = [&] (std::vector<std::string> &variables, const NamedData *data, const std::string &var) {
+			if (!storeData(data)) {
+				return;
+			}
+			if (data->dataType == NamedData::DataType::VECTOR) {
+				std::string name = dataname(data, 0);
+				variables.push_back(
+						"vector per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + _directory + name + ".****"
+				);
+				return;
+			}
+			if (data->dimension == 1) {
+				std::string name = dataname(data, 0);
+				variables.push_back(
+						"scalar per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + _directory + name + ".****"
+				);
+				return;
+			}
+			for (int d = 0; d < data->dimension; d++) {
+				std::string name = dataname(data, d);
+				variables.push_back(
+						"scalar per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + _directory + name + ".****"
+				);
+			}
+		};
+
+		if (_variables.size() == 0) {
+			for (size_t i = 0; i < info::mesh->nodes->data.size(); i++) {
+				pushdata(_variables, info::mesh->nodes->data[i], "node");
+			}
+			for (size_t i = 0; i < info::mesh->elements->data.size(); i++) {
+				pushdata(_variables, info::mesh->elements->data[i], "element");
+			}
+		}
+
 		writer->casefile();
 	}
 
@@ -125,48 +168,6 @@ std::string EnSightGold::dataname(const NamedData *data, int d)
 
 void EnSightGold::casefile()
 {
-	auto spaces = [] (const std::string &label, size_t size) -> std::string {
-		if (size > label.size()) {
-			return std::string(size - label.size(), ' ');
-		}
-		return "";
-	};
-
-	auto pushdata = [&] (std::vector<std::string> &variables, const NamedData *data, const std::string &var) {
-		if (!storeData(data)) {
-			return;
-		}
-		if (data->dataType == NamedData::DataType::VECTOR) {
-			std::string name = dataname(data, 0);
-			variables.push_back(
-					"vector per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + _directory + name + ".****"
-			);
-			return;
-		}
-		if (data->dimension == 1) {
-			std::string name = dataname(data, 0);
-			variables.push_back(
-					"scalar per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + _directory + name + ".****"
-			);
-			return;
-		}
-		for (int d = 0; d < data->dimension; d++) {
-			std::string name = dataname(data, d);
-			variables.push_back(
-					"scalar per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + _directory + name + ".****"
-			);
-		}
-	};
-
-	if (_variables.size() == 0) {
-		for (size_t i = 0; i < info::mesh->nodes->data.size(); i++) {
-			pushdata(_variables, info::mesh->nodes->data[i], "node");
-		}
-		for (size_t i = 0; i < info::mesh->elements->data.size(); i++) {
-			pushdata(_variables, info::mesh->elements->data[i], "element");
-		}
-	}
-
 	std::ofstream os(_path + _name + ".case");
 
 	os << "\n# output from ESPRESO library (espreso.it4.cz)";
