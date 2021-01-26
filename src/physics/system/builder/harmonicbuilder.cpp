@@ -148,14 +148,26 @@ void HarmonicBuilder::init(FETISystem &system)
 	system.solvers[0].buildB1();
 	system.solvers[0].Kdiag.shallowCopyStructure(system.solvers[0].f.at(0));
 	if (system.solvers[0].solver.configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
-		system.assemblers[0].composer->kernel->solverDataProvider->feti->initKernels(
-				system.assemblers[0].K, system.assemblers[0].N1, system.assemblers[0].N2, system.assemblers[0].RegMat,
-				system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI);
-		system.solvers[0].N1.shallowCopyStructure(&system.assemblers[0].N1);
-		system.solvers[0].N2.shallowCopyStructure(&system.assemblers[0].N2);
-		system.solvers[0].RegMat.shallowCopyStructure(&system.assemblers[0].RegMat);
-	}
+		if (
+				system.solvers[0].solver.configuration.regularization_version == FETIConfiguration::REGULARIZATION_VERSION::FIX_POINTS ||
+				system.solvers[0].solver.configuration.regularization_version == FETIConfiguration::REGULARIZATION_VERSION::EIGEN_VECTORS) {
 
+			int NDIM = system.solvers[0].kernelDimension = system.assemblers[0].composer->kernel->solverDataProvider->feti->initKernels(
+					system.assemblers[0].K, system.assemblers[0].N1, system.assemblers[0].N2, system.assemblers[0].RegMat,
+					system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI);
+			system.solvers[0].N1.uniformCombination(&system.assemblers[0].N1, &system.assemblers[0].N1, DOFs, NDIM);
+			system.solvers[0].N2.uniformCombination(&system.assemblers[0].N2, &system.assemblers[0].N2, DOFs, NDIM);
+			system.solvers[0].RegMat.uniformCombination(&system.assemblers[0].RegMat, &system.assemblers[0].RegMat, DOFs, DOFs);
+		}
+		if (system.solvers[0].solver.configuration.regularization_version == FETIConfiguration::REGULARIZATION_VERSION::WAVE_DIRECTIONS) {
+			system.assemblers[0].composer->kernel->solverDataProvider->feti->initKernels(
+					system.assemblers[0].K, system.assemblers[0].N1, system.assemblers[0].N2, system.assemblers[0].RegMat,
+					system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI);
+			system.solvers[0].N1.shallowCopyStructure(&system.assemblers[0].N1);
+			system.solvers[0].N2.shallowCopyStructure(&system.assemblers[0].N2);
+			system.solvers[0].RegMat.shallowCopyStructure(&system.assemblers[0].RegMat);
+		}
+	}
 	if (system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI) {
 		switch (system.solvers[0].solver.configuration.B0_type) {
 		case FETIConfiguration::B0_TYPE::CORNERS:
@@ -212,24 +224,37 @@ void HarmonicBuilder::buildSystem(FETISystem &system)
 {
 	buildSystem(system.assemblers[0], system.solvers[0]);
 	if (system.solvers[0].solver.configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
-		system.assemblers[0].composer->kernel->solverDataProvider->feti->fillKernels(
-				system.assemblers[0].K, system.assemblers[0].M, system.assemblers[0].N1, system.assemblers[0].N2, system.assemblers[0].RegMat,
-				system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI);
-		system.solvers[0].N1.fillData(&system.assemblers[0].N1);
-		system.solvers[0].N2.fillData(&system.assemblers[0].N2);
-		system.solvers[0].RegMat.fillData(&system.assemblers[0].RegMat);
+		if (
+				system.solvers[0].solver.configuration.regularization_version == FETIConfiguration::REGULARIZATION_VERSION::FIX_POINTS ||
+				system.solvers[0].solver.configuration.regularization_version == FETIConfiguration::REGULARIZATION_VERSION::EIGEN_VECTORS) {
 
-//		int NDIM = system.solvers[0].kernelDimension;
-//		system.solvers[0].N1.fill(0);
-//		system.solvers[0].N1.addToCombination(1, &system.assemblers[0].N1, 0, 0, DOFs, NDIM, 2 * DOFs, 2 * NDIM);
-//		system.solvers[0].N1.addToCombination(1, &system.assemblers[0].N1, DOFs, NDIM, DOFs, NDIM, 2 * DOFs, 2 * NDIM);
-//		system.solvers[0].N2.fill(0);
-//		system.solvers[0].N2.addToCombination(1, &system.assemblers[0].N2, 0, 0, DOFs, NDIM, 2 * DOFs, 2 * NDIM);
-//		system.solvers[0].N2.addToCombination(1, &system.assemblers[0].N2, DOFs, NDIM, DOFs, NDIM, 2 * DOFs, 2 * NDIM);
-//		system.solvers[0].RegMat.fill(0);
-//		system.solvers[0].RegMat.addToCombination(1, &system.assemblers[0].RegMat, 0, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
-//		system.solvers[0].RegMat.addToCombination(1, &system.assemblers[0].RegMat, DOFs, DOFs, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
+			system.assemblers[0].composer->kernel->solverDataProvider->feti->fillKernels(
+					system.assemblers[0].K, system.assemblers[0].M, system.assemblers[0].N1, system.assemblers[0].N2, system.assemblers[0].RegMat,
+					system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI);
+
+			int NDIM = system.solvers[0].kernelDimension;
+			system.solvers[0].N1.fill(0);
+			system.solvers[0].N1.addToCombination(1, &system.assemblers[0].N1, 0, 0, DOFs, NDIM, 2 * DOFs, 2 * NDIM);
+			system.solvers[0].N1.addToCombination(1, &system.assemblers[0].N1, DOFs, NDIM, DOFs, NDIM, 2 * DOFs, 2 * NDIM);
+			system.solvers[0].N2.fill(0);
+			system.solvers[0].N2.addToCombination(1, &system.assemblers[0].N2, 0, 0, DOFs, NDIM, 2 * DOFs, 2 * NDIM);
+			system.solvers[0].N2.addToCombination(1, &system.assemblers[0].N2, DOFs, NDIM, DOFs, NDIM, 2 * DOFs, 2 * NDIM);
+			system.solvers[0].RegMat.fill(0);
+			system.solvers[0].RegMat.addToCombination(1, &system.assemblers[0].RegMat, 0, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
+			system.solvers[0].RegMat.addToCombination(1, &system.assemblers[0].RegMat, DOFs, DOFs, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
+
+		}
+
+		if (system.solvers[0].solver.configuration.regularization_version == FETIConfiguration::REGULARIZATION_VERSION::WAVE_DIRECTIONS) {
+			system.assemblers[0].composer->kernel->solverDataProvider->feti->fillKernels(
+					system.assemblers[0].K, system.assemblers[0].M, system.assemblers[0].N1, system.assemblers[0].N2, system.assemblers[0].RegMat,
+					system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI);
+			system.solvers[0].N1.fillData(&system.assemblers[0].N1);
+			system.solvers[0].N2.fillData(&system.assemblers[0].N2);
+			system.solvers[0].RegMat.fillData(&system.assemblers[0].RegMat);
+		}
 	}
+
 	for (size_t i = 0; i < system.solvers.size(); i++) {
 		if (
 				system.solvers[i].solver.configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_R ||

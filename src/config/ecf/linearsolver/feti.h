@@ -58,7 +58,14 @@ struct FETIConfiguration: public ECFDescription {
 		/// Based on a physics
 		ANALYTIC = 0,
 		/// Randomly found null pivots of stiffness matrix
-		ALGEBRAIC = 1
+		ALGEBRAIC = 1,
+	};
+	enum class REGULARIZATION_VERSION {
+		/// Based on a physics
+		FIX_POINTS = 0,
+		/// Randomly found null pivots of stiffness matrix
+		EIGEN_VECTORS = 1,
+		WAVE_DIRECTIONS = 2,
 	};
 
 	enum class B0_TYPE {
@@ -117,6 +124,7 @@ struct FETIConfiguration: public ECFDescription {
 	ITERATIVE_SOLVER iterative_solver;
 	PRECONDITIONER preconditioner;
 	REGULARIZATION regularization;
+	REGULARIZATION_VERSION regularization_version;
 	CONJ_PROJECTOR conjugate_projector;
 
 	size_t geneo_size, restart_iteration, num_restart;
