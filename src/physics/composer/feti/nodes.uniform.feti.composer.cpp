@@ -29,8 +29,6 @@
 #include <algorithm>
 #include <numeric>
 
-#include "basis/utilities/print.h"
-
 using namespace espreso;
 
 NodesUniformFETIComposer::NodesUniformFETIComposer(const FETIConfiguration &configuration, Kernel *kernel, FETIAssemblerData *data, int DOFs)

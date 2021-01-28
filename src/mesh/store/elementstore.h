@@ -36,7 +36,6 @@ struct ElementStore {
 	ElementData* appendData(int dimension, NamedData::DataType datatype, const std::string &name = "", step::TYPE restriction = step::TYPE::TIME);
 
 	std::vector<esint> gatherDomainsProcDistribution();
-	std::vector<esint> gatherClustersDistribution();
 
 	esint dimension;
 	esint size;

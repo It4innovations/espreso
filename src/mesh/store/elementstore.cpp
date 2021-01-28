@@ -460,11 +460,6 @@ std::vector<esint> ElementStore::gatherDomainsProcDistribution()
 	return Store::gatherDistribution(ndomains);
 }
 
-std::vector<esint> ElementStore::gatherClustersDistribution()
-{
-	return Store::gatherDistribution(nclusters);
-}
-
 void ElementData::statistics(const tarray<esint> &elements, esint totalsize, Statistics *statistics) const
 {
 	for (int d = 0; d <= nstatistics(); d++) {

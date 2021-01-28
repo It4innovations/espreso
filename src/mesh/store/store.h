@@ -76,13 +76,8 @@ struct Store {
 	static std::vector<esint> gatherDistribution(esint size)
 	{
 		std::vector<esint> result(info::mpi::size + 1);
-		esint esize = size;
-		Communication::exscan(esize);
-
-		Communication::allGather(&esize, result.data(), sizeof(esint), MPI_BYTE);
-		result.back() = esize + size;
-		Communication::broadcast(&result.back(), sizeof(esint), MPI_BYTE, info::mpi::size - 1);
-
+		Communication::allGather(&size, result.data(), MPITools::getType(size).mpisize, MPITools::getType(size).mpitype);
+		utils::sizesToOffsets(result);
 		return result;
 	}
 
