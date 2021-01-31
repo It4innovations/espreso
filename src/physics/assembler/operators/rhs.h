@@ -183,9 +183,9 @@ struct HeatRHS3D: public Operator {
 struct HeatRHS: public BoundaryOperatorBuilder {
 	GET_NAME(HeatRHS)
 
-	HeatTransferKernelOpt &kernel;
+	HeatTransferModuleOpt &kernel;
 
-	HeatRHS(HeatTransferKernelOpt &kernel): kernel(kernel)
+	HeatRHS(HeatTransferModuleOpt &kernel): kernel(kernel)
 	{
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 			if (info::mesh->boundaryRegions[r]->dimension) {
@@ -211,19 +211,19 @@ struct HeatRHS: public BoundaryOperatorBuilder {
 
 	void apply(int region, int interval)
 	{
-		iterate_boundary_gps<HeatTransferKernelOpt>(HeatQ(
+		iterate_boundary_gps<HeatTransferModuleOpt>(HeatQ(
 				info::mesh->boundaryRegions[region]->area, kernel.heatFlow.gp.regions[region],
 				kernel.heatFlux.gp.regions[region],
 				kernel.convection.heatTransferCoeficient.gp.regions[region], kernel.convection.externalTemperature.gp.regions[region],
 				kernel.q.gp.regions[region], interval), region);
 		if (info::mesh->dimension == 2) {
-			iterate_boundary_gps<HeatTransferKernelOpt>(HeatRHS2D(
+			iterate_boundary_gps<HeatTransferModuleOpt>(HeatRHS2D(
 					kernel.integration.boundary.N.regions[region], kernel.integration.boundary.weight.regions[region], kernel.integration.boundary.jacobian.regions[region],
 					kernel.thickness.boundary.gp.regions[region], kernel.q.gp.regions[region],
 					kernel.linearSystem.boundary.rhs.regions[region], interval), region);
 		}
 		if (info::mesh->dimension == 3) {
-			iterate_boundary_gps<HeatTransferKernelOpt>(HeatRHS3D(
+			iterate_boundary_gps<HeatTransferModuleOpt>(HeatRHS3D(
 					kernel.integration.boundary.N.regions[region], kernel.integration.boundary.weight.regions[region], kernel.integration.boundary.jacobian.regions[region],
 					kernel.q.gp.regions[region], kernel.linearSystem.boundary.rhs.regions[region], interval), region);
 		}

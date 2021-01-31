@@ -11,7 +11,7 @@ struct DistributedAssemblerData;
 class FacesEdgesUniformDistributedComposer: public DistributedComposerOpt {
 
 public:
-	FacesEdgesUniformDistributedComposer(Kernel *kernel, KernelOpt *opt, DistributedAssemblerData *data, int fDOFs, int eDOFs);
+	FacesEdgesUniformDistributedComposer(Kernel *kernel, ModuleOpt *opt, DistributedAssemblerData *data, int fDOFs, int eDOFs);
 
 	int esize(esint interval);
 	int bsize(esint region, esint interval);

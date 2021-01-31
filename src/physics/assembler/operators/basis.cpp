@@ -8,7 +8,7 @@
 
 using namespace espreso;
 
-bool Basis::build(HeatTransferKernelOpt &kernel)
+bool Basis::build(HeatTransferModuleOpt &kernel)
 {
 	kernel.integration.N.resize();
 	kernel.integration.dN.resize();

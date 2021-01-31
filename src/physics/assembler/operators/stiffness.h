@@ -86,9 +86,9 @@ struct Stiffness3DHeat: public Stiffness {
 
 struct HeatStiffness: public ElementOperatorBuilder {
 	GET_NAME(HeatStiffness)
-	HeatTransferKernelOpt &kernel;
+	HeatTransferModuleOpt &kernel;
 
-	HeatStiffness(HeatTransferKernelOpt &kernel): kernel(kernel)
+	HeatStiffness(HeatTransferModuleOpt &kernel): kernel(kernel)
 	{
 		if (info::mesh->dimension == 2) {
 			kernel.linearSystem.stiffness.addInputs(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivity, kernel.thickness.gp);
@@ -103,17 +103,17 @@ struct HeatStiffness: public ElementOperatorBuilder {
 		const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
 		if (mat->thermal_conductivity.model == ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
 			if (info::mesh->dimension == 2) {
-				iterate_elements_gps<HeatTransferKernelOpt>(Stiffness2DHeatIsotropic(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivityIsotropic, kernel.thickness.gp, kernel.linearSystem.stiffness, interval));
+				iterate_elements_gps<HeatTransferModuleOpt>(Stiffness2DHeatIsotropic(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivityIsotropic, kernel.thickness.gp, kernel.linearSystem.stiffness, interval));
 			}
 			if (info::mesh->dimension == 3) {
-				iterate_elements_gps<HeatTransferKernelOpt>(Stiffness2DHeatIsotropic(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivityIsotropic, kernel.thickness.gp, kernel.linearSystem.stiffness, interval));
+				iterate_elements_gps<HeatTransferModuleOpt>(Stiffness2DHeatIsotropic(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivityIsotropic, kernel.thickness.gp, kernel.linearSystem.stiffness, interval));
 			}
 		} else {
 			if (info::mesh->dimension == 2) {
-				iterate_elements_gps<HeatTransferKernelOpt>(Stiffness2DHeat(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivity, kernel.linearSystem.stiffness, kernel.thickness.gp, interval));
+				iterate_elements_gps<HeatTransferModuleOpt>(Stiffness2DHeat(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivity, kernel.linearSystem.stiffness, kernel.thickness.gp, interval));
 			}
 			if (info::mesh->dimension == 3) {
-				iterate_elements_gps<HeatTransferKernelOpt>(Stiffness3DHeat(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivity, kernel.linearSystem.stiffness, kernel.thickness.gp, interval));
+				iterate_elements_gps<HeatTransferModuleOpt>(Stiffness3DHeat(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivity, kernel.linearSystem.stiffness, kernel.thickness.gp, interval));
 			}
 		}
 	}

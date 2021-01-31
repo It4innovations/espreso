@@ -153,16 +153,16 @@ struct ConvectionExternalNaturalInclinedWall: public ConvectionOperator {
 struct ConvectionBuilder: public BoundaryOperatorBuilder {
 	GET_NAME(ConvectionBuilder)
 
-	HeatTransferKernelOpt &kernel;
+	HeatTransferModuleOpt &kernel;
 	ParametersConvection &convection;
 
-	ConvectionBuilder(HeatTransferKernelOpt &kernel, ParametersConvection &convection)
+	ConvectionBuilder(HeatTransferModuleOpt &kernel, ParametersConvection &convection)
 	: kernel(kernel), convection(convection)
 	{
 
 	}
 
-	bool build(HeatTransferKernelOpt &kernel) override
+	bool build(HeatTransferModuleOpt &kernel) override
 	{
 		for (size_t region = 0; region < convection.configuration.regions.size(); ++region) {
 			if (convection.configuration.regions[region].isset) {
@@ -215,8 +215,8 @@ struct ConvectionBuilder: public BoundaryOperatorBuilder {
 			case ConvectionConfiguration::TYPE::EXTERNAL_NATURAL:
 				switch (convection.configuration.regions[region].settings.front()->fluid) {
 				case ConvectionConfiguration::FLUID::AIR:
-					iterate_boundary_gps<HeatTransferKernelOpt>(ConvectionFluidAir(convection, kernel.temp.boundary.gp.regions[region], region, interval), region);
-					iterate_boundary_gps<HeatTransferKernelOpt>(ConvectionExternalNaturalInclinedWall(convection, kernel.temp.boundary.gp.regions[region], region, interval), region);
+					iterate_boundary_gps<HeatTransferModuleOpt>(ConvectionFluidAir(convection, kernel.temp.boundary.gp.regions[region], region, interval), region);
+					iterate_boundary_gps<HeatTransferModuleOpt>(ConvectionExternalNaturalInclinedWall(convection, kernel.temp.boundary.gp.regions[region], region, interval), region);
 					break;
 				default:
 					break;

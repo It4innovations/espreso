@@ -1,14 +1,14 @@
 
 #include "expression.h"
 
-#include "physics/assembler/kernels/heattransfer.kernel.opt.h"
+#include "physics/assembler/modules/heattransfer.module.opt.h"
 
 #include "basis/utilities/parser.h"
 #include "esinfo/eslog.hpp"
 
 using namespace espreso;
 
-bool ExpressionsToElements::build(HeatTransferKernelOpt &kernel)
+bool ExpressionsToElements::build(HeatTransferModuleOpt &kernel)
 {
 	if (ecfname.size() == 0) {
 		return false;
@@ -117,7 +117,7 @@ void ExpressionsToBoundary::replace(const std::string &name, BoundaryParameterPa
 	}
 }
 
-bool ExpressionsToBoundary::build(HeatTransferKernelOpt &kernel)
+bool ExpressionsToBoundary::build(HeatTransferModuleOpt &kernel)
 {
 	if (ecfname.size() == 0) {
 		return false;

@@ -58,11 +58,11 @@ struct KFullFiller: public KFiller {
 struct MatricesFiller: public ElementOperatorBuilder {
 	GET_NAME(MatricesFiller)
 
-	HeatTransferKernelOpt &kernel;
+	HeatTransferModuleOpt &kernel;
 	double *K;
 	esint *perm;
 
-	MatricesFiller(HeatTransferKernelOpt &kernel, double *K, esint *perm): kernel(kernel), K(K), perm(perm)
+	MatricesFiller(HeatTransferModuleOpt &kernel, double *K, esint *perm): kernel(kernel), K(K), perm(perm)
 	{
 
 	}
@@ -106,11 +106,11 @@ struct VectorFiller: public Operator {
 struct RHSFiller: public BoundaryOperatorBuilder {
 	GET_NAME(MatricesFiller)
 
-	HeatTransferKernelOpt &kernel;
+	HeatTransferModuleOpt &kernel;
 	double *RHS;
 	esint *perm;
 
-	RHSFiller(HeatTransferKernelOpt &kernel, double *RHS, esint *perm): kernel(kernel), RHS(RHS), perm(perm)
+	RHSFiller(HeatTransferModuleOpt &kernel, double *RHS, esint *perm): kernel(kernel), RHS(RHS), perm(perm)
 	{
 
 	}

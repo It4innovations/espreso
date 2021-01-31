@@ -14,7 +14,7 @@
 #include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "physics/system/fetisystem.h"
-#include "physics/assembler/kernels/kernel.opt.h"
+#include "physics/assembler/modules/module.opt.h"
 #include "physics/kernels/solverdataprovider/provider.h"
 #include "physics/system/builder/builder.h"
 #include "math/vector.sparse.h"

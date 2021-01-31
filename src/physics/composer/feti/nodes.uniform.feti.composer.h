@@ -11,7 +11,7 @@ struct FETIAssemblerData;
 class NodesUniformFETIComposer: public FETIComposerOpt {
 
 public:
-	NodesUniformFETIComposer(const FETIConfiguration &configuration, Kernel *kernel, KernelOpt *opt, FETIAssemblerData *data, int DOFs);
+	NodesUniformFETIComposer(const FETIConfiguration &configuration, Kernel *kernel, ModuleOpt *opt, FETIAssemblerData *data, int DOFs);
 
 	int esize(esint interval);
 	int bsize(esint region, esint interval);

@@ -1,8 +1,8 @@
 
-#ifndef SRC_PHYSICS_ASSEMBLER_KERNELS_KERNEL_OPT_H_
-#define SRC_PHYSICS_ASSEMBLER_KERNELS_KERNEL_OPT_H_
+#ifndef SRC_PHYSICS_ASSEMBLER_MODULES_MODULE_OPT_H_
+#define SRC_PHYSICS_ASSEMBLER_MODULES_MODULE_OPT_H_
 
-#include "kernel.parameters.h"
+#include "module.parameters.h"
 #include "physics/assembler/operator.h"
 #include "physics/kernels/basefunctions/basefunctions.h"
 
@@ -20,10 +20,10 @@ struct ExpressionsToBoundary;
 class ConvectionConfiguration;
 struct SolverDataProvider;
 
-class KernelOpt
+class ModuleOpt
 {
 public:
-	virtual ~KernelOpt() {}
+	virtual ~ModuleOpt() {}
 	SolverDataProvider *solverDataProvider;
 
 	virtual void nextSubstep() =0;
@@ -36,7 +36,7 @@ public:
 	virtual void updateRHS(double *RHS, esint *perm, int region, int interval) =0;
 
 protected:
-	KernelOpt(SolverDataProvider *provider): solverDataProvider(provider)
+	ModuleOpt(SolverDataProvider *provider): solverDataProvider(provider)
 	{
 		BaseFunctions::setBaseFunctions();
 	}
@@ -61,4 +61,4 @@ protected:
 
 }
 
-#endif /* SRC_PHYSICS_ASSEMBLER_KERNELS_KERNEL_OPT_H_ */
+#endif /* SRC_PHYSICS_ASSEMBLER_MODULES_MODULE_OPT_H_ */

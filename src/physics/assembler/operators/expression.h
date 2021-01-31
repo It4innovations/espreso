@@ -12,7 +12,7 @@
 
 namespace espreso {
 
-class HeatTransferKernelOpt;
+class HeatTransferModuleOpt;
 
 struct ExpressionsToParameter {
 
@@ -58,7 +58,7 @@ struct ExpressionsToElements: public ExpressionsToParameter, public ElementOpera
 		parameter.builder = this;
 	}
 
-	bool build(HeatTransferKernelOpt &kernel) override;
+	bool build(HeatTransferModuleOpt &kernel) override;
 	void apply(int interval);
 };
 
@@ -91,7 +91,7 @@ struct ExpressionsToBoundary: public BoundaryOperatorBuilder {
 
 	void replace(const std::string &name, BoundaryParameterPack &pack);
 
-	bool build(HeatTransferKernelOpt &kernel) override;
+	bool build(HeatTransferModuleOpt &kernel) override;
 	void apply(int region, int interval);
 };
 

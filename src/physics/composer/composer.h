@@ -9,7 +9,7 @@
 namespace espreso {
 
 class Kernel;
-class KernelOpt;
+class ModuleOpt;
 struct AssemblerData;
 struct IJ;
 class Vectors;
@@ -19,7 +19,7 @@ class SolverDataProvider;
 class Composer {
 
 public:
-	Composer(Kernel *kernel, KernelOpt *opt);
+	Composer(Kernel *kernel, ModuleOpt *opt);
 
 	virtual void init() = 0;
 	virtual void assemble(const Builder &builder) = 0;
@@ -34,7 +34,7 @@ public:
 	void processSolution();
 
 	Kernel *kernel;
-	KernelOpt *opt;
+	ModuleOpt *opt;
 
 	virtual ~Composer();
 protected:

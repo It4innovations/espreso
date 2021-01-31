@@ -26,7 +26,7 @@ class NodesUniformDistributedComposer: public DistributedComposerOpt {
 	};
 
 public:
-	NodesUniformDistributedComposer(Kernel *kernel, KernelOpt *opt, DistributedAssemblerData *data, int DOFs);
+	NodesUniformDistributedComposer(Kernel *kernel, ModuleOpt *opt, DistributedAssemblerData *data, int DOFs);
 
 	int esize(esint interval);
 	int bsize(esint region, esint interval);

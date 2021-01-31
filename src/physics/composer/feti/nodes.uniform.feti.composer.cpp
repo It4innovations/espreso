@@ -33,7 +33,7 @@
 
 using namespace espreso;
 
-NodesUniformFETIComposer::NodesUniformFETIComposer(const FETIConfiguration &configuration, Kernel *kernel, KernelOpt *opt, FETIAssemblerData *data, int DOFs)
+NodesUniformFETIComposer::NodesUniformFETIComposer(const FETIConfiguration &configuration, Kernel *kernel, ModuleOpt *opt, FETIAssemblerData *data, int DOFs)
 : FETIComposerOpt(configuration, kernel, opt, data), _DOFs(DOFs)
 {
 

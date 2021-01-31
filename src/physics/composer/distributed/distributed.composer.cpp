@@ -21,7 +21,7 @@
 
 using namespace espreso;
 
-DistributedComposer::DistributedComposer(Kernel *kernel, KernelOpt *opt, DistributedAssemblerData *data)
+DistributedComposer::DistributedComposer(Kernel *kernel, ModuleOpt *opt, DistributedAssemblerData *data)
 : Composer(kernel, opt), _data(data),
   _DOFMap(NULL)
 {

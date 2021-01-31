@@ -3,7 +3,7 @@
 #include "physics/system/linearsystem.h"
 #include "physics/system/builder/builder.h"
 #include "physics/kernels/kernel.h"
-#include "physics/assembler/kernels/kernel.opt.h"
+#include "physics/assembler/modules/module.opt.h"
 #include "math/matrix.indices.h"
 #include "math/matrix.h"
 #include "math/vector.sparse.h"
@@ -12,7 +12,7 @@
 
 using namespace espreso;
 
-Composer::Composer(Kernel *kernel, KernelOpt *opt)
+Composer::Composer(Kernel *kernel, ModuleOpt *opt)
 : kernel(kernel), opt(opt)
 {
 

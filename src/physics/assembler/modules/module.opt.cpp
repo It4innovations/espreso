@@ -1,5 +1,5 @@
 
-#include "kernel.opt.hpp"
+#include "module.opt.hpp"
 
 #include "basis/utilities/parser.h"
 #include "esinfo/ecfinfo.h"
@@ -10,7 +10,7 @@
 
 using namespace espreso;
 
-void KernelOpt::setMaterials(const std::map<std::string, std::string> &settings)
+void ModuleOpt::setMaterials(const std::map<std::string, std::string> &settings)
 {
 	for (auto ei = info::mesh->elements->eintervals.begin(); ei != info::mesh->elements->eintervals.end(); ++ei) {
 		int region = ei->region;
@@ -38,7 +38,7 @@ void KernelOpt::setMaterials(const std::map<std::string, std::string> &settings)
 	}
 }
 
-void KernelOpt::printMaterials(const std::map<std::string, std::string> &settings)
+void ModuleOpt::printMaterials(const std::map<std::string, std::string> &settings)
 {
 	for (auto reg = info::mesh->elementsRegions.begin() + 1; reg != info::mesh->elementsRegions.end(); ++reg) {
 		auto ms = settings.find((*reg)->name);
@@ -55,7 +55,7 @@ void KernelOpt::printMaterials(const std::map<std::string, std::string> &setting
 	}
 }
 
-void KernelOpt::examineMaterialParameter(const std::string &material, const std::string &name, const ECFExpression &settings, ExpressionsToElements &builder, int dimension)
+void ModuleOpt::examineMaterialParameter(const std::string &material, const std::string &name, const ECFExpression &settings, ExpressionsToElements &builder, int dimension)
 {
 	builder.ecfname = name;
 	if (settings.evaluator->variables.size()) {
@@ -72,16 +72,16 @@ void KernelOpt::examineMaterialParameter(const std::string &material, const std:
 	}
 }
 
-void KernelOpt::examineElementParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExpressionsToElements &builder)
+void ModuleOpt::examineElementParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExpressionsToElements &builder)
 {
 	examineElementParameter<ECFExpression>(name, settings, builder, 0, [] (const ECFExpression &expr) { return expr.evaluator; });
 }
-void KernelOpt::examineElementParameter(const std::string &name, const std::map<std::string, ECFExpressionVector> &settings, ExpressionsToElements &builder, int dimension)
+void ModuleOpt::examineElementParameter(const std::string &name, const std::map<std::string, ECFExpressionVector> &settings, ExpressionsToElements &builder, int dimension)
 {
 	examineElementParameter<ECFExpressionVector>(name, settings, builder, dimension, [&] (const ECFExpressionVector &expr) { return expr.data[dimension].evaluator; });
 }
 
-void KernelOpt::examineBoundaryParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExpressionsToBoundary &builder)
+void ModuleOpt::examineBoundaryParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExpressionsToBoundary &builder)
 {
 	builder.ecfname = name;
 	if (settings.size()) {
@@ -105,7 +105,7 @@ void KernelOpt::examineBoundaryParameter(const std::string &name, const std::map
 	}
 }
 
-void KernelOpt::examineBoundaryParameter(const std::string &name, const std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection)
+void ModuleOpt::examineBoundaryParameter(const std::string &name, const std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection)
 {
 	if (settings.size()) {
 		eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");

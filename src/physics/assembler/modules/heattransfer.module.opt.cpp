@@ -1,6 +1,6 @@
 
-#include "heattransfer.kernel.opt.h"
-#include "kernel.opt.hpp"
+#include "heattransfer.module.opt.h"
+#include "module.opt.hpp"
 #include "physics/assembler/operators/basis.h"
 #include "physics/assembler/operators/expression.h"
 #include "physics/assembler/operators/coordinates.h"
@@ -18,13 +18,19 @@
 
 using namespace espreso;
 
-ElementData* HeatTransferKernelOpt::phase = NULL;
-ElementData* HeatTransferKernelOpt::latentHeat = NULL;
-ElementData* HeatTransferKernelOpt::gradient = NULL;
-ElementData* HeatTransferKernelOpt::flux = NULL;
+ElementData* HeatTransferModuleOpt::phase = NULL;
+ElementData* HeatTransferModuleOpt::latentHeat = NULL;
+ElementData* HeatTransferModuleOpt::gradient = NULL;
+ElementData* HeatTransferModuleOpt::flux = NULL;
 
-void HeatTransferKernelOpt::createParameters()
+void HeatTransferModuleOpt::createParameters()
 {
+	if (info::ecf->physics == PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D && info::ecf->heat_transfer_2d.kernel == HeatTransferGlobalSettings::KERNEL::OLD) {
+		return;
+	}
+	if (info::ecf->physics == PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D && info::ecf->heat_transfer_3d.kernel == HeatTransferGlobalSettings::KERNEL::OLD) {
+		return;
+	}
 	ParametersTemperature::outputInitial = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_TEMPERATURE");
 	ParametersTemperature::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "TEMPERATURE");
 	if (info::ecf->output.results_selection.translation_motions) {
@@ -44,7 +50,7 @@ void HeatTransferKernelOpt::createParameters()
 	}
 }
 
-void HeatTransferKernelOpt::insertParameters(Evaluator *evaluator)
+void HeatTransferModuleOpt::insertParameters(Evaluator *evaluator)
 {
 	for (size_t p = 0; p < evaluator->variables.size(); ++p) {
 		if (StringCompare::caseInsensitiveEq("INITIAL_TEMPERATURE", evaluator->variables[p])) {
@@ -70,18 +76,18 @@ void HeatTransferKernelOpt::insertParameters(Evaluator *evaluator)
 	}
 }
 
-HeatTransferKernelOpt::HeatTransferKernelOpt(HeatTransferKernelOpt *previous, HeatTransferLoadStepConfiguration &configuration)
-: KernelOpt(new HeatTransferSolverDataProvider(configuration)),
+HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, HeatTransferLoadStepConfiguration &configuration)
+: ModuleOpt(new HeatTransferSolverDataProvider(configuration)),
   configuration(configuration)
 {
 	geometry::computeBoundaryRegionsArea();
 
 	Basis().build(*this);
-	operators.push_back(new ElementCoordinates<HeatTransferKernelOpt>(*this));
-	operators.push_back(new BoundaryCoordinates<HeatTransferKernelOpt>(*this));
+	operators.push_back(new ElementCoordinates<HeatTransferModuleOpt>(*this));
+	operators.push_back(new BoundaryCoordinates<HeatTransferModuleOpt>(*this));
 
-	operators.push_back(new ElementIntegration<HeatTransferKernelOpt>(*this));
-	operators.push_back(new BoundaryIntegration<HeatTransferKernelOpt>(*this));
+	operators.push_back(new ElementIntegration<HeatTransferModuleOpt>(*this));
+	operators.push_back(new BoundaryIntegration<HeatTransferModuleOpt>(*this));
 
 	operators.push_back(new ExpressionsToElements(cooSystem.cartesian2D, 0));
 	operators.push_back(new ExpressionsToElements(cooSystem.cartesian3D, 0));
@@ -271,7 +277,7 @@ HeatTransferKernelOpt::HeatTransferKernelOpt(HeatTransferKernelOpt *previous, He
 		eslog::info(" ============================================================================================= \n");
 
 		for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
-			HeatTransferKernelOpt::insertParameters(it->second.evaluator);
+			HeatTransferModuleOpt::insertParameters(it->second.evaluator);
 		}
 
 		temp.initial.node.builder->build(*this);
@@ -290,16 +296,16 @@ HeatTransferKernelOpt::HeatTransferKernelOpt(HeatTransferKernelOpt *previous, He
 		temp.node.addInputs(ParametersTemperature::output);
 		CopyElementParameters(temp.initial.node, temp.node).now();
 
-		ElementsGaussPointsBuilder<HeatTransferKernelOpt, 1>(integration.N, temp.initial.node, temp.initial.gp).now();
-		operators.push_back(new ElementsGaussPointsBuilder<HeatTransferKernelOpt, 1>(integration.N, temp.node, temp.gp));
+		ElementsGaussPointsBuilder<HeatTransferModuleOpt, 1>(integration.N, temp.initial.node, temp.initial.gp).now();
+		operators.push_back(new ElementsGaussPointsBuilder<HeatTransferModuleOpt, 1>(integration.N, temp.node, temp.gp));
 
 		temp.initial.boundary.node.addInputs(ParametersTemperature::outputInitial);
 		CopyNodesToBoundaryNodes(*ParametersTemperature::outputInitial, temp.initial.boundary.node).now();
-		BoundaryGaussPointsBuilder<HeatTransferKernelOpt, 1>(integration.boundary.N, temp.initial.boundary.node, temp.initial.boundary.gp).now();
+		BoundaryGaussPointsBuilder<HeatTransferModuleOpt, 1>(integration.boundary.N, temp.initial.boundary.node, temp.initial.boundary.gp).now();
 
 		temp.boundary.node.addInputs(ParametersTemperature::output);
 		operators.push_back(new CopyNodesToBoundaryNodes(*ParametersTemperature::output, temp.boundary.node));
-		operators.push_back(new BoundaryGaussPointsBuilder<HeatTransferKernelOpt, 1>(integration.boundary.N, temp.boundary.node, temp.boundary.gp));
+		operators.push_back(new BoundaryGaussPointsBuilder<HeatTransferModuleOpt, 1>(integration.boundary.N, temp.boundary.node, temp.boundary.gp));
 	}
 
 	if (configuration.translation_motions.size()) {
@@ -372,39 +378,39 @@ HeatTransferKernelOpt::HeatTransferKernelOpt(HeatTransferKernelOpt *previous, He
 	eslog::info(" ============================================================================================= \n");
 }
 
-void HeatTransferKernelOpt::nextSubstep()
+void HeatTransferModuleOpt::nextSubstep()
 {
 	for (auto op = operators.begin(); op != operators.end(); ++op) {
 		(*op)->now();
 	}
 }
 
-void HeatTransferKernelOpt::solutionChanged()
+void HeatTransferModuleOpt::solutionChanged()
 {
 	printf("SOLUTION CHANGED\n");
 }
 
-void HeatTransferKernelOpt::updateStiffness(double *K, esint *perm, int interval)
+void HeatTransferModuleOpt::updateStiffness(double *K, esint *perm, int interval)
 {
 	MatricesFiller(*this, K, perm).apply(interval);
 }
 
-void HeatTransferKernelOpt::updateStiffness(double *K, esint *perm, int region, int interval)
+void HeatTransferModuleOpt::updateStiffness(double *K, esint *perm, int region, int interval)
 {
 
 }
 
-void HeatTransferKernelOpt::updateRHS(double *RHS, esint *perm, int region, int interval)
+void HeatTransferModuleOpt::updateRHS(double *RHS, esint *perm, int region, int interval)
 {
 	RHSFiller(*this, RHS, perm).apply(region, interval);
 }
 
-void HeatTransferKernelOpt::fillElementsInterval(int interval)
+void HeatTransferModuleOpt::fillElementsInterval(int interval)
 {
 
 }
 
-void HeatTransferKernelOpt::processSolution()
+void HeatTransferModuleOpt::processSolution()
 {
 	printf("PROCESS SOLUTION\n");
 }

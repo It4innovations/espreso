@@ -17,7 +17,7 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 class FETIComposer: public Composer {
 
 public:
-	FETIComposer(const FETIConfiguration &configuration, Kernel *kernel, KernelOpt *opt, FETIAssemblerData *data);
+	FETIComposer(const FETIConfiguration &configuration, Kernel *kernel, ModuleOpt *opt, FETIAssemblerData *data);
 	~FETIComposer();
 
 	void assemble(const Builder &builder);

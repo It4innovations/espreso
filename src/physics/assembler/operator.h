@@ -6,7 +6,7 @@ namespace espreso {
 
 #define GET_NAME(structure) const char* name() { return #structure; }
 
-class HeatTransferKernelOpt;
+class HeatTransferModuleOpt;
 
 struct Operator {
 	static const int print = 0;
@@ -81,7 +81,7 @@ struct OperatorBuilder {
 	virtual const char* name() =0;
 	virtual void now() =0;
 
-	virtual bool build(HeatTransferKernelOpt &kernel) { return true; }
+	virtual bool build(HeatTransferModuleOpt &kernel) { return true; }
 };
 
 struct ElementOperatorBuilder: public OperatorBuilder {

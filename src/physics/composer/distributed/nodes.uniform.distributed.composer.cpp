@@ -24,7 +24,7 @@
 
 using namespace espreso;
 
-NodesUniformDistributedComposer::NodesUniformDistributedComposer(Kernel *kernel, KernelOpt *opt, DistributedAssemblerData *data, int DOFs)
+NodesUniformDistributedComposer::NodesUniformDistributedComposer(Kernel *kernel, ModuleOpt *opt, DistributedAssemblerData *data, int DOFs)
 : DistributedComposerOpt(kernel, opt, data), _DOFs(DOFs)
 {
 

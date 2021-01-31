@@ -1,9 +1,9 @@
 
-#ifndef SRC_PHYSICS_KERNELS_HEATTRANSFER_KERNEL_OPT_H_
-#define SRC_PHYSICS_KERNELS_HEATTRANSFER_KERNEL_OPT_H_
+#ifndef SRC_PHYSICS_ASSEMBLER_MODULES_HEATTRANSFER_MODULE_OPT_H_
+#define SRC_PHYSICS_ASSEMBLER_MODULES_HEATTRANSFER_MODULE_OPT_H_
 
-#include "kernel.opt.h"
-#include "kernel.parameters.h"
+#include "module.opt.h"
+#include "module.parameters.h"
 #include "physics/assembler/operator.h"
 #include "physics/assembler/parameter.h"
 
@@ -12,7 +12,7 @@ namespace espreso {
 struct HeatTransferLoadStepConfiguration;
 struct Builder;
 
-class HeatTransferKernelOpt: public KernelOpt
+class HeatTransferModuleOpt: public ModuleOpt
 {
 public:
 	static const int GP_LINE2 = 2;
@@ -36,8 +36,8 @@ public:
 	static void createParameters();
 	static void insertParameters(Evaluator *evaluator);
 
-	HeatTransferKernelOpt(HeatTransferKernelOpt *previous, HeatTransferLoadStepConfiguration &configuration);
-	~HeatTransferKernelOpt() {};
+	HeatTransferModuleOpt(HeatTransferModuleOpt *previous, HeatTransferLoadStepConfiguration &configuration);
+	~HeatTransferModuleOpt() {};
 
 	void nextSubstep();
 	void solutionChanged();
@@ -72,4 +72,4 @@ public:
 
 }
 
-#endif /* SRC_PHYSICS_KERNELS_HEATTRANSFER_KERNEL_OPT_H_ */
+#endif /* SRC_PHYSICS_ASSEMBLER_MODULES_HEATTRANSFER_MODULE_OPT_H_ */

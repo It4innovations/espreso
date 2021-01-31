@@ -30,7 +30,7 @@
 #include "composer/distributed/nodes.uniform.distributed.composer.h"
 #include "composer/distributed/faces.edges.uniform.distributed.composer.h"
 #include "composer/feti/nodes.uniform.feti.composer.h"
-#include "physics/assembler/kernels/heattransfer.kernel.opt.h"
+#include "physics/assembler/modules/heattransfer.module.opt.h"
 #include "physics/kernels/heattransfer2d.kernel.h"
 #include "physics/kernels/heattransfer3d.kernel.h"
 #include "physics/kernels/structuralmechanics2d.kernel.h"
@@ -47,7 +47,7 @@ static LinearSystem* getSystem(LinearSystem *previous, PhysicsConfiguration &phy
 {
 	LinearSystem *current = NULL;
 	Kernel *kernel = NULL, *pKernel = previous ? previous->assembler()->composer->kernel : NULL;
-	KernelOpt *opt = NULL;
+	ModuleOpt *opt = NULL;
 	switch (gsettings.kernel) {
 	case HeatTransferGlobalSettings::KERNEL::OLD:
 		switch (dimension) {
@@ -57,7 +57,7 @@ static LinearSystem* getSystem(LinearSystem *previous, PhysicsConfiguration &phy
 		}
 		break;
 	case HeatTransferGlobalSettings::KERNEL::OPT:
-		opt = new HeatTransferKernelOpt(dynamic_cast<HeatTransferKernelOpt*>(pKernel), loadStep);
+		opt = new HeatTransferModuleOpt(dynamic_cast<HeatTransferModuleOpt*>(pKernel), loadStep);
 		break;
 	}
 
@@ -299,8 +299,8 @@ LoadStepIterator::~LoadStepIterator()
 void LoadStepIterator::prepareExpressions()
 {
 	switch (info::ecf->physics) {
-	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D: HeatTransferKernelOpt::createParameters(); break;
-	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D: HeatTransferKernelOpt::createParameters(); break;
+	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D: HeatTransferModuleOpt::createParameters(); break;
+	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D: HeatTransferModuleOpt::createParameters(); break;
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D:
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
 	default: eslog::globalerror("Unknown physics.\n");

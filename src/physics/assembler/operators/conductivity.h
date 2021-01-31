@@ -124,9 +124,9 @@ struct CopyAnisotropic3DConductivity: public CopyConductivity {
 struct ThermalConductivity: public ElementOperatorBuilder {
 	GET_NAME(ThermalConductivity)
 
-	HeatTransferKernelOpt &kernel;
+	HeatTransferModuleOpt &kernel;
 
-	ThermalConductivity(HeatTransferKernelOpt &kernel): kernel(kernel)
+	ThermalConductivity(HeatTransferModuleOpt &kernel): kernel(kernel)
 	{
 		for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 			const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[i].material];
@@ -153,32 +153,32 @@ struct ThermalConductivity: public ElementOperatorBuilder {
 		if (info::mesh->dimension == 2) {
 			switch (mat->thermal_conductivity.model) {
 			case ThermalConductivityConfiguration::MODEL::ISOTROPIC: CopyElementParameters(kernel.material.model.isotropic, kernel.material.conductivityIsotropic).apply(interval); break;
-			case ThermalConductivityConfiguration::MODEL::DIAGONAL: iterate_elements_gps<HeatTransferKernelOpt>(CopyDiagonal2DConductivity(kernel.material.model.diagonal, kernel.material.conductivity, interval)); break;
-			case ThermalConductivityConfiguration::MODEL::SYMMETRIC: iterate_elements_gps<HeatTransferKernelOpt>(CopySymmetric2DConductivity(kernel.material.model.symmetric2D, kernel.material.conductivity, interval)); break;
-			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC: iterate_elements_gps<HeatTransferKernelOpt>(CopyAnisotropic2DConductivity(kernel.material.model.anisotropic, kernel.material.conductivity, interval)); break;
+			case ThermalConductivityConfiguration::MODEL::DIAGONAL: iterate_elements_gps<HeatTransferModuleOpt>(CopyDiagonal2DConductivity(kernel.material.model.diagonal, kernel.material.conductivity, interval)); break;
+			case ThermalConductivityConfiguration::MODEL::SYMMETRIC: iterate_elements_gps<HeatTransferModuleOpt>(CopySymmetric2DConductivity(kernel.material.model.symmetric2D, kernel.material.conductivity, interval)); break;
+			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC: iterate_elements_gps<HeatTransferModuleOpt>(CopyAnisotropic2DConductivity(kernel.material.model.anisotropic, kernel.material.conductivity, interval)); break;
 				break;
 			}
 
 			switch (mat->coordinate_system.type) {
-			case CoordinateSystemConfiguration::TYPE::CARTESIAN: iterate_elements_gps<HeatTransferKernelOpt>(Cartesian2DCoordinateSystem(kernel.coords.gp, kernel.cooSystem.cartesian2D, kernel.material.conductivity, interval)); break;
+			case CoordinateSystemConfiguration::TYPE::CARTESIAN: iterate_elements_gps<HeatTransferModuleOpt>(Cartesian2DCoordinateSystem(kernel.coords.gp, kernel.cooSystem.cartesian2D, kernel.material.conductivity, interval)); break;
 			case CoordinateSystemConfiguration::TYPE::SPHERICAL: break;
-			case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: iterate_elements_gps<HeatTransferKernelOpt>(Cylindrical2DCoordinateSystem(kernel.coords.gp, kernel.cooSystem.cylindric, kernel.material.conductivity, interval)); break;
+			case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: iterate_elements_gps<HeatTransferModuleOpt>(Cylindrical2DCoordinateSystem(kernel.coords.gp, kernel.cooSystem.cylindric, kernel.material.conductivity, interval)); break;
 				break;
 			}
 		}
 		if (info::mesh->dimension == 3) {
 			switch (mat->thermal_conductivity.model) {
 			case ThermalConductivityConfiguration::MODEL::ISOTROPIC: CopyElementParameters(kernel.material.model.isotropic, kernel.material.conductivityIsotropic).apply(interval); break;
-			case ThermalConductivityConfiguration::MODEL::DIAGONAL: iterate_elements_gps<HeatTransferKernelOpt>(CopyDiagonal3DConductivity(kernel.material.model.diagonal, kernel.material.conductivity, interval)); break;
-			case ThermalConductivityConfiguration::MODEL::SYMMETRIC: iterate_elements_gps<HeatTransferKernelOpt>(CopyDiagonal3DConductivity(kernel.material.model.symmetric3D, kernel.material.conductivity, interval)); break;
-			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC: iterate_elements_gps<HeatTransferKernelOpt>(CopyDiagonal3DConductivity(kernel.material.model.anisotropic, kernel.material.conductivity, interval)); break;
+			case ThermalConductivityConfiguration::MODEL::DIAGONAL: iterate_elements_gps<HeatTransferModuleOpt>(CopyDiagonal3DConductivity(kernel.material.model.diagonal, kernel.material.conductivity, interval)); break;
+			case ThermalConductivityConfiguration::MODEL::SYMMETRIC: iterate_elements_gps<HeatTransferModuleOpt>(CopyDiagonal3DConductivity(kernel.material.model.symmetric3D, kernel.material.conductivity, interval)); break;
+			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC: iterate_elements_gps<HeatTransferModuleOpt>(CopyDiagonal3DConductivity(kernel.material.model.anisotropic, kernel.material.conductivity, interval)); break;
 				break;
 			}
 
 			switch (mat->coordinate_system.type) {
-			case CoordinateSystemConfiguration::TYPE::CARTESIAN: iterate_elements_gps<HeatTransferKernelOpt>(Cartesian3DCoordinateSystem(kernel.coords.gp, kernel.cooSystem.cartesian3D, kernel.material.conductivity, interval)); break;
-			case CoordinateSystemConfiguration::TYPE::SPHERICAL: iterate_elements_gps<HeatTransferKernelOpt>(Spherical3DCoordinateSystem(kernel.coords.gp, kernel.cooSystem.spherical, kernel.material.conductivity, interval)); break;
-			case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: iterate_elements_gps<HeatTransferKernelOpt>(Cylindrical3DCoordinateSystem(kernel.coords.gp, kernel.cooSystem.cylindric, kernel.material.conductivity, interval)); break;
+			case CoordinateSystemConfiguration::TYPE::CARTESIAN: iterate_elements_gps<HeatTransferModuleOpt>(Cartesian3DCoordinateSystem(kernel.coords.gp, kernel.cooSystem.cartesian3D, kernel.material.conductivity, interval)); break;
+			case CoordinateSystemConfiguration::TYPE::SPHERICAL: iterate_elements_gps<HeatTransferModuleOpt>(Spherical3DCoordinateSystem(kernel.coords.gp, kernel.cooSystem.spherical, kernel.material.conductivity, interval)); break;
+			case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: iterate_elements_gps<HeatTransferModuleOpt>(Cylindrical3DCoordinateSystem(kernel.coords.gp, kernel.cooSystem.cylindric, kernel.material.conductivity, interval)); break;
 				break;
 			}
 		}

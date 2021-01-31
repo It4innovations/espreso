@@ -1,5 +1,5 @@
 
-#include "kernel.parameters.h"
+#include "module.parameters.h"
 
 using namespace espreso;
 

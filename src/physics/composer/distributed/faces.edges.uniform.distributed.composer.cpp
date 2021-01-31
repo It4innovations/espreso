@@ -24,7 +24,7 @@
 
 using namespace espreso;
 
-FacesEdgesUniformDistributedComposer::FacesEdgesUniformDistributedComposer(Kernel *kernel, KernelOpt *opt, DistributedAssemblerData *data, int fDOFs, int eDOFs)
+FacesEdgesUniformDistributedComposer::FacesEdgesUniformDistributedComposer(Kernel *kernel, ModuleOpt *opt, DistributedAssemblerData *data, int fDOFs, int eDOFs)
 : DistributedComposerOpt(kernel, opt, data), _fDOFs(fDOFs), _eDOFs(eDOFs)
 {
 

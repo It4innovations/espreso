@@ -1,5 +1,5 @@
 
-#include "kernel.opt.h"
+#include "module.opt.h"
 #include "physics/assembler/operators/expression.h"
 
 #include "basis/utilities/parser.h"
@@ -11,7 +11,7 @@
 using namespace espreso;
 
 template<typename Ttype>
-void KernelOpt::validateRegionSettings(const std::string &name, const std::map<std::string, Ttype> &settings)
+void ModuleOpt::validateRegionSettings(const std::string &name, const std::map<std::string, Ttype> &settings)
 {
 	for (auto ei = info::mesh->elements->eintervals.begin(); ei != info::mesh->elements->eintervals.end(); ++ei) {
 		if (ei->region == -1) { // intersected regions
@@ -32,7 +32,7 @@ void KernelOpt::validateRegionSettings(const std::string &name, const std::map<s
 }
 
 template<class TSecond>
-void KernelOpt::examineElementParameter(const std::string &name, const std::map<std::string, TSecond> &settings, ExpressionsToElements &builder, int dimension, std::function<const Evaluator*(const TSecond &expr)> getevaluator)
+void ModuleOpt::examineElementParameter(const std::string &name, const std::map<std::string, TSecond> &settings, ExpressionsToElements &builder, int dimension, std::function<const Evaluator*(const TSecond &expr)> getevaluator)
 {
 	builder.ecfname = name;
 	if (settings.size() == 1 && StringCompare::caseInsensitiveEq(settings.begin()->first, "ALL_ELEMENTS")) {

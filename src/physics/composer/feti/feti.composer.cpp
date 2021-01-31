@@ -26,7 +26,7 @@
 
 using namespace espreso;
 
-FETIComposer::FETIComposer(const FETIConfiguration &configuration, Kernel *kernel, KernelOpt *opt, FETIAssemblerData *data)
+FETIComposer::FETIComposer(const FETIConfiguration &configuration, Kernel *kernel, ModuleOpt *opt, FETIAssemblerData *data)
 : Composer(kernel, opt), _configuration(configuration), _data(data), _DOFMap(NULL)
 {
 //	auto isBEMDomain = [&](esint domain) {
