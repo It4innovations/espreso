@@ -81,7 +81,6 @@ struct HeatTransferGlobalSettings {
 
 	enum class KERNEL {
 		OLD,
-		NEW,
 		OPT
 	};
 
