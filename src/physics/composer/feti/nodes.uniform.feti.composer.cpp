@@ -33,10 +33,20 @@
 
 using namespace espreso;
 
-NodesUniformFETIComposer::NodesUniformFETIComposer(const FETIConfiguration &configuration, Kernel *kernel, FETIAssemblerData *data, int DOFs)
-: FETIComposer(configuration, kernel, data), _DOFs(DOFs)
+NodesUniformFETIComposer::NodesUniformFETIComposer(const FETIConfiguration &configuration, Kernel *kernel, KernelOpt *opt, FETIAssemblerData *data, int DOFs)
+: FETIComposerOpt(configuration, kernel, opt, data), _DOFs(DOFs)
 {
 
+}
+
+int NodesUniformFETIComposer::esize(esint interval)
+{
+	return _DOFs * Mesh::edata[info::mesh->elements->eintervals[interval].code].nodes;
+}
+
+int NodesUniformFETIComposer::bsize(esint region, esint interval)
+{
+	return _DOFs * Mesh::edata[info::mesh->boundaryRegions[region]->eintervals[interval].code].nodes;
 }
 
 void NodesUniformFETIComposer::init()
@@ -242,7 +252,7 @@ void NodesUniformFETIComposer::_buildPatterns()
 	_data->K.fillDecomposition(
 				info::mpi::rank, info::mpi::size, info::mesh->neighbors.size(),
 				distribution.data(), info::mesh->neighbors.data(), _DOFMap);
-	_data->f.initVectors(kernel->solutions.size());
+	_data->f.initVectors(solutions());
 	_data->f.initDomains(DataDecomposition::DUPLICATION::SPLIT, info::mesh->domains->size);
 	_data->f.fillDecomposition(
 			info::mpi::rank, info::mpi::size, info::mesh->neighbors.size(),
@@ -270,7 +280,7 @@ void NodesUniformFETIComposer::_buildPatterns()
 
 void NodesUniformFETIComposer::_buildKFEMPattern(esint domain)
 {
-	_data->K[domain].type = kernel->solverDataProvider->feti->getMatrixType(domain);
+	_data->K[domain].type = provider()->feti->getMatrixType(domain);
 
 	auto ebegin = info::mesh->elements->nodes->cbegin() + info::mesh->domains->elements[domain];
 	auto eend = info::mesh->elements->nodes->cbegin() + info::mesh->domains->elements[domain + 1];
@@ -282,7 +292,7 @@ void NodesUniformFETIComposer::_buildKFEMPattern(esint domain)
 	}
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-		if (info::mesh->boundaryRegions[r]->dimension && kernel->boundaryWithSettings(r)) {
+		if (info::mesh->boundaryRegions[r]->dimension) {
 			if (info::mesh->boundaryRegions[r]->eintervalsDistribution[domain] < info::mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]) {
 				esint begin = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[domain]].begin;
 				esint end = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1] - 1].end;
@@ -296,7 +306,7 @@ void NodesUniformFETIComposer::_buildKFEMPattern(esint domain)
 		}
 	}
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-		if (!info::mesh->boundaryRegions[r]->dimension && kernel->boundaryWithSettings(r)) {
+		if (!info::mesh->boundaryRegions[r]->dimension) {
 			esint prev = 0;
 			auto dmap = _DOFMap->begin();
 			for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().begin(); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(); prev = *n++) {
@@ -335,7 +345,7 @@ void NodesUniformFETIComposer::_buildKFEMPattern(esint domain)
 	}
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-		if (info::mesh->boundaryRegions[r]->dimension && kernel->boundaryWithSettings(r)) {
+		if (info::mesh->boundaryRegions[r]->dimension) {
 			if (info::mesh->boundaryRegions[r]->eintervalsDistribution[domain] < info::mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]) {
 				esint begin = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[domain]].begin;
 				esint end = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1] - 1].end;
@@ -349,7 +359,7 @@ void NodesUniformFETIComposer::_buildKFEMPattern(esint domain)
 	}
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-		if (!info::mesh->boundaryRegions[r]->dimension && kernel->boundaryWithSettings(r)) {
+		if (!info::mesh->boundaryRegions[r]->dimension) {
 			esint prev = 0;
 			auto dmap = _DOFMap->begin();
 			for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().begin(); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(); prev = *n++) {
@@ -501,7 +511,7 @@ void NodesUniformFETIComposer::_buildKBEMPattern(esint domain)
 void NodesUniformFETIComposer::_buildDirichlet()
 {
 	std::vector<std::pair<esint, esint> > dIndices;
-	kernel->solverDataProvider->general->dirichletIndices(dIndices);
+	provider()->general->dirichletIndices(dIndices);
 
 	for (auto i = dIndices.begin(); i != dIndices.end(); ++i) {
 		_dirichletMap.push_back(i->first * _DOFs + i->second);
@@ -725,7 +735,7 @@ void NodesUniformFETIComposer::_buildMortars()
 void NodesUniformFETIComposer::_buildInequality()
 {
 	std::vector<std::pair<esint, esint> > indices;
-	kernel->solverDataProvider->general->inequalityIndices(indices);
+	provider()->general->inequalityIndices(indices);
 
 	std::vector<esint> dofs, permutation, pattern;
 	for (auto i = indices.begin(); i != indices.end(); ++i) {
@@ -746,10 +756,10 @@ void NodesUniformFETIComposer::_buildInequality()
 	_data->gap.shallowCopyStructure(&_data->gapDirection);
 
 	std::vector<double> values(indices.size());
-	kernel->solverDataProvider->general->inequalityNormals(values);
+	provider()->general->inequalityNormals(values);
 	fillPermutedSparseData(_data->gapDirection[0].vals, dofs, permutation, values);
 
-	kernel->solverDataProvider->general->inequalityGaps(values);
+	provider()->general->inequalityGaps(values);
 	fillPermutedSparseData(_data->gap[0].vals, dofs, permutation, values);
 }
 

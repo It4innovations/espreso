@@ -9,7 +9,6 @@
 #include "physics/system/fetisystem.h"
 #include "physics/composer/composer.h"
 #include "physics/composer/feti/feti.composer.h"
-#include "physics/kernels/kernel.h"
 #include "physics/kernels/solverdataprovider/provider.h"
 #include "config/ecf/linearsolver/feti.h"
 
@@ -24,7 +23,7 @@ void TimeBuilder::init(AssemblerData &assembler, SolverData &solver)
 	solver.y->shallowCopyStructure(assembler.x);
 	solver.BC->shallowCopyStructure(assembler.BC);
 
-	solver.x->at(0)->fillData(&assembler.composer->kernel->solutions.front());
+	solver.x->at(0)->fillData(assembler.x->at(0));
 }
 
 void TimeBuilder::buildSystem(AssemblerData &assembler, SolverData &solver)
@@ -53,10 +52,7 @@ void TimeBuilder::buildSystem(AssemblerData &assembler, SolverData &solver)
 void TimeBuilder::updateSolution(AssemblerData &assembler, SolverData &solver)
 {
 	assembler.x->fillData(solver.x);
-	for (esint n = 0; n < assembler.x->nvectors; n++) {
-		assembler.composer->kernel->solutions.front().fillData(assembler.x->at(n));
-	}
-	assembler.composer->kernel->solutionChanged();
+	assembler.composer->solutionChanged(assembler.x);
 }
 
 void TimeBuilder::init(WSMPSystem &system)
@@ -82,8 +78,8 @@ void TimeBuilder::init(MKLPDSSSystem &system)
 void TimeBuilder::init(HYPRESystem &system)
 {
 	init(system.assemblers[0], system.solvers[0]);
-	system.assemblers[0].numFnc = system.assemblers[0].composer->kernel->solverDataProvider->hypre->numfnc();
-	system.assemblers[0].composer->kernel->solverDataProvider->hypre->initKernels(system.assemblers[0].K, system.assemblers[0].N);
+	system.assemblers[0].numFnc = system.assemblers[0].composer->provider()->hypre->numfnc();
+	system.assemblers[0].composer->provider()->hypre->initKernels(system.assemblers[0].K, system.assemblers[0].N);
 	system.solvers[0].N.shallowCopyStructure(&system.assemblers[0].N);
 }
 
@@ -96,7 +92,7 @@ void TimeBuilder::init(FETISystem &system)
 	system.solvers[0].buildB1();
 	system.solvers[0].Kdiag.shallowCopyStructure(system.solvers[0].f.at(0));
 	if (system.solvers[0].solver.configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
-		system.assemblers[0].composer->kernel->solverDataProvider->feti->initKernels(
+		system.assemblers[0].composer->provider()->feti->initKernels(
 				system.assemblers[0].K, system.assemblers[0].N1, system.assemblers[0].N2, system.assemblers[0].RegMat,
 				system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI);
 		system.solvers[0].N1.shallowCopyStructure(&system.assemblers[0].N1);
@@ -148,7 +144,7 @@ void TimeBuilder::buildSystem(HYPRESystem &system)
 {
 	buildSystem(system.assemblers[0], system.solvers[0]);
 	system.solvers[0].numFnc = system.assemblers[0].numFnc;
-	system.assemblers[0].composer->kernel->solverDataProvider->hypre->fillKernels(system.assemblers[0].K, system.assemblers[0].N);
+	system.assemblers[0].composer->provider()->hypre->fillKernels(system.assemblers[0].K, system.assemblers[0].N);
 	system.solvers[0].N.fillData(&system.assemblers[0].N);
 }
 

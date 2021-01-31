@@ -3,23 +3,43 @@
 #define SRC_PHYSICS_ASSEMBLER_KERNELS_KERNEL_OPT_H_
 
 #include "kernel.parameters.h"
-#include "physics/kernels/kernel.h"
 #include "physics/assembler/operator.h"
+#include "physics/kernels/basefunctions/basefunctions.h"
 
 #include <vector>
+#include <map>
+#include <functional>
 
 namespace espreso {
 
+struct Evaluator;
 struct ECFExpression;
 struct ECFExpressionVector;
 struct ExpressionsToElements;
 struct ExpressionsToBoundary;
 class ConvectionConfiguration;
+struct SolverDataProvider;
 
-class KernelOpt: public Kernel
+class KernelOpt
 {
+public:
+	virtual ~KernelOpt() {}
+	SolverDataProvider *solverDataProvider;
+
+	virtual void nextSubstep() =0;
+	virtual void solutionChanged() =0;
+	virtual void processSolution() =0;
+
+	virtual void updateStiffness(double *K, esint *perm, int interval) =0;
+
+	virtual void updateStiffness(double *K, esint *perm, int region, int interval) =0;
+	virtual void updateRHS(double *RHS, esint *perm, int region, int interval) =0;
+
 protected:
-	using Kernel::Kernel;
+	KernelOpt(SolverDataProvider *provider): solverDataProvider(provider)
+	{
+		BaseFunctions::setBaseFunctions();
+	}
 
 	void setMaterials(const std::map<std::string, std::string> &settings);
 	void printMaterials(const std::map<std::string, std::string> &settings);

@@ -13,8 +13,6 @@
 
 #include <cmath>
 
-#include "basis/utilities/print.h"
-
 using namespace espreso;
 
 // TODO: create file with constants
@@ -405,24 +403,7 @@ void HeatTransfer2DKernel::processElement(const Builder &builder, HeatTransferEl
 
 void HeatTransfer2DKernel::processEdge(const Builder &builder, HeatTransferBoundaryIterator &iterator, InstanceFiller &filler) const
 {
-	filler.insertK = filler.insertF = false;
 	filler.DOFs = iterator.element->nodes;
-	if (!iterator.convection && !iterator.heatflow.data && !iterator.heatflux.data && !iterator.radiation) {
-		return;
-	}
-	if (!(builder.matrices & (Builder::Request::K | Builder::Request::f))) {
-		return;
-	}
-
-	filler.DOFs = iterator.element->nodes;
-
-	const std::vector<MatrixDense> &N = *(iterator.element->N);
-	const std::vector<MatrixDense> &dN = *(iterator.element->dN);
-	const std::vector<double> &weighFactor = *(iterator.element->weighFactor);
-
-	MatrixDense coordinates(filler.DOFs, 2), dND(1, 2), q(filler.DOFs, 1), htc(filler.DOFs, 1), thickness(filler.DOFs, 1), emiss(filler.DOFs, 1);
-	MatrixDense gpQ(1, 1), gpHtc(1, 1), gpThickness(1, 1), gpEmiss(1, 1);
-
 	if ((filler.insertF = (builder.matrices & Builder::Request::f))) {
 		filler.Fe.resize(filler.DOFs);
 		filler.Fe.fill(0);
@@ -432,6 +413,20 @@ void HeatTransfer2DKernel::processEdge(const Builder &builder, HeatTransferBound
 		filler.Ke.resize(filler.DOFs, filler.DOFs);
 		filler.Ke.fill(0);
 	}
+
+	if (!iterator.convection && !iterator.heatflow.data && !iterator.heatflux.data && !iterator.radiation) {
+		return;
+	}
+	if (!(builder.matrices & (Builder::Request::K | Builder::Request::f))) {
+		return;
+	}
+
+	const std::vector<MatrixDense> &N = *(iterator.element->N);
+	const std::vector<MatrixDense> &dN = *(iterator.element->dN);
+	const std::vector<double> &weighFactor = *(iterator.element->weighFactor);
+
+	MatrixDense coordinates(filler.DOFs, 2), dND(1, 2), q(filler.DOFs, 1), htc(filler.DOFs, 1), thickness(filler.DOFs, 1), emiss(filler.DOFs, 1);
+	MatrixDense gpQ(1, 1), gpHtc(1, 1), gpThickness(1, 1), gpEmiss(1, 1);
 
 	for (int n = 0; n < filler.DOFs; n++) {
 		double temp = iterator.temperature.data[n];
@@ -467,7 +462,6 @@ void HeatTransfer2DKernel::processEdge(const Builder &builder, HeatTransferBound
 
 	for (size_t gp = 0; gp < N.size(); gp++) {
 		dND.multiply(dN[gp], coordinates);
-		std::cout << "dND: " << dND;
 		double J = dND.norm();
 		gpQ.multiply(N[gp], q);
 
@@ -486,8 +480,6 @@ void HeatTransfer2DKernel::processEdge(const Builder &builder, HeatTransferBound
 			filler.Fe[0][i] += J * weighFactor[gp] * N[gp](0, i % filler.DOFs) * gpQ(0, 0);
 		}
 	}
-
-	std::cout << "F: " << filler.Fe[0];
 }
 
 void HeatTransfer2DKernel::elementSolution(HeatTransferElementIterator &iterator)

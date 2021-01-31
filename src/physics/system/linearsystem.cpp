@@ -3,7 +3,6 @@
 #include "builder/builder.h"
 #include "output/output.h"
 #include "physics/composer/composer.h"
-#include "physics/kernels/kernel.h"
 #include "basis/utilities/sysutils.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/eslog.h"
@@ -57,7 +56,7 @@ void LinearSystem::init()
 
 void LinearSystem::nextSubstep()
 {
-	assembler()->composer->kernel->nextSubstep();
+	assembler()->composer->nextSubstep();
 	eslog::checkpointln("PHYSICS SOLVER: PARAMETERS EVALUATED");
 }
 
@@ -88,8 +87,8 @@ void LinearSystem::assemble()
 		for (step::ftt.step = 0; step::ftt.step < step::ftt.steps; ++step::ftt.step) {
 			step::ftt.time = (double)step::ftt.step / step::ftt.steps;
 
-			assembler()->composer->kernel->processSolution();
-			assembler()->composer->kernel->solutionChanged();
+			assembler()->composer->processSolution();
+			assembler()->composer->solutionChanged(NULL);
 			assembler()->composer->assemble(*builder);
 			_builderCreateSystem();
 
@@ -162,7 +161,7 @@ void LinearSystem::solutionChanged()
 
 void LinearSystem::processSolution()
 {
-	assembler()->composer->kernel->processSolution();
+	assembler()->composer->processSolution();
 	info::mesh->output->updateSolution();
 	eslog::checkpointln("PHYSICS SOLVER: SOLUTION PROCESSED");
 }

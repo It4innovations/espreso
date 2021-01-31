@@ -76,8 +76,6 @@ HeatTransferKernelOpt::HeatTransferKernelOpt(HeatTransferKernelOpt *previous, He
 {
 	geometry::computeBoundaryRegionsArea();
 
-	solutions.push_back(VectorDense(ParametersTemperature::output->data.size(), ParametersTemperature::output->data.data()));
-
 	Basis().build(*this);
 	operators.push_back(new ElementCoordinates<HeatTransferKernelOpt>(*this));
 	operators.push_back(new BoundaryCoordinates<HeatTransferKernelOpt>(*this));
@@ -383,27 +381,32 @@ void HeatTransferKernelOpt::nextSubstep()
 
 void HeatTransferKernelOpt::solutionChanged()
 {
-
+	printf("SOLUTION CHANGED\n");
 }
 
-bool HeatTransferKernelOpt::boundaryWithSettings(size_t rindex)
+void HeatTransferKernelOpt::updateStiffness(double *K, esint *perm, int interval)
 {
-	return false;
+	MatricesFiller(*this, K, perm).apply(interval);
 }
 
-void HeatTransferKernelOpt::processElements(const Builder &builder, InstanceFiller &filler)
+void HeatTransferKernelOpt::updateStiffness(double *K, esint *perm, int region, int interval)
 {
-	MatricesFiller(*this, filler).apply(filler.interval);
+
 }
 
-void HeatTransferKernelOpt::processBoundary(const Builder &builder, size_t rindex, InstanceFiller &filler)
+void HeatTransferKernelOpt::updateRHS(double *RHS, esint *perm, int region, int interval)
+{
+	RHSFiller(*this, RHS, perm).apply(region, interval);
+}
+
+void HeatTransferKernelOpt::fillElementsInterval(int interval)
 {
 
 }
 
 void HeatTransferKernelOpt::processSolution()
 {
-
+	printf("PROCESS SOLUTION\n");
 }
 
 

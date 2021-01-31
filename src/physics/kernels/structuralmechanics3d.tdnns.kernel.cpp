@@ -19,7 +19,7 @@ using namespace espreso;
 StructuralMechanics3DTDNNSKernel::StructuralMechanics3DTDNNSKernel(StructuralMechanics3DTDNNSKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration)
 : StructuralMechanics3DBaseKernel(previous, physics, gsettings, configuration)
 {
-	solutions.push_back(VectorDense(iterator.displacement.output.data->data.size(), iterator.displacement.output.data->data.data()));
+//	solutions.push_back(VectorDense(iterator.displacement.output.data->data.size(), iterator.displacement.output.data->data.data()));
 }
 
 

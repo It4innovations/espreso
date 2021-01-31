@@ -42,10 +42,13 @@ public:
 	void nextSubstep();
 	void solutionChanged();
 
-	bool boundaryWithSettings(size_t rindex);
+	void updateStiffness(double *K, esint *perm, int interval);
 
-	void processElements(const Builder &builder, InstanceFiller &filler);
-	void processBoundary(const Builder &builder, size_t rindex, InstanceFiller &filler);
+	void updateStiffness(double *K, esint *perm, int region, int interval);
+	void updateRHS(double *RHS, esint *perm, int region, int interval);
+
+	void fillElementsInterval(int interval);
+//	void processBoundary(const Builder &builder, size_t rindex, InstanceFiller &filler);
 	void processSolution();
 
 	const HeatTransferLoadStepConfiguration &configuration;

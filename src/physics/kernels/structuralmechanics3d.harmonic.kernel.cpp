@@ -12,23 +12,29 @@ using namespace espreso;
 HarmonicBalance3DKernel::HarmonicBalance3DKernel(HarmonicBalance3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration)
 : StructuralMechanics3DKernel(previous, physics, gsettings, configuration)
 {
-	if (previous == NULL) {
-		solutions.clear();
-		solutions.reserve(2);
-		solutions.push_back(VectorDense(iterator.cos.output.data->data.size(), iterator.cos.output.data->data.data()));
-		solutions.push_back(VectorDense(iterator.sin.output.data->data.size(), iterator.sin.output.data->data.data()));
-	} else {
-		solutions = previous->solutions;
-	}
+//	if (previous == NULL) {
+//		solutions.clear();
+//		solutions.reserve(2);
+//		solutions.push_back(VectorDense(iterator.cos.output.data->data.size(), iterator.cos.output.data->data.data()));
+//		solutions.push_back(VectorDense(iterator.sin.output.data->data.size(), iterator.sin.output.data->data.data()));
+//	} else {
+//		solutions = previous->solutions;
+//	}
 }
 
 HarmonicBalance3DKernel::HarmonicBalance3DKernel(StructuralMechanics3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration)
 : StructuralMechanics3DKernel(previous, physics, gsettings, configuration)
 {
-	solutions.clear();
-	solutions.reserve(2);
-	solutions.push_back(VectorDense(iterator.cos.output.data->data.size(), iterator.cos.output.data->data.data()));
-	solutions.push_back(VectorDense(iterator.sin.output.data->data.size(), iterator.sin.output.data->data.data()));
+//	solutions.clear();
+//	if (previous == NULL) {
+//		solutions.reserve(2);
+//		solutions.push_back(VectorDense(iterator.cos.output.data->data.size(), iterator.cos.output.data->data.data()));
+//		solutions.push_back(VectorDense(iterator.sin.output.data->data.size(), iterator.sin.output.data->data.data()));
+//	} else {
+//		solutions.resize(2);
+//		solutions[0] = previous->solutions[0];
+//		solutions.push_back(VectorDense(iterator.sin.output.data->data.size(), iterator.sin.output.data->data.data()));
+//	}
 }
 
 HarmonicBalance3DKernel::~HarmonicBalance3DKernel()

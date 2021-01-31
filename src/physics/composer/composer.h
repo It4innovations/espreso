@@ -9,22 +9,34 @@
 namespace espreso {
 
 class Kernel;
+class KernelOpt;
 struct AssemblerData;
 struct IJ;
+class Vectors;
 class VectorSparse;
+class SolverDataProvider;
 
 class Composer {
 
 public:
-	Composer(Kernel *kernel);
+	Composer(Kernel *kernel, KernelOpt *opt);
 
 	virtual void init() = 0;
 	virtual void assemble(const Builder &builder) = 0;
 
-	virtual ~Composer();
+	virtual int esize(esint interval) =0;
+	virtual int bsize(esint region, esint interval) =0;
+	SolverDataProvider* provider();
+	int solutions();
+
+	void solutionChanged(Vectors *solution);
+	void nextSubstep();
+	void processSolution();
 
 	Kernel *kernel;
+	KernelOpt *opt;
 
+	virtual ~Composer();
 protected:
 	esint getMatrixSize(esint size, bool omitLower);
 	void insertKPattern(IJ *target, const esint *begin, const esint *end, bool omitLower);

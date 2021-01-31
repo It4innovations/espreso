@@ -11,7 +11,7 @@
 using namespace espreso;
 
 NodesUniformAPIComposer::NodesUniformAPIComposer(const FETIConfiguration &configuration, int DOFs)
-: NodesUniformFETIComposer(configuration, NULL, NULL, DOFs)
+: NodesUniformFETIComposer(configuration, NULL, NULL, NULL, DOFs)
 {
 
 }

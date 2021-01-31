@@ -21,8 +21,6 @@ StructuralMechanics2DKernel::StructuralMechanics2DKernel(StructuralMechanics2DKe
 : KernelExecutor(new StructuralMechanics2DSolverDataProvider(configuration)),
   iterator(previous ? &previous->iterator : NULL, physics, gsetting, configuration, 2)
 {
-	solutions.push_back(VectorDense(iterator.displacement.output.data->data.size(), iterator.displacement.output.data->data.data()));
-
 	boundaries.reserve(info::mesh->boundaryRegions.size());
 	for (size_t i = 0; i < info::mesh->boundaryRegions.size(); ++i) {
 		boundaries.emplace_back(info::mesh->boundaryRegions[i], iterator, configuration, 2);
@@ -33,8 +31,6 @@ StructuralMechanics2DKernel::StructuralMechanics2DKernel(HeatTransfer2DKernel *p
 : KernelExecutor(new StructuralMechanics2DSolverDataProvider(configuration)),
   iterator(previous ? &previous->iterator : NULL, physics, gsetting, configuration, 2)
 {
-	solutions.push_back(VectorDense(iterator.displacement.output.data->data.size(), iterator.displacement.output.data->data.data()));
-
 	boundaries.reserve(info::mesh->boundaryRegions.size());
 	for (size_t i = 0; i < info::mesh->boundaryRegions.size(); ++i) {
 		boundaries.emplace_back(info::mesh->boundaryRegions[i], iterator, configuration, 2);
@@ -377,8 +373,13 @@ void StructuralMechanics2DKernel::processElement(const Builder &builder, const E
 
 void StructuralMechanics2DKernel::processEdge(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const
 {
-	filler.insertK = filler.insertF = false;
+	esint size = iterator.element->nodes;
 	filler.DOFs = 2 * iterator.element->nodes;
+	if ((filler.insertF = (builder.matrices & Builder::Request::f))) {
+		filler.Fe.resize(2 * size);
+		filler.Fe.fill(0);
+	}
+
 	if (iterator.normalPressure.data == NULL) {
 		return;
 	}
@@ -386,19 +387,12 @@ void StructuralMechanics2DKernel::processEdge(const Builder &builder, const Elas
 		return;
 	}
 
-	esint size = iterator.element->nodes;
-
 	const std::vector<MatrixDense> &N = *(iterator.element->N);
 	const std::vector<MatrixDense> &dN = *(iterator.element->dN);
 	const std::vector<double> &weighFactor = *(iterator.element->weighFactor);
 
 	MatrixDense coordinates(size, 2), dND(1, 2), P(size, 1), normal(2, 1), matThickness(size, 1), XY(1, 2);
 	MatrixDense gpP(1, 1), gpQ(1, 2), gpThickness(1, 1);
-
-	if ((filler.insertF = (builder.matrices & Builder::Request::f))) {
-		filler.Fe.resize(2 * size);
-		filler.Fe.fill(0);
-	}
 
 	for (esint n = 0; n < size; n++) {
 		coordinates(n, 0) = iterator.coordinates.data[2 * n + 0];

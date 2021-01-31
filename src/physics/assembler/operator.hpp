@@ -2,6 +2,10 @@
 #ifndef SRC_PHYSICS_ASSEMBLER_OPERATOR_HPP_
 #define SRC_PHYSICS_ASSEMBLER_OPERATOR_HPP_
 
+#include "esinfo/meshinfo.h"
+#include "mesh/store/elementstore.h"
+#include "mesh/store/boundaryregionstore.h"
+
 namespace espreso {
 
 template <class Kernel, class Operator>

@@ -24,10 +24,20 @@
 
 using namespace espreso;
 
-FacesEdgesUniformDistributedComposer::FacesEdgesUniformDistributedComposer(Kernel *kernel, DistributedAssemblerData *data, int fDOFs, int eDOFs)
-: DistributedComposer(kernel, data), _fDOFs(fDOFs), _eDOFs(eDOFs)
+FacesEdgesUniformDistributedComposer::FacesEdgesUniformDistributedComposer(Kernel *kernel, KernelOpt *opt, DistributedAssemblerData *data, int fDOFs, int eDOFs)
+: DistributedComposerOpt(kernel, opt, data), _fDOFs(fDOFs), _eDOFs(eDOFs)
 {
 
+}
+
+int FacesEdgesUniformDistributedComposer::esize(esint interval)
+{
+	return _fDOFs * Mesh::edata[info::mesh->elements->eintervals[interval].code].faces + _eDOFs * Mesh::edata[info::mesh->elements->eintervals[interval].code].edges;
+}
+
+int FacesEdgesUniformDistributedComposer::bsize(esint region, esint interval)
+{
+	return _fDOFs * Mesh::edata[info::mesh->boundaryRegions[region]->eintervals[interval].code].faces + _eDOFs * Mesh::edata[info::mesh->boundaryRegions[region]->eintervals[interval].code].edges;
 }
 
 void FacesEdgesUniformDistributedComposer::init()
@@ -140,7 +150,7 @@ void FacesEdgesUniformDistributedComposer::_initDOFMap()
 					}
 				}
 			}
-			auto edgenodes = info::mesh->elements->epointers->datatarray()[n]->edges->cbegin();
+			auto edgenodes = info::mesh->elements->epointers->datatarray()[n]->edgeList->cbegin();
 			for (auto edge = edges->begin(); edge != edges->end(); edge += *edge + 1, ++edgenodes) {
 				for (esint i = 1, prev = -1; i <= *edge; ++i) {
 					if (edge[i] < edistribution[info::mpi::rank] || edistribution[info::mpi::rank + 1] <= edge[i]) {
@@ -251,7 +261,7 @@ void FacesEdgesUniformDistributedComposer::_initDOFMap()
 					}
 				}
 			}
-			auto edgenodes = info::mesh->elements->epointers->datatarray()[n]->edges->cbegin();
+			auto edgenodes = info::mesh->elements->epointers->datatarray()[n]->edgeList->cbegin();
 			for (auto edge = edges->begin(); edge != edges->end(); edge += *edge + 1, ++edgenodes, map += _eDOFs) {
 				if (edge[0] != 0 && edge[1] < *eID) {
 					esint n1 = info::mesh->nodes->IDs->datatarray()[nodes->at(edgenodes->at(0))];
@@ -275,7 +285,7 @@ void FacesEdgesUniformDistributedComposer::_initDOFMap()
 						esint nfaces = (info::mesh->elements->faceNeighbors->cbegin() + edge[1])->size();
 						auto nedge = info::mesh->elements->edgeNeighbors->cbegin() + edge[1];
 						auto nnodes = info::mesh->elements->nodes->cbegin() + edge[1];
-						auto nedgenodes = (info::mesh->elements->epointers->datatarray()[edge[1]])->edges->cbegin();
+						auto nedgenodes = (info::mesh->elements->epointers->datatarray()[edge[1]])->edgeList->cbegin();
 						auto nmap = (_DOFMap->cbegin() + edge[1])->begin() + _fDOFs * nfaces;
 						for (auto ne = nedge->begin(); ne != nedge->end(); ne += *ne + 1, ++nedgenodes, nmap += _eDOFs) {
 							esint nn1 = info::mesh->nodes->IDs->datatarray()[nnodes->at(nedgenodes->at(0))];
@@ -493,7 +503,7 @@ void FacesEdgesUniformDistributedComposer::_buildPatterns()
 	_data->C.shallowCopyStructure(&_data->K);
 
 	// TODO: share distribution with K
-	_data->f.initVectors(kernel->solutions.size());
+	_data->f.initVectors(solutions());
 	_data->f.resize(dofs, foreignDOFs, info::mesh->neighbors.size());
 	_data->f.fillDistribution(halo.data(), _nDistribution.data(), info::mesh->neighbors.data());
 	_data->f.structureUpdated();

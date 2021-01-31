@@ -14,7 +14,7 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 class DistributedComposer: public Composer {
 
 public:
-	DistributedComposer(Kernel *kernel, DistributedAssemblerData *data);
+	DistributedComposer(Kernel *kernel, KernelOpt *opt, DistributedAssemblerData *data);
 	~DistributedComposer();
 
 	void assemble(const Builder &builder);

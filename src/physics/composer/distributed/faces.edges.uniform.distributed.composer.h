@@ -2,16 +2,19 @@
 #ifndef SRC_PHYSICS_COMPOSER_DISTRIBUTED_FACES_EDGES_UNIFORM_DISTRIBUTED_COMPOSER_H_
 #define SRC_PHYSICS_COMPOSER_DISTRIBUTED_FACES_EDGES_UNIFORM_DISTRIBUTED_COMPOSER_H_
 
-#include "distributed.composer.h"
+#include "distributed.composer.opt.h"
 
 namespace espreso {
 
 struct DistributedAssemblerData;
 
-class FacesEdgesUniformDistributedComposer: public DistributedComposer {
+class FacesEdgesUniformDistributedComposer: public DistributedComposerOpt {
 
 public:
-	FacesEdgesUniformDistributedComposer(Kernel *kernel, DistributedAssemblerData *data, int fDOFs, int eDOFs);
+	FacesEdgesUniformDistributedComposer(Kernel *kernel, KernelOpt *opt, DistributedAssemblerData *data, int fDOFs, int eDOFs);
+
+	int esize(esint interval);
+	int bsize(esint region, esint interval);
 
 	void init();
 

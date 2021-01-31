@@ -454,7 +454,7 @@ void computeDomainsSurface(NodeStore *nodes, ElementStore *elements, DomainStore
 
 			for (esint e = dbegin; e < dend; ++e, ++neighbors, ++enodes) {
 				auto epointer = elements->epointers->datatarray()[e];
-				auto faces = epointer->faces->begin();
+				auto faces = epointer->faceList->begin();
 				auto facepointer = epointer->facepointers->datatarray().begin();
 
 				for (size_t n = 0; n < neighbors->size(); ++n, ++faces, ++facepointer) {

@@ -99,7 +99,7 @@ void computeBodiesSurface(NodeStore *nodes, ElementStore *elements, std::vector<
 		for (size_t e = elements->distribution.threads[t]; e < elements->distribution.threads[t + 1]; ++e, ++neighs, ++nodes) {
 			for (size_t n = 0; n < neighs->size(); ++n) {
 				if (neighs->at(n) == -1) {
-					auto face = epointers[e]->faces->begin() + n;
+					auto face = epointers[e]->faceList->begin() + n;
 					for (auto f = face->begin(); f != face->end(); ++f) {
 						fdata.push_back(nodes->at(*f));
 					}

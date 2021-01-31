@@ -2,16 +2,19 @@
 #ifndef SRC_PHYSICS_COMPOSER_FETI_NODES_UNIFORM_FETI_COMPOSER_H_
 #define SRC_PHYSICS_COMPOSER_FETI_NODES_UNIFORM_FETI_COMPOSER_H_
 
-#include "feti.composer.h"
+#include "feti.composer.opt.h"
 
 namespace espreso {
 
 struct FETIAssemblerData;
 
-class NodesUniformFETIComposer: public FETIComposer {
+class NodesUniformFETIComposer: public FETIComposerOpt {
 
 public:
-	NodesUniformFETIComposer(const FETIConfiguration &configuration, Kernel *kernel, FETIAssemblerData *data, int DOFs);
+	NodesUniformFETIComposer(const FETIConfiguration &configuration, Kernel *kernel, KernelOpt *opt, FETIAssemblerData *data, int DOFs);
+
+	int esize(esint interval);
+	int bsize(esint region, esint interval);
 
 	void init();
 

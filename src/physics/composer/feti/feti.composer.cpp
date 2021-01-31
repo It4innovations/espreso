@@ -26,8 +26,8 @@
 
 using namespace espreso;
 
-FETIComposer::FETIComposer(const FETIConfiguration &configuration, Kernel *kernel, FETIAssemblerData *data)
-: Composer(kernel), _configuration(configuration), _data(data), _DOFMap(NULL)
+FETIComposer::FETIComposer(const FETIConfiguration &configuration, Kernel *kernel, KernelOpt *opt, FETIAssemblerData *data)
+: Composer(kernel, opt), _configuration(configuration), _data(data), _DOFMap(NULL)
 {
 //	auto isBEMDomain = [&](esint domain) {
 //		auto eregions = (info::mesh->elements->regions->begin() + info::mesh->domains->elements[domain])->begin();
@@ -74,7 +74,7 @@ void FETIComposer::assemble(const Builder &builder)
 		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
 			size_t KIndex = 0, RHSIndex = 0;
 			double KReduction = builder.timeIntegrationConstantK, RHSReduction = builder.internalForceReduction;
-			Kernel::InstanceFiller filler(kernel->solutions.size());
+			Kernel::InstanceFiller filler(solutions());
 			filler.K = _data->K[d].vals;
 			filler.M = _data->M[d].vals;
 			filler.C = _data->C[d].vals;
@@ -163,7 +163,7 @@ void FETIComposer::assemble(const Builder &builder)
 			filler.insertM = filler.insertC = filler.insertR = false;
 
 			for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-				if (info::mesh->boundaryRegions[r]->dimension && kernel->boundaryWithSettings(r)) {
+				if (info::mesh->boundaryRegions[r]->dimension) {
 					if (info::mesh->boundaryRegions[r]->eintervalsDistribution[d] < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]) {
 						filler.begin = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[d]].begin;
 						filler.end = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1] - 1].end;
@@ -173,7 +173,7 @@ void FETIComposer::assemble(const Builder &builder)
 				}
 			}
 			for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-				if (!info::mesh->boundaryRegions[r]->dimension && kernel->boundaryWithSettings(r)) {
+				if (!info::mesh->boundaryRegions[r]->dimension) {
 					esint prev = 0, i = 0;
 					auto dmap = info::mesh->nodes->domains->begin();
 					for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().begin(); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(); prev = *n++, ++i) {
@@ -196,6 +196,8 @@ void FETIComposer::assemble(const Builder &builder)
 			insertTime += tinsertTime;
 		}
 	}
+
+	printf("ASSEMBLE: %.3f, INSERT: %.3f\n", assembleTime, insertTime);
 
 	eslog::checkpoint("ASSEMBLER: VALUES FILLED");
 	eslog::param("ASSEMBLE", assembleTime);

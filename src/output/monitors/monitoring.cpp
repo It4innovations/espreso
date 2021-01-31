@@ -103,7 +103,7 @@ void Monitoring::updateMonitors()
 		NodeData *ndata = NULL;
 		ElementData *edata = NULL;
 		bool propertyNotFound = true;
-		for (size_t i = 0; propertyNotFound && i < info::mesh->nodes->data.size(); i++) {
+		for (size_t i = 0; i < info::mesh->nodes->data.size(); i++) {
 			if (info::mesh->nodes->data[i]->name.size()) {
 				if (!info::mesh->nodes->data[i]->onlySuffixed() && StringCompare::caseInsensitiveEq(it->second.property, info::mesh->nodes->data[i]->name)) {
 					ndata = info::mesh->nodes->data[i];
@@ -113,14 +113,12 @@ void Monitoring::updateMonitors()
 					if (StringCompare::caseInsensitiveEq(it->second.property, info::mesh->nodes->data[i]->name + info::mesh->nodes->data[i]->suffix(p))) {
 						ndata = info::mesh->nodes->data[i];
 						propertyNotFound = false;
-						break;
 					}
 				}
 			}
-
 		}
 
-		for (size_t i = 0; propertyNotFound && i < info::mesh->elements->data.size(); i++) {
+		for (size_t i = 0; i < info::mesh->elements->data.size(); i++) {
 			if (info::mesh->elements->data[i]->name.size()) {
 				if (!info::mesh->elements->data[i]->onlySuffixed() && StringCompare::caseInsensitiveEq(it->second.property, info::mesh->elements->data[i]->name)) {
 					edata = info::mesh->elements->data[i];
@@ -130,7 +128,6 @@ void Monitoring::updateMonitors()
 					if (StringCompare::caseInsensitiveEq(it->second.property, info::mesh->elements->data[i]->name + info::mesh->elements->data[i]->suffix(p))) {
 						edata = info::mesh->elements->data[i];
 						propertyNotFound = false;
-						break;
 					}
 				}
 			}

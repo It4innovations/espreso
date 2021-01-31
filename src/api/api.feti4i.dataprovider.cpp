@@ -93,7 +93,7 @@ void APIDataProvider::fillMatrix(std::function<void(FETI4IInt, FETI4IInt, FETI4I
 {
 	FETI4IInt type, size, *nodes;
 	TimeBuilder builder;
-	Kernel::InstanceFiller filler(kernel->solutions.size());
+	Kernel::InstanceFiller filler(1); // set correct number of solution vectors
 
 	std::fill(rhs.begin(), rhs.end(), 0);
 	builder.matrices = Builder::Request::K | Builder::Request::f;
@@ -160,6 +160,7 @@ void APIDataProvider::fillRHS(std::vector<FETI4IReal> &rhs)
 
 void APIDataProvider::storeSolution(std::vector<FETI4IReal> &solution)
 {
-	memcpy(kernel->solutions.back().vals, solution.data(), sizeof(double) * solution.size());
+//	TODO: FIX ME
+//	memcpy(kernel->solutions.back().vals, solution.data(), sizeof(double) * solution.size());
 	info::mesh->output->updateSolution();
 }

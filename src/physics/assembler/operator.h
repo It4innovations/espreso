@@ -12,16 +12,17 @@ struct Operator {
 	static const int print = 0;
 
 	class Link {
-		int interval, version, update;
+		int interval, version, update, isset;
 
 	public:
-		Link(int interval): interval(interval), version(0), update(0) {}
+		Link(int interval): interval(interval), version(0), update(0), isset(0) {}
 
 		operator bool() const { return update; }
 
 		Link& inputs(int version)
 		{
 			this->version = version;
+			isset = 1;
 			return *this;
 		}
 
@@ -30,6 +31,9 @@ struct Operator {
 		{
 			if (version < data.version[interval]) {
 				version = data.version[interval];
+			}
+			if (data.isset) {
+				isset = data.isset;
 			}
 			return *this;
 		}
@@ -49,6 +53,7 @@ struct Operator {
 				data.version[interval] = version;
 				++update;
 			}
+			data.isset = isset;
 			return *this;
 		}
 

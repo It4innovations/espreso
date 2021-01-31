@@ -2,13 +2,13 @@
 #ifndef SRC_PHYSICS_COMPOSER_DISTRIBUTED_NODES_UNIFORM_DISTRIBUTED_COMPOSER_H_
 #define SRC_PHYSICS_COMPOSER_DISTRIBUTED_NODES_UNIFORM_DISTRIBUTED_COMPOSER_H_
 
-#include "distributed.composer.h"
+#include "distributed.composer.opt.h"
 
 namespace espreso {
 
 struct DistributedAssemblerData;
 
-class NodesUniformDistributedComposer: public DistributedComposer {
+class NodesUniformDistributedComposer: public DistributedComposerOpt {
 
 	struct FaceID {
 		esint e1, e2;
@@ -26,7 +26,10 @@ class NodesUniformDistributedComposer: public DistributedComposer {
 	};
 
 public:
-	NodesUniformDistributedComposer(Kernel *kernel, DistributedAssemblerData *data, int DOFs);
+	NodesUniformDistributedComposer(Kernel *kernel, KernelOpt *opt, DistributedAssemblerData *data, int DOFs);
+
+	int esize(esint interval);
+	int bsize(esint region, esint interval);
 
 	void init();
 

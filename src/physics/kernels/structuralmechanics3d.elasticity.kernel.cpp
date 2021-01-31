@@ -23,25 +23,13 @@ using namespace espreso;
 StructuralMechanics3DKernel::StructuralMechanics3DKernel(StructuralMechanics3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration)
 : StructuralMechanics3DBaseKernel(previous, physics, gsettings, configuration)
 {
-	solutions.push_back(VectorDense(iterator.displacement.output.data->data.size(), iterator.displacement.output.data->data.data()));
-	orientation = NULL;
-	for (size_t i = 0; i < info::mesh->elements->data.size(); ++i) {
-		if (StringCompare::caseInsensitiveEq("ORIENTATION", info::mesh->elements->data[i]->name)) {
-			orientation = info::mesh->elements->data[i];
-		}
-	}
+
 }
 
 StructuralMechanics3DKernel::StructuralMechanics3DKernel(HeatTransfer3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration)
 : StructuralMechanics3DBaseKernel(previous, physics, gsettings, configuration)
 {
-	solutions.push_back(VectorDense(iterator.displacement.output.data->data.size(), iterator.displacement.output.data->data.data()));
-	orientation = NULL;
-	for (size_t i = 0; i < info::mesh->elements->data.size(); ++i) {
-		if (StringCompare::caseInsensitiveEq("ORIENTATION", info::mesh->elements->data[i]->name)) {
-			orientation = info::mesh->elements->data[i];
-		}
-	}
+
 }
 
 StructuralMechanics3DKernel::~StructuralMechanics3DKernel()
@@ -1179,8 +1167,12 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 
 void StructuralMechanics3DKernel::processFace(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const
 {
-	filler.insertK = filler.insertF = false;
-	filler.DOFs = 3 * iterator.element->nodes;
+	esint size = iterator.element->nodes;
+	filler.DOFs = 3 * size;
+	if ((filler.insertF = (builder.matrices & Builder::Request::f))) {
+		filler.Fe.resize(filler.DOFs);
+		filler.Fe.fill(0);
+	}
 	if (iterator.normalPressure.data == NULL) {
 		return;
 	}
@@ -1188,20 +1180,12 @@ void StructuralMechanics3DKernel::processFace(const Builder &builder, const Elas
 		return;
 	}
 
-	esint size = iterator.element->nodes;
-
 	const std::vector<MatrixDense> &N = *(iterator.element->N);
 	const std::vector<MatrixDense> &dN = *(iterator.element->dN);
 	const std::vector<double> &weighFactor = *(iterator.element->weighFactor);
 
 	MatrixDense coordinates(size, 3), dND(1, 3), P(size, 1), normal(1, 3);
 	MatrixDense gpP(1, 1), gpQ(1, 3);
-
-	filler.DOFs = 3 * size;
-	if ((filler.insertF = (builder.matrices & Builder::Request::f))) {
-		filler.Fe.resize(filler.DOFs);
-		filler.Fe.fill(0);
-	}
 
 	for (esint n = 0; n < size; n++) {
 		coordinates(n, 0) = iterator.coordinates.data[3 * n + 0];

@@ -9,8 +9,8 @@ using namespace espreso;
 
 Element::~Element()
 {
-	if (faces != NULL) { delete faces; }
-	if (edges != NULL) { delete edges; }
+	if (faceList != NULL) { delete faceList; }
+	if (edgeList != NULL) { delete edgeList; }
 	if (facepointers != NULL) { delete facepointers; }
 	if (edgepointers != NULL) { delete edgepointers; }
 	if (triangles != NULL) { delete triangles; }
@@ -61,6 +61,8 @@ template<> void Element::init<Element::CODE::POINT1>()
 	type = Element::TYPE::POINT;
 	code = Element::CODE::POINT1;
 	nodes = 1;
+	edges = 0;
+	faces = 0;
 	coarseNodes = 1;
 	nCommonFace = 1;
 	nCommonEdge = 1;
@@ -72,6 +74,8 @@ template<> void Element::init<Element::CODE::LINE2>()
 	type = Element::TYPE::LINE;
 	code = Element::CODE::LINE2;
 	nodes = 2;
+	edges = 0;
+	faces = 0;
 	coarseNodes = 2;
 	nCommonFace = 1;
 	nCommonEdge = 1;
@@ -83,6 +87,8 @@ template<> void Element::init<Element::CODE::LINE3>()
 	type = Element::TYPE::LINE;
 	code = Element::CODE::LINE3;
 	nodes = 3;
+	edges = 0;
+	faces = 0;
 	coarseNodes = 2;
 	nCommonFace = 1;
 	nCommonEdge = 1;
@@ -94,6 +100,8 @@ template<> void Element::init<Element::CODE::TRIANGLE3>()
 	type = Element::TYPE::PLANE;
 	code = Element::CODE::TRIANGLE3;
 	nodes = 3;
+	edges = 0;
+	faces = 3;
 	coarseNodes = 3;
 	nCommonFace = 2;
 	nCommonEdge = 1;
@@ -111,9 +119,9 @@ template<> void Element::init<Element::CODE::TRIANGLE3>()
 		0, 1, 2
 	};
 
-	edges = new serializededata<int, int>(2, data);
+	edgeList = new serializededata<int, int>(2, data);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
-	faces = new serializededata<int, int>(2, data);
+	faceList = new serializededata<int, int>(2, data);
 	facepointers = new serializededata<int, Element*>(1, epointers);
 	triangles = new serializededata<int, int>(3, tringles);
 	polygon = new std::vector<int>({0, 1, 2});
@@ -124,6 +132,8 @@ template<> void Element::init<Element::CODE::TRIANGLE6>()
 	type = Element::TYPE::PLANE;
 	code = Element::CODE::TRIANGLE6;
 	nodes = 6;
+	edges = 0;
+	faces = 3;
 	coarseNodes = 3;
 	nCommonFace = 3;
 	nCommonEdge = 2;
@@ -145,9 +155,9 @@ template<> void Element::init<Element::CODE::TRIANGLE6>()
 		3, 4, 5
 	};
 
-	edges = new serializededata<int, int>(3, data);
+	edgeList = new serializededata<int, int>(3, data);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
-	faces = new serializededata<int, int>(3, data);
+	faceList = new serializededata<int, int>(3, data);
 	facepointers = new serializededata<int, Element*>(1, epointers);
 	triangles = new serializededata<int, int>(3, tringles);
 	polygon = new std::vector<int>({0, 3, 1, 4, 2, 5});
@@ -158,6 +168,8 @@ template<> void Element::init<Element::CODE::SQUARE4>()
 	type = Element::TYPE::PLANE;
 	code = Element::CODE::SQUARE4;
 	nodes = 4;
+	edges = 0;
+	faces = 4;
 	coarseNodes = 4;
 	nCommonFace = 3;
 	nCommonEdge = 2;
@@ -177,9 +189,9 @@ template<> void Element::init<Element::CODE::SQUARE4>()
 		0, 2, 3
 	};
 
-	edges = new serializededata<int, int>(2, lines);
+	edgeList = new serializededata<int, int>(2, lines);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
-	faces = new serializededata<int, int>(2, lines);
+	faceList = new serializededata<int, int>(2, lines);
 	facepointers = new serializededata<int, Element*>(1, epointers);
 	triangles = new serializededata<int, int>(3, tringles);
 	polygon = new std::vector<int>({0, 1, 2, 3});
@@ -190,6 +202,8 @@ template<> void Element::init<Element::CODE::SQUARE8>()
 	type = Element::TYPE::PLANE;
 	code = Element::CODE::SQUARE8;
 	nodes = 8;
+	edges = 0;
+	faces = 4;
 	coarseNodes = 4;
 	nCommonFace = 3;
 	nCommonEdge = 2;
@@ -213,9 +227,9 @@ template<> void Element::init<Element::CODE::SQUARE8>()
 		4, 6, 7
 	};
 
-	edges = new serializededata<int, int>(3, data);
+	edgeList = new serializededata<int, int>(3, data);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
-	faces = new serializededata<int, int>(3, data);
+	faceList = new serializededata<int, int>(3, data);
 	facepointers = new serializededata<int, Element*>(1, epointers);
 	triangles = new serializededata<int, int>(3, tringles);
 	polygon = new std::vector<int>({0, 4, 1, 5, 2, 6, 3, 7});
@@ -226,6 +240,8 @@ template<> void Element::init<Element::CODE::TETRA4>()
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::TETRA4;
 	nodes = 4;
+	edges = 6;
+	faces = 4;
 	coarseNodes = 4;
 	nCommonFace = 3;
 	nCommonEdge = 2;
@@ -240,7 +256,7 @@ template<> void Element::init<Element::CODE::TETRA4>()
 		2, 1, 0
 	};
 
-	faces = new serializededata<int, int>(3, fpoints);
+	faceList = new serializededata<int, int>(3, fpoints);
 	facepointers = new serializededata<int, Element*>(1, fpointers);
 
 	std::vector<Element*> epointers(6, &Mesh::edata[static_cast<int>(Element::CODE::LINE2)]);
@@ -253,7 +269,7 @@ template<> void Element::init<Element::CODE::TETRA4>()
 		2, 3
 	};
 
-	edges = new serializededata<int, int>(2, epoints);
+	edgeList = new serializededata<int, int>(2, epoints);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
 }
 
@@ -262,6 +278,8 @@ template<> void Element::init<Element::CODE::TETRA10>()
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::TETRA10;
 	nodes = 10;
+	edges = 6;
+	faces = 4;
 	coarseNodes = 4;
 	nCommonFace = 4;
 	nCommonEdge = 3;
@@ -276,7 +294,7 @@ template<> void Element::init<Element::CODE::TETRA10>()
 		2, 1, 0, 5, 4, 6
 	};
 
-	faces = new serializededata<int, int>(6, fpoints);
+	faceList = new serializededata<int, int>(6, fpoints);
 	facepointers = new serializededata<int, Element*>(1, fpointers);
 
 	std::vector<Element*> epointers(6, &Mesh::edata[static_cast<int>(Element::CODE::LINE3)]);
@@ -290,7 +308,7 @@ template<> void Element::init<Element::CODE::TETRA10>()
 		2, 3, 9,
 	};
 
-	edges = new serializededata<int, int>(3, epoints);
+	edgeList = new serializededata<int, int>(3, epoints);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
 }
 
@@ -299,6 +317,8 @@ template<> void Element::init<Element::CODE::PYRAMID5>()
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::PYRAMID5;
 	nodes = 5;
+	edges = 8;
+	faces = 5;
 	coarseNodes = 5;
 	nCommonFace = 3;
 	nCommonEdge = 2;
@@ -317,7 +337,7 @@ template<> void Element::init<Element::CODE::PYRAMID5>()
 		3, 0, 4
 	};
 
-	faces = new serializededata<int, int>(fdist, fpoints);
+	faceList = new serializededata<int, int>(fdist, fpoints);
 	facepointers = new serializededata<int, Element*>(1, fpointers);
 
 	std::vector<Element*> epointers(8, &Mesh::edata[static_cast<int>(Element::CODE::LINE2)]);
@@ -332,7 +352,7 @@ template<> void Element::init<Element::CODE::PYRAMID5>()
 		3, 4,
 	};
 
-	edges = new serializededata<int, int>(2, epoints);
+	edgeList = new serializededata<int, int>(2, epoints);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
 }
 
@@ -341,6 +361,8 @@ template<> void Element::init<Element::CODE::PYRAMID13>()
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::PYRAMID13;
 	nodes = 13;
+	edges = 8;
+	faces = 5;
 	coarseNodes = 5;
 	nCommonFace = 4;
 	nCommonEdge = 3;
@@ -359,7 +381,7 @@ template<> void Element::init<Element::CODE::PYRAMID13>()
 		3, 0, 4, 8,  9, 12
 	};
 
-	faces = new serializededata<int, int>(fdist, fpoints);
+	faceList = new serializededata<int, int>(fdist, fpoints);
 	facepointers = new serializededata<int, Element*>(1, fpointers);
 
 	std::vector<Element*> epointers(8, &Mesh::edata[static_cast<int>(Element::CODE::LINE3)]);
@@ -375,7 +397,7 @@ template<> void Element::init<Element::CODE::PYRAMID13>()
 		3, 4, 12,
 	};
 
-	edges = new serializededata<int, int>(3, epoints);
+	edgeList = new serializededata<int, int>(3, epoints);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
 }
 
@@ -384,6 +406,8 @@ template<> void Element::init<Element::CODE::PRISMA6>()
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::PRISMA6;
 	nodes = 6;
+	edges = 9;
+	faces = 5;
 	coarseNodes = 6;
 	nCommonFace = 3;
 	nCommonEdge = 2;
@@ -402,7 +426,7 @@ template<> void Element::init<Element::CODE::PRISMA6>()
 		3, 4, 5,
 	};
 
-	faces = new serializededata<int, int>(fdist, fpoints);
+	faceList = new serializededata<int, int>(fdist, fpoints);
 	facepointers = new serializededata<int, Element*>(1, fpointers);
 
 	std::vector<Element*> epointers(9, &Mesh::edata[static_cast<int>(Element::CODE::LINE2)]);
@@ -418,7 +442,7 @@ template<> void Element::init<Element::CODE::PRISMA6>()
 		2, 5,
 	};
 
-	edges = new serializededata<int, int>(2, epoints);
+	edgeList = new serializededata<int, int>(2, epoints);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
 }
 
@@ -427,6 +451,8 @@ template<> void Element::init<Element::CODE::PRISMA15>()
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::PRISMA15;
 	nodes = 15;
+	edges = 9;
+	faces = 5;
 	coarseNodes = 6;
 	nCommonFace = 4;
 	nCommonEdge = 3;
@@ -445,7 +471,7 @@ template<> void Element::init<Element::CODE::PRISMA15>()
 		3, 4, 5, 9, 10, 11
 	};
 
-	faces = new serializededata<int, int>(fdist, fpoints);
+	faceList = new serializededata<int, int>(fdist, fpoints);
 	facepointers = new serializededata<int, Element*>(1, fpointers);
 
 	std::vector<Element*> epointers(9, &Mesh::edata[static_cast<int>(Element::CODE::LINE3)]);
@@ -461,7 +487,7 @@ template<> void Element::init<Element::CODE::PRISMA15>()
 		2, 5, 14,
 	};
 
-	edges = new serializededata<int, int>(3, epoints);
+	edgeList = new serializededata<int, int>(3, epoints);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
 }
 
@@ -470,6 +496,8 @@ template<> void Element::init<Element::CODE::HEXA8>()
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::HEXA8;
 	nodes = 8;
+	edges = 12;
+	faces = 6;
 	coarseNodes = 8;
 	nCommonFace = 3;
 	nCommonEdge = 2;
@@ -485,7 +513,7 @@ template<> void Element::init<Element::CODE::HEXA8>()
 		3, 0, 4, 7
 	};
 
-	faces = new serializededata<int, int>(4, fpoints);
+	faceList = new serializededata<int, int>(4, fpoints);
 	facepointers = new serializededata<int, Element*>(1, fpointers);
 
 	std::vector<Element*> epointers(12, &Mesh::edata[static_cast<int>(Element::CODE::LINE2)]);
@@ -504,7 +532,7 @@ template<> void Element::init<Element::CODE::HEXA8>()
 		3, 7,
 	};
 
-	edges = new serializededata<int, int>(2, epoints);
+	edgeList = new serializededata<int, int>(2, epoints);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
 
 }
@@ -514,6 +542,8 @@ template<> void Element::init<Element::CODE::HEXA20>()
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::HEXA20;
 	nodes = 20;
+	edges = 12;
+	faces = 6;
 	coarseNodes = 8;
 	nCommonFace = 4;
 	nCommonEdge = 3;
@@ -530,7 +560,7 @@ template<> void Element::init<Element::CODE::HEXA20>()
 		3, 0, 4, 7, 11, 16, 15, 19
 	};
 
-	faces = new serializededata<int, int>(8, fpoints);
+	faceList = new serializededata<int, int>(8, fpoints);
 	facepointers = new serializededata<int, Element*>(1, fpointers);
 
 	std::vector<Element*> epointers(12, &Mesh::edata[static_cast<int>(Element::CODE::LINE3)]);
@@ -550,7 +580,7 @@ template<> void Element::init<Element::CODE::HEXA20>()
 		3, 7, 19,
 	};
 
-	edges = new serializededata<int, int>(3, epoints);
+	edgeList = new serializededata<int, int>(3, epoints);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
 }
 

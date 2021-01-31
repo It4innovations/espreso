@@ -24,10 +24,20 @@
 
 using namespace espreso;
 
-NodesUniformDistributedComposer::NodesUniformDistributedComposer(Kernel *kernel, DistributedAssemblerData *data, int DOFs)
-: DistributedComposer(kernel, data), _DOFs(DOFs)
+NodesUniformDistributedComposer::NodesUniformDistributedComposer(Kernel *kernel, KernelOpt *opt, DistributedAssemblerData *data, int DOFs)
+: DistributedComposerOpt(kernel, opt, data), _DOFs(DOFs)
 {
 
+}
+
+int NodesUniformDistributedComposer::esize(esint interval)
+{
+	return _DOFs * Mesh::edata[info::mesh->elements->eintervals[interval].code].nodes;
+}
+
+int NodesUniformDistributedComposer::bsize(esint region, esint interval)
+{
+	return _DOFs * Mesh::edata[info::mesh->boundaryRegions[region]->eintervals[interval].code].nodes;
 }
 
 void NodesUniformDistributedComposer::init()
@@ -87,17 +97,15 @@ void NodesUniformDistributedComposer::_buildPatterns()
 		}
 
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-			if (kernel->boundaryWithSettings(r)) {
-				if (info::mesh->boundaryRegions[r]->dimension) {
-					for (auto e = info::mesh->boundaryRegions[r]->elements->begin(t); e != info::mesh->boundaryRegions[r]->elements->end(t); ++e) {
-						tRHSsize += e->size() * _DOFs;
-						tKsize += getMatrixSize(e->size() * _DOFs, omitLower);
-					}
-				} else {
-					for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().begin(t); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(t); ++n) {
-						if (info::mesh->nodes->size - info::mesh->nodes->uniqInfo.size <= *n) {
-							tRHSsize += _DOFs;
-						}
+			if (info::mesh->boundaryRegions[r]->dimension) {
+				for (auto e = info::mesh->boundaryRegions[r]->elements->begin(t); e != info::mesh->boundaryRegions[r]->elements->end(t); ++e) {
+					tRHSsize += e->size() * _DOFs;
+					tKsize += getMatrixSize(e->size() * _DOFs, omitLower);
+				}
+			} else {
+				for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().begin(t); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(t); ++n) {
+					if (info::mesh->nodes->size - info::mesh->nodes->uniqInfo.size <= *n) {
+						tRHSsize += _DOFs;
 					}
 				}
 			}
@@ -144,7 +152,7 @@ void NodesUniformDistributedComposer::_buildPatterns()
 		}
 
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-			if (info::mesh->boundaryRegions[r]->dimension && kernel->boundaryWithSettings(r)) {
+			if (info::mesh->boundaryRegions[r]->dimension) {
 				for (auto e = info::mesh->boundaryRegions[r]->elements->cbegin(t); e != info::mesh->boundaryRegions[r]->elements->cend(t); ++e) {
 					insert(e);
 					Koffset += getMatrixSize(e->size() * _DOFs, omitLower);
@@ -153,7 +161,7 @@ void NodesUniformDistributedComposer::_buildPatterns()
 		}
 
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-			if (info::mesh->boundaryRegions[r]->dimension == 0 && kernel->boundaryWithSettings(r)) {
+			if (info::mesh->boundaryRegions[r]->dimension == 0) {
 				for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().cbegin(t); n != info::mesh->boundaryRegions[r]->nodes->datatarray().cend(t); ++n) {
 					if (info::mesh->nodes->size - info::mesh->nodes->uniqInfo.size <= *n) {
 						for (esint dof = 0; dof < _DOFs; ++dof, ++RHSoffset) {
@@ -267,7 +275,7 @@ void NodesUniformDistributedComposer::_buildPatterns()
 	_data->CM.shallowCopyStructure(&_data->K);
 
 	// TODO: share distribution with K
-	_data->f.initVectors(kernel->solutions.size());
+	_data->f.initVectors(solutions());
 	_data->f.resize(info::mesh->nodes->size * _DOFs, foreignDOFs, info::mesh->neighbors.size());
 	_data->f.fillDistribution(_DOFMap->datatarray().data(), _nDistribution.data(), info::mesh->neighbors.data());
 	_data->f.structureUpdated();

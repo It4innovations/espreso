@@ -30,8 +30,6 @@ HeatTransfer3DKernel::HeatTransfer3DKernel(HeatTransfer3DKernel *previous, Physi
 	geometry::computeBoundaryRegionsArea();
 	geometry::computeMortars();
 
-	solutions.push_back(VectorDense(iterator.temperature.output.data->data.size(), iterator.temperature.output.data->data.data()));
-
 	boundaries.reserve(info::mesh->boundaryRegions.size());
 	for (size_t i = 0; i < info::mesh->boundaryRegions.size(); ++i) {
 		boundaries.emplace_back(info::mesh->boundaryRegions[i], iterator, configuration, 3);
@@ -550,8 +548,16 @@ void HeatTransfer3DKernel::processElement(const Builder &builder, const HeatTran
 
 void HeatTransfer3DKernel::processFace(const Builder &builder, const HeatTransferBoundaryIterator &iterator, InstanceFiller &filler) const
 {
-	filler.insertK = filler.insertF = false;
 	filler.DOFs = iterator.element->nodes;
+	if ((filler.insertF = (builder.matrices & Builder::Request::f))) {
+		filler.Fe.resize(filler.DOFs);
+		filler.Fe.fill(0);
+	}
+	if ((filler.insertK = (iterator.convection || iterator.radiation))) {
+		filler.Ke.resize(filler.DOFs, filler.DOFs);
+		filler.Ke.fill(0);
+	}
+
 	if (!iterator.convection && !iterator.heatflow.data && !iterator.heatflux.data && !iterator.radiation) {
 		return;
 	}
@@ -565,15 +571,6 @@ void HeatTransfer3DKernel::processFace(const Builder &builder, const HeatTransfe
 
 	MatrixDense coordinates(filler.DOFs, 3), dND(1, 3), q(filler.DOFs, 1), htc(filler.DOFs, 1), flow(filler.DOFs, 1), emiss(filler.DOFs, 1);
 	MatrixDense gpQ(1, 1), gpHtc(1, 1), gpFlow(1, 1), gpEmiss(1, 1);
-
-	if ((filler.insertF = (builder.matrices & Builder::Request::f))) {
-		filler.Fe.resize(filler.DOFs);
-		filler.Fe.fill(0);
-	}
-	if ((filler.insertK = (iterator.convection || iterator.radiation))) {
-		filler.Ke.resize(filler.DOFs, filler.DOFs);
-		filler.Ke.fill(0);
-	}
 
 	for (esint n = 0; n < filler.DOFs; n++) {
 		double temp = iterator.temperature.data[n];

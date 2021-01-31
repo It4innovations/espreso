@@ -31,7 +31,6 @@
 #include "composer/distributed/faces.edges.uniform.distributed.composer.h"
 #include "composer/feti/nodes.uniform.feti.composer.h"
 #include "physics/assembler/kernels/heattransfer.kernel.opt.h"
-#include "physics/kernels/heattransfer.kernel.h"
 #include "physics/kernels/heattransfer2d.kernel.h"
 #include "physics/kernels/heattransfer3d.kernel.h"
 #include "physics/kernels/structuralmechanics2d.kernel.h"
@@ -48,6 +47,7 @@ static LinearSystem* getSystem(LinearSystem *previous, PhysicsConfiguration &phy
 {
 	LinearSystem *current = NULL;
 	Kernel *kernel = NULL, *pKernel = previous ? previous->assembler()->composer->kernel : NULL;
+	KernelOpt *opt = NULL;
 	switch (gsettings.kernel) {
 	case HeatTransferGlobalSettings::KERNEL::OLD:
 		switch (dimension) {
@@ -56,43 +56,40 @@ static LinearSystem* getSystem(LinearSystem *previous, PhysicsConfiguration &phy
 		default: break;
 		}
 		break;
-	case HeatTransferGlobalSettings::KERNEL::NEW:
-		kernel = new HeatTransferKernel(dynamic_cast<HeatTransferKernel*>(pKernel), loadStep);
-		break;
 	case HeatTransferGlobalSettings::KERNEL::OPT:
-		kernel = new HeatTransferKernelOpt(dynamic_cast<HeatTransferKernelOpt*>(pKernel), loadStep);
+		opt = new HeatTransferKernelOpt(dynamic_cast<HeatTransferKernelOpt*>(pKernel), loadStep);
 		break;
 	}
 
 	switch (loadStep.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI: {
 		FETISystem *system = new FETISystem(1, 1, loadStep.feti);
-		system->assembler()->composer = new NodesUniformFETIComposer(loadStep.feti, kernel, system->assembler(), 1);
+		system->assembler()->composer = new NodesUniformFETIComposer(loadStep.feti, kernel, opt, system->assembler(), 1);
 		current = system;
 	} break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE: {
 		HYPRESystem *system = new HYPRESystem(1, 1, loadStep.hypre);
-		system->assembler()->composer = new NodesUniformDistributedComposer(kernel, system->assembler(), 1);
+		system->assembler()->composer = new NodesUniformDistributedComposer(kernel, opt, system->assembler(), 1);
 		current = system;
 	} break;
 	case LoadStepSolverConfiguration::SOLVER::MKLPDSS: {
 		MKLPDSSSystem *system = new MKLPDSSSystem(1, 1, loadStep.mklpdss);
-		system->assembler()->composer = new NodesUniformDistributedComposer(kernel, system->assembler(), 1);
+		system->assembler()->composer = new NodesUniformDistributedComposer(kernel, opt, system->assembler(), 1);
 		current = system;
 	} break;
 	case LoadStepSolverConfiguration::SOLVER::PARDISO: {
 		PARDISOSystem *system = new PARDISOSystem(1, 1, loadStep.pardiso);
-		system->assembler()->composer = new NodesUniformDistributedComposer(kernel, system->assembler(), 1);
+		system->assembler()->composer = new NodesUniformDistributedComposer(kernel, opt, system->assembler(), 1);
 		current = system;
 	} break;
 	case LoadStepSolverConfiguration::SOLVER::SUPERLU: {
 		SuperLUSystem *system = new SuperLUSystem(1, 1, loadStep.superlu);
-		system->assembler()->composer = new NodesUniformDistributedComposer(kernel, system->assembler(), 1);
+		system->assembler()->composer = new NodesUniformDistributedComposer(kernel, opt, system->assembler(), 1);
 		current = system;
 	} break;
 	case LoadStepSolverConfiguration::SOLVER::WSMP: {
 		WSMPSystem *system = new WSMPSystem(1, 1, loadStep.wsmp);
-		system->assembler()->composer = new NodesUniformDistributedComposer(kernel, system->assembler(), 1);
+		system->assembler()->composer = new NodesUniformDistributedComposer(kernel, opt, system->assembler(), 1);
 		current = system;
 	} break;
 	default:
@@ -144,51 +141,51 @@ static LinearSystem* getSystem(LinearSystem *previous, PhysicsConfiguration &phy
 	switch (loadStep.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI: {
 		FETISystem *system = new FETISystem(1, 1, loadStep.feti);
-		system->assembler()->composer = new NodesUniformFETIComposer(loadStep.feti, kernel, system->assembler(), DOFs);
+		system->assembler()->composer = new NodesUniformFETIComposer(loadStep.feti, kernel, NULL, system->assembler(), DOFs);
 		current = system;
 	} break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE: {
 		HYPRESystem *system = new HYPRESystem(1, 1, loadStep.hypre);
 		if (tdnns()) {
-			system->assembler()->composer = new FacesEdgesUniformDistributedComposer(kernel, system->assembler(), 4, 2);
+			system->assembler()->composer = new FacesEdgesUniformDistributedComposer(kernel, NULL, system->assembler(), 4, 2);
 		} else {
-			system->assembler()->composer = new NodesUniformDistributedComposer(kernel, system->assembler(), DOFs);
+			system->assembler()->composer = new NodesUniformDistributedComposer(kernel, NULL, system->assembler(), DOFs);
 		}
 		current = system;
 	} break;
 	case LoadStepSolverConfiguration::SOLVER::MKLPDSS: {
 		MKLPDSSSystem *system = new MKLPDSSSystem(1, 1, loadStep.mklpdss);
 		if (tdnns()) {
-			system->assembler()->composer = new FacesEdgesUniformDistributedComposer(kernel, system->assembler(), 4, 2);
+			system->assembler()->composer = new FacesEdgesUniformDistributedComposer(kernel, NULL, system->assembler(), 4, 2);
 		} else {
-			system->assembler()->composer = new NodesUniformDistributedComposer(kernel, system->assembler(), DOFs);
+			system->assembler()->composer = new NodesUniformDistributedComposer(kernel, NULL, system->assembler(), DOFs);
 		}
 		current = system;
 	} break;
 	case LoadStepSolverConfiguration::SOLVER::PARDISO: {
 		PARDISOSystem *system = new PARDISOSystem(1, 1, loadStep.pardiso);
 		if (tdnns()) {
-			system->assembler()->composer = new FacesEdgesUniformDistributedComposer(kernel, system->assembler(), 4, 2);
+			system->assembler()->composer = new FacesEdgesUniformDistributedComposer(kernel, NULL, system->assembler(), 4, 2);
 		} else {
-			system->assembler()->composer = new NodesUniformDistributedComposer(kernel, system->assembler(), DOFs);
+			system->assembler()->composer = new NodesUniformDistributedComposer(kernel, NULL, system->assembler(), DOFs);
 		}
 		current = system;
 	} break;
 	case LoadStepSolverConfiguration::SOLVER::SUPERLU: {
 		SuperLUSystem *system = new SuperLUSystem(1, 1, loadStep.superlu);
 		if (tdnns()) {
-			system->assembler()->composer = new FacesEdgesUniformDistributedComposer(kernel, system->assembler(), 4, 2);
+			system->assembler()->composer = new FacesEdgesUniformDistributedComposer(kernel, NULL, system->assembler(), 4, 2);
 		} else {
-			system->assembler()->composer = new NodesUniformDistributedComposer(kernel, system->assembler(), DOFs);
+			system->assembler()->composer = new NodesUniformDistributedComposer(kernel, NULL, system->assembler(), DOFs);
 		}
 		current = system;
 	} break;
 	case LoadStepSolverConfiguration::SOLVER::WSMP: {
 		WSMPSystem *system = new WSMPSystem(1, 1, loadStep.wsmp);
 		if (tdnns()) {
-			system->assembler()->composer = new FacesEdgesUniformDistributedComposer(kernel, system->assembler(), 4, 2);
+			system->assembler()->composer = new FacesEdgesUniformDistributedComposer(kernel, NULL, system->assembler(), 4, 2);
 		} else {
-			system->assembler()->composer = new NodesUniformDistributedComposer(kernel, system->assembler(), DOFs);
+			system->assembler()->composer = new NodesUniformDistributedComposer(kernel, NULL, system->assembler(), DOFs);
 		}
 		current = system;
 	} break;
@@ -302,8 +299,8 @@ LoadStepIterator::~LoadStepIterator()
 void LoadStepIterator::prepareExpressions()
 {
 	switch (info::ecf->physics) {
-	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D: HeatTransferKernel::createParameters(); HeatTransferKernelOpt::createParameters(); break;
-	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D: HeatTransferKernel::createParameters(); HeatTransferKernelOpt::createParameters(); break;
+	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D: HeatTransferKernelOpt::createParameters(); break;
+	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D: HeatTransferKernelOpt::createParameters(); break;
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D:
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
 	default: eslog::globalerror("Unknown physics.\n");

@@ -3,6 +3,7 @@
 #include "physics/system/linearsystem.h"
 #include "physics/system/builder/builder.h"
 #include "physics/kernels/kernel.h"
+#include "physics/assembler/kernels/kernel.opt.h"
 #include "math/matrix.indices.h"
 #include "math/matrix.h"
 #include "math/vector.sparse.h"
@@ -11,8 +12,8 @@
 
 using namespace espreso;
 
-Composer::Composer(Kernel *kernel)
-: kernel(kernel)
+Composer::Composer(Kernel *kernel, KernelOpt *opt)
+: kernel(kernel), opt(opt)
 {
 
 }
@@ -20,6 +21,56 @@ Composer::Composer(Kernel *kernel)
 Composer::~Composer()
 {
 	if (kernel != NULL) { delete kernel; }
+}
+
+SolverDataProvider* Composer::provider()
+{
+	if (kernel != NULL) {
+		return kernel->solverDataProvider;
+	} else {
+		return opt->solverDataProvider;
+	}
+}
+
+int Composer::solutions()
+{
+	if (kernel != NULL) {
+		return 1;
+	} else {
+		return 1;
+	}
+}
+
+void Composer::solutionChanged(Vectors *solution)
+{
+	if (kernel) {
+		if (solution) {
+			for (esint n = 0; n < solution->nvectors; n++) {
+				kernel->solutions[n].fillData(solution->at(n));
+			}
+		}
+		kernel->solutionChanged();
+	} else {
+		opt->solutionChanged();
+	}
+}
+
+void Composer::nextSubstep()
+{
+	if (kernel) {
+		kernel->nextSubstep();
+	} else {
+		opt->nextSubstep();
+	}
+}
+
+void Composer::processSolution()
+{
+	if (kernel) {
+		kernel->processSolution();
+	} else {
+		opt->processSolution();
+	}
 }
 
 esint Composer::getMatrixSize(esint size, bool omitLower)

@@ -21,8 +21,8 @@
 
 using namespace espreso;
 
-DistributedComposer::DistributedComposer(Kernel *kernel, DistributedAssemblerData *data)
-: Composer(kernel), _data(data),
+DistributedComposer::DistributedComposer(Kernel *kernel, KernelOpt *opt, DistributedAssemblerData *data)
+: Composer(kernel, opt), _data(data),
   _DOFMap(NULL)
 {
 
@@ -51,7 +51,7 @@ void DistributedComposer::assemble(const Builder &builder)
 	for (int t = 0; t < info::env::threads; t++) {
 		size_t KIndex = _tKOffsets[t], RHSIndex = _tRHSOffsets[t];
 		double KReduction = builder.timeIntegrationConstantK, RHSReduction = builder.internalForceReduction;
-		Kernel::InstanceFiller filler(kernel->solutions.size());
+		Kernel::InstanceFiller filler(solutions());
 
 		double prev, tinsertTime = 0, tassembleTime = 0;
 		filler.insert = [&] () {
@@ -108,9 +108,9 @@ void DistributedComposer::assemble(const Builder &builder)
 		filler.insertM = filler.insertC = filler.insertR = false;
 
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-			if (info::mesh->boundaryRegions[r]->dimension && kernel->boundaryWithSettings(r)) {
-				filler.begin = info::mesh->boundaryRegions[r]->epointers->datatarray().distribution()[t];
-				filler.end = info::mesh->boundaryRegions[r]->epointers->datatarray().distribution()[t + 1];
+			if (info::mesh->boundaryRegions[r]->dimension) {
+                                filler.begin = info::mesh->boundaryRegions[r]->epointers->datatarray().distribution()[t];
+                                filler.end = info::mesh->boundaryRegions[r]->epointers->datatarray().distribution()[t + 1];
 				prev = eslog::time();
 				kernel->processBoundary(builder, r, filler);
 			}
@@ -122,7 +122,7 @@ void DistributedComposer::assemble(const Builder &builder)
 
 		esint noffset = info::mesh->nodes->size - info::mesh->nodes->uniqInfo.size;
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-			if (!info::mesh->boundaryRegions[r]->dimension && kernel->boundaryWithSettings(r)) {
+			if (!info::mesh->boundaryRegions[r]->dimension) {
 				// process only nodes held by this process
 				esint roffset = std::lower_bound(
 						info::mesh->boundaryRegions[r]->nodes->datatarray().begin(),

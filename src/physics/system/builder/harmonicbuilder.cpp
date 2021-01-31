@@ -9,7 +9,6 @@
 #include "physics/system/fetisystem.h"
 #include "physics/composer/composer.h"
 #include "physics/composer/feti/feti.composer.h"
-#include "physics/kernels/kernel.h"
 #include "physics/kernels/solverdataprovider/provider.h"
 #include "config/ecf/linearsolver/feti.h"
 
@@ -26,8 +25,8 @@ void HarmonicBuilder::init(AssemblerData &assembler, SolverData &solver)
 	solver.y->shallowCopyStructure(solver.f);
 	solver.BC->uniformCombination(assembler.BC->at(0), assembler.BC->at(0), DOFs, DOFs); // BC does not have 2 vectors
 
-	solver.x->at(0)->fillCombinedValues(&assembler.composer->kernel->solutions[0], 0, DOFs, 2 * DOFs);
-	solver.x->at(0)->fillCombinedValues(&assembler.composer->kernel->solutions[1], DOFs, DOFs, 2 * DOFs);
+	solver.x->at(0)->fillCombinedValues(assembler.x->at(0), 0, DOFs, 2 * DOFs);
+	solver.x->at(0)->fillCombinedValues(assembler.x->at(1), DOFs, DOFs, 2 * DOFs);
 
 	reset(Builder::Request::KCM | Builder::Request::RBCf, assembler, solver);
 }
@@ -106,10 +105,7 @@ void HarmonicBuilder::updateSolution(AssemblerData &assembler, SolverData &solve
 {
 	assembler.x->at(0)->fillValuesFromCombination(solver.x->at(0), 0, DOFs, 2 * DOFs);
 	assembler.x->at(1)->fillValuesFromCombination(solver.x->at(0), DOFs, DOFs, 2 * DOFs);
-	for (esint n = 0; n < assembler.x->nvectors; n++) {
-		assembler.composer->kernel->solutions[n].fillData(assembler.x->at(n));
-	}
-	assembler.composer->kernel->solutionChanged();
+	assembler.composer->solutionChanged(assembler.x);
 }
 
 void HarmonicBuilder::init(WSMPSystem &system)
@@ -135,7 +131,7 @@ void HarmonicBuilder::init(MKLPDSSSystem &system)
 void HarmonicBuilder::init(HYPRESystem &system)
 {
 	init(system.assemblers[0], system.solvers[0]);
-	system.assemblers[0].numFnc = system.assemblers[0].composer->kernel->solverDataProvider->hypre->numfnc();
+	system.assemblers[0].numFnc = system.assemblers[0].composer->provider()->hypre->numfnc();
 //	system.assemblers[0].composer->assembler->initHypreKernels(system.assemblers[0].K, system.assemblers[0].N);
 //	system.solvers[0].N.uniformCombination(&system.assemblers[0].N, &system.assemblers[0].N, DOFs, DOFs);
 }

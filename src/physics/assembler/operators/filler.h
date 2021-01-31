@@ -8,14 +8,15 @@
 namespace espreso {
 
 struct KFiller: public Operator {
-	KFiller(const ParameterData &stiffness, Kernel::InstanceFiller &filler, PerElementSize size, int interval)
+	KFiller(const ParameterData &stiffness, double *K, esint *perm, PerElementSize size, int interval)
 	: Operator(interval, false, true),
 	  stiffness(stiffness, interval, stiffness.size),
-	  filler(filler),
+	  K(K), perm(perm),
 	  size(stiffness.increment(size, interval)) {}
 
 	InputParameterIterator stiffness;
-	Kernel::InstanceFiller &filler;
+	double *K;
+	esint *perm;
 	int size;
 
 	void operator++()
@@ -33,7 +34,7 @@ struct KSymmFiller: public KFiller {
 		for (int r = 0; r < size; ++r) {
 			for (int c = 0; c < size; ++c, ++stiffness.data) {
 				if (r <= c) {
-					filler.K[*filler.offset++] += *stiffness.data;
+					K[*perm++] += *stiffness.data;
 				}
 			}
 		}
@@ -48,7 +49,7 @@ struct KFullFiller: public KFiller {
 	{
 		for (int r = 0; r < size; ++r) {
 			for (int c = 0; c < size; ++c, ++stiffness.data) {
-				filler.K[*filler.offset++] += *stiffness.data;
+				K[*perm++] += *stiffness.data;
 			}
 		}
 	}
@@ -58,20 +59,65 @@ struct MatricesFiller: public ElementOperatorBuilder {
 	GET_NAME(MatricesFiller)
 
 	HeatTransferKernelOpt &kernel;
-	Kernel::InstanceFiller &filler;
+	double *K;
+	esint *perm;
 
-	MatricesFiller(HeatTransferKernelOpt &kernel, Kernel::InstanceFiller &filler): kernel(kernel), filler(filler)
+	MatricesFiller(HeatTransferKernelOpt &kernel, double *K, esint *perm): kernel(kernel), K(K), perm(perm)
 	{
 
 	}
 
 	void apply(int interval)
 	{
-		if (kernel.translationMotions.gp.builder) {
-			iterate_elements(KFullFiller(kernel.linearSystem.stiffness, filler, enodes, interval));
+		if (kernel.translationMotions.gp.isset) {
+			iterate_elements(KFullFiller(kernel.linearSystem.stiffness, K, perm, enodes, interval));
 		} else {
-			iterate_elements(KSymmFiller(kernel.linearSystem.stiffness, filler, enodes, interval));
+			iterate_elements(KSymmFiller(kernel.linearSystem.stiffness, K, perm, enodes, interval));
 		}
+	}
+};
+
+struct VectorFiller: public Operator {
+	GET_NAME(RHSFiller)
+	VectorFiller(const ParameterData &rhs, double *RHS, esint *perm, PerElementSize size, int interval)
+	: Operator(interval, false, true),
+	  rhs(rhs, interval, rhs.size),
+	  RHS(RHS), perm(perm),
+	  size(rhs.increment(size, interval)) {}
+
+	InputParameterIterator rhs;
+	double *RHS;
+	esint *perm;
+	int size;
+
+	void operator++()
+	{
+		// increment by operator()
+	}
+
+	void operator()()
+	{
+		for (int r = 0; r < size; ++r) {
+			RHS[*perm++] += *rhs.data;
+		}
+	}
+};
+
+struct RHSFiller: public BoundaryOperatorBuilder {
+	GET_NAME(MatricesFiller)
+
+	HeatTransferKernelOpt &kernel;
+	double *RHS;
+	esint *perm;
+
+	RHSFiller(HeatTransferKernelOpt &kernel, double *RHS, esint *perm): kernel(kernel), RHS(RHS), perm(perm)
+	{
+
+	}
+
+	void apply(int region, int interval)
+	{
+		iterate_boundary(VectorFiller(kernel.linearSystem.boundary.rhs.regions[region], RHS, perm, enodes, interval), region);
 	}
 };
 
