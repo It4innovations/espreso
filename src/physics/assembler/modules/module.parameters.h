@@ -133,6 +133,14 @@ struct ParametersConvection {
 	BoundarySettings<ConvectionConfiguration> configuration;
 };
 
+struct ParametersGradient {
+	static ElementData *output;
+};
+
+struct ParametersFlux {
+	static ElementData *output;
+};
+
 }
 
 

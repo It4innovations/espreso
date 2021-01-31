@@ -32,7 +32,7 @@ public:
 	static const int GP_HEXA8     = 8;
 	static const int GP_HEXA20    = 8;
 
-	static ElementData *phase, *latentHeat, *gradient, *flux;
+	static ElementData *phase, *latentHeat;
 	static void createParameters();
 	static void insertParameters(Evaluator *evaluator);
 
@@ -40,7 +40,7 @@ public:
 	~HeatTransferModuleOpt() {};
 
 	void nextSubstep();
-	void solutionChanged();
+	void solutionChanged(Vectors *solution);
 
 	void updateStiffness(double *K, esint *perm, int interval);
 
@@ -68,6 +68,11 @@ public:
 
 	ParametersLinearSystem<1> linearSystem;
 
+	ParametersGradient gradient;
+	ParametersFlux flux;
+
+protected:
+	void initTemperature();
 };
 
 }

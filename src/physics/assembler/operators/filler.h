@@ -67,6 +67,11 @@ struct MatricesFiller: public ElementOperatorBuilder {
 
 	}
 
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
+		return true;
+	}
+
 	void apply(int interval)
 	{
 		if (kernel.translationMotions.gp.isset) {
@@ -113,6 +118,11 @@ struct RHSFiller: public BoundaryOperatorBuilder {
 	RHSFiller(HeatTransferModuleOpt &kernel, double *RHS, esint *perm): kernel(kernel), RHS(RHS), perm(perm)
 	{
 
+	}
+
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
+		return true;
 	}
 
 	void apply(int region, int interval)

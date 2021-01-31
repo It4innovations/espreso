@@ -64,8 +64,14 @@ struct ElementCoordinates: public ElementOperatorBuilder {
 
 	ElementCoordinates(Kernel &kernel): kernel(kernel)
 	{
+
+	}
+
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
 		kernel.coords.node.addInputs(info::mesh->nodes->coordinates);
 		kernel.coords.gp.addInputs(kernel.coords.node);
+		return true;
 	}
 
 	void apply(int interval)
@@ -90,12 +96,18 @@ struct BoundaryCoordinates: public BoundaryOperatorBuilder {
 
 	BoundaryCoordinates(Kernel &kernel): kernel(kernel)
 	{
+
+	}
+
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 			kernel.coords.boundary.node.regions[r].addInputs(info::mesh->nodes->coordinates);
 			kernel.coords.boundary.gp.regions[r].addInputs(kernel.coords.boundary.node.regions[r]);
 			kernel.coords.boundary.node.regions[r].isset = true;
 			kernel.coords.boundary.gp.regions[r].isset = true;
 		}
+		return true;
 	}
 
 	void apply(int region, int interval)

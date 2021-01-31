@@ -90,12 +90,18 @@ struct HeatStiffness: public ElementOperatorBuilder {
 
 	HeatStiffness(HeatTransferModuleOpt &kernel): kernel(kernel)
 	{
+
+	}
+
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
 		if (info::mesh->dimension == 2) {
 			kernel.linearSystem.stiffness.addInputs(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivity, kernel.thickness.gp);
 		}
 		if (info::mesh->dimension == 3) {
 			kernel.linearSystem.stiffness.addInputs(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivity);
 		}
+		return true;
 	}
 
 	void apply(int interval)
@@ -106,7 +112,7 @@ struct HeatStiffness: public ElementOperatorBuilder {
 				iterate_elements_gps<HeatTransferModuleOpt>(Stiffness2DHeatIsotropic(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivityIsotropic, kernel.thickness.gp, kernel.linearSystem.stiffness, interval));
 			}
 			if (info::mesh->dimension == 3) {
-				iterate_elements_gps<HeatTransferModuleOpt>(Stiffness2DHeatIsotropic(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivityIsotropic, kernel.thickness.gp, kernel.linearSystem.stiffness, interval));
+				iterate_elements_gps<HeatTransferModuleOpt>(Stiffness3DHeatIsotropic(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivityIsotropic, kernel.thickness.gp, kernel.linearSystem.stiffness, interval));
 			}
 		} else {
 			if (info::mesh->dimension == 2) {

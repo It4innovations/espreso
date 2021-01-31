@@ -298,6 +298,12 @@ LoadStepIterator::~LoadStepIterator()
 
 void LoadStepIterator::prepareExpressions()
 {
+	if (info::ecf->physics == PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D && info::ecf->heat_transfer_2d.kernel == HeatTransferConfiguration::KERNEL::OLD) {
+		return;
+	}
+	if (info::ecf->physics == PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D && info::ecf->heat_transfer_3d.kernel == HeatTransferConfiguration::KERNEL::OLD) {
+		return;
+	}
 	switch (info::ecf->physics) {
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D: HeatTransferModuleOpt::createParameters(); break;
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D: HeatTransferModuleOpt::createParameters(); break;

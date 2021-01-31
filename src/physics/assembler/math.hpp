@@ -149,6 +149,57 @@ static inline void M2NMN3(const double &sumscale, const double * __restrict__ m2
 	m23[3 * 1 + 2] *= sumscale;
 }
 
+template<int N>
+static inline void ADDM2NMN1(const double &sumscale, const double * __restrict__ m2N, const double * __restrict__ mN1, double * __restrict__ m21)
+{
+	double x[2] = { 0, 0 };
+	for (int n = 0; n < N; ++n) {
+		x[0] += m2N[0 * N + n] * mN1[n];
+		x[1] += m2N[1 * N + n] * mN1[n];
+	}
+	m21[0] += sumscale * x[0];
+	m21[1] += sumscale * x[1];
+}
+
+template<int N>
+static inline void ADDM3NMN1(const double &sumscale, const double * __restrict__ m3N, const double * __restrict__ mN1, double * __restrict__ m31)
+{
+	double x[3] = { 0, 0, 0 };
+	for (int n = 0; n < N; ++n) {
+		x[0] += m3N[0 * N + n] * mN1[n];
+		x[1] += m3N[1 * N + n] * mN1[n];
+		x[2] += m3N[2 * N + n] * mN1[n];
+	}
+	m31[0] += sumscale * x[0];
+	m31[1] += sumscale * x[1];
+	m31[2] += sumscale * x[2];
+}
+
+template<int N>
+static inline void ADDM22M2NMN1(const double &sumscale, const double * __restrict__ m22, const double * __restrict__ m2N, const double * __restrict__ mN1, double * __restrict__ m21)
+{
+	double x[2] = { 0, 0 };
+	for (int n = 0; n < N; ++n) {
+		x[0] += m2N[0 * N + n] * mN1[n];
+		x[1] += m2N[1 * N + n] * mN1[n];
+	}
+	m21[0] += sumscale * (m22[0 * 2 + 0] * x[0] + m22[0 * 2 + 1] * x[1]);
+	m21[1] += sumscale * (m22[1 * 2 + 0] * x[0] + m22[1 * 2 + 1] * x[1]);
+}
+
+template<int N>
+static inline void ADDM33M3NMN1(const double &sumscale, const double * __restrict__ m33, const double * __restrict__ m3N, const double * __restrict__ mN1, double * __restrict__ m31)
+{
+	double x[3] = { 0, 0, 0 };
+	for (int n = 0; n < N; ++n) {
+		x[0] += m3N[0 * N + n] * mN1[n];
+		x[1] += m3N[1 * N + n] * mN1[n];
+		x[2] += m3N[2 * N + n] * mN1[n];
+	}
+	m31[0] += sumscale * (m33[0 * 3 + 0] * x[0] + m33[0 * 3 + 1] * x[1] + m33[0 * 3 + 2] * x[2]);
+	m31[1] += sumscale * (m33[1 * 3 + 0] * x[0] + m33[1 * 3 + 1] * x[1] + m33[1 * 3 + 2] * x[2]);
+	m31[2] += sumscale * (m33[2 * 3 + 0] * x[0] + m33[2 * 3 + 1] * x[1] + m33[2 * 3 + 2] * x[2]);
+}
 
 template<int N>
 static inline void ADDMN2M2N(const double &sumscale, const double * __restrict__ m2N, double * __restrict__ mNN)

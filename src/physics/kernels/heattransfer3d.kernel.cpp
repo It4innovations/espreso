@@ -30,6 +30,8 @@ HeatTransfer3DKernel::HeatTransfer3DKernel(HeatTransfer3DKernel *previous, Physi
 	geometry::computeBoundaryRegionsArea();
 	geometry::computeMortars();
 
+	solutions.push_back(VectorDense(iterator.temperature.output.data->data.size(), iterator.temperature.output.data->data.data()));
+
 	boundaries.reserve(info::mesh->boundaryRegions.size());
 	for (size_t i = 0; i < info::mesh->boundaryRegions.size(); ++i) {
 		boundaries.emplace_back(info::mesh->boundaryRegions[i], iterator, configuration, 3);

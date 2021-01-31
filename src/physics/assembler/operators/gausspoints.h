@@ -45,7 +45,13 @@ struct ElementsGaussPointsBuilder: public ElementOperatorBuilder {
 	ElementsGaussPointsBuilder(ParameterData &N, ParameterData &nodeData, ParameterData &gpData)
 	: N(N), nodeData(nodeData), gpData(gpData)
 	{
+
+	}
+
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
 		gpData.addInputs(nodeData);
+		return true;
 	}
 
 	void apply(int interval)
@@ -63,10 +69,16 @@ struct BoundaryGaussPointsBuilder: public BoundaryOperatorBuilder {
 	BoundaryGaussPointsBuilder(BoundaryParameterPack &N, BoundaryParameterPack &nodeData, BoundaryParameterPack &gpData)
 	: N(N), nodeData(nodeData), gpData(gpData)
 	{
+
+	}
+
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
 		for (size_t r = 0; r < gpData.regions.size(); ++r) {
 			gpData.regions[r].isset = nodeData.regions[r].isset;
 			gpData.regions[r].addInputs(nodeData.regions[r]);
 		}
+		return true;
 	}
 
 	void apply(int region, int interval)

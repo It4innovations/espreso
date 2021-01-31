@@ -128,6 +128,11 @@ struct ThermalConductivity: public ElementOperatorBuilder {
 
 	ThermalConductivity(HeatTransferModuleOpt &kernel): kernel(kernel)
 	{
+
+	}
+
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
 		for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 			const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[i].material];
 			switch (mat->coordinate_system.type) {
@@ -145,6 +150,7 @@ struct ThermalConductivity: public ElementOperatorBuilder {
 		if (info::mesh->dimension == 3) {
 			kernel.material.conductivity.addInputs(kernel.material.model.diagonal, kernel.material.model.symmetric3D, kernel.material.model.anisotropic, kernel.cooSystem.cartesian3D, kernel.cooSystem.spherical, kernel.cooSystem.cylindric);
 		}
+		return true;
 	}
 
 	void apply(int interval)

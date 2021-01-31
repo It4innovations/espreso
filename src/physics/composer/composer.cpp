@@ -7,6 +7,7 @@
 #include "math/matrix.indices.h"
 #include "math/matrix.h"
 #include "math/vector.sparse.h"
+#include "math/vector.dense.h"
 
 #include <cstddef>
 
@@ -51,7 +52,7 @@ void Composer::solutionChanged(Vectors *solution)
 		}
 		kernel->solutionChanged();
 	} else {
-		opt->solutionChanged();
+		opt->solutionChanged(solution);
 	}
 }
 

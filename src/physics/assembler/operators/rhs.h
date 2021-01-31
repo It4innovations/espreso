@@ -187,6 +187,11 @@ struct HeatRHS: public BoundaryOperatorBuilder {
 
 	HeatRHS(HeatTransferModuleOpt &kernel): kernel(kernel)
 	{
+
+	}
+
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 			if (info::mesh->boundaryRegions[r]->dimension) {
 				if (kernel.heatFlow.gp.regions[r].data == NULL) {
@@ -207,6 +212,7 @@ struct HeatRHS: public BoundaryOperatorBuilder {
 			}
 			kernel.linearSystem.boundary.rhs.regions[r].addInputs(kernel.q.gp.regions[r], kernel.integration.boundary.jacobian.regions[r]);
 		}
+		return true;
 	}
 
 	void apply(int region, int interval)

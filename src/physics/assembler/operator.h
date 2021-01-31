@@ -46,6 +46,16 @@ struct Operator {
 			return *this;
 		}
 
+		template<class TNamedData>
+		Link& result(TNamedData* &data)
+		{
+			if (data->version < version) {
+				data->version = version;
+			}
+			++update; // results are always updated
+			return *this;
+		}
+
 		template <class TParameter>
 		Link& outputs(TParameter &data)
 		{
@@ -81,7 +91,13 @@ struct OperatorBuilder {
 	virtual const char* name() =0;
 	virtual void now() =0;
 
-	virtual bool build(HeatTransferModuleOpt &kernel) { return true; }
+	virtual bool build(HeatTransferModuleOpt &kernel) =0;
+
+	void buildAndExecute(HeatTransferModuleOpt &kernel)
+	{
+		build(kernel);
+		now();
+	}
 };
 
 struct ElementOperatorBuilder: public OperatorBuilder {

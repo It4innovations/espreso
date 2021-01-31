@@ -19,6 +19,7 @@ struct ExpressionsToElements;
 struct ExpressionsToBoundary;
 class ConvectionConfiguration;
 struct SolverDataProvider;
+class Vectors;
 
 class ModuleOpt
 {
@@ -27,7 +28,7 @@ public:
 	SolverDataProvider *solverDataProvider;
 
 	virtual void nextSubstep() =0;
-	virtual void solutionChanged() =0;
+	virtual void solutionChanged(Vectors *solution) =0;
 	virtual void processSolution() =0;
 
 	virtual void updateStiffness(double *K, esint *perm, int interval) =0;
@@ -56,7 +57,7 @@ protected:
 	void examineBoundaryParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExpressionsToBoundary &builder);
 	void examineBoundaryParameter(const std::string &name, const std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection);
 
-	std::vector<OperatorBuilder*> operators;
+	std::vector<OperatorBuilder*> builders, results;
 };
 
 }

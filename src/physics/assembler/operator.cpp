@@ -10,7 +10,7 @@ using namespace espreso;
 
 void ElementOperatorBuilder::now()
 {
-	if (Operator::print) printf("BUILD ELEMENTS: %s\n", name());
+	if (Operator::print > 1) printf("BUILD ELEMENTS: %s\n", name());
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::threads; ++t) {
 		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
@@ -23,7 +23,7 @@ void ElementOperatorBuilder::now()
 
 void BoundaryOperatorBuilder::now()
 {
-	if (Operator::print) printf("BUILD BOUNDARY: %s\n", name());
+	if (Operator::print > 1) printf("BUILD BOUNDARY: %s\n", name());
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::threads; ++t) {
 		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {

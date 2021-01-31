@@ -89,7 +89,7 @@ void ExpressionsToElements::apply(int interval)
 		}
 		++parameter.version[interval];
 	} else {
-		if (Operator::print) printf("\tOP::ELEMENT::%d::EXPR::SKIPPED\n", interval);
+		if (Operator::print > 2) printf("\tOP::ELEMENT::%d::EXPR::SKIPPED\n", interval);
 	}
 }
 
@@ -200,7 +200,7 @@ void ExpressionsToBoundary::apply(int region, int interval)
 			}
 			++parameter.regions[region].version[interval];
 		} else {
-			if (Operator::print) printf("\tOP::BOUNDARY::%d::%d::EXPR::SKIPPED\n", region, interval);
+			if (Operator::print > 2) printf("\tOP::BOUNDARY::%d::%d::EXPR::SKIPPED\n", region, interval);
 		}
 	}
 }

@@ -20,12 +20,13 @@ bool Basis::build(HeatTransferModuleOpt &kernel)
 			double *n = (kernel.integration.N.data->begin() + index)->data();
 			double *dn = (kernel.integration.dN.data->begin() + index)->data();
 			double *w = (kernel.integration.weight.data->begin() + index)->data();
-			esint nsize = (*Mesh::edata[ei->code].N)[0].ncols * (*Mesh::edata[ei->code].N)[0].nrows;
-			for (size_t gp = 0; gp < Mesh::edata[ei->code].N->size(); ++gp) {
-				memcpy(n + gp * nsize, (*Mesh::edata[ei->code].N)[gp].vals, sizeof(double) * nsize);
-				memcpy(dn + Mesh::edata[ei->code].dimension * gp * nsize, (*Mesh::edata[ei->code].dN)[gp].vals, sizeof(double) * Mesh::edata[ei->code].dimension * nsize);
+			esint nodes = Mesh::edata[ei->code].nodes;
+			esint gps = Mesh::edata[ei->code].weighFactor->size();
+			for (esint gp = 0; gp < gps; ++gp) {
+				memcpy(n + gp * nodes, (*Mesh::edata[ei->code].N)[gp].vals, sizeof(double) * nodes);
+				memcpy(dn + Mesh::edata[ei->code].dimension * gp * nodes, (*Mesh::edata[ei->code].dN)[gp].vals, sizeof(double) * Mesh::edata[ei->code].dimension * nodes);
 			}
-			memcpy(w, Mesh::edata[ei->code].weighFactor->data(), sizeof(double) * nsize);
+			memcpy(w, Mesh::edata[ei->code].weighFactor->data(), sizeof(double) * gps);
 		}
 	}
 
@@ -41,12 +42,13 @@ bool Basis::build(HeatTransferModuleOpt &kernel)
 				double *n = (kernel.integration.boundary.N.regions[r].data->begin() + index)->data();
 				double *dn = (kernel.integration.boundary.dN.regions[r].data->begin() + index)->data();
 				double *w = (kernel.integration.boundary.weight.regions[r].data->begin() + index)->data();
-				esint nsize = (*Mesh::edata[ei->code].N)[0].ncols * (*Mesh::edata[ei->code].N)[0].nrows;
-				for (size_t gp = 0; gp < Mesh::edata[ei->code].N->size(); ++gp) {
-					memcpy(n + gp * nsize, (*Mesh::edata[ei->code].N)[gp].vals, sizeof(double) * nsize);
-					memcpy(dn + Mesh::edata[ei->code].dimension * gp * nsize, (*Mesh::edata[ei->code].dN)[gp].vals, sizeof(double) * Mesh::edata[ei->code].dimension * nsize);
+				esint nodes = Mesh::edata[ei->code].nodes;
+				esint gps = Mesh::edata[ei->code].weighFactor->size();
+				for (esint gp = 0; gp < gps; ++gp) {
+					memcpy(n + gp * nodes, (*Mesh::edata[ei->code].N)[gp].vals, sizeof(double) * nodes);
+					memcpy(dn + Mesh::edata[ei->code].dimension * gp * nodes, (*Mesh::edata[ei->code].dN)[gp].vals, sizeof(double) * Mesh::edata[ei->code].dimension * nodes);
 				}
-				memcpy(w, Mesh::edata[ei->code].weighFactor->data(), sizeof(double) * nsize);
+				memcpy(w, Mesh::edata[ei->code].weighFactor->data(), sizeof(double) * gps);
 			}
 		}
 	}

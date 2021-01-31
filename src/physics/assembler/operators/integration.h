@@ -1,6 +1,6 @@
 
-#ifndef SRC_PHYSICS_ASSEMBLER_OPERATORS_JACOBIAN_H_
-#define SRC_PHYSICS_ASSEMBLER_OPERATORS_JACOBIAN_H_
+#ifndef SRC_PHYSICS_ASSEMBLER_OPERATORS_INTEGRATION_H_
+#define SRC_PHYSICS_ASSEMBLER_OPERATORS_INTEGRATION_H_
 
 #include "physics/assembler/operator.h"
 #include "physics/assembler/parameter.h"
@@ -112,9 +112,15 @@ struct ElementIntegration: public ElementOperatorBuilder {
 
 	ElementIntegration(Kernel &kernel): kernel(kernel)
 	{
+
+	}
+
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
 		kernel.integration.jacobiInversion.addInputs(kernel.coords.node, kernel.integration.dN);
 		kernel.integration.jacobiDeterminant.addInputs(kernel.coords.node, kernel.integration.dN);
 		kernel.integration.dND.addInputs(kernel.coords.node, kernel.integration.dN);
+		return true;
 	}
 
 	void apply(int interval)
@@ -200,10 +206,16 @@ struct BoundaryIntegration: public BoundaryOperatorBuilder {
 
 	BoundaryIntegration(Kernel &kernel): kernel(kernel)
 	{
+
+	}
+
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 			kernel.integration.boundary.jacobian.regions[r].addInputs(kernel.coords.boundary.node.regions[r], kernel.integration.boundary.dN.regions[r]);
 			kernel.integration.boundary.jacobian.regions[r].isset = true;
 		}
+		return true;
 	}
 
 	void apply(int region, int interval)
@@ -224,4 +236,4 @@ struct BoundaryIntegration: public BoundaryOperatorBuilder {
 
 }
 
-#endif /* SRC_PHYSICS_ASSEMBLER_OPERATORS_JACOBIAN_H_ */
+#endif /* SRC_PHYSICS_ASSEMBLER_OPERATORS_INTEGRATION_H_ */

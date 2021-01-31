@@ -19,7 +19,7 @@ void AverageElementsNodesToNodes::now()
 	int version = *std::max_element(from.version.begin(), from.version.begin());
 	Communication::allReduce(&version, NULL, 1, MPI_INT, MPI_MAX);
 	if (to.version < version || !to.version) {
-		if (Operator::print) printf("\tOP::AverageElementsNodesToNodes\n");
+		if (Operator::print) printf("BUILD ELEMENTS: AverageElementsNodesToNodes\n");
 		to.version = version;
 		std::fill(to.data.begin(), to.data.end(), 0);
 		auto procNodes = info::mesh->elements->procNodes->begin();
@@ -86,7 +86,7 @@ void AverageElementsNodesToNodes::now()
 			}
 		}
 	} else {
-		printf("\tOP::SKIPPED::AverageElementsNodesToNodes\n");
+		if (Operator::print > 2) printf("BUILD ELEMENTS: SKIPPED::AverageElementsNodesToNodes\n");
 	}
 }
 
@@ -98,7 +98,7 @@ void CopyNodesToElementsNodes::now()
 			for (esint ii = info::mesh->elements->eintervalsDistribution[d]; ii < info::mesh->elements->eintervalsDistribution[d + 1]; ++ii) {
 				if (to.version[ii] < from.version || !to.version[ii]) {
 					to.version[ii] = from.version;
-					if (Operator::print) printf("\tOP::CopyNodesToElementsNodes::%d\n", ii);
+					if (Operator::print) printf("BUILD ELEMENTS: CopyNodesToElementsNodes::%d\n", ii);
 					auto i = (to.data->begin() + ii)->data();
 					auto procNodes = info::mesh->elements->procNodes->begin() + info::mesh->elements->eintervals[ii].begin;
 					for (esint e = info::mesh->elements->eintervals[ii].begin; e < info::mesh->elements->eintervals[ii].end; ++e, ++procNodes) {
@@ -109,7 +109,7 @@ void CopyNodesToElementsNodes::now()
 						}
 					}
 				} else {
-					if (Operator::print) printf("\tOP::CopyNodesToElementsNodes::%d::SKIPPED\n", ii);
+					if (Operator::print > 2) printf("BUILD ELEMENTS: CopyNodesToElementsNodes::%d::SKIPPED\n", ii);
 				}
 			}
 		}
@@ -126,7 +126,7 @@ void CopyNodesToBoundaryNodes::now()
 					for (esint ii = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; ii < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++ii) {
 						if (to.regions[r].version[ii] < from.version || !to.regions[r].version[ii]) {
 							to.regions[r].version[ii] = from.version;
-							if (Operator::print) printf("\tOP::CopyNodesToBoundaryNodes::%lu::%d\n", r, ii);
+							if (Operator::print) printf("BUILD BOUNDARY: CopyNodesToBoundaryNodes::%lu::%d\n", r, ii);
 
 							auto i = (to.regions[r].data->begin() + ii)->data();
 							auto procNodes = info::mesh->boundaryRegions[r]->procNodes->begin() + info::mesh->boundaryRegions[r]->eintervals[ii].begin;
@@ -138,7 +138,7 @@ void CopyNodesToBoundaryNodes::now()
 								}
 							}
 						}  else {
-							if (Operator::print) printf("\tOP::CopyNodesToBoundaryNodes::%lu::%d::SKIPPED\n", r, ii);
+							if (Operator::print > 2) printf("BUILD BOUNDARY: CopyNodesToBoundaryNodes::%lu::%d::SKIPPED\n", r, ii);
 						}
 					}
 				}
@@ -149,6 +149,7 @@ void CopyNodesToBoundaryNodes::now()
 
 void CopyBoundaryRegionsSettingToNodes::now()
 {
+	if (Operator::print) printf("BUILD BOUNDARY: CopyBoundaryRegionsSettingToNodes::\n");
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; t++) {
 		for (auto it = from.begin(); it != from.end(); ++it) {

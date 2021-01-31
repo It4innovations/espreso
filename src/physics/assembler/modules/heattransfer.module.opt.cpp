@@ -1,15 +1,20 @@
 
+
 #include "heattransfer.module.opt.h"
 #include "module.opt.hpp"
+#include "math/vector.dense.h"
+
 #include "physics/assembler/operators/basis.h"
 #include "physics/assembler/operators/expression.h"
 #include "physics/assembler/operators/coordinates.h"
-#include "physics/assembler/operators/jacobian.h"
 #include "physics/assembler/operators/conductivity.h"
 #include "physics/assembler/operators/convection.h"
+#include "physics/assembler/operators/integration.h"
 #include "physics/assembler/operators/stiffness.h"
 #include "physics/assembler/operators/rhs.h"
 #include "physics/assembler/operators/filler.h"
+#include "physics/assembler/operators/gradient.h"
+#include "physics/assembler/operators/flux.h"
 #include "physics/kernels/utils/geometry.h"
 #include "physics/kernels/solverdataprovider/heattransfer.provider.h"
 
@@ -20,8 +25,6 @@ using namespace espreso;
 
 ElementData* HeatTransferModuleOpt::phase = NULL;
 ElementData* HeatTransferModuleOpt::latentHeat = NULL;
-ElementData* HeatTransferModuleOpt::gradient = NULL;
-ElementData* HeatTransferModuleOpt::flux = NULL;
 
 void HeatTransferModuleOpt::createParameters()
 {
@@ -43,10 +46,10 @@ void HeatTransferModuleOpt::createParameters()
 		latentHeat = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "LATENT_HEAT");
 	}
 	if (info::ecf->output.results_selection.gradient) {
-		gradient = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "GRADIENT");
+		ParametersGradient::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "GRADIENT");
 	}
 	if (info::ecf->output.results_selection.flux) {
-		flux = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUX");
+		ParametersFlux::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUX");
 	}
 }
 
@@ -76,30 +79,63 @@ void HeatTransferModuleOpt::insertParameters(Evaluator *evaluator)
 	}
 }
 
+void HeatTransferModuleOpt::initTemperature()
+{
+	/// This code has to solve problem that initial temperature is set to elements regions, but we need it in nodes
+	/// 1. settings -> nodeInitialTemperature
+	/// 2. nodeInitialTemperature -> initialTemperature (here we average values)
+	/// 3. Dirichlet -> initialTemperature (if 'init_temp_respect_bc')
+	/// 4. initialTemperature -> nodeInitialTemperature (TODO: check the correction with TB)
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	temp.initial.node.builder = new ExpressionsToElements(temp.initial.node, 273.15);
+	if (info::mesh->dimension == 2) {
+		if (info::ecf->heat_transfer_2d.init_temp_respect_bc) {
+			temp.initial.node.setConstness(false);
+		}
+		examineElementParameter("INITIAL TEMPERATURE", info::ecf->heat_transfer_2d.initial_temperature, *temp.initial.node.builder);
+	}
+	if (info::mesh->dimension == 3) {
+		if (info::ecf->heat_transfer_2d.init_temp_respect_bc) {
+			temp.initial.node.setConstness(false);
+		}
+		examineElementParameter("INITIAL TEMPERATURE", info::ecf->heat_transfer_3d.initial_temperature, *temp.initial.node.builder);
+	}
+	for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
+		HeatTransferModuleOpt::insertParameters(it->second.evaluator);
+	}
+
+	temp.initial.node.builder->buildAndExecute(*this);
+	AverageElementsNodesToNodes(temp.initial.node, *ParametersTemperature::outputInitial).buildAndExecute(*this);
+	if (info::mesh->dimension == 2 && info::ecf->heat_transfer_2d.init_temp_respect_bc) {
+		CopyBoundaryRegionsSettingToNodes(configuration.temperature, *ParametersTemperature::outputInitial).buildAndExecute(*this);
+	}
+	if (info::mesh->dimension == 3 && info::ecf->heat_transfer_3d.init_temp_respect_bc) {
+		CopyBoundaryRegionsSettingToNodes(configuration.temperature, *ParametersTemperature::outputInitial).buildAndExecute(*this);
+	}
+	temp.initial.node.addInputs(ParametersTemperature::output);
+	temp.initial.boundary.node.addInputs(ParametersTemperature::outputInitial);
+	CopyNodesToElementsNodes(*ParametersTemperature::outputInitial, temp.initial.node).now();
+	CopyNodesToBoundaryNodes(*ParametersTemperature::outputInitial, temp.initial.boundary.node).now();
+	ElementsGaussPointsBuilder<HeatTransferModuleOpt, 1>(integration.N, temp.initial.node, temp.initial.gp).buildAndExecute(*this);
+	BoundaryGaussPointsBuilder<HeatTransferModuleOpt, 1>(integration.boundary.N, temp.initial.boundary.node, temp.initial.boundary.gp).buildAndExecute(*this);
+
+	ParametersTemperature::output->data = ParametersTemperature::outputInitial->data;
+	ParametersTemperature::output->version = ParametersTemperature::outputInitial->version;
+
+	temp.node.addInputs(ParametersTemperature::output);
+	temp.boundary.node.addInputs(ParametersTemperature::output);
+	CopyElementParameters(temp.initial.node, temp.node).now();
+	builders.push_back(new CopyNodesToElementsNodes(*ParametersTemperature::output, temp.node));
+	builders.push_back(new ElementsGaussPointsBuilder<HeatTransferModuleOpt, 1>(integration.N, temp.node, temp.gp));
+	builders.push_back(new CopyNodesToBoundaryNodes(*ParametersTemperature::output, temp.boundary.node));
+	builders.push_back(new BoundaryGaussPointsBuilder<HeatTransferModuleOpt, 1>(integration.boundary.N, temp.boundary.node, temp.boundary.gp));
+}
+
 HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, HeatTransferLoadStepConfiguration &configuration)
 : ModuleOpt(new HeatTransferSolverDataProvider(configuration)),
   configuration(configuration)
 {
 	geometry::computeBoundaryRegionsArea();
-
-	Basis().build(*this);
-	operators.push_back(new ElementCoordinates<HeatTransferModuleOpt>(*this));
-	operators.push_back(new BoundaryCoordinates<HeatTransferModuleOpt>(*this));
-
-	operators.push_back(new ElementIntegration<HeatTransferModuleOpt>(*this));
-	operators.push_back(new BoundaryIntegration<HeatTransferModuleOpt>(*this));
-
-	operators.push_back(new ExpressionsToElements(cooSystem.cartesian2D, 0));
-	operators.push_back(new ExpressionsToElements(cooSystem.cartesian3D, 0));
-	operators.push_back(new ExpressionsToElements(cooSystem.spherical, 0));
-	operators.push_back(new ExpressionsToElements(cooSystem.cylindric, 0));
-	operators.push_back(new ExpressionsToElements(material.model.isotropic, 1));
-	operators.push_back(new ExpressionsToElements(material.model.diagonal, 1));
-	operators.push_back(new ExpressionsToElements(material.model.symmetric2D, 1));
-	operators.push_back(new ExpressionsToElements(material.model.symmetric3D, 1));
-	operators.push_back(new ExpressionsToElements(material.model.anisotropic, 1));
-	operators.push_back(new ExpressionsToElements(material.density, 1));
-	operators.push_back(new ExpressionsToElements(material.heatCapacity, 1));
 
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info("  PHYSICS                                                                    HEAT TRANSFER 2D  \n");
@@ -117,7 +153,53 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 		validateRegionSettings("INITIAL TEMPERATURE", info::ecf->heat_transfer_3d.initial_temperature);
 	}
 
+	Basis().build(*this);
+	builders.push_back(new ElementCoordinates<HeatTransferModuleOpt>(*this));
+	builders.push_back(new BoundaryCoordinates<HeatTransferModuleOpt>(*this));
+
+	builders.push_back(new ElementIntegration<HeatTransferModuleOpt>(*this));
+	builders.push_back(new BoundaryIntegration<HeatTransferModuleOpt>(*this));
+
 	if (step::loadstep == 0) {
+		initTemperature(); // we need to init temperature first since other builder can read it
+
+		if (info::mesh->dimension == 2) {
+			builders.push_back(new ExpressionsToElements(thickness.gp, 1));
+			examineElementParameter("THICKNESS", info::ecf->heat_transfer_2d.thickness, *thickness.gp.builder);
+			builders.push_back(new ExpressionsToBoundaryFromElement(*thickness.gp.builder, thickness.boundary.gp, "THICKNESS"));
+
+			if (configuration.translation_motions.size()) {
+				switch (info::ecf->heat_transfer_2d.stabilization) {
+				case HeatTransferGlobalSettings::STABILIZATION::CAU: eslog::info("  %s:%77s \n", "STABILIZATION", "CAU"); break;
+				case HeatTransferGlobalSettings::STABILIZATION::SUPG: eslog::info("  %s:%77s \n", "STABILIZATION", "SUPG"); break;
+				}
+				eslog::info("  %s:%85g \n", "SIGMA", info::ecf->heat_transfer_2d.sigma);
+			}
+		}
+		if (info::mesh->dimension == 3) {
+			thickness.gp.resize(); // dummy resize in order to avoid memory errors in some operators
+			if (configuration.translation_motions.size()) {
+				switch (info::ecf->heat_transfer_3d.stabilization) {
+				case HeatTransferGlobalSettings::STABILIZATION::CAU: eslog::info("  %s:%77s \n", "STABILIZATION", "CAU"); break;
+				case HeatTransferGlobalSettings::STABILIZATION::SUPG: eslog::info("  %s:%77s \n", "STABILIZATION", "SUPG"); break;
+				}
+				eslog::info("  %s:%85g \n", "SIGMA", info::ecf->heat_transfer_3d.sigma);
+			}
+		}
+		eslog::info(" ============================================================================================= \n");
+
+		builders.push_back(new ExpressionsToElements(cooSystem.cartesian2D, 0));
+		builders.push_back(new ExpressionsToElements(cooSystem.cartesian3D, 0));
+		builders.push_back(new ExpressionsToElements(cooSystem.spherical, 0));
+		builders.push_back(new ExpressionsToElements(cooSystem.cylindric, 0));
+		builders.push_back(new ExpressionsToElements(material.model.isotropic, 1));
+		builders.push_back(new ExpressionsToElements(material.model.diagonal, 1));
+		builders.push_back(new ExpressionsToElements(material.model.symmetric2D, 1));
+		builders.push_back(new ExpressionsToElements(material.model.symmetric3D, 1));
+		builders.push_back(new ExpressionsToElements(material.model.anisotropic, 1));
+		builders.push_back(new ExpressionsToElements(material.density, 1));
+		builders.push_back(new ExpressionsToElements(material.heatCapacity, 1));
+
 		///////////////////////////////////// Set materials and check if there is not any incorrect region intersection
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		eslog::info("  MATERIALS                                                                                    \n");
@@ -219,7 +301,6 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 					examineMaterialParameter(mat->name, "KZY", mat->thermal_conductivity.values.get(2, 1), *material.model.anisotropic.builder, 7);
 					examineMaterialParameter(mat->name, "KZX", mat->thermal_conductivity.values.get(2, 0), *material.model.anisotropic.builder, 8);
 				}
-
 				break;
 			}
 			eslog::info("                                                                                               \n");
@@ -232,84 +313,12 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 		if (info::mesh->dimension == 3) {
 			printMaterials(info::ecf->heat_transfer_3d.material_set);
 		}
-		operators.push_back(new ThermalConductivity(*this));
+		builders.push_back(new ThermalConductivity(*this));
 		eslog::info(" ============================================================================================= \n");
-
-
-		/// Set initial temperature
-		/// This code has to solve problem that initial temperature is set to elements regions, but we need it in nodes
-		/// 1. settings -> nodeInitialTemperature
-		/// 2. nodeInitialTemperature -> initialTemperature (here we average values)
-		/// 3. Dirichlet -> initialTemperature (if 'init_temp_respect_bc')
-		/// 4. initialTemperature -> nodeInitialTemperature (TODO: check the correction with TB)
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		temp.initial.node.builder = new ExpressionsToElements(temp.initial.node, 273.15);
-		if (info::mesh->dimension == 2) {
-			if (info::ecf->heat_transfer_2d.init_temp_respect_bc) {
-				temp.initial.node.setConstness(false);
-			}
-			operators.push_back(new ExpressionsToElements(thickness.gp, 1));
-			examineElementParameter("THICKNESS", info::ecf->heat_transfer_2d.thickness, *thickness.gp.builder);
-			operators.push_back(new ExpressionsToBoundaryFromElement(*thickness.gp.builder, thickness.boundary.gp, "THICKNESS"));
-			examineElementParameter("INITIAL TEMPERATURE", info::ecf->heat_transfer_2d.initial_temperature, *temp.initial.node.builder);
-
-			if (configuration.translation_motions.size()) {
-				switch (info::ecf->heat_transfer_2d.stabilization) {
-				case HeatTransferGlobalSettings::STABILIZATION::CAU: eslog::info("  %s:%77s \n", "STABILIZATION", "CAU"); break;
-				case HeatTransferGlobalSettings::STABILIZATION::SUPG: eslog::info("  %s:%77s \n", "STABILIZATION", "SUPG"); break;
-				}
-				eslog::info("  %s:%85g \n", "SIGMA", info::ecf->heat_transfer_2d.sigma);
-			}
-		}
-		if (info::mesh->dimension == 3) {
-			if (info::ecf->heat_transfer_2d.init_temp_respect_bc) {
-				temp.initial.node.setConstness(false);
-			}
-			examineElementParameter("INITIAL TEMPERATURE", info::ecf->heat_transfer_3d.initial_temperature, *temp.initial.node.builder);
-			if (configuration.translation_motions.size()) {
-				switch (info::ecf->heat_transfer_3d.stabilization) {
-				case HeatTransferGlobalSettings::STABILIZATION::CAU: eslog::info("  %s:%77s \n", "STABILIZATION", "CAU"); break;
-				case HeatTransferGlobalSettings::STABILIZATION::SUPG: eslog::info("  %s:%77s \n", "STABILIZATION", "SUPG"); break;
-				}
-				eslog::info("  %s:%85g \n", "SIGMA", info::ecf->heat_transfer_3d.sigma);
-			}
-		}
-		eslog::info(" ============================================================================================= \n");
-
-		for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
-			HeatTransferModuleOpt::insertParameters(it->second.evaluator);
-		}
-
-		temp.initial.node.builder->build(*this);
-		temp.initial.node.builder->now();
-		AverageElementsNodesToNodes(temp.initial.node, *ParametersTemperature::outputInitial).now();
-		if (info::mesh->dimension == 2 && info::ecf->heat_transfer_2d.init_temp_respect_bc) {
-			CopyBoundaryRegionsSettingToNodes(configuration.temperature, *ParametersTemperature::outputInitial).now();
-			CopyNodesToElementsNodes(*ParametersTemperature::outputInitial, temp.initial.node).now();
-		}
-		if (info::mesh->dimension == 3 && info::ecf->heat_transfer_3d.init_temp_respect_bc) {
-			CopyBoundaryRegionsSettingToNodes(configuration.temperature, *ParametersTemperature::outputInitial).now();
-			CopyNodesToElementsNodes(*ParametersTemperature::outputInitial, temp.initial.node).now();
-		}
-		ParametersTemperature::output->data = ParametersTemperature::outputInitial->data;
-		ParametersTemperature::output->version = ParametersTemperature::outputInitial->version;
-		temp.node.addInputs(ParametersTemperature::output);
-		CopyElementParameters(temp.initial.node, temp.node).now();
-
-		ElementsGaussPointsBuilder<HeatTransferModuleOpt, 1>(integration.N, temp.initial.node, temp.initial.gp).now();
-		operators.push_back(new ElementsGaussPointsBuilder<HeatTransferModuleOpt, 1>(integration.N, temp.node, temp.gp));
-
-		temp.initial.boundary.node.addInputs(ParametersTemperature::outputInitial);
-		CopyNodesToBoundaryNodes(*ParametersTemperature::outputInitial, temp.initial.boundary.node).now();
-		BoundaryGaussPointsBuilder<HeatTransferModuleOpt, 1>(integration.boundary.N, temp.initial.boundary.node, temp.initial.boundary.gp).now();
-
-		temp.boundary.node.addInputs(ParametersTemperature::output);
-		operators.push_back(new CopyNodesToBoundaryNodes(*ParametersTemperature::output, temp.boundary.node));
-		operators.push_back(new BoundaryGaussPointsBuilder<HeatTransferModuleOpt, 1>(integration.boundary.N, temp.boundary.node, temp.boundary.gp));
 	}
 
 	if (configuration.translation_motions.size()) {
-		operators.push_back(new ExpressionsToElements(translationMotions.gp, 1));
+		builders.push_back(new ExpressionsToElements(translationMotions.gp, 1));
 		examineElementParameter("TRANSLATION MOTION.X", configuration.translation_motions, *translationMotions.gp.builder, 0);
 		examineElementParameter("TRANSLATION MOTION.Y", configuration.translation_motions, *translationMotions.gp.builder, 1);
 		if (info::mesh->dimension == 3) {
@@ -317,37 +326,37 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 		}
 	}
 
-	operators.push_back(new HeatStiffness(*this));
+	builders.push_back(new HeatStiffness(*this));
 
 	if (configuration.temperature.size()) {
-		operators.push_back(new ExpressionsToBoundary(dirichlet.gp));
+		builders.push_back(new ExpressionsToBoundary(dirichlet.gp));
 		examineBoundaryParameter("TEMPERATURE", configuration.temperature, *dirichlet.gp.builder);
 	}
 	if (configuration.heat_flow.size()) {
-		operators.push_back(new ExpressionsToBoundary(heatFlow.gp));
+		builders.push_back(new ExpressionsToBoundary(heatFlow.gp));
 		examineBoundaryParameter("HEAT FLOW", configuration.heat_flow, *heatFlow.gp.builder);
 	}
 	if (configuration.heat_flux.size()) {
-		operators.push_back(new ExpressionsToBoundary(heatFlux.gp));
+		builders.push_back(new ExpressionsToBoundary(heatFlux.gp));
 		examineBoundaryParameter("HEAT FLUX", configuration.heat_flux, *heatFlux.gp.builder);
 	}
 
 	if (configuration.convection.size()) {
-		operators.push_back(new ExpressionsToBoundary(convection.heatTransferCoeficient.gp));
-		operators.push_back(new ExpressionsToBoundary(convection.externalTemperature.gp));
+		builders.push_back(new ExpressionsToBoundary(convection.heatTransferCoeficient.gp));
+		builders.push_back(new ExpressionsToBoundary(convection.externalTemperature.gp));
 
-		operators.push_back(new ExpressionsToBoundary(convection.wallHeight.gp));
-		operators.push_back(new ExpressionsToBoundary(convection.tiltAngle.gp));
-		operators.push_back(new ExpressionsToBoundary(convection.diameter.gp));
-		operators.push_back(new ExpressionsToBoundary(convection.plateLength.gp));
-		operators.push_back(new ExpressionsToBoundary(convection.fluidVelocity.gp));
-		operators.push_back(new ExpressionsToBoundary(convection.plateDistance.gp));
-		operators.push_back(new ExpressionsToBoundary(convection.length.gp));
-		operators.push_back(new ExpressionsToBoundary(convection.experimentalConstant.gp));
-		operators.push_back(new ExpressionsToBoundary(convection.volumeFraction.gp));
-		operators.push_back(new ExpressionsToBoundary(convection.absolutePressure.gp));
+		builders.push_back(new ExpressionsToBoundary(convection.wallHeight.gp));
+		builders.push_back(new ExpressionsToBoundary(convection.tiltAngle.gp));
+		builders.push_back(new ExpressionsToBoundary(convection.diameter.gp));
+		builders.push_back(new ExpressionsToBoundary(convection.plateLength.gp));
+		builders.push_back(new ExpressionsToBoundary(convection.fluidVelocity.gp));
+		builders.push_back(new ExpressionsToBoundary(convection.plateDistance.gp));
+		builders.push_back(new ExpressionsToBoundary(convection.length.gp));
+		builders.push_back(new ExpressionsToBoundary(convection.experimentalConstant.gp));
+		builders.push_back(new ExpressionsToBoundary(convection.volumeFraction.gp));
+		builders.push_back(new ExpressionsToBoundary(convection.absolutePressure.gp));
 
-		operators.push_back(new ConvectionBuilder(*this, convection));
+		builders.push_back(new ConvectionBuilder(*this, convection));
 		examineBoundaryParameter("CONVECTION", configuration.convection, convection);
 	}
 //	if (configuration.diffuse_radiation.size()) {
@@ -363,15 +372,22 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 //		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 //	}
 
-	operators.push_back(new HeatRHS(*this));
+	builders.push_back(new HeatRHS(*this));
 
 	std::vector<OperatorBuilder*> nonempty; // there can be empty builders (e.g. from material)
-	for (auto op = operators.begin(); op != operators.end(); ++op) {
+	for (auto op = builders.begin(); op != builders.end(); ++op) {
 		if ((*op)->build(*this)) {
 			nonempty.push_back(*op);
 		}
 	}
-	operators.swap(nonempty);
+	builders.swap(nonempty);
+
+	if (gradient.output) {
+		results.push_back(new Gradient(*this));
+	}
+	if (flux.output) {
+		results.push_back(new Flux(*this));
+	}
 
 	eslog::info(" ============================================================================================= \n");
 	eslog::info("  PHYSICS CONFIGURATION VALIDATION                                                       PASS  \n");
@@ -380,14 +396,22 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 
 void HeatTransferModuleOpt::nextSubstep()
 {
-	for (auto op = operators.begin(); op != operators.end(); ++op) {
+	printf("NEXT SUBSTEP\n");
+	for (auto op = builders.begin(); op != builders.end(); ++op) {
 		(*op)->now();
 	}
 }
 
-void HeatTransferModuleOpt::solutionChanged()
+void HeatTransferModuleOpt::solutionChanged(Vectors *solution)
 {
 	printf("SOLUTION CHANGED\n");
+	VectorDense tmp(temp.output->data.size(), temp.output->data.data());
+	tmp.fillData(solution->at(0));
+
+	++temp.output->version;
+	for (auto op = builders.begin(); op != builders.end(); ++op) {
+		(*op)->now();
+	}
 }
 
 void HeatTransferModuleOpt::updateStiffness(double *K, esint *perm, int interval)
@@ -413,6 +437,9 @@ void HeatTransferModuleOpt::fillElementsInterval(int interval)
 void HeatTransferModuleOpt::processSolution()
 {
 	printf("PROCESS SOLUTION\n");
+	for (auto op = results.begin(); op != results.end(); ++op) {
+		(*op)->now();
+	}
 }
 
 

@@ -24,6 +24,11 @@ struct CopyParameters: public TParent {
 
 	}
 
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
+		return true;
+	}
+
 	void apply(int interval)
 	{
 		if (to.version[interval] < from.version[interval]) {
@@ -39,7 +44,7 @@ struct CopyParameters: public TParent {
 				memcpy((to.data->begin() + interval)->data(), (from.data->begin() + interval)->data(), sizeof(double) * (from.data->begin() + interval)->size());
 			}
 		} else {
-			if (Operator::print) printf("\tOP::PARAMETER::COPY::%d::SKIPPED\n", interval);
+			if (Operator::print > 1) printf("\tOP::PARAMETER::COPY::%d::SKIPPED\n", interval);
 		}
 	}
 };
@@ -64,6 +69,11 @@ struct CopyNodesToElementsNodes: public OperatorBuilder {
 
 	}
 
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
+		return true;
+	}
+
 	void now();
 };
 
@@ -76,6 +86,11 @@ struct AverageElementsNodesToNodes: public OperatorBuilder {
 	AverageElementsNodesToNodes(const ParameterData &from, NodeData &to): from(from), to(to)
 	{
 
+	}
+
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
+		return true;
 	}
 
 	void now();
@@ -94,18 +109,28 @@ struct CopyNodesToBoundaryNodes: public OperatorBuilder {
 		}
 	}
 
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
+		return true;
+	}
+
 	void now();
 };
 
 struct CopyBoundaryRegionsSettingToNodes: public OperatorBuilder {
 	GET_NAME(CopyBoundaryRegionsSettingToNodes)
 
-	std::map<std::string, ECFExpression> &from;
+	const std::map<std::string, ECFExpression> &from;
 	NodeData &to;
 
-	CopyBoundaryRegionsSettingToNodes(std::map<std::string, ECFExpression> &from, NodeData &to): from(from), to(to)
+	CopyBoundaryRegionsSettingToNodes(const std::map<std::string, ECFExpression> &from, NodeData &to): from(from), to(to)
 	{
 
+	}
+
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
+		return true;
 	}
 
 	void now();

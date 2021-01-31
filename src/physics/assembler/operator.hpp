@@ -192,7 +192,7 @@ static inline void iterate_elements_gps(Operator op)
 			}
 		}
 	} else {
-		if (Operator::print) printf("\tOP::ELEMENT::%d::GP::SKIPPED::%s\n", op.interval, op.name());
+		if (Operator::print > 2) printf("\tOP::ELEMENT::%d::GP::SKIPPED::%s\n", op.interval, op.name());
 	}
 }
 
@@ -210,7 +210,7 @@ static inline void iterate_elements(Operator op)
 			}
 		}
 	} else {
-		if (Operator::print) printf("\tOP::ELEMENT::%d::SKIPPED::%s\n", op.interval, op.name());
+		if (Operator::print > 2) printf("\tOP::ELEMENT::%d::SKIPPED::%s\n", op.interval, op.name());
 	}
 }
 
@@ -398,7 +398,7 @@ static inline void iterate_boundary_gps(Operator op, int region)
 			}
 		}
 	} else {
-		if (Operator::print) printf("\tOP::BOUNDARY::%d::%d::GP::SKIPPED::%s\n", region, op.interval, op.name());
+		if (Operator::print > 2) printf("\tOP::BOUNDARY::%d::%d::GP::SKIPPED::%s\n", region, op.interval, op.name());
 	}
 }
 
@@ -416,7 +416,7 @@ static inline void iterate_boundary(Operator op, int region)
 			}
 		}
 	} else {
-		if (Operator::print) printf("\tOP::BOUNDARY::%d::%d::SKIPPED::%s\n", region, op.interval, op.name());
+		if (Operator::print > 2) printf("\tOP::BOUNDARY::%d::%d::SKIPPED::%s\n", region, op.interval, op.name());
 	}
 }
 
