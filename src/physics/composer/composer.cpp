@@ -1,5 +1,6 @@
 
 #include "composer.h"
+#include "esinfo/eslog.h"
 #include "physics/system/linearsystem.h"
 #include "physics/system/builder/builder.h"
 #include "physics/kernels/kernel.h"
@@ -44,6 +45,7 @@ int Composer::solutions()
 
 void Composer::solutionChanged(Vectors *solution)
 {
+	double start = eslog::time();
 	if (kernel) {
 		if (solution) {
 			for (esint n = 0; n < solution->nvectors; n++) {
@@ -54,24 +56,29 @@ void Composer::solutionChanged(Vectors *solution)
 	} else {
 		opt->solutionChanged(solution);
 	}
+	printf("CHANGE SOLUTION: %f\n", eslog::time() - start);
 }
 
 void Composer::nextSubstep()
 {
+	double start = eslog::time();
 	if (kernel) {
 		kernel->nextSubstep();
 	} else {
 		opt->nextSubstep();
 	}
+	printf("ASSEMBLE: %f\n", eslog::time() - start);
 }
 
 void Composer::processSolution()
 {
+	double start = eslog::time();
 	if (kernel) {
 		kernel->processSolution();
 	} else {
 		opt->processSolution();
 	}
+	printf("PROCESS SOLUTION: %f\n", eslog::time() - start);
 }
 
 esint Composer::getMatrixSize(esint size, bool omitLower)

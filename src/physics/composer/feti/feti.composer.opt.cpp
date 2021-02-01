@@ -38,6 +38,8 @@ void FETIComposerOpt::assemble(const Builder &builder)
 
 	clearMatrices(builder.matrices, _data);
 
+	double start = eslog::time();
+
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::threads; ++t) {
 		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
@@ -76,6 +78,8 @@ void FETIComposerOpt::assemble(const Builder &builder)
 			}
 		}
 	}
+
+	printf("INSERT: %f\n", eslog::time() - start);
 
 	if (builder.matrices & Builder::Request::BC) {
 		std::vector<double> values(_dirichletMap.size());

@@ -137,6 +137,8 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 {
 	geometry::computeBoundaryRegionsArea();
 
+	double start = eslog::time();
+
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info("  PHYSICS                                                                    HEAT TRANSFER 2D  \n");
 	eslog::info(" ============================================================================================= \n");
@@ -392,11 +394,12 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 	eslog::info(" ============================================================================================= \n");
 	eslog::info("  PHYSICS CONFIGURATION VALIDATION                                                       PASS  \n");
 	eslog::info(" ============================================================================================= \n");
+
+	printf("ANALYZE AND BUILD: %f\n", eslog::time() - start);
 }
 
 void HeatTransferModuleOpt::nextSubstep()
 {
-	printf("NEXT SUBSTEP\n");
 	for (auto op = builders.begin(); op != builders.end(); ++op) {
 		(*op)->now();
 	}
@@ -404,7 +407,6 @@ void HeatTransferModuleOpt::nextSubstep()
 
 void HeatTransferModuleOpt::solutionChanged(Vectors *solution)
 {
-	printf("SOLUTION CHANGED\n");
 	VectorDense tmp(temp.output->data.size(), temp.output->data.data());
 	tmp.fillData(solution->at(0));
 
@@ -436,7 +438,6 @@ void HeatTransferModuleOpt::fillElementsInterval(int interval)
 
 void HeatTransferModuleOpt::processSolution()
 {
-	printf("PROCESS SOLUTION\n");
 	for (auto op = results.begin(); op != results.end(); ++op) {
 		(*op)->now();
 	}
