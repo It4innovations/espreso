@@ -73,7 +73,7 @@ class ESPRESOTest:
         print("\n==========")
         print(". env/threading.default {0}".format(ESPRESOTest.env["OMP_NUM_THREADS"]))
         print(" ".join(program))
-        print("==========\n")
+        print("==========")
 
         def _popen():
             return subprocess.Popen(program, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=ESPRESOTest.path, env=ESPRESOTest.env)
