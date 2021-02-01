@@ -19,7 +19,7 @@ public:
 			this->deleteMatrices = false;
 			this->NUM_MICS = configuration.n_mics;
 			SetAcceleratorAffinity();
-			ESINFO( DETAILS ) << "MICS: " << this->NUM_MICS;
+			//ESINFO( DETAILS ) << "MICS: " << this->NUM_MICS;
 	}
 
     virtual ~ClusterAcc();

@@ -266,7 +266,7 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( SuperCluster & clus
 		MPI_Allreduce( &KT1_norm_cluster_local2, &KT1_norm_cluster_global2, 1, MPI_DOUBLE, MPI_SUM, info::mpi::comm);
 		KT1_norm_cluster_global2 = sqrt(KT1_norm_cluster_global2);
 
-		//ESINFO(CONVERGENCE) << " KT1 norm:              " << std::setw(6) << KT1_norm_cluster_global / KT1_norm_cluster_global2;
+		////ESINFO(CONVERGENCE) << " KT1 norm:              " << std::setw(6) << KT1_norm_cluster_global / KT1_norm_cluster_global2;
 
 
 		// KT2
@@ -1529,10 +1529,10 @@ int IterSolverBase::Solve_RegCG ( SuperCluster & cluster,
 
 //	double min_tol = 1e-12;
 //	if (tol < min_tol) {
-//		ESINFO(CONVERGENCE) << Info::TextColor::RED << "The NORM is fulfilled.";
+//		//ESINFO(CONVERGENCE) << Info::TextColor::RED << "The NORM is fulfilled.";
 //	} else {
 		eslog::linearsolver("   iter     |r|          r        e    time[s]\n");
-//		ESINFO(CONVERGENCE)
+//		//ESINFO(CONVERGENCE)
 //			<< spaces(indent.size() + iterationWidth - 4) << "iter"
 //			<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 //			<< spaces(indent.size() + 4) << "r" << spaces(4)
@@ -1681,7 +1681,7 @@ for (size_t i = 0; i < p_l.size(); i++)
 		timing.totalTime.end();
 
 		eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
-//		ESINFO(CONVERGENCE)
+//		//ESINFO(CONVERGENCE)
 //			<< indent << std::setw(iterationWidth) << iter + 1
 //			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 //			<< indent << std::scientific << std::setprecision(3) << norm_l
@@ -1856,10 +1856,10 @@ int IterSolverBase::Solve_RegCG_ConjProj ( SuperCluster & cluster,
 
 //	double min_tol = 1e-12;
 //	if (tol < min_tol) {
-//		ESINFO(CONVERGENCE) << Info::TextColor::RED << "The NORM is fulfilled.";
+//		//ESINFO(CONVERGENCE) << Info::TextColor::RED << "The NORM is fulfilled.";
 //	} else {
 	eslog::linearsolver("   iter     |r|          r        e    time[s]\n");
-//		ESINFO(CONVERGENCE)
+//		//ESINFO(CONVERGENCE)
 //			<< spaces(indent.size() + iterationWidth - 4) << "iter"
 //			<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 //			<< spaces(indent.size() + 4) << "r" << spaces(4)
@@ -2009,7 +2009,7 @@ for (size_t i = 0; i < p_l.size(); i++)
 		 timing.totalTime.end();
 
 		eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
-//		ESINFO(CONVERGENCE)
+//		//ESINFO(CONVERGENCE)
 //			<< indent << std::setw(iterationWidth) << iter + 1
 //			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 //			<< indent << std::scientific << std::setprecision(3) << norm_l
@@ -2156,7 +2156,7 @@ for (size_t i = 0; i < g_l.size(); i++){
 //	};
 
 	eslog::linearsolver("   iter      |r|       r      e      time[s]\n");
-//	ESINFO(CONVERGENCE)
+//	//ESINFO(CONVERGENCE)
 //		<< spaces(indent.size() + iterationWidth - 4) << "iter"
 //		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 //		<< spaces(indent.size() + 4) << "r" << spaces(4)
@@ -2256,7 +2256,7 @@ for (size_t i = 0; i < w_l.size(); i++){
 		timing.totalTime.end();
 
 		eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
-//		ESINFO(CONVERGENCE)
+//		//ESINFO(CONVERGENCE)
 //			<< indent << std::setw(iterationWidth) << iter + 1
 //			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 //			<< indent << std::scientific << std::setprecision(3) << norm_l
@@ -2465,7 +2465,7 @@ if (
 //		return ss.str();
 //	};
 	eslog::linearsolver("   iter      |r|       r      e      time[s]\n");
-//	ESINFO(CONVERGENCE)
+//	//ESINFO(CONVERGENCE)
 //		<< spaces(indent.size() + iterationWidth - 4) << "iter"
 //		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 //		<< spaces(indent.size() + 4) << "r" << spaces(4)
@@ -2649,7 +2649,7 @@ for (size_t i = 0; i < w_l.size(); i++){
 		timing.totalTime.end();
 
 		eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
-//		ESINFO(CONVERGENCE)
+//		//ESINFO(CONVERGENCE)
 //			<< indent << std::setw(iterationWidth) << iter + 1
 //			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 //			<< indent << std::scientific << std::setprecision(3) << norm_l
@@ -2672,7 +2672,7 @@ for (size_t i = 0; i < w_l.size(); i++){
     double *Z = new double[cnt_iter];
     esint ldz = cnt_iter;
     LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt_iter, &d_H[0], &e_H[0], Z, ldz);
-//    ESINFO(DETAILS) << "cond(P*F*P) = " << d_H[0]/d_H[cnt_iter-1]  ;
+//    //ESINFO(DETAILS) << "cond(P*F*P) = " << d_H[0]/d_H[cnt_iter-1]  ;
     delete [] Z;
   }
 
@@ -3380,7 +3380,7 @@ for (size_t i = 0; i < g_l.size(); i++){
 //	};
 
 	eslog::linearsolver("   iter      |r|       r      e      time[s]\n");
-//	ESINFO(CONVERGENCE)
+//	//ESINFO(CONVERGENCE)
 //		<< spaces(indent.size() + iterationWidth - 4) << "iter"
 //		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 //		<< spaces(indent.size() + 4) << "r" << spaces(4)
@@ -3391,7 +3391,7 @@ for (size_t i = 0; i < g_l.size(); i++){
 
 	//norm_l = parallel_norm_compressed(cluster, Pg_l);
 
-//  ESINFO(CONVERGENCE)
+//  //ESINFO(CONVERGENCE)
 //  	<< indent << std::setw(iterationWidth) << 1
 //  	<< indent << std::fixed << std::setprecision(precisionWidth) <<  1.0000000
 //  	<< indent << std::scientific << std::setprecision(3) << norm_l
@@ -3562,7 +3562,7 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
 		timing.totalTime.end();
 
 		eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 2, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
-//		ESINFO(CONVERGENCE)
+//		//ESINFO(CONVERGENCE)
 //			<< indent << std::setw(iterationWidth) << iter + 2
 //			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 //			<< indent << std::scientific << std::setprecision(3) << norm_l
@@ -3800,7 +3800,7 @@ for (size_t i = 0; i < g_l.size(); i++){
 //	};
 
 	eslog::linearsolver("   iter      |r|       r      e      time[s]\n");
-//	ESINFO(CONVERGENCE)
+//	//ESINFO(CONVERGENCE)
 //		<< spaces(indent.size() + iterationWidth - 4) << "iter"
 //		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 //		<< spaces(indent.size() + 4) << "r" << spaces(4)
@@ -3812,7 +3812,7 @@ for (size_t i = 0; i < g_l.size(); i++){
 	//norm_l = parallel_norm_compressed(cluster, Pg_l);
 
 	eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", 1, 1., norm_l, precision, 0);
-//  ESINFO(CONVERGENCE)
+//  //ESINFO(CONVERGENCE)
 //  	<< indent << std::setw(iterationWidth) << 1
 //  	<< indent << std::fixed << std::setprecision(precisionWidth) <<  1.0000000
 //  	<< indent << std::scientific << std::setprecision(3) << norm_l
@@ -3977,7 +3977,7 @@ for (size_t i = 0; i < x_l.size(); i++) {
 
 
     eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 2, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
-//		ESINFO(CONVERGENCE)
+//		//ESINFO(CONVERGENCE)
 //			<< indent << std::setw(iterationWidth) << iter + 2
 //			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 //			<< indent << std::scientific << std::setprecision(3) << norm_l
@@ -4077,7 +4077,7 @@ int IterSolverBase::Solve_PipeCG_singular_dom ( SuperCluster & cluster,
 
 #ifdef USE_MPI_3
 	if (mpi_rank == mpi_root)
-		ESINFO(DETAILS) << "Note: PipeCG is using non-blocking AllReduce";
+		//ESINFO(DETAILS) << "Note: PipeCG is using non-blocking AllReduce";
 #endif
 	size_t dl_size = cluster.my_lamdas_indices.size();
 
@@ -4209,7 +4209,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 //	};
 
 	eslog::linearsolver("   iter      |r|       r      e      time[s]\n");
-//	ESINFO(CONVERGENCE)
+//	//ESINFO(CONVERGENCE)
 //		<< spaces(indent.size() + iterationWidth - 4) << "iter"
 //		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 //		<< spaces(indent.size() + 4) << "r" << spaces(4)
@@ -4299,7 +4299,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 		if (norm_l < tol) {
 			timing.totalTime.end();
 			eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
-//			ESINFO(CONVERGENCE)
+//			//ESINFO(CONVERGENCE)
 //				<< indent << std::setw(iterationWidth) << iter + 1
 //				<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 //				<< indent << std::scientific << std::setprecision(3) << norm_l
@@ -4340,7 +4340,7 @@ for (size_t i = 0; i < r_l.size(); i++) {
 		 timing.totalTime.end();
 
 		 eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 2, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
-//		ESINFO(CONVERGENCE)
+//		//ESINFO(CONVERGENCE)
 //			<< indent << std::setw(iterationWidth) << iter + 1
 //			<< indent << std::fixed << std::setprecision(precisionWidth) <<  norm_l / tol * precision
 //			<< indent << std::scientific << std::setprecision(3) << norm_l
@@ -4979,7 +4979,7 @@ int IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clus
 //	};
 
 	eslog::linearsolver("   iter      |r|       r      e      time[s]\n");
-//	ESINFO(CONVERGENCE)
+//	//ESINFO(CONVERGENCE)
 //		<< spaces(indent.size() + iterationWidth - 4) << "iter"
 //		<< spaces(indent.size() + precisionWidth - 3) << "|r|" << spaces(2)
 //		<< spaces(indent.size() + 4) << "r" << spaces(4)
@@ -5203,7 +5203,7 @@ int IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clus
 		timing.totalTime.end();
 
 		eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 1, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
-//		ESINFO(CONVERGENCE)
+//		//ESINFO(CONVERGENCE)
 //		<< indent << std::setw(iterationWidth) << iter
 //		<< indent << std::fixed << std::setprecision(precisionWidth) 	<< norm_l / tol * precision
 //		<< indent << std::scientific << std::setprecision(3) 		<< norm_l
@@ -5351,7 +5351,7 @@ void IterSolverBase::CreateGGt( SuperCluster & cluster )
 //
 //		count_cv += mpi_size/li;
 //
-//		ESINFO(PROGRESS3) << " Collecting matrices G : " << count_cv <<" of " << mpi_size;
+//		//ESINFO(PROGRESS3) << " Collecting matrices G : " << count_cv <<" of " << mpi_size;
 //	}
 //
 //	//SparseMatrix Gtt;
@@ -5371,23 +5371,23 @@ void IterSolverBase::CreateGGt( SuperCluster & cluster )
 //
 //		double t1 = omp_get_wtime();
 //		G.MatTranspose(Gt);
-//		ESINFO(PROGRESS3) << "Gtranspose = " << omp_get_wtime() - t1;
+//		//ESINFO(PROGRESS3) << "Gtranspose = " << omp_get_wtime() - t1;
 //
 //		t1 = omp_get_wtime();
 //		SparseMatrix GGt_Mat;
 //		GGt_Mat.MatMat(G, 'N', Gt);
-//		ESINFO(PROGRESS3) << "G x Gt = " << omp_get_wtime() - t1;
+//		//ESINFO(PROGRESS3) << "G x Gt = " << omp_get_wtime() - t1;
 //
 //		t1 = omp_get_wtime();
 //		Gt.Clear();
 //		G.Clear();
-//		ESINFO(PROGRESS3) << "G and Gt clear = " << omp_get_wtime() - t1;
+//		//ESINFO(PROGRESS3) << "G and Gt clear = " << omp_get_wtime() - t1;
 //
-//		ESINFO(EXHAUSTIVE) << GGt_Mat.SpyText();
+//		//ESINFO(EXHAUSTIVE) << GGt_Mat.SpyText();
 //
 //		t1 = omp_get_wtime();
 //		GGt_Mat.RemoveLower();
-//		ESINFO(PROGRESS3) << "GGt remove lower = " << omp_get_wtime() - t1;
+//		//ESINFO(PROGRESS3) << "GGt remove lower = " << omp_get_wtime() - t1;
 //
 //		t1 = omp_get_wtime();
 //		// Create Sparse Direct solver for GGt
@@ -5395,7 +5395,7 @@ void IterSolverBase::CreateGGt( SuperCluster & cluster )
 //
 //		t1 = omp_get_wtime();
 //		GGt.ImportMatrix(GGt_Mat);
-//		ESINFO(PROGRESS3) << "ImportMatrix = " << omp_get_wtime() - t1;
+//		//ESINFO(PROGRESS3) << "ImportMatrix = " << omp_get_wtime() - t1;
 //
 //
 //		t1 = omp_get_wtime();
@@ -5406,7 +5406,7 @@ void IterSolverBase::CreateGGt( SuperCluster & cluster )
 //		std::stringstream ss;
 //		ss << "Create GGt -> rank: " << info::mpi::MPIrank;
 //		GGt.Factorization(ss.str());
-//		ESINFO(PROGRESS3) << "Factorization = " << omp_get_wtime() - t1;
+//		//ESINFO(PROGRESS3) << "Factorization = " << omp_get_wtime() - t1;
 //
 //
 //		t1 = omp_get_wtime();
@@ -5425,9 +5425,9 @@ void IterSolverBase::CreateGGt( SuperCluster & cluster )
 //
 //#if TIME_MEAS >= 1
 //	double end = omp_get_wtime();
-//	ESINFO(PROGRESS3) <<"CG Loop - Create GGt  - collect all matrices   - Runtime = " << ec1 - sc1 << " s";
-//	ESINFO(PROGRESS3) <<"CG Loop - Create GGt  - GGt fact. processing   - Runtime = " << ep1 - sp1 << " s";
-//	ESINFO(PROGRESS3) <<"CG Loop - Create GGt  - total = proc + comm    - Runtime = " << end - start << " s";
+//	//ESINFO(PROGRESS3) <<"CG Loop - Create GGt  - collect all matrices   - Runtime = " << ec1 - sc1 << " s";
+//	//ESINFO(PROGRESS3) <<"CG Loop - Create GGt  - GGt fact. processing   - Runtime = " << ep1 - sp1 << " s";
+//	//ESINFO(PROGRESS3) <<"CG Loop - Create GGt  - total = proc + comm    - Runtime = " << end - start << " s";
 //#endif
 
 }
@@ -5558,19 +5558,19 @@ void IterSolverBase::CreateGGt_Inv( SuperCluster & cluster )
 
 		GGt_l.Clear();
 		count_cv_l += mpi_size/li;
-//		ESINFO(PROGRESS3) << "Collecting matrices G : " << count_cv_l <<" of " << mpi_size;
+//		//ESINFO(PROGRESS3) << "Collecting matrices G : " << count_cv_l <<" of " << mpi_size;
 	}
 	 collectGGt_time.end(); collectGGt_time.printStatMPI(); preproc_timing.addEvent(collectGGt_time);
 
 	if (mpi_rank == 0 && cluster.SYMMETRIC_SYSTEM)  {
-//		ESINFO(EXHAUSTIVE) << "Creating symmetric Coarse problem (GGt) matrix";
+//		//ESINFO(EXHAUSTIVE) << "Creating symmetric Coarse problem (GGt) matrix";
 		GGt_Mat_tmp.RemoveLower();
 	} else {
-//		ESINFO(EXHAUSTIVE) << "Creating non-symmetric Coarse problem (GGt) matrix";
+//		//ESINFO(EXHAUSTIVE) << "Creating non-symmetric Coarse problem (GGt) matrix";
 	}
 
 	//Show GGt matrix structure in the solver LOG
-//	ESINFO(EXHAUSTIVE) << GGt_Mat_tmp.SpyText();
+//	//ESINFO(EXHAUSTIVE) << GGt_Mat_tmp.SpyText();
 
 	// Entering data parallel region for single, in this case GGt matrix, we want MKL/Solver to run multi-threaded
 	MKL_Set_Num_Threads(PAR_NUM_THREADS);
@@ -5780,7 +5780,7 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 
 		GKpluGt_l.Clear();
 		count_cv_l += mpi_size/li;
-//		ESINFO(PROGRESS3) << "Collecting matrices GK+Gt : " << count_cv_l <<" of " << mpi_size;
+//		//ESINFO(PROGRESS3) << "Collecting matrices GK+Gt : " << count_cv_l <<" of " << mpi_size;
 	}
 	 collectGGt_time.end(); collectGGt_time.printStatMPI(); preproc_timing.addEvent(collectGGt_time);
 
@@ -5797,9 +5797,9 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 //	std::ofstream os3(utils::prepareFile(std::string(prefix), std::string("GGt_Mat_tmp")));
 //	os3 << GGt_Mat_tmp;
 
-	// GGt_Mat_tmp.RemoveLower();
+//	GGt_Mat_tmp.RemoveLower();
 //	std::cout << GGt_Mat_tmp.SpyText();
-	//	ESINFO(EXHAUSTIVE) << GGt_Mat_tmp.SpyText();
+//	ESINFO(EXHAUSTIVE) << GGt_Mat_tmp.SpyText();
 
 	// Entering data parallel region for single, in this case GGt matrix, we want MKL/Solver to run multi-threaded
 	MKL_Set_Num_Threads(PAR_NUM_THREADS);
@@ -5970,13 +5970,13 @@ void IterSolverBase::apply_A_l_Mat( TimeEval & time_eval, SuperCluster & cluster
 		apply_A_l_comp_dom_B_P(timeEvalAppa, cluster, tmp_pr_in, tmp_pr_out);
 
 //		if (i % 10 == 0) {
-//			ESINFO(PROGRESS3) << "\r" << i + 1 << " out of " << X_in.cols << " columns processed" <<Info::plain();
+//			//ESINFO(PROGRESS3) << "\r" << i + 1 << " out of " << X_in.cols << " columns processed" <<Info::plain();
 //		}
 
 		Y_out.dense_values.insert(Y_out.dense_values.end(), tmp_pr_out.begin(), tmp_pr_out.end());
 	}
 
-//	ESINFO(PROGRESS3) << "";
+//	//ESINFO(PROGRESS3) << "";
 
 }
 
@@ -5998,13 +5998,13 @@ void IterSolverBase::apply_A_l_Mat_local( TimeEval & time_eval, SuperCluster & c
 		apply_A_l_comp_dom_B_P_local(timeEvalAppa, cluster, tmp_pr_in, tmp_pr_out);
 
 //		if (i % 10 == 0) {
-//			ESINFO(PROGRESS3) << "\r" << i + 1 << " out of " << X_in.cols << " columns processed" <<Info::plain();
+//			//ESINFO(PROGRESS3) << "\r" << i + 1 << " out of " << X_in.cols << " columns processed" <<Info::plain();
 //		}
 
 		Y_out.dense_values.insert(Y_out.dense_values.end(), tmp_pr_out.begin(), tmp_pr_out.end());
 	}
 
-//	ESINFO(PROGRESS3) << "";
+//	//ESINFO(PROGRESS3) << "";
 
 }
 
@@ -6045,7 +6045,7 @@ void IterSolverBase::apply_A_l_Mat_local_sparse( TimeEval & time_eval, SuperClus
 		Y_out.CSR_I_row_indices.push_back(Y_out.CSR_J_col_indices.size() + 1);
 
 //		if (i % 1 == 0) {
-//			ESINFO(PROGRESS3) << "\r" << "Processing ApplyA on SPARSE matrix: " << i+1 << " out of " << X_in.rows << " columns processed" <<Info::plain();
+//			//ESINFO(PROGRESS3) << "\r" << "Processing ApplyA on SPARSE matrix: " << i+1 << " out of " << X_in.rows << " columns processed" <<Info::plain();
 //		}
 
 
@@ -6053,7 +6053,7 @@ void IterSolverBase::apply_A_l_Mat_local_sparse( TimeEval & time_eval, SuperClus
 
 	Y_out.nnz = Y_out.CSR_J_col_indices.size();
 
-//	ESINFO(PROGRESS3) << "";
+//	//ESINFO(PROGRESS3) << "";
 
 }
 

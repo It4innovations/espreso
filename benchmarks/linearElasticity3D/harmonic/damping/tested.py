@@ -13,8 +13,8 @@ def teardown():
 
 @istest
 def by():
-    yield run, "HEXA8", "MKLPDSS"
-    yield run, "HEXA20", "MKLPDSS"
+    # yield run, "HEXA8", "MKLPDSS"
+    # yield run, "HEXA20", "MKLPDSS"
     yield run, "HEXA8", "FETI"
     return
     for etype in [ "HEXA8", "HEXA20" ]:

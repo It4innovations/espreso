@@ -54,7 +54,7 @@ void SortedInput::checkERegions()
 //
 //	for (size_t r = 0; r < _meshData.eregions.size(); r++) {
 //		if (_meshData.eregions[r].min < _eDistribution.back() && _eDistribution.back() < _meshData.eregions[r].max) {
-//			ESINFO(ERROR) << "ESPRESO Workbench parser error: weird element region.";
+//			//ESINFO(ERROR) << "ESPRESO Workbench parser error: weird element region.";
 //		}
 //		if (_meshData.eregions[r].min >= _eDistribution.back()) {
 //			bregions.push_back(MeshERegion(std::move(_meshData.eregions[r])));
@@ -85,7 +85,7 @@ void SortedInput::checkERegions()
 //		}
 //
 //		if (!Communication::allGatherUnknownSize(borders)) {
-//			ESINFO(ERROR) << "ESPRESO internal error: gather bregion borders.";
+//			//ESINFO(ERROR) << "ESPRESO internal error: gather bregion borders.";
 //		}
 //
 //		bool onlyRename = false;
@@ -113,7 +113,7 @@ void SortedInput::checkERegions()
 //		}
 //
 //		if (!Communication::sendVariousTargets(sBuffer, rBuffer, tRanks)) {
-//			ESINFO(ERROR) << "ESPRESO internal error: send boundary region indices.";
+//			//ESINFO(ERROR) << "ESPRESO internal error: send boundary region indices.";
 //		}
 //
 //		for (size_t i = 1; i < rBuffer.size(); i++) {
@@ -477,7 +477,7 @@ void SortedInput::addBoundaryRegions()
 //				info::mesh->boundaryRegions.back()->dimension = 1;
 //				break;
 //			default:
-//				ESINFO(ERROR) << "ESPRESO Workbench parser: invalid boundary region type. Have to be 3D plane or 2D line.";
+//				//ESINFO(ERROR) << "ESPRESO Workbench parser: invalid boundary region type. Have to be 3D plane or 2D line.";
 //			}
 //			info::mesh->boundaryRegions.back()->elements = new serializededata<esint, esint>(tedist, tnodes);
 //			info::mesh->boundaryRegions.back()->epointers = new serializededata<esint, Element*>(1, epointers);
@@ -584,22 +584,22 @@ void SortedInput::addBoundaryRegions()
 //		MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_SUM, 0, info::mpi::MPICommunicator);
 //		MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_SUM, 0, info::mpi::MPICommunicator);
 //
-//		ESINFO(PROGRESS1) << "BR AVGNEIGHS: " << (double)avgneighs / info::mpi::MPIsize << ", AVGSIZE: " << allavgsize / info::mpi::MPIsize;
+//		//ESINFO(PROGRESS1) << "BR AVGNEIGHS: " << (double)avgneighs / info::mpi::MPIsize << ", AVGSIZE: " << allavgsize / info::mpi::MPIsize;
 //
 //		MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MIN, 0, info::mpi::MPICommunicator);
 //		MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MIN, 0, info::mpi::MPICommunicator);
 //
-//		ESINFO(PROGRESS1) << "BR MINNEIGHS: " << avgneighs << ", MINSIZE: " << allavgsize;
+//		//ESINFO(PROGRESS1) << "BR MINNEIGHS: " << avgneighs << ", MINSIZE: " << allavgsize;
 //
 //		MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MAX, 0, info::mpi::MPICommunicator);
 //		MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MAX, 0, info::mpi::MPICommunicator);
 //
-//		ESINFO(PROGRESS1) << "BR MAXNEIGHS: " << avgneighs << ", MAXSIZE: " << allavgsize;
+//		//ESINFO(PROGRESS1) << "BR MAXNEIGHS: " << avgneighs << ", MAXSIZE: " << allavgsize;
 //
 //		TimeEvent e5("BR EXCHANGE SBUFFER"); e5.start();
 //
 //		if (!Communication::sendVariousTargets(sBuffer, rBuffer, sRanks)) {
-//			ESINFO(ERROR) << "ESPRESO internal error: exchange node region.";
+//			//ESINFO(ERROR) << "ESPRESO internal error: exchange node region.";
 //		}
 //
 //		e5.end(); timing.addEvent(e5);
@@ -615,22 +615,22 @@ void SortedInput::addBoundaryRegions()
 //		MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_SUM, 0, info::mpi::MPICommunicator);
 //		MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_SUM, 0, info::mpi::MPICommunicator);
 //
-//		ESINFO(PROGRESS1) << "AVGNEIGHS: " << (double)avgneighs / info::mpi::MPIsize << ", AVGSIZE: " << allavgsize / info::mpi::MPIsize;
+//		//ESINFO(PROGRESS1) << "AVGNEIGHS: " << (double)avgneighs / info::mpi::MPIsize << ", AVGSIZE: " << allavgsize / info::mpi::MPIsize;
 //
 //		MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MIN, 0, info::mpi::MPICommunicator);
 //		MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MIN, 0, info::mpi::MPICommunicator);
 //
-//		ESINFO(PROGRESS1) << "MINNEIGHS: " << avgneighs << ", MINSIZE: " << allavgsize;
+//		//ESINFO(PROGRESS1) << "MINNEIGHS: " << avgneighs << ", MINSIZE: " << allavgsize;
 //
 //		MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MAX, 0, info::mpi::MPICommunicator);
 //		MPI_Reduce(&avgsize, &allavgsize, 1, MPI_DOUBLE, MPI_MAX, 0, info::mpi::MPICommunicator);
 //
-//		ESINFO(PROGRESS1) << "MAXNEIGHS: " << avgneighs << ", MAXSIZE: " << allavgsize;
+//		//ESINFO(PROGRESS1) << "MAXNEIGHS: " << avgneighs << ", MAXSIZE: " << allavgsize;
 //
 //		nneighs = _targetRanks.size();
 //
 //		MPI_Reduce(&nneighs, &avgneighs, 1, MPI_INT, MPI_MAX, 0, info::mpi::MPICommunicator);
-//		ESINFO(PROGRESS1) << "AVGTARGETS: " << (double)avgneighs / info::mpi::MPIsize;
+//		//ESINFO(PROGRESS1) << "AVGTARGETS: " << (double)avgneighs / info::mpi::MPIsize;
 //
 //		TimeEvent e6("BR PROCESS RBUFFER"); e6.start();
 //
@@ -702,7 +702,7 @@ void SortedInput::addBoundaryRegions()
 //
 //		rBuffer.clear();
 //		if (!Communication::sendVariousTargets(sBuffer, rBuffer, tRanks)) {
-//			ESINFO(ERROR) << "ESPRESO internal error: exchange node region to targets.";
+//			//ESINFO(ERROR) << "ESPRESO internal error: exchange node region to targets.";
 //		}
 //
 //		e7.end(); timing.addEvent(e7);
@@ -799,7 +799,7 @@ void SortedInput::addBoundaryRegions()
 //				info::mesh->boundaryRegions.back()->dimension = 1;
 //				break;
 //			default:
-//				ESINFO(ERROR) << "ESPRESO Workbench parser: invalid boundary region type. Have to be 3D plane or 2D line.";
+//				//ESINFO(ERROR) << "ESPRESO Workbench parser: invalid boundary region type. Have to be 3D plane or 2D line.";
 //			}
 //		}
 //		int dim = info::mesh->boundaryRegions.back()->dimension;
@@ -850,7 +850,7 @@ void SortedInput::addElementRegions()
 //		}
 //
 //		if (!Communication::sendVariousTargets(sBuffer, rBuffer, sRanks)) {
-//			ESINFO(ERROR) << "ESPRESO internal error: exchange node region.";
+//			//ESINFO(ERROR) << "ESPRESO internal error: exchange node region.";
 //		}
 //
 //		for (size_t t = threads; t < rBuffer.size(); t++) {

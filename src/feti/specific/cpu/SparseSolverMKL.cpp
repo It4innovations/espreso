@@ -1201,7 +1201,7 @@ void SparseSolverMKL::Create_SC( espreso::SparseMatrix & SC_out, MKL_INT sc_size
     }
 
 //	if (msglvl) {
-//		ESINFO(EXHAUSTIVE) << SC_out.SpyText();
+//		//ESINFO(EXHAUSTIVE) << SC_out.SpyText();
 //	}
 
 //    if (generate_symmetric_sc_1_generate_general_sc_0 == 1) {
@@ -1687,7 +1687,7 @@ void SparseSolverMKL::SaveMatrixInCSR(string filename) {
 //		}
 //		out.close();
 //	} else {
-//		ESINFO(ERROR) << "Matrix file " << filename << " cannot be created ! ";
+//		//ESINFO(ERROR) << "Matrix file " << filename << " cannot be created ! ";
 //	}
 }
 

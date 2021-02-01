@@ -14,9 +14,10 @@ def teardown():
 @istest
 def by():
     for etype in [ "SQUARE4", "SQUARE8", "TRIANGLE3", "TRIANGLE6" ]:
-        yield run, etype, "HYPRE", "0"
+        # yield run, etype, "HYPRE", "0"
         yield run, etype, "MKLPDSS", "0"
-        for method in [ "TOTAL_FETI", "HYBRID_FETI" ]:
+        # for method in [ "TOTAL_FETI", "HYBRID_FETI" ]:
+        for method in [ "TOTAL_FETI" ]:
             yield run, etype, "FETI", method
         if ESPRESOTest.fast: return
 

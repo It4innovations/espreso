@@ -1546,7 +1546,7 @@ void SparseSolverPARDISO::SaveMatrixInCSR(string filename) {
 //		}
 //		out.close();
 //	} else {
-//		ESINFO(ERROR) << "Matrix file " << filename << " cannot be created ! ";
+//		//ESINFO(ERROR) << "Matrix file " << filename << " cannot be created ! ";
 //	}
 }
 

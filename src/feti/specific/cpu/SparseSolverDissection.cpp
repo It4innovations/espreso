@@ -399,7 +399,7 @@ int SparseSolverDissection::Factorization(const std::string &str) {
 	/* all memory that is necessary for the factorization. */
 	/* -------------------------------------------------------------------- */
 
-	ESINFO(PROGRESS3) << Info::plain() << "f";
+	//ESINFO(PROGRESS3) << Info::plain() << "f";
 
 	if(use_dense_solver) {
 		dense_solver.Factorization(str);
@@ -880,7 +880,7 @@ void SparseSolverDissection::Create_SC( espreso::SparseMatrix & SC_out, MKL_INT 
     }
 
 	if (msglvl) {
-		ESINFO(EXHAUSTIVE) << SC_out.SpyText();
+		//ESINFO(EXHAUSTIVE) << SC_out.SpyText();
 	}
 
 //    if (generate_symmetric_sc_1_generate_general_sc_0 == 1) {
@@ -910,7 +910,7 @@ void SparseSolverDissection::Create_SC_w_Mat( espreso::SparseMatrix & K_in, espr
 	SC_out.type = 'G';
 
 	if (msglvl) {
-		ESINFO(EXHAUSTIVE) << SC_out.SpyText();
+		//ESINFO(EXHAUSTIVE) << SC_out.SpyText();
 	}
 
 	SC_out.ConvertCSRToDense(1);
@@ -927,9 +927,9 @@ void SparseSolverDissection::Create_non_sym_SC_w_Mat( espreso::SparseMatrix & K_
 	// |  K_in      B1_in |
 	// | (B0_in)t     0   |
 
-	ESINFO(PROGRESS1) << K_in.SpyText();
-	ESINFO(PROGRESS1) << B1_in.SpyText();
-	ESINFO(PROGRESS1) << B0_in.SpyText();
+	//ESINFO(PROGRESS1) << K_in.SpyText();
+	//ESINFO(PROGRESS1) << B1_in.SpyText();
+	//ESINFO(PROGRESS1) << B0_in.SpyText();
 
 	SparseMatrix K_sc1;
 	SparseMatrix K_b_tmp;
@@ -947,7 +947,7 @@ void SparseSolverDissection::Create_non_sym_SC_w_Mat( espreso::SparseMatrix & K_
 	SC_out.type = 'G';
 
 	if (msglvl) {
-		ESINFO(EXHAUSTIVE) << SC_out.SpyText();
+		//ESINFO(EXHAUSTIVE) << SC_out.SpyText();
 	}
 
 	SC_out.ConvertCSRToDense(0);
@@ -997,7 +997,7 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R, SparseMatrix &R2) {
 	// Test the obtained kernel vectors
 	// Test 1
 	// A*r = 0
-//	ESINFO(PROGRESS1) << "Dissection kernel test 1: 'A*r = 0'";
+//	//ESINFO(PROGRESS1) << "Dissection kernel test 1: 'A*r = 0'";
 //	SEQ_VECTOR <double> r(kern_dim * rows, -1.0);
 	SparseMatrix K_sing;
 	ExportMatrix(K_sing);
@@ -1009,7 +1009,7 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R, SparseMatrix &R2) {
 //			norm_r += r[j] * r[j];
 //		}
 //		norm_r = sqrt(norm_r);
-//		ESINFO(PROGRESS1) << "||r" << i << "|| = " << norm_r;
+//		//ESINFO(PROGRESS1) << "||r" << i << "|| = " << norm_r;
 //	}
 
 	// Test 2
@@ -1035,23 +1035,23 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R, SparseMatrix &R2) {
 //	norm_K = sqrt(norm_K);
 //
 //	double test2 = norm_K_R / (norm_K * norm_R);
-//	ESINFO(PROGRESS1) << "\nDissection kernel test 2: '||K * R|| / (||K|| * ||R||)'";
-//	ESINFO(PROGRESS1) << test2;
+//	//ESINFO(PROGRESS1) << "\nDissection kernel test 2: '||K * R|| / (||K|| * ||R||)'";
+//	//ESINFO(PROGRESS1) << test2;
 
 	// Test 3
 	// R^T * R = identity
 //	SparseMatrix I;
 //	Rr.ConvertDenseToCSR(0);
 //	I.MatMat(Rr, 'T', Rr);
-//	ESINFO(PROGRESS1) << "\nDissection kernel test 3: 'R^T * R = I'";
-//	ESINFO(PROGRESS1) << I;
+//	//ESINFO(PROGRESS1) << "\nDissection kernel test 3: 'R^T * R = I'";
+//	//ESINFO(PROGRESS1) << I;
 
 	// Test 4
 	// ||K * R|| / max(diag(K))
 	double max_diag_K = K_sing.getDiagonalMaximum();
 	double test4 = norm_K_R / max_diag_K;
-//	ESINFO(PROGRESS1) << "Dissection kernel test 4: '||K * R|| / max(diag(K))'";
-//	ESINFO(PROGRESS1) << test4 << "\n";
+//	//ESINFO(PROGRESS1) << "Dissection kernel test 4: '||K * R|| / max(diag(K))'";
+//	//ESINFO(PROGRESS1) << test4 << "\n";
 	cout << "Dissection kernel test 4: '||K * R|| / max(diag(K))'";
 	cout << test4 << "\n";
 #endif
@@ -1077,7 +1077,7 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R, SparseMatrix &R2) {
 //
 //	// Test 1
 //	// A*r = 0
-//	ESINFO(PROGRESS1) << "Dissection kernel test 1: 'A*r = 0'";
+//	//ESINFO(PROGRESS1) << "Dissection kernel test 1: 'A*r = 0'";
 //	SEQ_VECTOR <double> r(kern_dim * rows, -1.0);
 //	SparseMatrix K_sing;
 //	ExportMatrix(K_sing);
@@ -1089,7 +1089,7 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R, SparseMatrix &R2) {
 //			norm_r += r[j] * r[j];
 //		}
 //		norm_r = sqrt(norm_r);
-//		ESINFO(PROGRESS1) << "||r" << i << "|| = " << norm_r;
+//		//ESINFO(PROGRESS1) << "||r" << i << "|| = " << norm_r;
 //	}
 //
 //	// Test 2
@@ -1115,23 +1115,23 @@ void SparseSolverDissection::GetKernel(SparseMatrix &R, SparseMatrix &R2) {
 //	norm_K = sqrt(norm_K);
 //
 //	double test2 = norm_K_R / (norm_K * norm_R);
-//	ESINFO(PROGRESS1) << "\nDissection kernel test 2: '||K * R|| / (||K|| * ||R||)'";
-//	ESINFO(PROGRESS1) << test2;
+//	//ESINFO(PROGRESS1) << "\nDissection kernel test 2: '||K * R|| / (||K|| * ||R||)'";
+//	//ESINFO(PROGRESS1) << test2;
 //
 //	// Test 3
 //	// R^T * R = identity
 //	SparseMatrix I;
 //	R.ConvertDenseToCSR(0);
 //	I.MatMat(R, 'T', R);
-//	ESINFO(PROGRESS1) << "\nDissection kernel test 3: 'R^T * R = I'";
-//	ESINFO(PROGRESS1) << I;
+//	//ESINFO(PROGRESS1) << "\nDissection kernel test 3: 'R^T * R = I'";
+//	//ESINFO(PROGRESS1) << I;
 //
 //	// Test 4
 //	// ||K * R|| / max(diag(K))
 //	double max_diag_K = K_sing.getDiagonalMaximum();
 //	double test4 = norm_K_R / max_diag_K;
-//	ESINFO(PROGRESS1) << "Dissection kernel test 4: '||K * R|| / max(diag(K))'";
-//	ESINFO(PROGRESS1) << test4 << "\n";
+//	//ESINFO(PROGRESS1) << "Dissection kernel test 4: '||K * R|| / max(diag(K))'";
+//	//ESINFO(PROGRESS1) << test4 << "\n";
 //#endif
 //}
 //
@@ -1184,7 +1184,7 @@ void SparseSolverDissection::SaveMatrixInCSR(string filename) {
 		}
 		out.close();
 	} else {
-		ESINFO(ERROR) << "Matrix file " << filename << " cannot be created ! ";
+		//ESINFO(ERROR) << "Matrix file " << filename << " cannot be created ! ";
 	}
 }
 

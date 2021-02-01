@@ -214,7 +214,7 @@ public:
 
 		for (size_t c = 0; c < clusters.size(); c++) {
 			if (clusters[c].domains.size() == 1) {
-				//ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW
+				////ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW
 //				std::cout << "Cluster " << clusters[c].cluster_global_index << " on MPI rank " << info::mpi::rank << " has only one domain -> Using TFETI" << std::endl;
 				clusters[c].USE_HFETI = 0;
 			}

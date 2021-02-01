@@ -10,7 +10,7 @@ using namespace espreso;
 void IterSolverGPU::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
        time_eval.totalTime.start();
 
-       ESINFO(ERROR) << "Implement apply_A_l_comp_dom_B.";
+       //ESINFO(ERROR) << "Implement apply_A_l_comp_dom_B.";
        // TODO: implement
        /*
 	if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
@@ -127,7 +127,7 @@ for (esint d = 0; d < cluster.domains.size(); d++) {
 		time_eval.timeEvents[2].end();
 
 	}
-
+*/
 	if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
 		time_eval.timeEvents[0].start();
 		//// POZOR - jen pro porovnani vykonu CPU a GPU
@@ -142,50 +142,53 @@ for (esint d = 0; d < cluster.domains.size(); d++) {
 
 		time_eval.timeEvents[1].start();
 
-		cilk_spawn apply_A_FETI_SC_forFETI (cluster, x_in);
+		// cilk_spawn 
+		
+		apply_A_FETI_SC_forFETI (cluster, x_in);
 
-		#pragma omp parallel for
-for (esint d = 0; d < cluster.domains.size(); d++) {
+		//#pragma omp parallel for
+		for (esint d = 0; d < cluster.domains.size(); d++) {
 			SEQ_VECTOR < double > x_in_tmp;
 
-			if (!cluster.domains[d].isOnACC == 1) {
-				x_in_tmp.resize( cluster.domains[d].B1_comp_dom.rows );
-				for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
-					x_in_tmp[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
+			if (!cluster.domains[d]->isOnACC == 1) {
+				x_in_tmp.resize( cluster.domains[d]->B1_comp_dom.rows );
+				for (esint i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++) {
+					x_in_tmp[i] = x_in[ cluster.domains[d]->lambda_map_sub_local[i]];
 				}
 
 				if (!configuration.combine_sc_and_spds) {
-					cluster.domains[d].B1Kplus.DenseMatVec (x_in_tmp, cluster.domains[d].compressed_tmp);
+					cluster.domains[d]->B1Kplus.DenseMatVec (x_in_tmp, cluster.domains[d]->compressed_tmp);
 				} else {
-					cluster.domains[d].B1_comp_dom.MatVec (x_in_tmp, cluster.x_prim_cluster1[d], 'T');
-					cluster.domains[d].multKplusLocal(cluster.x_prim_cluster1[d]);
-					cluster.domains[d].B1_comp_dom.MatVec (cluster.x_prim_cluster1[d], cluster.domains[d].compressed_tmp, 'N', 0, 0, 0.0);
+					cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'T');
+					cluster.domains[d]->multKplusLocal(*cluster.x_prim_cluster1[d]);
+					cluster.domains[d]->B1_comp_dom.MatVec (*cluster.x_prim_cluster1[d], cluster.domains[d]->compressed_tmp, 'N', 0, 0, 0.0);
 				}
 			}
 		}
 
-		cilk_sync;
+		//cilk_sync;
 
 		time_eval.timeEvents[1].end();
 
-		time_eval.timeEvents[2].start();
 		std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
 
 		for (esint d = 0; d < cluster.domains.size(); d++) {
-			if (cluster.domains[d].isOnACC == 1) {
-				cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy_sync ( );
-				for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-					cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].cuda_pinned_buff[i];
+			if (cluster.domains[d]->isOnACC == 1) {
+				cluster.domains[d]->B1Kplus.DenseMatVecCUDA_wo_Copy_sync ( );
+				for (esint i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++)
+					cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += cluster.domains[d]->cuda_pinned_buff[i];
 			} else {
-				for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++)
-					cluster.compressed_tmp[ cluster.domains[d].lambda_map_sub_local[i] ] += cluster.domains[d].compressed_tmp[i];
+				for (esint i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++)
+				{
+					;
+				}
 			}
 
 		}
 		time_eval.timeEvents[2].end();
 	}
 
-
+/*
 
 	if (cluster.USE_KINV == 0 && cluster.USE_HFETI == 1) {
 
@@ -291,7 +294,7 @@ for (esint d = 0; d < cluster.domains.size(); d++)
 		 time_eval.timeEvents[2].end();
 
 	}
-
+*/
 
 	// *** Combine update lambdas among neighbors - shared by all methos above
 
@@ -300,23 +303,24 @@ for (esint d = 0; d < cluster.domains.size(); d++)
 	time_eval.timeEvents[3].end();
 
 	time_eval.totalTime.end();
-*/
+
 }
 
 
-	void IterSolverGPU::apply_A_FETI_SC_forFETI   ( Cluster & cluster, SEQ_VECTOR<double> & x_in ) {
+//	void IterSolverGPU::apply_A_FETI_SC_forFETI   ( Cluster & cluster, SEQ_VECTOR<double> & x_in ) {
+	void IterSolverGPU::apply_A_FETI_SC_forFETI   ( SuperCluster & cluster, SEQ_VECTOR<double> & x_in ) {
 		//cilk_
 		for (esint d = 0; d < cluster.domains.size(); d++) {
 
-			if (cluster.domains[d].isOnACC == 1) {
-				for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
-					cluster.domains[d].cuda_pinned_buff[i] = x_in[ cluster.domains[d].lambda_map_sub_local[i]];
+			if (cluster.domains[d]->isOnACC == 1) {
+				for (esint i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++) {
+					cluster.domains[d]->cuda_pinned_buff[i] = x_in[ cluster.domains[d]->lambda_map_sub_local[i]];
 				}
 
 #ifdef SHARE_SC
-				cluster.domains[d].B1Kplus.DenseMatVecCUDA_shared_wo_Copy_start(cluster.domains[d].cuda_pinned_buff, cluster.domains[d].cuda_pinned_buff,'N',0);
+				cluster.domains[d]->B1Kplus.DenseMatVecCUDA_shared_wo_Copy_start(cluster.domains[d]->cuda_pinned_buff, cluster.domains[d]->cuda_pinned_buff,'N',0);
 #else
-				cluster.domains[d].B1Kplus.DenseMatVecCUDA_wo_Copy_start(cluster.domains[d].cuda_pinned_buff, cluster.domains[d].cuda_pinned_buff,'N',0);
+				cluster.domains[d]->B1Kplus.DenseMatVecCUDA_wo_Copy_start(cluster.domains[d]->cuda_pinned_buff, cluster.domains[d]->cuda_pinned_buff,'N',0);
 #endif
 			}
 

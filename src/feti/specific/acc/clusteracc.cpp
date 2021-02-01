@@ -87,7 +87,7 @@ void ClusterAcc::SetAcceleratorAffinity() {
 
     this->MPI_per_node = _MPInodeSize;
     // END - detect how many MPI processes is running per node
-    ESINFO(PROGRESS2) << "MPI ranks per node: " << _MPInodeSize;
+    //ESINFO(PROGRESS2) << "MPI ranks per node: " << _MPInodeSize;
 
     int nMICs = configuration.n_mics;
 
@@ -114,7 +114,7 @@ void ClusterAcc::SetAcceleratorAffinity() {
         this->myTargets.push_back( 0 );
         this->acc_rank = _MPInodeRank;
     } else {
-        ESINFO(PROGRESS2) << "Incorrect number of MPI processes per accelerator!" << _MPInodeSize;  
+        //ESINFO(PROGRESS2) << "Incorrect number of MPI processes per accelerator!" << _MPInodeSize;  
     }
 
     //for (int i = 0; i < acc_per_MPI; ++i) {
@@ -204,7 +204,7 @@ void ClusterAcc::SetAcceleratorAffinity() {
 void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     // Ratio of work done on MIC
 
-    ESINFO(PROGRESS3) << "Creating Local Schur complements";
+    //ESINFO(PROGRESS3) << "Creating Local Schur complements";
     double MICr = 1.0;
     if ( configuration.load_balancing ) {
         MICr = 0.9;
@@ -326,7 +326,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
                 SEQ_VECTOR<float>().swap(  domains[domN].B1Kplus.dense_values_fl);
 
             }
-            ESINFO(PROGRESS3) << Info::plain() << ".";
+            //ESINFO(PROGRESS3) << Info::plain() << ".";
         }
     }
 
@@ -338,7 +338,7 @@ void ClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 #pragma omp parallel for
     for (esint d = 0; d < hostDomains.size(); ++d) {
 
-        ESINFO(PROGRESS3) << Info::plain() << "*";
+        //ESINFO(PROGRESS3) << Info::plain() << "*";
         esint domN = hostDomains.at(d);
         SparseMatrix TmpB;
         domains[domN].B1_comp_dom.MatTranspose(TmpB);
@@ -381,7 +381,7 @@ void ClusterAcc::SetupKsolvers ( ) {
                 //			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
                 //			break;
             default:
-                ESINFO(ERROR) << "Invalid KSOLVER value.";
+                //ESINFO(ERROR) << "Invalid KSOLVER value.";
                 exit(EXIT_FAILURE);
         }
 
@@ -740,7 +740,7 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
                 domains[d].Prec.ConvertDenseToDenseFloat( 1 );
                 memcpy( matrixPointer, &(domains[d].Prec.dense_values_fl[0]), this->DirichletPacks[ mic ].getDataLength(j) * sizeof(float) );
             }
-            ESINFO(PROGRESS3) << Info::plain() << ".";
+            //ESINFO(PROGRESS3) << Info::plain() << ".";
         }
     }
 
@@ -921,10 +921,10 @@ void ClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
             domains[d].Prec.USE_FLOAT = true;
         }
 
-        ESINFO(PROGRESS3) << Info::plain() << ".";
+        //ESINFO(PROGRESS3) << Info::plain() << ".";
     }
 
-    ESINFO(PROGRESS3);   
+    //ESINFO(PROGRESS3);   
 }
 
 
@@ -933,7 +933,7 @@ void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in,
     double & CPUtime, 
     double * MICtime ) {
 
-    //ESINFO(PROGRESS2) << "K+ multiply HFETI";
+    ////ESINFO(PROGRESS2) << "K+ multiply HFETI";
     mkl_set_num_threads(1);
 
     cluster_time.totalTime.start();
@@ -1009,7 +1009,7 @@ void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in,
             Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
             break;
         default:
-            ESINFO(GLOBAL_ERROR) << "Not implemented S alfa solver.";
+            //ESINFO(GLOBAL_ERROR) << "Not implemented S alfa solver.";
     }
 
     clus_Sa_time.end();
@@ -1129,7 +1129,7 @@ void ClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in,
 
 void ClusterAcc::multKplusGlobal_l_prepare_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 
-    //ESINFO(PROGRESS2) << "K+ multiply HFETI";
+    ////ESINFO(PROGRESS2) << "K+ multiply HFETI";
     mkl_set_num_threads(1);
 
 //    cluster_time.totalTime.start();
@@ -1205,7 +1205,7 @@ void ClusterAcc::multKplusGlobal_l_prepare_Acc(SEQ_VECTOR<SEQ_VECTOR<double> > &
             Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
             break;
         default:
-            ESINFO(GLOBAL_ERROR) << "Not implemented S alfa solver.";
+            //ESINFO(GLOBAL_ERROR) << "Not implemented S alfa solver.";
     }
 
     clus_Sa_time.end();

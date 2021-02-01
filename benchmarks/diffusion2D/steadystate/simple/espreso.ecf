@@ -102,10 +102,11 @@ HEAT_TRANSFER_2D {
 
       FETI {
         METHOD              [ARG8];
-        PRECONDITIONER      LUMPED;
+        PRECONDITIONER        NONE; #LUMPED;
         PRECISION            1E-09;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
+        use_schur_complement  true;
       }
 
       HYPRE {

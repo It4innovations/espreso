@@ -5,7 +5,7 @@
 
 //class SparseSolverCPU;
 
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 	#include <cuda_runtime.h>
 	#include <cublas_v2.h>
 #endif
@@ -81,7 +81,7 @@ public:
 	float  * d_x_in_fl;
 	float  * d_y_out_fl;
 
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 	cublasHandle_t handle;
 	cudaStream_t stream;
 

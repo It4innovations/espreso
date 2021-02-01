@@ -1,4 +1,5 @@
 ml intel/2020a
 ml ParMETIS/4.0.3-intel-2020a
+ml CUDA/10.0.130
 export MPICXX=mpiicpc
 export CXX=icpc

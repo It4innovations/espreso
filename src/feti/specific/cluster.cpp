@@ -402,7 +402,7 @@ void ClusterBase::SetupPreconditioner ( ) {
 	case FETIConfiguration::PRECONDITIONER::LUMPED:
 		// nothing needs to be done
 #ifdef BEM4I_TO_BE_REMOVED
-		ESINFO(GLOBAL_ERROR) << "Memory efficient Lumped not possible for BEM, used fast Lumped --> MAGIC (or 5)";
+		//ESINFO(GLOBAL_ERROR) << "Memory efficient Lumped not possible for BEM, used fast Lumped --> MAGIC (or 5)";
 #endif
 		break;
 	case FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION:
@@ -455,7 +455,7 @@ void ClusterBase::SetClusterHFETI () {
 			TimeEval HFETI_prec_timing (" HFETI - preprocessing timing");
 			HFETI_prec_timing.totalTime.start();
 
-//			ESINFO(PROGRESS3) << "HFETI preprocessing start";
+//			//ESINFO(PROGRESS3) << "HFETI preprocessing start";
 
 			TimeEvent B0_time("Compress B0 per cluster");
 			B0_time.start();
@@ -491,7 +491,7 @@ void ClusterBase::SetClusterHFETI () {
 
 		} else {
 
-			//ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW
+			////ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW
 //			std::cout << "Cluster " << cluster_global_index << " on MPI rank " << info::mpi::rank << " has only one domain -> Using TFETI" << std::endl;
 			USE_HFETI = 0;
 
@@ -622,7 +622,7 @@ void ClusterBase::multKplusGlobal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double
 
 void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 
-	//ESINFO(PROGRESS3) << "K+ multiply HFETI";
+	////ESINFO(PROGRESS3) << "K+ multiply HFETI";
 	mkl_set_num_threads(1);
 
 	if (true) { cluster_time.totalTime.start(); }
@@ -788,9 +788,9 @@ void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 		for (esint i = 0; i < domain_size; i++)
 			x_in[d][i] = tm2[d][i] + tm3[d][i];
 
-		//ESINFO(PROGRESS3) << Info::plain() << ".";
+		////ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
-	//ESINFO(PROGRESS3);
+	////ESINFO(PROGRESS3);
 	if (true) { loop_2_1_time.end(); }
 
 	if (true) { cluster_time.totalTime.end(); }
@@ -1363,7 +1363,7 @@ void ClusterBase::CreateF0() {
 					domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
 					domains[d].B0Kplus = domains[d].B0Kplus_comp;
 
-//					ESINFO(PROGRESS1) << domains[d].B0t_comp.SpyText();
+//					//ESINFO(PROGRESS1) << domains[d].B0t_comp.SpyText();
 				}
 			} else {
 				//TODO: The Klus.Solve - does not have to be called twice here - can be done with Transpose
@@ -1403,10 +1403,10 @@ void ClusterBase::CreateF0() {
 		domains[d].B0Kplus.Clear();
 
 		domains[d].Kplus.msglvl=0;
-//		ESINFO(PROGRESS3) << Info::plain() << ".";
+//		//ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
 
-//	ESINFO(PROGRESS3);
+//	//ESINFO(PROGRESS3);
 
 	if (true) { solve_F0_time.end(); }
 	if (true) { solve_F0_time.printStatMPI(); }
@@ -2378,7 +2378,7 @@ void ClusterBase::Create_G_perSubdomain (SparseMatrix &R_in, SparseMatrix &B_in,
 //					//domains[j].Kplus_Rb.MatTranspose(Rt);
 //					break;
 //				default:
-//					ESINFO(GLOBAL_ERROR) << "Not implemented regularization.";
+//					//ESINFO(GLOBAL_ERROR) << "Not implemented regularization.";
 //				}
 //
 //				//Rt = domains[j].Kplus_R;
@@ -2530,7 +2530,7 @@ void ClusterBase::Create_G_perSubdomain (SparseMatrix &R_in, SparseMatrix &B_in,
 //				//domains[j].Kplus_Rb.MatTranspose(Rt);
 //				break;
 //			default:
-//				ESINFO(GLOBAL_ERROR) << "Not implemented regularization.";
+//				//ESINFO(GLOBAL_ERROR) << "Not implemented regularization.";
 //			}
 //
 //			Rt.ConvertCSRToDense(1);
@@ -3156,7 +3156,7 @@ void ClusterBase::CreateDirichletPrec(DataHolder *instance)
 //			osS.close();
 //		}
 //
-//		ESINFO(PROGRESS3) << Info::plain() << ".";
+//		//ESINFO(PROGRESS3) << Info::plain() << ".";
 //	}
 }
 

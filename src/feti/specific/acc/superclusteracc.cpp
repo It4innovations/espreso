@@ -87,7 +87,7 @@ void SuperClusterAcc::SetAcceleratorAffinity() {
 
     this->MPI_per_node = _MPInodeSize;
     // END - detect how many MPI processes is running per node
-    ESINFO(PROGRESS2) << "MPI ranks per node: " << _MPInodeSize;
+    //ESINFO(PROGRESS2) << "MPI ranks per node: " << _MPInodeSize;
 
     int nMICs = configuration.n_mics;
 
@@ -114,7 +114,7 @@ void SuperClusterAcc::SetAcceleratorAffinity() {
         this->myTargets.push_back( 0 );
         this->acc_rank = _MPInodeRank;
     } else {
-        ESINFO(PROGRESS2) << "Incorrect number of MPI processes per accelerator!" << _MPInodeSize;  
+        //ESINFO(PROGRESS2) << "Incorrect number of MPI processes per accelerator!" << _MPInodeSize;  
     }
 
 #pragma omp parallel num_threads( acc_per_MPI )
@@ -162,7 +162,7 @@ void SuperClusterAcc::SetAcceleratorAffinity() {
 void SuperClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
     // Ratio of work done on MIC
 
-    ESINFO(PROGRESS3) << "Creating Local Schur complements";
+    //ESINFO(PROGRESS3) << "Creating Local Schur complements";
     double MICr = 1.0;
     if ( configuration.load_balancing ) {
         MICr = 0.9;
@@ -284,7 +284,7 @@ void SuperClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
                 SEQ_VECTOR<float>().swap(  domains[domN]->B1Kplus.dense_values_fl);
 
             }
-            ESINFO(PROGRESS3) << Info::plain() << ".";
+            //ESINFO(PROGRESS3) << Info::plain() << ".";
         }
     }
 
@@ -296,7 +296,7 @@ void SuperClusterAcc::Create_SC_perDomain(bool USE_FLOAT) {
 #pragma omp parallel for
     for (esint d = 0; d < hostDomains.size(); ++d) {
 
-        ESINFO(PROGRESS3) << Info::plain() << "*";
+        //ESINFO(PROGRESS3) << Info::plain() << "*";
         esint domN = hostDomains.at(d);
         SparseMatrix TmpB;
         domains[domN]->B1_comp_dom.MatTranspose(TmpB);
@@ -338,7 +338,7 @@ void SuperClusterAcc::SetupKsolvers ( ) {
                 //			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
                 //			break;
             default:
-                ESINFO(ERROR) << "Invalid KSOLVER value.";
+                //ESINFO(ERROR) << "Invalid KSOLVER value.";
                 exit(EXIT_FAILURE);
         }
 
@@ -710,7 +710,7 @@ void SuperClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
                 domains[d]->Prec.ConvertDenseToDenseFloat( 1 );
                 memcpy( matrixPointer, &(domains[d]->Prec.dense_values_fl[0]), this->DirichletPacks[ mic ].getDataLength(j) * sizeof(float) );
             }
-            ESINFO(PROGRESS3) << Info::plain() << ".";
+            //ESINFO(PROGRESS3) << Info::plain() << ".";
         }
     }
 
@@ -891,10 +891,10 @@ void SuperClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
             domains[d]->Prec.USE_FLOAT = true;
         }
 
-        ESINFO(PROGRESS3) << Info::plain() << ".";
+        //ESINFO(PROGRESS3) << Info::plain() << ".";
     }
 
-    ESINFO(PROGRESS3);   
+    //ESINFO(PROGRESS3);   
 }
 
 

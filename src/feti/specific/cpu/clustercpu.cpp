@@ -32,9 +32,9 @@ void ClusterCPU::Create_SC_perDomain(bool USE_FLOAT) {
             domains[i].B1Kplus.ConvertDenseToDenseFloat( 1 );
             domains[i].B1Kplus.USE_FLOAT = true;
         }
-//        ESINFO(PROGRESS3) << Info::plain() << ".";
+//        //ESINFO(PROGRESS3) << Info::plain() << ".";
     }
-//    ESINFO(PROGRESS3);
+//    //ESINFO(PROGRESS3);
 
 
     #pragma omp parallel for
@@ -70,9 +70,9 @@ void ClusterCPU::Create_Kinv_perDomain() {
         domains[i].B1Kplus.MatMat(Btmp,'N', domains[i].B1t_comp_dom);
         domains[i].B1Kplus.ConvertCSRToDense(0);
         //domains[i].B1Kplus.ConvertDenseToDenseFloat(0);
-//        ESINFO(PROGRESS3) << Info::plain() << ".";
+//        //ESINFO(PROGRESS3) << Info::plain() << ".";
     }
-//    ESINFO(PROGRESS3);
+//    //ESINFO(PROGRESS3);
 
     #pragma omp parallel for
 	for (size_t i = 0; i < domains_in_global_index.size(); i++ )
@@ -119,7 +119,7 @@ void ClusterCPU::SetupKsolvers ( ) {
 ////			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
 ////			break;
 //		default:
-//			ESINFO(ERROR) << "Invalid KSOLVER value.";
+//			//ESINFO(ERROR) << "Invalid KSOLVER value.";
 //		}
 //
 //        //domains[d].Kplus.mtype = -2;
@@ -160,9 +160,9 @@ void ClusterCPU::SetupKsolvers ( ) {
 //        if ( d == 0 && info::mpi::MPIrank == 0) {
 //        	domains[d].Kplus.msglvl = 0;
 //        }
-//        ESINFO(PROGRESS3) << Info::plain() << ".";
+//        //ESINFO(PROGRESS3) << Info::plain() << ".";
 //    }
-//    ESINFO(PROGRESS3);
+//    //ESINFO(PROGRESS3);
 
 }
 
@@ -331,7 +331,7 @@ for (size_t d = 0; d < domains.size(); d++) {
 //		osS.close();
 //	}
 
-//	ESINFO(PROGRESS3) << Info::plain() << ".";
+//	//ESINFO(PROGRESS3) << Info::plain() << ".";
 
 }
 }

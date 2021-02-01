@@ -9,7 +9,7 @@
 #define SOLVER_SPECIFIC_ACC_CLUSTERGPU_H_
 
 
-#include "cluster.h"
+#include "feti/specific/cluster.h"
 #include <cuda.h>
 #include <cuda_runtime.h>
 namespace espreso {

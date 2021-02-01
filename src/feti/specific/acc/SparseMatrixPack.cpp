@@ -248,7 +248,7 @@ void SparseMatrixPack::SetDevice(
   ) {
 
   if ( i >= nMatrices ) {
-  ESINFO(ERROR) << "Could not add matrix. Maximum number of matrices stored.";
+  //ESINFO(ERROR) << "Could not add matrix. Maximum number of matrices stored.";
   return;
   }
 

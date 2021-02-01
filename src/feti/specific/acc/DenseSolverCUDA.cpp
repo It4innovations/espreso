@@ -128,7 +128,7 @@ DenseSolverCUDA::DenseSolverCUDA(){
 
 	// Initialize cuSolver context and CUDA stream
 	#if DEVICE_ID == 1
-		ESINFO(VERBOSE_LEVEL3) << "Selected CUDA device 1";
+		//ESINFO(VERBOSE_LEVEL3) << "Selected CUDA device 1";
 		CHECK_ERR(cudaSetDevice(1));
 	#endif
 	CHECK_SO(cusolverDnCreate(&soDnHandle));
@@ -246,7 +246,7 @@ void DenseSolverCUDA::SetThreaded() {
 
 int DenseSolverCUDA::Factorization(const std::string &str) {
 
-	ESINFO(LIBRARIES) << "CuSolver dense factorization used (" << str << ")";
+	//ESINFO(LIBRARIES) << "CuSolver dense factorization used (" << str << ")";
 	int Lwork = 0;
 
 	if (USE_FLOAT) {
@@ -379,41 +379,41 @@ void DenseSolverCUDA::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 
 void DenseSolverCUDA::SolveMat_Sparse( SparseMatrix & A )
 {
-	ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
+	//ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
 }
 
 void DenseSolverCUDA::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out )
 {
-	ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
+	//ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
 }
 
 void DenseSolverCUDA::SolveMat_Sparse( SparseMatrix & A_in, SparseMatrix & B_out, char T_for_input_matrix_is_transposed_N_input_matrix_is_NOT_transposed )
 {
-	ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
+	//ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
 }
 
 void DenseSolverCUDA::SolveMat_Dense( SparseMatrix & A_in_out )
 {
-	ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
+	//ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
 }
 
 void DenseSolverCUDA::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out )
 {
-	ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
+	//ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
 }
 
 void DenseSolverCUDA::SolveCG(SparseMatrix & A_in, SEQ_VECTOR <double> & rhs_in, SEQ_VECTOR <double> & sol, SEQ_VECTOR <double> & initial_guess)
 {
-	ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
+	//ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
 }
 
 void DenseSolverCUDA::SolveCG(SparseMatrix & A_in, std::vector <double> & rhs, std::vector <double> & sol)
 {
-	ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
+	//ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
 }
 
 void DenseSolverCUDA::SolveCG(SparseMatrix & A_in, std::vector <double> & rhs_sol)
 {
-	ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
+	//ESINFO(GLOBAL_ERROR) << "IMPLEMENT DENSESOLVEr CUDA METHODS";
 }
 

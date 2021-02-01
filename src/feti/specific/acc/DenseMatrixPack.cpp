@@ -270,9 +270,9 @@ namespace espreso {
         }
 
 //        if ( i > maxNMatrices ) {
-//            ESINFO(ERROR) << "Could not add matrix. Maximum number of matrices stored.";
+//            //ESINFO(ERROR) << "Could not add matrix. Maximum number of matrices stored.";
 //        } else if ( size > freeSpace ) {
-//            ESINFO(ERROR) << "Could not add matrix. Not enough allocated memory.";
+//            //ESINFO(ERROR) << "Could not add matrix. Not enough allocated memory.";
 //        }
 
         this->packed[ i ] = isPacked;
@@ -297,7 +297,7 @@ namespace espreso {
             ) {
 
         if ( i >= nMatrices ) {
-//            ESINFO(ERROR) << "Could not add matrix. Maximum number of matrices stored.";
+//            //ESINFO(ERROR) << "Could not add matrix. Maximum number of matrices stored.";
             return;
         }
         long size = this->lengths[i];
@@ -355,7 +355,7 @@ namespace espreso {
                 }
             }
         } else {
-//            ESINFO(ERROR) << "Could not copy vector. Vector not yet allocated.";
+//            //ESINFO(ERROR) << "Could not copy vector. Vector not yet allocated.";
         }
     }
 

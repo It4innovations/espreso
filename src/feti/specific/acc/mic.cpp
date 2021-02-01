@@ -711,7 +711,7 @@ myPhase = 33;
         for (esint i = 0; i < nMatrices; i++) {
             if (error[i]!=0) {
                 err = true;
-                //ESINFO(ERROR) << "ERROR during solution: " << error[i] << ", matrix " << i;
+                ////ESINFO(ERROR) << "ERROR during solution: " << error[i] << ", matrix " << i;
             }
         }
         if (err)
@@ -768,7 +768,7 @@ void SparseSolverMIC::Create_SC(
         MKL_INT *SC_sizes,
         esint generate_symmetric_sc_1_generate_general_sc_0
         ) {
-    //ESINFO(PROGRESS3) << "Creating Schur complements";
+    ////ESINFO(PROGRESS3) << "Creating Schur complements";
 
 
     // data to be transfered to MIC
@@ -817,7 +817,7 @@ void SparseSolverMIC::Create_SC(
             esint myRank = omp_get_thread_num();
             matrixPerThread[myRank] = (double*) _mm_malloc(maxSize * sizeof(double), 64);
         }
-        //ESINFO(PROGRESS3) << "start";
+        ////ESINFO(PROGRESS3) << "start";
 #pragma omp parallel
         {
             esint myRank = omp_get_thread_num();
@@ -906,14 +906,14 @@ void SparseSolverMIC::Create_SC(
         }
         if ( err )
         {
-            //ESINFO(ERROR) << "ERROR during numerical factorization";
+            ////ESINFO(ERROR) << "ERROR during numerical factorization";
             exit (2);
         } else {
             initialized = true;
         }
 
 
-        //ESINFO(PROGRESS3) << "end";
+        ////ESINFO(PROGRESS3) << "end";
     }
 }
 
@@ -1141,7 +1141,7 @@ void SparseSolverMIC::Create_SC_w_Mat(
                 }
                 if ( error != 0 )
                 {
-                    //ESINFO(ERROR) << "ERROR during numerical factorization: " << error;
+                    ////ESINFO(ERROR) << "ERROR during numerical factorization: " << error;
                     exit (2);
                 } else {
                     initialized = true;

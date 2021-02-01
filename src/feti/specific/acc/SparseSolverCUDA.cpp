@@ -150,7 +150,7 @@ SparseSolverCUDA::SparseSolverCUDA(){
 
 	// Initialize cuSolver context and CUDA stream
 	#if DEVICE_ID == 1
-		ESINFO(VERBOSE_LEVEL3) << "Selected CUDA device 1";
+		//ESINFO(VERBOSE_LEVEL3) << "Selected CUDA device 1";
 		CHECK_ERR(cudaSetDevice(1));
 	#endif
 	CHECK_SO(cusolverSpCreate(&soHandle));
@@ -616,7 +616,7 @@ void SparseSolverCUDA::SetThreaded() {
 
 int SparseSolverCUDA::Factorization(const std::string &str) {
 	// printf("---Factorization\n");
-	ESINFO(LIBRARIES) << "CuSolver sparse factorization used (" << str << ")";
+	//ESINFO(LIBRARIES) << "CuSolver sparse factorization used (" << str << ")";
 
 	// Keeps factorization
 	CHECK_SO_FACT(cusolverSpCreateCsrcholInfo(&soInfo));

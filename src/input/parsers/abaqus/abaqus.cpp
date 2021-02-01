@@ -239,7 +239,7 @@ void AbaqusLoader::parse()
 		}
 	}
 //	for (size_t i = 0; i < 1; i++) {
-//		ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
+//		//ESINFO(ERROR) << "Workbench parser: something wrong happens while read EBLOCK.";
 //	}
 }
 

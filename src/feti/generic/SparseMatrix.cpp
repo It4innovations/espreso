@@ -168,7 +168,7 @@ SparseMatrix::SparseMatrix() {
 	d_x_in_fl		  = NULL;
 	d_y_out_fl		  = NULL;
 
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 	handle		    = NULL;
 	stream          = NULL;
 #endif
@@ -215,7 +215,7 @@ SparseMatrix::SparseMatrix( const SparseMatrix &A_in) {
 	d_x_in_fl		  = A_in.d_x_in_fl;
 	d_y_out_fl		  = A_in.d_y_out_fl;
 
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 	handle			  = A_in.handle;
 	stream			  = A_in.stream;
 #endif
@@ -263,7 +263,7 @@ void SparseMatrix::swap ( SparseMatrix &A_in) {
 	tmppf = d_x_in_fl		; d_x_in_fl         = A_in.d_x_in_fl;         A_in.d_x_in_fl         = tmppf;
 	tmppf = d_y_out_fl		; d_y_out_fl        = A_in.d_y_out_fl;        A_in.d_y_out_fl        = tmppf;
 
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 	cublasHandle_t thandle;
 	cudaStream_t   tstream;
 
@@ -314,7 +314,7 @@ SparseMatrix& SparseMatrix::operator= (const SparseMatrix &A_in) {
 		d_x_in_fl		  = A_in.d_x_in_fl;
 		d_y_out_fl		  = A_in.d_y_out_fl;
 
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 		handle			  = A_in.handle;
 		stream			  = A_in.stream;
 #endif
@@ -633,10 +633,10 @@ void SparseMatrix::PrintMatSize( string Matname ) {
 //	esint CSR_size   = CSR_I_row_indices.size() * sizeof(esint) + CSR_J_col_indices.size() * sizeof(esint) + CSR_V_values.size() * sizeof(double);
 //	esint IJV_size   = I_row_indices.size() * sizeof(esint) 	+ J_col_indices.size() * sizeof(esint) 	  + V_values.size() * sizeof(double);
 //
-//	ESINFO(ALWAYS_ON_ROOT) << "Matrix " << Matname << " sizes:";
-//	ESINFO(ALWAYS_ON_ROOT) << "DNS size: " << dense_size << " B";
-//	ESINFO(ALWAYS_ON_ROOT) << "CSR size: " << CSR_size << " B";
-//	ESINFO(ALWAYS_ON_ROOT) << "IJV size: " << IJV_size << " B";
+//	//ESINFO(ALWAYS_ON_ROOT) << "Matrix " << Matname << " sizes:";
+//	//ESINFO(ALWAYS_ON_ROOT) << "DNS size: " << dense_size << " B";
+//	//ESINFO(ALWAYS_ON_ROOT) << "CSR size: " << CSR_size << " B";
+//	//ESINFO(ALWAYS_ON_ROOT) << "IJV size: " << IJV_size << " B";
 }
 
 
@@ -1147,7 +1147,7 @@ void SparseMatrix::DenseMatMat(SparseMatrix & A_in, char trans_A, SparseMatrix &
 
 
 void SparseMatrix::DenseMatVecCUDA_w_Copy(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose, esint x_in_vector_start_index) {
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 
 	double *d_x_in_t, *d_y_out_t, *d_Mat;
 	esint mat_size = rows * cols;
@@ -1202,7 +1202,7 @@ void SparseMatrix::DenseMatVecCUDA_w_Copy(SEQ_VECTOR <double> & x_in, SEQ_VECTOR
 
 
 void SparseMatrix::DenseMatVecCUDA_wo_Copy(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_not_transpose, esint x_in_vector_start_index) {
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 
 	DenseMatVecCUDA_wo_Copy_start( &x_in[0], &y_out[0], T_for_transpose_N_for_not_transpose, x_in_vector_start_index);
 	DenseMatVecCUDA_wo_Copy_sync();
@@ -1250,7 +1250,7 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy(SEQ_VECTOR <double> & x_in, SEQ_VECTO
 
 
 void SparseMatrix::DenseMatVecCUDA_wo_Copy_start( double * x_in, double * y_out, char T_for_transpose_N_for_not_transpose, esint x_in_vector_start_index) {
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 
 	esint lda = rows;
 
@@ -1313,7 +1313,7 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start( double * x_in, double * y_out,
 }
 
 void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out, char T_for_transpose_N_for_not_transpose, esint x_in_vector_start_index) {
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 
 	esint lda = rows;
 
@@ -1377,7 +1377,7 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out
 
 
 //void SparseMatrix::DenseMatVecCUDA_shared_wo_Copy_start( double * x_in, double * y_out, char T_for_transpose_N_for_not_transpose, esint x_in_vector_start_index, esint extern_rows, esint extern_lda, esint dense_val_offset, char U_for_upper_L_for_lower) {
-//#ifdef CUDA
+//#ifdef SOLVER_CUDA
 //
 //	cublasStatus_t cublas_status = CUBLAS_STATUS_SUCCESS;
 //
@@ -1388,7 +1388,7 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out
 //	// Set input matrices on device
 //	cudaError_t status = cudaMemcpyAsync(d_x_in, x_in, extern_rows * sizeof(double), cudaMemcpyHostToDevice, stream);
 //	if (status != cudaSuccess)   {
-//		ESINFO(ERROR) << "Error during host to device copy";
+//		//ESINFO(ERROR) << "Error during host to device copy";
 //		MPI_Finalize();
 //		exit(0);
 //	}
@@ -1398,7 +1398,7 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out
 //
 //	if (type == 'G') {
 //		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
-//			ESINFO(GLOBAL_ERROR) << "Method DenseMatVecCUDA_shared_wo_Copy_start for General transposed matrix not implemented yet";
+//			//ESINFO(GLOBAL_ERROR) << "Method DenseMatVecCUDA_shared_wo_Copy_start for General transposed matrix not implemented yet";
 //			exit(1);
 //		} else {
 //			if(U_for_upper_L_for_lower == 'U') {
@@ -1421,7 +1421,7 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out
 //
 //	if (type == 'S') {
 //
-//		ESINFO(GLOBAL_ERROR) << "Method DenseMatVecCUDA_shared_wo_Copy_start for Symmetric matrix not implemented yet";
+//		//ESINFO(GLOBAL_ERROR) << "Method DenseMatVecCUDA_shared_wo_Copy_start for Symmetric matrix not implemented yet";
 //		exit(1);
 //
 ////		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
@@ -1432,7 +1432,7 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out
 //	}
 //
 //	if (cublas_status != CUBLAS_STATUS_SUCCESS)   {
-//		ESINFO(ERROR) << "Error during cublas DenseMatVec";
+//		//ESINFO(ERROR) << "Error during cublas DenseMatVec";
 //		MPI_Finalize();
 //		exit(0);
 //	}
@@ -1441,7 +1441,7 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out
 //	// Retrieve result vector from device
 //	status = cudaMemcpyAsync(y_out, d_y_out, extern_rows * sizeof(double), cudaMemcpyDeviceToHost, stream);
 //	if (status != cudaSuccess)   {
-//		ESINFO(ERROR) << "Error during device to host copy";
+//		//ESINFO(ERROR) << "Error during device to host copy";
 //		MPI_Finalize();
 //		exit(0);
 //	}
@@ -1450,7 +1450,7 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out
 //}
 
 void SparseMatrix::DenseMatVecCUDA_shared_wo_Copy_start( double * x_in, double * y_out, char T_for_transpose_N_for_not_transpose, esint x_in_vector_start_index) {
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 
 	cublasStatus_t cublas_status = CUBLAS_STATUS_SUCCESS;
 
@@ -1461,7 +1461,7 @@ void SparseMatrix::DenseMatVecCUDA_shared_wo_Copy_start( double * x_in, double *
 	// Set input matrices on device
 	cudaError_t status = cudaMemcpyAsync(d_x_in, x_in, rows * sizeof(double), cudaMemcpyHostToDevice, stream);
 	if (status != cudaSuccess)   {
-		ESINFO(ERROR) << "Error " << cudaGetErrorString(status) << " during host to device copy";
+		//ESINFO(ERROR) << "Error " << cudaGetErrorString(status) << " during host to device copy";
 		MPI_Finalize();
 		exit(0);
 	}
@@ -1471,7 +1471,7 @@ void SparseMatrix::DenseMatVecCUDA_shared_wo_Copy_start( double * x_in, double *
 
 	if (type == 'G') {
 		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
-			ESINFO(GLOBAL_ERROR) << "Method DenseMatVecCUDA_shared_wo_Copy_start for General transposed matrix not implemented yet";
+			//ESINFO(GLOBAL_ERROR) << "Method DenseMatVecCUDA_shared_wo_Copy_start for General transposed matrix not implemented yet";
 			exit(1);
 		} else {
 			if(uplo == 'U') {
@@ -1494,7 +1494,7 @@ void SparseMatrix::DenseMatVecCUDA_shared_wo_Copy_start( double * x_in, double *
 
 	if (type == 'S') {
 
-		ESINFO(GLOBAL_ERROR) << "Method DenseMatVecCUDA_shared_wo_Copy_start for Symmetric matrix not implemented yet";
+		//ESINFO(GLOBAL_ERROR) << "Method DenseMatVecCUDA_shared_wo_Copy_start for Symmetric matrix not implemented yet";
 		exit(1);
 
 //		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
@@ -1505,7 +1505,7 @@ void SparseMatrix::DenseMatVecCUDA_shared_wo_Copy_start( double * x_in, double *
 	}
 
 	if (cublas_status != CUBLAS_STATUS_SUCCESS)   {
-		ESINFO(ERROR) << "Error " << _cudaGetErrorEnum(cublas_status) << " during cublas DenseMatVec";
+		//ESINFO(ERROR) << "Error " << _cudaGetErrorEnum(cublas_status) << " during cublas DenseMatVec";
 		MPI_Finalize();
 		exit(0);
 	}
@@ -1514,7 +1514,7 @@ void SparseMatrix::DenseMatVecCUDA_shared_wo_Copy_start( double * x_in, double *
 	// Retrieve result vector from device
 	status = cudaMemcpyAsync(y_out, d_y_out, rows * sizeof(double), cudaMemcpyDeviceToHost, stream);
 	if (status != cudaSuccess)   {
-		ESINFO(ERROR) << "Error during device to host copy";
+		//ESINFO(ERROR) << "Error during device to host copy";
 		MPI_Finalize();
 		exit(0);
 	}
@@ -1523,7 +1523,7 @@ void SparseMatrix::DenseMatVecCUDA_shared_wo_Copy_start( double * x_in, double *
 }
 
 void SparseMatrix::DenseMatVecCUDA_wo_Copy_sync ( ) {
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 	cudaStreamSynchronize(stream);
 #endif
 }
@@ -1531,7 +1531,7 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_sync ( ) {
 
 esint SparseMatrix::MallocOnCUDA_Dev ( ) {
 	esint error = 0;
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 
 	esint mat_size;
 
@@ -1545,7 +1545,7 @@ esint SparseMatrix::MallocOnCUDA_Dev ( ) {
 				mat_size = ((rows + 1) * cols) / 2;
 			}
 		} else {
-			ESINFO(ERROR) << "GPU ERROR - Matrix on GPU cannot be allocated - no valid size of rows or cols \n";
+			//ESINFO(ERROR) << "GPU ERROR - Matrix on GPU cannot be allocated - no valid size of rows or cols \n";
 			exit(0);
 		}
 	}
@@ -1556,7 +1556,7 @@ esint SparseMatrix::MallocOnCUDA_Dev ( ) {
 
 	cudaError_t status = cudaMalloc((void**)&d_dense_values,   mat_size * sizeof(double));
 	if (status != cudaSuccess)   {
-		//ESINFO(ERROR) << "Error allocating GPU memory for Matrix";
+		////ESINFO(ERROR) << "Error allocating GPU memory for Matrix";
 		//MPI_Finalize();
 		//exit(0);
 		error = -1;
@@ -1564,7 +1564,7 @@ esint SparseMatrix::MallocOnCUDA_Dev ( ) {
 
 	status = cudaMalloc((void**)&d_x_in,  rows * sizeof(double));
 	if (status != cudaSuccess) {
-		//ESINFO(ERROR) << "Error allocating GPU memory for input vector";
+		////ESINFO(ERROR) << "Error allocating GPU memory for input vector";
 		//MPI_Finalize();
 		//exit(0);
 		error = -1;
@@ -1572,7 +1572,7 @@ esint SparseMatrix::MallocOnCUDA_Dev ( ) {
 
 	status = cudaMalloc((void**)&d_y_out, rows * sizeof(double));
 	if (status != cudaSuccess) {
-		//ESINFO(ERROR) << "Error allocating GPU memory for output vector";
+		////ESINFO(ERROR) << "Error allocating GPU memory for output vector";
 		//MPI_Finalize();
 		//exit(0);
 		error = -1;
@@ -1592,7 +1592,7 @@ esint SparseMatrix::MallocOnCUDA_Dev ( ) {
 
 esint SparseMatrix::MallocOnCUDA_Dev_fl ( ) {
 	esint error = 0;
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 
 	esint mat_size;
 
@@ -1606,7 +1606,7 @@ esint SparseMatrix::MallocOnCUDA_Dev_fl ( ) {
 				mat_size = ((rows + 1) * cols) / 2;
 			}
 		} else {
-			ESINFO(ERROR) << "GPU ERROR - Matrix on GPU cannot be allocated - no valid size of rows or cols \n";
+			//ESINFO(ERROR) << "GPU ERROR - Matrix on GPU cannot be allocated - no valid size of rows or cols \n";
 			exit(0);
 		}
 	}
@@ -1617,7 +1617,7 @@ esint SparseMatrix::MallocOnCUDA_Dev_fl ( ) {
 
 	cudaError_t status = cudaMalloc((void**)&d_dense_values_fl,   mat_size * sizeof(float));
 	if (status != cudaSuccess)   {
-		//ESINFO(ERROR) << "Error allocating GPU memory for Matrix";
+		////ESINFO(ERROR) << "Error allocating GPU memory for Matrix";
 		//MPI_Finalize();
 		//exit(0);
 		error = -1;
@@ -1626,7 +1626,7 @@ esint SparseMatrix::MallocOnCUDA_Dev_fl ( ) {
 
 	status = cudaMalloc((void**)&d_x_in_fl,  rows * sizeof(float));
 	if (status != cudaSuccess) {
-		//ESINFO(ERROR) << "Error allocating GPU memory for input vector";
+		////ESINFO(ERROR) << "Error allocating GPU memory for input vector";
 		//MPI_Finalize();
 		//exit(0);
 		error = -1;
@@ -1635,7 +1635,7 @@ esint SparseMatrix::MallocOnCUDA_Dev_fl ( ) {
 
 	status = cudaMalloc((void**)&d_y_out_fl, rows * sizeof(float));
 	if (status != cudaSuccess) {
-		//ESINFO(ERROR) << "Error allocating GPU memory for output vector";
+		////ESINFO(ERROR) << "Error allocating GPU memory for output vector";
 		//MPI_Finalize();
 		//exit(0);
 		error = -1;
@@ -1654,7 +1654,7 @@ esint SparseMatrix::MallocOnCUDA_Dev_fl ( ) {
 
 esint SparseMatrix::MallocVecsOnCUDA_Dev ( ) {
 	esint error = 0;
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 
 	if (d_x_in != NULL || d_y_out != NULL) {
 		FreeVecsFromCUDA_Dev();
@@ -1662,7 +1662,7 @@ esint SparseMatrix::MallocVecsOnCUDA_Dev ( ) {
 
 	cudaError_t status = cudaMalloc((void**)&d_x_in,  rows * sizeof(double));
 	if (status != cudaSuccess) {
-		//ESINFO(ERROR) << "Error allocating GPU memory for input vector";
+		////ESINFO(ERROR) << "Error allocating GPU memory for input vector";
 		//MPI_Finalize();
 		//exit(0);
 		error = -1;
@@ -1670,7 +1670,7 @@ esint SparseMatrix::MallocVecsOnCUDA_Dev ( ) {
 
 	status = cudaMalloc((void**)&d_y_out, rows * sizeof(double));
 	if (status != cudaSuccess) {
-		//ESINFO(ERROR) << "Error allocating GPU memory for output vector";
+		////ESINFO(ERROR) << "Error allocating GPU memory for output vector";
 		//MPI_Finalize();
 		//exit(0);
 		error = -1;
@@ -1689,7 +1689,7 @@ esint SparseMatrix::MallocVecsOnCUDA_Dev ( ) {
 
 esint SparseMatrix::MallocVecsOnCUDA_Dev_fl ( ) {
 	esint error = 0;
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 
 	if (d_x_in_fl != NULL || d_y_out_fl != NULL) {
 		FreeVecsFromCUDA_Dev_fl();
@@ -1697,7 +1697,7 @@ esint SparseMatrix::MallocVecsOnCUDA_Dev_fl ( ) {
 
 	cudaError_t status = cudaMalloc((void**)&d_x_in_fl,  rows * sizeof(float));
 	if (status != cudaSuccess) {
-		//ESINFO(ERROR) << "Error allocating GPU memory for input vector";
+		////ESINFO(ERROR) << "Error allocating GPU memory for input vector";
 		//MPI_Finalize();
 		//exit(0);
 		error = -1;
@@ -1705,7 +1705,7 @@ esint SparseMatrix::MallocVecsOnCUDA_Dev_fl ( ) {
 
 	status = cudaMalloc((void**)&d_y_out_fl, rows * sizeof(float));
 	if (status != cudaSuccess) {
-		//ESINFO(ERROR) << "Error allocating GPU memory for output vector";
+		////ESINFO(ERROR) << "Error allocating GPU memory for output vector";
 		//MPI_Finalize();
 		//exit(0);
 		error = -1;
@@ -1726,7 +1726,7 @@ esint SparseMatrix::MallocVecsOnCUDA_Dev_fl ( ) {
 esint SparseMatrix::CopyToCUDA_Dev( ) {
 	esint error = 0;
 
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 
 	if ( d_dense_values == NULL ) {
 		error = MallocOnCUDA_Dev();
@@ -1742,7 +1742,7 @@ esint SparseMatrix::CopyToCUDA_Dev( ) {
 
 esint SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 	esint error = 0;
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 
 	if ( d_dense_values == NULL ) {
 		error = MallocOnCUDA_Dev_fl();
@@ -1757,7 +1757,7 @@ esint SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 
 
 void SparseMatrix::CopyFromCUDA_Dev() {
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 //	cudaFree(d_dense_values);
 //	d_dense_values = NULL;
 #endif
@@ -1765,7 +1765,7 @@ void SparseMatrix::CopyFromCUDA_Dev() {
 
 
 void SparseMatrix::FreeFromCUDA_Dev() {
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 	cudaError_t status = cudaFree(d_dense_values);
 	status = cudaFree(d_x_in);
 	status = cudaFree(d_y_out);
@@ -1787,7 +1787,7 @@ void SparseMatrix::FreeFromCUDA_Dev() {
 
 
 void SparseMatrix::FreeFromCUDA_Dev_fl() {
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 
 	cudaError_t status = cudaFree(d_dense_values_fl);
 	status = cudaFree(d_x_in_fl);
@@ -1809,7 +1809,7 @@ void SparseMatrix::FreeFromCUDA_Dev_fl() {
 
 
 void SparseMatrix::FreeVecsFromCUDA_Dev() {
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 	cudaError_t status = cudaFree(d_x_in);
 	status = cudaFree(d_y_out);
 
@@ -1828,7 +1828,7 @@ void SparseMatrix::FreeVecsFromCUDA_Dev() {
 
 
 void SparseMatrix::FreeVecsFromCUDA_Dev_fl() {
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 	cudaError_t status = cudaFree(d_x_in_fl);
 	status = cudaFree(d_y_out_fl);
 
@@ -1846,7 +1846,7 @@ void SparseMatrix::FreeVecsFromCUDA_Dev_fl() {
 }
 
 
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 void SparseMatrix::SetCUDA_Stream(cudaStream_t & in_stream) {
 	stream = in_stream;
 	if (handle == NULL) {
@@ -2337,16 +2337,16 @@ void SparseMatrix::getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_o
 
 void SparseMatrix::printMatCSR(char *str0){
 //	esint offset = CSR_I_row_indices[0] ? 1 : 0;
-//	ESINFO(ALWAYS_ON_ROOT) << str0 << " = [ ...";
+//	//ESINFO(ALWAYS_ON_ROOT) << str0 << " = [ ...";
 //
 //	for (esint i = 0; i < rows; i++) {
 //		for (esint j = CSR_I_row_indices[i]; j < CSR_I_row_indices[i + 1]; j++) {
-//			ESINFO(ALWAYS_ON_ROOT) << i + 1 << " " << CSR_J_col_indices[j - offset] << " " << CSR_V_values[j - offset];
+//			//ESINFO(ALWAYS_ON_ROOT) << i + 1 << " " << CSR_J_col_indices[j - offset] << " " << CSR_V_values[j - offset];
 //		}
 //	}
-//	ESINFO(ALWAYS_ON_ROOT) << "];" << str0 << " = full(sparse(" << str0 << "(:,1)," << str0 << "(:,2)," << str0 << "(:,3)," << rows << "," << cols << "));";
+//	//ESINFO(ALWAYS_ON_ROOT) << "];" << str0 << " = full(sparse(" << str0 << "(:,1)," << str0 << "(:,2)," << str0 << "(:,3)," << rows << "," << cols << "));";
 //	if (type=='S'){
-//		ESINFO(ALWAYS_ON_ROOT) << str0 << "=" << str0 << "+" << str0 << "'-diag(diag(" << str0 << "));";
+//		//ESINFO(ALWAYS_ON_ROOT) << str0 << "=" << str0 << "+" << str0 << "'-diag(diag(" << str0 << "));";
 //	}
 }
 
@@ -2577,9 +2577,9 @@ double SparseMatrix::MatCondNumb( SparseMatrix & A_in, const std::string &str0, 
   }
 //
 	if (plot_a_and_b_defines_tridiag) {
-//		ESINFO(DETAILS) << "alpha beta";
+//		//ESINFO(DETAILS) << "alpha beta";
 //		for (esint i = 0 ; i < cnt; i++) {
-//			ESINFO(DETAILS) << alphaVec[i] << " " << betaVec[i];
+//			//ESINFO(DETAILS) << alphaVec[i] << " " << betaVec[i];
 //		}
 	}
   char JOBZ = 'N';
@@ -2588,18 +2588,18 @@ double SparseMatrix::MatCondNumb( SparseMatrix & A_in, const std::string &str0, 
   LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt, alphaVec, betaVec, Z, ldz);
   estim_cond=fabs(alphaVec[cnt-1]/alphaVec[0]);
 //	if (plot_n_first_n_last_eigenvalues > 0) {
-//		ESINFO(DETAILS) << "conds(" << str0 << ") = " << estim_cond << "\tit: " << cnt;
+//		//ESINFO(DETAILS) << "conds(" << str0 << ") = " << estim_cond << "\tit: " << cnt;
 //	}
   *maxEig = alphaVec[cnt-1];
 
 	if (plot_n_first_n_last_eigenvalues > 0) {
-//		ESINFO(DETAILS)
+//		//ESINFO(DETAILS)
 //			<< "eigenvals of " << str0 << " d{1:" << plot_n_first_n_last_eigenvalues << "} and d{"
 //			<< cnt-plot_n_first_n_last_eigenvalues+2 << ":\t" << cnt<< "}";
 //
 //		for (esint i = 0 ; i < cnt; i++) {
 //			if (i < plot_n_first_n_last_eigenvalues || i > cnt-plot_n_first_n_last_eigenvalues) {
-//				ESINFO(DETAILS) << i + 1 << ":" << alphaVec[i];
+//				//ESINFO(DETAILS) << i + 1 << ":" << alphaVec[i];
 //			}
 //		}
 	}
@@ -3572,7 +3572,7 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 //  - OWN
 #if VERBOSE_KERNEL == 4
     if (d_sub==0){
-      ESINFO(PROGRESS3) << "debug set-up";
+      //ESINFO(PROGRESS3) << "debug set-up";
     }
 #endif
 
@@ -4336,7 +4336,7 @@ if (defect_K_in == 0){
 //#if VERBOSE_KERNEL > 0
 //    os.close();
 //#endif
-//    ESINFO(ERROR) << "factorization of Kreg failed (2/2 factorization).";
+//    //ESINFO(ERROR) << "factorization of Kreg failed (2/2 factorization).";
 //    exit(EXIT_FAILURE);
 //  }
 //  ///////////////////////////////////////////////////////////////////////////////////
@@ -4555,7 +4555,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //  - OWN
 #if VERBOSE_KERNEL == 4
     if (d_sub==0){
-      ESINFO(PROGRESS3) << "debug set-up";
+      //ESINFO(PROGRESS3) << "debug set-up";
     }
 #endif
 
@@ -5557,7 +5557,7 @@ if (defect_K_in == 0){
 //#if VERBOSE_KERNEL > 0
 //    os.close();
 //#endif
-//    ESINFO(ERROR) << "factorization of Kreg failed (2/2 factorization).";
+//    //ESINFO(ERROR) << "factorization of Kreg failed (2/2 factorization).";
 //    exit(EXIT_FAILURE);
 //  }
 //  ///////////////////////////////////////////////////////////////////////////////////
@@ -5596,7 +5596,7 @@ if (defect_K_in == 0){
 #endif
 } //get_kernels_from_nonsym_K
 
-#ifdef CUDA
+#ifdef SOLVER_CUDA
 const char * SparseMatrix::_cudaGetErrorEnum(cublasStatus_t error)
 {
     switch (error)

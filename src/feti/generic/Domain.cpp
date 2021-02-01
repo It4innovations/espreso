@@ -496,7 +496,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 //		Kplus.Solve(x_in, y_out, x_in_vector_start_index, y_out_vector_start_index);
 //		break;
 //	default:
-//		ESINFO(GLOBAL_ERROR) << "Invalid KSOLVER value.";
+//		//ESINFO(GLOBAL_ERROR) << "Invalid KSOLVER value.";
 //		exit(EXIT_FAILURE);
 //	}
 //
@@ -580,7 +580,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 //				norm = sqrt(norm);
 //
 //				if (norm < configuration.Ksolver_precision) {
-//					ESINFO(PROGRESS3) << " " << step;
+//					//ESINFO(PROGRESS3) << " " << step;
 //					success = true;
 //					break;
 //				}
@@ -588,7 +588,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 //		}
 //
 //		if (!success) {
-//			ESINFO(PROGRESS3) << "FAILED";
+//			//ESINFO(PROGRESS3) << "FAILED";
 //		}
 //
 //		for (size_t i = 0; i < r.size(); i++) {
@@ -602,7 +602,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 ////		Kplus.SolveCG(K, x_in, y_out, x);
 ////		break;
 //	default:
-//		ESINFO(GLOBAL_ERROR) << "Invalid KSOLVER value.";
+//		//ESINFO(GLOBAL_ERROR) << "Invalid KSOLVER value.";
 //		exit(EXIT_FAILURE);
 //	}
 //}
@@ -643,7 +643,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 //				norm = sqrt(norm);
 //
 //				if (norm < configuration.Ksolver_precision) {
-//					ESINFO(PROGRESS3) << " " << step;
+//					//ESINFO(PROGRESS3) << " " << step;
 //					break;
 //				}
 //
@@ -651,7 +651,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 //		}
 //
 //		if (!success) {
-//			ESINFO(PROGRESS3) << "FAILED";
+//			//ESINFO(PROGRESS3) << "FAILED";
 //		}
 //
 //		for (size_t i = 0; i < r.size(); i++) {
@@ -677,7 +677,7 @@ void Domain::multKplusLocal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_
 //		Kplus.SolveCG(K, x_in_y_out);
 //		break;
 //	default:
-//		ESINFO(ERROR) << "Invalid KSOLVER value.";
+//		//ESINFO(ERROR) << "Invalid KSOLVER value.";
 //		exit(EXIT_FAILURE);
 //	}
 //}

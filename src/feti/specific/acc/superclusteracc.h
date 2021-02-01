@@ -33,7 +33,7 @@ class SuperClusterAcc : public SuperClusterBase
 	    this->deleteMatrices = false;
 		this->NUM_MICS = configuration.n_mics;
 		SetAcceleratorAffinity();
-		ESINFO( DETAILS ) << "Number of Xeon Phi coprocessors: " << this->NUM_MICS;
+		//ESINFO( DETAILS ) << "Number of Xeon Phi coprocessors: " << this->NUM_MICS;
     }
 
     virtual ~SuperClusterAcc();

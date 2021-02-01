@@ -91,11 +91,13 @@ STRUCTURAL_MECHANICS_3D {
 
       FETI {
         METHOD          TOTAL_FETI;
-        PRECONDITIONER   DIRICHLET;
+        PRECONDITIONER        NONE; #DIRICHLET;
         PRECISION            1E-09;
         ITERATIVE_SOLVER     GMRES;
         REGULARIZATION   ALGEBRAIC;
         MAX_ITERATIONS        1000;
+
+        use_schur_complement  true;
       }
 
       HARMONIC_SOLVER {

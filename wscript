@@ -245,6 +245,11 @@ def build(ctx):
         feti = fetisources + ("src/feti/specific/cpu/SparseSolverMKL.cpp",)
     if ctx.env["DEFINES_SOLVER"][0] == "SOLVER_PARDISO":
         feti = fetisources + ("src/feti/specific/cpu/SparseSolverPARDISO.cpp",)
+    if ctx.env["DEFINES_SOLVER"][0] == "SOLVER_CUDA":
+        feti = fetisources + ("src/feti/specific/cpu/SparseSolverMKL.cpp", "src/feti/specific/acc/clusterGPU.cpp", "src/feti/specific/acc/itersolverGPU.cpp",)
+	ctx.env.append_unique("DEFINES","STREAM_NUM=1")
+	ctx.env.append_unique("LIB",["cublas","cudart"])
+
 
     features = "cxx cxxshlib"
     ctx.lib = ctx.shlib
@@ -364,7 +369,7 @@ def options(opt):
         choices=modes,
         help="ESPRESO build mode: " + ", ".join(modes) + " [default: %default]")
 
-    solvers=["mkl", "pardiso"]
+    solvers=["mkl", "pardiso", "cuda"]
     opt.compiler.add_option("--solver",
         action="store",
         default="mkl",

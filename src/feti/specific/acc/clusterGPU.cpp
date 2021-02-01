@@ -1,4 +1,9 @@
 #include "clusterGPU.h"
+#include "esinfo/ecfinfo.h"
+#include "esinfo/mpiinfo.h"
+#include <sstream>
+#include <iostream>
+#include "mkl.h"
 
 using namespace espreso;
 
@@ -36,7 +41,7 @@ ClusterGPU::~ClusterGPU() {
 
 void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
-	ESINFO(PROGRESS3) << "Creating B1*K+*B1t Schur Complements with Pardiso SC and coping them to GPU";
+	std::cout << "Creating B1*K+*B1t Schur Complements with Pardiso SC and coping them to GPU";
 
 	bool GPU_full = false;
 	//GPU_full = true;
@@ -47,27 +52,27 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	int nDevices;
 	cudaGetDeviceCount(&nDevices);
 
-	ESINFO(PROGRESS3) << Info::plain() << "\n*** GPU Accelerators available on the server " << "\n\n";
+	std::cout << "\n*** GPU Accelerators available on the server " << "\n\n";
 	for (int i = 0; i < nDevices; i++) {
 		cudaDeviceProp prop;
 		cudaGetDeviceProperties(&prop, i);
-		ESINFO(PROGRESS3) << Info::plain() << " Device Number: " << i << "\n";
-		ESINFO(PROGRESS3) << Info::plain() << " Device name: " << prop.name << "\n";
-		ESINFO(PROGRESS3) << Info::plain() << " Memory Clock Rate (KHz): " << prop.memoryClockRate << "\n";
-		ESINFO(PROGRESS3) << Info::plain() << " Memory Bus Width (bits): " << prop.memoryBusWidth << "\n";
-		ESINFO(PROGRESS3) << Info::plain() << " Peak Memory Bandwidth (GB/s): " << 2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6 << "\n";
+		std::cout << " Device Number: " << i << "\n";
+		std::cout << " Device name: " << prop.name << "\n";
+		std::cout << " Memory Clock Rate (KHz): " << prop.memoryClockRate << "\n";
+		std::cout << " Memory Bus Width (bits): " << prop.memoryBusWidth << "\n";
+		std::cout << " Peak Memory Bandwidth (GB/s): " << 2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6 << "\n";
 
 		cudaSetDevice(i);
 		size_t free, total;
 		cudaMemGetInfo(&free, &total);
-		ESINFO(PROGRESS3) << Info::plain() << " GPU Total Memory [MB]: " << total/1024/1024 << "\n";
-		ESINFO(PROGRESS3) << Info::plain() << " GPU Free Memory [MB]:  " << free/1024/1024 << "\n\n";
+		std::cout << " GPU Total Memory [MB]: " << total/1024/1024 << "\n";
+		std::cout << " GPU Free Memory [MB]:  " << free/1024/1024 << "\n\n";
 
 	}
 
 	// GPU memory management
 	#if DEVICE_ID == 1
-		ESINFO(VERBOSE_LEVEL3) << "Selected CUDA device 1";
+		std::cout << "Selected CUDA device 1";
 		cudaSetDevice(1);
 	#else
 		cudaSetDevice(0);
@@ -85,7 +90,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
 
 		switch (configuration.schur_type) {
-		case MATRIX_STORAGE::GENERAL:
+		case FETIConfiguration::MATRIX_STORAGE::GENERAL:
 #ifdef SHARE_SC
 			// SC_total_size will be halved in the case of 2 symmetric SCs in 1 full matrix
 			if (d%2 == 0) {
@@ -130,7 +135,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			}
 #endif
 			break;
-		case MATRIX_STORAGE::SYMMETRIC:
+		case FETIConfiguration::MATRIX_STORAGE::SYMMETRIC:
 			if (USE_FLOAT) {
 				SC_total_size +=
 						(((domains[d].B1_comp_dom.rows + 1 ) * domains[d].B1_comp_dom.rows ) / 2
@@ -144,7 +149,8 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			}
 			break;
 		default:
-			ESINFO(GLOBAL_ERROR) << "Not implemented type of Schur complement.";
+			break;
+			std::cout << "ERROR - Not implemented type of Schur complement.";
 		}
 
 
@@ -159,25 +165,24 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		}
 	}
 
-	ESINFO(PROGRESS3) << Info::plain() << "\n Domains on GPU : " << domains_on_GPU << "\n";
-	ESINFO(PROGRESS3) << Info::plain() << " Domains on CPU : " << domains_on_CPU << "\n";
+	std::cout << "\n Domains on GPU : " << domains_on_GPU << "\n";
+	std::cout << " Domains on CPU : " << domains_on_CPU << "\n";
 
-	std::vector <int> on_gpu (info::mpi::MPIsize, 0);
-	MPI_Gather(&domains_on_GPU,1,MPI_INT,&on_gpu[0],1,MPI_INT, 0, info::mpi::MPICommunicator);
+	std::vector <int> on_gpu (info::mpi::size, 0);
+	MPI_Gather(&domains_on_GPU,1,MPI_INT,&on_gpu[0],1,MPI_INT, 0, info::mpi::comm);
 
-	std::vector <int> on_cpu (info::mpi::MPIsize, 0);
-	MPI_Gather(&domains_on_CPU,1,MPI_INT,&on_cpu[0],1,MPI_INT, 0, info::mpi::MPICommunicator);
+	std::vector <int> on_cpu (info::mpi::size, 0);
+	MPI_Gather(&domains_on_CPU,1,MPI_INT,&on_cpu[0],1,MPI_INT, 0, info::mpi::comm);
 
-	std::vector <int> don_gpu (info::mpi::MPIsize, 0);
-	MPI_Gather(&DOFs_GPU,1,MPI_INT,&don_gpu[0],1,MPI_INT, 0, info::mpi::MPICommunicator);
+	std::vector <int> don_gpu (info::mpi::size, 0);
+	MPI_Gather(&DOFs_GPU,1,MPI_INT,&don_gpu[0],1,MPI_INT, 0, info::mpi::comm);
 
-	std::vector <int> don_cpu (info::mpi::MPIsize, 0);
-	MPI_Gather(&DOFs_CPU,1,MPI_INT,&don_cpu[0],1,MPI_INT, 0, info::mpi::MPICommunicator);
+	std::vector <int> don_cpu (info::mpi::size, 0);
+	MPI_Gather(&DOFs_CPU,1,MPI_INT,&don_cpu[0],1,MPI_INT, 0, info::mpi::comm);
 
 
-	for (esint i = 0; i < info::mpi::MPIsize; i++) {
-		ESINFO(PROGRESS3) << Info::plain()
-			<< " MPI rank " << i <<
+	for (esint i = 0; i < info::mpi::size; i++) {
+		std::cout << " MPI rank " << i <<
 			"\t - GPU : domains = \t" << on_gpu[i] << "\t Total DOFs = \t" << don_gpu[i] <<
 			"\t - CPU : domains = \t" << on_cpu[i] << "\t Total DOFs = \t" << don_cpu[i] << "\n";
 	}
@@ -188,7 +193,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 //		if (domains[d].isOnACC == 1 || !configuration.combine_sc_and_spds) {
 //			// Calculates SC on CPU and keeps it CPU memory
 //			GetSchurComplement(USE_FLOAT, d);
-//			ESINFO(PROGRESS3) << Info::plain() << ".";
+//			////ESINFO(PROGRESS3) << Info::plain() << ".";
 //		}
 //	}
 
@@ -203,7 +208,7 @@ for (esint d = 0; d < domains_in_global_index.size(); d += 2 ) {
 		if (domains[d].isOnACC == 1 || !configuration.combine_sc_and_spds) {
 			// Calculates SC on CPU and keeps it CPU memory
 			GetSchurComplement(USE_FLOAT, d);
-			ESINFO(PROGRESS3) << Info::plain() << ".";
+			std::cout << Info::plain() << ".";
 
 			// Set if Upper or Lower part is referenced
 			domains[d].B1Kplus.uplo = 'U';
@@ -215,7 +220,7 @@ for (esint d = 0; d < domains_in_global_index.size(); d += 2 ) {
 		if (d+1 < domains_in_global_index.size() && (domains[d+1].isOnACC == 1 || !configuration.combine_sc_and_spds)) {
 			// Calculates SC on CPU and keeps it CPU memory
 			GetSchurComplement(USE_FLOAT, d+1);
-			ESINFO(PROGRESS3) << Info::plain() << ".";
+			std::cout << Info::plain() << ".";
 
 			esint sc1_rows = domains[d].B1Kplus.rows;
 			esint sc2_rows = domains[d+1].B1Kplus.rows;
@@ -311,12 +316,12 @@ for (esint d = 0; d < domains_in_global_index.size(); d += 2 ) {
 			if (domains[d].isOnACC == 1 || !configuration.combine_sc_and_spds) {
 				// Calculates SC on CPU and keeps it CPU memory
 				GetSchurComplement(USE_FLOAT, d);
-				ESINFO(PROGRESS3) << Info::plain() << ".";
+				std::cout << ".";
 			}
 		}
 #endif
 
-	ESINFO(PROGRESS3) << Info::plain() << "\n";
+	std::cout << "\n";
 
 	CreateCudaStreamPool();
 
@@ -358,7 +363,7 @@ for (esint d = 0; d < domains_in_global_index.size(); d += 2 ) {
 
 				status_c = cudaMallocHost((void**)&domains[d].cuda_pinned_buff_fl, domains[d].B1_comp_dom.rows * sizeof(float));
 				if (status_c != cudaSuccess) {
-					ESINFO(ERROR) << "Error allocating pinned host memory";
+					std::cout << "Error allocating pinned host memory";
 					status = -1;
 				}
 			} else {
@@ -384,7 +389,7 @@ for (esint d = 0; d < domains_in_global_index.size(); d += 2 ) {
 
 				status_c = cudaMallocHost((void**)&domains[d].cuda_pinned_buff, domains[d].B1_comp_dom.rows * sizeof(double));
 				if (status_c != cudaSuccess) {
-					ESINFO(ERROR) << "Error allocating pinned host memory";
+					std::cout << "Error allocating pinned host memory";
 					status = -1;
 				}
 			}
@@ -394,7 +399,7 @@ for (esint d = 0; d < domains_in_global_index.size(); d += 2 ) {
 
 				status_c = cudaMallocHost((void**)&domains[d].cuda_pinned_buff_fl, domains[d].B1_comp_dom.rows * sizeof(float));
 				if (status_c != cudaSuccess) {
-					ESINFO(ERROR) << "Error allocating pinned host memory";
+					std::cout << "Error allocating pinned host memory";
 					status = -1;
 				}
 			} else {
@@ -402,7 +407,7 @@ for (esint d = 0; d < domains_in_global_index.size(); d += 2 ) {
 
 				status_c = cudaMallocHost((void**)&domains[d].cuda_pinned_buff, domains[d].B1_comp_dom.rows * sizeof(double));
 				if (status_c != cudaSuccess) {
-					ESINFO(ERROR) << "Error allocating pinned host memory";
+					std::cout << "Error allocating pinned host memory";
 					status = -1;
 				}
 			}
@@ -414,11 +419,11 @@ for (esint d = 0; d < domains_in_global_index.size(); d += 2 ) {
 				if (USE_FLOAT) {
 					SEQ_VECTOR <float>  ().swap (domains[d].B1Kplus.dense_values_fl);
 
-					ESINFO(PROGRESS3) << Info::plain() << "g";
+					std::cout << "g";
 				} else {
 					SEQ_VECTOR <double> ().swap (domains[d].B1Kplus.dense_values);
 
-					ESINFO(PROGRESS3) << Info::plain() << "G";
+					std::cout << "G";
 				}
 			} else {
 
@@ -470,16 +475,16 @@ for (esint d = 0; d < domains_in_global_index.size(); d += 2 ) {
 					SEQ_VECTOR <float>  ().swap (domains[d].B1Kplus.dense_values_fl);
 
 					if (USE_FLOAT)
-						ESINFO(PROGRESS3) << Info::plain() << "f";
+						std::cout << "f";
 					else
-						ESINFO(PROGRESS3) << Info::plain() << "F";
+						std::cout << "F";
 
 				} else {
 
 					if (USE_FLOAT)
-						ESINFO(PROGRESS3) << Info::plain() << "c";
+						std::cout << "c";
 					else
-						ESINFO(PROGRESS3) << Info::plain() << "C";
+						std::cout << "C";
 				}
 			}
 
@@ -488,28 +493,28 @@ for (esint d = 0; d < domains_in_global_index.size(); d += 2 ) {
 			if (configuration.combine_sc_and_spds) {
 
 				if (USE_FLOAT)
-					ESINFO(PROGRESS3) << Info::plain() << "f";
+					std::cout << "f";
 				else
-					ESINFO(PROGRESS3) << Info::plain() << "F";
+					std::cout << "F";
 
 			} else {
 
 				//GetSchurComplement(USE_FLOAT, d);
 
 				if (USE_FLOAT)
-					ESINFO(PROGRESS3) << Info::plain() << "c";
+					std::cout << "c";
 				else
-					ESINFO(PROGRESS3) << Info::plain() << "C";
+					std::cout << "C";
 
 			}
 
 		}
 
-//		ESINFO(PROGRESS3) << Info::plain() << " Domain: " << d << " GPU : " << domains[d].isOnACC << "\n";
+		std::cout << " Domain: " << d << " GPU : " << domains[d].isOnACC << "\n";
 	}
 
-	ESINFO(PROGRESS3) << Info::plain() << "\n Domains transfered to GPU : " << domains_on_GPU << "\n";
-	ESINFO(PROGRESS3) << Info::plain() << " Domains on CPU : " << domains_on_CPU << "\n";
+	std::cout << "\n Domains transfered to GPU : " << domains_on_GPU << "\n";
+	std::cout << " Domains on CPU : " << domains_on_CPU << "\n";
 
 //	cilk_for (esint i = 0; i < domains_in_global_index.size(); i++ ) {
 //
@@ -536,13 +541,13 @@ for (esint d = 0; d < domains_in_global_index.size(); d += 2 ) {
 //				if (USE_FLOAT){
 //					status_c = cudaMallocHost((void**)&domains[i].cuda_pinned_buff_fl, domains[i].B1_comp_dom.rows * sizeof(float));
 //					if (status_c != cudaSuccess) {
-//						ESINFO(ERROR) << "Error allocating pinned host memory";
+//						////ESINFO(ERROR) << "Error allocating pinned host memory";
 //						status = 1;
 //					}
 //				} else {
 //					status_c = cudaMallocHost((void**)&domains[i].cuda_pinned_buff, domains[i].B1_comp_dom.rows * sizeof(double));
 //					if (status_c != cudaSuccess) {
-//						ESINFO(ERROR) << "Error allocating pinned host memory";
+//						////ESINFO(ERROR) << "Error allocating pinned host memory";
 //						status = 1;
 //					}
 //				}
@@ -557,9 +562,9 @@ for (esint d = 0; d < domains_in_global_index.size(); d += 2 ) {
 //				SEQ_VECTOR <float>  ().swap (domains[i].B1Kplus.dense_values_fl);
 //				domains[i].Kplus.keep_factors = false;
 //				if (USE_FLOAT)
-//					ESINFO(PROGRESS3) << Info::plain() << "g";
+//					////ESINFO(PROGRESS3) << Info::plain() << "g";
 //				else
-//					ESINFO(PROGRESS3) << Info::plain() << "G";
+//					////ESINFO(PROGRESS3) << Info::plain() << "G";
 //			} else {
 //				domains[i].isOnACC = 0;
 //				GPU_full = true;
@@ -567,30 +572,30 @@ for (esint d = 0; d < domains_in_global_index.size(); d += 2 ) {
 //					SEQ_VECTOR <double> ().swap (domains[i].B1Kplus.dense_values);
 //					SEQ_VECTOR <float>  ().swap (domains[i].B1Kplus.dense_values_fl);
 //					if (USE_FLOAT)
-//						ESINFO(PROGRESS3) << Info::plain() << "p";
+//						////ESINFO(PROGRESS3) << Info::plain() << "p";
 //					else
-//						ESINFO(PROGRESS3) << Info::plain() << "P";
+//						////ESINFO(PROGRESS3) << Info::plain() << "P";
 //				} else {
 //					if (USE_FLOAT)
-//						ESINFO(PROGRESS3) << Info::plain() << "c";
+//						////ESINFO(PROGRESS3) << Info::plain() << "c";
 //					else
-//						ESINFO(PROGRESS3) << Info::plain() << "C";
+//						////ESINFO(PROGRESS3) << Info::plain() << "C";
 //				}
 //			}
 //
 //		} else {
 //                        domains[i].isOnACC = 0;
 //			if (USE_FLOAT)
-//				ESINFO(PROGRESS3) << Info::plain() << "p";
+//				////ESINFO(PROGRESS3) << Info::plain() << "p";
 //			else
-//				ESINFO(PROGRESS3) << Info::plain() << "P";
+//				////ESINFO(PROGRESS3) << Info::plain() << "P";
 //		}
 //
 //		//GPU_full = true;
 //
 //	}
 
-	ESINFO(PROGRESS3);
+	////ESINFO(PROGRESS3);
 
 }
 
@@ -611,10 +616,10 @@ void ClusterGPU::GetSchurComplement( bool USE_FLOAT, esint i ) {
 		domains[i].B1Kplus.USE_FLOAT = true;
 	}
 
-	//ESINFO(PROGRESS3) << Info::plain() << "s";
+	//////ESINFO(PROGRESS3) << Info::plain() << "s";
 
 	// if Schur complement is symmetric - then remove lower part - slower for GPU but more mem. efficient
-	if (configuration.schur_type == MATRIX_STORAGE::SYMMETRIC) {
+	if (configuration.schur_type == FETIConfiguration::MATRIX_STORAGE::SYMMETRIC) {
 		domains[i].B1Kplus.RemoveLowerDense();
 	}
 
@@ -644,7 +649,7 @@ for (esint d = 0; d < domains.size(); d++) {
 //			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
 //			break;
 		default:
-			ESINFO(ERROR) << "Invalid KSOLVER value.";
+			////ESINFO(ERROR) << "Invalid KSOLVER value.";
 			exit(EXIT_FAILURE);
 		}
 
@@ -652,7 +657,7 @@ for (esint d = 0; d < domains.size(); d++) {
 
 			if (!configuration.combine_sc_and_spds) { // if both CPU and GPU uses Schur Complement
 				std::stringstream ss;
-				ss << "init -> rank: " << info::mpi::MPIrank << ", subdomain: " << d;
+				ss << "init -> rank: " << info::mpi::rank << ", subdomain: " << d;
 				domains[d].Kplus.keep_factors = true;
 				if (configuration.Ksolver != FETIConfiguration::KSOLVER::ITERATIVE) {
 					domains[d].Kplus.Factorization (ss.str());
@@ -660,7 +665,7 @@ for (esint d = 0; d < domains.size(); d++) {
 			} else {
 				if ( domains[d].isOnACC == 0 ) {
 					std::stringstream ss;
-					ss << "init -> rank: " << info::mpi::MPIrank << ", subdomain: " << d;
+					ss << "init -> rank: " << info::mpi::rank << ", subdomain: " << d;
 					domains[d].Kplus.keep_factors = true;
 					if (configuration.Ksolver != FETIConfiguration::KSOLVER::ITERATIVE) {
 						domains[d].Kplus.Factorization (ss.str());
@@ -670,10 +675,10 @@ for (esint d = 0; d < domains.size(); d++) {
 
 		} else {
 			domains[d].Kplus.keep_factors = false;
-			domains[d].Kplus.MPIrank = info::mpi::MPIrank;
+			//domains[d].Kplus.rank = info::mpi::rank;
 		}
 
-		if ( d == 0 && info::mpi::MPIrank == 0) {
+		if ( d == 0 && info::mpi::rank == 0) {
 			domains[d].Kplus.msglvl = 0; //Info::report(LIBRARIES) ? 1 : 0;
 		}
 	}
@@ -1120,7 +1125,7 @@ void ClusterGPU::CreateCudaStreamPool() {
 		for(esint i = 0; i < STREAM_NUM; i++) {
 			cudaStreamCreate(&cuda_stream_pool[i]);
 		}
-		ESINFO(VERBOSE_LEVEL3) << "CUDA stream pool created with " << STREAM_NUM << " streams per cluster";
+		////ESINFO(VERBOSE_LEVEL3) << "CUDA stream pool created with " << STREAM_NUM << " streams per cluster";
 	}
 #endif
 }

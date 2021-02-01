@@ -87,7 +87,7 @@ void SparseSolverMUMPS::Create_SC( SparseMatrix & B_out, int sc_size, bool isThr
 
 void SparseSolverMUMPS::Create_SC_w_Mat( SparseMatrix & K_in, SparseMatrix & B_in, SparseMatrix & SC_out, bool isThreaded, MKL_INT generate_symmetric_sc_1_generate_general_sc_0 )
 {
-	ESINFO(ERROR) << "Not implemented in MUMPS";
+	//ESINFO(ERROR) << "Not implemented in MUMPS";
 }
 /** @brief Constructor.
  *
@@ -214,7 +214,7 @@ void SparseSolverMUMPS::Factorization() {
 	dmumps_c(&id); // Factorization
 
 #ifdef DEBUG
-	ESINFO(PROGRESS3) << "Factorization completed ... ";
+	//ESINFO(PROGRESS3) << "Factorization completed ... ";
 #endif
 
 	m_factorized = 1;
@@ -504,7 +504,7 @@ void SparseSolverMUMPS::SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_ou
 
 void SparseSolverMUMPS::SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool isThreaded) {
 
- ESINFO(ERROR) << "Not Implemented in MUMPS";
+ //ESINFO(ERROR) << "Not Implemented in MUMPS";
 
 }
 

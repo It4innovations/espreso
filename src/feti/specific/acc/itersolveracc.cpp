@@ -147,7 +147,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
                 cluster.B1KplusPacks[omp_get_thread_num()].setMICratio( newRatio );
             }
             for ( esint i = 0 ; i < maxDevNumber; ++i ) {
-                ESINFO(DETAILS)<< std::setprecision(4) << "\tCPU/MIC[" << i << "] load balancing - CPU time: " <<  CPUtime << " s, MIC["<< i << "] time: "  
+                //ESINFO(DETAILS)<< std::setprecision(4) << "\tCPU/MIC[" << i << "] load balancing - CPU time: " <<  CPUtime << " s, MIC["<< i << "] time: "  
                     <<  MICtime[ i ]  << " s (data transfer: " << (MICtime[i] - cluster.B1KplusPacks[i].getElapsedTime()) / MICtime[i] * 100.0
                     << " %).  New MIC["<< i<< "] workload: " << 
                     cluster.B1KplusPacks[ i ].getMICratio( ) * 100.0 << "%";
@@ -255,7 +255,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
                 cluster.B1KplusPacks[omp_get_thread_num()].setMICratio( newRatio );
             }
             for ( esint i = 0 ; i < maxDevNumber; ++i ) {
-                ESINFO(DETAILS)<< std::setprecision(4) << "\tCPU/MIC[" << i << "] load balancing - CPU time: " <<  CPUtime << " s, MIC["<< i << "] time: "  
+                //ESINFO(DETAILS)<< std::setprecision(4) << "\tCPU/MIC[" << i << "] load balancing - CPU time: " <<  CPUtime << " s, MIC["<< i << "] time: "  
                     <<  MICtime[ i ]  << " s (data transfer: " << (MICtime[i] - cluster.B1KplusPacks[i].getElapsedTime()) / MICtime[i] * 100.0
                     << " %).  New MIC["<< i<< "] workload: " << 
                     cluster.B1KplusPacks[ i ].getMICratio( ) * 100.0 << "%";
@@ -358,7 +358,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
                 cluster.SparseKPack[omp_get_thread_num()].setMICratio( newRatio );
             }
             for ( esint i = 0 ; i < maxDevNumber; ++i ) {
-                ESINFO(DETAILS)<< std::setprecision(4) << "\tCPU/MIC[" << i << "] load balancing - CPU time: " <<  CPUtime << " s, MIC["<< i << "] time: "  
+                //ESINFO(DETAILS)<< std::setprecision(4) << "\tCPU/MIC[" << i << "] load balancing - CPU time: " <<  CPUtime << " s, MIC["<< i << "] time: "  
                     <<  MICtime[ i ]  << " s (data transfer: " << (MICtime[i] - cluster.SparseKPack[i].getElapsedTime()) / MICtime[i] * 100.0
                     << " %).  New MIC["<< i<< "] workload: " << 
                     cluster.SparseKPack[ i ].getMICratio( ) * 100.0 << "%";
@@ -487,7 +487,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
                     cluster.SparseKPack[omp_get_thread_num()].setMICratio( newRatio );
                 }
                 for ( esint i = 0 ; i < maxDevNumber; ++i ) {
-                    ESINFO(DETAILS)<< std::setprecision(4) << "\tCPU/MIC[" << i << "] load balancing - CPU time: " <<  CPUtime << " s, MIC["<< i << "] time: "  
+                    //ESINFO(DETAILS)<< std::setprecision(4) << "\tCPU/MIC[" << i << "] load balancing - CPU time: " <<  CPUtime << " s, MIC["<< i << "] time: "  
                         <<  MICtime[ i ]  << " s (data transfer: " << (MICtime[i] - cluster.SparseKPack[i].getElapsedTime()) / MICtime[i] * 100.0
                         << " %).  New MIC["<< i<< "] workload: " << 
                         cluster.SparseKPack[ i ].getMICratio( ) * 100.0 << "%";
@@ -545,7 +545,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
                 case FETIConfiguration::PRECONDITIONER::NONE:
                     break;
                 default:
-                    ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+                    //ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
             }
 
         }
@@ -629,7 +629,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
                     cluster.DirichletPacks[omp_get_thread_num()].setMICratio( newRatio );
                 }
                 for ( esint i = 0 ; i < maxDevNumber; ++i ) {
-                    ESINFO(DETAILS)<< std::setprecision(4) << "\tCPU/MIC[" << i << "] preconditioning load balancing - CPU time: " <<  CPUtime << " s, MIC["<< i << "] time: "  
+                    //ESINFO(DETAILS)<< std::setprecision(4) << "\tCPU/MIC[" << i << "] preconditioning load balancing - CPU time: " <<  CPUtime << " s, MIC["<< i << "] time: "  
                         <<  MICtime[ i ]  << " s (data transfer: " << (MICtime[i] - cluster.DirichletPacks[i].getElapsedTime()) / MICtime[i] * 100.0
                         << " %).  New MIC["<< i<< "] workload: " << 
                         cluster.DirichletPacks[ i ].getMICratio( ) * 100.0 << "%";
@@ -661,7 +661,7 @@ void IterSolverAcc::apply_A_l_comp_dom_B( TimeEval & time_eval, SuperCluster & c
                 case FETIConfiguration::PRECONDITIONER::NONE:
                     break;
                 default:
-                    ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
+                    //ESINFO(GLOBAL_ERROR) << "Not implemented preconditioner.";
             }
 
 

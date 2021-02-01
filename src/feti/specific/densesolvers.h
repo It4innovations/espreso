@@ -39,12 +39,16 @@ namespace espreso {
 
 #elif defined(SOLVER_CUDA)
 #include "cpu/DenseSolverMKL.h"
-#include "acc/DenseSolverCUDA.h"
+//#include "acc/DenseSolverCUDA.h"
 
 namespace espreso {
 	typedef DenseSolverMKL DenseSolverCPU;
-	typedef DenseSolverCUDA DenseSolverAcc;
+        typedef DenseSolverMKL DenseSolverAcc;
+//	typedef DenseSolverCUDA DenseSolverAcc;
 }
+
+
+
 
 #elif defined(SOLVER_CUDA_7)
 #include "cpu/DenseSolverMKL.h"
