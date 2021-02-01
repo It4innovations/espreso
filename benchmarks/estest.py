@@ -12,11 +12,15 @@ class ESPRESOTest:
 
     checker = os.getenv("ECFCHECKER", False)
     fast = os.getenv("FAST", False)
+    skip_hypre = os.getenv("SKIP_HYPRE", False)
+    skip_mklpdss = os.getenv("SKIP_MKLPDSS", False)
+    oversub = os.getenv("OVERSUB", False)
 
     root = os.path.dirname(os.path.dirname(__file__))
     feti4itester = os.path.join(root, "build", "feti4itester")
     espreso = os.path.join(root, "build", "espreso")
     ecfchecker = os.path.join(root, "build", "ecfchecker")
+    waf = os.path.join(root, "waf")
     mpirun = [ "mpirun", "-n" ]
 
     env = dict(os.environ)
@@ -37,6 +41,12 @@ class ESPRESOTest:
     @staticmethod
     def has_snailwatch():
         return snailwatch and "SNAILWATCH_URL" in os.environ and "SNAILWATCH_TOKEN"in os.environ
+
+    @staticmethod
+    def has_solver(solver):
+        program = [ ESPRESOTest.waf, "show" ]
+        output, error = subprocess.Popen(program, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+        return output.decode().find(solver) != -1
 
     @staticmethod
     def raise_error(error, output=""):
@@ -60,6 +70,11 @@ class ESPRESOTest:
         if ESPRESOTest.has_snailwatch():
             program.append("-m")
 
+        print("\n==========")
+        print(". env/threading.default {0}".format(ESPRESOTest.env["OMP_NUM_THREADS"]))
+        print(" ".join(program))
+        print("==========\n")
+
         def _popen():
             return subprocess.Popen(program, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=ESPRESOTest.path, env=ESPRESOTest.env)
 
@@ -74,10 +89,16 @@ class ESPRESOTest:
 
     @staticmethod
     def run():
+        if "HYPRE" in ESPRESOTest.args and (ESPRESOTest.skip_hypre or not ESPRESOTest.has_solver("hypre")):
+            raise SkipTest("Test require installed 'hypre' library.")
+        if "MKLPDSS" in ESPRESOTest.args and (ESPRESOTest.skip_mklpdss or not ESPRESOTest.has_solver("mklpdss")):
+            raise SkipTest("Test require installed 'mklpdss' library.")
         if ESPRESOTest.external and not os.path.exists(os.path.join(os.sep, "data", "espreso", "mesiotest")):
             raise SkipTest("Test depends on the external file.")
         program = copy.deepcopy(ESPRESOTest.mpirun)
         program.append(str(ESPRESOTest.processes))
+        if (ESPRESOTest.oversub):
+            program.append("--oversubscribe")
         if ESPRESOTest.checker:
             program.append(ESPRESOTest.ecfchecker)
         else:
