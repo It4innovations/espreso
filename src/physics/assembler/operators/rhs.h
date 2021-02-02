@@ -121,7 +121,7 @@ struct HeatRHS2D: public Operator {
 	  J(J, interval, egps),
 	  thickness(thickness, interval, egps),
 	  q(q, interval, egps),
-	  rhs(rhs, interval, egps)
+	  rhs(rhs, interval, enodes)
 	{ }
 
 	InputParameterIterator N, weight, J;
@@ -153,7 +153,7 @@ struct HeatRHS3D: public Operator {
 	  weight(weight, interval, egps),
 	  J(J, interval, egps),
 	  q(q, interval, egps),
-	  rhs(rhs, interval, egps)
+	  rhs(rhs, interval, enodes)
 	{
 		if (update) {
 			std::fill((rhs.data->begin() + interval)->data(), (rhs.data->begin() + interval + 1)->data(), 0);
@@ -206,11 +206,12 @@ struct HeatRHS: public BoundaryOperatorBuilder {
 				}
 
 				if (info::mesh->dimension == 2) {
-					kernel.q.gp.regions[r].addInput(kernel.thickness.boundary.gp.regions[r]);
+					kernel.linearSystem.boundary.rhs.regions[r].addInput(kernel.thickness.boundary.gp.regions[r]);
 				}
-				kernel.q.gp.regions[r].addInputs(kernel.integration.boundary.jacobian.regions[r], kernel.heatFlow.gp.regions[r], kernel.heatFlux.gp.regions[r], kernel.convection.heatTransferCoeficient.gp.regions[r]);
+				kernel.q.gp.regions[r].addInputs(kernel.heatFlow.gp.regions[r], kernel.heatFlux.gp.regions[r], kernel.convection.heatTransferCoeficient.gp.regions[r], kernel.convection.externalTemperature.gp.regions[r]);
+				kernel.linearSystem.boundary.rhs.regions[r].addInputs(kernel.q.gp.regions[r], kernel.integration.boundary.jacobian.regions[r], kernel.integration.boundary.weight.regions[r]);
 			}
-			kernel.linearSystem.boundary.rhs.regions[r].addInputs(kernel.q.gp.regions[r], kernel.integration.boundary.jacobian.regions[r]);
+
 		}
 		return true;
 	}
@@ -222,6 +223,7 @@ struct HeatRHS: public BoundaryOperatorBuilder {
 				kernel.heatFlux.gp.regions[region],
 				kernel.convection.heatTransferCoeficient.gp.regions[region], kernel.convection.externalTemperature.gp.regions[region],
 				kernel.q.gp.regions[region], interval), region);
+
 		if (info::mesh->dimension == 2) {
 			iterate_boundary_gps<HeatTransferModuleOpt>(HeatRHS2D(
 					kernel.integration.boundary.N.regions[region], kernel.integration.boundary.weight.regions[region], kernel.integration.boundary.jacobian.regions[region],
@@ -233,7 +235,6 @@ struct HeatRHS: public BoundaryOperatorBuilder {
 					kernel.integration.boundary.N.regions[region], kernel.integration.boundary.weight.regions[region], kernel.integration.boundary.jacobian.regions[region],
 					kernel.q.gp.regions[region], kernel.linearSystem.boundary.rhs.regions[region], interval), region);
 		}
-
 	}
 };
 

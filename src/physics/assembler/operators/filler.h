@@ -86,7 +86,7 @@ struct VectorFiller: public Operator {
 	GET_NAME(RHSFiller)
 	VectorFiller(const ParameterData &rhs, double *RHS, esint *perm, PerElementSize size, int interval)
 	: Operator(interval, false, true),
-	  rhs(rhs, interval, rhs.size),
+	  rhs(rhs, interval, enodes),
 	  RHS(RHS), perm(perm),
 	  size(rhs.increment(size, interval)) {}
 
@@ -103,7 +103,7 @@ struct VectorFiller: public Operator {
 	void operator()()
 	{
 		for (int r = 0; r < size; ++r) {
-			RHS[*perm++] += *rhs.data;
+			RHS[*perm++] += *rhs.data++;
 		}
 	}
 };

@@ -95,8 +95,8 @@ void ElementParameterData::resize()
 	std::vector<std::vector<esint> > distribution(info::env::threads);
 
 	distribution[0].push_back(0);
+	esint sum = 0;
 	for (int t = 0; t < info::env::threads; ++t) {
-		esint sum = 0;
 		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
 			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
 				esint isize = increment(i);
@@ -108,13 +108,16 @@ void ElementParameterData::resize()
 			}
 		}
 	}
-	utils::threadDistributionToFullDistribution(distribution);
 
 	std::vector<size_t> datadistribution;
 	for (int t = 0; t < info::env::threads; ++t) {
-		datadistribution.push_back(distribution[t].front());
+		if (distribution[t].size()) {
+			datadistribution.push_back(distribution[t].front());
+		} else {
+			datadistribution.push_back(sum);
+		}
 	}
-	datadistribution.push_back(distribution.back().back());
+	datadistribution.push_back(sum);
 
 	if (data) {
 		delete data;
@@ -165,8 +168,8 @@ void BoundaryParameterData::resize()
 	std::vector<std::vector<esint> > distribution(info::env::threads);
 
 	distribution[0].push_back(0);
+	esint sum = 0;
 	for (int t = 0; t < info::env::threads; ++t) {
-		esint sum = 0;
 		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
 			for (esint i = info::mesh->boundaryRegions[region]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[region]->eintervalsDistribution[d + 1]; ++i) {
 				esint isize = increment(i);
@@ -178,13 +181,16 @@ void BoundaryParameterData::resize()
 			}
 		}
 	}
-	utils::threadDistributionToFullDistribution(distribution);
 
 	std::vector<size_t> datadistribution;
 	for (int t = 0; t < info::env::threads; ++t) {
-		datadistribution.push_back(distribution[t].front());
+		if (distribution[t].size()) {
+			datadistribution.push_back(distribution[t].front());
+		} else {
+			datadistribution.push_back(sum);
+		}
 	}
-	datadistribution.push_back(distribution.back().back());
+	datadistribution.push_back(sum);
 
 	data = new serializededata<esint, double>(distribution, tarray<double>(datadistribution, 1));
 }
