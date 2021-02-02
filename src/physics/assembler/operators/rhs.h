@@ -6,6 +6,8 @@
 #include "physics/assembler/parameter.h"
 #include "physics/assembler/math.hpp"
 
+#include "basis/utilities/print.h"
+
 namespace espreso {
 
 struct HeatFlow: public Operator {
@@ -218,11 +220,17 @@ struct HeatRHS: public BoundaryOperatorBuilder {
 
 	void apply(int region, int interval)
 	{
+		printf("are: %f\n", info::mesh->boundaryRegions[region]->area);
 		iterate_boundary_gps<HeatTransferModuleOpt>(HeatQ(
 				info::mesh->boundaryRegions[region]->area, kernel.heatFlow.gp.regions[region],
 				kernel.heatFlux.gp.regions[region],
 				kernel.convection.heatTransferCoeficient.gp.regions[region], kernel.convection.externalTemperature.gp.regions[region],
 				kernel.q.gp.regions[region], interval), region);
+
+		std::cout << "N: " << *kernel.integration.boundary.N.regions[region].data << "\n";
+		std::cout << "weight: " << *kernel.integration.boundary.weight.regions[region].data << "\n";
+		std::cout << "J: " << *kernel.integration.boundary.jacobian.regions[region].data << "\n";
+		std::cout << "q: " << *kernel.q.gp.regions[region].data << "\n";
 
 		if (info::mesh->dimension == 2) {
 			iterate_boundary_gps<HeatTransferModuleOpt>(HeatRHS2D(

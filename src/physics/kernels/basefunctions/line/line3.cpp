@@ -50,8 +50,8 @@ void Line3::setBaseFunctions(Element &self)
 
 	for (size_t i = 0; i < GPCount; i++) {
 		(*self.N)[i](0, 0) = (1 / 2.0) * (s[i] - 1) * s[i];
-		(*self.N)[i](0, 1) = 1 - s[i] * s[i];
-		(*self.N)[i](0, 2) = (1 / 2.0) * (s[i] + 1) * s[i];
+		(*self.N)[i](0, 1) = (1 / 2.0) * (s[i] + 1) * s[i];
+		(*self.N)[i](0, 2) = 1 - s[i] * s[i];
 	}
 
 	for (unsigned int i = 0; i < GPCount; i++) {
@@ -59,8 +59,8 @@ void Line3::setBaseFunctions(Element &self)
 
 		// dNs - derivation of basis function
 		m(0, 0) = s[i] - 1 / 2.0;
-		m(0, 1) = -2 * s[i];
-		m(0, 2) = s[i] + 1 / 2.0;
+		m(0, 1) = s[i] + 1 / 2.0;
+		m(0, 2) = -2 * s[i];
 	}
 
 	BaseFunctions::created(self);
