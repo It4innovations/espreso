@@ -7,6 +7,7 @@
 #include "esinfo/eslog.hpp"
 
 #include <sstream>
+#include <iostream>
 
 #include "mkl.h"
 
@@ -1233,6 +1234,7 @@ void SparseSolverMKL::Create_SC_w_Mat( espreso::SparseMatrix & K_in, espreso::Sp
 	K_sc1.MatTranspose();
 	K_sc1.MatAppend(Sc_eye);
 
+	std::cout << K_sc1.SpyText();
 
 	// *** END - Prepare matrix
 

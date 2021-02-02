@@ -161,7 +161,7 @@ def configure(ctx):
 
     """ Set default compilers flags"""
 
-    ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
+    #ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
     ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
 
     if ctx.options.intwidth == "32":
@@ -247,8 +247,8 @@ def build(ctx):
         feti = fetisources + ("src/feti/specific/cpu/SparseSolverPARDISO.cpp",)
     if ctx.env["DEFINES_SOLVER"][0] == "SOLVER_CUDA":
         feti = fetisources + ("src/feti/specific/cpu/SparseSolverMKL.cpp", "src/feti/specific/acc/clusterGPU.cpp", "src/feti/specific/acc/itersolverGPU.cpp",)
-	ctx.env.append_unique("DEFINES","STREAM_NUM=1")
-	ctx.env.append_unique("LIB",["cublas","cudart"])
+    ctx.env.append_unique("DEFINES","STREAM_NUM=1")
+    ctx.env.append_unique("LIB",["cublas","cudart"])
 
 
     features = "cxx cxxshlib"

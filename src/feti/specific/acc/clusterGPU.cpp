@@ -203,7 +203,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 	// 2 domains per iteration processed
 	#pragma omp parallel for
-for (esint d = 0; d < domains_in_global_index.size(); d += 2 ) {
+	for (esint d = 0; d < domains_in_global_index.size(); d += 2 ) {
 
 		if (domains[d].isOnACC == 1 || !configuration.combine_sc_and_spds) {
 			// Calculates SC on CPU and keeps it CPU memory
@@ -609,7 +609,20 @@ void ClusterGPU::GetSchurComplement( bool USE_FLOAT, esint i ) {
 //		tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 //	}
 
-	tmpsps.Create_SC_w_Mat( domains[i].K, TmpB, domains[i].B1Kplus, false, 0 ); // general
+	if (domains[i].K.type =='S')
+	{
+		tmpsps.Create_SC_w_Mat        ( domains[i].K, TmpB, domains[i].B1Kplus, false, 0 ); // general
+	} else {
+		if (domains[i].K.type =='G')
+		{
+			tmpsps.Create_non_sym_SC_w_Mat( domains[i].K, TmpB, TmpB, domains[i].B1Kplus, false, 0 );
+		}
+		else
+		{
+			std::cout << "Error - not defined type of K mat type.";
+			exit(0);
+		}
+	}
 
 	if (USE_FLOAT){
 		domains[i].B1Kplus.ConvertDenseToDenseFloat( 1 );
