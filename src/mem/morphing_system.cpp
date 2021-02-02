@@ -359,7 +359,7 @@ esint MorphingMatrix::getNCols() const{
 }
 
 double MorphingMatrix::getCompressionRatio() const{
-	esint out = 0.0f;
+	esint out = this->B.size();
 	
 	for(auto &B: this->A){
 		out += B->getNEntries();

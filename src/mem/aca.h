@@ -6,6 +6,7 @@
 
 #include "esinfo/ecfinfo.h"
 #include "basis/evaluator/evaluator.h"
+#include "wrappers/mpi/communication.h"
 
 
 namespace espreso {

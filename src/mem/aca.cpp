@@ -9,6 +9,8 @@ FullRankBlock::FullRankBlock(const Cluster *L, const Cluster *R, const RBFTarget
 	this->nrows = L->size();
 	this->ncols = R->size();
 	
+	// printf("Constructing full matrix of size: %d x %d\n", this->nrows, this->ncols);
+	
 	esint n = std::max(this->nrows, this->ncols);
 	
 	this->x_local.resize(n);
@@ -67,20 +69,20 @@ void FullRankBlock::apply(const double * x_global, double *y_global, double alph
 	}
 	
 	#ifdef HAVE_MKL
-	cblas_dgemv(
-		CblasRowMajor,
-		transpose ? CblasTrans : CblasNoTrans,
-		this->nrows,
-		this->ncols,
-		alpha,
-		&this->data[0],
-		this->ncols,
-		&this->x_local[0],
-		1,
-		1.0f,
-		&this->y_local[0],
-		1
-	);
+	// cblas_dgemv(
+		// CblasRowMajor,
+		// transpose ? CblasTrans : CblasNoTrans,
+		// this->nrows,
+		// this->ncols,
+		// alpha,
+		// &this->data[0],
+		// this->ncols,
+		// &this->x_local[0],
+		// 1,
+		// 1.0f,
+		// &this->y_local[0],
+		// 1
+	// );
 	#else
 		
 	if(!transpose){
@@ -93,7 +95,7 @@ void FullRankBlock::apply(const double * x_global, double *y_global, double alph
 	else{
 		for(esint r = 0; r < this->nrows; ++r){
 			for(esint c = 0; c < this->ncols; ++c){
-				this->y_local[ c ] += alpha * this->data[r + c * this->ncols] * this->x_local[ r ];
+				this->y_local[ c ] += alpha * this->data[c + r * this->ncols] * this->x_local[ r ];
 			}
 		}
 	}
@@ -152,7 +154,7 @@ LowRankBlock::~LowRankBlock(){
 }
 
 esint LowRankBlock::size() const {
-	return this->rank * (this->nrows + this->ncols);
+	return this->data_right.size() + this->data_left.size();
 }
 
 //performs y = this * x * alpha + y * beta
@@ -172,63 +174,84 @@ void LowRankBlock::apply(const double * x_global, double *y_global, double alpha
 		}
 		std::fill(this->y_local.begin(), this->y_local.begin() + this->ncols, 0.0f);
 	}
-	std::fill(this->z_local.begin(), this->z_local.end(), 0.0f);
+	
+	if(this->data_right.size() > 0){
+		std::fill(this->z_local.begin(), this->z_local.end(), 0.0f);
+	}
 	
 	#ifdef HAVE_MKL
-	cblas_dgemv(
-		CblasRowMajor,
-		transpose ? CblasTrans : CblasNoTrans,
-		this->rank,
-		this->ncols,
-		alpha,
-		&this->data_right[0],
-		this->rank,
-		&this->x_local[0],
-		1,
-		1.0f,
-		&this->z_local[0],
-		1
-	);
+	// cblas_dgemv(
+		// CblasRowMajor,
+		// transpose ? CblasTrans : CblasNoTrans,
+		// this->rank,
+		// this->ncols,
+		// alpha,
+		// &this->data_right[0],
+		// this->rank,
+		// &this->x_local[0],
+		// 1,
+		// 1.0f,
+		// &this->z_local[0],
+		// 1
+	// );
 
-	cblas_dgemv(
-		CblasRowMajor,
-		transpose ? CblasTrans : CblasNoTrans,
-		this->nrows,
-		this->rank,
-		1.0f,
-		&this->data_left[0],
-		this->nrows,
-		&this->z_local[0],
-		1,
-		1.0f,
-		&this->y_local[0],
-		1
-	);
+	// cblas_dgemv(
+		// CblasRowMajor,
+		// transpose ? CblasTrans : CblasNoTrans,
+		// this->nrows,
+		// this->rank,
+		// 1.0f,
+		// &this->data_left[0],
+		// this->nrows,
+		// &this->z_local[0],
+		// 1,
+		// 1.0f,
+		// &this->y_local[0],
+		// 1
+	// );
 	#else
 		
-	if(!transpose){
-		for(esint k = 0; k < this->rank; ++k){
-			for(esint c = 0; c < this->ncols; ++c){
-				this->z_local[ k ] += alpha * this->data_right[c + k * this->ncols] * this->x_local[ c ];
+	if(this->data_right.size() <= 0){
+		if(!transpose){
+			for(esint r = 0; r < this->nrows; ++r){
+				for(esint c = 0; c < this->ncols; ++c){
+					this->y_local[ r ] += alpha * this->data_left[c + r * this->ncols] * this->x_local[ c ];
+				}
 			}
 		}
-
-		for(esint r = 0; r < this->nrows; ++r){
-			for(esint k = 0; k < this->rank; ++k){
-				this->y_local[ r ] += this->data_left[k + r * this->rank] * this->z_local[ k ];
+		else{
+			for(esint r = 0; r < this->nrows; ++r){
+				for(esint c = 0; c < this->ncols; ++c){
+					this->y_local[ c ] += alpha * this->data_left[c + r * this->ncols] * this->x_local[ r ];
+				}
 			}
 		}
 	}
 	else{
-		for(esint k = 0; k < this->rank; ++k){
-			for(esint c = 0; c < this->nrows; ++c){
-				this->z_local[ k ] += alpha * this->data_left[c + k * this->ncols] * this->x_local[ c ];
+		if(!transpose){
+			for(esint k = 0; k < this->rank; ++k){
+				for(esint c = 0; c < this->ncols; ++c){
+					this->z_local[ k ] += alpha * this->data_right[c + k * this->ncols] * this->x_local[ c ];
+				}
+			}
+
+			for(esint r = 0; r < this->nrows; ++r){
+				for(esint k = 0; k < this->rank; ++k){
+					this->y_local[ r ] += this->data_left[k + r * this->rank] * this->z_local[ k ];
+				}
 			}
 		}
-
-		for(esint r = 0; r < this->ncols; ++r){
+		else{
 			for(esint k = 0; k < this->rank; ++k){
-				this->y_local[ r ] += this->data_right[k + r * this->rank] * this->z_local[ k ];
+				for(esint c = 0; c < this->nrows; ++c){
+					this->z_local[ k ] += alpha * this->data_left[c + k * this->nrows] * this->x_local[ c ];
+				}
+			}
+
+			for(esint r = 0; r < this->ncols; ++r){
+				for(esint k = 0; k < this->rank; ++k){
+					this->y_local[ r ] += this->data_right[k + r * this->rank] * this->z_local[ k ];
+				}
 			}
 		}
 	}
@@ -381,18 +404,33 @@ void LowRankBlock::generateBlocksExplicit(const Cluster *L, const Cluster *R, do
 		}
 	}
 	
-	this->data_right.resize(this->rank * this->ncols);
-	this->data_left.resize(this->rank * this->nrows);
-	
-	for(esint k = 0; k < this->rank; ++k){
-		for(esint c = 0; c < this->ncols; ++c){
-			this->data_right[c + k * this->ncols] = data_rows[k]->at(c);
+	if(this->rank * (this->ncols + this->nrows) > this->ncols * this->nrows ){
+		this->data_right.resize(0);
+		this->data_left.resize(this->ncols * this->nrows);
+		std::fill(this->data_left.begin(), this->data_left.end(), 0.0f);
+		
+		for(esint k = 0; k < this->rank; ++k){
+			for(esint r = 0; r < this->nrows; ++r){
+				for(esint c = 0; c < this->ncols; ++c){
+					this->data_left[c + r * this->ncols] += data_cols[k]->at(r) * data_rows[k]->at(c);
+				}
+			}
 		}
 	}
-
-	for(esint r = 0; r < this->nrows; ++r){
+	else{
+		this->data_right.resize(this->rank * this->ncols);
+		this->data_left.resize(this->rank * this->nrows);
+		
 		for(esint k = 0; k < this->rank; ++k){
-			this->data_left[k + r * this->rank] = data_cols[k]->at(r);
+			for(esint c = 0; c < this->ncols; ++c){
+				this->data_right[c + k * this->ncols] = data_rows[k]->at(c);
+			}
+		}
+
+		for(esint r = 0; r < this->nrows; ++r){
+			for(esint k = 0; k < this->rank; ++k){
+				this->data_left[k + r * this->rank] = data_cols[k]->at(r);
+			}
 		}
 	}
 	
@@ -428,7 +466,7 @@ void LowRankBlock::generateBlocksImplicit(const Cluster *L, const Cluster *R, do
 	
 	while(true){
 
-	if(cross_row_idx < 0){
+		if(cross_row_idx < 0){
 			break;
 		}
 
@@ -537,18 +575,33 @@ void LowRankBlock::generateBlocksImplicit(const Cluster *L, const Cluster *R, do
 		}
 	}
 	
-	this->data_right.resize(this->rank * this->ncols);
-	this->data_left.resize(this->rank * this->nrows);
-	
-	for(esint k = 0; k < this->rank; ++k){
-		for(esint c = 0; c < this->ncols; ++c){
-			this->data_right[c + k * this->ncols] = data_rows[k]->at(c);
+	if(this->rank * (this->ncols + this->nrows) > this->ncols * this->nrows ){
+		this->data_right.resize(0);
+		this->data_left.resize(this->ncols * this->nrows);
+		std::fill(this->data_left.begin(), this->data_left.end(), 0.0f);
+		
+		for(esint k = 0; k < this->rank; ++k){
+			for(esint r = 0; r < this->nrows; ++r){
+				for(esint c = 0; c < this->ncols; ++c){
+					this->data_left[c + r * this->ncols] += data_cols[k]->at(r) * data_rows[k]->at(c);
+				}
+			}
 		}
 	}
-
-	for(esint r = 0; r < this->nrows; ++r){
+	else{
+		this->data_right.resize(this->rank * this->ncols);
+		this->data_left.resize(this->rank * this->nrows);
+		
 		for(esint k = 0; k < this->rank; ++k){
-			this->data_left[k + r * this->rank] = data_cols[k]->at(r);
+			for(esint c = 0; c < this->ncols; ++c){
+				this->data_right[c + k * this->ncols] = data_rows[k]->at(c);
+			}
+		}
+
+		for(esint r = 0; r < this->nrows; ++r){
+			for(esint k = 0; k < this->rank; ++k){
+				this->data_left[k + r * this->rank] = data_cols[k]->at(r);
+			}
 		}
 	}
 	
@@ -592,6 +645,7 @@ matrix_ACA::matrix_ACA(
 		
 		if(L->getIsAdmissible()){
 			this->createAdmissibleBlock(lC, rC, aca_epsilon, configuration);
+			// this->createNonAdmissibleBlock(lC, rC, configuration);
 		}
 		else{
 			this->createNonAdmissibleBlock(lC, rC, configuration);
@@ -603,31 +657,37 @@ matrix_ACA::matrix_ACA(
 	// printf("Compression ratio: %10.3f [%%]\n", this->getCompressionRatio() * 100.0f);
 	
 	//check if all entires are represented exactly once
-	std::vector<esint> histogram(this->nrows * this->ncols);
-	std::fill(histogram.begin(), histogram.end(), 0);
-	for(esint i = 0; i < T.leaf_size(); ++i){
-		const BlockCluster* L = T.get_leaf( i );
+	// std::vector<esint> histogram(this->nrows * this->ncols);
+	// std::fill(histogram.begin(), histogram.end(), 0);
+	// for(esint i = 0; i < T.leaf_size(); ++i){
+		// const BlockCluster* L = T.get_leaf( i );
 		
-		const Cluster* lC = L->getLeftCluster();
-		const Cluster* rC = L->getRightCluster();
+		// const Cluster* lC = L->getLeftCluster();
+		// const Cluster* rC = L->getRightCluster();
 		
-		for(esint ri = 0; ri < lC->size(); ++ri){
-			esint r = lC->getPointIndexGlobal(ri);
+		// for(esint ri = 0; ri < lC->size(); ++ri){
+			// esint r = lC->getPointIndexGlobal(ri);
 
-			for(esint ci = 0; ci < rC->size(); ++ci){
-				esint c = rC->getPointIndexGlobal(ci);
+			// for(esint ci = 0; ci < rC->size(); ++ci){
+				// esint c = rC->getPointIndexGlobal(ci);
 				
-				histogram[c + r * this->ncols]++;
-			}
-		}
-	}
-	bool valid = true;
-	for(auto i:histogram){
-		if(i != 1){
-			valid = false;
-			break;
-		}
-	}
+				// histogram[c + r * this->ncols]++;
+			// }
+		// }
+	// }
+	// bool valid = true;
+	// for(auto i:histogram){
+		// if(i != 1){
+			// valid = false;
+			// break;
+		// }
+	// }
+	
+	// if (info::mpi::rank == 0){
+		// printf("ACA matrix: #of leaves: %d\n", T.leaf_size());
+		// printf("ACA matrix: #of rows: %d, #of cols: %d\n", this->nrows, this->ncols);
+		// printf("ACA matrix valid: %d\n", (int)valid);
+	// }
 }
 
 matrix_ACA::~matrix_ACA(){
@@ -656,6 +716,8 @@ void matrix_ACA::apply(const double* x, double* y, double alpha, double beta, bo
 double matrix_ACA::getCompressionRatio() const {
 	double size_real = this->size_admissible + this->size_nonadmissible;
 	double size_max = this->nrows * this->ncols;
+	
+	// printf("ACA matrix: real size: %f, max size: %f\n", size_real, size_max);
 	return size_real / size_max;
 }
 
