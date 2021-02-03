@@ -56,6 +56,16 @@ struct Operator {
 			return *this;
 		}
 
+		template<class TParameter>
+		Link& self(TParameter &data)
+		{
+			if (data.version[interval] < version + 1) {
+				data.version[interval] = version + 1;
+				++update;
+			}
+			return *this;
+		}
+
 		template <class TParameter>
 		Link& outputs(TParameter &data)
 		{

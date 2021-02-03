@@ -21,7 +21,9 @@ struct CopyConductivity: public Operator {
 	: Operator(interval, output.isconst[interval], Link(interval).inputs(input).outputs(output)),
 	  input(input, interval, input.increment(interval)),
 	  output(output, interval, ndim * ndim * egps)
-	{ }
+	{
+
+	}
 
 	InputParameterIterator input;
 	OutputParameterIterator output;

@@ -48,7 +48,7 @@ struct HeatGradient3D: public OutputGradient {
 	template<int nodes, int gps>
 	void operator()(int gpindex)
 	{
-		ADDM2NMN1<nodes>(1. / gps, dND.data + 3 * nodes * gpindex, temp.data, gradient.data);
+		ADDM3NMN1<nodes>(1. / gps, dND.data + 3 * nodes * gpindex, temp.data, gradient.data);
 	}
 };
 

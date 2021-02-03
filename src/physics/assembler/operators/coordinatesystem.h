@@ -14,7 +14,7 @@ struct CoordinateSystem: public Operator {
 			const ParameterData &rotation,
 			ParameterData &matrix,
 			int interval)
-	: Operator(interval, matrix.isconst[interval], Link(interval).inputs(coordinates, rotation).outputs(matrix)),
+	: Operator(interval, matrix.isconst[interval], Link(interval).inputs(coordinates).self(matrix)),
 	  coordinates(coordinates, interval, ndim * egps),
 	  rotation(rotation, interval, rotation.increment(interval)),
 	  matrix(matrix, interval, ndim * ndim * egps)
