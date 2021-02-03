@@ -5,5 +5,11 @@ using namespace espreso;
 
 void DistributedComposerOpt::assemble(const Builder &builder)
 {
-	DistributedComposer::assemble(builder);
+	if (kernel) {
+		DistributedComposer::assemble(builder);
+		return;
+	}
+	if (builder.matrices == Builder::Request::NONE) {
+		return;
+	}
 }

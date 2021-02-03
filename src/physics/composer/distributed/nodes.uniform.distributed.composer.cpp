@@ -264,7 +264,7 @@ void NodesUniformDistributedComposer::_buildPatterns()
 
 	eslog::checkpointln("COMPOSER: PATTERNS BUILD");
 
-	_data->K.type = kernel->solverDataProvider->general->getMatrixType();
+	_data->K.type = provider()->general->getMatrixType();
 	_data->K.resize(info::mesh->nodes->size * _DOFs, info::mesh->nodes->uniqInfo.totalSize * _DOFs, COL.size(), foreignDOFs, info::mesh->neighbors.size());
 	_data->K.fillPattern(_data->K.nrows, ROW.data(), COL.data());
 	_data->K.fillDistribution(_DOFMap->datatarray().data(), _nDistribution.data(), info::mesh->neighbors.data());
@@ -288,7 +288,7 @@ void NodesUniformDistributedComposer::_buildPatterns()
 void NodesUniformDistributedComposer::_buildDirichlet()
 {
 	std::vector<std::pair<esint, esint> > dIndices;
-	kernel->solverDataProvider->general->dirichletIndices(dIndices);
+	provider()->general->dirichletIndices(dIndices);
 
 	for (auto i = dIndices.begin(); i != dIndices.end(); ++i) {
 		_dirichletMap.push_back(i->first * _DOFs + i->second);
