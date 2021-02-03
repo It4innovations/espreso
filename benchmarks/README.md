@@ -25,7 +25,12 @@ Whenever you implement a new feature, you should create tests for it! Usually, a
  4. Copy the ECF file and output logs into the created directory
  5. Create file `tested.py` in the directory and write the test (see examples below)
 
-
+##### A good test should cover the following scenarios:
+ - mesh should contain more elements sets
+ - mesh should contain both face and node boundary regions
+ - new property should be applied to a subset of elements or nodes
+ - test should be run with more threads and MPI processes
+ 
  ##### Example 1: test mesio with new (hypothetical) parameter *FILTER*
  ---
  Let we have an Ansys CDB database stored in **cube.dat** and configuration file **conf.ecf** that applies a filter to the loaded geometry according to parameter *FILTER* with possible values *HEXA*, *TETRA*, *PRISMA*, and *PYRAMID*. Since the filter parameter is an input parameter, we create directory `filter` in `benchmarks/input/` and copy files **cube.dat** and **conf.ecf** into this directory. Then, we edit parameter *FILTER* to value *[ARG0]* in the **conf.ecf** configuration file. It allows reading *FILTER*'s value as the first command-line argument. Hence, it is possible to run mesio e.g. with *FILTER=HEXA* in the following way:
