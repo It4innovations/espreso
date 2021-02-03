@@ -116,10 +116,10 @@ struct HeatStiffness: public ElementOperatorBuilder {
 			}
 		} else {
 			if (info::mesh->dimension == 2) {
-				iterate_elements_gps<HeatTransferModuleOpt>(Stiffness2DHeat(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivity, kernel.linearSystem.stiffness, kernel.thickness.gp, interval));
+				iterate_elements_gps<HeatTransferModuleOpt>(Stiffness2DHeat(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivity, kernel.thickness.gp, kernel.linearSystem.stiffness, interval));
 			}
 			if (info::mesh->dimension == 3) {
-				iterate_elements_gps<HeatTransferModuleOpt>(Stiffness3DHeat(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivity, kernel.linearSystem.stiffness, kernel.thickness.gp, interval));
+				iterate_elements_gps<HeatTransferModuleOpt>(Stiffness3DHeat(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivity, kernel.thickness.gp, kernel.linearSystem.stiffness, interval));
 			}
 		}
 	}
