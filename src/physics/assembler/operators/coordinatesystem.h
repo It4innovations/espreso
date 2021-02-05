@@ -122,7 +122,7 @@ struct Cylindrical3DCoordinateSystem: CoordinateSystem {
 	{
 		double angle = std::atan2(coordinates[3 * gpindex + 1] - rotation[2 * gpindex + 1], coordinates[3 * gpindex + 0] - rotation[2 * gpindex + 0]);
 		double cos[3] = { 1, 1, std::cos(angle) };
-		double sin[3] = { 1, 1, std::sin(angle) };
+		double sin[3] = { 0, 0, std::sin(angle) };
 		rotate3x3(cos, sin, matrix.data + 9 * gpindex);
 	}
 };
