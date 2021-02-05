@@ -88,8 +88,8 @@ struct CopySymmetric3DConductivity: public CopyConductivity {
 		int igp = 6 * gpindex;
 		int ogp = 9 * gpindex;
 		output.data[ogp + 0] = input.data[igp + 0]; output.data[ogp + 1] = input.data[igp + 3]; output.data[ogp + 2] = input.data[igp + 5];
-		output.data[ogp + 3] = 0;                   output.data[ogp + 4] = input.data[igp + 1]; output.data[ogp + 5] = input.data[igp + 4];
-		output.data[ogp + 6] = 0;                   output.data[ogp + 7] = 0;                   output.data[ogp + 8] = input.data[igp + 2];
+		output.data[ogp + 3] = input.data[igp + 3]; output.data[ogp + 4] = input.data[igp + 1]; output.data[ogp + 5] = input.data[igp + 4];
+		output.data[ogp + 6] = input.data[igp + 5]; output.data[ogp + 7] = input.data[igp + 4]; output.data[ogp + 8] = input.data[igp + 2];
 	}
 };
 
@@ -178,8 +178,8 @@ struct ThermalConductivity: public ElementOperatorBuilder {
 			switch (mat->thermal_conductivity.model) {
 			case ThermalConductivityConfiguration::MODEL::ISOTROPIC: CopyElementParameters(kernel.material.model.isotropic, kernel.material.conductivityIsotropic).apply(interval); break;
 			case ThermalConductivityConfiguration::MODEL::DIAGONAL: iterate_elements_gps<HeatTransferModuleOpt>(CopyDiagonal3DConductivity(kernel.material.model.diagonal, kernel.material.conductivity, interval)); break;
-			case ThermalConductivityConfiguration::MODEL::SYMMETRIC: iterate_elements_gps<HeatTransferModuleOpt>(CopyDiagonal3DConductivity(kernel.material.model.symmetric3D, kernel.material.conductivity, interval)); break;
-			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC: iterate_elements_gps<HeatTransferModuleOpt>(CopyDiagonal3DConductivity(kernel.material.model.anisotropic, kernel.material.conductivity, interval)); break;
+			case ThermalConductivityConfiguration::MODEL::SYMMETRIC: iterate_elements_gps<HeatTransferModuleOpt>(CopySymmetric3DConductivity(kernel.material.model.symmetric3D, kernel.material.conductivity, interval)); break;
+			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC: iterate_elements_gps<HeatTransferModuleOpt>(CopyAnisotropic3DConductivity(kernel.material.model.anisotropic, kernel.material.conductivity, interval)); break;
 				break;
 			}
 
