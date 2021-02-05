@@ -74,7 +74,7 @@ struct MatricesFiller: public ElementOperatorBuilder {
 
 	void apply(int interval)
 	{
-		if (kernel.translationMotions.gp.isset) {
+		if (kernel.translationMotions.gp.isset || kernel.material.model.anisotropic.isset) {
 			iterate_elements(KFullFiller(kernel.linearSystem.stiffness, K, perm, enodes, interval));
 		} else {
 			iterate_elements(KSymmFiller(kernel.linearSystem.stiffness, K, perm, enodes, interval));

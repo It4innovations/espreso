@@ -3,6 +3,7 @@
 #include "basis/containers/serializededata.h"
 #include "basis/evaluator/evaluator.h"
 #include "config/ecf/physics/heattransfer.h"
+#include "config/ecf/material/material.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/eslog.h"
 #include "mesh/store/nodestore.h"
@@ -24,6 +25,11 @@ MatrixType HeatTransferSolverDataProvider::General::getMatrixType()
 			) {
 
 		return MatrixType::REAL_UNSYMMETRIC;
+	}
+	for (size_t i = 0; i < info::mesh->materials.size(); ++i) {
+		if (info::mesh->materials[i]->thermal_conductivity.model == ThermalConductivityConfiguration::MODEL::ANISOTROPIC) {
+			return MatrixType::REAL_UNSYMMETRIC;
+		}
 	}
 	return MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 }
@@ -81,6 +87,11 @@ MatrixType HeatTransferSolverDataProvider::FETI::getMatrixType(esint domain)
 					return MatrixType::REAL_UNSYMMETRIC;
 				}
 			}
+		}
+	}
+	for (size_t i = 0; i < info::mesh->materials.size(); ++i) {
+		if (info::mesh->materials[i]->thermal_conductivity.model == ThermalConductivityConfiguration::MODEL::ANISOTROPIC) {
+			return MatrixType::REAL_UNSYMMETRIC;
 		}
 	}
 	return MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
