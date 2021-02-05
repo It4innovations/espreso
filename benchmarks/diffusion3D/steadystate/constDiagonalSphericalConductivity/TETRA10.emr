@@ -1,0 +1,5 @@
+         ;          ;              ;      TOP      ;     BOTTOM    ;  ALL_ELEMENTS  ;  ALL_ELEMENTS  ;  ALL_ELEMENTS  ;
+loadstep ;  substep ;         time ;  TEMPERATURE  ;  TEMPERATURE  ;    GRADIENT    ;      FLUX      ;   TEMPERATURE  ;
+         ;          ;              ;     <MAX>     ;     <MIN>     ;      <MAX>     ;      <MAX>     ;    <AVERAGE>   ;
+
+       1 ;        1 ;     1.000000 ;  1.000000e+02 ;  3.000000e+02 ;   1.270034e+03 ;   4.845520e+04 ;   2.000000e+02 ; 

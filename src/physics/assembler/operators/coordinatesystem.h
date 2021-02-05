@@ -139,10 +139,10 @@ struct Spherical3DCoordinateSystem: CoordinateSystem {
 		double z = coordinates[3 * gpindex + 2] - rotation[3 * gpindex + 2];
 		double azimut = std::atan2(y, x);
 		double r = std::sqrt(x * x + y * y + z * z);
-		double elevation = r < 1e-12 ? 0 : std::atan2(std::sqrt(z * z + x * x), y);
+		double elevation = r < 1e-15 ? 0 : std::atan2(std::sqrt(z * z + x * x), y);
 
 		double cos[3] = { 1, std::cos(elevation), std::cos(azimut) };
-		double sin[3] = { 1, std::sin(elevation), std::sin(azimut) };
+		double sin[3] = { 0, std::sin(elevation), std::sin(azimut) };
 
 		rotate3x3(cos, sin, matrix.data + 9 * gpindex);
 	}
