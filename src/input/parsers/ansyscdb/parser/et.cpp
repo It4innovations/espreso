@@ -24,10 +24,16 @@ ET& ET::parse(const char* begin)
 	if (
 			!StringCompare::caseInsensitiveEq(command[1], "tid") &&
 			!StringCompare::caseInsensitiveEq(command[1], "_tid") &&
-			!StringCompare::caseInsensitiveEq(command[1], "cid")) {
+			!StringCompare::caseInsensitiveEq(command[1], "cid") &&
+			!StringCompare::caseInsensitiveEq(command[1], "matid")) {
 		id = std::stoi(command[1]) - 1;
 	}
-	type = std::stoi(command[2]);
+
+	if (StringCompare::caseInsensitiveEq(command[2], "SOLID45")) {
+		type = 45;
+	} else {
+		type = std::stoi(command[2]);
+	}
 
 	WorkbenchParser::fillIndices(begin, begin, begin);
 

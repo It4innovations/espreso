@@ -257,6 +257,7 @@ bool EBlock::solid(const std::vector<ET> &et, AnsysCDBData &mesh)
 			case ET::ETYPE::TARGET:
 			case ET::ETYPE::CONTACT:
 			case ET::ETYPE::PRETS:
+			case ET::ETYPE::SKIP:
 				esize.push_back(nnodes);
 				nodes.insert(nodes.end(), nindices.begin(), nindices.begin() + nnodes);
 				type.back() = (esint)Element::CODE::NOT_SUPPORTED;

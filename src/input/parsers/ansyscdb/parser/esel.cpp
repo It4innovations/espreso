@@ -73,7 +73,6 @@ ESel& ESel::parse(const char* begin)
 		}
 		if (StringCompare::caseInsensitiveEq("REAL", command[2])) {
 			item = Item::REAL;
-			eslog::error("ESPRESO Workbench parser error: implement esel, Item='%s'\n", command[2].c_str());
 		}
 		if (StringCompare::caseInsensitiveEq("ESYS", command[2])) {
 			item = Item::ESYS;

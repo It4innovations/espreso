@@ -25,6 +25,7 @@ struct ET: public WorkbenchParser {
 		PRETS,
 
 		UNIVERSAL,
+		SKIP,
 
 		UNKNOWN
 	};
@@ -69,6 +70,8 @@ struct ET: public WorkbenchParser {
 		case 179: return ETYPE::PRETS; // PRETS
 
 		case 200: return ETYPE::UNIVERSAL;
+
+		case 201: return ETYPE::SKIP;
 
 		default: return ETYPE::UNKNOWN;
 		}
