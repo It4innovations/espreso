@@ -106,11 +106,6 @@ HEAT_TRANSFER_2D {
         TOP      100;
         BOTTOM   300;
       }
-      TRANSLATION_MOTIONS {
-        ALL_ELEMENTS  {
-          X 1;
-        }
-      }
     }
   }
 }
