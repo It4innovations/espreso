@@ -14,7 +14,7 @@ bool ExpressionsToElements::build(HeatTransferModuleOpt &kernel)
 		return false;
 	}
 	for (size_t i = 0; i < parameter.isconst.size(); ++i) {
-		for (int d = 0; evaluators[i] && d < dimension; ++d) {
+		for (int d = 0; d < dimension && evaluators[i * dimension + d]; ++d) {
 			for (size_t p = 0; p < evaluators[i * dimension + d]->variables.size(); ++p) {
 				parameter.isconst[i] = false; // in the case of TIME it is possible to keep value constant
 				if (StringCompare::caseInsensitiveEq("INITIAL_TEMPERATURE", evaluators[i * dimension + d]->variables[p])) {
