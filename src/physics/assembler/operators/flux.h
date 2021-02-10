@@ -10,7 +10,7 @@ namespace espreso {
 
 struct OutputFlux: public Operator {
 	OutputFlux(ParameterData &dND, ParameterData &temperature, ParameterData &conductivity, ElementData *flux, int interval)
-	: Operator(interval, false, Link(interval).inputs(dND, temperature).result(flux)),
+	: Operator(interval, false, Link(interval).inputs(dND, temperature).resultOut(flux)),
 	  dND(dND, interval, edim * enodes * egps),
 	  temp(temperature, interval, enodes),
 	  conductivity(conductivity, interval, conductivity.size),
@@ -95,16 +95,16 @@ struct Flux: public ElementOperatorBuilder {
 		const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
 		if (info::mesh->dimension == 2) {
 			if (mat->thermal_conductivity.model == ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
-				iterate_elements_gps<HeatTransferModuleOpt>(OutputFluxIsotropic2D(kernel.integration.dND, kernel.temp.node, kernel.material.conductivityIsotropic, kernel.flux.output, interval));
+				iterate_elements_gps<HeatTransferModuleOpt::NGP>(OutputFluxIsotropic2D(kernel.integration.dND, kernel.temp.node, kernel.material.conductivityIsotropic, kernel.flux.output, interval));
 			} else {
-				iterate_elements_gps<HeatTransferModuleOpt>(OutputFlux2D(kernel.integration.dND, kernel.temp.node, kernel.material.conductivity, kernel.flux.output, interval));
+				iterate_elements_gps<HeatTransferModuleOpt::NGP>(OutputFlux2D(kernel.integration.dND, kernel.temp.node, kernel.material.conductivity, kernel.flux.output, interval));
 			}
 		}
 		if (info::mesh->dimension == 3) {
 			if (mat->thermal_conductivity.model == ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
-				iterate_elements_gps<HeatTransferModuleOpt>(OutputFluxIsotropic3D(kernel.integration.dND, kernel.temp.node, kernel.material.conductivityIsotropic, kernel.flux.output, interval));
+				iterate_elements_gps<HeatTransferModuleOpt::NGP>(OutputFluxIsotropic3D(kernel.integration.dND, kernel.temp.node, kernel.material.conductivityIsotropic, kernel.flux.output, interval));
 			} else {
-				iterate_elements_gps<HeatTransferModuleOpt>(OutputFlux3D(kernel.integration.dND, kernel.temp.node, kernel.material.conductivity, kernel.flux.output, interval));
+				iterate_elements_gps<HeatTransferModuleOpt::NGP>(OutputFlux3D(kernel.integration.dND, kernel.temp.node, kernel.material.conductivity, kernel.flux.output, interval));
 			}
 		}
 	}

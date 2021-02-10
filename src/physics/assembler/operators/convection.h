@@ -215,8 +215,8 @@ struct ConvectionBuilder: public BoundaryOperatorBuilder {
 			case ConvectionConfiguration::TYPE::EXTERNAL_NATURAL:
 				switch (convection.configuration.regions[region].settings.front()->fluid) {
 				case ConvectionConfiguration::FLUID::AIR:
-					iterate_boundary_gps<HeatTransferModuleOpt>(ConvectionFluidAir(convection, kernel.temp.boundary.gp.regions[region], region, interval), region);
-					iterate_boundary_gps<HeatTransferModuleOpt>(ConvectionExternalNaturalInclinedWall(convection, kernel.temp.boundary.gp.regions[region], region, interval), region);
+					iterate_boundary_gps<HeatTransferModuleOpt::NGP>(ConvectionFluidAir(convection, kernel.temp.boundary.gp.regions[region], region, interval), region);
+					iterate_boundary_gps<HeatTransferModuleOpt::NGP>(ConvectionExternalNaturalInclinedWall(convection, kernel.temp.boundary.gp.regions[region], region, interval), region);
 					break;
 				default:
 					break;

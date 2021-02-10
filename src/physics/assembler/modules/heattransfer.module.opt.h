@@ -15,22 +15,24 @@ struct Builder;
 class HeatTransferModuleOpt: public ModuleOpt
 {
 public:
-	static const int GP_LINE2 = 2;
-	static const int GP_LINE3 = 3;
+	struct NGP {
+		static const int LINE2 = 2;
+		static const int LINE3 = 3;
 
-	static const int GP_TRIANGLE3 = 6;
-	static const int GP_TRIANGLE6 = 6;
-	static const int GP_SQUARE4   = 4;
-	static const int GP_SQUARE8   = 9;
+		static const int TRIANGLE3 = 6;
+		static const int TRIANGLE6 = 6;
+		static const int SQUARE4   = 4;
+		static const int SQUARE8   = 9;
 
-	static const int GP_TETRA4    = 4;
-	static const int GP_TETRA10   = 15;
-	static const int GP_PYRAMID5  = 8;
-	static const int GP_PYRAMID13 = 14;
-	static const int GP_PRISMA6   = 9;
-	static const int GP_PRISMA15  = 9;
-	static const int GP_HEXA8     = 8;
-	static const int GP_HEXA20    = 8;
+		static const int TETRA4    = 4;
+		static const int TETRA10   = 15;
+		static const int PYRAMID5  = 8;
+		static const int PYRAMID13 = 14;
+		static const int PRISMA6   = 9;
+		static const int PRISMA15  = 9;
+		static const int HEXA8     = 8;
+		static const int HEXA20    = 8;
+	};
 
 	static ElementData *phase, *latentHeat;
 	static void createParameters();
@@ -66,7 +68,7 @@ public:
 	ParametersConvection convection;
 	ParametersBoundaryFunction dirichlet, heatFlow, heatFlux, q;
 
-	ParametersLinearSystem<1> linearSystem;
+	ParametersElements<1> elements;
 
 	ParametersGradient gradient;
 	ParametersFlux flux;

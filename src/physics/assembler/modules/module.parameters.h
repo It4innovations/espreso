@@ -10,7 +10,7 @@ class ElementData;
 class ConvectionConfiguration;
 
 template <int dimension>
-struct ParametersLinearSystem {
+struct ParametersElements {
 	struct Boundary {
 		BoundaryParameter<dimension * dimension * enodes * enodes> stiffness;
 		BoundaryParameter<dimension * enodes> rhs;
@@ -92,6 +92,7 @@ struct ParametersMaterial {
 	ElementExternalParameter<egps> density, heatCapacity;
 	Model model;
 
+	ElementParameter<egps> mass;
 	ElementParameter<egps> conductivityIsotropic;
 	ElementParameter<ndim * ndim * egps> conductivity;
 };
@@ -107,7 +108,12 @@ struct ParametersThickness {
 
 struct ParametersTranslationMotions {
 	static ElementData *output;
+	double sigma;
+	bool CAU, SUPG;
+
 	ElementExternalParameter<ndim * egps> gp;
+	ElementParameter<enodes * enodes> stiffness;
+	ElementParameter<enodes> rhs;
 };
 
 struct ParametersBoundaryFunction {
@@ -135,6 +141,8 @@ struct ParametersConvection {
 
 struct ParametersGradient {
 	static ElementData *output;
+
+	ElementParameter<egps> xi;
 };
 
 struct ParametersFlux {

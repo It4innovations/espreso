@@ -104,13 +104,12 @@ struct ElementJacobian3D: public ElementJacobian {
 	}
 };
 
-template <class Kernel>
 struct ElementIntegration: public ElementOperatorBuilder {
 	GET_NAME(ElementIntegration)
 
-	Kernel &kernel;
+	HeatTransferModuleOpt &kernel;
 
-	ElementIntegration(Kernel &kernel): kernel(kernel)
+	ElementIntegration(HeatTransferModuleOpt &kernel): kernel(kernel)
 	{
 
 	}
@@ -126,10 +125,10 @@ struct ElementIntegration: public ElementOperatorBuilder {
 	void apply(int interval)
 	{
 		if (info::mesh->dimension == 2) {
-			iterate_elements_gps<Kernel>(ElementJacobian2D(kernel.coords.node, kernel.integration.dN, kernel.integration.jacobiInversion, kernel.integration.jacobiDeterminant, kernel.integration.dND, interval));
+			iterate_elements_gps<HeatTransferModuleOpt::NGP>(ElementJacobian2D(kernel.coords.node, kernel.integration.dN, kernel.integration.jacobiInversion, kernel.integration.jacobiDeterminant, kernel.integration.dND, interval));
 		}
 		if (info::mesh->dimension == 3) {
-			iterate_elements_gps<Kernel>(ElementJacobian3D(kernel.coords.node, kernel.integration.dN, kernel.integration.jacobiInversion, kernel.integration.jacobiDeterminant, kernel.integration.dND, interval));
+			iterate_elements_gps<HeatTransferModuleOpt::NGP>(ElementJacobian3D(kernel.coords.node, kernel.integration.dN, kernel.integration.jacobiInversion, kernel.integration.jacobiDeterminant, kernel.integration.dND, interval));
 		}
 	}
 };
@@ -198,13 +197,12 @@ struct BoundaryEdge2DJacobian: public BoundaryJacobian {
 	}
 };
 
-template <class Kernel>
 struct BoundaryIntegration: public BoundaryOperatorBuilder {
 	GET_NAME(BoundaryIntegration)
 
-	Kernel &kernel;
+	HeatTransferModuleOpt &kernel;
 
-	BoundaryIntegration(Kernel &kernel): kernel(kernel)
+	BoundaryIntegration(HeatTransferModuleOpt &kernel): kernel(kernel)
 	{
 
 	}
@@ -221,14 +219,14 @@ struct BoundaryIntegration: public BoundaryOperatorBuilder {
 	void apply(int region, int interval)
 	{
 		if (info::mesh->boundaryRegions[region]->dimension == 2) {
-			iterate_boundary_gps<Kernel>(BoundaryFaceJacobian(kernel.coords.boundary.node.regions[region], kernel.integration.boundary.dN.regions[region], kernel.integration.boundary.jacobian.regions[region], interval), region);
+			iterate_boundary_gps<HeatTransferModuleOpt::NGP>(BoundaryFaceJacobian(kernel.coords.boundary.node.regions[region], kernel.integration.boundary.dN.regions[region], kernel.integration.boundary.jacobian.regions[region], interval), region);
 		}
 		if (info::mesh->boundaryRegions[region]->dimension == 1) {
 			if (info::mesh->dimension == 3) {
-				iterate_boundary_gps<Kernel>(BoundaryEdge3DJacobian(kernel.coords.boundary.node.regions[region], kernel.integration.boundary.dN.regions[region], kernel.integration.boundary.jacobian.regions[region], interval), region);
+				iterate_boundary_gps<HeatTransferModuleOpt::NGP>(BoundaryEdge3DJacobian(kernel.coords.boundary.node.regions[region], kernel.integration.boundary.dN.regions[region], kernel.integration.boundary.jacobian.regions[region], interval), region);
 			}
 			if (info::mesh->dimension == 2) {
-				iterate_boundary_gps<Kernel>(BoundaryEdge2DJacobian(kernel.coords.boundary.node.regions[region], kernel.integration.boundary.dN.regions[region], kernel.integration.boundary.jacobian.regions[region], interval), region);
+				iterate_boundary_gps<HeatTransferModuleOpt::NGP>(BoundaryEdge2DJacobian(kernel.coords.boundary.node.regions[region], kernel.integration.boundary.dN.regions[region], kernel.integration.boundary.jacobian.regions[region], interval), region);
 			}
 		}
 	}

@@ -8,7 +8,7 @@
 
 namespace espreso {
 
-template <class Kernel, class Operator>
+template <class NGP, class Operator>
 static inline void iterate_elements_gps(Operator op)
 {
 	if (op.update) {
@@ -16,73 +16,73 @@ static inline void iterate_elements_gps(Operator op)
 			if (Operator::print) printf("\tOP::ELEMENT::%d::GP::CONSTANT::%s\n", op.interval, op.name());
 			switch (info::mesh->elements->eintervals[op.interval].code) {
 			case static_cast<int>(Element::CODE::LINE2):
-				for (int gp = 0; gp < Kernel::GP_LINE2; ++gp) {
-					op.template operator()<2, Kernel::GP_LINE2>(gp);
+				for (int gp = 0; gp < NGP::LINE2; ++gp) {
+					op.template operator()<2, NGP::LINE2>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::LINE3):
-				for (int gp = 0; gp < Kernel::GP_LINE3; ++gp) {
-					op.template operator()<3, Kernel::GP_LINE3>(gp);
+				for (int gp = 0; gp < NGP::LINE3; ++gp) {
+					op.template operator()<3, NGP::LINE3>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::TRIANGLE3):
-				for (int gp = 0; gp < Kernel::GP_TRIANGLE3; ++gp) {
-					op.template operator()<3, Kernel::GP_TRIANGLE3>(gp);
+				for (int gp = 0; gp < NGP::TRIANGLE3; ++gp) {
+					op.template operator()<3, NGP::TRIANGLE3>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::TRIANGLE6):
-				for (int gp = 0; gp < Kernel::GP_TRIANGLE6; ++gp) {
-					op.template operator()<6, Kernel::GP_TRIANGLE6>(gp);
+				for (int gp = 0; gp < NGP::TRIANGLE6; ++gp) {
+					op.template operator()<6, NGP::TRIANGLE6>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::SQUARE4):
-				for (int gp = 0; gp < Kernel::GP_SQUARE4; ++gp) {
-					op.template operator()<4, Kernel::GP_SQUARE4>(gp);
+				for (int gp = 0; gp < NGP::SQUARE4; ++gp) {
+					op.template operator()<4, NGP::SQUARE4>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::SQUARE8):
-				for (int gp = 0; gp < Kernel::GP_SQUARE8; ++gp) {
-					op.template operator()<8, Kernel::GP_SQUARE8>(gp);
+				for (int gp = 0; gp < NGP::SQUARE8; ++gp) {
+					op.template operator()<8, NGP::SQUARE8>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::TETRA4):
-				for (int gp = 0; gp < Kernel::GP_TETRA4; ++gp) {
-					op.template operator()<4, Kernel::GP_TETRA4>(gp);
+				for (int gp = 0; gp < NGP::TETRA4; ++gp) {
+					op.template operator()<4, NGP::TETRA4>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::TETRA10):
-				for (int gp = 0; gp < Kernel::GP_TETRA10; ++gp) {
-					op.template operator()<10, Kernel::GP_TETRA10>(gp);
+				for (int gp = 0; gp < NGP::TETRA10; ++gp) {
+					op.template operator()<10, NGP::TETRA10>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::PYRAMID5):
-				for (int gp = 0; gp < Kernel::GP_PYRAMID5; ++gp) {
-					op.template operator()<5, Kernel::GP_PYRAMID5>(gp);
+				for (int gp = 0; gp < NGP::PYRAMID5; ++gp) {
+					op.template operator()<5, NGP::PYRAMID5>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::PYRAMID13):
-				for (int gp = 0; gp < Kernel::GP_PYRAMID13; ++gp) {
-					op.template operator()<13, Kernel::GP_PYRAMID13>(gp);
+				for (int gp = 0; gp < NGP::PYRAMID13; ++gp) {
+					op.template operator()<13, NGP::PYRAMID13>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::PRISMA6):
-				for (int gp = 0; gp < Kernel::GP_PRISMA6; ++gp) {
-					op.template operator()<6, Kernel::GP_PRISMA6>(gp);
+				for (int gp = 0; gp < NGP::PRISMA6; ++gp) {
+					op.template operator()<6, NGP::PRISMA6>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::PRISMA15):
-				for (int gp = 0; gp < Kernel::GP_PRISMA15; ++gp) {
-					op.template operator()<15, Kernel::GP_PRISMA15>(gp);
+				for (int gp = 0; gp < NGP::PRISMA15; ++gp) {
+					op.template operator()<15, NGP::PRISMA15>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::HEXA8):
-				for (int gp = 0; gp < Kernel::GP_HEXA8; ++gp) {
-					op.template operator()<8, Kernel::GP_HEXA8>(gp);
+				for (int gp = 0; gp < NGP::HEXA8; ++gp) {
+					op.template operator()<8, NGP::HEXA8>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::HEXA20):
-				for (int gp = 0; gp < Kernel::GP_HEXA20; ++gp) {
-					op.template operator()<20, Kernel::GP_HEXA20>(gp);
+				for (int gp = 0; gp < NGP::HEXA20; ++gp) {
+					op.template operator()<20, NGP::HEXA20>(gp);
 				}
 			break;
 			default: break;
@@ -92,99 +92,99 @@ static inline void iterate_elements_gps(Operator op)
 			switch (info::mesh->elements->eintervals[op.interval].code) {
 			case static_cast<int>(Element::CODE::LINE2):
 				for (esint i = info::mesh->elements->eintervals[op.interval].begin; i < info::mesh->elements->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_LINE2; ++gp) {
-						op.template operator()<2, Kernel::GP_LINE2>(gp);
+					for (int gp = 0; gp < NGP::LINE2; ++gp) {
+						op.template operator()<2, NGP::LINE2>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::LINE3):
 				for (esint i = info::mesh->elements->eintervals[op.interval].begin; i < info::mesh->elements->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_LINE3; ++gp) {
-						op.template operator()<3, Kernel::GP_LINE3>(gp);
+					for (int gp = 0; gp < NGP::LINE3; ++gp) {
+						op.template operator()<3, NGP::LINE3>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::TRIANGLE3):
 				for (esint i = info::mesh->elements->eintervals[op.interval].begin; i < info::mesh->elements->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_TRIANGLE3; ++gp) {
-						op.template operator()<3, Kernel::GP_TRIANGLE3>(gp);
+					for (int gp = 0; gp < NGP::TRIANGLE3; ++gp) {
+						op.template operator()<3, NGP::TRIANGLE3>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::TRIANGLE6):
 				for (esint i = info::mesh->elements->eintervals[op.interval].begin; i < info::mesh->elements->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_TRIANGLE6; ++gp) {
-						op.template operator()<6, Kernel::GP_TRIANGLE6>(gp);
+					for (int gp = 0; gp < NGP::TRIANGLE6; ++gp) {
+						op.template operator()<6, NGP::TRIANGLE6>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::SQUARE4):
 				for (esint i = info::mesh->elements->eintervals[op.interval].begin; i < info::mesh->elements->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_SQUARE4; ++gp) {
-						op.template operator()<4, Kernel::GP_SQUARE4>(gp);
+					for (int gp = 0; gp < NGP::SQUARE4; ++gp) {
+						op.template operator()<4, NGP::SQUARE4>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::SQUARE8):
 				for (esint i = info::mesh->elements->eintervals[op.interval].begin; i < info::mesh->elements->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_SQUARE8; ++gp) {
-						op.template operator()<8, Kernel::GP_SQUARE8>(gp);
+					for (int gp = 0; gp < NGP::SQUARE8; ++gp) {
+						op.template operator()<8, NGP::SQUARE8>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::TETRA4):
 				for (esint i = info::mesh->elements->eintervals[op.interval].begin; i < info::mesh->elements->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_TETRA4; ++gp) {
-						op.template operator()<4, Kernel::GP_TETRA4>(gp);
+					for (int gp = 0; gp < NGP::TETRA4; ++gp) {
+						op.template operator()<4, NGP::TETRA4>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::TETRA10):
 				for (esint i = info::mesh->elements->eintervals[op.interval].begin; i < info::mesh->elements->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_TETRA10; ++gp) {
-						op.template operator()<10, Kernel::GP_TETRA10>(gp);
+					for (int gp = 0; gp < NGP::TETRA10; ++gp) {
+						op.template operator()<10, NGP::TETRA10>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::PYRAMID5):
 				for (esint i = info::mesh->elements->eintervals[op.interval].begin; i < info::mesh->elements->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_PYRAMID5; ++gp) {
-						op.template operator()<5, Kernel::GP_PYRAMID5>(gp);
+					for (int gp = 0; gp < NGP::PYRAMID5; ++gp) {
+						op.template operator()<5, NGP::PYRAMID5>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::PYRAMID13):
 				for (esint i = info::mesh->elements->eintervals[op.interval].begin; i < info::mesh->elements->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_PYRAMID13; ++gp) {
-						op.template operator()<13, Kernel::GP_PYRAMID13>(gp);
+					for (int gp = 0; gp < NGP::PYRAMID13; ++gp) {
+						op.template operator()<13, NGP::PYRAMID13>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::PRISMA6):
 				for (esint i = info::mesh->elements->eintervals[op.interval].begin; i < info::mesh->elements->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_PRISMA6; ++gp) {
-						op.template operator()<6, Kernel::GP_PRISMA6>(gp);
+					for (int gp = 0; gp < NGP::PRISMA6; ++gp) {
+						op.template operator()<6, NGP::PRISMA6>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::PRISMA15):
 				for (esint i = info::mesh->elements->eintervals[op.interval].begin; i < info::mesh->elements->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_PRISMA15; ++gp) {
-						op.template operator()<15, Kernel::GP_PRISMA15>(gp);
+					for (int gp = 0; gp < NGP::PRISMA15; ++gp) {
+						op.template operator()<15, NGP::PRISMA15>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::HEXA8):
 				for (esint i = info::mesh->elements->eintervals[op.interval].begin; i < info::mesh->elements->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_HEXA8; ++gp) {
-						op.template operator()<8, Kernel::GP_HEXA8>(gp);
+					for (int gp = 0; gp < NGP::HEXA8; ++gp) {
+						op.template operator()<8, NGP::HEXA8>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::HEXA20):
 				for (esint i = info::mesh->elements->eintervals[op.interval].begin; i < info::mesh->elements->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_HEXA20; ++gp) {
-						op.template operator()<20, Kernel::GP_HEXA20>(gp);
+					for (int gp = 0; gp < NGP::HEXA20; ++gp) {
+						op.template operator()<20, NGP::HEXA20>(gp);
 					}
 				}
 			break;
@@ -214,7 +214,7 @@ static inline void iterate_elements(Operator op)
 	}
 }
 
-template <class Kernel, class Operator>
+template <class NGP, class Operator>
 static inline void iterate_boundary_gps(Operator op, int region)
 {
 	if (op.update) {
@@ -222,73 +222,73 @@ static inline void iterate_boundary_gps(Operator op, int region)
 			if (Operator::print) printf("\tOP::BOUNDARY::%d::%d::GP::CONSTANT::%s\n", region, op.interval, op.name());
 			switch (info::mesh->boundaryRegions[region]->eintervals[op.interval].code) {
 			case static_cast<int>(Element::CODE::LINE2):
-				for (int gp = 0; gp < Kernel::GP_LINE2; ++gp) {
-					op.template operator()<2, Kernel::GP_LINE2>(gp);
+				for (int gp = 0; gp < NGP::LINE2; ++gp) {
+					op.template operator()<2, NGP::LINE2>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::LINE3):
-			for (int gp = 0; gp < Kernel::GP_LINE3; ++gp) {
-				op.template operator()<3, Kernel::GP_LINE3>(gp);
+			for (int gp = 0; gp < NGP::LINE3; ++gp) {
+				op.template operator()<3, NGP::LINE3>(gp);
 			}
 			break;
 			case static_cast<int>(Element::CODE::TRIANGLE3):
-				for (int gp = 0; gp < Kernel::GP_TRIANGLE3; ++gp) {
-					op.template operator()<3, Kernel::GP_TRIANGLE3>(gp);
+				for (int gp = 0; gp < NGP::TRIANGLE3; ++gp) {
+					op.template operator()<3, NGP::TRIANGLE3>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::TRIANGLE6):
-				for (int gp = 0; gp < Kernel::GP_TRIANGLE6; ++gp) {
-					op.template operator()<6, Kernel::GP_TRIANGLE6>(gp);
+				for (int gp = 0; gp < NGP::TRIANGLE6; ++gp) {
+					op.template operator()<6, NGP::TRIANGLE6>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::SQUARE4):
-				for (int gp = 0; gp < Kernel::GP_SQUARE4; ++gp) {
-					op.template operator()<4, Kernel::GP_SQUARE4>(gp);
+				for (int gp = 0; gp < NGP::SQUARE4; ++gp) {
+					op.template operator()<4, NGP::SQUARE4>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::SQUARE8):
-				for (int gp = 0; gp < Kernel::GP_SQUARE8; ++gp) {
-					op.template operator()<8, Kernel::GP_SQUARE8>(gp);
+				for (int gp = 0; gp < NGP::SQUARE8; ++gp) {
+					op.template operator()<8, NGP::SQUARE8>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::TETRA4):
-				for (int gp = 0; gp < Kernel::GP_TETRA4; ++gp) {
-					op.template operator()<4, Kernel::GP_TETRA4>(gp);
+				for (int gp = 0; gp < NGP::TETRA4; ++gp) {
+					op.template operator()<4, NGP::TETRA4>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::TETRA10):
-				for (int gp = 0; gp < Kernel::GP_TETRA10; ++gp) {
-					op.template operator()<10, Kernel::GP_TETRA10>(gp);
+				for (int gp = 0; gp < NGP::TETRA10; ++gp) {
+					op.template operator()<10, NGP::TETRA10>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::PYRAMID5):
-				for (int gp = 0; gp < Kernel::GP_PYRAMID5; ++gp) {
-					op.template operator()<5, Kernel::GP_PYRAMID5>(gp);
+				for (int gp = 0; gp < NGP::PYRAMID5; ++gp) {
+					op.template operator()<5, NGP::PYRAMID5>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::PYRAMID13):
-				for (int gp = 0; gp < Kernel::GP_PYRAMID13; ++gp) {
-					op.template operator()<13, Kernel::GP_PYRAMID13>(gp);
+				for (int gp = 0; gp < NGP::PYRAMID13; ++gp) {
+					op.template operator()<13, NGP::PYRAMID13>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::PRISMA6):
-				for (int gp = 0; gp < Kernel::GP_PRISMA6; ++gp) {
-					op.template operator()<6, Kernel::GP_PRISMA6>(gp);
+				for (int gp = 0; gp < NGP::PRISMA6; ++gp) {
+					op.template operator()<6, NGP::PRISMA6>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::PRISMA15):
-				for (int gp = 0; gp < Kernel::GP_PRISMA15; ++gp) {
-					op.template operator()<15, Kernel::GP_PRISMA15>(gp);
+				for (int gp = 0; gp < NGP::PRISMA15; ++gp) {
+					op.template operator()<15, NGP::PRISMA15>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::HEXA8):
-				for (int gp = 0; gp < Kernel::GP_HEXA8; ++gp) {
-					op.template operator()<8, Kernel::GP_HEXA8>(gp);
+				for (int gp = 0; gp < NGP::HEXA8; ++gp) {
+					op.template operator()<8, NGP::HEXA8>(gp);
 				}
 			break;
 			case static_cast<int>(Element::CODE::HEXA20):
-				for (int gp = 0; gp < Kernel::GP_HEXA20; ++gp) {
-					op.template operator()<20, Kernel::GP_HEXA20>(gp);
+				for (int gp = 0; gp < NGP::HEXA20; ++gp) {
+					op.template operator()<20, NGP::HEXA20>(gp);
 				}
 			break;
 			default: break;
@@ -298,99 +298,99 @@ static inline void iterate_boundary_gps(Operator op, int region)
 			switch (info::mesh->boundaryRegions[region]->eintervals[op.interval].code) {
 			case static_cast<int>(Element::CODE::LINE2):
 				for (esint i = info::mesh->boundaryRegions[region]->eintervals[op.interval].begin; i < info::mesh->boundaryRegions[region]->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_LINE2; ++gp) {
-						op.template operator()<2, Kernel::GP_LINE2>(gp);
+					for (int gp = 0; gp < NGP::LINE2; ++gp) {
+						op.template operator()<2, NGP::LINE2>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::LINE3):
 				for (esint i = info::mesh->boundaryRegions[region]->eintervals[op.interval].begin; i < info::mesh->boundaryRegions[region]->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_LINE3; ++gp) {
-						op.template operator()<3, Kernel::GP_LINE3>(gp);
+					for (int gp = 0; gp < NGP::LINE3; ++gp) {
+						op.template operator()<3, NGP::LINE3>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::TRIANGLE3):
 				for (esint i = info::mesh->boundaryRegions[region]->eintervals[op.interval].begin; i < info::mesh->boundaryRegions[region]->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_TRIANGLE3; ++gp) {
-						op.template operator()<3, Kernel::GP_TRIANGLE3>(gp);
+					for (int gp = 0; gp < NGP::TRIANGLE3; ++gp) {
+						op.template operator()<3, NGP::TRIANGLE3>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::TRIANGLE6):
 				for (esint i = info::mesh->boundaryRegions[region]->eintervals[op.interval].begin; i < info::mesh->boundaryRegions[region]->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_TRIANGLE6; ++gp) {
-						op.template operator()<6, Kernel::GP_TRIANGLE6>(gp);
+					for (int gp = 0; gp < NGP::TRIANGLE6; ++gp) {
+						op.template operator()<6, NGP::TRIANGLE6>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::SQUARE4):
 				for (esint i = info::mesh->boundaryRegions[region]->eintervals[op.interval].begin; i < info::mesh->boundaryRegions[region]->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_SQUARE4; ++gp) {
-						op.template operator()<4, Kernel::GP_SQUARE4>(gp);
+					for (int gp = 0; gp < NGP::SQUARE4; ++gp) {
+						op.template operator()<4, NGP::SQUARE4>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::SQUARE8):
 				for (esint i = info::mesh->boundaryRegions[region]->eintervals[op.interval].begin; i < info::mesh->boundaryRegions[region]->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_SQUARE8; ++gp) {
-						op.template operator()<8, Kernel::GP_SQUARE8>(gp);
+					for (int gp = 0; gp < NGP::SQUARE8; ++gp) {
+						op.template operator()<8, NGP::SQUARE8>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::TETRA4):
 				for (esint i = info::mesh->boundaryRegions[region]->eintervals[op.interval].begin; i < info::mesh->boundaryRegions[region]->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_TETRA4; ++gp) {
-						op.template operator()<4, Kernel::GP_TETRA4>(gp);
+					for (int gp = 0; gp < NGP::TETRA4; ++gp) {
+						op.template operator()<4, NGP::TETRA4>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::TETRA10):
 				for (esint i = info::mesh->boundaryRegions[region]->eintervals[op.interval].begin; i < info::mesh->boundaryRegions[region]->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_TETRA10; ++gp) {
-						op.template operator()<10, Kernel::GP_TETRA10>(gp);
+					for (int gp = 0; gp < NGP::TETRA10; ++gp) {
+						op.template operator()<10, NGP::TETRA10>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::PYRAMID5):
 				for (esint i = info::mesh->boundaryRegions[region]->eintervals[op.interval].begin; i < info::mesh->boundaryRegions[region]->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_PYRAMID5; ++gp) {
-						op.template operator()<5, Kernel::GP_PYRAMID5>(gp);
+					for (int gp = 0; gp < NGP::PYRAMID5; ++gp) {
+						op.template operator()<5, NGP::PYRAMID5>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::PYRAMID13):
 				for (esint i = info::mesh->boundaryRegions[region]->eintervals[op.interval].begin; i < info::mesh->boundaryRegions[region]->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_PYRAMID13; ++gp) {
-						op.template operator()<13, Kernel::GP_PYRAMID13>(gp);
+					for (int gp = 0; gp < NGP::PYRAMID13; ++gp) {
+						op.template operator()<13, NGP::PYRAMID13>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::PRISMA6):
 				for (esint i = info::mesh->boundaryRegions[region]->eintervals[op.interval].begin; i < info::mesh->boundaryRegions[region]->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_PRISMA6; ++gp) {
-						op.template operator()<6, Kernel::GP_PRISMA6>(gp);
+					for (int gp = 0; gp < NGP::PRISMA6; ++gp) {
+						op.template operator()<6, NGP::PRISMA6>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::PRISMA15):
 				for (esint i = info::mesh->boundaryRegions[region]->eintervals[op.interval].begin; i < info::mesh->boundaryRegions[region]->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_PRISMA15; ++gp) {
-						op.template operator()<15, Kernel::GP_PRISMA15>(gp);
+					for (int gp = 0; gp < NGP::PRISMA15; ++gp) {
+						op.template operator()<15, NGP::PRISMA15>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::HEXA8):
 				for (esint i = info::mesh->boundaryRegions[region]->eintervals[op.interval].begin; i < info::mesh->boundaryRegions[region]->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_HEXA8; ++gp) {
-						op.template operator()<8, Kernel::GP_HEXA8>(gp);
+					for (int gp = 0; gp < NGP::HEXA8; ++gp) {
+						op.template operator()<8, NGP::HEXA8>(gp);
 					}
 				}
 			break;
 			case static_cast<int>(Element::CODE::HEXA20):
 				for (esint i = info::mesh->boundaryRegions[region]->eintervals[op.interval].begin; i < info::mesh->boundaryRegions[region]->eintervals[op.interval].end; ++i, ++op) {
-					for (int gp = 0; gp < Kernel::GP_HEXA20; ++gp) {
-						op.template operator()<20, Kernel::GP_HEXA20>(gp);
+					for (int gp = 0; gp < NGP::HEXA20; ++gp) {
+						op.template operator()<20, NGP::HEXA20>(gp);
 					}
 				}
 			break;

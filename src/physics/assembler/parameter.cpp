@@ -80,6 +80,11 @@ void ParameterData::addInput(const NodeData* p)
 	setConstness(false);
 }
 
+void ParameterData::addInput(const ElementData* p)
+{
+	setConstness(false);
+}
+
 void ParameterData::addInput(int interval, const serializededata<esint, Point>* p)
 {
 	isconst[interval] = false;

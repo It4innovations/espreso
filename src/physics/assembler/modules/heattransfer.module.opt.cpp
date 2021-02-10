@@ -9,6 +9,9 @@
 #include "physics/assembler/operators/coordinates.h"
 #include "physics/assembler/operators/conductivity.h"
 #include "physics/assembler/operators/convection.h"
+#include "physics/assembler/operators/mass.h"
+#include "physics/assembler/operators/diffusionsplit.h"
+#include "physics/assembler/operators/advection.h"
 #include "physics/assembler/operators/integration.h"
 #include "physics/assembler/operators/stiffness.h"
 #include "physics/assembler/operators/rhs.h"
@@ -20,6 +23,8 @@
 
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.h"
+
+#include "basis/utilities/print.h"
 
 using namespace espreso;
 
@@ -116,8 +121,8 @@ void HeatTransferModuleOpt::initTemperature()
 	temp.initial.boundary.node.addInputs(ParametersTemperature::outputInitial);
 	CopyNodesToElementsNodes(*ParametersTemperature::outputInitial, temp.initial.node).now();
 	CopyNodesToBoundaryNodes(*ParametersTemperature::outputInitial, temp.initial.boundary.node).now();
-	ElementsGaussPointsBuilder<HeatTransferModuleOpt, 1>(integration.N, temp.initial.node, temp.initial.gp).buildAndExecute(*this);
-	BoundaryGaussPointsBuilder<HeatTransferModuleOpt, 1>(integration.boundary.N, temp.initial.boundary.node, temp.initial.boundary.gp).buildAndExecute(*this);
+	ElementsGaussPointsBuilder<1>(integration.N, temp.initial.node, temp.initial.gp).buildAndExecute(*this);
+	BoundaryGaussPointsBuilder<1>(integration.boundary.N, temp.initial.boundary.node, temp.initial.boundary.gp).buildAndExecute(*this);
 
 	ParametersTemperature::output->data = ParametersTemperature::outputInitial->data;
 	ParametersTemperature::output->version = ParametersTemperature::outputInitial->version;
@@ -126,9 +131,9 @@ void HeatTransferModuleOpt::initTemperature()
 	temp.boundary.node.addInputs(ParametersTemperature::output);
 	CopyElementParameters(temp.initial.node, temp.node).now();
 	builders.push_back(new CopyNodesToElementsNodes(*ParametersTemperature::output, temp.node));
-	builders.push_back(new ElementsGaussPointsBuilder<HeatTransferModuleOpt, 1>(integration.N, temp.node, temp.gp));
+	builders.push_back(new ElementsGaussPointsBuilder<1>(integration.N, temp.node, temp.gp));
 	builders.push_back(new CopyNodesToBoundaryNodes(*ParametersTemperature::output, temp.boundary.node));
-	builders.push_back(new BoundaryGaussPointsBuilder<HeatTransferModuleOpt, 1>(integration.boundary.N, temp.boundary.node, temp.boundary.gp));
+	builders.push_back(new BoundaryGaussPointsBuilder<1>(integration.boundary.N, temp.boundary.node, temp.boundary.gp));
 }
 
 HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, HeatTransferLoadStepConfiguration &configuration)
@@ -156,11 +161,11 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 	}
 
 	Basis().build(*this);
-	builders.push_back(new ElementCoordinates<HeatTransferModuleOpt>(*this));
-	builders.push_back(new BoundaryCoordinates<HeatTransferModuleOpt>(*this));
+	builders.push_back(new ElementCoordinates(*this));
+	builders.push_back(new BoundaryCoordinates(*this));
 
-	builders.push_back(new ElementIntegration<HeatTransferModuleOpt>(*this));
-	builders.push_back(new BoundaryIntegration<HeatTransferModuleOpt>(*this));
+	builders.push_back(new ElementIntegration(*this));
+	builders.push_back(new BoundaryIntegration(*this));
 
 	if (step::loadstep == 0) {
 		initTemperature(); // we need to init temperature first since other builder can read it
@@ -319,6 +324,8 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 		eslog::info(" ============================================================================================= \n");
 	}
 
+	builders.push_back(new MaterialMassBuilder(*this));
+
 	if (configuration.translation_motions.size()) {
 		builders.push_back(new ExpressionsToElements(translationMotions.gp, 1));
 		examineElementParameter("TRANSLATION MOTION.X", configuration.translation_motions, *translationMotions.gp.builder, 0);
@@ -326,6 +333,7 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 		if (info::mesh->dimension == 3) {
 			examineElementParameter("TRANSLATION MOTION.Z", configuration.translation_motions, *translationMotions.gp.builder, 2);
 		}
+		builders.push_back(new TranslationMotion(*this));
 	}
 
 	builders.push_back(new HeatStiffness(*this));
@@ -403,6 +411,9 @@ void HeatTransferModuleOpt::nextSubstep()
 	for (auto op = builders.begin(); op != builders.end(); ++op) {
 		(*op)->now();
 	}
+//
+//	std::cout << "mass: " << *material.mass.data << "\n";
+//	std::cout << "advK: " << *translationMotions.stiffness.data << "\n";
 }
 
 void HeatTransferModuleOpt::solutionChanged(Vectors *solution)

@@ -56,13 +56,12 @@ struct Coordinates3DToElementNodes: CoordinatesToElementNodes {
 	}
 };
 
-template <class Kernel>
 struct ElementCoordinates: public ElementOperatorBuilder {
 	GET_NAME(ElementCoordinates)
 
-	Kernel &kernel;
+	HeatTransferModuleOpt &kernel;
 
-	ElementCoordinates(Kernel &kernel): kernel(kernel)
+	ElementCoordinates(HeatTransferModuleOpt &kernel): kernel(kernel)
 	{
 
 	}
@@ -79,22 +78,21 @@ struct ElementCoordinates: public ElementOperatorBuilder {
 		auto procNodes = info::mesh->elements->procNodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
 		if (info::mesh->dimension == 2) {
 			iterate_elements(Coordinates2DToElementNodes(procNodes, kernel.coords.node, interval));
-			iterate_elements_gps<Kernel>(FromNodesToGaussPoints<2>(kernel.integration.N, kernel.coords.node, kernel.coords.gp, interval));
+			iterate_elements_gps<HeatTransferModuleOpt::NGP>(FromNodesToGaussPoints<2>(kernel.integration.N, kernel.coords.node, kernel.coords.gp, interval));
 		}
 		if (info::mesh->dimension == 3) {
 			iterate_elements(Coordinates3DToElementNodes(procNodes, kernel.coords.node, interval));
-			iterate_elements_gps<Kernel>(FromNodesToGaussPoints<3>(kernel.integration.N, kernel.coords.node, kernel.coords.gp, interval));
+			iterate_elements_gps<HeatTransferModuleOpt::NGP>(FromNodesToGaussPoints<3>(kernel.integration.N, kernel.coords.node, kernel.coords.gp, interval));
 		}
 	}
 };
 
-template <class Kernel>
 struct BoundaryCoordinates: public BoundaryOperatorBuilder {
 	GET_NAME(BoundaryCoordinates)
 
-	Kernel &kernel;
+	HeatTransferModuleOpt &kernel;
 
-	BoundaryCoordinates(Kernel &kernel): kernel(kernel)
+	BoundaryCoordinates(HeatTransferModuleOpt &kernel): kernel(kernel)
 	{
 
 	}
@@ -115,11 +113,11 @@ struct BoundaryCoordinates: public BoundaryOperatorBuilder {
 		auto procNodes = info::mesh->boundaryRegions[region]->procNodes->cbegin() + info::mesh->boundaryRegions[region]->eintervals[interval].begin;
 		if (info::mesh->dimension == 2) {
 			iterate_boundary(Coordinates2DToElementNodes(procNodes, kernel.coords.boundary.node.regions[region], interval), region);
-			iterate_boundary_gps<Kernel>(FromNodesToGaussPoints<2>(kernel.integration.boundary.N.regions[region], kernel.coords.boundary.node.regions[region], kernel.coords.boundary.gp.regions[region], interval), region);
+			iterate_boundary_gps<HeatTransferModuleOpt::NGP>(FromNodesToGaussPoints<2>(kernel.integration.boundary.N.regions[region], kernel.coords.boundary.node.regions[region], kernel.coords.boundary.gp.regions[region], interval), region);
 		}
 		if (info::mesh->dimension == 3) {
 			iterate_boundary(Coordinates3DToElementNodes(procNodes, kernel.coords.boundary.node.regions[region], interval), region);
-			iterate_boundary_gps<Kernel>(FromNodesToGaussPoints<3>(kernel.integration.boundary.N.regions[region], kernel.coords.boundary.node.regions[region], kernel.coords.boundary.gp.regions[region], interval), region);
+			iterate_boundary_gps<HeatTransferModuleOpt::NGP>(FromNodesToGaussPoints<3>(kernel.integration.boundary.N.regions[region], kernel.coords.boundary.node.regions[region], kernel.coords.boundary.gp.regions[region], interval), region);
 		}
 	}
 };

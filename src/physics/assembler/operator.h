@@ -26,6 +26,16 @@ struct Operator {
 			return *this;
 		}
 
+		template<class TNamedData>
+		Link& resultIn(TNamedData* &data)
+		{
+			if (version < data->version) {
+				version = data->version;
+			}
+			isset = true;
+			return *this;
+		}
+
 		template <class TParameter>
 		Link& inputs(const TParameter &data)
 		{
@@ -47,7 +57,7 @@ struct Operator {
 		}
 
 		template<class TNamedData>
-		Link& result(TNamedData* &data)
+		Link& resultOut(TNamedData* &data)
 		{
 			if (data->version < version) {
 				data->version = version;

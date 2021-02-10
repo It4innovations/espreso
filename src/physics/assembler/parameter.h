@@ -9,6 +9,7 @@ namespace espreso {
 
 class ECFExpression;
 class NodeData;
+class ElementData;
 struct ExpressionsToElements;
 struct ExpressionsToBoundary;
 
@@ -67,6 +68,7 @@ struct ParameterData {
 	void addInput(const serializededata<esint, Point>* p);
 	void addInput(const ECFExpression &exp, int interval);
 	void addInput(const NodeData* p);
+	void addInput(const ElementData* p);
 
 	void addInput(int interval, const serializededata<esint, Point>* p);
 
@@ -182,6 +184,8 @@ struct InputParameterIterator {
 	const double * __restrict data;
 
 	InputParameterIterator(const double * data, int increment): inc(increment), data(data) {}
+	InputParameterIterator(const ParameterData &info, esint interval)
+	: inc(info.isconst[interval] ? 0 : info.increment(info.size, interval)), data((info.data->begin() + interval)->data()) {}
 	InputParameterIterator(const ParameterData &info, esint interval, PerElementSize size)
 	: inc(info.isconst[interval] ? 0 : info.increment(size, interval)), data((info.data->begin() + interval)->data()) {}
 
@@ -194,6 +198,8 @@ struct OutputParameterIterator {
 	double * __restrict data;
 
 	OutputParameterIterator(double * data, int increment): inc(increment), data(data) {}
+	OutputParameterIterator(ParameterData &info, esint interval)
+	: inc(info.isconst[interval] ? 0 : info.increment(info.size, interval)), data((info.data->begin() + interval)->data()) { }
 	OutputParameterIterator(ParameterData &info, esint interval, PerElementSize size)
 	: inc(info.isconst[interval] ? 0 : info.increment(size, interval)), data((info.data->begin() + interval)->data()) { }
 

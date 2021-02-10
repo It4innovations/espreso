@@ -36,7 +36,7 @@ struct FromNodesToGaussPoints: public Operator {
 	}
 };
 
-template <class Kernel, int dimension>
+template <int dimension>
 struct ElementsGaussPointsBuilder: public ElementOperatorBuilder {
 	GET_NAME(ElementsGaussPointsBuilder)
 
@@ -56,11 +56,11 @@ struct ElementsGaussPointsBuilder: public ElementOperatorBuilder {
 
 	void apply(int interval)
 	{
-		iterate_elements_gps<Kernel>(FromNodesToGaussPoints<dimension>(N, nodeData, gpData, interval));
+		iterate_elements_gps<HeatTransferModuleOpt::NGP>(FromNodesToGaussPoints<dimension>(N, nodeData, gpData, interval));
 	}
 };
 
-template <class Kernel, int dimension>
+template <int dimension>
 struct BoundaryGaussPointsBuilder: public BoundaryOperatorBuilder {
 	GET_NAME(BoundaryGaussPointsBuilder)
 
@@ -84,7 +84,7 @@ struct BoundaryGaussPointsBuilder: public BoundaryOperatorBuilder {
 	void apply(int region, int interval)
 	{
 		if (nodeData.regions[region].isset) {
-			iterate_boundary_gps<Kernel>(FromNodesToGaussPoints<dimension>(N.regions[region], nodeData.regions[region], gpData.regions[region], interval), region);
+			iterate_boundary_gps<HeatTransferModuleOpt::NGP>(FromNodesToGaussPoints<dimension>(N.regions[region], nodeData.regions[region], gpData.regions[region], interval), region);
 		}
 	}
 };

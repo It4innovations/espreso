@@ -75,9 +75,9 @@ struct MatricesFiller: public ElementOperatorBuilder {
 	void apply(int interval)
 	{
 		if (kernel.translationMotions.gp.isset || kernel.material.model.anisotropic.isset) {
-			iterate_elements(KFullFiller(kernel.linearSystem.stiffness, K, perm, enodes, interval));
+			iterate_elements(KFullFiller(kernel.elements.stiffness, K, perm, enodes, interval));
 		} else {
-			iterate_elements(KSymmFiller(kernel.linearSystem.stiffness, K, perm, enodes, interval));
+			iterate_elements(KSymmFiller(kernel.elements.stiffness, K, perm, enodes, interval));
 		}
 	}
 };
@@ -127,7 +127,7 @@ struct RHSFiller: public BoundaryOperatorBuilder {
 
 	void apply(int region, int interval)
 	{
-		iterate_boundary(VectorFiller(kernel.linearSystem.boundary.rhs.regions[region], RHS, perm, enodes, interval), region);
+		iterate_boundary(VectorFiller(kernel.elements.boundary.rhs.regions[region], RHS, perm, enodes, interval), region);
 	}
 };
 
