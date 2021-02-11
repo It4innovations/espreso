@@ -120,23 +120,25 @@ void GridTowerGenerator::init(const GridTowerGeneratorConfiguration &configurati
 		if (grid->first + 1 == _gridIndex) {
 			_gridNodeOffset = noffset;
 		}
-		if (grid->first == _gridIndex) {
-			switch (configuration.direction) {
-			case GridTowerGeneratorConfiguration::DIRECTION::X:
-					_settings.end.x += lenght.x;
-					_settings.start.x += lenght.x;
-				break;
-			case GridTowerGeneratorConfiguration::DIRECTION::Y:
-					_settings.end.y += lenght.y;
-					_settings.start.y += lenght.y;;
-				break;
-			case GridTowerGeneratorConfiguration::DIRECTION::Z:
-					_settings.end.z += lenght.z;
-					_settings.start.z += lenght.z;
-				break;
+		if (configuration.composition == GridTowerGeneratorConfiguration::COMPOSITION::GLUED) {
+			if (grid->first == _gridIndex) {
+				switch (configuration.direction) {
+				case GridTowerGeneratorConfiguration::DIRECTION::X:
+						_settings.end.x += lenght.x;
+						_settings.start.x += lenght.x;
+					break;
+				case GridTowerGeneratorConfiguration::DIRECTION::Y:
+						_settings.end.y += lenght.y;
+						_settings.start.y += lenght.y;;
+					break;
+				case GridTowerGeneratorConfiguration::DIRECTION::Z:
+						_settings.end.z += lenght.z;
+						_settings.start.z += lenght.z;
+					break;
+				}
 			}
+			lenght += _settings.end - _settings.start;
 		}
-		lenght += _settings.end - _settings.start;
 	}
 
 	_settings.body = _gridIndex;

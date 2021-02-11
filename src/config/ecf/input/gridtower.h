@@ -14,7 +14,13 @@ struct GridTowerGeneratorConfiguration: public ECFDescription {
 		Z
 	};
 
+	enum class COMPOSITION {
+		GLUED,
+		FREE
+	};
+
 	DIRECTION direction;
+	COMPOSITION composition;
 
 	std::map<esint, GridGeneratorConfiguration> grids;
 
