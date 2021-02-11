@@ -252,24 +252,24 @@ void Move<InputExpressionOptionalVector, ElementNodeValues>::operator()()
 	if (from.ecf == NULL || moved) {
 		return;
 	}
-	if (from.ecf->all.isSet()) {
+	if (from.ecf->all.value.size()) {
 		for (int d = 0; d < to.dimension; ++d) {
 			from.ecf->all.evaluator->evalVector(
 					to.values->datatarray().size() / to.dimension, to.dimension, *from.params,
 					to.values->datatarray().data() + d);
 		}
 	} else {
-		if (from.ecf->x.isSet()) {
+		if (from.ecf->x.value.size()) {
 			from.ecf->x.evaluator->evalVector(
 					to.values->datatarray().size() / to.dimension, to.dimension, *from.params,
 					to.values->datatarray().data() + 0);
 		}
-		if (from.ecf->y.isSet()) {
+		if (from.ecf->y.value.size()) {
 			from.ecf->y.evaluator->evalVector(
 					to.values->datatarray().size() / to.dimension, to.dimension, *from.params,
 					to.values->datatarray().data() + 1);
 		}
-		if (to.dimension == 3 && from.ecf->z.isSet()) {
+		if (to.dimension == 3 && from.ecf->z.value.size()) {
 			from.ecf->z.evaluator->evalVector(
 					to.values->datatarray().size() / to.dimension, to.dimension, *from.params,
 					to.values->datatarray().data() + 2);
@@ -480,31 +480,31 @@ void Move<InputExpressionOptionalVectorMap, ElementNodeValues>::operator()()
 		for (auto it = from.ecf->begin(); it != from.ecf->end(); ++it) {
 			ElementsRegionStore *region = info::mesh->eregion(it->first);
 			if (to.isConst) {
-				if (it->second.all.isSet()) {
+				if (it->second.all.value.size()) {
 					for (int d = 0; d < to.dimension; ++d) {
 						it->second.all.evaluator->evalVector(
 								to.values->datatarray().size() / to.dimension, to.dimension, *from.params,
 								to.values->datatarray().data() + d);
 					}
 				} else {
-					if (it->second.x.isSet()) {
+					if (it->second.x.value.size()) {
 						it->second.x.evaluator->evalVector(
 								to.values->datatarray().size() / to.dimension, to.dimension, *from.params,
 								to.values->datatarray().data() + 0);
 					}
-					if (it->second.y.isSet()) {
+					if (it->second.y.value.size()) {
 						it->second.y.evaluator->evalVector(
 								to.values->datatarray().size() / to.dimension, to.dimension, *from.params,
 								to.values->datatarray().data() + 1);
 					}
-					if (to.dimension == 3 && it->second.z.isSet()) {
+					if (to.dimension == 3 && it->second.z.value.size()) {
 						it->second.z.evaluator->evalVector(
 								to.values->datatarray().size() / to.dimension, to.dimension, *from.params,
 								to.values->datatarray().data() + 2);
 					}
 				}
 			} else {
-				if (it->second.all.isSet()) {
+				if (it->second.all.value.size()) {
 					for (int d = 0; d < from.params->ncoords(); ++d) {
 						it->second.all.evaluator->evalFiltered(
 								region->elements->datatarray().size(t), from.params->ncoords(),
@@ -515,7 +515,7 @@ void Move<InputExpressionOptionalVectorMap, ElementNodeValues>::operator()()
 						);
 					}
 				} else {
-					if (it->second.x.isSet()) {
+					if (it->second.x.value.size()) {
 						it->second.x.evaluator->evalFiltered(
 								region->elements->datatarray().size(t), from.params->ncoords(),
 								region->elements->datatarray().begin(t),
@@ -524,7 +524,7 @@ void Move<InputExpressionOptionalVectorMap, ElementNodeValues>::operator()()
 								to.values->datatarray().data() + 0
 						);
 					}
-					if (it->second.y.isSet()) {
+					if (it->second.y.value.size()) {
 						it->second.y.evaluator->evalFiltered(
 								region->elements->datatarray().size(t), from.params->ncoords(),
 								region->elements->datatarray().begin(t),
@@ -533,7 +533,7 @@ void Move<InputExpressionOptionalVectorMap, ElementNodeValues>::operator()()
 								to.values->datatarray().data() + 1
 						);
 					}
-					if (from.params->ncoords() == 3 && it->second.z.isSet()) {
+					if (from.params->ncoords() == 3 && it->second.z.value.size()) {
 						it->second.z.evaluator->evalFiltered(
 								region->elements->datatarray().size(t), from.params->ncoords(),
 								region->elements->datatarray().begin(t),

@@ -65,7 +65,7 @@ bool ECFHarmonicExpressionVector::forall(const std::map<std::string, ECFHarmonic
 bool ECFExpressionOptionalVector::forall(const std::map<std::string, ECFExpressionOptionalVector> &parameter, std::function<bool(const ECFExpression &expr)> fnc)
 {
 	for (auto it = parameter.begin(); it != parameter.end(); ++it) {
-		if (it->second.all.isSet()) {
+		if (it->second.all.isset) {
 			if (!fnc(it->second.all)) {
 				return false;
 			}
@@ -79,13 +79,13 @@ bool ECFExpressionOptionalVector::forall(const std::map<std::string, ECFExpressi
 }
 
 ECFExpression::ECFExpression(const std::vector<std::string> &variables)
-: restriction(variables), evaluator(NULL)
+: restriction(variables), evaluator(NULL), isset(false)
 {
 	createEvaluator();
 }
 
 ECFExpression::ECFExpression(const std::vector<std::string> &variables, const std::string &initialValue)
-: value(initialValue), restriction(variables), evaluator(NULL)
+: value(initialValue), restriction(variables), evaluator(NULL), isset(false)
 {
 	createEvaluator();
 }
@@ -105,6 +105,7 @@ ECFExpression::ECFExpression(const ECFExpression &other)
 	if (other.evaluator != NULL) {
 		evaluator = other.evaluator->copy();
 	}
+	isset = other.isset;
 }
 
 ECFExpression& ECFExpression::operator=(const ECFExpression &other)
@@ -119,6 +120,7 @@ ECFExpression& ECFExpression::operator=(const ECFExpression &other)
 		if (other.evaluator != NULL) {
 			evaluator = other.evaluator->copy();
 		}
+		isset = other.isset;
 	}
 	return *this;
 }
@@ -131,6 +133,7 @@ void ECFExpression::createEvaluator()
 	}
 	if (value == "") {
 		evaluator = new Evaluator();
+		evaluator->isset = isset;
 		return;
 	}
 	if (StringCompare::contains(value, { "TABULAR" })) {
@@ -150,11 +153,13 @@ void ECFExpression::createEvaluator()
 			table.push_back(std::make_pair(std::stod(line[0]), std::stod(line[1])));
 		}
 		evaluator = new TableInterpolationEvaluator(table);
+		evaluator->isset = isset;
 		return;
 	}
 	if (Expression::isValid(value, {})) {
 		Expression expr(value, {});
 		evaluator = new ConstEvaluator(expr.evaluate());
+		evaluator->isset = isset;
 		return;
 	}
 	// postpone processing

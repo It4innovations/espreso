@@ -121,10 +121,10 @@ struct InputExpressionOptionalVector {
 	bool isConst() const
 	{
 		return
-				ecf->all.isSet() && ecf->all.evaluator->isConstant() &&
-				ecf->x.isSet() && ecf->x.evaluator->isConstant() &&
-				ecf->y.isSet() && ecf->y.evaluator->isConstant() &&
-				ecf->z.isSet() && ecf->z.evaluator->isConstant();
+				ecf->all.value.size() && ecf->all.evaluator->isConstant() &&
+				ecf->x.value.size() && ecf->x.evaluator->isConstant() &&
+				ecf->y.value.size() && ecf->y.evaluator->isConstant() &&
+				ecf->z.value.size() && ecf->z.evaluator->isConstant();
 	}
 };
 

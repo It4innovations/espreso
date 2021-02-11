@@ -15,13 +15,12 @@ struct BoundaryRegionStore;
 struct ElementsRegionStore;
 
 struct ECFExpression {
-	static std::vector<ECFExpression*> parametrized; // parametrizes expressions
+	static std::vector<ECFExpression*> parametrized; // parametrized expressions
 
 	std::string value;
 	std::vector<std::string> restriction, parameters;
 	Evaluator *evaluator;
-
-	bool isSet() const { return value.size(); }
+	bool isset;
 
 	ECFExpression(const std::vector<std::string> &variables);
 	ECFExpression(const std::vector<std::string> &variables, const std::string &initialValue);
