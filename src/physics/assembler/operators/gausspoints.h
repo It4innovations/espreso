@@ -10,13 +10,11 @@ namespace espreso {
 
 template<int dimension>
 struct FromNodesToGaussPoints: public Operator {
-	GET_NAME(FromNodesToGaussPoints)
-
 	FromNodesToGaussPoints(ParameterData &N, ParameterData &nodeData, ParameterData &gpData, int interval)
-	: Operator(interval, gpData.isconst[interval], Link(interval).inputs(N, nodeData).outputs(gpData)),
+	: Operator(interval, gpData.isconst[interval], gpData.update[interval]),
 	  N(N, interval, 0),
-	  n(nodeData, interval, dimension * enodes),
-	  gp(gpData, interval, dimension * egps)
+	  n(nodeData, interval),
+	  gp(gpData, interval)
 	{
 
 	}
@@ -38,19 +36,19 @@ struct FromNodesToGaussPoints: public Operator {
 
 template <int dimension>
 struct ElementsGaussPointsBuilder: public ElementOperatorBuilder {
-	GET_NAME(ElementsGaussPointsBuilder)
-
 	ParameterData &N, &nodeData, &gpData;
 
-	ElementsGaussPointsBuilder(ParameterData &N, ParameterData &nodeData, ParameterData &gpData)
-	: N(N), nodeData(nodeData), gpData(gpData)
+	ElementsGaussPointsBuilder(ParameterData &N, ParameterData &nodeData, ParameterData &gpData, const char *name)
+	: ElementOperatorBuilder(name), N(N), nodeData(nodeData), gpData(gpData)
 	{
 
 	}
 
 	bool build(HeatTransferModuleOpt &kernel) override
 	{
-		gpData.addInputs(nodeData);
+		gpData.addInput(nodeData);
+		gpData.resize();
+		kernel.addParameter(gpData);
 		return true;
 	}
 
@@ -62,12 +60,10 @@ struct ElementsGaussPointsBuilder: public ElementOperatorBuilder {
 
 template <int dimension>
 struct BoundaryGaussPointsBuilder: public BoundaryOperatorBuilder {
-	GET_NAME(BoundaryGaussPointsBuilder)
-
 	BoundaryParameterPack &N, &nodeData, &gpData;
 
-	BoundaryGaussPointsBuilder(BoundaryParameterPack &N, BoundaryParameterPack &nodeData, BoundaryParameterPack &gpData)
-	: N(N), nodeData(nodeData), gpData(gpData)
+	BoundaryGaussPointsBuilder(BoundaryParameterPack &N, BoundaryParameterPack &nodeData, BoundaryParameterPack &gpData, const char *name)
+	: BoundaryOperatorBuilder(name), N(N), nodeData(nodeData), gpData(gpData)
 	{
 
 	}
@@ -76,7 +72,9 @@ struct BoundaryGaussPointsBuilder: public BoundaryOperatorBuilder {
 	{
 		for (size_t r = 0; r < gpData.regions.size(); ++r) {
 			gpData.regions[r].isset = nodeData.regions[r].isset;
-			gpData.regions[r].addInputs(nodeData.regions[r]);
+			gpData.regions[r].addInput(nodeData.regions[r]);
+			gpData.regions[r].resize();
+			kernel.addParameter(gpData.regions[r]);
 		}
 		return true;
 	}

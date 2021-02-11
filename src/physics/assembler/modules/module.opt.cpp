@@ -8,7 +8,51 @@
 #include "mesh/store/elementsregionstore.h"
 #include "physics/assembler/operators/expression.h"
 
+#include <algorithm>
+
 using namespace espreso;
+
+void ModuleOpt::updateVersions()
+{
+	for (size_t p = 0; p < parameters.size(); ++p) {
+		for (size_t ii = 0; ii < parameters[p]->version.size(); ++ii) {
+			if (parameters[p]->version[ii] == -1) {
+				parameters[p]->version[ii] = 0;
+				parameters[p]->update[ii] = 1;
+			} else {
+				parameters[p]->update[ii] = 0;
+				for (size_t i = 0; i < parameters[p]->inputs.size(); ++i) {
+					if (parameters[p]->version[ii] < parameters[p]->inputs[i]->version(ii)) {
+						parameters[p]->version[ii] = parameters[p]->inputs[i]->version(ii);
+						parameters[p]->update[ii] = 1;
+					}
+				}
+			}
+		}
+	}
+
+	if (Operator::print) {
+		printVersions();
+	}
+}
+
+void ModuleOpt::printParamtereStats(const char* name, ParameterData &parameter)
+{
+	printf("parameter[update/version/isconst]:  ");
+	for (size_t i = 0; i < parameter.isconst.size(); ++i) {
+		if (parameter.version[i] == -1) {
+			printf(" [ / / ]");
+		} else {
+			printf(" [%c/%d/%c]", parameter.update[i] ? 'U' : ' ', parameter.version[i], parameter.isconst[i] ? 'C' : ' ');
+		}
+	}
+	printf(" %s\n", name);
+}
+
+void ModuleOpt::printParamtereStats(const char* name, NamedData *data)
+{
+	printf("nameddata[update/version/isconst]:   [-/%d/ ] %s\n", data->version, name);
+}
 
 void ModuleOpt::setMaterials(const std::map<std::string, std::string> &settings)
 {
@@ -57,7 +101,6 @@ void ModuleOpt::printMaterials(const std::map<std::string, std::string> &setting
 
 void ModuleOpt::examineMaterialParameter(const std::string &material, const std::string &name, const ECFExpression &settings, ExpressionsToElements &builder, int dimension)
 {
-	builder.ecfname = name;
 	if (settings.evaluator->variables.size()) {
 		std::string params = Parser::join(", ", settings.evaluator->variables);
 		eslog::info("   %18s:  %*s       FNC( %s )\n", name.c_str(), 55 - params.size(), "", params.c_str());
@@ -83,7 +126,6 @@ void ModuleOpt::examineElementParameter(const std::string &name, const std::map<
 
 void ModuleOpt::examineBoundaryParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExpressionsToBoundary &builder)
 {
-	builder.ecfname = name;
 	if (settings.size()) {
 		eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
 
@@ -120,7 +162,6 @@ void ModuleOpt::examineBoundaryParameter(const std::string &name, const std::map
 				};
 
 				auto addParam = [&] (ParametersConvection::ExternalParameter &param, const Evaluator *evaluator, const std::string &name) {
-					param.gp.builder->ecfname = name;
 					param.gp.builder->insert(rindex, 0, evaluator);
 					if (evaluator->variables.size()) {
 						std::string params = Parser::join(", ", evaluator->variables);

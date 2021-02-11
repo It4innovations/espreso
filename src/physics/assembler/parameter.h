@@ -4,6 +4,7 @@
 
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
+#include "mesh/store/nameddata.h"
 
 namespace espreso {
 
@@ -42,31 +43,41 @@ struct ParameterSettings {
 };
 
 struct ParameterData {
+	struct InputHolder {
+		virtual int version(int interval) const = 0;
+		virtual ~InputHolder() {}
+	};
+
+	struct InputHolderParameterData: public InputHolder {
+		const ParameterData &p;
+
+		int version(int interval) const { return p.version[interval]; }
+		InputHolderParameterData(const ParameterData &p): p(p) {}
+	};
+
+	template <typename TEBoundaries, typename TEData>
+	struct InputHolderSerializedEData: public InputHolder {
+		const serializededata<TEBoundaries, TEData>* p;
+
+		int version(int interval) const { return 0; } // do we need versioned edata?
+		InputHolderSerializedEData(const serializededata<TEBoundaries, TEData>* p): p(p) {}
+	};
+
+	struct InputHolderNamedData: public InputHolder {
+		const NamedData* p;
+
+		int version(int interval) const { return p->version; }
+		InputHolderNamedData(const NamedData* p): p(p) {}
+	};
+
 	PerElementSize size;
 	serializededata<esint, double>* data;
 
 	ParameterData(PerElementSize mask, int intervals);
 
-	template <class Parameter, class ... Other>
-	typename std::enable_if<sizeof...(Other)>::type
-	addInputs(const Parameter &p, const Other& ... other)
-	{
-		addInput(p);
-		addInputs(other...);
-	}
-
-	template <class Parameter, class ... Other>
-	typename std::enable_if<!sizeof...(Other)>::type
-	addInputs(const Parameter &p, const Other& ... other)
-	{
-		addInput(p);
-		resize();
-	}
-
 	void addInput(const ParameterData &p);
 	void addInput(const serializededata<esint, esint>* p);
 	void addInput(const serializededata<esint, Point>* p);
-	void addInput(const ECFExpression &exp, int interval);
 	void addInput(const NodeData* p);
 	void addInput(const ElementData* p);
 
@@ -76,12 +87,11 @@ struct ParameterData {
 
 	virtual int increment(int interval) const =0;
 	virtual int increment(PerElementSize size, int interval) const =0;
-	virtual void resize() =0;
-	virtual ~ParameterData() {}
+	virtual void resize(double init = .0) =0;
+	virtual ~ParameterData();
 
-	bool isset;
-	std::vector<bool> isconst;
-	std::vector<int> version;
+	std::vector<int> isconst, update, version;
+	std::vector<InputHolder*> inputs;
 };
 
 struct ElementParameterData: public ParameterData {
@@ -90,7 +100,7 @@ struct ElementParameterData: public ParameterData {
 	static int intervals();
 	int increment(int interval) const;
 	int increment(PerElementSize size, int interval) const;
-	void resize();
+	void resize(double init = .0);
 };
 
 template<int mask>
@@ -101,8 +111,9 @@ struct ElementParameter: public ElementParameterData {
 template<int mask>
 struct ElementExternalParameter: public ElementParameter<mask> {
 	ExpressionsToElements *builder;
+	std::vector<int> isset;
 
-	ElementExternalParameter(): builder(NULL) { }
+	ElementExternalParameter(): builder(NULL), isset(ElementParameterData::intervals(), 0) { }
 };
 
 struct BoundaryParameterData: public ParameterData {
@@ -112,9 +123,10 @@ struct BoundaryParameterData: public ParameterData {
 	static int intervals(int region);
 	int increment(int interval) const;
 	int increment(PerElementSize size, int interval) const;
-	void resize();
+	void resize(double init = .0);
 
 	int region;
+	int isset;
 };
 
 struct BoundaryParameterPack {
@@ -130,11 +142,10 @@ struct BoundaryParameterPack {
 		}
 	}
 
-	template <class ... Parameters>
-	void addInputs(const Parameters& ...p)
+	void resize()
 	{
 		for (size_t r = 0; r < regions.size(); ++r) {
-			regions[r].addInputs(p...);
+			regions[r].resize();
 		}
 	}
 

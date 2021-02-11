@@ -6,14 +6,23 @@
 #include "esinfo/meshinfo.h"
 #include "math/matrix.dense.h"
 #include "mesh/store/elementstore.h"
+#include "mesh/store/nodestore.h"
 #include "mesh/store/boundaryregionstore.h"
 
 using namespace espreso;
 
-ParameterData::ParameterData(PerElementSize mask, int intervals): size(mask), data(NULL), isset(false)
+ParameterData::ParameterData(PerElementSize mask, int intervals): size(mask), data(NULL)
 {
-	isconst.resize(intervals, true);
-	version.resize(intervals, 0);
+	isconst.resize(intervals, 1);
+	update.resize(intervals, 1);
+	version.resize(intervals, -1);
+}
+
+ParameterData::~ParameterData()
+{
+	for (size_t i = 0; i < inputs.size(); ++i) {
+		delete inputs[i];
+	}
 }
 
 ElementParameterData::ElementParameterData(PerElementSize mask)
@@ -28,7 +37,7 @@ int ElementParameterData::intervals()
 }
 
 BoundaryParameterData::BoundaryParameterData(int region, PerElementSize mask)
-: ParameterData(mask, intervals(region)), region(region)
+: ParameterData(mask, intervals(region)), region(region), isset(false)
 {
 
 }
@@ -52,13 +61,9 @@ BoundaryParameterPack::BoundaryParameterPack(PerElementSize mask)
 	}
 }
 
-void ParameterData::addInput(const ECFExpression &exp, int interval)
-{
-
-}
-
 void ParameterData::addInput(const ParameterData &p)
 {
+	inputs.push_back(new InputHolderParameterData(p));
 	for (size_t i = 0; i < isconst.size(); ++i) {
 		isconst[i] = isconst[i] && p.isconst[i];
 	}
@@ -67,26 +72,31 @@ void ParameterData::addInput(const ParameterData &p)
 // currently we assume that serialized data are never updated
 void ParameterData::addInput(const serializededata<esint, esint>* p)
 {
+	inputs.push_back(new InputHolderSerializedEData<esint, esint>(p));
 	setConstness(false);
 }
 
 void ParameterData::addInput(const serializededata<esint, Point>* p)
 {
+	inputs.push_back(new InputHolderSerializedEData<esint, Point>(p));
 	setConstness(false);
 }
 
 void ParameterData::addInput(const NodeData* p)
 {
+	inputs.push_back(new InputHolderNamedData(p));
 	setConstness(false);
 }
 
 void ParameterData::addInput(const ElementData* p)
 {
+	inputs.push_back(new InputHolderNamedData(p));
 	setConstness(false);
 }
 
 void ParameterData::addInput(int interval, const serializededata<esint, Point>* p)
 {
+	inputs.push_back(new InputHolderSerializedEData<esint, Point>(p));
 	isconst[interval] = false;
 }
 
@@ -95,7 +105,7 @@ void ParameterData::setConstness(bool constness)
 	std::fill(isconst.begin(), isconst.end(), constness);
 }
 
-void ElementParameterData::resize()
+void ElementParameterData::resize(double init)
 {
 	std::vector<std::vector<esint> > distribution(info::env::threads);
 
@@ -127,8 +137,7 @@ void ElementParameterData::resize()
 	if (data) {
 		delete data;
 	}
-	data = new serializededata<esint, double>(distribution, tarray<double>(datadistribution, 1));
-	isset = true;
+	data = new serializededata<esint, double>(distribution, tarray<double>(datadistribution, 1, init));
 }
 
 int ElementParameterData::increment(int interval) const
@@ -151,22 +160,22 @@ int ElementParameterData::increment(PerElementSize size, int interval) const
 			std::pow(info::mesh->edata[info::mesh->elements->eintervals[interval].code].N->size(), size.gp);
 }
 
-void BoundaryParameterData::resize()
+void BoundaryParameterData::resize(double init)
 {
 	if (data) {
 		delete data;
 	}
 	if (region == 0) {
 		// ALL_NODES are kept empty (is it possible to have boundary condition on all nodes?)
-		data = new serializededata<esint, double>({ 0, 0 }, tarray<double>(0, 0));
+		data = new serializededata<esint, double>({ 0, 0 }, tarray<double>(0, 0, init));
 		return;
 	}
 	if (info::mesh->boundaryRegions[region]->dimension == 0) {
 		esint dimension = size.n * std::pow(info::mesh->dimension, size.ndimension);
 		if (isconst[0]) {
-			data = new serializededata<esint, double>(dimension, tarray<double>(1, dimension));
+			data = new serializededata<esint, double>(dimension, tarray<double>(1, dimension, init));
 		} else {
-			data = new serializededata<esint, double>(dimension, tarray<double>(info::mesh->boundaryRegions[region]->nodes->datatarray().distribution(), dimension));
+			data = new serializededata<esint, double>(dimension, tarray<double>(info::mesh->boundaryRegions[region]->nodes->datatarray().distribution(), dimension, init));
 		}
 		return;
 	}
@@ -197,7 +206,7 @@ void BoundaryParameterData::resize()
 	}
 	datadistribution.push_back(sum);
 
-	data = new serializededata<esint, double>(distribution, tarray<double>(datadistribution, 1));
+	data = new serializededata<esint, double>(distribution, tarray<double>(datadistribution, 1, init));
 }
 
 int BoundaryParameterData::increment(int interval) const

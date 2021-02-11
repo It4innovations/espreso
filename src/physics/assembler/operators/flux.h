@@ -10,10 +10,10 @@ namespace espreso {
 
 struct OutputFlux: public Operator {
 	OutputFlux(ParameterData &dND, ParameterData &temperature, ParameterData &conductivity, ElementData *flux, int interval)
-	: Operator(interval, false, Link(interval).inputs(dND, temperature).resultOut(flux)),
-	  dND(dND, interval, edim * enodes * egps),
-	  temp(temperature, interval, enodes),
-	  conductivity(conductivity, interval, conductivity.size),
+	: Operator(interval, false, true),
+	  dND(dND, interval),
+	  temp(temperature, interval),
+	  conductivity(conductivity, interval),
 	  flux(flux->data.data() + info::mesh->dimension * info::mesh->elements->eintervals[interval].begin, info::mesh->dimension)
 	{
 		if (update) {
@@ -32,7 +32,6 @@ struct OutputFlux: public Operator {
 };
 
 struct OutputFluxIsotropic2D: public OutputFlux {
-	GET_NAME(OutputFluxIsotropic2D)
 	using OutputFlux::OutputFlux;
 
 	template<int nodes, int gps>
@@ -43,7 +42,6 @@ struct OutputFluxIsotropic2D: public OutputFlux {
 };
 
 struct OutputFluxIsotropic3D: public OutputFlux {
-	GET_NAME(OutputFluxIsotropic3D)
 	using OutputFlux::OutputFlux;
 
 	template<int nodes, int gps>
@@ -54,7 +52,6 @@ struct OutputFluxIsotropic3D: public OutputFlux {
 };
 
 struct OutputFlux2D: public OutputFlux {
-	GET_NAME(OutputFlux2D)
 	using OutputFlux::OutputFlux;
 
 	template<int nodes, int gps>
@@ -65,7 +62,6 @@ struct OutputFlux2D: public OutputFlux {
 };
 
 struct OutputFlux3D: public OutputFlux {
-	GET_NAME(OutputFlux3D)
 	using OutputFlux::OutputFlux;
 
 	template<int nodes, int gps>
@@ -76,11 +72,9 @@ struct OutputFlux3D: public OutputFlux {
 };
 
 struct Flux: public ElementOperatorBuilder {
-	GET_NAME(Gradient)
-
 	HeatTransferModuleOpt &kernel;
 
-	Flux(HeatTransferModuleOpt &kernel): kernel(kernel)
+	Flux(HeatTransferModuleOpt &kernel): ElementOperatorBuilder("ELEMENTS FLUX"), kernel(kernel)
 	{
 
 	}

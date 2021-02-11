@@ -13,16 +13,14 @@
 namespace espreso {
 
 struct ThermalConductivity: public ElementOperatorBuilder {
-	GET_NAME(ThermalConductivity)
 
 	struct CopyConductivity: public Operator {
-		GET_NAME(CopyConductivity)
 		CopyConductivity(
 				const ParameterData &input,
 				ParameterData &output,
 				int interval)
-		: Operator(interval, output.isconst[interval], Link(interval).inputs(input).outputs(output)),
-		  input(input, interval, input.increment(interval)),
+		: Operator(interval, output.isconst[interval], output.update[interval]),
+		  input(input, interval),
 		  output(output, interval)
 		{
 
@@ -39,7 +37,6 @@ struct ThermalConductivity: public ElementOperatorBuilder {
 	};
 
 	struct CopyDiagonal2DConductivity: public CopyConductivity {
-		GET_NAME(CopyDiagonal2DConductivity)
 		using CopyConductivity::CopyConductivity;
 
 		template<int nodes, int gps>
@@ -53,7 +50,6 @@ struct ThermalConductivity: public ElementOperatorBuilder {
 	};
 
 	struct CopyDiagonal3DConductivity: public CopyConductivity {
-		GET_NAME(CopyDiagonal3DConductivity)
 		using CopyConductivity::CopyConductivity;
 
 		template<int nodes, int gps>
@@ -68,7 +64,6 @@ struct ThermalConductivity: public ElementOperatorBuilder {
 	};
 
 	struct CopySymmetric2DConductivity: public CopyConductivity {
-		GET_NAME(CopySymmetric2DConductivity)
 		using CopyConductivity::CopyConductivity;
 
 		template<int nodes, int gps>
@@ -82,7 +77,6 @@ struct ThermalConductivity: public ElementOperatorBuilder {
 	};
 
 	struct CopySymmetric3DConductivity: public CopyConductivity {
-		GET_NAME(CopySymmetric3DConductivity)
 		using CopyConductivity::CopyConductivity;
 
 		template<int nodes, int gps>
@@ -97,7 +91,6 @@ struct ThermalConductivity: public ElementOperatorBuilder {
 	};
 
 	struct CopyAnisotropic2DConductivity: public CopyConductivity {
-		GET_NAME(CopyAnisotropic2DConductivity)
 		using CopyConductivity::CopyConductivity;
 
 		template<int nodes, int gps>
@@ -112,7 +105,6 @@ struct ThermalConductivity: public ElementOperatorBuilder {
 
 
 	struct CopyAnisotropic3DConductivity: public CopyConductivity {
-		GET_NAME(CopyAnisotropic3DConductivity)
 		using CopyConductivity::CopyConductivity;
 
 		template<int nodes, int gps>
@@ -128,7 +120,7 @@ struct ThermalConductivity: public ElementOperatorBuilder {
 
 	HeatTransferModuleOpt &kernel;
 
-	ThermalConductivity(HeatTransferModuleOpt &kernel): kernel(kernel)
+	ThermalConductivity(HeatTransferModuleOpt &kernel): ElementOperatorBuilder("THERMAL CONDUCTIVITY MATRIX"), kernel(kernel)
 	{
 
 	}
@@ -161,6 +153,9 @@ struct ThermalConductivity: public ElementOperatorBuilder {
 
 		kernel.material.conductivityIsotropic.resize();
 		kernel.material.conductivity.resize();
+
+		kernel.addParameter(kernel.material.conductivityIsotropic);
+		kernel.addParameter(kernel.material.conductivity);
 		return true;
 	}
 
@@ -169,7 +164,7 @@ struct ThermalConductivity: public ElementOperatorBuilder {
 		const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
 		if (info::mesh->dimension == 2) {
 			switch (mat->thermal_conductivity.model) {
-			case ThermalConductivityConfiguration::MODEL::ISOTROPIC: CopyElementParameters(kernel.material.model.isotropic, kernel.material.conductivityIsotropic).apply(interval); break;
+			case ThermalConductivityConfiguration::MODEL::ISOTROPIC: CopyElementParameters(kernel.material.model.isotropic, kernel.material.conductivityIsotropic, "COPY ISOTROPIC CONDUCTIVITY").apply(interval); return;
 			case ThermalConductivityConfiguration::MODEL::DIAGONAL: iterate_elements_gps<HeatTransferModuleOpt::NGP>(CopyDiagonal2DConductivity(kernel.material.model.diagonal, kernel.material.conductivity, interval)); break;
 			case ThermalConductivityConfiguration::MODEL::SYMMETRIC: iterate_elements_gps<HeatTransferModuleOpt::NGP>(CopySymmetric2DConductivity(kernel.material.model.symmetric2D, kernel.material.conductivity, interval)); break;
 			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC: iterate_elements_gps<HeatTransferModuleOpt::NGP>(CopyAnisotropic2DConductivity(kernel.material.model.anisotropic, kernel.material.conductivity, interval)); break;
@@ -185,7 +180,7 @@ struct ThermalConductivity: public ElementOperatorBuilder {
 		}
 		if (info::mesh->dimension == 3) {
 			switch (mat->thermal_conductivity.model) {
-			case ThermalConductivityConfiguration::MODEL::ISOTROPIC: CopyElementParameters(kernel.material.model.isotropic, kernel.material.conductivityIsotropic).apply(interval); break;
+			case ThermalConductivityConfiguration::MODEL::ISOTROPIC: CopyElementParameters(kernel.material.model.isotropic, kernel.material.conductivityIsotropic, "COPY ISOTROPIC CONDUCTIVITY").apply(interval); return;
 			case ThermalConductivityConfiguration::MODEL::DIAGONAL: iterate_elements_gps<HeatTransferModuleOpt::NGP>(CopyDiagonal3DConductivity(kernel.material.model.diagonal, kernel.material.conductivity, interval)); break;
 			case ThermalConductivityConfiguration::MODEL::SYMMETRIC: iterate_elements_gps<HeatTransferModuleOpt::NGP>(CopySymmetric3DConductivity(kernel.material.model.symmetric3D, kernel.material.conductivity, interval)); break;
 			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC: iterate_elements_gps<HeatTransferModuleOpt::NGP>(CopyAnisotropic3DConductivity(kernel.material.model.anisotropic, kernel.material.conductivity, interval)); break;

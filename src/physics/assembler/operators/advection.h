@@ -18,15 +18,15 @@ struct Advection: public Operator {
 			ParameterData &conductivity,
 			ParameterData &stiffness,
 			int interval)
-	: Operator(interval, tranlationMotion.isconst[interval], Link(interval).inputs(tranlationMotion, mass, dND).outputs(stiffness).self(conductivity)),
+	: Operator(interval, stiffness.isconst[interval], stiffness.update[interval]),
 	  sigma(sigma),
-	  translationMotion(tranlationMotion, interval, egps),
-	  mass(mass, interval, egps),
-	  dND(dND, interval, dND.size),
+	  translationMotion(tranlationMotion, interval),
+	  mass(mass, interval),
+	  dND(dND, interval),
 	  weight(weight, interval, 0),
-	  determinant(determinant, interval, egps),
-	  conductivity(conductivity, interval, conductivity.size),
-	  stiffness(stiffness, interval, enodes * enodes)
+	  determinant(determinant, interval),
+	  conductivity(conductivity, interval),
+	  stiffness(stiffness, interval)
 	{
 
 	}
@@ -43,7 +43,6 @@ struct Advection: public Operator {
 };
 
 struct Advection2DIsotropic: public Advection {
-	GET_NAME(Advection2DIsotropic)
 	using Advection::Advection;
 
 	template<int nodes, int gps>
@@ -74,7 +73,6 @@ struct Advection2DIsotropic: public Advection {
 };
 
 struct Advection3DIsotropic: public Advection {
-	GET_NAME(Advection3DIsotropic)
 	using Advection::Advection;
 
 	template<int nodes, int gps>
@@ -85,18 +83,19 @@ struct Advection3DIsotropic: public Advection {
 };
 
 struct TranslationMotion: public ElementOperatorBuilder {
-	GET_NAME(Gradient)
-
 	HeatTransferModuleOpt &kernel;
 
-	TranslationMotion(HeatTransferModuleOpt &kernel): kernel(kernel)
+	TranslationMotion(HeatTransferModuleOpt &kernel): ElementOperatorBuilder("TRANSLATION MOTION"), kernel(kernel)
 	{
 
 	}
 
 	bool build(HeatTransferModuleOpt &kernel) override
 	{
-		kernel.translationMotions.stiffness.addInputs(kernel.material.mass, kernel.translationMotions.gp);
+		kernel.translationMotions.stiffness.addInput(kernel.material.mass);
+		kernel.translationMotions.stiffness.addInput(kernel.translationMotions.gp);
+		kernel.translationMotions.stiffness.resize();
+		kernel.addParameter(kernel.translationMotions.stiffness);
 		return true;
 	}
 

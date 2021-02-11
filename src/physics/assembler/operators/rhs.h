@@ -77,14 +77,12 @@ namespace espreso {
 //};
 
 struct HeatQ: public Operator {
-	GET_NAME(HeatQ)
-
 	HeatQ(double area, const ParameterData &heatFlow, const ParameterData &heatFlux, const ParameterData &htc, const ParameterData &extTemp, ParameterData &q, int interval)
-	: Operator(interval, q.isconst[interval], Link(interval).inputs(heatFlow, heatFlux, htc, extTemp).outputs(q)),
-	  area(area), heatFlow(heatFlow, interval, egps),
-	  heatFlux(heatFlux, interval, egps),
-	  htc(htc, interval, egps), extTemp(extTemp, interval, egps),
-	  q(q, interval, egps)
+	: Operator(interval, q.isconst[interval], q.update[interval]),
+	  area(area), heatFlow(heatFlow, interval),
+	  heatFlux(heatFlux, interval),
+	  htc(htc, interval), extTemp(extTemp, interval),
+	  q(q, interval)
 	{
 		if (update) {
 			std::fill((q.data->begin() + interval)->data(), (q.data->begin() + interval + 1)->data(), 0);
@@ -112,16 +110,14 @@ struct HeatQ: public Operator {
 };
 
 struct HeatRHS2D: public Operator {
-	GET_NAME(HeatRHS2D)
-
 	HeatRHS2D(const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &thickness, const ParameterData &q, ParameterData &rhs, int interval)
-	: Operator(interval, rhs.isconst[interval], Link(interval).inputs(thickness, J, q).outputs(rhs)),
-	  N(N, interval, enodes * egps),
-	  weight(weight, interval, egps),
-	  J(J, interval, egps),
-	  thickness(thickness, interval, egps),
-	  q(q, interval, egps),
-	  rhs(rhs, interval, enodes)
+	: Operator(interval, rhs.isconst[interval], rhs.update[interval]),
+	  N(N, interval),
+	  weight(weight, interval),
+	  J(J, interval),
+	  thickness(thickness, interval),
+	  q(q, interval),
+	  rhs(rhs, interval)
 	{ }
 
 	InputParameterIterator N, weight, J;
@@ -145,15 +141,13 @@ struct HeatRHS2D: public Operator {
 };
 
 struct HeatRHS3D: public Operator {
-	GET_NAME(HeatRHS3D)
-
 	HeatRHS3D(const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &q, ParameterData &rhs, int interval)
-	: Operator(interval, rhs.isconst[interval], Link(interval).inputs(J, q).outputs(rhs)),
-	  N(N, interval, enodes * egps),
-	  weight(weight, interval, egps),
-	  J(J, interval, egps),
-	  q(q, interval, egps),
-	  rhs(rhs, interval, enodes)
+	: Operator(interval, rhs.isconst[interval], rhs.update[interval]),
+	  N(N, interval),
+	  weight(weight, interval),
+	  J(J, interval),
+	  q(q, interval),
+	  rhs(rhs, interval)
 	{
 		if (update) {
 			std::fill((rhs.data->begin() + interval)->data(), (rhs.data->begin() + interval + 1)->data(), 0);
@@ -181,11 +175,9 @@ struct HeatRHS3D: public Operator {
 };
 
 struct HeatRHS: public BoundaryOperatorBuilder {
-	GET_NAME(HeatRHS)
-
 	HeatTransferModuleOpt &kernel;
 
-	HeatRHS(HeatTransferModuleOpt &kernel): kernel(kernel)
+	HeatRHS(HeatTransferModuleOpt &kernel): BoundaryOperatorBuilder("HEAT TRANSFER RHS"), kernel(kernel)
 	{
 
 	}
@@ -196,22 +188,34 @@ struct HeatRHS: public BoundaryOperatorBuilder {
 			if (info::mesh->boundaryRegions[r]->dimension) {
 				if (kernel.heatFlow.gp.regions[r].data == NULL) {
 					kernel.heatFlow.gp.regions[r].resize();
+					kernel.addParameter(kernel.heatFlow.gp.regions[r]);
 				}
 				if (kernel.heatFlux.gp.regions[r].data == NULL) {
 					kernel.heatFlux.gp.regions[r].resize();
+					kernel.addParameter(kernel.heatFlux.gp.regions[r]);
 				}
 				if (kernel.convection.heatTransferCoeficient.gp.regions[r].data == NULL) {
 					kernel.convection.heatTransferCoeficient.gp.regions[r].resize();
 					kernel.convection.externalTemperature.gp.regions[r].resize();
+					kernel.addParameter(kernel.convection.externalTemperature.gp.regions[r]);
 				}
 
 				if (info::mesh->dimension == 2) {
 					kernel.elements.boundary.rhs.regions[r].addInput(kernel.thickness.boundary.gp.regions[r]);
 				}
-				kernel.q.gp.regions[r].addInputs(kernel.heatFlow.gp.regions[r], kernel.heatFlux.gp.regions[r], kernel.convection.heatTransferCoeficient.gp.regions[r], kernel.convection.externalTemperature.gp.regions[r]);
-				kernel.elements.boundary.rhs.regions[r].addInputs(kernel.q.gp.regions[r], kernel.integration.boundary.jacobian.regions[r], kernel.integration.boundary.weight.regions[r]);
-			}
+				kernel.q.gp.regions[r].addInput(kernel.heatFlow.gp.regions[r]);
+				kernel.q.gp.regions[r].addInput(kernel.heatFlux.gp.regions[r]);
+				kernel.q.gp.regions[r].addInput(kernel.convection.heatTransferCoeficient.gp.regions[r]);
+				kernel.q.gp.regions[r].addInput(kernel.convection.externalTemperature.gp.regions[r]);
+				kernel.q.gp.regions[r].resize();
+				kernel.addParameter(kernel.q.gp.regions[r]);
 
+				kernel.elements.boundary.rhs.regions[r].addInput(kernel.q.gp.regions[r]);
+				kernel.elements.boundary.rhs.regions[r].addInput(kernel.integration.boundary.jacobian.regions[r]);
+				kernel.elements.boundary.rhs.regions[r].addInput(kernel.integration.boundary.weight.regions[r]);
+				kernel.elements.boundary.rhs.regions[r].resize();
+				kernel.addParameter(kernel.elements.boundary.rhs.regions[r]);
+			}
 		}
 		return true;
 	}

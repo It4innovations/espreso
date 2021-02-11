@@ -16,13 +16,15 @@ struct ElementJacobian: public Operator {
 			ParameterData &det,
 			ParameterData &dND,
 			int interval)
-	: Operator(interval, false, Link(interval).inputs(coordinates, dN).outputs(inversion, det, dND)),
-	  coords(coordinates, interval, ndim * enodes),
+	: Operator(interval, false, inversion.update[interval] || det.update[interval] || dND.update[interval]),
+	  coords(coordinates, interval),
 	  dN(dN, interval, 0),
-	  inv(inversion, interval, ndim * ndim * egps),
-	  det(det, interval, egps),
-	  dND(dND, interval, edim * enodes * egps)
-	{ }
+	  inv(inversion, interval),
+	  det(det, interval),
+	  dND(dND, interval)
+	{
+
+	}
 
 	InputParameterIterator coords, dN;
 	OutputParameterIterator inv, det, dND;
@@ -35,7 +37,6 @@ struct ElementJacobian: public Operator {
 };
 
 struct ElementJacobian2D: public ElementJacobian {
-	GET_NAME(ElementJacobian2D)
 	using ElementJacobian::ElementJacobian;
 
 	template<int nodes, int gps>
@@ -62,7 +63,6 @@ struct ElementJacobian2D: public ElementJacobian {
 };
 
 struct ElementJacobian3D: public ElementJacobian {
-	GET_NAME(ElementJacobian3D)
 	using ElementJacobian::ElementJacobian;
 
 	template<int nodes, int gps>
@@ -105,20 +105,29 @@ struct ElementJacobian3D: public ElementJacobian {
 };
 
 struct ElementIntegration: public ElementOperatorBuilder {
-	GET_NAME(ElementIntegration)
-
 	HeatTransferModuleOpt &kernel;
 
-	ElementIntegration(HeatTransferModuleOpt &kernel): kernel(kernel)
+	ElementIntegration(HeatTransferModuleOpt &kernel): ElementOperatorBuilder("ELEMENTS INTEGRATION"), kernel(kernel)
 	{
 
 	}
 
 	bool build(HeatTransferModuleOpt &kernel) override
 	{
-		kernel.integration.jacobiInversion.addInputs(kernel.coords.node, kernel.integration.dN);
-		kernel.integration.jacobiDeterminant.addInputs(kernel.coords.node, kernel.integration.dN);
-		kernel.integration.dND.addInputs(kernel.coords.node, kernel.integration.dN);
+		kernel.integration.jacobiInversion.addInput(kernel.coords.node);
+		kernel.integration.jacobiInversion.addInput(kernel.integration.dN);
+		kernel.integration.jacobiInversion.resize();
+		kernel.addParameter(kernel.integration.jacobiInversion);
+
+		kernel.integration.jacobiDeterminant.addInput(kernel.coords.node);
+		kernel.integration.jacobiDeterminant.addInput(kernel.integration.dN);
+		kernel.integration.jacobiDeterminant.resize();
+		kernel.addParameter(kernel.integration.jacobiDeterminant);
+
+		kernel.integration.dND.addInput(kernel.coords.node);
+		kernel.integration.dND.addInput(kernel.integration.dN);
+		kernel.integration.dND.resize();
+		kernel.addParameter(kernel.integration.dND);
 		return true;
 	}
 
@@ -139,10 +148,10 @@ struct BoundaryJacobian: public Operator {
 			const ParameterData &dN,
 			ParameterData &jacobian,
 			int interval)
-	: Operator(interval, jacobian.isconst[interval], Link(interval).inputs(coordinates, dN).outputs(jacobian)),
-	  coords(coordinates, interval, ndim * enodes),
+	: Operator(interval, jacobian.isconst[interval], jacobian.update[interval]),
+	  coords(coordinates, interval),
 	  dN(dN, interval, 0),
-	  jacobian(jacobian, interval, egps)
+	  jacobian(jacobian, interval)
 	{ }
 
 	InputParameterIterator coords, dN;
@@ -156,7 +165,6 @@ struct BoundaryJacobian: public Operator {
 };
 
 struct BoundaryFaceJacobian: public BoundaryJacobian {
-	GET_NAME(BoundaryFaceJacobian)
 	using BoundaryJacobian::BoundaryJacobian;
 
 	template<int nodes, int gps>
@@ -172,7 +180,6 @@ struct BoundaryFaceJacobian: public BoundaryJacobian {
 };
 
 struct BoundaryEdge3DJacobian: public BoundaryJacobian {
-	GET_NAME(BoundaryEdge3DJacobian)
 	using BoundaryJacobian::BoundaryJacobian;
 
 	template<int nodes, int gps>
@@ -185,7 +192,6 @@ struct BoundaryEdge3DJacobian: public BoundaryJacobian {
 };
 
 struct BoundaryEdge2DJacobian: public BoundaryJacobian {
-	GET_NAME(BoundaryEdge2DJacobian)
 	using BoundaryJacobian::BoundaryJacobian;
 
 	template<int nodes, int gps>
@@ -198,11 +204,9 @@ struct BoundaryEdge2DJacobian: public BoundaryJacobian {
 };
 
 struct BoundaryIntegration: public BoundaryOperatorBuilder {
-	GET_NAME(BoundaryIntegration)
-
 	HeatTransferModuleOpt &kernel;
 
-	BoundaryIntegration(HeatTransferModuleOpt &kernel): kernel(kernel)
+	BoundaryIntegration(HeatTransferModuleOpt &kernel): BoundaryOperatorBuilder("BOUNDARY INTERGRATION"), kernel(kernel)
 	{
 
 	}
@@ -210,8 +214,11 @@ struct BoundaryIntegration: public BoundaryOperatorBuilder {
 	bool build(HeatTransferModuleOpt &kernel) override
 	{
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-			kernel.integration.boundary.jacobian.regions[r].addInputs(kernel.coords.boundary.node.regions[r], kernel.integration.boundary.dN.regions[r]);
+			kernel.integration.boundary.jacobian.regions[r].addInput(kernel.coords.boundary.node.regions[r]);
+			kernel.integration.boundary.jacobian.regions[r].addInput(kernel.integration.boundary.dN.regions[r]);
 			kernel.integration.boundary.jacobian.regions[r].isset = true;
+			kernel.integration.boundary.jacobian.regions[r].resize();
+			kernel.addParameter(kernel.integration.boundary.jacobian.regions[r]);
 		}
 		return true;
 	}

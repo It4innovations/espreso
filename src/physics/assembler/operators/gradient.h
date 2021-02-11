@@ -10,9 +10,9 @@ namespace espreso {
 
 struct OutputGradient: public Operator {
 	OutputGradient(ParameterData &dND, ParameterData &temperature, ElementData *gradient, int interval)
-	: Operator(interval, false, Link(interval).inputs(dND, temperature).resultOut(gradient)),
-	  dND(dND, interval, edim * enodes * egps),
-	  temp(temperature, interval, enodes),
+	: Operator(interval, false, true),
+	  dND(dND, interval),
+	  temp(temperature, interval),
 	  gradient(gradient->data.data() + info::mesh->dimension * info::mesh->elements->eintervals[interval].begin, info::mesh->dimension)
 	{
 		if (update) {
@@ -31,7 +31,6 @@ struct OutputGradient: public Operator {
 };
 
 struct HeatGradient2D: public OutputGradient {
-	GET_NAME(HeatGradient2D)
 	using OutputGradient::OutputGradient;
 
 	template<int nodes, int gps>
@@ -42,7 +41,6 @@ struct HeatGradient2D: public OutputGradient {
 };
 
 struct HeatGradient3D: public OutputGradient {
-	GET_NAME(HeatGradient3D)
 	using OutputGradient::OutputGradient;
 
 	template<int nodes, int gps>
@@ -53,11 +51,9 @@ struct HeatGradient3D: public OutputGradient {
 };
 
 struct Gradient: public ElementOperatorBuilder {
-	GET_NAME(Gradient)
-
 	HeatTransferModuleOpt &kernel;
 
-	Gradient(HeatTransferModuleOpt &kernel): kernel(kernel)
+	Gradient(HeatTransferModuleOpt &kernel): ElementOperatorBuilder("ELEMENTS GRADIENT"), kernel(kernel)
 	{
 
 	}

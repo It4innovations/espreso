@@ -34,7 +34,6 @@ void ModuleOpt::validateRegionSettings(const std::string &name, const std::map<s
 template<class TSecond>
 void ModuleOpt::examineElementParameter(const std::string &name, const std::map<std::string, TSecond> &settings, ExpressionsToElements &builder, int dimension, std::function<const Evaluator*(const TSecond &expr)> getevaluator)
 {
-	builder.ecfname = name;
 	if (settings.size() == 1 && StringCompare::caseInsensitiveEq(settings.begin()->first, "ALL_ELEMENTS")) {
 		const Evaluator *evaluator = getevaluator(settings.begin()->second);
 		for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {

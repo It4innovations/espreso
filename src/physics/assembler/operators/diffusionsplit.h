@@ -11,12 +11,12 @@ namespace espreso {
 
 struct DiffusionSplitBase: public Operator {
 	DiffusionSplitBase(ElementData *gradient, ParameterData &dND, ParameterData &conductivity, ParameterData &mass, ParameterData &xi, int interval)
-	: Operator(interval, false, Link(interval).resultIn(gradient).inputs(dND, conductivity, mass).outputs(xi)),
+	: Operator(interval, false, xi.update[interval]),
 	  gradient(gradient->data.data() + info::mesh->dimension * info::mesh->elements->eintervals[interval].begin, info::mesh->dimension),
-	  dND(dND, interval, edim * enodes * egps),
-	  conductivity(conductivity, interval, conductivity.size), // we touch only the first element in both isotropic and non-isotropic cases
-	  mass(mass, interval, egps),
-	  xi(xi, interval, egps)
+	  dND(dND, interval),
+	  conductivity(conductivity, interval), // we touch only the first element in both isotropic and non-isotropic cases
+	  mass(mass, interval),
+	  xi(xi, interval)
 	{
 
 	}
@@ -33,7 +33,26 @@ struct DiffusionSplitBase: public Operator {
 };
 
 struct DiffusionSplit2D: public DiffusionSplitBase {
-	GET_NAME(DiffusionSplit2D)
+	using DiffusionSplitBase::DiffusionSplitBase;
+
+	template<int nodes, int gps>
+	void operator()(int gpindex)
+	{
+		double g[nodes];
+		M12M2N<nodes>(gradient.data, dND.data + 2 * gpindex * nodes, g);
+
+		double grad = std::sqrt(gradient[0] * gradient[0] + gradient[1] * gradient[1]);
+		double norm = 0;
+		for (int n = 0; n < nodes; ++n) {
+			norm += g[n] * g[n];
+		}
+		double H = 2 * std::sqrt(gradient[0] * gradient[0] + gradient[1] * gradient[1]) / norm;
+		double T = (C1 * H * H) / (conductivity[0] * C2 + H * H * (mass[0] / step::time::shift));
+		xi[0] = std::max(1., 1 / (1 - T * mass[0] / step::time::shift));
+	}
+};
+
+struct DiffusionSplit3D: public DiffusionSplitBase {
 	using DiffusionSplitBase::DiffusionSplitBase;
 
 	template<int nodes, int gps>
@@ -54,18 +73,21 @@ struct DiffusionSplit2D: public DiffusionSplitBase {
 };
 
 struct DiffusionSplit: public ElementOperatorBuilder {
-	GET_NAME(DiffusionSplit)
-
 	HeatTransferModuleOpt &kernel;
 
-	DiffusionSplit(HeatTransferModuleOpt &kernel): kernel(kernel)
+	DiffusionSplit(HeatTransferModuleOpt &kernel): ElementOperatorBuilder("DIFFUSION SPLIT"), kernel(kernel)
 	{
 
 	}
 
 	bool build(HeatTransferModuleOpt &kernel) override
 	{
-		kernel.gradient.xi.addInputs(kernel.gradient.output, kernel.integration.dND, kernel.material.conductivity, kernel.material.mass);
+		kernel.gradient.xi.addInput(kernel.gradient.output);
+		kernel.gradient.xi.addInput(kernel.integration.dND);
+		kernel.gradient.xi.addInput(kernel.material.conductivity);
+		kernel.gradient.xi.addInput(kernel.material.mass);
+		kernel.gradient.xi.resize();
+		kernel.addParameter(kernel.gradient.xi);
 		return true;
 	}
 

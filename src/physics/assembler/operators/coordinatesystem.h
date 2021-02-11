@@ -13,11 +13,12 @@ struct CoordinateSystem: public Operator {
 			const ParameterData &coordinates,
 			const ParameterData &rotation,
 			ParameterData &matrix,
-			int interval)
-	: Operator(interval, matrix.isconst[interval], Link(interval).inputs(coordinates).self(matrix)),
-	  coordinates(coordinates, interval, ndim * egps),
-	  rotation(rotation, interval, rotation.increment(interval)),
-	  matrix(matrix, interval, ndim * ndim * egps)
+			int interval,
+			int update = 1)
+	: Operator(interval, matrix.isconst[interval], update && matrix.update[interval]),
+	  coordinates(coordinates, interval),
+	  rotation(rotation, interval),
+	  matrix(matrix, interval)
 	{
 
 	}
@@ -33,13 +34,11 @@ struct CoordinateSystem: public Operator {
 };
 
 struct Cartesian2DCoordinateSystem: CoordinateSystem {
-	GET_NAME(Cartesian2DCoordinateSystem)
-
 	Cartesian2DCoordinateSystem(
 			const ParameterData &coordinates,
-			const ParameterData &rotation,
+			const ElementExternalParameter<egps> &rotation,
 			ParameterData &matrix,
-			int interval): CoordinateSystem(coordinates, rotation, matrix, interval), fixedRotation(rotation.isconst[interval])
+			int interval): CoordinateSystem(coordinates, rotation, matrix, interval, rotation.isset[interval]), fixedRotation(rotation.isconst[interval])
 	{
 		angle();
 	}
@@ -64,8 +63,6 @@ struct Cartesian2DCoordinateSystem: CoordinateSystem {
 };
 
 struct Cylindrical2DCoordinateSystem: CoordinateSystem {
-	GET_NAME(Cylindrical2DCoordinateSystem)
-
 	using CoordinateSystem::CoordinateSystem;
 
 	template<int nodes, int gps>
@@ -79,13 +76,11 @@ struct Cylindrical2DCoordinateSystem: CoordinateSystem {
 };
 
 struct Cartesian3DCoordinateSystem: CoordinateSystem {
-	GET_NAME(Cartesian3DCoordinateSystem)
-
 	Cartesian3DCoordinateSystem(
 			const ParameterData &coordinates,
-			const ParameterData &rotation,
+			const ElementExternalParameter<ndim * egps> &rotation,
 			ParameterData &matrix,
-			int interval): CoordinateSystem(coordinates, rotation, matrix, interval), fixedRotation(rotation.isconst[interval])
+			int interval): CoordinateSystem(coordinates, rotation, matrix, interval, rotation.isset[interval]), fixedRotation(rotation.isconst[interval])
 	{
 		angle();
 	}
@@ -114,7 +109,6 @@ struct Cartesian3DCoordinateSystem: CoordinateSystem {
 };
 
 struct Cylindrical3DCoordinateSystem: CoordinateSystem {
-	GET_NAME(Cylindrical3DCoordinateSystem)
 	using CoordinateSystem::CoordinateSystem;
 
 	template<int nodes, int gps>
@@ -128,7 +122,6 @@ struct Cylindrical3DCoordinateSystem: CoordinateSystem {
 };
 
 struct Spherical3DCoordinateSystem: CoordinateSystem {
-	GET_NAME(Spherical3DCoordinateSystem)
 	using CoordinateSystem::CoordinateSystem;
 
 	template<int nodes, int gps>

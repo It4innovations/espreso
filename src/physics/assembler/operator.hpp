@@ -13,7 +13,6 @@ static inline void iterate_elements_gps(Operator op)
 {
 	if (op.update) {
 		if (op.isconst) {
-			if (Operator::print) printf("\tOP::ELEMENT::%d::GP::CONSTANT::%s\n", op.interval, op.name());
 			switch (info::mesh->elements->eintervals[op.interval].code) {
 			case static_cast<int>(Element::CODE::LINE2):
 				for (int gp = 0; gp < NGP::LINE2; ++gp) {
@@ -88,7 +87,6 @@ static inline void iterate_elements_gps(Operator op)
 			default: break;
 			}
 		} else {
-			if (Operator::print) printf("\tOP::ELEMENT::%d::GP::%s\n", op.interval, op.name());
 			switch (info::mesh->elements->eintervals[op.interval].code) {
 			case static_cast<int>(Element::CODE::LINE2):
 				for (esint i = info::mesh->elements->eintervals[op.interval].begin; i < info::mesh->elements->eintervals[op.interval].end; ++i, ++op) {
@@ -191,8 +189,6 @@ static inline void iterate_elements_gps(Operator op)
 			default: break;
 			}
 		}
-	} else {
-		if (Operator::print > 2) printf("\tOP::ELEMENT::%d::GP::SKIPPED::%s\n", op.interval, op.name());
 	}
 }
 
@@ -201,16 +197,12 @@ static inline void iterate_elements(Operator op)
 {
 	if (op.update) {
 		if (op.isconst) {
-			if (Operator::print) printf("\tOP::ELEMENT::%d::CONSTANT::%s\n", op.interval, op.name());
 			op();
 		} else {
-			if (Operator::print) printf("\tOP::ELEMENT::%d::%s\n", op.interval, op.name());
 			for (esint i = info::mesh->elements->eintervals[op.interval].begin; i < info::mesh->elements->eintervals[op.interval].end; ++i, ++op) {
 				op();
 			}
 		}
-	} else {
-		if (Operator::print > 2) printf("\tOP::ELEMENT::%d::SKIPPED::%s\n", op.interval, op.name());
 	}
 }
 
@@ -219,7 +211,6 @@ static inline void iterate_boundary_gps(Operator op, int region)
 {
 	if (op.update) {
 		if (op.isconst) {
-			if (Operator::print) printf("\tOP::BOUNDARY::%d::%d::GP::CONSTANT::%s\n", region, op.interval, op.name());
 			switch (info::mesh->boundaryRegions[region]->eintervals[op.interval].code) {
 			case static_cast<int>(Element::CODE::LINE2):
 				for (int gp = 0; gp < NGP::LINE2; ++gp) {
@@ -294,7 +285,6 @@ static inline void iterate_boundary_gps(Operator op, int region)
 			default: break;
 			}
 		} else {
-			if (Operator::print) printf("\tOP::BOUNDARY::%d::%d::GP::%s\n", region, op.interval, op.name());
 			switch (info::mesh->boundaryRegions[region]->eintervals[op.interval].code) {
 			case static_cast<int>(Element::CODE::LINE2):
 				for (esint i = info::mesh->boundaryRegions[region]->eintervals[op.interval].begin; i < info::mesh->boundaryRegions[region]->eintervals[op.interval].end; ++i, ++op) {
@@ -397,8 +387,6 @@ static inline void iterate_boundary_gps(Operator op, int region)
 			default: break;
 			}
 		}
-	} else {
-		if (Operator::print > 2) printf("\tOP::BOUNDARY::%d::%d::GP::SKIPPED::%s\n", region, op.interval, op.name());
 	}
 }
 
@@ -407,16 +395,12 @@ static inline void iterate_boundary(Operator op, int region)
 {
 	if (op.update) {
 		if (op.isconst) {
-			if (Operator::print) printf("\tOP::BOUNDARY::%d::%d::CONSTANT::%s\n", region, op.interval, op.name());
 			op();
 		} else {
-			if (Operator::print) printf("\tOP::BOUNDARY::%d::%d::%s\n", region, op.interval, op.name());
 			for (esint i = info::mesh->boundaryRegions[region]->eintervals[op.interval].begin; i < info::mesh->boundaryRegions[region]->eintervals[op.interval].end; ++i, ++op) {
 				op();
 			}
 		}
-	} else {
-		if (Operator::print > 2) printf("\tOP::BOUNDARY::%d::%d::SKIPPED::%s\n", region, op.interval, op.name());
 	}
 }
 

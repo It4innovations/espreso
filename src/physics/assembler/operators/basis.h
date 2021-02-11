@@ -11,7 +11,7 @@
 namespace espreso {
 
 struct Basis: public ElementOperatorBuilder {
-	GET_NAME(Basis)
+	Basis(): ElementOperatorBuilder("BASIC FUNCTIONS") {}
 
 	bool build(HeatTransferModuleOpt &kernel) override;
 

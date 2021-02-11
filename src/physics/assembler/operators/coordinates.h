@@ -13,7 +13,7 @@ namespace espreso {
 
 struct CoordinatesToElementNodes: public Operator {
 	CoordinatesToElementNodes(serializededata<esint, esint>::const_iterator procNodes, ParameterData &ncoordinates, int interval)
-	: Operator(interval, ncoordinates.isconst[interval], Link(interval).inputs(1).outputs(ncoordinates)),
+	: Operator(interval, ncoordinates.isconst[interval], ncoordinates.update[interval]),
 	  procNodes(procNodes),
 	  ncoordinates(ncoordinates, interval, ndim)
 	{
@@ -30,7 +30,6 @@ struct CoordinatesToElementNodes: public Operator {
 };
 
 struct Coordinates2DToElementNodes: CoordinatesToElementNodes {
-	GET_NAME(Coordinates2DToElementNodes)
 	using CoordinatesToElementNodes::CoordinatesToElementNodes;
 
 	void operator()()
@@ -43,7 +42,6 @@ struct Coordinates2DToElementNodes: CoordinatesToElementNodes {
 };
 
 struct Coordinates3DToElementNodes: CoordinatesToElementNodes {
-	GET_NAME(Coordinates3DToElementNodes)
 	using CoordinatesToElementNodes::CoordinatesToElementNodes;
 
 	void operator()()
@@ -57,19 +55,22 @@ struct Coordinates3DToElementNodes: CoordinatesToElementNodes {
 };
 
 struct ElementCoordinates: public ElementOperatorBuilder {
-	GET_NAME(ElementCoordinates)
-
 	HeatTransferModuleOpt &kernel;
 
-	ElementCoordinates(HeatTransferModuleOpt &kernel): kernel(kernel)
+	ElementCoordinates(HeatTransferModuleOpt &kernel): ElementOperatorBuilder("ELEMENTS COORDINATES"), kernel(kernel)
 	{
 
 	}
 
 	bool build(HeatTransferModuleOpt &kernel) override
 	{
-		kernel.coords.node.addInputs(info::mesh->nodes->coordinates);
-		kernel.coords.gp.addInputs(kernel.coords.node);
+		kernel.coords.node.addInput(info::mesh->nodes->coordinates);
+		kernel.coords.gp.addInput(kernel.coords.node);
+		kernel.coords.node.resize();
+		kernel.coords.gp.resize();
+
+		kernel.addParameter(kernel.coords.node);
+		kernel.addParameter(kernel.coords.gp);
 		return true;
 	}
 
@@ -88,11 +89,9 @@ struct ElementCoordinates: public ElementOperatorBuilder {
 };
 
 struct BoundaryCoordinates: public BoundaryOperatorBuilder {
-	GET_NAME(BoundaryCoordinates)
-
 	HeatTransferModuleOpt &kernel;
 
-	BoundaryCoordinates(HeatTransferModuleOpt &kernel): kernel(kernel)
+	BoundaryCoordinates(HeatTransferModuleOpt &kernel): BoundaryOperatorBuilder("BOUNDARY COORDINATES"), kernel(kernel)
 	{
 
 	}
@@ -100,10 +99,15 @@ struct BoundaryCoordinates: public BoundaryOperatorBuilder {
 	bool build(HeatTransferModuleOpt &kernel) override
 	{
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-			kernel.coords.boundary.node.regions[r].addInputs(info::mesh->nodes->coordinates);
-			kernel.coords.boundary.gp.regions[r].addInputs(kernel.coords.boundary.node.regions[r]);
+			kernel.coords.boundary.node.regions[r].addInput(info::mesh->nodes->coordinates);
+			kernel.coords.boundary.gp.regions[r].addInput(kernel.coords.boundary.node.regions[r]);
 			kernel.coords.boundary.node.regions[r].isset = true;
 			kernel.coords.boundary.gp.regions[r].isset = true;
+			kernel.coords.boundary.node.regions[r].resize();
+			kernel.coords.boundary.gp.regions[r].resize();
+
+			kernel.addParameter(kernel.coords.boundary.node.regions[r]);
+			kernel.addParameter(kernel.coords.boundary.gp.regions[r]);
 		}
 		return true;
 	}

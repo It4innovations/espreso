@@ -130,6 +130,7 @@ public:
 
 	Params params;
 	std::vector<std::string> variables;
+	bool isset;
 };
 
 }

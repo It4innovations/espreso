@@ -36,11 +36,22 @@ public:
 	virtual void updateStiffness(double *K, esint *perm, int region, int interval) =0;
 	virtual void updateRHS(double *RHS, esint *perm, int region, int interval) =0;
 
+	void addParameter(ParameterData &parameter)
+	{
+		parameters.push_back(&parameter);
+	}
 protected:
-	ModuleOpt(SolverDataProvider *provider): solverDataProvider(provider)
+
+	ModuleOpt(SolverDataProvider *provider): solverDataProvider(provider), version(0)
 	{
 		BaseFunctions::setBaseFunctions();
 	}
+
+	void updateVersions();
+	virtual void printVersions() =0;
+
+	void printParamtereStats(const char* name, ParameterData &parameter);
+	void printParamtereStats(const char* name, NamedData *data);
 
 	void setMaterials(const std::map<std::string, std::string> &settings);
 	void printMaterials(const std::map<std::string, std::string> &settings);
@@ -58,6 +69,8 @@ protected:
 	void examineBoundaryParameter(const std::string &name, const std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection);
 
 	std::vector<OperatorBuilder*> builders, results;
+	std::vector<ParameterData*> parameters;
+	int version;
 };
 
 }

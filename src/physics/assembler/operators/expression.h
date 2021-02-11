@@ -18,7 +18,6 @@ struct ExpressionsToParameter {
 
 	int dimension;
 	double defaultValue;
-	std::vector<int> update;
 	std::vector<const Evaluator*> evaluators;
 	std::vector<Evaluator::Params> params;
 
@@ -26,7 +25,6 @@ struct ExpressionsToParameter {
 	ExpressionsToParameter(ElementExternalParameter<mask> &parameter, double defaultValue)
 	: dimension(parameter.size.n * std::pow(info::mesh->dimension, parameter.size.ndimension)),
 	  defaultValue(defaultValue),
-	  update(parameter.isconst.size()),
 	  evaluators(dimension * parameter.isconst.size(), NULL),
 	  params(dimension * parameter.isconst.size())
 	{
@@ -36,7 +34,6 @@ struct ExpressionsToParameter {
 	ExpressionsToParameter(BoundaryParameterData &parameter)
 	: dimension(parameter.size.n * std::pow(info::mesh->dimension, parameter.size.ndimension)),
 	  defaultValue(0), // dummy since boundary condition is always presented or there is no boundary condition
-	  update(parameter.isconst.size()),
 	  evaluators(dimension * parameter.isconst.size(), NULL),
 	  params(dimension * parameter.isconst.size())
 	{
@@ -45,15 +42,15 @@ struct ExpressionsToParameter {
 };
 
 struct ExpressionsToElements: public ExpressionsToParameter, public ElementOperatorBuilder {
-	std::string ecfname;
-	const char* name() { return ecfname.c_str(); }
-
 	ParameterData &parameter;
+	std::vector<int> &isset;
 
 	template<int mask>
-	ExpressionsToElements(ElementExternalParameter<mask> &parameter, double defaultValue)
+	ExpressionsToElements(ElementExternalParameter<mask> &parameter, double defaultValue, const char* name)
 	: ExpressionsToParameter(parameter, defaultValue),
-	  parameter(parameter)
+	  ElementOperatorBuilder(name),
+	  parameter(parameter),
+	  isset(parameter.isset)
 	{
 		parameter.builder = this;
 	}
@@ -63,15 +60,12 @@ struct ExpressionsToElements: public ExpressionsToParameter, public ElementOpera
 };
 
 struct ExpressionsToBoundary: public BoundaryOperatorBuilder {
-	std::string ecfname;
-	const char* name() { return ecfname.c_str(); }
-
 	BoundaryParameterPack &parameter;
 	std::vector<ExpressionsToParameter> expressions;
 
 	template<int mask>
-	ExpressionsToBoundary(BoundaryExternalParameter<mask> &parameter)
-	: parameter(parameter)
+	ExpressionsToBoundary(BoundaryExternalParameter<mask> &parameter, const char *name)
+	: BoundaryOperatorBuilder(name), parameter(parameter)
 	{
 		expressions.reserve(info::mesh->boundaryRegions.size());
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
@@ -97,10 +91,9 @@ struct ExpressionsToBoundary: public BoundaryOperatorBuilder {
 
 struct ExpressionsToBoundaryFromElement: public ExpressionsToBoundary {
 	template<int mask>
-	ExpressionsToBoundaryFromElement(const ExpressionsToParameter &source, BoundaryExternalParameter<mask> &parameter, const std::string &ecfname="")
-	: ExpressionsToBoundary(parameter)
+	ExpressionsToBoundaryFromElement(const ExpressionsToParameter &source, BoundaryExternalParameter<mask> &parameter, const char *name)
+	: ExpressionsToBoundary(parameter, name)
 	{
-		this->ecfname = "FROM ELEMENTS::" + ecfname;
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 			if (info::mesh->boundaryRegions[r]->dimension) {
 				this->parameter.regions[r].isset = true;

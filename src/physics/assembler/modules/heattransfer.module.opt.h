@@ -75,6 +75,7 @@ public:
 
 protected:
 	void initTemperature();
+	void printVersions();
 };
 
 }

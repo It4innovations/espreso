@@ -14,81 +14,78 @@ struct Stiffness: public Operator {
 			const ParameterData &weight,
 			const ParameterData &determinant,
 			const ParameterData &conductivity,
+			const ParameterData &xi,
 			const ParameterData &thickness,
 			ParameterData &stiffness,
 			int interval)
-	: Operator(interval, stiffness.isconst[interval], Link(interval).inputs(dND, weight, determinant, conductivity, thickness).outputs(stiffness)),
-	  dND(dND, interval, dND.size),
+	: Operator(interval, stiffness.isconst[interval], stiffness.update[interval]),
+	  dND(dND, interval),
 	  weight(weight, interval, 0),
-	  determinant(determinant, interval, egps),
-	  conductivity(conductivity, interval, conductivity.size),
-	  thickness(thickness, interval, 1),
-	  stiffness(stiffness, interval, stiffness.size)
+	  determinant(determinant, interval),
+	  conductivity(conductivity, interval),
+	  xi(xi, interval),
+	  thickness(thickness, interval),
+	  stiffness(stiffness, interval)
 	{
 		if (update) {
 			std::fill((stiffness.data->begin() + interval)->data(), (stiffness.data->begin() + interval + 1)->data(), 0);
 		}
 	}
 
-	InputParameterIterator dND, weight, determinant, conductivity, thickness;
+	InputParameterIterator dND, weight, determinant, conductivity, xi, thickness;
 	OutputParameterIterator stiffness;
 
 	void operator++()
 	{
-		++dND; ++determinant; ++conductivity; ++thickness;
+		++dND; ++determinant; ++conductivity; ++xi; ++thickness;
 		++stiffness;
 	}
 };
 
 struct Stiffness2DHeatIsotropic: public Stiffness {
-	GET_NAME(Stiffness2DHeatIsotropic)
 	using Stiffness::Stiffness;
 
 	template<int nodes, int gps>
 	void operator()(int gpindex)
 	{
-		ADDMN2M2N<nodes>(thickness[gpindex] * determinant[gpindex] * weight[gpindex] * conductivity[gpindex], dND.data + 2 * nodes * gpindex, stiffness.data);
+		ADDMN2M2N<nodes>(thickness[gpindex] * xi[gpindex] * determinant[gpindex] * weight[gpindex] * conductivity[gpindex], dND.data + 2 * nodes * gpindex, stiffness.data);
 	}
 };
 
 struct Stiffness2DHeat: public Stiffness {
-	GET_NAME(Stiffness2DHeat)
 	using Stiffness::Stiffness;
 
 	template<int nodes, int gps>
 	void operator()(int gpindex)
 	{
-		ADDMN2M22M2N<nodes>(thickness[gpindex] * determinant[gpindex] * weight[gpindex], conductivity.data + 4 * gpindex, dND.data + 2 * nodes * gpindex, stiffness.data);
+		ADDMN2M22M2N<nodes>(thickness[gpindex] * xi[gpindex] * determinant[gpindex] * weight[gpindex], conductivity.data + 4 * gpindex, dND.data + 2 * nodes * gpindex, stiffness.data);
 	}
 };
 
 struct Stiffness3DHeatIsotropic: public Stiffness {
-	GET_NAME(Stiffness3DHeatIsotropic)
 	using Stiffness::Stiffness;
 
 	template<int nodes, int gps>
 	void operator()(int gpindex)
 	{
-		ADDMN3M3N<nodes>(determinant[gpindex] * weight[gpindex] * conductivity[gpindex], dND.data + 3 * nodes * gpindex, stiffness.data);
+		ADDMN3M3N<nodes>(xi[gpindex] * determinant[gpindex] * weight[gpindex] * conductivity[gpindex], dND.data + 3 * nodes * gpindex, stiffness.data);
 	}
 };
 
 struct Stiffness3DHeat: public Stiffness {
-	GET_NAME(Stiffness3DHeat)
 	using Stiffness::Stiffness;
 
 	template<int nodes, int gps>
 	void operator()(int gpindex)
 	{
-		KMN3M33M3N<nodes>(determinant[gpindex] * weight[gpindex], conductivity.data + 9 * gpindex, dND.data + 3 * nodes * gpindex, stiffness.data);
+		KMN3M33M3N<nodes>(xi[gpindex] * determinant[gpindex] * weight[gpindex], conductivity.data + 9 * gpindex, dND.data + 3 * nodes * gpindex, stiffness.data);
 	}
 };
 
 struct HeatStiffness: public ElementOperatorBuilder {
-	GET_NAME(HeatStiffness)
 	HeatTransferModuleOpt &kernel;
 
-	HeatStiffness(HeatTransferModuleOpt &kernel): kernel(kernel)
+	HeatStiffness(HeatTransferModuleOpt &kernel): ElementOperatorBuilder("HEAT TRANSFER STIFFNESS"), kernel(kernel)
 	{
 
 	}
@@ -96,11 +93,15 @@ struct HeatStiffness: public ElementOperatorBuilder {
 	bool build(HeatTransferModuleOpt &kernel) override
 	{
 		if (info::mesh->dimension == 2) {
-			kernel.elements.stiffness.addInputs(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivity, kernel.thickness.gp);
+			kernel.elements.stiffness.addInput(kernel.thickness.gp);
 		}
-		if (info::mesh->dimension == 3) {
-			kernel.elements.stiffness.addInputs(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivity);
-		}
+		kernel.elements.stiffness.addInput(kernel.integration.dND);
+		kernel.elements.stiffness.addInput(kernel.integration.weight);
+		kernel.elements.stiffness.addInput(kernel.integration.jacobiDeterminant);
+		kernel.elements.stiffness.addInput(kernel.material.conductivity);
+		kernel.elements.stiffness.addInput(kernel.gradient.xi);
+		kernel.elements.stiffness.resize();
+		kernel.addParameter(kernel.elements.stiffness);
 		return true;
 	}
 
@@ -109,17 +110,17 @@ struct HeatStiffness: public ElementOperatorBuilder {
 		const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
 		if (mat->thermal_conductivity.model == ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
 			if (info::mesh->dimension == 2) {
-				iterate_elements_gps<HeatTransferModuleOpt::NGP>(Stiffness2DHeatIsotropic(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivityIsotropic, kernel.thickness.gp, kernel.elements.stiffness, interval));
+				iterate_elements_gps<HeatTransferModuleOpt::NGP>(Stiffness2DHeatIsotropic(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivityIsotropic, kernel.gradient.xi, kernel.thickness.gp, kernel.elements.stiffness, interval));
 			}
 			if (info::mesh->dimension == 3) {
-				iterate_elements_gps<HeatTransferModuleOpt::NGP>(Stiffness3DHeatIsotropic(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivityIsotropic, kernel.thickness.gp, kernel.elements.stiffness, interval));
+				iterate_elements_gps<HeatTransferModuleOpt::NGP>(Stiffness3DHeatIsotropic(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivityIsotropic, kernel.gradient.xi, kernel.thickness.gp, kernel.elements.stiffness, interval));
 			}
 		} else {
 			if (info::mesh->dimension == 2) {
-				iterate_elements_gps<HeatTransferModuleOpt::NGP>(Stiffness2DHeat(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivity, kernel.thickness.gp, kernel.elements.stiffness, interval));
+				iterate_elements_gps<HeatTransferModuleOpt::NGP>(Stiffness2DHeat(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivity, kernel.gradient.xi, kernel.thickness.gp, kernel.elements.stiffness, interval));
 			}
 			if (info::mesh->dimension == 3) {
-				iterate_elements_gps<HeatTransferModuleOpt::NGP>(Stiffness3DHeat(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivity, kernel.thickness.gp, kernel.elements.stiffness, interval));
+				iterate_elements_gps<HeatTransferModuleOpt::NGP>(Stiffness3DHeat(kernel.integration.dND, kernel.integration.weight, kernel.integration.jacobiDeterminant, kernel.material.conductivity, kernel.gradient.xi, kernel.thickness.gp, kernel.elements.stiffness, interval));
 			}
 		}
 	}

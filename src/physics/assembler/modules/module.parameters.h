@@ -24,7 +24,7 @@ struct ParametersElements {
 };
 
 struct ParametersTemperature {
-	static NodeData *output, *outputInitial;
+	static NodeData *output;
 
 	struct Boundary {
 		BoundaryParameter<enodes> node;
@@ -32,6 +32,8 @@ struct ParametersTemperature {
 	};
 
 	struct Initial {
+		static NodeData *output;
+
 		ElementExternalParameter<enodes> node;
 		ElementExternalParameter<egps> gp;
 		Boundary boundary;

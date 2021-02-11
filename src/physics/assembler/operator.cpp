@@ -3,6 +3,7 @@
 
 #include "esinfo/envinfo.h"
 #include "esinfo/meshinfo.h"
+#include "esinfo/eslog.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/boundaryregionstore.h"
 
@@ -10,7 +11,11 @@ using namespace espreso;
 
 void ElementOperatorBuilder::now()
 {
-	if (Operator::print > 1) printf("BUILD ELEMENTS: %s\n", name());
+	double start;
+	if (Operator::print > 1) {
+		start = eslog::time();
+	}
+
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::threads; ++t) {
 		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
@@ -19,11 +24,19 @@ void ElementOperatorBuilder::now()
 			}
 		}
 	}
+
+	if (Operator::print > 1) {
+		printf("EVALUATE %s: %fs\n", name, eslog::time() - start);
+	}
 }
 
 void BoundaryOperatorBuilder::now()
 {
-	if (Operator::print > 1) printf("BUILD BOUNDARY: %s\n", name());
+	double start;
+	if (Operator::print > 1) {
+		start = eslog::time();
+	}
+
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::threads; ++t) {
 		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
@@ -35,5 +48,9 @@ void BoundaryOperatorBuilder::now()
 				}
 			}
 		}
+	}
+
+	if (Operator::print > 1) {
+		printf("EVALUATE %s: %fs\n", name, eslog::time() - start);
 	}
 }

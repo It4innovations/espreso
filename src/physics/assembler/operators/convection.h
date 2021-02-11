@@ -12,13 +12,13 @@ namespace espreso {
 struct ConvectionMaterialParameters: public Operator {
 	ConvectionMaterialParameters(ParametersConvection &convection, ParameterData &temp, int region, int interval, int update)
 	: Operator(interval, convection.heatTransferCoeficient.gp.regions[region].isconst[interval], update),
-	  extTemp(convection.externalTemperature.gp.regions[region], interval, egps),
-	  temp(temp, interval, egps),
-	  rho(convection.rho.gp.regions[region], interval, egps),
-	  heatCapacity(convection.heatCapacity.gp.regions[region], interval, egps),
-	  thermalConductivity(convection.thermalConductivity.gp.regions[region], interval, egps),
-	  dynamicViscosity(convection.dynamicViscosity.gp.regions[region], interval, egps),
-	  dynamicViscosityTemp(convection.dynamicViscosityTemp.gp.regions[region], interval, egps)
+	  extTemp(convection.externalTemperature.gp.regions[region], interval),
+	  temp(temp, interval),
+	  rho(convection.rho.gp.regions[region], interval),
+	  heatCapacity(convection.heatCapacity.gp.regions[region], interval),
+	  thermalConductivity(convection.thermalConductivity.gp.regions[region], interval),
+	  dynamicViscosity(convection.dynamicViscosity.gp.regions[region], interval),
+	  dynamicViscosityTemp(convection.dynamicViscosityTemp.gp.regions[region], interval)
 	{
 
 	}
@@ -28,14 +28,14 @@ struct ConvectionMaterialParameters: public Operator {
 };
 
 struct ConvectionFluidAir: public ConvectionMaterialParameters {
-	GET_NAME(ConvectionFluidAir)
-
 	ConvectionFluidAir(ParametersConvection &convection, ParameterData &temp, int region, int interval)
 	: ConvectionMaterialParameters(convection, temp, region, interval,
-			Link(interval)
-			.inputs(convection.absolutePressure.gp.regions[region], convection.externalTemperature.gp.regions[region], temp)
-			.outputs(convection.rho.gp.regions[region], convection.heatCapacity.gp.regions[region], convection.thermalConductivity.gp.regions[region], convection.dynamicViscosity.gp.regions[region], convection.dynamicViscosityTemp.gp.regions[region])),
-	  absolutePressure(convection.absolutePressure.gp.regions[region], interval, egps)
+			convection.rho.gp.regions[region].update[interval] ||
+			convection.heatCapacity.gp.regions[region].update[interval] ||
+			convection.thermalConductivity.gp.regions[region].update[interval] ||
+			convection.dynamicViscosity.gp.regions[region].update[interval] ||
+			convection.dynamicViscosityTemp.gp.regions[region].update[interval]),
+	  absolutePressure(convection.absolutePressure.gp.regions[region], interval)
 	{
 
 	}
@@ -94,14 +94,14 @@ struct ConvectionFluidAir: public ConvectionMaterialParameters {
 struct ConvectionOperator: public Operator {
 	ConvectionOperator(ParametersConvection &convection, ParameterData &temp, int region, int interval, int update)
 	: Operator(interval, convection.heatTransferCoeficient.gp.regions[region].isconst[interval], update),
-	  extTemp(convection.externalTemperature.gp.regions[region], interval, egps),
-	  temp(temp, interval, egps),
-	  rho(convection.rho.gp.regions[region], interval, egps),
-	  heatCapacity(convection.heatCapacity.gp.regions[region], interval, egps),
-	  thermalConductivity(convection.thermalConductivity.gp.regions[region], interval, egps),
-	  dynamicViscosity(convection.dynamicViscosity.gp.regions[region], interval, egps),
-	  dynamicViscosityTemp(convection.dynamicViscosityTemp.gp.regions[region], interval, egps),
-	  htc(convection.heatTransferCoeficient.gp.regions[region], interval, egps)
+	  extTemp(convection.externalTemperature.gp.regions[region], interval),
+	  temp(temp, interval),
+	  rho(convection.rho.gp.regions[region], interval),
+	  heatCapacity(convection.heatCapacity.gp.regions[region], interval),
+	  thermalConductivity(convection.thermalConductivity.gp.regions[region], interval),
+	  dynamicViscosity(convection.dynamicViscosity.gp.regions[region], interval),
+	  dynamicViscosityTemp(convection.dynamicViscosityTemp.gp.regions[region], interval),
+	  htc(convection.heatTransferCoeficient.gp.regions[region], interval)
 	{
 
 	}
@@ -112,16 +112,10 @@ struct ConvectionOperator: public Operator {
 };
 
 struct ConvectionExternalNaturalInclinedWall: public ConvectionOperator {
-	GET_NAME(ConvectionExternalNaturalInclinedWall)
-
 	ConvectionExternalNaturalInclinedWall(ParametersConvection &convection, ParameterData &temp, int region, int interval)
-	: ConvectionOperator(convection, temp, region, interval,
-			Link(interval)
-			.inputs(convection.externalTemperature.gp.regions[region], convection.rho.gp.regions[region], convection.heatCapacity.gp.regions[region],
-					convection.thermalConductivity.gp.regions[region], convection.dynamicViscosity.gp.regions[region], convection.wallHeight.gp.regions[region], convection.tiltAngle.gp.regions[region], temp)
-			.outputs(convection.heatTransferCoeficient.gp.regions[region])),
-	  wallHeight(convection.wallHeight.gp.regions[region], interval, 1),
-	  tiltAngle(convection.tiltAngle.gp.regions[region], interval, 1)
+	: ConvectionOperator(convection, temp, region, interval, convection.heatTransferCoeficient.gp.regions[region].update[interval]),
+	  wallHeight(convection.wallHeight.gp.regions[region], interval),
+	  tiltAngle(convection.tiltAngle.gp.regions[region], interval)
 	{
 
 	}
@@ -151,13 +145,11 @@ struct ConvectionExternalNaturalInclinedWall: public ConvectionOperator {
 };
 
 struct ConvectionBuilder: public BoundaryOperatorBuilder {
-	GET_NAME(ConvectionBuilder)
-
 	HeatTransferModuleOpt &kernel;
 	ParametersConvection &convection;
 
 	ConvectionBuilder(HeatTransferModuleOpt &kernel, ParametersConvection &convection)
-	: kernel(kernel), convection(convection)
+	: BoundaryOperatorBuilder("BOUNDARY CONVECTION"), kernel(kernel), convection(convection)
 	{
 
 	}
@@ -177,11 +169,23 @@ struct ConvectionBuilder: public BoundaryOperatorBuilder {
 					switch (convection.configuration.regions[region].settings.front()->fluid) {
 					case ConvectionConfiguration::FLUID::AIR:
 						convection.absolutePressure.gp.builder->replace("TEMPERATURE", convection.externalTemperature.gp);
-						convection.rho.gp.regions[region].addInputs(convection.absolutePressure.gp.regions[region]);
-						convection.heatCapacity.gp.regions[region].addInputs(convection.externalTemperature.gp.regions[region]);
-						convection.thermalConductivity.gp.regions[region].addInputs(convection.externalTemperature.gp.regions[region]);
-						convection.dynamicViscosity.gp.regions[region].addInputs(convection.externalTemperature.gp.regions[region]);
-						convection.dynamicViscosityTemp.gp.regions[region].addInputs(kernel.temp.boundary.gp.regions[region]);
+						convection.rho.gp.regions[region].addInput(convection.absolutePressure.gp.regions[region]);
+						convection.heatCapacity.gp.regions[region].addInput(convection.externalTemperature.gp.regions[region]);
+						convection.thermalConductivity.gp.regions[region].addInput(convection.externalTemperature.gp.regions[region]);
+						convection.dynamicViscosity.gp.regions[region].addInput(convection.externalTemperature.gp.regions[region]);
+						convection.dynamicViscosityTemp.gp.regions[region].addInput(kernel.temp.boundary.gp.regions[region]);
+
+						convection.rho.gp.regions[region].resize();
+						convection.heatCapacity.gp.regions[region].resize();
+						convection.thermalConductivity.gp.regions[region].resize();
+						convection.dynamicViscosity.gp.regions[region].resize();
+						convection.dynamicViscosityTemp.gp.regions[region].resize();
+
+						kernel.addParameter(convection.rho.gp.regions[region]);
+						kernel.addParameter(convection.heatCapacity.gp.regions[region]);
+						kernel.addParameter(convection.thermalConductivity.gp.regions[region]);
+						kernel.addParameter(convection.dynamicViscosity.gp.regions[region]);
+						kernel.addParameter(convection.dynamicViscosityTemp.gp.regions[region]);
 						break;
 					default:
 						break;
@@ -191,9 +195,15 @@ struct ConvectionBuilder: public BoundaryOperatorBuilder {
 				switch (convection.configuration.regions[region].settings.front()->type) {
 				case ConvectionConfiguration::TYPE::USER: break;
 				case ConvectionConfiguration::TYPE::EXTERNAL_NATURAL:
-					convection.heatTransferCoeficient.gp.regions[region].addInputs(
-							convection.rho.gp.regions[region], convection.heatCapacity.gp.regions[region], convection.thermalConductivity.gp.regions[region], convection.dynamicViscosity.gp.regions[region],
-							convection.wallHeight.gp.regions[region], convection.tiltAngle.gp.regions[region]);
+					convection.heatTransferCoeficient.gp.regions[region].addInput(convection.rho.gp.regions[region]);
+					convection.heatTransferCoeficient.gp.regions[region].addInput(convection.heatCapacity.gp.regions[region]);
+					convection.heatTransferCoeficient.gp.regions[region].addInput(convection.thermalConductivity.gp.regions[region]);
+					convection.heatTransferCoeficient.gp.regions[region].addInput(convection.dynamicViscosity.gp.regions[region]);
+					convection.heatTransferCoeficient.gp.regions[region].addInput(convection.wallHeight.gp.regions[region]);
+					convection.heatTransferCoeficient.gp.regions[region].addInput(convection.tiltAngle.gp.regions[region]);
+					convection.heatTransferCoeficient.gp.regions[region].resize();
+
+					kernel.addParameter(convection.heatTransferCoeficient.gp.regions[region]);
 					break;
 				case ConvectionConfiguration::TYPE::INTERNAL_NATURAL:
 				case ConvectionConfiguration::TYPE::EXTERNAL_FORCED:

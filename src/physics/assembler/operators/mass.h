@@ -10,11 +10,11 @@ namespace espreso {
 
 struct MaterialMass: public Operator {
 	MaterialMass(ParameterData &density, ParameterData &heatCapacity, ParameterData &thickness, ParameterData &mass, int interval)
-	: Operator(interval, false, Link(interval).inputs(density, heatCapacity, thickness).outputs(mass)),
-	  density(density, interval, egps),
-	  heatCapacity(heatCapacity, interval, egps),
-	  thickness(thickness, interval, egps),
-	  mass(mass, interval, egps)
+	: Operator(interval, false, mass.update[interval]),
+	  density(density, interval),
+	  heatCapacity(heatCapacity, interval),
+	  thickness(thickness, interval),
+	  mass(mass, interval)
 	{
 
 	}
@@ -24,7 +24,6 @@ struct MaterialMass: public Operator {
 };
 
 struct MaterialMass2D: public MaterialMass {
-	GET_NAME(MaterialMass2D)
 	using MaterialMass::MaterialMass;
 
 	template<int nodes, int gps>
@@ -41,7 +40,6 @@ struct MaterialMass2D: public MaterialMass {
 };
 
 struct MaterialMass3D: public MaterialMass {
-	GET_NAME(MaterialMass3D)
 	using MaterialMass::MaterialMass;
 
 	template<int nodes, int gps>
@@ -58,23 +56,22 @@ struct MaterialMass3D: public MaterialMass {
 };
 
 struct MaterialMassBuilder: public ElementOperatorBuilder {
-	GET_NAME(Gradient)
-
 	HeatTransferModuleOpt &kernel;
 
-	MaterialMassBuilder(HeatTransferModuleOpt &kernel): kernel(kernel)
+	MaterialMassBuilder(HeatTransferModuleOpt &kernel): ElementOperatorBuilder("MATERIAL MASS"), kernel(kernel)
 	{
 
 	}
 
 	bool build(HeatTransferModuleOpt &kernel) override
 	{
+		kernel.material.mass.addInput(kernel.material.density);
+		kernel.material.mass.addInput(kernel.material.heatCapacity);
 		if (info::mesh->dimension == 2) {
-			kernel.material.mass.addInputs(kernel.material.density, kernel.material.heatCapacity, kernel.thickness.gp);
+			kernel.material.mass.addInput(kernel.thickness.gp);
 		}
-		if (info::mesh->dimension == 3) {
-			kernel.material.conductivity.addInputs(kernel.material.density, kernel.material.heatCapacity);
-		}
+		kernel.material.mass.resize();
+		kernel.addParameter(kernel.material.mass);
 		return true;
 	}
 

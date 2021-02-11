@@ -10,7 +10,7 @@ namespace espreso {
 struct KFiller: public Operator {
 	KFiller(const ParameterData &stiffness, double *K, esint *perm, PerElementSize size, int interval)
 	: Operator(interval, false, true),
-	  stiffness(stiffness, interval, stiffness.size),
+	  stiffness(stiffness, interval),
 	  K(K), perm(perm),
 	  size(stiffness.increment(size, interval)) {}
 
@@ -26,7 +26,6 @@ struct KFiller: public Operator {
 };
 
 struct KSymmFiller: public KFiller {
-	GET_NAME(KSymmFiller)
 	using KFiller::KFiller;
 
 	void operator()()
@@ -42,7 +41,6 @@ struct KSymmFiller: public KFiller {
 };
 
 struct KFullFiller: public KFiller {
-	GET_NAME(KFullFiller)
 	using KFiller::KFiller;
 
 	void operator()()
@@ -56,15 +54,20 @@ struct KFullFiller: public KFiller {
 };
 
 struct MatricesFiller: public ElementOperatorBuilder {
-	GET_NAME(MatricesFiller)
-
 	HeatTransferModuleOpt &kernel;
+	bool issymmetric;
 	double *K;
 	esint *perm;
 
-	MatricesFiller(HeatTransferModuleOpt &kernel, double *K, esint *perm): kernel(kernel), K(K), perm(perm)
+	MatricesFiller(HeatTransferModuleOpt &kernel, double *K, esint *perm): ElementOperatorBuilder("FILL K"), kernel(kernel), issymmetric(true), K(K), perm(perm)
 	{
-
+		// TODO: allow various symmetricity for each interval
+		for (size_t i = 0; i < kernel.translationMotions.gp.isset.size(); ++i) {
+			issymmetric &= !kernel.translationMotions.gp.isset[i];
+		}
+		for (size_t i = 0; i < kernel.material.model.anisotropic.isset.size(); ++i) {
+			issymmetric &= !kernel.material.model.anisotropic.isset[i];
+		}
 	}
 
 	bool build(HeatTransferModuleOpt &kernel) override
@@ -74,19 +77,18 @@ struct MatricesFiller: public ElementOperatorBuilder {
 
 	void apply(int interval)
 	{
-		if (kernel.translationMotions.gp.isset || kernel.material.model.anisotropic.isset) {
-			iterate_elements(KFullFiller(kernel.elements.stiffness, K, perm, enodes, interval));
-		} else {
+		if (issymmetric) {
 			iterate_elements(KSymmFiller(kernel.elements.stiffness, K, perm, enodes, interval));
+		} else {
+			iterate_elements(KFullFiller(kernel.elements.stiffness, K, perm, enodes, interval));
 		}
 	}
 };
 
 struct VectorFiller: public Operator {
-	GET_NAME(RHSFiller)
 	VectorFiller(const ParameterData &rhs, double *RHS, esint *perm, PerElementSize size, int interval)
 	: Operator(interval, false, true),
-	  rhs(rhs, interval, enodes),
+	  rhs(rhs, interval),
 	  RHS(RHS), perm(perm),
 	  size(rhs.increment(size, interval)) {}
 
@@ -109,13 +111,11 @@ struct VectorFiller: public Operator {
 };
 
 struct RHSFiller: public BoundaryOperatorBuilder {
-	GET_NAME(MatricesFiller)
-
 	HeatTransferModuleOpt &kernel;
 	double *RHS;
 	esint *perm;
 
-	RHSFiller(HeatTransferModuleOpt &kernel, double *RHS, esint *perm): kernel(kernel), RHS(RHS), perm(perm)
+	RHSFiller(HeatTransferModuleOpt &kernel, double *RHS, esint *perm): BoundaryOperatorBuilder("FILL RHS"), kernel(kernel), RHS(RHS), perm(perm)
 	{
 
 	}
