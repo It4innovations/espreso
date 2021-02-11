@@ -1,6 +1,7 @@
 
-#include "../../../configuration.hpp"
 #include "hyprepilut.h"
+
+#include "config/configuration.hpp"
 
 using namespace espreso;
 

@@ -1,6 +1,7 @@
 
-#include "../../../configuration.hpp"
 #include "hypreparasails.h"
+
+#include "config/configuration.hpp"
 
 using namespace espreso;
 
