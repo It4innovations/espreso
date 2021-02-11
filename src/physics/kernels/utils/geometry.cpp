@@ -16,6 +16,7 @@
 #include "physics/kernels/basefunctions/plane/square4.h"
 
 #include <vector>
+#include <unordered_map>
 
 #include "basis/utilities/print.h"
 
@@ -383,123 +384,133 @@ void assembleMortarInterface(std::vector<ijv> &B)
 		}
 	};
 
+	std::unordered_map<esint, std::unordered_map<esint, esint> > interface;
+	for (size_t i = 0; i < info::mesh->contacts->interfaces.size(); ++i) {
+		interface[info::mesh->contacts->interfaces[i].from.body][info::mesh->contacts->interfaces[i].to.body] = i;
+	}
+
 	auto *sside = info::mesh->contacts->sparseSide;
 	auto *dside = info::mesh->contacts->denseSide;
 	double *coors = info::mesh->contacts->planeCoordinates->datatarray().data()->data();
 	for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s) {
-		Element* sElement = surfaces.back()->epointers->datatarray()[s->element];
-		auto sNodes = surfaces.back()->enodes->begin() + s->element;
-		const auto &sIDs = surfaces.back()->nIDs->datatarray();
-		sCoords.set(sElement->nodes, 2, coors + 2 * s->coordinateOffset);
-		if (printrank == info::mpi::rank) {
-			printf("s-%d-coords: ", s->element);
-			for (int n = 0; n < sElement->nodes; ++n) {
-				printf("<%+.4f, %+.4f>", sCoords[n][0], sCoords[n][1]);
+		for (auto iface = interface[s->body].begin(); iface != interface[s->body].end(); ++iface) {
+			Element* sElement = surfaces.back()->epointers->datatarray()[s->element];
+			auto sNodes = surfaces.back()->enodes->begin() + s->element;
+			const auto &sIDs = surfaces.back()->nIDs->datatarray();
+			sCoords.set(sElement->nodes, 2, coors + 2 * s->coordinateOffset);
+			if (printrank == info::mpi::rank) {
+				printf("s-%d-coords: ", s->element);
+				for (int n = 0; n < sElement->nodes; ++n) {
+					printf("<%+.4f, %+.4f>", sCoords[n][0], sCoords[n][1]);
+				}
+				printf("\n");
 			}
-			printf("\n");
-		}
 
-		std::vector<double> D(sElement->nodes * sElement->nodes), M(sElement->nodes * sElement->nodes), sparse(sElement->nodes * sElement->nodes);
-		for (int dmReady = 0; dmReady <= 1; ++dmReady) {
-			for (auto d = dside->datatarray().begin() + s->denseSegmentBegin; d != dside->datatarray().begin() + s->denseSegmentEnd; ++d) {
-				if (d->skip) {
-					continue;
-				}
-
-				Element* dElement = surfaces[d->neigh]->epointers->datatarray()[d->element];
-				auto dNodes = surfaces[d->neigh]->enodes->begin() + d->element;
-				const auto &dIDs = surfaces[d->neigh]->nIDs->datatarray();
-				if (dmReady) {
-					dCoords.set(sElement->nodes, 2, coors + 2 * d->coordinateOffset);
-					if (printrank == info::mpi::rank) {
-						printf("d-%d-coords: ", d->element);
-						for (int n = 0; n < dElement->nodes; ++n) {
-							printf("<%+.4f, %+.4f>", dCoords[n][0], dCoords[n][1]);
-						}
-						printf("\n");
+			std::vector<double> D(sElement->nodes * sElement->nodes), M(sElement->nodes * sElement->nodes), sparse(sElement->nodes * sElement->nodes);
+			for (int dmReady = 0; dmReady <= 1; ++dmReady) {
+				for (auto d = dside->datatarray().begin() + s->denseSegmentBegin; d != dside->datatarray().begin() + s->denseSegmentEnd; ++d) {
+					if (d->skip) {
+						continue;
 					}
-				}
+					if (iface->first != d->body) {
+						continue;
+					}
 
-				if (printrank == info::mpi::rank) printf("assemble %d-%d\n", s->element, d->element);
-
-				std::vector<double> dense(sElement->nodes * dElement->nodes);
-				for (esint t = 0; t < d->triangles; ++t) {
-					tCoords.set(3, 2, coors + 2 * (d->triangleOffset + 3 * t));
-					getReferenceCoords(sElement, sCoords, tCoords, sRefCoords);
-					getGpCoords(sRefCoords, sGpCoords);
-
-					BaseFunctions::recomputeDetJ(tElement, sRefCoords, tDetJ);
-					BaseFunctions::recomputeDetJN(sElement, sCoords, sDetJ, sN, sGpCoords);
-
-					if (!dmReady) {
-						// compute De, Me for coefficients Ae of dual basis functions from formula (4.60)
-						for (int gp = 0; gp < tGPs; ++gp) {
-							double weight = tElement->weighFactor->at(gp) * tDetJ[0][gp] * sDetJ[0][gp];
-							for (int i = 0; i < sElement->nodes; i++) {
-								D[i * sElement->nodes + i] += weight * sN[i][gp];
-								M[i * sElement->nodes + i] += weight * sN[i][gp] * sN[i][gp];
-								for (int j = i + 1; j < sElement->nodes; j++) {
-									M[j * sElement->nodes + i] += weight * sN[i][gp] * sN[j][gp];
-									M[i * sElement->nodes + j] += weight * sN[i][gp] * sN[j][gp];
-								}
-							}
-						}
-					} else {
-						getReferenceCoords(dElement, dCoords, tCoords, dRefCoords);
-						getGpCoords(dRefCoords, dGpCoords);
-						BaseFunctions::recomputeDetJN(dElement, dCoords, dDetJ, dN, dGpCoords);
-
+					Element* dElement = surfaces[d->neigh]->epointers->datatarray()[d->element];
+					auto dNodes = surfaces[d->neigh]->enodes->begin() + d->element;
+					const auto &dIDs = surfaces[d->neigh]->nIDs->datatarray();
+					if (dmReady) {
+						dCoords.set(sElement->nodes, 2, coors + 2 * d->coordinateOffset);
 						if (printrank == info::mpi::rank) {
-							printf("\tt-%d-%d-coords: <%+.4f, %+.4f><%+.4f, %+.4f><%+.4f, %+.4f>\n", s->element, d->element, tCoords[0][0], tCoords[0][1], tCoords[1][0], tCoords[1][1], tCoords[2][0], tCoords[2][1]);
-							printf("\tt-%d-%d-s-ref-coords: <%+.4f, %+.4f><%+.4f, %+.4f><%+.4f, %+.4f>\n", s->element, d->element, sRefCoords[0][0], sRefCoords[0][1], sRefCoords[1][0], sRefCoords[1][1], sRefCoords[2][0], sRefCoords[2][1]);
-							printf("\tt-%d-%d-d-ref-coords: <%+.4f, %+.4f><%+.4f, %+.4f><%+.4f, %+.4f>\n", s->element, d->element, dRefCoords[0][0], dRefCoords[0][1], dRefCoords[1][0], dRefCoords[1][1], dRefCoords[2][0], dRefCoords[2][1]);
+							printf("d-%d-coords: ", d->element);
+							for (int n = 0; n < dElement->nodes; ++n) {
+								printf("<%+.4f, %+.4f>", dCoords[n][0], dCoords[n][1]);
+							}
+							printf("\n");
 						}
+					}
 
-						MatrixDense psi;
-						psi.multiply(D.data(), sElement->nodes, sElement->nodes, sN.nrows, sN.ncols, sN.vals, 1, 0, true);
-						if (printrank == info::mpi::rank) std::cout << psi;
+					if (printrank == info::mpi::rank) printf("assemble %d-%d\n", s->element, d->element);
 
-						for (int gp = 0; gp < tGPs; ++gp) {
-							double weight = tElement->weighFactor->at(gp) * tDetJ[0][gp] * sDetJ[0][gp];
-							for (int i = 0; i < sElement->nodes; i++) {
-								for (int j = 0; j < sElement->nodes; j++) {
-									sparse[i * sElement->nodes + j] += weight * sN[j][gp] * psi[i][gp];
+					std::vector<double> dense(sElement->nodes * dElement->nodes);
+					for (esint t = 0; t < d->triangles; ++t) {
+						tCoords.set(3, 2, coors + 2 * (d->triangleOffset + 3 * t));
+						getReferenceCoords(sElement, sCoords, tCoords, sRefCoords);
+						getGpCoords(sRefCoords, sGpCoords);
+
+						BaseFunctions::recomputeDetJ(tElement, sRefCoords, tDetJ);
+						BaseFunctions::recomputeDetJN(sElement, sCoords, sDetJ, sN, sGpCoords);
+
+						if (!dmReady) {
+							// compute De, Me for coefficients Ae of dual basis functions from formula (4.60)
+							for (int gp = 0; gp < tGPs; ++gp) {
+								double weight = tElement->weighFactor->at(gp) * tDetJ[0][gp] * sDetJ[0][gp];
+								for (int i = 0; i < sElement->nodes; i++) {
+									D[i * sElement->nodes + i] += weight * sN[i][gp];
+									M[i * sElement->nodes + i] += weight * sN[i][gp] * sN[i][gp];
+									for (int j = i + 1; j < sElement->nodes; j++) {
+										M[j * sElement->nodes + i] += weight * sN[i][gp] * sN[j][gp];
+										M[i * sElement->nodes + j] += weight * sN[i][gp] * sN[j][gp];
+									}
 								}
-								for (int j = 0; j < dElement->nodes; j++) {
-									dense[i * dElement->nodes + j] -= weight * dN[j][gp] * psi[i][gp];
+							}
+						} else {
+							getReferenceCoords(dElement, dCoords, tCoords, dRefCoords);
+							getGpCoords(dRefCoords, dGpCoords);
+							BaseFunctions::recomputeDetJN(dElement, dCoords, dDetJ, dN, dGpCoords);
+
+							if (printrank == info::mpi::rank) {
+								printf("\tt-%d-%d-coords: <%+.4f, %+.4f><%+.4f, %+.4f><%+.4f, %+.4f>\n", s->element, d->element, tCoords[0][0], tCoords[0][1], tCoords[1][0], tCoords[1][1], tCoords[2][0], tCoords[2][1]);
+								printf("\tt-%d-%d-s-ref-coords: <%+.4f, %+.4f><%+.4f, %+.4f><%+.4f, %+.4f>\n", s->element, d->element, sRefCoords[0][0], sRefCoords[0][1], sRefCoords[1][0], sRefCoords[1][1], sRefCoords[2][0], sRefCoords[2][1]);
+								printf("\tt-%d-%d-d-ref-coords: <%+.4f, %+.4f><%+.4f, %+.4f><%+.4f, %+.4f>\n", s->element, d->element, dRefCoords[0][0], dRefCoords[0][1], dRefCoords[1][0], dRefCoords[1][1], dRefCoords[2][0], dRefCoords[2][1]);
+							}
+
+							MatrixDense psi;
+							psi.multiply(D.data(), sElement->nodes, sElement->nodes, sN.nrows, sN.ncols, sN.vals, 1, 0, true);
+							if (printrank == info::mpi::rank) std::cout << psi;
+
+							for (int gp = 0; gp < tGPs; ++gp) {
+								double weight = tElement->weighFactor->at(gp) * tDetJ[0][gp] * sDetJ[0][gp];
+								for (int i = 0; i < sElement->nodes; i++) {
+									for (int j = 0; j < sElement->nodes; j++) {
+										sparse[i * sElement->nodes + j] += weight * sN[j][gp] * psi[i][gp];
+									}
+									for (int j = 0; j < dElement->nodes; j++) {
+										dense[i * dElement->nodes + j] -= weight * dN[j][gp] * psi[i][gp];
+									}
+								}
+							}
+						}
+					}
+					if (dmReady) {
+						for (int i = 0; i < sElement->nodes; i++) {
+							for (int j = 0; j < dElement->nodes; j++) {
+								if (std::fabs(dense[i * dElement->nodes + j]) > BE_VALUE_TRESHOLD) {
+									if (printrank == info::mpi::rank) printf("  <%d,%d>=%f\n", sIDs[sNodes->at(i)], dIDs[dNodes->at(j)], dense[i * dElement->nodes + j]);
+									B.push_back(ijv(iface->second, sIDs[sNodes->at(i)], dIDs[dNodes->at(j)], dense[i * dElement->nodes + j]));
 								}
 							}
 						}
 					}
 				}
-				if (dmReady) {
-					for (int i = 0; i < sElement->nodes; i++) {
-						for (int j = 0; j < dElement->nodes; j++) {
-							if (std::fabs(dense[i * dElement->nodes + j]) > BE_VALUE_TRESHOLD) {
-								if (printrank == info::mpi::rank) printf("  <%d,%d>=%f\n", sIDs[sNodes->at(i)], dIDs[dNodes->at(j)], dense[i * dElement->nodes + j]);
-								B.push_back(ijv(sIDs[sNodes->at(i)], dIDs[dNodes->at(j)], dense[i * dElement->nodes + j]));
-							}
-						}
+				if (!dmReady) {
+					if (printrank == info::mpi::rank) {
+						std::cout << "M" << M;
+						std::cout << "D" << D;
+					}
+					// inv(M) * D  ... need to be transposed to evaluate psi coefs !!!!
+					MATH::DenseMatDenseMatRowMajorSystemSolve(sElement->nodes, sElement->nodes, M.data(), D.data());
+					if (printrank == info::mpi::rank) {
+						std::cout << "D" << D;
 					}
 				}
 			}
-			if (!dmReady) {
-				if (printrank == info::mpi::rank) {
-					std::cout << "M" << M;
-					std::cout << "D" << D;
-				}
-				// inv(M) * D  ... need to be transposed to evaluate psi coefs !!!!
-				MATH::DenseMatDenseMatRowMajorSystemSolve(sElement->nodes, sElement->nodes, M.data(), D.data());
-				if (printrank == info::mpi::rank) {
-					std::cout << "D" << D;
-				}
-			}
-		}
-		for (int i = 0; i < sElement->nodes; i++) {
-			for (int j = 0; j < sElement->nodes; j++) {
-				if (std::fabs(sparse[i * sElement->nodes + j]) > BE_VALUE_TRESHOLD) {
-					if (printrank == info::mpi::rank) printf("<%d,%d>=%f\n", sIDs[sNodes->at(i)], sIDs[sNodes->at(j)], sparse[i * sElement->nodes + j]);
-					B.push_back(ijv(sIDs[sNodes->at(i)], sIDs[sNodes->at(j)], sparse[i * sElement->nodes + j]));
+			for (int i = 0; i < sElement->nodes; i++) {
+				for (int j = 0; j < sElement->nodes; j++) {
+					if (std::fabs(sparse[i * sElement->nodes + j]) > BE_VALUE_TRESHOLD) {
+						if (printrank == info::mpi::rank) printf("<%d,%d>=%f\n", sIDs[sNodes->at(i)], sIDs[sNodes->at(j)], sparse[i * sElement->nodes + j]);
+						B.push_back(ijv(iface->second, sIDs[sNodes->at(i)], sIDs[sNodes->at(j)], sparse[i * sElement->nodes + j]));
+					}
 				}
 			}
 		}
@@ -599,7 +610,7 @@ void computeMortars()
 	std::vector<std::vector<esint> > sBuffer(neighsWithMe.size()), rBuffer(neighsWithMe.size());
 	for (auto begin = B.begin(), end = begin; begin != B.end(); begin = end) {
 		double scale = 1;
-		while (end != B.end() && begin->i == end->i) {
+		while (end != B.end() && begin->pair == end->pair && begin->i == end->i) {
 			if (end->i == end->j) {
 				scale = end->v;
 			}

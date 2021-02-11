@@ -515,17 +515,19 @@ void NodesUniformFETIComposer::_buildDirichlet()
 
 void NodesUniformFETIComposer::_buildMortars()
 {
+	struct __lambda__ { esint lambda, pair, id; };
+
 	esint lambdaCount = 0;
-	std::vector<std::pair<esint, esint> > lmap;
+	std::vector<__lambda__> lmap;
 	auto &myids = info::mesh->nodes->IDs->datatarray();
 
 	// collect my nodes in B in order to compute mortar lambdas
 	if (info::mesh->contacts->B.size()) {
 		for (auto it = info::mesh->contacts->B.begin(), prev = it; it != info::mesh->contacts->B.end(); ++it) {
-			if (it == info::mesh->contacts->B.begin() || prev->i != it->i) {
+			if (it == info::mesh->contacts->B.begin() || prev->pair != it->pair || prev->i != it->i) {
 				auto nit = std::lower_bound(myids.begin() + info::mesh->nodes->uniqInfo.nhalo, myids.end(), it->i);
 				if (nit != myids.end() && *nit == it->i) {
-					lmap.push_back(std::make_pair(it->i, lambdaCount++));
+					lmap.push_back({ lambdaCount++, it->pair, it->i });
 				}
 				prev = it;
 			}
@@ -534,20 +536,20 @@ void NodesUniformFETIComposer::_buildMortars()
 
 	esint size = Communication::exscan(lambdaCount);
 	for (auto lit = lmap.begin(); lit != lmap.end(); ++lit) {
-		lit->second += lambdaCount;
+		lit->lambda += lambdaCount;
 	}
 
-	std::vector<std::vector<std::pair<esint, esint>> > sLambdas(info::mesh->neighborsWithMe.size(), lmap), rLambdas(info::mesh->neighborsWithMe.size()); // pairs<noffset, lambda>
+	std::vector<std::vector<__lambda__> > sLambdas(info::mesh->neighborsWithMe.size(), lmap), rLambdas(info::mesh->neighborsWithMe.size());
 	if (!Communication::exchangeUnknownSize(sLambdas, rLambdas, info::mesh->neighborsWithMe)) {
 		eslog::internalFailure("cannot exchange mortar lambdas.\n");
 	}
 
 	// lambdas <node, lambda> are sorted according to lambda in order to get correct result from FETI solver
-	std::vector<std::pair<esint, esint> > lambdas;
+	std::vector<__lambda__> lambdas;
 	for (size_t n = 0; n < rLambdas.size(); ++n) {
 		lambdas.insert(lambdas.end(), rLambdas[n].begin(), rLambdas[n].end());
 	}
-	std::sort(lambdas.begin(), lambdas.end(), [] (const std::pair<esint, esint> &l1, const std::pair<esint, esint> &l2) { return l1.second < l2.second; });
+	std::sort(lambdas.begin(), lambdas.end(), [] (const __lambda__ &l1, const __lambda__ &l2) { return l1.lambda < l2.lambda; });
 
 //	Communication::serialize([&] () {
 //		std::cout << info::mpi::rank << ": \n";
@@ -572,6 +574,7 @@ void NodesUniformFETIComposer::_buildMortars()
 			}
 		}
 	}
+	utils::sortAndRemoveDuplicates(mylambdas);
 	utils::sortAndRemoveDuplicates(mids);
 //	Communication::serialize([&] () {
 //		std::cout << info::mpi::rank << ": \n";
@@ -627,12 +630,12 @@ void NodesUniformFETIComposer::_buildMortars()
 
 	// build B1 in correct order
 	for (auto lambda = lambdas.begin(); lambda != lambdas.end(); ++lambda) {
-		if (!std::binary_search(mylambdas.begin(), mylambdas.end(), lambda->first)) {
+		if (!std::binary_search(mylambdas.begin(), mylambdas.end(), lambda->id)) {
 			continue;
 		}
-		auto begin = std::lower_bound(info::mesh->contacts->B.begin(), info::mesh->contacts->B.end(), lambda->first, [] (const ijv &b, esint nid) { return b.i < nid; });
+		auto begin = std::lower_bound(info::mesh->contacts->B.begin(), info::mesh->contacts->B.end(), *lambda, [] (const ijv &b, const __lambda__ &l) { return b.pair == l.pair ? b.i < l.id : b.pair < l.pair; });
 		auto end = begin;
-		while (end != info::mesh->contacts->B.end() && begin->i == end->i) {
+		while (end != info::mesh->contacts->B.end() && lambda->pair == end->pair && lambda->id == end->i) {
 			++end;
 		}
 
@@ -645,7 +648,7 @@ void NodesUniformFETIComposer::_buildMortars()
 			while (nit != moffset.end() && nit->id == it->j) {
 				if (info::mesh->neighborsWithMe[nit->n] == info::mpi::rank) {
 					for (esint i = 0; i < rBuffer[nit->n][nit->offset + 1]; ++i) {
-						rows[rBuffer[nit->n][nit->offset + 2 + 2 * i] - _data->K.doffset].push_back(lambda->second + 1);
+						rows[rBuffer[nit->n][nit->offset + 2 + 2 * i] - _data->K.doffset].push_back(lambda->lambda + 1);
 						cols[rBuffer[nit->n][nit->offset + 2 + 2 * i] - _data->K.doffset].push_back(rBuffer[nit->n][nit->offset + 2 + 2 * i + 1] + 1);
 						vals[rBuffer[nit->n][nit->offset + 2 + 2 * i] - _data->K.doffset].push_back(it->v / domains);
 					}
@@ -691,6 +694,8 @@ void NodesUniformFETIComposer::_buildMortars()
 ////			std::cout << info::mesh->nodes->IDs->datatarray()[n] << "::" << info::mesh->nodes->coordinates->datatarray()[n] << " -> " << *(_DOFMap->begin() + n) << "\n";
 ////		}
 //	});
+
+
 
 	_data->mortars.initDomains(info::mesh->elements->ndomains);
 	_data->mortars.fillDecomposition(
