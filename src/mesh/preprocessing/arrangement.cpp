@@ -306,7 +306,9 @@ void arrangeElementsRegions()
 		delete info::mesh->elementsRegions.front()->nodes;
 	}
 	info::mesh->elementsRegions.front()->nodes = new serializededata<esint, esint>(1, tarray<esint>(info::mesh->nodes->distribution, allnodes));
-	info::mesh->elementsRegions.front()->ecounters = info::mesh->elements->ecounters;
+	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
+		info::mesh->elementsRegions.front()->ecounters[info::mesh->elements->eintervals[i].code] += info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
+	}
 
 	computeNodeInfo(regions);
 	profiler::synccheckpoint("node_info");
