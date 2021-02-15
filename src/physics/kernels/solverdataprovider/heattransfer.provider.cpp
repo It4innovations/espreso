@@ -87,39 +87,40 @@ MatrixType HeatTransferSolverDataProvider::FETI::getMatrixType(esint domain)
 
 bool HeatTransferSolverDataProvider::FETI::hasKernel(esint domain)
 {
+	if (
+			_configuration.feti.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_R ||
+			_configuration.feti.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_K) {
+		return true;
+	}
+
 	if (_configuration.type == LoadStepSolverConfiguration::TYPE::TRANSIENT) {
 		return false;
 	}
 
-	if (
-			_configuration.feti.conjugate_projector != FETIConfiguration::CONJ_PROJECTOR::CONJ_R &&
-			_configuration.feti.conjugate_projector != FETIConfiguration::CONJ_PROJECTOR::CONJ_K) {
-
-		if (_configuration.convection.size()) {
-			for (auto it = _configuration.convection.begin(); it != _configuration.convection.end(); ++it) {
-				BoundaryRegionStore *region = info::mesh->bregion(it->first);
-				if (region->eintervalsDistribution[domain] != region->eintervalsDistribution[domain + 1]) {
-					return false;
-				}
+	if (_configuration.convection.size()) {
+		for (auto it = _configuration.convection.begin(); it != _configuration.convection.end(); ++it) {
+			BoundaryRegionStore *region = info::mesh->bregion(it->first);
+			if (region->eintervalsDistribution[domain] != region->eintervalsDistribution[domain + 1]) {
+				return false;
 			}
 		}
+	}
 
-		if (_configuration.diffuse_radiation.size()) {
-			for (auto it = _configuration.diffuse_radiation.begin(); it != _configuration.diffuse_radiation.end(); ++it) {
-				BoundaryRegionStore *region = info::mesh->bregion(it->first);
-				if (region->eintervalsDistribution[domain] != region->eintervalsDistribution[domain + 1]) {
-					return false;
-				}
+	if (_configuration.diffuse_radiation.size()) {
+		for (auto it = _configuration.diffuse_radiation.begin(); it != _configuration.diffuse_radiation.end(); ++it) {
+			BoundaryRegionStore *region = info::mesh->bregion(it->first);
+			if (region->eintervalsDistribution[domain] != region->eintervalsDistribution[domain + 1]) {
+				return false;
 			}
 		}
+	}
 
-		if (_configuration.bio_heat.size()) {
-			for (auto it = _configuration.bio_heat.begin(); it != _configuration.bio_heat.end(); ++it) {
-				ElementsRegionStore *region = info::mesh->eregion(it->first);
-				for (esint i = info::mesh->elements->eintervalsDistribution[domain]; i < info::mesh->elements->eintervalsDistribution[domain + 1]; i++) {
-					if (region->eintervals[i].begin != region->eintervals[i].end) {
-						return false;
-					}
+	if (_configuration.bio_heat.size()) {
+		for (auto it = _configuration.bio_heat.begin(); it != _configuration.bio_heat.end(); ++it) {
+			ElementsRegionStore *region = info::mesh->eregion(it->first);
+			for (esint i = info::mesh->elements->eintervalsDistribution[domain]; i < info::mesh->elements->eintervalsDistribution[domain + 1]; i++) {
+				if (region->eintervals[i].begin != region->eintervals[i].end) {
+					return false;
 				}
 			}
 		}
