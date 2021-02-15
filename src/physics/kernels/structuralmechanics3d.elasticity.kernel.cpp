@@ -613,7 +613,7 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 	const std::vector<MatrixDense> &dN = *(iterator.element->dN);
 	const std::vector<double> &weighFactor = *(iterator.element->weighFactor);
 
-	MatrixDense C(6, 6), initCoordinates(size, 3), coordinates(size, 3), F(3, 3), J, JC, invJ(3, 3), dND, B, CEp, CB, precision, rhsT, SGL, CBL;
+	MatrixDense C(6, 6), XYZ(1, 3), initCoordinates(size, 3), coordinates(size, 3), F(3, 3), J, JC, invJ(3, 3), dND, B, CEp, CB, precision, rhsT, SGL, CBL;
 	MatrixDense eHat(3, 3), eVec(6, 1), sVec(6, 1), S(9, 9), BL(6, 3 * size), GL(9, 3 * size);
 	MatrixDense K(size, 36), TE(size, 3), inertia(size, 3), dens(size, 1);
 	MatrixDense gpK(size, 36), gpTE(1, 3), gpInertia(1, 3), gpDens(1, 1);
@@ -734,6 +734,7 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 		if (builder.matrices & Builder::Request::f) {
 			gpTE.multiply(N[gp], TE);
 			gpInertia.multiply(N[gp], inertia);
+			XYZ.multiply(N[gp], coordinates);
 		}
 
 		if (builder.matrices & Builder::Request::C) {
@@ -868,8 +869,10 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 			}
 		}
 
+		XYZ(0, 0) = 0;
 		for (esint i = 0; i < 3 * size; i++) {
 			filler.Fe[0][i] += gpDens(0, 0) * detJ * weighFactor[gp] * N[gp](0, i % size) * gpInertia(0, i / size);
+			filler.Fe[0][i] += gpDens(0, 0) * detJ * weighFactor[gp] * N[gp](0, i % size) * XYZ(0, i / size) * pow(iterator.angularVelocity.data[0], 2);
 		}
 	}
 
