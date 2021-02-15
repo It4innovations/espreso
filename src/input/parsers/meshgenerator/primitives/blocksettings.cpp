@@ -15,9 +15,9 @@ BlockSettings::BlockSettings(const BlockGeneratorConfiguration &configuration)
 
 	start = Triple<esint>(configuration.start_x / MeshGenerator::precision, configuration.start_y / MeshGenerator::precision, configuration.start_z / MeshGenerator::precision);
 	end   = Triple<esint>(
-			(configuration.start_x + configuration.length_x) / MeshGenerator::precision,
-			(configuration.start_y + configuration.length_y) / MeshGenerator::precision,
-			(configuration.start_z + configuration.length_z) / MeshGenerator::precision);
+			(esint)std::round((configuration.start_x + configuration.length_x) / (.1 * MeshGenerator::precision)) / 10,
+			(esint)std::round((configuration.start_y + configuration.length_y) / (.1 * MeshGenerator::precision)) / 10,
+			(esint)std::round((configuration.start_z + configuration.length_z) / (.1 * MeshGenerator::precision)) / 10);
 }
 
 size_t BlockSettings::preferedDomains(const BlockGeneratorConfiguration &configuration)
