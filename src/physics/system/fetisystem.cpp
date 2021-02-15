@@ -147,7 +147,7 @@ void FETISolverData::buildB1()
 		VALS[d].insert(VALS[d].end(), mortars[d].vals, mortars[d].vals + mortars[d].nnz);
 	}
 
-	if (mlambdas.size()) {
+	if (mortars.domains) {
 		mortarRows = mortars[0].nrows;
 		utils::sortAndRemoveDuplicates(mlambdas);
 		auto dmap = mortars.dmap->begin();
