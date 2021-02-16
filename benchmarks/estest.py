@@ -28,6 +28,7 @@ class ESPRESOTest:
     env["OMP_NUM_THREADS"] = "4"
     env["SOLVER_NUM_THREADS"] = "4"
     env["PAR_NUM_THREADS"] = "4"
+    env["OMPI_MCA_rmaps_base_oversubscribe"] = "1"
 
     path = ""
     ecf = "espreso.ecf"
