@@ -76,6 +76,7 @@ struct Builder {
 	double internalForceReduction;
 
 	bool tangentMatrixCorrection;
+	bool prestress;
 	bool rayleighDamping;
 	bool coriolisDamping;
 	bool spinSoftening;
@@ -91,6 +92,7 @@ struct Builder {
 	  AFTSamples(0),
 	  internalForceReduction(1),
 	  tangentMatrixCorrection(false),
+	  prestress(false),
 	  rayleighDamping(false),
 	  coriolisDamping(false),
 	  spinSoftening(false)

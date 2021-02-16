@@ -42,15 +42,27 @@ ElasticityElementIterator::ElasticityElementIterator(ElasticityElementIterator *
 		thickness           = previous->thickness; previous->thickness.kernel.values = NULL;
 		initialTemperature  = previous->initialTemperature; previous->initialTemperature.kernel.values = NULL;
 		if (harmonic) {
-			cos.output = previous->cos.output; previous->cos.kernel.values = NULL;
-			sin.output = previous->sin.output; previous->sin.kernel.values = NULL;
+			if (previous->cos.output.data) {
+				cos.output = previous->cos.output; previous->cos.kernel.values = NULL;
+				sin.output = previous->sin.output; previous->sin.kernel.values = NULL;
 
-			phase                .output = previous->phase.output;
-			displacementAmplitude.output = previous->displacementAmplitude.output;
-			velocity             .output = previous->velocity.output;
-			velocityAmplitude    .output = previous->velocityAmplitude.output;
-			acceleration         .output = previous->acceleration.output;
-			accelerationAmplitude.output = previous->accelerationAmplitude.output;
+				phase                .output = previous->phase.output;
+				displacementAmplitude.output = previous->displacementAmplitude.output;
+				velocity             .output = previous->velocity.output;
+				velocityAmplitude    .output = previous->velocityAmplitude.output;
+				acceleration         .output = previous->acceleration.output;
+				accelerationAmplitude.output = previous->accelerationAmplitude.output;
+			} else {
+				cos     .setOutput(NamedData::DataType::VECTOR, "DISPLACEMENT_COS", true, step::TYPE::FREQUENCY);
+				sin     .setOutput(NamedData::DataType::VECTOR, "DISPLACEMENT_SIN", true, step::TYPE::FREQUENCY);
+
+				phase                .setOutput(NamedData::DataType::SCALAR, "PHASE"                 , info::ecf->output.results_selection.phase, step::TYPE::FREQUENCY);
+				displacementAmplitude.setOutput(NamedData::DataType::SCALAR, "DISPLACEMENT_AMPLITUDE", info::ecf->output.results_selection.displacement, step::TYPE::FREQUENCY);
+				velocity             .setOutput(NamedData::DataType::VECTOR, "VELOCITY"              , true, step::TYPE::TIME | step::TYPE::FTT);
+				velocityAmplitude    .setOutput(NamedData::DataType::SCALAR, "VELOCITY_AMPLITUDE"    , true, step::TYPE::FREQUENCY);
+				acceleration         .setOutput(NamedData::DataType::VECTOR, "ACCELERATION"          , true, step::TYPE::TIME | step::TYPE::FTT);
+				accelerationAmplitude.setOutput(NamedData::DataType::SCALAR, "ACCELERATION_AMPLITUDE", true, step::TYPE::FREQUENCY);
+			}
 		}
 
 		principalStress.output = previous->principalStress.output;

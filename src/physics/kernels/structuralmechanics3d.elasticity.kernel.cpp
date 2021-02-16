@@ -640,12 +640,12 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 	const std::vector<MatrixDense> &dN = *(iterator.element->dN);
 	const std::vector<double> &weighFactor = *(iterator.element->weighFactor);
 
-	MatrixDense C(6, 6), XYZ(1, 3), initCoordinates(size, 3), coordinates(size, 3), F(3, 3), J, JC, invJ(3, 3), dND, B, CEp, CB, precision, rhsT, SGL, CBL;
+	MatrixDense C(6, 6), XYZ(1, 3), initCoordinates(size, 3), coordinates(size, 3), F(3, 3), J, JC, invJ(3, 3), dND, B, CEp, CB, precision, rhsT, SGL, CBL, disp(3 * size, 1), prestress(3 * size, 3 * size);
 	MatrixDense eHat(3, 3), eVec(6, 1), sVec(6, 1), S(9, 9), BL(6, 3 * size), GL(9, 3 * size);
 	MatrixDense K(size, 36), TE(size, 3), inertia(size, 3), dens(size, 1);
 	MatrixDense gpK(size, 36), gpTE(1, 3), gpInertia(1, 3), gpDens(1, 1);
 	MatrixDense rotation(3, 3), spin(3, 3), Ks, omegaN;
-	MatrixDense uc(3 * size, 1), us(3 * size, 1);
+	MatrixDense uc(3 * size, 1), us(3 * size, 1), uB(6, 1);
 	Point fixedOmega, fixedP;
 	MatrixDense tx(3, 1), ty(3, 1), tz(3, 1), G(3 * size, 3 * size), Nxr(3, 1), x, fixedR(3, 1), tztyNxr(3, 1), tytzNxr(3, 1), BB(1, size), Bx(3 * size, 3), Bxt1(3 * size, 1), Bxt2(3 * size, 1), Bxttt(3 * size, 3);
 	double detJ, te;
@@ -663,6 +663,9 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 		coordinates(n, 0) = initCoordinates(n, 0) + iterator.displacement.data[3 * n + 0];
 		coordinates(n, 1) = initCoordinates(n, 1) + iterator.displacement.data[3 * n + 1];
 		coordinates(n, 2) = initCoordinates(n, 2) + iterator.displacement.data[3 * n + 2];
+		disp(n + 0 * size, 0) = iterator.displacement.data[3 * n + 0];
+		disp(n + 1 * size, 0) = iterator.displacement.data[3 * n + 1];
+		disp(n + 2 * size, 0) = iterator.displacement.data[3 * n + 2];
 		dens(n, 0) = iterator.material->density.evaluator->eval(params);
 
 		if (harmonic) {
@@ -699,6 +702,7 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 			break;
 		}
 	}
+
 	x.nrows = 3 * size;
 	x.ncols = 1;
 	x.vals = initCoordinates.vals;
@@ -832,6 +836,40 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 					C(i, j) = gpK(0, k++);
 				}
 			}
+		}
+
+		if (builder.prestress) {
+			B.resize(C.nrows, 3 * size);
+			B.fill(0);
+			distribute6x3(B.vals, dND.vals, dND.nrows, dND.ncols);
+			// 6x24 * 24x1
+			uB.multiply(B, disp);
+			uB(0, 0) -= gpTE(0, 0);
+			uB(1, 0) -= gpTE(0, 1);
+			uB(2, 0) -= gpTE(0, 2);
+
+			MatrixDense stress(3, 3), Sigma, stress88(size, size), stressXX;
+			Sigma.multiply(C, uB);
+			stress[0][0] = Sigma[0][0];
+			stress[1][1] = Sigma[1][0];
+			stress[2][2] = Sigma[2][0];
+			stress[0][1] = Sigma[3][0];
+			stress[1][0] = Sigma[3][0];
+			stress[1][2] = Sigma[4][0];
+			stress[2][1] = Sigma[4][0];
+			stress[0][2] = Sigma[5][0];
+			stress[2][0] = Sigma[5][0];
+
+			stressXX.multiply(stress, dND);
+			stress88.multiply(dND, stressXX, 1, 0, true, false);
+			for (int i = 0; i < size; ++i) {
+				for (int j = 0; j < size; ++j) {
+					prestress[i][j] = stress88[i][j];
+					prestress[i + size][j + size] = stress88[i][j];
+					prestress[i + 2 * size][j + 2 * size] = stress88[i][j];
+				}
+			}
+
 		}
 
 		if (iterator.material->material_model == MaterialConfiguration::MATERIAL_MODEL::HYPER_ELASTIC && step::isInitial()) {
@@ -970,12 +1008,15 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 		}
 	}
 
+	if (builder.prestress && (builder.matrices & Builder::Request::K)) {
+		filler.Ke.add(1, &prestress);
+	}
+
 	if (iterator.corotating && iterator.corotating->spin_softening) {
 		filler.Ke.add(-1, &Ks);
 	}
 
 	if (iterator.massStabilization) {
-		printf("mass stabilization\n");
 		auto dual = info::mesh->elements->faceNeighbors->begin() + iterator.offset;
 		auto fpointer = iterator.element->facepointers->begin();
 		auto fnodes = iterator.element->faces->begin();
@@ -1007,7 +1048,6 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 				}
 			}
 		}
-		std::cout << filler.CMe;
 	}
 
 	if (!iterator.largeDisplacement && step::type != step::TYPE::FTT && (builder.matrices & Builder::Request::R)) {

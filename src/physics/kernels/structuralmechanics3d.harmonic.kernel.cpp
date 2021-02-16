@@ -26,15 +26,9 @@ HarmonicBalance3DKernel::HarmonicBalance3DKernel(StructuralMechanics3DKernel *pr
 : StructuralMechanics3DKernel(previous, physics, gsettings, configuration)
 {
 	solutions.clear();
-	if (previous == NULL) {
-		solutions.reserve(2);
-		solutions.push_back(VectorDense(iterator.cos.output.data->data.size(), iterator.cos.output.data->data.data()));
-		solutions.push_back(VectorDense(iterator.sin.output.data->data.size(), iterator.sin.output.data->data.data()));
-	} else {
-		solutions.resize(2);
-		solutions[0] = previous->solutions[0];
-		solutions.push_back(VectorDense(iterator.sin.output.data->data.size(), iterator.sin.output.data->data.data()));
-	}
+	solutions.reserve(2);
+	solutions.push_back(VectorDense(iterator.cos.output.data->data.size(), iterator.cos.output.data->data.data()));
+	solutions.push_back(VectorDense(iterator.sin.output.data->data.size(), iterator.sin.output.data->data.data()));
 }
 
 HarmonicBalance3DKernel::~HarmonicBalance3DKernel()

@@ -46,6 +46,7 @@ struct HarmonicSolverConfiguration: public ECFDescription {
 	double min_frequency, max_frequency;
 	int num_samples;
 
+	bool prestress;
 	bool mass_stabilization;
 
 	HarmonicDampingConfiguration damping;

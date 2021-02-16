@@ -21,7 +21,7 @@
 using namespace espreso;
 
 EnSightGold::EnSightGold(bool withDecomposition)
-: _ftt(NULL), _withDecomposition(withDecomposition), _withIDs(true)
+: _ftt(NULL), _withDecomposition(withDecomposition), _withIDs(true), _step(-1)
 {
 	_geometry = _directory + _name + ".geo";
 	_fixedDataPath = _directory;
@@ -93,7 +93,8 @@ void EnSightGold::updateSolution()
 		writer->ndata(info::mesh->nodes->data[di]);
 	}
 
-	if (info::mpi::grank == 0 || (step::type == step::TYPE::FTT && info::mpi::rank == 0)) {
+	if (_step != step::loadstep || info::mpi::grank == 0 || (step::type == step::TYPE::FTT && info::mpi::rank == 0)) {
+		_step = step::loadstep;
 		if (step::duplicate::instances > 1 && step::substep - step::duplicate::offset + 1 == step::duplicate::size) {
 			// TODO: generalize
 			_times.clear();
@@ -135,13 +136,11 @@ void EnSightGold::updateSolution()
 			}
 		};
 
-		if (_variables.size() == 0) {
-			for (size_t i = 0; i < info::mesh->nodes->data.size(); i++) {
-				pushdata(_variables, info::mesh->nodes->data[i], "node");
-			}
-			for (size_t i = 0; i < info::mesh->elements->data.size(); i++) {
-				pushdata(_variables, info::mesh->elements->data[i], "element");
-			}
+		for (size_t i = 0; i < info::mesh->nodes->data.size(); i++) {
+			pushdata(_variables, info::mesh->nodes->data[i], "node");
+		}
+		for (size_t i = 0; i < info::mesh->elements->data.size(); i++) {
+			pushdata(_variables, info::mesh->elements->data[i], "element");
 		}
 
 		writer->casefile();

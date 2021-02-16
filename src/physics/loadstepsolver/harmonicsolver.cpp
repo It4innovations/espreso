@@ -71,6 +71,7 @@ void HarmonicSolver::updateDamping()
 	} break;
 	}
 
+	_system->builder->prestress = _configuration.prestress;
 	_system->builder->coriolisDamping = _configuration.damping.coriolis_effect.coriolis_damping;
 	_system->builder->rotationAxis.x = _configuration.damping.coriolis_effect.rotation_axis.x;
 	_system->builder->rotationAxis.y = _configuration.damping.coriolis_effect.rotation_axis.y;

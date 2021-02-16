@@ -65,7 +65,12 @@ espreso::HarmonicSolverConfiguration::HarmonicSolverConfiguration()
 			.setdescription({ "Central frequency" })
 			.setdatatype({ ECFDataType::FLOAT }));
 	
-	mass_stabilization = true;
+	prestress = false;
+	REGISTER(prestress, ECFMetaData()
+			.setdescription({ "Insert mass matrix of domain interfaces into harmonic matrix." })
+			.setdatatype({ ECFDataType::FLOAT }));
+
+	mass_stabilization = false;
 	REGISTER(mass_stabilization, ECFMetaData()
 			.setdescription({ "Insert mass matrix of domain interfaces into harmonic matrix." })
 			.setdatatype({ ECFDataType::FLOAT }));
