@@ -226,8 +226,14 @@ fetisources = (
 )
 
 def build(ctx):
-    commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).rstrip()
-    ctx.env.append_unique("DEFINES_INFO", [ '__ESCOMMIT__=\"{0}\"'.format(commit.decode()) ])
+    def is_git_directory(path = '.'):
+        return subprocess.call(['git', '-C', path, 'status'], stderr=subprocess.STDOUT, stdout = open(os.devnull, 'w')) == 0
+
+    if is_git_directory():
+        commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).rstrip().decode()
+    else:
+        commit = "unknow"
+    ctx.env.append_unique("DEFINES_INFO", [ '__ESCOMMIT__=\"{0}\"'.format(commit) ])
     ctx.env.append_unique("DEFINES_INFO", [ '__ESCXX__=\"{0}\"'.format(ctx.env.CXX[0]) ])
     ctx.env.append_unique("DEFINES_INFO", [ '__ESBUILDPATH__=\"{0}\"'.format(ctx.bldnode.abspath()) ])
     ctx.env.append_unique("DEFINES_INFO", [ '__ESCXXFLAGS__=\"{0}\"'.format(" ".join(ctx.env.CXXFLAGS)) ])
