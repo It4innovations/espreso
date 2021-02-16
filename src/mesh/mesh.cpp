@@ -839,7 +839,7 @@ void Mesh::printMeshStatistics()
 			eslog::info("mesh: region=%s, dimension=%d, elements=%d, nodes=%d\n", boundaryRegions[r]->name.c_str(), boundaryRegions[r]->dimension, boundaryRegions[r]->totalsize, boundaryRegions[r]->nodeInfo.totalSize);
 		}
 		eslog::info("mesh: region=ALL_ELEMENTS, bodies=%d\n", elements->bodiesTotalSize);
-		for (size_t r = 0; r < elementsRegions.size(); r++) {
+		for (size_t r = 1; r < elementsRegions.size(); r++) {
 			for (size_t b = 0; b < elementsRegions[r]->bodies.size(); ++b) {
 				eslog::info("mesh: region=%s, b-elements=%d, b-faces=%d\n", elementsRegions[r]->name.c_str(), elementsRegions[r]->bodyElements[b], elementsRegions[r]->bodyFaces[b]);
 			}
