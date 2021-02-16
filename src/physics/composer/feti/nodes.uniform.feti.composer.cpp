@@ -643,7 +643,7 @@ void NodesUniformFETIComposer::_buildMortars()
 			auto nit = std::lower_bound(moffset.begin(), moffset.end(), it->j, [&] (const npair &info, const esint &lambda) { return info.id < lambda; });
 			esint domains = 0;
 			for (auto nnit = nit; nnit != moffset.end() && nnit->id == it->j; ++nnit) {
-				domains += rBuffer[nit->n][nit->offset + 1];
+				domains += rBuffer[nnit->n][nnit->offset + 1];
 			}
 			while (nit != moffset.end() && nit->id == it->j) {
 				if (info::mesh->neighborsWithMe[nit->n] == info::mpi::rank) {
