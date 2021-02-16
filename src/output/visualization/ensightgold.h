@@ -33,7 +33,7 @@ protected:
 
 	FTT *_ftt;
 
-	bool _withDecomposition;
+	bool _withDecomposition, _withIDs;
 	std::string _geometry;
 	std::string _fixedDataPath;
 	std::vector<std::string> _variables;

@@ -21,7 +21,7 @@
 using namespace espreso;
 
 EnSightGold::EnSightGold(bool withDecomposition)
-: _ftt(NULL), _withDecomposition(withDecomposition)
+: _ftt(NULL), _withDecomposition(withDecomposition), _withIDs(true)
 {
 	_geometry = _directory + _name + ".geo";
 	_fixedDataPath = _directory;
@@ -215,7 +215,11 @@ void EnSightGold::geometry()
 		_writer.description("EnSight Gold geometry format");
 		_writer.description("----------------------------");
 
-		_writer.description("node id off");
+		if (_withIDs) {
+			_writer.description("node id given");
+		} else {
+			_writer.description("node id off");
+		}
 		_writer.description("element id off");
 	}
 
@@ -223,6 +227,13 @@ void EnSightGold::geometry()
 		if (isRoot()) {
 			_writer.description("coordinates");
 			_writer.int32(store->nodeInfo.totalSize);
+		}
+
+		if (_withIDs) {
+			for (esint n = 0, i = store->nodeInfo.nhalo; n < store->nodeInfo.size; ++n, ++i) {
+				_writer.int32(info::mesh->nodes->IDs->datatarray()[store->nodes->datatarray()[i]]);
+			}
+			_writer.groupData();
 		}
 
 		for (int d = 0; d < 3; ++d) {
