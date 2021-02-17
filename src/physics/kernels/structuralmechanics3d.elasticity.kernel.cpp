@@ -988,10 +988,17 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 			}
 		}
 
-		XYZ(0, 0) = 0;
 		for (esint i = 0; i < 3 * size; i++) {
 			filler.Fe[0][i] += gpDens(0, 0) * detJ * weighFactor[gp] * N[gp](0, i % size) * gpInertia(0, i / size);
-			filler.Fe[0][i] += gpDens(0, 0) * detJ * weighFactor[gp] * N[gp](0, i % size) * XYZ(0, i / size) * pow(iterator.angularVelocity.data[0], 2);
+			if (iterator.angularVelocity.data[0]) {
+				filler.Fe[0][i] += gpDens(0, 0) * detJ * weighFactor[gp] * N[gp](0, i % size) * (i / size == 0 ? 0 : XYZ(0, i / size)) * pow(iterator.angularVelocity.data[0], 2);
+			}
+			if (iterator.angularVelocity.data[1]) {
+				filler.Fe[0][i] += gpDens(0, 0) * detJ * weighFactor[gp] * N[gp](0, i % size) * (i / size == 1 ? 0 : XYZ(0, i / size)) * pow(iterator.angularVelocity.data[1], 2);
+			}
+			if (iterator.angularVelocity.data[2]) {
+				filler.Fe[0][i] += gpDens(0, 0) * detJ * weighFactor[gp] * N[gp](0, i % size) * (i / size == 2 ? 0 : XYZ(0, i / size)) * pow(iterator.angularVelocity.data[2], 2);
+			}
 		}
 	}
 
