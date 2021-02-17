@@ -746,6 +746,7 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 		rotation(1, 2) = -ox;
 		rotation(2, 0) = -oy;
 		rotation(2, 1) =  ox;
+//		std::cout << rotation;
 	}
 
 	if (iterator.corotating && iterator.corotating->spin_softening) {
@@ -867,7 +868,6 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 					prestress[i + 2 * size][j + 2 * size] = stress88[i][j];
 				}
 			}
-
 		}
 
 		if (iterator.material->material_model == MaterialConfiguration::MATERIAL_MODEL::HYPER_ELASTIC && step::isInitial()) {

@@ -47,10 +47,10 @@ RotorDynamicsConfiguration::CorotatingRotorConfiguration::CorotatingRotorConfigu
 			.setdescription({ "Spin softening" })
 			.setdatatype({ ECFDataType::BOOL }));
 
-	rotating_damping = true;
-	REGISTER(rotating_damping, ECFMetaData()
-			.setdescription({ "Rotation damping" })
-			.setdatatype({ ECFDataType::BOOL }));
+	rotating_damping = false;
+//	REGISTER(rotating_damping, ECFMetaData()
+//			.setdescription({ "Rotation damping" })
+//			.setdatatype({ ECFDataType::BOOL }));
 
 	centrifugal_load = true;
 	REGISTER(centrifugal_load, ECFMetaData()
