@@ -1,0 +1,92 @@
+
+INPUT {
+  FORMAT      ENSIGHT;
+  PATH     cubes.case;
+
+  CONTACT_INTERFACES {
+    GENERAL {
+      DETECTION    ALL_BODIES;
+      CRITERION         BOUND;
+    }
+  }
+}
+
+PHYSICS   HEAT_TRANSFER_3D;
+HEAT_TRANSFER_3D {
+  LOAD_STEPS        1;
+
+  MATERIALS {
+    1 {
+      THERMAL_CONDUCTIVITY {
+        MODEL   ISOTROPIC;
+
+        KXX            1;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   1;
+  }
+
+  INITIAL_TEMPERATURE {
+    ALL_ELEMENTS   200;
+  }
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER   DIRICHLET;
+        PRECISION            1E-08;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION    ANALYTIC;
+      }
+
+      TEMPERATURE {
+        TOP      100;
+        BOTTOM   300;
+      }
+    }
+  }
+}
+
+OUTPUT {
+  RESULTS_STORE_FREQUENCY    EVERY_SUBSTEP;
+  MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
+
+  STORE_RESULTS                        ALL;
+  PRINT_MATRICES                      TRUE;
+
+  MONITORING {
+    1 {
+      REGION            TOP;
+      STATISTICS        MAX;
+      PROPERTY  TEMPERATURE;
+    }
+
+    2 {
+      REGION         BOTTOM;
+      STATISTICS        MIN;
+      PROPERTY  TEMPERATURE;
+    }
+
+    3 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        MAX;
+      PROPERTY     GRADIENT;
+    }
+
+    5 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        AVG;
+      PROPERTY  TEMPERATURE;
+    }
+  }
+}
+
