@@ -35,7 +35,6 @@ mesh: region=LEFT, dimension=2, elements=256, nodes=289
 mesh: region=BOTTOM, dimension=0, elements=0, nodes=289
 mesh: region=TOP, dimension=0, elements=0, nodes=289
 mesh: region=ALL_ELEMENTS, bodies=1
-mesh: region=ALL_ELEMENTS, b-elements=4096, b-faces=1536
 mesh: region=NAMELESS_ELEMENT_SET, b-elements=4096, b-faces=1536
                                                                                                
  ================================== DECOMPOSITION STATISTICS ================================= 
