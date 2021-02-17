@@ -146,6 +146,15 @@ OUTPUT64:
     - ./waf -j8
     - nosetests -v benchmarks/output/brake
 
+CONTACT:
+  stage: mesio
+  only:
+    - schedules
+  script:
+    - ./waf configure
+    - ./waf -j8
+    - nosetests -v benchmarks/contact
+
 APITEST:
   stage: feti4i
   only:
