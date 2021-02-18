@@ -1,0 +1,219 @@
+# ESPRESO Configuration File
+
+DEFAULT_ARGS {
+  0   HEXA20;
+
+  1        1;
+  2        1;
+  3        1;
+
+  4        2;
+  5        2;
+  6        2;
+
+  7        5;
+  8        5;
+  9        5;
+  
+  10      FIX_POINTS;
+ 
+  11    3;
+  
+}
+
+INPUT_TYPE                   GENERATOR;
+PHYSICS   STRUCTURAL_MECHANICS_3D;
+INPUT {
+
+ DECOMPOSITION {
+     #[NONE,METIS,PARMETIS,PTSCOTCH,HILBERT_CURVE]
+         PARALLEL_DECOMPOSER   METIS;
+             #[NONE,METIS,SCOTCH,KAHIP]
+                 SEQUENTIAL_DECOMPOSER    METIS;
+                     MESH_DUPLICATION            1;
+                         DOMAINS                      1;
+                         
+                             SEPARATE_MATERIALS       FALSE;
+                                 SEPARATE_REGIONS         FALSE;
+                                     SEPARATE_ETYPES          FALSE;
+                                     
+                                         PARMETIS_OPTIONS {
+                                               REFINEMENT   FALSE;
+                                                   }
+                                                   
+                                                       METIS_OPTIONS {
+                                                             #[VOLUME,EDGECUT]
+                                                                   OBJECTIVE_TYPE   VOLUME;
+                                                                       }
+                                                                       
+                                                                           PTSCOTCH_OPTIONS {
+                                                                               }
+                                                                               
+                                                                                   SCOTCH_OPTIONS {
+                                                                                       }
+                                                                                       
+                                                                                           KAHIP_OPTIONS {
+                                                                                               }
+                                                                                                 }
+                                                                                                 }
+                                                                                                 
+                                                                                                 
+
+GENERATOR {
+  SHAPE   GRID;
+
+  UNIFORM_CLUSTERS  true;
+  UNIFORM_DOMAINS  true;
+
+  GRID {
+    START_X                    0;
+    START_Y                    0;
+    START_Z                    0;
+
+    LENGTH_X                  1;
+    LENGTH_Y                  1;
+    LENGTH_Z                  1;
+
+    NODES {
+      Z0   <0 , 1> <0 , 1> <0 , 0>;
+      Z1   <0 , 1> <0 , 1> <1 ,1>;
+    }
+
+    ELEMENT_TYPE          [ARG0];
+
+    CLUSTERS_X            [ARG1];
+    CLUSTERS_Y            [ARG2];
+    CLUSTERS_Z            [ARG3];
+
+    DOMAINS_X             [ARG4];
+    DOMAINS_Y             [ARG5];
+    DOMAINS_Z             [ARG6];
+
+    ELEMENTS_X            [ARG7];
+    ELEMENTS_Y            [ARG8];
+    ELEMENTS_Z            [ARG9];
+  }
+}
+
+STRUCTURAL_MECHANICS_3D {
+  LOAD_STEPS   1;
+
+  MATERIALS {
+    1 {
+
+      DENS   7850;
+      CP        1;
+
+      LINEAR_ELASTIC_PROPERTIES {
+        MODEL   ISOTROPIC;
+
+        MIXY          0.3;
+        EX           2E11;
+      }
+
+      THERMAL_EXPANSION {
+        TEX             0;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   1;
+  }
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE       HARMONIC;
+      MODE         LINEAR;
+      SOLVER      FETI;
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER     DIRICHLET;
+        PRECISION            1E-8;
+        ITERATIVE_SOLVER     GMRES;
+        REGULARIZATION   ANALYTIC;
+        REGULARIZATION_VERSION   [ARG10];
+        MAX_ITERATIONS        100;
+        CONJUGATE_PROJECTOR CONJ_R;
+        NUM_DIRECTIONS  [ARG11];
+        SCALING  TRUE;
+        REDUNDANT_LAGRANGE  TRUE;
+        use_schur_complement true;
+      }
+
+      HARMONIC_SOLVER {
+        DAMPING {
+          RAYLEIGH {
+            TYPE                      DIRECT;
+
+            DIRECT_DAMPING {
+              STIFFNESS                   0;
+              MASS                        1;
+            }
+          }
+        }
+
+        FREQUENCY_INTERVAL_TYPE   LINEAR;
+        MIN_FREQUENCY                  0;
+        MAX_FREQUENCY               100;
+        NUM_SAMPLES                    1;
+      }
+
+      DISPLACEMENT {
+        Z0   { X 0; Y 0; Z 0; }
+      }
+
+      HARMONIC_FORCE {
+        Z1 {
+          TYPE      COMPONENTS;
+
+          MAGNITUDE   { X 0; Y 0; Z 100; }
+          PHASE       { X  0; Y 0; Z 0; }
+        }
+      }
+    }
+  }
+}
+
+OUTPUT {
+
+#  PATH  /scratch/work/project/open-18-15;
+
+  RESULTS_STORE_FREQUENCY    EVERY_SUBSTEP;
+  MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
+
+PRINT_MATRICES TRUE;
+
+
+  STORE_RESULTS                 ALL;
+
+  MONITORING {
+    1 {
+      REGION                     Z1;
+      STATISTICS                AVG;
+      PROPERTY       DISPLACEMENT_AMPLITUDE_Y;
+    }
+
+    2 {
+      REGION                     Z1;
+      STATISTICS                AVG;
+      PROPERTY   DISPLACEMENT_COS_Y;
+    }
+
+    3 {
+      REGION                     Z1;
+      STATISTICS                AVG;
+      PROPERTY   DISPLACEMENT_SIN_Y;
+    }
+
+    4 {
+      REGION                     Z1;
+      STATISTICS                AVG;
+      PROPERTY              PHASE_Y;
+    }
+
+
+  }
+}
