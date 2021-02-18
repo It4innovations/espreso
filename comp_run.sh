@@ -3,9 +3,10 @@
 ml Forge
 
 . env/modules.barbora.icpc
-# ml Python/3.8.2-GCCcore-9.3.0
 
-# ./waf configure -m debug  --solver=cuda
+#ml Python/3.8.2-GCCcore-9.3.0
+
+./waf configure -m debug  --solver=cuda
 
 ./waf
 

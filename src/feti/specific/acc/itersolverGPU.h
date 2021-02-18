@@ -19,9 +19,9 @@ public:
 	   void apply_A_htfeti_SC ( Cluster & cluster );
 
 
-	   virtual void apply_A_l_comp_dom_B_P      ( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out){};
-	   virtual void apply_A_l_comp_dom_B_P_local( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out){};
-	   virtual void apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<esint> & tmp_in_indices, SEQ_VECTOR<double> & tmp_in_values, SEQ_VECTOR<esint> & tmp_out_indices, SEQ_VECTOR<double> & tmp_out_values){};
+	   virtual void apply_A_l_comp_dom_B_P      ( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out);
+	   virtual void apply_A_l_comp_dom_B_P_local( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out);
+	   virtual void apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<esint> & tmp_in_indices, SEQ_VECTOR<double> & tmp_in_values, SEQ_VECTOR<esint> & tmp_out_indices, SEQ_VECTOR<double> & tmp_out_values);
 
 	   virtual void Apply_Prec( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out );
 

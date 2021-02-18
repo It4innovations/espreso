@@ -479,3 +479,198 @@ void IterSolverGPU::Apply_Prec( TimeEval & time_eval, SuperCluster & cluster, SE
 
 }
 
+void IterSolverGPU::apply_A_l_comp_dom_B_P( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
+
+    	eslog::error("apply_A_l_comp_dom_B_P - is not implemented in itersolverGPU.cpp .\n");
+
+		// See cpu/itersolver.cpu for reference implementation 
+
+}
+
+
+void IterSolverGPU::apply_A_l_comp_dom_B_P_local( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
+
+    	eslog::error("apply_A_l_comp_dom_B_P_local - is not implemented in itersolverGPU.cpp .\n");
+
+		// See cpu/itersolver.cpu for reference implementation 
+
+}
+
+void IterSolverGPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<esint> & in_indices, SEQ_VECTOR<double> & in_values, SEQ_VECTOR<esint> & out_indices, SEQ_VECTOR<double> & out_values) {
+
+//	 time_eval.totalTime.start();
+
+    if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 1) {
+
+    	eslog::error("Hybrid FETI not supported in apply_A_l_comp_dom_B_P_local_sparse in itersolverGPU.cpp.\n");
+
+		// See cpu/itersolver.cpu for reference implementation 
+
+    }
+
+
+    if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
+
+//    	 time_eval.timeEvents[0].start();
+    	SEQ_VECTOR <int> is_empty ( cluster.x_prim_cluster1.size(), true);
+ 		#pragma omp parallel for
+		for (size_t d = 0; d < cluster.domains.size(); d++) {
+			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d]->B1_comp_dom.rows, 0.0 ); 
+
+			esint iter_in = 0;
+			esint iter_lm = 0;
+
+			do {
+
+				if (cluster.domains[d]->lambda_map_sub[iter_lm] == in_indices[iter_in]) {
+					x_in_tmp[iter_lm] = in_values[iter_in];
+					iter_in++;
+					iter_lm++;
+					is_empty[d] = false;
+				} else {
+					if (cluster.domains[d]->lambda_map_sub[iter_lm] > in_indices[iter_in]) {
+						iter_in++;
+					} else {
+						iter_lm++;
+					}
+				}
+
+			} while (iter_lm != (esint)cluster.domains[d]->lambda_map_sub.size() && iter_in != (esint)in_indices.size() );
+
+			if (!is_empty[d]) {
+				//CPU
+				// cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'T');
+				//GPU - LSC 
+				for (esint i = 0; i < x_in_tmp.size(); i++) {
+					cluster.domains[d]->cuda_pinned_buff[i] = x_in_tmp[i];
+				}
+			}
+		}
+
+//         time_eval.timeEvents[0].end();
+
+//         time_eval.timeEvents[1].start();
+        if (cluster.USE_HFETI == 0) {
+        	//cluster.multKplusFETI (cluster.x_prim_cluster1);
+
+			#pragma omp parallel for
+			for (size_t d = 0; d < cluster.domains.size(); d++) {
+				if (!is_empty[d]) {
+					// CPU
+					// cluster.domains[d]->multKplusLocal(*cluster.x_prim_cluster1[d]);
+					// GPU - LSC 
+#ifdef SHARE_SC
+					cluster.domains[d]->B1Kplus.DenseMatVecCUDA_shared_wo_Copy_start(cluster.domains[d]->cuda_pinned_buff, cluster.domains[d]->cuda_pinned_buff,'N',0);
+#else
+					cluster.domains[d]->B1Kplus.DenseMatVecCUDA_wo_Copy_start(cluster.domains[d]->cuda_pinned_buff, cluster.domains[d]->cuda_pinned_buff,'N',0);
+#endif
+				}
+			}
+
+		} else {
+			eslog::error("apply_A_l_comp_dom_B_P_local_sparse - ERROR HTFETI_1x .\n");
+			// cluster.multKplusHFETI(cluster.x_prim_cluster1);
+        }
+//         time_eval.timeEvents[1].end();
+
+
+//         time_eval.timeEvents[2].start();
+		std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
+
+		SEQ_VECTOR < double > y_out_tmp;
+		for (size_t d = 0; d < cluster.domains.size(); d++) {
+			if (!is_empty[d]) {
+				// CPU
+				// y_out_tmp.resize( cluster.domains[d]->B1_comp_dom.rows );
+				// cluster.domains[d]->B1_comp_dom.MatVec (*cluster.x_prim_cluster1[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+				// for (size_t i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++)
+					// cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += y_out_tmp[i];
+
+				// GPU - LSC 
+				if (cluster.domains[d]->isOnACC == 1) {
+					cluster.domains[d]->B1Kplus.DenseMatVecCUDA_wo_Copy_sync ( );
+					for (esint i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++) {
+						cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += cluster.domains[d]->cuda_pinned_buff[i];					
+					}
+				} else {
+					eslog::error("apply_A_l_comp_dom_B_P_local_sparse - ERROR LSC not on GPU_2x .\n");
+				}
+			}
+		}
+
+//		time_eval.timeEvents[2].end();
+    }
+
+
+    if (cluster.USE_KINV == 0) {
+//    	 time_eval.timeEvents[0].start();
+    	SEQ_VECTOR <int> is_empty ( cluster.x_prim_cluster1.size(), true);
+ 		#pragma omp parallel for
+		for (size_t d = 0; d < cluster.domains.size(); d++) {
+			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d]->B1_comp_dom.rows, 0.0 );
+
+			esint iter_in = 0;
+			esint iter_lm = 0;
+
+			do {
+
+				if (cluster.domains[d]->lambda_map_sub[iter_lm] == in_indices[iter_in]) {
+					x_in_tmp[iter_lm] = in_values[iter_in];
+					iter_in++;
+					iter_lm++;
+					is_empty[d] = false;
+				} else {
+					if (cluster.domains[d]->lambda_map_sub[iter_lm] > in_indices[iter_in]) {
+						iter_in++;
+					} else {
+						iter_lm++;
+					}
+				}
+
+			} while (iter_lm != (esint)cluster.domains[d]->lambda_map_sub.size() && iter_in != (esint)in_indices.size() );
+
+			if (!is_empty[d])
+				cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'T');
+		}
+
+//         time_eval.timeEvents[0].end();
+
+//         time_eval.timeEvents[1].start();
+        if (cluster.USE_HFETI == 0) {
+        	//cluster.multKplusFETI (cluster.x_prim_cluster1);
+
+			#pragma omp parallel for
+			for (size_t d = 0; d < cluster.domains.size(); d++) {
+				if (!is_empty[d]) {
+					cluster.domains[d]->multKplusLocal(*cluster.x_prim_cluster1[d]);
+				}
+			}
+		} else {
+    		cluster.multKplusHFETI(cluster.x_prim_cluster1);
+        }
+//         time_eval.timeEvents[1].end();
+
+
+//         time_eval.timeEvents[2].start();
+		std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
+
+		SEQ_VECTOR < double > y_out_tmp;
+		for (size_t d = 0; d < cluster.domains.size(); d++) {
+			if (!is_empty[d]) {
+				y_out_tmp.resize( cluster.domains[d]->B1_comp_dom.rows );
+				cluster.domains[d]->B1_comp_dom.MatVec (*cluster.x_prim_cluster1[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+
+				for (size_t i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++)
+					cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += y_out_tmp[i];
+			}
+		}
+
+//		time_eval.timeEvents[2].end();
+    }
+
+	out_indices = cluster.my_lamdas_indices;
+	out_values  = cluster.compressed_tmp;
+
+//     time_eval.totalTime.end();
+
+}
