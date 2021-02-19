@@ -99,8 +99,8 @@ HarmonicDampingConfiguration::HarmonicDampingConfiguration()
 {
 	REGISTER(rayleigh, ECFMetaData()
 			.setdescription({ "RAYLEIGH damping configuration." }));
-	REGISTER(coriolis_effect, ECFMetaData()
-			.setdescription({ "Coriolis effect configuration." }));
+//	REGISTER(coriolis_effect, ECFMetaData()
+//			.setdescription({ "Coriolis effect configuration." }));
 }
 
 

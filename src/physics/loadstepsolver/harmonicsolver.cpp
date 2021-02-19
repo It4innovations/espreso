@@ -20,20 +20,20 @@
 
 using namespace espreso;
 
-HarmonicSolver::HarmonicSolver(LinearSystem *system, SubStepSolver *subStepSolver, HarmonicSolverConfiguration &configuration, double duration)
+HarmonicSolver::HarmonicSolver(LinearSystem *system, SubStepSolver *subStepSolver, StructuralMechanicsLoadStepConfiguration &configuration, double duration)
 : LoadStepSolver(system, subStepSolver, duration), _configuration(configuration)
 {
-	std::vector<int> distribution = tarray<int>::distribute(info::mpi::isize, _configuration.num_samples);
+	std::vector<int> distribution = tarray<int>::distribute(info::mpi::isize, _configuration.harmonic_solver.num_samples);
 	step::duplicate::instances = info::mpi::isize;
 	step::duplicate::offset = distribution[info::mpi::irank];
 	step::duplicate::size = distribution[info::mpi::irank + 1] - distribution[info::mpi::irank];
-	step::duplicate::totalsize = _configuration.num_samples;
+	step::duplicate::totalsize = _configuration.harmonic_solver.num_samples;
 
 	step::type = step::TYPE::FREQUENCY;
-	step::frequency::shift = (_configuration.max_frequency - _configuration.min_frequency) / _configuration.num_samples;
-	step::frequency::start = _configuration.min_frequency;
+	step::frequency::shift = (_configuration.harmonic_solver.max_frequency - _configuration.harmonic_solver.min_frequency) / _configuration.harmonic_solver.num_samples;
+	step::frequency::start = _configuration.harmonic_solver.min_frequency;
 	step::frequency::current = step::frequency::start + step::duplicate::offset * step::frequency::shift;
-	step::frequency::final = _configuration.max_frequency;
+	step::frequency::final = _configuration.harmonic_solver.max_frequency;
 
 	_fttRequestedFrequencies = info::ecf->output.frequency_to_time.requested_frequencies.data();
 	_fttRequestedFrequenciesEnd = _fttRequestedFrequencies + info::ecf->output.frequency_to_time.requested_frequencies.size();
@@ -51,7 +51,7 @@ void HarmonicSolver::init(LoadStepSolver *previous)
 
 void HarmonicSolver::updateDamping()
 {
-	switch (_configuration.damping.rayleigh.type) {
+	switch (_configuration.harmonic_solver.damping.rayleigh.type) {
 	case RayleighDampingConfiguration::TYPE::NONE:
 		_system->builder->rayleighDamping = false;
 		_system->builder->stiffnessDamping = 0;
@@ -59,24 +59,24 @@ void HarmonicSolver::updateDamping()
 		break;
 	case RayleighDampingConfiguration::TYPE::DIRECT:
 		_system->builder->rayleighDamping = true;
-		_system->builder->stiffnessDamping = _configuration.damping.rayleigh.direct_damping.stiffness.evaluator->eval({});
-		_system->builder->massDamping = _configuration.damping.rayleigh.direct_damping.mass.evaluator->eval({});
+		_system->builder->stiffnessDamping = _configuration.harmonic_solver.damping.rayleigh.direct_damping.stiffness.evaluator->eval({});
+		_system->builder->massDamping = _configuration.harmonic_solver.damping.rayleigh.direct_damping.mass.evaluator->eval({});
 		break;
 	case RayleighDampingConfiguration::TYPE::DAMPING_RATIO: {
 		_system->builder->rayleighDamping = true;
-		double ratio = _configuration.damping.rayleigh.ratio_damping.ratio.evaluator->eval({});
-		double frequency = _configuration.damping.rayleigh.ratio_damping.frequency.evaluator->eval({});
+		double ratio = _configuration.harmonic_solver.damping.rayleigh.ratio_damping.ratio.evaluator->eval({});
+		double frequency = _configuration.harmonic_solver.damping.rayleigh.ratio_damping.frequency.evaluator->eval({});
 		_system->builder->stiffnessDamping = 2 * ratio * 2 * M_PI * frequency;
 		_system->builder->massDamping = 2 * ratio / (2 * M_PI * frequency);
 	} break;
 	}
 
-	_system->builder->prestress = _configuration.prestress;
-	_system->builder->coriolisDamping = _configuration.damping.coriolis_effect.coriolis_damping;
-	_system->builder->rotationAxis.x = _configuration.damping.coriolis_effect.rotation_axis.x;
-	_system->builder->rotationAxis.y = _configuration.damping.coriolis_effect.rotation_axis.y;
-	_system->builder->rotationAxis.z = _configuration.damping.coriolis_effect.rotation_axis.z;
-	_system->builder->rotationAxis.normalize();
+	_system->builder->prestress = _configuration.harmonic_solver.prestress;
+	for (auto it = _configuration.rotor_dynamics.corotating.rotors_definitions.begin(); it != _configuration.rotor_dynamics.corotating.rotors_definitions.end(); ++it) {
+		_system->builder->coriolisDamping = _system->builder->coriolisDamping | it->second.coriolis_effect;
+		_system->builder->spinSoftening = _system->builder->coriolisDamping | it->second.spin_softening;
+	}
+	_system->builder->fixedRotor = _configuration.rotor_dynamics.fixed.rotors_definitions.size();
 }
 
 void HarmonicSolver::store()
@@ -126,7 +126,8 @@ void HarmonicSolver::updateStructuralMatrices()
 	if (
 			(_system->builder->rayleighDamping && _system->builder->spinSoftening) ||
 			(_system->builder->coriolisDamping) ||
-			(_configuration.mass_stabilization)) {
+			(_system->builder->fixedRotor) ||
+			(_configuration.harmonic_solver.mass_stabilization)) {
 
 		matrices |= Builder::Request::C;
 	}
@@ -137,7 +138,7 @@ void HarmonicSolver::updateStructuralMatrices()
 
 void HarmonicSolver::runNextSubstep()
 {
-	switch (_configuration.frequency_interval_type) {
+	switch (_configuration.harmonic_solver.frequency_interval_type) {
 	case HarmonicSolverConfiguration::INTERVAL_TYPE::LINEAR:
 		step::frequency::current += step::frequency::shift;
 		if (step::frequency::current + step::frequency::precision >= step::frequency::final) {
@@ -150,18 +151,18 @@ void HarmonicSolver::runNextSubstep()
 	step::frequency::angular = 2 * M_PI * step::frequency::current;
 	_system->nextSubstep();
 
-	switch (_configuration.damping.rayleigh.type) {
+	switch (_configuration.harmonic_solver.damping.rayleigh.type) {
 	case RayleighDampingConfiguration::TYPE::NONE:
 		break;
 	case RayleighDampingConfiguration::TYPE::DIRECT:
-		if (	_configuration.damping.rayleigh.direct_damping.stiffness.evaluator->isTimeDependent() ||
-				_configuration.damping.rayleigh.direct_damping.mass.evaluator->isTimeDependent()) {
+		if (	_configuration.harmonic_solver.damping.rayleigh.direct_damping.stiffness.evaluator->isTimeDependent() ||
+				_configuration.harmonic_solver.damping.rayleigh.direct_damping.mass.evaluator->isTimeDependent()) {
 			updateDamping();
 		}
 		break;
 	case RayleighDampingConfiguration::TYPE::DAMPING_RATIO:
-		if (	_configuration.damping.rayleigh.ratio_damping.ratio.evaluator->isTimeDependent() ||
-				_configuration.damping.rayleigh.ratio_damping.frequency.evaluator->isTimeDependent()) {
+		if (	_configuration.harmonic_solver.damping.rayleigh.ratio_damping.ratio.evaluator->isTimeDependent() ||
+				_configuration.harmonic_solver.damping.rayleigh.ratio_damping.frequency.evaluator->isTimeDependent()) {
 			updateDamping();
 		}
 		break;
@@ -169,9 +170,9 @@ void HarmonicSolver::runNextSubstep()
 
 	_system->builder->internalForceReduction = 1;
 	
-	switch (_configuration.aft.type) {
+	switch (_configuration.harmonic_solver.aft.type) {
 	case AlternatingFrequencyTime::TYPE::USER:
-		_system->builder->AFTSamples = _configuration.aft.time_samples;
+		_system->builder->AFTSamples = _configuration.harmonic_solver.aft.time_samples;
 		break;
 	default:
 		eslog::error("AFT type not implemented!\n");

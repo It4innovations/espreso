@@ -6,12 +6,12 @@
 
 namespace espreso {
 
-struct HarmonicSolverConfiguration;
+struct StructuralMechanicsLoadStepConfiguration;
 
 class HarmonicSolver: public LoadStepSolver {
 
 public:
-	HarmonicSolver(LinearSystem *system, SubStepSolver *subStepSolver, HarmonicSolverConfiguration &configuration, double duration);
+	HarmonicSolver(LinearSystem *system, SubStepSolver *subStepSolver, StructuralMechanicsLoadStepConfiguration &configuration, double duration);
 
 	void init(LoadStepSolver *previous);
 	void updateStructuralMatrices();
@@ -23,7 +23,7 @@ protected:
 	void store();
 	void ftt();
 
-	HarmonicSolverConfiguration &_configuration;
+	StructuralMechanicsLoadStepConfiguration &_configuration;
 	double *_fttRequestedFrequencies;
 	double *_fttRequestedFrequenciesEnd;
 };

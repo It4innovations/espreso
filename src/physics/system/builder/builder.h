@@ -2,8 +2,6 @@
 #ifndef SRC_PHYSICS_SYSTEM_BUILDER_BUILDER_H_
 #define SRC_PHYSICS_SYSTEM_BUILDER_BUILDER_H_
 
-#include "basis/containers/point.h"
-
 namespace espreso {
 
 class LinearSystem;
@@ -70,13 +68,13 @@ struct Builder {
 	double stiffnessDamping;
 	double massDamping;
 	double structuralDampingCoefficient;
-	Point rotationAxis;
 
 	int AFTSamples;
 	double internalForceReduction;
 
 	bool tangentMatrixCorrection;
 	bool prestress;
+	bool fixedRotor;
 	bool rayleighDamping;
 	bool coriolisDamping;
 	bool spinSoftening;
@@ -93,6 +91,7 @@ struct Builder {
 	  internalForceReduction(1),
 	  tangentMatrixCorrection(false),
 	  prestress(false),
+	  fixedRotor(false),
 	  rayleighDamping(false),
 	  coriolisDamping(false),
 	  spinSoftening(false)

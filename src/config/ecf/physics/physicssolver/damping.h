@@ -72,7 +72,7 @@ struct DampingConfiguration: public ECFDescription {
 struct HarmonicDampingConfiguration: public ECFDescription {
 
 	HarmonicRayleighDampingConfiguration rayleigh;
-	CoriolisEffectConfiguration coriolis_effect;
+//	CoriolisEffectConfiguration coriolis_effect;
 
 	HarmonicDampingConfiguration();
 };

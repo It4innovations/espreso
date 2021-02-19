@@ -264,7 +264,7 @@ static LoadStepSolver* getLoadStepSolver(LoadStepSolver *previous, StructuralMec
 			case LoadStepSolverConfiguration::MODE::NONLINEAR: current = new PseudoTimeStepping(system, subStepSolver, loadStep.nonlinear_solver, loadStep.duration_time); break;
 			} break;
 		case LoadStepSolverConfiguration::TYPE::TRANSIENT: current = new TransientSecondOrderImplicit(system, subStepSolver, loadStep.transient_solver, loadStep.duration_time); break;
-		case LoadStepSolverConfiguration::TYPE::HARMONIC: current = new HarmonicSolver(system, subStepSolver, loadStep.harmonic_solver, loadStep.duration_time); break;
+		case LoadStepSolverConfiguration::TYPE::HARMONIC: current = new HarmonicSolver(system, subStepSolver, loadStep, loadStep.duration_time); break;
 		default:
 			eslog::globalerror("Not implemented load-step solver.\n");
 		}

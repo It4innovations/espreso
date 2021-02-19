@@ -34,7 +34,7 @@ void HarmonicBuilder::init(AssemblerData &assembler, SolverData &solver)
 
 void HarmonicBuilder::buildSystem(AssemblerData &assembler, SolverData &solver)
 {
-	if (rayleighDamping || coriolisDamping) {
+	if (fixedRotor || rayleighDamping || coriolisDamping || spinSoftening) {
 		solver.K->type = MatrixType::REAL_UNSYMMETRIC;
 	} else {
 		solver.K->type = MatrixType::REAL_SYMMETRIC_INDEFINITE;
@@ -50,14 +50,13 @@ void HarmonicBuilder::buildSystem(AssemblerData &assembler, SolverData &solver)
 			solver.K->addToCombination( step::frequency::angular, assembler.C, DOFs, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
 			solver.K->addToCombination(1, assembler.CM, 0, DOFs, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
 			solver.K->addToCombination(1, assembler.CM, DOFs, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
-		} else {
-			if (rayleighDamping) {
-				double stiffCoef = stiffnessDamping + structuralDampingCoefficient / step::frequency::angular;
-				solver.K->addToCombination(-step::frequency::angular * stiffCoef, assembler.K, 0, DOFs, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
-				solver.K->addToCombination(-step::frequency::angular * massDamping, assembler.M, 0, DOFs, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
-				solver.K->addToCombination( step::frequency::angular * stiffCoef, assembler.K, DOFs, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
-				solver.K->addToCombination( step::frequency::angular * massDamping, assembler.M, DOFs, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
-			}
+		}
+		if (rayleighDamping) {
+			double stiffCoef = stiffnessDamping + structuralDampingCoefficient / step::frequency::angular;
+			solver.K->addToCombination(-step::frequency::angular * stiffCoef, assembler.K, 0, DOFs, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
+			solver.K->addToCombination(-step::frequency::angular * massDamping, assembler.M, 0, DOFs, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
+			solver.K->addToCombination( step::frequency::angular * stiffCoef, assembler.K, DOFs, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
+			solver.K->addToCombination( step::frequency::angular * massDamping, assembler.M, DOFs, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
 		}
 		if (matrices & Builder::Request::M) {
 			solver.K->addToCombination(-step::frequency::angular * step::frequency::angular, assembler.M, 0, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);

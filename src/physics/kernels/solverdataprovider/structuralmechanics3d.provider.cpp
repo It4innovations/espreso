@@ -32,7 +32,12 @@ MatrixType StructuralMechanics3DSolverDataProvider::General::getMatrixType()
 		if (_configuration.harmonic_solver.damping.rayleigh.type != HarmonicRayleighDampingConfiguration::TYPE::NONE) {
 			return MatrixType::REAL_UNSYMMETRIC;
 		}
-		if (_configuration.harmonic_solver.damping.coriolis_effect.coriolis_damping) {
+		for (auto it = _configuration.rotor_dynamics.corotating.rotors_definitions.begin(); it != _configuration.rotor_dynamics.corotating.rotors_definitions.end(); ++it) {
+			if (it->second.coriolis_effect || it->second.spin_softening) {
+				return MatrixType::REAL_UNSYMMETRIC;
+			}
+		}
+		if (_configuration.rotor_dynamics.fixed.rotors_definitions.size()) {
 			return MatrixType::REAL_UNSYMMETRIC;
 		}
 		return MatrixType::REAL_SYMMETRIC_INDEFINITE;
@@ -149,7 +154,12 @@ MatrixType StructuralMechanics3DSolverDataProvider::FETI::getMatrixType(esint do
 		if (_configuration.harmonic_solver.damping.rayleigh.type != HarmonicRayleighDampingConfiguration::TYPE::NONE) {
 			return MatrixType::REAL_UNSYMMETRIC;
 		}
-		if (_configuration.harmonic_solver.damping.coriolis_effect.coriolis_damping) {
+		for (auto it = _configuration.rotor_dynamics.corotating.rotors_definitions.begin(); it != _configuration.rotor_dynamics.corotating.rotors_definitions.end(); ++it) {
+			if (it->second.coriolis_effect || it->second.spin_softening) {
+				return MatrixType::REAL_UNSYMMETRIC;
+			}
+		}
+		if (_configuration.rotor_dynamics.fixed.rotors_definitions.size()) {
 			return MatrixType::REAL_UNSYMMETRIC;
 		}
 		return MatrixType::REAL_SYMMETRIC_INDEFINITE;

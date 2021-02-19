@@ -15,8 +15,6 @@
 
 #include <cmath>
 
-#include "basis/utilities/print.h"
-
 using namespace espreso;
 
 StructuralMechanics3DKernel::StructuralMechanics3DKernel(StructuralMechanics3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration)
@@ -647,7 +645,7 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 	MatrixDense rotation(3, 3), spin(3, 3), Ks, omegaN;
 	MatrixDense uc(3 * size, 1), us(3 * size, 1), uB(6, 1);
 	Point fixedOmega, fixedP;
-	MatrixDense tx(3, 1), ty(3, 1), tz(3, 1), G(3 * size, 3 * size), Nxr(3, 1), x, fixedR(3, 1), tztyNxr(3, 1), tytzNxr(3, 1), BB(1, size), Bx(3 * size, 3), Bxt1(3 * size, 1), Bxt2(3 * size, 1), Bxttt(3 * size, 3);
+	MatrixDense tx(1, 3), ty(1, 3), tz(1, 3), G(3 * size, 3 * size), Nxr(3, 1), x, fixedR(3, 1), tztyNxr(3, 1), tytzNxr(3, 1), BB(1, size), Bx(3 * size, 3), Bxt1(3 * size, 1), Bxt2(3 * size, 1), Bxttt(3 * size, 3);
 	double detJ, te;
 
 	for (int n = 0; n < size; n++) {
@@ -956,12 +954,12 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 				filler.Ke.multiply(B, CB, detJ * weighFactor[gp], 1, true);
 				if (iterator.fixed) {
 					B.multiply(tx, dND);
-					for (esint c = 0; c < Bx.ncols; c++) {
-						Bx[0 * Bx.ncols + 3 * c + 0] = B[c];
-						Bx[1 * Bx.ncols + 3 * c + 1] = B[c];
-						Bx[2 * Bx.ncols + 3 * c + 2] = B[c];
+					for (esint c = 0; c < B.ncols; c++) {
+						Bx[0 * B.ncols + c][0] = B[0][c];
+						Bx[1 * B.ncols + c][1] = B[0][c];
+						Bx[2 * B.ncols + c][2] = B[0][c];
 					}
-					Nxr.multiply(N[gp], x);
+					Nxr.multiply(NNN[gp], x);
 					Nxr.add(-1, &fixedR);
 					double tyNxr = ty[0][0] * Nxr[0][0] + ty[0][1] * Nxr[1][0] + ty[0][2] * Nxr[2][0];
 					double tzNxr = tz[0][0] * Nxr[0][0] + tz[0][1] * Nxr[1][0] + tz[0][2] * Nxr[2][0];
@@ -969,7 +967,7 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 					Bxt2.multiply(Bx, ty, tzNxr, 0, false, true);
 					Bxt1.add(-1, &Bxt2);
 					Bxttt.multiply(Bxt1, tx);
-					G.multiply(Bxttt, N[gp], weighFactor[gp] * detJ * gpDens[0][0], 1);
+					G.multiply(Bxttt, NNN[gp], weighFactor[gp] * detJ * gpDens[0][0], 1);
 				}
 			}
 

@@ -50,7 +50,8 @@ struct RotorDynamicsConfiguration: public ECFDescription {
 	};
 
 	struct FixedRotorConfiguration: public ECFDescription {
-		bool gyroscopic_effect, rotating_damping, centrifugal_load;
+		bool gyroscopic_effect, centrifugal_load;
+//		bool rotating_damping;
 		RotationConfiguration rotation;
 		RotationAxisConfiguration rotation_axis;
 
