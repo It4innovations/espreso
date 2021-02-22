@@ -169,10 +169,17 @@ MatrixType StructuralMechanics3DSolverDataProvider::FETI::getMatrixType(esint do
 
 bool StructuralMechanics3DSolverDataProvider::FETI::hasKernel(esint domain)
 {
-	if (_configuration.type == LoadStepSolverConfiguration::TYPE::TRANSIENT) {
-		return false;
+	if (_configuration.type == LoadStepSolverConfiguration::TYPE::STEADY_STATE) {
+		return true;
 	}
-	return true;
+
+	if (
+			_configuration.feti.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_R ||
+			_configuration.feti.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_K) {
+		return true;
+	}
+
+	return false;
 }
 
 int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster)
