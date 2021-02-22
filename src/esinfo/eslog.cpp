@@ -275,19 +275,19 @@ void internalFailure(const char* msg)
 
 void error(const char* msg)
 {
-	logger->output(msg, VerboseArg::COLOR::RED);
-	fflush(stdout);
-	exit(EXIT_SUCCESS);
+	logger->error(msg);
+	fflush(stderr);
+	exit(EXIT_FAILURE);
 }
 
 void globalerror(const char* msg)
 {
 	if (info::mpi::rank == 0) {
-		logger->output(msg, VerboseArg::COLOR::RED);
+		logger->error(msg);
 	}
 	Communication::barrier();
 	MPI_Finalize();
-	exit(EXIT_SUCCESS);
+	exit(EXIT_FAILURE);
 }
 
 }
