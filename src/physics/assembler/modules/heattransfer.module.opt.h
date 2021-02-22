@@ -64,6 +64,7 @@ public:
 
 	ParametersTemperature temp;
 	ParametersTranslationMotions translationMotions;
+	ParametersElementNodeFunction heatSource;
 
 	ParametersConvection convection;
 	ParametersBoundaryFunction dirichlet, heatFlow, heatFlux, q;

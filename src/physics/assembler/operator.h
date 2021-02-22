@@ -9,7 +9,7 @@ namespace espreso {
 class HeatTransferModuleOpt;
 
 struct Operator {
-	static const int print = 0;
+	static const int print = 2;
 
 	const int interval, isconst, update;
 

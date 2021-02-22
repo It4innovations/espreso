@@ -118,6 +118,10 @@ struct ParametersTranslationMotions {
 	ElementParameter<enodes> rhs;
 };
 
+struct ParametersElementNodeFunction {
+	ElementExternalParameter<enodes> node;
+};
+
 struct ParametersBoundaryFunction {
 	BoundaryExternalParameter<egps> gp;
 };

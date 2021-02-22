@@ -202,6 +202,26 @@ static inline void ADDM33M3NMN1(const double &sumscale, const double * __restric
 }
 
 template<int N>
+static inline void ADDMN1M1N(const double &sumscale, const double * __restrict__ mN1, const double * __restrict__ m1N, double * __restrict__ mNN)
+{
+	for (int n = 0; n < N; ++n) {
+		for (int m = 0; m < N; ++m) {
+			mNN[n * N + m] += sumscale * (mN1[n] * m1N[m]);
+		}
+	}
+}
+
+template<int N>
+static inline void ADDMN1M1N(const double &sumscale, const double * __restrict__ m1N, double * __restrict__ mNN)
+{
+	for (int n = 0; n < N; ++n) {
+		for (int m = 0; m < N; ++m) {
+			mNN[n * N + m] += sumscale * (m1N[n] * m1N[m]);
+		}
+	}
+}
+
+template<int N>
 static inline void ADDMN2M2N(const double &sumscale, const double * __restrict__ m2N, double * __restrict__ mNN)
 {
 	for (int n = 0; n < N; ++n) {
