@@ -184,9 +184,9 @@ void FETISystemSolver::insertK(FETIConfiguration &configuration, const MatrixCSR
 			_inner->holder.N2[d].rows = N2[d].nrows;
 			_inner->holder.N2[d].cols = N2[d].ncols;
 			_inner->holder.N2[d].nnz = N2[d].nrows * N2[d].ncols;
-//			_inner->holder.RegMat[d].rows = RegMat[d].nrows;
-//			_inner->holder.RegMat[d].cols = RegMat[d].ncols;
-//			_inner->holder.RegMat[d].nnz = RegMat[d].nnz;
+			_inner->holder.RegMat[d].rows = RegMat[d].nrows;
+			_inner->holder.RegMat[d].cols = RegMat[d].ncols;
+			_inner->holder.RegMat[d].nnz = RegMat[d].nnz;
 
 			// from ROWMAYOR to COLMAYOR
 			_inner->holder.N1[d].dense_values.clear();
@@ -204,16 +204,16 @@ void FETISystemSolver::insertK(FETIConfiguration &configuration, const MatrixCSR
 				}
 			}
 
-//			if ((esint)_inner->holder.RegMat[d].CSR_V_values.size() != RegMat[d].nnz) {
-//				_inner->holder.RegMat[d].CSR_I_row_indices.assign(RegMat[d].rows, RegMat[d].rows + RegMat[d].nrows + 1);
-//				_inner->holder.RegMat[d].CSR_J_col_indices.assign(RegMat[d].cols, RegMat[d].cols + RegMat[d].nnz);
-//			}
-//			_inner->holder.RegMat[d].CSR_V_values.assign(RegMat[d].vals, RegMat[d].vals + RegMat[d].nnz);
+			if ((esint)_inner->holder.RegMat[d].CSR_V_values.size() != RegMat[d].nnz) {
+				_inner->holder.RegMat[d].CSR_I_row_indices.assign(RegMat[d].rows, RegMat[d].rows + RegMat[d].nrows + 1);
+				_inner->holder.RegMat[d].CSR_J_col_indices.assign(RegMat[d].cols, RegMat[d].cols + RegMat[d].nnz);
+			}
+			_inner->holder.RegMat[d].CSR_V_values.assign(RegMat[d].vals, RegMat[d].vals + RegMat[d].nnz);
 
-//			if (RegMat[d].nnz) {
-//				_inner->holder.K[d].MatAddInPlace(_inner->holder.RegMat[d], 'N', 1);
-//			}
-//			_inner->holder.RegMat[d].ConvertToCOO(1);
+			if (RegMat[d].nnz) {
+				_inner->holder.K[d].MatAddInPlace(_inner->holder.RegMat[d], 'N', 1);
+			}
+			_inner->holder.RegMat[d].ConvertToCOO(1);
 
 			// WARN: only non-empty matrix can have type, otherwise solver fails
 			if (_inner->holder.N1[d].rows && _inner->holder.N1[d].cols) {
@@ -222,9 +222,9 @@ void FETISystemSolver::insertK(FETIConfiguration &configuration, const MatrixCSR
 			if (_inner->holder.N2[d].rows && _inner->holder.N2[d].cols) {
 				setType(_inner->holder.N2[d], N2[d].type);
 			}
-//			if (_inner->holder.RegMat[d].rows && _inner->holder.RegMat[d].cols) {
-//				setType(_inner->holder.RegMat[d], RegMat[d].type);
-//			}
+			if (_inner->holder.RegMat[d].rows && _inner->holder.RegMat[d].cols) {
+				setType(_inner->holder.RegMat[d], RegMat[d].type);
+			}
 
 			if (
 					configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_R ||
