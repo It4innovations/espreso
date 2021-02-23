@@ -591,43 +591,14 @@ void StructuralMechanics3DSolverDataProvider::FETI::fillKernels(MatrixCSRFETI &K
 	}
 
 	if (_configuration.feti.regularization_version == FETIConfiguration::REGULARIZATION_VERSION::EIGEN_VECTORS) {
-//		#pragma omp parallel for
-//		for (esint d = 0; d < K.domains; ++d) {
-//			if (hasKernel(d)) {
-//				esint fpm[128], loop, info, m, m0 = _configuration.feti.num_directions;
-//				double epsout, emin, emax;
-//				std::vector<double> e(m0), x(K[d].nrows * m0), res(m0);
-//				feastinit(fpm);
-//				dfeast_scsrgv("U", &K[d].nrows, K[d].vals, K[d].rows, K[d].cols, M[d].vals, M[d].rows, M[d].cols, fpm, &epsout, &loop, &emin, &emax, &m0, e.data(), x.data(), &m, res.data(), &info);
-//				if (info) {
-//					eslog::failure("dfeast_scsrgv returns error: %d\n", info);
-//				}
-//
-//				N1[d].fillValues(x.data());
-//			}
-//		}
-//		#pragma omp parallel for
-//		for (esint d = 0; d < K.domains; ++d) {
-//			if (hasKernel(d)) {
-//				std::vector<double> kk(K[d].nrows * K[d].nrows), mm(K[d].nrows * K[d].nrows);
-//				for (esint r = 0; r < K[d].nrows; ++r) {
-//					for (esint c = K[d].rows[r] - 1; c < K[d].rows[r + 1] - 1; ++c) {
-//						kk[r * K[d].ncols + K[d].cols[c] - 1] = K[d].vals[c];
-//						mm[r * M[d].ncols + M[d].cols[c] - 1] = M[d].vals[c];
-//					}
-//				}
-//
-//				int m, info, itype = 1, il = 1, iu = _configuration.feti.num_directions, lwork = -1, iwork = -1;
-//				double abstol = 1e-6;
-//				std::vector<double> work(1), E(K[d].nrows), X(K[d].nrows * 6), res(K[d].nrows);
-//				std::vector<int> ifail(K[d].nrows);
-//				dsygvx(&itype, "V", "I", "L", &K[d].nrows, kk.data(), &K[d].nrows, mm.data(), &K[d].nrows, NULL, NULL, &il, &iu, &abstol, &m, E.data(), X.data(), &K[d].nrows, work.data(), &lwork, &iwork, ifail.data(), &info);
-//				work.resize(lwork = iwork = work.front());
-//				dsygvx(&itype, "V", "I", "L", &K[d].nrows, kk.data(), &K[d].nrows, mm.data(), &K[d].nrows, NULL, NULL, &il, &iu, &abstol, &m, E.data(), X.data(), &K[d].nrows, work.data(), &lwork, &iwork, ifail.data(), &info);
-//
-//				N1[d].fillValues(X.data());
-//			}
-//		}
+		#pragma omp parallel for
+		for (esint d = 0; d < K.domains; ++d) {
+			if (hasKernel(d)) {
+				MatrixDense dK = K[d], dM = M[d];
+				std::vector<double> lambdas(dK.nrows);
+				dK.minGeneralizedEigenValues(dM.vals, _configuration.feti.num_directions, lambdas.data(), N1[d].vals);
+			}
+		}
 	}
 
 	if (_configuration.feti.regularization_version == FETIConfiguration::REGULARIZATION_VERSION::WAVE_DIRECTIONS) {

@@ -18,6 +18,23 @@ void MATH::upDense3x3EigenValues(double *mVals, double *eigenValues)
 #endif
 }
 
+void MATH::DenseMinGeneralizedEigenVectors(esint msize, double *A, double *B, esint n, double *lambdas, double *vectors)
+{
+#ifdef HAVE_MKL
+	esint nn;
+	esint *fail = new esint[msize];
+	double *tmpvec = new double[msize * msize];
+	LAPACKE_dsygvx(LAPACK_ROW_MAJOR, 1, 'V', 'I', 'U', msize, A, msize, B, msize, 0, 0, 1, n, 0, &nn, lambdas, tmpvec, msize, fail);
+	for (esint r = 0; r < msize; ++r) {
+		for (esint c = 0; c < n; ++c) {
+			vectors[r * n + c] = tmpvec[r * msize + c];
+		}
+	}
+	delete[] fail;
+	delete[] tmpvec;
+#endif
+}
+
 void MATH::DenseMatDenseMatRowMajorSystemSolve(int nra, int ncb, double *a, double *b)
 {
 	// B = A\B

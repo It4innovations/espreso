@@ -64,6 +64,7 @@ public:
 	void addToCombination(double alpha, const Matrix *in,  esint roffset, esint coffset, esint rsize, esint csize, esint rsum, esint csum);
 
 	void transpose();
+	void minGeneralizedEigenValues(double *B, esint n, double *lambdas, double *vectors);
 
 	void fillDiagonal(Vector *diagonal) const;
 

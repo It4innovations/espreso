@@ -174,6 +174,15 @@ void MatrixDense::transpose()
 	MATH::DenseTranspose(nrows, ncols, vals);
 }
 
+void MatrixDense::minGeneralizedEigenValues(double *B, esint n, double *lambdas, double *vectors)
+{
+	if (nrows == ncols) {
+		MATH::DenseMinGeneralizedEigenVectors(nrows, vals, B, n, lambdas, vectors);
+	} else {
+		eslog::failure("Cannot compute generalized eigen problem of non-square matrices\n");
+	}
+}
+
 void MatrixDense::fillDiagonal(Vector *diagonal) const
 {
 	MatrixDense::fillDiagonal(diagonal->downcast<VectorDense>());
