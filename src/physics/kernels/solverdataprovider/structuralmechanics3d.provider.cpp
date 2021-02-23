@@ -473,22 +473,29 @@ int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 				// then X = (tran(N) * N)^-1 * N
 				// RegMat = tran(N) * X
 
-				MatrixCSR N;
-				Nt.transposeTo(&N);
-				MatrixCSR A;
-
-				A.multiply(Nt, N);
-				A.removeLower(MatrixType::REAL_SYMMETRIC_INDEFINITE);
-				MatrixDense _X(N.nrows, N.ncols), B = N;
-				A.solve(B, _X);
-				MatrixCSR X = _X;
-				X.transpose();
-				_RegMat->at(d)->multiply(N, X);
-				_RegMat->at(d)->removeLower(MatrixType::REAL_SYMMETRIC_INDEFINITE);
-
-				RegMat[d].shallowCopyStructure(_RegMat->at(d));
-
 				N1[d].resize(K[d].nrows, 6);
+
+
+
+				if (
+						_configuration.feti.conjugate_projector != FETIConfiguration::CONJ_PROJECTOR::CONJ_R &&
+						_configuration.feti.conjugate_projector != FETIConfiguration::CONJ_PROJECTOR::CONJ_K) {
+
+					MatrixCSR N;
+					Nt.transposeTo(&N);
+					MatrixCSR A;
+
+					A.multiply(Nt, N);
+					A.removeLower(MatrixType::REAL_SYMMETRIC_INDEFINITE);
+					MatrixDense _X(N.nrows, N.ncols), B = N;
+					A.solve(B, _X);
+					MatrixCSR X = _X;
+					X.transpose();
+					_RegMat->at(d)->multiply(N, X);
+					_RegMat->at(d)->removeLower(MatrixType::REAL_SYMMETRIC_INDEFINITE);
+
+					RegMat[d].shallowCopyStructure(_RegMat->at(d));
+				}
 			}
 		}
 
@@ -537,11 +544,16 @@ void StructuralMechanics3DSolverDataProvider::FETI::fillKernels(MatrixCSRFETI &K
 		#pragma omp parallel for
 		for (esint d = 0; d < K.domains; ++d) {
 			if (hasKernel(d)) {
-				VectorDense diag(K[d].nrows, N1[d].vals);
-				K[d].fillDiagonal(&diag);
+				if (
+				_configuration.feti.conjugate_projector != FETIConfiguration::CONJ_PROJECTOR::CONJ_R &&
+				_configuration.feti.conjugate_projector != FETIConfiguration::CONJ_PROJECTOR::CONJ_K) {
 
-				RegMat[d].fillData(_RegMat->at(d));
-				RegMat[d].scale(diag.max());
+					VectorDense diag(K[d].nrows, N1[d].vals);
+					K[d].fillDiagonal(&diag);
+
+					RegMat[d].fillData(_RegMat->at(d));
+					RegMat[d].scale(diag.max());
+				}
 
 				Point center = _dCenter[d], norm = _dNorm[d];
 				double r44 = _dr44[d], r45 = _dr45[d], r46 = _dr46[d], r55 = _dr55[d], r56 = _dr56[d];
