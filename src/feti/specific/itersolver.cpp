@@ -2757,6 +2757,8 @@ int IterSolverBase::Solve_GMRES_ConjProj ( SuperCluster & cluster,
 	SEQ_VECTOR <double> MPw_l(dl_size, 0);
 	SEQ_VECTOR <double> z_l(dl_size, 0);
 	SEQ_VECTOR <double> v_l(dl_size, 0);
+	SEQ_VECTOR <double> Pz_l(dl_size, 0);
+	SEQ_VECTOR <double> Pv_l(dl_size, 0);
 	SEQ_VECTOR <double> w_l(dl_size, 0);
 	SEQ_VECTOR <double> Aw_l(dl_size, 0);
         SEQ_VECTOR <double> b_l(dl_size, 0);
@@ -2964,9 +2966,10 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
 	for (; iter < CG_max_iter; iter++) {
 
 		timing.totalTime.start();
+		ConjProjector_Inv(timeEvalProj, cluster, v_l, Pv_l, 0);
 
     appA_time.start();
-    apply_A_l_comp_dom_B(timeEvalAppa, cluster, v_l, w_l);
+    apply_A_l_comp_dom_B(timeEvalAppa, cluster, Pv_l, w_l);
     appA_time.end();
 
     switch (USE_PREC) {
@@ -3023,11 +3026,12 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
          z_l[i] -= V_l.dense_values[v_l.size()*k + i] * H_l[ij(k,iter)];
       }
     }
-    H_l[ij(iter+1,iter)] = sqrt(parallel_ddot_compressed(cluster, z_l, z_l));
+    ConjProjector_Inv( timeEvalProj, cluster, z_l,Pz_l, 0 );
+    H_l[ij(iter+1,iter)] = sqrt(parallel_ddot_compressed(cluster, Pz_l, Pz_l));
 
     #pragma omp parallel for
     for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
-      v_l[i] = z_l[i]/H_l[ij(iter+1,iter)];
+      v_l[i] = Pz_l[i]/H_l[ij(iter+1,iter)];
     }
 
     V_l.dense_values.insert(V_l.dense_values.end(), v_l.begin(), v_l.end());
