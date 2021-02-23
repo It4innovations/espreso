@@ -21,9 +21,6 @@
 #include <cmath>
 #include <algorithm>
 
-#include "mkl.h"
-#include "mkl_solvers_ee.h"
-
 using namespace espreso;
 
 MatrixType StructuralMechanics3DSolverDataProvider::General::getMatrixType()
@@ -594,21 +591,21 @@ void StructuralMechanics3DSolverDataProvider::FETI::fillKernels(MatrixCSRFETI &K
 	}
 
 	if (_configuration.feti.regularization_version == FETIConfiguration::REGULARIZATION_VERSION::EIGEN_VECTORS) {
-		#pragma omp parallel for
-		for (esint d = 0; d < K.domains; ++d) {
-			if (hasKernel(d)) {
-				esint fpm[128], loop, info, m, m0 = _configuration.feti.num_directions;
-				double epsout, emin, emax;
-				std::vector<double> e(m0), x(K[d].nrows * m0), res(m0);
-				feastinit(fpm);
-				dfeast_scsrgv("U", &K[d].nrows, K[d].vals, K[d].rows, K[d].cols, M[d].vals, M[d].rows, M[d].cols, fpm, &epsout, &loop, &emin, &emax, &m0, e.data(), x.data(), &m, res.data(), &info);
-				if (info) {
-					eslog::failure("dfeast_scsrgv returns error: %d\n", info);
-				}
-
-				N1[d].fillValues(x.data());
-			}
-		}
+//		#pragma omp parallel for
+//		for (esint d = 0; d < K.domains; ++d) {
+//			if (hasKernel(d)) {
+//				esint fpm[128], loop, info, m, m0 = _configuration.feti.num_directions;
+//				double epsout, emin, emax;
+//				std::vector<double> e(m0), x(K[d].nrows * m0), res(m0);
+//				feastinit(fpm);
+//				dfeast_scsrgv("U", &K[d].nrows, K[d].vals, K[d].rows, K[d].cols, M[d].vals, M[d].rows, M[d].cols, fpm, &epsout, &loop, &emin, &emax, &m0, e.data(), x.data(), &m, res.data(), &info);
+//				if (info) {
+//					eslog::failure("dfeast_scsrgv returns error: %d\n", info);
+//				}
+//
+//				N1[d].fillValues(x.data());
+//			}
+//		}
 //		#pragma omp parallel for
 //		for (esint d = 0; d < K.domains; ++d) {
 //			if (hasKernel(d)) {
