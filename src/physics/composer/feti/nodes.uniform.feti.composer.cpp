@@ -4,6 +4,7 @@
 #include "esinfo/envinfo.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/eslog.h"
+#include "esinfo/ecfinfo.h"
 #include "basis/utilities/utils.h"
 #include "wrappers/mpi/communication.h"
 #include "basis/containers/serializededata.h"
@@ -46,9 +47,16 @@ void NodesUniformFETIComposer::init()
 	eslog::param("DOFs/NODE", _DOFs);
 	eslog::ln();
 
-	if (_configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
-		computeFixPoints();
-		eslog::checkpointln("COMPOSER: FIX POINTS COMPUTED");
+	if (
+			info::ecf->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D ||
+			info::ecf->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D ||
+			info::ecf->physics == PhysicsConfiguration::TYPE::THERMO_ELASTICITY_2D ||
+			info::ecf->physics == PhysicsConfiguration::TYPE::THERMO_ELASTICITY_3D) {
+
+		if (_configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
+			computeFixPoints();
+			eslog::checkpointln("COMPOSER: FIX POINTS COMPUTED");
+		}
 	}
 
 	if (_configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS) {
