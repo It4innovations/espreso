@@ -14,7 +14,7 @@ def teardown():
 @istest
 def by():
 #     for regularization in [ "ANALYTIC", "ALGEBRAIC" ]:
-    for rtype in [ "FIX_POINTS", "EIGEN_VECTORS", "WAVE_DIRECTIONS" ]:
+    for rtype in [ "FIX_POINTS", "EIGEN_VECTORS" ]: # "WAVE_DIRECTIONS"
         for projection in [ "NONE", "CONJ_K" ]:
             yield run, rtype, projection
 
@@ -24,3 +24,4 @@ def run(rtype, projection):
     ESPRESOTest.args[2] = rtype
     ESPRESOTest.args[3] = projection
     ESPRESOTest.run()
+    ESPRESOTest.compare_emr("espreso.emr")

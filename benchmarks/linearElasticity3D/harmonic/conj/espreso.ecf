@@ -79,7 +79,7 @@ STRUCTURAL_MECHANICS_3D {
         ITERATIVE_SOLVER        GMRES;
         REGULARIZATION         [ARG1];
         REGULARIZATION_VERSION [ARG2];
-        MAX_ITERATIONS           1000;
+        MAX_ITERATIONS             45;
         CONJUGATE_PROJECTOR    [ARG3];
         NUM_DIRECTIONS              3;
       }
