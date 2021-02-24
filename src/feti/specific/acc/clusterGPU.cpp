@@ -77,25 +77,53 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	// Faze 2 - napsat podporu pro vice GPU na 1 MPI process 
 	
 	// GPU memory management
-	#if DEVICE_ID == 1
-		std::cout << "Selected CUDA device 1";
-		cudaSetDevice(1);
-	#else
-		cudaSetDevice(0);
-		std::cout << "Selected CUDA device 0";
-	#endif
+	// Create new communicator within the node (OMPI_COMM_TYPE_NODE can be swapped out with MPI_COMM_TYPE_SHARED for portability)
+	MPI_Comm node_comm;
+	MPI_Comm_split_type(info::mpi::comm, OMPI_COMM_TYPE_NODE, info::mpi::rank, MPI_INFO_NULL, &node_comm);
 
-	// END - TODO_GPU
+	// Get local size and id
+	int local_procs;
+	MPI_Comm_size(node_comm, &local_procs);
 
-	size_t GPU_free_mem, GPU_total_meml;
-	cudaMemGetInfo(&GPU_free_mem, &GPU_total_meml);
+	int local_id;
+	MPI_Comm_rank(node_comm, &local_id);
+
+	// Get memory info for all devices
+	std::vector <size_t>  GPU_free_mem(nDevices, 0);
+	std::vector <size_t>  GPU_total_mem(nDevices, 0);
+
+	if(local_id == 0)
+	{
+		for (int i = 0; i < nDevices; i++) {
+			cudaSetDevice(i);
+			size_t free, total;
+			cudaMemGetInfo(&free, &total);
+			GPU_free_mem[i] = free;
+			GPU_total_mem[i] = total;
+		}
+	}
+
+	// Assign device
+	int device_id = local_id % nDevices;
+	cudaSetDevice(device_id);
+
+	// Get mapping from proc to device_id
+	std::vector <int>  GPU_mapping(local_procs, 0);
+	MPI_Gather(&device_id, 1, MPI_INT, &GPU_mapping[0], 1, MPI_INT, 0, node_comm);
 
 	esint domains_on_GPU = 0;
 	esint domains_on_CPU = 0;
 	esint DOFs_GPU = 0;
 	esint DOFs_CPU = 0;
 
-	size_t SC_total_size = 0;
+	size_t local_SC_size_to_add = 0;
+	std::vector <int> SC_size_to_add(local_procs, 0);
+	std::vector <int> SC_total_size(nDevices, 0);
+	std::vector <int> msg(local_procs, 0);
+	int reply = 0;
+
+	MPI_Request msg_request;
+	MPI_Status msg_status;
 	// Smycka napocitava velikost LSCs pres vsechny domeny
 	for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
 
@@ -129,19 +157,19 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 				}
 
 				if (USE_FLOAT) {
-					SC_total_size += (SC_size + 2 * vec_size) * sizeof(float);
+					local_SC_size_to_add = (SC_size + 2 * vec_size) * sizeof(float);
 				} else {
-					SC_total_size += (SC_size + 2 * vec_size) * sizeof(double);
+					local_SC_size_to_add = (SC_size + 2 * vec_size) * sizeof(double);
 				}
 			}
 #else
 			if (USE_FLOAT) {
-				SC_total_size +=
+				local_SC_size_to_add =
 						( domains[d].B1_comp_dom.rows * domains[d].B1_comp_dom.rows +
 						  2 * domains[d].B1_comp_dom.rows
 						) * sizeof(float);
 			} else {
-				SC_total_size +=
+				local_SC_size_to_add =
 						( domains[d].B1_comp_dom.rows * domains[d].B1_comp_dom.rows +
 						  2 * domains[d].B1_comp_dom.rows
 						) * sizeof(double);
@@ -150,12 +178,12 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			break;
 		case FETIConfiguration::MATRIX_STORAGE::SYMMETRIC:
 			if (USE_FLOAT) {
-				SC_total_size +=
+				local_SC_size_to_add =
 						(((domains[d].B1_comp_dom.rows + 1 ) * domains[d].B1_comp_dom.rows ) / 2
 						 + 2 * domains[d].B1_comp_dom.rows
 						) * sizeof(float);
 			} else {
-				SC_total_size +=
+				local_SC_size_to_add =
 						(((domains[d].B1_comp_dom.rows + 1 ) * domains[d].B1_comp_dom.rows ) / 2
 						 + 2 * domains[d].B1_comp_dom.rows
 						) * sizeof(double);
@@ -166,12 +194,32 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			std::cout << "ERROR - Not implemented type of Schur complement.";
 		}
 
+		// Collect info on how much each process wants to add
+		MPI_Gather(&local_SC_size_to_add, 1, MPI_INT, &SC_size_to_add[0], 1, MPI_INT, 0, node_comm);
 
-		if (SC_total_size < GPU_free_mem) {
+		if(local_id == 0)
+		{   // Proc with id 0 will decide if it fits
+			for(int proc = 0; proc < local_procs; proc++)
+			{
+				if (SC_total_size[GPU_mapping[proc]] + SC_size_to_add[proc] < GPU_free_mem[GPU_mapping[proc]]) {
+					msg[proc] = 1;
+					SC_total_size[GPU_mapping[proc]] += SC_size_to_add[proc];
+				} else {
+					msg[proc] = 0;
+				}
+			}
+		}
+		// Get the decision from proc 0
+		MPI_Scatter(&msg[0], 1, MPI_INT, &reply, 1, MPI_INT, 0, node_comm);
+
+		if(reply)
+		{
 			domains_on_GPU++;
 			DOFs_GPU += domains[d].K.rows;
 			domains[d].isOnACC = 1;
-		} else {
+		}
+		else
+		{
 			domains_on_CPU++;
 			DOFs_CPU += domains[d].K.rows;
 			domains[d].isOnACC = 0;
@@ -335,6 +383,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
 
 		esint status = 0;
+		esint prec_status = 1;
 
 		if (domains[d].isOnACC == 1) {
 
@@ -342,6 +391,11 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 			// Assign CUDA stream from he pool
 			domains[d].B1Kplus.SetCUDA_Stream(cuda_stream_pool[d % STREAM_NUM]);
+			//if(USE_PREC == FETIConfiguration::PRECONDITIONER::DIRICHLET)
+			{
+				domains[d].Prec.SetCUDA_Stream(cuda_stream_pool[d % STREAM_NUM]);
+			}
+
 
 #ifdef SHARE_SC
 			if (USE_FLOAT){
@@ -398,7 +452,13 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			}
 #else
 			if (USE_FLOAT){
-				status = domains[d].B1Kplus.CopyToCUDA_Dev_fl();
+				//if(USE_PREC == FETIConfiguration::PRECONDITIONER::DIRICHLET)
+				{
+					prec_status = 0;
+					prec_status = domains[d].Prec.CopyToCUDA_Dev_fl();
+				}
+
+				status      = domains[d].B1Kplus.CopyToCUDA_Dev_fl();
 
 				// TODO_GPU - alokuji se pole pro vektory, kterymi se bude ve funkci Apply_A nasobit tato matice 
 				status_c = cudaMallocHost((void**)&domains[d].cuda_pinned_buff_fl, domains[d].B1_comp_dom.rows * sizeof(float));
@@ -407,7 +467,13 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 					status = -1;
 				}
 			} else {
-				status = domains[d].B1Kplus.CopyToCUDA_Dev();
+				//if(USE_PREC == FETIConfiguration::PRECONDITIONER::DIRICHLET)
+				{
+					prec_status = 0;
+					prec_status = domains[d].Prec.CopyToCUDA_Dev();
+				}
+
+				status      = domains[d].B1Kplus.CopyToCUDA_Dev();
 
 				status_c = cudaMallocHost((void**)&domains[d].cuda_pinned_buff, domains[d].B1_comp_dom.rows * sizeof(double));
 				if (status_c != cudaSuccess) {
@@ -417,7 +483,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			}
 #endif
 
-			if (status == 0) {
+			if (status == 0 && prec_status == 0) {
 				// TODO_GPU - LSCs ktere se uspesne prenesly do pameti GPU se smazou z pameti procesoru 
 				domains[d].Kplus.keep_factors = false;
 
@@ -432,6 +498,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 				}
 			} else {
 				// pokud se domenu nepodar nahrat na GPU 
+
 				domains[d].isOnACC = 0;
 				domains_on_CPU++;
 				domains_on_GPU--;
@@ -439,6 +506,14 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 				DOFs_GPU -= domains[d].K.rows;
 
 				domains[d].B1Kplus.ClearCUDA_Stream();
+
+				// TODO vyriesit vracanie Prec ak sa nepodary nahrat B1K+
+//				domains[d].Prec.ClearCUDA_Stream();
+//				if(domains[d].Prec.USE_FLOAT) {
+//					domains[d].Prec.FreeFromCUDA_Dev_fl();
+//				} else {
+//					domains[d].Prec.FreeFromCUDA_Dev();
+//				}
 
 #ifdef SHARE_SC
 				if(domains[d].B1Kplus.USE_FLOAT) {
@@ -461,6 +536,8 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 					DOFs_GPU -= domains[d].K.rows;
 				}
 #else
+
+
 				if(domains[d].B1Kplus.USE_FLOAT) {
 					domains[d].B1Kplus.FreeFromCUDA_Dev_fl();
 				} else {
