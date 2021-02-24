@@ -171,7 +171,7 @@ def configure(ctx):
         ctx.env.append_unique("DEFINES", [ "esint=long", "esint_mpi=MPI_LONG" ])
         ctx.env.append_unique("DEFINES_API", [ "FETI4I_INT_WIDTH=64" ])
 
-    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-Wall" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-Wall" ])  # -fopenmp
     ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
     if ctx.options.mode == "release":
         ctx.env.append_unique("CXXFLAGS", [ "-O3", "-g" ])

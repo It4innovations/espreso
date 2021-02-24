@@ -150,6 +150,7 @@ for (esint d = 0; d < cluster.domains.size(); d++) {
 		for (esint d = 0; d < cluster.domains.size(); d++) {
 			SEQ_VECTOR < double > x_in_tmp;
 
+			// TODO_GPU : pro vsechny domeny, ktere se nevlezly na GPU 
 			if (!cluster.domains[d]->isOnACC == 1) {
 				x_in_tmp.resize( cluster.domains[d]->B1_comp_dom.rows );
 				for (esint i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++) {
@@ -307,9 +308,10 @@ for (esint d = 0; d < cluster.domains.size(); d++)
 }
 
 
-//	void IterSolverGPU::apply_A_FETI_SC_forFETI   ( Cluster & cluster, SEQ_VECTOR<double> & x_in ) {
-	void IterSolverGPU::apply_A_FETI_SC_forFETI   ( SuperCluster & cluster, SEQ_VECTOR<double> & x_in ) {
+
+void IterSolverGPU::apply_A_FETI_SC_forFETI   ( SuperCluster & cluster, SEQ_VECTOR<double> & x_in ) {
 		//cilk_
+		// TODO_GPU - spustit v OpeMP smycce - mozna ne nutne "DenseMatVecCUDA_wo_Copy_start" ale urcite tu vyzobavaci smycku 
 		for (esint d = 0; d < cluster.domains.size(); d++) {
 
 			if (cluster.domains[d]->isOnACC == 1) {
@@ -320,6 +322,7 @@ for (esint d = 0; d < cluster.domains.size(); d++)
 #ifdef SHARE_SC
 				cluster.domains[d]->B1Kplus.DenseMatVecCUDA_shared_wo_Copy_start(cluster.domains[d]->cuda_pinned_buff, cluster.domains[d]->cuda_pinned_buff,'N',0);
 #else
+				// TODO_GPU - tato funkce je ve SparseMatrix.cpp 
 				cluster.domains[d]->B1Kplus.DenseMatVecCUDA_wo_Copy_start(cluster.domains[d]->cuda_pinned_buff, cluster.domains[d]->cuda_pinned_buff,'N',0);
 #endif
 			}
@@ -357,8 +360,7 @@ for (esint d = 0; d < cluster.domains.size(); d++)
 		}
 	}
 
-
-	void IterSolverGPU::apply_A_FETI_SC_forHFETI   ( Cluster & cluster )
+void IterSolverGPU::apply_A_FETI_SC_forHFETI   ( Cluster & cluster )
 	{
 		//cilk_
 		for (esint d = 0; d < cluster.domains.size(); d++) {
@@ -387,8 +389,7 @@ for (esint d = 0; d < cluster.domains.size(); d++)
 
 	}
 
-
-	void IterSolverGPU::apply_A_htfeti_SC ( Cluster & cluster )
+void IterSolverGPU::apply_A_htfeti_SC ( Cluster & cluster )
 	{
 		//cluster.multKplusGlobal_Kinv( cluster.x_prim_cluster1 );
 		cluster.multKplusGlobal_GPU( cluster.x_prim_cluster1 );
@@ -403,6 +404,8 @@ void IterSolverGPU::Apply_Prec( TimeEval & time_eval, SuperCluster & cluster, SE
 
 	#pragma omp parallel for
 	for (size_t d = 0; d < cluster.domains.size(); d++) {
+		
+		// TODO_GPU: Zde se tvori vektor za danou domenu, kterym se nasobi matice predpodminovace - tohle nechame na CPU. Vektor x_in je za cely cluster (vice domen, ktere sdili pamet na uzlu) 
 		SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d]->B1_comp_dom.rows, 0.0 );
 		for (size_t i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++)
 			x_in_tmp[i] = x_in[ cluster.domains[d]->lambda_map_sub_local[i]] * cluster.domains[d]->B1_scale_vec[i]; // includes B1 scaling
@@ -419,7 +422,11 @@ void IterSolverGPU::Apply_Prec( TimeEval & time_eval, SuperCluster & cluster, SE
 			cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster2[d], 'T');
 			break;
 		case FETIConfiguration::PRECONDITIONER::DIRICHLET:
+			// TODO_GPU
+			// zde je verze predpominovace na CPU, ktera se ma predelat pro GPU. Pro zacatek udelame na GPU pouze DIRICHLET
+			// nasledujici radek by mel zustat na CPU 
 			cluster.domains[d]->B1t_DirPr.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'N');
+			// nasledujici readek by mel jit na GPU - je otazkou jak udelal OpenMP paralelizaci vs. ovladani CUDY a streamu - podivat se na reseni v Apply_A a pro zacatek obe reseni sjednotit 
 			cluster.domains[d]->Prec.DenseMatVec(*cluster.x_prim_cluster1[d], *cluster.x_prim_cluster2[d],'N');
 			break;
 		case FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET:
@@ -479,6 +486,7 @@ void IterSolverGPU::Apply_Prec( TimeEval & time_eval, SuperCluster & cluster, SE
 
 }
 
+
 void IterSolverGPU::apply_A_l_comp_dom_B_P( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
 
     	eslog::error("apply_A_l_comp_dom_B_P - is not implemented in itersolverGPU.cpp .\n");
@@ -486,7 +494,6 @@ void IterSolverGPU::apply_A_l_comp_dom_B_P( TimeEval & time_eval, SuperCluster &
 		// See cpu/itersolver.cpu for reference implementation 
 
 }
-
 
 void IterSolverGPU::apply_A_l_comp_dom_B_P_local( TimeEval & time_eval, SuperCluster & cluster, SEQ_VECTOR<double> & x_in, SEQ_VECTOR<double> & y_out) {
 
@@ -535,7 +542,7 @@ void IterSolverGPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 					}
 				}
 
-			} while (iter_lm != (esint)cluster.domains[d]->lambda_map_sub.size() && iter_in != (esint)in_indices.size() );
+			} while (iter_lm != (esint)cluster.sssdomains[d]->lambda_map_sub.size() && iter_in != (esint)in_indices.size() );
 
 			if (!is_empty[d]) {
 				//CPU

@@ -70,13 +70,22 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 	}
 
+	// TODO_GPU
+	// - zde se rohoduje, na ktere GPU tento MPI proces pouziva 
+	// Faze 1 - 1 MPI process pouziva 1 GPU 
+	//		  - napsat kod, ktere si detekuje kolim MPI ranku je na uzlu a podle toho priradi min. 1 nebo vice MPI procesu na kazde GPU 
+	// Faze 2 - napsat podporu pro vice GPU na 1 MPI process 
+	
 	// GPU memory management
 	#if DEVICE_ID == 1
 		std::cout << "Selected CUDA device 1";
 		cudaSetDevice(1);
 	#else
 		cudaSetDevice(0);
+		std::cout << "Selected CUDA device 0";
 	#endif
+
+	// END - TODO_GPU
 
 	size_t GPU_free_mem, GPU_total_meml;
 	cudaMemGetInfo(&GPU_free_mem, &GPU_total_meml);
@@ -87,12 +96,16 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	esint DOFs_CPU = 0;
 
 	size_t SC_total_size = 0;
+	// Smycka napocitava velikost LSCs pres vsechny domeny
 	for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
 
 		switch (configuration.schur_type) {
 		case FETIConfiguration::MATRIX_STORAGE::GENERAL:
+
+	// TODO_GPU - SHARE_SC asi nepatri sem pro general matrix, ale patri do symetrickych matic nize 
+	// Radime potvrd.
 #ifdef SHARE_SC
-			// SC_total_size will be halved in the case of 2 symmetric SCs in 1 full matrix
+			// SC_total_size will be halved in the case of 2 symmetric SCs in 1 full matrix 
 			if (d%2 == 0) {
 				esint sc1_rows = domains[d].B1_comp_dom.rows;
 				esint sc2_rows = 0;
@@ -165,6 +178,8 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		}
 	}
 
+	// TODO_GPU - vsechny tyto std::cout se musi prepsat na logovani co ma Ondra M. 
+	// Ondro nektere moje rutiny, napr. SpyText jsou napsane pro std::cout a ne printf. Jake je reseni ? 
 	std::cout << "\n Domains on GPU : " << domains_on_GPU << "\n";
 	std::cout << " Domains on CPU : " << domains_on_CPU << "\n";
 
@@ -186,17 +201,6 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			"\t - GPU : domains = \t" << on_gpu[i] << "\t Total DOFs = \t" << don_gpu[i] <<
 			"\t - CPU : domains = \t" << on_cpu[i] << "\t Total DOFs = \t" << don_cpu[i] << "\n";
 	}
-
-
-	// Schur complement calculation on CPU
-//	cilk_for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
-//		if (domains[d].isOnACC == 1 || !configuration.combine_sc_and_spds) {
-//			// Calculates SC on CPU and keeps it CPU memory
-//			GetSchurComplement(USE_FLOAT, d);
-//			////ESINFO(PROGRESS3) << Info::plain() << ".";
-//		}
-//	}
-
 
 #ifdef SHARE_SC
 	SEQ_VECTOR <esint> SC_dense_val_offsets(domains_in_global_index.size(), 0);
@@ -326,17 +330,16 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	CreateCudaStreamPool();
 
 	// SC transfer to GPU - now sequential
+	// TODO_GPU - Faze 1: tohle je zpusob jak se budou kopirovat i Dirichlet predpodminovace na GPU - inspirovat se, pripadne se muze dat rovnou to teto smycky 
+	// TODO_GPU - Faze 2: zjistit, jak je to pomale a pripadne optimalizovat. Ale vyresi se implementaci vypoctu LSC na GPU 
 	for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
 
 		esint status = 0;
 
 		if (domains[d].isOnACC == 1) {
 
-			// Calculates SC on CPU and keeps it CPU memory
-			//GetSchurComplement(USE_FLOAT, d);
+			// TODO_GPU: Test performance (same streams)
 
-
-			// TODO Test performance (same streams)
 			// Assign CUDA stream from he pool
 			domains[d].B1Kplus.SetCUDA_Stream(cuda_stream_pool[d % STREAM_NUM]);
 
@@ -397,6 +400,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			if (USE_FLOAT){
 				status = domains[d].B1Kplus.CopyToCUDA_Dev_fl();
 
+				// TODO_GPU - alokuji se pole pro vektory, kterymi se bude ve funkci Apply_A nasobit tato matice 
 				status_c = cudaMallocHost((void**)&domains[d].cuda_pinned_buff_fl, domains[d].B1_comp_dom.rows * sizeof(float));
 				if (status_c != cudaSuccess) {
 					std::cout << "Error allocating pinned host memory";
@@ -414,6 +418,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 #endif
 
 			if (status == 0) {
+				// TODO_GPU - LSCs ktere se uspesne prenesly do pameti GPU se smazou z pameti procesoru 
 				domains[d].Kplus.keep_factors = false;
 
 				if (USE_FLOAT) {
@@ -426,7 +431,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 					std::cout << "G";
 				}
 			} else {
-
+				// pokud se domenu nepodar nahrat na GPU 
 				domains[d].isOnACC = 0;
 				domains_on_CPU++;
 				domains_on_GPU--;
@@ -498,8 +503,6 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 					std::cout << "F";
 
 			} else {
-
-				//GetSchurComplement(USE_FLOAT, d);
 
 				if (USE_FLOAT)
 					std::cout << "c";
@@ -904,7 +907,6 @@ void ClusterGPU::multKplus_HF_SC(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in, SEQ_VEC
 	cluster_time.totalTime.end();
 }
 
-
 void ClusterGPU::multKplus_HF_SPDS(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 
 	cluster_time.totalTime.start();
@@ -1126,6 +1128,8 @@ for (esint d = 0; d < domains.size(); d++)
 	 loop_2_1_time.end();
 
 }
+
+
 
 void ClusterGPU::CreateCudaStreamPool() {
 #ifdef STREAM_NUM
