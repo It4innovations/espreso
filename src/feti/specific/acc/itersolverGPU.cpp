@@ -146,7 +146,7 @@ for (esint d = 0; d < cluster.domains.size(); d++) {
 		
 		apply_A_FETI_SC_forFETI (cluster, x_in);
 
-		//#pragma omp parallel for
+		#pragma omp parallel for
 		for (esint d = 0; d < cluster.domains.size(); d++) {
 			SEQ_VECTOR < double > x_in_tmp;
 
@@ -173,6 +173,7 @@ for (esint d = 0; d < cluster.domains.size(); d++) {
 
 		std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
 
+		#pragma omp parallel for
 		for (esint d = 0; d < cluster.domains.size(); d++) {
 			if (cluster.domains[d]->isOnACC == 1) {
 				cluster.domains[d]->B1Kplus.DenseMatVecCUDA_wo_Copy_sync ( );
@@ -181,7 +182,7 @@ for (esint d = 0; d < cluster.domains.size(); d++) {
 			} else {
 				for (esint i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++)
 				{
-					;
+					cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += cluster.domains[d]->compressed_tmp[i];
 				}
 			}
 
@@ -312,13 +313,16 @@ for (esint d = 0; d < cluster.domains.size(); d++)
 void IterSolverGPU::apply_A_FETI_SC_forFETI   ( SuperCluster & cluster, SEQ_VECTOR<double> & x_in ) {
 		//cilk_
 		// TODO_GPU - spustit v OpeMP smycce - mozna ne nutne "DenseMatVecCUDA_wo_Copy_start" ale urcite tu vyzobavaci smycku 
-		for (esint d = 0; d < cluster.domains.size(); d++) {
-
-			if (cluster.domains[d]->isOnACC == 1) {
-				for (esint i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++) {
-					cluster.domains[d]->cuda_pinned_buff[i] = x_in[ cluster.domains[d]->lambda_map_sub_local[i]];
-				}
-
+	#pragma omp parallel for
+	for (esint d = 0; d < cluster.domains.size(); d++) {
+		if (cluster.domains[d]->isOnACC == 1) {
+			for (esint i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++) {
+				cluster.domains[d]->cuda_pinned_buff[i] = x_in[ cluster.domains[d]->lambda_map_sub_local[i]];
+			}
+		}
+	}
+	for (esint d = 0; d < cluster.domains.size(); d++) {
+		if (cluster.domains[d]->isOnACC == 1) {
 #ifdef SHARE_SC
 				cluster.domains[d]->B1Kplus.DenseMatVecCUDA_shared_wo_Copy_start(cluster.domains[d]->cuda_pinned_buff, cluster.domains[d]->cuda_pinned_buff,'N',0);
 #else
@@ -326,6 +330,7 @@ void IterSolverGPU::apply_A_FETI_SC_forFETI   ( SuperCluster & cluster, SEQ_VECT
 				cluster.domains[d]->B1Kplus.DenseMatVecCUDA_wo_Copy_start(cluster.domains[d]->cuda_pinned_buff, cluster.domains[d]->cuda_pinned_buff,'N',0);
 #endif
 			}
+
 
 //			if (cluster.domains[d].isOnACC == 1 && d%2 == 0) {
 //				for (esint i = 0; i < cluster.domains[d].lambda_map_sub_local.size(); i++) {
@@ -425,9 +430,10 @@ void IterSolverGPU::Apply_Prec( TimeEval & time_eval, SuperCluster & cluster, SE
 			// TODO_GPU
 			// zde je verze predpominovace na CPU, ktera se ma predelat pro GPU. Pro zacatek udelame na GPU pouze DIRICHLET
 			// nasledujici radek by mel zustat na CPU 
+
 			cluster.domains[d]->B1t_DirPr.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'N');
 			// nasledujici readek by mel jit na GPU - je otazkou jak udelal OpenMP paralelizaci vs. ovladani CUDY a streamu - podivat se na reseni v Apply_A a pro zacatek obe reseni sjednotit 
-			cluster.domains[d]->Prec.DenseMatVec(*cluster.x_prim_cluster1[d], *cluster.x_prim_cluster2[d],'N');
+//			cluster.domains[d]->Prec.DenseMatVec(*cluster.x_prim_cluster1[d], *cluster.x_prim_cluster2[d],'N');
 			break;
 		case FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET:
 			cluster.domains[d]->B1t_DirPr.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'N');
@@ -444,6 +450,41 @@ void IterSolverGPU::Apply_Prec( TimeEval & time_eval, SuperCluster & cluster, SE
 		}
 
 	}
+	// Only for DIRICHLET case for now
+	if(USE_PREC == FETIConfiguration::PRECONDITIONER::DIRICHLET)
+	{	// For those domains that did fit in to GPU initialize Prec application
+		for (size_t d = 0; d < cluster.domains.size(); d++)
+		{
+
+			cudaHostRegister(cluster.x_prim_cluster1[d]->data(), cluster.x_prim_cluster1[d]->size() * sizeof(double), cudaHostRegisterDefault);
+			cudaHostRegister(cluster.x_prim_cluster2[d]->data(), cluster.x_prim_cluster2[d]->size() * sizeof(double), cudaHostRegisterDefault);
+			if(cluster.domains[d]->isOnACC == 1)
+			{
+				cluster.domains[d]->Prec.DenseMatVecCUDA_wo_Copy_start( cluster.x_prim_cluster1[d]->data(), cluster.x_prim_cluster2[d]->data(),'N',0 );
+			}
+		}
+		// For those domains that didn't fit in to GPU apply Prec on CPU
+		#pragma omp parallel for
+		for (size_t d = 0; d < cluster.domains.size(); d++)
+		{
+			if(cluster.domains[d]->isOnACC == 0)
+			{
+				cluster.domains[d]->Prec.DenseMatVec(*cluster.x_prim_cluster1[d], *cluster.x_prim_cluster2[d],'N');
+			}
+		}
+		// Wait for GPU to finish operations
+		for (esint d = 0; d < cluster.domains.size(); d++)
+		{
+			if (cluster.domains[d]->isOnACC == 1)
+			{
+				cluster.domains[d]->Prec.DenseMatVecCUDA_wo_Copy_sync ( );
+			}
+			cudaHostUnregister(cluster.x_prim_cluster1[d]->data());
+			cudaHostUnregister(cluster.x_prim_cluster2[d]->data());
+		}
+	}
+
+
 
 	std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
 	SEQ_VECTOR < double > y_out_tmp;
@@ -542,7 +583,7 @@ void IterSolverGPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 					}
 				}
 
-			} while (iter_lm != (esint)cluster.sssdomains[d]->lambda_map_sub.size() && iter_in != (esint)in_indices.size() );
+			} while (iter_lm != (esint)cluster.domains[d]->lambda_map_sub.size() && iter_in != (esint)in_indices.size() );
 
 			if (!is_empty[d]) {
 				//CPU
