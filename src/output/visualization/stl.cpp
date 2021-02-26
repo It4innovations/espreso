@@ -40,9 +40,9 @@ void STL::updateMesh()
 
 	for (auto t = info::mesh->surface->triangles->cbegin(); t != info::mesh->surface->triangles->cend(); ++t) {
 		Point p[3] = {
-				info::mesh->nodes->coordinates->datatarray()[t->at(0)],
-				info::mesh->nodes->coordinates->datatarray()[t->at(1)],
-				info::mesh->nodes->coordinates->datatarray()[t->at(2)],
+				info::mesh->surface->coordinates->datatarray()[t->at(0)],
+				info::mesh->surface->coordinates->datatarray()[t->at(1)],
+				info::mesh->surface->coordinates->datatarray()[t->at(2)],
 		};
 		Point n = Point::cross(p[1] - p[0], p[2] - p[0]);
 
