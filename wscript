@@ -255,8 +255,9 @@ def build(ctx):
         ctx.lib = ctx.stlib
 
     def build(files, target, use=[]):
-        ctx(features=features, source=files,target=target, use=use)
-        return [ target ] + use
+        prefix = "nb"
+        ctx(features=features, source=files,target=prefix+target, use=use)
+        return [ prefix+target ] + use
 
     checker  = build(ctx.path.ant_glob('src/esinfo/**/*.cpp'), "esinfo", [ "INFO" ])
     checker += build(ctx.path.ant_glob('src/config/**/*.cpp'), "config")
