@@ -3,6 +3,7 @@
 #include "esinfo/mpiinfo.h"
 #include <sstream>
 #include <iostream>
+#include <algorithm>
 #include "mkl.h"
 
 using namespace espreso;
@@ -14,7 +15,7 @@ ClusterGPU::~ClusterGPU() {
 	DestroyCudaStreamPool();
 
 	for(esint d = 0; d < domains_in_global_index.size(); d++) {
-		if(domains[d].isOnACC) {
+                if(domains[d].isOnACC) {
 			domains[d].B1Kplus.ClearCUDA_Stream();
 #ifdef SHARE_SC
 			if(domains[d].B1Kplus.USE_FLOAT) {
@@ -39,16 +40,10 @@ ClusterGPU::~ClusterGPU() {
 	}
 }
 
-void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
-
-	std::cout << "Creating B1*K+*B1t Schur Complements with Pardiso SC and coping them to GPU";
+void ClusterGPU::GetAvailableGPUmemory() {
 
 	bool GPU_full = false;
 	//GPU_full = true;
-
-	esint status = 0;
-	cudaError_t status_c;
-
 	int nDevices;
 	cudaGetDeviceCount(&nDevices);
 
@@ -71,15 +66,15 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	}
 
 	// TODO_GPU
-	// - zde se rohoduje, na ktere GPU tento MPI proces pouziva 
-	// Faze 1 - 1 MPI process pouziva 1 GPU 
-	//		  - napsat kod, ktere si detekuje kolim MPI ranku je na uzlu a podle toho priradi min. 1 nebo vice MPI procesu na kazde GPU 
-	// Faze 2 - napsat podporu pro vice GPU na 1 MPI process 
-	
+	// - zde se rohoduje, na ktere GPU tento MPI proces pouziva
+	// Faze 1 - 1 MPI process pouziva 1 GPU
+	//		  - napsat kod, ktere si detekuje kolim MPI ranku je na uzlu a podle toho priradi min. 1 nebo vice MPI procesu na kazde GPU
+	// Faze 2 - napsat podporu pro vice GPU na 1 MPI process
+
 	// GPU memory management
 	// Create new communicator within the node (OMPI_COMM_TYPE_NODE can be swapped out with MPI_COMM_TYPE_SHARED for portability)
 	MPI_Comm node_comm;
-	MPI_Comm_split_type(info::mpi::comm, OMPI_COMM_TYPE_NODE, info::mpi::rank, MPI_INFO_NULL, &node_comm);
+	MPI_Comm_split_type(info::mpi::comm, MPI_COMM_TYPE_SHARED, info::mpi::rank, MPI_INFO_NULL, &node_comm);
 
 	// Get local size and id
 	int local_procs;
@@ -88,6 +83,25 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	int local_id;
 	MPI_Comm_rank(node_comm, &local_id);
 
+	size_t procs_per_gpu;
+	int device_id;
+	if ((local_procs % nDevices) != 0)
+	{
+	  std::cout<<" Only integer multiply number of processes per GPU. Processes: "<< local_procs << " GPUs: "<< nDevices << "\n";
+	  exit(0);
+	}
+	else
+	{
+	  procs_per_gpu = local_procs / nDevices;
+	  device_id     = local_id    / procs_per_gpu;
+	}
+
+	cudaSetDevice(device_id);
+	cudaMemGetInfo(&GPU_free_mem, &GPU_total_mem);
+	GPU_free_mem  /= procs_per_gpu;
+	GPU_total_mem /= procs_per_gpu;
+
+	/* OVERKILL PART 1
 	// Get memory info for all devices
 	std::vector <size_t>  GPU_free_mem(nDevices, 0);
 	std::vector <size_t>  GPU_total_mem(nDevices, 0);
@@ -124,6 +138,25 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 	MPI_Request msg_request;
 	MPI_Status msg_status;
+	*/
+}
+
+void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
+
+	GetAvailableGPUmemory();
+	std::cout << "Creating B1*K+*B1t Schur Complements with Pardiso SC and coping them to GPU";
+
+	esint status = 0;
+	cudaError_t status_c;
+
+	std::vector<size_t> local_SC_size_to_add (domains_in_global_index.size(), 0);
+
+	esint domains_on_GPU = 0;
+	esint domains_on_CPU = 0;
+	esint DOFs_GPU = 0;
+	esint DOFs_CPU = 0;
+
+
 	// Smycka napocitava velikost LSCs pres vsechny domeny
 	for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
 
@@ -157,19 +190,19 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 				}
 
 				if (USE_FLOAT) {
-					local_SC_size_to_add = (SC_size + 2 * vec_size) * sizeof(float);
+					local_SC_size_to_add[d] = (SC_size + 2 * vec_size) * sizeof(float);
 				} else {
-					local_SC_size_to_add = (SC_size + 2 * vec_size) * sizeof(double);
+					local_SC_size_to_add[d] = (SC_size + 2 * vec_size) * sizeof(double);
 				}
 			}
 #else
 			if (USE_FLOAT) {
-				local_SC_size_to_add =
+				local_SC_size_to_add[d] =
 						( domains[d].B1_comp_dom.rows * domains[d].B1_comp_dom.rows +
 						  2 * domains[d].B1_comp_dom.rows
 						) * sizeof(float);
 			} else {
-				local_SC_size_to_add =
+				local_SC_size_to_add[d] =
 						( domains[d].B1_comp_dom.rows * domains[d].B1_comp_dom.rows +
 						  2 * domains[d].B1_comp_dom.rows
 						) * sizeof(double);
@@ -178,12 +211,12 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			break;
 		case FETIConfiguration::MATRIX_STORAGE::SYMMETRIC:
 			if (USE_FLOAT) {
-				local_SC_size_to_add =
+				local_SC_size_to_add[d] =
 						(((domains[d].B1_comp_dom.rows + 1 ) * domains[d].B1_comp_dom.rows ) / 2
 						 + 2 * domains[d].B1_comp_dom.rows
 						) * sizeof(float);
 			} else {
-				local_SC_size_to_add =
+				local_SC_size_to_add[d] =
 						(((domains[d].B1_comp_dom.rows + 1 ) * domains[d].B1_comp_dom.rows ) / 2
 						 + 2 * domains[d].B1_comp_dom.rows
 						) * sizeof(double);
@@ -194,6 +227,21 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			std::cout << "ERROR - Not implemented type of Schur complement.";
 		}
 
+		if(local_SC_size_to_add[d] < GPU_free_mem)
+		{
+			domains_on_GPU++;
+			DOFs_GPU += domains[d].K.rows;
+			domains[d].B1Kplus.isOnACC = 1;
+			GPU_free_mem -= local_SC_size_to_add[d];
+		}
+		else
+		{
+			domains_on_CPU++;
+			DOFs_CPU += domains[d].K.rows;
+			domains[d].B1Kplus.isOnACC = 0;
+		}
+
+		/* OVERKILL PART 2
 		// Collect info on how much each process wants to add
 		MPI_Gather(&local_SC_size_to_add, 1, MPI_INT, &SC_size_to_add[0], 1, MPI_INT, 0, node_comm);
 
@@ -216,14 +264,15 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		{
 			domains_on_GPU++;
 			DOFs_GPU += domains[d].K.rows;
-			domains[d].isOnACC = 1;
+                        domains[d].isOnACC = 1;
 		}
 		else
 		{
 			domains_on_CPU++;
 			DOFs_CPU += domains[d].K.rows;
-			domains[d].isOnACC = 0;
+                        domains[d].isOnACC = 0;
 		}
+		*/
 	}
 
 	// TODO_GPU - vsechny tyto std::cout se musi prepsat na logovani co ma Ondra M. 
@@ -365,7 +414,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 #else
 	#pragma omp parallel for
 	for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
-			if (domains[d].isOnACC == 1 || !configuration.combine_sc_and_spds) {
+			if (domains[d].B1Kplus.isOnACC == 1 || !configuration.combine_sc_and_spds) {
 				// Calculates SC on CPU and keeps it CPU memory
 				GetSchurComplement(USE_FLOAT, d);
 				std::cout << ".";
@@ -383,18 +432,17 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
 
 		esint status = 0;
-		esint prec_status = 1;
 
-		if (domains[d].isOnACC == 1) {
+		if (domains[d].B1Kplus.isOnACC == 1) {
 
 			// TODO_GPU: Test performance (same streams)
 
 			// Assign CUDA stream from he pool
 			domains[d].B1Kplus.SetCUDA_Stream(cuda_stream_pool[d % STREAM_NUM]);
-			//if(USE_PREC == FETIConfiguration::PRECONDITIONER::DIRICHLET)
-			{
-				domains[d].Prec.SetCUDA_Stream(cuda_stream_pool[d % STREAM_NUM]);
-			}
+                        //if(USE_PREC == FETIConfiguration::PRECONDITIONER::DIRICHLET)
+//                        {
+//                                domains[d].Prec.SetCUDA_Stream(cuda_stream_pool[d % STREAM_NUM]);
+//                        }
 
 
 #ifdef SHARE_SC
@@ -452,38 +500,26 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			}
 #else
 			if (USE_FLOAT){
-				//if(USE_PREC == FETIConfiguration::PRECONDITIONER::DIRICHLET)
-				{
-					prec_status = 0;
-					prec_status = domains[d].Prec.CopyToCUDA_Dev_fl();
-				}
+                                status      = domains[d].B1Kplus.CopyToCUDA_Dev_fl();
 
-				status      = domains[d].B1Kplus.CopyToCUDA_Dev_fl();
-
+                                size_t memsize = (domains[d].B1Kplus.rows > domains[d].Prec.rows) ? domains[d].B1Kplus.rows : domains[d].Prec.rows;
 				// TODO_GPU - alokuji se pole pro vektory, kterymi se bude ve funkci Apply_A nasobit tato matice 
-				status_c = cudaMallocHost((void**)&domains[d].cuda_pinned_buff_fl, domains[d].B1_comp_dom.rows * sizeof(float));
-				if (status_c != cudaSuccess) {
-					std::cout << "Error allocating pinned host memory";
-					status = -1;
-				}
+                                domains[d].cuda_pinned_buff_fl.resize(memsize);
+                                cudaHostRegister(domains[d].cuda_pinned_buff_fl.data(), memsize * sizeof(float), cudaHostRegisterDefault);
+
 			} else {
-				//if(USE_PREC == FETIConfiguration::PRECONDITIONER::DIRICHLET)
-				{
-					prec_status = 0;
-					prec_status = domains[d].Prec.CopyToCUDA_Dev();
-				}
 
 				status      = domains[d].B1Kplus.CopyToCUDA_Dev();
 
-				status_c = cudaMallocHost((void**)&domains[d].cuda_pinned_buff, domains[d].B1_comp_dom.rows * sizeof(double));
-				if (status_c != cudaSuccess) {
-					std::cout << "Error allocating pinned host memory";
-					status = -1;
-				}
+                                size_t memsize = (domains[d].B1Kplus.rows > domains[d].Prec.rows) ? domains[d].B1Kplus.rows : domains[d].Prec.rows;
+
+                                domains[d].cuda_pinned_buff.resize(memsize);
+                                cudaHostRegister(domains[d].cuda_pinned_buff.data(), memsize * sizeof(double), cudaHostRegisterDefault);
+
 			}
 #endif
 
-			if (status == 0 && prec_status == 0) {
+			if (status == 0) {
 				// TODO_GPU - LSCs ktere se uspesne prenesly do pameti GPU se smazou z pameti procesoru 
 				domains[d].Kplus.keep_factors = false;
 
@@ -499,11 +535,14 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			} else {
 				// pokud se domenu nepodar nahrat na GPU 
 
-				domains[d].isOnACC = 0;
+
+				domains[d].B1Kplus.isOnACC = 0;
 				domains_on_CPU++;
 				domains_on_GPU--;
 				DOFs_CPU += domains[d].K.rows;
 				DOFs_GPU -= domains[d].K.rows;
+				GPU_free_mem += local_SC_size_to_add[d];
+
 
 				domains[d].B1Kplus.ClearCUDA_Stream();
 
@@ -546,9 +585,11 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 #endif
 
 				if(domains[d].B1Kplus.USE_FLOAT) {
-					cudaFreeHost(domains[d].cuda_pinned_buff_fl);
+                                        cudaHostUnregister(domains[d].cuda_pinned_buff_fl.data());
+					SEQ_VECTOR <float>  ().swap (domains[d].cuda_pinned_buff_fl);
 				} else {
-					cudaFreeHost(domains[d].cuda_pinned_buff);
+                                        cudaHostUnregister(domains[d].cuda_pinned_buff.data());
+					SEQ_VECTOR <double>  ().swap (domains[d].cuda_pinned_buff);
 				}
 
 				if (configuration.combine_sc_and_spds) {
@@ -590,7 +631,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 		}
 
-		std::cout << " Domain: " << d << " GPU : " << domains[d].isOnACC << "\n";
+		std::cout << " Domain: " << d << " GPU : " << domains[d].B1Kplus.isOnACC << "\n";
 	}
 
 	std::cout << "\n Domains transfered to GPU : " << domains_on_GPU << "\n";
@@ -718,6 +759,406 @@ void ClusterGPU::GetSchurComplement( bool USE_FLOAT, esint i ) {
 
 }
 
+void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
+
+	std::cout << "Creating Dirichlet Preconditioner with Pardiso SC and coping them to GPU";
+
+	esint status = 0;
+	cudaError_t status_c;
+
+	std::vector<size_t> local_Prec_size_to_add(domains_in_global_index.size(), 0);
+
+	esint domains_on_GPU = 0;
+	esint domains_on_CPU = 0;
+	esint DOFs_GPU = 0;
+	esint DOFs_CPU = 0;
+
+
+	// Smycka napocitava velikost LSCs pres vsechny domeny
+	for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
+
+		if (domains[d].Prec.USE_FLOAT) {
+		      local_Prec_size_to_add[d] =
+				      ( domains[d].B1t_Dir_perm_vec.size() * domains[d].B1t_Dir_perm_vec.size()
+				      ) * sizeof(float);
+		} else {
+		      local_Prec_size_to_add[d] =
+				      ( domains[d].B1t_Dir_perm_vec.size() * domains[d].B1t_Dir_perm_vec.size()
+				      ) * sizeof(double);
+		}
+		// If B1Kplus not on GPU we also need 2 vectors
+		if (domains[d].B1Kplus.isOnACC == 0)
+		{
+			if (domains[d].Prec.USE_FLOAT) {
+			      local_Prec_size_to_add[d] +=
+					      ( 2 * domains[d].B1t_Dir_perm_vec.size()
+					      ) * sizeof(float);
+			} else {
+			      local_Prec_size_to_add[d] +=
+					      ( 2 * domains[d].B1t_Dir_perm_vec.size()
+					      ) * sizeof(double);
+			}
+
+		}
+
+
+		if(local_Prec_size_to_add[d] < GPU_free_mem)
+		{
+		      domains_on_GPU++;
+		      DOFs_GPU += domains[d].Prec.rows;
+		      domains[d].Prec.isOnACC = 1;
+		      GPU_free_mem -= local_Prec_size_to_add[d];
+		}
+		else
+		{
+		      domains_on_CPU++;
+		      DOFs_CPU += domains[d].Prec.rows;
+		      domains[d].Prec.isOnACC = 0;
+		}
+
+		/* OVERKILL PART 2
+		// Collect info on how much each process wants to add
+		MPI_Gather(&local_SC_size_to_add, 1, MPI_INT, &SC_size_to_add[0], 1, MPI_INT, 0, node_comm);
+
+		if(local_id == 0)
+		{   // Proc with id 0 will decide if it fits
+		      for(int proc = 0; proc < local_procs; proc++)
+		      {
+			      if (SC_total_size[GPU_mapping[proc]] + SC_size_to_add[proc] < GPU_free_mem[GPU_mapping[proc]]) {
+				      msg[proc] = 1;
+				      SC_total_size[GPU_mapping[proc]] += SC_size_to_add[proc];
+			      } else {
+				      msg[proc] = 0;
+			      }
+		      }
+		}
+		// Get the decision from proc 0
+		MPI_Scatter(&msg[0], 1, MPI_INT, &reply, 1, MPI_INT, 0, node_comm);
+
+		if(reply)
+		{
+		      domains_on_GPU++;
+		      DOFs_GPU += domains[d].K.rows;
+		      domains[d].isOnACC = 1;
+		}
+		else
+		{
+		      domains_on_CPU++;
+		      DOFs_CPU += domains[d].K.rows;
+		      domains[d].isOnACC = 0;
+		}
+	*/
+	}
+
+	// TODO_GPU - vsechny tyto std::cout se musi prepsat na logovani co ma Ondra M.
+	// Ondro nektere moje rutiny, napr. SpyText jsou napsane pro std::cout a ne printf. Jake je reseni ?
+	std::cout << "\n Domains on GPU : " << domains_on_GPU << "\n";
+	std::cout << " Domains on CPU : " << domains_on_CPU << "\n";
+
+	std::vector <int> on_gpu (info::mpi::size, 0);
+	MPI_Gather(&domains_on_GPU,1,MPI_INT,&on_gpu[0],1,MPI_INT, 0, info::mpi::comm);
+
+	std::vector <int> on_cpu (info::mpi::size, 0);
+	MPI_Gather(&domains_on_CPU,1,MPI_INT,&on_cpu[0],1,MPI_INT, 0, info::mpi::comm);
+
+	std::vector <int> don_gpu (info::mpi::size, 0);
+	MPI_Gather(&DOFs_GPU,1,MPI_INT,&don_gpu[0],1,MPI_INT, 0, info::mpi::comm);
+
+	std::vector <int> don_cpu (info::mpi::size, 0);
+	MPI_Gather(&DOFs_CPU,1,MPI_INT,&don_cpu[0],1,MPI_INT, 0, info::mpi::comm);
+
+
+	for (esint i = 0; i < info::mpi::size; i++) {
+	      std::cout << " MPI rank " << i <<
+		      "\t - GPU : domains = \t" << on_gpu[i] << "\t Total DOFs = \t" << don_gpu[i] <<
+		      "\t - CPU : domains = \t" << on_cpu[i] << "\t Total DOFs = \t" << don_cpu[i] << "\n";
+	}
+
+	#pragma omp parallel for
+	for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
+		// Calculates Prec on CPU and keeps it CPU memory
+		GetDirichletPrec(instance, d);
+		std::cout << ".";
+	}
+	std::cout << "\n";
+
+	for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
+
+		esint status = 0;
+
+		if (domains[d].Prec.isOnACC == 1) {
+
+			// TODO_GPU: Test performance (same streams)
+
+			// Assign CUDA stream from he pool
+			domains[d].Prec.SetCUDA_Stream(cuda_stream_pool[d % STREAM_NUM]);
+
+
+			if (domains[d].Prec.USE_FLOAT){
+
+				status = domains[d].Prec.CopyToCUDA_Dev_fl();
+				// B1Kplus is not on GPU, threfore vectors arent alocated
+				if (domains[d].B1Kplus.isOnACC == 0)
+				{
+					size_t memsize = domains[d].Prec.rows;
+					// TODO_GPU - alokuji se pole pro vektory, kterymi se bude ve funkci Apply_Prec nasobit tato matice
+					domains[d].cuda_pinned_buff_fl.resize(memsize);
+					cudaHostRegister(domains[d].cuda_pinned_buff_fl.data(), memsize * sizeof(float), cudaHostRegisterDefault);
+				}
+
+			} else {
+
+				status = domains[d].Prec.CopyToCUDA_Dev();
+				// B1Kplus is not on GPU, threfore vectors arent alocated
+				if (domains[d].B1Kplus.isOnACC == 0)
+				{
+					size_t memsize = domains[d].Prec.rows;
+
+					domains[d].cuda_pinned_buff.resize(memsize);
+					cudaHostRegister(domains[d].cuda_pinned_buff.data(), memsize * sizeof(double), cudaHostRegisterDefault);
+				}
+
+			}
+
+			if (status == 0) {
+				// TODO_GPU - LSCs ktere se uspesne prenesly do pameti GPU se smazou z pameti procesoru
+
+				if (domains[d].Prec.USE_FLOAT) {
+					SEQ_VECTOR <float>  ().swap (domains[d].Prec.dense_values_fl);
+
+					std::cout << "g";
+				} else {
+					SEQ_VECTOR <double> ().swap (domains[d].Prec.dense_values);
+
+					std::cout << "G";
+				}
+			} else {
+				// pokud se domenu nepodar nahrat na GPU
+
+				domains[d].Prec.isOnACC = 0;
+				domains_on_CPU++;
+				domains_on_GPU--;
+				DOFs_CPU += domains[d].K.rows;
+				DOFs_GPU -= domains[d].K.rows;
+				GPU_free_mem += local_Prec_size_to_add[d];
+
+				domains[d].Prec.ClearCUDA_Stream();
+
+
+
+				if(domains[d].Prec.USE_FLOAT) {
+					domains[d].Prec.FreeFromCUDA_Dev_fl();
+				} else {
+					domains[d].Prec.FreeFromCUDA_Dev();
+				}
+
+				if(domains[d].Prec.USE_FLOAT) {
+					if (domains[d].B1Kplus.isOnACC == 0)
+					{
+						cudaHostUnregister(domains[d].cuda_pinned_buff_fl.data());
+						SEQ_VECTOR <float>  ().swap (domains[d].cuda_pinned_buff_fl);
+					}
+
+				} else {
+					if (domains[d].B1Kplus.isOnACC == 0)
+					{
+						cudaHostUnregister(domains[d].cuda_pinned_buff.data());
+						SEQ_VECTOR <double>  ().swap (domains[d].cuda_pinned_buff);
+					}
+				}
+
+
+
+				if (domains[d].Prec.USE_FLOAT)
+					std::cout << "c";
+				else
+					std::cout << "C";
+
+			}
+
+		} else {
+
+			if (domains[d].Prec.USE_FLOAT)
+				std::cout << "c";
+			else
+				std::cout << "C";
+
+		}
+
+		std::cout << " Domain: " << d << " GPU : " << domains[d].Prec.isOnACC << "\n";
+	}
+
+	std::cout << "\n Domains transfered to GPU : " << domains_on_GPU << "\n";
+	std::cout << " Domains on CPU : " << domains_on_CPU << "\n";
+
+}
+
+void ClusterGPU::GetDirichletPrec( DataHolder *instance, esint d) {
+
+//for (size_t d = 0; d < instance->K.size(); d++) {
+
+	SEQ_VECTOR<esint> perm_vec = domains[d].B1t_Dir_perm_vec;
+	SEQ_VECTOR<esint> perm_vec_full(instance->K[domains[d].domain_global_index].rows);// (instance->K[d].rows);
+	SEQ_VECTOR<esint> perm_vec_diff(instance->K[domains[d].domain_global_index].rows);// (instance->K[d].rows);
+
+	SEQ_VECTOR<esint> I_row_indices_p(instance->K[domains[d].domain_global_index].nnz);// (instance->K[d].nnz);
+	SEQ_VECTOR<esint> J_col_indices_p(instance->K[domains[d].domain_global_index].nnz);// (instance->K[d].nnz);
+
+	for (size_t i = 0; i < perm_vec.size(); i++) {
+		perm_vec[i] = perm_vec[i] - 1;
+	}
+
+	for (size_t i = 0; i < perm_vec_full.size(); i++) {
+		perm_vec_full[i] = i;
+	}
+
+	auto it = std::set_difference(perm_vec_full.begin(), perm_vec_full.end(), perm_vec.begin(), perm_vec.end(), perm_vec_diff.begin());
+	perm_vec_diff.resize(it - perm_vec_diff.begin());
+
+	perm_vec_full = perm_vec_diff;
+	perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
+
+	SparseMatrix K_modif = instance->K[domains[d].domain_global_index]; //[d];
+#ifdef BEM4I_TO_BE_REMOVED
+//TODO: Alex - da se nejak spocist Dir prec z dense matic K ??
+	K_modif.ConvertDenseToCSR(1);
+#endif
+	SparseMatrix RegMatCRS = instance->RegMat[domains[d].domain_global_index]; //[d];
+	RegMatCRS.ConvertToCSRwithSort(0);
+	K_modif.MatAddInPlace(RegMatCRS, 'N', -1);
+	// K_modif.RemoveLower();
+
+	SEQ_VECTOR<SEQ_VECTOR<esint >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<esint >(2, 1));
+	esint offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
+
+	for (esint i = 0; i < K_modif.rows; i++) {
+		vec_I1_i2[i][0] = perm_vec_full[i];
+		vec_I1_i2[i][1] = i; // position to create reverse permutation
+	}
+
+	std::sort(vec_I1_i2.begin(), vec_I1_i2.end(), [](const SEQ_VECTOR <esint >& a, const SEQ_VECTOR<esint>& b) {return a[0] < b[0];});
+
+	// permutations made on matrix in COO format
+	K_modif.ConvertToCOO(0);
+	esint I_index, J_index;
+	bool unsymmetric = !SYMMETRIC_SYSTEM;
+	for (esint i = 0; i < K_modif.nnz; i++) {
+		I_index = vec_I1_i2[K_modif.I_row_indices[i] - offset][1] + offset;
+		J_index = vec_I1_i2[K_modif.J_col_indices[i] - offset][1] + offset;
+		if (unsymmetric || I_index <= J_index) {
+			I_row_indices_p[i] = I_index;
+			J_col_indices_p[i] = J_index;
+		} else {
+			I_row_indices_p[i] = J_index;
+			J_col_indices_p[i] = I_index;
+		}
+	}
+	for (esint i = 0; i < K_modif.nnz; i++) {
+		K_modif.I_row_indices[i] = I_row_indices_p[i];
+		K_modif.J_col_indices[i] = J_col_indices_p[i];
+	}
+	K_modif.ConvertToCSRwithSort(1);
+//	{
+//		if (info::ecf->output.print_matrices) {
+//			std::ofstream osS(Logging::prepareFile(d, "K_modif"));
+//			osS << K_modif;
+//			osS.close();
+//		}
+//	}
+
+	// ------------------------------------------------------------------------------------------------------------------
+	bool diagonalized_K_rr = configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET;
+	//        PRECONDITIONER==NONE              - 0
+	//        PRECONDITIONER==LUMPED            - 1
+	//        PRECONDITIONER==WEIGHT_FUNCTION   - 2
+	//        PRECONDITIONER==DIRICHLET         - 3
+	//        PRECONDITIONER==SUPER_DIRICHLET   - 4
+	//
+	//        When next line is uncomment, var. PRECONDITIONER==DIRICHLET and PRECONDITIONER==SUPER_DIRICHLET provide identical preconditioner.
+	//        bool diagonalized_K_rr = false
+	// ------------------------------------------------------------------------------------------------------------------
+
+	esint sc_size = perm_vec.size();
+
+	if (sc_size == instance->K[domains[d].domain_global_index].rows) {
+		domains[d].Prec = instance->K[domains[d].domain_global_index];
+		domains[d].Prec.ConvertCSRToDense(1);
+		// if physics.K[d] does not contain inner DOF
+	} else {
+
+		if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET) {
+			SparseSolverCPU createSchur;
+//          createSchur.msglvl=1;
+			esint sc_size = perm_vec.size();
+			createSchur.ImportMatrix_wo_Copy(K_modif);
+			createSchur.Create_SC(domains[d].Prec, sc_size, false);
+			domains[d].Prec.ConvertCSRToDense(1);
+		} else {
+			SparseMatrix K_rr;
+			SparseMatrix K_rs;
+			SparseMatrix K_sr;
+			SparseMatrix KsrInvKrrKrs;
+
+			esint i_start = 0;
+			esint nonsing_size = K_modif.rows - sc_size - i_start;
+			esint j_start = nonsing_size;
+
+			K_rs.getSubBlockmatrix_rs(K_modif, K_rs, i_start, nonsing_size, j_start, sc_size);
+
+			if (SYMMETRIC_SYSTEM) {
+				K_rs.MatTranspose(K_sr);
+			} else {
+				K_sr.getSubBlockmatrix_rs(K_modif, K_sr, j_start, sc_size, i_start, nonsing_size);
+			}
+
+			domains[d].Prec.getSubDiagBlockmatrix(K_modif, domains[d].Prec, nonsing_size, sc_size);
+			SEQ_VECTOR<double> diagonals;
+			SparseSolverCPU K_rr_solver;
+
+			// K_rs is replaced by:
+			// a) K_rs = 1/diag(K_rr) * K_rs          (simplified Dirichlet precond.)
+			// b) K_rs =    inv(K_rr) * K_rs          (classical Dirichlet precond. assembled by own - not via PardisoSC routine)
+			if (diagonalized_K_rr) {
+				diagonals = K_modif.getDiagonal();
+				// diagonals is obtained directly from K_modif (not from K_rr to avoid assembling) thanks to its structure
+				//      K_modif = [K_rr, K_rs]
+				//                [K_sr, K_ss]
+				//
+				for (esint i = 0; i < K_rs.rows; i++) {
+					for (esint j = K_rs.CSR_I_row_indices[i]; j < K_rs.CSR_I_row_indices[i + 1]; j++) {
+						K_rs.CSR_V_values[j - offset] /= diagonals[i];
+					}
+				}
+			} else {
+				K_rr.getSubDiagBlockmatrix(K_modif, K_rr, i_start, nonsing_size);
+				K_rr_solver.ImportMatrix_wo_Copy(K_rr);
+//            K_rr_solver.msglvl = 1;
+				K_rr_solver.SolveMat_Dense(K_rs);
+			}
+
+			KsrInvKrrKrs.MatMat(K_sr, 'N', K_rs);
+			domains[d].Prec.MatAddInPlace(KsrInvKrrKrs, 'N', -1);
+//          if (!diagonalized_K_rr){
+//				    cluster.domains[d].Prec.ConvertCSRToDense(1);
+//          }
+		}
+
+	}
+
+//	if (info::ecf->output.print_matrices) {
+//		std::ofstream osS(Logging::prepareFile(domains[d].domain_global_index, "S"));
+//		SparseMatrix SC = domains[d].Prec;
+//		if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET) {
+//			SC.ConvertDenseToCSR(1);
+//		}
+//		osS << SC;
+//		osS.close();
+//	}
+
+//	//ESINFO(PROGRESS3) << Info::plain() << ".";
+
+}
+
 void ClusterGPU::SetupKsolvers ( ) {
 
 	#pragma omp parallel for
@@ -756,7 +1197,7 @@ for (esint d = 0; d < domains.size(); d++) {
 					domains[d].Kplus.Factorization (ss.str());
 				}
 			} else {
-				if ( domains[d].isOnACC == 0 ) {
+                                if ( domains[d].isOnACC == 0 ) {
 					std::stringstream ss;
 					ss << "init -> rank: " << info::mpi::rank << ", subdomain: " << d;
 					domains[d].Kplus.keep_factors = true;
@@ -903,7 +1344,7 @@ for (esint d = 0; d < domains.size(); d++)
 
 		bool MIXED_SC_FACT = configuration.combine_sc_and_spds;
 
-		if (domains[d].isOnACC == 0 && MIXED_SC_FACT) {
+                if (domains[d].isOnACC == 0 && MIXED_SC_FACT) {
 
 			for (esint i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
 				tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
@@ -1167,7 +1608,7 @@ for (esint d = 0; d < domains.size(); d++)
 
 		bool MIXED_SC_FACT = configuration.combine_sc_and_spds;
 
-		if ( (domains[d].isOnACC == 0 && MIXED_SC_FACT ) || !configuration.use_schur_complement ) {
+                if ( (domains[d].isOnACC == 0 && MIXED_SC_FACT ) || !configuration.use_schur_complement ) {
 
 			for (esint i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
 				tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;

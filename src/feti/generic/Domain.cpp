@@ -63,7 +63,7 @@ Domain::Domain(const FETIConfiguration &configuration, DataHolder *instance_in, 
 		domain_prim_size 	= K.cols;
 		domain_global_index = domain_index_in;
 		USE_HFETI 		 	= USE_HTFETI_in;
-		isOnACC          	= 0;
+                isOnACC          	= 0;
 
 		// TODO: this is broken (ask Lubos)
 		norm_f = 0;

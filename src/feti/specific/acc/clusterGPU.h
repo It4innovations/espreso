@@ -23,7 +23,11 @@ public:
 	~ClusterGPU();
 
 	void Create_SC_perDomain( bool USE_FLOAT );
+        void CreateDirichletPrec( DataHolder *instance );
+
 	void GetSchurComplement( bool USE_FLOAT, esint i );
+        void GetDirichletPrec( DataHolder *instance, esint d );
+
 
 	void SetupKsolvers ( );
 
@@ -46,6 +50,13 @@ public:
 	void DestroyCudaStreamPool();
 
 	SEQ_VECTOR <cudaStream_t> cuda_stream_pool;
+private:
+        void GetAvailableGPUmemory();
+
+        size_t  GPU_free_mem;
+        size_t  GPU_total_mem;
+
+
 
 #ifdef SHARE_SC
 	SEQ_VECTOR <double *> SC_dense_val_orig;

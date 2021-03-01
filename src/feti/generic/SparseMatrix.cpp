@@ -160,13 +160,15 @@ SparseMatrix::SparseMatrix() {
 
 	USE_FLOAT = false;
 
+	isOnACC = 0;
+
 	d_dense_values = NULL;
 	d_x_in		   = NULL;
 	d_y_out		   = NULL;
 
 	d_dense_values_fl = NULL;
 	d_x_in_fl		  = NULL;
-	d_y_out_fl		  = NULL;
+        d_y_out_fl		  = NULL;
 
 #ifdef SOLVER_CUDA
 	handle		    = NULL;
@@ -206,6 +208,7 @@ SparseMatrix::SparseMatrix( const SparseMatrix &A_in) {
 	dense_values	  = A_in.dense_values;
 	dense_values_fl   = A_in.dense_values_fl;
 
+	isOnACC           = A_in.isOnACC;
 	// GPU
 	d_dense_values    = A_in.d_dense_values;
 	d_x_in			  = A_in.d_x_in;

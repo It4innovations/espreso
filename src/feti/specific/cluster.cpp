@@ -84,7 +84,6 @@ void ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number
 		domains[d].USE_KINV    	 		= USE_KINV;
 		domains[d].USE_HFETI   	 		= USE_HFETI;
 		domains[d].domain_index  		= d;
-		domains[d].isOnACC  			= 0;
 
 		// Verbose level for K_plus
 		if ( d == 0 && info::mpi::rank == 0) {
@@ -412,7 +411,7 @@ void ClusterBase::SetupPreconditioner ( ) {
 		CreateDirichletPrec(instance);
 		break;
 	case FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET:
-		CreateDirichletPrec(instance);
+                CreateDirichletPrec(instance);
 		break;
 	case FETIConfiguration::PRECONDITIONER::MAGIC: // Fast Lumped
 		#pragma omp parallel for

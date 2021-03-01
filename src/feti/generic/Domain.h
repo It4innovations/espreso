@@ -59,7 +59,7 @@ public:
 	esint domain_prim_size;
 	esint USE_KINV;
 	esint USE_HFETI;
-	esint isOnACC;
+        esint isOnACC;
 
 	esint domain_index;
 	bool	enable_SP_refinement;
@@ -138,12 +138,11 @@ public:
 	SEQ_VECTOR <double> compressed_tmp2;
 
 	// CUDA
-	double * cuda_pinned_buff;
-	float  * cuda_pinned_buff_fl;
+	SEQ_VECTOR <double> cuda_pinned_buff;
+	SEQ_VECTOR <float>  cuda_pinned_buff_fl;
 	// END - CUDA
 
 
 };
 
 }
-

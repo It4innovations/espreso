@@ -51,7 +51,7 @@ public:
 	char type;		// 'G' for general or 'S' for symmetric
 	MatrixType mtype;
 	char uplo; 		// 'L' for lower or 'U' for upper
-	esint extern_lda; // leading dimension of the array holding 2 SCs in the device memory
+        esint extern_lda; // leading dimension of the array holding 2 SCs in the device memory
 
 	// Sparse COO data
 	SEQ_VECTOR <esint>	I_row_indices;
@@ -72,6 +72,7 @@ public:
 	SEQ_VECTOR <float> 		vec_fl_out;
 	bool					USE_FLOAT;
 
+	bool				isOnACC;
 	// CUDA
 	double * d_dense_values;
 	double * d_x_in;
