@@ -22,61 +22,26 @@ DEFAULT_ARGS {
 }
 
 INPUT_TYPE                   GENERATOR;
-PHYSICS   STRUCTURAL_MECHANICS_3D;
-INPUT {
-
- DECOMPOSITION {
-     #[NONE,METIS,PARMETIS,PTSCOTCH,HILBERT_CURVE]
-         PARALLEL_DECOMPOSER   METIS;
-             #[NONE,METIS,SCOTCH,KAHIP]
-                 SEQUENTIAL_DECOMPOSER    METIS;
-                     MESH_DUPLICATION            1;
-                         DOMAINS                      1;
-                         
-                             SEPARATE_MATERIALS       FALSE;
-                                 SEPARATE_REGIONS         FALSE;
-                                     SEPARATE_ETYPES          FALSE;
-                                     
-                                         PARMETIS_OPTIONS {
-                                               REFINEMENT   FALSE;
-                                                   }
-                                                   
-                                                       METIS_OPTIONS {
-                                                             #[VOLUME,EDGECUT]
-                                                                   OBJECTIVE_TYPE   VOLUME;
-                                                                       }
-                                                                       
-                                                                           PTSCOTCH_OPTIONS {
-                                                                               }
-                                                                               
-                                                                                   SCOTCH_OPTIONS {
-                                                                                       }
-                                                                                       
-                                                                                           KAHIP_OPTIONS {
-                                                                                               }
-                                                                                                 }
-                                                                                                 }
-                                                                                                 
-                                                                                                 
+PHYSICS        STRUCTURAL_MECHANICS_3D;
 
 GENERATOR {
   SHAPE   GRID;
 
-  UNIFORM_CLUSTERS  true;
-  UNIFORM_DOMAINS  true;
+  UNIFORM_CLUSTERS      FALSE;
+  UNIFORM_DOMAINS       FALSE;
 
   GRID {
-    START_X                    0;
-    START_Y                    0;
-    START_Z                    0;
+    START_X                   0;
+    START_Y                   0;
+    START_Z                   0;
 
-    LENGTH_X                  1;
-    LENGTH_Y                  1;
+    LENGTH_X                 .1;
+    LENGTH_Y                 .1;
     LENGTH_Z                  1;
 
     NODES {
-      Z0   <0 , 1> <0 , 1> <0 , 0>;
-      Z1   <0 , 1> <0 , 1> <1 ,1>;
+      Z0   <0 , .1> <0 , .1> <0 , 0>;
+      Z1   <0 , .1> <0 , .1> <1 , 1>;
     }
 
     ELEMENT_TYPE          [ARG0];
@@ -129,18 +94,18 @@ STRUCTURAL_MECHANICS_3D {
       SOLVER      FETI;
 
       FETI {
-        METHOD          TOTAL_FETI;
-        PRECONDITIONER     DIRICHLET;
-        PRECISION            1E-8;
-        ITERATIVE_SOLVER     GMRES;
-        REGULARIZATION   ANALYTIC;
-        REGULARIZATION_VERSION   [ARG10];
-        MAX_ITERATIONS        100;
-        CONJUGATE_PROJECTOR CONJ_R;
-        NUM_DIRECTIONS  [ARG11];
-        SCALING  TRUE;
-        REDUNDANT_LAGRANGE  TRUE;
-        use_schur_complement true;
+        METHOD                  TOTAL_FETI;
+        PRECONDITIONER           DIRICHLET;
+        PRECISION                     1E-7;
+        ITERATIVE_SOLVER             GMRES;
+        REGULARIZATION            ANALYTIC;
+        REGULARIZATION_VERSION     [ARG10];
+        MAX_ITERATIONS                1000;
+        CONJUGATE_PROJECTOR         CONJ_R;
+        NUM_DIRECTIONS             [ARG11];
+        SCALING                       TRUE;
+        REDUNDANT_LAGRANGE            TRUE;
+        USE_SCHUR_COMPLEMENT          TRUE;
       }
 
       HARMONIC_SOLVER {
@@ -179,39 +144,37 @@ STRUCTURAL_MECHANICS_3D {
 
 OUTPUT {
 
-#  PATH  /scratch/work/project/open-18-15;
-
   RESULTS_STORE_FREQUENCY    EVERY_SUBSTEP;
   MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
 
-PRINT_MATRICES TRUE;
+  # PRINT_MATRICES TRUE;
 
 
   STORE_RESULTS                 ALL;
 
   MONITORING {
     1 {
-      REGION                     Z1;
-      STATISTICS                AVG;
-      PROPERTY       DISPLACEMENT_AMPLITUDE_Y;
+      REGION                               Z1;
+      STATISTICS                          MAX;
+      PROPERTY       DISPLACEMENT_AMPLITUDE_X;
     }
 
     2 {
-      REGION                     Z1;
-      STATISTICS                AVG;
-      PROPERTY   DISPLACEMENT_COS_Y;
+      REGION                               Z1;
+      STATISTICS                          MAX;
+      PROPERTY       DISPLACEMENT_AMPLITUDE_Y;
     }
 
     3 {
-      REGION                     Z1;
-      STATISTICS                AVG;
-      PROPERTY   DISPLACEMENT_SIN_Y;
+      REGION                               Z1;
+      STATISTICS                          MAX;
+      PROPERTY       DISPLACEMENT_AMPLITUDE_Z;
     }
 
     4 {
-      REGION                     Z1;
-      STATISTICS                AVG;
-      PROPERTY              PHASE_Y;
+      REGION                               Z1;
+      STATISTICS                          AVG;
+      PROPERTY                        PHASE_Y;
     }
 
 
