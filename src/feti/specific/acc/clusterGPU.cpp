@@ -85,16 +85,26 @@ void ClusterGPU::GetAvailableGPUmemory() {
 
 	size_t procs_per_gpu;
 	int device_id;
-	if ((local_procs % nDevices) != 0)
+
+	if(local_procs > nDevices)
 	{
-	  std::cout<<" Only integer multiply number of processes per GPU. Processes: "<< local_procs << " GPUs: "<< nDevices << "\n";
-	  exit(0);
+		if ((local_procs % nDevices) != 0 )
+		{
+		  std::cout<<" Only integer multiply number of processes per GPU. Processes: "<< local_procs << " GPUs: "<< nDevices << "\n";
+		  exit(0);
+		}
+		else
+		{
+		  procs_per_gpu = local_procs / nDevices;
+		  device_id     = local_id    / procs_per_gpu;
+		}
 	}
 	else
 	{
-	  procs_per_gpu = local_procs / nDevices;
-	  device_id     = local_id    / procs_per_gpu;
+		procs_per_gpu = 1;
+		device_id     = local_id;
 	}
+
 
 	cudaSetDevice(device_id);
 	cudaMemGetInfo(&GPU_free_mem, &GPU_total_mem);
