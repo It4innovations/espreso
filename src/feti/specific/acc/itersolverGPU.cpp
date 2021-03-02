@@ -608,7 +608,7 @@ void IterSolverGPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
         if (cluster.USE_HFETI == 0) {
         	//cluster.multKplusFETI (cluster.x_prim_cluster1);
 
-			#pragma omp parallel for
+			//#pragma omp parallel for
 			for (size_t d = 0; d < cluster.domains.size(); d++) {
 				if (!is_empty[d]) {
 					// CPU
