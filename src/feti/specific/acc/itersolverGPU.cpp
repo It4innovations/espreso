@@ -173,7 +173,6 @@ for (esint d = 0; d < cluster.domains.size(); d++) {
 
 		std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
 
-		#pragma omp parallel for
 		for (esint d = 0; d < cluster.domains.size(); d++) {
 			if (cluster.domains[d]->B1Kplus.isOnACC == 1) {
 				cluster.domains[d]->B1Kplus.DenseMatVecCUDA_wo_Copy_sync ( );
