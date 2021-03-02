@@ -1,2 +1,5 @@
 ml ParMETIS/4.0.3-gompi-2019b
 ml mkl/2019.5.281
+ml CUDA/10.2.89
+export MPICXX=mpic++
+export CXX=g++
