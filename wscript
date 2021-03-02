@@ -161,7 +161,7 @@ def configure(ctx):
 
     """ Set default compilers flags"""
 
-    #ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
     ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
 
     if ctx.options.intwidth == "32":
