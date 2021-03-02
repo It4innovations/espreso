@@ -1,5 +1,4 @@
 #include "itersolverGPU.h"
-#include "cilk/cilk.h"
 
 using namespace espreso;
 
