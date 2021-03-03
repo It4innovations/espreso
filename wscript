@@ -101,11 +101,11 @@ def print_available(ctx):
     ctx.env["HAVE_MATH"] = _print(
         "Available math libraries",
         "NOT FOUND [ESPRESO SOLVER CANNOT BE COMPILED]",
-        [ "mkl" ])
+        [ "mkl", "cuda" ])
     _print(
         "Available third party solvers",
         "NOT FOUND",
-        [ "mklpdss", "hypre", "pardiso", "superlu", "wsmp" ],
+        [ "mklpdss", "hypre", "pardiso", "superlu", "wsmp", "csparse" ],
         "YELLOW")
     _print(
         "Available miscellaneous libraries",
@@ -127,6 +127,7 @@ def recurse(ctx):
 
     """ Math libraries"""
     ctx.recurse("src/wrappers/mkl")
+    ctx.recurse("src/wrappers/cuda")
 
     """ Solvers """
     ctx.recurse("src/wrappers/mklpdss")
@@ -134,6 +135,7 @@ def recurse(ctx):
     ctx.recurse("src/wrappers/pardiso")
     ctx.recurse("src/wrappers/superlu")
     ctx.recurse("src/wrappers/wsmp")
+    ctx.recurse("src/wrappers/csparse")
 
     """ Other """
     ctx.recurse("src/wrappers/pthread")
@@ -247,8 +249,6 @@ def build(ctx):
         feti = fetisources + ("src/feti/specific/cpu/SparseSolverPARDISO.cpp",)
     if ctx.env["DEFINES_SOLVER"][0] == "SOLVER_CUDA":
         feti = fetisources + ("src/feti/specific/cpu/SparseSolverMKL.cpp", "src/feti/specific/acc/clusterGPU.cpp", "src/feti/specific/acc/itersolverGPU.cpp",)
-    ctx.env.append_unique("DEFINES","STREAM_NUM=1")
-    ctx.env.append_unique("LIB",["cublas","cudart"])
 
 
     features = "cxx cxxshlib"
@@ -284,11 +284,13 @@ def build(ctx):
     espreso += build(ctx.path.ant_glob('src/physics/**/*.cpp'), "physics")
     espreso += build(ctx.path.ant_glob('src/math/**/*.cpp'), "math")
     espreso += build(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL" ])
+    espreso += build(ctx.path.ant_glob('src/wrappers/cuda/**/*.cpp'), "wcuda", [ "CUDA" ])
     espreso += build(ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'), "whypre", [ "HYPRE" ])
     espreso += build(ctx.path.ant_glob('src/wrappers/mklpdss/**/*.cpp'), "wmklpdss", [ "MKLPDSS", "MKL" ])
     espreso += build(ctx.path.ant_glob('src/wrappers/pardiso/**/*.cpp'), "wpardiso", [ "PARDISO", "MKL" ])
     espreso += build(ctx.path.ant_glob('src/wrappers/superlu/**/*.cpp'), "wsuperlu", [ "SUPERLU", "MKL" ])
     espreso += build(ctx.path.ant_glob('src/wrappers/wsmp/**/*.cpp'), "wwsmp", [ "WSMP" ])
+    espreso += build(ctx.path.ant_glob('src/wrappers/csparse/**/*.cpp'), "wcsparse", [ "CSPARSE" ])
     espreso += build(ctx.path.ant_glob('src/wrappers/bem/**/*.cpp'), "wbem", [ "BEM" ])
     if ctx.env["HAVE_MATH"]:
         espreso += build(feti, "feti", [ "SOLVER", "PARDISO", "MKL" ])

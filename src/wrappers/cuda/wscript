@@ -1,0 +1,5 @@
+def options(opt):
+    pass
+
+def configure(ctx):
+    ctx.link_cxx(name="cuda", header_name=["cuda_runtime_api.h", "cusolverSp.h", "cusolverSp_LOWLEVEL_PREVIEW.h"], libs=["cublas", "cudart", "cusparse", "cusolver", "nvToolsExt"])
