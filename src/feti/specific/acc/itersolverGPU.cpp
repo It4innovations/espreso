@@ -568,7 +568,7 @@ void IterSolverGPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 
 //    	 time_eval.timeEvents[0].start();
     	SEQ_VECTOR <int> is_empty ( cluster.x_prim_cluster1.size(), true);
- 		#pragma omp parallel for
+                #pragma omp parallel for
 		for (size_t d = 0; d < cluster.domains.size(); d++) {
 			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d]->B1_comp_dom.rows, 0.0 ); 
 
@@ -596,9 +596,13 @@ void IterSolverGPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 				//CPU
 				// cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'T');
 				//GPU - LSC 
-				for (esint i = 0; i < x_in_tmp.size(); i++) {
-					cluster.domains[d]->cuda_pinned_buff[i] = x_in_tmp[i];
-				}
+                                if (cluster.domains[d]->B1Kplus.isOnACC == 1) {
+                                  for (esint i = 0; i < x_in_tmp.size(); i++) {
+                                          cluster.domains[d]->cuda_pinned_buff[i] = x_in_tmp[i];
+                                  }
+                                } else {
+                                        eslog::error("apply_A_l_comp_dom_B_P_local_sparse - ERROR LSC not on GPU\n");
+                                }
 			}
 		}
 
