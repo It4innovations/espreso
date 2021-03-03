@@ -81,6 +81,9 @@ void GetProcessMemoryStat_u( );
 void GetMemoryStat_u( );  
 double GetProcessMemory_u ( );
 
+// Compare vectors and returns number of different values
+int CompareVectors(SEQ_VECTOR <double>& vec_a, SEQ_VECTOR <double>& vec_b);
+
 }
 // **** END - Uncategorized functions ********************************
 // *******************************************************************
