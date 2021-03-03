@@ -111,7 +111,7 @@ void ClusterGPU::GetAvailableGPUmemory() {
 	GPU_free_mem  /= procs_per_gpu;
 	GPU_total_mem /= procs_per_gpu;
 
-	/* OVERKILL PART 1
+	/*OVERKILL PART 1
 	// Get memory info for all devices
 	std::vector <size_t>  GPU_free_mem(nDevices, 0);
 	std::vector <size_t>  GPU_total_mem(nDevices, 0);
@@ -170,6 +170,10 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	// Smycka napocitava velikost LSCs pres vsechny domeny
 	for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
 
+		size_t vec_size = (domains[d].B1_comp_dom.rows > domains[d].B1t_Dir_perm_vec.size())
+				? domains[d].B1_comp_dom.rows
+				: domains[d].B1t_Dir_perm_vec.size();
+
 		switch (configuration.schur_type) {
 		case FETIConfiguration::MATRIX_STORAGE::GENERAL:
 
@@ -209,12 +213,12 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			if (USE_FLOAT) {
 				local_SC_size_to_add[d] =
 						( domains[d].B1_comp_dom.rows * domains[d].B1_comp_dom.rows +
-						  2 * domains[d].B1_comp_dom.rows
+						  2 * vec_size
 						) * sizeof(float);
 			} else {
 				local_SC_size_to_add[d] =
 						( domains[d].B1_comp_dom.rows * domains[d].B1_comp_dom.rows +
-						  2 * domains[d].B1_comp_dom.rows
+						  2 * vec_size
 						) * sizeof(double);
 			}
 #endif
@@ -223,12 +227,12 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			if (USE_FLOAT) {
 				local_SC_size_to_add[d] =
 						(((domains[d].B1_comp_dom.rows + 1 ) * domains[d].B1_comp_dom.rows ) / 2
-						 + 2 * domains[d].B1_comp_dom.rows
+						 + 2 * vec_size
 						) * sizeof(float);
 			} else {
 				local_SC_size_to_add[d] =
 						(((domains[d].B1_comp_dom.rows + 1 ) * domains[d].B1_comp_dom.rows ) / 2
-						 + 2 * domains[d].B1_comp_dom.rows
+						 + 2 * vec_size
 						) * sizeof(double);
 			}
 			break;
@@ -476,11 +480,16 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 					domains[d].B1Kplus.d_dense_values_fl = domains[d-1].B1Kplus.d_dense_values_fl - SC_dense_val_offsets[d-1] + SC_dense_val_offsets[d];
 				}
 
-				status_c = cudaMallocHost((void**)&domains[d].cuda_pinned_buff_fl, domains[d].B1_comp_dom.rows * sizeof(float));
-				if (status_c != cudaSuccess) {
-					std::cout << "Error allocating pinned host memory";
-					status = -1;
+				size_t memsize = (domains[d].B1Kplus.rows > domains[d].B1t_Dir_perm_vec.size()) ? domains[d].B1Kplus.rows : domains[d].B1t_Dir_perm_vec.size();
+				// TODO_GPU - alokuji se pole pro vektory, kterymi se bude ve funkci Apply_A nasobit tato matice
+				domains[d].ml cuda_pinned_buff_fl.resize(memsize);
+				if (domains[d].cuda_pinned_buff_fl.size() != memsize)
+				{
+				      std::cout << "Error allocating pinned host memory";
+				      status = -1;
 				}
+				cudaHostRegister(domains[d].cuda_pinned_buff_fl.data(), memsize * sizeof(float), cudaHostRegisterDefault);
+
 			} else {
 				if(d%2==0) {
 					status = domains[d].B1Kplus.CopyToCUDA_Dev();
@@ -502,28 +511,45 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 					domains[d].B1Kplus.d_dense_values = domains[d-1].B1Kplus.d_dense_values - SC_dense_val_offsets[d-1] + SC_dense_val_offsets[d];
 				}
 
-				status_c = cudaMallocHost((void**)&domains[d].cuda_pinned_buff, domains[d].B1_comp_dom.rows * sizeof(double));
-				if (status_c != cudaSuccess) {
-					std::cout << "Error allocating pinned host memory";
-					status = -1;
+				size_t memsize = (domains[d].B1Kplus.rows > domains[d].B1t_Dir_perm_vec.size()) ? domains[d].B1Kplus.rows : domains[d].B1t_Dir_perm_vec.size();
+
+				domains[d].cuda_pinned_buff.resize(memsize);
+				if (domains[d].cuda_pinned_buff.size() != memsize)
+				{
+				      std::cout << "Error allocating pinned host memory";
+				      status = -1;
 				}
+				cudaHostRegister(domains[d].cuda_pinned_buff.data(), memsize * sizeof(double), cudaHostRegisterDefault);
+
 			}
 #else
 			if (USE_FLOAT){
                                 status      = domains[d].B1Kplus.CopyToCUDA_Dev_fl();
 
-                                size_t memsize = (domains[d].B1Kplus.rows > domains[d].Prec.rows) ? domains[d].B1Kplus.rows : domains[d].Prec.rows;
+				size_t memsize = (domains[d].B1_comp_dom.rows > domains[d].B1t_Dir_perm_vec.size()) ? domains[d].B1_comp_dom.rows : domains[d].B1t_Dir_perm_vec.size();
 				// TODO_GPU - alokuji se pole pro vektory, kterymi se bude ve funkci Apply_A nasobit tato matice 
-                                domains[d].cuda_pinned_buff_fl.resize(memsize);
+				domains[d].cuda_pinned_buff_fl.resize(memsize);
+
+				domains[d].cuda_pinned_buff_fl.resize(memsize);
+				if (domains[d].cuda_pinned_buff_fl.size() != memsize)
+				{
+				      std::cout << "Error allocating pinned host memory";
+				      status = -1;
+				}
                                 cudaHostRegister(domains[d].cuda_pinned_buff_fl.data(), memsize * sizeof(float), cudaHostRegisterDefault);
 
 			} else {
 
 				status      = domains[d].B1Kplus.CopyToCUDA_Dev();
 
-                                size_t memsize = (domains[d].B1Kplus.rows > domains[d].Prec.rows) ? domains[d].B1Kplus.rows : domains[d].Prec.rows;
+				size_t memsize = (domains[d].B1_comp_dom.rows > domains[d].B1t_Dir_perm_vec.size()) ? domains[d].B1_comp_dom.rows : domains[d].B1t_Dir_perm_vec.size();
 
                                 domains[d].cuda_pinned_buff.resize(memsize);
+				if (domains[d].cuda_pinned_buff.size() != memsize)
+				{
+				      std::cout << "Error allocating pinned host memory";
+				      status = -1;
+				}
                                 cudaHostRegister(domains[d].cuda_pinned_buff.data(), memsize * sizeof(double), cudaHostRegisterDefault);
 
 			}
@@ -670,17 +696,25 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 //				}
 //
 //				if (USE_FLOAT){
-//					status_c = cudaMallocHost((void**)&domains[i].cuda_pinned_buff_fl, domains[i].B1_comp_dom.rows * sizeof(float));
-//					if (status_c != cudaSuccess) {
-//						////ESINFO(ERROR) << "Error allocating pinned host memory";
-//						status = 1;
-//					}
+//					size_t memsize = (domains[d].B1Kplus.rows > domains[d].B1t_Dir_perm_vec.size()) ? domains[d].B1Kplus.rows : domains[d].B1t_Dir_perm_vec.size();
+//
+//                                      domains[d].cuda_pinned_buff_fl.resize(memsize);
+//                                      cudaHostRegister(domains[d].cuda_pinned_buff_fl.data(), memsize * sizeof(float), cudaHostRegisterDefault);
+//					if (domains[d].cuda_pinned_buff_fl.size() != memsize)
+//					{
+//						std::cout << "Error allocating pinned host memory";
+//						status = -1;
+//                                      }
 //				} else {
-//					status_c = cudaMallocHost((void**)&domains[i].cuda_pinned_buff, domains[i].B1_comp_dom.rows * sizeof(double));
-//					if (status_c != cudaSuccess) {
-//						////ESINFO(ERROR) << "Error allocating pinned host memory";
-//						status = 1;
-//					}
+//					size_t memsize = (domains[d].B1Kplus.rows > domains[d].B1t_Dir_perm_vec.size()) ? domains[d].B1Kplus.rows : domains[d].B1t_Dir_perm_vec.size();
+//
+//                                      domains[d].cuda_pinned_buff.resize(memsize);
+//					if (domains[d].cuda_pinned_buff.size() != memsize)
+//					{
+//						std::cout << "Error allocating pinned host memory";
+//						status = -1;
+//                                      }
+//                                      cudaHostRegister(domains[d].cuda_pinned_buff.data(), memsize * sizeof(double), cudaHostRegisterDefault);
 //				}
 //			} else {
 //				status = 1;
@@ -931,7 +965,7 @@ void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
 			}
 
 			if (status == 0) {
-				// TODO_GPU - LSCs ktere se uspesne prenesly do pameti GPU se smazou z pameti procesoru
+                                // TODO_GPU - Precs ktere se uspesne prenesly do pameti GPU se smazou z pameti procesoru
 
 				if (domains[d].Prec.USE_FLOAT) {
 					SEQ_VECTOR <float>  ().swap (domains[d].Prec.dense_values_fl);
