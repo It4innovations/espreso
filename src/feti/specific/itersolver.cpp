@@ -376,13 +376,14 @@ void IterSolverBase::GetSolution_Primal_singular_parallel  ( SuperCluster & clus
 //		if (norm > configuration.precision) {
 //			eslog::warning("     - |                       >>> SOLVER DOES NOT CONVERGED <<<                       | -\n");
 //		}
-		switch (configuration.solver) {
-		case FETIConfiguration::ITERATIVE_SOLVER::QPCE:
-			Solve_QPCE_singular_dom(cluster, in_right_hand_side_primal );
-			break;
-		default:
-			ESINFO(GLOBAL_ERROR) << "Unknown CG solver";
-		}
+//		switch (configuration.solver) {
+//		case FETIConfiguration::ITERATIVE_SOLVER::QPCE:
+//			Solve_QPCE_singular_dom(cluster, in_right_hand_side_primal );
+//			break;
+//		default:
+//			break;
+//			ESINFO(GLOBAL_ERROR) << "Unknown CG solver";
+//		}
 
 
 	}
