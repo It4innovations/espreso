@@ -2488,7 +2488,10 @@ void ClusterGPU::multKplusGlobal_GPU(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 
 		bool MIXED_SC_FACT = configuration.combine_sc_and_spds;
 
+<<<<<<< HEAD
 		if (domains[d].B1Kplus.is_on_acc == 0 && MIXED_SC_FACT) {
+=======
+>>>>>>> FIX #67: Removed ineffective HTFETI branches
 		// 4. 3. 2021 Ineffective computation
 		// if (domains[d].B0Kplus_comp.is_on_acc == 0 && MIXED_SC_FACT) {
 
@@ -2502,7 +2505,11 @@ void ClusterGPU::multKplusGlobal_GPU(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 
 		// 	domains[d].multKplusLocal(tm1[d] , tm2[d]);
 		// } else {
+<<<<<<< HEAD
 		for (size_t i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+=======
+		for (esint i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+>>>>>>> FIX #67: Removed ineffective HTFETI branches
 			tmp_vec[i] = -1.0 * vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
 
 		domains[d].B0Kplus_comp.DenseMatVec(tmp_vec, tm2[d], 'T' );
@@ -2746,16 +2753,26 @@ void ClusterGPU::multKplus_HF_Loop2_MIX (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in)
 
 		bool MIXED_SC_FACT = configuration.combine_sc_and_spds;
 
+<<<<<<< HEAD
 		if ( (domains[d].B1Kplus.is_on_acc == 0 && MIXED_SC_FACT ) || !configuration.use_schur_complement ) {
 
 			for (size_t i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
 				tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
+=======
+		// 4. 3. 2021 Ineffective computation
+        // if ( (domains[d].B0Kplus_comp.is_on_acc == 0 && MIXED_SC_FACT ) || !configuration.use_schur_complement ) {
+			// for (esint i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+			// 	tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
 
-			domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
+			// domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
+>>>>>>> FIX #67: Removed ineffective HTFETI branches
 
-			for (esint i = 0; i < domain_size; i++)
-				tm1[d][i] = x_in[d][i] - tm1[d][i];
+			// for (esint i = 0; i < domain_size; i++)
+			// 	tm1[d][i] = x_in[d][i] - tm1[d][i];
 
+			// domains[d].multKplusLocal(tm1[d] , tm2[d]);
+
+<<<<<<< HEAD
 			domains[d].multKplusLocal(tm1[d] , tm2[d]);
 
 		// 4. 3. 2021 Ineffective computation
@@ -2783,6 +2800,21 @@ void ClusterGPU::multKplus_HF_Loop2_MIX (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in)
 		esint e0_start	=  d	* domains[d].Kplus_R.cols;
 		esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
 
+=======
+			// esint e0_start	=  d	* domains[d].Kplus_R.cols;
+			// esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
+
+			// domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
+		// } else {
+		for (esint i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+			tmp_vec[i] = -1.0 * vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
+
+		domains[d].B0Kplus_comp.DenseMatVec(tmp_vec, tm2[d], 'T' );
+
+		esint e0_start	=  d	* domains[d].Kplus_R.cols;
+		esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
+
+>>>>>>> FIX #67: Removed ineffective HTFETI branches
 		domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
 		// }
 
