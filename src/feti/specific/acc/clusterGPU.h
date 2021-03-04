@@ -53,8 +53,10 @@ public:
 private:
 	void GetGPU();
 
+		// TODO change to arrays for multi-GPU per cluster
         size_t  GPU_free_mem;
         size_t  GPU_total_mem;
+		int device_id;
 
 	int device_id;
 

@@ -1000,8 +1000,29 @@ void ClusterGPU::GetSchurComplement(bool USE_FLOAT, esint i) {
 		tmpsps.Create_SC_w_Mat(domains[i].K, TmpB, domains[i].B1Kplus, false, 0); // general
 		// order = 0; // 0 = natural, 1 = amd(A+A')
 	} else if (domains[i].K.type =='G') {
+<<<<<<< HEAD
 		tmpsps.Create_non_sym_SC_w_Mat(domains[i].K, TmpB, TmpB, domains[i].B1Kplus, false, 0);
 		// order = 0; // 0 = natural, 1 = amd(A+A'), 2 = amd(S'*S), 3 = amd(A'*A)
+=======
+		// 1-based indexing must be converted to 0-based indexing
+		SparseMatrix B1_comp_dom_copy = domains[i].B1_comp_dom;
+		
+		// Convert CSR to CSC
+		// 1-based indexing must be converted to 0-based indexing
+		// TODO: Do not copy if possible
+		SparseMatrix K_csc;
+		domains[i].K.MatTranspose(K_csc);
+
+		// CSparse factorization - 0-based indexing, CSC-format
+		int order = 0; // 0 = natural, 1 = amd(AaA'), 2 = amd(S'*S), 3 = amd(A'*A)
+		int tol = 1; // partial pivoting tolerance
+		int n_rhs = B1_comp_dom_copy.rows;
+		int device_id = domains[i].B1Kplus.device_id;
+
+		cuda::SetDevice(device_id);
+		cuda::Malloc((void**)&domains[i].B1Kplus.d_dense_values, n_rhs * n_rhs * sizeof(double));
+		csparse::CreateLscGpu(K_csc, B1_comp_dom_copy, order, tol, device_id, domains[i].B1Kplus);
+>>>>>>> ENH #62: Set device_id from SparseMatrix to the CSparse call
 	} else {
 		eslog::error("Error - not defined type of K mat type.");
 		exit(0);
