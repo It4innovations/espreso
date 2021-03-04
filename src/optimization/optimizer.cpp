@@ -7,11 +7,7 @@ using namespace espreso;
 
 void EmptyOptimizer::run(std::function<void(void)> fnc)
 {
-	double start = Measure::time();
 	fnc();
-	double end = Measure::time();
-
-	std::cout << "T," << end - start << std::endl;
 }
 
 EvolutionaryOptimizer::EvolutionaryOptimizer(const OptimizationConfiguration& configuration,
