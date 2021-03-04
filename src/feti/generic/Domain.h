@@ -59,7 +59,6 @@ public:
 	esint domain_prim_size;
 	esint USE_KINV;
 	esint USE_HFETI;
-        esint isOnACC;
 
 	esint domain_index;
 	bool	enable_SP_refinement;

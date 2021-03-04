@@ -72,7 +72,7 @@ public:
 	SEQ_VECTOR <float> 		vec_fl_out;
 	bool					USE_FLOAT;
 
-	bool				isOnACC;
+	bool				is_on_acc;
 	// CUDA
 	double * d_dense_values;
 	double * d_x_in;

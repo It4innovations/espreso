@@ -160,7 +160,7 @@ SparseMatrix::SparseMatrix() {
 
 	USE_FLOAT = false;
 
-	isOnACC = 0;
+	is_on_acc = 0;
 
 	d_dense_values = NULL;
 	d_x_in		   = NULL;
@@ -208,7 +208,7 @@ SparseMatrix::SparseMatrix( const SparseMatrix &A_in) {
 	dense_values	  = A_in.dense_values;
 	dense_values_fl   = A_in.dense_values_fl;
 
-	isOnACC           = A_in.isOnACC;
+	is_on_acc           = A_in.is_on_acc;
 	// GPU
 	d_dense_values    = A_in.d_dense_values;
 	d_x_in			  = A_in.d_x_in;
