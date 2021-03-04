@@ -73,6 +73,8 @@ public:
 	bool					USE_FLOAT;
 
 	bool				is_on_acc;
+	int					device_id;
+
 	// CUDA
 	double * d_dense_values;
 	double * d_x_in;

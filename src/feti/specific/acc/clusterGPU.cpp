@@ -93,7 +93,11 @@ void ClusterGPU::GetGPU() {
 //		int local_id;
 //		MPI_Comm_rank(node_comm, &local_id);
 
+<<<<<<< HEAD
 		size_t procs_per_gpu;
+=======
+	size_t procs_per_gpu;
+>>>>>>> ENH #56: device_id in SparseMatrix
 
 		if(MPITools::node->size > nDevices)
 		{
@@ -194,6 +198,7 @@ size_t ClusterGPU::CalculateGpuBufferSize(esint max_B1_nnz, esint max_B1_rows, e
 
 
 void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
+<<<<<<< HEAD
 	DEBUGOUT << "Creating B1*K+*B1t Schur Complements with CSparse and cuSparse on GPU\n";
 	
 	// Currently sets device_id for the cluster (all domains)
@@ -214,6 +219,12 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	n_csrsm2_info_per_gpu = configuration.num_info_objects;
 
 	// Decide if LSC fits in GPU memory
+=======
+	// Currently sets device_id for the cluster (all domains)
+	GetAvailableGPUmemory();
+	std::cout << "Creating B1*K+*B1t Schur Complements with Pardiso SC and coping them to GPU";
+
+>>>>>>> ENH #56: device_id in SparseMatrix
 	esint status = 0;
 	std::vector<size_t> local_SC_size_to_add(domains_in_global_index.size(), 0);
 
@@ -313,6 +324,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			eslog::error("ERROR - Not implemented type of Schur complement.");
 		}
 
+<<<<<<< HEAD
 		max_B1_nnz = std::max(max_B1_nnz, domains[d].B1_comp_dom.nnz);
 		max_B1_rows = std::max(max_B1_rows, domains[d].B1_comp_dom.rows);
 		max_B1_size = std::max(max_B1_size, domains[d].B1_comp_dom.rows * domains[d].B1_comp_dom.cols);
@@ -323,6 +335,15 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		
 		// Possible optimization - overlap gpu_buffers_size with size of vectors, see #86
 		if(local_SC_size_to_add[d] < (gpu_buffers_size > GPU_free_mem ? 0 : GPU_free_mem - gpu_buffers_size)) {
+=======
+		if(local_SC_size_to_add[d] < GPU_free_mem)
+		{
+			domains_on_GPU++;
+			DOFs_GPU += domains[d].K.rows;
+			domains[d].B1Kplus.is_on_acc = 1;
+			// Prepared for the case of multi-GPU per cluster
+			domains[d].B1Kplus.device_id = device_id;
+>>>>>>> ENH #56: device_id in SparseMatrix
 			GPU_free_mem -= local_SC_size_to_add[d];
 			lsc_to_get_factors_ids.push_back(d);
 		} else {
