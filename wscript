@@ -37,7 +37,6 @@ def link_cxx(self, *k, **kw):
 
         if "fragment" in kw:
             test = dict(execute=True)
-            test.update(header)
             inc = [ "#include <{0}>\n".format(h) for h in kw["header_name"].split() ]
             test["fragment"] = "{0}int main(int argc, char** argv) {{ {1} }}".format("".join(inc), kw["fragment"])
             test["msg"] = "Checking for '{0}' settings".format(kw["name"])
@@ -48,7 +47,6 @@ def link_cxx(self, *k, **kw):
     if "libs" in kw:
         libs = dict(stlib=kw["libs"], libpath=libpath, msg="Checking for '{0}' library".format(kw["name"]))
         libs.update(general)
-        libs.update(header)
         if not self.options.static or not self.check_cxx(**libs):
             libs["lib"] = libs["stlib"]
             libs.pop("stlib")
