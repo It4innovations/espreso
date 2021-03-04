@@ -67,6 +67,8 @@ namespace MATH {
 	void DenseTranspose(esint rows, esint cols, double *vals);
 	void DenseMinGeneralizedEigenVectors(esint msize, double *A, double *B, esint n, double *lambdas, double *vectors);
 
+	void DenseRowsOrthonormalization(esint rows, esint cols, double *vals);
+
 	// C = alpha * A * B + beta * C
 	void DenseMatDenseMatRowMajorProduct(
 			double alpha, bool transposeA, esint aRows, esint aCols, double* aVals,

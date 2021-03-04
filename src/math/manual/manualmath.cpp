@@ -57,6 +57,17 @@ void MATH::DenseTranspose(esint rows, esint cols, double *vals)
 	}
 }
 
+void MATH::DenseRowsOrthonormalization(esint rows, esint cols, double *vals)
+{
+	for (esint r = 0; r < rows; ++r) {
+		for (esint rr = 0; rr < r; ++rr) {
+			double scale = MATH::vecDot(cols, vals + rr * cols, vals + r * cols) / MATH::vecDot(cols, vals + rr * cols);
+			MATH::vecAdd(cols, vals + r * cols, -scale, vals + rr * cols);
+		}
+		MATH::vecScale(cols, 1. / MATH::vecNorm(cols, vals + r * cols), vals + r * cols);
+	}
+}
+
 void MATH::CSRRemoveLower(esint rows, esint cols, esint *aRows, esint *aCols, double *aVals)
 {
 	esint indexing = aRows[0], total = 0;
