@@ -36,7 +36,7 @@ def link_cxx(self, *k, **kw):
             return False
 
         if "fragment" in kw:
-            test = dict(execute=True)
+            test = dict(execute=True, mandatory=False)
             inc = [ "#include <{0}>\n".format(h) for h in kw["header_name"].split() ]
             test["fragment"] = "{0}int main(int argc, char** argv) {{ {1} }}".format("".join(inc), kw["fragment"])
             test["msg"] = "Checking for '{0}' settings".format(kw["name"])
