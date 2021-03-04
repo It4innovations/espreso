@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-void csparse::CreateLscGpu(SparseMatrix& A, SparseMatrix& B, int order, int tol, int gpu_id, SparseMatrix& SC) {
+void csparse::CreateLscGpu(SparseMatrix& A, SparseMatrix& B, int order, int tol, int gpu_id, int print_output, SparseMatrix& SC) {
     // | A (B)t |
     // | B   0  |
 
@@ -52,7 +52,7 @@ void csparse::CreateLscGpu(SparseMatrix& A, SparseMatrix& B, int order, int tol,
     B_cs->nzmax = B.CSR_V_values.size();
 
 	// Factorize K on CPU, solve mrhs linear system and SpMM on GPU
-	int ok = create_lsc(fact, order, A_cs, B_cs, tol, SC.d_dense_values, gpu_id);
+	int ok = create_lsc(fact, order, A_cs, B_cs, tol, SC.d_dense_values, gpu_id, print_output);
 
     if(!ok) eslog::error("ESPRESO run-time error: CSparse library factorization failed.\n");
 

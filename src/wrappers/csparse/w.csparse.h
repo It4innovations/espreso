@@ -8,7 +8,7 @@ namespace csparse {
 
 // CSparse factorization - 0-based indexing, CSC-format
 // Factorize A on CPU, solve mrhs linear system and SpMM on GPU
-void CreateLscGpu(SparseMatrix& A, SparseMatrix& B, int order, int tol, int gpu_id, SparseMatrix& SC);
+void CreateLscGpu(SparseMatrix& A, SparseMatrix& B, int order, int tol, int gpu_id, int print_output, SparseMatrix& SC);
 
 }
 }
