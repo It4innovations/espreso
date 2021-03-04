@@ -8,6 +8,7 @@
 #include "esinfo/eslog.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/meshinfo.h"
+#include "math/math.h"
 
 #include <fstream>
 
@@ -99,12 +100,8 @@ void FETISolverData::buildB1()
 	auto map = K.dmap->cbegin();
 	for (esint i = 0, prev = 0; i < BC.holder()->nnz; prev = BC.holder()->indices[i++]) {
 		map += BC.holder()->indices[i] - prev;
-		if (solver.configuration.redundant_lagrange) {
-			for (auto di = map->begin(); di != map->end(); ++di) {
-				if (K.ismy(di->domain)) { ++doffset; }
-			}
-		} else {
-			if (K.ismy(map->begin()->domain)) { ++doffset; }
+		for (auto di = map->begin(); di != map->end(); ++di) {
+			if (K.ismy(di->domain)) { ++doffset; }
 		}
 	}
 
@@ -117,23 +114,13 @@ void FETISolverData::buildB1()
 	map = K.dmap->cbegin();
 	for (esint i = 0, prev = 0; i < BC.holder()->nnz; prev = BC.holder()->indices[i++]) {
 		map += BC.holder()->indices[i] - prev;
-		if (solver.configuration.redundant_lagrange) {
-			for (auto di = map->begin(); di != map->end(); ++di) {
-				if (K.ismy(di->domain)) {
-					B1Map.push_back(doffset);
-					B1Map.push_back(0);
-					ROWS[di->domain - K.doffset].push_back(1 + doffset++);
-					COLS[di->domain - K.doffset].push_back(1 + di->index);
-					VALS[di->domain - K.doffset].push_back(1);
-				}
-			}
-		} else {
-			if (K.ismy(map->begin()->domain)) {
+		for (auto di = map->begin(); di != map->end(); ++di) {
+			if (K.ismy(di->domain)) {
 				B1Map.push_back(doffset);
 				B1Map.push_back(0);
-				ROWS[map->begin()->domain - K.doffset].push_back(1 + doffset++);
-				COLS[map->begin()->domain - K.doffset].push_back(1 + map->begin()->index);
-				VALS[map->begin()->domain - K.doffset].push_back(1);
+				ROWS[di->domain - K.doffset].push_back(1 + doffset++);
+				COLS[di->domain - K.doffset].push_back(1 + di->index);
+				VALS[di->domain - K.doffset].push_back(1);
 			}
 		}
 	}
@@ -219,22 +206,22 @@ void FETISolverData::buildB1()
 		return false;
 	};
 
+	size_t maxMultiplicity = 2;
 	if (K.nshared) {
 		map = K.dmap->cbegin();
 		for (esint n = 0, j = 0, prev = 0; n < K.nshared; prev = K.shared[n++]) {
 			map += K.shared[n] - prev;
-			if (solver.configuration.redundant_lagrange) {
-				while (j < BC.holder()->nnz && BC.holder()->indices[j] < K.shared[n]) {
-					++j;
-				}
-				if (j == BC.holder()->nnz || BC.holder()->indices[j] != K.shared[n]) {
-					if (fillbuffer(map)) {
-						goffset += map->size() * (map->size() - 1) / 2;
-					}
-				}
-			} else {
+			while (j < BC.holder()->nnz && BC.holder()->indices[j] < K.shared[n]) {
+				++j;
+			}
+			if (j == BC.holder()->nnz || BC.holder()->indices[j] != K.shared[n]) {
+				maxMultiplicity = std::max(map->size(), maxMultiplicity);
 				if (fillbuffer(map)) {
-					goffset += map->size() - 1;
+					if (solver.configuration.redundant_lagrange) {
+						goffset += map->size() * (map->size() - 1) / 2;
+					} else {
+						goffset += map->size() - 1;
+					}
 				}
 			}
 		}
@@ -253,6 +240,13 @@ void FETISolverData::buildB1()
 		eslog::internalFailure("exchange gluing offsets.\n");
 	}
 
+	MatrixDense multiplicity(maxMultiplicity - 1, maxMultiplicity);
+	for (esint r = 0; r < multiplicity.nrows; ++r) {
+		multiplicity[r][r] = 1;
+		multiplicity[r][r + 1] = -1;
+	}
+	multiplicity.orthonormalizeRows();
+
 	if (K.nshared) {
 		std::vector<esint> boffset(info::mesh->neighbors.size());
 		map = K.dmap->cbegin();
@@ -261,7 +255,7 @@ void FETISolverData::buildB1()
 			while (j < BC.holder()->nnz && BC.holder()->indices[j] < K.shared[n]) {
 				++j;
 			}
-			if (!solver.configuration.redundant_lagrange || j == BC.holder()->nnz || BC.holder()->indices[j] != K.shared[n]) {
+			if (j == BC.holder()->nnz || BC.holder()->indices[j] != K.shared[n]) {
 				esint lambda;
 				if (K.ismy(map->begin()->domain)) {
 					lambda = goffset;
@@ -277,42 +271,81 @@ void FETISolverData::buildB1()
 					}
 					lambda = rBuffer[roffset][boffset[roffset]++];
 				}
-				for (auto di1 = map->begin(); di1 != map->end(); ++di1) {
-					for (auto di2 = di1 + 1; di2 != map->end(); ++di2) {
-						if (K.ismy(di1->domain) || K.ismy(di2->domain)) {
-							B1Map.push_back(lambda);
-							B1Map.push_back(0);
+				if (solver.configuration.redundant_lagrange) {
+					for (auto di1 = map->begin(); di1 != map->end(); ++di1) {
+						for (auto di2 = di1 + 1; di2 != map->end(); ++di2) {
+							if (K.ismy(di1->domain) || K.ismy(di2->domain)) {
+								B1Map.push_back(lambda);
+								B1Map.push_back(0);
 
-							if (K.ismy(di1->domain)) {
-								ROWS[di1->domain - K.doffset].push_back(lambda + 1);
-								COLS[di1->domain - K.doffset].push_back(di1->index + 1);
-								VALS[di1->domain - K.doffset].push_back(1);
-								DUPS[di1->domain - K.doffset].push_back(1. / map->size());
-							} else {
-								esint roffset = 0;
-								while (K.distribution[K.neighbors[roffset] + 1] <= di1->domain) {
-									++roffset;
+								if (K.ismy(di1->domain)) {
+									ROWS[di1->domain - K.doffset].push_back(lambda + 1);
+									COLS[di1->domain - K.doffset].push_back(di1->index + 1);
+									VALS[di1->domain - K.doffset].push_back(1);
+									DUPS[di1->domain - K.doffset].push_back(1. / map->size());
+								} else {
+									esint roffset = 0;
+									while (K.distribution[K.neighbors[roffset] + 1] <= di1->domain) {
+										++roffset;
+									}
+									++B1Map.back();
+									B1Map.push_back(K.neighbors[roffset]);
 								}
-								++B1Map.back();
-								B1Map.push_back(K.neighbors[roffset]);
+								if (K.ismy(di2->domain)) {
+									ROWS[di2->domain - K.doffset].push_back(lambda + 1);
+									COLS[di2->domain - K.doffset].push_back(di2->index + 1);
+									VALS[di2->domain - K.doffset].push_back(-1);
+									DUPS[di2->domain - K.doffset].push_back(1. / map->size());
+								} else {
+									esint roffset = 0;
+									while (K.distribution[K.neighbors[roffset] + 1] <= di2->domain) {
+										++roffset;
+									}
+									++B1Map.back();
+									B1Map.push_back(K.neighbors[roffset]);
+								}
 							}
-							if (K.ismy(di2->domain)) {
-								ROWS[di2->domain - K.doffset].push_back(lambda + 1);
-								COLS[di2->domain - K.doffset].push_back(di2->index + 1);
-								VALS[di2->domain - K.doffset].push_back(-1);
-								DUPS[di2->domain - K.doffset].push_back(1. / map->size());
-							} else {
-								esint roffset = 0;
-								while (K.distribution[K.neighbors[roffset] + 1] <= di2->domain) {
-									++roffset;
+							++lambda;
+						}
+					}
+				} else {
+					// orthonormal multiplicity fill the lower triangle in the following way
+					// myfirst = the first dof that this process has
+					// x x 0 0 0
+					// x x x 0 0
+					// x x x x 0
+					// x x x x x
+					size_t myfirst = 0;
+					for (size_t i = 0; i < map->size(); ++i) {
+						if (K.ismy(map->at(i).domain)) {
+							myfirst = i;
+							break;
+						}
+					}
+					for (size_t link = 0; link + 1 < map->size(); ++link) {
+						if (myfirst <= link + 1) {
+							B1Map.push_back(lambda);
+							size_t mapCounter = B1Map.size();
+							B1Map.push_back(0);
+							esint roffset = 0;
+							for (size_t i = 0; i <= link + 1; ++i) {
+								if (K.ismy(map->at(i).domain)) {
+									ROWS[map->at(i).domain - K.doffset].push_back(lambda + 1);
+									COLS[map->at(i).domain - K.doffset].push_back(map->at(i).index + 1);
+									VALS[map->at(i).domain - K.doffset].push_back(multiplicity[link][i]);
+									DUPS[map->at(i).domain - K.doffset].push_back(1. / map->size());
+								} else {
+									while (K.distribution[K.neighbors[roffset] + 1] <= map->at(i).domain) {
+										++roffset;
+									}
+									if (B1Map[mapCounter] == 0 || B1Map.back() != K.neighbors[roffset]) {
+										++B1Map[mapCounter];
+										B1Map.push_back(K.neighbors[roffset]);
+									}
 								}
-								++B1Map.back();
-								B1Map.push_back(K.neighbors[roffset]);
 							}
 						}
 						++lambda;
-
-						if (!solver.configuration.redundant_lagrange) { break; }
 					}
 				}
 			}
@@ -386,15 +419,9 @@ void FETISolverData::setDirichlet(const Builder *builder)
 		auto map = K.dmap->cbegin();
 		for (esint i = 0, prev = 0; i < BC.holder()->nnz; prev = BC.holder()->indices[i++]) {
 			map += BC.holder()->indices[i] - prev;
-			if (solver.configuration.redundant_lagrange) {
-				for (auto di = map->begin(); di != map->end(); ++di) {
-					if (K.ismy(di->domain)) {
-						B1c[di->domain - K.doffset].vals[doffset[di->domain - K.doffset]++] = BC.holder()->vals[i];
-					}
-				}
-			} else {
-				if (K.ismy(map->begin()->domain)) {
-					B1c[map->begin()->domain - K.doffset].vals[doffset[map->begin()->domain - K.doffset]++] = BC.holder()->vals[i];
+			for (auto di = map->begin(); di != map->end(); ++di) {
+				if (K.ismy(di->domain)) {
+					B1c[di->domain - K.doffset].vals[doffset[di->domain - K.doffset]++] = BC.holder()->vals[i];
 				}
 			}
 		}
@@ -413,7 +440,7 @@ void FETISolverData::setDirichlet(const Builder *builder)
 				while (j < BC.holder()->nnz && BC.holder()->indices[j] < Kdiag.shared[n]) {
 					++j;
 				}
-				if (!solver.configuration.redundant_lagrange || j == BC.holder()->nnz || BC.holder()->indices[j] != Kdiag.shared[n]) {
+				if (j == BC.holder()->nnz || BC.holder()->indices[j] != Kdiag.shared[n]) {
 					double sum = 0;
 					for (size_t j = i; j < i + map->size(); ++j) {
 						sum += Kdiag.gathered[j];

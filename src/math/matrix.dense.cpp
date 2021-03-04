@@ -183,6 +183,11 @@ void MatrixDense::minGeneralizedEigenValues(double *B, esint n, double *lambdas,
 	}
 }
 
+void MatrixDense::orthonormalizeRows()
+{
+	MATH::DenseRowsOrthonormalization(nrows, ncols, vals);
+}
+
 void MatrixDense::fillDiagonal(Vector *diagonal) const
 {
 	MatrixDense::fillDiagonal(diagonal->downcast<VectorDense>());

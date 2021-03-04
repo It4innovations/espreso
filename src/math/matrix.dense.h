@@ -65,6 +65,7 @@ public:
 
 	void transpose();
 	void minGeneralizedEigenValues(double *B, esint n, double *lambdas, double *vectors);
+	void orthonormalizeRows();
 
 	void fillDiagonal(Vector *diagonal) const;
 
