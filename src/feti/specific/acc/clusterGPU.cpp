@@ -67,6 +67,7 @@ ClusterGPU::~ClusterGPU() {
 	}
 }
 
+<<<<<<< HEAD
 void ClusterGPU::GetGPU() {
 	// If already set dont do anything
 	if(device_id < 0) {
@@ -92,6 +93,50 @@ void ClusterGPU::GetGPU() {
 //
 //		int local_id;
 //		MPI_Comm_rank(node_comm, &local_id);
+=======
+void ClusterGPU::GetAvailableGPUmemory() {
+
+	bool GPU_full = false;
+	//GPU_full = true;
+	int nDevices;
+	cudaGetDeviceCount(&nDevices);
+
+	eslog::info("\n*** GPU Accelerators available on the server\n\n");
+	for (int i = 0; i < nDevices; i++) {
+		cudaDeviceProp prop;
+		cudaGetDeviceProperties(&prop, i);
+		eslog::info(" Device Number: %d\n", i);
+		eslog::info(" Device name: %s\n", prop.name);
+		eslog::info(" Memory Clock Rate (KHz): %d\n", prop.memoryClockRate);
+		eslog::info(" Memory Bus Width (bits): %d\n", prop.memoryBusWidth);
+		eslog::info(" Peak Memory Bandwidth (GB/s): %f\n", 2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6);
+
+		cudaSetDevice(i);
+		size_t free, total;
+		cudaMemGetInfo(&free, &total);
+		eslog::info(" GPU Total Memory [MB]: %d\n", total/1024/1024);
+		eslog::info(" GPU Free Memory [MB]:  %d\n\n", free/1024/1024);
+
+	}
+
+	// TODO_GPU
+	// - zde se rohoduje, na ktere GPU tento MPI proces pouziva
+	// Faze 1 - 1 MPI process pouziva 1 GPU
+	//		  - napsat kod, ktere si detekuje kolim MPI ranku je na uzlu a podle toho priradi min. 1 nebo vice MPI procesu na kazde GPU
+	// Faze 2 - napsat podporu pro vice GPU na 1 MPI process
+
+	// GPU memory management
+	// Create new communicator within the node (OMPI_COMM_TYPE_NODE can be swapped out with MPI_COMM_TYPE_SHARED for portability)
+	MPI_Comm node_comm;
+	MPI_Comm_split_type(info::mpi::comm, MPI_COMM_TYPE_SHARED, info::mpi::rank, MPI_INFO_NULL, &node_comm);
+
+	// Get local size and id
+	int local_procs;
+	MPI_Comm_size(node_comm, &local_procs);
+
+	int local_id;
+	MPI_Comm_rank(node_comm, &local_id);
+>>>>>>> ENH #66: Output formatting updated, eslog used
 
 <<<<<<< HEAD
 		size_t procs_per_gpu;
@@ -99,6 +144,7 @@ void ClusterGPU::GetGPU() {
 	size_t procs_per_gpu;
 >>>>>>> ENH #56: device_id in SparseMatrix
 
+<<<<<<< HEAD
 		if(MPITools::node->size > nDevices)
 		{
 			if ((MPITools::node->size % nDevices) != 0 )
@@ -121,6 +167,25 @@ void ClusterGPU::GetGPU() {
 		checkCudaErrors(cudaMemGetInfo(&GPU_free_mem, &GPU_total_mem));
 		GPU_free_mem  /= procs_per_gpu;
 		GPU_total_mem /= procs_per_gpu;
+=======
+	if(local_procs > nDevices) {
+		if ((local_procs % nDevices) != 0) {
+		  eslog::error(" Only integer multiply number of processes per GPU. Processes: %d GPUs: %d\n", local_procs, nDevices);
+		  exit(0);
+		} else {
+		  procs_per_gpu = local_procs / nDevices;
+		  device_id     = local_id    / procs_per_gpu;
+		}
+	} else {
+		procs_per_gpu = 1;
+		device_id     = local_id;
+	}
+
+	cuda::SetDevice(device_id);
+	cudaMemGetInfo(&GPU_free_mem, &GPU_total_mem);
+	GPU_free_mem  /= procs_per_gpu;
+	GPU_total_mem /= procs_per_gpu;
+>>>>>>> ENH #66: Output formatting updated, eslog used
 
 		/*OVERKILL PART 1
 		// Get memory info for all devices
@@ -222,7 +287,8 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 =======
 	// Currently sets device_id for the cluster (all domains)
 	GetAvailableGPUmemory();
-	std::cout << "Creating B1*K+*B1t Schur Complements with Pardiso SC and coping them to GPU";
+
+	eslog::info("Creating B1*K+*B1t Schur Complements with CSparse and cuSparse on GPU\n");
 
 >>>>>>> ENH #56: device_id in SparseMatrix
 	esint status = 0;
@@ -325,6 +391,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 		max_B1_nnz = std::max(max_B1_nnz, domains[d].B1_comp_dom.nnz);
 		max_B1_rows = std::max(max_B1_rows, domains[d].B1_comp_dom.rows);
 		max_B1_size = std::max(max_B1_size, domains[d].B1_comp_dom.rows * domains[d].B1_comp_dom.cols);
@@ -338,6 +405,9 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 =======
 		if(local_SC_size_to_add[d] < GPU_free_mem)
 		{
+=======
+		if(local_SC_size_to_add[d] < GPU_free_mem) {
+>>>>>>> ENH #66: Output formatting updated, eslog used
 			domains_on_GPU++;
 			DOFs_GPU += domains[d].K.rows;
 			domains[d].B1Kplus.is_on_acc = 1;
@@ -345,7 +415,10 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			domains[d].B1Kplus.device_id = device_id;
 >>>>>>> ENH #56: device_id in SparseMatrix
 			GPU_free_mem -= local_SC_size_to_add[d];
+<<<<<<< HEAD
 			lsc_to_get_factors_ids.push_back(d);
+=======
+>>>>>>> ENH #66: Output formatting updated, eslog used
 		} else {
 			domains_on_CPU++;
 			DOFs_CPU += domains[d].K.rows;
@@ -387,6 +460,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		*/
 	}
 
+<<<<<<< HEAD
 	// Factorize and get factor sizes, process only domains that can fit GPU w/o factor-based buffers
 	PUSH_RANGE("Fact+LSC mem alloc", 1)
 	int order;
@@ -488,6 +562,12 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			DOFs_CPU += domains[idx].K.rows;
 			domains[idx].B1Kplus.is_on_acc = 0;
 			lsc_on_cpu_ids.push_back(idx);
+=======
+	// TODO_GPU - vsechny tyto std::cout se musi prepsat na logovani co ma Ondra M. 
+	// Ondro nektere moje rutiny, napr. SpyText jsou napsane pro std::cout a ne printf. Jake je reseni ? 
+	std::vector <int> on_gpu (info::mpi::size, 0);
+	MPI_Gather(&domains_on_GPU,1,MPI_INT,&on_gpu[0],1,MPI_INT, 0, info::mpi::comm);
+>>>>>>> ENH #66: Output formatting updated, eslog used
 
 			if (SYMMETRIC_SYSTEM) {
 				csparse::FreeCholFactor(vec_L_row_indexes[d - deleted], vec_L_col_pointers[d - deleted], vec_L_values[d - deleted], vec_perm[d - deleted]);
@@ -507,6 +587,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 				vec_L_values.erase(vec_L_values.begin() + (d - deleted));
 				vec_perm.erase(vec_perm.begin() + (d - deleted));
 
+<<<<<<< HEAD
 				vec_U_nnz.erase(vec_U_nnz.begin() + (d - deleted));
 				vec_U_row_indexes.erase(vec_U_row_indexes.begin() + (d - deleted));
 				vec_U_col_pointers.erase(vec_U_col_pointers.begin() + (d - deleted));
@@ -516,6 +597,11 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			}
 			deleted++;
 		}
+=======
+	for (esint i = 0; i < info::mpi::size; i++) {
+		eslog::info(" MPI rank %d\t - GPU: LSCs = %d Total DOFs = %d\t - CPU: LSCs = %d Total DOFs = %d\n",
+		 i, on_gpu[i], don_gpu[i], on_cpu[i], don_cpu[i]);
+>>>>>>> ENH #66: Output formatting updated, eslog used
 	}
 
 	// TODO_GPU - vsechny tyto std::cout se musi prepsat na logovani co ma Ondra M. 
@@ -660,16 +746,35 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		SC_dense_val_orig.resize(domains_in_global_index.size());
 	}
 #else
+<<<<<<< HEAD
 	// TODO refactoring: Possibly remove the last checking phase
 	GetSchurComplementsGpu(USE_FLOAT, vec_L_nnz, vec_L_row_indexes, vec_L_col_pointers, vec_L_values,
  	 vec_U_nnz, vec_U_row_indexes, vec_U_col_pointers, vec_U_values, vec_perm, vec_perm_2, max_B1_nnz,
  	 max_B1_rows, max_B1_size, max_K_rows, max_L_nnz, max_U_nnz);
 
 	GetSchurComplementsCpu(USE_FLOAT);
+=======
+	if(USE_FLOAT) eslog::warning("ESPRESO run-time warning: CSparse does not support single precision.\n");
+
+	#pragma omp parallel for
+	for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
+			if (domains[d].B1Kplus.is_on_acc == 1 || !configuration.combine_sc_and_spds) {
+				// Calculates SC on GPU and keeps it in GPU memory
+				GetSchurComplement(USE_FLOAT, d);
+				eslog::info(".");
+			}
+		}
+>>>>>>> ENH #66: Output formatting updated, eslog used
 #endif
 //	eslog::info("\n");
 
+<<<<<<< HEAD
 	// TODO: check if correct GPU is set in case of multi-GPU per cluster
+=======
+	eslog::info("\n");
+
+	// TODO: check if correct GPU is set
+>>>>>>> ENH #66: Output formatting updated, eslog used
 	CreateCudaStreamPool();
 
 	// TODO refactoring: device vectors should be allocated with memory for LSC and the following phase removed
@@ -756,11 +861,20 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			}
 #else
 			if (USE_FLOAT){
+<<<<<<< HEAD
 				 status      = domains[d].B1Kplus.CopyToCUDA_Dev_fl();
 
 				size_t memsize = (domains[d].B1_comp_dom.rows > domains[d].B1t_Dir_perm_vec.size()) ? domains[d].B1_comp_dom.rows : domains[d].B1t_Dir_perm_vec.size();
 				// TODO_GPU - alokuji se pole pro vektory, kterymi se bude ve funkci Apply_A nasobit tato matice 
 				domains[d].cuda_pinned_buff_fl.resize(memsize);			
+=======
+                status = domains[d].B1Kplus.CopyToCUDA_Dev_fl();
+
+				size_t memsize = (domains[d].B1_comp_dom.rows > domains[d].B1t_Dir_perm_vec.size()) ? domains[d].B1_comp_dom.rows : domains[d].B1t_Dir_perm_vec.size();
+				// TODO_GPU - alokuji se pole pro vektory, kterymi se bude ve funkci Apply_A nasobit tato matice 
+				domains[d].cuda_pinned_buff_fl.resize(memsize);
+				
+>>>>>>> ENH #66: Output formatting updated, eslog used
 				if (domains[d].cuda_pinned_buff_fl.size() != memsize) {
 				      eslog::error("Error allocating pinned host memory");
 				      status = -1;
@@ -790,11 +904,19 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 				if (USE_FLOAT) {
 					SEQ_VECTOR <float>  ().swap (domains[d].B1Kplus.dense_values_fl);
 
+<<<<<<< HEAD
 					// eslog::info("g");
 				} else {
 					SEQ_VECTOR <double> ().swap (domains[d].B1Kplus.dense_values);
 
 					// eslog::info("G");
+=======
+					eslog::info("g");
+				} else {
+					SEQ_VECTOR <double> ().swap (domains[d].B1Kplus.dense_values);
+
+					eslog::info("G");
+>>>>>>> ENH #66: Output formatting updated, eslog used
 				}
 			} else {
 				// pokud se domenu nepodar nahrat na GPU 
@@ -854,6 +976,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 					SEQ_VECTOR <double> ().swap (domains[d].B1Kplus.dense_values);
 					SEQ_VECTOR <float>  ().swap (domains[d].B1Kplus.dense_values_fl);
 
+<<<<<<< HEAD
 					// if (USE_FLOAT)
 					// 	std::cout << "f";
 					// else
@@ -865,10 +988,22 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 					// 	std::cout << "c";
 					// else
 					// 	std::cout << "C";
+=======
+					if (USE_FLOAT)
+						eslog::info("f");
+					else
+						eslog::info("F");
+				} else {
+					if (USE_FLOAT)
+						eslog::info("c");
+					else
+						eslog::info("C");
+>>>>>>> ENH #66: Output formatting updated, eslog used
 				}
 			}
 		} else {
 			if (configuration.combine_sc_and_spds) {
+<<<<<<< HEAD
 
 				// if (USE_FLOAT)
 				// 	std::cout << "f";
@@ -882,16 +1017,32 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 				// else
 				// 	std::cout << "C";
 
+=======
+				if (USE_FLOAT)
+					eslog::info("f");
+				else
+					eslog::info("F");
+			} else {
+				if (USE_FLOAT)
+					eslog::info("c");
+				else
+					eslog::info("C");
+>>>>>>> ENH #66: Output formatting updated, eslog used
 			}
 		}
 
 		// std::cout << " Domain: " << d << " GPU : " << domains[d].B1Kplus.is_on_acc << "\n";
 	}
 
+<<<<<<< HEAD
 //	eslog::info("\n LSCs assembled on GPU: %d\n", domains_on_GPU);
 //	eslog::info(" LSCs remaining on CPU: %d\n", domains_on_CPU);
 
 	checkCudaErrors(cudaFree(d_blocked_memory));
+=======
+	eslog::info("\n LSCs assembled on GPU: %d\n", domains_on_GPU);
+	eslog::info(" LSCs remaining on CPU: %d\n", domains_on_CPU);
+>>>>>>> ENH #66: Output formatting updated, eslog used
 
 //	cilk_for (esint i = 0; i < domains_in_global_index.size(); i++ ) {
 //
@@ -1741,9 +1892,13 @@ void ClusterGPU::GetSchurComplementsCpu(bool USE_FLOAT) {
 
 
 void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
+<<<<<<< HEAD
 	DEBUGOUT << "Creating Dirichlet Preconditioner with Pardiso SC and copying them to GPU\n";
 
 	GetGPU();
+=======
+	eslog::info("Creating Dirichlet Preconditioner with Pardiso SC and copying them to GPU\n");
+>>>>>>> ENH #66: Output formatting updated, eslog used
 
 	esint status = 0;
 
@@ -1755,7 +1910,12 @@ void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
 	esint DOFs_CPU = 0;
 
 	// Smycka napocitava velikost LSCs pres vsechny domeny
+<<<<<<< HEAD
 	for (size_t d = 0; d < domains_in_global_index.size(); d++) {
+=======
+	for (esint d = 0; d < domains_in_global_index.size(); d++) {
+
+>>>>>>> ENH #66: Output formatting updated, eslog used
 		if (domains[d].Prec.USE_FLOAT) {
 			local_Prec_size_to_add[d] =
 					( domains[d].B1t_Dir_perm_vec.size() * domains[d].B1t_Dir_perm_vec.size()
@@ -1825,6 +1985,7 @@ void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
 
 	// TODO_GPU - vsechny tyto std::cout se musi prepsat na logovani co ma Ondra M.
 	// Ondro nektere moje rutiny, napr. SpyText jsou napsane pro std::cout a ne printf. Jake je reseni ?
+<<<<<<< HEAD
 
 //	std::vector <int> on_gpu (info::mpi::size, 0);
 //	MPI_Gather(&domains_on_GPU,1,MPI_INT,&on_gpu[0],1,MPI_INT, 0, info::mpi::comm);
@@ -1847,10 +2008,29 @@ void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
 	Communication::allReduce(info, NULL, 2, MPITools::getType<esint>().mpitype, MPI_SUM);
 	std::string ratio = Parser::stringwithcommas(info[0]) + " / " + Parser::stringwithcommas(info[1]);
 	eslog::solver("     - | ACCELERATED PRECONDITIONERS %49s | -\n", ratio.c_str());
+=======
+	std::vector <int> on_gpu (info::mpi::size, 0);
+	MPI_Gather(&domains_on_GPU,1,MPI_INT,&on_gpu[0],1,MPI_INT, 0, info::mpi::comm);
+
+	std::vector <int> on_cpu (info::mpi::size, 0);
+	MPI_Gather(&domains_on_CPU,1,MPI_INT,&on_cpu[0],1,MPI_INT, 0, info::mpi::comm);
+
+	std::vector <int> don_gpu (info::mpi::size, 0);
+	MPI_Gather(&DOFs_GPU,1,MPI_INT,&don_gpu[0],1,MPI_INT, 0, info::mpi::comm);
+
+	std::vector <int> don_cpu (info::mpi::size, 0);
+	MPI_Gather(&DOFs_CPU,1,MPI_INT,&don_cpu[0],1,MPI_INT, 0, info::mpi::comm);
+
+	for (esint i = 0; i < info::mpi::size; i++) {
+	    eslog::info(" MPI rank %d\t - GPU: Precs = %d Total DOFs = %d\t - CPU: Precs = %d Total DOFs = %d\n",
+		 i, on_gpu[i], don_gpu[i], on_cpu[i], don_cpu[i]);
+	}
+>>>>>>> ENH #66: Output formatting updated, eslog used
 
 	#pragma omp parallel for
 	for (size_t d = 0; d < domains_in_global_index.size(); d++ ) {
 		// Calculates Prec on CPU and keeps it CPU memory
+<<<<<<< HEAD
 		// Base solver method
 		CreateDirichletPrec_perDomain(instance, d);
 //		std::cout << ".";
@@ -1858,6 +2038,12 @@ void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
 //	if (info::mpi::rank == 0) {
 //		std::cout << "\n";
 //	}
+=======
+		GetDirichletPrec(instance, d);
+		eslog::info(".");
+	}
+	eslog::info("\n");
+>>>>>>> ENH #66: Output formatting updated, eslog used
 
 	CreateCudaStreamPool();
 
@@ -1867,8 +2053,12 @@ void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
 		if (domains[d].Prec.is_on_acc == 1) {
 			// TODO_GPU: Test performance (same streams)
 			// Assign CUDA stream from he pool
+<<<<<<< HEAD
 			domains[d].Prec.stream = cuda_stream_pool[d % configuration.num_streams];
 			domains[d].Prec.handle = cublas_handle_pool[d % configuration.num_streams];
+=======
+			domains[d].Prec.SetCUDA_Stream(cuda_stream_pool[d % STREAM_NUM]);
+>>>>>>> ENH #66: Output formatting updated, eslog used
 
 			if (domains[d].Prec.USE_FLOAT){
 				status = domains[d].Prec.CopyToCUDA_Dev_fl();
@@ -1880,12 +2070,15 @@ void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
 					cudaHostRegister(domains[d].cuda_pinned_buff_fl.data(), memsize * sizeof(float), cudaHostRegisterDefault);
 				}
 			} else {
+<<<<<<< HEAD
 				// Share already allocated device vectors with B1Kplus after move from SparseMatrix to Domain
 				// Temporal solution
 				if(domains[d].B1Kplus.rows >= domains[d].Prec.rows) {
 					domains[d].Prec.d_x_in = domains[d].B1Kplus.d_x_in;
 					domains[d].Prec.d_y_out = domains[d].B1Kplus.d_y_out;
 				}
+=======
+>>>>>>> ENH #66: Output formatting updated, eslog used
 				status = domains[d].Prec.CopyToCUDA_Dev();
 				// B1Kplus is not on GPU, threfore vectors arent alocated
 				if (domains[d].B1Kplus.is_on_acc == 0) {
@@ -1897,14 +2090,21 @@ void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
 			}
 
 			if (status == 0) {
-                                // TODO_GPU - Precs ktere se uspesne prenesly do pameti GPU se smazou z pameti procesoru
-
+                // TODO_GPU - Precs ktere se uspesne prenesly do pameti GPU se smazou z pameti procesoru
 				if (domains[d].Prec.USE_FLOAT) {
 					SEQ_VECTOR <float>  ().swap (domains[d].Prec.dense_values_fl);
 
+<<<<<<< HEAD
 					// std::cout << "g";
 				} else {
 					SEQ_VECTOR <double> ().swap (domains[d].Prec.dense_values);
+=======
+					eslog::info("g");
+				} else {
+					SEQ_VECTOR <double> ().swap (domains[d].Prec.dense_values);
+
+					eslog::info("G");
+>>>>>>> ENH #66: Output formatting updated, eslog used
 				}
 
 					// std::cout << "G";
@@ -1936,7 +2136,177 @@ void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
 						SEQ_VECTOR <double>  ().swap (domains[d].cuda_pinned_buff);
 					}
 				}
+<<<<<<< HEAD
 			}
+=======
+
+				if (domains[d].Prec.USE_FLOAT)
+					eslog::info("c");
+				else
+					eslog::info("C");
+			}
+		} else {
+			if (domains[d].Prec.USE_FLOAT)
+				eslog::info("c");
+			else
+				eslog::info("C");
+		}
+		// std::cout << " Domain: " << d << " GPU : " << domains[d].Prec.is_on_acc << "\n";
+	}
+
+	eslog::info("\n Precs transfered to GPU: %d\n", domains_on_GPU);
+	eslog::info(" Precs remaining on CPU: %d\n", domains_on_CPU);
+}
+
+
+void ClusterGPU::GetDirichletPrec( DataHolder *instance, esint d) {
+//for (size_t d = 0; d < instance->K.size(); d++) {
+
+	SEQ_VECTOR<esint> perm_vec = domains[d].B1t_Dir_perm_vec;
+	SEQ_VECTOR<esint> perm_vec_full(instance->K[domains[d].domain_global_index].rows);// (instance->K[d].rows);
+	SEQ_VECTOR<esint> perm_vec_diff(instance->K[domains[d].domain_global_index].rows);// (instance->K[d].rows);
+
+	SEQ_VECTOR<esint> I_row_indices_p(instance->K[domains[d].domain_global_index].nnz);// (instance->K[d].nnz);
+	SEQ_VECTOR<esint> J_col_indices_p(instance->K[domains[d].domain_global_index].nnz);// (instance->K[d].nnz);
+
+	for (size_t i = 0; i < perm_vec.size(); i++) {
+		perm_vec[i] = perm_vec[i] - 1;
+	}
+
+	for (size_t i = 0; i < perm_vec_full.size(); i++) {
+		perm_vec_full[i] = i;
+	}
+
+	auto it = std::set_difference(perm_vec_full.begin(), perm_vec_full.end(), perm_vec.begin(), perm_vec.end(), perm_vec_diff.begin());
+	perm_vec_diff.resize(it - perm_vec_diff.begin());
+
+	perm_vec_full = perm_vec_diff;
+	perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
+
+	SparseMatrix K_modif = instance->K[domains[d].domain_global_index]; //[d];
+#ifdef BEM4I_TO_BE_REMOVED
+//TODO: Alex - da se nejak spocist Dir prec z dense matic K ??
+	K_modif.ConvertDenseToCSR(1);
+#endif
+	SparseMatrix RegMatCRS = instance->RegMat[domains[d].domain_global_index]; //[d];
+	RegMatCRS.ConvertToCSRwithSort(0);
+	K_modif.MatAddInPlace(RegMatCRS, 'N', -1);
+	// K_modif.RemoveLower();
+
+	SEQ_VECTOR<SEQ_VECTOR<esint >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<esint >(2, 1));
+	esint offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
+
+	for (esint i = 0; i < K_modif.rows; i++) {
+		vec_I1_i2[i][0] = perm_vec_full[i];
+		vec_I1_i2[i][1] = i; // position to create reverse permutation
+	}
+
+	std::sort(vec_I1_i2.begin(), vec_I1_i2.end(), [](const SEQ_VECTOR <esint >& a, const SEQ_VECTOR<esint>& b) {return a[0] < b[0];});
+
+	// permutations made on matrix in COO format
+	K_modif.ConvertToCOO(0);
+	esint I_index, J_index;
+	bool unsymmetric = !SYMMETRIC_SYSTEM;
+	for (esint i = 0; i < K_modif.nnz; i++) {
+		I_index = vec_I1_i2[K_modif.I_row_indices[i] - offset][1] + offset;
+		J_index = vec_I1_i2[K_modif.J_col_indices[i] - offset][1] + offset;
+		if (unsymmetric || I_index <= J_index) {
+			I_row_indices_p[i] = I_index;
+			J_col_indices_p[i] = J_index;
+		} else {
+			I_row_indices_p[i] = J_index;
+			J_col_indices_p[i] = I_index;
+		}
+	}
+	for (esint i = 0; i < K_modif.nnz; i++) {
+		K_modif.I_row_indices[i] = I_row_indices_p[i];
+		K_modif.J_col_indices[i] = J_col_indices_p[i];
+	}
+	K_modif.ConvertToCSRwithSort(1);
+//	{
+//		if (info::ecf->output.print_matrices) {
+//			std::ofstream osS(Logging::prepareFile(d, "K_modif"));
+//			osS << K_modif;
+//			osS.close();
+//		}
+//	}
+
+	// ------------------------------------------------------------------------------------------------------------------
+	bool diagonalized_K_rr = configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET;
+	//        PRECONDITIONER==NONE              - 0
+	//        PRECONDITIONER==LUMPED            - 1
+	//        PRECONDITIONER==WEIGHT_FUNCTION   - 2
+	//        PRECONDITIONER==DIRICHLET         - 3
+	//        PRECONDITIONER==SUPER_DIRICHLET   - 4
+	//
+	//        When next line is uncomment, var. PRECONDITIONER==DIRICHLET and PRECONDITIONER==SUPER_DIRICHLET provide identical preconditioner.
+	//        bool diagonalized_K_rr = false
+	// ------------------------------------------------------------------------------------------------------------------
+
+	esint sc_size = perm_vec.size();
+
+	if (sc_size == instance->K[domains[d].domain_global_index].rows) {
+		domains[d].Prec = instance->K[domains[d].domain_global_index];
+		domains[d].Prec.ConvertCSRToDense(1);
+		// if physics.K[d] does not contain inner DOF
+	} else {
+
+		if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET) {
+			SparseSolverCPU createSchur;
+//          createSchur.msglvl=1;
+			esint sc_size = perm_vec.size();
+			createSchur.ImportMatrix_wo_Copy(K_modif);
+			createSchur.Create_SC(domains[d].Prec, sc_size, false);
+			domains[d].Prec.ConvertCSRToDense(1);
+		} else {
+			SparseMatrix K_rr;
+			SparseMatrix K_rs;
+			SparseMatrix K_sr;
+			SparseMatrix KsrInvKrrKrs;
+
+			esint i_start = 0;
+			esint nonsing_size = K_modif.rows - sc_size - i_start;
+			esint j_start = nonsing_size;
+
+			K_rs.getSubBlockmatrix_rs(K_modif, K_rs, i_start, nonsing_size, j_start, sc_size);
+
+			if (SYMMETRIC_SYSTEM) {
+				K_rs.MatTranspose(K_sr);
+			} else {
+				K_sr.getSubBlockmatrix_rs(K_modif, K_sr, j_start, sc_size, i_start, nonsing_size);
+			}
+
+			domains[d].Prec.getSubDiagBlockmatrix(K_modif, domains[d].Prec, nonsing_size, sc_size);
+			SEQ_VECTOR<double> diagonals;
+			SparseSolverCPU K_rr_solver;
+
+			// K_rs is replaced by:
+			// a) K_rs = 1/diag(K_rr) * K_rs          (simplified Dirichlet precond.)
+			// b) K_rs =    inv(K_rr) * K_rs          (classical Dirichlet precond. assembled by own - not via PardisoSC routine)
+			if (diagonalized_K_rr) {
+				diagonals = K_modif.getDiagonal();
+				// diagonals is obtained directly from K_modif (not from K_rr to avoid assembling) thanks to its structure
+				//      K_modif = [K_rr, K_rs]
+				//                [K_sr, K_ss]
+				//
+				for (esint i = 0; i < K_rs.rows; i++) {
+					for (esint j = K_rs.CSR_I_row_indices[i]; j < K_rs.CSR_I_row_indices[i + 1]; j++) {
+						K_rs.CSR_V_values[j - offset] /= diagonals[i];
+					}
+				}
+			} else {
+				K_rr.getSubDiagBlockmatrix(K_modif, K_rr, i_start, nonsing_size);
+				K_rr_solver.ImportMatrix_wo_Copy(K_rr);
+//            K_rr_solver.msglvl = 1;
+				K_rr_solver.SolveMat_Dense(K_rs);
+			}
+
+			KsrInvKrrKrs.MatMat(K_sr, 'N', K_rs);
+			domains[d].Prec.MatAddInPlace(KsrInvKrrKrs, 'N', -1);
+//          if (!diagonalized_K_rr){
+//				    cluster.domains[d].Prec.ConvertCSRToDense(1);
+//          }
+>>>>>>> ENH #66: Output formatting updated, eslog used
 		}
 
 		// std::cout << " Domain: " << d << " GPU : " << domains[d].Prec.is_on_acc << "\n";
