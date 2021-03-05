@@ -5,6 +5,7 @@
 #include "basis/containers/allocators.h"
 
 #include <vector>
+#include <string>
 
 namespace espreso {
 
