@@ -49,10 +49,8 @@ ClusterGPU::~ClusterGPU() {
 void ClusterGPU::GetGPU() {
 
 	// If already set dont do anything
-	if(device_id > 0)
+	if(device_id < 0)
 	{
-		return;
-	}
 
 	bool GPU_full = false;
 	//GPU_full = true;
@@ -78,90 +76,90 @@ void ClusterGPU::GetGPU() {
 
 		}
 	}
+		// TODO_GPU
+		// - zde se rohoduje, na ktere GPU tento MPI proces pouziva
+		// Faze 1 - 1 MPI process pouziva 1 GPU
+		//		  - napsat kod, ktere si detekuje kolim MPI ranku je na uzlu a podle toho priradi min. 1 nebo vice MPI procesu na kazde GPU
+		// Faze 2 - napsat podporu pro vice GPU na 1 MPI process
 
-	// TODO_GPU
-	// - zde se rohoduje, na ktere GPU tento MPI proces pouziva
-	// Faze 1 - 1 MPI process pouziva 1 GPU
-	//		  - napsat kod, ktere si detekuje kolim MPI ranku je na uzlu a podle toho priradi min. 1 nebo vice MPI procesu na kazde GPU
-	// Faze 2 - napsat podporu pro vice GPU na 1 MPI process
+		// GPU memory management
+		// Create new communicator within the node (OMPI_COMM_TYPE_NODE can be swapped out with MPI_COMM_TYPE_SHARED for portability)
+		MPI_Comm node_comm;
+		MPI_Comm_split_type(info::mpi::comm, MPI_COMM_TYPE_SHARED, info::mpi::rank, MPI_INFO_NULL, &node_comm);
 
-	// GPU memory management
-	// Create new communicator within the node (OMPI_COMM_TYPE_NODE can be swapped out with MPI_COMM_TYPE_SHARED for portability)
-	MPI_Comm node_comm;
-	MPI_Comm_split_type(info::mpi::comm, MPI_COMM_TYPE_SHARED, info::mpi::rank, MPI_INFO_NULL, &node_comm);
+		// Get local size and id
+		int local_procs;
+		MPI_Comm_size(node_comm, &local_procs);
 
-	// Get local size and id
-	int local_procs;
-	MPI_Comm_size(node_comm, &local_procs);
+		int local_id;
+		MPI_Comm_rank(node_comm, &local_id);
 
-	int local_id;
-	MPI_Comm_rank(node_comm, &local_id);
+		size_t procs_per_gpu;
 
-	size_t procs_per_gpu;
-
-	if(local_procs > nDevices)
-	{
-		if ((local_procs % nDevices) != 0 )
+		if(local_procs > nDevices)
 		{
-		  std::cout<<" Only integer multiply number of processes per GPU. Processes: "<< local_procs << " GPUs: "<< nDevices << "\n";
-		  exit(0);
+			if ((local_procs % nDevices) != 0 )
+			{
+			  std::cout<<" Only integer multiply number of processes per GPU. Processes: "<< local_procs << " GPUs: "<< nDevices << "\n";
+			  exit(0);
+			}
+			else
+			{
+			  procs_per_gpu = local_procs / nDevices;
+			  device_id     = local_id    / procs_per_gpu;
+			}
 		}
 		else
 		{
-		  procs_per_gpu = local_procs / nDevices;
-		  device_id     = local_id    / procs_per_gpu;
+			procs_per_gpu = 1;
+			device_id     = local_id;
 		}
-	}
-	else
-	{
-		procs_per_gpu = 1;
-		device_id     = local_id;
-	}
 
 
-	cudaSetDevice(device_id);
-	cudaMemGetInfo(&GPU_free_mem, &GPU_total_mem);
-	GPU_free_mem  /= procs_per_gpu;
-	GPU_total_mem /= procs_per_gpu;
+		cudaSetDevice(device_id);
+		cudaMemGetInfo(&GPU_free_mem, &GPU_total_mem);
+		GPU_free_mem  /= procs_per_gpu;
+		GPU_total_mem /= procs_per_gpu;
 
-	/*OVERKILL PART 1
-	// Get memory info for all devices
-	std::vector <size_t>  GPU_free_mem(nDevices, 0);
-	std::vector <size_t>  GPU_total_mem(nDevices, 0);
+		/*OVERKILL PART 1
+		// Get memory info for all devices
+		std::vector <size_t>  GPU_free_mem(nDevices, 0);
+		std::vector <size_t>  GPU_total_mem(nDevices, 0);
 
-	if(local_id == 0)
-	{
-		for (int i = 0; i < nDevices; i++) {
-			cudaSetDevice(i);
-			size_t free, total;
-			cudaMemGetInfo(&free, &total);
-			GPU_free_mem[i] = free;
-			GPU_total_mem[i] = total;
+		if(local_id == 0)
+		{
+			for (int i = 0; i < nDevices; i++) {
+				cudaSetDevice(i);
+				size_t free, total;
+				cudaMemGetInfo(&free, &total);
+				GPU_free_mem[i] = free;
+				GPU_total_mem[i] = total;
+			}
 		}
+
+		// Assign device
+		int device_id = local_id % nDevices;
+		cudaSetDevice(device_id);
+
+		// Get mapping from proc to device_id
+		std::vector <int>  GPU_mapping(local_procs, 0);
+		MPI_Gather(&device_id, 1, MPI_INT, &GPU_mapping[0], 1, MPI_INT, 0, node_comm);
+
+		esint domains_on_GPU = 0;
+		esint domains_on_CPU = 0;
+		esint DOFs_GPU = 0;
+		esint DOFs_CPU = 0;
+
+		size_t local_SC_size_to_add = 0;
+		std::vector <int> SC_size_to_add(local_procs, 0);
+		std::vector <int> SC_total_size(nDevices, 0);
+		std::vector <int> msg(local_procs, 0);
+		int reply = 0;
+
+		MPI_Request msg_request;
+		MPI_Status msg_status;
+		*/
 	}
-
-	// Assign device
-	int device_id = local_id % nDevices;
-	cudaSetDevice(device_id);
-
-	// Get mapping from proc to device_id
-	std::vector <int>  GPU_mapping(local_procs, 0);
-	MPI_Gather(&device_id, 1, MPI_INT, &GPU_mapping[0], 1, MPI_INT, 0, node_comm);
-
-	esint domains_on_GPU = 0;
-	esint domains_on_CPU = 0;
-	esint DOFs_GPU = 0;
-	esint DOFs_CPU = 0;
-
-	size_t local_SC_size_to_add = 0;
-	std::vector <int> SC_size_to_add(local_procs, 0);
-	std::vector <int> SC_total_size(nDevices, 0);
-	std::vector <int> msg(local_procs, 0);
-	int reply = 0;
-
-	MPI_Request msg_request;
-	MPI_Status msg_status;
-	*/
 }
 
 void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
