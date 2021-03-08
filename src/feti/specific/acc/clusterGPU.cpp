@@ -15,7 +15,7 @@ ClusterGPU::~ClusterGPU() {
 	DestroyCudaStreamPool();
 
 	for(esint d = 0; d < domains_in_global_index.size(); d++) {
-                if(domains[d].isOnACC) {
+		if(domains[d].B1Kplus.isOnACC || domains[d].Prec.isOnACC) {
 			domains[d].B1Kplus.ClearCUDA_Stream();
 #ifdef SHARE_SC
 			if(domains[d].B1Kplus.USE_FLOAT) {
@@ -30,12 +30,18 @@ ClusterGPU::~ClusterGPU() {
 				domains[d].B1Kplus.FreeFromCUDA_Dev();
 			}
 #else
-			if(domains[d].B1Kplus.USE_FLOAT) {
-				domains[d].B1Kplus.FreeFromCUDA_Dev_fl();
-			} else {
-				domains[d].B1Kplus.FreeFromCUDA_Dev();
+			if(domains[d].B1Kplus.isOnACC) {
+				if(domains[d].B1Kplus.USE_FLOAT) {
+					domains[d].B1Kplus.FreeFromCUDA_Dev_fl();
+				} else {
+					domains[d].B1Kplus.FreeFromCUDA_Dev();
+				}
 			}
 #endif
+			if(domains[d].Prec.isOnACC)
+			{
+				domains[d].Prec.FreeFromCUDA_Dev();
+			}
 		}
 	}
 }
@@ -289,13 +295,13 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		{
 			domains_on_GPU++;
 			DOFs_GPU += domains[d].K.rows;
-                        domains[d].isOnACC = 1;
+			domains[d]B1Kplus.isOnACC = 1;
 		}
 		else
 		{
 			domains_on_CPU++;
 			DOFs_CPU += domains[d].K.rows;
-                        domains[d].isOnACC = 0;
+			domains[d]B1Kplus.isOnACC = 0;
 		}
 		*/
 	}
@@ -333,7 +339,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	#pragma omp parallel for
 	for (esint d = 0; d < domains_in_global_index.size(); d += 2 ) {
 
-		if (domains[d].isOnACC == 1 || !configuration.combine_sc_and_spds) {
+		if (domains[d]B1Kplus.isOnACC == 1 || !configuration.combine_sc_and_spds) {
 			// Calculates SC on CPU and keeps it CPU memory
 			GetSchurComplement(USE_FLOAT, d);
 			std::cout << Info::plain() << ".";
@@ -345,7 +351,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			domains[d].B1Kplus.extern_lda = domains[d].B1Kplus.rows;
 		}
 
-		if (d+1 < domains_in_global_index.size() && (domains[d+1].isOnACC == 1 || !configuration.combine_sc_and_spds)) {
+		if (d+1 < domains_in_global_index.size() && (domains[d+1]B1Kplus.isOnACC == 1 || !configuration.combine_sc_and_spds)) {
 			// Calculates SC on CPU and keeps it CPU memory
 			GetSchurComplement(USE_FLOAT, d+1);
 			std::cout << Info::plain() << ".";
@@ -618,7 +624,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 				}
 
 				if(d%2 == 0 && d+1 < domains_in_global_index.size()) {
-					domains[d+1].isOnACC = 0;
+					domains[d+1]B1Kplus.isOnACC = 0;
 					domains_on_CPU++;
 					domains_on_GPU--;
 					DOFs_CPU += domains[d].K.rows;
@@ -736,7 +742,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 //
 //			// if status == 0 - all buffers in GPU mem were sucesfuly allocated
 //			if (status == 0) {
-//				domains[i].isOnACC = 1;
+//				domains[i]B1Kplus.isOnACC = 1;
 //				SEQ_VECTOR <double> ().swap (domains[i].B1Kplus.dense_values);
 //				SEQ_VECTOR <float>  ().swap (domains[i].B1Kplus.dense_values_fl);
 //				domains[i].Kplus.keep_factors = false;
@@ -745,7 +751,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 //				else
 //					////ESINFO(PROGRESS3) << Info::plain() << "G";
 //			} else {
-//				domains[i].isOnACC = 0;
+//				domains[i]B1Kplus.isOnACC = 0;
 //				GPU_full = true;
 //				if (configuration.combine_sc_and_spds) {
 //					SEQ_VECTOR <double> ().swap (domains[i].B1Kplus.dense_values);
@@ -763,7 +769,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 //			}
 //
 //		} else {
-//                        domains[i].isOnACC = 0;
+//                        domains[i]B1Kplus.isOnACC = 0;
 //			if (USE_FLOAT)
 //				////ESINFO(PROGRESS3) << Info::plain() << "p";
 //			else
@@ -901,13 +907,13 @@ void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
 		{
 		      domains_on_GPU++;
 		      DOFs_GPU += domains[d].K.rows;
-		      domains[d].isOnACC = 1;
+		      domains[d]B1Kplus.isOnACC = 1;
 		}
 		else
 		{
 		      domains_on_CPU++;
 		      DOFs_CPU += domains[d].K.rows;
-		      domains[d].isOnACC = 0;
+		      domains[d]B1Kplus.isOnACC = 0;
 		}
 	*/
 	}
@@ -1099,7 +1105,7 @@ for (esint d = 0; d < domains.size(); d++) {
 					domains[d].Kplus.Factorization (ss.str());
 				}
 			} else {
-                                if ( domains[d].isOnACC == 0 ) {
+				if ( domains[d].B1Kplus.isOnACC == 0 ) {
 					std::stringstream ss;
 					ss << "init -> rank: " << info::mpi::rank << ", subdomain: " << d;
 					domains[d].Kplus.keep_factors = true;
@@ -1246,7 +1252,7 @@ for (esint d = 0; d < domains.size(); d++)
 
 		bool MIXED_SC_FACT = configuration.combine_sc_and_spds;
 
-                if (domains[d].isOnACC == 0 && MIXED_SC_FACT) {
+		if (domains[d].B1Kplus.isOnACC == 0 && MIXED_SC_FACT) {
 
 			for (esint i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
 				tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
@@ -1510,7 +1516,7 @@ for (esint d = 0; d < domains.size(); d++)
 
 		bool MIXED_SC_FACT = configuration.combine_sc_and_spds;
 
-                if ( (domains[d].isOnACC == 0 && MIXED_SC_FACT ) || !configuration.use_schur_complement ) {
+		if ( (domains[d].B1Kplus.isOnACC == 0 && MIXED_SC_FACT ) || !configuration.use_schur_complement ) {
 
 			for (esint i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
 				tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
