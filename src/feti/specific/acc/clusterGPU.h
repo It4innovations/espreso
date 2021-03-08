@@ -19,7 +19,7 @@ class ClusterGPU: public ClusterBase
 
 public:
 	// Constructor
-	ClusterGPU(const FETIConfiguration &configuration, DataHolder *instance_in): ClusterBase(configuration, instance_in) { }
+	ClusterGPU(const FETIConfiguration &configuration, DataHolder *instance_in): ClusterBase(configuration, instance_in), device_id(-1) { }
 	~ClusterGPU();
 
 	void Create_SC_perDomain( bool USE_FLOAT );
@@ -51,10 +51,12 @@ public:
 
 	SEQ_VECTOR <cudaStream_t> cuda_stream_pool;
 private:
-        void GetAvailableGPUmemory();
+	void GetGPU();
 
         size_t  GPU_free_mem;
         size_t  GPU_total_mem;
+
+	int device_id;
 
 
 

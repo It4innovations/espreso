@@ -228,6 +228,8 @@
         virtual void Create_SC_perDomain( bool USE_FLOAT ) = 0;
         virtual void CreateDirichletPrec( DataHolder *instance );
 
+	void CreateDirichletPrec_perDomain( DataHolder *instance, size_t d);
+
 	void B1_comp_MatVecSum(SEQ_VECTOR < SEQ_VECTOR <double> > & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_non_transpose );
 
 	void ShowTiming();
