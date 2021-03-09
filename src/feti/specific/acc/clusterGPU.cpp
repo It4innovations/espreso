@@ -448,13 +448,13 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			if (domains[d].B1Kplus.isOnACC == 1 || !configuration.combine_sc_and_spds) {
 				// Calculates SC on CPU and keeps it CPU memory
 				GetSchurComplement(USE_FLOAT, d);
-				if (info::mpi::rank == 0) std::cout << ".";
+//				if (info::mpi::rank == 0) std::cout << ".";
 			}
 		}
 #endif
-	if (info::mpi::rank == 0) {
-		std::cout << "\n";
-	}
+//	if (info::mpi::rank == 0) {
+//		std::cout << "\n";
+//	}
 
 	CreateCudaStreamPool();
 
@@ -946,11 +946,11 @@ void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
 		// Calculates Prec on CPU and keeps it CPU memory
 		// Base solver method
 		CreateDirichletPrec_perDomain(instance, d);
-		std::cout << ".";
+//		std::cout << ".";
 	}
-	if (info::mpi::rank == 0) {
-		std::cout << "\n";
-	}
+//	if (info::mpi::rank == 0) {
+//		std::cout << "\n";
+//	}
 
 	CreateCudaStreamPool();
 
