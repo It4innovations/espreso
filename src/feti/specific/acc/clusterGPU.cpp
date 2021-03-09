@@ -47,22 +47,24 @@ void ClusterGPU::GetAvailableGPUmemory() {
 	int nDevices;
 	cudaGetDeviceCount(&nDevices);
 
-	std::cout << "\n*** GPU Accelerators available on the server " << "\n\n";
-	for (int i = 0; i < nDevices; i++) {
-		cudaDeviceProp prop;
-		cudaGetDeviceProperties(&prop, i);
-		std::cout << " Device Number: " << i << "\n";
-		std::cout << " Device name: " << prop.name << "\n";
-		std::cout << " Memory Clock Rate (KHz): " << prop.memoryClockRate << "\n";
-		std::cout << " Memory Bus Width (bits): " << prop.memoryBusWidth << "\n";
-		std::cout << " Peak Memory Bandwidth (GB/s): " << 2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6 << "\n";
+	if (info::mpi::rank == 0) {
+		std::cout << "\n*** GPU Accelerators available on the server " << "\n\n";
+		for (int i = 0; i < nDevices; i++) {
+			cudaDeviceProp prop;
+			cudaGetDeviceProperties(&prop, i);
+			std::cout << " Device Number: " << i << "\n";
+			std::cout << " Device name: " << prop.name << "\n";
+			std::cout << " Memory Clock Rate (KHz): " << prop.memoryClockRate << "\n";
+			std::cout << " Memory Bus Width (bits): " << prop.memoryBusWidth << "\n";
+			std::cout << " Peak Memory Bandwidth (GB/s): " << 2.0*prop.memoryClockRate*(prop.memoryBusWidth/8)/1.0e6 << "\n";
 
-		cudaSetDevice(i);
-		size_t free, total;
-		cudaMemGetInfo(&free, &total);
-		std::cout << " GPU Total Memory [MB]: " << total/1024/1024 << "\n";
-		std::cout << " GPU Free Memory [MB]:  " << free/1024/1024 << "\n\n";
+			cudaSetDevice(i);
+			size_t free, total;
+			cudaMemGetInfo(&free, &total);
+			std::cout << " GPU Total Memory [MB]: " << total/1024/1024 << "\n";
+			std::cout << " GPU Free Memory [MB]:  " << free/1024/1024 << "\n\n";
 
+		}
 	}
 
 	// TODO_GPU
@@ -154,7 +156,9 @@ void ClusterGPU::GetAvailableGPUmemory() {
 void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 	GetAvailableGPUmemory();
-	std::cout << "Creating B1*K+*B1t Schur Complements with Pardiso SC and coping them to GPU";
+	if (info::mpi::rank == 0) {
+		std::cout << "Creating B1*K+*B1t Schur Complements with Pardiso SC and coping them to GPU";
+	}
 
 	esint status = 0;
 	cudaError_t status_c;
@@ -291,8 +295,8 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 	// TODO_GPU - vsechny tyto std::cout se musi prepsat na logovani co ma Ondra M. 
 	// Ondro nektere moje rutiny, napr. SpyText jsou napsane pro std::cout a ne printf. Jake je reseni ? 
-	std::cout << "\n Domains on GPU : " << domains_on_GPU << "\n";
-	std::cout << " Domains on CPU : " << domains_on_CPU << "\n";
+	// std::cout << "\n Domains on GPU : " << domains_on_GPU << "\n";
+	// std::cout << " Domains on CPU : " << domains_on_CPU << "\n";
 
 	std::vector <int> on_gpu (info::mpi::size, 0);
 	MPI_Gather(&domains_on_GPU,1,MPI_INT,&on_gpu[0],1,MPI_INT, 0, info::mpi::comm);
@@ -306,11 +310,13 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	std::vector <int> don_cpu (info::mpi::size, 0);
 	MPI_Gather(&DOFs_CPU,1,MPI_INT,&don_cpu[0],1,MPI_INT, 0, info::mpi::comm);
 
-
-	for (esint i = 0; i < info::mpi::size; i++) {
-		std::cout << " MPI rank " << i <<
-			"\t - GPU : domains = \t" << on_gpu[i] << "\t Total DOFs = \t" << don_gpu[i] <<
-			"\t - CPU : domains = \t" << on_cpu[i] << "\t Total DOFs = \t" << don_cpu[i] << "\n";
+	if (info::mpi::rank == 0) {
+		std::cout << "Local Schur complement:" << "\n"; 
+		for (esint i = 0; i < info::mpi::size; i++) {
+			std::cout << " MPI rank " << i <<
+				"\t - GPU : domains = \t" << on_gpu[i] << "\t Total DOFs = \t" << don_gpu[i] <<
+				"\t - CPU : domains = \t" << on_cpu[i] << "\t Total DOFs = \t" << don_cpu[i] << "\n";
+		}
 	}
 
 #ifdef SHARE_SC
@@ -431,12 +437,13 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			if (domains[d].B1Kplus.isOnACC == 1 || !configuration.combine_sc_and_spds) {
 				// Calculates SC on CPU and keeps it CPU memory
 				GetSchurComplement(USE_FLOAT, d);
-				std::cout << ".";
+				if (info::mpi::rank == 0) std::cout << ".";
 			}
 		}
 #endif
-
-	std::cout << "\n";
+	if (info::mpi::rank == 0) {
+		std::cout << "\n";
+	}
 
 	CreateCudaStreamPool();
 
@@ -562,11 +569,11 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 				if (USE_FLOAT) {
 					SEQ_VECTOR <float>  ().swap (domains[d].B1Kplus.dense_values_fl);
 
-					std::cout << "g";
+					// std::cout << "g";
 				} else {
 					SEQ_VECTOR <double> ().swap (domains[d].B1Kplus.dense_values);
 
-					std::cout << "G";
+					// std::cout << "G";
 				}
 			} else {
 				// pokud se domenu nepodar nahrat na GPU 
@@ -633,17 +640,17 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 					SEQ_VECTOR <double> ().swap (domains[d].B1Kplus.dense_values);
 					SEQ_VECTOR <float>  ().swap (domains[d].B1Kplus.dense_values_fl);
 
-					if (USE_FLOAT)
-						std::cout << "f";
-					else
-						std::cout << "F";
+					// if (USE_FLOAT)
+					// 	std::cout << "f";
+					// else
+					// 	std::cout << "F";
 
 				} else {
 
-					if (USE_FLOAT)
-						std::cout << "c";
-					else
-						std::cout << "C";
+					// if (USE_FLOAT)
+					// 	std::cout << "c";
+					// else
+					// 	std::cout << "C";
 				}
 			}
 
@@ -651,27 +658,27 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 			if (configuration.combine_sc_and_spds) {
 
-				if (USE_FLOAT)
-					std::cout << "f";
-				else
-					std::cout << "F";
+				// if (USE_FLOAT)
+				// 	std::cout << "f";
+				// else
+				// 	std::cout << "F";
 
 			} else {
 
-				if (USE_FLOAT)
-					std::cout << "c";
-				else
-					std::cout << "C";
+				// if (USE_FLOAT)
+				// 	std::cout << "c";
+				// else
+				// 	std::cout << "C";
 
 			}
 
 		}
 
-		std::cout << " Domain: " << d << " GPU : " << domains[d].B1Kplus.isOnACC << "\n";
+		// std::cout << " Domain: " << d << " GPU : " << domains[d].B1Kplus.isOnACC << "\n";
 	}
 
-	std::cout << "\n Domains transfered to GPU : " << domains_on_GPU << "\n";
-	std::cout << " Domains on CPU : " << domains_on_CPU << "\n";
+	// std::cout << "\n Domains transfered to GPU : " << domains_on_GPU << "\n";
+	// std::cout << " Domains on CPU : " << domains_on_CPU << "\n";
 
 //	cilk_for (esint i = 0; i < domains_in_global_index.size(); i++ ) {
 //
@@ -805,7 +812,9 @@ void ClusterGPU::GetSchurComplement( bool USE_FLOAT, esint i ) {
 
 void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
 
-	std::cout << "Creating Dirichlet Preconditioner with Pardiso SC and coping them to GPU";
+	if (info::mpi::rank == 0) {
+		std::cout << "Creating Dirichlet Preconditioner with Pardiso SC and coping them to GPU";
+	}
 
 	esint status = 0;
 	cudaError_t status_c;
@@ -896,8 +905,8 @@ void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
 
 	// TODO_GPU - vsechny tyto std::cout se musi prepsat na logovani co ma Ondra M.
 	// Ondro nektere moje rutiny, napr. SpyText jsou napsane pro std::cout a ne printf. Jake je reseni ?
-	std::cout << "\n Domains on GPU : " << domains_on_GPU << "\n";
-	std::cout << " Domains on CPU : " << domains_on_CPU << "\n";
+	// std::cout << "\n Domains on GPU : " << domains_on_GPU << "\n";
+	// std::cout << " Domains on CPU : " << domains_on_CPU << "\n";
 
 	std::vector <int> on_gpu (info::mpi::size, 0);
 	MPI_Gather(&domains_on_GPU,1,MPI_INT,&on_gpu[0],1,MPI_INT, 0, info::mpi::comm);
@@ -911,21 +920,25 @@ void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
 	std::vector <int> don_cpu (info::mpi::size, 0);
 	MPI_Gather(&DOFs_CPU,1,MPI_INT,&don_cpu[0],1,MPI_INT, 0, info::mpi::comm);
 
-
-	for (esint i = 0; i < info::mpi::size; i++) {
-	      std::cout << " MPI rank " << i <<
-		      "\t - GPU : domains = \t" << on_gpu[i] << "\t Total DOFs = \t" << don_gpu[i] <<
-		      "\t - CPU : domains = \t" << on_cpu[i] << "\t Total DOFs = \t" << don_cpu[i] << "\n";
+	if (info::mpi::rank == 0) {
+		std::cout << "Dirichlet preconditioner:" << "\n"; 
+		for (esint i = 0; i < info::mpi::size; i++) {
+			std::cout << " MPI rank " << i <<
+				"\t - GPU : domains = \t" << on_gpu[i] << "\t Total DOFs = \t" << don_gpu[i] <<
+				"\t - CPU : domains = \t" << on_cpu[i] << "\t Total DOFs = \t" << don_cpu[i] << "\n";
+		}
 	}
-
 	#pragma omp parallel for
 	for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
 		// Calculates Prec on CPU and keeps it CPU memory
 		GetDirichletPrec(instance, d);
-		std::cout << ".";
+		if (info::mpi::rank == 0) std::cout << ".";
 	}
-	std::cout << "\n";
-
+	
+	if (info::mpi::rank == 0) {
+		std::cout << "\n";
+	}
+	
 	for (esint d = 0; d < domains_in_global_index.size(); d++ ) {
 
 		esint status = 0;
@@ -970,11 +983,11 @@ void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
 				if (domains[d].Prec.USE_FLOAT) {
 					SEQ_VECTOR <float>  ().swap (domains[d].Prec.dense_values_fl);
 
-					std::cout << "g";
+					// std::cout << "g";
 				} else {
 					SEQ_VECTOR <double> ().swap (domains[d].Prec.dense_values);
 
-					std::cout << "G";
+					// std::cout << "G";
 				}
 			} else {
 				// pokud se domenu nepodar nahrat na GPU
@@ -1013,27 +1026,27 @@ void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
 
 
 
-				if (domains[d].Prec.USE_FLOAT)
-					std::cout << "c";
-				else
-					std::cout << "C";
+				// if (domains[d].Prec.USE_FLOAT)
+				// 	std::cout << "c";
+				// else
+				// 	std::cout << "C";
 
 			}
 
 		} else {
 
-			if (domains[d].Prec.USE_FLOAT)
-				std::cout << "c";
-			else
-				std::cout << "C";
+			// if (domains[d].Prec.USE_FLOAT)
+			// 	std::cout << "c";
+			// else
+			// 	std::cout << "C";
 
 		}
 
-		std::cout << " Domain: " << d << " GPU : " << domains[d].Prec.isOnACC << "\n";
+		// std::cout << " Domain: " << d << " GPU : " << domains[d].Prec.isOnACC << "\n";
 	}
 
-	std::cout << "\n Domains transfered to GPU : " << domains_on_GPU << "\n";
-	std::cout << " Domains on CPU : " << domains_on_CPU << "\n";
+	// std::cout << "\n Domains transfered to GPU : " << domains_on_GPU << "\n";
+	// std::cout << " Domains on CPU : " << domains_on_CPU << "\n";
 
 }
 

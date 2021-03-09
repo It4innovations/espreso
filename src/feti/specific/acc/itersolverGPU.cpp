@@ -127,8 +127,9 @@ for (esint d = 0; d < cluster.domains.size(); d++) {
 
 	}
 */
-	if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {
-		time_eval.timeEvents[0].start();
+	if (cluster.USE_HFETI == 0) {	//if (cluster.USE_KINV == 1 && cluster.USE_HFETI == 0) {	
+		
+		// time_eval.timeEvents[0].start();
 		//// POZOR - jen pro porovnani vykonu CPU a GPU
 		//cilk_for (esint d = 0; d < cluster.domains.size(); d++) {
 		//	SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d].B1_comp_dom.rows );
@@ -137,53 +138,94 @@ for (esint d = 0; d < cluster.domains.size(); d++) {
 		//	cluster.domains[d].B1Kplus.DenseMatVec(x_in_tmp, cluster.domains[d].compressed_tmp);
 		//}
 		//// POZOR - jen pro porovnani vykonu CPU a GPU
+		// time_eval.timeEvents[0].end();
+
+
+
+		// apply_A_FETI_SC_forFETI (cluster, x_in);
+	
+	// Vsechny domeny ktere se vlezly na GPU se zpracuji zde 
+	// 1. cast - vyzobani dat do pinovanych bufferu 
+		time_eval.timeEvents[0].start();
+	#pragma omp parallel for
+		for (esint d = 0; d < cluster.domains.size(); d++) {
+			if (cluster.domains[d]->B1Kplus.isOnACC == 1) {
+				for (esint i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++) {
+					cluster.domains[d]->cuda_pinned_buff[i] = x_in[ cluster.domains[d]->lambda_map_sub_local[i]];
+				}
+			}
+		}
 		time_eval.timeEvents[0].end();
 
+	// 2. cast - nastartovani asynchroniho kopirovani vetktoru na GPU, DGEMV na GPU a kopirovani vektoru zpet na CPU 
 		time_eval.timeEvents[1].start();
-
-		// cilk_spawn 
-		
-		apply_A_FETI_SC_forFETI (cluster, x_in);
-
-		#pragma omp parallel for
+	// #pragma omp parallel for
 		for (esint d = 0; d < cluster.domains.size(); d++) {
-			SEQ_VECTOR < double > x_in_tmp;
+			if (cluster.domains[d]->B1Kplus.isOnACC == 1) {
+        		cluster.domains[d]->B1Kplus.DenseMatVecCUDA_wo_Copy_start(cluster.domains[d]->cuda_pinned_buff.data(), cluster.domains[d]->cuda_pinned_buff.data(),'N',0);
+			}
+		}
 
-			// TODO_GPU : pro vsechny domeny, ktere se nevlezly na GPU 
+	// 2. cast - vsechny domeny, ktere se nevlezly na GPU se zpracuji na CPU - provede se zatimco se na GPU asynchrone provadi zpracovani domen lezicich na GPU 
+	#pragma omp parallel for
+		for (esint d = 0; d < cluster.domains.size(); d++) {
 			if (cluster.domains[d]->B1Kplus.isOnACC == 0) {
+				
+				SEQ_VECTOR < double > x_in_tmp;
 				x_in_tmp.resize( cluster.domains[d]->B1_comp_dom.rows );
+				
 				for (esint i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++) {
 					x_in_tmp[i] = x_in[ cluster.domains[d]->lambda_map_sub_local[i]];
 				}
 
-				if (!configuration.combine_sc_and_spds) {
-					cluster.domains[d]->B1Kplus.DenseMatVec (x_in_tmp, cluster.domains[d]->compressed_tmp);
-				} else {
+				if (cluster.USE_KINV == 0 || configuration.combine_sc_and_spds ) {
 					cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'T');
 					cluster.domains[d]->multKplusLocal(*cluster.x_prim_cluster1[d]);
 					cluster.domains[d]->B1_comp_dom.MatVec (*cluster.x_prim_cluster1[d], cluster.domains[d]->compressed_tmp, 'N', 0, 0, 0.0);
+				} else {
+					cluster.domains[d]->B1Kplus.DenseMatVec (x_in_tmp, cluster.domains[d]->compressed_tmp);
 				}
+
+				// *** Original version 
+				//
+				// if (!configuration.combine_sc_and_spds) {
+				// 	cluster.domains[d]->B1Kplus.DenseMatVec (x_in_tmp, cluster.domains[d]->compressed_tmp);
+				// } else {
+				// 	cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'T');
+				// 	cluster.domains[d]->multKplusLocal(*cluster.x_prim_cluster1[d]);
+				// 	cluster.domains[d]->B1_comp_dom.MatVec (*cluster.x_prim_cluster1[d], cluster.domains[d]->compressed_tmp, 'N', 0, 0, 0.0);
+				// }
 			}
 		}
 
-		//cilk_sync;
+	// 3. cast - synchrizace exekuce na GPU
+	#pragma omp parallel for
+		for (esint d = 0; d < cluster.domains.size(); d++) {
+			if (cluster.domains[d]->B1Kplus.isOnACC == 1) {
+				cluster.domains[d]->B1Kplus.DenseMatVecCUDA_wo_Copy_sync ( );
+			}
+		}
 
 		time_eval.timeEvents[1].end();
+
+
+		time_eval.timeEvents[2].start();
 
 		std::fill( cluster.compressed_tmp.begin(), cluster.compressed_tmp.end(), 0.0);
 
 		for (esint d = 0; d < cluster.domains.size(); d++) {
 			if (cluster.domains[d]->B1Kplus.isOnACC == 1) {
-				cluster.domains[d]->B1Kplus.DenseMatVecCUDA_wo_Copy_sync ( );
-				for (esint i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++)
+				// cluster.domains[d]->B1Kplus.DenseMatVecCUDA_wo_Copy_sync ( );
+				for (esint i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++) 
+				{
 					cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += cluster.domains[d]->cuda_pinned_buff[i];
+				}
 			} else {
 				for (esint i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++)
 				{
 					cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += cluster.domains[d]->compressed_tmp[i];
 				}
 			}
-
 		}
 		time_eval.timeEvents[2].end();
 	}
@@ -621,7 +663,7 @@ void IterSolverGPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 #ifdef SHARE_SC
 					cluster.domains[d]->B1Kplus.DenseMatVecCUDA_shared_wo_Copy_start(cluster.domains[d]->cuda_pinned_buff, cluster.domains[d]->cuda_pinned_buff,'N',0);
 #else
-                                        cluster.domains[d]->B1Kplus.DenseMatVecCUDA_wo_Copy_start(cluster.domains[d]->cuda_pinned_buff.data(), cluster.domains[d]->cuda_pinned_buff.data(),'N',0);
+                    cluster.domains[d]->B1Kplus.DenseMatVecCUDA_wo_Copy_start(cluster.domains[d]->cuda_pinned_buff.data(), cluster.domains[d]->cuda_pinned_buff.data(),'N',0);
 #endif
 				}
 			}

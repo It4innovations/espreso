@@ -5720,12 +5720,22 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 	SparseMatrix GKpluGt_l;
 	vector < SparseMatrix > GKpluGt_neighs       ( neighs_of_neighs.size() );
 
+
+	// Note: puvodni verze s MatMatT - ktere se pro klsicky projektor pouziva pro HTFETI
+	// #pragma omp parallel for
+	// for (size_t neigh_i = 0; neigh_i < neighs_of_neighs.size(); neigh_i++ ) {
+	// 	GKpluGt_neighs[neigh_i].MatMatT(G_neighs_neighs[neigh_i], GA_l);
+	// }
+
+	// // v2 - odstranena MatMatT kvuli vykonu
+	GA_l.MatTranspose();
 	#pragma omp parallel for
 	for (size_t neigh_i = 0; neigh_i < neighs_of_neighs.size(); neigh_i++ ) {
+		GKpluGt_neighs[neigh_i].MatMat(G_neighs_neighs[neigh_i], 'N', GA_l);
+	// // }
 
-		GKpluGt_neighs[neigh_i].MatMatT(G_neighs_neighs[neigh_i], GA_l);
-		//GKpluGt_neighs[neigh_i].MatMat(G_neighs_neighs[neigh_i], 'N', GA_l);
-
+	// #pragma omp parallel for
+	// for (size_t neigh_i = 0; neigh_i < neighs_of_neighs.size(); neigh_i++ ) {
 		GKpluGt_neighs[neigh_i].MatTranspose();
 
 		esint inc = global_ker_sizes[neighs_of_neighs[neigh_i]];
@@ -5736,6 +5746,7 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 
 		G_neighs_neighs[neigh_i].Clear();
 	}
+	
 	 GGTNeighTime.end(); GGTNeighTime.printStatMPI(); preproc_timing.addEvent(GGTNeighTime);
 
 
@@ -5785,8 +5796,8 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 	 collectGGt_time.end(); collectGGt_time.printStatMPI(); preproc_timing.addEvent(collectGGt_time);
 
 	if (mpi_size == 1) {
-//      GGt_Mat_tmp.MatMatT(cluster.G1, GA_l);
-      GGt_Mat_tmp.MatMatT(GA_l, cluster.G1);
+		GGt_Mat_tmp.MatMat(cluster.G1,'N',GA_l);
+		GGt_Mat_tmp.MatTranspose(); 
 	}
 
 //	const char* prefix = ".";
