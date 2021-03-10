@@ -15,7 +15,7 @@ ClusterGPU::~ClusterGPU() {
 	DestroyCudaStreamPool();
 
 	for(esint d = 0; d < domains_in_global_index.size(); d++) {
-		if(domains[d].B1Kplus.isOnACC || domains[d].Prec.isOnACC) {
+		if(domains[d].B1Kplus.isOnACC) {
 			domains[d].B1Kplus.ClearCUDA_Stream();
 #ifdef SHARE_SC
 			if(domains[d].B1Kplus.USE_FLOAT) {
@@ -30,14 +30,16 @@ ClusterGPU::~ClusterGPU() {
 				domains[d].B1Kplus.FreeFromCUDA_Dev();
 			}
 #else
-			if(domains[d].B1Kplus.isOnACC) {
-				if(domains[d].B1Kplus.USE_FLOAT) {
-					domains[d].B1Kplus.FreeFromCUDA_Dev_fl();
-				} else {
-					domains[d].B1Kplus.FreeFromCUDA_Dev();
-				}
+			if(domains[d].B1Kplus.USE_FLOAT) {
+				domains[d].B1Kplus.FreeFromCUDA_Dev_fl();
+			} else {
+				domains[d].B1Kplus.FreeFromCUDA_Dev();
 			}
-#endif
+		}
+#endif			
+		if(domains[d].Prec.isOnACC) {
+			domains[d].Prec.ClearCUDA_Stream();
+			
 			if(domains[d].Prec.isOnACC)
 			{
 				domains[d].Prec.FreeFromCUDA_Dev();
@@ -52,12 +54,12 @@ void ClusterGPU::GetGPU() {
 	if(device_id < 0)
 	{
 
-	bool GPU_full = false;
-	//GPU_full = true;
-	int nDevices;
-	cudaGetDeviceCount(&nDevices);
 
-	if (info::mpi::rank == 0) {
+		bool GPU_full = false;
+		//GPU_full = true;
+		int nDevices;
+		cudaGetDeviceCount(&nDevices);
+
 		std::cout << "\n*** GPU Accelerators available on the server " << "\n\n";
 		for (int i = 0; i < nDevices; i++) {
 			cudaDeviceProp prop;
@@ -75,7 +77,7 @@ void ClusterGPU::GetGPU() {
 			std::cout << " GPU Free Memory [MB]:  " << free/1024/1024 << "\n\n";
 
 		}
-	}
+
 		// TODO_GPU
 		// - zde se rohoduje, na ktere GPU tento MPI proces pouziva
 		// Faze 1 - 1 MPI process pouziva 1 GPU
@@ -467,6 +469,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 		if (domains[d].B1Kplus.isOnACC == 1) {
 
+
 			// TODO_GPU: Test performance (same streams)
 
 			// Assign CUDA stream from he pool
@@ -542,7 +545,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			}
 #else
 			if (USE_FLOAT){
-                                status      = domains[d].B1Kplus.CopyToCUDA_Dev_fl();
+				 status      = domains[d].B1Kplus.CopyToCUDA_Dev_fl();
 
 				size_t memsize = (domains[d].B1_comp_dom.rows > domains[d].B1t_Dir_perm_vec.size()) ? domains[d].B1_comp_dom.rows : domains[d].B1t_Dir_perm_vec.size();
 				// TODO_GPU - alokuji se pole pro vektory, kterymi se bude ve funkci Apply_A nasobit tato matice 
@@ -828,6 +831,7 @@ void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
 	}
 	//Setup a GPU and get memory info
 	GetGPU();
+
 
 	esint status = 0;
 	cudaError_t status_c;

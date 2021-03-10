@@ -612,7 +612,7 @@ void IterSolverGPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
     	SEQ_VECTOR <int> is_empty ( cluster.x_prim_cluster1.size(), true);
                 #pragma omp parallel for
 		for (size_t d = 0; d < cluster.domains.size(); d++) {
-			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d]->B1_comp_dom.rows, 0.0 ); 
+			SEQ_VECTOR < double > x_in_tmp ( cluster.domains[d]->B1_comp_dom.rows, 0.0 );
 
 			esint iter_in = 0;
 			esint iter_lm = 0;
@@ -643,10 +643,14 @@ void IterSolverGPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
                                           cluster.domains[d]->cuda_pinned_buff[i] = x_in_tmp[i];
                                   }
                                 } else {
-                                        eslog::error("apply_A_l_comp_dom_B_P_local_sparse - ERROR LSC not on GPU\n");
+					for (esint i = 0; i < x_in_tmp.size(); i++) {
+						(*cluster.x_prim_cluster1[d])[i] = x_in_tmp[i];
+					}
+//                                        eslog::error("apply_A_l_comp_dom_B_P_local_sparse - ERROR LSC not on GPU\n");
                                 }
 			}
 		}
+
 
 //         time_eval.timeEvents[0].end();
 
@@ -656,15 +660,17 @@ void IterSolverGPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 
 			//#pragma omp parallel for
 			for (size_t d = 0; d < cluster.domains.size(); d++) {
-				if (!is_empty[d]) {
+				if (cluster.domains[d]->B1Kplus.isOnACC == 1 ) {
+					if (!is_empty[d] && (cluster.domains[d]->B1Kplus.isOnACC == 1)) {
 					// CPU
 					// cluster.domains[d]->multKplusLocal(*cluster.x_prim_cluster1[d]);
 					// GPU - LSC 
 #ifdef SHARE_SC
-					cluster.domains[d]->B1Kplus.DenseMatVecCUDA_shared_wo_Copy_start(cluster.domains[d]->cuda_pinned_buff, cluster.domains[d]->cuda_pinned_buff,'N',0);
+						cluster.domains[d]->B1Kplus.DenseMatVecCUDA_shared_wo_Copy_start(cluster.domains[d]->cuda_pinned_buff, cluster.domains[d]->cuda_pinned_buff,'N',0);
 #else
-                    cluster.domains[d]->B1Kplus.DenseMatVecCUDA_wo_Copy_start(cluster.domains[d]->cuda_pinned_buff.data(), cluster.domains[d]->cuda_pinned_buff.data(),'N',0);
+						cluster.domains[d]->B1Kplus.DenseMatVecCUDA_wo_Copy_start(cluster.domains[d]->cuda_pinned_buff.data(), cluster.domains[d]->cuda_pinned_buff.data(),'N',0);
 #endif
+					}
 				}
 			}
 
@@ -672,6 +678,14 @@ void IterSolverGPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 			eslog::error("apply_A_l_comp_dom_B_P_local_sparse - ERROR HTFETI_1x .\n");
 			// cluster.multKplusHFETI(cluster.x_prim_cluster1);
         }
+
+	#pragma omp parallel for
+	for (size_t d = 0; d < cluster.domains.size(); d++) {
+		// If non-empty and didnt fit into GPU, compute on CPU. TODO check if we can use *cluster.x_prim_cluster1[d]!!!
+		if (!is_empty[d] && (cluster.domains[d]->B1Kplus.isOnACC == 0) ) {
+				cluster.domains[d]->B1_comp_dom.MatVec (*cluster.x_prim_cluster1[d], *cluster.x_prim_cluster1[d], 'T');
+		}
+	}
 //         time_eval.timeEvents[1].end();
 
 
@@ -694,7 +708,9 @@ void IterSolverGPU::apply_A_l_comp_dom_B_P_local_sparse( TimeEval & time_eval, S
 						cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += cluster.domains[d]->cuda_pinned_buff[i];					
 					}
 				} else {
-					eslog::error("apply_A_l_comp_dom_B_P_local_sparse - ERROR LSC not on GPU_2x .\n");
+					for (esint i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++) {
+						cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += (*cluster.x_prim_cluster1[d])[i];
+					}
 				}
 			}
 		}
