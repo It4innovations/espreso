@@ -101,7 +101,7 @@ def print_available(ctx):
     ctx.env["HAVE_MATH"] = _print(
         "Available math libraries",
         "NOT FOUND [ESPRESO SOLVER CANNOT BE COMPILED]",
-        [ "mkl", "cuda" ])
+        [ "mkl" ])
     _print(
         "Available third party solvers",
         "NOT FOUND",
@@ -110,7 +110,7 @@ def print_available(ctx):
     _print(
         "Available miscellaneous libraries",
         "NOT FOUND",
-        [ "pthread", "hdf5", "bem", "catayst" ],
+        [ "pthread", "hdf5", "bem", "catalyst", "cuda" ],
         "YELLOW")
 
 """ Recurse to third party libraries wrappers"""
