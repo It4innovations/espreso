@@ -5,9 +5,14 @@
 
 using namespace espreso;
 
-void EmptyOptimizer::run(std::function<void(void)> fnc)
+bool EmptyOptimizer::set(std::function<bool(void)> fnc)
 {
-	fnc();
+	return fnc();
+}
+
+bool EmptyOptimizer::run(std::function<bool(void)> fnc)
+{
+	return fnc();
 }
 
 EvolutionaryOptimizer::EvolutionaryOptimizer(const OptimizationConfiguration& configuration,
@@ -20,22 +25,29 @@ EvolutionaryOptimizer::EvolutionaryOptimizer(const OptimizationConfiguration& co
 }
 
 
-void EvolutionaryOptimizer::set()
+bool EvolutionaryOptimizer::set(std::function<bool(void)> fnc)
 {
 	this->proxy.setNextConfiguration();
+
+	return fnc();
 	// for (auto p = _parameters.begin(); p != _parameters.end(); ++p) {
 	// 	std::cout << (*p)->name << ": " << (*p)->getValue() << " ";
 	// }
 	// std::cout << std::endl;
 }
 
-void EvolutionaryOptimizer::run(std::function<void(void)> fnc)
+bool EvolutionaryOptimizer::run(std::function<bool(void)> fnc)
 {
-	double start = Measure::time();
-	fnc();
-	double end = Measure::time();
+	bool ret;
+	
+	double start = eslog::time();
+	ret = fnc();
+	double end = eslog::time();
 
-	this->proxy.setConfigurationEvaluation(end - start);
+	if (ret) { this->proxy.setConfigurationEvaluation(end - start); }
+	else { this->proxy.setConfigurationForbidden(); }
+
+	return ret;
 
 	// this->proxy.setConfigurationEvaluation(sphere.evaluate());
 }
