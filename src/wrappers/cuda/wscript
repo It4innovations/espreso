@@ -1,5 +1,27 @@
+
+from waflib import TaskGen,Task
+from waflib.Tools import c_preproc
+
+class cuda(Task.Task):
+    run_str = '${NVCC} ${NVCCFLAGS} ${FRAMEWORKPATH_ST:FRAMEWORKPATH} ${CPPPATH_ST:INCPATHS} ${DEFINES_ST:DEFINES} ${CXX_SRC_F}${SRC} ${CXX_TGT_F} ${TGT}'
+    color   = 'GREEN'
+    ext_in  = ['.h']
+    vars    = ['CCDEPS']
+    scan    = c_preproc.scan
+    shell   = False
+
+@TaskGen.extension(".cu", ".cuda")
+def cxx_hook(self, node):
+    return self.create_compiled_task("cuda", node)
+
 def options(opt):
     pass
 
 def configure(ctx):
-    ctx.link_cxx(name="cuda", header_name=["cuda_runtime_api.h", "cusolverSp.h", "cusolverSp_LOWLEVEL_PREVIEW.h"], libs=["cublas", "cudart", "cusparse", "cusolver", "nvToolsExt"])
+    if ctx.link_cxx(name="cuda", header_name=["cuda_runtime_api.h", "cusolverSp.h", "cusolverSp_LOWLEVEL_PREVIEW.h"], libs=["cublas", "cudart", "cusparse", "cusolver", "nvToolsExt"]):
+        ctx.env.NVCC = ctx.find_program("nvcc")
+        ctx.env.NVCCFLAGS = [ "-dw", "-lineinfo", "--use_fast_math", "-std=c++11", "-O3", "-Xcompiler", "-fPIC" ]
+
+def build(ctx):
+    if ctx.env.NVCC:
+        ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cuda/kernels/**/*.cu'), "cudakernels", [ "CUDA" ])
