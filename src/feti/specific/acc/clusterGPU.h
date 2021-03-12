@@ -8,12 +8,12 @@
 #ifndef SOLVER_SPECIFIC_ACC_CLUSTERGPU_H_
 #define SOLVER_SPECIFIC_ACC_CLUSTERGPU_H_
 
-
 #include "feti/specific/cluster.h"
+// TODO: Should be moved to the CUDA wrapper:
 #include <cuda.h>
 #include <cuda_runtime.h>
+#include "cusparse_v2.h"
 namespace espreso {
-
 class ClusterGPU: public ClusterBase
 {
 
@@ -22,17 +22,11 @@ public:
 	ClusterGPU(const FETIConfiguration &configuration, DataHolder *instance_in): ClusterBase(configuration, instance_in), device_id(-1) { }
 	~ClusterGPU();
 
-	void Create_SC_perDomain( bool USE_FLOAT );
-        void CreateDirichletPrec( DataHolder *instance );
-
-	void GetSchurComplement( bool USE_FLOAT, esint i );
-        void GetDirichletPrec( DataHolder *instance, esint d );
-
-
-	void SetupKsolvers ( );
+	void Create_SC_perDomain(bool USE_FLOAT);
+    void CreateDirichletPrec(DataHolder *instance);
+	void SetupKsolvers();
 
 	void multKplusGlobal_GPU   ( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in );
-
 
 	void multKplus_HF      (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in);
 	void multKplus_HF_SC   (SEQ_VECTOR<SEQ_VECTOR<double> > & x_in);
@@ -50,17 +44,121 @@ public:
 	void DestroyCudaStreamPool();
 
 	SEQ_VECTOR <cudaStream_t> cuda_stream_pool;
+
 private:
+	void GetSchurComplement(bool USE_FLOAT, esint i);
+	// The method is prepared for multiple GPUs per cluster
+	void GetSchurComplements(bool USE_FLOAT);
+    void GetDirichletPrec(DataHolder *instance, esint d);
 	void GetGPU();
+<<<<<<< HEAD
 
 		// TODO change to arrays for multi-GPU per cluster
         size_t  GPU_free_mem;
         size_t  GPU_total_mem;
 		int device_id;
 
+=======
+	// TODO change to arrays for multi-GPU per cluster
+	size_t  GPU_free_mem;
+	size_t  GPU_total_mem;
+>>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 	int device_id;
+	SEQ_VECTOR<int> lsc_on_gpu_ids;
+	SEQ_VECTOR<int> lsc_on_cpu_ids;
+    // numbeŕ of computation streams for LSC
+    int n_streams_per_gpu;
+    // Determines how often the GPU is synchronized in order to free temporary memory
+    int n_csrsm2_info_per_gpu;
+    // The struct represents members assigned to one GPU
+    typedef struct {
+        // Number of LSCs stored in each GPU
+        int n_lsc_gpu;
+        // Define ranges
+        int start;
+        int end;
 
+        // 1 data_stream per GPU
+        cudaStream_t data_stream;
 
+        cudaStream_t *h_array_stream;
+        cusparseHandle_t *h_array_handle;
+
+        cudaEvent_t event_data_preload;
+        cudaEvent_t event1;
+        cudaEvent_t event2;
+
+        csrsm2Info_t *h_array_info_L;
+        csrsm2Info_t *h_array_info_U;
+
+        // Only one set of device arrays for CSC L and U (L^T)
+        int *d_csc_L_col_ptr;
+        int *d_csc_L_row_ind;
+        double *d_csc_L_val;
+
+        int *d_csc_U_col_ptr;
+        int *d_csc_U_row_ind;
+        double *d_csc_U_val;
+
+        int **h_array_d_csr_B_row_ptr;
+        int **h_array_d_csr_B_col_ind;
+        double **h_array_d_csr_B_val;
+        char **h_array_d_buffer;
+
+        // Possible future micro-optimization: 
+        // Comment out in order to eliminate Bt_csr (this would currently break HtoD data transfers)
+        int **h_array_d_csr_Bt_row_ptr;
+        int **h_array_d_csr_Bt_col_ind;
+        double **h_array_d_csr_Bt_val;
+
+        double **h_array_d_X_reordered;
+        double **h_array_d_lsc;
+        int *h_array_lsc_id;
+
+        // Permutation vectors
+        int **h_array_d_pinv;
+        int **h_array_d_q;
+    } TGPU;
+
+// TODO Distribution of domains based on real size of LSC of each domain (# RHS)
+// e.g.: Having N domains and G GPUs, sort domains descending by LSC size
+// assign G largest domains to GPUs, and continue assigning the following domains
+// to the GPU with the currently smallest sum of assigned LSC sizes.
+//  add int* lsc_sizes argument
+void DistributeDomains(TGPU* gpus, int n_gpu, int n_lsc);
+
+// NVTX library (CUDA profiling tags)
+#ifdef USE_NVTX
+    #include "nvToolsExt.h"
+
+    extern const uint32_t colors[7];
+    extern const int num_colors;
+    typedef enum { GREEN,
+                BLUE,
+                YELLOW,
+                PURPLE,
+                TURQUOISE,
+                RED,
+                GREY } color_names;
+
+    #define PUSH_RANGE(name, cid)                              \
+        {                                                      \
+            int color_id = cid;                                \
+            color_id = color_id % num_colors;                  \
+            nvtxEventAttributes_t eventAttrib = {0};           \
+            eventAttrib.version = NVTX_VERSION;                \
+            eventAttrib.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;  \
+            eventAttrib.colorType = NVTX_COLOR_ARGB;           \
+            eventAttrib.color = colors[color_id];              \
+            eventAttrib.messageType = NVTX_MESSAGE_TYPE_ASCII; \
+            eventAttrib.message.ascii = name;                  \
+            nvtxRangePushEx(&eventAttrib);                     \
+        }
+    #define POP_RANGE nvtxRangePop();
+#else
+    #define PUSH_RANGE(name, cid)
+    #define POP_RANGE
+#endif
 
 #ifdef SHARE_SC
 	SEQ_VECTOR <double *> SC_dense_val_orig;
@@ -69,7 +167,5 @@ private:
 };
 
 }
-
-
 
 #endif /* SOLVER_SPECIFIC_ACC_CLUSTERGPU_H_ */
