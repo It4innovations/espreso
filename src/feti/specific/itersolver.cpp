@@ -108,7 +108,7 @@ void IterSolverBase::Preprocessing ( SuperCluster & cluster )
 
 
 
-void IterSolverBase::Solve ( SuperCluster & cluster,
+int IterSolverBase::Solve ( SuperCluster & cluster,
 		SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel,
 	    SEQ_VECTOR < SEQ_VECTOR <double> > & out_dual_solution_parallel)
@@ -148,12 +148,13 @@ void IterSolverBase::Solve ( SuperCluster & cluster,
 		iters = Solve_full_ortho_CG_singular_dom_geneo(cluster, in_right_hand_side_primal);
 		break;
 	case FETIConfiguration::ITERATIVE_SOLVER::PCG_CP:
-		eslog::error("Regular CG with conjugate projector not implemented yet.\n");
+		iters = -1;
 		break;
-
 	default:
 		eslog::error("Unknown CG solver.\n");
 	}
+
+	if (iters < 0) { return iters; }
 
 	 postproc_timing.totalTime.start();
 
@@ -165,9 +166,7 @@ void IterSolverBase::Solve ( SuperCluster & cluster,
 
 	 postproc_timing.totalTime.endWithBarrier();
 
-
-
-
+	return iters;
 }
 
 
@@ -4944,7 +4943,7 @@ int IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clus
 		break;
 
 	default:
-		eslog::error("FETI Geneo requires dirichlet preconditioner.\n");
+		return -2;
 	}
 
 
@@ -5055,7 +5054,7 @@ int IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clus
 			break;
 
 		default:
-			eslog::error("FETI Geneo requires dirichlet preconditioner.\n");
+			return -2;
 		}
 
 
@@ -5178,7 +5177,7 @@ int IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clus
 				break;
 
 			default:
-				eslog::error("FETI Geneo requires dirichlet preconditioner.\n");
+				return -2;
 			}
 
 			W_l.dense_values.insert(W_l.dense_values.end(), w_l.begin(), w_l.end());

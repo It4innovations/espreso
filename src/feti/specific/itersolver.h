@@ -183,7 +183,7 @@ public:
 	// *** Public functions
 	void Preprocessing  ( SuperCluster & cluster );
 
-	void Solve     ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel, SEQ_VECTOR < SEQ_VECTOR <double> > & out_dual_solution_parallel );
+	int Solve     ( SuperCluster & cluster, SEQ_VECTOR < SEQ_VECTOR <double> > & in_right_hand_side_primal, SEQ_VECTOR < SEQ_VECTOR <double> > & out_primal_solution_parallel, SEQ_VECTOR < SEQ_VECTOR <double> > & out_dual_solution_parallel );
 
 
 	// *** Power Method - Estimation of maximum eigenvalue of matrix
