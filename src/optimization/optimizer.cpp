@@ -15,9 +15,8 @@ bool EmptyOptimizer::run(std::function<bool(void)> fnc)
 	return fnc();
 }
 
-EvolutionaryOptimizer::EvolutionaryOptimizer(const OptimizationConfiguration& configuration,
-	std::vector<ECFParameter*>& parameters) 
-: proxy(parameters, configuration)
+EvolutionaryOptimizer::EvolutionaryOptimizer(const AutoOptimizationConfiguration& configuration, std::vector<ECFParameter*>& parameters)
+: m_proxy(parameters, configuration)
 {
 	// sphere.forEachParameters(
 	// 	[&] (ECFParameter* p) { this->addParameter(p); }
@@ -27,7 +26,8 @@ EvolutionaryOptimizer::EvolutionaryOptimizer(const OptimizationConfiguration& co
 
 bool EvolutionaryOptimizer::set(std::function<bool(void)> fnc)
 {
-	this->proxy.setNextConfiguration();
+	this->m_proxy.setNextConfiguration();
+	this->m_set_function = fnc;
 
 	return fnc();
 	// for (auto p = _parameters.begin(); p != _parameters.end(); ++p) {
@@ -44,11 +44,16 @@ bool EvolutionaryOptimizer::run(std::function<bool(void)> fnc)
 	ret = fnc();
 	double end = eslog::time();
 
-	if (ret) { this->proxy.setConfigurationEvaluation(end - start); }
-	else { this->proxy.setConfigurationForbidden(); }
+	if (ret) { this->m_proxy.setConfigurationEvaluation(end - start); }
+	else 
+	{ 
+		this->m_proxy.setConfigurationForbidden();
+		while(!this->set(m_set_function))
+		{ this->m_proxy.setConfigurationForbidden(); }
+	}
 
 	return ret;
 
-	// this->proxy.setConfigurationEvaluation(sphere.evaluate());
+	// this->m_proxy.setConfigurationEvaluation(sphere.evaluate());
 }
 
