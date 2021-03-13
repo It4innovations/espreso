@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 	MPITools::init();
 	profiler::synccheckpoint("mpi_init_tools");
 
-	eslog::init(new Logger<TimeLogger, ProgressTerminalLogger, ProgressFileLogger>);
+	eslog::init(new Logger<TimeLogger, ProgressTerminalLogger, ProgressFileLogger, OldTimeLogger>);
 	profiler::synccheckpoint("init_loggers");
 	eslog::startln("ESPRESO: STARTED", "ESPRESO");
 
