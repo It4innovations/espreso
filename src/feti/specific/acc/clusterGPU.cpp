@@ -1237,8 +1237,12 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 		int order;
 
 		if(SYMMETRIC_SYSTEM) {
+<<<<<<< HEAD
 			order = 0; // 0 = natural, 1 = amd(A+A')
 >>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
+=======
+			order = 1; // 0 = natural, 1 = amd(A+A')
+>>>>>>> ENH #77: Default CSparse ordering for LSC set to amd(A+A')
 
 			#pragma omp parallel for
 			for (esint d = 0; d < n_lsc; d++) {
@@ -1304,8 +1308,12 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 			vec_U_values.resize(n_lsc);
 			vec_perm_2.resize(n_lsc);
 
+<<<<<<< HEAD
 			order = 0; // 0 = natural, 1 = amd(A+A'), 2 = amd(S'*S), 3 = amd(A'*A)
 >>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
+=======
+			order = 1; // 0 = natural, 1 = amd(A+A'), 2 = amd(S'*S), 3 = amd(A'*A)
+>>>>>>> ENH #77: Default CSparse ordering for LSC set to amd(A+A')
 
 			#pragma omp parallel for
 			for (esint d = 0; d < n_lsc; d++) {
