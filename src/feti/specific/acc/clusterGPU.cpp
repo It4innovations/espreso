@@ -13,14 +13,9 @@
 #include "wrappers/csparse/w.csparse.h"
 
 // TODO: move to CUDA wrapper
-<<<<<<< HEAD
 #include "wrappers/cuda/helper_cuda.h"
 #include "cudakernels.h"
 #include "wrappers/nvtx/w.nvtx.h"
-=======
-#include "helper_cuda.h"
-#include "cudakernels.h"
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 
 using namespace espreso;
 
@@ -210,7 +205,6 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		blocked_memory_size = GPU_free_mem - ((size_t) configuration.allowed_gpu_memory_mb * 1024 * 1024);
 	cuda::Malloc((void **) &d_blocked_memory, blocked_memory_size);
 
-<<<<<<< HEAD
 	// TODO Initialize cusparse context
 	
 	// Update amount of free device memory
@@ -218,11 +212,6 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 
 	// Read configuration
 	n_csrsm2_info_per_gpu = configuration.num_info_objects;
-=======
-	// Decide if LSC fits in GPU memory
-	esint status = 0;
-	cudaError_t status_c;
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 
 	// Decide if LSC fits in GPU memory
 	esint status = 0;
@@ -232,8 +221,6 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	esint domains_on_CPU = 0;
 	esint DOFs_GPU = 0;
 	esint DOFs_CPU = 0;
-	// Reserve capacity to prevent reallocation (full utilization of the capacity is expected in the most cases)
-	lsc_on_gpu_ids.reserve(domains_in_global_index.size());
 
 	SEQ_VECTOR<esint> lsc_to_get_factors_ids;
 	// Reserve capacity to prevent reallocation (full utilization of the capacity is expected in the most cases)
@@ -326,7 +313,6 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			eslog::error("ERROR - Not implemented type of Schur complement.");
 		}
 
-<<<<<<< HEAD
 		max_B1_nnz = std::max(max_B1_nnz, domains[d].B1_comp_dom.nnz);
 		max_B1_rows = std::max(max_B1_rows, domains[d].B1_comp_dom.rows);
 		max_B1_size = std::max(max_B1_size, domains[d].B1_comp_dom.rows * domains[d].B1_comp_dom.cols);
@@ -339,21 +325,6 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		if(local_SC_size_to_add[d] < (gpu_buffers_size > GPU_free_mem ? 0 : GPU_free_mem - gpu_buffers_size)) {
 			GPU_free_mem -= local_SC_size_to_add[d];
 			lsc_to_get_factors_ids.push_back(d);
-=======
-		// TODO: Calculate precisely gpu_buffers_size
-		// max size of L, U, X, LSC (nnz, m, n)
-		// n_streams
-		// n_info_objects
-		size_t gpu_buffers_size = 0;
-		if(local_SC_size_to_add[d] < GPU_free_mem - gpu_buffers_size) {
-			domains_on_GPU++;
-			DOFs_GPU += domains[d].K.rows;
-			domains[d].B1Kplus.is_on_acc = 1;
-			// Prepared for the case of multi-GPU per cluster
-			domains[d].B1Kplus.device_id = device_id;
-			GPU_free_mem -= local_SC_size_to_add[d];
-			lsc_on_gpu_ids.push_back(d);
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 		} else {
 			domains_on_CPU++;
 			DOFs_CPU += domains[d].K.rows;
@@ -526,7 +497,6 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		}
 	}
 
-<<<<<<< HEAD
 	// TODO_GPU - vsechny tyto std::cout se musi prepsat na logovani co ma Ondra M. 
 	// Ondro nektere moje rutiny, napr. SpyText jsou napsane pro std::cout a ne printf. Jake je reseni ? 
 //	std::vector <int> on_gpu (info::mpi::size, 0);
@@ -555,8 +525,6 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	std::string ratio = Parser::stringwithcommas(info[0]) + " / " + Parser::stringwithcommas(info[1]);
 	eslog::solver("     - | ACCELERATED DOMAINS %57s | -\n", ratio.c_str());
 
-=======
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 // Assemble LSC matrices per domain
 #ifdef SHARE_SC
 	SEQ_VECTOR <esint> SC_dense_val_offsets(domains_in_global_index.size(), 0);
@@ -671,7 +639,6 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		SC_dense_val_orig.resize(domains_in_global_index.size());
 	}
 #else
-<<<<<<< HEAD
 	// TODO refactoring: Possibly remove the last checking phase
 	GetSchurComplementsGpu(USE_FLOAT, vec_L_nnz, vec_L_row_indexes, vec_L_col_pointers, vec_L_values,
  	 vec_U_nnz, vec_U_row_indexes, vec_U_col_pointers, vec_U_values, vec_perm, vec_perm_2, max_B1_nnz,
@@ -680,16 +647,6 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	GetSchurComplementsCpu(USE_FLOAT);
 #endif
 //	eslog::info("\n");
-=======
-	// TODO refactoring: Split into GetSchurComplementsGpu and GetSchurComplementsCpu and remove the last checking phase
-	GetSchurComplements(USE_FLOAT);
-#endif
-	eslog::info("\n");
-
-	// TODO refactoring: loop over lsc_on_cpu_ids inside and assemble remaining LSC on GPU ()
-	// if(!configuration.combine_sc_and_spds)
-	// 	GetSchurComplementsCpu(USE_FLOAT);
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 
 	// TODO: check if correct GPU is set in case of multi-GPU per cluster
 	CreateCudaStreamPool();
@@ -1010,17 +967,12 @@ void ClusterGPU::GetSchurComplement(bool USE_FLOAT, esint i) {
 	// |      K      (B1_comp_dom)t |
 	// | B1_comp_dom      0         |
 
-<<<<<<< HEAD
-=======
-	// Backup - This should be called only for USE_FLOAT == true until
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 	SparseMatrix TmpB;
 	domains[i].B1_comp_dom.MatTranspose(TmpB);
 	SparseSolverCPU tmpsps;
 	//	if ( i == 0 && cluster_global_index == 1) {
 	//		tmpsps.msglvl = Info::report(LIBRARIES) ? 1 : 0;
 	//	}
-<<<<<<< HEAD
 
 	// int order = 0;
 	if (domains[i].K.type =='S') {
@@ -1033,58 +985,6 @@ void ClusterGPU::GetSchurComplement(bool USE_FLOAT, esint i) {
 		eslog::error("Error - not defined type of K mat type.");
 		exit(0);
 	}
-=======
-	tmpsps.Create_SC_w_Mat(domains[i].K, TmpB, domains[i].B1Kplus, false, 0); // general
-
-	eslog::warning("Espreso warning: Support for single precision LSC assembly on GPU not implemented yet - calling Pardiso SC");
-
-	// DEPRECATED - The old way - tobe removed
-	// if (domains[i].K.type =='S') {
-	// 	// 1-based indexing must be converted to 0-based indexing
-	// 	SparseMatrix B1_comp_dom_copy = domains[i].B1_comp_dom;
-		
-	// 	// Convert CSR to CSC
-	// 	// 1-based indexing must be converted to 0-based indexing
-	// 	// TODO: Do not copy if possible
-	// 	// Probably not necessary for symmetric system
-	// 	SparseMatrix K_csc;
-	// 	domains[i].K.MatTranspose(K_csc);
-
-	// 	// CSparse factorization - 0-based indexing, CSC-format
-	// 	int order = 0; // 0 = natural, 1 = amd(A+A')
-	// 	int tol = 1; // partial pivoting tolerance - not applied for symmetric system
-	// 	int n_rhs = B1_comp_dom_copy.rows;
-	// 	int device_id = domains[i].B1Kplus.device_id;
-	// 	int print_output = 0;
-
-	// 	cuda::SetDevice(device_id);
-	// 	cuda::Malloc((void**)&domains[i].B1Kplus.d_dense_values, n_rhs * n_rhs * sizeof(double));
-	// 	csparse::CreateLscGpu(K_csc, B1_comp_dom_copy, order, tol, device_id, print_output, domains[i].B1Kplus);
-	// } else if (domains[i].K.type =='G') {
-	// 	// 1-based indexing must be converted to 0-based indexing
-	// 	SparseMatrix B1_comp_dom_copy = domains[i].B1_comp_dom;
-		
-	// 	// Convert CSR to CSC
-	// 	// 1-based indexing must be converted to 0-based indexing
-	// 	// TODO: Do not copy if possible
-	// 	SparseMatrix K_csc;
-	// 	domains[i].K.MatTranspose(K_csc);
-
-	// 	// CSparse factorization - 0-based indexing, CSC-format
-	// 	int order = 0; // 0 = natural, 1 = amd(A+A'), 2 = amd(S'*S), 3 = amd(A'*A)
-	// 	int tol = 1; // partial pivoting tolerance
-	// 	int n_rhs = B1_comp_dom_copy.rows;
-	// 	int device_id = domains[i].B1Kplus.device_id;
-	// 	int print_output = 0;
-
-	// 	cuda::SetDevice(device_id);
-	// 	cuda::Malloc((void**)&domains[i].B1Kplus.d_dense_values, n_rhs * n_rhs * sizeof(double));
-	// 	csparse::CreateLscGpu(K_csc, B1_comp_dom_copy, order, tol, device_id, print_output, domains[i].B1Kplus);
-	// } else {
-	// 	eslog::error("Error - not defined type of K mat type.");
-	// 	exit(0);
-	// }
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 
 	// DEPRECATED - The old way to compute LSC on GPU using custom CSparse - tobe removed
 	// // 1-based indexing must be converted to 0-based indexing
@@ -1138,11 +1038,7 @@ void ClusterGPU::DistributeDomains(TGPU* gpus, int n_gpu, int n_lsc) {
 
         // Assign IDs and LSC device pointers of domains to the GPU
         for (int i = 0; i < gpus[g].n_lsc_gpu; i++) {
-<<<<<<< HEAD
             gpus[g].h_array_lsc_id[i] = lsc_on_gpu_ids[n];
-=======
-            gpus[g].h_array_lsc_id[i] = n;
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 			gpus[g].h_array_d_lsc[i] = domains[lsc_on_gpu_ids[n]].B1Kplus.d_dense_values;
             n++;
         }        
@@ -1159,7 +1055,6 @@ void ClusterGPU::DistributeDomains(TGPU* gpus, int n_gpu, int n_lsc) {
 }
 
 
-<<<<<<< HEAD
 void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_nnz,
  SEQ_VECTOR<int*>& vec_L_row_indexes, SEQ_VECTOR<int*>& vec_L_col_pointers, SEQ_VECTOR<double*>& vec_L_values,
  SEQ_VECTOR<int>& vec_U_nnz, SEQ_VECTOR<int*>& vec_U_row_indexes, SEQ_VECTOR<int*>& vec_U_col_pointers,
@@ -1174,18 +1069,6 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 				// Calculates SC on CPU and keeps it in CPU memory
 				GetSchurComplement(USE_FLOAT, d);
 //				eslog::info(".");
-=======
-void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
-	if(USE_FLOAT) {
-		eslog::warning("ESPRESO run-time warning: Support for GPU accelerated LSC in single precision not implemented yet. Assembling LSC on CPU using Pardiso.\n");
-		// Temporary backup:
-		#pragma omp parallel for
-		for (esint d = 0; d < domains_in_global_index.size(); d++) {
-			if (domains[d].B1Kplus.is_on_acc == 1 || !configuration.combine_sc_and_spds) {
-				// Calculates SC on CPU and keeps it in CPU memory
-				GetSchurComplement(USE_FLOAT, d);
-				eslog::info(".");
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 			}
 		}
 	} else {
@@ -1200,7 +1083,6 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 	// 		eslog::info(".");
 	// 	}
 	// }
-<<<<<<< HEAD
 	// return;
 
 		int n_lsc = lsc_on_gpu_ids.size();
@@ -1209,46 +1091,11 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 
 		if(SYMMETRIC_SYSTEM) {
 			order = 1; // 0 = natural, 1 = amd(A+A')
-=======
-
-	// return;
-		int n_lsc = lsc_on_gpu_ids.size();
-
-		// Perform Factorization and register host memory for async memcpy
-		SEQ_VECTOR<int> vec_L_nnz(n_lsc);
-		SEQ_VECTOR<int*> vec_L_row_indexes(n_lsc);
-		SEQ_VECTOR<int*> vec_L_col_pointers(n_lsc);
-		SEQ_VECTOR<double*> vec_L_values(n_lsc);
-		SEQ_VECTOR<int*> vec_perm(n_lsc);
-
-		SEQ_VECTOR<int> vec_U_nnz;
-		SEQ_VECTOR<int*> vec_U_row_indexes;
-		SEQ_VECTOR<int*> vec_U_col_pointers;
-		SEQ_VECTOR<double*> vec_U_values;
-		SEQ_VECTOR<int*> vec_perm_2;
-
-		SEQ_VECTOR<int> vec_K_rows(n_lsc);
-		SEQ_VECTOR<int> vec_B1_rows(n_lsc);
-		SEQ_VECTOR<int> vec_B1_nnz(n_lsc);
-		SEQ_VECTOR<int> vec_B1_size(n_lsc);
-
-		SEQ_VECTOR<SparseMatrix> vec_B1_comp_dom_copy(n_lsc);
-
-		int order;
-
-		if(SYMMETRIC_SYSTEM) {
-<<<<<<< HEAD
-			order = 0; // 0 = natural, 1 = amd(A+A')
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
-=======
-			order = 1; // 0 = natural, 1 = amd(A+A')
->>>>>>> ENH #77: Default CSparse ordering for LSC set to amd(A+A')
 
 			#pragma omp parallel for
 			for (esint d = 0; d < n_lsc; d++) {
 				// Allocate device memory for LSCs
 				cuda::SetDevice(device_id);
-<<<<<<< HEAD
 				cuda::Malloc((void**)&domains[lsc_on_gpu_ids[d]].B1Kplus.d_dense_values,
 				 domains[lsc_on_gpu_ids[d]].B1_comp_dom.rows * domains[lsc_on_gpu_ids[d]].B1_comp_dom.rows * sizeof(double));
 				
@@ -1258,27 +1105,6 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 
 				// TODO: This copy should be eliminated by setting 1-based indexing for B in cusparse routines and using original B1
 				vec_B1_comp_dom_copy[d] = domains[lsc_on_gpu_ids[d]].B1_comp_dom;
-=======
-				cuda::Malloc((void**)&domains[d].B1Kplus.d_dense_values, domains[d].B1_comp_dom.rows * domains[d].B1_comp_dom.rows * sizeof(double));
-				domains[d].B1Kplus.cols = domains[d].B1_comp_dom.rows;
-				domains[d].B1Kplus.rows = domains[d].B1_comp_dom.rows;
-				domains[d].B1Kplus.type = 'G';
-
-				PUSH_RANGE("Factorize", 1)
-				csparse::FactorizeChol(domains[d].K, order, vec_L_nnz[d], vec_L_row_indexes[d], 
-				vec_L_col_pointers[d], vec_L_values[d], vec_perm[d]);
-				POP_RANGE
-
-				checkCudaErrors(cudaHostRegister(vec_L_row_indexes[d], vec_L_nnz[d] * sizeof(int), cudaHostRegisterDefault));
-				checkCudaErrors(cudaHostRegister(vec_L_col_pointers[d], (domains[d].K.cols + 1) * sizeof(int), cudaHostRegisterDefault));
-				checkCudaErrors(cudaHostRegister(vec_L_values[d], vec_L_nnz[d] * sizeof(double), cudaHostRegisterDefault));
-				if(order) {
-					checkCudaErrors(cudaHostRegister(vec_perm[d], domains[d].K.rows * sizeof(int), cudaHostRegisterDefault));
-				}
-
-				// TODO: This copy should be eliminated by setting 1-based indexing for B in cusparse routines and using original B1
-				vec_B1_comp_dom_copy[d] = domains[d].B1_comp_dom;
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 				// Convert 1-based to 0-based indexing
 				for(int& i : vec_B1_comp_dom_copy[d].CSR_I_row_indices) {
 					i--;
@@ -1286,40 +1112,14 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 				for(int& i : vec_B1_comp_dom_copy[d].CSR_J_col_indices) {
 					i--;
 				}
-<<<<<<< HEAD
 			}
 		} else {
 			order = 1; // 0 = natural, 1 = amd(A+A'), 2 = amd(S'*S), 3 = amd(A'*A)
-=======
-
-				checkCudaErrors(cudaHostRegister(vec_B1_comp_dom_copy[d].CSR_J_col_indices.data(), domains[d].B1_comp_dom.CSR_V_values.size() * sizeof(int), cudaHostRegisterDefault));
-				checkCudaErrors(cudaHostRegister(vec_B1_comp_dom_copy[d].CSR_I_row_indices.data(), (domains[d].B1_comp_dom.rows + 1) * sizeof(int), cudaHostRegisterDefault));
-				checkCudaErrors(cudaHostRegister(vec_B1_comp_dom_copy[d].CSR_V_values.data(), domains[d].B1_comp_dom.CSR_V_values.size() * sizeof(double), cudaHostRegisterDefault));
-				
-				vec_K_rows[d] = domains[d].K.rows;
-				vec_B1_rows[d] = domains[d].B1_comp_dom.rows;
-				vec_B1_nnz[d] = domains[d].B1_comp_dom.CSR_V_values.size();
-				vec_B1_size[d] = domains[d].B1_comp_dom.rows * domains[d].B1_comp_dom.cols;
-			}
-		} else {
-			vec_U_nnz.resize(n_lsc);
-			vec_U_row_indexes.resize(n_lsc);
-			vec_U_col_pointers.resize(n_lsc);
-			vec_U_values.resize(n_lsc);
-			vec_perm_2.resize(n_lsc);
-
-<<<<<<< HEAD
-			order = 0; // 0 = natural, 1 = amd(A+A'), 2 = amd(S'*S), 3 = amd(A'*A)
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
-=======
-			order = 1; // 0 = natural, 1 = amd(A+A'), 2 = amd(S'*S), 3 = amd(A'*A)
->>>>>>> ENH #77: Default CSparse ordering for LSC set to amd(A+A')
 
 			#pragma omp parallel for
 			for (esint d = 0; d < n_lsc; d++) {
 				// Allocate device memory for LSCs
 				cuda::SetDevice(device_id);
-<<<<<<< HEAD
 				cuda::Malloc((void**)&domains[lsc_on_gpu_ids[d]].B1Kplus.d_dense_values,
 				 domains[lsc_on_gpu_ids[d]].B1_comp_dom.rows * domains[lsc_on_gpu_ids[d]].B1_comp_dom.rows * sizeof(double));
 
@@ -1329,33 +1129,6 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 
 				// TODO: This should be eliminated by setting 1-based indexing for B in cusparse routines
 				vec_B1_comp_dom_copy[d] = domains[lsc_on_gpu_ids[d]].B1_comp_dom;
-=======
-				cuda::Malloc((void**)&domains[d].B1Kplus.d_dense_values, domains[d].B1_comp_dom.rows * domains[d].B1_comp_dom.rows * sizeof(double));
-				domains[d].B1Kplus.cols = domains[d].B1_comp_dom.rows;
-				domains[d].B1Kplus.rows = domains[d].B1_comp_dom.rows;
-				domains[d].B1Kplus.type = 'G';
-
-				PUSH_RANGE("Factorize", 1)
-				csparse::FactorizeLu(domains[d].K, order, vec_L_nnz[d], vec_L_row_indexes[d], 
-				vec_L_col_pointers[d], vec_L_values[d], vec_U_nnz[d], vec_U_row_indexes[d], 
-				vec_U_col_pointers[d], vec_U_values[d], vec_perm[d], vec_perm_2[d]);
-				POP_RANGE
-
-				checkCudaErrors(cudaHostRegister(vec_L_row_indexes[d], vec_L_nnz[d] * sizeof(int), cudaHostRegisterDefault));
-				checkCudaErrors(cudaHostRegister(vec_L_col_pointers[d], (domains[d].K.cols + 1) * sizeof(int), cudaHostRegisterDefault));
-				checkCudaErrors(cudaHostRegister(vec_L_values[d], vec_L_nnz[d] * sizeof(double), cudaHostRegisterDefault));
-				checkCudaErrors(cudaHostRegister(vec_perm[d], domains[d].K.rows * sizeof(int), cudaHostRegisterDefault));
-
-				checkCudaErrors(cudaHostRegister(vec_U_row_indexes[d], vec_U_nnz[d] * sizeof(int), cudaHostRegisterDefault));
-				checkCudaErrors(cudaHostRegister(vec_U_col_pointers[d], (domains[d].K.cols + 1) * sizeof(int), cudaHostRegisterDefault));
-				checkCudaErrors(cudaHostRegister(vec_U_values[d], vec_U_nnz[d] * sizeof(double), cudaHostRegisterDefault));
-				if(order) {
-					checkCudaErrors(cudaHostRegister(vec_perm_2[d], domains[d].K.rows * sizeof(int), cudaHostRegisterDefault));
-				}
-
-				// TODO: This should be eliminated by setting 1-based indexing for B in cusparse routines
-				vec_B1_comp_dom_copy[d] = domains[d].B1_comp_dom;
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 				// Convert 1-based to 0-based indexing
 				for(int& i : vec_B1_comp_dom_copy[d].CSR_I_row_indices) {
 					i--;
@@ -1363,7 +1136,6 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 				for(int& i : vec_B1_comp_dom_copy[d].CSR_J_col_indices) {
 					i--;
 				}
-<<<<<<< HEAD
 			}
 		}
 		POP_RANGE
@@ -1373,38 +1145,11 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 		// TODO - To be removed as of #88 is implemented
 		// Get max dimensions
 		int max_nnz = std::max(max_L_nnz, max_U_nnz);
-=======
-				checkCudaErrors(cudaHostRegister(vec_B1_comp_dom_copy[d].CSR_J_col_indices.data(), domains[d].B1_comp_dom.CSR_V_values.size() * sizeof(int), cudaHostRegisterDefault));
-				checkCudaErrors(cudaHostRegister(vec_B1_comp_dom_copy[d].CSR_I_row_indices.data(), (domains[d].B1_comp_dom.rows + 1) * sizeof(int), cudaHostRegisterDefault));
-				checkCudaErrors(cudaHostRegister(vec_B1_comp_dom_copy[d].CSR_V_values.data(), domains[d].B1_comp_dom.CSR_V_values.size() * sizeof(double), cudaHostRegisterDefault));
-
-				vec_K_rows[d] = domains[d].K.rows;
-				vec_B1_rows[d] = domains[d].B1_comp_dom.rows;
-				vec_B1_nnz[d] = domains[d].B1_comp_dom.CSR_V_values.size();
-				vec_B1_size[d] = domains[d].B1_comp_dom.rows * domains[d].B1_comp_dom.cols;
-			}
-		}
-
-		PUSH_RANGE("Prepare host arrays", 2)
-		// Get max dimensions
-		int max_K_rows = *std::max_element(vec_K_rows.begin(), vec_K_rows.end());
-		int max_nnz_L = *std::max_element(vec_L_nnz.begin(), vec_L_nnz.end());
-        int max_nnz_U = SYMMETRIC_SYSTEM ? max_nnz_L : *std::max_element(vec_U_nnz.begin(), vec_U_nnz.end()); // if chol, U = U^T
-		int max_nnz = std::max(max_nnz_L, max_nnz_U);
-		int max_B1_rows = *std::max_element(vec_B1_rows.begin(), vec_B1_rows.end());
-		int max_B1_nnz = *std::max_element(vec_B1_nnz.begin(), vec_B1_nnz.end());
-		int max_B1_size = *std::max_element(vec_B1_size.begin(), vec_B1_size.end());
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 
 		// General settings
 		// Currently only 1 GPU with specified device_id per cluster
 		int n_gpu = 1;
 		int gpu_id = device_id;
-<<<<<<< HEAD
-=======
-		n_streams_per_gpu = 2;
-		n_csrsm2_info_per_gpu = 64;
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 		// Array of gpu structs
         TGPU *gpus = (TGPU*) malloc(n_gpu * sizeof(TGPU));
 
@@ -1447,23 +1192,15 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
         cusparseMatDescr_t h_descrU = NULL;
         cusparseMatDescr_t h_descrBt = NULL;
         int solve_algo = 1;  // solve_algo = 0 is non-block version; solve_algo = 1 is block version
-<<<<<<< HEAD
         cusparseOperation_t solve_transL = CUSPARSE_OPERATION_TRANSPOSE; // Transposed matrix require larger info object
-=======
-        cusparseOperation_t solve_transL = CUSPARSE_OPERATION_TRANSPOSE;
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
         cusparseOperation_t solve_transU = SYMMETRIC_SYSTEM ? CUSPARSE_OPERATION_NON_TRANSPOSE : CUSPARSE_OPERATION_TRANSPOSE;  // L^T and U in CSC
         cusparseOperation_t solve_transB = CUSPARSE_OPERATION_NON_TRANSPOSE; // TODO LU probably change for U
         double solve_alpha = 1.0;
         cusparseSolvePolicy_t policy = CUSPARSE_SOLVE_POLICY_NO_LEVEL; // CUSPARSE_SOLVE_POLICY_USE_LEVEL
         // TODO: set according the largest domain #54
-<<<<<<< HEAD
         size_t expected_buffer_size = ((max_K_rows + max_nnz) * 4 + max_B1_size) * sizeof(double);
 		// This should be correct according NVIDIA but is too low in real
 		// size_t expected_buffer_size = (max_K_rows + max_nnz) * sizeof(float) + max_B1_size * sizeof(double); 
-=======
-        size_t expected_buffer_size = ((max_K_rows + max_nnz) * 4 + max_K_rows * max_B1_rows) * sizeof(double);
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
         size_t solve_buffer_size = expected_buffer_size; // solve_buffer_size is overwritten during the computation
 		// Configuration of matrix descriptor L, U, and B^T*/
         checkCudaErrors(cusparseCreateMatDescr(&h_descrL));
@@ -1561,7 +1298,6 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
             }
 
             // Allocate only one set of device arrays for CSC L, U (L^T), and permutation vectors per GPU
-<<<<<<< HEAD
             checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_L_row_ind, max_L_nnz * sizeof(int)));
             checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_L_col_ptr, (max_K_rows + 1) * sizeof(int)));
             checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_L_val, max_L_nnz * sizeof(double)));
@@ -1569,15 +1305,6 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
             checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_U_row_ind, max_U_nnz * sizeof(int)));
             checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_U_col_ptr, (max_K_rows + 1) * sizeof(int)));
             checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_U_val, max_U_nnz * sizeof(double)));
-=======
-            checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_L_row_ind, max_nnz_L * sizeof(int)));
-            checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_L_col_ptr, (max_K_rows + 1) * sizeof(int)));
-            checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_L_val, max_nnz_L * sizeof(double)));
-
-            checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_U_row_ind, max_nnz_U * sizeof(int)));
-            checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_U_col_ptr, (max_K_rows + 1) * sizeof(int)));
-            checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_U_val, max_nnz_U * sizeof(double)));
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
         }
 		POP_RANGE  // END Prepare device arrays
 
@@ -1589,7 +1316,6 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
             // Copy CSR B and CSC L for the first domain from host to device
             PUSH_RANGE("B_csr 0 memcpy HtD", 4)
             checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_val[0], vec_B1_comp_dom_copy[idx].CSR_V_values.data(),
-<<<<<<< HEAD
 			 domains[idx].B1_comp_dom.CSR_V_values.size() * sizeof(double), cudaMemcpyHostToDevice, gpus[g].data_stream));
 			checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_col_ind[0], vec_B1_comp_dom_copy[idx].CSR_J_col_indices.data(),
 			 domains[idx].B1_comp_dom.CSR_V_values.size() * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
@@ -1604,25 +1330,11 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 			 cudaMemcpyHostToDevice, gpus[g].data_stream));
             checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_col_ptr, vec_L_col_pointers[idx], (domains[idx].K.rows + 1) * sizeof(int),
 			 cudaMemcpyHostToDevice, gpus[g].data_stream));
-=======
-			 vec_B1_nnz[idx] * sizeof(double), cudaMemcpyHostToDevice, gpus[g].data_stream));
-			checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_col_ind[0], vec_B1_comp_dom_copy[idx].CSR_J_col_indices.data(),
-			 vec_B1_nnz[idx] * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-			checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_row_ptr[0], vec_B1_comp_dom_copy[idx].CSR_I_row_indices.data(),
-			 (vec_B1_rows[idx] + 1) * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-            POP_RANGE
-
-            PUSH_RANGE("L_csr 0 memcpy HtD", 4)
-            checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_val, vec_L_values[idx], vec_L_nnz[idx] * sizeof(double), cudaMemcpyHostToDevice, gpus[g].data_stream));
-            checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_row_ind, vec_L_row_indexes[idx], vec_L_nnz[idx] * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-            checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_col_ptr, vec_L_col_pointers[idx], (vec_K_rows[idx] + 1) * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
             POP_RANGE
 
 			PUSH_RANGE("perm 0 memcpy HtD", 4)
 			if(SYMMETRIC_SYSTEM) {
 				if(order) {
-<<<<<<< HEAD
 					checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[0], vec_perm[idx], domains[idx].K.rows * sizeof(int),
 					 cudaMemcpyHostToDevice, gpus[g].data_stream));
 				}
@@ -1633,15 +1345,6 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 				}
 				checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[0], vec_perm[idx], domains[idx].K.rows * sizeof(int),
 				 cudaMemcpyHostToDevice, gpus[g].data_stream));
-=======
-					checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[0], vec_perm[idx], vec_K_rows[idx] * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-				}
-            } else {
-				if(order) {
-					checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_q[0], vec_perm_2[idx], vec_K_rows[idx] * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-				}
-				checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[0], vec_perm[idx], vec_K_rows[idx] * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
             }
 			POP_RANGE
 
@@ -1670,7 +1373,6 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 
                 PUSH_RANGE("Create SpMM objects", 5)
                 // Create B, X, LSC cusparse matrix objects
-<<<<<<< HEAD
                 checkCudaErrors(cusparseCreateCsr(&h_array_h_matB[i], (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
 				 (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.CSR_V_values.size(), (void*) gpus[g].h_array_d_csr_B_row_ptr[s_gpu],
                 (void*) gpus[g].h_array_d_csr_B_col_ind[s_gpu], (void*) gpus[g].h_array_d_csr_B_val[s_gpu],
@@ -1681,15 +1383,6 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
                 (void*) gpus[g].h_array_d_buffer[s_gpu], compute_type, spmm_order));
                 checkCudaErrors(cusparseCreateDnMat(&h_array_h_matLSC[i], (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
 				 (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
-=======
-                checkCudaErrors(cusparseCreateCsr(&h_array_h_matB[i], (int64_t) vec_B1_rows[i], (int64_t) vec_K_rows[i], (int64_t)  vec_B1_nnz[i], (void*) gpus[g].h_array_d_csr_B_row_ptr[s_gpu],
-                (void*) gpus[g].h_array_d_csr_B_col_ind[s_gpu], (void*) gpus[g].h_array_d_csr_B_val[s_gpu],
-                spmm_csr_row_offsets_type, spmm_csr_col_ind_type, spmm_idx_base, compute_type));
-                // h_array_d_buffer used instead of h_array_d_X
-                checkCudaErrors(cusparseCreateDnMat(&h_array_h_matX[i], (int64_t) vec_K_rows[i], (int64_t) vec_B1_rows[i], (int64_t) vec_K_rows[i],
-                (void*) gpus[g].h_array_d_buffer[s_gpu], compute_type, spmm_order));
-                checkCudaErrors(cusparseCreateDnMat(&h_array_h_matLSC[i], (int64_t) vec_B1_rows[i], (int64_t) vec_B1_rows[i], (int64_t) vec_B1_rows[i],
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
                 (void*) gpus[g].h_array_d_lsc[i_gpu], compute_type, spmm_order));
                 POP_RANGE // Create SpMM objects
 
@@ -1706,11 +1399,7 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 
                 // Currently not necessary to get buffer size
 // #ifdef DEBUG
-<<<<<<< HEAD
 //                 checkCudaErrors(cusparseCsr2cscEx2_bufferSize(gpus[g].h_array_handle[s_gpu], domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.CSR_V_values.size(), gpus[g].h_array_d_csr_B_val[s_gpu],
-=======
-//                 checkCudaErrors(cusparseCsr2cscEx2_bufferSize(gpus[g].h_array_handle[s_gpu], vec_B1_rows[i], vec_K_rows[i], vec_B1_nnz[i], gpus[g].h_array_d_csr_B_val[s_gpu],
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 //                  gpus[g].h_array_d_csr_B_row_ptr[s_gpu], gpus[g].h_array_d_csr_B_col_ind[s_gpu], gpus[g].h_array_d_csr_Bt_val[s_gpu], gpus[g].h_array_d_csr_Bt_row_ptr[s_gpu],
 //                   gpus[g].h_array_d_csr_Bt_col_ind[s_gpu], compute_type, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO, CUSPARSE_CSR2CSC_ALG1,
 //                    &solve_buffer_size));
@@ -1721,12 +1410,8 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 //                 checkCudaErrors(cudaDeviceSynchronize());
 // #endif
 
-<<<<<<< HEAD
                 checkCudaErrors(cusparseCsr2cscEx2(gpus[g].h_array_handle[s_gpu], domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.CSR_V_values.size(), gpus[g].h_array_d_csr_B_val[s_gpu],
-=======
-                checkCudaErrors(cusparseCsr2cscEx2(gpus[g].h_array_handle[s_gpu], vec_B1_rows[i], vec_K_rows[i], vec_B1_nnz[i], gpus[g].h_array_d_csr_B_val[s_gpu],
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
                 gpus[g].h_array_d_csr_B_row_ptr[s_gpu], gpus[g].h_array_d_csr_B_col_ind[s_gpu], gpus[g].h_array_d_csr_Bt_val[s_gpu], 
                 gpus[g].h_array_d_csr_Bt_row_ptr[s_gpu], gpus[g].h_array_d_csr_Bt_col_ind[s_gpu], compute_type, CUSPARSE_ACTION_NUMERIC,
                 CUSPARSE_INDEX_BASE_ZERO, CUSPARSE_CSR2CSC_ALG1, gpus[g].h_array_d_buffer[s_gpu]));
@@ -1734,7 +1419,6 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 
                 PUSH_RANGE("Convert Bt_csr to dense", 0)
                 // Convert B^T from CSR to dense on device
-<<<<<<< HEAD
                 // m = Bt_cs->m = domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows
                 // n = Bt_cs->n = domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows
                 // h_array_d_buffer used instead of h_array_d_X
@@ -1742,13 +1426,6 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, h_descrBt, gpus[g].h_array_d_csr_Bt_val[s_gpu],
                 gpus[g].h_array_d_csr_Bt_row_ptr[s_gpu], gpus[g].h_array_d_csr_Bt_col_ind[s_gpu], (double *) gpus[g].h_array_d_buffer[s_gpu],
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows));
-=======
-                // m = Bt_cs->m = vec_K_rows[i]
-                // n = Bt_cs->n = vec_B1_rows[i]
-                // h_array_d_buffer used instead of h_array_d_X
-                checkCudaErrors(cusparseDcsr2dense(gpus[g].h_array_handle[s_gpu], vec_K_rows[i], vec_B1_rows[i], h_descrBt, gpus[g].h_array_d_csr_Bt_val[s_gpu],
-                gpus[g].h_array_d_csr_Bt_row_ptr[s_gpu], gpus[g].h_array_d_csr_Bt_col_ind[s_gpu], (double *) gpus[g].h_array_d_buffer[s_gpu], vec_K_rows[i]));
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
                 POP_RANGE //Convert Bt_csr to dense
 
                 PUSH_RANGE("Input reordering", 1)
@@ -1757,26 +1434,16 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
                 // Symm: h_array_d_X_reordered(S->pinv) = h_array_d_buffer
                 // Unsym: h_array_d_X_reordered(N->pinv) = h_array_d_buffer
                 cuda::IpvecReorderMrhs(gpus[g].h_array_d_pinv[s_gpu], (double *) gpus[g].h_array_d_buffer[s_gpu], gpus[g].h_array_d_X_reordered[s_gpu],
-<<<<<<< HEAD
                 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, gpus[g].h_array_stream[s_gpu]); /* b = P'*x */
-=======
-                vec_K_rows[i], vec_B1_rows[i], gpus[g].h_array_stream[s_gpu]); /* b = P'*x */
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
                 POP_RANGE // Input reordering
 
                 PUSH_RANGE("Querry workspace lsolve", 2)
                 /* step 3: query workspace */
                 // requires sorted CSR
-<<<<<<< HEAD
                 checkCudaErrors(cusparseDcsrsm2_bufferSizeExt(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transL, solve_transB,
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, vec_L_nnz[i],
                  &solve_alpha, h_descrL, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
 				  domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_L[info_gpu], policy, &solve_buffer_size));
-=======
-                checkCudaErrors(cusparseDcsrsm2_bufferSizeExt(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transL, solve_transB, vec_K_rows[i], vec_B1_rows[i], vec_L_nnz[i],
-                                                            &solve_alpha, h_descrL, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind,
-                                                            gpus[g].h_array_d_X_reordered[s_gpu], vec_K_rows[i], gpus[g].h_array_info_L[info_gpu], policy, &solve_buffer_size));
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
                 
 				if(solve_buffer_size > expected_buffer_size)
                     printf("CSparse LSC warning: GPU %d: LSC %d: The calculated solve buffer size (%f MB) is larger than the size of the used buffer (%f MB).\n",
@@ -1785,46 +1452,27 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
                 
                 /* step 4: analysis */
                 PUSH_RANGE("Analysis lsolve", 3)
-<<<<<<< HEAD
                 checkCudaErrors(cusparseDcsrsm2_analysis(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transL, solve_transB, domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows,
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, vec_L_nnz[i], &solve_alpha, h_descrL, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind,
                  gpus[g].h_array_d_X_reordered[s_gpu], domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_L[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
-=======
-                checkCudaErrors(cusparseDcsrsm2_analysis(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transL, solve_transB, vec_K_rows[i], vec_B1_rows[i], vec_L_nnz[i],
-                                                        &solve_alpha, h_descrL, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind,
-                                                        gpus[g].h_array_d_X_reordered[s_gpu], vec_K_rows[i], gpus[g].h_array_info_L[info_gpu],
-                                                        policy, gpus[g].h_array_d_buffer[s_gpu]));
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
                 POP_RANGE // Analysis lsolve
 
                 // Overlap CSC U (L^T) transfer with L-Solve
                 PUSH_RANGE("U_csc memcpy HtD", 4)
-<<<<<<< HEAD
                 checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_val, SYMMETRIC_SYSTEM ? vec_L_values[i] : vec_U_values[i],
 				 SYMMETRIC_SYSTEM ? vec_L_nnz[i] : vec_U_nnz[i] * sizeof(double), cudaMemcpyHostToDevice, gpus[g].data_stream));
                 checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_row_ind, SYMMETRIC_SYSTEM ? vec_L_row_indexes[i] : vec_U_row_indexes[i],
 				 SYMMETRIC_SYSTEM ? vec_L_nnz[i] : vec_U_nnz[i] * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
                 checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_col_ptr, SYMMETRIC_SYSTEM ? vec_L_col_pointers[i] : vec_U_col_pointers[i],
 				 (domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows + 1) * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-=======
-                checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_val, SYMMETRIC_SYSTEM ? vec_L_values[i] : vec_U_values[i], SYMMETRIC_SYSTEM ? vec_L_nnz[i] : vec_U_nnz[i] * sizeof(double), cudaMemcpyHostToDevice, gpus[g].data_stream));
-                checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_row_ind, SYMMETRIC_SYSTEM ? vec_L_row_indexes[i] : vec_U_row_indexes[i], SYMMETRIC_SYSTEM ? vec_L_nnz[i] : vec_U_nnz[i] * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-                checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_col_ptr, SYMMETRIC_SYSTEM ? vec_L_col_pointers[i] : vec_U_col_pointers[i], (vec_K_rows[i] + 1) * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
                 POP_RANGE // U_csc memcpy HtD
 
                 /* step 5: solve X = L * X */
                 PUSH_RANGE("Lsolve", 5)
-<<<<<<< HEAD
                 checkCudaErrors(cusparseDcsrsm2_solve(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transL, solve_transB,
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, vec_L_nnz[i],
 				 &solve_alpha, h_descrL, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
                  domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_L[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
-=======
-                checkCudaErrors(cusparseDcsrsm2_solve(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transL, solve_transB, vec_K_rows[i], vec_B1_rows[i], vec_L_nnz[i], &solve_alpha,
-                                                    h_descrL, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
-                                                    vec_K_rows[i], gpus[g].h_array_info_L[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
                 POP_RANGE // Lsolve
 
                 // Record all the remaining work of the compute stream into the event1
@@ -1837,7 +1485,6 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
                     PUSH_RANGE("B_csr+n_gpu memcpy HtD", 6)
                     int s_gpu_following = (i_gpu + 1) % n_streams_per_gpu;
 					checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_val[s_gpu_following], vec_B1_comp_dom_copy[i + 1].CSR_V_values.data(),
-<<<<<<< HEAD
 					 domains[gpus[g].h_array_lsc_id[i_gpu + 1]].B1_comp_dom.CSR_V_values.size() * sizeof(double), cudaMemcpyHostToDevice, gpus[g].data_stream));
                     checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_col_ind[s_gpu_following], vec_B1_comp_dom_copy[i + 1].CSR_J_col_indices.data(),
 					 domains[gpus[g].h_array_lsc_id[i_gpu + 1]].B1_comp_dom.CSR_V_values.size() * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
@@ -1852,24 +1499,10 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 					 cudaMemcpyHostToDevice, gpus[g].data_stream));
                     checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_col_ptr, vec_L_col_pointers[i + 1], (domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows + 1) * sizeof(int),
 					 cudaMemcpyHostToDevice, gpus[g].data_stream));
-=======
-					 vec_B1_nnz[i + 1] * sizeof(double), cudaMemcpyHostToDevice, gpus[g].data_stream));
-                    checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_col_ind[s_gpu_following], vec_B1_comp_dom_copy[i + 1].CSR_J_col_indices.data(),
-					 vec_B1_nnz[i + 1] * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-                    checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_row_ptr[s_gpu_following], vec_B1_comp_dom_copy[i + 1].CSR_I_row_indices.data(),
-					 (vec_B1_rows[i + 1] + 1) * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-                    POP_RANGE // B_csr+n_gpu memcpy HtD
-
-                    PUSH_RANGE("L_csc+n_gpu memcpy HtD", 0)
-                    checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_val, vec_L_values[i + 1], vec_L_nnz[i + 1] * sizeof(double), cudaMemcpyHostToDevice, gpus[g].data_stream));
-                    checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_row_ind, vec_L_row_indexes[i + 1], vec_L_nnz[i + 1] * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-                    checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_col_ptr, vec_L_col_pointers[i + 1], (vec_K_rows[i + 1] + 1) * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
                     POP_RANGE // L_csc+n_gpu memcpy HtD
 
 					if(SYMMETRIC_SYSTEM) {
 						if(order) {
-<<<<<<< HEAD
 							checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[s_gpu_following], vec_perm[i + 1],
 							domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
 						}
@@ -1880,15 +1513,6 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 						}
 						checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[s_gpu_following], vec_perm[i + 1],
 						 domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-=======
-							checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[s_gpu_following], vec_perm[i + 1], vec_K_rows[i + 1] * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-						}
-					} else {
-						if(order) {
-							checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_q[s_gpu_following], vec_perm_2[i + 1], vec_K_rows[i + 1] * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-						}
-						checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[s_gpu_following], vec_perm[i + 1], vec_K_rows[i + 1] * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 					}
 
                     // Record all the remaining work of the data stream into the event2
@@ -1899,16 +1523,10 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
                 PUSH_RANGE("Querry workspace ltsolve", 1)
                 // TODO LU check correctness in case of problems
                 // requires sorted CSR
-<<<<<<< HEAD
                 checkCudaErrors(cusparseDcsrsm2_bufferSizeExt(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transU, solve_transB,
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, SYMMETRIC_SYSTEM ? vec_L_nnz[i] : vec_U_nnz[i],
 				 &solve_alpha, h_descrU, gpus[g].d_csc_U_val, gpus[g].d_csc_U_col_ptr, gpus[g].d_csc_U_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_U[info_gpu], policy, &solve_buffer_size));
-=======
-                checkCudaErrors(cusparseDcsrsm2_bufferSizeExt(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transU, solve_transB, vec_K_rows[i], vec_B1_rows[i], SYMMETRIC_SYSTEM ? vec_L_nnz[i] : vec_U_nnz[i], &solve_alpha,
-                                                            h_descrU, gpus[g].d_csc_U_val, gpus[g].d_csc_U_col_ptr, gpus[g].d_csc_U_row_ind,
-                                                            gpus[g].h_array_d_X_reordered[s_gpu], vec_K_rows[i], gpus[g].h_array_info_U[info_gpu], policy, &solve_buffer_size));
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 
                 if(solve_buffer_size > expected_buffer_size)
                     printf("CSparse LSC warning: GPU %d: LSC %d: The calculated solve buffer size (%f MB) is larger than the size of the used buffer (%f MB).\n",
@@ -1917,32 +1535,18 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 
                 /* step 7: analysis */
                 PUSH_RANGE("Analysis ltsolve", 2)
-<<<<<<< HEAD
                 checkCudaErrors(cusparseDcsrsm2_analysis(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transU, solve_transB,
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, SYMMETRIC_SYSTEM ? vec_L_nnz[i] : vec_U_nnz[i],
                  &solve_alpha, h_descrU, gpus[g].d_csc_U_val, gpus[g].d_csc_U_col_ptr, gpus[g].d_csc_U_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_U[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
-=======
-                checkCudaErrors(cusparseDcsrsm2_analysis(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transU, solve_transB, vec_K_rows[i], vec_B1_rows[i], SYMMETRIC_SYSTEM ? vec_L_nnz[i] : vec_U_nnz[i],
-                                                        &solve_alpha, h_descrU, gpus[g].d_csc_U_val, gpus[g].d_csc_U_col_ptr, gpus[g].d_csc_U_row_ind,
-                                                        gpus[g].h_array_d_X_reordered[s_gpu], vec_K_rows[i], gpus[g].h_array_info_U[info_gpu],
-                                                        policy, gpus[g].h_array_d_buffer[s_gpu]));
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
                 POP_RANGE // Analysis ltsolve
 
                 /* step 8: solve X = Lt\X */
                 PUSH_RANGE("Ltsolve", 3)
-<<<<<<< HEAD
                 checkCudaErrors(cusparseDcsrsm2_solve(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transU, solve_transB,
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, SYMMETRIC_SYSTEM ? vec_L_nnz[i] : vec_U_nnz[i],
 				 &solve_alpha, h_descrU, gpus[g].d_csc_U_val, gpus[g].d_csc_U_col_ptr, gpus[g].d_csc_U_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
 				domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_U[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
-=======
-                checkCudaErrors(cusparseDcsrsm2_solve(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transU, solve_transB, vec_K_rows[i], vec_B1_rows[i], SYMMETRIC_SYSTEM ? vec_L_nnz[i] : vec_U_nnz[i],
-                                                    &solve_alpha, h_descrU, gpus[g].d_csc_U_val, gpus[g].d_csc_U_col_ptr, gpus[g].d_csc_U_row_ind,
-                                                    gpus[g].h_array_d_X_reordered[s_gpu], vec_K_rows[i], gpus[g].h_array_info_U[info_gpu],
-                                                    policy, gpus[g].h_array_d_buffer[s_gpu]));
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
                 POP_RANGE // Ltsolve
 
                 PUSH_RANGE("Output reordering", 4)
@@ -1951,19 +1555,11 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
                 // Symm: h_array_d_buffer = h_array_d_X_reordered(S->pinv)
                 // Unsym: h_array_d_buffer(S->q) = h_array_d_X_reordered
                 if (SYMMETRIC_SYSTEM) {
-<<<<<<< HEAD
                     cuda::PvecReorderMrhs(gpus[g].h_array_d_pinv[s_gpu], gpus[g].h_array_d_X_reordered[s_gpu], (double *) gpus[g].h_array_d_buffer[s_gpu],
 					domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, gpus[g].h_array_stream[s_gpu]); /* b = P'*x */
                 } else {
                     cuda::IpvecReorderMrhs(gpus[g].h_array_d_q[s_gpu], gpus[g].h_array_d_X_reordered[s_gpu], (double *) gpus[g].h_array_d_buffer[s_gpu],
 					domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, gpus[g].h_array_stream[s_gpu]);
-=======
-                    cuda::PvecReorderMrhs(gpus[g].h_array_d_pinv[s_gpu], gpus[g].h_array_d_X_reordered[s_gpu],
-                    (double *) gpus[g].h_array_d_buffer[s_gpu], vec_K_rows[i], vec_B1_rows[i], gpus[g].h_array_stream[s_gpu]); /* b = P'*x */
-                } else {
-                    cuda::IpvecReorderMrhs(gpus[g].h_array_d_q[s_gpu], gpus[g].h_array_d_X_reordered[s_gpu],
-                    (double *) gpus[g].h_array_d_buffer[s_gpu], vec_K_rows[i], vec_B1_rows[i], gpus[g].h_array_stream[s_gpu]);
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
                 }
                 POP_RANGE // Output reordering
 // #ifdef DEBUG
@@ -1972,15 +1568,9 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 //                 h_array_h_matX[i], &spmm_beta, h_array_h_matLSC[i], compute_type, spmm_algo, &spmm_buffer_size));
     
 //                 printf("Thr %d GPU %d: LSC %d: Calculated SpMM spmm_buffer_size = %f MB\n", tid, g, i, (double)spmm_buffer_size / 1024.0 / 1024.0);
-<<<<<<< HEAD
 //                 if(spmm_buffer_size > (domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows * domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows * sizeof(double)))
 //                     printf("CSparse LSC warning: Thr %d GPU %d: LSC %d: The calculated SpMM buffer size (%f MB) is larger than the size of the used buffer (%f MB).\n",
 //                      tid, g, i, (double) spmm_buffer_size / 1024.0 / 1024.0, (double) (domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows * domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows * sizeof(double)) / 1024.0 / 1024.0);
-=======
-//                 if(spmm_buffer_size > (vec_K_rows[i] * vec_B1_rows[i] * sizeof(double)))
-//                     printf("CSparse LSC warning: Thr %d GPU %d: LSC %d: The calculated SpMM buffer size (%f MB) is larger than the size of the used buffer (%f MB).\n",
-//                      tid, g, i, (double) spmm_buffer_size / 1024.0 / 1024.0, (double) (vec_K_rows[i] * vec_B1_rows[i] * sizeof(double)) / 1024.0 / 1024.0);
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 //                 checkCudaErrors(cudaDeviceSynchronize());
 // #endif
                 PUSH_RANGE("SpMM", 5)
@@ -2081,41 +1671,12 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
         free(h_array_h_matLSC);
         free(gpus);
 
-<<<<<<< HEAD
 		// Free factors
 		#pragma omp parallel for
 		for (esint d = 0; d < n_lsc; d++) {
 			if (SYMMETRIC_SYSTEM) {
 				csparse::FreeCholFactor(vec_L_row_indexes[d], vec_L_col_pointers[d], vec_L_values[d], vec_perm[d]);
 			} else {
-=======
-		// Unregister host memory and free factors
-		#pragma omp parallel for
-		for (esint d = 0; d < n_lsc; d++) {
-			checkCudaErrors(cudaHostUnregister(vec_L_row_indexes[d]));
-			checkCudaErrors(cudaHostUnregister(vec_L_col_pointers[d]));
-			checkCudaErrors(cudaHostUnregister(vec_L_values[d]));
-
-			checkCudaErrors(cudaHostUnregister(vec_B1_comp_dom_copy[d].CSR_J_col_indices.data()));
-			checkCudaErrors(cudaHostUnregister(vec_B1_comp_dom_copy[d].CSR_I_row_indices.data()));
-			checkCudaErrors(cudaHostUnregister(vec_B1_comp_dom_copy[d].CSR_V_values.data()));
-
-			if (SYMMETRIC_SYSTEM) {
-				if(order) {
-					checkCudaErrors(cudaHostUnregister(vec_perm[d]));
-				}
-
-				csparse::FreeCholFactor(vec_L_row_indexes[d], vec_L_col_pointers[d], vec_L_values[d], vec_perm[d]);
-			} else {
-				checkCudaErrors(cudaHostUnregister(vec_U_row_indexes[d]));
-				checkCudaErrors(cudaHostUnregister(vec_U_col_pointers[d]));
-				checkCudaErrors(cudaHostUnregister(vec_U_values[d]));
-				checkCudaErrors(cudaHostUnregister(vec_perm[d]));
-				if(order) {
-					checkCudaErrors(cudaHostUnregister(vec_perm_2[d]));
-				}
-
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 				csparse::FreeLuFactors(vec_L_row_indexes[d], vec_L_col_pointers[d], vec_L_values[d],
 				vec_U_row_indexes[d], vec_U_col_pointers[d], vec_U_values[d], vec_perm[d], vec_perm_2[d]);
 			}
@@ -2125,7 +1686,6 @@ void ClusterGPU::GetSchurComplements(bool USE_FLOAT) {
 }
 
 
-<<<<<<< HEAD
 void ClusterGPU::GetSchurComplementsCpu(bool USE_FLOAT) {
 	#pragma omp parallel for
 	for (size_t d = 0; d < domains_in_global_index.size(); d++ ) {
@@ -2138,8 +1698,6 @@ void ClusterGPU::GetSchurComplementsCpu(bool USE_FLOAT) {
 }
 
 
-=======
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 void ClusterGPU::CreateDirichletPrec( DataHolder *instance) {
 	DEBUGOUT << "Creating Dirichlet Preconditioner with Pardiso SC and copying them to GPU\n";
 
