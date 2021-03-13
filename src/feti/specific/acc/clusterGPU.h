@@ -13,6 +13,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include "cusparse_v2.h"
+
 namespace espreso {
 class ClusterGPU: public ClusterBase
 {
@@ -126,39 +127,6 @@ private:
 // to the GPU with the currently smallest sum of assigned LSC sizes.
 //  add int* lsc_sizes argument
 void DistributeDomains(TGPU* gpus, int n_gpu, int n_lsc);
-
-// NVTX library (CUDA profiling tags)
-#ifdef USE_NVTX
-    #include "nvToolsExt.h"
-
-    extern const uint32_t colors[7];
-    extern const int num_colors;
-    typedef enum { GREEN,
-                BLUE,
-                YELLOW,
-                PURPLE,
-                TURQUOISE,
-                RED,
-                GREY } color_names;
-
-    #define PUSH_RANGE(name, cid)                              \
-        {                                                      \
-            int color_id = cid;                                \
-            color_id = color_id % num_colors;                  \
-            nvtxEventAttributes_t eventAttrib = {0};           \
-            eventAttrib.version = NVTX_VERSION;                \
-            eventAttrib.size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;  \
-            eventAttrib.colorType = NVTX_COLOR_ARGB;           \
-            eventAttrib.color = colors[color_id];              \
-            eventAttrib.messageType = NVTX_MESSAGE_TYPE_ASCII; \
-            eventAttrib.message.ascii = name;                  \
-            nvtxRangePushEx(&eventAttrib);                     \
-        }
-    #define POP_RANGE nvtxRangePop();
-#else
-    #define PUSH_RANGE(name, cid)
-    #define POP_RANGE
-#endif
 
 #ifdef SHARE_SC
 	SEQ_VECTOR <double *> SC_dense_val_orig;
