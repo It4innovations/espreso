@@ -3,4 +3,4 @@ def options(opt):
 
 def configure(ctx):
     ctx.env.append_unique("DEFINES","STREAM_NUM=1")
-    ctx.link_cxx(name="csparse", header_name=["cs.h"], libs=["csparse"], use=["CUDA"])
+    ctx.link_cxx(name="csparse", header_name=["cs.h"], libs=["cxsparse"], use=["CUDA"])

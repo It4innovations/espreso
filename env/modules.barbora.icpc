@@ -1,5 +1,8 @@
+ml SuiteSparse/5.6.0-intel-2020a-METIS-5.1.0
+module unload METIS/5.1.0-intel-2020a
 ml intel/2020a
 ml ParMETIS/4.0.3-intel-2020a
 ml CUDA/11.0.2-GCC-9.3.0
+
 export MPICXX=mpiicpc
 export CXX=icpc
