@@ -1,5 +1,5 @@
 // #ifdef HAVE_CUDA
-#include "helper_cuda.h"
+#include "wrappers/cuda/helper_cuda.h"
 #include "cudakernels.h"
 
 namespace espreso {
