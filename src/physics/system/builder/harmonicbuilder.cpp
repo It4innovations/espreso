@@ -147,7 +147,7 @@ void HarmonicBuilder::init(FETISystem &system)
 				system.solvers[0].solver.configuration.regularization_version == FETIConfiguration::REGULARIZATION_VERSION::FIX_POINTS ||
 				system.solvers[0].solver.configuration.regularization_version == FETIConfiguration::REGULARIZATION_VERSION::EIGEN_VECTORS) {
 
-			int NDIM = system.solvers[0].kernelDimension = system.assemblers[0].composer->kernel->solverDataProvider->feti->initKernels(
+			int NDIM = system.solvers[0].kernelDimension = system.assemblers[0].composer->provider()->feti->initKernels(
 					system.assemblers[0].K, system.assemblers[0].N1, system.assemblers[0].N2, system.assemblers[0].RegMat,
 					system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI);
 			system.solvers[0].N1.uniformCombination(&system.assemblers[0].N1, &system.assemblers[0].N1, DOFs, NDIM);
@@ -155,7 +155,7 @@ void HarmonicBuilder::init(FETISystem &system)
 			system.solvers[0].RegMat.uniformCombination(&system.assemblers[0].RegMat, &system.assemblers[0].RegMat, DOFs, DOFs);
 		}
 		if (system.solvers[0].solver.configuration.regularization_version == FETIConfiguration::REGULARIZATION_VERSION::WAVE_DIRECTIONS) {
-			system.assemblers[0].composer->kernel->solverDataProvider->feti->initKernels(
+			system.assemblers[0].composer->provider()->feti->initKernels(
 					system.assemblers[0].K, system.assemblers[0].N1, system.assemblers[0].N2, system.assemblers[0].RegMat,
 					system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI);
 			system.solvers[0].N1.shallowCopyStructure(&system.assemblers[0].N1);
@@ -223,7 +223,7 @@ void HarmonicBuilder::buildSystem(FETISystem &system)
 				system.solvers[0].solver.configuration.regularization_version == FETIConfiguration::REGULARIZATION_VERSION::FIX_POINTS ||
 				system.solvers[0].solver.configuration.regularization_version == FETIConfiguration::REGULARIZATION_VERSION::EIGEN_VECTORS) {
 
-			system.assemblers[0].composer->kernel->solverDataProvider->feti->fillKernels(
+			system.assemblers[0].composer->provider()->feti->fillKernels(
 					system.assemblers[0].K, system.assemblers[0].M, system.assemblers[0].N1, system.assemblers[0].N2, system.assemblers[0].RegMat,
 					system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI);
 
@@ -241,7 +241,7 @@ void HarmonicBuilder::buildSystem(FETISystem &system)
 		}
 
 		if (system.solvers[0].solver.configuration.regularization_version == FETIConfiguration::REGULARIZATION_VERSION::WAVE_DIRECTIONS) {
-			system.assemblers[0].composer->kernel->solverDataProvider->feti->fillKernels(
+			system.assemblers[0].composer->provider()->feti->fillKernels(
 					system.assemblers[0].K, system.assemblers[0].M, system.assemblers[0].N1, system.assemblers[0].N2, system.assemblers[0].RegMat,
 					system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI);
 			system.solvers[0].N1.fillData(&system.assemblers[0].N1);

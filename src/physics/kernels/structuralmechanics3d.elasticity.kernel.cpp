@@ -1100,7 +1100,7 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 	if (iterator.massStabilization) {
 		auto dual = info::mesh->elements->faceNeighbors->begin() + iterator.offset;
 		auto fpointer = iterator.element->facepointers->begin();
-		auto fnodes = iterator.element->faces->begin();
+		auto fnodes = iterator.element->faceList->begin();
 		auto doffset = std::lower_bound(info::mesh->domains->elements.begin(), info::mesh->domains->elements.end(), iterator.offset + 1) - info::mesh->domains->elements.begin() - 1;
 		auto lower = info::mesh->domains->elements[doffset] + info::mesh->elements->distribution.process.offset;
 		auto upper = info::mesh->domains->elements[doffset + 1] + info::mesh->elements->distribution.process.offset;
