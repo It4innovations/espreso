@@ -1779,13 +1779,13 @@ void SparseMatrix::FreeFromCUDA_Dev() {
 	d_x_in = NULL;
 	d_y_out = NULL;
 
-	if(stream != NULL){
-		status = cudaStreamDestroy(stream);
-		stream = NULL;
-	}
+	// if(stream != NULL){
+	// 	status = cudaStreamDestroy(stream);
+	// 	stream = NULL;
+	// }
 
-	cublasDestroy(handle);
-	handle = NULL;
+	// cublasDestroy(handle);
+	// handle = NULL;
 
 #endif
 }
@@ -1802,13 +1802,13 @@ void SparseMatrix::FreeFromCUDA_Dev_fl() {
 	d_x_in_fl = NULL;
 	d_y_out_fl = NULL;
 
-	if(stream != NULL) {
-		status = cudaStreamDestroy(stream);
-		stream = NULL;
-	}
+	// if(stream != NULL) {
+	// 	status = cudaStreamDestroy(stream);
+	// 	stream = NULL;
+	// }
 
-	cublasDestroy(handle);
-	handle = NULL;
+	// cublasDestroy(handle);
+	// handle = NULL;
 #endif
 }
 
@@ -1821,13 +1821,13 @@ void SparseMatrix::FreeVecsFromCUDA_Dev() {
 	d_x_in = NULL;
 	d_y_out = NULL;
 
-	if(stream != NULL) {
-		status = cudaStreamDestroy(stream);
-		stream = NULL;
-	}
+	// if(stream != NULL) {
+	// 	status = cudaStreamDestroy(stream);
+	// 	stream = NULL;
+	// }
 
-	cublasDestroy(handle);
-	handle = NULL;
+	// cublasDestroy(handle);
+	// handle = NULL;
 #endif
 }
 
@@ -1840,13 +1840,13 @@ void SparseMatrix::FreeVecsFromCUDA_Dev_fl() {
 	d_x_in_fl = NULL;
 	d_y_out_fl = NULL;
 
-	if(stream != NULL) {
-		status = cudaStreamDestroy(stream);
-		stream = NULL;
-	}
+	// if(stream != NULL) {
+	// 	status = cudaStreamDestroy(stream);
+	// 	stream = NULL;
+	// }
 
-	cublasDestroy(handle);
-	handle = NULL;
+	// cublasDestroy(handle);
+	// handle = NULL;
 #endif
 }
 
