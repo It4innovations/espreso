@@ -45,32 +45,32 @@ public:
 	void DestroyCudaStreamPool();
 
 	SEQ_VECTOR <cudaStream_t> cuda_stream_pool;
+    SEQ_VECTOR <cublasHandle_t> cublas_handle_pool;
 
 private:
 	void GetSchurComplement(bool USE_FLOAT, esint i);
 	// The method is prepared for multiple GPUs per cluster
-	void GetSchurComplements(bool USE_FLOAT);
+	void GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_nnz,
+     SEQ_VECTOR<int*>& vec_L_row_indexes, SEQ_VECTOR<int*>& vec_L_col_pointers, SEQ_VECTOR<double*>& vec_L_values,
+     SEQ_VECTOR<int>& vec_U_nnz, SEQ_VECTOR<int*>& vec_U_row_indexes, SEQ_VECTOR<int*>& vec_U_col_pointers,
+     SEQ_VECTOR<double*>& vec_U_values, SEQ_VECTOR<int*>& vec_perm, SEQ_VECTOR<int*>& vec_perm_2, esint max_B1_nnz,
+     esint max_B1_rows, esint max_B1_size, esint max_K_rows, esint max_L_nnz, esint max_U_nnz);
+    void GetSchurComplementsCpu(bool USE_FLOAT);
     void GetDirichletPrec(DataHolder *instance, esint d);
 	void GetGPU();
-<<<<<<< HEAD
-
-		// TODO change to arrays for multi-GPU per cluster
-        size_t  GPU_free_mem;
-        size_t  GPU_total_mem;
-		int device_id;
-
-=======
+    // Calculates GPU buffers apaort from dense LSC matrix = B1_comp_dom.rows * B1_comp_dom.rows * sizeof(double)
+    // and in/out vectors = 2 * vec_size * sizeof(double)
+    size_t CalculateGpuBufferSize(esint max_B1_nnz, esint max_B1_rows, esint max_B1_size, esint max_K_rows, esint max_L_nnz, esint max_U_nnz);
 	// TODO change to arrays for multi-GPU per cluster
 	size_t  GPU_free_mem;
 	size_t  GPU_total_mem;
->>>>>>> ENH #69: Batched LSC assembling on GPU implemented for non-symmetric K in double prec.
 	int device_id;
 	SEQ_VECTOR<int> lsc_on_gpu_ids;
 	SEQ_VECTOR<int> lsc_on_cpu_ids;
     // numbeŕ of computation streams for LSC
-    int n_streams_per_gpu;
+    int n_streams_per_gpu = 2;
     // Determines how often the GPU is synchronized in order to free temporary memory
-    int n_csrsm2_info_per_gpu;
+    int n_csrsm2_info_per_gpu; // Set in ecf
     // The struct represents members assigned to one GPU
     typedef struct {
         // Number of LSCs stored in each GPU
