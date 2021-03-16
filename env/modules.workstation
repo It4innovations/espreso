@@ -6,3 +6,10 @@ ml parmetis-4.0.3-gcc-6.4.0-lh3wo4l
 ml hdf5-1.12.0-gcc-6.4.0-4yhtah2
 ml hypre-2.20.0-gcc-6.4.0-tvwywtq
 ml valgrind-3.16.1-gcc-6.4.0-kbfoczc
+
+export PATH=/usr/local/cuda-10.2/bin/:$PATH
+export LD_LIBRARY_PATH=/usr/local/cuda-10.2/lib64:$LD_LIBRARY_PATH
+export LIBRARY_PATH=/usr/local/cuda-10.2/lib64:$LD_LIBRARY_PATH
+export CPATH=/usr/local/cuda-10.2/include:$CPATH
+
+export CPATH=/usr/include/suitesparse/:$CPATH
