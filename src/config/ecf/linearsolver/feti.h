@@ -148,7 +148,7 @@ struct FETIConfiguration: public ECFDescription {
 
 	size_t sc_size, n_mics;
 	bool load_balancing, load_balancing_preconditioner;
-	size_t allowed_gpu_memory_mb;
+	int allowed_gpu_memory_mb;
 	size_t num_info_objects;
 	double gpu_fragmentation_ratio;
 	size_t num_streams;
