@@ -150,6 +150,7 @@ struct FETIConfiguration: public ECFDescription {
 	bool load_balancing, load_balancing_preconditioner;
 	size_t blocked_gpu_memory_mb;
 	size_t num_info_objects;
+	double gpu_fragmentation_ratio;
 
 	FETIConfiguration();
 };
