@@ -1233,12 +1233,7 @@ void SparseSolverMKL::Create_SC_w_Mat( espreso::SparseMatrix & K_in, espreso::Sp
 	K_sc1.MatAppend(K_b_tmp);
 	K_sc1.MatTranspose();
 	K_sc1.MatAppend(Sc_eye);
-
-	std::cout << K_sc1.SpyText();
-
 	// *** END - Prepare matrix
-
-
 
 	/* Internal solver memory pointer pt, */
 	/* 32-bit: int pt[64]; 64-bit: long int pt[64] */
