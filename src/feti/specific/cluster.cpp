@@ -119,13 +119,15 @@ void ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number
 
 	#pragma omp parallel for
 	for (size_t d = 0; d < domains.size(); d++ ) {
-		if (USE_KINV == 1 ) {
-			domains[d].compressed_tmp.resize( domains[d].B1.I_row_indices.size(), 0);
-			domains[d].compressed_tmp2.resize( domains[d].B1.I_row_indices.size(), 0);
-		} else {
-			domains[d].compressed_tmp.resize( 1, 0);
-			domains[d].compressed_tmp2.resize( 1, 0);
-		}
+//		if (USE_KINV == 1 ) {
+//			domains[d].compressed_tmp.resize( domains[d].B1.I_row_indices.size(), 0);
+//			domains[d].compressed_tmp2.resize( domains[d].B1.I_row_indices.size(), 0);
+//		} else {
+//			domains[d].compressed_tmp.resize( 1, 0);
+//			domains[d].compressed_tmp2.resize( 1, 0);
+//		}
+		domains[d].compressed_tmp.resize( domains[d].B1.I_row_indices.size(), 0);
+		domains[d].compressed_tmp2.resize( domains[d].B1.I_row_indices.size(), 0);
 	}
 
 

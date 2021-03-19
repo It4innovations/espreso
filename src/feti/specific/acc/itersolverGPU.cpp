@@ -183,7 +183,7 @@ for (esint d = 0; d < cluster.domains.size(); d++) {
 				if (cluster.USE_KINV == 0 || configuration.combine_sc_and_spds ) {
 					cluster.domains[d]->B1_comp_dom.MatVec (x_in_tmp, *cluster.x_prim_cluster1[d], 'T');
 					cluster.domains[d]->multKplusLocal(*cluster.x_prim_cluster1[d]);
-					cluster.domains[d]->B1_comp_dom.MatVec (*cluster.x_prim_cluster1[d], *cluster.x_prim_cluster2[d], 'N', 0, 0, 0.0);
+					cluster.domains[d]->B1_comp_dom.MatVec (*cluster.x_prim_cluster1[d], cluster.domains[d]->compressed_tmp, 'N', 0, 0, 0.0);
 				} else {
 					cluster.domains[d]->B1Kplus.DenseMatVec (x_in_tmp, cluster.domains[d]->compressed_tmp);
 				}
@@ -225,14 +225,7 @@ for (esint d = 0; d < cluster.domains.size(); d++) {
 			} else {
 				for (size_t i = 0; i < cluster.domains[d]->lambda_map_sub_local.size(); i++)
 				{
-					if (cluster.USE_KINV == 0)
-					{
-						cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += (*cluster.x_prim_cluster2[d])[i];
-					}
-					else
-					{
-						cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += cluster.domains[d]->compressed_tmp[i];
-					}
+					cluster.compressed_tmp[ cluster.domains[d]->lambda_map_sub_local[i] ] += cluster.domains[d]->compressed_tmp[i];
 				}
 			}
 		}
