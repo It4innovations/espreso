@@ -1,0 +1,168 @@
+# ESPRESO Configuration File
+
+DEFAULT_ARGS {
+  0   1;
+  1   8;
+}
+
+INPUT_TYPE                   GENERATOR;
+PHYSICS        STRUCTURAL_MECHANICS_3D;
+
+GENERATOR {
+  SHAPE   GRID;
+
+  UNIFORM_CLUSTERS      TRUE;
+  UNIFORM_DOMAINS       TRUE;
+
+  GRID {
+    START_X                   0;
+    START_Y                   0;
+    START_Z                   0;
+
+    LENGTH_X                 .1;
+    LENGTH_Y                 .1;
+    LENGTH_Z                  1;
+
+    NODES {
+      Z0   <0 , .1> <0 , .1> <0 , 0>;
+      Z1   <0 , .1> <0 , .1> <1 , 1>;
+    }
+
+    ELEMENT_TYPE          HEXA8;
+
+    CLUSTERS_X            1;
+    CLUSTERS_Y            1;
+    CLUSTERS_Z            [ARG0];
+
+    DOMAINS_X             2;
+    DOMAINS_Y             2;
+    DOMAINS_Z             [ARG1];
+
+    ELEMENTS_X            1;
+    ELEMENTS_Y            1;
+    ELEMENTS_Z            2;
+  }
+}
+
+STRUCTURAL_MECHANICS_3D {
+  LOAD_STEPS   1;
+
+  MATERIALS {
+    1 {
+
+      DENS   7850;
+      CP        1;
+
+      LINEAR_ELASTIC_PROPERTIES {
+        MODEL   ISOTROPIC;
+
+        MIXY          0.3;
+        EX           2E11;
+      }
+
+      THERMAL_EXPANSION {
+        TEX             0;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   1;
+  }
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE       HARMONIC;
+      MODE         LINEAR;
+      SOLVER      FETI;
+
+      FETI {
+        METHOD                  TOTAL_FETI;
+        PRECONDITIONER           DIRICHLET;
+        PRECISION                     1E-7;
+        ITERATIVE_SOLVER             GMRES;
+        REGULARIZATION            ANALYTIC;
+        REGULARIZATION_VERSION  FIX_POINTS;
+        MAX_ITERATIONS                1000;
+        CONJUGATE_PROJECTOR         CONJ_R;
+        NUM_DIRECTIONS             	 6;
+        SCALING                       TRUE;
+        REDUNDANT_LAGRANGE            TRUE;
+        USE_SCHUR_COMPLEMENT          TRUE;
+        COMBINE_SC_AND_SPDS           TRUE;
+      }
+
+      HARMONIC_SOLVER {
+        DAMPING {
+          RAYLEIGH {
+            TYPE                      DIRECT;
+
+            DIRECT_DAMPING {
+              STIFFNESS                   0;
+              MASS                        1;
+            }
+          }
+        }
+
+        FREQUENCY_INTERVAL_TYPE   LINEAR;
+        MIN_FREQUENCY                  0;
+        MAX_FREQUENCY               100;
+        NUM_SAMPLES                    1;
+      }
+
+      DISPLACEMENT {
+        Z0   { X 0; Y 0; Z 0; }
+      }
+
+      HARMONIC_FORCE {
+        Z1 {
+          TYPE      COMPONENTS;
+
+          MAGNITUDE   { X 0; Y 0; Z 100; }
+          PHASE       { X  0; Y 0; Z 0; }
+        }
+      }
+    }
+  }
+}
+
+OUTPUT {
+
+  RESULTS_STORE_FREQUENCY    EVERY_SUBSTEP;
+  MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
+
+  # PRINT_MATRICES TRUE;
+
+
+  STORE_RESULTS                 ALL;
+
+  MONITORING {
+    1 {
+      REGION                               Z1;
+      STATISTICS                          MAX;
+      PROPERTY       DISPLACEMENT_AMPLITUDE_X;
+    }
+
+    2 {
+      REGION                               Z1;
+      STATISTICS                          MAX;
+      PROPERTY       DISPLACEMENT_AMPLITUDE_Y;
+    }
+
+    3 {
+      REGION                               Z1;
+      STATISTICS                          MAX;
+      PROPERTY       DISPLACEMENT_AMPLITUDE_Z;
+    }
+
+    4 {
+      REGION                               Z1;
+      STATISTICS                          AVG;
+      PROPERTY                        PHASE_Y;
+    }
+
+
+  }
+}
+
