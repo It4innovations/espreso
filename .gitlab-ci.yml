@@ -128,6 +128,18 @@ ELASTICITY:
     - nosetests -v benchmarks/linearElasticity2D
     - nosetests -v benchmarks/linearElasticity3D
 
+CUDA_SOLVER:
+  stage: espreso
+  only:
+    refs:
+      - schedules
+    variables:
+      - $CUDA
+  script:
+    - ./waf configure --solver=cuda
+    - ./waf -j8
+    - nosetests -v benchmarks/cudasolver
+
 FETI_SOLVER:
   stage: espreso
   only:
