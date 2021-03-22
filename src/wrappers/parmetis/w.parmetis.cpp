@@ -6,6 +6,7 @@
 #include "w.parmetis.h"
 #include "wrappers/mpi/communication.h"
 #include "esinfo/eslog.hpp"
+#include "esinfo/ecfinfo.h"
 
 using namespace espreso;
 
@@ -37,7 +38,8 @@ esint ParMETIS::call(
 	esint numflag = 0;
 	esint parts = MPITools::procs->size;
 	std::vector<float> partFraction(verticesWeightCount * parts, 1.0 / parts);
-	std::vector<float> unbalanceTolerance(verticesWeightCount, 1.02);
+	std::vector<float> unbalanceTolerance(verticesWeightCount, info::ecf->input.decomposition.parmetis_options.tolerance);
+
 	esint options[4] = { 0, 0, 0, PARMETIS_PSR_UNCOUPLED };
 	float itr = 1e6;
 
