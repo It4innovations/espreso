@@ -516,7 +516,7 @@ void EnSightGold::edata(const NamedData *data)
 							_writer.description(EnsightOutputWriter::codetotype(etype));
 						}
 						eiterator(info::mesh->elementsRegions[r], etype, [&] (const ElementsInterval &interval, esint eindex) {
-							_writer.float32(0);
+							_writer.float32(data->store[eindex * data->dimension + d]);
 						});
 					}
 				}
