@@ -10,6 +10,11 @@ ParMETISConfiguration::ParMETISConfiguration()
 	REGISTER(refinement, ECFMetaData()
 			.setdescription({ "Apply refinement." })
 			.setdatatype({ ECFDataType::BOOL }));
+
+	tolerance = 1.05;
+	REGISTER(tolerance, ECFMetaData()
+			.setdescription({ "Imbalance tolerance." })
+			.setdatatype({ ECFDataType::FLOAT }));
 }
 
 METISConfiguration::METISConfiguration()

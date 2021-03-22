@@ -11,6 +11,7 @@ namespace espreso {
 struct ParMETISConfiguration: public ECFDescription {
 
 	bool refinement;
+	double tolerance;
 
 	ParMETISConfiguration();
 };
