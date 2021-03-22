@@ -16,6 +16,7 @@
 #include "physics/coupled.h"
 #include "physics/heattransfer.h"
 #include "physics/structuralmechanics.h"
+#include "physics/acoustics.h"
 
 #include "config/holders/range.h"
 
@@ -78,6 +79,8 @@ struct ECF: public ECFDescription {
 	HeatTransferConfiguration heat_transfer_3d;
 	StructuralMechanicsConfiguration structural_mechanics_2d;
 	StructuralMechanicsConfiguration structural_mechanics_3d;
+	AcousticsConfiguration acoustics_2d;
+	AcousticsConfiguration acoustics_3d;
 
 	OutputConfiguration output;
 

@@ -15,6 +15,8 @@ struct PhysicsConfiguration: public ECFDescription {
 		HEAT_TRANSFER_3D,
 		STRUCTURAL_MECHANICS_2D,
 		STRUCTURAL_MECHANICS_3D,
+		ACOUSTICS_2D,
+		ACOUSTICS_3D,
 		SHALLOW_WATER_2D
 	};
 
