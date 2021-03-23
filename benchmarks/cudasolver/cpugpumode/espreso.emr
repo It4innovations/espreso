@@ -1,0 +1,5 @@
+         ;          ;              ;             Z1             ;             Z1             ;             Z1             ;
+loadstep ;  substep ;    frequency ;  DISPLACEMENT_AMPLITUDE_Z  ;  ACCELERATION_AMPLITUDE_Z  ;  ACCELERATION_AMPLITUDE_Z  ;
+         ;          ;              ;            <MAX>           ;            <MAX>           ;          <AVERAGE>         ;
+
+       1 ;        1 ;     100.0000 ;               1.333065e-06 ;               5.262728e-01 ;               4.991314e-01 ; 
