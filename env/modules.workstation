@@ -1,1 +1,9 @@
-ml gcc openmpi valgrind intel-mkl metis parmetis scotch kahip hypre hdf5 xbraid
+ml gcc-6.4.0-gcc-4.8.5-n5n36ax
+ml openmpi-4.0.5-gcc-6.4.0-viwc7r5
+ml valgrind-3.15.0-gcc-6.4.0-c3aasc4
+ml intel-mkl-2018.2.199-gcc-6.4.0-awx2czh
+ml metis-5.1.0-gcc-6.4.0-pn3qtdz
+ml parmetis-4.0.3-gcc-6.4.0-lh3wo4l
+ml hdf5-1.12.0-gcc-6.4.0-4yhtah2
+ml hypre-2.20.0-gcc-6.4.0-tvwywtq
+ml valgrind-3.16.1-gcc-6.4.0-kbfoczc
