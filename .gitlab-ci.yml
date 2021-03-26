@@ -67,7 +67,7 @@ DUMMY_WRAPPERS:
     - schedules
   script:
     - ml purge
-    - ml gcc openmpi
+    - . $PWD/env/modules.workstation.mpi_only
     - ./waf configure
     - ./waf -j8
 
