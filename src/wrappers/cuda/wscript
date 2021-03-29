@@ -13,7 +13,7 @@ def configure(ctx):
             arch = ctx.check_cxx(fragment='''
                     #include "cuda_runtime_api.h"
                     #include <cstdio>
-                    int main() { cudaDeviceProp deviceProp; cudaGetDeviceProperties(&deviceProp, 0); printf("%d%d", deviceProp.major, deviceProp.minor); return 0; }''',
+                    int main() { cudaDeviceProp prop; prop.major = prop.minor = 0; cudaGetDeviceProperties(&prop, 0); if (prop.major != 0) printf("%d%d", prop.major, prop.minor); return 0; }''',
                 lib         = "cudart",
                 execute     = True,
                 define_ret  = True,
