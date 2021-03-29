@@ -28,7 +28,7 @@ void cuda::fillDeviceInfo()
 		}
 	}
 	size_t tmp[3] = { (size_t)cuda::devices, cuda::availMemory, cuda::totalMemory };
-	Communication::allReduce(tmp, NULL, 3, MPITools::getType(tmp).mpitype, MPI_SUM);
+	Communication::allReduce(tmp, NULL, 3, MPITools::getType<size_t>().mpitype, MPI_SUM);
 
 	eslog::info(" == NUMBER OF ACCELERATORS %*d == \n", 64, cuda::devices);
 	eslog::info(" == ACCELERATORS MEMORY :: AVAILABLE %*d [MB] == \n", 49, cuda::availMemory);
