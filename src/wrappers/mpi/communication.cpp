@@ -23,6 +23,7 @@ using namespace espreso;
 
 MPIOperations* MPITools::operations = NULL;
 MPIGroup* MPITools::procs = NULL;
+MPIGroup* MPITools::node = NULL;
 MPIGroup* MPITools::instances = NULL;
 MPIGroup* MPITools::global = NULL;
 MPIGroup* MPITools::asynchronous = NULL;
@@ -127,6 +128,13 @@ MPIGroup::MPIGroup(MPI_Comm &comm)
 	MPI_Comm_size(communicator, &size);
 }
 
+MPIGroup::MPIGroup(MPI_Comm &&comm)
+: communicator(std::move(comm))
+{
+	MPI_Comm_rank(communicator, &rank);
+	MPI_Comm_size(communicator, &size);
+}
+
 void MPIGroup::filter(const std::vector<int> &ranks)
 {
 	profiler::start("mpi_group_filter");
@@ -166,39 +174,6 @@ MPIGroup::~MPIGroup()
 	}
 }
 
-void MPISubset::fillNodeColor()
-{
-	profiler::syncstart("mpi_node_color");
-	int length, maxlength;
-	std::vector<char> name(MPI_MAX_PROCESSOR_NAME);
-	MPI_Get_processor_name(name.data(), &length);
-
-	MPI_Allreduce(&length, &maxlength, 1, MPI_INT, MPI_MAX, info::mpi::comm);
-
-	std::vector<char> names(info::mpi::size * maxlength);
-
-	MPI_Gather(name.data(), maxlength * sizeof(char), MPI_CHAR, names.data(), maxlength * sizeof(char), MPI_BYTE, 0, info::mpi::comm);
-
-	std::vector<int> permutation(info::mpi::size), colors(info::mpi::size);
-
-	std::iota(permutation.begin(), permutation.end(), 0);
-	std::sort(permutation.begin(), permutation.end(), [&] (int i, int j) {
-		return std::lexicographical_compare(
-				names.begin() + maxlength * i, names.begin() + maxlength * (i + 1),
-				names.begin() + maxlength * j, names.begin() + maxlength * (j + 1));
-	});
-	for (size_t i = 1; i < colors.size(); i++) {
-		if (memcmp(names.data() + maxlength * i, names.data() + maxlength * (i - 1), maxlength) ){
-			colors[i] = colors[i - 1] + 1;
-		} else {
-			colors[i] = colors[i - 1];
-		}
-	}
-
-	MPI_Scatter(colors.data(), 1, MPI_INT, &nodeRank, 1, MPI_INT, 0, info::mpi::comm);
-	profiler::syncend("mpi_node_color");
-}
-
 MPISubset::MPISubset(int max_mpi_procs)
 {
 	profiler::syncstart("mpi_subset");
@@ -229,6 +204,10 @@ void MPITools::init()
 	global = new MPIGroup(info::mpi::gcomm);
 	asynchronous = new MPIGroup(info::mpi::comm);
 
+	MPI_Comm nodeComm;
+	MPI_Comm_split_type(info::mpi::comm, MPI_COMM_TYPE_SHARED, info::mpi::rank, MPI_INFO_NULL, &nodeComm);
+	node = new MPIGroup(nodeComm);
+
 	subset = new MPISubset(info::mpi::size);
 	singleton = new MPISubset(1);
 }
@@ -253,6 +232,10 @@ void MPITools::reinit()
 	instances = new MPIGroup(info::mpi::icomm);
 	global = new MPIGroup(info::mpi::gcomm);
 	asynchronous = new MPIGroup(info::mpi::comm);
+
+	MPI_Comm nodeComm;
+	MPI_Comm_split_type(info::mpi::comm, MPI_COMM_TYPE_SHARED, info::mpi::rank, MPI_INFO_NULL, &nodeComm);
+	node = new MPIGroup(nodeComm);
 }
 
 void MPITools::finish()

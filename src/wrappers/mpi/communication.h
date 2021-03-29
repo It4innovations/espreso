@@ -43,6 +43,7 @@ struct MPIGroup {
 
 	MPIGroup();
 	MPIGroup(MPI_Comm &comm);
+	MPIGroup(MPI_Comm &&comm);
 	~MPIGroup();
 
 	void filter(const std::vector<int> &ranks);
@@ -72,6 +73,7 @@ class MPITools
 public:
 	static MPIOperations *operations;
 	static MPIGroup *procs;
+	static MPIGroup *node;
 	static MPIGroup *instances;
 	static MPIGroup *global;
 	static MPIGroup *asynchronous;
