@@ -117,30 +117,31 @@ void EnSightGold::updateSolution()
 			if (data->dataType == NamedData::DataType::VECTOR) {
 				std::string name = dataname(data, 0);
 				variables.push_back(
-						"vector per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + _directory + name + ".****"
+						"vector per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + writer->_directory + name + ".****"
 				);
 				return;
 			}
 			if (data->dimension == 1) {
 				std::string name = dataname(data, 0);
 				variables.push_back(
-						"scalar per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + _directory + name + ".****"
+						"scalar per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + writer->_directory + name + ".****"
 				);
 				return;
 			}
 			for (int d = 0; d < data->dimension; d++) {
 				std::string name = dataname(data, d);
 				variables.push_back(
-						"scalar per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + _directory + name + ".****"
+						"scalar per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + writer->_directory + name + ".****"
 				);
 			}
 		};
 
+		writer->_variables.clear();
 		for (size_t i = 0; i < info::mesh->nodes->data.size(); i++) {
-			pushdata(_variables, info::mesh->nodes->data[i], "node");
+			pushdata(writer->_variables, info::mesh->nodes->data[i], "node");
 		}
 		for (size_t i = 0; i < info::mesh->elements->data.size(); i++) {
-			pushdata(_variables, info::mesh->elements->data[i], "element");
+			pushdata(writer->_variables, info::mesh->elements->data[i], "element");
 		}
 
 		writer->casefile();
