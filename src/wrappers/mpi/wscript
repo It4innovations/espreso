@@ -9,17 +9,31 @@ def options(opt):
 
 def configure(ctx):
     # Open MPI and Intel-MPI are based on MPICH, we need to check MPICH_VERSION at last
-    libraries = list()
-    libraries.append(("Open MPI", 'printf("%d", OMPI_MAJOR_VERSION);'))
-    libraries.append(("Intel MPI", 'printf("%s", I_MPI_VERSION);'))
-    libraries.append(("mpich", 'printf("%s", "MPICH_VERSION");'));
-    for lib, checker in libraries:
-        if ctx.check_cc(
-            mandatory   = False,
-            msg         = 'Checking for MPI version ({0})'.format(lib),
-            fragment    = '#include "mpi.h"\n#include <cstdio>\n int main() {{ {0} return 0; }}'.format(checker)):
-            ctx.env.MPI = lib
-            break
-        
-                
-                
+    code = '''
+        #include "mpi.h"
+        #include <cstdio>
+        int main() {
+        #ifdef OMPI_MAJOR_VERSION
+            printf("Open MPI");
+            return 0;
+        #endif
+        #ifdef I_MPI_VERSION
+            printf("Intel MPI");
+            return 0;
+        #endif
+        #ifdef MPICH_VERSION
+            printf("mpich");
+            return 0;
+        #endif
+            printf("unknown");
+            return 0;
+        }
+    '''
+
+    ctx.env.MPI = ctx.check_cxx(
+        mandatory   = False,
+        msg         = 'Checking for MPI library',
+        fragment    = code,
+        define_ret  = True,
+        execute     = True,
+        okmsg       = lambda ret: str(ret["success"]))

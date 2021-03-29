@@ -9,12 +9,10 @@ def configure(ctx):
     if ctx.options.intwidth == "64":
         suffix = '_ilp64'
 
-    if ctx.env.MPI == "Intel MPI":
-        lib = prefix + "intelmpi" + suffix
-    if ctx.env.MPI == "mpich":
-        lib = prefix + "intelmpi" + suffix
     if ctx.env.MPI == "Open MPI":
         lib = prefix + "openmpi" + suffix
+    else:
+        lib = prefix + "intelmpi" + suffix
 
     if "HAVE_MKL" in ctx.env["DEFINES_MKL"]:
         ctx.env.append_unique("SHLIB_MARKER", "-Wl,--no-as-needed")
