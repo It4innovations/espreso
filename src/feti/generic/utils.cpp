@@ -308,7 +308,7 @@ double GetProcessMemory_u ( ) {
 
 int CompareVectors(SEQ_VECTOR <double> & vec_a, SEQ_VECTOR <double> & vec_b) {
 	int err = 0;
-	double min_epsilon = std::numeric_limits<double>::epsilon();
+//	double min_epsilon = std::numeric_limits<double>::epsilon();
 	double epsilon = 1e-18;
 	double diff = 0.0;
 

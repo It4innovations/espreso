@@ -128,7 +128,7 @@ void csparse::FactorizeChol(SparseMatrix& A, int order, int& L_nnz, int*& L_row_
         A_cs = cs_transpose (A_cs, 1);
 
     // C = A + triu(A,1)', or C=A
-    cs* A_cs_sym = sym ? MakeSym(A_cs) : A_cs;
+//    cs* A_cs_sym = sym ? MakeSym(A_cs) : A_cs;
 
     // Ordering and symbolic analysis
     css *S = cs_schol(order, A_cs);
