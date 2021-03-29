@@ -10,9 +10,6 @@ def configure(ctx):
             arch = "-arch=" + ctx.options.cuda_arch
             ctx.msg("CUDA architecture version", ctx.options.cuda_arch)
         else:
-            def okmsg(kw):
-                return "sm_" + str(kw["success"])
-
             arch = ctx.check_cxx(fragment='''
                     #include "cuda_runtime_api.h"
                     #include <cstdio>
@@ -23,10 +20,10 @@ def configure(ctx):
                 mandatory   = False,
                 msg         = "Checking for 'cuda' architecture",
                 errmsg      = "default",
-                okmsg       = okmsg)
+                okmsg       = lambda ret: "sm_" + str(ret["success"]))
 
             if arch:
-                arch = "-arch=" + arch
+                arch = "-arch=sm_" + arch
             else:
                 arch = ""
 
