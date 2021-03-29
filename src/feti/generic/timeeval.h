@@ -7,6 +7,12 @@
 
 namespace espreso {
 
+#ifdef FETI_DEBUG
+#define DEBUGOUT std::cout
+#else
+#define DEBUGOUT if (true) ; else std::cout
+#endif
+
 struct TimeEvent
 {
 	friend class TimeEval;

@@ -4813,11 +4813,11 @@ int IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clus
 //
 
 
-	eslog::info("\n\n Full orthogonal with restart and conjugate projector \n");
+//	eslog::info("\n\n Full orthogonal with restart and conjugate projector \n");
 
-	if (configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::GENEO) {
-		eslog::info(" - using GENEO \n");
-	}
+//	if (configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::GENEO) {
+//		eslog::info(" - using GENEO \n");
+//	}
 
 	size_t dl_size = cluster.my_lamdas_indices.size();
 
@@ -5965,7 +5965,7 @@ void IterSolverBase::Projector_l_inv_compG ( TimeEval & time_eval, Cluster & clu
 */
 void IterSolverBase::apply_A_l_Mat( TimeEval & time_eval, SuperCluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out) {
 
-	eslog::checkpointln("Processing ApplyA on full matrix.");
+//	eslog::checkpointln("Processing ApplyA on full matrix.");
 
 	Y_out.Clear();
 	Y_out.type = 'G';
@@ -5993,7 +5993,7 @@ void IterSolverBase::apply_A_l_Mat( TimeEval & time_eval, SuperCluster & cluster
 
 void IterSolverBase::apply_A_l_Mat_local( TimeEval & time_eval, SuperCluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out) {
 
-	eslog::checkpointln("Processing ApplyA on sparse TRANSPOSED matrix.");
+//	eslog::checkpointln("Processing ApplyA on sparse TRANSPOSED matrix.");
 
 	Y_out.Clear();
 	Y_out.type = 'G';
@@ -6022,7 +6022,7 @@ void IterSolverBase::apply_A_l_Mat_local( TimeEval & time_eval, SuperCluster & c
 
 void IterSolverBase::apply_A_l_Mat_local_sparse( TimeEval & time_eval, SuperCluster & cluster, SparseMatrix       & X_in, SparseMatrix       & Y_out) {
 
-	eslog::checkpointln("Processing ApplyA on SPARSE matrix.\n");
+//	eslog::checkpointln("Processing ApplyA on SPARSE matrix.\n");
 
 	Y_out.Clear();
 	Y_out.type = 'G';
