@@ -1,3 +1,4 @@
+
 #ifndef SRC_WRAPPERS_CUDA_W_CUDA_H_
 #define SRC_WRAPPERS_CUDA_W_CUDA_H_
 
@@ -5,6 +6,12 @@
 
 namespace espreso {
 namespace cuda {
+
+extern int devices;
+extern size_t availMemory;
+extern size_t totalMemory;
+
+void fillDeviceInfo();
 
 /**
  * \brief Set device to be used for GPU executions
@@ -77,3 +84,4 @@ void Malloc(void **devPtr, size_t size);
 }
 
 #endif /* SRC_WRAPPERS_CUDA_W_CUDA_H_ */
+

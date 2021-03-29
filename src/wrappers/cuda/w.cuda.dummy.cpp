@@ -1,3 +1,4 @@
+
 #include "w.cuda.h"
 #include "esinfo/eslog.h"
 
@@ -5,8 +6,13 @@
 
 namespace espreso {
 
+void cuda::fillDeviceInfo()
+{
+
+}
+
 void cuda::SetDevice(esint device_id) {
-    eslog::warning("ESPRESO run-time error: cannot call CUDA library (the library is not linked).\n");
+	eslog::warning("ESPRESO run-time error: cannot call CUDA library (the library is not linked).\n");
 }
 
 void cuda::Malloc(void **dev_ptr, size_t size) {

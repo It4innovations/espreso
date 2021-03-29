@@ -61,10 +61,6 @@ public:
 private:
 	MPISubset(MPISubset const&) = delete;
 	void operator=(MPISubset const&) = delete;
-
-	static void fillNodeColor();
-
-	static int nodeRank;
 };
 
 class MPITools

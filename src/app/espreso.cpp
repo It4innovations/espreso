@@ -7,6 +7,7 @@
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
 #include "wrappers/mpi/communication.h"
+#include "wrappers/cuda/w.cuda.h"
 
 #include "basis/logging/logger.h"
 #include "basis/logging/progresslogger.h"
@@ -44,11 +45,13 @@ int main(int argc, char **argv)
 	eslog::checkpointln("ESPRESO: CONFIGURATION READ");
 	eslog::startln("CONFIGURATION STARTED", "CONFIGURATION");
 
+
 	bool divided = info::mpi::divide(info::ecf->input.decomposition.mesh_duplication);
 	MPITools::setSubset(info::ecf->input.third_party_scalability_limit);
 	eslog::initFiles();
 	profiler::synccheckpoint("divide_mpi");
 	eslog::printRunInfo(&argc, &argv);
+	cuda::fillDeviceInfo(); // it also prints the info
 	profiler::synccheckpoint("init_run_info");
 	if (!divided) {
 		eslog::globalerror("Cannot set MESH DUPLICATION: the number of MPI processes is not divisible by %d\n", info::ecf->input.decomposition.mesh_duplication);

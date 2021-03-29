@@ -30,7 +30,6 @@ MPIGroup* MPITools::asynchronous = NULL;
 
 MPISubset* MPITools::subset = NULL;
 MPISubset* MPITools::singleton = NULL;
-int MPISubset::nodeRank = -1;
 
 int Communication::TAG::SFC               =  0 * __GAP__;
 int Communication::TAG::EX_KNOWN          =  1 * __GAP__;
