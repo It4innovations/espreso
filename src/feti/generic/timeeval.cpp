@@ -15,7 +15,7 @@
 using namespace espreso;
 
 
-// #define MEAS_DISSABLED
+#define MEAS_DISSABLED
 
 // #define MPIBARRIER  ; //MPI_Barrier(info::mpi::MPICommunicator);
 #define MPIBARRIER  MPI_Barrier(info::mpi::comm);
