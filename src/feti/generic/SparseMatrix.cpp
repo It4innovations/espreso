@@ -1763,8 +1763,11 @@ esint SparseMatrix::CopyToCUDA_Dev_fl ( ) {
 
 void SparseMatrix::CopyFromCUDA_Dev() {
 #ifdef SOLVER_CUDA
-//	cudaFree(d_dense_values);
-//	d_dense_values = NULL;
+	if ( dense_values.size() == 0 ) {
+		dense_values.resize(rows*cols);
+	}
+
+	cudaMemcpy(&dense_values[0], d_dense_values, dense_values.size() * sizeof(double), cudaMemcpyDeviceToHost);
 #endif
 }
 

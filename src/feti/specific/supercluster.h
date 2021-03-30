@@ -38,6 +38,11 @@ using std::make_pair;
 #include "clusters.h"
 #include "feti/generic/utils.h"
 
+#include "basis/utilities/utils.h"
+#include "basis/utilities/debugprint.h"
+#include "basis/utilities/sysutils.h"
+#include <fstream>
+
 namespace espreso {
 
 class SuperClusterBase
@@ -596,6 +601,70 @@ public:
 //		if (!USE_HFETI &&  USE_KINV) multKplusFETI_LSC (x_in);
 
 
+	}
+
+	void printInitData(const char* prefix )
+	{
+		for (size_t d = 0; d < domains.size(); d++) {
+			if(USE_KINV)
+			{
+				if(domains[d]->B1Kplus.is_on_acc == 1)
+				{
+					domains[d]->B1Kplus.CopyFromCUDA_Dev();
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("B1Kplus") + std::to_string(d)));
+					os << domains[d]->B1Kplus;
+				}
+				else
+				{
+					if (!configuration.combine_sc_and_spds)
+					{
+						std::ofstream os(utils::prepareFile(std::string(prefix), std::string("B1Kplus") + std::to_string(d)));
+						os << domains[d]->B1Kplus;
+					}
+				}
+			}
+
+			if (configuration.preconditioner ==  FETIConfiguration::PRECONDITIONER::DIRICHLET)
+			{
+				if(domains[d]->Prec.is_on_acc == 1)
+				{
+					domains[d]->Prec.CopyFromCUDA_Dev();
+				}
+
+				std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Prec") + std::to_string(d)));
+				os << domains[d]->Prec;
+			}
+
+			if (configuration.keep_factors) {
+				if (!configuration.combine_sc_and_spds) { // if both CPU and GPU uses Schur Complement
+					if (configuration.Ksolver != FETIConfiguration::KSOLVER::ITERATIVE) {
+						std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Kplus") + std::to_string(d)));
+						SparseMatrix tmp_mat;
+						domains[d]->Kplus.ExportMatrix(tmp_mat);
+						os << tmp_mat;
+					}
+				} else {
+					if ( domains[d]->B1Kplus.is_on_acc == 0 ) {
+						if (configuration.Ksolver != FETIConfiguration::KSOLVER::ITERATIVE) {
+							std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Kplus") + std::to_string(d)));
+							SparseMatrix tmp_mat;
+							domains[d]->Kplus.ExportMatrix(tmp_mat);
+							os << tmp_mat;
+						}
+					}
+				}
+			}
+
+		}
+		// Conjugate projector matrices
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("G1_comp")));
+			os << G1_comp;
+		}
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("GGtinvM")));
+			os << GGtinvM;
+		}
 	}
 
 

@@ -8,6 +8,7 @@
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/eslog.hpp"
+#include "esinfo/ecfinfo.h"
 
 #include "mkl.h"
 
@@ -2960,6 +2961,66 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
   auto ij= [&]( esint ii, esint jj ) -> esint
    { return ii + n_mat*jj; };
 
+	// Debug printing
+	if (info::ecf->output.print_matrices) {
+		std::string prefix = utils::debugDirectory() + "/fetisolver/gmres/init";
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("b_l")));
+			os << b_l;
+		}
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("x_l")));
+			os << x_l;
+		}
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Ax_l")));
+			os << Ax_l;
+		}
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("g_l")));
+			os << g_l;
+		}
+		switch (USE_PREC) {
+			case FETIConfiguration::PRECONDITIONER::LUMPED:
+			case FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION:
+			case FETIConfiguration::PRECONDITIONER::DIRICHLET:
+			case FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET:
+			case FETIConfiguration::PRECONDITIONER::MAGIC:
+				{
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Pg_l")));
+					os << Pg_l;
+				}
+				{
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("MPg_l")));
+					os << MPg_l;
+				}
+				if (USE_GGtINV == 1) 
+				{
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("z_l")));
+					os << z_l;
+				}
+				break;
+			case FETIConfiguration::PRECONDITIONER::NONE:
+				if (USE_GGtINV == 1) 
+				{
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("z_l")));
+					os << z_l;
+				}
+				{
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Pg_l")));
+					os << Pg_l;
+				}
+			break;
+		}	
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Beta")));
+			os << beta;
+		}
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("v_l")));
+			os << v_l;
+		}
+	}
 
 	// *** Start the CG iteration loop ********************************************
   int iter = 0;
@@ -3016,6 +3077,44 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
     default:
     	eslog::error("Not implemented preconditioner.\n");
     }
+	// Debug printing
+	if (info::ecf->output.print_matrices) {
+		std::string prefix = utils::debugDirectory() + "/fetisolver/gmres/" + std::to_string(iter);
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Pv_l")));
+			os << Pv_l;
+		}
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("w_l")));
+			os << w_l;
+		}
+		switch (USE_PREC) {
+			case FETIConfiguration::PRECONDITIONER::LUMPED:
+			case FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION:
+			case FETIConfiguration::PRECONDITIONER::DIRICHLET:
+			case FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET:
+			case FETIConfiguration::PRECONDITIONER::MAGIC:
+				if (USE_GGtINV == 1) 
+				{
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("z_l")));
+					os << z_l;
+					std::ofstream os2(utils::prepareFile(std::string(prefix), std::string("Pw_l")));
+					os2 << Pw_l;
+				}
+				{
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("MPw_l")));
+					os << MPw_l;
+				}
+				break;
+			case FETIConfiguration::PRECONDITIONER::NONE:
+				if (USE_GGtINV == 1) 
+				{
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("z_l")));
+					os << z_l;
+				}
+				break;
+		}
+	}
 
 //  Modified Gram-Schmidt
     for (int k = 0;k<iter+1;k++){
@@ -3037,6 +3136,23 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
     V_l.dense_values.insert(V_l.dense_values.end(), v_l.begin(), v_l.end());
     V_l.nnz+=v_l.size();
     V_l.cols++;
+
+	// Debug printing
+	if (info::ecf->output.print_matrices) {
+		std::string prefix = utils::debugDirectory() + "/fetisolver/gmres/" + std::to_string(iter);
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("H_l")));
+			os << H_l;
+		}
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Pz_l")));
+			os << Pz_l;
+		}
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("v_l")));
+			os << v_l;
+		}
+	}
 
     // cblas set-up
     _alpha    = 1;
@@ -3098,6 +3214,23 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
     norm_l = fabs(g_H[iter+1]);
 
 	timing.totalTime.end();
+
+	// Debug printing
+	if (info::ecf->output.print_matrices) {
+		std::string prefix = utils::debugDirectory() + "/fetisolver/gmres/" + std::to_string(iter);
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("H_l_modif")));
+			os << H_l_modif;
+		}
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Permut_l")));
+			os << Permut_l;
+		}
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("g_H")));
+			os << g_H;
+		}
+	}
 
 	eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 2, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
 //		ESINFO(CONVERGENCE)
@@ -3425,6 +3558,67 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
   auto ij= [&]( esint ii, esint jj ) -> esint
    { return ii + n_mat*jj; };
   //
+
+    // Debug printing
+	if (info::ecf->output.print_matrices) {
+		std::string prefix = utils::debugDirectory() + "/fetisolver/gmres/init";
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("b_l")));
+			os << b_l;
+		}
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("x_l")));
+			os << x_l;
+		}
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Ax_l")));
+			os << Ax_l;
+		}
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("g_l")));
+			os << g_l;
+		}
+		switch (USE_PREC) {
+			case FETIConfiguration::PRECONDITIONER::LUMPED:
+			case FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION:
+			case FETIConfiguration::PRECONDITIONER::DIRICHLET:
+			case FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET:
+			case FETIConfiguration::PRECONDITIONER::MAGIC:
+				{
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Pg_l")));
+					os << Pg_l;
+				}
+				{
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("MPg_l")));
+					os << MPg_l;
+				}
+				if (USE_GGtINV == 1) 
+				{
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("z_l")));
+					os << z_l;
+				}
+				break;
+			case FETIConfiguration::PRECONDITIONER::NONE:
+				if (USE_GGtINV == 1) 
+				{
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("z_l")));
+					os << z_l;
+				}
+				{
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Pg_l")));
+					os << Pg_l;
+				}
+			break;
+		}	
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Beta")));
+			os << beta;
+		}
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("v_l")));
+			os << v_l;
+		}
+	}
 	// *** Start the CG iteration loop ********************************************
   int iter = 0;
 	for (; iter < CG_max_iter; iter++) {
@@ -3475,6 +3669,41 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
     default:
     	eslog::error("Not implemented preconditioner.\n");
     }
+
+	// Debug printing
+	if (info::ecf->output.print_matrices) {
+		std::string prefix = utils::debugDirectory() + "/fetisolver/gmres/" + std::to_string(iter);
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("w_l")));
+			os << w_l;
+		}
+		switch (USE_PREC) {
+			case FETIConfiguration::PRECONDITIONER::LUMPED:
+			case FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION:
+			case FETIConfiguration::PRECONDITIONER::DIRICHLET:
+			case FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET:
+			case FETIConfiguration::PRECONDITIONER::MAGIC:
+				{
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("z_l")));
+					os << z_l;
+				}
+				{
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Pw_l")));
+					os << Pw_l;
+				}
+				{
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("MPw_l")));
+					os << MPw_l;
+				}
+				break;
+			case FETIConfiguration::PRECONDITIONER::NONE: 
+				{
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("z_l")));
+					os << z_l;
+				}
+				break;
+		}
+	}
 //
 //  Modified Gram-Schmidt
     for (int k = 0;k<iter+1;k++){
@@ -3498,6 +3727,20 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
     V_l.dense_values.insert(V_l.dense_values.end(), v_l.begin(), v_l.end());
     V_l.nnz+=v_l.size();
     V_l.cols++;
+
+	// Debug printing
+	if (info::ecf->output.print_matrices) {
+		std::string prefix = utils::debugDirectory() + "/fetisolver/gmres/" + std::to_string(iter);
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("H_l")));
+			os << H_l;
+		}
+
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("v_l")));
+			os << v_l;
+		}
+	}
 
     // cblas set-up
      _alpha   = 1;
@@ -3561,6 +3804,22 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
 
 		timing.totalTime.end();
 
+	// Debug printing
+	if (info::ecf->output.print_matrices) {
+		std::string prefix = utils::debugDirectory() + "/fetisolver/gmres/" + std::to_string(iter);
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("H_l_modif")));
+			os << H_l_modif;
+		}
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Permut_l")));
+			os << Permut_l;
+		}
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("g_H")));
+			os << g_H;
+		}
+	}
 		eslog::linearsolver("%6d  %.4e  %.4e  %.0e  %7.5f\n", iter + 2, norm_l / tol * precision, norm_l, precision, timing.totalTime.getLastStat());
 //		//ESINFO(CONVERGENCE)
 //			<< indent << std::setw(iterationWidth) << iter + 2
