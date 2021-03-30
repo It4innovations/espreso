@@ -24,22 +24,22 @@ HarmonicSolver::HarmonicSolver(LinearSystem *system, SubStepSolver *subStepSolve
 : LoadStepSolver(system, subStepSolver, duration), _configuration(configuration)
 {
 	std::vector<int> distribution = tarray<int>::distribute(info::mpi::isize, _configuration.harmonic_solver.num_samples);
-	step::duplicate::instances = info::mpi::isize;
-	step::duplicate::offset = distribution[info::mpi::irank];
-	step::duplicate::size = distribution[info::mpi::irank + 1] - distribution[info::mpi::irank];
-	step::duplicate::totalsize = _configuration.harmonic_solver.num_samples;
+	step::duplicate.instances = info::mpi::isize;
+	step::duplicate.offset = distribution[info::mpi::irank];
+	step::duplicate.size = distribution[info::mpi::irank + 1] - distribution[info::mpi::irank];
+	step::duplicate.totalsize = _configuration.harmonic_solver.num_samples;
 
-	step::type = step::TYPE::FREQUENCY;
-	step::frequency::shift = (_configuration.harmonic_solver.max_frequency - _configuration.harmonic_solver.min_frequency) / _configuration.harmonic_solver.num_samples;
-	step::frequency::start = _configuration.harmonic_solver.min_frequency;
-	step::frequency::current = step::frequency::start + step::duplicate::offset * step::frequency::shift;
-	step::frequency::final = _configuration.harmonic_solver.max_frequency;
+	step::step.type = step::TYPE::FREQUENCY;
+	step::frequency.shift = (_configuration.harmonic_solver.max_frequency - _configuration.harmonic_solver.min_frequency) / _configuration.harmonic_solver.num_samples;
+	step::frequency.start = _configuration.harmonic_solver.min_frequency;
+	step::frequency.current = step::frequency.start + step::duplicate.offset * step::frequency.shift;
+	step::frequency.final = _configuration.harmonic_solver.max_frequency;
 
 	_fttRequestedFrequencies = info::ecf->output.frequency_to_time.requested_frequencies.data();
 	_fttRequestedFrequenciesEnd = _fttRequestedFrequencies + info::ecf->output.frequency_to_time.requested_frequencies.size();
 
 	std::sort(_fttRequestedFrequencies, _fttRequestedFrequenciesEnd);
-	_fttRequestedFrequencies = std::lower_bound(_fttRequestedFrequencies, _fttRequestedFrequenciesEnd, step::frequency::current);
+	_fttRequestedFrequencies = std::lower_bound(_fttRequestedFrequencies, _fttRequestedFrequenciesEnd, step::frequency.current);
 
 	updateDamping();
 }
@@ -87,17 +87,17 @@ void HarmonicSolver::store()
 	case HarmonicOuputConfiguration::STORE_FREQUENCY::EVERY_FREQUENCY:
 		ftt(); break;
 	case HarmonicOuputConfiguration::STORE_FREQUENCY::EVERY_NTH_FREQUENCY:
-		if (step::substep % info::ecf->output.frequency_to_time.results_nth_stepping == 0) {
+		if (step::step.substep % info::ecf->output.frequency_to_time.results_nth_stepping == 0) {
 			ftt();
 		} else {
 			_system->processSolution();
 		}
 		break;
 	case HarmonicOuputConfiguration::STORE_FREQUENCY::SPECIFIC_FREQUENCIES:
-		while (_fttRequestedFrequencies != _fttRequestedFrequenciesEnd && *_fttRequestedFrequencies < step::frequency::current) {
+		while (_fttRequestedFrequencies != _fttRequestedFrequenciesEnd && *_fttRequestedFrequencies < step::frequency.current) {
 			++_fttRequestedFrequencies;
 		}
-		if (_fttRequestedFrequencies != _fttRequestedFrequenciesEnd && *_fttRequestedFrequencies == step::frequency::current) {
+		if (_fttRequestedFrequencies != _fttRequestedFrequenciesEnd && *_fttRequestedFrequencies == step::frequency.current) {
 			ftt();
 		} else {
 			_system->processSolution();
@@ -109,15 +109,15 @@ void HarmonicSolver::store()
 void HarmonicSolver::ftt()
 {
 	_system->processSolution();
-	step::type = step::TYPE::FTT;
-	step::ftt::steps = info::ecf->output.frequency_to_time.samples;
-	step::ftt::period = 1 / step::frequency::current;
-	for (int i = 0; i < step::ftt::steps; i++) {
-		step::ftt::step = i;
-		step::ftt::time = step::ftt::period * ((double)i / step::ftt::steps);
+	step::step.type = step::TYPE::FTT;
+	step::ftt.steps = info::ecf->output.frequency_to_time.samples;
+	step::ftt.period = 1 / step::frequency.current;
+	for (int i = 0; i < step::ftt.steps; i++) {
+		step::ftt.step = i;
+		step::ftt.time = step::ftt.period * ((double)i / step::ftt.steps);
 		_system->processSolution();
 	}
-	step::type = step::TYPE::FREQUENCY;
+	step::step.type = step::TYPE::FREQUENCY;
 }
 
 void HarmonicSolver::updateStructuralMatrices()
@@ -140,15 +140,15 @@ void HarmonicSolver::runNextSubstep()
 {
 	switch (_configuration.harmonic_solver.frequency_interval_type) {
 	case HarmonicSolverConfiguration::INTERVAL_TYPE::LINEAR:
-		step::frequency::current += step::frequency::shift;
-		if (step::frequency::current + step::frequency::precision >= step::frequency::final) {
-			step::frequency::current = step::frequency::final;
+		step::frequency.current += step::frequency.shift;
+		if (step::frequency.current + step::frequency.precision >= step::frequency.final) {
+			step::frequency.current = step::frequency.final;
 		}
 		break;
 	default:
 		eslog::internalFailure("not implemented interval type.\n");
 	}
-	step::frequency::angular = 2 * M_PI * step::frequency::current;
+	step::frequency.angular = 2 * M_PI * step::frequency.current;
 	_system->nextSubstep();
 
 	switch (_configuration.harmonic_solver.damping.rayleigh.type) {
@@ -179,7 +179,7 @@ void HarmonicSolver::runNextSubstep()
 	}
 
 	eslog::solver(" = ==================================== HARMONIC SOLVER ==================================== =\n");
-	eslog::solver(" =  LOAD STEP %2d, SUBSTEP %4d, FREQ %10.4f, FREQ STEP %10.4f, FINAL FREQ %10.4f =\n", step::loadstep + 1, step::substep + 1, step::frequency::current, step::frequency::shift, step::frequency::final);
+	eslog::solver(" =  LOAD STEP %2d, SUBSTEP %4d, FREQ %10.4f, FREQ STEP %10.4f, FINAL FREQ %10.4f =\n", step::step.loadstep + 1, step::step.substep + 1, step::frequency.current, step::frequency.shift, step::frequency.final);
 	eslog::solver(" = ----------------------------------------------------------------------------------------- =\n");
 
 	_subStepSolver->solve(*this);

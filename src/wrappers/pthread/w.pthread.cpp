@@ -50,6 +50,7 @@ void* async(void *data)
 	while (true) {
 		pthread_mutex_lock(&shdata->outputLock);
 		if (shdata->finish) {
+			pthread_spin_unlock(&shdata->computationLock);
 			break;
 		}
 		shdata->executor->call(shdata->tag);
@@ -69,6 +70,7 @@ Pthread::~Pthread()
 	pthread_spin_lock(&_shdata->computationLock);
 	_shdata->finish = true;
 	pthread_mutex_unlock(&_shdata->outputLock);
+	pthread_spin_lock(&_shdata->computationLock);
 	delete _shdata;
 }
 

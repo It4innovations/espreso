@@ -315,12 +315,12 @@ void PhysicalSolver::clear()
 template <typename TPhysics>
 void PhysicalSolver::runSingle(PhysicalSolver &solver, TPhysics &configuration)
 {
-	while (step::loadstep < configuration.load_steps) {
-		eslog::nextStep(step::loadstep + 1);
+	while (step::step.loadstep < configuration.load_steps) {
+		eslog::nextStep(step::step.loadstep + 1);
 
 		eslog::startln("PHYSICS BUILDER: LOAD STEP STARTED", "PHYSICS BUILDER");
 
-		auto &loadStepSettings = configuration.load_steps_settings.at(step::loadstep + 1);
+		auto &loadStepSettings = configuration.load_steps_settings.at(step::step.loadstep + 1);
 
 		PhysicalSolver prev = solver;
 		solver.system = getSystem(prev.system, configuration, configuration, loadStepSettings, configuration.dimension);
@@ -344,16 +344,16 @@ void PhysicalSolver::runSingle(PhysicalSolver &solver, TPhysics &configuration)
 		eslog::endln("PHYSICS BUILDER: MONITORS SET");
 
 		eslog::checkpoint("ESPRESO: PHYSICS PREPARED");
-		eslog::param("LOADSTEP", step::loadstep + 1);
+		eslog::param("LOADSTEP", step::step.loadstep + 1);
 		eslog::ln();
 
 		eslog::startln("PHYSICS SOLVER: STARTED", "PHYSICS SOLVER");
 		solver.loadStepSolver->run();
 		eslog::endln("PHYSICS SOLVER: FINISHED");
 
-		++step::loadstep;
+		++step::step.loadstep;
 		eslog::checkpoint("ESPRESO: PHYSICS SOLVED");
-		eslog::param("LOADSTEP", step::loadstep);
+		eslog::param("LOADSTEP", step::step.loadstep);
 		eslog::ln();
 	}
 }
@@ -361,11 +361,11 @@ void PhysicalSolver::runSingle(PhysicalSolver &solver, TPhysics &configuration)
 template <typename TPhysics>
 void PhysicalSolver::runCoupled(PhysicalSolver &first, PhysicalSolver &second, TPhysics &configuration)
 {
-	while (step::loadstep < configuration.load_steps) {
-		eslog::nextStep(step::loadstep + 1);
+	while (step::step.loadstep < configuration.load_steps) {
+		eslog::nextStep(step::step.loadstep + 1);
 
 		eslog::startln("PHYSICS BUILDER: LOAD STEP STARTED", "PHYSICS BUILDER");
-		auto &loadStepSettings = configuration.load_steps_settings.at(step::loadstep + 1);
+		auto &loadStepSettings = configuration.load_steps_settings.at(step::step.loadstep + 1);
 
 		PhysicalSolver _first = first, _second = second;
 		first.system = getSystem(_first.system, configuration, configuration, loadStepSettings.heat_transfer, configuration.dimension);
@@ -386,26 +386,26 @@ void PhysicalSolver::runCoupled(PhysicalSolver &first, PhysicalSolver &second, T
 		eslog::endln("PHYSICS BUILDER: MONITORS SET");
 
 		eslog::checkpoint("ESPRESO: PHYSICS PREPARED");
-		eslog::param("LOADSTEP", step::loadstep + 1);
+		eslog::param("LOADSTEP", step::step.loadstep + 1);
 		eslog::ln();
 
 		eslog::startln("PHYSICS SOLVER: STARTED", "PHYSICS SOLVER");
-		step::substep = step::duplicate::offset;
-		step::iteration = 0;
+		step::step.substep = step::duplicate.offset;
+		step::step.iteration = 0;
 
 		while (!step::isLast()) {
 			info::mesh->output->suppress();
 			first.loadStepSolver->runNextSubstep();
 			info::mesh->output->permit();
 			second.loadStepSolver->runNextSubstep();
-			step::substep++;
-			step::iteration = 0;
+			step::step.substep++;
+			step::step.iteration = 0;
 		}
 		eslog::endln("PHYSICS SOLVER: FINISHED");
 
-		++step::loadstep;
+		++step::step.loadstep;
 		eslog::checkpoint("ESPRESO: PHYSICS SOLVED");
-		eslog::param("LOADSTEP", step::loadstep);
+		eslog::param("LOADSTEP", step::step.loadstep);
 		eslog::ln();
 	}
 }

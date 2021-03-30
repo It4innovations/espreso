@@ -144,12 +144,12 @@ void TransientSecondOrderImplicit::updateStructuralMatrices()
 
 void TransientSecondOrderImplicit::runNextSubstep()
 {
-	double last = step::time::current;
-	step::time::current += _nTimeShift;
-	if (step::time::current + step::time::precision >= step::time::final) {
-		step::time::current = step::time::final;
+	double last = step::time.current;
+	step::time.current += _nTimeShift;
+	if (step::time.current + step::time.precision >= step::time.final) {
+		step::time.current = step::time.final;
 	}
-	step::time::shift = step::time::current - last;
+	step::time.shift = step::time.current - last;
 	_system->nextSubstep();
 
 	switch (_configuration.damping.rayleigh.type) {
@@ -181,20 +181,20 @@ void TransientSecondOrderImplicit::runNextSubstep()
 	default:
 		eslog::globalerror("Not supported first order implicit solver method.\n");
 	}
-	eslog::solver(" =  LOAD STEP %2d, SUBSTEP %4d, TIME %10.6f, TIME STEP %10.6f, FINAL TIME %10.5f =\n", step::loadstep + 1, step::substep + 1, step::time::current, step::time::shift, step::time::final);
+	eslog::solver(" =  LOAD STEP %2d, SUBSTEP %4d, TIME %10.6f, TIME STEP %10.6f, FINAL TIME %10.5f =\n", step::step.loadstep + 1, step::step.substep + 1, step::time.current, step::time.shift, step::time.final);
 	eslog::solver(" = ----------------------------------------------------------------------------------------- =\n");
 
 	_subStepSolver->solve(*this);
 
 	dU->sum(1, _system->solver()->x, -1, U);
-	_nTimeShift = step::time::shift;
+	_nTimeShift = step::time.shift;
 
 	bool changeConstants = false;
 
-	if (_configuration.auto_time_stepping.allowed && step::time::current < step::time::final) {
+	if (_configuration.auto_time_stepping.allowed && step::time.current < step::time.final) {
 		eslog::solver(" = -------------------------------- AUTOMATIC TIME STEPPING -------------------------------- =\n");
 		if (false && dU->at(0)->norm() / U->at(0)->norm() < 1e-5) {
-			_nTimeShift = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * step::time::shift);
+			_nTimeShift = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * step::time.shift);
 		} else {
 			_system->assembler()->K->apply(dU, dTK);
 			_system->assembler()->M->apply(dU, dTM);
@@ -203,36 +203,36 @@ void TransientSecondOrderImplicit::runNextSubstep()
 			double resPeriod = 1 / resFreq;
 			double t2 = resPeriod / _configuration.auto_time_stepping.points_per_period;
 
-			if (step::time::shift != t2) {
-				if (step::time::shift < t2) {
-					if (_configuration.auto_time_stepping.IDFactor * step::time::shift < t2) {
-						_nTimeShift = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * step::time::shift);
+			if (step::time.shift != t2) {
+				if (step::time.shift < t2) {
+					if (_configuration.auto_time_stepping.IDFactor * step::time.shift < t2) {
+						_nTimeShift = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * step::time.shift);
 					}
 				} else {
-					if (step::time::shift / _configuration.auto_time_stepping.IDFactor > t2) {
-						_nTimeShift = std::max(_configuration.auto_time_stepping.min_time_step, step::time::shift / _configuration.auto_time_stepping.IDFactor);
+					if (step::time.shift / _configuration.auto_time_stepping.IDFactor > t2) {
+						_nTimeShift = std::max(_configuration.auto_time_stepping.min_time_step, step::time.shift / _configuration.auto_time_stepping.IDFactor);
 					}
 				}
 			}
 
-			eslog::solver(" = RESPONSE FREQUENCY, POINTS PER PERIOD                                 %.5e, %6.2f =\n", resFreq, resPeriod / step::time::shift);
+			eslog::solver(" = RESPONSE FREQUENCY, POINTS PER PERIOD                                 %.5e, %6.2f =\n", resFreq, resPeriod / step::time.shift);
 		}
 
-		if (std::fabs(step::time::shift - _nTimeShift) / step::time::shift < step::time::precision) {
+		if (std::fabs(step::time.shift - _nTimeShift) / step::time.shift < step::time.precision) {
 			eslog::solver(" = TIME STEP UNCHANGED                                                                       =\n");
 		} else {
-			if (step::time::shift - step::time::precision < _nTimeShift) {
+			if (step::time.shift - step::time.precision < _nTimeShift) {
 				eslog::solver(" = TIME STEP INCREASED TO NEW VALUE                                                 %8.6f =\n", _nTimeShift);
 			} else {
 				eslog::solver(" = TIME STEP DECREASED TO NEW VALUE                                                 %8.6f =\n", _nTimeShift);
 			}
-			eslog::solver(" = INCREASE FACTOR                                                                         %5.2f =\n", _nTimeShift / step::time::shift);
+			eslog::solver(" = INCREASE FACTOR                                                                         %5.2f =\n", _nTimeShift / step::time.shift);
 			changeConstants = true;
 		}
 		eslog::checkpointln("PHYSICS SOLVER: TIME STEP COMPUTED");
 	}
 
-	if (step::time::shift - step::time::precision < _nTimeShift) {
+	if (step::time.shift - step::time.precision < _nTimeShift) {
 		Z->sum( _newmarkConsts[0], dU, -_newmarkConsts[2], V);
 		Z->add(-_newmarkConsts[3], W);
 		V->add( _newmarkConsts[6], W);
@@ -244,8 +244,8 @@ void TransientSecondOrderImplicit::runNextSubstep()
 	} else {
 		_system->solver()->x->fillData(U);
 		_system->solutionChanged();
-		step::time::current -= step::time::shift;
-		--step::substep;
+		step::time.current -= step::time.shift;
+		--step::step.substep;
 	}
 
 	if (changeConstants) {

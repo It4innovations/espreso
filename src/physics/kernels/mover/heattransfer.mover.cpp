@@ -272,7 +272,7 @@ void Move<InputConvection, ElementNodeValues>::operator()()
 			htc.values->datatarray()[i] = convectionHTC(
 					*from.ecf,
 					from.params->ncoords(), from.params->coords() + i * from.params->ncoords(),
-					step::time::current,
+					step::time.current,
 					from.params->temp()[i]);
 		}
 	}

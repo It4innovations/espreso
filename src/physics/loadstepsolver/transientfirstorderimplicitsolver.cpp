@@ -87,7 +87,7 @@ void TransientFirstOrderImplicit::updateStructuralMatrices()
 	_system->assemble();
 
 	if (_system->builder->matrices & (Builder::Request::M | Builder::Request::f)) {
-		X->sum(1 / (_alpha * step::time::shift), U, (1 - _alpha) / _alpha, V);
+		X->sum(1 / (_alpha * step::time.shift), U, (1 - _alpha) / _alpha, V);
 		_system->assembler()->M->apply(X, Y);
 		_system->solver()->f->add(1, Y);
 		eslog::checkpointln("PHYSICS SOLVER: MATRICES POST-PROCESSED");
@@ -96,18 +96,18 @@ void TransientFirstOrderImplicit::updateStructuralMatrices()
 
 void TransientFirstOrderImplicit::runNextSubstep()
 {
-	double last = step::time::current;
-	step::time::current += _nTimeShift;
-	if (step::time::current + step::time::precision >= step::time::final) {
-		step::time::current = step::time::final;
+	double last = step::time.current;
+	step::time.current += _nTimeShift;
+	if (step::time.current + step::time.precision >= step::time.final) {
+		step::time.current = step::time.final;
 	}
-	step::time::shift = step::time::current - last;
+	step::time.shift = step::time.current - last;
 	_system->nextSubstep();
 
 	_system->builder->internalForceReduction = 1;
 	_system->builder->timeIntegrationConstantK = 1;
 	_system->builder->timeIntegrationConstantC = 0;
-	_system->builder->timeIntegrationConstantM = 1 / (_alpha * step::time::shift);
+	_system->builder->timeIntegrationConstantM = 1 / (_alpha * step::time.shift);
 
 	switch (_configuration.method) {
 	case TransientFirstOrderImplicitSolverConfiguration::METHOD::CRANK_NICOLSON:
@@ -125,45 +125,45 @@ void TransientFirstOrderImplicit::runNextSubstep()
 	default:
 		eslog::globalerror("Not supported first order implicit solver method.\n");
 	}
-	eslog::solver(" =  LOAD STEP %2d, SUBSTEP %4d, TIME %10.6f, TIME STEP %10.6f, FINAL TIME %10.6f =\n", step::loadstep + 1, step::substep + 1, step::time::current, step::time::shift, step::time::final);
+	eslog::solver(" =  LOAD STEP %2d, SUBSTEP %4d, TIME %10.6f, TIME STEP %10.6f, FINAL TIME %10.6f =\n", step::step.loadstep + 1, step::step.substep + 1, step::time.current, step::time.shift, step::time.final);
 	eslog::solver(" = ----------------------------------------------------------------------------------------- =\n");
 
 	_subStepSolver->solve(*this);
 
 	dU->sum(1, _system->solver()->x, -1, U);
-	_nTimeShift = step::time::shift;
+	_nTimeShift = step::time.shift;
 
-	if (_configuration.auto_time_stepping.allowed && step::time::current < step::time::final) {
+	if (_configuration.auto_time_stepping.allowed && step::time.current < step::time.final) {
 		eslog::solver(" = -------------------------------- AUTOMATIC TIME STEPPING -------------------------------- =\n");
 		if (dU->at(0)->norm() / U->at(0)->norm() < 1e-5) {
-			_nTimeShift = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * step::time::shift);
+			_nTimeShift = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * step::time.shift);
 		} else {
 			_system->assembler()->K->apply(dU, dTK);
 			_system->assembler()->M->apply(dU, dTM);
 
 			double resFreq = dU->at(0)->dot(dTK->at(0)) / dU->at(0)->dot(dTM->at(0));
-			double oscilationLimit = step::time::shift * resFreq;
+			double oscilationLimit = step::time.shift * resFreq;
 			double t1 = _configuration.auto_time_stepping.oscilation_limit / resFreq;
 
-			if (step::time::shift != t1) {
-				if (step::time::shift < t1) {
-					if (_configuration.auto_time_stepping.IDFactor * step::time::shift < t1) {
-						_nTimeShift = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * step::time::shift);
+			if (step::time.shift != t1) {
+				if (step::time.shift < t1) {
+					if (_configuration.auto_time_stepping.IDFactor * step::time.shift < t1) {
+						_nTimeShift = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * step::time.shift);
 					}
 				} else {
-					if (step::time::shift / _configuration.auto_time_stepping.IDFactor > t1) {
-						_nTimeShift = std::max(_configuration.auto_time_stepping.min_time_step, step::time::shift / _configuration.auto_time_stepping.IDFactor);
+					if (step::time.shift / _configuration.auto_time_stepping.IDFactor > t1) {
+						_nTimeShift = std::max(_configuration.auto_time_stepping.min_time_step, step::time.shift / _configuration.auto_time_stepping.IDFactor);
 					}
 				}
 			}
 			eslog::solver(" = RESPONSE FREQUENCY, OSCILATION LIMIT                             %.5e, %.5e =\n", resFreq, oscilationLimit);
 		}
 
-		if (std::fabs(step::time::shift - _nTimeShift) / step::time::shift < step::time::precision) {
+		if (std::fabs(step::time.shift - _nTimeShift) / step::time.shift < step::time.precision) {
 			eslog::solver(" = TIME STEP UNCHANGED                                                                       =\n");
 		} else {
 
-			if (step::time::shift < _nTimeShift) {
+			if (step::time.shift < _nTimeShift) {
 				eslog::solver(" = TIME STEP INCREASED TO NEW VALUE                                                 %8.6f =\n", _nTimeShift);
 			} else {
 				eslog::solver(" = TIME STEP DECREASED TO NEW VALUE                                                 %8.6f =\n", _nTimeShift);
@@ -172,15 +172,15 @@ void TransientFirstOrderImplicit::runNextSubstep()
 		eslog::checkpointln("PHYSICS SOLVER: TIME STEP COMPUTED");
 	}
 
-	if (step::time::shift - step::time::precision < _nTimeShift) {
-		V->sum(1 / (_alpha * step::time::shift), dU, -(1 - _alpha) / _alpha, V);
+	if (step::time.shift - step::time.precision < _nTimeShift) {
+		V->sum(1 / (_alpha * step::time.shift), dU, -(1 - _alpha) / _alpha, V);
 		U->fillData(_system->solver()->x);
 		_system->processSolution();
 	} else {
 		_system->solver()->x->fillData(U);
 		_system->solutionChanged();
-		step::time::current -= step::time::shift;
-		--step::substep;
+		step::time.current -= step::time.shift;
+		--step::step.substep;
 	}
 	eslog::solver(" = ========================================================================================= =\n");
 	eslog::solver(" = ================================================================= run time %12.3f s =\n\n", eslog::duration());

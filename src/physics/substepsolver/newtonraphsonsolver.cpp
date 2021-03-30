@@ -174,7 +174,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 		return alpha;
 	};
 
-	step::iteration = 0;
+	step::step.iteration = 0;
 	if (step::isInitial()) {
 		_system->builder->tangentMatrixCorrection = false;
 		_system->builder->matrices = Builder::Request::KCM | Builder::Request::f | Builder::Request::BC;
@@ -200,7 +200,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 	}
 
 	_system->builder->tangentMatrixCorrection = _configuration.tangent_matrix_correction;
-	while (step::iteration++ < _configuration.max_iterations) {
+	while (step::step.iteration++ < _configuration.max_iterations) {
 		U->fillData(_system->solver()->x);
 		if (_configuration.method == NonLinearSolverConfiguration::METHOD::NEWTON_RAPHSON) {
 			_system->builder->matrices = Builder::Request::KCM | Builder::Request::RBCf;
@@ -227,7 +227,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 			R->fillData(f);
 			R->fillData(BC);
 			double residualDenominator = std::max(R->at(0)->norm(), 1e-3);
-			if (residualNumerator / residualDenominator < _configuration.requested_second_residual && step::iteration > 1 ) {
+			if (residualNumerator / residualDenominator < _configuration.requested_second_residual && step::step.iteration > 1 ) {
 				eslog::solver("     - HEAT NORM, CRITERIA                           %.5e / %.5e CONVERGED -\n", residualNumerator, residualDenominator * _configuration.requested_second_residual);
 				if (_configuration.check_first_residual) {
 					if (solutionNorm < _configuration.requested_first_residual) {
@@ -255,7 +255,7 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 		}
 
 		eslog::solver("\n     - EQUIL. ITERATION :: %3d                     REASSEMBLED MATRICES :: %c, %c, %c, %c, %c -\n",
-				step::iteration,
+				step::step.iteration,
 				(_system->builder->matrices & Builder::Request::K) ? 'K' : ' ',
 				(_system->builder->matrices & Builder::Request::M) ? 'M' : ' ',
 				(_system->builder->matrices & Builder::Request::C) ? 'C' : ' ',

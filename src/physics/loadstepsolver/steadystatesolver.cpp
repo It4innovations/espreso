@@ -29,8 +29,8 @@ void SteadyStateSolver::updateStructuralMatrices()
 
 void SteadyStateSolver::runNextSubstep()
 {
-	step::time::current = step::time::final;
-	step::time::shift = step::time::final - step::time::current;
+	step::time.current = step::time.final;
+	step::time.shift = step::time.final - step::time.current;
 	_system->nextSubstep();
 
 	_system->builder->internalForceReduction = 1;
@@ -39,7 +39,7 @@ void SteadyStateSolver::runNextSubstep()
 	_system->builder->timeIntegrationConstantM = 0;
 
 	eslog::solver("\n = ================================== STEADY STATE SOLVER ================================== =\n");
-	eslog::solver(" =  LOAD STEP %2d, SUBSTEP %4d, TIME %10.6f, TIME STEP %10.6f, FINAL TIME %10.6f =\n", step::loadstep + 1, step::substep + 1, step::time::current, step::time::shift, step::time::final);
+	eslog::solver(" =  LOAD STEP %2d, SUBSTEP %4d, TIME %10.6f, TIME STEP %10.6f, FINAL TIME %10.6f =\n", step::step.loadstep + 1, step::step.substep + 1, step::time.current, step::time.shift, step::time.final);
 	eslog::solver(" = ----------------------------------------------------------------------------------------- =\n");
 
 	_subStepSolver->solve(*this);

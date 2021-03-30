@@ -628,7 +628,7 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 		}
 	}
 
-	bool harmonic = step::type == step::TYPE::FREQUENCY || step::type == step::TYPE::FTT;
+	bool harmonic = step::step.type == step::TYPE::FREQUENCY || step::step.type == step::TYPE::FTT;
 
 	int size = iterator.element->nodes;
 	filler.DOFs = 3 * size;
@@ -693,10 +693,10 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 
 		switch (iterator.material->material_model) {
 		case MaterialBaseConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC:
-			assembleLinearElasticMaterialMatrix(n, iterator.coordinates.data, iterator.material, step::time::current, iterator.temperature.data[n], K);
+			assembleLinearElasticMaterialMatrix(n, iterator.coordinates.data, iterator.material, step::time.current, iterator.temperature.data[n], K);
 			break;
 		case MaterialBaseConfiguration::MATERIAL_MODEL::HYPER_ELASTIC:
-//			assembleHyperElasticMaterialMatrix(n, iterator.coordinates, iterator.material, step::time::current, iterator.temperature[n], K);
+//			assembleHyperElasticMaterialMatrix(n, iterator.coordinates, iterator.material, step::time.current, iterator.temperature[n], K);
 			break;
 		}
 	}
@@ -736,9 +736,9 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 	}
 
 	if (iterator.corotating && iterator.corotating->coriolis_effect) {
-		double ox = step::frequency::angular / iterator.corotating->rotation.frequency_ratio * iterator.rotationAxis->orientation.x.evaluator->eval(Evaluator::Params());
-		double oy = step::frequency::angular / iterator.corotating->rotation.frequency_ratio * iterator.rotationAxis->orientation.y.evaluator->eval(Evaluator::Params());
-		double oz = step::frequency::angular / iterator.corotating->rotation.frequency_ratio * iterator.rotationAxis->orientation.z.evaluator->eval(Evaluator::Params());
+		double ox = step::frequency.angular / iterator.corotating->rotation.frequency_ratio * iterator.rotationAxis->orientation.x.evaluator->eval(Evaluator::Params());
+		double oy = step::frequency.angular / iterator.corotating->rotation.frequency_ratio * iterator.rotationAxis->orientation.y.evaluator->eval(Evaluator::Params());
+		double oz = step::frequency.angular / iterator.corotating->rotation.frequency_ratio * iterator.rotationAxis->orientation.z.evaluator->eval(Evaluator::Params());
 		rotation.fill(0);
 		rotation(0, 1) = -oz;
 		rotation(0, 2) =  oy;
@@ -750,9 +750,9 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 	}
 
 	if (iterator.corotating && iterator.corotating->spin_softening) {
-		double ox = step::frequency::angular / iterator.corotating->rotation.frequency_ratio * iterator.rotationAxis->orientation.x.evaluator->eval(Evaluator::Params());
-		double oy = step::frequency::angular / iterator.corotating->rotation.frequency_ratio * iterator.rotationAxis->orientation.y.evaluator->eval(Evaluator::Params());
-		double oz = step::frequency::angular / iterator.corotating->rotation.frequency_ratio * iterator.rotationAxis->orientation.z.evaluator->eval(Evaluator::Params());
+		double ox = step::frequency.angular / iterator.corotating->rotation.frequency_ratio * iterator.rotationAxis->orientation.x.evaluator->eval(Evaluator::Params());
+		double oy = step::frequency.angular / iterator.corotating->rotation.frequency_ratio * iterator.rotationAxis->orientation.y.evaluator->eval(Evaluator::Params());
+		double oz = step::frequency.angular / iterator.corotating->rotation.frequency_ratio * iterator.rotationAxis->orientation.z.evaluator->eval(Evaluator::Params());
 		spin(0, 0) = -(oy * oy + oz * oz);
 		spin(1, 1) = -(ox * ox + oz * oz);
 		spin(2, 2) = -(ox * ox + oy * oy);
@@ -816,7 +816,7 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 			Ks.multiply(NNN[gp], omegaN, gpDens(0, 0) * detJ * weighFactor[gp], 1, true);
 		}
 
-		if (step::type != step::TYPE::FTT && (builder.matrices & (Builder::Request::M | Builder::Request::R))) {
+		if (step::step.type != step::TYPE::FTT && (builder.matrices & (Builder::Request::M | Builder::Request::R))) {
 			filler.Me.multiply(NNN[gp], NNN[gp], gpDens(0, 0) * detJ * weighFactor[gp], 1, true);
 		}
 
@@ -949,7 +949,7 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 			B.resize(C.nrows, 3 * size);
 			B.fill(0);
 			distribute6x3(B.vals, dND.vals, dND.nrows, dND.ncols);
-			if (step::type != step::TYPE::FTT && (builder.matrices & (Builder::Request::K | Builder::Request::R))) {
+			if (step::step.type != step::TYPE::FTT && (builder.matrices & (Builder::Request::K | Builder::Request::R))) {
 				CB.multiply(C, B);
 				filler.Ke.multiply(B, CB, detJ * weighFactor[gp], 1, true);
 				if (iterator.fixed) {
@@ -971,7 +971,7 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 				}
 			}
 
-			if (step::type != step::TYPE::FTT && (builder.matrices & Builder::Request::f)) {
+			if (step::step.type != step::TYPE::FTT && (builder.matrices & Builder::Request::f)) {
 				precision.resize(C.nrows, 1);
 				precision(0, 0) = gpTE(0, 0);
 				precision(1, 0) = gpTE(0, 1);
@@ -1002,14 +1002,14 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 
 	if (builder.matrices & Builder::Request::C) {
 		if (iterator.fixed) {
-			filler.Ce.add(step::frequency::angular * iterator.fixed->rotation.frequency_ratio, &G);
+			filler.Ce.add(step::frequency.angular * iterator.fixed->rotation.frequency_ratio, &G);
 			G.transpose();
-			filler.Ce.add(-step::frequency::angular * iterator.fixed->rotation.frequency_ratio, &G);
+			filler.Ce.add(-step::frequency.angular * iterator.fixed->rotation.frequency_ratio, &G);
 		}
 		if (builder.rayleighDamping) {
-			double stiffDamping = builder.stiffnessDamping + builder.structuralDampingCoefficient / step::frequency::angular;
-			filler.Ce.add(step::frequency::angular * stiffDamping, &filler.Ke);
-			filler.Ce.add(step::frequency::angular * builder.massDamping, &filler.Me);
+			double stiffDamping = builder.stiffnessDamping + builder.structuralDampingCoefficient / step::frequency.angular;
+			filler.Ce.add(step::frequency.angular * stiffDamping, &filler.Ke);
+			filler.Ce.add(step::frequency.angular * builder.massDamping, &filler.Me);
 		}
 	}
 
@@ -1055,22 +1055,22 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 		}
 	}
 
-	if (!iterator.largeDisplacement && step::type != step::TYPE::FTT && (builder.matrices & Builder::Request::R)) {
+	if (!iterator.largeDisplacement && step::step.type != step::TYPE::FTT && (builder.matrices & Builder::Request::R)) {
 		if (harmonic) {
 			filler.Re[0].multiply(filler.Ke, uc, 1.0);
 			filler.Re[1].multiply(filler.Ke, us, 1.0);
-			filler.Re[0].multiply(filler.Me, uc, -step::frequency::angular * step::frequency::angular, 1.0);
-			filler.Re[1].multiply(filler.Me, us, -step::frequency::angular * step::frequency::angular, 1.0);
+			filler.Re[0].multiply(filler.Me, uc, -step::frequency.angular * step::frequency.angular, 1.0);
+			filler.Re[1].multiply(filler.Me, us, -step::frequency.angular * step::frequency.angular, 1.0);
 
 			if (builder.matrices & Builder::Request::C) {
 				filler.Re[0].multiply(filler.Ce, us, -1, 1.0);
 				filler.Re[1].multiply(filler.Ce, uc,  1, 1.0);
 			} else {
-				filler.Re[0].multiply(filler.Ke, us, -step::frequency::angular * (builder.stiffnessDamping + builder.structuralDampingCoefficient / step::frequency::angular), 1.0);
-				filler.Re[0].multiply(filler.Me, us, -step::frequency::angular * builder.massDamping, 1.0);
+				filler.Re[0].multiply(filler.Ke, us, -step::frequency.angular * (builder.stiffnessDamping + builder.structuralDampingCoefficient / step::frequency.angular), 1.0);
+				filler.Re[0].multiply(filler.Me, us, -step::frequency.angular * builder.massDamping, 1.0);
 
-				filler.Re[1].multiply(filler.Ke, uc,  step::frequency::angular * (builder.stiffnessDamping + builder.structuralDampingCoefficient / step::frequency::angular), 1.0);
-				filler.Re[1].multiply(filler.Me, uc,  step::frequency::angular * builder.massDamping, 1.0);
+				filler.Re[1].multiply(filler.Ke, uc,  step::frequency.angular * (builder.stiffnessDamping + builder.structuralDampingCoefficient / step::frequency.angular), 1.0);
+				filler.Re[1].multiply(filler.Me, uc,  step::frequency.angular * builder.massDamping, 1.0);
 			}
 
 			if (!(builder.matrices & Builder::Request::M)) {
@@ -1158,7 +1158,7 @@ void StructuralMechanics3DKernel::processNode(const Builder &builder, const Elas
 	if (!(builder.matrices & Builder::Request::f)) {
 		return;
 	}
-	if (step::type == step::TYPE::FTT) {
+	if (step::step.type == step::TYPE::FTT) {
 		return;
 	}
 
@@ -1183,7 +1183,7 @@ void StructuralMechanics3DKernel::processNode(const Builder &builder, const Elas
 	}
 
 	if (iterator.rotatingForce.mass.data != NULL) {
-		double value = step::frequency::angular * step::frequency::angular * iterator.rotatingForce.mass.data[0] * iterator.rotatingForce.radius.data[0];
+		double value = step::frequency.angular * step::frequency.angular * iterator.rotatingForce.mass.data[0] * iterator.rotatingForce.radius.data[0];
 		filler.Fe[0][0] =   value * std::cos(iterator.rotatingForce.phaseAngle.data[0] * M_PI / 180);
 		filler.Fe[0][1] = - value * std::sin(iterator.rotatingForce.phaseAngle.data[0] * M_PI / 180);
 		filler.Fe[1][0] = - value * std::sin(iterator.rotatingForce.phaseAngle.data[0] * M_PI / 180);
@@ -1193,7 +1193,7 @@ void StructuralMechanics3DKernel::processNode(const Builder &builder, const Elas
 
 void StructuralMechanics3DKernel::elementSolution(ElasticityElementIterator &iterator)
 {
-	if (!info::ecf->output.results_selection.stress || step::type == step::TYPE::FREQUENCY) {
+	if (!info::ecf->output.results_selection.stress || step::step.type == step::TYPE::FREQUENCY) {
 		return;
 	}
 
@@ -1235,10 +1235,10 @@ void StructuralMechanics3DKernel::elementSolution(ElasticityElementIterator &ite
 
 		switch (iterator.material->material_model) {
 		case MaterialBaseConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC:
-			assembleLinearElasticMaterialMatrix(n, iterator.coordinates.data, iterator.material, step::time::current, iterator.temperature.data[n], K);
+			assembleLinearElasticMaterialMatrix(n, iterator.coordinates.data, iterator.material, step::time.current, iterator.temperature.data[n], K);
 			break;
 		case MaterialBaseConfiguration::MATERIAL_MODEL::HYPER_ELASTIC:
-//			assembleHyperElasticMaterialMatrix(n, iterator.coordinates, iterator.material, step::time::current, iterator.temperature[n], K);
+//			assembleHyperElasticMaterialMatrix(n, iterator.coordinates, iterator.material, step::time.current, iterator.temperature[n], K);
 			break;
 		}
 	}

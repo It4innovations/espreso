@@ -40,27 +40,27 @@ void HarmonicBuilder::buildSystem(AssemblerData &assembler, SolverData &solver)
 		solver.K->type = MatrixType::REAL_SYMMETRIC_INDEFINITE;
 	}
 
-	if (step::type == step::TYPE::FREQUENCY) {
+	if (step::step.type == step::TYPE::FREQUENCY) {
 		if (matrices & Builder::Request::K) {
 			solver.K->addToCombination(1, assembler.K, 0, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
 			solver.K->addToCombination(1, assembler.K, DOFs, DOFs, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
 		}
 		if (matrices & Builder::Request::C) {
-			solver.K->addToCombination(-step::frequency::angular, assembler.C, 0, DOFs, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
-			solver.K->addToCombination( step::frequency::angular, assembler.C, DOFs, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
+			solver.K->addToCombination(-step::frequency.angular, assembler.C, 0, DOFs, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
+			solver.K->addToCombination( step::frequency.angular, assembler.C, DOFs, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
 			solver.K->addToCombination(1, assembler.CM, 0, DOFs, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
 			solver.K->addToCombination(1, assembler.CM, DOFs, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
 		}
 		if (rayleighDamping) {
-			double stiffCoef = stiffnessDamping + structuralDampingCoefficient / step::frequency::angular;
-			solver.K->addToCombination(-step::frequency::angular * stiffCoef, assembler.K, 0, DOFs, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
-			solver.K->addToCombination(-step::frequency::angular * massDamping, assembler.M, 0, DOFs, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
-			solver.K->addToCombination( step::frequency::angular * stiffCoef, assembler.K, DOFs, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
-			solver.K->addToCombination( step::frequency::angular * massDamping, assembler.M, DOFs, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
+			double stiffCoef = stiffnessDamping + structuralDampingCoefficient / step::frequency.angular;
+			solver.K->addToCombination(-step::frequency.angular * stiffCoef, assembler.K, 0, DOFs, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
+			solver.K->addToCombination(-step::frequency.angular * massDamping, assembler.M, 0, DOFs, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
+			solver.K->addToCombination( step::frequency.angular * stiffCoef, assembler.K, DOFs, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
+			solver.K->addToCombination( step::frequency.angular * massDamping, assembler.M, DOFs, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
 		}
 		if (matrices & Builder::Request::M) {
-			solver.K->addToCombination(-step::frequency::angular * step::frequency::angular, assembler.M, 0, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
-			solver.K->addToCombination(-step::frequency::angular * step::frequency::angular, assembler.M, DOFs, DOFs, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
+			solver.K->addToCombination(-step::frequency.angular * step::frequency.angular, assembler.M, 0, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
+			solver.K->addToCombination(-step::frequency.angular * step::frequency.angular, assembler.M, DOFs, DOFs, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
 		}
 
 		if (matrices & Builder::Request::R) {
@@ -74,20 +74,20 @@ void HarmonicBuilder::buildSystem(AssemblerData &assembler, SolverData &solver)
 		solver.BC->at(0)->fillCombinedValues(assembler.BC->at(0), DOFs, DOFs, 2 * DOFs);
 	}
 
-	if (step::type == step::TYPE::FTT) {
+	if (step::step.type == step::TYPE::FTT) {
 //		if (matrices & Builder::Request::M) {
-//			solver.K->addToCombination(-step::frequency::angular * step::frequency::angular, assembler.M, 0, 0, DOFs, 2 * DOFs);
-//			solver.K->addToCombination(-step::frequency::angular * step::frequency::angular, assembler.M, DOFs, DOFs, DOFs, 2 * DOFs);
+//			solver.K->addToCombination(-step::frequency.angular * step::frequency.angular, assembler.M, 0, 0, DOFs, 2 * DOFs);
+//			solver.K->addToCombination(-step::frequency.angular * step::frequency.angular, assembler.M, DOFs, DOFs, DOFs, 2 * DOFs);
 //		}
 //		if (matrices & Builder::Request::C) {
 //			solver.K->addToCombination(-1, assembler.C, 0, DOFs, DOFs, 2 * DOFs);
 //			solver.K->addToCombination( 1, assembler.C, DOFs, 0, DOFs, 2 * DOFs);
 //		}
 
-		double cosVal = std::cos(step::ftt::step * 2 * M_PI);
-		double sinVal = std::sin(step::ftt::step * 2 * M_PI);
+		double cosVal = std::cos(step::ftt.step * 2 * M_PI);
+		double sinVal = std::sin(step::ftt.step * 2 * M_PI);
 
-		double coeff = 2.0 / step::ftt::steps;
+		double coeff = 2.0 / step::ftt.steps;
 
 		if (matrices & Builder::Request::K) {
 			solver.K->addToCombination(cosVal * cosVal * coeff, assembler.K, 0, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);

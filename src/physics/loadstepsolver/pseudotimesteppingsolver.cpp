@@ -30,21 +30,21 @@ void PseudoTimeStepping::updateStructuralMatrices()
 
 void PseudoTimeStepping::runNextSubstep()
 {
-	double last = step::time::current;
-	step::time::current += (step::time::final - step::time::start) / _configuration.substeps;
-	if (step::time::current + step::time::precision >= step::time::final) {
-		step::time::current = step::time::final;
+	double last = step::time.current;
+	step::time.current += (step::time.final - step::time.start) / _configuration.substeps;
+	if (step::time.current + step::time.precision >= step::time.final) {
+		step::time.current = step::time.final;
 	}
-	step::time::shift = step::time::current - last;
+	step::time.shift = step::time.current - last;
 	_system->nextSubstep();
 
-	_system->builder->internalForceReduction = (double)(step::substep + 1) / _configuration.substeps;
+	_system->builder->internalForceReduction = (double)(step::step.substep + 1) / _configuration.substeps;
 	_system->builder->timeIntegrationConstantK = 1;
 	_system->builder->timeIntegrationConstantC = 0;
 	_system->builder->timeIntegrationConstantM = 0;
 
 	eslog::solver("\n = ================================== PSEUDO TIME SOLVER =================================== =\n");
-	eslog::solver(" =  LOAD STEP %2d, SUBSTEP %4d, TIME %10.6f, TIME STEP %10.6f, FINAL TIME %10.6f =\n", step::loadstep + 1, step::substep + 1, step::time::current, step::time::shift, step::time::final);
+	eslog::solver(" =  LOAD STEP %2d, SUBSTEP %4d, TIME %10.6f, TIME STEP %10.6f, FINAL TIME %10.6f =\n", step::step.loadstep + 1, step::step.substep + 1, step::time.current, step::time.shift, step::time.final);
 	eslog::solver(" = ----------------------------------------------------------------------------------------- =\n");
 
 	_subStepSolver->solve(*this);

@@ -39,7 +39,7 @@ int post(const std::string &value, int size)
 
 bool Monitoring::storeStep()
 {
-	if (step::type == step::TYPE::FTT) {
+	if (step::outstep.type == step::TYPE::FTT) {
 		return true;
 	} else {
 		switch (info::ecf->output.monitors_store_frequency) {
@@ -48,7 +48,7 @@ bool Monitoring::storeStep()
 		case OutputConfiguration::STORE_FREQUENCY::EVERY_SUBSTEP:
 			return true;
 		case OutputConfiguration::STORE_FREQUENCY::EVERY_NTH_SUBSTEP:
-			return step::substep % info::ecf->output.monitors_nth_stepping == 0;
+			return step::outstep.substep % info::ecf->output.monitors_nth_stepping == 0;
 		case OutputConfiguration::STORE_FREQUENCY::LAST_SUBSTEP:
 			return step::isLast();
 		default:
@@ -292,7 +292,7 @@ void Monitoring::updateMonitors()
 
 		// 2. line with parameters
 		fprintf(_runFile, "%8s %c %8s %c ", "loadstep", delimiter, "substep", delimiter);
-		switch (step::type) {
+		switch (step::outstep.type) {
 		case step::TYPE::TIME:
 			fprintf(_runFile, "%12s %c", "time", delimiter); break;
 		case step::TYPE::FREQUENCY:
@@ -311,7 +311,7 @@ void Monitoring::updateMonitors()
 		}
 		fprintf(_runFile, "\n\n");
 
-		for (int i = 0; i < step::duplicate::offset; i++) {
+		for (int i = 0; i < step::outduplicate.offset; i++) {
 			fprintf(_runFile, "%10c %10c %14c", delimiter, delimiter, delimiter);
 			for (size_t i = 0; i < _monitors.size(); i++) {
 				center(_monitors[i].stats, _monitors[i].printSize);
@@ -344,9 +344,9 @@ void Monitoring::updateSolution()
 		return;
 	}
 
-	if (step::type == step::TYPE::FTT) {
+	if (step::outstep.type == step::TYPE::FTT) {
 		if (step::isFirst()) {
-			std::string fttFilePath = _path + _directory + std::to_string(step::frequency::current);
+			std::string fttFilePath = _path + _directory + std::to_string(step::outfrequency.current);
 			utils::createDirectory(fttFilePath);
 			_fttFile = fopen((fttFilePath + "/" + std::string(info::ecf->name.c_str()) + ".emr").c_str(), "w");
 		}
@@ -360,12 +360,12 @@ void Monitoring::updateSolution()
 			}
 		}
 	} else {
-		fprintf(_runFile, "%8d %c %8d %c ", step::loadstep + 1, delimiter, step::substep + 1, delimiter);
-		switch (step::type) {
+		fprintf(_runFile, "%8d %c %8d %c ", step::outstep.loadstep + 1, delimiter, step::outstep.substep + 1, delimiter);
+		switch (step::outstep.type) {
 		case step::TYPE::TIME:
-			fprintf(_runFile, "%12.6f %c ", step::time::current, delimiter); break;
+			fprintf(_runFile, "%12.6f %c ", step::outtime.current, delimiter); break;
 		case step::TYPE::FREQUENCY:
-			fprintf(_runFile, "%12.4f %c ", step::frequency::current, delimiter); break;
+			fprintf(_runFile, "%12.4f %c ", step::outfrequency.current, delimiter); break;
 		default: break;
 		}
 

@@ -5,100 +5,112 @@
 namespace espreso {
 namespace step {
 
-	enum class TYPE: int {
-		TIME = 1,
-		FREQUENCY = 2,
-		FTT = 4
-	};
+enum class TYPE: int {
+	TIME = 1,
+	FREQUENCY = 2,
+	FTT = 4
+};
 
-	inline TYPE operator|(TYPE t1, TYPE t2) { return static_cast<TYPE>(static_cast<int>(t1) | static_cast<int>(t2)); }
-	inline TYPE operator&(TYPE t1, TYPE t2) { return static_cast<TYPE>(static_cast<int>(t1) & static_cast<int>(t2)); }
+inline TYPE operator|(TYPE t1, TYPE t2) { return static_cast<TYPE>(static_cast<int>(t1) | static_cast<int>(t2)); }
+inline TYPE operator&(TYPE t1, TYPE t2) { return static_cast<TYPE>(static_cast<int>(t1) & static_cast<int>(t2)); }
 
-	extern int loadstep;
-	extern int substep;
-	extern int iteration;
+struct Step {
+	int loadstep = 0;
+	int substep = 0;
+	int iteration = 0;
 
-	extern TYPE type;
+	TYPE type;
+} extern step, outstep;
 
-namespace duplicate {
-	extern int instances;
-	extern int offset;
-	extern int size;
-	extern int totalsize;
-}
+struct Duplicate {
+	int instances = 1;
+	int offset = 0;
+	int size = 1;
+	int totalsize = 1;
+} extern duplicate, outduplicate;
 
-namespace time {
-	extern double start;
-	extern double current;
-	extern double shift; // difference between current and previous time
-	extern double final;
-	extern double precision;
+struct Time {
+	double start = 0;
+	double current = 0;
+	double shift = 1; // difference between current and previous time
+	double final = 1;
+	double precision = 1e-8;
 
-	inline bool isLast() {
-		if (duplicate::instances == 1) {
+	inline bool isLast(const Step &step = step, const Duplicate &duplicate = duplicate) const {
+		if (duplicate.instances == 1) {
 			return current == final;
 		} else {
-			return substep - duplicate::offset == duplicate::size;
+			return step.substep - duplicate.offset == duplicate.size;
 		}
 	}
-}
+} extern time, outtime;
 
-namespace frequency {
-	extern double start;
-	extern double current;
-	extern double shift; // difference between current and previous frequency
-	extern double final;
-	extern double precision;
-	extern double angular;
+struct Frequency {
+	double start = 0;
+	double current = 0;
+	double shift = 1; // difference between current and previous frequency
+	double final = 1;
+	double precision = 1e-8;
+	double angular = 0;
 
-	inline bool isLast() {
-		if (duplicate::instances == 1) {
+	inline bool isLast(const Step &step = step, const Duplicate &duplicate = duplicate) const {
+		if (duplicate.instances == 1) {
 			return current == final;
 		} else {
-			return substep - duplicate::offset == duplicate::size;
+			return step.substep - duplicate.offset == duplicate.size;
 		}
 	}
-}
+} extern frequency, outfrequency;
 
-namespace ftt { // frequency to time
-	extern int step;
-	extern int steps;
+struct Ftt { // frequency to time
+	int step = 0;
+	int steps = 1;
 
-	extern double time;
-	extern double period;
+	double time = 0;
+	double period = 1;
 
-	inline bool isFirst() { return step == 0; }
-	inline bool isLast() { return step + 1 == steps; }
-}
+	inline bool isFirst() const { return step == 0; }
+	inline bool isLast() const { return step + 1 == steps; }
+} extern ftt, outftt;
 
-inline bool isInitial()
+
+inline bool isInitial(const Step &step = step)
 {
-	return loadstep == 0 && substep == 0 && iteration == 0;
+	return step.loadstep == 0 && step.substep == 0 && step.iteration == 0;
 }
 
-inline bool isFirst()
+inline bool isFirst(const Step &step = step, const Ftt &ftt = ftt)
 {
-	switch (type) {
+	switch (step.type) {
 	case TYPE::TIME:
 	case TYPE::FREQUENCY:
-		return substep == 0 && iteration == 0;
+		return step.substep == 0 && step.iteration == 0;
 	case TYPE::FTT:
-		return ftt::isFirst();
+		return ftt.isFirst();
 	}
 	return false;
 }
 
-inline bool isLast()
+inline bool isLast(const Step &step = step, const Duplicate &duplicate = duplicate, const Time &time = time, const Frequency &frequency = frequency, const Ftt &ftt = ftt)
 {
-	switch (type) {
+	switch (step.type) {
 	case TYPE::TIME:
-		return time::isLast();
+		return time.isLast(step, duplicate);
 	case TYPE::FREQUENCY:
-		return frequency::isLast();
+		return frequency.isLast(step, duplicate);
 	case TYPE::FTT:
-		return ftt::isLast();
+		return ftt.isLast();
 	}
 	return false;
+}
+
+inline void toOut()
+{
+	outstep = step;
+	outduplicate = duplicate;
+	outtime = time;
+	outfrequency = frequency;
+	outftt = ftt;
 }
 
 };

@@ -39,7 +39,7 @@ public:
 		double _time;
 		double _frequency;
 
-		Params(): _ncoors(0), _coors(NULL), _inittemp(NULL), _temp(NULL), _disp(NULL), _time(step::time::current), _frequency(step::frequency::current) {}
+		Params(): _ncoors(0), _coors(NULL), _inittemp(NULL), _temp(NULL), _disp(NULL), _time(step::time.current), _frequency(step::frequency.current) {}
 
 		int ncoords() { return _ncoors; }
 		const double* coords() { return _coors; }

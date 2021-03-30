@@ -91,12 +91,12 @@ void TopologyOptimization::runNextSubstep()
 	int iteration = 1;
 	double change = .5;
 	do {
-		step::time::current += 0.01;
-		step::time::shift = 0.1;
+		step::time.current += 0.01;
+		step::time.shift = 0.1;
 		_system->nextSubstep();
 
 		eslog::solver("\n = ================================= TOPOLOGY OPTIMIZATION ================================= =\n");
-		eslog::solver(" =  LOAD STEP %2d, SUBSTEP %4d,                             ITERATION %4d, CHANGE %8.6f  =\n", step::loadstep + 1, step::substep + 1, iteration, change);
+		eslog::solver(" =  LOAD STEP %2d, SUBSTEP %4d,                             ITERATION %4d, CHANGE %8.6f  =\n", step::step.loadstep + 1, step::step.substep + 1, iteration, change);
 		eslog::solver(" = ----------------------------------------------------------------------------------------- =\n");
 
 		_subStepSolver->solve(*this);
@@ -149,6 +149,6 @@ void TopologyOptimization::runNextSubstep()
 		eslog::solver(" = ================================================================= run time %12.3f s =\n\n", eslog::duration());
 	} while (iteration++ < _configuration.solver_settings.max_iterations && change > _configuration.solver_settings.precision);
 
-	step::time::current = step::time::final;
+	step::time.current = step::time.final;
 }
 

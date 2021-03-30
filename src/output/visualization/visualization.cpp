@@ -35,7 +35,7 @@ bool Visualization::isRoot()
 
 bool Visualization::storeStep()
 {
-	if (step::type == step::TYPE::FTT) {
+	if (step::outstep.type == step::TYPE::FTT) {
 		return true;
 	} else {
 		switch (info::ecf->output.results_store_frequency) {
@@ -44,7 +44,7 @@ bool Visualization::storeStep()
 		case OutputConfiguration::STORE_FREQUENCY::EVERY_SUBSTEP:
 			return true;
 		case OutputConfiguration::STORE_FREQUENCY::EVERY_NTH_SUBSTEP:
-			return step::substep % info::ecf->output.results_nth_stepping == 0;
+			return step::outstep.substep % info::ecf->output.results_nth_stepping == 0;
 		case OutputConfiguration::STORE_FREQUENCY::LAST_SUBSTEP:
 			return step::isLast();
 
@@ -56,7 +56,7 @@ bool Visualization::storeStep()
 
 bool Visualization::storeData(const NamedData *data)
 {
-	if (static_cast<int>(data->restriction & step::type) == 0) {
+	if (static_cast<int>(data->restriction & step::outstep.type) == 0) {
 		return false;
 	}
 	if (data->name.size() == 0) {

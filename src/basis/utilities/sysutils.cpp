@@ -78,9 +78,9 @@ std::string debugDirectory()
 {
 	std::stringstream path;
 	path << info::ecf->outpath << "/DEBUG";
-	path << "/loadstep" << step::loadstep;
-	path << "/substep" << step::substep;
-	path << "/iteration" << step::iteration;
+	path << "/loadstep" << step::step.loadstep;
+	path << "/substep" << step::step.substep;
+	path << "/iteration" << step::step.iteration;
 	path << "/" << info::mpi::rank;
 	return path.str();
 }
@@ -143,9 +143,11 @@ std::string getStack()
 
 	FILE *in;
 	char buff[512];
+	printf("popen\n");
 	if(!(in = popen(command.str().c_str(), "r"))){
 		return "Broken address to file lines command";
 	}
+	printf("popened\n");
 
 	std::string message;
 	while(fgets(buff, sizeof(buff), in) != NULL){

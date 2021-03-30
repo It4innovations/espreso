@@ -694,7 +694,7 @@ void StructuralMechanics3DSolverDataProvider::FETI::fillKernels(MatrixCSRFETI &K
 			Point{-0.707107, 0.500000, 0.500000}
 		};
 
-		double omega = step::frequency::angular;//2*3.141592*100;
+		double omega = step::frequency.angular;//2*3.141592*100;
 	//    std::FILE *fp = std::fopen("omega.txt", "r");
 	//    std::fscanf(fp, "%lf", &omega);
 	//    std::fclose(fp);

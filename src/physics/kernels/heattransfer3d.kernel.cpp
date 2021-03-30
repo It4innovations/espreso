@@ -274,8 +274,8 @@ void HeatTransfer3DKernel::processElement(const Builder &builder, const HeatTran
 		if (iterator.material->phase_change) {
 			double phase, derivation;
 			smoothstep(phase, derivation, iterator.material->phase_change_temperature - iterator.material->transition_interval / 2, iterator.material->phase_change_temperature + iterator.material->transition_interval / 2, T(n, 0), iterator.material->smooth_step_order);
-			assembleMaterialMatrix(n, iterator.coordinates.data + 3 * n, phase1, phase, step::time::current, T(n, 0), K, CD, tangentCorrection);
-			assembleMaterialMatrix(n, iterator.coordinates.data + 3 * n, phase2, (1 - phase), step::time::current, T(n, 0), K, CD, tangentCorrection);
+			assembleMaterialMatrix(n, iterator.coordinates.data + 3 * n, phase1, phase, step::time.current, T(n, 0), K, CD, tangentCorrection);
+			assembleMaterialMatrix(n, iterator.coordinates.data + 3 * n, phase2, (1 - phase), step::time.current, T(n, 0), K, CD, tangentCorrection);
 			double dens1 = phase1->density.evaluator->eval(params);
 			double dens2 = phase2->density.evaluator->eval(params);
 			double hc1 = phase1->heat_capacity.evaluator->eval(params);
@@ -283,7 +283,7 @@ void HeatTransfer3DKernel::processElement(const Builder &builder, const HeatTran
 
 			m(n, 0) = (phase * dens1 + (1 - phase) * dens2) * (phase * hc1 + (1 - phase) * hc2 + iterator.material->latent_heat * derivation);
 		} else {
-			assembleMaterialMatrix(n, iterator.coordinates.data + 3 * n, iterator.material, 1, step::time::current, T(n, 0), K, CD, tangentCorrection);
+			assembleMaterialMatrix(n, iterator.coordinates.data + 3 * n, iterator.material, 1, step::time.current, T(n, 0), K, CD, tangentCorrection);
 			double dens = iterator.material->density.evaluator->eval(params);
 			double hc = iterator.material->heat_capacity.evaluator->eval(params);
 			m(n, 0) = dens * hc;
@@ -442,8 +442,8 @@ void HeatTransfer3DKernel::processElement(const Builder &builder, const HeatTran
 
 		if ((builder.matrices & Builder::Request::M) && gsettings.diffusion_split && g.norm() != 0) {
 			gh_e = 2 * g.norm() / g_e.norm();
-			tauK = (C1 * gh_e * gh_e) / (Ce(0, 0) * C2 + gh_e * gh_e * (gpM(0, 0) / step::time::shift));
-			xi = std::max(1., 1 / (1 - tauK * gpM(0, 0) / step::time::shift));
+			tauK = (C1 * gh_e * gh_e) / (Ce(0, 0) * C2 + gh_e * gh_e * (gpM(0, 0) / step::time.shift));
+			xi = std::max(1., 1 / (1 - tauK * gpM(0, 0) / step::time.shift));
 		}
 
 		if (norm_u_e != 0) {
@@ -584,7 +584,7 @@ void HeatTransfer3DKernel::processFace(const Builder &builder, const HeatTransfe
 			double text = iterator.extemperature.data[n];
 			htc(n, 0) = iterator.htc.data[n];
 
-			if (step::iteration) {
+			if (step::step.iteration) {
 				q(n, 0) += htc(n, 0) * (text - temp);
 			} else {
 				q(n, 0) += htc(n, 0) * (text);
@@ -695,15 +695,15 @@ void HeatTransfer3DKernel::processEdge(const Builder &builder, const HeatTransfe
 //		htc(n, 0) = convection != NULL ? computeHTC(*convection, e, _mesh->coordinates()[e->node(n)], step, temp) : 0;
 //
 //		if (_step->iteration) {
-//			q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, _step->step, _mesh->coordinates()[e->node(n)], _step->time::currentTime, temp, 0) - temp);
+//			q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, _step->step, _mesh->coordinates()[e->node(n)], _step->time.currentTime, temp, 0) - temp);
 //		} else {
-//			q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, _step->step, _mesh->coordinates()[e->node(n)], _step->time::currentTime, temp, 0));
+//			q(n, 0) += htc(n, 0) * (e->getProperty(Property::EXTERNAL_TEMPERATURE, _step->step, _mesh->coordinates()[e->node(n)], _step->time.currentTime, temp, 0));
 //		}
 //
-//		emiss(n, 0) = CONST_Stefan_Boltzmann * e->getProperty(Property::EMISSIVITY, _step->step, _mesh->coordinates()[e->node(n)], _step->time::currentTime, temp, 0);
-//		q(n, 0) += emiss(n, 0) * (pow(e->getProperty(Property::EXTERNAL_TEMPERATURE, _step->step, _mesh->coordinates()[e->node(n)], _step->time::currentTime, temp, 0), 4) - pow(temp, 4));
-//		q(n, 0) += e->getProperty(Property::HEAT_FLOW, _step->step, _mesh->coordinates()[e->node(n)], _step->time::currentTime, temp, 0) / area;
-//		q(n, 0) += e->getProperty(Property::HEAT_FLUX, _step->step, _mesh->coordinates()[e->node(n)], _step->time::currentTime, temp, 0);
+//		emiss(n, 0) = CONST_Stefan_Boltzmann * e->getProperty(Property::EMISSIVITY, _step->step, _mesh->coordinates()[e->node(n)], _step->time.currentTime, temp, 0);
+//		q(n, 0) += emiss(n, 0) * (pow(e->getProperty(Property::EXTERNAL_TEMPERATURE, _step->step, _mesh->coordinates()[e->node(n)], _step->time.currentTime, temp, 0), 4) - pow(temp, 4));
+//		q(n, 0) += e->getProperty(Property::HEAT_FLOW, _step->step, _mesh->coordinates()[e->node(n)], _step->time.currentTime, temp, 0) / area;
+//		q(n, 0) += e->getProperty(Property::HEAT_FLUX, _step->step, _mesh->coordinates()[e->node(n)], _step->time.currentTime, temp, 0);
 //
 //		emiss(n, 0) *= 4 * temp * temp * temp;
 //	}
@@ -753,12 +753,12 @@ void HeatTransfer3DKernel::elementSolution(const HeatTransferElementIterator &it
 		if (iterator.material->phase_change) {
 			double phase, derivation;
 			smoothstep(phase, derivation, iterator.material->phase_change_temperature - iterator.material->transition_interval / 2, iterator.material->phase_change_temperature + iterator.material->transition_interval / 2, T(n, 0), iterator.material->smooth_step_order);
-			assembleMaterialMatrix(n, iterator.coordinates.data + 3 * n, phase1, phase, step::time::current, T(n, 0), K, CD, false);
-			assembleMaterialMatrix(n, iterator.coordinates.data + 3 * n, phase2, (1 - phase), step::time::current, T(n, 0), K, CD, false);
+			assembleMaterialMatrix(n, iterator.coordinates.data + 3 * n, phase1, phase, step::time.current, T(n, 0), K, CD, false);
+			assembleMaterialMatrix(n, iterator.coordinates.data + 3 * n, phase2, (1 - phase), step::time.current, T(n, 0), K, CD, false);
 			iterator.phase.data[0] += phase;
 			iterator.latentHeat.data[0] += iterator.material->latent_heat * derivation;
 		} else {
-			assembleMaterialMatrix(n, iterator.coordinates.data + 3 * n, iterator.material, 1, step::time::current, T(n, 0), K, CD, false);
+			assembleMaterialMatrix(n, iterator.coordinates.data + 3 * n, iterator.material, 1, step::time.current, T(n, 0), K, CD, false);
 		}
 
 		U(n, 0) = iterator.motion.data[3 * n + 0];

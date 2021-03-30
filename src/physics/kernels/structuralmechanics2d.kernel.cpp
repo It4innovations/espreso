@@ -228,7 +228,7 @@ void StructuralMechanics2DKernel::processElement(const Builder &builder, const E
 			TE(n, 1) = (iterator.temperature.data[n] - iterator.initialTemperature.data[n]) * te;
 			break;
 		}
-		assembleMaterialMatrix(n, iterator.coordinates.data, iterator.material, step::time::current, iterator.temperature.data[n], K);
+		assembleMaterialMatrix(n, iterator.coordinates.data, iterator.material, step::time.current, iterator.temperature.data[n], K);
 	}
 
 	if (builder.matrices & (Builder::Request::K | Builder::Request::R)) {
@@ -485,7 +485,7 @@ void StructuralMechanics2DKernel::elementSolution(ElasticityElementIterator &ite
 		thickness(n, 0) = iterator.thickness.data[n];
 		disp[n + 0 * size] = iterator.displacement.data[2 * n + 0];
 		disp[n + 1 * size] = iterator.displacement.data[2 * n + 1];
-		assembleMaterialMatrix(n, iterator.coordinates.data, iterator.material, step::time::current, iterator.temperature.data[n], K);
+		assembleMaterialMatrix(n, iterator.coordinates.data, iterator.material, step::time.current, iterator.temperature.data[n], K);
 	}
 
 	for (size_t gp = 0; gp < N.size(); gp++) {

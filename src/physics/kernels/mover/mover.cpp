@@ -114,10 +114,10 @@ void MoverInstance::next(const MoverIncrement &counters)
 
 void MoverInstance::nextSubstep()
 {
-	nodeparams.time(step::time::current);
-	nodeparams.freq(step::frequency::current);
-	kernelparams.time(step::time::current);
-	kernelparams.freq(step::frequency::current);
+	nodeparams.time(step::time.current);
+	nodeparams.freq(step::frequency.current);
+	kernelparams.time(step::time.current);
+	kernelparams.freq(step::frequency.current);
 	for (size_t i = 0; i < stepMovers.size(); i++) {
 		stepMovers[i]->operator()();
 	}
@@ -125,10 +125,10 @@ void MoverInstance::nextSubstep()
 
 void MoverInstance::solutionChanged()
 {
-	nodeparams.time(step::time::current);
-	nodeparams.freq(step::frequency::current);
-	kernelparams.time(step::time::current);
-	kernelparams.freq(step::frequency::current);
+	nodeparams.time(step::time.current);
+	nodeparams.freq(step::frequency.current);
+	kernelparams.time(step::time.current);
+	kernelparams.freq(step::frequency.current);
 	for (size_t i = 0; i < solutionMovers.size(); i++) {
 		solutionMovers[i]->operator()();
 	}

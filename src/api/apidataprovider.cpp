@@ -70,16 +70,16 @@ void APIDataProvider::prepare(int* argc, char ***argv)
 
 	switch (info::ecf->physics) {
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D:
-		kernel = new HeatTransfer2DKernel(NULL, info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(step::loadstep + 1));
+		kernel = new HeatTransfer2DKernel(NULL, info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(step::step.loadstep + 1));
 		break;
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D:
-		kernel = new HeatTransfer3DKernel(NULL, info::ecf->heat_transfer_3d, info::ecf->heat_transfer_3d, info::ecf->heat_transfer_3d.load_steps_settings.at(step::loadstep + 1));
+		kernel = new HeatTransfer3DKernel(NULL, info::ecf->heat_transfer_3d, info::ecf->heat_transfer_3d, info::ecf->heat_transfer_3d.load_steps_settings.at(step::step.loadstep + 1));
 		break;
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D:
-		kernel = new StructuralMechanics2DKernel((StructuralMechanics2DKernel*)NULL, info::ecf->structural_mechanics_2d, info::ecf->structural_mechanics_2d, info::ecf->structural_mechanics_2d.load_steps_settings.at(step::loadstep + 1));
+		kernel = new StructuralMechanics2DKernel((StructuralMechanics2DKernel*)NULL, info::ecf->structural_mechanics_2d, info::ecf->structural_mechanics_2d, info::ecf->structural_mechanics_2d.load_steps_settings.at(step::step.loadstep + 1));
 		break;
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
-		kernel = new StructuralMechanics3DKernel((StructuralMechanics3DKernel*)NULL, info::ecf->structural_mechanics_3d, info::ecf->structural_mechanics_3d, info::ecf->structural_mechanics_3d.load_steps_settings.at(step::loadstep + 1));
+		kernel = new StructuralMechanics3DKernel((StructuralMechanics3DKernel*)NULL, info::ecf->structural_mechanics_3d, info::ecf->structural_mechanics_3d, info::ecf->structural_mechanics_3d.load_steps_settings.at(step::step.loadstep + 1));
 		break;
 	default:
 		eslog::globalerror("Physical solver: not implemented physical solver.\n");

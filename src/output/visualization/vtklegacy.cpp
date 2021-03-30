@@ -129,15 +129,15 @@ void VTKLegacy::updateMesh()
 void VTKLegacy::updateSolution()
 {
 	std::string dir, name, suffix;
-	if (step::type == step::TYPE::FTT) {
-		dir = _path + _directory + std::to_string(step::frequency::current) + "/";
+	if (step::outstep.type == step::TYPE::FTT) {
+		dir = _path + _directory + std::to_string(step::outfrequency.current) + "/";
 		utils::createDirectory(dir);
-		name = _name + ".freq." + std::to_string(step::frequency::current);
-		suffix = "." + std::to_string(step::ftt::step) + _suffix;
+		name = _name + ".freq." + std::to_string(step::outfrequency.current);
+		suffix = "." + std::to_string(step::outftt.step) + _suffix;
 	} else {
 		dir = _path + _directory;
 		name = _name;
-		suffix = "." + std::to_string(step::substep) + _suffix;
+		suffix = "." + std::to_string(step::outstep.substep) + _suffix;
 	}
 
 	int index = 0;

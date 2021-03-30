@@ -35,8 +35,8 @@ EnSightGold::~EnSightGold()
 EnSightGold::FTT::FTT(EnSightGold *parent)
 : EnSightGold()
 {
-	_directory += std::to_string(step::frequency::current) + "/";
-	_name = parent->_name + ".freq." + std::to_string(step::frequency::current);
+	_directory += std::to_string(step::outfrequency.current) + "/";
+	_name = parent->_name + ".freq." + std::to_string(step::outfrequency.current);
 	if (isRoot()) {
 		createOutputDirectory();
 	}
@@ -76,14 +76,14 @@ void EnSightGold::updateSolution()
 {
 	EnSightGold *writer = this;
 
-	if (step::type == step::TYPE::FTT && step::isFirst()) {
+	if (step::outstep.type == step::TYPE::FTT && step::outftt.isFirst()) {
 		_ftt = new FTT(this);
 	}
 
-	switch (step::type) {
-	case step::TYPE::TIME:      _times.push_back(step::time::current); break;
-	case step::TYPE::FREQUENCY: _times.push_back(step::frequency::current); break;
-	case step::TYPE::FTT: _ftt->_times.push_back(step::ftt::time); writer = _ftt; break;
+	switch (step::outstep.type) {
+	case step::TYPE::TIME:      _times.push_back(step::outtime.current); break;
+	case step::TYPE::FREQUENCY: _times.push_back(step::outfrequency.current); break;
+	case step::TYPE::FTT: _ftt->_times.push_back(step::outftt.time); writer = _ftt; break;
 	}
 
 	for (size_t di = 0; di < info::mesh->elements->data.size(); di++) {
@@ -93,13 +93,13 @@ void EnSightGold::updateSolution()
 		writer->ndata(info::mesh->nodes->data[di]);
 	}
 
-	if (_step != step::loadstep || info::mpi::grank == 0 || (step::type == step::TYPE::FTT && info::mpi::rank == 0)) {
-		_step = step::loadstep;
-		if (step::duplicate::instances > 1 && step::substep - step::duplicate::offset + 1 == step::duplicate::size) {
+	if (_step != step::outstep.loadstep || info::mpi::grank == 0 || (step::outstep.type == step::TYPE::FTT && info::mpi::rank == 0)) {
+		_step = step::outstep.loadstep;
+		if (step::outduplicate.instances > 1 && step::outstep.substep - step::outduplicate.offset + 1 == step::outduplicate.size) {
 			// TODO: generalize
 			_times.clear();
-			for (auto f = step::frequency::start; f < step::frequency::final; f += step::frequency::shift) {
-				_times.push_back(f + step::frequency::shift);
+			for (auto f = step::outfrequency.start; f < step::outfrequency.final; f += step::outfrequency.shift) {
+				_times.push_back(f + step::outfrequency.shift);
 			}
 		}
 
@@ -150,7 +150,7 @@ void EnSightGold::updateSolution()
 	writer->_writer.reorder();
 	writer->_writer.write();
 
-	if (step::type == step::TYPE::FTT && step::isLast()) {
+	if (step::outstep.type == step::TYPE::FTT && step::outftt.isLast()) {
 		delete _ftt;
 	}
 }
@@ -339,7 +339,7 @@ void EnSightGold::ndata(const NamedData *data)
 		return;
 	}
 
-	auto niterator = [&] (esint size, esint *nodes, std::function<void(esint nindex)> callback) {
+	auto niterator = [this] (esint size, esint *nodes, std::function<void(esint nindex)> callback) {
 		for (esint n = 0; n < size; ++n) {
 			callback(nodes[n]);
 		}
@@ -348,7 +348,7 @@ void EnSightGold::ndata(const NamedData *data)
 
 	if (data->dataType == NamedData::DataType::VECTOR) {
 		std::stringstream file;
-		file << _path + _directory + dataname(data, 0) + "." << std::setw(4) << std::setfill('0') << _times.size() + step::duplicate::offset;
+		file << _path + _directory + dataname(data, 0) + "." << std::setw(4) << std::setfill('0') << _times.size() + step::outduplicate.offset;
 
 		if (isRoot()) {
 			_writer.description(dataname(data, 0));
@@ -404,7 +404,7 @@ void EnSightGold::ndata(const NamedData *data)
 	} else {
 		for (int d = 0; d < data->dimension; ++d) {
 			std::stringstream file;
-			file << _path + _directory + dataname(data, d) + "." << std::setw(4) << std::setfill('0') << _times.size() + step::duplicate::offset;
+			file << _path + _directory + dataname(data, d) + "." << std::setw(4) << std::setfill('0') << _times.size() + step::outduplicate.offset;
 
 			if (isRoot()) {
 				_writer.description(dataname(data, d));
@@ -466,7 +466,7 @@ void EnSightGold::edata(const NamedData *data)
 
 	if (data->dataType == NamedData::DataType::VECTOR) {
 		std::stringstream file;
-		file << _path + _directory + dataname(data, 0) + "." << std::setw(4) << std::setfill('0') << _times.size() + step::duplicate::offset;
+		file << _path + _directory + dataname(data, 0) + "." << std::setw(4) << std::setfill('0') << _times.size() + step::outduplicate.offset;
 		if (isRoot()) {
 			_writer.description(dataname(data, 0));
 		}
@@ -500,7 +500,7 @@ void EnSightGold::edata(const NamedData *data)
 	} else {
 		for (int d = 0; d < data->dimension; ++d) {
 			std::stringstream file;
-			file << _path + _directory + dataname(data, d) + "." << std::setw(4) << std::setfill('0') << _times.size() + step::duplicate::offset;
+			file << _path + _directory + dataname(data, d) + "." << std::setw(4) << std::setfill('0') << _times.size() + step::outduplicate.offset;
 
 			if (isRoot()) {
 				_writer.description(dataname(data, 0));

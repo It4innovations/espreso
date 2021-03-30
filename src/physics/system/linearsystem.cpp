@@ -81,12 +81,12 @@ void LinearSystem::assemble()
 		}
 	}
 
-	if (step::type == step::TYPE::FREQUENCY && builder->AFTSamples && (builder->matrices & Builder::Request::R)) {
-		step::type = step::TYPE::FTT;
-		step::ftt::steps = builder->AFTSamples;
-		step::ftt::period = 1 / step::frequency::current;
-		for (step::ftt::step = 0; step::ftt::step < step::ftt::steps; ++step::ftt::step) {
-			step::ftt::time = (double)step::ftt::step / step::ftt::steps;
+	if (step::step.type == step::TYPE::FREQUENCY && builder->AFTSamples && (builder->matrices & Builder::Request::R)) {
+		step::step.type = step::TYPE::FTT;
+		step::ftt.steps = builder->AFTSamples;
+		step::ftt.period = 1 / step::frequency.current;
+		for (step::ftt.step = 0; step::ftt.step < step::ftt.steps; ++step::ftt.step) {
+			step::ftt.time = (double)step::ftt.step / step::ftt.steps;
 
 			assembler()->composer->kernel->processSolution();
 			assembler()->composer->kernel->solutionChanged();
@@ -97,19 +97,19 @@ void LinearSystem::assemble()
 				eslog::storedata(" STORE ASSEMBLED MATRICES\n");
 				if (nassemblers() == 1) {
 					std::string prefix = utils::debugDirectory() + "/assembler";
-					std::string suffix = "_aft" + std::to_string(step::ftt::step);
+					std::string suffix = "_aft" + std::to_string(step::ftt.step);
 					assembler()->print(builder, prefix.c_str(), suffix.c_str());
 				} else {
 					for (int i = 0; i < nassemblers(); i++) {
 						std::string prefix = utils::debugDirectory() + "/assembler" + std::to_string(i + 1);
-						std::string suffix = "_aft" + std::to_string(step::ftt::step);
+						std::string suffix = "_aft" + std::to_string(step::ftt.step);
 						assembler()->print(builder, prefix.c_str(), suffix.c_str());
 					}
 				}
 			}
 		}
 
-		step::type = step::TYPE::FREQUENCY;
+		step::step.type = step::TYPE::FREQUENCY;
 	}
 
 	if (info::ecf->output.print_matrices) {

@@ -394,7 +394,7 @@ void XDMF::updateMesh()
 
 void XDMF::updateSolution()
 {
-	if (step::type == step::TYPE::FTT) {
+	if (step::outstep.type == step::TYPE::FTT) {
 		return; // TODO
 	}
 
@@ -414,7 +414,7 @@ void XDMF::updateSolution()
 			_data->topoloty[rindex] = _data->region[rindex]->element(_data->topoloty[rindex]);
 		}
 	}
-	_data->tree->element("Time")->attribute("Value", std::to_string(step::time::current));
+	_data->tree->element("Time")->attribute("Value", std::to_string(step::outtime.current));
 
 	std::vector<XDMF::Attribute> attributes;
 	attributes.reserve(info::mesh->elements->data.size() + info::mesh->nodes->data.size());

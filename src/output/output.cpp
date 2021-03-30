@@ -13,6 +13,7 @@
 #include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.h"
+#include "esinfo/stepinfo.h"
 #include "esinfo/meshinfo.h"
 #include "wrappers/pthread/w.pthread.h"
 
@@ -68,6 +69,7 @@ public:
 	void copy(int tag)
 	{
 		info::mesh->toBuffer();
+		step::toOut();
 	}
 
 	void call(int tag)

@@ -355,7 +355,7 @@ void TimeLogger::finish()
 	// WARNING: MPI sometimes copy name pointer from other process, hence use _events names
 	std::vector<size_t> begins;
 	std::vector<std::vector<const char*> > uniques, duplications;
-	std::vector<std::string> solvers(step::loadstep + 1);
+	std::vector<std::string> solvers(step::step.loadstep + 1);
 	int loadstep = 0;
 	size_t lastend = 0;
 
