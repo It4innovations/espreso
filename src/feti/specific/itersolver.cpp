@@ -5,6 +5,7 @@
 #include "itersolver.h"
 
 #include "basis/utilities/utils.h"
+#include "basis/utilities/debugprint.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/eslog.hpp"
@@ -5960,6 +5961,17 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 	}
 	 ComGA1.end(); ComGA1.printStatMPI(); preproc_timing.addEvent(ComGA1);
 
+	if (info::ecf->output.print_matrices) {
+		std::string prefix = utils::debugDirectory() + "/fetisolver/init";
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("GA_l")));
+			os << GA_l;
+		}
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("G1")));
+			os << cluster.G1;
+		}
+	}
 
 	 TimeEvent GetGKN1("Get global kernel numbering "); GetGKN1.start();
 	int local_ker_size  = (int)cluster.G1.rows;
@@ -6005,7 +6017,7 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 
 		G_neighs_neighs[neigh_i].Clear();
 	}
-	
+
 	 GGTNeighTime.end(); GGTNeighTime.printStatMPI(); preproc_timing.addEvent(GGTNeighTime);
 
 
@@ -6016,6 +6028,13 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 	}
 	 GGtLocAsm.end(); GGtLocAsm.printStatMPI(); preproc_timing.addEvent(GGtLocAsm);
 
+	if (info::ecf->output.print_matrices) {
+		std::string prefix = utils::debugDirectory() + "/fetisolver/init";
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("GKplusGt_l")));
+			os << GKpluGt_l;
+		}
+	}
 
 
 	 // Collecting pieces of GGt from all clusters to master (MPI rank 0) node - using binary tree reduction
@@ -6057,6 +6076,14 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 	if (mpi_size == 1) {
 		GGt_Mat_tmp.MatMat(cluster.G1,'N',GA_l);
 		GGt_Mat_tmp.MatTranspose(); 
+	}
+
+	if (info::ecf->output.print_matrices && mpi_rank == 0) {
+		std::string prefix = utils::debugDirectory() + "/fetisolver/init";
+		{
+			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("GGt_Mat_tmp")));
+			os << GGt_Mat_tmp;
+		}
 	}
 
 //	const char* prefix = ".";

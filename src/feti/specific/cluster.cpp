@@ -3,12 +3,16 @@
 #include "feti/dataholder.h"
 
 #include "basis/utilities/utils.h"
+#include "basis/utilities/debugprint.h"
+#include "basis/utilities/sysutils.h"
+
 #include "esinfo/mpiinfo.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 
 #include <utility>
 #include <sstream>
+#include <fstream>
 
 #include "mkl.h"
 
@@ -2036,6 +2040,21 @@ void ClusterBase::Create_G_perCluster() {
 
 	#pragma omp parallel for
 	for (size_t j = 0; j < domains.size(); j++) {
+		if (info::ecf->output.print_matrices) {
+			std::string prefix = utils::debugDirectory() + "/fetisolver/init";
+			{
+				std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Kplus_R_") + std::to_string(j)));
+				os << domains[j].Kplus_R;
+			}
+			{
+				std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Kplus_R2_") + std::to_string(j)));
+				os << domains[j].Kplus_R2;
+			}
+			{
+				std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Kplus_origR_") + std::to_string(j)));
+				os << domains[j].Kplus_origR;
+			}
+		}
 
 		if (	configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_R ||
 				configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_K)
@@ -2087,6 +2106,18 @@ void ClusterBase::Create_G_perCluster() {
 				//Create_G1_perSubdomain(Rt2, domains[j].B1, tmp_Mat2[j]);
 				Create_G_perSubdomain(Rt2, B, tmp_Mat2[j]);
 			}
+
+			if (info::ecf->output.print_matrices) {
+			std::string prefix = utils::debugDirectory() + "/fetisolver/init";
+			{
+				std::ofstream os(utils::prepareFile(std::string(prefix), std::string("tmp_Mat_") + std::to_string(j)));
+				os << tmp_Mat[j];
+			}
+			if (!SYMMETRIC_SYSTEM){
+				std::ofstream os(utils::prepareFile(std::string(prefix), std::string("tmp_Mat2_") + std::to_string(j)));
+				os << tmp_Mat2[j];
+			}
+	}
 
 	 	} // END: if
 
