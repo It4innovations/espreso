@@ -24,13 +24,27 @@ struct SharedData {
 		pthread_mutex_init(&outputLock, NULL);
 		pthread_mutex_lock(&outputLock);
 
-		cpu_set_t cpumask;
-		CPU_ZERO(&cpumask);
-		CPU_SET(utils::nprocs() - 1, &cpumask);
-
 		pthread_attr_t attributes;
 		pthread_attr_init(&attributes);
-		pthread_attr_setaffinity_np(&attributes, sizeof(cpu_set_t), &cpumask);
+
+		cpu_set_t affinity;
+		pthread_attr_getaffinity_np(&attributes, sizeof(cpu_set_t), &affinity);
+
+		const int ncores = CPU_COUNT(&affinity);
+		int core = ncores - 1;
+		while (core >= 0) {
+			if (CPU_ISSET(core, &affinity)) {
+				core--;
+			}
+		}
+		if (0 <= core) {
+			cpu_set_t cpumask;
+			CPU_ZERO(&cpumask);
+			CPU_SET(core, &cpumask);
+
+			pthread_attr_setaffinity_np(&attributes, sizeof(cpu_set_t), &cpumask);
+		}
+
 		pthread_create(&thread, &attributes, async, this);
 		pthread_attr_destroy(&attributes);
 	}
