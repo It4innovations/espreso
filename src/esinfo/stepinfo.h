@@ -19,7 +19,7 @@ struct Step {
 	int substep = 0;
 	int iteration = 0;
 
-	TYPE type;
+	TYPE type = TYPE::TIME;
 } extern step, outstep;
 
 struct Duplicate {
