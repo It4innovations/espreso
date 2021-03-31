@@ -2963,7 +2963,7 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
    { return ii + n_mat*jj; };
 
 	// Debug printing
-	if (info::ecf->output.print_matrices) {
+	if (info::ecf->output.print_matrices > 1) {
 		std::string prefix = utils::debugDirectory() + "/fetisolver/gmres/init";
 		{
 			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("b_l")));
@@ -3079,7 +3079,7 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
     	eslog::error("Not implemented preconditioner.\n");
     }
 	// Debug printing
-	if (info::ecf->output.print_matrices) {
+	if (info::ecf->output.print_matrices > 2) {
 		std::string prefix = utils::debugDirectory() + "/fetisolver/gmres/" + std::to_string(iter);
 		{
 			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Pv_l")));
@@ -3139,7 +3139,7 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
     V_l.cols++;
 
 	// Debug printing
-	if (info::ecf->output.print_matrices) {
+	if (info::ecf->output.print_matrices > 2) {
 		std::string prefix = utils::debugDirectory() + "/fetisolver/gmres/" + std::to_string(iter);
 		{
 			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("H_l")));
@@ -3217,7 +3217,7 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
 	timing.totalTime.end();
 
 	// Debug printing
-	if (info::ecf->output.print_matrices) {
+	if (info::ecf->output.print_matrices > 2) {
 		std::string prefix = utils::debugDirectory() + "/fetisolver/gmres/" + std::to_string(iter);
 		{
 			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("H_l_modif")));
@@ -3561,7 +3561,7 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
   //
 
     // Debug printing
-	if (info::ecf->output.print_matrices) {
+	if (info::ecf->output.print_matrices > 1) {
 		std::string prefix = utils::debugDirectory() + "/fetisolver/gmres/init";
 		{
 			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("b_l")));
@@ -3672,7 +3672,7 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
     }
 
 	// Debug printing
-	if (info::ecf->output.print_matrices) {
+	if (info::ecf->output.print_matrices > 2) {
 		std::string prefix = utils::debugDirectory() + "/fetisolver/gmres/" + std::to_string(iter);
 		{
 			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("w_l")));
@@ -3730,7 +3730,7 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
     V_l.cols++;
 
 	// Debug printing
-	if (info::ecf->output.print_matrices) {
+	if (info::ecf->output.print_matrices > 2) {
 		std::string prefix = utils::debugDirectory() + "/fetisolver/gmres/" + std::to_string(iter);
 		{
 			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("H_l")));
@@ -3806,7 +3806,7 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
 		timing.totalTime.end();
 
 	// Debug printing
-	if (info::ecf->output.print_matrices) {
+	if (info::ecf->output.print_matrices > 2) {
 		std::string prefix = utils::debugDirectory() + "/fetisolver/gmres/" + std::to_string(iter);
 		{
 			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("H_l_modif")));
@@ -5961,7 +5961,7 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 	}
 	 ComGA1.end(); ComGA1.printStatMPI(); preproc_timing.addEvent(ComGA1);
 
-	if (info::ecf->output.print_matrices) {
+	if (info::ecf->output.print_matrices > 1) {
 		std::string prefix = utils::debugDirectory() + "/fetisolver/init";
 		{
 			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("GA_l")));
@@ -6028,7 +6028,7 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 	}
 	 GGtLocAsm.end(); GGtLocAsm.printStatMPI(); preproc_timing.addEvent(GGtLocAsm);
 
-	if (info::ecf->output.print_matrices) {
+	if (info::ecf->output.print_matrices > 1) {
 		std::string prefix = utils::debugDirectory() + "/fetisolver/init";
 		{
 			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("GKplusGt_l")));
@@ -6078,7 +6078,7 @@ void IterSolverBase::CreateConjGGt_Inv( SuperCluster & cluster )
 		GGt_Mat_tmp.MatTranspose(); 
 	}
 
-	if (info::ecf->output.print_matrices && mpi_rank == 0) {
+	if (info::ecf->output.print_matrices > 1 && mpi_rank == 0) {
 		std::string prefix = utils::debugDirectory() + "/fetisolver/init";
 		{
 			std::ofstream os(utils::prepareFile(std::string(prefix), std::string("GGt_Mat_tmp")));

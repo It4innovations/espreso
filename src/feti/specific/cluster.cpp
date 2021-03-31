@@ -2040,7 +2040,7 @@ void ClusterBase::Create_G_perCluster() {
 
 	#pragma omp parallel for
 	for (size_t j = 0; j < domains.size(); j++) {
-		if (info::ecf->output.print_matrices) {
+		if (info::ecf->output.print_matrices > 2) {
 			std::string prefix = utils::debugDirectory() + "/fetisolver/init";
 			{
 				std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Kplus_R_") + std::to_string(j)));
@@ -2107,7 +2107,7 @@ void ClusterBase::Create_G_perCluster() {
 				Create_G_perSubdomain(Rt2, B, tmp_Mat2[j]);
 			}
 
-			if (info::ecf->output.print_matrices) {
+			if (info::ecf->output.print_matrices > 2) {
 			std::string prefix = utils::debugDirectory() + "/fetisolver/init";
 			{
 				std::ofstream os(utils::prepareFile(std::string(prefix), std::string("tmp_Mat_") + std::to_string(j)));

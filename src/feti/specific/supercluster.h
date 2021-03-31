@@ -603,58 +603,60 @@ public:
 
 	}
 
-	void printInitData(const char* prefix )
+	void printInitData(const char* prefix, size_t level)
 	{
-		for (size_t d = 0; d < domains.size(); d++) {
-			if(USE_KINV)
-			{
-				if(domains[d]->B1Kplus.is_on_acc == 1)
+		if(level > 1)
+		{
+			for (size_t d = 0; d < domains.size(); d++) {
+				if(USE_KINV)
 				{
-					domains[d]->B1Kplus.CopyFromCUDA_Dev();
-					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("B1Kplus") + std::to_string(d)));
-					os << domains[d]->B1Kplus;
-				}
-				else
-				{
-					if (!configuration.combine_sc_and_spds)
+					if(domains[d]->B1Kplus.is_on_acc == 1)
 					{
+						domains[d]->B1Kplus.CopyFromCUDA_Dev();
 						std::ofstream os(utils::prepareFile(std::string(prefix), std::string("B1Kplus") + std::to_string(d)));
 						os << domains[d]->B1Kplus;
 					}
-				}
-			}
-
-			if (configuration.preconditioner ==  FETIConfiguration::PRECONDITIONER::DIRICHLET)
-			{
-				if(domains[d]->Prec.is_on_acc == 1)
-				{
-					domains[d]->Prec.CopyFromCUDA_Dev();
-				}
-
-				std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Prec") + std::to_string(d)));
-				os << domains[d]->Prec;
-			}
-
-			if (configuration.keep_factors) {
-				if (!configuration.combine_sc_and_spds) { // if both CPU and GPU uses Schur Complement
-					if (configuration.Ksolver != FETIConfiguration::KSOLVER::ITERATIVE) {
-						std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Kplus") + std::to_string(d)));
-						SparseMatrix tmp_mat;
-						domains[d]->Kplus.ExportMatrix(tmp_mat);
-						os << tmp_mat;
+					else
+					{
+						if (!configuration.combine_sc_and_spds)
+						{
+							std::ofstream os(utils::prepareFile(std::string(prefix), std::string("B1Kplus") + std::to_string(d)));
+							os << domains[d]->B1Kplus;
+						}
 					}
-				} else {
-					if ( domains[d]->B1Kplus.is_on_acc == 0 ) {
+				}
+
+				if (configuration.preconditioner ==  FETIConfiguration::PRECONDITIONER::DIRICHLET)
+				{
+					if(domains[d]->Prec.is_on_acc == 1)
+					{
+						domains[d]->Prec.CopyFromCUDA_Dev();
+					}
+
+					std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Prec") + std::to_string(d)));
+					os << domains[d]->Prec;
+				}
+
+				if (configuration.keep_factors) {
+					if (!configuration.combine_sc_and_spds) { // if both CPU and GPU uses Schur Complement
 						if (configuration.Ksolver != FETIConfiguration::KSOLVER::ITERATIVE) {
 							std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Kplus") + std::to_string(d)));
 							SparseMatrix tmp_mat;
 							domains[d]->Kplus.ExportMatrix(tmp_mat);
 							os << tmp_mat;
 						}
+					} else {
+						if ( domains[d]->B1Kplus.is_on_acc == 0 ) {
+							if (configuration.Ksolver != FETIConfiguration::KSOLVER::ITERATIVE) {
+								std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Kplus") + std::to_string(d)));
+								SparseMatrix tmp_mat;
+								domains[d]->Kplus.ExportMatrix(tmp_mat);
+								os << tmp_mat;
+							}
+						}
 					}
 				}
 			}
-
 		}
 		// Conjugate projector matrices
 		{

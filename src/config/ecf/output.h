@@ -118,7 +118,7 @@ struct OutputConfiguration: public ECFDescription {
 	size_t measure_level;
 	LOGGER logger;
 
-	bool print_matrices;
+	size_t print_matrices;
 
 	FORMAT format;
 	MODE mode;

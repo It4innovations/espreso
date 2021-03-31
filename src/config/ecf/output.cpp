@@ -96,7 +96,7 @@ OutputConfiguration::OutputConfiguration(const ECF *root)
 	print_matrices = 0;
 	REGISTER(print_matrices, ECFMetaData()
 			.setdescription({ "Print assembler matrices for debugging." })
-			.setdatatype({ ECFDataType::BOOL }));
+			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
 
 	path = "results";
 	REGISTER(path, ECFMetaData()
