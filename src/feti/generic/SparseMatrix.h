@@ -51,7 +51,7 @@ public:
 	char type;		// 'G' for general or 'S' for symmetric
 	MatrixType mtype;
 	char uplo; 		// 'L' for lower or 'U' for upper
-        esint extern_lda; // leading dimension of the array holding 2 SCs in the device memory
+	esint extern_lda; // leading dimension of the array holding 2 SCs in the device memory
 
 	// Sparse COO data
 	SEQ_VECTOR <esint>	I_row_indices;
@@ -202,7 +202,7 @@ public:
 	void   SetDiagonalOfSymmetricMatrix( double val );
 	void   getSubDiagBlockmatrix( SparseMatrix & A_in, SparseMatrix & A_out, esint i_start, esint size);
 	void   getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_out, esint i_start, esint i_size,
-                                          esint j_start, esint j_size);
+									esint j_start, esint j_size);
 
 	// Return diagonal of CSR matrix. Columns indices have to be sorted!!
 	std::vector<double> getDiagonal() const;
@@ -231,30 +231,30 @@ public:
 
 //	void get_kernel_from_K();
 	void get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat, SparseMatrix &KplusR,
-        double &norm_KR, esint &defect, esint d_sub, size_t scSize);
-  void get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regMat, SparseMatrix &KplusR,
-        SparseMatrix &KplusR2,
-        double &norm_KR,esint &defect,esint d_sub, size_t scSize);
+		double &norm_KR, esint &defect, esint d_sub, size_t scSize);
+	void get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regMat, SparseMatrix &KplusR,
+		SparseMatrix &KplusR2,
+		double &norm_KR,esint &defect,esint d_sub, size_t scSize);
 
 private:
 
-  // get_kernel_from_K: default parameters
-  //
-  bool DIAGONALSCALING                                  = true;
-  esint PERMUTVECTORACTIVE                            = 1;
-  bool USE_ALGEBRAIC_OR_S_SET                         = true;
-  bool DIAGONALFETI_REGULARIZATION                           = true;
-  esint GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K = 0;
-  esint GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S = 0;
-  esint PLOT_N_FIRST_N_LAST_EIGENVALUES               = 0;
-  esint FIXING_NODES_OR_DOF                           = 0;
-  esint DOFPERNODE                                    = 3;
-  double COND_NUMB_FOR_SINGULAR_MATRIX                  = 1e13;
-  esint CHECK_NONSING                                 = 0;
-  esint MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS          = 2500;
-  esint sc_size                                       = 200;
-  esint TWENTY                                        = 20;
-  double JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY       = 1.0e-5;
+	// get_kernel_from_K: default parameters
+	//
+	bool DIAGONALSCALING                                  = true;
+	esint PERMUTVECTORACTIVE                            = 1;
+	bool USE_ALGEBRAIC_OR_S_SET                         = true;
+	bool DIAGONALFETI_REGULARIZATION                           = true;
+	esint GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K = 0;
+	esint GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S = 0;
+	esint PLOT_N_FIRST_N_LAST_EIGENVALUES               = 0;
+	esint FIXING_NODES_OR_DOF                           = 0;
+	esint DOFPERNODE                                    = 3;
+	double COND_NUMB_FOR_SINGULAR_MATRIX                  = 1e13;
+	esint CHECK_NONSING                                 = 0;
+	esint MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS          = 2500;
+	esint sc_size                                       = 200;
+	esint TWENTY                                        = 20;
+	double JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY       = 1.0e-5;
 
 };
 

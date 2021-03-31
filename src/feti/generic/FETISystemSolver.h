@@ -44,14 +44,14 @@ public:
 
 	virtual ~FETISystemSolver();
 
-//	void setup();
+//  void setup();
 
 	void init(const std::vector<int> &neighbors, FETIConfiguration &configuration);
 
 	void Preprocessing( std::vector < std::vector < esint > > & lambda_map_sub );
 
-	int Solve( std::vector < std::vector <double > >	& f_vec, std::vector < std::vector < double > > & prim_solution );
-	int Solve( std::vector < std::vector <double > >	& f_vec, std::vector < std::vector < double > > & prim_solution, std::vector < std::vector < double > > & dual_solution );
+	void Solve( std::vector < std::vector <double > >   & f_vec, std::vector < std::vector < double > > & prim_solution );
+	void Solve( std::vector < std::vector <double > >   & f_vec, std::vector < std::vector < double > > & prim_solution, std::vector < std::vector < double > > & dual_solution );
 
 	void Postprocessing ();
 

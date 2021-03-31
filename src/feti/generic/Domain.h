@@ -15,7 +15,7 @@ using std::map;
 #pragma once
 
 namespace espreso {
-	
+
 class Domain {
 
 public:
@@ -34,7 +34,7 @@ public:
 	void multKplusLocalCore( SEQ_VECTOR <double> & x_in_y_out);
 
 	const FETIConfiguration &configuration;
-	DataHolder 		    *instance;
+	DataHolder          *instance;
 
 	SparseMatrix &origK;
 	SparseMatrix &K;
@@ -61,7 +61,7 @@ public:
 	esint USE_HFETI;
 
 	esint domain_index;
-	bool	enable_SP_refinement;
+	bool    enable_SP_refinement;
 
 
 	// Matrices and vectors of the cluster
@@ -89,7 +89,7 @@ public:
 	SparseMatrix B1t_comp_dom;
 	SEQ_VECTOR <esint> lambda_map_sub_local;
 
-//	SparseSolverAcc Kplus;
+//  SparseSolverAcc Kplus;
 
 #ifdef BEM4I_TO_BE_REMOVED
 	DenseSolverCPU Kplus;
@@ -112,19 +112,19 @@ public:
 	SparseMatrix M;
 	SparseMatrix Prec;
 
-	SEQ_VECTOR <esint>	map_vector_e0;
-	SEQ_VECTOR <esint>	map_vector;
+	SEQ_VECTOR <esint>  map_vector_e0;
+	SEQ_VECTOR <esint>  map_vector;
 
-	SEQ_VECTOR <esint> 	fix_nodes;
-	SEQ_VECTOR <esint> 	fix_dofs;
+	SEQ_VECTOR <esint>  fix_nodes;
+	SEQ_VECTOR <esint>  fix_dofs;
 
 	// variables to export results
-	SEQ_VECTOR <esint>	number_of_nodes_in_global0;
-	SEQ_VECTOR <esint>	map_vector_local2global0;
-	SEQ_VECTOR <esint>	nodeMulti;
-	SEQ_VECTOR <double> 	ux;
-	SEQ_VECTOR <double> 	uy;
-	SEQ_VECTOR <double> 	uz;
+	SEQ_VECTOR <esint>  number_of_nodes_in_global0;
+	SEQ_VECTOR <esint>  map_vector_local2global0;
+	SEQ_VECTOR <esint>  nodeMulti;
+	SEQ_VECTOR <double>     ux;
+	SEQ_VECTOR <double>     uy;
+	SEQ_VECTOR <double>     uz;
 
 	SEQ_VECTOR <double> up0;
 	SEQ_VECTOR <double> BtLambda_i;

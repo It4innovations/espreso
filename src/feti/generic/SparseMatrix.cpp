@@ -19,9 +19,9 @@ namespace espreso {
 #define comp_x(_a,_b,_x,_p) (_a[_x]!=_a[_p] ? _a[_x]-_a[_p] : _b[_x]-_b[_p])
 
 static void q_sort_in(vector <esint>    & I_row_indices,
-					  vector <esint>    & J_col_indices,
-					  vector <double> & V_values,
-					  esint lo, esint hi ) {
+						vector <esint>    & J_col_indices,
+						vector <double> & V_values,
+						esint lo, esint hi ) {
 	esint h, l, p, p1, p2, t;
 	double p3, td;
 
@@ -96,7 +96,7 @@ std::string SparseMatrix::SpyText()
 		if (( r + rows_coef) < rows)
 			row_length = CSR_I_row_indices[r+rows_coef] - CSR_I_row_indices[r];
 		else
- 			row_length = CSR_I_row_indices[rows] - CSR_I_row_indices[r];
+			row_length = CSR_I_row_indices[rows] - CSR_I_row_indices[r];
 
 			SEQ_VECTOR<char> tmp (60,' ');
 			SEQ_VECTOR<esint> tmp_c (60,0);
@@ -169,7 +169,7 @@ SparseMatrix::SparseMatrix() {
 
 	d_dense_values_fl = NULL;
 	d_x_in_fl		  = NULL;
-    d_y_out_fl		  = NULL;
+	d_y_out_fl		  = NULL;
 
 #ifdef SOLVER_CUDA
 	handle		    = NULL;
@@ -1333,7 +1333,7 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out
 	float alpha = 1.0;
 	float beta  = 0.0;
 
-    if (type == 'G') {
+	if (type == 'G') {
 		if ( T_for_transpose_N_for_not_transpose == 'T' ) {
 			cublasSgemv(handle,
 				CUBLAS_OP_T,
@@ -1349,7 +1349,7 @@ void SparseMatrix::DenseMatVecCUDA_wo_Copy_start_fl( float * x_in, float * y_out
 				d_x_in_fl, 1,
 				&beta, d_y_out_fl, 1);
 		}
-    }
+	}
 
 	if (type == 'S') {
 
@@ -1979,12 +1979,12 @@ void SparseMatrix::MatVec(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_ou
 	// void mkl_dcsrmv (char *transa, esint *m, esint *k, double *alpha, char *matdescra, double *val,       esint *indx,          esint *pntrb,     esint *pntre,     double *x,						   double *beta,  double *y);
 	// mkl_ccsrmv      (&transa,      &m,         &m,         &alpha,              matdescra, values,            columns,                rowIndex,           &(rowIndex[1]),     sol_vec,						   &beta,         rhs_vec);
 	mkl_dcsrmv         (&trans,       &rows,      &cols,      &alpha,              matdescra, 
-      &CSR_V_values[0],  
-      &CSR_J_col_indices[0],  
-      &CSR_I_row_indices[0],  
-      &CSR_I_row_indices[1],  
-      &x_in[x_in_vector_start_index],   &beta,         
-      &y_out[y_out_vector_start_index]);
+	&CSR_V_values[0],  
+	&CSR_J_col_indices[0],  
+	&CSR_I_row_indices[0],  
+	&CSR_I_row_indices[1],  
+	&x_in[x_in_vector_start_index],   &beta,         
+&y_out[y_out_vector_start_index]);
 
 }
 
@@ -2234,17 +2234,17 @@ void SparseMatrix::MatAdd(SparseMatrix & A_in, SparseMatrix & B_in, char MatB_T_
 void SparseMatrix::spmv_(SparseMatrix & A, double *x, double *Ax){
 #ifdef GENINVtools
 	esint nA = A.cols;
-  esint offset = A.CSR_I_row_indices[0] ? 1 : 0;
-  memset(Ax,0,nA * sizeof(double));
-  for (esint i = 0; i < nA ; i++) {
-    for (esint j = A.CSR_I_row_indices[i];j<A.CSR_I_row_indices[i+1];j++) {
-      Ax[i] += CSR_V_values[j-offset] * x[CSR_J_col_indices[j-offset]-offset];
-      if (j > CSR_I_row_indices[i]) {
-        Ax[CSR_J_col_indices[j-offset]-offset] +=
-            CSR_V_values[j-offset] * x[CSR_J_col_indices[CSR_I_row_indices[i]-offset]-offset];
-      }
-    }
-  }
+	esint offset = A.CSR_I_row_indices[0] ? 1 : 0;
+	memset(Ax,0,nA * sizeof(double));
+	for (esint i = 0; i < nA ; i++) {
+		for (esint j = A.CSR_I_row_indices[i];j<A.CSR_I_row_indices[i+1];j++) {
+			Ax[i] += CSR_V_values[j-offset] * x[CSR_J_col_indices[j-offset]-offset];
+			if (j > CSR_I_row_indices[i]) {
+				Ax[CSR_J_col_indices[j-offset]-offset] +=
+					CSR_V_values[j-offset] * x[CSR_J_col_indices[CSR_I_row_indices[i]-offset]-offset];
+			}
+		}
+	}
 #endif
 }
 
@@ -2258,45 +2258,45 @@ void SparseMatrix::getSubDiagBlockmatrix(SparseMatrix & A_in, SparseMatrix & A_o
 // rev. 2015-10-10 (A.M.)
 //
 // step 1: getting nnz of submatrix
-  esint nnz_new=0;
-  esint offset = A_in.CSR_I_row_indices[0] ? 1 : 0;
-  for (esint i = 0;i<size_rr;i++){
-    for (esint j = A_in.CSR_I_row_indices[i+i_start];j<A_in.CSR_I_row_indices[i+i_start+1];j++){
-      if ((A_in.CSR_J_col_indices[j-offset]-offset)>=i_start &&
-                      (A_in.CSR_J_col_indices[j-offset]-offset)<(i_start+size_rr)){
-        nnz_new++;
-      }
-    }
-  }
+	esint nnz_new=0;
+	esint offset = A_in.CSR_I_row_indices[0] ? 1 : 0;
+	for (esint i = 0;i<size_rr;i++){
+		for (esint j = A_in.CSR_I_row_indices[i+i_start];j<A_in.CSR_I_row_indices[i+i_start+1];j++){
+			if ((A_in.CSR_J_col_indices[j-offset]-offset)>=i_start &&
+					(A_in.CSR_J_col_indices[j-offset]-offset)<(i_start+size_rr)){
+				nnz_new++;
+			}
+		}
+	}
 // step 2: allocation 1d arrays
-  A_out.CSR_V_values.resize(nnz_new);
-  A_out.CSR_J_col_indices.resize(nnz_new);
-  A_out.CSR_I_row_indices.resize(size_rr+1);
-  A_out.rows=size_rr;
-  A_out.cols=size_rr;
-  A_out.nnz=nnz_new;
+	A_out.CSR_V_values.resize(nnz_new);
+	A_out.CSR_J_col_indices.resize(nnz_new);
+	A_out.CSR_I_row_indices.resize(size_rr+1);
+	A_out.rows=size_rr;
+	A_out.cols=size_rr;
+	A_out.nnz=nnz_new;
 	A_out.type = A_in.type;
 // step 3: filling 1d arrays
-  esint ijcnt=0;
-  A_out.CSR_I_row_indices[0]=offset;
-  for (esint i = 0;i<size_rr;i++){
-    for (esint j = A_in.CSR_I_row_indices[i+i_start];j<A_in.CSR_I_row_indices[i+i_start+1];j++){
-      if ((A_in.CSR_J_col_indices[j-offset]-offset)>=i_start &&
-                    (A_in.CSR_J_col_indices[j-offset]-offset)<(i_start+size_rr)){
-        A_out.CSR_J_col_indices[ijcnt] = (A_in.CSR_J_col_indices[j-offset]) - i_start;
-        A_out.CSR_V_values[ijcnt]=A_in.CSR_V_values[j-offset];
-        ijcnt++;
-      }
-    }
-    A_out.CSR_I_row_indices[i+1]=offset+ijcnt;
-  }
+	esint ijcnt=0;
+	A_out.CSR_I_row_indices[0]=offset;
+	for (esint i = 0;i<size_rr;i++){
+		for (esint j = A_in.CSR_I_row_indices[i+i_start];j<A_in.CSR_I_row_indices[i+i_start+1];j++){
+			if ((A_in.CSR_J_col_indices[j-offset]-offset)>=i_start &&
+					(A_in.CSR_J_col_indices[j-offset]-offset)<(i_start+size_rr)){
+				A_out.CSR_J_col_indices[ijcnt] = (A_in.CSR_J_col_indices[j-offset]) - i_start;
+				A_out.CSR_V_values[ijcnt]=A_in.CSR_V_values[j-offset];
+				ijcnt++;
+			}
+		}
+		A_out.CSR_I_row_indices[i+1]=offset+ijcnt;
+	}
 #endif
 }
 
 
 void SparseMatrix::getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_out,
-                                          esint i_start, esint i_size,
-                                          esint j_start, esint j_size){
+											esint i_start, esint i_size,
+											esint j_start, esint j_size){
 #ifdef GENINVtools
 //
 // Original matrix A_in is assembled from 4 submatrices
@@ -2309,38 +2309,38 @@ void SparseMatrix::getSubBlockmatrix_rs( SparseMatrix & A_in, SparseMatrix & A_o
 // rev. 2015-10-10 (A.M.)
 //
 // step 1: getting nnz of submatrix
-  esint nnz_new=0;
-  esint offset = A_in.CSR_I_row_indices[0] ? 1 : 0;
-  for (esint i = 0;i<i_size;i++){
-    for (esint j = A_in.CSR_I_row_indices[i+i_start];j<A_in.CSR_I_row_indices[i+i_start+1];j++){
-      if ((A_in.CSR_J_col_indices[j-offset]-offset)>=j_start &&
-                      (A_in.CSR_J_col_indices[j-offset]-offset)<(j_start+j_size)){
-        nnz_new++;
-      }
-    }
-  }
-// step 2: allocation 1d arrays
-  A_out.CSR_V_values.resize(nnz_new);
-  A_out.CSR_J_col_indices.resize(nnz_new);
-  A_out.CSR_I_row_indices.resize(i_size+1);
-  A_out.rows=i_size;
-  A_out.cols=j_size;
-  A_out.nnz=nnz_new;
+	esint nnz_new=0;
+	esint offset = A_in.CSR_I_row_indices[0] ? 1 : 0;
+	for (esint i = 0;i<i_size;i++){
+		for (esint j = A_in.CSR_I_row_indices[i+i_start];j<A_in.CSR_I_row_indices[i+i_start+1];j++){
+			if ((A_in.CSR_J_col_indices[j-offset]-offset)>=j_start &&
+						(A_in.CSR_J_col_indices[j-offset]-offset)<(j_start+j_size)){
+				nnz_new++;
+			}
+		}
+	}
+	// step 2: allocation 1d arrays
+	A_out.CSR_V_values.resize(nnz_new);
+	A_out.CSR_J_col_indices.resize(nnz_new);
+	A_out.CSR_I_row_indices.resize(i_size+1);
+	A_out.rows=i_size;
+	A_out.cols=j_size;
+	A_out.nnz=nnz_new;
 	A_out.type = 'G';
-// step 3: filling 1d arrays
-  esint ijcnt=0;
-  A_out.CSR_I_row_indices[0]=offset;
-  for (esint i = 0;i<i_size;i++){
-    for (esint j = A_in.CSR_I_row_indices[i+i_start];j<A_in.CSR_I_row_indices[i+i_start+1];j++){
-      if ((A_in.CSR_J_col_indices[j-offset]-offset)>=j_start &&
-                    (A_in.CSR_J_col_indices[j-offset]-offset)<(j_start+j_size)){
-        A_out.CSR_J_col_indices[ijcnt] = (A_in.CSR_J_col_indices[j-offset]) - j_start;
-        A_out.CSR_V_values[ijcnt]=A_in.CSR_V_values[j-offset];
-        ijcnt++;
-      }
-    }
-    A_out.CSR_I_row_indices[i+1]=offset+ijcnt;
-  }
+	// step 3: filling 1d arrays
+	esint ijcnt=0;
+	A_out.CSR_I_row_indices[0]=offset;
+	for (esint i = 0;i<i_size;i++){
+		for (esint j = A_in.CSR_I_row_indices[i+i_start];j<A_in.CSR_I_row_indices[i+i_start+1];j++){
+			if ((A_in.CSR_J_col_indices[j-offset]-offset)>=j_start &&
+						(A_in.CSR_J_col_indices[j-offset]-offset)<(j_start+j_size)){
+			A_out.CSR_J_col_indices[ijcnt] = (A_in.CSR_J_col_indices[j-offset]) - j_start;
+			A_out.CSR_V_values[ijcnt]=A_in.CSR_V_values[j-offset];
+			ijcnt++;
+			}
+		}
+		A_out.CSR_I_row_indices[i+1]=offset+ijcnt;
+	}
 }
 
 void SparseMatrix::printMatCSR(char *str0){
@@ -2388,52 +2388,52 @@ void SparseMatrix::printMatCSR2(char *str0){
 
 double SparseMatrix::getNorm_K_R(SparseMatrix & K, SparseMatrix &R_in_dense_format, char transa){
 #ifdef GENINVtools
-  double norm_AR_row=0,norm_AR = 0;
-  double * AR =  new double [K.rows];
+	double norm_AR_row=0,norm_AR = 0;
+	double * AR =  new double [K.rows];
 
 
-  if (true){
-	  char matdescra[] = {0,0,0,0,0,0};
-	  matdescra[0] = K.type; // General matrix
-	  if (K.type == 'S') {
-	  	matdescra[1] = 'U'; // Triangular indicator: upper
-	  	matdescra[2] = 'N'; // Main diagonal type: non-unit
-	  }
-	  matdescra[3] = 'F'; // One based indexing
+	if (true){
+		char matdescra[] = {0,0,0,0,0,0};
+		matdescra[0] = K.type; // General matrix
+		if (K.type == 'S') {
+			matdescra[1] = 'U'; // Triangular indicator: upper
+			matdescra[2] = 'N'; // Main diagonal type: non-unit
+		}
+		matdescra[3] = 'F'; // One based indexing
 
-    double alpha=1,beta=0;
-    for (esint i = 0;i<R_in_dense_format.cols;i++){
-      mkl_dcsrmv (&transa,       &K.rows,      &K.cols,      &alpha,
-                  matdescra, 
-                  &K.CSR_V_values[0],  
-                  &K.CSR_J_col_indices[0],  
-                  &K.CSR_I_row_indices[0],
-                  &K.CSR_I_row_indices[1],
-                  &(R_in_dense_format.dense_values[i*R_in_dense_format.rows]),
-                  &beta, AR);
-      norm_AR_row = 0;
-      for (esint j = 0; j < R_in_dense_format.rows;j++){
-        norm_AR_row+=AR[j]*AR[j];
-      }
-    norm_AR+=norm_AR_row;
-    }
-    norm_AR=sqrt(norm_AR);
-  }
-  else
-  {
-    for (esint i = 0;i<R_in_dense_format.cols;i++){
-      memset(AR,0,R_in_dense_format.rows * sizeof(double));
-      K.spmv_( K,&(R_in_dense_format.dense_values[i*R_in_dense_format.rows]),AR);
-      norm_AR_row=0.0;
-      for (esint j = 0; j < R_in_dense_format.rows;j++){
-        norm_AR_row+=AR[j]*AR[j];
-      }
-      norm_AR+=norm_AR_row;
-    }
-    norm_AR=sqrt(norm_AR);
-  }
-  delete [] AR;
-  return norm_AR;
+		double alpha=1,beta=0;
+		for (esint i = 0;i<R_in_dense_format.cols;i++){
+			mkl_dcsrmv (&transa,       &K.rows,      &K.cols,      &alpha,
+				matdescra, 
+				&K.CSR_V_values[0],  
+				&K.CSR_J_col_indices[0],  
+				&K.CSR_I_row_indices[0],
+				&K.CSR_I_row_indices[1],
+				&(R_in_dense_format.dense_values[i*R_in_dense_format.rows]),
+				&beta, AR);
+			norm_AR_row = 0;
+			for (esint j = 0; j < R_in_dense_format.rows;j++){
+				norm_AR_row+=AR[j]*AR[j];
+			}
+			norm_AR+=norm_AR_row;
+		}
+		norm_AR=sqrt(norm_AR);
+	}
+	else
+	{
+		for (esint i = 0;i<R_in_dense_format.cols;i++){
+			memset(AR,0,R_in_dense_format.rows * sizeof(double));
+			K.spmv_( K,&(R_in_dense_format.dense_values[i*R_in_dense_format.rows]),AR);
+			norm_AR_row=0.0;
+			for (esint j = 0; j < R_in_dense_format.rows;j++){
+				norm_AR_row+=AR[j]*AR[j];
+			}
+			norm_AR+=norm_AR_row;
+		}
+		norm_AR=sqrt(norm_AR);
+	}
+	delete [] AR;
+	return norm_AR;
 #endif
 }
 
@@ -2457,25 +2457,25 @@ void SparseMatrix::Mat_MP_Inverse(SparseMatrix &R_in, SparseMatrix &A_in) {
 
 void SparseMatrix::GramSchmidtOrtho(){
 #ifdef GENINVtools
-  double *w = new double [rows];
-  double *R = new double [cols*cols];
-  memset(R,0,(cols*cols) * sizeof(double));
+	double *w = new double [rows];
+	double *R = new double [cols*cols];
+	memset(R,0,(cols*cols) * sizeof(double));
 
-  for (esint j = 0;j<cols;j++){
-    memcpy( w, &(dense_values[j*rows]) , sizeof( double ) * rows);
-    for (esint i = 0;i<j;i++){
-      R[j*cols+i] = dot_e(w, &(dense_values[i*rows]),rows);
-      for (esint k=0;k<rows;k++){
-        w[k]-=dense_values[i*rows+k]*R[j*cols+i];
-      }
-    }
-    R[j*cols+j] = sqrt(dot_e(w,w,rows));
-    for (esint k=0;k<rows;k++){
-      dense_values[j*rows+k] = w[k]/R[j*cols+j];
-    }
-  }
-  delete [] w;
-  delete [] R;
+	for (esint j = 0;j<cols;j++){
+		memcpy( w, &(dense_values[j*rows]) , sizeof( double ) * rows);
+		for (esint i = 0;i<j;i++){
+			R[j*cols+i] = dot_e(w, &(dense_values[i*rows]),rows);
+			for (esint k=0;k<rows;k++){
+				w[k]-=dense_values[i*rows+k]*R[j*cols+i];
+			}
+		}
+		R[j*cols+j] = sqrt(dot_e(w,w,rows));
+		for (esint k=0;k<rows;k++){
+			dense_values[j*rows+k] = w[k]/R[j*cols+j];
+		}
+	}
+	delete [] w;
+	delete [] R;
 #endif
 }
 
@@ -2484,105 +2484,105 @@ bool compareDouble(const double &i, const double &j) { return fabs(i)<=fabs(j); 
 void SparseMatrix::getNullPivots(SEQ_VECTOR <esint> & null_pivots){
 #ifdef GENINVtools
 	SEQ_VECTOR <double> N(dense_values);
-  std::vector <double>::iterator  it;
-  esint I,colInd,rowInd;
-  double *tmpV = new double[rows];
-  double pivot;
-  esint tmp_int;
-  esint *_nul_piv = new esint[rows];
-  for (esint i = 0;i<rows;i++) _nul_piv[i]=i;
+	std::vector <double>::iterator  it;
+	esint I,colInd,rowInd;
+	double *tmpV = new double[rows];
+	double pivot;
+	esint tmp_int;
+	esint *_nul_piv = new esint[rows];
+	for (esint i = 0;i<rows;i++) _nul_piv[i]=i;
 
-  auto ij = [&]( esint ii, esint jj ) -> esint {
-	  return ii + rows * jj;
-  };
+	auto ij = [&]( esint ii, esint jj ) -> esint {
+		return ii + rows * jj;
+	};
 
-  for (esint j=0;j<cols;j++){
-    it = std::max_element(N.begin(),N.end()-j*rows,compareDouble);
-    I = it - N.begin();
-    colInd = I/rows;
-    rowInd = I-colInd*rows;
-    for (esint k=0;k<cols-j;k++){
-      tmpV[k] = N[ij(rows-1-j,k)];
-      N[ij(rows-1-j,k)] = N[ij(rowInd,k)];
-      N[ij(rowInd,k)]= tmpV[k];
-    }
-    tmp_int = _nul_piv[rowInd];
-    _nul_piv[rowInd] = _nul_piv[rows-1-j];
-    _nul_piv[rows-1-j] = tmp_int;
-    if (cols - 1 - j != colInd) {
-		memcpy( tmpV, &(N[ij(0,cols-1-j)]) , sizeof( double ) * rows);
-		memcpy( &(N[ij(0, cols - 1 - j)]), &(N[ij(0, colInd)]), sizeof( double ) * rows);
-		memcpy( &(N[ij(0,colInd)]),tmpV , sizeof( double ) * rows);
-    }
-    pivot = N[ij(rows-1-j,cols-1-j)];
-    for (esint J=0;J<cols-j-1;J++){
-      for (esint I=0;I<rows-j;I++){
-        N[ij(I,J)] -= N[ij(I,cols-1-j)]*N[ij(rows-1-j,J)]/pivot;
-      }
-    }
-  }
-  for (esint i = 0;i<cols;i++){
-    null_pivots.push_back(_nul_piv[rows-1-i]+1);
-  }
-  sort(null_pivots.begin(),null_pivots.end());
+	for (esint j=0;j<cols;j++){
+		it = std::max_element(N.begin(),N.end()-j*rows,compareDouble);
+		I = it - N.begin();
+		colInd = I/rows;
+		rowInd = I-colInd*rows;
+		for (esint k=0;k<cols-j;k++){
+			tmpV[k] = N[ij(rows-1-j,k)];
+			N[ij(rows-1-j,k)] = N[ij(rowInd,k)];
+			N[ij(rowInd,k)]= tmpV[k];
+		}
+		tmp_int = _nul_piv[rowInd];
+		_nul_piv[rowInd] = _nul_piv[rows-1-j];
+		_nul_piv[rows-1-j] = tmp_int;
+		if (cols - 1 - j != colInd) {
+			memcpy( tmpV, &(N[ij(0,cols-1-j)]) , sizeof( double ) * rows);
+			memcpy( &(N[ij(0, cols - 1 - j)]), &(N[ij(0, colInd)]), sizeof( double ) * rows);
+			memcpy( &(N[ij(0,colInd)]),tmpV , sizeof( double ) * rows);
+		}
+		pivot = N[ij(rows-1-j,cols-1-j)];
+		for (esint J=0;J<cols-j-1;J++){
+			for (esint I=0;I<rows-j;I++){
+				N[ij(I,J)] -= N[ij(I,cols-1-j)]*N[ij(rows-1-j,J)]/pivot;
+			}
+		}
+	}
+	for (esint i = 0;i<cols;i++){
+		null_pivots.push_back(_nul_piv[rows-1-i]+1);
+	}
+	sort(null_pivots.begin(),null_pivots.end());
 //
-  delete [] _nul_piv;
-  delete [] tmpV;
+	delete [] _nul_piv;
+	delete [] tmpV;
 //
 #endif
 }
 //
 double SparseMatrix::MatCondNumb( SparseMatrix & A_in, const std::string &str0, esint plot_n_first_n_last_eigenvalues,
-                    double *maxEig,  int nMax_input){
+					double *maxEig,  int nMax_input){
 #ifdef GENINVtools
-  bool plot_a_and_b_defines_tridiag=false;
-  esint nA = A_in.rows;
-  esint nMax = 200; // size of tridiagonal matrix
-  //esint nEigToplot = 10;
-  double *s = new double[nA];
-  double *s_bef = new double[nA];
-  double *As = new double[nA];
-  double *r = new double[nA];
-  double tmp_a,alpha, beta = 1.0, beta_bef;
-  double estim_cond;
+	bool plot_a_and_b_defines_tridiag=false;
+	esint nA = A_in.rows;
+	esint nMax = 200; // size of tridiagonal matrix
+	//esint nEigToplot = 10;
+	double *s = new double[nA];
+	double *s_bef = new double[nA];
+	double *As = new double[nA];
+	double *r = new double[nA];
+	double tmp_a,alpha, beta = 1.0, beta_bef;
+	double estim_cond;
 
-  if (nMax_input>0 && nMax_input<nMax){
-    nMax = nMax_input;
-  }
+	if (nMax_input>0 && nMax_input<nMax){
+		nMax = nMax_input;
+	}
 
 //
-  nMax = nMax > nA ? nA : nMax;
-  double *alphaVec = new double[nMax];
-  double *betaVec  = new double[nMax];
-  esint cnt = 0;
-//
-  memset(s,0,nA * sizeof(double));
-  for (esint i = 0 ; i < nA; i++){ r[i] = i ; }
-  tmp_a = sqrt(dot_e(r,r,nA));
-  for (esint i = 0 ; i < nA; i++){ r[i] /=  tmp_a; }
-//
-  for (esint i = 0; i < nMax ; i++){
-    memcpy( s_bef, s , sizeof( double ) * nA);
-    beta_bef=beta;
-    memcpy( s, r , sizeof( double ) * nA);
-    for (esint j =  0;j < nA; j++){
-      s[j]/=beta;
-    }
-    spmv_(A_in,s,As);
-    alpha = dot_e(s,As,nA);
-    for (esint j =  0;j < nA; j++){
-      r[j]=As[j] - s[j]*alpha - s_bef[j]*beta;
-    }
-//
-    beta = sqrt(dot_e(r,r,nA));
-    alphaVec[i] = alpha;
-    betaVec[i]  = beta;
-//
-    cnt++;
-    if ( fabs(beta/beta_bef) < 1e-4 ){
-      break;
-    }
-  }
+	nMax = nMax > nA ? nA : nMax;
+	double *alphaVec = new double[nMax];
+	double *betaVec  = new double[nMax];
+	esint cnt = 0;
+	//
+	memset(s,0,nA * sizeof(double));
+	for (esint i = 0 ; i < nA; i++){ r[i] = i ; }
+	tmp_a = sqrt(dot_e(r,r,nA));
+	for (esint i = 0 ; i < nA; i++){ r[i] /=  tmp_a; }
+	//
+	for (esint i = 0; i < nMax ; i++){
+		memcpy( s_bef, s , sizeof( double ) * nA);
+		beta_bef=beta;
+		memcpy( s, r , sizeof( double ) * nA);
+		for (esint j =  0;j < nA; j++){
+			s[j]/=beta;
+		}	
+		spmv_(A_in,s,As);
+		alpha = dot_e(s,As,nA);
+		for (esint j =  0;j < nA; j++){
+			r[j]=As[j] - s[j]*alpha - s_bef[j]*beta;
+		}
+
+		beta = sqrt(dot_e(r,r,nA));
+		alphaVec[i] = alpha;
+		betaVec[i]  = beta;
+
+		cnt++;
+		if ( fabs(beta/beta_bef) < 1e-4 ){
+			break;
+		}
+	}
 //
 	if (plot_a_and_b_defines_tridiag) {
 //		//ESINFO(DETAILS) << "alpha beta";
@@ -2590,15 +2590,15 @@ double SparseMatrix::MatCondNumb( SparseMatrix & A_in, const std::string &str0, 
 //			//ESINFO(DETAILS) << alphaVec[i] << " " << betaVec[i];
 //		}
 	}
-  char JOBZ = 'N';
-  double *Z = new double[cnt];
-  esint ldz = cnt;
-  LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt, alphaVec, betaVec, Z, ldz);
-  estim_cond=fabs(alphaVec[cnt-1]/alphaVec[0]);
-//	if (plot_n_first_n_last_eigenvalues > 0) {
-//		//ESINFO(DETAILS) << "conds(" << str0 << ") = " << estim_cond << "\tit: " << cnt;
-//	}
-  *maxEig = alphaVec[cnt-1];
+	char JOBZ = 'N';
+	double *Z = new double[cnt];
+	esint ldz = cnt;
+	LAPACKE_dstev(LAPACK_ROW_MAJOR, JOBZ, cnt, alphaVec, betaVec, Z, ldz);
+	estim_cond=fabs(alphaVec[cnt-1]/alphaVec[0]);
+	//	if (plot_n_first_n_last_eigenvalues > 0) {
+	//		//ESINFO(DETAILS) << "conds(" << str0 << ") = " << estim_cond << "\tit: " << cnt;
+	//	}
+	*maxEig = alphaVec[cnt-1];
 
 	if (plot_n_first_n_last_eigenvalues > 0) {
 //		//ESINFO(DETAILS)
@@ -2612,25 +2612,25 @@ double SparseMatrix::MatCondNumb( SparseMatrix & A_in, const std::string &str0, 
 //		}
 	}
 //
-  delete [] s;
-  delete [] s_bef;
-  delete [] As;
-  delete [] r;
-  delete [] alphaVec;
-  delete [] betaVec;
-  delete [] Z;
+	delete [] s;
+	delete [] s_bef;
+	delete [] As;
+	delete [] r;
+	delete [] alphaVec;
+	delete [] betaVec;
+	delete [] Z;
 
-  return estim_cond;
+	return estim_cond;
 #endif
-  return 0;
+	return 0;
 }
 
 double SparseMatrix::dot_e(double *x, double *y, esint n){
-  double dot_xy = 0.0;
-  for (esint i = 0; i< n; i++){
-    dot_xy+=x[i]*y[i];
-  }
-  return dot_xy;
+	double dot_xy = 0.0;
+	for (esint i = 0; i< n; i++){
+		dot_xy+=x[i]*y[i];
+	}
+	return dot_xy;
 }
 
 // AM -end:   ---------------------------------------------------------------------------
@@ -3105,13 +3105,13 @@ void SparseMatrix::CreateMatFromRowsFromMatrix(SparseMatrix & A_in, SEQ_VECTOR <
 
 		fill(CSR_I_row_indices.begin() + old_index, CSR_I_row_indices.begin() + next_index, row_fill);
 
-                esint A_in_start_index;
-                if (rows_to_add[i] > 0)
-		   A_in_start_index = A_in.CSR_I_row_indices[rows_to_add[i] - 1 ] - 1 ;
+				esint A_in_start_index;
+		if (rows_to_add[i] > 0)
+				A_in_start_index = A_in.CSR_I_row_indices[rows_to_add[i] - 1 ] - 1 ;
 		else
-                   A_in_start_index = 0;
+				A_in_start_index = 0;
 
-                esint A_in_end_index   = A_in.CSR_I_row_indices[rows_to_add[i] + 1 - 1] - 1 ;
+		esint A_in_end_index   = A_in.CSR_I_row_indices[rows_to_add[i] + 1 - 1] - 1 ;
 
 		CSR_J_col_indices.insert(CSR_J_col_indices.end(), A_in.CSR_J_col_indices.begin() + A_in_start_index, A_in.CSR_J_col_indices.begin() + A_in_end_index );
 		CSR_V_values.     insert(CSR_V_values.end(),      A_in.CSR_V_values.     begin() + A_in_start_index, A_in.CSR_V_values.     begin() + A_in_end_index );
@@ -3128,7 +3128,7 @@ void SparseMatrix::CreateMatFromRowsFromMatrix(SparseMatrix & A_in, SEQ_VECTOR <
 
 void SparseMatrix::CreateMatFromRowsFromMatrix_NewSize(SparseMatrix & A_in, SEQ_VECTOR <esint> & rows_to_add) {
 
-    if (A_in.nnz > 0 ) {
+	if (A_in.nnz > 0 ) {
 
 	int row_fill   = 1;
 
@@ -3144,7 +3144,7 @@ void SparseMatrix::CreateMatFromRowsFromMatrix_NewSize(SparseMatrix & A_in, SEQ_
 		rows_to_add[i];
 
 		//fill(CSR_I_row_indices.begin() + old_index, CSR_I_row_indices.begin() + next_index, row_fill);
-                CSR_I_row_indices.push_back(row_fill);
+				CSR_I_row_indices.push_back(row_fill);
 
 		int A_in_start_index = A_in.CSR_I_row_indices[rows_to_add[i] - 1 ] - 1 ;
 		int A_in_end_index   = A_in.CSR_I_row_indices[rows_to_add[i] + 1 - 1] - 1 ;
@@ -3157,10 +3157,10 @@ void SparseMatrix::CreateMatFromRowsFromMatrix_NewSize(SparseMatrix & A_in, SEQ_
 
 
 	//fill(CSR_I_row_indices.begin() + next_index, CSR_I_row_indices.begin() + rows + 1, row_fill);
-        CSR_I_row_indices.push_back(row_fill);
+		CSR_I_row_indices.push_back(row_fill);
 
 	nnz = CSR_V_values.size();
-    }
+	}
 }
 
 esint SparseMatrix::MatCompare(SparseMatrix & A) {
@@ -3434,7 +3434,7 @@ double SparseMatrix::getDiagonalAbsMaximum() const
 
 
 void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
-      SparseMatrix &Kplus_R,double &norm_KR_d_pow_2_approx, esint &defect_d,esint d_sub, size_t scSize){
+		SparseMatrix &Kplus_R,double &norm_KR_d_pow_2_approx, esint &defect_d,esint d_sub, size_t scSize){
 
 	sc_size = scSize;
 //
@@ -3453,86 +3453,86 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 //    1) diagonalScaling
 //  reducing of big jump coefficient effect (TODO include diagonal scaling into whole ESPRESO)
 //BOOL DIAGONALSCALING                                  = true;
-  bool diagonalScaling                                  = false;
+	bool diagonalScaling                                  = false;
 
 //    2) permutVectorActive
 //  random selection of singular DOFs
 // 0 - no permut., 1 - std::vector shuffle, 2 - generating own random sequence -
 //ESLOCAL PERMUTVECTORACTIVE                            = 1;
-  esint permutVectorActive                            = 1;
+	esint permutVectorActive                            = 1;
 
 //    3) use_null_pivots_or_s_set
-  // NtN_Mat from null pivots or fixing DOFs
+// NtN_Mat from null pivots or fixing DOFs
 //BOOL USE_ALGEBRAIC_OR_S_SET                         = TRUE;
-  bool use_null_pivots_or_s_set                         = true;
+	bool use_null_pivots_or_s_set                         = true;
 
 //    4) diagonalRegularization
 //  regularization only on diagonal elements (big advantage: patern of K and K_regular is the same !!!)
 //  size of set 's' = defect(K)
 //  It's is active, only if and only if 'use_null_pivots_or_s_set = true'
 //BOOL DIAGONALFETI_REGULARIZATION                           = TRUE;
-  bool diagonalRegularization                           = true;
+	bool diagonalRegularization                           = true;
 
 //    5) get_n_first_and_n_last_eigenvals_from_dense_K
 // get and print 2*n K eigenvalues (K is temporarily converted to dense);
 //ESLOCAL GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K = 0;
-  esint get_n_first_and_n_last_eigenvals_from_dense_K = 10;
+	esint get_n_first_and_n_last_eigenvals_from_dense_K = 10;
 
 //    6) get_n_first_and_n_last_eigenvals_from_dense_S
 // get and print 2*n S eigenvalues
 //ESLOCAL GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S = 0;
 #if VERBOSE_KERNEL > 0
-  esint get_n_first_and_n_last_eigenvals_from_dense_S = 10;
+	esint get_n_first_and_n_last_eigenvals_from_dense_S = 10;
 #endif
 
 //    7) plot_n_first_n_last_eigenvalues
 // get of K eigenvalues (K is temporarily converted to dense matrix);
 //ESLOCAL PLOT_N_FIRST_N_LAST_EIGENVALUES               = 0;
-  esint plot_n_first_n_last_eigenvalues               = 0;
+	esint plot_n_first_n_last_eigenvalues               = 0;
 
 //    8) fixing_nodes_or_dof
 // non-singular part determined by fixing nodes (FN),
 // min(fixing_nodes_or_dof)>=3; if variable is nonzero,
 // parameter sc_size is set to fixing_nodes_or_dof*dofPerNode
 //ESLOCAL FIXING_NODES_OR_DOF                           = 0;
-  esint fixing_nodes_or_dof = 0;
+	esint fixing_nodes_or_dof = 0;
 //ESLOCAL DOFPERNODE                                    = 3;
-  esint dofPerNode                                    = 3;
+	esint dofPerNode                                    = 3;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //    1) cond_numb_for_singular_matrix
 //  If cond(K) > cond_numb_for_singular_matrix, K is considered as singular matrix.
 //DOUBLE COND_NUMB_FOR_SINGULAR_MATRIX                  = 1E13;
-  double cond_numb_for_singular_matrix                  = 1e13;
+	double cond_numb_for_singular_matrix                  = 1e13;
 
 //    2) check_nonsing
 // if check_nonsing>0, checking of K_rr non-singularity is activated and it is repeated
 // (check_nonsing) times.
 //ESLOCAL CHECK_NONSING                                 = 0;
-  esint check_nonsing                                 = 0;
+	esint check_nonsing                                 = 0;
 
 //    3) max_size_of_dense_matrix_to_get_eigs
 // if size of K is less then CHECK_N..., K is converted to dense format to get eigenvalues.
 //ESLOCAL MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS          = 2500;
-  esint max_size_of_dense_matrix_to_get_eigs          = 2500;
+	esint max_size_of_dense_matrix_to_get_eigs          = 2500;
 
 //    4) sc_size
 // specification of size of Schur complement used for detection of zero eigenvalues.
 //esint  sc_size >= expected defect 'd' (e.g. in elasticity d=6).
-//ESLOCAL sc_size                                       = 50;
-  esint sc_size                                       = 50;
+	//ESLOCAL sc_size                                       = 50;
+	esint sc_size                                       = 50;
 
 //    5) twenty
 // testing last twenty eigenvalues of S to distinguish, if d-last ones are zero or not.
 //ESLOCAL TWENTY                                        = 20;
-  esint twenty                                        = 20;
-  // twenty eigenvalues are ascstd::endly ordered in d = d[0],d[1], ..., d[n-2],d[n-1]
+	esint twenty                                        = 20;
+// twenty eigenvalues are ascstd::endly ordered in d = d[0],d[1], ..., d[n-2],d[n-1]
 
 //    6) jump_in_eigenvalues_alerting_singularity
 // if d[i]/d[i+1]< jump_in_eigenvalues_alerting_singularity, d[i] is last nonzero eigenvalue
 //DOUBLE JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY       = 1.0E-5;
-  double jump_in_eigenvalues_alerting_singularity       = 1.0e-5;
+	double jump_in_eigenvalues_alerting_singularity       = 1.0e-5;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3545,672 +3545,673 @@ void SparseMatrix::get_kernel_from_K(SparseMatrix &K, SparseMatrix &regMat,
 
 // DEFAULT SET-UP
 #if VERBOSE_KERNEL > 0
-    double begin_time = omp_get_wtime();
-    get_n_first_and_n_last_eigenvals_from_dense_S = GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S;
+	double begin_time = omp_get_wtime();
+	get_n_first_and_n_last_eigenvals_from_dense_S = GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S;
 #endif
 #if VERBOSE_KERNEL < 4
-    diagonalScaling                               = DIAGONALSCALING;
-    permutVectorActive                            = PERMUTVECTORACTIVE;
-    use_null_pivots_or_s_set                      = USE_ALGEBRAIC_OR_S_SET;
-    diagonalRegularization                        = DIAGONALFETI_REGULARIZATION;
-    get_n_first_and_n_last_eigenvals_from_dense_K = GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K;
-    plot_n_first_n_last_eigenvalues               = PLOT_N_FIRST_N_LAST_EIGENVALUES;
-    fixing_nodes_or_dof                           = FIXING_NODES_OR_DOF;
-    dofPerNode                                    = DOFPERNODE;
-    cond_numb_for_singular_matrix                 = COND_NUMB_FOR_SINGULAR_MATRIX;
-    check_nonsing                                 = CHECK_NONSING;
-    max_size_of_dense_matrix_to_get_eigs          = MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS;
-    sc_size                                       = sc_size;
-    twenty                                        = TWENTY;
-    jump_in_eigenvalues_alerting_singularity      = JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY;
+	diagonalScaling                               = DIAGONALSCALING;
+	permutVectorActive                            = PERMUTVECTORACTIVE;
+	use_null_pivots_or_s_set                      = USE_ALGEBRAIC_OR_S_SET;
+	diagonalRegularization                        = DIAGONALFETI_REGULARIZATION;
+	get_n_first_and_n_last_eigenvals_from_dense_K = GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K;
+	plot_n_first_n_last_eigenvalues               = PLOT_N_FIRST_N_LAST_EIGENVALUES;
+	fixing_nodes_or_dof                           = FIXING_NODES_OR_DOF;
+	dofPerNode                                    = DOFPERNODE;
+	cond_numb_for_singular_matrix                 = COND_NUMB_FOR_SINGULAR_MATRIX;
+	check_nonsing                                 = CHECK_NONSING;
+	max_size_of_dense_matrix_to_get_eigs          = MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS;
+	sc_size                                       = sc_size;
+	twenty                                        = TWENTY;
+	jump_in_eigenvalues_alerting_singularity      = JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY;
 #endif
 
 // STATISTICS MADE AND PRINTED TO FILE
 //        'kernel_detct_cX_dY.txt  (X - clust. number, Y - subdomain. number)
 //  -BRIEF
 #if VERBOSE_KERNEL == 2
-    // print ||K*R|| to file
+	// print ||K*R|| to file
 #endif
 //  - DETAILED
 #if VERBOSE_KERNEL == 3
-    get_n_first_and_n_last_eigenvals_from_dense_S = 10;
-    check_nonsing                                 = 1;
-    // max(eig(K))
+	get_n_first_and_n_last_eigenvals_from_dense_S = 10;
+	check_nonsing                                 = 1;
+	// max(eig(K))
 #endif
 //  - OWN
 #if VERBOSE_KERNEL == 4
-    if (d_sub==0){
-      //ESINFO(PROGRESS3) << "debug set-up";
-    }
+	if (d_sub==0){
+	//ESINFO(PROGRESS3) << "debug set-up";
+	}
 #endif
 
 
-  if (!use_null_pivots_or_s_set) diagonalRegularization=false;
+	if (!use_null_pivots_or_s_set) diagonalRegularization=false;
 
 #if VERBOSE_KERNEL>0
 
-    std::string name;
-    if (d_sub==-1){
-      name = Logging::prepareFile("kernel_detct_GGt");
-    }
-    else{
-      name = Logging::prepareFile(d_sub,"kernel_detct");
-    }
-    std::ofstream os(name);
+	std::string name;
+	if (d_sub==-1){
+		name = Logging::prepareFile("kernel_detct_GGt");
+	}
+	else{
+		name = Logging::prepareFile(d_sub,"kernel_detct");
+	}
+	std::ofstream os(name);
 
 
-    os << "Verbose Level:       " ;
-    if (VERBOSE_KERNEL==1){
-      os << "1/4   (times)\n";
-    }
-    else if (VERBOSE_KERNEL==2){
-      os << "2/4   (brief)\n";
-    }
-    else if (VERBOSE_KERNEL==3){
-      os << "3/4   (detailed)\n";
-    }
-    else if (VERBOSE_KERNEL==4){
-      os << "4/4   (own)\n";
-    }
-    os << "diagonalScaling:     " << int(diagonalScaling)<< "\n";
-    os << "permutVectorActive:  " << diagonalScaling<< "\n";
-    if (use_null_pivots_or_s_set){
-      os << "K regularized by null pivots";
-      if (diagonalRegularization){
-        os << ", pattern of K is not changed \n\tcontributions only on diagonal elements";
-      }
-      os << "\n";
-    }
-    else{
-      os << "K regularized by set of fixing nodes\n";
-    }
+	os << "Verbose Level:       " ;
+	if (VERBOSE_KERNEL==1){
+		os << "1/4   (times)\n";
+	}
+	else if (VERBOSE_KERNEL==2){
+		os << "2/4   (brief)\n";
+	}
+	else if (VERBOSE_KERNEL==3){
+		os << "3/4   (detailed)\n";
+	}
+	else if (VERBOSE_KERNEL==4){
+		os << "4/4   (own)\n";
+	}
+	os << "diagonalScaling:     " << int(diagonalScaling)<< "\n";
+	os << "permutVectorActive:  " << diagonalScaling<< "\n";
+	if (use_null_pivots_or_s_set){
+		os << "K regularized by null pivots";
+		if (diagonalRegularization){
+			os << ", pattern of K is not changed \n\tcontributions only on diagonal elements";
+		}
+		os << "\n";
+	}
+	else{
+		os << "K regularized by set of fixing nodes\n";
+	}
 
-    if (fixing_nodes_or_dof==0){
-      os << "non-singular part chosen by set of DOF\n";
-    }
-    else{
-      os << "non-singular part chosen by set of fixing nodes (FN), number of FN: "<<fixing_nodes_or_dof << "\n";
-      os << "DOF per node: " <<  dofPerNode << "\n";
-    }
+	if (fixing_nodes_or_dof==0){
+		os << "non-singular part chosen by set of DOF\n";
+	}
+	else{
+		os << "non-singular part chosen by set of fixing nodes (FN), number of FN: "<<fixing_nodes_or_dof << "\n";
+		os << "DOF per node: " <<  dofPerNode << "\n";
+	}
 
-    os << std::scientific;
-    os.precision(4);
-    os << "cond_numb_for_singular_matrix:             " << cond_numb_for_singular_matrix << "\n";
-    os << "jump_in_eigenvalues_alerting_singularity   " << jump_in_eigenvalues_alerting_singularity << "\n";
-    os << std::fixed;
-    os.precision(15);
-    os << "check_nonsing:                             " << check_nonsing << "\n";
-    os << "max_size_of_dense_matrix_to_get_eigs       " << max_size_of_dense_matrix_to_get_eigs << "\n";
+	os << std::scientific;
+	os.precision(4);
+	os << "cond_numb_for_singular_matrix:             " << cond_numb_for_singular_matrix << "\n";
+	os << "jump_in_eigenvalues_alerting_singularity   " << jump_in_eigenvalues_alerting_singularity << "\n";
+	os << std::fixed;
+	os.precision(15);
+	os << "check_nonsing:                             " << check_nonsing << "\n";
+	os << "max_size_of_dense_matrix_to_get_eigs       " << max_size_of_dense_matrix_to_get_eigs << "\n";
 
 #endif
 
-  //TODO if K.rows<=sc_size, use directly input K instead of S
-  //
-  int n_nodsSub = 0;
-  double rho = K.getDiagonalMaximum();
-  if (fixing_nodes_or_dof>0){
-    sc_size = fixing_nodes_or_dof*dofPerNode;
-    n_nodsSub = round(K.rows/dofPerNode);
-  }
-  //
-  //##########################################################################################
-  //
-  SparseMatrix S;
-  SparseMatrix K_rr;
-  SparseMatrix K_rs;
-  K_rr.mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-  esint i_start = 0;
+//TODO if K.rows<=sc_size, use directly input K instead of S
+//
+	int n_nodsSub = 0;
+	double rho = K.getDiagonalMaximum();
+	if (fixing_nodes_or_dof>0){
+		sc_size = fixing_nodes_or_dof*dofPerNode;
+		n_nodsSub = round(K.rows/dofPerNode);
+	}
+	//
+	//##########################################################################################
+	//
+	SparseMatrix S;
+	SparseMatrix K_rr;
+	SparseMatrix K_rs;
+	K_rr.mtype = MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+	esint i_start = 0;
 
-  if (K.rows<sc_size){
-	  sc_size = K.rows;
-    fixing_nodes_or_dof=0;
-  }
+	if (K.rows<sc_size){
+		sc_size = K.rows;
+		fixing_nodes_or_dof=0;
+	}
 
 
 #if VERBOSE_KERNEL>1
-    os << "dim(SchurComplement):                      " <<  sc_size << "\n";
-    os << "===================================================================================\n";
+	os << "dim(SchurComplement):                      " <<  sc_size << "\n";
+	os << "===================================================================================\n";
 #endif
 
-  esint nonsing_size = K.rows - sc_size - i_start;
-  esint j_start = nonsing_size;
-  SEQ_VECTOR <esint > permVec;
+	esint nonsing_size = K.rows - sc_size - i_start;
+	esint j_start = nonsing_size;
+	SEQ_VECTOR <esint > permVec;
 
-  permVec.resize(K.rows);
-  SEQ_VECTOR <SEQ_VECTOR<esint >> vec_I1_i2(K.rows, SEQ_VECTOR<esint >(2, 1));
-  esint offset = K.CSR_I_row_indices[0] ? 1 : 0;
-  //
+	permVec.resize(K.rows);
+	SEQ_VECTOR <SEQ_VECTOR<esint >> vec_I1_i2(K.rows, SEQ_VECTOR<esint >(2, 1));
+	esint offset = K.CSR_I_row_indices[0] ? 1 : 0;
+	//
 
-  double cond_of_regular_part=1e307;
-  esint *I_row_indices_p = new esint [K.nnz] ;
-  esint *J_col_indices_p = new esint [K.nnz] ;
-  SEQ_VECTOR <esint > tmp_vec_s;
-  tmp_vec_s.resize(sc_size);
-  esint v1, n_mv, cnt_permut_vec;
-  SEQ_VECTOR <esint >::iterator it;
-  SEQ_VECTOR <esint > fix_dofs;
-  fix_dofs.resize(sc_size);
-  SparseMatrix K_modif;
+	double cond_of_regular_part=1e307;
+	esint *I_row_indices_p = new esint [K.nnz] ;
+	esint *J_col_indices_p = new esint [K.nnz] ;
+	SEQ_VECTOR <esint > tmp_vec_s;
+	tmp_vec_s.resize(sc_size);
+	esint v1, n_mv, cnt_permut_vec;
+	SEQ_VECTOR <esint >::iterator it;
+	SEQ_VECTOR <esint > fix_dofs;
+	fix_dofs.resize(sc_size);
+	SparseMatrix K_modif;
 
-  double di=1,dj=1;
-  esint cnt_iter_check_nonsing=0;
+	double di=1,dj=1;
+	esint cnt_iter_check_nonsing=0;
 
-  K_modif = K; // TODO not necessary to do
+	K_modif = K; // TODO not necessary to do
 
 #if VERBOSE_KERNEL > 0
-  double elapsed_secs[15];
-  double time1 = omp_get_wtime();
-  elapsed_secs[0] = (time1 - begin_time) ;
+	double elapsed_secs[15];
+	double time1 = omp_get_wtime();
+	elapsed_secs[0] = (time1 - begin_time) ;
 #endif
 
-  SEQ_VECTOR <double> tmp_approx_max_eig;
-  tmp_approx_max_eig.resize(K.rows);
+	SEQ_VECTOR <double> tmp_approx_max_eig;
+	tmp_approx_max_eig.resize(K.rows);
 
 
 
 
-  // diagonal scaling of K_modif:
-  // K_modif[i,j] = K_modif[i,j]/sqrt(K_modif[i,i]*K_modif[j,j]);
-  for (esint i = 0;i<K_modif.rows;i++){
-    if (diagonalScaling) {
-      di=K_modif.CSR_V_values[K_modif.CSR_I_row_indices[i]-offset];
-    }
-    for (esint j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
-      if (diagonalScaling) {
-        dj=K_modif.CSR_V_values[
-          K_modif.CSR_I_row_indices[K_modif.CSR_J_col_indices[j-offset]-offset]-offset];
-      }
-      K_modif.CSR_V_values[j-offset]/=sqrt(di*dj);
-      tmp_approx_max_eig[i]+=fabs(K.CSR_V_values[j-offset]);
-    }
-  }
+	// diagonal scaling of K_modif:
+	// K_modif[i,j] = K_modif[i,j]/sqrt(K_modif[i,i]*K_modif[j,j]);
+	for (esint i = 0;i<K_modif.rows;i++){
+		if (diagonalScaling) {
+			di=K_modif.CSR_V_values[K_modif.CSR_I_row_indices[i]-offset];
+		}
+		for (esint j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
+			if (diagonalScaling) {
+				dj=K_modif.CSR_V_values[
+				K_modif.CSR_I_row_indices[K_modif.CSR_J_col_indices[j-offset]-offset]-offset];
+			}
+			K_modif.CSR_V_values[j-offset]/=sqrt(di*dj);
+			tmp_approx_max_eig[i]+=fabs(K.CSR_V_values[j-offset]);
+		}
+	}
 
 #if VERBOSE_KERNEL>0
 //1 - diagonal scaling
-  time1 = omp_get_wtime();
-  elapsed_secs[1] = (time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[1] = (time1 - begin_time) ;
 #endif
-  //                                               |
-  //#################################################################################
-  if (get_n_first_and_n_last_eigenvals_from_dense_K &&
-      K_modif.cols<max_size_of_dense_matrix_to_get_eigs && cnt_iter_check_nonsing==0) {
-    K_modif.ConvertCSRToDense(0);
-  // EIGENVALUES AND EIGENVECTORS OF STIFFNESS MATRIX
-  // Works only for matrix until size ~ 2500
-    char JOBZ_ = 'V';
-    char UPLO_ = 'U';
-    double *WK_modif = new double[K_modif.cols];
-    double *ZK_modif = new double[K_modif.cols*K_modif.cols];
-    MKL_INT info;
-    MKL_INT ldzA = K_modif.cols;
-    info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ_, UPLO_,
-            K_modif.cols, &(K_modif.dense_values[0]), WK_modif, ZK_modif, ldzA);
+	//                                               |
+	//#################################################################################
+	if (get_n_first_and_n_last_eigenvals_from_dense_K &&
+		K_modif.cols<max_size_of_dense_matrix_to_get_eigs && cnt_iter_check_nonsing==0) {
+		K_modif.ConvertCSRToDense(0);
+	// EIGENVALUES AND EIGENVECTORS OF STIFFNESS MATRIX
+	// Works only for matrix until size ~ 2500
+		char JOBZ_ = 'V';
+		char UPLO_ = 'U';
+		double *WK_modif = new double[K_modif.cols];
+		double *ZK_modif = new double[K_modif.cols*K_modif.cols];
+		MKL_INT info;
+		MKL_INT ldzA = K_modif.cols;
+		info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ_, UPLO_,
+				K_modif.cols, &(K_modif.dense_values[0]), WK_modif, ZK_modif, ldzA);
 
 
 #if VERBOSE_KERNEL>1
-      os<<"eigenvals of K d{1:" << get_n_first_and_n_last_eigenvals_from_dense_K << "} and d{" <<
-           K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K+2 << ":"<< K_modif.rows<< "}\n";
+		os<<"eigenvals of K d{1:" << get_n_first_and_n_last_eigenvals_from_dense_K << "} and d{" <<
+			K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K+2 << ":"<< K_modif.rows<< "}\n";
 
 
-      for (esint i = 0 ; i < K_modif.rows; i++){
-        if (i < get_n_first_and_n_last_eigenvals_from_dense_K ||
-              i > K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K){
-          os<< i+1 <<":"<< WK_modif[i] << "\n";
-        }
-      }
+		for (esint i = 0 ; i < K_modif.rows; i++){
+			if (i < get_n_first_and_n_last_eigenvals_from_dense_K ||
+				i > K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K){
+				os<< i+1 <<":"<< WK_modif[i] << "\n";
+			}
+		}
 #endif
-    if (info){
-      eslog::error("something wrong with Schur complement in SparseSolver::generalIinverse.\n");
-    }
-    delete [] WK_modif;
-    delete [] ZK_modif;
-  }
-  //#################################################################################
+		if (info){
+			eslog::error("something wrong with Schur complement in SparseSolver::generalIinverse.\n");
+		}
+		delete [] WK_modif;
+		delete [] ZK_modif;
+	}
+//#################################################################################
 
 //
 #if VERBOSE_KERNEL>0
 //2 - before singular test
-  time1 = omp_get_wtime();
-  elapsed_secs[2] = (time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[2] = (time1 - begin_time) ;
 #endif
-               //                                               |
-  while ( cond_of_regular_part > cond_numb_for_singular_matrix && cnt_iter_check_nonsing<(check_nonsing+1)) {
-    // loop checking non-singularity of K_rr matrix
-    if (cnt_iter_check_nonsing>0){
-      K_modif.Clear();
-      K_modif=K;
-      //diagonal scaling
-      for (esint i = 0;i<K_modif.rows;i++){
-        if (diagonalScaling) {
-          di=K_modif.CSR_V_values[K_modif.CSR_I_row_indices[i]-offset];
-        }
-        for (esint j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
-          if (diagonalScaling) {
-            dj=K_modif.CSR_V_values[
-              K_modif.CSR_I_row_indices[K_modif.CSR_J_col_indices[j-offset]-offset]-offset];
-          }
-          K_modif.CSR_V_values[j-offset]/=sqrt(di*dj);
-        }
-      }
-    }
-    //
-    if (permutVectorActive<2){
-      // set row permVec = {0,1,2,3,4,...,K.rows};
-      if (fixing_nodes_or_dof==0 || (permutVectorActive==0)){
-        for (esint i=0; i<K.rows; ++i) { permVec[i]=i;} // 0 1 2 K.rows-1
-      }
-      else
-      {
-        for (esint i=0; i<n_nodsSub; ++i) { permVec[i]=i;} // 0 1 2 n_nodsSub-1
-      }
-    }
+
+	while ( cond_of_regular_part > cond_numb_for_singular_matrix && cnt_iter_check_nonsing<(check_nonsing+1)) {
+	// loop checking non-singularity of K_rr matrix
+		if (cnt_iter_check_nonsing>0){
+			K_modif.Clear();
+			K_modif=K;
+			//diagonal scaling
+			for (esint i = 0;i<K_modif.rows;i++){
+				if (diagonalScaling) {
+					di=K_modif.CSR_V_values[K_modif.CSR_I_row_indices[i]-offset];
+				}
+				for (esint j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
+					if (diagonalScaling) {
+						dj=K_modif.CSR_V_values[
+						K_modif.CSR_I_row_indices[K_modif.CSR_J_col_indices[j-offset]-offset]-offset];
+					}
+					K_modif.CSR_V_values[j-offset]/=sqrt(di*dj);
+				}
+			}
+		}
+	//
+	if (permutVectorActive<2){
+	// set row permVec = {0,1,2,3,4,...,K.rows};
+		if (fixing_nodes_or_dof==0 || (permutVectorActive==0)){
+			for (esint i=0; i<K.rows; ++i) { permVec[i]=i;} // 0 1 2 K.rows-1
+		}
+		else
+		{
+			for (esint i=0; i<n_nodsSub; ++i) { permVec[i]=i;} // 0 1 2 n_nodsSub-1
+		}
+	}
 //
-    if (permutVectorActive==1){
-      //srand(time(NULL));
-      srand(0);
+	if (permutVectorActive==1){
+		//srand(time(NULL));
+		srand(0);
 
-      if (fixing_nodes_or_dof==0){
-        random_shuffle ( permVec.begin(), permVec.end() );
-      }
-      else
-      {
-        //std::srand(std::time(0));
-    	  std::srand(0);
-        std::random_shuffle ( permVec.begin(), permVec.begin()+n_nodsSub);
-        for (esint i=n_nodsSub;i>0;i--){
-          for (esint j=0;j<dofPerNode;j++){
-            permVec[dofPerNode*i-1-j] = dofPerNode*permVec[i-1]+j;
-          }
-        }
-      }
+		if (fixing_nodes_or_dof==0){
+			random_shuffle ( permVec.begin(), permVec.end() );
+		}
+		else
+		{
+			//std::srand(std::time(0));
+			std::srand(0);
+			std::random_shuffle ( permVec.begin(), permVec.begin()+n_nodsSub);
+			for (esint i=n_nodsSub;i>0;i--){
+				for (esint j=0;j<dofPerNode;j++){
+					permVec[dofPerNode*i-1-j] = dofPerNode*permVec[i-1]+j;
+				}
+			}
+		}
 
-      sort(permVec.begin(),permVec.begin()+nonsing_size);
-      sort(permVec.begin()+nonsing_size,permVec.end());
-    }
-    else if (permutVectorActive==2){
-      // random permutation
-      n_mv = 0;                     // n_mv = size(unique(tmp_vec_s)) has to be equal to sc_size
-      cnt_permut_vec=0;
-      //srand(time(NULL));
-      srand(0);
-      // loop controls, if series 'tmp_vec_s' with unique integers has suffisciant dimension.
-      // If not, missing numbers are added and checked again.
-      do {
-        for (esint i = 0;i<(sc_size-n_mv);i++){
-          v1 = rand() % K_modif.rows;
-          tmp_vec_s[n_mv+i]=v1;
-        }
-        it=tmp_vec_s.begin();
-        std::sort(tmp_vec_s.begin(), tmp_vec_s.end());
-        it = std::unique(tmp_vec_s.begin(), tmp_vec_s.end());
-        n_mv = distance(tmp_vec_s.begin(),it);
-        cnt_permut_vec++;
-     } while (n_mv != sc_size && cnt_permut_vec < 100);
-      //
-      esint ik=0,cnt_i=0;
-      for (size_t i = 0;i<permVec.size();i++){
-        if (i==(size_t)tmp_vec_s[ik]){
-          permVec[ik+nonsing_size]=tmp_vec_s[ik];
-          ik++;
-        }
-        else{
-          permVec[cnt_i]=i;
-          cnt_i++;
-        }
-      }
+		sort(permVec.begin(),permVec.begin()+nonsing_size);
+		sort(permVec.begin()+nonsing_size,permVec.end());
+	}
+	else if (permutVectorActive==2){
+		// random permutation
+		n_mv = 0;                     // n_mv = size(unique(tmp_vec_s)) has to be equal to sc_size
+		cnt_permut_vec=0;
+		//srand(time(NULL));
+		srand(0);
+		// loop controls, if series 'tmp_vec_s' with unique integers has suffisciant dimension.
+		// If not, missing numbers are added and checked again.
+		do {
+			for (esint i = 0;i<(sc_size-n_mv);i++){
+				v1 = rand() % K_modif.rows;
+				tmp_vec_s[n_mv+i]=v1;
+			}
+			it=tmp_vec_s.begin();
+			std::sort(tmp_vec_s.begin(), tmp_vec_s.end());
+			it = std::unique(tmp_vec_s.begin(), tmp_vec_s.end());
+			n_mv = distance(tmp_vec_s.begin(),it);
+			cnt_permut_vec++;
+		} while (n_mv != sc_size && cnt_permut_vec < 100);
+		//
+		esint ik=0,cnt_i=0;
+		for (size_t i = 0;i<permVec.size();i++){
+			if (i==(size_t)tmp_vec_s[ik]){
+				permVec[ik+nonsing_size]=tmp_vec_s[ik];
+				ik++;
+			}
+			else
+			{
+				permVec[cnt_i]=i;
+				cnt_i++;
+			}
+		}
 #if VERBOSE_KERNEL>1
-        os << "n_mv: " << n_mv <<", sc_size: " << sc_size << ", it. for RAND: "<< cnt_permut_vec<<"\n";
+		os << "n_mv: " << n_mv <<", sc_size: " << sc_size << ", it. for RAND: "<< cnt_permut_vec<<"\n";
 #endif
-    }
-    //      r = permVec[0:nonsing_size-1]     (singular DOFs)
-    //      s = permVec[nonsing_size:end-1]   (non-singular DOFs)
-    if (permutVectorActive>0){
-//
-      for (esint i = 0; i < K.rows;i++){
-        vec_I1_i2[i][0]=permVec[i];
-        vec_I1_i2[i][1]=i; // position to create revers permutation
-      }
+	}
+	//      r = permVec[0:nonsing_size-1]     (singular DOFs)
+	//      s = permVec[nonsing_size:end-1]   (non-singular DOFs)
+	if (permutVectorActive>0){
+	//
+		for (esint i = 0; i < K.rows;i++){
+			vec_I1_i2[i][0]=permVec[i];
+			vec_I1_i2[i][1]=i; // position to create revers permutation
+		}
 
-      std::sort(vec_I1_i2.begin(), vec_I1_i2.end(),
-                [](const SEQ_VECTOR <esint >& a, const SEQ_VECTOR <esint >& b) {
-        return a[0] < b[0];
-      });
-      // permutations made on matrix in COO format
-      K_modif.ConvertToCOO(0);
-      esint I_index,J_index;
-      for (esint i = 0;i<K_modif.nnz;i++){
-        I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
-        J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
-        if (I_index>J_index){
-          I_row_indices_p[i]=J_index; J_col_indices_p[i]=I_index;
-        }
-        else{
-          I_row_indices_p[i]=I_index; J_col_indices_p[i]=J_index;
-        }
-      }
-//
-      for (esint i = 0; i<K_modif.nnz;i++){
-        K_modif.I_row_indices[i] = I_row_indices_p[i];
-        K_modif.J_col_indices[i] = J_col_indices_p[i];
-      }
-      K_modif.ConvertToCSRwithSort(0);
-    }
-//
-    for (esint i = 0;i<sc_size;i++) fix_dofs[i]=permVec[nonsing_size + i] + offset;
-    K_rr.getSubDiagBlockmatrix(K_modif,K_rr,i_start, nonsing_size);
-    if (check_nonsing!=0){
-      double lmx_K_rr;
-      cond_of_regular_part = K_rr.MatCondNumb(K_rr,"K_rr",plot_n_first_n_last_eigenvalues,&lmx_K_rr,100);
+		std::sort(vec_I1_i2.begin(), vec_I1_i2.end(),
+				[](const SEQ_VECTOR <esint >& a, const SEQ_VECTOR <esint >& b) {
+					return a[0] < b[0];
+				});
+		// permutations made on matrix in COO format
+		K_modif.ConvertToCOO(0);
+		esint I_index,J_index;
+		for (esint i = 0;i<K_modif.nnz;i++){
+			I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
+			J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
+			if (I_index>J_index){
+				I_row_indices_p[i]=J_index; J_col_indices_p[i]=I_index;
+			}
+			else{
+				I_row_indices_p[i]=I_index; J_col_indices_p[i]=J_index;
+			}
+		}
+		//
+		for (esint i = 0; i<K_modif.nnz;i++){
+			K_modif.I_row_indices[i] = I_row_indices_p[i];
+			K_modif.J_col_indices[i] = J_col_indices_p[i];
+		}
+		K_modif.ConvertToCSRwithSort(0);
+	}
+	//
+	for (esint i = 0;i<sc_size;i++) fix_dofs[i]=permVec[nonsing_size + i] + offset;
+		K_rr.getSubDiagBlockmatrix(K_modif,K_rr,i_start, nonsing_size);
+		if (check_nonsing!=0){
+			double lmx_K_rr;
+			cond_of_regular_part = K_rr.MatCondNumb(K_rr,"K_rr",plot_n_first_n_last_eigenvalues,&lmx_K_rr,100);
 
 #if VERBOSE_KERNEL>2
-        os << "cond of regular part = "<< cond_of_regular_part <<"\n" << std::flush ;
+			os << "cond of regular part = "<< cond_of_regular_part <<"\n" << std::flush ;
 #endif
-    }
+		}
 //
-    cnt_iter_check_nonsing++;
-  }
+		cnt_iter_check_nonsing++;
+	}
 
-  delete [] I_row_indices_p;
-  delete [] J_col_indices_p;
+	delete [] I_row_indices_p;
+	delete [] J_col_indices_p;
 
 
 #if VERBOSE_KERNEL>0
 //3 - after singular test
-  time1 = omp_get_wtime();
-  elapsed_secs[3] = (time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[3] = (time1 - begin_time) ;
 #endif
 //                                               |
 
 //
-  K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
+	K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
 #if VERBOSE_KERNEL>0
 //4 - creation of block K_rs
-  time1 = omp_get_wtime();
-  elapsed_secs[4] = double(time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[4] = double(time1 - begin_time) ;
 #endif
 //
-  SparseSolverCPU K_rr_solver;
-  std::stringstream ss;
-  bool SC_via_K_rr=true;
+	SparseSolverCPU K_rr_solver;
+	std::stringstream ss;
+	bool SC_via_K_rr=true;
 //
-  if (K_rr.cols==0){
-    S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
-    S.RemoveLower();
-  }
-  else
-  {
-    if (SC_via_K_rr){
-      S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
-      K_rr_solver.ImportMatrix(K_rr);
-      ss << "get kerner from K -> rank: " << info::mpi::rank;
-      int error_K_rr = K_rr_solver.Factorization(ss.str());
+	if (K_rr.cols==0){
+		S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
+		S.RemoveLower();
+	}
+	else
+	{
+		if (SC_via_K_rr){
+			S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
+			K_rr_solver.ImportMatrix(K_rr);
+			ss << "get kerner from K -> rank: " << info::mpi::rank;
+			int error_K_rr = K_rr_solver.Factorization(ss.str());
 
 
-      if (error_K_rr){
-        // K  ------------------------------------------------------------------------
-//        SparseMatrix se0 = K;
-//        std::ofstream ose00(Logging::prepareFile(d_sub, "K_Err"));
-//        ose00 << se0;
-//        ose00.close();
-//        // K_rr ----------------------------------------------------------------------
-//        SparseMatrix se1 = K_rr;
-//        std::ofstream ose0(Logging::prepareFile(d_sub, "K_rrErr"));
-//        ose0 << se1;
-//        ose0.close();
-//        // K_rs ----------------------------------------------------------------------
-//        SparseMatrix se2 = K_rs;
-//        std::ofstream ose1(Logging::prepareFile(d_sub, "K_rsErr"));
-//        ose1 << se2;
-//        ose1.close();
-//        // K_modif -------------------------------------------------------------------
-//        SparseMatrix se3 = K_modif;
-//        std::ofstream ose2(Logging::prepareFile(d_sub, "K_modifErr"));
-//        ose2 << se3;
-//        ose2.close();
-//        // info file -----------------------------------------------------------------
-//        if (d_sub!=-1){
-//          std::ofstream ose3(Logging::prepareFile(d_sub, "permut_vectorErr"));
-//          for (size_t i = 0;i<permVec.size();i++){
-//            ose3 << permVec[i]+1 <<" ";
-//          }
-//          ose3.close();
-//        }
-#if VERBOSE_KERNEL > 0
-        os.close();
-#endif
-        eslog::error("factorization of K_rr failed (1/2 factorization).\n");
-        exit(EXIT_FAILURE);
-      }
-      SparseMatrix invKrrKrs = K_rs;
-      K_rr_solver.SolveMat_Dense(invKrrKrs);
-      SparseMatrix KsrInvKrrKrs;
-      KsrInvKrrKrs.MatMat(K_rs,'T',invKrrKrs);
-      S.MatAddInPlace(KsrInvKrrKrs,'N',-1);
-      S.RemoveLower();
-    }
-    else{
-      SparseSolverCPU createSchur;
-      // TODO PARDISO_SC provides factor K_rr.
-      // if SC_via_K_rr=false,  factorization is made redundantly later.
-      createSchur.ImportMatrix(K_modif);
-      createSchur.Create_SC(S,sc_size,false);
-      K_modif.Clear();
-      createSchur.Clear();
-    }
-  }
+			if (error_K_rr){
+			// K  ------------------------------------------------------------------------
+	//        SparseMatrix se0 = K;
+	//        std::ofstream ose00(Logging::prepareFile(d_sub, "K_Err"));
+	//        ose00 << se0;
+	//        ose00.close();
+	//        // K_rr ----------------------------------------------------------------------
+	//        SparseMatrix se1 = K_rr;
+	//        std::ofstream ose0(Logging::prepareFile(d_sub, "K_rrErr"));
+	//        ose0 << se1;
+	//        ose0.close();
+	//        // K_rs ----------------------------------------------------------------------
+	//        SparseMatrix se2 = K_rs;
+	//        std::ofstream ose1(Logging::prepareFile(d_sub, "K_rsErr"));
+	//        ose1 << se2;
+	//        ose1.close();
+	//        // K_modif -------------------------------------------------------------------
+	//        SparseMatrix se3 = K_modif;
+	//        std::ofstream ose2(Logging::prepareFile(d_sub, "K_modifErr"));
+	//        ose2 << se3;
+	//        ose2.close();
+	//        // info file -----------------------------------------------------------------
+	//        if (d_sub!=-1){
+	//          std::ofstream ose3(Logging::prepareFile(d_sub, "permut_vectorErr"));
+	//          for (size_t i = 0;i<permVec.size();i++){
+	//            ose3 << permVec[i]+1 <<" ";
+	//          }
+	//          ose3.close();
+	//        }
+	#if VERBOSE_KERNEL > 0
+				os.close();
+	#endif
+				eslog::error("factorization of K_rr failed (1/2 factorization).\n");
+				exit(EXIT_FAILURE);
+			}
+			SparseMatrix invKrrKrs = K_rs;
+			K_rr_solver.SolveMat_Dense(invKrrKrs);
+			SparseMatrix KsrInvKrrKrs;
+			KsrInvKrrKrs.MatMat(K_rs,'T',invKrrKrs);
+			S.MatAddInPlace(KsrInvKrrKrs,'N',-1);
+			S.RemoveLower();
+		}
+		else{
+			SparseSolverCPU createSchur;
+			// TODO PARDISO_SC provides factor K_rr.
+			// if SC_via_K_rr=false,  factorization is made redundantly later.
+			createSchur.ImportMatrix(K_modif);
+			createSchur.Create_SC(S,sc_size,false);
+			K_modif.Clear();
+			createSchur.Clear();
+		}
+	}
 //
-  S.type='S';
-  S.ConvertCSRToDense(1);
+	S.type='S';
+	S.ConvertCSRToDense(1);
 #if VERBOSE_KERNEL>0
 //5 - Schur complement created
-    time1 = omp_get_wtime();
-    elapsed_secs[5] = double(time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[5] = double(time1 - begin_time) ;
 #endif
 // EIGENVALUES AND EIGENVECTORS OF SCHUR COMPLEMENT
-  char JOBZ = 'V';
-  char UPLO = 'U';
-  double *W = new double[S.cols];
-  double *Z = new double[S.cols*S.cols];
-  MKL_INT info;
-  MKL_INT ldz = S.cols;
-  info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ, UPLO, S.cols, &(S.dense_values[0]), W, Z, ldz);
-  if (info){
-	  eslog::error("something wrong with Schur complement in SparseSolverCPU::generalIinverse.\n");
-  }
+	char JOBZ = 'V';
+	char UPLO = 'U';
+	double *W = new double[S.cols];
+	double *Z = new double[S.cols*S.cols];
+	MKL_INT info;
+	MKL_INT ldz = S.cols;
+	info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ, UPLO, S.cols, &(S.dense_values[0]), W, Z, ldz);
+	if (info){
+		eslog::error("something wrong with Schur complement in SparseSolverCPU::generalIinverse.\n");
+	}
 #if VERBOSE_KERNEL>0
 //6 - Schur complement eigenvalues obtained
-  time1 = omp_get_wtime();
-  elapsed_secs[6] = double(time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[6] = double(time1 - begin_time) ;
 #endif
 // IDENTIFICATIONS OF ZERO EIGENVALUES
-  esint defect_K_in = 0;// R_s_cols;
-  double ratio;
-  esint itMax = twenty < S.rows ? twenty : S.rows ;
+	esint defect_K_in = 0;// R_s_cols;
+	double ratio;
+	esint itMax = twenty < S.rows ? twenty : S.rows ;
 //#if VERBOSE_KERNEL>1
 //  os<<"ratio,      eig{i-1},          eig{i}\n";
 //#endif
-  for (esint i = itMax-1; i > 0;i--){
-    ratio = fabs(W[i-1]/W[i]);
+	for (esint i = itMax-1; i > 0;i--){
+		ratio = fabs(W[i-1]/W[i]);
 //#if VERBOSE_KERNEL>1
 //    os<<ratio <<" "<< W[i-1] << " " << W[i] << "\n";
 //#endif
-    if (ratio < jump_in_eigenvalues_alerting_singularity){
-      defect_K_in=i;
-      break;
-    }
-  }
+		if (ratio < jump_in_eigenvalues_alerting_singularity){
+			defect_K_in=i;
+			break;
+		}
+	}
 #if VERBOSE_KERNEL>0
 //7 - zero eigenvalues detection
-  time1 = omp_get_wtime();
-  elapsed_secs[7] = double(time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[7] = double(time1 - begin_time) ;
 #endif
 //
 #if VERBOSE_KERNEL>1
-  if (get_n_first_and_n_last_eigenvals_from_dense_S!=0){
-    int i1i = get_n_first_and_n_last_eigenvals_from_dense_S;
-    if (i1i>S.rows){i1i=S.rows;}
-    os<<"eigenvals of S d{1:" << i1i << "} and d{" <<
-         S.rows-get_n_first_and_n_last_eigenvals_from_dense_S+2 << ":"<< S.rows<< "}\n";
+	if (get_n_first_and_n_last_eigenvals_from_dense_S!=0){
+		int i1i = get_n_first_and_n_last_eigenvals_from_dense_S;
+		if (i1i>S.rows){i1i=S.rows;}
+			os<<"eigenvals of S d{1:" << i1i << "} and d{" <<
+				S.rows-get_n_first_and_n_last_eigenvals_from_dense_S+2 << ":"<< S.rows<< "}\n";
 
-    for (esint i = 0 ; i < S.rows; i++){
-      if (i < get_n_first_and_n_last_eigenvals_from_dense_S ||
-            i > S.rows-get_n_first_and_n_last_eigenvals_from_dense_S){
-        os<< i+1 <<":\t"<< W[i] << "\n";
-      }
-    }
-  }
+		for (esint i = 0 ; i < S.rows; i++){
+			if (i < get_n_first_and_n_last_eigenvals_from_dense_S ||
+					i > S.rows-get_n_first_and_n_last_eigenvals_from_dense_S){
+				os<< i+1 <<":\t"<< W[i] << "\n";
+			}
+		}
+	}
 #endif
 
-if (defect_K_in == 0){
+	if (defect_K_in == 0){
 
-	regMat = SparseMatrix();
-	Kplus_R = SparseMatrix();
+		regMat = SparseMatrix();
+		Kplus_R = SparseMatrix();
 
-	    regMat.rows = 0;
-	    regMat.cols = 0;
-	    regMat.nnz= 0; 
-//      regMat.ConvertToCOO(1);
+			regMat.rows = 0;
+			regMat.cols = 0;
+			regMat.nnz= 0; 
+	//      regMat.ConvertToCOO(1);
 
-	    Kplus_R.rows = 0;
-	    Kplus_R.cols = 0;
-	    Kplus_R.nnz= 0;
+			Kplus_R.rows = 0;
+			Kplus_R.cols = 0;
+			Kplus_R.nnz= 0;
 
-      norm_KR_d_pow_2_approx = 0;
-      defect_d = 0;
+		norm_KR_d_pow_2_approx = 0;
+		defect_d = 0;
 
-      delete [] W;
-	  delete [] Z;
+		delete [] W;
+		delete [] Z;
 
-      return; 
-}
+		return; 
+	}
 
 
 
 // --------------- CREATING KERNEL R_s FOR SINGULAR PART (SCHUR COMPLEMENT)
-  SparseMatrix R_s;
-  R_s.nnz  = defect_K_in*S.rows;
-  R_s.dense_values.resize(R_s.nnz);
-  R_s.rows = S.rows;
-  R_s.cols = defect_K_in;
-  R_s.type = 'G';
-  esint cntR=0;
-  for (esint j = 0; j < defect_K_in; j++){
-    for (esint i = 0; i < R_s.rows; i++){
-	    R_s.dense_values[cntR] = Z[j*R_s.rows + i];
-      cntR++;
-    }
-  }
-  R_s.ConvertDenseToCSR(0);
+	SparseMatrix R_s;
+	R_s.nnz  = defect_K_in*S.rows;
+	R_s.dense_values.resize(R_s.nnz);
+	R_s.rows = S.rows;
+	R_s.cols = defect_K_in;
+	R_s.type = 'G';
+	esint cntR=0;
+	for (esint j = 0; j < defect_K_in; j++){
+		for (esint i = 0; i < R_s.rows; i++){
+			R_s.dense_values[cntR] = Z[j*R_s.rows + i];
+			cntR++;
+		}
+	}
+	R_s.ConvertDenseToCSR(0);
 #if VERBOSE_KERNEL>0
 //8 - R_s created
-  time1 = omp_get_wtime();
-  elapsed_secs[8] = double(time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[8] = double(time1 - begin_time) ;
 #endif
 // --------------- CREATING KERNEL R_r FOR NON-SINGULAR PART
 
-  int R_r_rows = 0;
-  SparseMatrix R_r;
-  if (K_rr.cols!=0){
-    R_r.MatMat(K_rs,'N',R_s);
-    K_rs.Clear();
-    if (!SC_via_K_rr) {
-      K_rr_solver.ImportMatrix(K_rr);
-      K_rr.Clear();
-      ss << "get kerner from K -> rank: " << info::mpi::rank;
-      K_rr_solver.Factorization(ss.str());
-    }
-    K_rr_solver.SolveMat_Dense(R_r); // inv(K_rr)*K_rs*R_s
-    K_rr_solver.Clear();
-    R_r.ConvertCSRToDense(0);
-    R_r_rows = R_r.rows;
-  }
-  R_s.ConvertCSRToDense(0);
+	int R_r_rows = 0;
+	SparseMatrix R_r;
+	if (K_rr.cols!=0){
+		R_r.MatMat(K_rs,'N',R_s);
+		K_rs.Clear();
+		if (!SC_via_K_rr) {
+			K_rr_solver.ImportMatrix(K_rr);
+			K_rr.Clear();
+			ss << "get kerner from K -> rank: " << info::mpi::rank;
+			K_rr_solver.Factorization(ss.str());
+		}
+		K_rr_solver.SolveMat_Dense(R_r); // inv(K_rr)*K_rs*R_s
+		K_rr_solver.Clear();
+		R_r.ConvertCSRToDense(0);
+		R_r_rows = R_r.rows;
+	}
+	R_s.ConvertCSRToDense(0);
 #if VERBOSE_KERNEL>0
 //9 - R_r created (applied K_rr)
-  time1 = omp_get_wtime();
-  elapsed_secs[9] = double(time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[9] = double(time1 - begin_time) ;
 #endif
-               //                                               |
+//                                               |
 // --------------- CREATING WHOLE KERNEL Kplus_R = [ (R_r)^T (R_s)^T ]^T
-  Kplus_R.rows = R_r_rows+R_s.rows;
-  Kplus_R.cols = R_s.cols;
-  Kplus_R.nnz  = Kplus_R.cols*Kplus_R.rows;
-  Kplus_R.type = 'G';
+	Kplus_R.rows = R_r_rows+R_s.rows;
+	Kplus_R.cols = R_s.cols;
+	Kplus_R.nnz  = Kplus_R.cols*Kplus_R.rows;
+	Kplus_R.type = 'G';
 	Kplus_R.dense_values.resize(Kplus_R.nnz);
-  cntR=0;
-  for (esint j = 0; j < Kplus_R.cols; j++){
-    for (esint i = 0; i < R_r_rows; i++){
-      if (diagonalScaling){
-        di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i]]-offset];
-      }
-      Kplus_R.dense_values[j*Kplus_R.rows + permVec[i]] = R_r.dense_values[j*R_r_rows + i]/sqrt(di);
-      cntR++;
-    }
-    for (esint i = 0; i < R_s.rows; i++){
-      if (diagonalScaling){
-        di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i+R_r_rows]]-offset];
-      }
-	    Kplus_R.dense_values[j*Kplus_R.rows + permVec[i+R_r_rows]] =-R_s.dense_values[j*R_s.rows + i]/sqrt(di);
-      cntR++;
-    }
-  }
+	cntR=0;
+	for (esint j = 0; j < Kplus_R.cols; j++){
+		for (esint i = 0; i < R_r_rows; i++){
+			if (diagonalScaling){
+				di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i]]-offset];
+			}
+			Kplus_R.dense_values[j*Kplus_R.rows + permVec[i]] = R_r.dense_values[j*R_r_rows + i]/sqrt(di);
+			cntR++;
+		}
+		for (esint i = 0; i < R_s.rows; i++){
+			if (diagonalScaling){
+				di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i+R_r_rows]]-offset];
+			}
+			Kplus_R.dense_values[j*Kplus_R.rows + permVec[i+R_r_rows]] =-R_s.dense_values[j*R_s.rows + i]/sqrt(di);
+			cntR++;
+		}
+	}
 //
-  Kplus_R.GramSchmidtOrtho();
-  SEQ_VECTOR <esint > null_pivots;
-  Kplus_R.getNullPivots(null_pivots);
+	Kplus_R.GramSchmidtOrtho();
+	SEQ_VECTOR <esint > null_pivots;
+	Kplus_R.getNullPivots(null_pivots);
 
 #if VERBOSE_KERNEL>0
 //10 - R - Gram Schmidt Orthogonalization
-  time1 = omp_get_wtime();
-  os << "null pivots: \n";
-  os << "[";
-  for (size_t k = 0; k<null_pivots.size();k++){
-    os << null_pivots[k] ;
-    if (k<null_pivots.size()-1 ){
-     os << ", ";
-      }
-  }
-   os << "]\n";
+	time1 = omp_get_wtime();
+	os << "null pivots: \n";
+	os << "[";
+	for (size_t k = 0; k<null_pivots.size();k++){
+		os << null_pivots[k] ;
+		if (k<null_pivots.size()-1 ){
+			os << ", ";
+		}
+	}
+	os << "]\n";
 
-  elapsed_secs[10] = double(time1 - begin_time) ;
+	elapsed_secs[10] = double(time1 - begin_time) ;
 #endif
-               //                                               |
+		//                                               |
 
-  // norm of product K*R: second matrix has to be in dense format!!!
+// norm of product K*R: second matrix has to be in dense format!!!
 //11 - max(eig(K))
 
-  std::vector <double>::iterator  it2;
-  it2 = std::max_element(tmp_approx_max_eig.begin(),tmp_approx_max_eig.end(),compareDouble);
-  double lmx_K_approx       = *it2;
-  double tmp_Norm_K_R       = K.getNorm_K_R(K,Kplus_R,'N');
-  norm_KR_d_pow_2_approx   = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K_approx*lmx_K_approx);
-  defect_d                 = Kplus_R.cols;
+	std::vector <double>::iterator  it2;
+	it2 = std::max_element(tmp_approx_max_eig.begin(),tmp_approx_max_eig.end(),compareDouble);
+	double lmx_K_approx       = *it2;
+	double tmp_Norm_K_R       = K.getNorm_K_R(K,Kplus_R,'N');
+	norm_KR_d_pow_2_approx   = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K_approx*lmx_K_approx);
+	defect_d                 = Kplus_R.cols;
 
 
 #if VERBOSE_KERNEL>2
-  os << "max(eig(K)) approx:      " << lmx_K_approx << "\n";
+	os << "max(eig(K)) approx:      " << lmx_K_approx << "\n";
 #endif
 #if VERBOSE_KERNEL>3
-  double lmx_K;
-  K.MatCondNumb(K,"K_singular",plot_n_first_n_last_eigenvalues,&lmx_K,100);
-  double norm_KR_d_pow_2          = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K*lmx_K);
-  double norm_KR                  = sqrt(norm_KR_d_pow_2);
-  os << std::scientific;
-  os << "max(eig(K)):             " << lmx_K << "\n";
-  os << "max(diag(K)):            " << rho << "\n";
-  os << "defect(K):               " << defect_K_in <<"\n";
-  os << "norm_KR:                 " << norm_KR <<"\n";
+	double lmx_K;
+	K.MatCondNumb(K,"K_singular",plot_n_first_n_last_eigenvalues,&lmx_K,100);
+	double norm_KR_d_pow_2          = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K*lmx_K);
+	double norm_KR                  = sqrt(norm_KR_d_pow_2);
+	os << std::scientific;
+	os << "max(eig(K)):             " << lmx_K << "\n";
+	os << "max(diag(K)):            " << rho << "\n";
+	os << "defect(K):               " << defect_K_in <<"\n";
+	os << "norm_KR:                 " << norm_KR <<"\n";
 #endif
 #if VERBOSE_KERNEL>2
-  os << "norm_KR_approx:          " << sqrt(norm_KR_d_pow_2_approx) <<"\n";
+	os << "norm_KR_approx:          " << sqrt(norm_KR_d_pow_2_approx) <<"\n";
 #endif
 //                                               |
 #if VERBOSE_KERNEL > 0
-  time1 = omp_get_wtime();
-  elapsed_secs[11] = double(time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[11] = double(time1 - begin_time) ;
 #endif
 //
-  Kplus_R.ConvertDenseToCSR(0);
+	Kplus_R.ConvertDenseToCSR(0);
 //
 //
 
@@ -4218,70 +4219,70 @@ if (defect_K_in == 0){
 
 
 
-  if (diagonalRegularization){
-    esint tmp_int0;
-    if (d_sub!=-1) {
-	    regMat.rows = K.rows;
-	    regMat.cols = K.cols;
-	    regMat.type = 'S';
-	    regMat.nnz= null_pivots.size();
+	if (diagonalRegularization){
+	esint tmp_int0;
+		if (d_sub!=-1) {
+			regMat.rows = K.rows;
+			regMat.cols = K.cols;
+			regMat.type = 'S';
+			regMat.nnz= null_pivots.size();
 
-      regMat.I_row_indices.resize(regMat.nnz);
-      regMat.J_col_indices.resize(regMat.nnz);
-      regMat.V_values.resize(regMat.nnz);
-    }
-    for (size_t i = 0; i < null_pivots.size(); i++){
-      tmp_int0=K.CSR_I_row_indices[null_pivots[i]-offset]-offset;
-      K.CSR_V_values[tmp_int0]+=rho;
-      // if d_sub==-1; it's G0G0t matrix (or S_alpha)
-      if (d_sub!=-1) {
-        regMat.I_row_indices[i] = null_pivots[i];
-        regMat.J_col_indices[i] = null_pivots[i];
-        regMat.V_values[i]      = rho ;
-      }
-    }
-  }
-  else{
-    SparseMatrix N;
-    if (use_null_pivots_or_s_set){
-      N.CreateMatFromRowsFromMatrix( Kplus_R, null_pivots);
-    }
-    else
-    {
-      N.CreateMatFromRowsFromMatrix( Kplus_R, fix_dofs);
-    }
-  //null_pivots
-    SparseMatrix Nt;
-    N.MatTranspose( Nt );
-    SparseMatrix NtN_Mat;
-    NtN_Mat.MatMat( Nt,'N',N );
-    NtN_Mat.MatTranspose();
-    NtN_Mat.RemoveLower();
-    SparseSolverCPU NtN;
-    NtN.ImportMatrix(NtN_Mat);
-    NtN_Mat.Clear();
-    std::stringstream sss;
-    sss << "get kernel from K -> rank: " << info::mpi::rank;
-    NtN.Factorization(sss.str());
-    NtN.SolveMat_Sparse(Nt);
-    NtN.Clear();
-    NtN_Mat.MatMat(N,'N',Nt);
-    NtN_Mat.MatScale(rho);
-    NtN_Mat.RemoveLower();
-    K.MatAddInPlace (NtN_Mat,'N', 1);
-    // IF d_sub == -1, it is GGt0 of cluster and regMat is no need
-    if (d_sub!=-1)
-    {
-      regMat=NtN_Mat;
-      regMat.ConvertToCOO(1);
-    }
-  }
+			regMat.I_row_indices.resize(regMat.nnz);
+			regMat.J_col_indices.resize(regMat.nnz);
+			regMat.V_values.resize(regMat.nnz);
+		}
+		for (size_t i = 0; i < null_pivots.size(); i++){
+			tmp_int0=K.CSR_I_row_indices[null_pivots[i]-offset]-offset;
+			K.CSR_V_values[tmp_int0]+=rho;
+			// if d_sub==-1; it's G0G0t matrix (or S_alpha)
+			if (d_sub!=-1) {
+				regMat.I_row_indices[i] = null_pivots[i];
+				regMat.J_col_indices[i] = null_pivots[i];
+				regMat.V_values[i]      = rho ;
+			}
+		}
+	}
+	else{
+		SparseMatrix N;
+		if (use_null_pivots_or_s_set){
+			N.CreateMatFromRowsFromMatrix( Kplus_R, null_pivots);
+		}
+		else
+		{
+			N.CreateMatFromRowsFromMatrix( Kplus_R, fix_dofs);
+		}
+		//null_pivots
+		SparseMatrix Nt;
+		N.MatTranspose( Nt );
+		SparseMatrix NtN_Mat;
+		NtN_Mat.MatMat( Nt,'N',N );
+		NtN_Mat.MatTranspose();
+		NtN_Mat.RemoveLower();
+		SparseSolverCPU NtN;
+		NtN.ImportMatrix(NtN_Mat);
+		NtN_Mat.Clear();
+		std::stringstream sss;
+		sss << "get kernel from K -> rank: " << info::mpi::rank;
+		NtN.Factorization(sss.str());
+		NtN.SolveMat_Sparse(Nt);
+		NtN.Clear();
+		NtN_Mat.MatMat(N,'N',Nt);
+		NtN_Mat.MatScale(rho);
+		NtN_Mat.RemoveLower();
+		K.MatAddInPlace (NtN_Mat,'N', 1);
+	// IF d_sub == -1, it is GGt0 of cluster and regMat is no need
+		if (d_sub!=-1)
+		{
+			regMat=NtN_Mat;
+			regMat.ConvertToCOO(1);
+		}
+	}
 
 //  K.printMatCSR("K_regularized");
 //  K.MatCondNumb(K,"K_regularized",plot_n_first_n_last_eigenvalues);
 
-  delete [] W;
-  delete [] Z;
+	delete [] W;
+	delete [] Z;
 
 
 
@@ -4357,41 +4358,41 @@ if (defect_K_in == 0){
 
 
 
-  K_modif.Clear();
-  K_rr.Clear();
-  K_rs.Clear();
+	K_modif.Clear();
+	K_rr.Clear();
+	K_rs.Clear();
 
 
 
 
-  //std::cout << "Total time in kernel detection:                 " << elapsed_secs[12] << "[s] \n";
+//std::cout << "Total time in kernel detection:                 " << elapsed_secs[12] << "[s] \n";
 
 #if VERBOSE_KERNEL>0
-  double end_time = omp_get_wtime();
-  //12 - Total time in kernel detection
-  elapsed_secs[12] = double(end_time - begin_time) ;
+	double end_time = omp_get_wtime();
+	//12 - Total time in kernel detection
+	elapsed_secs[12] = double(end_time - begin_time) ;
 
-  os << std::fixed;
-  os << "allocation of vectors, copying of matrix:       " << elapsed_secs[0]                 << "[s] \n";
-  os << "diagonal scaling:                               " << elapsed_secs[1]-elapsed_secs[0] << "[s] \n";
-  os << "before singular test:                           " << elapsed_secs[2]-elapsed_secs[1] << "[s] \n";
-  os << "after singular test:                            " << elapsed_secs[3]-elapsed_secs[2] << "[s] \n";
-  os << "creation of block K_rs:                         " << elapsed_secs[4]-elapsed_secs[3] << "[s] \n";
-  os << "Schur complement created:                       " << elapsed_secs[5]-elapsed_secs[4] << "[s] \n";
-  os << "Schur complement eigenvalues obtained:          " << elapsed_secs[6]-elapsed_secs[5] << "[s] \n";
-  os << "zero eigenvalues detection:                     " << elapsed_secs[7]-elapsed_secs[6] << "[s] \n";
-  os << "R_s created:                                    " << elapsed_secs[8]-elapsed_secs[7] << "[s] \n";
-  os << "R_r created (applied K_rr):                     " << elapsed_secs[9]-elapsed_secs[8] << "[s] \n";
-  os << "R - Gram Schmidt Orthogonalization:             " << elapsed_secs[10]-elapsed_secs[9] << "[s] \n";
-  os << "max(eig(K)):                                    " << elapsed_secs[11]-elapsed_secs[10] << "[s] \n";
-  os << "Total time in kernel detection:                 " << elapsed_secs[12]<< "[s] \n";
-  os.close();
+	os << std::fixed;
+	os << "allocation of vectors, copying of matrix:       " << elapsed_secs[0]                 << "[s] \n";
+	os << "diagonal scaling:                               " << elapsed_secs[1]-elapsed_secs[0] << "[s] \n";
+	os << "before singular test:                           " << elapsed_secs[2]-elapsed_secs[1] << "[s] \n";
+	os << "after singular test:                            " << elapsed_secs[3]-elapsed_secs[2] << "[s] \n";
+	os << "creation of block K_rs:                         " << elapsed_secs[4]-elapsed_secs[3] << "[s] \n";
+	os << "Schur complement created:                       " << elapsed_secs[5]-elapsed_secs[4] << "[s] \n";
+	os << "Schur complement eigenvalues obtained:          " << elapsed_secs[6]-elapsed_secs[5] << "[s] \n";
+	os << "zero eigenvalues detection:                     " << elapsed_secs[7]-elapsed_secs[6] << "[s] \n";
+	os << "R_s created:                                    " << elapsed_secs[8]-elapsed_secs[7] << "[s] \n";
+	os << "R_r created (applied K_rr):                     " << elapsed_secs[9]-elapsed_secs[8] << "[s] \n";
+	os << "R - Gram Schmidt Orthogonalization:             " << elapsed_secs[10]-elapsed_secs[9] << "[s] \n";
+	os << "max(eig(K)):                                    " << elapsed_secs[11]-elapsed_secs[10] << "[s] \n";
+	os << "Total time in kernel detection:                 " << elapsed_secs[12]<< "[s] \n";
+	os.close();
 #endif
 }
 
 void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regMat,
-      SparseMatrix &Kplus_R,SparseMatrix &Kplus_Rl,
-      double &norm_KR_d_pow_2_approx, esint &defect_d,esint d_sub, size_t scSize){
+		SparseMatrix &Kplus_R,SparseMatrix &Kplus_Rl,
+		double &norm_KR_d_pow_2_approx, esint &defect_d,esint d_sub, size_t scSize){
 
 	sc_size = scSize;
 //
@@ -4411,43 +4412,43 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //    1) diagonalScaling
 //  reducing of big jump coefficient effect (TODO include diagonal scaling into whole ESPRESO)
 //BOOL DIAGONALSCALING                                  = true;
-  bool diagonalScaling                                  = true;
+	bool diagonalScaling                                  = true;
 
-//    2) permutVectorActive
-//  random selection of singular DOFs
-// 0 - no permut., 1 - std::vector shuffle, 2 - generating own random sequence -
-//ESLOCAL PERMUTVECTORACTIVE                            = 1;
-  esint permutVectorActive                            = 1;
+	//    2) permutVectorActive
+	//  random selection of singular DOFs
+	// 0 - no permut., 1 - std::vector shuffle, 2 - generating own random sequence -
+	//ESLOCAL PERMUTVECTORACTIVE                            = 1;
+	esint permutVectorActive                            = 1;
 
-//    3) use_null_pivots_or_s_set
-  // NtN_Mat from null pivots or fixing DOFs
-//BOOL USE_ALGEBRAIC_OR_S_SET                         = TRUE;
-  bool use_null_pivots_or_s_set                         = false;
+	//    3) use_null_pivots_or_s_set
+	// NtN_Mat from null pivots or fixing DOFs
+	//BOOL USE_ALGEBRAIC_OR_S_SET                         = TRUE;
+	bool use_null_pivots_or_s_set                         = false;
 
-//    4) diagonalRegularization
-//  regularization only on diagonal elements (big advantage: patern of K and K_regular is the same !!!)
-//  size of set 's' = defect(K)
-//  It's is active, only if and only if 'use_null_pivots_or_s_set = true'
-//BOOL DIAGONALFETI_REGULARIZATION                           = TRUE;
-  bool diagonalRegularization                           = false;
+	//    4) diagonalRegularization
+	//  regularization only on diagonal elements (big advantage: patern of K and K_regular is the same !!!)
+	//  size of set 's' = defect(K)
+	//  It's is active, only if and only if 'use_null_pivots_or_s_set = true'
+	//BOOL DIAGONALFETI_REGULARIZATION                           = TRUE;
+	bool diagonalRegularization                           = false;
 
-//    5) get_n_first_and_n_last_eigenvals_from_dense_K
-// get and print 2*n K eigenvalues (K is temporarily converted to dense);
-//ESLOCAL GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K = 0;
-  esint get_n_first_and_n_last_eigenvals_from_dense_K = 10;
+	//    5) get_n_first_and_n_last_eigenvals_from_dense_K
+	// get and print 2*n K eigenvalues (K is temporarily converted to dense);
+	//ESLOCAL GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K = 0;
+	esint get_n_first_and_n_last_eigenvals_from_dense_K = 10;
 
-//    6) get_n_first_and_n_last_eigenvals_from_dense_S
+	//    6) get_n_first_and_n_last_eigenvals_from_dense_S
 // get and print 2*n S eigenvalues
 //ESLOCAL GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S = 0;
 #if VERBOSE_KERNEL > 0
-  esint get_n_first_and_n_last_eigenvals_from_dense_S = 10;
+	esint get_n_first_and_n_last_eigenvals_from_dense_S = 10;
 #endif
 
 //    7) plot_n_first_n_last_eigenvalues
 // get of K eigenvalues (K is temporarily converted to dense matrix);
 //ESLOCAL PLOT_N_FIRST_N_LAST_EIGENVALUES               = 0;
 #if VERBOSE_KERNEL > 0
-  esint plot_n_first_n_last_eigenvalues               = 0;
+	esint plot_n_first_n_last_eigenvalues               = 0;
 #endif
 
 //    8) fixing_nodes_or_dof
@@ -4455,44 +4456,44 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 // min(fixing_nodes_or_dof)>=3; if variable is nonzero,
 // parameter sc_size is set to fixing_nodes_or_dof*dofPerNode
 //ESLOCAL FIXING_NODES_OR_DOF                           = 0;
-  esint fixing_nodes_or_dof                           = 0;
+	esint fixing_nodes_or_dof                           = 0;
 //ESLOCAL DOFPERNODE                                    = 3;
-  esint dofPerNode                                    = 1;
+	esint dofPerNode                                    = 1;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //    1) cond_numb_for_singular_matrix
 //  If cond(K) > cond_numb_for_singular_matrix, K is considered as singular matrix.
 //DOUBLE COND_NUMB_FOR_SINGULAR_MATRIX                  = 1E13;
-  double cond_numb_for_singular_matrix                  = 1e13;
+	double cond_numb_for_singular_matrix                  = 1e13;
 
 //    2) check_nonsing
 // if check_nonsing>0, checking of K_rr non-singularity is activated and it is repeated
 // (check_nonsing) times.
 //ESLOCAL CHECK_NONSING                                 = 0;
-  esint check_nonsing                                 = 0;
+	esint check_nonsing                                 = 0;
 
 //    3) max_size_of_dense_matrix_to_get_eigs
 // if size of K is less then CHECK_N..., K is converted to dense format to get eigenvalues.
 //ESLOCAL MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS          = 2500;
-  esint max_size_of_dense_matrix_to_get_eigs          = 2500;
+	esint max_size_of_dense_matrix_to_get_eigs          = 2500;
 
 //    4) sc_size
 // specification of size of Schur complement used for detection of zero eigenvalues.
 //esint  sc_size >= expected defect 'd' (e.g. in elasticity d=6).
 //ESLOCAL sc_size                                       = 50;
-  esint sc_size                                       = 50;
+	esint sc_size                                       = 50;
 
 //    5) twenty
 // testing last twenty eigenvalues of S to distinguish, if d-last ones are zero or not.
 //ESLOCAL TWENTY                                        = 20;
-  esint twenty                                        = 20;
-  // twenty eigenvalues are ascstd::endly ordered in d = d[0],d[1], ..., d[n-2],d[n-1]
+	esint twenty                                        = 20;
+// twenty eigenvalues are ascstd::endly ordered in d = d[0],d[1], ..., d[n-2],d[n-1]
 
 //    6) jump_in_eigenvalues_alerting_singularity
 // if d[i]/d[i+1]< jump_in_eigenvalues_alerting_singularity, d[i] is last nonzero eigenvalue
 //DOUBLE JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY       = 1.0E-5;
-  double jump_in_eigenvalues_alerting_singularity       = 1.0e-5;
+	double jump_in_eigenvalues_alerting_singularity       = 1.0e-5;
 
 
 
@@ -4511,24 +4512,24 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 // DEFAULT SET-UP
 #if VERBOSE_KERNEL > 0
-    double begin_time = omp_get_wtime();
-    get_n_first_and_n_last_eigenvals_from_dense_S = GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S;
-    plot_n_first_n_last_eigenvalues               = PLOT_N_FIRST_N_LAST_EIGENVALUES;
+	double begin_time = omp_get_wtime();
+	get_n_first_and_n_last_eigenvals_from_dense_S = GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_S;
+	plot_n_first_n_last_eigenvalues               = PLOT_N_FIRST_N_LAST_EIGENVALUES;
 #endif
 #if VERBOSE_KERNEL < 4
-    diagonalScaling                               = DIAGONALSCALING;
-    permutVectorActive                            = PERMUTVECTORACTIVE;
-    use_null_pivots_or_s_set                      = USE_ALGEBRAIC_OR_S_SET;
-    diagonalRegularization                        = DIAGONALFETI_REGULARIZATION;
-    get_n_first_and_n_last_eigenvals_from_dense_K = GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K;
-    fixing_nodes_or_dof                           = FIXING_NODES_OR_DOF;
-    dofPerNode                                    = DOFPERNODE;
-    cond_numb_for_singular_matrix                 = COND_NUMB_FOR_SINGULAR_MATRIX;
-    check_nonsing                                 = CHECK_NONSING;
-    max_size_of_dense_matrix_to_get_eigs          = MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS;
-    sc_size                                       = sc_size;
-    twenty                                        = TWENTY;
-    jump_in_eigenvalues_alerting_singularity      = JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY;
+	diagonalScaling                               = DIAGONALSCALING;
+	permutVectorActive                            = PERMUTVECTORACTIVE;
+	use_null_pivots_or_s_set                      = USE_ALGEBRAIC_OR_S_SET;
+	diagonalRegularization                        = DIAGONALFETI_REGULARIZATION;
+	get_n_first_and_n_last_eigenvals_from_dense_K = GET_N_FIRST_AND_N_LAST_EIGENVALS_FROM_DENSE_K;
+	fixing_nodes_or_dof                           = FIXING_NODES_OR_DOF;
+	dofPerNode                                    = DOFPERNODE;
+	cond_numb_for_singular_matrix                 = COND_NUMB_FOR_SINGULAR_MATRIX;
+	check_nonsing                                 = CHECK_NONSING;
+	max_size_of_dense_matrix_to_get_eigs          = MAX_SIZE_OF_DENSE_MATRIX_TO_GET_EIGS;
+	sc_size                                       = sc_size;
+	twenty                                        = TWENTY;
+	jump_in_eigenvalues_alerting_singularity      = JUMP_IN_EIGENVALUES_ALERTING_SINGULARITY;
 #endif
 
 
@@ -4538,13 +4539,13 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 
 // FOR UNSYMMETRIC MATRIX HAS TO BE SET-UP FOLLOWING PARAMETERS - ALWAYS_ON_ROOT
-  use_null_pivots_or_s_set          = false;
-  fixing_nodes_or_dof               = 0;
-  dofPerNode                        = 1;
+	use_null_pivots_or_s_set          = false;
+	fixing_nodes_or_dof               = 0;
+	dofPerNode                        = 1;
 //TODO diagonalScaling disabled for S_alpha in HTFETI !!!
-  if (d_sub==-1){
-    diagonalScaling=0;
-  }
+	if (d_sub==-1){
+		diagonalScaling=0;
+	}
 
 
 
@@ -4552,157 +4553,157 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //        'kernel_detct_cX_dY.txt  (X - clust. number, Y - subdomain. number)
 //  -BRIEF
 #if VERBOSE_KERNEL == 2
-    // print ||K*R|| to file
+	// print ||K*R|| to file
 #endif
 //  - DETAILED
 #if VERBOSE_KERNEL == 3
-    get_n_first_and_n_last_eigenvals_from_dense_S = 10;
-    check_nonsing                                 = 1;
-    // max(eig(K))
+	get_n_first_and_n_last_eigenvals_from_dense_S = 10;
+	check_nonsing                                 = 1;
+	// max(eig(K))
 #endif
 //  - OWN
 #if VERBOSE_KERNEL == 4
-    if (d_sub==0){
-      //ESINFO(PROGRESS3) << "debug set-up";
-    }
+	if (d_sub==0){
+		//ESINFO(PROGRESS3) << "debug set-up";
+	}
 #endif
 
 
-  if (!use_null_pivots_or_s_set) diagonalRegularization=false;
+	if (!use_null_pivots_or_s_set) diagonalRegularization=false;
 
 #if VERBOSE_KERNEL>0
 
-    std::string name;
-    if (d_sub==-1){
-      name = Logging::prepareFile("kernel_detct_GGt");
-    }
-    else{
-      name = Logging::prepareFile(d_sub,"kernel_detct");
-    }
-    std::ofstream os(name);
+	std::string name;
+	if (d_sub==-1){
+		name = Logging::prepareFile("kernel_detct_GGt");
+	}
+	else{
+		name = Logging::prepareFile(d_sub,"kernel_detct");
+	}
+	std::ofstream os(name);
 
 
-    os << "Verbose Level:       " ;
-    if (VERBOSE_KERNEL==1){
-      os << "1/4   (times)\n";
-    }
-    else if (VERBOSE_KERNEL==2){
-      os << "2/4   (brief)\n";
-    }
-    else if (VERBOSE_KERNEL==3){
-      os << "3/4   (detailed)\n";
-    }
-    else if (VERBOSE_KERNEL==4){
-      os << "4/4   (own)\n";
-    }
-    os << "diagonalScaling:     " << int(diagonalScaling)<< "\n";
-    os << "permutVectorActive:  " << diagonalScaling<< "\n";
-    if (use_null_pivots_or_s_set){
-      os << "K regularized by null pivots";
-      if (diagonalRegularization){
-        os << ", pattern of K is not changed \n\tcontributions only on diagonal elements";
-      }
-      os << "\n";
-    }
-    else{
-      os << "K regularized by set of fixing nodes\n";
-    }
+	os << "Verbose Level:       " ;
+	if (VERBOSE_KERNEL==1){
+		os << "1/4   (times)\n";
+	}
+	else if (VERBOSE_KERNEL==2){
+		os << "2/4   (brief)\n";
+	}
+	else if (VERBOSE_KERNEL==3){
+		os << "3/4   (detailed)\n";
+	}
+	else if (VERBOSE_KERNEL==4){
+		os << "4/4   (own)\n";
+	}
+	os << "diagonalScaling:     " << int(diagonalScaling)<< "\n";
+	os << "permutVectorActive:  " << diagonalScaling<< "\n";
+	if (use_null_pivots_or_s_set){
+		os << "K regularized by null pivots";
+		if (diagonalRegularization){
+			os << ", pattern of K is not changed \n\tcontributions only on diagonal elements";
+		}
+		os << "\n";
+	}
+	else{
+		os << "K regularized by set of fixing nodes\n";
+	}
 
-    if (fixing_nodes_or_dof==0){
-      os << "non-singular part chosen by set of DOF\n";
-    }
-    else{
-      os << "non-singular part chosen by set of fixing nodes (FN), number of FN: "<<fixing_nodes_or_dof << "\n";
-      os << "DOF per node: " <<  dofPerNode << "\n";
-    }
+	if (fixing_nodes_or_dof==0){
+		os << "non-singular part chosen by set of DOF\n";
+	}
+	else{
+		os << "non-singular part chosen by set of fixing nodes (FN), number of FN: "<<fixing_nodes_or_dof << "\n";
+		os << "DOF per node: " <<  dofPerNode << "\n";
+	}
 
-    os << std::scientific;
-    os.precision(4);
-    os << "cond_numb_for_singular_matrix:             " << cond_numb_for_singular_matrix << "\n";
-    os << "jump_in_eigenvalues_alerting_singularity   " << jump_in_eigenvalues_alerting_singularity << "\n";
-    os << std::fixed;
-    os.precision(15);
-    os << "check_nonsing:                             " << check_nonsing << "\n";
-    os << "max_size_of_dense_matrix_to_get_eigs       " << max_size_of_dense_matrix_to_get_eigs << "\n";
+	os << std::scientific;
+	os.precision(4);
+	os << "cond_numb_for_singular_matrix:             " << cond_numb_for_singular_matrix << "\n";
+	os << "jump_in_eigenvalues_alerting_singularity   " << jump_in_eigenvalues_alerting_singularity << "\n";
+	os << std::fixed;
+	os.precision(15);
+	os << "check_nonsing:                             " << check_nonsing << "\n";
+	os << "max_size_of_dense_matrix_to_get_eigs       " << max_size_of_dense_matrix_to_get_eigs << "\n";
 
 #endif
 
-  //TODO if K.rows<=sc_size, use directly input K instead of S
-  //
-  int n_nodsSub = 0;
-  double rho = K.getDiagonalAbsMaximum();
-  if (fixing_nodes_or_dof>0){
-    sc_size = fixing_nodes_or_dof*dofPerNode;
-    n_nodsSub = round(K.rows/dofPerNode);
-  }
-  //
-  //##########################################################################################
-  //
-  SparseMatrix S;
-  SparseMatrix K_rr;
-  SparseMatrix K_rs;
-  SparseMatrix K_sr;
-  esint i_start = 0;
+	//TODO if K.rows<=sc_size, use directly input K instead of S
+	//
+	int n_nodsSub = 0;
+	double rho = K.getDiagonalAbsMaximum();
+	if (fixing_nodes_or_dof>0){
+		sc_size = fixing_nodes_or_dof*dofPerNode;
+		n_nodsSub = round(K.rows/dofPerNode);
+	}
+	//
+	//##########################################################################################
+	//
+	SparseMatrix S;
+	SparseMatrix K_rr;
+	SparseMatrix K_rs;
+	SparseMatrix K_sr;
+	esint i_start = 0;
 
-  if (K.rows<sc_size){
-	  sc_size = K.rows;
-    fixing_nodes_or_dof=0;
-  }
+	if (K.rows<sc_size){
+		sc_size = K.rows;
+		fixing_nodes_or_dof=0;
+	}
 
 
 #if VERBOSE_KERNEL>1
-    os << "dim(SchurComplement):                      " <<  sc_size << "\n";
-    os << "===================================================================================\n";
+	os << "dim(SchurComplement):                      " <<  sc_size << "\n";
+	os << "===================================================================================\n";
 #endif
 
-  esint nonsing_size = K.rows - sc_size - i_start;
-  esint j_start = nonsing_size;
-  SEQ_VECTOR <esint > permVec;
+	esint nonsing_size = K.rows - sc_size - i_start;
+	esint j_start = nonsing_size;
+	SEQ_VECTOR <esint > permVec;
 
-  permVec.resize(K.rows);
-  SEQ_VECTOR <SEQ_VECTOR<esint >> vec_I1_i2(K.rows, SEQ_VECTOR<esint >(2, 1));
-  esint offset = K.CSR_I_row_indices[0] ? 1 : 0;
-  //
+	permVec.resize(K.rows);
+	SEQ_VECTOR <SEQ_VECTOR<esint >> vec_I1_i2(K.rows, SEQ_VECTOR<esint >(2, 1));
+	esint offset = K.CSR_I_row_indices[0] ? 1 : 0;
+	//
 
-  double cond_of_regular_part=1e307;
-  esint *I_row_indices_p = new esint [K.nnz] ;
-  esint *J_col_indices_p = new esint [K.nnz] ;
-  SEQ_VECTOR <esint > tmp_vec_s;
-  tmp_vec_s.resize(sc_size);
-  esint v1, n_mv, cnt_permut_vec;
-  SEQ_VECTOR <esint >::iterator it;
-  SEQ_VECTOR <esint > fix_dofs;
-  fix_dofs.resize(sc_size);
-  SparseMatrix K_modif;
+	double cond_of_regular_part=1e307;
+	esint *I_row_indices_p = new esint [K.nnz] ;
+	esint *J_col_indices_p = new esint [K.nnz] ;
+	SEQ_VECTOR <esint > tmp_vec_s;
+	tmp_vec_s.resize(sc_size);
+	esint v1, n_mv, cnt_permut_vec;
+	SEQ_VECTOR <esint >::iterator it;
+	SEQ_VECTOR <esint > fix_dofs;
+	fix_dofs.resize(sc_size);
+	SparseMatrix K_modif;
 
-  double di=1;
-  esint cnt_iter_check_nonsing=0;
+	double di=1;
+	esint cnt_iter_check_nonsing=0;
 
-  K.type = 'G';
-  K_modif = K; // TODO not necessary to do
+	K.type = 'G';
+	K_modif = K; // TODO not necessary to do
 
 #if VERBOSE_KERNEL > 0
-  double elapsed_secs[15];
-  double time1 = omp_get_wtime();
-//0 - allocation of vectors, copying of matrix
-  elapsed_secs[0] = (time1 - begin_time) ;
+	double elapsed_secs[15];
+	double time1 = omp_get_wtime();
+	//0 - allocation of vectors, copying of matrix
+	elapsed_secs[0] = (time1 - begin_time) ;
 #endif
 
-  SEQ_VECTOR <double> tmp_approx_max_eig;
-  tmp_approx_max_eig.resize(K.rows);
+	SEQ_VECTOR <double> tmp_approx_max_eig;
+	tmp_approx_max_eig.resize(K.rows);
 
 
 
 
-  // diagonal scaling of K_modif:
-  // K_modif[i,j] = K_modif[i,j]/sqrt(K_modif[i,i]*K_modif[j,j]);
+	// diagonal scaling of K_modif:
+	// K_modif[i,j] = K_modif[i,j]/sqrt(K_modif[i,i]*K_modif[j,j]);
 
 
 
 
-  //K.printMatCSR("K");
-  SEQ_VECTOR <double> diagonals = K_modif.getDiagonal();
-  std::for_each(diagonals.begin(),diagonals.end(),[](double & value ){value = fabs(value);});
+	//K.printMatCSR("K");
+	SEQ_VECTOR <double> diagonals = K_modif.getDiagonal();
+	std::for_each(diagonals.begin(),diagonals.end(),[](double & value ){value = fabs(value);});
 
 //	std::for_each(matrix->eIndices.back().begin(), matrix->eIndices.back().end(), [ &offset ] (esint &index) { index -= offset; });
 
@@ -4721,199 +4722,199 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //  }
 
 
-  esint tmp_j;
-  for (esint i = 0;i<K_modif.rows;i++){
-    for (esint j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
-      tmp_j = K_modif.CSR_J_col_indices[j-offset]-offset;
-      if (diagonalScaling) {
-        K_modif.CSR_V_values[j-offset] /= sqrt(diagonals[i]*diagonals[tmp_j]);
-      }
-      if (i>=tmp_j){
-        tmp_approx_max_eig[i]+=fabs(K.CSR_V_values[j-offset]);
-      }
-    }
-  }
+	esint tmp_j;
+	for (esint i = 0;i<K_modif.rows;i++){
+		for (esint j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
+			tmp_j = K_modif.CSR_J_col_indices[j-offset]-offset;
+			if (diagonalScaling) {
+				K_modif.CSR_V_values[j-offset] /= sqrt(diagonals[i]*diagonals[tmp_j]);
+			}
+			if (i>=tmp_j){
+				tmp_approx_max_eig[i]+=fabs(K.CSR_V_values[j-offset]);
+			}
+		}
+}
 
 
 //  K_modif.printMatCSR("K_scaled");
 
 #if VERBOSE_KERNEL>0
 //1 - diagonal scaling
-  time1 = omp_get_wtime();
-  elapsed_secs[1] = (time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[1] = (time1 - begin_time) ;
 #endif
-  //                                               |
-  //#################################################################################
-  //#################################################################################
-  if (get_n_first_and_n_last_eigenvals_from_dense_K &&
-      K_modif.cols<max_size_of_dense_matrix_to_get_eigs && cnt_iter_check_nonsing==0) {
-    K_modif.ConvertCSRToDense(0);
-  // EIGENVALUES AND EIGENVECTORS OF STIFFNESS MATRIX
-  // Works only for matrix until size ~ 2500
-    char JOBZ_ = 'V';
-    char UPLO_ = 'U';
-    double *WK_modif = new double[K_modif.cols];
-    double *ZK_modif = new double[K_modif.cols*K_modif.cols];
-    MKL_INT info;
-    MKL_INT ldzA = K_modif.cols;
-    info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ_, UPLO_,
-            K_modif.cols, &(K_modif.dense_values[0]), WK_modif, ZK_modif, ldzA);
+//                                               |
+//#################################################################################
+//#################################################################################
+	if (get_n_first_and_n_last_eigenvals_from_dense_K &&
+			K_modif.cols<max_size_of_dense_matrix_to_get_eigs && cnt_iter_check_nonsing==0) {
+		K_modif.ConvertCSRToDense(0);
+// EIGENVALUES AND EIGENVECTORS OF STIFFNESS MATRIX
+// Works only for matrix until size ~ 2500
+		char JOBZ_ = 'V';
+		char UPLO_ = 'U';
+		double *WK_modif = new double[K_modif.cols];
+		double *ZK_modif = new double[K_modif.cols*K_modif.cols];
+		MKL_INT info;
+		MKL_INT ldzA = K_modif.cols;
+		info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ_, UPLO_,
+				K_modif.cols, &(K_modif.dense_values[0]), WK_modif, ZK_modif, ldzA);
 
 
 #if VERBOSE_KERNEL>1
-      os<<"eigenvals of K d{1:" << get_n_first_and_n_last_eigenvals_from_dense_K << "} and d{" <<
-           K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K+2 << ":"<< K_modif.rows<< "}\n";
+		os<<"eigenvals of K d{1:" << get_n_first_and_n_last_eigenvals_from_dense_K << "} and d{" <<
+				K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K+2 << ":"<< K_modif.rows<< "}\n";
 
 
-      for (esint i = 0 ; i < K_modif.rows; i++){
-        if (i < get_n_first_and_n_last_eigenvals_from_dense_K ||
-              i > K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K){
-          os<< i+1 <<":"<< WK_modif[i] << "\n";
-        }
-      }
+		for (esint i = 0 ; i < K_modif.rows; i++){
+			if (i < get_n_first_and_n_last_eigenvals_from_dense_K ||
+					i > K_modif.rows-get_n_first_and_n_last_eigenvals_from_dense_K){
+				os<< i+1 <<":"<< WK_modif[i] << "\n";
+			}
+		}
 #endif
-    if (info){
-    	eslog::error("something wrong with Schur complement in SparseSolverCPU::generalIinverse.\n");
-    }
-    delete [] WK_modif;
-    delete [] ZK_modif;
-  }
-  //#################################################################################
-  //#################################################################################
+		if (info){
+			eslog::error("something wrong with Schur complement in SparseSolverCPU::generalIinverse.\n");
+		}
+		delete [] WK_modif;
+		delete [] ZK_modif;
+	}
+//#################################################################################
+//#################################################################################
 
 //
 #if VERBOSE_KERNEL>0
 //2 - before singular test
-  time1 = omp_get_wtime();
-  elapsed_secs[2] = (time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[2] = (time1 - begin_time) ;
 #endif
-               //                                               |
-  while ( cond_of_regular_part > cond_numb_for_singular_matrix && cnt_iter_check_nonsing<(check_nonsing+1)) {
-    // loop checking non-singularity of K_rr matrix
-    if (cnt_iter_check_nonsing>0){
-      K_modif.Clear();
-      K_modif=K;
-      //diagonal scaling
-      for (esint i = 0;i<K_modif.rows;i++){
-        for (esint j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
-          tmp_j = K_modif.CSR_J_col_indices[j-offset]-offset;
-          if (diagonalScaling) {
-            K_modif.CSR_V_values[j-offset] /= sqrt(diagonals[i]*diagonals[tmp_j]);
-          }
-          if (i!=tmp_j){
-            tmp_approx_max_eig[i]+=fabs(K.CSR_V_values[j-offset]);
-          }
-        }
-      }
-    }
-    //
-    if (permutVectorActive<2){
-      // set row permVec = {0,1,2,3,4,...,K.rows};
-      if (fixing_nodes_or_dof==0 || (permutVectorActive==0)){
-        for (esint i=0; i<K.rows; ++i) { permVec[i]=i;} // 0 1 2 K.rows-1
-      }
-      else
-      {
-        for (esint i=0; i<n_nodsSub; ++i) { permVec[i]=i;} // 0 1 2 n_nodsSub-1
-      }
-    }
-//
-//  srand(time(NULL));
-    srand(0); // random will be constant until next compiling
-    if (permutVectorActive==1){
-      if (fixing_nodes_or_dof==0){
-        random_shuffle ( permVec.begin(), permVec.end() );
-      }
-      else
-      {
-        std::random_shuffle ( permVec.begin(), permVec.begin()+n_nodsSub);
-        for (esint i=n_nodsSub;i>0;i--){
-          for (esint j=0;j<dofPerNode;j++){
-            permVec[dofPerNode*i-1-j] = dofPerNode*permVec[i-1]+j;
-          }
-        }
-      }
+//                                               |
+	while ( cond_of_regular_part > cond_numb_for_singular_matrix && cnt_iter_check_nonsing<(check_nonsing+1)) {
+		// loop checking non-singularity of K_rr matrix
+		if (cnt_iter_check_nonsing>0){
+			K_modif.Clear();
+			K_modif=K;
+			//diagonal scaling
+			for (esint i = 0;i<K_modif.rows;i++){
+				for (esint j = K_modif.CSR_I_row_indices[i];j<K_modif.CSR_I_row_indices[i+1];j++){
+					tmp_j = K_modif.CSR_J_col_indices[j-offset]-offset;
+					if (diagonalScaling) {
+						K_modif.CSR_V_values[j-offset] /= sqrt(diagonals[i]*diagonals[tmp_j]);
+					}
+					if (i!=tmp_j){
+						tmp_approx_max_eig[i]+=fabs(K.CSR_V_values[j-offset]);
+					}
+				}
+			}
+		}
+		//
+		if (permutVectorActive<2){
+			// set row permVec = {0,1,2,3,4,...,K.rows};
+			if (fixing_nodes_or_dof==0 || (permutVectorActive==0)){
+				for (esint i=0; i<K.rows; ++i) { permVec[i]=i;} // 0 1 2 K.rows-1
+			}
+			else
+			{
+				for (esint i=0; i<n_nodsSub; ++i) { permVec[i]=i;} // 0 1 2 n_nodsSub-1
+			}
+		}
+	//
+	//  srand(time(NULL));
+		srand(0); // random will be constant until next compiling
+		if (permutVectorActive==1){
+			if (fixing_nodes_or_dof==0){
+				random_shuffle ( permVec.begin(), permVec.end() );
+			}
+			else
+			{
+				std::random_shuffle ( permVec.begin(), permVec.begin()+n_nodsSub);
+				for (esint i=n_nodsSub;i>0;i--){
+					for (esint j=0;j<dofPerNode;j++){
+						permVec[dofPerNode*i-1-j] = dofPerNode*permVec[i-1]+j;
+					}
+				}
+			}
 
-      sort(permVec.begin(),permVec.begin()+nonsing_size);
-      sort(permVec.begin()+nonsing_size,permVec.end());
-    }
-    else if (permutVectorActive==2){
-      // random permutation
-      n_mv = 0;                     // n_mv = size(unique(tmp_vec_s)) has to be equal to sc_size
-      cnt_permut_vec=0;
-      // loop controls, if series 'tmp_vec_s' with unique integers has suffisciant dimension.
-      // If not, missing numbers are added and checked again.
-      do {
-        for (esint i = 0;i<(sc_size-n_mv);i++){
-          v1 = rand() % K_modif.rows;
-          tmp_vec_s[n_mv+i]=v1;
-        }
-        it=tmp_vec_s.begin();
-        std::sort(tmp_vec_s.begin(), tmp_vec_s.end());
-        it = std::unique(tmp_vec_s.begin(), tmp_vec_s.end());
-        n_mv = distance(tmp_vec_s.begin(),it);
-        cnt_permut_vec++;
-     } while (n_mv != sc_size && cnt_permut_vec < 100);
-      //
-      esint ik=0,cnt_i=0;
-      for (size_t i = 0;i<permVec.size();i++){
-        if ((esint)i==tmp_vec_s[ik]){
-          permVec[ik+nonsing_size]=tmp_vec_s[ik];
-          ik++;
-        }
-        else{
-          permVec[cnt_i]=i;
-          cnt_i++;
-        }
-      }
+			sort(permVec.begin(),permVec.begin()+nonsing_size);
+			sort(permVec.begin()+nonsing_size,permVec.end());
+		}
+		else if (permutVectorActive==2){
+			// random permutation
+			n_mv = 0;                     // n_mv = size(unique(tmp_vec_s)) has to be equal to sc_size
+			cnt_permut_vec=0;
+			// loop controls, if series 'tmp_vec_s' with unique integers has suffisciant dimension.
+			// If not, missing numbers are added and checked again.
+			do {
+				for (esint i = 0;i<(sc_size-n_mv);i++){
+					v1 = rand() % K_modif.rows;
+					tmp_vec_s[n_mv+i]=v1;
+				}
+				it=tmp_vec_s.begin();
+				std::sort(tmp_vec_s.begin(), tmp_vec_s.end());
+				it = std::unique(tmp_vec_s.begin(), tmp_vec_s.end());
+				n_mv = distance(tmp_vec_s.begin(),it);
+				cnt_permut_vec++;
+			} while (n_mv != sc_size && cnt_permut_vec < 100);
+			//
+			esint ik=0,cnt_i=0;
+			for (size_t i = 0;i<permVec.size();i++){
+				if ((esint)i==tmp_vec_s[ik]){
+					permVec[ik+nonsing_size]=tmp_vec_s[ik];
+					ik++;
+				}
+				else{
+					permVec[cnt_i]=i;
+					cnt_i++;
+				}
+			}
 #if VERBOSE_KERNEL>1
-        os << "n_mv: " << n_mv <<", sc_size: " << sc_size << ", it. for RAND: "<< cnt_permut_vec<<"\n";
+			os << "n_mv: " << n_mv <<", sc_size: " << sc_size << ", it. for RAND: "<< cnt_permut_vec<<"\n";
 #endif
-    }
-    //      r = permVec[0:nonsing_size-1]     (singular DOFs)
-    //      s = permVec[nonsing_size:end-1]   (non-singular DOFs)
-    if (permutVectorActive>0){
+		}
+		//      r = permVec[0:nonsing_size-1]     (singular DOFs)
+		//      s = permVec[nonsing_size:end-1]   (non-singular DOFs)
+		if (permutVectorActive>0){
 //
-      for (esint i = 0; i < K.rows;i++){
-        vec_I1_i2[i][0]=permVec[i];
-        vec_I1_i2[i][1]=i; // position to create revers permutation
-      }
+			for (esint i = 0; i < K.rows;i++){
+				vec_I1_i2[i][0]=permVec[i];
+				vec_I1_i2[i][1]=i; // position to create revers permutation
+			}
 
-      std::sort(vec_I1_i2.begin(), vec_I1_i2.end(),
-                [](const SEQ_VECTOR <esint >& a, const SEQ_VECTOR <esint >& b) {
-        return a[0] < b[0];
-      });
-      // permutations made on matrix in COO format
-      K_modif.ConvertToCOO(0);
-      esint I_index,J_index;
-      bool unsymmetric=true;
-      for (esint i = 0;i<K_modif.nnz;i++){
-        I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
-        J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
-        if (unsymmetric || I_index<=J_index){
-          I_row_indices_p[i]=I_index;
-          J_col_indices_p[i]=J_index;
-        }
-        else{
-          I_row_indices_p[i]=J_index;
-          J_col_indices_p[i]=I_index;
-        }
-      }
-//
-      for (esint i = 0; i<K_modif.nnz;i++){
-        K_modif.I_row_indices[i] = I_row_indices_p[i];
-        K_modif.J_col_indices[i] = J_col_indices_p[i];
-      }
-      K_modif.ConvertToCSRwithSort(0);
-    }
+			std::sort(vec_I1_i2.begin(), vec_I1_i2.end(),
+					[](const SEQ_VECTOR <esint >& a, const SEQ_VECTOR <esint >& b) {
+						return a[0] < b[0];
+					});
+			// permutations made on matrix in COO format
+			K_modif.ConvertToCOO(0);
+			esint I_index,J_index;
+			bool unsymmetric=true;
+			for (esint i = 0;i<K_modif.nnz;i++){
+				I_index = vec_I1_i2[K_modif.I_row_indices[i]-offset][1]+offset;
+				J_index = vec_I1_i2[K_modif.J_col_indices[i]-offset][1]+offset;
+				if (unsymmetric || I_index<=J_index){
+					I_row_indices_p[i]=I_index;
+					J_col_indices_p[i]=J_index;
+				}
+				else{
+					I_row_indices_p[i]=J_index;
+					J_col_indices_p[i]=I_index;
+				}
+			}
+			//
+			for (esint i = 0; i<K_modif.nnz;i++){
+				K_modif.I_row_indices[i] = I_row_indices_p[i];
+				K_modif.J_col_indices[i] = J_col_indices_p[i];
+			}
+			K_modif.ConvertToCSRwithSort(0);
+		}
 
 
 //    K_modif.printMatCSR("K_scaled_permuted");
 //
-    for (esint i = 0;i<sc_size;i++) fix_dofs[i]=permVec[nonsing_size + i] + offset;
-    
+		for (esint i = 0;i<sc_size;i++) fix_dofs[i]=permVec[nonsing_size + i] + offset;
+		
 
-    K_rr.getSubDiagBlockmatrix(K_modif,K_rr,i_start, nonsing_size);
+		K_rr.getSubDiagBlockmatrix(K_modif,K_rr,i_start, nonsing_size);
 
 //    std::cout<< "K_rr.size()="<<K_rr.rows << std::std::endl;
 //    std::cout<< "i_start="<<i_start << std::std::endl;
@@ -4930,58 +4931,58 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //#endif
 //    }
 //
-    cnt_iter_check_nonsing++;
-  }
+		cnt_iter_check_nonsing++;
+	}
 
-  delete [] I_row_indices_p;
-  delete [] J_col_indices_p;
+	delete [] I_row_indices_p;
+	delete [] J_col_indices_p;
 
 
 #if VERBOSE_KERNEL>0
 //3 - after singular test
-  time1 = omp_get_wtime();
-  elapsed_secs[3] = (time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[3] = (time1 - begin_time) ;
 #endif
 //                                               |
 
 //
-  K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
-  K_sr.getSubBlockmatrix_rs(K_modif,K_sr,j_start,sc_size,i_start, nonsing_size);
+	K_rs.getSubBlockmatrix_rs(K_modif,K_rs,i_start, nonsing_size,j_start,sc_size);
+	K_sr.getSubBlockmatrix_rs(K_modif,K_sr,j_start,sc_size,i_start, nonsing_size);
 
 
 
 
 #if VERBOSE_KERNEL>0
 //4 - creation of block K_rs
-  time1 = omp_get_wtime();
-  elapsed_secs[4] = double(time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[4] = double(time1 - begin_time) ;
 #endif
 //
-  SparseSolverCPU K_rr_solver;
-  std::stringstream ss;
-  bool SC_via_K_rr=true;
+	SparseSolverCPU K_rr_solver;
+	std::stringstream ss;
+	bool SC_via_K_rr=true;
 //
-  int K_rr_cols = K_rr.cols;
-  if (K_rr_cols==0){
-    S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
+	int K_rr_cols = K_rr.cols;
+	if (K_rr_cols==0){
+		S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
 //    S.RemoveLower();
-  }
-  else
-  {
-    if (SC_via_K_rr){
-      S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
-//      S.printMatCSR("K_ss");
-      K_rr_solver.ImportMatrix_wo_Copy(K_rr);
+	}
+	else
+	{
+		if (SC_via_K_rr){
+			S.getSubDiagBlockmatrix(K_modif,S,nonsing_size,sc_size);
+//      	S.printMatCSR("K_ss");
+			K_rr_solver.ImportMatrix_wo_Copy(K_rr);
 
 //      std::stringstream matrix_name;
 //      matrix_name << typeid(K_rr_solver).name() << "_K_rr";
 //      K_rr_solver.SaveMatrixInCSR(matrix_name.str());
 
 //      K_rr.printMatCSR("K_rr");
-      K_rr_solver.mtype = 11;
-      K_rr_solver.msglvl= 0;
+			K_rr_solver.mtype = 11;
+			K_rr_solver.msglvl= 0;
 
-      ss << "get kerner from K -> rank: " << info::mpi::rank;
+			ss << "get kerner from K -> rank: " << info::mpi::rank;
 
 
 //      {
@@ -4990,10 +4991,10 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //        ose00 << se0;
 //        ose00.close();
 //      }
-      int error_K_rr = K_rr_solver.Factorization(ss.str());
+			int error_K_rr = K_rr_solver.Factorization(ss.str());
 
-      if (error_K_rr){
-        // K  ------------------------------------------------------------------------
+			if (error_K_rr){
+// K  ------------------------------------------------------------------------
 //        SparseMatrix se0 = K;
 //        std::ofstream ose00(Logging::prepareFile(d_sub, "K_Err"));
 //        ose00 << se0;
@@ -5022,32 +5023,32 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //          ose3.close();
 //        }
 #if VERBOSE_KERNEL > 0
-        os.close();
+				os.close();
 #endif
-        eslog::error("factorization of K_rr failed (1/2 factorization).\n");
-        exit(EXIT_FAILURE);
-      }
-      SparseMatrix invKrrKrs = K_rs;
-      K_rr_solver.SolveMat_Dense(invKrrKrs);
-      SparseMatrix KsrInvKrrKrs;
-      KsrInvKrrKrs.MatMat(K_sr,'N',invKrrKrs);
-      S.MatAddInPlace(KsrInvKrrKrs,'N',-1);
+				eslog::error("factorization of K_rr failed (1/2 factorization).\n");
+				exit(EXIT_FAILURE);
+			}
+			SparseMatrix invKrrKrs = K_rs;
+			K_rr_solver.SolveMat_Dense(invKrrKrs);
+			SparseMatrix KsrInvKrrKrs;
+			KsrInvKrrKrs.MatMat(K_sr,'N',invKrrKrs);
+			S.MatAddInPlace(KsrInvKrrKrs,'N',-1);
 //      S.RemoveLower();
-    }
-    else{
-      SparseSolverCPU createSchur;
-      // TODO PARDISO_SC provides factor K_rr.
-      // if SC_via_K_rr=false,  factorization is made redundantly later.
-      createSchur.ImportMatrix(K_modif);
-      createSchur.Create_SC(S,sc_size,false);
-      K_modif.Clear();
-      createSchur.Clear();
-    }
-  }
+		}
+		else{
+			SparseSolverCPU createSchur;
+			// TODO PARDISO_SC provides factor K_rr.
+			// if SC_via_K_rr=false,  factorization is made redundantly later.
+			createSchur.ImportMatrix(K_modif);
+			createSchur.Create_SC(S,sc_size,false);
+			K_modif.Clear();
+			createSchur.Clear();
+		}
+	}
 //
 
 
-  S.type='G';
+	S.type='G';
 
 //  if (false){
 //   SparseMatrix s2 = S;
@@ -5058,7 +5059,7 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 //   }
 
 //  S.printMatCSR("S");
-  S.ConvertCSRToDense(1);
+	S.ConvertCSRToDense(1);
 
 
 
@@ -5068,71 +5069,71 @@ void SparseMatrix::get_kernels_from_nonsym_K(SparseMatrix &K, SparseMatrix &regM
 
 #if VERBOSE_KERNEL>0
 //5 - Schur complement created
-    time1 = omp_get_wtime();
-    elapsed_secs[5] = double(time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[5] = double(time1 - begin_time) ;
 #endif
 // EIGENVALUES AND EIGENVECTORS OF SCHUR COMPLEMENT
-  double *S_S     = new double[S.cols];
-  double *U_S     = new double[S.cols*S.cols];
-  double *Vt_S    = new double[S.cols*S.cols];
-  double *superb  = new double[S.cols-1];
-//  double *W= new double[S.cols*S.cols];
-//  double *Z= new double[S.cols*S.cols];
-  MKL_INT info;
-  MKL_INT lds = S.cols, Scols= S.cols, Srows = S.rows;
-//  info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ, UPLO, S.cols, &(S.dense_values[0]), W, Z, ldz);
-  info = LAPACKE_dgesvd( LAPACK_COL_MAJOR, 'A', 'A', Scols, Srows, &(S.dense_values[0]), lds,
-                        S_S, U_S, lds, Vt_S, lds, superb );
+	double *S_S     = new double[S.cols];
+	double *U_S     = new double[S.cols*S.cols];
+	double *Vt_S    = new double[S.cols*S.cols];
+	double *superb  = new double[S.cols-1];
+	//  double *W= new double[S.cols*S.cols];
+	//  double *Z= new double[S.cols*S.cols];
+	MKL_INT info;
+	MKL_INT lds = S.cols, Scols= S.cols, Srows = S.rows;
+	//  info = LAPACKE_dspev (LAPACK_COL_MAJOR, JOBZ, UPLO, S.cols, &(S.dense_values[0]), W, Z, ldz);
+	info = LAPACKE_dgesvd( LAPACK_COL_MAJOR, 'A', 'A', Scols, Srows, &(S.dense_values[0]), lds,
+						S_S, U_S, lds, Vt_S, lds, superb );
 
 
 
-  if (info){
-    eslog::error("something wrong with Schur complement in SparseSolverCPU::generalIinverse.\n");
-  }
+	if (info){
+		eslog::error("something wrong with Schur complement in SparseSolverCPU::generalIinverse.\n");
+	}
 #if VERBOSE_KERNEL>0
 //6 - Schur complement eigenvalues obtained
-  time1 = omp_get_wtime();
-  elapsed_secs[6] = double(time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[6] = double(time1 - begin_time) ;
 #endif
 // IDENTIFICATIONS OF ZERO EIGENVALUES
-  esint defect_K_in = 0;// R_s_cols;
-  esint ind_U_V = 0;// R_s_cols;
-  double ratio;
-  esint itMax = twenty < S.rows ? sc_size-twenty-1 : 0 ;
+	esint defect_K_in = 0;// R_s_cols;
+	esint ind_U_V = 0;// R_s_cols;
+	double ratio;
+	esint itMax = twenty < S.rows ? sc_size-twenty-1 : 0 ;
 //#if VERBOSE_KERNEL>1
 //  os<<"ratio,      eig{i-1},          eig{i}\n";
 //#endif
-  for (esint i = itMax; i < sc_size-1;i++){
-    ratio = fabs(S_S[i+1]/S_S[i]);
+	for (esint i = itMax; i < sc_size-1;i++){
+		ratio = fabs(S_S[i+1]/S_S[i]);
 //#if VERBOSE_KERNEL>1
 //    os<<ratio <<" "<< S_S[i] << " " << S_S[i+1] << "\n";
 //#endif
-    if (ratio < jump_in_eigenvalues_alerting_singularity){
-      ind_U_V = i+1;
-      defect_K_in=sc_size-(i+1);
-      break;
-    }
-  }
+		if (ratio < jump_in_eigenvalues_alerting_singularity){
+			ind_U_V = i+1;
+			defect_K_in=sc_size-(i+1);
+			break;
+		}
+	}
 #if VERBOSE_KERNEL>0
 //7 - zero eigenvalues detection
-  time1 = omp_get_wtime();
-  elapsed_secs[7] = double(time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[7] = double(time1 - begin_time) ;
 #endif
 //
 #if VERBOSE_KERNEL>1
-  if (get_n_first_and_n_last_eigenvals_from_dense_S!=0){
-    int i1i = get_n_first_and_n_last_eigenvals_from_dense_S;
-    if (i1i>S.rows){i1i=S.rows;}
-    os<<"eigenvals of S d{1:" << i1i << "} and d{" <<
-         S.rows-get_n_first_and_n_last_eigenvals_from_dense_S+2 << ":"<< S.rows<< "}\n";
+	if (get_n_first_and_n_last_eigenvals_from_dense_S!=0){
+		int i1i = get_n_first_and_n_last_eigenvals_from_dense_S;
+		if (i1i>S.rows){i1i=S.rows;}
+		os<<"eigenvals of S d{1:" << i1i << "} and d{" <<
+			S.rows-get_n_first_and_n_last_eigenvals_from_dense_S+2 << ":"<< S.rows<< "}\n";
 
-    for (esint i = 0 ; i < S.rows; i++){
-      if (i < get_n_first_and_n_last_eigenvals_from_dense_S ||
-            i > S.rows-get_n_first_and_n_last_eigenvals_from_dense_S){
-        os<< i+1 <<":\t"<< S_S[i] << "\n";
-      }
-    }
-  }
+		for (esint i = 0 ; i < S.rows; i++){
+			if (i < get_n_first_and_n_last_eigenvals_from_dense_S ||
+					i > S.rows-get_n_first_and_n_last_eigenvals_from_dense_S){
+				os<< i+1 <<":\t"<< S_S[i] << "\n";
+			}
+		}
+	}
 #endif
 
 
@@ -5141,29 +5142,29 @@ if (defect_K_in == 0){
 	Kplus_R = SparseMatrix();
 	Kplus_Rl = SparseMatrix();
 
-	    regMat.rows = 0;
-	    regMat.cols = 0;
-	    regMat.nnz= 0;
+		regMat.rows = 0;
+		regMat.cols = 0;
+		regMat.nnz= 0;
 //      regMat.ConvertToCOO(1);
 
-	    Kplus_R.rows = 0;
-	    Kplus_R.cols = 0;
-	    Kplus_R.nnz= 0;
+		Kplus_R.rows = 0;
+		Kplus_R.cols = 0;
+		Kplus_R.nnz= 0;
 
-	    Kplus_Rl.rows = 0;
-	    Kplus_Rl.cols = 0;
-	    Kplus_Rl.nnz= 0;
+		Kplus_Rl.rows = 0;
+		Kplus_Rl.cols = 0;
+		Kplus_Rl.nnz= 0;
 
-      norm_KR_d_pow_2_approx = 0;
-      defect_d = 0;
+		norm_KR_d_pow_2_approx = 0;
+		defect_d = 0;
 
-      delete [] S_S ;
-	  delete [] U_S ;
-	  delete [] Vt_S;
-	  delete [] superb;
+		delete [] S_S ;
+		delete [] U_S ;
+		delete [] Vt_S;
+		delete [] superb;
 
 
-      return; 
+		return; 
 }
 
 
@@ -5174,167 +5175,167 @@ if (defect_K_in == 0){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  // right kernel   K * R = 0
-  SparseMatrix R_s;
-  R_s.nnz  = defect_K_in*S.rows;
-  R_s.dense_values.resize(R_s.nnz);
-  R_s.rows = S.rows;
-  R_s.cols = defect_K_in;
-  R_s.type = 'G';
-  esint cntR=0;
-  for (esint j = 0; j < defect_K_in; j++){
-    for (esint i = 0; i < R_s.rows; i++){
-	    R_s.dense_values[cntR] = Vt_S[j + ind_U_V + i*R_s.rows];
-      cntR++;
-    }
-  }
-  R_s.ConvertDenseToCSR(0);
+	// right kernel   K * R = 0
+	SparseMatrix R_s;
+	R_s.nnz  = defect_K_in*S.rows;
+	R_s.dense_values.resize(R_s.nnz);
+	R_s.rows = S.rows;
+	R_s.cols = defect_K_in;
+	R_s.type = 'G';
+	esint cntR=0;
+	for (esint j = 0; j < defect_K_in; j++){
+		for (esint i = 0; i < R_s.rows; i++){
+			R_s.dense_values[cntR] = Vt_S[j + ind_U_V + i*R_s.rows];
+			cntR++;
+		}
+	}
+	R_s.ConvertDenseToCSR(0);
 
 
 #if VERBOSE_KERNEL>0
 //8 - R_s created
-  time1 = omp_get_wtime();
-  elapsed_secs[8] = double(time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[8] = double(time1 - begin_time) ;
 #endif
 // --------------- CREATING KERNEL R_r FOR NON-SINGULAR PART
-  int R_r_rows = 0;
-  SparseMatrix R_r;
-  if (K_rr_cols!=0){
-    R_r.MatMat(K_rs,'N',R_s);
-    K_rs.Clear();
-    if (!SC_via_K_rr) {
-      K_rr_solver.ImportMatrix(K_rr);
-//      K_rr.Clear();
-      ss << "get kerner from K -> rank: " << info::mpi::rank;
-      K_rr_solver.Factorization(ss.str());
-    }
-    K_rr_solver.SolveMat_Dense(R_r); // inv(K_rr)*K_rs*R_s
-//    K_rr_solver.Clear();
-    R_r.ConvertCSRToDense(0);
-    R_r_rows = R_r.rows;
-  }
-  R_s.ConvertCSRToDense(0);
+	int R_r_rows = 0;
+	SparseMatrix R_r;
+	if (K_rr_cols!=0){
+		R_r.MatMat(K_rs,'N',R_s);
+		K_rs.Clear();
+		if (!SC_via_K_rr) {
+			K_rr_solver.ImportMatrix(K_rr);
+		//      K_rr.Clear();
+			ss << "get kerner from K -> rank: " << info::mpi::rank;
+			K_rr_solver.Factorization(ss.str());
+		}
+		K_rr_solver.SolveMat_Dense(R_r); // inv(K_rr)*K_rs*R_s
+	//    K_rr_solver.Clear();
+		R_r.ConvertCSRToDense(0);
+		R_r_rows = R_r.rows;
+	}
+	R_s.ConvertCSRToDense(0);
 #if VERBOSE_KERNEL>0
 //9 - R_r created (applied K_rr)
-  time1 = omp_get_wtime();
-  elapsed_secs[9] = double(time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[9] = double(time1 - begin_time) ;
 #endif
 //                                               |
 // --------------- CREATING WHOLE KERNEL Kplus_Rl = [ (R_r)^T (R_s)^T ]^T
-  Kplus_R.rows = R_r_rows+R_s.rows;
-  Kplus_R.cols = R_s.cols;
-  Kplus_R.nnz  = Kplus_R.cols*Kplus_R.rows;
-  Kplus_R.type = 'G';
+	Kplus_R.rows = R_r_rows+R_s.rows;
+	Kplus_R.cols = R_s.cols;
+	Kplus_R.nnz  = Kplus_R.cols*Kplus_R.rows;
+	Kplus_R.type = 'G';
 	Kplus_R.dense_values.resize(Kplus_R.nnz);
-  cntR=0;
-  for (esint j = 0; j < Kplus_R.cols; j++){
-    for (esint i = 0; i < R_r_rows; i++){
-      if (diagonalScaling){
-        di=diagonals[permVec[i]];
-      }
-      Kplus_R.dense_values[j*Kplus_R.rows + permVec[i]] = R_r.dense_values[j*R_r_rows + i]/sqrt(di);
-      cntR++;
-    }
-    for (esint i = 0; i < R_s.rows; i++){
-      if (diagonalScaling){
-//        di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i+R_r_rows]]-offset];
-        di=diagonals[permVec[i + R_r_rows]];
-      }
-	    Kplus_R.dense_values[j*Kplus_R.rows + permVec[i+R_r_rows]] =-R_s.dense_values[j*R_s.rows + i]/sqrt(di);
-      cntR++;
-    }
-  }
+	cntR=0;
+	for (esint j = 0; j < Kplus_R.cols; j++){
+		for (esint i = 0; i < R_r_rows; i++){
+			if (diagonalScaling){
+				di=diagonals[permVec[i]];
+			}
+			Kplus_R.dense_values[j*Kplus_R.rows + permVec[i]] = R_r.dense_values[j*R_r_rows + i]/sqrt(di);
+			cntR++;
+		}
+		for (esint i = 0; i < R_s.rows; i++){
+			if (diagonalScaling){
+		//        di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i+R_r_rows]]-offset];
+				di=diagonals[permVec[i + R_r_rows]];
+			}
+			Kplus_R.dense_values[j*Kplus_R.rows + permVec[i+R_r_rows]] =-R_s.dense_values[j*R_s.rows + i]/sqrt(di);
+			cntR++;
+		}
+	}
 //
-  Kplus_R.GramSchmidtOrtho();
-  SEQ_VECTOR <esint > null_pivots;
+	Kplus_R.GramSchmidtOrtho();
+	SEQ_VECTOR <esint > null_pivots;
 //  Kplus_R.getNullPivots(null_pivots);
 
 #if VERBOSE_KERNEL>0
 //10 - R - Gram Schmidt Orthogonalization
-  time1 = omp_get_wtime();
-  os << "null pivots: \n";
-  os << "[";
-  for (size_t k = 0; k<null_pivots.size();k++){
-    os << null_pivots[k] ;
-    if (k<null_pivots.size()-1 ){
-     os << ", ";
-      }
-  }
-   os << "]\n";
+	time1 = omp_get_wtime();
+	os << "null pivots: \n";
+	os << "[";
+	for (size_t k = 0; k<null_pivots.size();k++){
+		os << null_pivots[k] ;
+		if (k<null_pivots.size()-1 ){
+			os << ", ";
+		}
+	}
+	os << "]\n";
 
-  elapsed_secs[10] = double(time1 - begin_time) ;
+	elapsed_secs[10] = double(time1 - begin_time) ;
 #endif
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // left kernel   Rl_t * K = 0
-  SparseMatrix Rl_s;
-  Rl_s.nnz  = defect_K_in*S.rows;
-  Rl_s.dense_values.resize(Rl_s.nnz);
-  Rl_s.rows = S.rows;
-  Rl_s.cols = defect_K_in;
-  Rl_s.type = 'G';
-  cntR=0;
-  for (esint j = 0; j < defect_K_in; j++){
-    for (esint i = 0; i < Rl_s.rows; i++){
-	    Rl_s.dense_values[cntR] = U_S[(j + ind_U_V)*Rl_s.rows + i ];
-      cntR++;
-    }
-  }
+	SparseMatrix Rl_s;
+	Rl_s.nnz  = defect_K_in*S.rows;
+	Rl_s.dense_values.resize(Rl_s.nnz);
+	Rl_s.rows = S.rows;
+	Rl_s.cols = defect_K_in;
+	Rl_s.type = 'G';
+	cntR=0;
+	for (esint j = 0; j < defect_K_in; j++){
+		for (esint i = 0; i < Rl_s.rows; i++){
+			Rl_s.dense_values[cntR] = U_S[(j + ind_U_V)*Rl_s.rows + i ];
+			cntR++;
+		}
+	}
 //
-  Rl_s.ConvertDenseToCSR(0);
-  int Rl_r_rows = 0;
-  SparseMatrix Rl_r;
+	Rl_s.ConvertDenseToCSR(0);
+	int Rl_r_rows = 0;
+	SparseMatrix Rl_r;
 //
 
 
 
-  if (K_rr_cols!=0){
+	if (K_rr_cols!=0){
 //    SparseSolverCPU K_rr_t_solver;
 //    SparseMatrix K_rr_t;
 //    K_rr.MatTranspose( K_rr_t );
 //    K_rr_t_solver.ImportMatrix(K_rr_t);
-    Rl_r.MatMat(K_sr,'T',Rl_s);
-    K_sr.Clear();
+		Rl_r.MatMat(K_sr,'T',Rl_s);
+		K_sr.Clear();
 //    K_rr_t_solver.mtype=11;
 //    K_rr_t_solver.SolveMat_Dense(Rl_r); // inv(K_rr)*K_rs*R_s
 //    K_rr_t_solver.Clear();
-    K_rr_solver.iparm[11] = 2;
-    K_rr_solver.SolveMat_Dense(Rl_r); // inv(K_rr)*K_rs*R_s
-    Rl_r.ConvertCSRToDense(0);
-    Rl_r_rows = Rl_r.rows;
-  }
+		K_rr_solver.iparm[11] = 2;
+		K_rr_solver.SolveMat_Dense(Rl_r); // inv(K_rr)*K_rs*R_s
+		Rl_r.ConvertCSRToDense(0);
+		Rl_r_rows = Rl_r.rows;
+	}
 
 //
 //                                               |
 // --------------- CREATING WHOLE KERNEL Kplus_Rl = [ (R_r)^T (R_s)^T ]^T
 //
-  Kplus_Rl.rows = Rl_r_rows+Rl_s.rows;
-  Kplus_Rl.cols = Rl_s.cols;
-  Kplus_Rl.nnz  = Kplus_Rl.cols*Kplus_Rl.rows;
-  Kplus_Rl.type = 'G';
+	Kplus_Rl.rows = Rl_r_rows+Rl_s.rows;
+	Kplus_Rl.cols = Rl_s.cols;
+	Kplus_Rl.nnz  = Kplus_Rl.cols*Kplus_Rl.rows;
+	Kplus_Rl.type = 'G';
 	Kplus_Rl.dense_values.resize(Kplus_Rl.nnz);
-  cntR=0;
-  for (esint j = 0; j < Kplus_Rl.cols; j++){
-    for (esint i = 0; i < Rl_r_rows; i++){
-      if (diagonalScaling){
-        di=diagonals[permVec[i]];
-      }
-      Kplus_Rl.dense_values[j*Kplus_Rl.rows + permVec[i]] = Rl_r.dense_values[j*Rl_r_rows + i]/sqrt(di);
-      cntR++;
-    }
-    for (esint i = 0; i < Rl_s.rows; i++){
-      if (diagonalScaling){
-//        di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i+R_r_rows]]-offset];
-        di=diagonals[permVec[i + Rl_r_rows]];
-      }
-	    Kplus_Rl.dense_values[j*Kplus_Rl.rows + permVec[i+Rl_r_rows]] =-Rl_s.dense_values[j*Rl_s.rows + i]/sqrt(di);
-      cntR++;
-    }
-  }
+	cntR=0;
+	for (esint j = 0; j < Kplus_Rl.cols; j++){
+		for (esint i = 0; i < Rl_r_rows; i++){
+			if (diagonalScaling){
+				di=diagonals[permVec[i]];
+			}
+			Kplus_Rl.dense_values[j*Kplus_Rl.rows + permVec[i]] = Rl_r.dense_values[j*Rl_r_rows + i]/sqrt(di);
+			cntR++;
+		}
+		for (esint i = 0; i < Rl_s.rows; i++){
+			if (diagonalScaling){
+			//        di=K.CSR_V_values[K.CSR_I_row_indices[permVec[i+R_r_rows]]-offset];
+				di=diagonals[permVec[i + Rl_r_rows]];
+			}
+			Kplus_Rl.dense_values[j*Kplus_Rl.rows + permVec[i+Rl_r_rows]] =-Rl_s.dense_values[j*Rl_s.rows + i]/sqrt(di);
+			cntR++;
+		}
+	}
 //
-  Kplus_Rl.GramSchmidtOrtho();
-  SEQ_VECTOR <esint > null_pivotsl;
+	Kplus_Rl.GramSchmidtOrtho();
+	SEQ_VECTOR <esint > null_pivotsl;
 //  Kplus_Rl.getNullPivots(null_pivotsl);
 
 
@@ -5361,53 +5362,53 @@ if (defect_K_in == 0){
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-               //                                               |
+//                                               |
 
-  // norm of product K*R: second matrix has to be in dense format!!!
+// norm of product K*R: second matrix has to be in dense format!!!
 //11 - max(eig(K))
 
-  std::vector <double>::iterator  it2;
-  it2 = std::max_element(tmp_approx_max_eig.begin(),tmp_approx_max_eig.end(),compareDouble);
-  double lmx_K_approx       = *it2;
-  double tmp_Norm_K_R       = K.getNorm_K_R(K,Kplus_R,'N');
-  norm_KR_d_pow_2_approx   = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K_approx*lmx_K_approx);
-  defect_d                 = Kplus_R.cols;
+	std::vector <double>::iterator  it2;
+	it2 = std::max_element(tmp_approx_max_eig.begin(),tmp_approx_max_eig.end(),compareDouble);
+	double lmx_K_approx       = *it2;
+	double tmp_Norm_K_R       = K.getNorm_K_R(K,Kplus_R,'N');
+	norm_KR_d_pow_2_approx   = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K_approx*lmx_K_approx);
+	defect_d                 = Kplus_R.cols;
 
 
 #if VERBOSE_KERNEL>2
-  double tmp_Norm_Kt_Rl     = K.getNorm_K_R(K,Kplus_Rl,'T');
-  double norm_KtRl_d_pow_2_approx   = (tmp_Norm_Kt_Rl*tmp_Norm_Kt_Rl)/(lmx_K_approx*lmx_K_approx);
+	double tmp_Norm_Kt_Rl     = K.getNorm_K_R(K,Kplus_Rl,'T');
+	double norm_KtRl_d_pow_2_approx   = (tmp_Norm_Kt_Rl*tmp_Norm_Kt_Rl)/(lmx_K_approx*lmx_K_approx);
 #endif
 
 #if VERBOSE_KERNEL>2
-  os << std::scientific;
-  os << "max(eig(K)) approx:      " << lmx_K_approx << "\n";
+	os << std::scientific;
+	os << "max(eig(K)) approx:      " << lmx_K_approx << "\n";
 #endif
 #if VERBOSE_KERNEL>3
-  double lmx_K;
-  K.MatCondNumb(K,"K_singular",plot_n_first_n_last_eigenvalues,&lmx_K,100);
-  double norm_KR_d_pow_2          = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K*lmx_K);
-  double norm_KtRl_d_pow_2          = (tmp_Norm_Kt_Rl*tmp_Norm_Kt_Rl)/(lmx_K*lmx_K);
-  double norm_KR                  = sqrt(norm_KR_d_pow_2);
-  double norm_KtRl                = sqrt(norm_KtRl_d_pow_2);
-  os << "max(eig(K)):             " << lmx_K << "\n";
-  os << "max(diag(K)):            " << rho << "\n";
-  os << "defect(K):               " << defect_K_in <<"\n";
-  os << "norm_KR:                 " << norm_KR <<"\n";
-  os << "norm_KtRl:               " << norm_KtRl <<"\n";
+	double lmx_K;
+	K.MatCondNumb(K,"K_singular",plot_n_first_n_last_eigenvalues,&lmx_K,100);
+	double norm_KR_d_pow_2          = (tmp_Norm_K_R*tmp_Norm_K_R)/(lmx_K*lmx_K);
+	double norm_KtRl_d_pow_2          = (tmp_Norm_Kt_Rl*tmp_Norm_Kt_Rl)/(lmx_K*lmx_K);
+	double norm_KR                  = sqrt(norm_KR_d_pow_2);
+	double norm_KtRl                = sqrt(norm_KtRl_d_pow_2);
+	os << "max(eig(K)):             " << lmx_K << "\n";
+	os << "max(diag(K)):            " << rho << "\n";
+	os << "defect(K):               " << defect_K_in <<"\n";
+	os << "norm_KR:                 " << norm_KR <<"\n";
+	os << "norm_KtRl:               " << norm_KtRl <<"\n";
 #endif
 #if VERBOSE_KERNEL>2
-  os << "norm_KR_approx:          " << sqrt(norm_KR_d_pow_2_approx) <<"\n";
-  os << "norm_KtRl_approx:        " << sqrt(norm_KtRl_d_pow_2_approx) <<"\n";
+	os << "norm_KR_approx:          " << sqrt(norm_KR_d_pow_2_approx) <<"\n";
+	os << "norm_KtRl_approx:        " << sqrt(norm_KtRl_d_pow_2_approx) <<"\n";
 #endif
 //                                               |
 #if VERBOSE_KERNEL > 0
-  time1 = omp_get_wtime();
-  elapsed_secs[11] = double(time1 - begin_time) ;
+	time1 = omp_get_wtime();
+	elapsed_secs[11] = double(time1 - begin_time) ;
 #endif
 //
-  Kplus_R.ConvertDenseToCSR(0);
-  Kplus_Rl.ConvertDenseToCSR(0);
+	Kplus_R.ConvertDenseToCSR(0);
+	Kplus_Rl.ConvertDenseToCSR(0);
 //
 //
 
@@ -5415,69 +5416,69 @@ if (defect_K_in == 0){
 //  Kplus_R.printMatCSR("R");
 //  Kplus_Rl.printMatCSR("Rl");
 
-  if (diagonalRegularization){
-    esint tmp_int0;
-    if (d_sub!=-1) {
-	    regMat.rows = K.rows;
-	    regMat.cols = K.cols;
-	    regMat.type = 'G';
-	    regMat.nnz= null_pivots.size();
+	if (diagonalRegularization){
+		esint tmp_int0;
+		if (d_sub!=-1) {
+			regMat.rows = K.rows;
+			regMat.cols = K.cols;
+			regMat.type = 'G';
+			regMat.nnz= null_pivots.size();
 
-      regMat.I_row_indices.resize(regMat.nnz);
-      regMat.J_col_indices.resize(regMat.nnz);
-      regMat.V_values.resize(regMat.nnz);
-    }
-    for (size_t i = 0; i < null_pivots.size(); i++){
-      tmp_int0=K.CSR_I_row_indices[null_pivots[i]-offset]-offset;
-      K.CSR_V_values[tmp_int0]+=rho;
-      // if d_sub==-1; it's G0G0t matrix (or S_alpha)
-      if (d_sub!=-1) {
-        regMat.I_row_indices[i] = null_pivots[i];
-        regMat.J_col_indices[i] = null_pivots[i];
-        regMat.V_values[i]      = rho ;
-      }
-    }
-  }
-  else{
-    SparseMatrix N;
-    SparseMatrix Nl;
-    if (use_null_pivots_or_s_set){
-       N.CreateMatFromRowsFromMatrix( Kplus_R,  null_pivots);
-      Nl.CreateMatFromRowsFromMatrix( Kplus_Rl, null_pivots);
-    }
-    else
-    {
-      N.CreateMatFromRowsFromMatrix( Kplus_R, fix_dofs);
-      Nl.CreateMatFromRowsFromMatrix( Kplus_Rl, fix_dofs);
-    }
-  //null_pivots
-    bool use_invNtN_in_regMat=false;
-    SparseMatrix Nt;
-    SparseMatrix Nlt;
-    N.MatTranspose( Nt );
-    SparseMatrix NtNl;
-    std::stringstream sss;
-    sss << "get kernel from K -> rank: " << info::mpi::rank;
-    if (use_invNtN_in_regMat){
-      Nl.MatTranspose( Nlt );
-      NtNl.MatMat( Nt,'N',Nl );
-      SparseSolverCPU inv_NtNl;
-      inv_NtNl.ImportMatrix_wo_Copy(NtNl);
-      //NtNl.Clear();
-      inv_NtNl.Factorization(sss.str());
-      // Nt replaced (!) Nt = inv(NtNl) * Nt
-      inv_NtNl.SolveMat_Sparse(Nt);
-      inv_NtNl.Clear();
-    }
-    NtNl.MatMat(Nl,'N',Nt);
-    NtNl.MatScale(rho);
-    K.MatAddInPlace (NtNl,'N', 1);
-    // IF d_sub == -1, it is GGt0 of cluster and regMat is no need
-    if (d_sub!=-1)
-    {
-      regMat=NtNl;
-      regMat.ConvertToCOO(1);
-    }
+			regMat.I_row_indices.resize(regMat.nnz);
+			regMat.J_col_indices.resize(regMat.nnz);
+			regMat.V_values.resize(regMat.nnz);
+		}
+		for (size_t i = 0; i < null_pivots.size(); i++){
+			tmp_int0=K.CSR_I_row_indices[null_pivots[i]-offset]-offset;
+			K.CSR_V_values[tmp_int0]+=rho;
+			// if d_sub==-1; it's G0G0t matrix (or S_alpha)
+			if (d_sub!=-1) {
+				regMat.I_row_indices[i] = null_pivots[i];
+				regMat.J_col_indices[i] = null_pivots[i];
+				regMat.V_values[i]      = rho ;
+			}
+		}
+	}
+	else{
+		SparseMatrix N;
+		SparseMatrix Nl;
+		if (use_null_pivots_or_s_set){
+			N.CreateMatFromRowsFromMatrix( Kplus_R,  null_pivots);
+			Nl.CreateMatFromRowsFromMatrix( Kplus_Rl, null_pivots);
+		}
+		else
+		{
+			N.CreateMatFromRowsFromMatrix( Kplus_R, fix_dofs);
+			Nl.CreateMatFromRowsFromMatrix( Kplus_Rl, fix_dofs);
+		}
+		//null_pivots
+		bool use_invNtN_in_regMat=false;
+		SparseMatrix Nt;
+		SparseMatrix Nlt;
+		N.MatTranspose( Nt );
+		SparseMatrix NtNl;
+		std::stringstream sss;
+		sss << "get kernel from K -> rank: " << info::mpi::rank;
+		if (use_invNtN_in_regMat){
+			Nl.MatTranspose( Nlt );
+			NtNl.MatMat( Nt,'N',Nl );
+			SparseSolverCPU inv_NtNl;
+			inv_NtNl.ImportMatrix_wo_Copy(NtNl);
+			//NtNl.Clear();
+			inv_NtNl.Factorization(sss.str());
+			// Nt replaced (!) Nt = inv(NtNl) * Nt
+			inv_NtNl.SolveMat_Sparse(Nt);
+			inv_NtNl.Clear();
+		}
+		NtNl.MatMat(Nl,'N',Nt);
+		NtNl.MatScale(rho);
+		K.MatAddInPlace (NtNl,'N', 1);
+		// IF d_sub == -1, it is GGt0 of cluster and regMat is no need
+		if (d_sub!=-1)
+		{
+			regMat=NtNl;
+			regMat.ConvertToCOO(1);
+		}
 
 
 //    {
@@ -5498,12 +5499,12 @@ if (defect_K_in == 0){
 
 
 
-  }
+	}
 
-  delete [] S_S ;
-  delete [] U_S ;
-  delete [] Vt_S;
-  delete [] superb;
+	delete [] S_S ;
+	delete [] U_S ;
+	delete [] Vt_S;
+	delete [] superb;
 
 
 //  // TESTING OF REGULARIZED MATRIX
@@ -5573,74 +5574,74 @@ if (defect_K_in == 0){
 //
 
 
-  K_modif.Clear();
-  K_rr.Clear();
-  K_rs.Clear();
+	K_modif.Clear();
+	K_rr.Clear();
+	K_rs.Clear();
 
 
 #if VERBOSE_KERNEL > 0
-  double end_time = omp_get_wtime();
-//12 - Total time in kernel detection
-  elapsed_secs[12] = double(end_time - begin_time) ;
-  //std::cout << "Total time in kernel detection:                 " << elapsed_secs[12] << "[s] \n";
+	double end_time = omp_get_wtime();
+	//12 - Total time in kernel detection
+	elapsed_secs[12] = double(end_time - begin_time) ;
+	//std::cout << "Total time in kernel detection:                 " << elapsed_secs[12] << "[s] \n";
 #endif
 
 #if VERBOSE_KERNEL>0
-  os << std::fixed;
-  os << "allocation of vectors, copying of matrix:       " << elapsed_secs[0]                 << "[s] \n";
-  os << "diagonal scaling:                               " << elapsed_secs[1]-elapsed_secs[0] << "[s] \n";
-  os << "before singular test:                           " << elapsed_secs[2]-elapsed_secs[1] << "[s] \n";
-  os << "after singular test:                            " << elapsed_secs[3]-elapsed_secs[2] << "[s] \n";
-  os << "creation of block K_rs:                         " << elapsed_secs[4]-elapsed_secs[3] << "[s] \n";
-  os << "Schur complement created:                       " << elapsed_secs[5]-elapsed_secs[4] << "[s] \n";
-  os << "Schur complement eigenvalues obtained:          " << elapsed_secs[6]-elapsed_secs[5] << "[s] \n";
-  os << "zero eigenvalues detection:                     " << elapsed_secs[7]-elapsed_secs[6] << "[s] \n";
-  os << "R_s created:                                    " << elapsed_secs[8]-elapsed_secs[7] << "[s] \n";
-  os << "R_r created (applied K_rr):                     " << elapsed_secs[9]-elapsed_secs[8] << "[s] \n";
-  os << "R - Gram Schmidt Orthogonalization:             " << elapsed_secs[10]-elapsed_secs[9] << "[s] \n";
-  os << "max(eig(K)):                                    " << elapsed_secs[11]-elapsed_secs[10] << "[s] \n";
-  os << "Total time in kernel detection:                 " << elapsed_secs[12]<< "[s] \n";
-  os.close();
+	os << std::fixed;
+	os << "allocation of vectors, copying of matrix:       " << elapsed_secs[0]                 << "[s] \n";
+	os << "diagonal scaling:                               " << elapsed_secs[1]-elapsed_secs[0] << "[s] \n";
+	os << "before singular test:                           " << elapsed_secs[2]-elapsed_secs[1] << "[s] \n";
+	os << "after singular test:                            " << elapsed_secs[3]-elapsed_secs[2] << "[s] \n";
+	os << "creation of block K_rs:                         " << elapsed_secs[4]-elapsed_secs[3] << "[s] \n";
+	os << "Schur complement created:                       " << elapsed_secs[5]-elapsed_secs[4] << "[s] \n";
+	os << "Schur complement eigenvalues obtained:          " << elapsed_secs[6]-elapsed_secs[5] << "[s] \n";
+	os << "zero eigenvalues detection:                     " << elapsed_secs[7]-elapsed_secs[6] << "[s] \n";
+	os << "R_s created:                                    " << elapsed_secs[8]-elapsed_secs[7] << "[s] \n";
+	os << "R_r created (applied K_rr):                     " << elapsed_secs[9]-elapsed_secs[8] << "[s] \n";
+	os << "R - Gram Schmidt Orthogonalization:             " << elapsed_secs[10]-elapsed_secs[9] << "[s] \n";
+	os << "max(eig(K)):                                    " << elapsed_secs[11]-elapsed_secs[10] << "[s] \n";
+	os << "Total time in kernel detection:                 " << elapsed_secs[12]<< "[s] \n";
+	os.close();
 #endif
 } //get_kernels_from_nonsym_K
 
 #ifdef SOLVER_CUDA
 const char * SparseMatrix::_cudaGetErrorEnum(cublasStatus_t error)
 {
-    switch (error)
-    {
-        case CUBLAS_STATUS_SUCCESS:
-            return "CUBLAS_STATUS_SUCCESS";
+	switch (error)
+	{
+		case CUBLAS_STATUS_SUCCESS:
+			return "CUBLAS_STATUS_SUCCESS";
 
-        case CUBLAS_STATUS_NOT_INITIALIZED:
-            return "CUBLAS_STATUS_NOT_INITIALIZED";
+		case CUBLAS_STATUS_NOT_INITIALIZED:
+			return "CUBLAS_STATUS_NOT_INITIALIZED";
 
-        case CUBLAS_STATUS_ALLOC_FAILED:
-            return "CUBLAS_STATUS_ALLOC_FAILED";
+		case CUBLAS_STATUS_ALLOC_FAILED:
+			return "CUBLAS_STATUS_ALLOC_FAILED";
 
-        case CUBLAS_STATUS_INVALID_VALUE:
-            return "CUBLAS_STATUS_INVALID_VALUE";
+		case CUBLAS_STATUS_INVALID_VALUE:
+			return "CUBLAS_STATUS_INVALID_VALUE";
 
-        case CUBLAS_STATUS_ARCH_MISMATCH:
-            return "CUBLAS_STATUS_ARCH_MISMATCH";
+		case CUBLAS_STATUS_ARCH_MISMATCH:
+			return "CUBLAS_STATUS_ARCH_MISMATCH";
 
-        case CUBLAS_STATUS_MAPPING_ERROR:
-            return "CUBLAS_STATUS_MAPPING_ERROR";
+		case CUBLAS_STATUS_MAPPING_ERROR:
+			return "CUBLAS_STATUS_MAPPING_ERROR";
 
-        case CUBLAS_STATUS_EXECUTION_FAILED:
-            return "CUBLAS_STATUS_EXECUTION_FAILED";
+		case CUBLAS_STATUS_EXECUTION_FAILED:
+			return "CUBLAS_STATUS_EXECUTION_FAILED";
 
-        case CUBLAS_STATUS_INTERNAL_ERROR:
-            return "CUBLAS_STATUS_INTERNAL_ERROR";
+		case CUBLAS_STATUS_INTERNAL_ERROR:
+			return "CUBLAS_STATUS_INTERNAL_ERROR";
 
-        case CUBLAS_STATUS_NOT_SUPPORTED:
-            return "CUBLAS_STATUS_NOT_SUPPORTED";
+		case CUBLAS_STATUS_NOT_SUPPORTED:
+			return "CUBLAS_STATUS_NOT_SUPPORTED";
 
-        case CUBLAS_STATUS_LICENSE_ERROR:
-            return "CUBLAS_STATUS_LICENSE_ERROR";
-    }
+		case CUBLAS_STATUS_LICENSE_ERROR:
+			return "CUBLAS_STATUS_LICENSE_ERROR";
+	}
 
-    return "<unknown>";
+	return "<unknown>";
 }
 #endif
 
