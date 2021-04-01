@@ -47,8 +47,8 @@ struct DiffusionSplit2D: public DiffusionSplitBase {
 			norm += g[n] * g[n];
 		}
 		double H = 2 * std::sqrt(gradient[0] * gradient[0] + gradient[1] * gradient[1]) / norm;
-		double T = (C1 * H * H) / (conductivity[0] * C2 + H * H * (mass[0] / step::time::shift));
-		xi[0] = std::max(1., 1 / (1 - T * mass[0] / step::time::shift));
+		double T = (C1 * H * H) / (conductivity[0] * C2 + H * H * (mass[0] / step::time.shift));
+		xi[0] = std::max(1., 1 / (1 - T * mass[0] / step::time.shift));
 	}
 };
 
@@ -67,8 +67,8 @@ struct DiffusionSplit3D: public DiffusionSplitBase {
 			norm += g[n] * g[n];
 		}
 		double H = 2 * std::sqrt(gradient[0] * gradient[0] + gradient[1] * gradient[1]) / norm;
-		double T = (C1 * H * H) / (conductivity[0] * C2 + H * H * (mass[0] / step::time::shift));
-		xi[0] = std::max(1., 1 / (1 - T * mass[0] / step::time::shift));
+		double T = (C1 * H * H) / (conductivity[0] * C2 + H * H * (mass[0] / step::time.shift));
+		xi[0] = std::max(1., 1 / (1 - T * mass[0] / step::time.shift));
 	}
 };
 

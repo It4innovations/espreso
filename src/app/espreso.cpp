@@ -101,7 +101,7 @@ int main(int argc, char **argv)
 		eslog::checkpointln("ESPRESO: EXPRESSIONS CHECKED");
 		while (steps.next()) {
 			eslog::checkpoint("ESPRESO: PHYSICS SOLVED");
-			eslog::param("LOADSTEP", step::loadstep);
+			eslog::param("LOADSTEP", step::step.loadstep);
 			eslog::ln();
 		}
 		profiler::syncend("physical_solver");

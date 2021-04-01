@@ -159,7 +159,7 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 	builders.push_back(new ElementIntegration(*this));
 	builders.push_back(new BoundaryIntegration(*this));
 
-	if (step::loadstep == 0) {
+	if (step::step.loadstep == 0) {
 		initTemperature(); // we need to init temperature first since other builder can read it
 
 		if (info::mesh->dimension == 2) {
