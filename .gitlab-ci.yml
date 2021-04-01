@@ -19,6 +19,7 @@ PYTHON:
       - schedules
     variables:
       - $BUILD
+      - $FULL
   script:
     - python2 waf configure -mdebug
     - python2 waf -j8
@@ -34,6 +35,7 @@ INT32:
       - schedules
     variables:
       - $BUILD
+      - $FULL
   script:
     - ./waf configure
     - ./waf -j8
@@ -46,6 +48,7 @@ INT64:
       - schedules
     variables:
       - $BUILD
+      - $FULL
   script:
     - ./waf configure --intwidth=64
     - ./waf -j8
@@ -58,6 +61,7 @@ STATIC:
       - schedules
     variables:
       - $BUILD
+      - $FULL
   script:
     - ./waf configure --static
     - ./waf --static --libs="dl" -j8
@@ -70,6 +74,7 @@ PROFILE:
       - schedules
     variables:
       - $BUILD
+      - $FULL
   script:
     - ./waf configure -mprofile
     - ./waf -j8
@@ -83,6 +88,7 @@ DUMMY_WRAPPERS:
       - schedules
     variables:
       - $BUILD
+      - $FULL
   script:
     - ml purge
     - . $PWD/env/modules.workstation.mpi_only
@@ -96,6 +102,7 @@ GUI:
       - schedules
     variables:
       - $BUILD
+      - $FULL
   script:
     - ./waf configure --with-gui
     - ./waf -j8
@@ -107,6 +114,7 @@ HEAT:
       - schedules
     variables:
       - $ESPRESO
+      - $FULL
   script:
     - ./waf configure
     - ./waf -j8
@@ -122,6 +130,7 @@ ELASTICITY:
       - schedules
     variables:
       - $ESPRESO
+      - $FULL
   script:
     - ./waf configure
     - ./waf -j8
@@ -132,10 +141,10 @@ CUDA_SOLVER:
   stage: espreso
   only:
     refs:
-      - cuda
       - schedules
     variables:
       - $CUDA
+      - $FULL
   script:
     - ./waf configure --solver=cuda
     - ./waf -j8
@@ -148,6 +157,7 @@ FETI_SOLVER:
       - schedules
     variables:
       - $ESPRESO
+      - $FULL
   script:
     - ./waf configure
     - ./waf -j8
@@ -160,6 +170,7 @@ INPUT32:
       - schedules
     variables:
       - $MESIO
+      - $FULL
   script:
     - ./waf configure
     - ./waf -j8
@@ -172,6 +183,7 @@ INPUT64:
       - schedules
     variables:
       - $MESIO
+      - $FULL
   script:
     - ./waf configure --intwidth=64
     - ./waf -j8
@@ -184,6 +196,7 @@ OUTPUT32:
       - schedules
     variables:
       - $MESIO
+      - $FULL
   script:
     - ./waf configure
     - ./waf -j8
@@ -196,6 +209,7 @@ OUTPUT64:
       - schedules
     variables:
       - $MESIO
+      - $FULL
   script:
     - ./waf configure --intwidth=64
     - ./waf -j8
@@ -208,6 +222,7 @@ CONTACT:
       - schedules
     variables:
       - $MESIO
+      - $FULL
   script:
     - ./waf configure
     - ./waf -j8
@@ -220,6 +235,7 @@ APITEST:
       - schedules
     variables:
       - $API
+      - $FULL
   script:
     - ./waf configure
     - ./waf -j8
