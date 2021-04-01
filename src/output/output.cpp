@@ -89,7 +89,7 @@ using namespace espreso;
 
 OutputWriter::OutputWriter()
 : _path(info::ecf->outpath + "/"), _directory("PREPOSTDATA/"), _name(info::ecf->name),
-  _measure(Mesh::convertDatabase()), _allowed(true)
+  _measure(info::ecf->output.mode == OutputConfiguration::MODE::SYNC), _allowed(true)
 {
 
 }
