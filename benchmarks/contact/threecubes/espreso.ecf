@@ -61,7 +61,6 @@ OUTPUT {
   MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
 
   STORE_RESULTS                        ALL;
-  PRINT_MATRICES                      TRUE;
 
   MONITORING {
     1 {
