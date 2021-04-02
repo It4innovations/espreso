@@ -441,7 +441,7 @@ void HeatTransfer2DKernel::processEdge(const Builder &builder, HeatTransferBound
 			double text = iterator.extemperature.data[n];
 			htc(n, 0) = iterator.htc.data[n];
 
-			if (step::outstep.iteration) {
+			if (step::step.iteration) {
 				q(n, 0) += htc(n, 0) * (text - temp);
 			} else {
 				q(n, 0) += htc(n, 0) * (text);
