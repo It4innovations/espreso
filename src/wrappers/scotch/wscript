@@ -1,0 +1,8 @@
+
+def options(opt):
+    opt.decomposers.add_option("--scotch", action="store", type="string", metavar="SCOTCH_ROOT", default="", help="Path to Scotch root directory.")
+
+def configure(ctx):
+    ctx.link_cxx(
+        name="scotch", header_name="cstdio cstdint scotch.h", libs=["scotch", "scotcherr"], root=ctx.options.scotch,
+        fragment="return sizeof(SCOTCH_Num) != sizeof(esint);")

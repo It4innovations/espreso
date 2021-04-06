@@ -1,0 +1,26 @@
+
+DEFAULT_ARGS {
+  0                                         ANSYS_CDB;
+  1  /data/espreso/mesiotest/cooler/linear/cooler.dat;
+  2                                               MPI;
+  3                                                32;
+}
+
+INPUT {
+  FORMAT      [ARG0];
+  PATH        [ARG1];
+  LOADER      [ARG2];
+
+  KEEP_MATERIAL_SETS     FALSE;
+  CONVERT_DATABASE        TRUE;
+
+  THIRD_PARTY_SCALABILITY_LIMIT   [ARG3];
+  DECOMPOSITION {
+    PARALLEL_DECOMPOSER             NONE;
+  }
+}
+
+OUTPUT {
+  RESULTS_STORE_FREQUENCY NEVER;
+}
+

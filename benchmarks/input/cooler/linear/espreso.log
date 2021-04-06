@@ -1,0 +1,57 @@
+ ESPRESO: STARTED
+ ESPRESO: CONFIGURATION READ
+ ====================================== ESPRESO RUN INFO ===================================== 
+ ============================================================================================= 
+ == CXX                                /opt/spack/opt/spack/linux-centos7-nehalem/gcc-6.4.0 ==
+ ==                              /openmpi-2.0.4-efosiekwgebvwxucu4a73nnvj5ssg4d5/bin/mpic++ == 
+ == CXXFLAGS                                               -fopenmp -std=c++11 -Wall -O3 -g == 
+ == COMMIT                                         bf887c3decfdf6d70812525660c38d44d0d2e801 == 
+ == BINARY                                      /home/mec059/projects/espreso/build/espreso == 
+ == DATE [YYYY-MM-DD]                                                            2020-06-02 == 
+ == TIME [HH-MM-SS]                                                                10-57-37 == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == COMMAND                                  espreso -c espreso.ecf --OUTPUT::LOGGER=PARSER == 
+ == MPI_COMM_WORLD                                                                        1 == 
+ == OMP_NUM_THREADS                                                                       1 == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == NUMBER OF LOADERS                                                                     1 == 
+ == NUMBER OF WRITTERS                                                                    1 == 
+ == STORING MODE                                                               SYNCHRONIZED == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == RUN PATH                   /home/mec059/projects/espreso/benchmarks/input/cooler/linear == 
+ == ECF            /home/mec059/projects/espreso/benchmarks/input/cooler/linear/espreso.ecf == 
+ == MESH                                   /data/espreso/mesiotest/cooler/linear/cooler.dat == 
+ == OUTPUT             /home/mec059/projects/espreso/benchmarks/input/cooler/linear/results ==
+ ==                                                              /2020-06-02-at-10h-57m-37s == 
+ ============================================================================================= 
+ ESPRESO: RUN INITIALIZED
+ ESPRESO: MESH LOADED
+ ESPRESO: MESH PREPROCESSED
+ ====================================== MESH STATISTICS ====================================== 
+mesh: region=PART_01, dimension=3, elements=763500, nodes=878296
+mesh: region=FACE_SET_01, dimension=2, elements=215270, nodes=215491
+mesh: region=BOTTOM_NODE_SET, dimension=0, elements=0, nodes=11817
+ ============================================================================================= 
+                              MIN                 MAX                 SUM           IMBALANCE 
+  CLUSTERS  :                   1                   1                   1               1.000
+  DOMAINS   :                   1                   1                   1               1.000
+  ELEMENTS  :             763,500             763,500             763,500               1.000
+  NODES     :             878,296             878,296             878,296               1.000
+  NEIGHBORS :                   0                   0                   0               0.000
+  ELEMS/DOM :             763,500             763,500             763,500               1.000
+ ============================================================================================= 
+ ESPRESO: MESH STORED
+ ESPRESO: DATABASE CONVERTED
+
+ ======================================== RUN FINISHED ======================================= 
+ == OVERALL TIME ============================================================================= 
+ ============================================ avg. [s]  < min [s] -  max [s]> [  %  ] [ imb ]   
+time: region='ESPRESO STARTED AT                        ', avg='0.016353', min='0.016353', max='0.016353', ratio=' 0.42', imb=' 1.00'
+time: region='ESPRESO: CONFIGURATION READ               ', avg='0.002050', min='0.002050', max='0.002050', ratio=' 0.05', imb=' 1.00'
+time: region='ESPRESO: RUN INITIALIZED                  ', avg='0.012561', min='0.012561', max='0.012561', ratio=' 0.33', imb=' 1.00'
+time: region='ESPRESO: MESH LOADED                      ', avg='1.598262', min='1.598262', max='1.598262', ratio='41.48', imb=' 1.00'
+time: region='ESPRESO: MESH PREPROCESSED                ', avg='1.727775', min='1.727775', max='1.727775', ratio='44.85', imb=' 1.00'
+time: region='ESPRESO: MESH STORED                      ', avg='0.511974', min='0.511974', max='0.511974', ratio='13.29', imb=' 1.00'
+time: region='ESPRESO: DATABASE CONVERTED               ', avg='0.000042', min='0.000042', max='0.000042', ratio=' 0.00', imb=' 1.00'
+time: region='ESPRESO TOTAL DURATION                    ', avg='3.852663', min='3.852663', max='3.852663', ratio='99.57', imb=' 1.00'
+ ============================================================================================= 

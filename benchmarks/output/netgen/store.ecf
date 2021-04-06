@@ -1,0 +1,113 @@
+
+INPUT_TYPE GENERATOR;
+
+GENERATOR {
+  SHAPE   GRID;
+
+  UNIFORM_CLUSTERS  FALSE;
+
+  GRID {
+    LENGTH_X                   1;
+    LENGTH_Y                   1;
+    LENGTH_Z                   1;
+
+    FACES {
+      BOTTOM   <1 , 1> <0 , 1> <0 , 1>;
+      TOP      <0 , 0> <0 , 1> <0 , 1>;
+    }
+
+    ELEMENT_TYPE         TETRA4;
+
+    BLOCKS_X                   1;
+    BLOCKS_Y                   1;
+    BLOCKS_Z                   1;
+
+    CLUSTERS_X                 1;
+    CLUSTERS_Y                 1;
+    CLUSTERS_Z                 1;
+
+    DOMAINS_X                  2;
+    DOMAINS_Y                  3;
+    DOMAINS_Z                  4;
+
+    ELEMENTS_X                 8;
+    ELEMENTS_Y                 6;
+    ELEMENTS_Z                 4;
+  }
+}
+
+HEAT_TRANSFER_3D {
+  LOAD_STEPS        1;
+
+  MATERIALS {
+    1 {
+      COORDINATE_SYSTEM {
+        TYPE     CYLINDRICAL;
+        CENTER   { X .5; Y .5; Z .5; }
+        ROTATION { X 90; }
+      }
+
+      DENS   1;
+      CP     1;
+
+      THERMAL_CONDUCTIVITY {
+        MODEL   DIAGONAL;
+
+        KXX            1;
+        KYY           10;
+        KZZ           10;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   1;
+  }
+
+  INITIAL_TEMPERATURE {
+    ALL_ELEMENTS   200;
+  }
+
+  STABILIZATION   CAU;
+  SIGMA             0;
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER   DIRICHLET;
+        PRECISION            1E-08;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION    ANALYTIC;
+      }
+
+      HYPRE {
+        SOLVER_TYPE   PCG;
+
+        PCG {
+          RELATIVE_CONV_TOL       1E-09;
+          ABSOLUTE_CONV_TOL           0;
+          RESIDUAL_CONV_TOL       1E-09;
+          MAX_ITERATIONS           1000;
+          PRECONDITIONER           NONE;
+        }
+      }
+
+      TEMPERATURE {
+        TOP      100;
+        BOTTOM   300;
+      }
+    }
+  }
+}
+
+OUTPUT {
+  FORMAT NETGEN;
+  PATH    store;
+}
+

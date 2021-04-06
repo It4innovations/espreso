@@ -1,0 +1,73 @@
+ ESPRESO: STARTED
+ ESPRESO: CONFIGURATION READ
+ ====================================== ESPRESO RUN INFO ===================================== 
+ ============================================================================================= 
+ == CXX                          /opt/spack/opt/spack/linux-ubuntu18.04-ivybridge/gcc-7.5.0 ==
+ ==                              /openmpi-2.0.4-ehsvqamkl4p6bimf3oruqckjgmttzc5y/bin/mpic++ == 
+ == CXXFLAGS                                               -fopenmp -std=c++11 -Wall -O3 -g == 
+ == COMMIT                                         a4b3ead20dfcb6c0f01dbbce0dba818808342acf == 
+ == BINARY                                      /home/mec059/projects/espreso/build/espreso == 
+ == DATE [YYYY-MM-DD]                                                            2020-10-27 == 
+ == TIME [HH-MM-SS]                                                                08-05-07 == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == COMMAND                              espreso -c ecf/sestava.ecf --OUTPUT::LOGGER=PARSER == 
+ == MPI_COMM_WORLD                                                                        1 == 
+ == OMP_NUM_THREADS                                                                       1 == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == NUMBER OF LOADERS                                                                     1 == 
+ == NUMBER OF WRITTERS                                                                    1 == 
+ == STORING MODE                                                               SYNCHRONIZED == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == RUN PATH                                                  /home/mec059/projects/espreso == 
+ == ECF                                       /home/mec059/projects/espreso/ecf/sestava.ecf == 
+ == MESH                                     /home/mec059/projects/espreso/data/sestava.cdb == 
+ == OUTPUT                  /home/mec059/projects/espreso/results/2020-10-27-at-08h-05m-07s == 
+ ============================================================================================= 
+ ESPRESO: RUN INITIALIZED
+ ESPRESO: MESH LOADED
+ ESPRESO: MESH PREPROCESSED
+ ====================================== MESH STATISTICS ====================================== 
+mesh: region=E1, dimension=3, elements=44, nodes=114
+mesh: region=E2, dimension=3, elements=44, nodes=114
+mesh: region=NAMELESS_ELEMENT_SET, dimension=3, elements=20536, nodes=27636
+mesh: region=A, dimension=0, elements=0, nodes=500
+mesh: region=B, dimension=0, elements=0, nodes=950
+mesh: region=C, dimension=0, elements=0, nodes=1300
+mesh: region=D, dimension=0, elements=0, nodes=950
+mesh: region=HLAVA1, dimension=0, elements=0, nodes=63
+mesh: region=HLAVA2, dimension=0, elements=0, nodes=63
+mesh: region=MATICE1, dimension=0, elements=0, nodes=72
+mesh: region=MATICE2, dimension=0, elements=0, nodes=72
+mesh: region=N1, dimension=0, elements=0, nodes=114
+mesh: region=N2, dimension=0, elements=0, nodes=114
+mesh: region=PRILOZKAD, dimension=0, elements=0, nodes=464
+mesh: region=PRILOZKAH1, dimension=0, elements=0, nodes=112
+mesh: region=PRILOZKAH2, dimension=0, elements=0, nodes=112
+mesh: region=SPOJKAD1, dimension=0, elements=0, nodes=106
+mesh: region=SPOJKAD2, dimension=0, elements=0, nodes=106
+mesh: region=SPOJKAH, dimension=0, elements=0, nodes=840
+mesh: bodies=10
+ ============================================================================================= 
+                              MIN                 MAX                 SUM           IMBALANCE 
+  CLUSTERS  :                  10                  10                  10               1.000
+  DOMAINS   :                  10                  10                  10               1.000
+  ELEMENTS  :              20,624              20,624              20,624               1.000
+  NODES     :              27,750              27,750              27,750               1.000
+  NEIGHBORS :                   0                   0                   0               0.000
+  ELEMS/DOM :                 452               5,635              20,624              12.467
+ ============================================================================================= 
+ ESPRESO: MESH STORED
+ ESPRESO: DATABASE CONVERTED
+
+ ======================================== RUN FINISHED ======================================= 
+ == OVERALL TIME ============================================================================= 
+ ============================================ avg. [s]  < min [s] -  max [s]> [  %  ] [ imb ]   
+time: region='ESPRESO STARTED AT                        ', avg='0.008082', min='0.008082', max='0.008082', ratio=' 6.61', imb=' 1.00'
+time: region='ESPRESO: CONFIGURATION READ               ', avg='0.000949', min='0.000949', max='0.000949', ratio=' 0.83', imb=' 1.00'
+time: region='ESPRESO: RUN INITIALIZED                  ', avg='0.003362', min='0.003362', max='0.003362', ratio=' 2.95', imb=' 1.00'
+time: region='ESPRESO: MESH LOADED                      ', avg='0.048461', min='0.048461', max='0.048461', ratio='42.47', imb=' 1.00'
+time: region='ESPRESO: MESH PREPROCESSED                ', avg='0.048228', min='0.048228', max='0.048228', ratio='42.26', imb=' 1.00'
+time: region='ESPRESO: MESH STORED                      ', avg='0.013096', min='0.013096', max='0.013096', ratio='11.48', imb=' 1.00'
+time: region='ESPRESO: DATABASE CONVERTED               ', avg='0.000019', min='0.000019', max='0.000019', ratio=' 0.02', imb=' 1.00'
+time: region='ESPRESO TOTAL DURATION                    ', avg='0.114115', min='0.114115', max='0.114115', ratio='93.36', imb=' 1.00'
+ ============================================================================================= 

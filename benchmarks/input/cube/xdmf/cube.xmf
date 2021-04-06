@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Xdmf xmlns:xi="http://www.w3.org/2001/XInclude" Version="3">
+  <Domain>
+    <Grid GridType="Collection" CollectionType="Temporal" Name="cube">
+      <Grid GridType="Tree">
+        <Grid Name="NAMELESS_ELEMENT_SET">
+          <Geometry GeometryType="XYZ">
+            <DataItem Reference="XML">
+              /Xdmf/Domain/DataItem[@Name="NAMELESS_ELEMENT_SET_COORDINATES"]
+            </DataItem>
+          </Geometry>
+          <Topology TopologyType="Mixed" NumberOfElements="4096">
+            <DataItem Reference="XML">
+              /Xdmf/Domain/DataItem[@Name="NAMELESS_ELEMENT_SET_ELEMENTS"]
+            </DataItem>
+          </Topology>
+          <Attribute Name="TRANSLATION_MOTION" Center="Cell" AttributeType="Vector">
+            <DataItem Dimensions="4096 3" DataType="Float" Format="HDF">
+              cube.h5:TRANSLATION_MOTION_0_NAMELESS_ELEMENT_SET
+            </DataItem>
+          </Attribute>
+          <Attribute Name="TEMPERATURE" Center="Node" AttributeType="Scalar">
+            <DataItem Dimensions="4913" DataType="Float" Format="HDF">
+              cube.h5:TEMPERATURE_0_NAMELESS_ELEMENT_SET
+            </DataItem>
+          </Attribute>
+        </Grid>
+        <Grid Name="LEFT">
+          <Geometry GeometryType="XYZ">
+            <DataItem Reference="XML">
+              /Xdmf/Domain/DataItem[@Name="LEFT_COORDINATES"]
+            </DataItem>
+          </Geometry>
+          <Topology TopologyType="Mixed" NumberOfElements="256">
+            <DataItem Reference="XML">
+              /Xdmf/Domain/DataItem[@Name="LEFT_ELEMENTS"]
+            </DataItem>
+          </Topology>
+          <Attribute Name="TEMPERATURE" Center="Node" AttributeType="Scalar">
+            <DataItem Dimensions="289" DataType="Float" Format="HDF">
+              cube.h5:TEMPERATURE_0_LEFT
+            </DataItem>
+          </Attribute>
+        </Grid>
+        <Grid Name="BOTTOM">
+          <Geometry GeometryType="XYZ">
+            <DataItem Reference="XML">
+              /Xdmf/Domain/DataItem[@Name="BOTTOM_COORDINATES"]
+            </DataItem>
+          </Geometry>
+          <Topology TopologyType="Mixed" NumberOfElements="289">
+            <DataItem Reference="XML">
+              /Xdmf/Domain/DataItem[@Name="BOTTOM_ELEMENTS"]
+            </DataItem>
+          </Topology>
+          <Attribute Name="TEMPERATURE" Center="Node" AttributeType="Scalar">
+            <DataItem Dimensions="289" DataType="Float" Format="HDF">
+              cube.h5:TEMPERATURE_0_BOTTOM
+            </DataItem>
+          </Attribute>
+        </Grid>
+        <Grid Name="TOP">
+          <Geometry GeometryType="XYZ">
+            <DataItem Reference="XML">
+              /Xdmf/Domain/DataItem[@Name="TOP_COORDINATES"]
+            </DataItem>
+          </Geometry>
+          <Topology TopologyType="Mixed" NumberOfElements="289">
+            <DataItem Reference="XML">
+              /Xdmf/Domain/DataItem[@Name="TOP_ELEMENTS"]
+            </DataItem>
+          </Topology>
+          <Attribute Name="TEMPERATURE" Center="Node" AttributeType="Scalar">
+            <DataItem Dimensions="289" DataType="Float" Format="HDF">
+              cube.h5:TEMPERATURE_0_TOP
+            </DataItem>
+          </Attribute>
+        </Grid>
+        <Time Value="1.000000"/>
+      </Grid>
+    </Grid>
+    <DataItem Name="NAMELESS_ELEMENT_SET_COORDINATES" Format="HDF" Dimensions="4913 3">
+      cube.h5:NAMELESS_ELEMENT_SET_COORDINATES
+    </DataItem>
+    <DataItem Name="NAMELESS_ELEMENT_SET_ELEMENTS" DataType="Int" Format="HDF" Dimensions="36864">
+      cube.h5:NAMELESS_ELEMENT_SET_ELEMENTS
+    </DataItem>
+    <DataItem Name="LEFT_COORDINATES" Format="HDF" Dimensions="289 3">
+      cube.h5:LEFT_COORDINATES
+    </DataItem>
+    <DataItem Name="LEFT_ELEMENTS" DataType="Int" Format="HDF" Dimensions="1280">
+      cube.h5:LEFT_ELEMENTS
+    </DataItem>
+    <DataItem Name="BOTTOM_COORDINATES" Format="HDF" Dimensions="289 3">
+      cube.h5:BOTTOM_COORDINATES
+    </DataItem>
+    <DataItem Name="BOTTOM_ELEMENTS" DataType="Int" Format="HDF" Dimensions="867">
+      cube.h5:BOTTOM_ELEMENTS
+    </DataItem>
+    <DataItem Name="TOP_COORDINATES" Format="HDF" Dimensions="289 3">
+      cube.h5:TOP_COORDINATES
+    </DataItem>
+    <DataItem Name="TOP_ELEMENTS" DataType="Int" Format="HDF" Dimensions="867">
+      cube.h5:TOP_ELEMENTS
+    </DataItem>
+  </Domain>
+</Xdmf>

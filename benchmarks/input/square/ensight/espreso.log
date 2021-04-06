@@ -1,0 +1,75 @@
+ ESPRESO: STARTED [MPI=1] [OMP/MPI=1]
+ ESPRESO: CONFIGURATION READ [ecf=ecf/square.ecf]
+ ====================================== ESPRESO RUN INFO ===================================== 
+ ============================================================================================= 
+ == CXX                                /opt/spack/opt/spack/linux-centos7-nehalem/gcc-6.4.0 ==
+ ==                              /openmpi-2.0.4-efosiekwgebvwxucu4a73nnvj5ssg4d5/bin/mpic++ == 
+ == CXXFLAGS                                               -fopenmp -std=c++11 -Wall -O3 -g == 
+ == COMMIT                                         a10d02b84ea1329f0d47203b3e1441e11ca5ccc9 == 
+ == BINARY                                      /home/mec059/projects/espreso/build/espreso == 
+ == DATE [YYYY-MM-DD]                                                            2020-01-27 == 
+ == TIME [HH-MM-SS]                                                                13-29-11 == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == MPI_COMM_WORLD                                                                        1 == 
+ == OMP_NUM_THREADS                                                                       1 == 
+ == STORING MODE                                                           SEPARETED THREAD == 
+ == COMMAND                                       espreso -c ecf/square.ecf 8 1 1 2 2 10 10 == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == RUN PATH                                                  /home/mec059/projects/espreso == 
+ == ECF                                        /home/mec059/projects/espreso/ecf/square.ecf == 
+ == MESH                                                                          GENERATOR == 
+ == OUTPUT                  /home/mec059/projects/espreso/results/2020-01-27-at-13h-29m-11s == 
+ ============================================================================================= 
+ ESPRESO: RUN INITIALIZED
+ ESPRESO: MESH LOADED [shape=GRID]
+ ESPRESO: MESH PREPROCESSED
+ ====================================== MESH STATISTICS ====================================== 
+mesh: region=EEL, dimension=2, elements=200, nodes=241
+mesh: region=NAMELESS_ELEMENT_SET, dimension=2, elements=200, nodes=241
+mesh: region=EDGGE, dimension=1, elements=20, nodes=21
+mesh: region=BOTTOM, dimension=0, elements=0, nodes=21
+mesh: region=TOP, dimension=0, elements=0, nodes=21
+ ============================================================================================= 
+                              MIN                 MAX                 SUM           IMBALANCE 
+  CLUSTERS  :                   1                   1                   1               1.000
+  DOMAINS   :                   4                   4                   4               1.000
+  ELEMENTS  :                 400                 400                 400               1.000
+  NODES     :                 441                 441                 441               1.000
+  NEIGHBORS :                   0                   0                   0               0.000
+  ELEMS/DOM :                 100                 100                 400               1.000
+ ============================================================================================= 
+
+ ============================================================================================= 
+ ======================================= LOAD STEP   1 ======================================= 
+ ============================================================================================= 
+ ESPRESO: PHYSICS PREPARED [LOADSTEP=1]
+
+ = ================================== STEADY STATE SOLVER ================================== =
+ =  LOAD STEP  1, SUBSTEP    1, TIME   1.000000, TIME STEP   0.000000, FINAL TIME   1.000000 =
+ = ----------------------------------------------------------------------------------------- =
+     - LINEAR TIME STEP                          REASSEMBLED MATRICES  ::  K,  ,  ,  , f -    
+     - ---- LINEAR SOLVER -------------------------------------------------------------- -
+     - | SOLVER :: ESPRESO        TYPE ::                            FETI, PCG, LUMPED | -
+     - | REQUESTED STOPPING CRITERIA                                      1.000000e-09 | -
+     - | SOLUTION RESIDUAL NORM                                           2.111815e-14 | -
+     - | ITERATIONS TO CONVERGENCE                                                  15 | -
+     - | SOLVER TIME                                                           0.003 s | -
+     - --------------------------------------------------------------------------------- -
+ = ========================================================================================= =
+ = ================================================================= run time        0.165 s =
+
+ ESPRESO: PHYSICS SOLVED [LOADSTEP=1]
+
+ ======================================== RUN FINISHED ======================================= 
+ == OVERALL TIME ============================================================================= 
+ ============================================ avg. [s]  < min [s] -  max [s]> [  %  ] [ imb ]   
+time: region='ESPRESO STARTED AT', avg='0.021310', min='0.021310', max='0.021310', ratio='12.90', imb=' 1.00'
+time: region='ESPRESO: CONFIGURATION READ', avg='0.049515', min='0.049515', max='0.049515', ratio='34.55', imb=' 1.00'
+time: region='ESPRESO: RUN INITIALIZED', avg='0.024539', min='0.024539', max='0.024539', ratio='17.12', imb=' 1.00'
+time: region='ESPRESO: MESH LOADED', avg='0.005987', min='0.005987', max='0.005987', ratio=' 4.18', imb=' 1.00'
+time: region='ESPRESO: MESH PREPROCESSED', avg='0.003370', min='0.003370', max='0.003370', ratio=' 2.35', imb=' 1.00'
+                                                                              [ LOAD STEP 1 ]
+time: region='ESPRESO: PHYSICS PREPARED', avg='0.017053', min='0.017053', max='0.017053', ratio='11.90', imb=' 1.00'
+time: region='ESPRESO: PHYSICS SOLVED', avg='0.042833', min='0.042833', max='0.042833', ratio='29.89', imb=' 1.00'
+time: region='ESPRESO TOTAL DURATION', avg='0.143298', min='0.143298', max='0.143298', ratio='86.77', imb=' 1.00'
+ ============================================================================================= 

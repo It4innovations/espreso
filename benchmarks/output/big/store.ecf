@@ -1,0 +1,14 @@
+
+INPUT {
+  FORMAT   VTK_LEGACY;
+  PATH     /data/espreso/mesiotest/big/big.BODY.vtk;
+
+  CONVERT_DATABASE        TRUE;
+}
+
+OUTPUT {
+  WRITER [ARG0];
+  FORMAT VTK_LEGACY;
+  PATH    store;
+}
+

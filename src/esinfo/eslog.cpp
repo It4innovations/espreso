@@ -1,0 +1,328 @@
+
+#include "eslog.hpp"
+#include "basis/logging/logger.h"
+#include "basis/logging/timelogger.h"
+#include "basis/logging/profiler.h"
+#include "basis/utilities/sysutils.h"
+#include "basis/utilities/communication.h"
+#include "esinfo/mpiinfo.h"
+#include "esinfo/systeminfo.h"
+#include "esinfo/ecfinfo.h"
+#include "esinfo/envinfo.h"
+
+#include <ctime>
+
+namespace espreso {
+namespace eslog {
+
+char buffer[BUFFER_SIZE];
+LoggerBase *logger = NULL;
+
+const char* path()
+{
+	return logger->outputPath.c_str();
+}
+
+const char* name()
+{
+	return logger->name.c_str();
+}
+
+const char* executable()
+{
+	return logger->exe.c_str();
+}
+
+double time()
+{
+	return TimeLogger::time();
+}
+
+double duration()
+{
+	return TimeLogger::duration();
+}
+
+void init(LoggerBase *logger)
+{
+	eslog::logger = logger;
+
+	for (int i = 0; i < logger->size; i++) {
+		logger->args[i]->rank = info::mpi::rank;
+		logger->args[i]->grank = info::mpi::grank;
+	}
+}
+
+void reinit()
+{
+	for (int i = 0; i < logger->size; i++) {
+		logger->args[i]->rank = info::mpi::rank;
+		logger->args[i]->grank = info::mpi::grank;
+	}
+}
+
+void initRunInfo(int *argc, char ***argv, const char* app, const char* ecf, const char* outputPath)
+{
+	int width = 78;
+
+	time_t initTime = std::time(NULL);
+	Communication::broadcast(&initTime, sizeof(time_t), MPI_BYTE, 0, MPITools::global);
+	struct tm *timeinfo;
+	char datetime[80], date[80], time[80];
+	timeinfo = std::localtime(&initTime);
+	std::strftime(datetime, 80, "%F-at-%Hh-%Mm-%Ss", timeinfo);
+	std::strftime(date, 80, "%F", timeinfo);
+	std::strftime(time, 80, "%H-%M-%S", timeinfo);
+
+	char* pwd = info::env::pwd();
+	if (pwd) {
+		logger->pwd = std::string(pwd);
+	}
+	logger->exe = std::string(info::system::buildpath()) + "/" + std::string(app);
+	logger->cmd = std::string((*argv)[0]);
+	for (int arg = 1; arg < *argc; ++arg) {
+		logger->cmd += " " + std::string((*argv)[arg]);
+	}
+	logger->ecf = std::string(ecf);
+	logger->outputRoot = std::string(outputPath);
+	logger->outputDirectory = std::string(datetime);
+	logger->outputPath = logger->outputRoot + "/" + logger->outputDirectory;
+	size_t namebegin = logger->ecf.find_last_of("/") + 1;
+	size_t nameend = logger->ecf.find_last_of(".");
+	logger->name = logger->ecf.substr(namebegin, nameend - namebegin);
+
+	if (info::mpi::grank) {
+		Communication::barrier(MPITools::global);
+		logger->initOutput();
+	} else {
+		utils::createDirectory(logger->outputPath + "/PREPOSTDATA");
+		logger->initOutput();
+		std::string symlink = logger->outputRoot + "/last";
+		if (utils::exists(symlink)) {
+			utils::remove(symlink);
+		}
+		utils::createSymlink(logger->outputDirectory, symlink);
+		utils::copyFile(logger->ecf, symlink + "/" + logger->name + ".ecf");
+		Communication::barrier(MPITools::global);
+	}
+
+	auto divide = [] (std::string &str, size_t max, const char* separator = "/") {
+		std::string backup(str);
+		size_t i = 0, c = 0, cmax = 10;
+		while (++c < cmax && str.size() - i > max) {
+			size_t it = str.find_last_of(separator, i + max);
+			str.insert(it, " ==\n == ");
+			size_t spaces = i + max - it + (i ? 9 : 0);
+			str.insert(i, spaces, ' ');
+			i = it + 8 + spaces;
+		}
+		str.insert(i, max - (str.size() - i) + (i ? 9 : 0), ' ');
+		if (c == cmax) {
+			str = backup;
+		}
+	};
+
+	std::string cxx = info::system::cxx();
+	std::string mesh = info::ecf->input.path;
+	std::string runpath(logger->pwd);
+	std::string exe(logger->exe);
+	std::string cmd(logger->cmd);
+	std::string ecffile(ecf);
+	std::string outpath(logger->outputPath);
+	if (runpath.size()) {
+		if (ecffile[0] != '/') {
+			ecffile = (runpath + "/" + ecffile);
+		}
+		if (mesh[0] != '/') {
+			mesh = (runpath + "/" + mesh);
+		}
+		if (outpath[0] != '/') {
+			outpath = (runpath + "/" + outpath);
+		}
+	}
+
+
+	divide(cxx, width);
+	divide(ecffile, width);
+	divide(mesh, width);
+	divide(runpath, width);
+	divide(exe, width);
+	divide(cmd, width, ":/ ");
+	divide(outpath, width);
+
+	eslog::info(" ====================================== ESPRESO RUN INFO ===================================== \n");
+	eslog::info(" ============================================================================================= \n");
+	eslog::info(" == CXX      %*s == \n", width, cxx.c_str());
+	eslog::info(" == CXXFLAGS %*s == \n", width, info::system::cxxflags());
+	eslog::info(" == COMMIT   %*s == \n", width, info::system::commit());
+	eslog::info(" == BINARY   %*s == \n", width, exe.c_str());
+	eslog::info(" == DATE [YYYY-MM-DD]   %*s == \n", width - 11, date);
+	eslog::info(" == TIME [HH-MM-SS]    %*s == \n", width - 10, time);
+	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
+	eslog::info(" == COMMAND  %*s == \n", width, cmd.c_str());
+	eslog::info(" == MPI_COMM_WORLD %*d == \n", width - 6, info::mpi::size);
+	eslog::info(" == OMP_NUM_THREADS %*d == \n", width - 7, info::env::OMP_NUM_THREADS);
+	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
+	eslog::info(" == NUMBER OF LOADERS %*d == \n", width - 9, MPITools::subset->acrosssize);
+	eslog::info(" == NUMBER OF WRITTERS %*d == \n", width - 10, MPITools::subset->acrosssize);
+	switch (info::ecf->output.mode) {
+	case OutputConfiguration::MODE::SYNC  : eslog::info(" == STORING MODE %*s == \n", width - 4, "SYNCHRONIZED"); break;
+	case OutputConfiguration::MODE::THREAD: eslog::info(" == STORING MODE %*s == \n", width - 4, "SEPARETED THREAD"); break;
+	}
+	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
+	eslog::info(" == RUN PATH %*s == \n", width, runpath.c_str());
+	eslog::info(" == ECF      %*s == \n", width, ecffile.c_str());
+	switch (info::ecf->input_type) {
+	case ECF::INPUT_TYPE::EXTERNAL_FILE: eslog::info(" == MESH     %*s == \n", width, mesh.c_str()); break;
+	case ECF::INPUT_TYPE::GENERATOR:     eslog::info(" == MESH     %*s == \n", width, "GENERATOR"); break;
+	}
+	eslog::info(" == OUTPUT   %*s == \n", width, outpath.c_str());
+	eslog::info(" ============================================================================================= \n");
+}
+
+void finish()
+{
+	eslog::info("\n ======================================== RUN FINISHED ======================================= \n");
+	logger->finish();
+	if (logger) delete logger;
+}
+
+void always()
+{
+	logger->always();
+}
+
+void start(const char* name, const char* section)
+{
+	logger->start(name, section);
+}
+
+void checkpoint(const char* name)
+{
+	logger->checkpoint(name);
+}
+
+void end(const char* name)
+{
+	logger->end(name);
+}
+
+void ln()
+{
+	logger->ln();
+}
+
+void nextStep(int step)
+{
+	logger->nextLoadStep(step);
+	eslog::info("\n ============================================================================================= \n");
+	eslog::info(" ======================================= LOAD STEP %3d ======================================= \n", step);
+	eslog::info(" ============================================================================================= \n");
+}
+
+void startln(const char* name, const char* section)
+{
+	start(name, section);
+	ln();
+}
+
+void checkpointln(const char* name)
+{
+	checkpoint(name);
+	ln();
+}
+
+void endln(const char* name)
+{
+	end(name);
+	logger->ln();
+}
+
+void param(const char* name, const int &value)
+{
+	logger->param(name, value);
+}
+
+void param(const char* name, const long &value)
+{
+	logger->param(name, value);
+}
+
+void param(const char* name, const long unsigned int &value)
+{
+	logger->param(name, value);
+}
+
+void param(const char* name, const double &value)
+{
+	logger->param(name, value);
+}
+
+void param(const char* name, const char* value)
+{
+	logger->param(name, value);
+}
+
+void info(const char* msg)
+{
+	logger->output(msg, VerboseArg::COLOR::WHITE);
+}
+
+void solver(const char* msg)
+{
+	logger->output(msg, VerboseArg::COLOR::WHITE);
+}
+
+void linearsolver(const char* msg)
+{
+	for (int n = 0; n < logger->size; ++n) {
+		if (logger->args[n]->argflag == 'v' && logger->args[n]->verbosity > 2) {
+			logger->output(msg, VerboseArg::COLOR::WHITE);
+			break;
+		}
+	}
+}
+
+void duration(const char* msg)
+{
+	for (int n = 0; n < logger->size; ++n) {
+		if (logger->args[n]->argflag == 'm' && logger->args[n]->verbosity > 1) {
+			logger->output(msg, VerboseArg::COLOR::WHITE);
+			break;
+		}
+	}
+}
+
+void warning(const char* msg)
+{
+	logger->output(msg, VerboseArg::COLOR::YELLOW);
+}
+
+void storedata(const char* msg)
+{
+	logger->output(msg, VerboseArg::COLOR::BLUE);
+}
+
+void error(const char* msg)
+{
+	logger->error(msg);
+	utils::printStack();
+	fflush(stderr);
+	exit(EXIT_FAILURE);
+}
+
+void globalerror(const char* msg)
+{
+	if (info::mpi::rank == 0) {
+		logger->output(msg, VerboseArg::COLOR::RED);
+	}
+	Communication::barrier();
+	MPI_Finalize();
+	exit(EXIT_SUCCESS);
+}
+
+}
+}
+
+
+

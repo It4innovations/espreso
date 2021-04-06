@@ -1,0 +1,193 @@
+# ESPRESO Configuration File
+
+#BENCHMARK ARG0 [ SQUARE8, TRIANGLE6 ]
+
+DEFAULT_ARGS {
+  0  8;
+
+  1  2;
+  2  1;
+
+  3  8;
+  4  2;
+
+  5 10;
+  6 10;
+
+  7 FETI;
+}
+
+INPUT_TYPE            GENERATOR;
+PHYSICS   HEAT_TRANSFER_2D;
+
+GENERATOR {
+  SHAPE   GRID;
+
+  GRID {
+    LENGTH_X                0.01;
+    LENGTH_Y               0.001;
+    LENGTH_Z                   1;
+
+    NODES {
+      LEFT      <0 , 0> <0 , 0.001> <0 , 0>;
+      RIGHT   <0.01 , 0.01> <0 , 0.001> <0 , 0>;
+    }
+
+    ELEMENT_TYPE          [ARG0];
+
+    BLOCKS_X                   1;
+    BLOCKS_Y                   1;
+    BLOCKS_Z                   1;
+
+    CLUSTERS_X            [ARG1];
+    CLUSTERS_Y            [ARG2];
+    CLUSTERS_Z                 1;
+
+    DOMAINS_X             [ARG3];
+    DOMAINS_Y             [ARG4];
+    DOMAINS_Z                  1;
+
+    ELEMENTS_X            [ARG5];
+    ELEMENTS_Y            [ARG6];
+    ELEMENTS_Z                 1;
+  }
+}
+
+HEAT_TRANSFER_2D {
+  LOAD_STEPS         1;
+
+  MATERIALS {
+    MAT_01 {
+      PHASE_CHANGE                 TRUE;
+
+      SMOOTH_STEP_ORDER               1;
+      LATENT_HEAT                333500;
+      TRANSITION_INTERVAL            10;
+      PHASE_CHANGE_TEMPERATURE   273.15;
+
+      PHASES {
+        1 {
+          DENS   918;
+          CP    2052;
+
+          THERMAL_CONDUCTIVITY {
+            MODEL   ISOTROPIC;
+
+            KXX          2.31;
+          }
+        }
+
+        2 {
+          DENS   997;
+          CP    4179;
+
+          THERMAL_CONDUCTIVITY {
+            MODEL   ISOTROPIC;
+
+            KXX         0.613;
+          }
+        }
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   MAT_01;
+  }
+
+  INITIAL_TEMPERATURE {
+    ALL_ELEMENTS   253.15;
+  }
+
+  THICKNESS {
+    ALL_ELEMENTS   0.001;
+  }
+
+  STABILIZATION   SUPG;
+  SIGMA              0;
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME   10;
+      TYPE      TRANSIENT;
+      MODE      NONLINEAR;
+      SOLVER       [ARG7];
+
+      NONLINEAR_SOLVER {
+        METHOD                  NEWTON_RAPHSON;
+
+        CHECK_TEMPERATURE                 TRUE;
+        CHECK_HEAT                        TRUE;
+        REQUESTED_TEMPERATURE_RESIDUAL   0.001;
+        REQUESTED_HEAT_RESIDUAL          0.001;
+
+        STEPPING                         FALSE;
+        SUBSTEPS                             1;
+        MAX_ITERATIONS                      50;
+
+        LINE_SEARCH                       TRUE;
+        TANGENT_MATRIX_CORRECTION        FALSE;
+      }
+
+      TRANSIENT_SOLVER {
+        METHOD   CRANK_NICOLSON;
+
+        TIME_STEP             1;
+      }
+
+      FETI {
+        METHOD                TOTAL_FETI;
+        PRECONDITIONER         DIRICHLET;
+        PRECISION                  1E-08;
+        MAX_ITERATIONS              1000;
+        ITERATIVE_SOLVER   ORTHOGONALPCG;
+      }
+
+      TEMPERATURE {
+        LEFT    253.15;
+        RIGHT   353.15;
+      }
+    }
+  }
+}
+
+OUTPUT {
+  PATH                              results;
+
+  RESULTS_STORE_FREQUENCY    EVERY_SUBSTEP;
+  MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
+
+  STORE_RESULTS                         ALL;
+
+  MONITORING {
+    1 {
+      REGION      ALL_NODES;
+      STATISTICS        MIN;
+      PROPERTY  TEMPERATURE;
+    }
+
+    2 {
+      REGION      ALL_NODES;
+      STATISTICS        MAX;
+      PROPERTY  TEMPERATURE;
+    }
+
+    3 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        MIN;
+      PROPERTY        PHASE;
+    }
+
+    4 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        MAX;
+      PROPERTY        PHASE;
+    }
+
+    5 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        MAX;
+      PROPERTY  LATENT_HEAT;
+    }
+  }
+}

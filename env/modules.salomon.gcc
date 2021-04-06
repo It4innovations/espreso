@@ -1,0 +1,8 @@
+
+ml iomkl/2018.04
+ml ParMETIS/4.0.3-gompi-2017c
+ml Hypre/2.15.1-foss-2017b
+ml SCOTCH/6.0.9-foss-2017b
+ml HDF5/1.10.6-foss-2017b-parallel
+
+export CXX=

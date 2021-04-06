@@ -1,0 +1,13 @@
+
+def options(opt):
+    opt.solvers.add_option("--wsmp", action="store", type="string", metavar="WSMP_LIB", default="", help="Path to WSMP library.")
+
+def configure(ctx):
+    libs = [ "pwsmp64" ]
+    if ctx.options.cxx == "icpc":
+        libs.append("ifcore")
+    if ctx.options.cxx == "g++":
+        libs.append("gfortran")
+        libs.append("pthread")
+
+    ctx.link_cxx(name="wsmp", libs=libs, root=ctx.options.wsmp)

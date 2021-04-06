@@ -1,0 +1,41 @@
+
+import os
+from nose.tools import istest
+
+from estest import ESPRESOTest
+
+def setup():
+    ESPRESOTest.path = os.path.dirname(__file__)
+    ESPRESOTest.args = [ "format", "file", "loader", "readers" ]
+
+def teardown():
+    ESPRESOTest.clean()
+
+@istest
+def by():
+    path = os.path.join("/", "data", "espreso", "mesiotest", "brake")
+    ansys = os.path.join(path, "brake.dat")
+    ensight = os.path.join(path, "brake.case")
+    vtk = os.path.join(path, "brake.*.vtk")
+    xdmf = os.path.join(path, "brake.xmf")
+
+    os.path.exists(ansys)
+    os.path.exists(ensight)
+    os.path.exists(vtk)
+    os.path.exists(xdmf)
+    for p in range(1, 32):
+        for format, file in [ ("ANSYS_CDB", ansys), ("ENSIGHT", ensight), ("VTK_LEGACY", vtk), ("XDMF", xdmf) ]:
+                for readers in [ 1, 3, 7, 13, 19, 29 ]:
+                    if readers < p:
+                        yield run, file, format, p, readers, "POSIX"
+                    if readers == p:
+                        for loader in [ "POSIX", "MPI", "MPI_COLLECTIVE" ]:
+                            yield run, file, format, p, readers, loader
+
+def run(file, format, p, readers, loader):
+    ESPRESOTest.processes = p
+    ESPRESOTest.args[0] = format
+    ESPRESOTest.args[1] = file
+    ESPRESOTest.args[2] = loader
+    ESPRESOTest.args[3] = readers
+    ESPRESOTest.compare_mesh("espreso.log", ESPRESOTest.run())

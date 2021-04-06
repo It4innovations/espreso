@@ -1,0 +1,7 @@
+
+def options(opt):
+    opt.decomposers.add_option("--kahip", action="store", type="string", metavar="KAHIP_ROOT", default="", help="Path to KaHIP root directory.")
+
+def configure(ctx):
+    if int(ctx.options.intwidth) == 32:
+        ctx.link_cxx(name="kahip", header_name="kaHIP_interface.h", libs=["kahip"], root=ctx.options.kahip)

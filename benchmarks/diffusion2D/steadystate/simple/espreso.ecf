@@ -1,0 +1,151 @@
+# ESPRESO Configuration File
+
+DEFAULT_ARGS {
+  0     SQUARE4;
+
+  1           2;
+  2           2;
+
+  3           3;
+  4           2;
+
+  5          20;
+  6          30;
+
+  7        FETI;
+  8  TOTAL_FETI;
+}
+
+INPUT_TYPE            GENERATOR;
+PHYSICS   HEAT_TRANSFER_2D;
+
+GENERATOR {
+  SHAPE   GRID;
+
+  GRID {
+    LENGTH_X                   1;
+    LENGTH_Y                   1;
+    LENGTH_Z                   1;
+
+    NODES {
+      BOTTOM   <1 , 1> <0 , 1> <0 , 0>;
+      TOP      <0 , 0> <0 , 1> <0 , 0>;
+    }
+
+    EDGES {
+      EDGGE   <1 , 1> <0 , 1> <0 , 0>;
+    }
+
+    ELEMENTS {
+      EEL chessboard_white;
+    }
+
+    ELEMENT_TYPE          [ARG0];
+
+    BLOCKS_X                   1;
+    BLOCKS_Y                   1;
+    BLOCKS_Z                   1;
+
+    CLUSTERS_X            [ARG1];
+    CLUSTERS_Y            [ARG2];
+    CLUSTERS_Z                 1;
+
+    DOMAINS_X             [ARG3];
+    DOMAINS_Y             [ARG4];
+    DOMAINS_Z                  1;
+
+    ELEMENTS_X            [ARG5];
+    ELEMENTS_Y            [ARG6];
+    ELEMENTS_Z                 1;
+  }
+}
+
+HEAT_TRANSFER_2D {
+  LOAD_STEPS        1;
+
+  MATERIALS {
+    1 {
+      COORDINATE_SYSTEM {
+        TYPE   CARTESIAN;
+        ROTATION   { Z 45; }
+      }
+
+      DENS   1;
+      CP     1;
+
+      THERMAL_CONDUCTIVITY {
+        MODEL   DIAGONAL;
+
+        KXX            5;
+        KYY           10;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   1;
+  }
+
+  INITIAL_TEMPERATURE {
+    ALL_ELEMENTS   200;
+  }
+
+  STABILIZATION   CAU;
+  SIGMA             0;
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER       [ARG7];
+
+      FETI {
+        METHOD              [ARG8];
+        PRECONDITIONER      LUMPED;
+        PRECISION            1E-09;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION    ANALYTIC;
+      }
+
+      HYPRE {
+        SOLVER_TYPE   BOOMERAMG;
+
+        BOOMERAMG {
+          CONVERGENCE_TOLERANCE                1E-09;
+          SOLVER_INFO                        NO_INFO;
+        }
+      }
+
+      TEMPERATURE {
+        TOP      100;
+        BOTTOM   300;
+      }
+    }
+  }
+}
+
+OUTPUT {
+  RESULTS_STORE_FREQUENCY    EVERY_SUBSTEP;
+  MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
+
+  MONITORING {
+    1 {
+      REGION            TOP;
+      STATISTICS        MAX;
+      PROPERTY  TEMPERATURE;
+    }
+
+    2 {
+      REGION         BOTTOM;
+      STATISTICS        MIN;
+      PROPERTY  TEMPERATURE;
+    }
+
+    5 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        AVG;
+      PROPERTY  TEMPERATURE;
+    }
+  }
+}

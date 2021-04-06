@@ -1,0 +1,151 @@
+# ESPRESO Configuration File
+
+DEFAULT_ARGS {
+  0   SQUARE4;
+
+  1         2;
+  2         2;
+
+  3         3;
+  4         2;
+
+  5        20;
+  6        30;
+
+  7        FETI;
+  8  TOTAL_FETI;
+}
+
+INPUT_TYPE                   GENERATOR;
+PHYSICS   STRUCTURAL_MECHANICS_2D;
+
+GENERATOR {
+  SHAPE   GRID;
+
+  GRID {
+    START_X                     0;
+    START_Y                     0;
+    START_Z                     0;
+
+    LENGTH_X                  100;
+    LENGTH_Y                  100;
+    LENGTH_Z                  100;
+
+    NODES {
+      Y0   <0 , 100> <0 , 0> <0 , 0>;
+      X0   <0 , 0> <0 , 100> <0 , 0>;
+    }
+
+    EDGES {
+      Y1   <0 , 100> <100 , 100> <0 , 0>;
+      X1   <100 , 100> <0 , 100> <0 , 0>;
+    }
+
+    ELEMENT_TYPE           [ARG0];
+
+    CLUSTERS_X             [ARG1];
+    CLUSTERS_Y             [ARG2];
+    CLUSTERS_Z                  1;
+
+    DOMAINS_X              [ARG3];
+    DOMAINS_Y              [ARG4];
+    DOMAINS_Z                   1;
+
+    ELEMENTS_X             [ARG5];
+    ELEMENTS_Y             [ARG6];
+    ELEMENTS_Z                  1;
+  }
+}
+
+STRUCTURAL_MECHANICS_2D {
+  LOAD_STEPS   1;
+
+  MATERIALS {
+    1 {
+
+      DENS   7850;
+      CP        1;
+
+      LINEAR_ELASTIC_PROPERTIES {
+        MODEL   ISOTROPIC;
+
+        MIXY          0.3;
+        EX         2.1E11;
+      }
+
+      THERMAL_EXPANSION {
+        TEX             0;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   1;
+  }
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER       [ARG7];
+
+      FETI {
+        METHOD              [ARG8];
+        PRECONDITIONER      LUMPED;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION   ALGEBRAIC;
+      }
+
+      HYPRE {
+        SOLVER_TYPE   BOOMERAMG;
+
+        BOOMERAMG {
+          CONVERGENCE_TOLERANCE                1E-09;
+          SOLVER_INFO                        NO_INFO;
+          MIN_ITERATIONS                           1;
+          MAX_ITERATIONS                        1000;
+          MAX_COAREST_GRID_SIZE                    9;
+          MIN_COAREST_GRID_SIZE                    1;
+          MAX_MULTIGRID_LEVELS                    25;
+          AMG_STRENGTH_TRESHOLD                  0.8;
+        }
+      }
+
+      DISPLACEMENT {
+        Y0   { Y 0; }
+        X0   { X 0; }
+      }
+
+      NORMAL_PRESSURE {
+        Y1  70 * 2.1E11 / 5200;
+        X1  70 * 2.1E11 / 5200;
+      }
+    }
+  }
+}
+
+OUTPUT {
+  RESULTS_STORE_FREQUENCY    EVERY_SUBSTEP;
+  MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
+
+  MONITORING {
+    1 {
+      REGION        ALL_NODES;
+      STATISTICS          MIN;
+      PROPERTY   DISPLACEMENT;
+    }
+
+    2 {
+      REGION        ALL_NODES;
+      STATISTICS          MAX;
+      PROPERTY   DISPLACEMENT;
+    }
+
+    3 {
+      REGION                 Y1;
+      STATISTICS            MAX;
+      PROPERTY   DISPLACEMENT_Y;
+    }
+  }
+}

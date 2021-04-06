@@ -1,0 +1,1146 @@
+
+#include "structuralmechanics3d.elasticity.kernel.h"
+#include "heattransfer3d.kernel.h"
+#include "esinfo/stepinfo.h"
+#include "esinfo/eslog.hpp"
+#include "esinfo/ecfinfo.h"
+#include "esinfo/meshinfo.h"
+#include "physics/system/builder/builder.h"
+#include "basis/containers/point.h"
+#include "basis/evaluator/evaluator.h"
+#include "config/ecf/physics/heattransfer.h"
+#include "math/matrix.dense.h"
+#include "math/vector.dense.h"
+
+#include <cmath>
+
+using namespace espreso;
+
+StructuralMechanics3DKernel::StructuralMechanics3DKernel(StructuralMechanics3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration)
+: StructuralMechanics3DBaseKernel(previous, physics, gsettings, configuration)
+{
+	solutions.push_back(VectorDense(iterator.displacement.output.data->data.size(), iterator.displacement.output.data->data.data()));
+}
+
+StructuralMechanics3DKernel::StructuralMechanics3DKernel(HeatTransfer3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration)
+: StructuralMechanics3DBaseKernel(previous, physics, gsettings, configuration)
+{
+	solutions.push_back(VectorDense(iterator.displacement.output.data->data.size(), iterator.displacement.output.data->data.data()));
+}
+
+StructuralMechanics3DKernel::~StructuralMechanics3DKernel()
+{
+
+}
+
+void StructuralMechanics3DKernel::assembleLinearElasticMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, MatrixDense &K) const
+{
+	double Ex, Ey, Ez, miXY, miXZ, miYZ, Gx, Gy, Gz;
+	Point p(coordinates[0], coordinates[1], coordinates[2]);
+
+	Evaluator::Params params;
+	params.coords(3, coordinates);
+	params.temp(&temp);
+
+	switch (mat->linear_elastic_properties.model) {
+
+	case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC: {
+		Ex = Ey = Ez = mat->linear_elastic_properties.young_modulus.get(0, 0).evaluator->eval(params);
+		miXY = miXZ = miYZ = mat->linear_elastic_properties.poisson_ratio.get(0, 0).evaluator->eval(params);
+
+		double EE = Ex / ((1 + miXY) * (1 - 2 * miXY));
+
+		K(node,  0) = EE * (1.0 - miXY);
+		K(node,  1) = EE * (1.0 - miXY);
+		K(node,  2) = EE * (1.0 - miXY);
+		K(node,  3) = EE * (0.5 - miXY);
+		K(node,  4) = EE * (0.5 - miXY);
+		K(node,  5) = EE * (0.5 - miXY);
+
+		K(node,  6) = EE * miXY;
+		K(node,  7) = EE * miXY;
+		K(node,  8) = 0;
+		K(node,  9) = 0;
+		K(node, 10) = 0;
+		K(node, 11) = EE * miXY;
+		K(node, 12) = 0;
+		K(node, 13) = 0;
+		K(node, 14) = 0;
+		K(node, 15) = 0;
+		K(node, 16) = 0;
+		K(node, 17) = 0;
+		K(node, 18) = 0;
+		K(node, 19) = 0;
+		K(node, 20) = 0;
+		K(node, 21) = EE * miXY;
+		K(node, 22) = EE * miXY;
+		K(node, 23) = EE * miXY;
+		K(node, 24) = 0;
+		K(node, 25) = 0;
+		K(node, 26) = 0;
+		K(node, 27) = 0;
+		K(node, 28) = 0;
+		K(node, 29) = 0;
+		K(node, 30) = 0;
+		K(node, 31) = 0;
+		K(node, 32) = 0;
+		K(node, 33) = 0;
+		K(node, 34) = 0;
+		K(node, 35) = 0;
+	} break;
+
+	case LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC: {
+		K(node,  0) = mat->linear_elastic_properties.anisotropic.get(0, 0).evaluator->eval(params);
+		K(node,  1) = mat->linear_elastic_properties.anisotropic.get(1, 1).evaluator->eval(params);
+		K(node,  2) = mat->linear_elastic_properties.anisotropic.get(2, 2).evaluator->eval(params);
+		K(node,  3) = mat->linear_elastic_properties.anisotropic.get(3, 3).evaluator->eval(params);
+		K(node,  4) = mat->linear_elastic_properties.anisotropic.get(4, 4).evaluator->eval(params);
+		K(node,  5) = mat->linear_elastic_properties.anisotropic.get(5, 5).evaluator->eval(params);
+
+		K(node,  6) = mat->linear_elastic_properties.anisotropic.get(0, 1).evaluator->eval(params);
+		K(node,  7) = mat->linear_elastic_properties.anisotropic.get(0, 2).evaluator->eval(params);
+		K(node,  8) = mat->linear_elastic_properties.anisotropic.get(0, 3).evaluator->eval(params);
+		K(node,  9) = mat->linear_elastic_properties.anisotropic.get(0, 4).evaluator->eval(params);
+		K(node, 10) = mat->linear_elastic_properties.anisotropic.get(0, 5).evaluator->eval(params);
+		K(node, 11) = mat->linear_elastic_properties.anisotropic.get(1, 2).evaluator->eval(params);
+		K(node, 12) = mat->linear_elastic_properties.anisotropic.get(1, 3).evaluator->eval(params);
+		K(node, 13) = mat->linear_elastic_properties.anisotropic.get(1, 4).evaluator->eval(params);
+		K(node, 14) = mat->linear_elastic_properties.anisotropic.get(1, 5).evaluator->eval(params);
+		K(node, 15) = mat->linear_elastic_properties.anisotropic.get(2, 3).evaluator->eval(params);
+		K(node, 16) = mat->linear_elastic_properties.anisotropic.get(2, 4).evaluator->eval(params);
+		K(node, 17) = mat->linear_elastic_properties.anisotropic.get(2, 5).evaluator->eval(params);
+		K(node, 18) = mat->linear_elastic_properties.anisotropic.get(3, 4).evaluator->eval(params);
+		K(node, 19) = mat->linear_elastic_properties.anisotropic.get(3, 5).evaluator->eval(params);
+		K(node, 20) = mat->linear_elastic_properties.anisotropic.get(4, 5).evaluator->eval(params);
+
+		K(node, 21) = K(node,  6);
+		K(node, 22) = K(node,  7);
+		K(node, 23) = K(node, 11);
+		K(node, 24) = K(node,  8);
+		K(node, 25) = K(node, 12);
+		K(node, 26) = K(node, 15);
+		K(node, 27) = K(node,  9);
+		K(node, 28) = K(node, 13);
+		K(node, 29) = K(node, 16);
+		K(node, 30) = K(node, 18);
+		K(node, 31) = K(node, 10);
+		K(node, 32) = K(node, 14);
+		K(node, 33) = K(node, 17);
+		K(node, 34) = K(node, 19);
+		K(node, 35) = K(node, 20);
+	} break;
+
+	case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC: {
+		Ex = mat->linear_elastic_properties.young_modulus.get(0, 0).evaluator->eval(params);
+		Ey = mat->linear_elastic_properties.young_modulus.get(1, 1).evaluator->eval(params);
+		Ez = mat->linear_elastic_properties.young_modulus.get(2, 2).evaluator->eval(params);
+
+		miXY = mat->linear_elastic_properties.poisson_ratio.get(0, 0).evaluator->eval(params);
+		miXZ = mat->linear_elastic_properties.poisson_ratio.get(1, 1).evaluator->eval(params);
+		miYZ = mat->linear_elastic_properties.poisson_ratio.get(2, 2).evaluator->eval(params);
+
+		Gx = mat->linear_elastic_properties.shear_modulus.get(0, 0).evaluator->eval(params);
+		Gy = mat->linear_elastic_properties.shear_modulus.get(1, 1).evaluator->eval(params);
+		Gz = mat->linear_elastic_properties.shear_modulus.get(2, 2).evaluator->eval(params);
+
+		double miYX = miXY * Ey / Ex;
+		double miZY = miYZ * Ez / Ey;
+		double miZX = miXZ * Ex / Ez;
+
+		double ksi = 1 - (miXY * miYX + miYZ * miZY + miXZ * miZX) - (miXY * miYZ * miZX + miYX * miZY * miXZ);
+
+		double dxx = Ex * (1 - miYZ * miZY) / ksi;
+		double dxy = Ey * (miXY + miXZ * miZY) / ksi;
+		double dxz = Ez * (miXZ + miYZ * miXY)  /ksi;
+		double dyy = Ey * (1 - miXZ * miZX) / ksi;
+		double dyz = Ez * (miYZ + miYX * miXZ) / ksi;
+		double dzz = Ez * (1 - miYX * miXY) / ksi;
+
+		K(node,  0) = dxx;
+		K(node,  1) = dyy;
+		K(node,  2) = dzz;
+		K(node,  3) = Gx;
+		K(node,  4) = Gz;
+		K(node,  5) = Gy;
+
+		K(node,  6) = dxy;
+		K(node,  7) = dxz;
+		K(node,  8) = 0;
+		K(node,  9) = 0;
+		K(node, 10) = 0;
+		K(node, 11) = dyz;
+		K(node, 12) = 0;
+		K(node, 13) = 0;
+		K(node, 14) = 0;
+		K(node, 15) = 0;
+		K(node, 16) = 0;
+		K(node, 17) = 0;
+		K(node, 18) = 0;
+		K(node, 19) = 0;
+		K(node, 20) = 0;
+		K(node, 21) = dxy;
+		K(node, 22) = dxz;
+		K(node, 23) = dyz;
+		K(node, 24) = 0;
+		K(node, 25) = 0;
+		K(node, 26) = 0;
+		K(node, 27) = 0;
+		K(node, 28) = 0;
+		K(node, 29) = 0;
+		K(node, 30) = 0;
+		K(node, 31) = 0;
+		K(node, 32) = 0;
+		K(node, 33) = 0;
+		K(node, 34) = 0;
+		K(node, 35) = 0;
+	} break;
+
+	default:
+		eslog::error("Structural mechanics 3D not supports set material model.\n");
+	}
+}
+
+void StructuralMechanics3DKernel::assembleHyperElasticMaterialMatrix(const MaterialBaseConfiguration *mat, MatrixDense &F, MatrixDense &C, MatrixDense &S) const
+{
+	C.fill(0);
+	MatrixDense rCG(3, 3);
+	if (!step::isInitial()) {
+		rCG.multiply(F, F, 1, 0, true, false);
+	}
+	double c01, c10, d, dd, K, G, EE = 0, miXY = 0, lambdaL, E = 0;
+	MatrixDense eHat(3, 3), eVec(6, 1), sVec(6, 1);
+
+	if (step::isInitial()) {
+		switch (mat->hyper_elastic_properties.model) {
+		case HyperElasticPropertiesConfiguration::MODEL::NEO_HOOKEN_CMP:
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::NEO_HOOKEN_INC:
+			E = mat->hyper_elastic_properties.E.evaluator->eval(Evaluator::Params());
+			miXY = mat->hyper_elastic_properties.mi.evaluator->eval(Evaluator::Params());
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::MOONEY_RIVLIN_2PARAMS:
+			c01 = mat->hyper_elastic_properties.C01.evaluator->eval(Evaluator::Params());
+			c10 = mat->hyper_elastic_properties.C10.evaluator->eval(Evaluator::Params());
+			d = mat->hyper_elastic_properties.d.evaluator->eval(Evaluator::Params());
+
+			G = 2 * (c10 + c01);
+			dd = (1 - 2 * G) / (c10 + c01);
+			K = 2 / dd;
+			E = (9 * K * G) / (3 * K + G);
+			miXY = (3 * K - 2 * G) / (2 * (3 * K + G));
+
+			E = 2e11;
+			miXY = 0.3;
+
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::MOONEY_RIVLIN_3PARAMS:
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::MOONEY_RIVLIN_5PARAMS:
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::MOONEY_RIVLIN_9PARAMS:
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::ARRUDA_BOYCE:
+			d = mat->hyper_elastic_properties.d.evaluator->eval(Evaluator::Params());
+			G = mat->hyper_elastic_properties.G.evaluator->eval(Evaluator::Params());
+			K = 2 / d;
+			E  = (9 * K * G) / (3 * K + G);
+			miXY = (3 * K - 2 * G) / (2 * (3 * K + G));
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::BLATZ_KO_FOAM:
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::GENT:
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::OGDEN_1:
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::OGDEN_2:
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::OGDEN_3:
+			break;
+		}
+
+		EE = E / ((1 + miXY) * (1 - 2 * miXY));
+		C(0, 0) = EE * (1.0 - miXY);
+		C(1, 1) = EE * (1.0 - miXY);
+		C(2, 2) = EE * (1.0 - miXY);
+		C(3, 3) = EE * (0.5 - miXY);
+		C(4, 4) = EE * (0.5 - miXY);
+		C(5, 5) = EE * (0.5 - miXY);
+		C(0, 1) = EE * miXY;
+		C(0, 2) = EE * miXY;
+		C(1, 2) = EE * miXY;
+		C(1, 0) = EE * miXY;
+		C(2, 0) = EE * miXY;
+		C(2, 1) = EE * miXY;
+	} else {
+		double detF, detCG, lnDetF, lambda, mu;
+		MatrixDense invCG(3, 3);
+
+		switch (mat->hyper_elastic_properties.model) {
+		case HyperElasticPropertiesConfiguration::MODEL::NEO_HOOKEN_CMP:
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::NEO_HOOKEN_INC:
+			E = mat->hyper_elastic_properties.E.evaluator->eval(Evaluator::Params());
+			miXY = mat->hyper_elastic_properties.mi.evaluator->eval(Evaluator::Params());
+			lambda = E * miXY / ((1 + miXY) * (1 - 2 * miXY));
+			mu = E / (2 * (1 + miXY));
+
+			S(0,0) = mu+(mu*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2)))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-(lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2)))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2));
+			S(0,1) = (mu*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))*2.0+(rCG(0,2)*rCG(0,2))*rCG(1,1)*2.0+(rCG(0,1)*rCG(0,1))*rCG(2,2)*2.0-rCG(0,1)*rCG(0,2)*rCG(1,2)*4.0-rCG(0,0)*rCG(1,1)*rCG(2,2)*2.0)-(lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))*2.0+(rCG(0,2)*rCG(0,2))*rCG(1,1)*2.0+(rCG(0,1)*rCG(0,1))*rCG(2,2)*2.0-rCG(0,1)*rCG(0,2)*rCG(1,2)*4.0-rCG(0,0)*rCG(1,1)*rCG(2,2)*2.0);
+			S(0,2) = (mu*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))*2.0+(rCG(0,2)*rCG(0,2))*rCG(1,1)*2.0+(rCG(0,1)*rCG(0,1))*rCG(2,2)*2.0-rCG(0,1)*rCG(0,2)*rCG(1,2)*4.0-rCG(0,0)*rCG(1,1)*rCG(2,2)*2.0)-(lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))*2.0+(rCG(0,2)*rCG(0,2))*rCG(1,1)*2.0+(rCG(0,1)*rCG(0,1))*rCG(2,2)*2.0-rCG(0,1)*rCG(0,2)*rCG(1,2)*4.0-rCG(0,0)*rCG(1,1)*rCG(2,2)*2.0);
+			S(1,0) = (mu*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))*2.0+(rCG(0,2)*rCG(0,2))*rCG(1,1)*2.0+(rCG(0,1)*rCG(0,1))*rCG(2,2)*2.0-rCG(0,1)*rCG(0,2)*rCG(1,2)*4.0-rCG(0,0)*rCG(1,1)*rCG(2,2)*2.0)-(lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))*2.0+(rCG(0,2)*rCG(0,2))*rCG(1,1)*2.0+(rCG(0,1)*rCG(0,1))*rCG(2,2)*2.0-rCG(0,1)*rCG(0,2)*rCG(1,2)*4.0-rCG(0,0)*rCG(1,1)*rCG(2,2)*2.0);
+			S(1,1) = mu+(mu*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2)))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-(lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2)))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2));
+			S(1,2) = (mu*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))*2.0+(rCG(0,2)*rCG(0,2))*rCG(1,1)*2.0+(rCG(0,1)*rCG(0,1))*rCG(2,2)*2.0-rCG(0,1)*rCG(0,2)*rCG(1,2)*4.0-rCG(0,0)*rCG(1,1)*rCG(2,2)*2.0)-(lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))*2.0+(rCG(0,2)*rCG(0,2))*rCG(1,1)*2.0+(rCG(0,1)*rCG(0,1))*rCG(2,2)*2.0-rCG(0,1)*rCG(0,2)*rCG(1,2)*4.0-rCG(0,0)*rCG(1,1)*rCG(2,2)*2.0);
+			S(2,0) = (mu*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))*2.0+(rCG(0,2)*rCG(0,2))*rCG(1,1)*2.0+(rCG(0,1)*rCG(0,1))*rCG(2,2)*2.0-rCG(0,1)*rCG(0,2)*rCG(1,2)*4.0-rCG(0,0)*rCG(1,1)*rCG(2,2)*2.0)-(lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))*2.0+(rCG(0,2)*rCG(0,2))*rCG(1,1)*2.0+(rCG(0,1)*rCG(0,1))*rCG(2,2)*2.0-rCG(0,1)*rCG(0,2)*rCG(1,2)*4.0-rCG(0,0)*rCG(1,1)*rCG(2,2)*2.0);
+			S(2,1) = (mu*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))*2.0+(rCG(0,2)*rCG(0,2))*rCG(1,1)*2.0+(rCG(0,1)*rCG(0,1))*rCG(2,2)*2.0-rCG(0,1)*rCG(0,2)*rCG(1,2)*4.0-rCG(0,0)*rCG(1,1)*rCG(2,2)*2.0)-(lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))*2.0+(rCG(0,2)*rCG(0,2))*rCG(1,1)*2.0+(rCG(0,1)*rCG(0,1))*rCG(2,2)*2.0-rCG(0,1)*rCG(0,2)*rCG(1,2)*4.0-rCG(0,0)*rCG(1,1)*rCG(2,2)*2.0);
+			S(2,2) = mu+(mu*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1)))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-(lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1)))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2));
+
+			C(0,0) = lambda*pow(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2),2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)+mu*pow(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2),2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)*2.0-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*pow(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2),2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)*2.0;
+			C(0,1) = (mu*rCG(2,2)*2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))+lambda*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)+mu*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)*2.0-(lambda*rCG(2,2)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)*2.0;
+			C(0,2) = (mu*rCG(1,1)*2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))+lambda*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)+mu*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)*2.0-(lambda*rCG(1,1)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)*2.0;
+			C(0,3) = (lambda*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+mu*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0);
+			C(0,4) = (mu*rCG(1,2)*-2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))+(lambda*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+mu*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)+(lambda*rCG(1,2)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0);
+			C(0,5) = (lambda*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+mu*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0);
+			C(1,0) = (mu*rCG(2,2)*2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))+lambda*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)+mu*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)*2.0-(lambda*rCG(2,2)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)*2.0;
+			C(1,1) = lambda*pow(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2),2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)+mu*pow(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2),2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)*2.0-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*pow(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2),2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)*2.0;
+			C(1,2) = (mu*rCG(0,0)*2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))+lambda*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)+mu*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)*2.0-(lambda*rCG(0,0)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)*2.0;
+			C(1,3) = (lambda*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+mu*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0);
+			C(1,4) = (lambda*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+mu*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0);
+			C(1,5) = (mu*rCG(0,2)*-2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))+(lambda*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+mu*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)+(lambda*rCG(0,2)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0);
+			C(2,0) = (mu*rCG(1,1)*2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))+lambda*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)+mu*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)*2.0-(lambda*rCG(1,1)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)*2.0;
+			C(2,1) = (mu*rCG(0,0)*2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))+lambda*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)+mu*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)*2.0-(lambda*rCG(0,0)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)*2.0;
+			C(2,2) = lambda*pow(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1),2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)+mu*pow(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1),2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)*2.0-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*pow(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1),2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)*2.0;
+			C(2,3) = (mu*rCG(0,1)*-2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))+(lambda*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+mu*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)+(lambda*rCG(0,1)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0);
+			C(2,4) = (lambda*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+mu*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0);
+			C(2,5) = (lambda*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+mu*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0);
+			C(3,0) = (lambda*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+mu*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0);
+			C(3,1) = (lambda*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+mu*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0);
+			C(3,2) = (mu*rCG(0,1)*-2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))+(lambda*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+mu*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)+(lambda*rCG(0,1)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0);
+			C(3,3) = (lambda*pow(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0,2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/4.0+(mu*pow(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0,2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0-(mu*rCG(2,2))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-(lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*pow(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0,2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+(lambda*rCG(2,2)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2))))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2));
+			C(3,4) = (mu*rCG(0,2))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))+(lambda*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/4.0+(mu*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0-(lambda*rCG(0,2)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2))))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-(lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0;
+			C(3,5) = (mu*rCG(1,2))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))+(lambda*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/4.0+(mu*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0-(lambda*rCG(1,2)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2))))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-(lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0;
+			C(4,0) = (mu*rCG(1,2)*-2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))+(lambda*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+mu*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)+(lambda*rCG(1,2)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0);
+			C(4,1) = (lambda*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+mu*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0);
+			C(4,2) = (lambda*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+mu*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0);
+			C(4,3) = (mu*rCG(0,2))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))+(lambda*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/4.0+(mu*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0-(lambda*rCG(0,2)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2))))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-(lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0;
+			C(4,4) = (lambda*pow(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0,2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/4.0+(mu*pow(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0,2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0-(mu*rCG(0,0))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-(lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*pow(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0,2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+(lambda*rCG(0,0)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2))))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2));
+			C(4,5) = (mu*rCG(0,1))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))+(lambda*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/4.0+(mu*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0-(lambda*rCG(0,1)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2))))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-(lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0;
+			C(5,0) = (lambda*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+mu*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(1,1)*rCG(2,2)-rCG(1,2)*rCG(1,2))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0);
+			C(5,1) = (mu*rCG(0,2)*-2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))+(lambda*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+mu*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)+(lambda*rCG(0,2)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*2.0)/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(2,2)-rCG(0,2)*rCG(0,2))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0);
+			C(5,2) = (lambda*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+mu*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0)-lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,0)*rCG(1,1)-rCG(0,1)*rCG(0,1))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0);
+			C(5,3) = (mu*rCG(1,2))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))+(lambda*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/4.0+(mu*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0-(lambda*rCG(1,2)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2))))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-(lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*(rCG(0,2)*rCG(1,2)*2.0-rCG(0,1)*rCG(2,2)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0;
+			C(5,4) = (mu*rCG(0,1))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))+(lambda*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/4.0+(mu*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0-(lambda*rCG(0,1)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2))))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-(lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*(rCG(0,1)*rCG(0,2)*2.0-rCG(0,0)*rCG(1,2)*2.0)*(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0;
+			C(5,5) = (lambda*pow(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0,2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/4.0+(mu*pow(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0,2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0-(mu*rCG(1,1))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2))-(lambda*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2)))*pow(rCG(0,1)*rCG(1,2)*2.0-rCG(0,2)*rCG(1,1)*2.0,2.0)*1.0/pow(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2),2.0))/2.0+(lambda*rCG(1,1)*log(sqrt(-rCG(0,0)*(rCG(1,2)*rCG(1,2))-(rCG(0,2)*rCG(0,2))*rCG(1,1)-(rCG(0,1)*rCG(0,1))*rCG(2,2)+rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0+rCG(0,0)*rCG(1,1)*rCG(2,2))))/(rCG(0,0)*(rCG(1,2)*rCG(1,2))+(rCG(0,2)*rCG(0,2))*rCG(1,1)+(rCG(0,1)*rCG(0,1))*rCG(2,2)-rCG(0,1)*rCG(0,2)*rCG(1,2)*2.0-rCG(0,0)*rCG(1,1)*rCG(2,2));
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::MOONEY_RIVLIN_2PARAMS:
+			c01 = mat->hyper_elastic_properties.C01.evaluator->eval(Evaluator::Params());
+			c10 = mat->hyper_elastic_properties.C10.evaluator->eval(Evaluator::Params());
+			d = mat->hyper_elastic_properties.d.evaluator->eval(Evaluator::Params());
+
+			K = 2 / d;
+			G = 2 * (c10 + c01);
+
+			detF = MATH::determinant3x3(F.vals);
+			detCG = MATH::determinant3x3(rCG.vals);
+			MATH::Dense3x3inverse(F.vals, invCG.vals, detCG);
+
+			lnDetF = log(detF);
+
+			lambda = 17000;
+			mu = 1e5;
+			S(0, 0) = lambda * lnDetF * invCG(0, 0) + mu * (1 - invCG(0, 0));
+			S(1, 1) = lambda * lnDetF * invCG(1, 1) + mu * (1 - invCG(1, 1));
+			S(2, 2) = lambda * lnDetF * invCG(2, 2) + mu * (1 - invCG(2, 2));
+
+			S(0, 1) = lambda * lnDetF * invCG(0, 1) + mu * (0 - invCG(0, 1));
+			S(0, 2) = lambda * lnDetF * invCG(0, 2) + mu * (0 - invCG(0, 2));
+			S(1, 0) = lambda * lnDetF * invCG(1, 0) + mu * (0 - invCG(1, 0));
+			S(1, 2) = lambda * lnDetF * invCG(1, 2) + mu * (0 - invCG(1, 2));
+			S(2, 0) = lambda * lnDetF * invCG(2, 0) + mu * (0 - invCG(2, 0));
+			S(2, 1) = lambda * lnDetF * invCG(2, 1) + mu * (0 - invCG(2, 1));
+
+			C(1 - 1, 1 - 1) = (-2 * lnDetF * lambda+lambda+2*mu)*invCG(0, 0) * invCG(0, 0);
+			C(1 - 1, 2 - 1) = (2*mu-2*lnDetF*lambda)*invCG(0, 1)*invCG(0, 1) + lambda*invCG(0, 0)*invCG(1, 1);
+			C(1 - 1, 3 - 1) = (2*mu-2*lnDetF*lambda)*invCG(2, 0)*invCG(2, 0) + lambda*invCG(0, 0)*invCG(2, 2);
+			C(1 - 1, 4 - 1) = (-2*lnDetF*lambda+lambda+2*mu)*invCG(0, 1)*invCG(0, 0);
+			C(1 - 1, 5 - 1) = lambda*invCG(0, 0)*invCG(1, 2)+2*(mu-lnDetF*lambda)*invCG(0, 1)*invCG(2, 0);
+			C(1 - 1, 6 - 1) = (-2*lnDetF*lambda+lambda+2*mu)*invCG(0, 0)*invCG(2, 0);
+			C(2 - 1, 2 - 1) = (-2*lnDetF*lambda+lambda+2*mu)*invCG(1, 1)*invCG(1, 1);
+			C(2 - 1, 3 - 1) = (2*mu-2*lnDetF*lambda)*invCG(1, 2)*invCG(1, 2) + lambda*invCG(2, 2)*invCG(1, 1);
+			C(2 - 1, 4 - 1) = (-2*lnDetF*lambda+lambda+2*mu)*invCG(0, 1)*invCG(1, 1);
+			C(2 - 1, 5 - 1) = (-2*lnDetF*lambda+lambda+2*mu)*invCG(1, 1)*invCG(1, 2);
+			C(2 - 1, 6 - 1) = 2*(mu-lnDetF*lambda)*invCG(0, 1)*invCG(1, 2)+lambda*invCG(1, 1)*invCG(2, 0);
+			C(3 - 1, 3 - 1) = (-2*lnDetF*lambda+lambda+2*mu)*invCG(2, 2)*invCG(2, 2);
+			C(3 - 1, 4 - 1) = 2*(mu-lnDetF*lambda)*invCG(1, 2)*invCG(2, 0)+lambda*invCG(0, 1)*invCG(2, 2);
+			C(3 - 1, 5 - 1) = (-2*lnDetF*lambda+lambda+2*mu)*invCG(1, 2)*invCG(2, 2);
+			C(3 - 1, 6 - 1) = (-2*lnDetF*lambda+lambda+2*mu)*invCG(2, 0)*invCG(2, 2);
+			C(4 - 1, 4 - 1) = (-lnDetF*lambda+lambda+mu)*invCG(0, 1)*invCG(0, 1)+(mu-lnDetF*lambda)*invCG(0, 0)*invCG(1, 1);
+			C(4 - 1, 5 - 1) = (-lnDetF*lambda+lambda+mu)*invCG(0, 1)*invCG(1, 2)+(mu-lnDetF*lambda)*invCG(1, 1)*invCG(2, 0);
+			C(4 - 1, 6 - 1) = (-lnDetF*lambda+lambda+mu)*invCG(0, 1)*invCG(2, 0)+(mu-lnDetF*lambda)*invCG(0, 0)*invCG(1, 2);
+			C(5 - 1, 5 - 1) = (-lnDetF*lambda+lambda+mu)*invCG(1, 2)*invCG(1, 2)+(mu-lnDetF*lambda)*invCG(1, 1)*invCG(2, 2);
+			C(5 - 1, 6 - 1) = (-lnDetF*lambda+lambda+mu)*invCG(1, 2)*invCG(2, 0)+(mu-lnDetF*lambda)*invCG(0, 1)*invCG(2, 2);
+			C(6 - 1, 6 - 1) = (-lnDetF*lambda+lambda+mu)*invCG(2, 0)*invCG(2, 0)+(mu-lnDetF*lambda)*invCG(0, 0)*invCG(2, 2);
+
+
+//			E = (9 * K * G) / (3 * K + G);
+//			miXY = (3 * K - 2 * G) / (2 * (3 * K + G));
+
+//			E = 2e11;
+//			miXY = 0.3;
+//
+//			EE = E / ((1 + miXY) * (1 - 2 * miXY));
+//			C(0, 0) = EE * (1.0 - miXY);
+//			C(1, 1) = EE * (1.0 - miXY);
+//			C(2, 2) = EE * (1.0 - miXY);
+//			C(3, 3) = EE * (0.5 - miXY);
+//			C(4, 4) = EE * (0.5 - miXY);
+//			C(5, 5) = EE * (0.5 - miXY);
+//			C(0, 1) = EE * miXY;
+//			C(0, 2) = EE * miXY;
+//			C(1, 2) = EE * miXY;
+//			C(1, 0) = EE * miXY;
+//			C(2, 0) = EE * miXY;
+//			C(2, 1) = EE * miXY;
+//
+//			eHat.multiply(F, F, .5, 0, true, false);
+//			eHat(0, 0) -= .5;
+//			eHat(1, 1) -= .5;
+//			eHat(2, 2) -= .5;
+//			eVec(0, 0) = eHat(0, 0);
+//			eVec(1, 0) = eHat(1, 1);
+//			eVec(2, 0) = eHat(2, 2);
+//			eVec(3, 0) = 2 * eHat(0, 1);
+//			eVec(4, 0) = 2 * eHat(1, 2);
+//			eVec(5, 0) = 2 * eHat(0, 2);
+//			sVec.multiply(C, eVec);
+//			S(0, 0) = sVec(0, 0);
+//			S(1, 1) = sVec(1, 0);
+//			S(2, 2) = sVec(2, 0);
+//			S(0, 1) = sVec(3, 0);
+//			S(1, 0) = sVec(3, 0);
+//			S(0, 2) = sVec(5, 0);
+//			S(2, 0) = sVec(5, 0);
+//			S(1, 2) = sVec(4, 0);
+//			S(2, 1) = sVec(4, 0);
+//
+//			S(0, 0) = c10+c01*(rCG(1, 1)+rCG(2, 2))+((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))/d;
+//			S(0, 1) = -c01*rCG(0, 1)+((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))/(d*2.0);
+//			S(0, 2) = -c01*rCG(0, 2)+((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))/(d*2.0);
+//			S(1, 0) = -c01*rCG(0, 1)+((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))/(d*2.0);
+//			S(1, 1) = c10+c01*(rCG(0, 0)+rCG(2, 2))+((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))/d;
+//			S(1, 2) = -c01*rCG(1, 2)+((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))/(d*2.0);
+//			S(2, 0) = -c01*rCG(0, 2)+((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))/(d*2.0);
+//			S(2, 1) = -c01*rCG(1, 2)+((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))/(d*2.0);
+//			S(2, 2) = c10+c01*(rCG(0, 0)+rCG(1, 1))+((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))/d;
+//
+//			C(0, 0) = (pow(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2),2.0)*-2.0)/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*pow(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2),2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0)*2.0)/d;
+//			C(0, 1) = c01*4.0+(rCG(2, 2)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*4.0)/d-((rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*2.0)/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0)*2.0)/d;
+//			C(0, 2) = c01*4.0+(rCG(1, 1)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*4.0)/d-((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*2.0)/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0)*2.0)/d;
+//			C(0, 3) = -((rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/d;
+//			C(0, 4) = (rCG(1, 2)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*-4.0)/d-((rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/d;
+//			C(0, 5) = -((rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/d;
+//			C(1, 0) = c01*4.0+(rCG(2, 2)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*4.0)/d-((rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*2.0)/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0)*2.0)/d;
+//			C(1, 1) = (pow(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2),2.0)*-2.0)/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*pow(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2),2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0)*2.0)/d;
+//			C(1, 2) = c01*4.0+(rCG(0, 0)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*4.0)/d-((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*2.0)/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0)*2.0)/d;
+//			C(1, 3) = -((rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/d;
+//			C(1, 4) = -((rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/d;
+//			C(1, 5) = (rCG(0, 2)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*-4.0)/d-((rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/d;
+//			C(2, 0) = c01*4.0+(rCG(1, 1)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*4.0)/d-((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*2.0)/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0)*2.0)/d;
+//			C(2, 1) = c01*4.0+(rCG(0, 0)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*4.0)/d-((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*2.0)/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0)*2.0)/d;
+//			C(2, 2) = (pow(rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1),2.0)*-2.0)/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*pow(rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1),2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0)*2.0)/d;
+//			C(2, 3) = (rCG(0, 1)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*-4.0)/d-((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/d;
+//			C(2, 4) = -((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/d;
+//			C(2, 5) = -((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/d;
+//			C(3, 0) = -((rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/d;
+//			C(3, 1) = -((rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/d;
+//			C(3, 2) = (rCG(0, 1)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*-4.0)/d-((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/d;
+//			C(3, 3) = c01*-2.0-pow(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0,2.0)/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*2.0)-(rCG(2, 2)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*2.0)/d-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*pow(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0,2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/(d*2.0);
+//			C(3, 4) = ((rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*(-1.0/2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))+(rCG(0, 2)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*2.0)/d-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/(d*2.0);
+//			C(3, 5) = ((rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*(-1.0/2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))+(rCG(1, 2)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*2.0)/d-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/(d*2.0);
+//			C(4, 0) = (rCG(1, 2)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*-4.0)/d-((rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/d;
+//			C(4, 1) = -((rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/d;
+//			C(4, 2) = -((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/d;
+//			C(4, 3) = ((rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*(-1.0/2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))+(rCG(0, 2)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*2.0)/d-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/(d*2.0);
+//			C(4, 4) = c01*-2.0-pow(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0,2.0)/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*2.0)-(rCG(0, 0)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*2.0)/d-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*pow(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0,2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/(d*2.0);
+//			C(4, 5) = ((rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*(-1.0/2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))+(rCG(0, 1)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*2.0)/d-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/(d*2.0);
+//			C(5, 0) = -((rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/d;
+//			C(5, 1) = (rCG(0, 2)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*-4.0)/d-((rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/d;
+//			C(5, 2) = -((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/d;
+//			C(5, 3) = ((rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*(-1.0/2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))+(rCG(1, 2)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*2.0)/d-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/(d*2.0);
+//			C(5, 4) = ((rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*(-1.0/2.0))/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))+(rCG(0, 1)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*2.0)/d-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/(d*2.0);
+//			C(5, 5) = c01*-2.0-pow(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0,2.0)/(d*(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*2.0)-(rCG(1, 1)*(sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*1.0/sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))*2.0)/d-((sqrt(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-1.0)*pow(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0,2.0)*1.0/pow(-rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))-(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)-(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)+rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0+rCG(0, 0)*rCG(1, 1)*rCG(2, 2),3.0/2.0))/(d*2.0);
+
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::MOONEY_RIVLIN_3PARAMS:
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::MOONEY_RIVLIN_5PARAMS:
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::MOONEY_RIVLIN_9PARAMS:
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::ARRUDA_BOYCE:
+			d = mat->hyper_elastic_properties.d.evaluator->eval(Evaluator::Params());
+			G = mat->hyper_elastic_properties.G.evaluator->eval(Evaluator::Params());
+			lambdaL = mat->hyper_elastic_properties.lambdaL.evaluator->eval(Evaluator::Params());
+
+			S(0, 0) = ((rCG(1, 1)*rCG(2, 2))/2.0+(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))*2.0+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)*2.0+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)*2.0-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*4.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)*2.0)-(rCG(1, 2)*rCG(1, 2))/2.0)/d+G*(1.0/(lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),2.0)*(1.1E1/3.5E2)+1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),3.0)*1.078014184397163E-2+1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),4.0)*3.851576994434137E-3+(1.0/(lambdaL*lambdaL)*(rCG(0, 0)*2.0+rCG(1, 1)*2.0+rCG(2, 2)*2.0))/2.0E1+1.0/2.0);
+			S(0, 1) = (rCG(0, 2)*rCG(1, 2)-rCG(0, 1)*rCG(2, 2)+(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))*2.0+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)*2.0+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)*2.0-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*4.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)*2.0))/(d*2.0);
+			S(0, 2) = (rCG(0, 1)*rCG(1, 2)-rCG(0, 2)*rCG(1, 1)+(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))*2.0+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)*2.0+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)*2.0-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*4.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)*2.0))/(d*2.0);
+			S(1, 0) = (rCG(0, 2)*rCG(1, 2)-rCG(0, 1)*rCG(2, 2)+(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))*2.0+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)*2.0+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)*2.0-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*4.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)*2.0))/(d*2.0);
+			S(1, 1) = ((rCG(0, 0)*rCG(2, 2))/2.0+(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))*2.0+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)*2.0+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)*2.0-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*4.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)*2.0)-(rCG(0, 2)*rCG(0, 2))/2.0)/d+G*(1.0/(lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),2.0)*(1.1E1/3.5E2)+1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),3.0)*1.078014184397163E-2+1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),4.0)*3.851576994434137E-3+(1.0/(lambdaL*lambdaL)*(rCG(0, 0)*2.0+rCG(1, 1)*2.0+rCG(2, 2)*2.0))/2.0E1+1.0/2.0);
+			S(1, 2) = (rCG(0, 1)*rCG(0, 2)-rCG(0, 0)*rCG(1, 2)+(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))*2.0+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)*2.0+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)*2.0-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*4.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)*2.0))/(d*2.0);
+			S(2, 0) = (rCG(0, 1)*rCG(1, 2)-rCG(0, 2)*rCG(1, 1)+(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))*2.0+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)*2.0+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)*2.0-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*4.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)*2.0))/(d*2.0);
+			S(2, 1) = (rCG(0, 1)*rCG(0, 2)-rCG(0, 0)*rCG(1, 2)+(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))*2.0+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)*2.0+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)*2.0-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*4.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)*2.0))/(d*2.0);
+			S(2, 2) = ((rCG(0, 0)*rCG(1, 1))/2.0+(rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))*2.0+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)*2.0+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)*2.0-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*4.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)*2.0)-(rCG(0, 1)*rCG(0, 1))/2.0)/d+G*(1.0/(lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),2.0)*(1.1E1/3.5E2)+1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),3.0)*1.078014184397163E-2+1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),4.0)*3.851576994434137E-3+(1.0/(lambdaL*lambdaL)*(rCG(0, 0)*2.0+rCG(1, 1)*2.0+rCG(2, 2)*2.0))/2.0E1+1.0/2.0);
+
+			C(0, 0) = G*(1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),2.0)*3.234042553191489E-2+1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),3.0)*1.540630797773655E-2+1.0/(lambdaL*lambdaL)/1.0E1+1.0/(lambdaL*lambdaL*lambdaL*lambdaL)*(rCG(0, 0)*2.0+rCG(1, 1)*2.0+rCG(2, 2)*2.0)*(1.1E1/3.5E2))*4.0+(pow(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2),2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0)*2.0)/d;
+			C(0, 1) = ((rCG(2, 2)/2.0+rCG(2, 2)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))*2.0+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)*2.0+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)*2.0-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*4.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)*2.0)+((rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0)*4.0)/d+G*(1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),2.0)*3.234042553191489E-2+1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),3.0)*1.540630797773655E-2+1.0/(lambdaL*lambdaL)/1.0E1+1.0/(lambdaL*lambdaL*lambdaL*lambdaL)*(rCG(0, 0)*2.0+rCG(1, 1)*2.0+rCG(2, 2)*2.0)*(1.1E1/3.5E2))*4.0;
+			C(0, 2) = ((rCG(1, 1)/2.0+rCG(1, 1)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))*2.0+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)*2.0+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)*2.0-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*4.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)*2.0)+((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0)*4.0)/d+G*(1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),2.0)*3.234042553191489E-2+1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),3.0)*1.540630797773655E-2+1.0/(lambdaL*lambdaL)/1.0E1+1.0/(lambdaL*lambdaL*lambdaL*lambdaL)*(rCG(0, 0)*2.0+rCG(1, 1)*2.0+rCG(2, 2)*2.0)*(1.1E1/3.5E2))*4.0;
+			C(0, 3) = ((rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/d;
+			C(0, 4) = ((rCG(1, 2)+rCG(1, 2)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-((rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0)*-2.0)/d;
+			C(0, 5) = ((rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/d;
+			C(1, 0) = ((rCG(2, 2)/2.0+rCG(2, 2)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))*2.0+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)*2.0+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)*2.0-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*4.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)*2.0)+((rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0)*4.0)/d+G*(1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),2.0)*3.234042553191489E-2+1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),3.0)*1.540630797773655E-2+1.0/(lambdaL*lambdaL)/1.0E1+1.0/(lambdaL*lambdaL*lambdaL*lambdaL)*(rCG(0, 0)*2.0+rCG(1, 1)*2.0+rCG(2, 2)*2.0)*(1.1E1/3.5E2))*4.0;
+			C(1, 1) = G*(1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),2.0)*3.234042553191489E-2+1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),3.0)*1.540630797773655E-2+1.0/(lambdaL*lambdaL)/1.0E1+1.0/(lambdaL*lambdaL*lambdaL*lambdaL)*(rCG(0, 0)*2.0+rCG(1, 1)*2.0+rCG(2, 2)*2.0)*(1.1E1/3.5E2))*4.0+(pow(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2),2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0)*2.0)/d;
+			C(1, 2) = ((rCG(0, 0)/2.0+rCG(0, 0)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))*2.0+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)*2.0+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)*2.0-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*4.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)*2.0)+((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0)*4.0)/d+G*(1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),2.0)*3.234042553191489E-2+1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),3.0)*1.540630797773655E-2+1.0/(lambdaL*lambdaL)/1.0E1+1.0/(lambdaL*lambdaL*lambdaL*lambdaL)*(rCG(0, 0)*2.0+rCG(1, 1)*2.0+rCG(2, 2)*2.0)*(1.1E1/3.5E2))*4.0;
+			C(1, 3) = ((rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/d;
+			C(1, 4) = ((rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/d;
+			C(1, 5) = ((rCG(0, 2)+rCG(0, 2)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-((rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0)*-2.0)/d;
+			C(2, 0) = ((rCG(1, 1)/2.0+rCG(1, 1)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))*2.0+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)*2.0+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)*2.0-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*4.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)*2.0)+((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0)*4.0)/d+G*(1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),2.0)*3.234042553191489E-2+1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),3.0)*1.540630797773655E-2+1.0/(lambdaL*lambdaL)/1.0E1+1.0/(lambdaL*lambdaL*lambdaL*lambdaL)*(rCG(0, 0)*2.0+rCG(1, 1)*2.0+rCG(2, 2)*2.0)*(1.1E1/3.5E2))*4.0;
+			C(2, 1) = ((rCG(0, 0)/2.0+rCG(0, 0)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))*2.0+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)*2.0+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)*2.0-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*4.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)*2.0)+((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0)*4.0)/d+G*(1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),2.0)*3.234042553191489E-2+1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),3.0)*1.540630797773655E-2+1.0/(lambdaL*lambdaL)/1.0E1+1.0/(lambdaL*lambdaL*lambdaL*lambdaL)*(rCG(0, 0)*2.0+rCG(1, 1)*2.0+rCG(2, 2)*2.0)*(1.1E1/3.5E2))*4.0;
+			C(2, 2) = G*(1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),2.0)*3.234042553191489E-2+1.0/(lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL*lambdaL)*pow(rCG(0, 0)+rCG(1, 1)+rCG(2, 2),3.0)*1.540630797773655E-2+1.0/(lambdaL*lambdaL)/1.0E1+1.0/(lambdaL*lambdaL*lambdaL*lambdaL)*(rCG(0, 0)*2.0+rCG(1, 1)*2.0+rCG(2, 2)*2.0)*(1.1E1/3.5E2))*4.0+(pow(rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1),2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0)*2.0)/d;
+			C(2, 3) = ((rCG(0, 1)+rCG(0, 1)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0)*-2.0)/d;
+			C(2, 4) = ((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/d;
+			C(2, 5) = ((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/d;
+			C(3, 0) = ((rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/d;
+			C(3, 1) = ((rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/d;
+			C(3, 2) = ((rCG(0, 1)+rCG(0, 1)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0)*-2.0)/d;
+			C(3, 3) = -(rCG(2, 2)-(pow(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0,2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0+rCG(2, 2)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))/d;
+			C(3, 4) = (rCG(0, 2)+rCG(0, 2)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2))+((rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0)/d;
+			C(3, 5) = (rCG(1, 2)+rCG(1, 2)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2))+((rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0)/d;
+			C(4, 0) = ((rCG(1, 2)+rCG(1, 2)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-((rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0)*-2.0)/d;
+			C(4, 1) = ((rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/d;
+			C(4, 2) = ((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/d;
+			C(4, 3) = (rCG(0, 2)+rCG(0, 2)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2))+((rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0)/d;
+			C(4, 4) = -(rCG(0, 0)-(pow(rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0,2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0+rCG(0, 0)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))/d;
+			C(4, 5) = (rCG(0, 1)+rCG(0, 1)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2))+((rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0)/d;
+			C(5, 0) = ((rCG(1, 1)*rCG(2, 2)-rCG(1, 2)*rCG(1, 2))*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/d;
+			C(5, 1) = ((rCG(0, 2)+rCG(0, 2)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2))-((rCG(0, 0)*rCG(2, 2)-rCG(0, 2)*rCG(0, 2))*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0)*-2.0)/d;
+			C(5, 2) = ((rCG(0, 0)*rCG(1, 1)-rCG(0, 1)*rCG(0, 1))*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/d;
+			C(5, 3) = (rCG(1, 2)+rCG(1, 2)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2))+((rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*(rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 1)*rCG(2, 2)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0)/d;
+			C(5, 4) = (rCG(0, 1)+rCG(0, 1)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2))+((rCG(0, 1)*rCG(0, 2)*2.0-rCG(0, 0)*rCG(1, 2)*2.0)*(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0)/d;
+			C(5, 5) = -(rCG(1, 1)-(pow(rCG(0, 1)*rCG(1, 2)*2.0-rCG(0, 2)*rCG(1, 1)*2.0,2.0)*1.0/pow(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2),2.0))/2.0+rCG(1, 1)/(rCG(0, 0)*(rCG(1, 2)*rCG(1, 2))+(rCG(0, 2)*rCG(0, 2))*rCG(1, 1)+(rCG(0, 1)*rCG(0, 1))*rCG(2, 2)-rCG(0, 1)*rCG(0, 2)*rCG(1, 2)*2.0-rCG(0, 0)*rCG(1, 1)*rCG(2, 2)))/d;
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::BLATZ_KO_FOAM:
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::GENT:
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::OGDEN_1:
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::OGDEN_2:
+			break;
+		case HyperElasticPropertiesConfiguration::MODEL::OGDEN_3:
+			break;
+		}
+	}
+}
+
+// source dX, dY, dZ
+
+// target::
+// dX   0   0
+//  0  dY   0
+//  0   0  dZ
+// dY  dX   0
+//  0  dZ  dY
+// dZ   0  dX
+static void distribute6x3(double *target, const double *source, size_t rows, size_t columns)
+{
+	const double *dNDx = source;
+	const double *dNDy = source + columns;
+	const double *dNDz = source + 2 * columns;
+
+	memcpy(target                                   , dNDx, sizeof(double) * columns);
+	memcpy(target + 3 * rows * columns +     columns, dNDx, sizeof(double) * columns);
+	memcpy(target + 5 * rows * columns + 2 * columns, dNDx, sizeof(double) * columns);
+
+	memcpy(target + 1 * rows * columns +     columns, dNDy, sizeof(double) * columns);
+	memcpy(target + 3 * rows * columns              , dNDy, sizeof(double) * columns);
+	memcpy(target + 4 * rows * columns + 2 * columns, dNDy, sizeof(double) * columns);
+
+	memcpy(target + 2 * rows * columns + 2 * columns, dNDz, sizeof(double) * columns);
+	memcpy(target + 4 * rows * columns +     columns, dNDz, sizeof(double) * columns);
+	memcpy(target + 5 * rows * columns              , dNDz, sizeof(double) * columns);
+}
+
+// source dX, dY, dZ
+
+// target::
+// dX   0   0
+// dY   0   0
+// dZ   0   0
+//  0  dX   0
+//  0  dY   0
+//  0  dZ   0
+//  0   0  dX
+//  0   0  dY
+//  0   0  dZ
+static void distribute9x3(double *target, const double *source, size_t rows, size_t columns)
+{
+	const double *dNDx = source;
+	const double *dNDy = source + columns;
+	const double *dNDz = source + 2 * columns;
+
+	memcpy(target                                   , dNDx, sizeof(double) * columns);
+	memcpy(target + 3 * rows * columns + 1 * columns, dNDx, sizeof(double) * columns);
+	memcpy(target + 6 * rows * columns + 2 * columns, dNDx, sizeof(double) * columns);
+
+	memcpy(target + 1 * rows * columns              , dNDy, sizeof(double) * columns);
+	memcpy(target + 4 * rows * columns + 1 * columns, dNDy, sizeof(double) * columns);
+	memcpy(target + 7 * rows * columns + 2 * columns, dNDy, sizeof(double) * columns);
+
+	memcpy(target + 2 * rows * columns              , dNDz, sizeof(double) * columns);
+	memcpy(target + 5 * rows * columns + 1 * columns, dNDz, sizeof(double) * columns);
+	memcpy(target + 8 * rows * columns + 2 * columns, dNDz, sizeof(double) * columns);
+}
+
+void StructuralMechanics3DKernel::processElement(const Builder &builder, const ElasticityElementIterator &iterator, InstanceFiller &filler) const
+{
+	bool harmonic = step::type == step::TYPE::FREQUENCY || step::type == step::TYPE::FTT;
+
+	int size = iterator.element->nodes;
+	filler.DOFs = 3 * size;
+
+	const std::vector<MatrixDense> &N = *(iterator.element->N);
+	const std::vector<MatrixDense> &NNN = *(iterator.element->NNN);
+	const std::vector<MatrixDense> &dN = *(iterator.element->dN);
+	const std::vector<double> &weighFactor = *(iterator.element->weighFactor);
+
+	MatrixDense C(6, 6), initCoordinates(size, 3), coordinates(size, 3), F(3, 3), J, JC, invJ(3, 3), dND, B, CEp, CB, precision, rhsT, SGL, CBL;
+	MatrixDense eHat(3, 3), eVec(6, 1), sVec(6, 1), S(9, 9), BL(6, 3 * size), GL(9, 3 * size);
+	MatrixDense K(size, 36), TE(size, 3), inertia(size, 3), dens(size, 1);
+	MatrixDense gpK(size, 36), gpTE(1, 3), gpInertia(1, 3), gpDens(1, 1);
+	MatrixDense rotation(3, 3), spin(3, 3), Ks, omegaN;
+	MatrixDense uc(3 * size, 1), us(3 * size, 1);
+	double detJ, te;
+
+	for (int n = 0; n < size; n++) {
+		Evaluator::Params params;
+		params.coords(3, iterator.coordinates.data + 3 * n);
+		params.temp(iterator.temperature.data + n);
+		inertia(n, 0) = iterator.acceleration.data[3 * n + 0];
+		inertia(n, 1) = iterator.acceleration.data[3 * n + 1];
+		inertia(n, 2) = iterator.acceleration.data[3 * n + 2];
+		initCoordinates(n, 0) = iterator.coordinates.data[3 * n + 0];
+		initCoordinates(n, 1) = iterator.coordinates.data[3 * n + 1];
+		initCoordinates(n, 2) = iterator.coordinates.data[3 * n + 2];
+		coordinates(n, 0) = initCoordinates(n, 0) + iterator.displacement.data[3 * n + 0];
+		coordinates(n, 1) = initCoordinates(n, 1) + iterator.displacement.data[3 * n + 1];
+		coordinates(n, 2) = initCoordinates(n, 2) + iterator.displacement.data[3 * n + 2];
+		dens(n, 0) = iterator.material->density.evaluator->eval(params);
+
+		if (harmonic) {
+			uc(0 * size + n, 0) = iterator.cos.data[3 * n + 0];
+			uc(1 * size + n, 0) = iterator.cos.data[3 * n + 1];
+			uc(2 * size + n, 0) = iterator.cos.data[3 * n + 2];
+
+			us(0 * size + n, 0) = iterator.sin.data[3 * n + 0];
+			us(1 * size + n, 0) = iterator.sin.data[3 * n + 1];
+			us(2 * size + n, 0) = iterator.sin.data[3 * n + 2];
+		}
+
+		switch (iterator.material->thermal_expansion.model) {
+		case ThermalExpansionConfiguration::MODEL::ISOTROPIC:
+			te = iterator.material->thermal_expansion.thermal_expansion.get(0, 0).evaluator->eval(params);
+			TE(n, 0) = TE(n, 1) = TE(n, 2) = (iterator.temperature.data[n] - iterator.initialTemperature.data[n]) * te;
+			break;
+		case ThermalExpansionConfiguration::MODEL::ORTHOTROPIC:
+			te = iterator.material->thermal_expansion.thermal_expansion.get(0, 0).evaluator->eval(params);
+			TE(n, 0) = (iterator.temperature.data[n] - iterator.initialTemperature.data[n]) * te;
+			te = iterator.material->thermal_expansion.thermal_expansion.get(1, 1).evaluator->eval(params);
+			TE(n, 1) = (iterator.temperature.data[n] - iterator.initialTemperature.data[n]) * te;
+			te = iterator.material->thermal_expansion.thermal_expansion.get(2, 2).evaluator->eval(params);
+			TE(n, 2) = (iterator.temperature.data[n] - iterator.initialTemperature.data[n]) * te;
+			break;
+		}
+
+		switch (iterator.material->material_model) {
+		case MaterialBaseConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC:
+			assembleLinearElasticMaterialMatrix(n, iterator.coordinates.data, iterator.material, step::time::current, iterator.temperature.data[n], K);
+			break;
+		case MaterialBaseConfiguration::MATERIAL_MODEL::HYPER_ELASTIC:
+//			assembleHyperElasticMaterialMatrix(n, iterator.coordinates, iterator.material, step::time::current, iterator.temperature[n], K);
+			break;
+		}
+	}
+
+	if (builder.coriolisDamping) {
+		double ox = step::frequency::angular * builder.rotationAxis.x;
+		double oy = step::frequency::angular * builder.rotationAxis.y;
+		double oz = step::frequency::angular * builder.rotationAxis.z;
+		rotation.fill(0);
+		rotation(0, 1) = -oz;
+		rotation(0, 2) =  oy;
+		rotation(1, 0) =  oz;
+		rotation(1, 2) = -ox;
+		rotation(2, 0) = -oy;
+		rotation(2, 1) =  ox;
+	}
+
+	if (builder.spinSoftening) {
+		double ox = step::frequency::angular * builder.rotationAxis.x;
+		double oy = step::frequency::angular * builder.rotationAxis.y;
+		double oz = step::frequency::angular * builder.rotationAxis.z;
+		spin(0, 0) = -(oy * oy + oz * oz);
+		spin(1, 1) = -(ox * ox + oz * oz);
+		spin(2, 2) = -(ox * ox + oy * oy);
+		spin(0, 1) = ox * oy;
+		spin(0, 2) = ox * oz;
+		spin(1, 0) = ox * oy;
+		spin(1, 2) = oy * oz;
+		spin(2, 0) = ox * oz;
+		spin(2, 1) = oy * oz;
+	}
+
+	if (builder.matrices & (Builder::Request::K | Builder::Request::R)) {
+		filler.Ke.resize(3 * size, 3 * size);
+		filler.Ke.fill(0);
+	}
+	if (builder.matrices & Builder::Request::C) {
+		filler.Ce.resize(3 * size, 3 * size);
+		filler.Ce.fill(0);
+	}
+	if (builder.matrices & (Builder::Request::M | Builder::Request::R)) {
+		filler.Me.resize(3 * size, 3 * size);
+		filler.Me.fill(0);
+	}
+	if (builder.matrices & Builder::Request::R) {
+		filler.Re.resize(3 * size);
+		filler.Re.fill(0);
+	}
+	if (builder.matrices & Builder::Request::f) {
+		filler.Fe.resize(3 * size);
+		filler.Fe.fill(0);
+	}
+
+	for (size_t gp = 0; gp < N.size(); gp++) {
+		J.multiply(dN[gp], initCoordinates);
+
+		detJ = MATH::determinant3x3(J.vals);
+		if (detJ < 0) { ++filler.invalid; detJ = -detJ; }
+		MATH::Dense3x3inverse(J.vals, invJ.vals, detJ);
+
+		gpK.multiply(N[gp], K);
+		dND.multiply(invJ, dN[gp]);
+		gpDens.multiply(N[gp], dens);
+
+		if (builder.matrices & Builder::Request::f) {
+			gpTE.multiply(N[gp], TE);
+			gpInertia.multiply(N[gp], inertia);
+		}
+
+		if (builder.matrices & Builder::Request::C) {
+			if (builder.coriolisDamping) {
+				omegaN.multiply(rotation, NNN[gp]);
+				filler.Ce.multiply(NNN[gp], omegaN, 2 * gpDens(0, 0) * detJ * weighFactor[gp], 1, true);
+			}
+		}
+
+		if (builder.spinSoftening) {
+			omegaN.multiply(spin, NNN[gp]);
+			Ks.multiply(NNN[gp], omegaN, gpDens(0, 0) * detJ * weighFactor[gp], 1, true);
+		}
+
+		if (step::type != step::TYPE::FTT && (builder.matrices & (Builder::Request::M | Builder::Request::R))) {
+			filler.Me.multiply(NNN[gp], NNN[gp], gpDens(0, 0) * detJ * weighFactor[gp], 1, true);
+		}
+
+		if (iterator.material->material_model == MaterialConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC) {
+			size_t k = 0;
+			for (size_t i = 0; i < 6; i++) {
+				C(i, i) = gpK(0, k++);
+			}
+			for (size_t i = 0; i < 6; i++) {
+				for (size_t j = i + 1; j < 6; j++) {
+					C(i, j) = gpK(0, k++);
+				}
+			}
+			for (size_t i = 0; i < 6; i++) {
+				for (size_t j = 0; j < i; j++) {
+					C(i, j) = gpK(0, k++);
+				}
+			}
+		}
+
+		if (iterator.material->material_model == MaterialConfiguration::MATERIAL_MODEL::HYPER_ELASTIC && step::isInitial()) {
+			assembleHyperElasticMaterialMatrix(iterator.material, F, C, S);
+		}
+
+		if (iterator.largeDisplacement && !step::isInitial()) {
+			JC.multiply(dN[gp], coordinates);
+			F.multiply(JC, invJ, 1, 0, true);
+
+			if (iterator.material->material_model == MaterialConfiguration::MATERIAL_MODEL::HYPER_ELASTIC) {
+				assembleHyperElasticMaterialMatrix(iterator.material, F, C, S);
+				for (int i = 1; i < 3; i++) {
+					S(0 + i * 3, 0 + i * 3) = S(0, 0);
+					S(1 + i * 3, 1 + i * 3) = S(1, 1);
+					S(2 + i * 3, 2 + i * 3) = S(2, 2);
+					S(0 + i * 3, 1 + i * 3) = S(0, 1);
+					S(1 + i * 3, 0 + i * 3) = S(1, 0);
+					S(0 + i * 3, 2 + i * 3) = S(0, 2);
+					S(2 + i * 3, 0 + i * 3) = S(2, 0);
+					S(1 + i * 3, 2 + i * 3) = S(1, 2);
+					S(2 + i * 3, 1 + i * 3) = S(2, 1);
+				}
+				sVec(0, 0) = S(0, 0);
+				sVec(1, 0) = S(1, 1);
+				sVec(2, 0) = S(2, 2);
+				sVec(3, 0) = S(0, 1);
+				sVec(4, 0) = S(1, 2);
+				sVec(5, 0) = S(0, 2);
+			}
+
+			if (iterator.material->material_model == MaterialConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC) {
+				eHat.multiply(F, F, .5, 0, true, false);
+				eHat(0, 0) -= .5;
+				eHat(1, 1) -= .5;
+				eHat(2, 2) -= .5;
+				eVec(0, 0) = eHat(0, 0);
+				eVec(1, 0) = eHat(1, 1);
+				eVec(2, 0) = eHat(2, 2);
+				eVec(3, 0) = 2 * eHat(0, 1);
+				eVec(4, 0) = 2 * eHat(1, 2);
+				eVec(5, 0) = 2 * eHat(0, 2);
+				sVec.multiply(C, eVec);
+				for (int i = 0; i < 3; i++) {
+					S(0 + i * 3, 0 + i * 3) = sVec(0, 0);
+					S(1 + i * 3, 1 + i * 3) = sVec(1, 0);
+					S(2 + i * 3, 2 + i * 3) = sVec(2, 0);
+					S(0 + i * 3, 1 + i * 3) = sVec(3, 0);
+					S(1 + i * 3, 0 + i * 3) = sVec(3, 0);
+					S(0 + i * 3, 2 + i * 3) = sVec(5, 0);
+					S(2 + i * 3, 0 + i * 3) = sVec(5, 0);
+					S(1 + i * 3, 2 + i * 3) = sVec(4, 0);
+					S(2 + i * 3, 1 + i * 3) = sVec(4, 0);
+				}
+			}
+
+			distribute9x3(GL.vals, dND.vals, dND.nrows, dND.ncols);
+			for (int i = 0; i < size; i++) {
+				for (int j = 0; j < 3; j++) {
+					BL(0, i + j * size) = F(j, 0) * dND(0, i);
+					BL(1, i + j * size) = F(j, 1) * dND(1, i);
+					BL(2, i + j * size) = F(j, 2) * dND(2, i);
+					BL(3, i + j * size) = F(j, 0) * dND(1, i) + F(j, 1) * dND(0, i);
+					BL(4, i + j * size) = F(j, 1) * dND(2, i) + F(j, 2) * dND(1, i);
+					BL(5, i + j * size) = F(j, 0) * dND(2, i) + F(j, 2) * dND(0, i);
+				}
+			}
+
+			if (builder.matrices & Builder::Request::K) {
+				CBL.multiply(C, BL);
+				filler.Ke.multiply(BL, CBL, detJ * weighFactor[gp], 1, true);
+				SGL.multiply(S, GL);
+				filler.Ke.multiply(GL, SGL, detJ * weighFactor[gp], 1, true);
+			}
+			if (builder.matrices & Builder::Request::R) {
+				filler.Re.multiply(BL, sVec, detJ * weighFactor[gp], 1, true);
+			}
+		} else {
+			B.resize(C.nrows, 3 * size);
+			B.fill(0);
+			distribute6x3(B.vals, dND.vals, dND.nrows, dND.ncols);
+			if (step::type != step::TYPE::FTT && (builder.matrices & (Builder::Request::K | Builder::Request::R))) {
+				CB.multiply(C, B);
+				filler.Ke.multiply(B, CB, detJ * weighFactor[gp], 1, true);
+			}
+
+			if (step::type != step::TYPE::FTT && (builder.matrices & Builder::Request::f)) {
+				precision.resize(C.nrows, 1);
+				precision(0, 0) = gpTE(0, 0);
+				precision(1, 0) = gpTE(0, 1);
+				precision(2, 0) = gpTE(0, 2);
+				precision(3, 0) = precision(4, 0) = precision(5, 0) = 0;
+
+				CEp.multiply(C, precision);
+				rhsT.multiply(B, CEp, detJ * weighFactor[gp], 0, true, false);
+				for (esint i = 0; i < 3 * size; i++) {
+					filler.Fe[0][i] += rhsT(i, 0);
+				}
+			}
+		}
+
+		for (esint i = 0; i < 3 * size; i++) {
+			filler.Fe[0][i] += gpDens(0, 0) * detJ * weighFactor[gp] * N[gp](0, i % size) * gpInertia(0, i / size);
+		}
+	}
+
+	if (builder.matrices & Builder::Request::C) {
+		if (builder.rayleighDamping) {
+			double stiffDamping = builder.stiffnessDamping + builder.structuralDampingCoefficient / step::frequency::angular;
+			filler.Ce.add(step::frequency::angular * stiffDamping, &filler.Ke);
+			filler.Ce.add(step::frequency::angular * builder.massDamping, &filler.Me);
+		}
+	}
+
+	if (builder.spinSoftening) {
+		filler.Ke.add(-1, &Ks);
+	}
+
+	if (!iterator.largeDisplacement && step::type != step::TYPE::FTT && (builder.matrices & Builder::Request::R)) {
+		if (harmonic) {
+			filler.Re[0].multiply(filler.Ke, uc, 1.0);
+			filler.Re[1].multiply(filler.Ke, us, 1.0);
+			filler.Re[0].multiply(filler.Me, uc, -step::frequency::angular * step::frequency::angular, 1.0);
+			filler.Re[1].multiply(filler.Me, us, -step::frequency::angular * step::frequency::angular, 1.0);
+
+			if (builder.matrices & Builder::Request::C) {
+				filler.Re[0].multiply(filler.Ce, us, -1, 1.0);
+				filler.Re[1].multiply(filler.Ce, uc,  1, 1.0);
+			} else {
+				filler.Re[0].multiply(filler.Ke, us, -step::frequency::angular * (builder.stiffnessDamping + builder.structuralDampingCoefficient / step::frequency::angular), 1.0);
+				filler.Re[0].multiply(filler.Me, us, -step::frequency::angular * builder.massDamping, 1.0);
+
+				filler.Re[1].multiply(filler.Ke, uc,  step::frequency::angular * (builder.stiffnessDamping + builder.structuralDampingCoefficient / step::frequency::angular), 1.0);
+				filler.Re[1].multiply(filler.Me, uc,  step::frequency::angular * builder.massDamping, 1.0);
+			}
+
+			if (!(builder.matrices & Builder::Request::M)) {
+				filler.Me.resize(0, 0);
+			}
+			if (!(builder.matrices & Builder::Request::K)) {
+				filler.Ke.resize(0, 0);
+			}
+		}
+	}
+
+	filler.insertK = builder.matrices & Builder::Request::K;
+	filler.insertM = builder.matrices & Builder::Request::M;
+	filler.insertC = builder.matrices & Builder::Request::C;
+	filler.insertR = builder.matrices & Builder::Request::R;
+	filler.insertF = builder.matrices & Builder::Request::f;
+}
+
+void StructuralMechanics3DKernel::processFace(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const
+{
+	filler.insertK = filler.insertF = false;
+	filler.DOFs = 3 * iterator.element->nodes;
+	if (iterator.normalPressure.data == NULL) {
+		return;
+	}
+	if (!(builder.matrices & (Builder::Request::K | Builder::Request::f))) {
+		return;
+	}
+
+	esint size = iterator.element->nodes;
+
+	const std::vector<MatrixDense> &N = *(iterator.element->N);
+	const std::vector<MatrixDense> &dN = *(iterator.element->dN);
+	const std::vector<double> &weighFactor = *(iterator.element->weighFactor);
+
+	MatrixDense coordinates(size, 3), dND(1, 3), P(size, 1), normal(1, 3);
+	MatrixDense gpP(1, 1), gpQ(1, 3);
+
+	filler.DOFs = 3 * size;
+	if ((filler.insertF = (builder.matrices & Builder::Request::f))) {
+		filler.Fe.resize(filler.DOFs);
+		filler.Fe.fill(0);
+	}
+
+	for (esint n = 0; n < size; n++) {
+		coordinates(n, 0) = iterator.coordinates.data[3 * n + 0];
+		coordinates(n, 1) = iterator.coordinates.data[3 * n + 1];
+		coordinates(n, 2) = iterator.coordinates.data[3 * n + 2];
+		P(n, 0) += iterator.normalPressure.data[n];
+	}
+
+	for (size_t gp = 0; gp < N.size(); gp++) {
+		dND.multiply(dN[gp], coordinates);
+		Point v2(dND(0, 0), dND(0, 1), dND(0, 2));
+		Point v1(dND(1, 0), dND(1, 1), dND(1, 2));
+		Point va = Point::cross(v1, v2);
+		// e->rotateOutside(e->parentElements()[0], _mesh->coordinates(), va);
+		double J = va.norm();
+		normal(0, 0) = va.x / va.norm();
+		normal(0, 1) = va.y / va.norm();
+		normal(0, 2) = va.z / va.norm();
+
+		gpP.multiply(N[gp], P);
+		gpQ.multiply(normal, gpP, 1, 0, true);
+
+		for (esint i = 0; i < filler.DOFs; i++) {
+			filler.Fe[0][i] += J * weighFactor[gp] * N[gp](0, i % size) * gpQ(0, i / size);
+		}
+	}
+}
+
+void StructuralMechanics3DKernel::processEdge(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const
+{
+	filler.insertK = filler.insertF = false;
+	filler.DOFs = 3 * iterator.element->nodes;
+}
+
+void StructuralMechanics3DKernel::processNode(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const
+{
+	filler.insertK = filler.insertF = false;
+	filler.DOFs = 3;
+	if (iterator.force.data == NULL && iterator.harmonicForce.magnitude.data == NULL && iterator.rotatingForce.mass.data == NULL) {
+		return;
+	}
+	if (!(builder.matrices & Builder::Request::f)) {
+		return;
+	}
+	if (step::type == step::TYPE::FTT) {
+		return;
+	}
+
+	if ((filler.insertF = (builder.matrices & Builder::Request::f))) {
+		filler.Fe.resize(3);
+		filler.Fe.fill(0);
+	}
+
+	if (iterator.force.data) {
+		filler.Fe[0][0] = iterator.force.data[0];
+		filler.Fe[0][1] = iterator.force.data[1];
+		filler.Fe[0][2] = iterator.force.data[2];
+	}
+
+	if (iterator.harmonicForce.magnitude.data != NULL) {
+		filler.Fe[0][0] = iterator.harmonicForce.magnitude.data[0] * std::cos(iterator.harmonicForce.phase.data[0] * M_PI / 180);
+		filler.Fe[0][1] = iterator.harmonicForce.magnitude.data[1] * std::cos(iterator.harmonicForce.phase.data[1] * M_PI / 180);
+		filler.Fe[0][2] = iterator.harmonicForce.magnitude.data[2] * std::cos(iterator.harmonicForce.phase.data[2] * M_PI / 180);
+		filler.Fe[1][0] = iterator.harmonicForce.magnitude.data[0] * std::sin(iterator.harmonicForce.phase.data[0] * M_PI / 180);
+		filler.Fe[1][1] = iterator.harmonicForce.magnitude.data[1] * std::sin(iterator.harmonicForce.phase.data[1] * M_PI / 180);
+		filler.Fe[1][2] = iterator.harmonicForce.magnitude.data[2] * std::sin(iterator.harmonicForce.phase.data[2] * M_PI / 180);
+	}
+
+	if (iterator.rotatingForce.mass.data != NULL) {
+		double value = step::frequency::angular * step::frequency::angular * iterator.rotatingForce.mass.data[0] * iterator.rotatingForce.radius.data[0];
+		filler.Fe[0][0] =   value * std::cos(iterator.rotatingForce.phaseAngle.data[0] * M_PI / 180);
+		filler.Fe[0][1] = - value * std::sin(iterator.rotatingForce.phaseAngle.data[0] * M_PI / 180);
+		filler.Fe[1][0] = - value * std::sin(iterator.rotatingForce.phaseAngle.data[0] * M_PI / 180);
+		filler.Fe[1][1] = - value * std::cos(iterator.rotatingForce.phaseAngle.data[0] * M_PI / 180);
+	}
+}
+
+void StructuralMechanics3DKernel::elementSolution(ElasticityElementIterator &iterator)
+{
+	if (!info::ecf->output.results_selection.stress || step::type == step::TYPE::FREQUENCY) {
+		return;
+	}
+
+	int size = iterator.element->nodes;
+
+	const std::vector<MatrixDense> &N = *(iterator.element->N);
+	const std::vector<MatrixDense> &dN = *(iterator.element->dN);
+
+	MatrixDense C(6, 6), initCoordinates(size, 3), disp(3 * size, 1), J, invJ(3, 3), dND, B, F(3, 3), S(3, 3), SF(3, 3), Sigma(6, 1);
+	MatrixDense K(size, 36), TE(size, 3), uB(6, 1);
+	MatrixDense gpK(size, 36), gpTE(1, 3), gpInertia(1, 3), gpDens(1, 1);
+	double detJ, detF, te;
+
+	for (int n = 0; n < size; n++) {
+		Evaluator::Params params;
+		params.coords(3, iterator.coordinates.data + 3 * n);
+		params.temp(iterator.temperature.data + n);
+		initCoordinates(n, 0) = iterator.coordinates.data[3 * n + 0];
+		initCoordinates(n, 1) = iterator.coordinates.data[3 * n + 1];
+		initCoordinates(n, 2) = iterator.coordinates.data[3 * n + 2];
+		disp(n + 0 * size, 0) = iterator.displacement.data[3 * n + 0];
+		disp(n + 1 * size, 0) = iterator.displacement.data[3 * n + 1];
+		disp(n + 2 * size, 0) = iterator.displacement.data[3 * n + 2];
+
+		switch (iterator.material->thermal_expansion.model) {
+		case ThermalExpansionConfiguration::MODEL::ISOTROPIC:
+			te = iterator.material->thermal_expansion.thermal_expansion.get(0, 0).evaluator->eval(params);
+			TE(n, 0) = TE(n, 1) = TE(n, 2) = (iterator.temperature.data[n] - iterator.initialTemperature.data[n]) * te;
+			break;
+		case ThermalExpansionConfiguration::MODEL::ORTHOTROPIC:
+			te = iterator.material->thermal_expansion.thermal_expansion.get(0, 0).evaluator->eval(params);
+			TE(n, 0) = (iterator.temperature.data[n] - iterator.initialTemperature.data[n]) * te;
+			te = iterator.material->thermal_expansion.thermal_expansion.get(1, 1).evaluator->eval(params);
+			TE(n, 1) = (iterator.temperature.data[n] - iterator.initialTemperature.data[n]) * te;
+			te = iterator.material->thermal_expansion.thermal_expansion.get(2, 2).evaluator->eval(params);
+			TE(n, 2) = (iterator.temperature.data[n] - iterator.initialTemperature.data[n]) * te;
+			break;
+		}
+
+		switch (iterator.material->material_model) {
+		case MaterialBaseConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC:
+			assembleLinearElasticMaterialMatrix(n, iterator.coordinates.data, iterator.material, step::time::current, iterator.temperature.data[n], K);
+			break;
+		case MaterialBaseConfiguration::MATERIAL_MODEL::HYPER_ELASTIC:
+//			assembleHyperElasticMaterialMatrix(n, iterator.coordinates, iterator.material, step::time::current, iterator.temperature[n], K);
+			break;
+		}
+	}
+
+	for (size_t gp = 0; gp < N.size(); gp++) {
+		J.multiply(dN[gp], initCoordinates);
+		detJ = MATH::determinant3x3(J.vals);
+		if (detJ < 0) { detJ = -detJ; }
+		MATH::Dense3x3inverse(J.vals, invJ.vals, detJ);
+
+		gpK.multiply(N[gp], K);
+		dND.multiply(invJ, dN[gp]);
+		gpTE.multiply(N[gp], TE);
+
+		if (iterator.material->material_model == MaterialConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC) {
+			size_t k = 0;
+			for (size_t i = 0; i < 6; i++) {
+				C(i, i) = gpK(0, k++);
+			}
+			for (size_t i = 0; i < 6; i++) {
+				for (size_t j = i + 1; j < 6; j++) {
+					C(i, j) = gpK(0, k++);
+				}
+			}
+			for (size_t i = 0; i < 6; i++) {
+				for (size_t j = 0; j < i; j++) {
+					C(i, j) = gpK(0, k++);
+				}
+			}
+		}
+
+		if (iterator.material->material_model == MaterialConfiguration::MATERIAL_MODEL::HYPER_ELASTIC) {
+			assembleHyperElasticMaterialMatrix(iterator.material, F, C, S);
+			detF = MATH::determinant3x3(F.vals);
+			SF.multiply(S, F, 1, 0, false, true);
+
+			Sigma.multiply(F, SF, 1 / detF, 1);
+		}
+		if (iterator.material->material_model == MaterialConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC) {
+			B.resize(C.nrows, 3 * size);
+			B.fill(0);
+			distribute6x3(B.vals, dND.vals, dND.nrows, dND.ncols);
+			// 6x24 * 24x1
+			uB.multiply(B, disp);
+			uB(0, 0) -= gpTE(0, 0);
+			uB(1, 0) -= gpTE(0, 1);
+			uB(2, 0) -= gpTE(0, 2);
+
+			Sigma.multiply(C, uB, 1, 1);
+		}
+	}
+
+	iterator.componentStress.data[0] = Sigma(0, 0) / N.size();
+	iterator.componentStress.data[1] = Sigma(1, 0) / N.size();
+	iterator.componentStress.data[2] = Sigma(2, 0) / N.size();
+	iterator.componentStress.data[3] = Sigma(3, 0) / N.size();
+	iterator.componentStress.data[4] = Sigma(4, 0) / N.size();
+	iterator.componentStress.data[5] = Sigma(5, 0) / N.size();
+
+	MATH::upDense3x3EigenValues(iterator.componentStress.data, iterator.principalStress.data);
+
+	iterator.vonMisesStress.data[0] = sqrt((
+			(iterator.principalStress.data[0] - iterator.principalStress.data[1]) *
+			(iterator.principalStress.data[0] - iterator.principalStress.data[1]) +
+			(iterator.principalStress.data[0] - iterator.principalStress.data[2]) *
+			(iterator.principalStress.data[0] - iterator.principalStress.data[2]) +
+			(iterator.principalStress.data[1] - iterator.principalStress.data[2]) *
+			(iterator.principalStress.data[1] - iterator.principalStress.data[2])) / 2);
+}
+
+void StructuralMechanics3DKernel::nodeSolution(ElasticityElementIterator &iterator)
+{
+
+}
+

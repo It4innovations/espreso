@@ -1,0 +1,8 @@
+
+def options(opt):
+    opt.other.add_option("--hdf5", action="store", type="string", metavar="HDF5_ROOT", default="", help="Path to HDF5.")
+
+def configure(ctx):
+    ctx.link_cxx(
+        name="hdf5", header_name="hdf5.h", libs=["hdf5", "z"], root=ctx.options.hdf5,
+        fragment="\n#ifdef H5_HAVE_PARALLEL\n return 0;\n#endif\nreturn 1;\n")

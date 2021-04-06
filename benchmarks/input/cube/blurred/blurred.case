@@ -1,0 +1,11 @@
+
+# output from ESPRESO library (espreso.it4.cz)
+#
+
+FORMAT
+type: ensight gold
+
+GEOMETRY
+model: blurred.geo
+
+VARIABLE

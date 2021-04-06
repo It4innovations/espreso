@@ -1,0 +1,159 @@
+ ESPRESO: STARTED [MPI=8] [OMP/MPI=1]
+ ESPRESO: CONFIGURATION READ [ecf=ecf/brake.ecf]
+  CONFIGURATION STARTED
+ ====================================== ESPRESO RUN INFO ===================================== 
+ ============================================================================================= 
+ == CXX                                /opt/spack/opt/spack/linux-centos7-nehalem/gcc-6.4.0 ==
+ ==                              /openmpi-2.0.4-efosiekwgebvwxucu4a73nnvj5ssg4d5/bin/mpic++ == 
+ == CXXFLAGS                                               -fopenmp -std=c++11 -Wall -O3 -g == 
+ == COMMIT                                         a10d02b84ea1329f0d47203b3e1441e11ca5ccc9 == 
+ == BINARY                                      /home/mec059/projects/espreso/build/espreso == 
+ == DATE [YYYY-MM-DD]                                                            2020-01-27 == 
+ == TIME [HH-MM-SS]                                                                12-47-29 == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == MPI_COMM_WORLD                                                                        8 == 
+ == OMP_NUM_THREADS                                                                       1 == 
+ == STORING MODE                                                           SEPARETED THREAD == 
+ == COMMAND                                           espreso -c ecf/brake.ecf PARMETIS -vv == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == RUN PATH                                                  /home/mec059/projects/espreso == 
+ == ECF                                         /home/mec059/projects/espreso/ecf/brake.ecf == 
+ == MESH                                /home/mec059/projects/espreso/data/brake/brake.case == 
+ == OUTPUT                  /home/mec059/projects/espreso/results/2020-01-27-at-12h-47m-29s == 
+ ============================================================================================= 
+  CONFIGURATION: OUTPUT DIRECTORY CREATED
+  CONFIGURATION: MESH INITIALIZED
+  CONFIGURATION: MPI TOOLS INITIALIZED
+  CONFIGURATION: MESH STORE PREPARED
+ ESPRESO: RUN INITIALIZED
+  ENSIGHT: STARTED [database=data/brake/brake.case]
+  ENSIGHT: READ CASEFILE
+  ENSIGHT: GEOMETRY READ
+  ENSIGHT: GEOMETRY PARSED
+   SCATTERED DATA: BUILD MESH
+   SCATTERED DATA: DATA BALANCED
+   SCATTERED DATA: REGION ASSIGNED
+   SCATTERED DATA: NODES BUCKETS COMPUTED
+   SCATTERED DATA: ELEMENTS BUCKETS ASSIGNED
+   SCATTERED DATA: ELEMENTS CLUSTERED
+   SCATTERED DATA: ELEMENTS SORTED
+   SCATTERED DATA: NEIGHBORS COMPUTED
+   SCATTERED DATA: NODES SORTED
+   SCATTERED DATA: ELEMENTS NODES REINDEXED
+   SCATTERED DATA: DUPLICIT ELEMENTS REMOVED
+   SCATTERED DATA: NODES FILLED
+   SCATTERED DATA: ELEMENTS SORTED
+   MESH: NODES AND ELEMENTS LINKED
+   SCATTERED DATA: BOUNDARY EXCHANGED
+   SCATTERED DATA: REGIONS FILLED
+   SCATTERED DATA: BOUNDARY NODES REINDEXED
+  ENSIGHT: MESH BUILT
+ ESPRESO: MESH LOADED [database=data/brake/brake.case]
+  MESH: PREPROCESSING STARTED
+  MESH: MATERIALS FILLED
+  MESH: ELEMENTS NEIGHBOURS COMPUTED
+  MESH: REGION MASK FILLED
+  MESH: HALO EXCHANGED
+  MESH: DUAL GRAPH COMPUTED
+  MESH: RE-CLUSTERIZED BY PAR-METIS
+   EXCHANGE ELEMENTS
+   COMPUTE TARGETS
+   SERIALIZE ELEMENTS
+   SERIALIZE NODES
+   SERIALIZE BOUNDARIES
+   EXCHANGE
+   DESERIALIZE ELEMENTS
+   DESERIALIZE NODES
+   DESERIALIZE BOUDARIES
+   POST-PROCESSING
+   IDS REQUESTS
+   PROC REQUESTS
+   NEW IDS
+   FINISH
+  MESH: ELEMENTS EXCHANGED
+  MESH: LOCAL DUAL GRAPH COMPUTED
+  MESH: CLUSTER NONCONTINUITY CHECKED
+  MESH: NONCONTINUITY PROCESSED
+  MESH: DOMAINS COMPUTED BY METIS
+  MESH: ELEMENTS ARRANGED TO DOMAINS
+  MESH: ELEMENTS PERMUTATION ARRANGED
+  MESH: ELEMENTS PERMUTED
+  MESH: NODES ARRANGED
+  MESH: MESH DECOMPOSED
+  MESH: ELEMENTS REGIONS ARRANGED
+  MESH: BOUNDARY REGIONS ARRANGED
+  MESH: REGIONS ARRANGED
+  MESH: PREPROCESSING FINISHED
+ ESPRESO: MESH PREPROCESSED
+ ====================================== MESH STATISTICS ====================================== 
+mesh: region=BRAKE_DISC, dimension=3, elements=21642, nodes=38493
+mesh: region=BRAKE_PADS, dimension=3, elements=5311, nodes=8924
+mesh: region=CALIPER, dimension=3, elements=4919, nodes=9084
+mesh: region=DYNAMOMETR, dimension=3, elements=102, nodes=334
+mesh: region=FLANGE_CONNECTION, dimension=3, elements=216, nodes=492
+mesh: region=FLANGE_WITH_SCREWS, dimension=3, elements=17669, nodes=33280
+mesh: region=PISTONS, dimension=3, elements=230, nodes=1167
+mesh: region=SHAFT, dimension=3, elements=2706, nodes=5006
+mesh: region=SMALL_METAL_PLATES, dimension=3, elements=89, nodes=362
+mesh: region=TORQUE_SENSOR_ADAPTER, dimension=3, elements=19704, nodes=35542
+mesh: region=CONVECTION_BRAKE_FRONT, dimension=2, elements=1175, nodes=2899
+mesh: region=CONVECTION_BRAKE_INSIDE_1, dimension=2, elements=515, nodes=1363
+mesh: region=CONVECTION_BRAKE_INSIDE_2, dimension=2, elements=989, nodes=2247
+mesh: region=CONVECTION_BRAKE_PADS, dimension=2, elements=933, nodes=2081
+mesh: region=CONVECTION_BRAKE_PADS_2, dimension=2, elements=446, nodes=1078
+mesh: region=CONVECTION_BRAKE_SIDES, dimension=2, elements=133, nodes=392
+mesh: region=CONVECTION_BRAKE_VENTILATION_HOL, dimension=2, elements=5600, nodes=11844
+mesh: region=CONVECTION_CALIPER_BOTTOM, dimension=2, elements=337, nodes=845
+mesh: region=CONVECTION_CALIPER_DUCT, dimension=2, elements=452, nodes=968
+mesh: region=CONVECTION_CALIPER_INSIDE, dimension=2, elements=325, nodes=847
+mesh: region=CONVECTION_CALIPER_NEAR_BRAKE, dimension=2, elements=188, nodes=473
+mesh: region=CONVECTION_CALIPER_UP, dimension=2, elements=481, nodes=1140
+mesh: region=CONVECTION_DYNAMOMETER, dimension=2, elements=45, nodes=110
+mesh: region=CONVECTION_DYNAMOMETER_2, dimension=2, elements=32, nodes=80
+mesh: region=CONVECTION_FLANGE_CONNECTION_1, dimension=2, elements=60, nodes=144
+mesh: region=CONVECTION_FLANGE_CONNECTION_2, dimension=2, elements=56, nodes=136
+mesh: region=CONVECTION_FLANGE_SCREWS_EXTERIO, dimension=2, elements=4214, nodes=8738
+mesh: region=CONVECTION_FLANGE_SCREWS_INTERIO, dimension=2, elements=2880, nodes=6520
+mesh: region=CONVECTION_FLANGE_SCREWS_SMALL_I, dimension=2, elements=477, nodes=1139
+mesh: region=CONVECTION_PISTONS, dimension=2, elements=140, nodes=512
+mesh: region=CONVECTION_SCREWS, dimension=2, elements=128, nodes=280
+mesh: region=CONVECTION_SHAFT_EXTERIOR, dimension=2, elements=345, nodes=743
+mesh: region=CONVECTION_SHAFT_INTERIOR, dimension=2, elements=54, nodes=123
+mesh: region=CONVECTION_SMALL_METAL_PLATES_BO, dimension=2, elements=34, nodes=128
+mesh: region=CONVECTION_SMALL_METAL_PLATES_ED, dimension=2, elements=29, nodes=97
+mesh: region=CONVECTION_SMALL_METAL_PLATES_UP, dimension=2, elements=33, nodes=127
+mesh: region=CONVECTION_TORQUE_ADAPTER, dimension=2, elements=16, nodes=48
+mesh: region=CONVECTION_TORQUE_ADAPTER_DUCTS, dimension=2, elements=909, nodes=2133
+mesh: region=CONVECTION_TORQUE_ADAPTER_EXTERI, dimension=2, elements=4949, nodes=10589
+mesh: region=CONVECTION_TORQUE_ADAPTER_INSIDE, dimension=2, elements=1301, nodes=3026
+mesh: region=CONVECTION_TORQUE_ADAPTER_SHAFT, dimension=2, elements=95, nodes=221
+mesh: region=CONVECTION_TORQUE_ADAPTER_SMALL_, dimension=2, elements=304, nodes=666
+mesh: region=NAMELESS_FACE_SET, dimension=2, elements=64, nodes=186
+mesh: region=HEAT_FLUX_BRAKE_PADS, dimension=0, elements=0, nodes=186
+ ============================================================================================= 
+                              MIN                 MAX                 SUM           IMBALANCE 
+  CLUSTERS  :                   1                   2                   9               2.000
+  DOMAINS   :                   1                   2                   9               2.000
+  ELEMENTS  :               8,821               9,175              72,306               1.040
+  NODES     :              16,058              16,620             130,835               1.035
+  NEIGHBORS :                   2                   5                  28               2.500
+  ELEMS/DOM :               1,871               9,175              72,306               4.904
+ ============================================================================================= 
+  MESIO: STARTING STORING ENSIGHT
+  MESIO: MESH DATA SERIALIZED
+  FILE OPEN
+  FILE STORED
+  MESIO: MESH STORED
+ ESPRESO: MESH STORED
+
+ ======================================== RUN FINISHED ======================================= 
+ == OVERALL TIME ============================================================================= 
+ ============================================ avg. [s]  < min [s] -  max [s]> [  %  ] [ imb ]   
+time: region='ESPRESO STARTED AT', avg='0.036216', min='0.023470', max='0.053869', ratio=' 9.52', imb=' 2.30'
+time: region='ESPRESO: CONFIGURATION READ', avg='0.001948', min='0.001870', max='0.001999', ratio=' 0.58', imb=' 1.07'
+time: region='ESPRESO: RUN INITIALIZED', avg='0.023117', min='0.023067', max='0.023202', ratio=' 6.84', imb=' 1.01'
+time: region='ESPRESO: MESH LOADED', avg='0.136431', min='0.136256', max='0.136522', ratio='40.36', imb=' 1.00'
+time: region='ESPRESO: MESH PREPROCESSED', avg='0.133302', min='0.133206', max='0.133486', ratio='39.43', imb=' 1.00'
+time: region='ESPRESO: MESH STORED', avg='0.043278', min='0.043245', max='0.043454', ratio='12.80', imb=' 1.00'
+time: region='ESPRESO TOTAL DURATION', avg='0.338077', min='0.338039', max='0.338287', ratio='88.86', imb=' 1.00'
+ ============================================================================================= 

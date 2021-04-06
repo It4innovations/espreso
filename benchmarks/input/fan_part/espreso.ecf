@@ -1,0 +1,30 @@
+
+DEFAULT_ARGS {
+  0                                     ANSYS_CDB;
+  1 /data/espreso/mesiotest/fan_part/fan_part.dat;
+}
+
+INPUT {
+  FORMAT      [ARG0];
+  PATH        [ARG1];
+
+  KEEP_MATERIAL_SETS     FALSE;
+  CONVERT_DATABASE        TRUE;
+
+  DECOMPOSITION {
+    PARALLEL_DECOMPOSER             NONE;
+  }
+
+  TRANSFORMATIONS {
+    FAN_PART {
+      TRANSFORMATION     ROTATE;
+      Z                      15;
+      INSTANCES              23;
+    }
+  }
+}
+
+OUTPUT {
+  RESULTS_STORE_FREQUENCY NEVER;
+}
+

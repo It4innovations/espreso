@@ -1,0 +1,14 @@
+
+INPUT {
+  FORMAT                VTK_LEGACY;
+  PATH      store/last/store.*.vtk;
+  CONVERT_DATABASE            TRUE;
+
+  DECOMPOSITION {
+    PARALLEL_DECOMPOSER NONE;
+  }
+}
+
+OUTPUT {
+  RESULTS_STORE_FREQUENCY  NEVER;
+}

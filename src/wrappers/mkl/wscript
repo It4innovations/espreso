@@ -1,0 +1,18 @@
+
+def options(opt):
+    opt.math.add_option("--mkl", action="store", type="string", metavar="MKL_ROOT", default="", help="Path to MKL.")
+
+def configure(ctx):
+    libs = []
+    if ctx.options.intwidth == "32":
+        libs.append("mkl_intel_lp64")
+    if ctx.options.intwidth == "64":
+        libs.append("mkl_intel_ilp64")
+    libs.append("mkl_core")
+    if ctx.options.cxx == "icpc":
+        libs.append("mkl_intel_thread")
+    if ctx.options.cxx == "g++":
+        libs.append("mkl_gnu_thread")
+
+    if ctx.link_cxx(name="mkl", header_name="mkl.h", libs=libs, root=ctx.options.mkl):
+        ctx.env.append_unique("DEFINES_MKL", ("MKL_INT=int", "MKL_INT=long")[ctx.options.intwidth == "64"])

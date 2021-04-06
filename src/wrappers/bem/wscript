@@ -1,0 +1,6 @@
+
+def options(opt):
+    opt.other.add_option("--bem", action="store", type="string", metavar="BEM4I_ROOT", default="", help="Path to BEM4I assembler.")
+
+def configure(ctx):
+    ctx.link_cxx(name="bem", header_name="heatdtn.h", libs=["heatdtn_int"+ctx.options.intwidth], root=ctx.options.bem)

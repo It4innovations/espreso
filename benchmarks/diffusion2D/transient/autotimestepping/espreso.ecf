@@ -1,0 +1,167 @@
+# ESPRESO Configuration File
+
+DEFAULT_ARGS {
+  0   SQUARE4;
+
+  1         2;
+  2         2;
+
+  3         2;
+  4         3;
+
+  5        15;
+  6        10;
+
+  7     HYPRE;
+}
+
+INPUT_TYPE            GENERATOR;
+PHYSICS   HEAT_TRANSFER_2D;
+
+GENERATOR {
+  SHAPE   GRID;
+
+  GRID {
+    LENGTH_X                    1;
+    LENGTH_Y                    1;
+    LENGTH_Z                    1;
+
+    NODES {
+      LEFT    <0 , 1> <0 , 0> <0 , 0>;
+      RIGHT   <0 , 1> <1 , 1> <0 , 0>;
+    }
+
+    ELEMENT_TYPE           [ARG0];
+
+    BLOCKS_X                    1;
+    BLOCKS_Y                    1;
+    BLOCKS_Z                    1;
+
+    CLUSTERS_X             [ARG1];
+    CLUSTERS_Y             [ARG2];
+    CLUSTERS_Z                  1;
+
+    DOMAINS_X              [ARG3];
+    DOMAINS_Y              [ARG4];
+    DOMAINS_Z                   1;
+
+    ELEMENTS_X             [ARG5];
+    ELEMENTS_Y             [ARG6];
+    ELEMENTS_Z                  1;
+  }
+}
+
+HEAT_TRANSFER_2D {
+  LOAD_STEPS        1;
+
+  MATERIALS {
+    1 {
+
+      DENS   1;
+      CP     1;
+
+      THERMAL_CONDUCTIVITY {
+        MODEL   ISOTROPIC;
+
+        KXX           0.1;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   1;
+  }
+
+
+  STABILIZATION   CAU;
+  SIGMA             0;
+
+  INITIAL_TEMPERATURE {
+    ALL_ELEMENTS    0;
+  }
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME  20;
+      TYPE    TRANSIENT;
+      MODE       LINEAR;
+      SOLVER     [ARG7];
+
+      TRANSIENT_SOLVER {
+        METHOD   CRANK_NICOLSON;
+
+        TIME_STEP          0.02;
+
+        AUTO_TIME_STEPPING {
+          ALLOWED        TRUE;
+          MIN_TIME_STEP 0.001;
+          MAX_TIME_STEP     1;
+        }
+      }
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECISION            1E-12;
+        PRECONDITIONER   DIRICHLET;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION    ANALYTIC;
+        B0_TYPE            CORNERS;
+      }
+
+      HYPRE {
+        SOLVER_TYPE   BOOMERAMG;
+
+        PCG {
+          RELATIVE_CONV_TOL       1E-12;
+          ABSOLUTE_CONV_TOL           0;
+          RESIDUAL_CONV_TOL       1E-12;
+          MAX_ITERATIONS           1000;
+          TWO_NORM                 TRUE;
+          RECOMPUTE_RESIDUAL_END   TRUE;
+          RECOMPUTE_RESIDUAL_P    FALSE;
+          PRECONDITIONER      BOOMERAMG;
+
+          BOOMERAMG {
+            CONVERGENCE_TOLERANCE                1E-08;
+          }
+        }
+
+        BOOMERAMG {
+          CONVERGENCE_TOLERANCE                1E-09;
+        }
+      }
+
+      TEMPERATURE {
+        LEFT                 300;
+        RIGHT   500 + 100 * TIME;
+      }
+    }
+  }
+}
+
+OUTPUT {
+  RESULTS_STORE_FREQUENCY        EVERY_SUBSTEP;
+  MONITORS_STORE_FREQUENCY       EVERY_SUBSTEP;
+
+  STORE_RESULTS                             ALL;
+
+  MONITORING {
+    1 {
+      REGION       ALL_NODES;
+      STATISTICS         MAX;
+      PROPERTY   TEMPERATURE;
+    }
+
+    2 {
+      REGION       ALL_NODES;
+      STATISTICS         MIN;
+      PROPERTY   TEMPERATURE;
+    }
+
+    3 {
+      REGION       ALL_NODES;
+      STATISTICS         AVG;
+      PROPERTY   TEMPERATURE;
+    }
+  }
+}

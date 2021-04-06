@@ -1,0 +1,149 @@
+stages:
+  - build
+  - benchmarks
+  - release
+
+before_script:
+  - export SPACK_ROOT=/opt/spack
+  - . $SPACK_ROOT/share/spack/setup-env.sh
+  - export PATH=$PWD/build/:$PATH
+  - export LD_LIBRARY_PATH=$PWD/build/:$LD_LIBRARY_PATH 
+  - . $PWD/env/modules.workstation
+
+PYTHON:
+  stage: build
+  only:
+    - triggers
+  script:
+    - python2 waf configure -mdebug
+    - python2 waf -j8
+    - nosetests -v benchmarks/dummy
+    - python3 waf configure -mdebug
+    - python3 waf -j8
+    - nosetests -v benchmarks/dummy
+
+INT32:
+  stage: build
+  only:
+    - triggers
+  script:
+    - ./waf configure
+    - ./waf -j8
+    - nosetests -v benchmarks/dummy
+
+INT64:
+  stage: build
+  only:
+    - triggers
+  script:
+    - ./waf configure --intwidth=64
+    - ./waf -j8
+    - nosetests -v benchmarks/dummy
+
+STATIC:
+  stage: build
+  only:
+    - triggers
+  script:
+    - ./waf configure --static
+    - ./waf --static --libs="dl" -j8
+    - nosetests -v benchmarks/dummy
+
+PROFILE:
+  stage: build
+  only:
+    - triggers
+  script:
+    - ./waf configure -mprofile
+    - ./waf -j8
+    - nosetests -v benchmarks/dummy
+
+
+DUMMY_WRAPPERS:
+  stage: build
+  only:
+    - triggers
+  script:
+    - ml purge
+    - ml gcc openmpi
+    - ./waf configure
+    - ./waf -j8
+
+HEAT:
+  stage: benchmarks
+  only:
+    - triggers
+  script:
+    - ./waf configure
+    - ./waf -j8
+    - nosetests -v benchmarks/advectionDiffusion2D
+    - nosetests -v benchmarks/advectionDiffusion3D
+    - nosetests -v benchmarks/diffusion2D
+    - nosetests -v benchmarks/diffusion3D
+
+ELASTICITY:
+  stage: benchmarks
+  only:
+    - triggers
+  script:
+    - ./waf configure
+    - ./waf -j8
+    - nosetests -v benchmarks/linearElasticity2D
+    - nosetests -v benchmarks/linearElasticity3D
+
+FETI:
+  stage: benchmarks
+  only:
+    - triggers
+  script:
+    - ./waf configure
+    - ./waf -j8
+    - nosetests -v benchmarks/fetisolver
+
+INPUT32:
+  stage: benchmarks
+  only:
+    - triggers
+  script:
+    - ./waf configure
+    - ./waf -j8
+    - nosetests -v benchmarks/input
+
+INPUT64:
+  stage: benchmarks
+  only:
+    - triggers
+  script:
+    - ./waf configure --intwidth=64
+    - ./waf -j8
+    - nosetests -v benchmarks/input/brake
+
+OUTPUT32:
+  stage: benchmarks
+  only:
+    - triggers
+  script:
+    - ./waf configure
+    - ./waf -j8
+    - nosetests -v benchmarks/output
+
+OUTPUT64:
+  stage: benchmarks
+  only:
+    - triggers
+  script:
+    - ./waf configure --intwidth=64
+    - ./waf -j8
+    - nosetests -v benchmarks/output/brake
+
+GITHUB:
+  stage: release
+  only:
+    - triggers
+  script:
+    - if ! git remote | grep release > /dev/null; then
+        git remote add release git@github.com:It4innovations/espreso.git;
+      fi
+    - git checkout master
+    - git pull origin master
+    - git push release master

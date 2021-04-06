@@ -1,0 +1,15 @@
+
+INPUT {
+  FORMAT   ANSYS_CDB;
+  PATH     /data/espreso/mesiotest/brake/brake.dat;
+
+  CONVERT_DATABASE        TRUE;
+  THIRD_PARTY_SCALABILITY_LIMIT   [ARG0];
+}
+
+OUTPUT {
+  WRITER [ARG1];
+  FORMAT [ARG2];
+  PATH    store;
+}
+

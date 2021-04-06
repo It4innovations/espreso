@@ -1,0 +1,14 @@
+
+INPUT {
+  FORMAT               NETGEN;
+  PATH  store/last/store.mesh;
+  CONVERT_DATABASE        TRUE;
+
+  DECOMPOSITION {
+    PARALLEL_DECOMPOSER NONE;
+  }
+}
+
+OUTPUT {
+  RESULTS_STORE_FREQUENCY  NEVER;
+}

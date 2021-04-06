@@ -1,0 +1,73 @@
+ ESPRESO: STARTED [MPI=1] [OMP/MPI=1]
+ ESPRESO: CONFIGURATION READ [ecf=espreso.ecf]
+ ====================================== ESPRESO RUN INFO ===================================== 
+ ============================================================================================= 
+ == CXX                                                                     /usr/bin/mpic++ == 
+ == CXXFLAGS                                               -fopenmp -std=c++11 -Wall -O3 -g == 
+ == COMMIT                                         e742243161c619aad1de6f3731a8db05b035947f == 
+ == BINARY                                      /home/mec059/projects/espreso/build/espreso == 
+ == DATE [YYYY-MM-DD]                                                            2020-01-27 == 
+ == TIME [HH-MM-SS]                                                                21-18-11 == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == MPI_COMM_WORLD                                                                        1 == 
+ == OMP_NUM_THREADS                                                                       1 == 
+ == STORING MODE                                                           SEPARETED THREAD == 
+ == COMMAND                                      espreso -c espreso.ecf 0 1 1 1 2 2 2 8 8 8 == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == RUN PATH                                                  /home/mec059/projects/espreso == 
+ == ECF                                           /home/mec059/projects/espreso/espreso.ecf == 
+ == MESH                                                                          GENERATOR == 
+ == OUTPUT                  /home/mec059/projects/espreso/results/2020-01-27-at-21h-18m-11s == 
+ ============================================================================================= 
+ ESPRESO: RUN INITIALIZED
+ ESPRESO: MESH LOADED [shape=GRID]
+ ESPRESO: MESH PREPROCESSED
+ ====================================== MESH STATISTICS ====================================== 
+mesh: region=NAMELESS_ELEMENT_SET, dimension=3, elements=4096, nodes=4913
+mesh: region=LEFT, dimension=2, elements=256, nodes=289
+mesh: region=BOTTOM, dimension=0, elements=0, nodes=289
+mesh: region=TOP, dimension=0, elements=0, nodes=289
+ ============================================================================================= 
+                              MIN                 MAX                 SUM           IMBALANCE 
+  CLUSTERS  :                   1                   1                   1               1.000
+  DOMAINS   :                   8                   8                   8               1.000
+  ELEMENTS  :               4,096               4,096               4,096               1.000
+  NODES     :               4,913               4,913               4,913               1.000
+  NEIGHBORS :                   0                   0                   0               0.000
+  ELEMS/DOM :                 473                 563               4,096               1.190
+ ============================================================================================= 
+
+ ============================================================================================= 
+ ======================================= LOAD STEP   1 ======================================= 
+ ============================================================================================= 
+ ESPRESO: PHYSICS PREPARED [LOADSTEP=1]
+
+ = ================================== STEADY STATE SOLVER ================================== =
+ =  LOAD STEP  1, SUBSTEP    1, TIME   1.000000, TIME STEP   0.000000, FINAL TIME   1.000000 =
+ = ----------------------------------------------------------------------------------------- =
+     - LINEAR TIME STEP                          REASSEMBLED MATRICES  ::  K,  ,  ,  , f -    
+     - ---- LINEAR SOLVER -------------------------------------------------------------- -
+     - | SOLVER :: ESPRESO        TYPE ::                         FETI, PCG, DIRICHLET | -
+     - | REQUESTED STOPPING CRITERIA                                      1.000000e-08 | -
+     - | SOLUTION RESIDUAL NORM                                           3.839122e-14 | -
+     - | ITERATIONS TO CONVERGENCE                                                  20 | -
+     - | SOLVER TIME                                                           0.032 s | -
+     - --------------------------------------------------------------------------------- -
+ = ========================================================================================= =
+ = ================================================================= run time        0.549 s =
+
+ ESPRESO: PHYSICS SOLVED [LOADSTEP=1]
+
+ ======================================== RUN FINISHED ======================================= 
+ == OVERALL TIME ============================================================================= 
+ ============================================ avg. [s]  < min [s] -  max [s]> [  %  ] [ imb ]   
+time: region='ESPRESO STARTED AT', avg='0.124207', min='0.124207', max='0.124207', ratio='22.58', imb=' 1.00'
+time: region='ESPRESO: CONFIGURATION READ', avg='0.024538', min='0.024538', max='0.024538', ratio=' 5.77', imb=' 1.00'
+time: region='ESPRESO: RUN INITIALIZED', avg='0.007172', min='0.007172', max='0.007172', ratio=' 1.69', imb=' 1.00'
+time: region='ESPRESO: MESH LOADED', avg='0.006720', min='0.006720', max='0.006720', ratio=' 1.58', imb=' 1.00'
+time: region='ESPRESO: MESH PREPROCESSED', avg='0.024011', min='0.024011', max='0.024011', ratio=' 5.65', imb=' 1.00'
+                                                                              [ LOAD STEP 1 ]
+time: region='ESPRESO: PHYSICS PREPARED', avg='0.029547', min='0.029547', max='0.029547', ratio=' 6.95', imb=' 1.00'
+time: region='ESPRESO: PHYSICS SOLVED', avg='0.333215', min='0.333215', max='0.333215', ratio='78.37', imb=' 1.00'
+time: region='ESPRESO TOTAL DURATION', avg='0.425203', min='0.425203', max='0.425203', ratio='77.30', imb=' 1.00'
+ ============================================================================================= 

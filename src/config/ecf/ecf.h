@@ -1,0 +1,74 @@
+
+#ifndef SRC_CONFIG_ECF_ECF_H_
+#define SRC_CONFIG_ECF_ECF_H_
+
+#include "output.h"
+
+#include "pythontestgenerator.h"
+
+#include "input/input.h"
+#include "input/generator.h"
+#include "input/feti4ilibrary.h"
+
+#include "meshmorphing.h"
+
+#include "physics/physics.h"
+#include "physics/coupled.h"
+#include "physics/heattransfer.h"
+#include "physics/structuralmechanics.h"
+
+namespace espreso {
+
+struct ECF: public ECFDescription {
+
+	enum class INPUT_TYPE {
+		EXTERNAL_FILE,
+		GENERATOR
+	};
+
+	static void init(int *argc, char ***argv);
+	static void finish();
+
+	PhysicsConfiguration* getPhysics() { return const_cast<PhysicsConfiguration*>(_getPhysics()); }
+	const PhysicsConfiguration* getPhysics() const { return _getPhysics(); }
+
+	PythonTestGenerator python_test_generator;
+
+	std::map<size_t, std::string> default_args;
+	std::map<std::string, std::string> variables;
+
+	FETI4ILibraryConfiguration feti4ilibrary;
+
+	INPUT_TYPE input_type;
+	InputConfiguration input;
+	InputGeneratorConfiguration generator;
+
+	MeshMorphing mesh_morphing;
+
+	PhysicsConfiguration::TYPE physics;
+	ThermoElasticityConfiguration thermo_elasticity_2d;
+	ThermoElasticityConfiguration thermo_elasticity_3d;
+	HeatTransferConfiguration heat_transfer_2d;
+	HeatTransferConfiguration heat_transfer_3d;
+	StructuralMechanicsConfiguration structural_mechanics_2d;
+	StructuralMechanicsConfiguration structural_mechanics_3d;
+
+	OutputConfiguration output;
+
+	std::string ecffile;
+
+	ECF();
+	ECF(const std::string &file);
+	ECF(int *argc, char ***argv);
+	void fill(const std::string &file);
+	void fill(int *argc, char ***argv);
+
+protected:
+	void init();
+
+	const PhysicsConfiguration* _getPhysics() const;
+};
+
+}
+
+#endif /* SRC_CONFIG_ECF_ECF_H_ */

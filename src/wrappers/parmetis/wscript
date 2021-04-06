@@ -1,0 +1,7 @@
+
+def options(opt):
+    opt.decomposers.add_option("--parmetis", action="store", type="string", metavar="PARMETIS_ROOT", default="", help="Path to ParMETIS root directory.")
+
+def configure(ctx):
+    if "HAVE_METIS" in ctx.env.DEFINES_METIS:
+        ctx.link_cxx(name="parmetis", header_name="parmetis.h", libs=["parmetis"], root=ctx.options.parmetis)

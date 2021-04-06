@@ -1,0 +1,14 @@
+
+INPUT {
+  FORMAT                [ARG0];
+  PATH                  [ARG1];
+  CONVERT_DATABASE        TRUE;
+
+  DECOMPOSITION {
+    PARALLEL_DECOMPOSER NONE;
+  }
+}
+
+OUTPUT {
+  RESULTS_STORE_FREQUENCY  NEVER;
+}

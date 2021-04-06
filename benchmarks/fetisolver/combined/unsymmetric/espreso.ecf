@@ -1,0 +1,124 @@
+# ESPRESO Configuration File
+
+DEFAULT_ARGS {
+  0   TOTAL_FETI;
+  1          PCG;
+  2         NONE;
+  3     ANALYTIC;
+  4      KERNELS;
+}
+
+INPUT_TYPE            GENERATOR;
+PHYSICS   HEAT_TRANSFER_2D;
+
+GENERATOR {
+  SHAPE   GRID;
+
+  GRID {
+    LENGTH_X                   1;
+    LENGTH_Y                   1;
+    LENGTH_Z                   1;
+
+    NODES {
+      TOP   <0 , 0> <0 , 1> <0 , 0>;
+    }
+
+    EDGES {
+      BOTTOM   <1 , 1> <0 , 1> <0 , 0>;
+      LEFT     <0 , 1> <0 , 0> <0 , 0>;
+      RIGHT    <0 , 1> <1 , 1> <0 , 0>;
+    }
+
+    ELEMENT_TYPE         SQUARE4;
+
+    BLOCKS_X                   1;
+    BLOCKS_Y                   1;
+    BLOCKS_Z                   1;
+
+    CLUSTERS_X                 2;
+    CLUSTERS_Y                 2;
+    CLUSTERS_Z                 1;
+
+    DOMAINS_X                  2;
+    DOMAINS_Y                  3;
+    DOMAINS_Z                  1;
+
+    ELEMENTS_X                15;
+    ELEMENTS_Y                10;
+    ELEMENTS_Z                 1;
+  }
+}
+
+HEAT_TRANSFER_2D {
+  LOAD_STEPS        1;
+
+  MATERIALS {
+    1 {
+      NAME          ;
+      DESCRIPTION   ;
+
+      DENS         1;
+      CP           1;
+
+      THERMAL_CONDUCTIVITY {
+        MODEL   ISOTROPIC;
+
+        KXX             1;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   1;
+  }
+
+
+  STABILIZATION   CAU;
+  SIGMA             0;
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD              [ARG0];
+        PRECONDITIONER      [ARG2];
+        PRECISION            0.001;
+        MAX_ITERATIONS          50;
+        ITERATIVE_SOLVER    [ARG1];
+        REGULARIZATION      [ARG3];
+        REDUNDANT_LAGRANGE   FALSE;
+        SCALING              FALSE;
+        B0_TYPE             [ARG4];
+      }
+
+      TEMPERATURE {
+        TOP   1;
+      }
+
+      TRANSLATION_MOTIONS {
+        ALL_ELEMENTS   { X 10 - 20 * X; Y 10 - 20 * Y; }
+      }
+
+      CONVECTION {
+        BOTTOM {
+          HEAT_TRANSFER_COEFFICIENT   10;
+          EXTERNAL_TEMPERATURE        50;
+        }
+
+        LEFT {
+          HEAT_TRANSFER_COEFFICIENT   10;
+          EXTERNAL_TEMPERATURE        50;
+        }
+
+        RIGHT {
+          HEAT_TRANSFER_COEFFICIENT   10;
+          EXTERNAL_TEMPERATURE        50;
+        }
+      }
+    }
+  }
+}

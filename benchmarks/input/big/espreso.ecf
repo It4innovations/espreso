@@ -1,0 +1,23 @@
+
+DEFAULT_ARGS {
+  0  MPI;
+}
+
+INPUT {
+  LOADER      [ARG0];
+
+  FORMAT     VTK_LEGACY;
+  PATH   /data/espreso/mesiotest/big/big.BODY.vtk;
+
+  KEEP_MATERIAL_SETS     FALSE;
+  CONVERT_DATABASE        TRUE;
+
+  DECOMPOSITION {
+    PARALLEL_DECOMPOSER             NONE;
+  }
+}
+
+OUTPUT {
+  RESULTS_STORE_FREQUENCY NEVER;
+}
+

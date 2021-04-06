@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Xdmf xmlns:xi="http://www.w3.org/2001/XInclude" Version="3">
+  <Domain>
+    <Grid GridType="Collection" CollectionType="Temporal" Name="square">
+      <Grid GridType="Tree">
+        <Grid Name="EEL">
+          <Geometry GeometryType="XY">
+            <DataItem Reference="XML">
+              /Xdmf/Domain/DataItem[@Name="EEL_COORDINATES"]
+            </DataItem>
+          </Geometry>
+          <Topology TopologyType="Mixed" NumberOfElements="200">
+            <DataItem Reference="XML">
+              /Xdmf/Domain/DataItem[@Name="EEL_ELEMENTS"]
+            </DataItem>
+          </Topology>
+          <Attribute Name="TRANSLATION_MOTION" Center="Cell" AttributeType="Vector">
+            <DataItem Dimensions="200 3" DataType="Float" Format="HDF">
+              square.h5:TRANSLATION_MOTION_0_EEL
+            </DataItem>
+          </Attribute>
+          <Attribute Name="TEMPERATURE" Center="Node" AttributeType="Scalar">
+            <DataItem Dimensions="241" DataType="Float" Format="HDF">
+              square.h5:TEMPERATURE_0_EEL
+            </DataItem>
+          </Attribute>
+        </Grid>
+        <Grid Name="NAMELESS_ELEMENT_SET">
+          <Geometry GeometryType="XY">
+            <DataItem Reference="XML">
+              /Xdmf/Domain/DataItem[@Name="NAMELESS_ELEMENT_SET_COORDINATES"]
+            </DataItem>
+          </Geometry>
+          <Topology TopologyType="Mixed" NumberOfElements="200">
+            <DataItem Reference="XML">
+              /Xdmf/Domain/DataItem[@Name="NAMELESS_ELEMENT_SET_ELEMENTS"]
+            </DataItem>
+          </Topology>
+          <Attribute Name="TRANSLATION_MOTION" Center="Cell" AttributeType="Vector">
+            <DataItem Dimensions="200 3" DataType="Float" Format="HDF">
+              square.h5:TRANSLATION_MOTION_0_NAMELESS_ELEMENT_SET
+            </DataItem>
+          </Attribute>
+          <Attribute Name="TEMPERATURE" Center="Node" AttributeType="Scalar">
+            <DataItem Dimensions="241" DataType="Float" Format="HDF">
+              square.h5:TEMPERATURE_0_NAMELESS_ELEMENT_SET
+            </DataItem>
+          </Attribute>
+        </Grid>
+        <Grid Name="EDGGE">
+          <Geometry GeometryType="XY">
+            <DataItem Reference="XML">
+              /Xdmf/Domain/DataItem[@Name="EDGGE_COORDINATES"]
+            </DataItem>
+          </Geometry>
+          <Topology TopologyType="Mixed" NumberOfElements="20">
+            <DataItem Reference="XML">
+              /Xdmf/Domain/DataItem[@Name="EDGGE_ELEMENTS"]
+            </DataItem>
+          </Topology>
+          <Attribute Name="TEMPERATURE" Center="Node" AttributeType="Scalar">
+            <DataItem Dimensions="21" DataType="Float" Format="HDF">
+              square.h5:TEMPERATURE_0_EDGGE
+            </DataItem>
+          </Attribute>
+        </Grid>
+        <Grid Name="BOTTOM">
+          <Geometry GeometryType="XY">
+            <DataItem Reference="XML">
+              /Xdmf/Domain/DataItem[@Name="BOTTOM_COORDINATES"]
+            </DataItem>
+          </Geometry>
+          <Topology TopologyType="Mixed" NumberOfElements="21">
+            <DataItem Reference="XML">
+              /Xdmf/Domain/DataItem[@Name="BOTTOM_ELEMENTS"]
+            </DataItem>
+          </Topology>
+          <Attribute Name="TEMPERATURE" Center="Node" AttributeType="Scalar">
+            <DataItem Dimensions="21" DataType="Float" Format="HDF">
+              square.h5:TEMPERATURE_0_BOTTOM
+            </DataItem>
+          </Attribute>
+        </Grid>
+        <Grid Name="TOP">
+          <Geometry GeometryType="XY">
+            <DataItem Reference="XML">
+              /Xdmf/Domain/DataItem[@Name="TOP_COORDINATES"]
+            </DataItem>
+          </Geometry>
+          <Topology TopologyType="Mixed" NumberOfElements="21">
+            <DataItem Reference="XML">
+              /Xdmf/Domain/DataItem[@Name="TOP_ELEMENTS"]
+            </DataItem>
+          </Topology>
+          <Attribute Name="TEMPERATURE" Center="Node" AttributeType="Scalar">
+            <DataItem Dimensions="21" DataType="Float" Format="HDF">
+              square.h5:TEMPERATURE_0_TOP
+            </DataItem>
+          </Attribute>
+        </Grid>
+        <Time Value="1.000000"/>
+      </Grid>
+    </Grid>
+    <DataItem Name="EEL_COORDINATES" Format="HDF" Dimensions="241 2">
+      square.h5:EEL_COORDINATES
+    </DataItem>
+    <DataItem Name="EEL_ELEMENTS" DataType="Int" Format="HDF" Dimensions="1000">
+      square.h5:EEL_ELEMENTS
+    </DataItem>
+    <DataItem Name="NAMELESS_ELEMENT_SET_COORDINATES" Format="HDF" Dimensions="241 2">
+      square.h5:NAMELESS_ELEMENT_SET_COORDINATES
+    </DataItem>
+    <DataItem Name="NAMELESS_ELEMENT_SET_ELEMENTS" DataType="Int" Format="HDF" Dimensions="1000">
+      square.h5:NAMELESS_ELEMENT_SET_ELEMENTS
+    </DataItem>
+    <DataItem Name="EDGGE_COORDINATES" Format="HDF" Dimensions="21 2">
+      square.h5:EDGGE_COORDINATES
+    </DataItem>
+    <DataItem Name="EDGGE_ELEMENTS" DataType="Int" Format="HDF" Dimensions="80">
+      square.h5:EDGGE_ELEMENTS
+    </DataItem>
+    <DataItem Name="BOTTOM_COORDINATES" Format="HDF" Dimensions="21 2">
+      square.h5:BOTTOM_COORDINATES
+    </DataItem>
+    <DataItem Name="BOTTOM_ELEMENTS" DataType="Int" Format="HDF" Dimensions="63">
+      square.h5:BOTTOM_ELEMENTS
+    </DataItem>
+    <DataItem Name="TOP_COORDINATES" Format="HDF" Dimensions="21 2">
+      square.h5:TOP_COORDINATES
+    </DataItem>
+    <DataItem Name="TOP_ELEMENTS" DataType="Int" Format="HDF" Dimensions="63">
+      square.h5:TOP_ELEMENTS
+    </DataItem>
+  </Domain>
+</Xdmf>

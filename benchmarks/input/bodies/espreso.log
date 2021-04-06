@@ -1,0 +1,165 @@
+ ESPRESO: STARTED
+ ESPRESO: CONFIGURATION READ
+  CONFIGURATION STARTED
+ ====================================== ESPRESO RUN INFO ===================================== 
+ ============================================================================================= 
+ == CXX                                /opt/spack/opt/spack/linux-centos7-nehalem/gcc-6.4.0 ==
+ ==                              /openmpi-2.0.4-efosiekwgebvwxucu4a73nnvj5ssg4d5/bin/mpic++ == 
+ == CXXFLAGS                                               -fopenmp -std=c++11 -Wall -O3 -g == 
+ == COMMIT                                         bce3b72eea2510dc223a1345f2dada3231302402 == 
+ == BINARY                                        /home/meca/projects/espreso/build/espreso == 
+ == DATE [YYYY-MM-DD]                                                            2020-09-03 == 
+ == TIME [HH-MM-SS]                                                                13-59-37 == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == COMMAND                            espreso -c ecf/brake.ecf --OUTPUT::LOGGER=PARSER -vv == 
+ == MPI_COMM_WORLD                                                                       21 == 
+ == OMP_NUM_THREADS                                                                       1 == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == NUMBER OF LOADERS                                                                    21 == 
+ == NUMBER OF WRITTERS                                                                   21 == 
+ == STORING MODE                                                               SYNCHRONIZED == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == RUN PATH                                                    /home/meca/projects/espreso == 
+ == ECF                                           /home/meca/projects/espreso/ecf/brake.ecf == 
+ == MESH                                           /data/espreso/mesiotest/bodies/brake.dat == 
+ == OUTPUT                    /home/meca/projects/espreso/results/2020-09-03-at-13h-59m-37s == 
+ ============================================================================================= 
+  CONFIGURATION: RUN INFO INITIALIZED
+  CONFIGURATION: MESH INITIALIZED
+ ESPRESO: RUN INITIALIZED
+  ANSYS CDB PARSER: STARTED
+  ANSYS CDB PARSER: READER PREPARED
+   READER: STARTED
+   READER: FILE READ
+   READER: SYNCHRONIZED
+   READER: ALIGNED
+  ANSYS CDB PARSER: DATA READ
+  ANSYS CDB PARSER: DATA SCANNED
+  ANSYS CDB PARSER: DATA PARSED
+  BUILDER: BUILD SCATTERED MESH
+  BUILDER: DATA BALANCED
+  BUILDER: REGION ASSIGNED
+  BUILDER: NODES BUCKETS COMPUTED
+  BUILDER: ELEMENTS BUCKETS ASSIGNED
+  BUILDER: ELEMENTS CLUSTERED
+  BUILDER: NEIGHBORS APPROXIMATED
+  BUILDER: ELEMENTS SORTED
+   LINKUP: CONNECTING CLUSTERS
+   LINKUP: UKNOWN NODES COMPUTED
+   LINKUP: UKNOWN NODES EXCHANGED
+   LINKUP: NODES REQUESTS PROCESSED
+   LINKUP: REQUESTED NODES RETURNED
+   LINKUP: UNKNOWN NODES PROCESSED
+   LINKUP: ASKED FOR MISSING NEIGHBORS
+   LINKUP: MISSING NEIGHBORS FOUND
+   LINKUP: MISSING NEIGHBORS RETURNED
+   LINKUP: MISSING NEIGHBORS ADDED
+   LINKUP: ASKED FOR MISSING NODES
+   LINKUP: MISSING NODES COMPUTED
+   LINKUP: MISSING NODES RETURNED
+   LINKUP: MISSING NODES INCLUDED
+   LINKUP: NODES RANK MAP COMPUTED
+   LINKUP: NODES RANK MAP EXCHANGED
+   LINKUP: LINKED UP
+  BUILDER: LINKED UP
+  BUILDER: NODES SORTED
+  BUILDER: ELEMENTS NODES REINDEXED
+  BUILDER: NODES FILLED
+  BUILDER: ELEMENTS SORTED
+  MESH: NODES AND ELEMENTS LINKED
+   BOUNDARY: TARGET BOUNDARY ELEMENTS
+   BOUNDARY: UNKNOWN NODES COMPUTED
+   BOUNDARY: UNKNOWN NODES EXCHANGED
+   BOUNDARY: UNKNOWN NODES PROCESSED
+   BOUNDARY: UNKNOWN NODES RETURNED
+   BOUNDARY: MISSING NODES COMPUTED
+   BOUNDARY: MISSING NODES EXCHAGNED
+   BOUNDARY: MISSING NODES FOUND
+   BOUNDARY: MISSING NODES RETURNED
+   BOUNDARY: PARENT ELEMENTS FOUND
+   BOUNDARY: BOUNDARY EXCHANGED
+   BOUNDARY: BOUNDARIES INCLUDED
+  BUILDER: BOUNDARY EXCHANGED
+  BUILDER: REGIONS FILLED
+  BUILDER: BOUNDARY NODES REINDEXED
+ ESPRESO: MESH LOADED
+  MESH: PREPROCESSING STARTED
+  MESH: MATERIALS FILLED
+  MESH: ELEMENTS NEIGHBOURS COMPUTED
+  MESH: REGION MASK FILLED
+  MESH: HALO EXCHANGED
+  MESH: DUAL GRAPH COMPUTED
+  MESH: RECLUSTERIZED BY PARMETIS
+   EXCHANGE EL: STARTED
+   EXCHANGE EL: COMPUTE TARGETS
+   EXCHANGE EL: SERIALIZE ELEMENTS
+   EXCHANGE EL: SERIALIZE NODES
+   EXCHANGE EL: SERIALIZE BOUNDARIES
+   EXCHANGE EL: EXCHANGE
+   EXCHANGE EL: DESERIALIZE ELEMENTS
+   EXCHANGE EL: DESERIALIZE NODES
+   EXCHANGE EL: DESERIALIZE BOUDARIES
+   EXCHANGE EL: POST-PROCESSING
+   EXCHANGE EL: IDS REQUESTS
+   EXCHANGE EL: PROC REQUESTS
+   EXCHANGE EL: NEW IDS
+   EXCHANGE EL: FINISH
+  MESH: ELEMENTS EXCHANGED
+  MESH: LOCAL DUAL GRAPH COMPUTED
+  MESH: CLUSTER NONCONTINUITY CHECKED
+  MESH: NONCONTINUITY PROCESSED
+  MESH: DOMAINS COMPUTED BY METIS
+  MESH: ELEMENTS ARRANGED TO DOMAINS
+  MESH: ELEMENTS PERMUTATION ARRANGED
+  MESH: ELEMENTS PERMUTED
+  MESH: NODES ARRANGED
+  MESH: MESH DECOMPOSED
+  MESH: MESH BODIES FOUND
+  MESH: ELEMENTS REGIONS ARRANGED
+  MESH: BOUNDARY REGIONS ARRANGED
+  MESH: REGIONS ARRANGED
+  MESH: PREPROCESSING FINISHED
+ ESPRESO: MESH PREPROCESSED
+ ====================================== MESH STATISTICS ====================================== 
+mesh: region=BRAKE_DISC, dimension=3, elements=23453, nodes=46168
+mesh: region=BRAKE_PADS, dimension=3, elements=5052, nodes=12080
+mesh: region=CALIPER, dimension=3, elements=5328, nodes=15500
+mesh: region=DYNAMOMETR, dimension=3, elements=454, nodes=1998
+mesh: region=FLANGE_CONNECTION, dimension=3, elements=6276, nodes=10810
+mesh: region=FLANGE_WITH_SCREWS, dimension=3, elements=20280, nodes=55193
+mesh: region=PISTONS, dimension=3, elements=243, nodes=2215
+mesh: region=SCREWS, dimension=3, elements=664, nodes=2135
+mesh: region=SHAFT, dimension=3, elements=12325, nodes=24420
+mesh: region=SMALL_METAL_PLATES, dimension=3, elements=239, nodes=2328
+mesh: region=TORQUE_SENSOR_ADAPTER, dimension=3, elements=21391, nodes=44263
+mesh: region=NAMELESS_FACE_SET, dimension=2, elements=60846, nodes=58956
+mesh: bodies=106
+ ============================================================================================= 
+                              MIN                 MAX                 SUM           IMBALANCE 
+  CLUSTERS  :                   1                  25                 118              25.000
+  DOMAINS   :                   1                  25                 118              25.000
+  ELEMENTS  :               4,437               4,791              95,705               1.080
+  NODES     :               8,164              16,976             219,244               2.079
+  NEIGHBORS :                   0                   3                  30               0.000
+  ELEMS/DOM :                  16               4,749              95,705             296.812
+ ============================================================================================= 
+  ENSIGHT: STORING STARTED
+  ENSIGHT: GEOMETRY SERIALIZED
+  ENSIGHT: CASEFILE STORED
+  ENSIGHT: GEOMETRY DATA REORDERED
+  ENSIGHT: GEOMETRY STORED
+ ESPRESO: MESH STORED
+ ESPRESO: DATABASE CONVERTED
+
+ ======================================== RUN FINISHED ======================================= 
+ == OVERALL TIME ============================================================================= 
+ ============================================ avg. [s]  < min [s] -  max [s]> [  %  ] [ imb ]   
+time: region='ESPRESO STARTED AT                        ', avg='0.246447', min='0.216540', max='0.286657', ratio='43.45', imb=' 1.32'
+time: region='ESPRESO: CONFIGURATION READ               ', avg='0.004150', min='0.004122', max='0.004171', ratio=' 1.37', imb=' 1.01'
+time: region='ESPRESO: RUN INITIALIZED                  ', avg='0.010162', min='0.010088', max='0.010444', ratio=' 3.36', imb=' 1.04'
+time: region='ESPRESO: MESH LOADED                      ', avg='0.151103', min='0.150301', max='0.151855', ratio='50.04', imb=' 1.01'
+time: region='ESPRESO: MESH PREPROCESSED                ', avg='0.112409', min='0.111666', max='0.113210', ratio='37.22', imb=' 1.01'
+time: region='ESPRESO: MESH STORED                      ', avg='0.024157', min='0.024126', max='0.024189', ratio=' 8.00', imb=' 1.00'
+time: region='ESPRESO: DATABASE CONVERTED               ', avg='0.000005', min='0.000003', max='0.000022', ratio=' 0.00', imb=' 7.41'
+time: region='ESPRESO TOTAL DURATION                    ', avg='0.301986', min='0.301953', max='0.302045', ratio='53.25', imb=' 1.00'
+ ============================================================================================= 

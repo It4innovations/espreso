@@ -1,0 +1,12 @@
+
+def options(opt):
+    opt.solvers.add_option("--mklpdss", action="store", type="string", metavar="MKLPDSS_ROOT", default="", help="Path to MKL PDSS library.")
+
+def configure(ctx):
+    if ctx.options.cxx == "icpc":
+        lib = ["mkl_blacs_intelmpi_lp64"]
+    if ctx.options.cxx == "g++":
+        lib = ["mkl_blacs_openmpi_lp64"]
+
+    if "HAVE_MKL" in ctx.env["DEFINES_MKL"]:
+        ctx.link_cxx(name="mklpdss", header_name="mkl_cluster_sparse_solver.h", libs=lib, use="MKL", root=ctx.options.mklpdss)

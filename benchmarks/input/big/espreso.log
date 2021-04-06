@@ -1,0 +1,155 @@
+ ESPRESO: STARTED
+ ESPRESO: CONFIGURATION READ
+  CONFIGURATION STARTED
+ ====================================== ESPRESO RUN INFO ===================================== 
+ ============================================================================================= 
+ == CXX                                /opt/spack/opt/spack/linux-centos7-nehalem/gcc-6.4.0 ==
+ ==                              /openmpi-2.0.4-efosiekwgebvwxucu4a73nnvj5ssg4d5/bin/mpic++ == 
+ == CXXFLAGS                                               -fopenmp -std=c++11 -Wall -O3 -g == 
+ == COMMIT                                         abdcae721beaeb7b0a64ea0d915067d50abe85c9 == 
+ == BINARY                                      /home/mec059/projects/espreso/build/espreso == 
+ == DATE [YYYY-MM-DD]                                                            2020-07-01 == 
+ == TIME [HH-MM-SS]                                                                13-45-13 == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == COMMAND                                                      espreso -c espreso.ecf -vv == 
+ == MPI_COMM_WORLD                                                                       16 == 
+ == OMP_NUM_THREADS                                                                       1 == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == NUMBER OF LOADERS                                                                    16 == 
+ == NUMBER OF WRITTERS                                                                   16 == 
+ == STORING MODE                                                               SYNCHRONIZED == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == RUN PATH                             /home/mec059/projects/espreso/benchmarks/input/big == 
+ == ECF                      /home/mec059/projects/espreso/benchmarks/input/big/espreso.ecf == 
+ == MESH                                                /data/espreso/mesiotest/big/big.vtk == 
+ == OUTPUT                       /home/mec059/projects/espreso/benchmarks/input/big/results ==
+ ==                                                              /2020-07-01-at-13h-45m-13s == 
+ ============================================================================================= 
+  CONFIGURATION: RUN INFO INITIALIZED
+  CONFIGURATION: MESH INITIALIZED
+ ESPRESO: RUN INITIALIZED
+  VTK PARSER: STARTED
+  VTK PARSER: FILES LISTED
+  VTK PARSER: GEOMETRY READER PREPARED
+  VTK PARSER: GEOMETRY READ
+  VTK PARSER: GEOMETRY ALIGNED
+  VTK PARSER: GEOMETRY SCANNED
+  VTK PARSER: GEOMETRY PARSED
+  BUILDER: BUILD SCATTERED MESH
+  BUILDER: DATA BALANCED
+  BUILDER: REGION ASSIGNED
+  BUILDER: NODES BUCKETS COMPUTED
+  BUILDER: ELEMENTS BUCKETS ASSIGNED
+  BUILDER: ELEMENTS CLUSTERED
+  BUILDER: NEIGHBORS APPROXIMATED
+  BUILDER: DUPLICATED NODES MERGED
+  BUILDER: ELEMENTS SORTED
+   LINKUP: CONNECTING CLUSTERS
+   LINKUP: UKNOWN NODES COMPUTED
+   LINKUP: UKNOWN NODES EXCHANGED
+   LINKUP: NODES REQUESTS PROCESSED
+   LINKUP: REQUESTED NODES RETURNED
+   LINKUP: UNKNOWN NODES PROCESSED
+   LINKUP: ASKED FOR MISSING NEIGHBORS
+   LINKUP: MISSING NEIGHBORS FOUND
+   LINKUP: MISSING NEIGHBORS RETURNED
+   LINKUP: MISSING NEIGHBORS ADDED
+   LINKUP: ASKED FOR MISSING NODES
+   LINKUP: MISSING NODES COMPUTED
+   LINKUP: MISSING NODES RETURNED
+   LINKUP: MISSING NODES INCLUDED
+   LINKUP: DUPLICATED NODES PROJECTED
+   LINKUP: DUPLICATED NODES EXCHANGED
+   LINKUP: DUPLICATED NODES COUPLED
+   LINKUP: NODES RANK MAP COMPUTED
+   LINKUP: NODES RANK MAP EXCHANGED
+   LINKUP: LINKED UP
+  BUILDER: NEIGHBORS COMPUTED
+  BUILDER: NODES SORTED
+  BUILDER: ELEMENTS NODES REINDEXED
+  BUILDER: DUPLICATED ELEMENTS REMOVED
+  BUILDER: NODES FILLED
+  BUILDER: ELEMENTS SORTED
+  MESH: NODES AND ELEMENTS LINKED
+   BOUNDARY: TARGET BOUNDARY ELEMENTS
+   BOUNDARY: UNKNOWN NODES COMPUTED
+   BOUNDARY: UNKNOWN NODES EXCHANGED
+   BOUNDARY: UNKNOWN NODES PROCESSED
+   BOUNDARY: UNKNOWN NODES RETURNED
+   BOUNDARY: MISSING NODES COMPUTED
+   BOUNDARY: MISSING NODES EXCHAGNED
+   BOUNDARY: MISSING NODES FOUND
+   BOUNDARY: MISSING NODES RETURNED
+   BOUNDARY: PARENT ELEMENTS FOUND
+   BOUNDARY: BOUNDARY EXCHANGED
+   BOUNDARY: BOUNDARIES INCLUDED
+  BUILDER: BOUNDARY EXCHANGED
+  BUILDER: REGIONS FILLED
+  BUILDER: BOUNDARY NODES REINDEXED
+ ESPRESO: MESH LOADED
+  MESH: PREPROCESSING STARTED
+  MESH: MATERIALS FILLED
+  MESH: ELEMENTS NEIGHBOURS COMPUTED
+  MESH: REGION MASK FILLED
+  MESH: HALO EXCHANGED
+  MESH: DUAL GRAPH COMPUTED
+  MESH: RECLUSTERIZED SKIPPED
+  MESH: LOCAL DUAL GRAPH COMPUTED
+  MESH: CLUSTER NONCONTINUITY CHECKED
+  MESH: NONCONTINUITY PROCESSED
+  MESH: DOMAINS COMPUTED BY METIS
+  MESH: ELEMENTS ARRANGED TO DOMAINS
+  MESH: ELEMENTS PERMUTATION ARRANGED
+  MESH: ELEMENTS PERMUTED
+  MESH: NODES ARRANGED
+  MESH: MESH DECOMPOSED
+  MESH: ELEMENTS REGIONS ARRANGED
+  MESH: BOUNDARY REGIONS ARRANGED
+  MESH: REGIONS ARRANGED
+  MESH: PREPROCESSING FINISHED
+ ESPRESO: MESH PREPROCESSED
+ ====================================== MESH STATISTICS ====================================== 
+  REGION NAME                                             :         ELEMENTS            NODES
+ ============================================================================================= 
+  TOTAL NUMBER OF NODES                                   :                        66,340,340
+  TOTAL NUMBER OF ELEMENTS                                :       18,039,176
+                                                  TETRA10 :        2,732,984
+                                                PYRAMID13 :           94,284
+                                                 PRISMA15 :           26,352
+                                                   HEXA20 :       15,185,556
+  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  
+
+  ELEMS REGIONS SIZES [  1]                               :       18,039,176       66,340,340
+                                             ALL_ELEMENTS :       18,039,176       66,340,340
+                          /data/espreso/mesiotest/big/big :       18,039,176       66,340,340
+
+  FACES REGIONS SIZES [  0]                               :                0                0
+
+  EDGES REGIONS SIZES [  0]                               :                0                0
+
+  NODES REGIONS SIZES [  0]                               :                                 0
+                                                ALL_NODES :                        66,340,340
+ ============================================================================================= 
+                              MIN                 MAX                 SUM           IMBALANCE 
+  CLUSTERS  :                   4                  67                 506              16.750
+  DOMAINS   :                   4                  67                 506              16.750
+  ELEMENTS  :           1,127,444           1,127,452          18,039,176               1.000
+  NODES     :           3,532,326           4,795,402          69,519,663               1.358
+  NEIGHBORS :                   9                  14                 176               1.556
+  ELEMS/DOM :                   1           1,127,446          18,039,176         1127446.000
+ ============================================================================================= 
+ ESPRESO: MESH STORED
+ ESPRESO: DATABASE CONVERTED
+
+ ======================================== RUN FINISHED ======================================= 
+ == OVERALL TIME ============================================================================= 
+ ============================================ avg. [s]  < min [s] -  max [s]> [  %  ] [ imb ]   
+  ESPRESO STARTED AT                          0.054084  <0.036140 - 0.076726> [ 0.16] [ 2.12]
+   ESPRESO: CONFIGURATION READ                0.003071  <0.003056 - 0.003096> [ 0.01] [ 1.01]
+   ESPRESO: RUN INITIALIZED                   0.007560  <0.007537 - 0.007701> [ 0.02] [ 1.02]
+   ESPRESO: MESH LOADED                       24.95616  <24.95561 - 24.95687> [74.69] [ 1.00]
+   ESPRESO: MESH PREPROCESSED                 8.445388  <8.444688 - 8.445962> [25.28] [ 1.00]
+   ESPRESO: MESH STORED                       0.000222  <0.000190 - 0.000351> [ 0.00] [ 1.85]
+   ESPRESO: DATABASE CONVERTED                0.000003  <0.000002 - 0.000012> [ 0.00] [ 7.55]
+  ESPRESO TOTAL DURATION                      33.41241  <33.41236 - 33.41260> [99.80] [ 1.00]
+ ============================================================================================= 

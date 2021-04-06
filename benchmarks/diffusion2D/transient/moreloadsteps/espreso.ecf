@@ -1,0 +1,198 @@
+# ESPRESO Configuration File
+
+DEFAULT_ARGS {
+  0    2;
+  1    2;
+
+  2    3;
+  3    2;
+
+  4   20;
+  5   30;
+
+  6 FETI;
+}
+
+INPUT_TYPE            GENERATOR;
+PHYSICS   HEAT_TRANSFER_2D;
+
+GENERATOR {
+  SHAPE   GRID;
+
+  GRID {
+    LENGTH_X                    1;
+    LENGTH_Y                    1;
+    LENGTH_Z                    1;
+
+    NODES {
+      TOP      <0 , 1> <1 , 1> <0 , 0>;
+      BOTTOM   <0 , 1> <0 , 0> <0 , 0>;
+    }
+
+    EDGES {
+      LEFT    <0 , 0> <0 , 1> <0 , 0>;
+      RIGHT   <1 , 1> <0 , 1> <0 , 0>;
+    }
+
+    ELEMENT_TYPE          SQUARE4;
+
+    BLOCKS_X                    1;
+    BLOCKS_Y                    1;
+    BLOCKS_Z                    1;
+
+    CLUSTERS_X             [ARG0];
+    CLUSTERS_Y             [ARG1];
+    CLUSTERS_Z                  1;
+
+    DOMAINS_X              [ARG2];
+    DOMAINS_Y              [ARG3];
+    DOMAINS_Z                   1;
+
+    ELEMENTS_X             [ARG4];
+    ELEMENTS_Y             [ARG5];
+    ELEMENTS_Z                  1;
+  }
+}
+
+HEAT_TRANSFER_2D {
+  LOAD_STEPS         3;
+
+  MATERIALS {
+    MAT_01 {
+
+      DENS   1;
+      CP     1;
+
+      THERMAL_CONDUCTIVITY {
+        MODEL   ISOTROPIC;
+
+        KXX             2;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   MAT_01;
+  }
+
+  INITIAL_TEMPERATURE {
+    ALL_ELEMENTS   293.15;
+  }
+
+  STABILIZATION   SUPG;
+  SIGMA              0;
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER       [ARG6];
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER   DIRICHLET;
+        PRECISION            1E-08;
+        MAX_ITERATIONS         100;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION   ALGEBRAIC;
+      }
+
+      TEMPERATURE {
+        TOP         530;
+        BOTTOM   293.15;
+      }
+    }
+
+    2 {
+      DURATION_TIME   0.1;
+      TYPE      TRANSIENT;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      TRANSIENT_SOLVER {
+        METHOD   CRANK_NICOLSON;
+
+        TIME_STEP         0.005;
+      }
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER   DIRICHLET;
+        PRECISION            1E-08;
+        MAX_ITERATIONS         100;
+        ITERATIVE_SOLVER       PCG;
+      }
+
+      TEMPERATURE {
+        TOP         530;
+        BOTTOM   293.15;
+      }
+
+      CONVECTION {
+        RIGHT {
+          HEAT_TRANSFER_COEFFICIENT   12;
+          EXTERNAL_TEMPERATURE      1200;
+        }
+      }
+    }
+
+    3 {
+      DURATION_TIME   0.1;
+      TYPE      TRANSIENT;
+      MODE         LINEAR;
+      SOLVER        HYPRE;
+
+      TRANSIENT_SOLVER {
+        METHOD   CRANK_NICOLSON;
+
+        TIME_STEP         0.005;
+      }
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER   DIRICHLET;
+        PRECISION            1E-08;
+        MAX_ITERATIONS         100;
+        ITERATIVE_SOLVER       PCG;
+      }
+
+      TEMPERATURE {
+        TOP         530;
+        BOTTOM   293.15;
+      }
+
+      CONVECTION {
+        LEFT {
+          HEAT_TRANSFER_COEFFICIENT   12;
+          EXTERNAL_TEMPERATURE      1200;
+        }
+      }
+    }
+  }
+}
+
+OUTPUT {
+  RESULTS_STORE_FREQUENCY    EVERY_SUBSTEP;
+  MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
+
+  MONITORING {
+    1 {
+      REGION       ALL_NODES;
+      STATISTICS         MAX;
+      PROPERTY   TEMPERATURE;
+    }
+
+    2 {
+      REGION       ALL_NODES;
+      STATISTICS         MIN;
+      PROPERTY   TEMPERATURE;
+    }
+
+    3 {
+      REGION       ALL_NODES;
+      STATISTICS         AVG;
+      PROPERTY   TEMPERATURE;
+    }
+  }
+}

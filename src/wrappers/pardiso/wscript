@@ -1,0 +1,7 @@
+
+def options(opt):
+    opt.solvers.add_option("--pardiso", action="store", type="string", metavar="PARDISO_LIB", default="", help="Path to PARDISO library (libpardiso.so).")
+
+def configure(ctx):
+    if int(ctx.options.intwidth) == 32:
+        ctx.link_cxx(name="pardiso", libs=["pardiso", "gfortran", "gomp"], root=ctx.options.pardiso)

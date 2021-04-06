@@ -1,0 +1,5 @@
+         ;          ;              ;      TOP      ;     BOTTOM    ; --- ; --- ;  ALL_ELEMENTS  ;
+loadstep ;  substep ;         time ;  TEMPERATURE  ;  TEMPERATURE  ;  -  ;  -  ;   TEMPERATURE  ;
+         ;          ;              ;     <MAX>     ;     <MIN>     ;     ;     ;    <AVERAGE>   ;
+
+       1 ;        1 ;     1.000000 ;  1.000000e+02 ;  3.000000e+02 ;     ;     ;   1.838624e+02 ; 

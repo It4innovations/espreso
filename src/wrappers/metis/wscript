@@ -1,0 +1,8 @@
+
+def options(opt):
+    opt.decomposers.add_option("--metis", action="store", type="string", metavar="METIS_ROOT", default="", help="Path to METIS root directory.")
+
+def configure(ctx):
+    ctx.link_cxx(
+        name="metis", header_name="metis.h", libs=["metis"], root=ctx.options.metis,
+        fragment="return IDXTYPEWIDTH != {0};".format(ctx.options.intwidth))
