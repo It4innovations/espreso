@@ -1,7 +1,8 @@
 
 #include "optimizer.h"
+#include "esinfo/eslog.h"
 
-#include "../basis/logging/logging.h"
+#include <iostream>
 
 using namespace espreso;
 

@@ -2,11 +2,11 @@
 #ifndef SRC_CONFIG_ECF_SOLVER_OPTIMIZATION_H_
 #define SRC_CONFIG_ECF_SOLVER_OPTIMIZATION_H_
 
-#include "../../../configuration.h"
+#include "config/description.h"
 
-namespace espreso 
+namespace espreso
 {
-struct PSOConfiguration : public ECFObject
+struct PSOConfiguration : public ECFDescription
 {
 	int generations;
 	double C1;
@@ -17,7 +17,7 @@ struct PSOConfiguration : public ECFObject
 	PSOConfiguration();
 };
 
-struct DEConfiguration : public ECFObject
+struct DEConfiguration : public ECFDescription
 {
 	double F;
 	double CR;
@@ -26,12 +26,12 @@ struct DEConfiguration : public ECFObject
 };
 
 
-struct SOMAT3AConfiguration : public ECFObject
+struct SOMAT3AConfiguration : public ECFDescription
 {
 	// TODO
 };
 
-struct SOMAConfiguration : public ECFObject
+struct SOMAConfiguration : public ECFDescription
 {
 	double PRT;
 	double STEP;
@@ -40,13 +40,14 @@ struct SOMAConfiguration : public ECFObject
 	SOMAConfiguration();
 };
 
-struct OptimizationConfiguration : public ECFObject
+struct AutoOptimizationConfiguration : public ECFDescription
 {
 	enum class ALGORITHM
 	{
+		NONE,
 		PARTICLE_SWARM,
-    	DIFFERENTIAL_EVOLUTION,
-    	SOMAT3A,
+		DIFFERENTIAL_EVOLUTION,
+		SOMAT3A,
 		SOMA,
 		RANDOM,
 		ALL_PERMUTATIONS
@@ -61,7 +62,7 @@ struct OptimizationConfiguration : public ECFObject
 	SOMAConfiguration soma;
 	SOMAT3AConfiguration somat3a;
 
-	OptimizationConfiguration();
+	AutoOptimizationConfiguration();
 };
 
 }

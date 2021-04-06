@@ -23,6 +23,7 @@ class MatrixDenseFETI;
 class VectorDenseFETI;
 class VectorsDenseFETI;
 class TimeEval;
+class AutoOptimizer;
 
 class FETISystemSolver: public SystemSolver {
 public:
@@ -61,6 +62,7 @@ public:
 
 	FETIConfiguration &configuration;
 	TimeEval *timeEvalMain;
+	AutoOptimizer *optimizer;
 
 private:
 
