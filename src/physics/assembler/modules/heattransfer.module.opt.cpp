@@ -187,8 +187,8 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 		}
 		eslog::info(" ============================================================================================= \n");
 
-		builders.push_back(new ExpressionsToElements(cooSystem.cartesian2D, 0, "CARTESIAN COORDINATE SYSTEM"));
-		builders.push_back(new ExpressionsToElements(cooSystem.cartesian3D, 0, "CARTESIAN COORDINATE SYSTEM"));
+		builders.push_back(new ExpressionsToElements(cooSystem.cartesian2D, 0, "CARTESIAN 2D COORDINATE SYSTEM"));
+		builders.push_back(new ExpressionsToElements(cooSystem.cartesian3D, 0, "CARTESIAN 3D COORDINATE SYSTEM"));
 		builders.push_back(new ExpressionsToElements(cooSystem.spherical, 0, "SPHERICAL COORDINATE SYSTEM"));
 		builders.push_back(new ExpressionsToElements(cooSystem.cylindric, 0, "CYLINDRIC COORDINATE SYSTEM"));
 		builders.push_back(new ExpressionsToElements(material.model.isotropic, 1, "ISOTROPIC MATERIAL MODEL"));

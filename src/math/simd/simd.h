@@ -48,12 +48,12 @@ ALWAYS_INLINE void store(double *to, const SIMD& value) noexcept
 
 ALWAYS_INLINE const SIMD operator+(const SIMD& v1, const SIMD& v2) noexcept
 {
-	return v1.data +  v2.data;
+	return v1.data + v2.data;
 }
 
 ALWAYS_INLINE const SIMD operator*(const SIMD& v1, const SIMD& v2) noexcept
 {
-	return v1.data *  v2.data;
+	return v1.data * v2.data;
 }
 
 ALWAYS_INLINE double sum(const SIMD& value) noexcept
