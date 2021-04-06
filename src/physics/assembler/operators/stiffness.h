@@ -78,7 +78,7 @@ struct Stiffness3DHeat: public Stiffness {
 	template<int nodes, int gps>
 	void operator()(int gpindex)
 	{
-		KMN3M33M3N<nodes>(xi[gpindex] * determinant[gpindex] * weight[gpindex], conductivity.data + 9 * gpindex, dND.data + 3 * nodes * gpindex, stiffness.data);
+		ADDMN3M33M3N<nodes>(xi[gpindex] * determinant[gpindex] * weight[gpindex], conductivity.data + 9 * gpindex, dND.data + 3 * nodes * gpindex, stiffness.data);
 	}
 };
 

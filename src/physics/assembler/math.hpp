@@ -254,7 +254,7 @@ static inline void ADDMN2M22M2N(const double &sumscale, const double * __restric
 }
 
 template<int N>
-static inline void KMN3M33M3N(const double &sumscale, const double * __restrict__ m33, const double * __restrict__ m3N, double * __restrict__ mNN)
+static inline void ADDMN3M33M3N(const double &sumscale, const double * __restrict__ m33, const double * __restrict__ m3N, double * __restrict__ mNN)
 {
 	for (int n = 0; n < N; ++n) {
 		for (int m = 0; m < N; ++m) {
