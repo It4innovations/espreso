@@ -161,9 +161,9 @@ def build(ctx):
     if ctx.env["HAVE_MATH"]:
         ctx.program(source="src/app/espreso.cpp",target="espreso", use=ctx.checker + ctx.mesio + ctx.espreso, stlib=ctx.options.stlibs, lib=ctx.options.libs)
 
-        ctx.lib(source="src/api/wrapper.cpp",target="feti4i", includes="include", use=ctx.checker + ctx.mesio + ctx.espreso + ["API"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
-        ctx.program(source=["src/api/apitester.cpp", "src/api/apidataprovider.cpp"], target="feti4itester", includes="include", use=ctx.checker + ctx.mesio + ctx.espreso + ["API", "feti4i"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
-        ctx.program(source="src/api/example.cpp", target="feti4iexample", includes="include", use=ctx.checker + ctx.mesio + ctx.espreso + ["API", "feti4i"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
+        ctx.lib(source="src/api/wrapper.feti4i.cpp", target="feti4i", includes="include", use=ctx.checker + ctx.mesio + ctx.espreso + ["API"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
+        ctx.program(source=["src/api/api.feti4i.cpp", "src/api/api.feti4i.dataprovider.cpp"], target="test.feti4i", includes="include", use=ctx.checker + ctx.mesio + ctx.espreso + ["API", "feti4i"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
+        ctx.program(source="src/api/example.feti4i.cpp", target="example.feti4i", includes="include", use=ctx.checker + ctx.mesio + ctx.espreso + ["API", "feti4i"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
 
     if ctx.env.with_gui:
         ctx.objects(source=ctx.path.ant_glob("**/*.ui"), target="ui")

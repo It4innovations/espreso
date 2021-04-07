@@ -17,7 +17,7 @@ class ESPRESOTest:
     oversub = os.getenv("OVERSUB", False)
 
     root = os.path.dirname(os.path.dirname(__file__))
-    feti4itester = os.path.join(root, "build", "feti4itester")
+    feti4itester = os.path.join(root, "build", "test.feti4i")
     espreso = os.path.join(root, "build", "espreso")
     ecfchecker = os.path.join(root, "build", "ecfchecker")
     waf = os.path.join(root, "waf")

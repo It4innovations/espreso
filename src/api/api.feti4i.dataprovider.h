@@ -1,6 +1,6 @@
 
-#ifndef SRC_API_APIDATAPROVIDER_H_
-#define SRC_API_APIDATAPROVIDER_H_
+#ifndef SRC_API_API_FETI4I_DATAPROVIDER_H_
+#define SRC_API_API_FETI4I_DATAPROVIDER_H_
 
 #include "feti4i.h"
 
@@ -36,4 +36,4 @@ protected:
 
 }
 
-#endif /* SRC_API_APIDATAPROVIDER_H_ */
+#endif /* SRC_API_API_FETI4I_DATAPROVIDER_H_ */
