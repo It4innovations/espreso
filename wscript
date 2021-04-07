@@ -26,10 +26,10 @@ def configure(ctx):
 
     if ctx.options.intwidth == "32":
         ctx.env.append_unique("DEFINES", [ "esint=int", "esint_mpi=MPI_INT" ])
-        ctx.env.append_unique("DEFINES_API", [ "FETI4I_INT_WIDTH=32" ])
+        ctx.env.append_unique("DEFINES_API", [ "FETI4I_INT_WIDTH=32", "MESIO_INT_WIDTH=32" ])
     if ctx.options.intwidth == "64":
         ctx.env.append_unique("DEFINES", [ "esint=long", "esint_mpi=MPI_LONG" ])
-        ctx.env.append_unique("DEFINES_API", [ "FETI4I_INT_WIDTH=64" ])
+        ctx.env.append_unique("DEFINES_API", [ "FETI4I_INT_WIDTH=64", "MESIO_INT_WIDTH=64" ])
 
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-Wall" ])  # -fopenmp
     ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
@@ -138,6 +138,9 @@ def build(ctx):
     ctx.build_mesio(ctx.path.ant_glob('src/wrappers/scotch/**/*.cpp'), "wscotch", [ "SCOTCH" ])
     ctx.build_mesio(ctx.path.ant_glob('src/wrappers/ptscotch/**/*.cpp'), "wptscotch", [ "PTSCOTCH" ])
     ctx.build_mesio(ctx.path.ant_glob('src/wrappers/kahip/**/*.cpp'), "wkahip", [ "KAHIP" ])
+
+    ctx.lib(source="src/api/wrapper.mesio.cpp", target="mesioapi", includes="include", use=ctx.checker + ctx.mesio + ["API"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
+    ctx.program(source=["src/api/api.mesio.cpp"], target="test.mesio", includes="include", use=ctx.checker + ctx.mesio + ["API", "mesioapi"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
 
     ctx.build_espreso(ctx.path.ant_glob('src/physics/**/*.cpp'), "physics")
     ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math")
