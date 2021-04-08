@@ -26,12 +26,9 @@ def by():
     os.path.exists(xdmf)
     for p in range(1, 32, 4):
         for format, file in [ ("ANSYS_CDB", ansys), ("ENSIGHT", ensight), ("VTK_LEGACY", vtk), ("XDMF", xdmf) ]:
-                for readers in [ 2, 7, 12, 23 ]:
-                    if readers < p:
-                        yield run, file, format, p, readers, "MPI"
-                    if readers == p:
-                        for loader in [ "MPI", "MPI_COLLECTIVE", "POSIX" ]:
-                            yield run, file, format, p, readers, loader
+            for readers in [ 2, 7, 12, 23 ]:
+                if readers < p:
+                    yield run, file, format, p, readers, [ "POSIX", "MPI", "MPI_COLLECTIVE" ][int(((p + 1) / 3) % 3)]
 
 def run(file, format, p, readers, loader):
     ESPRESOTest.processes = p

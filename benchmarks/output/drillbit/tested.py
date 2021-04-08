@@ -16,7 +16,7 @@ def teardown():
 
 @istest
 def by():
-    for processes in range(2, 32, 3):
+    for processes in range(2, 32, 5):
         for writers in [ 3, 11 ]:
             if writers <= processes:
                 for writer in [ "MPI" ]:

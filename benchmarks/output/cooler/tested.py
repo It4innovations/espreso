@@ -17,7 +17,7 @@ def teardown():
 @istest
 def by():
     for processes in range(4, 16, 2):
-        for writers in [ 1, 12 ]:
+        for writers in [ 4, 12 ]:
             if writers <= processes:
                 for writer in [ "MPI_COLLECTIVE" ]:
                     for format in [ ("ENSIGHT", "store.case"), ("VTK_LEGACY", "store.*.vtk"), ("XDMF", "store.xmf") ]:
