@@ -133,7 +133,7 @@ void MESIONodes(
 void MESIONodesRanks(
     MESIO           mesio,
     MESIOInt**      rankDistribution,
-    MESIOInt**      rankData
+    int**           rankData
 );
 
 void MESIONodesDomains(
@@ -159,13 +159,13 @@ void MESIOElementsDomains(
 
 void MESIOElementsMaterials(
     MESIO           mesio,
-    MESIOInt**      material
+    int**           material
 );
 
 void MESIOElementsBodies(
     MESIO           mesio,
     MESIOInt*       bodies,
-    MESIOInt**      body
+    int**           body
 );
 
 void MESIOElementsNeighbors(

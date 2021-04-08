@@ -132,7 +132,7 @@ void MESIONodes(
 void MESIONodesRanks(
 	MESIO           mesio,
 	MESIOInt**      rankDistribution,
-	MESIOInt**      rankData)
+	int**           rankData)
 {
 	*rankDistribution = info::mesh->nodes->ranks->boundarytarray().data();
 	*rankData = info::mesh->nodes->ranks->datatarray().data();
@@ -141,7 +141,7 @@ void MESIONodesRanks(
 void MESIONodesDomains(
 	MESIO           mesio,
 	MESIOInt**      domainDistribution,
-	MESIOInt**      domainData)
+	int**           domainData)
 {
 	*domainDistribution = info::mesh->nodes->domains->boundarytarray().data();
 	*domainData = info::mesh->nodes->domains->datatarray().data();
@@ -173,15 +173,15 @@ void MESIOElementsDomains(
 
 void MESIOElementsMaterials(
 	MESIO           mesio,
-	MESIOInt**      material)
+	int**           material)
 {
 	*material = info::mesh->elements->material->datatarray().data();
 }
 
 void MESIOElementsBodies(
 	MESIO           mesio,
-	MESIOInt*       bodies,
-	MESIOInt**      body)
+	int*            bodies,
+	int**           body)
 {
 	*bodies = info::mesh->elements->bodiesTotalSize;
 	*body = info::mesh->elements->body->datatarray().data();

@@ -19,7 +19,8 @@ int main(int argc, char **argv)
 	std::ofstream os("cube." + std::to_string(mpirank) + ".txt");
 	{ // NODES
 		MESIOInt nhalo, offset, size, totalSize;
-		MESIOInt *ids, *position, *rankDist, *rankData;
+		MESIOInt *ids, *position, *rankDist;
+		int *rankData;
 		MESIOReal *coordinates;
 
 		MESIONodes(mesio, &nhalo, &offset, &size, &totalSize, &ids, &position, &coordinates);
