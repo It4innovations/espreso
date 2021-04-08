@@ -103,7 +103,7 @@ struct VTKASCIIWritter: public OutputFilePack {
 	{
 		insert(snprintf(buffer, bsize, "%d", size));
 		for (int n = 0; n < size; ++n) {
-			insert(snprintf(buffer, bsize, " %d", (int)map[nodes[n]] + offset));
+			insert(snprintf(buffer, bsize, " %d", (int)(map[nodes[n]] + offset)));
 		}
 		insert(snprintf(buffer, bsize, "\n"));
 	}
