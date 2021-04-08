@@ -5,6 +5,7 @@
 #include "basis/containers/point.h"
 
 #include <vector>
+#include <string>
 #include <utility>
 #include <map>
 #include <string>

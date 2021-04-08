@@ -59,6 +59,10 @@ struct RBFTargetConfiguration: public ECFDescription {
 	ECFExpression function;
 	double solver_precision;
 	int solver_max_iter;
+	int polynomial_regularization_degree;
+	bool use_transform_translate;
+	bool use_transform_scale;
+	bool use_transform_rotate;
 
 	std::string target;
 	std::map<std::string, RBFTargetTransformationConfiguration> morphers;

@@ -8,6 +8,7 @@
 
 #include "config/ecf/meshmorphing.h"
 #include "config/reader/tokenizer.h"
+#include "esinfo/eslog.hpp"
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/ecfinfo.h"
@@ -445,11 +446,16 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 	if (info::mesh->nodes->originCoordinates == NULL) {
 		info::mesh->nodes->originCoordinates = new serializededata<esint, Point>(*info::mesh->nodes->coordinates);
 	}
+	// else{
+		// delete info::mesh->nodes->originCoordinates;
+		// info::mesh->nodes->originCoordinates = new serializededata<esint, Point>(*info::mesh->nodes->coordinates);
+	// }
 
 	std::vector<Point> sPoints, rPoints;
 	std::vector<double> sDisplacement, rDisplacement;
 
 	size_t nSize = 0;
+	// printf("dimension: %d\n", dimension);
 	for(auto it = configuration.morphers.begin(); it != configuration.morphers.end(); ++it) {
 		nSize += info::mesh->bregion(it->first)->nodeInfo.size;
 		
@@ -462,7 +468,8 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 	for(auto it = configuration.morphers.begin(); it != configuration.morphers.end(); ++it) {
 		const BoundaryRegionStore *region = info::mesh->bregion(it->first);
 		const auto &nodes = region->nodes->datatarray();
-		const auto &coordinates = info::mesh->nodes->coordinates->datatarray();
+		// const auto &coordinates = info::mesh->nodes->coordinates->datatarray();
+		const auto &coordinates = info::mesh->nodes->originCoordinates->datatarray();
 
 		size_t prevsize = sPoints.size();
 		for (esint n = 0; n < region->nodeInfo.size; ++n) {
@@ -514,7 +521,7 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 	
 	// if(info::mpi::rank == 0){
 		// for(int i = 0; i < rPoints.size(); ++i){
-			// printf("	    Point[%d]: [%10.8f, %10.8f, %10.8f]\n", i, rPoints[i].x, rPoints[i].y, rPoints[i].z);
+			// printf("	    [%10.8f, %10.8f, %10.8f], displacement  [%10.8f, %10.8f, %10.8f]\n", rPoints[i].x, rPoints[i].y, rPoints[i].z, rDisplacement[dimension * i], rDisplacement[dimension * i+1], rDisplacement[dimension * i+2]);
 		// }
 	// }
 	
@@ -528,39 +535,85 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 	double aca_eta = 2.0f;
 	double aca_eps = 1e-6;
 	esint base_tree_size = 10;
+	
+	
+	bool use_transform_translate = configuration.use_transform_translate;
+	bool use_transform_scale = configuration.use_transform_scale;
+	bool use_transform_rotate = configuration.use_transform_rotate;
+	int regularization_poly_degree = configuration.polynomial_regularization_degree;
+	eslog::info("\n =================================== MORPHING SYSTEM ASSEMBLY ================================ \n");
+	double aca_start = eslog::time();
 	MorphingMatrix M_ACA(
+		dimension,
+		use_transform_translate,
+		use_transform_scale,
+		use_transform_rotate,
+		regularization_poly_degree,
 		sPoints,
 		sDisplacement,
 		configuration,
-		true, 
-		true, 
-		true,
 		aca_eps,
 		aca_eta,
 		base_tree_size,
 		rhs_values_aca
 	);
-	rhs_values_aca.resize(dimension * M_ACA.getNRows());
+	eslog::info("   ASSMEBLY TIME                                                                %8.3f [s] \n", eslog::time() - aca_start);
+	double aca_compr = M_ACA.getCompressionRatio();
+	eslog::info("   COMPRESSION                                                                  %8.3f [%%] \n\n", aca_compr * 100.0f);
+	// eslog::info("   # of rows           %10d\n", M_ACA.getNRows());
+	// eslog::info("   # of columns        %10d\n", M_ACA.getNCols());
 	wq_values_aca.resize(dimension * M_ACA.getNCols());	
 	
-	// M_ACA.print();
+	// M_ACA.print(rhs_values_aca);
 
 	esint itercount_aca = 0;
 	std::vector<esint> iters_dim(dimension);
+	std::vector<const char*> dim_name = {"X", "Y", "Z", "T"};
 	for(esint d = 0 ; d < dimension; d++) {
 		esint mm__;
+		double sol_time = eslog::time();
 		iters_dim[d] += MATH::SOLVER::GMRESolverInternal_ACA(
 			M_ACA,
 			&rhs_values_aca[d * M_ACA.getNRows()], 
 			&wq_values_aca[d * M_ACA.getNCols()],
-			1e-12, 
-			1000, 
+			configuration.solver_precision, 
+			configuration.solver_max_iter, 
 			mm__
-		);
+		) - 1;
 		itercount_aca += iters_dim[d];
+		eslog::info("   SOLUTION FOR %s                             %6d [iterations]               %8.3f [s] \n", dim_name[d], iters_dim[d], eslog::time() - sol_time);
 	}
-	if (info::mpi::rank == 0){
-		printf("ACA solution found in %6d iterations (%4d for x, %4d for y, %4d for z)\n", itercount_aca,iters_dim[0],iters_dim[1],iters_dim[2]);
+	
+	// if (info::mpi::rank == 0){
+		// printf("ACA solution found in %6d iterations (%4d for x, %4d for y, %4d for z)\n", itercount_aca,iters_dim[0],iters_dim[1],iters_dim[2]);
+		// printf("sol=[\n");
+		// for(esint r = 0; r < M_ACA.getNCols(); ++r){
+			// for(esint c = 0; c < dimension; ++c){
+				// printf("%10.6f ", wq_values_aca[M_ACA.getNCols() * c + r]);
+			// }
+			// printf(";\n");
+		// }
+		// printf("];\n");
+	// }
+	std::vector<double> error_morph(3);
+	std::vector<double> orthogonality_error(3);
+	M_ACA.calculateMorphingError(
+		wq_values_aca, 
+		rhs_values_aca,
+		error_morph[0],
+		error_morph[1],
+		error_morph[2],
+		orthogonality_error[0],
+		orthogonality_error[1],
+		orthogonality_error[2]
+	);
+	eslog::info("\n");
+	for(esint d = 0; d < dimension; ++d){
+		eslog::info("   MORPHING ERROR FOR %s                                                           %10.8f  \n", dim_name[d], error_morph[d]);
+	}
+	eslog::info("\n");
+	for(esint d = 0; d < dimension; ++d){
+		eslog::info("   ORTHOGONALITY ERROR FOR %s                                                      %10.8f  \n", dim_name[d], orthogonality_error[d]);
 	}
 	
 	/*
@@ -828,70 +881,63 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 	}
 	*/
 	
-
-	esint wq_points = wq_values_aca.size()/dimension;
-	esint points_size = rPoints.size();
 	
-	auto solution = wq_values_aca;
-
 	ElementsRegionStore *tregion = info::mesh->eregion(configuration.target);
+	
+	// std::vector<Point> coords_mem;
+	// coords_mem.reserve(info::mesh->nodes->size);
+	// for (esint n = 0; n < info::mesh->nodes->size; ++n) {
+		// coords_mem.emplace_back(info::mesh->nodes->coordinates->datatarray()[n]);
+	// }
 
-	//TODO possible errors below this part
+	// {
+		// for (esint n = 0; n < info::mesh->nodes->size; ++n) {
+			// Point &morphed = info::mesh->nodes->coordinates->datatarray()[n];
+			// Point origin = morphed;
+			
+			// M_ACA.transformPoint(morphed, origin, wq_values_aca, rPoints, configuration, wq_points, wq_points2);
+		
+		// }
+	// }
+	
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (auto n = tregion->nodes->begin(t)->begin(); n != tregion->nodes->end(t)->begin(); ++n) {
-			Point &morphed = info::mesh->nodes->coordinates->datatarray()[*n];
+			// Point &morphed = info::mesh->nodes->coordinates->datatarray()[*n];
+			Point morphed = info::mesh->nodes->originCoordinates->datatarray()[*n];
+
 			Point origin = morphed;
-
-			for (size_t i = 0; i < rPoints.size(); i++) {
-				double R = configuration.function.evaluator->evaluate((rPoints[i] - origin).length());
-
-				morphed.x += R * solution[i ];
-				morphed.y += R * solution[i + wq_points];
-				if (dimension == 3) {
-					morphed.z += R * solution[i + wq_points * 2];
-				}
-			}
-			if (dimension == 3) {
-				morphed.x += origin.x * solution[points_size + 0];
-				morphed.x += origin.y * solution[points_size + 1];
-				morphed.x += origin.z * solution[points_size + 2];
-				morphed.x +=            solution[points_size + 3];
-
-				morphed.y += origin.x * solution[wq_points + points_size + 0];
-				morphed.y += origin.y * solution[wq_points + points_size + 1];
-				morphed.y += origin.z * solution[wq_points + points_size + 2];
-				morphed.y +=            solution[wq_points + points_size + 3];
-
-				morphed.z += origin.x * solution[wq_points*2 + points_size + 0];
-				morphed.z += origin.y * solution[wq_points*2 + points_size + 1];
-				morphed.z += origin.z * solution[wq_points*2 + points_size + 2];
-				morphed.z +=            solution[wq_points*2 + points_size + 3];
-			}
-
-			if (dimension == 2) {
-				morphed.x += origin.x * solution[points_size + 0];
-				morphed.x += origin.y * solution[points_size + 1];
-				morphed.x +=            solution[points_size + 2];
-
-				morphed.y += origin.x * solution[wq_points + points_size + 0];
-				morphed.y += origin.y * solution[wq_points + points_size + 1];
-				morphed.y +=            solution[wq_points + points_size + 2];
-			}
-
+			// Point origin = info::mesh->nodes->originCoordinates->datatarray()[*n];
+			// info::mesh->nodes->originCoordinates->datatarray()[*n] = origin;
+			
+			M_ACA.transformPoint(morphed, origin, wq_values_aca, rPoints, configuration);
+			
+			info::mesh->nodes->coordinates->datatarray()[*n] = morphed;
+			
 		}
 	}
+	
 
 	NodeData *morphing = info::mesh->nodes->appendData(3, NamedData::DataType::VECTOR, "RBF_MORPHING");
-
-	#pragma omp parallel for
-	for (esint n = 0; n < info::mesh->nodes->size; ++n) {
+	double morphing_time = eslog::time();
+	#pragma omp parallel
+	{
 		const auto &origin = info::mesh->nodes->originCoordinates->datatarray();
 		const auto &morphed = info::mesh->nodes->coordinates->datatarray();
-		morphing->data[3 * n + 0] = (morphed[n] - origin[n]).x;
-		morphing->data[3 * n + 1] = (morphed[n] - origin[n]).y;
-		morphing->data[3 * n + 2] = (morphed[n] - origin[n]).z;
+		
+		#pragma omp for
+		for (esint n = 0; n < info::mesh->nodes->size; ++n) {
+			Point p = morphed[n] - origin[n];
+			
+			morphing->data[3 * n + 0] = p.x;
+			morphing->data[3 * n + 1] = p.y;
+			morphing->data[3 * n + 2] = p.z;
+			
+		}
 	}
+	eslog::info(" \n");
+	eslog::info("   TIME TO MORPH ALL COORDINATES                                              %10.3f [s] \n", eslog::time() - morphing_time);
+	eslog::info(" ============================================================================================= \n");
 
 	eslog::checkpoint("MESH: COORDINATES MORPHED");
 	eslog::param("morpher", name.c_str());

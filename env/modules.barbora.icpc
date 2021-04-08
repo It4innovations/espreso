@@ -6,3 +6,4 @@ ml CUDAcore/11.3.0
 
 export MPICXX=mpiicpc
 export CXX=icpc
+export LANG=C

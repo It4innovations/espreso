@@ -14,6 +14,10 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 )
 {
 	esint niters = 0;
+	esint nToRestart = 10000;
+	esint useMaxIterLimit = 0;
+	double* mem_vec = new double[M.getNRows()];
+
 #ifdef HAVE_MKL
 	//---------------------------------------------------------------------------
 	// Define arrays for the coefficient matrix
@@ -29,7 +33,9 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 	//---------------------------------------------------------------------------
 	esint ipar[size];
 	double dpar[size];
-	std::vector<double> tmp(cols * (2 * cols + 1) + (cols * (cols + 9)) / 2 + 1);
+	
+	ipar[14] = nToRestart;
+	std::vector<double> tmp(cols * (2 * ipar[14] + 1) + (ipar[14] * (ipar[14] + 9)) / 2 + 1);
 
 	//---------------------------------------------------------------------------
 	// Some additional variables to use with the RCI (P)FGMRES solver
@@ -62,11 +68,11 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 	ipar[4] = maxIterations;
 	dpar[0] = tolerance;
 
-	ipar[7] = 1;
-	ipar[8] = 1;
+	ipar[7] = 1;//1 -> performs test for maximal number of iterations: ipar[3] <= ipar[4]
+	ipar[8] = 1;//1 -> performs residual stopping test: dpar[4] <= dpar[3]
 	ipar[9] = 0;
-	ipar[10] = 0;
-	ipar[11] = 1;
+	ipar[10] = 1;//0 -> non-preconditioned version
+	ipar[11] = 1;//1 -> performs automatic test for zero norm of the currently generated vector: dpar[6] <= dpar[7], dpar[7] contains the tolerance value
 
 	//---------------------------------------------------------------------------
 	// Check the correctness and consistency of the newly set parameters
@@ -100,6 +106,16 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 			continue;
 		}
 
+
+		//---------------------------------------------------------------------------
+		// If RCI_request=3, then apply the preconditioner to tmp[ipar[21]-1] and store it into tmp[ipar[22]-1]
+		//---------------------------------------------------------------------------
+		if (RCI_request == 3) {
+			M.applyPreconditioner(tmp.data() + ipar[21] - 1, tmp.data() + ipar[22] - 1, 1.0f, 0.0f, false);
+			continue;
+		}
+
+
 		break;
 	}
 	//---------------------------------------------------------------------------
@@ -118,6 +134,8 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 		eslog::error("Something wrong happens while 'dfgmres_get' in ACA solver.\n");
 	}
 #endif
+
+	delete [] mem_vec;
 
 	return niters;
 }
