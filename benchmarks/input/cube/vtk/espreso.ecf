@@ -1,6 +1,6 @@
 
 INPUT {
-  LOADER    [ARG3];
+  LOADER    [ARG2];
 
   FORMAT   VTK_LEGACY;
   PATH         [ARG0];

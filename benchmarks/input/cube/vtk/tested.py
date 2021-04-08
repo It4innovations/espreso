@@ -22,5 +22,5 @@ def run(processes, decomposer, loader):
     ESPRESOTest.processes = processes
     ESPRESOTest.args[0] = os.path.join(ESPRESOTest.path, "cube.*.vtk")
     ESPRESOTest.args[1] = decomposer
-    ESPRESOTest.args[3] = loader
+    ESPRESOTest.args[2] = loader
     ESPRESOTest.compare_mesh("espreso.log", ESPRESOTest.run())
