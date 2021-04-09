@@ -244,7 +244,10 @@ APITEST:
 GITHUB:
   stage: release
   only:
-    - schedules
+    refs:
+      - schedules
+    variables:
+      - $FULL
   script:
     - if ! git remote | grep release > /dev/null; then
         git remote add release git@github.com:It4innovations/espreso.git;
