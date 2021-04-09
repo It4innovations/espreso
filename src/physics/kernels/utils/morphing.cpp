@@ -78,7 +78,7 @@ static void createTranslationMatrixToCenter(const CoordinateSystemConfiguration 
 		createTranslationMatrix2D(m, x, y);
 	} break;
 	default:
-		eslog::internalFailure("unsupported operation.\n");
+		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
 	}
 }
 
@@ -100,7 +100,7 @@ static void createTranslationMatrixToZero(const CoordinateSystemConfiguration &c
 		createTranslationMatrix2D(m, -x, -y);
 	} break;
 	default:
-		eslog::internalFailure("unsupported operation.\n");
+		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
 	}
 }
 
@@ -119,7 +119,7 @@ static void multiplyTransformationMatrices(const CoordinateSystemConfiguration &
 		MATH::DenseMatDenseMatRowMajorProduct(1, false, 3, 4, left.data(), false, 3, 3, right.data(), 0, result.data());
 	} break;
 	default:
-		eslog::internalFailure("unsupported operation.\n");
+		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
 	}
 }
 
@@ -139,7 +139,7 @@ static Point applyTransformation(const CoordinateSystemConfiguration &csystem, s
 		result /=  m[2 * 3 + 0] * p.x + m[2 * 3 + 1] * p.y + m[2 * 3 + 2];
 	} break;
 	default:
-		eslog::internalFailure("unsupported operation.\n");
+		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
 	}
 	return result;
 }
@@ -161,7 +161,7 @@ static void createRotationMatrix(const CoordinateSystemConfiguration &csystem, s
 		csystem.rotation.z.evaluator->evalVector(1, Evaluator::Params(), &(rPoint.z));
 	} break;
 	default:
-		eslog::internalFailure("unsupported operation.\n");
+		eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
 	}
 
 	switch (*csystem.dimension) {
@@ -180,7 +180,7 @@ static void createRotationMatrix(const CoordinateSystemConfiguration &csystem, s
 				sin.z = std::sin(d2r(rPoint.z));
 			} break;
 			default:
-				eslog::internalFailure("unsupported operation.\n");
+				eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
 			}
 			m[0 * 4 + 0] = cos.y * cos.z;                         m[0 * 4 + 1] = cos.y * sin.z;                         m[0 * 4 + 2] = -sin.y;
 			m[1 * 4 + 0] = cos.z * sin.x * sin.y - cos.x * sin.z; m[1 * 4 + 1] = cos.x * cos.z + sin.x * sin.y * sin.z; m[1 * 4 + 2] = cos.y * sin.x;
@@ -200,14 +200,14 @@ static void createRotationMatrix(const CoordinateSystemConfiguration &csystem, s
 				sin = std::sin(d2r(rPoint.z));
 			} break;
 			default:
-				eslog::internalFailure("unsupported operation.\n");
+				eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
 			}
 			m[0 * 3 + 0] =  cos; m[0 * 3 + 1] = sin;
 			m[1 * 3 + 0] = -sin; m[1 * 3 + 1] = cos;
 			m[2 * 3 + 2] = 1;
 		} break;
 		default:
-			eslog::internalFailure("unsupported operation.\n");
+			eslog::globalerror("ESPRESO internal error: unsupported operation.\n");
 	}
 }
 
