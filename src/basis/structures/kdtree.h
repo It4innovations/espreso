@@ -10,20 +10,21 @@
 namespace espreso {
 
 class KDTree {
+	enum: size_t { defaultBucketSize = 8 };
+
 	struct splitter {
 		int d;
 		esint index;
 		double value;
 	};
 
-	struct leaf_intervals{
+	struct leaf_intervals {
 		esint begin;
 		esint end;
 	};
 
 public:
-	KDTree(const std::vector<Point> &coordinates);
-	KDTree(const std::vector<Point> &coordinates, size_t bucketsize);
+	KDTree(const std::vector<Point> &coordinates, size_t bucketsize = defaultBucketSize);
 	KDTree(const std::vector<Point> &coordinates, Point &min, Point &max);
 
 	esint begin(esint interval)
@@ -102,8 +103,7 @@ public:
 	std::vector<leaf_intervals> leaf_intervals;
 
 protected:
-	void build();
-	void build(size_t bucketsize);
+	void build(size_t bucketsize = defaultBucketSize);
 };
 
 }
