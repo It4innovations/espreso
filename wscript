@@ -327,7 +327,6 @@ def show(ctx):
     ctx.logger.handlers = Logs.log_handler()
 
     ctx.msg("CXX", " ".join(ctx.env.CXX))
-    ctx.msg("INFO", " ".join(ctx.env.DEFINES_INFO))
     ctx.msg("DEFINES", " ".join(ctx.env.DEFINES))
     ctx.msg("CXXFLAGS", " ".join(ctx.env.CXXFLAGS))
     print_available(ctx)
