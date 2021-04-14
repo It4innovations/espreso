@@ -293,13 +293,13 @@ const void OutputManager::writeConfiguration(const char type,
 		case OutputConfiguration::LOGGER::USER:
 			eslog::solver("     - | AUTOMATIC OPTIMIZATION :: ALGORITHM                   %23s | -\n",
 			m_config.ecfdescription->getParameter(&m_config.algorithm)->getValue().c_str());
-			// ss << type << ",";
-			// for (auto p = configuration.cbegin();
-			// 	p != configuration.cend();
-			// 	++p)
-			// {ss << *p << ",";}
-			// eslog::solver("     - | AUTOMATIC OPTIMIZATION :: CONFIGURATION     %33s | -\n",
-			// ss.str().c_str());
+			ss << type << ",";
+			for (auto p = configuration.cbegin();
+				p != configuration.cend();
+			 	++p)
+			{ss << *p << ",";}
+			eslog::solver("     - | AUTOMATIC OPTIMIZATION :: CONFIGURATION  %36s | -\n",
+			ss.str().c_str());
 			break;
 		case OutputConfiguration::LOGGER::PARSER:
 		default:
@@ -423,7 +423,7 @@ void OptimizationProxy::setConfigurationEvaluation(double value)
 
 void OptimizationProxy::setConfigurationForbidden()
 {
-	if (!info::mpi::rank) return;
+	if (info::mpi::rank != 0) return;
 
 	this->m_forbiddens.push_back(m_alg->getCurrentSpecimen());
 	this->m_alg->evaluateCurrentSpecimen(std::numeric_limits<double>::max());

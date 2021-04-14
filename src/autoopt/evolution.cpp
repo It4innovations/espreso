@@ -17,6 +17,7 @@ RandomAlgorithm::RandomAlgorithm(ParameterManager& manager,
 
 std::vector<double>& RandomAlgorithm::getCurrentSpecimen()
 {
+	this->m_output.writeConfiguration('N', m_last);
 	return m_last;
 }
 
@@ -45,6 +46,7 @@ void AllPermutationsAlgorithm::evaluateCurrentSpecimen(double value)
 {
 	m_last.push_back(value);
 	m_output.writeConfiguration('N', m_last);
+	m_last.pop_back();
 	
 	int carry = 1;
 	for (int i = m_dimension - 1; i > -1; i--)

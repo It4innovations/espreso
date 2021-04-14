@@ -29,8 +29,15 @@ bool EvolutionaryOptimizer::set(std::function<bool(void)> fnc)
 {
 	this->m_proxy.setNextConfiguration();
 	this->m_set_function = fnc;
+	
+	bool ret = fnc();
 
-	return fnc();
+	if (!ret)
+	{
+		this->m_proxy.setConfigurationForbidden();
+	}
+
+	return ret;
 	// for (auto p = _parameters.begin(); p != _parameters.end(); ++p) {
 	// 	std::cout << (*p)->name << ": " << (*p)->getValue() << " ";
 	// }
@@ -49,8 +56,7 @@ bool EvolutionaryOptimizer::run(std::function<bool(void)> fnc)
 	else 
 	{ 
 		this->m_proxy.setConfigurationForbidden();
-		while(!this->set(m_set_function))
-		{ this->m_proxy.setConfigurationForbidden(); }
+		while(!this->set(m_set_function));
 	}
 
 	return ret;
