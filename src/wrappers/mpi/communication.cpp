@@ -683,7 +683,15 @@ bool Communication::reduce(void *in, void *out, size_t size, MPI_Datatype type, 
 	}
 	profiler::syncstart("mpi_reduce");
 	profiler::syncparam("size", size);
-	MPI_Reduce(in, out, size, type, op, root, group->communicator);
+	if (out == NULL) {
+		if (info::mpi::rank == root) {
+			MPI_Reduce(MPI_IN_PLACE, in, size, type, op, root, group->communicator);
+		} else {
+			MPI_Reduce(in, NULL, size, type, op, root, group->communicator);
+		}
+	} else {
+		MPI_Reduce(in, out, size, type, op, root, group->communicator);
+	}
 	profiler::syncend("mpi_reduce");
 	return true;
 }
