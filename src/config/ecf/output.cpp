@@ -98,6 +98,11 @@ OutputConfiguration::OutputConfiguration(const ECF *root)
 			.setdescription({ "Print assembler matrices for debugging." })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
 
+	store_decomposition = 1;
+	REGISTER(store_decomposition, ECFMetaData()
+			.setdescription({ "Store decomposition." })
+			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
+
 	path = "results";
 	REGISTER(path, ECFMetaData()
 			.setdescription({ "Path" })

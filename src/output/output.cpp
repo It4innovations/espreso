@@ -108,8 +108,8 @@ Output::Output()
 	if (info::ecf->output.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
 		OutputWriter *writer = NULL;
 		switch (info::ecf->output.format) {
-		case OutputConfiguration::FORMAT::VTK_LEGACY: writer = new VTKLegacy(!info::ecf->input.convert_database); break;
-		case OutputConfiguration::FORMAT::ENSIGHT: writer = new EnSightGold(!info::ecf->input.convert_database); break;
+		case OutputConfiguration::FORMAT::VTK_LEGACY: writer = new VTKLegacy(info::ecf->output.store_decomposition); break;
+		case OutputConfiguration::FORMAT::ENSIGHT: writer = new EnSightGold(info::ecf->output.store_decomposition); break;
 		case OutputConfiguration::FORMAT::XDMF: writer = new XDMF(); break;
 		case OutputConfiguration::FORMAT::STL_SURFACE: writer = new STL(); break;
 		case OutputConfiguration::FORMAT::NETGEN: writer = new Netgen(); break;
