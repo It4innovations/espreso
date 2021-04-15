@@ -291,8 +291,6 @@ const void OutputManager::writeConfiguration(const char type,
 
 	switch(info::ecf->output.logger) {
 		case OutputConfiguration::LOGGER::USER:
-			eslog::solver("     - | AUTOMATIC OPTIMIZATION :: ALGORITHM                   %23s | -\n",
-			m_config.ecfdescription->getParameter(&m_config.algorithm)->getValue().c_str());
 			ss << type << ",";
 			for (auto p = configuration.cbegin();
 				p != configuration.cend();
@@ -303,18 +301,47 @@ const void OutputManager::writeConfiguration(const char type,
 			break;
 		case OutputConfiguration::LOGGER::PARSER:
 		default:
-			std::stringstream ss;
-			ss << "autoopt: algorithm=";
-			ss << m_config.ecfdescription->getParameter(&m_config.algorithm)->getValue();
-			ss << " configuration=" << type << ",";
+			ss << "autoopt: configuration=" << type << ",";
 			for (auto p = configuration.cbegin();
 				p != configuration.cend();
 				++p)
 			{ss << *p << ",";}
 			ss << "\n";
-			eslog::info(" = ====================== AUTOMATIC OPTIMIZATION OF SOLVER PARAMETERS ====================== = \n");
 			eslog::info(ss.str().c_str());
-			eslog::info(" = ========================================================================================= = \n");
+	}
+}
+
+const void OutputManager::writeAlgorithm()
+{
+	switch(info::ecf->output.logger) {
+		case OutputConfiguration::LOGGER::USER:
+			eslog::solver("     - | AUTOMATIC OPTIMIZATION :: ALGORITHM                   %23s | -\n",
+			m_config.ecfdescription->getParameter(&m_config.algorithm)->getValue().c_str());
+			break;
+		case OutputConfiguration::LOGGER::PARSER:
+		default:
+			std::stringstream ss;
+			ss << "autoopt: algorithm=";
+			ss << m_config.ecfdescription->getParameter(&m_config.algorithm)->getValue();
+			ss << "\n";
+			eslog::info(ss.str().c_str());
+	}
+}
+
+const void OutputManager::writeEvaluation(double evaluation)
+{
+	std::stringstream ss;
+
+	switch(info::ecf->output.logger) {
+		case OutputConfiguration::LOGGER::USER:
+			ss << evaluation;
+			eslog::solver("     - | AUTOMATIC OPTIMIZATION :: EVALUATION                   %22s | -\n",
+			ss.str().c_str());
+			break;
+		case OutputConfiguration::LOGGER::PARSER:
+		default:
+			ss << "autoopt: evaluation=" << evaluation << "\n";
+			eslog::info(ss.str().c_str());
 	}
 }
 
@@ -368,21 +395,20 @@ OptimizationProxy::~OptimizationProxy()
 
 void OptimizationProxy::setNextConfiguration()
 {
-	std::vector<double> configuration;
-
 	if (info::mpi::rank == 0) {
-		configuration = m_alg->getCurrentSpecimen();
-		while (this->isForbidden(configuration))
+		m_last_conf = m_alg->getCurrentSpecimen();
+		while (this->isForbidden(m_last_conf))
 		{
 			m_alg->evaluateCurrentSpecimen(std::numeric_limits<double>::max());
-			configuration = m_alg->getCurrentSpecimen(); 
+			m_last_conf = m_alg->getCurrentSpecimen(); 
 		}
 	}
 	else {
-		configuration.resize(this->dimension);
+		m_last_conf.clear();
+		m_last_conf.resize(this->dimension);
 	}
 
-	Communication::broadcast(configuration.data(), this->dimension,
+	Communication::broadcast(m_last_conf.data(), this->dimension,
 		MPI_DOUBLE, 0);
 
 	int p = 0;
@@ -392,22 +418,22 @@ void OptimizationProxy::setNextConfiguration()
 		if (dt == ECFDataType::OPTION || dt == ECFDataType::ENUM_FLAGS)
 		{
 			(*it)->setValue(
-				(*it)->metadata.options[(int)configuration[p]].name
+				(*it)->metadata.options[(int)m_last_conf[p]].name
 			);
 		}
 		else if (dt == ECFDataType::BOOL)
 		{
 			(*it)->setValue(
-				((int)configuration[p]) == 0 ? "FALSE" : "TRUE"
+				((int)m_last_conf[p]) == 0 ? "FALSE" : "TRUE"
 			);
 		}
 		else if (dt == ECFDataType::FLOAT)
 		{
-			(*it)->setValue(std::to_string(configuration[p]));
+			(*it)->setValue(std::to_string(m_last_conf[p]));
 		}
 		else
 		{
-			(*it)->setValue(std::to_string((int)configuration[p]));
+			(*it)->setValue(std::to_string((int)m_last_conf[p]));
 		}
 	}
 }
@@ -425,7 +451,7 @@ void OptimizationProxy::setConfigurationForbidden()
 {
 	if (info::mpi::rank != 0) return;
 
-	this->m_forbiddens.push_back(m_alg->getCurrentSpecimen());
+	this->m_forbiddens.push_back(m_last_conf);
 	this->m_alg->evaluateCurrentSpecimen(std::numeric_limits<double>::max());
 }
 

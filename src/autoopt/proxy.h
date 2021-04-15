@@ -51,6 +51,8 @@ public:
 	OutputManager(const AutoOptimizationConfiguration& configuration);
 
 	const void writeConfiguration(const char type, std::vector<double>& configuration);
+	const void writeAlgorithm();
+	const void writeEvaluation(double evaluation);
 
 private:
 	const AutoOptimizationConfiguration& m_config;
@@ -79,6 +81,7 @@ private:
 	OutputManager m_output;
 	std::vector<std::vector<double> > m_forbiddens;
 
+	std::vector<double> m_last_conf;
 	bool isForbidden(std::vector<double>& configuration);
 };
 

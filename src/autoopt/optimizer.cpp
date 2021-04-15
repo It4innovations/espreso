@@ -54,7 +54,7 @@ bool EvolutionaryOptimizer::run(std::function<bool(void)> fnc)
 
 	if (ret) { this->m_proxy.setConfigurationEvaluation(end - start); }
 	else 
-	{ 
+	{
 		this->m_proxy.setConfigurationForbidden();
 		while(!this->set(m_set_function));
 	}

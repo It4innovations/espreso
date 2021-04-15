@@ -39,14 +39,13 @@ AllPermutationsAlgorithm::AllPermutationsAlgorithm(ParameterManager& manager,
 
 std::vector<double>& AllPermutationsAlgorithm::getCurrentSpecimen()
 {
+	m_output.writeConfiguration('N', m_last);
 	return m_last;
 }
 
 void AllPermutationsAlgorithm::evaluateCurrentSpecimen(double value)
 {
-	m_last.push_back(value);
-	m_output.writeConfiguration('N', m_last);
-	m_last.pop_back();
+	m_output.writeEvaluation(value);
 	
 	int carry = 1;
 	for (int i = m_dimension - 1; i > -1; i--)
