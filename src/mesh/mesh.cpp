@@ -119,7 +119,8 @@ Mesh::Mesh()
   contacts(new ContactStore()),
 
   output(new Output()),
-  _withGUI(false)
+  _withGUI(false),
+  _withFETI(false)
 {
 	dimension = 0;
 	switch (info::ecf->physics) {
@@ -287,6 +288,8 @@ void Mesh::preprocess()
 		}
 	};
 
+	_withFETI = true; // forEachSteps([] (const LoadStepSolverConfiguration &step) { return step.solver == LoadStepSolverConfiguration::SOLVER::FETI; });
+
 	eslog::startln("MESH: PREPROCESSING STARTED", "MESHING");
 	setMaterials();
 	eslog::checkpointln("MESH: MATERIALS FILLED");
@@ -308,7 +311,7 @@ void Mesh::preprocess()
 	esint msize;
 	Communication::allReduce(&elements->size, &msize, 1, MPITools::getType<esint>().mpitype, MPI_MIN);
 	if (msize == 0) {
-		eslog::globalerror("ESPRESO quit computtion: process without any elements detected.\n");
+		eslog::globalerror("ESPRESO quit computation: process without any elements detected.\n");
 	}
 
 	if (hasBEM(info::ecf->getPhysics())) {
@@ -448,10 +451,7 @@ void Mesh::preprocess()
 	profiler::synccheckpoint("arrange_boundary_regions");
 	eslog::checkpointln("MESH: BOUNDARY REGIONS ARRANGED");
 
-	if (forEachSteps([] (const LoadStepSolverConfiguration &step) {
-		return step.solver == LoadStepSolverConfiguration::SOLVER::FETI;
-	})) {
-
+	if (_withFETI) {
 		mesh::computeNodeDomainDistribution();
 		mesh::computeLocalIndices();
 		profiler::synccheckpoint("preprocess_domains");
@@ -482,10 +482,7 @@ void Mesh::preprocess()
 		eslog::checkpointln("MESH: BODIES SURFACE COMPUTED");
 	}
 
-	if (forEachSteps([] (const LoadStepSolverConfiguration &step) {
-		return step.solver == LoadStepSolverConfiguration::SOLVER::FETI && step.feti.method == FETIConfiguration::METHOD::HYBRID_FETI && step.feti.B0_type == FETIConfiguration::B0_TYPE::KERNELS;
-	})) {
-
+	if (_withFETI) {
 		mesh::computeDomainDual();
 		profiler::synccheckpoint("compute_domain_dual");
 	}
@@ -853,86 +850,651 @@ void Mesh::printMeshStatistics()
 	}
 }
 
+struct __meshinfo__ {
+	struct op_min { template<typename T> T operator()(const T&i, const T&j) const { return std::min(i, j); } };
+	struct op_max { template<typename T> T operator()(const T&i, const T&j) const { return std::max(i, j); } };
+	struct op_sum { template<typename T> T operator()(const T&i, const T&j) const { return i + j; } };
+
+	template <typename T>
+	struct domain_t {
+		T elements = 0, uniquenodes = 0, nodes = 0, neighbors = 0, ninterface = 0, einterface = 0;
+		double nratio = 0, eratio = 0;
+
+		void set(const T &value)
+		{
+			elements = uniquenodes = nodes = neighbors = ninterface = einterface = value;
+			nratio = eratio = value;
+		}
+
+		template<typename TT>
+		domain_t& operator=(const domain_t<TT> &other)
+		{
+			elements = other.elements;
+			uniquenodes = other.uniquenodes;
+			nodes = other.nodes;
+			neighbors = other.neighbors;
+			ninterface = other.ninterface;
+			einterface = other.einterface;
+			nratio = other.nratio;
+			eratio = other.eratio;
+			return *this;
+		}
+
+		template <typename OP>
+		void apply(const domain_t &other, const OP &op)
+		{
+			elements = op(elements, other.elements);
+			uniquenodes = op(uniquenodes, other.uniquenodes);
+			nodes = op(nodes, other.nodes);
+			neighbors = op(neighbors, other.neighbors);
+			ninterface = op(ninterface, other.ninterface);
+			einterface = op(einterface, other.einterface);
+			nratio = op(nratio, other.nratio);
+			eratio = op(eratio, other.eratio);
+		}
+
+		void avg(const domain_t<esint> &sum)
+		{
+			elements /= sum.elements;
+			uniquenodes /= sum.uniquenodes;
+			nodes /= sum.nodes;
+			neighbors /= sum.neighbors;
+			ninterface /= sum.ninterface;
+			einterface /= sum.einterface;
+			nratio /= sum.nratio;
+			eratio /= sum.eratio;
+		}
+
+		void var(const domain_t<esint> &sum)
+		{
+			if (sum.elements - 1 > 0) elements = std::sqrt(elements * (1. / (sum.elements - 1)));
+			if (sum.uniquenodes - 1 > 0) uniquenodes = std::sqrt(uniquenodes * (1. / (sum.uniquenodes - 1)));
+			if (sum.nodes - 1 > 0) nodes = std::sqrt(nodes * (1. / (sum.nodes - 1)));
+			if (sum.neighbors - 1 > 0) neighbors = std::sqrt(neighbors * (1. / (sum.neighbors - 1)));
+			if (sum.ninterface - 1 > 0) ninterface = std::sqrt(ninterface * (1. / (sum.ninterface - 1)));
+			if (sum.einterface - 1 > 0) einterface = std::sqrt(einterface * (1. / (sum.einterface - 1)));
+			if (sum.nratio - 1 > 0) nratio = std::sqrt(nratio * (1. / (sum.nratio - 1)));
+			if (sum.eratio - 1 > 0) eratio = std::sqrt(eratio * (1. / (sum.eratio - 1)));
+		}
+	};
+	template <typename T>
+	struct cluster_t: public domain_t<T> {
+		T domains = 0;
+
+		void set(const T &value)
+		{
+			domain_t<T>::set(value);
+			domains = value;
+		}
+
+		template<typename TT>
+		cluster_t& operator=(const cluster_t<TT> &other)
+		{
+			domain_t<T>::operator=(other);
+			domains = other.domains;
+			return *this;
+		}
+
+		template<typename TT>
+		cluster_t& operator=(const domain_t<TT> &other)
+		{
+			domain_t<T>::operator=(other);
+			return *this;
+		}
+
+		template <typename OP>
+		void apply(const cluster_t &other, const OP &op)
+		{
+			domain_t<T>::apply(other, op);
+			domains = op(domains, other.domains);
+		}
+
+		void avg(const cluster_t<esint> &sum)
+		{
+			domain_t<T>::avg(sum);
+			domains /= sum.domains;
+		}
+
+		void var(const cluster_t<esint> &sum)
+		{
+			domain_t<T>::var(sum);
+			if (sum.domains - 1 > 0) domains = std::sqrt(domains * (1. / (sum.domains - 1)));
+		}
+	};
+	template <typename T>
+	struct mpi_t: public cluster_t<T> {
+		T clusters = 0;
+
+		void set(const T &value)
+		{
+			cluster_t<T>::set(value);
+			clusters = value;
+		}
+
+		template<typename TT>
+		mpi_t& operator=(const mpi_t<TT> &other)
+		{
+			cluster_t<T>::operator=(other);
+			clusters = other.clusters;
+			return *this;
+		}
+
+		template <typename OP>
+		void apply(const mpi_t &other, const OP &op)
+		{
+			cluster_t<T>::apply(other, op);
+			clusters = op(clusters, other.clusters);
+		}
+
+		void avg(const mpi_t<esint> &sum)
+		{
+			cluster_t<T>::avg(sum);
+			clusters /= sum.clusters;
+		}
+
+		void var(const mpi_t<esint> &sum)
+		{
+			cluster_t<T>::var(sum);
+			if (sum.clusters - 1 > 0) clusters = std::sqrt(clusters * (1. / (sum.clusters - 1)));
+		}
+	};
+
+	template<template<typename> typename C, typename T>
+	struct stats_t {
+		C<T> min, max, sum;
+		C<double> avg;
+
+		template<template<typename> typename CC, typename TT>
+		stats_t<C, T>& operator=(const stats_t<CC, TT> &other)
+		{
+			min = other.min;
+			max = other.max;
+			sum = other.sum;
+			avg = other.avg;
+			return *this;
+		}
+
+		void set(const C<T> &value)
+		{
+			avg = min = max = sum = value;
+		}
+
+		void apply(const stats_t<C, T> &other)
+		{
+			min.apply(other.min, op_min());
+			max.apply(other.max, op_max());
+			avg.apply(other.avg, op_sum());
+			sum.apply(other.sum, op_sum());
+		}
+	};
+
+	struct value_t {
+		mpi_t<esint> mpi;
+		cluster_t<esint> cluster;
+		domain_t<esint> domain;
+	} value;
+
+	struct variance_t {
+		mpi_t<double> mpi;
+		cluster_t<double> cluster;
+		domain_t<double> domain;
+	} variance;
+
+	struct base_t {
+		stats_t<mpi_t, esint> mpi;
+		stats_t<cluster_t, esint> cluster;
+		stats_t<domain_t, esint> domain;
+
+		void apply(const base_t &other)
+		{
+			mpi.apply(other.mpi);
+			cluster.apply(other.cluster);
+			domain.apply(other.domain);
+		}
+	} stats;
+
+	void avg()
+	{
+		stats.mpi.avg.avg(stats.mpi.sum);
+		stats.cluster.avg.avg(stats.cluster.sum);
+		stats.domain.avg.avg(stats.domain.sum);
+	}
+
+	void var()
+	{
+		variance.mpi.var(stats.mpi.sum);
+		variance.cluster.var(stats.cluster.sum);
+		variance.domain.var(stats.domain.sum);
+	}
+
+	MPI_Datatype base_mpi_t;
+	MPI_Op base_mpi_op;
+
+	static void op(void *in, void *out, int *len, MPI_Datatype *datatype)
+	{
+		for (int i = 0; i < *len; i++) {
+			(static_cast<base_t*>(out) + i)->apply(*(static_cast<base_t*>(in) + i));
+		}
+	}
+
+	__meshinfo__()
+	{
+		MPI_Type_contiguous(sizeof(stats), MPI_BYTE, &base_mpi_t);
+		MPI_Type_commit(&base_mpi_t);
+		MPI_Op_create(op, true, &base_mpi_op);
+	}
+
+	~__meshinfo__()
+	{
+		MPI_Type_free(&base_mpi_t);
+		MPI_Op_free(&base_mpi_op);
+	}
+};
+
 void Mesh::printDecompositionStatistics()
 {
-	esint cluster     = 0;
-	esint domain      = 1;
-	esint elements    = 2;
-	esint nodes       = 3;
-	esint neighbors   = 4;
-	esint elPerDomain = 5;
-//	esint nPerDomain  = 6;
-	esint total       = 7;
-	std::vector<esint> min(total, std::numeric_limits<esint>::max()), max(total), sum(total), gmin(total, 1), gmax(total, 1), gsum(total, 1);
+	__meshinfo__ mesh;
+	std::vector<esint> dnodes(elements->ndomains), dninterface(elements->ndomains), delements(elements->ndomains), deinterface(elements->ndomains), dneighs(elements->ndomains);
+	std::vector<double> dnratio(elements->ndomains), deratio(elements->ndomains);
+	std::vector<esint> cnodes(elements->nclusters), cninterface(elements->nclusters), celements(elements->nclusters), ceinterface(elements->nclusters), cneighs(elements->nclusters), cdomains(elements->nclusters);
+	std::vector<double> cnratio(elements->nclusters), ceratio(elements->nclusters);
 
-	min[cluster] = max[cluster] = sum[cluster] = this->elements->nclusters;
-	min[domain] = max[domain] = sum[domain] = this->elements->ndomains;
-	min[elements] = max[elements] = sum[elements] = this->elements->size;
-	min[nodes] = max[nodes] = sum[nodes] = this->nodes->size;
-	min[neighbors] = max[neighbors] = sum[neighbors] = this->neighbors.size();
+	#pragma omp parallel for
+	for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
+		esint inodes = 0;
+		for (auto ranks = nodes->ranks->begin(t); ranks != nodes->ranks->end(t); ++ranks) {
+			if (ranks->size() > 1) {
+				++inodes;
+			}
+		}
+		#pragma omp atomic
+		mesh.value.mpi.ninterface += inodes;
 
-	for (esint d = 0; d < this->elements->ndomains; ++d) {
-		min[elPerDomain] = std::min(min[elPerDomain], this->elements->elementsDistribution[d + 1] - this->elements->elementsDistribution[d]);
-		max[elPerDomain] = std::max(max[elPerDomain], this->elements->elementsDistribution[d + 1] - this->elements->elementsDistribution[d]);
-		sum[elPerDomain] += this->elements->elementsDistribution[d + 1] - this->elements->elementsDistribution[d];
+		esint ielements = 0;
+		for (auto neighs = elements->faceNeighbors->begin(t); neighs != elements->faceNeighbors->end(t); ++neighs) {
+			for (auto n = neighs->begin(); n != neighs->end(); ++n) {
+				if (*n != -1 && (*n < elements->offset || elements->offset + elements->size <= *n)) {
+					++ielements;
+				}
+			}
+		}
+		#pragma omp atomic
+		mesh.value.mpi.einterface += ielements;
 
-//		esint nodes = this->nodes->uniqInfo.totalSize;
-//		eslog::warning("DOMAIN INTERVALS DEPENDENT CODE\n");
-//		esint nodes = 0;
-//		for (size_t i = 0; i < this->nodes->dintervals[d].size(); ++i) {
-//			nodes += this->nodes->dintervals[d][i].end - this->nodes->dintervals[d][i].begin;
-//		}
-//		min[nPerDomain] = std::min(min[nPerDomain], nodes);
-//		max[nPerDomain] = std::max(max[nPerDomain], nodes);
-//		sum[nPerDomain] += nodes;
+		if (_withFETI) {
+			std::vector<esint> tdnodes(elements->ndomains), tdninterface(elements->ndomains);
+			for (auto dmap = nodes->domains->begin(t); dmap != nodes->domains->end(t); ++dmap) {
+				if (dmap->size() == 1) {
+					++tdnodes[dmap->front() - elements->firstDomain];
+				} else {
+					for (auto d = dmap->begin(); d != dmap->end(); ++d) {
+						if (elements->firstDomain <= *d && *d < elements->firstDomain + elements->ndomains) {
+							++tdnodes[*d - elements->firstDomain];
+							++tdninterface[*d - elements->firstDomain];
+						}
+					}
+				}
+			}
+
+			std::vector<esint> tdeinterface(elements->ndomains);
+			for (esint d = elements->domainDistribution[t]; d < elements->domainDistribution[t + 1]; ++d) {
+				auto begin = elements->faceNeighbors->begin() + elements->elementsDistribution[d];
+				auto end = elements->faceNeighbors->begin() + elements->elementsDistribution[d + 1];
+				for (auto neighs = begin; neighs != end; ++neighs) {
+					esint size = 0;
+					for (auto n = neighs->begin(); n != neighs->end(); ++n) {
+						if (*n != -1 && (*n < elements->offset + elements->elementsDistribution[d] || elements->offset + elements->elementsDistribution[d + 1] <= *n)) {
+							++tdeinterface[d];
+							++size;
+						}
+					}
+				}
+			}
+
+			for (esint d = 0; d < elements->ndomains; ++d) {
+				dnodes[d] += tdnodes[d];
+				dninterface[d] += tdninterface[d];
+				deinterface[d] += tdeinterface[d];
+			}
+		}
 	}
 
-	Communication::reduce(min.data(), gmin.data(), total, MPITools::getType<esint>().mpitype, MPI_MIN, 0);
-	Communication::reduce(max.data(), gmax.data(), total, MPITools::getType<esint>().mpitype, MPI_MAX, 0);
-	Communication::reduce(sum.data(), gsum.data(), total, MPITools::getType<esint>().mpitype, MPI_SUM, 0);
+	mesh.value.mpi.clusters    = elements->nclusters;
+	mesh.value.mpi.domains     = elements->ndomains;
+	mesh.value.mpi.elements    = elements->size;
+	mesh.value.mpi.uniquenodes = nodes->uniqInfo.size;
+	mesh.value.mpi.nodes       = nodes->size;
+	mesh.value.mpi.nratio      = (double)mesh.value.mpi.ninterface / mesh.value.mpi.nodes;
+	mesh.value.mpi.eratio      = (double)mesh.value.mpi.einterface / mesh.value.mpi.elements;
+	mesh.value.mpi.neighbors   = neighbors.size();
 
-	double imbalance;
-	eslog::info("                                                                                               \n");
+	mesh.stats.mpi.set(mesh.value.mpi);
+	mesh.stats.mpi.sum.set(1);
+
+	if (_withFETI) {
+		mesh.value.domain.elements += elements->size;
+		for (esint d = 0; d < elements->ndomains; ++d) {
+			mesh.value.domain.nodes += dnodes[d];
+			mesh.value.domain.ninterface += dninterface[d];
+			dnratio[d] = (double)dninterface[d] / dnodes[d];
+			mesh.value.domain.nratio += dnratio[d];
+			delements[d] = elements->elementsDistribution[d + 1] - elements->elementsDistribution[d];
+			mesh.value.domain.einterface += deinterface[d];
+			deratio[d] = (double)deinterface[d] / delements[d];
+			mesh.value.domain.eratio += deratio[d];
+			dneighs[d] = (FETIData->fullDomainDual->begin() + d)->size();
+			mesh.value.domain.neighbors += dneighs[d];
+		}
+		mesh.stats.domain.set(mesh.value.domain);
+		{
+			auto minmax = std::minmax_element(dnodes.begin(), dnodes.end());
+			mesh.stats.domain.min.nodes = *minmax.first;
+			mesh.stats.domain.max.nodes = *minmax.second;
+		}
+		{
+			auto minmax = std::minmax_element(dninterface.begin(), dninterface.end());
+			mesh.stats.domain.min.ninterface = *minmax.first;
+			mesh.stats.domain.max.ninterface = *minmax.second;
+		}
+		{
+			auto minmax = std::minmax_element(dnratio.begin(), dnratio.end());
+			mesh.stats.domain.min.nratio = *minmax.first;
+			mesh.stats.domain.max.nratio = *minmax.second;
+		}
+		{
+			auto minmax = std::minmax_element(delements.begin(), delements.end());
+			mesh.stats.domain.min.elements = *minmax.first;
+			mesh.stats.domain.max.elements = *minmax.second;
+		}
+		{
+			auto minmax = std::minmax_element(deinterface.begin(), deinterface.end());
+			mesh.stats.domain.min.einterface = *minmax.first;
+			mesh.stats.domain.max.einterface = *minmax.second;
+		}
+		{
+			auto minmax = std::minmax_element(deratio.begin(), deratio.end());
+			mesh.stats.domain.min.eratio = *minmax.first;
+			mesh.stats.domain.max.eratio = *minmax.second;
+		}
+		{
+			auto minmax = std::minmax_element(dneighs.begin(), dneighs.end());
+			mesh.stats.domain.min.neighbors = *minmax.first;
+			mesh.stats.domain.max.neighbors = *minmax.second;
+		}
+		mesh.stats.domain.sum.set(elements->ndomains);
+		mesh.value.cluster = mesh.value.mpi;
+		mesh.stats.cluster = mesh.stats.mpi;
+		if (elements->nclusters > 1) {
+			mesh.stats.cluster.min = mesh.stats.domain.max;
+			mesh.stats.cluster.max = mesh.stats.domain.min;
+			for (esint d = 0; d < elements->ndomains; ++d) {
+				++cdomains[elements->clusters[d]];
+				celements[elements->clusters[d]] += delements[d];
+				cnodes[elements->clusters[d]] += dnodes[d];
+				cninterface[elements->clusters[d]] += dninterface[d];
+				cnratio[elements->clusters[d]] += dnratio[d];
+				ceinterface[elements->clusters[d]] += deinterface[d];
+				ceratio[elements->clusters[d]] += deratio[d];
+				cneighs[elements->clusters[d]] += dneighs[d];
+			}
+			{
+				auto minmax = std::minmax_element(cdomains.begin(), cdomains.end());
+				mesh.stats.cluster.min.domains = *minmax.first;
+				mesh.stats.cluster.max.domains = *minmax.second;
+			}
+			{
+				auto minmax = std::minmax_element(cnodes.begin(), cnodes.end());
+				mesh.stats.cluster.min.nodes = *minmax.first;
+				mesh.stats.cluster.max.nodes = *minmax.second;
+			}
+			{
+				auto minmax = std::minmax_element(cninterface.begin(), cninterface.end());
+				mesh.stats.cluster.min.ninterface = *minmax.first;
+				mesh.stats.cluster.max.ninterface = *minmax.second;
+			}
+			{
+				auto minmax = std::minmax_element(cnratio.begin(), cnratio.end());
+				mesh.stats.cluster.min.nratio = *minmax.first;
+				mesh.stats.cluster.max.nratio = *minmax.second;
+			}
+			{
+				auto minmax = std::minmax_element(celements.begin(), celements.end());
+				mesh.stats.cluster.min.elements = *minmax.first;
+				mesh.stats.cluster.max.elements = *minmax.second;
+			}
+			{
+				auto minmax = std::minmax_element(ceinterface.begin(), ceinterface.end());
+				mesh.stats.cluster.min.einterface = *minmax.first;
+				mesh.stats.cluster.max.einterface = *minmax.second;
+			}
+			{
+				auto minmax = std::minmax_element(ceratio.begin(), ceratio.end());
+				mesh.stats.cluster.min.eratio = *minmax.first;
+				mesh.stats.cluster.max.eratio = *minmax.second;
+			}
+			{
+				auto minmax = std::minmax_element(cneighs.begin(), cneighs.end());
+				mesh.stats.cluster.min.neighbors = *minmax.first;
+				mesh.stats.cluster.max.neighbors = *minmax.second;
+			}
+			mesh.stats.cluster.sum.set(elements->nclusters);
+		}
+	}
+
+	Communication::allReduce(&mesh.stats, NULL, 1, mesh.base_mpi_t, mesh.base_mpi_op);
+	mesh.avg();
+	mesh.variance.mpi.elements    = std::pow(mesh.stats.mpi.avg.elements    - mesh.value.mpi.elements, 2);
+	mesh.variance.mpi.uniquenodes = std::pow(mesh.stats.mpi.avg.uniquenodes - mesh.value.mpi.uniquenodes, 2);
+	mesh.variance.mpi.nodes       = std::pow(mesh.stats.mpi.avg.nodes       - mesh.value.mpi.nodes, 2);
+	mesh.variance.mpi.neighbors   = std::pow(mesh.stats.mpi.avg.neighbors   - mesh.value.mpi.neighbors, 2);
+	mesh.variance.mpi.ninterface  = std::pow(mesh.stats.mpi.avg.ninterface  - mesh.value.mpi.ninterface, 2);
+	mesh.variance.mpi.einterface  = std::pow(mesh.stats.mpi.avg.einterface  - mesh.value.mpi.einterface, 2);
+	mesh.variance.mpi.nratio      = std::pow(mesh.stats.mpi.avg.nratio      - mesh.value.mpi.nratio, 2);
+	mesh.variance.mpi.eratio      = std::pow(mesh.stats.mpi.avg.eratio      - mesh.value.mpi.eratio, 2);
+	mesh.variance.mpi.domains     = std::pow(mesh.stats.mpi.avg.domains     - mesh.value.mpi.domains, 2);
+	mesh.variance.mpi.clusters    = std::pow(mesh.stats.mpi.avg.clusters    - mesh.value.mpi.clusters, 2);
+	if (mesh.stats.mpi.sum.clusters == info::mpi::size) {
+		mesh.variance.cluster = mesh.variance.mpi;
+	} else {
+		for (esint c = 0; c < elements->nclusters; ++c) {
+			mesh.variance.cluster.elements    = std::pow(mesh.stats.cluster.avg.elements    - celements[c], 2);
+			mesh.variance.cluster.nodes       = std::pow(mesh.stats.cluster.avg.nodes       - cnodes[c], 2);
+			mesh.variance.cluster.ninterface  = std::pow(mesh.stats.cluster.avg.ninterface  - cninterface[c], 2);
+			mesh.variance.cluster.einterface  = std::pow(mesh.stats.cluster.avg.einterface  - ceinterface[c], 2);
+			mesh.variance.cluster.nratio      = std::pow(mesh.stats.cluster.avg.nratio      - cnratio[c], 2);
+			mesh.variance.cluster.eratio      = std::pow(mesh.stats.cluster.avg.eratio      - ceratio[c], 2);
+			mesh.variance.cluster.neighbors   = std::pow(mesh.stats.cluster.avg.neighbors   - cneighs[c], 2);
+		}
+	}
+	for (esint d = 0; d < elements->ndomains; ++d) {
+		mesh.variance.domain.elements    = std::pow(mesh.stats.domain.avg.elements    - delements[d], 2);
+		mesh.variance.domain.nodes       = std::pow(mesh.stats.domain.avg.nodes       - dnodes[d], 2);
+		mesh.variance.domain.ninterface  = std::pow(mesh.stats.domain.avg.ninterface  - dninterface[d], 2);
+		mesh.variance.domain.einterface  = std::pow(mesh.stats.domain.avg.einterface  - deinterface[d], 2);
+		mesh.variance.domain.nratio      = std::pow(mesh.stats.domain.avg.nratio      - dnratio[d], 2);
+		mesh.variance.domain.eratio      = std::pow(mesh.stats.domain.avg.eratio      - deratio[d], 2);
+		mesh.variance.domain.neighbors   = std::pow(mesh.stats.domain.avg.neighbors   - dneighs[d], 2);
+	}
+
+	Communication::allReduce(&mesh.variance, NULL, sizeof(mesh.variance) / sizeof(double), MPI_DOUBLE, MPI_SUM);
+	mesh.var();
+
 	eslog::info(" ================================== DECOMPOSITION STATISTICS ================================= \n");
-	eslog::info("                              MIN                 MAX                 SUM           IMBALANCE \n");
-	eslog::info("  CLUSTERS  : %19s %19s %19s", Parser::stringwithcommas(gmin[cluster]).c_str(), Parser::stringwithcommas(gmax[cluster]).c_str(), Parser::stringwithcommas(gsum[cluster]).c_str());
-	if ((imbalance = (double)gmax[cluster] / gmin[cluster]) > 2) {
-		eslog::warning(" %19.3f\n", imbalance);
-	} else {
-		eslog::info(" %19.3f\n", imbalance);
+	if (!_withFETI || mesh.stats.mpi.max.clusters > 1) {
+		eslog::info(" ============================================================================================= \n");
+		eslog::info("  PER MPI STATISTICS         %12s %12s %12s %12s %12s \n", "MIN", "MAX", "AVG", "VAR", "IMBALANCE");
+		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+		eslog::info("  CLUSTERS                 : %12d %12d %12.2f %12.2f %12.2f \n",
+				mesh.stats.mpi.min.clusters,
+				mesh.stats.mpi.max.clusters,
+				mesh.stats.mpi.avg.clusters,
+				mesh.variance.mpi.clusters,
+				mesh.stats.mpi.min.clusters ? (double)mesh.stats.mpi.max.clusters / mesh.stats.mpi.min.clusters : 0.0);
+		eslog::info("  DOMAINS                  : %12d %12d %12.2f %12.2f %12.2f \n",
+				mesh.stats.mpi.min.domains,
+				mesh.stats.mpi.max.domains,
+				mesh.stats.mpi.avg.domains,
+				mesh.variance.mpi.domains,
+				mesh.stats.mpi.min.domains ? (double)mesh.stats.mpi.max.domains / mesh.stats.mpi.min.domains : 0.0);
+		eslog::info("  UNIQUE NODES             : %12s %12s %12s %12s %12.2f \n",
+				Parser::stringwithcommas(mesh.stats.mpi.min.uniquenodes).c_str(),
+				Parser::stringwithcommas(mesh.stats.mpi.max.uniquenodes).c_str(),
+				Parser::stringwithcommas((int)mesh.stats.mpi.avg.uniquenodes).c_str(),
+				Parser::stringwithcommas((int)mesh.variance.mpi.uniquenodes).c_str(),
+				mesh.stats.mpi.min.uniquenodes ? (double)mesh.stats.mpi.max.uniquenodes / mesh.stats.mpi.min.uniquenodes : 0.0);
+		eslog::info("  NODES                    : %12s %12s %12s %12s %12.2f \n",
+				Parser::stringwithcommas(mesh.stats.mpi.min.nodes).c_str(),
+				Parser::stringwithcommas(mesh.stats.mpi.max.nodes).c_str(),
+				Parser::stringwithcommas((int)mesh.stats.mpi.avg.nodes).c_str(),
+				Parser::stringwithcommas((int)mesh.variance.mpi.nodes).c_str(),
+				mesh.stats.mpi.min.nodes ? (double)mesh.stats.mpi.max.nodes / mesh.stats.mpi.min.nodes : 0.0);
+		eslog::info("  INTERFACE NODES          : %12s %12s %12s %12s %12.2f \n",
+				Parser::stringwithcommas(mesh.stats.mpi.min.ninterface).c_str(),
+				Parser::stringwithcommas(mesh.stats.mpi.max.ninterface).c_str(),
+				Parser::stringwithcommas((int)mesh.stats.mpi.avg.ninterface).c_str(),
+				Parser::stringwithcommas((int)mesh.variance.mpi.ninterface).c_str(),
+				mesh.stats.mpi.min.ninterface ? (double)mesh.stats.mpi.max.ninterface / mesh.stats.mpi.min.ninterface : 0.0);
+		eslog::info("  INTERFACE NODES RATIO    : %12.2f %12.2f %12.2f %12.2f %12.2f \n",
+				mesh.stats.mpi.min.nratio,
+				mesh.stats.mpi.max.nratio,
+				mesh.stats.mpi.avg.nratio,
+				mesh.variance.mpi.nratio,
+				mesh.stats.mpi.min.nratio ? mesh.stats.mpi.max.nratio / mesh.stats.mpi.min.nratio : 0.0);
+		eslog::info("  ELEMENTS                 : %12s %12s %12s %12s %12.2f \n",
+				Parser::stringwithcommas(mesh.stats.mpi.min.elements).c_str(),
+				Parser::stringwithcommas(mesh.stats.mpi.max.elements).c_str(),
+				Parser::stringwithcommas((int)mesh.stats.mpi.avg.elements).c_str(),
+				Parser::stringwithcommas((int)mesh.variance.mpi.elements).c_str(),
+				mesh.stats.mpi.min.elements ? (double)mesh.stats.mpi.max.elements / mesh.stats.mpi.min.elements : 0.0);
+		eslog::info("  INTERFACE ELEMENTS       : %12s %12s %12s %12s %12.2f \n",
+				Parser::stringwithcommas(mesh.stats.mpi.min.einterface).c_str(),
+				Parser::stringwithcommas(mesh.stats.mpi.max.einterface).c_str(),
+				Parser::stringwithcommas((int)mesh.stats.mpi.avg.einterface).c_str(),
+				Parser::stringwithcommas((int)mesh.variance.mpi.einterface).c_str(),
+				mesh.stats.mpi.min.einterface ? (double)mesh.stats.mpi.max.einterface / mesh.stats.mpi.min.einterface : 0);
+		eslog::info("  INTERFACE ELEMENTS RATIO : %12.2f %12.2f %12.2f %12.2f %12.2f \n",
+				mesh.stats.mpi.min.eratio,
+				mesh.stats.mpi.max.eratio,
+				mesh.stats.mpi.avg.eratio,
+				mesh.variance.mpi.eratio,
+				mesh.stats.mpi.min.eratio ? mesh.stats.mpi.max.eratio / mesh.stats.mpi.min.eratio : 0.0);
+		eslog::info("  NEIGHBORS                : %12d %12d %12.2f %12.2f %12.2f \n",
+				mesh.stats.mpi.min.neighbors,
+				mesh.stats.mpi.max.neighbors,
+				mesh.stats.mpi.avg.neighbors,
+				mesh.variance.mpi.neighbors,
+				mesh.stats.mpi.min.neighbors ? (double)mesh.stats.mpi.max.neighbors / mesh.stats.mpi.min.neighbors : 0.0);
 	}
-	eslog::info("  DOMAINS   : %19s %19s %19s", Parser::stringwithcommas(gmin[domain]).c_str(), Parser::stringwithcommas(gmax[domain]).c_str(), Parser::stringwithcommas(gsum[domain]).c_str());
-	if ((imbalance = (double)gmax[domain] / gmin[domain]) > 2) {
-		eslog::warning(" %19.3f\n", imbalance);
-	} else {
-		eslog::info(" %19.3f\n", imbalance);
+
+	if (_withFETI) {
+		eslog::info(" ============================================================================================= \n");
+		eslog::info("  PER CLUSTER STATISTICS     %12s %12s %12s %12s %12s \n", "MIN", "MAX", "AVG", "VAR", "IMBALANCE");
+		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+		eslog::info("  DOMAINS                  : %12d %12d %12.2f %12.2f %12.2f \n",
+				mesh.stats.cluster.min.domains,
+				mesh.stats.cluster.max.domains,
+				mesh.stats.cluster.avg.domains,
+				mesh.variance.cluster.domains,
+				mesh.stats.cluster.min.domains ? (double)mesh.stats.cluster.max.domains / mesh.stats.cluster.min.domains : 0.0);
+		if (mesh.stats.mpi.max.clusters == 1) {
+			eslog::info("  UNIQUE NODES             : %12s %12s %12s %12s %12.2f \n",
+					Parser::stringwithcommas(mesh.stats.cluster.min.uniquenodes).c_str(),
+					Parser::stringwithcommas(mesh.stats.cluster.max.uniquenodes).c_str(),
+					Parser::stringwithcommas((int)mesh.stats.cluster.avg.uniquenodes).c_str(),
+					Parser::stringwithcommas((int)mesh.variance.cluster.uniquenodes).c_str(),
+					mesh.stats.cluster.min.uniquenodes ? (double)mesh.stats.cluster.max.uniquenodes / mesh.stats.cluster.min.uniquenodes : 0.0);
+		}
+		eslog::info("  NODES                    : %12s %12s %12s %12s %12.2f \n",
+				Parser::stringwithcommas(mesh.stats.cluster.min.nodes).c_str(),
+				Parser::stringwithcommas(mesh.stats.cluster.max.nodes).c_str(),
+				Parser::stringwithcommas((int)mesh.stats.cluster.avg.nodes).c_str(),
+				Parser::stringwithcommas((int)mesh.variance.cluster.nodes).c_str(),
+				mesh.stats.cluster.min.nodes ? (double)mesh.stats.cluster.max.nodes / mesh.stats.cluster.min.nodes : 0.0);
+		eslog::info("  INTERFACE NODES          : %12s %12s %12s %12s %12.2f \n",
+				Parser::stringwithcommas(mesh.stats.cluster.min.ninterface).c_str(),
+				Parser::stringwithcommas(mesh.stats.cluster.max.ninterface).c_str(),
+				Parser::stringwithcommas((int)mesh.stats.cluster.avg.ninterface).c_str(),
+				Parser::stringwithcommas((int)mesh.variance.cluster.ninterface).c_str(),
+				mesh.stats.cluster.min.ninterface ? (double)mesh.stats.cluster.max.ninterface / mesh.stats.cluster.min.ninterface : 0.0);
+		eslog::info("  INTERFACE NODES RATIO    : %12.2f %12.2f %12.2f %12.2f %12.2f \n",
+				mesh.stats.cluster.min.nratio,
+				mesh.stats.cluster.max.nratio,
+				mesh.stats.cluster.avg.nratio,
+				mesh.variance.cluster.nratio,
+				mesh.stats.cluster.min.nratio ? mesh.stats.cluster.max.nratio / mesh.stats.cluster.min.nratio : 0.0);
+		eslog::info("  ELEMENTS                 : %12s %12s %12s %12s %12.2f \n",
+				Parser::stringwithcommas(mesh.stats.cluster.min.elements).c_str(),
+				Parser::stringwithcommas(mesh.stats.cluster.max.elements).c_str(),
+				Parser::stringwithcommas((int)mesh.stats.cluster.avg.elements).c_str(),
+				Parser::stringwithcommas((int)mesh.variance.cluster.elements).c_str(),
+				mesh.stats.cluster.min.elements ? (double)mesh.stats.cluster.max.elements / mesh.stats.cluster.min.elements : 0.0);
+		eslog::info("  INTERFACE ELEMENTS       : %12s %12s %12s %12s %12.2f \n",
+				Parser::stringwithcommas(mesh.stats.cluster.min.einterface).c_str(),
+				Parser::stringwithcommas(mesh.stats.cluster.max.einterface).c_str(),
+				Parser::stringwithcommas((int)mesh.stats.cluster.avg.einterface).c_str(),
+				Parser::stringwithcommas((int)mesh.variance.cluster.einterface).c_str(),
+				mesh.stats.cluster.min.einterface ? (double)mesh.stats.cluster.max.einterface / mesh.stats.cluster.min.einterface : 0.0);
+		eslog::info("  INTERFACE ELEMENTS RATIO : %12.2f %12.2f %12.2f %12.2f %12.2f \n",
+				mesh.stats.cluster.min.eratio,
+				mesh.stats.cluster.max.eratio,
+				mesh.stats.cluster.avg.eratio,
+				mesh.variance.cluster.eratio,
+				mesh.stats.cluster.min.eratio ? mesh.stats.cluster.max.eratio / mesh.stats.cluster.min.eratio : 0.0);
+		if (mesh.stats.mpi.max.clusters == 1) {
+			eslog::info("  NEIGHBORS                : %12d %12d %12.2f %12.2f %12.2f \n",
+					mesh.stats.cluster.min.neighbors,
+					mesh.stats.cluster.max.neighbors,
+					mesh.stats.cluster.avg.neighbors,
+					mesh.variance.cluster.neighbors,
+					mesh.stats.cluster.min.neighbors ? (double)mesh.stats.cluster.max.neighbors / mesh.stats.cluster.min.neighbors : 0.0);
+		}
+
+		eslog::info(" ============================================================================================= \n");
+		eslog::info("  PER DOMAIN STATISTICS      %12s %12s %12s %12s %12s \n", "MIN", "MAX", "AVG", "VAR", "IMBALANCE");
+		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+		eslog::info("  NODES                    : %12s %12s %12s %12s %12.2f \n",
+				Parser::stringwithcommas(mesh.stats.domain.min.nodes).c_str(),
+				Parser::stringwithcommas(mesh.stats.domain.max.nodes).c_str(),
+				Parser::stringwithcommas((int)mesh.stats.domain.avg.nodes).c_str(),
+				Parser::stringwithcommas((int)mesh.variance.domain.nodes).c_str(),
+				mesh.stats.domain.min.nodes ? (double)mesh.stats.domain.max.nodes / mesh.stats.domain.min.nodes : 0.0);
+		eslog::info("  INTERFACE NODES          : %12s %12s %12s %12s %12.2f \n",
+				Parser::stringwithcommas(mesh.stats.domain.min.ninterface).c_str(),
+				Parser::stringwithcommas(mesh.stats.domain.max.ninterface).c_str(),
+				Parser::stringwithcommas((int)mesh.stats.domain.avg.ninterface).c_str(),
+				Parser::stringwithcommas((int)mesh.variance.domain.ninterface).c_str(),
+				mesh.stats.domain.min.ninterface ? (double)mesh.stats.domain.max.ninterface / mesh.stats.domain.min.ninterface : 0.0);
+		eslog::info("  INTERFACE NODES RATIO    : %12.2f %12.2f %12.2f %12.2f %12.2f \n",
+				mesh.stats.domain.min.nratio,
+				mesh.stats.domain.max.nratio,
+				mesh.stats.domain.avg.nratio,
+				mesh.variance.domain.nratio,
+				mesh.stats.domain.min.nratio ? mesh.stats.domain.max.nratio / mesh.stats.domain.min.nratio : 0.0);
+		eslog::info("  ELEMENTS                 : %12s %12s %12s %12s %12.2f \n",
+				Parser::stringwithcommas(mesh.stats.domain.min.elements).c_str(),
+				Parser::stringwithcommas(mesh.stats.domain.max.elements).c_str(),
+				Parser::stringwithcommas((int)mesh.stats.domain.avg.elements).c_str(),
+				Parser::stringwithcommas((int)mesh.variance.domain.elements).c_str(),
+				mesh.stats.domain.min.elements ? (double)mesh.stats.domain.max.elements / mesh.stats.domain.min.elements : 0.0);
+		eslog::info("  INTERFACE ELEMENTS       : %12s %12s %12s %12s %12.2f \n",
+				Parser::stringwithcommas(mesh.stats.domain.min.einterface).c_str(),
+				Parser::stringwithcommas(mesh.stats.domain.max.einterface).c_str(),
+				Parser::stringwithcommas((int)mesh.stats.domain.avg.einterface).c_str(),
+				Parser::stringwithcommas((int)mesh.variance.domain.einterface).c_str(),
+				mesh.stats.domain.min.einterface ? (double)mesh.stats.domain.max.einterface / mesh.stats.domain.min.einterface : 0.0);
+		eslog::info("  INTERFACE ELEMENTS RATIO : %12.2f %12.2f %12.2f %12.2f %12.2f \n",
+				mesh.stats.domain.min.eratio,
+				mesh.stats.domain.max.eratio,
+				mesh.stats.domain.avg.eratio,
+				mesh.variance.domain.eratio,
+				mesh.stats.domain.min.eratio ? mesh.stats.domain.max.eratio / mesh.stats.domain.min.eratio : 0.0);
+		eslog::info("  NEIGHBORS DOMAINS        : %12d %12d %12.2f %12.2f %12.2f \n",
+				mesh.stats.domain.min.neighbors,
+				mesh.stats.domain.max.neighbors,
+				mesh.stats.domain.avg.neighbors,
+				mesh.variance.domain.neighbors,
+				mesh.stats.domain.min.neighbors ? (double)mesh.stats.domain.max.neighbors / mesh.stats.domain.min.neighbors : 0.0);
 	}
-	eslog::info("  ELEMENTS  : %19s %19s %19s", Parser::stringwithcommas(gmin[elements]).c_str(), Parser::stringwithcommas(gmax[elements]).c_str(), Parser::stringwithcommas(gsum[elements]).c_str());
-	if ((imbalance = (double)gmax[elements] / gmin[elements]) > 2) {
-		eslog::warning(" %19.3f\n", imbalance);
-	} else {
-		eslog::info(" %19.3f\n", imbalance);
-	}
-	eslog::info("  NODES     : %19s %19s %19s", Parser::stringwithcommas(gmin[nodes]).c_str(), Parser::stringwithcommas(gmax[nodes]).c_str(), Parser::stringwithcommas(gsum[nodes]).c_str());
-	if ((imbalance = (double)gmax[nodes] / gmin[nodes]) > 2) {
-		eslog::warning(" %19.3f\n", imbalance);
-	} else {
-		eslog::info(" %19.3f\n", imbalance);
-	}
-	eslog::info("  NEIGHBORS : %19s %19s %19s", Parser::stringwithcommas(gmin[neighbors]).c_str(), Parser::stringwithcommas(gmax[neighbors]).c_str(), Parser::stringwithcommas(gsum[neighbors]).c_str());
-	eslog::info(" %19.3f\n", gmin[neighbors] ? (double)gmax[neighbors] / gmin[neighbors] : 0);
-	eslog::info("  ELEMS/DOM : %19s %19s %19s", Parser::stringwithcommas(gmin[elPerDomain]).c_str(), Parser::stringwithcommas(gmax[elPerDomain]).c_str(), Parser::stringwithcommas(gsum[elPerDomain]).c_str());
-	if ((imbalance = (double)gmax[elPerDomain] / gmin[elPerDomain]) > 2) {
-		eslog::warning(" %19.3f\n", imbalance);
-	} else {
-		eslog::info(" %19.3f\n", imbalance);
-	}
-//	eslog::info("  NODES/DOM : %13d %13d %13d", gmin[nPerDomain], gmax[nPerDomain], gsum[nPerDomain]);
-//	if ((imbalance = (double)gmax[nPerDomain] / gmin[nPerDomain]) > 2) {
-//		eslog::warning(" %13.3f\n", imbalance);
-//	} else {
-//		eslog::info(" %13.3f\n", imbalance);
-//	}
 	eslog::info(" ============================================================================================= \n");
 }
 

@@ -96,7 +96,7 @@ public:
 
 	Output *output;
 
-	bool _withGUI;
+	bool _withGUI, _withFETI;
 };
 
 }

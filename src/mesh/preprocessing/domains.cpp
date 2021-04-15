@@ -163,45 +163,57 @@ void computeDomainDual()
 	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<std::vector<esint> > dist(threads), data(threads);
+	std::vector<std::vector<esint> > distFull(threads), dataFull(threads);
 
 	esint first = *info::mesh->elements->IDs->datatarray().begin();
 	esint last = first + info::mesh->elements->size;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		std::vector<esint> tdist, tdata;
+		std::vector<esint> tdist, tdata, tdistFull, tdataFull;
 		if (t == 0) {
 			tdist.push_back(0);
+			tdistFull.push_back(0);
 		}
 
 		auto neighs = info::mesh->elements->faceNeighbors->cbegin(t);
 		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
-			std::vector<esint> ndomains;
+			std::vector<esint> ndomains, ndomainsFull;
 			for (esint e = info::mesh->elements->elementsDistribution[d]; e < info::mesh->elements->elementsDistribution[d + 1]; ++e, ++neighs) {
 				for (auto n = neighs->begin(); n != neighs->end(); ++n) {
-					if (*n != -1 && first <= *n && *n < last) {
+					if (*n != -1) {
 						if (*n < first + info::mesh->elements->elementsDistribution[d] || first + info::mesh->elements->elementsDistribution[d + 1] <= *n) {
 							esint doffset = 0;
 							while (first + info::mesh->elements->elementsDistribution[doffset] <= *n) {
 								++doffset;
 							}
-							ndomains.push_back(doffset - 1);
+							ndomainsFull.push_back(info::mesh->elements->firstDomain + doffset - 1);
+							if (first <= *n && *n < last) {
+								ndomains.push_back(doffset - 1);
+							}
 						}
 					}
 				}
 			}
 			utils::sortAndRemoveDuplicates(ndomains);
+			utils::sortAndRemoveDuplicates(ndomainsFull);
 			tdata.insert(tdata.end(), ndomains.begin(), ndomains.end());
 			tdist.push_back(tdata.size());
+			tdataFull.insert(tdataFull.end(), ndomainsFull.begin(), ndomainsFull.end());
+			tdistFull.push_back(tdataFull.size());
 		}
 
 		dist[t].swap(tdist);
 		data[t].swap(tdata);
+		distFull[t].swap(tdistFull);
+		dataFull[t].swap(tdataFull);
 	}
 
 	utils::threadDistributionToFullDistribution(dist);
+	utils::threadDistributionToFullDistribution(distFull);
 
 	info::mesh->FETIData->domainDual = new serializededata<esint, esint>(dist, data);
+	info::mesh->FETIData->fullDomainDual = new serializededata<esint, esint>(distFull, dataFull);
 
 	eslog::checkpointln("MESH: DOMAIN DUAL GRAPH COMPUTED");
 }
