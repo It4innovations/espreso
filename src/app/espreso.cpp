@@ -89,6 +89,10 @@ int main(int argc, char **argv)
 	profiler::syncend("mesh_output");
 
 	if (Mesh::convertDatabase()) {
+		if (info::ecf->output.store_decomposition > 1) {
+			info::mesh->output->updateMonitors();
+			info::mesh->output->updateSolution();
+		}
 		eslog::endln("ESPRESO: DATABASE CONVERTED");
 	} else {
 		profiler::syncstart("physical_solver");

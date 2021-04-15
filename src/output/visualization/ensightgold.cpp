@@ -6,6 +6,7 @@
 #include "esinfo/eslog.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/meshinfo.h"
+#include "esinfo/ecfinfo.h"
 #include "mesh/mesh.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
@@ -20,8 +21,8 @@
 
 using namespace espreso;
 
-EnSightGold::EnSightGold(bool withDecomposition)
-: _ftt(NULL), _withDecomposition(withDecomposition), _withIDs(true), _step(-1)
+EnSightGold::EnSightGold()
+: _ftt(NULL), _withIDs(true), _step(-1)
 {
 	_geometry = _directory + _name + ".geo";
 	_fixedDataPath = _directory;
@@ -48,7 +49,7 @@ void EnSightGold::updateMesh()
 	profiler::syncstart("store_ensight");
 	if (info::mpi::irank == 0) {
 		geometry();
-		if (_withDecomposition) {
+		if (info::ecf->output.store_decomposition) {
 			decomposition();
 		}
 	}
@@ -181,7 +182,7 @@ void EnSightGold::casefile()
 	os << "\n";
 	os << "\nVARIABLE";
 	os << "\n";
-	if (_withDecomposition) {
+	if (info::ecf->output.store_decomposition) {
 		os << "scalar per element: BODY    " << _fixedDataPath << "BODY" << "\n";
 		os << "scalar per element: DOMAIN  " << _fixedDataPath << "DOMAIN" << "\n";
 		os << "scalar per element: CLUSTER " << _fixedDataPath << "CLUSTER" << "\n";

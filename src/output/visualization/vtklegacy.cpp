@@ -6,6 +6,7 @@
 #include "wrappers/mpi/communication.h"
 #include "basis/utilities/sysutils.h"
 #include "esinfo/eslog.h"
+#include "esinfo/ecfinfo.h"
 #include "esinfo/stepinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/meshinfo.h"
@@ -19,8 +20,7 @@
 
 using namespace espreso;
 
-VTKLegacy::VTKLegacy(bool withDecomposition)
-: _withDecomposition(withDecomposition)
+VTKLegacy::VTKLegacy()
 {
 	_suffix = ".vtk";
 }
@@ -91,7 +91,7 @@ void VTKLegacy::updateMesh()
 		insertHeader();
 		insertPoints(info::mesh->elementsRegions[r]);
 		esint ncells = insertElements(info::mesh->elementsRegions[r], _cells[index]);
-		if (_withDecomposition) {
+		if (info::ecf->output.store_decomposition) {
 			if (isRoot()) {
 				_writer.celldata(ncells);
 			}
@@ -148,7 +148,7 @@ void VTKLegacy::updateSolution()
 		if (isRoot()) {
 			_writer.celldata(ncells);
 		}
-		if (_withDecomposition) {
+		if (info::ecf->output.store_decomposition) {
 			insertDecomposition(info::mesh->elementsRegions[r]);
 		}
 		for (size_t i = 0; i < info::mesh->elements->data.size(); ++i) {

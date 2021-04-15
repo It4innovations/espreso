@@ -17,7 +17,7 @@ class EnSightGold: public Visualization {
 
 	class FTT;
 public:
-	EnSightGold(bool withDecomposition = true);
+	EnSightGold();
 	~EnSightGold();
 
 	void updateMesh();
@@ -33,7 +33,7 @@ protected:
 
 	FTT *_ftt;
 
-	bool _withDecomposition, _withIDs;
+	bool _withIDs;
 	int _step;
 	std::string _geometry;
 	std::string _fixedDataPath;

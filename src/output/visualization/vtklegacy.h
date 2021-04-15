@@ -15,7 +15,7 @@ class BoundaryRegionStore;
 
 class VTKLegacy: public Visualization {
 public:
-	VTKLegacy(bool withDecomposition = true);
+	VTKLegacy();
 	~VTKLegacy();
 
 	void updateMesh();
@@ -30,7 +30,6 @@ protected:
 	void insertData(NamedData *data, esint nindices, esint *indices);
 	void insertDecomposition(const ElementsRegionStore *store);
 protected:
-	bool _withDecomposition;
 	std::string _suffix;
 	VTKASCIIWritter _writer;
 

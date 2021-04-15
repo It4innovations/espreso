@@ -1293,7 +1293,7 @@ void Mesh::printDecompositionStatistics()
 	mesh.variance.mpi.eratio      = std::pow(mesh.stats.mpi.avg.eratio      - mesh.value.mpi.eratio, 2);
 	mesh.variance.mpi.domains     = std::pow(mesh.stats.mpi.avg.domains     - mesh.value.mpi.domains, 2);
 	mesh.variance.mpi.clusters    = std::pow(mesh.stats.mpi.avg.clusters    - mesh.value.mpi.clusters, 2);
-	if (mesh.stats.mpi.sum.clusters == info::mpi::size) {
+	if (mesh.stats.mpi.max.clusters == info::mpi::size) {
 		mesh.variance.cluster = mesh.variance.mpi;
 	} else {
 		for (esint c = 0; c < elements->nclusters; ++c) {
@@ -1403,50 +1403,52 @@ void Mesh::printDecompositionStatistics()
 					Parser::stringwithcommas((int)mesh.stats.cluster.avg.uniquenodes).c_str(),
 					Parser::stringwithcommas((int)mesh.variance.cluster.uniquenodes).c_str(),
 					mesh.stats.cluster.min.uniquenodes ? (double)mesh.stats.cluster.max.uniquenodes / mesh.stats.cluster.min.uniquenodes : 0.0);
+			eslog::info("  NODES                    : %12s %12s %12s %12s %12.2f \n",
+					Parser::stringwithcommas(mesh.stats.cluster.min.nodes).c_str(),
+					Parser::stringwithcommas(mesh.stats.cluster.max.nodes).c_str(),
+					Parser::stringwithcommas((int)mesh.stats.cluster.avg.nodes).c_str(),
+					Parser::stringwithcommas((int)mesh.variance.cluster.nodes).c_str(),
+					mesh.stats.cluster.min.nodes ? (double)mesh.stats.cluster.max.nodes / mesh.stats.cluster.min.nodes : 0.0);
+			eslog::info("  INTERFACE NODES          : %12s %12s %12s %12s %12.2f \n",
+					Parser::stringwithcommas(mesh.stats.cluster.min.ninterface).c_str(),
+					Parser::stringwithcommas(mesh.stats.cluster.max.ninterface).c_str(),
+					Parser::stringwithcommas((int)mesh.stats.cluster.avg.ninterface).c_str(),
+					Parser::stringwithcommas((int)mesh.variance.cluster.ninterface).c_str(),
+					mesh.stats.cluster.min.ninterface ? (double)mesh.stats.cluster.max.ninterface / mesh.stats.cluster.min.ninterface : 0.0);
+			eslog::info("  INTERFACE NODES RATIO    : %12.2f %12.2f %12.2f %12.2f %12.2f \n",
+					mesh.stats.cluster.min.nratio,
+					mesh.stats.cluster.max.nratio,
+					mesh.stats.cluster.avg.nratio,
+					mesh.variance.cluster.nratio,
+					mesh.stats.cluster.min.nratio ? mesh.stats.cluster.max.nratio / mesh.stats.cluster.min.nratio : 0.0);
 		}
-		eslog::info("  NODES                    : %12s %12s %12s %12s %12.2f \n",
-				Parser::stringwithcommas(mesh.stats.cluster.min.nodes).c_str(),
-				Parser::stringwithcommas(mesh.stats.cluster.max.nodes).c_str(),
-				Parser::stringwithcommas((int)mesh.stats.cluster.avg.nodes).c_str(),
-				Parser::stringwithcommas((int)mesh.variance.cluster.nodes).c_str(),
-				mesh.stats.cluster.min.nodes ? (double)mesh.stats.cluster.max.nodes / mesh.stats.cluster.min.nodes : 0.0);
-		eslog::info("  INTERFACE NODES          : %12s %12s %12s %12s %12.2f \n",
-				Parser::stringwithcommas(mesh.stats.cluster.min.ninterface).c_str(),
-				Parser::stringwithcommas(mesh.stats.cluster.max.ninterface).c_str(),
-				Parser::stringwithcommas((int)mesh.stats.cluster.avg.ninterface).c_str(),
-				Parser::stringwithcommas((int)mesh.variance.cluster.ninterface).c_str(),
-				mesh.stats.cluster.min.ninterface ? (double)mesh.stats.cluster.max.ninterface / mesh.stats.cluster.min.ninterface : 0.0);
-		eslog::info("  INTERFACE NODES RATIO    : %12.2f %12.2f %12.2f %12.2f %12.2f \n",
-				mesh.stats.cluster.min.nratio,
-				mesh.stats.cluster.max.nratio,
-				mesh.stats.cluster.avg.nratio,
-				mesh.variance.cluster.nratio,
-				mesh.stats.cluster.min.nratio ? mesh.stats.cluster.max.nratio / mesh.stats.cluster.min.nratio : 0.0);
 		eslog::info("  ELEMENTS                 : %12s %12s %12s %12s %12.2f \n",
 				Parser::stringwithcommas(mesh.stats.cluster.min.elements).c_str(),
 				Parser::stringwithcommas(mesh.stats.cluster.max.elements).c_str(),
 				Parser::stringwithcommas((int)mesh.stats.cluster.avg.elements).c_str(),
 				Parser::stringwithcommas((int)mesh.variance.cluster.elements).c_str(),
 				mesh.stats.cluster.min.elements ? (double)mesh.stats.cluster.max.elements / mesh.stats.cluster.min.elements : 0.0);
-		eslog::info("  INTERFACE ELEMENTS       : %12s %12s %12s %12s %12.2f \n",
-				Parser::stringwithcommas(mesh.stats.cluster.min.einterface).c_str(),
-				Parser::stringwithcommas(mesh.stats.cluster.max.einterface).c_str(),
-				Parser::stringwithcommas((int)mesh.stats.cluster.avg.einterface).c_str(),
-				Parser::stringwithcommas((int)mesh.variance.cluster.einterface).c_str(),
-				mesh.stats.cluster.min.einterface ? (double)mesh.stats.cluster.max.einterface / mesh.stats.cluster.min.einterface : 0.0);
-		eslog::info("  INTERFACE ELEMENTS RATIO : %12.2f %12.2f %12.2f %12.2f %12.2f \n",
-				mesh.stats.cluster.min.eratio,
-				mesh.stats.cluster.max.eratio,
-				mesh.stats.cluster.avg.eratio,
-				mesh.variance.cluster.eratio,
-				mesh.stats.cluster.min.eratio ? mesh.stats.cluster.max.eratio / mesh.stats.cluster.min.eratio : 0.0);
 		if (mesh.stats.mpi.max.clusters == 1) {
-			eslog::info("  NEIGHBORS                : %12d %12d %12.2f %12.2f %12.2f \n",
-					mesh.stats.cluster.min.neighbors,
-					mesh.stats.cluster.max.neighbors,
-					mesh.stats.cluster.avg.neighbors,
-					mesh.variance.cluster.neighbors,
-					mesh.stats.cluster.min.neighbors ? (double)mesh.stats.cluster.max.neighbors / mesh.stats.cluster.min.neighbors : 0.0);
+			eslog::info("  INTERFACE ELEMENTS       : %12s %12s %12s %12s %12.2f \n",
+					Parser::stringwithcommas(mesh.stats.cluster.min.einterface).c_str(),
+					Parser::stringwithcommas(mesh.stats.cluster.max.einterface).c_str(),
+					Parser::stringwithcommas((int)mesh.stats.cluster.avg.einterface).c_str(),
+					Parser::stringwithcommas((int)mesh.variance.cluster.einterface).c_str(),
+					mesh.stats.cluster.min.einterface ? (double)mesh.stats.cluster.max.einterface / mesh.stats.cluster.min.einterface : 0.0);
+			eslog::info("  INTERFACE ELEMENTS RATIO : %12.2f %12.2f %12.2f %12.2f %12.2f \n",
+					mesh.stats.cluster.min.eratio,
+					mesh.stats.cluster.max.eratio,
+					mesh.stats.cluster.avg.eratio,
+					mesh.variance.cluster.eratio,
+					mesh.stats.cluster.min.eratio ? mesh.stats.cluster.max.eratio / mesh.stats.cluster.min.eratio : 0.0);
+			if (mesh.stats.mpi.max.clusters == 1) {
+				eslog::info("  NEIGHBORS                : %12d %12d %12.2f %12.2f %12.2f \n",
+						mesh.stats.cluster.min.neighbors,
+						mesh.stats.cluster.max.neighbors,
+						mesh.stats.cluster.avg.neighbors,
+						mesh.variance.cluster.neighbors,
+						mesh.stats.cluster.min.neighbors ? (double)mesh.stats.cluster.max.neighbors / mesh.stats.cluster.min.neighbors : 0.0);
+			}
 		}
 
 		eslog::info(" ============================================================================================= \n");
@@ -1496,5 +1498,87 @@ void Mesh::printDecompositionStatistics()
 				mesh.stats.domain.min.neighbors ? (double)mesh.stats.domain.max.neighbors / mesh.stats.domain.min.neighbors : 0.0);
 	}
 	eslog::info(" ============================================================================================= \n");
+
+	if (info::ecf->output.store_decomposition > 1) {
+		NamedData *data;
+		if (!_withFETI || mesh.stats.mpi.max.clusters > 1) {
+			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "MPI_CLUSTERS");
+			std::fill(data->data.begin(), data->data.end(), mesh.value.mpi.clusters);
+			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "MPI_NODES");
+			std::fill(data->data.begin(), data->data.end(), mesh.value.mpi.nodes);
+			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "MPI_INODES");
+			std::fill(data->data.begin(), data->data.end(), mesh.value.mpi.ninterface);
+			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "MPI_INODES_RATIO");
+			std::fill(data->data.begin(), data->data.end(), mesh.value.mpi.nratio);
+			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "MPI_ELEMENTS");
+			std::fill(data->data.begin(), data->data.end(), mesh.value.mpi.elements);
+			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "MPI_IELEMENTS");
+			std::fill(data->data.begin(), data->data.end(), mesh.value.mpi.einterface);
+			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "MPI_IELEMENTS_RATIO");
+			std::fill(data->data.begin(), data->data.end(), mesh.value.mpi.eratio);
+			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "MPI_NEIGHBORS");
+			std::fill(data->data.begin(), data->data.end(), mesh.value.mpi.neighbors);
+		}
+		if (_withFETI) {
+			if (mesh.stats.mpi.max.clusters == 1) {
+				data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "CLUSTER_NODES");
+				std::fill(data->data.begin(), data->data.end(), mesh.value.cluster.nodes);
+				data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "CLUSTER_INODES");
+				std::fill(data->data.begin(), data->data.end(), mesh.value.cluster.ninterface);
+				data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "CLUSTER_INODES_RATIO");
+				std::fill(data->data.begin(), data->data.end(), mesh.value.cluster.nratio);
+			}
+			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "CLUSTER_ELEMENTS");
+			if (elements->nclusters == 1) {
+				std::fill(data->data.begin(), data->data.end(), mesh.value.cluster.elements);
+			} else {
+				for (esint d = 0; d < elements->ndomains; ++d) {
+					std::fill(data->data.begin() + elements->elementsDistribution[d], data->data.begin() + elements->elementsDistribution[d + 1], celements[elements->clusters[d]]);
+				}
+			}
+			if (mesh.stats.mpi.max.clusters == 1) {
+				data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "CLUSTER_IELEMENTS");
+				std::fill(data->data.begin(), data->data.end(), mesh.value.cluster.einterface);
+				data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "CLUSTER_IELEMENTS_RATIO");
+				std::fill(data->data.begin(), data->data.end(), mesh.value.cluster.eratio);
+				data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "CLUSTER_NEIGHBORS");
+				std::fill(data->data.begin(), data->data.end(), mesh.value.cluster.neighbors);
+			}
+
+			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "DOMAIN_NODES");
+			for (esint d = 0; d < elements->ndomains; ++d) {
+				std::fill(data->data.begin() + elements->elementsDistribution[d], data->data.begin() + elements->elementsDistribution[d + 1], dnodes[d]);
+			}
+			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "DOMAIN_INODES");
+			for (esint d = 0; d < elements->ndomains; ++d) {
+				std::fill(data->data.begin() + elements->elementsDistribution[d], data->data.begin() + elements->elementsDistribution[d + 1], dninterface[d]);
+			}
+			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "DOMAIN_INODES_RATIO");
+			for (esint d = 0; d < elements->ndomains; ++d) {
+				std::fill(data->data.begin() + elements->elementsDistribution[d], data->data.begin() + elements->elementsDistribution[d + 1], dnratio[d]);
+			}
+			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "DOMAIN_ELEMENTS");
+			for (esint d = 0; d < elements->ndomains; ++d) {
+				std::fill(data->data.begin() + elements->elementsDistribution[d], data->data.begin() + elements->elementsDistribution[d + 1], delements[d]);
+			}
+			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "DOMAIN_IELEMENTS");
+			for (esint d = 0; d < elements->ndomains; ++d) {
+				std::fill(data->data.begin() + elements->elementsDistribution[d], data->data.begin() + elements->elementsDistribution[d + 1], deinterface[d]);
+			}
+			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "DOMAIN_IELEMENTS_RATIO");
+			for (esint d = 0; d < elements->ndomains; ++d) {
+				std::fill(data->data.begin() + elements->elementsDistribution[d], data->data.begin() + elements->elementsDistribution[d + 1], deratio[d]);
+			}
+
+			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "DOMAIN_IELEMENTS_RATIO");
+			for (esint d = 0; d < elements->ndomains; ++d) {
+				std::fill(data->data.begin() + elements->elementsDistribution[d], data->data.begin() + elements->elementsDistribution[d + 1], deratio[d]);
+			}
+			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "DOMAIN_NEIGHBORS");
+			for (esint d = 0; d < elements->ndomains; ++d) {
+				std::fill(data->data.begin() + elements->elementsDistribution[d], data->data.begin() + elements->elementsDistribution[d + 1], dneighs[d]);
+			}
+		}
+	}
 }
 
