@@ -288,7 +288,7 @@ void Mesh::preprocess()
 		}
 	};
 
-	_withFETI = true; // forEachSteps([] (const LoadStepSolverConfiguration &step) { return step.solver == LoadStepSolverConfiguration::SOLVER::FETI; });
+	_withFETI = forEachSteps([] (const LoadStepSolverConfiguration &step) { return step.solver == LoadStepSolverConfiguration::SOLVER::FETI; });
 
 	eslog::startln("MESH: PREPROCESSING STARTED", "MESHING");
 	setMaterials();
