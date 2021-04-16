@@ -223,6 +223,9 @@ MorphingMatrix::MorphingMatrix(
 	// if(info::mpi::rank == 0){
 		// printf("ACA morphing matrix constructed, compression ratio %f [%%]\n", 100.0f * compr);
 	// }
+
+	// this->print(displacementLocal);
+	// this->P->printData();
 }
 
 void MorphingMatrix::transform_points(
@@ -798,6 +801,9 @@ void MorphingMatrix::transformPoint(
 	// printf(" -> (%10.6f, %10.6f, %10.6f)\n", point_to_morph.x, point_to_morph.y, point_to_morph.z);
 }
 
+void MorphingMatrix::printData() const {
+	//TODO	
+}
 
 
 //performs y = this * x * alpha + y * beta

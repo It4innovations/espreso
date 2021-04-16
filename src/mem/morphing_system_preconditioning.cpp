@@ -27,7 +27,7 @@ MorphingMatrixPreconditioner::MorphingMatrixPreconditioner(
     if(points_local.size() > 0){
         nsparse_points = std::ceil(std::log2(points_local.size()));
     }
-	nsparse_points = 2;
+	// nsparse_points = 2;
 
     KDTree T(points_local, nsparse_points);
     esint nbuckets = T.getNLeaves();
@@ -232,6 +232,64 @@ void MorphingMatrixPreconditioner::prepareMatrixSparse(
 		// printf("\n");
 	// }	
 }
+
+void MorphingMatrixPreconditioner::printData() const {
+
+	printf("prec_row_indices = [\n");
+	for(auto &v: this->row_indices){
+		printf("%d ", v);
+	}
+	printf("];\n");
+	
+	printf("prec_col_indices = [\n");
+	for(auto &v: this->col_indices){
+		printf("%d ", v);
+	}
+	printf("];\n");
+	
+	printf("prec_values = [\n");
+	for(auto &v: this->values){
+		printf("%f ", v);
+	}
+	printf("];\n");
+	
+	std::vector<double> basis_vector( this->dim_id + this->nreg_dim );
+	std::fill(basis_vector.begin(), basis_vector.end(), 0.0f);
+	
+	std::vector<std::vector<double>> M(this->dim_id + this->nreg_dim);
+	for(auto &el: M){
+		el.resize(this->dim_id + this->nreg_dim);
+		std::fill(el.begin(), el.end(), 0.0f);
+	}
+	
+	for(esint i = 0; i < this->dim_id + this->nreg_dim; ++i){
+		basis_vector[i] = 1.0f;
+
+		this->apply(
+			&basis_vector[0],
+			&M[i][0],
+			1.0f,
+			0.0f,
+			true
+		);
+
+		basis_vector[i] = 0.0f;
+	}
+	
+	if(info::mpi::rank == 0){
+		printf("---\n");
+		printf("P=[\n");
+		for(esint r = 0; r < this->dim_id + this->nreg_dim; ++r){
+			for(esint c = 0; c < this->dim_id + this->nreg_dim; ++c){
+				printf("%10.6f ", M[r][c]);
+			}
+			printf(";\n");
+		}
+		printf("];\n");
+		printf("---\n");		
+	}
+
+}
 	
 //performs y = this * x * alpha + y * beta
 void MorphingMatrixPreconditioner::apply(
@@ -247,7 +305,7 @@ void MorphingMatrixPreconditioner::apply(
     // }
 	
 	
-	MATH::vecScale(this->nrows + this->nreg_dim, beta / info::mpi::size, y_global);
+	MATH::vecScale(this->dim_id + this->nreg_dim, beta / info::mpi::size, y_global);
 	
 	size_t ri, ci;
 	double v;
@@ -257,7 +315,7 @@ void MorphingMatrixPreconditioner::apply(
 			ci = this->row_indices[i];
 			v = this->values[i];
 			
-			y_global[ri] += v * x_global[ci];
+			y_global[ri] += v * alpha * x_global[ci];
 		}
 	}
 	else{
@@ -266,17 +324,17 @@ void MorphingMatrixPreconditioner::apply(
 			ci = this->col_indices[i];
 			v = this->values[i];
 			
-			y_global[ri] += v * x_global[ci];
+			y_global[ri] += v * alpha * x_global[ci];
 		}
 	}
 	
-	Communication::allReduce(MPI_IN_PLACE, y_global, this->nrows + this->nreg_dim, MPI_DOUBLE, MPI_SUM);
+	Communication::allReduce(MPI_IN_PLACE, y_global, this->dim_id + this->nreg_dim, MPI_DOUBLE, MPI_SUM);
 }
 
 esint MorphingMatrixPreconditioner::getNRows() const {
-    return this->nrows + this->nreg_dim;
+    return this->dim_id + this->nreg_dim;
 }
 
 esint MorphingMatrixPreconditioner::getNCols() const{
-    return this->ncols + this->nreg_dim;
+    return this->dim_id + this->nreg_dim;
 }

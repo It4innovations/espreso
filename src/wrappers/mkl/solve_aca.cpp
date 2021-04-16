@@ -17,6 +17,16 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 	esint nToRestart = 10000;
 	esint useMaxIterLimit = 0;
 	double* mem_vec = new double[M.getNRows()];
+	// double* rhsVals_tmp = new double[M.getNRows()];
+
+
+	// M.applyPreconditioner(rhsVals, rhsVals_tmp, 1.0f, 0.0f, false);
+
+	// printf("c = [");
+	// for(int i = 0; i < M.getNRows(); ++i){
+	// 	printf("%f ", rhsVals_tmp[i]);
+	// }
+	// printf("\n];\n");
 
 #ifdef HAVE_MKL
 	//---------------------------------------------------------------------------
@@ -57,6 +67,7 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 	// Initialize the solver
 	//---------------------------------------------------------------------------
 	dfgmres_init(&ivar, results, rhsVals, &RCI_request, ipar, dpar, tmp.data());
+	// dfgmres_init(&ivar, results, rhsVals_tmp, &RCI_request, ipar, dpar, tmp.data());
 	if (RCI_request != 0) {
 		eslog::error("Something wrong happens while 'dfgmres_init' in ACA solver.\n");
 	}
@@ -78,6 +89,7 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 	// Check the correctness and consistency of the newly set parameters
 	//---------------------------------------------------------------------------
 	dfgmres_check(&ivar, results, rhsVals, &RCI_request, ipar, dpar, tmp.data());
+	// dfgmres_check(&ivar, results, rhsVals_tmp, &RCI_request, ipar, dpar, tmp.data());
 	if (RCI_request != 0) {
 		eslog::error("Something wrong happens while 'dfgmres_check' in ACA solver.\n");
 	}
@@ -89,6 +101,7 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 	niters = 0;
 	while (true) {
 		dfgmres(&ivar, results, rhsVals, &RCI_request, ipar, dpar, tmp.data());
+		// dfgmres(&ivar, results, rhsVals_tmp, &RCI_request, ipar, dpar, tmp.data());
 
 		//---------------------------------------------------------------------------
 		// If RCI_request=0, then the solution was found with the required precision
@@ -102,6 +115,8 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 		//---------------------------------------------------------------------------
 		if (RCI_request == 1) {
 			M.apply(tmp.data() + ipar[21] - 1, tmp.data() + ipar[22] - 1, alpha, beta, false);
+			// M.apply(tmp.data() + ipar[21] - 1, mem_vec, 1.0f, 0.0f, false);
+			// M.applyPreconditioner(mem_vec, tmp.data() + ipar[22] - 1, alpha, beta, false);
 			niters++;
 			continue;
 		}
@@ -112,6 +127,7 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 		//---------------------------------------------------------------------------
 		if (RCI_request == 3) {
 			M.applyPreconditioner(tmp.data() + ipar[21] - 1, tmp.data() + ipar[22] - 1, 1.0f, 0.0f, false);
+			niters++;
 			continue;
 		}
 
@@ -127,6 +143,7 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 	//---------------------------------------------------------------------------
 	ipar[12] = 0;
 	dfgmres_get(&ivar, results, rhsVals, &RCI_request, ipar, dpar, tmp.data(), &itercount);
+	// dfgmres_get(&ivar, results, rhsVals_tmp, &RCI_request, ipar, dpar, tmp.data(), &itercount);
 	//---------------------------------------------------------------------------
 	// Print solution vector: computed_solution[N] and the number of iterations: itercount
 	//---------------------------------------------------------------------------
@@ -136,6 +153,7 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 #endif
 
 	delete [] mem_vec;
+	// delete [] rhsVals_tmp;
 
 	return niters;
 }

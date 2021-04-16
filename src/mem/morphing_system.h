@@ -41,6 +41,8 @@ public:
 		
 		std::vector<double> &morphing_rhs
 	);
+
+	void printData() const;
 	
 	//performs y = this * x * alpha + y * beta
 	void apply(

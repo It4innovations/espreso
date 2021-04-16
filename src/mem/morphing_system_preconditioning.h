@@ -33,6 +33,8 @@ public:
 		const std::vector<Point> &points_local,
 		const RBFTargetConfiguration &configuration
 	);
+
+	void printData() const;
 	
 	//performs y = this * x * alpha + y * beta
 	void apply(
