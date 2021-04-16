@@ -163,11 +163,12 @@ void OutputFilePack::reorder()
 	}
 	profiler::synccheckpoint("all_to_all");
 
-	for (size_t j = 0; j < _files.size(); ++j) {
-		int rr = reorderedRank(info::mpi::rank, _files[j]->_offset);
-		_files[j]->_buffer.resize(_files[j]->_distribution[rr + 1] - _files[j]->_distribution[rr]);
-	}
+
 	if (MPITools::subset->within.rank == 0) {
+		for (size_t j = 0; j < _files.size(); ++j) {
+			int rr = reorderedRank(info::mpi::rank, _files[j]->_offset);
+			_files[j]->_buffer.resize(_files[j]->_distribution[rr + 1] - _files[j]->_distribution[rr]);
+		}
 		size_t offset = 0;
 		for (int r = 0; r < info::mpi::size; r++) {
 			size_t total = offset + rBuffer[offset];
