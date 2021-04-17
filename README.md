@@ -3,7 +3,7 @@ The main repository of the highly-parallel framework for engineering application
  - massively parallel linear solver [espreso](#espreso) based on FETI Domain Decomposition Methods, which is capable of solving problems with over a hundred billions of unknowns using thousands compute nodes.
 
 # MESIO
-Mesio is a highly-parallel loader and convertor of external unstructured meshes databases. It is composed of several commonly used algorithms that together provide a robust solution for the pre/post-processing phase of solving large-scale engineering problems ([pdf](https://doi.org/10.1109/IPDPS.2019.00084)). With mesio a user is able to use the same sequential database file with an arbitrary number of MPI processes. It allows engineers to use their favourite tools for creation of numerical models without any penalty for a parallel run.
+Mesio is a highly-parallel loader and converter of external unstructured meshes databases. It is composed of several commonly used algorithms that together provide a robust solution for the pre/post-processing phase of solving large-scale engineering problems ([pdf](https://doi.org/10.1109/IPDPS.2019.00084)). With mesio a user is able to use the same sequential database file with an arbitrary number of MPI processes. It allows engineers to use their favorite tools for creation of numerical models without any penalty for a parallel run.
 
 Mesio is composed from (i) the mesh builder that is able to reconstruct an unstructured mesh from randomly scattered data across parallel processes in a distributed memory of an HPC machine without gathering data into a single node and (ii) lightweight parallel parsers of given mesh databases. Hence, the usage is not limited to any particular format -- only a simple parallel parser has to be implemented for a new format. Currently, the following parsers are implemented:
  - ANSYS CDB
@@ -14,11 +14,13 @@ Mesio is composed from (i) the mesh builder that is able to reconstruct an unstr
  - OpenFOAM (partially)
  - Abaqus (partially)
 
-An output database stored by mesio is also in a sequetial form for simple by a favourite visualization tool. The following format are available:
+An output database stored by mesio is also in a sequential form for simple by a favorite visualization tool. The following format are available:
  - VTK Legacy
  - XDMF
  - Ensight
  - STL surface
+
+Mesio functionality is provided to other researchers by [API](#mesio-api).
 
 # ESPRESO
 Espreso is a set of several highly-scalable solvers based on the methods of domain decomposition designed to take full advantage of today's most powerful petascale supercomputers ([pdf](https://dx.doi.org/10.1177/1094342018798452)). It contains in-house developed FETI based algorithms including the Hybrid Total FETI method suitable for parallel machines with tens or hundreds of thousands of cores.
@@ -31,7 +33,7 @@ Both mesio and espreso can be configured by [ecf](#configuration-via-a-configura
 ---
 ---
 
-## Instalation
+## Installation
 ---
 
 ####  External Dependencies
@@ -65,7 +67,7 @@ For compilation Python-based framework [Waf](https://waf.io/book/) is used. The 
 $ ./waf configure
 $ ./waf
 ```
-The compilation process builds all libraries and executables into the *build* directory. This directory should be added to ``LD_LIBRARY_PATH`` and ``PATH`` environment variables. Then it is possible to run [mesio](#mesio) or [espreso](#espreso) by the following command:
+The compilation process builds all libraries and executable tools into the *build* directory. This directory should be added to ``LD_LIBRARY_PATH`` and ``PATH`` environment variables. Then it is possible to run [mesio](#mesio) or [espreso](#espreso) by the following command:
 ```sh
 $ mpirun -n $N mesio -c $ECF
 $ mpirun -n $N espreso -c $ECF
@@ -80,7 +82,7 @@ Before running the library, the following variables should be set according to t
  - SOLVER_NUM_THREADS - should be set to nCores/PPN
  - PAR_NUM_THREADS - should be set to nCores/PPN
 
-It is possible to set all environment variables at once usign the following script in the ESPRESO root directory:
+It is possible to set all environment variables at once using the following script in the ESPRESO root directory:
 ```sh
 $ . env/threading.default ${nCores/PPN}
 ```
@@ -157,12 +159,49 @@ HEAT_TRANSFER_3D {
   }
 }
 ```
+#### MESIO API
+
+Our parallel loader can be utilized by third party software by provided C API. The interface is available via the `mesio.h` header in the include directory and the `libmesioapi` library. An example of calling the library can be found in `src/api/api.mesio.cpp`. The code below shows how the loader should be called. Once the method `MESIOLoad` is finished an input database is loaded. Then, one can use provided functions to return mesh data stored in internal structures. The code shows requesting of nodes and elements only. For the full API description see the provided example and our wiki (the wiki also contains the description of how to implement a simple parallel parser).
+
+```cpp
+#include "mesio.h"
+
+int main(int argc, char **argv)
+{
+	MPI_Init(&argc, &argv);
+	int mpirank, mpisize;
+	MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
+	MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
+
+	MESIO mesio;
+	MESIOInit(MPI_COMM_WORLD, 2);
+	MESIOLoad(&mesio, MESIO_ANSYS, "path_to_file", MESIO_PARMETIS, 4);
+
+	{ // GET NODES
+		MESIOInt nhalo, offset, size, totalSize;
+		MESIOInt *ids, *position;
+		MESIOReal *coordinates;
+
+		MESIONodes(mesio, &nhalo, &offset, &size, &totalSize, &ids, &position, &coordinates);
+	}
+
+	{ // GET ELEMENTS
+		MESIOInt offset, size, totalSize;
+		MESIOInt *type, *enodesDist, *enodesData;
+
+		MESIOElements(mesio, &offset, &size, &totalSize, &type, &enodesDist, &enodesData);
+	}
+	MESIOFinalize();
+	MPI_Finalize();
+	return 0;
+}
+```
 
 #### ESPRESO API
 
-The library contains a simple C API that allows to utilize FETI based solvers in third party softwares. The interface is available via the `feti4i.h` header in the include directory and the `libfeti4i` library. An example of calling the library can be found in `src/api/apitester.cpp`. The tester uses the espreso physical module to assemble matrices and call the FETI solver through API.
+Our FETI based solvers can be utilized by third party software by provided C API. The interface is available via the `feti4i.h` header in the include directory and the `libfeti4i` library. An example of calling the library can be found in `src/api/api.feti4i.cpp`. The tester uses the espreso physical module to assemble matrices and call the FETI solver through API.
 
-Usage of the library is scatched by the following code. The methods documentation can be found in the library header file.
+Usage of the library is scratched by the following code. The methods documentation can be found in the library header file.
 
 ```cpp
 #include "feti4i.h"
@@ -222,7 +261,7 @@ int main(int argc, char **argv)
 
 #### ESPRESO GUI
 
-It is possible to use GUI, instead of setting a configuration file manually. GUI is automatically generated from internal configuration structures that assures always up to date list of available parameters. Besides showing all parameters with their possible values, GUI also showes the input geometry, and elements and boundary regions. It is also possible to use GUI for generation of a configuration file.
+It is possible to use GUI, instead of setting a configuration file manually. GUI is automatically generated from internal configuration structures that assures always up to date list of available parameters. Besides showing all parameters with their possible values, GUI also shows the input geometry, and elements and boundary regions. It is also possible to use GUI for generation of a configuration file.
 
 In order to built GUI, one has to configure espreso with flag *\-\-with-gui*. In that case, Qt5 has to be installed.
 
@@ -240,11 +279,11 @@ $ espresogui -c $ECF
 $ mpirun -n $N espresogui -c $ECF
 ```
 
-# Licence
+# License
 
 See the LICENSE file at the root directory.
 
-# Acknowledgement
+# Acknowledgment
 
 This work was supported by
  - The Ministry of Education, Youth and Sports from the Large Infrastructures for Research, Experimental Development and Innovations project "e-Infrastructure CZ -- LM2018140",
