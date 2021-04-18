@@ -485,7 +485,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs_sol) {
 
 }
 
-void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT n_rhs) {
+int SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT n_rhs) {
 
 	SEQ_VECTOR <float> tmp_in, tmp_out;
 
@@ -535,8 +535,9 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 //		osK << s;
 //		osK.close();
 
-		eslog::error("error during solution.\n");
-		exit (3);
+		// eslog::error("error during solution.\n");
+		// exit (3);
+		return -3;
 	}
 
 	if (!keep_factors) {
@@ -556,6 +557,7 @@ void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & so
 			sol[i] = (double)tmp_out[i];
 	}
 
+	return 0;
 }
 
 void SparseSolverMKL::Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT rhs_start_index, MKL_INT sol_start_index) {
@@ -710,11 +712,11 @@ void SparseSolverMKL::SolveMat_Sparse( espreso::SparseMatrix & A_in, espreso::Sp
 }
 
 
-void SparseSolverMKL::SolveMat_Dense( espreso::SparseMatrix & A ) {
-	SolveMat_Dense(A, A);
+int SparseSolverMKL::SolveMat_Dense( espreso::SparseMatrix & A ) {
+	return SolveMat_Dense(A, A);
 }
 
-void SparseSolverMKL::SolveMat_Dense( espreso::SparseMatrix & A_in, espreso::SparseMatrix & B_out ) {
+int SparseSolverMKL::SolveMat_Dense( espreso::SparseMatrix & A_in, espreso::SparseMatrix & B_out ) {
 
 	SEQ_VECTOR<double> rhs;
 	SEQ_VECTOR<double> sol;
@@ -760,7 +762,8 @@ void SparseSolverMKL::SolveMat_Dense( espreso::SparseMatrix & A_in, espreso::Spa
 		&info);
 
 	// Solve with multiple right hand sides
-	Solve(rhs,sol,nRhs);
+	int ret = Solve(rhs,sol,nRhs);
+	if (ret < 0) return ret;
 	rhs.clear();
 
 	// Convert solution matrix (SOL) to sparse format - find nnz step
@@ -819,7 +822,7 @@ void SparseSolverMKL::SolveMat_Dense( espreso::SparseMatrix & A_in, espreso::Spa
 	B_out.nnz	= B_out.CSR_V_values.size();
 	B_out.type	= 'G';
 
-
+	return ret;
 }
 
 //Obsolete - to be removed

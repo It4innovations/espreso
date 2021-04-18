@@ -40,14 +40,14 @@ public:
 	void insertB0(const MatrixIJVFETI &B0);
 	void insertRHS(const VectorsDenseFETI &f);
 
-	void update(FETIConfiguration &configuration);
+	int update(FETIConfiguration &configuration);
 	void solve(FETIConfiguration &configuration, VectorsDenseFETI &x, VectorsDenseFETI &y);
 
 	virtual ~FETISystemSolver();
 
 //  void setup();
 
-	void init(const std::vector<int> &neighbors, FETIConfiguration &configuration);
+	int init(const std::vector<int> &neighbors, FETIConfiguration &configuration);
 
 	void Preprocessing( std::vector < std::vector < esint > > & lambda_map_sub );
 
@@ -69,7 +69,7 @@ private:
 	FETISolverData &_data;
 
 	FETIDataHolder *_inner;
-	void setup_HTFETI();
+	int setup_HTFETI();
 
 	void setup_LocalSchurComplement(FETIConfiguration &configuration);
 	void setup_Preconditioner();

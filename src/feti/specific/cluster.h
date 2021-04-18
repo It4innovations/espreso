@@ -207,7 +207,7 @@
 
         void CompressB0();
         void CreateG0();
-        void CreateF0();
+        int CreateF0();
         void CreateSa();
 
 //        void Create_G1_perCluster();

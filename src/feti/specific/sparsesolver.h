@@ -24,11 +24,11 @@ public:
 
 
 	virtual void Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT rhs_start_index, MKL_INT sol_start_index) = 0;
-	virtual void Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT n_rhs) = 0;
+	virtual int Solve( SEQ_VECTOR <double> & rhs, SEQ_VECTOR <double> & sol, MKL_INT n_rhs) = 0;
 	virtual void Solve( SEQ_VECTOR <double> & rhs_sol) = 0;
 
-	virtual void SolveMat_Dense( SparseMatrix & A_in_out ) = 0;
-	virtual void SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ) = 0;
+	virtual int SolveMat_Dense( SparseMatrix & A_in_out ) = 0;
+	virtual int SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out ) = 0;
 
 	virtual void SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool isThreaded ) = 0;
 

@@ -211,7 +211,7 @@ public:
 		//TODO - Fix and remove
 	}
 
-	void SetClusterHFETI() {
+	int SetClusterHFETI() {
 
 		eslog::checkpointln("HFETI preprocessing start.");
 
@@ -283,7 +283,11 @@ public:
 
 		 TimeEvent F0_time("Create F0 per cluster"); F0_time.start();
 		for (size_t c = 0; c < clusters.size(); c++) {
-			if (clusters[c].domains.size() > 1) clusters[c].CreateF0();
+			if (clusters[c].domains.size() > 1) 
+			{
+				int ret = clusters[c].CreateF0();
+				if (ret < 0) return ret;
+			}
 		}
 		 F0_time.end(); HFETI_prec_timing.addEvent(F0_time);
 
@@ -296,8 +300,7 @@ public:
 		 HFETI_prec_timing.totalTime.end();
 		 HFETI_prec_timing.printStatsMPI();
 
-
-
+		return 0;
 	}
 
 	SparseMatrix G1, G1_comp;

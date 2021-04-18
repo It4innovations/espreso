@@ -1300,7 +1300,7 @@ void ClusterBase::CreateG0() {
 
 }
 
-void ClusterBase::CreateF0() {
+int ClusterBase::CreateF0() {
 
 	 TimeEval F0_timing (" HFETI - F0 preprocessing timing");
 	 if (true) { F0_timing.totalTime.start(); }
@@ -1316,7 +1316,8 @@ void ClusterBase::CreateF0() {
 	 TimeEvent solve_F0_time("B0 compression; F0 multiple InitialCondition solve");
 	 if (true) { solve_F0_time.start(); }
 
-	#pragma omp parallel for
+	int ret = 0;
+	#pragma omp parallel for shared(ret)
 	for (size_t d = 0; d < domains.size(); d++) {
 
 		if (MPIrank == 0 && d == 0)
@@ -1367,7 +1368,13 @@ void ClusterBase::CreateF0() {
 
 
 				} else {
-					domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
+					int ret_tmp = domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
+					if (ret_tmp < 0) {
+						#pragma omp atomic write
+						ret = ret_tmp;
+
+						continue;
+					}
 					domains[d].B0Kplus = domains[d].B0Kplus_comp;
 
 //					//ESINFO(PROGRESS1) << domains[d].B0t_comp.SpyText();
@@ -1412,6 +1419,8 @@ void ClusterBase::CreateF0() {
 		domains[d].Kplus.msglvl=0;
 //		//ESINFO(PROGRESS3) << Info::plain() << ".";
 	}
+
+	if (ret < 0) return ret;
 
 //	//ESINFO(PROGRESS3);
 
@@ -1485,6 +1494,7 @@ void ClusterBase::CreateF0() {
 
 	vec_lambda.resize(F0.m_Kplus_size);
 
+	return ret;
 };
 
 void ClusterBase::CreateSa() {

@@ -89,6 +89,10 @@ void FETISystemSolver::update()
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB &&
 			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
 		{ return false; }
+		if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
+			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB &&
+			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		{ return false; }
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB &&
 			configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
@@ -168,7 +172,6 @@ void FETISystemSolver::update()
 		{ return false; }
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS &&
 			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
 		{ return false; }
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
@@ -188,12 +191,10 @@ void FETISystemSolver::update()
 		{ return false; }
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS &&
 			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
 		{ return false; }
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::pipePCG &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS &&
 			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
 		{ return false; }
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
@@ -201,8 +202,20 @@ void FETISystemSolver::update()
 			configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS &&
 			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
 		{ return false; }
-		update(configuration);
-		return true;
+		
+		int ret = update(configuration);
+		if (ret >= 0) return true;
+
+		switch (ret) {
+			case -3:
+				eslog::info("SparseSolver: error during solution\n");
+				break;
+			default:
+				eslog::error("FETI update(): Unknown error!\n");
+				break;
+		}
+
+		return false;
 	}));
 }
 
@@ -465,7 +478,7 @@ void FETISystemSolver::insertRHS(const VectorsDenseFETI &f)
 }
 
 // make partial initialization according to updated matrices
-void FETISystemSolver::update(FETIConfiguration &configuration)
+int FETISystemSolver::update(FETIConfiguration &configuration)
 {
 	// TODO update appropriate solver objects and stop steeling matrices! :)
 	// factorization and preconditioners and HFETI preprocessing
@@ -544,13 +557,16 @@ void FETISystemSolver::update(FETIConfiguration &configuration)
 	timeSolClusterInit.endWithBarrier(); timeEvalMain->addEvent(timeSolClusterInit);
 	_inner->solver  = new IterSolver(configuration);
 
-	init(info::mesh->neighbors, configuration);
+	int ret = init(info::mesh->neighbors, configuration);
+	if (ret < 0) return ret;
 
 	if (info::ecf->output.print_matrices > 0) {
 		eslog::storedata(" STORE MATRICES FOR FETI ITER SOLVER\n");
 		std::string prefix = utils::debugDirectory() + "/fetisolver/init";
 		_inner->cluster->printInitData(prefix.c_str(), info::ecf->output.print_matrices);
 	}
+
+	return ret;
 }
 
 // run solver and store primal and dual solution
@@ -586,6 +602,7 @@ void FETISystemSolver::solve(FETIConfiguration &configuration, VectorsDenseFETI 
 				eslog::info("Method Solve for float is not implemented yet - float not available in Dissection solver.\n");
 				break;
 			default:
+				eslog::error("FETI solve(): Unknow error!\n");
 				break;
 		}
 		return false;
@@ -603,14 +620,15 @@ void FETISystemSolver::solve(FETIConfiguration &configuration, VectorsDenseFETI 
 }
 
 
-void FETISystemSolver::setup_HTFETI() {
+int FETISystemSolver::setup_HTFETI() {
 // Setup Hybrid FETI part of the solver
 
 	if (_inner->cluster->USE_HFETI == 1) {
 		TimeEvent timeHFETIprec(string("Solver - HFETI preprocessing"));
 		timeHFETIprec.start();
 
-		_inner->cluster->SetClusterHFETI();
+		int ret = _inner->cluster->SetClusterHFETI();
+		if (ret < 0) return ret;
 
 		timeHFETIprec.endWithBarrier();
 		timeEvalMain->addEvent(timeHFETIprec);
@@ -618,6 +636,8 @@ void FETISystemSolver::setup_HTFETI() {
 //		ESLOG(MEMORY) << "After HFETI preprocessing process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
 //		ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 	}
+	
+	return 0;
 }
 
 void FETISystemSolver::setup_LocalSchurComplement(FETIConfiguration &configuration) {
@@ -781,7 +801,7 @@ void FETISystemSolver::setup_InitClusterAndSolver(FETIConfiguration &configurati
 }
 
 // TODO: const parameters
-void FETISystemSolver::init(const std::vector<int> &neighbors, FETIConfiguration &configuration)
+int FETISystemSolver::init(const std::vector<int> &neighbors, FETIConfiguration &configuration)
 {
 	//mkl_cbwr_set(MKL_CBWR_COMPATIBLE);
 
@@ -829,7 +849,8 @@ void FETISystemSolver::init(const std::vector<int> &neighbors, FETIConfiguration
 
 
 	// *** Setup Hybrid FETI part of the solver
-	setup_HTFETI();
+	int ret = setup_HTFETI();
+	if (ret < 0) return ret;
 
 	// *** For algebraic kernels, GGt needs to be computed after HTFETI preprocessing
 	if (_inner->cluster->USE_HFETI == 1 && configuration.regularization == FETIConfiguration::REGULARIZATION::ALGEBRAIC) {
@@ -853,7 +874,7 @@ void FETISystemSolver::init(const std::vector<int> &neighbors, FETIConfiguration
 
 //	ESLOG(MEMORY) << "End of preprocessing - process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
 //	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
-
+	return 0;
 }
 
 int FETISystemSolver::Solve( std::vector < std::vector < double > >  & f_vec,

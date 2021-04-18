@@ -30,11 +30,11 @@ public:
 
 
 	void Solve( std::vector <double> & rhs, std::vector <double> & sol, MKL_INT rhs_start_index, MKL_INT sol_start_index);
-	void Solve( std::vector <double> & rhs, std::vector <double> & sol, MKL_INT n_rhs );
+	int Solve( std::vector <double> & rhs, std::vector <double> & sol, MKL_INT n_rhs );
 	void Solve( std::vector <double> & rhs_sol);
 
-	void SolveMat_Dense( SparseMatrix & A_in_out );
-	void SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out );
+	int SolveMat_Dense( SparseMatrix & A_in_out );
+	int SolveMat_Dense( SparseMatrix & A_in, SparseMatrix & B_out );
 
 	void SolveMatF( SparseMatrix & A_in, SparseMatrix & B_out, bool isThreaded );
 
