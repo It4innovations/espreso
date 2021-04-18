@@ -85,7 +85,7 @@ void FETISystemSolver::update()
 	insertRHS(_data.f);
 
 	while(!optimizer->set([&]() {
-		if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
+		if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB &&
 			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
 		{ return false; }
@@ -117,7 +117,6 @@ void FETISystemSolver::update()
 		{ return false; }
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS &&
 			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
 		{ return false; }
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET &&
@@ -142,8 +141,6 @@ void FETISystemSolver::update()
 		{ return false; }
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::GMRES &&
-			configuration.regularization == FETIConfiguration::REGULARIZATION::ALGEBRAIC &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS &&
 			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
 		{ return false; }
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET &&
@@ -174,9 +171,17 @@ void FETISystemSolver::update()
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG &&
 			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
 		{ return false; }
+		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::LUMPED &&
+			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG &&
+			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		{ return false; }
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG &&
 			configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		{ return false; }
+		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
+			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP &&
 			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
 		{ return false; }
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET &&
