@@ -7,7 +7,7 @@
 #include "basis/utilities/inline.h"
 
 #include <cstddef>
-#include <emmintrin.h>
+#include <immintrin.h>
 
 struct SIMD
 {
@@ -53,9 +53,30 @@ ALWAYS_INLINE const SIMD operator*(const SIMD& v1, const SIMD& v2) noexcept
 	return _mm_mul_pd(v1.data, v2.data);
 }
 
-ALWAYS_INLINE double sum(const SIMD& value) noexcept
+ALWAYS_INLINE const SIMD operator-(const SIMD& v1, const SIMD& v2) noexcept
 {
-	return _mm_cvtsd_f64(_mm_add_sd(value.data, _mm_unpackhi_pd(value.data, value.data)));
+	return _mm_sub_pd(v1.data, v2.data);
+}
+
+ALWAYS_INLINE const SIMD operator/(const SIMD& v1, const SIMD& v2) noexcept
+{
+	return _mm_div_pd(v1.data, v2.data);
+}
+
+ALWAYS_INLINE SIMD zeros() noexcept
+{
+	return _mm_setzero_pd();
+}
+
+ALWAYS_INLINE SIMD ones() noexcept
+{
+	return _mm_set1_pd(1.0);
+}
+
+ALWAYS_INLINE SIMD negate(const SIMD& value) noexcept
+{
+	__m128i tmp = _mm_set_epi32(1<<31, 0, 1<<31, 0);
+	return _mm_xor_pd(value.data, reinterpret_cast<__m128d>(tmp));
 }
 
 #endif // __SSE2__

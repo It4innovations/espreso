@@ -2,7 +2,7 @@
 #ifndef SRC_MATH_SIMD_SIMD_AVX_H_
 #define SRC_MATH_SIMD_SIMD_AVX_H_
 
-#if defined(__AVX__)
+#if defined(__AVX512F__) && defined(__AVX512DQ__)
 
 #include "basis/utilities/inline.h"
 
@@ -12,11 +12,11 @@
 struct SIMD
 {
 	enum: size_t {
-		size = 4U
+		size = 8U
 	};
 
-	ALWAYS_INLINE SIMD() noexcept: data(_mm256_setzero_pd()) { }
-	ALWAYS_INLINE SIMD(__m256d value) noexcept: data(value) { }
+	ALWAYS_INLINE SIMD() noexcept: data(_mm512_setzero_pd()) { }
+	ALWAYS_INLINE SIMD(__m512d value) noexcept: data(value) { }
 	ALWAYS_INLINE SIMD(const SIMD &other) noexcept: data(other.data) { }
 
 	ALWAYS_INLINE SIMD& operator=(const SIMD &other) noexcept
@@ -30,52 +30,52 @@ struct SIMD
 		return reinterpret_cast<const double*>(&data)[i];
 	}
 
-	__m256d data;
+	__m512d data;
 };
 
 ALWAYS_INLINE const SIMD load(const double *from) noexcept
 {
-	return _mm256_load_pd(from);
+	return _mm512_load_pd(from);
 }
 
 ALWAYS_INLINE void store(double *to, const SIMD& value) noexcept
 {
-	_mm256_store_pd(to, value.data);
+	_mm512_store_pd(to, value.data);
 }
 
 ALWAYS_INLINE const SIMD operator+(const SIMD& v1, const SIMD& v2) noexcept
 {
-	return _mm256_add_pd(v1.data, v2.data);
+	return _mm512_add_pd(v1.data, v2.data);
 }
 
 ALWAYS_INLINE const SIMD operator*(const SIMD& v1, const SIMD& v2) noexcept
 {
-	return _mm256_mul_pd(v1.data, v2.data);
+	return _mm512_mul_pd(v1.data, v2.data);
 }
 
 ALWAYS_INLINE const SIMD operator-(const SIMD& v1, const SIMD& v2) noexcept
 {
-	return _mm256_sub_pd(v1.data, v2.data);
+	return _mm512_sub_pd(v1.data, v2.data);
 }
 
 ALWAYS_INLINE const SIMD operator/(const SIMD& v1, const SIMD& v2) noexcept
 {
-	return _mm256_div_pd(v1.data, v2.data);
+	return _mm512_div_pd(v1.data, v2.data);
 }
 
 ALWAYS_INLINE SIMD zeros() noexcept
 {
-	return _mm256_setzero_pd();
+	return _mm512_setzero_pd();
 }
 
 ALWAYS_INLINE SIMD ones() noexcept
 {
-	return _mm256_set1_pd(1.0);
+	return _mm512_set1_pd(1.0);
 }
 ALWAYS_INLINE SIMD negate(const SIMD& value) noexcept
 {
-	__m256i tmp = _mm256_set_epi32(1<<31, 0, 1<<31, 0, 1<<31, 0, 1<<31, 0);
-	return _mm256_xor_pd(value.data, reinterpret_cast<__m256d>(tmp));
+	__m512i tmp = _mm512_set_epi32(1<<31, 0, 1<<31, 0, 1<<31, 0, 1<<31, 0, 1<<31, 0, 1<<31, 0, 1<<31, 0, 1<<31, 0);
+	return _mm512_xor_pd(value.data, reinterpret_cast<__m512d>(tmp));
 }
 #endif // __AVX__
 #endif /* SRC_MATH_SIMD_SIMD_AVX_H_ */
