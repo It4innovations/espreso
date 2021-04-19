@@ -100,6 +100,29 @@ static inline void M22M2N(const double * __restrict__ m22, const double * __rest
 }
 
 template<int N>
+static inline void M22M2NSimd(const double * __restrict__ m22, const double * __restrict__ m2N, double * __restrict__ result)
+{
+	SIMD m22Simd [4];
+	m22Simd[0] = load(&m22[0 * SIMD::size]);
+	m22Simd[1] = load(&m22[1 * SIMD::size]);
+	m22Simd[2] = load(&m22[2 * SIMD::size]);
+	m22Simd[3] = load(&m22[3 * SIMD::size]);
+
+	for (int n = 0; n < N; ++n) {
+		SIMD m2N1 = load(&m2N[n * SIMD::size]);
+		SIMD m2N2 = load(&m2N[(N + n) * SIMD::size]);
+
+		SIMD res[2];
+
+		res[0] = m22Simd[0] * m2N1 + m22Simd[1] * m2N2;
+		res[1] = m22Simd[2] * m2N1 + m22Simd[3] * m2N2;
+
+		store(&result[(0 + n) * SIMD::size], res[0]);
+		store(&result[(N + n) * SIMD::size], res[1]);
+	}
+}
+
+template<int N>
 static inline void M33M3N(const double * __restrict__ m33, const double * __restrict__ m3N, double * __restrict__ result)
 {
 	for (int n = 0; n < N; ++n) {

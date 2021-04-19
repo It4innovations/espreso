@@ -5,6 +5,7 @@
 #include "physics/assembler/operator.h"
 #include "physics/assembler/parameter.h"
 #include "physics/assembler/math.hpp"
+#include "math/simd/simd.h"
 
 namespace espreso {
 
@@ -59,6 +60,41 @@ struct ElementJacobian2D: public ElementJacobian {
 		inv[4 * gpindex + 3] =   detJx * jacobian[0];
 
 		M22M2N<nodes>(inv.data + 4 * gpindex, dN.data + 2 * gpindex * nodes, dND.data + 2 * gpindex * nodes);
+	}
+};
+
+struct ElementJacobian2DSimd: public ElementJacobian {
+	using ElementJacobian::ElementJacobian;
+
+	template<int nodes, int gps>
+	void operator()(int gpindex)
+	{
+		SIMD jacobian[4] {zeros(), zeros(), zeros(), zeros()};
+		SIMD dNX, dNY, coordsX, coordsY;
+
+		for (int n = 0; n < nodes; ++n) {
+
+			coordsX = load(&coords[(n * 2 + 0) * SIMD::size]);
+			coordsY = load(&coords[(n * 2 + 1) * SIMD::size]);
+			dNX = load(&dN[(2 * gpindex * nodes + n + 0 * nodes) * SIMD::size]);
+			dNY = load(&dN[(2 * gpindex * nodes + n + 1 * nodes) * SIMD::size]);
+
+			jacobian[0] = jacobian[0] + dNX * coordsX;
+			jacobian[1] = jacobian[1] + dNX * coordsY;
+			jacobian[2] = jacobian[2] + dNY * coordsX;
+			jacobian[3] = jacobian[3] + dNY * coordsY;
+		}
+
+		SIMD determinant = jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2];
+		store(&det[gpindex * SIMD::size], determinant);
+
+		SIMD detJx = ones() / determinant;
+		store(&inv[(4 * gpindex + 0) * SIMD::size], detJx * jacobian[3]);
+		store(&inv[(4 * gpindex + 1) * SIMD::size], negate(detJx) * jacobian[1]);
+		store(&inv[(4 * gpindex + 2) * SIMD::size], negate(detJx) * jacobian[2]);
+		store(&inv[(4 * gpindex + 3) * SIMD::size], detJx * jacobian[0]);
+
+		M22M2NSimd<nodes>(inv.data + 4 * gpindex * SIMD::size , dN.data + 2 * gpindex * nodes * SIMD::size, dND.data + 2 * gpindex * nodes * SIMD::size);
 	}
 };
 
@@ -128,6 +164,22 @@ struct ElementIntegration: public ElementOperatorBuilder {
 		kernel.integration.dND.addInput(kernel.integration.dN);
 		kernel.integration.dND.resize();
 		kernel.addParameter(kernel.integration.dND);
+
+		kernel.integrationSimd.jacobiInversion.addInput(kernel.coordsSimd.node);
+		kernel.integrationSimd.jacobiInversion.addInput(kernel.integration.dN);
+		kernel.integrationSimd.jacobiInversion.resizeAligned(SIMD::size * sizeof(double));
+		kernel.addParameter(kernel.integrationSimd.jacobiInversion);
+
+		kernel.integrationSimd.jacobiDeterminant.addInput(kernel.coordsSimd.node);
+		kernel.integrationSimd.jacobiDeterminant.addInput(kernel.integration.dN);
+		kernel.integrationSimd.jacobiDeterminant.resizeAligned(SIMD::size * sizeof(double));
+		kernel.addParameter(kernel.integrationSimd.jacobiDeterminant);
+
+		kernel.integrationSimd.dND.addInput(kernel.coordsSimd.node);
+		kernel.integrationSimd.dND.addInput(kernel.integration.dN);
+		kernel.integrationSimd.dND.resizeAligned(SIMD::size * sizeof(double));
+		kernel.addParameter(kernel.integrationSimd.dND);
+
 		return true;
 	}
 
@@ -135,6 +187,7 @@ struct ElementIntegration: public ElementOperatorBuilder {
 	{
 		if (info::mesh->dimension == 2) {
 			iterate_elements_gps<HeatTransferModuleOpt::NGP>(ElementJacobian2D(kernel.coords.node, kernel.integration.dN, kernel.integration.jacobiInversion, kernel.integration.jacobiDeterminant, kernel.integration.dND, interval));
+			iterate_elements_gps_simd<HeatTransferModuleOpt::NGP>(ElementJacobian2DSimd(kernel.coordsSimd.node, kernel.integrationSimd.dN, kernel.integrationSimd.jacobiInversion, kernel.integrationSimd.jacobiDeterminant, kernel.integrationSimd.dND, interval));
 		}
 		if (info::mesh->dimension == 3) {
 			iterate_elements_gps<HeatTransferModuleOpt::NGP>(ElementJacobian3D(kernel.coords.node, kernel.integration.dN, kernel.integration.jacobiInversion, kernel.integration.jacobiDeterminant, kernel.integration.dND, interval));
