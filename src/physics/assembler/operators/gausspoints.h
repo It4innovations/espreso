@@ -34,6 +34,32 @@ struct FromNodesToGaussPoints: public Operator {
 	}
 };
 
+template<int dimension>
+struct FromNodesToGaussPointsSimd: public Operator {
+	FromNodesToGaussPointsSimd(ParameterData &N, ParameterData &nodeData, ParameterData &gpData, int interval)
+	: Operator(interval, gpData.isconst[interval], gpData.update[interval]),
+	  N(N, interval, 0),
+	  n(nodeData, interval),
+	  gp(gpData, interval)
+	{
+
+	}
+
+	InputParameterIterator N, n;
+	OutputParameterIterator gp;
+
+	template<int nodes, int gps>
+	void operator()(int gpindex)
+	{
+		NtoGPSimd<nodes, dimension>(N.data + gpindex * nodes * SIMD::size, n.data, gp.data + gpindex * dimension * SIMD::size );
+	}
+
+	void operator++()
+	{
+		++n; ++gp;
+	}
+};
+
 template <int dimension>
 struct ElementsGaussPointsBuilder: public ElementOperatorBuilder {
 	ParameterData &N, &nodeData, &gpData;

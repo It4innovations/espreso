@@ -50,6 +50,30 @@ static void NtoGP(const double * __restrict__ gp_N, const double * __restrict__ 
 	}
 }
 
+template<int nodes, int dimension>
+static void NtoGPSimd(const double * __restrict__ gp_N, const double * __restrict__ nvalues, double * __restrict__ gpvalues)
+{
+
+	SIMD res[dimension];
+
+	for (int d = 0; d < dimension; ++d) {
+		res[d] = zeros();
+	}
+
+	for (int n = 0; n < nodes; ++n) {
+		SIMD gp = load(&gp_N[n * SIMD::size]);
+
+		for (int d = 0; d < dimension; ++d) {
+			SIMD nv = load(&nvalues[(dimension * n + d) * SIMD::size]);
+			res[d] = res[d] + gp * nv;
+		}
+	}
+
+	for (int d = 0; d < dimension; ++d) {
+		store(&gpvalues[d * SIMD::size], res[d]);
+	}
+}
+
 template<int N>
 static inline void M12M2N(const double * __restrict__ m12, const double * __restrict__ m2N, double * __restrict__ result)
 {
