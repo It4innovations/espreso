@@ -18,13 +18,13 @@ class tarray {
 public:
 	static std::vector<TType> distribute(int threads, TType size, TType minchunk = 0);
 
-	tarray(size_t threads, size_t size, TType init = TType{});
-	tarray(size_t threads, const std::vector<TType> &data);
-	tarray(size_t threads, size_t size, bool skipinit);
-	tarray(const std::vector<std::vector<TType> > &data);
-	tarray(const std::vector<TType> &data);
-	tarray(const std::vector<size_t> &distribution, const std::vector<TType> &data);
-	tarray(const std::vector<size_t> &distribution, size_t duplication, TType init = TType{});
+	tarray(size_t threads, size_t size, TType init = TType{}, size_t alignment = 0);
+	tarray(size_t threads, const std::vector<TType> &data, size_t alignment = 0);
+	tarray(size_t threads, size_t size, bool skipinit, size_t alignment = 0);
+	tarray(const std::vector<std::vector<TType> > &data, size_t alignment = 0);
+	tarray(const std::vector<TType> &data, size_t alignment = 0);
+	tarray(const std::vector<size_t> &distribution, const std::vector<TType> &data, size_t alignment = 0);
+	tarray(const std::vector<size_t> &distribution, size_t duplication, TType init = TType{}, size_t alignment = 0);
 
 	tarray(const tarray<TType> &other);
 	tarray(tarray<TType> &&other);
@@ -63,8 +63,15 @@ public:
 	~tarray();
 
 private:
+
+	void allocate();
+	void deallocate();
+
 	size_t _size;
+	size_t _alignment;
+
 	TType *_data;
+	TType *_dataUnaligned;
 
 	std::vector<size_t> _distribution;
 };
