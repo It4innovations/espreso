@@ -2,7 +2,9 @@
 #ifndef SRC_MATH_SIMD_SIMD_H_
 #define SRC_MATH_SIMD_SIMD_H_
 
-#if defined(__AVX__)
+#if defined(__AVX512F__) && defined(__AVX512DQ__)
+#include "simd.avx512.h"
+#elif defined(__AVX__)
 #include "simd.avx.h"
 #elif defined(__SSE2__)
 #include "simd.sse2.h"
@@ -56,9 +58,29 @@ ALWAYS_INLINE const SIMD operator*(const SIMD& v1, const SIMD& v2) noexcept
 	return v1.data * v2.data;
 }
 
-ALWAYS_INLINE double sum(const SIMD& value) noexcept
+ALWAYS_INLINE const SIMD operator-(const SIMD& v1, const SIMD& v2) noexcept
 {
-	return value.data;
+	return v1.data - v2.data;
+}
+
+ALWAYS_INLINE const SIMD operator/(const SIMD& v1, const SIMD& v2) noexcept
+{
+	return v1.data / v2.data;
+}
+
+ALWAYS_INLINE SIMD zeros() noexcept
+{
+	return 0.0;
+}
+
+ALWAYS_INLINE SIMD ones() noexcept
+{
+	return 1.0;
+}
+
+ALWAYS_INLINE SIMD negate(const SIMD& value) noexcept
+{
+	return -value.data;
 }
 
 #endif // default SIMD with single double
