@@ -3,6 +3,7 @@
 #define SRC_PHYSICS_ASSEMBLER_MODULES_MODULE_PARAMETERS_H_
 
 #include "physics/assembler/parameter.h"
+#include "math/simd/simd.h"
 
 namespace espreso {
 
@@ -68,6 +69,26 @@ struct ParametersIntegration {
 	ElementParameter<egps> weight;
 	ElementParameter<enodes * egps> N;
 	ElementParameter<edim * enodes * egps> dN;
+
+	ElementParameter<egps> jacobiDeterminant;
+	ElementParameter<ndim * ndim * egps> jacobiInversion;
+	ElementParameter<edim * enodes * egps> dND;
+
+	Boundary boundary;
+};
+
+struct ParametersIntegrationSimd {
+	struct Boundary {
+		BoundaryParameter<egps> weight;
+		BoundaryParameter<enodes * egps> N;
+		BoundaryParameter<edim * enodes * egps> dN;
+
+		BoundaryParameter<egps> jacobian;
+	};
+
+	ElementParameter<egps> weight;
+	ElementParameter<enodes * egps + SIMD::size> N;
+	ElementParameter<edim * enodes * egps + SIMD::size> dN;
 
 	ElementParameter<egps> jacobiDeterminant;
 	ElementParameter<ndim * ndim * egps> jacobiInversion;
