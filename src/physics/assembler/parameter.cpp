@@ -140,6 +140,49 @@ void ElementParameterData::resize(double init)
 	data = new serializededata<esint, double>(distribution, tarray<double>(datadistribution, 1, init));
 }
 
+void ElementParameterData::resizeAligned(size_t alignment, double init)
+{
+	std::vector<std::vector<esint> > distribution(info::env::threads);
+
+	distribution[0].push_back(0);
+	esint sum = 0;
+	for (int t = 0; t < info::env::threads; ++t) {
+		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
+				esint isize = increment(i);
+				esint elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
+				size_t alignmentInElements = alignment / sizeof(double);
+				elements = (((elements - 1)/ alignmentInElements)+ 1) * alignmentInElements;
+				if (!isconst[i]) {
+					isize *= elements;
+				}
+				else
+				{
+					isize *= alignmentInElements;
+				}
+
+				distribution[t].push_back(isize + sum);
+				sum += isize;
+			}
+		}
+	}
+
+	std::vector<size_t> datadistribution;
+	for (int t = 0; t < info::env::threads; ++t) {
+		if (distribution[t].size()) {
+			datadistribution.push_back(distribution[t].front());
+		} else {
+			datadistribution.push_back(sum);
+		}
+	}
+	datadistribution.push_back(sum);
+
+	if (data) {
+		delete data;
+	}
+	data = new serializededata<esint, double>(distribution, tarray<double>(datadistribution, 1, init, alignment));
+}
+
 int ElementParameterData::increment(int interval) const
 {
 	return

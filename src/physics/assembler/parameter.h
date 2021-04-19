@@ -101,6 +101,7 @@ struct ElementParameterData: public ParameterData {
 	int increment(int interval) const;
 	int increment(PerElementSize size, int interval) const;
 	void resize(double init = .0);
+	void resizeAligned(size_t alignment, double init = .0);
 };
 
 template<int mask>
