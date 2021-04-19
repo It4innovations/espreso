@@ -37,7 +37,7 @@ def configure(ctx):
 
     ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
     if ctx.options.mode == "release":
-        ctx.env.append_unique("CXXFLAGS", [ "-O3", "-g" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-O3", "-g", "-march=native" ])
     if ctx.options.mode == "devel":
         ctx.env.append_unique("CXXFLAGS", [ "-O2", "-g" ])
     if ctx.options.mode == "debug":
