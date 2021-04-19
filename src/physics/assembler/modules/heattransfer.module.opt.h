@@ -56,7 +56,9 @@ public:
 	const HeatTransferLoadStepConfiguration &configuration;
 
 	ParametersIntegration integration;
+	ParametersIntegrationSimd integrationSimd;
 	ParametersCoordinates coords;
+	ParametersCoordinates coordsSimd;
 	ParametersThickness thickness;
 
 	ParametersCoordinateSystem cooSystem;
