@@ -3,6 +3,7 @@
 #define SRC_BASIS_CONTAINERS_TARRAY_HPP_
 
 #include "tarray.h"
+#include <memory>
 
 namespace espreso {
 
