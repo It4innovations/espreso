@@ -16,6 +16,15 @@ struct Operator {
 	Operator(int interval, bool isconst, bool update): interval(interval), isconst(isconst), update(update) {}
 	virtual ~Operator() {}
 
+	Operator& operator+=(const size_t rhs)
+	{
+		for(size_t i = 0; i < rhs; ++i)
+		{
+			++(*this);
+		}
+		return *this;
+	}
+
 	virtual void operator++() =0;
 };
 
