@@ -162,11 +162,23 @@ void computeDomainDual()
 	}
 	size_t threads = info::env::OMP_NUM_THREADS;
 
+	std::vector<std::pair<esint, esint> > sBuffer, gBuffer;
+	std::vector<std::vector<std::pair<esint, esint> > > rBuffer(info::mesh->neighborsWithMe.size());
+
+	for (esint d = 0; d < info::mesh->elements->ndomains; ++d) {
+		sBuffer.push_back(std::make_pair(info::mesh->elements->offset + info::mesh->elements->elementsDistribution[d + 1], d + info::mesh->elements->firstDomain));
+	}
+
+	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighborsWithMe)) {
+		eslog::internalFailure("cannot exchange distribution of elements to domains.\n");
+	}
+
+	for (size_t n = 0; n < rBuffer.size(); ++n) {
+		gBuffer.insert(gBuffer.end(), rBuffer[n].begin(), rBuffer[n].end());
+	}
+
 	std::vector<std::vector<esint> > dist(threads), data(threads);
 	std::vector<std::vector<esint> > distFull(threads), dataFull(threads);
-
-	esint first = *info::mesh->elements->IDs->datatarray().begin();
-	esint last = first + info::mesh->elements->size;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -182,14 +194,11 @@ void computeDomainDual()
 			for (esint e = info::mesh->elements->elementsDistribution[d]; e < info::mesh->elements->elementsDistribution[d + 1]; ++e, ++neighs) {
 				for (auto n = neighs->begin(); n != neighs->end(); ++n) {
 					if (*n != -1) {
-						if (*n < first + info::mesh->elements->elementsDistribution[d] || first + info::mesh->elements->elementsDistribution[d + 1] <= *n) {
-							esint doffset = 0;
-							while (first + info::mesh->elements->elementsDistribution[doffset] <= *n) {
-								++doffset;
-							}
-							ndomainsFull.push_back(info::mesh->elements->firstDomain + doffset - 1);
-							if (first <= *n && *n < last) {
-								ndomains.push_back(doffset - 1);
+						if (*n < info::mesh->elements->offset + info::mesh->elements->elementsDistribution[d] || info::mesh->elements->offset + info::mesh->elements->elementsDistribution[d + 1] <= *n) {
+							auto it = std::lower_bound(gBuffer.begin(), gBuffer.end(), *n, [] (const std::pair<esint, esint> &info, const esint &e) { return info.first <= e; });
+							ndomainsFull.push_back(it->second);
+							if (info::mesh->elements->firstDomain <= ndomainsFull.back() && ndomainsFull.back() < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
+								ndomains.push_back(ndomainsFull.back() - info::mesh->elements->firstDomain);
 							}
 						}
 					}
