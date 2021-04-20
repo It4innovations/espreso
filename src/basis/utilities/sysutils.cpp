@@ -121,7 +121,9 @@ void printStack()
 {
 	pid_t pid = getpid();
 	std::string pstack = "pstack " + std::to_string(pid);
-	system(pstack.c_str());
+	if (system(pstack.c_str())) {
+		// stack cannot be printed
+	}
 }
 
 std::string getStack()
