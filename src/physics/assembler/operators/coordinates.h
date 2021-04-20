@@ -87,6 +87,26 @@ struct Coordinates3DToElementNodes: CoordinatesToElementNodes {
 	}
 };
 
+struct Coordinates3DToElementNodesSimd: CoordinatesToElementNodes {
+	using CoordinatesToElementNodes::CoordinatesToElementNodes;
+
+	void operator()()
+	{
+		serializededata<esint, esint>::const_iterator tmpNodeIter(procNodes);
+		OutputParameterIterator tmpNcoordinates(ncoordinates);
+
+		for(size_t simdLane = 0; simdLane < SIMD::size; ++simdLane, ++tmpNodeIter)
+		{
+			for (auto n = tmpNodeIter->begin(); n != tmpNodeIter->end(); ++n, ++ncoordinates) {
+				auto nodeOfElement  = (n - tmpNodeIter->begin());
+				tmpNcoordinates[(nodeOfElement * 3 + 0) * SIMD::size + simdLane] = info::mesh->nodes->coordinates->datatarray()[*n].x;
+				tmpNcoordinates[(nodeOfElement * 3 + 1) * SIMD::size + simdLane] = info::mesh->nodes->coordinates->datatarray()[*n].y;
+				tmpNcoordinates[(nodeOfElement * 3 + 2) * SIMD::size + simdLane] = info::mesh->nodes->coordinates->datatarray()[*n].z;
+			}
+		}
+	}
+};
+
 struct ElementCoordinates: public ElementOperatorBuilder {
 	HeatTransferModuleOpt &kernel;
 
@@ -127,7 +147,10 @@ struct ElementCoordinates: public ElementOperatorBuilder {
 			iterate_elements_gps<HeatTransferModuleOpt::NGP>(FromNodesToGaussPoints<2>(kernel.integration.N, kernel.coords.node, kernel.coords.gp, interval));
 		}
 		if (info::mesh->dimension == 3) {
+			iterate_elements_simd(Coordinates3DToElementNodesSimd(procNodes, kernel.coordsSimd.node, interval));
 			iterate_elements(Coordinates3DToElementNodes(procNodes, kernel.coords.node, interval));
+
+			iterate_elements_gps_simd<HeatTransferModuleOpt::NGP>(FromNodesToGaussPointsSimd<3>(kernel.integrationSimd.N, kernel.coordsSimd.node, kernel.coordsSimd.gp, interval));
 			iterate_elements_gps<HeatTransferModuleOpt::NGP>(FromNodesToGaussPoints<3>(kernel.integration.N, kernel.coords.node, kernel.coords.gp, interval));
 		}
 	}
