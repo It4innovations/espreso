@@ -35,6 +35,16 @@ struct SIMD
 		return data;
 	}
 
+	ALWAYS_INLINE double operator- () const noexcept
+	{
+		return -data;
+	}
+
+	ALWAYS_INLINE double operator+ () const noexcept
+	{
+		return data;
+	}
+
 	double data;
 };
 

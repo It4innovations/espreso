@@ -30,6 +30,17 @@ struct SIMD
 		return reinterpret_cast<const double*>(&data)[i];
 	}
 
+	ALWAYS_INLINE SIMD operator- () const noexcept
+	{
+		__m256i tmp = _mm256_set_epi32(1<<31, 0, 1<<31, 0, 1<<31, 0, 1<<31, 0);
+		return _mm256_xor_pd(data, reinterpret_cast<__m256d>(tmp));
+	}
+
+	ALWAYS_INLINE SIMD operator+ () const noexcept
+	{
+		return data;
+	}
+
 	__m256d data;
 };
 
