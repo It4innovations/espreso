@@ -41,29 +41,14 @@ struct Coordinates2DToElementNodes: CoordinatesToElementNodes {
 	}
 };
 
-struct Coordinates2DToElementNodesSimd: public Operator {
-	Coordinates2DToElementNodesSimd(serializededata<esint, esint>::const_iterator procNodes, ParameterData &ncoordinates, int interval)
-	: Operator(interval, ncoordinates.isconst[interval], ncoordinates.update[interval]),
-	  procNodes(procNodes),
-	  ncoordinates(ncoordinates, interval, ndim)
-	{
-
-	}
-
-	serializededata<esint, esint>::const_iterator procNodes;
-	OutputParameterIterator ncoordinates;
-
-	void operator++()
-	{
-		++procNodes;
-	}
-
+struct Coordinates2DToElementNodesSimd: CoordinatesToElementNodes {
+	using CoordinatesToElementNodes::CoordinatesToElementNodes;
 	void operator()()
 	{
 		serializededata<esint, esint>::const_iterator tmpNodeIter(procNodes);
 		OutputParameterIterator tmpNcoordinates(ncoordinates);
 
-		for(size_t simdLane = 0; simdLane < SIMD::size; ++simdLane, ++tmpNodeIter)
+		for(size_t simdLane = 0; simdLane < SIMD::size && tmpNodeIter->begin() != tmpNodeIter->end(); ++simdLane, ++tmpNodeIter)
 		{
 			for (auto n = tmpNodeIter->begin(); n != tmpNodeIter->end(); ++n, ++ncoordinates) {
 				auto nodeOfElement  = (n - tmpNodeIter->begin());
@@ -95,7 +80,7 @@ struct Coordinates3DToElementNodesSimd: CoordinatesToElementNodes {
 		serializededata<esint, esint>::const_iterator tmpNodeIter(procNodes);
 		OutputParameterIterator tmpNcoordinates(ncoordinates);
 
-		for(size_t simdLane = 0; simdLane < SIMD::size; ++simdLane, ++tmpNodeIter)
+		for(size_t simdLane = 0; simdLane < SIMD::size && tmpNodeIter->begin() != tmpNodeIter->end(); ++simdLane, ++tmpNodeIter)
 		{
 			for (auto n = tmpNodeIter->begin(); n != tmpNodeIter->end(); ++n, ++ncoordinates) {
 				auto nodeOfElement  = (n - tmpNodeIter->begin());
