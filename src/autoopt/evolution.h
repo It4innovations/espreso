@@ -82,6 +82,8 @@ private:
 	std::vector<std::vector<double> > pBest;
 	std::vector<std::vector<double> > velocity;
 	std::vector<double> gBest;
+
+	void migrateSpecimen();
 };
 
 class DEAlgorithm : public EvolutionAlgorithm
@@ -107,6 +109,8 @@ private:
 	const double CR;
 
 	std::vector<double> best;
+
+	void mutateSpecimen();
 };
 
 class SOMAAlgorithm : public EvolutionAlgorithm
