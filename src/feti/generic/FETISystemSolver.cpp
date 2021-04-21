@@ -696,31 +696,36 @@ void FETISystemSolver::solve(FETIConfiguration &configuration, VectorsDenseFETI 
 
 	while (!optimizer->run([&] () {
 		int ret = Solve(_inner->holder.F, _inner->holder.primalSolution, _inner->holder.dualSolution);
-		// Successful run of solver
-		if (ret >= 0 && ret < configuration.max_iterations) return true;
-		// Solver exceeded the maximum number of iterations and did not converge
-		if (ret >= configuration.max_iterations) {
-			eslog::info("FETI solve: Maximum number of iterations has been exceeded.\n");
-			return false;
-		}
 		
 		// Solver errors
-		switch (ret)
-		{
-			case -1:
-				eslog::info("FETI solve: Regular CG with conjugate projector not implemented yet.\n");
-				break;
-			case -2:
-				eslog::info("FETI solve: Geneo requires dirichlet preconditioner.\n");
-				break;
-			case -3:
-				eslog::info("FETI solve: MKL Sparse Solver - Error during solution.\n");
-				break;
-			default:
-				eslog::error("FETI solve: Unknow error!\n");
-				break;
+		if (ret < 0) {
+			switch (ret)
+			{
+				case -1:
+					eslog::info("FETI solve: Regular CG with conjugate projector not implemented yet.\n");
+					break;
+				case -2:
+					eslog::info("FETI solve: Geneo requires dirichlet preconditioner.\n");
+					break;
+				case -3:
+					eslog::info("FETI solve: MKL Sparse Solver - Error during solution.\n");
+					break;
+				default:
+					eslog::error("FETI solve: Unknow error!\n");
+					break;
+			}
+			return false;
 		}
-		return false;
+		else {
+			size_t s_ret = static_cast<size_t>(ret);
+			// Successful run of solver
+			if (s_ret >= 0 && s_ret < configuration.max_iterations) return true;
+			// Solver exceeded the maximum number of iterations and did not converge
+			else {
+				eslog::info("FETI solve: Maximum number of iterations has been exceeded.\n");
+				return false;
+			}
+		}
 	}));
 
 
