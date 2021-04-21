@@ -85,128 +85,234 @@ void FETISystemSolver::update()
 	insertRHS(_data.f);
 
 	while(!optimizer->set([&]() {
-		if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::LUMPED &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		if (configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS && 
 			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
 		{ return false; }
 		// Intel MKL ERROR: Parameter 5 was incorrect on entry to MKL_DCSRMV.
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS &&
 			configuration.method == FETIConfiguration::METHOD::TOTAL_FETI)
 		{ return false; }
 		// Intel MKL ERROR: Parameter 5 was incorrect on entry to MKL_DCSRMV.
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::LUMPED &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS &&
 			configuration.method == FETIConfiguration::METHOD::TOTAL_FETI)
 		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
+		// Intel MKL ERROR: Parameter 5 was incorrect on entry to MKL_DCSRMV.
+		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+			configuration.method == FETIConfiguration::METHOD::TOTAL_FETI)
 		{ return false; }
+		// Intel MKL ERROR: Parameter 5 was incorrect on entry to MKL_DCSRMV.
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+			configuration.method == FETIConfiguration::METHOD::TOTAL_FETI)
 		{ return false; }
+		// Intel MKL ERROR: Parameter 5 was incorrect on entry to MKL_DCSRMV.
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+			configuration.method == FETIConfiguration::METHOD::TOTAL_FETI)
 		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::LUMPED &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::GMRES &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::GMRES &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG_CP &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG_CP &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG_CP &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::LUMPED &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::pipePCG &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
-			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::pipePCG &&
-			configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS &&
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
+		// if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::LUMPED &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::LUMPED &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::GMRES &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::LUMPED &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::GMRES &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::GMRES &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::GMRES &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::GMRES &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG_CP &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::LUMPED &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG_CP &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG_CP &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG_CP &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG_CP &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::LUMPED &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::PCG &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::LUMPED &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::LUMPED &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::pipePCG &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::LUMPED &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::pipePCG &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::pipePCG &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::pipePCG &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
+		// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
+		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::pipePCG &&
+		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+		// 	configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+		// { return false; }
 		
 		int ret = update(configuration);
 		if (ret >= 0) return true;
@@ -601,7 +707,7 @@ void FETISystemSolver::solve(FETIConfiguration &configuration, VectorsDenseFETI 
 				eslog::info("FETI Geneo requires dirichlet preconditioner.\n");
 				break;
 			case -3:
-				eslog::info("Error during solution.\n");
+				eslog::info("SpareSolver: Error during solution.\n");
 				break;
 			case -4:
 				eslog::info("Method Solve for float is not implemented yet - float not available in Dissection solver.\n");
