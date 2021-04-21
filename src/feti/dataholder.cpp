@@ -1,6 +1,9 @@
 
 #include "dataholder.h"
 #include "basis/containers/serializededata.h"
+#include "basis/utilities/sysutils.h"
+#include "basis/utilities/debugprint.h"
+#include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.h"
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
@@ -8,6 +11,7 @@
 #include "mesh/store/clusterstore.h"
 
 #include <algorithm>
+#include <fstream>
 
 using namespace espreso;
 
@@ -93,6 +97,19 @@ void DataHolder::assembleB0fromKernels()
 		B0[d].rows = rows[info::mesh->domains->cluster[d]];
 		B0[d].cols = K[d].cols;
 		B0[d].nnz = B0[d].V_values.size();
+	}
+
+	if (info::ecf->output.print_matrices) {
+		eslog::storedata(" STORE B0, N1\n");
+		std::string prefix = utils::debugDirectory() + "/linsolver";
+		for (size_t d = 0; d < B0.size(); ++d) {
+			std::ofstream os(utils::prepareFile(prefix, std::string("B0") + std::to_string(d)));
+			os << B0[d];
+		}
+		for (size_t d = 0; d < N1.size(); ++d) {
+			std::ofstream os(utils::prepareFile(prefix, std::string("N1") + std::to_string(d)));
+			os << N1[d];
+		}
 	}
 }
 
