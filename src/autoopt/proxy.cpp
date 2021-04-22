@@ -284,8 +284,8 @@ double ParameterManager::_checkParameter_no_rounding(int id, double value)
 OutputManager::OutputManager(const AutoOptimizationConfiguration& configuration)
 : m_config(configuration) {}
 
-const void OutputManager::writeConfiguration(const char type,
-	std::vector<double>& configuration)
+void OutputManager::writeConfiguration(const char type,
+	std::vector<double>& configuration) const
 {
 	std::stringstream ss;
 
@@ -311,7 +311,7 @@ const void OutputManager::writeConfiguration(const char type,
 	}
 }
 
-const void OutputManager::writeAlgorithm()
+void OutputManager::writeAlgorithm() const
 {
 	switch(info::ecf->output.logger) {
 		case OutputConfiguration::LOGGER::USER:
@@ -328,7 +328,7 @@ const void OutputManager::writeAlgorithm()
 	}
 }
 
-const void OutputManager::writeEvaluation(double evaluation)
+void OutputManager::writeEvaluation(double evaluation) const
 {
 	std::stringstream ss;
 

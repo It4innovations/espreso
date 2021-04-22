@@ -47,7 +47,7 @@ void ClusterBase::ShowTiming()  {
 }
 
 
-void ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number_of_subdomains ) {
+int ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number_of_subdomains ) {
 
 	// *** Init the vector of domains *****************************************************
 	domains_in_global_index.resize( number_of_subdomains ) ;
@@ -81,7 +81,7 @@ void ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number
 		}
 		Communication::allReduce(&hasKernel, NULL, 1, MPI_INT, MPI_MIN);
 		if (!hasKernel) {
-			eslog::error("cannot call Hybrid FETI to a system with regular matrices.\n");
+			return -4;
 		}
 	}
 
@@ -248,6 +248,7 @@ void ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number
 //	ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
 //	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
+	return 0;
 }
 
 void ClusterBase::SetClusterPC( ) {

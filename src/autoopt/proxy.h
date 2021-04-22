@@ -50,9 +50,9 @@ class OutputManager
 public:
 	OutputManager(const AutoOptimizationConfiguration& configuration);
 
-	const void writeConfiguration(const char type, std::vector<double>& configuration);
-	const void writeAlgorithm();
-	const void writeEvaluation(double evaluation);
+	void writeConfiguration(const char type, std::vector<double>& configuration) const;
+	void writeAlgorithm() const;
+	void writeEvaluation(double evaluation) const;
 
 private:
 	const AutoOptimizationConfiguration& m_config;

@@ -27,6 +27,8 @@ class SuperClusterAcc : public SuperClusterBase
 
         loop_2_1_time	("Loop2: Kplus-sv, B0-mv, Kplus-mv")
     {
+        if (initReturnCode() < 0) return;
+
         if (instance_in != NULL) {
             init();
         }

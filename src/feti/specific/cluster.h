@@ -192,7 +192,7 @@
 
         // Functions of the class
 
-        void InitClusterPC   ( esint * subdomains_global_indices, esint number_of_subdomains );
+        int InitClusterPC   ( esint * subdomains_global_indices, esint number_of_subdomains );
         void SetClusterPC    (); //SEQ_VECTOR <SEQ_VECTOR <esint> > & lambda_map);
         void SetClusterHFETI ();
 

@@ -88,32 +88,46 @@ void FETISystemSolver::update()
 //		if (configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
 //			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
 //		{ return false; }
-//		// Intel MKL ERROR: Parameter 5 was incorrect on entry to MKL_DCSRMV.
-//		else
+		// Intel MKL ERROR: Parameter 5 was incorrect on entry to MKL_DCSRMV.
 		if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
 			configuration.method == FETIConfiguration::METHOD::TOTAL_FETI)
-		{ return false; }
+		{
+			eslog::info("FETI update: Cannot use QPCE and TOTAL FETI without a preconditioner.\n");
+			return false; 
+		}
 		// Intel MKL ERROR: Parameter 5 was incorrect on entry to MKL_DCSRMV.
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::LUMPED &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
 			configuration.method == FETIConfiguration::METHOD::TOTAL_FETI)
-		{ return false; }
+		{
+			eslog::info("FETI update: Cannot use QPCE and TOTAL FETI with the LUMPED preconditioner.\n");
+			return false; 
+		}
 		// Intel MKL ERROR: Parameter 5 was incorrect on entry to MKL_DCSRMV.
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
 			configuration.method == FETIConfiguration::METHOD::TOTAL_FETI)
-		{ return false; }
+		{
+			eslog::info("FETI update: Cannot use QPCE and TOTAL FETI with the WEIGHTS preconditioner.\n");
+			return false; 
+		}
 		// Intel MKL ERROR: Parameter 5 was incorrect on entry to MKL_DCSRMV.
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
 			configuration.method == FETIConfiguration::METHOD::TOTAL_FETI)
-		{ return false; }
+		{
+			eslog::info("FETI update: Cannot use QPCE and TOTAL FETI with the DIRICHLET preconditioner.\n");
+			return false; 
+		}
 		// Intel MKL ERROR: Parameter 5 was incorrect on entry to MKL_DCSRMV.
 		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
 			configuration.method == FETIConfiguration::METHOD::TOTAL_FETI)
-		{ return false; }
+		{
+			eslog::info("FETI update: Cannot use QPCE and TOTAL FETI with the SUPER DIRICHLET preconditioner.\n");
+			return false; 
+		}
 		// if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
 		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB &&
 		// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
@@ -321,6 +335,9 @@ void FETISystemSolver::update()
 		switch (ret) {
 			case -3:
 				eslog::info("FETI update: MKL Sparse Solver - Error during solution.\n");
+				break;
+			case -4:
+				eslog::info("FETI update: Cannot use Hybrid FETI with a regular matrix system.\n");
 				break;
 			default:
 				eslog::error("FETI update: Unknown error!\n");
@@ -598,6 +615,8 @@ int FETISystemSolver::update(FETIConfiguration &configuration)
 	delete _inner->cluster;
 	delete _inner->solver;
 
+	int ret = 0;
+
 	//instance->computeKernels(configuration.regularization, configuration.sc_size);
 
 	_inner->holder.B0.resize(info::mesh->domains->size);
@@ -667,9 +686,11 @@ int FETISystemSolver::update(FETIConfiguration &configuration)
 	TimeEvent timeSolClusterInit(string("Solver - Cluster init (K factorization incl.)"));timeSolClusterInit.start();
 	_inner->cluster = new SuperClusterCPU(configuration, &_inner->holder);
 	timeSolClusterInit.endWithBarrier(); timeEvalMain->addEvent(timeSolClusterInit);
+	ret = _inner->cluster->initReturnCode();
 	_inner->solver  = new IterSolver(configuration);
+	if (ret < 0) return ret;
 
-	int ret = init(info::mesh->neighbors, configuration);
+	ret = init(info::mesh->neighbors, configuration);
 	if (ret < 0) return ret;
 
 	if (info::ecf->output.print_matrices > 0) {

@@ -55,7 +55,10 @@ public:
 		instance(instance_in)
 	{
 		if (instance_in != NULL) {
-			init();
+			init_return_code = init();
+		}
+		else {
+			init_return_code = 0;
 		}
 	}
 
@@ -89,7 +92,13 @@ public:
 
 	esint min_numClusters_per_MPI;
 
-	void init() {
+	int init_return_code;
+
+	int initReturnCode() const {
+		return this->init_return_code;
+	}
+
+	int init() {
 
 		numClusters 							= 1 + *std::max_element(info::mesh->domains->cluster.begin(), info::mesh->domains->cluster.end());
 		number_of_subdomains_per_supercluster 	= instance->K.size();
@@ -188,7 +197,8 @@ public:
 			}
 
 			// Init all compute clusters - communication layer and respective buffers are not allocated
-			clusters[c].InitClusterPC(&domain_list[0], number_of_subdomains_per_cluster);
+			int ret = clusters[c].InitClusterPC(&domain_list[0], number_of_subdomains_per_cluster);
+			if (ret < 0) return ret;
 
 			// Get an original mapping of the subdomains
 			for (size_t d = 0; d < clusters[c].domains.size(); d++) {
@@ -209,6 +219,8 @@ public:
 
 
 		//TODO - Fix and remove
+
+		return 0;
 	}
 
 	int SetClusterHFETI() {
