@@ -141,7 +141,6 @@ void Domain::SetDomain() {
 	}
 
 	Kplus.Factorization ("K matrix");
-
 //  if ( configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC ) {
 //      instance->computeKernel(configuration.regularization, configuration.sc_size, domain_global_index, configuration.method == FETIConfiguration::METHOD::HYBRID_FETI);
 //      Kplus.ImportMatrix_wo_Copy(K);

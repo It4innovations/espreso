@@ -10,6 +10,8 @@
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 
+#include "wrappers/mpi/communication.h"
+
 #include <utility>
 #include <sstream>
 #include <fstream>
@@ -70,6 +72,19 @@ void ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number
 		domains[d].SetDomain();
 	}
 	POP_RANGE // END Solver - K factorization
+
+	if (configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+	{
+		int hasKernel = 0;
+		for (size_t d = 0; d < domains.size(); ++d) {
+			hasKernel |= domains[d].Kplus_R.rows;
+		}
+		Communication::allReduce(&hasKernel, NULL, 1, MPI_INT, MPI_MIN);
+		if (!hasKernel) {
+			eslog::error("cannot call Hybrid FETI to a system with regular matrices.\n");
+		}
+	}
+
 
 	//// *** Alocate temporarly vectors for Temporary vectors for Apply_A function *********
 	//// *** - temporary vectors for work primal domain size *******************************

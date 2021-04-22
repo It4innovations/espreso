@@ -85,11 +85,12 @@ void FETISystemSolver::update()
 	insertRHS(_data.f);
 
 	while(!optimizer->set([&]() {
-		if (configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS && 
-			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-		{ return false; }
-		// Intel MKL ERROR: Parameter 5 was incorrect on entry to MKL_DCSRMV.
-		else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
+//		if (configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+//			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
+//		{ return false; }
+//		// Intel MKL ERROR: Parameter 5 was incorrect on entry to MKL_DCSRMV.
+//		else
+		if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
 			configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
 			configuration.method == FETIConfiguration::METHOD::TOTAL_FETI)
 		{ return false; }
