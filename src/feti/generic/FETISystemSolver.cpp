@@ -79,12 +79,29 @@ void FETISystemSolver::init()
 
 void FETISystemSolver::update()
 {
-	insertK(configuration, _data.K, _data.origK, _data.N1, _data.N2, _data.RegMat);
-	insertB1(_data.B1Dirichlet, _data.B1c, _data.B1Gluing, _data.B1duplication, _data.B1Inequality, _data.B1gap, _data.B1Map);
-	insertB0(_data.B0);
-	insertRHS(_data.f);
-
 	while(!optimizer->set([&]() {
+		if (configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
+			for (esint d = 0; d < _data.K.domains; ++d) {
+				if (_data.K[d].type != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
+					eslog::info("FETI update: ANALYTIC regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix is not allowed.\n");
+					return false;
+				}
+			}
+		}
+
+		insertK(configuration, _data.K, _data.origK, _data.N1, _data.N2, _data.RegMat);
+		insertB1(_data.B1Dirichlet, _data.B1c, _data.B1Gluing, _data.B1duplication, _data.B1Inequality, _data.B1gap, _data.B1Map);
+		insertB0(_data.B0);
+		insertRHS(_data.f);
+
+		if (
+			std::any_of(_inner->holder.K.begin(), _inner->holder.K.end(), [] (const SparseMatrix &K) { return K.mtype == MatrixType::REAL_UNSYMMETRIC; }) &&
+			configuration.iterative_solver != FETIConfiguration::ITERATIVE_SOLVER::GMRES &&
+			configuration.iterative_solver != FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB) 
+		{
+			eslog::info("FETI update: Invalid linear solver configuration. Only GMRES and BICGSTAB can solve unsymmetric system.\n");
+			return false;
+		}
 		if (configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
 			configuration.method == FETIConfiguration::METHOD::TOTAL_FETI) 
 		{
@@ -711,14 +728,6 @@ int FETISystemSolver::update(FETIConfiguration &configuration)
 // run solver and store primal and dual solution
 void FETISystemSolver::solve(FETIConfiguration &configuration, VectorsDenseFETI &x, VectorsDenseFETI &y)
 {
-	if (
-			std::any_of(_inner->holder.K.begin(), _inner->holder.K.end(), [] (const SparseMatrix &K) { return K.mtype == MatrixType::REAL_UNSYMMETRIC; }) &&
-			configuration.iterative_solver != FETIConfiguration::ITERATIVE_SOLVER::GMRES &&
-			configuration.iterative_solver != FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB) {
-
-		eslog::error("Invalid Linear Solver configuration: Only GMRES and BICGSTAB can solve unsymmetric system.\n");
-	}
-
 	double start = eslog::time();
 	eslog::solver("     - | REQUESTED STOPPING CRITERIA                                      %e | -\n", configuration.precision);
 
