@@ -825,7 +825,6 @@ void Input::fillElements()
 		}
 	}
 
-	info::mesh->elements->dimension = info::mesh->dimension;
 	info::mesh->elements->offset = _eDistribution[info::mpi::rank];
 	info::mesh->elements->size = _etypeDistribution[estart];
 	info::mesh->elements->totalSize = _etypeDistribution.back();

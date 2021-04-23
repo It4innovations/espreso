@@ -1349,7 +1349,6 @@ void exchangeElements(const std::vector<esint> &partition)
 
 	elements->faceNeighbors = new serializededata<esint, esint>(elemsNeighborsDistribution, elemsNeighborsData);
 
-	elements->dimension = info::mesh->elements->dimension;
 	elements->size = elements->IDs->structures();
 	elements->distribution = elements->IDs->datatarray().distribution();
 

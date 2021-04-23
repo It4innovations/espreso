@@ -38,7 +38,6 @@ struct ElementStore: UniqueDataInfo {
 
 	std::vector<esint> gatherDomainsProcDistribution();
 
-	esint dimension;
 	std::vector<size_t> distribution;
 
 	serializededata<esint, esint>* IDs;

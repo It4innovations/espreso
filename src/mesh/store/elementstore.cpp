@@ -14,8 +14,7 @@
 using namespace espreso;
 
 ElementStore::ElementStore()
-: dimension(3),
-  distribution({0, 0}),
+: distribution({0, 0}),
 
   IDs(NULL),
   procNodes(NULL),
@@ -44,7 +43,6 @@ size_t ElementStore::packedFullSize() const
 {
 	size_t packedSize = 0;
 
-	packedSize += utils::packedSize(dimension);
 	packedSize += utils::packedSize(size);
 	packedSize += utils::packedSize(offset);
 	packedSize += utils::packedSize(totalSize);
@@ -93,7 +91,6 @@ size_t ElementStore::packedFullSize() const
 
 void ElementStore::packFull(char* &p) const
 {
-	utils::pack(dimension, p);
 	utils::pack(size, p);
 	utils::pack(offset, p);
 	utils::pack(totalSize, p);
@@ -145,7 +142,6 @@ void ElementStore::packFull(char* &p) const
 
 void ElementStore::unpackFull(const char* &p)
 {
-	utils::unpack(dimension, p);
 	utils::unpack(size, p);
 	utils::unpack(offset, p);
 	utils::unpack(totalSize, p);
