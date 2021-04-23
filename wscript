@@ -4,11 +4,12 @@ import sys, os, logging, subprocess, types
 def configure(ctx):
     ctx.env.with_gui = ctx.options.with_gui
     ctx.env.static = ctx.options.static
+    ctx.options.with_cuda = ctx.options.with_cuda or ctx.options.solver.upper() == "CUDA"
     ctx.link_cxx = types.MethodType(link_cxx, ctx)
 
     ctx.msg("Setting int width to", ctx.options.intwidth)
     ctx.msg("Setting build mode to", ctx.options.mode)
-    ctx.msg("Setting math to", ctx.options.solver)
+    ctx.msg("Setting solver to", ctx.options.solver)
 
     """ Set compilers """
     ctx.find_program(ctx.options.mpicxx, var="MPICXX")
@@ -240,6 +241,11 @@ def options(opt):
         default="mkl",
         choices=solvers,
         help="ESPRESO solver " + ", ".join(solvers) + " [default: %default]")
+
+    opt.compiler.add_option("--with-cuda",
+        action="store_true",
+        default=False,
+        help="Build ESPRESO with CUDA support.")
 
     opt.compiler.add_option("--static",
         action="store_true",

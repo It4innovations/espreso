@@ -3,6 +3,9 @@ def options(opt):
     opt.other.add_option("--cuda-arch", action="store", type="string", help="CUDA architecture.")
 
 def configure(ctx):
+    if not ctx.options.with_cuda:
+        return
+
     if ctx.link_cxx(name="cuda", header_name=["cuda_runtime_api.h", "cusolverSp.h", "cusolverSp_LOWLEVEL_PREVIEW.h"], libs=["cublas", "cudart", "cusparse", "cusolver", "nvToolsExt"]):
         ctx.env.NVCC = ctx.find_program("nvcc")
 
