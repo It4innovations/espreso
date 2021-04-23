@@ -42,19 +42,19 @@ DebugOutput::DebugOutput(double clusterShrinkRatio, double domainShrinkRatio, bo
 			mesh::computeNodeDomainDistribution();
 		}
 
-		std::vector<Point> dcenters(_mesh.elements->ndomains);
-		std::vector<esint> dcounter(_mesh.elements->ndomains);
+		std::vector<Point> dcenters(_mesh.elements->domains.size);
+		std::vector<esint> dcounter(_mesh.elements->domains.size);
 		auto domains = _mesh.nodes->domains->begin();
 		for (esint n = 0; n < _mesh.nodes->size; ++n, ++domains) {
 			for (auto d = domains->begin(); d != domains->end(); ++d) {
-				if (_mesh.elements->firstDomain <= *d && *d < _mesh.elements->firstDomain + _mesh.elements->ndomains) {
-					dcenters[*d - _mesh.elements->firstDomain] += _mesh.nodes->coordinates->datatarray()[n];
-					dcounter[*d - _mesh.elements->firstDomain] += 1;
+				if (_mesh.elements->domains.offset <= *d && *d < _mesh.elements->domains.offset + _mesh.elements->domains.size) {
+					dcenters[*d - _mesh.elements->domains.offset] += _mesh.nodes->coordinates->datatarray()[n];
+					dcounter[*d - _mesh.elements->domains.offset] += 1;
 				}
 			}
 		}
 
-		_dcenters = new Point[_mesh.elements->ndomains];
+		_dcenters = new Point[_mesh.elements->domains.size];
 		for (size_t d = 0; d < dcenters.size(); ++d) {
 			_dcenters[d] = dcenters[d] / dcounter[d];
 		}
@@ -95,7 +95,7 @@ void DebugOutput::pointsInDomains(esint nother, esint &noffset, esint &nsize)
 	auto c = _mesh.nodes->coordinates->datatarray().begin();
 	for (auto n = _mesh.nodes->domains->begin(); n != _mesh.nodes->domains->end(); ++n, ++c) {
 		for (auto d = n->begin(); d != n->end(); ++d) {
-			Point p = Visualization::shrink(*c, _ccenter, _dcenters[*d - _mesh.elements->firstDomain], _clusterShrinkRatio, _domainShrinkRatio);
+			Point p = Visualization::shrink(*c, _ccenter, _dcenters[*d - _mesh.elements->domains.offset], _clusterShrinkRatio, _domainShrinkRatio);
 			_writer.point(p.x, p.y, p.z);
 		}
 	}

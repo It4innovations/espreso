@@ -3,6 +3,7 @@
 #define SRC_MESH_STORE_ELEMENTSTORE_H_
 
 #include "basis/containers/point.h"
+#include "info.h"
 #include "elementsinterval.h"
 #include "contactinfo.h"
 #include "nameddata.h"
@@ -24,7 +25,7 @@ struct ElementData: public NamedData {
 	void statistics(const tarray<esint> &elements, esint totalsize, Statistics *statistics) const;
 };
 
-struct ElementStore {
+struct ElementStore: UniqueDataInfo {
 
 	void store(const std::string &file);
 
@@ -38,9 +39,6 @@ struct ElementStore {
 	std::vector<esint> gatherDomainsProcDistribution();
 
 	esint dimension;
-	esint size;
-	esint offset;
-	esint totalSize;
 	std::vector<size_t> distribution;
 
 	serializededata<esint, esint>* IDs;
@@ -59,11 +57,7 @@ struct ElementStore {
 
 	serializededata<esint, double>* stiffness;
 
-	esint bodiesSize;
-	esint bodiesOffset;
-	esint bodiesTotalSize;
-	esint firstDomain;
-	esint ndomains;
+	UniqueDataInfo bodies, domains;
 	std::vector<esint> domainDistribution;
 	std::vector<esint> elementsDistribution;
 	std::vector<int> clusters;

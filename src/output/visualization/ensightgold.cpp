@@ -566,7 +566,7 @@ void EnSightGold::decomposition()
 	esint cluster = info::mesh->elements->nclusters;
 	Communication::exscan(cluster, MPITools::asynchronous);
 	store("CLUSTER", [&] (const ElementsInterval &interval, esint eindex) {
-		return info::mesh->elements->clusters[interval.domain - info::mesh->elements->firstDomain] + cluster;
+		return info::mesh->elements->clusters[interval.domain - info::mesh->elements->domains.offset] + cluster;
 	});
 	store("MPI", [&] (const ElementsInterval &interval, esint eindex) {
 		return info::mpi::rank;

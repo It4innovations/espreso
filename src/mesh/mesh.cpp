@@ -783,7 +783,7 @@ void Mesh::printMeshStatistics()
 
 		eslog::info("  BODY STATISTICS %22s : %16s %16s %16s\n", "ELEMENTS REGION", "ELEMENTS", "FACES", "PROPORTION");
 		eslog::info(" ============================================================================================= \n");
-		eslog::info("  %38s : %16s %16s %9d BODIES\n", elementsRegions[0]->name.c_str(), Parser::stringwithcommas(ecountTotal).c_str(), Parser::stringwithcommas(scountTotal).c_str(), elements->bodiesTotalSize);
+		eslog::info("  %38s : %16s %16s %9d BODIES\n", elementsRegions[0]->name.c_str(), Parser::stringwithcommas(ecountTotal).c_str(), Parser::stringwithcommas(scountTotal).c_str(), elements->bodies.totalSize);
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 		for (size_t r = 1; r < elementsRegions.size(); r++) {
 			for (size_t b = 0; b < elementsRegions[r]->bodies.size(); ++b) {
@@ -842,7 +842,7 @@ void Mesh::printMeshStatistics()
 		for (size_t r = 0; r < boundaryRegions.size(); r++) {
 			eslog::info("mesh: region=%s, dimension=%d, elements=%d, nodes=%d\n", boundaryRegions[r]->name.c_str(), boundaryRegions[r]->originalDimension, boundaryRegions[r]->totalsize, boundaryRegions[r]->nodeInfo.totalSize);
 		}
-		eslog::info("mesh: region=ALL_ELEMENTS, bodies=%d\n", elements->bodiesTotalSize);
+		eslog::info("mesh: region=ALL_ELEMENTS, bodies=%d\n", elements->bodies.totalSize);
 		for (size_t r = 1; r < elementsRegions.size(); r++) {
 			for (size_t b = 0; b < elementsRegions[r]->bodies.size(); ++b) {
 				eslog::info("mesh: region=%s, b-elements=%d, b-faces=%d\n", elementsRegions[r]->name.c_str(), elementsRegions[r]->bodyElements[b], elementsRegions[r]->bodyFaces[b]);
@@ -1101,8 +1101,8 @@ struct __meshinfo__ {
 void Mesh::printDecompositionStatistics()
 {
 	__meshinfo__ mesh;
-	std::vector<esint> dnodes(elements->ndomains), dninterface(elements->ndomains), delements(elements->ndomains), deinterface(elements->ndomains), dneighs(elements->ndomains);
-	std::vector<double> dnratio(elements->ndomains), deratio(elements->ndomains);
+	std::vector<esint> dnodes(elements->domains.size), dninterface(elements->domains.size), delements(elements->domains.size), deinterface(elements->domains.size), dneighs(elements->domains.size);
+	std::vector<double> dnratio(elements->domains.size), deratio(elements->domains.size);
 	std::vector<esint> cnodes(elements->nclusters), cninterface(elements->nclusters), celements(elements->nclusters), ceinterface(elements->nclusters), cneighs(elements->nclusters), cdomains(elements->nclusters);
 	std::vector<double> cnratio(elements->nclusters), ceratio(elements->nclusters);
 
@@ -1129,21 +1129,21 @@ void Mesh::printDecompositionStatistics()
 		mesh.value.mpi.einterface += ielements;
 
 		if (_withFETI) {
-			std::vector<esint> tdnodes(elements->ndomains), tdninterface(elements->ndomains);
+			std::vector<esint> tdnodes(elements->domains.size), tdninterface(elements->domains.size);
 			for (auto dmap = nodes->domains->begin(t); dmap != nodes->domains->end(t); ++dmap) {
 				if (dmap->size() == 1) {
-					++tdnodes[dmap->front() - elements->firstDomain];
+					++tdnodes[dmap->front() - elements->domains.offset];
 				} else {
 					for (auto d = dmap->begin(); d != dmap->end(); ++d) {
-						if (elements->firstDomain <= *d && *d < elements->firstDomain + elements->ndomains) {
-							++tdnodes[*d - elements->firstDomain];
-							++tdninterface[*d - elements->firstDomain];
+						if (elements->domains.offset <= *d && *d < elements->domains.offset + elements->domains.size) {
+							++tdnodes[*d - elements->domains.offset];
+							++tdninterface[*d - elements->domains.offset];
 						}
 					}
 				}
 			}
 
-			std::vector<esint> tdeinterface(elements->ndomains);
+			std::vector<esint> tdeinterface(elements->domains.size);
 			for (esint d = elements->domainDistribution[t]; d < elements->domainDistribution[t + 1]; ++d) {
 				auto begin = elements->faceNeighbors->begin() + elements->elementsDistribution[d];
 				auto end = elements->faceNeighbors->begin() + elements->elementsDistribution[d + 1];
@@ -1158,7 +1158,7 @@ void Mesh::printDecompositionStatistics()
 				}
 			}
 
-			for (esint d = 0; d < elements->ndomains; ++d) {
+			for (esint d = 0; d < elements->domains.size; ++d) {
 				dnodes[d] += tdnodes[d];
 				dninterface[d] += tdninterface[d];
 				deinterface[d] += tdeinterface[d];
@@ -1167,7 +1167,7 @@ void Mesh::printDecompositionStatistics()
 	}
 
 	mesh.value.mpi.clusters    = elements->nclusters;
-	mesh.value.mpi.domains     = elements->ndomains;
+	mesh.value.mpi.domains     = elements->domains.size;
 	mesh.value.mpi.elements    = elements->size;
 	mesh.value.mpi.uniquenodes = nodes->uniqInfo.size;
 	mesh.value.mpi.nodes       = nodes->size;
@@ -1180,7 +1180,7 @@ void Mesh::printDecompositionStatistics()
 
 	if (_withFETI) {
 		mesh.value.domain.elements += elements->size;
-		for (esint d = 0; d < elements->ndomains; ++d) {
+		for (esint d = 0; d < elements->domains.size; ++d) {
 			mesh.value.domain.nodes += dnodes[d];
 			mesh.value.domain.ninterface += dninterface[d];
 			dnratio[d] = (double)dninterface[d] / dnodes[d];
@@ -1228,13 +1228,13 @@ void Mesh::printDecompositionStatistics()
 			mesh.stats.domain.min.neighbors = *minmax.first;
 			mesh.stats.domain.max.neighbors = *minmax.second;
 		}
-		mesh.stats.domain.sum.set(elements->ndomains);
+		mesh.stats.domain.sum.set(elements->domains.size);
 		mesh.value.cluster = mesh.value.mpi;
 		mesh.stats.cluster = mesh.stats.mpi;
 		if (elements->nclusters > 1) {
 			mesh.stats.cluster.min = mesh.stats.domain.max;
 			mesh.stats.cluster.max = mesh.stats.domain.min;
-			for (esint d = 0; d < elements->ndomains; ++d) {
+			for (esint d = 0; d < elements->domains.size; ++d) {
 				++cdomains[elements->clusters[d]];
 				celements[elements->clusters[d]] += delements[d];
 				cnodes[elements->clusters[d]] += dnodes[d];
@@ -1313,7 +1313,7 @@ void Mesh::printDecompositionStatistics()
 			mesh.variance.cluster.neighbors   = std::pow(mesh.stats.cluster.avg.neighbors   - cneighs[c], 2);
 		}
 	}
-	for (esint d = 0; d < elements->ndomains; ++d) {
+	for (esint d = 0; d < elements->domains.size; ++d) {
 		mesh.variance.domain.elements    = std::pow(mesh.stats.domain.avg.elements    - delements[d], 2);
 		mesh.variance.domain.nodes       = std::pow(mesh.stats.domain.avg.nodes       - dnodes[d], 2);
 		mesh.variance.domain.ninterface  = std::pow(mesh.stats.domain.avg.ninterface  - dninterface[d], 2);
@@ -1539,7 +1539,7 @@ void Mesh::printDecompositionStatistics()
 			if (elements->nclusters == 1) {
 				std::fill(data->data.begin(), data->data.end(), mesh.value.cluster.elements);
 			} else {
-				for (esint d = 0; d < elements->ndomains; ++d) {
+				for (esint d = 0; d < elements->domains.size; ++d) {
 					std::fill(data->data.begin() + elements->elementsDistribution[d], data->data.begin() + elements->elementsDistribution[d + 1], celements[elements->clusters[d]]);
 				}
 			}
@@ -1553,36 +1553,36 @@ void Mesh::printDecompositionStatistics()
 			}
 
 			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "DOMAIN_NODES");
-			for (esint d = 0; d < elements->ndomains; ++d) {
+			for (esint d = 0; d < elements->domains.size; ++d) {
 				std::fill(data->data.begin() + elements->elementsDistribution[d], data->data.begin() + elements->elementsDistribution[d + 1], dnodes[d]);
 			}
 			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "DOMAIN_INODES");
-			for (esint d = 0; d < elements->ndomains; ++d) {
+			for (esint d = 0; d < elements->domains.size; ++d) {
 				std::fill(data->data.begin() + elements->elementsDistribution[d], data->data.begin() + elements->elementsDistribution[d + 1], dninterface[d]);
 			}
 			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "DOMAIN_INODES_RATIO");
-			for (esint d = 0; d < elements->ndomains; ++d) {
+			for (esint d = 0; d < elements->domains.size; ++d) {
 				std::fill(data->data.begin() + elements->elementsDistribution[d], data->data.begin() + elements->elementsDistribution[d + 1], dnratio[d]);
 			}
 			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "DOMAIN_ELEMENTS");
-			for (esint d = 0; d < elements->ndomains; ++d) {
+			for (esint d = 0; d < elements->domains.size; ++d) {
 				std::fill(data->data.begin() + elements->elementsDistribution[d], data->data.begin() + elements->elementsDistribution[d + 1], delements[d]);
 			}
 			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "DOMAIN_IELEMENTS");
-			for (esint d = 0; d < elements->ndomains; ++d) {
+			for (esint d = 0; d < elements->domains.size; ++d) {
 				std::fill(data->data.begin() + elements->elementsDistribution[d], data->data.begin() + elements->elementsDistribution[d + 1], deinterface[d]);
 			}
 			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "DOMAIN_IELEMENTS_RATIO");
-			for (esint d = 0; d < elements->ndomains; ++d) {
+			for (esint d = 0; d < elements->domains.size; ++d) {
 				std::fill(data->data.begin() + elements->elementsDistribution[d], data->data.begin() + elements->elementsDistribution[d + 1], deratio[d]);
 			}
 
 			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "DOMAIN_IELEMENTS_RATIO");
-			for (esint d = 0; d < elements->ndomains; ++d) {
+			for (esint d = 0; d < elements->domains.size; ++d) {
 				std::fill(data->data.begin() + elements->elementsDistribution[d], data->data.begin() + elements->elementsDistribution[d + 1], deratio[d]);
 			}
 			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "DOMAIN_NEIGHBORS");
-			for (esint d = 0; d < elements->ndomains; ++d) {
+			for (esint d = 0; d < elements->domains.size; ++d) {
 				std::fill(data->data.begin() + elements->elementsDistribution[d], data->data.begin() + elements->elementsDistribution[d + 1], dneighs[d]);
 			}
 		}

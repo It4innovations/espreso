@@ -344,20 +344,20 @@ void computeBodies()
 		labels[b] = it != labels.end() ? it->second : b;
 	}
 
-	info::mesh->elements->bodiesSize = 0;
+	info::mesh->elements->bodies.size = 0;
 	std::vector<esint> ulabels;
 	for (esint b = boffset; b < boffset + bodies; ++b) {
 		if (labels[b] == b) {
 			ulabels.push_back(b);
-			++info::mesh->elements->bodiesSize;
+			++info::mesh->elements->bodies.size;
 		}
 	}
 	std::sort(ulabels.begin(), ulabels.end());
-	info::mesh->elements->bodiesOffset = ulabels.size() ? ulabels.front() : 0;
+	info::mesh->elements->bodies.offset = ulabels.size() ? ulabels.front() : 0;
 	Communication::allGatherUnknownSize(ulabels);
-	info::mesh->elements->bodiesOffset = std::lower_bound(ulabels.begin(), ulabels.end(), info::mesh->elements->bodiesOffset) - ulabels.begin();
+	info::mesh->elements->bodies.offset = std::lower_bound(ulabels.begin(), ulabels.end(), info::mesh->elements->bodies.offset) - ulabels.begin();
 
-	info::mesh->elements->bodiesTotalSize = ulabels.size();
+	info::mesh->elements->bodies.totalSize = ulabels.size();
 	for (esint b = boffset; b < boffset + bodies; ++b) {
 		labels[b] = std::lower_bound(ulabels.begin(), ulabels.end(), labels[b]) - ulabels.begin();
 	}
@@ -371,7 +371,7 @@ void computeBodies()
 		memcpy(info::mesh->elements->body->datatarray().data(), body.data(), info::mesh->elements->size * sizeof(int));
 	}
 
-	std::vector<esint> bodyRegions(info::mesh->elements->bodiesTotalSize * info::mesh->elements->regionMaskSize);
+	std::vector<esint> bodyRegions(info::mesh->elements->bodies.totalSize * info::mesh->elements->regionMaskSize);
 
 	for (esint e = 0; e < info::mesh->elements->size; ++e) {
 		int rsize = info::mesh->elements->regionMaskSize;
@@ -384,7 +384,7 @@ void computeBodies()
 	Communication::allReduce(bodyRegions.data(), NULL, bodyRegions.size(), MPITools::getType<esint>().mpitype, MPI_BOR);
 
 	std::vector<esint> boffsets = { 0 };
-	for (esint b = 0; b < info::mesh->elements->bodiesTotalSize; ++b) {
+	for (esint b = 0; b < info::mesh->elements->bodies.totalSize; ++b) {
 		int rsize = info::mesh->elements->regionMaskSize;
 		int regions = 0;
 		for (int r = 0; r < rsize; ++r) {
@@ -399,7 +399,7 @@ void computeBodies()
 
 	int maskSize = info::mesh->elements->regionMaskSize;
 
-	for (int b = 0; b < info::mesh->elements->bodiesTotalSize; ++b) {
+	for (int b = 0; b < info::mesh->elements->bodies.totalSize; ++b) {
 		for (int r = 0, rindex = 0; r < info::mesh->elements->regionMaskSize; ++r) {
 			for (size_t bit = 0; bit < 8 * sizeof(esint) && bit + r * sizeof(esint) < info::mesh->elementsRegions.size(); ++bit, ++rindex) {
 				if (bodyRegions[b * maskSize + r] & (1 << bit)) {
@@ -409,7 +409,7 @@ void computeBodies()
 		}
 	}
 
-	std::vector<esint> bcount, esum(info::mesh->elements->bodiesTotalSize), fsum(info::mesh->elements->bodiesTotalSize);
+	std::vector<esint> bcount, esum(info::mesh->elements->bodies.totalSize), fsum(info::mesh->elements->bodies.totalSize);
 	for (size_t r = 0; r < info::mesh->elementsRegions.size(); ++r) {
 		std::fill(esum.begin(), esum.end(), 0);
 		std::fill(fsum.begin(), fsum.end(), 0);

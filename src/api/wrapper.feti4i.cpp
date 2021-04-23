@@ -344,7 +344,7 @@ void FETI4ICreateInstance(
 					auto dmap = composer.DOFMap()->begin() + (*n * matrix->dofs);
 					for (int dof = 0; dof < matrix->dofs; ++dof, ++dmap) {
 						for (auto di = dmap->begin(); di != dmap->end(); ++di) {
-							if (di->domain == d + info::mesh->elements->firstDomain) {
+							if (di->domain == d + info::mesh->elements->domains.offset) {
 								dofs.push_back(di->index);
 							}
 						}

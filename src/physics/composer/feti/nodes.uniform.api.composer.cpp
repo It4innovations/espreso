@@ -22,12 +22,12 @@ void NodesUniformAPIComposer::fill(FETISolverData &data)
 
 	std::vector<esint> distribution = info::mesh->elements->gatherDomainsProcDistribution();
 
-	data.K.initDomains(info::mesh->elements->ndomains);
+	data.K.initDomains(info::mesh->elements->domains.size);
 	data.K.fillDecomposition(
 				info::mpi::rank, info::mpi::size, info::mesh->neighbors.size(),
 				distribution.data(), info::mesh->neighbors.data(), _DOFMap);
 	data.f.initVectors(1);
-	data.f.initDomains(DataDecomposition::DUPLICATION::SPLIT_DOMAINS, info::mesh->elements->ndomains);
+	data.f.initDomains(DataDecomposition::DUPLICATION::SPLIT_DOMAINS, info::mesh->elements->domains.size);
 	data.f.fillDecomposition(
 			info::mpi::rank, info::mpi::size, info::mesh->neighbors.size(),
 			distribution.data(), info::mesh->neighbors.data(), _DOFMap);

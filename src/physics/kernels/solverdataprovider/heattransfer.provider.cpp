@@ -169,7 +169,7 @@ void HeatTransferSolverDataProvider::FETI::fillKernels(MatrixCSRFETI &K, MatrixC
 			if (_configuration.feti.conjugate_projector != FETIConfiguration::CONJ_PROJECTOR::CONJ_K) {
 				if (ortogonalizeCluster) {
 					esint nSum = 0;
-					for (esint dd = 0; dd < info::mesh->elements->ndomains; dd++) {
+					for (esint dd = 0; dd < info::mesh->elements->domains.size; dd++) {
 						if (info::mesh->elements->clusters[d] == info::mesh->elements->clusters[dd]) {
 							nSum += K[dd].nrows;
 						}

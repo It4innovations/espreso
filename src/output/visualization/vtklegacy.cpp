@@ -416,7 +416,7 @@ void VTKLegacy::insertDecomposition(const ElementsRegionStore *store)
 	esint cluster = info::mesh->elements->nclusters;
 	Communication::exscan(cluster, MPITools::asynchronous);
 	iterate("CLUSTER", [&] (const ElementsInterval &interval, esint eindex) {
-		return info::mesh->elements->clusters[interval.domain - info::mesh->elements->firstDomain] + cluster;
+		return info::mesh->elements->clusters[interval.domain - info::mesh->elements->domains.offset] + cluster;
 	});
 	iterate("MPI", [&] (const ElementsInterval &interval, esint eindex) {
 		return info::mpi::rank;

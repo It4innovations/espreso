@@ -145,14 +145,14 @@ void arrangeElementsPermutation(std::vector<esint> &permutation)
 	profiler::synccheckpoint("iboundaries");
 
 	info::mesh->elements->eintervals.push_back(ElementsInterval(0, 0));
-	info::mesh->elements->eintervals.back().domain = info::mesh->elements->firstDomain;
+	info::mesh->elements->eintervals.back().domain = info::mesh->elements->domains.offset;
 	info::mesh->elements->eintervals.back().code = static_cast<int>(info::mesh->elements->epointers->datatarray()[permutation[0]]->code);
 	info::mesh->elements->eintervalsDistribution.push_back(0);
 	for (size_t i = 0; i < iboundaries[0].size(); i++) {
 		info::mesh->elements->eintervals.back().end = iboundaries[0][i];
 		info::mesh->elements->eintervals.push_back(ElementsInterval(iboundaries[0][i], iboundaries[0][i]));
 		const std::vector<esint> &edist = info::mesh->elements->elementsDistribution;
-		info::mesh->elements->eintervals.back().domain = std::lower_bound(edist.begin(), edist.end(), info::mesh->elements->eintervals.back().begin + 1) - edist.begin() - 1 + info::mesh->elements->firstDomain;
+		info::mesh->elements->eintervals.back().domain = std::lower_bound(edist.begin(), edist.end(), info::mesh->elements->eintervals.back().begin + 1) - edist.begin() - 1 + info::mesh->elements->domains.offset;
 		info::mesh->elements->eintervals.back().code = static_cast<int>(info::mesh->elements->epointers->datatarray()[permutation[info::mesh->elements->eintervals.back().begin]]->code);
 		if ((info::mesh->elements->eintervals.end() - 1)->domain != (info::mesh->elements->eintervals.end() - 2)->domain) {
 			info::mesh->elements->eintervalsDistribution.push_back(info::mesh->elements->eintervals.size() - 1);
@@ -501,7 +501,7 @@ void arrangeBoundaryRegions()
 			}
 			store->eintervalsDistribution.insert(
 					store->eintervalsDistribution.end(),
-					info::mesh->elements->ndomains - lastDomain,
+					info::mesh->elements->domains.size - lastDomain,
 					store->eintervals.size());
 		}
 	}

@@ -691,10 +691,10 @@ void partitiate(esint parts, bool uniformDecomposition)
 		}
 	}
 
-	info::mesh->elements->ndomains = utils::sizesToOffsets(domainCounter);
-	info::mesh->elements->firstDomain = info::mesh->elements->ndomains;
-	Communication::exscan(info::mesh->elements->firstDomain);
-	domainCounter.push_back(info::mesh->elements->ndomains);
+	info::mesh->elements->domains.size = utils::sizesToOffsets(domainCounter);
+	info::mesh->elements->domains.offset = info::mesh->elements->domains.size;
+	Communication::exscan(info::mesh->elements->domains.offset);
+	domainCounter.push_back(info::mesh->elements->domains.size);
 	info::mesh->elements->domainDistribution = domainCounter;
 
 	info::mesh->elements->elementsDistribution.push_back(0);

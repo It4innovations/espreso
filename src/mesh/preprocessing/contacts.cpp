@@ -959,7 +959,7 @@ void arrangeContactInterfaces()
 	}
 	std::sort(info::mesh->contacts->interfaces.begin(), info::mesh->contacts->interfaces.end(), comp);
 
-	std::vector<std::string> bnames(info::mesh->elements->bodiesTotalSize);
+	std::vector<std::string> bnames(info::mesh->elements->bodies.totalSize);
 	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
 		for (size_t b = 0; b < info::mesh->elementsRegions[r]->bodies.size(); ++b) {
 			if (bnames[info::mesh->elementsRegions[r]->bodies[b]].size()) {

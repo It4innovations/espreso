@@ -277,23 +277,23 @@ int StructuralMechanics2DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 	_cCenter = _cNorm = std::vector<Point>(clusters, Point(0, 0, 0));
 	_cNp = std::vector<size_t>(clusters, 0);
 
-	_dCenter = _dNorm = std::vector<Point>(info::mesh->elements->ndomains, Point(0, 0, 0));
+	_dCenter = _dNorm = std::vector<Point>(info::mesh->elements->domains.size, Point(0, 0, 0));
 
-	std::vector<double> cbuffer1(info::mesh->elements->ndomains, 0);
-	dnodes.resize(info::mesh->elements->ndomains);
+	std::vector<double> cbuffer1(info::mesh->elements->domains.size, 0);
+	dnodes.resize(info::mesh->elements->domains.size);
 
 	auto dmap = info::mesh->nodes->domains->cbegin();
 	for (esint i = 0; i < info::mesh->nodes->size; ++i, ++dmap) {
 		for (auto d = dmap->begin(); d != dmap->end(); ++d) {
-			if (info::mesh->elements->firstDomain <= *d && *d < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
-				esint domain = *d - info::mesh->elements->firstDomain;
+			if (info::mesh->elements->domains.offset <= *d && *d < info::mesh->elements->domains.offset + info::mesh->elements->domains.size) {
+				esint domain = *d - info::mesh->elements->domains.offset;
 				_dCenter[domain] += info::mesh->nodes->coordinates->datatarray()[i];
 				dnodes[domain].push_back(i);
 			}
 		}
 	}
 
-	for (esint d = 0; d < info::mesh->elements->ndomains; d++) {
+	for (esint d = 0; d < info::mesh->elements->domains.size; d++) {
 		_cCenter[info::mesh->elements->clusters[d]] += _dCenter[d];
 		_dCenter[d] = _dCenter[d] / dnodes[d].size();
 		_cNp[info::mesh->elements->clusters[d]] += dnodes[d].size();
@@ -304,11 +304,11 @@ int StructuralMechanics2DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 
 	// Compute norm of column 4 (norm.x)
 	dmap = info::mesh->nodes->domains->cbegin();
-	std::vector<double> pnorm(info::mesh->elements->ndomains), pcnorm(info::mesh->elements->ndomains);
+	std::vector<double> pnorm(info::mesh->elements->domains.size), pcnorm(info::mesh->elements->domains.size);
 	for (esint i = 0; i < info::mesh->nodes->size; ++i, ++dmap) {
 		for (auto d = dmap->begin(); d != dmap->end(); ++d) {
-			if (info::mesh->elements->firstDomain <= *d && *d < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
-				esint domain = *d - info::mesh->elements->firstDomain;
+			if (info::mesh->elements->domains.offset <= *d && *d < info::mesh->elements->domains.offset + info::mesh->elements->domains.size) {
+				esint domain = *d - info::mesh->elements->domains.offset;
 				Point dp = info::mesh->nodes->coordinates->datatarray()[i] - _dCenter[domain];
 				pnorm[domain] += dp.x * dp.x + dp.y * dp.y;
 				Point cp = info::mesh->nodes->coordinates->datatarray()[i] - _cCenter[info::mesh->elements->clusters[domain]];
@@ -316,11 +316,11 @@ int StructuralMechanics2DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 			}
 		}
 	}
-	for (esint d = 0; d < info::mesh->elements->ndomains; d++) {
+	for (esint d = 0; d < info::mesh->elements->domains.size; d++) {
 		_dNorm[d].x = std::sqrt(pnorm[d]);
 		cbuffer1[d] += pcnorm[d];
 	}
-	for (esint d = 0; d < info::mesh->elements->ndomains; d++) {
+	for (esint d = 0; d < info::mesh->elements->domains.size; d++) {
 		_cNorm[info::mesh->elements->clusters[d]].x += cbuffer1[d];
 	}
 	for (size_t c = 0; c < clusters; c++) {
@@ -331,7 +331,7 @@ int StructuralMechanics2DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 	N2.initDomains(K.domains);
 	RegMat.initDomains(K.domains);
 	_RegMat = new MatrixCSRFETI();
-	_RegMat->initDomains(info::mesh->elements->ndomains);
+	_RegMat->initDomains(info::mesh->elements->domains.size);
 
 	#pragma omp parallel for
 	for (esint d = 0; d < K.domains; ++d) {

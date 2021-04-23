@@ -78,7 +78,7 @@ void computeNodeDomainDistribution()
 
 				tBuffer[noffset].push_back(ntod - begin);
 				for (auto i = begin; i != ntod; ++i) {
-					tBuffer[noffset].push_back(info::mesh->elements->firstDomain + i->second);
+					tBuffer[noffset].push_back(info::mesh->elements->domains.offset + i->second);
 				}
 			}
 		}
@@ -165,8 +165,8 @@ void computeDomainDual()
 	std::vector<std::pair<esint, esint> > sBuffer, gBuffer;
 	std::vector<std::vector<std::pair<esint, esint> > > rBuffer(info::mesh->neighborsWithMe.size());
 
-	for (esint d = 0; d < info::mesh->elements->ndomains; ++d) {
-		sBuffer.push_back(std::make_pair(info::mesh->elements->offset + info::mesh->elements->elementsDistribution[d + 1], d + info::mesh->elements->firstDomain));
+	for (esint d = 0; d < info::mesh->elements->domains.size; ++d) {
+		sBuffer.push_back(std::make_pair(info::mesh->elements->offset + info::mesh->elements->elementsDistribution[d + 1], d + info::mesh->elements->domains.offset));
 	}
 
 	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighborsWithMe)) {
@@ -197,8 +197,8 @@ void computeDomainDual()
 						if (*n < info::mesh->elements->offset + info::mesh->elements->elementsDistribution[d] || info::mesh->elements->offset + info::mesh->elements->elementsDistribution[d + 1] <= *n) {
 							auto it = std::lower_bound(gBuffer.begin(), gBuffer.end(), *n, [] (const std::pair<esint, esint> &info, const esint &e) { return info.first <= e; });
 							ndomainsFull.push_back(it->second);
-							if (info::mesh->elements->firstDomain <= ndomainsFull.back() && ndomainsFull.back() < info::mesh->elements->firstDomain + info::mesh->elements->ndomains) {
-								ndomains.push_back(ndomainsFull.back() - info::mesh->elements->firstDomain);
+							if (info::mesh->elements->domains.offset <= ndomainsFull.back() && ndomainsFull.back() < info::mesh->elements->domains.offset + info::mesh->elements->domains.size) {
+								ndomains.push_back(ndomainsFull.back() - info::mesh->elements->domains.offset);
 							}
 						}
 					}

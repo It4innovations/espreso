@@ -31,7 +31,7 @@ struct MESIOData {
 		}
 		domains.reserve(espreso::info::mesh->elements->size);
 		for (size_t i = 1; i < espreso::info::mesh->elements->elementsDistribution.size(); ++i) {
-			domains.resize(espreso::info::mesh->elements->elementsDistribution[i], espreso::info::mesh->elements->firstDomain + i - 1);
+			domains.resize(espreso::info::mesh->elements->elementsDistribution[i], espreso::info::mesh->elements->domains.offset + i - 1);
 		}
 		rtypes.resize(espreso::info::mesh->boundaryRegions.size());
 		for (size_t i = 0; i < espreso::info::mesh->boundaryRegions.size(); ++i) {
@@ -183,7 +183,7 @@ void MESIOElementsBodies(
 	int*            bodies,
 	int**           body)
 {
-	*bodies = info::mesh->elements->bodiesTotalSize;
+	*bodies = info::mesh->elements->bodies.totalSize;
 	*body = info::mesh->elements->body->datatarray().data();
 }
 

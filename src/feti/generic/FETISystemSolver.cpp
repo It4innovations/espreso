@@ -357,10 +357,10 @@ void FETISystemSolver::update(FETIConfiguration &configuration)
 
 	//instance->computeKernels(configuration.regularization, configuration.sc_size);
 
-	_inner->holder.B0.resize(info::mesh->elements->ndomains);
-	_inner->holder.N1.resize(info::mesh->elements->ndomains);
-	_inner->holder.N2.resize(info::mesh->elements->ndomains);
-	_inner->holder.RegMat.resize(info::mesh->elements->ndomains);
+	_inner->holder.B0.resize(info::mesh->elements->domains.size);
+	_inner->holder.N1.resize(info::mesh->elements->domains.size);
+	_inner->holder.N2.resize(info::mesh->elements->domains.size);
+	_inner->holder.RegMat.resize(info::mesh->elements->domains.size);
 
 	std::string type;
 	switch (configuration.method) {
