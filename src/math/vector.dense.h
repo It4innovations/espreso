@@ -5,6 +5,8 @@
 #include "vector.h"
 #include "data.vector.dense.h"
 
+#include <cstring>
+
 namespace espreso {
 
 class MatrixDense;
@@ -109,6 +111,32 @@ public:
 protected:
 	Vector* create();
 };
+
+namespace utils {
+
+inline size_t packedSize(const VectorDense &data)
+{
+	return sizeof(data.size) + sizeof(double) * data.size;
+}
+
+inline void pack(VectorDense &data, char* &p)
+{
+	std::memcpy(p, &data.size, sizeof(data.size));
+	p += sizeof(data.size);
+	std::memcpy(p, data.vals, sizeof(double) * data.size);
+	p += sizeof(double) * data.size;
+}
+
+inline void unpack(VectorDense &data, const char* &p)
+{
+	std::memcpy(&data.size, p, sizeof(data.size));
+	p += packedSize(data.size);
+	data.resize(data.size);
+	std::memcpy(data.vals, p, sizeof(double) * data.size);
+	p += sizeof(double) * data.size;
+}
+
+} // namespace utils
 
 }
 

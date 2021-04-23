@@ -1,5 +1,6 @@
 
 #include "regionstore.h"
+#include "basis/containers/serializededata.h"
 #include "basis/utilities/packing.h"
 #include "mesh/element.h"
 

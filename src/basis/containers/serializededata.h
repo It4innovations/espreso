@@ -5,6 +5,7 @@
 #include "edata.h"
 #include "tarray.h"
 #include "basis/logging/profiler.h"
+#include "basis/utilities/packing.h"
 
 #include <vector>
 
@@ -413,7 +414,51 @@ private:
 	std::vector<const_iterator> _constiterator;
 };
 
+namespace utils {
+
+template <typename TEBoundaries, typename TEData>
+inline size_t packedSize(serializededata<TEBoundaries, TEData> *data)
+{
+	if (data != NULL) {
+		return data->packedSize() + 1 + 3 * sizeof(size_t);
+	}
+	return 1;
 }
+
+template <typename TEBoundaries, typename TEData>
+inline void pack(serializededata<TEBoundaries, TEData> *data, char* &p)
+{
+	pack(data != NULL, p);
+	if (data != NULL) {
+		pack(data->threads(), p);
+		pack(data->boundarytarray().size(), p);
+		pack(data->datatarray().size(), p);
+		data->pack(p);
+	}
+}
+
+template <typename TEBoundaries, typename TEData>
+inline void unpack(serializededata<TEBoundaries, TEData> *&data, const char* &p)
+{
+	if (data != NULL) {
+		delete data;
+		data = NULL;
+	}
+
+	bool notnull;
+	unpack(notnull, p);
+	if (notnull) {
+		size_t threads, bsize, dsize;
+		unpack(threads, p);
+		unpack(bsize, p);
+		unpack(dsize, p);
+		data = new serializededata<TEBoundaries, TEData>(tarray<TEBoundaries>(threads, bsize), tarray<TEData>(threads, dsize));
+		data->unpack(p);
+	}
+}
+
+} // namespace utils
+} // namespace espreso
 
 
 #endif /* SRC_BASIS_CONTAINERS_SERIALIZEDEDATA_H_ */
