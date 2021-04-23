@@ -128,7 +128,7 @@ public:
 protected:
 	FILE *out, *err;
 	size_t bsize;
-	char prebuffer[PREBUFFER_SIZE];
+	char prebuffer[PREBUFFER_SIZE] = { 0 };
 };
 
 class ProgressTerminalLogger: public ProgressLogger<ProgressTerminalLogger >, public Verbosity<ProgressTerminalLogger, 'v'> {
