@@ -10,6 +10,7 @@
 #include "mesh/store/store.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
+#include "mesh/store/domainstore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/contactinterfacestore.h"
@@ -112,7 +113,7 @@ void arrangeElementsPermutation(std::vector<esint> &permutation)
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; ++d) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; ++d) {
 			std::sort(
 					permutation.begin() + info::mesh->elements->elementsDistribution[d],
 					permutation.begin() + info::mesh->elements->elementsDistribution[d + 1],
@@ -130,7 +131,7 @@ void arrangeElementsPermutation(std::vector<esint> &permutation)
 	std::vector<std::vector<esint> > iboundaries(threads);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; ++d) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; ++d) {
 			if (d) {
 				iboundaries[t].push_back(info::mesh->elements->elementsDistribution[d]);
 			}
@@ -145,14 +146,14 @@ void arrangeElementsPermutation(std::vector<esint> &permutation)
 	profiler::synccheckpoint("iboundaries");
 
 	info::mesh->elements->eintervals.push_back(ElementsInterval(0, 0));
-	info::mesh->elements->eintervals.back().domain = info::mesh->elements->domains.offset;
+	info::mesh->elements->eintervals.back().domain = info::mesh->domains->offset;
 	info::mesh->elements->eintervals.back().code = static_cast<int>(info::mesh->elements->epointers->datatarray()[permutation[0]]->code);
 	info::mesh->elements->eintervalsDistribution.push_back(0);
 	for (size_t i = 0; i < iboundaries[0].size(); i++) {
 		info::mesh->elements->eintervals.back().end = iboundaries[0][i];
 		info::mesh->elements->eintervals.push_back(ElementsInterval(iboundaries[0][i], iboundaries[0][i]));
 		const std::vector<esint> &edist = info::mesh->elements->elementsDistribution;
-		info::mesh->elements->eintervals.back().domain = std::lower_bound(edist.begin(), edist.end(), info::mesh->elements->eintervals.back().begin + 1) - edist.begin() - 1 + info::mesh->elements->domains.offset;
+		info::mesh->elements->eintervals.back().domain = std::lower_bound(edist.begin(), edist.end(), info::mesh->elements->eintervals.back().begin + 1) - edist.begin() - 1 + info::mesh->domains->offset;
 		info::mesh->elements->eintervals.back().code = static_cast<int>(info::mesh->elements->epointers->datatarray()[permutation[info::mesh->elements->eintervals.back().begin]]->code);
 		if ((info::mesh->elements->eintervals.end() - 1)->domain != (info::mesh->elements->eintervals.end() - 2)->domain) {
 			info::mesh->elements->eintervalsDistribution.push_back(info::mesh->elements->eintervals.size() - 1);
@@ -219,7 +220,7 @@ void arrangeElementsRegions()
 			std::vector<esint> mask(maskSize);
 			mask[maskOffset] = bit;
 
-			for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 				for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; i++) {
 					size_t usize = unique[t].size();
 					for (esint e = info::mesh->elementsRegions[r]->eintervals[i].begin; e < info::mesh->elementsRegions[r]->eintervals[i].end; ++e) {
@@ -252,7 +253,7 @@ void arrangeElementsRegions()
 			std::vector<std::vector<esint> > nodes(threads);
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
-				for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+				for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 					for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; i++) {
 						if (eintervals[i].end - eintervals[i].begin > 0) {
 							if (eintervals[i].end - eintervals[i].begin == info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin) {
@@ -463,8 +464,8 @@ void arrangeBoundaryRegions()
 			}
 
 			std::vector<size_t> tdistribution;
-			for (size_t t = 0; t < info::mesh->elements->domainDistribution.size(); t++) {
-				tdistribution.push_back(edistribution[info::mesh->elements->domainDistribution[t]]);
+			for (size_t t = 0; t < info::mesh->domains->distribution.size(); t++) {
+				tdistribution.push_back(edistribution[info::mesh->domains->distribution[t]]);
 			}
 
 			store->permute(permutation, tdistribution);
@@ -473,7 +474,7 @@ void arrangeBoundaryRegions()
 
 			#pragma omp parallel for
 			for (int t = 0; t < threads; t++) {
-				for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+				for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 					iboundaries[t].push_back(edistribution[d]);
 					for (size_t e = edistribution[d] + 1; e < edistribution[d + 1]; ++e) {
 						if (store->epointers->datatarray()[e]->code != store->epointers->datatarray()[e - 1]->code) {
@@ -501,7 +502,7 @@ void arrangeBoundaryRegions()
 			}
 			store->eintervalsDistribution.insert(
 					store->eintervalsDistribution.end(),
-					info::mesh->elements->domains.size - lastDomain,
+					info::mesh->domains->size - lastDomain,
 					store->eintervals.size());
 		}
 	}

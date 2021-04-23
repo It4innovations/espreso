@@ -10,6 +10,7 @@
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
+#include "mesh/store/domainstore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "basis/containers/point.h"
@@ -676,7 +677,7 @@ void partitiate(esint parts, bool uniformDecomposition)
 	}
 	utils::removeDuplicates(domainDistribution);
 
-	std::vector<esint> domainCounter(threads);
+	std::vector<size_t> domainCounter(threads);
 	for (size_t t = 0; t < threads; t++) {
 		if (domainDistribution.size() < threads + 1) {
 			if (t < domainDistribution.size() - 1) {
@@ -691,11 +692,11 @@ void partitiate(esint parts, bool uniformDecomposition)
 		}
 	}
 
-	info::mesh->elements->domains.size = utils::sizesToOffsets(domainCounter);
-	info::mesh->elements->domains.offset = info::mesh->elements->domains.size;
-	Communication::exscan(info::mesh->elements->domains.offset);
-	domainCounter.push_back(info::mesh->elements->domains.size);
-	info::mesh->elements->domainDistribution = domainCounter;
+	info::mesh->domains->size = utils::sizesToOffsets(domainCounter);
+	info::mesh->domains->offset = info::mesh->domains->size;
+	Communication::exscan(info::mesh->domains->offset);
+	domainCounter.push_back(info::mesh->domains->size);
+	info::mesh->domains->distribution = domainCounter;
 
 	info::mesh->elements->elementsDistribution.push_back(0);
 	for (size_t t = 0; t < threads; t++) {

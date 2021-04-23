@@ -5,6 +5,7 @@
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/fetidatastore.h"
+#include "mesh/store/domainstore.h"
 
 #include <algorithm>
 
@@ -22,7 +23,7 @@ void DataHolder::assembleB0fromKernels()
 
 	auto dual = info::mesh->FETIData->domainDual->begin();
 	std::vector<esint> rows(info::mesh->elements->nclusters);
-	for (esint d1 = 0; d1 < info::mesh->elements->domains.size; ++d1, ++dual) {
+	for (esint d1 = 0; d1 < info::mesh->domains->size; ++d1, ++dual) {
 		esint cluster = info::mesh->elements->clusters[d1];
 		for (auto dit = dual->begin(); dit != dual->end(); ++dit) {
 			if (d1 < *dit) {
@@ -77,10 +78,10 @@ void DataHolder::assembleB0fromKernels()
 						} else {
 							B0[d1].I_row_indices.push_back(rindex[it - dual->begin()] + 1);
 							B0[d1].J_col_indices.push_back(d1index + 1);
-							B0[d1].V_values.push_back( (double)(d1 + 1) / info::mesh->elements->domains.size);
+							B0[d1].V_values.push_back( (double)(d1 + 1) / info::mesh->domains->size);
 							B0[d2].I_row_indices.push_back(rindex[it - dual->begin()] + 1);
 							B0[d2].J_col_indices.push_back(d2index + 1);
-							B0[d2].V_values.push_back(-(double)(d1 + 1) / info::mesh->elements->domains.size);
+							B0[d2].V_values.push_back(-(double)(d1 + 1) / info::mesh->domains->size);
 						}
 					}
 				}
@@ -88,7 +89,7 @@ void DataHolder::assembleB0fromKernels()
 		}
 	}
 
-	for (esint d = 0; d < info::mesh->elements->domains.size; ++d) {
+	for (esint d = 0; d < info::mesh->domains->size; ++d) {
 		B0[d].rows = rows[info::mesh->elements->clusters[d]];
 		B0[d].cols = K[d].cols;
 		B0[d].nnz = B0[d].V_values.size();

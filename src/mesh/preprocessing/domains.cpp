@@ -3,6 +3,7 @@
 
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
+#include "mesh/store/domainstore.h"
 #include "mesh/store/surfacestore.h"
 #include "mesh/store/fetidatastore.h"
 #include "basis/containers/serializededata.h"
@@ -35,7 +36,7 @@ void computeNodeDomainDistribution()
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; t++) {
 		std::vector<std::pair<esint, esint> > tdata;
 
-		for (esint d = info::mesh->elements->domainDistribution[t]; d != info::mesh->elements->domainDistribution[t + 1]; ++d) {
+		for (size_t d = info::mesh->domains->distribution[t]; d != info::mesh->domains->distribution[t + 1]; ++d) {
 			std::vector<esint> dnodes(
 					(info::mesh->elements->procNodes->begin() + info::mesh->elements->elementsDistribution[d])->begin(),
 					(info::mesh->elements->procNodes->begin() + info::mesh->elements->elementsDistribution[d + 1])->begin());
@@ -78,7 +79,7 @@ void computeNodeDomainDistribution()
 
 				tBuffer[noffset].push_back(ntod - begin);
 				for (auto i = begin; i != ntod; ++i) {
-					tBuffer[noffset].push_back(info::mesh->elements->domains.offset + i->second);
+					tBuffer[noffset].push_back(info::mesh->domains->offset + i->second);
 				}
 			}
 		}
@@ -140,7 +141,7 @@ void computeLocalIndices()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (esint d = info::mesh->elements->domainDistribution[t]; d != info::mesh->elements->domainDistribution[t + 1]; ++d) {
+		for (size_t d = info::mesh->domains->distribution[t]; d != info::mesh->domains->distribution[t + 1]; ++d) {
 			esint dbegin = (info::mesh->elements->procNodes->begin() + info::mesh->elements->elementsDistribution[d])->begin() - info::mesh->elements->procNodes->datatarray().begin();
 			esint dend = (info::mesh->elements->procNodes->begin() + info::mesh->elements->elementsDistribution[d + 1])->begin() - info::mesh->elements->procNodes->datatarray().begin();
 
@@ -165,8 +166,8 @@ void computeDomainDual()
 	std::vector<std::pair<esint, esint> > sBuffer, gBuffer;
 	std::vector<std::vector<std::pair<esint, esint> > > rBuffer(info::mesh->neighborsWithMe.size());
 
-	for (esint d = 0; d < info::mesh->elements->domains.size; ++d) {
-		sBuffer.push_back(std::make_pair(info::mesh->elements->offset + info::mesh->elements->elementsDistribution[d + 1], d + info::mesh->elements->domains.offset));
+	for (esint d = 0; d < info::mesh->domains->size; ++d) {
+		sBuffer.push_back(std::make_pair(info::mesh->elements->offset + info::mesh->elements->elementsDistribution[d + 1], d + info::mesh->domains->offset));
 	}
 
 	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighborsWithMe)) {
@@ -189,7 +190,7 @@ void computeDomainDual()
 		}
 
 		auto neighs = info::mesh->elements->faceNeighbors->cbegin(t);
-		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			std::vector<esint> ndomains, ndomainsFull;
 			for (esint e = info::mesh->elements->elementsDistribution[d]; e < info::mesh->elements->elementsDistribution[d + 1]; ++e, ++neighs) {
 				for (auto n = neighs->begin(); n != neighs->end(); ++n) {
@@ -197,8 +198,8 @@ void computeDomainDual()
 						if (*n < info::mesh->elements->offset + info::mesh->elements->elementsDistribution[d] || info::mesh->elements->offset + info::mesh->elements->elementsDistribution[d + 1] <= *n) {
 							auto it = std::lower_bound(gBuffer.begin(), gBuffer.end(), *n, [] (const std::pair<esint, esint> &info, const esint &e) { return info.first <= e; });
 							ndomainsFull.push_back(it->second);
-							if (info::mesh->elements->domains.offset <= ndomainsFull.back() && ndomainsFull.back() < info::mesh->elements->domains.offset + info::mesh->elements->domains.size) {
-								ndomains.push_back(ndomainsFull.back() - info::mesh->elements->domains.offset);
+							if (info::mesh->domains->offset <= ndomainsFull.back() && ndomainsFull.back() < info::mesh->domains->offset + info::mesh->domains->size) {
+								ndomains.push_back(ndomainsFull.back() - info::mesh->domains->offset);
 							}
 						}
 					}
@@ -253,7 +254,7 @@ void computeDomainsSurface()
 
 		auto neighbors = info::mesh->elements->faceNeighbors->cbegin(t);
 		auto enodes = info::mesh->elements->procNodes->cbegin(t);
-		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			esint dbegin = info::mesh->elements->elementsDistribution[d];
 			esint dend = info::mesh->elements->elementsDistribution[d + 1];
 
@@ -309,7 +310,7 @@ void computeDomainsSurface()
 
 	std::vector<size_t> tdistribution = { 0 };
 	for (size_t t = 0; t < threads; t++) {
-		tdistribution.push_back(info::mesh->domainsSurface->edistribution[info::mesh->elements->domainDistribution[t + 1]]);
+		tdistribution.push_back(info::mesh->domainsSurface->edistribution[info::mesh->domains->distribution[t + 1]]);
 	}
 
 	if (ecounter[0][(int)Element::CODE::TRIANGLE3] == (esint)info::mesh->domainsSurface->edistribution.back()) {
@@ -342,7 +343,7 @@ void triangularizeDomainSurface()
 		intervals.front().push_back(0);
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 				auto elements = info::mesh->domainsSurface->enodes->cbegin() + info::mesh->domainsSurface->edistribution[d];
 				auto epointer = info::mesh->domainsSurface->epointers->datatarray().begin() + info::mesh->domainsSurface->edistribution[d];
 

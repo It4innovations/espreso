@@ -36,8 +36,6 @@ struct ElementStore: UniqueDataInfo {
 
 	ElementData* appendData(int dimension, NamedData::DataType datatype, const std::string &name = "", step::TYPE restriction = step::TYPE::TIME);
 
-	std::vector<esint> gatherDomainsProcDistribution();
-
 	std::vector<size_t> distribution;
 
 	serializededata<esint, esint>* IDs;
@@ -56,8 +54,7 @@ struct ElementStore: UniqueDataInfo {
 
 	serializededata<esint, double>* stiffness;
 
-	UniqueDataInfo bodies, domains;
-	std::vector<esint> domainDistribution;
+	UniqueDataInfo bodies;
 	std::vector<esint> elementsDistribution;
 	std::vector<int> clusters;
 	esint nclusters;
@@ -90,7 +87,5 @@ struct ElementStore: UniqueDataInfo {
 };
 
 }
-
-
 
 #endif /* SRC_MESH_STORE_ELEMENTSTORE_H_ */

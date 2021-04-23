@@ -13,6 +13,7 @@
 #include "mesh/preprocessing/meshpreprocessing.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
+#include "mesh/store/domainstore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/surfacestore.h"
@@ -83,7 +84,7 @@ void NodesUniformFETIComposer::_initDOFMap()
 	// TODO: improve performance using info::mesh->nodes->domains
 	size_t threads = info::env::OMP_NUM_THREADS;
 
-	_domainDOFsSize.resize(info::mesh->elements->domains.size);
+	_domainDOFsSize.resize(info::mesh->domains->size);
 
 	// nID, domain
 	std::vector<std::vector<std::pair<esint, esint> > > ntodomains(threads);
@@ -92,7 +93,7 @@ void NodesUniformFETIComposer::_initDOFMap()
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<std::pair<esint, esint> > tdata;
 
-		for (esint d = info::mesh->elements->domainDistribution[t]; d != info::mesh->elements->domainDistribution[t + 1]; ++d) {
+		for (size_t d = info::mesh->domains->distribution[t]; d != info::mesh->domains->distribution[t + 1]; ++d) {
 			std::vector<esint> dnodes(
 					(info::mesh->elements->procNodes->begin() + info::mesh->elements->elementsDistribution[d])->begin(),
 					(info::mesh->elements->procNodes->begin() + info::mesh->elements->elementsDistribution[d + 1])->begin());
@@ -127,7 +128,7 @@ void NodesUniformFETIComposer::_initDOFMap()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		std::vector<esint> tDOFs(info::mesh->elements->domains.size);
+		std::vector<esint> tDOFs(info::mesh->domains->size);
 
 		for (size_t n = ndistribution[t]; n < ndistribution[t + 1]; ++n) {
 			tDOFs[ntodomains[0][n].second] += _DOFs;
@@ -162,7 +163,7 @@ void NodesUniformFETIComposer::_initDOFMap()
 
 				tBuffer[noffset].push_back(n - begin);
 				for (size_t i = begin; i < n; i++) {
-					tBuffer[noffset].push_back(info::mesh->elements->domains.offset + ntodomains[0][i].second);
+					tBuffer[noffset].push_back(info::mesh->domains->offset + ntodomains[0][i].second);
 					tBuffer[noffset].push_back(DOFs[t][ntodomains[0][i].second]);
 				}
 			}
@@ -232,24 +233,24 @@ void NodesUniformFETIComposer::_initDOFMap()
 
 void NodesUniformFETIComposer::_buildPatterns()
 {
-	_KPermutation.resize(info::mesh->elements->domains.size);
-	_RHSPermutation.resize(info::mesh->elements->domains.size);
+	_KPermutation.resize(info::mesh->domains->size);
+	_RHSPermutation.resize(info::mesh->domains->size);
 
-	std::vector<esint> distribution = info::mesh->elements->gatherDomainsProcDistribution();
+	std::vector<esint> distribution = info::mesh->domains->gatherProcDistribution();
 
-	_data->K.initDomains(info::mesh->elements->domains.size);
+	_data->K.initDomains(info::mesh->domains->size);
 	_data->K.fillDecomposition(
 				info::mpi::rank, info::mpi::size, info::mesh->neighbors.size(),
 				distribution.data(), info::mesh->neighbors.data(), _DOFMap);
 	_data->f.initVectors(kernel->solutions.size());
-	_data->f.initDomains(DataDecomposition::DUPLICATION::SPLIT, info::mesh->elements->domains.size);
+	_data->f.initDomains(DataDecomposition::DUPLICATION::SPLIT, info::mesh->domains->size);
 	_data->f.fillDecomposition(
 			info::mpi::rank, info::mpi::size, info::mesh->neighbors.size(),
 			distribution.data(), info::mesh->neighbors.data(), _DOFMap);
 
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; t++) {
-		for (esint d = info::mesh->elements->domainDistribution[t]; d != info::mesh->elements->domainDistribution[t + 1]; ++d) {
+		for (size_t d = info::mesh->domains->distribution[t]; d != info::mesh->domains->distribution[t + 1]; ++d) {
 			if (_BEMDomain[d]) {
 				_buildKBEMPattern(d);
 			} else {
@@ -300,7 +301,7 @@ void NodesUniformFETIComposer::_buildKFEMPattern(esint domain)
 			auto dmap = _DOFMap->begin();
 			for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().begin(); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(); prev = *n++) {
 				dmap += (*n - prev) * _DOFs;
-				if (dmap->begin()->domain == domain + info::mesh->elements->domains.offset) {
+				if (dmap->begin()->domain == domain + info::mesh->domains->offset) {
 					RHSsize += _DOFs;
 				}
 			}
@@ -319,7 +320,7 @@ void NodesUniformFETIComposer::_buildKFEMPattern(esint domain)
 		for (int dof = 0; dof < _DOFs; ++dof) {
 			for (auto n = enodes->begin(); n != enodes->end(); ++n, ++RHSoffset) {
 				auto DOFs = (_DOFMap->begin() + (*n * _DOFs + dof))->begin();
-				while (DOFs->domain != domain + info::mesh->elements->domains.offset) {
+				while (DOFs->domain != domain + info::mesh->domains->offset) {
 					++DOFs;
 				}
 				*RHSoffset = DOFs->index;
@@ -354,7 +355,7 @@ void NodesUniformFETIComposer::_buildKFEMPattern(esint domain)
 			for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().begin(); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(); prev = *n++) {
 				dmap += (*n - prev) * _DOFs;
 				for (int dof = 0; dof < _DOFs; ++dof) {
-					if ((dmap + dof)->begin()->domain == domain + info::mesh->elements->domains.offset) {
+					if ((dmap + dof)->begin()->domain == domain + info::mesh->domains->offset) {
 						*RHSoffset++ = (dmap + dof)->begin()->index;
 					}
 				}
@@ -451,7 +452,7 @@ void NodesUniformFETIComposer::_buildKBEMPattern(esint domain)
 //		esint *_RHS = RHSoffset;
 //		for (auto n = enodes->begin(); n != enodes->end(); ++n, ++RHSoffset) {
 //			auto DOFs = (_DOFMap->begin() + *n)->begin();
-//			while (*DOFs != domain + info::mesh->elements->domains.offset) {
+//			while (*DOFs != domain + info::mesh->domains->offset) {
 //				DOFs += 1 + _DOFs;
 //			}
 //			*RHSoffset = *(DOFs + 1);
@@ -634,8 +635,8 @@ void NodesUniformFETIComposer::_buildMortars()
 	std::vector<esint> didist = { 0 };
 	std::vector<DI> didata;
 
-	std::vector<std::vector<esint> > rows(info::mesh->elements->domains.size), cols(info::mesh->elements->domains.size);
-	std::vector<std::vector<double> > vals(info::mesh->elements->domains.size);
+	std::vector<std::vector<esint> > rows(info::mesh->domains->size), cols(info::mesh->domains->size);
+	std::vector<std::vector<double> > vals(info::mesh->domains->size);
 
 	// build B1 in correct order
 	for (auto lambda = lambdas.begin(); lambda != lambdas.end(); ++lambda) {
@@ -677,13 +678,13 @@ void NodesUniformFETIComposer::_buildMortars()
 	serializededata<esint, DI> *dmap = new serializededata<esint, DI>(tarray<esint>(info::env::OMP_NUM_THREADS, didist), tarray<DI>(info::env::OMP_NUM_THREADS, didata));
 
 //	Communication::serialize([&] () {
-//		std::cout << info::mpi::rank << "<" << info::mesh->elements->domains.offset << "> " << ": \n";
+//		std::cout << info::mpi::rank << "<" << info::mesh->domains->offset << "> " << ": \n";
 //		for (size_t n = 0; n < rows.size(); ++n) {
 //			for (size_t i = 0; i < rows[n].size(); i++) {
 //				if (i && rows[n][i] != rows[n][i - 1]) {
 //					printf("\n");
 //				}
-//				printf("%lu:%2d: <%lu:%d> = %8.6f\n", n, rows[n][i], info::mesh->elements->domains.offset + n, cols[n][i] - 1, vals[n][i]);
+//				printf("%lu:%2d: <%lu:%d> = %8.6f\n", n, rows[n][i], info::mesh->domains->offset + n, cols[n][i] - 1, vals[n][i]);
 //			}
 //			printf("\n");
 //		}
@@ -706,12 +707,12 @@ void NodesUniformFETIComposer::_buildMortars()
 
 
 
-	_data->mortars.initDomains(info::mesh->elements->domains.size);
+	_data->mortars.initDomains(info::mesh->domains->size);
 	_data->mortars.fillDecomposition(
 				info::mpi::rank, info::mpi::size, info::mesh->neighbors.size(),
 				_data->K.distribution, info::mesh->neighbors.data(), dmap);
 
-	for (esint d = 0; d < info::mesh->elements->domains.size; ++d) {
+	for (esint d = 0; d < info::mesh->domains->size; ++d) {
 		_data->mortars[d].resize(size, _data->K[d].ncols, vals[d].size());
 		_data->mortars[d].fillPattern(rows[d].size(), rows[d].data(), cols[d].data());
 		_data->mortars[d].fillValues(vals[d].size(), vals[d].data());
@@ -956,7 +957,7 @@ void NodesUniformFETIComposer::computeFixPoints()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<esint> dist, data, partition;
-		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			size_t size = fixPoints[t].size();
 			addFixPoints(info::mesh->elements->procNodes, info::mesh->elements->elementsDistribution[d], info::mesh->elements->elementsDistribution[d + 1], info::mesh->elements->epointers, fixPoints[t]);
 			utils::sortAndRemoveDuplicates(fixPoints[t], size);
@@ -988,7 +989,7 @@ void computeFixPointsOnSurface()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<esint> dist, data, partition;
-		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			size_t size = fixPoints[t].size();
 			addFixPoints(info::mesh->domainsSurface->enodes, info::mesh->domainsSurface->edistribution[d], info::mesh->domainsSurface->edistribution[d + 1], info::mesh->domainsSurface->epointers, fixPoints[t]);
 			utils::sortAndRemoveDuplicates(fixPoints[t], size);
@@ -1013,8 +1014,8 @@ void NodesUniformFETIComposer::buildB0FromCorners(MatrixIJVFETI &B0)
 	}
 
 	esint lambda = 0;
-	std::vector<std::vector<esint> > ROWS(info::mesh->elements->domains.size), COLS(info::mesh->elements->domains.size);
-	std::vector<std::vector<double> > VALS(info::mesh->elements->domains.size);
+	std::vector<std::vector<esint> > ROWS(info::mesh->domains->size), COLS(info::mesh->domains->size);
+	std::vector<std::vector<double> > VALS(info::mesh->domains->size);
 
 	auto dmap = _DOFMap->begin();
 	for (size_t n = 0, prev = 0; n < info::mesh->FETIData->corners.size(); prev = n++) {
@@ -1037,7 +1038,7 @@ void NodesUniformFETIComposer::buildB0FromCorners(MatrixIJVFETI &B0)
 
 	_data->B0.initDomains(_data->K.domains);
 	#pragma omp parallel for
-	for (esint d = 0; d < info::mesh->elements->domains.size; d++) {
+	for (esint d = 0; d < info::mesh->domains->size; d++) {
 		_data->B0[d].type = MatrixType::REAL_UNSYMMETRIC;
 		_data->B0[d].resize(lambda, _data->K[d].ncols, VALS[d].size());
 		_data->B0[d].fillPattern(ROWS[d].size(), ROWS[d].data(), COLS[d].data());

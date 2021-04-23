@@ -18,6 +18,7 @@
 
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
+#include "mesh/store/domainstore.h"
 #include "mesh/preprocessing/meshpreprocessing.h"
 
 #include "physics/system/fetisystem.h"
@@ -332,7 +333,7 @@ void FETI4ICreateInstance(
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; t++) {
 		std::vector<esint> dofs;
-		for (esint d = info::mesh->elements->domainDistribution[t]; d != info::mesh->elements->domainDistribution[t + 1]; ++d) {
+		for (size_t d = info::mesh->domains->distribution[t]; d != info::mesh->domains->distribution[t + 1]; ++d) {
 			system->data.K[d].type = static_cast<MatrixType>(matrix->type);
 
 			std::vector<FETI4IIJV> m;
@@ -344,7 +345,7 @@ void FETI4ICreateInstance(
 					auto dmap = composer.DOFMap()->begin() + (*n * matrix->dofs);
 					for (int dof = 0; dof < matrix->dofs; ++dof, ++dmap) {
 						for (auto di = dmap->begin(); di != dmap->end(); ++di) {
-							if (di->domain == d + info::mesh->elements->domains.offset) {
+							if (di->domain == (esint)d + info::mesh->domains->offset) {
 								dofs.push_back(di->index);
 							}
 						}

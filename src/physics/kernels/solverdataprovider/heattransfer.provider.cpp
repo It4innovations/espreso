@@ -7,6 +7,7 @@
 #include "esinfo/eslog.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
+#include "mesh/store/domainstore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "math/vector.dense.h"
@@ -169,7 +170,7 @@ void HeatTransferSolverDataProvider::FETI::fillKernels(MatrixCSRFETI &K, MatrixC
 			if (_configuration.feti.conjugate_projector != FETIConfiguration::CONJ_PROJECTOR::CONJ_K) {
 				if (ortogonalizeCluster) {
 					esint nSum = 0;
-					for (esint dd = 0; dd < info::mesh->elements->domains.size; dd++) {
+					for (esint dd = 0; dd < info::mesh->domains->size; dd++) {
 						if (info::mesh->elements->clusters[d] == info::mesh->elements->clusters[dd]) {
 							nSum += K[dd].nrows;
 						}

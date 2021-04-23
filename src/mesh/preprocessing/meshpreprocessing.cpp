@@ -17,6 +17,7 @@
 #include "mesh/element.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
+#include "mesh/store/domainstore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/surfacestore.h"
@@ -1205,9 +1206,9 @@ void computeBoundaryNodes(std::vector<esint> &externalBoundary, std::vector<esin
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<esint> texternal, tinternal;
 
-		auto neighbors = info::mesh->elements->faceNeighbors->cbegin() + info::mesh->elements->elementsDistribution[info::mesh->elements->domainDistribution[t]];
-		auto enodes = info::mesh->elements->procNodes->cbegin() + info::mesh->elements->elementsDistribution[info::mesh->elements->domainDistribution[t]];
-		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+		auto neighbors = info::mesh->elements->faceNeighbors->cbegin() + info::mesh->elements->elementsDistribution[info::mesh->domains->distribution[t]];
+		auto enodes = info::mesh->elements->procNodes->cbegin() + info::mesh->elements->elementsDistribution[info::mesh->domains->distribution[t]];
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			esint dbegin = info::mesh->elements->elementsDistribution[d];
 			esint dend = info::mesh->elements->elementsDistribution[d + 1];
 

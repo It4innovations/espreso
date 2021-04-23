@@ -15,6 +15,7 @@
 #include "mesh/preprocessing/meshpreprocessing.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
+#include "mesh/store/domainstore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/boundaryregionstore.h"
 
@@ -31,7 +32,7 @@ struct MESIOData {
 		}
 		domains.reserve(espreso::info::mesh->elements->size);
 		for (size_t i = 1; i < espreso::info::mesh->elements->elementsDistribution.size(); ++i) {
-			domains.resize(espreso::info::mesh->elements->elementsDistribution[i], espreso::info::mesh->elements->domains.offset + i - 1);
+			domains.resize(espreso::info::mesh->elements->elementsDistribution[i], espreso::info::mesh->domains->offset + i - 1);
 		}
 		rtypes.resize(espreso::info::mesh->boundaryRegions.size());
 		for (size_t i = 0; i < espreso::info::mesh->boundaryRegions.size(); ++i) {

@@ -10,6 +10,7 @@
 #include "esinfo/eslog.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
+#include "mesh/store/domainstore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "physics/system/fetisystem.h"
@@ -41,9 +42,9 @@ FETIComposer::FETIComposer(const FETIConfiguration &configuration, Kernel *kerne
 //		return false;
 //	};
 
-	_BEMDomain.resize(info::mesh->elements->domains.size);
+	_BEMDomain.resize(info::mesh->domains->size);
 	if (BEM4I::isLinked()) {
-//		for (esint d = 0; d < info::mesh->elements->domains.size; ++d) {
+//		for (esint d = 0; d < info::mesh->domains->size; ++d) {
 //			_BEMDomain[d] = isBEMDomain(d);
 //		}
 	}
@@ -67,7 +68,7 @@ void FETIComposer::assemble(const Builder &builder)
 	double insertTime = 0, assembleTime = 0;
 
 	#pragma omp parallel for
-	for  (esint d = 0; d < info::mesh->elements->domains.size; d++) {
+	for  (esint d = 0; d < info::mesh->domains->size; d++) {
 		size_t KIndex = 0, RHSIndex = 0;
 		double KReduction = builder.timeIntegrationConstantK, RHSReduction = builder.internalForceReduction;
 		Kernel::InstanceFiller filler(kernel->solutions.size());
@@ -169,7 +170,7 @@ void FETIComposer::assemble(const Builder &builder)
 				auto dmap = info::mesh->nodes->domains->begin();
 				for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().begin(); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(); prev = *n++, ++i) {
 					dmap += *n - prev;
-					if (dmap->at(0) == d + info::mesh->elements->domains.offset) {
+					if (dmap->at(0) == d + info::mesh->domains->offset) {
 						filler.begin = i;
 						filler.end = i + 1;
 						prev = eslog::time();

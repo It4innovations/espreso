@@ -68,10 +68,6 @@ size_t ElementStore::packedFullSize() const
 	packedSize += utils::packedSize(bodies.size);
 	packedSize += utils::packedSize(bodies.offset);
 	packedSize += utils::packedSize(bodies.totalSize);
-	packedSize += utils::packedSize(domains.size);
-	packedSize += utils::packedSize(domains.offset);
-	packedSize += utils::packedSize(domains.totalSize);
-	packedSize += utils::packedSize(domainDistribution);
 	packedSize += utils::packedSize(elementsDistribution);
 	packedSize += utils::packedSize(clusters);
 	packedSize += utils::packedSize(nclusters);
@@ -121,10 +117,6 @@ void ElementStore::packFull(char* &p) const
 	utils::pack(bodies.size, p);
 	utils::pack(bodies.offset, p);
 	utils::pack(bodies.totalSize, p);
-	utils::pack(domains.size, p);
-	utils::pack(domains.offset, p);
-	utils::pack(domains.totalSize, p);
-	utils::pack(domainDistribution, p);
 	utils::pack(elementsDistribution, p);
 	utils::pack(clusters, p);
 	utils::pack(nclusters, p);
@@ -176,10 +168,6 @@ void ElementStore::unpackFull(const char* &p)
 	utils::unpack(bodies.size, p);
 	utils::unpack(bodies.offset, p);
 	utils::unpack(bodies.totalSize, p);
-	utils::unpack(domains.size, p);
-	utils::unpack(domains.offset, p);
-	utils::unpack(domains.totalSize, p);
-	utils::unpack(domainDistribution, p);
 	utils::unpack(elementsDistribution, p);
 	utils::unpack(clusters, p);
 	utils::unpack(nclusters, p);
@@ -209,9 +197,6 @@ size_t ElementStore::packedSize() const
 			utils::packedSize(bodies.size) +
 			utils::packedSize(bodies.offset) +
 			utils::packedSize(bodies.totalSize) +
-			utils::packedSize(domains.size) +
-			utils::packedSize(domains.offset) +
-			utils::packedSize(domains.totalSize) +
 			utils::packedSize(nclusters) +
 			utils::packedSize(clusters) +
 			utils::packedSize(elementsDistribution) +
@@ -242,9 +227,6 @@ void ElementStore::pack(char* &p) const
 	utils::pack(bodies.size, p);
 	utils::pack(bodies.offset, p);
 	utils::pack(bodies.totalSize, p);
-	utils::pack(domains.size, p);
-	utils::pack(domains.offset, p);
-	utils::pack(domains.totalSize, p);
 	utils::pack(nclusters, p);
 	utils::pack(clusters, p);
 	utils::pack(elementsDistribution, p);
@@ -281,9 +263,6 @@ void ElementStore::unpack(const char* &p)
 	utils::unpack(bodies.size, p);
 	utils::unpack(bodies.offset, p);
 	utils::unpack(bodies.totalSize, p);
-	utils::unpack(domains.size, p);
-	utils::unpack(domains.offset, p);
-	utils::unpack(domains.totalSize, p);
 	utils::unpack(nclusters, p);
 	utils::unpack(clusters, p);
 	utils::unpack(elementsDistribution, p);
@@ -446,11 +425,6 @@ ElementData* ElementStore::appendData(int dimension, NamedData::DataType datatyp
 	data.back()->restriction = restriction;
 	data.back()->data.resize(size * dimension);
 	return this->data.back();
-}
-
-std::vector<esint> ElementStore::gatherDomainsProcDistribution()
-{
-	return Store::gatherDistribution(domains.size);
 }
 
 void ElementData::statistics(const tarray<esint> &elements, esint totalsize, Statistics *statistics) const

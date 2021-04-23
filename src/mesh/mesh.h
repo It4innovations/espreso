@@ -17,6 +17,7 @@ struct Statistics;
 struct ElementStore;
 struct ElementData;
 struct NodeStore;
+struct DomainStore;
 struct NodeData;
 
 struct ElementsRegionStore;
@@ -78,6 +79,8 @@ public:
 	std::vector<ElementsRegionStore*> elementsRegions;
 	std::vector<BoundaryRegionStore*> boundaryRegions;
 	std::vector<ContactInterfaceStore*> contactInterfaces;
+
+	DomainStore *domains;
 
 	FETIDataStore *FETIData;
 
