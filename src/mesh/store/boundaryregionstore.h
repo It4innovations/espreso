@@ -13,7 +13,7 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 struct Element;
 
 struct BoundaryRegionStore: public RegionStore {
-	int dimension;
+	int originalDimension, dimension;
 	double area;
 
 	std::vector<size_t> distribution;

@@ -597,7 +597,7 @@ void fillRegionMask()
 	eslog::checkpointln("MESH: REGION MASK FILLED");
 }
 
-void computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion, int elementDimension)
+void computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion)
 {
 	profiler::syncstart("compute_boundary_elements_from_nodes");
 	if (info::mesh->nodes->elements == NULL) {
@@ -740,7 +740,6 @@ void computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion, int elementD
 
 	bregion->procNodes = new serializededata<esint, esint>(edist, edata);
 	bregion->epointers = new serializededata<esint, Element*>(1, epointers);
-	bregion->dimension = elementDimension;
 
 	profiler::syncend("compute_boundary_elements_from_nodes");
 	eslog::checkpoint("MESH: BOUNDARY FROM NODES COMPUTED");

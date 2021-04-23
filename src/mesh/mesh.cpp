@@ -123,8 +123,12 @@ Mesh::Mesh()
   contacts(new ContactStore()),
 
   output(new Output()),
+  _omitClusterization(false),
+  _omitDecomposition(false),
   _withGUI(false),
-  _withFETI(false)
+  _withFETI(false),
+  _withBEM(false),
+  _withEdgeDual(false)
 {
 	dimension = 0;
 	switch (info::ecf->physics) {
@@ -145,7 +149,6 @@ Mesh::Mesh()
 	if (preferedDomains == 0) {
 		preferedDomains = info::env::OMP_NUM_THREADS; // TODO: set better value;
 	}
-	uniformDecomposition = false;
 }
 
 Mesh::~Mesh()
@@ -230,110 +233,55 @@ void Mesh::setMaterials()
 	}
 }
 
-void Mesh::preprocess()
+void Mesh::analyze()
 {
-	profiler::syncstart("meshing");
-
-	auto hasBEM = [] (const PhysicsConfiguration *physics) {
-		for (auto it = physics->discretization.begin(); it != physics->discretization.end(); ++it) {
-			if (it->second == PhysicsConfiguration::DISCRETIZATION::BEM) {
-				return true;
-			}
+	// check FETI
+	switch (info::ecf->physics) {
+	case PhysicsConfiguration::TYPE::THERMO_ELASTICITY_2D:
+		for (auto step = info::ecf->thermo_elasticity_2d.load_steps_settings.begin(); step != info::ecf->thermo_elasticity_2d.load_steps_settings.end(); ++step) {
+			_withFETI |= step->second.heat_transfer.solver == LoadStepSolverConfiguration::SOLVER::FETI;
+			_withFETI |= step->second.structural_mechanics.solver == LoadStepSolverConfiguration::SOLVER::FETI;
 		}
-		return false;
-	};
-
-	auto forEachSteps = [&] (std::function<bool(const LoadStepSolverConfiguration &)> fnc) {
-		bool ret = false;
-		switch (info::ecf->physics) {
-		case PhysicsConfiguration::TYPE::THERMO_ELASTICITY_2D:
-			for (auto step = info::ecf->thermo_elasticity_2d.load_steps_settings.begin(); step != info::ecf->thermo_elasticity_2d.load_steps_settings.end(); ++step) {
-				ret |= fnc(step->second.heat_transfer);
-				ret |= fnc(step->second.structural_mechanics);
-			}
-			break;
-		case PhysicsConfiguration::TYPE::THERMO_ELASTICITY_3D:
-			for (auto step = info::ecf->thermo_elasticity_3d.load_steps_settings.begin(); step != info::ecf->thermo_elasticity_3d.load_steps_settings.end(); ++step) {
-				ret |= fnc(step->second.heat_transfer);
-				ret |= fnc(step->second.structural_mechanics);
-			}
-			break;
-		case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D:
-			for (auto step = info::ecf->heat_transfer_2d.load_steps_settings.begin(); step != info::ecf->heat_transfer_2d.load_steps_settings.end(); ++step) {
-				ret |= fnc(step->second);
-			}
-			break;
-		case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D:
-			for (auto step = info::ecf->heat_transfer_3d.load_steps_settings.begin(); step != info::ecf->heat_transfer_3d.load_steps_settings.end(); ++step) {
-				ret |= fnc(step->second);
-			}
-			break;
-		case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D:
-			for (auto step = info::ecf->structural_mechanics_2d.load_steps_settings.begin(); step != info::ecf->structural_mechanics_2d.load_steps_settings.end(); ++step) {
-				ret |= fnc(step->second);
-			}
-			break;
-		case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
-			for (auto step = info::ecf->structural_mechanics_3d.load_steps_settings.begin(); step != info::ecf->structural_mechanics_3d.load_steps_settings.end(); ++step) {
-				ret |= fnc(step->second);
-			}
-			break;
-		default:
-			eslog::globalerror("Mesh: Not implemented physics.\n");
-			exit(0);
+		break;
+	case PhysicsConfiguration::TYPE::THERMO_ELASTICITY_3D:
+		for (auto step = info::ecf->thermo_elasticity_3d.load_steps_settings.begin(); step != info::ecf->thermo_elasticity_3d.load_steps_settings.end(); ++step) {
+			_withFETI |= step->second.heat_transfer.solver == LoadStepSolverConfiguration::SOLVER::FETI;
+			_withFETI |= step->second.structural_mechanics.solver == LoadStepSolverConfiguration::SOLVER::FETI;
 		}
-		return ret;
-	};
-
-	auto ntob = [&] (const std::string &rname, int dimension) {
-		BoundaryRegionStore *region = bregion(rname);
-		if (region->dimension == 0) {
-			mesh::computeBoundaryElementsFromNodes(region, dimension);
+		break;
+	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D:
+		for (auto step = info::ecf->heat_transfer_2d.load_steps_settings.begin(); step != info::ecf->heat_transfer_2d.load_steps_settings.end(); ++step) {
+			_withFETI |= step->second.solver == LoadStepSolverConfiguration::SOLVER::FETI;
 		}
-	};
-
-	_withFETI = forEachSteps([] (const LoadStepSolverConfiguration &step) { return step.solver == LoadStepSolverConfiguration::SOLVER::FETI; });
-
-	eslog::startln("MESH: PREPROCESSING STARTED", "MESHING");
-	setMaterials();
-	eslog::checkpointln("MESH: MATERIALS FILLED");
-
-	if (info::ecf->input_type == ECF::INPUT_TYPE::EXTERNAL_FILE) {
-		mesh::reclusterize();
-		uniformDecomposition = false;
+		break;
+	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D:
+		for (auto step = info::ecf->heat_transfer_3d.load_steps_settings.begin(); step != info::ecf->heat_transfer_3d.load_steps_settings.end(); ++step) {
+			_withFETI |= step->second.solver == LoadStepSolverConfiguration::SOLVER::FETI;
+		}
+		break;
+	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D:
+		for (auto step = info::ecf->structural_mechanics_2d.load_steps_settings.begin(); step != info::ecf->structural_mechanics_2d.load_steps_settings.end(); ++step) {
+			_withFETI |= step->second.solver == LoadStepSolverConfiguration::SOLVER::FETI;
+		}
+		break;
+	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
+		for (auto step = info::ecf->structural_mechanics_3d.load_steps_settings.begin(); step != info::ecf->structural_mechanics_3d.load_steps_settings.end(); ++step) {
+			_withFETI |= step->second.solver == LoadStepSolverConfiguration::SOLVER::FETI;
+		}
+		break;
+	default:
+		eslog::globalerror("Mesh: Not implemented physics.\n");
+		exit(0);
 	}
 
-	if (info::ecf->input_type == ECF::INPUT_TYPE::GENERATOR) {
-		uniformDecomposition = info::ecf->generator.uniform_domains;
-		if (!info::ecf->generator.uniform_clusters) {
-			mesh::reclusterize();
-			uniformDecomposition = false;
+	// check BEM
+	for (auto it = info::ecf->getPhysics()->discretization.begin(); it != info::ecf->getPhysics()->discretization.end(); ++it) {
+		if (it->second == PhysicsConfiguration::DISCRETIZATION::BEM) {
+			_withBEM = info::ecf->getPhysics()->dimension == DIMENSION::D3;
 		}
 	}
-	profiler::synccheckpoint("reclusterize");
 
-	esint msize;
-	Communication::allReduce(&elements->size, &msize, 1, MPITools::getType<esint>().mpitype, MPI_MIN);
-	if (msize == 0) {
-		eslog::globalerror("ESPRESO quit computation: process without any elements detected.\n");
-	}
-
-	if (hasBEM(info::ecf->getPhysics())) {
-		// TODO: BEM does not always need separate regions
-		info::ecf->input.decomposition.separate_materials = true;
-		info::ecf->input.decomposition.separate_regions = true;
-	}
-	if (
-			info::ecf->input.decomposition.separate_materials ||
-			info::ecf->input.decomposition.separate_regions ||
-			info::ecf->input.decomposition.separate_etypes) {
-		uniformDecomposition = false;
-	}
-	mesh::partitiate(preferedDomains, uniformDecomposition);
-
-	profiler::synccheckpoint("domain_decomposition");
-	eslog::checkpointln("MESH: MESH DECOMPOSED");
-
+	// check whether we need to 'increase' boundary dimensions
 	if (info::ecf->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D || info::ecf->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D) {
 		const StructuralMechanicsConfiguration *sm;
 		int dimension;
@@ -348,7 +296,7 @@ void Mesh::preprocess()
 
 		for (auto ls = sm->load_steps_settings.begin(); ls != sm->load_steps_settings.end(); ++ls) {
 			for (auto bc = ls->second.normal_pressure.begin(); bc != ls->second.normal_pressure.end(); ++bc) {
-				ntob(bc->first, dimension);
+				bregion(bc->first)->dimension = dimension;
 			}
 		}
 	}
@@ -365,28 +313,19 @@ void Mesh::preprocess()
 			dimension = 2;
 		}
 
-		bool composeregion = false;
 		for (auto ls = ht->load_steps_settings.begin(); ls != ht->load_steps_settings.end(); ++ls) {
 			for (auto bc = ls->second.heat_flow.begin(); bc != ls->second.heat_flow.end(); ++bc) {
-				composeregion = true;
-				ntob(bc->first, dimension);
+				bregion(bc->first)->dimension = dimension;
 			}
 			for (auto bc = ls->second.heat_flux.begin(); bc != ls->second.heat_flux.end(); ++bc) {
-				composeregion = true;
-				ntob(bc->first, dimension);
+				bregion(bc->first)->dimension = dimension;
 			}
 			for (auto bc = ls->second.convection.begin(); bc != ls->second.convection.end(); ++bc) {
-				composeregion = true;
-				ntob(bc->first, dimension);
+				bregion(bc->first)->dimension = dimension;
 			}
 			for (auto bc = ls->second.diffuse_radiation.begin(); bc != ls->second.diffuse_radiation.end(); ++bc) {
-				composeregion = true;
-				ntob(bc->first, dimension);
+				bregion(bc->first)->dimension = dimension;
 			}
-		}
-
-		if (composeregion) {
-			eslog::checkpointln("MESH: BOUNDARY REGIONS COMPOSED");
 		}
 	}
 
@@ -402,34 +341,87 @@ void Mesh::preprocess()
 			dimension = 2;
 		}
 
-		bool composeregion = false;
 		for (auto ls = te->load_steps_settings.begin(); ls != te->load_steps_settings.end(); ++ls) {
 			for (auto bc = ls->second.heat_transfer.heat_flow.begin(); bc != ls->second.heat_transfer.heat_flow.end(); ++bc) {
-				composeregion = true;
-				ntob(bc->first, dimension);
+				bregion(bc->first)->dimension = dimension;
 			}
 			for (auto bc = ls->second.heat_transfer.heat_flux.begin(); bc != ls->second.heat_transfer.heat_flux.end(); ++bc) {
-				composeregion = true;
-				ntob(bc->first, dimension);
+				bregion(bc->first)->dimension = dimension;
 			}
 			for (auto bc = ls->second.heat_transfer.convection.begin(); bc != ls->second.heat_transfer.convection.end(); ++bc) {
-				composeregion = true;
-				ntob(bc->first, dimension);
+				bregion(bc->first)->dimension = dimension;
 			}
 			for (auto bc = ls->second.heat_transfer.diffuse_radiation.begin(); bc != ls->second.heat_transfer.diffuse_radiation.end(); ++bc) {
-				composeregion = true;
-				ntob(bc->first, dimension);
+				bregion(bc->first)->dimension = dimension;
 			}
 			for (auto bc = ls->second.structural_mechanics.normal_pressure.begin(); bc != ls->second.structural_mechanics.normal_pressure.end(); ++bc) {
-				composeregion = true;
-				ntob(bc->first, dimension);
+				bregion(bc->first)->dimension = dimension;
 			}
 		}
+	}
 
-		if (composeregion) {
-			eslog::checkpointln("MESH: BOUNDARY REGIONS COMPOSED");
+	if (info::ecf->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D) {
+		if (info::ecf->structural_mechanics_3d.discretization.size() && info::ecf->structural_mechanics_3d.discretization.begin()->second == PhysicsConfiguration::DISCRETIZATION::FEM_TDNNS) {
+			_withEdgeDual = true;
 		}
 	}
+
+	if (info::ecf->input_type == ECF::INPUT_TYPE::EXTERNAL_FILE) {
+		_omitClusterization = false;
+		_omitDecomposition = false;
+	}
+
+	if (info::ecf->input_type == ECF::INPUT_TYPE::GENERATOR) {
+		_omitDecomposition = info::ecf->generator.uniform_clusters && info::ecf->generator.uniform_domains;
+		_omitClusterization = info::ecf->generator.uniform_clusters;
+	}
+
+	if (_withBEM) {
+		// TODO: BEM does not always need separate regions
+		info::ecf->input.decomposition.separate_materials = true;
+		info::ecf->input.decomposition.separate_regions = true;
+	}
+	if (
+			info::ecf->input.decomposition.separate_materials ||
+			info::ecf->input.decomposition.separate_regions ||
+			info::ecf->input.decomposition.separate_etypes) {
+		_omitDecomposition = false;
+	}
+}
+
+void Mesh::preprocess()
+{
+	profiler::syncstart("meshing");
+
+	analyze();
+
+	eslog::startln("MESH: PREPROCESSING STARTED", "MESHING");
+	setMaterials();
+	eslog::checkpointln("MESH: MATERIALS FILLED");
+
+	if (!_omitClusterization) {
+		mesh::reclusterize();
+		profiler::synccheckpoint("reclusterize");
+	}
+
+	esint msize;
+	Communication::allReduce(&elements->size, &msize, 1, MPITools::getType<esint>().mpitype, MPI_MIN);
+	if (msize == 0) {
+		eslog::globalerror("ESPRESO quit computation: process without any elements detected.\n");
+	}
+
+	mesh::partitiate(preferedDomains, _omitDecomposition);
+
+	profiler::synccheckpoint("domain_decomposition");
+	eslog::checkpointln("MESH: MESH DECOMPOSED");
+
+
+	for (size_t r = 0; r < boundaryRegions.size(); ++r) {
+		if (boundaryRegions[r]->originalDimension < boundaryRegions[r]->dimension) {
+			mesh::computeBoundaryElementsFromNodes(boundaryRegions[r]);
+		}
+	}
+	eslog::checkpointln("MESH: BOUNDARY REGIONS COMPOSED");
 
 	profiler::synccheckpoint("preprocess_boundary_regions");
 
@@ -462,7 +454,7 @@ void Mesh::preprocess()
 		eslog::checkpointln("MESH: ELEMENTS DOMAIN INDICES COMPUTED");
 	}
 
-	if (info::ecf->getPhysics()->dimension == DIMENSION::D3 && (hasBEM(info::ecf->getPhysics()))) {
+	if (_withBEM) {
 		mesh::computeDomainsSurface();
 		mesh::triangularizeDomainSurface();
 		profiler::synccheckpoint("preprocess_surface");
@@ -491,12 +483,10 @@ void Mesh::preprocess()
 		profiler::synccheckpoint("compute_domain_dual");
 	}
 
-	if (info::ecf->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D) {
-		if (info::ecf->structural_mechanics_3d.discretization.size() && info::ecf->structural_mechanics_3d.discretization.begin()->second == PhysicsConfiguration::DISCRETIZATION::FEM_TDNNS) {
-			mesh::computeElementsEdgeNeighbors();
-			profiler::synccheckpoint("compute_edge_neighbors");
-			eslog::checkpointln("MESH: EDGE NEIGHBORS COMPUTED");
-		}
+	if (_withEdgeDual) {
+		mesh::computeElementsEdgeNeighbors();
+		profiler::synccheckpoint("compute_edge_neighbors");
+		eslog::checkpointln("MESH: EDGE NEIGHBORS COMPUTED");
 	}
 
 	DebugOutput::mesh();
@@ -513,7 +503,6 @@ void Mesh::duplicate()
 	if (info::mpi::irank == 0) {
 		packedSize += utils::packedSize(dimension);
 		packedSize += utils::packedSize(preferedDomains);
-		packedSize += utils::packedSize(uniformDecomposition);
 
 		packedSize += elements->packedFullSize();
 		packedSize += nodes->packedFullSize();
@@ -540,7 +529,13 @@ void Mesh::duplicate()
 
 		packedSize += utils::packedSize(neighbors);
 		packedSize += utils::packedSize(neighborsWithMe);
+		packedSize += utils::packedSize(_omitClusterization);
+		packedSize += utils::packedSize(_omitDecomposition);
 		packedSize += utils::packedSize(_withGUI);
+		packedSize += utils::packedSize(_withGUI);
+		packedSize += utils::packedSize(_withFETI);
+		packedSize += utils::packedSize(_withBEM);
+		packedSize += utils::packedSize(_withEdgeDual);
 	}
 
 	Communication::broadcast(&packedSize, sizeof(size_t), MPI_BYTE, 0, MPITools::instances);
@@ -550,7 +545,6 @@ void Mesh::duplicate()
 		char *p = buffer;
 		utils::pack(dimension, p);
 		utils::pack(preferedDomains, p);
-		utils::pack(uniformDecomposition, p);
 
 		elements->packFull(p);
 		nodes->packFull(p);
@@ -577,7 +571,12 @@ void Mesh::duplicate()
 
 		utils::pack(neighbors, p);
 		utils::pack(neighborsWithMe, p);
+		utils::pack(_omitClusterization, p);
+		utils::pack(_omitDecomposition, p);
 		utils::pack(_withGUI, p);
+		utils::pack(_withFETI, p);
+		utils::pack(_withBEM, p);
+		utils::pack(_withEdgeDual, p);
 	}
 
 	eslog::checkpoint("MESH: MESH PACKED");
@@ -601,7 +600,6 @@ void Mesh::duplicate()
 		const char *p = buffer;
 		utils::unpack(dimension, p);
 		utils::unpack(preferedDomains, p);
-		utils::unpack(uniformDecomposition, p);
 
 		elements->unpackFull(p);
 		nodes->unpackFull(p);
@@ -629,7 +627,12 @@ void Mesh::duplicate()
 
 		utils::unpack(neighbors, p);
 		utils::unpack(neighborsWithMe, p);
+		utils::unpack(_omitClusterization, p);
+		utils::unpack(_omitDecomposition, p);
 		utils::unpack(_withGUI, p);
+		utils::unpack(_withFETI, p);
+		utils::unpack(_withBEM, p);
+		utils::unpack(_withEdgeDual, p);
 
 		setMaterials();
 	}
@@ -709,7 +712,7 @@ void Mesh::printMeshStatistics()
 		nelements += elementsRegions[r]->totalsize; nelementsnodes += elementsRegions[r]->nodeInfo.totalSize;
 	}
 	for (size_t r = 1; r < boundaryRegions.size(); r++) {
-		switch (boundaryRegions[r]->dimension) {
+		switch (boundaryRegions[r]->originalDimension) {
 		case 2: ++fregs; nfaces += boundaryRegions[r]->totalsize; nfacenodes += boundaryRegions[r]->nodeInfo.totalSize; break;
 		case 1: ++eregs; nedges += boundaryRegions[r]->totalsize; nedgenodes += boundaryRegions[r]->nodeInfo.totalSize; break;
 		case 0: ++nregs; nnodes += boundaryRegions[r]->nodeInfo.totalSize; break;
@@ -758,21 +761,21 @@ void Mesh::printMeshStatistics()
 		eslog::info("\n");
 		eslog::info("  %s [%3d]%*s : %16s %16s\n", "FACES REGIONS SIZES", fregs, namesize - 26, " ", Parser::stringwithcommas(nfaces).c_str(), Parser::stringwithcommas(nfacenodes).c_str());
 		for (size_t r = 0; r < boundaryRegions.size(); r++) {
-			if (boundaryRegions[r]->dimension == 2) {
+			if (boundaryRegions[r]->originalDimension == 2) {
 				eslog::info(" %*s : %16s %16s\n", namesize, boundaryRegions[r]->name.c_str(), Parser::stringwithcommas(boundaryRegions[r]->totalsize).c_str(), Parser::stringwithcommas(boundaryRegions[r]->nodeInfo.totalSize).c_str());
 			}
 		}
 		eslog::info("\n");
 		eslog::info("  %s [%3d]%*s : %16s %16s\n", "EDGES REGIONS SIZES", eregs, namesize - 26, " ", Parser::stringwithcommas(nedges).c_str(), Parser::stringwithcommas(nedgenodes).c_str());
 		for (size_t r = 0; r < boundaryRegions.size(); r++) {
-			if (boundaryRegions[r]->dimension == 1) {
+			if (boundaryRegions[r]->originalDimension == 1) {
 				eslog::info(" %*s : %16s %16s\n", namesize, boundaryRegions[r]->name.c_str(), Parser::stringwithcommas(boundaryRegions[r]->totalsize).c_str(), Parser::stringwithcommas(boundaryRegions[r]->nodeInfo.totalSize).c_str());
 			}
 		}
 		eslog::info("\n");
 		eslog::info("  %s [%3d]%*s : %16s %16s\n", "NODES REGIONS SIZES", nregs, namesize - 26, " ", " ", Parser::stringwithcommas(nnodes).c_str());
 		for (size_t r = 0; r < boundaryRegions.size(); r++) {
-			if (boundaryRegions[r]->dimension == 0) {
+			if (boundaryRegions[r]->originalDimension == 0) {
 				eslog::info(" %*s : %16s %16s\n", namesize, boundaryRegions[r]->name.c_str(), " ", Parser::stringwithcommas(boundaryRegions[r]->nodeInfo.totalSize).c_str());
 			}
 		}
@@ -837,7 +840,7 @@ void Mesh::printMeshStatistics()
 			eslog::info("mesh: region=%s, dimension=%d, elements=%d, nodes=%d\n", elementsRegions[r]->name.c_str(), dimension, elementsRegions[r]->totalsize, elementsRegions[r]->nodeInfo.totalSize);
 		}
 		for (size_t r = 0; r < boundaryRegions.size(); r++) {
-			eslog::info("mesh: region=%s, dimension=%d, elements=%d, nodes=%d\n", boundaryRegions[r]->name.c_str(), boundaryRegions[r]->dimension, boundaryRegions[r]->totalsize, boundaryRegions[r]->nodeInfo.totalSize);
+			eslog::info("mesh: region=%s, dimension=%d, elements=%d, nodes=%d\n", boundaryRegions[r]->name.c_str(), boundaryRegions[r]->originalDimension, boundaryRegions[r]->totalsize, boundaryRegions[r]->nodeInfo.totalSize);
 		}
 		eslog::info("mesh: region=ALL_ELEMENTS, bodies=%d\n", elements->bodiesTotalSize);
 		for (size_t r = 1; r < elementsRegions.size(); r++) {

@@ -1031,6 +1031,7 @@ void arrangeContactInterfaces()
 			push(dense[i]);
 		}
 
+		info::mesh->contactInterfaces.back()->originalDimension = 2;
 		info::mesh->contactInterfaces.back()->dimension = 2;
 		info::mesh->contactInterfaces.back()->procNodes = new serializededata<esint, esint>(dist, data);
 		info::mesh->contactInterfaces.back()->epointers = new serializededata<esint, Element*>(1, epointer);

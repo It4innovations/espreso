@@ -921,7 +921,7 @@ void Input::fillBoundaryRegions()
 
 			if (add) {
 				info::mesh->boundaryRegions.push_back(new BoundaryRegionStore(eregion->first));
-				info::mesh->boundaryRegions.back()->dimension = 2 - i;
+				info::mesh->boundaryRegions.back()->dimension = info::mesh->boundaryRegions.back()->originalDimension = 2 - i;
 
 				std::vector<size_t> edistribution = tarray<size_t>::distribute(threads, eregion->second.size());
 				std::vector<esint> eregiondist(eregion->second.size() + 1);
@@ -1037,7 +1037,7 @@ void Input::reindexBoundaryNodes()
 	size_t threads = info::env::OMP_NUM_THREADS;
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-		if (info::mesh->boundaryRegions[r]->dimension) {
+		if (info::mesh->boundaryRegions[r]->originalDimension) {
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
 				for (auto n = info::mesh->boundaryRegions[r]->procNodes->begin(t)->begin(); n != info::mesh->boundaryRegions[r]->procNodes->end(t)->begin(); ++n) {

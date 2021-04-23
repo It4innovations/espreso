@@ -56,7 +56,7 @@ void findCloseElements();
 void computeSurfaceElementNeighbors(SurfaceStore *surface);
 void computeContactInterface();
 
-void computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion, int elementDimension);
+void computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion);
 
 void linkNodesAndElements(
 		serializededata<esint, esint>* &nelements,

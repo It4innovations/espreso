@@ -71,7 +71,6 @@ public:
 
 	int dimension;
 	size_t preferedDomains;
-	size_t uniformDecomposition;
 
 	ElementStore* elements;
 	NodeStore* nodes;
@@ -96,7 +95,11 @@ public:
 
 	Output *output;
 
-	bool _withGUI, _withFETI;
+protected:
+	void analyze();
+
+	bool _omitClusterization, _omitDecomposition;
+	bool _withGUI, _withFETI, _withBEM, _withEdgeDual;
 };
 
 }

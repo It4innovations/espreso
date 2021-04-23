@@ -11,6 +11,7 @@ using namespace espreso;
 
 BoundaryRegionStore::BoundaryRegionStore(const std::string &name)
 : RegionStore(name),
+  originalDimension(0),
   dimension(0),
   area(0),
   procNodes(NULL),
@@ -58,6 +59,7 @@ size_t BoundaryRegionStore::packedFullSize() const
 {
 	size_t packedSize = RegionStore::packedFullSize();
 
+	packedSize += utils::packedSize(originalDimension);
 	packedSize += utils::packedSize(dimension);
 	packedSize += utils::packedSize(area);
 
@@ -83,6 +85,7 @@ size_t BoundaryRegionStore::packedFullSize() const
 void BoundaryRegionStore::packFull(char* &p) const
 {
 	RegionStore::packFull(p);
+	utils::pack(originalDimension, p);
 	utils::pack(dimension, p);
 	utils::pack(area, p);
 
@@ -108,6 +111,7 @@ void BoundaryRegionStore::packFull(char* &p) const
 void BoundaryRegionStore::unpackFull(const char* &p)
 {
 	RegionStore::unpackFull(p);
+	utils::unpack(originalDimension, p);
 	utils::unpack(dimension, p);
 	utils::unpack(area, p);
 
@@ -138,6 +142,7 @@ size_t BoundaryRegionStore::packedSize() const
 {
 	return
 			RegionStore::packedSize() +
+			utils::packedSize(originalDimension) +
 			utils::packedSize(dimension) +
 			procNodes->packedSize() +
 			sizeof(size_t) + epointers->datatarray().size() * sizeof(int) +
@@ -148,6 +153,7 @@ size_t BoundaryRegionStore::packedSize() const
 void BoundaryRegionStore::pack(char* &p) const
 {
 	RegionStore::pack(p);
+	utils::pack(originalDimension, p);
 	utils::pack(dimension, p);
 	procNodes->pack(p);
 	std::vector<int> eindices;
@@ -167,6 +173,7 @@ void BoundaryRegionStore::pack(char* &p) const
 void BoundaryRegionStore::unpack(const char* &p)
 {
 	RegionStore::unpack(p);
+	utils::unpack(originalDimension, p);
 	utils::unpack(dimension, p);
 	if (procNodes == NULL) {
 		procNodes = new serializededata<esint, esint>(tarray<esint>(1, 0), tarray<esint>(1, 0));
