@@ -5,9 +5,11 @@
 namespace espreso {
 
 struct UniqueDataInfo {
-	esint offset, size, totalSize;
+	esint offset, last, size, totalSize;
 
-	UniqueDataInfo(): offset(0), size(0), totalSize(0) {}
+	UniqueDataInfo(): offset(0), last(0), size(0), totalSize(0) {}
+
+	inline bool isLocal(const esint &index) const noexcept { return offset <= index && index < last; }
 };
 
 struct DuplicateDataInfo: public UniqueDataInfo {

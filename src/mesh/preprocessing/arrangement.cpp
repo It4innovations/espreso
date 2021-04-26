@@ -177,9 +177,9 @@ void arrangeElementsPermutation(std::vector<esint> &permutation)
 		info::mesh->elements->ecounters[i] = sum[i];
 	}
 
-	std::vector<esint> procdist = Communication::getDistribution(info::mesh->elements->size);
-	info::mesh->elements->offset = procdist[info::mpi::rank];
-	info::mesh->elements->totalSize = procdist.back();
+	info::mesh->elements->offset = info::mesh->elements->size;
+	info::mesh->elements->totalSize = Communication::exscan(info::mesh->elements->offset);
+	info::mesh->elements->last = info::mesh->elements->offset + info::mesh->elements->size;
 
 	profiler::synccheckpoint("elements_statistics");
 	profiler::syncend("permute_elements");
@@ -581,12 +581,9 @@ void computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion)
 
 	utils::sortWithInplaceMerge(elements[0], distribution);
 
-	esint ebegin = info::mesh->elements->offset;
-	esint eend = ebegin + info::mesh->elements->size;
-
-	auto begin = std::lower_bound(elements[0].begin(), elements[0].end(), ebegin,
+	auto begin = std::lower_bound(elements[0].begin(), elements[0].end(), info::mesh->elements->offset,
 			[] (const std::pair<esint, esint> &p, esint e) { return p.first < e; });
-	auto end = std::lower_bound(elements[0].begin(), elements[0].end(), eend,
+	auto end = std::lower_bound(elements[0].begin(), elements[0].end(), info::mesh->elements->last,
 			[] (const std::pair<esint, esint> &p, esint e) { return p.first < e; });
 
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, end - begin);
@@ -622,7 +619,7 @@ void computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion)
 			nodes.push_back((begin + e)->second);
 			if ((e + 1 == tdistribution[t + 1] || (begin + e + 1)->first != (begin + e)->first)) {
 
-				element = (begin + e)->first - ebegin;
+				element = (begin + e)->first - info::mesh->elements->offset;
 				utils::sortAndRemoveDuplicates(nodes);
 
 				enodes += element - prev;
@@ -651,9 +648,9 @@ void computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion)
 							neighbor = neighbors->at(nface);
 							if (neighbor == -1) {
 								addFace();
-							} else if (element + ebegin < neighbor) {
-								if (ebegin <= neighbor && neighbor < eend) {
-									neighbor -= ebegin;
+							} else if (element + info::mesh->elements->offset < neighbor) {
+								if (info::mesh->elements->isLocal(neighbor)) {
+									neighbor -= info::mesh->elements->offset;
 									if (memcmp(regions.data() + element * rsize, regions.data() + neighbor * rsize, sizeof(esint) * rsize) != 0) {
 										addFace();
 									}

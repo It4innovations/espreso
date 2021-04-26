@@ -198,7 +198,7 @@ void computeDomainDual()
 						if (*n < info::mesh->elements->offset + info::mesh->domains->elements[d] || info::mesh->elements->offset + info::mesh->domains->elements[d + 1] <= *n) {
 							auto it = std::lower_bound(gBuffer.begin(), gBuffer.end(), *n, [] (const std::pair<esint, esint> &info, const esint &e) { return info.first <= e; });
 							ndomainsFull.push_back(it->second);
-							if (info::mesh->domains->offset <= ndomainsFull.back() && ndomainsFull.back() < info::mesh->domains->offset + info::mesh->domains->size) {
+							if (info::mesh->domains->isLocal(ndomainsFull.back())) {
 								ndomains.push_back(ndomainsFull.back() - info::mesh->domains->offset);
 							}
 						}
@@ -240,8 +240,6 @@ void computeDomainsSurface()
 	std::vector<std::vector<Element*> > fpointer(threads);
 	std::vector<std::vector<size_t> > intervals(threads);
 
-	esint eoffset = info::mesh->elements->offset;
-
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<esint> tfaces, tfacesDistribution, tecounter((int)Element::CODE::SIZE);
@@ -264,7 +262,7 @@ void computeDomainsSurface()
 				auto facepointer = epointer->facepointers->datatarray().begin();
 
 				for (size_t n = 0; n < neighbors->size(); ++n, ++faces, ++facepointer) {
-					if (neighbors->at(n) < dbegin + eoffset || dend + eoffset <= neighbors->at(n)) {
+					if (neighbors->at(n) < dbegin + info::mesh->elements->offset || dend + info::mesh->elements->offset <= neighbors->at(n)) {
 						for (auto f = faces->begin(); f != faces->end(); ++f) {
 							tfaces.push_back(enodes->at(*f));
 						}

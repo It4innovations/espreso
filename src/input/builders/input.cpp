@@ -826,6 +826,7 @@ void Input::fillElements()
 	}
 
 	info::mesh->elements->offset = _eDistribution[info::mpi::rank];
+	info::mesh->elements->last = _eDistribution[info::mpi::rank + 1];
 	info::mesh->elements->size = _etypeDistribution[estart];
 	info::mesh->elements->totalSize = _etypeDistribution.back();
 	info::mesh->elements->distribution = edistribution;

@@ -1124,7 +1124,7 @@ void Mesh::printDecompositionStatistics()
 		esint ielements = 0;
 		for (auto neighs = elements->faceNeighbors->begin(t); neighs != elements->faceNeighbors->end(t); ++neighs) {
 			for (auto n = neighs->begin(); n != neighs->end(); ++n) {
-				if (*n != -1 && (*n < elements->offset || elements->offset + elements->size <= *n)) {
+				if (*n != -1 && (*n < elements->offset || elements->last <= *n)) {
 					++ielements;
 				}
 			}
@@ -1139,7 +1139,7 @@ void Mesh::printDecompositionStatistics()
 					++tdnodes[dmap->front() - domains->offset];
 				} else {
 					for (auto d = dmap->begin(); d != dmap->end(); ++d) {
-						if (domains->offset <= *d && *d < domains->offset + domains->size) {
+						if (domains->isLocal(*d)) {
 							++tdnodes[*d - domains->offset];
 							++tdninterface[*d - domains->offset];
 						}
