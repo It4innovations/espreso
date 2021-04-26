@@ -54,7 +54,6 @@ struct ElementStore: UniqueDataInfo {
 	serializededata<esint, double>* stiffness;
 
 	UniqueDataInfo bodies;
-	esint nclusters;
 
 	int regionMaskSize;
 	std::vector<esint> ecounters;

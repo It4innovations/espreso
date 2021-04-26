@@ -11,6 +11,7 @@
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/domainstore.h"
+#include "mesh/store/clusterstore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "basis/containers/point.h"
@@ -489,7 +490,7 @@ void partitiate(esint parts, bool uniformDecomposition)
 			}
 		}
 		clusters.resize(parts, 0);
-		info::mesh->elements->nclusters = 1;
+		info::mesh->clusters->size = 1;
 	} else { // non-continuous dual graph
 		// thread x part x elements
 		std::vector<std::vector<std::vector<esint> > > tdecomposition(threads, std::vector<std::vector<esint> >(nextID));
@@ -560,7 +561,7 @@ void partitiate(esint parts, bool uniformDecomposition)
 			partsCounter += pparts[p] = std::ceil((frames[p].size() - 1) / averageDomainSize);
 			clusters.resize(partsCounter, p);
 		}
-		info::mesh->elements->nclusters = nextID;
+		info::mesh->clusters->size = nextID;
 
 		profiler::checkpoint("process_noncontinuity");
 		eslog::checkpointln("MESH: NONCONTINUITY PROCESSED");

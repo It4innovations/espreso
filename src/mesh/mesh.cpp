@@ -30,6 +30,7 @@
 #include "store/elementstore.h"
 #include "store/nodestore.h"
 #include "store/domainstore.h"
+#include "store/clusterstore.h"
 #include "store/elementsregionstore.h"
 #include "store/boundaryregionstore.h"
 #include "store/contactinterfacestore.h"
@@ -119,6 +120,7 @@ void Mesh::finish()
 Mesh::Mesh()
 : elements(new ElementStore()), nodes(new NodeStore()),
   domains(new DomainStore()),
+  clusters(new ClusterStore()),
   FETIData(new FETIDataStore()),
   halo(new ElementStore()),
   surface(new SurfaceStore()), domainsSurface(new SurfaceStore()),
@@ -1105,8 +1107,8 @@ void Mesh::printDecompositionStatistics()
 	__meshinfo__ mesh;
 	std::vector<esint> dnodes(domains->size), dninterface(domains->size), delements(domains->size), deinterface(domains->size), dneighs(domains->size);
 	std::vector<double> dnratio(domains->size), deratio(domains->size);
-	std::vector<esint> cnodes(elements->nclusters), cninterface(elements->nclusters), celements(elements->nclusters), ceinterface(elements->nclusters), cneighs(elements->nclusters), cdomains(elements->nclusters);
-	std::vector<double> cnratio(elements->nclusters), ceratio(elements->nclusters);
+	std::vector<esint> cnodes(clusters->size), cninterface(clusters->size), celements(clusters->size), ceinterface(clusters->size), cneighs(clusters->size), cdomains(clusters->size);
+	std::vector<double> cnratio(clusters->size), ceratio(clusters->size);
 
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
@@ -1168,7 +1170,7 @@ void Mesh::printDecompositionStatistics()
 		}
 	}
 
-	mesh.value.mpi.clusters    = elements->nclusters;
+	mesh.value.mpi.clusters    = clusters->size;
 	mesh.value.mpi.domains     = domains->size;
 	mesh.value.mpi.elements    = elements->size;
 	mesh.value.mpi.uniquenodes = nodes->uniqInfo.size;
@@ -1233,7 +1235,7 @@ void Mesh::printDecompositionStatistics()
 		mesh.stats.domain.sum.set(domains->size);
 		mesh.value.cluster = mesh.value.mpi;
 		mesh.stats.cluster = mesh.stats.mpi;
-		if (elements->nclusters > 1) {
+		if (clusters->size > 1) {
 			mesh.stats.cluster.min = mesh.stats.domain.max;
 			mesh.stats.cluster.max = mesh.stats.domain.min;
 			for (esint d = 0; d < domains->size; ++d) {
@@ -1286,7 +1288,7 @@ void Mesh::printDecompositionStatistics()
 				mesh.stats.cluster.min.neighbors = *minmax.first;
 				mesh.stats.cluster.max.neighbors = *minmax.second;
 			}
-			mesh.stats.cluster.sum.set(elements->nclusters);
+			mesh.stats.cluster.sum.set(clusters->size);
 		}
 	}
 
@@ -1305,7 +1307,7 @@ void Mesh::printDecompositionStatistics()
 	if (mesh.stats.mpi.max.clusters == info::mpi::size) {
 		mesh.variance.cluster = mesh.variance.mpi;
 	} else {
-		for (esint c = 0; c < elements->nclusters; ++c) {
+		for (esint c = 0; c < clusters->size; ++c) {
 			mesh.variance.cluster.elements    = std::pow(mesh.stats.cluster.avg.elements    - celements[c], 2);
 			mesh.variance.cluster.nodes       = std::pow(mesh.stats.cluster.avg.nodes       - cnodes[c], 2);
 			mesh.variance.cluster.ninterface  = std::pow(mesh.stats.cluster.avg.ninterface  - cninterface[c], 2);
@@ -1538,7 +1540,7 @@ void Mesh::printDecompositionStatistics()
 				std::fill(data->data.begin(), data->data.end(), mesh.value.cluster.nratio);
 			}
 			data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "CLUSTER_ELEMENTS");
-			if (elements->nclusters == 1) {
+			if (clusters->size == 1) {
 				std::fill(data->data.begin(), data->data.end(), mesh.value.cluster.elements);
 			} else {
 				for (esint d = 0; d < domains->size; ++d) {

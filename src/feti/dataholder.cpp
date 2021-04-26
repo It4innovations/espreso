@@ -5,6 +5,7 @@
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/domainstore.h"
+#include "mesh/store/clusterstore.h"
 
 #include <algorithm>
 
@@ -21,7 +22,7 @@ void DataHolder::assembleB0fromKernels()
 	std::vector<esint> rindex;
 
 	auto dual = info::mesh->domains->localDual->begin();
-	std::vector<esint> rows(info::mesh->elements->nclusters);
+	std::vector<esint> rows(info::mesh->clusters->size);
 	for (esint d1 = 0; d1 < info::mesh->domains->size; ++d1, ++dual) {
 		esint cluster = info::mesh->domains->cluster[d1];
 		for (auto dit = dual->begin(); dit != dual->end(); ++dit) {

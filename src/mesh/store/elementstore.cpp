@@ -30,7 +30,6 @@ ElementStore::ElementStore()
   edgeNeighbors(NULL),
 
   stiffness(NULL),
-  nclusters(1),
 
   regionMaskSize(1),
   ecounters(static_cast<int>(Element::CODE::SIZE))
@@ -66,7 +65,6 @@ size_t ElementStore::packedFullSize() const
 	packedSize += utils::packedSize(bodies.size);
 	packedSize += utils::packedSize(bodies.offset);
 	packedSize += utils::packedSize(bodies.totalSize);
-	packedSize += utils::packedSize(nclusters);
 
 	packedSize += utils::packedSize(regionMaskSize);
 	packedSize += utils::packedSize(ecounters);
@@ -112,7 +110,6 @@ void ElementStore::packFull(char* &p) const
 	utils::pack(bodies.size, p);
 	utils::pack(bodies.offset, p);
 	utils::pack(bodies.totalSize, p);
-	utils::pack(nclusters, p);
 
 	utils::pack(regionMaskSize, p);
 	utils::pack(ecounters, p);
@@ -160,7 +157,6 @@ void ElementStore::unpackFull(const char* &p)
 	utils::unpack(bodies.size, p);
 	utils::unpack(bodies.offset, p);
 	utils::unpack(bodies.totalSize, p);
-	utils::unpack(nclusters, p);
 
 	utils::unpack(regionMaskSize, p);
 	utils::unpack(ecounters, p);
@@ -187,7 +183,6 @@ size_t ElementStore::packedSize() const
 			utils::packedSize(bodies.size) +
 			utils::packedSize(bodies.offset) +
 			utils::packedSize(bodies.totalSize) +
-			utils::packedSize(nclusters) +
 			utils::packedSize(ecounters) +
 			utils::packedSize(eintervals);
 }
@@ -215,7 +210,6 @@ void ElementStore::pack(char* &p) const
 	utils::pack(bodies.size, p);
 	utils::pack(bodies.offset, p);
 	utils::pack(bodies.totalSize, p);
-	utils::pack(nclusters, p);
 	utils::pack(ecounters, p);
 	utils::pack(eintervals, p);
 }
@@ -249,7 +243,6 @@ void ElementStore::unpack(const char* &p)
 	utils::unpack(bodies.size, p);
 	utils::unpack(bodies.offset, p);
 	utils::unpack(bodies.totalSize, p);
-	utils::unpack(nclusters, p);
 	utils::unpack(ecounters, p);
 	utils::unpack(eintervals, p);
 }

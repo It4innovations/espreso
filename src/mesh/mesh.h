@@ -18,6 +18,7 @@ struct ElementStore;
 struct ElementData;
 struct NodeStore;
 struct DomainStore;
+struct ClusterStore;
 struct NodeData;
 
 struct ElementsRegionStore;
@@ -81,6 +82,7 @@ public:
 	std::vector<ContactInterfaceStore*> contactInterfaces;
 
 	DomainStore *domains;
+	ClusterStore *clusters;
 
 	FETIDataStore *FETIData;
 

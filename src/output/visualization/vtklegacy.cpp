@@ -13,6 +13,7 @@
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/domainstore.h"
+#include "mesh/store/clusterstore.h"
 #include "mesh/store/contactinterfacestore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/elementsregionstore.h"
@@ -414,7 +415,7 @@ void VTKLegacy::insertDecomposition(const ElementsRegionStore *store)
 	iterate("DOMAIN", [&] (const ElementsInterval &interval, esint eindex) {
 		return interval.domain;
 	});
-	esint cluster = info::mesh->elements->nclusters;
+	esint cluster = info::mesh->clusters->offset;
 	Communication::exscan(cluster, MPITools::asynchronous);
 	iterate("CLUSTER", [&] (const ElementsInterval &interval, esint eindex) {
 		return info::mesh->domains->cluster[interval.domain - info::mesh->domains->offset] + cluster;
