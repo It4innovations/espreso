@@ -208,108 +208,54 @@ void arrangeElementsRegions()
 	profiler::synccheckpoint("eintervals");
 
 	for (size_t r = 0; r < info::mesh->elementsRegions.size(); r++) {
-		std::vector<std::vector<esint> > unique(threads);
-		info::mesh->elementsRegions[r]->ueintervals = info::mesh->elementsRegions[r]->eintervals;
+		const auto &eintervals =  info::mesh->elementsRegions[r]->eintervals;
+		const auto &elements = info::mesh->elementsRegions[r]->elements->datatarray();
+		for (size_t i = 0; i < eintervals.size(); ++i) {
+			info::mesh->elementsRegions[r]->ecounters[eintervals[i].code] += eintervals[i].end - eintervals[i].begin;
+		}
 
+		std::vector<std::vector<esint> > nodes(threads);
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
-			const auto &regions = info::mesh->elements->regions->datatarray();
-			int maskSize = info::mesh->elements->regionMaskSize;
-			esint maskOffset = r / (8 * sizeof(esint));
-			esint bit = (esint)1 << (r % (8 * sizeof(esint)));
-			std::vector<esint> mask(maskSize);
-			mask[maskOffset] = bit;
-
 			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 				for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; i++) {
-					size_t usize = unique[t].size();
-					for (esint e = info::mesh->elementsRegions[r]->eintervals[i].begin; e < info::mesh->elementsRegions[r]->eintervals[i].end; ++e) {
-						if (memcmp(regions.data() + e * maskSize, mask.data(), sizeof(esint) * maskSize) == 0) {
-							unique[t].push_back(e);
-						}
-					}
-					info::mesh->elementsRegions[r]->ueintervals[i].begin = 0;
-					info::mesh->elementsRegions[r]->ueintervals[i].end = unique[t].size() - usize;
-				}
-			}
-		}
-
-		for (size_t i = 1; i < info::mesh->elementsRegions[r]->ueintervals.size(); ++i) {
-			info::mesh->elementsRegions[r]->ueintervals[i].begin += info::mesh->elementsRegions[r]->ueintervals[i - 1].end;
-			info::mesh->elementsRegions[r]->ueintervals[i].end   += info::mesh->elementsRegions[r]->ueintervals[i - 1].end;
-		}
-
-		if (info::mesh->elementsRegions[r]->eintervals == info::mesh->elementsRegions[r]->ueintervals) {
-			info::mesh->elementsRegions[r]->uniqueElements = info::mesh->elementsRegions[r]->elements;
-		} else {
-			info::mesh->elementsRegions[r]->uniqueElements = new serializededata<esint, esint>(1, unique);
-		}
-
-		auto computeCountersAndNodes = [&] (const std::vector<ElementsInterval> &eintervals, const tarray<esint> &elements) {
-			for (size_t i = 0; i < eintervals.size(); ++i) {
-				info::mesh->elementsRegions[r]->ecounters[eintervals[i].code] += eintervals[i].end - eintervals[i].begin;
-			}
-
-			std::vector<std::vector<esint> > nodes(threads);
-			#pragma omp parallel for
-			for (size_t t = 0; t < threads; t++) {
-				for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
-					for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; i++) {
-						if (eintervals[i].end - eintervals[i].begin > 0) {
-							if (eintervals[i].end - eintervals[i].begin == info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin) {
-								nodes[t].insert(
-										nodes[t].end(),
-										(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin)->begin(),
-										(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].end)->begin());
-							} else {
-								auto enodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin;
-								esint prev = info::mesh->elements->eintervals[i].begin;
-								for (esint e = eintervals[i].begin; e < eintervals[i].end; prev = elements[e++]) {
-									enodes += elements[e] - prev;
-									nodes[t].insert(nodes[t].end(), enodes->begin(), enodes->end());
-								}
+					if (eintervals[i].end - eintervals[i].begin > 0) {
+						if (eintervals[i].end - eintervals[i].begin == info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin) {
+							nodes[t].insert(
+									nodes[t].end(),
+									(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin)->begin(),
+									(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].end)->begin());
+						} else {
+							auto enodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin;
+							esint prev = info::mesh->elements->eintervals[i].begin;
+							for (esint e = eintervals[i].begin; e < eintervals[i].end; prev = elements[e++]) {
+								enodes += elements[e] - prev;
+								nodes[t].insert(nodes[t].end(), enodes->begin(), enodes->end());
 							}
 						}
 					}
 				}
-				utils::sortAndRemoveDuplicates(nodes[t]);
 			}
-			utils::mergeThreadedUniqueData(nodes);
-			nodes.resize(1);
-			nodes.resize(threads);
-			serializededata<esint, esint>::balance(1, nodes);
-
-			info::mesh->elementsRegions[r]->nodes = new serializededata<esint, esint>(1, nodes);
-		};
-
-		if (StringCompare::caseInsensitiveEq(info::mesh->elementsRegions[r]->name, "ALL_ELEMENTS")) {
-			computeCountersAndNodes(info::mesh->elementsRegions[r]->ueintervals, info::mesh->elementsRegions[r]->uniqueElements->datatarray());
-		} else {
-			computeCountersAndNodes(info::mesh->elementsRegions[r]->eintervals, info::mesh->elementsRegions[r]->elements->datatarray());
+			utils::sortAndRemoveDuplicates(nodes[t]);
 		}
+		utils::mergeThreadedUniqueData(nodes);
+		nodes.resize(1);
+		nodes.resize(threads);
+		serializededata<esint, esint>::balance(1, nodes);
+
+		info::mesh->elementsRegions[r]->nodes = new serializededata<esint, esint>(1, nodes);
 	}
 	profiler::synccheckpoint("regions_nodes");
-
-	ElementsRegionStore* nameless = info::mesh->eregion("ALL_ELEMENTS");
-	info::mesh->elementsRegions.push_back(new ElementsRegionStore("NAMELESS_ELEMENT_SET"));
-	info::mesh->elementsRegions.back()->eintervals = nameless->ueintervals;
-	info::mesh->elementsRegions.back()->elements = new serializededata<esint, esint>(*nameless->uniqueElements);
-	info::mesh->elementsRegions.back()->uniqueElements = info::mesh->elementsRegions.back()->elements;
-	info::mesh->elementsRegions.back()->ecounters = nameless->ecounters;
-	info::mesh->elementsRegions.back()->nodes = new serializededata<esint, esint>(*nameless->nodes);
 
 	std::vector<RegionStore*> regions(info::mesh->elementsRegions.begin(), info::mesh->elementsRegions.end());
 	synchronizeRegionNodes(regions);
 
 	std::vector<esint> allnodes(info::mesh->nodes->IDs->datatarray().size());
 	std::iota(allnodes.begin(), allnodes.end(), 0);
-	if (info::mesh->elementsRegions.front()->nodes->datatarray().size() == 0) {
+	if (info::mesh->elementsRegions.front()->nodes) {
 		delete info::mesh->elementsRegions.front()->nodes;
 	}
 	info::mesh->elementsRegions.front()->nodes = new serializededata<esint, esint>(1, tarray<esint>(info::mesh->nodes->distribution, allnodes));
-	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-		info::mesh->elementsRegions.front()->ecounters[info::mesh->elements->eintervals[i].code] += info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
-	}
 
 	computeNodeInfo(regions);
 	profiler::synccheckpoint("node_info");

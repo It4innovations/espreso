@@ -9,7 +9,6 @@ using namespace espreso;
 ElementsRegionStore::ElementsRegionStore(const std::string &name)
 : RegionStore(name),
   elements(NULL),
-  uniqueElements(NULL),
   surface(new SurfaceStore())
 {
 
@@ -23,9 +22,6 @@ ElementsRegionStore::ElementsRegionStore(const char* &packedData)
 
 ElementsRegionStore::~ElementsRegionStore()
 {
-	if (uniqueElements != NULL && uniqueElements != elements) {
-		delete uniqueElements;
-	}
 	if (elements != NULL) { delete elements; }
 	delete surface;
 }
@@ -35,10 +31,8 @@ size_t ElementsRegionStore::packedFullSize() const
 	size_t packedSize = RegionStore::packedFullSize();
 
 	packedSize += utils::packedSize(elements);
-	packedSize += utils::packedSize(uniqueElements);
 
 	packedSize += utils::packedSize(eintervals);
-	packedSize += utils::packedSize(ueintervals);
 
 	packedSize += utils::packedSize(bodies);
 	packedSize += utils::packedSize(bodyElements);
@@ -51,9 +45,7 @@ void ElementsRegionStore::packFull(char* &p) const
 {
 	RegionStore::packFull(p);
 	utils::pack(elements, p);
-	utils::pack(uniqueElements, p);
 	utils::pack(eintervals, p);
-	utils::pack(ueintervals, p);
 	utils::pack(bodies, p);
 	utils::pack(bodyElements, p);
 	utils::pack(bodyFaces, p);
@@ -64,9 +56,7 @@ void ElementsRegionStore::unpackFull(const char* &p)
 {
 	RegionStore::unpackFull(p);
 	utils::unpack(elements, p);
-	utils::unpack(uniqueElements, p);
 	utils::unpack(eintervals, p);
-	utils::unpack(ueintervals, p);
 	utils::unpack(bodies, p);
 	utils::unpack(bodyElements, p);
 	utils::unpack(bodyFaces, p);

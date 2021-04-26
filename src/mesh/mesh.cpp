@@ -757,12 +757,9 @@ void Mesh::printMeshStatistics()
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n\n");
 
 		eslog::info("  %s [%3ld]%*s : %16s %16s\n", "ELEMS REGIONS SIZES", elementsRegions.size() - 1, namesize - 26, " ", Parser::stringwithcommas(nelements).c_str(), Parser::stringwithcommas(nelementsnodes).c_str());
-		for (size_t r = 0; r < elementsRegions.size(); r++) {
-			if (StringCompare::caseInsensitiveEq(elementsRegions[r]->name, "NAMELESS_ELEMENT_SET")) {
-				eslog::warning(" %*s : %16s %16s\n", namesize, elementsRegions[r]->name.c_str(), Parser::stringwithcommas(elementsRegions[r]->totalsize).c_str(), Parser::stringwithcommas(elementsRegions[r]->nodeInfo.totalSize).c_str());
-			} else {
-				eslog::info(" %*s : %16s %16s\n", namesize, elementsRegions[r]->name.c_str(), Parser::stringwithcommas(elementsRegions[r]->totalsize).c_str(), Parser::stringwithcommas(elementsRegions[r]->nodeInfo.totalSize).c_str());
-			}
+		eslog::info(" %*s : %16s %16s\n", namesize, elementsRegions.front()->name.c_str(), "", "");
+		for (size_t r = 1; r < elementsRegions.size(); r++) {
+			eslog::info(" %*s : %16s %16s\n", namesize, elementsRegions[r]->name.c_str(), Parser::stringwithcommas(elementsRegions[r]->totalsize).c_str(), Parser::stringwithcommas(elementsRegions[r]->nodeInfo.totalSize).c_str());
 		}
 		eslog::info("\n");
 		eslog::info("  %s [%3d]%*s : %16s %16s\n", "FACES REGIONS SIZES", fregs, namesize - 26, " ", Parser::stringwithcommas(nfaces).c_str(), Parser::stringwithcommas(nfacenodes).c_str());
@@ -780,7 +777,8 @@ void Mesh::printMeshStatistics()
 		}
 		eslog::info("\n");
 		eslog::info("  %s [%3d]%*s : %16s %16s\n", "NODES REGIONS SIZES", nregs, namesize - 26, " ", " ", Parser::stringwithcommas(nnodes).c_str());
-		for (size_t r = 0; r < boundaryRegions.size(); r++) {
+		eslog::info(" %*s : %16s %16s\n", namesize, boundaryRegions.front()->name.c_str(), " ", " ");
+		for (size_t r = 1; r < boundaryRegions.size(); r++) {
 			if (boundaryRegions[r]->originalDimension == 0) {
 				eslog::info(" %*s : %16s %16s\n", namesize, boundaryRegions[r]->name.c_str(), " ", Parser::stringwithcommas(boundaryRegions[r]->nodeInfo.totalSize).c_str());
 			}

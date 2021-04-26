@@ -16,10 +16,8 @@ struct SurfaceStore;
 
 struct ElementsRegionStore: public RegionStore {
 	serializededata<esint, esint>* elements;
-	serializededata<esint, esint>* uniqueElements;
 
 	std::vector<ElementsInterval> eintervals;
-	std::vector<ElementsInterval> ueintervals;
 
 	SurfaceStore *surface;
 
