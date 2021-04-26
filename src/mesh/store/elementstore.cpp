@@ -17,8 +17,7 @@ ElementStore::ElementStore()
 : distribution({0, 0}),
 
   IDs(NULL),
-  procNodes(NULL),
-  domainNodes(NULL),
+  nodes(NULL),
   centers(NULL),
 
   body(NULL),
@@ -49,8 +48,7 @@ size_t ElementStore::packedFullSize() const
 	packedSize += utils::packedSize(distribution);
 
 	packedSize += utils::packedSize(IDs);
-	packedSize += utils::packedSize(procNodes);
-	packedSize += utils::packedSize(domainNodes);
+	packedSize += utils::packedSize(nodes);
 	packedSize += utils::packedSize(centers);
 	packedSize += utils::packedSize(body);
 	packedSize += utils::packedSize(contact);
@@ -68,8 +66,6 @@ size_t ElementStore::packedFullSize() const
 	packedSize += utils::packedSize(bodies.size);
 	packedSize += utils::packedSize(bodies.offset);
 	packedSize += utils::packedSize(bodies.totalSize);
-	packedSize += utils::packedSize(elementsDistribution);
-	packedSize += utils::packedSize(clusters);
 	packedSize += utils::packedSize(nclusters);
 
 	packedSize += utils::packedSize(regionMaskSize);
@@ -93,8 +89,7 @@ void ElementStore::packFull(char* &p) const
 	utils::pack(distribution, p);
 
 	utils::pack(IDs, p);
-	utils::pack(procNodes, p);
-	utils::pack(domainNodes, p);
+	utils::pack(nodes, p);
 	utils::pack(centers, p);
 	utils::pack(body, p);
 	utils::pack(contact, p);
@@ -117,8 +112,6 @@ void ElementStore::packFull(char* &p) const
 	utils::pack(bodies.size, p);
 	utils::pack(bodies.offset, p);
 	utils::pack(bodies.totalSize, p);
-	utils::pack(elementsDistribution, p);
-	utils::pack(clusters, p);
 	utils::pack(nclusters, p);
 
 	utils::pack(regionMaskSize, p);
@@ -140,8 +133,7 @@ void ElementStore::unpackFull(const char* &p)
 	utils::unpack(distribution, p);
 
 	utils::unpack(IDs, p);
-	utils::unpack(procNodes, p);
-	utils::unpack(domainNodes, p);
+	utils::unpack(nodes, p);
 	utils::unpack(centers, p);
 	utils::unpack(body, p);
 	utils::unpack(contact, p);
@@ -168,8 +160,6 @@ void ElementStore::unpackFull(const char* &p)
 	utils::unpack(bodies.size, p);
 	utils::unpack(bodies.offset, p);
 	utils::unpack(bodies.totalSize, p);
-	utils::unpack(elementsDistribution, p);
-	utils::unpack(clusters, p);
 	utils::unpack(nclusters, p);
 
 	utils::unpack(regionMaskSize, p);
@@ -190,7 +180,7 @@ size_t ElementStore::packedSize() const
 			utils::packedSize(size) +
 			utils::packedSize(offset) +
 			utils::packedSize(totalSize) +
-			procNodes->packedSize() +
+			nodes->packedSize() +
 			sizeof(size_t) + epointers->datatarray().size() * sizeof(int) +
 			utils::packedSize(body) +
 			utils::packedSize(contact) +
@@ -198,8 +188,6 @@ size_t ElementStore::packedSize() const
 			utils::packedSize(bodies.offset) +
 			utils::packedSize(bodies.totalSize) +
 			utils::packedSize(nclusters) +
-			utils::packedSize(clusters) +
-			utils::packedSize(elementsDistribution) +
 			utils::packedSize(ecounters) +
 			utils::packedSize(eintervals);
 }
@@ -209,7 +197,7 @@ void ElementStore::pack(char* &p) const
 	utils::pack(size, p);
 	utils::pack(offset, p);
 	utils::pack(totalSize, p);
-	procNodes->pack(p);
+	nodes->pack(p);
 	if (epointers != NULL) {
 		std::vector<int> eindices;
 		eindices.reserve(epointers->datatarray().size());
@@ -228,16 +216,14 @@ void ElementStore::pack(char* &p) const
 	utils::pack(bodies.offset, p);
 	utils::pack(bodies.totalSize, p);
 	utils::pack(nclusters, p);
-	utils::pack(clusters, p);
-	utils::pack(elementsDistribution, p);
 	utils::pack(ecounters, p);
 	utils::pack(eintervals, p);
 }
 
 void ElementStore::unpack(const char* &p)
 {
-	if (procNodes == NULL) {
-		procNodes = new serializededata<esint, esint>(tarray<esint>(1, 0), tarray<esint>(1, 0));
+	if (nodes == NULL) {
+		nodes = new serializededata<esint, esint>(tarray<esint>(1, 0), tarray<esint>(1, 0));
 	}
 	if (epointers == NULL) {
 		epointers = new serializededata<esint, Element*>(1, tarray<Element*>(1, 0));
@@ -246,7 +232,7 @@ void ElementStore::unpack(const char* &p)
 	utils::unpack(size, p);
 	utils::unpack(offset, p);
 	utils::unpack(totalSize, p);
-	procNodes->unpack(p);
+	nodes->unpack(p);
 	if (epointers != NULL) {
 		std::vector<int> eindices;
 		utils::unpack(eindices, p);
@@ -264,8 +250,6 @@ void ElementStore::unpack(const char* &p)
 	utils::unpack(bodies.offset, p);
 	utils::unpack(bodies.totalSize, p);
 	utils::unpack(nclusters, p);
-	utils::unpack(clusters, p);
-	utils::unpack(elementsDistribution, p);
 	utils::unpack(ecounters, p);
 	utils::unpack(eintervals, p);
 }
@@ -346,8 +330,7 @@ void ElementStore::unpackData(const char* &p)
 ElementStore::~ElementStore()
 {
 	if (IDs != NULL) { delete IDs; }
-	if (procNodes != NULL) { delete procNodes; }
-	if (domainNodes != NULL) { delete domainNodes; }
+	if (nodes != NULL) { delete nodes; }
 	if (centers != NULL) { delete centers; }
 
 	if (body != NULL) { delete body; }
@@ -371,8 +354,7 @@ void ElementStore::store(const std::string &file)
 	std::ofstream os(file + std::to_string(info::mpi::rank) + ".txt");
 
 	Store::storedata(os, "IDs", IDs);
-	Store::storedata(os, "nodes", procNodes);
-	Store::storedata(os, "nodes", domainNodes);
+	Store::storedata(os, "nodes", nodes);
 	Store::storedata(os, "centers", centers);
 
 	Store::storedata(os, "body", body);
@@ -388,8 +370,7 @@ void ElementStore::permute(const std::vector<esint> &permutation, const std::vec
 	this->distribution = distribution;
 
 	if (IDs != NULL) { IDs->permute(permutation, distribution); }
-	if (procNodes != NULL) { procNodes->permute(permutation, distribution); }
-	if (domainNodes != NULL) { domainNodes->permute(permutation, distribution); }
+	if (nodes != NULL) { nodes->permute(permutation, distribution); }
 	if (centers != NULL) { centers->permute(permutation, distribution); }
 
 	if (body != NULL) { body->permute(permutation, distribution); }
@@ -413,7 +394,7 @@ void ElementStore::reindex(const serializededata<esint, esint> *nIDs)
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (auto n = procNodes->begin(t)->begin(); n != procNodes->end(t)->begin(); ++n) {
+		for (auto n = nodes->begin(t)->begin(); n != nodes->end(t)->begin(); ++n) {
 			*n = std::lower_bound(nIDs->datatarray().begin(), nIDs->datatarray().end(), *n) - nIDs->datatarray().begin();
 		}
 	}

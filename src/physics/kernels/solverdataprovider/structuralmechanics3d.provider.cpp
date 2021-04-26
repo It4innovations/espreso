@@ -195,7 +195,7 @@ int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 	_RegMat->initDomains(info::mesh->domains->size);
 
 	if (_configuration.feti.regularization_version == FETIConfiguration::REGULARIZATION_VERSION::FIX_POINTS) {
-		size_t clusters = *std::max_element(info::mesh->elements->clusters.begin(), info::mesh->elements->clusters.end()) + 1;
+		size_t clusters = *std::max_element(info::mesh->domains->cluster.begin(), info::mesh->domains->cluster.end()) + 1;
 		_cCenter = _cNorm = std::vector<Point>(clusters, Point(0, 0, 0));
 		_cr44 = _cr45 = _cr46 = _cr55 = _cr56 = std::vector<double>(clusters, 0);
 		_cNp = std::vector<size_t>(clusters, 0);
@@ -218,9 +218,9 @@ int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 		}
 
 		for (esint d = 0; d < info::mesh->domains->size; d++) {
-			_cCenter[info::mesh->elements->clusters[d]] += _dCenter[d];
+			_cCenter[info::mesh->domains->cluster[d]] += _dCenter[d];
 			_dCenter[d] = _dCenter[d] / dnodes[d].size();
-			_cNp[info::mesh->elements->clusters[d]] += dnodes[d].size();
+			_cNp[info::mesh->domains->cluster[d]] += dnodes[d].size();
 		}
 		for (size_t c = 0; c < clusters; c++) {
 			_cCenter[c] /= _cNp[c];
@@ -235,7 +235,7 @@ int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 					esint domain = *d - info::mesh->domains->offset;
 					Point dp = info::mesh->nodes->coordinates->datatarray()[i] - _dCenter[domain];
 					pnorm[domain] += dp.x * dp.x + dp.y * dp.y;
-					Point cp = info::mesh->nodes->coordinates->datatarray()[i] - _cCenter[info::mesh->elements->clusters[domain]];
+					Point cp = info::mesh->nodes->coordinates->datatarray()[i] - _cCenter[info::mesh->domains->cluster[domain]];
 					pcnorm[domain] += cp.x * cp.x + cp.y * cp.y;
 				}
 			}
@@ -245,7 +245,7 @@ int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 			cbuffer1[d] += pcnorm[d];
 		}
 		for (esint p = 0; p < info::mesh->domains->size; p++) {
-			_cNorm[info::mesh->elements->clusters[p]].x += cbuffer1[p];
+			_cNorm[info::mesh->domains->cluster[p]].x += cbuffer1[p];
 		}
 		for (size_t c = 0; c < clusters; c++) {
 			_cNorm[c].x = std::sqrt(_cNorm[c].x);
@@ -258,7 +258,7 @@ int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 			for (auto d = dmap->begin(); d != dmap->end(); ++d) {
 				if (info::mesh->domains->offset <= *d && *d < info::mesh->domains->offset + info::mesh->domains->size) {
 					esint domain = *d - info::mesh->domains->offset;
-					int cluster = info::mesh->elements->clusters[domain];
+					int cluster = info::mesh->domains->cluster[domain];
 
 					Point dp = info::mesh->nodes->coordinates->datatarray()[i] - _dCenter[domain];
 					_dr44[domain] += (-dp.y / _dNorm[domain].x) * (-dp.y / _dNorm[domain].x) + (dp.x / _dNorm[domain].x) * (dp.x / _dNorm[domain].x);
@@ -272,8 +272,8 @@ int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 		}
 
 		for (esint p = 0; p < info::mesh->domains->size; p++) {
-			_cr44[info::mesh->elements->clusters[p]] += cbuffer1[p];
-			_cr45[info::mesh->elements->clusters[p]] += cbuffer2[p];
+			_cr44[info::mesh->domains->cluster[p]] += cbuffer1[p];
+			_cr45[info::mesh->domains->cluster[p]] += cbuffer2[p];
 		}
 
 		// Compute norm of column 5 (norm.y)
@@ -284,7 +284,7 @@ int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 			for (auto d = dmap->begin(); d != dmap->end(); ++d) {
 				if (info::mesh->domains->offset <= *d && *d < info::mesh->domains->offset + info::mesh->domains->size) {
 					esint domain = *d - info::mesh->domains->offset;
-					int cluster = info::mesh->elements->clusters[domain];
+					int cluster = info::mesh->domains->cluster[domain];
 
 					Point dp = info::mesh->nodes->coordinates->datatarray()[i] - _dCenter[domain];
 					dnorm[domain] += (-dp.z - _dr45[domain] / _dr44[domain] * (-dp.y / _dNorm[domain].x)) * (-dp.z - _dr45[domain] / _dr44[domain] * (-dp.y / _dNorm[domain].x));
@@ -303,7 +303,7 @@ int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 			cbuffer1[p] = cnorm[p];
 		}
 		for (esint p = 0; p < info::mesh->domains->size; p++) {
-			_cNorm[info::mesh->elements->clusters[p]].y += cbuffer1[p];
+			_cNorm[info::mesh->domains->cluster[p]].y += cbuffer1[p];
 		}
 		for (size_t c = 0; c < clusters; c++) {
 			_cNorm[c].y = std::sqrt(_cNorm[c].y);
@@ -317,7 +317,7 @@ int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 			for (auto d = dmap->begin(); d != dmap->end(); ++d) {
 				if (info::mesh->domains->offset <= *d && *d < info::mesh->domains->offset + info::mesh->domains->size) {
 					esint domain = *d - info::mesh->domains->offset;
-					int cluster = info::mesh->elements->clusters[domain];
+					int cluster = info::mesh->domains->cluster[domain];
 					double c5;
 
 					Point dp = info::mesh->nodes->coordinates->datatarray()[i] - _dCenter[domain];
@@ -347,9 +347,9 @@ int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 			}
 		}
 		for (esint p = 0; p < info::mesh->domains->size; p++) {
-			_cr46[info::mesh->elements->clusters[p]] += cbuffer1[p];
-			_cr55[info::mesh->elements->clusters[p]] += cbuffer2[p];
-			_cr56[info::mesh->elements->clusters[p]] += cbuffer3[p];
+			_cr46[info::mesh->domains->cluster[p]] += cbuffer1[p];
+			_cr55[info::mesh->domains->cluster[p]] += cbuffer2[p];
+			_cr56[info::mesh->domains->cluster[p]] += cbuffer3[p];
 		}
 
 		// Compute norm of column 6 (norm.z)
@@ -364,7 +364,7 @@ int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 			for (auto d = dmap->begin(); d != dmap->end(); ++d) {
 				if (info::mesh->domains->offset <= *d && *d < info::mesh->domains->offset + info::mesh->domains->size) {
 					esint domain = *d - info::mesh->domains->offset;
-					int cluster = info::mesh->elements->clusters[domain];
+					int cluster = info::mesh->domains->cluster[domain];
 					double c6;
 
 					Point dp = info::mesh->nodes->coordinates->datatarray()[i] - _dCenter[domain];
@@ -391,7 +391,7 @@ int StructuralMechanics3DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 			cbuffer1[p] = cnorm[p];
 		}
 		for (esint p = 0; p < info::mesh->domains->size; p++) {
-			_cNorm[info::mesh->elements->clusters[p]].z += cbuffer1[p];
+			_cNorm[info::mesh->domains->cluster[p]].z += cbuffer1[p];
 		}
 		for (size_t c = 0; c < clusters; c++) {
 			_cNorm[c].z = std::sqrt(_cNorm[c].z);
@@ -561,7 +561,7 @@ void StructuralMechanics3DSolverDataProvider::FETI::fillKernels(MatrixCSRFETI &K
 				size_t np = dnodes[d].size();
 
 				if (ortogonalizeCluster) {
-					size_t cluster = info::mesh->elements->clusters[d];
+					size_t cluster = info::mesh->domains->cluster[d];
 					center = _cCenter[cluster], norm = _cNorm[cluster];
 					r44 = _cr44[cluster], r45 = _cr45[cluster], r46 = _cr46[cluster], r55 = _cr55[cluster], r56 = _cr56[cluster];
 					np = _cNp[cluster];

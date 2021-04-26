@@ -7,8 +7,6 @@
 using namespace espreso;
 
 FETIDataStore::FETIDataStore()
-: domainDual(NULL),
-  fullDomainDual(NULL)
 {
 	sFixPointsDistribution = {0, 0};
 	iFixPointsDistribution = {0, 0};
@@ -16,16 +14,12 @@ FETIDataStore::FETIDataStore()
 
 FETIDataStore::~FETIDataStore()
 {
-	if (domainDual == NULL) { delete domainDual; }
-	if (fullDomainDual == NULL) { delete fullDomainDual; }
+
 }
 
 size_t FETIDataStore::packedFullSize() const
 {
 	size_t packedSize = 0;
-
-	packedSize += utils::packedSize(domainDual);
-	packedSize += utils::packedSize(fullDomainDual);
 
 	packedSize += utils::packedSize(corners);
 
@@ -39,9 +33,6 @@ size_t FETIDataStore::packedFullSize() const
 
 void FETIDataStore::packFull(char* &p) const
 {
-	utils::pack(domainDual, p);
-	utils::pack(fullDomainDual, p);
-
 	utils::pack(corners, p);
 
 	utils::pack(surfaceFixPoints, p);
@@ -52,9 +43,6 @@ void FETIDataStore::packFull(char* &p) const
 
 void FETIDataStore::unpackFull(const char* &p)
 {
-	utils::unpack(domainDual, p);
-	utils::unpack(fullDomainDual, p);
-
 	utils::unpack(corners, p);
 
 	utils::unpack(surfaceFixPoints, p);

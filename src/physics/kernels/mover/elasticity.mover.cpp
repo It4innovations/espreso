@@ -26,15 +26,15 @@ ElasticityElementIterator::ElasticityElementIterator(ElasticityElementIterator *
   rotationAxis(NULL),
   fixed(NULL)
 {
-	coordinates.set(info::mesh->nodes->coordinates, info::mesh->elements->procNodes);
+	coordinates.set(info::mesh->nodes->coordinates, info::mesh->elements->nodes);
 
-	displacement   .setInput(configuration.displacement    , nodeparams  , info::mesh->elements->procNodes);
-	temperature    .setInput(configuration.temperature     , kernelparams, info::mesh->elements->procNodes);
-	acceleration   .setInput(configuration.acceleration    , kernelparams, info::mesh->elements->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
-	angularVelocity.setInput(configuration.angular_velocity, kernelparams, info::mesh->elements->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
+	displacement   .setInput(configuration.displacement    , nodeparams  , info::mesh->elements->nodes);
+	temperature    .setInput(configuration.temperature     , kernelparams, info::mesh->elements->nodes);
+	acceleration   .setInput(configuration.acceleration    , kernelparams, info::mesh->elements->nodes, MoverParameter::Properties::ALLOW_CONSTANT);
+	angularVelocity.setInput(configuration.angular_velocity, kernelparams, info::mesh->elements->nodes, MoverParameter::Properties::ALLOW_CONSTANT);
 	if (harmonic) {
-		cos.setInput(configuration.displacement, nodeparams, info::mesh->elements->procNodes);
-		sin.setInput(configuration.displacement, nodeparams, info::mesh->elements->procNodes);
+		cos.setInput(configuration.displacement, nodeparams, info::mesh->elements->nodes);
+		sin.setInput(configuration.displacement, nodeparams, info::mesh->elements->nodes);
 	}
 
 	if (previous) {
@@ -89,13 +89,13 @@ ElasticityElementIterator::ElasticityElementIterator(ElasticityElementIterator *
 		}
 
 		if (dimension == 2) {
-			thickness.setInput(physics.thickness, kernelparams, info::mesh->elements->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
+			thickness.setInput(physics.thickness, kernelparams, info::mesh->elements->nodes, MoverParameter::Properties::ALLOW_CONSTANT);
 			thickness.setOutput(NamedData::DataType::SCALAR, "THICKNESS", info::ecf->output.results_selection.thickness);
-			initialTemperature.setInput(physics.initial_temperature, kernelparams, info::mesh->elements->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
+			initialTemperature.setInput(physics.initial_temperature, kernelparams, info::mesh->elements->nodes, MoverParameter::Properties::ALLOW_CONSTANT);
 		}
 
 		if (dimension == 3) {
-			initialTemperature.setInput(physics.initial_temperature, kernelparams, info::mesh->elements->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
+			initialTemperature.setInput(physics.initial_temperature, kernelparams, info::mesh->elements->nodes, MoverParameter::Properties::ALLOW_CONSTANT);
 		}
 
 		principalStress.setOutput(NamedData::DataType::NUMBERED   , "PRINCIPAL_STRESS", info::ecf->output.results_selection.stress, step::TYPE::TIME | step::TYPE::FTT);

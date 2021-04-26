@@ -6,6 +6,7 @@
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementsregionstore.h"
+#include "mesh/store/domainstore.h"
 #include "physics/system/builder/builder.h"
 #include "basis/containers/point.h"
 #include "basis/evaluator/evaluator.h"
@@ -1025,9 +1026,9 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 		auto dual = info::mesh->elements->faceNeighbors->begin() + iterator.offset;
 		auto fpointer = iterator.element->facepointers->begin();
 		auto fnodes = iterator.element->faces->begin();
-		auto doffset = std::lower_bound(info::mesh->elements->elementsDistribution.begin(), info::mesh->elements->elementsDistribution.end(), iterator.offset + 1) - info::mesh->elements->elementsDistribution.begin() - 1;
-		auto lower = info::mesh->elements->elementsDistribution[doffset] + info::mesh->elements->offset;
-		auto upper = info::mesh->elements->elementsDistribution[doffset + 1] + info::mesh->elements->offset;
+		auto doffset = std::lower_bound(info::mesh->domains->elements.begin(), info::mesh->domains->elements.end(), iterator.offset + 1) - info::mesh->domains->elements.begin() - 1;
+		auto lower = info::mesh->domains->elements[doffset] + info::mesh->elements->offset;
+		auto upper = info::mesh->domains->elements[doffset + 1] + info::mesh->elements->offset;
 		for (auto neigh = dual->begin(); neigh != dual->end(); ++neigh, ++fpointer, ++fnodes) {
 			if (*neigh != -1) {
 				if (*neigh < lower || upper <= *neigh) {

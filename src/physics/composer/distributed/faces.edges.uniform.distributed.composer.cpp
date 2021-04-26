@@ -111,7 +111,7 @@ void FacesEdgesUniformDistributedComposer::_initDOFMap()
 		auto eID = info::mesh->elements->IDs->datatarray().cbegin(t);
 		auto faces = info::mesh->elements->faceNeighbors->cbegin(t);
 		auto edges = info::mesh->elements->edgeNeighbors->cbegin(t);
-		auto nodes = info::mesh->elements->procNodes->cbegin(t);
+		auto nodes = info::mesh->elements->nodes->cbegin(t);
 		for (size_t n = info::mesh->elements->distribution[t]; n < info::mesh->elements->distribution[t + 1]; ++n, ++faces, ++edges, ++nodes, ++eID) {
 			for (auto face = faces->begin(); face != faces->end(); ++face) {
 				if (*face != -1 && (*face < edistribution[info::mpi::rank] || edistribution[info::mpi::rank + 1] <= *face)) {
@@ -218,7 +218,7 @@ void FacesEdgesUniformDistributedComposer::_initDOFMap()
 		auto eID = info::mesh->elements->IDs->datatarray().cbegin(t);
 		auto faces = info::mesh->elements->faceNeighbors->cbegin(t);
 		auto edges = info::mesh->elements->edgeNeighbors->cbegin(t);
-		auto nodes = info::mesh->elements->procNodes->cbegin(t);
+		auto nodes = info::mesh->elements->nodes->cbegin(t);
 		auto map = _DOFMap->datatarray().begin(t);
 		for (size_t n = info::mesh->elements->distribution[t]; n < info::mesh->elements->distribution[t + 1]; ++n, ++faces, ++edges, ++nodes, ++eID) {
 			for (auto face = faces->begin(); face != faces->end(); ++face, map += _fDOFs) {
@@ -274,7 +274,7 @@ void FacesEdgesUniformDistributedComposer::_initDOFMap()
 					} else {
 						esint nfaces = (info::mesh->elements->faceNeighbors->cbegin() + edge[1])->size();
 						auto nedge = info::mesh->elements->edgeNeighbors->cbegin() + edge[1];
-						auto nnodes = info::mesh->elements->procNodes->cbegin() + edge[1];
+						auto nnodes = info::mesh->elements->nodes->cbegin() + edge[1];
 						auto nedgenodes = (info::mesh->elements->epointers->datatarray()[edge[1]])->edges->cbegin();
 						auto nmap = (_DOFMap->cbegin() + edge[1])->begin() + _fDOFs * nfaces;
 						for (auto ne = nedge->begin(); ne != nedge->end(); ne += *ne + 1, ++nedgenodes, nmap += _eDOFs) {

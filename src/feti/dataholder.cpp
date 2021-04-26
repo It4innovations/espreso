@@ -4,7 +4,6 @@
 #include "esinfo/eslog.h"
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
-#include "mesh/store/fetidatastore.h"
 #include "mesh/store/domainstore.h"
 
 #include <algorithm>
@@ -21,10 +20,10 @@ void DataHolder::assembleB0fromKernels()
 {
 	std::vector<esint> rindex;
 
-	auto dual = info::mesh->FETIData->domainDual->begin();
+	auto dual = info::mesh->domains->localDual->begin();
 	std::vector<esint> rows(info::mesh->elements->nclusters);
 	for (esint d1 = 0; d1 < info::mesh->domains->size; ++d1, ++dual) {
-		esint cluster = info::mesh->elements->clusters[d1];
+		esint cluster = info::mesh->domains->cluster[d1];
 		for (auto dit = dual->begin(); dit != dual->end(); ++dit) {
 			if (d1 < *dit) {
 				rindex.push_back(rows[cluster]);
@@ -34,14 +33,14 @@ void DataHolder::assembleB0fromKernels()
 					rows[cluster] += N1[d1].cols ? N1[d1].cols : 1;
 				}
 			} else {
-				auto dualbegin = info::mesh->FETIData->domainDual->begin();
+				auto dualbegin = info::mesh->domains->localDual->begin();
 				auto it = std::lower_bound((dualbegin + *dit)->begin(), (dualbegin + *dit)->end(), d1);
 				rindex.push_back(rindex[it - dualbegin->begin()]);
 			}
 		}
 	}
 
-	dual = info::mesh->FETIData->domainDual->begin();
+	dual = info::mesh->domains->localDual->begin();
 	auto dmap = decomposition->dmap->begin();
 	for (esint n = 0, prev = 0; n < decomposition->nshared; prev = decomposition->shared[n++]) {
 		dmap += decomposition->shared[n] - prev;
@@ -90,7 +89,7 @@ void DataHolder::assembleB0fromKernels()
 	}
 
 	for (esint d = 0; d < info::mesh->domains->size; ++d) {
-		B0[d].rows = rows[info::mesh->elements->clusters[d]];
+		B0[d].rows = rows[info::mesh->domains->cluster[d]];
 		B0[d].cols = K[d].cols;
 		B0[d].nnz = B0[d].V_values.size();
 	}

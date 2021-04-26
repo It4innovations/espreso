@@ -75,7 +75,7 @@ void arrangeNodes()
 		}
 	};
 
-	localremap(info::mesh->elements->procNodes);
+	localremap(info::mesh->elements->nodes);
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
 		if (info::mesh->boundaryRegions[r]->procNodes != NULL) {
@@ -115,8 +115,8 @@ void arrangeElementsPermutation(std::vector<esint> &permutation)
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; ++d) {
 			std::sort(
-					permutation.begin() + info::mesh->elements->elementsDistribution[d],
-					permutation.begin() + info::mesh->elements->elementsDistribution[d + 1],
+					permutation.begin() + info::mesh->domains->elements[d],
+					permutation.begin() + info::mesh->domains->elements[d + 1],
 					[&] (esint i, esint j) {
 				if (info::mesh->elements->epointers->datatarray()[i]->code != info::mesh->elements->epointers->datatarray()[j]->code) {
 					return info::mesh->elements->epointers->datatarray()[i]->code < info::mesh->elements->epointers->datatarray()[j]->code;
@@ -133,9 +133,9 @@ void arrangeElementsPermutation(std::vector<esint> &permutation)
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; ++d) {
 			if (d) {
-				iboundaries[t].push_back(info::mesh->elements->elementsDistribution[d]);
+				iboundaries[t].push_back(info::mesh->domains->elements[d]);
 			}
-			for (esint e = info::mesh->elements->elementsDistribution[d] + 1; e < info::mesh->elements->elementsDistribution[d + 1]; ++e) {
+			for (esint e = info::mesh->domains->elements[d] + 1; e < info::mesh->domains->elements[d + 1]; ++e) {
 				if (info::mesh->elements->epointers->datatarray()[permutation[e]]->code != info::mesh->elements->epointers->datatarray()[permutation[e - 1]]->code) {
 					iboundaries[t].push_back(e);
 				}
@@ -152,7 +152,7 @@ void arrangeElementsPermutation(std::vector<esint> &permutation)
 	for (size_t i = 0; i < iboundaries[0].size(); i++) {
 		info::mesh->elements->eintervals.back().end = iboundaries[0][i];
 		info::mesh->elements->eintervals.push_back(ElementsInterval(iboundaries[0][i], iboundaries[0][i]));
-		const std::vector<esint> &edist = info::mesh->elements->elementsDistribution;
+		const std::vector<esint> &edist = info::mesh->domains->elements;
 		info::mesh->elements->eintervals.back().domain = std::lower_bound(edist.begin(), edist.end(), info::mesh->elements->eintervals.back().begin + 1) - edist.begin() - 1 + info::mesh->domains->offset;
 		info::mesh->elements->eintervals.back().code = static_cast<int>(info::mesh->elements->epointers->datatarray()[permutation[info::mesh->elements->eintervals.back().begin]]->code);
 		if ((info::mesh->elements->eintervals.end() - 1)->domain != (info::mesh->elements->eintervals.end() - 2)->domain) {
@@ -259,10 +259,10 @@ void arrangeElementsRegions()
 							if (eintervals[i].end - eintervals[i].begin == info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin) {
 								nodes[t].insert(
 										nodes[t].end(),
-										(info::mesh->elements->procNodes->cbegin() + info::mesh->elements->eintervals[i].begin)->begin(),
-										(info::mesh->elements->procNodes->cbegin() + info::mesh->elements->eintervals[i].end)->begin());
+										(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin)->begin(),
+										(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].end)->begin());
 							} else {
-								auto enodes = info::mesh->elements->procNodes->cbegin() + info::mesh->elements->eintervals[i].begin;
+								auto enodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin;
 								esint prev = info::mesh->elements->eintervals[i].begin;
 								for (esint e = eintervals[i].begin; e < eintervals[i].end; prev = elements[e++]) {
 									enodes += elements[e] - prev;
@@ -386,7 +386,7 @@ void arrangeBoundaryRegions()
 			store->epointers = new serializededata<esint, Element*>(1, tarray<Element*>(threads, 0));
 		} else {
 			std::vector<size_t> distribution = tarray<size_t>::distribute(threads, store->procNodes->structures());
-			std::vector<esint> &eDomainDistribution = info::mesh->elements->elementsDistribution;
+			std::vector<esint> &eDomainDistribution = info::mesh->domains->elements;
 			std::vector<esint> emembership(distribution.back()), edomain(distribution.back());
 
 			#pragma omp parallel for
@@ -439,7 +439,7 @@ void arrangeBoundaryRegions()
 				for (size_t e = distribution[t]; e < distribution[t + 1]; ++e, ++nodes) {
 					esint eindex = emembership[e] - eoffset;
 					auto epointer = info::mesh->elements->epointers->datatarray()[eindex];
-					auto enodes = info::mesh->elements->procNodes->begin() + eindex;
+					auto enodes = info::mesh->elements->nodes->begin() + eindex;
 					tdata.push_back(eindex);
 					if (store->dimension == 1) {
 						tdata.push_back(epointer->getIndex(*enodes, epointer->edges, epointer->edgepointers, *nodes));
@@ -458,7 +458,7 @@ void arrangeBoundaryRegions()
 			store->emembership = new serializededata<esint, esint>(2, ememberdata);
 
 			std::vector<size_t> edistribution;
-			for (auto i = info::mesh->elements->elementsDistribution.begin(); i != info::mesh->elements->elementsDistribution.end(); ++i) {
+			for (auto i = info::mesh->domains->elements.begin(); i != info::mesh->domains->elements.end(); ++i) {
 				auto it = std::lower_bound(permutation.begin(), permutation.end(), *i, [&] (esint i, esint d) { return emembership[i] - eoffset < d; });
 				edistribution.push_back(it - permutation.begin());
 			}
@@ -668,7 +668,7 @@ void computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion)
 
 		int nface;
 		esint element, neighbor, prev = 0;
-		auto enodes = info::mesh->elements->procNodes->cbegin();
+		auto enodes = info::mesh->elements->nodes->cbegin();
 		auto neighbors = info::mesh->elements->faceNeighbors->cbegin();
 		const auto &regions = info::mesh->elements->regions->datatarray();
 

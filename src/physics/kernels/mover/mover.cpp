@@ -658,9 +658,9 @@ void Move<ElementNodeValues, OutputElements>::operator()()
 
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; t++) {
-		size_t noffset = elements->procNodes->datatarray().distribution()[t];
+		size_t noffset = elements->nodes->datatarray().distribution()[t];
 		size_t eoffset = elements->distribution[t];
-		for (auto enodes = elements->procNodes->cbegin(t); enodes != elements->procNodes->cend(t); ++enodes, ++eoffset) {
+		for (auto enodes = elements->nodes->cbegin(t); enodes != elements->nodes->cend(t); ++enodes, ++eoffset) {
 			for (int d = 0; d < to.data->dimension; d++) {
 				double sum = 0;
 				for (auto n = enodes->begin(); n != enodes->end(); ++n, ++noffset) {

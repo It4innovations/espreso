@@ -672,7 +672,7 @@ void partitiate(esint parts, bool uniformDecomposition)
 
 	for (size_t i = 1; i < domainDistribution.size(); i++) {
 		if (domainDistribution[i - 1] != domainDistribution[i]) {
-			info::mesh->elements->clusters.push_back(clusters[i - 1]);
+			info::mesh->domains->cluster.push_back(clusters[i - 1]);
 		}
 	}
 	utils::removeDuplicates(domainDistribution);
@@ -698,17 +698,17 @@ void partitiate(esint parts, bool uniformDecomposition)
 	domainCounter.push_back(info::mesh->domains->size);
 	info::mesh->domains->distribution = domainCounter;
 
-	info::mesh->elements->elementsDistribution.push_back(0);
+	info::mesh->domains->elements.push_back(0);
 	for (size_t t = 0; t < threads; t++) {
 		if (domainDistribution.size() < threads + 1) {
 			if (t < domainDistribution.size() - 1) {
-				info::mesh->elements->elementsDistribution.push_back(domainDistribution[t + 1]);
+				info::mesh->domains->elements.push_back(domainDistribution[t + 1]);
 			}
 		} else {
 			auto begin = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution[t]);
 			auto end   = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution[t + 1]);
 			for (auto it = begin; it != end; ++it) {
-				info::mesh->elements->elementsDistribution.push_back(*(it + 1));
+				info::mesh->domains->elements.push_back(*(it + 1));
 			}
 		}
 	}
@@ -849,7 +849,7 @@ void exchangeElements(const std::vector<esint> &partition)
 		auto body = info::mesh->elements->body->datatarray().data();
 		auto material = info::mesh->elements->material->datatarray().data();
 		auto epointer = info::mesh->elements->epointers->datatarray().data();
-		auto enodes = info::mesh->elements->procNodes->cbegin(t);
+		auto enodes = info::mesh->elements->nodes->cbegin(t);
 		auto eneighbors = info::mesh->elements->faceNeighbors->cbegin(t);
 		auto nIDs = info::mesh->nodes->IDs->datatarray().data();
 
@@ -1343,7 +1343,7 @@ void exchangeElements(const std::vector<esint> &partition)
 	elements->body = new serializededata<esint, int>(1, elemsBody);
 	elements->material = new serializededata<esint, int>(1, elemsMaterial);
 	elements->epointers = new serializededata<esint, Element*>(1, elemsEpointer);
-	elements->procNodes = new serializededata<esint, esint>(elemsNodesDistribution, elemsNodesData); // global IDs
+	elements->nodes = new serializededata<esint, esint>(elemsNodesDistribution, elemsNodesData); // global IDs
 
 	elements->regionMaskSize = eregionsBitMaskSize;
 	elements->regions = new serializededata<esint, esint>(eregionsBitMaskSize, elemsRegions);
@@ -1656,7 +1656,7 @@ void exchangeElements(const std::vector<esint> &partition)
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (auto n = elements->procNodes->begin(t)->begin(); n != elements->procNodes->end(t)->begin(); ++n) {
+		for (auto n = elements->nodes->begin(t)->begin(); n != elements->nodes->end(t)->begin(); ++n) {
 			*n = *std::lower_bound(permutation.begin(), permutation.end(), *n, [&] (esint i, esint val) {
 				return nodes->IDs->datatarray()[i] < val;
 			});

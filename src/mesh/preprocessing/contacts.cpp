@@ -77,7 +77,7 @@ void computeBodiesSurface()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto nodes = info::mesh->elements->procNodes->cbegin(t);
+		auto nodes = info::mesh->elements->nodes->cbegin(t);
 		auto neighs = info::mesh->elements->faceNeighbors->cbegin(t);
 		const auto &epointers = info::mesh->elements->epointers->datatarray();
 

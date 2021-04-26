@@ -38,8 +38,8 @@ void computeNodeDomainDistribution()
 
 		for (size_t d = info::mesh->domains->distribution[t]; d != info::mesh->domains->distribution[t + 1]; ++d) {
 			std::vector<esint> dnodes(
-					(info::mesh->elements->procNodes->begin() + info::mesh->elements->elementsDistribution[d])->begin(),
-					(info::mesh->elements->procNodes->begin() + info::mesh->elements->elementsDistribution[d + 1])->begin());
+					(info::mesh->elements->nodes->begin() + info::mesh->domains->elements[d])->begin(),
+					(info::mesh->elements->nodes->begin() + info::mesh->domains->elements[d + 1])->begin());
 
 			utils::sortAndRemoveDuplicates(dnodes);
 			for (size_t i = 0; i < dnodes.size(); i++) {
@@ -137,17 +137,17 @@ void computeLocalIndices()
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
 
-	info::mesh->elements->domainNodes = new serializededata<esint, esint>(*info::mesh->elements->procNodes);
+	info::mesh->domains->nodes = new serializededata<esint, esint>(*info::mesh->elements->nodes);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t d = info::mesh->domains->distribution[t]; d != info::mesh->domains->distribution[t + 1]; ++d) {
-			esint dbegin = (info::mesh->elements->procNodes->begin() + info::mesh->elements->elementsDistribution[d])->begin() - info::mesh->elements->procNodes->datatarray().begin();
-			esint dend = (info::mesh->elements->procNodes->begin() + info::mesh->elements->elementsDistribution[d + 1])->begin() - info::mesh->elements->procNodes->datatarray().begin();
+			esint dbegin = (info::mesh->elements->nodes->begin() + info::mesh->domains->elements[d])->begin() - info::mesh->elements->nodes->datatarray().begin();
+			esint dend = (info::mesh->elements->nodes->begin() + info::mesh->domains->elements[d + 1])->begin() - info::mesh->elements->nodes->datatarray().begin();
 
-			std::vector<esint> dnodes(info::mesh->elements->domainNodes->datatarray().begin() + dbegin, info::mesh->elements->domainNodes->datatarray().begin() + dend);
+			std::vector<esint> dnodes(info::mesh->domains->nodes->datatarray().begin() + dbegin, info::mesh->domains->nodes->datatarray().begin() + dend);
 			utils::sortAndRemoveDuplicates(dnodes);
-			for (auto n = info::mesh->elements->domainNodes->datatarray().begin() + dbegin; n != info::mesh->elements->domainNodes->datatarray().begin() + dend; ++n) {
+			for (auto n = info::mesh->domains->nodes->datatarray().begin() + dbegin; n != info::mesh->domains->nodes->datatarray().begin() + dend; ++n) {
 				*n = std::lower_bound(dnodes.begin(), dnodes.end(), *n) - dnodes.begin();
 			}
 		}
@@ -167,7 +167,7 @@ void computeDomainDual()
 	std::vector<std::vector<std::pair<esint, esint> > > rBuffer(info::mesh->neighborsWithMe.size());
 
 	for (esint d = 0; d < info::mesh->domains->size; ++d) {
-		sBuffer.push_back(std::make_pair(info::mesh->elements->offset + info::mesh->elements->elementsDistribution[d + 1], d + info::mesh->domains->offset));
+		sBuffer.push_back(std::make_pair(info::mesh->elements->offset + info::mesh->domains->elements[d + 1], d + info::mesh->domains->offset));
 	}
 
 	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighborsWithMe)) {
@@ -192,10 +192,10 @@ void computeDomainDual()
 		auto neighs = info::mesh->elements->faceNeighbors->cbegin(t);
 		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			std::vector<esint> ndomains, ndomainsFull;
-			for (esint e = info::mesh->elements->elementsDistribution[d]; e < info::mesh->elements->elementsDistribution[d + 1]; ++e, ++neighs) {
+			for (esint e = info::mesh->domains->elements[d]; e < info::mesh->domains->elements[d + 1]; ++e, ++neighs) {
 				for (auto n = neighs->begin(); n != neighs->end(); ++n) {
 					if (*n != -1) {
-						if (*n < info::mesh->elements->offset + info::mesh->elements->elementsDistribution[d] || info::mesh->elements->offset + info::mesh->elements->elementsDistribution[d + 1] <= *n) {
+						if (*n < info::mesh->elements->offset + info::mesh->domains->elements[d] || info::mesh->elements->offset + info::mesh->domains->elements[d + 1] <= *n) {
 							auto it = std::lower_bound(gBuffer.begin(), gBuffer.end(), *n, [] (const std::pair<esint, esint> &info, const esint &e) { return info.first <= e; });
 							ndomainsFull.push_back(it->second);
 							if (info::mesh->domains->offset <= ndomainsFull.back() && ndomainsFull.back() < info::mesh->domains->offset + info::mesh->domains->size) {
@@ -222,8 +222,8 @@ void computeDomainDual()
 	utils::threadDistributionToFullDistribution(dist);
 	utils::threadDistributionToFullDistribution(distFull);
 
-	info::mesh->FETIData->domainDual = new serializededata<esint, esint>(dist, data);
-	info::mesh->FETIData->fullDomainDual = new serializededata<esint, esint>(distFull, dataFull);
+	info::mesh->domains->localDual = new serializededata<esint, esint>(dist, data);
+	info::mesh->domains->dual = new serializededata<esint, esint>(distFull, dataFull);
 
 	eslog::checkpointln("MESH: DOMAIN DUAL GRAPH COMPUTED");
 }
@@ -253,10 +253,10 @@ void computeDomainsSurface()
 		}
 
 		auto neighbors = info::mesh->elements->faceNeighbors->cbegin(t);
-		auto enodes = info::mesh->elements->procNodes->cbegin(t);
+		auto enodes = info::mesh->elements->nodes->cbegin(t);
 		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
-			esint dbegin = info::mesh->elements->elementsDistribution[d];
-			esint dend = info::mesh->elements->elementsDistribution[d + 1];
+			esint dbegin = info::mesh->domains->elements[d];
+			esint dend = info::mesh->domains->elements[d + 1];
 
 			for (esint e = dbegin; e < dend; ++e, ++neighbors, ++enodes) {
 				auto epointer = info::mesh->elements->epointers->datatarray()[e];

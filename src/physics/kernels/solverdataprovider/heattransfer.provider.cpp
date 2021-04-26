@@ -171,7 +171,7 @@ void HeatTransferSolverDataProvider::FETI::fillKernels(MatrixCSRFETI &K, MatrixC
 				if (ortogonalizeCluster) {
 					esint nSum = 0;
 					for (esint dd = 0; dd < info::mesh->domains->size; dd++) {
-						if (info::mesh->elements->clusters[d] == info::mesh->elements->clusters[dd]) {
+						if (info::mesh->domains->cluster[d] == info::mesh->domains->cluster[dd]) {
 							nSum += K[dd].nrows;
 						}
 					}

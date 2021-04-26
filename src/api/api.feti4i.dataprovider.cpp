@@ -107,7 +107,7 @@ void APIDataProvider::fillMatrix(std::function<void(FETI4IInt, FETI4IInt, FETI4I
 		}
 		add(type, size, nodes, filler.Ke.vals);
 	};
-	auto enodes = info::mesh->elements->procNodes->begin();
+	auto enodes = info::mesh->elements->nodes->begin();
 	for (auto range = info::mesh->elements->eintervals.begin(); range != info::mesh->elements->eintervals.end(); ++range) {
 		for (esint e = range->begin; e < range->end; ++e, filler.begin = filler.end++, ++enodes) {
 			type = (int)Mesh::edata[range->code].type;

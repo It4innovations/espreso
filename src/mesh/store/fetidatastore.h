@@ -11,9 +11,6 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 
 struct FETIDataStore {
 
-	// B0 from kernels
-	serializededata<esint, esint> *domainDual, *fullDomainDual;
-
 	// B0 from corners
 	std::vector<esint> corners;
 

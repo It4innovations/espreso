@@ -81,7 +81,7 @@ void NodesUniformDistributedComposer::_buildPatterns()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		esint tKsize = 0, tRHSsize = 0;
-		for (auto e = info::mesh->elements->procNodes->begin(t); e != info::mesh->elements->procNodes->end(t); ++e) {
+		for (auto e = info::mesh->elements->nodes->begin(t); e != info::mesh->elements->nodes->end(t); ++e) {
 			tRHSsize += e->size() * _DOFs;
 			tKsize += getMatrixSize(e->size() * _DOFs, omitLower);
 		}
@@ -138,7 +138,7 @@ void NodesUniformDistributedComposer::_buildPatterns()
 			insertKPattern(Koffset, _RHS, RHSoffset, omitLower);
 		};
 
-		for (auto e = info::mesh->elements->procNodes->cbegin(t); e != info::mesh->elements->procNodes->cend(t); ++e) {
+		for (auto e = info::mesh->elements->nodes->cbegin(t); e != info::mesh->elements->nodes->cend(t); ++e) {
 			insert(e);
 			Koffset += getMatrixSize(e->size() * _DOFs, omitLower);
 		}

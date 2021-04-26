@@ -266,7 +266,7 @@ void EnSightGold::geometry()
 				for (size_t i = 0; i < region->eintervals.size(); i++) {
 					if (region->eintervals[i].code == etype) {
 						for (esint e = region->eintervals[i].begin; e < region->eintervals[i].end; ++e) {
-							auto element = info::mesh->elements->procNodes->cbegin() + region->elements->datatarray()[e];
+							auto element = info::mesh->elements->nodes->cbegin() + region->elements->datatarray()[e];
 							for (auto n = element->begin(); n != element->end(); ++n) {
 								_writer.enode(region->getPosition(*n) + 1);
 							}
@@ -567,7 +567,7 @@ void EnSightGold::decomposition()
 	esint cluster = info::mesh->elements->nclusters;
 	Communication::exscan(cluster, MPITools::asynchronous);
 	store("CLUSTER", [&] (const ElementsInterval &interval, esint eindex) {
-		return info::mesh->elements->clusters[interval.domain - info::mesh->domains->offset] + cluster;
+		return info::mesh->domains->cluster[interval.domain - info::mesh->domains->offset] + cluster;
 	});
 	store("MPI", [&] (const ElementsInterval &interval, esint eindex) {
 		return info::mpi::rank;

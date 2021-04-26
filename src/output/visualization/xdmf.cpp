@@ -259,7 +259,7 @@ void XDMF::updateMesh()
 
 			Element::CODE code = getcode(region->ecounters); // Element::CODE::SIZE is used for representation of Mixed topology
 			esint prev = 0;
-			auto element = info::mesh->elements->procNodes->cbegin();
+			auto element = info::mesh->elements->nodes->cbegin();
 			for (auto e = region->elements->datatarray().cbegin(); e != region->elements->datatarray().cend(); prev = *e++) {
 				element += *e - prev;
 				if (code == Element::CODE::SIZE) {

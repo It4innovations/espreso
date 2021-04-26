@@ -447,7 +447,7 @@ void linkNodesAndElements()
 {
 	linkNodesAndElements(
 			info::mesh->nodes->elements,
-			info::mesh->elements->procNodes,
+			info::mesh->elements->nodes,
 			info::mesh->elements->IDs,
 			info::mesh->elements->distribution,
 			true);
@@ -786,7 +786,7 @@ void computeElementsFaceNeighbors()
 	computeElementsNeighbors(
 			info::mesh->nodes->elements,
 			info::mesh->elements->faceNeighbors,
-			info::mesh->elements->procNodes,
+			info::mesh->elements->nodes,
 			info::mesh->elements->IDs,
 			info::mesh->elements->epointers,
 			info::mesh->elements->distribution,
@@ -802,7 +802,7 @@ void computeElementsEdgeNeighbors()
 	computeElementsNeighbors(
 			info::mesh->nodes->elements,
 			info::mesh->elements->edgeNeighbors,
-			info::mesh->elements->procNodes,
+			info::mesh->elements->nodes,
 			info::mesh->elements->IDs,
 			info::mesh->elements->epointers,
 			info::mesh->elements->distribution,
@@ -926,7 +926,7 @@ void computeElementsCenters()
 	#pragma omp parallel for
 	for (int t = 0; t < threads; t++) {
 		auto center = info::mesh->elements->centers->datatarray().begin(t);
-		for (auto e = info::mesh->elements->procNodes->cbegin(t); e != info::mesh->elements->procNodes->cend(t); ++e, ++center) {
+		for (auto e = info::mesh->elements->nodes->cbegin(t); e != info::mesh->elements->nodes->cend(t); ++e, ++center) {
 			for (auto n = e->begin(); n != e->end(); ++n) {
 				*center += info::mesh->nodes->coordinates->datatarray()[*n];
 			}
@@ -1026,7 +1026,7 @@ void computeRegionsSurface()
 		for (size_t t = 0; t < threads; t++) {
 			esint hindex, addFace = 0;
 			int rsize = info::mesh->elements->regionMaskSize;
-			auto nodes = info::mesh->elements->procNodes->cbegin();
+			auto nodes = info::mesh->elements->nodes->cbegin();
 			auto neighs = info::mesh->elements->faceNeighbors->cbegin();
 			const auto &regions = info::mesh->elements->regions->datatarray();
 			const auto &epointers = info::mesh->elements->epointers->datatarray();
@@ -1206,11 +1206,11 @@ void computeBoundaryNodes(std::vector<esint> &externalBoundary, std::vector<esin
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<esint> texternal, tinternal;
 
-		auto neighbors = info::mesh->elements->faceNeighbors->cbegin() + info::mesh->elements->elementsDistribution[info::mesh->domains->distribution[t]];
-		auto enodes = info::mesh->elements->procNodes->cbegin() + info::mesh->elements->elementsDistribution[info::mesh->domains->distribution[t]];
+		auto neighbors = info::mesh->elements->faceNeighbors->cbegin() + info::mesh->domains->elements[info::mesh->domains->distribution[t]];
+		auto enodes = info::mesh->elements->nodes->cbegin() + info::mesh->domains->elements[info::mesh->domains->distribution[t]];
 		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
-			esint dbegin = info::mesh->elements->elementsDistribution[d];
-			esint dend = info::mesh->elements->elementsDistribution[d + 1];
+			esint dbegin = info::mesh->domains->elements[d];
+			esint dend = info::mesh->domains->elements[d + 1];
 
 			for (esint e = dbegin; e < dend; ++e, ++neighbors, ++enodes) {
 				auto epointer = info::mesh->elements->epointers->datatarray()[e];

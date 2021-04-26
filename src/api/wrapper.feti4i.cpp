@@ -307,7 +307,7 @@ void FETI4ICreateInstance(
 	matrix->mesh.nodes->IDs = new serializededata<esint, esint>(1, tarray<esint>(threads, matrix->l2g));
 	matrix->mesh.nodes->distribution = matrix->mesh.nodes->IDs->datatarray().distribution();
 	matrix->mesh.elements->epointers = new serializededata<esint, Element*>(1, etype);
-	matrix->mesh.elements->procNodes = new serializededata<esint, esint>(ndist, nodes);
+	matrix->mesh.elements->nodes = new serializededata<esint, esint>(ndist, nodes);
 	matrix->mesh.elements->stiffness = new serializededata<esint, double>(sdist, stiffness);
 
 	matrix->mesh.elements->offset = matrix->mesh.elements->epointers->datatarray().size();;
@@ -337,9 +337,9 @@ void FETI4ICreateInstance(
 			system->data.K[d].type = static_cast<MatrixType>(matrix->type);
 
 			std::vector<FETI4IIJV> m;
-			auto enodes = info::mesh->elements->procNodes->begin() + info::mesh->elements->elementsDistribution[d];
-			auto stiffness = info::mesh->elements->stiffness->begin() + info::mesh->elements->elementsDistribution[d];
-			for (esint e = info::mesh->elements->elementsDistribution[d]; e < info::mesh->elements->elementsDistribution[d + 1]; ++e, ++enodes, ++stiffness) {
+			auto enodes = info::mesh->elements->nodes->begin() + info::mesh->domains->elements[d];
+			auto stiffness = info::mesh->elements->stiffness->begin() + info::mesh->domains->elements[d];
+			for (esint e = info::mesh->domains->elements[d]; e < info::mesh->domains->elements[d + 1]; ++e, ++enodes, ++stiffness) {
 				dofs.clear();
 				for (auto n = enodes->begin(); n != enodes->end(); ++n) {
 					auto dmap = composer.DOFMap()->begin() + (*n * matrix->dofs);

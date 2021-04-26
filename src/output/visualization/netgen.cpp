@@ -55,7 +55,7 @@ void Netgen::updateMesh()
 		const ElementsRegionStore *region = info::mesh->elementsRegions[r];
 
 		for (auto e = region->elements->datatarray().begin(); e != region->elements->datatarray().end(); ++e) {
-			auto element = (info::mesh->elements->procNodes->cbegin() + *e)->data();
+			auto element = (info::mesh->elements->nodes->cbegin() + *e)->data();
 			_writer.int32s(r);
 			_writer.int32s(info::mesh->nodes->uniqInfo.position[element[0]] + 1);
 			_writer.int32s(info::mesh->nodes->uniqInfo.position[element[1]] + 1);

@@ -231,7 +231,7 @@ esint VTKLegacy::insertElements(const ElementsRegionStore *store, const std::vec
 	int intsize = 11;
 	for (auto e = store->elements->datatarray().cbegin(); e != store->elements->datatarray().cend(); ++e) {
 		esint nnodes = store->nodes->datatarray().size();
-		auto element = info::mesh->elements->procNodes->cbegin() + *e;
+		auto element = info::mesh->elements->nodes->cbegin() + *e;
 		_writer.insert(element->size() > 9 ? 2 : 1, _esize.data() + element->size() * 2 - 2);
 		if (info::mesh->elements->size < nnodes * 5) {
 			for (auto n = element->begin(); n != element->end(); ++n) {
@@ -417,7 +417,7 @@ void VTKLegacy::insertDecomposition(const ElementsRegionStore *store)
 	esint cluster = info::mesh->elements->nclusters;
 	Communication::exscan(cluster, MPITools::asynchronous);
 	iterate("CLUSTER", [&] (const ElementsInterval &interval, esint eindex) {
-		return info::mesh->elements->clusters[interval.domain - info::mesh->domains->offset] + cluster;
+		return info::mesh->domains->cluster[interval.domain - info::mesh->domains->offset] + cluster;
 	});
 	iterate("MPI", [&] (const ElementsInterval &interval, esint eindex) {
 		return info::mpi::rank;

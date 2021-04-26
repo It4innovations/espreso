@@ -17,6 +17,13 @@ struct DomainStore: UniqueDataInfo {
 
 	std::vector<esint> gatherProcDistribution();
 
+	serializededata<esint, esint>* nodes;
+	std::vector<esint> elements;
+	std::vector<int> cluster;
+
+	serializededata<esint, esint> *dual;
+	serializededata<esint, esint> *localDual;
+
 	DomainStore();
 	~DomainStore();
 };

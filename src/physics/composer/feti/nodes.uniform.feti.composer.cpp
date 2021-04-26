@@ -95,8 +95,8 @@ void NodesUniformFETIComposer::_initDOFMap()
 
 		for (size_t d = info::mesh->domains->distribution[t]; d != info::mesh->domains->distribution[t + 1]; ++d) {
 			std::vector<esint> dnodes(
-					(info::mesh->elements->procNodes->begin() + info::mesh->elements->elementsDistribution[d])->begin(),
-					(info::mesh->elements->procNodes->begin() + info::mesh->elements->elementsDistribution[d + 1])->begin());
+					(info::mesh->elements->nodes->begin() + info::mesh->domains->elements[d])->begin(),
+					(info::mesh->elements->nodes->begin() + info::mesh->domains->elements[d + 1])->begin());
 
 			utils::sortAndRemoveDuplicates(dnodes);
 			for (size_t i = 0; i < dnodes.size(); i++) {
@@ -272,8 +272,8 @@ void NodesUniformFETIComposer::_buildKFEMPattern(esint domain)
 {
 	_data->K[domain].type = kernel->solverDataProvider->feti->getMatrixType(domain);
 
-	auto ebegin = info::mesh->elements->procNodes->cbegin() + info::mesh->elements->elementsDistribution[domain];
-	auto eend = info::mesh->elements->procNodes->cbegin() + info::mesh->elements->elementsDistribution[domain + 1];
+	auto ebegin = info::mesh->elements->nodes->cbegin() + info::mesh->domains->elements[domain];
+	auto eend = info::mesh->elements->nodes->cbegin() + info::mesh->domains->elements[domain + 1];
 
 	esint Ksize = 0, RHSsize = 0;
 	for (auto e = ebegin; e != eend; ++e) {
@@ -959,7 +959,7 @@ void NodesUniformFETIComposer::computeFixPoints()
 		std::vector<esint> dist, data, partition;
 		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			size_t size = fixPoints[t].size();
-			addFixPoints(info::mesh->elements->procNodes, info::mesh->elements->elementsDistribution[d], info::mesh->elements->elementsDistribution[d + 1], info::mesh->elements->epointers, fixPoints[t]);
+			addFixPoints(info::mesh->elements->nodes, info::mesh->domains->elements[d], info::mesh->domains->elements[d + 1], info::mesh->elements->epointers, fixPoints[t]);
 			utils::sortAndRemoveDuplicates(fixPoints[t], size);
 			fixPointsDist[t].push_back(fixPoints[t].size());
 		}

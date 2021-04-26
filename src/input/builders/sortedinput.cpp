@@ -178,7 +178,7 @@ void SortedInput::fillCoordinates()
 	std::vector<std::vector<esint> > nodes(threads);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		std::vector<esint> tnodes(info::mesh->elements->procNodes->datatarray().begin(t), info::mesh->elements->procNodes->datatarray().end(t));
+		std::vector<esint> tnodes(info::mesh->elements->nodes->datatarray().begin(t), info::mesh->elements->nodes->datatarray().end(t));
 		utils::sortAndRemoveDuplicates(tnodes);
 		nodes[t].swap(tnodes);
 	}
@@ -363,7 +363,7 @@ void SortedInput::fillCoordinates()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		for (auto n = info::mesh->elements->procNodes->begin(t)->begin(); n != info::mesh->elements->procNodes->end(t)->begin(); ++n) {
+		for (auto n = info::mesh->elements->nodes->begin(t)->begin(); n != info::mesh->elements->nodes->end(t)->begin(); ++n) {
 			*n = std::lower_bound(info::mesh->nodes->IDs->datatarray().begin(), info::mesh->nodes->IDs->datatarray().end(), *n) - info::mesh->nodes->IDs->datatarray().begin();
 		}
 	}

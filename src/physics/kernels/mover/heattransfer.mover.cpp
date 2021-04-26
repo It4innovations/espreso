@@ -27,13 +27,13 @@ HeatTransferElementIterator::HeatTransferElementIterator(HeatTransferElementIter
 		case HumanThermoregulationSystem::ACTIVITY_LEVEL_UNIT::TEACHER:activity_level_unit=1.5; break;
 	}
 
-	coordinates.set(info::mesh->nodes->coordinates, info::mesh->elements->procNodes);
+	coordinates.set(info::mesh->nodes->coordinates, info::mesh->elements->nodes);
 
-	temperature      .setInput(configuration.temperature            , nodeparams  , info::mesh->elements->procNodes);
-	heatSource       .setInput(configuration.heat_source            , kernelparams, info::mesh->elements->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
-	motion           .setInput(configuration.translation_motions    , kernelparams, info::mesh->elements->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
-//	bioHeat          .setInput(configuration.bio_heat               , kernelparams, info::mesh->elements->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
-//	bioHeatDerivation.setInput(configuration.bio_heat               , kernelparams, info::mesh->elements->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
+	temperature      .setInput(configuration.temperature            , nodeparams  , info::mesh->elements->nodes);
+	heatSource       .setInput(configuration.heat_source            , kernelparams, info::mesh->elements->nodes, MoverParameter::Properties::ALLOW_CONSTANT);
+	motion           .setInput(configuration.translation_motions    , kernelparams, info::mesh->elements->nodes, MoverParameter::Properties::ALLOW_CONSTANT);
+//	bioHeat          .setInput(configuration.bio_heat               , kernelparams, info::mesh->elements->nodes, MoverParameter::Properties::ALLOW_CONSTANT);
+//	bioHeatDerivation.setInput(configuration.bio_heat               , kernelparams, info::mesh->elements->nodes, MoverParameter::Properties::ALLOW_CONSTANT);
 
 	if (previous) {
 		temperature.output = previous->temperature.output;
@@ -57,12 +57,12 @@ HeatTransferElementIterator::HeatTransferElementIterator(HeatTransferElementIter
 		flux        .setOutput(NamedData::DataType::VECTOR, "FLUX"              , info::ecf->output.results_selection.flux);
 		htc         .setOutput(NamedData::DataType::SCALAR, "HTC"               , info::ecf->output.results_selection.htc);
 		if (dimension == 2) {
-			initialTemperature.setInput(physics.initial_temperature, kernelparams, info::mesh->elements->procNodes);
-			thickness.setInput(physics.thickness, kernelparams, info::mesh->elements->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
+			initialTemperature.setInput(physics.initial_temperature, kernelparams, info::mesh->elements->nodes);
+			thickness.setInput(physics.thickness, kernelparams, info::mesh->elements->nodes, MoverParameter::Properties::ALLOW_CONSTANT);
 			thickness.setOutput(NamedData::DataType::SCALAR, "THICKNESS"        , info::ecf->output.results_selection.thickness);
 		}
 		if (dimension == 3) {
-			initialTemperature.setInput(physics.initial_temperature, kernelparams, info::mesh->elements->procNodes);
+			initialTemperature.setInput(physics.initial_temperature, kernelparams, info::mesh->elements->nodes);
 		}
 	}
 
@@ -181,7 +181,7 @@ void Move<InputBioHeat, ElementNodeValues>::operator()()
 			ElementsRegionStore *region = info::mesh->eregion(it->first);
 			Evaluator::Params params;
 			for (esint *e = region->elements->datatarray().begin(t), i = 0; e < region->elements->datatarray().end(t); ++e) {
-				auto element = info::mesh->elements->procNodes->begin() + *e;
+				auto element = info::mesh->elements->nodes->begin() + *e;
 				for (auto n = element->begin(); n != element->end(); ++n, ++i) {
 					params.coords(from.params->ncoords(), from.params->coords() + *n * from.params->ncoords()).temp(from.params->temp() + *n);
 					double temp = from.params->temp()[*n];
@@ -222,7 +222,7 @@ void Move<InputBioHeatDerivation, ElementNodeValues>::operator()()
 			ElementsRegionStore *region = info::mesh->eregion(it->first);
 			Evaluator::Params params;
 			for (esint *e = region->elements->datatarray().begin(t), i = 0; e < region->elements->datatarray().end(t); ++e) {
-				auto element = info::mesh->elements->procNodes->begin() + *e;
+				auto element = info::mesh->elements->nodes->begin() + *e;
 				for (auto n = element->begin(); n != element->end(); ++n, ++i) {
 					params.coords(from.params->ncoords(), from.params->coords() + *n * from.params->ncoords()).temp(from.params->temp() + *n);
 					double temp = from.params->temp()[*n];

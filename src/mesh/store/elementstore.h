@@ -39,8 +39,7 @@ struct ElementStore: UniqueDataInfo {
 	std::vector<size_t> distribution;
 
 	serializededata<esint, esint>* IDs;
-	serializededata<esint, esint>* procNodes;
-	serializededata<esint, esint>* domainNodes;
+	serializededata<esint, esint>* nodes;
 	serializededata<esint, Point>* centers;
 
 	serializededata<esint, int>* body;
@@ -55,8 +54,6 @@ struct ElementStore: UniqueDataInfo {
 	serializededata<esint, double>* stiffness;
 
 	UniqueDataInfo bodies;
-	std::vector<esint> elementsDistribution;
-	std::vector<int> clusters;
 	esint nclusters;
 
 	int regionMaskSize;

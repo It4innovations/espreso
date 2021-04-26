@@ -58,7 +58,7 @@ Catalyst::Catalyst()
 	_VTKGrid->Allocate(_mesh.elements->size);
 	std::vector<vtkIdType> nodes(20);
 	auto epointers = _mesh.elements->epointers->datatarray().cbegin();
-	for (auto e = _mesh.elements->procNodes->cbegin(); e != _mesh.elements->procNodes->cend(); ++e, ++epointers) {
+	for (auto e = _mesh.elements->nodes->cbegin(); e != _mesh.elements->nodes->cend(); ++e, ++epointers) {
 		nodes.clear();
 		nodes.insert(nodes.end(), e->begin(), e->end());
 		_VTKGrid->InsertNextCell(VTKWritter::ecode((*epointers)->code), nodes.size(), nodes.data());

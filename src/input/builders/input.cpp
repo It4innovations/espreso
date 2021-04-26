@@ -830,7 +830,7 @@ void Input::fillElements()
 	info::mesh->elements->totalSize = _etypeDistribution.back();
 	info::mesh->elements->distribution = edistribution;
 	info::mesh->elements->IDs = new serializededata<esint, esint>(1, eIDs);
-	info::mesh->elements->procNodes = new serializededata<esint, esint>(tedist, tnodes);
+	info::mesh->elements->nodes = new serializededata<esint, esint>(tedist, tnodes);
 	info::mesh->elements->epointers = new serializededata<esint, Element*>(1, epointers);
 	info::mesh->elements->material = new serializededata<esint, int>(1, eMat);
 	info::mesh->elements->body = new serializededata<esint, int>(1, eBody);

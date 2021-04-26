@@ -28,7 +28,7 @@ FETIComposer::FETIComposer(const FETIConfiguration &configuration, Kernel *kerne
 : Composer(kernel), _configuration(configuration), _data(data), _DOFMap(NULL)
 {
 //	auto isBEMDomain = [&](esint domain) {
-//		auto eregions = (info::mesh->elements->regions->begin() + info::mesh->elements->elementsDistribution[domain])->begin();
+//		auto eregions = (info::mesh->elements->regions->begin() + info::mesh->domains->elements[domain])->begin();
 //		for (int byte = 0; byte < info::mesh->elements->regionMaskSize; ++byte) {
 //			for (size_t bit = 0; bit < sizeof(esint); bit++) {
 //				if (eregions[byte] & 1 << bit) {
@@ -141,8 +141,8 @@ void FETIComposer::assemble(const Builder &builder)
 			}; break;
 		}
 
-		filler.begin = info::mesh->elements->elementsDistribution[d];
-		filler.end = info::mesh->elements->elementsDistribution[d + 1];
+		filler.begin = info::mesh->domains->elements[d];
+		filler.end = info::mesh->domains->elements[d + 1];
 
 		if (_BEMDomain[d]) {
 //			assembler->processBEMdomain(d, _data->K[d].vals);

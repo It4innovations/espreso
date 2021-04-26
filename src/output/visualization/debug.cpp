@@ -107,14 +107,14 @@ esint DebugOutput::elements(esint noffset, esint nother, esint nothernodes)
 {
 	esint esize = _mesh.elementsRegions.front()->elements->structures(), gesize;
 	Communication::allReduce(&esize, &gesize, 1, MPITools::getType<esint>().mpitype, MPI_SUM);
-	esint ensize = _mesh.elements->procNodes->datatarray().size(), gensize;
+	esint ensize = _mesh.elements->nodes->datatarray().size(), gensize;
 	Communication::allReduce(&ensize, &gensize, 1, MPITools::getType<esint>().mpitype, MPI_SUM);
 
 	if (Visualization::isRoot()) {
 		_writer.cells(gesize + nother, gesize + gensize + nother + nothernodes);
 	}
 
-	for (auto e = _mesh.elements->procNodes->begin(); e != _mesh.elements->procNodes->end(); ++e) {
+	for (auto e = _mesh.elements->nodes->begin(); e != _mesh.elements->nodes->end(); ++e) {
 		_writer.cell(e->size(), e->data(), noffset);
 	}
 	_writer.groupData();
@@ -126,14 +126,14 @@ esint DebugOutput::elementsInDomains(esint noffset, esint nother, esint notherno
 {
 	esint esize = _mesh.elementsRegions.front()->elements->structures(), gesize;
 	Communication::allReduce(&esize, &gesize, 1, MPITools::getType<esint>().mpitype, MPI_SUM);
-	esint ensize = _mesh.elements->procNodes->datatarray().size(), gensize;
+	esint ensize = _mesh.elements->nodes->datatarray().size(), gensize;
 	Communication::allReduce(&ensize, &gensize, 1, MPITools::getType<esint>().mpitype, MPI_SUM);
 
 	if (Visualization::isRoot()) {
 		_writer.cells(gesize, gesize + gensize);
 	}
 
-	for (auto e = _mesh.elements->domainNodes->begin(); e != _mesh.elements->domainNodes->end(); ++e) {
+	for (auto e = _mesh.domains->nodes->begin(); e != _mesh.domains->nodes->end(); ++e) {
 		_writer.cell(e->size(), e->data(), noffset);
 	}
 	_writer.groupData();

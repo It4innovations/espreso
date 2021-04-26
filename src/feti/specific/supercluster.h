@@ -33,6 +33,7 @@ using std::make_pair;
 #include "esinfo/eslog.hpp"
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
+#include "mesh/store/domainstore.h"
 #include "feti/generic/SparseMatrix.h"
 #include "sparsesolvers.h"
 #include "clusters.h"
@@ -89,7 +90,7 @@ public:
 
 	void init() {
 
-		numClusters 							= 1 + *std::max_element(info::mesh->elements->clusters.begin(), info::mesh->elements->clusters.end());
+		numClusters 							= 1 + *std::max_element(info::mesh->domains->cluster.begin(), info::mesh->domains->cluster.end());
 		number_of_subdomains_per_supercluster 	= instance->K.size();
 
 		x_prim_cluster1.resize( number_of_subdomains_per_supercluster );
@@ -159,8 +160,8 @@ public:
 
 			esint number_of_subdomains_per_cluster = 0;
 			std::vector<esint> domain_list;
-			for (size_t i = 0; i < info::mesh->elements->clusters.size(); i++) {
-				if (info::mesh->elements->clusters[i] == c) {
+			for (size_t i = 0; i < info::mesh->domains->cluster.size(); i++) {
+				if (info::mesh->domains->cluster[i] == c) {
 					number_of_subdomains_per_cluster++;
 					domain_list.push_back(i);
 				}

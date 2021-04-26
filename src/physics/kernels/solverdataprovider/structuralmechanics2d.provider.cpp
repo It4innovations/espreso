@@ -273,7 +273,7 @@ int StructuralMechanics2DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 		}
 	}
 
-	size_t clusters = *std::max_element(info::mesh->elements->clusters.begin(), info::mesh->elements->clusters.end()) + 1;
+	size_t clusters = *std::max_element(info::mesh->domains->cluster.begin(), info::mesh->domains->cluster.end()) + 1;
 
 	_cCenter = _cNorm = std::vector<Point>(clusters, Point(0, 0, 0));
 	_cNp = std::vector<size_t>(clusters, 0);
@@ -295,9 +295,9 @@ int StructuralMechanics2DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 	}
 
 	for (esint d = 0; d < info::mesh->domains->size; d++) {
-		_cCenter[info::mesh->elements->clusters[d]] += _dCenter[d];
+		_cCenter[info::mesh->domains->cluster[d]] += _dCenter[d];
 		_dCenter[d] = _dCenter[d] / dnodes[d].size();
-		_cNp[info::mesh->elements->clusters[d]] += dnodes[d].size();
+		_cNp[info::mesh->domains->cluster[d]] += dnodes[d].size();
 	}
 	for (size_t c = 0; c < clusters; c++) {
 		_cCenter[c] /= _cNp[c];
@@ -312,7 +312,7 @@ int StructuralMechanics2DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 				esint domain = *d - info::mesh->domains->offset;
 				Point dp = info::mesh->nodes->coordinates->datatarray()[i] - _dCenter[domain];
 				pnorm[domain] += dp.x * dp.x + dp.y * dp.y;
-				Point cp = info::mesh->nodes->coordinates->datatarray()[i] - _cCenter[info::mesh->elements->clusters[domain]];
+				Point cp = info::mesh->nodes->coordinates->datatarray()[i] - _cCenter[info::mesh->domains->cluster[domain]];
 				pcnorm[domain] += cp.x * cp.x + cp.y * cp.y;
 			}
 		}
@@ -322,7 +322,7 @@ int StructuralMechanics2DSolverDataProvider::FETI::initKernels(MatrixCSRFETI &K,
 		cbuffer1[d] += pcnorm[d];
 	}
 	for (esint d = 0; d < info::mesh->domains->size; d++) {
-		_cNorm[info::mesh->elements->clusters[d]].x += cbuffer1[d];
+		_cNorm[info::mesh->domains->cluster[d]].x += cbuffer1[d];
 	}
 	for (size_t c = 0; c < clusters; c++) {
 		_cNorm[c].x = std::sqrt(_cNorm[c].x);
@@ -421,7 +421,7 @@ void StructuralMechanics2DSolverDataProvider::FETI::fillKernels(MatrixCSRFETI &K
 			size_t np = dnodes[d].size();
 
 			if (ortogonalizeCluster) {
-				size_t cluster = info::mesh->elements->clusters[d];
+				size_t cluster = info::mesh->domains->cluster[d];
 				center = _cCenter[cluster], norm = _cNorm[cluster];
 				np = _cNp[cluster];
 			} else {
