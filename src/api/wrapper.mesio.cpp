@@ -16,6 +16,7 @@
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/domainstore.h"
+#include "mesh/store/bodystore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/boundaryregionstore.h"
 
@@ -184,7 +185,7 @@ void MESIOElementsBodies(
 	int*            bodies,
 	int**           body)
 {
-	*bodies = info::mesh->elements->bodies.totalSize;
+	*bodies = info::mesh->bodies->totalSize;
 	*body = info::mesh->elements->body->datatarray().data();
 }
 

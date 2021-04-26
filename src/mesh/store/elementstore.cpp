@@ -62,10 +62,6 @@ size_t ElementStore::packedFullSize() const
 		packedSize += sizeof(size_t) + epointers->datatarray().size() * sizeof(int);
 	}
 
-	packedSize += utils::packedSize(bodies.size);
-	packedSize += utils::packedSize(bodies.offset);
-	packedSize += utils::packedSize(bodies.totalSize);
-
 	packedSize += utils::packedSize(regionMaskSize);
 	packedSize += utils::packedSize(ecounters);
 	packedSize += utils::packedSize(eintervals);
@@ -106,10 +102,6 @@ void ElementStore::packFull(char* &p) const
 		}
 		utils::pack(eindices, p);
 	}
-
-	utils::pack(bodies.size, p);
-	utils::pack(bodies.offset, p);
-	utils::pack(bodies.totalSize, p);
 
 	utils::pack(regionMaskSize, p);
 	utils::pack(ecounters, p);
@@ -154,10 +146,6 @@ void ElementStore::unpackFull(const char* &p)
 		}
 	}
 
-	utils::unpack(bodies.size, p);
-	utils::unpack(bodies.offset, p);
-	utils::unpack(bodies.totalSize, p);
-
 	utils::unpack(regionMaskSize, p);
 	utils::unpack(ecounters, p);
 	utils::unpack(eintervals, p);
@@ -180,9 +168,6 @@ size_t ElementStore::packedSize() const
 			sizeof(size_t) + epointers->datatarray().size() * sizeof(int) +
 			utils::packedSize(body) +
 			utils::packedSize(contact) +
-			utils::packedSize(bodies.size) +
-			utils::packedSize(bodies.offset) +
-			utils::packedSize(bodies.totalSize) +
 			utils::packedSize(ecounters) +
 			utils::packedSize(eintervals);
 }
@@ -207,9 +192,6 @@ void ElementStore::pack(char* &p) const
 	}
 	utils::pack(body, p);
 	utils::pack(contact, p);
-	utils::pack(bodies.size, p);
-	utils::pack(bodies.offset, p);
-	utils::pack(bodies.totalSize, p);
 	utils::pack(ecounters, p);
 	utils::pack(eintervals, p);
 }
@@ -240,9 +222,6 @@ void ElementStore::unpack(const char* &p)
 	}
 	utils::unpack(body, p);
 	utils::unpack(contact, p);
-	utils::unpack(bodies.size, p);
-	utils::unpack(bodies.offset, p);
-	utils::unpack(bodies.totalSize, p);
 	utils::unpack(ecounters, p);
 	utils::unpack(eintervals, p);
 }

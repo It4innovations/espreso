@@ -4,6 +4,7 @@
 #include "mesh/element.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
+#include "mesh/store/bodystore.h"
 #include "mesh/store/surfacestore.h"
 #include "mesh/store/contactstore.h"
 #include "mesh/store/elementsregionstore.h"
@@ -959,7 +960,7 @@ void arrangeContactInterfaces()
 	}
 	std::sort(info::mesh->contacts->interfaces.begin(), info::mesh->contacts->interfaces.end(), comp);
 
-	std::vector<std::string> bnames(info::mesh->elements->bodies.totalSize);
+	std::vector<std::string> bnames(info::mesh->bodies->totalSize);
 	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
 		for (size_t b = 0; b < info::mesh->elementsRegions[r]->bodies.size(); ++b) {
 			if (bnames[info::mesh->elementsRegions[r]->bodies[b]].size()) {

@@ -53,8 +53,6 @@ struct ElementStore: UniqueDataInfo {
 
 	serializededata<esint, double>* stiffness;
 
-	UniqueDataInfo bodies;
-
 	int regionMaskSize;
 	std::vector<esint> ecounters;
 	std::vector<ElementsInterval> eintervals;

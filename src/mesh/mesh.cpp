@@ -31,6 +31,7 @@
 #include "store/nodestore.h"
 #include "store/domainstore.h"
 #include "store/clusterstore.h"
+#include "store/bodystore.h"
 #include "store/elementsregionstore.h"
 #include "store/boundaryregionstore.h"
 #include "store/contactinterfacestore.h"
@@ -121,6 +122,7 @@ Mesh::Mesh()
 : elements(new ElementStore()), nodes(new NodeStore()),
   domains(new DomainStore()),
   clusters(new ClusterStore()),
+  bodies(new BodyStore()),
   FETIData(new FETIDataStore()),
   halo(new ElementStore()),
   surface(new SurfaceStore()), domainsSurface(new SurfaceStore()),
@@ -787,7 +789,7 @@ void Mesh::printMeshStatistics()
 
 		eslog::info("  BODY STATISTICS %22s : %16s %16s %16s\n", "ELEMENTS REGION", "ELEMENTS", "FACES", "PROPORTION");
 		eslog::info(" ============================================================================================= \n");
-		eslog::info("  %38s : %16s %16s %9d BODIES\n", elementsRegions[0]->name.c_str(), Parser::stringwithcommas(ecountTotal).c_str(), Parser::stringwithcommas(scountTotal).c_str(), elements->bodies.totalSize);
+		eslog::info("  %38s : %16s %16s %9d BODIES\n", elementsRegions[0]->name.c_str(), Parser::stringwithcommas(ecountTotal).c_str(), Parser::stringwithcommas(scountTotal).c_str(), bodies->totalSize);
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 		for (size_t r = 1; r < elementsRegions.size(); r++) {
 			for (size_t b = 0; b < elementsRegions[r]->bodies.size(); ++b) {
@@ -846,7 +848,7 @@ void Mesh::printMeshStatistics()
 		for (size_t r = 0; r < boundaryRegions.size(); r++) {
 			eslog::info("mesh: region=%s, dimension=%d, elements=%d, nodes=%d\n", boundaryRegions[r]->name.c_str(), boundaryRegions[r]->originalDimension, boundaryRegions[r]->totalsize, boundaryRegions[r]->nodeInfo.totalSize);
 		}
-		eslog::info("mesh: region=ALL_ELEMENTS, bodies=%d\n", elements->bodies.totalSize);
+		eslog::info("mesh: region=ALL_ELEMENTS, bodies=%d\n", bodies->totalSize);
 		for (size_t r = 1; r < elementsRegions.size(); r++) {
 			for (size_t b = 0; b < elementsRegions[r]->bodies.size(); ++b) {
 				eslog::info("mesh: region=%s, b-elements=%d, b-faces=%d\n", elementsRegions[r]->name.c_str(), elementsRegions[r]->bodyElements[b], elementsRegions[r]->bodyFaces[b]);

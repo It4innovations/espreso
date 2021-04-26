@@ -19,6 +19,7 @@ struct ElementData;
 struct NodeStore;
 struct DomainStore;
 struct ClusterStore;
+struct BodyStore;
 struct NodeData;
 
 struct ElementsRegionStore;
@@ -83,6 +84,7 @@ public:
 
 	DomainStore *domains;
 	ClusterStore *clusters;
+	BodyStore *bodies;
 
 	FETIDataStore *FETIData;
 
