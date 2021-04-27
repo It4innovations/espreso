@@ -4,18 +4,24 @@
 
 namespace espreso {
 
-struct UniqueDataInfo {
-	esint offset, last, size, totalSize;
+struct DistributionInfo {
+	esint offset, size, totalSize;
 
-	UniqueDataInfo(): offset(0), last(0), size(0), totalSize(0) {}
+	DistributionInfo(): offset(0), size(0), totalSize(0) {}
+};
+
+struct DistributedDataInfo: public DistributionInfo {
+	esint last;
+
+	DistributedDataInfo(): last(0) {}
 
 	inline bool isLocal(const esint &index) const noexcept { return offset <= index && index < last; }
 };
 
-struct DuplicateDataInfo: public UniqueDataInfo {
+struct DuplicatedDataInfo: public DistributedDataInfo {
 	esint nhalo;
 
-	DuplicateDataInfo(): nhalo(0) {}
+	DuplicatedDataInfo(): nhalo(0) {}
 };
 
 }

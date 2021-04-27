@@ -14,7 +14,8 @@
 using namespace espreso;
 
 ElementStore::ElementStore()
-: distribution({0, 0}),
+: threading({0, 0}),
+  processPerCode(static_cast<int>(Element::CODE::SIZE)),
 
   IDs(NULL),
   nodes(NULL),
@@ -31,8 +32,7 @@ ElementStore::ElementStore()
 
   stiffness(NULL),
 
-  regionMaskSize(1),
-  ecounters(static_cast<int>(Element::CODE::SIZE))
+  regionMaskSize(1)
 {
 
 }
@@ -41,10 +41,7 @@ size_t ElementStore::packedFullSize() const
 {
 	size_t packedSize = 0;
 
-	packedSize += utils::packedSize(size);
-	packedSize += utils::packedSize(offset);
-	packedSize += utils::packedSize(totalSize);
-	packedSize += utils::packedSize(distribution);
+	packedSize += utils::packedSize(threading);
 
 	packedSize += utils::packedSize(IDs);
 	packedSize += utils::packedSize(nodes);
@@ -63,7 +60,6 @@ size_t ElementStore::packedFullSize() const
 	}
 
 	packedSize += utils::packedSize(regionMaskSize);
-	packedSize += utils::packedSize(ecounters);
 	packedSize += utils::packedSize(eintervals);
 	packedSize += utils::packedSize(eintervalsDistribution);
 
@@ -77,10 +73,7 @@ size_t ElementStore::packedFullSize() const
 
 void ElementStore::packFull(char* &p) const
 {
-	utils::pack(size, p);
-	utils::pack(offset, p);
-	utils::pack(totalSize, p);
-	utils::pack(distribution, p);
+	utils::pack(threading, p);
 
 	utils::pack(IDs, p);
 	utils::pack(nodes, p);
@@ -104,7 +97,6 @@ void ElementStore::packFull(char* &p) const
 	}
 
 	utils::pack(regionMaskSize, p);
-	utils::pack(ecounters, p);
 	utils::pack(eintervals, p);
 	utils::pack(eintervalsDistribution, p);
 
@@ -116,10 +108,7 @@ void ElementStore::packFull(char* &p) const
 
 void ElementStore::unpackFull(const char* &p)
 {
-	utils::unpack(size, p);
-	utils::unpack(offset, p);
-	utils::unpack(totalSize, p);
-	utils::unpack(distribution, p);
+	utils::unpack(threading, p);
 
 	utils::unpack(IDs, p);
 	utils::unpack(nodes, p);
@@ -140,14 +129,13 @@ void ElementStore::unpackFull(const char* &p)
 		if (epointers != NULL) {
 			delete epointers;
 		}
-		epointers = new serializededata<esint, Element*>(1, tarray<Element*>(info::env::OMP_NUM_THREADS, size));
-		for (esint i = 0; i < size; ++i) {
+		epointers = new serializededata<esint, Element*>(1, tarray<Element*>(info::env::OMP_NUM_THREADS, process.size));
+		for (esint i = 0; i < process.size; ++i) {
 			epointers->datatarray()[i] = &Mesh::edata[eindices[i]];
 		}
 	}
 
 	utils::unpack(regionMaskSize, p);
-	utils::unpack(ecounters, p);
 	utils::unpack(eintervals, p);
 	utils::unpack(eintervalsDistribution, p);
 
@@ -161,22 +149,15 @@ void ElementStore::unpackFull(const char* &p)
 size_t ElementStore::packedSize() const
 {
 	return
-			utils::packedSize(size) +
-			utils::packedSize(offset) +
-			utils::packedSize(totalSize) +
 			nodes->packedSize() +
 			sizeof(size_t) + epointers->datatarray().size() * sizeof(int) +
 			utils::packedSize(body) +
 			utils::packedSize(contact) +
-			utils::packedSize(ecounters) +
 			utils::packedSize(eintervals);
 }
 
 void ElementStore::pack(char* &p) const
 {
-	utils::pack(size, p);
-	utils::pack(offset, p);
-	utils::pack(totalSize, p);
 	nodes->pack(p);
 	if (epointers != NULL) {
 		std::vector<int> eindices;
@@ -184,7 +165,7 @@ void ElementStore::pack(char* &p) const
 
 		size_t threads = info::env::OMP_NUM_THREADS;
 		for (size_t t = 0; t < threads; t++) {
-			for (size_t i = this->distribution[t]; i < this->distribution[t + 1]; ++i) {
+			for (size_t i = this->threading[t]; i < this->threading[t + 1]; ++i) {
 				eindices.push_back(static_cast<int>(epointers->datatarray()[i]->code));
 			}
 		}
@@ -192,7 +173,6 @@ void ElementStore::pack(char* &p) const
 	}
 	utils::pack(body, p);
 	utils::pack(contact, p);
-	utils::pack(ecounters, p);
 	utils::pack(eintervals, p);
 }
 
@@ -205,9 +185,6 @@ void ElementStore::unpack(const char* &p)
 		epointers = new serializededata<esint, Element*>(1, tarray<Element*>(1, 0));
 	}
 
-	utils::unpack(size, p);
-	utils::unpack(offset, p);
-	utils::unpack(totalSize, p);
 	nodes->unpack(p);
 	if (epointers != NULL) {
 		std::vector<int> eindices;
@@ -215,14 +192,13 @@ void ElementStore::unpack(const char* &p)
 		if (epointers != NULL) {
 			delete epointers;
 		}
-		epointers = new serializededata<esint, Element*>(1, tarray<Element*>(1, size));
-		for (esint i = 0; i < size; ++i) {
+		epointers = new serializededata<esint, Element*>(1, tarray<Element*>(1, process.size));
+		for (esint i = 0; i < process.size; ++i) {
 			epointers->datatarray()[i] = &Mesh::edata[eindices[i]];
 		}
 	}
 	utils::unpack(body, p);
 	utils::unpack(contact, p);
-	utils::unpack(ecounters, p);
 	utils::unpack(eintervals, p);
 }
 
@@ -339,7 +315,7 @@ void ElementStore::store(const std::string &file)
 
 void ElementStore::permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution)
 {
-	this->distribution = distribution;
+	this->threading = distribution;
 
 	if (IDs != NULL) { IDs->permute(permutation, distribution); }
 	if (nodes != NULL) { nodes->permute(permutation, distribution); }
@@ -376,7 +352,7 @@ ElementData* ElementStore::appendData(int dimension, NamedData::DataType datatyp
 {
 	this->data.push_back(new ElementData(dimension, datatype, name));
 	data.back()->restriction = restriction;
-	data.back()->data.resize(size * dimension);
+	data.back()->data.resize(process.size * dimension);
 	return this->data.back();
 }
 

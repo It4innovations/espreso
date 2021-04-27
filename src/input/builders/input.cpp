@@ -825,11 +825,11 @@ void Input::fillElements()
 		}
 	}
 
-	info::mesh->elements->offset = _eDistribution[info::mpi::rank];
-	info::mesh->elements->last = _eDistribution[info::mpi::rank + 1];
-	info::mesh->elements->size = _etypeDistribution[estart];
-	info::mesh->elements->totalSize = _etypeDistribution.back();
-	info::mesh->elements->distribution = edistribution;
+	info::mesh->elements->process.offset = _eDistribution[info::mpi::rank];
+	info::mesh->elements->process.last = _eDistribution[info::mpi::rank + 1];
+	info::mesh->elements->process.size = _etypeDistribution[estart];
+	info::mesh->elements->process.totalSize = _etypeDistribution.back();
+	info::mesh->elements->threading = edistribution;
 	info::mesh->elements->IDs = new serializededata<esint, esint>(1, eIDs);
 	info::mesh->elements->nodes = new serializededata<esint, esint>(tedist, tnodes);
 	info::mesh->elements->epointers = new serializededata<esint, Element*>(1, epointers);
@@ -837,7 +837,7 @@ void Input::fillElements()
 	info::mesh->elements->body = new serializededata<esint, int>(1, eBody);
 
 	info::mesh->elementsRegions.push_back(new ElementsRegionStore("ALL_ELEMENTS"));
-	info::mesh->elementsRegions.back()->elements = new serializededata<esint, esint>(1, tarray<esint>(threads, info::mesh->elements->size));
+	info::mesh->elementsRegions.back()->elements = new serializededata<esint, esint>(1, tarray<esint>(threads, info::mesh->elements->process.size));
 	std::iota(info::mesh->elementsRegions.back()->elements->datatarray().begin(), info::mesh->elementsRegions.back()->elements->datatarray().end(), 0);
 	profiler::syncend("fill_elements");
 }

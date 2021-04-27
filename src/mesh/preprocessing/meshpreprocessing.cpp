@@ -42,13 +42,13 @@ void computeBodies()
 		computeElementsFaceNeighbors();
 	}
 
-	esint ebegin = info::mesh->elements->offset;
-	esint eend = ebegin + info::mesh->elements->size;
+	esint ebegin = info::mesh->elements->process.offset;
+	esint eend = ebegin + info::mesh->elements->process.size;
 	esint bodies = 0, boffset;
-	std::vector<int> body(info::mesh->elements->size, -1);
+	std::vector<int> body(info::mesh->elements->process.size, -1);
 
 	{ // DFS for body search
-		for (esint e = 0; e < info::mesh->elements->size; ++e) {
+		for (esint e = 0; e < info::mesh->elements->process.size; ++e) {
 			std::vector<esint> stack;
 			if (body[e] == -1) {
 				stack.push_back(e);
@@ -88,7 +88,7 @@ void computeBodies()
 			holders[b + boffset] = info::mpi::rank;
 		}
 		struct ebody { esint e, b; };
-		std::vector<esint> edistribution = Communication::getDistribution(info::mesh->elements->size);
+		std::vector<esint> edistribution = Communication::getDistribution(info::mesh->elements->process.size);
 		std::vector<std::vector<ebody> > sBuffer(info::mesh->neighbors.size()), rBuffer(info::mesh->neighbors.size());
 
 		auto e2roffset = [&] (esint e) {
@@ -97,7 +97,7 @@ void computeBodies()
 		};
 
 		auto dual = info::mesh->elements->faceNeighbors->cbegin();
-		for (esint e = 0; e < info::mesh->elements->size; ++e, ++dual) {
+		for (esint e = 0; e < info::mesh->elements->process.size; ++e, ++dual) {
 			for (auto n = dual->begin(); n != dual->end(); ++n) {
 				if (*n != -1 && (*n < ebegin || eend <= *n)) {
 					sBuffer[e2roffset(*n)].push_back(ebody{e + ebegin, body[e]});
@@ -127,7 +127,7 @@ void computeBodies()
 		}
 
 		dual = info::mesh->elements->faceNeighbors->cbegin();
-		for (esint e = 0; e < info::mesh->elements->size; ++e, ++dual) {
+		for (esint e = 0; e < info::mesh->elements->process.size; ++e, ++dual) {
 			for (auto n = dual->begin(); n != dual->end(); ++n) {
 				if (*n != -1 && (*n < ebegin || eend <= *n)) {
 					esint roffset = e2roffset(*n);
@@ -368,14 +368,14 @@ void computeBodies()
 	}
 
 	if (info::mesh->elements->body == NULL) {
-		info::mesh->elements->body = new serializededata<esint, int>(1, tarray<int>(info::mesh->elements->distribution, body));
+		info::mesh->elements->body = new serializededata<esint, int>(1, tarray<int>(info::mesh->elements->threading, body));
 	} else {
-		memcpy(info::mesh->elements->body->datatarray().data(), body.data(), info::mesh->elements->size * sizeof(int));
+		memcpy(info::mesh->elements->body->datatarray().data(), body.data(), info::mesh->elements->process.size * sizeof(int));
 	}
 
 	std::vector<esint> bodyRegions(info::mesh->bodies->totalSize * info::mesh->elements->regionMaskSize);
 
-	for (esint e = 0; e < info::mesh->elements->size; ++e) {
+	for (esint e = 0; e < info::mesh->elements->process.size; ++e) {
 		int rsize = info::mesh->elements->regionMaskSize;
 		int b = info::mesh->elements->body->datatarray()[e];
 		for (int r = 0; r < rsize; ++r) {
@@ -450,7 +450,7 @@ void linkNodesAndElements()
 			info::mesh->nodes->elements,
 			info::mesh->elements->nodes,
 			info::mesh->elements->IDs,
-			info::mesh->elements->distribution,
+			info::mesh->elements->threading,
 			true);
 }
 
@@ -663,8 +663,8 @@ void exchangeHalo()
 		fillRegionMask();
 	}
 
-	esint ebegin = info::mesh->elements->offset;
-	esint eend = ebegin + info::mesh->elements->size;
+	esint ebegin = info::mesh->elements->process.offset;
+	esint eend = ebegin + info::mesh->elements->process.size;
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 	std::vector<std::vector<esint> > sBuffer(info::mesh->neighbors.size()), rBuffer(info::mesh->neighbors.size());
@@ -768,8 +768,8 @@ void exchangeHalo()
 	info::mesh->halo->epointers = new serializededata<esint, Element*>(1, hcode);
 	info::mesh->halo->regions = new serializededata<esint, esint>(rsize, hregions);
 
-	info::mesh->halo->size = info::mesh->halo->IDs->datatarray().size();
-	info::mesh->halo->distribution = info::mesh->halo->IDs->datatarray().distribution();
+	info::mesh->halo->process.size = info::mesh->halo->IDs->datatarray().size();
+	info::mesh->halo->threading = info::mesh->halo->IDs->datatarray().distribution();
 
 	const auto &hIDs = info::mesh->halo->IDs->datatarray();
 	std::vector<esint> permutation(hIDs.size());
@@ -790,7 +790,7 @@ void computeElementsFaceNeighbors()
 			info::mesh->elements->nodes,
 			info::mesh->elements->IDs,
 			info::mesh->elements->epointers,
-			info::mesh->elements->distribution,
+			info::mesh->elements->threading,
 			[] (Element *e) { return e->faces; },
 			false, // there are max 1 neighbor
 			true); // sorted nodes IDs
@@ -806,7 +806,7 @@ void computeElementsEdgeNeighbors()
 			info::mesh->elements->nodes,
 			info::mesh->elements->IDs,
 			info::mesh->elements->epointers,
-			info::mesh->elements->distribution,
+			info::mesh->elements->threading,
 			[] (Element *e) { return e->edges; },
 			true, // we need to know the number of neighbors
 			true); // sorted nodes IDs
@@ -883,7 +883,7 @@ void computeElementsNeighbors(
 				hasNeighbor = hasNeighbor | intersection.size();
 			}
 			tdist.push_back(tdata.size());
-//			if (!hasNeighbor && info::mesh->elements->size != 1) {
+//			if (!hasNeighbor && info::mesh->elements->distribution.size != 1) {
 //				eslog::error("Input error: a dangling element found (the element without any neighbor).\n");
 //			}
 		}
@@ -922,7 +922,7 @@ void computeElementsCenters()
 	profiler::syncstart("compute_element_centers");
 	int threads = info::env::OMP_NUM_THREADS;
 
-	info::mesh->elements->centers = new serializededata<esint, Point>(1, info::mesh->elements->distribution);
+	info::mesh->elements->centers = new serializededata<esint, Point>(1, info::mesh->elements->threading);
 
 	#pragma omp parallel for
 	for (int t = 0; t < threads; t++) {
@@ -954,10 +954,10 @@ void computeDecomposedDual(std::vector<esint> &dualDist, std::vector<esint> &dua
 	}
 
 	size_t threads = info::env::OMP_NUM_THREADS;
-	esint eBegin = info::mesh->elements->offset;
-	esint eEnd   = eBegin + info::mesh->elements->size;
+	esint eBegin = info::mesh->elements->process.offset;
+	esint eEnd   = eBegin + info::mesh->elements->process.size;
 
-	std::vector<esint> dDistribution(info::mesh->elements->size + 1);
+	std::vector<esint> dDistribution(info::mesh->elements->process.size + 1);
 	std::vector<std::vector<esint> > dData(threads);
 
 	#pragma omp parallel for
@@ -967,7 +967,7 @@ void computeDecomposedDual(std::vector<esint> &dualDist, std::vector<esint> &dua
 		int rsize = info::mesh->elements->regionMaskSize;
 
 		auto neighs = info::mesh->elements->faceNeighbors->cbegin(t);
-		for (size_t e = info::mesh->elements->distribution[t]; e < info::mesh->elements->distribution[t + 1]; ++e, ++neighs) {
+		for (size_t e = info::mesh->elements->threading[t]; e < info::mesh->elements->threading[t + 1]; ++e, ++neighs) {
 			for (auto n = neighs->begin(); n != neighs->end(); ++n) {
 				if (*n != -1 && eBegin <= *n && *n < eEnd) {
 					if (separateMaterials) {
@@ -993,7 +993,7 @@ void computeDecomposedDual(std::vector<esint> &dualDist, std::vector<esint> &dua
 		dData[t].swap(tdata);
 	}
 
-	utils::threadDistributionToFullDistribution(dDistribution, info::mesh->elements->distribution);
+	utils::threadDistributionToFullDistribution(dDistribution, info::mesh->elements->threading);
 	for (size_t t = 1; t < threads; t++) {
 		dData[0].insert(dData[0].end(), dData[t].begin(), dData[t].end());
 	}
@@ -1016,8 +1016,8 @@ void computeRegionsSurface()
 	}
 
 	size_t threads = info::env::OMP_NUM_THREADS;
-	esint eBegin = info::mesh->elements->offset;
-	esint eEnd = eBegin + info::mesh->elements->size;
+	esint eBegin = info::mesh->elements->process.offset;
+	esint eEnd = eBegin + info::mesh->elements->process.size;
 
 	for (size_t r = 0; r < info::mesh->elementsRegions.size(); r++) {
 		std::vector<std::vector<esint> > faces(threads), facesDistribution(threads), ecounters(threads, std::vector<esint>((int)Element::CODE::SIZE));
@@ -1201,7 +1201,7 @@ void computeBoundaryNodes(std::vector<esint> &externalBoundary, std::vector<esin
 
 	std::vector<std::vector<esint> > external(threads), internal(threads);
 
-	esint eoffset = info::mesh->elements->offset;
+	esint eoffset = info::mesh->elements->process.offset;
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {

@@ -1027,8 +1027,8 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 		auto fpointer = iterator.element->facepointers->begin();
 		auto fnodes = iterator.element->faces->begin();
 		auto doffset = std::lower_bound(info::mesh->domains->elements.begin(), info::mesh->domains->elements.end(), iterator.offset + 1) - info::mesh->domains->elements.begin() - 1;
-		auto lower = info::mesh->domains->elements[doffset] + info::mesh->elements->offset;
-		auto upper = info::mesh->domains->elements[doffset + 1] + info::mesh->elements->offset;
+		auto lower = info::mesh->domains->elements[doffset] + info::mesh->elements->process.offset;
+		auto upper = info::mesh->domains->elements[doffset + 1] + info::mesh->elements->process.offset;
 		for (auto neigh = dual->begin(); neigh != dual->end(); ++neigh, ++fpointer, ++fnodes) {
 			if (*neigh != -1) {
 				if (*neigh < lower || upper <= *neigh) {

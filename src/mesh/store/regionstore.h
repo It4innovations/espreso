@@ -2,8 +2,10 @@
 #ifndef SRC_MESH_STORE_REGIONSTORE_H_
 #define SRC_MESH_STORE_REGIONSTORE_H_
 
+#include "info.h"
 #include "elementsinterval.h"
 #include "nodeuniquenessinfo.h"
+
 #include <vector>
 #include <string>
 
@@ -15,10 +17,9 @@ struct RegionStore {
 
 	std::string name;
 
-	esint size;
-	esint offset;
-	esint totalsize;
-	std::vector<esint> eoffsets, ecounters;
+	DistributedDataInfo process;
+	std::vector<DistributedDataInfo> processPerCode;
+
 	serializededata<esint, esint>* nodes;
 	NodeUniquenessInfo nodeInfo;
 

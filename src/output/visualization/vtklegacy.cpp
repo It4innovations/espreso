@@ -55,7 +55,7 @@ void VTKLegacy::updateMesh()
 	int index = 0, intsize = 11;
 	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++index) {
 		esint nnodes = info::mesh->elementsRegions[r]->nodes->datatarray().size();
-		if (info::mesh->elements->size < nnodes * 5) {
+		if (info::mesh->elements->process.size < nnodes * 5) {
 			_cells[index].resize(info::mesh->nodes->size * (intsize + sizeof(int)) + 1);
 			for (esint n = 0; n < nnodes; ++n) {
 				esint nn = info::mesh->elementsRegions[r]->nodes->datatarray()[n];
@@ -220,21 +220,21 @@ void VTKLegacy::insertPoints(const RegionStore *store)
 esint VTKLegacy::insertElements(const ElementsRegionStore *store, const std::vector<char, initless_allocator<char> > &data)
 {
 	esint enodes = 0;
-	for (size_t i = 0; i < store->ecounters.size(); i++) {
-		if (store->ecounters[i]) {
-			enodes += store->ecounters[i] * Mesh::edata[i].nodes;
+	for (size_t i = 0; i < store->processPerCode.size(); i++) {
+		if (store->processPerCode[i].size) {
+			enodes += store->processPerCode[i].size * Mesh::edata[i].nodes;
 		}
 	}
 
 	if (isRoot()) {
-		_writer.cells(store->totalsize, store->totalsize + enodes);
+		_writer.cells(store->process.totalSize, store->process.totalSize + enodes);
 	}
 	int intsize = 11;
 	for (auto e = store->elements->datatarray().cbegin(); e != store->elements->datatarray().cend(); ++e) {
 		esint nnodes = store->nodes->datatarray().size();
 		auto element = info::mesh->elements->nodes->cbegin() + *e;
 		_writer.insert(element->size() > 9 ? 2 : 1, _esize.data() + element->size() * 2 - 2);
-		if (info::mesh->elements->size < nnodes * 5) {
+		if (info::mesh->elements->process.size < nnodes * 5) {
 			for (auto n = element->begin(); n != element->end(); ++n) {
 				int size = *reinterpret_cast<const int*>(data.data() + (intsize + sizeof(int)) * *n + intsize);
 				_writer.insert(size, data.data() + (intsize + sizeof(int)) * *n);
@@ -251,28 +251,28 @@ esint VTKLegacy::insertElements(const ElementsRegionStore *store, const std::vec
 	_writer.groupData();
 
 	if (isRoot()) {
-		_writer.celltypes(store->totalsize);
+		_writer.celltypes(store->process.totalSize);
 	}
 	for (auto e = store->elements->datatarray().cbegin(); e != store->elements->datatarray().cend(); ++e) {
 		_writer.insert(3, _ecode.data() + 3 * (int)info::mesh->elements->epointers->datatarray()[*e]->code);
 	}
 	_writer.groupData();
 
-	return store->totalsize;
+	return store->process.totalSize;
 }
 
 esint VTKLegacy::insertElements(const BoundaryRegionStore *store, const std::vector<char, initless_allocator<char> > &data)
 {
 	if (store->dimension) {
 		esint enodes = 0;
-		for (size_t i = 0; i < store->ecounters.size(); i++) {
-			if (store->ecounters[i]) {
-				enodes += store->ecounters[i] * Mesh::edata[i].nodes;
+		for (size_t i = 0; i < store->processPerCode.size(); i++) {
+			if (store->processPerCode[i].size) {
+				enodes += store->processPerCode[i].size * Mesh::edata[i].nodes;
 			}
 		}
 
 		if (isRoot()) {
-			_writer.cells(store->totalsize, store->totalsize + enodes);
+			_writer.cells(store->process.totalSize, store->process.totalSize + enodes);
 		}
 		int intsize = 11;
 		for (auto e = store->procNodes->cbegin(); e != store->procNodes->cend(); ++e) {
@@ -287,14 +287,14 @@ esint VTKLegacy::insertElements(const BoundaryRegionStore *store, const std::vec
 		_writer.groupData();
 
 		if (isRoot()) {
-			_writer.celltypes(store->totalsize);
+			_writer.celltypes(store->process.totalSize);
 		}
-		for (esint e = 0; e < store->size; ++e) {
+		for (esint e = 0; e < store->process.size; ++e) {
 			_writer.insert(3, _ecode.data() + 3 * (int)store->epointers->datatarray()[e]->code);
 		}
 		_writer.groupData();
 
-		return store->totalsize;
+		return store->process.totalSize;
 	} else {
 		if (isRoot()) {
 			_writer.cells(store->nodeInfo.totalSize, 2 * store->nodeInfo.totalSize);

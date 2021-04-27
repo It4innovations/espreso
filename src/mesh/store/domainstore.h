@@ -11,7 +11,7 @@ namespace espreso {
 
 template <typename TEBoundaries, typename TEData> class serializededata;
 
-struct DomainStore: UniqueDataInfo {
+struct DomainStore: DistributedDataInfo {
 
 	std::vector<size_t> distribution;
 

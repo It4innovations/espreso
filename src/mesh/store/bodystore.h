@@ -11,7 +11,7 @@ namespace espreso {
 
 template <typename TEBoundaries, typename TEData> class serializededata;
 
-struct BodyStore: UniqueDataInfo {
+struct BodyStore: DistributedDataInfo {
 
 	BodyStore();
 	~BodyStore();

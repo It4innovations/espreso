@@ -25,18 +25,20 @@ struct ElementData: public NamedData {
 	void statistics(const tarray<esint> &elements, esint totalsize, Statistics *statistics) const;
 };
 
-struct ElementStore: UniqueDataInfo {
+struct ElementStore {
 
 	void store(const std::string &file);
 
-	void permute(const std::vector<esint> &permutation) { permute(permutation, distribution); }
+	void permute(const std::vector<esint> &permutation) { permute(permutation, threading); }
 	void permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution);
 
 	void reindex(const serializededata<esint, esint> *nIDs);
 
 	ElementData* appendData(int dimension, NamedData::DataType datatype, const std::string &name = "", step::TYPE restriction = step::TYPE::TIME);
 
-	std::vector<size_t> distribution;
+	std::vector<size_t> threading;
+	DistributedDataInfo process;
+	std::vector<DistributionInfo> processPerCode;
 
 	serializededata<esint, esint>* IDs;
 	serializededata<esint, esint>* nodes;
@@ -54,7 +56,7 @@ struct ElementStore: UniqueDataInfo {
 	serializededata<esint, double>* stiffness;
 
 	int regionMaskSize;
-	std::vector<esint> ecounters;
+
 	std::vector<ElementsInterval> eintervals;
 	std::vector<esint> eintervalsDistribution;
 

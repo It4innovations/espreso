@@ -93,8 +93,8 @@ void DistributedComposer::assemble(const Builder &builder)
 			prev = eslog::time();
 		};
 
-		filler.begin = info::mesh->elements->distribution[t];
-		filler.end = info::mesh->elements->distribution[t + 1];
+		filler.begin = info::mesh->elements->threading[t];
+		filler.end = info::mesh->elements->threading[t + 1];
 
 		prev = eslog::time();
 		kernel->processElements(builder, filler);

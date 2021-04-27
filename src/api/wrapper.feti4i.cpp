@@ -310,12 +310,13 @@ void FETI4ICreateInstance(
 	matrix->mesh.elements->nodes = new serializededata<esint, esint>(ndist, nodes);
 	matrix->mesh.elements->stiffness = new serializededata<esint, double>(sdist, stiffness);
 
-	matrix->mesh.elements->offset = matrix->mesh.elements->epointers->datatarray().size();;
-	matrix->mesh.elements->size = matrix->mesh.elements->epointers->datatarray().size();
-	matrix->mesh.elements->totalSize = Communication::exscan(matrix->mesh.elements->offset);
-	matrix->mesh.elements->distribution = matrix->mesh.elements->epointers->datatarray().distribution();
-	matrix->mesh.elements->IDs = new serializededata<esint, esint>(1, tarray<esint>(matrix->mesh.elements->distribution, 1));
-	std::iota(matrix->mesh.elements->IDs->datatarray().begin(), matrix->mesh.elements->IDs->datatarray().end(), matrix->mesh.elements->offset);
+	matrix->mesh.elements->process.offset = matrix->mesh.elements->epointers->datatarray().size();;
+	matrix->mesh.elements->process.size = matrix->mesh.elements->epointers->datatarray().size();
+	matrix->mesh.elements->process.last = matrix->mesh.elements->process.offset + matrix->mesh.elements->process.size;
+	matrix->mesh.elements->process.totalSize = Communication::exscan(matrix->mesh.elements->process.offset);
+	matrix->mesh.elements->threading = matrix->mesh.elements->epointers->datatarray().distribution();
+	matrix->mesh.elements->IDs = new serializededata<esint, esint>(1, tarray<esint>(matrix->mesh.elements->threading, 1));
+	std::iota(matrix->mesh.elements->IDs->datatarray().begin(), matrix->mesh.elements->IDs->datatarray().end(), matrix->mesh.elements->process.offset);
 
 	Mesh *mesh = &matrix->mesh;
 	std::swap(mesh, info::mesh);

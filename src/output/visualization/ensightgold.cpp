@@ -258,10 +258,10 @@ void EnSightGold::geometry()
 
 		nodes(region);
 		for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
-			if (region->ecounters[etype]) {
+			if (region->processPerCode[etype].totalSize) {
 				if (isRoot()) {
 					_writer.description(EnsightOutputWriter::codetotype(etype));
-					_writer.int32(region->ecounters[etype]);
+					_writer.int32(region->processPerCode[etype].totalSize);
 				}
 
 				for (size_t i = 0; i < region->eintervals.size(); i++) {
@@ -291,10 +291,10 @@ void EnSightGold::geometry()
 		nodes(region);
 		if (region->dimension) {
 			for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
-				if (region->ecounters[etype]) {
+				if (region->processPerCode[etype].totalSize) {
 					if (isRoot()) {
 						_writer.description(EnsightOutputWriter::codetotype(etype));
-						_writer.int32(region->ecounters[etype]);
+						_writer.int32(region->processPerCode[etype].totalSize);
 					}
 
 					for (size_t i = 0; i < region->eintervals.size(); i++) {
@@ -481,7 +481,7 @@ void EnSightGold::edata(const NamedData *data)
 			}
 
 			for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
-				if (info::mesh->elementsRegions[r]->ecounters[etype]) {
+				if (info::mesh->elementsRegions[r]->processPerCode[etype].totalSize) {
 					if (isRoot()) {
 						_writer.description(EnsightOutputWriter::codetotype(etype));
 					}
@@ -515,7 +515,7 @@ void EnSightGold::edata(const NamedData *data)
 					_writer.int32(part);
 				}
 				for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
-					if (info::mesh->elementsRegions[r]->ecounters[etype]) {
+					if (info::mesh->elementsRegions[r]->processPerCode[etype].totalSize) {
 						if (isRoot()) {
 							_writer.description(EnsightOutputWriter::codetotype(etype));
 						}
@@ -544,7 +544,7 @@ void EnSightGold::decomposition()
 			}
 
 			for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
-				if (info::mesh->elementsRegions[r]->ecounters[etype]) {
+				if (info::mesh->elementsRegions[r]->processPerCode[etype].totalSize) {
 					if (isRoot()) {
 						_writer.description(EnsightOutputWriter::codetotype(etype));
 					}

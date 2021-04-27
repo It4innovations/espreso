@@ -411,7 +411,7 @@ void Mesh::preprocess()
 	}
 
 	esint msize;
-	Communication::allReduce(&elements->size, &msize, 1, MPITools::getType<esint>().mpitype, MPI_MIN);
+	Communication::allReduce(&elements->process.size, &msize, 1, MPITools::getType<esint>().mpitype, MPI_MIN);
 	if (msize == 0) {
 		eslog::globalerror("ESPRESO quit computation: process without any elements detected.\n");
 	}
@@ -715,12 +715,12 @@ void Mesh::printMeshStatistics()
 	size_t nregs = 0, nnodes = 0;
 
 	for (size_t r = 1; r < elementsRegions.size(); r++) {
-		nelements += elementsRegions[r]->totalsize; nelementsnodes += elementsRegions[r]->nodeInfo.totalSize;
+		nelements += elementsRegions[r]->process.totalSize; nelementsnodes += elementsRegions[r]->nodeInfo.totalSize;
 	}
 	for (size_t r = 1; r < boundaryRegions.size(); r++) {
 		switch (boundaryRegions[r]->originalDimension) {
-		case 2: ++fregs; nfaces += boundaryRegions[r]->totalsize; nfacenodes += boundaryRegions[r]->nodeInfo.totalSize; break;
-		case 1: ++eregs; nedges += boundaryRegions[r]->totalsize; nedgenodes += boundaryRegions[r]->nodeInfo.totalSize; break;
+		case 2: ++fregs; nfaces += boundaryRegions[r]->process.totalSize; nfacenodes += boundaryRegions[r]->nodeInfo.totalSize; break;
+		case 1: ++eregs; nedges += boundaryRegions[r]->process.totalSize; nedgenodes += boundaryRegions[r]->nodeInfo.totalSize; break;
 		case 0: ++nregs; nnodes += boundaryRegions[r]->nodeInfo.totalSize; break;
 		default: break;
 		}
@@ -747,11 +747,11 @@ void Mesh::printMeshStatistics()
 		eslog::info(" ============================================================================================= \n");
 
 		eslog::info("  %s%*s : %16s %16s\n", "TOTAL NUMBER OF NODES", namesize - 22, " ", " ", Parser::stringwithcommas(nodes->uniqInfo.totalSize).c_str());
-		eslog::info("  %s%*s : %16s\n", "TOTAL NUMBER OF ELEMENTS", namesize - 25, " ", Parser::stringwithcommas(elements->totalSize).c_str());
+		eslog::info("  %s%*s : %16s\n", "TOTAL NUMBER OF ELEMENTS", namesize - 25, " ", Parser::stringwithcommas(elements->process.totalSize).c_str());
 
 		for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
-			if (elements->ecounters[etype]) {
-				eslog::info(" %*s : %16s\n", namesize, ename(etype).c_str(), Parser::stringwithcommas(elements->ecounters[etype]).c_str());
+			if (elements->processPerCode[etype].totalSize) {
+				eslog::info(" %*s : %16s\n", namesize, ename(etype).c_str(), Parser::stringwithcommas(elements->processPerCode[etype].totalSize).c_str());
 			}
 		}
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n\n");
@@ -759,20 +759,20 @@ void Mesh::printMeshStatistics()
 		eslog::info("  %s [%3ld]%*s : %16s %16s\n", "ELEMS REGIONS SIZES", elementsRegions.size() - 1, namesize - 26, " ", Parser::stringwithcommas(nelements).c_str(), Parser::stringwithcommas(nelementsnodes).c_str());
 		eslog::info(" %*s : %16s %16s\n", namesize, elementsRegions.front()->name.c_str(), "", "");
 		for (size_t r = 1; r < elementsRegions.size(); r++) {
-			eslog::info(" %*s : %16s %16s\n", namesize, elementsRegions[r]->name.c_str(), Parser::stringwithcommas(elementsRegions[r]->totalsize).c_str(), Parser::stringwithcommas(elementsRegions[r]->nodeInfo.totalSize).c_str());
+			eslog::info(" %*s : %16s %16s\n", namesize, elementsRegions[r]->name.c_str(), Parser::stringwithcommas(elementsRegions[r]->process.totalSize).c_str(), Parser::stringwithcommas(elementsRegions[r]->nodeInfo.totalSize).c_str());
 		}
 		eslog::info("\n");
 		eslog::info("  %s [%3d]%*s : %16s %16s\n", "FACES REGIONS SIZES", fregs, namesize - 26, " ", Parser::stringwithcommas(nfaces).c_str(), Parser::stringwithcommas(nfacenodes).c_str());
 		for (size_t r = 0; r < boundaryRegions.size(); r++) {
 			if (boundaryRegions[r]->originalDimension == 2) {
-				eslog::info(" %*s : %16s %16s\n", namesize, boundaryRegions[r]->name.c_str(), Parser::stringwithcommas(boundaryRegions[r]->totalsize).c_str(), Parser::stringwithcommas(boundaryRegions[r]->nodeInfo.totalSize).c_str());
+				eslog::info(" %*s : %16s %16s\n", namesize, boundaryRegions[r]->name.c_str(), Parser::stringwithcommas(boundaryRegions[r]->process.totalSize).c_str(), Parser::stringwithcommas(boundaryRegions[r]->nodeInfo.totalSize).c_str());
 			}
 		}
 		eslog::info("\n");
 		eslog::info("  %s [%3d]%*s : %16s %16s\n", "EDGES REGIONS SIZES", eregs, namesize - 26, " ", Parser::stringwithcommas(nedges).c_str(), Parser::stringwithcommas(nedgenodes).c_str());
 		for (size_t r = 0; r < boundaryRegions.size(); r++) {
 			if (boundaryRegions[r]->originalDimension == 1) {
-				eslog::info(" %*s : %16s %16s\n", namesize, boundaryRegions[r]->name.c_str(), Parser::stringwithcommas(boundaryRegions[r]->totalsize).c_str(), Parser::stringwithcommas(boundaryRegions[r]->nodeInfo.totalSize).c_str());
+				eslog::info(" %*s : %16s %16s\n", namesize, boundaryRegions[r]->name.c_str(), Parser::stringwithcommas(boundaryRegions[r]->process.totalSize).c_str(), Parser::stringwithcommas(boundaryRegions[r]->nodeInfo.totalSize).c_str());
 			}
 		}
 		eslog::info("\n");
@@ -841,10 +841,10 @@ void Mesh::printMeshStatistics()
 	case OutputConfiguration::LOGGER::PARSER:
 		eslog::info(" ====================================== MESH STATISTICS ====================================== \n");
 		for (size_t r = 0; r < elementsRegions.size(); r++) {
-			eslog::info("mesh: region=%s, dimension=%d, elements=%d, nodes=%d\n", elementsRegions[r]->name.c_str(), dimension, elementsRegions[r]->totalsize, elementsRegions[r]->nodeInfo.totalSize);
+			eslog::info("mesh: region=%s, dimension=%d, elements=%d, nodes=%d\n", elementsRegions[r]->name.c_str(), dimension, elementsRegions[r]->process.totalSize, elementsRegions[r]->nodeInfo.totalSize);
 		}
 		for (size_t r = 0; r < boundaryRegions.size(); r++) {
-			eslog::info("mesh: region=%s, dimension=%d, elements=%d, nodes=%d\n", boundaryRegions[r]->name.c_str(), boundaryRegions[r]->originalDimension, boundaryRegions[r]->totalsize, boundaryRegions[r]->nodeInfo.totalSize);
+			eslog::info("mesh: region=%s, dimension=%d, elements=%d, nodes=%d\n", boundaryRegions[r]->name.c_str(), boundaryRegions[r]->originalDimension, boundaryRegions[r]->process.totalSize, boundaryRegions[r]->nodeInfo.totalSize);
 		}
 		eslog::info("mesh: region=ALL_ELEMENTS, bodies=%d\n", bodies->totalSize);
 		for (size_t r = 1; r < elementsRegions.size(); r++) {
@@ -1124,7 +1124,7 @@ void Mesh::printDecompositionStatistics()
 		esint ielements = 0;
 		for (auto neighs = elements->faceNeighbors->begin(t); neighs != elements->faceNeighbors->end(t); ++neighs) {
 			for (auto n = neighs->begin(); n != neighs->end(); ++n) {
-				if (*n != -1 && (*n < elements->offset || elements->last <= *n)) {
+				if (*n != -1 && (*n < elements->process.offset || elements->process.last <= *n)) {
 					++ielements;
 				}
 			}
@@ -1154,7 +1154,7 @@ void Mesh::printDecompositionStatistics()
 				for (auto neighs = begin; neighs != end; ++neighs) {
 					esint size = 0;
 					for (auto n = neighs->begin(); n != neighs->end(); ++n) {
-						if (*n != -1 && (*n < elements->offset + domains->elements[d] || elements->offset + domains->elements[d + 1] <= *n)) {
+						if (*n != -1 && (*n < elements->process.offset + domains->elements[d] || elements->process.offset + domains->elements[d + 1] <= *n)) {
 							++tdeinterface[d];
 							++size;
 						}
@@ -1172,7 +1172,7 @@ void Mesh::printDecompositionStatistics()
 
 	mesh.value.mpi.clusters    = clusters->size;
 	mesh.value.mpi.domains     = domains->size;
-	mesh.value.mpi.elements    = elements->size;
+	mesh.value.mpi.elements    = elements->process.size;
 	mesh.value.mpi.uniquenodes = nodes->uniqInfo.size;
 	mesh.value.mpi.nodes       = nodes->size;
 	mesh.value.mpi.nratio      = (double)mesh.value.mpi.ninterface / mesh.value.mpi.nodes;
@@ -1183,7 +1183,7 @@ void Mesh::printDecompositionStatistics()
 	mesh.stats.mpi.sum.set(1);
 
 	if (_withFETI) {
-		mesh.value.domain.elements += elements->size;
+		mesh.value.domain.elements += elements->process.size;
 		for (esint d = 0; d < domains->size; ++d) {
 			mesh.value.domain.nodes += dnodes[d];
 			mesh.value.domain.ninterface += dninterface[d];
