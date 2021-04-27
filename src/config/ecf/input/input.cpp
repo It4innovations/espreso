@@ -38,7 +38,8 @@ InputConfiguration::InputConfiguration()
 			.addoption(ECFOption().setname("XDMF").setdescription("XDMF format."))
 			.addoption(ECFOption().setname("ENSIGHT").setdescription("Ensigh Gold format."))
 			.addoption(ECFOption().setname("VTK_LEGACY").setdescription("VTK Legacy format."))
-			.addoption(ECFOption().setname("NETGEN").setdescription("Neutral Netgen format.")));
+			.addoption(ECFOption().setname("NETGEN").setdescription("Neutral Netgen format."))
+			.addoption(ECFOption().setname("GMSH").setdescription("GMSH mesh generator.")));
 
 	REGISTER(clipping_box, ECFMetaData().setdescription({ "Clipping box." }));
 
@@ -99,6 +100,9 @@ InputConfiguration::InputConfiguration()
 
 	REGISTER(decomposition, ECFMetaData()
 			.setdescription({ "Domains decomposition settings." }));
+
+	REGISTER(generation, ECFMetaData()
+			.setdescription({ "Mesh generation settings." }));
 
 	REGISTER(contact_interfaces, ECFMetaData()
 				.setdescription({ "List of contact interfaces", "Contact interface definition" })

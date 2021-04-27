@@ -1,0 +1,6 @@
+
+def options(opt):
+    opt.other.add_option("--gmsh", action="store", type="string", metavar="GMSH_ROOT", default="", help="Path to GMSH library.")
+
+def configure(ctx):
+    ctx.link_cxx(name="gmsh", header_name="gmsh.h", libs=["gmsh"], root=ctx.options.gmsh)

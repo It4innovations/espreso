@@ -5,6 +5,7 @@
 #include "config/description.h"
 #include "contactinterface.h"
 #include "decomposition.h"
+#include "meshgeneration.h"
 #include "transformation.h"
 
 #include <string>
@@ -28,7 +29,8 @@ struct InputConfiguration: public ECFDescription {
 		XDMF,
 		ENSIGHT,
 		VTK_LEGACY,
-		NETGET
+		NETGET,
+		GMSH
 	};
 
 	enum class LOADER {
@@ -54,6 +56,7 @@ struct InputConfiguration: public ECFDescription {
 
 	std::map<std::string, InputTransformationConfiguration> transformations;
 	DecompositionConfiguration decomposition;
+	MeshGenerationConfiguration generation;
 	std::map<std::string, ContactInterfaceConfiguration> contact_interfaces;
 
 	InputConfiguration();

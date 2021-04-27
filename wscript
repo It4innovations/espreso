@@ -134,6 +134,7 @@ def build(ctx):
     ctx.build_mesio(ctx.path.ant_glob('src/wrappers/pthread/**/*.cpp'), "wpthread", [ "PTHREAD" ])
     ctx.build_mesio(ctx.path.ant_glob('src/wrappers/catalyst/**/*.cpp'), "wcatalyst", [ "CATALYST" ])
     ctx.build_mesio(ctx.path.ant_glob('src/wrappers/hdf5/**/*.cpp'), "whdf5", [ "HDF5" ])
+    ctx.build_mesio(ctx.path.ant_glob('src/wrappers/gmsh/**/*.cpp'), "wgmsh", [ "GMSH" ])
     ctx.build_mesio(ctx.path.ant_glob('src/wrappers/metis/**/*.cpp'), "wmetis", [ "METIS" ])
     ctx.build_mesio(ctx.path.ant_glob('src/wrappers/parmetis/**/*.cpp'), "wparmetis", [ "PARMETIS" ])
     ctx.build_mesio(ctx.path.ant_glob('src/wrappers/scotch/**/*.cpp'), "wscotch", [ "SCOTCH" ])
@@ -269,6 +270,12 @@ def print_available(ctx):
             ctx.end_msg("[ " + ", ".join(libs) + " ]", color="BLUE")
         return bool(len(libs))
 
+    ctx.env["HAVE_MESH_GENERATOR"] = _print(
+        "Available tools for mesh generation",
+        "NOT FOUND",
+        [ "gmsh" ],
+        "YELLOW")
+
     ctx.env["HAVE_DECOMPOSERS"] = _print(
         "Available graph partitioning tools",
         "NOT FOUND [ESPRESO FUNCTIONALITY IS SIGNIFICANTLY LIMITED]",
@@ -315,6 +322,7 @@ def recurse(ctx):
     """ Other """
     ctx.recurse("src/wrappers/pthread")
     ctx.recurse("src/wrappers/hdf5")
+    ctx.recurse("src/wrappers/gmsh")
     ctx.recurse("src/wrappers/bem")
     ctx.recurse("src/wrappers/catalyst")
 
