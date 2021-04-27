@@ -167,7 +167,7 @@ void computeDomainDual()
 	std::vector<std::vector<std::pair<esint, esint> > > rBuffer(info::mesh->neighborsWithMe.size());
 
 	for (esint d = 0; d < info::mesh->domains->size; ++d) {
-		sBuffer.push_back(std::make_pair(info::mesh->elements->process.offset + info::mesh->domains->elements[d + 1], d + info::mesh->domains->offset));
+		sBuffer.push_back(std::make_pair(info::mesh->elements->distribution.process.offset + info::mesh->domains->elements[d + 1], d + info::mesh->domains->offset));
 	}
 
 	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighborsWithMe)) {
@@ -195,7 +195,7 @@ void computeDomainDual()
 			for (esint e = info::mesh->domains->elements[d]; e < info::mesh->domains->elements[d + 1]; ++e, ++neighs) {
 				for (auto n = neighs->begin(); n != neighs->end(); ++n) {
 					if (*n != -1) {
-						if (*n < info::mesh->elements->process.offset + info::mesh->domains->elements[d] || info::mesh->elements->process.offset + info::mesh->domains->elements[d + 1] <= *n) {
+						if (*n < info::mesh->elements->distribution.process.offset + info::mesh->domains->elements[d] || info::mesh->elements->distribution.process.offset + info::mesh->domains->elements[d + 1] <= *n) {
 							auto it = std::lower_bound(gBuffer.begin(), gBuffer.end(), *n, [] (const std::pair<esint, esint> &info, const esint &e) { return info.first <= e; });
 							ndomainsFull.push_back(it->second);
 							if (info::mesh->domains->isLocal(ndomainsFull.back())) {
@@ -262,7 +262,7 @@ void computeDomainsSurface()
 				auto facepointer = epointer->facepointers->datatarray().begin();
 
 				for (size_t n = 0; n < neighbors->size(); ++n, ++faces, ++facepointer) {
-					if (neighbors->at(n) < dbegin + info::mesh->elements->process.offset || dend + info::mesh->elements->process.offset <= neighbors->at(n)) {
+					if (neighbors->at(n) < dbegin + info::mesh->elements->distribution.process.offset || dend + info::mesh->elements->distribution.process.offset <= neighbors->at(n)) {
 						for (auto f = faces->begin(); f != faces->end(); ++f) {
 							tfaces.push_back(enodes->at(*f));
 						}

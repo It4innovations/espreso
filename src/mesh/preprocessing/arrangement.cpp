@@ -97,10 +97,10 @@ void arrangeNodes()
 void arrangeElements()
 {
 	profiler::syncstart("arrange_elements");
-	std::vector<esint> permutation(info::mesh->elements->process.size);
+	std::vector<esint> permutation(info::mesh->elements->distribution.process.size);
 	std::iota(permutation.begin(), permutation.end(), 0);
 	arrangeElementsPermutation(permutation);
-	permuteElements(permutation, info::mesh->elements->threading);
+	permuteElements(permutation, info::mesh->elements->distribution.threads);
 
 	profiler::syncend("arrange_elements");
 	eslog::checkpointln("MESH: ELEMENTS ARRANGED");
@@ -159,28 +159,28 @@ void arrangeElementsPermutation(std::vector<esint> &permutation)
 			info::mesh->elements->eintervalsDistribution.push_back(info::mesh->elements->eintervals.size() - 1);
 		}
 	}
-	info::mesh->elements->eintervals.back().end = info::mesh->elements->process.size;
+	info::mesh->elements->eintervals.back().end = info::mesh->elements->distribution.process.size;
 	info::mesh->elements->eintervalsDistribution.push_back(info::mesh->elements->eintervals.size());
 	profiler::synccheckpoint("eintervals");
 
 	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-		info::mesh->elements->processPerCode[info::mesh->elements->eintervals[i].code].size += info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
+		info::mesh->elements->distribution.code[info::mesh->elements->eintervals[i].code].size += info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
 	}
 
 	std::vector<esint> sum, offset;
-	for (size_t i = 0; i < info::mesh->elements->processPerCode.size(); ++i) {
-		offset.push_back(info::mesh->elements->processPerCode[i].size);
+	for (size_t i = 0; i < info::mesh->elements->distribution.code.size(); ++i) {
+		offset.push_back(info::mesh->elements->distribution.code[i].size);
 	}
 	sum.resize(offset.size());
 	Communication::exscan(sum, offset);
-	for (size_t i = 0; i < info::mesh->elements->processPerCode.size(); ++i) {
-		info::mesh->elements->processPerCode[i].offset = offset[i];
-		info::mesh->elements->processPerCode[i].totalSize = sum[i];
+	for (size_t i = 0; i < info::mesh->elements->distribution.code.size(); ++i) {
+		info::mesh->elements->distribution.code[i].offset = offset[i];
+		info::mesh->elements->distribution.code[i].totalSize = sum[i];
 	}
 
-	info::mesh->elements->process.offset = info::mesh->elements->process.size;
-	info::mesh->elements->process.totalSize = Communication::exscan(info::mesh->elements->process.offset);
-	info::mesh->elements->process.last = info::mesh->elements->process.offset + info::mesh->elements->process.size;
+	info::mesh->elements->distribution.process.offset = info::mesh->elements->distribution.process.size;
+	info::mesh->elements->distribution.process.totalSize = Communication::exscan(info::mesh->elements->distribution.process.offset);
+	info::mesh->elements->distribution.process.last = info::mesh->elements->distribution.process.offset + info::mesh->elements->distribution.process.size;
 
 	profiler::synccheckpoint("elements_statistics");
 	profiler::syncend("permute_elements");
@@ -212,8 +212,7 @@ void arrangeElementsRegions()
 		const auto &eintervals =  info::mesh->elementsRegions[r]->eintervals;
 		const auto &elements = info::mesh->elementsRegions[r]->elements->datatarray();
 		for (size_t i = 0; i < eintervals.size(); ++i) {
-			info::mesh->elementsRegions[r]->processPerCode[eintervals[i].code].size += eintervals[i].end - eintervals[i].begin;
-			info::mesh->elementsRegions[r]->processPerCode[eintervals[i].code].last += eintervals[i].end - eintervals[i].begin;
+			info::mesh->elementsRegions[r]->distribution.code[eintervals[i].code].size += eintervals[i].end - eintervals[i].begin;
 		}
 
 		std::vector<std::vector<esint> > nodes(threads);
@@ -269,31 +268,30 @@ void arrangeElementsRegions()
 
 	std::vector<esint> sum, offset;
 	for (size_t r = 0; r < info::mesh->elementsRegions.size(); r++) {
-		for (size_t i = 0; i < info::mesh->elements->processPerCode.size(); i++) {
-			if (info::mesh->elements->processPerCode[i].totalSize) {
-				info::mesh->elementsRegions[r]->process.size += info::mesh->elementsRegions[r]->processPerCode[i].size;
-				info::mesh->elementsRegions[r]->process.last += info::mesh->elementsRegions[r]->processPerCode[i].size;
-				offset.push_back(info::mesh->elementsRegions[r]->processPerCode[i].size);
+		for (size_t i = 0; i < info::mesh->elements->distribution.code.size(); i++) {
+			if (info::mesh->elements->distribution.code[i].totalSize) {
+				info::mesh->elementsRegions[r]->distribution.process.size += info::mesh->elementsRegions[r]->distribution.code[i].size;
+				info::mesh->elementsRegions[r]->distribution.process.last += info::mesh->elementsRegions[r]->distribution.code[i].size;
+				offset.push_back(info::mesh->elementsRegions[r]->distribution.code[i].size);
 			}
 		}
-		info::mesh->elementsRegions[r]->process.offset = info::mesh->elementsRegions[r]->process.size;
-		offset.push_back(info::mesh->elementsRegions[r]->process.offset);
+		info::mesh->elementsRegions[r]->distribution.process.offset = info::mesh->elementsRegions[r]->distribution.process.size;
+		offset.push_back(info::mesh->elementsRegions[r]->distribution.process.offset);
 	}
 
 	sum.resize(offset.size());
 	Communication::exscan(sum, offset);
 
 	for (size_t r = 0, j = 0; r < info::mesh->elementsRegions.size(); r++) {
-		for (size_t i = 0; i < info::mesh->elements->processPerCode.size(); i++) {
-			if (info::mesh->elements->processPerCode[i].totalSize) {
-				info::mesh->elementsRegions[r]->processPerCode[i].offset = offset[j];
-				info::mesh->elementsRegions[r]->processPerCode[i].last += offset[j];
-				info::mesh->elementsRegions[r]->processPerCode[i].totalSize = sum[j++];
+		for (size_t i = 0; i < info::mesh->elements->distribution.code.size(); i++) {
+			if (info::mesh->elements->distribution.code[i].totalSize) {
+				info::mesh->elementsRegions[r]->distribution.code[i].offset = offset[j];
+				info::mesh->elementsRegions[r]->distribution.code[i].totalSize = sum[j++];
 			}
 		}
-		info::mesh->elementsRegions[r]->process.offset = offset[j];
-		info::mesh->elementsRegions[r]->process.last += offset[j];
-		info::mesh->elementsRegions[r]->process.totalSize = sum[j++];
+		info::mesh->elementsRegions[r]->distribution.process.offset = offset[j];
+		info::mesh->elementsRegions[r]->distribution.process.last += offset[j];
+		info::mesh->elementsRegions[r]->distribution.process.totalSize = sum[j++];
 	}
 
 	profiler::synccheckpoint("element_info");
@@ -310,7 +308,7 @@ void arrangeBoundaryRegions()
 	allRegions.insert(allRegions.end(), info::mesh->boundaryRegions.begin(), info::mesh->boundaryRegions.end());
 	allRegions.insert(allRegions.end(), info::mesh->contactInterfaces.begin(), info::mesh->contactInterfaces.end());
 
-	esint eoffset = info::mesh->elements->process.offset;
+	esint eoffset = info::mesh->elements->distribution.process.offset;
 	for (size_t r = 0; r < allRegions.size(); r++) {
 		if (allRegions[r]->nodes == NULL) {
 			std::vector<std::vector<esint> > nodes(threads);
@@ -465,12 +463,11 @@ void arrangeBoundaryRegions()
 		BoundaryRegionStore *store = allRegions[r];
 		if (store->dimension) {
 			for (size_t i = 0; i < store->eintervals.size(); ++i) {
-				store->processPerCode[store->eintervals[i].code].size += store->eintervals[i].end - store->eintervals[i].begin;
-				store->processPerCode[store->eintervals[i].code].last += store->eintervals[i].end - store->eintervals[i].begin;
+				store->distribution.code[store->eintervals[i].code].size += store->eintervals[i].end - store->eintervals[i].begin;
 				codes[r] |= 1 << store->eintervals[i].code;
 			}
 		} else {
-			store->processPerCode[(int)Element::CODE::POINT1].offset = store->nodeInfo.offset;
+			store->distribution.code[(int)Element::CODE::POINT1].offset = store->nodeInfo.offset;
 		}
 	}
 
@@ -480,16 +477,16 @@ void arrangeBoundaryRegions()
 	for (size_t r = 0; r < allRegions.size(); r++) {
 		BoundaryRegionStore *store = allRegions[r];
 		if (store->dimension) {
-			for (size_t i = 0, bitmask = 1; i < info::mesh->elements->processPerCode.size(); i++, bitmask = bitmask << 1) {
+			for (size_t i = 0, bitmask = 1; i < info::mesh->elements->distribution.code.size(); i++, bitmask = bitmask << 1) {
 				if (codes[r] & bitmask) {
-					store->process.size += store->processPerCode[i].size;
-					store->process.last += store->processPerCode[i].size;
-					offset.push_back(store->process.size);
+					store->distribution.process.size += store->distribution.code[i].size;
+					store->distribution.process.last += store->distribution.code[i].size;
+					offset.push_back(store->distribution.process.size);
 				}
 			}
 		}
-		store->process.offset = store->process.size;
-		offset.push_back(store->process.offset);
+		store->distribution.process.offset = store->distribution.process.size;
+		offset.push_back(store->distribution.process.offset);
 	}
 
 	sum.resize(offset.size());
@@ -498,20 +495,18 @@ void arrangeBoundaryRegions()
 	for (size_t r = 0, j = 0; r < allRegions.size(); r++) {
 		BoundaryRegionStore *store = allRegions[r];
 		if (store->dimension) {
-			for (size_t i = 0, bitmask = 1; i < info::mesh->elements->processPerCode.size(); i++, bitmask = bitmask << 1) {
+			for (size_t i = 0, bitmask = 1; i < info::mesh->elements->distribution.code.size(); i++, bitmask = bitmask << 1) {
 				if (codes[r] & bitmask) {
-					store->processPerCode[i].offset = offset[j];
-					store->processPerCode[i].last += offset[j];
-					store->processPerCode[i].totalSize = sum[j++];
+					store->distribution.code[i].offset = offset[j];
+					store->distribution.code[i].totalSize = sum[j++];
 				}
 			}
 		} else {
-			store->processPerCode[(int)Element::CODE::POINT1].offset = store->nodeInfo.offset;
-			store->processPerCode[(int)Element::CODE::POINT1].totalSize = store->nodeInfo.totalSize;
+			store->distribution.code[(int)Element::CODE::POINT1].offset = store->nodeInfo.offset;
+			store->distribution.code[(int)Element::CODE::POINT1].totalSize = store->nodeInfo.totalSize;
 		}
-		store->process.offset = offset[j];
-		store->process.last += offset[j];
-		store->process.totalSize = sum[j++];
+		store->distribution.process.offset = offset[j];
+		store->distribution.process.totalSize = sum[j++];
 	}
 
 	profiler::synccheckpoint("boundary_stats");
@@ -532,16 +527,16 @@ void fillRegionMask()
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		esint maskOffset = 0;
-		eregions[t].resize(regionsBitMaskSize * (info::mesh->elements->threading[t + 1] - info::mesh->elements->threading[t]));
+		eregions[t].resize(regionsBitMaskSize * (info::mesh->elements->distribution.threads[t + 1] - info::mesh->elements->distribution.threads[t]));
 		for (size_t r = 0; r < info::mesh->elementsRegions.size(); r++) {
 			maskOffset = r / (8 * sizeof(esint));
 			esint bit = (esint)1 << (r % (8 * sizeof(esint)));
 
 			const auto &elements = info::mesh->elementsRegions[r]->elements->datatarray();
-			auto begin = std::lower_bound(elements.begin(), elements.end(), info::mesh->elements->threading[t]);
-			auto end = std::lower_bound(elements.begin(), elements.end(), info::mesh->elements->threading[t + 1]);
+			auto begin = std::lower_bound(elements.begin(), elements.end(), info::mesh->elements->distribution.threads[t]);
+			auto end = std::lower_bound(elements.begin(), elements.end(), info::mesh->elements->distribution.threads[t + 1]);
 			for (auto i = begin; i != end; ++i) {
-				eregions[t][(*i - info::mesh->elements->threading[t]) * regionsBitMaskSize + maskOffset] |= bit;
+				eregions[t][(*i - info::mesh->elements->distribution.threads[t]) * regionsBitMaskSize + maskOffset] |= bit;
 			}
 		}
 	}
@@ -590,9 +585,9 @@ void computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion)
 
 	utils::sortWithInplaceMerge(elements[0], distribution);
 
-	auto begin = std::lower_bound(elements[0].begin(), elements[0].end(), info::mesh->elements->process.offset,
+	auto begin = std::lower_bound(elements[0].begin(), elements[0].end(), info::mesh->elements->distribution.process.offset,
 			[] (const std::pair<esint, esint> &p, esint e) { return p.first < e; });
-	auto end = std::lower_bound(elements[0].begin(), elements[0].end(), info::mesh->elements->process.last,
+	auto end = std::lower_bound(elements[0].begin(), elements[0].end(), info::mesh->elements->distribution.process.last,
 			[] (const std::pair<esint, esint> &p, esint e) { return p.first < e; });
 
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(threads, end - begin);
@@ -628,7 +623,7 @@ void computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion)
 			nodes.push_back((begin + e)->second);
 			if ((e + 1 == tdistribution[t + 1] || (begin + e + 1)->first != (begin + e)->first)) {
 
-				element = (begin + e)->first - info::mesh->elements->process.offset;
+				element = (begin + e)->first - info::mesh->elements->distribution.process.offset;
 				utils::sortAndRemoveDuplicates(nodes);
 
 				enodes += element - prev;
@@ -657,9 +652,9 @@ void computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion)
 							neighbor = neighbors->at(nface);
 							if (neighbor == -1) {
 								addFace();
-							} else if (element + info::mesh->elements->process.offset < neighbor) {
-								if (info::mesh->elements->process.isLocal(neighbor)) {
-									neighbor -= info::mesh->elements->process.offset;
+							} else if (element + info::mesh->elements->distribution.process.offset < neighbor) {
+								if (info::mesh->elements->distribution.process.isLocal(neighbor)) {
+									neighbor -= info::mesh->elements->distribution.process.offset;
 									if (memcmp(regions.data() + element * rsize, regions.data() + neighbor * rsize, sizeof(esint) * rsize) != 0) {
 										addFace();
 									}

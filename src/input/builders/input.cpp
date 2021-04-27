@@ -825,11 +825,11 @@ void Input::fillElements()
 		}
 	}
 
-	info::mesh->elements->process.offset = _eDistribution[info::mpi::rank];
-	info::mesh->elements->process.last = _eDistribution[info::mpi::rank + 1];
-	info::mesh->elements->process.size = _etypeDistribution[estart];
-	info::mesh->elements->process.totalSize = _etypeDistribution.back();
-	info::mesh->elements->threading = edistribution;
+	info::mesh->elements->distribution.process.offset = _eDistribution[info::mpi::rank];
+	info::mesh->elements->distribution.process.last = _eDistribution[info::mpi::rank + 1];
+	info::mesh->elements->distribution.process.size = _etypeDistribution[estart];
+	info::mesh->elements->distribution.process.totalSize = _etypeDistribution.back();
+	info::mesh->elements->distribution.threads = edistribution;
 	info::mesh->elements->IDs = new serializededata<esint, esint>(1, eIDs);
 	info::mesh->elements->nodes = new serializededata<esint, esint>(tedist, tnodes);
 	info::mesh->elements->epointers = new serializededata<esint, Element*>(1, epointers);
@@ -837,7 +837,7 @@ void Input::fillElements()
 	info::mesh->elements->body = new serializededata<esint, int>(1, eBody);
 
 	info::mesh->elementsRegions.push_back(new ElementsRegionStore("ALL_ELEMENTS"));
-	info::mesh->elementsRegions.back()->elements = new serializededata<esint, esint>(1, tarray<esint>(threads, info::mesh->elements->process.size));
+	info::mesh->elementsRegions.back()->elements = new serializededata<esint, esint>(1, tarray<esint>(threads, info::mesh->elements->distribution.process.size));
 	std::iota(info::mesh->elementsRegions.back()->elements->datatarray().begin(), info::mesh->elementsRegions.back()->elements->datatarray().end(), 0);
 	profiler::syncend("fill_elements");
 }
@@ -951,7 +951,7 @@ void Input::fillBoundaryRegions()
 					}
 				}
 
-				info::mesh->boundaryRegions.back()->distribution = edistribution;
+				info::mesh->boundaryRegions.back()->distribution.threads = edistribution;
 				info::mesh->boundaryRegions.back()->procNodes = new serializededata<esint, esint>(tedist, tnodes);
 				info::mesh->boundaryRegions.back()->epointers = new serializededata<esint, Element*>(1, epointers);
 			}

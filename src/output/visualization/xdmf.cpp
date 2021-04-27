@@ -52,7 +52,7 @@ struct XDMFData {
 
 using namespace espreso;
 
-static Element::CODE getcode(const std::vector<DistributedDataInfo> &processPerCode) {
+static Element::CODE getcode(const std::vector<DistributionInfo> &processPerCode) {
 	Element::CODE code = Element::CODE::POINT1;
 	for (size_t i = 0; i < processPerCode.size(); ++i) {
 		if (processPerCode[i].totalSize) {
@@ -65,7 +65,7 @@ static Element::CODE getcode(const std::vector<DistributedDataInfo> &processPerC
 	return code;
 };
 
-static esint getoffset(const std::vector<DistributedDataInfo> &processPerCode, Element::CODE code) {
+static esint getoffset(const std::vector<DistributionInfo> &processPerCode, Element::CODE code) {
 	esint offset = 0;
 	for (size_t i = 0; i < processPerCode.size(); ++i) {
 		offset += processPerCode[i].offset * Mesh::edata[i].nodes;
@@ -79,7 +79,7 @@ static esint getoffset(const std::vector<DistributedDataInfo> &processPerCode, E
 	return offset;
 };
 
-static esint gettotalsize(const std::vector<DistributedDataInfo> &processPerCode, Element::CODE code) {
+static esint gettotalsize(const std::vector<DistributionInfo> &processPerCode, Element::CODE code) {
 	esint size = 0;
 	for (size_t i = 0; i < processPerCode.size(); ++i) {
 		size += processPerCode[i].totalSize * Mesh::edata[i].nodes;
@@ -128,16 +128,16 @@ static void fillTopology(const std::string &path, XDMFData *xml, XDMF::Topology 
 	// heavy data are already stored
 	heavydata.name = region->name + "_TOPOLOGY";
 	heavydata.dimension = code == Element::CODE::SIZE ? 1 : code == Element::CODE::LINE2 ? 3 : Mesh::edata[(int)code].nodes;
-	heavydata.offset = getoffset(region->processPerCode, code) / heavydata.dimension;
+	heavydata.offset = getoffset(region->distribution.code, code) / heavydata.dimension;
 	heavydata.size = heavydata.topology.size() / heavydata.dimension;
-	heavydata.totalsize = code == Element::CODE::POINT1 ? region->nodeInfo.totalSize : gettotalsize(region->processPerCode, code) / heavydata.dimension;
+	heavydata.totalsize = code == Element::CODE::POINT1 ? region->nodeInfo.totalSize : gettotalsize(region->distribution.code, code) / heavydata.dimension;
 
 	auto topology = xml->region[rindex]->element("Topology");
 	auto reference = topology->element("DataItem");
 	auto dataitem = xml->domain->element("DataItem");
 
 	topology->attribute("TopologyType", XDMFWritter::etype(code));
-	topology->attribute("NumberOfElements", std::to_string(code == Element::CODE::POINT1 ? region->nodeInfo.totalSize : region->process.totalSize));
+	topology->attribute("NumberOfElements", std::to_string(code == Element::CODE::POINT1 ? region->nodeInfo.totalSize : region->distribution.process.totalSize));
 
 	reference->attribute("Reference", "XML");
 	reference->value = dataitem->ref(heavydata.name);
@@ -198,9 +198,9 @@ static void fillTopologyAttribute(const std::string &path, XML::Element *xml, XD
 {
 	heavydata.name = store->name + "_" + data->name + "_" + std::to_string(iteration);
 	heavydata.dimension = data->dimension > 1 ? 3 : 1;
-	heavydata.offset = store->process.offset;
-	heavydata.size = store->process.size;
-	heavydata.totalsize = store->process.totalSize;
+	heavydata.offset = store->distribution.process.offset;
+	heavydata.size = store->distribution.process.size;
+	heavydata.totalsize = store->distribution.process.totalSize;
 	heavydata.values.clear();
 	heavydata.values.reserve((data->dimension > 1 ? 3 : 1) * store->elements->structures());
 	for (auto e = store->elements->datatarray().cbegin(); e != store->elements->datatarray().cend(); ++e) {
@@ -267,7 +267,7 @@ void XDMF::updateMesh()
 
 			fillGeometry(_directory + _name, _data, geometries[rindex], region, rindex);
 
-			Element::CODE code = getcode(region->processPerCode); // Element::CODE::SIZE is used for representation of Mixed topology
+			Element::CODE code = getcode(region->distribution.code); // Element::CODE::SIZE is used for representation of Mixed topology
 			esint prev = 0;
 			auto element = info::mesh->elements->nodes->cbegin();
 			for (auto e = region->elements->datatarray().cbegin(); e != region->elements->datatarray().cend(); prev = *e++) {
@@ -292,7 +292,7 @@ void XDMF::updateMesh()
 
 			fillGeometry(_directory + _name, _data, geometries[rindex], region, rindex);
 
-			Element::CODE code = getcode(region->processPerCode);
+			Element::CODE code = getcode(region->distribution.code);
 			if (region->dimension) {
 				auto epointer = region->epointers->datatarray().cbegin();
 				for (auto e = region->procNodes->begin(); e != region->procNodes->end(); ++e, ++epointer) {

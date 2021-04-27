@@ -93,8 +93,8 @@ void DistributedComposer::assemble(const Builder &builder)
 			prev = eslog::time();
 		};
 
-		filler.begin = info::mesh->elements->threading[t];
-		filler.end = info::mesh->elements->threading[t + 1];
+		filler.begin = info::mesh->elements->distribution.threads[t];
+		filler.end = info::mesh->elements->distribution.threads[t + 1];
 
 		prev = eslog::time();
 		kernel->processElements(builder, filler);
@@ -108,8 +108,8 @@ void DistributedComposer::assemble(const Builder &builder)
 
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
 			if (info::mesh->boundaryRegions[r]->dimension && kernel->boundaryWithSettings(r)) {
-				filler.begin = info::mesh->boundaryRegions[r]->distribution[t];
-				filler.end = info::mesh->boundaryRegions[r]->distribution[t + 1];
+				filler.begin = info::mesh->boundaryRegions[r]->distribution.threads[t];
+				filler.end = info::mesh->boundaryRegions[r]->distribution.threads[t + 1];
 				prev = eslog::time();
 				kernel->processBoundary(builder, r, filler);
 			}

@@ -3,7 +3,7 @@
 #define SRC_MESH_STORE_ELEMENTSTORE_H_
 
 #include "basis/containers/point.h"
-#include "info.h"
+#include "elementinfo.h"
 #include "elementsinterval.h"
 #include "contactinfo.h"
 #include "nameddata.h"
@@ -29,16 +29,14 @@ struct ElementStore {
 
 	void store(const std::string &file);
 
-	void permute(const std::vector<esint> &permutation) { permute(permutation, threading); }
-	void permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution);
+	void permute(const std::vector<esint> &permutation) { permute(permutation, distribution.threads); }
+	void permute(const std::vector<esint> &permutation, const std::vector<size_t> &threading);
 
 	void reindex(const serializededata<esint, esint> *nIDs);
 
 	ElementData* appendData(int dimension, NamedData::DataType datatype, const std::string &name = "", step::TYPE restriction = step::TYPE::TIME);
 
-	std::vector<size_t> threading;
-	DistributedDataInfo process;
-	std::vector<DistributionInfo> processPerCode;
+	ElementsDistributionInfo distribution;
 
 	serializededata<esint, esint>* IDs;
 	serializededata<esint, esint>* nodes;

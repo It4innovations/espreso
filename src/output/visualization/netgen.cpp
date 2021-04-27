@@ -28,8 +28,8 @@ Netgen::~Netgen()
 
 void Netgen::updateMesh()
 {
-	for (size_t i = 0; i < info::mesh->elements->processPerCode.size(); ++i) {
-		if (info::mesh->elements->processPerCode[i].totalSize && (int)i != (int)Element::CODE::TETRA4) {
+	for (size_t i = 0; i < info::mesh->elements->distribution.code.size(); ++i) {
+		if (info::mesh->elements->distribution.code[i].totalSize && (int)i != (int)Element::CODE::TETRA4) {
 			eslog::error("Netgen writer error: only tetrahedral geometry can be stored in Netgen neutral format.\n");
 		}
 	}
@@ -46,7 +46,7 @@ void Netgen::updateMesh()
 
 	esint nelements = 0;
 	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
-		nelements +=  info::mesh->elementsRegions[r]->process.totalSize;
+		nelements +=  info::mesh->elementsRegions[r]->distribution.process.totalSize;
 	}
 	if (Visualization::isRoot()) {
 		_writer.int32ln(nelements);
@@ -68,7 +68,7 @@ void Netgen::updateMesh()
 	esint nboundary = 0;
 	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
-			nboundary +=  info::mesh->boundaryRegions[r]->process.totalSize;
+			nboundary +=  info::mesh->boundaryRegions[r]->distribution.process.totalSize;
 		}
 	}
 	if (Visualization::isRoot()) {

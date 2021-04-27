@@ -155,9 +155,9 @@ KernelExecutor<Instance>::elementsSolution(T * t)
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; t++) {
 		auto iterator = static_cast<Instance*>(this)->iterator;
-		iterator.initKernelIterator(info::mesh->elements->threading[t]);
+		iterator.initKernelIterator(info::mesh->elements->distribution.threads[t]);
 
-		for (size_t e = info::mesh->elements->threading[t]; e < info::mesh->elements->threading[t + 1]; ++e) {
+		for (size_t e = info::mesh->elements->distribution.threads[t]; e < info::mesh->elements->distribution.threads[t + 1]; ++e) {
 			iterator.element = info::mesh->elements->epointers->datatarray()[e];
 			iterator.material = info::mesh->materials[info::mesh->elements->material->datatarray()[e]];
 

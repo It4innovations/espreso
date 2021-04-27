@@ -14,10 +14,7 @@
 using namespace espreso;
 
 ElementStore::ElementStore()
-: threading({0, 0}),
-  processPerCode(static_cast<int>(Element::CODE::SIZE)),
-
-  IDs(NULL),
+: IDs(NULL),
   nodes(NULL),
   centers(NULL),
 
@@ -40,8 +37,6 @@ ElementStore::ElementStore()
 size_t ElementStore::packedFullSize() const
 {
 	size_t packedSize = 0;
-
-	packedSize += utils::packedSize(threading);
 
 	packedSize += utils::packedSize(IDs);
 	packedSize += utils::packedSize(nodes);
@@ -73,8 +68,6 @@ size_t ElementStore::packedFullSize() const
 
 void ElementStore::packFull(char* &p) const
 {
-	utils::pack(threading, p);
-
 	utils::pack(IDs, p);
 	utils::pack(nodes, p);
 	utils::pack(centers, p);
@@ -108,8 +101,6 @@ void ElementStore::packFull(char* &p) const
 
 void ElementStore::unpackFull(const char* &p)
 {
-	utils::unpack(threading, p);
-
 	utils::unpack(IDs, p);
 	utils::unpack(nodes, p);
 	utils::unpack(centers, p);
@@ -129,8 +120,8 @@ void ElementStore::unpackFull(const char* &p)
 		if (epointers != NULL) {
 			delete epointers;
 		}
-		epointers = new serializededata<esint, Element*>(1, tarray<Element*>(info::env::OMP_NUM_THREADS, process.size));
-		for (esint i = 0; i < process.size; ++i) {
+		epointers = new serializededata<esint, Element*>(1, tarray<Element*>(info::env::OMP_NUM_THREADS, distribution.process.size));
+		for (esint i = 0; i < distribution.process.size; ++i) {
 			epointers->datatarray()[i] = &Mesh::edata[eindices[i]];
 		}
 	}
@@ -165,7 +156,7 @@ void ElementStore::pack(char* &p) const
 
 		size_t threads = info::env::OMP_NUM_THREADS;
 		for (size_t t = 0; t < threads; t++) {
-			for (size_t i = this->threading[t]; i < this->threading[t + 1]; ++i) {
+			for (size_t i = distribution.threads[t]; i < distribution.threads[t + 1]; ++i) {
 				eindices.push_back(static_cast<int>(epointers->datatarray()[i]->code));
 			}
 		}
@@ -192,8 +183,8 @@ void ElementStore::unpack(const char* &p)
 		if (epointers != NULL) {
 			delete epointers;
 		}
-		epointers = new serializededata<esint, Element*>(1, tarray<Element*>(1, process.size));
-		for (esint i = 0; i < process.size; ++i) {
+		epointers = new serializededata<esint, Element*>(1, tarray<Element*>(1, distribution.process.size));
+		for (esint i = 0; i < distribution.process.size; ++i) {
 			epointers->datatarray()[i] = &Mesh::edata[eindices[i]];
 		}
 	}
@@ -313,25 +304,25 @@ void ElementStore::store(const std::string &file)
 	Store::storedata(os, "neighbors", faceNeighbors);
 }
 
-void ElementStore::permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution)
+void ElementStore::permute(const std::vector<esint> &permutation, const std::vector<size_t> &threading)
 {
-	this->threading = distribution;
+	distribution.threads = threading;
 
-	if (IDs != NULL) { IDs->permute(permutation, distribution); }
-	if (nodes != NULL) { nodes->permute(permutation, distribution); }
-	if (centers != NULL) { centers->permute(permutation, distribution); }
+	if (IDs != NULL) { IDs->permute(permutation, threading); }
+	if (nodes != NULL) { nodes->permute(permutation, threading); }
+	if (centers != NULL) { centers->permute(permutation, threading); }
 
-	if (body != NULL) { body->permute(permutation, distribution); }
-	if (contact != NULL) { contact->permute(permutation, distribution); }
-	if (material != NULL) { material->permute(permutation, distribution); }
-	if (regions != NULL) { regions->permute(permutation, distribution); }
+	if (body != NULL) { body->permute(permutation, threading); }
+	if (contact != NULL) { contact->permute(permutation, threading); }
+	if (material != NULL) { material->permute(permutation, threading); }
+	if (regions != NULL) { regions->permute(permutation, threading); }
 
-	if (epointers != NULL) { epointers->permute(permutation, distribution); }
+	if (epointers != NULL) { epointers->permute(permutation, threading); }
 
-	if (faceNeighbors != NULL) { faceNeighbors->permute(permutation, distribution); }
-	if (edgeNeighbors != NULL) { edgeNeighbors->permute(permutation, distribution); }
+	if (faceNeighbors != NULL) { faceNeighbors->permute(permutation, threading); }
+	if (edgeNeighbors != NULL) { edgeNeighbors->permute(permutation, threading); }
 
-	if (stiffness != NULL) { stiffness->permute(permutation, distribution); }
+	if (stiffness != NULL) { stiffness->permute(permutation, threading); }
 
 	// TODO: permute data
 }
@@ -352,7 +343,7 @@ ElementData* ElementStore::appendData(int dimension, NamedData::DataType datatyp
 {
 	this->data.push_back(new ElementData(dimension, datatype, name));
 	data.back()->restriction = restriction;
-	data.back()->data.resize(process.size * dimension);
+	data.back()->data.resize(distribution.process.size * dimension);
 	return this->data.back();
 }
 

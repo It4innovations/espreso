@@ -8,7 +8,7 @@ using namespace espreso;
 
 RegionStore::RegionStore(const std::string &name)
 : name(name),
-  processPerCode(static_cast<int>(Element::CODE::SIZE)), nodes(NULL)
+  nodes(NULL)
 {
 
 }

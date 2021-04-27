@@ -2,7 +2,7 @@
 #ifndef SRC_MESH_STORE_REGIONSTORE_H_
 #define SRC_MESH_STORE_REGIONSTORE_H_
 
-#include "info.h"
+#include "elementinfo.h"
 #include "elementsinterval.h"
 #include "nodeuniquenessinfo.h"
 
@@ -17,8 +17,7 @@ struct RegionStore {
 
 	std::string name;
 
-	DistributedDataInfo process;
-	std::vector<DistributedDataInfo> processPerCode;
+	ElementsDistributionInfo distribution;
 
 	serializededata<esint, esint>* nodes;
 	NodeUniquenessInfo nodeInfo;

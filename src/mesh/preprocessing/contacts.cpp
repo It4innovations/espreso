@@ -88,7 +88,7 @@ void computeBodiesSurface()
 			fdist.push_back(0);
 		}
 
-		for (size_t e = info::mesh->elements->threading[t]; e < info::mesh->elements->threading[t + 1]; ++e, ++neighs, ++nodes) {
+		for (size_t e = info::mesh->elements->distribution.threads[t]; e < info::mesh->elements->distribution.threads[t + 1]; ++e, ++neighs, ++nodes) {
 			for (size_t n = 0; n < neighs->size(); ++n) {
 				if (neighs->at(n) == -1) {
 					auto face = epointers[e]->faces->begin() + n;

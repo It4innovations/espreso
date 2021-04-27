@@ -27,11 +27,11 @@
 struct MESIOData {
 	MESIOData()
 	{
-		etypes.reserve(espreso::info::mesh->elements->process.size);
+		etypes.reserve(espreso::info::mesh->elements->distribution.process.size);
 		for (size_t e = 0; e < espreso::info::mesh->elements->epointers->datatarray().size(); ++e) {
 			etypes.push_back(static_cast<int>(espreso::info::mesh->elements->epointers->datatarray()[e]->code));
 		}
-		domains.reserve(espreso::info::mesh->elements->process.size);
+		domains.reserve(espreso::info::mesh->elements->distribution.process.size);
 		for (size_t i = 1; i < espreso::info::mesh->domains->elements.size(); ++i) {
 			domains.resize(espreso::info::mesh->domains->elements[i], espreso::info::mesh->domains->offset + i - 1);
 		}
@@ -158,9 +158,9 @@ void MESIOElements(
 	MESIOInt**      enodesDistribution,
 	MESIOInt**      enodesData)
 {
-	*offset = info::mesh->elements->process.offset;
-	*size = info::mesh->elements->process.size;
-	*totalSize = info::mesh->elements->process.totalSize;
+	*offset = info::mesh->elements->distribution.process.offset;
+	*size = info::mesh->elements->distribution.process.size;
+	*totalSize = info::mesh->elements->distribution.process.totalSize;
 	*type = mesio->etypes.data();
 	*enodesDistribution = info::mesh->elements->nodes->boundarytarray().data();
 	*enodesData = info::mesh->elements->nodes->datatarray().data();
@@ -204,8 +204,8 @@ void MESIOElementsCounters(
 	MESIOInt*       offset,
 	MESIOInt*       totalSize)
 {
-	*offset = info::mesh->elementsRegions.front()->processPerCode[etype].offset;
-	*totalSize = info::mesh->elementsRegions.front()->processPerCode[etype].totalSize;
+	*offset = info::mesh->elementsRegions.front()->distribution.code[etype].offset;
+	*totalSize = info::mesh->elementsRegions.front()->distribution.code[etype].totalSize;
 }
 
 int MESIOElementsRegions(
@@ -251,8 +251,8 @@ void MESIOElementsRegionCounters(
 	MESIOInt*       offset,
 	MESIOInt*       totalSize)
 {
-	*offset = info::mesh->elementsRegions[region]->processPerCode[etype].offset;
-	*totalSize = info::mesh->elementsRegions[region]->processPerCode[etype].totalSize;
+	*offset = info::mesh->elementsRegions[region]->distribution.code[etype].offset;
+	*totalSize = info::mesh->elementsRegions[region]->distribution.code[etype].totalSize;
 }
 
 int MESIOBoundaryRegions(
@@ -275,7 +275,7 @@ void MESIOBoundaryRegion(
 	*name = info::mesh->boundaryRegions[region]->name.c_str();
 	*dimension = info::mesh->boundaryRegions[region]->dimension;
 	if (*dimension) {
-		*size = info::mesh->boundaryRegions[region]->process.size;
+		*size = info::mesh->boundaryRegions[region]->distribution.process.size;
 		*type = mesio->rtypes[region].data();
 		*parent = info::mesh->boundaryRegions[region]->emembership->datatarray().data();
 		*elementDistribution = info::mesh->boundaryRegions[region]->procNodes->boundarytarray().data();
@@ -311,6 +311,6 @@ void MESIOBoundaryRegionCounters(
 	MESIOInt*       offset,
 	MESIOInt*       totalSize)
 {
-	*offset = info::mesh->boundaryRegions[region]->processPerCode[etype].offset;
-	*totalSize = info::mesh->boundaryRegions[region]->processPerCode[etype].totalSize;
+	*offset = info::mesh->boundaryRegions[region]->distribution.code[etype].offset;
+	*totalSize = info::mesh->boundaryRegions[region]->distribution.code[etype].totalSize;
 }

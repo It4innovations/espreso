@@ -123,7 +123,7 @@ void TopologyOptimization::runNextSubstep()
 					rsum += xPhys->vals[i];
 				}
 				Communication::allReduce(&rsum, &sum, 1, MPI_DOUBLE, MPI_SUM);
-				if (sum > _configuration.constraint.value * info::mesh->elements->process.totalSize) {
+				if (sum > _configuration.constraint.value * info::mesh->elements->distribution.process.totalSize) {
 					l1 = lmid;
 				} else {
 					l2 = lmid;

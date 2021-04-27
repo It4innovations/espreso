@@ -37,19 +37,19 @@ BoundaryRegionStore::~BoundaryRegionStore()
 	if (emembership != NULL) { delete emembership; }
 }
 
-void BoundaryRegionStore::permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution)
+void BoundaryRegionStore::permute(const std::vector<esint> &permutation, const std::vector<size_t> &threading)
 {
-	this->distribution = distribution;
+	distribution.threads = threading;
 
 	if (procNodes != NULL) {
-		procNodes->permute(permutation, distribution);
+		procNodes->permute(permutation, distribution.threads);
 	}
 
 	if (epointers != NULL) {
-		epointers->permute(permutation, distribution);
+		epointers->permute(permutation, distribution.threads);
 	}
 	if (emembership != NULL) {
-		emembership->permute(permutation, distribution);
+		emembership->permute(permutation, distribution.threads);
 	}
 
 	eintervals.clear();
@@ -63,7 +63,6 @@ size_t BoundaryRegionStore::packedFullSize() const
 	packedSize += utils::packedSize(dimension);
 	packedSize += utils::packedSize(area);
 
-	packedSize += utils::packedSize(distribution);
 	packedSize += utils::packedSize(procNodes);
 	packedSize += utils::packedSize(triangles);
 
@@ -89,7 +88,6 @@ void BoundaryRegionStore::packFull(char* &p) const
 	utils::pack(dimension, p);
 	utils::pack(area, p);
 
-	utils::pack(distribution, p);
 	utils::pack(procNodes, p);
 	utils::pack(triangles, p);
 
@@ -115,7 +113,6 @@ void BoundaryRegionStore::unpackFull(const char* &p)
 	utils::unpack(dimension, p);
 	utils::unpack(area, p);
 
-	utils::unpack(distribution, p);
 	utils::unpack(procNodes, p);
 	utils::unpack(triangles, p);
 

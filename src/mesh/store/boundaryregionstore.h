@@ -16,7 +16,6 @@ struct BoundaryRegionStore: public RegionStore {
 	int originalDimension, dimension;
 	double area;
 
-	std::vector<size_t> distribution;
 	serializededata<esint, esint>* procNodes;
 	serializededata<esint, esint>* triangles;
 
@@ -34,8 +33,8 @@ struct BoundaryRegionStore: public RegionStore {
 	void pack(char* &p) const;
 	void unpack(const char* &p);
 
-	void permute(const std::vector<esint> &permutation) { permute(permutation, distribution); }
-	void permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution);
+	void permute(const std::vector<esint> &permutation) { permute(permutation, distribution.threads); }
+	void permute(const std::vector<esint> &permutation, const std::vector<size_t> &threading);
 
 	BoundaryRegionStore(const std::string &name);
 	BoundaryRegionStore(const char* &packedData);

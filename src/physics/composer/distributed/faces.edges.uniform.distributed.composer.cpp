@@ -58,7 +58,7 @@ void FacesEdgesUniformDistributedComposer::_initDOFMap()
 		esint dsize = 0;
 		auto eID = info::mesh->elements->IDs->datatarray().cbegin(t);
 		auto faces = info::mesh->elements->faceNeighbors->cbegin(t);
-		for (size_t n = info::mesh->elements->threading[t]; n < info::mesh->elements->threading[t + 1]; ++n, ++faces, ++eID) {
+		for (size_t n = info::mesh->elements->distribution.threads[t]; n < info::mesh->elements->distribution.threads[t + 1]; ++n, ++faces, ++eID) {
 			for (auto face = faces->begin(); face != faces->end(); ++face) {
 				if (*face == -1 || *eID < *face) {
 					dsize += _fDOFs;
@@ -70,7 +70,7 @@ void FacesEdgesUniformDistributedComposer::_initDOFMap()
 		dsize = 0;
 		eID = info::mesh->elements->IDs->datatarray().cbegin(t);
 		auto edges = info::mesh->elements->edgeNeighbors->cbegin(t);
-		for (size_t n = info::mesh->elements->threading[t]; n < info::mesh->elements->threading[t + 1]; ++n, ++edges, ++eID) {
+		for (size_t n = info::mesh->elements->distribution.threads[t]; n < info::mesh->elements->distribution.threads[t + 1]; ++n, ++edges, ++eID) {
 			for (auto edge = edges->begin(); edge != edges->end(); edge += *edge + 1) {
 				if (*edge == 0 || *eID < *(edge + 1)) {
 					dsize += _eDOFs;
@@ -88,7 +88,7 @@ void FacesEdgesUniformDistributedComposer::_initDOFMap()
 	_nDistribution = Communication::getDistribution(goffset);
 	goffset = _nDistribution[info::mpi::rank];
 
-	std::vector<esint> edistribution = Communication::getDistribution(info::mesh->elements->process.size);
+	std::vector<esint> edistribution = Communication::getDistribution(info::mesh->elements->distribution.process.size);
 
 	std::vector<std::vector<std::vector<esint> > > sIDBuffer(threads, std::vector<std::vector<esint> >(info::mesh->neighbors.size()));
 	std::vector<std::vector<std::vector<esint> > > sDistBuffer(threads, std::vector<std::vector<esint> >(info::mesh->neighbors.size(), std::vector<esint>({0})));
@@ -112,7 +112,7 @@ void FacesEdgesUniformDistributedComposer::_initDOFMap()
 		auto faces = info::mesh->elements->faceNeighbors->cbegin(t);
 		auto edges = info::mesh->elements->edgeNeighbors->cbegin(t);
 		auto nodes = info::mesh->elements->nodes->cbegin(t);
-		for (size_t n = info::mesh->elements->threading[t]; n < info::mesh->elements->threading[t + 1]; ++n, ++faces, ++edges, ++nodes, ++eID) {
+		for (size_t n = info::mesh->elements->distribution.threads[t]; n < info::mesh->elements->distribution.threads[t + 1]; ++n, ++faces, ++edges, ++nodes, ++eID) {
 			for (auto face = faces->begin(); face != faces->end(); ++face) {
 				if (*face != -1 && (*face < edistribution[info::mpi::rank] || edistribution[info::mpi::rank + 1] <= *face)) {
 					esint noffset = 0;
@@ -220,7 +220,7 @@ void FacesEdgesUniformDistributedComposer::_initDOFMap()
 		auto edges = info::mesh->elements->edgeNeighbors->cbegin(t);
 		auto nodes = info::mesh->elements->nodes->cbegin(t);
 		auto map = _DOFMap->datatarray().begin(t);
-		for (size_t n = info::mesh->elements->threading[t]; n < info::mesh->elements->threading[t + 1]; ++n, ++faces, ++edges, ++nodes, ++eID) {
+		for (size_t n = info::mesh->elements->distribution.threads[t]; n < info::mesh->elements->distribution.threads[t + 1]; ++n, ++faces, ++edges, ++nodes, ++eID) {
 			for (auto face = faces->begin(); face != faces->end(); ++face, map += _fDOFs) {
 				if (*face != -1 && *face < *eID) {
 					if (*face < edistribution[info::mpi::rank] || edistribution[info::mpi::rank + 1] <= *face) {
@@ -311,7 +311,7 @@ void FacesEdgesUniformDistributedComposer::_buildPatterns()
 		esint tKsize = 0, tRHSsize = 0;
 
 		auto map = _DOFMap->cbegin(t);
-		for (size_t n = info::mesh->elements->threading[t]; n < info::mesh->elements->threading[t + 1]; ++n, ++map) {
+		for (size_t n = info::mesh->elements->distribution.threads[t]; n < info::mesh->elements->distribution.threads[t + 1]; ++n, ++map) {
 			tRHSsize += map->size();
 			tKsize += getMatrixSize(map->size(), omitLower);
 		}
@@ -355,7 +355,7 @@ void FacesEdgesUniformDistributedComposer::_buildPatterns()
 	for (int t = 0; t < threads; t++) {
 		IJ *Koffset = KPattern.data() + _tKOffsets[t];
 		auto map = _DOFMap->cbegin(t);
-		for (size_t n = info::mesh->elements->threading[t]; n < info::mesh->elements->threading[t + 1]; ++n, ++map) {
+		for (size_t n = info::mesh->elements->distribution.threads[t]; n < info::mesh->elements->distribution.threads[t + 1]; ++n, ++map) {
 			insertKPattern(Koffset, map->begin(), map->end(), omitLower);
 			Koffset += getMatrixSize(map->size(), omitLower);
 		}
