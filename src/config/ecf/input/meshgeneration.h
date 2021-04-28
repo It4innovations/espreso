@@ -23,9 +23,33 @@ struct GMSHConfiguration: public ECFDescription {
 	GMSHConfiguration();
 };
 
+struct NGLibConfiguration: public ECFDescription {
+
+	int uselocalh;
+	double maxh, minh;
+
+	double fineness, grading;
+	double elementsperedge, elementspercurve;
+
+	int closeedgeenable;
+	double closeedgefact;
+
+	int minedgelenenable;
+	double minedgelen;
+
+	int second_order, quad_dominated;
+	int optsurfmeshenable, optvolmeshenable, optsteps_3d, optsteps_2d;
+	int invert_tets, invert_trigs;
+	int check_overlap, check_overlapping_boundary;
+
+	NGLibConfiguration();
+};
+
+
 struct MeshGenerationConfiguration: public ECFDescription {
 
 	GMSHConfiguration gmsh_options;
+	NGLibConfiguration nglib_options;
 
 	MeshGenerationConfiguration();
 };

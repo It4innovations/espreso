@@ -22,6 +22,7 @@
 #include "input/parsers/vtklegacy/vtklegacy.h"
 #include "input/parsers/netgen/netgen.h"
 #include "input/parsers/gmsh/gmsh.h"
+#include "input/parsers/nglib/nglib.h"
 #include "input/parsers/meshgenerator/meshgenerator.h"
 
 #include "preprocessing/meshpreprocessing.h"
@@ -93,6 +94,7 @@ void Mesh::load()
 		case InputConfiguration::FORMAT::VTK_LEGACY:     data = new VTKLegacyLoader    (info::ecf->input); break;
 		case InputConfiguration::FORMAT::NETGET:         data = new NetgenNeutralLoader(info::ecf->input); break;
 		case InputConfiguration::FORMAT::GMSH:           data = new GMSHGenerator      (info::ecf->input); break;
+		case InputConfiguration::FORMAT::NGLIB:          data = new NGLibGenerator     (info::ecf->input); break;
 		}
 		break;
 	case ECF::INPUT_TYPE::GENERATOR:

@@ -39,7 +39,8 @@ InputConfiguration::InputConfiguration()
 			.addoption(ECFOption().setname("ENSIGHT").setdescription("Ensigh Gold format."))
 			.addoption(ECFOption().setname("VTK_LEGACY").setdescription("VTK Legacy format."))
 			.addoption(ECFOption().setname("NETGEN").setdescription("Neutral Netgen format."))
-			.addoption(ECFOption().setname("GMSH").setdescription("GMSH mesh generator.")));
+			.addoption(ECFOption().setname("GMSH").setdescription("GMSH mesh generator."))
+			.addoption(ECFOption().setname("NGLIB").setdescription("NGLib mesh generator.")));
 
 	REGISTER(clipping_box, ECFMetaData().setdescription({ "Clipping box." }));
 

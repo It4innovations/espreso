@@ -1,6 +1,8 @@
 
 def options(opt):
     opt.other.add_option("--gmsh", action="store", type="string", metavar="GMSH_ROOT", default="", help="Path to GMSH library.")
+    opt.other.add_option("--without-gmsh", action="store_true", default=False, help="Build without GMSH library.")
 
 def configure(ctx):
-    ctx.link_cxx(name="gmsh", header_name="gmsh.h", libs=["gmsh"], root=ctx.options.gmsh)
+    if not ctx.options.without_gmsh:
+        ctx.link_cxx(name="gmsh", header_name="gmsh.h", libs=["gmsh"], root=ctx.options.gmsh)

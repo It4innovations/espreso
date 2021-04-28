@@ -30,7 +30,8 @@ struct InputConfiguration: public ECFDescription {
 		ENSIGHT,
 		VTK_LEGACY,
 		NETGET,
-		GMSH
+		GMSH,
+		NGLIB
 	};
 
 	enum class LOADER {

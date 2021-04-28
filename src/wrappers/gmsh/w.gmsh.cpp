@@ -34,7 +34,6 @@ void GMSH::generate(MeshData &mesh)
 	}
 
 	const GMSHConfiguration &configuration = info::ecf->input.generation.gmsh_options;
-
 	bool isvalid = false;
 	gmsh::initialize();
 	gmsh::model::add("model");

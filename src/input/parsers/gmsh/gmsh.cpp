@@ -1,10 +1,7 @@
 
 #include "gmsh.h"
-#include "config/ecf/input/input.h"
 #include "basis/logging/profiler.h"
 #include "esinfo/eslog.h"
-#include "input/meshbuilder.h"
-#include "input/parsers/distributedscanner.h"
 #include "wrappers/gmsh/w.gmsh.h"
 
 using namespace espreso;
