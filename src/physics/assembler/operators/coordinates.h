@@ -27,6 +27,12 @@ struct CoordinatesToElementNodes: public Operator {
 	{
 		++procNodes;
 	}
+
+	CoordinatesToElementNodes& operator+=(const int rhs)
+	{
+		procNodes += rhs;
+		return *this;
+	}
 };
 
 struct Coordinates2DToElementNodes: CoordinatesToElementNodes {
@@ -42,6 +48,7 @@ struct Coordinates2DToElementNodes: CoordinatesToElementNodes {
 };
 
 struct Coordinates2DToElementNodesSimd: CoordinatesToElementNodes {
+
 	using CoordinatesToElementNodes::CoordinatesToElementNodes;
 	void operator()()
 	{
@@ -52,8 +59,8 @@ struct Coordinates2DToElementNodesSimd: CoordinatesToElementNodes {
 		{
 			for (auto n = tmpNodeIter->begin(); n != tmpNodeIter->end(); ++n, ++ncoordinates) {
 				auto nodeOfElement  = (n - tmpNodeIter->begin());
-				tmpNcoordinates[nodeOfElement * 2*SIMD::size + simdLane] = info::mesh->nodes->coordinates->datatarray()[*n].x;
-				tmpNcoordinates[nodeOfElement * 2*SIMD::size + simdLane + SIMD::size] = info::mesh->nodes->coordinates->datatarray()[*n].y;
+				tmpNcoordinates[(nodeOfElement * 2 + 0) * SIMD::size + simdLane] = info::mesh->nodes->coordinates->datatarray()[*n].x;
+				tmpNcoordinates[(nodeOfElement * 2 + 1) * SIMD::size + simdLane] = info::mesh->nodes->coordinates->datatarray()[*n].y;
 			}
 		}
 	}

@@ -35,6 +35,13 @@ struct ElementJacobian: public Operator {
 		++coords;
 		++inv; ++det; ++dND;
 	}
+
+	ElementJacobian& operator+=(const int rhs)
+	{
+		coords +=rhs;
+		inv += rhs; det += rhs; dND += rhs;
+		return *this;
+	}
 };
 
 struct ElementJacobian2D: public ElementJacobian {

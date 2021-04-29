@@ -58,6 +58,12 @@ struct FromNodesToGaussPointsSimd: public Operator {
 	{
 		++n; ++gp;
 	}
+
+	FromNodesToGaussPointsSimd& operator+=(const int rhs)
+	{
+		n += rhs; gp += rhs;
+		return *this;
+	}
 };
 
 template <int dimension>
