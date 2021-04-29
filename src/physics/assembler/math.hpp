@@ -102,23 +102,17 @@ static inline void M22M2N(const double * __restrict__ m22, const double * __rest
 template<int N>
 static inline void M22M2NSimd(const double * __restrict__ m22, const double * __restrict__ m2N, double * __restrict__ result)
 {
-	SIMD m22Simd [4];
-	m22Simd[0] = load(&m22[0 * SIMD::size]);
-	m22Simd[1] = load(&m22[1 * SIMD::size]);
-	m22Simd[2] = load(&m22[2 * SIMD::size]);
-	m22Simd[3] = load(&m22[3 * SIMD::size]);
+	SIMD m22Simd0 = load(&m22[0 * SIMD::size]);
+	SIMD m22Simd1 = load(&m22[1 * SIMD::size]);
+	SIMD m22Simd2 = load(&m22[2 * SIMD::size]);
+	SIMD m22Simd3 = load(&m22[3 * SIMD::size]);
 
 	for (int n = 0; n < N; ++n) {
 		SIMD m2N1 = load(&m2N[n * SIMD::size]);
 		SIMD m2N2 = load(&m2N[(N + n) * SIMD::size]);
 
-		SIMD res[2];
-
-		res[0] = m22Simd[0] * m2N1 + m22Simd[1] * m2N2;
-		res[1] = m22Simd[2] * m2N1 + m22Simd[3] * m2N2;
-
-		store(&result[(0 + n) * SIMD::size], res[0]);
-		store(&result[(N + n) * SIMD::size], res[1]);
+		store(&result[(0 + n) * SIMD::size], m22Simd0 * m2N1 + m22Simd1 * m2N2);
+		store(&result[(N + n) * SIMD::size], m22Simd2 * m2N1 + m22Simd3 * m2N2);
 	}
 }
 
@@ -135,31 +129,24 @@ static inline void M33M3N(const double * __restrict__ m33, const double * __rest
 template<int N>
 static inline void M33M3NSimd(const double * __restrict__ m33, const double * __restrict__ m3N, double * __restrict__ result)
 {
-	SIMD m33Simd [9];
-	m33Simd[0] = load(&m33[0 * SIMD::size]);
-	m33Simd[1] = load(&m33[1 * SIMD::size]);
-	m33Simd[2] = load(&m33[2 * SIMD::size]);
-	m33Simd[3] = load(&m33[3 * SIMD::size]);
-	m33Simd[4] = load(&m33[4 * SIMD::size]);
-	m33Simd[5] = load(&m33[5 * SIMD::size]);
-	m33Simd[6] = load(&m33[6 * SIMD::size]);
-	m33Simd[7] = load(&m33[7 * SIMD::size]);
-	m33Simd[8] = load(&m33[8 * SIMD::size]);
+	SIMD m33Simd0 = load(&m33[0 * SIMD::size]);
+	SIMD m33Simd1 = load(&m33[1 * SIMD::size]);
+	SIMD m33Simd2 = load(&m33[2 * SIMD::size]);
+	SIMD m33Simd3 = load(&m33[3 * SIMD::size]);
+	SIMD m33Simd4 = load(&m33[4 * SIMD::size]);
+	SIMD m33Simd5 = load(&m33[5 * SIMD::size]);
+	SIMD m33Simd6 = load(&m33[6 * SIMD::size]);
+	SIMD m33Simd7 = load(&m33[7 * SIMD::size]);
+	SIMD m33Simd8 = load(&m33[8 * SIMD::size]);
 
 	for (int n = 0; n < N; ++n) {
 		SIMD m3N1 = load(&m3N[(0 * N + n) * SIMD::size]);
 		SIMD m3N2 = load(&m3N[(1 * N + n) * SIMD::size]);
 		SIMD m3N3 = load(&m3N[(2 * N + n) * SIMD::size]);
 
-		SIMD res[3];
-
-		res[0] = m33Simd[0] * m3N1 + m33Simd[1] * m3N2 + m33Simd[2] * m3N3;
-		res[1] = m33Simd[3] * m3N1 + m33Simd[4] * m3N2 + m33Simd[5] * m3N3;
-		res[2] = m33Simd[6] * m3N1 + m33Simd[7] * m3N2 + m33Simd[8] * m3N3;
-
-		store(&result[(0 * N + n) * SIMD::size], res[0]);
-		store(&result[(1 * N + n) * SIMD::size], res[1]);
-		store(&result[(2 * N + n) * SIMD::size], res[2]);
+		store(&result[(0 * N + n) * SIMD::size], m33Simd0 * m3N1 + m33Simd1 * m3N2 + m33Simd2 * m3N3);
+		store(&result[(1 * N + n) * SIMD::size], m33Simd3 * m3N1 + m33Simd4 * m3N2 + m33Simd5 * m3N3);
+		store(&result[(2 * N + n) * SIMD::size], m33Simd6 * m3N1 + m33Simd7 * m3N2 + m33Simd8 * m3N3);
 	}
 }
 

@@ -76,32 +76,39 @@ struct ElementJacobian2DSimd: public ElementJacobian {
 	template<int nodes, int gps>
 	void operator()(int gpindex)
 	{
-		SIMD jacobian[4] {zeros(), zeros(), zeros(), zeros()};
-		SIMD dNX, dNY, coordsX, coordsY;
+		const double * __restrict__ pCoords = coords.data;
+		const double * __restrict__ pDN     = dN.data;
 
+		double * __restrict__ pDet = det.data;
+		double * __restrict__ pInv = inv.data;
+		double * __restrict__ pDND = dND.data;
+
+		SIMD jacobian0, jacobian1, jacobian2, jacobian3;
+		SIMD dNX, dNY, coordsX, coordsY;
+		
 		for (int n = 0; n < nodes; ++n) {
 
-			coordsX = load(&coords[(n * 2 + 0) * SIMD::size]);
-			coordsY = load(&coords[(n * 2 + 1) * SIMD::size]);
-			dNX = load(&dN[(2 * gpindex * nodes + n + 0 * nodes) * SIMD::size]);
-			dNY = load(&dN[(2 * gpindex * nodes + n + 1 * nodes) * SIMD::size]);
+			coordsX = load(&pCoords[(n * 2 + 0) * SIMD::size]);
+			coordsY = load(&pCoords[(n * 2 + 1) * SIMD::size]);
+			dNX = load(&pDN[(2 * gpindex * nodes + n + 0 * nodes) * SIMD::size]);
+			dNY = load(&pDN[(2 * gpindex * nodes + n + 1 * nodes) * SIMD::size]);
 
-			jacobian[0] = jacobian[0] + dNX * coordsX;
-			jacobian[1] = jacobian[1] + dNX * coordsY;
-			jacobian[2] = jacobian[2] + dNY * coordsX;
-			jacobian[3] = jacobian[3] + dNY * coordsY;
+			jacobian0 = jacobian0 + dNX * coordsX;
+			jacobian1 = jacobian1 + dNX * coordsY;
+			jacobian2 = jacobian2 + dNY * coordsX;
+			jacobian3 = jacobian3 + dNY * coordsY;
 		}
 
-		SIMD determinant = jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2];
-		store(&det[gpindex * SIMD::size], determinant);
+		SIMD determinant = jacobian0 * jacobian3 - jacobian1 * jacobian2;
+		store(&pDet[gpindex * SIMD::size], determinant);
 
 		SIMD detJx = ones() / determinant;
-		store(&inv[(4 * gpindex + 0) * SIMD::size],  detJx * jacobian[3]);
-		store(&inv[(4 * gpindex + 1) * SIMD::size], -detJx * jacobian[1]);
-		store(&inv[(4 * gpindex + 2) * SIMD::size], -detJx * jacobian[2]);
-		store(&inv[(4 * gpindex + 3) * SIMD::size],  detJx * jacobian[0]);
+		store(&pInv[(4 * gpindex + 0) * SIMD::size],  detJx * jacobian3);
+		store(&pInv[(4 * gpindex + 1) * SIMD::size], -detJx * jacobian1);
+		store(&pInv[(4 * gpindex + 2) * SIMD::size], -detJx * jacobian2);
+		store(&pInv[(4 * gpindex + 3) * SIMD::size],  detJx * jacobian0);
 
-		M22M2NSimd<nodes>(inv.data + 4 * gpindex * SIMD::size , dN.data + 2 * gpindex * nodes * SIMD::size, dND.data + 2 * gpindex * nodes * SIMD::size);
+		M22M2NSimd<nodes>(pInv + 4 * gpindex * SIMD::size , pDN + 2 * gpindex * nodes * SIMD::size, pDND + 2 * gpindex * nodes * SIMD::size);
 	}
 };
 
@@ -153,51 +160,58 @@ struct ElementJacobian3DSimd: public ElementJacobian {
 	template<int nodes, int gps>
 	void operator()(int gpindex)
 	{
-		SIMD jacobian[9] = { zeros(), zeros(), zeros(), zeros(), zeros(), zeros(), zeros(), zeros(), zeros() };
+		const double * __restrict__ pCoords = coords.data;
+		const double * __restrict__ pDN     = dN.data;
+
+		double * __restrict__ pDet = det.data;
+		double * __restrict__ pInv = inv.data;
+		double * __restrict__ pDND = dND.data;
+
+		SIMD jacobian0, jacobian1, jacobian2, jacobian3, jacobian4, jacobian5, jacobian6, jacobian7, jacobian8;
 		SIMD dNX, dNY, dNZ, coordsX, coordsY, coordsZ;
 
 		for (int n = 0; n < nodes; ++n) {
-			coordsX = load(&coords[(n * 3 + 0) * SIMD::size]);
-			coordsY = load(&coords[(n * 3 + 1) * SIMD::size]);
-			coordsZ = load(&coords[(n * 3 + 2) * SIMD::size]);
-			dNX = load(&dN[(3 * gpindex * nodes + n + 0 * nodes) * SIMD::size]);
-			dNY = load(&dN[(3 * gpindex * nodes + n + 1 * nodes) * SIMD::size]);
-			dNZ = load(&dN[(3 * gpindex * nodes + n + 2 * nodes) * SIMD::size]);
+			coordsX = load(&pCoords[(n * 3 + 0) * SIMD::size]);
+			coordsY = load(&pCoords[(n * 3 + 1) * SIMD::size]);
+			coordsZ = load(&pCoords[(n * 3 + 2) * SIMD::size]);
+			dNX = load(&pDN[(3 * gpindex * nodes + n + 0 * nodes) * SIMD::size]);
+			dNY = load(&pDN[(3 * gpindex * nodes + n + 1 * nodes) * SIMD::size]);
+			dNZ = load(&pDN[(3 * gpindex * nodes + n + 2 * nodes) * SIMD::size]);
 
-			jacobian[0] = jacobian[0] + dNX * coordsX;
-			jacobian[1] = jacobian[1] + dNX * coordsY;
-			jacobian[2] = jacobian[2] + dNX * coordsZ;
-			jacobian[3] = jacobian[3] + dNY * coordsX;
-			jacobian[4] = jacobian[4] + dNY * coordsY;
-			jacobian[5] = jacobian[5] + dNY * coordsZ;
-			jacobian[6] = jacobian[6] + dNZ * coordsX;
-			jacobian[7] = jacobian[7] + dNZ * coordsY;
-			jacobian[8] = jacobian[8] + dNZ * coordsZ;
+			jacobian0 = jacobian0 + dNX * coordsX;
+			jacobian1 = jacobian1 + dNX * coordsY;
+			jacobian2 = jacobian2 + dNX * coordsZ;
+			jacobian3 = jacobian3 + dNY * coordsX;
+			jacobian4 = jacobian4 + dNY * coordsY;
+			jacobian5 = jacobian5 + dNY * coordsZ;
+			jacobian6 = jacobian6 + dNZ * coordsX;
+			jacobian7 = jacobian7 + dNZ * coordsY;
+			jacobian8 = jacobian8 + dNZ * coordsZ;
 		}
 
 		SIMD determinant =
-				+ jacobian[0] * jacobian[4] * jacobian[8]
-				+ jacobian[1] * jacobian[5] * jacobian[6]
-				+ jacobian[2] * jacobian[3] * jacobian[7]
-				- jacobian[2] * jacobian[4] * jacobian[6]
-				- jacobian[1] * jacobian[3] * jacobian[8]
-				- jacobian[0] * jacobian[5] * jacobian[7];
+				+ jacobian0 * jacobian4 * jacobian8
+				+ jacobian1 * jacobian5 * jacobian6
+				+ jacobian2 * jacobian3 * jacobian7
+				- jacobian2 * jacobian4 * jacobian6
+				- jacobian1 * jacobian3 * jacobian8
+				- jacobian0 * jacobian5 * jacobian7;
 
-		store(&det[gpindex * SIMD::size], determinant);
+		store(&pDet[gpindex * SIMD::size], determinant);
 
 		SIMD detJx = ones() / determinant;
 
-		store(&inv[(9 * gpindex + 0) * SIMD::size], detJx * ( jacobian[8] * jacobian[4] - jacobian[7] * jacobian[5]));
-		store(&inv[(9 * gpindex + 1) * SIMD::size], detJx * (-jacobian[8] * jacobian[1] + jacobian[7] * jacobian[2]));
-		store(&inv[(9 * gpindex + 2) * SIMD::size], detJx * ( jacobian[5] * jacobian[1] - jacobian[4] * jacobian[2]));
-		store(&inv[(9 * gpindex + 3) * SIMD::size], detJx * (-jacobian[8] * jacobian[3] + jacobian[6] * jacobian[5]));
-		store(&inv[(9 * gpindex + 4) * SIMD::size], detJx * ( jacobian[8] * jacobian[0] - jacobian[6] * jacobian[2]));
-		store(&inv[(9 * gpindex + 5) * SIMD::size], detJx * (-jacobian[5] * jacobian[0] + jacobian[3] * jacobian[2]));
-		store(&inv[(9 * gpindex + 6) * SIMD::size], detJx * ( jacobian[7] * jacobian[3] - jacobian[6] * jacobian[4]));
-		store(&inv[(9 * gpindex + 7) * SIMD::size], detJx * (-jacobian[7] * jacobian[0] + jacobian[6] * jacobian[1]));
-		store(&inv[(9 * gpindex + 8) * SIMD::size], detJx * ( jacobian[4] * jacobian[0] - jacobian[3] * jacobian[1]));
+		store(&pInv[(9 * gpindex + 0) * SIMD::size], detJx * ( jacobian8 * jacobian4 - jacobian7 * jacobian5));
+		store(&pInv[(9 * gpindex + 1) * SIMD::size], detJx * (-jacobian8 * jacobian1 + jacobian7 * jacobian2));
+		store(&pInv[(9 * gpindex + 2) * SIMD::size], detJx * ( jacobian5 * jacobian1 - jacobian4 * jacobian2));
+		store(&pInv[(9 * gpindex + 3) * SIMD::size], detJx * (-jacobian8 * jacobian3 + jacobian6 * jacobian5));
+		store(&pInv[(9 * gpindex + 4) * SIMD::size], detJx * ( jacobian8 * jacobian0 - jacobian6 * jacobian2));
+		store(&pInv[(9 * gpindex + 5) * SIMD::size], detJx * (-jacobian5 * jacobian0 + jacobian3 * jacobian2));
+		store(&pInv[(9 * gpindex + 6) * SIMD::size], detJx * ( jacobian7 * jacobian3 - jacobian6 * jacobian4));
+		store(&pInv[(9 * gpindex + 7) * SIMD::size], detJx * (-jacobian7 * jacobian0 + jacobian6 * jacobian1));
+		store(&pInv[(9 * gpindex + 8) * SIMD::size], detJx * ( jacobian4 * jacobian0 - jacobian3 * jacobian1));
 
-		M33M3NSimd<nodes>(inv.data + 9 * gpindex * SIMD::size, dN.data + 3 * gpindex * nodes * SIMD::size, dND.data + 3 * gpindex * nodes * SIMD::size);
+		M33M3NSimd<nodes>(pInv + 9 * gpindex * SIMD::size, pDN + 3 * gpindex * nodes * SIMD::size, pDND + 3 * gpindex * nodes * SIMD::size);
 	}
 };
 
