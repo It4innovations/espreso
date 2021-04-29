@@ -5125,7 +5125,7 @@ int IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clus
 	SEQ_VECTOR <double> fi_l	 	(CG_max_iter, 0);
 	SEQ_VECTOR <double> fi_g	 	(CG_max_iter, 0);
 
-	bool update = true;
+	int update = true;
 
 //	int cnt_iter=0;
 
@@ -5347,7 +5347,7 @@ int IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clus
 		    }
 		}
 
-
+		MPI_Allreduce(MPI_IN_PLACE, &update, 1, MPI_INT, MPI_MIN, info::mpi::comm);
 		if (update) {
 
 			#pragma omp parallel for
