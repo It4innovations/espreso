@@ -7,6 +7,7 @@
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/domainstore.h"
+#include "mesh/preprocessing/meshpreprocessing.h"
 #include "physics/system/builder/builder.h"
 #include "basis/containers/point.h"
 #include "basis/evaluator/evaluator.h"
@@ -610,7 +611,7 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 	for (size_t r = 0; iterator.corotating == NULL && iterator.fixed == NULL && r < info::mesh->elementsRegions.size(); r++) {
 		esint maskOffset = r / (8 * sizeof(esint));
 		esint bit = (esint)1 << (r % (8 * sizeof(esint)));
-		if (info::mesh->elements->regions->datatarray()[iterator.offset * info::mesh->elements->regionMaskSize + maskOffset] & bit) {
+		if (info::mesh->elements->regions->datatarray()[iterator.offset * mesh::bitMastSize(info::mesh->elementsRegions.size()) + maskOffset] & bit) {
 			switch (iterator.configuration.rotor_dynamics.type) {
 			case RotorDynamicsConfiguration::TYPE::FIXED: {
 				auto def = iterator.configuration.rotor_dynamics.fixed.rotors_definitions.find(info::mesh->elementsRegions[r]->name);

@@ -53,8 +53,6 @@ struct ElementStore {
 
 	serializededata<esint, double>* stiffness;
 
-	int regionMaskSize;
-
 	std::vector<ElementsInterval> eintervals;
 	std::vector<esint> eintervalsDistribution;
 

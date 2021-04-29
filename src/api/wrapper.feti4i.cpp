@@ -312,7 +312,7 @@ void FETI4ICreateInstance(
 
 	matrix->mesh.elements->distribution.process.offset = matrix->mesh.elements->epointers->datatarray().size();;
 	matrix->mesh.elements->distribution.process.size = matrix->mesh.elements->epointers->datatarray().size();
-	matrix->mesh.elements->distribution.process.last = matrix->mesh.elements->distribution.process.offset + matrix->mesh.elements->distribution.process.size;
+	matrix->mesh.elements->distribution.process.next = matrix->mesh.elements->distribution.process.offset + matrix->mesh.elements->distribution.process.size;
 	matrix->mesh.elements->distribution.process.totalSize = Communication::exscan(matrix->mesh.elements->distribution.process.offset);
 	matrix->mesh.elements->distribution.threads = matrix->mesh.elements->epointers->datatarray().distribution();
 	matrix->mesh.elements->IDs = new serializededata<esint, esint>(1, tarray<esint>(matrix->mesh.elements->distribution.threads, 1));
@@ -320,10 +320,10 @@ void FETI4ICreateInstance(
 
 	Mesh *mesh = &matrix->mesh;
 	std::swap(mesh, info::mesh);
-	mesh::computeNodesDuplication();
-	mesh::partitiate(settings.domains, false);
+	mesh::computeNodesDuplication(mesh->nodes, mesh->neighborsWithMe);
+	mesh::partitiate(mesh->elements, mesh->nodes, mesh->clusters, mesh->domains, mesh->elementsRegions, mesh->boundaryRegions, mesh->neighbors, settings.domains, false);
 	if (settings.solver.method == FETIConfiguration::METHOD::HYBRID_FETI) {
-		mesh::computeDomainDual();
+		mesh::computeDomainDual(mesh->nodes, mesh->elements, mesh->domains, mesh->neighbors, mesh->neighborsWithMe);
 	}
 
 	NodesUniformAPIComposer composer(settings.solver, matrix->dofs);

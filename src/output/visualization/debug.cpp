@@ -40,7 +40,7 @@ DebugOutput::DebugOutput(double clusterShrinkRatio, double domainShrinkRatio, bo
 
 	if (withDomains) {
 		if (_mesh.nodes->domains == NULL) {
-			mesh::computeNodeDomainDistribution();
+			mesh::computeNodeDomainDistribution(info::mesh->elements, info::mesh->nodes, info::mesh->domains, info::mesh->neighborsWithMe);
 		}
 
 		std::vector<Point> dcenters(_mesh.domains->size);
@@ -234,7 +234,7 @@ void DebugOutput::faceNeighbors()
 	DebugOutput output(1, 1, false);
 
 	if (output._mesh.elements->centers == NULL) {
-		mesh::computeElementsCenters();
+		mesh::computeElementsCenters(info::mesh->elements, info::mesh->nodes);
 	}
 
 	esint psize = output._mesh.elements->centers->datatarray().size(), gpsize;
@@ -301,7 +301,7 @@ void DebugOutput::meshDual(std::vector<esint> &frames, std::vector<esint> &neigh
 	DebugOutput output(1, 1, false);
 
 	if (output._mesh.elements->centers == NULL) {
-		mesh::computeElementsCenters();
+		mesh::computeElementsCenters(info::mesh->elements, info::mesh->nodes);
 	}
 
 	esint psize = output._mesh.elements->centers->datatarray().size(), gpsize;
@@ -382,14 +382,14 @@ void DebugOutput::surfaceFixPoints(double clusterShrinkRatio, double domainShrin
 
 void DebugOutput::contact(double clusterShrinkRatio, double domainShrinkRatio)
 {
-	if (!info::ecf->output.debug || info::mesh->contacts->sparseSide == NULL) {
+	if (!info::ecf->output.debug || info::mesh->contact->sparseSide == NULL) {
 		return;
 	}
 
 	DebugOutput output(clusterShrinkRatio, domainShrinkRatio, false);
 
-	auto *sside = info::mesh->contacts->sparseSide;
-	auto *dside = info::mesh->contacts->denseSide;
+	auto *sside = info::mesh->contact->sparseSide;
+	auto *dside = info::mesh->contact->denseSide;
 
 	esint cells = 0, gcells, points = 0, poffset;
 	for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s) {
@@ -414,7 +414,7 @@ void DebugOutput::contact(double clusterShrinkRatio, double domainShrinkRatio)
 		for (auto d = dside->datatarray().begin() + s->denseSegmentBegin; d != dside->datatarray().begin() + s->denseSegmentEnd; ++d) {
 			if (!d->skip) {
 				for (esint t = 0; t < d->triangles; ++t) {
-					const Triangle &tr = output._mesh.contacts->intersections->datatarray()[triangle++];
+					const Triangle &tr = output._mesh.contact->intersections->datatarray()[triangle++];
 					output._writer.point(tr.p[0].x, tr.p[0].y, tr.p[0].z);
 					output._writer.point(tr.p[1].x, tr.p[1].y, tr.p[1].z);
 					output._writer.point(tr.p[2].x, tr.p[2].y, tr.p[2].z);

@@ -27,9 +27,7 @@ ElementStore::ElementStore()
   faceNeighbors(NULL),
   edgeNeighbors(NULL),
 
-  stiffness(NULL),
-
-  regionMaskSize(1)
+  stiffness(NULL)
 {
 
 }
@@ -54,7 +52,6 @@ size_t ElementStore::packedFullSize() const
 		packedSize += sizeof(size_t) + epointers->datatarray().size() * sizeof(int);
 	}
 
-	packedSize += utils::packedSize(regionMaskSize);
 	packedSize += utils::packedSize(eintervals);
 	packedSize += utils::packedSize(eintervalsDistribution);
 
@@ -89,7 +86,6 @@ void ElementStore::packFull(char* &p) const
 		utils::pack(eindices, p);
 	}
 
-	utils::pack(regionMaskSize, p);
 	utils::pack(eintervals, p);
 	utils::pack(eintervalsDistribution, p);
 
@@ -126,7 +122,6 @@ void ElementStore::unpackFull(const char* &p)
 		}
 	}
 
-	utils::unpack(regionMaskSize, p);
 	utils::unpack(eintervals, p);
 	utils::unpack(eintervalsDistribution, p);
 

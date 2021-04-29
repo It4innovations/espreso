@@ -532,9 +532,9 @@ void NodesUniformFETIComposer::_buildMortars()
 	auto &myids = info::mesh->nodes->IDs->datatarray();
 
 	// collect my nodes in B in order to compute mortar lambdas
-	if (info::mesh->contacts->B.size()) {
-		for (auto it = info::mesh->contacts->B.begin(), prev = it; it != info::mesh->contacts->B.end(); ++it) {
-			if (it == info::mesh->contacts->B.begin() || prev->pair != it->pair || prev->i != it->i) {
+	if (info::mesh->contact->B.size()) {
+		for (auto it = info::mesh->contact->B.begin(), prev = it; it != info::mesh->contact->B.end(); ++it) {
+			if (it == info::mesh->contact->B.begin() || prev->pair != it->pair || prev->i != it->i) {
 				auto nit = std::lower_bound(myids.begin() + info::mesh->nodes->uniqInfo.nhalo, myids.end(), it->i);
 				if (nit != myids.end() && *nit == it->i) {
 					lmap.push_back({ lambdaCount++, it->pair, it->i });
@@ -572,7 +572,7 @@ void NodesUniformFETIComposer::_buildMortars()
 
 	// found nodes that are on mortar interface -> we have exchange domain map in order to get correct decomposition
 	std::vector<esint> mids, mylambdas;
-	for (auto it = info::mesh->contacts->B.begin(); it != info::mesh->contacts->B.end(); ++it) {
+	for (auto it = info::mesh->contact->B.begin(); it != info::mesh->contact->B.end(); ++it) {
 		auto nit = std::find(myids.begin(), myids.begin() + info::mesh->nodes->uniqInfo.nhalo, it->j);
 		if (nit == myids.begin() + info::mesh->nodes->uniqInfo.nhalo || *nit != it->j) {
 			nit = std::lower_bound(myids.begin() + info::mesh->nodes->uniqInfo.nhalo, myids.end(), it->j);
@@ -643,9 +643,9 @@ void NodesUniformFETIComposer::_buildMortars()
 		if (!std::binary_search(mylambdas.begin(), mylambdas.end(), lambda->id)) {
 			continue;
 		}
-		auto begin = std::lower_bound(info::mesh->contacts->B.begin(), info::mesh->contacts->B.end(), *lambda, [] (const ijv &b, const __lambda__ &l) { return b.pair == l.pair ? b.i < l.id : b.pair < l.pair; });
+		auto begin = std::lower_bound(info::mesh->contact->B.begin(), info::mesh->contact->B.end(), *lambda, [] (const ijv &b, const __lambda__ &l) { return b.pair == l.pair ? b.i < l.id : b.pair < l.pair; });
 		auto end = begin;
-		while (end != info::mesh->contacts->B.end() && lambda->pair == end->pair && lambda->id == end->i) {
+		while (end != info::mesh->contact->B.end() && lambda->pair == end->pair && lambda->id == end->i) {
 			++end;
 		}
 
@@ -761,7 +761,7 @@ void NodesUniformFETIComposer::synchronize(const Builder &builder)
 void NodesUniformFETIComposer::computeCornerNodes()
 {
 	if (info::mesh->nodes->domains == NULL) {
-		mesh::computeNodeDomainDistribution();
+		mesh::computeNodeDomainDistribution(info::mesh->elements, info::mesh->nodes, info::mesh->domains, info::mesh->neighborsWithMe);
 	}
 
 	std::vector<esint> uniq;
@@ -978,7 +978,7 @@ void NodesUniformFETIComposer::computeFixPoints()
 void computeFixPointsOnSurface()
 {
 	if (info::mesh->domainsSurface == NULL || info::mesh->domainsSurface->enodes == NULL) {
-		mesh::computeDomainsSurface();
+		mesh::computeDomainsSurface(info::mesh->nodes, info::mesh->elements, info::mesh->domains, info::mesh->domainsSurface, info::mesh->neighbors);
 	}
 
 	size_t threads = info::env::OMP_NUM_THREADS;

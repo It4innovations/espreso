@@ -126,7 +126,7 @@ Mesh::Mesh()
   FETIData(new FETIDataStore()),
   halo(new ElementStore()),
   surface(new SurfaceStore()), domainsSurface(new SurfaceStore()),
-  contacts(new ContactStore()),
+  contact(new ContactStore()),
 
   output(new Output()),
   _omitClusterization(false),
@@ -168,7 +168,7 @@ Mesh::~Mesh()
 	delete halo;
 	delete surface;
 	delete domainsSurface;
-	delete contacts;
+	delete contact;
 
 	for (size_t i = 0; i < contactInterfaces.size(); ++i) {
 		delete contactInterfaces[i];
@@ -405,8 +405,10 @@ void Mesh::preprocess()
 	setMaterials();
 	eslog::checkpointln("MESH: MATERIALS FILLED");
 
+	mesh::fillRegionMask(info::mesh->elements->distribution, info::mesh->elementsRegions, info::mesh->elements->regions);
+
 	if (!_omitClusterization) {
-		mesh::reclusterize();
+		mesh::reclusterize(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe, halo);
 		profiler::synccheckpoint("reclusterize");
 	}
 
@@ -416,59 +418,70 @@ void Mesh::preprocess()
 		eslog::globalerror("ESPRESO quit computation: process without any elements detected.\n");
 	}
 
-	mesh::partitiate(preferedDomains, _omitDecomposition);
+	mesh::partitiate(elements, nodes, clusters, domains, elementsRegions, boundaryRegions, neighbors, preferedDomains, _omitDecomposition);
 
 	profiler::synccheckpoint("domain_decomposition");
 	eslog::checkpointln("MESH: MESH DECOMPOSED");
 
+	if (info::mesh->elements->faceNeighbors == NULL) {
+		mesh::computeElementsFaceNeighbors(nodes, elements, neighbors);
+	}
+
+	if (info::mesh->halo->IDs == NULL) {
+		mesh::exchangeHalo(elements, nodes, halo, neighbors);
+	}
 
 	for (size_t r = 0; r < boundaryRegions.size(); ++r) {
 		if (boundaryRegions[r]->originalDimension < boundaryRegions[r]->dimension) {
-			mesh::computeBoundaryElementsFromNodes(boundaryRegions[r]);
+			mesh::computeRegionsBoundaryElementsFromNodes(nodes, elements, halo, elementsRegions, boundaryRegions[r]);
 		}
 	}
 	eslog::checkpointln("MESH: BOUNDARY REGIONS COMPOSED");
 
 	profiler::synccheckpoint("preprocess_boundary_regions");
 
-	mesh::arrangeElementsRegions();
+	mesh::computeRegionsElementIntervals(elements, elementsRegions);
+	mesh::computeRegionsElementNodes(nodes, elements, neighbors, elementsRegions);
+	mesh::computeRegionsElementDistribution(info::mesh->elements, info::mesh->elementsRegions);
 	profiler::synccheckpoint("arrange_element_regions");
 	eslog::checkpointln("MESH: ELEMENT REGIONS ARRANGED");
 
-	mesh::computeBodies();
+	mesh::computeBodies(nodes, elements, bodies, elementsRegions, neighbors);
 	eslog::checkpointln("MESH: BODIES COMPUTED");
 
 	if (info::ecf->input.contact_interfaces.size()) {
-		mesh::computeBodiesSurface();
+		mesh::computeBodiesSurface(nodes, elements, elementsRegions, surface, neighbors);
 		mesh::computeWarpedNormals(surface);
-		mesh::exchangeContactHalo();
-		mesh::findCloseElements();
-		mesh::computeContactInterface();
-		mesh::arrangeContactInterfaces();
+		mesh::exchangeContactHalo(surface, contact);
+		mesh::findCloseElements(contact);
+		mesh::computeContactInterface(surface, contact);
+		mesh::arrangeContactInterfaces(contact, bodies, elementsRegions, contactInterfaces);
 		profiler::synccheckpoint("compute_contact_interface");
 		eslog::checkpointln("MESH: CONTACT INTERFACE COMPUTED");
 	}
 
-	mesh::arrangeBoundaryRegions();
+	mesh::computeRegionsBoundaryNodes(neighbors, nodes, boundaryRegions, contactInterfaces);
+	mesh::computeRegionsBoundaryParents(nodes, elements, domains, boundaryRegions, contactInterfaces);
+	mesh::computeRegionsBoundaryDistribution(boundaryRegions, contactInterfaces);
 	profiler::synccheckpoint("arrange_boundary_regions");
 	eslog::checkpointln("MESH: BOUNDARY REGIONS ARRANGED");
 
 	if (_withFETI) {
-		mesh::computeNodeDomainDistribution();
-		mesh::computeLocalIndices();
+		mesh::computeNodeDomainDistribution(elements, nodes, domains, neighborsWithMe);
+		mesh::computeLocalIndices(elements, domains);
 		profiler::synccheckpoint("preprocess_domains");
 		eslog::checkpointln("MESH: ELEMENTS DOMAIN INDICES COMPUTED");
 	}
 
 	if (_withBEM) {
-		mesh::computeDomainsSurface();
-		mesh::triangularizeDomainSurface();
+		mesh::computeDomainsSurface(nodes, elements, domains, domainsSurface, neighbors);
+		mesh::triangularizeDomainSurface(nodes, elements, domains, domainsSurface, neighbors);
 		profiler::synccheckpoint("preprocess_surface");
 		eslog::checkpointln("MESH: DOMAIN SURFACE COMPUTED");
 	}
 
 	if (info::ecf->getPhysics()->dimension == DIMENSION::D3 && _withGUI) {
-		mesh::computeRegionsSurface();
+		mesh::computeRegionsSurface(elements, nodes, halo, elementsRegions, neighbors);
 		for (size_t r = 0; r < elementsRegions.size(); r++) {
 			mesh::triangularizeSurface(elementsRegions[r]->surface);
 		}
@@ -479,18 +492,18 @@ void Mesh::preprocess()
 	}
 
 	if (info::ecf->getPhysics()->dimension == DIMENSION::D3 && info::ecf->output.format == OutputConfiguration::FORMAT::STL_SURFACE) {
-		mesh::computeBodiesSurface();
+		mesh::computeBodiesSurface(nodes, elements, elementsRegions, surface, neighbors);
 		mesh::triangularizeSurface(surface);
 		eslog::checkpointln("MESH: BODIES SURFACE COMPUTED");
 	}
 
 	if (_withFETI) {
-		mesh::computeDomainDual();
+		mesh::computeDomainDual(nodes, elements, domains, neighbors, neighborsWithMe);
 		profiler::synccheckpoint("compute_domain_dual");
 	}
 
 	if (_withEdgeDual) {
-		mesh::computeElementsEdgeNeighbors();
+		mesh::computeElementsEdgeNeighbors(nodes, elements, neighbors);
 		profiler::synccheckpoint("compute_edge_neighbors");
 		eslog::checkpointln("MESH: EDGE NEIGHBORS COMPUTED");
 	}
@@ -531,7 +544,7 @@ void Mesh::duplicate()
 
 		packedSize += surface->packedFullSize();
 		packedSize += domainsSurface->packedFullSize();
-		packedSize += contacts->packedFullSize();
+		packedSize += contact->packedFullSize();
 
 		packedSize += utils::packedSize(neighbors);
 		packedSize += utils::packedSize(neighborsWithMe);
@@ -573,7 +586,7 @@ void Mesh::duplicate()
 
 		surface->packFull(p);
 		domainsSurface->packFull(p);
-		contacts->packFull(p);
+		contact->packFull(p);
 
 		utils::pack(neighbors, p);
 		utils::pack(neighborsWithMe, p);
@@ -629,7 +642,7 @@ void Mesh::duplicate()
 
 		surface->unpackFull(p);
 		domainsSurface->unpackFull(p);
-		contacts->unpackFull(p);
+		contact->unpackFull(p);
 
 		utils::unpack(neighbors, p);
 		utils::unpack(neighborsWithMe, p);
@@ -823,7 +836,7 @@ void Mesh::printMeshStatistics()
 			interface += " - - - - ";
 			eslog::info(" %*s %*s \n", 36, " ", namesize, interface.c_str());
 			for (size_t i = 0; i < it->second.found_interfaces.size(); ++i) {
-				auto &iface = contacts->interfaces[contactInterfaces[it->second.found_interfaces[i]]->interfaceIndex];
+				auto &iface = contact->interfaces[contactInterfaces[it->second.found_interfaces[i]]->interfaceIndex];
 				std::vector<std::string> names = Parser::split(contactInterfaces[it->second.found_interfaces[i]]->name, "-");
 				if (names.size() <= 2) {
 					names.push_back("NAMELESS_BODY");
@@ -854,8 +867,8 @@ void Mesh::printMeshStatistics()
 		}
 		for (auto it = contactInterfaces.begin(); it != contactInterfaces.end(); ++it) {
 			eslog::info("mesh: region=%s, s-faces=%d, s-area=%.5f, d-faces=%d, d-area=%.5f\n", (*it)->name.c_str(),
-					contacts->interfaces[(*it)->interfaceIndex].from.faces, contacts->interfaces[(*it)->interfaceIndex].from.area,
-					contacts->interfaces[(*it)->interfaceIndex].to.faces, contacts->interfaces[(*it)->interfaceIndex].to.area);
+					contact->interfaces[(*it)->interfaceIndex].from.faces, contact->interfaces[(*it)->interfaceIndex].from.area,
+					contact->interfaces[(*it)->interfaceIndex].to.faces, contact->interfaces[(*it)->interfaceIndex].to.area);
 		}
 		break;
 	}
@@ -1124,7 +1137,7 @@ void Mesh::printDecompositionStatistics()
 		esint ielements = 0;
 		for (auto neighs = elements->faceNeighbors->begin(t); neighs != elements->faceNeighbors->end(t); ++neighs) {
 			for (auto n = neighs->begin(); n != neighs->end(); ++n) {
-				if (*n != -1 && (*n < elements->distribution.process.offset || elements->distribution.process.last <= *n)) {
+				if (*n != -1 && (*n < elements->distribution.process.offset || elements->distribution.process.next <= *n)) {
 					++ielements;
 				}
 			}

@@ -96,7 +96,7 @@ ScatteredInput::ScatteredInput(MeshBuilder &meshData)
 	eslog::checkpointln("BUILDER: ELEMENTS SORTED");
 
 	if (info::mesh->nodes->elements == NULL) {
-		mesh::linkNodesAndElements();
+		mesh::linkNodesAndElements(info::mesh->elements, info::mesh->nodes, info::mesh->neighbors);
 		profiler::synccheckpoint("link_nodes_and_elements");
 	}
 

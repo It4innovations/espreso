@@ -826,7 +826,7 @@ void Input::fillElements()
 	}
 
 	info::mesh->elements->distribution.process.offset = _eDistribution[info::mpi::rank];
-	info::mesh->elements->distribution.process.last = _eDistribution[info::mpi::rank + 1];
+	info::mesh->elements->distribution.process.next = _eDistribution[info::mpi::rank + 1];
 	info::mesh->elements->distribution.process.size = _etypeDistribution[estart];
 	info::mesh->elements->distribution.process.totalSize = _etypeDistribution.back();
 	info::mesh->elements->distribution.threads = edistribution;

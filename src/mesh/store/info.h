@@ -11,11 +11,11 @@ struct DistributionInfo {
 };
 
 struct DistributedDataInfo: public DistributionInfo {
-	esint last;
+	esint next;
 
-	DistributedDataInfo(): last(0) {}
+	DistributedDataInfo(): next(0) {}
 
-	inline bool isLocal(const esint &index) const noexcept { return offset <= index && index < last; }
+	inline bool isLocal(const esint &index) const noexcept { return offset <= index && index < next; }
 };
 
 struct DuplicatedDataInfo: public DistributedDataInfo {

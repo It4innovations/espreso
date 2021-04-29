@@ -93,7 +93,7 @@ public:
 	SurfaceStore *surface;
 	SurfaceStore *domainsSurface;
 
-	ContactStore *contacts;
+	ContactStore *contact;
 
 	std::vector<int> neighbors;
 	std::vector<int> neighborsWithMe;

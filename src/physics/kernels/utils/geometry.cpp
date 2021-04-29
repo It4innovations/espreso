@@ -366,7 +366,7 @@ void assembleMortarInterface(std::vector<ijv> &B)
 	MatrixDense sGpCoords(tGPs, 2), dGpCoords(tGPs, 2);
 	MatrixDense tmp, sDetJ, dDetJ, tDetJ, sN, dN;
 
-	const std::vector<SurfaceStore*> &surfaces = info::mesh->contacts->surfaces;
+	const std::vector<SurfaceStore*> &surfaces = info::mesh->contact->surfaces;
 
 	auto getReferenceCoords = [&] (Element *e, MatrixDense &eCoords, MatrixDense &tCoords, MatrixDense &ref) {
 		switch (e->code) { // TODO: improve for other types
@@ -385,13 +385,13 @@ void assembleMortarInterface(std::vector<ijv> &B)
 	};
 
 	std::unordered_map<esint, std::unordered_map<esint, esint> > interface;
-	for (size_t i = 0; i < info::mesh->contacts->interfaces.size(); ++i) {
-		interface[info::mesh->contacts->interfaces[i].from.body][info::mesh->contacts->interfaces[i].to.body] = i;
+	for (size_t i = 0; i < info::mesh->contact->interfaces.size(); ++i) {
+		interface[info::mesh->contact->interfaces[i].from.body][info::mesh->contact->interfaces[i].to.body] = i;
 	}
 
-	auto *sside = info::mesh->contacts->sparseSide;
-	auto *dside = info::mesh->contacts->denseSide;
-	double *coors = info::mesh->contacts->planeCoordinates->datatarray().data()->data();
+	auto *sside = info::mesh->contact->sparseSide;
+	auto *dside = info::mesh->contact->denseSide;
+	double *coors = info::mesh->contact->planeCoordinates->datatarray().data()->data();
 	for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s) {
 		for (auto iface = interface[s->body].begin(); iface != interface[s->body].end(); ++iface) {
 			Element* sElement = surfaces.back()->epointers->datatarray()[s->element];
@@ -520,22 +520,22 @@ void assembleMortarInterface(std::vector<ijv> &B)
 void computeMortars()
 {
 	std::vector<ijv> B;
-	if (info::mesh->contacts->sparseSide != NULL) {
+	if (info::mesh->contact->sparseSide != NULL) {
 		assembleMortarInterface(B);
 	}
 	std::sort(B.begin(), B.end());
 
 	// exchange neighbors
-	std::vector<int> neighs, neighsWithMe = info::mesh->contacts->neighbors;
+	std::vector<int> neighs, neighsWithMe = info::mesh->contact->neighbors;
 	std::vector<std::vector<int> > rNeighs(info::mesh->neighbors.size());
-	if (!Communication::exchangeUnknownSize(info::mesh->contacts->neighbors, rNeighs, info::mesh->neighbors)) {
+	if (!Communication::exchangeUnknownSize(info::mesh->contact->neighbors, rNeighs, info::mesh->neighbors)) {
 		eslog::internalFailure("exchange mortar neighbors.\n");
 	}
 	for (size_t r = 0; r < rNeighs.size(); ++r) {
 		neighsWithMe.insert(neighsWithMe.end(), rNeighs[r].begin(), rNeighs[r].end());
 	}
-	rNeighs.resize(info::mesh->contacts->neighbors.size());
-	if (!Communication::exchangeUnknownSize(info::mesh->neighbors, rNeighs, info::mesh->contacts->neighbors)) {
+	rNeighs.resize(info::mesh->contact->neighbors.size());
+	if (!Communication::exchangeUnknownSize(info::mesh->neighbors, rNeighs, info::mesh->contact->neighbors)) {
 		eslog::internalFailure("exchange mortar geometric neighbors.\n");
 	}
 	for (size_t r = 0; r < rNeighs.size(); ++r) {
@@ -629,7 +629,7 @@ void computeMortars()
 			}
 		}
 		if (bsize != sBuffer[0].size()) {
-			info::mesh->contacts->B.insert(info::mesh->contacts->B.end(), begin, end);
+			info::mesh->contact->B.insert(info::mesh->contact->B.end(), begin, end);
 			for (auto it = begin; it != end; ++it) {
 				cIDs.push_back(it->j);
 			}
