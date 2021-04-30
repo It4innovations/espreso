@@ -126,6 +126,7 @@ MorphingMatrix::MorphingMatrix(
 	}
 	
 	//recieving foreign data
+	// printf("point_data = [\n");
 	for(auto el: process_blocks[info::mpi::rank]){
 		if(el != info::mpi::rank){
 			active_point_set[el].resize(nPoints[el]);
@@ -141,8 +142,13 @@ MorphingMatrix::MorphingMatrix(
 			);
 			req_idx++;
 		}
+
+		// for(auto &p: active_point_set[el]){
+		// 	printf("  %10.8f, %10.8f, %10.8f;\n", p.x, p.y, p.z);
+		// }
 	}
 	MPI_Waitall(req_idx, requests.data(), MPI_STATUSES_IGNORE);
+	// printf("];\n");
 
 	
 	//construction of relevant trees and global DOFs
@@ -192,15 +198,17 @@ MorphingMatrix::MorphingMatrix(
 	
 	this->ncols = npoints_total + this->n_regularization;
 	this->nrows = this->ncols;
+
+
 	// this->apply_data_mem.resize(this->nrows);
 
-	this->P = new MorphingMatrixPreconditioner(
-		npoints_total, 
-		this->n_regularization,
-		this->global_DOFs_start[info::mpi::rank],
-		active_point_set[info::mpi::rank], 
-		configuration
-	);
+	// this->P = new MorphingMatrixPreconditioner(
+	// 	npoints_total, 
+	// 	this->n_regularization,
+	// 	this->global_DOFs_start[info::mpi::rank],
+	// 	active_point_set[info::mpi::rank], 
+	// 	configuration
+	// );
 	
 	morphing_rhs.resize(this->nrows * this->dimension);
 	std::fill(morphing_rhs.begin(), morphing_rhs.end(), 0.0f);
@@ -629,6 +637,10 @@ void MorphingMatrix::calculateMorphingError(
 		
 	}
 
+	error_morph_x = std::sqrt(error_morph_x / (error_morph_x_ref > 0?error_morph_x_ref:1));
+	error_morph_y = std::sqrt(error_morph_y / (error_morph_y_ref > 0?error_morph_y_ref:1));
+	error_morph_z = std::sqrt(error_morph_z / (error_morph_z_ref > 0?error_morph_z_ref:1));
+
 	orthogonality_error_x = 0.0f;
 	orthogonality_error_y = 0.0f;
 	orthogonality_error_z = 0.0f;
@@ -638,9 +650,6 @@ void MorphingMatrix::calculateMorphingError(
 		orthogonality_error_z += res_z[i] * res_z[i];
 	}
 	
-	error_morph_x = std::sqrt(error_morph_x);
-	error_morph_y = std::sqrt(error_morph_y);
-	error_morph_z = std::sqrt(error_morph_z);
 
 	orthogonality_error_x = std::sqrt(orthogonality_error_x);
 	orthogonality_error_y = std::sqrt(orthogonality_error_y);

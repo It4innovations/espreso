@@ -533,7 +533,7 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 	std::vector<double> wq_values_aca;
 	
 	double aca_eta = 2.0f;
-	double aca_eps = 1e-6;
+	double aca_eps = 1e-12;
 	esint base_tree_size = 10;
 	
 	
@@ -557,7 +557,8 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 		base_tree_size,
 		rhs_values_aca
 	);
-	eslog::info("   ASSMEBLY TIME                                                                %8.3f [s] \n", eslog::time() - aca_start);
+	eslog::info("   ACA MATRIX DIMENSION                                                         %8d \n", M_ACA.getNRows());
+	eslog::info("   ASSEMBLY TIME                                                                %8.3f [s] \n", eslog::time() - aca_start);
 	double aca_compr = M_ACA.getCompressionRatio();
 	eslog::info("   COMPRESSION                                                                  %8.3f [%%] \n\n", aca_compr * 100.0f);
 	// eslog::info("   # of rows           %10d\n", M_ACA.getNRows());
@@ -609,12 +610,12 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 	);
 	eslog::info("\n");
 	for(esint d = 0; d < dimension; ++d){
-		eslog::info("   MORPHING ERROR FOR %s                                                           %10.8f  \n", dim_name[d], error_morph[d]);
+		eslog::info("   MORPHING ERROR FOR %s                                                           %10.8f [%] \n", dim_name[d], error_morph[d]);
 	}
-	eslog::info("\n");
-	for(esint d = 0; d < dimension; ++d){
-		eslog::info("   ORTHOGONALITY ERROR FOR %s                                                      %10.8f  \n", dim_name[d], orthogonality_error[d]);
-	}
+	// eslog::info("\n");
+	// for(esint d = 0; d < dimension; ++d){
+	// 	eslog::info("   ORTHOGONALITY ERROR FOR %s                                                      %10.8f  \n", dim_name[d], orthogonality_error[d]);
+	// }
 	
 	/*
 	std::vector<double> M_values;
@@ -903,8 +904,8 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (auto n = tregion->nodes->begin(t)->begin(); n != tregion->nodes->end(t)->begin(); ++n) {
-			// Point &morphed = info::mesh->nodes->coordinates->datatarray()[*n];
-			Point morphed = info::mesh->nodes->originCoordinates->datatarray()[*n];
+			Point &morphed = info::mesh->nodes->coordinates->datatarray()[*n];
+			// Point morphed = info::mesh->nodes->originCoordinates->datatarray()[*n];
 
 			Point origin = morphed;
 			// Point origin = info::mesh->nodes->originCoordinates->datatarray()[*n];

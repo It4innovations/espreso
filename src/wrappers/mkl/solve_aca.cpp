@@ -82,7 +82,7 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 	ipar[7] = 1;//1 -> performs test for maximal number of iterations: ipar[3] <= ipar[4]
 	ipar[8] = 1;//1 -> performs residual stopping test: dpar[4] <= dpar[3]
 	ipar[9] = 0;
-	ipar[10] = 1;//0 -> non-preconditioned version
+	ipar[10] = 0;//0 -> non-preconditioned version
 	ipar[11] = 1;//1 -> performs automatic test for zero norm of the currently generated vector: dpar[6] <= dpar[7], dpar[7] contains the tolerance value
 
 	//---------------------------------------------------------------------------

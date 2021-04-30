@@ -27,7 +27,7 @@ MorphingMatrixPreconditioner::MorphingMatrixPreconditioner(
     if(points_local.size() > 0){
         nsparse_points = std::ceil(std::log2(points_local.size()));
     }
-	// nsparse_points = 2;
+	nsparse_points = 2;
 
     KDTree T(points_local, nsparse_points);
     esint nbuckets = T.getNLeaves();
@@ -47,6 +47,14 @@ MorphingMatrixPreconditioner::MorphingMatrixPreconditioner(
     // printf("%d %d\n", sparse_point_indices_global[0], sparse_point_indices_global[1]);
     Communication::allGatherUnknownSize<esint>(sparse_point_indices_global);
     Communication::allGatherUnknownSize<Point>(sparse_points_local);
+
+	//recieving foreign data
+	// printf("sparse_indices = [");
+	// for(auto el: sparse_point_indices_global){
+	// 	printf("  %d, ", el);
+	// }
+	// printf("];\n");
+	
    
 	printf("# of sparse points: %d, total # of local points: %d\n", sparse_points_local.size(), points_local.size());
 	// printf("%d %d\n", sparse_point_indices_global[0], sparse_point_indices_global[1]);
