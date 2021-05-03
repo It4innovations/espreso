@@ -557,7 +557,7 @@ void computeRegionsBoundaryElementsFromNodes(const NodeStore *nodes, const Eleme
 	std::vector<std::vector<esint> > edist(threads), edata(threads), ecode(threads);
 	std::vector<std::vector<Element*> > epointers(threads);
 
-	int rsize = bitMastSize(elementsRegions.size());
+	int rsize = elements->regions->edataSize();
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {

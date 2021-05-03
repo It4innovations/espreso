@@ -369,7 +369,7 @@ void computeBodies(NodeStore *nodes, ElementStore *elements, BodyStore *bodies, 
 		memcpy(elements->body->datatarray().data(), body.data(), elements->distribution.process.size * sizeof(int));
 	}
 
-	int rsize = bitMastSize(elementsRegions.size());
+	int rsize = elements->regions->edataSize();
 	std::vector<esint> bodyRegions(bodies->totalSize * rsize);
 	for (esint e = 0; e < elements->distribution.process.size; ++e) {
 		int b = elements->body->datatarray()[e];
@@ -686,7 +686,7 @@ ElementStore* exchangeHalo(ElementStore *elements, NodeStore *nodes, std::vector
 		hElements[t].swap(telements);
 	}
 
-	int rsize = bitMastSize(elements->regions->datatarray().size() / elements->distribution.process.size);
+	int rsize = elements->regions->edataSize();
 
 	std::vector<std::vector<size_t> > tdist(neighbors.size());
 	for (size_t n = 0; n < neighbors.size(); ++n) {
@@ -958,7 +958,7 @@ void computeDecomposedDual(NodeStore *nodes, ElementStore *elements, std::vector
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<esint> tdata;
 		int mat1 = 0, mat2 = 0, reg = 0, etype1 = 0, etype2 = 0;
-		int rsize = bitMastSize(elementsRegions.size());
+		int rsize = elements->regions->edataSize();
 
 		auto neighs = elements->faceNeighbors->cbegin(t);
 		for (size_t e = elements->distribution.threads[t]; e < elements->distribution.threads[t + 1]; ++e, ++neighs) {
@@ -1013,7 +1013,7 @@ void computeRegionsSurface(ElementStore *elements, NodeStore *nodes, ElementStor
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			esint hindex, addFace = 0;
-			int rsize = bitMastSize(elementsRegions.size());
+			int rsize = elements->regions->edataSize();
 			auto nodes = elements->nodes->cbegin();
 			auto neighs = elements->faceNeighbors->cbegin();
 			const auto &regions = elements->regions->datatarray();
