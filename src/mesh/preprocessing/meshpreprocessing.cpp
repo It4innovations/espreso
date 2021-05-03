@@ -38,10 +38,6 @@ void computeBodies(NodeStore *nodes, ElementStore *elements, BodyStore *bodies, 
 {
 	profiler::syncstart("mesh_bodies_found");
 
-	if (elements->faceNeighbors == NULL) {
-		computeElementsFaceNeighbors(nodes, elements, neighbors);
-	}
-
 	esint ebegin = elements->distribution.process.offset;
 	esint eend = ebegin + elements->distribution.process.size;
 	esint nbodies = 0, boffset;
@@ -655,9 +651,6 @@ void exchangeHalo(ElementStore *elements, NodeStore *nodes, ElementStore *halo, 
 {
 	profiler::syncstart("exchange_halo");
 	// halo elements are all elements that have some shared node
-	if (nodes->elements == NULL) {
-		linkNodesAndElements(elements, nodes, neighbors);
-	}
 
 	esint ebegin = elements->distribution.process.offset;
 	esint eend = ebegin + elements->distribution.process.size;
@@ -952,12 +945,6 @@ void computeDecomposedDual(NodeStore *nodes, ElementStore *elements, std::vector
 	bool separateMaterials = info::ecf->input.decomposition.separate_materials;
 	bool separateEtypes = info::ecf->input.decomposition.separate_etypes;
 
-	if (elements->faceNeighbors == NULL) {
-		computeElementsFaceNeighbors(nodes, elements, neighbors);
-	}
-
-	fillRegionMask(elements->distribution, elementsRegions, elements->regions);
-
 	size_t threads = info::env::OMP_NUM_THREADS;
 	esint eBegin = elements->distribution.process.offset;
 	esint eEnd   = eBegin + elements->distribution.process.size;
@@ -1013,9 +1000,6 @@ void computeDecomposedDual(NodeStore *nodes, ElementStore *elements, std::vector
 void computeRegionsSurface(ElementStore *elements, NodeStore *nodes, ElementStore *halo, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors)
 {
 	profiler::syncstart("compute_region_surface");
-	if (elements->faceNeighbors == NULL) {
-		computeElementsFaceNeighbors(nodes, elements, neighbors);
-	}
 	if (halo->IDs == NULL) {
 		exchangeHalo(elements, nodes, halo, neighbors);
 	}
@@ -1198,10 +1182,6 @@ void triangularizeBoundary(BoundaryRegionStore *boundary)
 void computeBoundaryNodes(NodeStore *nodes, ElementStore *elements, DomainStore *domains, std::vector<int> &neighbors, std::vector<esint> &externalBoundary, std::vector<esint> &internalBoundary)
 {
 	profiler::syncstart("compute_boundary_nodes");
-	if (elements->faceNeighbors == NULL) {
-		computeElementsFaceNeighbors(nodes, elements, neighbors);
-	}
-
 	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<std::vector<esint> > external(threads), internal(threads);

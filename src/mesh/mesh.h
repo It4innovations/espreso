@@ -104,6 +104,7 @@ public:
 
 protected:
 	void analyze();
+	void computePersistentParameters();
 
 	bool _omitClusterization, _omitDecomposition;
 	bool _withGUI, _withFETI, _withBEM, _withEdgeDual;

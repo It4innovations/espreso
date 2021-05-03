@@ -395,6 +395,19 @@ void Mesh::analyze()
 	}
 }
 
+void Mesh::computePersistentParameters()
+{
+	setMaterials();
+	eslog::checkpointln("MESH: MATERIALS FILLED");
+
+	mesh::fillRegionMask(elements->distribution, elementsRegions, elements->regions);
+
+	mesh::computeElementsFaceNeighbors(nodes, elements, neighbors);
+	if (_withEdgeDual) {
+		mesh::computeElementsEdgeNeighbors(nodes, elements, neighbors);
+	}
+}
+
 void Mesh::preprocess()
 {
 	profiler::syncstart("meshing");
@@ -402,10 +415,7 @@ void Mesh::preprocess()
 	analyze();
 
 	eslog::startln("MESH: PREPROCESSING STARTED", "MESHING");
-	setMaterials();
-	eslog::checkpointln("MESH: MATERIALS FILLED");
-
-	mesh::fillRegionMask(info::mesh->elements->distribution, info::mesh->elementsRegions, info::mesh->elements->regions);
+	computePersistentParameters();
 
 	if (!_omitClusterization) {
 		mesh::reclusterize(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe, halo);
@@ -422,10 +432,6 @@ void Mesh::preprocess()
 
 	profiler::synccheckpoint("domain_decomposition");
 	eslog::checkpointln("MESH: MESH DECOMPOSED");
-
-	if (info::mesh->elements->faceNeighbors == NULL) {
-		mesh::computeElementsFaceNeighbors(nodes, elements, neighbors);
-	}
 
 	if (info::mesh->halo->IDs == NULL) {
 		mesh::exchangeHalo(elements, nodes, halo, neighbors);
@@ -500,12 +506,6 @@ void Mesh::preprocess()
 	if (_withFETI) {
 		mesh::computeDomainDual(nodes, elements, domains, neighbors, neighborsWithMe);
 		profiler::synccheckpoint("compute_domain_dual");
-	}
-
-	if (_withEdgeDual) {
-		mesh::computeElementsEdgeNeighbors(nodes, elements, neighbors);
-		profiler::synccheckpoint("compute_edge_neighbors");
-		eslog::checkpointln("MESH: EDGE NEIGHBORS COMPUTED");
 	}
 
 	DebugOutput::mesh();

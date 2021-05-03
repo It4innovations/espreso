@@ -298,10 +298,6 @@ void reclusterize(ElementStore *elements, NodeStore *nodes, std::vector<Elements
 	}
 
 	profiler::syncstart("reclusterize");
-	if (elements->faceNeighbors == NULL) {
-		computeElementsFaceNeighbors(nodes, elements, neighbors);
-	}
-
 	if (halo->IDs == NULL) {
 		exchangeHalo(elements, nodes, halo, neighbors);
 	}
@@ -737,15 +733,6 @@ void partitiate(ElementStore *elements, NodeStore *nodes, ClusterStore *clusters
 void exchangeElements(ElementStore *elements, NodeStore *nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe, const std::vector<esint> &partition)
 {
 	profiler::syncstart("exchange_elements");
-	if (nodes->elements == NULL) {
-		// need for correctly update nodes ranks
-		linkNodesAndElements(elements, nodes, neighbors);
-	}
-
-	if (elements->faceNeighbors == NULL) {
-		computeElementsFaceNeighbors(nodes, elements, neighbors);
-	}
-
 	eslog::startln("EXCHANGE EL: STARTED", "EXCHANGE EL");
 
 	// 0. Compute targets
@@ -1745,10 +1732,6 @@ void exchangeElements(ElementStore *elements, NodeStore *nodes, std::vector<Elem
 void permuteElements(ElementStore *elements, NodeStore *nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors, const std::vector<esint> &permutation, const std::vector<size_t> &distribution)
 {
 	profiler::syncstart("permute_elements");
-	if (nodes->elements == NULL) {
-		linkNodesAndElements(elements, nodes, neighbors);
-	}
-
 	std::vector<esint> backpermutation(permutation.size());
 	std::iota(backpermutation.begin(), backpermutation.end(), 0);
 	std::sort(backpermutation.begin(), backpermutation.end(), [&] (esint i, esint j) { return permutation[i] < permutation[j]; });

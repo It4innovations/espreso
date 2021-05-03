@@ -158,9 +158,6 @@ void computeLocalIndices(ElementStore *elements, DomainStore *domains)
 
 void computeDomainDual(NodeStore *nodes, ElementStore *elements, DomainStore *domains, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe)
 {
-	if (elements->faceNeighbors == NULL) {
-		computeElementsFaceNeighbors(nodes, elements, neighbors);
-	}
 	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<std::pair<esint, esint> > sBuffer, gBuffer;
@@ -230,10 +227,6 @@ void computeDomainDual(NodeStore *nodes, ElementStore *elements, DomainStore *do
 
 void computeDomainsSurface(NodeStore *nodes, ElementStore *elements, DomainStore *domains, SurfaceStore *domainsSurface, std::vector<int> &neighbors)
 {
-	if (elements->faceNeighbors == NULL) {
-		computeElementsFaceNeighbors(nodes, elements, neighbors);
-	}
-
 	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<std::vector<esint> > faces(threads), facesDistribution(threads), ecounter(threads, std::vector<esint>((int)Element::CODE::SIZE));
