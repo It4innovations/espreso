@@ -234,7 +234,7 @@ void DebugOutput::faceNeighbors()
 	DebugOutput output(1, 1, false);
 
 	if (output._mesh.elements->centers == NULL) {
-		mesh::computeElementsCenters(info::mesh->elements, info::mesh->nodes);
+		mesh::computeElementsCenters(info::mesh->nodes, info::mesh->elements);
 	}
 
 	esint psize = output._mesh.elements->centers->datatarray().size(), gpsize;
@@ -301,7 +301,7 @@ void DebugOutput::meshDual(std::vector<esint> &frames, std::vector<esint> &neigh
 	DebugOutput output(1, 1, false);
 
 	if (output._mesh.elements->centers == NULL) {
-		mesh::computeElementsCenters(info::mesh->elements, info::mesh->nodes);
+		mesh::computeElementsCenters(info::mesh->nodes, info::mesh->elements);
 	}
 
 	esint psize = output._mesh.elements->centers->datatarray().size(), gpsize;

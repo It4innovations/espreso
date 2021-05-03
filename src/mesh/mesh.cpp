@@ -379,6 +379,9 @@ void Mesh::analyze()
 		_omitDecomposition = info::ecf->generator.uniform_clusters && info::ecf->generator.uniform_domains;
 		_omitClusterization = info::ecf->generator.uniform_clusters;
 	}
+	if (info::mpi::size == 1) {
+		_omitClusterization = true;
+	}
 
 	if (_withBEM) {
 		// TODO: BEM does not always need separate regions
@@ -393,24 +396,56 @@ void Mesh::analyze()
 	}
 }
 
-void Mesh::computePersistentParameters()
+void Mesh::reclusterize()
 {
-	setMaterials();
-	eslog::checkpointln("MESH: MATERIALS FILLED");
-
-	mesh::fillRegionMask(elements->distribution, elementsRegions, elements->regions);
-
 	mesh::computeElementsFaceNeighbors(nodes, elements, neighbors);
 	if (_withEdgeDual) {
 		mesh::computeElementsEdgeNeighbors(nodes, elements, neighbors);
 	}
 
-	{
+	if (!_omitClusterization) {
+		if (info::ecf->input.decomposition.parallel_decomposer == DecompositionConfiguration::ParallelDecomposer::HILBERT_CURVE) {
+			mesh::computeElementsCenters(nodes, elements);
+		}
+		std::vector<esint> partition;
+		mesh::computeElementsClusterization(elements, nodes, partition);
+		mesh::exchangeElements(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe, partition);
+		profiler::synccheckpoint("reclusterize");
+	}
+
+	esint minsize = elements->IDs->datatarray().size();
+	Communication::allReduce(&minsize, NULL, 1, MPITools::getType<esint>().mpitype, MPI_MIN);
+	if (minsize == 0) {
+		eslog::globalerror("ESPRESO quit computation: process without any elements detected.\n");
+	}
+
+	mesh::sortNodes(nodes, elements, boundaryRegions);
+	mesh::computeElementDistribution(elements);
+	mesh::computeRegionsElementDistribution(elements, elementsRegions);
+}
+
+void Mesh::computePersistentParameters()
+{
+	setMaterials();
+	mesh::fillRegionMask(elements, elementsRegions);
+
+	{ // compute boundary element from nodes
 		ElementStore *halo = NULL;
-		for (size_t r = 0; r < boundaryRegions.size(); ++r) {
+		if (info::ecf->getPhysics()->dimension == DIMENSION::D3 && _withGUI) {
+			halo = mesh::exchangeHalo(elements, nodes, neighbors);
+			mesh::computeRegionsSurface(elements, nodes, halo, elementsRegions, neighbors);
+			for (size_t r = 0; r < elementsRegions.size(); r++) {
+				mesh::triangularizeSurface(elementsRegions[r]->surface);
+			}
+			for (size_t r = 0; r < boundaryRegions.size(); r++) {
+				mesh::triangularizeBoundary(boundaryRegions[r]);
+			}
+			eslog::checkpointln("MESH: REGION SURFACE COMPUTED");
+		}
+
+		for (size_t r = 0; halo == NULL && r < boundaryRegions.size(); ++r) {
 			if (boundaryRegions[r]->originalDimension < boundaryRegions[r]->dimension) {
 				halo = mesh::exchangeHalo(elements, nodes, neighbors);
-				break;
 			}
 		}
 		for (size_t r = 0; r < boundaryRegions.size(); ++r) {
@@ -418,48 +453,11 @@ void Mesh::computePersistentParameters()
 				mesh::computeRegionsBoundaryElementsFromNodes(nodes, elements, halo, elementsRegions, boundaryRegions[r]);
 			}
 		}
+
 		if (halo) {
 			delete halo;
 		}
 	}
-	eslog::checkpointln("MESH: BOUNDARY REGIONS COMPOSED");
-}
-
-void Mesh::preprocess()
-{
-	profiler::syncstart("meshing");
-
-	analyze();
-
-	eslog::startln("MESH: PREPROCESSING STARTED", "MESHING");
-	computePersistentParameters();
-
-	if (!_omitClusterization) {
-		mesh::reclusterize(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe);
-		profiler::synccheckpoint("reclusterize");
-	}
-
-	esint msize;
-	Communication::allReduce(&elements->distribution.process.size, &msize, 1, MPITools::getType<esint>().mpitype, MPI_MIN);
-	if (msize == 0) {
-		eslog::globalerror("ESPRESO quit computation: process without any elements detected.\n");
-	}
-
-	mesh::partitiate(elements, nodes, clusters, domains, elementsRegions, boundaryRegions, neighbors, preferedDomains, _omitDecomposition);
-
-	profiler::synccheckpoint("domain_decomposition");
-	eslog::checkpointln("MESH: MESH DECOMPOSED");
-
-	profiler::synccheckpoint("preprocess_boundary_regions");
-
-	mesh::computeRegionsElementIntervals(elements, elementsRegions);
-	mesh::computeRegionsElementNodes(nodes, elements, neighbors, elementsRegions);
-	mesh::computeRegionsElementDistribution(info::mesh->elements, info::mesh->elementsRegions);
-	profiler::synccheckpoint("arrange_element_regions");
-	eslog::checkpointln("MESH: ELEMENT REGIONS ARRANGED");
-
-	mesh::computeBodies(nodes, elements, bodies, elementsRegions, neighbors);
-	eslog::checkpointln("MESH: BODIES COMPUTED");
 
 	if (info::ecf->input.contact_interfaces.size()) {
 		mesh::computeBodiesSurface(nodes, elements, elementsRegions, surface, neighbors);
@@ -472,9 +470,41 @@ void Mesh::preprocess()
 		eslog::checkpointln("MESH: CONTACT INTERFACE COMPUTED");
 	}
 
-	mesh::computeRegionsBoundaryNodes(neighbors, nodes, boundaryRegions, contactInterfaces);
-	mesh::computeRegionsBoundaryParents(nodes, elements, domains, boundaryRegions, contactInterfaces);
 	mesh::computeRegionsBoundaryDistribution(boundaryRegions, contactInterfaces);
+
+	mesh::computeRegionsElementNodes(nodes, elements, neighbors, elementsRegions);
+	mesh::computeRegionsBoundaryNodes(neighbors, nodes, boundaryRegions, contactInterfaces);
+
+	mesh::computeBodies(elements, bodies, elementsRegions, neighbors);
+
+	if (info::ecf->getPhysics()->dimension == DIMENSION::D3 && info::ecf->output.format == OutputConfiguration::FORMAT::STL_SURFACE) {
+		if (info::ecf->input.contact_interfaces.size() == 0) {
+			mesh::computeBodiesSurface(nodes, elements, elementsRegions, surface, neighbors);
+		}
+		mesh::triangularizeSurface(surface);
+		eslog::checkpointln("MESH: BODIES SURFACE COMPUTED");
+	}
+
+	eslog::checkpointln("MESH: BODIES COMPUTED");
+	eslog::checkpointln("MESH: BOUNDARY REGIONS COMPOSED");
+}
+
+void Mesh::partitiate(int ndomains)
+{
+	mesh::partitiate(elements, nodes, clusters, domains, elementsRegions, boundaryRegions, neighbors, ndomains, _omitDecomposition);
+
+	profiler::synccheckpoint("domain_decomposition");
+	eslog::checkpointln("MESH: MESH DECOMPOSED");
+
+	profiler::synccheckpoint("preprocess_boundary_regions");
+
+	mesh::computeElementIntervals(domains, elements);
+	mesh::computeRegionsElementIntervals(elements, elementsRegions);
+	profiler::synccheckpoint("arrange_element_regions");
+	eslog::checkpointln("MESH: ELEMENT REGIONS ARRANGED");
+
+	mesh::computeRegionsBoundaryParents(nodes, elements, domains, boundaryRegions, contactInterfaces);
+
 	profiler::synccheckpoint("arrange_boundary_regions");
 	eslog::checkpointln("MESH: BOUNDARY REGIONS ARRANGED");
 
@@ -492,27 +522,23 @@ void Mesh::preprocess()
 		eslog::checkpointln("MESH: DOMAIN SURFACE COMPUTED");
 	}
 
-//	if (info::ecf->getPhysics()->dimension == DIMENSION::D3 && _withGUI) {
-//		mesh::computeRegionsSurface(elements, nodes, halo, elementsRegions, neighbors);
-//		for (size_t r = 0; r < elementsRegions.size(); r++) {
-//			mesh::triangularizeSurface(elementsRegions[r]->surface);
-//		}
-//		for (size_t r = 0; r < boundaryRegions.size(); r++) {
-//			mesh::triangularizeBoundary(boundaryRegions[r]);
-//		}
-//		eslog::checkpointln("MESH: REGION SURFACE COMPUTED");
-//	}
-
-	if (info::ecf->getPhysics()->dimension == DIMENSION::D3 && info::ecf->output.format == OutputConfiguration::FORMAT::STL_SURFACE) {
-		mesh::computeBodiesSurface(nodes, elements, elementsRegions, surface, neighbors);
-		mesh::triangularizeSurface(surface);
-		eslog::checkpointln("MESH: BODIES SURFACE COMPUTED");
-	}
-
 	if (_withFETI) {
 		mesh::computeDomainDual(nodes, elements, domains, neighbors, neighborsWithMe);
 		profiler::synccheckpoint("compute_domain_dual");
 	}
+}
+
+void Mesh::preprocess()
+{
+	profiler::syncstart("meshing");
+	analyze();
+
+	eslog::startln("MESH: PREPROCESSING STARTED", "MESHING");
+
+	reclusterize();
+	computePersistentParameters();
+	partitiate(preferedDomains);
+	_omitDecomposition = false;
 
 	DebugOutput::mesh();
 	profiler::syncend("meshing");

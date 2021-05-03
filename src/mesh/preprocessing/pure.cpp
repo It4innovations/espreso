@@ -1,60 +1,399 @@
 
 #include "meshpreprocessing.h"
 
+#include "basis/containers/serializededata.h"
+#include "basis/logging/profiler.h"
+#include "basis/sfc/hilbertcurve.h"
+#include "basis/utilities/utils.h"
+#include "basis/utilities/parser.h"
 #include "esinfo/ecfinfo.h"
-#include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
-#include "esinfo/eslog.h"
+#include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"
+#include "esinfo/mpiinfo.h"
 
-#include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
-#include "mesh/store/domainstore.h"
-#include "mesh/store/clusterstore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/boundaryregionstore.h"
-#include "basis/containers/point.h"
-#include "basis/containers/serializededata.h"
-#include "basis/sfc/hilbertcurve.h"
-#include "basis/logging/profiler.h"
-#include "wrappers/mpi/communication.h"
-#include "basis/utilities/utils.h"
-
-#include "config/ecf/input/decomposition.h"
-
 #include "output/visualization/debug.h"
 
+#include "wrappers/mpi/communication.h"
 #include "wrappers/kahip/w.kahip.h"
 #include "wrappers/metis/w.metis.h"
 #include "wrappers/parmetis/w.parmetis.h"
 #include "wrappers/ptscotch/w.ptscotch.h"
 #include "wrappers/scotch/w.scotch.h"
 
-#include <algorithm>
+#include <vector>
 #include <numeric>
+#include <algorithm>
 
 namespace espreso {
 namespace mesh {
 
-esint getSFCDecomposition(ElementStore *elements, NodeStore *nodes, std::vector<esint> &partition)
+void computeNodesDuplication(NodeStore *nodes, std::vector<int> &neighborsWithMe)
+{
+	profiler::syncstart("compute_nodes_duplication");
+
+	if (nodes->ranks) {
+		delete nodes->ranks;
+	}
+
+	std::vector<esint> nids(nodes->IDs->datatarray().begin(), nodes->IDs->datatarray().end());
+
+	std::vector<std::vector<esint> > sBuffer(neighborsWithMe.size(), nids), rBuffer(neighborsWithMe.size());
+	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, neighborsWithMe)) {
+		eslog::internalFailure("cannot exchange nodes ids.\n");
+	}
+
+	int threads = info::env::OMP_NUM_THREADS;
+
+	std::vector<std::vector<esint> > rdist(threads);
+	std::vector<std::vector<int> >rdata(threads);
+	rdist.front().push_back(0);
+	std::vector<size_t> offset(neighborsWithMe.size());
+	for (size_t n = 0; n < nids.size(); ++n) {
+		for (size_t r = 0; r < neighborsWithMe.size(); ++r) {
+			while (offset[r] < rBuffer[r].size() && rBuffer[r][offset[r]] < nids[n]) { ++offset[r]; }
+			if (offset[r] < rBuffer[r].size() && rBuffer[r][offset[r]] == nids[n]) {
+				rdata.front().push_back(neighborsWithMe[r]);
+			}
+		}
+		rdist.front().push_back(rdata.front().size());
+	}
+
+	serializededata<esint, int>::balance(rdist, rdata);
+	nodes->ranks = new serializededata<esint, int>(rdist, rdata);
+
+	profiler::syncend("compute_nodes_duplication");
+}
+
+void linkNodesAndElements(ElementStore *elements, NodeStore *nodes, const std::vector<int> &neighbors)
+{
+	linkNodesAndElements(nodes, neighbors, nodes->elements, elements->nodes, elements->IDs, true);
+}
+
+void linkNodesAndElements(
+		const NodeStore *nodes,
+		const std::vector<int> &neighbors,
+		serializededata<esint, esint>* &nelements,
+		serializededata<esint, esint> *enodes,
+		serializededata<esint, esint> *eIDs,
+		bool sortedIDs)
+{
+	profiler::syncstart("link_nodes_and_elements");
+	size_t threads = info::env::OMP_NUM_THREADS;
+
+	const serializededata<esint, esint> *nIDs = nodes->IDs;
+	const serializededata<esint, int> *nranks = nodes->ranks;
+	const std::vector<size_t> &ndistribution  = nodes->IDs->datatarray().distribution();
+
+	std::vector<esint> npermutation;
+	if (!sortedIDs) {
+		npermutation.resize(nIDs->datatarray().size());
+		std::iota(npermutation.begin(), npermutation.end(), 0);
+		std::sort(npermutation.begin(), npermutation.end(), [&] (esint i, esint j) {
+			return nIDs->datatarray()[i] < nIDs->datatarray()[j];
+		});
+	}
+
+	// thread x neighbor x vector(from, to)
+	std::vector<std::vector<std::vector<std::pair<esint, esint> > > > sBuffer(threads);
+	std::vector<std::vector<std::pair<esint, esint> > > rBuffer(neighbors.size());
+	std::vector<std::pair<esint, esint> > localLinks;
+
+	localLinks.resize(enodes->cend()->begin() - enodes->cbegin()->begin());
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		auto tnodes = enodes->cbegin(t);
+		size_t offset = enodes->cbegin(t)->begin() - enodes->cbegin()->begin();
+
+		for (size_t e = eIDs->datatarray().distribution()[t]; e < eIDs->datatarray().distribution()[t + 1]; ++e, ++tnodes) {
+			for (auto n = tnodes->begin(); n != tnodes->end(); ++n, ++offset) {
+				localLinks[offset].first = *n;
+				localLinks[offset].second = eIDs->datatarray()[e];
+			}
+		}
+	}
+
+	utils::sortWithInplaceMerge(localLinks, enodes->datatarray().distribution());
+	profiler::synccheckpoint("local_links");
+
+	std::vector<size_t> tbegin(threads);
+	for (size_t t = 1; t < threads; t++) {
+		tbegin[t] = std::lower_bound(localLinks.begin() + tbegin[t - 1], localLinks.end(), ndistribution[t], [] (std::pair<esint, esint> &p, esint n) { return p.first < n; }) - localLinks.begin();
+	}
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		auto ranks = nranks->cbegin(t);
+		std::vector<std::vector<std::pair<esint, esint> > > tBuffer(neighbors.size());
+
+		auto begin = localLinks.begin() + tbegin[t];
+		auto end = begin;
+
+		for (size_t n = ndistribution[t]; n < ndistribution[t + 1]; ++n, ++ranks) {
+			while (begin != localLinks.end() && begin->first < (esint)n) ++begin;
+			if (begin != localLinks.end() && begin->first == (esint)n) {
+				end = begin;
+				while (end != localLinks.end() && end->first == begin->first) ++end;
+				esint nID = nIDs->datatarray()[begin->first];
+				for (auto it = begin; it != end; ++it) {
+					it->first = nID;
+				}
+				size_t i = 0;
+				for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {
+					if (*rank != info::mpi::rank) {
+						while (neighbors[i] < *rank) ++i;
+						tBuffer[i].insert(tBuffer[i].end(), begin, end);
+					}
+				}
+				begin = end;
+			}
+		}
+
+		sBuffer[t].swap(tBuffer);
+	}
+
+	for (size_t t = 1; t < threads; t++) {
+		for (size_t r = 0; r < sBuffer[0].size(); r++) {
+			sBuffer[0][r].insert(sBuffer[0][r].end(), sBuffer[t][r].begin(), sBuffer[t][r].end());
+		}
+	}
+
+	if (!sortedIDs) {
+		std::sort(localLinks.begin(), localLinks.end());
+		for (size_t n = 0; n < neighbors.size(); ++n) {
+			std::sort(sBuffer[0][n].begin(), sBuffer[0][n].end());
+		}
+	}
+	profiler::synccheckpoint("sbuffer");
+
+	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, neighbors)) {
+		eslog::internalFailure("addLinkFromTo - exchangeUnknownSize.\n");
+	}
+	profiler::synccheckpoint("exchange");
+
+	std::vector<size_t> boundaries = { 0, localLinks.size() };
+	for (size_t r = 0; r < rBuffer.size(); r++) {
+		localLinks.insert(localLinks.end(), rBuffer[r].begin(), rBuffer[r].end());
+		boundaries.push_back(localLinks.size());
+	}
+
+	utils::mergeAppendedData(localLinks, boundaries);
+	if (!sortedIDs) {
+		for (size_t i = 0, j = 0; i < localLinks.size(); i++) {
+			while (nIDs->datatarray()[npermutation[j]] < localLinks[i].first) ++j;
+			localLinks[i].first = npermutation[j];
+		}
+		std::sort(localLinks.begin(), localLinks.end());
+	}
+
+	std::vector<std::vector<esint> > linksBoundaries(threads);
+	std::vector<std::vector<esint> > linksData(threads);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		if (ndistribution[t] != ndistribution[t + 1]) {
+			auto llink = localLinks.begin();
+			if (sortedIDs) {
+				llink = std::lower_bound(localLinks.begin(), localLinks.end(), nIDs->datatarray()[ndistribution[t]], [] (std::pair<esint, esint> &p, esint n) { return p.first < n; });
+			} else {
+				llink = std::lower_bound(localLinks.begin(), localLinks.end(), ndistribution[t], [] (std::pair<esint, esint> &p, esint n) { return p.first < n; });
+			}
+			esint current;
+
+			std::vector<esint> tBoundaries, tData;
+			if (t == 0) {
+				tBoundaries.push_back(0);
+			}
+
+			for (size_t n = ndistribution[t]; n < ndistribution[t + 1] && llink != localLinks.end(); ++n) {
+				current = llink->first;
+				if (
+						(sortedIDs && current == nIDs->datatarray()[n]) ||
+						(!sortedIDs && current == (esint)n)) {
+
+					while (llink != localLinks.end() && current == llink->first) {
+						tData.push_back(llink->second);
+						++llink;
+					}
+				}
+				tBoundaries.push_back(llink - localLinks.begin());
+			}
+
+			linksBoundaries[t].swap(tBoundaries);
+			linksData[t].swap(tData);
+		}
+	}
+
+	nelements = new serializededata<esint, esint>(linksBoundaries, linksData);
+
+	profiler::synccheckpoint("rbuffer");
+	profiler::syncend("link_nodes_and_elements");
+	eslog::checkpointln("MESH: NODES AND ELEMENTS LINKED");
+}
+
+void computeElementsFaceNeighbors(NodeStore *nodes, ElementStore *elements, const std::vector<int> &neighbors)
+{
+	computeElementsNeighbors(
+			nodes,
+			neighbors,
+			nodes->elements,
+			elements->faceNeighbors,
+			elements->nodes,
+			elements->IDs,
+			elements->epointers,
+			[] (Element *e) { return e->faces; },
+			false, // there are max 1 neighbor
+			true); // sorted nodes IDs
+
+	DebugOutput::faceNeighbors();
+}
+
+void computeElementsEdgeNeighbors(NodeStore *nodes, ElementStore *elements, const std::vector<int> &neighbors)
+{
+	computeElementsNeighbors(
+			nodes,
+			neighbors,
+			nodes->elements,
+			elements->edgeNeighbors,
+			elements->nodes,
+			elements->IDs,
+			elements->epointers,
+			[] (Element *e) { return e->edges; },
+			true, // we need to know the number of neighbors
+			true); // sorted nodes IDs
+}
+
+void computeElementsNeighbors(
+		NodeStore *nodes,
+		const std::vector<int> &neighbors,
+		serializededata<esint, esint>* &nelements,
+		serializededata<esint, esint>* &eneighbors,
+		serializededata<esint, esint> *enodes,
+		serializededata<esint, esint> *eIDs,
+		serializededata<esint, Element*> *epointers,
+		std::function<serializededata<int, int>*(Element*)> across,
+		bool insertNeighSize,
+		bool sortedIDs)
+{
+	profiler::syncstart("compute_elements_neighbors");
+	if (nelements == NULL) {
+		linkNodesAndElements(nodes, neighbors, nelements, enodes, eIDs, sortedIDs);
+	}
+
+	size_t threads = info::env::OMP_NUM_THREADS;
+
+	std::vector<std::vector<esint> > dualDistribution(threads);
+	std::vector<std::vector<esint> > dualData(threads);
+
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+		auto nodes = enodes->cbegin(t);
+
+		std::vector<esint> tdist, tdata, intersection;
+		if (t == 0) {
+			tdist.push_back(0);
+		}
+		for (size_t e = eIDs->datatarray().distribution()[t]; e < eIDs->datatarray().distribution()[t + 1]; ++e, ++nodes) {
+			bool hasNeighbor = false;
+			for (auto interface = across(epointers->datatarray()[e])->begin(); interface != across(epointers->datatarray()[e])->end(); ++interface) {
+				auto telements = nelements->cbegin() + nodes->at(*interface->begin());
+				intersection.clear();
+				for (auto n = telements->begin(); n != telements->end(); ++n) {
+					if (*n != eIDs->datatarray()[e]) {
+						intersection.push_back(*n);
+					}
+				}
+				for (auto n = interface->begin() + 1; n != interface->end() && intersection.size(); ++n) {
+					telements = nelements->cbegin() + nodes->at(*n);
+					auto it1 = intersection.begin();
+					auto it2 = telements->begin();
+					auto last = intersection.begin();
+					while (it1 != intersection.end()) {
+						while (it2 != telements->end() && *it2 < *it1) {
+							++it2;
+						}
+						if (it2 == telements->end()) {
+							break;
+						}
+						if (*it1 == *it2) {
+							*last++ = *it1++;
+						} else {
+							it1++;
+						}
+					}
+					intersection.resize(last - intersection.begin());
+				}
+				if (insertNeighSize) {
+					tdata.push_back(intersection.size());
+					tdata.insert(tdata.end(), intersection.begin(), intersection.end());
+				} else {
+					tdata.push_back(intersection.size() ? intersection.front() : -1);
+					if (intersection.size() > 1) {
+						eslog::error("Input error: a face shared by 3 elements found.\n");
+					}
+				}
+				hasNeighbor = hasNeighbor | intersection.size();
+			}
+			tdist.push_back(tdata.size());
+//			if (!hasNeighbor && elements->distribution.size != 1) {
+//				eslog::error("Input error: a dangling element found (the element without any neighbor).\n");
+//			}
+		}
+
+		dualDistribution[t].swap(tdist);
+		dualData[t].swap(tdata);
+	}
+
+	utils::threadDistributionToFullDistribution(dualDistribution);
+
+	eneighbors = new serializededata<esint, esint>(dualDistribution, dualData);
+
+	profiler::syncend("compute_elements_neighbors");
+	eslog::checkpointln("MESH: ELEMENTS NEIGHBOURS COMPUTED");
+}
+
+void computeElementsCenters(const NodeStore *nodes, ElementStore *elements)
+{
+	if (elements->centers) {
+		return;
+	}
+	profiler::syncstart("compute_element_centers");
+	int threads = info::env::OMP_NUM_THREADS;
+
+	elements->centers = new serializededata<esint, Point>(1, elements->epointers->datatarray().distribution());
+
+	#pragma omp parallel for
+	for (int t = 0; t < threads; t++) {
+		auto center = elements->centers->datatarray().begin(t);
+		for (auto e = elements->nodes->cbegin(t); e != elements->nodes->cend(t); ++e, ++center) {
+			for (auto n = e->begin(); n != e->end(); ++n) {
+				*center += nodes->coordinates->datatarray()[*n];
+			}
+			*center /= e->size();
+		}
+	}
+	profiler::syncend("compute_element_centers");
+	eslog::checkpointln("MESH: ELEMENTS CENTERS COMPUTED");
+}
+
+esint getSFCDecomposition(const ElementStore *elements, const NodeStore *nodes, std::vector<esint> &partition)
 {
 	profiler::syncstart("get_sfc_decomposition");
 	int threads = info::env::OMP_NUM_THREADS;
 
-	if (elements->centers == NULL) {
-		computeElementsCenters(elements, nodes);
-	}
-
 	HilbertCurve sfc(info::mesh->dimension, SFCDEPTH, nodes->coordinates->datatarray().size(), nodes->coordinates->datatarray().data());
 
-	std::vector<esint> buckets(elements->distribution.process.size), borders;
-	std::vector<esint> permutation(elements->distribution.process.size);
+	std::vector<esint> buckets(elements->epointers->datatarray().size()), borders;
+	std::vector<esint> permutation(elements->epointers->datatarray().size());
 
 	#pragma omp parallel for
 	for (int t = 0; t < threads; t++) {
 		auto center = elements->centers->datatarray().cbegin(t);
-		for (size_t e = elements->distribution.threads[t]; e != elements->distribution.threads[t + 1]; ++e, ++center) {
+		for (size_t e = elements->epointers->datatarray().distribution()[t]; e != elements->epointers->datatarray().distribution()[t + 1]; ++e, ++center) {
 			buckets[e] = sfc.getBucket(*center);
 		}
 	}
@@ -72,9 +411,9 @@ esint getSFCDecomposition(ElementStore *elements, NodeStore *nodes, std::vector<
 //	Communication::computeSFCBalancedBorders(sfc, buckets, permutation, borders);
 	profiler::synccheckpoint("compute_splitters");
 
-	if (elements->distribution.process.size) {
+	if (elements->epointers->datatarray().size()) {
 		auto border = std::lower_bound(borders.begin(), borders.end(), buckets[permutation[0]] + 1);
-		for (esint e = 0; e != elements->distribution.process.size; ++e) {
+		for (size_t e = 0; e != elements->epointers->datatarray().size(); ++e) {
 			while (*border < buckets[permutation[e]]) {
 				++border;
 			}
@@ -89,7 +428,7 @@ esint getSFCDecomposition(ElementStore *elements, NodeStore *nodes, std::vector<
 	std::vector<Point> dcenters(info::mpi::size), sumcenters(info::mpi::size);
 	std::vector<esint> dsize(info::mpi::size), sumsize(info::mpi::size);
 
-	for (esint e = 0; e < elements->distribution.process.size; ++e) {
+	for (size_t e = 0; e < elements->epointers->datatarray().size(); ++e) {
 		dcenters[partition[e]] += elements->centers->datatarray()[e];
 		++dsize[partition[e]];
 	}
@@ -103,7 +442,7 @@ esint getSFCDecomposition(ElementStore *elements, NodeStore *nodes, std::vector<
 
 	#pragma omp parallel for
 	for (int t = 0; t < threads; t++) {
-		for (size_t e = elements->distribution.threads[t]; e < elements->distribution.threads[t + 1]; ++e) {
+		for (size_t e = elements->epointers->datatarray().distribution()[t]; e < elements->epointers->datatarray().distribution()[t + 1]; ++e) {
 			Point &center = elements->centers->datatarray()[e];
 			for (int r = 0; r < info::mpi::size; ++r) {
 				if ((dcenters[r] - center).length() < (dcenters[partition[e]] - center).length()) {
@@ -116,7 +455,7 @@ esint getSFCDecomposition(ElementStore *elements, NodeStore *nodes, std::vector<
 	return 0; // edge cut is not computed
 }
 
-esint callParallelDecomposer(ElementStore *elements, NodeStore *nodes, std::vector<esint> &eframes, std::vector<esint> &eneighbors, std::vector<esint> &partition)
+esint callParallelDecomposer(const ElementStore *elements, const NodeStore *nodes, std::vector<esint> &eframes, std::vector<esint> &eneighbors, std::vector<esint> &partition)
 {
 	DebugOutput::meshDual(eframes, eneighbors);
 
@@ -291,7 +630,7 @@ esint callParallelDecomposer(ElementStore *elements, NodeStore *nodes, std::vect
 	return edgecut;
 }
 
-void reclusterize(ElementStore *elements, NodeStore *nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe)
+void computeElementsClusterization(const ElementStore *elements, const NodeStore *nodes, std::vector<esint> &partition)
 {
 	if (info::mpi::size == 1) {
 		return;
@@ -311,7 +650,7 @@ void reclusterize(ElementStore *elements, NodeStore *nodes, std::vector<Elements
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
-	std::vector<esint> dDistribution(elements->distribution.process.size + 1);
+	std::vector<esint> dDistribution(elements->epointers->datatarray().size() + 1);
 	std::vector<std::vector<esint> > dData(threads);
 
 	#pragma omp parallel for
@@ -322,7 +661,7 @@ void reclusterize(ElementStore *elements, NodeStore *nodes, std::vector<Elements
 //		esint hindex = 0;
 
 		auto neighs = elements->faceNeighbors->cbegin(t);
-		for (size_t e = elements->distribution.threads[t]; e < elements->distribution.threads[t + 1]; ++e, ++neighs) {
+		for (size_t e = elements->epointers->datatarray().distribution()[t]; e < elements->epointers->datatarray().distribution()[t + 1]; ++e, ++neighs) {
 			for (auto n = neighs->begin(); n != neighs->end(); ++n) {
 				if (*n != -1) {
 					tdata.push_back(*n);
@@ -364,370 +703,23 @@ void reclusterize(ElementStore *elements, NodeStore *nodes, std::vector<Elements
 		dData[t].swap(tdata);
 	}
 
-	utils::threadDistributionToFullDistribution(dDistribution, elements->distribution.threads);
+	utils::threadDistributionToFullDistribution(dDistribution, elements->epointers->datatarray().distribution());
 	for (size_t t = 1; t < threads; t++) {
 		dData[0].insert(dData[0].end(), dData[t].begin(), dData[t].end());
 	}
 
-	std::vector<esint> partition(elements->distribution.process.size, info::mpi::rank);
+	partition.clear();
+	partition.resize(elements->epointers->datatarray().size(), info::mpi::rank);
 
 	profiler::synccheckpoint("compute_dual");
 	eslog::checkpointln("MESH: DUAL GRAPH COMPUTED");
 
 	callParallelDecomposer(elements, nodes, dDistribution, dData.front(), partition);
 	profiler::synccheckpoint("decompose");
-
-	if (info::ecf->input.decomposition.parallel_decomposer != DecompositionConfiguration::ParallelDecomposer::NONE) {
-		exchangeElements(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe, partition);
-	}
-	profiler::synccheckpoint("exchange");
 	profiler::syncend("reclusterize");
 }
 
-void partitiate(ElementStore *elements, NodeStore *nodes, ClusterStore *clusters, DomainStore *domains, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, esint parts, bool uniformDecomposition)
-{
-	profiler::syncstart("partitiate");
-	switch (info::ecf->input.decomposition.sequential_decomposer) {
-	case DecompositionConfiguration::SequentialDecomposer::NONE:
-		break;
-	case DecompositionConfiguration::SequentialDecomposer::METIS:
-		if (!METIS::islinked() && info::mpi::rank == 0) {
-			eslog::warning("ESPRESO run-time event: METIS is not linked, decomposition into domains is skipped.\n");
-		}
-		break;
-	case DecompositionConfiguration::SequentialDecomposer::SCOTCH:
-		if (!Scotch::islinked() && info::mpi::rank == 0) {
-			eslog::warning("ESPRESO run-time event: SCOTCH is not linked, decomposition into domains is skipped.\n");
-		}
-		break;
-	case DecompositionConfiguration::SequentialDecomposer::KAHIP:
-		if (!KaHIP::islinked() && info::mpi::rank == 0) {
-			eslog::warning("ESPRESO run-time event: KaHIP is not linked, decomposition into domains is skipped.\n");
-		}
-		break;
-	}
-
-	std::vector<esint> dualDist, dualData;
-	computeDecomposedDual(nodes, elements, elementsRegions, neighbors, dualDist, dualData);
-
-	size_t threads = info::env::OMP_NUM_THREADS;
-
-	std::vector<int> partID(elements->distribution.process.size, -1);
-
-	int nextID = 0;
-	for (esint e = 0; e < elements->distribution.process.size; ++e) {
-		std::vector<esint> stack;
-		if (partID[e] == -1) {
-			stack.push_back(e);
-			partID[e] = nextID;
-			while (stack.size()) {
-				esint current = stack.back();
-				stack.pop_back();
-				for (auto n = dualData.begin() + dualDist[current]; n != dualData.begin() + dualDist[current + 1]; ++n) {
-					if (partID[*n] == -1) {
-						stack.push_back(*n);
-						partID[*n] = nextID;
-					}
-				}
-			}
-			nextID++;
-		}
-	}
-
-	std::vector<int> cluster;
-	std::vector<esint> partition(elements->distribution.process.size);
-
-	profiler::synccheckpoint("check_noncontinuity");
-	eslog::checkpointln("MESH: CLUSTER NONCONTINUITY CHECKED");
-
-	if (nextID == 1) {
-		eslog::checkpointln("MESH: NONCONTINUITY PROCESSED");
-
-		if (uniformDecomposition) {
-			esint psize = elements->distribution.process.size / parts;
-			for (esint p = 0, offset = 0; p < parts; ++p, offset += psize) {
-				std::fill(partition.begin() + offset, partition.begin() + offset + psize, p);
-			}
-		} else {
-			switch (info::ecf->input.decomposition.sequential_decomposer) {
-			case DecompositionConfiguration::SequentialDecomposer::NONE:
-				break;
-			case DecompositionConfiguration::SequentialDecomposer::METIS:
-				if (METIS::islinked()) {
-					METIS::call(info::ecf->input.decomposition.metis_options,
-						elements->distribution.process.size, dualDist.data(), dualData.data(),
-						0, NULL, NULL, parts, partition.data());
-				}
-				profiler::checkpoint("metis");
-				break;
-			case DecompositionConfiguration::SequentialDecomposer::SCOTCH:
-				if (Scotch::islinked()) {
-					Scotch::call(info::ecf->input.decomposition.scotch_options,
-						elements->distribution.process.size, dualDist.data(), dualData.data(),
-						0, NULL, NULL, parts, partition.data());
-				}
-				profiler::checkpoint("scotch");
-				break;
-			case DecompositionConfiguration::SequentialDecomposer::KAHIP:
-				if (KaHIP::islinked()) {
-					KaHIP::call(info::ecf->input.decomposition.kahip_options,
-						elements->distribution.process.size, dualDist.data(), dualData.data(),
-						0, NULL, NULL, parts, partition.data());
-				}
-				profiler::checkpoint("kahip");
-				break;
-			}
-		}
-		cluster.resize(parts, 0);
-		clusters->size = 1;
-	} else { // non-continuous dual graph
-		// thread x part x elements
-		std::vector<std::vector<std::vector<esint> > > tdecomposition(threads, std::vector<std::vector<esint> >(nextID));
-		std::vector<std::vector<esint> > tdualsize(threads, std::vector<esint>(nextID));
-
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			for (size_t e = elements->distribution.threads[t]; e < elements->distribution.threads[t + 1]; ++e) {
-				tdecomposition[t][partID[e]].push_back(e);
-				tdualsize[t][partID[e]] += dualDist[e + 1] - dualDist[e];
-			}
-		}
-		std::vector<std::vector<esint> > foffsets(nextID), noffsets(nextID);
-		std::vector<esint> partoffset(nextID);
-		#pragma omp parallel for
-		for (int p = 0; p < nextID; p++) {
-			foffsets[p].push_back(0);
-			noffsets[p].push_back(0);
-			for (size_t t = 1; t < threads; t++) {
-				foffsets[p].push_back(tdecomposition[0][p].size());
-				noffsets[p].push_back(tdualsize[0][p]);
-				tdecomposition[0][p].insert(tdecomposition[0][p].end(), tdecomposition[t][p].begin(), tdecomposition[t][p].end());
-				tdualsize[0][p] += tdualsize[t][p];
-			}
-		}
-		for (int p = 1; p < nextID; p++) {
-			partoffset[p] = partoffset[p - 1] + tdecomposition[0][p - 1].size();
-		}
-
-		std::vector<std::vector<esint> > frames(nextID), neighbors(nextID);
-		#pragma omp parallel for
-		for (int p = 0; p < nextID; p++) {
-			frames[p].resize(1 + tdecomposition[0][p].size());
-			neighbors[p].resize(tdualsize[0][p]);
-		}
-
-		// TODO: try parallelization
-		// #pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			size_t partindex;
-			std::vector<esint> foffset(nextID), noffset(nextID);
-			for (int p = 0; p < nextID; p++) {
-				foffset[p] = foffsets[p][t];
-				noffset[p] = noffsets[p][t];
-			}
-
-			for (size_t e = elements->distribution.threads[t]; e < elements->distribution.threads[t + 1]; ++e) {
-				partindex = partID[e];
-
-				frames[partindex][++foffset[partindex]] = dualDist[e + 1] - dualDist[e];
-				if (e > elements->distribution.threads[t]) {
-					frames[partindex][foffset[partindex]] += frames[partindex][foffset[partindex] - 1];
-				} else {
-					frames[partindex][foffset[partindex]] += noffset[partindex];
-				}
-				auto node = dualData.begin() + dualDist[e];
-				for (esint n = frames[partindex][foffset[partindex]] - (dualDist[e + 1] - dualDist[e]); n < frames[partindex][foffset[partindex]]; ++n, ++node) {
-					neighbors[partindex][n] = std::lower_bound(tdecomposition[0][partindex].begin(), tdecomposition[0][partindex].end(), *node) - tdecomposition[0][partindex].begin();
-				}
-			}
-		}
-
-		std::vector<esint> pparts(nextID);
-
-		double averageDomainSize = elements->distribution.process.size / (double)parts;
-		size_t partsCounter = 0;
-		for (int p = 0; p < nextID; p++) {
-			partsCounter += pparts[p] = std::ceil((frames[p].size() - 1) / averageDomainSize);
-			cluster.resize(partsCounter, p);
-		}
-		clusters->size = nextID;
-
-		profiler::checkpoint("process_noncontinuity");
-		eslog::checkpointln("MESH: NONCONTINUITY PROCESSED");
-
-		#pragma omp parallel for
-		for (int p = 0; p < nextID; p++) {
-			switch (info::ecf->input.decomposition.sequential_decomposer) {
-			case DecompositionConfiguration::SequentialDecomposer::NONE:
-				break;
-			case DecompositionConfiguration::SequentialDecomposer::METIS:
-				if (METIS::islinked()) {
-					METIS::call(info::ecf->input.decomposition.metis_options,
-						frames[p].size() - 1, frames[p].data(), neighbors[p].data(),
-						0, NULL, NULL, pparts[p], partition.data() + partoffset[p]);
-				}
-				profiler::checkpoint("metis");
-				break;
-			case DecompositionConfiguration::SequentialDecomposer::SCOTCH:
-				if (Scotch::islinked()) {
-					Scotch::call(info::ecf->input.decomposition.scotch_options,
-						frames[p].size() - 1, frames[p].data(), neighbors[p].data(),
-						0, NULL, NULL, pparts[p], partition.data() + partoffset[p]);
-				}
-				profiler::checkpoint("scotch");
-				break;
-			case DecompositionConfiguration::SequentialDecomposer::KAHIP:
-				if (KaHIP::islinked()) {
-					KaHIP::call(info::ecf->input.decomposition.kahip_options,
-						frames[p].size() - 1, frames[p].data(), neighbors[p].data(),
-						0, NULL, NULL, pparts[p], partition.data() + partoffset[p]);
-				}
-				profiler::checkpoint("kahip");
-				break;
-			}
-		}
-
-		std::vector<esint> ppartition = partition;
-		nextID = 0;
-		for (size_t p = 0; p < tdecomposition[0].size(); p++) {
-			for (size_t i = 0; i < tdecomposition[0][p].size(); ++i) {
-				partition[tdecomposition[0][p][i]] = ppartition[partoffset[p] + i] + nextID;
-			}
-			nextID += pparts[p];
-		}
-	}
-
-	if (uniformDecomposition) {
-		eslog::checkpointln("MESH: DOMAINS KEEPED UNIFORM");
-	} else {
-		switch (info::ecf->input.decomposition.sequential_decomposer) {
-		case DecompositionConfiguration::SequentialDecomposer::NONE:
-			eslog::checkpointln("MESH: DECOMPOSITION TO DOMAINS SKIPPED"); break;
-		case DecompositionConfiguration::SequentialDecomposer::METIS:
-			eslog::checkpointln("MESH: DOMAINS COMPUTED BY METIS"); break;
-		case DecompositionConfiguration::SequentialDecomposer::SCOTCH:
-			eslog::checkpointln("MESH: DOMAINS COMPUTED BY SCOTCH"); break;
-		case DecompositionConfiguration::SequentialDecomposer::KAHIP:
-			eslog::checkpointln("MESH: DOMAINS COMPUTED BY KAHIP"); break;
-		}
-	}
-
-	std::vector<esint> permutation(partition.size());
-	std::iota(permutation.begin(), permutation.end(), 0);
-	std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) {
-		if (partition[i] == partition[j]) {
-			return i < j;
-		}
-		return partition[i] < partition[j];
-	});
-
-	std::vector<size_t> domainDistribution;
-	std::vector<size_t> tdistribution;
-
-	esint partindex = 0;
-	auto begin = permutation.begin();
-	while (begin != permutation.end()) {
-		domainDistribution.push_back(begin - permutation.begin());
-		begin = std::lower_bound(begin, permutation.end(), ++partindex, [&] (esint i, esint val) {
-			return partition[i] < val;
-		});
-	}
-	domainDistribution.push_back(permutation.size());
-
-	// TODO: improve domain distribution for more complicated decomposition
-	if (domainDistribution.size() == threads + 1) {
-		tdistribution = std::vector<size_t>(domainDistribution.begin(), domainDistribution.end());
-	} else {
-		if (domainDistribution.size() < threads + 1) {
-			tdistribution = tarray<size_t>::distribute(threads, permutation.size());
-		} else {
-			double averageThreadSize = elements->distribution.process.size / (double)threads;
-			tdistribution.push_back(0);
-			for (size_t t = 0; t < threads - 1; t++) {
-				auto more = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution.back() + averageThreadSize);
-				if (more == domainDistribution.end()) {
-					tdistribution.push_back(domainDistribution.back());
-				} else {
-					auto less = more - 1;
-					if (std::fabs(*less - averageThreadSize * (t + 1)) < std::fabs(*more - averageThreadSize * (t + 1))) {
-						tdistribution.push_back(*less);
-					} else {
-						tdistribution.push_back(*more);
-					}
-				}
-			}
-			tdistribution.push_back(permutation.size());
-		}
-	}
-
-	for (size_t i = 1; i < domainDistribution.size(); i++) {
-		if (domainDistribution[i - 1] != domainDistribution[i]) {
-			domains->cluster.push_back(cluster[i - 1]);
-		}
-	}
-	utils::removeDuplicates(domainDistribution);
-
-	std::vector<size_t> domainCounter(threads);
-	for (size_t t = 0; t < threads; t++) {
-		if (domainDistribution.size() < threads + 1) {
-			if (t < domainDistribution.size() - 1) {
-				++domainCounter[t];
-			}
-		} else {
-			auto begin = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution[t]);
-			auto end   = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution[t + 1]);
-			for (auto it = begin; it != end; ++it) {
-				++domainCounter[t];
-			}
-		}
-	}
-
-	domains->size = utils::sizesToOffsets(domainCounter);
-	domains->offset = domains->size;
-	Communication::exscan(domains->offset);
-	domainCounter.push_back(domains->size);
-	domains->distribution = domainCounter;
-
-	domains->elements.push_back(0);
-	for (size_t t = 0; t < threads; t++) {
-		if (domainDistribution.size() < threads + 1) {
-			if (t < domainDistribution.size() - 1) {
-				domains->elements.push_back(domainDistribution[t + 1]);
-			}
-		} else {
-			auto begin = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution[t]);
-			auto end   = std::lower_bound(domainDistribution.begin(), domainDistribution.end(), tdistribution[t + 1]);
-			for (auto it = begin; it != end; ++it) {
-				domains->elements.push_back(*(it + 1));
-			}
-		}
-	}
-
-	profiler::synccheckpoint("arrange_to_domains");
-	eslog::checkpointln("MESH: ELEMENTS ARRANGED TO DOMAINS");
-
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		const auto &p = elements->epointers->datatarray();
-		for (size_t d = domains->distribution[t]; d < domains->distribution[t + 1]; ++d) {
-			std::sort(permutation.begin() + domains->elements[d], permutation.begin() + domains->elements[d + 1], [p] (esint i, esint j) {
-				if (p[i]->code != p[j]->code) {
-					return p[i]->code < p[j]->code;
-				}
-				return i < j;
-			});
-		}
-	}
-	permuteElements(elements, nodes, elementsRegions, neighbors, permutation, tdistribution);
-	computeElementIntervals(domains, elements);
-	computeElementDistribution(elements->eintervals, elements->distribution);
-
-	sortNodes(nodes, elements, boundaryRegions);
-	profiler::synccheckpoint("arrange_data");
-	profiler::syncend("partitiate");
-}
-
-void exchangeElements(ElementStore *elements, NodeStore *nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe, const std::vector<esint> &partition)
+void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe, const std::vector<esint> &partition)
 {
 	profiler::syncstart("exchange_elements");
 	eslog::startln("EXCHANGE EL: STARTED", "EXCHANGE EL");
@@ -752,7 +744,7 @@ void exchangeElements(ElementStore *elements, NodeStore *nodes, std::vector<Elem
 
 			std::vector<int> ttt;
 			std::vector<bool> tflags(info::mpi::size, false);
-			for (size_t e = elements->distribution.threads[t]; e < elements->distribution.threads[t + 1]; ++e) {
+			for (size_t e = elements->IDs->datatarray().distribution()[t]; e < elements->IDs->datatarray().distribution()[t + 1]; ++e) {
 				if (partition[e] != info::mpi::rank) {
 					tflags[partition[e]] = true;
 				}
@@ -822,15 +814,15 @@ void exchangeElements(ElementStore *elements, NodeStore *nodes, std::vector<Elem
 
 	// Step 1: Serialize element data
 
-	std::vector<esint> regionElementMask(elements->distribution.process.size * eregionsBitMaskSize);
+	std::vector<esint> regionElementMask(elements->IDs->datatarray().size() * eregionsBitMaskSize);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		esint maskOffset = 0;
 		for (size_t r = 0; r < elementsRegions.size(); r++) {
 			maskOffset = r / (8 * sizeof(esint));
 			esint bit = (esint)1 << (r % (8 * sizeof(esint)));
-			auto begin = std::lower_bound(elementsRegions[r]->elements->datatarray().begin(), elementsRegions[r]->elements->datatarray().end(), elements->distribution.threads[t]);
-			auto end = std::lower_bound(elementsRegions[r]->elements->datatarray().begin(), elementsRegions[r]->elements->datatarray().end(), elements->distribution.threads[t + 1]);
+			auto begin = std::lower_bound(elementsRegions[r]->elements->datatarray().begin(), elementsRegions[r]->elements->datatarray().end(), elements->IDs->datatarray().distribution()[t]);
+			auto end = std::lower_bound(elementsRegions[r]->elements->datatarray().begin(), elementsRegions[r]->elements->datatarray().end(), elements->IDs->datatarray().distribution()[t + 1]);
 			for (auto i = begin; i != end; ++i) {
 				regionElementMask[*i * eregionsBitMaskSize + maskOffset] |= bit;
 			}
@@ -864,16 +856,16 @@ void exchangeElements(ElementStore *elements, NodeStore *nodes, std::vector<Elem
 		}
 
 		// estimation
-		telemsIDs.reserve(1.5 * elements->distribution.process.size / threads);
-		telemsBody.reserve(1.5 * elements->distribution.process.size / threads);
-		telemsMaterial.reserve(1.5 * elements->distribution.process.size / threads);
-		telemsEpointer.reserve(1.5 * elements->distribution.process.size / threads);
-		telemsNodesDistribution.reserve(1.5 * elements->distribution.process.size / threads);
-		telemsNeighborsDistribution.reserve(1.5 * elements->distribution.process.size / threads);
-		telemsRegions.reserve(1.5 * elements->distribution.process.size / threads);
+		telemsIDs.reserve(1.5 * elements->IDs->datatarray().size() / threads);
+		telemsBody.reserve(1.5 * elements->IDs->datatarray().size() / threads);
+		telemsMaterial.reserve(1.5 * elements->IDs->datatarray().size() / threads);
+		telemsEpointer.reserve(1.5 * elements->IDs->datatarray().size() / threads);
+		telemsNodesDistribution.reserve(1.5 * elements->IDs->datatarray().size() / threads);
+		telemsNeighborsDistribution.reserve(1.5 * elements->IDs->datatarray().size() / threads);
+		telemsRegions.reserve(1.5 * elements->IDs->datatarray().size() / threads);
 
 		size_t target;
-		for (size_t e = elements->distribution.threads[t]; e < elements->distribution.threads[t + 1]; ++e, ++enodes, ++eneighbors) {
+		for (size_t e = elements->IDs->datatarray().distribution()[t]; e < elements->IDs->datatarray().distribution()[t + 1]; ++e, ++enodes, ++eneighbors) {
 			if (partition[e] == info::mpi::rank) {
 				telemsIDs.push_back(IDs[e]);
 				telemsBody.push_back(body[e]);
@@ -925,8 +917,8 @@ void exchangeElements(ElementStore *elements, NodeStore *nodes, std::vector<Elem
 			if (boundaryRegions[r]->nodes) {
 				maskOffset = r / (8 * sizeof(esint));
 				esint bit = (esint)1 << (r % (8 * sizeof(esint)));
-				auto begin = std::lower_bound(boundaryRegions[r]->nodes->datatarray().begin(), boundaryRegions[r]->nodes->datatarray().end(), nodes->distribution[t]);
-				auto end = std::lower_bound(boundaryRegions[r]->nodes->datatarray().begin(), boundaryRegions[r]->nodes->datatarray().end(), nodes->distribution[t + 1]);
+				auto begin = std::lower_bound(boundaryRegions[r]->nodes->datatarray().begin(), boundaryRegions[r]->nodes->datatarray().end(), nodes->IDs->datatarray().distribution()[t]);
+				auto end = std::lower_bound(boundaryRegions[r]->nodes->datatarray().begin(), boundaryRegions[r]->nodes->datatarray().end(), nodes->IDs->datatarray().distribution()[t + 1]);
 				for (auto i = begin; i != end; ++i) {
 					regionNodeMask[*i * bregionsBitMaskSize + maskOffset] |= bit;
 				}
@@ -934,8 +926,8 @@ void exchangeElements(ElementStore *elements, NodeStore *nodes, std::vector<Elem
 		}
 	}
 
-	esint eBegin = Communication::getDistribution(elements->distribution.process.size)[info::mpi::rank];
-	esint eEnd = eBegin + elements->distribution.process.size;
+	esint eBegin = Communication::getDistribution(elements->IDs->datatarray().size())[info::mpi::rank];
+	esint eEnd = eBegin + elements->IDs->datatarray().size();
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -955,14 +947,14 @@ void exchangeElements(ElementStore *elements, NodeStore *nodes, std::vector<Elem
 
 		std::vector<std::vector<esint> > tsNodes(targets.size(), std::vector<esint>({ 0 }));
 
-		tnodesIDs.reserve(1.5 * nodes->size / threads);
-		tnodesCoordinates.reserve(1.5 * nodes->size / threads);
-		tnodesElemsDistribution.reserve(1.5 * nodes->size / threads);
-		tnodesRegions.reserve(1.5 * nodes->size / threads);
+		tnodesIDs.reserve(1.5 * nodes->IDs->datatarray().size() / threads);
+		tnodesCoordinates.reserve(1.5 * nodes->IDs->datatarray().size() / threads);
+		tnodesElemsDistribution.reserve(1.5 * nodes->IDs->datatarray().size() / threads);
+		tnodesRegions.reserve(1.5 * nodes->IDs->datatarray().size() / threads);
 
 		size_t target;
 		std::vector<bool> last(targets.size() + 1); // targets + me
-		for (size_t n = nodes->distribution[t]; n < nodes->distribution[t + 1]; ++n, ++elems) {
+		for (size_t n = nodes->IDs->datatarray().distribution()[t]; n < nodes->IDs->datatarray().distribution()[t + 1]; ++n, ++elems) {
 			std::fill(last.begin(), last.end(), false);
 			for (auto e = elems->begin(); e != elems->end(); ++e) {
 				if (eBegin <= *e && *e < eEnd) {
@@ -1006,8 +998,8 @@ void exchangeElements(ElementStore *elements, NodeStore *nodes, std::vector<Elem
 	for (size_t r = 0; r < boundaryRegions.size(); r++) {
 		if (boundaryRegions[r]->dimension) {
 			emembership.clear();
-			emembership.resize(boundaryRegions[r]->distribution.threads.back());
-			std::vector<size_t> distribution = boundaryRegions[r]->distribution.threads;
+			emembership.resize(boundaryRegions[r]->epointers->datatarray().size());
+			const std::vector<size_t> &distribution = boundaryRegions[r]->epointers->datatarray().distribution();
 
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
@@ -1413,8 +1405,8 @@ void exchangeElements(ElementStore *elements, NodeStore *nodes, std::vector<Elem
 		}
 	}
 
-	std::vector<esint> eIDsOLD = Communication::getDistribution(elements->distribution.process.size);
-	std::vector<esint> eIDsNEW = Communication::getDistribution(newElements->distribution.process.size);
+	std::vector<size_t> eIDsOLD = Communication::getDistribution(elements->epointers->datatarray().size());
+	std::vector<size_t> eIDsNEW = Communication::getDistribution(newElements->epointers->datatarray().size());
 
 	for (size_t t = 1; t < threads; ++t) {
 		elemsIDs[0].insert(elemsIDs[0].end(), elemsIDs[t].begin(), elemsIDs[t].end());
@@ -1724,101 +1716,133 @@ void exchangeElements(ElementStore *elements, NodeStore *nodes, std::vector<Elem
 	eslog::checkpointln("MESH: ELEMENTS EXCHANGED");
 }
 
-void permuteElements(ElementStore *elements, NodeStore *nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors, const std::vector<esint> &permutation, const std::vector<size_t> &distribution)
+void sortNodes(NodeStore *nodes, ElementStore *elements, std::vector<BoundaryRegionStore*> &boundaryRegions)
 {
-	profiler::syncstart("permute_elements");
+	profiler::syncstart("sort_nodes");
+	profiler::syncparam("size", nodes->size);
+	std::vector<esint> permutation(nodes->size);
+	std::iota(permutation.begin(), permutation.end(), 0);
+	std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) {
+		int irank = *(nodes->ranks->begin() + i)->begin();
+		int jrank = *(nodes->ranks->begin() + j)->begin();
+		if (irank == jrank) {
+			return nodes->IDs->datatarray()[i] < nodes->IDs->datatarray()[j];
+		}
+		return irank < jrank;
+	});
+
+	nodes->permute(permutation);
+	profiler::synccheckpoint("permute");
+
+	// nhalo is used by other routines (before arrange boundary elements)
+	nodes->uniqInfo.nhalo = 0;
+	auto ranks = nodes->ranks->begin();
+	while (ranks != nodes->ranks->end() && *ranks->begin() < info::mpi::rank) {
+		++ranks;
+		++nodes->uniqInfo.nhalo;
+	}
+
 	std::vector<esint> backpermutation(permutation.size());
 	std::iota(backpermutation.begin(), backpermutation.end(), 0);
 	std::sort(backpermutation.begin(), backpermutation.end(), [&] (esint i, esint j) { return permutation[i] < permutation[j]; });
 
-	size_t threads = info::env::OMP_NUM_THREADS;
+	profiler::synccheckpoint("backpermute");
 
-	auto n2i = [ & ] (size_t neighbor) {
-		return std::lower_bound(neighbors.begin(), neighbors.end(), neighbor) - neighbors.begin();
-	};
-
-	std::vector<esint> IDBoundaries = Communication::getDistribution(elements->distribution.process.size);
-	std::vector<std::vector<std::pair<esint, esint> > > rHalo(neighbors.size());
-
-	if (elements->faceNeighbors != NULL || nodes->elements != NULL) {
-		// thread x neighbor x elements(oldID, newID)
-		std::vector<std::vector<std::vector<std::pair<esint, esint> > > > sHalo(threads, std::vector<std::vector<std::pair<esint, esint> > >(neighbors.size()));
-
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			auto ranks = nodes->ranks->cbegin(t);
-			auto elements = nodes->elements->cbegin(t);
-			esint begine = IDBoundaries[info::mpi::rank];
-			esint ende   = IDBoundaries[info::mpi::rank + 1];
-
-			for (auto n = nodes->distribution[t]; n < nodes->distribution[t + 1]; ++n, ++ranks, ++elements) {
-				for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {
-					if (*rank != info::mpi::rank) {
-						for (auto e = elements->begin(); e != elements->end(); ++e) {
-							if (begine <= *e && *e < ende) {
-								sHalo[t][n2i(*rank)].push_back(std::make_pair(*e, backpermutation[*e - begine] + begine));
-							}
-						}
-					}
-				}
-			}
-
-			for (size_t n = 0; n < sHalo[t].size(); ++n) {
-				utils::sortAndRemoveDuplicates(sHalo[t][n]);
-			}
-		}
-
-		utils::mergeThreadedUniqueData(sHalo);
-
-		if (!Communication::exchangeUnknownSize(sHalo[0], rHalo, neighbors)) {
-			eslog::internalFailure("exchange halo element new IDs while element permutation.\n");
-		}
-	}
-	profiler::synccheckpoint("prepare");
-
-	auto globalremap = [&] (serializededata<esint, esint>* data, bool sort) {
+	auto localremap = [&] (serializededata<esint, esint>* data) {
 		if (data == NULL) {
 			return;
 		}
 		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			int source;
+		for (int t = 0; t < info::env::OMP_NUM_THREADS; t++) {
 			for (auto e = data->begin(t); e != data->end(t); ++e) {
 				for (auto n = e->begin(); n != e->end(); ++n) {
-					if (*n >= 0) {
-						source = std::lower_bound(IDBoundaries.begin(), IDBoundaries.end(), *n + 1) - IDBoundaries.begin() - 1;
-						if (source == info::mpi::rank) {
-							*n = IDBoundaries[info::mpi::rank] + backpermutation[*n - IDBoundaries[info::mpi::rank]];
-						} else {
-							*n = std::lower_bound(rHalo[n2i(source)].begin(), rHalo[n2i(source)].end(), std::make_pair(*n, (esint)0))->second;
-						}
-					}
-				}
-				if (sort) {
-					std::sort(e->begin(), e->end());
+					*n = backpermutation[*n];
 				}
 			}
 		}
 	};
 
-	esint firstID = elements->IDs->datatarray().front();
-	elements->permute(permutation, distribution);
-	std::iota(elements->IDs->datatarray().begin(), elements->IDs->datatarray().end(), firstID);
+	localremap(elements->nodes);
 
-	globalremap(elements->faceNeighbors, false);
-	globalremap(nodes->elements, true);
-
-	for (size_t r = 0; r < elementsRegions.size(); ++r) {
-		for (auto n = elementsRegions[r]->elements->datatarray().begin(); n != elementsRegions[r]->elements->datatarray().end(); ++n) {
-			*n = backpermutation[*n];
+	for (size_t r = 0; r < boundaryRegions.size(); r++) {
+		if (boundaryRegions[r]->elements != NULL) {
+			localremap(boundaryRegions[r]->elements);
 		}
-		std::sort(elementsRegions[r]->elements->datatarray().begin(), elementsRegions[r]->elements->datatarray().end());
+		if (!StringCompare::caseInsensitiveEq(boundaryRegions[r]->name, "ALL_NODES")) {
+			if (boundaryRegions[r]->nodes != NULL) {
+				localremap(boundaryRegions[r]->nodes);
+				std::sort(boundaryRegions[r]->nodes->datatarray().begin(), boundaryRegions[r]->nodes->datatarray().end());
+			}
+		}
 	}
 
 	profiler::synccheckpoint("remap");
-	profiler::syncend("permute_elements");
-	eslog::checkpointln("MESH: ELEMENTS PERMUTED");
+	profiler::syncend("sort_nodes");
+	eslog::checkpointln("MESH: NODES ARRANGED");
 }
 
+void computeElementDistribution(ElementStore *elements)
+{
+	profiler::syncstart("compute_element_distribution");
+	elements->distribution.clear();
+	for (auto epointer = elements->epointers->datatarray().begin(); epointer != elements->epointers->datatarray().end(); ++epointer) {
+		++elements->distribution.code[(int)(*epointer)->code].size;
+	}
+	elements->distribution.process.size = elements->epointers->datatarray().size();
+
+	std::vector<esint> sum, offset;
+	for (size_t i = 0; i < elements->distribution.code.size(); ++i) {
+		offset.push_back(elements->distribution.code[i].size);
+	}
+	sum.resize(offset.size());
+	Communication::exscan(sum, offset);
+	for (size_t i = 0; i < elements->distribution.code.size(); ++i) {
+		elements->distribution.code[i].offset = offset[i];
+		elements->distribution.code[i].totalSize = sum[i];
+	}
+
+	elements->distribution.process.offset = elements->distribution.process.size;
+	elements->distribution.process.totalSize = Communication::exscan(elements->distribution.process.offset);
+	elements->distribution.process.next = elements->distribution.process.offset + elements->distribution.process.size;
+	profiler::syncend("compute_element_distribution");
 }
+
+void computeRegionsElementDistribution(const ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions)
+{
+	profiler::syncstart("regions element distribution");
+	std::vector<esint> sum, offset;
+	for (size_t r = 0; r < elementsRegions.size(); r++) {
+		elementsRegions[r]->distribution.clear();
+		for (auto e = elementsRegions[r]->elements->datatarray().begin(); e != elementsRegions[r]->elements->datatarray().end(); ++e) {
+			++elementsRegions[r]->distribution.code[(int)elements->epointers->datatarray()[*e]->code].size;
+		}
+		for (size_t i = 0; i < elements->distribution.code.size(); i++) {
+			if (elements->distribution.code[i].totalSize) {
+				elementsRegions[r]->distribution.process.size += elementsRegions[r]->distribution.code[i].size;
+				elementsRegions[r]->distribution.process.next += elementsRegions[r]->distribution.code[i].size;
+				offset.push_back(elementsRegions[r]->distribution.code[i].size);
+			}
+		}
+		elementsRegions[r]->distribution.process.offset = elementsRegions[r]->distribution.process.size;
+		offset.push_back(elementsRegions[r]->distribution.process.offset);
+	}
+
+	sum.resize(offset.size());
+	Communication::exscan(sum, offset);
+
+	for (size_t r = 0, j = 0; r < elementsRegions.size(); r++) {
+		for (size_t i = 0; i < elements->distribution.code.size(); i++) {
+			if (elements->distribution.code[i].totalSize) {
+				elementsRegions[r]->distribution.code[i].offset = offset[j];
+				elementsRegions[r]->distribution.code[i].totalSize = sum[j++];
+			}
+		}
+		elementsRegions[r]->distribution.process.offset = offset[j];
+		elementsRegions[r]->distribution.process.next += offset[j];
+		elementsRegions[r]->distribution.process.totalSize = sum[j++];
+	}
+	profiler::syncend("regions element distribution");
 }
+
+} // namespace mesh
+} // namespace espreso

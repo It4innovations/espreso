@@ -49,9 +49,9 @@ public:
 		_withGUI = true;
 		preprocess();
 	}
+	void partitiate(int ndomains);
 	void duplicate();
 	void toBuffer();
-	void setMaterials();
 	void printMeshStatistics();
 	void printDecompositionStatistics();
 
@@ -102,6 +102,8 @@ public:
 
 protected:
 	void analyze();
+	void setMaterials();
+	void reclusterize();
 	void computePersistentParameters();
 
 	bool _omitClusterization, _omitDecomposition;

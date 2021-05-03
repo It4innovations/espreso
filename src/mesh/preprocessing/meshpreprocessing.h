@@ -28,51 +28,80 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 
 namespace mesh {
 
-void triangularizeSurface(SurfaceStore *surface);
-void triangularizeBoundary(BoundaryRegionStore *boundary);
-
-void addFixPoints(const serializededata<esint, esint>* elements, esint begin, esint end, const serializededata<esint, Element*>* epointers, std::vector<esint> &fixPoints);
-
-
-/// new methods
-
-inline int bitMastSize(size_t elements)
-{
-	size_t size = 8 * sizeof(esint);
-	return elements / size + (elements % size ? 1 : 0);
-}
-
-ElementStore* exchangeHalo(ElementStore *elements, NodeStore *nodes, std::vector<int> &neighbors);
+// methods for 'pure' mesh
+//  - elements, nodes, neighbors only
+//  - no requirements on decomposition -> operations with neighbors processes can take some time
+// ================================================================================================
 
 void computeNodesDuplication(NodeStore *nodes, std::vector<int> &neighborsWithMe);
 
-void linkNodesAndElements(ElementStore *elements, NodeStore *nodes, std::vector<int> &neighbors);
+void linkNodesAndElements(ElementStore *elements, NodeStore *nodes, const std::vector<int> &neighbors);
 void linkNodesAndElements(
-		NodeStore *nodes,
-		std::vector<int> &neighbors,
+		const NodeStore *nodes,
+		const std::vector<int> &neighbors,
 		serializededata<esint, esint>* &nelements,
 		serializededata<esint, esint> *enodes,
 		serializededata<esint, esint> *eIDs,
-		std::vector<size_t> &edistribution,
 		bool sortedIDs);
 
+void computeElementsFaceNeighbors(NodeStore *nodes, ElementStore *elements, const std::vector<int> &neighbors);
+void computeElementsEdgeNeighbors(NodeStore *nodes, ElementStore *elements, const std::vector<int> &neighbors);
 void computeElementsNeighbors(
 		NodeStore *nodes,
-		std::vector<int> &neighbors,
+		const std::vector<int> &neighbors,
 		serializededata<esint, esint>* &nelements,
 		serializededata<esint, esint>* &eneighbors,
 		serializededata<esint, esint> *enodes,
 		serializededata<esint, esint> *eIDs,
 		serializededata<esint, Element*> *epointers,
-		std::vector<size_t> &edistribution,
 		std::function<serializededata<int, int>*(Element*)> across,
 		bool insertNeighSize,
 		bool sortedIDs);
 
-void computeElementsCenters(ElementStore *elements, NodeStore *nodes);
+void computeElementsCenters(const NodeStore *nodes, ElementStore *elements);
 
-void computeElementsFaceNeighbors(NodeStore *nodes, ElementStore *elements, std::vector<int> &neighbors);
-void computeElementsEdgeNeighbors(NodeStore *nodes, ElementStore *elements, std::vector<int> &neighbors);
+void computeElementsClusterization(const ElementStore *elements, const NodeStore *nodes, std::vector<esint> &partition);
+void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe, const std::vector<esint> &partition);
+
+void sortNodes(NodeStore *nodes, ElementStore *elements, std::vector<BoundaryRegionStore*> &boundaryRegions);
+void computeElementDistribution(ElementStore *elements);
+void computeRegionsElementDistribution(const ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions);
+
+
+// methods for clustered mesh
+//  - elements, nodes distribution computed
+//  - operations with neighbors processes should be scalable
+// ================================================================================================
+
+void fillRegionMask(ElementStore *elements, const std::vector<ElementsRegionStore*> &elementsRegions);
+
+ElementStore* exchangeHalo(ElementStore *elements, NodeStore *nodes, std::vector<int> &neighbors);
+
+void computeBodies(ElementStore *elements, BodyStore *bodies, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors);
+void computeRegionsElementNodes(const NodeStore *nodes, const ElementStore *elements, const std::vector<int> &neighbors, std::vector<ElementsRegionStore*> &elementsRegions);
+void computeRegionsBoundaryNodes(const std::vector<int> &neighbors, NodeStore *nodes, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
+void computeRegionsBoundaryElementsFromNodes(const NodeStore *nodes, const ElementStore *elements, const ElementStore *halo, const std::vector<ElementsRegionStore*> &elementsRegions, BoundaryRegionStore *bregion);
+void computeRegionsBoundaryDistribution(std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
+
+void computeBodiesSurface(NodeStore *nodes, ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions, SurfaceStore *surface, std::vector<int> &neighbors);
+void computeWarpedNormals(SurfaceStore * surface);
+void exchangeContactHalo(SurfaceStore * surface, ContactStore *contact);
+void findCloseElements(ContactStore *contact);
+void computeContactInterface(SurfaceStore* surface, ContactStore* contact);
+void arrangeContactInterfaces(ContactStore* contact, BodyStore *bodies, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
+
+void triangularizeSurface(SurfaceStore *surface);
+void triangularizeBoundary(BoundaryRegionStore *boundary);
+void computeRegionsSurface(ElementStore *elements, NodeStore *nodes, ElementStore *halo, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors);
+void computeSurfaceElementNeighbors(NodeStore *nodes, std::vector<int> &neigbors, SurfaceStore *surface);
+
+
+// methods for clustered and decomposed mesh
+//  - all data are computed
+//  - decompose elements to domains and intervals!
+// ================================================================================================
+
+void addFixPoints(const serializededata<esint, esint>* elements, esint begin, esint end, const serializededata<esint, Element*>* epointers, std::vector<esint> &fixPoints);
 
 void computeDecomposedDual(NodeStore *nodes, ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors, std::vector<esint> &dualDist, std::vector<esint> &dualData);
 void computeDomainDual(NodeStore *nodes, ElementStore *elements, DomainStore *domains, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe);
@@ -82,45 +111,13 @@ void triangularizeDomainSurface(NodeStore *nodes, ElementStore *elements, Domain
 void computeNodeDomainDistribution(ElementStore *elements, NodeStore *nodes, DomainStore *domains, std::vector<int> neighborsWithMe);
 void computeLocalIndices(ElementStore *elements, DomainStore *domains);
 
-void computeRegionsSurface(ElementStore *elements, NodeStore *nodes, ElementStore *halo, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors);
-void computeSurfaceElementNeighbors(NodeStore *nodes, std::vector<int> &neigbors, SurfaceStore *surface);
-
-void computeBoundaryNodes(NodeStore *nodes, ElementStore *elements, DomainStore *domains, std::vector<int> &neighbors, std::vector<esint> &externalBoundary, std::vector<esint> &internalBoundary);
-
-void sortNodes(NodeStore *nodes, ElementStore *elements, std::vector<BoundaryRegionStore*> &boundaryRegions);
-
 void computeElementIntervals(const DomainStore *domains, ElementStore *elements);
-void computeElementDistribution(const std::vector<ElementsInterval> &eintervals, ElementsDistributionInfo &distribution);
 
-void computeRegionsElementNodes(const NodeStore *nodes, const ElementStore *elements, const std::vector<int> &neighbors, std::vector<ElementsRegionStore*> &elementsRegions);
 void computeRegionsElementIntervals(const ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions);
-void computeRegionsElementDistribution(const ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions);
-
-void computeRegionsBoundaryNodes(const std::vector<int> &neighbors, NodeStore *nodes, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
 void computeRegionsBoundaryParents(const NodeStore *nodes, const ElementStore *elements, const DomainStore *domains, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
-void computeRegionsBoundaryDistribution(std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
-void computeRegionsBoundaryElementsFromNodes(const NodeStore *nodes, const ElementStore *elements, const ElementStore *halo, const std::vector<ElementsRegionStore*> &elementsRegions, BoundaryRegionStore *bregion);
 
-void computeBodies(NodeStore *nodes, ElementStore *elements, BodyStore *bodies, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors);
-
-void computeBodiesSurface(NodeStore *nodes, ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions, SurfaceStore *surface, std::vector<int> &neighbors);
-void computeWarpedNormals(SurfaceStore * surface);
-void exchangeContactHalo(SurfaceStore * surface, ContactStore *contact);
-void findCloseElements(ContactStore *contact);
-void computeContactInterface(SurfaceStore* surface, ContactStore* contact);
-void arrangeContactInterfaces(ContactStore* contact, BodyStore *bodies, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
-
-void synchronizeRegionNodes(const NodeStore *nodes, const std::vector<int> &neighbors, std::vector<RegionStore*> &regions);
-void computeNodeInfo(const NodeStore *nodes, const std::vector<int> &neighbors, std::vector<RegionStore*> &regions);
-
-void fillRegionMask(const ElementsDistributionInfo &distribution, const std::vector<ElementsRegionStore*> &elementsRegions, serializededata<esint, esint>* &mask);
-
-esint getSFCDecomposition(ElementStore *elements, NodeStore *nodes, std::vector<esint> &partition);
-esint callParallelDecomposer(ElementStore *elements, NodeStore *nodes, std::vector<esint> &eframes, std::vector<esint> &eneighbors, std::vector<esint> &partition);
-void reclusterize(ElementStore *elements, NodeStore *nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe);
 void partitiate(ElementStore *elements, NodeStore *nodes, ClusterStore *clusters, DomainStore *domains, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, esint parts, bool uniformDecomposition);
 
-void exchangeElements(ElementStore *elements, NodeStore *nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe, const std::vector<esint> &partition);
 void permuteElements(ElementStore *elements, NodeStore *nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors, const std::vector<esint> &permutation, const std::vector<size_t> &distribution);
 
 }

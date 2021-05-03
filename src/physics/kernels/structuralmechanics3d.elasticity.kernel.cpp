@@ -608,10 +608,11 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 {
 	iterator.corotating = NULL;
 	iterator.fixed = NULL;
+	int rsize = info::mesh->elements->regions->edataSize();
 	for (size_t r = 0; iterator.corotating == NULL && iterator.fixed == NULL && r < info::mesh->elementsRegions.size(); r++) {
 		esint maskOffset = r / (8 * sizeof(esint));
 		esint bit = (esint)1 << (r % (8 * sizeof(esint)));
-		if (info::mesh->elements->regions->datatarray()[iterator.offset * mesh::bitMastSize(info::mesh->elementsRegions.size()) + maskOffset] & bit) {
+		if (info::mesh->elements->regions->datatarray()[iterator.offset * rsize + maskOffset] & bit) {
 			switch (iterator.configuration.rotor_dynamics.type) {
 			case RotorDynamicsConfiguration::TYPE::FIXED: {
 				auto def = iterator.configuration.rotor_dynamics.fixed.rotors_definitions.find(info::mesh->elementsRegions[r]->name);
