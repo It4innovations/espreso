@@ -252,6 +252,11 @@ public:
 		}
 	}
 
+	size_t edataSize() const
+	{
+		return _edatasize;
+	}
+
 	void permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution)
 	{
 		if (_eboundaries.size()) {
