@@ -291,29 +291,25 @@ esint callParallelDecomposer(ElementStore *elements, NodeStore *nodes, std::vect
 	return edgecut;
 }
 
-void reclusterize(ElementStore *elements, NodeStore *nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe, ElementStore *halo)
+void reclusterize(ElementStore *elements, NodeStore *nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe)
 {
 	if (info::mpi::size == 1) {
 		return;
 	}
 
 	profiler::syncstart("reclusterize");
-	if (halo->IDs == NULL) {
-		exchangeHalo(elements, nodes, halo, neighbors);
-	}
 
 	// Disable due to horible scalability
 //	if (elements->centers == NULL) {
 //		computeElementsCenters();
 //	}
 
-	bool separateRegions = info::ecf->input.decomposition.separate_regions;
-	bool separateMaterials = info::ecf->input.decomposition.separate_materials;
-	bool separateEtypes = info::ecf->input.decomposition.separate_etypes;
+//	bool separateRegions = info::ecf->input.decomposition.separate_regions;
+//	bool separateMaterials = info::ecf->input.decomposition.separate_materials;
+//	bool separateEtypes = info::ecf->input.decomposition.separate_etypes;
+//	esint eoffset = elements->distribution.process.offset;
 
 	size_t threads = info::env::OMP_NUM_THREADS;
-
-	esint eoffset = elements->distribution.process.offset;
 
 	std::vector<esint> dDistribution(elements->distribution.process.size + 1);
 	std::vector<std::vector<esint> > dData(threads);
@@ -321,44 +317,45 @@ void reclusterize(ElementStore *elements, NodeStore *nodes, std::vector<Elements
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<esint> tdata;
-		int mat1 = 0, mat2 = 0, reg = 0, etype1 = 0, etype2 = 0;
-		int rsize = bitMastSize(elements->regions->datatarray().size() / elements->distribution.process.size);
-		esint hindex = 0;
+//		int mat1 = 0, mat2 = 0, reg = 0, etype1 = 0, etype2 = 0;
+//		int rsize = bitMastSize(elements->regions->datatarray().size() / elements->distribution.process.size);
+//		esint hindex = 0;
 
 		auto neighs = elements->faceNeighbors->cbegin(t);
 		for (size_t e = elements->distribution.threads[t]; e < elements->distribution.threads[t + 1]; ++e, ++neighs) {
 			for (auto n = neighs->begin(); n != neighs->end(); ++n) {
 				if (*n != -1) {
-					if ((separateRegions || separateMaterials || separateEtypes) && (*n < eoffset || eoffset + elements->distribution.process.size <= *n)) {
-						hindex = std::lower_bound(halo->IDs->datatarray().begin(), halo->IDs->datatarray().end(), *n) - halo->IDs->datatarray().begin();
-					}
-					if (separateMaterials) {
-						mat1 = elements->material->datatarray()[e];
-						if (*n < eoffset || eoffset + elements->distribution.process.size <= *n) {
-							mat2 = halo->material->datatarray()[hindex];
-						} else {
-							mat2 = elements->material->datatarray()[*n - eoffset];
-						}
-					}
-					if (separateRegions) {
-						if (*n < eoffset || eoffset + elements->distribution.process.size <= *n) {
-							reg = memcmp(elements->regions->datatarray().data() + e * rsize, halo->regions->datatarray().data() + hindex * rsize, sizeof(esint) * rsize);
-						} else {
-							reg = memcmp(elements->regions->datatarray().data() + e * rsize, elements->regions->datatarray().data() + (*n - eoffset) * rsize, sizeof(esint) * rsize);
-						}
-					}
-					if (separateEtypes) {
-						etype1 = (int)elements->epointers->datatarray()[e]->type;
-						if (*n < eoffset || eoffset + elements->distribution.process.size <= *n) {
-							etype2 = (int)halo->epointers->datatarray()[hindex]->type;
-						} else {
-							etype2 = (int)elements->epointers->datatarray()[*n - eoffset]->type;
-						}
-					}
-
-					if (mat1 == mat2 && !reg && etype1 == etype2) {
-						tdata.push_back(*n);
-					}
+					tdata.push_back(*n);
+//					if ((separateRegions || separateMaterials || separateEtypes) && (*n < eoffset || eoffset + elements->distribution.process.size <= *n)) {
+//						hindex = std::lower_bound(halo->IDs->datatarray().begin(), halo->IDs->datatarray().end(), *n) - halo->IDs->datatarray().begin();
+//					}
+//					if (separateMaterials) {
+//						mat1 = elements->material->datatarray()[e];
+//						if (*n < eoffset || eoffset + elements->distribution.process.size <= *n) {
+//							mat2 = halo->material->datatarray()[hindex];
+//						} else {
+//							mat2 = elements->material->datatarray()[*n - eoffset];
+//						}
+//					}
+//					if (separateRegions) {
+//						if (*n < eoffset || eoffset + elements->distribution.process.size <= *n) {
+//							reg = memcmp(elements->regions->datatarray().data() + e * rsize, halo->regions->datatarray().data() + hindex * rsize, sizeof(esint) * rsize);
+//						} else {
+//							reg = memcmp(elements->regions->datatarray().data() + e * rsize, elements->regions->datatarray().data() + (*n - eoffset) * rsize, sizeof(esint) * rsize);
+//						}
+//					}
+//					if (separateEtypes) {
+//						etype1 = (int)elements->epointers->datatarray()[e]->type;
+//						if (*n < eoffset || eoffset + elements->distribution.process.size <= *n) {
+//							etype2 = (int)halo->epointers->datatarray()[hindex]->type;
+//						} else {
+//							etype2 = (int)elements->epointers->datatarray()[*n - eoffset]->type;
+//						}
+//					}
+//
+//					if (mat1 == mat2 && !reg && etype1 == etype2) {
+//						tdata.push_back(*n);
+//					}
 				}
 			}
 			dDistribution[e + 1] = tdata.size();
@@ -1708,8 +1705,6 @@ void exchangeElements(ElementStore *elements, NodeStore *nodes, std::vector<Elem
 	newElements->distribution.process.totalSize = elements->distribution.process.totalSize;
 	std::swap(elements, newElements);
 	std::swap(nodes, newNodes);
-	delete info::mesh->halo;
-	info::mesh->halo = new ElementStore();
 	neighbors.clear();
 	for (size_t t = 0; t < IDtargets[0].size(); t++) {
 		if (IDtargets[0][t] != info::mpi::rank) {

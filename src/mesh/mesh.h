@@ -88,8 +88,6 @@ public:
 
 	FETIDataStore *FETIData;
 
-	ElementStore *halo;
-
 	SurfaceStore *surface;
 	SurfaceStore *domainsSurface;
 

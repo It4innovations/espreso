@@ -42,7 +42,7 @@ inline int bitMastSize(size_t elements)
 	return elements / size + (elements % size ? 1 : 0);
 }
 
-void exchangeHalo(ElementStore *elements, NodeStore *nodes, ElementStore *halo, std::vector<int> &neighbors);
+ElementStore* exchangeHalo(ElementStore *elements, NodeStore *nodes, std::vector<int> &neighbors);
 
 void computeNodesDuplication(NodeStore *nodes, std::vector<int> &neighborsWithMe);
 
@@ -117,7 +117,7 @@ void fillRegionMask(const ElementsDistributionInfo &distribution, const std::vec
 
 esint getSFCDecomposition(ElementStore *elements, NodeStore *nodes, std::vector<esint> &partition);
 esint callParallelDecomposer(ElementStore *elements, NodeStore *nodes, std::vector<esint> &eframes, std::vector<esint> &eneighbors, std::vector<esint> &partition);
-void reclusterize(ElementStore *elements, NodeStore *nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe, ElementStore *halo);
+void reclusterize(ElementStore *elements, NodeStore *nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe);
 void partitiate(ElementStore *elements, NodeStore *nodes, ClusterStore *clusters, DomainStore *domains, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, esint parts, bool uniformDecomposition);
 
 void exchangeElements(ElementStore *elements, NodeStore *nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe, const std::vector<esint> &partition);

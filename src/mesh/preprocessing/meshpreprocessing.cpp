@@ -647,7 +647,7 @@ void computeNodesDuplication(NodeStore *nodes, std::vector<int> &neighborsWithMe
 	profiler::syncend("compute_nodes_duplication");
 }
 
-void exchangeHalo(ElementStore *elements, NodeStore *nodes, ElementStore *halo, std::vector<int> &neighbors)
+ElementStore* exchangeHalo(ElementStore *elements, NodeStore *nodes, std::vector<int> &neighbors)
 {
 	profiler::syncstart("exchange_halo");
 	// halo elements are all elements that have some shared node
@@ -751,6 +751,7 @@ void exchangeHalo(ElementStore *elements, NodeStore *nodes, ElementStore *halo, 
 		}
 	}
 
+	ElementStore *halo = new ElementStore();
 	halo->IDs = new serializededata<esint, esint>(1, hid);
 	halo->body = new serializededata<esint, int>(1, hbody);
 	halo->material = new serializededata<esint, int>(1, hmaterial);
@@ -769,6 +770,7 @@ void exchangeHalo(ElementStore *elements, NodeStore *nodes, ElementStore *halo, 
 	profiler::synccheckpoint("rbuffer");
 	profiler::syncend("exchange_halo");
 	eslog::checkpointln("MESH: HALO EXCHANGED");
+	return halo;
 }
 
 void computeElementsFaceNeighbors(NodeStore *nodes, ElementStore *elements, std::vector<int> &neighbors)
@@ -1000,10 +1002,6 @@ void computeDecomposedDual(NodeStore *nodes, ElementStore *elements, std::vector
 void computeRegionsSurface(ElementStore *elements, NodeStore *nodes, ElementStore *halo, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors)
 {
 	profiler::syncstart("compute_region_surface");
-	if (halo->IDs == NULL) {
-		exchangeHalo(elements, nodes, halo, neighbors);
-	}
-
 	size_t threads = info::env::OMP_NUM_THREADS;
 	esint eBegin = elements->distribution.process.offset;
 	esint eEnd = eBegin + elements->distribution.process.size;

@@ -124,7 +124,6 @@ Mesh::Mesh()
   clusters(new ClusterStore()),
   bodies(new BodyStore()),
   FETIData(new FETIDataStore()),
-  halo(new ElementStore()),
   surface(new SurfaceStore()), domainsSurface(new SurfaceStore()),
   contact(new ContactStore()),
 
@@ -165,7 +164,6 @@ Mesh::~Mesh()
 	delete elements;
 	delete nodes;
 	delete FETIData;
-	delete halo;
 	delete surface;
 	delete domainsSurface;
 	delete contact;
@@ -406,6 +404,25 @@ void Mesh::computePersistentParameters()
 	if (_withEdgeDual) {
 		mesh::computeElementsEdgeNeighbors(nodes, elements, neighbors);
 	}
+
+	{
+		ElementStore *halo = NULL;
+		for (size_t r = 0; r < boundaryRegions.size(); ++r) {
+			if (boundaryRegions[r]->originalDimension < boundaryRegions[r]->dimension) {
+				halo = mesh::exchangeHalo(elements, nodes, neighbors);
+				break;
+			}
+		}
+		for (size_t r = 0; r < boundaryRegions.size(); ++r) {
+			if (boundaryRegions[r]->originalDimension < boundaryRegions[r]->dimension) {
+				mesh::computeRegionsBoundaryElementsFromNodes(nodes, elements, halo, elementsRegions, boundaryRegions[r]);
+			}
+		}
+		if (halo) {
+			delete halo;
+		}
+	}
+	eslog::checkpointln("MESH: BOUNDARY REGIONS COMPOSED");
 }
 
 void Mesh::preprocess()
@@ -418,7 +435,7 @@ void Mesh::preprocess()
 	computePersistentParameters();
 
 	if (!_omitClusterization) {
-		mesh::reclusterize(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe, halo);
+		mesh::reclusterize(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe);
 		profiler::synccheckpoint("reclusterize");
 	}
 
@@ -432,17 +449,6 @@ void Mesh::preprocess()
 
 	profiler::synccheckpoint("domain_decomposition");
 	eslog::checkpointln("MESH: MESH DECOMPOSED");
-
-	if (info::mesh->halo->IDs == NULL) {
-		mesh::exchangeHalo(elements, nodes, halo, neighbors);
-	}
-
-	for (size_t r = 0; r < boundaryRegions.size(); ++r) {
-		if (boundaryRegions[r]->originalDimension < boundaryRegions[r]->dimension) {
-			mesh::computeRegionsBoundaryElementsFromNodes(nodes, elements, halo, elementsRegions, boundaryRegions[r]);
-		}
-	}
-	eslog::checkpointln("MESH: BOUNDARY REGIONS COMPOSED");
 
 	profiler::synccheckpoint("preprocess_boundary_regions");
 
@@ -486,16 +492,16 @@ void Mesh::preprocess()
 		eslog::checkpointln("MESH: DOMAIN SURFACE COMPUTED");
 	}
 
-	if (info::ecf->getPhysics()->dimension == DIMENSION::D3 && _withGUI) {
-		mesh::computeRegionsSurface(elements, nodes, halo, elementsRegions, neighbors);
-		for (size_t r = 0; r < elementsRegions.size(); r++) {
-			mesh::triangularizeSurface(elementsRegions[r]->surface);
-		}
-		for (size_t r = 0; r < boundaryRegions.size(); r++) {
-			mesh::triangularizeBoundary(boundaryRegions[r]);
-		}
-		eslog::checkpointln("MESH: REGION SURFACE COMPUTED");
-	}
+//	if (info::ecf->getPhysics()->dimension == DIMENSION::D3 && _withGUI) {
+//		mesh::computeRegionsSurface(elements, nodes, halo, elementsRegions, neighbors);
+//		for (size_t r = 0; r < elementsRegions.size(); r++) {
+//			mesh::triangularizeSurface(elementsRegions[r]->surface);
+//		}
+//		for (size_t r = 0; r < boundaryRegions.size(); r++) {
+//			mesh::triangularizeBoundary(boundaryRegions[r]);
+//		}
+//		eslog::checkpointln("MESH: REGION SURFACE COMPUTED");
+//	}
 
 	if (info::ecf->getPhysics()->dimension == DIMENSION::D3 && info::ecf->output.format == OutputConfiguration::FORMAT::STL_SURFACE) {
 		mesh::computeBodiesSurface(nodes, elements, elementsRegions, surface, neighbors);
@@ -540,7 +546,6 @@ void Mesh::duplicate()
 		}
 
 		packedSize += FETIData->packedFullSize();
-		packedSize += halo->packedFullSize();
 
 		packedSize += surface->packedFullSize();
 		packedSize += domainsSurface->packedFullSize();
@@ -582,7 +587,6 @@ void Mesh::duplicate()
 		}
 
 		FETIData->packFull(p);
-		halo->packFull(p);
 
 		surface->packFull(p);
 		domainsSurface->packFull(p);
@@ -638,7 +642,6 @@ void Mesh::duplicate()
 		}
 
 		FETIData->unpackFull(p);
-		halo->unpackFull(p);
 
 		surface->unpackFull(p);
 		domainsSurface->unpackFull(p);
