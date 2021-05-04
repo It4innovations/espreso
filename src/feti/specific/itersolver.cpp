@@ -5478,7 +5478,7 @@ int IterSolverBase::Solve_full_ortho_CG_singular_dom_geneo ( SuperCluster & clus
 
 	} // end of CG iterations
 
-	eslog::linearsolver("FULL CG Stop after %d Ïterations.\n", N_ITER);
+	eslog::linearsolver("FULL CG Stop after %d iterations.\n", N_ITER);
 	// *** save solution - in dual and amplitudes *********************************************
 
 //	if (configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::GENEO) {
