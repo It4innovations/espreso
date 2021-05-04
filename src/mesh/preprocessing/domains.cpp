@@ -332,7 +332,9 @@ void partitiate(ElementStore *elements, NodeStore *nodes, ClusterStore *clusters
 
 	domains->size = utils::sizesToOffsets(domainCounter);
 	domains->offset = domains->size;
-	Communication::exscan(domains->offset);
+	domains->next = domains->size;
+	domains->totalSize = Communication::exscan(domains->offset);
+	domains->next += domains->offset;
 	domainCounter.push_back(domains->size);
 	domains->distribution = domainCounter;
 

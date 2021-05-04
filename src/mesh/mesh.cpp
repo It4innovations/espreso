@@ -1346,7 +1346,7 @@ void Mesh::printDecompositionStatistics()
 	mesh.variance.mpi.eratio      = std::pow(mesh.stats.mpi.avg.eratio      - mesh.value.mpi.eratio, 2);
 	mesh.variance.mpi.domains     = std::pow(mesh.stats.mpi.avg.domains     - mesh.value.mpi.domains, 2);
 	mesh.variance.mpi.clusters    = std::pow(mesh.stats.mpi.avg.clusters    - mesh.value.mpi.clusters, 2);
-	if (mesh.stats.mpi.max.clusters == info::mpi::size) {
+	if (mesh.stats.mpi.max.clusters == 1) {
 		mesh.variance.cluster = mesh.variance.mpi;
 	} else {
 		for (esint c = 0; c < clusters->size; ++c) {
