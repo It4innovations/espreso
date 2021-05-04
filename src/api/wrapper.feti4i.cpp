@@ -321,7 +321,7 @@ void FETI4ICreateInstance(
 	Mesh *mesh = &matrix->mesh;
 	std::swap(mesh, info::mesh);
 	mesh::computeNodesDuplication(mesh->nodes, mesh->neighborsWithMe);
-	mesh::partitiate(mesh->elements, mesh->nodes, mesh->clusters, mesh->domains, mesh->elementsRegions, mesh->boundaryRegions, mesh->neighbors, settings.domains, false);
+	mesh->partitiate(settings.domains);
 	if (settings.solver.method == FETIConfiguration::METHOD::HYBRID_FETI) {
 		mesh::computeDomainDual(mesh->nodes, mesh->elements, mesh->domains, mesh->neighbors, mesh->neighborsWithMe);
 	}

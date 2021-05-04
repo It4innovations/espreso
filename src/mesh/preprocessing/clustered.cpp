@@ -628,6 +628,87 @@ void computeRegionsBoundaryNodes(const std::vector<int> &neighbors, NodeStore *n
 	profiler::syncend("compute_regions_boundary_nodes");
 }
 
+void computeRegionsBoundaryParents(const NodeStore *nodes, const ElementStore *elements, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces)
+{
+	profiler::syncstart("arrange_boudary_regions");
+	int threads = info::env::OMP_NUM_THREADS;
+
+	std::vector<BoundaryRegionStore*> allRegions;
+	allRegions.insert(allRegions.end(), boundaryRegions.begin(), boundaryRegions.end());
+	allRegions.insert(allRegions.end(), contactInterfaces.begin(), contactInterfaces.end());
+
+	esint eoffset = elements->distribution.process.offset;
+	for (size_t r = 0; r < allRegions.size(); r++) {
+		BoundaryRegionStore *store = allRegions[r];
+		if (store->dimension == 0) {
+			store->elements = new serializededata<esint, esint>(1, tarray<esint>(threads, 0));
+			store->epointers = new serializededata<esint, Element*>(1, tarray<Element*>(threads, 0));
+		} else {
+			std::vector<size_t> distribution = tarray<size_t>::distribute(threads, store->elements->structures());
+			std::vector<esint> emembership(distribution.back());
+
+			#pragma omp parallel for
+			for (int t = 0; t < threads; t++) {
+				auto enodes = store->elements->cbegin() + distribution[t];
+				std::vector<esint> nlinks;
+				size_t counter;
+				for (size_t e = distribution[t]; e < distribution[t + 1]; ++e, ++enodes) {
+					nlinks.clear();
+					for (auto n = enodes->begin(); n != enodes->end(); ++n) {
+						auto links = nodes->elements->cbegin() + *n;
+						nlinks.insert(nlinks.end(), links->begin(), links->end());
+					}
+					std::sort(nlinks.begin(), nlinks.end());
+					counter = 1;
+					for (size_t i = 1; i < nlinks.size(); ++i) {
+						if (nlinks[i - 1] == nlinks[i]) {
+							++counter;
+							if (counter == enodes->size() && eoffset <= nlinks[i]) {
+								emembership[e] = nlinks[i];
+								break;
+							}
+						} else {
+							counter = 1;
+						}
+					}
+				}
+			}
+
+			std::vector<std::vector<esint> > ememberdata(threads);
+
+			#pragma omp parallel for
+			for (int t = 0; t < threads; t++) {
+				std::vector<esint> tdata;
+
+				auto nodes = store->elements->begin() + distribution[t];
+				for (size_t e = distribution[t]; e < distribution[t + 1]; ++e, ++nodes) {
+					esint eindex = emembership[e] - eoffset;
+					auto epointer = elements->epointers->datatarray()[eindex];
+					auto enodes = elements->nodes->begin() + eindex;
+					tdata.push_back(eindex);
+					if (store->dimension == 1) {
+						tdata.push_back(epointer->getIndex(*enodes, epointer->edges, epointer->edgepointers, *nodes));
+					}
+					if (store->dimension == 2) {
+						tdata.push_back(epointer->getIndex(*enodes, epointer->faces, epointer->facepointers, *nodes));
+					}
+					if (tdata.back() < 0) {
+						eslog::internalFailure("cannot find sub-element index.\n");
+					}
+				}
+
+				ememberdata[t].swap(tdata);
+			}
+
+			store->emembership = new serializededata<esint, esint>(2, ememberdata);
+		}
+	}
+
+	profiler::syncend("arrange_boudary_regions");
+	eslog::checkpointln("MESH: BOUNDARY REGIONS ARRANGED");
+}
+
+
 void computeBodies(ElementStore *elements, BodyStore *bodies, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors)
 {
 	profiler::syncstart("mesh_bodies_found");

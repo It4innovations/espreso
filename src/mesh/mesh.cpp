@@ -474,6 +474,7 @@ void Mesh::computePersistentParameters()
 
 	mesh::computeRegionsElementNodes(nodes, elements, neighbors, elementsRegions);
 	mesh::computeRegionsBoundaryNodes(neighbors, nodes, boundaryRegions, contactInterfaces);
+	mesh::computeRegionsBoundaryParents(nodes, elements, boundaryRegions, contactInterfaces);
 
 	mesh::computeBodies(elements, bodies, elementsRegions, neighbors);
 
@@ -491,7 +492,23 @@ void Mesh::computePersistentParameters()
 
 void Mesh::partitiate(int ndomains)
 {
-	mesh::partitiate(elements, nodes, clusters, domains, elementsRegions, boundaryRegions, neighbors, ndomains, _omitDecomposition);
+	std::vector<esint> permutation;
+	std::vector<size_t> distribution;
+	if (_omitDecomposition) {
+		permutation.resize(elements->distribution.process.size);
+		std::iota(permutation.begin(), permutation.end(), 0);
+		esint psize = elements->distribution.process.size / ndomains;
+		distribution.push_back(0);
+		for (esint p = 0, offset = 0; p < ndomains; ++p, offset += psize) {
+			distribution.push_back(offset + psize);
+		}
+		_omitDecomposition = false; // only the first run
+	} else {
+		mesh::computeElementsDecomposition(elements, ndomains, distribution, permutation);
+	}
+	mesh::permuteElements(elements, nodes, domains, elementsRegions, boundaryRegions, contactInterfaces, neighbors, distribution, permutation);
+	mesh::computeDomainDual(nodes, elements, domains, neighbors, neighborsWithMe);
+	mesh::computeClustersDistribution(domains, clusters);
 
 	profiler::synccheckpoint("domain_decomposition");
 	eslog::checkpointln("MESH: MESH DECOMPOSED");
@@ -500,10 +517,9 @@ void Mesh::partitiate(int ndomains)
 
 	mesh::computeElementIntervals(domains, elements);
 	mesh::computeRegionsElementIntervals(elements, elementsRegions);
+	mesh::computeRegionsBoundaryIntervals(nodes, elements, domains, boundaryRegions, contactInterfaces);
 	profiler::synccheckpoint("arrange_element_regions");
 	eslog::checkpointln("MESH: ELEMENT REGIONS ARRANGED");
-
-	mesh::computeRegionsBoundaryParents(nodes, elements, domains, boundaryRegions, contactInterfaces);
 
 	profiler::synccheckpoint("arrange_boundary_regions");
 	eslog::checkpointln("MESH: BOUNDARY REGIONS ARRANGED");
@@ -521,11 +537,6 @@ void Mesh::partitiate(int ndomains)
 		profiler::synccheckpoint("preprocess_surface");
 		eslog::checkpointln("MESH: DOMAIN SURFACE COMPUTED");
 	}
-
-	if (_withFETI) {
-		mesh::computeDomainDual(nodes, elements, domains, neighbors, neighborsWithMe);
-		profiler::synccheckpoint("compute_domain_dual");
-	}
 }
 
 void Mesh::preprocess()
@@ -538,7 +549,6 @@ void Mesh::preprocess()
 	reclusterize();
 	computePersistentParameters();
 	partitiate(preferedDomains);
-	_omitDecomposition = false;
 
 	DebugOutput::mesh();
 	profiler::syncend("meshing");

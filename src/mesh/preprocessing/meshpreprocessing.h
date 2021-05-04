@@ -82,6 +82,7 @@ void computeRegionsElementNodes(const NodeStore *nodes, const ElementStore *elem
 void computeRegionsBoundaryNodes(const std::vector<int> &neighbors, NodeStore *nodes, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
 void computeRegionsBoundaryElementsFromNodes(const NodeStore *nodes, const ElementStore *elements, const ElementStore *halo, const std::vector<ElementsRegionStore*> &elementsRegions, BoundaryRegionStore *bregion);
 void computeRegionsBoundaryDistribution(std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
+void computeRegionsBoundaryParents(const NodeStore *nodes, const ElementStore *elements, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
 
 void computeBodiesSurface(NodeStore *nodes, ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions, SurfaceStore *surface, std::vector<int> &neighbors);
 void computeWarpedNormals(SurfaceStore * surface);
@@ -96,15 +97,22 @@ void computeRegionsSurface(ElementStore *elements, NodeStore *nodes, ElementStor
 void computeSurfaceElementNeighbors(NodeStore *nodes, std::vector<int> &neigbors, SurfaceStore *surface);
 
 
+// methods for mesh decomposition
+//  - decompose elements to domains and intervals
+// ================================================================================================
+
+void computeElementsDecomposition(const ElementStore *elements, esint parts, std::vector<size_t> &distribution, std::vector<esint> &permutation);
+void permuteElements(ElementStore *elements, NodeStore *nodes, DomainStore *domains, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces, std::vector<int> &neighbors, std::vector<size_t> &distribution, const std::vector<esint> &permutation);
+
+
 // methods for clustered and decomposed mesh
 //  - all data are computed
-//  - decompose elements to domains and intervals!
 // ================================================================================================
 
 void addFixPoints(const serializededata<esint, esint>* elements, esint begin, esint end, const serializededata<esint, Element*>* epointers, std::vector<esint> &fixPoints);
 
-void computeDecomposedDual(NodeStore *nodes, ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors, std::vector<esint> &dualDist, std::vector<esint> &dualData);
 void computeDomainDual(NodeStore *nodes, ElementStore *elements, DomainStore *domains, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe);
+void computeClustersDistribution(DomainStore *domains, ClusterStore *clusters);
 void computeDomainsSurface(NodeStore *nodes, ElementStore *elements, DomainStore *domains, SurfaceStore *domainsSurface, std::vector<int> &neighbors);
 void triangularizeDomainSurface(NodeStore *nodes, ElementStore *elements, DomainStore *domains, SurfaceStore *domainsSurface, std::vector<int> &neighbors);
 
@@ -114,11 +122,7 @@ void computeLocalIndices(ElementStore *elements, DomainStore *domains);
 void computeElementIntervals(const DomainStore *domains, ElementStore *elements);
 
 void computeRegionsElementIntervals(const ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions);
-void computeRegionsBoundaryParents(const NodeStore *nodes, const ElementStore *elements, const DomainStore *domains, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
-
-void partitiate(ElementStore *elements, NodeStore *nodes, ClusterStore *clusters, DomainStore *domains, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, esint parts, bool uniformDecomposition);
-
-void permuteElements(ElementStore *elements, NodeStore *nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors, const std::vector<esint> &permutation, const std::vector<size_t> &distribution);
+void computeRegionsBoundaryIntervals(const NodeStore *nodes, const ElementStore *elements, const DomainStore *domains, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
 
 }
 }

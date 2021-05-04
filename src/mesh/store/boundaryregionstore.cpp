@@ -51,8 +51,6 @@ void BoundaryRegionStore::permute(const std::vector<esint> &permutation, const s
 	if (emembership != NULL) {
 		emembership->permute(permutation, distribution.threads);
 	}
-
-	eintervals.clear();
 }
 
 size_t BoundaryRegionStore::packedFullSize() const
