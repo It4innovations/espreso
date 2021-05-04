@@ -37,6 +37,7 @@ namespace mesh {
 
 void computeBodiesSurface(NodeStore *nodes, ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions, SurfaceStore *surface, std::vector<int> &neighbors)
 {
+	profiler::syncstart("compute_bodies_surface");
 	auto eregion = [elementsRegions] (const std::string &name) -> ElementsRegionStore* {
 		for (size_t r = 0; r < elementsRegions.size(); r++) {
 			if (StringCompare::caseSensitiveEq(elementsRegions[r]->name, name)) {
@@ -184,6 +185,7 @@ void computeBodiesSurface(NodeStore *nodes, ElementStore *elements, std::vector<
 	surface->totalSize = Communication::exscan(surface->offset);
 
 	DebugOutput::surface("surface.bodies", 1, 1);
+	profiler::syncend("compute_bodies_surface");
 	eslog::checkpointln("MESH: BODY SURFACE COMPUTED");
 }
 
@@ -272,12 +274,13 @@ void computeWarpedNormals(SurfaceStore * surface)
 	surface->base = new serializededata<esint, Point>(1, base);
 
 	DebugOutput::warpedNormals("surface.planes", 1, 1);
-	eslog::checkpointln("MESH: WARPED SURFACE NORMALS COMMPUTED");
 	profiler::syncend("compute_warped_surface_normals");
+	eslog::checkpointln("MESH: WARPED SURFACE NORMALS COMMPUTED");
 }
 
 void exchangeContactHalo(SurfaceStore * surface, ContactStore *contact)
 {
+	profiler::syncstart("exchange_contact_halo");
 	_Point<float> box[2] = {
 			_Point<float>( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max(),  std::numeric_limits<float>::max()),
 			_Point<float>(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max(), -std::numeric_limits<float>::max())
@@ -459,11 +462,13 @@ void exchangeContactHalo(SurfaceStore * surface, ContactStore *contact)
 	contact->neighborsWithMe.push_back(info::mpi::rank);
 	contact->surfaces.push_back(surface);
 
+	profiler::syncend("exchange_contact_halo");
 	eslog::checkpointln("MESH: CLOSE BOUNDARY EXCHANGED");
 }
 
 void findCloseElements(ContactStore *contact)
 {
+	profiler::syncstart("find_close_elements");
 	// checking
 	// 1. distance to plane defined by normal and center
 	// 2. test if any point is in coarse element defined by: base + s * parameter.u + t * parameter.v
@@ -604,6 +609,7 @@ void findCloseElements(ContactStore *contact)
 		contact->interfaces.push_back(Interface(i->first, i->second));
 	}
 
+	profiler::syncend("find_close_elements");
 	eslog::checkpointln("MESH: CLOSE ELEMENTS FOUND");
 }
 

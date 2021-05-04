@@ -167,6 +167,7 @@ void computeRegionsBoundaryIntervals(const NodeStore *nodes, const ElementStore 
 
 void computeNodeDomainDistribution(ElementStore *elements, NodeStore *nodes, DomainStore *domains, std::vector<int> neighborsWithMe)
 {
+	profiler::syncstart("compute_node_domain_distribution");
 	// nID, domain
 	std::vector<std::vector<std::pair<esint, esint> > > ntodomains(info::env::OMP_NUM_THREADS);
 
@@ -268,11 +269,13 @@ void computeNodeDomainDistribution(ElementStore *elements, NodeStore *nodes, Dom
 
 	nodes->domains = new serializededata<esint, int>(tarray<esint>(ddistribution, domainsDistrubtion), tarray<int>(ddatadistribution, domainsData));
 
+	profiler::syncend("compute_node_domain_distribution");
 	eslog::checkpointln("MESH: NODE TO DOMAINS MAP COMPUTED");
 }
 
 void computeLocalIndices(ElementStore *elements, DomainStore *domains)
 {
+	profiler::syncstart("compute_local_indices");
 	size_t threads = info::env::OMP_NUM_THREADS;
 
 	domains->nodes = new serializededata<esint, esint>(*elements->nodes);
@@ -291,11 +294,13 @@ void computeLocalIndices(ElementStore *elements, DomainStore *domains)
 		}
 	}
 
+	profiler::syncend("compute_local_indices");
 	eslog::checkpointln("MESH: LOCAL INDICES COMPUTED");
 }
 
 void computeDomainDual(NodeStore *nodes, ElementStore *elements, DomainStore *domains, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe)
 {
+	profiler::syncstart("compute_domain_dual");
 	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<std::pair<esint, esint> > sBuffer, gBuffer;
@@ -360,11 +365,13 @@ void computeDomainDual(NodeStore *nodes, ElementStore *elements, DomainStore *do
 	domains->localDual = new serializededata<esint, esint>(dist, data);
 	domains->dual = new serializededata<esint, esint>(distFull, dataFull);
 
+	profiler::syncend("compute_domain_dual");
 	eslog::checkpointln("MESH: DOMAIN DUAL GRAPH COMPUTED");
 }
 
 void computeClustersDistribution(DomainStore *domains, ClusterStore *clusters)
 {
+	profiler::syncstart("compute_cluster_distribution");
 	domains->cluster.clear();
 	domains->cluster.resize(domains->size, -1);
 
@@ -390,10 +397,13 @@ void computeClustersDistribution(DomainStore *domains, ClusterStore *clusters)
 	clusters->offset = clusters->next = clusters->size = cluster;
 	clusters->totalSize = Communication::exscan(clusters->offset);
 	clusters->next += clusters->size;
+	profiler::syncend("compute_cluster_distribution");
+	eslog::checkpointln("MESH: CLUSTERS DISTRIBUTION COMPUTED");
 }
 
 void computeDomainsSurface(NodeStore *nodes, ElementStore *elements, DomainStore *domains, SurfaceStore *domainsSurface, std::vector<int> &neighbors)
 {
+	profiler::syncend("compute_domains_surface");
 	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<std::vector<esint> > faces(threads), facesDistribution(threads), ecounter(threads, std::vector<esint>((int)Element::CODE::SIZE));
@@ -482,11 +492,13 @@ void computeDomainsSurface(NodeStore *nodes, ElementStore *elements, DomainStore
 		domainsSurface->enodes = new serializededata<esint, esint>(facesDistribution, faces);
 	}
 
+	profiler::syncend("compute_domains_surface");
 	eslog::checkpointln("MESH: DOMAIN SURFACE COMPUTED");
 }
 
 void triangularizeDomainSurface(NodeStore *nodes, ElementStore *elements, DomainStore *domains, SurfaceStore *domainsSurface, std::vector<int> &neighbors)
 {
+	profiler::syncstart("triangulate_domains_surface");
 	if (domainsSurface->enodes == NULL) {
 		computeDomainsSurface(nodes, elements, domains, domainsSurface, neighbors);
 	}
@@ -521,6 +533,7 @@ void triangularizeDomainSurface(NodeStore *nodes, ElementStore *elements, Domain
 		domainsSurface->triangles = new serializededata<esint, esint>(3, triangles);
 	}
 
+	profiler::syncend("triangulate_domains_surface");
 	eslog::checkpointln("MESH: DOMAIN SURFACE TRIANGULARIZED");
 }
 

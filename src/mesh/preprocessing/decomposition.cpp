@@ -295,6 +295,8 @@ void computeElementsDecomposition(const ElementStore *elements, esint parts, std
 		begin = std::lower_bound(begin, permutation.end(), ++partindex, [&] (esint i, esint val) { return partition[i] < val; });
 	}
 	distribution.push_back(permutation.size());
+	profiler::syncend("partitiate");
+	eslog::checkpointln("MESH: ELEMENT PERMUTATION COMPUTED");
 }
 
 void permuteElements(ElementStore *elements, NodeStore *nodes, DomainStore *domains, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces, std::vector<int> &neighbors, std::vector<size_t> &distribution, const std::vector<esint> &permutation)

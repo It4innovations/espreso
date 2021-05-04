@@ -185,7 +185,7 @@ ElementStore* exchangeHalo(ElementStore *elements, NodeStore *nodes, std::vector
 
 	profiler::synccheckpoint("rbuffer");
 	profiler::syncend("exchange_halo");
-	eslog::checkpointln("MESH: HALO EXCHANGED");
+	eslog::checkpointln("MESH: HALO ELEMENTS EXCHANGED");
 	return halo;
 }
 
@@ -385,6 +385,7 @@ void computeRegionsBoundaryDistribution(std::vector<BoundaryRegionStore*> &bound
 	}
 
 	profiler::syncend("compute_regions_boudary_distribution");
+	eslog::checkpointln("MESH: BOUDANRY REGIONS DISTRIBUTION COMPUTED");
 }
 
 void synchronizeRegionNodes(const NodeStore *nodes, const std::vector<int> &neighbors, std::vector<RegionStore*> &regions)
@@ -469,6 +470,7 @@ void synchronizeRegionNodes(const NodeStore *nodes, const std::vector<int> &neig
 	}
 	profiler::synccheckpoint("rbuffer");
 	profiler::syncend("synchronize_region_nodes");
+	eslog::checkpointln("MESH: REGION NODES SYNCHRONIZED");
 }
 
 void computeNodeInfo(const NodeStore *nodes, const std::vector<int> &neighbors, std::vector<RegionStore*> &regions)
@@ -562,8 +564,8 @@ void computeNodeInfo(const NodeStore *nodes, const std::vector<int> &neighbors, 
 			}
 		}
 	}
-	profiler::synccheckpoint("rbuffer");
 	profiler::syncend("compute_node_info");
+	eslog::checkpointln("MESH: NODE INFO COMPUTED");
 }
 
 void computeRegionsElementNodes(const NodeStore *nodes, const ElementStore *elements, const std::vector<int> &neighbors, std::vector<ElementsRegionStore*> &elementsRegions)
@@ -596,7 +598,7 @@ void computeRegionsElementNodes(const NodeStore *nodes, const ElementStore *elem
 
 	computeNodeInfo(nodes, neighbors, regions);
 	profiler::syncend("compute_regions_nodes");
-	eslog::checkpointln("MESH: REGIONS NODES COMPUTED");
+	eslog::checkpointln("MESH: ELEMENTS REGIONS NODES COMPUTED");
 }
 
 void computeRegionsBoundaryNodes(const std::vector<int> &neighbors, NodeStore *nodes, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces)
@@ -626,11 +628,12 @@ void computeRegionsBoundaryNodes(const std::vector<int> &neighbors, NodeStore *n
 	computeNodeInfo(nodes, neighbors, regions);
 	nodes->uniqInfo = allRegions[0]->nodeInfo;
 	profiler::syncend("compute_regions_boundary_nodes");
+	eslog::checkpointln("MESH: BOUNDARY REGIONS NODES COMPUTED");
 }
 
 void computeRegionsBoundaryParents(const NodeStore *nodes, const ElementStore *elements, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces)
 {
-	profiler::syncstart("arrange_boudary_regions");
+	profiler::syncstart("compute_regions_boundary_parents");
 	int threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<BoundaryRegionStore*> allRegions;
@@ -704,8 +707,8 @@ void computeRegionsBoundaryParents(const NodeStore *nodes, const ElementStore *e
 		}
 	}
 
-	profiler::syncend("arrange_boudary_regions");
-	eslog::checkpointln("MESH: BOUNDARY REGIONS ARRANGED");
+	profiler::syncend("compute_regions_boundary_parents");
+	eslog::checkpointln("MESH: BOUNDARY PARENTS COMPUTED");
 }
 
 
@@ -1117,6 +1120,7 @@ void triangularizeSurface(SurfaceStore *surface)
 	if (surface == NULL) {
 		return;
 	}
+	profiler::syncstart("triangularize_surface");
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -1155,11 +1159,13 @@ void triangularizeSurface(SurfaceStore *surface)
 		surface->triangles = new serializededata<esint, esint>(3, triangles);
 	}
 
+	profiler::syncend("triangularize_surface");
 	eslog::checkpointln("MESH: SURFACE TRIANGULARIZED");
 }
 
 void triangularizeBoundary(BoundaryRegionStore *boundary)
 {
+	profiler::syncstart("triangularize_boudnary");
 	size_t threads = info::env::OMP_NUM_THREADS;
 
 	if (boundary->dimension == 2) {
@@ -1196,6 +1202,7 @@ void triangularizeBoundary(BoundaryRegionStore *boundary)
 		boundary->triangles = new serializededata<esint, esint>(3, triangles);
 	}
 
+	profiler::syncend("triangularize_boudnary");
 	eslog::checkpointln("MESH: BOUNDARY TRIANGULARIZED");
 }
 

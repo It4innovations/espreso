@@ -67,6 +67,7 @@ void computeNodesDuplication(NodeStore *nodes, std::vector<int> &neighborsWithMe
 	nodes->ranks = new serializededata<esint, int>(rdist, rdata);
 
 	profiler::syncend("compute_nodes_duplication");
+	eslog::checkpointln("MESH: NODES DUPLICATION COMPUTED");
 }
 
 void linkNodesAndElements(ElementStore *elements, NodeStore *nodes, const std::vector<int> &neighbors)
@@ -1776,9 +1777,8 @@ void sortNodes(NodeStore *nodes, ElementStore *elements, std::vector<BoundaryReg
 		}
 	}
 
-	profiler::synccheckpoint("remap");
 	profiler::syncend("sort_nodes");
-	eslog::checkpointln("MESH: NODES ARRANGED");
+	eslog::checkpointln("MESH: NODES SORTED");
 }
 
 void computeElementDistribution(ElementStore *elements)
@@ -1805,6 +1805,8 @@ void computeElementDistribution(ElementStore *elements)
 	elements->distribution.process.totalSize = Communication::exscan(elements->distribution.process.offset);
 	elements->distribution.process.next = elements->distribution.process.offset + elements->distribution.process.size;
 	profiler::syncend("compute_element_distribution");
+
+	eslog::checkpointln("MESH: ELEMENT DISTRIBUTION COMPUTED");
 }
 
 void computeRegionsElementDistribution(const ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions)
@@ -1842,6 +1844,8 @@ void computeRegionsElementDistribution(const ElementStore *elements, std::vector
 		elementsRegions[r]->distribution.process.totalSize = sum[j++];
 	}
 	profiler::syncend("regions element distribution");
+
+	eslog::checkpointln("MESH: ELEMENTS REGIONS DISTRIBUTION COMPUTED");
 }
 
 } // namespace mesh
