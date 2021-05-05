@@ -300,7 +300,7 @@ void EnSightGold::geometry()
 					for (size_t i = 0; i < region->eintervals.size(); i++) {
 						if (region->eintervals[i].code == etype) {
 							for (esint e = region->eintervals[i].begin; e < region->eintervals[i].end; ++e) {
-								auto element = region->procNodes->cbegin() + e;
+								auto element = region->elements->cbegin() + e;
 								for (auto n = element->begin(); n != element->end(); ++n) {
 									_writer.enode(region->getPosition(*n) + 1);
 								}

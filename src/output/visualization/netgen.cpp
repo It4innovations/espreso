@@ -78,7 +78,7 @@ void Netgen::updateMesh()
 		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 
 		if (region->dimension) {
-			for (auto e = region->procNodes->begin(); e != region->procNodes->end(); ++e) {
+			for (auto e = region->elements->begin(); e != region->elements->end(); ++e) {
 				auto element = e->data();
 				_writer.int32s(bindex);
 				_writer.int32s(info::mesh->nodes->uniqInfo.position[element[0]] + 1);

@@ -1167,7 +1167,7 @@ void triangularizeBoundary(BoundaryRegionStore *boundary)
 				tintervals.push_back(0);
 			}
 
-			auto elements = boundary->procNodes->cbegin(t);
+			auto elements = boundary->elements->cbegin(t);
 			const auto &epointers = boundary->epointers->datatarray().begin();
 
 			for (size_t e = boundary->distribution.threads[t]; e < boundary->distribution.threads[t + 1]; ++e, ++elements) {

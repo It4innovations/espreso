@@ -124,21 +124,21 @@ HeatTransferBoundaryIterator::HeatTransferBoundaryIterator(BoundaryRegionStore *
 	convection = configuration.convection.find(region->name) != configuration.convection.end();
 	radiation = configuration.diffuse_radiation.find(region->name) != configuration.diffuse_radiation.end();
 
-	coordinates.set(info::mesh->nodes->coordinates, region->procNodes);
-	temperature.setInput(iterator.temperature.output, region->procNodes);
-	thickness  .setInput(iterator.thickness.output  , region->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
-	heatflow   .setInput(configuration.heat_flow    , region->name, kernelparams, region->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
-	heatflux   .setInput(configuration.heat_flux    , region->name, kernelparams, region->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
+	coordinates.set(info::mesh->nodes->coordinates, region->elements);
+	temperature.setInput(iterator.temperature.output, region->elements);
+	thickness  .setInput(iterator.thickness.output  , region->elements, MoverParameter::Properties::ALLOW_CONSTANT);
+	heatflow   .setInput(configuration.heat_flow    , region->name, kernelparams, region->elements, MoverParameter::Properties::ALLOW_CONSTANT);
+	heatflux   .setInput(configuration.heat_flux    , region->name, kernelparams, region->elements, MoverParameter::Properties::ALLOW_CONSTANT);
 
-	htc.setInput(configuration.convection, region->name, kernelparams, region->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
+	htc.setInput(configuration.convection, region->name, kernelparams, region->elements, MoverParameter::Properties::ALLOW_CONSTANT);
 	htc.output = iterator.htc.output;
 	if (convection) {
-		extemperature.setInput(configuration.convection.find(region->name)->second.external_temperature, kernelparams, region->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
+		extemperature.setInput(configuration.convection.find(region->name)->second.external_temperature, kernelparams, region->elements, MoverParameter::Properties::ALLOW_CONSTANT);
 	}
 	if (radiation) {
-		emissivity.setInput(configuration.diffuse_radiation.find(region->name)->second.emissivity, kernelparams, region->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
+		emissivity.setInput(configuration.diffuse_radiation.find(region->name)->second.emissivity, kernelparams, region->elements, MoverParameter::Properties::ALLOW_CONSTANT);
 		if (!convection) {
-			extemperature.setInput(configuration.diffuse_radiation.find(region->name)->second.external_temperature, kernelparams, region->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
+			extemperature.setInput(configuration.diffuse_radiation.find(region->name)->second.external_temperature, kernelparams, region->elements, MoverParameter::Properties::ALLOW_CONSTANT);
 		}
 	}
 

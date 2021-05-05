@@ -14,7 +14,7 @@ BoundaryRegionStore::BoundaryRegionStore(const std::string &name)
   originalDimension(0),
   dimension(0),
   area(0),
-  procNodes(NULL),
+  elements(NULL),
   triangles(NULL),
   epointers(NULL),
   emembership(NULL)
@@ -30,8 +30,8 @@ BoundaryRegionStore::BoundaryRegionStore(const char* &packedData)
 
 BoundaryRegionStore::~BoundaryRegionStore()
 {
-	if (procNodes != NULL) { delete procNodes; }
-	if (triangles != NULL && triangles != procNodes) { delete triangles; }
+	if (elements != NULL) { delete elements; }
+	if (triangles != NULL && triangles != elements) { delete triangles; }
 
 	if (epointers != NULL) { delete epointers; }
 	if (emembership != NULL) { delete emembership; }
@@ -41,8 +41,8 @@ void BoundaryRegionStore::permute(const std::vector<esint> &permutation, const s
 {
 	distribution.threads = threading;
 
-	if (procNodes != NULL) {
-		procNodes->permute(permutation, distribution.threads);
+	if (elements != NULL) {
+		elements->permute(permutation, distribution.threads);
 	}
 
 	if (epointers != NULL) {
@@ -63,7 +63,7 @@ size_t BoundaryRegionStore::packedFullSize() const
 	packedSize += utils::packedSize(dimension);
 	packedSize += utils::packedSize(area);
 
-	packedSize += utils::packedSize(procNodes);
+	packedSize += utils::packedSize(elements);
 	packedSize += utils::packedSize(triangles);
 
 	packedSize += 1;
@@ -88,7 +88,7 @@ void BoundaryRegionStore::packFull(char* &p) const
 	utils::pack(dimension, p);
 	utils::pack(area, p);
 
-	utils::pack(procNodes, p);
+	utils::pack(elements, p);
 	utils::pack(triangles, p);
 
 	utils::pack(epointers != NULL, p);
@@ -113,7 +113,7 @@ void BoundaryRegionStore::unpackFull(const char* &p)
 	utils::unpack(dimension, p);
 	utils::unpack(area, p);
 
-	utils::unpack(procNodes, p);
+	utils::unpack(elements, p);
 	utils::unpack(triangles, p);
 
 	bool notnull;
@@ -141,7 +141,7 @@ size_t BoundaryRegionStore::packedSize() const
 			RegionStore::packedSize() +
 			utils::packedSize(originalDimension) +
 			utils::packedSize(dimension) +
-			procNodes->packedSize() +
+			elements->packedSize() +
 			sizeof(size_t) + epointers->datatarray().size() * sizeof(int) +
 			utils::packedSize(emembership) +
 			utils::packedSize(eintervals);
@@ -152,7 +152,7 @@ void BoundaryRegionStore::pack(char* &p) const
 	RegionStore::pack(p);
 	utils::pack(originalDimension, p);
 	utils::pack(dimension, p);
-	procNodes->pack(p);
+	elements->pack(p);
 	std::vector<int> eindices;
 	eindices.reserve(epointers->datatarray().size());
 
@@ -172,11 +172,11 @@ void BoundaryRegionStore::unpack(const char* &p)
 	RegionStore::unpack(p);
 	utils::unpack(originalDimension, p);
 	utils::unpack(dimension, p);
-	if (procNodes == NULL) {
-		procNodes = new serializededata<esint, esint>(tarray<esint>(1, 0), tarray<esint>(1, 0));
+	if (elements == NULL) {
+		elements = new serializededata<esint, esint>(tarray<esint>(1, 0), tarray<esint>(1, 0));
 		epointers = new serializededata<esint, Element*>(1, tarray<Element*>(1, 0));
 	}
-	procNodes->unpack(p);
+	elements->unpack(p);
 	std::vector<int> eindices;
 	utils::unpack(eindices, p);
 	if (epointers != NULL) {

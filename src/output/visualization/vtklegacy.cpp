@@ -275,7 +275,7 @@ esint VTKLegacy::insertElements(const BoundaryRegionStore *store, const std::vec
 			_writer.cells(store->distribution.process.totalSize, store->distribution.process.totalSize + enodes);
 		}
 		int intsize = 11;
-		for (auto e = store->procNodes->cbegin(); e != store->procNodes->cend(); ++e) {
+		for (auto e = store->elements->cbegin(); e != store->elements->cend(); ++e) {
 			_writer.insert(e->size() > 9 ? 2 : 1, _esize.data() + e->size() * 2 - 2);
 			for (auto n = e->begin(); n != e->end(); ++n) {
 				esint p = std::lower_bound(store->nodes->datatarray().begin(), store->nodes->datatarray().end(), *n) - store->nodes->datatarray().begin();

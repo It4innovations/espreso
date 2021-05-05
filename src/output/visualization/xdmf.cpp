@@ -295,7 +295,7 @@ void XDMF::updateMesh()
 			Element::CODE code = getcode(region->distribution.code);
 			if (region->dimension) {
 				auto epointer = region->epointers->datatarray().cbegin();
-				for (auto e = region->procNodes->begin(); e != region->procNodes->end(); ++e, ++epointer) {
+				for (auto e = region->elements->begin(); e != region->elements->end(); ++e, ++epointer) {
 					if (code == Element::CODE::SIZE) {
 						topologies[rindex].topology.push_back(XDMFWritter::ecode((*epointer)->code));
 					}

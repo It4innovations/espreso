@@ -78,8 +78,8 @@ void arrangeNodes()
 	localremap(info::mesh->elements->nodes);
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-		if (info::mesh->boundaryRegions[r]->procNodes != NULL) {
-			localremap(info::mesh->boundaryRegions[r]->procNodes);
+		if (info::mesh->boundaryRegions[r]->elements != NULL) {
+			localremap(info::mesh->boundaryRegions[r]->elements);
 		}
 		if (!StringCompare::caseInsensitiveEq(info::mesh->boundaryRegions[r]->name, "ALL_NODES")) {
 			if (info::mesh->boundaryRegions[r]->nodes != NULL) {
@@ -307,7 +307,7 @@ void arrangeBoundaryRegions()
 	for (size_t r = 0; r < allRegions.size(); r++) {
 		if (allRegions[r]->nodes == NULL) {
 			std::vector<std::vector<esint> > nodes(threads);
-			nodes[0] = std::vector<esint>(allRegions[r]->procNodes->datatarray().begin(), allRegions[r]->procNodes->datatarray().end());
+			nodes[0] = std::vector<esint>(allRegions[r]->elements->datatarray().begin(), allRegions[r]->elements->datatarray().end());
 			utils::sortAndRemoveDuplicates(nodes[0]);
 			serializededata<esint, esint>::balance(1, nodes);
 			allRegions[r]->nodes = new serializededata<esint, esint>(1, nodes);
@@ -326,16 +326,16 @@ void arrangeBoundaryRegions()
 	for (size_t r = 0; r < allRegions.size(); r++) {
 		BoundaryRegionStore *store = allRegions[r];
 		if (store->dimension == 0) {
-			store->procNodes = new serializededata<esint, esint>(1, tarray<esint>(threads, 0));
+			store->elements = new serializededata<esint, esint>(1, tarray<esint>(threads, 0));
 			store->epointers = new serializededata<esint, Element*>(1, tarray<Element*>(threads, 0));
 		} else {
-			std::vector<size_t> distribution = tarray<size_t>::distribute(threads, store->procNodes->structures());
+			std::vector<size_t> distribution = tarray<size_t>::distribute(threads, store->elements->structures());
 			std::vector<esint> &eDomainDistribution = info::mesh->domains->elements;
 			std::vector<esint> emembership(distribution.back()), edomain(distribution.back());
 
 			#pragma omp parallel for
 			for (int t = 0; t < threads; t++) {
-				auto enodes = store->procNodes->cbegin() + distribution[t];
+				auto enodes = store->elements->cbegin() + distribution[t];
 				std::vector<esint> nlinks;
 				size_t counter;
 				for (size_t e = distribution[t]; e < distribution[t + 1]; ++e, ++enodes) {
@@ -361,7 +361,7 @@ void arrangeBoundaryRegions()
 				}
 			}
 
-			std::vector<esint> permutation(store->procNodes->structures());
+			std::vector<esint> permutation(store->elements->structures());
 			std::iota(permutation.begin(), permutation.end(), 0);
 			std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) {
 				if (edomain[i] == edomain[j]) {
@@ -379,7 +379,7 @@ void arrangeBoundaryRegions()
 			for (int t = 0; t < threads; t++) {
 				std::vector<esint> tdata;
 
-				auto nodes = store->procNodes->begin() + distribution[t];
+				auto nodes = store->elements->begin() + distribution[t];
 				for (size_t e = distribution[t]; e < distribution[t + 1]; ++e, ++nodes) {
 					esint eindex = emembership[e] - eoffset;
 					auto epointer = info::mesh->elements->epointers->datatarray()[eindex];
@@ -681,7 +681,7 @@ void computeBoundaryElementsFromNodes(BoundaryRegionStore *bregion)
 		}
 	}
 
-	bregion->procNodes = new serializededata<esint, esint>(edist, edata);
+	bregion->elements = new serializededata<esint, esint>(edist, edata);
 	bregion->epointers = new serializededata<esint, Element*>(1, epointers);
 
 	profiler::syncend("compute_boundary_elements_from_nodes");

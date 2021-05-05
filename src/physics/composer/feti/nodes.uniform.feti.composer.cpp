@@ -286,7 +286,7 @@ void NodesUniformFETIComposer::_buildKFEMPattern(esint domain)
 			if (info::mesh->boundaryRegions[r]->eintervalsDistribution[domain] < info::mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]) {
 				esint begin = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[domain]].begin;
 				esint end = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1] - 1].end;
-				auto enodes = info::mesh->boundaryRegions[r]->procNodes->cbegin() + begin;
+				auto enodes = info::mesh->boundaryRegions[r]->elements->cbegin() + begin;
 
 				for (esint i = begin; i < end; ++i, ++enodes) {
 					RHSsize += enodes->size() * _DOFs;
@@ -339,7 +339,7 @@ void NodesUniformFETIComposer::_buildKFEMPattern(esint domain)
 			if (info::mesh->boundaryRegions[r]->eintervalsDistribution[domain] < info::mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]) {
 				esint begin = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[domain]].begin;
 				esint end = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1] - 1].end;
-				auto enodes = info::mesh->boundaryRegions[r]->procNodes->cbegin() + begin;
+				auto enodes = info::mesh->boundaryRegions[r]->elements->cbegin() + begin;
 				for (esint i = begin; i < end; ++i, ++enodes) {
 					insert(enodes);
 					Koffset += getMatrixSize(enodes->size() * _DOFs, _data->K[domain].type != MatrixType::REAL_UNSYMMETRIC);

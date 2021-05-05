@@ -16,7 +16,7 @@ struct BoundaryRegionStore: public RegionStore {
 	int originalDimension, dimension;
 	double area;
 
-	serializededata<esint, esint>* procNodes;
+	serializededata<esint, esint>* elements;
 	serializededata<esint, esint>* triangles;
 
 	serializededata<esint, Element*>* epointers;

@@ -278,8 +278,8 @@ void MESIOBoundaryRegion(
 		*size = info::mesh->boundaryRegions[region]->distribution.process.size;
 		*type = mesio->rtypes[region].data();
 		*parent = info::mesh->boundaryRegions[region]->emembership->datatarray().data();
-		*elementDistribution = info::mesh->boundaryRegions[region]->procNodes->boundarytarray().data();
-		*elementData = info::mesh->boundaryRegions[region]->procNodes->datatarray().data();
+		*elementDistribution = info::mesh->boundaryRegions[region]->elements->boundarytarray().data();
+		*elementData = info::mesh->boundaryRegions[region]->elements->datatarray().data();
 	} else {
 		*size = 0;
 		*type = *parent = *elementDistribution = *elementData = NULL;

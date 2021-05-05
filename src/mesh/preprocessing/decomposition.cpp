@@ -1018,7 +1018,7 @@ void exchangeElements(const std::vector<esint> &partition)
 
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
-				auto enodes = info::mesh->boundaryRegions[r]->procNodes->cbegin() + distribution[t];
+				auto enodes = info::mesh->boundaryRegions[r]->elements->cbegin() + distribution[t];
 				std::vector<esint> nlinks;
 				size_t counter;
 				for (size_t e = distribution[t]; e < distribution[t + 1]; ++e, ++enodes) {
@@ -1057,7 +1057,7 @@ void exchangeElements(const std::vector<esint> &partition)
 					tsize[i] = sBoundary[t][i].size();
 				}
 				esint target;
-				auto enodes = info::mesh->boundaryRegions[r]->procNodes->cbegin() + distribution[t];
+				auto enodes = info::mesh->boundaryRegions[r]->elements->cbegin() + distribution[t];
 				const auto &IDs = info::mesh->nodes->IDs->datatarray();
 				const auto &epointer = info::mesh->boundaryRegions[r]->epointers->datatarray();
 				for (size_t e = distribution[t]; e < distribution[t + 1]; ++e, ++enodes) {
@@ -1372,11 +1372,11 @@ void exchangeElements(const std::vector<esint> &partition)
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
-			delete info::mesh->boundaryRegions[r]->procNodes;
+			delete info::mesh->boundaryRegions[r]->elements;
 			delete info::mesh->boundaryRegions[r]->epointers;
 
 			utils::threadDistributionToFullDistribution(boundaryEDistribution[r]);
-			info::mesh->boundaryRegions[r]->procNodes = new serializededata<esint, esint>(boundaryEDistribution[r], boundaryEData[r]);
+			info::mesh->boundaryRegions[r]->elements = new serializededata<esint, esint>(boundaryEDistribution[r], boundaryEData[r]);
 			info::mesh->boundaryRegions[r]->epointers = new serializededata<esint, Element*>(1, boundaryEPointers[r]);
 		}
 	}
@@ -1665,10 +1665,10 @@ void exchangeElements(const std::vector<esint> &partition)
 	}
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-		if (info::mesh->boundaryRegions[r]->procNodes) {
+		if (info::mesh->boundaryRegions[r]->elements) {
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
-				for (auto n = info::mesh->boundaryRegions[r]->procNodes->begin(t)->begin(); n != info::mesh->boundaryRegions[r]->procNodes->end(t)->begin(); ++n) {
+				for (auto n = info::mesh->boundaryRegions[r]->elements->begin(t)->begin(); n != info::mesh->boundaryRegions[r]->elements->end(t)->begin(); ++n) {
 					*n = *std::lower_bound(permutation.begin(), permutation.end(), *n, [&] (esint i, esint val) {
 						return nodes->IDs->datatarray()[i] < val;
 					});

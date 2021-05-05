@@ -89,7 +89,7 @@ void NodesUniformDistributedComposer::_buildPatterns()
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
 			if (kernel->boundaryWithSettings(r)) {
 				if (info::mesh->boundaryRegions[r]->dimension) {
-					for (auto e = info::mesh->boundaryRegions[r]->procNodes->begin(t); e != info::mesh->boundaryRegions[r]->procNodes->end(t); ++e) {
+					for (auto e = info::mesh->boundaryRegions[r]->elements->begin(t); e != info::mesh->boundaryRegions[r]->elements->end(t); ++e) {
 						tRHSsize += e->size() * _DOFs;
 						tKsize += getMatrixSize(e->size() * _DOFs, omitLower);
 					}
@@ -145,7 +145,7 @@ void NodesUniformDistributedComposer::_buildPatterns()
 
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
 			if (info::mesh->boundaryRegions[r]->dimension && kernel->boundaryWithSettings(r)) {
-				for (auto e = info::mesh->boundaryRegions[r]->procNodes->cbegin(t); e != info::mesh->boundaryRegions[r]->procNodes->cend(t); ++e) {
+				for (auto e = info::mesh->boundaryRegions[r]->elements->cbegin(t); e != info::mesh->boundaryRegions[r]->elements->cend(t); ++e) {
 					insert(e);
 					Koffset += getMatrixSize(e->size() * _DOFs, omitLower);
 				}

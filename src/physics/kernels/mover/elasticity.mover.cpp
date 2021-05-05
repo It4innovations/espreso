@@ -171,11 +171,11 @@ ElasticityBoundaryIterator::ElasticityBoundaryIterator(BoundaryRegionStore *regi
 			rotatingForce.location  .setInput(configuration.rotating_force.find(region->name)->second.location             , kernelparams, region->nodes, MoverParameter::Properties::ALLOW_CONSTANT);
 		}
 	} else {
-		coordinates.set(info::mesh->nodes->coordinates, region->procNodes);
+		coordinates.set(info::mesh->nodes->coordinates, region->elements);
 		if (dimension == 2) {
-			thickness.setInput(iterator.thickness.output, region->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
+			thickness.setInput(iterator.thickness.output, region->elements, MoverParameter::Properties::ALLOW_CONSTANT);
 		}
-		normalPressure.setInput(configuration.normal_pressure, region->name, kernelparams, region->procNodes, MoverParameter::Properties::ALLOW_CONSTANT);
+		normalPressure.setInput(configuration.normal_pressure, region->name, kernelparams, region->elements, MoverParameter::Properties::ALLOW_CONSTANT);
 	}
 
 	kernelparams.coords(dimension, coordinates.kernel.values->datatarray().data());

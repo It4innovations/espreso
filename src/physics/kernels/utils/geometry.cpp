@@ -32,10 +32,10 @@ void computeBoundaryRegionsArea()
 			BoundaryRegionStore *store = info::mesh->boundaryRegions[r];
 
 			double A = 0;
-			auto nodes = store->procNodes->cbegin();
+			auto nodes = store->elements->cbegin();
 			const auto &epointers = store->epointers->datatarray();
 			const auto &coordinates = info::mesh->nodes->coordinates->datatarray();
-			for (size_t e = 0; e < store->procNodes->structures(); ++e, ++nodes) {
+			for (size_t e = 0; e < store->elements->structures(); ++e, ++nodes) {
 
 				MatrixDense coords(nodes->size(), 3), dND(1, 3);
 

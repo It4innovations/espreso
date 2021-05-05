@@ -952,7 +952,7 @@ void Input::fillBoundaryRegions()
 				}
 
 				info::mesh->boundaryRegions.back()->distribution.threads = edistribution;
-				info::mesh->boundaryRegions.back()->procNodes = new serializededata<esint, esint>(tedist, tnodes);
+				info::mesh->boundaryRegions.back()->elements = new serializededata<esint, esint>(tedist, tnodes);
 				info::mesh->boundaryRegions.back()->epointers = new serializededata<esint, Element*>(1, epointers);
 			}
 		}
@@ -1040,7 +1040,7 @@ void Input::reindexBoundaryNodes()
 		if (info::mesh->boundaryRegions[r]->originalDimension) {
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
-				for (auto n = info::mesh->boundaryRegions[r]->procNodes->begin(t)->begin(); n != info::mesh->boundaryRegions[r]->procNodes->end(t)->begin(); ++n) {
+				for (auto n = info::mesh->boundaryRegions[r]->elements->begin(t)->begin(); n != info::mesh->boundaryRegions[r]->elements->end(t)->begin(); ++n) {
 					*n = std::lower_bound(info::mesh->nodes->IDs->datatarray().begin(), info::mesh->nodes->IDs->datatarray().end(), *n) - info::mesh->nodes->IDs->datatarray().begin();
 				}
 			}
