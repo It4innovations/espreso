@@ -261,11 +261,6 @@ void arrangeElementsRegions()
 	computeNodeInfo(regions);
 	profiler::synccheckpoint("node_info");
 
-	if (info::mesh->elementsRegions.back()->nodeInfo.totalSize == 0) {
-		delete info::mesh->elementsRegions.back(); // remove NAMELESS_ELEMENT_SET if it is empty
-		info::mesh->elementsRegions.pop_back();
-	}
-
 	std::vector<esint> sum, offset;
 	for (size_t r = 0; r < info::mesh->elementsRegions.size(); r++) {
 		for (size_t i = 0; i < info::mesh->elements->distribution.code.size(); i++) {
