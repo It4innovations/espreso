@@ -15,7 +15,8 @@ struct ElementsDistributionInfo {
 	DistributedDataInfo process;
 	std::vector<DistributionInfo> code;
 
-	ElementsDistributionInfo(): threads({ 0, 0 }), code(static_cast<int>(Element::CODE::SIZE)) {}
+	ElementsDistributionInfo();
+	void clear();
 };
 
 }
