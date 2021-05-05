@@ -13,6 +13,20 @@ DEFAULT_ARGS {
   7       3;
   8       5;
   9       2;
+
+  10    R^3;
+
+  11      2;
+  12      0;
+  13      0;
+  14      0;
+  
+  15   1E-3;
+  16    100;
+
+  17  1E-12;
+  18    2.0;
+  19     10;
 }
 
 INPUT_TYPE            GENERATOR;
@@ -60,9 +74,19 @@ MESH_MORPHING {
 
   RBF {
     MY_RBF_MORPHING {
-      SOLVER            DIRECT;
-      SOLVER_PRECISION   1E-07;
-      FUNCTION             R;
+      SOLVER_PRECISION                 [ARG15];
+	  solver_max_iter                  [ARG16];
+	  
+	  aca_precision                    [ARG17];
+	  aca_eta                          [ARG18];
+	  aca_cluster_tree_leaf_size       [ARG19];
+	  
+	  polynomial_regularization_degree [ARG11];
+	  use_transform_translate          [ARG12];
+	  use_transform_scale              [ARG13];
+	  use_transform_rotate             [ARG14];
+	  
+      FUNCTION                         [ARG10];
 
       TARGET      ALL_ELEMENTS;
 
