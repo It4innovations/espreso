@@ -63,6 +63,35 @@ void fillRegionMask(ElementStore *elements, const std::vector<ElementsRegionStor
 	eslog::checkpointln("MESH: REGION MASK FILLED");
 }
 
+void processNamelessElements(ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions)
+{
+	profiler::syncstart("process_nameless_elements");
+	size_t threads = info::env::OMP_NUM_THREADS;
+
+	std::vector<esint> nameless;
+	int rsize = elements->regions->edataSize();
+	esint eindex = 0;
+	for (auto regions = elements->regions->begin(); regions != elements->regions->end(); ++regions, ++eindex) {
+		bool named = regions->at(0) != 1;
+		for (int r = 1; !named && r < rsize; ++r) {
+			named = regions->at(r) != 0;
+		}
+		if (!named) {
+			nameless.push_back(eindex);
+		}
+	}
+
+	esint size = nameless.size();
+	Communication::allReduce(&size, NULL, 1, MPITools::getType(size).mpitype, MPI_MAX);
+	if (size) {
+		elementsRegions.push_back(new ElementsRegionStore("NAMELESS_ELEMENT_SET"));
+		elementsRegions.back()->elements = new serializededata<esint, esint>(1, { threads, nameless });
+	}
+
+	profiler::syncend("process_nameless_elements");
+	eslog::checkpointln("MESH: CHECKED NAMELESS ELEMENTS");
+}
+
 ElementStore* exchangeHalo(ElementStore *elements, NodeStore *nodes, std::vector<int> &neighbors)
 {
 	profiler::syncstart("exchange_halo");

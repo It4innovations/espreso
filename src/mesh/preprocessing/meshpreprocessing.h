@@ -75,6 +75,7 @@ void computeRegionsElementDistribution(const ElementStore *elements, std::vector
 // ================================================================================================
 
 void fillRegionMask(ElementStore *elements, const std::vector<ElementsRegionStore*> &elementsRegions);
+void processNamelessElements(ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions);
 
 ElementStore* exchangeHalo(ElementStore *elements, NodeStore *nodes, std::vector<int> &neighbors);
 

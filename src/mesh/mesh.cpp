@@ -423,14 +423,15 @@ void Mesh::reclusterize()
 	}
 
 	mesh::sortNodes(nodes, elements, boundaryRegions);
-	mesh::computeElementDistribution(elements);
-	mesh::computeRegionsElementDistribution(elements, elementsRegions);
 }
 
 void Mesh::computePersistentParameters()
 {
 	setMaterials();
 	mesh::fillRegionMask(elements, elementsRegions);
+	mesh::processNamelessElements(elements, elementsRegions);
+	mesh::computeElementDistribution(elements);
+	mesh::computeRegionsElementDistribution(elements, elementsRegions);
 
 	{ // compute boundary element from nodes
 		ElementStore *halo = NULL;
