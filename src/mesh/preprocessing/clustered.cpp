@@ -603,20 +603,22 @@ void computeRegionsElementNodes(const NodeStore *nodes, const ElementStore *elem
 	size_t threads = info::env::OMP_NUM_THREADS;
 	for (size_t r = 0; r < elementsRegions.size(); r++) {
 		std::vector<std::vector<esint> > rnodes(threads);
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			rnodes[t].reserve(elements->nodes->datatarray().size(t));
-			auto enodes = elements->nodes->cbegin() + *elementsRegions[r]->elements->datatarray().begin(t);
-			for (auto e = elementsRegions[r]->elements->datatarray().begin(t), prev = e; e != elementsRegions[r]->elements->datatarray().end(t); prev = e++) {
-				enodes += *e - *prev;
-				rnodes[t].insert(rnodes[t].end(), enodes->begin(), enodes->end());
+		if (elementsRegions[r]->elements->structures()) {
+			#pragma omp parallel for
+			for (size_t t = 0; t < threads; t++) {
+				rnodes[t].reserve(elements->nodes->datatarray().size(t));
+				auto enodes = elements->nodes->cbegin() + *elementsRegions[r]->elements->datatarray().begin(t);
+				for (auto e = elementsRegions[r]->elements->datatarray().begin(t), prev = e; e != elementsRegions[r]->elements->datatarray().end(t); prev = e++) {
+					enodes += *e - *prev;
+					rnodes[t].insert(rnodes[t].end(), enodes->begin(), enodes->end());
+				}
+				utils::sortAndRemoveDuplicates(rnodes[t]);
 			}
-			utils::sortAndRemoveDuplicates(rnodes[t]);
+			utils::mergeThreadedUniqueData(rnodes);
+			rnodes.resize(1);
+			rnodes.resize(threads);
+			serializededata<esint, esint>::balance(1, rnodes);
 		}
-		utils::mergeThreadedUniqueData(rnodes);
-		rnodes.resize(1);
-		rnodes.resize(threads);
-		serializededata<esint, esint>::balance(1, rnodes);
 
 		elementsRegions[r]->nodes = new serializededata<esint, esint>(1, rnodes);
 	}
