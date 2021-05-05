@@ -1,6 +1,10 @@
 
 #include "optimizer.h"
 #include "esinfo/eslog.h"
+#include "wrappers/mpi/communication.h"
+#include "esinfo/eslog.h"
+#include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.hpp"
 
 #include <iostream>
 
@@ -40,14 +44,16 @@ bool EvolutionaryOptimizer::set(std::function<bool(void)> fnc)
 	this->m_proxy.setNextConfiguration();
 	this->m_set_function = fnc;
 	
-	bool ret = fnc();
-
-	if (!ret)
+	int l_ret = fnc();
+	int g_ret = 0;
+	Communication::allReduce(&l_ret, &g_ret, 1, MPI_INT, MPI_MIN);
+	
+	if (!g_ret)
 	{
 		this->m_proxy.setConfigurationForbidden();
 	}
 
-	return ret;
+	return static_cast<bool>(g_ret);
 	// for (auto p = _parameters.begin(); p != _parameters.end(); ++p) {
 	// 	std::cout << (*p)->name << ": " << (*p)->getValue() << " ";
 	// }
@@ -56,20 +62,23 @@ bool EvolutionaryOptimizer::set(std::function<bool(void)> fnc)
 
 bool EvolutionaryOptimizer::run(std::function<bool(void)> fnc)
 {
-	bool ret;
+	int l_ret;
 	
 	double start = eslog::time();
-	ret = fnc();
+	l_ret = fnc();
 	double end = eslog::time();
+	
+	int g_ret = 0;
+	Communication::allReduce(&l_ret, &g_ret, 1, MPI_INT, MPI_MIN);
 
-	if (ret) { this->m_proxy.setConfigurationEvaluation(end - start); }
+	if (g_ret) { this->m_proxy.setConfigurationEvaluation(end - start); }
 	else 
 	{
 		this->m_proxy.setConfigurationForbidden();
 		while(!this->set(m_set_function));
 	}
 
-	return ret;
+	return static_cast<bool>(g_ret);
 
 	// this->m_proxy.setConfigurationEvaluation(sphere.evaluate());
 }
