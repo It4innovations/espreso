@@ -362,6 +362,8 @@ void computeDomainDual(NodeStore *nodes, ElementStore *elements, DomainStore *do
 	utils::threadDistributionToFullDistribution(dist);
 	utils::threadDistributionToFullDistribution(distFull);
 
+	if (domains->localDual) delete domains->localDual;
+	if (domains->dual) delete domains->dual;
 	domains->localDual = new serializededata<esint, esint>(dist, data);
 	domains->dual = new serializededata<esint, esint>(distFull, dataFull);
 

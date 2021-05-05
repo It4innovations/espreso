@@ -65,6 +65,7 @@ struct DecompositionConfiguration: public ECFDescription {
 	int mesh_duplication;
 	int domains;
 
+	bool force_continuity;
 	bool separate_materials, separate_regions, separate_etypes;
 	ParMETISConfiguration parmetis_options;
 	METISConfiguration metis_options;

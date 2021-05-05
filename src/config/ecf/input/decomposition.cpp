@@ -76,6 +76,11 @@ DecompositionConfiguration::DecompositionConfiguration()
 
 	ecfdescription->addSpace();
 
+	force_continuity = false;
+	REGISTER(force_continuity, ECFMetaData()
+			.setdescription({ "Force continuous decomposition." })
+			.setdatatype({ ECFDataType::BOOL }));
+
 	separate_materials = false;
 	separate_regions = false;
 	separate_etypes = false;

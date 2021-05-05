@@ -62,6 +62,7 @@ void computeElementsCenters(const NodeStore *nodes, ElementStore *elements);
 
 void computeElementsClusterization(const ElementStore *elements, const NodeStore *nodes, std::vector<esint> &partition);
 void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe, const std::vector<esint> &partition);
+void makeClustersContinuous();
 
 void sortNodes(NodeStore *nodes, ElementStore *elements, std::vector<BoundaryRegionStore*> &boundaryRegions);
 void computeElementDistribution(ElementStore *elements);

@@ -277,6 +277,9 @@ void Mesh::analyze()
 		eslog::globalerror("Mesh: Not implemented physics.\n");
 		exit(0);
 	}
+	if (_withFETI) {
+		info::ecf->input.decomposition.force_continuity = true;
+	}
 
 	// check BEM
 	for (auto it = info::ecf->getPhysics()->discretization.begin(); it != info::ecf->getPhysics()->discretization.end(); ++it) {
