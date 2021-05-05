@@ -160,6 +160,10 @@ esint LowRankBlock::size() const {
 //performs y = this * x * alpha + y * beta
 void LowRankBlock::apply(const double * x_global, double *y_global, double alpha, double beta, bool transpose){
 	
+	if(this->data_left.size() + this->data_right.size() == 0){
+		return;
+	}
+
 	MATH::vecScale((transpose?this->ncols:this->nrows), beta, y_global);
 	
 	if(!transpose){
