@@ -15,11 +15,6 @@ enum class MORPHING_TYPE {
 	RBF = 1
 };
 
-enum class MORPHING_RBF_SOLVER {
-	ITERATIVE = 0,
-	DIRECT = 1
-};
-
 enum class MORPHING_TRANSFORMATION {
 	FIXED,
 	OFFSET,
@@ -54,8 +49,6 @@ struct ExternalFFDConfiguration: public ECFDescription {
 
 struct RBFTargetConfiguration: public ECFDescription {
 
-	MORPHING_RBF_SOLVER solver;
-
 	ECFExpression function;
 	double solver_precision;
 	int solver_max_iter;
@@ -63,6 +56,10 @@ struct RBFTargetConfiguration: public ECFDescription {
 	bool use_transform_translate;
 	bool use_transform_scale;
 	bool use_transform_rotate;
+
+	double aca_precision;
+	double aca_eta;
+	int aca_cluster_tree_leaf_size;
 
 	std::string target;
 	std::map<std::string, RBFTargetTransformationConfiguration> morphers;

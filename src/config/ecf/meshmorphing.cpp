@@ -65,12 +65,6 @@ espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECF *ECF)
 : function({ "R" }, "R"),
   external_ffd(ECF)
 {
-	solver = MORPHING_RBF_SOLVER::DIRECT;
-	REGISTER(solver, ECFMetaData()
-		.setdescription({ "Mesh Morphing solver." })
-		.setdatatype({ ECFDataType::OPTION })
-		.addoption(ECFOption().setname("ITERATIVE").setdescription("Iterative"))
-		.addoption(ECFOption().setname("DIRECT").setdescription("Direct")));
 
 	solver_precision = 1e-5;
 	REGISTER(solver_precision, ECFMetaData()
@@ -105,6 +99,21 @@ espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECF *ECF)
 	REGISTER(function, ECFMetaData()
 		.setdescription({ "Radial basis function." })
 		.setdatatype({ ECFDataType::EXPRESSION }));
+
+	aca_precision = 1e-6;
+	REGISTER(aca_precision, ECFMetaData()
+		.setdescription({ "ACA precision." })
+		.setdatatype({ ECFDataType::FLOAT }));
+
+	aca_eta = 2;
+	REGISTER(aca_eta, ECFMetaData()
+		.setdescription({ "ACA eta." })
+		.setdatatype({ ECFDataType::FLOAT }));
+
+	aca_cluster_tree_leaf_size = 10;
+		REGISTER(aca_cluster_tree_leaf_size, ECFMetaData()
+			.setdescription({ "Base size of cluster tree leaves in ACA." })
+			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
 	ecfdescription->addSeparator();
 

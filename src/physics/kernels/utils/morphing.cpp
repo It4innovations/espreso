@@ -532,9 +532,9 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 	std::vector<double> rhs_values_aca;
 	std::vector<double> wq_values_aca;
 	
-	double aca_eta = 2.0f;
-	double aca_eps = 1e-12;
-	esint base_tree_size = 10;
+	double aca_eta = configuration.aca_eta;
+	double aca_eps = configuration.aca_precision;
+	esint base_tree_size = configuration.aca_cluster_tree_leaf_size;
 	
 	
 	bool use_transform_translate = configuration.use_transform_translate;
