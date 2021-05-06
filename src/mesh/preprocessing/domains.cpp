@@ -144,7 +144,7 @@ void computeRegionsBoundaryIntervals(const NodeStore *nodes, const ElementStore 
 						}
 					}
 				}
-				distribution.push_back(edomain.size());
+				distribution.resize(threads + 1, edomain.size());
 				store->eintervals.push_back(ElementsInterval(begin, edomain.size()));
 				store->eintervals.back().code = static_cast<int>(store->epointers->datatarray()[permutation.back()]->code);
 				store->eintervals.back().domain = edomain[permutation.back()];
