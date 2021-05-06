@@ -1075,7 +1075,7 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 	std::vector<esint> emembership;
 
 	for (size_t r = 0; r < boundaryRegions.size(); r++) {
-		if (boundaryRegions[r]->dimension) {
+		if (boundaryRegions[r]->originalDimension) {
 			emembership.clear();
 			emembership.resize(boundaryRegions[r]->epointers->datatarray().size());
 			const std::vector<size_t> &distribution = boundaryRegions[r]->epointers->datatarray().distribution();
@@ -1434,7 +1434,7 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 	newNodes->distribution = newNodes->IDs->datatarray().distribution();
 
 	for (size_t r = 0; r < boundaryRegions.size(); r++) {
-		if (boundaryRegions[r]->dimension) {
+		if (boundaryRegions[r]->originalDimension) {
 			delete boundaryRegions[r]->elements;
 			delete boundaryRegions[r]->epointers;
 
