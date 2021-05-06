@@ -144,33 +144,34 @@ void NodesUniformFETIComposer::_initDOFMap()
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto nranks = info::mesh->nodes->ranks->begin() + ntodomains[0][ndistribution[t]].first;
-
 		std::vector<std::vector<esint> > tBuffer(info::mesh->neighborsWithMe.size());
 
-		size_t n = ndistribution[t];
-		while (n < ndistribution[t + 1]) {
-			size_t begin = n++;
-			while (n < ntodomains[0].size() && ntodomains[0][n].first == ntodomains[0][n - 1].first) {
-				++n;
-			}
-
-			esint noffset = 0;
-			for (auto r = nranks->begin(); r != nranks->end(); ++r) {
-				while (info::mesh->neighborsWithMe[noffset] < *r) {
-					++noffset;
+		if (ndistribution[t] < ndistribution[t  +1]) {
+			auto nranks = info::mesh->nodes->ranks->begin() + ntodomains[0][ndistribution[t]].first;
+			size_t n = ndistribution[t];
+			while (n < ndistribution[t + 1]) {
+				size_t begin = n++;
+				while (n < ntodomains[0].size() && ntodomains[0][n].first == ntodomains[0][n - 1].first) {
+					++n;
 				}
 
-				tBuffer[noffset].push_back(n - begin);
+				esint noffset = 0;
+				for (auto r = nranks->begin(); r != nranks->end(); ++r) {
+					while (info::mesh->neighborsWithMe[noffset] < *r) {
+						++noffset;
+					}
+
+					tBuffer[noffset].push_back(n - begin);
+					for (size_t i = begin; i < n; i++) {
+						tBuffer[noffset].push_back(info::mesh->domains->offset + ntodomains[0][i].second);
+						tBuffer[noffset].push_back(DOFs[t][ntodomains[0][i].second]);
+					}
+				}
+				++nranks;
+
 				for (size_t i = begin; i < n; i++) {
-					tBuffer[noffset].push_back(info::mesh->domains->offset + ntodomains[0][i].second);
-					tBuffer[noffset].push_back(DOFs[t][ntodomains[0][i].second]);
+					DOFs[t][ntodomains[0][i].second] += _DOFs;
 				}
-			}
-			++nranks;
-
-			for (size_t i = begin; i < n; i++) {
-				DOFs[t][ntodomains[0][i].second] += _DOFs;
 			}
 		}
 		sBuffer[t].swap(tBuffer);
@@ -221,9 +222,9 @@ void NodesUniformFETIComposer::_initDOFMap()
 	std::vector<size_t> distribution = info::mesh->nodes->distribution, datadistribution(threads + 1);
 	for (size_t t = 1; t < threads; t++) {
 		distribution[t] = _DOFs * distribution[t] + 1;
-		datadistribution[t] = DOFDistribution[distribution[t]];
+		datadistribution[t] = distribution[t] < DOFDistribution.size() ? DOFDistribution[distribution[t]] : DOFDistribution.back();
 	}
-	datadistribution[threads] = DOFDistribution[_DOFs * distribution[threads]];
+	datadistribution[threads] = _DOFs * distribution[threads] < DOFDistribution.size() ? DOFDistribution[_DOFs * distribution[threads]] : DOFDistribution.back();
 	distribution[threads] = _DOFs * distribution[threads] + 1;
 
 	_DOFMap = new serializededata<esint, DI>(
