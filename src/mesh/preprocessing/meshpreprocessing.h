@@ -124,7 +124,7 @@ void computeLocalIndices(ElementStore *elements, DomainStore *domains);
 void computeElementIntervals(const DomainStore *domains, ElementStore *elements);
 
 void computeRegionsElementIntervals(const ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions);
-void computeRegionsBoundaryIntervals(const NodeStore *nodes, const ElementStore *elements, const DomainStore *domains, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
+void computeRegionsBoundaryIntervals(const DomainStore *domains, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
 
 }
 }
