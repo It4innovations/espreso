@@ -107,7 +107,7 @@ void computeRegionsBoundaryIntervals(const DomainStore *domains, std::vector<Bou
 			std::vector<esint> edomain(store->distribution.process.size);
 			#pragma omp parallel for
 			for (int t = 0; t < threads; t++) {
-				auto domain = edomain.begin();
+				auto domain = edomain.begin() + store->emembership->datatarray().distribution()[t] / 2;
 				for (auto parent = store->emembership->begin(t); parent != store->emembership->end(t); ++parent, ++domain) {
 					*domain = std::lower_bound(domains->elements.begin(), domains->elements.end(), parent->at(0) + 1) - domains->elements.begin() - 1;
 				}
