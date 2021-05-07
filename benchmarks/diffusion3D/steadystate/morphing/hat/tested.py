@@ -18,6 +18,7 @@ def by():
         if ESPRESOTest.fast: return
 
 def run(etype):
+    ESPRESOTest.processes = 1
     ESPRESOTest.args[0] = etype
     ESPRESOTest.run()
     ESPRESOTest.compare_emr(".".join([etype, "emr"]))
