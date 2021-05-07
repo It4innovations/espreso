@@ -12,8 +12,8 @@ MESH_MORPHING {
 
   RBF {
     MY_RBF_MORPHING {
-      SOLVER_PRECISION                   1e-3;
-	  solver_max_iter                     100;
+      SOLVER_PRECISION                   1e-6;
+	  solver_max_iter                     200;
 	  
 	  aca_precision                     1e-12;
 	  aca_eta                               2;
