@@ -585,6 +585,10 @@ void Mesh::duplicate()
 			packedSize += contactInterfaces[i]->packedFullSize();
 		}
 
+		packedSize += domains->packedFullSize();
+		packedSize += clusters->packedFullSize();
+		packedSize += bodies->packedFullSize();
+
 		packedSize += FETIData->packedFullSize();
 
 		packedSize += surface->packedFullSize();
@@ -595,7 +599,6 @@ void Mesh::duplicate()
 		packedSize += utils::packedSize(neighborsWithMe);
 		packedSize += utils::packedSize(_omitClusterization);
 		packedSize += utils::packedSize(_omitDecomposition);
-		packedSize += utils::packedSize(_withGUI);
 		packedSize += utils::packedSize(_withGUI);
 		packedSize += utils::packedSize(_withFETI);
 		packedSize += utils::packedSize(_withBEM);
@@ -625,6 +628,10 @@ void Mesh::duplicate()
 		for (size_t i = 0; i < contactInterfaces.size(); i++) {
 			contactInterfaces[i]->packFull(p);
 		}
+
+		domains->packFull(p);
+		clusters->packFull(p);
+		bodies->packFull(p);
 
 		FETIData->packFull(p);
 
@@ -659,6 +666,10 @@ void Mesh::duplicate()
 			delete boundaryRegions[i];
 		}
 		boundaryRegions.clear();
+		for (size_t i = 0; i < contactInterfaces.size(); i++) {
+			delete contactInterfaces[i];
+		}
+		contactInterfaces.clear();
 
 		const char *p = buffer;
 		utils::unpack(dimension, p);
@@ -680,6 +691,10 @@ void Mesh::duplicate()
 		for (size_t i = 0; i < size; i++) {
 			contactInterfaces.push_back(new ContactInterfaceStore(p));
 		}
+
+		domains->unpackFull(p);
+		clusters->unpackFull(p);
+		bodies->unpackFull(p);
 
 		FETIData->unpackFull(p);
 

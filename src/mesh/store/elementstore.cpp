@@ -36,6 +36,10 @@ size_t ElementStore::packedFullSize() const
 {
 	size_t packedSize = 0;
 
+	packedSize += utils::packedSize(distribution.threads);
+	packedSize += utils::packedSize(distribution.process);
+	packedSize += utils::packedSize(distribution.code);
+
 	packedSize += utils::packedSize(IDs);
 	packedSize += utils::packedSize(nodes);
 	packedSize += utils::packedSize(centers);
@@ -65,6 +69,10 @@ size_t ElementStore::packedFullSize() const
 
 void ElementStore::packFull(char* &p) const
 {
+	utils::pack(distribution.threads, p);
+	utils::pack(distribution.process, p);
+	utils::pack(distribution.code, p);
+
 	utils::pack(IDs, p);
 	utils::pack(nodes, p);
 	utils::pack(centers, p);
@@ -97,6 +105,10 @@ void ElementStore::packFull(char* &p) const
 
 void ElementStore::unpackFull(const char* &p)
 {
+	utils::unpack(distribution.threads, p);
+	utils::unpack(distribution.process, p);
+	utils::unpack(distribution.code, p);
+
 	utils::unpack(IDs, p);
 	utils::unpack(nodes, p);
 	utils::unpack(centers, p);
