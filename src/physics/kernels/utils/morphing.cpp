@@ -610,7 +610,7 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 	);
 	eslog::info("\n");
 	for(esint d = 0; d < dimension; ++d){
-		eslog::info("   MORPHING ERROR FOR %s                                                           %10.8f [%] \n", dim_name[d], error_morph[d]);
+		eslog::info("   MORPHING ERROR FOR %s                                                       %10.8f [%] \n", dim_name[d], error_morph[d]);
 	}
 	// eslog::info("\n");
 	// for(esint d = 0; d < dimension; ++d){

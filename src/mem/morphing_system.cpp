@@ -637,9 +637,9 @@ void MorphingMatrix::calculateMorphingError(
 		
 	}
 
-	error_morph_x = std::sqrt(error_morph_x / (error_morph_x_ref > 0?error_morph_x_ref:1));
-	error_morph_y = std::sqrt(error_morph_y / (error_morph_y_ref > 0?error_morph_y_ref:1));
-	error_morph_z = std::sqrt(error_morph_z / (error_morph_z_ref > 0?error_morph_z_ref:1));
+	error_morph_x = 100*std::sqrt(error_morph_x / (error_morph_x_ref > 0?error_morph_x_ref:1));
+	error_morph_y = 100*std::sqrt(error_morph_y / (error_morph_y_ref > 0?error_morph_y_ref:1));
+	error_morph_z = 100*std::sqrt(error_morph_z / (error_morph_z_ref > 0?error_morph_z_ref:1));
 
 	orthogonality_error_x = 0.0f;
 	orthogonality_error_y = 0.0f;
