@@ -425,7 +425,7 @@ template <typename TEBoundaries, typename TEData>
 inline size_t packedSize(serializededata<TEBoundaries, TEData> *data)
 {
 	if (data != NULL) {
-		return data->packedSize() + 1 + 3 * sizeof(size_t);
+		return 1 + data->packedSize();
 	}
 	return 1;
 }
@@ -435,9 +435,6 @@ inline void pack(serializededata<TEBoundaries, TEData> *data, char* &p)
 {
 	pack(data != NULL, p);
 	if (data != NULL) {
-		pack(data->threads(), p);
-		pack(data->boundarytarray().size(), p);
-		pack(data->datatarray().size(), p);
 		data->pack(p);
 	}
 }
@@ -453,11 +450,7 @@ inline void unpack(serializededata<TEBoundaries, TEData> *&data, const char* &p)
 	bool notnull;
 	unpack(notnull, p);
 	if (notnull) {
-		size_t threads, bsize, dsize;
-		unpack(threads, p);
-		unpack(bsize, p);
-		unpack(dsize, p);
-		data = new serializededata<TEBoundaries, TEData>(tarray<TEBoundaries>(threads, bsize), tarray<TEData>(threads, dsize));
+		data = new serializededata<TEBoundaries, TEData>(tarray<TEBoundaries>(0, 0), tarray<TEData>(0, 0));
 		data->unpack(p);
 	}
 }

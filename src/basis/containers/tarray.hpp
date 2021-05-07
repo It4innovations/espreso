@@ -173,12 +173,20 @@ tarray<TType>::tarray(const std::vector<size_t> &distribution, size_t duplicatio
 template <typename TType>
 size_t tarray<TType>::packedSize() const
 {
-	return sizeof(size_t) + _size * sizeof(TType);
+	return
+			sizeof(size_t) + _distribution.size() * sizeof(size_t) +
+			sizeof(size_t) +
+			_size * sizeof(TType);
 }
 
 template <typename TType>
 void tarray<TType>::pack(char* &p) const
 {
+	size_t dsize = _distribution.size();
+	memcpy(p, &dsize, sizeof(size_t));
+	p += sizeof(size_t);
+	memcpy(p, _distribution.data(), _distribution.size() * sizeof(size_t));
+	p += _distribution.size() * sizeof(size_t);
 	memcpy(p, &_size, sizeof(size_t));
 	p += sizeof(size_t);
 	if (_size) {
@@ -190,6 +198,13 @@ void tarray<TType>::pack(char* &p) const
 template <typename TType>
 void tarray<TType>::unpack(const char* &p)
 {
+	size_t dsize;
+	memcpy(&dsize, p, sizeof(size_t));
+	p += sizeof(size_t);
+	_distribution.resize(dsize);
+	memcpy(_distribution.data(), p, _distribution.size() * sizeof(size_t));
+	p += _distribution.size() * sizeof(size_t);
+
 	memcpy(&_size, p, sizeof(size_t));
 	p += sizeof(size_t);
 
@@ -204,8 +219,6 @@ void tarray<TType>::unpack(const char* &p)
 		memcpy(reinterpret_cast<void*>(_data), p, _size * sizeof(TType));
 		p += _size * sizeof(TType);
 	}
-
-	_distribution = { 0, _size };
 }
 
 template <typename TType>
