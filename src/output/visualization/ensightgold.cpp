@@ -24,7 +24,7 @@
 using namespace espreso;
 
 EnSightGold::EnSightGold()
-: _ftt(NULL), _withIDs(true), _step(-1)
+: _ftt(NULL), _withIDs(false), _step(-1)
 {
 	_geometry = _directory + _name + ".geo";
 	_fixedDataPath = _directory;
