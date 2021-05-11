@@ -96,20 +96,24 @@ static void computeDecomposedDual(const ElementStore *elements, std::vector<esin
 void computeElementsDecomposition(const ElementStore *elements, esint parts, std::vector<size_t> &distribution, std::vector<esint> &permutation)
 {
 	profiler::syncstart("partitiate");
+	bool skip = false;
 	switch (info::ecf->input.decomposition.sequential_decomposer) {
 	case DecompositionConfiguration::SequentialDecomposer::NONE:
 		break;
 	case DecompositionConfiguration::SequentialDecomposer::METIS:
+		skip = !METIS::islinked();
 		if (!METIS::islinked() && info::mpi::rank == 0) {
 			eslog::warning("ESPRESO run-time event: METIS is not linked, decomposition into domains is skipped.\n");
 		}
 		break;
 	case DecompositionConfiguration::SequentialDecomposer::SCOTCH:
+		skip = !Scotch::islinked();
 		if (!Scotch::islinked() && info::mpi::rank == 0) {
 			eslog::warning("ESPRESO run-time event: SCOTCH is not linked, decomposition into domains is skipped.\n");
 		}
 		break;
 	case DecompositionConfiguration::SequentialDecomposer::KAHIP:
+		skip = !KaHIP::islinked();
 		if (!KaHIP::islinked() && info::mpi::rank == 0) {
 			eslog::warning("ESPRESO run-time event: KaHIP is not linked, decomposition into domains is skipped.\n");
 		}
@@ -143,135 +147,137 @@ void computeElementsDecomposition(const ElementStore *elements, esint parts, std
 		}
 	}
 
-	std::vector<esint> partition(elements->distribution.process.size);
+	std::vector<esint> partition(partID.begin(), partID.end());
 
 	profiler::synccheckpoint("check_noncontinuity");
 	eslog::checkpointln("MESH: CLUSTER NONCONTINUITY CHECKED");
 
-	if (nextID == 1) {
-		eslog::checkpointln("MESH: NONCONTINUITY PROCESSED");
+	if (!skip) {
+		if (nextID == 1) {
+			eslog::checkpointln("MESH: NONCONTINUITY PROCESSED");
 
-		switch (info::ecf->input.decomposition.sequential_decomposer) {
-		case DecompositionConfiguration::SequentialDecomposer::NONE:
-			break;
-		case DecompositionConfiguration::SequentialDecomposer::METIS:
-			METIS::call(info::ecf->input.decomposition.metis_options, partition.size(), dualDist.data(), dualData.data(), 0, NULL, NULL, parts, partition.data());
-			profiler::checkpoint("metis");
-			break;
-		case DecompositionConfiguration::SequentialDecomposer::SCOTCH:
-			Scotch::call(info::ecf->input.decomposition.scotch_options, partition.size(), dualDist.data(), dualData.data(), 0, NULL, NULL, parts, partition.data());
-			profiler::checkpoint("scotch");
-			break;
-		case DecompositionConfiguration::SequentialDecomposer::KAHIP:
-			KaHIP::call(info::ecf->input.decomposition.kahip_options, partition.size(), dualDist.data(), dualData.data(), 0, NULL, NULL, parts, partition.data());
-			profiler::checkpoint("kahip");
-			break;
-		}
-	} else { // non-continuous dual graph
-		// thread x part x elements
-		std::vector<std::vector<std::vector<esint> > > tdecomposition(threads, std::vector<std::vector<esint> >(nextID));
-		std::vector<std::vector<esint> > tdualsize(threads, std::vector<esint>(nextID));
-
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			for (size_t e = elements->distribution.threads[t]; e < elements->distribution.threads[t + 1]; ++e) {
-				tdecomposition[t][partID[e]].push_back(e);
-				tdualsize[t][partID[e]] += dualDist[e + 1] - dualDist[e];
-			}
-		}
-		std::vector<std::vector<esint> > foffsets(nextID), noffsets(nextID);
-		std::vector<esint> partoffset(nextID);
-		#pragma omp parallel for
-		for (int p = 0; p < nextID; p++) {
-			foffsets[p].push_back(0);
-			noffsets[p].push_back(0);
-			for (size_t t = 1; t < threads; t++) {
-				foffsets[p].push_back(tdecomposition[0][p].size());
-				noffsets[p].push_back(tdualsize[0][p]);
-				tdecomposition[0][p].insert(tdecomposition[0][p].end(), tdecomposition[t][p].begin(), tdecomposition[t][p].end());
-				tdualsize[0][p] += tdualsize[t][p];
-			}
-		}
-		for (int p = 1; p < nextID; p++) {
-			partoffset[p] = partoffset[p - 1] + tdecomposition[0][p - 1].size();
-		}
-
-		std::vector<std::vector<esint> > frames(nextID), neighbors(nextID);
-		#pragma omp parallel for
-		for (int p = 0; p < nextID; p++) {
-			frames[p].resize(1 + tdecomposition[0][p].size());
-			neighbors[p].resize(tdualsize[0][p]);
-		}
-
-		// TODO: try parallelization
-		// #pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			size_t partindex;
-			std::vector<esint> foffset(nextID), noffset(nextID);
-			for (int p = 0; p < nextID; p++) {
-				foffset[p] = foffsets[p][t];
-				noffset[p] = noffsets[p][t];
-			}
-
-			for (size_t e = elements->distribution.threads[t]; e < elements->distribution.threads[t + 1]; ++e) {
-				partindex = partID[e];
-
-				frames[partindex][++foffset[partindex]] = dualDist[e + 1] - dualDist[e];
-				if (e > elements->distribution.threads[t]) {
-					frames[partindex][foffset[partindex]] += frames[partindex][foffset[partindex] - 1];
-				} else {
-					frames[partindex][foffset[partindex]] += noffset[partindex];
-				}
-				auto node = dualData.begin() + dualDist[e];
-				for (esint n = frames[partindex][foffset[partindex]] - (dualDist[e + 1] - dualDist[e]); n < frames[partindex][foffset[partindex]]; ++n, ++node) {
-					neighbors[partindex][n] = std::lower_bound(tdecomposition[0][partindex].begin(), tdecomposition[0][partindex].end(), *node) - tdecomposition[0][partindex].begin();
-				}
-			}
-		}
-
-		std::vector<esint> pparts(nextID);
-		profiler::checkpoint("process_noncontinuity");
-		eslog::checkpointln("MESH: NONCONTINUITY PROCESSED");
-
-		#pragma omp parallel for
-		for (int p = 0; p < nextID; p++) {
 			switch (info::ecf->input.decomposition.sequential_decomposer) {
 			case DecompositionConfiguration::SequentialDecomposer::NONE:
 				break;
 			case DecompositionConfiguration::SequentialDecomposer::METIS:
-				METIS::call(info::ecf->input.decomposition.metis_options, frames[p].size() - 1, frames[p].data(), neighbors[p].data(), 0, NULL, NULL, pparts[p], partition.data() + partoffset[p]);
+				METIS::call(info::ecf->input.decomposition.metis_options, partition.size(), dualDist.data(), dualData.data(), 0, NULL, NULL, parts, partition.data());
 				profiler::checkpoint("metis");
 				break;
 			case DecompositionConfiguration::SequentialDecomposer::SCOTCH:
-				Scotch::call(info::ecf->input.decomposition.scotch_options, frames[p].size() - 1, frames[p].data(), neighbors[p].data(), 0, NULL, NULL, pparts[p], partition.data() + partoffset[p]);
+				Scotch::call(info::ecf->input.decomposition.scotch_options, partition.size(), dualDist.data(), dualData.data(), 0, NULL, NULL, parts, partition.data());
 				profiler::checkpoint("scotch");
 				break;
 			case DecompositionConfiguration::SequentialDecomposer::KAHIP:
-				KaHIP::call(info::ecf->input.decomposition.kahip_options, frames[p].size() - 1, frames[p].data(), neighbors[p].data(), 0, NULL, NULL, pparts[p], partition.data() + partoffset[p]);
+				KaHIP::call(info::ecf->input.decomposition.kahip_options, partition.size(), dualDist.data(), dualData.data(), 0, NULL, NULL, parts, partition.data());
 				profiler::checkpoint("kahip");
 				break;
 			}
-		}
+		} else { // non-continuous dual graph
+			// thread x part x elements
+			std::vector<std::vector<std::vector<esint> > > tdecomposition(threads, std::vector<std::vector<esint> >(nextID));
+			std::vector<std::vector<esint> > tdualsize(threads, std::vector<esint>(nextID));
 
-		std::vector<esint> ppartition = partition;
-		nextID = 0;
-		for (size_t p = 0; p < tdecomposition[0].size(); p++) {
-			for (size_t i = 0; i < tdecomposition[0][p].size(); ++i) {
-				partition[tdecomposition[0][p][i]] = ppartition[partoffset[p] + i] + nextID;
+			#pragma omp parallel for
+			for (size_t t = 0; t < threads; t++) {
+				for (size_t e = elements->distribution.threads[t]; e < elements->distribution.threads[t + 1]; ++e) {
+					tdecomposition[t][partID[e]].push_back(e);
+					tdualsize[t][partID[e]] += dualDist[e + 1] - dualDist[e];
+				}
 			}
-			nextID += pparts[p];
-		}
-	}
+			std::vector<std::vector<esint> > foffsets(nextID), noffsets(nextID);
+			std::vector<esint> partoffset(nextID);
+			#pragma omp parallel for
+			for (int p = 0; p < nextID; p++) {
+				foffsets[p].push_back(0);
+				noffsets[p].push_back(0);
+				for (size_t t = 1; t < threads; t++) {
+					foffsets[p].push_back(tdecomposition[0][p].size());
+					noffsets[p].push_back(tdualsize[0][p]);
+					tdecomposition[0][p].insert(tdecomposition[0][p].end(), tdecomposition[t][p].begin(), tdecomposition[t][p].end());
+					tdualsize[0][p] += tdualsize[t][p];
+				}
+			}
+			for (int p = 1; p < nextID; p++) {
+				partoffset[p] = partoffset[p - 1] + tdecomposition[0][p - 1].size();
+			}
 
-	switch (info::ecf->input.decomposition.sequential_decomposer) {
-	case DecompositionConfiguration::SequentialDecomposer::NONE:
-		eslog::checkpointln("MESH: DECOMPOSITION TO DOMAINS SKIPPED"); break;
-	case DecompositionConfiguration::SequentialDecomposer::METIS:
-		eslog::checkpointln("MESH: DOMAINS COMPUTED BY METIS"); break;
-	case DecompositionConfiguration::SequentialDecomposer::SCOTCH:
-		eslog::checkpointln("MESH: DOMAINS COMPUTED BY SCOTCH"); break;
-	case DecompositionConfiguration::SequentialDecomposer::KAHIP:
-		eslog::checkpointln("MESH: DOMAINS COMPUTED BY KAHIP"); break;
+			std::vector<std::vector<esint> > frames(nextID), neighbors(nextID);
+			#pragma omp parallel for
+			for (int p = 0; p < nextID; p++) {
+				frames[p].resize(1 + tdecomposition[0][p].size());
+				neighbors[p].resize(tdualsize[0][p]);
+			}
+
+			// TODO: try parallelization
+			// #pragma omp parallel for
+			for (size_t t = 0; t < threads; t++) {
+				size_t partindex;
+				std::vector<esint> foffset(nextID), noffset(nextID);
+				for (int p = 0; p < nextID; p++) {
+					foffset[p] = foffsets[p][t];
+					noffset[p] = noffsets[p][t];
+				}
+
+				for (size_t e = elements->distribution.threads[t]; e < elements->distribution.threads[t + 1]; ++e) {
+					partindex = partID[e];
+
+					frames[partindex][++foffset[partindex]] = dualDist[e + 1] - dualDist[e];
+					if (e > elements->distribution.threads[t]) {
+						frames[partindex][foffset[partindex]] += frames[partindex][foffset[partindex] - 1];
+					} else {
+						frames[partindex][foffset[partindex]] += noffset[partindex];
+					}
+					auto node = dualData.begin() + dualDist[e];
+					for (esint n = frames[partindex][foffset[partindex]] - (dualDist[e + 1] - dualDist[e]); n < frames[partindex][foffset[partindex]]; ++n, ++node) {
+						neighbors[partindex][n] = std::lower_bound(tdecomposition[0][partindex].begin(), tdecomposition[0][partindex].end(), *node) - tdecomposition[0][partindex].begin();
+					}
+				}
+			}
+
+			std::vector<esint> pparts(nextID);
+			profiler::checkpoint("process_noncontinuity");
+			eslog::checkpointln("MESH: NONCONTINUITY PROCESSED");
+
+			#pragma omp parallel for
+			for (int p = 0; p < nextID; p++) {
+				switch (info::ecf->input.decomposition.sequential_decomposer) {
+				case DecompositionConfiguration::SequentialDecomposer::NONE:
+					break;
+				case DecompositionConfiguration::SequentialDecomposer::METIS:
+					METIS::call(info::ecf->input.decomposition.metis_options, frames[p].size() - 1, frames[p].data(), neighbors[p].data(), 0, NULL, NULL, pparts[p], partition.data() + partoffset[p]);
+					profiler::checkpoint("metis");
+					break;
+				case DecompositionConfiguration::SequentialDecomposer::SCOTCH:
+					Scotch::call(info::ecf->input.decomposition.scotch_options, frames[p].size() - 1, frames[p].data(), neighbors[p].data(), 0, NULL, NULL, pparts[p], partition.data() + partoffset[p]);
+					profiler::checkpoint("scotch");
+					break;
+				case DecompositionConfiguration::SequentialDecomposer::KAHIP:
+					KaHIP::call(info::ecf->input.decomposition.kahip_options, frames[p].size() - 1, frames[p].data(), neighbors[p].data(), 0, NULL, NULL, pparts[p], partition.data() + partoffset[p]);
+					profiler::checkpoint("kahip");
+					break;
+				}
+			}
+
+			std::vector<esint> ppartition = partition;
+			nextID = 0;
+			for (size_t p = 0; p < tdecomposition[0].size(); p++) {
+				for (size_t i = 0; i < tdecomposition[0][p].size(); ++i) {
+					partition[tdecomposition[0][p][i]] = ppartition[partoffset[p] + i] + nextID;
+				}
+				nextID += pparts[p];
+			}
+		}
+
+		switch (info::ecf->input.decomposition.sequential_decomposer) {
+		case DecompositionConfiguration::SequentialDecomposer::NONE:
+			eslog::checkpointln("MESH: DECOMPOSITION TO DOMAINS SKIPPED"); break;
+		case DecompositionConfiguration::SequentialDecomposer::METIS:
+			eslog::checkpointln("MESH: DOMAINS COMPUTED BY METIS"); break;
+		case DecompositionConfiguration::SequentialDecomposer::SCOTCH:
+			eslog::checkpointln("MESH: DOMAINS COMPUTED BY SCOTCH"); break;
+		case DecompositionConfiguration::SequentialDecomposer::KAHIP:
+			eslog::checkpointln("MESH: DOMAINS COMPUTED BY KAHIP"); break;
+		}
 	}
 
 	permutation.clear();
