@@ -235,6 +235,11 @@ void computeElementsDecomposition(const ElementStore *elements, esint parts, std
 			}
 
 			std::vector<esint> pparts(nextID);
+			double averageDomainSize = info::mesh->elements->distribution.process.size / (double)parts;
+			for (int p = 0; p < nextID; p++) {
+				pparts[p] = std::ceil((frames[p].size() - 1) / averageDomainSize);
+			}
+
 			profiler::checkpoint("process_noncontinuity");
 			eslog::checkpointln("MESH: NONCONTINUITY PROCESSED");
 

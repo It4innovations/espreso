@@ -463,6 +463,8 @@ void Mesh::computePersistentParameters()
 		}
 	}
 
+	mesh::computeBodies(elements, bodies, elementsRegions, neighbors);
+
 	if (info::ecf->input.contact_interfaces.size()) {
 		mesh::computeBodiesSurface(nodes, elements, elementsRegions, surface, neighbors);
 		mesh::computeWarpedNormals(surface);
@@ -479,8 +481,6 @@ void Mesh::computePersistentParameters()
 	mesh::computeRegionsElementNodes(nodes, elements, neighbors, elementsRegions);
 	mesh::computeRegionsBoundaryNodes(neighbors, nodes, boundaryRegions, contactInterfaces);
 	mesh::computeRegionsBoundaryParents(nodes, elements, boundaryRegions, contactInterfaces);
-
-	mesh::computeBodies(elements, bodies, elementsRegions, neighbors);
 
 	if (info::ecf->getPhysics()->dimension == DIMENSION::D3 && info::ecf->output.format == OutputConfiguration::FORMAT::STL_SURFACE) {
 		if (info::ecf->input.contact_interfaces.size() == 0) {
