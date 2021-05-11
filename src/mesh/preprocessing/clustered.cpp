@@ -385,7 +385,7 @@ void computeRegionsBoundaryDistribution(std::vector<BoundaryRegionStore*> &bound
 				if (codes[r] & bitmask) {
 					store->distribution.process.size += store->distribution.code[i].size;
 					store->distribution.process.next += store->distribution.code[i].size;
-					offset.push_back(store->distribution.process.size);
+					offset.push_back(store->distribution.code[i].size);
 				}
 			}
 		}
