@@ -474,7 +474,7 @@ void Mesh::computePersistentParameters()
 		eslog::checkpointln("MESH: CONTACT INTERFACE COMPUTED");
 	}
 
-	mesh::computeRegionsBoundaryDistribution(boundaryRegions, contactInterfaces);
+	mesh::computeRegionsBoundaryDistribution(nodes, boundaryRegions, contactInterfaces);
 
 	mesh::computeRegionsElementNodes(nodes, elements, neighbors, elementsRegions);
 	mesh::computeRegionsBoundaryNodes(neighbors, nodes, boundaryRegions, contactInterfaces);

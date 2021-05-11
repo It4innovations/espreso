@@ -351,7 +351,7 @@ void computeRegionsBoundaryElementsFromNodes(const NodeStore *nodes, const Eleme
 	eslog::ln();
 }
 
-void computeRegionsBoundaryDistribution(std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces)
+void computeRegionsBoundaryDistribution(NodeStore *nodes, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces)
 {
 	profiler::syncstart("compute_regions_boudary_distribution");
 	std::vector<BoundaryRegionStore*> allRegions;
@@ -371,7 +371,11 @@ void computeRegionsBoundaryDistribution(std::vector<BoundaryRegionStore*> &bound
 				}
 			}
 		} else {
-			store->distribution.code[(int)Element::CODE::POINT1].offset = store->nodeInfo.offset;
+			for (auto n = store->nodes->datatarray().cbegin(); n != store->nodes->datatarray().cend(); ++n) {
+				if ((nodes->ranks->begin() + *n)->front() == info::mpi::rank) {
+					++store->distribution.code[(int)Element::CODE::POINT1].size;
+				}
+			}
 		}
 	}
 
@@ -388,6 +392,8 @@ void computeRegionsBoundaryDistribution(std::vector<BoundaryRegionStore*> &bound
 					offset.push_back(store->distribution.code[i].size);
 				}
 			}
+		} else {
+			offset.push_back(store->distribution.code[(int)Element::CODE::POINT1].size);
 		}
 		store->distribution.process.offset = store->distribution.process.size;
 		offset.push_back(store->distribution.process.offset);
@@ -406,8 +412,8 @@ void computeRegionsBoundaryDistribution(std::vector<BoundaryRegionStore*> &bound
 				}
 			}
 		} else {
-			store->distribution.code[(int)Element::CODE::POINT1].offset = store->nodeInfo.offset;
-			store->distribution.code[(int)Element::CODE::POINT1].totalSize = store->nodeInfo.totalSize;
+			store->distribution.code[(int)Element::CODE::POINT1].offset = offset[j];
+			store->distribution.code[(int)Element::CODE::POINT1].totalSize = sum[j++];
 		}
 		store->distribution.process.offset = offset[j];
 		store->distribution.process.totalSize = sum[j++];
