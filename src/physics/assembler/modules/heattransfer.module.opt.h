@@ -6,6 +6,7 @@
 #include "module.parameters.h"
 #include "physics/assembler/operator.h"
 #include "physics/assembler/parameter.h"
+#include "config/ecf/physics/heattransfer.h"
 
 namespace espreso {
 
@@ -38,7 +39,7 @@ public:
 	static void createParameters();
 	static void insertParameters(Evaluator *evaluator);
 
-	HeatTransferModuleOpt(HeatTransferModuleOpt *previous, HeatTransferLoadStepConfiguration &configuration);
+	HeatTransferModuleOpt(HeatTransferModuleOpt *previous, HeatTransferGlobalSettings &gsettings, HeatTransferLoadStepConfiguration &configuration);
 	~HeatTransferModuleOpt() {};
 
 	void nextSubstep();
@@ -53,6 +54,7 @@ public:
 //	void processBoundary(const Builder &builder, size_t rindex, InstanceFiller &filler);
 	void processSolution();
 
+	const HeatTransferGlobalSettings &gsettings;
 	const HeatTransferLoadStepConfiguration &configuration;
 
 	ParametersIntegration integration;

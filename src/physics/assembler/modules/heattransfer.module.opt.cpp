@@ -128,8 +128,9 @@ void HeatTransferModuleOpt::initTemperature()
 	builders.push_back(new BoundaryGaussPointsBuilder<1>(integration.boundary.N, temp.boundary.node, temp.boundary.gp, "INTEGRATE TEMPERATURE INTO BOUNDARY GAUSS POINTS"));
 }
 
-HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, HeatTransferLoadStepConfiguration &configuration)
+HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, HeatTransferGlobalSettings &gsettings, HeatTransferLoadStepConfiguration &configuration)
 : ModuleOpt(new HeatTransferSolverDataProvider(configuration)),
+  gsettings(gsettings),
   configuration(configuration)
 {
 	geometry::computeBoundaryRegionsArea();

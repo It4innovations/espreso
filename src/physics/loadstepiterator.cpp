@@ -57,7 +57,8 @@ static LinearSystem* getSystem(LinearSystem *previous, PhysicsConfiguration &phy
 		}
 		break;
 	case HeatTransferGlobalSettings::KERNEL::OPT:
-		opt = new HeatTransferModuleOpt(dynamic_cast<HeatTransferModuleOpt*>(pKernel), loadStep);
+	case HeatTransferGlobalSettings::KERNEL::VEC:
+		opt = new HeatTransferModuleOpt(dynamic_cast<HeatTransferModuleOpt*>(pKernel), gsettings, loadStep);
 		break;
 	}
 

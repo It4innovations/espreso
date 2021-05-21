@@ -294,7 +294,8 @@ HeatTransferGlobalSettings::HeatTransferGlobalSettings(ECFObject *ecfdescription
 			.setdescription({ "Kernel assembler" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("OLD").setdescription("Old (hopefully) slow assembler."))
-			.addoption(ECFOption().setname("OPT").setdescription("Opt assembler.")));
+			.addoption(ECFOption().setname("OPT").setdescription("Opt assembler."))
+			.addoption(ECFOption().setname("VEC").setdescription("Hand-vectorized assembler.")));
 
 	sigma = 0;
 	REGISTER(sigma, ECFMetaData()

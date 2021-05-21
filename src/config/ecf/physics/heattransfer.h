@@ -81,7 +81,8 @@ struct HeatTransferGlobalSettings {
 
 	enum class KERNEL {
 		OLD,
-		OPT
+		OPT,
+		VEC
 	};
 
 	STABILIZATION stabilization;
