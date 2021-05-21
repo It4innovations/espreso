@@ -117,6 +117,33 @@ struct ElementCoordinates: public ElementOperatorBuilder {
 		kernel.addParameter(kernel.coords.node);
 		kernel.addParameter(kernel.coords.gp);
 
+		return true;
+	}
+
+	void apply(int interval)
+	{
+		auto procNodes = info::mesh->elements->procNodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
+		if (info::mesh->dimension == 2) {
+			iterate_elements(Coordinates2DToElementNodes(procNodes, kernel.coords.node, interval));
+			iterate_elements_gps<HeatTransferModuleOpt::NGP>(FromNodesToGaussPoints<2>(kernel.integration.N, kernel.coords.node, kernel.coords.gp, interval));
+		}
+		if (info::mesh->dimension == 3) {
+			iterate_elements(Coordinates3DToElementNodes(procNodes, kernel.coords.node, interval));
+			iterate_elements_gps<HeatTransferModuleOpt::NGP>(FromNodesToGaussPoints<3>(kernel.integration.N, kernel.coords.node, kernel.coords.gp, interval));
+		}
+	}
+};
+
+struct ElementCoordinatesSimd: public ElementOperatorBuilder {
+	HeatTransferModuleOpt &kernel;
+
+	ElementCoordinatesSimd(HeatTransferModuleOpt &kernel): ElementOperatorBuilder("ELEMENTS COORDINATES"), kernel(kernel)
+	{
+
+	}
+
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
 		kernel.coordsSimd.node.addInput(info::mesh->nodes->coordinates);
 		kernel.coordsSimd.gp.addInput(kernel.coordsSimd.node);
 		kernel.coordsSimd.node.resizeAligned(SIMD::size * sizeof(double));
@@ -133,17 +160,11 @@ struct ElementCoordinates: public ElementOperatorBuilder {
 		auto procNodes = info::mesh->elements->procNodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
 		if (info::mesh->dimension == 2) {
 			iterate_elements_simd(Coordinates2DToElementNodesSimd(procNodes, kernel.coordsSimd.node, interval));
-			iterate_elements(Coordinates2DToElementNodes(procNodes, kernel.coords.node, interval));
-
 			iterate_elements_gps_simd<HeatTransferModuleOpt::NGP>(FromNodesToGaussPointsSimd<2>(kernel.integrationSimd.N, kernel.coordsSimd.node, kernel.coordsSimd.gp, interval));
-			iterate_elements_gps<HeatTransferModuleOpt::NGP>(FromNodesToGaussPoints<2>(kernel.integration.N, kernel.coords.node, kernel.coords.gp, interval));
 		}
 		if (info::mesh->dimension == 3) {
 			iterate_elements_simd(Coordinates3DToElementNodesSimd(procNodes, kernel.coordsSimd.node, interval));
-			iterate_elements(Coordinates3DToElementNodes(procNodes, kernel.coords.node, interval));
-
 			iterate_elements_gps_simd<HeatTransferModuleOpt::NGP>(FromNodesToGaussPointsSimd<3>(kernel.integrationSimd.N, kernel.coordsSimd.node, kernel.coordsSimd.gp, interval));
-			iterate_elements_gps<HeatTransferModuleOpt::NGP>(FromNodesToGaussPoints<3>(kernel.integration.N, kernel.coords.node, kernel.coords.gp, interval));
 		}
 	}
 };

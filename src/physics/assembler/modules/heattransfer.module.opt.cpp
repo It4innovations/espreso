@@ -154,10 +154,27 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 	}
 
 	Basis().build(*this);
-	builders.push_back(new ElementCoordinates(*this));
+	
+	if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC) 
+	{
+		builders.push_back(new ElementCoordinatesSimd(*this));
+	}
+	else
+	{
+		builders.push_back(new ElementCoordinates(*this));
+	}
+
 	builders.push_back(new BoundaryCoordinates(*this));
 
-	builders.push_back(new ElementIntegration(*this));
+	if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC) 
+	{
+		builders.push_back(new ElementIntegrationSimd(*this));
+	}
+	else
+	{
+		builders.push_back(new ElementIntegration(*this));
+	}
+	
 	builders.push_back(new BoundaryIntegration(*this));
 
 	if (step::step.loadstep == 0) {

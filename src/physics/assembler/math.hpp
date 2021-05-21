@@ -100,13 +100,14 @@ static inline void M22M2N(const double * __restrict__ m22, const double * __rest
 }
 
 template<int N>
-static inline void M22M2NSimd(const double * __restrict__ m22, const double * __restrict__ m2N, double * __restrict__ result)
+ALWAYS_INLINE static void M22M2NSimd(const double * __restrict__ m22, const double * __restrict__ m2N, double * __restrict__ result)
 {
 	SIMD m22Simd0 = load(&m22[0 * SIMD::size]);
 	SIMD m22Simd1 = load(&m22[1 * SIMD::size]);
 	SIMD m22Simd2 = load(&m22[2 * SIMD::size]);
 	SIMD m22Simd3 = load(&m22[3 * SIMD::size]);
 
+	#pragma unroll(N)
 	for (int n = 0; n < N; ++n) {
 		SIMD m2N1 = load(&m2N[n * SIMD::size]);
 		SIMD m2N2 = load(&m2N[(N + n) * SIMD::size]);
@@ -127,7 +128,7 @@ static inline void M33M3N(const double * __restrict__ m33, const double * __rest
 }
 
 template<int N>
-static inline void M33M3NSimd(const double * __restrict__ m33, const double * __restrict__ m3N, double * __restrict__ result)
+ALWAYS_INLINE static void M33M3NSimd(const double * __restrict__ m33, const double * __restrict__ m3N, double * __restrict__ result)
 {
 	SIMD m33Simd0 = load(&m33[0 * SIMD::size]);
 	SIMD m33Simd1 = load(&m33[1 * SIMD::size]);
@@ -139,6 +140,7 @@ static inline void M33M3NSimd(const double * __restrict__ m33, const double * __
 	SIMD m33Simd7 = load(&m33[7 * SIMD::size]);
 	SIMD m33Simd8 = load(&m33[8 * SIMD::size]);
 
+	#pragma unroll(N)
 	for (int n = 0; n < N; ++n) {
 		SIMD m3N1 = load(&m3N[(0 * N + n) * SIMD::size]);
 		SIMD m3N2 = load(&m3N[(1 * N + n) * SIMD::size]);

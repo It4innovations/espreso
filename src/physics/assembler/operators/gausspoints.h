@@ -50,8 +50,8 @@ struct FromNodesToGaussPointsSimd: public Operator {
 
 	template<int nodes, int gps>
 	void operator()(int gpindex)
-	{
-		NtoGPSimd<nodes, dimension>(N.data + gpindex * nodes * SIMD::size, n.data, gp.data + gpindex * dimension * SIMD::size );
+	{	
+		NtoGPSimd<nodes, dimension>(N.data + gpindex * nodes * SIMD::size, n.data, gp.data + gpindex * dimension * SIMD::size);
 	}
 
 	void operator++()

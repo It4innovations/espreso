@@ -193,7 +193,7 @@ struct BoundarySettings: public BoundarySettingsPack<Settings> {
 
 struct InputParameterIterator {
 	const int inc;
-	const double * __restrict data;
+	const double * __restrict__ data;
 
 	InputParameterIterator(const double * data, int increment): inc(increment), data(data) {}
 	InputParameterIterator(const ParameterData &info, esint interval)
@@ -208,7 +208,7 @@ struct InputParameterIterator {
 
 struct OutputParameterIterator {
 	const int inc;
-	double * __restrict data;
+	double * __restrict__ data;
 
 	OutputParameterIterator(double * data, int increment): inc(increment), data(data) {}
 	OutputParameterIterator(ParameterData &info, esint interval)

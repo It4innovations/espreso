@@ -86,6 +86,7 @@ struct ElementJacobian2DSimd: public ElementJacobian {
 		SIMD jacobian0, jacobian1, jacobian2, jacobian3;
 		SIMD dNX, dNY, coordsX, coordsY;
 		
+		#pragma unroll(nodes)
 		for (int n = 0; n < nodes; ++n) {
 
 			coordsX = load(&pCoords[(n * 2 + 0) * SIMD::size]);
@@ -108,7 +109,7 @@ struct ElementJacobian2DSimd: public ElementJacobian {
 		store(&pInv[(4 * gpindex + 2) * SIMD::size], -detJx * jacobian2);
 		store(&pInv[(4 * gpindex + 3) * SIMD::size],  detJx * jacobian0);
 
-		M22M2NSimd<nodes>(pInv + 4 * gpindex * SIMD::size , pDN + 2 * gpindex * nodes * SIMD::size, pDND + 2 * gpindex * nodes * SIMD::size);
+		M22M2NSimd<nodes>(&pInv[4 * SIMD::size * gpindex], &pDN[2 * SIMD::size * nodes * gpindex], &pDND[2 * SIMD::size * nodes * gpindex]);
 	}
 };
 
@@ -170,6 +171,7 @@ struct ElementJacobian3DSimd: public ElementJacobian {
 		SIMD jacobian0, jacobian1, jacobian2, jacobian3, jacobian4, jacobian5, jacobian6, jacobian7, jacobian8;
 		SIMD dNX, dNY, dNZ, coordsX, coordsY, coordsZ;
 
+		#pragma unroll(nodes)
 		for (int n = 0; n < nodes; ++n) {
 			coordsX = load(&pCoords[(n * 3 + 0) * SIMD::size]);
 			coordsY = load(&pCoords[(n * 3 + 1) * SIMD::size]);
@@ -211,7 +213,7 @@ struct ElementJacobian3DSimd: public ElementJacobian {
 		store(&pInv[(9 * gpindex + 7) * SIMD::size], detJx * (-jacobian7 * jacobian0 + jacobian6 * jacobian1));
 		store(&pInv[(9 * gpindex + 8) * SIMD::size], detJx * ( jacobian4 * jacobian0 - jacobian3 * jacobian1));
 
-		M33M3NSimd<nodes>(pInv + 9 * gpindex * SIMD::size, pDN + 3 * gpindex * nodes * SIMD::size, pDND + 3 * gpindex * nodes * SIMD::size);
+		M33M3NSimd<nodes>(&pInv[9 * gpindex * SIMD::size], &pDN[3 * gpindex * nodes * SIMD::size], &pDND[3 * gpindex * nodes * SIMD::size]);
 	}
 };
 
@@ -262,10 +264,47 @@ struct ElementIntegration: public ElementOperatorBuilder {
 	{
 		if (info::mesh->dimension == 2) {
 			iterate_elements_gps<HeatTransferModuleOpt::NGP>(ElementJacobian2D(kernel.coords.node, kernel.integration.dN, kernel.integration.jacobiInversion, kernel.integration.jacobiDeterminant, kernel.integration.dND, interval));
-			iterate_elements_gps_simd<HeatTransferModuleOpt::NGP>(ElementJacobian2DSimd(kernel.coordsSimd.node, kernel.integrationSimd.dN, kernel.integrationSimd.jacobiInversion, kernel.integrationSimd.jacobiDeterminant, kernel.integrationSimd.dND, interval));
 		}
 		if (info::mesh->dimension == 3) {
 			iterate_elements_gps<HeatTransferModuleOpt::NGP>(ElementJacobian3D(kernel.coords.node, kernel.integration.dN, kernel.integration.jacobiInversion, kernel.integration.jacobiDeterminant, kernel.integration.dND, interval));
+		}
+	}
+};
+
+struct ElementIntegrationSimd: public ElementOperatorBuilder {
+	HeatTransferModuleOpt &kernel;
+
+	ElementIntegrationSimd(HeatTransferModuleOpt &kernel): ElementOperatorBuilder("ELEMENTS INTEGRATION"), kernel(kernel)
+	{
+
+	}
+
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
+		kernel.integrationSimd.jacobiInversion.addInput(kernel.coordsSimd.node);
+		kernel.integrationSimd.jacobiInversion.addInput(kernel.integration.dN);
+		kernel.integrationSimd.jacobiInversion.resizeAligned(SIMD::size * sizeof(double));
+		kernel.addParameter(kernel.integrationSimd.jacobiInversion);
+
+		kernel.integrationSimd.jacobiDeterminant.addInput(kernel.coordsSimd.node);
+		kernel.integrationSimd.jacobiDeterminant.addInput(kernel.integration.dN);
+		kernel.integrationSimd.jacobiDeterminant.resizeAligned(SIMD::size * sizeof(double));
+		kernel.addParameter(kernel.integrationSimd.jacobiDeterminant);
+
+		kernel.integrationSimd.dND.addInput(kernel.coordsSimd.node);
+		kernel.integrationSimd.dND.addInput(kernel.integration.dN);
+		kernel.integrationSimd.dND.resizeAligned(SIMD::size * sizeof(double));
+		kernel.addParameter(kernel.integrationSimd.dND);
+
+		return true;
+	}
+
+	void apply(int interval)
+	{
+		if (info::mesh->dimension == 2) {
+			iterate_elements_gps_simd<HeatTransferModuleOpt::NGP>(ElementJacobian2DSimd(kernel.coordsSimd.node, kernel.integrationSimd.dN, kernel.integrationSimd.jacobiInversion, kernel.integrationSimd.jacobiDeterminant, kernel.integrationSimd.dND, interval));
+		}
+		if (info::mesh->dimension == 3) {
 			iterate_elements_gps_simd<HeatTransferModuleOpt::NGP>(ElementJacobian3DSimd(kernel.coordsSimd.node, kernel.integrationSimd.dN, kernel.integrationSimd.jacobiInversion, kernel.integrationSimd.jacobiDeterminant, kernel.integrationSimd.dND, interval));
 		}
 	}
