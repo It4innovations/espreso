@@ -8,13 +8,37 @@
 #include "basis/evaluator/evaluator.h"
 #include "wrappers/mpi/communication.h"
 
+#include <omp.h>
+
 
 namespace espreso {
 
 struct RBFTargetConfiguration;
 struct RBFTargetTransformationConfiguration;
+
+class ACABlock{
+public:
+
+	ACABlock(){
+
+	};
 	
-class FullRankBlock{
+	virtual esint size() const = 0;
+	
+	virtual void apply(const double * x_global, double *y_global, double alpha, double beta, bool transpose) = 0;
+	
+private:
+	std::vector<esint> DOF_indices_left;
+	std::vector<esint> DOF_indices_right;
+	
+	std::vector<double> x_local;
+	std::vector<double> y_local;
+	
+	esint nrows = 0;
+	esint ncols = 0;
+};
+
+class FullRankBlock: public ACABlock{
 public:
 
 	FullRankBlock(const Cluster *L, const Cluster *R, const RBFTargetConfiguration &configuration);
@@ -39,7 +63,7 @@ private:
 	esint ncols = 0;
 };
 
-class LowRankBlock{
+class LowRankBlock: public ACABlock{
 public:
 
 	LowRankBlock(const Cluster *L, const Cluster *R, double eps, const RBFTargetConfiguration &configuration);
@@ -89,7 +113,7 @@ public:
 	
 	~matrix_ACA();
 	
-	void apply(const double* x, double* y, double alpha, double beta, bool transpose) const;
+	void apply(const double* x, double* y, double alpha, double beta, bool transpose);
 	
 	double getCompressionRatio() const;
 	
@@ -97,18 +121,18 @@ public:
 	
 private:
 
-	void createAdmissibleBlock(const Cluster* L, const Cluster* R, double eps, const RBFTargetConfiguration &configuration);
-	
-	void createNonAdmissibleBlock(const Cluster* L, const Cluster* R, const RBFTargetConfiguration &configuration);
-	
-	std::vector<LowRankBlock*> admissible_blocks;
-	std::vector<FullRankBlock*> nonadmissible_blocks;
+	std::vector<ACABlock*> aca_blocks;
+
+	std::vector<std::vector<ACABlock*>> aca_blocks_threaded;
+
 	
 	esint size_admissible = 0;
 	esint size_nonadmissible = 0;
 	
 	esint nrows = 0;
 	esint ncols = 0;
+
+	std::vector<std::vector<double>> y_tmp;
 };
 
 

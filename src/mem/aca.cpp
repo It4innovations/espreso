@@ -1,9 +1,6 @@
 #include "aca.h"
 
-
-
 using namespace espreso;
-
 
 FullRankBlock::FullRankBlock(const Cluster *L, const Cluster *R, const RBFTargetConfiguration &configuration){
 	this->nrows = L->size();
@@ -53,7 +50,7 @@ esint FullRankBlock::size() const {
 //performs y = this * x * alpha + y * beta
 void FullRankBlock::apply(const double * x_global, double *y_global, double alpha, double beta, bool transpose){
 
-	MATH::vecScale((transpose?this->ncols:this->nrows), beta, y_global);
+	// MATH::vecScale((transpose?this->ncols:this->nrows), beta, y_global);
 	
 	if(!transpose){
 		for(esint i = 0; i < this->ncols; ++i){
@@ -164,7 +161,7 @@ void LowRankBlock::apply(const double * x_global, double *y_global, double alpha
 		return;
 	}
 
-	MATH::vecScale((transpose?this->ncols:this->nrows), beta, y_global);
+	// MATH::vecScale((transpose?this->ncols:this->nrows), beta, y_global);
 	
 	if(!transpose){
 		for(esint i = 0; i < this->ncols; ++i){
@@ -638,82 +635,93 @@ matrix_ACA::matrix_ACA(
 	if(this->nrows * this->ncols <= 0){
 		return;
 	}
+
+	esint nthreads = 1;
+	#pragma omp parallel
+	{
+		nthreads = omp_get_num_threads();
+	}
+	this->y_tmp.resize(nthreads);
+	for(auto &y: this->y_tmp){
+		y.resize(std::max(this->nrows, this->ncols));
+	}
+	this->aca_blocks_threaded.resize(nthreads);
 	
 	BlockClusterTree T(lT, rT, aca_eta);
-	
-	for(esint i = 0; i < T.leaf_size(); ++i){
-		const BlockCluster* L = T.get_leaf( i );
-		
-		const Cluster* lC = L->getLeftCluster();
-		const Cluster* rC = L->getRightCluster();
-		
-		if(L->getIsAdmissible()){
-			this->createAdmissibleBlock(lC, rC, aca_epsilon, configuration);
-			// this->createNonAdmissibleBlock(lC, rC, configuration);
-		}
-		else{
-			this->createNonAdmissibleBlock(lC, rC, configuration);
-		}
-	}
-	
-	// printf("# of     admissible blocks: %6d\n", (int)this->admissible_blocks.size());
-	// printf("# of non-admissible blocks: %6d\n", (int)this->nonadmissible_blocks.size());
-	// printf("Compression ratio: %10.3f [%%]\n", this->getCompressionRatio() * 100.0f);
-	
-	//check if all entires are represented exactly once
-	// std::vector<esint> histogram(this->nrows * this->ncols);
-	// std::fill(histogram.begin(), histogram.end(), 0);
-	// for(esint i = 0; i < T.leaf_size(); ++i){
-		// const BlockCluster* L = T.get_leaf( i );
-		
-		// const Cluster* lC = L->getLeftCluster();
-		// const Cluster* rC = L->getRightCluster();
-		
-		// for(esint ri = 0; ri < lC->size(); ++ri){
-			// esint r = lC->getPointIndexGlobal(ri);
+	this->aca_blocks.resize(T.leaf_size());
 
-			// for(esint ci = 0; ci < rC->size(); ++ci){
-				// esint c = rC->getPointIndexGlobal(ci);
-				
-				// histogram[c + r * this->ncols]++;
-			// }
-		// }
-	// }
-	// bool valid = true;
-	// for(auto i:histogram){
-		// if(i != 1){
-			// valid = false;
-			// break;
-		// }
-	// }
-	
-	// if (info::mpi::rank == 0){
-		// printf("ACA matrix: #of leaves: %d\n", T.leaf_size());
-		// printf("ACA matrix: #of rows: %d, #of cols: %d\n", this->nrows, this->ncols);
-		// printf("ACA matrix valid: %d\n", (int)valid);
-	// }
+	esint size_nonadmissible_ = 0;
+	esint size_admissible_ = 0;
+	#pragma omp parallel reduction(+:size_nonadmissible_, size_admissible_)
+	{
+		esint idx;
+		esint size_admissible_tmp = 0;
+		esint size_nonadmissible_tmp = 0;
+		esint T_s = T.leaf_size();
+
+		#pragma omp for schedule(dynamic, 1) nowait
+		for(esint i = 0; i < T_s; ++i){
+			const BlockCluster* L = T.get_leaf( i );
+			
+			const Cluster* lC = L->getLeftCluster();
+			const Cluster* rC = L->getRightCluster();
+			
+			if(L->getIsAdmissible()){
+				this->aca_blocks[i] = new LowRankBlock(lC, rC, aca_epsilon, configuration);
+				size_admissible_tmp += this->aca_blocks[i]->size();
+			}
+			else{
+				this->aca_blocks[i] = new FullRankBlock(lC, rC, configuration);
+				size_nonadmissible_tmp += this->aca_blocks[i]->size();
+			}
+		}
+		size_nonadmissible_ = size_nonadmissible_tmp;
+		size_admissible_ = size_admissible_tmp;
+	}
+	this->size_nonadmissible = size_nonadmissible_;
+	this->size_admissible = size_admissible_;
+
+	std::vector<esint> aca_blocks_size_threaded(nthreads);
+	std::fill(aca_blocks_size_threaded.begin(), aca_blocks_size_threaded.end(), 0);
+	for(auto M: this->aca_blocks){
+		esint s = M->size();
+
+		esint min_s = aca_blocks_size_threaded[0];
+		esint bucket_idx = 0;
+		for(esint i = 1; i < aca_blocks_size_threaded.size(); ++i){
+			if(min_s > aca_blocks_size_threaded[i]) {
+				min_s = aca_blocks_size_threaded[i];
+				bucket_idx = i;
+			}
+		}
+
+		this->aca_blocks_threaded[bucket_idx].push_back(M);
+		aca_blocks_size_threaded[bucket_idx] += M->size();
+	}
 }
 
 matrix_ACA::~matrix_ACA(){
-	for(auto el: this->admissible_blocks){
-		delete el;
-	}
-	for(auto el: this->nonadmissible_blocks){
+	for(auto el: this->aca_blocks){
 		delete el;
 	}
 }
 
-void matrix_ACA::apply(const double* x, double* y, double alpha, double beta, bool transpose) const {
+void matrix_ACA::apply(const double* x, double* y, double alpha, double beta, bool transpose)  {
+	esint dim = (transpose?this->ncols:this->nrows);
+	MATH::vecScale(dim, beta, y);
 	
-	MATH::vecScale((transpose?this->ncols:this->nrows), beta, y);
-	
-	//TODO: OpenMP parallel for
-	for(auto &M: this->admissible_blocks){
-		M->apply(x, y, alpha, 1.0f, transpose);
+	#pragma omp parallel
+  	{
+		esint tid = omp_get_thread_num( );
+		MATH::vecScale(dim, 0.0, this->y_tmp[tid].data());
+
+		for(auto &M: this->aca_blocks_threaded[tid]){
+			M->apply(x, &this->y_tmp[tid][0], alpha, 1.0f, transpose);
+		}
 	}
 	
-	for(auto &M: this->nonadmissible_blocks){
-		M->apply(x, y, alpha, 1.0f, transpose);
+	for(esint i = 0; i < this->y_tmp.size(); ++i){
+		MATH::vecAdd(dim, y, 1.0, this->y_tmp[i].data());
 	}
 }
 
@@ -728,26 +736,3 @@ double matrix_ACA::getCompressionRatio() const {
 esint matrix_ACA::getNEntries() const {
 	return this->size_admissible + this->size_nonadmissible;
 }
-
-void matrix_ACA::createAdmissibleBlock(const Cluster* L, const Cluster* R, double eps, const RBFTargetConfiguration &configuration){
-	LowRankBlock *A = new LowRankBlock(L, R, eps, configuration);
-	this->admissible_blocks.push_back( A );
-
-	this->size_admissible += A->size();
-}
-
-void matrix_ACA::createNonAdmissibleBlock(const Cluster* L, const Cluster* R, const RBFTargetConfiguration &configuration){
-	FullRankBlock *A = new FullRankBlock(L, R, configuration);
-	this->nonadmissible_blocks.push_back( A );
-	
-	this->size_nonadmissible += A->size();
-}
-
-
-
-
-
-
-
-
-
