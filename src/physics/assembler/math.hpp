@@ -299,6 +299,22 @@ static inline void ADDMN2M2N(const double &sumscale, const double * __restrict__
 }
 
 template<int N>
+ALWAYS_INLINE static void ADDMN2M2NSimd(const SIMD &sumscale, const double * __restrict__ m2N, double * __restrict__ mNN)
+{
+	for (int n = 0; n < N; ++n) {
+		SIMD m2N1 = load(&m2N[n * SIMD::size]);
+		SIMD m2N2 = load(&m2N[(N + n) * SIMD::size]);
+		for (int m = 0; m < N; ++m) {
+			SIMD m2N3 = load(&m2N[m * SIMD::size]);
+			SIMD m2N4 = load(&m2N[(N + m) * SIMD::size]);
+			SIMD res  = load(&mNN[(n * N + m) * SIMD::size]);
+			res = res + sumscale * (m2N1 * m2N3 + m2N2 * m2N4);
+			store(&mNN[(n * N + m) * SIMD::size], res);
+		}
+	}
+}
+
+template<int N>
 static inline void ADDMN3M3N(const double &sumscale, const double * __restrict__ m3N, double * __restrict__ mNN)
 {
 	for (int n = 0; n < N; ++n) {
