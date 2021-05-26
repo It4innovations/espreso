@@ -197,6 +197,68 @@ struct ThermalConductivity: public ElementOperatorBuilder {
 	}
 };
 
+struct ThermalConductivitySimd: public ElementOperatorBuilder {
+
+	struct CopyConductivity: public Operator {
+		CopyConductivity(
+				const ParameterData &input,
+				ParameterData &output,
+				int interval)
+		: Operator(interval, output.isconst[interval], output.update[interval]),
+		  input(input, interval),
+		  output(output, interval)
+		{
+
+		}
+
+		InputParameterIterator input;
+		OutputParameterIterator output;
+
+		void operator++()
+		{
+			++input;
+			++output;
+		}
+	};
+
+	HeatTransferModuleOpt &kernel;
+
+	ThermalConductivitySimd(HeatTransferModuleOpt &kernel): ElementOperatorBuilder("THERMAL CONDUCTIVITY MATRIX"), kernel(kernel)
+	{
+
+	}
+
+	bool build(HeatTransferModuleOpt &kernel) override
+	{
+		for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
+			const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[i].material];
+			switch (mat->coordinate_system.type) {
+			case CoordinateSystemConfiguration::TYPE::CARTESIAN: break;
+				break;
+			}
+		}
+
+		kernel.materialSimd.conductivityIsotropic.addInput(kernel.material.model.isotropic);
+		kernel.materialSimd.conductivityIsotropic.resizeAligned(SIMD::size*sizeof(double));
+		kernel.addParameter(kernel.materialSimd.conductivityIsotropic);
+		return true;
+	}
+
+	void apply(int interval)
+	{
+		const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
+		if (info::mesh->dimension == 2) {
+			switch (mat->thermal_conductivity.model) {
+			case ThermalConductivityConfiguration::MODEL::ISOTROPIC: CopyElementParameters(kernel.material.model.isotropic, kernel.materialSimd.conductivityIsotropic, "COPY ISOTROPIC CONDUCTIVITY").apply(interval); return;
+			}
+		}
+		if (info::mesh->dimension == 3) {
+			switch (mat->thermal_conductivity.model) {
+			case ThermalConductivityConfiguration::MODEL::ISOTROPIC: CopyElementParameters(kernel.material.model.isotropic, kernel.materialSimd.conductivityIsotropic, "COPY ISOTROPIC CONDUCTIVITY").apply(interval); return;
+			}
+		}
+	}
+};
 }
 
 #endif /* SRC_PHYSICS_ASSEMBLER_OPERATORS_CONDUCTIVITY_H_ */

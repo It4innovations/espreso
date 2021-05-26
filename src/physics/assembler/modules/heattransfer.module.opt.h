@@ -62,9 +62,11 @@ public:
 	ParametersCoordinates coords;
 	ParametersCoordinates coordsSimd;
 	ParametersThickness thickness;
+	ParametersThickness thicknessSimd;
 
 	ParametersCoordinateSystem cooSystem;
 	ParametersMaterial material;
+	ParametersMaterial materialSimd;
 
 	ParametersTemperature temp;
 	ParametersTranslationMotions translationMotions;
@@ -74,8 +76,10 @@ public:
 	ParametersBoundaryFunction dirichlet, heatFlow, heatFlux, q;
 
 	ParametersElements<1> elements;
+	ParametersElements<1> elementsSimd;
 
 	ParametersGradient gradient;
+	ParametersGradient gradientSimd;
 	ParametersFlux flux;
 
 protected:
