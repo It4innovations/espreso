@@ -16,6 +16,7 @@ bool Basis::build(HeatTransferModuleOpt &kernel)
 	kernel.integration.dN.resize();
 	kernel.integrationSimd.dN.resizeAligned(SIMD::size*sizeof(double));
 	kernel.integration.weight.resize();
+	kernel.integrationSimd.weight.resizeAligned(SIMD::size*sizeof(double));
 	{
 		int index = 0;
 		for (auto ei = info::mesh->elements->eintervals.begin(); ei != info::mesh->elements->eintervals.end(); ++ei, ++index) {
@@ -31,12 +32,21 @@ bool Basis::build(HeatTransferModuleOpt &kernel)
 
 			double *nSimd = (kernel.integrationSimd.N.data->begin() + index)->data();
 			double *dnSimd = (kernel.integrationSimd.dN.data->begin() + index)->data();
+			double *wSimd = (kernel.integrationSimd.weight.data->begin() + index)->data();
 
 			esint nodes = Mesh::edata[ei->code].nodes;
 			esint gps = Mesh::edata[ei->code].weighFactor->size();
 			for (esint gp = 0; gp < gps; ++gp) {
 				memcpy(n + gp * nodes, (*Mesh::edata[ei->code].N)[gp].vals, sizeof(double) * nodes);
 				memcpy(dn + Mesh::edata[ei->code].dimension * gp * nodes, (*Mesh::edata[ei->code].dN)[gp].vals, sizeof(double) * Mesh::edata[ei->code].dimension * nodes);
+
+				for(int node = 0; node < nodes; ++node)
+				{
+					for(int simdLane = 0; simdLane < SIMD::size; ++simdLane)
+					{
+						nSimd[(gp*nodes + node)*SIMD::size + simdLane] = n[gp*nodes + node];
+					}
+				}
 
 				esint dims = Mesh::edata[ei->code].dimension;
 				for(int dim = 0; dim < dims; ++dim)
@@ -45,13 +55,19 @@ bool Basis::build(HeatTransferModuleOpt &kernel)
 					{
 						for(int simdLane = 0; simdLane < SIMD::size; ++simdLane)
 						{
-							nSimd[(gp*nodes + node)*SIMD::size + simdLane] = n[gp*nodes + node];
 							dnSimd[(gp*dims*nodes + dim*nodes + node)*SIMD::size + simdLane] = dn[gp*dims*nodes + dim*nodes + node];
 						}
 					}
 				}
 			}
 			memcpy(w, Mesh::edata[ei->code].weighFactor->data(), sizeof(double) * gps);
+			for(esint gp = 0; gp < gps; ++gp)
+			{
+				for(int simdLane = 0; simdLane < SIMD::size; ++simdLane)
+				{
+					wSimd[gp*SIMD::size + simdLane] = w[gp];
+				}
+			}
 		}
 	}
 

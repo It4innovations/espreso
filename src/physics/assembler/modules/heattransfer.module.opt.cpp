@@ -155,7 +155,7 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 
 	Basis().build(*this);
 	
-	if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC) 
+	if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
 	{
 		builders.push_back(new ElementCoordinatesSimd(*this));
 	}
@@ -166,7 +166,7 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 
 	builders.push_back(new BoundaryCoordinates(*this));
 
-	if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC) 
+	if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
 	{
 		builders.push_back(new ElementIntegrationSimd(*this));
 	}
@@ -177,10 +177,23 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 	
 	builders.push_back(new BoundaryIntegration(*this));
 
+	if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
+	{
+		eslog::warning("WARNING: USING EXPERIMENTAL ASSEMBLER. \n");
+		eslog::warning("WARNING: NUMBER OF ELEMENTS HAS TO BE MULTIPLE OF VECTOR LENGTH. \n");
+	}
+
 	if (step::step.loadstep == 0) {
 		initTemperature(); // we need to init temperature first since other builder can read it
 
 		if (info::mesh->dimension == 2) {
+			if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
+			{
+				eslog::warning("WARNING: CONSTANT THICKNESS ONLY.\n");
+				builders.push_back(new ExpressionsToElements(thicknessSimd.gp, 1, "ELEMENTS THICKNESS"));
+				examineElementParameter("THICKNESS", info::ecf->heat_transfer_2d.thickness, *thicknessSimd.gp.builder);
+			}
+			// Redundant beacause of boundary
 			builders.push_back(new ExpressionsToElements(thickness.gp, 1, "ELEMENTS THICKNESS"));
 			examineElementParameter("THICKNESS", info::ecf->heat_transfer_2d.thickness, *thickness.gp.builder);
 			builders.push_back(new ExpressionsToBoundaryFromElement(*thickness.gp.builder, thickness.boundary.gp, "BOUDARY THICKNESS"));
@@ -266,59 +279,74 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 			examineMaterialParameter(mat->name, "HEAT CAPACITY", mat->heat_capacity, *material.heatCapacity.builder, 0);
 			eslog::info("                                                                                               \n");
 
-			switch (mat->thermal_conductivity.model) {
-			case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
-				eslog::info("         CONDUCTIVITY:                                                              ISOTROPIC \n");
-				examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.isotropic.builder, 0);
-				break;
-			case ThermalConductivityConfiguration::MODEL::DIAGONAL:
-				eslog::info("         CONDUCTIVITY:                                                               DIAGONAL \n");
-				if (info::mesh->dimension == 2) {
-					examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.diagonal.builder, 0);
-					examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), *material.model.diagonal.builder, 1);
+			if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
+			{
+				eslog::warning("WARNING: CONSTANT THERMAL CONDUCTIVITY ONLY.\n");
+				switch (mat->thermal_conductivity.model) {
+				case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
+					eslog::info("         CONDUCTIVITY:                                                              ISOTROPIC \n");
+					examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.isotropic.builder, 0);
+					break;
+				default:
+					eslog::error("EXPERIMENTAL ASSEMBLER SUPPORTS ISOTROPIC MODEL OF THERMAL CONDCTIVITY ONLY.\n");
 				}
-				if (info::mesh->dimension == 3) {
-					examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.diagonal.builder, 0);
-					examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), *material.model.diagonal.builder, 1);
-					examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), *material.model.diagonal.builder, 2);
+			}
+			else
+			{
+				switch (mat->thermal_conductivity.model) {
+				case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
+					eslog::info("         CONDUCTIVITY:                                                              ISOTROPIC \n");
+					examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.isotropic.builder, 0);
+					break;
+				case ThermalConductivityConfiguration::MODEL::DIAGONAL:
+					eslog::info("         CONDUCTIVITY:                                                               DIAGONAL \n");
+					if (info::mesh->dimension == 2) {
+						examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.diagonal.builder, 0);
+						examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), *material.model.diagonal.builder, 1);
+					}
+					if (info::mesh->dimension == 3) {
+						examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.diagonal.builder, 0);
+						examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), *material.model.diagonal.builder, 1);
+						examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), *material.model.diagonal.builder, 2);
+					}
+					break;
+				case ThermalConductivityConfiguration::MODEL::SYMMETRIC:
+					eslog::info("         CONDUCTIVITY:                                                              SYMMETRIC \n");
+					if (info::mesh->dimension == 2) {
+						examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.symmetric2D.builder, 0);
+						examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), *material.model.symmetric2D.builder, 1);
+						examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), *material.model.symmetric2D.builder, 2);
+					}
+					if (info::mesh->dimension == 3) {
+						examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.symmetric3D.builder, 0);
+						examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), *material.model.symmetric3D.builder, 1);
+						examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), *material.model.symmetric3D.builder, 2);
+						examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), *material.model.symmetric3D.builder, 3);
+						examineMaterialParameter(mat->name, "KYZ", mat->thermal_conductivity.values.get(1, 2), *material.model.symmetric3D.builder, 4);
+						examineMaterialParameter(mat->name, "KXZ", mat->thermal_conductivity.values.get(0, 2), *material.model.symmetric3D.builder, 5);
+					}
+					break;
+				case ThermalConductivityConfiguration::MODEL::ANISOTROPIC:
+					eslog::info("         CONDUCTIVITY:                                                            ANISOTROPIC \n");
+					if (info::mesh->dimension == 2) {
+						examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.anisotropic.builder, 0);
+						examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), *material.model.anisotropic.builder, 1);
+						examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), *material.model.anisotropic.builder, 2);
+						examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(1, 0), *material.model.anisotropic.builder, 3);
+					}
+					if (info::mesh->dimension == 3) {
+						examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.anisotropic.builder, 0);
+						examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), *material.model.anisotropic.builder, 1);
+						examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), *material.model.anisotropic.builder, 2);
+						examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), *material.model.anisotropic.builder, 3);
+						examineMaterialParameter(mat->name, "KYZ", mat->thermal_conductivity.values.get(1, 2), *material.model.anisotropic.builder, 4);
+						examineMaterialParameter(mat->name, "KXZ", mat->thermal_conductivity.values.get(0, 2), *material.model.anisotropic.builder, 5);
+						examineMaterialParameter(mat->name, "KYX", mat->thermal_conductivity.values.get(1, 0), *material.model.anisotropic.builder, 6);
+						examineMaterialParameter(mat->name, "KZY", mat->thermal_conductivity.values.get(2, 1), *material.model.anisotropic.builder, 7);
+						examineMaterialParameter(mat->name, "KZX", mat->thermal_conductivity.values.get(2, 0), *material.model.anisotropic.builder, 8);
+					}
+					break;
 				}
-				break;
-			case ThermalConductivityConfiguration::MODEL::SYMMETRIC:
-				eslog::info("         CONDUCTIVITY:                                                              SYMMETRIC \n");
-				if (info::mesh->dimension == 2) {
-					examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.symmetric2D.builder, 0);
-					examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), *material.model.symmetric2D.builder, 1);
-					examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), *material.model.symmetric2D.builder, 2);
-				}
-				if (info::mesh->dimension == 3) {
-					examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.symmetric3D.builder, 0);
-					examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), *material.model.symmetric3D.builder, 1);
-					examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), *material.model.symmetric3D.builder, 2);
-					examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), *material.model.symmetric3D.builder, 3);
-					examineMaterialParameter(mat->name, "KYZ", mat->thermal_conductivity.values.get(1, 2), *material.model.symmetric3D.builder, 4);
-					examineMaterialParameter(mat->name, "KXZ", mat->thermal_conductivity.values.get(0, 2), *material.model.symmetric3D.builder, 5);
-				}
-				break;
-			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC:
-				eslog::info("         CONDUCTIVITY:                                                            ANISOTROPIC \n");
-				if (info::mesh->dimension == 2) {
-					examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.anisotropic.builder, 0);
-					examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), *material.model.anisotropic.builder, 1);
-					examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), *material.model.anisotropic.builder, 2);
-					examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(1, 0), *material.model.anisotropic.builder, 3);
-				}
-				if (info::mesh->dimension == 3) {
-					examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.anisotropic.builder, 0);
-					examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), *material.model.anisotropic.builder, 1);
-					examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), *material.model.anisotropic.builder, 2);
-					examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), *material.model.anisotropic.builder, 3);
-					examineMaterialParameter(mat->name, "KYZ", mat->thermal_conductivity.values.get(1, 2), *material.model.anisotropic.builder, 4);
-					examineMaterialParameter(mat->name, "KXZ", mat->thermal_conductivity.values.get(0, 2), *material.model.anisotropic.builder, 5);
-					examineMaterialParameter(mat->name, "KYX", mat->thermal_conductivity.values.get(1, 0), *material.model.anisotropic.builder, 6);
-					examineMaterialParameter(mat->name, "KZY", mat->thermal_conductivity.values.get(2, 1), *material.model.anisotropic.builder, 7);
-					examineMaterialParameter(mat->name, "KZX", mat->thermal_conductivity.values.get(2, 0), *material.model.anisotropic.builder, 8);
-				}
-				break;
 			}
 			eslog::info("                                                                                               \n");
 		}
@@ -330,23 +358,53 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 		if (info::mesh->dimension == 3) {
 			printMaterials(info::ecf->heat_transfer_3d.material_set);
 		}
-		builders.push_back(new ThermalConductivity(*this));
+		if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
+		{
+			builders.push_back(new ThermalConductivitySimd(*this));
+		}
+		else
+		{
+			builders.push_back(new ThermalConductivity(*this));
+		}
+
 		eslog::info(" ============================================================================================= \n");
 	}
 
 	builders.push_back(new MaterialMassBuilder(*this));
 
 	if (info::mesh->dimension == 2 && info::ecf->heat_transfer_2d.diffusion_split) {
+		if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
+		{
+			eslog::error("EXPERIMENTAL ASSEMBLER DOESNT SUPPORT GRADIENT.\n");
+		}
 		Gradient(*this).buildAndExecute(*this);
 		builders.push_back(new DiffusionSplit(*this));
 	} else {
-		gradient.xi.resize(1);
+		if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
+		{
+			gradientSimd.xi.resize(1);
+		}
+		else
+		{
+			gradient.xi.resize(1);
+		}
 	}
 	if (info::mesh->dimension == 3 && info::ecf->heat_transfer_3d.diffusion_split) {
+		if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
+		{
+			eslog::error("EXPERIMENTAL ASSEMBLER DOESNT SUPPORT GRADIENT.\n");
+		}
 		Gradient(*this).buildAndExecute(*this);
 		builders.push_back(new DiffusionSplit(*this));
 	} else {
-		gradient.xi.resize(1);
+		if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
+		{
+			gradientSimd.xi.resize(1);
+		}
+		else
+		{
+			gradient.xi.resize(1);
+		}
 	}
 
 	if (configuration.translation_motions.size()) {
@@ -359,7 +417,14 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 		builders.push_back(new TranslationMotion(*this));
 	}
 
-	builders.push_back(new HeatStiffness(*this));
+	if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
+	{
+		builders.push_back(new HeatStiffnessSimd(*this));
+	}
+	else
+	{
+		builders.push_back(new HeatStiffness(*this));
+	}
 
 	if (configuration.temperature.size()) {
 		builders.push_back(new ExpressionsToBoundary(dirichlet.gp, "BOUNDARY TEMPERATURE"));
