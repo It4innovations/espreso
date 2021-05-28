@@ -241,22 +241,7 @@ struct ElementIntegration: public ElementOperatorBuilder {
 		kernel.integration.dND.addInput(kernel.integration.dN);
 		kernel.integration.dND.resize();
 		kernel.addParameter(kernel.integration.dND);
-
-		kernel.integrationSimd.jacobiInversion.addInput(kernel.coordsSimd.node);
-		kernel.integrationSimd.jacobiInversion.addInput(kernel.integration.dN);
-		kernel.integrationSimd.jacobiInversion.resizeAligned(SIMD::size * sizeof(double));
-		kernel.addParameter(kernel.integrationSimd.jacobiInversion);
-
-		kernel.integrationSimd.jacobiDeterminant.addInput(kernel.coordsSimd.node);
-		kernel.integrationSimd.jacobiDeterminant.addInput(kernel.integration.dN);
-		kernel.integrationSimd.jacobiDeterminant.resizeAligned(SIMD::size * sizeof(double));
-		kernel.addParameter(kernel.integrationSimd.jacobiDeterminant);
-
-		kernel.integrationSimd.dND.addInput(kernel.coordsSimd.node);
-		kernel.integrationSimd.dND.addInput(kernel.integration.dN);
-		kernel.integrationSimd.dND.resizeAligned(SIMD::size * sizeof(double));
-		kernel.addParameter(kernel.integrationSimd.dND);
-
+		
 		return true;
 	}
 

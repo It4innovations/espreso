@@ -143,11 +143,11 @@ struct Stiffness2DHeatIsotropicSimd: public Stiffness {
 		
 		double * __restrict__ pStiffness = stiffness.data;
 
-		SIMD scale = load(&thickness[gpindex * SIMD::size]) 
-				* load(&xi[gpindex * SIMD::size])
-				* load(&determinant[gpindex * SIMD::size])
-				* load(&weight[gpindex * SIMD::size])
-				* load(&conductivity[gpindex * SIMD::size]);
+		SIMD scale =  load(&thickness[gpindex * SIMD::size]) 
+					* load(&xi[gpindex * SIMD::size])
+					* load(&determinant[gpindex * SIMD::size])
+					* load(&weight[gpindex * SIMD::size])
+					* load(&conductivity[gpindex * SIMD::size]);
 
 		ADDMN2M2NSimd<nodes>(scale, &pDND[2 * nodes * gpindex * SIMD::size], pStiffness);
 	}

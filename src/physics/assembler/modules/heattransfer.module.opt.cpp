@@ -382,7 +382,7 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 	} else {
 		if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
 		{
-			gradientSimd.xi.resize(1);
+			gradientSimd.xi.resizeAligned(SIMD::size*sizeof(double), 1);
 		}
 		else
 		{
@@ -399,7 +399,7 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 	} else {
 		if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
 		{
-			gradientSimd.xi.resize(1);
+			gradientSimd.xi.resizeAligned(SIMD::size*sizeof(double), 1);
 		}
 		else
 		{

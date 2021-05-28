@@ -83,7 +83,15 @@ bool ExpressionsToElements::build(HeatTransferModuleOpt &kernel)
 			}
 		}
 	}
-	parameter.resize();
+	
+	if (kernel.gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
+	{
+		parameter.resizeAligned(SIMD::size*sizeof(double));
+	}
+	else
+	{
+		parameter.resize();
+	}
 	kernel.addParameter(parameter);
 	return true;
 }
