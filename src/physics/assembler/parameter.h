@@ -88,6 +88,7 @@ struct ParameterData {
 	virtual int increment(int interval) const =0;
 	virtual int increment(PerElementSize size, int interval) const =0;
 	virtual void resize(double init = .0) =0;
+	virtual void resizeAligned(size_t alignment, double init = .0) =0;
 	virtual ~ParameterData();
 
 	std::vector<int> isconst, update, version;
@@ -125,6 +126,7 @@ struct BoundaryParameterData: public ParameterData {
 	int increment(int interval) const;
 	int increment(PerElementSize size, int interval) const;
 	void resize(double init = .0);
+	void resizeAligned(size_t alignment, double init = .0);
 
 	int region;
 	int isset;

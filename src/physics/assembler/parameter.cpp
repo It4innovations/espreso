@@ -252,6 +252,14 @@ void BoundaryParameterData::resize(double init)
 	data = new serializededata<esint, double>(distribution, tarray<double>(datadistribution, 1, init));
 }
 
+void BoundaryParameterData::resizeAligned(size_t alignment, double init)
+{
+	/*Workaround for now.
+	Later data should be aligned on SIMD bounary to prevent split loads
+	Inspiration can be taken from ElementParameterData */
+	resize(init);
+}
+
 int BoundaryParameterData::increment(int interval) const
 {
 	return
