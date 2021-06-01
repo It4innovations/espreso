@@ -911,15 +911,23 @@ void Input::fillBoundaryRegions()
 	}
 	profiler::synccheckpoint("check_unnamed");
 
+	std::vector<int> frominterval, add;
+	frominterval.reserve(2 * _meshData.eregions.size());
+
 	for (int i = estart; i < 2; i++) {
 		for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion) {
-			int frominterval = 0, add = 0;
 			if (eregion->second.size() && _etypeDistribution[i] <= eregion->second.front() && eregion->second.front() < _etypeDistribution[i + 1]) {
-				frominterval = 1;
+				frominterval.push_back(1);
+			} else {
+				frominterval.push_back(0);
 			}
-			Communication::allReduce(&frominterval, &add, 1, MPI_INT, MPI_SUM);
-
-			if (add) {
+		}
+	}
+	add.resize(frominterval.size());
+	Communication::allReduce(frominterval.data(), add.data(), frominterval.size(), MPI_INT, MPI_SUM);
+	for (int i = estart, j = 0; i < 2; i++) {
+		for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion) {
+			if (add[j++]) {
 				info::mesh->boundaryRegions.push_back(new BoundaryRegionStore(eregion->first));
 				info::mesh->boundaryRegions.back()->dimension = info::mesh->boundaryRegions.back()->originalDimension = 2 - i;
 
@@ -979,17 +987,21 @@ void Input::fillElementRegions()
 	size_t threads = info::env::OMP_NUM_THREADS;
 	size_t estart = info::mesh->dimension == 3 ? 0 : 1;
 
-	for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion) {
-		int fromelements = 0, add = 0;
+	std::vector<int> fromelements(_meshData.eregions.size()), add(_meshData.eregions.size());
+	size_t i = 0;
+	for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion, ++i) {
 		if (eregion->second.size() && eregion->second.front() < _etypeDistribution[estart]) {
-			fromelements = 1;
+			fromelements[i] = 1;
 		}
+	}
+	Communication::allReduce(fromelements.data(), add.data(), fromelements.size(), MPI_INT, MPI_SUM);
+	i = 0;
+	for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion, ++i) {
 		auto it = std::lower_bound(eregion->second.begin(), eregion->second.end(), _etypeDistribution.back());
 		if (it != eregion->second.end()) {
 			eregion->second.resize(it - eregion->second.begin());
 		}
-		Communication::allReduce(&fromelements, &add, 1, MPI_INT, MPI_SUM);
-		if (add) {
+		if (add[i]) {
 			info::mesh->elementsRegions.push_back(new ElementsRegionStore(eregion->first));
 			info::mesh->elementsRegions.back()->elements = new serializededata<esint, esint>(1, { threads, eregion->second });
 		}
