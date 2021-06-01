@@ -38,6 +38,7 @@ size_t ElementsRegionStore::packedFullSize() const
 	packedSize += utils::packedSize(bodyElements);
 	packedSize += utils::packedSize(bodyFaces);
 	packedSize += utils::packedSize(contact);
+	packedSize += utils::packedSize(orientation);
 	return packedSize;
 }
 
@@ -50,6 +51,7 @@ void ElementsRegionStore::packFull(char* &p) const
 	utils::pack(bodyElements, p);
 	utils::pack(bodyFaces, p);
 	utils::pack(contact, p);
+	utils::pack(orientation, p);
 }
 
 void ElementsRegionStore::unpackFull(const char* &p)
@@ -61,6 +63,7 @@ void ElementsRegionStore::unpackFull(const char* &p)
 	utils::unpack(bodyElements, p);
 	utils::unpack(bodyFaces, p);
 	utils::unpack(contact, p);
+	utils::unpack(orientation, p);
 }
 
 size_t ElementsRegionStore::packedSize() const

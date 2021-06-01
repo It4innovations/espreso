@@ -1004,6 +1004,10 @@ void Input::fillElementRegions()
 		if (add[i]) {
 			info::mesh->elementsRegions.push_back(new ElementsRegionStore(eregion->first));
 			info::mesh->elementsRegions.back()->elements = new serializededata<esint, esint>(1, { threads, eregion->second });
+			auto it = _meshData.orientation.find(eregion->first);
+			if (it != _meshData.orientation.end()) {
+				info::mesh->elementsRegions.back()->orientation = it->second;
+			}
 		}
 	}
 	profiler::syncend("fill_element_regions");
