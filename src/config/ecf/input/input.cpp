@@ -95,6 +95,11 @@ InputConfiguration::InputConfiguration()
 
 	ecfdescription->addSeparator();
 
+	REGISTER(node_regions, ECFMetaData()
+			.setdescription({ "List of transformations", "Transformation" })
+			.setdatatype({ ECFDataType::ELEMENTS_REGION })
+			.setpattern({ "ALL_ELEMENTS" }));
+
 	REGISTER(transformations, ECFMetaData()
 			.setdescription({ "List of transformations", "Transformation" })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })

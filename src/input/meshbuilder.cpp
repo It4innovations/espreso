@@ -65,6 +65,32 @@ void MeshBuilder::build()
 	}
 	profiler::synccheckpoint("transformation");
 
+	for (auto nreg = info::ecf->input.node_regions.begin(); nreg != info::ecf->input.node_regions.end(); ++nreg) {
+		auto &nodes = nregions[nreg->first];
+		Point origin(nreg->second.x, nreg->second.y, nreg->second.z);
+		Point end(nreg->second.x + nreg->second.lx, nreg->second.y + nreg->second.ly, nreg->second.z + nreg->second.lz);
+		switch (nreg->second.shape) {
+		case InputNodeRegionConfiguration::SHAPE::CIRCLE:
+			for (size_t i = 0; i < coordinates.size(); ++i) {
+				if ((origin - coordinates[i]).length() <= nreg->second.radius) {
+					nodes.push_back(nIDs[i]);
+				}
+			}
+			break;
+		case InputNodeRegionConfiguration::SHAPE::BLOCK:
+			for (size_t i = 0; i < coordinates.size(); ++i) {
+				if (
+						origin.x <= coordinates[i].x && coordinates[i].x <= end.x &&
+						origin.y <= coordinates[i].y && coordinates[i].y <= end.y &&
+						origin.z <= coordinates[i].z && coordinates[i].z <= end.z) {
+					nodes.push_back(nIDs[i]);
+				}
+			}
+			break;
+		}
+	}
+	profiler::synccheckpoint("node_regions");
+
 //	Communication::serialize([&] () {
 ////		{ std::ofstream os("XnIDs", std::ofstream::app); os << nIDs; os.close(); }
 ////		{ std::ofstream os("Xcoordinates", std::ofstream::app); os << coordinates; os.close(); }

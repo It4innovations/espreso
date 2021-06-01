@@ -6,6 +6,7 @@
 #include "contactinterface.h"
 #include "decomposition.h"
 #include "meshgeneration.h"
+#include "noderegion.h"
 #include "transformation.h"
 
 #include <string>
@@ -57,6 +58,7 @@ struct InputConfiguration: public ECFDescription {
 	int third_party_scalability_limit;
 
 	std::map<std::string, InputTransformationConfiguration> transformations;
+	std::map<std::string, InputNodeRegionConfiguration> node_regions;
 	DecompositionConfiguration decomposition;
 	MeshGenerationConfiguration generation;
 	std::map<std::string, ContactInterfaceConfiguration> contact_interfaces;
