@@ -1,0 +1,124 @@
+ ESPRESO: STARTED
+ ESPRESO: CONFIGURATION READ
+ ====================================== ESPRESO RUN INFO ===================================== 
+ ============================================================================================= 
+ == CXX                                                                              mpicxx == 
+ == CXXFLAGS                                               -fopenmp -std=c++11 -Wall -O0 -g == 
+ == COMMIT                                         a93e42eea7b1eb9149e87432816334ec80109801 == 
+ == BINARY          /home/mec059/projects/espreso/build//home/mec059/projects/espreso/build ==
+ ==                                                                                /espreso == 
+ == DATE [YYYY-MM-DD]                                                            2021-06-01 == 
+ == TIME [HH-MM-SS]                                                                12-23-14 == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == COMMAND                                                                         espreso == 
+ == MPI_COMM_WORLD                                                                        1 == 
+ == OMP_NUM_THREADS                                                                       1 == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == NUMBER OF LOADERS                                                                     1 == 
+ == NUMBER OF WRITTERS                                                                    1 == 
+ == STORING MODE                                                         SEPARETED P-THREAD == 
+ ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == 
+ == RUN PATH                         /home/mec059/projects/espreso/benchmarks/input/crystal == 
+ == ECF                  /home/mec059/projects/espreso/benchmarks/input/crystal/espreso.ecf == 
+ == MESH                 /home/mec059/projects/espreso/benchmarks/input/crystal/crystal.msh == 
+ == OUTPUT                   /home/mec059/projects/espreso/benchmarks/input/crystal/results ==
+ ==                                                              /2021-06-01-at-12h-23m-14s == 
+ ============================================================================================= 
+ ESPRESO: RUN INITIALIZED
+ ESPRESO: MESH LOADED
+ ESPRESO: MESH PREPROCESSED
+ ====================================== MESH STATISTICS ====================================== 
+ ============================================================================================= 
+  GEOMETRY                               :              MIN              MAX           LENGTH
+  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  
+                           X-COORDINATES :         0.000000         1.000000         1.000000
+                           Y-COORDINATES :         0.000000         1.000000         1.000000
+                           Z-COORDINATES :         0.000000         1.000000         1.000000
+ ============================================================================================= 
+                                              REGION NAME :         ELEMENTS            NODES
+ ============================================================================================= 
+  TOTAL NUMBER OF NODES                                   :                               433
+  TOTAL NUMBER OF ELEMENTS                                :            1,627
+                                                   TETRA4 :            1,627
+  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  
+
+  ELEMS REGIONS SIZES [ 10]                               :            1,627              765
+                                             ALL_ELEMENTS :                                  
+                                                    poly1 :              201               99
+                                                   poly10 :              207               97
+                                                    poly2 :              253              110
+                                                    poly3 :              146               71
+                                                    poly4 :               91               46
+                                                    poly5 :              123               59
+                                                    poly6 :              170               76
+                                                    poly7 :              171               79
+                                                    poly8 :               94               46
+                                                    poly9 :              171               82
+
+  FACES REGIONS SIZES [  0]                               :                0                0
+
+  EDGES REGIONS SIZES [  0]                               :                0                0
+
+  NODES REGIONS SIZES [  7]                               :                               367
+                                                ALL_NODES :                                  
+                                                      BOD :                                 1
+                                                       x0 :                                73
+                                                       x1 :                                49
+                                                       y0 :                                77
+                                                       y1 :                                56
+                                                       z0 :                                54
+                                                       z1 :                                57
+ ============================================================================================= 
+  BODY STATISTICS        ELEMENTS REGION :         ELEMENTS            FACES       PROPORTION
+ ============================================================================================= 
+                            ALL_ELEMENTS :            1,627              570         1 BODIES
+  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  
+                                   poly1 :              201               67         0.123540
+                                  poly10 :              207               16         0.127228
+                                   poly2 :              253               93         0.155501
+                                   poly3 :              146               62         0.089736
+                                   poly4 :               91               30         0.055931
+                                   poly5 :              123               50         0.075599
+                                   poly6 :              170               80         0.104487
+                                   poly7 :              171               64         0.105101
+                                   poly8 :               94               43         0.057775
+                                   poly9 :              171               65         0.105101
+ ============================================================================================= 
+ ============================================================================================= 
+ ================================== DECOMPOSITION STATISTICS ================================= 
+ ============================================================================================= 
+  PER CLUSTER STATISTICS              MIN          MAX          AVG          VAR    IMBALANCE 
+  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  
+  DOMAINS                  :            4            4         4.00         0.00         1.00 
+  UNIQUE NODES             :          433          433          433            0         1.00 
+  NODES                    :          433          433          433            0         1.00 
+  INTERFACE NODES          :            0            0            0            0         0.00 
+  INTERFACE NODES RATIO    :         0.00         0.00         0.00         0.00         0.00 
+  ELEMENTS                 :        1,627        1,627        1,627            0         1.00 
+  INTERFACE ELEMENTS       :            0            0            0            0         0.00 
+  INTERFACE ELEMENTS RATIO :         0.00         0.00         0.00         0.00         0.00 
+  NEIGHBORS                :            0            0         0.00         0.00         0.00 
+ ============================================================================================= 
+  PER DOMAIN STATISTICS               MIN          MAX          AVG          VAR    IMBALANCE 
+  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  
+  NODES                    :          123          140          133            3         1.14 
+  INTERFACE NODES          :           35           56           47            1         1.60 
+  INTERFACE NODES RATIO    :         0.28         0.42         0.35         0.00         1.47 
+  ELEMENTS                 :          370          446          406           22         1.21 
+  INTERFACE ELEMENTS       :           48           82           67            2         1.71 
+  INTERFACE ELEMENTS RATIO :         0.13         0.21         0.16         0.00         1.59 
+  NEIGHBORS DOMAINS        :            3            3         3.00         0.00         1.00 
+ ============================================================================================= 
+ ESPRESO: DATABASE CONVERTED
+
+ ======================================== RUN FINISHED ======================================= 
+ == OVERALL TIME ============================================================================= 
+ ============================================ avg. [s]  < min [s] -  max [s]> [  %  ] [ imb ]   
+  ESPRESO STARTED AT                          0.228074  <0.228074 - 0.228074> [51.82] [ 1.00]
+   ESPRESO: CONFIGURATION READ                0.145491  <0.145491 - 0.145491> [74.46] [ 1.00]
+   ESPRESO: RUN INITIALIZED                   0.000876  <0.000876 - 0.000876> [ 0.45] [ 1.00]
+   ESPRESO: MESH LOADED                       0.010553  <0.010553 - 0.010553> [ 5.40] [ 1.00]
+   ESPRESO: MESH PREPROCESSED                 0.037882  <0.037882 - 0.037882> [19.39] [ 1.00]
+   ESPRESO: DATABASE CONVERTED                0.000595  <0.000595 - 0.000595> [ 0.30] [ 1.00]
+  ESPRESO TOTAL DURATION                      0.195396  <0.195396 - 0.195396> [44.40] [ 1.00]
+ ============================================================================================= 

@@ -1,0 +1,100 @@
+
+VARIABLES {
+  C11     141e9;
+  C12    64.8e9;
+  C44    48.7e9;
+}
+
+INPUT {
+  FORMAT                 NEPER;
+  PATH             crystal.msh;
+  LOADER                 POSIX;
+
+  CONVERT_DATABASE        TRUE;
+
+  NODE_REGIONS {
+    BOD  { SHAPE CIRCLE; X 0; Y 0; Z 0; RADIUS 1e-9; }
+  }
+
+  DECOMPOSITION {
+    DOMAINS                                4;
+    PARALLEL_DECOMPOSER             PARMETIS;
+    PARMETIS_OPTIONS {
+      TOLERANCE                         1.02;
+    }
+  }
+}
+
+PHYSICS STRUCTURAL_MECHANICS_3D;
+
+STRUCTURAL_MECHANICS_3D {
+  LOAD_STEPS   1;
+
+  MATERIALS {
+    1 {
+
+      DENS   7850;
+      CP        1;
+
+      LINEAR_ELASTIC_PROPERTIES {
+        MODEL     ANISOTROPIC;
+        ORIENTATION      TRUE;
+
+        MIXY             0.3;
+        EX             2.1E9;
+
+        D11            [C11];
+        D22            [C11];
+        D33            [C11];
+        D44            [C44];
+        D55            [C44];
+        D66            [C44];
+
+        D12            [C12];
+        D23            [C12];
+        D13            [C12];
+      }
+
+      THERMAL_EXPANSION {
+        TEX             0;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   1;
+  }
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER   DIRICHLET;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION    ANALYTIC;
+        B0_TYPE            KERNELS;
+        PRECISION             1e-9;
+      }
+
+      DISPLACEMENT {
+        z0   { X 0 ; Y 0 ; Z 0; }
+      }
+
+      NORMAL_PRESSURE {
+        z1   9.8066;
+      }
+    }
+  }
+}
+
+OUTPUT {
+  STORE_RESULTS    ALL;
+}
+
+
+
