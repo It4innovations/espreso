@@ -15,6 +15,8 @@ struct LinearElasticPropertiesConfiguration: public ECFDescription {
 		ANISOTROPIC
 	};
 
+	bool orientation;
+
 	MODEL model;
 	DIMENSION *dimension;
 

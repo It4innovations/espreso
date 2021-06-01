@@ -36,7 +36,7 @@ StructuralMechanics3DKernel::~StructuralMechanics3DKernel()
 
 }
 
-void StructuralMechanics3DKernel::assembleLinearElasticMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, MatrixDense &K) const
+void StructuralMechanics3DKernel::assembleLinearElasticMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, MatrixDense &K, Point &orientation) const
 {
 	double Ex, Ey, Ez, miXY, miXZ, miYZ, Gx, Gy, Gz;
 	Point p(coordinates[0], coordinates[1], coordinates[2]);
@@ -44,6 +44,8 @@ void StructuralMechanics3DKernel::assembleLinearElasticMaterialMatrix(esint node
 	Evaluator::Params params;
 	params.coords(3, coordinates);
 	params.temp(&temp);
+
+	MatrixDense TCT(6, 6), T(6, 6), C(6, 6), CT(6, 6);
 
 	switch (mat->linear_elastic_properties.model) {
 
@@ -53,84 +55,85 @@ void StructuralMechanics3DKernel::assembleLinearElasticMaterialMatrix(esint node
 
 		double EE = Ex / ((1 + miXY) * (1 - 2 * miXY));
 
-		K(node,  0) = EE * (1.0 - miXY);
-		K(node,  1) = EE * (1.0 - miXY);
-		K(node,  2) = EE * (1.0 - miXY);
-		K(node,  3) = EE * (0.5 - miXY);
-		K(node,  4) = EE * (0.5 - miXY);
-		K(node,  5) = EE * (0.5 - miXY);
+		C(0, 0) = EE * (1.0 - miXY);
+		C(1, 1) = EE * (1.0 - miXY);
+		C(2, 2) = EE * (1.0 - miXY);
+		C(3, 3) = EE * (0.5 - miXY);
+		C(4, 4) = EE * (0.5 - miXY);
+		C(5, 5) = EE * (0.5 - miXY);
 
-		K(node,  6) = EE * miXY;
-		K(node,  7) = EE * miXY;
-		K(node,  8) = 0;
-		K(node,  9) = 0;
-		K(node, 10) = 0;
-		K(node, 11) = EE * miXY;
-		K(node, 12) = 0;
-		K(node, 13) = 0;
-		K(node, 14) = 0;
-		K(node, 15) = 0;
-		K(node, 16) = 0;
-		K(node, 17) = 0;
-		K(node, 18) = 0;
-		K(node, 19) = 0;
-		K(node, 20) = 0;
-		K(node, 21) = EE * miXY;
-		K(node, 22) = EE * miXY;
-		K(node, 23) = EE * miXY;
-		K(node, 24) = 0;
-		K(node, 25) = 0;
-		K(node, 26) = 0;
-		K(node, 27) = 0;
-		K(node, 28) = 0;
-		K(node, 29) = 0;
-		K(node, 30) = 0;
-		K(node, 31) = 0;
-		K(node, 32) = 0;
-		K(node, 33) = 0;
-		K(node, 34) = 0;
-		K(node, 35) = 0;
+		C(0, 1) = EE * miXY;
+		C(0, 2) = EE * miXY;
+		C(0, 3) = 0;
+		C(0, 4) = 0;
+		C(0, 5) = 0;
+		C(1, 2) = EE * miXY;
+		C(1, 3) = 0;
+		C(1, 4) = 0;
+		C(1, 5) = 0;
+		C(2, 3) = 0;
+		C(2, 4) = 0;
+		C(2, 5) = 0;
+		C(3, 4) = 0;
+		C(3, 5) = 0;
+		C(4, 5) = 0;
+
+		C(1, 0) = EE * miXY;
+		C(2, 0) = EE * miXY;
+		C(2, 1) = EE * miXY;
+		C(3, 0) = 0;
+		C(3, 1) = 0;
+		C(3, 2) = 0;
+		C(4, 0) = 0;
+		C(4, 1) = 0;
+		C(4, 2) = 0;
+		C(4, 3) = 0;
+		C(5, 0) = 0;
+		C(5, 1) = 0;
+		C(5, 2) = 0;
+		C(5, 3) = 0;
+		C(5, 4) = 0;
 	} break;
 
 	case LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC: {
-		K(node,  0) = mat->linear_elastic_properties.anisotropic.get(0, 0).evaluator->eval(params);
-		K(node,  1) = mat->linear_elastic_properties.anisotropic.get(1, 1).evaluator->eval(params);
-		K(node,  2) = mat->linear_elastic_properties.anisotropic.get(2, 2).evaluator->eval(params);
-		K(node,  3) = mat->linear_elastic_properties.anisotropic.get(3, 3).evaluator->eval(params);
-		K(node,  4) = mat->linear_elastic_properties.anisotropic.get(4, 4).evaluator->eval(params);
-		K(node,  5) = mat->linear_elastic_properties.anisotropic.get(5, 5).evaluator->eval(params);
+		C(0, 0) = mat->linear_elastic_properties.anisotropic.get(0, 0).evaluator->eval(params);
+		C(1, 1) = mat->linear_elastic_properties.anisotropic.get(1, 1).evaluator->eval(params);
+		C(2, 2) = mat->linear_elastic_properties.anisotropic.get(2, 2).evaluator->eval(params);
+		C(3, 3) = mat->linear_elastic_properties.anisotropic.get(3, 3).evaluator->eval(params);
+		C(4, 4) = mat->linear_elastic_properties.anisotropic.get(4, 4).evaluator->eval(params);
+		C(5, 5) = mat->linear_elastic_properties.anisotropic.get(5, 5).evaluator->eval(params);
 
-		K(node,  6) = mat->linear_elastic_properties.anisotropic.get(0, 1).evaluator->eval(params);
-		K(node,  7) = mat->linear_elastic_properties.anisotropic.get(0, 2).evaluator->eval(params);
-		K(node,  8) = mat->linear_elastic_properties.anisotropic.get(0, 3).evaluator->eval(params);
-		K(node,  9) = mat->linear_elastic_properties.anisotropic.get(0, 4).evaluator->eval(params);
-		K(node, 10) = mat->linear_elastic_properties.anisotropic.get(0, 5).evaluator->eval(params);
-		K(node, 11) = mat->linear_elastic_properties.anisotropic.get(1, 2).evaluator->eval(params);
-		K(node, 12) = mat->linear_elastic_properties.anisotropic.get(1, 3).evaluator->eval(params);
-		K(node, 13) = mat->linear_elastic_properties.anisotropic.get(1, 4).evaluator->eval(params);
-		K(node, 14) = mat->linear_elastic_properties.anisotropic.get(1, 5).evaluator->eval(params);
-		K(node, 15) = mat->linear_elastic_properties.anisotropic.get(2, 3).evaluator->eval(params);
-		K(node, 16) = mat->linear_elastic_properties.anisotropic.get(2, 4).evaluator->eval(params);
-		K(node, 17) = mat->linear_elastic_properties.anisotropic.get(2, 5).evaluator->eval(params);
-		K(node, 18) = mat->linear_elastic_properties.anisotropic.get(3, 4).evaluator->eval(params);
-		K(node, 19) = mat->linear_elastic_properties.anisotropic.get(3, 5).evaluator->eval(params);
-		K(node, 20) = mat->linear_elastic_properties.anisotropic.get(4, 5).evaluator->eval(params);
+		C(0, 1) = mat->linear_elastic_properties.anisotropic.get(0, 1).evaluator->eval(params);
+		C(0, 2) = mat->linear_elastic_properties.anisotropic.get(0, 2).evaluator->eval(params);
+		C(0, 3) = mat->linear_elastic_properties.anisotropic.get(0, 3).evaluator->eval(params);
+		C(0, 4) = mat->linear_elastic_properties.anisotropic.get(0, 4).evaluator->eval(params);
+		C(0, 5) = mat->linear_elastic_properties.anisotropic.get(0, 5).evaluator->eval(params);
+		C(1, 2) = mat->linear_elastic_properties.anisotropic.get(1, 2).evaluator->eval(params);
+		C(1, 3) = mat->linear_elastic_properties.anisotropic.get(1, 3).evaluator->eval(params);
+		C(1, 4) = mat->linear_elastic_properties.anisotropic.get(1, 4).evaluator->eval(params);
+		C(1, 5) = mat->linear_elastic_properties.anisotropic.get(1, 5).evaluator->eval(params);
+		C(2, 3) = mat->linear_elastic_properties.anisotropic.get(2, 3).evaluator->eval(params);
+		C(2, 4) = mat->linear_elastic_properties.anisotropic.get(2, 4).evaluator->eval(params);
+		C(2, 5) = mat->linear_elastic_properties.anisotropic.get(2, 5).evaluator->eval(params);
+		C(3, 4) = mat->linear_elastic_properties.anisotropic.get(3, 4).evaluator->eval(params);
+		C(3, 5) = mat->linear_elastic_properties.anisotropic.get(3, 5).evaluator->eval(params);
+		C(4, 5) = mat->linear_elastic_properties.anisotropic.get(4, 5).evaluator->eval(params);
 
-		K(node, 21) = K(node,  6);
-		K(node, 22) = K(node,  7);
-		K(node, 23) = K(node, 11);
-		K(node, 24) = K(node,  8);
-		K(node, 25) = K(node, 12);
-		K(node, 26) = K(node, 15);
-		K(node, 27) = K(node,  9);
-		K(node, 28) = K(node, 13);
-		K(node, 29) = K(node, 16);
-		K(node, 30) = K(node, 18);
-		K(node, 31) = K(node, 10);
-		K(node, 32) = K(node, 14);
-		K(node, 33) = K(node, 17);
-		K(node, 34) = K(node, 19);
-		K(node, 35) = K(node, 20);
+		C(1, 0) = K(node,  6);
+		C(2, 0) = K(node,  7);
+		C(2, 1) = K(node, 11);
+		C(3, 0) = K(node,  8);
+		C(3, 1) = K(node, 12);
+		C(3, 2) = K(node, 15);
+		C(4, 0) = K(node,  9);
+		C(4, 1) = K(node, 13);
+		C(4, 2) = K(node, 16);
+		C(4, 3) = K(node, 18);
+		C(5, 0) = K(node, 10);
+		C(5, 1) = K(node, 14);
+		C(5, 2) = K(node, 17);
+		C(5, 3) = K(node, 19);
+		C(5, 4) = K(node, 20);
 	} break;
 
 	case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC: {
@@ -159,47 +162,109 @@ void StructuralMechanics3DKernel::assembleLinearElasticMaterialMatrix(esint node
 		double dyz = Ez * (miYZ + miYX * miXZ) / ksi;
 		double dzz = Ez * (1 - miYX * miXY) / ksi;
 
-		K(node,  0) = dxx;
-		K(node,  1) = dyy;
-		K(node,  2) = dzz;
-		K(node,  3) = Gx;
-		K(node,  4) = Gz;
-		K(node,  5) = Gy;
+		C(0, 0) = dxx;
+		C(1, 1) = dyy;
+		C(2, 2) = dzz;
+		C(3, 3) = Gx;
+		C(4, 4) = Gz;
+		C(5, 5) = Gy;
 
-		K(node,  6) = dxy;
-		K(node,  7) = dxz;
-		K(node,  8) = 0;
-		K(node,  9) = 0;
-		K(node, 10) = 0;
-		K(node, 11) = dyz;
-		K(node, 12) = 0;
-		K(node, 13) = 0;
-		K(node, 14) = 0;
-		K(node, 15) = 0;
-		K(node, 16) = 0;
-		K(node, 17) = 0;
-		K(node, 18) = 0;
-		K(node, 19) = 0;
-		K(node, 20) = 0;
-		K(node, 21) = dxy;
-		K(node, 22) = dxz;
-		K(node, 23) = dyz;
-		K(node, 24) = 0;
-		K(node, 25) = 0;
-		K(node, 26) = 0;
-		K(node, 27) = 0;
-		K(node, 28) = 0;
-		K(node, 29) = 0;
-		K(node, 30) = 0;
-		K(node, 31) = 0;
-		K(node, 32) = 0;
-		K(node, 33) = 0;
-		K(node, 34) = 0;
-		K(node, 35) = 0;
+		C(0, 1) = dxy;
+		C(0, 2) = dxz;
+		C(0, 3) = 0;
+		C(0, 4) = 0;
+		C(0, 5) = 0;
+		C(1, 2) = dyz;
+		C(1, 3) = 0;
+		C(1, 4) = 0;
+		C(1, 5) = 0;
+		C(2, 3) = 0;
+		C(2, 4) = 0;
+		C(2, 5) = 0;
+		C(3, 4) = 0;
+		C(3, 5) = 0;
+		C(4, 5) = 0;
+
+		C(1, 0) = dxy;
+		C(2, 0) = dxz;
+		C(2, 1) = dyz;
+		C(3, 0) = 0;
+		C(3, 1) = 0;
+		C(3, 2) = 0;
+		C(4, 0) = 0;
+		C(4, 1) = 0;
+		C(4, 2) = 0;
+		C(4, 3) = 0;
+		C(5, 0) = 0;
+		C(5, 1) = 0;
+		C(5, 2) = 0;
+		C(5, 3) = 0;
+		C(5, 4) = 0;
 	} break;
 
 	default:
 		eslog::error("Structural mechanics 3D not supports set material model.\n");
+	}
+
+	if (mat->linear_elastic_properties.orientation) {
+		Point angle = -orientation * (M_PI / 180);
+
+		T[0][0] = std::pow(std::cos(angle.x), 2.0) * std::pow(std::cos(angle.z), 2.0) - std::sin(angle.x * 2.0) * std::sin(angle.z * 2.0) * std::cos(angle.y) * (1.0 / 2.0) + std::pow(std::cos(angle.y), 2.0) * std::pow(std::sin(angle.x), 2.0) * std::pow(std::sin(angle.z), 2.0);
+		T[0][1] = std::pow(std::cos(angle.z), 2.0) * std::pow(std::sin(angle.x), 2.0) + std::sin(angle.x * 2.0) * std::sin(angle.z * 2.0) * std::cos(angle.y) * (1.0 / 2.0) + std::pow(std::cos(angle.x), 2.0) * std::pow(std::cos(angle.y), 2.0) * std::pow(std::sin(angle.z), 2.0);
+		T[0][2] = std::pow(std::sin(angle.y), 2.0) * std::pow(std::sin(angle.z), 2.0);
+		T[0][3] = std::sin(angle.z * 2.0) * std::sin(angle.x) * std::sin(angle.y) + std::sin(angle.y * 2.0) * std::cos(angle.x) * std::pow(std::sin(angle.z), 2.0);
+		T[0][4] = std::sin(angle.z * 2.0) * std::cos(angle.x) * std::sin(angle.y) - std::sin(angle.y * 2.0) * std::sin(angle.x) * std::pow(std::sin(angle.z), 2.0);
+		T[0][5] = std::sin(angle.x * 2.0) * std::pow(std::cos(angle.z), 2.0) + std::cos(angle.x * 2.0) * std::sin(angle.z * 2.0) * std::cos(angle.y) - std::sin(angle.x * 2.0) * std::pow(std::cos(angle.y), 2.0) * std::pow(std::sin(angle.z), 2.0);
+		T[1][0] = std::pow(std::cos(angle.x), 2.0) * std::pow(std::sin(angle.z), 2.0) + std::sin(angle.x * 2.0) * std::sin(angle.z * 2.0) * std::cos(angle.y) * (1.0 / 2.0) + std::pow(std::cos(angle.y), 2.0) * std::pow(std::cos(angle.z), 2.0) * std::pow(std::sin(angle.x), 2.0);
+		T[1][1] = std::pow(std::sin(angle.x), 2.0) * std::pow(std::sin(angle.z), 2.0) - std::sin(angle.x * 2.0) * std::sin(angle.z * 2.0) * std::cos(angle.y) * (1.0 / 2.0) + std::pow(std::cos(angle.x), 2.0) * std::pow(std::cos(angle.y), 2.0) * std::pow(std::cos(angle.z), 2.0);
+		T[1][2] = std::pow(std::cos(angle.z), 2.0) * std::pow(std::sin(angle.y), 2.0);
+		T[1][3] = -std::sin(angle.z * 2.0) * std::sin(angle.x) * std::sin(angle.y) + std::sin(angle.y * 2.0) * std::cos(angle.x) * std::pow(std::cos(angle.z), 2.0);
+		T[1][4] = -std::sin(angle.z * 2.0) * std::cos(angle.x) * std::sin(angle.y) - std::sin(angle.y * 2.0) * std::pow(std::cos(angle.z), 2.0) * std::sin(angle.x);
+		T[1][5] = std::sin(angle.x * 2.0) * std::pow(std::sin(angle.z), 2.0) - std::cos(angle.x * 2.0) * std::sin(angle.z * 2.0) * std::cos(angle.y) - std::sin(angle.x * 2.0) * std::pow(std::cos(angle.y), 2.0) * std::pow(std::cos(angle.z), 2.0);
+		T[2][0] = std::pow(std::sin(angle.x), 2.0) * std::pow(std::sin(angle.y), 2.0);
+		T[2][1] = std::pow(std::cos(angle.x), 2.0) * std::pow(std::sin(angle.y), 2.0);
+		T[2][2] = std::pow(std::cos(angle.y), 2.0);
+		T[2][3] = -std::sin(angle.y * 2.0) * std::cos(angle.x);
+		T[2][4] = std::sin(angle.y * 2.0) * std::sin(angle.x);
+		T[2][5] = -std::sin(angle.x * 2.0) * std::pow(std::sin(angle.y), 2.0);
+		T[3][0] = std::sin(angle.x * 2.0) * std::sin(angle.y) * std::sin(angle.z) * (-1.0 / 2.0) - std::sin(angle.y * 2.0) * std::cos(angle.z) * std::pow(std::sin(angle.x), 2.0) * (1.0 / 2.0);
+		T[3][1] = std::sin(angle.x * 2.0) * std::sin(angle.y) * std::sin(angle.z) * (1.0 / 2.0) - std::sin(angle.y * 2.0) * std::pow(std::cos(angle.x), 2.0) * std::cos(angle.z) * (1.0 / 2.0);
+		T[3][2] = std::sin(angle.y * 2.0) * std::cos(angle.z) * (1.0 / 2.0);
+		T[3][3] = std::cos(angle.y * 2.0) * std::cos(angle.x) * std::cos(angle.z) - std::cos(angle.y) * std::sin(angle.x) * std::sin(angle.z);
+		T[3][4] = -std::cos(angle.y * 2.0) * std::cos(angle.z) * std::sin(angle.x) - std::cos(angle.x) * std::cos(angle.y) * std::sin(angle.z);
+		T[3][5] = std::cos(angle.x * 2.0) * std::sin(angle.y) * std::sin(angle.z) + std::sin(angle.x * 2.0) * std::sin(angle.y * 2.0) * std::cos(angle.z) * (1.0 / 2.0);
+		T[4][0] = std::sin(angle.x * 2.0) * std::cos(angle.z) * std::sin(angle.y) * (1.0 / 2.0) - std::sin(angle.y * 2.0) * std::pow(std::sin(angle.x), 2.0) * std::sin(angle.z) * (1.0 / 2.0);
+		T[4][1] = std::sin(angle.x * 2.0) * std::cos(angle.z) * std::sin(angle.y) * (-1.0 / 2.0) - std::sin(angle.y * 2.0) * std::pow(std::cos(angle.x), 2.0) * std::sin(angle.z) * (1.0 / 2.0);
+		T[4][2] = std::sin(angle.y * 2.0) * std::sin(angle.z) * (1.0 / 2.0);
+		T[4][3] = std::cos(angle.y * 2.0) * std::cos(angle.x) * std::sin(angle.z) + std::cos(angle.y) * std::cos(angle.z) * std::sin(angle.x);
+		T[4][4] = -std::cos(angle.y * 2.0) * std::sin(angle.x) * std::sin(angle.z) + std::cos(angle.x) * std::cos(angle.y) * std::cos(angle.z);
+		T[4][5] = -std::cos(angle.x * 2.0) * std::cos(angle.z) * std::sin(angle.y) + std::sin(angle.x * 2.0) * std::sin(angle.y * 2.0) * std::sin(angle.z) * (1.0 / 2.0);
+		T[5][0] = std::sin(angle.z * 2.0) * std::pow(std::cos(angle.x), 2.0) * (-1.0 / 2.0) - std::cos(angle.z * 2.0) * std::sin(angle.x * 2.0) * std::cos(angle.y) * (1.0 / 2.0) + std::sin(angle.z * 2.0) * std::pow(std::cos(angle.y), 2.0) * std::pow(std::sin(angle.x), 2.0) * (1.0 / 2.0);
+		T[5][1] = std::sin(angle.z * 2.0) * std::pow(std::sin(angle.x), 2.0) * (-1.0 / 2.0) + std::cos(angle.z * 2.0) * std::sin(angle.x * 2.0) * std::cos(angle.y) * (1.0 / 2.0) + std::sin(angle.z * 2.0) * std::pow(std::cos(angle.x), 2.0) * std::pow(std::cos(angle.y), 2.0) * (1.0 / 2.0);
+		T[5][2] = std::sin(angle.z * 2.0) * std::pow(std::sin(angle.y), 2.0) * (1.0 / 2.0);
+		T[5][3] = std::cos(angle.z * 2.0) * std::sin(angle.x) * std::sin(angle.y) + std::sin(angle.y * 2.0) * std::sin(angle.z * 2.0) * std::cos(angle.x) * (1.0 / 2.0);
+		T[5][4] = std::cos(angle.z * 2.0) * std::cos(angle.x) * std::sin(angle.y) - std::sin(angle.y * 2.0) * std::sin(angle.z * 2.0) * std::sin(angle.x) * (1.0 / 2.0);
+		T[5][5] = std::sin(angle.x * 2.0) * std::sin(angle.z * 2.0) * (-1.0 / 2.0) + std::cos(angle.x * 2.0) * std::cos(angle.z * 2.0) * std::cos(angle.y) - std::sin(angle.x * 2.0) * std::sin(angle.z * 2.0) * std::pow(std::cos(angle.y), 2.0) * (1.0 / 2.0);
+
+		CT.multiply(C, T);
+		TCT.multiply(T, CT, 1, 0, true, false);
+	} else {
+		TCT = C;
+	}
+
+	size_t k = 0;
+	for (size_t i = 0; i < 6; i++) {
+		K(node, k++) = TCT(i, i);
+	}
+	for (size_t i = 0; i < 6; i++) {
+		for (size_t j = i + 1; j < 6; j++) {
+			K(node, k++) = TCT(i, j);
+		}
+	}
+	for (size_t i = 0; i < 6; i++) {
+		for (size_t j = 0; j < i; j++) {
+			K(node, k++) = TCT(i, j);
+		}
 	}
 }
 
@@ -608,8 +673,9 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 {
 	iterator.corotating = NULL;
 	iterator.fixed = NULL;
+	Point orientation;
 	int rsize = info::mesh->elements->regions->edataSize();
-	for (size_t r = 0; iterator.corotating == NULL && iterator.fixed == NULL && r < info::mesh->elementsRegions.size(); r++) {
+	for (size_t r = 0; r < info::mesh->elementsRegions.size(); r++) {
 		esint maskOffset = r / (8 * sizeof(esint));
 		esint bit = (esint)1 << (r % (8 * sizeof(esint)));
 		if (info::mesh->elements->regions->datatarray()[iterator.offset * rsize + maskOffset] & bit) {
@@ -628,6 +694,7 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 				}
 			} break;
 			}
+			orientation = info::mesh->elementsRegions[r]->orientation;
 		}
 	}
 
@@ -696,7 +763,7 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 
 		switch (iterator.material->material_model) {
 		case MaterialBaseConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC:
-			assembleLinearElasticMaterialMatrix(n, iterator.coordinates.data, iterator.material, step::time.current, iterator.temperature.data[n], K);
+			assembleLinearElasticMaterialMatrix(n, iterator.coordinates.data, iterator.material, step::time.current, iterator.temperature.data[n], K, orientation);
 			break;
 		case MaterialBaseConfiguration::MATERIAL_MODEL::HYPER_ELASTIC:
 //			assembleHyperElasticMaterialMatrix(n, iterator.coordinates, iterator.material, step::time.current, iterator.temperature[n], K);
@@ -1200,6 +1267,16 @@ void StructuralMechanics3DKernel::elementSolution(ElasticityElementIterator &ite
 		return;
 	}
 
+	Point orientation;
+	int rsize = info::mesh->elements->regions->edataSize();
+	for (size_t r = 0; r < info::mesh->elementsRegions.size(); r++) {
+		esint maskOffset = r / (8 * sizeof(esint));
+		esint bit = (esint)1 << (r % (8 * sizeof(esint)));
+		if (info::mesh->elements->regions->datatarray()[iterator.offset * rsize + maskOffset] & bit) {
+			orientation = info::mesh->elementsRegions[r]->orientation;
+		}
+	}
+
 	int size = iterator.element->nodes;
 
 	const std::vector<MatrixDense> &N = *(iterator.element->N);
@@ -1238,7 +1315,7 @@ void StructuralMechanics3DKernel::elementSolution(ElasticityElementIterator &ite
 
 		switch (iterator.material->material_model) {
 		case MaterialBaseConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC:
-			assembleLinearElasticMaterialMatrix(n, iterator.coordinates.data, iterator.material, step::time.current, iterator.temperature.data[n], K);
+			assembleLinearElasticMaterialMatrix(n, iterator.coordinates.data, iterator.material, step::time.current, iterator.temperature.data[n], K, orientation);
 			break;
 		case MaterialBaseConfiguration::MATERIAL_MODEL::HYPER_ELASTIC:
 //			assembleHyperElasticMaterialMatrix(n, iterator.coordinates, iterator.material, step::time.current, iterator.temperature[n], K);

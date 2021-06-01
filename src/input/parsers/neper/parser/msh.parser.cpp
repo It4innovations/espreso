@@ -11,8 +11,6 @@
 
 #include <numeric>
 
-#include "basis/utilities/print.h"
-
 using namespace espreso;
 
 NeperMshMesh::Keyword::Keyword(InputFilePack &pack, const char *c)

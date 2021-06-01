@@ -29,7 +29,7 @@ struct StructuralMechanics3DKernel: public StructuralMechanics3DBaseKernel
 	virtual void elementSolution(ElasticityElementIterator &iterator);
 	virtual void nodeSolution(ElasticityElementIterator &iterator);
 protected:
-	void assembleLinearElasticMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, MatrixDense &K) const;
+	void assembleLinearElasticMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, MatrixDense &K, Point &orientation) const;
 	void assembleHyperElasticMaterialMatrix(const MaterialBaseConfiguration *mat, MatrixDense &F, MatrixDense &C, MatrixDense &S) const;
 };
 

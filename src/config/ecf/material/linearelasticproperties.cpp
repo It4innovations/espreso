@@ -4,13 +4,18 @@
 #include "config/conditions.h"
 
 espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfiguration(DIMENSION *D)
-: model(MODEL::ISOTROPIC),
+: orientation(false),
+  model(MODEL::ISOTROPIC),
   dimension(D),
   poisson_ratio(3),
   young_modulus(3),
   shear_modulus(3),
   anisotropic(6)
 {
+	REGISTER(orientation, ECFMetaData()
+			.setdescription({ "Orientation from elements' regions." })
+			.setdatatype( { ECFDataType::BOOL } ));
+
 	REGISTER(model, ECFMetaData()
 			.setdescription({ "Tensors model." })
 			.setdatatype({ ECFDataType::OPTION })
