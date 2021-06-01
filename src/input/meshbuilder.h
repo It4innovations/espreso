@@ -40,6 +40,8 @@ struct MeshData {
 
 	std::map<std::string, std::vector<esint> > eregions; // elements regions <name, list of IDs>
 	std::map<std::string, std::vector<esint> > nregions; // nodes regions <name, list of IDs>
+
+	std::map<std::string, Point > orientation;
 };
 
 struct MeshBuilder: public MeshData {

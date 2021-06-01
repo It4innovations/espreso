@@ -39,6 +39,7 @@ InputConfiguration::InputConfiguration()
 			.addoption(ECFOption().setname("ENSIGHT").setdescription("Ensigh Gold format."))
 			.addoption(ECFOption().setname("VTK_LEGACY").setdescription("VTK Legacy format."))
 			.addoption(ECFOption().setname("NETGEN").setdescription("Neutral Netgen format."))
+			.addoption(ECFOption().setname("NEPER").setdescription("Neper Msh format."))
 			.addoption(ECFOption().setname("GMSH").setdescription("GMSH mesh generator."))
 			.addoption(ECFOption().setname("NGLIB").setdescription("NGLib mesh generator.")));
 

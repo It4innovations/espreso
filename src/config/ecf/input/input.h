@@ -30,6 +30,7 @@ struct InputConfiguration: public ECFDescription {
 		ENSIGHT,
 		VTK_LEGACY,
 		NETGET,
+		NEPER,
 		GMSH,
 		NGLIB
 	};

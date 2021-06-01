@@ -23,6 +23,7 @@
 #include "input/parsers/netgen/netgen.h"
 #include "input/parsers/gmsh/gmsh.h"
 #include "input/parsers/nglib/nglib.h"
+#include "input/parsers/neper/neper.h"
 #include "input/parsers/meshgenerator/meshgenerator.h"
 
 #include "preprocessing/meshpreprocessing.h"
@@ -96,6 +97,7 @@ void Mesh::load()
 		case InputConfiguration::FORMAT::ENSIGHT:        data = new EnsightLoader      (info::ecf->input); break;
 		case InputConfiguration::FORMAT::VTK_LEGACY:     data = new VTKLegacyLoader    (info::ecf->input); break;
 		case InputConfiguration::FORMAT::NETGET:         data = new NetgenNeutralLoader(info::ecf->input); break;
+		case InputConfiguration::FORMAT::NEPER:          data = new NeperLoader        (info::ecf->input); break;
 		case InputConfiguration::FORMAT::GMSH:           data = new GMSHGenerator      (info::ecf->input); break;
 		case InputConfiguration::FORMAT::NGLIB:          data = new NGLibGenerator     (info::ecf->input); break;
 		}
