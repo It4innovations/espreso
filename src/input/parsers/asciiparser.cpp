@@ -59,7 +59,7 @@ static inline void _next(InputFile &file, size_t &begin)
 	}
 }
 
-void setDistribution(InputFile &file, size_t begin, size_t end, std::vector<size_t> &tdistribution)
+void setDistribution(InputFile &file, size_t begin, size_t end, std::vector<size_t> &tdistribution, bool toLines = false)
 {
 	size_t mpibegin = std::max(begin, file.distribution[info::mpi::rank]);
 	size_t mpiend = std::min(end, file.distribution[info::mpi::rank + 1]);
@@ -73,7 +73,11 @@ void setDistribution(InputFile &file, size_t begin, size_t end, std::vector<size
 			tdistribution[t] += mpibegin;
 		}
 		for (size_t t = 1; t + 1 < tdistribution.size(); ++t) {
-			while (!ASCIIParser::isempty(file.begin + tdistribution[t]++));
+			if (toLines) {
+				while (*(file.begin + tdistribution[t]++) != '\n');
+			} else {
+				while (!ASCIIParser::isempty(file.begin + tdistribution[t]++));
+			}
 		}
 	} else {
 		tdistribution.resize(info::env::OMP_NUM_THREADS + 1, 0);
@@ -116,7 +120,7 @@ void ASCIIParser::parse(std::vector<esint> &ids, std::vector<Point> &coordinates
 {
 	profiler::syncstart("parse_ascii_mixed");
 	std::vector<size_t> tdistribution;
-	setDistribution(file, begin, end, tdistribution);
+	setDistribution(file, begin, end, tdistribution, true);
 
 	std::vector<std::vector<esint> > tids(info::env::OMP_NUM_THREADS);
 	std::vector<std::vector<Point> > tcoords(info::env::OMP_NUM_THREADS);
