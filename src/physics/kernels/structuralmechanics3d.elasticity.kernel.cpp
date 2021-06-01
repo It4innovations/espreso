@@ -119,21 +119,21 @@ void StructuralMechanics3DKernel::assembleLinearElasticMaterialMatrix(esint node
 		C(3, 5) = mat->linear_elastic_properties.anisotropic.get(3, 5).evaluator->eval(params);
 		C(4, 5) = mat->linear_elastic_properties.anisotropic.get(4, 5).evaluator->eval(params);
 
-		C(1, 0) = K(node,  6);
-		C(2, 0) = K(node,  7);
-		C(2, 1) = K(node, 11);
-		C(3, 0) = K(node,  8);
-		C(3, 1) = K(node, 12);
-		C(3, 2) = K(node, 15);
-		C(4, 0) = K(node,  9);
-		C(4, 1) = K(node, 13);
-		C(4, 2) = K(node, 16);
-		C(4, 3) = K(node, 18);
-		C(5, 0) = K(node, 10);
-		C(5, 1) = K(node, 14);
-		C(5, 2) = K(node, 17);
-		C(5, 3) = K(node, 19);
-		C(5, 4) = K(node, 20);
+		C(1, 0) = C(0, 1);
+		C(2, 0) = C(0, 2);
+		C(2, 1) = C(1, 2);
+		C(3, 0) = C(0, 3);
+		C(3, 1) = C(1, 3);
+		C(3, 2) = C(2, 3);
+		C(4, 0) = C(0, 4);
+		C(4, 1) = C(1, 4);
+		C(4, 2) = C(2, 4);
+		C(4, 3) = C(3, 4);
+		C(5, 0) = C(0, 5);
+		C(5, 1) = C(1, 5);
+		C(5, 2) = C(2, 5);
+		C(5, 3) = C(3, 5);
+		C(5, 4) = C(4, 5);
 	} break;
 
 	case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC: {
@@ -246,8 +246,8 @@ void StructuralMechanics3DKernel::assembleLinearElasticMaterialMatrix(esint node
 		T[5][4] = std::cos(angle.z * 2.0) * std::cos(angle.x) * std::sin(angle.y) - std::sin(angle.y * 2.0) * std::sin(angle.z * 2.0) * std::sin(angle.x) * (1.0 / 2.0);
 		T[5][5] = std::sin(angle.x * 2.0) * std::sin(angle.z * 2.0) * (-1.0 / 2.0) + std::cos(angle.x * 2.0) * std::cos(angle.z * 2.0) * std::cos(angle.y) - std::sin(angle.x * 2.0) * std::sin(angle.z * 2.0) * std::pow(std::cos(angle.y), 2.0) * (1.0 / 2.0);
 
-		CT.multiply(C, T);
-		TCT.multiply(T, CT, 1, 0, true, false);
+		CT.multiply(C, T, 1, 0, false, true);
+		TCT.multiply(T, CT);
 	} else {
 		TCT = C;
 	}
