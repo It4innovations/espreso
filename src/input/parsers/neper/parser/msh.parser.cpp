@@ -185,8 +185,52 @@ void NeperMshMesh::parseASCII(MeshBuilder &mesh)
 			mesh.eIDs.push_back(id);
 			mesh.etype.push_back(type);
 			mesh.esize.push_back(enodes);
-			for (esint n = 0; n < enodes; ++n) {
-				mesh.enodes.push_back(edata[i++]);
+			switch (enodes) {
+			case 10:
+				for (esint n = 0; n < 8; ++n) {
+					mesh.enodes.push_back(edata[i + n]);
+				}
+				mesh.enodes.push_back(edata[i + 9]);
+				mesh.enodes.push_back(edata[i + 8]);
+				i += 10;
+				break;
+			case 20:
+				for (esint n = 0; n < 8; ++n) {
+					mesh.enodes.push_back(edata[i + n]);
+				}
+				mesh.enodes.push_back(edata[i + 8]);
+				mesh.enodes.push_back(edata[i + 11]);
+				mesh.enodes.push_back(edata[i + 13]);
+				mesh.enodes.push_back(edata[i + 9]);
+				mesh.enodes.push_back(edata[i + 16]);
+				mesh.enodes.push_back(edata[i + 18]);
+				mesh.enodes.push_back(edata[i + 19]);
+				mesh.enodes.push_back(edata[i + 17]);
+				mesh.enodes.push_back(edata[i + 10]);
+				mesh.enodes.push_back(edata[i + 12]);
+				mesh.enodes.push_back(edata[i + 14]);
+				mesh.enodes.push_back(edata[i + 15]);
+				i += 20;
+				break;
+			case 15:
+				for (esint n = 0; n < 6; ++n) {
+					mesh.enodes.push_back(edata[i + n]);
+				}
+				mesh.enodes.push_back(edata[i + 6]);
+				mesh.enodes.push_back(edata[i + 9]);
+				mesh.enodes.push_back(edata[i + 7]);
+				mesh.enodes.push_back(edata[i + 12]);
+				mesh.enodes.push_back(edata[i + 14]);
+				mesh.enodes.push_back(edata[i + 13]);
+				mesh.enodes.push_back(edata[i + 8]);
+				mesh.enodes.push_back(edata[i + 10]);
+				mesh.enodes.push_back(edata[i + 11]);
+				i += 15;
+				break;
+			default:
+				for (esint n = 0; n < enodes; ++n) {
+					mesh.enodes.push_back(edata[i++]);
+				}
 			}
 			if (tag0 == tag1) {
 				if (tag0 >= eregs.size()) {
