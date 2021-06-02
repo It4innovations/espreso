@@ -196,7 +196,7 @@ void MeshBuilder::duplicate(Geometry &source, int instance)
 	}
 }
 
-void MeshBuilder::translate(InputTransformationConfiguration &transformation, Geometry &source, int &instance)
+void MeshBuilder::translate(const InputTransformationConfiguration &transformation, Geometry &source, int &instance)
 {
 	for (int i = 0; i < transformation.instances; ++i, ++instance) {
 		duplicate(source, instance);
@@ -210,7 +210,7 @@ void MeshBuilder::translate(InputTransformationConfiguration &transformation, Ge
 	}
 }
 
-void MeshBuilder::rotate(InputTransformationConfiguration &transformation, Geometry &source, int &instance)
+void MeshBuilder::rotate(const InputTransformationConfiguration &transformation, Geometry &source, int &instance)
 {
 	for (int i = 0; i < transformation.instances; ++i, ++instance) {
 		double cos = std::cos(instance * M_PI * transformation.z / 180), sin = std::sin(instance * M_PI * transformation.z / 180);
@@ -225,12 +225,12 @@ void MeshBuilder::rotate(InputTransformationConfiguration &transformation, Geome
 	}
 }
 
-void MeshBuilder::scale(InputTransformationConfiguration &transformation, Geometry &source, int &instance)
+void MeshBuilder::scale(const InputTransformationConfiguration &transformation, Geometry &source, int &instance)
 {
 
 }
 
-void MeshBuilder::shear(InputTransformationConfiguration &transformation, Geometry &source, int &instance)
+void MeshBuilder::shear(const InputTransformationConfiguration &transformation, Geometry &source, int &instance)
 {
 
 }

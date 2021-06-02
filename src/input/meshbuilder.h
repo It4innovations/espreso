@@ -70,10 +70,10 @@ struct MeshBuilder: public MeshData {
 	virtual void build();
 
 	void selectGeometry(Geometry &geometry);
-	void translate(InputTransformationConfiguration &transformation, Geometry &source, int &instance);
-	void rotate(InputTransformationConfiguration &transformation, Geometry &source, int &instance);
-	void scale(InputTransformationConfiguration &transformation, Geometry &source, int &instance);
-	void shear(InputTransformationConfiguration &transformation, Geometry &source, int &instance);
+	void translate(const InputTransformationConfiguration &transformation, Geometry &source, int &instance);
+	void rotate(const InputTransformationConfiguration &transformation, Geometry &source, int &instance);
+	void scale(const InputTransformationConfiguration &transformation, Geometry &source, int &instance);
+	void shear(const InputTransformationConfiguration &transformation, Geometry &source, int &instance);
 
 	std::vector<esint> _nrankdist; // nodes ranks distribution [0, 2, 5, ...] n0 is on 2 processes
 	std::vector<int> _nranks;        // nodes ranks              [0, 1, ...]    n0 is on processes 0 and 1
