@@ -26,8 +26,6 @@ struct ElementsRegionStore: public RegionStore {
 	std::vector<esint> bodyFaces;
 	ContactInfo contact;
 
-	Point orientation; // temporary until new assembler updates
-
 	size_t packedFullSize() const;
 	void packFull(char* &p) const;
 	void unpackFull(const char* &p);

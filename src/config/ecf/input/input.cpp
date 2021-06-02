@@ -75,6 +75,11 @@ InputConfiguration::InputConfiguration()
 			.setdescription({ "Tolerance for merging nodes according to coordinates." })
 			.setdatatype({ ECFDataType::FLOAT }));
 
+	insert_orientation = false;
+//	REGISTER(insert_orientation, ECFMetaData()
+//			.setdescription({ "Insert orientation (only for NEPER)." })
+//			.setdatatype({ ECFDataType::BOOL }));
+
 	loader = LOADER::MPI;
 	REGISTER(loader, ECFMetaData()
 			.setdescription({ "A type of used function for loading data." })

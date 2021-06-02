@@ -996,17 +996,30 @@ void Input::fillElementRegions()
 	}
 	Communication::allReduce(fromelements.data(), add.data(), fromelements.size(), MPI_INT, MPI_SUM);
 	i = 0;
+	NamedData *orientation = NULL, *poly = NULL;
+	if (info::ecf->input.insert_orientation) {
+		orientation = info::mesh->elements->appendData(3, NamedData::DataType::VECTOR, "ORIENTATION");
+		poly = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "POLY");
+	}
 	for (auto eregion = _meshData.eregions.begin(); eregion != _meshData.eregions.end(); ++eregion, ++i) {
 		auto it = std::lower_bound(eregion->second.begin(), eregion->second.end(), _etypeDistribution.back());
 		if (it != eregion->second.end()) {
 			eregion->second.resize(it - eregion->second.begin());
 		}
 		if (add[i]) {
-			info::mesh->elementsRegions.push_back(new ElementsRegionStore(eregion->first));
-			info::mesh->elementsRegions.back()->elements = new serializededata<esint, esint>(1, { threads, eregion->second });
-			auto it = _meshData.orientation.find(eregion->first);
-			if (it != _meshData.orientation.end()) {
-				info::mesh->elementsRegions.back()->orientation = it->second;
+			if (info::ecf->input.insert_orientation && StringCompare::caseInsensitivePreffix("poly", eregion->first)) {
+				auto it = _meshData.orientation.find(eregion->first);
+				if (it != _meshData.orientation.end()) {
+					for (size_t i = 0; i < eregion->second.size(); ++i) {
+						poly->data[eregion->second[i]] = std::atoi(it->first.c_str() + 4);
+						orientation->data[3 * eregion->second[i] + 0] = it->second.x;
+						orientation->data[3 * eregion->second[i] + 1] = it->second.y;
+						orientation->data[3 * eregion->second[i] + 2] = it->second.z;
+					}
+				}
+			} else {
+				info::mesh->elementsRegions.push_back(new ElementsRegionStore(eregion->first));
+				info::mesh->elementsRegions.back()->elements = new serializededata<esint, esint>(1, { threads, eregion->second });
 			}
 		}
 	}

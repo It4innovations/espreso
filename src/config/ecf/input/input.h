@@ -53,6 +53,8 @@ struct InputConfiguration: public ECFDescription {
 	bool convert_database;
 	double duplication_tolerance;
 
+	bool insert_orientation;
+
 	LOADER loader;
 	size_t stripe_size;
 	int third_party_scalability_limit;

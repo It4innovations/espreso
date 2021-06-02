@@ -31,6 +31,8 @@ struct StructuralMechanics3DKernel: public StructuralMechanics3DBaseKernel
 protected:
 	void assembleLinearElasticMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, MatrixDense &K, Point &orientation) const;
 	void assembleHyperElasticMaterialMatrix(const MaterialBaseConfiguration *mat, MatrixDense &F, MatrixDense &C, MatrixDense &S) const;
+
+	ElementData *orientation;
 };
 
 }

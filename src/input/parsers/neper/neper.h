@@ -10,11 +10,11 @@ class InputConfiguration;
 
 class NeperLoader: public MeshBuilder {
 public:
-	NeperLoader(const InputConfiguration &configuration);
+	NeperLoader(InputConfiguration &configuration);
 	void load();
 
 protected:
-	const InputConfiguration &_configuration;
+	InputConfiguration &_configuration;
 };
 
 }

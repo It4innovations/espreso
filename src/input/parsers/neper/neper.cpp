@@ -9,10 +9,10 @@
 
 using namespace espreso;
 
-NeperLoader::NeperLoader(const InputConfiguration &configuration)
+NeperLoader::NeperLoader(InputConfiguration &configuration)
 : _configuration(configuration)
 {
-
+	_configuration.insert_orientation = true;
 }
 
 void NeperLoader::load()

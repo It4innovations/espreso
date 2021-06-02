@@ -11,6 +11,7 @@
 #include "physics/system/builder/builder.h"
 #include "basis/containers/point.h"
 #include "basis/evaluator/evaluator.h"
+#include "basis/utilities/parser.h"
 #include "config/ecf/physics/heattransfer.h"
 #include "math/matrix.dense.h"
 #include "math/vector.dense.h"
@@ -23,12 +24,24 @@ StructuralMechanics3DKernel::StructuralMechanics3DKernel(StructuralMechanics3DKe
 : StructuralMechanics3DBaseKernel(previous, physics, gsettings, configuration)
 {
 	solutions.push_back(VectorDense(iterator.displacement.output.data->data.size(), iterator.displacement.output.data->data.data()));
+	orientation = NULL;
+	for (size_t i = 0; i < info::mesh->elements->data.size(); ++i) {
+		if (StringCompare::caseInsensitiveEq("ORIENTATION", info::mesh->elements->data[i]->name)) {
+			orientation = info::mesh->elements->data[i];
+		}
+	}
 }
 
 StructuralMechanics3DKernel::StructuralMechanics3DKernel(HeatTransfer3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration)
 : StructuralMechanics3DBaseKernel(previous, physics, gsettings, configuration)
 {
 	solutions.push_back(VectorDense(iterator.displacement.output.data->data.size(), iterator.displacement.output.data->data.data()));
+	orientation = NULL;
+	for (size_t i = 0; i < info::mesh->elements->data.size(); ++i) {
+		if (StringCompare::caseInsensitiveEq("ORIENTATION", info::mesh->elements->data[i]->name)) {
+			orientation = info::mesh->elements->data[i];
+		}
+	}
 }
 
 StructuralMechanics3DKernel::~StructuralMechanics3DKernel()
@@ -673,7 +686,6 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 {
 	iterator.corotating = NULL;
 	iterator.fixed = NULL;
-	Point orientation;
 	int rsize = info::mesh->elements->regions->edataSize();
 	for (size_t r = 0; r < info::mesh->elementsRegions.size(); r++) {
 		esint maskOffset = r / (8 * sizeof(esint));
@@ -694,7 +706,6 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 				}
 			} break;
 			}
-			orientation = info::mesh->elementsRegions[r]->orientation;
 		}
 	}
 
@@ -717,6 +728,13 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 	Point fixedOmega, fixedP;
 	MatrixDense tx(1, 3), ty(1, 3), tz(1, 3), G(3 * size, 3 * size), Nxr(3, 1), x, fixedR(3, 1), tztyNxr(3, 1), tytzNxr(3, 1), BB(1, size), Bx(3 * size, 3), Bxt1(3 * size, 1), Bxt2(3 * size, 1), Bxttt(3 * size, 3);
 	double detJ, te;
+
+	Point orientation;
+	if (iterator.material->linear_elastic_properties.orientation) {
+		orientation.x = this->orientation->data[3 * iterator.offset + 0];
+		orientation.x = this->orientation->data[3 * iterator.offset + 1];
+		orientation.x = this->orientation->data[3 * iterator.offset + 2];
+	}
 
 	for (int n = 0; n < size; n++) {
 		Evaluator::Params params;
@@ -1268,13 +1286,10 @@ void StructuralMechanics3DKernel::elementSolution(ElasticityElementIterator &ite
 	}
 
 	Point orientation;
-	int rsize = info::mesh->elements->regions->edataSize();
-	for (size_t r = 0; r < info::mesh->elementsRegions.size(); r++) {
-		esint maskOffset = r / (8 * sizeof(esint));
-		esint bit = (esint)1 << (r % (8 * sizeof(esint)));
-		if (info::mesh->elements->regions->datatarray()[iterator.offset * rsize + maskOffset] & bit) {
-			orientation = info::mesh->elementsRegions[r]->orientation;
-		}
+	if (iterator.material->linear_elastic_properties.orientation) {
+		orientation.x = this->orientation->data[3 * iterator.offset + 0];
+		orientation.x = this->orientation->data[3 * iterator.offset + 1];
+		orientation.x = this->orientation->data[3 * iterator.offset + 2];
 	}
 
 	int size = iterator.element->nodes;
