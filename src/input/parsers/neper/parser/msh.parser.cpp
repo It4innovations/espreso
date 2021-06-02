@@ -113,7 +113,7 @@ void NeperMshMesh::scan()
 	add<ElementOrientations>(scanner, _meshfile, _elementOrientations);
 	add<Groups>(scanner, _meshfile, _groups);
 
-	scanner.align(_meshfile, " \n");
+	scanner.align(_meshfile, "\n");
 	scanner.scanlines(_meshfile);
 
 	scanner.synchronize(_format, _nodes, _elements, _periodicity, _nsets, _fasets, _nodePartitions, _physicalNames, _elsetOrientations, _elementOrientations, _groups);
