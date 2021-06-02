@@ -191,8 +191,6 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdescription({ "Load balancing of Dirichlet preconditioner" })
 			.setdatatype({ ECFDataType::BOOL }));
 
-	REGISTER(auto_optimization, ECFMetaData().setdescription({ "Automatic optimization of FETI solver parameters." }));
-
 	allowed_gpu_memory_mb = -1;
 	REGISTER(allowed_gpu_memory_mb, ECFMetaData()
 			.setdescription({ "The size of GPU memory in MB that is allowed for LSC assembly to decrease #LSC on GPU" })

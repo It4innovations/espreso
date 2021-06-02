@@ -14,7 +14,6 @@
 #include "esinfo/mpiinfo.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/eslog.hpp"
-#include "autoopt/optimizer.h"
 #include "mesh/mesh.h"
 #include "mesh/store/domainstore.h"
 #include "config/ecf/linearsolver/feti.h"
@@ -52,24 +51,6 @@ FETISystemSolver::FETISystemSolver(FETIConfiguration &configuration, FETISolverD
 : configuration(configuration), _data(data), _inner(NULL)
 {
 	timeEvalMain = new TimeEval("ESPRESO Solver Overall Timing");
-
-	if (configuration.auto_optimization.algorithm != AutoOptimizationConfiguration::ALGORITHM::NONE)
-	{
-		std::vector<ECFParameter*> opt_parameters;
-		opt_parameters = {
-			configuration.ecfdescription->getParameter(&configuration.preconditioner),
-			configuration.ecfdescription->getParameter(&configuration.iterative_solver),
-			configuration.ecfdescription->getParameter(&configuration.regularization),
-			configuration.ecfdescription->getParameter(&configuration.redundant_lagrange),
-			configuration.ecfdescription->getParameter(&configuration.B0_type),
-			configuration.ecfdescription->getParameter(&configuration.scaling),
-			// this->configuration.getParameter(&this->configuration.use_schur_complement)
-			configuration.ecfdescription->getParameter(&configuration.method)
-		};
-		this->optimizer = new EvolutionaryOptimizer(configuration.auto_optimization, opt_parameters);
-	} else {
-		this->optimizer = new EmptyOptimizer();
-	}
 }
 
 void FETISystemSolver::init()
@@ -79,12 +60,14 @@ void FETISystemSolver::init()
 
 void FETISystemSolver::update()
 {
-	while(!optimizer->set([&]() {
+//	while(!optimizer->set([&]() {
+	{
 		if (configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
 			for (esint d = 0; d < _data.K.domains; ++d) {
 				if (_data.K[d].type != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
 					eslog::info("FETI update: ANALYTIC regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix is not allowed.\n");
-					return false;
+//					return false;
+					eslog::error("Call FETI solver with invalid settings.\n");
 				}
 			}
 		}
@@ -100,13 +83,15 @@ void FETISystemSolver::update()
 			configuration.iterative_solver != FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB) 
 		{
 			eslog::info("FETI update: Invalid linear solver configuration. Only GMRES and BICGSTAB can solve unsymmetric system.\n");
-			return false;
+//			return false;
+			eslog::error("Call FETI solver with invalid settings.\n");
 		}
 		if (configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
 			configuration.method == FETIConfiguration::METHOD::TOTAL_FETI) 
 		{
 			eslog::info("FETI update: Cannot use QPCE and TOTAL FETI together.\n");
-			return false;
+//			return false;
+			eslog::error("Call FETI solver with invalid settings.\n");
 		}
 //		if (configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
 //			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
@@ -353,7 +338,9 @@ void FETISystemSolver::update()
 		// { return false; }
 		
 		int ret = update(configuration);
-		if (ret >= 0) return true;
+		if (ret >= 0) {
+			return;
+		}
 
 		switch (ret) {
 			case -3:
@@ -367,8 +354,9 @@ void FETISystemSolver::update()
 				break;
 		}
 
-		return false;
-	}));
+//		return false;
+		eslog::error("Call FETI solver with invalid settings.\n");
+	}; //));
 }
 
 void FETISystemSolver::solve()
@@ -406,9 +394,6 @@ FETISystemSolver::~FETISystemSolver() {
 
 	if (_inner) {
 		delete _inner;
-	}
-	if (optimizer) {
-		delete optimizer;
 	}
 }
 
@@ -731,7 +716,8 @@ void FETISystemSolver::solve(FETIConfiguration &configuration, VectorsDenseFETI 
 	double start = eslog::time();
 	eslog::solver("     - | REQUESTED STOPPING CRITERIA                                      %e | -\n", configuration.precision);
 
-	while (!optimizer->run([&] () {
+//	while (!optimizer->run([&] () {
+	{
 		int ret = Solve(_inner->holder.F, _inner->holder.primalSolution, _inner->holder.dualSolution);
 		
 		// Solver errors
@@ -751,19 +737,22 @@ void FETISystemSolver::solve(FETIConfiguration &configuration, VectorsDenseFETI 
 					eslog::error("FETI solve: Unknow error!\n");
 					break;
 			}
-			return false;
+//			return false;
+			eslog::error("FETI solver did not converge.\n");
 		}
 		else {
 			size_t s_ret = static_cast<size_t>(ret);
 			// Successful run of solver
-			if (s_ret >= 0 && s_ret < configuration.max_iterations) return true;
+			if (s_ret >= 0 && s_ret < configuration.max_iterations) {
+//				return true;
+			}
 			// Solver exceeded the maximum number of iterations and did not converge
 			else {
 				eslog::info("FETI solve: Maximum number of iterations has been exceeded.\n");
-				return false;
+//				return false;
 			}
 		}
-	}));
+	}//));
 
 
 	#pragma omp parallel for

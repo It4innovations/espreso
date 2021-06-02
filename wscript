@@ -128,6 +128,7 @@ def build(ctx):
     ctx.build_checker(ctx.path.ant_glob('src/esinfo/**/*.cpp'), "esinfo", [ "INFO" ])
     ctx.build_checker(ctx.path.ant_glob('src/config/**/*.cpp'), "config")
     ctx.build_checker(ctx.path.ant_glob('src/basis/**/*.cpp'), "basis")
+    ctx.build_checker(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
     ctx.build_checker(ctx.path.ant_glob('src/wrappers/mpi/**/*.cpp'), "wmpi")
 
     ctx.build_mesio(ctx.path.ant_glob('src/mesh/**/*.cpp'), "mesh")
@@ -150,7 +151,6 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/physics/**/*.cpp'), "physics")
     ctx.build_espreso(ctx.path.ant_glob('src/morphing/**/*.cpp'), "devel")
     ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math")
-    ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cuda/**/*.cpp'), "wcuda", [ "CUDA" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'), "whypre", [ "HYPRE" ])

@@ -12,22 +12,12 @@ using namespace espreso;
 
 bool EmptyOptimizer::set(std::function<bool(void)> fnc)
 {
-	bool ret = fnc();
-	if (!ret) {
-		eslog::error("An error occured during the solution. " \
-		"You have used an invalid FETI settings for your task.\n");
-	}
-	return ret;
+	return true;
 }
 
 bool EmptyOptimizer::run(std::function<bool(void)> fnc)
 {
-	bool ret = fnc();
-	if (!ret) {
-		eslog::error("An error occured during the solution. " \
-		"You have used an invalid FETI settings for your task.\n");
-	}
-	return ret;
+	return true;
 }
 
 EvolutionaryOptimizer::EvolutionaryOptimizer(const AutoOptimizationConfiguration& configuration, std::vector<ECFParameter*>& parameters)

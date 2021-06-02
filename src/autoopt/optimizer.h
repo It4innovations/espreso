@@ -3,7 +3,7 @@
 #define SRC_AUTOOPT_OPTIMIZER_H_
 
 #include "proxy.h"
-#include "config/ecf/linearsolver/autoopt.h"
+#include "config/ecf/autoopt.h"
 
 #include <vector>
 #include <functional>

@@ -140,6 +140,9 @@ void ECF::_init()
 	REGISTER(mesh_morphing, ECFMetaData()
 			.setdescription({ "Settings for mesh morphing." }));
 
+	REGISTER(auto_optimization, ECFMetaData()
+			.setdescription({ "Automatic optimization of solvers' parameters." }));
+
 	physics = PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D;
 	REGISTER(physics, ECFMetaData()
 			.setdescription({ "Physics" })

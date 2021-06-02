@@ -4,8 +4,8 @@
 #include "esinfo/mpiinfo.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
-#include "config/ecf/linearsolver/autoopt.h"
 #include "config/ecf/output.h"
+#include "config/ecf/autoopt.h"
 #include "wrappers/mpi/communication.h"
 
 #include <limits>

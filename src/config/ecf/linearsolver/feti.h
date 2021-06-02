@@ -3,8 +3,6 @@
 #define SRC_CONFIG_ECF_LINEARSOLVER_FETI_H_
 
 #include "config/description.h"
-#include "autoopt.h"
-
 #include <cstddef>
 
 namespace espreso {
@@ -153,8 +151,6 @@ struct FETIConfiguration: public ECFDescription {
 	size_t num_info_objects;
 	double gpu_fragmentation_ratio;
 	size_t num_streams;
-
-	AutoOptimizationConfiguration auto_optimization;
 
 	FETIConfiguration();
 };

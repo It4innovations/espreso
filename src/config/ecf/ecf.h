@@ -11,6 +11,7 @@
 #include "input/feti4ilibrary.h"
 
 #include "meshmorphing.h"
+#include "autoopt.h"
 
 #include "physics/physics.h"
 #include "physics/coupled.h"
@@ -70,6 +71,8 @@ struct ECF: public ECFDescription {
 	InputGeneratorConfiguration generator;
 
 	MeshMorphing mesh_morphing;
+
+	AutoOptimizationConfiguration auto_optimization;
 
 	PhysicsConfiguration::TYPE physics;
 	ThermoElasticityConfiguration thermo_elasticity_2d;
