@@ -13,6 +13,7 @@
 #include "mesh/store/elementsregionstore.h"
 #include "physics/kernels/kernel.h"
 #include "physics/kernels/solverdataprovider/provider.h"
+#include "physics/composer/feti/nodes.uniform.feti.composer.h"
 #include "physics/system/distributedsystem.h"
 #include "physics/system/builder/builder.h"
 #include "math/matrix.indices.h"

@@ -30,6 +30,8 @@ struct HeatTransferSolverDataProvider: public SolverDataProvider {
 		int initKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster);
 		void fillKernels(MatrixCSRFETI &K, MatrixCSRFETI &M, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster);
 
+		void buildB0FromCorners(MatrixCSRFETI &K, MatrixIJVFETI &B0) {}
+
 		HeatTransferLoadStepConfiguration &_configuration;
 		FETI(HeatTransferLoadStepConfiguration &configuration): _configuration(configuration) {}
 	};

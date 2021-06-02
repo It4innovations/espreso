@@ -10,8 +10,8 @@
 
 using namespace espreso;
 
-NodesUniformAPIComposer::NodesUniformAPIComposer(const FETIConfiguration &configuration, int DOFs)
-: NodesUniformFETIComposer(configuration, NULL, NULL, DOFs)
+NodesUniformAPIComposer::NodesUniformAPIComposer(int DOFs)
+: NodesUniformFETIComposer(NULL, NULL, DOFs)
 {
 
 }

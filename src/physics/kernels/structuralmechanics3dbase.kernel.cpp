@@ -7,7 +7,7 @@
 using namespace espreso;
 
 StructuralMechanics3DBaseKernel::StructuralMechanics3DBaseKernel(StructuralMechanics3DBaseKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration)
-: KernelExecutor(new StructuralMechanics3DSolverDataProvider(configuration)),
+: KernelExecutor(new StructuralMechanics3DSolverDataProvider(configuration, 3)),
   gsettings(gsettings),
   iterator(previous ? &previous->iterator : NULL, physics, gsettings, configuration, 3)
 {
@@ -18,7 +18,7 @@ StructuralMechanics3DBaseKernel::StructuralMechanics3DBaseKernel(StructuralMecha
 }
 
 StructuralMechanics3DBaseKernel::StructuralMechanics3DBaseKernel(HeatTransfer3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration)
-: KernelExecutor(new StructuralMechanics3DSolverDataProvider(configuration)),
+: KernelExecutor(new StructuralMechanics3DSolverDataProvider(configuration, 3)),
   gsettings(gsettings),
   iterator(previous ? &previous->iterator : NULL, physics, gsettings, configuration, 3)
 {

@@ -11,7 +11,7 @@ struct FETISolverData;
 class NodesUniformAPIComposer: public NodesUniformFETIComposer {
 
 public:
-	NodesUniformAPIComposer(const FETIConfiguration &configuration, int DOFs);
+	NodesUniformAPIComposer(int DOFs);
 
 	void fill(FETISolverData &data);
 

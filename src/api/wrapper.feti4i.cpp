@@ -330,7 +330,7 @@ void FETI4ICreateInstance(
 
 	Mesh *mesh = &matrix->mesh;
 	std::swap(mesh, info::mesh);
-	NodesUniformAPIComposer composer(settings.solver, matrix->dofs);
+	NodesUniformAPIComposer composer(matrix->dofs);
 	composer.fill(system->data);
 
 	struct FETI4IIJV { FETI4IInt i, j; FETI4IReal v; };

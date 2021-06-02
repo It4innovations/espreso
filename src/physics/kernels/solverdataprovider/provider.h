@@ -11,6 +11,7 @@ class MatrixCSRDistributed;
 class VectorsDenseDistributed;
 class MatrixCSRFETI;
 class MatrixDenseFETI;
+class MatrixIJVFETI;
 class VectorsDenseDistributed;
 enum class MatrixType: int;
 
@@ -34,7 +35,16 @@ struct SolverDataProvider {
 		virtual int initKernels(MatrixCSRFETI &K, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster) =0;
 		virtual void fillKernels(MatrixCSRFETI &K, MatrixCSRFETI &M, MatrixDenseFETI &N1, MatrixDenseFETI &N2, MatrixCSRFETI &RegMat, bool ortogonalizeCluster) =0;
 
+		void computeCornerNodes();
+		void computeFixPoints();
+		void computeFixPointsOnSurface();
+
+		virtual void buildB0FromCorners(MatrixCSRFETI &K, MatrixIJVFETI &B0) =0;
+
 		virtual ~FETI() {}
+
+	protected:
+		void _buildB0FromCorners(MatrixCSRFETI &K, MatrixIJVFETI &B0, int DOFs);
 	};
 
 	struct Hypre {

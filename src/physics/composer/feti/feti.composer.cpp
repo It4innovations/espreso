@@ -24,8 +24,8 @@
 
 using namespace espreso;
 
-FETIComposer::FETIComposer(const FETIConfiguration &configuration, Kernel *kernel, FETIAssemblerData *data)
-: Composer(kernel), _configuration(configuration), _data(data), _DOFMap(NULL)
+FETIComposer::FETIComposer(Kernel *kernel, FETIAssemblerData *data)
+: Composer(kernel), _data(data), _DOFMap(NULL)
 {
 //	auto isBEMDomain = [&](esint domain) {
 //		auto eregions = (info::mesh->elements->regions->begin() + info::mesh->domains->elements[domain])->begin();

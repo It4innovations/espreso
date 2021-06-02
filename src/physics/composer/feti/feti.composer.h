@@ -17,17 +17,14 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 class FETIComposer: public Composer {
 
 public:
-	FETIComposer(const FETIConfiguration &configuration, Kernel *kernel, FETIAssemblerData *data);
+	FETIComposer(Kernel *kernel, FETIAssemblerData *data);
 	~FETIComposer();
 
 	void assemble(const Builder &builder);
 
-	virtual void buildB0FromCorners(MatrixIJVFETI &B0) =0;
-
 protected:
 	virtual void synchronize(const Builder &builder) =0;
 
-	const FETIConfiguration &_configuration;
 	FETIAssemblerData *_data;
 
 	serializededata<esint, DI> *_DOFMap;

@@ -18,7 +18,7 @@
 using namespace espreso;
 
 StructuralMechanics2DKernel::StructuralMechanics2DKernel(StructuralMechanics2DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsetting, StructuralMechanicsLoadStepConfiguration &configuration)
-: KernelExecutor(new StructuralMechanics2DSolverDataProvider(configuration)),
+: KernelExecutor(new StructuralMechanics2DSolverDataProvider(configuration, 2)),
   iterator(previous ? &previous->iterator : NULL, physics, gsetting, configuration, 2)
 {
 	solutions.push_back(VectorDense(iterator.displacement.output.data->data.size(), iterator.displacement.output.data->data.data()));
@@ -30,7 +30,7 @@ StructuralMechanics2DKernel::StructuralMechanics2DKernel(StructuralMechanics2DKe
 }
 
 StructuralMechanics2DKernel::StructuralMechanics2DKernel(HeatTransfer2DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsetting, StructuralMechanicsLoadStepConfiguration &configuration)
-: KernelExecutor(new StructuralMechanics2DSolverDataProvider(configuration)),
+: KernelExecutor(new StructuralMechanics2DSolverDataProvider(configuration, 2)),
   iterator(previous ? &previous->iterator : NULL, physics, gsetting, configuration, 2)
 {
 	solutions.push_back(VectorDense(iterator.displacement.output.data->data.size(), iterator.displacement.output.data->data.data()));

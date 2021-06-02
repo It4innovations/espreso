@@ -7,6 +7,7 @@
 namespace espreso {
 
 struct DistributedAssemblerData;
+struct NodesUniformFETIComposer;
 
 class NodesUniformDistributedComposer: public DistributedComposer {
 

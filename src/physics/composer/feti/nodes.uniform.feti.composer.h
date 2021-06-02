@@ -7,22 +7,17 @@
 namespace espreso {
 
 struct FETIAssemblerData;
+class NodesUniformDistributedComposer;
 
 class NodesUniformFETIComposer: public FETIComposer {
 
 public:
-	NodesUniformFETIComposer(const FETIConfiguration &configuration, Kernel *kernel, FETIAssemblerData *data, int DOFs);
+	NodesUniformFETIComposer(Kernel *kernel, FETIAssemblerData *data, int DOFs);
 
 	void init();
 
-	void buildB0FromCorners(MatrixIJVFETI &B0);
-
 protected:
 	void synchronize(const Builder &builder);
-
-	void computeCornerNodes();
-	void computeFixPoints();
-	void computeFixPointsOnSurface();
 
 	void _initDOFMap();
 	void _buildPatterns();
