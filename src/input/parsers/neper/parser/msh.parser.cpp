@@ -284,7 +284,9 @@ void NeperMshMesh::parseASCII(MeshBuilder &mesh)
 	std::vector<esint> polyid, groups;
 	std::vector<Point> orientation;
 	ASCIIParser::parse(polyid, orientation, _meshfile, _elsetOrientations.front().begin, _elsetOrientations.front().end);
-	ASCIIParser::parse(groups, _meshfile, _groups.front().begin, _groups.front().end);
+	if (_groups.size()) {
+		ASCIIParser::parse(groups, _meshfile, _groups.front().begin, _groups.front().end);
+	}
 
 	esint maxpoly = eregs.size();
 	Communication::allReduce(&maxpoly, NULL, 1, MPITools::getType(maxpoly).mpitype, MPI_MAX);
