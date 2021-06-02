@@ -31,22 +31,22 @@ NewtonRaphson::NewtonRaphson(LinearSystem *system, NonLinearSolverConfiguration 
 void NewtonRaphson::init(SubStepSolver *previous)
 {
 	if (U == NULL) {
-		U = _system->solver()->x->shallowCopyStructure();
+		U = system->solver()->x->shallowCopyStructure();
 	}
 
 	if (_configuration.check_second_residual) {
 		if (R == NULL) {
-			R = _system->solver()->f->shallowCopyStructure();
+			R = system->solver()->f->shallowCopyStructure();
 		}
 		if (f == NULL) {
-			f = _system->solver()->f->shallowCopyStructure();
+			f = system->solver()->f->shallowCopyStructure();
 		}
-		if (!_system->solver()->hasReactionForces()) {
+		if (!system->solver()->hasReactionForces()) {
 			if (K == NULL) {
-				K = _system->solver()->K->shallowCopyStructure();
+				K = system->solver()->K->shallowCopyStructure();
 			}
 		}
-		BC = _system->solver()->BC->shallowCopyStructure();
+		BC = system->solver()->BC->shallowCopyStructure();
 	} else {
 		if (K != NULL) { delete K; K = NULL; }
 		if (R != NULL) { delete R; R = NULL; }
@@ -55,13 +55,13 @@ void NewtonRaphson::init(SubStepSolver *previous)
 
 	if (_configuration.line_search) {
 		if (lsSolution == NULL) {
-			lsSolution = _system->solver()->x->shallowCopyStructure();
+			lsSolution = system->solver()->x->shallowCopyStructure();
 		}
 		if (lsRHS == NULL) {
-			lsRHS = _system->solver()->f->shallowCopyStructure();
+			lsRHS = system->solver()->f->shallowCopyStructure();
 		}
 		if (lsResidual == NULL) {
-			lsResidual = _system->solver()->f->shallowCopyStructure();
+			lsResidual = system->solver()->f->shallowCopyStructure();
 		}
 	}
 
@@ -111,9 +111,9 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 	double solutionNorm = 10 * _configuration.requested_first_residual;
 
 	auto computeDual = [&] () {
-		if (!_system->solver()->hasReactionForces()) {
-			K->apply(_system->solver()->x, _system->solver()->y);
-			_system->solver()->y->sum(1, f, -1, _system->solver()->y);
+		if (!system->solver()->hasReactionForces()) {
+			K->apply(system->solver()->x, system->solver()->y);
+			system->solver()->y->sum(1, f, -1, system->solver()->y);
 			eslog::checkpointln("PHYSICS SOLVER: DUAL SOLUTION COMPUTED");
 		}
 	};
@@ -124,27 +124,27 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 		double a = 0, b = 1;
 		double fa = 0, fb = 0, fx = 0, faStart = 0;
 
-		_system->builder->matrices = Builder::Request::R;
+		system->builder->matrices = Builder::Request::R;
 
 		for (size_t i = 0; i < 6; i++) {
-			lsSolution->sum(1, U, alpha, _system->solver()->x);
+			lsSolution->sum(1, U, alpha, system->solver()->x);
 
-			lsSolution->swap(_system->solver()->x);
-			_system->solutionChanged();
+			lsSolution->swap(system->solver()->x);
+			system->solutionChanged();
 			loadStepSolver.updateStructuralMatrices();
-			lsSolution->swap(_system->solver()->x);
+			lsSolution->swap(system->solver()->x);
 
-			lsResidual->sum(1, lsRHS, -1, _system->solver()->R);
+			lsResidual->sum(1, lsRHS, -1, system->solver()->R);
 
 			if (i == 0) {
-				faStart = _system->solver()->x->at(0)->dot(_system->solver()->f->at(0));
-				fb = _system->solver()->x->at(0)->dot(lsResidual->at(0));
+				faStart = system->solver()->x->at(0)->dot(system->solver()->f->at(0));
+				fb = system->solver()->x->at(0)->dot(lsResidual->at(0));
 				if ((faStart < 0 && fb < 0) || (faStart >= 0 && fb >= 0)) {
 					return alpha;
 				}
 				fa = faStart;
 			} else {
-				fx = _system->solver()->x->at(0)->dot(lsResidual->at(0));
+				fx = system->solver()->x->at(0)->dot(lsResidual->at(0));
 				if (fa * fx < 0) {
 					b = alpha;
 					fb = fx;
@@ -169,61 +169,61 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 			alpha = 1;
 		}
 
-		_system->solver()->x->scale(alpha);
+		system->solver()->x->scale(alpha);
 		eslog::checkpointln("PHYSICS SOLVER: LINE SEARCH PROCESSED");
 		return alpha;
 	};
 
 	step::step.iteration = 0;
 	if (step::isInitial()) {
-		_system->builder->tangentMatrixCorrection = false;
-		_system->builder->matrices = Builder::Request::KCM | Builder::Request::f | Builder::Request::BC;
+		system->builder->tangentMatrixCorrection = false;
+		system->builder->matrices = Builder::Request::KCM | Builder::Request::f | Builder::Request::BC;
 		loadStepSolver.updateStructuralMatrices();
-		if (_configuration.check_second_residual && !_system->solver()->hasReactionForces()) {
-			K->fillData(_system->solver()->K);
-			f->fillData(_system->solver()->f);
+		if (_configuration.check_second_residual && !system->solver()->hasReactionForces()) {
+			K->fillData(system->solver()->K);
+			f->fillData(system->solver()->f);
 		}
-		_system->setDirichlet();
+		system->setDirichlet();
 
 		eslog::solver("     - INITIAL STEP                              REASSEMBLED MATRICES  ::  %c, %c, %c, %c, %c -    \n",
-					(_system->builder->matrices & Builder::Request::K)  ? 'K' : ' ',
-					(_system->builder->matrices & Builder::Request::M)  ? 'M' : ' ',
-					(_system->builder->matrices & Builder::Request::C)  ? 'C' : ' ',
-					(_system->builder->matrices & Builder::Request::R)  ? 'R' : ' ',
-					(_system->builder->matrices & Builder::Request::f)  ? 'f' : ' ');
+					(system->builder->matrices & Builder::Request::K)  ? 'K' : ' ',
+					(system->builder->matrices & Builder::Request::M)  ? 'M' : ' ',
+					(system->builder->matrices & Builder::Request::C)  ? 'C' : ' ',
+					(system->builder->matrices & Builder::Request::R)  ? 'R' : ' ',
+					(system->builder->matrices & Builder::Request::f)  ? 'f' : ' ');
 
-		_system->solve();
+		system->solve();
 		if (_configuration.check_second_residual) {
 			computeDual();
 		}
-		_system->solutionChanged();
+		system->solutionChanged();
 	}
 
-	_system->builder->tangentMatrixCorrection = _configuration.tangent_matrix_correction;
+	system->builder->tangentMatrixCorrection = _configuration.tangent_matrix_correction;
 	while (step::step.iteration++ < _configuration.max_iterations) {
-		U->fillData(_system->solver()->x);
+		U->fillData(system->solver()->x);
 		if (_configuration.method == NonLinearSolverConfiguration::METHOD::NEWTON_RAPHSON) {
-			_system->builder->matrices = Builder::Request::KCM | Builder::Request::RBCf;
+			system->builder->matrices = Builder::Request::KCM | Builder::Request::RBCf;
 		} else {
-			_system->builder->matrices = Builder::Request::RBCf;
+			system->builder->matrices = Builder::Request::RBCf;
 		}
 		loadStepSolver.updateStructuralMatrices();
 		if (_configuration.line_search) {
-			lsRHS->fillData(_system->solver()->f);
+			lsRHS->fillData(system->solver()->f);
 		}
-		if (_configuration.check_second_residual && !_system->solver()->hasReactionForces()) {
-			K->fillData(_system->solver()->K);
+		if (_configuration.check_second_residual && !system->solver()->hasReactionForces()) {
+			K->fillData(system->solver()->K);
 		}
 		if (_configuration.check_second_residual) {
-			f->fillData(_system->solver()->f);
+			f->fillData(system->solver()->f);
 		}
 
-		_system->solver()->f->add(-1, _system->solver()->R);
+		system->solver()->f->add(-1, system->solver()->R);
 
 		if (_configuration.check_second_residual) {
-			R->sum(1, _system->solver()->f, -1, _system->solver()->y);
+			R->sum(1, system->solver()->f, -1, system->solver()->y);
 			double residualNumerator = R->at(0)->norm();
-			BC->fillData(_system->solver()->R);
+			BC->fillData(system->solver()->R);
 			R->fillData(f);
 			R->fillData(BC);
 			double residualDenominator = std::max(R->at(0)->norm(), 1e-3);
@@ -239,11 +239,11 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 			} else {
 				eslog::solver("     - HEAT NORM, CRITERIA                           %.5e / %.5e           -\n", residualNumerator, residualDenominator * _configuration.requested_second_residual);
 			}
-			f->fillData(_system->solver()->f);
+			f->fillData(system->solver()->f);
 		}
 
-		_system->solver()->BC->add(-1, U);
-		_system->setDirichlet();
+		system->solver()->BC->add(-1, U);
+		system->setDirichlet();
 
 		if (_configuration.adaptive_precision) {
 //			double solutionPrecisionError = 1;
@@ -256,30 +256,30 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 
 		eslog::solver("\n     - EQUIL. ITERATION :: %3d                     REASSEMBLED MATRICES :: %c, %c, %c, %c, %c -\n",
 				step::step.iteration,
-				(_system->builder->matrices & Builder::Request::K) ? 'K' : ' ',
-				(_system->builder->matrices & Builder::Request::M) ? 'M' : ' ',
-				(_system->builder->matrices & Builder::Request::C) ? 'C' : ' ',
-				(_system->builder->matrices & Builder::Request::R) ? 'R' : ' ',
-				(_system->builder->matrices & Builder::Request::f) ? 'f' : ' ');
-		_system->solve();
+				(system->builder->matrices & Builder::Request::K) ? 'K' : ' ',
+				(system->builder->matrices & Builder::Request::M) ? 'M' : ' ',
+				(system->builder->matrices & Builder::Request::C) ? 'C' : ' ',
+				(system->builder->matrices & Builder::Request::R) ? 'R' : ' ',
+				(system->builder->matrices & Builder::Request::f) ? 'f' : ' ');
+		system->solve();
 		if (_configuration.check_second_residual) {
 			computeDual();
 		}
 
 		if (_configuration.line_search) {
-			double lsInc = _system->solver()->x->at(0)->absmax();
+			double lsInc = system->solver()->x->at(0)->absmax();
 			double lsAlpha = lineSearch();
 			eslog::solver("     - LINE SEARCH, MAX DOF INCREMENT                               %.5f, %.5e -\n", lsAlpha, lsInc);
 		}
 
 		if (!_configuration.check_first_residual) {
-			_system->solver()->x->add(1, U);
-			_system->solutionChanged();
+			system->solver()->x->add(1, U);
+			system->solutionChanged();
 		} else {
-			double solutionNumerator = _system->solver()->x->at(0)->norm();
-			_system->solver()->x->add(1, U);
-			_system->solutionChanged();
-			double solutionDenominator = std::max(_system->solver()->x->at(0)->norm(), 1e-3);
+			double solutionNumerator = system->solver()->x->at(0)->norm();
+			system->solver()->x->add(1, U);
+			system->solutionChanged();
+			double solutionDenominator = std::max(system->solver()->x->at(0)->norm(), 1e-3);
 			solutionNorm = solutionNumerator / solutionDenominator;
 
 			if (solutionNorm > _configuration.requested_first_residual) {

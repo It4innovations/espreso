@@ -62,16 +62,16 @@ void TopologyOptimization::init(LoadStepSolver *previous)
 
 void TopologyOptimization::updateStructuralMatrices()
 {
-	_system->builder->matrices &= Builder::Request::K | Builder::Request::RBCf;
-	_system->assemble();
+	system->builder->matrices &= Builder::Request::K | Builder::Request::RBCf;
+	system->assemble();
 }
 
 void TopologyOptimization::runNextSubstep()
 {
-	_system->builder->internalForceReduction = 1;
-	_system->builder->timeIntegrationConstantK = 1;
-	_system->builder->timeIntegrationConstantC = 0;
-	_system->builder->timeIntegrationConstantM = 0;
+	system->builder->internalForceReduction = 1;
+	system->builder->timeIntegrationConstantK = 1;
+	system->builder->timeIntegrationConstantC = 0;
+	system->builder->timeIntegrationConstantM = 0;
 
 	auto setFixedRegions = [&] () {
 		for (auto preset = _configuration.constraint.preset_regions.begin(); preset != _configuration.constraint.preset_regions.end(); ++preset) {
@@ -93,14 +93,14 @@ void TopologyOptimization::runNextSubstep()
 	do {
 		step::time.current += 0.01;
 		step::time.shift = 0.1;
-		_system->nextSubstep();
+		system->nextSubstep();
 
 		eslog::solver("\n = ================================= TOPOLOGY OPTIMIZATION ================================= =\n");
 		eslog::solver(" =  LOAD STEP %2d, SUBSTEP %4d,                             ITERATION %4d, CHANGE %8.6f  =\n", step::step.loadstep + 1, step::step.substep + 1, iteration, change);
 		eslog::solver(" = ----------------------------------------------------------------------------------------- =\n");
 
-		_subStepSolver->solve(*this);
-		_system->processSolution();
+		subStepSolver->solve(*this);
+		system->processSolution();
 
 		double c = 0;
 		for (esint i = 0; i < C->size; i++) {

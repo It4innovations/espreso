@@ -7,7 +7,7 @@
 using namespace espreso;
 
 LoadStepSolver::LoadStepSolver(LinearSystem *system, SubStepSolver *subStepSolver, double duration)
-: _system(system), _subStepSolver(subStepSolver)
+: system(system), subStepSolver(subStepSolver)
 {
 	step::time.start = step::time.current;
 	step::time.final = step::time.current + duration;

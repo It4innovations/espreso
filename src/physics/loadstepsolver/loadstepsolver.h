@@ -22,10 +22,8 @@ public:
 	virtual void init(LoadStepSolver *previous) =0;
 	virtual void updateStructuralMatrices() =0;
 
-
-protected:
-	LinearSystem *_system;
-	SubStepSolver *_subStepSolver;
+	LinearSystem *system;
+	SubStepSolver *subStepSolver;
 };
 
 }

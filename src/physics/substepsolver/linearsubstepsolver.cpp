@@ -27,19 +27,19 @@ bool LinearSubStep::hasSameMode(const LoadStepSolverConfiguration &configuration
 
 void LinearSubStep::solve(LoadStepSolver &loadStepSolver)
 {
-	_system->builder->matrices = Builder::Request::KCM | Builder::Request::f | Builder::Request::BC;
+	system->builder->matrices = Builder::Request::KCM | Builder::Request::f | Builder::Request::BC;
 	loadStepSolver.updateStructuralMatrices();
-	_system->setDirichlet();
+	system->setDirichlet();
 
 	eslog::solver("     - LINEAR TIME STEP                          REASSEMBLED MATRICES  ::  %c, %c, %c, %c, %c -    \n",
-			(_system->builder->matrices & Builder::Request::K)  ? 'K' : ' ',
-			(_system->builder->matrices & Builder::Request::M)  ? 'M' : ' ',
-			(_system->builder->matrices & Builder::Request::C)  ? 'C' : ' ',
-			(_system->builder->matrices & Builder::Request::R)  ? 'R' : ' ',
-			(_system->builder->matrices & Builder::Request::f)  ? 'f' : ' ');
+			(system->builder->matrices & Builder::Request::K)  ? 'K' : ' ',
+			(system->builder->matrices & Builder::Request::M)  ? 'M' : ' ',
+			(system->builder->matrices & Builder::Request::C)  ? 'C' : ' ',
+			(system->builder->matrices & Builder::Request::R)  ? 'R' : ' ',
+			(system->builder->matrices & Builder::Request::f)  ? 'f' : ' ');
 
-	_system->solve();
-	_system->solutionChanged();
+	system->solve();
+	system->solutionChanged();
 }
 
 

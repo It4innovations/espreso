@@ -56,17 +56,17 @@ TransientSecondOrderImplicit::~TransientSecondOrderImplicit()
 
 void TransientSecondOrderImplicit::init(LoadStepSolver *previous)
 {
-	U = _system->solver()->x->shallowCopyStructure();
-	dU = _system->solver()->x->shallowCopyStructure();
-	V = _system->solver()->f->shallowCopyStructure();
-	W = _system->solver()->f->shallowCopyStructure();
-	X = _system->solver()->f->shallowCopyStructure();
-	Y = _system->solver()->f->shallowCopyStructure();
-	Z = _system->solver()->f->shallowCopyStructure();
-	dTK = _system->solver()->x->shallowCopyStructure();
-	dTM = _system->solver()->x->shallowCopyStructure();
+	U = system->solver()->x->shallowCopyStructure();
+	dU = system->solver()->x->shallowCopyStructure();
+	V = system->solver()->f->shallowCopyStructure();
+	W = system->solver()->f->shallowCopyStructure();
+	X = system->solver()->f->shallowCopyStructure();
+	Y = system->solver()->f->shallowCopyStructure();
+	Z = system->solver()->f->shallowCopyStructure();
+	dTK = system->solver()->x->shallowCopyStructure();
+	dTM = system->solver()->x->shallowCopyStructure();
 
-	U->fillData(_system->solver()->x);
+	U->fillData(system->solver()->x);
 	if (dynamic_cast<TransientSecondOrderImplicit*>(previous)) {
 		V->fillData(dynamic_cast<TransientSecondOrderImplicit*>(previous)->V);
 		W->fillData(dynamic_cast<TransientSecondOrderImplicit*>(previous)->W);
@@ -108,34 +108,34 @@ void TransientSecondOrderImplicit::updateDamping()
 
 void TransientSecondOrderImplicit::updateStructuralMatrices()
 {
-	_system->builder->matrices &= Builder::Request::K | Builder::Request::M | Builder::Request::RBCf;
-	_system->assemble();
+	system->builder->matrices &= Builder::Request::K | Builder::Request::M | Builder::Request::RBCf;
+	system->assemble();
 
 	switch (_configuration.damping.rayleigh.type) {
 	case RayleighDampingConfiguration::TYPE::NONE:
-		if (_system->builder->matrices & (Builder::Request::M | Builder::Request::f)) {
+		if (system->builder->matrices & (Builder::Request::M | Builder::Request::f)) {
 			X->sum(_newmarkConsts[0], U, _newmarkConsts[2], V);
 			X->add(_newmarkConsts[3], W);
-			_system->assembler()->M->apply(X, Y);
-			_system->solver()->f->add(1, Y);
+			system->assembler()->M->apply(X, Y);
+			system->solver()->f->add(1, Y);
 			eslog::checkpointln("PHYSICS SOLVER: MATRICES POST-PROCESSED");
 		}
 		break;
 	case RayleighDampingConfiguration::TYPE::DIRECT:
 	case RayleighDampingConfiguration::TYPE::DAMPING_RATIO:
-		if (_system->builder->matrices & (Builder::Request::K | Builder::Request::M | Builder::Request::f)) {
+		if (system->builder->matrices & (Builder::Request::K | Builder::Request::M | Builder::Request::f)) {
 			X->sum(_newmarkConsts[0], U, _newmarkConsts[2], V);
 			X->add(_newmarkConsts[3], W);
 			X->add(_massDamping * _newmarkConsts[1], U);
 			X->add(_massDamping * _newmarkConsts[4], V);
 			X->add(_massDamping * _newmarkConsts[5], W);
-			_system->assembler()->M->apply(X, Y);
-			_system->solver()->f->add(1, Y);
+			system->assembler()->M->apply(X, Y);
+			system->solver()->f->add(1, Y);
 
 			X->sum(_stiffnessDamping * _newmarkConsts[1], U, _stiffnessDamping * _newmarkConsts[4], V);
 			X->add(_stiffnessDamping * _newmarkConsts[5], W);
-			_system->assembler()->K->apply(X, Y);
-			_system->solver()->f->add(1, Y);
+			system->assembler()->K->apply(X, Y);
+			system->solver()->f->add(1, Y);
 			eslog::checkpointln("PHYSICS SOLVER: MATRICES POST-PROCESSED");
 		}
 		break;
@@ -150,7 +150,7 @@ void TransientSecondOrderImplicit::runNextSubstep()
 		step::time.current = step::time.final;
 	}
 	step::time.shift = step::time.current - last;
-	_system->nextSubstep();
+	system->nextSubstep();
 
 	switch (_configuration.damping.rayleigh.type) {
 	case RayleighDampingConfiguration::TYPE::NONE:
@@ -169,10 +169,10 @@ void TransientSecondOrderImplicit::runNextSubstep()
 		break;
 	}
 
-	_system->builder->internalForceReduction = 1;
-	_system->builder->timeIntegrationConstantK = 1 + _newmarkConsts[1] * _stiffnessDamping;
-	_system->builder->timeIntegrationConstantC = 0;
-	_system->builder->timeIntegrationConstantM = _newmarkConsts[0] + _newmarkConsts[1] * _massDamping;
+	system->builder->internalForceReduction = 1;
+	system->builder->timeIntegrationConstantK = 1 + _newmarkConsts[1] * _stiffnessDamping;
+	system->builder->timeIntegrationConstantC = 0;
+	system->builder->timeIntegrationConstantM = _newmarkConsts[0] + _newmarkConsts[1] * _massDamping;
 
 	switch (_configuration.method) {
 	case TransientSecondOrderImplicitSolverConfiguration::METHOD::NEWMARK:
@@ -184,9 +184,9 @@ void TransientSecondOrderImplicit::runNextSubstep()
 	eslog::solver(" =  LOAD STEP %2d, SUBSTEP %4d, TIME %10.6f, TIME STEP %10.6f, FINAL TIME %10.5f =\n", step::step.loadstep + 1, step::step.substep + 1, step::time.current, step::time.shift, step::time.final);
 	eslog::solver(" = ----------------------------------------------------------------------------------------- =\n");
 
-	_subStepSolver->solve(*this);
+	subStepSolver->solve(*this);
 
-	dU->sum(1, _system->solver()->x, -1, U);
+	dU->sum(1, system->solver()->x, -1, U);
 	_nTimeShift = step::time.shift;
 
 	bool changeConstants = false;
@@ -196,8 +196,8 @@ void TransientSecondOrderImplicit::runNextSubstep()
 		if (false && dU->at(0)->norm() / U->at(0)->norm() < 1e-5) {
 			_nTimeShift = std::min(_configuration.auto_time_stepping.max_time_step, _configuration.auto_time_stepping.IDFactor * step::time.shift);
 		} else {
-			_system->assembler()->K->apply(dU, dTK);
-			_system->assembler()->M->apply(dU, dTM);
+			system->assembler()->K->apply(dU, dTK);
+			system->assembler()->M->apply(dU, dTM);
 
 			double resFreq = std::sqrt(std::fabs(dU->at(0)->dot(dTK->at(0)) / (4 * M_PI * M_PI * dU->at(0)->dot(dTM->at(0)))));
 			double resPeriod = 1 / resFreq;
@@ -239,11 +239,11 @@ void TransientSecondOrderImplicit::runNextSubstep()
 		V->add( _newmarkConsts[7], Z);
 		std::swap(W, Z);
 
-		U->fillData(_system->solver()->x);
-		_system->processSolution();
+		U->fillData(system->solver()->x);
+		system->processSolution();
 	} else {
-		_system->solver()->x->fillData(U);
-		_system->solutionChanged();
+		system->solver()->x->fillData(U);
+		system->solutionChanged();
 		step::time.current -= step::time.shift;
 		--step::step.substep;
 	}
