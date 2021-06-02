@@ -732,8 +732,8 @@ void StructuralMechanics3DKernel::processElement(const Builder &builder, const E
 	Point orientation;
 	if (iterator.material->linear_elastic_properties.orientation) {
 		orientation.x = this->orientation->data[3 * iterator.offset + 0];
-		orientation.x = this->orientation->data[3 * iterator.offset + 1];
-		orientation.x = this->orientation->data[3 * iterator.offset + 2];
+		orientation.y = this->orientation->data[3 * iterator.offset + 1];
+		orientation.z = this->orientation->data[3 * iterator.offset + 2];
 	}
 
 	for (int n = 0; n < size; n++) {

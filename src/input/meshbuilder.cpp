@@ -128,6 +128,7 @@ void MeshBuilder::build()
 	case TYPE::GENERATED:
 		GeneratedInput{*this, false};
 	}
+	info::mesh->orientation = orientation;
 	profiler::syncend("build_mesh");
 }
 

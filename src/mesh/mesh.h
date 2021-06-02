@@ -3,9 +3,11 @@
 #define SRC_MESH_MESH_H_
 
 #include "element.h"
+#include "basis/containers/point.h"
 
 #include <string>
 #include <vector>
+#include <map>
 
 namespace espreso {
 
@@ -97,6 +99,7 @@ public:
 	std::vector<int> neighborsWithMe;
 
 	std::vector<const MaterialConfiguration*> materials;
+	std::map<std::string, Point > orientation;
 
 	Output *output;
 

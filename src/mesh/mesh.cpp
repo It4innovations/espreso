@@ -425,6 +425,32 @@ void Mesh::reclusterize()
 	}
 
 	mesh::sortNodes(nodes, elements, boundaryRegions);
+
+	// to be removed
+	NamedData *orientation = NULL, *poly = NULL;
+	if (info::ecf->input.insert_orientation) {
+		orientation = info::mesh->elements->appendData(3, NamedData::DataType::VECTOR, "ORIENTATION");
+		poly = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "POLY");
+	}
+
+	std::vector<ElementsRegionStore*> regions = elementsRegions;
+	elementsRegions.clear();
+	for (size_t r = 0; r < regions.size(); ++r) {
+		if (info::ecf->input.insert_orientation && StringCompare::caseInsensitivePreffix("poly", regions[r]->name)) {
+			auto it = this->orientation.find(regions[r]->name);
+			if (it != this->orientation.end()) {
+				for (size_t e = 0; e < regions[r]->elements->datatarray().size(); ++e) {
+					poly->data[regions[r]->elements->datatarray()[e]] = std::atoi(it->first.c_str() + 4);
+					orientation->data[3 * regions[r]->elements->datatarray()[e] + 0] = it->second.x;
+					orientation->data[3 * regions[r]->elements->datatarray()[e] + 1] = it->second.y;
+					orientation->data[3 * regions[r]->elements->datatarray()[e] + 2] = it->second.z;
+				}
+			}
+			delete regions[r];
+		} else {
+			elementsRegions.push_back(regions[r]);
+		}
+	}
 }
 
 void Mesh::computePersistentParameters()

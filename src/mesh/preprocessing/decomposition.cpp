@@ -485,6 +485,17 @@ void permuteElements(ElementStore *elements, NodeStore *nodes, DomainStore *doma
 		}
 	}
 
+	for (size_t v = 0; v < elements->data.size(); ++v) {
+		std::vector<double> data;
+		data.reserve(elements->data[v]->dimension * elements->distribution.process.size);
+		for (esint e = 0; e < elements->distribution.process.size; ++e) {
+			for (int d = 0; d < elements->data[v]->dimension; ++d) {
+				data.push_back(elements->data[v]->data[elements->data[v]->dimension * permutation[e] + d]);
+			}
+		}
+		elements->data[v]->data.swap(data);
+	}
+
 	profiler::synccheckpoint("remap");
 	profiler::syncend("permute_elements");
 	eslog::checkpointln("MESH: ELEMENTS PERMUTED");
