@@ -25,7 +25,7 @@ NeperMshMesh::KeywordWithSize::KeywordWithSize(InputFilePack &pack, const char *
 {
 	if (StringCompare::caseInsensitiveEq(std::string(c, c + open.size()), open)) {
 		const char *_c = c;
-		while (*c++ != '\n'); // $Nodes
+		while (*c++ != '\n');
 		char *next;
 		size = strtol(c, &next, 0);
 		c = next;
@@ -54,6 +54,27 @@ NeperMshMesh::Format::Format(InputFilePack &pack, const char *c)
 		c = next;
 		data_size = strtol(c, &next, 0);
 	} else if (StringCompare::caseInsensitiveEq(std::string(c, c + 14), "$EndMeshFormat")) {
+		const char *_c = c;
+		while (*c != '\n') { --c; }
+		end = offset + (c - _c);
+	} else {
+		eslog::error("MESIO internal error: cannot parse 'NEPER.msh format.\n");
+	}
+}
+
+NeperMshMesh::Groups::Groups(InputFilePack &pack, const char *c)
+: Keyword(pack, c)
+{
+	if (StringCompare::caseInsensitiveEq(std::string(c, c + std::string(open).size()), open)) {
+		const char *_c = c;
+		while (*c++ != '\n'); // $Groups
+		while (*c++ != '\n'); // elset
+		char *next;
+		size = strtol(c, &next, 0);
+		c = next;
+		while (*c++ != '\n'); // go to the first data line
+		begin = offset + (c - _c);
+	} else if (StringCompare::caseInsensitiveEq(std::string(c, c + std::string(close).size()), close)) {
 		const char *_c = c;
 		while (*c != '\n') { --c; }
 		end = offset + (c - _c);
@@ -260,14 +281,16 @@ void NeperMshMesh::parseASCII(MeshBuilder &mesh)
 		}
 	}
 
-	std::vector<esint> polyid;
+	std::vector<esint> polyid, groups;
 	std::vector<Point> orientation;
 	ASCIIParser::parse(polyid, orientation, _meshfile, _elsetOrientations.front().begin, _elsetOrientations.front().end);
+	ASCIIParser::parse(groups, _meshfile, _groups.front().begin, _groups.front().end);
 
 	esint maxpoly = eregs.size();
 	Communication::allReduce(&maxpoly, NULL, 1, MPITools::getType(maxpoly).mpitype, MPI_MAX);
 	Communication::allGatherUnknownSize(boundaries);
 	Communication::allGatherUnknownSize(polyid);
+	Communication::allGatherUnknownSize(groups);
 	Communication::allGatherUnknownSize(orientation);
 
 	size_t current = 0;
@@ -289,6 +312,20 @@ void NeperMshMesh::parseASCII(MeshBuilder &mesh)
 		}
 	}
 	mesh.nregions[boundaries[current].name].assign(nsets.begin() + begin, nsets.end());
+
+	for (size_t i = 0; i < groups.size(); i += 2) {
+		auto &elems = mesh.eregions["GROUP_" + std::to_string(groups[i + 1])];
+		if ((size_t)groups[i] <= eregs.size()) {
+			elems.insert(elems.end(), eregs[groups[i] - 1].begin(), eregs[groups[i] - 1].end());
+		}
+	}
+	for (auto reg = mesh.eregions.begin(); reg != mesh.eregions.end(); ++reg) {
+		if (StringCompare::caseSensitivePreffix("GROUP_", reg->first)) {
+			if (!std::is_sorted(reg->second.begin(), reg->second.end())) {
+				std::sort(reg->second.begin(), reg->second.end());
+			}
+		}
+	}
 
 	eregs.resize(maxpoly);
 	for (esint i = 0; i < maxpoly; ++i) {

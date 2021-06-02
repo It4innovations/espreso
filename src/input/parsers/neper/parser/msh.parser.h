@@ -104,11 +104,12 @@ class NeperMshMesh {
 		ElementOrientations(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
 	};
 
-	struct Groups: public KeywordWithSize {
+	struct Groups: public Keyword {
+		size_t size;
 		static constexpr const char *open = "$Groups", *close = "$EndGroups";
 
-		Groups() {}
-		Groups(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
+		Groups(): size(0) {}
+		Groups(InputFilePack &pack, const char *c);
 	};
 
 public:
