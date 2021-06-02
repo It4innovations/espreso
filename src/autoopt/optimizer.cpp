@@ -12,12 +12,12 @@ using namespace espreso;
 
 bool EmptyOptimizer::set(std::function<bool(void)> fnc)
 {
-	return true;
+	return fnc();
 }
 
 bool EmptyOptimizer::run(std::function<bool(void)> fnc)
 {
-	return true;
+	return fnc();
 }
 
 EvolutionaryOptimizer::EvolutionaryOptimizer(const AutoOptimizationConfiguration& configuration, std::vector<ECFParameter*>& parameters)

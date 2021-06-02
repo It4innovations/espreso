@@ -378,6 +378,7 @@ void PhysicalSolver::runSingle(PhysicalSolver &solver, TPhysics &configuration)
 				delete prev;
 				return true;
 			});
+
 			step::step.substep++;
 			step::step.iteration = 0;
 		}
