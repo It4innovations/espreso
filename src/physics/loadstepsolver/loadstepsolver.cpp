@@ -13,15 +13,3 @@ LoadStepSolver::LoadStepSolver(LinearSystem *system, SubStepSolver *subStepSolve
 	step::time.final = step::time.current + duration;
 	step::time.shift = duration;
 }
-
-void LoadStepSolver::run()
-{
-	step::step.substep = step::duplicate.offset;
-	step::step.iteration = 0;
-
-	while (!step::isLast()) {
-		runNextSubstep();
-		step::step.substep++;
-		step::step.iteration = 0;
-	}
-}

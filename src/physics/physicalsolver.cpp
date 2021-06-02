@@ -1,5 +1,6 @@
 
 #include "physicalsolver.h"
+#include "esinfo/autoopt.h"
 #include "esinfo/stepinfo.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
@@ -50,7 +51,7 @@ static LinearSystem* getSystem(LinearSystem *previous, PhysicsConfiguration &phy
 	switch (loadStep.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI: {
 		FETISystem *system = new FETISystem(1, 1, loadStep.feti);
-		system->assembler()->composer = new NodesUniformFETIComposer(loadStep.feti, kernel, system->assembler(), 1);
+		system->assembler()->composer = new NodesUniformFETIComposer(kernel, system->assembler(), 1);
 		current = system;
 	} break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE: {
@@ -133,7 +134,7 @@ static LinearSystem* getSystem(LinearSystem *previous, PhysicsConfiguration &phy
 	switch (loadStep.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI: {
 		FETISystem *system = new FETISystem(1, 1, loadStep.feti);
-		system->assembler()->composer = new NodesUniformFETIComposer(loadStep.feti, kernel, system->assembler(), DOFs);
+		system->assembler()->composer = new NodesUniformFETIComposer(kernel, system->assembler(), DOFs);
 		current = system;
 	} break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE: {
@@ -348,7 +349,37 @@ void PhysicalSolver::runSingle(PhysicalSolver &solver, TPhysics &configuration)
 		eslog::ln();
 
 		eslog::startln("PHYSICS SOLVER: STARTED", "PHYSICS SOLVER");
-		solver.loadStepSolver->run();
+
+//		solver.loadStepSolver->run();
+		step::step.substep = step::duplicate.offset;
+		step::step.iteration = 0;
+
+		autoopt::solver::init(loadStepSettings);
+		bool updateDecomposition = false;
+		info::ecf->input.decomposition.ecfdescription->getParameter(&info::ecf->input.decomposition.domains)->addListener(ECFParameter::Event::VALUE_SET, [&updateDecomposition] (const std::string &value) { updateDecomposition = true; });
+
+		while (!step::isLast()) {
+			if (step::isInitial()) {
+				PhysicalSolver prev = solver;
+				solver.system = getSystem(prev.system, configuration, configuration, loadStepSettings, configuration.dimension);
+				solver.subStepSolver = getSubStepSolver(prev.subStepSolver, loadStepSettings, solver.system);
+				solver.loadStepSolver = getLoadStepSolver(prev.loadStepSolver, loadStepSettings, solver.system, solver.subStepSolver);
+			}
+			autoopt::solver::update([&] () {
+				if (updateDecomposition) {
+					info::mesh->partitiate(info::ecf->input.decomposition.domains);
+					updateDecomposition = false;
+				}
+				PhysicalSolver prev = solver;
+				solver.system = getSystem(prev.system, configuration, configuration, loadStepSettings, configuration.dimension);
+				solver.subStepSolver = getSubStepSolver(prev.subStepSolver, loadStepSettings, solver.system);
+				solver.loadStepSolver = getLoadStepSolver(prev.loadStepSolver, loadStepSettings, solver.system, solver.subStepSolver);
+				solver.loadStepSolver->runNextSubstep();
+				return true;
+			});
+			step::step.substep++;
+			step::step.iteration = 0;
+		}
 		eslog::endln("PHYSICS SOLVER: FINISHED");
 
 		++step::step.loadstep;

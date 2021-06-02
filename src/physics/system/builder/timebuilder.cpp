@@ -96,6 +96,7 @@ void TimeBuilder::init(FETISystem &system)
 	system.solvers[0].buildB1();
 	system.solvers[0].Kdiag.shallowCopyStructure(system.solvers[0].f.at(0));
 	if (system.solvers[0].solver.configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
+		system.assemblers[0].composer->kernel->solverDataProvider->feti->computeFixPoints();
 		system.assemblers[0].composer->kernel->solverDataProvider->feti->initKernels(
 				system.assemblers[0].K, system.assemblers[0].N1, system.assemblers[0].N2, system.assemblers[0].RegMat,
 				system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI);
@@ -106,7 +107,8 @@ void TimeBuilder::init(FETISystem &system)
 	if (system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI) {
 		switch (system.solvers[0].solver.configuration.B0_type) {
 		case FETIConfiguration::B0_TYPE::CORNERS:
-			reinterpret_cast<FETIComposer*>(system.assemblers[0].composer)->buildB0FromCorners(system.assemblers[0].B0);
+			system.assemblers[0].composer->kernel->solverDataProvider->feti->computeCornerNodes();
+			system.assemblers[0].composer->kernel->solverDataProvider->feti->buildB0FromCorners(system.assemblers[0].K, system.assemblers[0].B0);
 			system.solvers[0].B0.shallowCopy(&system.assemblers[0].B0);
 			break;
 		case FETIConfiguration::B0_TYPE::KERNELS:

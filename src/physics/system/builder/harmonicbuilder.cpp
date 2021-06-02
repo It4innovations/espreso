@@ -151,6 +151,7 @@ void HarmonicBuilder::init(FETISystem &system)
 				system.solvers[0].solver.configuration.regularization_version == FETIConfiguration::REGULARIZATION_VERSION::FIX_POINTS ||
 				system.solvers[0].solver.configuration.regularization_version == FETIConfiguration::REGULARIZATION_VERSION::EIGEN_VECTORS) {
 
+			system.assemblers[0].composer->kernel->solverDataProvider->feti->computeFixPoints();
 			int NDIM = system.solvers[0].kernelDimension = system.assemblers[0].composer->kernel->solverDataProvider->feti->initKernels(
 					system.assemblers[0].K, system.assemblers[0].N1, system.assemblers[0].N2, system.assemblers[0].RegMat,
 					system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI);
@@ -170,7 +171,8 @@ void HarmonicBuilder::init(FETISystem &system)
 	if (system.solvers[0].solver.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI) {
 		switch (system.solvers[0].solver.configuration.B0_type) {
 		case FETIConfiguration::B0_TYPE::CORNERS:
-			reinterpret_cast<FETIComposer*>(system.assemblers[0].composer)->buildB0FromCorners(system.assemblers[0].B0);
+			system.assemblers[0].composer->kernel->solverDataProvider->feti->computeCornerNodes();
+			system.assemblers[0].composer->kernel->solverDataProvider->feti->buildB0FromCorners(system.assemblers[0].K, system.assemblers[0].B0);
 			system.solvers[0].B0.uniformCombination(&system.assemblers[0].B0, &system.assemblers[0].B0, DOFs, DOFs);
 			system.solvers[0].B0.addToCombination(1, &system.assemblers[0].B0, 0, 0, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
 			system.solvers[0].B0.addToCombination(1, &system.assemblers[0].B0, DOFs, DOFs, DOFs, DOFs, 2 * DOFs, 2 * DOFs);
