@@ -45,6 +45,8 @@ struct ExpressionsToElements: public ExpressionsToParameter, public ElementOpera
 	ParameterData &parameter;
 	std::vector<int> &isset;
 
+	virtual ~ExpressionsToElements() {}
+
 	template<int mask>
 	ExpressionsToElements(ElementExternalParameter<mask> &parameter, double defaultValue, const char* name)
 	: ExpressionsToParameter(parameter, defaultValue),
@@ -54,6 +56,24 @@ struct ExpressionsToElements: public ExpressionsToParameter, public ElementOpera
 	{
 		parameter.builder = this;
 	}
+};
+
+struct ExpressionsToElementsSimple: public ExpressionsToElements {
+
+	template<int mask>
+	ExpressionsToElementsSimple(ElementExternalParameter<mask> &parameter, double defaultValue, const char* name)
+	: ExpressionsToElements(parameter, defaultValue, name) {}
+
+	bool build(HeatTransferModuleOpt &kernel) override;
+	void apply(int interval);
+};
+
+
+struct ExpressionsToElementsSimd: public ExpressionsToElements {
+
+	template<int mask>
+	ExpressionsToElementsSimd(ElementExternalParameter<mask> &parameter, double defaultValue, const char* name)
+	: ExpressionsToElements(parameter, defaultValue, name) {}
 
 	bool build(HeatTransferModuleOpt &kernel) override;
 	void apply(int interval);

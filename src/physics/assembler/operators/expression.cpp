@@ -10,7 +10,7 @@
 
 using namespace espreso;
 
-bool ExpressionsToElements::build(HeatTransferModuleOpt &kernel)
+bool ExpressionsToElementsSimple::build(HeatTransferModuleOpt &kernel)
 {
 	if (std::all_of(evaluators.begin(), evaluators.end(), [] (const Evaluator *ev) { return ev == NULL; })) {
 		return false;
@@ -84,25 +84,115 @@ bool ExpressionsToElements::build(HeatTransferModuleOpt &kernel)
 		}
 	}
 	
-	if (kernel.gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
-	{
-		parameter.resizeAligned(SIMD::size*sizeof(double));
-	}
-	else
-	{
-		parameter.resize();
-	}
+	parameter.resize();
+	
 	kernel.addParameter(parameter);
 	return true;
 }
 
-void ExpressionsToElements::apply(int interval)
+void ExpressionsToElementsSimple::apply(int interval)
 {
 	auto idata = parameter.data->begin() + interval;
 	if (parameter.update[interval]) {
 		for (int d = 0; d < dimension; ++d) {
 			if (evaluators[dimension * interval + d]) {
 				evaluators[dimension * interval + d]->evalVector(idata->size() / dimension, dimension, params[dimension * interval + d], idata->data() + d);
+			} else {
+				for (size_t j = 0; j < idata->size(); j += dimension) {
+					idata->data()[j + d] = defaultValue;
+				}
+			}
+		}
+	}
+}
+
+bool ExpressionsToElementsSimd::build(HeatTransferModuleOpt &kernel)
+{
+	if (std::all_of(evaluators.begin(), evaluators.end(), [] (const Evaluator *ev) { return ev == NULL; })) {
+		return false;
+	}
+	for (size_t i = 0; i < parameter.isconst.size(); ++i) {
+		for (int d = 0; d < dimension && evaluators[i * dimension + d]; ++d) {
+			isset[i] = isset[i] | evaluators[i * dimension + d]->isset;
+			for (size_t p = 0; p < evaluators[i * dimension + d]->variables.size(); ++p) {
+				parameter.isconst[i] = false; // in the case of TIME it is possible to keep value constant
+				if (StringCompare::caseInsensitiveEq("INITIAL_TEMPERATURE", evaluators[i * dimension + d]->variables[p])) {
+					if (parameter.size.gp) {
+						params[i * dimension + d].general.push_back({ (kernel.temp.initial.gp.data->begin() + i)->data(), 0, kernel.temp.initial.gp.isconst[i] ? 0 : 1 });
+						parameter.addInput(kernel.temp.initial.gp);
+					} else {
+						params[i * dimension + d].general.push_back({ (kernel.temp.initial.node.data->begin() + i)->data(), 0, kernel.temp.initial.node.isconst[i] ? 0 : 1 });
+						parameter.addInput(kernel.temp.initial.node);
+					}
+				}
+				if (StringCompare::caseInsensitiveEq("TEMPERATURE", evaluators[i * dimension + d]->variables[p])) {
+					if (parameter.size.gp) {
+						params[i * dimension + d].general.push_back({ (kernel.temp.gp.data->begin() + i)->data(), 0, kernel.temp.gp.isconst[i] ? 0 : 1 });
+						parameter.addInput(kernel.temp.gp);
+					} else {
+						params[i * dimension + d].general.push_back({ (kernel.temp.node.data->begin() + i)->data(), 0, kernel.temp.node.isconst[i] ? 0 : 1 });
+						parameter.addInput(kernel.temp.node);
+					}
+				}
+				bool insertGpCoords = false, insertNodeCoords = false;
+				if (StringCompare::caseInsensitiveEq("COORDINATE_X", evaluators[i * dimension + d]->variables[p])) {
+					if (parameter.size.gp) {
+						params[i * dimension + d].general.push_back({ (kernel.coordsSimd.gp.data->begin() + i)->data(), 0, kernel.coords.gp.isconst[i] ? 0 : info::mesh->dimension });
+						insertGpCoords = true;
+					} else {
+						params[i * dimension + d].general.push_back({ (kernel.coordsSimd.node.data->begin() + i)->data(), 0, kernel.coords.node.isconst[i] ? 0 : info::mesh->dimension });
+						insertNodeCoords = true;
+					}
+				}
+				if (StringCompare::caseInsensitiveEq("COORDINATE_Y", evaluators[i * dimension + d]->variables[p])) {
+					if (parameter.size.gp) {
+						params[i * dimension + d].general.push_back({ (kernel.coordsSimd.gp.data->begin() + i)->data(), 1, kernel.coords.gp.isconst[i] ? 0 : info::mesh->dimension });
+						insertGpCoords = true;
+					} else {
+						params[i * dimension + d].general.push_back({ (kernel.coordsSimd.node.data->begin() + i)->data(), 1, kernel.coords.node.isconst[i] ? 0 : info::mesh->dimension });
+						insertNodeCoords = true;
+					}
+				}
+				if (info::mesh->dimension == 3) {
+					if (StringCompare::caseInsensitiveEq("COORDINATE_Z", evaluators[i * dimension + d]->variables[p])) {
+						if (parameter.size.gp) {
+							params[i * dimension + d].general.push_back({ (kernel.coordsSimd.gp.data->begin() + i)->data(), 2, kernel.coords.gp.isconst[i] ? 0 : info::mesh->dimension });
+							insertGpCoords = true;
+						} else {
+							params[i * dimension + d].general.push_back({ (kernel.coordsSimd.node.data->begin() + i)->data(), 2, kernel.coords.node.isconst[i] ? 0 : info::mesh->dimension });
+							insertNodeCoords = true;
+						}
+					}
+				}
+				if (insertGpCoords) {
+					parameter.addInput(kernel.coords.gp);
+				}
+				if (insertNodeCoords) {
+					parameter.addInput(kernel.coords.node);
+				}
+//					if (StringCompare::caseInsensitiveEq("TIME", evaluators[i * dimension + d]->parameters[p])) {
+//						info.addInput(_time, interval, dimension);
+//					}
+				if (params[i * dimension + d].general.size() == p) {
+					eslog::error("ESPRESO internal error: implement dependency on parameter: '%s'\n", evaluators[i * dimension + d]->variables[p]);
+				}
+			}
+		}
+	}
+	
+	parameter.resizeAligned(SIMD::size*sizeof(double));
+	
+	kernel.addParameter(parameter);
+	return true;
+}
+
+void ExpressionsToElementsSimd::apply(int interval)
+{
+	auto idata = parameter.data->begin() + interval;
+	if (parameter.update[interval]) {
+		for (int d = 0; d < dimension; ++d) {
+			if (evaluators[dimension * interval + d]) {
+				evaluators[dimension * interval + d]->evalVectorSimd(idata->size() / dimension, dimension, params[dimension * interval + d], idata->data() + d);
 			} else {
 				for (size_t j = 0; j < idata->size(); j += dimension) {
 					idata->data()[j + d] = defaultValue;

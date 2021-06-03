@@ -182,7 +182,7 @@ struct HeatStiffnessSimd: public ElementOperatorBuilder {
 		if (mat->thermal_conductivity.model == ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
 			if (info::mesh->dimension == 2) {
 				iterate_elements_gps_simd<HeatTransferModuleOpt::NGP>(Stiffness2DHeatIsotropicSimd(kernel.integrationSimd.dND, kernel.integrationSimd.weight, kernel.integrationSimd.jacobiDeterminant, kernel.materialSimd.conductivityIsotropic, kernel.gradientSimd.xi, kernel.thicknessSimd.gp, kernel.elementsSimd.stiffness, interval));
-			}		
+			}
 		}
 	}
 };
