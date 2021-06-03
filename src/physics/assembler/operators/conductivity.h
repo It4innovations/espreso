@@ -249,12 +249,12 @@ struct ThermalConductivitySimd: public ElementOperatorBuilder {
 		const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
 		if (info::mesh->dimension == 2) {
 			switch (mat->thermal_conductivity.model) {
-			case ThermalConductivityConfiguration::MODEL::ISOTROPIC: CopyElementParameters(kernel.material.model.isotropic, kernel.materialSimd.conductivityIsotropic, "COPY ISOTROPIC CONDUCTIVITY").apply(interval); return;
+			case ThermalConductivityConfiguration::MODEL::ISOTROPIC: CopyElementParameters(kernel.materialSimd.model.isotropic, kernel.materialSimd.conductivityIsotropic, "COPY ISOTROPIC CONDUCTIVITY").apply(interval); return;
 			}
 		}
 		if (info::mesh->dimension == 3) {
 			switch (mat->thermal_conductivity.model) {
-			case ThermalConductivityConfiguration::MODEL::ISOTROPIC: CopyElementParameters(kernel.material.model.isotropic, kernel.materialSimd.conductivityIsotropic, "COPY ISOTROPIC CONDUCTIVITY").apply(interval); return;
+			case ThermalConductivityConfiguration::MODEL::ISOTROPIC: CopyElementParameters(kernel.materialSimd.model.isotropic, kernel.materialSimd.conductivityIsotropic, "COPY ISOTROPIC CONDUCTIVITY").apply(interval); return;
 			}
 		}
 	}

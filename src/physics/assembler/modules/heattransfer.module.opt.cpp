@@ -90,7 +90,7 @@ void HeatTransferModuleOpt::initTemperature()
 	/// 3. Dirichlet -> initialTemperature (if 'init_temp_respect_bc')
 	/// 4. initialTemperature -> nodeInitialTemperature (TODO: check the correction with TB)
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	temp.initial.node.builder = new ExpressionsToElements(temp.initial.node, 273.15, "INITIAL TEMPERATURE");
+	temp.initial.node.builder = new ExpressionsToElementsSimple(temp.initial.node, 273.15, "INITIAL TEMPERATURE");
 	if (info::mesh->dimension == 2) {
 		if (info::ecf->heat_transfer_2d.init_temp_respect_bc) {
 			temp.initial.node.setConstness(false);
@@ -190,11 +190,11 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 			if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
 			{
 				eslog::warning("WARNING: CONSTANT THICKNESS ONLY.\n");
-				builders.push_back(new ExpressionsToElements(thicknessSimd.gp, 1, "ELEMENTS THICKNESS"));
+				builders.push_back(new ExpressionsToElementsSimd(thicknessSimd.gp, 1, "ELEMENTS THICKNESS"));
 				examineElementParameter("THICKNESS", info::ecf->heat_transfer_2d.thickness, *thicknessSimd.gp.builder);
 			}
 			// Redundant beacause of boundary
-			builders.push_back(new ExpressionsToElements(thickness.gp, 1, "ELEMENTS THICKNESS"));
+			builders.push_back(new ExpressionsToElementsSimple(thickness.gp, 1, "ELEMENTS THICKNESS"));
 			examineElementParameter("THICKNESS", info::ecf->heat_transfer_2d.thickness, *thickness.gp.builder);
 			builders.push_back(new ExpressionsToBoundaryFromElement(*thickness.gp.builder, thickness.boundary.gp, "BOUDARY THICKNESS"));
 
@@ -218,17 +218,22 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 		}
 		eslog::info(" ============================================================================================= \n");
 
-		builders.push_back(new ExpressionsToElements(cooSystem.cartesian2D, 0, "CARTESIAN 2D COORDINATE SYSTEM"));
-		builders.push_back(new ExpressionsToElements(cooSystem.cartesian3D, 0, "CARTESIAN 3D COORDINATE SYSTEM"));
-		builders.push_back(new ExpressionsToElements(cooSystem.spherical, 0, "SPHERICAL COORDINATE SYSTEM"));
-		builders.push_back(new ExpressionsToElements(cooSystem.cylindric, 0, "CYLINDRIC COORDINATE SYSTEM"));
-		builders.push_back(new ExpressionsToElements(material.model.isotropic, 1, "ISOTROPIC MATERIAL MODEL"));
-		builders.push_back(new ExpressionsToElements(material.model.diagonal, 1, "DIAGONAL MATERIAL MODEL"));
-		builders.push_back(new ExpressionsToElements(material.model.symmetric2D, 1, "SYMMETRIC MATERIAL MODEL"));
-		builders.push_back(new ExpressionsToElements(material.model.symmetric3D, 1, "SYMMETRIC MATERIAL MODEL"));
-		builders.push_back(new ExpressionsToElements(material.model.anisotropic, 1, "ANISOTROPIC MATERIAL MODEL"));
-		builders.push_back(new ExpressionsToElements(material.density, 1, "MATERIAL DENSITY"));
-		builders.push_back(new ExpressionsToElements(material.heatCapacity, 1, "MATERIAL HEAT CAPACITY"));
+		if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
+		{
+			builders.push_back(new ExpressionsToElementsSimd(materialSimd.model.isotropic, 1, "ISOTROPIC MATERIAL MODEL"));
+		}
+
+		builders.push_back(new ExpressionsToElementsSimple(cooSystem.cartesian2D, 0, "CARTESIAN 2D COORDINATE SYSTEM"));
+		builders.push_back(new ExpressionsToElementsSimple(cooSystem.cartesian3D, 0, "CARTESIAN 3D COORDINATE SYSTEM"));
+		builders.push_back(new ExpressionsToElementsSimple(cooSystem.spherical, 0, "SPHERICAL COORDINATE SYSTEM"));
+		builders.push_back(new ExpressionsToElementsSimple(cooSystem.cylindric, 0, "CYLINDRIC COORDINATE SYSTEM"));
+		builders.push_back(new ExpressionsToElementsSimple(material.model.isotropic, 1, "ISOTROPIC MATERIAL MODEL"));
+		builders.push_back(new ExpressionsToElementsSimple(material.model.diagonal, 1, "DIAGONAL MATERIAL MODEL"));
+		builders.push_back(new ExpressionsToElementsSimple(material.model.symmetric2D, 1, "SYMMETRIC MATERIAL MODEL"));
+		builders.push_back(new ExpressionsToElementsSimple(material.model.symmetric3D, 1, "SYMMETRIC MATERIAL MODEL"));
+		builders.push_back(new ExpressionsToElementsSimple(material.model.anisotropic, 1, "ANISOTROPIC MATERIAL MODEL"));
+		builders.push_back(new ExpressionsToElementsSimple(material.density, 1, "MATERIAL DENSITY"));
+		builders.push_back(new ExpressionsToElementsSimple(material.heatCapacity, 1, "MATERIAL HEAT CAPACITY"));
 
 		///////////////////////////////////// Set materials and check if there is not any incorrect region intersection
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -285,7 +290,7 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 				switch (mat->thermal_conductivity.model) {
 				case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
 					eslog::info("         CONDUCTIVITY:                                                              ISOTROPIC \n");
-					examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.isotropic.builder, 0);
+					examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *materialSimd.model.isotropic.builder, 0);
 					break;
 				default:
 					eslog::error("EXPERIMENTAL ASSEMBLER SUPPORTS ISOTROPIC MODEL OF THERMAL CONDCTIVITY ONLY.\n");
@@ -408,7 +413,7 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 	}
 
 	if (configuration.translation_motions.size()) {
-		builders.push_back(new ExpressionsToElements(translationMotions.gp, 1, "TRANSLATION MOTION"));
+		builders.push_back(new ExpressionsToElementsSimple(translationMotions.gp, 1, "TRANSLATION MOTION"));
 		examineElementParameter("TRANSLATION MOTION.X", configuration.translation_motions, *translationMotions.gp.builder, 0);
 		examineElementParameter("TRANSLATION MOTION.Y", configuration.translation_motions, *translationMotions.gp.builder, 1);
 		if (info::mesh->dimension == 3) {
@@ -483,9 +488,17 @@ HeatTransferModuleOpt::HeatTransferModuleOpt(HeatTransferModuleOpt *previous, He
 	builders.swap(nonempty);
 
 	if (gradient.output) {
+		if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
+		{
+			eslog::error("EXPERIMENTAL ASSEMBLER DOESNT SUPPORT GRADIENT OUTPUT.\n");
+		}
 		results.push_back(new Gradient(*this));
 	}
 	if (flux.output) {
+		if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
+		{
+			eslog::error("EXPERIMENTAL ASSEMBLER DOESNT SUPPORT FLUX OUTPUT.\n");
+		}
 		results.push_back(new Flux(*this));
 	}
 
@@ -519,7 +532,14 @@ void HeatTransferModuleOpt::solutionChanged(Vectors *solution)
 
 void HeatTransferModuleOpt::updateStiffness(double *K, esint *perm, int interval)
 {
-	MatricesFiller(*this, K, perm).apply(interval);
+	if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
+	{
+		MatricesFillerSimd(*this, K, perm).apply(interval);
+	}
+	else
+	{
+		MatricesFiller(*this, K, perm).apply(interval);
+	}
 }
 
 void HeatTransferModuleOpt::updateStiffness(double *K, esint *perm, int region, int interval)
@@ -591,10 +611,17 @@ void HeatTransferModuleOpt::printVersions()
 	printParamtereStats("elements.mass", elements.mass);
 	printParamtereStats("elements.rhs", elements.rhs);
 
-	printParamtereStats("gradient.output", gradient.output);
-	printParamtereStats("gradient.xi", gradient.xi);
+	if (gradient.output)
+	{
+		printParamtereStats("gradient.output", gradient.output);
+	}
 
-	printParamtereStats("flux.output", flux.output);
+	printParamtereStats("gradient.xi", gradient.xi);
+	
+	if (flux.output)
+	{	
+		printParamtereStats("flux.output", flux.output);
+	}
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		printf("REGION: %s\n", info::mesh->boundaryRegions[r]->name.c_str());
