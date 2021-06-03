@@ -28,6 +28,7 @@ public:
 	virtual Evaluator* copy() const { return new ExpressionEvaluator(*this); }
 
 	void evalVector(esint size, esint increment, const Params &params, double *results) const;
+	void evalVectorSimd(esint size, esint increment, const Params &params, double *results) const;
 	void evalFiltered(esint size, esint increment, const esint *elements, const esint *distribution, const Params &params, double *results) const;
 	void evalSelectedSparse(esint size, esint increment, const esint *selection, const Params &params, double *results) const;
 	void evalSelectedDense(esint size, esint increment, const esint *selection, const Params &params, double *results) const;

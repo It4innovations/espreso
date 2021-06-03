@@ -3,6 +3,7 @@
 #define SRC_BASIS_EVALUATOR_EVALUATOR_H_
 
 #include "esinfo/stepinfo.h"
+#include "math/simd/simd.h"
 
 #include <string>
 #include <vector>
@@ -78,6 +79,11 @@ public:
 		for (esint i = 0; i < size; ++i) {
 			results[i * increment] = 0;
 		}
+	}
+
+	virtual void evalVectorSimd(esint size, esint increment, const Params &params, double *results) const
+	{
+		evalVector(size, 1, params, results);
 	}
 
 	virtual void evalFiltered(esint size, const esint *elements, const esint *distribution, const Params &params, double *results) const

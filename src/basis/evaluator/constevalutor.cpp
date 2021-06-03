@@ -10,6 +10,14 @@ void ConstEvaluator::evalVector(esint size, esint increment, const Params &param
 	}
 }
 
+void ConstEvaluator::evalVectorSimd(esint size, esint increment, const Params &params, double *results) const
+{
+	for (esint i = 0; i < size; i += SIMD::size) {
+		for (esint simdLane = 0; simdLane < SIMD::size; ++simdLane) {
+			results[i * increment + simdLane] = _value;
+		}
+	}
+}
 
 void ConstEvaluator::evalFiltered(esint size, esint increment, const esint *elements, const esint *distribution, const Params &params, double *results) const
 {

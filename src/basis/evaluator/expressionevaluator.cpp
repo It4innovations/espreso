@@ -53,6 +53,19 @@ void ExpressionEvaluator::evalVector(esint size, esint increment, const Params &
 	}
 }
 
+void ExpressionEvaluator::evalVectorSimd(esint size, esint increment, const Params &params, double *results) const
+{
+	int thread = omp_get_thread_num();
+	for (esint i = 0; i < size; i+=SIMD::size) {
+		for (esint simdLane = 0; simdLane < SIMD::size; ++simdLane) {
+			for (size_t p = 0; p < params.general.size(); ++p) {
+				_expressions[thread]->values[p] = *(params.general[p].val + i * params.general[p].increment + params.general[p].offset + simdLane);
+			}
+			results[i * increment + simdLane] = _expressions[thread]->evaluate();
+		}
+	}
+}
+
 void ExpressionEvaluator::evalFiltered(esint size, esint increment, const esint *elements, const esint *distribution, const Params &params, double *results) const
 {
 	int thread = omp_get_thread_num();
