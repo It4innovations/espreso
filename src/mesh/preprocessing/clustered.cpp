@@ -614,8 +614,9 @@ void computeRegionsElementNodes(const NodeStore *nodes, const ElementStore *elem
 			for (size_t t = 0; t < threads; t++) {
 				rnodes[t].reserve(elements->nodes->datatarray().size(t));
 				auto enodes = elements->nodes->cbegin();
-				for (auto e = elementsRegions[r]->elements->datatarray().cbegin(t), prev = elementsRegions[r]->elements->datatarray().cbegin(); e != elementsRegions[r]->elements->datatarray().cend(t); prev = e++) {
-					enodes += *e - *prev;
+				esint prev = 0;
+				for (auto e = elementsRegions[r]->elements->datatarray().cbegin(t); e != elementsRegions[r]->elements->datatarray().cend(t); prev = *e++) {
+					enodes += *e - prev;
 					rnodes[t].insert(rnodes[t].end(), enodes->begin(), enodes->end());
 				}
 				utils::sortAndRemoveDuplicates(rnodes[t]);
