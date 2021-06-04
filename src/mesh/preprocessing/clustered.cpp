@@ -613,8 +613,8 @@ void computeRegionsElementNodes(const NodeStore *nodes, const ElementStore *elem
 			#pragma omp parallel for
 			for (size_t t = 0; t < threads; t++) {
 				rnodes[t].reserve(elements->nodes->datatarray().size(t));
-				auto enodes = elements->nodes->cbegin() + *elementsRegions[r]->elements->datatarray().begin(t);
-				for (auto e = elementsRegions[r]->elements->datatarray().begin(t), prev = e; e != elementsRegions[r]->elements->datatarray().end(t); prev = e++) {
+				auto enodes = elements->nodes->cbegin();
+				for (auto e = elementsRegions[r]->elements->datatarray().cbegin(t), prev = elementsRegions[r]->elements->datatarray().cbegin(); e != elementsRegions[r]->elements->datatarray().cend(t); prev = e++) {
 					enodes += *e - *prev;
 					rnodes[t].insert(rnodes[t].end(), enodes->begin(), enodes->end());
 				}
