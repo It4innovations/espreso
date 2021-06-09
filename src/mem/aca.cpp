@@ -707,6 +707,11 @@ matrix_ACA::~matrix_ACA(){
 }
 
 void matrix_ACA::apply(const double* x, double* y, double alpha, double beta, bool transpose)  {
+
+	if(this->getNEntries() <= 0){
+		return;
+	}
+
 	esint dim = (transpose?this->ncols:this->nrows);
 	MATH::vecScale(dim, beta, y);
 	
