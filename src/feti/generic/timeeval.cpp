@@ -15,12 +15,12 @@
 using namespace espreso;
 
 
-#define MEAS_DISSABLED
+// #define SOLVER_MEASUREMENT
 
 // #define MPIBARRIER  ; //MPI_Barrier(info::mpi::MPICommunicator);
 #define MPIBARRIER  MPI_Barrier(info::mpi::comm);
 
-#ifdef MEAS_DISSABLED
+#ifndef SOLVER_MEASUREMENT
 
 TimeEvent::TimeEvent(std::string name){};
 
