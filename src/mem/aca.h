@@ -10,6 +10,9 @@
 
 #include <omp.h>
 
+/*
+	apply pomoci: DenseMatDenseMatRowMajorProduct v math.h
+*/
 
 namespace espreso {
 

@@ -56,7 +56,7 @@ MorphingMatrixPreconditioner::MorphingMatrixPreconditioner(
 	// printf("];\n");
 	
    
-	printf("# of sparse points: %d, total # of local points: %d\n", sparse_points_local.size(), points_local.size());
+	printf("# of sparse points: %d, total # of local points: %d\n", (int)sparse_points_local.size(), (int)points_local.size());
 	// printf("%d %d\n", sparse_point_indices_global[0], sparse_point_indices_global[1]);
 
     this->nrows = sparse_points_local.size() + 1;
@@ -64,7 +64,7 @@ MorphingMatrixPreconditioner::MorphingMatrixPreconditioner(
     this->prepareMatrixSparse(sparse_points_local, configuration);
 
     //for each local point, we assemble local sparse RBF systems and compute the appropriate inverse functions
-    for(esint i = 0; i < points_local.size(); ++i){
+    for(esint i = 0; i < (esint)points_local.size(); ++i){
         esint global_dof_row = i + dof_shift;
 
 		// printf("Point %3d\n", i);
@@ -85,7 +85,7 @@ MorphingMatrixPreconditioner::MorphingMatrixPreconditioner(
 			this->values.push_back(this->inverse_row[0]);
         }
 
-		for(esint j = 0; j < sparse_point_indices_global.size(); ++j){
+		for(esint j = 0; j < (esint)sparse_point_indices_global.size(); ++j){
 			this->row_indices.push_back(global_dof_row);
 			this->col_indices.push_back(sparse_point_indices_global[j]);
 			this->values.push_back(this->inverse_row[j + 1]);
@@ -108,37 +108,20 @@ void MorphingMatrixPreconditioner::updateInverseRowSparseOnly(esint idx){
 
 	std::fill(this->basis_vector.begin(), this->basis_vector.end(), 0.0f);
 	this->basis_vector[idx + 1] = 1.0f;
-	
+
 	std::copy(
 		this->sparse_system.begin(), 
 		this->sparse_system.end(),
         this->sparse_system_mem.begin()
 	);
 
-	int result= MATH::SOLVER::directUpperSymetricIndefiniteColumnMajor(
+	MATH::SOLVER::directUpperSymetricIndefiniteColumnMajor(
 		this->nrows - 1,  
 		&this->sparse_system_mem[0],
 		1, 
 		&this->basis_vector[1]
 	);
-	
-	// printf("    SPARSE: %d\n", result);
-	
-	// if(result > 0){
-		// esint l = 0;
-		// for(int r = 0; r < this->nrows - 1; ++r){
-			// for(int c = 0; c <= r; ++c){
-				// printf("%10.8f ", this->sparse_system_mem[l++]);
-			// }
-			// printf("\n");
-		// }
-		// printf("rhs: ");
-		// for(int i = 1; i < this->nrows; ++i){
-			// printf("%10.8f ", this->basis_vector[i]);
-		// }
-		// printf("\n");
-	// }
-	
+
 	std::copy(
 		this->basis_vector.begin(), 
 		this->basis_vector.end(),

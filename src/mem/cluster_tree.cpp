@@ -12,7 +12,7 @@ Cluster::Cluster(const std::vector<Point> *b){
 	this->cluster_indices = new std::vector<esint>();
 	this->cluster_indices->reserve( b->size() );
 
-	for(esint i = 0; i < b->size(); ++i){
+	for(esint i = 0; i < (esint)b->size(); ++i){
 		this->cluster_indices->push_back( i );
 	}
 	

@@ -6,12 +6,18 @@
 #include "basis/containers/point.h"
 #include "math/math.h"
 
+/*
+	premistit do: src/...
+*/
+
 namespace espreso {
 
 class BlockCluster{
 public:
 	
 	BlockCluster();
+	
+	~BlockCluster();
 	
 	BlockCluster(const Cluster* l, const Cluster* r, double eta);
 	
@@ -67,6 +73,8 @@ public:
 		const ClusterTree &rT,
 		double eta
 	);
+
+	~BlockClusterTree();
 	
 	esint leaf_size() const;
 	
