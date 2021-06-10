@@ -58,13 +58,13 @@ int APIDataProvider::DOFs()
 
 void APIDataProvider::prepare(int* argc, char ***argv)
 {
-	ECFReader::read(*info::ecf->ecfdescription, argc, argv, info::ecf->default_args, info::ecf->variables);
+	info::ecf->ecffile = ECFReader::read(*info::ecf->ecfdescription, argc, argv, info::ecf->default_args, info::ecf->variables);
 	info::ecf->input.decomposition.domains = 1;
+	info::ecf->set();
 	Mesh::load();
 	info::mesh->preprocess();
 	info::mesh->printMeshStatistics();
 
-	info::mesh->output->updateMesh();
 	info::mesh->output->updateMesh();
 	eslog::checkpointln("ESPRESO: MESH PREPARED");
 

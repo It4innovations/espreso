@@ -52,7 +52,7 @@ static void computeDecomposedDual(const ElementStore *elements, std::vector<esin
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<esint> tdata;
 		int mat1 = 0, mat2 = 0, reg = 0, etype1 = 0, etype2 = 0;
-		int rsize = elements->regions->edataSize();
+		int rsize = separateRegions ? elements->regions->edataSize() : 0;
 
 		auto neighs = elements->faceNeighbors->cbegin(t);
 		for (size_t e = elements->distribution.threads[t]; e < elements->distribution.threads[t + 1]; ++e, ++neighs) {
@@ -333,14 +333,14 @@ void permuteElements(ElementStore *elements, NodeStore *nodes, DomainStore *doma
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 			auto ranks = nodes->ranks->cbegin(t);
-			auto elements = nodes->elements->cbegin(t);
+			auto nelements = nodes->elements->cbegin(t);
 			esint begine = IDBoundaries[info::mpi::rank];
 			esint ende   = IDBoundaries[info::mpi::rank + 1];
 
-			for (auto n = nodes->distribution[t]; n < nodes->distribution[t + 1]; ++n, ++ranks, ++elements) {
+			for (auto n = nodes->distribution[t]; n < nodes->distribution[t + 1]; ++n, ++ranks, ++nelements) {
 				for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {
 					if (*rank != info::mpi::rank) {
-						for (auto e = elements->begin(); e != elements->end(); ++e) {
+						for (auto e = nelements->begin(); e != nelements->end(); ++e) {
 							if (begine <= *e && *e < ende) {
 								sHalo[t][n2i(*rank)].push_back(std::make_pair(*e, backpermutation[*e - begine] + begine));
 							}

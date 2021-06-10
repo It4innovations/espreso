@@ -109,11 +109,13 @@ void FETI4IInit(
 	info::mpi::init(comm);
 	MPITools::init();
 	eslog::init(new Logger<ProgressTerminalLogger>);
+
 	if (utils::exists("espreso.ecf")) {
 		ECF::init("espreso.ecf");
 	} else {
 		ECF::init();
 	}
+	info::ecf->output.mode = OutputConfiguration::MODE::SYNC;
 	for (int i = 0; i < eslog::logger->size; ++i) {
 		eslog::logger->args[i]->verbosity = verbosity;
 	}
@@ -318,14 +320,16 @@ void FETI4ICreateInstance(
 	matrix->mesh.elements->IDs = new serializededata<esint, esint>(1, tarray<esint>(matrix->mesh.elements->distribution.threads, 1));
 	std::iota(matrix->mesh.elements->IDs->datatarray().begin(), matrix->mesh.elements->IDs->datatarray().end(), matrix->mesh.elements->distribution.process.offset);
 
-	Mesh *mesh = &matrix->mesh;
-	std::swap(mesh, info::mesh);
-	mesh::computeNodesDuplication(mesh->nodes, mesh->neighborsWithMe);
-	mesh->partitiate(settings.domains);
+	mesh::computeNodesDuplication(matrix->mesh.nodes, matrix->mesh.neighborsWithMe);
+	mesh::computeElementsFaceNeighbors(matrix->mesh.nodes, matrix->mesh.elements, matrix->mesh.neighbors);
+	mesh::sortNodes(matrix->mesh.nodes, matrix->mesh.elements, matrix->mesh.boundaryRegions);
+	matrix->mesh.partitiate(settings.domains);
 	if (settings.solver.method == FETIConfiguration::METHOD::HYBRID_FETI) {
-		mesh::computeDomainDual(mesh->nodes, mesh->elements, mesh->domains, mesh->neighbors, mesh->neighborsWithMe);
+		mesh::computeDomainDual(matrix->mesh.nodes, matrix->mesh.elements, matrix->mesh.domains, matrix->mesh.neighbors, matrix->mesh.neighborsWithMe);
 	}
 
+	Mesh *mesh = &matrix->mesh;
+	std::swap(mesh, info::mesh);
 	NodesUniformAPIComposer composer(settings.solver, matrix->dofs);
 	composer.fill(system->data);
 
