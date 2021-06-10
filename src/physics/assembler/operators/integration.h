@@ -36,7 +36,7 @@ struct ElementJacobian: public Operator {
 		++inv; ++det; ++dND;
 	}
 
-	ElementJacobian& operator+=(const int rhs)
+	ElementJacobian& operator+=(const size_t rhs)
 	{
 		coords +=rhs;
 		inv += rhs; det += rhs; dND += rhs;
@@ -73,8 +73,8 @@ struct ElementJacobian2D: public ElementJacobian {
 struct ElementJacobian2DSimd: public ElementJacobian {
 	using ElementJacobian::ElementJacobian;
 
-	template<int nodes, int gps>
-	void operator()(int gpindex)
+	template<size_t nodes, size_t gps>
+	void operator()(size_t gpindex)
 	{
 		const double * __restrict__ pCoords = coords.data;
 		const double * __restrict__ pDN     = dN.data;
@@ -87,7 +87,7 @@ struct ElementJacobian2DSimd: public ElementJacobian {
 		SIMD dNX, dNY, coordsX, coordsY;
 		
 		#pragma unroll(nodes)
-		for (int n = 0; n < nodes; ++n) {
+		for (size_t n = 0; n < nodes; ++n) {
 
 			coordsX = load(&pCoords[(n * 2 + 0) * SIMD::size]);
 			coordsY = load(&pCoords[(n * 2 + 1) * SIMD::size]);
@@ -158,8 +158,8 @@ struct ElementJacobian3D: public ElementJacobian {
 struct ElementJacobian3DSimd: public ElementJacobian {
 	using ElementJacobian::ElementJacobian;
 
-	template<int nodes, int gps>
-	void operator()(int gpindex)
+	template<size_t nodes, size_t gps>
+	void operator()(size_t gpindex)
 	{
 		const double * __restrict__ pCoords = coords.data;
 		const double * __restrict__ pDN     = dN.data;
@@ -172,7 +172,7 @@ struct ElementJacobian3DSimd: public ElementJacobian {
 		SIMD dNX, dNY, dNZ, coordsX, coordsY, coordsZ;
 
 		#pragma unroll(nodes)
-		for (int n = 0; n < nodes; ++n) {
+		for (size_t n = 0; n < nodes; ++n) {
 			coordsX = load(&pCoords[(n * 3 + 0) * SIMD::size]);
 			coordsY = load(&pCoords[(n * 3 + 1) * SIMD::size]);
 			coordsZ = load(&pCoords[(n * 3 + 2) * SIMD::size]);

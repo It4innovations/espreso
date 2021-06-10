@@ -41,7 +41,7 @@ struct Stiffness: public Operator {
 		++stiffness;
 	}
 
-	Stiffness& operator+=(const int rhs)
+	Stiffness& operator+=(const size_t rhs)
 	{
 		dND += rhs; determinant += rhs; conductivity += rhs; xi += rhs; thickness += rhs;
 		stiffness += rhs;
@@ -136,11 +136,10 @@ struct HeatStiffness: public ElementOperatorBuilder {
 struct Stiffness2DHeatIsotropicSimd: public Stiffness {
 	using Stiffness::Stiffness;
 
-	template<int nodes, int gps>
-	void operator()(int gpindex)
+	template<size_t nodes, size_t gps>
+	void operator()(size_t gpindex)
 	{
-		const double * __restrict__ pDND     = dND.data;
-		
+		const double * __restrict__ pDND = dND.data;
 		double * __restrict__ pStiffness = stiffness.data;
 
 		SIMD scale =  load(&thickness[gpindex * SIMD::size]) 

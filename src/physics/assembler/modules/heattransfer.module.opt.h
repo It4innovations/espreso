@@ -17,22 +17,22 @@ class HeatTransferModuleOpt: public ModuleOpt
 {
 public:
 	struct NGP {
-		static const int LINE2 = 2;
-		static const int LINE3 = 3;
+		static const size_t LINE2 = 2;
+		static const size_t LINE3 = 3;
 
-		static const int TRIANGLE3 = 6;
-		static const int TRIANGLE6 = 6;
-		static const int SQUARE4   = 4;
-		static const int SQUARE8   = 9;
+		static const size_t TRIANGLE3 = 6;
+		static const size_t TRIANGLE6 = 6;
+		static const size_t SQUARE4   = 4;
+		static const size_t SQUARE8   = 9;
 
-		static const int TETRA4    = 4;
-		static const int TETRA10   = 15;
-		static const int PYRAMID5  = 8;
-		static const int PYRAMID13 = 14;
-		static const int PRISMA6   = 9;
-		static const int PRISMA15  = 9;
-		static const int HEXA8     = 8;
-		static const int HEXA20    = 8;
+		static const size_t TETRA4    = 4;
+		static const size_t TETRA10   = 15;
+		static const size_t PYRAMID5  = 8;
+		static const size_t PYRAMID13 = 14;
+		static const size_t PRISMA6   = 9;
+		static const size_t PRISMA15  = 9;
+		static const size_t HEXA8     = 8;
+		static const size_t HEXA20    = 8;
 	};
 
 	static ElementData *phase, *latentHeat;

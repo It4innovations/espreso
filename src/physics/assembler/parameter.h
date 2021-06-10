@@ -205,6 +205,7 @@ struct InputParameterIterator {
 
 	inline InputParameterIterator& operator++() { data += inc; return *this; }
 	inline InputParameterIterator& operator+=(const int rhs) { data += rhs*inc; return *this; }
+	inline InputParameterIterator& operator+=(const size_t rhs) { data += rhs*inc; return *this; }
 	inline const double& operator[](esint i) const { return data[i]; }
 };
 
@@ -220,6 +221,7 @@ struct OutputParameterIterator {
 
 	inline OutputParameterIterator& operator++() { data += inc; return *this; }
 	inline OutputParameterIterator& operator+=(const int rhs) { data += rhs*inc; return *this; }
+	inline OutputParameterIterator& operator+=(const size_t rhs) { data += rhs*inc; return *this; }
 	inline double& operator[](esint i) { return data[i]; }
 	inline const double& operator[](esint i) const { return data[i]; }
 };
