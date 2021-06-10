@@ -30,12 +30,12 @@ void PseudoTimeStepping::updateStructuralMatrices()
 
 void PseudoTimeStepping::runNextSubstep()
 {
-	double last = step::time.current;
+	step::time.previous = step::time.current;
 	step::time.current += (step::time.final - step::time.start) / _configuration.substeps;
 	if (step::time.current + step::time.precision >= step::time.final) {
 		step::time.current = step::time.final;
 	}
-	step::time.shift = step::time.current - last;
+	step::time.shift = step::time.current - step::time.previous;
 	system->nextSubstep();
 
 	system->builder->internalForceReduction = (double)(step::step.substep + 1) / _configuration.substeps;

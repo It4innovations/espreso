@@ -96,12 +96,12 @@ void TransientFirstOrderImplicit::updateStructuralMatrices()
 
 void TransientFirstOrderImplicit::runNextSubstep()
 {
-	double last = step::time.current;
+	step::time.previous = step::time.current;
 	step::time.current += _nTimeShift;
 	if (step::time.current + step::time.precision >= step::time.final) {
 		step::time.current = step::time.final;
 	}
-	step::time.shift = step::time.current - last;
+	step::time.shift = step::time.current - step::time.previous;
 	system->nextSubstep();
 
 	system->builder->internalForceReduction = 1;
@@ -179,7 +179,7 @@ void TransientFirstOrderImplicit::runNextSubstep()
 	} else {
 		system->solver()->x->fillData(U);
 		system->solutionChanged();
-		step::time.current -= step::time.shift;
+		step::time.current = step::time.previous;
 		--step::step.substep;
 	}
 	eslog::solver(" = ========================================================================================= =\n");

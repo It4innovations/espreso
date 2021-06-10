@@ -140,6 +140,7 @@ void HarmonicSolver::runNextSubstep()
 {
 	switch (_configuration.harmonic_solver.frequency_interval_type) {
 	case HarmonicSolverConfiguration::INTERVAL_TYPE::LINEAR:
+		step::frequency.previous = step::frequency.current;
 		step::frequency.current += step::frequency.shift;
 		if (step::frequency.current + step::frequency.precision >= step::frequency.final) {
 			step::frequency.current = step::frequency.final;

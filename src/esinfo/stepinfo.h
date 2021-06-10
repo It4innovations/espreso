@@ -31,6 +31,7 @@ struct Duplicate {
 
 struct Time {
 	double start = 0;
+	double previous = 0;
 	double current = 0;
 	double shift = 1; // difference between current and previous time
 	double final = 1;
@@ -47,6 +48,7 @@ struct Time {
 
 struct Frequency {
 	double start = 0;
+	double previous = 0;
 	double current = 0;
 	double shift = 1; // difference between current and previous frequency
 	double final = 1;
@@ -102,6 +104,15 @@ inline bool isLast(const Step &step = step, const Duplicate &duplicate = duplica
 		return ftt.isLast();
 	}
 	return false;
+}
+
+inline void toPrevious(const Step &step = step, Time &time = time, Frequency &frequency = frequency)
+{
+	switch (step.type) {
+	case TYPE::TIME: time.current = time.previous; break;
+	case TYPE::FREQUENCY: frequency.current = frequency.previous; break;
+	case TYPE::FTT: break;
+	}
 }
 
 inline void toOut()

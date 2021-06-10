@@ -91,6 +91,7 @@ void TopologyOptimization::runNextSubstep()
 	int iteration = 1;
 	double change = .5;
 	do {
+		step::time.previous = step::time.current;
 		step::time.current += 0.01;
 		step::time.shift = 0.1;
 		system->nextSubstep();

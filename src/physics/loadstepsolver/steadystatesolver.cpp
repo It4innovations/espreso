@@ -29,8 +29,9 @@ void SteadyStateSolver::updateStructuralMatrices()
 
 void SteadyStateSolver::runNextSubstep()
 {
+	step::time.previous = step::time.current;
 	step::time.current = step::time.final;
-	step::time.shift = step::time.final - step::time.current;
+	step::time.shift = step::time.final - step::time.previous;
 	system->nextSubstep();
 
 	system->builder->internalForceReduction = 1;

@@ -144,12 +144,12 @@ void TransientSecondOrderImplicit::updateStructuralMatrices()
 
 void TransientSecondOrderImplicit::runNextSubstep()
 {
-	double last = step::time.current;
+	step::time.previous = step::time.current;
 	step::time.current += _nTimeShift;
 	if (step::time.current + step::time.precision >= step::time.final) {
 		step::time.current = step::time.final;
 	}
-	step::time.shift = step::time.current - last;
+	step::time.shift = step::time.current - step::time.previous;
 	system->nextSubstep();
 
 	switch (_configuration.damping.rayleigh.type) {
@@ -244,7 +244,7 @@ void TransientSecondOrderImplicit::runNextSubstep()
 	} else {
 		system->solver()->x->fillData(U);
 		system->solutionChanged();
-		step::time.current -= step::time.shift;
+		step::time.current = step::time.previous;
 		--step::step.substep;
 	}
 
