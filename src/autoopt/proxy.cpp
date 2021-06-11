@@ -67,7 +67,16 @@ std::vector<double> ParameterManager::generateConfiguration()
 		}
 		else if (dt == ECFDataType::NONNEGATIVE_INTEGER)
 		{
-			configuration.push_back(m_generator());
+			if ((*it)->metadata.autoopt_range_set)
+			{
+				std::uniform_int_distribution<int> dist(
+					(*it)->metadata.autoopt_range_begin,
+					(*it)->metadata.autoopt_range_end
+				);
+				configuration.push_back( dist(m_generator) );
+			}
+			else 
+			{ configuration.push_back(m_generator()); }
 		}
 		else if (dt == ECFDataType::FLOAT)
 		{
@@ -115,7 +124,10 @@ double ParameterManager::getParameterMin(int id)
 	}
 	else if (dt == ECFDataType::NONNEGATIVE_INTEGER)
 	{
-		return 0;
+		if (p->metadata.autoopt_range_set)
+		{ return p->metadata.autoopt_range_begin; }
+		else 
+		{ return 0; }
 	}
 	else if (dt == ECFDataType::OPTION)
 	{
@@ -151,7 +163,10 @@ double ParameterManager::getParameterMax(int id)
 	}
 	else if (dt == ECFDataType::NONNEGATIVE_INTEGER)
 	{
-		return std::numeric_limits<int>::max();
+		if (p->metadata.autoopt_range_set)
+		{ return p->metadata.autoopt_range_end; }
+		else 
+		{ return std::numeric_limits<int>::max(); }
 	}
 	else if (dt == ECFDataType::OPTION)
 	{
@@ -221,8 +236,14 @@ double ParameterManager::_checkParameter_immediate_rounding(int id, double value
 	else if (dt == ECFDataType::NONNEGATIVE_INTEGER)
 	{
 		int val = (int)value;
-		if (val < 0) return 0;
-		return val;
+		if (p->metadata.autoopt_range_set)
+		{
+			if (val < p->metadata.autoopt_range_begin) 
+			{ return p->metadata.autoopt_range_begin; }
+			else if (val > p->metadata.autoopt_range_end)
+			{ return p->metadata.autoopt_range_end; }
+		}
+		else if (val < 0) return 0;
 	}
 	else if (dt == ECFDataType::OPTION)
 	{
@@ -247,10 +268,8 @@ double ParameterManager::_checkParameter_immediate_rounding(int id, double value
 		if (val > 1) return 1;
 		return val;
 	}
-	else
-	{
-		return value;
-	}
+
+	return (int)value;
 }
 
 double ParameterManager::_checkParameter_no_rounding(int id, double value)
@@ -264,7 +283,14 @@ double ParameterManager::_checkParameter_no_rounding(int id, double value)
 	}
 	else if (dt == ECFDataType::NONNEGATIVE_INTEGER)
 	{
-		if (value < 0) return 0;
+		if (p->metadata.autoopt_range_set)
+		{
+			if (value < p->metadata.autoopt_range_begin) 
+			{ return p->metadata.autoopt_range_begin; }
+			else if (value > p->metadata.autoopt_range_end)
+			{ return p->metadata.autoopt_range_end; }
+		}
+		else if (value < 0) return 0;
 	}
 	else if (dt == ECFDataType::OPTION || dt == ECFDataType::ENUM_FLAGS)
 	{

@@ -10,7 +10,7 @@ namespace solver {
 
 AutoOptimizer* autoopt = NULL;
 
-void init(LoadStepSolverConfiguration &loadStep)
+void init(LoadStepSolverConfiguration &loadStep, DecompositionConfiguration &decomposition)
 {
 	if (autoopt != NULL) {
 		delete autoopt;
@@ -25,7 +25,8 @@ void init(LoadStepSolverConfiguration &loadStep)
 			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.redundant_lagrange),
 			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.B0_type),
 			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.scaling),
-//			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.method)
+			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.method),
+			decomposition.ecfdescription->getParameter(&decomposition.domains)
 		};
 		autoopt = new EvolutionaryOptimizer(info::ecf->auto_optimization, opt_parameters);
 	} else {

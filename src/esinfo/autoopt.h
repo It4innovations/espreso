@@ -9,11 +9,13 @@
 namespace espreso {
 
 struct LoadStepSolverConfiguration;
+struct DecompositionConfiguration;
 
 namespace autoopt {
 namespace solver {
 
-	void init(LoadStepSolverConfiguration &loadStep);
+	void init(LoadStepSolverConfiguration &loadStep, 
+		DecompositionConfiguration &decomposition);
 
 	void update(std::function<bool(void)> fnc);
 	bool evaluate(std::function<bool(void)> fnc);

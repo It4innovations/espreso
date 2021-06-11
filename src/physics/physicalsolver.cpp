@@ -354,7 +354,7 @@ void PhysicalSolver::runSingle(PhysicalSolver &solver, TPhysics &configuration)
 		step::step.substep = step::duplicate.offset;
 		step::step.iteration = 0;
 
-		autoopt::solver::init(loadStepSettings);
+		autoopt::solver::init(loadStepSettings, info::ecf->input.decomposition);
 		bool updateDecomposition = false;
 		info::ecf->input.decomposition.ecfdescription->getParameter(&info::ecf->input.decomposition.domains)->addListener(ECFParameter::Event::VALUE_SET, [&updateDecomposition] (const std::string &value) { updateDecomposition = true; });
 

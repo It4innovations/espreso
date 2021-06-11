@@ -72,7 +72,8 @@ DecompositionConfiguration::DecompositionConfiguration()
 	domains = 0;
 	REGISTER(domains, ECFMetaData()
 			.setdescription({ "Number of domains for each cluster (Keep 0 for automatic decomposition)." })
-			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
+			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER })
+			.setautooptrange(1, 512));
 
 	ecfdescription->addSpace();
 
