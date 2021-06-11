@@ -17,8 +17,8 @@ public:
 	PARDISOSystemSolver(PARDISOConfiguration &configuration, PARDISOSolverData &data);
 
 	void init();
-	void update();
-	void solve();
+	bool update() override;
+	bool solve() override;
 
 	double& precision() { return _precision; }
 	~PARDISOSystemSolver();

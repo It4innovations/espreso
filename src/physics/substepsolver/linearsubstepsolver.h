@@ -14,7 +14,7 @@ public:
 	void init(SubStepSolver *previous);
 	bool hasSameMode(const LoadStepSolverConfiguration &configuration) const;
 
-	void solve(LoadStepSolver &loadStepSolver);
+	bool solve(LoadStepSolver &loadStepSolver) override;
 };
 
 }

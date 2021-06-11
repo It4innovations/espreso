@@ -11,6 +11,7 @@
 #include "esinfo/stepinfo.h"
 #include "math/matrix.h"
 #include "math/vector.h"
+#include "esinfo/autoopt.h"
 
 #include <cstddef>
 
@@ -133,7 +134,7 @@ void LinearSystem::setDirichlet()
 	eslog::checkpointln("PHYSICS SOLVER: DIRICHLET SET");
 }
 
-void LinearSystem::solve()
+bool LinearSystem::solve()
 {
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE MATRICES FOR LINEAR SOLVER\n");
@@ -141,10 +142,18 @@ void LinearSystem::solve()
 		solver()->printData(builder, prefix.c_str());
 	}
 
+	bool ret = true;
+
 	if (builder->matrices & Builder::Request::KCM) {
-		solver()->linearSolver->update();
+		ret = solver()->linearSolver->update();
+		if (!ret) return false;
 	}
-	solver()->linearSolver->solve();
+	
+	ret = autoopt::solver::evaluate([&] () {
+		return solver()->linearSolver->solve();
+	});
+	if (!ret) return false;
+
 
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE LINEAR SOLVER SOLUTION\n");
@@ -152,6 +161,8 @@ void LinearSystem::solve()
 		solver()->printSolution(builder, prefix.c_str());
 	}
 	eslog::checkpointln("PHYSICS SOLVER: SOLUTION COMPUTED");
+
+	return ret;
 }
 
 void LinearSystem::solutionChanged()

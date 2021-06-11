@@ -16,8 +16,8 @@ public:
 	virtual ~SystemSolver() {}
 
 	virtual void init() =0;
-	virtual void update() =0;
-	virtual void solve() =0;
+	virtual bool update() =0;
+	virtual bool solve() =0;
 
 	virtual double& precision() =0;
 };
@@ -65,7 +65,7 @@ struct LinearSystem {
 	void nextSubstep();
 	void assemble();
 	void setDirichlet();
-	void solve();
+	bool solve();
 	void solutionChanged();
 	void processSolution();
 

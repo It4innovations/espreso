@@ -16,7 +16,7 @@ namespace solver {
 	void init(LoadStepSolverConfiguration &loadStep);
 
 	void update(std::function<bool(void)> fnc);
-	void evaluate(std::function<bool(void)> fnc);
+	bool evaluate(std::function<bool(void)> fnc);
 
 	extern AutoOptimizer *optimizer;
 };

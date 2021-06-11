@@ -72,7 +72,7 @@ void HYPRESystemSolver::init()
 #endif
 }
 
-void HYPRESystemSolver::update()
+bool HYPRESystemSolver::update()
 {
 #ifdef HAVE_HYPRE
 	std::vector<esint> ncols;
@@ -96,6 +96,7 @@ void HYPRESystemSolver::update()
 		HYPRE_IJVectorAssemble(_inner->N[n]);
 	}
 #endif
+	return true;
 }
 
 double& HYPRESystemSolver::precision()
@@ -543,7 +544,7 @@ static void setPilutPreconditioner(HYPRE_Solver &pilut, const HYPREPilutConfigur
 }
 #endif
 
-void HYPRESystemSolver::solve()
+bool HYPRESystemSolver::solve()
 {
 #ifdef HAVE_HYPRE
 	std::fill(_data.x[0].vals + _data.x[0].nhalo, _data.x[0].vals + _data.x[0].size, 0);
@@ -1121,5 +1122,7 @@ void HYPRESystemSolver::solve()
 
 	HYPRE_IJVectorGetValues(_inner->x, _nrows, _inner->rows.data(), _data.x[0].vals + _data.x[0].nhalo);
 	_data.x[0].scatterToUpper();
+
 #endif
+	return true;
 }

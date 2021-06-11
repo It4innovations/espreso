@@ -12,7 +12,9 @@ using namespace espreso;
 
 bool EmptyOptimizer::set(std::function<bool(void)> fnc)
 {
-	return fnc();
+	bool ret = fnc();
+	if (!ret) { eslog::error("Called FETI with invalid parameters!\n"); }
+	return ret;
 }
 
 bool EmptyOptimizer::run(std::function<bool(void)> fnc)
@@ -32,7 +34,6 @@ EvolutionaryOptimizer::EvolutionaryOptimizer(const AutoOptimizationConfiguration
 bool EvolutionaryOptimizer::set(std::function<bool(void)> fnc)
 {
 	this->m_proxy.setNextConfiguration();
-	this->m_set_function = fnc;
 	
 	int l_ret = fnc();
 	int g_ret = 0;
@@ -62,11 +63,6 @@ bool EvolutionaryOptimizer::run(std::function<bool(void)> fnc)
 	Communication::allReduce(&l_ret, &g_ret, 1, MPI_INT, MPI_MIN);
 
 	if (g_ret) { this->m_proxy.setConfigurationEvaluation(end - start); }
-	else 
-	{
-		this->m_proxy.setConfigurationForbidden();
-		while(!this->set(m_set_function));
-	}
 
 	return static_cast<bool>(g_ret);
 

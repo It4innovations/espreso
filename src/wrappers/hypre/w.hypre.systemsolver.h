@@ -15,8 +15,8 @@ public:
 	HYPRESystemSolver(HYPREConfiguration &configuration, HYPRESolverData &data);
 
 	void init();
-	void update();
-	void solve();
+	bool update() override;
+	bool solve() override;
 
 	double& precision();
 

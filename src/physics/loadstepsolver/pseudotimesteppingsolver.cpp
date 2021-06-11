@@ -28,7 +28,7 @@ void PseudoTimeStepping::updateStructuralMatrices()
 	system->assemble();
 }
 
-void PseudoTimeStepping::runNextSubstep()
+bool PseudoTimeStepping::runNextSubstep()
 {
 	step::time.previous = step::time.current;
 	step::time.current += (step::time.final - step::time.start) / _configuration.substeps;
@@ -52,6 +52,8 @@ void PseudoTimeStepping::runNextSubstep()
 
 	eslog::solver(" = ========================================================================================= =\n");
 	eslog::solver(" = ================================================================= run time %12.3f s =\n\n", eslog::duration());
+
+	return true;
 }
 
 

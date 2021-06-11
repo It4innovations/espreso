@@ -29,8 +29,8 @@ public:
 	FETISystemSolver(FETIConfiguration &configuration, FETISolverData &data);
 
 	void init();
-	void update();
-	void solve();
+	bool update() override;
+	bool solve() override;
 
 	double& precision();
 
@@ -40,7 +40,7 @@ public:
 	void insertRHS(const VectorsDenseFETI &f);
 
 	int update(FETIConfiguration &configuration);
-	void solve(FETIConfiguration &configuration, VectorsDenseFETI &x, VectorsDenseFETI &y);
+	bool solve(FETIConfiguration &configuration, VectorsDenseFETI &x, VectorsDenseFETI &y);
 
 	virtual ~FETISystemSolver();
 

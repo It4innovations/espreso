@@ -15,7 +15,7 @@ public:
 	void updateStructuralMatrices();
 
 protected:
-	void runNextSubstep();
+	bool runNextSubstep() override;
 };
 
 }

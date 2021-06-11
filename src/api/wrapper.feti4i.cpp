@@ -416,7 +416,8 @@ void FETI4ICreateInstance(
 	settings.solver.regularization = FETIConfiguration::REGULARIZATION::ALGEBRAIC;
 	settings.solver.B0_type = FETIConfiguration::B0_TYPE::KERNELS;
 	system->solver.init();
-	system->solver.update();
+	if (!system->solver.update())
+	{ eslog::error("An error occured in the FETI solver!\n"); }
 
 	std::swap(info::mesh, mesh);
 }

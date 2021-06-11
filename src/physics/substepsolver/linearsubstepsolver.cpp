@@ -25,7 +25,7 @@ bool LinearSubStep::hasSameMode(const LoadStepSolverConfiguration &configuration
 	return configuration.mode == LoadStepSolverConfiguration::MODE::LINEAR;
 }
 
-void LinearSubStep::solve(LoadStepSolver &loadStepSolver)
+bool LinearSubStep::solve(LoadStepSolver &loadStepSolver)
 {
 	system->builder->matrices = Builder::Request::KCM | Builder::Request::f | Builder::Request::BC;
 	loadStepSolver.updateStructuralMatrices();
@@ -38,8 +38,11 @@ void LinearSubStep::solve(LoadStepSolver &loadStepSolver)
 			(system->builder->matrices & Builder::Request::R)  ? 'R' : ' ',
 			(system->builder->matrices & Builder::Request::f)  ? 'f' : ' ');
 
-	system->solve();
+	bool ret = system->solve();
+	if (!ret) return false;
 	system->solutionChanged();
+	
+	return true;
 }
 
 

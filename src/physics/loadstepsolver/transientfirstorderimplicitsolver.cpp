@@ -94,7 +94,7 @@ void TransientFirstOrderImplicit::updateStructuralMatrices()
 	}
 }
 
-void TransientFirstOrderImplicit::runNextSubstep()
+bool TransientFirstOrderImplicit::runNextSubstep()
 {
 	step::time.previous = step::time.current;
 	step::time.current += _nTimeShift;
@@ -128,7 +128,8 @@ void TransientFirstOrderImplicit::runNextSubstep()
 	eslog::solver(" =  LOAD STEP %2d, SUBSTEP %4d, TIME %10.6f, TIME STEP %10.6f, FINAL TIME %10.6f =\n", step::step.loadstep + 1, step::step.substep + 1, step::time.current, step::time.shift, step::time.final);
 	eslog::solver(" = ----------------------------------------------------------------------------------------- =\n");
 
-	subStepSolver->solve(*this);
+	bool ret = subStepSolver->solve(*this);
+	if (!ret) return false;
 
 	dU->sum(1, system->solver()->x, -1, U);
 	_nTimeShift = step::time.shift;
@@ -184,6 +185,8 @@ void TransientFirstOrderImplicit::runNextSubstep()
 	}
 	eslog::solver(" = ========================================================================================= =\n");
 	eslog::solver(" = ================================================================= run time %12.3f s =\n\n", eslog::duration());
+
+	return true;
 }
 
 

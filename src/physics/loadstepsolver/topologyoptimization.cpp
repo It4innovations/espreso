@@ -66,7 +66,7 @@ void TopologyOptimization::updateStructuralMatrices()
 	system->assemble();
 }
 
-void TopologyOptimization::runNextSubstep()
+bool TopologyOptimization::runNextSubstep()
 {
 	system->builder->internalForceReduction = 1;
 	system->builder->timeIntegrationConstantK = 1;
@@ -151,5 +151,7 @@ void TopologyOptimization::runNextSubstep()
 	} while (iteration++ < _configuration.solver_settings.max_iterations && change > _configuration.solver_settings.precision);
 
 	step::time.current = step::time.final;
+
+	return true;
 }
 

@@ -72,7 +72,7 @@ void SuperLUSystemSolver::init()
 #endif
 }
 
-void SuperLUSystemSolver::update()
+bool SuperLUSystemSolver::update()
 {
 #ifdef HAVE_SUPERLU
 	eslog::solver("     - ---- LINEAR SOLVER -------------------------------------------------------------- -\n");
@@ -116,9 +116,10 @@ void SuperLUSystemSolver::update()
 
 	eslog::solver("     - | PREPROCESSING                                                      %8.3f s | -\n", eslog::time() - start);
 #endif
+	return true;
 }
 
-void SuperLUSystemSolver::solve()
+bool SuperLUSystemSolver::solve()
 {
 #ifdef HAVE_SUPERLU
 	_inner->solution = _data.x[0].vals + _data.x[0].nhalo;
@@ -145,7 +146,9 @@ void SuperLUSystemSolver::solve()
 
 	eslog::solver("     - | SOLVER TIME                                                        %8.3f s | -\n", eslog::time() - start);
 	eslog::solver("     - --------------------------------------------------------------------------------- -\n");
+
 #endif
+	return true;
 }
 
 SuperLUSystemSolver::~SuperLUSystemSolver()

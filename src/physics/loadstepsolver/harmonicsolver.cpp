@@ -136,7 +136,7 @@ void HarmonicSolver::updateStructuralMatrices()
 	system->assemble();
 }
 
-void HarmonicSolver::runNextSubstep()
+bool HarmonicSolver::runNextSubstep()
 {
 	switch (_configuration.harmonic_solver.frequency_interval_type) {
 	case HarmonicSolverConfiguration::INTERVAL_TYPE::LINEAR:
@@ -188,5 +188,7 @@ void HarmonicSolver::runNextSubstep()
 
 	eslog::solver(" = ========================================================================================= =\n");
 	eslog::solver(" = ================================================================= run time %12.3f s =\n\n", eslog::duration());
+
+	return true;
 }
 

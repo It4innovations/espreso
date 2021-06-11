@@ -93,7 +93,7 @@ bool NewtonRaphson::hasSameMode(const LoadStepSolverConfiguration &configuration
 	return configuration.mode == LoadStepSolverConfiguration::MODE::NONLINEAR;
 }
 
-void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
+bool NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 {
 	if (!_configuration.check_first_residual && !_configuration.check_second_residual) {
 		eslog::globalerror("Turn on at least one convergence parameter for NONLINEAR solver.\n");
@@ -294,6 +294,8 @@ void NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 	}
 
 	eslog::solver("     - --------------------------------------------------------------------------------- -\n");
+
+	return true;
 }
 
 

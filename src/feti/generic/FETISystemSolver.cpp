@@ -58,7 +58,7 @@ void FETISystemSolver::init()
 	_inner = new FETIDataHolder();
 }
 
-void FETISystemSolver::update()
+bool FETISystemSolver::update()
 {
 //	while(!optimizer->set([&]() {
 	{
@@ -66,8 +66,7 @@ void FETISystemSolver::update()
 			for (esint d = 0; d < _data.K.domains; ++d) {
 				if (_data.K[d].type != MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
 					eslog::info("FETI update: ANALYTIC regularization of not REAL_SYMMETRIC_POSITIVE_DEFINITE matrix is not allowed.\n");
-//					return false;
-					eslog::error("Call FETI solver with invalid settings.\n");
+					return false;
 				}
 			}
 		}
@@ -83,19 +82,14 @@ void FETISystemSolver::update()
 			configuration.iterative_solver != FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB) 
 		{
 			eslog::info("FETI update: Invalid linear solver configuration. Only GMRES and BICGSTAB can solve unsymmetric system.\n");
-//			return false;
-			eslog::error("Call FETI solver with invalid settings.\n");
+			return false;
 		}
 		if (configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
 			configuration.method == FETIConfiguration::METHOD::TOTAL_FETI) 
 		{
 			eslog::info("FETI update: Cannot use QPCE and TOTAL FETI together.\n");
-//			return false;
-			eslog::error("Call FETI solver with invalid settings.\n");
+			return false;
 		}
-//		if (configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
-//			configuration.method == FETIConfiguration::METHOD::HYBRID_FETI)
-//		{ return false; }
 		// // Intel MKL ERROR: Parameter 5 was incorrect on entry to MKL_DCSRMV.
 		// if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE &&
 		// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::QPCE &&
@@ -339,7 +333,7 @@ void FETISystemSolver::update()
 		
 		int ret = update(configuration);
 		if (ret >= 0) {
-			return;
+			return true;
 		}
 
 		switch (ret) {
@@ -354,15 +348,17 @@ void FETISystemSolver::update()
 				break;
 		}
 
-//		return false;
-		eslog::error("Call FETI solver with invalid settings.\n");
+		return false;
 	}; //));
 }
 
-void FETISystemSolver::solve()
+bool FETISystemSolver::solve()
 {
-	solve(configuration, _data.x, _data.y);
+	bool ret = solve(configuration, _data.x, _data.y);
+	if (!ret) { return false; }
 	_data.x.averageDuplications();
+
+	return true;
 }
 
 double& FETISystemSolver::precision()
@@ -711,48 +707,131 @@ int FETISystemSolver::update(FETIConfiguration &configuration)
 }
 
 // run solver and store primal and dual solution
-void FETISystemSolver::solve(FETIConfiguration &configuration, VectorsDenseFETI &x, VectorsDenseFETI &y)
+bool FETISystemSolver::solve(FETIConfiguration &configuration, VectorsDenseFETI &x, VectorsDenseFETI &y)
 {
 	double start = eslog::time();
 	eslog::solver("     - | REQUESTED STOPPING CRITERIA                                      %e | -\n", configuration.precision);
 
-//	while (!optimizer->run([&] () {
-	{
-		int ret = Solve(_inner->holder.F, _inner->holder.primalSolution, _inner->holder.dualSolution);
-		
-		// Solver errors
-		if (ret < 0) {
-			switch (ret)
-			{
-				case -1:
-					eslog::info("FETI solve: Regular CG with conjugate projector not implemented yet.\n");
-					break;
-				case -2:
-					eslog::info("FETI solve: Geneo requires dirichlet preconditioner.\n");
-					break;
-				case -3:
-					eslog::info("FETI solve: MKL Sparse Solver - Error during solution.\n");
-					break;
-				default:
-					eslog::error("FETI solve: Unknow error!\n");
-					break;
-			}
-//			return false;
-			eslog::error("FETI solver did not converge.\n");
+	// if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
+	// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP &&
+	// 	configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS &&
+	// 	configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC &&
+	// 	configuration.redundant_lagrange == false &&
+	// 	configuration.scaling == false &&
+	// 	configuration.method == FETIConfiguration::METHOD::TOTAL_FETI) 
+	// {
+	// 	eslog::info("FETI update: Invalid configuration.\n");	
+	// 	return false; 
+	// }
+	// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
+	// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP &&
+	// 	configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS &&
+	// 	configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC &&
+	// 	configuration.redundant_lagrange == false &&
+	// 	configuration.scaling == true &&
+	// 	configuration.method == FETIConfiguration::METHOD::TOTAL_FETI)
+	// {
+	// 	eslog::info("FETI update: Invalid configuration.\n");	
+	// 	return false; 
+	// }
+	// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
+	// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP &&
+	// 	configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC &&
+	// 	configuration.redundant_lagrange == false &&
+	// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+	// 	configuration.scaling == false &&
+	// 	configuration.method == FETIConfiguration::METHOD::TOTAL_FETI)
+	// {
+	// 	eslog::info("FETI update: Invalid configuration.\n");	
+	// 	return false; 
+	// }
+	// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
+	// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP &&
+	// 	configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC &&
+	// 	configuration.redundant_lagrange == false &&
+	// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+	// 	configuration.scaling == true &&
+	// 	configuration.method == FETIConfiguration::METHOD::TOTAL_FETI)
+	// {
+	// 	eslog::info("FETI update: Invalid configuration.\n");	
+	// 	return false; 
+	// }
+	// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
+	// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP &&
+	// 	configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC &&
+	// 	configuration.redundant_lagrange == true &&
+	// 	configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS &&
+	// 	configuration.scaling == false &&
+	// 	configuration.method == FETIConfiguration::METHOD::TOTAL_FETI)
+	// {
+	// 	eslog::info("FETI update: Invalid configuration.\n");	
+	// 	return false; 
+	// }
+	// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
+	// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP &&
+	// 	configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC &&
+	// 	configuration.redundant_lagrange == true &&
+	// 	configuration.B0_type == FETIConfiguration::B0_TYPE::CORNERS &&
+	// 	configuration.scaling == true &&
+	// 	configuration.method == FETIConfiguration::METHOD::TOTAL_FETI)
+	// {
+	// 	eslog::info("FETI update: Invalid configuration.\n");	
+	// 	return false; 
+	// }
+	// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
+	// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP &&
+	// 	configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC &&
+	// 	configuration.redundant_lagrange == true &&
+	// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+	// 	configuration.scaling == false &&
+	// 	configuration.method == FETIConfiguration::METHOD::TOTAL_FETI)
+	// {
+	// 	eslog::info("FETI update: Invalid configuration.\n");	
+	// 	return false; 
+	// }
+	// else if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET &&
+	// 	configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP &&
+	// 	configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC &&
+	// 	configuration.redundant_lagrange == true &&
+	// 	configuration.B0_type == FETIConfiguration::B0_TYPE::KERNELS &&
+	// 	configuration.scaling == true &&
+	// 	configuration.method == FETIConfiguration::METHOD::TOTAL_FETI)
+	// {
+	// 	eslog::info("FETI update: Invalid configuration.\n");	
+	// 	return false; 
+	// }
+
+	int ret = Solve(_inner->holder.F, _inner->holder.primalSolution, _inner->holder.dualSolution);
+	
+	// Solver errors
+	if (ret < 0) {
+		switch (ret)
+		{
+			case -1:
+				eslog::info("FETI solve: Regular CG with conjugate projector not implemented yet.\n");
+				break;
+			case -2:
+				eslog::info("FETI solve: Geneo requires dirichlet preconditioner.\n");
+				break;
+			case -3:
+				eslog::info("FETI solve: MKL Sparse Solver - Error during solution.\n");
+				break;
+			default:
+				eslog::error("FETI solve: Unknown error!\n");
+				break;
 		}
-		else {
-			size_t s_ret = static_cast<size_t>(ret);
-			// Successful run of solver
-			if (s_ret >= 0 && s_ret < configuration.max_iterations) {
-//				return true;
-			}
-			// Solver exceeded the maximum number of iterations and did not converge
-			else {
-				eslog::info("FETI solve: Maximum number of iterations has been exceeded.\n");
-//				return false;
-			}
+		eslog::info("FETI solver did not converge.\n");
+		return false;
+	}
+	else {
+		size_t s_ret = static_cast<size_t>(ret);
+
+		// Solver exceeded the maximum number of iterations and did not converge
+		if (s_ret >= 0 && s_ret >= configuration.max_iterations) {
+			eslog::info("FETI solve: Maximum number of iterations has been exceeded.\n");
+			return false;
 		}
-	}//));
+	}
 
 
 	#pragma omp parallel for
@@ -763,6 +842,8 @@ void FETISystemSolver::solve(FETIConfiguration &configuration, VectorsDenseFETI 
 
 	eslog::solver("     - | SOLVER TIME                                                        %8.3f s | -\n", eslog::time() - start);
 	eslog::solver("     - --------------------------------------------------------------------------------- -\n");
+
+	return true;
 }
 
 

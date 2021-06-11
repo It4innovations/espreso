@@ -17,7 +17,7 @@ public:
 	LoadStepSolver(LinearSystem *system, SubStepSolver *subStepSolver, double duration);
 	virtual ~LoadStepSolver() {}
 
-	virtual void runNextSubstep() =0;
+	virtual bool runNextSubstep() =0;
 
 	virtual void init(LoadStepSolver *previous) =0;
 	virtual void updateStructuralMatrices() =0;

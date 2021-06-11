@@ -20,7 +20,7 @@ public:
 
 	virtual void init(SubStepSolver *previous) =0;
 	virtual bool hasSameMode(const LoadStepSolverConfiguration &configuration) const =0;
-	virtual void solve(LoadStepSolver &loadStepSolver) =0;
+	virtual bool solve(LoadStepSolver &loadStepSolver) =0;
 
 	LinearSystem *system;
 };

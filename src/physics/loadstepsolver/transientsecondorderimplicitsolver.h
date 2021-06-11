@@ -19,7 +19,7 @@ public:
 	void updateStructuralMatrices();
 
 protected:
-	void runNextSubstep();
+	bool runNextSubstep() override;
 
 	void updateConstants();
 	void updateDamping();

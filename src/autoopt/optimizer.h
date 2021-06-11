@@ -41,7 +41,6 @@ public:
 
 protected:
 	OptimizationProxy m_proxy;
-	std::function<bool(void)> m_set_function;
 };
 
 }

@@ -28,7 +28,7 @@ void PARDISOSystemSolver::init()
 	_x = new VectorDense();
 }
 
-void PARDISOSystemSolver::update()
+bool PARDISOSystemSolver::update()
 {
 	eslog::solver("   - ---- LINEAR SOLVER ------------------------------------------ -\n");
 	eslog::solver("   - | SOLVER :: PARDISO                                         | -\n");
@@ -66,15 +66,19 @@ void PARDISOSystemSolver::update()
 	eslog::solver("   - | NUMERICAL FACTORIZATION                        %8.3f s | -\n", eslog::time() - start);
 
 	_f->_DataVectorDense::operator=(_data.f[0]);
+
+	return true;
 }
 
-void PARDISOSystemSolver::solve()
+bool PARDISOSystemSolver::solve()
 {
 	double start = eslog::time();
 	_x->_DataVectorDense::operator=(_data.x[0]);
 	_K->solve(*_f, *_x);
 	eslog::solver("   - | SOLVER TIME                                    %8.3f s | -\n", eslog::time() - start);
 	eslog::solver("   - ------------------------------------------------------------- -\n");
+
+	return true;
 }
 
 PARDISOSystemSolver::~PARDISOSystemSolver()

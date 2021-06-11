@@ -15,8 +15,8 @@ public:
 	MKLPDSSSystemSolver(MKLPDSSConfiguration &configuration, MKLPDSSSolverData &data);
 
 	void init();
-	void update();
-	void solve();
+	bool update() override;
+	bool solve() override;
 
 	double& precision() { return _precision; }
 

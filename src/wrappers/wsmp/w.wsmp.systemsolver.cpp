@@ -78,7 +78,7 @@ void WSMPSystemSolver::init()
 #endif
 }
 
-void WSMPSystemSolver::update()
+bool WSMPSystemSolver::update()
 {
 #ifdef HAVE_WSMP
 	eslog::solver("     - ---- LINEAR SOLVER -------------------------------------------------------------- -\n");
@@ -225,9 +225,10 @@ void WSMPSystemSolver::update()
 
 	eslog::solver("     - | PREPROCESSING                                                      %8.3f s | -\n", eslog::time() - start);
 #endif
+	return true;
 }
 
-void WSMPSystemSolver::solve()
+bool WSMPSystemSolver::solve()
 {
 #ifdef HAVE_WSMP
 	_inner->solution = _data.x[0].vals + _data.x[0].nhalo;
@@ -250,7 +251,9 @@ void WSMPSystemSolver::solve()
 
 	eslog::solver("     - | SOLVER TIME                                                        %8.3f s | -\n", eslog::time() - start);
 	eslog::solver("     - --------------------------------------------------------------------------------- -\n");
+
 #endif
+	return true;
 }
 
 WSMPSystemSolver::~WSMPSystemSolver()

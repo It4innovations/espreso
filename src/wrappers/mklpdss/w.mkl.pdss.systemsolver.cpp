@@ -79,7 +79,7 @@ void MKLPDSSSystemSolver::init()
 #endif
 }
 
-void MKLPDSSSystemSolver::update()
+bool MKLPDSSSystemSolver::update()
 {
 #ifdef HAVE_MKLPDSS
 	eslog::solver("     - ---- LINEAR SOLVER -------------------------------------------------------------- -\n");
@@ -150,9 +150,10 @@ void MKLPDSSSystemSolver::update()
 
 	_inner->rhsValues = _data.f[0].vals + _data.f[0].nhalo;
 #endif
+	return true;
 }
 
-void MKLPDSSSystemSolver::solve()
+bool MKLPDSSSystemSolver::solve()
 {
 #ifdef HAVE_MKLPDSS
 	_inner->solution = _data.x[0].vals + _data.x[0].nhalo;
@@ -161,6 +162,8 @@ void MKLPDSSSystemSolver::solve()
 	_data.x.scatterToUpper();
 	eslog::solver("     - | SOLVER TIME                                                        %8.3f s | -\n", eslog::time() - start);
 	eslog::solver("     - --------------------------------------------------------------------------------- -\n");
+
+	return true;
 #endif
 }
 

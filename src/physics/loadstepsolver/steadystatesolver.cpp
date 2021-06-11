@@ -27,7 +27,7 @@ void SteadyStateSolver::updateStructuralMatrices()
 	system->assemble();
 }
 
-void SteadyStateSolver::runNextSubstep()
+bool SteadyStateSolver::runNextSubstep()
 {
 	step::time.previous = step::time.current;
 	step::time.current = step::time.final;
@@ -43,10 +43,13 @@ void SteadyStateSolver::runNextSubstep()
 	eslog::solver(" =  LOAD STEP %2d, SUBSTEP %4d, TIME %10.6f, TIME STEP %10.6f, FINAL TIME %10.6f =\n", step::step.loadstep + 1, step::step.substep + 1, step::time.current, step::time.shift, step::time.final);
 	eslog::solver(" = ----------------------------------------------------------------------------------------- =\n");
 
-	subStepSolver->solve(*this);
+	bool ret = subStepSolver->solve(*this);
+	if (!ret) return false;
 	system->processSolution();
 
 	eslog::solver(" = ========================================================================================= =\n");
 	eslog::solver(" = ================================================================= run time %12.3f s =\n\n", eslog::duration());
+
+	return true;
 }
 
