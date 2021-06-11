@@ -5,6 +5,8 @@
 
 # ignore generated directories
 build/*
+bin/*
+lib64/*
 
 # ignore ESPRESO results (default location)
 **/results/
