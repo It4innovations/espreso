@@ -367,7 +367,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	}
 
 	// Factorize and get factor sizes, process only domains that can fit GPU w/o factor-based buffers
-	PUSH_RANGE("Fact+LSC mem alloc", 1)
+	PUSH_RANGE("Fact CSparse", 1)
 	int order;
 	SEQ_VECTOR<int> vec_L_nnz(lsc_to_get_factors_ids.size());
 	SEQ_VECTOR<int*> vec_L_row_indexes(lsc_to_get_factors_ids.size());
@@ -428,7 +428,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			vec_B1_size[d] = domains[idx].B1_comp_dom.rows * domains[idx].B1_comp_dom.cols;
 		}
 	}
-	POP_RANGE
+	POP_RANGE // END Fact CSparse
 
 	// Reset max variables
 	max_B1_nnz = 0;
@@ -1060,6 +1060,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
  SEQ_VECTOR<int>& vec_U_nnz, SEQ_VECTOR<int*>& vec_U_row_indexes, SEQ_VECTOR<int*>& vec_U_col_pointers,
  SEQ_VECTOR<double*>& vec_U_values, SEQ_VECTOR<int*>& vec_perm, SEQ_VECTOR<int*>& vec_perm_2, esint max_B1_nnz,
  esint max_B1_rows, esint max_B1_size, esint max_K_rows, esint max_L_nnz, esint max_U_nnz) {
+	 PUSH_RANGE("Get LSC GPU", 0)
 	if(USE_FLOAT) {
 		eslog::warning("ESPRESO run-time warning: Support for GPU accelerated LSC in single precision not implemented yet. Assembling LSC on CPU using Pardiso.\n");
 		// Temporary CPU backup:
@@ -1089,6 +1090,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 		SEQ_VECTOR<SparseMatrix> vec_B1_comp_dom_copy(n_lsc);
 		int order;
 
+		PUSH_RANGE("LSC device mem alloc", 1)
 		if(SYMMETRIC_SYSTEM) {
 			order = 1; // 0 = natural, 1 = amd(A+A')
 
@@ -1138,7 +1140,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 				}
 			}
 		}
-		POP_RANGE
+		POP_RANGE // END LSC device mem alloc
 
 		PUSH_RANGE("Prepare host arrays", 2)
 
@@ -1603,7 +1605,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 		} // OMP parallel region
 
 		// Free memory
-		PUSH_RANGE("Free", 6)
+		PUSH_RANGE("Free mem", 6)
 		for (int g = 0; g < n_gpu; g++) {
             checkCudaErrors(cudaSetDevice(g + gpu_id));
             checkCudaErrors(cudaStreamDestroy(gpus[g].data_stream));
@@ -1681,12 +1683,14 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 				vec_U_row_indexes[d], vec_U_col_pointers[d], vec_U_values[d], vec_perm[d], vec_perm_2[d]);
 			}
 		}
-		POP_RANGE // Free
+		POP_RANGE // END Free mem
 	}
+	POP_RANGE // END Get LSC GPU
 }
 
 
 void ClusterGPU::GetSchurComplementsCpu(bool USE_FLOAT) {
+	PUSH_RANGE("Get LSC CPU", 0)
 	#pragma omp parallel for
 	for (size_t d = 0; d < domains_in_global_index.size(); d++ ) {
 		if (domains[d].B1Kplus.is_on_acc == 0 && !configuration.combine_sc_and_spds) {
@@ -1695,6 +1699,7 @@ void ClusterGPU::GetSchurComplementsCpu(bool USE_FLOAT) {
 			// ESINFO(PROGRESS3) << Info::plain() << ".";
 		}
 	}
+	POP_RANGE // END Get LSC CPU
 }
 
 

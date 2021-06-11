@@ -23,6 +23,7 @@
 #include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
 #include "timeeval.h"
+#include "wrappers/nvtx/w.nvtx.h"
 
 namespace espreso {
 
@@ -499,6 +500,7 @@ void FETISystemSolver::setup_LocalSchurComplement(FETIConfiguration &configurati
 //TODO: update for multiple clusters
 
 	if (_inner->cluster->USE_KINV == 1) {
+		PUSH_RANGE("Solver - Schur Complement asm.", 1)
 		TimeEvent KSCMem(string("Solver - SC asm. w PARDISO-SC mem [MB]")); KSCMem.startWithoutBarrier(GetProcessMemory_u());
 		TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC"));timeSolSC2.start();
 		bool USE_FLOAT = false;
@@ -508,6 +510,7 @@ void FETISystemSolver::setup_LocalSchurComplement(FETIConfiguration &configurati
 		_inner->cluster->Create_SC_perDomain(USE_FLOAT);
 		timeSolSC2.endWithBarrier(); timeEvalMain->addEvent(timeSolSC2);
 		KSCMem.endWithoutBarrier(GetProcessMemory_u()); //KSCMem.printLastStatMPIPerNode();
+		POP_RANGE // END Solver - Schur Complement asm.
 //		 ESLOG(MEMORY) << "After K inv. process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
 //		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 	} else {
@@ -520,6 +523,7 @@ void FETISystemSolver::setup_LocalSchurComplement(FETIConfiguration &configurati
 
 void FETISystemSolver::setup_Preconditioner() {
 // Load Matrix K, Regularization
+		PUSH_RANGE("Solver - Setup preconditioners", 2)
 		TimeEvent timeRegKproc(string("Solver - Setup preconditioners")); timeRegKproc.start();
 //		 ESLOG(MEMORY) << "Before - Setup preconditioners - process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
 //		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
@@ -534,10 +538,12 @@ void FETISystemSolver::setup_Preconditioner() {
 //		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 		timeRegKproc.endWithBarrier();
 		timeEvalMain->addEvent(timeRegKproc);
+		POP_RANGE  // END Solver - Setup preconditioners
 }
 
 void FETISystemSolver::setup_FactorizationOfStiffnessMatrices() {
 // K Factorization
+		PUSH_RANGE("Solver - K factorization", 3)
 		TimeEvent timeSolKproc(string("Solver - K factorization")); timeSolKproc.start();
 		TimeEvent KFactMem(string("Solver - K factorization mem. [MB]")); KFactMem.startWithoutBarrier(GetProcessMemory_u());
 
@@ -548,12 +554,13 @@ void FETISystemSolver::setup_FactorizationOfStiffnessMatrices() {
 //		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 		timeSolKproc.endWithBarrier();
 		timeEvalMain->addEvent(timeSolKproc);
+		POP_RANGE // END Solver - K factorization
 }
 
 
 void FETISystemSolver::setup_SetDirichletBoundaryConditions() {
 // Set Dirichlet Boundary Condition
-
+		PUSH_RANGE("Solver - Set Dirichlet Boundary Condition", 4)
 		TimeEvent timeSetInitialCondition(string("Solver - Set Dirichlet Boundary Condition"));
 		timeSetInitialCondition.start();
 
@@ -565,10 +572,11 @@ void FETISystemSolver::setup_SetDirichletBoundaryConditions() {
 
 		timeSetInitialCondition.endWithBarrier();
 		timeEvalMain->addEvent(timeSetInitialCondition);
+		POP_RANGE // END Solver - Set Dirichlet Boundary Condition
 }
 
 void FETISystemSolver::setup_CreateG_GGt_CompressG() {
-
+		PUSH_RANGE("Solver - Create G GGt Compress G", 5)
 		TimeEvent timeSolPrec(string("Solver - FETI Preprocessing")); timeSolPrec.start();
 
 //		 ESLOG(MEMORY) << "Solver Preprocessing - HFETI with regularization from K matrix";
@@ -611,7 +619,7 @@ void FETISystemSolver::setup_CreateG_GGt_CompressG() {
 //		 ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 		timeSolPrec.endWithBarrier(); timeEvalMain->addEvent(timeSolPrec);
-
+		POP_RANGE // END Solver - Create G GGt Compress G
 
 }
 
@@ -735,6 +743,7 @@ int FETISystemSolver::Solve( std::vector < std::vector < double > >  & f_vec,
 								std::vector < std::vector < double > >  & prim_solution,
 								std::vector < std::vector < double > > & dual_solution) {
 
+	PUSH_RANGE("Solver - CG Solver runtime", 6)
 	TimeEvent timeSolCG(string("Solver - CG Solver runtime"));
 	timeSolCG.start();
 
@@ -742,6 +751,7 @@ int FETISystemSolver::Solve( std::vector < std::vector < double > >  & f_vec,
 	timeSolCG.endWithBarrier();
 	timeEvalMain->addEvent(timeSolCG);
 	return ret;
+	POP_RANGE // END Solver - CG Solver runtime
 }
 
 void FETISystemSolver::Postprocessing( ) {

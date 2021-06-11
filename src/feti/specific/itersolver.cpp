@@ -21,6 +21,7 @@
 #include "basis/utilities/debugprint.h"
 #include <fstream>
 
+#include "wrappers/nvtx/w.nvtx.h"
 
 using namespace espreso;
 
@@ -3623,7 +3624,7 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
 	// *** Start the CG iteration loop ********************************************
   int iter = 0;
 	for (; iter < CG_max_iter; iter++) {
-
+		PUSH_RANGE("Iter", 6)
 		timing.totalTime.start();
 
     appA_time.start();
@@ -3841,6 +3842,7 @@ for (size_t i = 0; i < cluster.my_lamdas_indices.size(); i++) {
 		if (norm_l < tol)
 			break;
 //
+	POP_RANGE // END Iter
 	}
 
   for (int i = cnt_iter-1;i>=0;i-- ){

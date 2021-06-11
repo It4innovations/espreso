@@ -54,6 +54,9 @@ def configure(ctx):
         Logs.error("Cannot find PARDISO library. Set --pardiso=PATH_TO_PARDISO to use PARDISO solver")
     ctx.env["DEFINES_SOLVER"] = [ "SOLVER_" + ctx.options.solver.upper() ]
 
+    if ctx.options.with_nvtx:
+        ctx.env.append_unique("CXXFLAGS", [ "-DUSE_NVTX" ]) # NVTX profiling tags
+
     print_available(ctx)
 
 def build(ctx):
@@ -95,7 +98,6 @@ def build(ctx):
         feti = fetisources + ("src/feti/specific/cpu/SparseSolverPARDISO.cpp",)
     if ctx.env["DEFINES_SOLVER"][0] == "SOLVER_CUDA":
         feti = fetisources + ("src/feti/specific/cpu/SparseSolverMKL.cpp", "src/feti/specific/acc/clusterGPU.cpp", "src/feti/specific/acc/itersolverGPU.cpp",)
-        # ctx.env.append_unique("CXXFLAGS", [ "-DUSE_NVTX" ]) # CUDA profiling tags
 
     features = "cxx cxxshlib"
     ctx.lib = ctx.shlib
@@ -158,6 +160,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/wsmp/**/*.cpp'), "wwsmp", [ "WSMP" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/csparse/**/*.cpp'), "wcsparse", [ "CSPARSE" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/bem/**/*.cpp'), "wbem", [ "BEM" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/nvtx/**/*.cpp'), "wnvtx", [ "NVTX" ])
     if ctx.env["HAVE_MATH"]:
         if ctx.env.NVCC:
             ctx.build_espreso(ctx.path.ant_glob('src/feti/specific/acc/**/*.cu'), "cudakernels", [ "CUDA" ])
@@ -328,6 +331,7 @@ def recurse(ctx):
     ctx.recurse("src/wrappers/nglib")
     ctx.recurse("src/wrappers/bem")
     ctx.recurse("src/wrappers/catalyst")
+    ctx.recurse("src/wrappers/nvtx")
 
 from waflib import Logs
 from waflib.Build import BuildContext

@@ -15,6 +15,7 @@
 #include <fstream>
 
 #include "mkl.h"
+#include "wrappers/nvtx/w.nvtx.h"
 
 using std::make_pair;
 
@@ -62,12 +63,13 @@ void ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number
 
 
 
-
+	PUSH_RANGE("Solver - K factorization", 6)
 	#pragma omp parallel for
 	for (size_t d = 0; d < domains.size(); d++ ) {
 		domains_in_global_index[d] = subdomains_global_indices[d];
 		domains[d].SetDomain();
 	}
+	POP_RANGE // END Solver - K factorization
 
 	//// *** Alocate temporarly vectors for Temporary vectors for Apply_A function *********
 	//// *** - temporary vectors for work primal domain size *******************************

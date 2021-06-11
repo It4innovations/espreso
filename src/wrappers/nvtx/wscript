@@ -1,0 +1,6 @@
+def options(opt):
+    opt.other.add_option("--with-nvtx", action="store_true", default=False, help="Use NVTX library for profiling annotations.")
+
+def configure(ctx):
+    if ctx.options.with_nvtx:
+        ctx.link_cxx(name="nvtx", header_name="nvToolsExt.h", libs=["nvToolsExt"])
