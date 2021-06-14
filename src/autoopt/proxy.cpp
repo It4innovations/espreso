@@ -67,11 +67,11 @@ std::vector<double> ParameterManager::generateConfiguration()
 		}
 		else if (dt == ECFDataType::NONNEGATIVE_INTEGER)
 		{
-			if ((*it)->metadata.autoopt_range_set)
+			if ((*it)->metadata.range)
 			{
 				std::uniform_int_distribution<int> dist(
-					(*it)->metadata.autoopt_range_begin,
-					(*it)->metadata.autoopt_range_end
+					std::atoi((*it)->metadata.range->min.c_str()),
+					std::atoi((*it)->metadata.range->max.c_str())
 				);
 				configuration.push_back( dist(m_generator) );
 			}
@@ -124,8 +124,8 @@ double ParameterManager::getParameterMin(int id)
 	}
 	else if (dt == ECFDataType::NONNEGATIVE_INTEGER)
 	{
-		if (p->metadata.autoopt_range_set)
-		{ return p->metadata.autoopt_range_begin; }
+		if (p->metadata.range)
+		{ return std::atoi(p->metadata.range->min.c_str()); }
 		else 
 		{ return 0; }
 	}
@@ -163,8 +163,8 @@ double ParameterManager::getParameterMax(int id)
 	}
 	else if (dt == ECFDataType::NONNEGATIVE_INTEGER)
 	{
-		if (p->metadata.autoopt_range_set)
-		{ return p->metadata.autoopt_range_end; }
+		if (p->metadata.range)
+		{ return std::atoi(p->metadata.range->max.c_str()); }
 		else 
 		{ return std::numeric_limits<int>::max(); }
 	}
@@ -236,12 +236,12 @@ double ParameterManager::_checkParameter_immediate_rounding(int id, double value
 	else if (dt == ECFDataType::NONNEGATIVE_INTEGER)
 	{
 		int val = (int)value;
-		if (p->metadata.autoopt_range_set)
+		if (p->metadata.range)
 		{
-			if (val < p->metadata.autoopt_range_begin) 
-			{ return p->metadata.autoopt_range_begin; }
-			else if (val > p->metadata.autoopt_range_end)
-			{ return p->metadata.autoopt_range_end; }
+			if (val < std::atoi(p->metadata.range->min.c_str()))
+			{ return std::atoi(p->metadata.range->min.c_str()); }
+			else if (val > std::atoi(p->metadata.range->max.c_str()))
+			{ return std::atoi(p->metadata.range->max.c_str()); }
 		}
 		else if (val < 0) return 0;
 	}
@@ -283,12 +283,12 @@ double ParameterManager::_checkParameter_no_rounding(int id, double value)
 	}
 	else if (dt == ECFDataType::NONNEGATIVE_INTEGER)
 	{
-		if (p->metadata.autoopt_range_set)
+		if (p->metadata.range)
 		{
-			if (value < p->metadata.autoopt_range_begin) 
-			{ return p->metadata.autoopt_range_begin; }
-			else if (value > p->metadata.autoopt_range_end)
-			{ return p->metadata.autoopt_range_end; }
+			if (value < std::atoi(p->metadata.range->min.c_str()))
+			{ return std::atoi(p->metadata.range->min.c_str()); }
+			else if (value > std::atoi(p->metadata.range->max.c_str()))
+			{ return std::atoi(p->metadata.range->max.c_str()); }
 		}
 		else if (value < 0) return 0;
 	}

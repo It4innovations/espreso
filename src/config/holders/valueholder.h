@@ -82,9 +82,9 @@ inline bool ECFValueHolder<ECFRange>::_setValue(const std::string &value)
 	if (range.size() != 3) {
 		return false;
 	}
-	this->value.min = range[0];
-	this->value.max = range[1];
-	this->value.step = range[2];
+	this->value.min = Parser::strip(range[0]);
+	this->value.max = Parser::strip(range[1]);
+	this->value.step = Parser::strip(range[2]);
 	return true;
 }
 

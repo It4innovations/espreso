@@ -369,6 +369,7 @@ void ECFReader::_read(
 			} else {
 				if (range != NULL) {
 					range->parameter.push_back(parameter);
+					parameter->metadata.range = range;
 					range = NULL;
 				}
 			}

@@ -65,8 +65,7 @@ ECFMetaData ECFMetaData::suffix(size_t start) const
 
 ECFMetaData::ECFMetaData(): visibleObjectName(false), tensor(NULL), 
 tensor_row(-1), tensor_column(-1), exporting(true), range_begin(0), 
-range_end(0), gui_type(ECFGUIType::STATIC), autoopt_range_set(false),
-autoopt_range_begin(1), autoopt_range_end(1)
+range_end(0), gui_type(ECFGUIType::STATIC), range(NULL)
 {
 	condition = new ECFCondition();
 	isallowed = [] () { return true; };
@@ -83,10 +82,9 @@ ECFMetaData::ECFMetaData(const ECFMetaData &other)
   unit(other.unit), exporting(other.exporting), range_begin(other.range_begin),
   range_end(other.range_end), gui_type(other.gui_type),
   pattern_name(other.pattern_name), pattern_item_name(other.pattern_item_name),
+  range(NULL),
   condition(other.condition->copy()),
-  isallowed(other.isallowed), ismandatory(other.ismandatory),
-  autoopt_range_set(other.autoopt_range_set), autoopt_range_begin(other.autoopt_range_begin),
-  autoopt_range_end(other.autoopt_range_end)
+  isallowed(other.isallowed), ismandatory(other.ismandatory)
 {
 
 }
@@ -101,9 +99,9 @@ ECFMetaData::ECFMetaData(ECFMetaData &&other)
   unit(std::move(other.unit)), exporting(other.exporting), range_begin(other.range_begin),
   range_end(other.range_end), gui_type(other.gui_type), 
   pattern_name(other.pattern_name), pattern_item_name(other.pattern_item_name),
+  range(NULL),
   condition(other.condition), isallowed(std::move(other.isallowed)), 
-  ismandatory(std::move(other.ismandatory)), autoopt_range_set(other.autoopt_range_set),
-  autoopt_range_begin(other.autoopt_range_begin), autoopt_range_end(other.autoopt_range_end) 
+  ismandatory(std::move(other.ismandatory))
 {
 	other.condition = NULL;
 }
@@ -135,9 +133,6 @@ ECFMetaData& ECFMetaData::operator=(const ECFMetaData &other)
 		}
 		condition = other.condition->copy();
 		visibleObjectName = other.visibleObjectName;
-		autoopt_range_set = other.autoopt_range_set;
-		autoopt_range_begin = other.autoopt_range_begin;
-		autoopt_range_end = other.autoopt_range_end;
 	}
 	return *this;
 }

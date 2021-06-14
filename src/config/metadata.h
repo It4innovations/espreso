@@ -10,6 +10,7 @@ namespace espreso {
 
 struct TensorConfiguration;
 struct ECFAbstractCondition;
+struct ECFRange;
 
 enum class ECFDataType {
 	BOOL,
@@ -105,10 +106,7 @@ struct ECFMetaData {
 	ECFGUIType gui_type;
 	std::string pattern_name;
 	std::string pattern_item_name;
-
-	bool autoopt_range_set;
-	int autoopt_range_begin;
-	int autoopt_range_end;
+	ECFRange *range;
 
 	ECFAbstractCondition *condition;
 
@@ -139,9 +137,6 @@ struct ECFMetaData {
 	ECFMetaData& setform() { this->gui_type = ECFGUIType::FORM; return *this; }
 	ECFMetaData& setpatternname(const std::string &name) { this->pattern_name = name; return *this; }
 	ECFMetaData& setpatternitemname(const std::string &name) { this->pattern_item_name = name; return *this; }
-
-	ECFMetaData& setautooptrange(int begin, int end) 
-	{ this->autoopt_range_set = true; this->autoopt_range_begin = begin; this->autoopt_range_end = end; return *this; }
 
 	ECFMetaData& addoption(const ECFOption &option) { options.push_back(option); return *this; }
 
