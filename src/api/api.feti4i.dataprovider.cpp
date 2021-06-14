@@ -58,7 +58,7 @@ int APIDataProvider::DOFs()
 
 void APIDataProvider::prepare(int* argc, char ***argv)
 {
-	info::ecf->ecffile = ECFReader::read(*info::ecf->ecfdescription, argc, argv, info::ecf->default_args, info::ecf->variables);
+	info::ecf->ecffile = ECFReader::read(*info::ecf->ecfdescription, argc, argv, info::ecf->ranges, info::ecf->default_args, info::ecf->variables);
 	info::ecf->input.decomposition.domains = 1;
 	info::ecf->set();
 	Mesh::load();

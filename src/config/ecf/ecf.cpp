@@ -106,6 +106,11 @@ void ECF::_init()
 			.setdatatype({ ECFDataType::STRING, ECFDataType::STRING })
 			.setpattern({ "MY_VARIABLE", "VALUE" }));
 
+	REGISTER(ranges, ECFMetaData()
+			.setdescription({ "A name of range usable in *.ecf file.", "A range of the variable" })
+			.setdatatype({ ECFDataType::STRING, ECFDataType::RANGE })
+			.setpattern({ "MY_VARIABLE", "MIN : MAX: STEP" }));
+
 	REGISTER(functions, ECFMetaData()
 			.setdescription({ "A name of a function usable in expressions.", "The function definition." })
 			.setdatatype({ ECFDataType::STRING })
@@ -198,13 +203,13 @@ ECF::ECF(int *argc, char ***argv, const std::string &app)
 void ECF::fill(const std::string &file)
 {
 	ecffile = file;
-	ECFReader::read(*this->ecfdescription, file, this->default_args, this->variables);
+	ECFReader::read(*this->ecfdescription, file, this->ranges, this->default_args, this->variables);
 	set();
 }
 
 void ECF::fill(int *argc, char ***argv, const std::string &app)
 {
-	ecffile = ECFReader::read(*this->ecfdescription, argc, argv, this->default_args, this->variables);
+	ecffile = ECFReader::read(*this->ecfdescription, argc, argv, this->ranges, this->default_args, this->variables);
 	exe = std::string(info::system::buildpath()) + "/" + app;
 	set();
 }

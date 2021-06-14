@@ -48,6 +48,7 @@ std::string ECFReader::_read(
 		ECFObject &configuration,
 		int* argc,
 		char ***argv,
+		std::map<std::string, ECFRange> &ranges,
 		const std::map<size_t, std::string> &defaultArgs,
 		const std::map<std::string, std::string> &variables)
 {
@@ -151,7 +152,7 @@ std::string ECFReader::_read(
 		nameless.push_back(std::string((*argv)[optind++]));
 	}
 
-	_read(configuration, confFile, nameless, defaultArgs, variables);
+	_read(configuration, confFile, nameless, ranges, defaultArgs, variables);
 
 	for (size_t i = 0; i < verbosity.size(); i++) {
 		switch (verbosity[i]->argflag) {
@@ -192,6 +193,7 @@ void ECFReader::_read(
 		ECFObject &configuration,
 		const std::string &file,
 		const std::vector<std::string> &args,
+		std::map<std::string, ECFRange> &ranges,
 		const std::map<size_t, std::string> &defaultArgs,
 		const std::map<std::string, std::string> &variables)
 {
@@ -203,8 +205,8 @@ void ECFReader::_read(
 	bool correctlyLoaded = true, unfinishedLine = false;
 	std::map<size_t, std::vector<std::string> > arguments;
 
-	std::string link;
 	ECFParameter *parameter;
+	ECFRange* range = NULL;
 	confStack.push(&configuration);
 	tokenStack.push(new CollectiveTokenizer(file));
 	while (tokenStack.size()) {
@@ -222,10 +224,16 @@ void ECFReader::_read(
 		case Tokenizer::Token::LINK:
 		{
 			std::string value = tokenStack.top()->value();
-			link = "[" + value + "]";
 			for (auto it = variables.begin(); it != variables.end(); ++it) {
 				if (StringCompare::caseInsensitiveEq(it->first, value)) {
 					value = it->second;
+					break;
+				}
+			}
+			for (auto it = ranges.begin(); it != ranges.end(); ++it) {
+				if (StringCompare::caseInsensitiveEq(it->first, value)) {
+					range = &it->second;
+					value = it->second.min; // set the first value
 					break;
 				}
 			}
@@ -285,7 +293,6 @@ void ECFReader::_read(
 				break;
 			}
 			if (StringCompare::caseInsensitiveEq(values.back(), "TABULAR")) {
-				link = "TABULAR [" + value + "]";
 				values.push_back("[" + value + "]");
 			} else {
 				values.push_back(value);
@@ -359,13 +366,15 @@ void ECFReader::_read(
 				std::stringstream ssp; ssp << prefix;
 				eslog::globalerror("Invalid ECF configuration. Parameter '%s::%s' is an object. Expected '{' instead of '%s'\n",
 						ssp.str().c_str(), parameter->name.c_str(), tokenStack.top()->lastLines(2).c_str(), ss.str().c_str());
+			} else {
+				if (range != NULL) {
+					range->parameter = parameter;
+					range == NULL;
+				}
 			}
 			if (!parameter->setValue(ss.str())) {
 				std::stringstream ssp; ssp << prefix;
 				eslog::globalerror("PARSE ERROR: Parameter '%s::%s' has wrong value '%s'\n", ssp.str().c_str(), values[0].c_str(), ss.str().c_str());
-			}
-			if (link.size()) {
-				link = "";
 			}
 			values.clear();
 			break;

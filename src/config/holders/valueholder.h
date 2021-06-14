@@ -3,6 +3,7 @@
 #define SRC_CONFIG_HOLDERS_VALUEHOLDER_H_
 
 #include "expression.h"
+#include "range.h"
 #include "config/configuration.h"
 #include "basis/utilities/parser.h"
 #include <sstream>
@@ -54,6 +55,12 @@ inline std::string ECFValueHolder<ECFExpression>::getValue() const
 }
 
 template <>
+inline std::string ECFValueHolder<ECFRange>::getValue() const
+{
+	return value.min + " : " + value.max + " : " + value.step;
+}
+
+template <>
 inline bool ECFValueHolder<std::string>::_setValue(const std::string &value)
 {
 	this->value = value;
@@ -66,6 +73,19 @@ inline bool ECFValueHolder<ECFExpression>::_setValue(const std::string &value)
 	this->value.value = Parser::uppercase(value);
 	this->value.createEvaluator();
 	return this->value.evaluator != NULL;
+}
+
+template <>
+inline bool ECFValueHolder<ECFRange>::_setValue(const std::string &value)
+{
+	auto range = Parser::split(value, ":");
+	if (range.size() != 3) {
+		return false;
+	}
+	this->value.min = range[0];
+	this->value.max = range[1];
+	this->value.step = range[2];
+	return true;
 }
 
 template <>

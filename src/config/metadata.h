@@ -14,6 +14,7 @@ struct ECFAbstractCondition;
 enum class ECFDataType {
 	BOOL,
 	STRING,
+	RANGE,
 	INTEGER,
 	POSITIVE_INTEGER,
 	NONNEGATIVE_INTEGER,

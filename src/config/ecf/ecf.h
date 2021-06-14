@@ -17,6 +17,8 @@
 #include "physics/heattransfer.h"
 #include "physics/structuralmechanics.h"
 
+#include "config/holders/range.h"
+
 namespace espreso {
 
 struct FunctionDefinition: public ECFDescription {
@@ -39,7 +41,6 @@ struct FunctionDefinition: public ECFDescription {
 	FunctionDefinition();
 };
 
-
 struct ECF: public ECFDescription {
 
 	enum class INPUT_TYPE {
@@ -59,6 +60,7 @@ struct ECF: public ECFDescription {
 
 	std::map<size_t, std::string> default_args;
 	std::map<std::string, std::string> variables;
+	std::map<std::string, ECFRange> ranges;
 	std::map<std::string, FunctionDefinition> functions;
 
 	FETI4ILibraryConfiguration feti4ilibrary;
