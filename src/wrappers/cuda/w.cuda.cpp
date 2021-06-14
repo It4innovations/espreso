@@ -16,13 +16,18 @@ namespace espreso {
 
 void cuda::fillDeviceInfo()
 {
-	checkCudaErrors(cudaGetDeviceCount(&cuda::devices));
+	cudaError_t cuda_status = cudaGetDeviceCount(&cuda::devices);
+	if(cuda_status != cudaSuccess) {
+		espreso::cuda::devices = 0;
+		eslog::error("ERROR: No CUDA device available (--solver=cuda or --with-cuda used).\n Underlying CUDA error at %s:%d code=%d(%s) \"%s\"\n Descr: %s\n", __FILE__, __LINE__,
+            static_cast<unsigned int>(cuda_status), _cudaGetErrorEnum(cuda_status), "cudaGetDeviceCount(&cuda::devices)", cudaGetErrorString((cudaError_t)cuda_status));
+	}
 
 	if (MPITools::node->rank == 0) {
 		for (int i = 0; i < cuda::devices; i++) {
 			cudaDeviceProp prop;
-			cudaGetDeviceProperties(&prop, i);
-			cudaMemGetInfo(&cuda::availMemory, &cuda::totalMemory);
+			checkCudaErrors(cudaGetDeviceProperties(&prop, i));
+			checkCudaErrors(cudaMemGetInfo(&cuda::availMemory, &cuda::totalMemory));
 			cuda::availMemory /= 1024 * 1024;
 			cuda::totalMemory /= 1024 * 1024;
 		}
