@@ -3,4 +3,4 @@ def options(opt):
 
 def configure(ctx):
     if ctx.options.with_nvtx:
-        ctx.link_cxx(name="nvtx", header_name="nvToolsExt.h", libs=["nvToolsExt"])
+        ctx.link_cxx(name="nvtx", header_name="nvToolsExt.h", libs=["nvToolsExt"], mandatory=True)

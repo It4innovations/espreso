@@ -6,7 +6,7 @@ def configure(ctx):
     if not ctx.options.with_cuda:
         return
 
-    if ctx.link_cxx(name="cuda", header_name=["cuda_runtime_api.h", "cusolverSp.h", "cusolverSp_LOWLEVEL_PREVIEW.h"], libs=["cublas", "cudart", "cusparse", "cusolver"]):
+    if ctx.link_cxx(name="cuda", header_name=["cuda_runtime_api.h", "cuda_runtime.h", "cusparse_v2.h", "cusolverSp.h", "cusolverSp_LOWLEVEL_PREVIEW.h"], libs=["cublas", "cudart", "cusparse", "cusolver"], mandatory=True):
         ctx.env.NVCC = ctx.find_program("nvcc")
 
         if ctx.options.cuda_arch:

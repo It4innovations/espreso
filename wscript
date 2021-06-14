@@ -364,6 +364,8 @@ def link_cxx(self, *k, **kw):
         libpath = [ os.path.join(kw["root"], dir) for dir in os.listdir(kw["root"]) if dir.startswith("lib") ]
 
     general = dict(uselib_store=kw["name"].upper(), mandatory=False)
+    if "mandatory" in kw:
+        general["mandatory"] = kw["mandatory"]
     if "use" in kw:
         general["use"] = kw["use"]
 
