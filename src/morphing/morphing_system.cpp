@@ -315,7 +315,7 @@ void MorphingMatrix::transform_displacements(
 	std::vector<double> &displacements
 ) const {
 	
-	esint npoints = displacements.size() / this->dimension;
+	size_t npoints = displacements.size() / this->dimension;
 	for (size_t r = 0; r < npoints; r++) {
 		this->transform_displacement(
 			&displacements[r * this->dimension]
@@ -368,7 +368,7 @@ void MorphingMatrix::define_geometry_transformations(
 	
 	if(sPoints.size() > 0){
 		
-		for(auto i = 0; i < sPoints.size(); ++i){
+		for(size_t i = 0; i < sPoints.size(); ++i){
 			
 			auto &p = sPoints[i];
 			
@@ -615,7 +615,7 @@ void MorphingMatrix::calculateMorphingError(
 	
 	double displ_local[3];
 	
-	for(size_t i = 0; i < this->nrows - this->n_regularization; ++i){
+	for(esint i = 0; i < this->nrows - this->n_regularization; ++i){
 		
 		displ_local[0] = rhs[i];
 		displ_local[1] = rhs[i + this->nrows];
@@ -644,7 +644,7 @@ void MorphingMatrix::calculateMorphingError(
 	orthogonality_error_x = 0.0f;
 	orthogonality_error_y = 0.0f;
 	orthogonality_error_z = 0.0f;
-	for(size_t i = this->nrows - this->n_regularization; i < this->nrows; ++i){
+	for(esint i = this->nrows - this->n_regularization; i < this->nrows; ++i){
 		orthogonality_error_x += res_x[i] * res_x[i];
 		orthogonality_error_y += res_y[i] * res_y[i];
 		orthogonality_error_z += res_z[i] * res_z[i];
@@ -831,7 +831,7 @@ void MorphingMatrix::apply(
 	esint shift_x;
 	esint shift_y;
 	
-	for(int b = 0; b < this->A.size(); ++b){
+	for(size_t b = 0; b < this->A.size(); ++b){
 		
 		bi = this->A_inner_block_idx[b];
 		bo = this->A_outer_block_idx[b];

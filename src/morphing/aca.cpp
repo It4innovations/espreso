@@ -48,6 +48,7 @@ esint FullRankBlock::size() const {
 }
 
 //performs y = this * x * alpha + y * beta
+//TODO use functions implemented in math.h
 void FullRankBlock::apply(const double * x_global, double *y_global, double alpha, double beta, bool transpose){
 
 	// MATH::vecScale((transpose?this->ncols:this->nrows), beta, y_global);
@@ -155,6 +156,7 @@ esint LowRankBlock::size() const {
 }
 
 //performs y = this * x * alpha + y * beta
+//TODO use functions implemented in math.h
 void LowRankBlock::apply(const double * x_global, double *y_global, double alpha, double beta, bool transpose){
 	
 	if(this->data_left.size() + this->data_right.size() == 0){
@@ -458,7 +460,6 @@ void LowRankBlock::generateBlocksImplicit(const Cluster *L, const Cluster *R, do
 	std::fill(assembled_rows.begin(), assembled_rows.end(), false);
 	std::fill(assembled_cols.begin(), assembled_cols.end(), false);
 	
-	double ref_norm_curr = 0.0f;
 	double approx_norm = 0.0f;
 	esint cross_row_idx = 0;
 	esint cross_col_idx = -1;
@@ -654,7 +655,6 @@ matrix_ACA::matrix_ACA(
 	esint size_admissible_ = 0;
 	#pragma omp parallel reduction(+:size_nonadmissible_, size_admissible_)
 	{
-		esint idx;
 		esint size_admissible_tmp = 0;
 		esint size_nonadmissible_tmp = 0;
 		esint T_s = T.leaf_size();
@@ -684,11 +684,9 @@ matrix_ACA::matrix_ACA(
 	std::vector<esint> aca_blocks_size_threaded(nthreads);
 	std::fill(aca_blocks_size_threaded.begin(), aca_blocks_size_threaded.end(), 0);
 	for(auto M: this->aca_blocks){
-		esint s = M->size();
-
 		esint min_s = aca_blocks_size_threaded[0];
 		esint bucket_idx = 0;
-		for(esint i = 1; i < aca_blocks_size_threaded.size(); ++i){
+		for(esint i = 1; i < (esint)aca_blocks_size_threaded.size(); ++i){
 			if(min_s > aca_blocks_size_threaded[i]) {
 				min_s = aca_blocks_size_threaded[i];
 				bucket_idx = i;
@@ -725,7 +723,7 @@ void matrix_ACA::apply(const double* x, double* y, double alpha, double beta, bo
 		}
 	}
 	
-	for(esint i = 0; i < this->y_tmp.size(); ++i){
+	for(esint i = 0; i < (esint)this->y_tmp.size(); ++i){
 		MATH::vecAdd(dim, y, 1.0, this->y_tmp[i].data());
 	}
 }

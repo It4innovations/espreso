@@ -158,30 +158,12 @@ void MorphingMatrixPreconditioner::updateInverseRow(
 		}
 	}	
 
-	int result= MATH::SOLVER::directUpperSymetricIndefiniteColumnMajor(
+	MATH::SOLVER::directUpperSymetricIndefiniteColumnMajor(
 		this->nrows,  
 		&this->sparse_system_mem[0],
 		1, 
 		&this->basis_vector[0]
 	);
-	
-	// printf("    FULL: %d\n", result);
-
-	// if(result > 0){
-		// esint l = 0, k = 0;
-		// for(int r = 0; r < this->nrows; ++r){
-			// for(int c = 0; c <= r; ++c){
-				// this->sparse_system_mem[l++] = this->sparse_system[k++];
-			// }
-		// }	
-		// l = 0;
-		// for(int r = 0; r < this->nrows; ++r){
-			// for(int c = 0; c <= r; ++c){
-				// printf("%10.8f ", this->sparse_system_mem[l++]);
-			// }
-			// printf("\n");
-		// }
-	// }
 	
 	std::copy(
 		this->basis_vector.begin(), 

@@ -27,7 +27,6 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 
 	esint niters = 0;
 	esint nToRestart = maxIterations;
-	esint useMaxIterLimit = 0;
 	double* mem_vec = new double[M->getNRows()];
 	// double* rhsVals_tmp = new double[M.getNRows()];
 
@@ -47,7 +46,6 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 	//---------------------------------------------------------------------------
 	esint size = 128;
 	
-	esint rows = M->getNRows();
 	esint cols = M->getNCols();
 
 	//---------------------------------------------------------------------------

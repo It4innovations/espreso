@@ -26,6 +26,10 @@ public:
 
 	};
 	
+	virtual ~ACABlock(){
+		
+	};
+	
 	virtual esint size() const = 0;
 	
 	virtual void apply(const double * x_global, double *y_global, double alpha, double beta, bool transpose) = 0;
@@ -46,7 +50,7 @@ public:
 
 	FullRankBlock(const Cluster *L, const Cluster *R, const RBFTargetConfiguration &configuration);
 	
-	~FullRankBlock();
+	virtual ~FullRankBlock();
 	
 	esint size() const;
 	
@@ -71,7 +75,7 @@ public:
 
 	LowRankBlock(const Cluster *L, const Cluster *R, double eps, const RBFTargetConfiguration &configuration);
 	
-	~LowRankBlock();
+	virtual ~LowRankBlock();
 	
 	esint size() const;
 	
