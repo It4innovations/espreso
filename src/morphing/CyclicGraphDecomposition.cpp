@@ -2077,12 +2077,12 @@ void CyclicGraphDecomposition::define_workload(
 	
 	auto block_indices = WORKLOAD_DISTRIBUTION[nranks - 1];
 	
-	for ( esint i = 0; i < block_indices.size( ); i++ ) {
+	for ( esint i = 0; i < (esint)block_indices.size( ); i++ ) {
 		row_idx = block_indices[i];
 		
 		active_block_indices[(row_idx + proc_idx) % nranks] = true;
 		
-		for ( esint j = 0; j < block_indices.size( ); j++ ) {
+		for ( esint j = 0; j < (esint)block_indices.size( ); j++ ) {
 			col_idx = block_indices[j];
 			
 			diagIdx = ( nranks + col_idx - row_idx ) % nranks;
@@ -2102,7 +2102,7 @@ void CyclicGraphDecomposition::define_workload(
 	}
 	
 	for(esint r = 0; r < nranks; ++r){
-		for(esint c = 0; c < block_indices.size(); ++c){
+		for(esint c = 0; c < (esint)block_indices.size(); ++c){
 			process_blocks[r].push_back((block_indices[c] + r) % nranks);
 		}
 	}

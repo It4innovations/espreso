@@ -147,7 +147,10 @@ ClusterTree::ClusterTree(Cluster &r){
 }
 
 ClusterTree::~ClusterTree(){
-	
+	if( this->root ){
+		delete this->root;
+		this->root = nullptr;
+	}
 }
 
 void ClusterTree::createClusterTree(esint base_cluster_size) {

@@ -5,12 +5,40 @@ using namespace espreso;
 
 BlockCluster::BlockCluster(){}
 
-// BlockCluster::~BlockCluster(){
-	// if(this->child_LL){
-		// delete this->child_LL;
-		// this->child_LL = nullptr;
-	// }
-// }
+BlockCluster::~BlockCluster(){
+	if(this->child_LL){
+		delete this->child_LL;
+		this->child_LL = nullptr;
+	}
+	if(this->child_LR){
+		delete this->child_LR;
+		this->child_LR = nullptr;
+	}
+	if(this->child_RL){
+		delete this->child_RL;
+		this->child_RL = nullptr;
+	}
+	if(this->child_RR){
+		delete this->child_RR;
+		this->child_RR = nullptr;
+	}
+	if(this->child_lL){
+		delete this->child_lL;
+		this->child_lL = nullptr;
+	}
+	if(this->child_lR){
+		delete this->child_lR;
+		this->child_lR = nullptr;
+	}
+	if(this->child_Lr){
+		delete this->child_Lr;
+		this->child_Lr = nullptr;
+	}
+	if(this->child_Rr){
+		delete this->child_Rr;
+		this->child_Rr = nullptr;
+	}
+}
 
 BlockCluster::BlockCluster(const Cluster* l, const Cluster* r, double eta_){
 	this->left_cluster = l;
@@ -152,6 +180,13 @@ BlockClusterTree::BlockClusterTree(
 	
 	if(e == 0){
 		this->leaf_clusters.push_back( this->root );
+	}
+}
+
+BlockClusterTree::~BlockClusterTree(){
+	if(this->root){
+		delete this->root;
+		this->root = nullptr;
 	}
 }
 

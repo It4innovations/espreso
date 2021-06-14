@@ -7,7 +7,7 @@ namespace espreso{
 	
 
 class CyclicGraphDecomposition{
-
+//TODO implement a function to calculate CDCs for unknown values
 public:
 	
 	/*
