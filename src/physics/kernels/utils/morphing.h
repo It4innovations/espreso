@@ -10,8 +10,7 @@
 
 #include "math/math.h"
 
-#include "mem/morphing_system.h"
-#include "wrappers/mkl/solve_aca.h"
+#include "morphing/morphing_system.h"
 
 
 namespace espreso {

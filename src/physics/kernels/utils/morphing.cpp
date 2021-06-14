@@ -574,7 +574,7 @@ void morphRBF(const std::string &name, const RBFTargetConfiguration &configurati
 		esint mm__;
 		double sol_time = eslog::time();
 		iters_dim[d] += MATH::SOLVER::GMRESolverInternal_ACA(
-			M_ACA,
+			&M_ACA,
 			&rhs_values_aca[d * M_ACA.getNRows()], 
 			&wq_values_aca[d * M_ACA.getNCols()],
 			configuration.solver_precision, 

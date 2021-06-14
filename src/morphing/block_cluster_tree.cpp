@@ -5,12 +5,12 @@ using namespace espreso;
 
 BlockCluster::BlockCluster(){}
 
-BlockCluster::~BlockCluster(){
-	if(this->child_LL){
-		delete this->child_LL;
-		this->child_LL = nullptr;
-	}
-}
+// BlockCluster::~BlockCluster(){
+	// if(this->child_LL){
+		// delete this->child_LL;
+		// this->child_LL = nullptr;
+	// }
+// }
 
 BlockCluster::BlockCluster(const Cluster* l, const Cluster* r, double eta_){
 	this->left_cluster = l;

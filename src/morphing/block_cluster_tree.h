@@ -17,7 +17,7 @@ public:
 	
 	BlockCluster();
 	
-	~BlockCluster();
+	// ~BlockCluster();
 	
 	BlockCluster(const Cluster* l, const Cluster* r, double eta);
 	
@@ -74,7 +74,7 @@ public:
 		double eta
 	);
 
-	~BlockClusterTree();
+	// ~BlockClusterTree();
 	
 	esint leaf_size() const;
 	

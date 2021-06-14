@@ -1,11 +1,22 @@
-#include "solve_aca.h"
+
+#include "math/math.h"
+#include "esinfo/eslog.h"
+#include "morphing/morphing_system.h"
+
+#include <vector>
+
+#ifdef HAVE_MKL
+#include "mkl_rci.h"
+#include "mkl_blas.h"
+#include "mkl_lapack.h"
+#include "mkl_spblas.h"
+#endif
 
 using namespace espreso;
-// using namespace MATH;
-// using namespace SOLVER;
+
 
 esint MATH::SOLVER::GMRESolverInternal_ACA(
-	const MorphingMatrix &M,
+	const MorphingMatrix *M,
 	double *rhsVals, 
 	double *results,
 	double tolerance, 
@@ -17,7 +28,7 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 	esint niters = 0;
 	esint nToRestart = maxIterations;
 	esint useMaxIterLimit = 0;
-	double* mem_vec = new double[M.getNRows()];
+	double* mem_vec = new double[M->getNRows()];
 	// double* rhsVals_tmp = new double[M.getNRows()];
 
 
@@ -36,8 +47,8 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 	//---------------------------------------------------------------------------
 	esint size = 128;
 	
-	esint rows = M.getNRows();
-	esint cols = M.getNCols();
+	esint rows = M->getNRows();
+	esint cols = M->getNCols();
 
 	//---------------------------------------------------------------------------
 	// Allocate storage for the ?par parameters and the solution/rhs/residual vectors
@@ -115,7 +126,7 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 		// If RCI_request=1, then compute the vector tmp[ipar[22]-1] = alpha*A*tmp[ipar[21]-1] + beta * tmp[ipar[22]-1]
 		//---------------------------------------------------------------------------
 		if (RCI_request == 1) {
-			M.apply(tmp.data() + ipar[21] - 1, tmp.data() + ipar[22] - 1, alpha, beta, false);
+			M->apply(tmp.data() + ipar[21] - 1, tmp.data() + ipar[22] - 1, alpha, beta, false);
 			// M.apply(tmp.data() + ipar[21] - 1, mem_vec, 1.0f, 0.0f, false);
 			// M.applyPreconditioner(mem_vec, tmp.data() + ipar[22] - 1, alpha, beta, false);
 			niters++;
@@ -127,7 +138,7 @@ esint MATH::SOLVER::GMRESolverInternal_ACA(
 		// If RCI_request=3, then apply the preconditioner to tmp[ipar[21]-1] and store it into tmp[ipar[22]-1]
 		//---------------------------------------------------------------------------
 		if (RCI_request == 3) {
-			M.applyPreconditioner(tmp.data() + ipar[21] - 1, tmp.data() + ipar[22] - 1, 1.0f, 0.0f, false);
+			M->applyPreconditioner(tmp.data() + ipar[21] - 1, tmp.data() + ipar[22] - 1, 1.0f, 0.0f, false);
 			niters++;
 			continue;
 		}

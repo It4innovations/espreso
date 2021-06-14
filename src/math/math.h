@@ -5,6 +5,7 @@
 namespace espreso {
 
 enum class MatrixType: int;
+class MorphingMatrix;
 
 namespace MATH {
 
@@ -143,6 +144,16 @@ namespace MATH {
 		esint directUpperSymetricIndefiniteColumnMajor(
 				esint cols, double *m_packed_values,
 				esint nrhs, double *rhsVals);
+				
+		esint GMRESolverInternal_ACA(
+			const MorphingMatrix *M,
+			double *rhsVals, 
+			double *results,
+			double tolerance, 
+			esint maxIterations, 
+			esint &itercount
+		);
+		
 	};
 };
 
