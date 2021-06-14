@@ -27,6 +27,11 @@ Vector* VectorSparseFETI::create()
 	return new VectorSparse();
 }
 
+void VectorSparseFETI::fromFETI(VectorFETI *other) const
+{
+
+}
+
 void VectorSparseFETI::filter(const DataDecomposition *other, esint nindices, esint *indices)
 {
 //	DataDecomposition::shallowCopy(other);

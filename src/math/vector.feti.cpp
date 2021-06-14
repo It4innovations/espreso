@@ -144,9 +144,13 @@ void VectorFETI::fillData(const Vector *in)
 {
 	if (dynamic_cast<const VectorFETI*>(in)) {
 		const VectorFETI *_in = in->downcast<VectorFETI>();
-		#pragma omp parallel for
-		for (esint d = 0; d < domains; ++d) {
-			at(d)->fillData(_in->at(d));
+		if (_in->domains != domains) {
+			_in->fromFETI(this);
+		} else {
+			#pragma omp parallel for
+			for (esint d = 0; d < domains; ++d) {
+				at(d)->fillData(_in->at(d));
+			}
 		}
 		return;
 	}
@@ -249,6 +253,11 @@ double VectorFETI::dot(const Vector *other)
 {
 	eslog::internalFailure("call empty function.\n");
 	return 0;
+}
+
+void VectorFETI::fromFETI(VectorFETI *other) const
+{
+	eslog::internalFailure("call empty function.\n");
 }
 
 VectorsFETI::VectorsFETI()

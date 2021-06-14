@@ -281,6 +281,11 @@ void VectorDense::toFETI(VectorFETI *other) const
 	}
 }
 
+void VectorDense::fromFETI(VectorFETI *other) const
+{
+
+}
+
 void VectorDense::toCombinedFETI(VectorFETI *other, esint offset, esint nsize, esint sumsize) const
 {
 	if (dynamic_cast<VectorDenseFETI*>(other)) {

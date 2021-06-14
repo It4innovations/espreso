@@ -260,6 +260,27 @@ void VectorDenseFETI::sumDuplications()
 	}
 }
 
+void VectorDenseFETI::fromFETI(VectorFETI *other) const
+{
+	const VectorDenseFETI* _other = other->downcast<VectorDenseFETI>();
+	esint i = 0;
+	for (auto n = dmap->begin(); n != dmap->end(); ++n, ++i) {
+		double value = 0;
+		auto omap = _other->dmap->begin() + i;
+		for (auto odi = omap->begin(); odi != omap->end(); ++odi) {
+			if (_other->ismy(odi->domain)) {
+				value = _other->at(odi->domain - _other->distribution[info::mpi::rank])->vals[odi->index];
+				break;
+			}
+		}
+		for (auto di = n->begin(); di != n->end(); ++di) {
+			if (ismy(di->domain)) {
+				at(di->domain - distribution[info::mpi::rank])->vals[di->index] = value;
+			}
+		}
+	}
+}
+
 VectorsDenseFETI::VectorsDenseFETI()
 {
 	initVectors(0);

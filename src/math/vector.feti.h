@@ -47,6 +47,8 @@ public:
 	virtual double absmax();
 	virtual double dot(const Vector *other);
 
+	virtual void fromFETI(VectorFETI *other) const;
+
 	esint domains;
 	Vector **vectors;
 

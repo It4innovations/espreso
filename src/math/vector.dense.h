@@ -63,6 +63,8 @@ public:
 	void toFETI(VectorFETI *other) const;
 	void toCombinedFETI(VectorFETI *other, esint offset, esint nsize, esint sumsize) const;
 
+	void fromFETI(VectorFETI *other) const;
+
 	void multiply(
 			const MatrixDense &A, const MatrixDense &B,
 			double alpha = 1, double beta = 0,

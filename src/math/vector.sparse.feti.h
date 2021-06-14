@@ -21,6 +21,8 @@ public:
 
 	VectorSparseFETI* copy();
 
+	void fromFETI(VectorFETI *other) const;
+
 	void filter(const DataDecomposition *other, esint nindices, esint *indices);
 
 protected:
