@@ -374,6 +374,7 @@ void PhysicalSolver::runSingle(PhysicalSolver &solver, TPhysics &configuration)
 				solver.system = getSystem(prev, configuration, configuration, loadStepSettings, configuration.dimension);
 				solver.subStepSolver->system = solver.system; // = getSubStepSolver(prev.subStepSolver, loadStepSettings, solver.system);
 				solver.loadStepSolver->system = solver.system; // = getLoadStepSolver(prev.loadStepSolver, loadStepSettings, solver.system, solver.subStepSolver);
+				solver.loadStepSolver->updateSystem();
 				bool ret = solver.loadStepSolver->runNextSubstep();
 				if (!ret) {
 					step::toPrevious();

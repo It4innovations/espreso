@@ -22,6 +22,11 @@ void PseudoTimeStepping::init(LoadStepSolver *previous)
 
 }
 
+void PseudoTimeStepping::updateSystem()
+{
+
+}
+
 void PseudoTimeStepping::updateStructuralMatrices()
 {
 	system->builder->matrices &= Builder::Request::K | Builder::Request::RBCf;

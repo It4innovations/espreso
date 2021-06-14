@@ -81,6 +81,29 @@ void TransientFirstOrderImplicit::init(LoadStepSolver *previous)
 	}
 }
 
+void TransientFirstOrderImplicit::updateSystem()
+{
+	delete dU;
+	delete U;
+	delete X;
+	delete Y;
+	delete dTK;
+	delete dTM;
+
+	dU = system->solver()->x->shallowCopyStructure();
+	U = system->solver()->x->shallowCopyStructure();
+	X = system->solver()->f->shallowCopyStructure();
+	Y = system->solver()->f->shallowCopyStructure();
+	dTK = system->solver()->x->shallowCopyStructure();
+	dTM = system->solver()->x->shallowCopyStructure();
+
+	U->fillData(system->solver()->x);
+
+	auto _V = V;
+	V = system->solver()->x->shallowCopyStructure();
+	V->fillData(_V);
+}
+
 void TransientFirstOrderImplicit::updateStructuralMatrices()
 {
 	system->builder->matrices &= Builder::Request::K | Builder::Request::M | Builder::Request::RBCf;

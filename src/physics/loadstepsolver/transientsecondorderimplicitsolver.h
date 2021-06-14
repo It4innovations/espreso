@@ -16,6 +16,7 @@ public:
 	~TransientSecondOrderImplicit();
 
 	void init(LoadStepSolver *previous);
+	void updateSystem();
 	void updateStructuralMatrices();
 
 protected:

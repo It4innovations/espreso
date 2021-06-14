@@ -76,6 +76,37 @@ void TransientSecondOrderImplicit::init(LoadStepSolver *previous)
 	}
 }
 
+void TransientSecondOrderImplicit::updateSystem()
+{
+	delete U;
+	delete dU;
+	delete V;
+	delete W;
+	delete X;
+	delete Y;
+	delete Z;
+	delete dTK;
+	delete dTM;
+
+	U = system->solver()->x->shallowCopyStructure();
+	dU = system->solver()->x->shallowCopyStructure();
+	V = system->solver()->f->shallowCopyStructure();
+	W = system->solver()->f->shallowCopyStructure();
+	X = system->solver()->f->shallowCopyStructure();
+	Y = system->solver()->f->shallowCopyStructure();
+	Z = system->solver()->f->shallowCopyStructure();
+	dTK = system->solver()->x->shallowCopyStructure();
+	dTM = system->solver()->x->shallowCopyStructure();
+
+	U->fillData(system->solver()->x);
+	auto _V = V;
+	V = system->solver()->x->shallowCopyStructure();
+	V->fillData(_V);
+	auto _W = W;
+	W = system->solver()->x->shallowCopyStructure();
+	W->fillData(_V);
+}
+
 void TransientSecondOrderImplicit::updateConstants()
 {
 	_newmarkConsts[0] = 1. / (_delta * _nTimeShift * _nTimeShift);

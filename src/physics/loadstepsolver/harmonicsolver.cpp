@@ -49,6 +49,11 @@ void HarmonicSolver::init(LoadStepSolver *previous)
 
 }
 
+void HarmonicSolver::updateSystem()
+{
+
+}
+
 void HarmonicSolver::updateDamping()
 {
 	switch (_configuration.harmonic_solver.damping.rayleigh.type) {

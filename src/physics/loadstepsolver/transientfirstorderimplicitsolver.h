@@ -16,6 +16,7 @@ public:
 	~TransientFirstOrderImplicit();
 
 	void init(LoadStepSolver *previous);
+	void updateSystem();
 	void updateStructuralMatrices();
 
 protected:

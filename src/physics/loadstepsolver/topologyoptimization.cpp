@@ -60,6 +60,11 @@ void TopologyOptimization::init(LoadStepSolver *previous)
 	DV->fill(1);
 }
 
+void TopologyOptimization::updateSystem()
+{
+	eslog::error("ESPRESO internal error: implement me.\n");
+}
+
 void TopologyOptimization::updateStructuralMatrices()
 {
 	system->builder->matrices &= Builder::Request::K | Builder::Request::RBCf;

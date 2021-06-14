@@ -12,6 +12,7 @@ public:
 	SteadyStateSolver(LinearSystem *system, SubStepSolver *subStepSolver, double duration);
 
 	void init(LoadStepSolver *previous);
+	void updateSystem();
 	void updateStructuralMatrices();
 
 protected:

@@ -14,6 +14,7 @@ public:
 	PseudoTimeStepping(LinearSystem *system, SubStepSolver *subStepSolver, NonLinearSolverConfiguration &configuration, double duration);
 
 	void init(LoadStepSolver *previous);
+	void updateSystem();
 	void updateStructuralMatrices();
 
 protected:

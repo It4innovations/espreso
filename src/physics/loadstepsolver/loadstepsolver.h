@@ -20,6 +20,7 @@ public:
 	virtual bool runNextSubstep() =0;
 
 	virtual void init(LoadStepSolver *previous) =0;
+	virtual void updateSystem() =0;
 	virtual void updateStructuralMatrices() =0;
 
 	LinearSystem *system;

@@ -21,6 +21,11 @@ void SteadyStateSolver::init(LoadStepSolver *previous)
 
 }
 
+void SteadyStateSolver::updateSystem()
+{
+
+}
+
 void SteadyStateSolver::updateStructuralMatrices()
 {
 	system->builder->matrices &= Builder::Request::K | Builder::Request::RBCf;

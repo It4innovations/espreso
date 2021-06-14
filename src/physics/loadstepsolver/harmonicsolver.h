@@ -14,6 +14,7 @@ public:
 	HarmonicSolver(LinearSystem *system, SubStepSolver *subStepSolver, StructuralMechanicsLoadStepConfiguration &configuration, double duration);
 
 	void init(LoadStepSolver *previous);
+	void updateSystem();
 	void updateStructuralMatrices();
 
 protected:
