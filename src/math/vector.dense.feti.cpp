@@ -260,22 +260,20 @@ void VectorDenseFETI::sumDuplications()
 	}
 }
 
-void VectorDenseFETI::fromFETI(VectorFETI *other) const
+void VectorDenseFETI::toFETI(VectorFETI *other) const
 {
 	const VectorDenseFETI* _other = other->downcast<VectorDenseFETI>();
-	esint i = 0;
-	for (auto n = dmap->begin(); n != dmap->end(); ++n, ++i) {
+	for (auto my = dmap->begin(), to = _other->dmap->begin(); my != dmap->end(); ++my, ++to) {
 		double value = 0;
-		auto omap = _other->dmap->begin() + i;
-		for (auto odi = omap->begin(); odi != omap->end(); ++odi) {
-			if (_other->ismy(odi->domain)) {
-				value = _other->at(odi->domain - _other->distribution[info::mpi::rank])->vals[odi->index];
+		for (auto di = my->begin(); di != my->end(); ++di) {
+			if (ismy(di->domain)) {
+				value = at(di->domain - distribution[info::mpi::rank])->vals[di->index];
 				break;
 			}
 		}
-		for (auto di = n->begin(); di != n->end(); ++di) {
-			if (ismy(di->domain)) {
-				at(di->domain - distribution[info::mpi::rank])->vals[di->index] = value;
+		for (auto di = to->begin(); di != to->end(); ++di) {
+			if (_other->ismy(di->domain)) {
+				_other->at(di->domain - _other->distribution[info::mpi::rank])->vals[di->index] = value;
 			}
 		}
 	}

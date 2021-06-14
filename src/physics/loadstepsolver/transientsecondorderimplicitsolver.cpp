@@ -104,7 +104,7 @@ void TransientSecondOrderImplicit::updateSystem()
 	V->fillData(_V);
 	auto _W = W;
 	W = system->solver()->x->shallowCopyStructure();
-	W->fillData(_V);
+	W->fillData(_W);
 }
 
 void TransientSecondOrderImplicit::updateConstants()

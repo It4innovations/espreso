@@ -30,7 +30,7 @@ public:
 	void averageDuplications();
 	void sumDuplications();
 
-	void fromFETI(VectorFETI *other) const;
+	void toFETI(VectorFETI *other) const;
 
 	const char* name() const { return "VectorDenseFETI"; }
 

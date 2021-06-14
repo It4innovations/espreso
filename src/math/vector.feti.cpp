@@ -143,14 +143,22 @@ void VectorFETI::fill(double value)
 void VectorFETI::fillData(const Vector *in)
 {
 	if (dynamic_cast<const VectorFETI*>(in)) {
-		const VectorFETI *_in = in->downcast<VectorFETI>();
-		if (_in->domains != domains) {
-			_in->fromFETI(this);
-		} else {
-			#pragma omp parallel for
-			for (esint d = 0; d < domains; ++d) {
-				at(d)->fillData(_in->at(d));
+		if (dynamic_cast<const VectorDenseFETI*>(in) && dynamic_cast<VectorDenseFETI*>(this)) {
+			const VectorDenseFETI* _in = dynamic_cast<const VectorDenseFETI*>(in);
+			VectorDenseFETI* _self = dynamic_cast<VectorDenseFETI*>(this);
+			bool same = _in->domains != _self->domains;
+			for (esint d = 0; same && d < _self->domains; ++d) {
+				same &= _in->at(d)->size == _self->at(d)->size;
 			}
+			if (same) {
+				#pragma omp parallel for
+				for (esint d = 0; d < domains; ++d) {
+					at(d)->fillData(_in->at(d));
+				}
+			} else {
+				dynamic_cast<const VectorDenseFETI*>(in)->toFETI(_self);
+			}
+			return;
 		}
 		return;
 	}

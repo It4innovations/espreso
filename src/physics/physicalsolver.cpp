@@ -359,12 +359,6 @@ void PhysicalSolver::runSingle(PhysicalSolver &solver, TPhysics &configuration)
 		info::ecf->input.decomposition.ecfdescription->getParameter(&info::ecf->input.decomposition.domains)->addListener(ECFParameter::Event::VALUE_SET, [&updateDecomposition] (const std::string &value) { updateDecomposition = true; });
 
 		while (!step::isLast()) {
-			if (step::isInitial()) {
-				PhysicalSolver prev = solver;
-				solver.system = getSystem(prev.system, configuration, configuration, loadStepSettings, configuration.dimension);
-				solver.subStepSolver = getSubStepSolver(prev.subStepSolver, loadStepSettings, solver.system);
-				solver.loadStepSolver = getLoadStepSolver(prev.loadStepSolver, loadStepSettings, solver.system, solver.subStepSolver);
-			}
 			autoopt::solver::update([&] () {
 				if (updateDecomposition) {
 					info::mesh->partitiate(info::ecf->input.decomposition.domains);
