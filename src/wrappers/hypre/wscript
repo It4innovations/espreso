@@ -4,4 +4,4 @@ def options(opt):
 
 def configure(ctx):
     if int(ctx.options.intwidth) == 32:
-        ctx.link_cxx(name="hypre", header_name="HYPRE.h", libs=["HYPRE"], root=ctx.options.hypre)
+        ctx.link_cxx(name="hypre", header_name="HYPRE.h", libs=["HYPRE", "HYPRE_core"], root=ctx.options.hypre)
