@@ -6,6 +6,8 @@
 #include "esinfo/mpiinfo.h"
 #include "esinfo/eslog.hpp"
 
+#include <complex>
+
 #include "mkl_spblas.h"
 
 #include <sstream>

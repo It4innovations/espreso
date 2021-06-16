@@ -21,6 +21,10 @@
 #include "output/output.h"
 #include "physics/loadstepiterator.h"
 
+#include "math2/math2.h"
+#include "math2/generalization/matrix_feti.h"
+#include "math2/generalization/vector_feti.h"
+
 using namespace espreso;
 
 int main(int argc, char **argv)
@@ -107,6 +111,9 @@ int main(int argc, char **argv)
 		profiler::syncend("physical_solver");
 		eslog::endln("ESPRESO: SIMULATION FINISHED");
 	}
+
+	Matrix_FETI<Matrix_Dense, double> m;
+	Vector_FETI<Vector_Sparse, double> v;
 
 	Mesh::finish();
 	eslog::finish();

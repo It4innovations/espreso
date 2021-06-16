@@ -2,6 +2,8 @@
 #ifndef SOLVER_SPECIFIC_CPU_SOLVERMKL_H_
 #define SOLVER_SPECIFIC_CPU_SOLVERMKL_H_
 
+#include <complex>
+
 #include "mkl_pardiso.h"
 #include "feti/specific/sparsesolver.h"
 

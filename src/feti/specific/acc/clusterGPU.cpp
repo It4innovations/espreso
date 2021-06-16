@@ -7,6 +7,7 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
+#include <complex>
 #include "mkl.h"
 #include "wrappers/mpi/communication.h"
 #include "wrappers/cuda/w.cuda.h"

@@ -1,0 +1,23 @@
+
+#ifndef SRC_MATH2_PRIMITIVES_MATRIX_INFO_H_
+#define SRC_MATH2_PRIMITIVES_MATRIX_INFO_H_
+
+namespace espreso {
+
+enum Matrix_Type: int {
+	REAL_SYMMETRIC_POSITIVE_DEFINITE,
+	REAL_SYMMETRIC_INDEFINITE,
+	REAL_UNSYMMETRIC
+};
+
+enum Matrix_Shape: int {
+	LOWER,
+	UPPER,
+	FULL
+};
+
+}
+
+
+
+#endif /* SRC_MATH2_PRIMITIVES_MATRIX_INFO_H_ */

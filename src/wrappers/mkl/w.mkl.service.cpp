@@ -1,5 +1,6 @@
 
 #include "math/math.h"
+#include "math2/math2.h"
 
 #ifdef HAVE_MKL
 #include "mkl_service.h"

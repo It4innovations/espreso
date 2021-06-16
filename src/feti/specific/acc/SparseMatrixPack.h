@@ -1,4 +1,6 @@
 
+#include <complex>
+
 #include "generic/utils.h"
 #include "generic/SparseMatrix.h"
 #include "mkl_pardiso.h"

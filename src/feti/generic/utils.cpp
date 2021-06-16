@@ -7,6 +7,7 @@
 #include <sstream>
 #include <fstream>
 #include <cstring>
+#include <complex>
 
 #include "mkl.h"
 

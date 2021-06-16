@@ -152,6 +152,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/physics/**/*.cpp'), "physics")
     ctx.build_espreso(ctx.path.ant_glob('src/morphing/**/*.cpp'), "devel")
     ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math")
+    ctx.build_espreso(ctx.path.ant_glob('src/math2/**/*.cpp'), "math2")
     ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cuda/**/*.cpp'), "wcuda", [ "CUDA" ])

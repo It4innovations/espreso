@@ -1,5 +1,6 @@
 
 #include "math/math.h"
+#include "math2/math2.h"
 #include "esinfo/eslog.h"
 #include <cstdio>
 
@@ -24,6 +25,230 @@ static void checkStatus(sparse_status_t status)
 	}
 }
 #endif
+
+namespace espreso {
+namespace math {
+
+template <>
+void commit(Matrix_Dense<double> &x)
+{
+#ifdef HAVE_MKL
+	// dummy
+#endif
+}
+
+template <>
+void commit(Matrix_Dense<std::complex<double> > &x)
+{
+#ifdef HAVE_MKL
+	// dummy
+#endif
+}
+
+template <>
+void commit(Matrix_CSR<double> &x)
+{
+#ifdef HAVE_MKL
+	x._external = new Matrix_CSR_External_Representation();
+	if (x.nnz) {
+		checkStatus(mkl_sparse_d_create_csr(&x._external->inspector, SPARSE_INDEX_BASE_ONE, x.nrows, x.ncols, x.rows, x.rows + 1, x.cols, x.vals));
+	}
+#endif
+}
+
+template <>
+void commit(Matrix_CSR<std::complex<double> > &x)
+{
+#ifdef HAVE_MKL
+	x._external = new Matrix_CSR_External_Representation();
+	if (x.nnz) {
+		checkStatus(mkl_sparse_z_create_csr(&x._external->inspector, SPARSE_INDEX_BASE_ONE, x.nrows, x.ncols, x.rows, x.rows + 1, x.cols, x.vals));
+	}
+#endif
+}
+
+template <>
+void commit(Matrix_IJV<double> &x)
+{
+#ifdef HAVE_MKL
+	x._external = new Matrix_IJV_External_Representation();
+	if (x.nnz) {
+		checkStatus(mkl_sparse_d_create_coo(&x._external->inspector, SPARSE_INDEX_BASE_ONE, x.nrows, x.ncols, x.nnz, x.rows, x.cols, x.vals));
+	}
+#endif
+}
+
+template <>
+void commit(Matrix_IJV<std::complex<double> > &x)
+{
+#ifdef HAVE_MKL
+	x._external = new Matrix_IJV_External_Representation();
+	if (x.nnz) {
+		checkStatus(mkl_sparse_z_create_coo(&x._external->inspector, SPARSE_INDEX_BASE_ONE, x.nrows, x.ncols, x.nnz, x.rows, x.cols, x.vals));
+	}
+#endif
+}
+
+template <>
+void free(Matrix_Dense<double> &x)
+{
+#ifdef HAVE_MKL
+#endif
+}
+
+template <>
+void free(Matrix_Dense<std::complex<double> > &x)
+{
+#ifdef HAVE_MKL
+#endif
+}
+
+template <>
+void free(Matrix_CSR<double> &x)
+{
+#ifdef HAVE_MKL
+	if (x._external) {
+		checkStatus(mkl_sparse_destroy(x._external->inspector));
+		x._external = nullptr;
+	}
+#endif
+}
+
+template <>
+void free(Matrix_CSR<std::complex<double> > &x)
+{
+#ifdef HAVE_MKL
+	if (x._external) {
+		checkStatus(mkl_sparse_destroy(x._external->inspector));
+		x._external = nullptr;
+	}
+#endif
+}
+
+template <>
+void free(Matrix_IJV<double> &x)
+{
+#ifdef HAVE_MKL
+	if (x._external) {
+		checkStatus(mkl_sparse_destroy(x._external->inspector));
+		x._external = nullptr;
+	}
+#endif
+}
+
+template <>
+void free(Matrix_IJV<std::complex<double> > &x)
+{
+#ifdef HAVE_MKL
+	if (x._external) {
+		checkStatus(mkl_sparse_destroy(x._external->inspector));
+		x._external = nullptr;
+	}
+#endif
+}
+
+template <>
+void apply(Vector_Dense<double> &y, const double &alpha, Matrix_CSR<double> &a, const double &beta, const Vector_Dense<double> &x)
+{
+#ifdef HAVE_MKL
+	matrix_descr descr;
+	switch (a.type) {
+	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+		descr.type = SPARSE_MATRIX_TYPE_SYMMETRIC;
+		break;
+	case Matrix_Type::REAL_UNSYMMETRIC:
+		descr.type = SPARSE_MATRIX_TYPE_GENERAL;
+		break;
+	}
+
+	switch (a.shape) {
+	case Matrix_Shape::FULL : descr.mode = SPARSE_FILL_MODE_FULL; break;
+	case Matrix_Shape::UPPER: descr.mode = SPARSE_FILL_MODE_UPPER; break;
+	case Matrix_Shape::LOWER: descr.mode = SPARSE_FILL_MODE_LOWER; break;
+	}
+	descr.diag = SPARSE_DIAG_NON_UNIT;
+	checkStatus(mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, a._external->inspector, descr, x.vals, beta, y.vals));
+#endif
+}
+
+template <>
+void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &alpha, Matrix_CSR<std::complex<double> > &a, const std::complex<double> &beta, const Vector_Dense<std::complex<double> > &x)
+{
+#ifdef HAVE_MKL
+	matrix_descr descr;
+	switch (a.type) {
+	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+		descr.type = SPARSE_MATRIX_TYPE_SYMMETRIC;
+		break;
+	case Matrix_Type::REAL_UNSYMMETRIC:
+		descr.type = SPARSE_MATRIX_TYPE_GENERAL;
+		break;
+	}
+
+	switch (a.shape) {
+	case Matrix_Shape::FULL : descr.mode = SPARSE_FILL_MODE_FULL; break;
+	case Matrix_Shape::UPPER: descr.mode = SPARSE_FILL_MODE_UPPER; break;
+	case Matrix_Shape::LOWER: descr.mode = SPARSE_FILL_MODE_LOWER; break;
+	}
+	descr.diag = SPARSE_DIAG_NON_UNIT;
+	checkStatus(mkl_sparse_z_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, a._external->inspector, descr, x.vals, beta, y.vals));
+#endif
+}
+
+template <>
+void apply(Vector_Dense<double> &y, const double &alpha, Matrix_IJV<double> &a, const double &beta, const Vector_Dense<double> &x)
+{
+#ifdef HAVE_MKL
+	matrix_descr descr;
+	switch (a.type) {
+	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+		descr.type = SPARSE_MATRIX_TYPE_SYMMETRIC;
+		break;
+	case Matrix_Type::REAL_UNSYMMETRIC:
+		descr.type = SPARSE_MATRIX_TYPE_GENERAL;
+		break;
+	}
+
+	switch (a.shape) {
+	case Matrix_Shape::FULL : descr.mode = SPARSE_FILL_MODE_FULL; break;
+	case Matrix_Shape::UPPER: descr.mode = SPARSE_FILL_MODE_UPPER; break;
+	case Matrix_Shape::LOWER: descr.mode = SPARSE_FILL_MODE_LOWER; break;
+	}
+	descr.diag = SPARSE_DIAG_NON_UNIT;
+	checkStatus(mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, a._external->inspector, descr, x.vals, beta, y.vals));
+#endif
+}
+
+template <>
+void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &alpha, Matrix_IJV<std::complex<double> > &a, const std::complex<double> &beta, const Vector_Dense<std::complex<double> > &x)
+{
+#ifdef HAVE_MKL
+	matrix_descr descr;
+	switch (a.type) {
+	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+		descr.type = SPARSE_MATRIX_TYPE_SYMMETRIC;
+		break;
+	case Matrix_Type::REAL_UNSYMMETRIC:
+		descr.type = SPARSE_MATRIX_TYPE_GENERAL;
+		break;
+	}
+
+	switch (a.shape) {
+	case Matrix_Shape::FULL : descr.mode = SPARSE_FILL_MODE_FULL; break;
+	case Matrix_Shape::UPPER: descr.mode = SPARSE_FILL_MODE_UPPER; break;
+	case Matrix_Shape::LOWER: descr.mode = SPARSE_FILL_MODE_LOWER; break;
+	}
+	descr.diag = SPARSE_DIAG_NON_UNIT;
+	checkStatus(mkl_sparse_z_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, a._external->inspector, descr, x.vals, beta, y.vals));
+#endif
+}
+
+}
+}
 
 #ifdef HAVE_MKL
 void MATH::CSRHandlerData::info(esint &nrows, esint &ncols, esint &nnz)

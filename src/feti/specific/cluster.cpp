@@ -13,6 +13,7 @@
 #include <utility>
 #include <sstream>
 #include <fstream>
+#include <complex>
 
 #include "mkl.h"
 #include "wrappers/nvtx/w.nvtx.h"

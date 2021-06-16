@@ -6,6 +6,17 @@
 #include "mkl_spblas.h"
 
 namespace espreso {
+
+struct Matrix_CSR_External_Representation
+{
+	sparse_matrix_t inspector;
+};
+
+struct Matrix_IJV_External_Representation
+{
+	sparse_matrix_t inspector;
+};
+
 namespace MATH {
 
 struct CSRHandlerData: public PARDISOParameters {

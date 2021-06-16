@@ -1,5 +1,6 @@
 
 #include "math/math.h"
+#include "math2/math2.h"
 #include "esinfo/eslog.h"
 
 #ifdef HAVE_MKL

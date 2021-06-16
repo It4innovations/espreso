@@ -3,6 +3,8 @@
 
 //#include "mkl.h"
 
+#include <complex>
+
 #include "mkl_lapack.h"
 
 #include "feti/specific/densesolver.h"

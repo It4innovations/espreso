@@ -4,6 +4,8 @@
 #include "basis/utilities/utils.h"
 #include "esinfo/envinfo.h"
 
+#include <complex>
+
 #include "mkl.h"
 
 using namespace espreso;

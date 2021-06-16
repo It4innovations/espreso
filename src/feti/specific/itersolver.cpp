@@ -11,6 +11,8 @@
 #include "esinfo/eslog.hpp"
 #include "esinfo/ecfinfo.h"
 
+#include <complex>
+
 #include "mkl.h"
 
 #include <sstream>

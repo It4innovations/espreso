@@ -18,4 +18,4 @@ def configure(ctx):
         libs.append("mkl_gnu_thread")
 
     if ctx.link_cxx(name="mkl", header_name="mkl.h", libs=libs, root=ctx.options.mkl):
-        ctx.env.append_unique("DEFINES_MKL", ("MKL_INT=int", "MKL_INT=long")[ctx.options.intwidth == "64"])
+        ctx.env.append_unique("DEFINES_MKL", [("MKL_INT=int", "MKL_INT=long")[ctx.options.intwidth == "64"], "MKL_Complex8=std::complex<float>", "MKL_Complex16=std::complex<double>"])

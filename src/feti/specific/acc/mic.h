@@ -2,6 +2,8 @@
 #ifndef SOLVER_SPARSE_MIC_MKL_H_
 #define SOLVER_SPARSE_MIC_MKL_H_
 
+#include <complex>
+
 #include "sparsesolver.h"
 #include "mkl_pardiso.h"
 #include "DenseMatrixPack.h"
