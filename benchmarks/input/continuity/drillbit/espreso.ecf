@@ -1,0 +1,25 @@
+
+INPUT {
+  FORMAT                                           ENSIGHT;
+  PATH      /data/espreso/mesiotest/drillbit/drillbit.case;
+  LOADER                                             POSIX;
+
+  KEEP_MATERIAL_SETS     FALSE;
+  CONVERT_DATABASE        TRUE;
+
+  DECOMPOSITION {
+    DOMAINS                                1;
+    PARALLEL_DECOMPOSER             PARMETIS;
+
+    FORCE_CONTINUITY                    TRUE;
+
+    PARMETIS_OPTIONS {
+      TOLERANCE       1.02;
+    }
+  }
+}
+
+OUTPUT {
+  RESULTS_STORE_FREQUENCY NEVER;
+}
+

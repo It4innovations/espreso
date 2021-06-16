@@ -179,6 +179,16 @@ class ESPRESOTest:
                     ESPRESOTest.raise_error("invalid value on region {0}::{1} {2} != {3}\n".format(region, key, value, log2[region][key]), output)
 
     @staticmethod
+    def check_continuity(output):
+        if ESPRESOTest.checker:
+            return
+
+        for line in output.splitlines():
+            if line.startswith("decomposition: "):
+                if int(line.split(":")[2]) != 1:
+                    ESPRESOTest.raise_error("non-continuous cluster found.\n")
+
+    @staticmethod
     def report(timereport):
         if not ESPRESOTest.has_snailwatch() or ESPRESOTest.checker:
             return
