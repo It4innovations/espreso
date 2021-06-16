@@ -146,6 +146,9 @@ struct Communication {
 	static bool exchangeKnownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbors, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
+	static bool exchangeKnownSize(const std::vector<Ttype> &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbors, MPIGroup *group = MPITools::procs);
+
+	template <typename Ttype>
 	static bool exchangeUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbors, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>

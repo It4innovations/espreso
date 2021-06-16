@@ -103,6 +103,49 @@ bool Communication::exchangeKnownSize(const std::vector<std::vector<Ttype> > &sB
 	return true;
 }
 
+template <typename Ttype>
+bool Communication::exchangeKnownSize(const std::vector<Ttype> &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbors, MPIGroup *group)
+{
+	profiler::syncstart("comm_exchange_known_size");
+	profiler::syncparam("neighbors", neighbors.size());
+	auto &rmin = profiler::syncparam<size_t>("rmin", 1 << 30);
+	auto &rmax = profiler::syncparam<size_t>("rmax", 0);
+	MPIType type(MPITools::getType<Ttype>());
+
+	if (type.mpisize * sBuffer.size() > 1 << 30) {
+		profiler::syncend("comm_exchange_known_size");
+		return false;
+	}
+	for (size_t n = 0; n < neighbors.size(); n++) {
+		if (type.mpisize * rBuffer[n].size() > 1 << 30) {
+			profiler::syncend("comm_exchange_known_size");
+			return false;
+		}
+	}
+	std::vector<MPI_Request> req(2 * neighbors.size());
+
+	for (size_t n = 0; n < neighbors.size(); n++) {
+		// bullxmpi violate MPI standard (cast away constness)
+		MPI_Isend(const_cast<Ttype*>(sBuffer.data()), type.mpisize * sBuffer.size(), type.mpitype, neighbors[n], TAG::EX_KNOWN, group->communicator, req.data() + 2 * n);
+	}
+
+	for (size_t n = 0; n < neighbors.size(); n++) {
+		// bullxmpi violate MPI standard (cast away constness)
+		MPI_Irecv(const_cast<Ttype*>(rBuffer[n].data()), type.mpisize * rBuffer[n].size(), type.mpitype, neighbors[n], TAG::EX_KNOWN, group->communicator, req.data() + 2 * n + 1);
+		rmin.min(type.mpisize * rBuffer[n].size());
+		rmax.max(type.mpisize * rBuffer[n].size());
+	}
+	profiler::synccheckpoint("msg_prepared");
+
+	MPI_Waitall(2 * neighbors.size(), req.data(), MPI_STATUSES_IGNORE);
+	if (group->communicator == MPI_COMM_WORLD) {
+		++TAG::EX_KNOWN;
+	}
+	profiler::synccheckpoint("waitall");
+	profiler::syncend("comm_exchange_known_size");
+	return true;
+}
+
 
 template <typename Ttype>
 bool Communication::exchangeUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbors, MPIGroup *group)
