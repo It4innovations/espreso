@@ -7,11 +7,9 @@
 namespace espreso {
 
 struct ECFRange {
-	ECFParameter *parameter;
+	std::vector<ECFParameter*> parameter;
 
 	std::string min, max, step;
-
-	ECFRange();
 };
 
 }

@@ -368,8 +368,8 @@ void ECFReader::_read(
 						ssp.str().c_str(), parameter->name.c_str(), tokenStack.top()->lastLines(2).c_str(), ss.str().c_str());
 			} else {
 				if (range != NULL) {
-					range->parameter = parameter;
-					range == NULL;
+					range->parameter.push_back(parameter);
+					range = NULL;
 				}
 			}
 			if (!parameter->setValue(ss.str())) {
