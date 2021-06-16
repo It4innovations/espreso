@@ -60,9 +60,12 @@ void computeElementsNeighbors(
 
 void computeElementsCenters(const NodeStore *nodes, ElementStore *elements);
 
+int getStronglyConnectedComponents(const ElementStore *elements, std::vector<int> &component);
+void computeComponentDual(const ElementStore *elements, esint coffset, esint csize, const std::vector<int> &component, const std::vector<int> &neighbors, std::vector<esint> &dualDist, std::vector<esint> &dualData);
+
 void computeElementsClusterization(const ElementStore *elements, const NodeStore *nodes, std::vector<esint> &partition);
 void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe, const std::vector<esint> &partition);
-void makeClustersContinuous();
+void computeContinuousClusterization(const ElementStore *elements, const NodeStore *nodes, const std::vector<esint> &dualDist, const std::vector<esint> &dualData, esint coffset, esint csize, const std::vector<int> &component, const std::vector<int> &neighborsWithMe, std::vector<esint> &partition);
 
 void sortNodes(NodeStore *nodes, ElementStore *elements, std::vector<BoundaryRegionStore*> &boundaryRegions);
 void computeElementDistribution(ElementStore *elements);
@@ -103,6 +106,7 @@ void computeSurfaceElementNeighbors(NodeStore *nodes, std::vector<int> &neigbors
 //  - decompose elements to domains and intervals
 // ================================================================================================
 
+void computeDecomposedDual(const ElementStore *elements, std::vector<esint> &dualDist, std::vector<esint> &dualData);
 void computeElementsDecomposition(const ElementStore *elements, esint parts, std::vector<size_t> &distribution, std::vector<esint> &permutation);
 void permuteElements(ElementStore *elements, NodeStore *nodes, DomainStore *domains, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces, std::vector<int> &neighbors, std::vector<size_t> &distribution, const std::vector<esint> &permutation);
 

@@ -415,6 +415,18 @@ void Mesh::reclusterize()
 		std::vector<esint> partition;
 		mesh::computeElementsClusterization(elements, nodes, partition);
 		mesh::exchangeElements(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe, partition);
+		if (info::ecf->input.decomposition.force_continuity) {
+			std::vector<esint> component;
+			esint csize = mesh::getStronglyConnectedComponents(elements, component);
+			esint coffset = csize;
+			esint clusters = Communication::exscan(coffset);
+			if (clusters > info::mpi::size) {
+				std::vector<esint> dualDist, dualData;
+				mesh::computeComponentDual(elements, coffset, csize, component, neighbors, dualDist, dualData);
+				mesh::computeContinuousClusterization(elements, nodes, dualDist, dualData, coffset, csize, component, neighborsWithMe, partition);
+				mesh::exchangeElements(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe, partition);
+			}
+		}
 		profiler::synccheckpoint("reclusterize");
 	}
 
@@ -1429,6 +1441,11 @@ void Mesh::printDecompositionStatistics()
 	Communication::allReduce(&mesh.variance, NULL, sizeof(mesh.variance) / sizeof(double), MPI_DOUBLE, MPI_SUM);
 	mesh.var();
 
+	eslog::info(" ================================== DECOMPOSITION STATISTICS ================================= \n");
+	if (info::ecf->output.logger == OutputConfiguration::LOGGER::PARSER) {
+		eslog::info("decomposition: clusters per MPI: %d\n", mesh.stats.mpi.max.clusters);
+		return;
+	}
 	eslog::info(" ================================== DECOMPOSITION STATISTICS ================================= \n");
 	if (!_withFETI || mesh.stats.mpi.max.clusters > 1) {
 		eslog::info(" ============================================================================================= \n");

@@ -720,77 +720,106 @@ void computeElementsClusterization(const ElementStore *elements, const NodeStore
 	profiler::syncend("reclusterize");
 }
 
-void makeClustersContinuous()
+int getStronglyConnectedComponents(const ElementStore *elements, std::vector<int> &component)
+{
+	profiler::syncstart("get_strongly_connected_components");
+	component.clear();
+	component.resize(elements->faceNeighbors->structures(), -1);
+	int nextID = 0;
+	esint ebegin = elements->IDs->datatarray().front();
+	esint eend = elements->IDs->datatarray().back();
+	for (size_t e = 0; e < component.size(); ++e) {
+		std::vector<esint> stack;
+		if (component[e] == -1) {
+			stack.push_back(e);
+			component[e] = nextID;
+			while (stack.size()) {
+				esint current = stack.back();
+				stack.pop_back();
+				auto faces = elements->faceNeighbors->begin() + current;
+				for (auto n = faces->begin(); n != faces->end(); ++n) {
+					if (*n != -1 && ebegin <= *n && *n <= eend && component[*n - ebegin] == -1) {
+						stack.push_back(*n - ebegin);
+						component[*n - ebegin] = nextID;
+					}
+				}
+			}
+			nextID++;
+		}
+	}
+	profiler::syncend("get_strongly_connected_components");
+	return nextID;
+}
+
+void computeContinuousClusterization(const ElementStore *elements, const NodeStore *nodes, const std::vector<esint> &dualDist, const std::vector<esint> &dualData, esint coffset, esint csize, const std::vector<int> &component, const std::vector<int> &neighborsWithMe, std::vector<esint> &partition)
 {
 	profiler::syncstart("make_continued");
 
-//	struct __dinfo__ {
-//		esint domain, proc, elements, fixed;
-//
-//		bool operator<(const esint &domain) { return this->domain < domain; }
-//	};
-//
-//	if (info::mesh->FETIData->fullDomainDual == NULL) {
-//		computeDomainDual();
-//	}
-//
-//	std::vector<__dinfo__> sBuffer, gBuffer;
-//	std::vector<std::vector<__dinfo__> > rBuffer(info::mesh->neighborsWithMe.size());
-//	sBuffer.reserve(3 * info::mesh->neighbors.size());
-//
-//	esint maxdomain = 0;
-//	for (esint d = 0; d != info::mesh->elements->ndomains; ++d) {
-//		sBuffer.push_back(__dinfo__{d + info::mesh->elements->firstDomain, info::mpi::rank, info::mesh->elements->elementsDistribution[d + 1] - info::mesh->elements->elementsDistribution[d], 0});
-//		if (
-//				(info::mesh->elements->elementsDistribution[d + 1] - info::mesh->elements->elementsDistribution[d]) >
-//				(info::mesh->elements->elementsDistribution[maxdomain + 1] - info::mesh->elements->elementsDistribution[maxdomain])) {
-//			maxdomain = d;
-//		}
-//	}
-//	sBuffer[maxdomain].fixed = 1;
-//
-//	int freeDomain = 1;
-//
-//	while (freeDomain) {
-//		freeDomain = 0;
-//		if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighborsWithMe)) {
-//			eslog::internalFailure("Cannot exchange domains sizes\n");
-//		}
-//		gBuffer.clear();
-//		for (size_t n = 0; n < rBuffer.size(); ++n) {
-//			gBuffer.insert(gBuffer.end(), rBuffer[n].begin(), rBuffer[n].end());
-//		}
-//
-//		for (esint d = 0; d != info::mesh->elements->ndomains; ++d) {
-//			if (d != maxdomain) {
-//				auto dual = info::mesh->FETIData->fullDomainDual->begin() + d;
-//				for (auto nd = dual->begin(); nd != dual->end(); ++nd) {
-//					auto ddesc = std::lower_bound(gBuffer.begin(), gBuffer.end(), *nd);
-//					if (ddesc == gBuffer.end() || ddesc->domain != *nd) {
-//						eslog::internalFailure("Unknown neighboring domain.\n");
-//					}
-//					if (ddesc->fixed) {
-//						sBuffer[d].proc = ddesc->proc;
-//						sBuffer[d].fixed = 1;
-//					} else {
-//						++freeDomain;
-//					}
-//				}
-//			}
-//		}
-//		Communication::allReduce(&freeDomain, NULL, 1, MPI_INT, MPI_SUM);
-//	}
-//
-//	profiler::synccheckpoint("decomposition_fixed");
-//	eslog::checkpointln("MESH: DECOMPOSITION FIXED");
-//
-//	std::vector<esint> partition;
-//	partition.reserve(info::mesh->elements->size);
-//	for (esint d = 0; d != info::mesh->elements->ndomains; ++d) {
-//		partition.resize(info::mesh->elements->elementsDistribution[d + 1], sBuffer[d].proc);
-//	}
+	struct __dinfo__ {
+		esint domain, proc, elements, fixed;
 
-//	exchangeElements(partition);
+		bool operator<(const esint &domain) { return this->domain < domain; }
+	};
+
+	std::vector<__dinfo__> sBuffer, gBuffer;
+	std::vector<std::vector<__dinfo__> > rBuffer(info::mesh->neighborsWithMe.size());
+
+	sBuffer.resize(csize);
+	for (size_t i = 0; i < sBuffer.size(); ++i) {
+		sBuffer[i].domain = coffset + i;
+		sBuffer[i].proc = info::mpi::rank;
+		sBuffer[i].elements = 0;
+		sBuffer[i].fixed = i == 0 ? 1 : 0;
+	}
+	for (size_t i = 0; i < component.size(); ++i) {
+		++sBuffer[component[i]].elements;
+	}
+	for (size_t i = 1, max = 0; i < sBuffer.size(); ++i) {
+		if (sBuffer[max].elements < sBuffer[i].elements) {
+			sBuffer[max].fixed = 0;
+			sBuffer[i].fixed = 1;
+			max = i;
+		}
+	}
+
+	int freeDomain = 1;
+	while (freeDomain) {
+		freeDomain = 0;
+		if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, neighborsWithMe)) {
+			eslog::internalFailure("Cannot exchange domains sizes\n");
+		}
+		gBuffer.clear();
+		for (size_t n = 0; n < rBuffer.size(); ++n) {
+			gBuffer.insert(gBuffer.end(), rBuffer[n].begin(), rBuffer[n].end());
+		}
+
+		for (esint c = 0; c != csize; ++c) {
+			if (!sBuffer[c].fixed) {
+				for (esint nc = dualDist[c]; nc != dualDist[c + 1]; ++nc) {
+					auto ddesc = std::lower_bound(gBuffer.begin(), gBuffer.end(), dualData[nc]);
+					if (ddesc == gBuffer.end() || ddesc->domain != dualData[nc]) {
+						eslog::internalFailure("Unknown neighboring domain.\n");
+					}
+					if (ddesc->fixed) {
+						sBuffer[c].proc = ddesc->proc;
+						sBuffer[c].fixed = 1;
+					} else {
+						++freeDomain;
+					}
+				}
+			}
+		}
+		Communication::allReduce(&freeDomain, NULL, 1, MPI_INT, MPI_SUM);
+	}
+
+	profiler::synccheckpoint("decomposition_fixed");
+	eslog::checkpointln("MESH: DECOMPOSITION FIXED");
+
+	partition.clear();
+	partition.resize(component.size());
+	for (size_t i = 0; i < component.size(); ++i) {
+		partition[i] = sBuffer[component[i]].proc;
+	}
 
 	eslog::startln("MAKE CONTINUED: STARTED", "MAKE CONTINUED");
 

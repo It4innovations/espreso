@@ -34,7 +34,7 @@
 namespace espreso {
 namespace mesh {
 
-static void computeDecomposedDual(const ElementStore *elements, std::vector<esint> &dualDist, std::vector<esint> &dualData)
+void computeDecomposedDual(const ElementStore *elements, std::vector<esint> &dualDist, std::vector<esint> &dualData)
 {
 	profiler::syncstart("compute_decomposed_dual");
 	bool separateRegions = info::ecf->input.decomposition.separate_regions;
@@ -91,6 +91,82 @@ static void computeDecomposedDual(const ElementStore *elements, std::vector<esin
 
 	profiler::syncend("compute_decomposed_dual");
 	eslog::checkpointln("MESH: LOCAL DUAL GRAPH COMPUTED");
+}
+
+void computeComponentDual(const ElementStore *elements, esint coffset, esint csize, const std::vector<int> &component, const std::vector<int> &neighbors, std::vector<esint> &dualDist, std::vector<esint> &dualData)
+{
+	profiler::syncstart("compute_component_dual");
+
+	struct __map__ {
+		esint id, component;
+	};
+
+	esint ebegin = elements->IDs->datatarray().front();
+	esint eend = elements->IDs->datatarray().back();
+	std::vector<esint> eIDs{ eend };
+	std::vector<std::vector<esint> > rIDs(neighbors.size(), { 0 });
+	if (!Communication::exchangeKnownSize(eIDs, rIDs, neighbors)) {
+		eslog::error("ESPRESO internal error: computeComponentDual - cannot exchange eIDs.\n");
+	}
+	eIDs.clear();
+	for (size_t i = 0; i < rIDs.size(); ++i) {
+		eIDs.push_back(rIDs[i].back());
+	}
+
+	auto n2i = [eIDs] (esint n) {
+		return std::lower_bound(eIDs.begin(), eIDs.end(), n) - eIDs.begin();
+	};
+
+	std::vector<std::vector<__map__> > sBuffer(neighbors.size()), rBuffer(neighbors.size());
+	esint eoffset = 0;
+	for (auto e = elements->faceNeighbors->begin(); e != elements->faceNeighbors->end(); ++e, ++eoffset) {
+		for (auto n = e->begin(); n != e->end(); ++n) {
+			if (*n != -1 && (*n < ebegin || eend < *n)) {
+				auto ni = n2i(*n);
+				if (sBuffer[ni].size() == 0 || sBuffer[ni].back().id != ebegin + eoffset) {
+					sBuffer[ni].push_back({ ebegin + eoffset, coffset + component[eoffset] });
+				}
+			}
+		}
+	}
+
+	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, neighbors)) {
+		eslog::error("ESPRESO internal error: computeComponentDual - cannot exchange neighbors components.\n");
+	}
+
+	std::vector<std::vector<esint> > neighs(csize);
+
+	eoffset = 0;
+	for (auto e = elements->faceNeighbors->begin(); e != elements->faceNeighbors->end(); ++e, ++eoffset) {
+		for (auto n = e->begin(); n != e->end(); ++n) {
+			if (*n != -1 && (*n < ebegin || eend < *n)) {
+				auto ni = n2i(*n);
+				auto it = std::lower_bound(rBuffer[ni].begin(), rBuffer[ni].end(), *n, [] (const __map__ &map, esint id) { return map.id < id; });
+				if (it == rBuffer[ni].end() || it->id != *n) {
+					eslog::error("ESPRESO internal error: computeComponentDual - cannot found neighbor's ID.\n");
+				}
+				if (neighs[component[eoffset]].size() == 0 || neighs[component[eoffset]].back() != it->component) {
+					neighs[component[eoffset]].push_back(it->component);
+				}
+			}
+		}
+	}
+
+	dualDist = { 0 };
+
+	size_t dsize = 0;
+	for (size_t i = 0; i < neighs.size(); ++i) {
+		utils::sortAndRemoveDuplicates(neighs[i]);
+		dsize += neighs[i].size();
+	}
+	dualData.clear();
+	dualData.reserve(dsize);
+	for (size_t i = 0; i < neighs.size(); ++i) {
+		dualData.insert(dualData.end(), neighs[i].begin(), neighs[i].end());
+		dualDist.push_back(dualData.size());
+	}
+
+	profiler::syncend("compute_component_dual");
 }
 
 void computeElementsDecomposition(const ElementStore *elements, esint parts, std::vector<size_t> &distribution, std::vector<esint> &permutation)
