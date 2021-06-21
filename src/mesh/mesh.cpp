@@ -416,7 +416,7 @@ void Mesh::reclusterize()
 		mesh::computeElementsClusterization(elements, nodes, partition);
 		mesh::exchangeElements(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe, partition);
 		if (info::ecf->input.decomposition.force_continuity) {
-			std::vector<esint> component;
+			std::vector<int> component;
 			esint csize = mesh::getStronglyConnectedComponents(elements, component);
 			esint coffset = csize;
 			esint clusters = Communication::exscan(coffset);
