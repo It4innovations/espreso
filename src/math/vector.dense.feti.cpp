@@ -263,17 +263,39 @@ void VectorDenseFETI::sumDuplications()
 void VectorDenseFETI::toFETI(VectorFETI *other) const
 {
 	const VectorDenseFETI* _other = other->downcast<VectorDenseFETI>();
-	for (auto my = dmap->begin(), to = _other->dmap->begin(); my != dmap->end(); ++my, ++to) {
-		double value = 0;
-		for (auto di = my->begin(); di != my->end(); ++di) {
-			if (ismy(di->domain)) {
-				value = at(di->domain - distribution[info::mpi::rank])->vals[di->index];
-				break;
+	if (_other->duplications == DUPLICATION::DUPLICATE) {
+		for (auto my = dmap->begin(), to = _other->dmap->begin(); my != dmap->end(); ++my, ++to) {
+			double value = 0;
+			for (auto di = my->begin(); di != my->end(); ++di) {
+				if (ismy(di->domain)) {
+					value = at(di->domain - distribution[info::mpi::rank])->vals[di->index];
+					break;
+				}
+			}
+			for (auto di = to->begin(); di != to->end(); ++di) {
+				if (_other->ismy(di->domain)) {
+					_other->at(di->domain - _other->distribution[info::mpi::rank])->vals[di->index] = value;
+				}
 			}
 		}
-		for (auto di = to->begin(); di != to->end(); ++di) {
-			if (_other->ismy(di->domain)) {
-				_other->at(di->domain - _other->distribution[info::mpi::rank])->vals[di->index] = value;
+	} else {
+		for (auto my = dmap->begin(), to = _other->dmap->begin(); my != dmap->end(); ++my, ++to) {
+			double value = 0;
+			for (auto di = my->begin(); di != my->end(); ++di) {
+				if (ismy(di->domain)) {
+					value += at(di->domain - distribution[info::mpi::rank])->vals[di->index];
+				}
+			}
+			esint md = 0;
+			for (auto di = to->begin(); di != to->end(); ++di) {
+				if (_other->ismy(di->domain)) {
+					++md;
+				}
+			}
+			for (auto di = to->begin(); di != to->end(); ++di) {
+				if (_other->ismy(di->domain)) {
+					_other->at(di->domain - _other->distribution[info::mpi::rank])->vals[di->index] = value / md;
+				}
 			}
 		}
 	}

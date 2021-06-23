@@ -146,7 +146,7 @@ void VectorFETI::fillData(const Vector *in)
 		if (dynamic_cast<const VectorDenseFETI*>(in) && dynamic_cast<VectorDenseFETI*>(this)) {
 			const VectorDenseFETI* _in = dynamic_cast<const VectorDenseFETI*>(in);
 			VectorDenseFETI* _self = dynamic_cast<VectorDenseFETI*>(this);
-			bool same = _in->domains != _self->domains;
+			bool same = _in->domains == _self->domains;
 			for (esint d = 0; same && d < _self->domains; ++d) {
 				same &= _in->at(d)->size == _self->at(d)->size;
 			}
