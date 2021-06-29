@@ -24,6 +24,7 @@
 #include "math2/math2.h"
 #include "math2/generalization/matrix_feti.h"
 #include "math2/generalization/vector_feti.h"
+#include "analysis/looper.h"
 
 using namespace espreso;
 
@@ -100,7 +101,7 @@ int main(int argc, char **argv)
 		eslog::endln("ESPRESO: DATABASE CONVERTED");
 	} else {
 		profiler::syncstart("physical_solver");
-		LoadStepIterator steps;
+/*		LoadStepIterator steps;
 		steps.prepareExpressions();
 		eslog::checkpointln("ESPRESO: EXPRESSIONS CHECKED");
 		while (steps.next()) {
@@ -108,12 +109,12 @@ int main(int argc, char **argv)
 			eslog::param("LOADSTEP", step::step.loadstep);
 			eslog::ln();
 		}
+*/
+		Looper looper;
+		looper.run();
 		profiler::syncend("physical_solver");
 		eslog::endln("ESPRESO: SIMULATION FINISHED");
 	}
-
-	Matrix_FETI<Matrix_Dense, double> m;
-	Vector_FETI<Vector_Sparse, double> v;
 
 	Mesh::finish();
 	eslog::finish();
