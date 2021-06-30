@@ -311,27 +311,23 @@ OutputManager::OutputManager(const AutoOptimizationConfiguration& configuration)
 : m_config(configuration) {}
 
 void OutputManager::writeConfiguration(const char type,
-	std::vector<double>& configuration) const
+	std::vector<double>& configuration, int dimension) const
 {
 	std::stringstream ss;
 
 	switch(info::ecf->output.logger) {
 		case OutputConfiguration::LOGGER::USER:
 			ss << type << ",";
-			for (auto p = configuration.cbegin();
-				p != configuration.cend();
-			 	++p)
-			{ss << *p << ",";}
+			for (int d = 0; d < dimension; ++d)
+			{ss << configuration[d] << ",";}
 			eslog::solver("     - | AUTOMATIC OPTIMIZATION :: CONFIGURATION  %36s | -\n",
 			ss.str().c_str());
 			break;
 		case OutputConfiguration::LOGGER::PARSER:
 		default:
 			ss << "autoopt: configuration=" << type << ",";
-			for (auto p = configuration.cbegin();
-				p != configuration.cend();
-				++p)
-			{ss << *p << ",";}
+			for (int d = 0; d < dimension; ++d)
+			{ss << configuration[d] << ",";}
 			ss << "\n";
 			eslog::info(ss.str().c_str());
 	}

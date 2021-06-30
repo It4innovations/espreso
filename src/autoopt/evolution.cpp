@@ -17,7 +17,7 @@ RandomAlgorithm::RandomAlgorithm(ParameterManager& manager,
 
 std::vector<double>& RandomAlgorithm::getCurrentSpecimen()
 {
-	this->m_output.writeConfiguration('N', m_last);
+	this->m_output.writeConfiguration('N', m_last, m_manager.count());
 	return m_last;
 }
 
@@ -38,7 +38,7 @@ AllPermutationsAlgorithm::AllPermutationsAlgorithm(ParameterManager& manager,
 
 std::vector<double>& AllPermutationsAlgorithm::getCurrentSpecimen()
 {
-	m_output.writeConfiguration('N', m_last);
+	m_output.writeConfiguration('N', m_last, m_manager.count());
 	return m_last;
 }
 
@@ -92,12 +92,12 @@ std::vector<double>& PSOAlgorithm::getCurrentSpecimen()
 {
 	if (isInitializing)
 	{
-		m_output.writeConfiguration('I', *current);
+		m_output.writeConfiguration('I', *current, dimension);
 		return *current;
 	}
 	else
 	{
-		m_output.writeConfiguration('N', *current);
+		m_output.writeConfiguration('N', *current, dimension);
 		return *current;
 	}
 }
@@ -188,12 +188,12 @@ std::vector<double>& DEAlgorithm::getCurrentSpecimen()
 {
 	if (isInitializing)
 	{
-		m_output.writeConfiguration('I', *current);
+		m_output.writeConfiguration('I', *current, dimension);
 		return *current;
 	}
 	else
 	{		
-		this->m_output.writeConfiguration('T', trial_vector);
+		this->m_output.writeConfiguration('T', trial_vector, dimension);
 		// this->m_output.writeConfiguration('N', new_generation.back());
 		return trial_vector;
 	}
@@ -281,11 +281,11 @@ SOMAAlgorithm::SOMAAlgorithm(ParameterManager& manager, OutputManager& output,
 std::vector<double>& SOMAAlgorithm::getCurrentSpecimen()
 {
 	if (isInitializing) {
-		m_output.writeConfiguration('I', *current);
+		m_output.writeConfiguration('I', *current, dimension);
 		return *current;
 	}
 	else {
-		m_output.writeConfiguration('J', *current_journey);
+		m_output.writeConfiguration('J', *current_journey, dimension);
 		return *current_journey;
 	}
 }
@@ -374,11 +374,11 @@ SOMAT3AAlgorithm::SOMAT3AAlgorithm(ParameterManager& manager, OutputManager& out
 std::vector<double>& SOMAT3AAlgorithm::getCurrentSpecimen()
 {
 	if (isInitializing) {
-		m_output.writeConfiguration('I', *current);
+		m_output.writeConfiguration('I', *current, dimension);
 		return *current; 
 	}
 	else {
-		m_output.writeConfiguration('J', *current_journey);
+		m_output.writeConfiguration('J', *current_journey, dimension);
 		return *current_journey;
 	}
 }
