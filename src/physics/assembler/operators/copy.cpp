@@ -6,6 +6,7 @@
 #include "esinfo/envinfo.h"
 #include "esinfo/eslog.h"
 #include "esinfo/meshinfo.h"
+#include "mesh/store/domainstore.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/boundaryregionstore.h"
@@ -18,7 +19,7 @@ void AverageElementsNodesToNodes::now()
 {
 	if (Operator::print > 1) printf("%s\n", name);
 	std::fill(to.data.begin(), to.data.end(), 0);
-	auto procNodes = info::mesh->elements->procNodes->begin();
+	auto procNodes = info::mesh->elements->nodes->begin();
 	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		InputParameterIterator input(from, i, to.dimension);
 		for (esint e = info::mesh->elements->eintervals[i].begin; e < info::mesh->elements->eintervals[i].end; ++e, ++procNodes) {
@@ -88,10 +89,10 @@ void CopyNodesToElementsNodes::now()
 	if (Operator::print > 1) printf("%s\n", name);
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::threads; t++) {
-		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			for (esint ii = info::mesh->elements->eintervalsDistribution[d]; ii < info::mesh->elements->eintervalsDistribution[d + 1]; ++ii) {
 				auto i = (to.data->begin() + ii)->data();
-				auto procNodes = info::mesh->elements->procNodes->begin() + info::mesh->elements->eintervals[ii].begin;
+				auto procNodes = info::mesh->elements->nodes->begin() + info::mesh->elements->eintervals[ii].begin;
 				for (esint e = info::mesh->elements->eintervals[ii].begin; e < info::mesh->elements->eintervals[ii].end; ++e, ++procNodes) {
 					for (auto n = procNodes->begin(); n != procNodes->end(); ++n) {
 						for (int dim = 0; dim < from.dimension; ++dim, ++i) {
@@ -111,10 +112,10 @@ void CopyNodesToBoundaryNodes::now()
 	for (int t = 0; t < info::env::threads; t++) {
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 			if (info::mesh->boundaryRegions[r]->dimension) {
-				for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; ++d) {
+				for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; ++d) {
 					for (esint ii = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; ii < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++ii) {
 						auto i = (to.regions[r].data->begin() + ii)->data();
-						auto procNodes = info::mesh->boundaryRegions[r]->procNodes->begin() + info::mesh->boundaryRegions[r]->eintervals[ii].begin;
+						auto procNodes = info::mesh->boundaryRegions[r]->nodes->begin() + info::mesh->boundaryRegions[r]->eintervals[ii].begin;
 						for (auto e = info::mesh->boundaryRegions[r]->eintervals[ii].begin; e != info::mesh->boundaryRegions[r]->eintervals[ii].end; ++e, ++procNodes) {
 							for (auto n = procNodes->begin(); n != procNodes->end(); ++n) {
 								for (int dim = 0; dim < from.dimension; ++dim, ++i) {

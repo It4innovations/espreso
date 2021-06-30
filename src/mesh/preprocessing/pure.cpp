@@ -246,7 +246,7 @@ void computeElementsFaceNeighbors(NodeStore *nodes, ElementStore *elements, cons
 			elements->nodes,
 			elements->IDs,
 			elements->epointers,
-			[] (Element *e) { return e->faces; },
+			[] (Element *e) { return e->faceList; },
 			false, // there are max 1 neighbor
 			true); // sorted nodes IDs
 
@@ -263,7 +263,7 @@ void computeElementsEdgeNeighbors(NodeStore *nodes, ElementStore *elements, cons
 			elements->nodes,
 			elements->IDs,
 			elements->epointers,
-			[] (Element *e) { return e->edges; },
+			[] (Element *e) { return e->edgeList; },
 			true, // we need to know the number of neighbors
 			true); // sorted nodes IDs
 }

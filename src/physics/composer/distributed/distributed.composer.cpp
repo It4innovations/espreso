@@ -10,6 +10,7 @@
 #include "mesh/store/elementstore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/elementsregionstore.h"
+#include "mesh/store/domainstore.h"
 #include "physics/system/distributedsystem.h"
 #include "physics/kernels/kernel.h"
 #include "physics/kernels/solverdataprovider/provider.h"
@@ -92,7 +93,7 @@ void DistributedComposer::assemble(const Builder &builder)
 			prev = eslog::time();
 		};
 
-		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			for (esint ii = info::mesh->elements->eintervalsDistribution[d]; ii < info::mesh->elements->eintervalsDistribution[d + 1]; ++ii) {
 				filler.interval = ii;
 				prev = eslog::time();

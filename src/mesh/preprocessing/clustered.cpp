@@ -287,7 +287,7 @@ void computeRegionsBoundaryElementsFromNodes(const NodeStore *nodes, const Eleme
 				prev = element;
 
 				const auto &fpointers = elements->epointers->datatarray()[element]->facepointers->datatarray();
-				auto fnodes = elements->epointers->datatarray()[element]->faces->cbegin();
+				auto fnodes = elements->epointers->datatarray()[element]->faceList->cbegin();
 				nface = 0;
 				for (auto f = fpointers.begin(); f != fpointers.end(); ++f, ++fnodes, ++nface) {
 
@@ -728,10 +728,10 @@ void computeRegionsBoundaryParents(const NodeStore *nodes, const ElementStore *e
 					auto enodes = elements->nodes->begin() + eindex;
 					tdata.push_back(eindex);
 					if (store->dimension == 1) {
-						tdata.push_back(epointer->getIndex(*enodes, epointer->edges, epointer->edgepointers, *nodes));
+						tdata.push_back(epointer->getIndex(*enodes, epointer->edgeList, epointer->edgepointers, *nodes));
 					}
 					if (store->dimension == 2) {
-						tdata.push_back(epointer->getIndex(*enodes, epointer->faces, epointer->facepointers, *nodes));
+						tdata.push_back(epointer->getIndex(*enodes, epointer->faceList, epointer->facepointers, *nodes));
 					}
 					if (tdata.back() < 0) {
 						eslog::internalFailure("cannot find sub-element index.\n");
@@ -1286,7 +1286,7 @@ void computeRegionsSurface(ElementStore *elements, NodeStore *nodes, ElementStor
 						addFace = neighs->at(n) == -1;
 					}
 					if (addFace) {
-						auto face = epointers[*e]->faces->begin() + n;
+						auto face = epointers[*e]->faceList->begin() + n;
 						for (auto f = face->begin(); f != face->end(); ++f) {
 							fdata.push_back(nodes->at(*f));
 						}

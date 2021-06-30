@@ -122,7 +122,7 @@ struct ElementCoordinates: public ElementOperatorBuilder {
 
 	void apply(int interval)
 	{
-		auto procNodes = info::mesh->elements->procNodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
+		auto procNodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
 		if (info::mesh->dimension == 2) {
 			iterate_elements(Coordinates2DToElementNodes(procNodes, kernel.coords.node, interval));
 			iterate_elements_gps<HeatTransferModuleOpt::NGP>(FromNodesToGaussPoints<2>(kernel.integration.N, kernel.coords.node, kernel.coords.gp, interval));
@@ -157,7 +157,7 @@ struct ElementCoordinatesSimd: public ElementOperatorBuilder {
 
 	void apply(int interval)
 	{
-		auto procNodes = info::mesh->elements->procNodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
+		auto procNodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
 		if (info::mesh->dimension == 2) {
 			iterate_elements_simd(Coordinates2DToElementNodesSimd(procNodes, kernel.coordsSimd.node, interval));
 			iterate_elements_gps_simd<HeatTransferModuleOpt::NGP>(FromNodesToGaussPointsSimd<2>(kernel.integrationSimd.N, kernel.coordsSimd.node, kernel.coordsSimd.gp, interval));
@@ -195,7 +195,7 @@ struct BoundaryCoordinates: public BoundaryOperatorBuilder {
 
 	void apply(int region, int interval)
 	{
-		auto procNodes = info::mesh->boundaryRegions[region]->procNodes->cbegin() + info::mesh->boundaryRegions[region]->eintervals[interval].begin;
+		auto procNodes = info::mesh->boundaryRegions[region]->nodes->cbegin() + info::mesh->boundaryRegions[region]->eintervals[interval].begin;
 		if (info::mesh->dimension == 2) {
 			iterate_boundary(Coordinates2DToElementNodes(procNodes, kernel.coords.boundary.node.regions[region], interval), region);
 			iterate_boundary_gps<HeatTransferModuleOpt::NGP>(FromNodesToGaussPoints<2>(kernel.integration.boundary.N.regions[region], kernel.coords.boundary.node.regions[region], kernel.coords.boundary.gp.regions[region], interval), region);

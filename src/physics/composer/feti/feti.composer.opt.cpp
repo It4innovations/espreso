@@ -9,6 +9,7 @@
 #include "esinfo/meshinfo.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.h"
+#include "mesh/store/domainstore.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/boundaryregionstore.h"
@@ -42,7 +43,7 @@ void FETIComposerOpt::assemble(const Builder &builder)
 
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::threads; ++t) {
-		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			bool omitLower = _data->K[d].type != MatrixType::REAL_UNSYMMETRIC;
 			esint *Kperm = _KPermutation[d].data();
 			esint *RHSperm = _RHSPermutation[d].data();

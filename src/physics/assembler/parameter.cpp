@@ -5,6 +5,7 @@
 #include "esinfo/envinfo.h"
 #include "esinfo/meshinfo.h"
 #include "math/matrix.dense.h"
+#include "mesh/store/domainstore.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/boundaryregionstore.h"
@@ -112,7 +113,7 @@ void ElementParameterData::resize(double init)
 	distribution[0].push_back(0);
 	esint sum = 0;
 	for (int t = 0; t < info::env::threads; ++t) {
-		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
 				esint isize = increment(i);
 				if (!isconst[i]) {
@@ -147,7 +148,7 @@ void ElementParameterData::resizeAligned(size_t alignment, double init)
 	distribution[0].push_back(0);
 	esint sum = 0;
 	for (int t = 0; t < info::env::threads; ++t) {
-		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
 				esint isize = increment(i);
 				esint elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
@@ -227,7 +228,7 @@ void BoundaryParameterData::resize(double init)
 	distribution[0].push_back(0);
 	esint sum = 0;
 	for (int t = 0; t < info::env::threads; ++t) {
-		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			for (esint i = info::mesh->boundaryRegions[region]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[region]->eintervalsDistribution[d + 1]; ++i) {
 				esint isize = increment(i);
 				if (!isconst[i]) {

@@ -71,7 +71,7 @@ void FETIComposer::assemble(const Builder &builder)
 
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::threads; ++t) {
-		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			size_t KIndex = 0, RHSIndex = 0;
 			double KReduction = builder.timeIntegrationConstantK, RHSReduction = builder.internalForceReduction;
 			Kernel::InstanceFiller filler(solutions());
@@ -178,7 +178,7 @@ void FETIComposer::assemble(const Builder &builder)
 					auto dmap = info::mesh->nodes->domains->begin();
 					for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().begin(); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(); prev = *n++, ++i) {
 						dmap += *n - prev;
-						if (dmap->at(0) == d + info::mesh->elements->firstDomain) {
+						if (dmap->at(0) == (esint)d + info::mesh->domains->offset) {
 							filler.begin = i;
 							filler.end = i + 1;
 							prev = eslog::time();
