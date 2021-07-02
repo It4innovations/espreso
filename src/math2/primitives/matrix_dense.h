@@ -82,6 +82,11 @@ public:
 		_Matrix_Dense<T>::operator=(_allocated);
 	}
 
+	void resize(const Matrix_Dense &other)
+	{
+		resize(other.nrows, other.ncols);
+	}
+
 	void pattern(const Matrix_Dense &other)
 	{
 		realloc(_allocated, other.nrows, other.ncols);

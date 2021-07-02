@@ -42,22 +42,22 @@ public:
 		swap(_allocated, other._allocated);
 	}
 
-	Vector_Dense& operator=(const Vector_Dense &other)
-	{
-		realloc(_allocated, other.size);
-		_Vector_Dense<T>::operator=(_allocated);
-		for (esint i = 0; i < other.size; ++i) {
-			this->vals[i] = other.vals[i];
-		}
-		return *this;
-	}
+	Vector_Dense& operator=(const Vector_Dense &other) = delete;
+//	{
+//		realloc(_allocated, other.size);
+//		_Vector_Dense<T>::operator=(_allocated);
+//		for (esint i = 0; i < other.size; ++i) {
+//			this->vals[i] = other.vals[i];
+//		}
+//		return *this;
+//	}
 
-	Vector_Dense& operator=(Vector_Dense &&other)
-	{
-		swap(*this, other);
-		swap(_allocated, other._allocated);
-		return *this;
-	}
+	Vector_Dense& operator=(Vector_Dense &&other) = delete;
+//	{
+//		swap(*this, other);
+//		swap(_allocated, other._allocated);
+//		return *this;
+//	}
 
 	~Vector_Dense()
 	{
@@ -68,6 +68,11 @@ public:
 	{
 		realloc(_allocated, size);
 		_Vector_Dense<T>::operator=(_allocated);
+	}
+
+	void resize(const Vector_Dense &other)
+	{
+		resize(other.size);
 	}
 
 	void pattern(const Vector_Dense &other)

@@ -2,21 +2,17 @@
 #ifndef SRC_ANALYSIS_MODE_NEWTONRAPHSON_H_
 #define SRC_ANALYSIS_MODE_NEWTONRAPHSON_H_
 
-#include "analysis/linearsolver/linearsolver.h"
-
-#include "math2/generalization/vector_base.h"
+#include "analysis/linearsystem/linearsystem.h"
 #include "math2/generalization/matrix_base.h"
 
 namespace espreso {
 
 struct AX_NewtonRaphson {
 
-	void init(DirectSolver<double> *solver);
-	void init(FETISolver<double> *solver);
-	void init(MultigridSolver<double> *solver);
+	void init(AX_LinearSystem<double> *system);
 
 private:
-	LinearSolver *solver;
+	AX_LinearSystem<double> *system;
 
 	Matrix_Base<double> *K;
 	Vector_Base<double> *U, *R, *f, *BC;

@@ -1,46 +1,24 @@
 
 #include "newtonraphson.h"
 
-#include "analysis/linearsolver/directsolver.h"
-#include "analysis/linearsolver/fetisolver.h"
-#include "analysis/linearsolver/multigridsolver.h"
-
 using namespace espreso;
 
-void AX_NewtonRaphson::init(DirectSolver<double> *solver)
+
+void AX_NewtonRaphson::init(AX_LinearSystem<double> *system)
 {
-	if (this->solver != nullptr) {
-
-	} else {
-
-	}
-	this->solver = solver;
-}
-
-void AX_NewtonRaphson::init(FETISolver<double> *solver)
-{
-	if (this->solver != nullptr) {
+	if (this->system != nullptr) {
 		// transform
 	} else {
-		K = solver->getMatrixPattern();
-		U = solver->getVectorPattern();
-		R = solver->getVectorPattern();
-		f = solver->getVectorPattern();
-		BC = solver->getVectorPattern();
-		f = solver->getVectorPattern();
-		lsSolution = solver->getVectorPattern();
-		lsRHS = solver->getVectorPattern();
-		lsResidual = solver->getVectorPattern();
+		K = system->solver.A->copyPattern();
+		U = system->solver.b->copyPattern();
+		R = system->solver.b->copyPattern();
+		f = system->solver.b->copyPattern();
+		BC = system->solver.b->copyPattern();
+		f = system->solver.b->copyPattern();
+		lsSolution = system->solver.b->copyPattern();
+		lsRHS = system->solver.b->copyPattern();
+		lsResidual = system->solver.b->copyPattern();
 	}
-	this->solver = solver;
+	this->system = system;
 }
 
-void AX_NewtonRaphson::init(MultigridSolver<double> *solver)
-{
-	if (this->solver != nullptr) {
-
-	} else {
-
-	}
-	this->solver = solver;
-}

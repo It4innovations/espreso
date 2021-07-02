@@ -95,6 +95,12 @@ std::string prepareFile(const std::string &directory, const std::string &name, i
 	}
 }
 
+std::string filename(const std::string &directory, const std::string &name)
+{
+	createDirectory(directory);
+	return directory + "/" + name;
+}
+
 void listDirectory(const std::string &dir, std::vector<std::string> &files)
 {
 	DIR *d = opendir(dir.c_str());

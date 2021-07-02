@@ -38,19 +38,20 @@ int Communication::TAG::R_LOW_KNOWN       =  3 * __GAP__;
 int Communication::TAG::R_LOW_UNKNOWN     =  4 * __GAP__;
 int Communication::TAG::R_UP_KNOWN        =  5 * __GAP__;
 int Communication::TAG::R_UP_UNKNOWN      =  6 * __GAP__;
-int Communication::TAG::GATHER_UNKNOWN    =  7 * __GAP__;
-int Communication::TAG::ALLGATHER_UNKNOWN =  8 * __GAP__;
-int Communication::TAG::BCAST_UNKNOWN     =  9 * __GAP__;
-int Communication::TAG::BALANCE           = 10 * __GAP__;
-int Communication::TAG::ALL_TO_ALLV       = 11 * __GAP__;
-int Communication::TAG::EXSCAN            = 12 * __GAP__;
-int Communication::TAG::DISTRIBUTION      = 13 * __GAP__;
-int Communication::TAG::SEND_VARIOUS      = 14 * __GAP__;
-int Communication::TAG::ALL_TO_ALL_OPT    = 15 * __GAP__;
-int Communication::TAG::SPLITTERS         = 16 * __GAP__;
-int Communication::TAG::ALLREDUCE         = 17 * __GAP__;
-int Communication::TAG::SCATTERV          = 18 * __GAP__;
-int Communication::TAG::SCATTER           = 19 * __GAP__;
+int Communication::TAG::GATHER_UNIFORM    =  7 * __GAP__;
+int Communication::TAG::GATHER_UNKNOWN    =  8 * __GAP__;
+int Communication::TAG::ALLGATHER_UNKNOWN =  9 * __GAP__;
+int Communication::TAG::BCAST_UNKNOWN     =  0 * __GAP__;
+int Communication::TAG::BALANCE           = 11 * __GAP__;
+int Communication::TAG::ALL_TO_ALLV       = 12 * __GAP__;
+int Communication::TAG::EXSCAN            = 13 * __GAP__;
+int Communication::TAG::DISTRIBUTION      = 14 * __GAP__;
+int Communication::TAG::SEND_VARIOUS      = 15 * __GAP__;
+int Communication::TAG::ALL_TO_ALL_OPT    = 16 * __GAP__;
+int Communication::TAG::SPLITTERS         = 17 * __GAP__;
+int Communication::TAG::ALLREDUCE         = 18 * __GAP__;
+int Communication::TAG::SCATTERV          = 19 * __GAP__;
+int Communication::TAG::SCATTER           = 20 * __GAP__;
 
 template<typename Ttype>
 static void _scan(void *in, void *out, int *len, MPI_Datatype *datatype)

@@ -10,8 +10,6 @@
 #include "mesh/store/elementstore.h"
 #include "mesh/store/domainstore.h"
 #include "mesh/store/nodestore.h"
-#include "mesh/store/elementsregionstore.h"
-#include "mesh/store/boundaryregionstore.h"
 
 #include "wrappers/mpi/communication.h"
 
@@ -38,19 +36,25 @@ inline bool operator<(const IJ &left, const IJ &right)
 	return left.row == right.row ? left.column < right.column : left.row < right.row;
 }
 
-
-void UniformNodesFETIPattern::init()
+UniformNodesFETIPattern::UniformNodesFETIPattern(): dmap(nullptr)
 {
-	// TODO: improve performance using info::mesh->nodes->domains
-	size_t threads = info::env::OMP_NUM_THREADS;
 
-	elements.resize(info::mesh->domains->size);
+}
+
+UniformNodesFETIPattern::~UniformNodesFETIPattern()
+{
+	if (dmap) { delete dmap; }
+}
+
+void fillDomainMap(UniformNodesFETIPattern *pattern, int dofs)
+{
+	pattern->elements.resize(info::mesh->domains->size);
 
 	// nID, domain
-	std::vector<std::vector<std::pair<esint, esint> > > ntodomains(threads);
+	std::vector<std::vector<std::pair<esint, esint> > > ntodomains(info::env::threads);
 
 	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
+	for (int t = 0; t < info::env::threads; t++) {
 		std::vector<std::pair<esint, esint> > tdata;
 
 		for (size_t d = info::mesh->domains->distribution[t]; d != info::mesh->domains->distribution[t + 1]; ++d) {
@@ -62,22 +66,22 @@ void UniformNodesFETIPattern::init()
 			for (size_t i = 0; i < dnodes.size(); i++) {
 				tdata.push_back(std::pair<esint, esint>(dnodes[i], d));
 			}
-			elements[d].size = dnodes.size() * _DOFs;
+			pattern->elements[d].size = dnodes.size() * dofs;
 		}
 
 		ntodomains[t].swap(tdata);
 	}
 
-	for (size_t t = 1; t < threads; t++) {
+	for (int t = 1; t < info::env::threads; t++) {
 		ntodomains[0].insert(ntodomains[0].end(), ntodomains[t].begin(), ntodomains[t].end());
 	}
 
 	std::sort(ntodomains[0].begin(), ntodomains[0].end());
 
-	std::vector<std::vector<esint> > DOFs(threads);
-	std::vector<size_t> ndistribution = tarray<size_t>::distribute(threads, ntodomains[0].size());
+	std::vector<std::vector<esint> > DOFs(info::env::threads);
+	std::vector<size_t> ndistribution = tarray<size_t>::distribute(info::env::threads, ntodomains[0].size());
 
-	for (size_t t = 1; t < threads; t++) {
+	for (int t = 1; t < info::env::threads; t++) {
 		while (
 				ndistribution[t] < ntodomains[0].size() &&
 				ntodomains[0][ndistribution[t]].first == ntodomains[0][ndistribution[t] - 1].first) {
@@ -87,11 +91,11 @@ void UniformNodesFETIPattern::init()
 	}
 
 	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
+	for (int t = 0; t < info::env::threads; t++) {
 		std::vector<esint> tDOFs(info::mesh->domains->size);
 
 		for (size_t n = ndistribution[t]; n < ndistribution[t + 1]; ++n) {
-			tDOFs[ntodomains[0][n].second] += _DOFs;
+			tDOFs[ntodomains[0][n].second] += dofs;
 		}
 
 		DOFs[t].swap(tDOFs);
@@ -99,11 +103,11 @@ void UniformNodesFETIPattern::init()
 
 	utils::sizesToOffsets(DOFs);
 
-	std::vector<std::vector<std::vector<esint> > > sBuffer(threads);
+	std::vector<std::vector<std::vector<esint> > > sBuffer(info::env::threads);
 	std::vector<std::vector<esint> > rBuffer(info::mesh->neighborsWithMe.size());
 
 	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
+	for (int t = 0; t < info::env::threads; t++) {
 		std::vector<std::vector<esint> > tBuffer(info::mesh->neighborsWithMe.size());
 
 		if (ndistribution[t] < ndistribution[t  +1]) {
@@ -130,14 +134,14 @@ void UniformNodesFETIPattern::init()
 				++nranks;
 
 				for (size_t i = begin; i < n; i++) {
-					DOFs[t][ntodomains[0][i].second] += _DOFs;
+					DOFs[t][ntodomains[0][i].second] += dofs;
 				}
 			}
 		}
 		sBuffer[t].swap(tBuffer);
 	}
 
-	for (size_t t = 1; t < threads; t++) {
+	for (int t = 1; t < info::env::threads; t++) {
 		for (size_t n = 0; n < sBuffer[t].size(); n++) {
 			sBuffer[0][n].insert(sBuffer[0][n].end(), sBuffer[t][n].begin(), sBuffer[t][n].end());
 		}
@@ -170,7 +174,7 @@ void UniformNodesFETIPattern::init()
 			roffset[noffset] += 2 * domains;
 		}
 
-		for (int dof = 0; dof < _DOFs; ++dof) {
+		for (int dof = 0; dof < dofs; ++dof) {
 			for (size_t i = 0; i < current.size(); ++i) {
 				DOFData.push_back({ current[i].domain, current[i].index + dof });
 			}
@@ -179,167 +183,131 @@ void UniformNodesFETIPattern::init()
 		current.clear();
 	}
 
-	std::vector<size_t> distribution = info::mesh->nodes->distribution, datadistribution(threads + 1);
-	for (size_t t = 1; t < threads; t++) {
-		distribution[t] = _DOFs * distribution[t] + 1;
+	std::vector<size_t> distribution = info::mesh->nodes->distribution, datadistribution(info::env::threads + 1);
+	for (int t = 1; t < info::env::threads; t++) {
+		distribution[t] = dofs * distribution[t] + 1;
 		datadistribution[t] = distribution[t] < DOFDistribution.size() ? DOFDistribution[distribution[t]] : DOFDistribution.back();
 	}
-	datadistribution[threads] = _DOFs * distribution[threads] < DOFDistribution.size() ? DOFDistribution[_DOFs * distribution[threads]] : DOFDistribution.back();
-	distribution[threads] = _DOFs * distribution[threads] + 1;
+	datadistribution[info::env::threads] = dofs * distribution[info::env::threads] < DOFDistribution.size() ? DOFDistribution[dofs * distribution[info::env::threads]] : DOFDistribution.back();
+	distribution[info::env::threads] = dofs * distribution[info::env::threads] + 1;
 
-	_DOFMap = new serializededata<esint, DI>(
+	pattern->dmap = new serializededata<esint, DI>(
 			tarray<esint>(distribution, DOFDistribution),
 			tarray<DI>(datadistribution, DOFData));
 }
 
-void init(esint domain, int dofs, serializededata<esint, DI> *map, std::function<int(int)> getMatrixSize, std::function<void(IJ *target, const esint *begin, const esint *end)> insertPatter)
+void fillPermutation(UniformNodesFETIPattern *pattern, int dofs, Matrix_Type type, int domain)
 {
+	auto sizeUpper = [] (int size) {
+		return (size * size - size) / 2 + size;
+	};
+
+	auto sizeFull = [] (int size) {
+		return size * size;
+	};
+
+	auto fillUpper = [] (IJ* &target, const esint *begin, const esint *end) {
+		for (auto row = begin, colbegin = begin; row != end; ++row, ++colbegin) {
+			for (auto col = colbegin; col != end; ++col, ++target) {
+				if (*row <= *col) {
+					target->row = *row;
+					target->column = *col;
+				} else {
+					target->row = *col;
+					target->column = *row;
+				}
+			}
+		}
+	};
+
+	auto fillFull = [] (IJ* &target, const esint *begin, const esint *end) {
+		for (auto row = begin; row != end; ++row) {
+			for (auto col = begin; col != end; ++col, ++target) {
+				target->row = *row;
+				target->column = *col;
+			}
+		}
+	};
+
+	std::function<int(int)> size;
+	std::function<void(IJ*&, const esint*, const esint*)> fill;
+
+	switch (type) {
+	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE: size = sizeUpper; fill = fillUpper; break;
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE: size = sizeUpper; fill = fillUpper; break;
+	case Matrix_Type::REAL_UNSYMMETRIC: size = sizeFull; fill = fillFull; break;
+	}
+
 	auto ebegin = info::mesh->elements->nodes->cbegin() + info::mesh->domains->elements[domain];
 	auto eend = info::mesh->elements->nodes->cbegin() + info::mesh->domains->elements[domain + 1];
 
 	esint Ksize = 0, RHSsize = 0;
 	for (auto e = ebegin; e != eend; ++e) {
 		RHSsize += e->size() * dofs;
-		Ksize += getMatrixSize(e->size() * dofs);
+		Ksize += size(e->size() * dofs);
 	}
 
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-		if (info::mesh->boundaryRegions[r]->dimension) {
-			if (info::mesh->boundaryRegions[r]->eintervalsDistribution[domain] < info::mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]) {
-				esint begin = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[domain]].begin;
-				esint end = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1] - 1].end;
-				auto enodes = info::mesh->boundaryRegions[r]->elements->cbegin() + begin;
-
-				for (esint i = begin; i < end; ++i, ++enodes) {
-					RHSsize += enodes->size() * dofs;
-					Ksize += getMatrixSize(enodes->size() * dofs);
-				}
-			}
-		}
-	}
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-		if (!info::mesh->boundaryRegions[r]->dimension) {
-			esint prev = 0;
-			auto dmap = map->begin();
-			for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().begin(); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(); prev = *n++) {
-				dmap += (*n - prev) * dofs;
-				if (dmap->begin()->domain == domain + info::mesh->domains->offset) {
-					RHSsize += dofs;
-				}
-			}
-		}
-	}
-
-	std::vector<esint> permK(Ksize), permRHS(RHSsize);
 	std::vector<IJ> KPattern(Ksize);
-	std::vector<esint> RHSPattern(RHSsize), ROW, COL;
+	std::vector<esint> RHSPattern(RHSsize);
 
 	IJ *Koffset = KPattern.data();
 	esint *RHSoffset = RHSPattern.data();
 
-	auto insert = [&] (serializededata<esint, esint>::const_iterator &enodes) {
+	for (auto e = ebegin; e != eend; ++e) {
 		esint *_RHS = RHSoffset;
 		for (int dof = 0; dof < dofs; ++dof) {
-			for (auto n = enodes->begin(); n != enodes->end(); ++n, ++RHSoffset) {
-				auto DOFs = (map->begin() + (*n * dofs + dof))->begin();
+			for (auto n = e->begin(); n != e->end(); ++n, ++RHSoffset) {
+				auto DOFs = (pattern->dmap->begin() + (*n * dofs + dof))->begin();
 				while (DOFs->domain != domain + info::mesh->domains->offset) {
 					++DOFs;
 				}
 				*RHSoffset = DOFs->index;
 			}
 		}
-		insertPatter(Koffset, _RHS, RHSoffset);
-	};
-
-	for (auto e = ebegin; e != eend; ++e) {
-		insert(e);
-		Koffset += getMatrixSize(e->size() * dofs);
+		fill(Koffset, _RHS, RHSoffset);
 	}
 
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-		if (info::mesh->boundaryRegions[r]->dimension) {
-			if (info::mesh->boundaryRegions[r]->eintervalsDistribution[domain] < info::mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]) {
-				esint begin = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[domain]].begin;
-				esint end = info::mesh->boundaryRegions[r]->eintervals[info::mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1] - 1].end;
-				auto enodes = info::mesh->boundaryRegions[r]->elements->cbegin() + begin;
-				for (esint i = begin; i < end; ++i, ++enodes) {
-					insert(enodes);
-					Koffset += getMatrixSize(enodes->size() * dofs);
-				}
-			}
-		}
+	std::vector<IJ> KData = KPattern;
+	std::vector<esint> RHSData = RHSPattern;
+
+	utils::sortAndRemoveDuplicates(KPattern);
+	utils::sortAndRemoveDuplicates(RHSPattern);
+
+	pattern->elements[domain].row.reserve(KPattern.size());
+	pattern->elements[domain].column.reserve(KPattern.size());
+	pattern->elements[domain].K.reserve(KData.size());
+	pattern->elements[domain].f.reserve(RHSData.size());
+
+	for (size_t i = 0; i < KPattern.size(); ++i) {
+		pattern->elements[domain].row.push_back(KPattern[i].row);
+		pattern->elements[domain].column.push_back(KPattern[i].column);
 	}
 
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); r++) {
-		if (!info::mesh->boundaryRegions[r]->dimension) {
-			esint prev = 0;
-			auto dmap = map->begin();
-			for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().begin(); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(); prev = *n++) {
-				dmap += (*n - prev) * dofs;
-				for (int dof = 0; dof < dofs; ++dof) {
-					if ((dmap + dof)->begin()->domain == domain + info::mesh->domains->offset) {
-						*RHSoffset++ = (dmap + dof)->begin()->index;
-					}
-				}
-			}
-		}
+	for (size_t i = 0; i < KData.size(); ++i) {
+		pattern->elements[domain].K.push_back(std::lower_bound(KPattern.begin(), KPattern.end(), KData[i]) - KPattern.begin());
 	}
-
-//	std::vector<esint> pK(KPattern.size());
-//	std::iota(pK.begin(), pK.end(), 0);
-//	std::sort(pK.begin(), pK.end(), [&] (esint i, esint j) {
-//		return KPattern[i] < KPattern[j];
-//	});
-//
-//	std::vector<esint> pRHS(RHSPattern.size());
-//	std::iota(pRHS.begin(), pRHS.end(), 0);
-//	std::sort(pRHS.begin(), pRHS.end(), [&] (esint i, esint j) {
-//		return RHSPattern[i] < RHSPattern[j];
-//	});
-//
-//	ROW.reserve(_domainDOFsSize[domain] + 1);
-//	COL.reserve(KPattern.size());
-//	ROW.push_back(1);
-//	COL.push_back(KPattern[pK.front()].column + 1);
-//	permK[pK.front()] = 0;
-//	for (size_t i = 1, nonzeros = 0; i < pK.size(); i++) {
-//		if (KPattern[pK[i]] != KPattern[pK[i - 1]]) {
-//			++nonzeros;
-//			COL.push_back(KPattern[pK[i]].column + 1);
-//			if (KPattern[pK[i - 1]].row != KPattern[pK[i]].row) {
-//				ROW.push_back(nonzeros + 1);
-//			}
-//		}
-//		permK[pK[i]] = nonzeros;
-//	}
-//	permRHS[pRHS.front()] = 0;
-//	for (size_t i = 1, nonzeros = 0; i < pRHS.size(); i++) {
-//		if (RHSPattern[pRHS[i]] != RHSPattern[pRHS[i - 1]]) {
-//			++nonzeros;
-//		}
-//		permRHS[pRHS[i]] = nonzeros;
-//	}
-//
-//	_KPermutation[domain].swap(permK);
-//	_RHSPermutation[domain].swap(permRHS);
-//
-//	ROW.push_back(COL.size() + 1);
-//
-//	_data->K[domain].resize(_domainDOFsSize[domain], _domainDOFsSize[domain], COL.size());
-//	_data->K[domain].fillPattern(_domainDOFsSize[domain], ROW.data(), COL.data());
-//	_data->K[domain].structureUpdated();
+	for (size_t i = 0; i < RHSData.size(); ++i) {
+		pattern->elements[domain].f.push_back(std::lower_bound(RHSPattern.begin(), RHSPattern.end(), RHSData[i]) - RHSPattern.begin());
+	}
 }
 
-void UniformNodesFETIPattern::initUpper()
+void UniformNodesFETIPattern::set(int dofs, Matrix_Type type)
 {
-//	for (esint d = 0; d < info::mesh->domains->size; ++d) {
-//		init(d, [] (int dofs) { return (dofs * dofs - dofs) / 2 + dofs; });
-//	}
+	if (dmap) { delete dmap; }
+
+	fillDomainMap(this, dofs);
+	for (esint domain = 0; domain < info::mesh->domains->size; ++domain) {
+		fillPermutation(this, dofs, type, domain);
+	}
 }
 
-void UniformNodesFETIPattern::initFull()
+void UniformNodesFETIPattern::fillCSR(int domain, esint *rows, esint *cols)
 {
-//	for (esint d = 0; d < info::mesh->domains->size; ++d) {
-//		init(d, [] (int dofs) { return dofs * dofs; });
-//	}
+	rows[0] = cols[0] = _Matrix_CSR_Pattern::Indexing;
+	for (size_t r = 1, c = 1; c < elements[domain].column.size(); ++c) {
+		cols[c] = elements[domain].column[c] + _Matrix_CSR_Pattern::Indexing;
+		if (elements[domain].row[c] != elements[domain].row[c - 1]) {
+			rows[r++] = c + _Matrix_CSR_Pattern::Indexing;
+		}
+	}
 }

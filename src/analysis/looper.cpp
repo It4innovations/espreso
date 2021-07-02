@@ -11,7 +11,7 @@ using namespace espreso;
 
 void Looper::run()
 {
-	printf("looper\n");
-
 	AX_HeatSteadyStateLinear analysis(info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(1));
+
+	analysis.solve();
 }

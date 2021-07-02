@@ -9,6 +9,10 @@ namespace espreso {
 struct Matrix_CSR_External_Representation;
 
 struct _Matrix_CSR_Pattern {
+	enum: int {
+		Indexing = 1
+	};
+
 	esint nrows, ncols, nnz, *rows, *cols;
 };
 
@@ -90,6 +94,11 @@ public:
 	{
 		realloc(_allocated, nrows, ncols, nnz);
 		_Matrix_CSR<T>::operator=(_allocated);
+	}
+
+	void resize(const Matrix_CSR &other)
+	{
+		resize(other.nrows, other.ncols, other.nnz);
 	}
 
 	void pattern(const Matrix_CSR &other)

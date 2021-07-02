@@ -100,6 +100,24 @@ namespace math {
 	template <typename T> void norm(const Vector_Dense<T> &x)  { norm(x.size, x.vals, 1); }
 	template <typename T> void norm(const Vector_Sparse<T> &x) { norm(x.nnz , x.vals, 1); }
 
+	template <typename T> T max(const Vector_Dense<T> &x)
+	{
+		T max = x.vals[0];
+		for (esint i = 0; i < x.size; ++i) {
+			if (max < x.vals[i]) {
+				max = x.vals[i];
+			}
+		}
+		return max;
+	}
+
+	template <typename T> void getDiagonal(const Matrix_CSR<T> &m, Vector_Dense<T> &v)
+	{
+
+	}
+
+	template <class T> void store(T &x, const char* file);
+
 } // math
 } // espreso
 

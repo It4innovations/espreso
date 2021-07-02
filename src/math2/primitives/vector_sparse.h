@@ -72,6 +72,11 @@ public:
 		_Vector_Sparse<T>::operator=(_allocated);
 	}
 
+	void resize(const Vector_Sparse &other)
+	{
+		resize(other.size, other.nnz);
+	}
+
 	void pattern(const Vector_Sparse &other)
 	{
 		realloc(_allocated, other);

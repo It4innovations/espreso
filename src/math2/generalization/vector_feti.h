@@ -2,6 +2,7 @@
 #ifndef SRC_MATH2_GENERALIZATION_VECTOR_FETI_H_
 #define SRC_MATH2_GENERALIZATION_VECTOR_FETI_H_
 
+
 #include "vector_base.h"
 #include "math2/math2.h"
 #include "math2/utils/utils_feti.h"
@@ -19,12 +20,15 @@ public:
 
 	}
 
-	Vector_FETI* copy()
-	{
-		Vector_FETI<Vector, T> *m = new Vector_FETI<Vector, T>();
-		m->domains = domains;
-		return m;
-	}
+//	Vector_FETI* copy()
+//	{
+//		Vector_FETI<Vector, T> *m = new Vector_FETI<Vector, T>();
+//		m->domains.reserve(domains.size());
+//		for (size_t d = 0; d < domains.size(); ++d) {
+//			m->domains.push_back(domains[d]);
+//		}
+//		return m;
+//	}
 
 	Vector_FETI* copyPattern()
 	{
@@ -34,6 +38,16 @@ public:
 			m->domains[d].pattern(domains[d]);
 		}
 		return m;
+	}
+
+	void store(const char *file)
+	{
+		math::store(*this, file);
+	}
+
+	void store(std::vector<T> &output)
+	{
+		//
 	}
 
 	void fill(const T &value)
@@ -107,7 +121,5 @@ public:
 };
 
 }
-
-
 
 #endif /* SRC_MATH2_GENERALIZATION_VECTOR_FETI_H_ */

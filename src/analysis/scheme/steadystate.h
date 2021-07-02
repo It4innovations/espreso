@@ -2,21 +2,26 @@
 #ifndef SRC_ANALYSIS_SCHEME_STEADYSTATE_H_
 #define SRC_ANALYSIS_SCHEME_STEADYSTATE_H_
 
-#include "analysis/linearsolver/linearsolver.h"
+#include "scheme.h"
 
-#include "math2/generalization/vector_base.h"
+#include "analysis/linearsystem/linearsystem.h"
 #include "math2/generalization/matrix_base.h"
 
 namespace espreso {
 
-struct AX_SteadyState {
+struct AX_SteadyState: public AX_Scheme {
 
-	void init(DirectSolver<double> *solver);
-	void init(FETISolver<double> *solver);
-	void init(MultigridSolver<double> *solver);
+	void init(AX_LinearSystem<double> *solver);
+
+	void reassemble(AX_HeatTransfer &assembler, bool &A, bool &b);
+	void solved();
 
 	Matrix_Base<double> *K;
 	Vector_Base<double> *f;
+
+	AX_LinearSystem<double> *solver;
+
+	ElementMapping<double> mappingK, mappingF;
 };
 
 }

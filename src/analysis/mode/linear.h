@@ -2,18 +2,20 @@
 #ifndef SRC_ANALYSIS_MODE_LINEAR_H_
 #define SRC_ANALYSIS_MODE_LINEAR_H_
 
-#include "analysis/linearsolver/linearsolver.h"
+#include "analysis/assembler/module/heattransfer.h"
+#include "analysis/linearsystem/linearsystem.h"
+#include "analysis/scheme/scheme.h"
 
 namespace espreso {
 
 struct AX_Linear {
 
-	void init(DirectSolver<double> *solver);
-	void init(FETISolver<double> *solver);
-	void init(MultigridSolver<double> *solver);
+	void init(AX_LinearSystem<double> *system);
+
+	bool solve(AX_Scheme &scheme, AX_HeatTransfer &assembler);
 
 private:
-	LinearSolver *solver;
+	AX_LinearSystem<double> *system;
 };
 
 }

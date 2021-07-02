@@ -1,26 +1,26 @@
 
 #include "linear.h"
 
-#include "analysis/linearsolver/directsolver.h"
-#include "analysis/linearsolver/fetisolver.h"
-#include "analysis/linearsolver/multigridsolver.h"
+#include "esinfo/ecfinfo.h"
 
 using namespace espreso;
 
-void AX_Linear::init(DirectSolver<double> *solver)
+void AX_Linear::init(AX_LinearSystem<double> *system)
 {
-	printf("init Linear solver for Direct<double>\n");
-	this->solver = solver;
+	this->system = system;
 }
 
-void AX_Linear::init(FETISolver<double> *solver)
+bool AX_Linear::solve(AX_Scheme &scheme, AX_HeatTransfer &assembler)
 {
-	printf("init Linear solver for FETI<double>\n");
-	this->solver = solver;
-}
+	bool updateA = false, updateRHS = false, updateDirichlet = false;
+	assembler.next();
+	scheme.reassemble(assembler, updateA, updateRHS);
+	updateDirichlet |= assembler.fillDirichlet(system->dirichlet);
+	system->update(assembler, updateA, updateRHS, updateDirichlet);
 
-void AX_Linear::init(MultigridSolver<double> *solver)
-{
-	printf("init Linear solver for Multigrid<double>\n");
-	this->solver = solver;
+	bool solved = system->solve();
+	if (solved) {
+		assembler.updateSolution(system->solver.x);
+	}
+	return solved;
 }

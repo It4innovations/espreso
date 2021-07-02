@@ -86,6 +86,11 @@ public:
 		_Matrix_IJV<T>::operator=(_allocated);
 	}
 
+	void resize(const Matrix_IJV &other)
+	{
+		resize(other.nrows, other.ncols, other.nnz);
+	}
+
 	void pattern(const Matrix_IJV &other)
 	{
 		realloc(_allocated, other);

@@ -129,7 +129,7 @@ struct Communication {
 		EX_KNOWN, EX_UNKNOWN,
 		R_LOW_KNOWN, R_LOW_UNKNOWN,
 		R_UP_KNOWN, R_UP_UNKNOWN,
-		GATHER_UNKNOWN, ALLGATHER_UNKNOWN, BCAST_UNKNOWN,
+		GATHER_UNIFORM, GATHER_UNKNOWN, ALLGATHER_UNKNOWN, BCAST_UNKNOWN,
 		BALANCE, ALL_TO_ALLV,
 		EXSCAN, DISTRIBUTION,
 		SEND_VARIOUS, ALL_TO_ALL_OPT,
@@ -171,6 +171,9 @@ struct Communication {
 
 	template <typename Ttype>
 	static bool receiveUpperUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbors, MPIGroup *group = MPITools::procs);
+
+	template <typename Ttype>
+	static bool gatherUniformNeighbors(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, const std::vector<int> &neighbors, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype, typename Talloc=std::allocator<Ttype> >
 	static bool gatherUnknownSize(const std::vector<Ttype, Talloc> &sBuffer, std::vector<Ttype, Talloc> &rBuffer, MPIGroup *group = MPITools::procs);

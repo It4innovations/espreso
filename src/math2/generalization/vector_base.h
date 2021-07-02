@@ -2,6 +2,8 @@
 #ifndef SRC_MATH2_GENERALIZATION_VECTOR_BASE_H_
 #define SRC_MATH2_GENERALIZATION_VECTOR_BASE_H_
 
+#include <vector>
+
 namespace espreso {
 
 template <typename T>
@@ -10,8 +12,10 @@ class Vector_Base
 public:
 	virtual ~Vector_Base() {};
 
-	virtual Vector_Base* copy() =0;
+//	virtual Vector_Base* copy() =0;
 	virtual Vector_Base* copyPattern() =0;
+	virtual void store(const char *file) =0;
+	virtual void store(std::vector<T> &output) =0;
 
 	virtual void fill(const T &value) =0;
 	virtual void fillData(const Vector_Base *in) =0;

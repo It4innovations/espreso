@@ -510,6 +510,39 @@ bool Communication::receiveUpperUnknownSize(const std::vector<std::vector<Ttype>
 	return true;
 }
 
+template <typename Ttype>
+bool Communication::gatherUniformNeighbors(const std::vector<Ttype> &sBuffer, std::vector<Ttype> &rBuffer, const std::vector<int> &neighbors, MPIGroup *group)
+{
+	profiler::syncstart("comm_gather_uniform_neighbors");
+	profiler::syncparam("neighbors", neighbors.size());
+	MPIType type(MPITools::getType<Ttype>());
+
+	if (type.mpisize * sBuffer.size() > 1 << 30) {
+		profiler::syncend("comm_gather_uniform_neighbors");
+		return false;
+	}
+	std::vector<MPI_Request> req(2 * neighbors.size());
+
+	for (size_t n = 0; n < neighbors.size(); n++) {
+		// bullxmpi violate MPI standard (cast away constness)
+		MPI_Isend(const_cast<Ttype*>(sBuffer.data()), type.mpisize * sBuffer.size(), type.mpitype, neighbors[n], TAG::GATHER_UNIFORM, group->communicator, req.data() + 2 * n);
+	}
+
+	for (size_t n = 0; n < neighbors.size(); n++) {
+		// bullxmpi violate MPI standard (cast away constness)
+		MPI_Irecv(const_cast<Ttype*>(rBuffer.data() + n * sBuffer.size()), type.mpisize * sBuffer.size(), type.mpitype, neighbors[n], TAG::GATHER_UNIFORM, group->communicator, req.data() + 2 * n + 1);
+	}
+	profiler::synccheckpoint("msg_prepared");
+
+	MPI_Waitall(2 * neighbors.size(), req.data(), MPI_STATUSES_IGNORE);
+	if (group->communicator == MPI_COMM_WORLD) {
+		++TAG::GATHER_UNIFORM;
+	}
+	profiler::synccheckpoint("waitall");
+	profiler::syncend("comm_gather_uniform_neighbors");
+	return true;
+}
+
 template <typename Ttype, typename Talloc>
 bool Communication::gatherUnknownSize(const std::vector<Ttype, Talloc> &sBuffer, std::vector<Ttype, Talloc> &rBuffer, MPIGroup *group)
 {

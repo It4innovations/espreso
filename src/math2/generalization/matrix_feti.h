@@ -2,8 +2,8 @@
 #ifndef SRC_MATH2_GENERALIZATION_MATRIX_FETI_H_
 #define SRC_MATH2_GENERALIZATION_MATRIX_FETI_H_
 
-#include "matrix_base.h"
 #include "vector_feti.h"
+#include "matrix_base.h"
 #include "math2/math2.h"
 
 #include <vector>
@@ -19,15 +19,15 @@ public:
 
 	}
 
-	Matrix_FETI* copy()
-	{
-		Matrix_FETI<Matrix, T> *m = new Matrix_FETI<Matrix, T>();
-		m->domains.reserve(domains.size());
-		for (size_t d = 0; d < domains.size(); ++d) {
-			m->domains.push_back(domains[d]);
-		}
-		return m;
-	}
+//	Matrix_FETI* copy()
+//	{
+//		Matrix_FETI<Matrix, T> *m = new Matrix_FETI<Matrix, T>();
+//		m->domains.resize(domains.size());
+//		for (size_t d = 0; d < domains.size(); ++d) {
+//			m->domains[d].resize(domains[d]);
+//		}
+//		return m;
+//	}
 
 	Matrix_FETI* copyPattern()
 	{
@@ -37,6 +37,11 @@ public:
 			m->domains[d].pattern(domains[d]);
 		}
 		return m;
+	}
+
+	void store(const char *file)
+	{
+		math::store(*this, file);
 	}
 
 	void fill(const T &value)
