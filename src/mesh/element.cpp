@@ -61,6 +61,7 @@ template<> void Element::init<Element::CODE::POINT1>()
 	type = Element::TYPE::POINT;
 	code = Element::CODE::POINT1;
 	nodes = 1;
+	gps = 0;
 	edges = 0;
 	faces = 0;
 	coarseNodes = 1;
@@ -74,6 +75,7 @@ template<> void Element::init<Element::CODE::LINE2>()
 	type = Element::TYPE::LINE;
 	code = Element::CODE::LINE2;
 	nodes = 2;
+	gps = 2;
 	edges = 0;
 	faces = 0;
 	coarseNodes = 2;
@@ -87,6 +89,7 @@ template<> void Element::init<Element::CODE::LINE3>()
 	type = Element::TYPE::LINE;
 	code = Element::CODE::LINE3;
 	nodes = 3;
+	gps = 3;
 	edges = 0;
 	faces = 0;
 	coarseNodes = 2;
@@ -100,6 +103,7 @@ template<> void Element::init<Element::CODE::TRIANGLE3>()
 	type = Element::TYPE::PLANE;
 	code = Element::CODE::TRIANGLE3;
 	nodes = 3;
+	gps = 6;
 	edges = 0;
 	faces = 3;
 	coarseNodes = 3;
@@ -132,6 +136,7 @@ template<> void Element::init<Element::CODE::TRIANGLE6>()
 	type = Element::TYPE::PLANE;
 	code = Element::CODE::TRIANGLE6;
 	nodes = 6;
+	gps = 6;
 	edges = 0;
 	faces = 3;
 	coarseNodes = 3;
@@ -168,6 +173,7 @@ template<> void Element::init<Element::CODE::SQUARE4>()
 	type = Element::TYPE::PLANE;
 	code = Element::CODE::SQUARE4;
 	nodes = 4;
+	gps = 4;
 	edges = 0;
 	faces = 4;
 	coarseNodes = 4;
@@ -202,6 +208,7 @@ template<> void Element::init<Element::CODE::SQUARE8>()
 	type = Element::TYPE::PLANE;
 	code = Element::CODE::SQUARE8;
 	nodes = 8;
+	gps = 9;
 	edges = 0;
 	faces = 4;
 	coarseNodes = 4;
@@ -240,6 +247,7 @@ template<> void Element::init<Element::CODE::TETRA4>()
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::TETRA4;
 	nodes = 4;
+	gps = 4;
 	edges = 6;
 	faces = 4;
 	coarseNodes = 4;
@@ -278,6 +286,7 @@ template<> void Element::init<Element::CODE::TETRA10>()
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::TETRA10;
 	nodes = 10;
+	gps = 15;
 	edges = 6;
 	faces = 4;
 	coarseNodes = 4;
@@ -317,6 +326,7 @@ template<> void Element::init<Element::CODE::PYRAMID5>()
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::PYRAMID5;
 	nodes = 5;
+	gps = 8;
 	edges = 8;
 	faces = 5;
 	coarseNodes = 5;
@@ -361,6 +371,7 @@ template<> void Element::init<Element::CODE::PYRAMID13>()
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::PYRAMID13;
 	nodes = 13;
+	gps = 14;
 	edges = 8;
 	faces = 5;
 	coarseNodes = 5;
@@ -406,6 +417,7 @@ template<> void Element::init<Element::CODE::PRISMA6>()
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::PRISMA6;
 	nodes = 6;
+	gps = 9;
 	edges = 9;
 	faces = 5;
 	coarseNodes = 6;
@@ -451,6 +463,7 @@ template<> void Element::init<Element::CODE::PRISMA15>()
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::PRISMA15;
 	nodes = 15;
+	gps = 9;
 	edges = 9;
 	faces = 5;
 	coarseNodes = 6;
@@ -496,6 +509,7 @@ template<> void Element::init<Element::CODE::HEXA8>()
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::HEXA8;
 	nodes = 8;
+	gps = 8;
 	edges = 12;
 	faces = 6;
 	coarseNodes = 8;
@@ -542,6 +556,7 @@ template<> void Element::init<Element::CODE::HEXA20>()
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::HEXA20;
 	nodes = 20;
+	gps = 8;
 	edges = 12;
 	faces = 6;
 	coarseNodes = 8;
