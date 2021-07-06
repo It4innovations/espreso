@@ -108,8 +108,8 @@ struct LoadStepSolverConfiguration: public ECFDescription {
 
 	enum class SOLVER {
 		FETI,
-		HYPRE,
 		MKLPDSS,
+		HYPRE,
 		PARDISO,
 		SUPERLU,
 		WSMP

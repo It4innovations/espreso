@@ -26,7 +26,8 @@ void init(LoadStepSolverConfiguration &loadStep, DecompositionConfiguration &dec
 			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.B0_type),
 			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.scaling),
 			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.method),
-			decomposition.ecfdescription->getParameter(&decomposition.domains)
+			decomposition.ecfdescription->getParameter(&decomposition.domains),
+			loadStep.ecfdescription->getParameter(&loadStep.solver)
 		};
 		autoopt = new EvolutionaryOptimizer(info::ecf->auto_optimization, opt_parameters);
 	} else {

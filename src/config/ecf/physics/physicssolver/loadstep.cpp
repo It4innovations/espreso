@@ -155,11 +155,11 @@ LoadStepSolverConfiguration::LoadStepSolverConfiguration()
 			.setdescription({ "Linear solver" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("FETI").setdescription("Use ESPRESO as linear solver."))
-			.addoption(ECFOption().setname("HYPRE").setdescription("Use hypre library."))
-			.addoption(ECFOption().setname("MKLPDSS").setdescription("Use parallel direct sparse solver from MKL (PARDISO)."))
-			.addoption(ECFOption().setname("PARDISO").setdescription("Use PARDISO original library."))
-			.addoption(ECFOption().setname("SUPERLU").setdescription("Use SuperLU_DIST."))
-			.addoption(ECFOption().setname("WSMP").setdescription("Use Watson Sparse Matrix Package.")));
+			// .addoption(ECFOption().setname("HYPRE").setdescription("Use hypre library."))
+			.addoption(ECFOption().setname("MKLPDSS").setdescription("Use parallel direct sparse solver from MKL (PARDISO).")));
+			// .addoption(ECFOption().setname("PARDISO").setdescription("Use PARDISO original library."))
+			// .addoption(ECFOption().setname("SUPERLU").setdescription("Use SuperLU_DIST."))
+			// .addoption(ECFOption().setname("WSMP").setdescription("Use Watson Sparse Matrix Package.")));
 
 	REGISTER(topology_optimization_settings, ECFMetaData()
 			.setdescription({ "Topology optimization settings." })
