@@ -2,6 +2,7 @@
 #include "vector.feti.h"
 #include "vector.dense.feti.h"
 #include "vector.sparse.feti.h"
+#include "vector.dense.distributed.h"
 #include "esinfo/eslog.h"
 
 #include <cstddef>
@@ -160,6 +161,10 @@ void VectorFETI::fillData(const Vector *in)
 			}
 			return;
 		}
+		return;
+	}
+	if (dynamic_cast<const VectorDenseDistributed*>(in)) {
+		dynamic_cast<const VectorDenseDistributed*>(in)->toFETI(this);
 		return;
 	}
 	if (dynamic_cast<const VectorDense*>(in)) {

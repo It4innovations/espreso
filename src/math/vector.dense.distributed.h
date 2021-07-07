@@ -8,6 +8,8 @@
 
 namespace espreso {
 
+class VectorFETI;
+
 class VectorDenseDistributed: public Vector, public DataVectorDense, public DataDistributed
 {
 public:
@@ -44,6 +46,8 @@ public:
 	double max();
 	double absmax();
 	double dot(const Vector *other);
+
+	void toFETI(VectorFETI *other) const;
 
 	void gatherFromUpper();
 	void scatterToUpper();
