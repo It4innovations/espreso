@@ -1326,10 +1326,6 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 				tnodesElemsDistribution.push_back(0);
 			}
 
-			auto nodesetit = nodeset.begin();
-			if (rdistribution[t] + 1 < rdistribution[t + 1]) {
-				nodesetit = std::lower_bound(nodeset.begin(), nodeset.end(), rNodes[i][rdistribution[t] + 1]);
-			}
 			for (size_t n = rdistribution[t] + 1; n < rdistribution[t + 1]; ) {
 				tnpermutation.push_back(n);
 				n += 1 + sizeof(Point) / sizeof(esint); // id, Point
@@ -1339,6 +1335,10 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 			std::sort(tnpermutation.begin(), tnpermutation.end(), [&] (esint n1, esint n2) {
 				return rNodes[i][n1] < rNodes[i][n2];
 			});
+			auto nodesetit = nodeset.begin();
+			if (rdistribution[t] + 1 < rdistribution[t + 1]) {
+				nodesetit = std::lower_bound(nodeset.begin(), nodeset.end(), rNodes[i][tnpermutation.front()]);
+			}
 			size_t index;
 			for (size_t n = 0; n < tnpermutation.size(); n++) {
 				index = tnpermutation[n];

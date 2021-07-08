@@ -146,7 +146,7 @@ void NodesUniformFETIComposer::_initDOFMap()
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<std::vector<esint> > tBuffer(info::mesh->neighborsWithMe.size());
 
-		if (ndistribution[t] < ndistribution[t  +1]) {
+		if (ndistribution[t] < ndistribution[t + 1]) {
 			auto nranks = info::mesh->nodes->ranks->begin() + ntodomains[0][ndistribution[t]].first;
 			size_t n = ndistribution[t];
 			while (n < ndistribution[t + 1]) {
@@ -160,7 +160,6 @@ void NodesUniformFETIComposer::_initDOFMap()
 					while (info::mesh->neighborsWithMe[noffset] < *r) {
 						++noffset;
 					}
-
 					tBuffer[noffset].push_back(n - begin);
 					for (size_t i = begin; i < n; i++) {
 						tBuffer[noffset].push_back(info::mesh->domains->offset + ntodomains[0][i].second);
