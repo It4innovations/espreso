@@ -25,7 +25,7 @@ public:
 	MKLPDSSConfiguration &configuration;
 
 protected:
-	void call(esint phase);
+	bool call(esint phase);
 
 	esint _roffset, _nrows;
 	double _precision; // dummy

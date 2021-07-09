@@ -141,11 +141,11 @@ bool MKLPDSSSystemSolver::update()
 	_inner->rowPtrs = _inner->rowData.data();
 
 	if (fillStructure) {
-		call(11);
+		if (!call(11)) return false;
 		eslog::solver("     - | SYMBOLIC FACTORIZATION                                             %8.3f s | -\n", eslog::time() - start);
 		start = eslog::time();
 	}
-	call(22);
+	if (!call(22)) return false;
 	eslog::solver("     - | NUMERICAL FACTORIZATION                                            %8.3f s | -\n", eslog::time() - start);
 
 	_inner->rhsValues = _data.f[0].vals + _data.f[0].nhalo;
@@ -158,7 +158,7 @@ bool MKLPDSSSystemSolver::solve()
 #ifdef HAVE_MKLPDSS
 	_inner->solution = _data.x[0].vals + _data.x[0].nhalo;
 	double start = eslog::time();
-	call(33); // solve at once
+	if (!call(33)) return false; // solve at once
 	_data.x.scatterToUpper();
 	eslog::solver("     - | SOLVER TIME                                                        %8.3f s | -\n", eslog::time() - start);
 	eslog::solver("     - --------------------------------------------------------------------------------- -\n");
@@ -175,7 +175,7 @@ MKLPDSSSystemSolver::~MKLPDSSSystemSolver()
 #endif
 }
 
-void MKLPDSSSystemSolver::call(esint phase)
+bool MKLPDSSSystemSolver::call(esint phase)
 {
 #ifdef HAVE_MKLPDSS
 	_inner->phase = phase;
@@ -188,10 +188,11 @@ void MKLPDSSSystemSolver::call(esint phase)
 			_inner->rhsValues, _inner->solution,
 			&_inner->comm, &_inner->error);
 
+	bool ret = true;
 	switch (_inner->error) {
 	case   0: break;
 	case  -1: eslog::error("MKL PDSS: input inconsistent.\n"); break;
-	case  -2: eslog::error("MKL PDSS: not enough memory.\n"); break;
+	case  -2: eslog::info("MKL PDSS: not enough memory.\n"); ret = false; break;
 	case  -3: eslog::error("MKL PDSS: reordering problem.\n"); break;
 	case  -4: eslog::error("MKL PDSS: zero pivot, numerical factorization or iterative refinement problem.\n"); break;
 	case  -5: eslog::error("MKL PDSS: unclassified (internal) error.\n"); break;
@@ -202,6 +203,8 @@ void MKLPDSSSystemSolver::call(esint phase)
 	case -10: eslog::error("MKL PDSS: error opening OOC files.\n"); break;
 	case -11: eslog::error("MKL PDSS: read/write error with OOC files.\n"); break;
 	}
+
+	return ret;
 #endif
 }
 
