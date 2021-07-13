@@ -388,6 +388,9 @@ void Mesh::analyze()
 	if (info::mpi::size == 1) {
 		_omitClusterization = true;
 	}
+	if (info::ecf->input.decomposition.parallel_decomposer == DecompositionConfiguration::ParallelDecomposer::NONE) {
+		_omitClusterization = true;
+	}
 
 	if (_withBEM) {
 		// TODO: BEM does not always need separate regions
