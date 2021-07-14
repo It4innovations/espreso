@@ -7,6 +7,7 @@
 #include "esinfo/eslog.hpp"
 
 #include <vector>
+#include <complex>
 
 #ifdef HAVE_MKLPDSS
 #include "mkl_cluster_sparse_solver.h"
