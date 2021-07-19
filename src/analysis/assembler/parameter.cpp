@@ -26,6 +26,13 @@ ParameterData::~ParameterData()
 	}
 }
 
+ExternalValue::ExternalValue(ParameterData &parameter)
+: dimension(parameter.size.n * std::pow(info::mesh->dimension, parameter.size.ndimension)),
+  evaluator(dimension * parameter.isconst.size(), nullptr)
+{
+
+}
+
 ElementParameterData::ElementParameterData(PerElementSize mask)
 : ParameterData(mask, intervals())
 {

@@ -49,6 +49,9 @@ void computeElementIntervals(const DomainStore *domains, ElementStore *elements)
 				if (elements->epointers->datatarray()[e]->code != elements->epointers->datatarray()[e - 1]->code) {
 					iboundaries[t].push_back(e);
 				}
+				if (memcmp(elements->regions->datatarray().data() + e * elements->regions->edataSize(), elements->regions->datatarray().data() + (e - 1) * elements->regions->edataSize(), sizeof(esint) * elements->regions->edataSize())) {
+					iboundaries[t].push_back(e);
+				}
 			}
 		}
 	}

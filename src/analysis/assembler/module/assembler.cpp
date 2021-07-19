@@ -8,11 +8,19 @@
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/elementsregionstore.h"
+#include "mesh/store/boundaryregionstore.h"
 #include "analysis/assembler/operators/expression.h"
 
 #include <algorithm>
 
 using namespace espreso;
+
+Assembler::Assembler()
+: actionOps(info::mesh->elements->eintervals.size()), actionRes(info::mesh->elements->eintervals.size()),
+  version(0)
+{
+
+}
 
 void Assembler::updateVersions()
 {
@@ -97,7 +105,7 @@ void Assembler::printMaterials(const std::map<std::string, std::string> &setting
 	}
 }
 
-void Assembler::examineMaterialParameter(const std::string &material, const std::string &name, const ECFExpression &settings, ExpressionsToElements &builder, int dimension)
+bool Assembler::examineMaterialParameter(const std::string &material, const std::string &name, const ECFExpression &settings, ExternalValue &value, int dimension)
 {
 	if (settings.evaluator->variables.size()) {
 		std::string params = Parser::join(", ", settings.evaluator->variables);
@@ -108,41 +116,42 @@ void Assembler::examineMaterialParameter(const std::string &material, const std:
 
 	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		if (StringCompare::caseInsensitiveEq(info::mesh->materials[info::mesh->elements->eintervals[i].material]->name, material)) {
-			builder.evaluators[builder.dimension * i + dimension] = settings.evaluator;
+			value.evaluator[value.dimension * i + dimension] = settings.evaluator;
 		}
 	}
+	return settings.evaluator->isset;
 }
 
-void Assembler::examineElementParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExpressionsToElements &builder)
+bool Assembler::examineElementParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExternalValue &value)
 {
-	examineElementParameter<ECFExpression>(name, settings, builder, 0, [] (const ECFExpression &expr) { return expr.evaluator; });
+	return examineElementParameter<ECFExpression>(name, settings, value, 0, [] (const ECFExpression &expr) { return expr.evaluator; });
 }
-void Assembler::examineElementParameter(const std::string &name, const std::map<std::string, ECFExpressionVector> &settings, ExpressionsToElements &builder, int dimension)
+bool Assembler::examineElementParameter(const std::string &name, const std::map<std::string, ECFExpressionVector> &settings, ExternalValue &value, int dimension)
 {
-	examineElementParameter<ECFExpressionVector>(name, settings, builder, dimension, [&] (const ECFExpressionVector &expr) { return expr.data[dimension].evaluator; });
+	return examineElementParameter<ECFExpressionVector>(name, settings, value, dimension, [&] (const ECFExpressionVector &expr) { return expr.data[dimension].evaluator; });
 }
 
-void Assembler::examineBoundaryParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExpressionsToBoundary &builder)
+void Assembler::examineBoundaryParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExternalValue &value)
 {
-	if (settings.size()) {
-		eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
-
-		int rindex = 0;
-		for (auto reg = info::mesh->boundaryRegions.begin(); reg != info::mesh->boundaryRegions.end(); ++reg, ++rindex) {
-			auto ms = settings.find((*reg)->name);
-			if (ms != settings.end()) {
-				const Evaluator *evaluator = ms->second.evaluator;
-				builder.insert(rindex, 0, evaluator);
-				if (evaluator->variables.size()) {
-					std::string params = Parser::join(", ", evaluator->variables);
-					eslog::info("   %30s:  %*s       FNC( %s )\n", (*reg)->name.c_str(), 43 - params.size(), "", params.c_str());
-				} else {
-					eslog::info("   %30s:  %57g \n", (*reg)->name.c_str(), evaluator->eval(Evaluator::Params()));
-				}
-			}
-		}
-		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-	}
+//	if (settings.size()) {
+//		eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
+//
+//		int rindex = 0;
+//		for (auto reg = info::mesh->boundaryRegions.begin(); reg != info::mesh->boundaryRegions.end(); ++reg, ++rindex) {
+//			auto ms = settings.find((*reg)->name);
+//			if (ms != settings.end()) {
+//				const Evaluator *evaluator = ms->second.evaluator;
+//				wrapper.insert(rindex, 0, evaluator);
+//				if (evaluator->variables.size()) {
+//					std::string params = Parser::join(", ", evaluator->variables);
+//					eslog::info("   %30s:  %*s       FNC( %s )\n", (*reg)->name.c_str(), 43 - params.size(), "", params.c_str());
+//				} else {
+//					eslog::info("   %30s:  %57g \n", (*reg)->name.c_str(), evaluator->eval(Evaluator::Params()));
+//				}
+//			}
+//		}
+//		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+//	}
 }
 
 void Assembler::examineBoundaryParameter(const std::string &name, const std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection)

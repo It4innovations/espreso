@@ -62,6 +62,11 @@ public:
 
 	virtual ~Evaluator() {};
 
+	double eval() const
+	{
+		return eval(params);
+	}
+
 	double eval(const Params &params) const
 	{
 		double value;

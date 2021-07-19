@@ -2,6 +2,8 @@
 #ifndef SRC_PHYSICS_ASSEMBLER_MATH_HPP_
 #define SRC_PHYSICS_ASSEMBLER_MATH_HPP_
 
+#include "math/simd/simd.h"
+
 namespace espreso {
 
 // |cos , -sin| |c[0] , c[2]| | cos , sin|
@@ -293,7 +295,8 @@ static inline void ADDMN2M2N(const double &sumscale, const double * __restrict__
 {
 	for (size_t n = 0; n < N; ++n) {
 		for (size_t m = 0; m < N; ++m) {
-			mNN[n * N + m] += sumscale * (m2N[n] * m2N[m] + m2N[N + n] * m2N[N + m]);
+			mNN[n * N + m] += sumscale * m2N[n] * m2N[m];
+			mNN[n * N + m] += sumscale * m2N[N + n] * m2N[N + m];
 		}
 	}
 }

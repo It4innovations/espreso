@@ -1,96 +1,77 @@
 
-#ifndef SRC_PHYSICS_ASSEMBLER_OPERATORS_BASIS_H_
-#define SRC_PHYSICS_ASSEMBLER_OPERATORS_BASIS_H_
-
-#include "analysis/assembler/module/assembler.h"
-
+#include "analysis/assembler/module/heattransfer.h"
+#include "esinfo/meshinfo.h"
+#include "mesh/element.h"
+#include "mesh/store/elementstore.h"
 #include "mesh/store/boundaryregionstore.h"
 
 namespace espreso {
 
 template<Element::CODE code> void fill(size_t gps, double *N, double *dN, double *w);
 
-template <class Assembler>
+template <class Module>
 void fill(int code, double *N, double *dN, double *w)
 {
 	switch ((Element::CODE)code) {
-	case Element::CODE::POINT1:    fill<Element::CODE::POINT1>   (Assembler::NGP::POINT1   , N, dN, w); break;
-	case Element::CODE::LINE2:     fill<Element::CODE::LINE2>    (Assembler::NGP::LINE2    , N, dN, w); break;
-	case Element::CODE::TRIANGLE3: fill<Element::CODE::TRIANGLE3>(Assembler::NGP::TRIANGLE3, N, dN, w); break;
-	case Element::CODE::SQUARE4:   fill<Element::CODE::SQUARE4>  (Assembler::NGP::SQUARE4  , N, dN, w); break;
-	case Element::CODE::TETRA4:    fill<Element::CODE::TETRA4>   (Assembler::NGP::TETRA4   , N, dN, w); break;
-	case Element::CODE::PYRAMID5:  fill<Element::CODE::PYRAMID5> (Assembler::NGP::PYRAMID5 , N, dN, w); break;
-	case Element::CODE::PRISMA6:   fill<Element::CODE::PRISMA6>  (Assembler::NGP::PRISMA6  , N, dN, w); break;
-	case Element::CODE::HEXA8:     fill<Element::CODE::HEXA8>    (Assembler::NGP::HEXA8    , N, dN, w); break;
-	case Element::CODE::LINE3:     fill<Element::CODE::LINE3>    (Assembler::NGP::LINE3    , N, dN, w); break;
-	case Element::CODE::TRIANGLE6: fill<Element::CODE::TRIANGLE6>(Assembler::NGP::TRIANGLE6, N, dN, w); break;
-	case Element::CODE::SQUARE8:   fill<Element::CODE::SQUARE8>  (Assembler::NGP::SQUARE8  , N, dN, w); break;
-	case Element::CODE::TETRA10:   fill<Element::CODE::TETRA10>  (Assembler::NGP::TETRA10  , N, dN, w); break;
-	case Element::CODE::PYRAMID13: fill<Element::CODE::PYRAMID13>(Assembler::NGP::PYRAMID13, N, dN, w); break;
-	case Element::CODE::PRISMA15:  fill<Element::CODE::PRISMA15> (Assembler::NGP::PRISMA15 , N, dN, w); break;
-	case Element::CODE::HEXA20:    fill<Element::CODE::HEXA20>   (Assembler::NGP::HEXA20   , N, dN, w); break;
+	case Element::CODE::POINT1:    fill<Element::CODE::POINT1>   (Module::NGP::POINT1   , N, dN, w); break;
+	case Element::CODE::LINE2:     fill<Element::CODE::LINE2>    (Module::NGP::LINE2    , N, dN, w); break;
+	case Element::CODE::TRIANGLE3: fill<Element::CODE::TRIANGLE3>(Module::NGP::TRIANGLE3, N, dN, w); break;
+	case Element::CODE::SQUARE4:   fill<Element::CODE::SQUARE4>  (Module::NGP::SQUARE4  , N, dN, w); break;
+	case Element::CODE::TETRA4:    fill<Element::CODE::TETRA4>   (Module::NGP::TETRA4   , N, dN, w); break;
+	case Element::CODE::PYRAMID5:  fill<Element::CODE::PYRAMID5> (Module::NGP::PYRAMID5 , N, dN, w); break;
+	case Element::CODE::PRISMA6:   fill<Element::CODE::PRISMA6>  (Module::NGP::PRISMA6  , N, dN, w); break;
+	case Element::CODE::HEXA8:     fill<Element::CODE::HEXA8>    (Module::NGP::HEXA8    , N, dN, w); break;
+	case Element::CODE::LINE3:     fill<Element::CODE::LINE3>    (Module::NGP::LINE3    , N, dN, w); break;
+	case Element::CODE::TRIANGLE6: fill<Element::CODE::TRIANGLE6>(Module::NGP::TRIANGLE6, N, dN, w); break;
+	case Element::CODE::SQUARE8:   fill<Element::CODE::SQUARE8>  (Module::NGP::SQUARE8  , N, dN, w); break;
+	case Element::CODE::TETRA10:   fill<Element::CODE::TETRA10>  (Module::NGP::TETRA10  , N, dN, w); break;
+	case Element::CODE::PYRAMID13: fill<Element::CODE::PYRAMID13>(Module::NGP::PYRAMID13, N, dN, w); break;
+	case Element::CODE::PRISMA15:  fill<Element::CODE::PRISMA15> (Module::NGP::PRISMA15 , N, dN, w); break;
+	case Element::CODE::HEXA20:    fill<Element::CODE::HEXA20>   (Module::NGP::HEXA20   , N, dN, w); break;
 	default: break;
 	}
 }
 
-template <class Assembler>
-struct Basis: public ElementOperatorBuilder {
-	Assembler &assembler;
-
-	Basis(Assembler &assembler)
-	: ElementOperatorBuilder("BASIC FUNCTIONS"), assembler(assembler)
+void baseFunction(AX_HeatTransfer &module)
+{
+	module.integration.N.resize();
+	module.integration.dN.resize();
+	module.integration.weight.resize();
 	{
+		int index = 0;
+		for (auto ei = info::mesh->elements->eintervals.begin(); ei != info::mesh->elements->eintervals.end(); ++ei, ++index) {
+			module.integration.N.version[index] = module.integration.dN.version[index] = module.integration.weight.version[index] = 0;
+			module.integration.N.update[index] = module.integration.dN.update[index] = module.integration.weight.update[index] = 0;
 
+			double *n = (module.integration.N.data->begin() + index)->data();
+			double *dn = (module.integration.dN.data->begin() + index)->data();
+			double *w = (module.integration.weight.data->begin() + index)->data();
+
+			fill<AX_HeatTransfer>(ei->code, n, dn, w);
+		}
 	}
 
-	bool build() override
-	{
-		if (Operator::print > 1) printf("EVALUATE %s\n", name);
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (info::mesh->boundaryRegions[r]->dimension) {
+			module.integration.boundary.N.regions[r].resize();
+			module.integration.boundary.dN.regions[r].resize();
+			module.integration.boundary.weight.regions[r].resize();
 
-		assembler.integration.N.resize();
-		assembler.integration.dN.resize();
-		assembler.integration.weight.resize();
-		{
 			int index = 0;
-			for (auto ei = info::mesh->elements->eintervals.begin(); ei != info::mesh->elements->eintervals.end(); ++ei, ++index) {
-				assembler.integration.N.version[index] = assembler.integration.dN.version[index] = assembler.integration.weight.version[index] = 0;
-				assembler.integration.N.update[index] = assembler.integration.dN.update[index] = assembler.integration.weight.update[index] = 0;
+			for (auto ei = info::mesh->boundaryRegions[r]->eintervals.begin(); ei != info::mesh->boundaryRegions[r]->eintervals.end(); ++ei, ++index) {
+				module.integration.boundary.N.regions[r].version[index] = module.integration.boundary.dN.regions[r].version[index] = module.integration.boundary.weight.regions[r].version[index] = 0;
+				module.integration.boundary.N.regions[r].update[index] = module.integration.boundary.dN.regions[r].update[index] = module.integration.boundary.weight.regions[r].update[index] = 0;
 
-				double *n = (assembler.integration.N.data->begin() + index)->data();
-				double *dn = (assembler.integration.dN.data->begin() + index)->data();
-				double *w = (assembler.integration.weight.data->begin() + index)->data();
+				double *n = (module.integration.boundary.N.regions[r].data->begin() + index)->data();
+				double *dn = (module.integration.boundary.dN.regions[r].data->begin() + index)->data();
+				double *w = (module.integration.boundary.weight.regions[r].data->begin() + index)->data();
 
-				fill<Assembler>(ei->code, n, dn, w);
+				fill<AX_HeatTransfer>(ei->code, n, dn, w);
 			}
 		}
-
-		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-			if (info::mesh->boundaryRegions[r]->dimension) {
-				assembler.integration.boundary.N.regions[r].resize();
-				assembler.integration.boundary.dN.regions[r].resize();
-				assembler.integration.boundary.weight.regions[r].resize();
-
-				int index = 0;
-				for (auto ei = info::mesh->boundaryRegions[r]->eintervals.begin(); ei != info::mesh->boundaryRegions[r]->eintervals.end(); ++ei, ++index) {
-					assembler.integration.boundary.N.regions[r].version[index] = assembler.integration.boundary.dN.regions[r].version[index] = assembler.integration.boundary.weight.regions[r].version[index] = 0;
-					assembler.integration.boundary.N.regions[r].update[index] = assembler.integration.boundary.dN.regions[r].update[index] = assembler.integration.boundary.weight.regions[r].update[index] = 0;
-
-					double *n = (assembler.integration.boundary.N.regions[r].data->begin() + index)->data();
-					double *dn = (assembler.integration.boundary.dN.regions[r].data->begin() + index)->data();
-					double *w = (assembler.integration.boundary.weight.regions[r].data->begin() + index)->data();
-
-					fill<Assembler>(ei->code, n, dn, w);
-				}
-			}
-		}
-		return true;
 	}
+}
 
-	void apply(int interval)
-	{
-
-	}
-};
 
 template<> void fill<Element::CODE::POINT1>(size_t gps, double *N, double *dN, double *w)
 {
@@ -870,4 +851,4 @@ template<> void fill<Element::CODE::HEXA20>(size_t gps, double *N, double *dN, d
 
 }
 
-#endif /* SRC_PHYSICS_ASSEMBLER_OPERATORS_BASIS_H_ */
+

@@ -6,13 +6,14 @@
 #include "basis/containers/serializededata.h"
 #include "mesh/store/nameddata.h"
 
+#include <vector>
+
 namespace espreso {
 
+class Evaluator;
 class ECFExpression;
 class NodeData;
 class ElementData;
-struct ExpressionsToElements;
-struct ExpressionsToBoundary;
 
 enum ElementSizeMask: int {
 	ndim   = 1 << 6,
@@ -95,6 +96,13 @@ struct ParameterData {
 	std::vector<InputHolder*> inputs;
 };
 
+struct ExternalValue {
+	int dimension;
+	std::vector<Evaluator*> evaluator;
+
+	ExternalValue(ParameterData &parameter);
+};
+
 struct ElementParameterData: public ParameterData {
 	ElementParameterData(PerElementSize mask);
 
@@ -112,10 +120,10 @@ struct ElementParameter: public ElementParameterData {
 
 template<int mask>
 struct ElementExternalParameter: public ElementParameter<mask> {
-	ExpressionsToElements *builder;
+	ExternalValue evaluator;
 	std::vector<int> isset;
 
-	ElementExternalParameter(): builder(NULL), isset(ElementParameterData::intervals(), 0) { }
+	ElementExternalParameter(): evaluator(*this), isset(ElementParameterData::intervals(), 0) { }
 };
 
 struct BoundaryParameterData: public ParameterData {
@@ -163,9 +171,9 @@ struct BoundaryParameter: public BoundaryParameterPack {
 
 template<int mask>
 struct BoundaryExternalParameter: public BoundaryParameter<mask> {
-	ExpressionsToBoundary *builder;
+	ExternalValue *settings;
 
-	BoundaryExternalParameter(): builder(NULL) { }
+	BoundaryExternalParameter(): settings(NULL) { }
 };
 
 template <class Settings>

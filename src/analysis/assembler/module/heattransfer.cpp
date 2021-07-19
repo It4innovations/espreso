@@ -4,32 +4,20 @@
 
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
+#include "esinfo/envinfo.h"
 #include "esinfo/meshinfo.h"
 
-#include "analysis/assembler/operators/basis.h"
-#include "analysis/assembler/operators/expression.h"
-#include "analysis/assembler/operators/coordinates.h"
-#include "analysis/assembler/operators/integration.h"
-#include "analysis/assembler/operators/conductivity.h"
-#include "analysis/assembler/operators/stiffness.h"
-#include "analysis/assembler/operators/filler.h"
+#include "analysis/assembler/operators/operators.h"
 
-//#include "analysis/assembler/operators/conductivity.h"
-//#include "analysis/assembler/operators/convection.h"
-//#include "analysis/assembler/operators/mass.h"
-//#include "analysis/assembler/operators/diffusionsplit.h"
-//#include "analysis/assembler/operators/advection.h"
-//#include "analysis/assembler/operators/integration.h"
-//#include "analysis/assembler/operators/stiffness.h"
-//#include "analysis/assembler/operators/rhs.h"
-//#include "analysis/assembler/operators/filler.h"
-//#include "analysis/assembler/operators/gradient.h"
-//#include "analysis/assembler/operators/flux.h"
-
+#include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
+#include "mesh/store/domainstore.h"
 #include "mesh/store/boundaryregionstore.h"
 
 #include <numeric>
+#include <algorithm>
+
+#include "basis/utilities/print.h"
 
 using namespace espreso;
 
@@ -94,21 +82,6 @@ void AX_HeatTransfer::init()
 
 	ParametersTemperature::Initial::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_TEMPERATURE");
 	ParametersTemperature::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "TEMPERATURE");
-//	if (info::ecf->output.results_selection.translation_motions) {
-//		ParametersTranslationMotions::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "TRANSLATION_MOTION");
-//	}
-//	if (info::ecf->output.results_selection.phase) {
-//		phase = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "PHASE");
-//	}
-//	if (info::ecf->output.results_selection.latent_heat) {
-//		latentHeat = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "LATENT_HEAT");
-//	}
-//	if (info::ecf->output.results_selection.gradient) {
-//		ParametersGradient::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "GRADIENT");
-//	}
-//	if (info::ecf->output.results_selection.flux) {
-//		ParametersFlux::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUX");
-//	}
 
 	if (info::mesh->dimension == 2) {
 		setMaterials(info::ecf->heat_transfer_2d.material_set);
@@ -122,89 +95,17 @@ void AX_HeatTransfer::init()
 		validateRegionSettings("INITIAL TEMPERATURE", info::ecf->heat_transfer_3d.initial_temperature);
 	}
 
-	Basis<AX_HeatTransfer>(*this).build();
-	builders.push_back(new ElementCoordinates<AX_HeatTransfer>(*this));
-	builders.push_back(new ElementIntegration<AX_HeatTransfer>(*this));
+	baseFunction(*this);
+	elementCoordinates(*this);
+	elementIntegration(*this);
 
-//	if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
-//	{
-//		builders.push_back(new ElementCoordinatesSimd(*this));
-//	}
-//	else
-//	{
-//		builders.push_back(new ElementCoordinates(*this));
-//	}
-//
-//	builders.push_back(new BoundaryCoordinates(*this));
-//
-//	if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
-//	{
-//		builders.push_back(new ElementIntegrationSimd(*this));
-//	}
-//	else
-//	{
-//		builders.push_back(new ElementIntegration(*this));
-//	}
-//
-//	builders.push_back(new BoundaryIntegration(*this));
-//
-//	if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
-//	{
-//		eslog::warning("WARNING: USING EXPERIMENTAL ASSEMBLER. \n");
-//		eslog::warning("WARNING: NUMBER OF ELEMENTS HAS TO BE MULTIPLE OF VECTOR LENGTH. \n");
-//	}
-//
+	bool correct = true;
+
 	if (step::step.loadstep == 0) {
-//		initTemperature(); // we need to init temperature first since other builder can read it
-//
 		if (info::mesh->dimension == 2) {
-//			if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
-//			{
-//				eslog::warning("WARNING: CONSTANT THICKNESS ONLY.\n");
-//				builders.push_back(new ExpressionsToElementsSimd(thicknessSimd.gp, 1, "ELEMENTS THICKNESS"));
-//				examineElementParameter("THICKNESS", info::ecf->heat_transfer_2d.thickness, *thicknessSimd.gp.builder);
-//			}
-//			// Redundant beacause of boundary
-			builders.push_back(new ExpressionsToElementsSimple<AX_HeatTransfer>(*this, thickness.gp, 1, "ELEMENTS THICKNESS"));
-			examineElementParameter("THICKNESS", info::ecf->heat_transfer_2d.thickness, *thickness.gp.builder);
-//			builders.push_back(new ExpressionsToBoundaryFromElement(*thickness.gp.builder, thickness.boundary.gp, "BOUDARY THICKNESS"));
-//
-//			if (configuration.translation_motions.size()) {
-//				switch (info::ecf->heat_transfer_2d.stabilization) {
-//				case HeatTransferGlobalSettings::STABILIZATION::CAU: eslog::info("  %s:%77s \n", "STABILIZATION", "CAU"); break;
-//				case HeatTransferGlobalSettings::STABILIZATION::SUPG: eslog::info("  %s:%77s \n", "STABILIZATION", "SUPG"); break;
-//				}
-//				eslog::info("  %s:%85g \n", "SIGMA", info::ecf->heat_transfer_2d.sigma);
-//			}
+			correct &= examineElementParameter("THICKNESS", info::ecf->heat_transfer_2d.thickness, thickness.gp.evaluator);
+			fromExpression(*this, thickness.gp, thickness.gp.evaluator);
 		}
-//		if (info::mesh->dimension == 3) {
-//			thickness.gp.resize(); // dummy resize in order to avoid memory errors in some operators
-//			if (configuration.translation_motions.size()) {
-//				switch (info::ecf->heat_transfer_3d.stabilization) {
-//				case HeatTransferGlobalSettings::STABILIZATION::CAU: eslog::info("  %s:%77s \n", "STABILIZATION", "CAU"); break;
-//				case HeatTransferGlobalSettings::STABILIZATION::SUPG: eslog::info("  %s:%77s \n", "STABILIZATION", "SUPG"); break;
-//				}
-//				eslog::info("  %s:%85g \n", "SIGMA", info::ecf->heat_transfer_3d.sigma);
-//			}
-//		}
-//		eslog::info(" ============================================================================================= \n");
-//
-//		if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
-//		{
-//			builders.push_back(new ExpressionsToElementsSimd(materialSimd.model.isotropic, 1, "ISOTROPIC MATERIAL MODEL"));
-//		}
-
-		builders.push_back(new ExpressionsToElementsSimple<AX_HeatTransfer>(*this, cooSystem.cartesian2D, 0, "CARTESIAN 2D COORDINATE SYSTEM"));
-		builders.push_back(new ExpressionsToElementsSimple<AX_HeatTransfer>(*this, cooSystem.cartesian3D, 0, "CARTESIAN 3D COORDINATE SYSTEM"));
-		builders.push_back(new ExpressionsToElementsSimple<AX_HeatTransfer>(*this, cooSystem.spherical, 0, "SPHERICAL COORDINATE SYSTEM"));
-		builders.push_back(new ExpressionsToElementsSimple<AX_HeatTransfer>(*this, cooSystem.cylindric, 0, "CYLINDRIC COORDINATE SYSTEM"));
-		builders.push_back(new ExpressionsToElementsSimple<AX_HeatTransfer>(*this, material.model.isotropic, 1, "ISOTROPIC MATERIAL MODEL"));
-		builders.push_back(new ExpressionsToElementsSimple<AX_HeatTransfer>(*this, material.model.diagonal, 1, "DIAGONAL MATERIAL MODEL"));
-		builders.push_back(new ExpressionsToElementsSimple<AX_HeatTransfer>(*this, material.model.symmetric2D, 1, "SYMMETRIC MATERIAL MODEL"));
-		builders.push_back(new ExpressionsToElementsSimple<AX_HeatTransfer>(*this, material.model.symmetric3D, 1, "SYMMETRIC MATERIAL MODEL"));
-		builders.push_back(new ExpressionsToElementsSimple<AX_HeatTransfer>(*this, material.model.anisotropic, 1, "ANISOTROPIC MATERIAL MODEL"));
-		builders.push_back(new ExpressionsToElementsSimple<AX_HeatTransfer>(*this, material.density, 1, "MATERIAL DENSITY"));
-		builders.push_back(new ExpressionsToElementsSimple<AX_HeatTransfer>(*this, material.heatCapacity, 1, "MATERIAL HEAT CAPACITY"));
 
 		///////////////////////////////////// Set materials and check if there is not any incorrect region intersection
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -218,12 +119,12 @@ void AX_HeatTransfer::init()
 			case CoordinateSystemConfiguration::TYPE::CARTESIAN:
 				eslog::info("    COORDINATE SYSTEM:                                                              CARTESIAN \n");
 				if (info::mesh->dimension == 2) {
-					examineMaterialParameter(mat->name, "ROTATION.Z", mat->coordinate_system.rotation.z, *cooSystem.cartesian2D.builder, 0);
+					examineMaterialParameter(mat->name, "ROTATION.Z", mat->coordinate_system.rotation.z, cooSystem.cartesian2D.evaluator, 0);
 				}
 				if (info::mesh->dimension == 3) {
-					examineMaterialParameter(mat->name, "ROTATION.X", mat->coordinate_system.rotation.x, *cooSystem.cartesian3D.builder, 0);
-					examineMaterialParameter(mat->name, "ROTATION.Y", mat->coordinate_system.rotation.y, *cooSystem.cartesian3D.builder, 1);
-					examineMaterialParameter(mat->name, "ROTATION.Z", mat->coordinate_system.rotation.z, *cooSystem.cartesian3D.builder, 2);
+					examineMaterialParameter(mat->name, "ROTATION.X", mat->coordinate_system.rotation.x, cooSystem.cartesian3D.evaluator, 0);
+					examineMaterialParameter(mat->name, "ROTATION.Y", mat->coordinate_system.rotation.y, cooSystem.cartesian3D.evaluator, 1);
+					examineMaterialParameter(mat->name, "ROTATION.Z", mat->coordinate_system.rotation.z, cooSystem.cartesian3D.evaluator, 2);
 				}
 				break;
 			case CoordinateSystemConfiguration::TYPE::SPHERICAL:
@@ -232,100 +133,99 @@ void AX_HeatTransfer::init()
 				}
 				if (info::mesh->dimension == 3) {
 					eslog::info("    COORDINATE SYSTEM:                                                              SPHERICAL \n");
-					examineMaterialParameter(mat->name, "CENTER.X", mat->coordinate_system.center.x, *cooSystem.spherical.builder, 0);
-					examineMaterialParameter(mat->name, "CENTER.Y", mat->coordinate_system.center.y, *cooSystem.spherical.builder, 1);
-					examineMaterialParameter(mat->name, "CENTER.Z", mat->coordinate_system.center.z, *cooSystem.spherical.builder, 2);
+					examineMaterialParameter(mat->name, "CENTER.X", mat->coordinate_system.center.x, cooSystem.spherical.evaluator, 0);
+					examineMaterialParameter(mat->name, "CENTER.Y", mat->coordinate_system.center.y, cooSystem.spherical.evaluator, 1);
+					examineMaterialParameter(mat->name, "CENTER.Z", mat->coordinate_system.center.z, cooSystem.spherical.evaluator, 2);
 				}
 				break;
 			case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
 				eslog::info("    COORDINATE SYSTEM:                                                            CYLINDRICAL \n");
 				if (info::mesh->dimension == 2) {
-					examineMaterialParameter(mat->name, "CENTER.X", mat->coordinate_system.center.x, *cooSystem.cylindric.builder, 0);
-					examineMaterialParameter(mat->name, "CENTER.Y", mat->coordinate_system.center.y, *cooSystem.cylindric.builder, 1);
+					examineMaterialParameter(mat->name, "CENTER.X", mat->coordinate_system.center.x, cooSystem.cylindric.evaluator, 0);
+					examineMaterialParameter(mat->name, "CENTER.Y", mat->coordinate_system.center.y, cooSystem.cylindric.evaluator, 1);
 				}
 				if (info::mesh->dimension == 3) {
-					examineMaterialParameter(mat->name, "CENTER.X", mat->coordinate_system.center.x, *cooSystem.cylindric.builder, 0);
-					examineMaterialParameter(mat->name, "CENTER.Y", mat->coordinate_system.center.y, *cooSystem.cylindric.builder, 1);
+					examineMaterialParameter(mat->name, "CENTER.X", mat->coordinate_system.center.x, cooSystem.cylindric.evaluator, 0);
+					examineMaterialParameter(mat->name, "CENTER.Y", mat->coordinate_system.center.y, cooSystem.cylindric.evaluator, 1);
 				}
 				break;
 			}
 			eslog::info("                                                                                               \n");
 
-			examineMaterialParameter(mat->name, "DENSITY", mat->density, *material.density.builder, 0);
-			examineMaterialParameter(mat->name, "HEAT CAPACITY", mat->heat_capacity, *material.heatCapacity.builder, 0);
+			correct &= examineMaterialParameter(mat->name, "DENSITY", mat->density, material.density.evaluator, 0);
+			correct &= examineMaterialParameter(mat->name, "HEAT CAPACITY", mat->heat_capacity, material.heatCapacity.evaluator, 0);
 			eslog::info("                                                                                               \n");
 
-			if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
-			{
-				eslog::warning("WARNING: CONSTANT THERMAL CONDUCTIVITY ONLY.\n");
-				switch (mat->thermal_conductivity.model) {
-				case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
-					eslog::info("         CONDUCTIVITY:                                                              ISOTROPIC \n");
-					examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *materialSimd.model.isotropic.builder, 0);
-					break;
-				default:
-					eslog::error("EXPERIMENTAL ASSEMBLER SUPPORTS ISOTROPIC MODEL OF THERMAL CONDCTIVITY ONLY.\n");
+		switch (mat->thermal_conductivity.model) {
+			case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
+				eslog::info("         CONDUCTIVITY:                                                              ISOTROPIC \n");
+				correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.isotropic.evaluator, 0);
+				break;
+			case ThermalConductivityConfiguration::MODEL::DIAGONAL:
+				eslog::info("         CONDUCTIVITY:                                                               DIAGONAL \n");
+				if (info::mesh->dimension == 2) {
+					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.diagonal.evaluator, 0);
+					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.diagonal.evaluator, 1);
 				}
-			}
-			else
-			{
-				switch (mat->thermal_conductivity.model) {
-				case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
-					eslog::info("         CONDUCTIVITY:                                                              ISOTROPIC \n");
-					examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.isotropic.builder, 0);
-					break;
-				case ThermalConductivityConfiguration::MODEL::DIAGONAL:
-					eslog::info("         CONDUCTIVITY:                                                               DIAGONAL \n");
-					if (info::mesh->dimension == 2) {
-						examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.diagonal.builder, 0);
-						examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), *material.model.diagonal.builder, 1);
-					}
-					if (info::mesh->dimension == 3) {
-						examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.diagonal.builder, 0);
-						examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), *material.model.diagonal.builder, 1);
-						examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), *material.model.diagonal.builder, 2);
-					}
-					break;
-				case ThermalConductivityConfiguration::MODEL::SYMMETRIC:
-					eslog::info("         CONDUCTIVITY:                                                              SYMMETRIC \n");
-					if (info::mesh->dimension == 2) {
-						examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.symmetric2D.builder, 0);
-						examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), *material.model.symmetric2D.builder, 1);
-						examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), *material.model.symmetric2D.builder, 2);
-					}
-					if (info::mesh->dimension == 3) {
-						examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.symmetric3D.builder, 0);
-						examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), *material.model.symmetric3D.builder, 1);
-						examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), *material.model.symmetric3D.builder, 2);
-						examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), *material.model.symmetric3D.builder, 3);
-						examineMaterialParameter(mat->name, "KYZ", mat->thermal_conductivity.values.get(1, 2), *material.model.symmetric3D.builder, 4);
-						examineMaterialParameter(mat->name, "KXZ", mat->thermal_conductivity.values.get(0, 2), *material.model.symmetric3D.builder, 5);
-					}
-					break;
-				case ThermalConductivityConfiguration::MODEL::ANISOTROPIC:
-					eslog::info("         CONDUCTIVITY:                                                            ANISOTROPIC \n");
-					if (info::mesh->dimension == 2) {
-						examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.anisotropic.builder, 0);
-						examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), *material.model.anisotropic.builder, 1);
-						examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), *material.model.anisotropic.builder, 2);
-						examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(1, 0), *material.model.anisotropic.builder, 3);
-					}
-					if (info::mesh->dimension == 3) {
-						examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), *material.model.anisotropic.builder, 0);
-						examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), *material.model.anisotropic.builder, 1);
-						examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), *material.model.anisotropic.builder, 2);
-						examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), *material.model.anisotropic.builder, 3);
-						examineMaterialParameter(mat->name, "KYZ", mat->thermal_conductivity.values.get(1, 2), *material.model.anisotropic.builder, 4);
-						examineMaterialParameter(mat->name, "KXZ", mat->thermal_conductivity.values.get(0, 2), *material.model.anisotropic.builder, 5);
-						examineMaterialParameter(mat->name, "KYX", mat->thermal_conductivity.values.get(1, 0), *material.model.anisotropic.builder, 6);
-						examineMaterialParameter(mat->name, "KZY", mat->thermal_conductivity.values.get(2, 1), *material.model.anisotropic.builder, 7);
-						examineMaterialParameter(mat->name, "KZX", mat->thermal_conductivity.values.get(2, 0), *material.model.anisotropic.builder, 8);
-					}
-					break;
+				if (info::mesh->dimension == 3) {
+					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.diagonal.evaluator, 0);
+					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.diagonal.evaluator, 1);
+					correct &= examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), material.model.diagonal.evaluator, 2);
 				}
+				break;
+			case ThermalConductivityConfiguration::MODEL::SYMMETRIC:
+				eslog::info("         CONDUCTIVITY:                                                             SYMMETRIC \n");
+				if (info::mesh->dimension == 2) {
+					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.symmetric2D.evaluator, 0);
+					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.symmetric2D.evaluator, 1);
+					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.symmetric2D.evaluator, 2);
+				}
+				if (info::mesh->dimension == 3) {
+					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.symmetric3D.evaluator, 0);
+					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.symmetric3D.evaluator, 1);
+					correct &= examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), material.model.symmetric3D.evaluator, 2);
+					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.symmetric3D.evaluator, 3);
+					correct &= examineMaterialParameter(mat->name, "KYZ", mat->thermal_conductivity.values.get(1, 2), material.model.symmetric3D.evaluator, 4);
+					correct &= examineMaterialParameter(mat->name, "KXZ", mat->thermal_conductivity.values.get(0, 2), material.model.symmetric3D.evaluator, 5);
+				}
+				break;
+			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC:
+				eslog::info("         CONDUCTIVITY:                                                            ANISOTROPIC \n");
+				if (info::mesh->dimension == 2) {
+					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.anisotropic.evaluator, 0);
+					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.anisotropic.evaluator, 1);
+					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.anisotropic.evaluator, 2);
+					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(1, 0), material.model.anisotropic.evaluator, 3);
+				}
+				if (info::mesh->dimension == 3) {
+					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.anisotropic.evaluator, 0);
+					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.anisotropic.evaluator, 1);
+					correct &= examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), material.model.anisotropic.evaluator, 2);
+					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.anisotropic.evaluator, 3);
+					correct &= examineMaterialParameter(mat->name, "KYZ", mat->thermal_conductivity.values.get(1, 2), material.model.anisotropic.evaluator, 4);
+					correct &= examineMaterialParameter(mat->name, "KXZ", mat->thermal_conductivity.values.get(0, 2), material.model.anisotropic.evaluator, 5);
+					correct &= examineMaterialParameter(mat->name, "KYX", mat->thermal_conductivity.values.get(1, 0), material.model.anisotropic.evaluator, 6);
+					correct &= examineMaterialParameter(mat->name, "KZY", mat->thermal_conductivity.values.get(2, 1), material.model.anisotropic.evaluator, 7);
+					correct &= examineMaterialParameter(mat->name, "KZX", mat->thermal_conductivity.values.get(2, 0), material.model.anisotropic.evaluator, 8);
+				}
+				break;
 			}
 			eslog::info("                                                                                               \n");
 		}
+
+		fromExpression(*this, cooSystem.cartesian2D, cooSystem.cartesian2D.evaluator);
+		fromExpression(*this, cooSystem.cartesian3D, cooSystem.cartesian3D.evaluator);
+		fromExpression(*this, cooSystem.spherical, cooSystem.spherical.evaluator);
+		fromExpression(*this, cooSystem.cylindric, cooSystem.cylindric.evaluator);
+
+		fromExpression(*this, material.model.isotropic, material.model.isotropic.evaluator);
+		fromExpression(*this, material.model.diagonal, material.model.diagonal.evaluator);
+		fromExpression(*this, material.model.symmetric2D, material.model.symmetric2D.evaluator);
+		fromExpression(*this, material.model.symmetric3D, material.model.symmetric3D.evaluator);
+		fromExpression(*this, material.model.anisotropic, material.model.anisotropic.evaluator);
+
+		fromExpression(*this, material.density, material.density.evaluator);
+		fromExpression(*this, material.heatCapacity, material.heatCapacity.evaluator);
 
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 		if (info::mesh->dimension == 2) {
@@ -334,163 +234,62 @@ void AX_HeatTransfer::init()
 		if (info::mesh->dimension == 3) {
 			printMaterials(info::ecf->heat_transfer_3d.material_set);
 		}
-//		if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
-//		{
-//			builders.push_back(new ThermalConductivitySimd(*this));
-//		}
-//		else
-//		{
-//			builders.push_back(new ThermalConductivity(*this));
-//		}
-		builders.push_back(new ThermalConductivity<AX_HeatTransfer>(*this));
+
+		thermalConductivity(*this);
 
 		eslog::info(" ============================================================================================= \n");
 	}
 
 	gradient.xi.resize(1);
 
-//
-//	builders.push_back(new MaterialMassBuilder(*this));
-//
-//	if (info::mesh->dimension == 2 && info::ecf->heat_transfer_2d.diffusion_split) {
-//		if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
-//		{
-//			eslog::error("EXPERIMENTAL ASSEMBLER DOESNT SUPPORT GRADIENT.\n");
-//		}
-//		Gradient(*this).buildAndExecute(*this);
-//		builders.push_back(new DiffusionSplit(*this));
-//	} else {
-//		if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
-//		{
-//			gradientSimd.xi.resizeAligned(SIMD::size*sizeof(double), 1);
-//		}
-//		else
-//		{
-//			gradient.xi.resize(1);
-//		}
-//	}
-//	if (info::mesh->dimension == 3 && info::ecf->heat_transfer_3d.diffusion_split) {
-//		if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
-//		{
-//			eslog::error("EXPERIMENTAL ASSEMBLER DOESNT SUPPORT GRADIENT.\n");
-//		}
-//		Gradient(*this).buildAndExecute(*this);
-//		builders.push_back(new DiffusionSplit(*this));
-//	} else {
-//		if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
-//		{
-//			gradientSimd.xi.resizeAligned(SIMD::size*sizeof(double), 1);
-//		}
-//		else
-//		{
-//			gradient.xi.resize(1);
-//		}
-//	}
-//
-//	if (configuration.translation_motions.size()) {
-//		builders.push_back(new ExpressionsToElementsSimple(translationMotions.gp, 1, "TRANSLATION MOTION"));
-//		examineElementParameter("TRANSLATION MOTION.X", configuration.translation_motions, *translationMotions.gp.builder, 0);
-//		examineElementParameter("TRANSLATION MOTION.Y", configuration.translation_motions, *translationMotions.gp.builder, 1);
-//		if (info::mesh->dimension == 3) {
-//			examineElementParameter("TRANSLATION MOTION.Z", configuration.translation_motions, *translationMotions.gp.builder, 2);
-//		}
-//		builders.push_back(new TranslationMotion(*this));
-//	}
-//
-//	if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
-//	{
-//		builders.push_back(new HeatStiffnessSimd(*this));
-//	}
-//	else
-//	{
-//		builders.push_back(new HeatStiffness(*this));
-//	}
+	heatStiffness(*this);
 
-	builders.push_back(new HeatStiffness<AX_HeatTransfer>(*this));
-
-//
-//	if (configuration.temperature.size()) {
-//		builders.push_back(new ExpressionsToBoundary(dirichlet.gp, "BOUNDARY TEMPERATURE"));
-//		examineBoundaryParameter("TEMPERATURE", configuration.temperature, *dirichlet.gp.builder);
-//	}
-//	if (configuration.heat_flow.size()) {
-//		builders.push_back(new ExpressionsToBoundary(heatFlow.gp, "BOUNDARY HEAT FLOW"));
-//		examineBoundaryParameter("HEAT FLOW", configuration.heat_flow, *heatFlow.gp.builder);
-//	}
-//	if (configuration.heat_flux.size()) {
-//		builders.push_back(new ExpressionsToBoundary(heatFlux.gp, "BOUNDARY HEAT FLUX"));
-//		examineBoundaryParameter("HEAT FLUX", configuration.heat_flux, *heatFlux.gp.builder);
-//	}
-//
-//	if (configuration.convection.size()) {
-//		builders.push_back(new ExpressionsToBoundary(convection.heatTransferCoeficient.gp, "CONVECTION: HTC"));
-//		builders.push_back(new ExpressionsToBoundary(convection.externalTemperature.gp, "CONVECTION: EXTERNAL TEMPERATURE"));
-//
-//		builders.push_back(new ExpressionsToBoundary(convection.wallHeight.gp, "CONVECTION: WALL HEIGHT"));
-//		builders.push_back(new ExpressionsToBoundary(convection.tiltAngle.gp, "CONVECTION: TILT ANGLE"));
-//		builders.push_back(new ExpressionsToBoundary(convection.diameter.gp, "CONVECTION: DIAMETER"));
-//		builders.push_back(new ExpressionsToBoundary(convection.plateLength.gp, "CONVECTION: PLATE LENGTH"));
-//		builders.push_back(new ExpressionsToBoundary(convection.fluidVelocity.gp, "CONVECTION: FLUID VELOCITY"));
-//		builders.push_back(new ExpressionsToBoundary(convection.plateDistance.gp, "CONVECTION: PLATE DISTANCE"));
-//		builders.push_back(new ExpressionsToBoundary(convection.length.gp, "CONVECTION: LENGTH"));
-//		builders.push_back(new ExpressionsToBoundary(convection.experimentalConstant.gp, "CONVECTION: EXPERIMENTAL CONSTANT"));
-//		builders.push_back(new ExpressionsToBoundary(convection.volumeFraction.gp, "CONVECTION: VOLUME FRACTION"));
-//		builders.push_back(new ExpressionsToBoundary(convection.absolutePressure.gp, "CONVECTION: ABSOLUTE PRESSURE"));
-//
-//		builders.push_back(new ConvectionBuilder(*this, convection));
-//		examineBoundaryParameter("CONVECTION", configuration.convection, convection);
-//	}
-////	if (configuration.diffuse_radiation.size()) {
-////		eslog::info("  DIFFUSE RADIATION                                                                            \n");
-////		for (auto it = configuration.diffuse_radiation.begin(); it != configuration.diffuse_radiation.end(); ++it) {
-////			if (it->second.external_temperature.evaluator->parameters.size()) {
-////				std::string params = Parser::join(", ", it->second.external_temperature.evaluator->parameters);
-////				eslog::info("   %30s: EX. TEMP. %*s       FNC( %s )\n", it->first.c_str(), 34 - params.size(), "", params.c_str());
-////			} else {
-////				eslog::info("   %30s: EX. TEMP. %48g \n", it->first.c_str(), it->second.external_temperature.evaluator->eval(Evaluator::Params()));
-////			}
-////		}
-////		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-////	}
-//
-//	builders.push_back(new HeatRHS(*this));
-//
-	std::vector<OperatorBuilder*> nonempty; // there can be empty builders (e.g. from material)
-	for (auto op = builders.begin(); op != builders.end(); ++op) {
-		if ((*op)->build()) {
-			nonempty.push_back(*op);
-		} else {
-			if (Operator::print > 1) printf("DROP %s\n", (*op)->name);
-		}
+	eslog::info(" ============================================================================================= \n");
+	if (correct) {
+		eslog::info("  PHYSICS CONFIGURATION VALIDATION                                                       PASS  \n");
+	} else {
+		eslog::info("  PHYSICS CONFIGURATION VALIDATION                                                       FAIL  \n");
 	}
-	builders.swap(nonempty);
-//
-//	if (gradient.output) {
-//		if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
-//		{
-//			eslog::error("EXPERIMENTAL ASSEMBLER DOESNT SUPPORT GRADIENT OUTPUT.\n");
-//		}
-//		results.push_back(new Gradient(*this));
-//	}
-//	if (flux.output) {
-//		if (gsettings.kernel == HeatTransferGlobalSettings::KERNEL::VEC)
-//		{
-//			eslog::error("EXPERIMENTAL ASSEMBLER DOESNT SUPPORT FLUX OUTPUT.\n");
-//		}
-//		results.push_back(new Flux(*this));
-//	}
-
 	eslog::info(" ============================================================================================= \n");
-	eslog::info("  PHYSICS CONFIGURATION VALIDATION                                                       PASS  \n");
-	eslog::info(" ============================================================================================= \n");
+	if (!correct) {
+		eslog::globalerror("                                                               INVALID CONFIGURATION DETECTED \n");
+	}
 }
 
 void AX_HeatTransfer::next()
 {
 	updateVersions();
-	for (auto op = builders.begin(); op != builders.end(); ++op) {
-		(*op)->now();
+
+	#pragma omp parallel for
+	for (int t = 0; t < info::env::threads; ++t) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
+			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
+				size_t elementsInInterval = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
+
+				// First pass through operators
+				for(size_t element = 0; element < elementsInInterval; ++element) {
+					for (auto op = actionOps[i].begin(); op != actionOps[i].end(); ++op) {
+						if((*op)->update) {
+							if(element == 0 || !(*op)->isconst) {
+								(**op)();
+								++(**op);
+							}
+						}
+					}
+				}
+			}
+		}
 	}
+
+	std::cout << "COO[nd]: " << *coords.node.data << "\n";
+	std::cout << "COO[gp]: " << *coords.gp.data << "\n";
+	std::cout << "thick: " << *thickness.gp.data << "\n";
+	std::cout << "cart: " << *cooSystem.cartesian2D.data << "\n";
+	std::cout << "iso: " << *material.model.isotropic.data << "\n";
+	std::cout << "dia: " << *material.model.diagonal.data << "\n";
+	std::cout << "cond-iso: " << *material.conductivityIsotropic.data << "\n";
+	std::cout << "cond-dia: " << *material.conductivity.data << "\n";
+	std::cout << "stiffness: " << *elements.stiffness.data << "\n";
 }
 
 void AX_HeatTransfer::fillDirichletIndices(Vector_Sparse<double> &dirichlet)
@@ -535,7 +334,7 @@ bool AX_HeatTransfer::fillK(Matrix_Base<double> *K, const ElementMapping<double>
 {
 	K->fill(0);
 	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-		MatricesFiller<AX_HeatTransfer>(*this, mapping.elements[i].data, mapping.elements[i].position).apply(i);
+//		MatricesFiller(*this, mapping.elements[i].data, mapping.elements[i].position).apply(i);
 	}
 	return true;
 }

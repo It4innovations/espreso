@@ -2,6 +2,7 @@
 #include "assembler.h"
 #include "analysis/assembler/operators/expression.h"
 
+#include "basis/evaluator/evaluator.h"
 #include "basis/utilities/parser.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"
@@ -32,12 +33,12 @@ void Assembler::validateRegionSettings(const std::string &name, const std::map<s
 }
 
 template<class TSecond>
-void Assembler::examineElementParameter(const std::string &name, const std::map<std::string, TSecond> &settings, ExpressionsToElements &builder, int dimension, std::function<const Evaluator*(const TSecond &expr)> getevaluator)
+bool Assembler::examineElementParameter(const std::string &name, const std::map<std::string, TSecond> &settings, ExternalValue &value, int dimension, std::function<Evaluator*(const TSecond &expr)> getevaluator)
 {
 	if (settings.size() == 1 && StringCompare::caseInsensitiveEq(settings.begin()->first, "ALL_ELEMENTS")) {
-		const Evaluator *evaluator = getevaluator(settings.begin()->second);
+		Evaluator *evaluator = getevaluator(settings.begin()->second);
 		for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-			builder.evaluators[builder.dimension * i + dimension] = evaluator;
+			value.evaluator[value.dimension * i + dimension] = evaluator;
 		}
 		if (evaluator->variables.size()) {
 			std::string params = Parser::join(", ", evaluator->variables);
@@ -45,9 +46,11 @@ void Assembler::examineElementParameter(const std::string &name, const std::map<
 		} else {
 			eslog::info("  %s:  %*g \n", name.c_str(), 88 - name.size(), evaluator->eval(Evaluator::Params()));
 		}
+		return evaluator->isset;
 	} else {
 		if (settings.size() == 0) {
-			eslog::info("  %s:  %*g \n", name.c_str(), 88 - name.size(), builder.defaultValue);
+			eslog::info("  %s:  %*s \n", name.c_str(), 88 - name.size(), "UNKNOWN");
+			return false;
 		} else {
 			eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
 			int rindex = 1, rlast = info::mesh->elementsRegions.size() - 1;
@@ -57,7 +60,7 @@ void Assembler::examineElementParameter(const std::string &name, const std::map<
 					ms = settings.find("ALL_ELEMENTS");
 				}
 				if (ms != settings.end()) {
-					const Evaluator *evaluator = getevaluator(ms->second);
+					Evaluator *evaluator = getevaluator(ms->second);
 					if (evaluator->variables.size()) {
 						std::string params = Parser::join(", ", evaluator->variables);
 						eslog::info("   %30s:  %*s       FNC( %s )\n", (*reg)->name.c_str(), 43 - params.size(), "", params.c_str());
@@ -66,7 +69,7 @@ void Assembler::examineElementParameter(const std::string &name, const std::map<
 					}
 					for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 						if (info::mesh->elements->eintervals[i].region == rindex || (info::mesh->elements->eintervals[i].region == 0 && rindex == rlast)) {
-							builder.evaluators[builder.dimension * i + dimension] = evaluator;
+							value.evaluator[value.dimension * i + dimension] = evaluator;
 						}
 						if (info::mesh->elements->eintervals[i].region == -1) {
 							const std::vector<int> &regions = info::mesh->elements->eintervals[i].regions;
@@ -77,15 +80,18 @@ void Assembler::examineElementParameter(const std::string &name, const std::map<
 								}
 							}
 							if (!other) {
-								builder.evaluators[builder.dimension * i + dimension] = evaluator;
+								value.evaluator[value.dimension * i + dimension] = evaluator;
 							}
 						}
 					}
+					return true;
 				} else {
-					eslog::info("   %30s:  %57g \n", (*reg)->name.c_str(), builder.defaultValue);
+					eslog::info("  %s:  %*s \n", name.c_str(), 88 - name.size(), "UNKNOWN");
+					return false;
 				}
 			}
 			eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 		}
 	}
+	return false;
 }

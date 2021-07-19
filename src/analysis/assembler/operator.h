@@ -19,6 +19,17 @@ struct Operator {
 	virtual void operator++() =0;
 };
 
+struct ActionOperator: public Operator
+{
+	using Operator::Operator;
+
+	virtual ~ActionOperator() {}
+
+	virtual void operator()() =0;
+	virtual void reset() =0;
+};
+
+
 struct OperatorBuilder {
 	const char *name;
 
@@ -26,13 +37,6 @@ struct OperatorBuilder {
 	virtual ~OperatorBuilder() {}
 
 	virtual void now() =0;
-	virtual bool build() =0;
-
-	void buildAndExecute()
-	{
-		build();
-		now();
-	}
 };
 
 struct ElementOperatorBuilder: public OperatorBuilder {
@@ -54,6 +58,5 @@ struct BoundaryOperatorBuilder: public OperatorBuilder {
 };
 
 }
-
 
 #endif /* SRC_PHYSICS_ASSEMBLER_OPERATOR_H_ */
