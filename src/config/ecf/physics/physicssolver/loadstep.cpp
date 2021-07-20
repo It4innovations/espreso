@@ -206,6 +206,13 @@ HeatTransferLoadStepSolverConfiguration::HeatTransferLoadStepSolverConfiguration
 			.allowonly([&] () { return type == TYPE::TRANSIENT; }));
 }
 
+AcousticLoadStepSolverConfiguration::AcousticLoadStepSolverConfiguration()
+{
+	REGISTER(harmonic_solver, ECFMetaData()
+			.setdescription({ "Harmonic physics solver settings" })
+			.allowonly([&] () { return type == TYPE::HARMONIC; }));
+}
+
 StructuralMechanicsLoadStepSolverConfiguration::StructuralMechanicsLoadStepSolverConfiguration()
 : nonlinear_solver("displacement", "forces")
 {

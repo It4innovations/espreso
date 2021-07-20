@@ -4,7 +4,22 @@
 
 using namespace espreso;
 
-AcousticsLoadStepConfiguration::AcousticsLoadStepConfiguration(DIMENSION *D)
+AcousticGlobalSettings::AcousticGlobalSettings(ECFObject *ecfdescription)
+{
+	init_temp_respect_bc = true;
+	REGISTER(init_temp_respect_bc, ECFMetaData()
+			.setdescription({ "Initial temperature follows BC" })
+			.setdatatype({ ECFDataType::BOOL })
+			.setform());
+
+	diffusion_split = false;
+	REGISTER(diffusion_split, ECFMetaData()
+			.setdescription({ "Thermal shock stabilization" })
+			.setdatatype({ ECFDataType::BOOL })
+			.setform());
+}
+
+AcousticLoadStepConfiguration::AcousticLoadStepConfiguration(DIMENSION *D)
 {
 	REGISTER(acoustic_pressure, ECFMetaData()
 			.setdescription({ "The name of a region.", "Pressure" })
@@ -20,8 +35,9 @@ AcousticsLoadStepConfiguration::AcousticsLoadStepConfiguration(DIMENSION *D)
 			ECFMetaData::getboundaryconditionvariables());
 }
 
-AcousticsConfiguration::AcousticsConfiguration(DIMENSION d)
-: PhysicsConfiguration(d, MaterialConfiguration::PHYSICAL_MODEL::ACOUSTICS),
+AcousticConfiguration::AcousticConfiguration(DIMENSION d)
+: PhysicsConfiguration(d, MaterialConfiguration::PHYSICAL_MODEL::ACOUSTIC),
+  AcousticGlobalSettings(ecfdescription),
   dimension(d)
 {
 	REGISTER(load_steps_settings, ECFMetaData()

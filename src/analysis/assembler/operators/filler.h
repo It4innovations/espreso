@@ -8,13 +8,13 @@
 namespace espreso {
 
 struct MatrixFiller: public ActionOperator {
-	MatrixFiller(int interval, const ParameterData &stiffness, double *data, const esint *position)
+	MatrixFiller(int interval, const ParameterData &local, double *global, const esint *position)
 	: ActionOperator(interval, false, true),
-	  stiffness(stiffness, interval),
-	  data(data), position(position) {}
+	  local(local, interval),
+	  global(global), position(position) {}
 
-	InputParameterIterator stiffness;
-	double *data;
+	InputParameterIterator local;
+	double *global;
 	const esint *position;
 
 	void operator++()
@@ -34,9 +34,9 @@ struct MatrixUpperFiller: public MatrixFiller {
 
 	void operator()()
 	{
-		for (size_t r = 0; r < nodes * dimension; ++r, stiffness.data += nodes * dimension) {
+		for (size_t r = 0; r < nodes * dimension; ++r, local.data += nodes * dimension) {
 			for (size_t c = r; c < nodes * dimension; ++c) {
-				data[*position++] += *(stiffness.data + c);
+				global[*position++] += *(local.data + c);
 			}
 		}
 	}
@@ -48,9 +48,9 @@ struct MatrixLowerFiller: public MatrixFiller {
 
 	void operator()()
 	{
-		for (size_t r = 0; r < nodes * dimension; ++r, stiffness.data += nodes * dimension) {
+		for (size_t r = 0; r < nodes * dimension; ++r, local.data += nodes * dimension) {
 			for (size_t c = 0; c <= r; ++c) {
-				data[*position++] += *(stiffness.data + c);
+				global[*position++] += *(local.data + c);
 			}
 		}
 	}
@@ -64,11 +64,9 @@ struct MatrixFullFiller: public MatrixFiller {
 	{
 		for (size_t r = 0; r < nodes * dimension; ++r) {
 			for (size_t c = 0; c < nodes * dimension; ++c) {
-				printf("%lu %lu : [ %d ] = %f\n", r, c, *position, *(stiffness.data));
-				data[*position++] += *stiffness.data++;
+				global[*position++] += *local.data++;
 			}
 		}
-		printf("====\n");
 	}
 };
 

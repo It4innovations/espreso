@@ -4,6 +4,7 @@
 
 #include "linearsystem.h"
 #include "analysis/analysis/heat.steadystate.linear.h"
+#include "analysis/analysis/acoustic.real.linear.h"
 //#include "analysis/analysis/heat.steadystate.nonlinear.h"
 //#include "analysis/analysis/heat.transient.linear.h"
 //#include "analysis/analysis/heat.transient.nonlinear.h"
@@ -41,15 +42,34 @@ struct AX_DirectSystem: AX_LinearSystem<T> {
 
 	}
 
+	void init(AX_AcousticRealLinear *analysis)
+	{
+		assembler.pattern.set(1);
+		assembler.pattern.fill(assembler.A);
+		assembler.pattern.fill(assembler.b);
+		assembler.pattern.fill(assembler.x);
+		AX_LinearSystem<T>::assembler.A = &assembler.A;
+		AX_LinearSystem<T>::assembler.b = &assembler.b;
+		AX_LinearSystem<T>::assembler.x = &assembler.x;
+
+		solver.pattern.set(2);
+		solver.pattern.fill(solver.A);
+		solver.pattern.fill(solver.b);
+		solver.pattern.fill(solver.x);
+		AX_LinearSystem<T>::solver.A = &solver.A;
+		AX_LinearSystem<T>::solver.b = &solver.b;
+		AX_LinearSystem<T>::solver.x = &solver.x;
+	}
+
 	void init(AX_HeatSteadyStateLinear *analysis)
 	{
-		pattern.set(1);
-		pattern.fill(A);
-		pattern.fill(b);
-		pattern.fill(x);
-		this->assembler.A = this->solver.A = &A;
-		this->assembler.b = this->solver.b = &b;
-		this->assembler.x = this->solver.x = &x;
+		solver.pattern.set(1);
+		solver.pattern.fill(solver.A);
+		solver.pattern.fill(solver.b);
+		solver.pattern.fill(solver.x);
+		AX_LinearSystem<T>::assembler.A = AX_LinearSystem<T>::solver.A = &solver.A;
+		AX_LinearSystem<T>::assembler.b = AX_LinearSystem<T>::solver.b = &solver.b;
+		AX_LinearSystem<T>::assembler.x = AX_LinearSystem<T>::solver.x = &solver.x;
 	}
 
 //	void init(AX_HeatSteadyStateNonLinear *analysis)
@@ -87,7 +107,12 @@ struct AX_DirectSystem: AX_LinearSystem<T> {
 //
 //	}
 
-	void update(AX_HeatTransfer &assembler, bool A, bool b, bool dirichlet)
+	void update(AX_Acoustic &assembler)
+	{
+
+	}
+
+	void update(AX_HeatTransfer &assembler)
 	{
 
 	}
@@ -132,10 +157,12 @@ struct AX_DirectSystem: AX_LinearSystem<T> {
 		return false;
 	}
 
-	UniformNodesDistributedPattern pattern;
+	struct Data {
+		UniformNodesDistributedPattern pattern;
 
-	Matrix_Distributed<Matrix_CSR, T> A;
-	Vector_Distributed<Vector_Dense, T> x, b;
+		Matrix_Distributed<Matrix_CSR, T> A;
+		Vector_Distributed<Vector_Dense, T> x, b;
+	} assembler, solver;
 };
 
 }

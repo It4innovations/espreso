@@ -77,7 +77,17 @@ public:
 		if (dynamic_cast<const Matrix_FETI<Matrix, T>*>(a)) {
 			#pragma omp parallel for
 			for (size_t d = 0; d < domains.size(); ++d) {
-				math::add<T>(domains[d], alpha, static_cast<const Matrix_FETI<Matrix, T>*>(a)->domains[d]);
+				math::add(domains[d], alpha, static_cast<const Matrix_FETI<Matrix, T>*>(a)->domains[d]);
+			}
+		}
+	}
+
+	void add(const T &alpha, const Matrix_Base<T> *a, int rowOffset, int colOffset, int size, int step)
+	{
+		if (dynamic_cast<const Matrix_FETI<Matrix, T>*>(a)) {
+			#pragma omp parallel for
+			for (size_t d = 0; d < domains.size(); ++d) {
+				math::add(domains[d], alpha, static_cast<const Matrix_FETI<Matrix, T>*>(a)->domains[d], rowOffset, colOffset, size, step);
 			}
 		}
 	}
@@ -88,6 +98,16 @@ public:
 			#pragma omp parallel for
 			for (size_t d = 0; d < domains.size(); ++d) {
 				math::sum(domains[d], alpha, static_cast<const Matrix_FETI<Matrix, T>*>(a)->domains[d], beta, static_cast<const Matrix_FETI<Matrix, T>*>(b)->domains[d]);
+			}
+		}
+	}
+
+	void sum(const T &alpha, const Matrix_Base<T> *a, const T &beta, const Matrix_Base<T> *b, int rowOffset, int colOffset, int size, int step)
+	{
+		if (dynamic_cast<const Matrix_FETI<Matrix, T>*>(a) && dynamic_cast<const Matrix_FETI<Matrix, T>*>(b)) {
+			#pragma omp parallel for
+			for (size_t d = 0; d < domains.size(); ++d) {
+				math::sum(domains[d], alpha, static_cast<const Matrix_FETI<Matrix, T>*>(a)->domains[d], beta, static_cast<const Matrix_FETI<Matrix, T>*>(b)->domains[d], rowOffset, colOffset, size, step);
 			}
 		}
 	}

@@ -1,6 +1,6 @@
 
-#ifndef SRC_PHYSICS_ASSEMBLER_OPERATORS_STIFFNESS_H_
-#define SRC_PHYSICS_ASSEMBLER_OPERATORS_STIFFNESS_H_
+#ifndef SRC_ANALYSIS_ASSEMBLER_OPERATORS_HEATTRANSFER_H_
+#define SRC_ANALYSIS_ASSEMBLER_OPERATORS_HEATTRANSFER_H_
 
 #include "analysis/assembler/operator.h"
 #include "analysis/assembler/parameter.h"
@@ -104,4 +104,4 @@ struct Stiffness3DHeat: public Stiffness {
 
 }
 
-#endif /* SRC_PHYSICS_ASSEMBLER_OPERATORS_STIFFNESS_H_ */
+#endif /* SRC_ANALYSIS_ASSEMBLER_OPERATORS_HEATTRANSFER_H_ */

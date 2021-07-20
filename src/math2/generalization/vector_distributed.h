@@ -57,6 +57,13 @@ public:
 		}
 	}
 
+	void fillData(const Vector_Base<T> *in, int offset, int size, int step)
+	{
+		if (dynamic_cast<const Vector_Distributed<Vector, T>*>(in)) {
+			math::copy(cluster, static_cast<const Vector_Distributed<Vector, T>*>(in)->cluster, offset, size, step);
+		}
+	}
+
 	void scale(const T &alpha)
 	{
 		math::scale(alpha, cluster);
@@ -69,10 +76,24 @@ public:
 		}
 	}
 
+	void add(const T &alpha, const Vector_Base<T> *a, int offset, int size, int step)
+	{
+		if (dynamic_cast<const Vector_Distributed<Vector, T>*>(a)) {
+			math::add<T>(cluster, alpha, static_cast<const Vector_Distributed<Vector, T>*>(a)->cluster, offset, size, step);
+		}
+	}
+
 	void sum(const T &alpha, const Vector_Base<T> *a, const T &beta, const Vector_Base<T> *b)
 	{
 		if (dynamic_cast<const Vector_Distributed<Vector, T>*>(a) && dynamic_cast<const Vector_Distributed<Vector, T>*>(b)) {
 			math::sum(cluster, alpha, static_cast<const Vector_Distributed<Vector, T>*>(a)->cluster, beta, static_cast<const Vector_Distributed<Vector, T>*>(b)->cluster);
+		}
+	}
+
+	void sum(const T &alpha, const Vector_Base<T> *a, const T &beta, const Vector_Base<T> *b, int offset, int size, int step)
+	{
+		if (dynamic_cast<const Vector_Distributed<Vector, T>*>(a) && dynamic_cast<const Vector_Distributed<Vector, T>*>(b)) {
+			math::sum(cluster, alpha, static_cast<const Vector_Distributed<Vector, T>*>(a)->cluster, beta, static_cast<const Vector_Distributed<Vector, T>*>(b)->cluster, offset, size, step);
 		}
 	}
 

@@ -76,7 +76,7 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs)
 	utils::sortAndRemoveDuplicates(KPattern);
 	utils::sortAndRemoveDuplicates(RHSPattern);
 
-	pattern->elements.size = info::mesh->nodes->uniqInfo.nhalo + info::mesh->nodes->uniqInfo.size;
+	pattern->elements.size = dofs * (info::mesh->nodes->uniqInfo.nhalo + info::mesh->nodes->uniqInfo.size);
 	pattern->elements.row.reserve(KPattern.size());
 	pattern->elements.column.reserve(KPattern.size());
 	pattern->elements.K.reserve(KData.size());

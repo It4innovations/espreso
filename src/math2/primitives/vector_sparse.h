@@ -22,12 +22,12 @@ template <typename T>
 class Vector_Sparse: public _Vector_Sparse<T>
 {
 public:
-	Vector_Sparse(): _Vector_Sparse<T>{}, _allocated{}
+	Vector_Sparse(): _Vector_Sparse<T>{}, touched(false), _allocated{}
 	{
 
 	}
 
-	Vector_Sparse(const Vector_Sparse &other): _Vector_Sparse<T>{}, _allocated{}
+	Vector_Sparse(const Vector_Sparse &other): _Vector_Sparse<T>{}, touched(false), _allocated{}
 	{
 		realloc(_allocated, other.size, other.nnz);
 		_Vector_Sparse<T>::operator=(_allocated);
@@ -37,7 +37,7 @@ public:
 		}
 	}
 
-	Vector_Sparse(Vector_Sparse &&other): _Vector_Sparse<T>{}, _allocated{}
+	Vector_Sparse(Vector_Sparse &&other): _Vector_Sparse<T>{}, touched(false), _allocated{}
 	{
 		swap(*this, other);
 		swap(_allocated, other._allocated);
@@ -83,6 +83,8 @@ public:
 		_Vector_Sparse<T>::operator=(_allocated);
 		this->indices = other.indices;
 	}
+
+	bool touched;
 
 protected:
 	template <typename Type>

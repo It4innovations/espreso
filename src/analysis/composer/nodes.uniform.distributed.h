@@ -43,7 +43,7 @@ struct UniformNodesDistributedPattern {
 	{
 		m.cluster.type = m.type;
 		m.cluster.shape = m.shape;
-		m.cluster.resize(elements.size, elements.size, elements.K.size());
+		m.cluster.resize(elements.size, elements.size, elements.row.size());
 		fillCSR(m.cluster.rows, m.cluster.cols);
 		fillDistribution(m.distribution);
 	}

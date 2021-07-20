@@ -51,7 +51,6 @@ public:
 		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(in)) {
 			math::copy(cluster, static_cast<const Matrix_Distributed<Matrix, T>*>(in)->cluster);
 		}
-
 	}
 
 	void scale(const T &alpha)
@@ -62,7 +61,14 @@ public:
 	void add(const T &alpha, const Matrix_Base<T> *a)
 	{
 		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a)) {
-			math::add<T>(cluster, alpha, static_cast<const Matrix_Distributed<Matrix, T>*>(a)->cluster);
+			math::add(cluster, alpha, static_cast<const Matrix_Distributed<Matrix, T>*>(a)->cluster);
+		}
+	}
+
+	void add(const T &alpha, const Matrix_Base<T> *a, int rowOffset, int colOffset, int size, int step)
+	{
+		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a)) {
+			math::add(cluster, alpha, static_cast<const Matrix_Distributed<Matrix, T>*>(a)->cluster, rowOffset, colOffset, size, step);
 		}
 	}
 
@@ -70,6 +76,13 @@ public:
 	{
 		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a) && dynamic_cast<const Matrix_Distributed<Matrix, T>*>(b)) {
 			math::sum(cluster, alpha, static_cast<const Matrix_Distributed<Matrix, T>*>(a)->cluster, beta, static_cast<const Matrix_Distributed<Matrix, T>*>(b)->cluster);
+		}
+	}
+
+	void sum(const T &alpha, const Matrix_Base<T> *a, const T &beta, const Matrix_Base<T> *b,  int rowOffset, int colOffset, int size, int step)
+	{
+		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a) && dynamic_cast<const Matrix_Distributed<Matrix, T>*>(b)) {
+			math::sum(cluster, alpha, static_cast<const Matrix_Distributed<Matrix, T>*>(a)->cluster, beta, static_cast<const Matrix_Distributed<Matrix, T>*>(b)->cluster, rowOffset, colOffset, size, step);
 		}
 	}
 

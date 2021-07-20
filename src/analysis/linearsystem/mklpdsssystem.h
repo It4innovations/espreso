@@ -4,6 +4,7 @@
 
 #include "linearsystem.h"
 #include "analysis/analysis/heat.steadystate.linear.h"
+#include "analysis/analysis/acoustic.real.linear.h"
 //#include "analysis/analysis/heat.steadystate.nonlinear.h"
 //#include "analysis/analysis/heat.transient.linear.h"
 //#include "analysis/analysis/heat.transient.nonlinear.h"
@@ -28,26 +29,53 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 
 	void setMapping(Matrix_Base<T> *A) const
 	{
-		pattern.setMap(dynamic_cast<Matrix_Distributed<Matrix_CSR, T>*>(A));
+		assembler.pattern.setMap(dynamic_cast<Matrix_Distributed<Matrix_CSR, T>*>(A));
 	}
 
 	void setMapping(Vector_Base<T> *x) const
 	{
-		pattern.setMap(dynamic_cast<Vector_Distributed<Vector_Dense, T>*>(x));
+		assembler.pattern.setMap(dynamic_cast<Vector_Distributed<Vector_Dense, T>*>(x));
+	}
+
+	void init(AX_AcousticRealLinear *analysis)
+	{
+		assembler.A.type = analysis->assembler.matrixType();
+		assembler.pattern.set(1);
+		assembler.pattern.fill(assembler.A);
+		assembler.pattern.fill(assembler.b);
+		assembler.pattern.fill(assembler.x);
+		AX_LinearSystem<T>::assembler.A = &assembler.A;
+		AX_LinearSystem<T>::assembler.b = &assembler.b;
+		AX_LinearSystem<T>::assembler.x = &assembler.x;
+		AX_LinearSystem<T>::assembler.dirichlet = &assembler.dirichlet;
+
+		solver.A.type = analysis->assembler.matrixType();
+		solver.pattern.set(2);
+		solver.pattern.fill(solver.A);
+		solver.pattern.fill(solver.b);
+		solver.pattern.fill(solver.x);
+		AX_LinearSystem<T>::solver.A = &solver.A;
+		AX_LinearSystem<T>::solver.b = &solver.b;
+		AX_LinearSystem<T>::solver.x = &solver.x;
+		AX_LinearSystem<T>::solver.dirichlet = &solver.dirichlet;
+
+		analysis->assembler.initDirichlet(assembler.dirichlet);
+		math::multiplyPattern(solver.dirichlet, assembler.dirichlet, 1, 2);
 	}
 
 	void init(AX_HeatSteadyStateLinear *analysis)
 	{
-		A.type = analysis->assembler.matrixType();
-		pattern.set(1);
-		pattern.fill(A);
-		pattern.fill(b);
-		pattern.fill(x);
-		this->assembler.A = this->solver.A = &A;
-		this->assembler.b = this->solver.b = &b;
-		this->assembler.x = this->solver.x = &x;
-		analysis->assembler.fillDirichletIndices(this->dirichlet);
-		mklpdss.set(A);
+		assembler.A.type = analysis->assembler.matrixType();
+		assembler.pattern.set(1);
+		assembler.pattern.fill(solver.A);
+		assembler.pattern.fill(solver.b);
+		assembler.pattern.fill(solver.x);
+		AX_LinearSystem<T>::assembler.A = AX_LinearSystem<T>::solver.A = &solver.A;
+		AX_LinearSystem<T>::assembler.b = AX_LinearSystem<T>::solver.b = &solver.b;
+		AX_LinearSystem<T>::assembler.x = AX_LinearSystem<T>::solver.x = &solver.x;
+
+		analysis->assembler.initDirichlet(solver.dirichlet);
+		AX_LinearSystem<T>::assembler.dirichlet = AX_LinearSystem<T>::solver.dirichlet = &solver.dirichlet;
 	}
 
 //	void init(AX_HeatSteadyStateNonLinear *analysis)
@@ -85,16 +113,32 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 //
 //	}
 
-	void update(AX_HeatTransfer &assembler, bool updatedA, bool updatedB, bool updatedDirichlet)
+	void update(AX_Acoustic &assembler)
 	{
-		if (updatedA || updatedB || updatedDirichlet) {
-			setDirichlet(A, b, this->dirichlet);
-			mklpdss.update(A);
+		mklpdss.set(solver.A);
+		if (solver.A.touched || solver.b.touched || solver.dirichlet.touched) {
+			setDirichlet(solver.A, solver.b, solver.dirichlet);
+			mklpdss.update(solver.A);
 		}
 
 		if (info::ecf->output.print_matrices) {
-			math::store(A, utils::filename(utils::debugDirectory() + "/system", "A").c_str());
-			math::store(b, utils::filename(utils::debugDirectory() + "/system", "b").c_str());
+			math::store(solver.A, utils::filename(utils::debugDirectory() + "/system", "A").c_str());
+			math::store(solver.b, utils::filename(utils::debugDirectory() + "/system", "b").c_str());
+			math::store(solver.dirichlet, utils::filename(utils::debugDirectory() + "/system", "dirichlet").c_str());
+		}
+	}
+
+	void update(AX_HeatTransfer &assembler)
+	{
+		mklpdss.set(solver.A);
+		if (solver.A.touched || solver.b.touched || solver.dirichlet.touched) {
+			setDirichlet(solver.A, solver.b, solver.dirichlet);
+			mklpdss.update(solver.A);
+		}
+
+		if (info::ecf->output.print_matrices) {
+			math::store(solver.A, utils::filename(utils::debugDirectory() + "/system", "A").c_str());
+			math::store(solver.b, utils::filename(utils::debugDirectory() + "/system", "b").c_str());
 		}
 	}
 
@@ -134,19 +178,22 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 
 	bool solve()
 	{
-		if (mklpdss.solve(b, x)) {
+		if (mklpdss.solve(solver.b, solver.x)) {
 			if (info::ecf->output.print_matrices) {
-				math::store(x, utils::filename(utils::debugDirectory() + "/system", "x").c_str());
+				math::store(solver.x, utils::filename(utils::debugDirectory() + "/system", "x").c_str());
 			}
 			return true;
 		}
 		return false;
 	}
 
-	UniformNodesDistributedPattern pattern;
+	struct Data {
+		UniformNodesDistributedPattern pattern;
 
-	Matrix_Distributed<Matrix_CSR, T> A;
-	Vector_Distributed<Vector_Dense, T> x, b;
+		Matrix_Distributed<Matrix_CSR, T> A;
+		Vector_Distributed<Vector_Dense, T> x, b;
+		Vector_Sparse<T> dirichlet;
+	} assembler, solver;
 
 	MKLPDSS<T> mklpdss;
 };

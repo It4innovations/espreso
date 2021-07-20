@@ -145,17 +145,20 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 			mklpdss.external->A.rows[i - nhalo + 1] = offset + _Matrix_CSR_Pattern::Indexing;
 		}
 	} else {
-//		if (fillStructure) {
-//			_inner->rowData.clear();
-//			_inner->rowData.reserve(_nrows + 1);
-//
-//			// row data have to be always renumbered
-//			for (esint i = A.nhalo; i <= A.nrows; i++) {
-//				_inner->rowData.push_back(A.rows[i] - A.rows[A.nhalo] + 1);
-//			}
-//			_inner->colIndices = A.cols + A.rows[A.nhalo] - 1;
-//		}
-//		_inner->values = A.vals + A.rows[A.nhalo] - 1;
+		esint nhalo = A.distribution.halo.size();
+		for (esint i = nhalo; i < A.cluster.nrows; i++) {
+			for (esint c = A.cluster.rows[i] - _Matrix_CSR_Pattern::Indexing; c < A.cluster.rows[i + 1] - _Matrix_CSR_Pattern::Indexing; ++c) {
+				++mklpdss.external->A.nnz;
+			}
+		}
+		mklpdss.external->A.resize(A.cluster.nrows - nhalo, A.cluster.ncols, mklpdss.external->A.nnz);
+		mklpdss.external->A.rows[0] = _Matrix_CSR_Pattern::Indexing;
+		for (esint i = nhalo, offset = 0; i < A.cluster.nrows; i++) {
+			for (esint c = A.cluster.rows[i] - _Matrix_CSR_Pattern::Indexing; c < A.cluster.rows[i + 1] - _Matrix_CSR_Pattern::Indexing; ++c) {
+				mklpdss.external->A.cols[offset++] = A.cluster.cols[c];
+			}
+			mklpdss.external->A.rows[i - nhalo + 1] = offset + _Matrix_CSR_Pattern::Indexing;
+		}
 	}
 	bool status = _call(mklpdss, 11);
 	eslog::solver("     - | SYMBOLIC FACTORIZATION                                             %8.3f s | -\n", eslog::time() - start);
@@ -178,17 +181,12 @@ bool _update(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 			}
 		}
 	} else {
-//		if (fillStructure) {
-//			_inner->rowData.clear();
-//			_inner->rowData.reserve(_nrows + 1);
-//
-//			// row data have to be always renumbered
-//			for (esint i = A.nhalo; i <= A.nrows; i++) {
-//				_inner->rowData.push_back(A.rows[i] - A.rows[A.nhalo] + 1);
-//			}
-//			_inner->colIndices = A.cols + A.rows[A.nhalo] - 1;
-//		}
-//		_inner->values = A.vals + A.rows[A.nhalo] - 1;
+		esint nhalo = A.distribution.halo.size();
+		for (esint i = nhalo, offset = 0; i < A.cluster.nrows; i++) {
+			for (esint c = A.cluster.rows[i] - _Matrix_CSR_Pattern::Indexing; c < A.cluster.rows[i + 1] - _Matrix_CSR_Pattern::Indexing; ++c) {
+				mklpdss.external->A.vals[offset++] = A.cluster.vals[c];
+			}
+		}
 	}
 	bool status = _call(mklpdss, 22);
 	eslog::solver("     - | NUMERICAL FACTORIZATION                                            %8.3f s | -\n", eslog::time() - start);

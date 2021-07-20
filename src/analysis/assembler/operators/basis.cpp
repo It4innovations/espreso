@@ -1,4 +1,5 @@
 
+#include "analysis/assembler/module/acoustic.h"
 #include "analysis/assembler/module/heattransfer.h"
 #include "esinfo/meshinfo.h"
 #include "mesh/element.h"
@@ -32,7 +33,8 @@ void fill(int code, double *N, double *dN, double *w)
 	}
 }
 
-void baseFunction(AX_HeatTransfer &module)
+template <class Module>
+void _baseFunction(Module &module)
 {
 	module.integration.N.resize();
 	module.integration.dN.resize();
@@ -47,7 +49,7 @@ void baseFunction(AX_HeatTransfer &module)
 			double *dn = (module.integration.dN.data->begin() + index)->data();
 			double *w = (module.integration.weight.data->begin() + index)->data();
 
-			fill<AX_HeatTransfer>(ei->code, n, dn, w);
+			fill<Module>(ei->code, n, dn, w);
 		}
 	}
 
@@ -66,10 +68,20 @@ void baseFunction(AX_HeatTransfer &module)
 				double *dn = (module.integration.boundary.dN.regions[r].data->begin() + index)->data();
 				double *w = (module.integration.boundary.weight.regions[r].data->begin() + index)->data();
 
-				fill<AX_HeatTransfer>(ei->code, n, dn, w);
+				fill<Module>(ei->code, n, dn, w);
 			}
 		}
 	}
+}
+
+void baseFunction(AX_HeatTransfer &module)
+{
+	_baseFunction(module);
+}
+
+void baseFunction(AX_Acoustic &module)
+{
+	_baseFunction(module);
 }
 
 

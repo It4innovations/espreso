@@ -7,16 +7,10 @@
 namespace espreso {
 
 struct Analysis {
+	virtual ~Analysis() {}
 
-template<template<typename> class Solver, typename T, class Analysis, class Configuration>
-static AX_LinearSystem<T>* init(Analysis *analysis, Configuration &configuration)
-{
-	Solver<T> *solver = new Solver<T>(configuration);
-	solver->init(analysis);
-	analysis->scheme.init(solver, analysis->assembler);
-	analysis->mode.init(solver);
-	return solver;
-}
+	virtual void init() =0;
+	virtual void run() =0;
 
 };
 }

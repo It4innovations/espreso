@@ -142,6 +142,13 @@ struct HeatTransferLoadStepSolverConfiguration: public LoadStepSolverConfigurati
 	HeatTransferLoadStepSolverConfiguration();
 };
 
+struct AcousticLoadStepSolverConfiguration: public LoadStepSolverConfiguration {
+
+	HarmonicSolverConfiguration harmonic_solver;
+
+	AcousticLoadStepSolverConfiguration();
+};
+
 struct StructuralMechanicsLoadStepSolverConfiguration: public LoadStepSolverConfiguration {
 
 	NonLinearSolverConfiguration nonlinear_solver;

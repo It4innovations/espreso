@@ -25,6 +25,19 @@ void store(Vector_Dense<double> &x, const char* file)
 }
 
 template <>
+void store(Vector_Sparse<double> &x, const char* file)
+{
+	std::ofstream os(std::string(file) + ".txt");
+	os.precision(15);
+	os << std::showpos;
+
+	for (esint i = 0; i < x.nnz; i++) {
+		os << std::setw(6) << x.indices[i] << " ";
+		os << std::setw(25) << std::scientific << x.vals[i] << "\n";
+	}
+}
+
+template <>
 void store(Vector_Distributed<Vector_Dense, double> &x, const char* file)
 {
 	Vector_Dense<double> _x;

@@ -4,6 +4,7 @@
 
 #include "linearsystem.h"
 #include "analysis/analysis/heat.steadystate.linear.h"
+#include "analysis/analysis/acoustic.real.linear.h"
 //#include "analysis/analysis/heat.steadystate.nonlinear.h"
 //#include "analysis/analysis/heat.transient.linear.h"
 //#include "analysis/analysis/heat.transient.nonlinear.h"
@@ -34,6 +35,11 @@ struct AX_FETISystem: AX_LinearSystem<T> {
 		pattern.setMap(dynamic_cast<Vector_FETI<Vector_Dense, T>*>(x));
 	}
 
+	void init(AX_AcousticRealLinear *analysis)
+	{
+
+	}
+
 	void init(AX_HeatSteadyStateLinear *analysis)
 	{
 		pattern.set(1, analysis->assembler.matrixType());
@@ -43,7 +49,9 @@ struct AX_FETISystem: AX_LinearSystem<T> {
 		this->assembler.A = this->solver.A = &A;
 		this->assembler.b = this->solver.b = &b;
 		this->assembler.x = this->solver.x = &x;
-		analysis->assembler.fillDirichletIndices(this->dirichlet);
+
+		analysis->assembler.initDirichlet(dirichlet);
+		this->assembler.dirichlet = this->solver.dirichlet = &dirichlet;
 
 		initKernels(*this, analysis->assembler);
 	}
@@ -83,11 +91,16 @@ struct AX_FETISystem: AX_LinearSystem<T> {
 //
 //	}
 
-	void update(AX_HeatTransfer &assembler, bool A, bool b, bool dirichlet)
+	void update(AX_Acoustic &assembler)
 	{
-		if (A) {
+
+	}
+
+	void update(AX_HeatTransfer &assembler)
+	{
+//		if (solver.A.touched || solver.b.touched || solver.dirichlet.touched) {
 			updateKernels(*this, assembler);
-		}
+//		}
 	}
 
 //	void prepare(AX_HeatSteadyStateNonLinear *analysis)
@@ -136,6 +149,7 @@ struct AX_FETISystem: AX_LinearSystem<T> {
 
 	Matrix_FETI<Matrix_CSR, T> A;
 	Vector_FETI<Vector_Dense, T> x, b;
+	Vector_Sparse<T> dirichlet;
 
 	Matrix_FETI<Matrix_CSR, T> RegMat;
 	Matrix_FETI<Matrix_Dense, T> N1, N2;

@@ -3,6 +3,7 @@
 #include "gausspoints.h"
 
 #include "analysis/assembler/operator.hpp"
+#include "analysis/assembler/module/acoustic.h"
 #include "analysis/assembler/module/heattransfer.h"
 #include "esinfo/meshinfo.h"
 #include "mesh/store/nodestore.h"
@@ -10,7 +11,8 @@
 
 namespace espreso {
 
-void elementCoordinates(AX_HeatTransfer &module)
+template <class Module>
+void _elementCoordinates(Module &module)
 {
 	module.coords.node.addInput(info::mesh->nodes->coordinates);
 	module.coords.gp.addInput(module.coords.node);
@@ -24,13 +26,23 @@ void elementCoordinates(AX_HeatTransfer &module)
 		auto procNodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
 		if (info::mesh->dimension == 2) {
 			module.actionOps[interval].emplace_back(new Coordinates2DToElementNodes(procNodes, module.coords.node, interval));
-			module.actionOps[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, 2, FromNodesToGaussPoints>(interval, module.integration.N, module.coords.node, module.coords.gp));
+			module.actionOps[interval].emplace_back(instantiate<typename Module::NGP, 2, FromNodesToGaussPoints>(interval, module.integration.N, module.coords.node, module.coords.gp));
 		}
 		if (info::mesh->dimension == 3) {
 			module.actionOps[interval].emplace_back(new Coordinates3DToElementNodes(procNodes, module.coords.node, interval));
-			module.actionOps[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, 3, FromNodesToGaussPoints>(interval, module.integration.N, module.coords.node, module.coords.gp));
+			module.actionOps[interval].emplace_back(instantiate<typename Module::NGP, 3, FromNodesToGaussPoints>(interval, module.integration.N, module.coords.node, module.coords.gp));
 		}
 	}
+}
+
+void elementCoordinates(AX_HeatTransfer &module)
+{
+	_elementCoordinates(module);
+}
+
+void elementCoordinates(AX_Acoustic &module)
+{
+	_elementCoordinates(module);
 }
 
 //BoundaryCoordinates::BoundaryCoordinates(AX_HeatTransfer &module): BoundaryOperatorBuilder("BOUNDARY COORDINATES")

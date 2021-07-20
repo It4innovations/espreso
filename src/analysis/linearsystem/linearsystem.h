@@ -9,6 +9,7 @@
 namespace espreso {
 
 class AX_HeatSteadyStateLinear;
+class AX_AcousticRealLinear;
 //class AX_HeatSteadyStateNonLinear;
 //class AX_HeatTransientLinear;
 //class AX_HeatTransientNonLinear;
@@ -18,6 +19,7 @@ class AX_HeatSteadyStateLinear;
 //class AX_StructuralMechanicsTransientLinear;
 
 class AX_HeatTransfer;
+class AX_Acoustic;
 
 template <typename T>
 struct AX_LinearSystem {
@@ -25,6 +27,7 @@ struct AX_LinearSystem {
 	struct Template {
 		Matrix_Base<T> *A;
 		Vector_Base<T> *x, *b;
+		Vector_Sparse<T> *dirichlet;
 	};
 
 	virtual void setMapping(Matrix_Base<T> *A) const =0;
@@ -32,6 +35,7 @@ struct AX_LinearSystem {
 
 	virtual ~AX_LinearSystem() {}
 
+	virtual void init(AX_AcousticRealLinear       *analysis) =0;
 	virtual void init(AX_HeatSteadyStateLinear    *analysis) =0;
 //	virtual void init(AX_HeatSteadyStateNonLinear *analysis) =0;
 //	virtual void init(AX_HeatTransientLinear      *analysis) =0;
@@ -41,7 +45,8 @@ struct AX_LinearSystem {
 //	virtual void init(AX_StructuralMechanicsSteadyStateLinear     *analysis) =0;
 //	virtual void init(AX_StructuralMechanicsTransientLinear       *analysis) =0;
 
-	virtual void update(AX_HeatTransfer &assembler, bool A, bool b, bool dirichlet) =0;
+	virtual void update(AX_Acoustic     &assembler) =0;
+	virtual void update(AX_HeatTransfer &assembler) =0;
 //	virtual void update(AX_HeatSteadyStateNonLinear *analysis, bool A, bool b) =0;
 //	virtual void update(AX_HeatTransientLinear      *analysis, bool A, bool b) =0;
 //	virtual void update(AX_HeatTransientNonLinear   *analysis, bool A, bool b) =0;
@@ -53,7 +58,6 @@ struct AX_LinearSystem {
 	virtual bool solve() =0;
 
 	Template assembler, solver;
-	Vector_Sparse<T> dirichlet;
 };
 
 }

@@ -64,40 +64,68 @@ namespace math { // interface to wrappers
 namespace espreso {
 namespace math {
 
-	template <typename T> void fill(Vector_Dense<T> &x , const T &value) { fill(x.size           , x.vals, 1, value); }
+	template <typename T> void multiplyPattern(Vector_Dense<T>  &x, const Vector_Dense<T>  &y, int size, int multipicity);
+	template <typename T> void multiplyPattern(Vector_Sparse<T> &x, const Vector_Sparse<T> &y, int size, int multipicity);
+	template <typename T> void multiplyPattern(Matrix_Dense<T>  &x, const Matrix_Dense<T>  &y, int size, int multipicity);
+	template <typename T> void multiplyPattern(Matrix_CSR<T>    &x, const Matrix_CSR<T>    &y, int size, int multipicity);
+	template <typename T> void multiplyPattern(Matrix_IJV<T>    &x, const Matrix_IJV<T>    &y, int size, int multipicity);
+
+	template <typename T> void fill(Vector_Dense<T>  &x, const T &value) { fill(x.size           , x.vals, 1, value); }
 	template <typename T> void fill(Vector_Sparse<T> &x, const T &value) { fill(x.nnz            , x.vals, 1, value); }
-	template <typename T> void fill(Matrix_Dense<T> &x , const T &value) { fill(x.nrows * x.ncols, x.vals, 1, value); }
-	template <typename T> void fill(Matrix_CSR<T> &x   , const T &value) { fill(x.nnz            , x.vals, 1, value); }
-	template <typename T> void fill(Matrix_IJV<T> &x   , const T &value) { fill(x.nnz            , x.vals, 1, value); }
+	template <typename T> void fill(Matrix_Dense<T>  &x, const T &value) { fill(x.nrows * x.ncols, x.vals, 1, value); }
+	template <typename T> void fill(Matrix_CSR<T>    &x, const T &value) { fill(x.nnz            , x.vals, 1, value); }
+	template <typename T> void fill(Matrix_IJV<T>    &x, const T &value) { fill(x.nnz            , x.vals, 1, value); }
 
-	template <typename T> void copy(Vector_Dense<T> &x , const Vector_Dense<T> &y)  { copy(x.size           , x.vals, 1, y.vals, 1); }
+	template <typename T> void copy(Vector_Dense<T>  &x, const Vector_Dense<T>  &y) { copy(x.size           , x.vals, 1, y.vals, 1); }
 	template <typename T> void copy(Vector_Sparse<T> &x, const Vector_Sparse<T> &y) { copy(x.nnz            , x.vals, 1, y.vals, 1); }
-	template <typename T> void copy(Matrix_Dense<T> &x , const Matrix_Dense<T> &y)  { copy(x.nrows * x.ncols, x.vals, 1, y.vals, 1); }
-	template <typename T> void copy(Matrix_CSR<T> &x   , const Matrix_CSR<T> &y)    { copy(x.nnz            , x.vals, 1, y.vals, 1); }
-	template <typename T> void copy(Matrix_IJV<T> &x   , const Matrix_IJV<T> &y)    { copy(x.nnz            , x.vals, 1, y.vals, 1); }
+	template <typename T> void copy(Matrix_Dense<T>  &x, const Matrix_Dense<T>  &y) { copy(x.nrows * x.ncols, x.vals, 1, y.vals, 1); }
+	template <typename T> void copy(Matrix_CSR<T>    &x, const Matrix_CSR<T>    &y) { copy(x.nnz            , x.vals, 1, y.vals, 1); }
+	template <typename T> void copy(Matrix_IJV<T>    &x, const Matrix_IJV<T>    &y) { copy(x.nnz            , x.vals, 1, y.vals, 1); }
 
-	template <typename T> void scale(const T &alpha, Vector_Dense<T> &x)  { scale(x.size           , alpha, x.vals, 1); }
+	template <typename T> void copy(Vector_Dense<T>  &x, const Vector_Dense<T>  &y, int offset, int size, int step);
+	template <typename T> void copy(Vector_Sparse<T> &x, const Vector_Sparse<T> &y, int offset, int size, int step);
+	template <typename T> void copy(Matrix_Dense<T>  &x, const Matrix_Dense<T>  &y, int rowOffset, int colOffset, int size, int step);
+	template <typename T> void copy(Matrix_CSR<T>    &x, const Matrix_CSR<T>    &y, int rowOffset, int colOffset, int size, int step);
+	template <typename T> void copy(Matrix_IJV<T>    &x, const Matrix_IJV<T>    &y, int rowOffset, int colOffset, int size, int step);
+
+	template <typename T> void scale(const T &alpha, Vector_Dense<T>  &x) { scale(x.size           , alpha, x.vals, 1); }
 	template <typename T> void scale(const T &alpha, Vector_Sparse<T> &x) { scale(x.nnz            , alpha, x.vals, 1); }
-	template <typename T> void scale(const T &alpha, Matrix_Dense<T> &x)  { scale(x.nrows * x.ncols, alpha, x.vals, 1); }
-	template <typename T> void scale(const T &alpha, Matrix_CSR<T> &x)    { scale(x.nnz            , alpha, x.vals, 1); }
-	template <typename T> void scale(const T &alpha, Matrix_IJV<T> &x)    { scale(x.nnz            , alpha, x.vals, 1); }
+	template <typename T> void scale(const T &alpha, Matrix_Dense<T>  &x) { scale(x.nrows * x.ncols, alpha, x.vals, 1); }
+	template <typename T> void scale(const T &alpha, Matrix_CSR<T>    &x) { scale(x.nnz            , alpha, x.vals, 1); }
+	template <typename T> void scale(const T &alpha, Matrix_IJV<T>    &x) { scale(x.nnz            , alpha, x.vals, 1); }
 
-	template <typename T> void add(Vector_Dense<T> &x , const T &alpha, const Vector_Dense<T> &y)  { add(x.size           , x.vals, 1, alpha, y.vals, 1); }
+	// x = alpha * x + beta * y
+	template <typename T> void add(Vector_Dense<T>  &x, const T &alpha, const Vector_Dense<T>  &y) { add(x.size           , x.vals, 1, alpha, y.vals, 1); }
 	template <typename T> void add(Vector_Sparse<T> &x, const T &alpha, const Vector_Sparse<T> &y) { add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
-	template <typename T> void add(Matrix_Dense<T> &x , const T &alpha, const Matrix_Dense<T> &y)  { add(x.nrows * x.ncols, x.vals, 1, alpha, y.vals, 1); }
-	template <typename T> void add(Matrix_CSR<T> &x   , const T &alpha, const Matrix_CSR<T> &y)    { add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
-	template <typename T> void add(Matrix_IJV<T> &x   , const T &alpha, const Matrix_IJV<T> &y)    { add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
+	template <typename T> void add(Matrix_Dense<T>  &x, const T &alpha, const Matrix_Dense<T>  &y) { add(x.nrows * x.ncols, x.vals, 1, alpha, y.vals, 1); }
+	template <typename T> void add(Matrix_CSR<T>    &x, const T &alpha, const Matrix_CSR<T>    &y) { add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
+	template <typename T> void add(Matrix_IJV<T>    &x, const T &alpha, const Matrix_IJV<T>    &y) { add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
 
-	template <typename T> void sum(Vector_Dense<T> &x, const T &alpha , const Vector_Dense<T> &y , const T &beta, const Vector_Dense<T> &z)  { copy(x, y); scale(alpha, x); add(x, beta, z); }
+	// x += beta * y [.. offset -> size  / step]
+	template <typename T> void add(Vector_Dense<T>  &x, const T &alpha, const Vector_Dense<T>  &y, int offset, int size, int step);
+	template <typename T> void add(Vector_Sparse<T> &x, const T &alpha, const Vector_Sparse<T> &y, int offset, int size, int step);
+	template <typename T> void add(Matrix_Dense<T>  &x, const T &alpha, const Matrix_Dense<T>  &y, int rowOffset, int colOffset, int size, int step);
+	template <typename T> void add(Matrix_CSR<T>    &x, const T &alpha, const Matrix_CSR<T>    &y, int rowOffset, int colOffset, int size, int step);
+	template <typename T> void add(Matrix_IJV<T>    &x, const T &alpha, const Matrix_IJV<T>    &y, int rowOffset, int colOffset, int size, int step);
+
+	// x = alpha * y + beta * z
+	template <typename T> void sum(Vector_Dense<T>  &x, const T &alpha, const Vector_Dense<T>  &y, const T &beta, const Vector_Dense<T>  &z) { copy(x, y); scale(alpha, x); add(x, beta, z); }
 	template <typename T> void sum(Vector_Sparse<T> &x, const T &alpha, const Vector_Sparse<T> &y, const T &beta, const Vector_Sparse<T> &z) { copy(x, y); scale(alpha, x); add(x, beta, z); }
-	template <typename T> void sum(Matrix_Dense<T> &x, const T &alpha , const Matrix_Dense<T> &y , const T &beta, const Matrix_Dense<T> &z)  { copy(x, y); scale(alpha, x); add(x, beta, z); }
-	template <typename T> void sum(Matrix_CSR<T> &x  , const T &alpha , const Matrix_CSR<T> &y   , const T &beta, const Matrix_CSR<T> &z)    { copy(x, y); scale(alpha, x); add(x, beta, z); }
-	template <typename T> void sum(Matrix_IJV<T> &x  , const T &alpha , const Matrix_IJV<T> &y   , const T &beta, const Matrix_IJV<T> &z)    { copy(x, y); scale(alpha, x); add(x, beta, z); }
+	template <typename T> void sum(Matrix_Dense<T>  &x, const T &alpha, const Matrix_Dense<T>  &y, const T &beta, const Matrix_Dense<T>  &z) { copy(x, y); scale(alpha, x); add(x, beta, z); }
+	template <typename T> void sum(Matrix_CSR<T>    &x, const T &alpha, const Matrix_CSR<T>    &y, const T &beta, const Matrix_CSR<T>    &z) { copy(x, y); scale(alpha, x); add(x, beta, z); }
+	template <typename T> void sum(Matrix_IJV<T>    &x, const T &alpha, const Matrix_IJV<T>    &y, const T &beta, const Matrix_IJV<T>    &z) { copy(x, y); scale(alpha, x); add(x, beta, z); }
 
-	template <typename T> void dot(const Vector_Dense<T> &x , const Vector_Dense<T> &y)  { dot(x.size, x.vals, 1, y.vals, 1); }
+	// x = alpha * y + beta * z [.. offset -> size  / step]
+	template <typename T> void sum(Vector_Dense<T>  &x, const T &alpha, const Vector_Dense<T>  &y, const T &beta, const Vector_Dense<T>  &z, int offset, int size, int step);
+	template <typename T> void sum(Vector_Sparse<T> &x, const T &alpha, const Vector_Sparse<T> &y, const T &beta, const Vector_Sparse<T> &z, int offset, int size, int step);
+	template <typename T> void sum(Matrix_Dense<T>  &x, const T &alpha, const Matrix_Dense<T>  &y, const T &beta, const Matrix_Dense<T>  &z, int rowOffset, int colOffset, int size, int step);
+	template <typename T> void sum(Matrix_CSR<T>    &x, const T &alpha, const Matrix_CSR<T>    &y, const T &beta, const Matrix_CSR<T>    &z, int rowOffset, int colOffset, int size, int step);
+	template <typename T> void sum(Matrix_IJV<T>    &x, const T &alpha, const Matrix_IJV<T>    &y, const T &beta, const Matrix_IJV<T>    &z, int rowOffset, int colOffset, int size, int step);
+
+	template <typename T> void dot(const Vector_Dense<T>  &x, const Vector_Dense<T>  &y) { dot(x.size, x.vals, 1, y.vals, 1); }
 	template <typename T> void dot(const Vector_Sparse<T> &x, const Vector_Sparse<T> &y) { dot(x.nnz , x.vals, 1, y.vals, 1); }
 
-	template <typename T> void norm(const Vector_Dense<T> &x)  { norm(x.size, x.vals, 1); }
+	template <typename T> void norm(const Vector_Dense<T>  &x) { norm(x.size, x.vals, 1); }
 	template <typename T> void norm(const Vector_Sparse<T> &x) { norm(x.nnz , x.vals, 1); }
 
 	template <typename T> T max(const Vector_Dense<T> &x)
@@ -120,5 +148,7 @@ namespace math {
 
 } // math
 } // espreso
+
+#include "math2.hpp"
 
 #endif /* SRC_MATH2_MATH2_H_ */

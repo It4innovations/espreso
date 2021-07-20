@@ -4,6 +4,7 @@
 #include "esinfo/envinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"
+#include "mesh/store/domainstore.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "physics/system/distributedsystem.h"
@@ -30,7 +31,7 @@ void DistributedComposerOpt::assemble(const Builder &builder)
 
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::threads; t++) {
-		for (esint d = info::mesh->elements->domainDistribution[t]; d < info::mesh->elements->domainDistribution[t + 1]; d++) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			bool omitLower = _data->K.type != MatrixType::REAL_UNSYMMETRIC;
 			esint *Kperm = _KPermutation.data();
 			esint *RHSperm = _RHSPermutation.data();

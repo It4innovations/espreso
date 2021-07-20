@@ -13,6 +13,7 @@ namespace espreso {
 
 struct HeatTransferGlobalSettings;
 struct HeatTransferLoadStepConfiguration;
+struct AX_SteadyState;
 
 class AX_HeatTransfer: public Assembler
 {
@@ -40,18 +41,14 @@ public:
 
 	AX_HeatTransfer(AX_HeatTransfer *previous, HeatTransferGlobalSettings &gsettings, HeatTransferLoadStepConfiguration &configuration);
 
-	void init();
-	void next(bool &updatedK, bool &updatedM, bool &updatedRHS);
+	void init(AX_SteadyState &scheme);
+	void analyze();
+	void next();
 
-	void fillDirichletIndices(Vector_Sparse<double> &dirichlet);
+	void initDirichlet(Vector_Sparse<double> &dirichlet);
+	void fillDirichlet(Vector_Sparse<double> &dirichlet);
 
-	void setK(Matrix_Base<double> *K);
-	void setM(Matrix_Base<double> *M);
-	void setRHS(Vector_Base<double> *rhs);
-
-	bool fillDirichlet(Vector_Sparse<double> &dirichlet);
-
-	void updateSolution(Vector_Base<double> *x);
+	void updateSolution();
 
 	Matrix_Type matrixType() { return Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE; }
 	bool hasKernel(int domain) { return true; }
@@ -87,7 +84,7 @@ public:
 	std::vector<esint> dirichletIndices, dirichletPermutation;
 
 	Matrix_Base<double> *K, *M;
-	Vector_Base<double> *rhs;
+	Vector_Base<double> *rhs, *x;
 
 protected:
 	void initTemperature();

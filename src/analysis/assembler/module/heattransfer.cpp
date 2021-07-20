@@ -8,6 +8,7 @@
 #include "esinfo/meshinfo.h"
 
 #include "analysis/assembler/operators/operators.h"
+#include "analysis/scheme/steadystate.h"
 
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
@@ -22,7 +23,7 @@
 using namespace espreso;
 
 AX_HeatTransfer::AX_HeatTransfer(AX_HeatTransfer *previous, HeatTransferGlobalSettings &gsettings, HeatTransferLoadStepConfiguration &configuration)
-: gsettings(gsettings), configuration(configuration), K(nullptr), M(nullptr), rhs(nullptr)
+: gsettings(gsettings), configuration(configuration), K{}, M{}, rhs{}, x{}
 {
 
 }
@@ -73,8 +74,16 @@ void AX_HeatTransfer::initTemperature()
 //	builders.push_back(new BoundaryGaussPointsBuilder<1>(integration.boundary.N, temp.boundary.node, temp.boundary.gp, "INTEGRATE TEMPERATURE INTO BOUNDARY GAUSS POINTS"));
 }
 
+void AX_HeatTransfer::init(AX_SteadyState &scheme)
+{
+	K = scheme.K;
+	rhs = scheme.f;
+	x = scheme.x;
 
-void AX_HeatTransfer::init()
+	analyze();
+}
+
+void AX_HeatTransfer::analyze()
 {
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info("  PHYSICS                                                                    HEAT TRANSFER 2D  \n");
@@ -257,13 +266,22 @@ void AX_HeatTransfer::init()
 	}
 }
 
-void AX_HeatTransfer::next(bool &updatedK, bool &updatedM, bool &updatedRHS)
+void AX_HeatTransfer::next()
 {
 	updateVersions();
 
-	updatedK = updatedM = updatedRHS = true;
-	this->K->fill(0);
-	this->rhs->fill(0);
+	if (K != nullptr) {
+		K->fill(0);
+		K->touched = true;
+	}
+	if (M != nullptr) {
+		M->fill(0);
+		M->touched = true;
+	}
+	if (rhs != nullptr) {
+		rhs->fill(0);
+		rhs->touched = true;
+	}
 
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::threads; ++t) {
@@ -287,17 +305,17 @@ void AX_HeatTransfer::next(bool &updatedK, bool &updatedM, bool &updatedRHS)
 	}
 
 	std::cout << "COO[nd]: " << *coords.node.data << "\n";
-	std::cout << "COO[gp]: " << *coords.gp.data << "\n";
-	std::cout << "thick: " << *thickness.gp.data << "\n";
-	std::cout << "cart: " << *cooSystem.cartesian2D.data << "\n";
-	std::cout << "iso: " << *material.model.isotropic.data << "\n";
-	std::cout << "dia: " << *material.model.diagonal.data << "\n";
-	std::cout << "cond-iso: " << *material.conductivityIsotropic.data << "\n";
-	std::cout << "cond-dia: " << *material.conductivity.data << "\n";
+//	std::cout << "COO[gp]: " << *coords.gp.data << "\n";
+//	std::cout << "thick: " << *thickness.gp.data << "\n";
+//	std::cout << "cart: " << *cooSystem.cartesian2D.data << "\n";
+//	std::cout << "iso: " << *material.model.isotropic.data << "\n";
+//	std::cout << "dia: " << *material.model.diagonal.data << "\n";
+//	std::cout << "cond-iso: " << *material.conductivityIsotropic.data << "\n";
+//	std::cout << "cond-dia: " << *material.conductivity.data << "\n";
 	std::cout << "stiffness: " << *elements.stiffness.data << "\n";
 }
 
-void AX_HeatTransfer::fillDirichletIndices(Vector_Sparse<double> &dirichlet)
+void AX_HeatTransfer::initDirichlet(Vector_Sparse<double> &dirichlet)
 {
 	size_t dsize = 0;
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
@@ -335,22 +353,7 @@ void AX_HeatTransfer::fillDirichletIndices(Vector_Sparse<double> &dirichlet)
 	}
 }
 
-void AX_HeatTransfer::setK(Matrix_Base<double> *K)
-{
-	this->K = K;
-}
-
-void AX_HeatTransfer::setM(Matrix_Base<double> *M)
-{
-	this->M = M;
-}
-
-void AX_HeatTransfer::setRHS(Vector_Base<double> *rhs)
-{
-	this->rhs = rhs;
-}
-
-bool AX_HeatTransfer::fillDirichlet(Vector_Sparse<double> &dirichlet)
+void AX_HeatTransfer::fillDirichlet(Vector_Sparse<double> &dirichlet)
 {
 	std::vector<double> values;
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
@@ -365,10 +368,9 @@ bool AX_HeatTransfer::fillDirichlet(Vector_Sparse<double> &dirichlet)
 	for (size_t i = 0; i < dirichletPermutation.size(); ++i) {
 		dirichlet.vals[i] = values[dirichletPermutation[i]];
 	}
-	return true;
 }
 
-void AX_HeatTransfer::updateSolution(Vector_Base<double> *x)
+void AX_HeatTransfer::updateSolution()
 {
 	x->store(ParametersTemperature::output->data);
 }

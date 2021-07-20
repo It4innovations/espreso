@@ -1,26 +1,27 @@
 
 #include "analysis.h"
-#include "heat.steadystate.linear.h"
+#include "acoustic.real.linear.h"
 
 #include "analysis/linearsystem/directsystem.h"
 #include "analysis/linearsystem/fetisystem.h"
 #include "analysis/linearsystem/mklpdsssystem.h"
 #include "analysis/linearsystem/multigridsystem.h"
 
-#include "config/ecf/physics/heattransfer.h"
+#include "config/ecf/physics/acoustic.h"
 
 #include "esinfo/meshinfo.h"
+#include "esinfo/stepinfo.h"
 #include "output/output.h"
 
 using namespace espreso;
 
-AX_HeatSteadyStateLinear::AX_HeatSteadyStateLinear(HeatTransferGlobalSettings &gsettings, HeatTransferLoadStepConfiguration &configuration)
-: gsettings(gsettings), configuration(configuration), assembler{nullptr, gsettings, configuration}, scheme{}, system{}
+AX_AcousticRealLinear::AX_AcousticRealLinear(AcousticGlobalSettings &gsettings, AcousticLoadStepConfiguration &configuration)
+: gsettings(gsettings), configuration(configuration), assembler{nullptr, gsettings, configuration}, scheme{configuration.harmonic_solver, 1}, system{}
 {
 
 }
 
-void AX_HeatSteadyStateLinear::init()
+void AX_AcousticRealLinear::init()
 {
 	switch (configuration.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI:    system = new AX_FETISystem<double>(configuration.feti); break;
@@ -35,25 +36,29 @@ void AX_HeatSteadyStateLinear::init()
 	assembler.init(scheme);
 }
 
-void AX_HeatSteadyStateLinear::run()
+void AX_AcousticRealLinear::run()
 {
-	step::Time time;
-	scheme.setTime(time, configuration.duration_time);
+	step::Frequency frequency;
+	scheme.initFrequency(frequency);
 
-	assembler.next();
-	scheme.composeSystem(system);
-	assembler.fillDirichlet(*system->solver.dirichlet);
+	while (frequency.current != frequency.final) {
+		scheme.nextFrequency(frequency);
 
-	scheme.storeScheme(time);
+		assembler.next();
+		scheme.composeSystem(frequency, system);
 
-	system->update(assembler);
-	system->solve();
+		assembler.fillDirichlet(*system->assembler.dirichlet);
+		scheme.composeDirichlet(system);
 
-	scheme.extractSolution(system);
-	scheme.storeSolution(time);
+		scheme.storeScheme(frequency);
 
-	assembler.updateSolution();
-	info::mesh->output->updateSolution();
+		system->update(assembler);
+		system->solve();
+
+		scheme.extractSolution(system);
+		scheme.storeSolution(frequency);
+
+		assembler.updateSolution();
+		info::mesh->output->updateSolution();
+	}
 }
-
-

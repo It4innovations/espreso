@@ -19,6 +19,7 @@ struct ParametersElements {
 
 	ElementParameter<dimension * dimension * enodes * enodes> stiffness;
 	ElementParameter<dimension * dimension * enodes * enodes> mass;
+	ElementParameter<dimension * dimension * enodes * enodes> damping;
 	ElementParameter<dimension * enodes> rhs;
 
 	Boundary boundary;
@@ -45,6 +46,29 @@ struct ParametersTemperature {
 	ElementExternalParameter<egps> gp;
 	Boundary boundary;
 };
+
+struct ParametersAcousticPressure {
+	static NodeData *output;
+
+	struct Boundary {
+		BoundaryParameter<enodes> node;
+		BoundaryParameter<egps> gp;
+	};
+
+	struct Initial {
+		static NodeData *output;
+
+		ElementExternalParameter<enodes> node;
+		ElementExternalParameter<egps> gp;
+		Boundary boundary;
+	};
+
+	Initial initial;
+	ElementParameter<enodes> node;
+	ElementExternalParameter<egps> gp;
+	Boundary boundary;
+};
+
 
 struct ParametersCoordinates {
 	struct Boundary {

@@ -4,6 +4,7 @@
 
 #include "linearsystem.h"
 #include "analysis/analysis/heat.steadystate.linear.h"
+#include "analysis/analysis/acoustic.real.linear.h"
 //#include "analysis/analysis/heat.steadystate.nonlinear.h"
 //#include "analysis/analysis/heat.transient.linear.h"
 //#include "analysis/analysis/heat.transient.nonlinear.h"
@@ -27,6 +28,11 @@ struct AX_MultigridSystem: AX_LinearSystem<T> {
 	}
 
 	void setMapping(Vector_Base<T> *x) const
+	{
+
+	}
+
+	void init(AX_AcousticRealLinear *analysis)
 	{
 
 	}
@@ -71,7 +77,12 @@ struct AX_MultigridSystem: AX_LinearSystem<T> {
 //
 //	}
 
-	void update(AX_HeatTransfer &assembler, bool A, bool b, bool dirichlet)
+	void update(AX_Acoustic &assembler)
+	{
+
+	}
+
+	void update(AX_HeatTransfer &assembler)
 	{
 
 	}

@@ -4,6 +4,7 @@
 
 #include "analysis/assembler/operator.h"
 #include "analysis/assembler/parameter.h"
+#include "analysis/assembler/module/acoustic.h"
 #include "analysis/assembler/module/heattransfer.h"
 
 #include <memory>
@@ -18,6 +19,13 @@ void elementIntegration(AX_HeatTransfer &module);
 void thermalConductivity(AX_HeatTransfer &module);
 void heatStiffness(AX_HeatTransfer &module);
 void addFiller(AX_HeatTransfer &module);
+
+void baseFunction(AX_Acoustic &module);
+void elementCoordinates(AX_Acoustic &module);
+void elementIntegration(AX_Acoustic &module);
+void acousticStiffness(AX_Acoustic &module);
+void acousticMass(AX_Acoustic &module);
+void addFiller(AX_Acoustic &module);
 
 }
 
