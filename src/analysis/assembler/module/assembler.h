@@ -5,6 +5,11 @@
 #include "parameters.h"
 #include "analysis/assembler/operator.h"
 
+#include "analysis/composer/elementmapping.h"
+#include "math2/primitives/vector_sparse.h"
+#include "math2/primitives/matrix_info.h"
+#include "math2/generalization/matrix_base.h"
+
 #include <memory>
 #include <vector>
 #include <map>
@@ -35,7 +40,6 @@ public:
 	std::vector<std::vector<std::unique_ptr<ActionOperator> > > actionOps, actionRes;
 
 protected:
-
 	void updateVersions();
 
 	void printParamtereStats(const char* name, ParameterData &parameter);

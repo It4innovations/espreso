@@ -8,23 +8,24 @@
 
 using namespace espreso;
 
-void AX_SteadyState::init(AX_LinearSystem<double> *solver)
+void AX_SteadyState::init(AX_LinearSystem<double> *system, AX_HeatTransfer &assembler)
 {
-	K = solver->assembler.A->copyPattern();
-	f = solver->assembler.b->copyPattern();
-	mappingK = solver->mapping(K);
-	mappingF = solver->mapping(f);
-	this->solver = solver;
+	system->setMapping(K = system->assembler.A->copyPattern());
+	system->setMapping(f = system->assembler.b->copyPattern());
+	assembler.setK(K);
+	assembler.setRHS(f);
+	assembler.init();
+	this->system = system;
 }
 
-void AX_SteadyState::reassemble(AX_HeatTransfer &assembler, bool &A, bool &b)
+void AX_SteadyState::reassemble(AX_HeatTransfer &assembler, bool &updatedA, bool &updatedB)
 {
-	if (A |= assembler.fillK(K, mappingK)) {
-		solver->solver.A->fillData(K);
-	}
-	if (b |= assembler.fillRHS(f, mappingF)) {
-		solver->solver.b->fillData(f);
-	}
+	bool updatedK, updatedM, updatedRHS;
+	assembler.next(updatedK, updatedM, updatedRHS);
+	system->solver.A->fillData(K);
+	system->solver.b->fillData(f);
+	updatedA |= updatedK;
+	updatedB |= updatedRHS;
 
 	if (info::ecf->output.print_matrices) {
 		K->store(utils::filename(utils::debugDirectory() + "/scheme", "K").c_str());

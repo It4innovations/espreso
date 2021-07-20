@@ -13,7 +13,6 @@ void AX_Linear::init(AX_LinearSystem<double> *system)
 bool AX_Linear::solve(AX_Scheme &scheme, AX_HeatTransfer &assembler)
 {
 	bool updateA = false, updateRHS = false, updateDirichlet = false;
-	assembler.next();
 	scheme.reassemble(assembler, updateA, updateRHS);
 	updateDirichlet |= assembler.fillDirichlet(system->dirichlet);
 	system->update(assembler, updateA, updateRHS, updateDirichlet);

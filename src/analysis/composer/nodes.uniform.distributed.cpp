@@ -32,7 +32,7 @@ UniformNodesDistributedPattern::~UniformNodesDistributedPattern()
 
 }
 
-void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, Matrix_Type type)
+void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs)
 {
 	pattern->dofs = dofs;
 	auto size = [] (int size) {
@@ -95,9 +95,9 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, Matrix_T
 	}
 }
 
-void UniformNodesDistributedPattern::set(int dofs, Matrix_Type type)
+void UniformNodesDistributedPattern::set(int dofs)
 {
-	fillPermutation(this, dofs, type);
+	fillPermutation(this, dofs);
 }
 
 void UniformNodesDistributedPattern::fillCSR(esint *rows, esint *cols)

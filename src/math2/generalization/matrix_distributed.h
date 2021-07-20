@@ -30,6 +30,8 @@ public:
 	Matrix_Distributed* copyPattern()
 	{
 		Matrix_Distributed<Matrix, T> *m = new Matrix_Distributed<Matrix, T>();
+		m->type = m->cluster.type = this->type;
+		m->shape = m->cluster.shape = this->shape;
 		m->cluster.pattern(cluster);
 		return m;
 	}

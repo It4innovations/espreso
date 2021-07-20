@@ -24,14 +24,14 @@ struct AX_FETISystem: AX_LinearSystem<T> {
 
 	AX_FETISystem(FETIConfiguration &configuration): configuration(configuration) {}
 
-	ElementMapping<T> mapping(const Matrix_Base<T> *A) const
+	void setMapping(Matrix_Base<T> *A) const
 	{
-		return pattern.map(dynamic_cast<const Matrix_FETI<Matrix_CSR, T>*>(A));
+		pattern.setMap(dynamic_cast<Matrix_FETI<Matrix_CSR, T>*>(A));
 	}
 
-	ElementMapping<T> mapping(const Vector_Base<T> *x) const
+	void setMapping(Vector_Base<T> *x) const
 	{
-		return pattern.map(dynamic_cast<const Vector_FETI<Vector_Dense, T>*>(x));
+		pattern.setMap(dynamic_cast<Vector_FETI<Vector_Dense, T>*>(x));
 	}
 
 	void init(AX_HeatSteadyStateLinear *analysis)

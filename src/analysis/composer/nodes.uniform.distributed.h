@@ -29,7 +29,7 @@ struct UniformNodesDistributedPattern {
 	UniformNodesDistributedPattern();
 	~UniformNodesDistributedPattern();
 
-	void set(int dofs, Matrix_Type type);
+	void set(int dofs);
 
 	template<typename T>
 	void fill(Vector_Distributed<Vector_Dense, T> &v)
@@ -41,35 +41,33 @@ struct UniformNodesDistributedPattern {
 	template<typename T>
 	void fill(Matrix_Distributed<Matrix_CSR, T> &m)
 	{
+		m.cluster.type = m.type;
+		m.cluster.shape = m.shape;
 		m.cluster.resize(elements.size, elements.size, elements.K.size());
 		fillCSR(m.cluster.rows, m.cluster.cols);
 		fillDistribution(m.distribution);
 	}
 
 	template<typename T>
-	ElementMapping<T> map(const Matrix_Distributed<Matrix_CSR, T> *m) const
+	void setMap(Matrix_Distributed<Matrix_CSR, T> *m) const
 	{
-		ElementMapping<T> map;
-		map.elements.resize(info::mesh->elements->eintervals.size());
+		m->mapping.elements.resize(info::mesh->elements->eintervals.size());
 		for (size_t i = 0, offset = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-			map.elements[i].data = m->cluster.vals + offset;
-			map.elements[i].position = elements.K.data() + offset;
+			m->mapping.elements[i].data = m->cluster.vals;
+			m->mapping.elements[i].position = elements.K.data() + offset;
 			offset += (info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin) * Mesh::edata[info::mesh->elements->eintervals[i].code].nodes * Mesh::edata[info::mesh->elements->eintervals[i].code].nodes;
 		}
-		return map;
 	}
 
 	template<typename T>
-	ElementMapping<T> map(const Vector_Distributed<Vector_Dense, T> *v) const
+	void setMap(Vector_Distributed<Vector_Dense, T> *v) const
 	{
-		ElementMapping<T> map;
-		map.elements.resize(info::mesh->elements->eintervals.size());
+		v->mapping.elements.resize(info::mesh->elements->eintervals.size());
 		for (size_t i = 0, offset = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-			map.elements[i].data = v->cluster.vals + offset;
-			map.elements[i].position = elements.f.data() + offset;
+			v->mapping.elements[i].data = v->cluster.vals + offset;
+			v->mapping.elements[i].position = elements.f.data() + offset;
 			offset += (info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin) * Mesh::edata[info::mesh->elements->eintervals[i].code].nodes;
 		}
-		return map;
 	}
 
 	void fillCSR(esint *rows, esint *cols);

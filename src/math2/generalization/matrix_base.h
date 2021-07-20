@@ -4,12 +4,16 @@
 
 #include "vector_base.h"
 
+#include "analysis/composer/elementmapping.h"
+
 namespace espreso {
 
 template <typename T>
 class Matrix_Base
 {
 public:
+	Matrix_Base(): type(Matrix_Type::REAL_UNSYMMETRIC), shape(Matrix_Shape::FULL) {}
+
 	virtual ~Matrix_Base() {};
 
 //	virtual Matrix_Base* copy() =0;
@@ -24,6 +28,10 @@ public:
 	virtual void sum(const T &alpha, const Matrix_Base *a, const T &beta, const Matrix_Base *b) =0;
 
 	virtual void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out) =0;
+
+	Matrix_Type type;
+	Matrix_Shape shape;
+	ElementMapping<T> mapping;
 };
 
 }

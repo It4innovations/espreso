@@ -22,7 +22,7 @@
 using namespace espreso;
 
 AX_HeatTransfer::AX_HeatTransfer(AX_HeatTransfer *previous, HeatTransferGlobalSettings &gsettings, HeatTransferLoadStepConfiguration &configuration)
-: gsettings(gsettings), configuration(configuration)
+: gsettings(gsettings), configuration(configuration), K(nullptr), M(nullptr), rhs(nullptr)
 {
 
 }
@@ -243,6 +243,7 @@ void AX_HeatTransfer::init()
 	gradient.xi.resize(1);
 
 	heatStiffness(*this);
+	addFiller(*this);
 
 	eslog::info(" ============================================================================================= \n");
 	if (correct) {
@@ -256,9 +257,13 @@ void AX_HeatTransfer::init()
 	}
 }
 
-void AX_HeatTransfer::next()
+void AX_HeatTransfer::next(bool &updatedK, bool &updatedM, bool &updatedRHS)
 {
 	updateVersions();
+
+	updatedK = updatedM = updatedRHS = true;
+	this->K->fill(0);
+	this->rhs->fill(0);
 
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::threads; ++t) {
@@ -330,19 +335,19 @@ void AX_HeatTransfer::fillDirichletIndices(Vector_Sparse<double> &dirichlet)
 	}
 }
 
-bool AX_HeatTransfer::fillK(Matrix_Base<double> *K, const ElementMapping<double> &mapping)
+void AX_HeatTransfer::setK(Matrix_Base<double> *K)
 {
-	K->fill(0);
-	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-//		MatricesFiller(*this, mapping.elements[i].data, mapping.elements[i].position).apply(i);
-	}
-	return true;
+	this->K = K;
 }
 
-bool AX_HeatTransfer::fillRHS(Vector_Base<double> *rhs, const ElementMapping<double> &mapping)
+void AX_HeatTransfer::setM(Matrix_Base<double> *M)
 {
-	rhs->fill(0);
-	return true;
+	this->M = M;
+}
+
+void AX_HeatTransfer::setRHS(Vector_Base<double> *rhs)
+{
+	this->rhs = rhs;
 }
 
 bool AX_HeatTransfer::fillDirichlet(Vector_Sparse<double> &dirichlet)

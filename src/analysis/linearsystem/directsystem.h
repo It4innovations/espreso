@@ -31,19 +31,19 @@ struct AX_DirectSystem: AX_LinearSystem<T> {
 	AX_DirectSystem(SuperLUConfiguration &configuration) {}
 	AX_DirectSystem(WSMPConfiguration &configuration) {}
 
-	ElementMapping<T> mapping(const Matrix_Base<T> *A) const
+	void setMapping(Matrix_Base<T> *A) const
 	{
-		return ElementMapping<T>();
+
 	}
 
-	ElementMapping<T> mapping(const Vector_Base<T> *x) const
+	void setMapping(Vector_Base<T> *x) const
 	{
-		return ElementMapping<T>();
+
 	}
 
 	void init(AX_HeatSteadyStateLinear *analysis)
 	{
-		pattern.set(1, analysis->assembler.matrixType());
+		pattern.set(1);
 		pattern.fill(A);
 		pattern.fill(b);
 		pattern.fill(x);

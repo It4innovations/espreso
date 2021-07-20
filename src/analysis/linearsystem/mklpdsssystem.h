@@ -26,19 +26,20 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 
 	AX_MKLPDSSSystem(MKLPDSSConfiguration &configuration): mklpdss(configuration) {}
 
-	ElementMapping<T> mapping(const Matrix_Base<T> *A) const
+	void setMapping(Matrix_Base<T> *A) const
 	{
-		return pattern.map(dynamic_cast<const Matrix_Distributed<Matrix_CSR, T>*>(A));
+		pattern.setMap(dynamic_cast<Matrix_Distributed<Matrix_CSR, T>*>(A));
 	}
 
-	ElementMapping<T> mapping(const Vector_Base<T> *x) const
+	void setMapping(Vector_Base<T> *x) const
 	{
-		return pattern.map(dynamic_cast<const Vector_Distributed<Vector_Dense, T>*>(x));
+		pattern.setMap(dynamic_cast<Vector_Distributed<Vector_Dense, T>*>(x));
 	}
 
 	void init(AX_HeatSteadyStateLinear *analysis)
 	{
-		pattern.set(1, A.cluster.type = analysis->assembler.matrixType());
+		A.type = analysis->assembler.matrixType();
+		pattern.set(1);
 		pattern.fill(A);
 		pattern.fill(b);
 		pattern.fill(x);
@@ -84,16 +85,16 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 //
 //	}
 
-	void update(AX_HeatTransfer &assembler, bool A, bool b, bool dirichlet)
+	void update(AX_HeatTransfer &assembler, bool updatedA, bool updatedB, bool updatedDirichlet)
 	{
-		if (A || b || dirichlet) {
-			setDirichlet(this->A, this->b, this->dirichlet);
-			mklpdss.update(this->A);
+		if (updatedA || updatedB || updatedDirichlet) {
+			setDirichlet(A, b, this->dirichlet);
+			mklpdss.update(A);
 		}
 
 		if (info::ecf->output.print_matrices) {
-			math::store(this->A, utils::filename(utils::debugDirectory() + "/system", "A").c_str());
-			math::store(this->b, utils::filename(utils::debugDirectory() + "/system", "b").c_str());
+			math::store(A, utils::filename(utils::debugDirectory() + "/system", "A").c_str());
+			math::store(b, utils::filename(utils::debugDirectory() + "/system", "b").c_str());
 		}
 	}
 
@@ -133,7 +134,13 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 
 	bool solve()
 	{
-		return mklpdss.solve(b, x);
+		if (mklpdss.solve(b, x)) {
+			if (info::ecf->output.print_matrices) {
+				math::store(x, utils::filename(utils::debugDirectory() + "/system", "x").c_str());
+			}
+			return true;
+		}
+		return false;
 	}
 
 	UniformNodesDistributedPattern pattern;

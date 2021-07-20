@@ -2,6 +2,8 @@
 #ifndef SRC_MATH2_GENERALIZATION_VECTOR_BASE_H_
 #define SRC_MATH2_GENERALIZATION_VECTOR_BASE_H_
 
+#include "analysis/composer/elementmapping.h"
+
 #include <vector>
 
 namespace espreso {
@@ -28,6 +30,8 @@ public:
 	virtual double max() =0;
 	virtual double absmax() =0;
 	virtual double dot(const Vector_Base *other) =0;
+
+	ElementMapping<T> mapping;
 };
 
 }

@@ -34,6 +34,8 @@ public:
 		Matrix_FETI<Matrix, T> *m = new Matrix_FETI<Matrix, T>();
 		m->domains.resize(domains.size());
 		for (size_t d = 0; d < domains.size(); ++d) {
+			m->type = m->domains[d].type = this->type;
+			m->shape = m->domains[d].shape = this->shape;
 			m->domains[d].pattern(domains[d]);
 		}
 		return m;

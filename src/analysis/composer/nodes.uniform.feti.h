@@ -44,23 +44,23 @@ struct UniformNodesFETIPattern {
 		m.domains.resize(elements.size());
 		#pragma omp parallel for
 		for (size_t d = 0; d < elements.size(); ++d) {
+			m.domains[d].type = m.type;
+			m.domains[d].shape = m.shape;
 			m.domains[d].resize(elements[d].size, elements[d].size, elements[d].K.size());
 			fillCSR(d, m.domains[d].rows, m.domains[d].cols);
 		}
 	}
 
 	template<typename T>
-	ElementMapping<T> map(const Matrix_FETI<Matrix_CSR, T> *m) const
+	void setMap(Matrix_FETI<Matrix_CSR, T> *m) const
 	{
-		ElementMapping<T> map;
-		return map;
+
 	}
 
 	template<typename T>
-	ElementMapping<T> map(const Vector_FETI<Vector_Dense, T> *m) const
+	void setMap(Vector_FETI<Vector_Dense, T> *m) const
 	{
-		ElementMapping<T> map;
-		return map;
+
 	}
 
 	void fillCSR(int domain, esint *rows, esint *cols);

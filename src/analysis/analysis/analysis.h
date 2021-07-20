@@ -13,8 +13,7 @@ static AX_LinearSystem<T>* init(Analysis *analysis, Configuration &configuration
 {
 	Solver<T> *solver = new Solver<T>(configuration);
 	solver->init(analysis);
-	analysis->assembler.init();
-	analysis->scheme.init(solver);
+	analysis->scheme.init(solver, analysis->assembler);
 	analysis->mode.init(solver);
 	return solver;
 }

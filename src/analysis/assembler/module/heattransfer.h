@@ -3,7 +3,6 @@
 #define SRC_ANALYSIS_ASSEMBLER_MODULE_HEATTRANSFER_H_
 
 #include "assembler.h"
-#include "analysis/composer/elementmapping.h"
 #include "math2/primitives/vector_sparse.h"
 #include "math2/primitives/matrix_info.h"
 #include "math2/generalization/matrix_base.h"
@@ -42,12 +41,14 @@ public:
 	AX_HeatTransfer(AX_HeatTransfer *previous, HeatTransferGlobalSettings &gsettings, HeatTransferLoadStepConfiguration &configuration);
 
 	void init();
-	void next();
+	void next(bool &updatedK, bool &updatedM, bool &updatedRHS);
 
 	void fillDirichletIndices(Vector_Sparse<double> &dirichlet);
 
-	bool fillK(Matrix_Base<double> *K, const ElementMapping<double> &mapping);
-	bool fillRHS(Vector_Base<double> *rhs, const ElementMapping<double> &mapping);
+	void setK(Matrix_Base<double> *K);
+	void setM(Matrix_Base<double> *M);
+	void setRHS(Vector_Base<double> *rhs);
+
 	bool fillDirichlet(Vector_Sparse<double> &dirichlet);
 
 	void updateSolution(Vector_Base<double> *x);
@@ -85,13 +86,14 @@ public:
 
 	std::vector<esint> dirichletIndices, dirichletPermutation;
 
+	Matrix_Base<double> *K, *M;
+	Vector_Base<double> *rhs;
+
 protected:
 	void initTemperature();
 	void printVersions();
 };
 
 }
-
-
 
 #endif /* SRC_ANALYSIS_ASSEMBLER_MODULE_HEATTRANSFER_H_ */

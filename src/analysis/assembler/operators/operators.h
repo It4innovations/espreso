@@ -17,6 +17,7 @@ void elementCoordinates(AX_HeatTransfer &module);
 void elementIntegration(AX_HeatTransfer &module);
 void thermalConductivity(AX_HeatTransfer &module);
 void heatStiffness(AX_HeatTransfer &module);
+void addFiller(AX_HeatTransfer &module);
 
 }
 

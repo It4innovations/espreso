@@ -1,5 +1,5 @@
 
-#include <analysis/linearsystem/mklpdsssystem.h>
+#include "mklpdsssystem.h"
 #include "esinfo/eslog.h"
 #include "wrappers/mpi/communication.h"
 

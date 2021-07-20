@@ -21,14 +21,14 @@ struct AX_MultigridSystem: AX_LinearSystem<T> {
 
 	AX_MultigridSystem(HYPREConfiguration &configuration) {}
 
-	ElementMapping<T> mapping(const Matrix_Base<T> *A) const
+	void setMapping(Matrix_Base<T> *A) const
 	{
-		return ElementMapping<T>();
+
 	}
 
-	ElementMapping<T> mapping(const Vector_Base<T> *x) const
+	void setMapping(Vector_Base<T> *x) const
 	{
-		return ElementMapping<T>();
+
 	}
 
 	void init(AX_HeatSteadyStateLinear *analysis)

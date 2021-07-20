@@ -11,17 +11,15 @@ namespace espreso {
 
 struct AX_SteadyState: public AX_Scheme {
 
-	void init(AX_LinearSystem<double> *solver);
+	void init(AX_LinearSystem<double> *system, AX_HeatTransfer &assembler);
 
-	void reassemble(AX_HeatTransfer &assembler, bool &A, bool &b);
+	void reassemble(AX_HeatTransfer &assembler, bool &updatedA, bool &updatedB);
 	void solved();
 
 	Matrix_Base<double> *K;
 	Vector_Base<double> *f;
 
-	AX_LinearSystem<double> *solver;
-
-	ElementMapping<double> mappingK, mappingF;
+	AX_LinearSystem<double> *system;
 };
 
 }

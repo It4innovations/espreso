@@ -27,8 +27,8 @@ struct AX_LinearSystem {
 		Vector_Base<T> *x, *b;
 	};
 
-	virtual ElementMapping<T> mapping(const Matrix_Base<T> *A) const =0;
-	virtual ElementMapping<T> mapping(const Vector_Base<T> *x) const =0;
+	virtual void setMapping(Matrix_Base<T> *A) const =0;
+	virtual void setMapping(Vector_Base<T> *x) const =0;
 
 	virtual ~AX_LinearSystem() {}
 
