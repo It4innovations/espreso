@@ -4,7 +4,6 @@
 
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
-#include "esinfo/envinfo.h"
 #include "esinfo/meshinfo.h"
 
 #include "analysis/assembler/operators/operators.h"
@@ -123,26 +122,7 @@ void AX_Acoustic::next()
 		im.rhs->touched = true;
 	}
 
-	#pragma omp parallel for
-	for (int t = 0; t < info::env::threads; ++t) {
-		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
-			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
-				size_t elementsInInterval = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
-
-				// First pass through operators
-				for(size_t element = 0; element < elementsInInterval; ++element) {
-					for (auto op = actionOps[i].begin(); op != actionOps[i].end(); ++op) {
-						if((*op)->update) {
-							if(element == 0 || !(*op)->isconst) {
-								(**op)();
-								++(**op);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
+	iterate();
 
 	std::cout << "COO[nd]: " << *coords.node.data << "\n";
 	std::cout << "stiffness: " << *elements.stiffness.data << "\n";

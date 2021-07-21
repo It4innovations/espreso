@@ -4,8 +4,10 @@
 #include "basis/evaluator/evaluator.h"
 #include "basis/utilities/parser.h"
 #include "esinfo/ecfinfo.h"
+#include "esinfo/envinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"
+#include "mesh/store/domainstore.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/boundaryregionstore.h"
@@ -16,10 +18,58 @@
 using namespace espreso;
 
 Assembler::Assembler()
-: actionOps(info::mesh->elements->eintervals.size()), actionRes(info::mesh->elements->eintervals.size()),
+: elementOps(info::mesh->elements->eintervals.size()), elementRes(info::mesh->elements->eintervals.size()),
+  boundaryOps(info::mesh->boundaryRegions.size()), boundaryRes(info::mesh->boundaryRegions.size()),
   version(0)
 {
+	for (size_t i = 0; i < info::mesh->boundaryRegions.size(); ++i) {
+		if (info::mesh->boundaryRegions[i]->dimension) {
+			boundaryOps[i].resize(info::mesh->boundaryRegions[i]->eintervals.size());
+			boundaryRes[i].resize(info::mesh->boundaryRegions[i]->eintervals.size());
+		}
+	}
+}
 
+void Assembler::iterate()
+{
+	#pragma omp parallel for
+	for (int t = 0; t < info::env::threads; ++t) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
+			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
+				size_t elementsInInterval = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
+
+				for(size_t element = 0; element < elementsInInterval; ++element) {
+					for (auto op = elementOps[i].begin(); op != elementOps[i].end(); ++op) {
+						if((*op)->update) {
+							if(element == 0 || !(*op)->isconst) {
+								(**op)();
+								++(**op);
+							}
+						}
+					}
+				}
+			}
+
+			for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+				if (info::mesh->boundaryRegions[r]->dimension) {
+					for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
+						size_t elementsInInterval = info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin;
+
+						for(size_t element = 0; element < elementsInInterval; ++element) {
+							for (auto op = boundaryOps[r][i].begin(); op != boundaryOps[r][i].end(); ++op) {
+								if((*op)->update) {
+									if(element == 0 || !(*op)->isconst) {
+										(**op)();
+										++(**op);
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 void Assembler::updateVersions()
@@ -105,7 +155,7 @@ void Assembler::printMaterials(const std::map<std::string, std::string> &setting
 	}
 }
 
-bool Assembler::examineMaterialParameter(const std::string &material, const std::string &name, const ECFExpression &settings, ExternalValue &value, int dimension)
+bool Assembler::examineMaterialParameter(const std::string &material, const std::string &name, const ECFExpression &settings, ExternalElementValue &externalValue, int dimension)
 {
 	if (settings.evaluator->variables.size()) {
 		std::string params = Parser::join(", ", settings.evaluator->variables);
@@ -116,42 +166,44 @@ bool Assembler::examineMaterialParameter(const std::string &material, const std:
 
 	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		if (StringCompare::caseInsensitiveEq(info::mesh->materials[info::mesh->elements->eintervals[i].material]->name, material)) {
-			value.evaluator[value.dimension * i + dimension] = settings.evaluator;
+			externalValue.evaluator[externalValue.dimension * i + dimension] = settings.evaluator;
 		}
 	}
 	return settings.evaluator->isset;
 }
 
-bool Assembler::examineElementParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExternalValue &value)
+bool Assembler::examineElementParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExternalElementValue &externalValue)
 {
-	return examineElementParameter<ECFExpression>(name, settings, value, 0, [] (const ECFExpression &expr) { return expr.evaluator; });
+	return examineElementParameter<ECFExpression>(name, settings, externalValue, 0, [] (const ECFExpression &expr) { return expr.evaluator; });
 }
-bool Assembler::examineElementParameter(const std::string &name, const std::map<std::string, ECFExpressionVector> &settings, ExternalValue &value, int dimension)
+bool Assembler::examineElementParameter(const std::string &name, const std::map<std::string, ECFExpressionVector> &settings, ExternalElementValue &externalValue, int dimension)
 {
-	return examineElementParameter<ECFExpressionVector>(name, settings, value, dimension, [&] (const ECFExpressionVector &expr) { return expr.data[dimension].evaluator; });
+	return examineElementParameter<ECFExpressionVector>(name, settings, externalValue, dimension, [&] (const ECFExpressionVector &expr) { return expr.data[dimension].evaluator; });
 }
 
-void Assembler::examineBoundaryParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExternalValue &value)
+void Assembler::examineBoundaryParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExternalBoundaryValue &externalValue)
 {
-//	if (settings.size()) {
-//		eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
-//
-//		int rindex = 0;
-//		for (auto reg = info::mesh->boundaryRegions.begin(); reg != info::mesh->boundaryRegions.end(); ++reg, ++rindex) {
-//			auto ms = settings.find((*reg)->name);
-//			if (ms != settings.end()) {
-//				const Evaluator *evaluator = ms->second.evaluator;
-//				wrapper.insert(rindex, 0, evaluator);
-//				if (evaluator->variables.size()) {
-//					std::string params = Parser::join(", ", evaluator->variables);
-//					eslog::info("   %30s:  %*s       FNC( %s )\n", (*reg)->name.c_str(), 43 - params.size(), "", params.c_str());
-//				} else {
-//					eslog::info("   %30s:  %57g \n", (*reg)->name.c_str(), evaluator->eval(Evaluator::Params()));
-//				}
-//			}
-//		}
-//		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-//	}
+	if (settings.size()) {
+		eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
+
+		int rindex = 0;
+		for (auto reg = info::mesh->boundaryRegions.begin(); reg != info::mesh->boundaryRegions.end(); ++reg, ++rindex) {
+			auto ms = settings.find((*reg)->name);
+			if (ms != settings.end()) {
+				const Evaluator *evaluator = ms->second.evaluator;
+				for (size_t i = 0; i < info::mesh->boundaryRegions[rindex]->eintervals.size(); ++i) {
+					externalValue.evaluator[rindex].evaluator[i];
+				}
+				if (evaluator->variables.size()) {
+					std::string params = Parser::join(", ", evaluator->variables);
+					eslog::info("   %30s:  %*s       FNC( %s )\n", (*reg)->name.c_str(), 43 - params.size(), "", params.c_str());
+				} else {
+					eslog::info("   %30s:  %57g \n", (*reg)->name.c_str(), evaluator->eval(Evaluator::Params()));
+				}
+			}
+		}
+		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+	}
 }
 
 void Assembler::examineBoundaryParameter(const std::string &name, const std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection)

@@ -17,9 +17,9 @@ void _add(Module &module, Matrix_Base<double> *A, ParameterData &parameter)
 		double *data = A->mapping.elements[interval].data;
 		const esint *position = A->mapping.elements[interval].position;
 		switch (A->shape) {
-		case Matrix_Shape::FULL:  module.actionOps[interval].emplace_back(instantiate<typename Module::NGP, dofs, MatrixFullFiller >(interval, parameter, data, position)); break;
-		case Matrix_Shape::LOWER: module.actionOps[interval].emplace_back(instantiate<typename Module::NGP, dofs, MatrixLowerFiller>(interval, parameter, data, position)); break;
-		case Matrix_Shape::UPPER: module.actionOps[interval].emplace_back(instantiate<typename Module::NGP, dofs, MatrixUpperFiller>(interval, parameter, data, position)); break;
+		case Matrix_Shape::FULL:  module.elementOps[interval].emplace_back(instantiate<typename Module::NGP, dofs, MatrixFullFiller >(interval, parameter, data, position)); break;
+		case Matrix_Shape::LOWER: module.elementOps[interval].emplace_back(instantiate<typename Module::NGP, dofs, MatrixLowerFiller>(interval, parameter, data, position)); break;
+		case Matrix_Shape::UPPER: module.elementOps[interval].emplace_back(instantiate<typename Module::NGP, dofs, MatrixUpperFiller>(interval, parameter, data, position)); break;
 		}
 	}
 }

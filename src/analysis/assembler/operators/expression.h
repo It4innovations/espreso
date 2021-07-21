@@ -9,8 +9,8 @@
 namespace espreso {
 
 template <size_t nodes, size_t gps>
-struct ExpressionsToElements: public ActionOperator {
-	ExpressionsToElements(int interval, ParameterData &parameter, Evaluator *evaluator, size_t offset, size_t size)
+struct ExpressionsToParameter: public ActionOperator {
+	ExpressionsToParameter(int interval, ParameterData &parameter, Evaluator *evaluator, size_t offset, size_t size)
 	: ActionOperator(interval, parameter.isconst[interval], parameter.update[interval]),
 	  data(parameter, interval),
 	  evaluator(evaluator),

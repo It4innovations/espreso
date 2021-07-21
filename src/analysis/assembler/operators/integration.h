@@ -120,6 +120,79 @@ struct ElementJacobian3D: public ElementJacobian {
 	}
 };
 
+struct BoundaryJacobian: public ActionOperator {
+	BoundaryJacobian(
+			int interval,
+			const ParameterData &coordinates,
+			const ParameterData &dN,
+			ParameterData &jacobian)
+	: ActionOperator(interval, jacobian.isconst[interval], jacobian.update[interval]),
+	  coords(coordinates, interval),
+	  dN(dN, interval, 0),
+	  jacobian(jacobian, interval)
+	{ }
+
+	InputParameterIterator coords, dN;
+	OutputParameterIterator jacobian;
+
+	void operator++()
+	{
+		++coords;
+		++jacobian;
+	}
+
+	void reset()
+	{
+
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct BoundaryFaceJacobian: public BoundaryJacobian {
+	using BoundaryJacobian::BoundaryJacobian;
+
+	void operator()()
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			double dND[6] = { 0, 0, 0, 0, 0, 0 };
+			M2NMN3<nodes>(1, dN.data + 2 * gpindex * nodes, coords.data, dND);
+			double x = dND[1] * dND[5] - dND[2] * dND[4];
+			double y = dND[2] * dND[3] - dND[0] * dND[5];
+			double z = dND[0] * dND[4] - dND[1] * dND[3];
+			jacobian.data[gpindex] = std::sqrt(x * x + y * y + z * z);
+		}
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct BoundaryEdge3DJacobian: public BoundaryJacobian {
+	using BoundaryJacobian::BoundaryJacobian;
+
+	void operator()()
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			double dND[3] = { 0, 0, 0 };
+			M1NMN3<nodes>(1, dN.data + 1 * gpindex * nodes, coords.data, dND);
+			jacobian.data[gpindex] = std::sqrt(dND[0] * dND[0] + dND[1] * dND[1] + dND[2] * dND[2]);
+		}
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct BoundaryEdge2DJacobian: public BoundaryJacobian {
+	using BoundaryJacobian::BoundaryJacobian;
+
+	void operator()()
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			double dND[2] = { 0, 0 };
+			M1NMN2<nodes>(1, dN.data + 1 * gpindex * nodes, coords.data, dND);
+			jacobian.data[gpindex] = std::sqrt(dND[0] * dND[0] + dND[1] * dND[1]);
+		}
+	}
+};
+
+
 }
 
 #endif /* SRC_PHYSICS_ASSEMBLER_OPERATORS_INTEGRATION_H_ */

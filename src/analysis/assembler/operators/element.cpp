@@ -29,14 +29,14 @@ void heatStiffness(AX_HeatTransfer &module)
 		const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
 		if (mat->thermal_conductivity.model == ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
 			if (info::mesh->dimension == 2) {
-				module.actionOps[interval].emplace_back(
+				module.elementOps[interval].emplace_back(
 						instantiate<AX_HeatTransfer::NGP, Stiffness2DHeatIsotropic>(interval,
 								module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant,
 								module.material.conductivityIsotropic,
 								module.gradient.xi, module.thickness.gp, module.elements.stiffness));
 			}
 			if (info::mesh->dimension == 3) {
-				module.actionOps[interval].emplace_back(
+				module.elementOps[interval].emplace_back(
 						instantiate<AX_HeatTransfer::NGP, Stiffness3DHeatIsotropic>(interval,
 								module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant,
 								module.material.conductivityIsotropic,
@@ -44,14 +44,14 @@ void heatStiffness(AX_HeatTransfer &module)
 			}
 		} else {
 			if (info::mesh->dimension == 2) {
-				module.actionOps[interval].emplace_back(
+				module.elementOps[interval].emplace_back(
 						instantiate<AX_HeatTransfer::NGP, Stiffness2DHeat>(interval,
 								module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant,
 								module.material.conductivity,
 								module.gradient.xi, module.thickness.gp, module.elements.stiffness));
 			}
 			if (info::mesh->dimension == 3) {
-				module.actionOps[interval].emplace_back(
+				module.elementOps[interval].emplace_back(
 						instantiate<AX_HeatTransfer::NGP, Stiffness3DHeat>(interval,
 								module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant,
 								module.material.conductivity,
@@ -77,10 +77,10 @@ void acousticStiffness(AX_Acoustic &module)
 
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
 		if (info::mesh->dimension == 2) {
-			module.actionOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, Stiffness2DAcoustic>(interval, module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant, module.elements.stiffness));
+			module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, Stiffness2DAcoustic>(interval, module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant, module.elements.stiffness));
 		}
 		if (info::mesh->dimension == 3) {
-			module.actionOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, Stiffness2DAcoustic>(interval, module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant, module.elements.stiffness));
+			module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, Stiffness2DAcoustic>(interval, module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant, module.elements.stiffness));
 		}
 	}
 }
@@ -98,7 +98,7 @@ void acousticMass(AX_Acoustic &module)
 	module.addParameter(module.elements.stiffness);
 
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
-		module.actionOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticMass>(interval, module.integration.N, module.integration.weight, module.integration.jacobiDeterminant, module.elements.mass));
+		module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticMass>(interval, module.integration.N, module.integration.weight, module.integration.jacobiDeterminant, module.elements.mass));
 	}
 }
 

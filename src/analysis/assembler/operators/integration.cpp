@@ -31,10 +31,36 @@ void _elementIntegration(Module &module)
 
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
 		if (info::mesh->dimension == 2) {
-			module.actionOps[interval].emplace_back(instantiate<typename Module::NGP, ElementJacobian2D>(interval, module.coords.node, module.integration.dN, module.integration.jacobiInversion, module.integration.jacobiDeterminant, module.integration.dND));
+			module.elementOps[interval].emplace_back(instantiate<typename Module::NGP, ElementJacobian2D>(interval, module.coords.node, module.integration.dN, module.integration.jacobiInversion, module.integration.jacobiDeterminant, module.integration.dND));
 		}
 		if (info::mesh->dimension == 3) {
-			module.actionOps[interval].emplace_back(instantiate<typename Module::NGP, ElementJacobian3D>(interval, module.coords.node, module.integration.dN, module.integration.jacobiInversion, module.integration.jacobiDeterminant, module.integration.dND));
+			module.elementOps[interval].emplace_back(instantiate<typename Module::NGP, ElementJacobian3D>(interval, module.coords.node, module.integration.dN, module.integration.jacobiInversion, module.integration.jacobiDeterminant, module.integration.dND));
+		}
+	}
+}
+
+template <class Module>
+void _boundaryIntegration(Module &module)
+{
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		module.integration.boundary.jacobian.regions[r].addInput(module.coords.boundary.node.regions[r]);
+		module.integration.boundary.jacobian.regions[r].addInput(module.integration.boundary.dN.regions[r]);
+		module.integration.boundary.jacobian.regions[r].isset = true;
+		module.integration.boundary.jacobian.regions[r].resize();
+		module.addParameter(module.integration.boundary.jacobian.regions[r]);
+
+		for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
+			if (info::mesh->boundaryRegions[r]->dimension == 2) {
+				module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, BoundaryFaceJacobian>(r, interval, module.coords.boundary.node.regions[r], module.integration.boundary.dN.regions[r], module.integration.boundary.jacobian.regions[r]));
+			}
+			if (info::mesh->boundaryRegions[r]->dimension == 1) {
+				if (info::mesh->dimension == 3) {
+					module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, BoundaryEdge3DJacobian>(r, interval, module.coords.boundary.node.regions[r], module.integration.boundary.dN.regions[r], module.integration.boundary.jacobian.regions[r]));
+				}
+				if (info::mesh->dimension == 2) {
+					module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, BoundaryEdge2DJacobian>(r, interval, module.coords.boundary.node.regions[r], module.integration.boundary.dN.regions[r], module.integration.boundary.jacobian.regions[r]));
+				}
+			}
 		}
 	}
 }
@@ -42,11 +68,13 @@ void _elementIntegration(Module &module)
 void elementIntegration(AX_HeatTransfer &module)
 {
 	_elementIntegration(module);
+	_boundaryIntegration(module);
 }
 
 void elementIntegration(AX_Acoustic &module)
 {
 	_elementIntegration(module);
+	_boundaryIntegration(module);
 }
 
 }

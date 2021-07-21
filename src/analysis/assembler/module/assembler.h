@@ -37,9 +37,12 @@ public:
 		parameters.push_back(&parameter);
 	}
 
-	std::vector<std::vector<std::unique_ptr<ActionOperator> > > actionOps, actionRes;
+	std::vector<std::vector<std::unique_ptr<ActionOperator> > > elementOps, elementRes;
+	std::vector<std::vector<std::vector<std::unique_ptr<ActionOperator> > > > boundaryOps, boundaryRes;
 
 protected:
+	void iterate();
+
 	void updateVersions();
 
 	void printParamtereStats(const char* name, ParameterData &parameter);
@@ -50,17 +53,16 @@ protected:
 	template<typename Ttype>
 	void validateRegionSettings(const std::string &name, const std::map<std::string, Ttype> &settings);
 
-	bool examineMaterialParameter(const std::string &material, const std::string &name, const ECFExpression &settings, ExternalValue &value, int dimension);
+	bool examineMaterialParameter(const std::string &material, const std::string &name, const ECFExpression &settings, ExternalElementValue &externalValue, int dimension);
 
 	template<class TSecond>
-	bool examineElementParameter(const std::string &name, const std::map<std::string, TSecond> &settings, ExternalValue &value, int dimension, std::function<Evaluator*(const TSecond &expr)> getevaluator);
-	bool examineElementParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExternalValue &value);
-	bool examineElementParameter(const std::string &name, const std::map<std::string, ECFExpressionVector> &settings, ExternalValue &value, int dimension);
+	bool examineElementParameter(const std::string &name, const std::map<std::string, TSecond> &settings, ExternalElementValue &externalValue, int dimension, std::function<Evaluator*(const TSecond &expr)> getevaluator);
+	bool examineElementParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExternalElementValue &externalValue);
+	bool examineElementParameter(const std::string &name, const std::map<std::string, ECFExpressionVector> &settings, ExternalElementValue &externalValue, int dimension);
 
-	void examineBoundaryParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExternalValue &value);
+	void examineBoundaryParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExternalBoundaryValue &value);
 	void examineBoundaryParameter(const std::string &name, const std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection);
 
-	std::vector<OperatorBuilder*> builders, results;
 	std::vector<ParameterData*> parameters;
 	int version;
 };

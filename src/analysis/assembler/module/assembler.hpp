@@ -33,7 +33,7 @@ void Assembler::validateRegionSettings(const std::string &name, const std::map<s
 }
 
 template<class TSecond>
-bool Assembler::examineElementParameter(const std::string &name, const std::map<std::string, TSecond> &settings, ExternalValue &value, int dimension, std::function<Evaluator*(const TSecond &expr)> getevaluator)
+bool Assembler::examineElementParameter(const std::string &name, const std::map<std::string, TSecond> &settings, ExternalElementValue &value, int dimension, std::function<Evaluator*(const TSecond &expr)> getevaluator)
 {
 	if (settings.size() == 1 && StringCompare::caseInsensitiveEq(settings.begin()->first, "ALL_ELEMENTS")) {
 		Evaluator *evaluator = getevaluator(settings.begin()->second);

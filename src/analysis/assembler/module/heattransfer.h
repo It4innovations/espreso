@@ -72,7 +72,7 @@ public:
 	ParametersElementNodeFunction heatSource;
 
 	ParametersConvection convection;
-	ParametersBoundaryFunction temperature, heatFlow, heatFlux, q;
+	ParametersBoundaryFunction dirichlet, temperature, heatFlow, heatFlux, q;
 
 	ParametersElements<1> elements;
 	ParametersElements<1> elementsSimd;

@@ -65,7 +65,7 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 
 	void init(AX_HeatSteadyStateLinear *analysis)
 	{
-		assembler.A.type = analysis->assembler.matrixType();
+		assembler.A.type = solver.A.type = analysis->assembler.matrixType();
 		assembler.pattern.set(1);
 		assembler.pattern.fill(solver.A);
 		assembler.pattern.fill(solver.b);

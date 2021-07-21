@@ -96,11 +96,11 @@ struct ParameterData {
 	std::vector<InputHolder*> inputs;
 };
 
-struct ExternalValue {
+struct ExternalElementValue {
 	int dimension;
 	std::vector<Evaluator*> evaluator;
 
-	ExternalValue(ParameterData &parameter);
+	ExternalElementValue(ParameterData &parameter);
 };
 
 struct ElementParameterData: public ParameterData {
@@ -120,10 +120,10 @@ struct ElementParameter: public ElementParameterData {
 
 template<int mask>
 struct ElementExternalParameter: public ElementParameter<mask> {
-	ExternalValue evaluator;
+	ExternalElementValue externalValue;
 	std::vector<int> isset;
 
-	ElementExternalParameter(): evaluator(*this), isset(ElementParameterData::intervals(), 0) { }
+	ElementExternalParameter(): externalValue(*this), isset(ElementParameterData::intervals(), 0) { }
 };
 
 struct BoundaryParameterData: public ParameterData {
@@ -160,8 +160,14 @@ struct BoundaryParameterPack {
 		}
 	}
 
-private:
-	PerElementSize _mask;
+	PerElementSize size;
+};
+
+struct ExternalBoundaryValue {
+	int dimension;
+	std::vector<ExternalElementValue> evaluator;
+
+	ExternalBoundaryValue(BoundaryParameterPack &parameter);
 };
 
 template<int mask>
@@ -171,9 +177,9 @@ struct BoundaryParameter: public BoundaryParameterPack {
 
 template<int mask>
 struct BoundaryExternalParameter: public BoundaryParameter<mask> {
-	ExternalValue *settings;
+	ExternalBoundaryValue externalValue;
 
-	BoundaryExternalParameter(): settings(NULL) { }
+	BoundaryExternalParameter(): externalValue(*this) { }
 };
 
 template <class Settings>

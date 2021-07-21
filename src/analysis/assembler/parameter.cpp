@@ -26,11 +26,20 @@ ParameterData::~ParameterData()
 	}
 }
 
-ExternalValue::ExternalValue(ParameterData &parameter)
+ExternalElementValue::ExternalElementValue(ParameterData &parameter)
 : dimension(parameter.size.n * std::pow(info::mesh->dimension, parameter.size.ndimension)),
   evaluator(dimension * parameter.isconst.size(), nullptr)
 {
 
+}
+
+ExternalBoundaryValue::ExternalBoundaryValue(BoundaryParameterPack &parameter)
+: dimension(parameter.size.n * std::pow(info::mesh->dimension, parameter.size.ndimension))
+{
+	evaluator.reserve(info::mesh->boundaryRegions.size());
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		evaluator.emplace_back(parameter.regions[r]);
+	}
 }
 
 ElementParameterData::ElementParameterData(PerElementSize mask)
@@ -61,11 +70,11 @@ int BoundaryParameterData::intervals(int region)
 }
 
 BoundaryParameterPack::BoundaryParameterPack(PerElementSize mask)
-: _mask(mask)
+: size(mask)
 {
 	regions.reserve(info::mesh->boundaryRegions.size());
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-		regions.emplace_back(BoundaryParameterData(r, _mask));
+		regions.emplace_back(BoundaryParameterData(r, size));
 	}
 }
 

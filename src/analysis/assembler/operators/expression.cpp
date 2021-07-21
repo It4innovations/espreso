@@ -14,7 +14,7 @@
 
 namespace espreso {
 
-void fromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalValue &value)
+void fromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementValue &value)
 {
 	if (std::all_of(value.evaluator.begin(), value.evaluator.end(), [] (const Evaluator *ev) { return ev == NULL; })) {
 		return;
@@ -93,9 +93,14 @@ void fromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalV
 	module.addParameter(parameter);
 	for (size_t i = 0; i < parameter.isconst.size(); ++i) {
 		for (int d = 0; d < value.dimension && value.evaluator[i * value.dimension + d]; ++d) {
-			module.actionOps[i].emplace_back(instantiate<AX_HeatTransfer::NGP, ExpressionsToElements>(i, parameter, value.evaluator[i * value.dimension + d], d, value.dimension));
+			module.elementOps[i].emplace_back(instantiate<AX_HeatTransfer::NGP, ExpressionsToParameter>(i, parameter, value.evaluator[i * value.dimension + d], d, value.dimension));
 		}
 	}
+}
+
+void fromExpression(AX_HeatTransfer &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &value)
+{
+
 }
 
 }
