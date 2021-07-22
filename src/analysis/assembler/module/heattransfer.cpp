@@ -311,22 +311,14 @@ void AX_HeatTransfer::next()
 void AX_HeatTransfer::initDirichlet(Vector_Sparse<double> &dirichlet)
 {
 	size_t dsize = 0;
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-		const BoundaryRegionStore *bregion = info::mesh->boundaryRegions[r];
-		auto it = configuration.temperature.find(bregion->name);
-		if (it != configuration.temperature.end()) {
-			dsize += bregion->nodes->datatarray().size();
-		}
+	for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
+		BoundaryRegionStore *region = info::mesh->bregion(it->first);
+		dsize += region->nodes->datatarray().size();
 	}
 	dirichletIndices.reserve(dsize);
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-		const BoundaryRegionStore *bregion = info::mesh->boundaryRegions[r];
-		auto it = configuration.temperature.find(bregion->name);
-		if (it != configuration.temperature.end()) {
-			for (auto n = bregion->nodes->datatarray().cbegin(); n != bregion->nodes->datatarray().cend(); ++n) {
-				dirichletIndices.push_back(*n);
-			}
-		}
+	for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
+		BoundaryRegionStore *region = info::mesh->bregion(it->first);
+		dirichletIndices.insert(dirichletIndices.end(), region->nodes->datatarray().begin(), region->nodes->datatarray().end());
 	}
 	dirichletPermutation.resize(dsize);
 	std::iota(dirichletPermutation.begin(), dirichletPermutation.end(), 0);
@@ -348,19 +340,22 @@ void AX_HeatTransfer::initDirichlet(Vector_Sparse<double> &dirichlet)
 
 void AX_HeatTransfer::fillDirichlet(Vector_Sparse<double> &dirichlet)
 {
-	std::vector<double> values;
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-		const BoundaryRegionStore *bregion = info::mesh->boundaryRegions[r];
-		auto it = configuration.temperature.find(bregion->name);
-		if (it != configuration.temperature.end()) {
-			for (auto n = bregion->nodes->datatarray().cbegin(); n != bregion->nodes->datatarray().cend(); ++n) {
-				values.push_back(r);
-			}
-		}
+	size_t offset = 0;
+	std::vector<double> values(dirichletPermutation.size());
+	for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
+		BoundaryRegionStore *region = info::mesh->bregion(it->first);
+		it->second.evaluator->evalSelectedSparse(
+				region->nodes->datatarray().size(),
+				region->nodes->datatarray().data(),
+				Evaluator::Params().coords(3, reinterpret_cast<double*>(info::mesh->nodes->coordinates->datatarray().data())),
+				values.data() + offset);
+		offset += region->nodes->datatarray().size();
 	}
+
 	for (size_t i = 0; i < dirichletPermutation.size(); ++i) {
 		dirichlet.vals[i] = values[dirichletPermutation[i]];
 	}
+	dirichlet.touched = true;
 }
 
 void AX_HeatTransfer::updateSolution()
