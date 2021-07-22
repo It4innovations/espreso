@@ -139,6 +139,7 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 		if (info::ecf->output.print_matrices) {
 			math::store(solver.A, utils::filename(utils::debugDirectory() + "/system", "A").c_str());
 			math::store(solver.b, utils::filename(utils::debugDirectory() + "/system", "b").c_str());
+			math::store(solver.dirichlet, utils::filename(utils::debugDirectory() + "/system", "dirichlet").c_str());
 		}
 	}
 

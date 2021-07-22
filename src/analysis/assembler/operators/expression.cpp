@@ -9,6 +9,7 @@
 #include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
+#include "mesh/store/boundaryregionstore.h"
 
 #include <algorithm>
 
@@ -20,7 +21,7 @@ void fromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalE
 		return;
 	}
 
-	for (size_t i = 0; i < parameter.isconst.size(); ++i) {
+	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		for (int d = 0; d < value.dimension && value.evaluator[i * value.dimension + d]; ++d) {
 			for (size_t p = 0; p < value.evaluator[i * value.dimension + d]->variables.size(); ++p) {
 				parameter.isconst[i] = false; // in the case of TIME it is possible to keep value constant
@@ -91,16 +92,30 @@ void fromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalE
 	parameter.resize();
 
 	module.addParameter(parameter);
-	for (size_t i = 0; i < parameter.isconst.size(); ++i) {
+	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		for (int d = 0; d < value.dimension && value.evaluator[i * value.dimension + d]; ++d) {
 			module.elementOps[i].emplace_back(instantiate<AX_HeatTransfer::NGP, ExpressionsToParameter>(i, parameter, value.evaluator[i * value.dimension + d], d, value.dimension));
 		}
 	}
 }
 
-void fromExpression(AX_HeatTransfer &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &value)
+void fromExpression(AX_HeatTransfer &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values)
 {
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		for (int d = 0; d < values.dimension && values.evaluator[r * values.dimension + d]; ++d) {
+			// add input parameters
+		}
 
+		if (std::any_of(values.evaluator.begin() + r * values.dimension, values.evaluator.begin() + r * values.dimension + values.dimension, [] (const Evaluator *ev) { return ev != NULL; })) {
+			parameter.regions[r].resize();
+			module.addParameter(parameter.regions[r]);
+			for (int d = 0; d < values.dimension && values.evaluator[r * values.dimension + d]; ++d) {
+				for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+					module.boundaryOps[r][i].emplace_back(instantiate<AX_HeatTransfer::NGP, ExpressionsToParameter>(r, i, parameter.regions[r], values.evaluator[r * values.dimension + d], d, values.dimension));
+				}
+			}
+		}
+	}
 }
 
 }

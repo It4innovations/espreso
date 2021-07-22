@@ -101,6 +101,9 @@ struct ExternalElementValue {
 	std::vector<Evaluator*> evaluator;
 
 	ExternalElementValue(ParameterData &parameter);
+
+protected:
+	ExternalElementValue(int dimension): dimension(dimension) {}
 };
 
 struct ElementParameterData: public ParameterData {
@@ -163,10 +166,7 @@ struct BoundaryParameterPack {
 	PerElementSize size;
 };
 
-struct ExternalBoundaryValue {
-	int dimension;
-	std::vector<ExternalElementValue> evaluator;
-
+struct ExternalBoundaryValue: public ExternalElementValue { // the same as ExternalElementValue but array is array of regions
 	ExternalBoundaryValue(BoundaryParameterPack &parameter);
 };
 
@@ -177,9 +177,9 @@ struct BoundaryParameter: public BoundaryParameterPack {
 
 template<int mask>
 struct BoundaryExternalParameter: public BoundaryParameter<mask> {
-	ExternalBoundaryValue externalValue;
+	ExternalBoundaryValue externalValues;
 
-	BoundaryExternalParameter(): externalValue(*this) { }
+	BoundaryExternalParameter(): externalValues(*this) { }
 };
 
 template <class Settings>

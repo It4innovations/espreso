@@ -51,7 +51,7 @@ void _boundaryCoordinates(Module &module)
 			module.addParameter(module.coords.boundary.gp.regions[r]);
 
 			for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
-				auto procNodes = info::mesh->boundaryRegions[r]->nodes->cbegin() + info::mesh->boundaryRegions[r]->eintervals[interval].begin;
+				auto procNodes = info::mesh->boundaryRegions[r]->elements->cbegin() + info::mesh->boundaryRegions[r]->eintervals[interval].begin;
 				if (info::mesh->dimension == 2) {
 					module.boundaryOps[r][interval].emplace_back(new Coordinates2DToElementNodes(procNodes, module.coords.boundary.node.regions[r], interval));
 					module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, 2, FromNodesToGaussPoints>(r, interval, module.integration.boundary.N.regions[r], module.coords.boundary.node.regions[r], module.coords.boundary.gp.regions[r]));

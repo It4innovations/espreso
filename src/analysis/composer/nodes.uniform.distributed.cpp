@@ -93,6 +93,36 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs)
 	for (size_t i = 0; i < RHSData.size(); ++i) {
 		pattern->elements.f.push_back(std::lower_bound(RHSPattern.begin(), RHSPattern.end(), RHSData[i]) - RHSPattern.begin());
 	}
+
+	std::vector<esint> belement(dofs * 8);
+	pattern->bregion.resize(info::mesh->boundaryRegions.size());
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (info::mesh->boundaryRegions[r]->dimension) {
+
+			Ksize = 0; RHSsize = 0;
+			for (auto e = info::mesh->boundaryRegions[r]->elements->begin(); e != info::mesh->boundaryRegions[r]->elements->end(); ++e) {
+				RHSsize += e->size() * dofs;
+				Ksize += size(e->size() * dofs);
+			}
+			pattern->bregion[r].f.reserve(RHSsize);
+			pattern->bregion[r].K.reserve(Ksize);
+
+			for (auto e = info::mesh->boundaryRegions[r]->elements->begin(); e != info::mesh->boundaryRegions[r]->elements->end(); ++e) {
+				belement.clear();
+				for (int dof = 0; dof < dofs; ++dof) {
+					for (auto n = e->begin(); n != e->end(); ++n) {
+						belement.push_back(info::mesh->nodes->uniqInfo.position[*n] * dofs + dof);
+					}
+				}
+				for (size_t i = 0; i < belement.size(); ++i) {
+					pattern->bregion[r].f.push_back(std::lower_bound(RHSPattern.begin(), RHSPattern.end(), belement[i]) - RHSPattern.begin());
+					for (size_t j = 0; j < belement.size(); ++j) {
+						pattern->bregion[r].K.push_back(std::lower_bound(KPattern.begin(), KPattern.end(), IJ{belement[i], belement[j]}) - KPattern.begin());
+					}
+				}
+			}
+		}
+	}
 }
 
 void UniformNodesDistributedPattern::set(int dofs)

@@ -34,12 +34,9 @@ ExternalElementValue::ExternalElementValue(ParameterData &parameter)
 }
 
 ExternalBoundaryValue::ExternalBoundaryValue(BoundaryParameterPack &parameter)
-: dimension(parameter.size.n * std::pow(info::mesh->dimension, parameter.size.ndimension))
+: ExternalElementValue(parameter.size.n * std::pow(info::mesh->dimension, parameter.size.ndimension))
 {
-	evaluator.reserve(info::mesh->boundaryRegions.size());
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-		evaluator.emplace_back(parameter.regions[r]);
-	}
+	evaluator.resize(dimension * info::mesh->boundaryRegions.size(), nullptr);
 }
 
 ElementParameterData::ElementParameterData(PerElementSize mask)

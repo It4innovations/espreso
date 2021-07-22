@@ -598,7 +598,7 @@ void Mesh::partitiate(int ndomains)
 
 	mesh::computeElementIntervals(domains, elements);
 	mesh::computeRegionsElementIntervals(elements, elementsRegions);
-	mesh::computeRegionsBoundaryIntervals(domains, boundaryRegions, contactInterfaces);
+	mesh::computeRegionsBoundaryIntervals(elements, domains, boundaryRegions, contactInterfaces);
 	profiler::synccheckpoint("arrange_element_regions");
 	eslog::checkpointln("MESH: ELEMENT REGIONS ARRANGED");
 

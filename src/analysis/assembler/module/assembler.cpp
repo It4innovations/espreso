@@ -190,10 +190,8 @@ void Assembler::examineBoundaryParameter(const std::string &name, const std::map
 		for (auto reg = info::mesh->boundaryRegions.begin(); reg != info::mesh->boundaryRegions.end(); ++reg, ++rindex) {
 			auto ms = settings.find((*reg)->name);
 			if (ms != settings.end()) {
-				const Evaluator *evaluator = ms->second.evaluator;
-				for (size_t i = 0; i < info::mesh->boundaryRegions[rindex]->eintervals.size(); ++i) {
-					externalValue.evaluator[rindex].evaluator[i];
-				}
+				Evaluator *evaluator = ms->second.evaluator;
+				externalValue.evaluator[externalValue.dimension * rindex] = evaluator;
 				if (evaluator->variables.size()) {
 					std::string params = Parser::join(", ", evaluator->variables);
 					eslog::info("   %30s:  %*s       FNC( %s )\n", (*reg)->name.c_str(), 43 - params.size(), "", params.c_str());

@@ -70,6 +70,35 @@ struct MatrixFullFiller: public MatrixFiller {
 	}
 };
 
+template<size_t nodes, size_t gps, size_t dimension>
+struct VectorFiller: public ActionOperator {
+	VectorFiller(int interval, const ParameterData &rhs, double *global, const esint *position)
+	: ActionOperator(interval, false, true),
+	  rhs(rhs, interval),
+	  global(global), position(position) {}
+
+	InputParameterIterator rhs;
+	double *global;
+	const esint *position;
+
+	void operator++()
+	{
+		// increment by operator()
+	}
+
+	void operator()()
+	{
+		for (size_t r = 0; r < nodes * dimension; ++r) {
+			global[*position++] += *rhs.data++;
+		}
+	}
+
+	void reset()
+	{
+
+	}
+};
+
 }
 
 

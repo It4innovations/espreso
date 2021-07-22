@@ -111,6 +111,7 @@ void AX_HeatTransfer::analyze()
 		if (info::mesh->dimension == 2) {
 			correct &= examineElementParameter("THICKNESS", info::ecf->heat_transfer_2d.thickness, thickness.gp.externalValue);
 			fromExpression(*this, thickness.gp, thickness.gp.externalValue);
+//			builders.push_back(new ExpressionsToBoundaryFromElement(*thickness.gp.builder, thickness.boundary.gp, "BOUDARY THICKNESS"));
 		}
 
 		///////////////////////////////////// Set materials and check if there is not any incorrect region intersection
@@ -250,21 +251,20 @@ void AX_HeatTransfer::analyze()
 	heatStiffness(*this);
 
 	if (configuration.temperature.size()) {
-//		builders.push_back(new ExpressionsToBoundary(dirichlet.gp, "BOUNDARY TEMPERATURE"));
-		fromExpression(*this, dirichlet.gp, dirichlet.gp.externalValue);
-		examineBoundaryParameter("TEMPERATURE", configuration.temperature, dirichlet.gp.externalValue);
+		examineBoundaryParameter("TEMPERATURE", configuration.temperature, dirichlet.gp.externalValues);
+		fromExpression(*this, dirichlet.gp, dirichlet.gp.externalValues);
 	}
 	if (configuration.heat_flow.size()) {
-		fromExpression(*this, heatFlow.gp, heatFlow.gp.externalValue);
-		examineBoundaryParameter("HEAT FLOW", configuration.heat_flow, heatFlow.gp.externalValue);
+		examineBoundaryParameter("HEAT FLOW", configuration.heat_flow, heatFlow.gp.externalValues);
+		fromExpression(*this, heatFlow.gp, heatFlow.gp.externalValues);
 	}
 	if (configuration.heat_flux.size()) {
-		fromExpression(*this, heatFlux.gp, heatFlux.gp.externalValue);
-		examineBoundaryParameter("HEAT FLUX", configuration.heat_flux, heatFlux.gp.externalValue);
+		examineBoundaryParameter("HEAT FLUX", configuration.heat_flux, heatFlux.gp.externalValues);
+		fromExpression(*this, heatFlux.gp, heatFlux.gp.externalValues);
 	}
+	heatRHS(*this);
 
 	addFiller(*this);
-
 
 	eslog::info(" ============================================================================================= \n");
 	if (correct) {
@@ -297,7 +297,7 @@ void AX_HeatTransfer::next()
 
 	iterate();
 
-	std::cout << "COO[nd]: " << *coords.node.data << "\n";
+//	std::cout << "COO[nd]: " << *coords.node.data << "\n";
 //	std::cout << "COO[gp]: " << *coords.gp.data << "\n";
 //	std::cout << "thick: " << *thickness.gp.data << "\n";
 //	std::cout << "cart: " << *cooSystem.cartesian2D.data << "\n";
@@ -305,7 +305,7 @@ void AX_HeatTransfer::next()
 //	std::cout << "dia: " << *material.model.diagonal.data << "\n";
 //	std::cout << "cond-iso: " << *material.conductivityIsotropic.data << "\n";
 //	std::cout << "cond-dia: " << *material.conductivity.data << "\n";
-	std::cout << "stiffness: " << *elements.stiffness.data << "\n";
+//	std::cout << "stiffness: " << *elements.stiffness.data << "\n";
 }
 
 void AX_HeatTransfer::initDirichlet(Vector_Sparse<double> &dirichlet)
