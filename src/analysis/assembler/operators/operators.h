@@ -13,6 +13,7 @@ namespace espreso {
 
 void fromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementValue &value);
 void fromExpression(AX_HeatTransfer &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values);
+void fromExpression(AX_Acoustic &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values);
 
 void baseFunction(AX_HeatTransfer &module);
 void elementCoordinates(AX_HeatTransfer &module);

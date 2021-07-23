@@ -83,6 +83,13 @@ void AX_Acoustic::analyze()
 	if (M != nullptr) {
 		acousticMass(*this);
 	}
+
+	if (configuration.normal_acceleration.size()) {
+		examineBoundaryParameter("NORMAL ACCELERATION", configuration.normal_acceleration, normalAcceleration.gp.externalValues);
+		fromExpression(*this, normalAcceleration.gp, normalAcceleration.gp.externalValues);
+	}
+	acousticRHS(*this);
+
 	addFiller(*this);
 
 	eslog::info(" ============================================================================================= \n");

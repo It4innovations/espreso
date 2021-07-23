@@ -113,7 +113,7 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 //
 //	}
 
-	void update(AX_Acoustic &assembler)
+	void _update()
 	{
 		mklpdss.set(solver.A);
 		if (solver.A.touched || solver.b.touched || solver.dirichlet.touched) {
@@ -128,19 +128,14 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 		}
 	}
 
+	void update(AX_Acoustic &assembler)
+	{
+		_update();
+	}
+
 	void update(AX_HeatTransfer &assembler)
 	{
-		mklpdss.set(solver.A);
-		if (solver.A.touched || solver.b.touched || solver.dirichlet.touched) {
-			setDirichlet(solver.A, solver.b, solver.dirichlet);
-			mklpdss.update(solver.A);
-		}
-
-		if (info::ecf->output.print_matrices) {
-			math::store(solver.A, utils::filename(utils::debugDirectory() + "/system", "A").c_str());
-			math::store(solver.b, utils::filename(utils::debugDirectory() + "/system", "b").c_str());
-			math::store(solver.dirichlet, utils::filename(utils::debugDirectory() + "/system", "dirichlet").c_str());
-		}
+		_update();
 	}
 
 //	void prepare(AX_HeatSteadyStateNonLinear *analysis)

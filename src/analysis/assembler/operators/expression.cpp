@@ -4,6 +4,7 @@
 #include "analysis/assembler/operator.hpp"
 #include "analysis/assembler/parameter.h"
 #include "analysis/assembler/module/heattransfer.h"
+#include "analysis/assembler/module/acoustic.h"
 #include "basis/evaluator/evaluator.h"
 #include "basis/utilities/parser.h"
 #include "esinfo/eslog.hpp"
@@ -112,6 +113,25 @@ void fromExpression(AX_HeatTransfer &module, BoundaryParameterPack &parameter, E
 			for (int d = 0; d < values.dimension && values.evaluator[r * values.dimension + d]; ++d) {
 				for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
 					module.boundaryOps[r][i].emplace_back(instantiate<AX_HeatTransfer::NGP, ExpressionsToParameter>(r, i, parameter.regions[r], values.evaluator[r * values.dimension + d], d, values.dimension));
+				}
+			}
+		}
+	}
+}
+
+void fromExpression(AX_Acoustic &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values)
+{
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		for (int d = 0; d < values.dimension && values.evaluator[r * values.dimension + d]; ++d) {
+			// add input parameters
+		}
+
+		if (std::any_of(values.evaluator.begin() + r * values.dimension, values.evaluator.begin() + r * values.dimension + values.dimension, [] (const Evaluator *ev) { return ev != NULL; })) {
+			parameter.regions[r].resize();
+			module.addParameter(parameter.regions[r]);
+			for (int d = 0; d < values.dimension && values.evaluator[r * values.dimension + d]; ++d) {
+				for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+					module.boundaryOps[r][i].emplace_back(instantiate<AX_Acoustic::NGP, ExpressionsToParameter>(r, i, parameter.regions[r], values.evaluator[r * values.dimension + d], d, values.dimension));
 				}
 			}
 		}

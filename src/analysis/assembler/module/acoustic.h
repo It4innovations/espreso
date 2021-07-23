@@ -61,6 +61,8 @@ public:
 	ParametersIntegration integration;
 	ParametersCoordinates coords;
 
+	ParametersBoundaryFunction dirichlet, normalAcceleration, q;
+
 	ParametersElements<1> elements;
 
 	std::vector<esint> dirichletIndices, dirichletPermutation;

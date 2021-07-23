@@ -55,6 +55,16 @@ void addFiller(AX_Acoustic &module)
 	if (module.C != nullptr) {
 		_add<1>(module, module.C, module.elements.damping);
 	}
+
+	if (module.re.rhs != nullptr) {
+		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+			if (info::mesh->boundaryRegions[r]->dimension && module.elements.boundary.rhs.regions[r].data != NULL) {
+				for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
+					module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, VectorFiller>(r, interval, module.elements.boundary.rhs.regions[r], module.re.rhs->mapping.boundary[r][interval].data, module.re.rhs->mapping.boundary[r][interval].position));
+				}
+			}
+		}
+	}
 }
 
 }
