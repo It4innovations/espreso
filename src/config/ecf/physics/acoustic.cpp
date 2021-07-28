@@ -19,6 +19,14 @@ AcousticGlobalSettings::AcousticGlobalSettings(ECFObject *ecfdescription)
 			.setform());
 }
 
+ImpedanceConfiguration::ImpedanceConfiguration()
+: impedance(ECFExpression::Scope::BGPS)
+{
+	REGISTER(impedance, ECFMetaData()
+			.setdescription({ "Impedance value" })
+			.setdatatype({ ECFDataType::EXPRESSION }));
+}
+
 AcousticLoadStepConfiguration::AcousticLoadStepConfiguration(DIMENSION *D)
 {
 	REGISTER(acoustic_pressure, ECFMetaData()
@@ -33,6 +41,12 @@ AcousticLoadStepConfiguration::AcousticLoadStepConfiguration(DIMENSION *D)
 			.setpattern({ "MY_REGION", "0" })
 			.setdynamic(),
 			ECFExpression::Scope::BGPS);
+
+	REGISTER(impedance, ECFMetaData()
+			.setdescription({ "The name of a region.", "Impedance" })
+			.setdatatype({ ECFDataType::BOUNDARY_REGION })
+			.setpattern({ "MY_REGION"})
+			.setdynamic());
 }
 
 AcousticConfiguration::AcousticConfiguration(DIMENSION d)

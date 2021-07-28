@@ -16,9 +16,15 @@ struct AcousticGlobalSettings {
 	AcousticGlobalSettings(ECFObject *ecfdescription);
 };
 
+struct ImpedanceConfiguration: public ECFDescription {
+	ECFExpression impedance;
+	ImpedanceConfiguration();
+};
+
 struct AcousticLoadStepConfiguration: public AcousticLoadStepSolverConfiguration {
 
 	std::map<std::string, ECFExpression> acoustic_pressure, normal_acceleration;
+	std::map<std::string, ImpedanceConfiguration> impedance;
 
 	AcousticLoadStepConfiguration(DIMENSION *D);
 };

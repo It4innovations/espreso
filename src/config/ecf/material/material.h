@@ -17,7 +17,7 @@ struct MaterialBaseConfiguration: public ECFDescription {
 	enum PHYSICAL_MODEL {
 		THERMAL              = 1 << 0,
 		STRUCTURAL_MECHANICS = 1 << 1,
-		ACOUSTIC = 1 << 2,
+		ACOUSTIC             = 1 << 2
 	};
 
 	enum class MATERIAL_MODEL {
