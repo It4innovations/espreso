@@ -128,20 +128,22 @@ void VTKLegacy::updateMesh()
 	if (_measure) { eslog::endln("VTK LEGACY: GEOMETRY STORED"); }
 }
 
-void VTKLegacy::updateSolution()
+void VTKLegacy::updateMonitors(step::TYPE type)
 {
-	std::string dir, name, suffix;
-	if (step::outstep.type == step::TYPE::FTT) {
-		dir = _path + _directory + std::to_string(step::outfrequency.current) + "/";
-		utils::createDirectory(dir);
-		name = _name + ".freq." + std::to_string(step::outfrequency.current);
-		suffix = "." + std::to_string(step::outftt.step) + _suffix;
-	} else {
-		dir = _path + _directory;
-		name = _name;
-		suffix = "." + std::to_string(step::outstep.substep) + _suffix;
-	}
+}
 
+void VTKLegacy::updateSolution(const step::Time &time)
+{
+	updateSolution(_path + _directory, _name, "." + std::to_string(time.current) + _suffix);
+}
+
+void VTKLegacy::updateSolution(const step::Frequency &frequency)
+{
+	updateSolution(_path + _directory, _name, "." + std::to_string(frequency.current) + _suffix);
+}
+
+void VTKLegacy::updateSolution(const std::string &dir, const std::string &name, const std::string &suffix)
+{
 	int index = 0;
 	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++index) {
 		insertHeader();

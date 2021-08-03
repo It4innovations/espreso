@@ -71,7 +71,7 @@ Monitoring::~Monitoring()
 	}
 }
 
-void Monitoring::updateMonitors()
+void Monitoring::updateMonitors(step::TYPE type)
 {
 	for (auto it = info::ecf->output.monitoring.begin(); it != info::ecf->output.monitoring.end(); ++it) {
 		if (it->first <= 0) {
@@ -318,6 +318,16 @@ void Monitoring::updateMonitors()
 
 		fflush(_runFile);
 	}
+}
+
+void Monitoring::updateSolution(const step::Time &time)
+{
+
+}
+
+void Monitoring::updateSolution(const step::Frequency &frequency)
+{
+
 }
 
 void Monitoring::updateSolution()

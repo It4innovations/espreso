@@ -95,8 +95,17 @@ void Netgen::updateMesh()
 	_writer.write();
 }
 
+void Netgen::updateMonitors(step::TYPE type)
+{
 
-void Netgen::updateSolution()
+}
+
+void Netgen::updateSolution(const step::Time &time)
+{
+	// TODO
+}
+
+void Netgen::updateSolution(const step::Frequency &frequency)
 {
 	// TODO
 }

@@ -464,7 +464,7 @@ bool LoadStepIterator::next(TPhysics &configuration)
 	_loadStepSolver = loadStepSolver;
 
 	if (step::isInitial()) {
-		info::mesh->output->updateMonitors();
+		info::mesh->output->updateMonitors(step::step.type);
 	}
 	eslog::endln("PHYSICS BUILDER: MONITORS SET");
 

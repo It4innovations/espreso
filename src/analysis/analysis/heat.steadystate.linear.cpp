@@ -33,6 +33,8 @@ void AX_HeatSteadyStateLinear::init()
 	system->init(this);
 	scheme.init(system);
 	assembler.init(scheme);
+
+	info::mesh->output->updateMonitors(step::TYPE::TIME);
 }
 
 void AX_HeatSteadyStateLinear::run()
@@ -53,7 +55,7 @@ void AX_HeatSteadyStateLinear::run()
 	scheme.storeSolution(time);
 
 	assembler.updateSolution();
-	info::mesh->output->updateSolution();
+	info::mesh->output->updateSolution(time);
 }
 
 

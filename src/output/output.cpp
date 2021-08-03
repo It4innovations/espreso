@@ -22,8 +22,6 @@
 namespace espreso {
 
 struct OutputExecutor {
-	static const int mesh = 0, solution = 1, monitors = 2;
-
 	void insert(OutputWriter *writer)
 	{
 		writers.push_back(writer);
@@ -36,50 +34,114 @@ struct OutputExecutor {
 		}
 	}
 
-	virtual void execute(int tag) = 0;
+	virtual void mesh() = 0;
+	virtual void monitors(step::TYPE type) = 0;
+	virtual void solution(const step::Time &time) = 0;
+	virtual void solution(const step::Frequency &frequency) = 0;
 
 	std::vector<OutputWriter*> writers;
 };
 
 class DirectOutputExecutor: public OutputExecutor {
 public:
-	virtual void execute(int tag)
+	virtual void mesh()
 	{
 		for (size_t i = 0; i < writers.size(); ++i) {
-			if (tag == mesh) {
-				writers[i]->updateMesh();
-			}
-			if (tag == solution) {
-				writers[i]->updateSolution();
-			}
-			if (tag == monitors) {
-				writers[i]->updateMonitors();
-			}
+			writers[i]->updateMesh();
+		}
+	}
+
+	virtual void monitors(step::TYPE type)
+	{
+		for (size_t i = 0; i < writers.size(); ++i) {
+			writers[i]->updateMonitors(type);
+		}
+	}
+
+	virtual void solution(const step::Time &time)
+	{
+		for (size_t i = 0; i < writers.size(); ++i) {
+			writers[i]->updateSolution(time);
+		}
+	}
+
+	virtual void solution(const step::Frequency &frequency)
+	{
+		for (size_t i = 0; i < writers.size(); ++i) {
+			writers[i]->updateSolution(frequency);
 		}
 	}
 };
 
+
+
 class AsyncOutputExecutor: public DirectOutputExecutor, public Pthread::Executor, public Pthread {
+	struct SharedData {
+		enum class TAG {
+			MESH,
+			MONITORS,
+			SOLUTION,
+			DUMMY
+		} tag;
+		step::TYPE type;
+		step::Time time;
+		step::Frequency frequency;
+
+		SharedData(TAG tag, step::TYPE type): tag(tag), type(type) {}
+		SharedData(TAG tag, const step::Time &time): tag(tag), type(step::TYPE::TIME), time(time) {}
+		SharedData(TAG tag, const step::Frequency &frequency): tag(tag), type(step::TYPE::FREQUENCY), frequency(frequency) {}
+	} app, thread;
+
 public:
-	AsyncOutputExecutor(): Pthread(this)
+	AsyncOutputExecutor(): Pthread(this), app(SharedData::TAG::DUMMY, step::TYPE::TIME), thread(app)
 	{
 
 	}
 
-	void copy(int tag)
+	void copy()
 	{
 		info::mesh->toBuffer();
-		step::toOut();
+		thread = app;
 	}
 
-	void call(int tag)
+	void call()
 	{
-		DirectOutputExecutor::execute(tag);
+		if (thread.tag == SharedData::TAG::MESH) {
+			DirectOutputExecutor::mesh();
+		}
+		if (thread.tag == SharedData::TAG::MONITORS) {
+			DirectOutputExecutor::monitors(thread.type);
+		}
+		if (thread.type == step::TYPE::TIME) {
+			DirectOutputExecutor::solution(thread.time);
+		}
+		if (thread.type == step::TYPE::FREQUENCY) {
+			DirectOutputExecutor::solution(thread.frequency);
+		}
 	}
 
-	void execute(int tag)
+	virtual void mesh()
 	{
-		Pthread::call(tag);
+		app = SharedData(SharedData::TAG::MESH, step::TYPE::TIME); // dummy type
+		Pthread::call();
+	}
+
+	virtual void monitors(step::TYPE type)
+	{
+		app = SharedData(SharedData::TAG::MONITORS, type);
+		Pthread::call();
+	}
+
+	virtual void solution(const step::Time &time)
+	{
+		app = SharedData(SharedData::TAG::SOLUTION, time);
+		Pthread::call();
+	}
+
+	virtual void solution(const step::Frequency &frequency)
+	{
+		app = SharedData(SharedData::TAG::SOLUTION, frequency);
+		Pthread::call();
 	}
 };
 
@@ -136,23 +198,32 @@ Output::~Output()
 
 void Output::updateMesh()
 {
-	if (_async) { _async->execute(OutputExecutor::mesh); }
-	if (_direct) { _direct->execute(OutputExecutor::mesh); }
+	// Time is not used during storing the solution
+	if (_async) { _async->mesh(); }
+	if (_direct) { _direct->mesh(); }
 }
 
-void Output::updateMonitors()
+void Output::updateMonitors(step::TYPE type)
 {
 	if (_allowed) {
-		if (_async) { _async->execute(OutputExecutor::monitors); }
-		if (_direct) { _direct->execute(OutputExecutor::monitors); }
+		if (_async) { _async->monitors(type); }
+		if (_direct) { _direct->monitors(type); }
 	}
 }
 
-void Output::updateSolution()
+void Output::updateSolution(const step::Time &time)
 {
 	if (_allowed) {
-		if (_async) { _async->execute(OutputExecutor::solution); }
-		if (_direct) { _direct->execute(OutputExecutor::solution); }
+		if (_async) { _async->solution(time); }
+		if (_direct) { _direct->solution(time); }
+	}
+}
+
+void Output::updateSolution(const step::Frequency &frequency)
+{
+	if (_allowed) {
+		if (_async) { _async->solution(frequency); }
+		if (_direct) { _direct->solution(frequency); }
 	}
 }
 

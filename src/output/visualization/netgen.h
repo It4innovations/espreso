@@ -14,7 +14,9 @@ struct Netgen: public Visualization {
 	~Netgen();
 
 	void updateMesh();
-	void updateSolution();
+	void updateMonitors(step::TYPE type);
+	void updateSolution(const step::Time &time);
+	void updateSolution(const step::Frequency &frequency);
 
 protected:
 	NetgenASCIIWritter _writer;

@@ -19,9 +19,13 @@ public:
 	~VTKLegacy();
 
 	void updateMesh();
-	void updateSolution();
+	void updateMonitors(step::TYPE type);
+	void updateSolution(const step::Time &time);
+	void updateSolution(const step::Frequency &frequency);
 
 protected:
+	void updateSolution(const std::string &dir, const std::string &name, const std::string &suffix);
+
 	void insertHeader();
 	void insertPoints(const RegionStore *store);
 	esint insertElements(const ElementsRegionStore *store, const std::vector<char, initless_allocator<char> > &data);

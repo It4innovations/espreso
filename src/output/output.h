@@ -2,6 +2,8 @@
 #ifndef SRC_OUTPUT_OUTPUT_H_
 #define SRC_OUTPUT_OUTPUT_H_
 
+#include "esinfo/stepinfo.h"
+
 #include <string>
 
 namespace espreso {
@@ -13,9 +15,11 @@ class OutputWriter {
 public:
 	virtual bool storeStep() { return true; }
 
-	virtual void updateMesh() = 0;
-	virtual void updateMonitors() = 0;
-	virtual void updateSolution() = 0;
+	virtual void updateMesh() =0;
+	virtual void updateMonitors(step::TYPE type) =0;
+
+	virtual void updateSolution(const step::Time &time) =0;
+	virtual void updateSolution(const step::Frequency &frequency) =0;
 
 	virtual ~OutputWriter() {};
 
@@ -33,8 +37,10 @@ public:
 	~Output();
 
 	void updateMesh();
-	void updateMonitors();
-	void updateSolution();
+	void updateMonitors(step::TYPE type);
+
+	void updateSolution(const step::Time &time);
+	void updateSolution(const step::Frequency &frequency);
 
 	void suppress();
 	void permit();

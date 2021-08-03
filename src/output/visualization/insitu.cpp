@@ -26,7 +26,18 @@ void InSitu::updateMesh()
 	_catalyst = new Catalyst();
 }
 
-void InSitu::updateSolution()
+void InSitu::updateMonitors(step::TYPE type)
+{
+
+}
+
+void InSitu::updateSolution(const step::Time &time)
+{
+	_catalyst->update();
+	sleep(info::ecf->output.catalyst_sleep_time);
+}
+
+void InSitu::updateSolution(const step::Frequency &frequency)
 {
 	_catalyst->update();
 	sleep(info::ecf->output.catalyst_sleep_time);

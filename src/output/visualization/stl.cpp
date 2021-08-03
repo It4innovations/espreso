@@ -64,8 +64,17 @@ void STL::updateMesh()
 	_writer.write();
 }
 
+void STL::updateMonitors(step::TYPE type)
+{
 
-void STL::updateSolution()
+}
+
+void STL::updateSolution(const step::Time &time)
+{
+	// TODO
+}
+
+void STL::updateSolution(const step::Frequency &frequency)
 {
 	// TODO
 }

@@ -8,16 +8,15 @@ namespace espreso {
 
 void* async(void *data);
 
-struct SharedData {
+struct ThreadControl {
 	Pthread::Executor *executor;
 	pthread_t thread;
 	pthread_spinlock_t computationLock;
 	pthread_mutex_t outputLock;
 
-	int tag;
 	bool finish;
 
-	SharedData(Pthread::Executor *executor): executor(executor), finish(false)
+	ThreadControl(Pthread::Executor *executor): executor(executor), finish(false)
 	{
 		pthread_spin_init(&computationLock, PTHREAD_PROCESS_PRIVATE);
 		pthread_spin_lock(&computationLock);
@@ -49,7 +48,7 @@ struct SharedData {
 		pthread_attr_destroy(&attributes);
 	}
 
-	~SharedData() {
+	~ThreadControl() {
 		pthread_join(thread, NULL);
 		pthread_spin_destroy(&computationLock);
 		pthread_mutex_destroy(&outputLock);
@@ -58,42 +57,41 @@ struct SharedData {
 
 void* async(void *data)
 {
-	SharedData *shdata = reinterpret_cast<SharedData*>(data);
-	pthread_spin_unlock(&shdata->computationLock);
+	ThreadControl *threadControl = reinterpret_cast<ThreadControl*>(data);
+	pthread_spin_unlock(&threadControl->computationLock);
 
 	while (true) {
-		pthread_mutex_lock(&shdata->outputLock);
-		if (shdata->finish) {
-			pthread_spin_unlock(&shdata->computationLock);
+		pthread_mutex_lock(&threadControl->outputLock);
+		if (threadControl->finish) {
+			pthread_spin_unlock(&threadControl->computationLock);
 			break;
 		}
-		shdata->executor->call(shdata->tag);
-		pthread_spin_unlock(&shdata->computationLock);
+		threadControl->executor->call();
+		pthread_spin_unlock(&threadControl->computationLock);
 	}
 	return NULL;
 }
 
 Pthread::Pthread(Executor *executor)
-: _shdata(new SharedData(executor))
+: _threadControl(new ThreadControl(executor))
 {
 
 }
 
 Pthread::~Pthread()
 {
-	pthread_spin_lock(&_shdata->computationLock);
-	_shdata->finish = true;
-	pthread_mutex_unlock(&_shdata->outputLock);
-	pthread_spin_lock(&_shdata->computationLock);
-	delete _shdata;
+	pthread_spin_lock(&_threadControl->computationLock);
+	_threadControl->finish = true;
+	pthread_mutex_unlock(&_threadControl->outputLock);
+	pthread_spin_lock(&_threadControl->computationLock);
+	delete _threadControl;
 }
 
-void Pthread::call(int tag)
+void Pthread::call()
 {
-	pthread_spin_lock(&_shdata->computationLock);
-	_shdata->executor->copy(tag);
-	_shdata->tag = tag;
-	pthread_mutex_unlock(&_shdata->outputLock);
+	pthread_spin_lock(&_threadControl->computationLock);
+	_threadControl->executor->copy();
+	pthread_mutex_unlock(&_threadControl->outputLock);
 }
 
 }

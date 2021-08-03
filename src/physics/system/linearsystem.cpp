@@ -162,7 +162,12 @@ void LinearSystem::solutionChanged()
 void LinearSystem::processSolution()
 {
 	assembler()->composer->processSolution();
-	info::mesh->output->updateSolution();
+	if (step::step.type == step::TYPE::TIME) {
+		info::mesh->output->updateSolution(step::time);
+	}
+	if (step::step.type == step::TYPE::FREQUENCY) {
+		info::mesh->output->updateSolution(step::frequency);
+	}
 	eslog::checkpointln("PHYSICS SOLVER: SOLUTION PROCESSED");
 }
 

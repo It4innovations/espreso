@@ -22,7 +22,5 @@ void Looper::run()
 	}
 
 	analysis->init();
-	info::mesh->output->updateMonitors();
-
 	analysis->run();
 }

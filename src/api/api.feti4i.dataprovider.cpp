@@ -84,7 +84,7 @@ void APIDataProvider::prepare(int* argc, char ***argv)
 	default:
 		eslog::globalerror("Physical solver: not implemented physical solver.\n");
 	}
-	info::mesh->output->updateMonitors();
+	info::mesh->output->updateMonitors(step::step.type);
 
 	rhs.resize(DOFs() * nodesSize());
 }
@@ -162,5 +162,10 @@ void APIDataProvider::storeSolution(std::vector<FETI4IReal> &solution)
 {
 //	TODO: FIX ME
 //	memcpy(kernel->solutions.back().vals, solution.data(), sizeof(double) * solution.size());
-	info::mesh->output->updateSolution();
+	if (step::step.type == step::TYPE::TIME) {
+		info::mesh->output->updateSolution(step::time);
+	}
+	if (step::step.type == step::TYPE::FREQUENCY) {
+		info::mesh->output->updateSolution(step::frequency);
+	}
 }

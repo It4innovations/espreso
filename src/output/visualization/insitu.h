@@ -14,7 +14,9 @@ struct InSitu: public Visualization {
 	~InSitu();
 
 	void updateMesh();
-	void updateSolution();
+	void updateMonitors(step::TYPE type);
+	void updateSolution(const step::Time &time);
+	void updateSolution(const step::Frequency &frequency);
 
 protected:
 	Catalyst *_catalyst;

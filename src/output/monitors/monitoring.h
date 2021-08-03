@@ -32,14 +32,17 @@ public:
 	bool storeStep();
 
 	void updateMesh() {}
-	void updateMonitors();
-	void updateSolution();
+	void updateMonitors(step::TYPE type);
+	void updateSolution(const step::Time &time);
+	void updateSolution(const step::Frequency &frequency);
 
 	Monitoring();
 	~Monitoring();
 	static char delimiter;
 
 protected:
+	void updateSolution();
+
 	FILE *_runFile, *_fttFile;
 
 

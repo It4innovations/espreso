@@ -402,12 +402,13 @@ void XDMF::updateMesh()
 	if (_measure) { eslog::endln("XDMF: GEOMETRY STORED"); }
 }
 
-void XDMF::updateSolution()
+void XDMF::updateMonitors(step::TYPE type)
 {
-	if (step::outstep.type == step::TYPE::FTT) {
-		return; // TODO
-	}
 
+}
+
+void XDMF::updateSolution(const step::Time &time)
+{
 	size_t rindex = 0;
 	if (_data->iteration) {
 		_data->tree = _data->collection->element("Grid")->attribute("GridType","Tree");
@@ -490,6 +491,16 @@ void XDMF::updateSolution()
 		_xml->store(_path + _name + ".xmf");
 	}
 	++_data->iteration;
+}
+
+void XDMF::updateSolution(const step::Frequency &frequency)
+{
+
+}
+
+void XDMF::updateSolution()
+{
+
 }
 
 

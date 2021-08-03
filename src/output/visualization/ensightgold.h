@@ -21,9 +21,12 @@ public:
 	~EnSightGold();
 
 	void updateMesh();
-	void updateSolution();
+	void updateMonitors(step::TYPE type);
+	void updateSolution(const step::Time &time);
+	void updateSolution(const step::Frequency &frequency);
 
 protected:
+	void updateSolution();
 	std::string dataname(const NamedData *data, int d);
 	void casefile();
 	void geometry();

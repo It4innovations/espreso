@@ -4,24 +4,24 @@
 
 namespace espreso {
 
-struct SharedData;
+struct ThreadControl;
 
 class Pthread {
 public:
 	class Executor {
 	public:
-		virtual void call(int tag) = 0;
-		virtual void copy(int tag) = 0;
+		virtual void call() = 0;
+		virtual void copy() = 0;
 		virtual ~Executor() {};
 	};
 
-	Pthread();
 	Pthread(Executor *executor);
 	~Pthread();
-	void call(int tag);
+
+	void call();
 
 protected:
-	SharedData * _shdata;
+	ThreadControl *_threadControl;
 };
 
 }

@@ -95,8 +95,8 @@ int main(int argc, char **argv)
 
 	if (Mesh::convertDatabase()) {
 		if (info::ecf->output.store_decomposition > 1) {
-			info::mesh->output->updateMonitors();
-			info::mesh->output->updateSolution();
+			info::mesh->output->updateMonitors(step::TYPE::TIME);
+			info::mesh->output->updateSolution(step::Time());
 		}
 		eslog::endln("ESPRESO: DATABASE CONVERTED");
 	} else {

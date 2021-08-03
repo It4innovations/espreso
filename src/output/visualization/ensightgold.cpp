@@ -75,19 +75,71 @@ void EnSightGold::updateMesh()
 	if (_measure) { eslog::endln("ENSIGHT: GEOMETRY STORED"); }
 }
 
+void EnSightGold::updateMonitors(step::TYPE type)
+{
+	auto spaces = [] (const std::string &label, size_t size) -> std::string {
+		if (size > label.size()) {
+			return std::string(size - label.size(), ' ');
+		}
+		return "";
+	};
+
+	auto pushdata = [&] (std::vector<std::string> &variables, const NamedData *data, const std::string &var) {
+		if (!storeData(data)) {
+			return;
+		}
+		if (data->dataType == NamedData::DataType::VECTOR) {
+			std::string name = dataname(data, 0);
+			variables.push_back("vector per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + _directory + name + ".****");
+			return;
+		}
+		if (data->dimension == 1) {
+			std::string name = dataname(data, 0);
+			variables.push_back("scalar per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + _directory + name + ".****");
+			return;
+		}
+		for (int d = 0; d < data->dimension; d++) {
+			std::string name = dataname(data, d);
+			variables.push_back("scalar per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + _directory + name + ".****");
+		}
+	};
+
+	_variables.clear();
+	for (size_t i = 0; i < info::mesh->nodes->data.size(); i++) {
+		pushdata(_variables, info::mesh->nodes->data[i], "node");
+	}
+	for (size_t i = 0; i < info::mesh->elements->data.size(); i++) {
+		pushdata(_variables, info::mesh->elements->data[i], "element");
+	}
+
+	casefile();
+}
+
+void EnSightGold::updateSolution(const step::Time &time)
+{
+	_times.push_back(time.current);
+	updateSolution();
+}
+
+void EnSightGold::updateSolution(const step::Frequency &frequency)
+{
+	_times.push_back(frequency.current);
+	updateSolution();
+}
+
 void EnSightGold::updateSolution()
 {
 	EnSightGold *writer = this;
 
-	if (step::outstep.type == step::TYPE::FTT && step::outftt.isFirst()) {
-		_ftt = new FTT(this);
-	}
-
-	switch (step::outstep.type) {
-	case step::TYPE::TIME:      _times.push_back(step::outtime.current); break;
-	case step::TYPE::FREQUENCY: _times.push_back(step::outfrequency.current); break;
-	case step::TYPE::FTT: _ftt->_times.push_back(step::outftt.time); writer = _ftt; break;
-	}
+//	if (step::outstep.type == step::TYPE::FTT && step::outftt.isFirst()) {
+//		_ftt = new FTT(this);
+//	}
+//
+//	switch (step::outstep.type) {
+//	case step::TYPE::TIME:      _times.push_back(step::outtime.current); break;
+//	case step::TYPE::FREQUENCY: _times.push_back(step::outfrequency.current); break;
+//	case step::TYPE::FTT: _ftt->_times.push_back(step::outftt.time); writer = _ftt; break;
+//	}
 
 	size_t nvars = 0;
 	for (size_t di = 0; di < info::mesh->elements->data.size(); di++) {
@@ -100,66 +152,25 @@ void EnSightGold::updateSolution()
 		_variables.clear();
 	}
 
-	if (_step != step::outstep.loadstep || info::mpi::grank == 0 || (step::outstep.type == step::TYPE::FTT && info::mpi::rank == 0)) {
-		_step = step::outstep.loadstep;
-		if (step::outduplicate.instances > 1 && step::outstep.substep - step::outduplicate.offset + 1 == step::outduplicate.size) {
-			// TODO: generalize
-			_times.clear();
-			for (auto f = step::outfrequency.start; f < step::outfrequency.final; f += step::outfrequency.shift) {
-				_times.push_back(f + step::outfrequency.shift);
-			}
-		}
-
-		auto spaces = [] (const std::string &label, size_t size) -> std::string {
-			if (size > label.size()) {
-				return std::string(size - label.size(), ' ');
-			}
-			return "";
-		};
-
-		auto pushdata = [&] (std::vector<std::string> &variables, const NamedData *data, const std::string &var) {
-			if (!storeData(data)) {
-				return;
-			}
-			if (data->dataType == NamedData::DataType::VECTOR) {
-				std::string name = dataname(data, 0);
-				variables.push_back(
-						"vector per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + writer->_directory + name + ".****"
-				);
-				return;
-			}
-			if (data->dimension == 1) {
-				std::string name = dataname(data, 0);
-				variables.push_back(
-						"scalar per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + writer->_directory + name + ".****"
-				);
-				return;
-			}
-			for (int d = 0; d < data->dimension; d++) {
-				std::string name = dataname(data, d);
-				variables.push_back(
-						"scalar per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + writer->_directory + name + ".****"
-				);
-			}
-		};
-
-		writer->_variables.clear();
-		for (size_t i = 0; i < info::mesh->nodes->data.size(); i++) {
-			pushdata(writer->_variables, info::mesh->nodes->data[i], "node");
-		}
-		for (size_t i = 0; i < info::mesh->elements->data.size(); i++) {
-			pushdata(writer->_variables, info::mesh->elements->data[i], "element");
-		}
-
-		writer->casefile();
-	}
+//	if (_step != step::outstep.loadstep || info::mpi::grank == 0 || (step::outstep.type == step::TYPE::FTT && info::mpi::rank == 0)) {
+//		_step = step::outstep.loadstep;
+//		if (step::outduplicate.instances > 1 && step::outstep.substep - step::outduplicate.offset + 1 == step::outduplicate.size) {
+//			// TODO: generalize
+//			_times.clear();
+//			for (auto f = step::outfrequency.start; f < step::outfrequency.final; f += step::outfrequency.shift) {
+//				_times.push_back(f + step::outfrequency.shift);
+//			}
+//		}
+//
+//		updateValues();
+//	}
 
 	writer->_writer.reorder();
 	writer->_writer.write();
 
-	if (step::outstep.type == step::TYPE::FTT && step::outftt.isLast()) {
-		delete _ftt;
-	}
+//	if (step::outstep.type == step::TYPE::FTT && step::outftt.isLast()) {
+//		delete _ftt;
+//	}
 }
 
 std::string EnSightGold::dataname(const NamedData *data, int d)
