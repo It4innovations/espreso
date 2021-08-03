@@ -112,7 +112,9 @@ void EnSightGold::updateMonitors(step::TYPE type)
 		pushdata(_variables, info::mesh->elements->data[i], "element");
 	}
 
-	casefile();
+	if (info::mpi::rank == 0) {
+		casefile();
+	}
 }
 
 void EnSightGold::updateSolution(const step::Time &time)
@@ -148,9 +150,9 @@ void EnSightGold::updateSolution()
 	for (size_t di = 0; di < info::mesh->nodes->data.size(); di++) {
 		nvars += writer->ndata(info::mesh->nodes->data[di]);
 	}
-	if (nvars != _variables.size()) {
-		_variables.clear();
-	}
+//	if (nvars != _variables.size()) {
+//		_variables.clear();
+//	}
 
 //	if (_step != step::outstep.loadstep || info::mpi::grank == 0 || (step::outstep.type == step::TYPE::FTT && info::mpi::rank == 0)) {
 //		_step = step::outstep.loadstep;
@@ -167,6 +169,10 @@ void EnSightGold::updateSolution()
 
 	writer->_writer.reorder();
 	writer->_writer.write();
+
+	if (info::mpi::rank == 0) {
+		casefile();
+	}
 
 //	if (step::outstep.type == step::TYPE::FTT && step::outftt.isLast()) {
 //		delete _ftt;
