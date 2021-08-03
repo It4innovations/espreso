@@ -161,7 +161,7 @@ void computeRegionsBoundaryIntervals(const ElementStore *elements, const DomainS
 					if (eregion[*prev] != eregion[*currect] || store->epointers->datatarray()[*prev]->code != store->epointers->datatarray()[*currect]->code) {
 						store->eintervals.push_back(ElementsInterval(begin, currect - permutation.begin()));
 						store->eintervals.back().code = static_cast<int>(store->epointers->datatarray()[*prev]->code);
-						store->eintervals.back().domain = elements->eintervals[*prev].domain;
+						store->eintervals.back().domain = elements->eintervals[eregion[*prev]].domain;
 						begin = currect - permutation.begin();
 					}
 					if (eregion[*prev] != eregion[*currect]) {
