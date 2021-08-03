@@ -22,7 +22,6 @@ public:
 			const std::vector<TableProperty> &properties,
 			const std::vector<std::vector<double> > &axis);
 
-	virtual Type type() { return Type::TABLE; }
 	virtual Evaluator* copy() const { return new TableEvaluator(*this); }
 
 	void evalVector(esint size, esint increment, const Params &params, double *results) const;

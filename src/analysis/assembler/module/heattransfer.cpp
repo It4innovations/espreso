@@ -2,6 +2,7 @@
 #include "heattransfer.h"
 #include "assembler.hpp"
 
+#include "basis/expression/variable.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/envinfo.h"
@@ -25,33 +26,69 @@ AX_HeatTransfer::AX_HeatTransfer(AX_HeatTransfer *previous, HeatTransferGlobalSe
 
 }
 
+void AX_HeatTransfer::initParameters()
+{
+	ParametersTemperature::Initial::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_TEMPERATURE");
+	ParametersTemperature::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "TEMPERATURE");
+	if (info::ecf->output.results_selection.translation_motions) {
+		ParametersTranslationMotions::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "TRANSLATION_MOTION");
+	}
+	if (info::ecf->output.results_selection.gradient) {
+		ParametersGradient::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "GRADIENT");
+	}
+	if (info::ecf->output.results_selection.flux) {
+		ParametersFlux::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUX");
+	}
+
+	Variable::list.node["INITIAL_TEMPERATURE"] = Variable(0, 1, ParametersTemperature::Initial::output->data.data());
+	Variable::list.node["TEMPERATURE"] = Variable(0, 1, ParametersTemperature::output->data.data());
+
+	if (info::mesh->dimension == 2) {
+		initialTemperature = info::ecf->heat_transfer_2d.initial_temperature;
+	}
+	if (info::mesh->dimension == 3) {
+		initialTemperature = info::ecf->heat_transfer_3d.initial_temperature;
+	}
+	for (auto it = initialTemperature.begin(); it != initialTemperature.end(); ++it) {
+		it->second.scope = ECFExpression::Scope::ENODES;
+		for (auto p = it->second.parameters.begin(); p != it->second.parameters.end(); ++p) {
+			Variable::list.enodes.insert(std::make_pair(*p, Variable()));
+		}
+	}
+}
+
 void AX_HeatTransfer::initTemperature()
 {
-	/// This code has to solve problem that initial temperature is set to elements regions, but we need it in nodes
-	/// 1. settings -> nodeInitialTemperature
-	/// 2. nodeInitialTemperature -> initialTemperature (here we average values)
-	/// 3. Dirichlet -> initialTemperature (if 'init_temp_respect_bc')
-	/// 4. initialTemperature -> nodeInitialTemperature (TODO: check the correction with TB)
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//	temp.initial.node.builder = new ExpressionsToElementsSimple(temp.initial.node, 273.15, "INITIAL TEMPERATURE");
-//	if (info::mesh->dimension == 2) {
-//		if (info::ecf->heat_transfer_2d.init_temp_respect_bc) {
-//			temp.initial.node.setConstness(false);
-//		}
-//		examineElementParameter("INITIAL TEMPERATURE", info::ecf->heat_transfer_2d.initial_temperature, *temp.initial.node.builder);
-//	}
-//	if (info::mesh->dimension == 3) {
-//		if (info::ecf->heat_transfer_2d.init_temp_respect_bc) {
-//			temp.initial.node.setConstness(false);
-//		}
-//		examineElementParameter("INITIAL TEMPERATURE", info::ecf->heat_transfer_3d.initial_temperature, *temp.initial.node.builder);
-//	}
+	// This code has to solve problem that initial temperature is set to elements regions, but we need it in nodes
+	// 1. settings -> nodeInitialTemperature
+	// 2. nodeInitialTemperature -> initialTemperature (here we average values)
+	// 3. Dirichlet -> initialTemperature (if 'init_temp_respect_bc')
+	// 4. initialTemperature -> nodeInitialTemperature (TODO: check the correction with TB)
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	if (info::mesh->dimension == 2) {
+		if (info::ecf->heat_transfer_2d.init_temp_respect_bc) {
+			temp.initial.node.setConstness(false);
+		}
+		examineElementParameter("INITIAL TEMPERATURE", initialTemperature, temp.initial.node.externalValue);
+	}
+	if (info::mesh->dimension == 3) {
+		if (info::ecf->heat_transfer_3d.init_temp_respect_bc) {
+			temp.initial.node.setConstness(false);
+		}
+		examineElementParameter("INITIAL TEMPERATURE", initialTemperature, temp.initial.node.externalValue);
+	}
+//	iterate();
+	evaluateFromExpression(*this, temp.initial.node, temp.initial.node.externalValue);
+
 //	for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
-////		AX_HeatTransfer::insertParameters(it->second.evaluator);
+//		AX_HeatTransfer::insertParameters(it->second.evaluator);
 //	}
 //
 //	temp.initial.node.builder->buildAndExecute(*this);
-//	AverageElementsNodesToNodes(temp.initial.node, *ParametersTemperature::Initial::output, "AVERAGE NODE INITIAL TEMPERATURE").buildAndExecute(*this);
+
+	averageEnodesToNodes(temp.initial.node, *ParametersTemperature::Initial::output);
+
 //	if (info::mesh->dimension == 2 && info::ecf->heat_transfer_2d.init_temp_respect_bc) {
 //		CopyBoundaryRegionsSettingToNodes(configuration.temperature, *ParametersTemperature::Initial::output, "SET INITIAL TEMPERATURE ACCORDING TO DIRICHLET").buildAndExecute(*this);
 //	}
@@ -62,7 +99,13 @@ void AX_HeatTransfer::initTemperature()
 //	CopyNodesToBoundaryNodes(*ParametersTemperature::Initial::output, temp.initial.boundary.node, "COPY INITIAL TEMPERATURE TO BOUNDARY NODES").buildAndExecute(*this);
 //	ElementsGaussPointsBuilder<1>(integration.N, temp.initial.node, temp.initial.gp, "INTEGRATE INITIAL TEMPERATURE INTO ELEMENTS GAUSS POINTS").buildAndExecute(*this);
 //	BoundaryGaussPointsBuilder<1>(integration.boundary.N, temp.initial.boundary.node, temp.initial.boundary.gp, "INTEGRATE INITIAL TEMPERATURE INTO BOUNDARY GAUSS POINTS").buildAndExecute(*this);
-//
+
+	auto it = Variable::list.egps.end();
+	if ((it = Variable::list.egps.find("TEMPERATURE"))!= Variable::list.egps.end()) {
+		copyNodesToEnodes(*this, *ParametersTemperature::output, temp.node);
+		moveEnodesToGPs(*this, temp.node, temp.gp, 1);
+		Variable::list.egps["TEMPERATURE"] = Variable(0, 1, temp.gp.data->datatarray().data());
+	}
 //	ParametersTemperature::output->data = ParametersTemperature::Initial::output->data;
 //	CopyElementParameters(temp.initial.node, temp.node, "COPY INITIAL TEMPERATURE TO ELEMENT NODES").buildAndExecute(*this);
 //	builders.push_back(new CopyNodesToElementsNodes(*ParametersTemperature::output, temp.node, "COPY TEMPERATURE TO ELEMENTS NODES"));
@@ -70,6 +113,7 @@ void AX_HeatTransfer::initTemperature()
 //	builders.push_back(new CopyNodesToBoundaryNodes(*ParametersTemperature::output, temp.boundary.node, "COPY TEMPERATURE TO BOUNDARY NODES"));
 //	builders.push_back(new BoundaryGaussPointsBuilder<1>(integration.boundary.N, temp.boundary.node, temp.boundary.gp, "INTEGRATE TEMPERATURE INTO BOUNDARY GAUSS POINTS"));
 }
+
 
 void AX_HeatTransfer::init(AX_SteadyState &scheme)
 {
@@ -85,9 +129,7 @@ void AX_HeatTransfer::analyze()
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info("  PHYSICS                                                                    HEAT TRANSFER 2D  \n");
 	eslog::info(" ============================================================================================= \n");
-
-	ParametersTemperature::Initial::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_TEMPERATURE");
-	ParametersTemperature::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "TEMPERATURE");
+	bool correct = true;
 
 	if (info::mesh->dimension == 2) {
 		setMaterials(info::ecf->heat_transfer_2d.material_set);
@@ -101,26 +143,30 @@ void AX_HeatTransfer::analyze()
 		validateRegionSettings("INITIAL TEMPERATURE", info::ecf->heat_transfer_3d.initial_temperature);
 	}
 
+	initParameters();
+
 	baseFunction(*this);
 	elementCoordinates(*this);
+
+	initTemperature();
+
 	elementIntegration(*this);
 
-	bool correct = true;
+//	Variable::print();
 
 	if (step::step.loadstep == 0) {
 		if (info::mesh->dimension == 2) {
 			correct &= examineElementParameter("THICKNESS", info::ecf->heat_transfer_2d.thickness, thickness.gp.externalValue);
 			fromExpression(*this, thickness.gp, thickness.gp.externalValue);
-//			builders.push_back(new ExpressionsToBoundaryFromElement(*thickness.gp.builder, thickness.boundary.gp, "BOUDARY THICKNESS"));
 		}
 
 		///////////////////////////////////// Set materials and check if there is not any incorrect region intersection
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		eslog::info("  MATERIALS                                                                                    \n");
+		eslog::info("\n  MATERIALS                                                                                    \n");
 		eslog::info(" --------------------------------------------------------------------------------------------- \n");
 		for (size_t i = 0; i < info::mesh->materials.size(); ++i) {
 			eslog::info(" --- %s ---%*s \n", info::mesh->materials[i]->name.c_str(), 84 - info::mesh->materials[i]->name.size(), "");
-			const MaterialConfiguration *mat = info::mesh->materials[i];
+			MaterialConfiguration *mat = info::mesh->materials[i];
 
 			switch (mat->coordinate_system.type) {
 			case CoordinateSystemConfiguration::TYPE::CARTESIAN:
@@ -251,15 +297,15 @@ void AX_HeatTransfer::analyze()
 	heatStiffness(*this);
 
 	if (configuration.temperature.size()) {
-		examineBoundaryParameter("TEMPERATURE", configuration.temperature, dirichlet.gp.externalValues);
+		correct &= examineBoundaryParameter("TEMPERATURE", configuration.temperature, dirichlet.gp.externalValues);
 		fromExpression(*this, dirichlet.gp, dirichlet.gp.externalValues);
 	}
 	if (configuration.heat_flow.size()) {
-		examineBoundaryParameter("HEAT FLOW", configuration.heat_flow, heatFlow.gp.externalValues);
+		correct &= examineBoundaryParameter("HEAT FLOW", configuration.heat_flow, heatFlow.gp.externalValues);
 		fromExpression(*this, heatFlow.gp, heatFlow.gp.externalValues);
 	}
 	if (configuration.heat_flux.size()) {
-		examineBoundaryParameter("HEAT FLUX", configuration.heat_flux, heatFlux.gp.externalValues);
+		correct &= examineBoundaryParameter("HEAT FLUX", configuration.heat_flux, heatFlux.gp.externalValues);
 		fromExpression(*this, heatFlux.gp, heatFlux.gp.externalValues);
 	}
 	heatRHS(*this);

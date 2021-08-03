@@ -2,8 +2,9 @@
 #include "assembler.h"
 #include "analysis/assembler/operators/expression.h"
 
-#include "basis/evaluator/evaluator.h"
+#include "basis/expression/variable.h"
 #include "basis/utilities/parser.h"
+#include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
@@ -33,20 +34,26 @@ void Assembler::validateRegionSettings(const std::string &name, const std::map<s
 }
 
 template<class TSecond>
-bool Assembler::examineElementParameter(const std::string &name, const std::map<std::string, TSecond> &settings, ExternalElementValue &value, int dimension, std::function<Evaluator*(const TSecond &expr)> getevaluator)
+bool Assembler::examineElementParameter(const std::string &name, std::map<std::string, TSecond> &settings, ExternalElementValue &value, int dimension, std::function<ECFExpression*(TSecond &expr)> getExpr)
 {
 	if (settings.size() == 1 && StringCompare::caseInsensitiveEq(settings.begin()->first, "ALL_ELEMENTS")) {
-		Evaluator *evaluator = getevaluator(settings.begin()->second);
+		ECFExpression* expr = getExpr(settings.begin()->second);
+		if (expr->evaluator == nullptr) {
+			if (!Variable::create(*expr)) {
+				eslog::warning("  %s:  %*s \n", name.c_str(), 88 - name.size(), "INVALID EXPRESSION");
+				return false;
+			}
+		}
 		for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-			value.evaluator[value.dimension * i + dimension] = evaluator;
+			value.evaluator[value.dimension * i + dimension] = expr->evaluator;
 		}
-		if (evaluator->variables.size()) {
-			std::string params = Parser::join(", ", evaluator->variables);
-			eslog::info("  %s:  %*s       FNC( %s )\n", name.c_str(), 54 - params.size(), "", params.c_str());
+		if (expr->evaluator->variables.size()) {
+			std::string params = Parser::join(", ", expr->evaluator->variables);
+			eslog::info("  %s:  %*s       FNC( %s )\n", name.c_str(), 55 - params.size(), "", params.c_str());
 		} else {
-			eslog::info("  %s:  %*g \n", name.c_str(), 88 - name.size(), evaluator->eval(Evaluator::Params()));
+			eslog::info("  %s:  %*g \n", name.c_str(), 88 - name.size(), expr->evaluator->eval(Evaluator::Params()));
 		}
-		return evaluator->isset;
+		return true;
 	} else {
 		if (settings.size() == 0) {
 			eslog::info("  %s:  %*s \n", name.c_str(), 88 - name.size(), "UNKNOWN");
@@ -60,16 +67,22 @@ bool Assembler::examineElementParameter(const std::string &name, const std::map<
 					ms = settings.find("ALL_ELEMENTS");
 				}
 				if (ms != settings.end()) {
-					Evaluator *evaluator = getevaluator(ms->second);
-					if (evaluator->variables.size()) {
-						std::string params = Parser::join(", ", evaluator->variables);
+					ECFExpression* expr = getExpr(settings.begin()->second);
+					if (expr->evaluator == nullptr) {
+						if (!Variable::create(*expr)) {
+							eslog::warning("   %30s:  %*s \n", (*reg)->name.c_str(), 60 - (*reg)->name.size(), "INVALID EXPRESSION");
+							return false;
+						}
+					}
+					if (expr->evaluator->variables.size()) {
+						std::string params = Parser::join(", ", expr->evaluator->variables);
 						eslog::info("   %30s:  %*s       FNC( %s )\n", (*reg)->name.c_str(), 43 - params.size(), "", params.c_str());
 					} else {
-						eslog::info("   %30s:  %57g \n", (*reg)->name.c_str(), evaluator->eval(Evaluator::Params()));
+						eslog::info("   %30s:  %57g \n", (*reg)->name.c_str(), expr->evaluator->eval(Evaluator::Params()));
 					}
 					for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 						if (info::mesh->elements->eintervals[i].region == rindex || (info::mesh->elements->eintervals[i].region == 0 && rindex == rlast)) {
-							value.evaluator[value.dimension * i + dimension] = evaluator;
+							value.evaluator[value.dimension * i + dimension] = expr->evaluator;
 						}
 						if (info::mesh->elements->eintervals[i].region == -1) {
 							const std::vector<int> &regions = info::mesh->elements->eintervals[i].regions;
@@ -80,7 +93,7 @@ bool Assembler::examineElementParameter(const std::string &name, const std::map<
 								}
 							}
 							if (!other) {
-								value.evaluator[value.dimension * i + dimension] = evaluator;
+								value.evaluator[value.dimension * i + dimension] = expr->evaluator;
 							}
 						}
 					}

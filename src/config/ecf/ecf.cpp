@@ -12,6 +12,9 @@
 #include "esinfo/ecfinfo.h"
 #include "esinfo/systeminfo.h"
 
+#include "analysis/analysis/acoustic.real.linear.h"
+#include "analysis/analysis/heat.steadystate.linear.h"
+
 using namespace espreso;
 
 void ECF::init()
@@ -65,32 +68,32 @@ const PhysicsConfiguration* ECF::_getPhysics() const
 	}
 }
 
-FunctionDefinition::FunctionDefinition()
-{
-	loadstep = -1;
-	REGISTER(loadstep, ECFMetaData()
-			.setdescription({ "Expression is evaluated only for a given loadstep (use -1 for the last)." })
-			.setdatatype({ ECFDataType::INTEGER }));
-
-	REGISTER(region, ECFMetaData()
-			.setdescription({ "Expression is evaluated only for a given loadstep (use -1 for the last)." })
-			.setdatatype({ ECFDataType::REGION }));
-
-	aggregator = AGGREGATOR::NONE;
-	REGISTER(aggregator, ECFMetaData()
-			.setdescription({ "Variant" })
-			.setdatatype({ ECFDataType::OPTION })
-			.addoption(ECFOption().setname("NONE").setdescription("Define a new value for all nodes/elements."))
-			.addoption(ECFOption().setname("MIN").setdescription("Minimum across a given region."))
-			.addoption(ECFOption().setname("MAX").setdescription("Maximum across a given region."))
-			.addoption(ECFOption().setname("AVG").setdescription("Average across a given region."))
-			.addoption(ECFOption().setname("ABSMIN").setdescription("Absolute value of the minimun across a given region."))
-			.addoption(ECFOption().setname("ABSMAX").setdescription("Absolute value of the maximun across a given region.")));
-
-	REGISTER(function, ECFMetaData()
-			.setdescription({ "The function definition." })
-			.setdatatype({ ECFDataType::EXPRESSION}));
-}
+//FunctionDefinition::FunctionDefinition()
+//{
+//	loadstep = -1;
+//	REGISTER(loadstep, ECFMetaData()
+//			.setdescription({ "Expression is evaluated only for a given loadstep (use -1 for the last)." })
+//			.setdatatype({ ECFDataType::INTEGER }));
+//
+//	REGISTER(region, ECFMetaData()
+//			.setdescription({ "Expression is evaluated only for a given loadstep (use -1 for the last)." })
+//			.setdatatype({ ECFDataType::REGION }));
+//
+//	aggregator = AGGREGATOR::NONE;
+//	REGISTER(aggregator, ECFMetaData()
+//			.setdescription({ "Variant" })
+//			.setdatatype({ ECFDataType::OPTION })
+//			.addoption(ECFOption().setname("NONE").setdescription("Define a new value for all nodes/elements."))
+//			.addoption(ECFOption().setname("MIN").setdescription("Minimum across a given region."))
+//			.addoption(ECFOption().setname("MAX").setdescription("Maximum across a given region."))
+//			.addoption(ECFOption().setname("AVG").setdescription("Average across a given region."))
+//			.addoption(ECFOption().setname("ABSMIN").setdescription("Absolute value of the minimun across a given region."))
+//			.addoption(ECFOption().setname("ABSMAX").setdescription("Absolute value of the maximun across a given region.")));
+//
+//	REGISTER(function, ECFMetaData()
+//			.setdescription({ "The function definition." })
+//			.setdatatype({ ECFDataType::EXPRESSION}));
+//}
 
 void ECF::_init()
 {
@@ -114,10 +117,10 @@ void ECF::_init()
 			.setdatatype({ ECFDataType::STRING, ECFDataType::RANGE })
 			.setpattern({ "MY_VARIABLE", "MIN : MAX: STEP" }));
 
-	REGISTER(functions, ECFMetaData()
-			.setdescription({ "A name of a function usable in expressions.", "The function definition." })
-			.setdatatype({ ECFDataType::STRING })
-			.setpattern({ "FNC" }));
+//	REGISTER(functions, ECFMetaData()
+//			.setdescription({ "A name of a function usable in expressions.", "The function definition." })
+//			.setdatatype({ ECFDataType::STRING })
+//			.setpattern({ "FNC" }));
 
 	ecfdescription->addSpace();
 

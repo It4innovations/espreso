@@ -7,9 +7,11 @@
 #include "analysis/linearsystem/mklpdsssystem.h"
 #include "analysis/linearsystem/multigridsystem.h"
 
+#include "basis/expression/variable.h"
 #include "config/ecf/physics/heattransfer.h"
-
 #include "esinfo/meshinfo.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/elementstore.h"
 #include "output/output.h"
 
 using namespace espreso;
@@ -34,6 +36,8 @@ void AX_HeatSteadyStateLinear::init()
 	scheme.init(system);
 	assembler.init(scheme);
 
+	Variable::list.global.insert(std::make_pair("TIME", Variable()));
+
 	info::mesh->output->updateMonitors(step::TYPE::TIME);
 }
 
@@ -41,6 +45,7 @@ void AX_HeatSteadyStateLinear::run()
 {
 	step::Time time;
 	scheme.setTime(time, configuration.duration_time);
+	Variable::list.global["TIME"].val = &time.current;
 
 	assembler.next();
 	scheme.composeSystem(system);

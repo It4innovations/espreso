@@ -78,14 +78,14 @@ bool ECFExpressionOptionalVector::forall(const std::map<std::string, ECFExpressi
 	return true;
 }
 
-ECFExpression::ECFExpression()
-: evaluator(NULL), isset(false)
+ECFExpression::ECFExpression(Scope scope)
+: scope(scope), evaluator(NULL), isset(false)
 {
 	createEvaluator();
 }
 
-ECFExpression::ECFExpression(const std::string &initialValue)
-: value(initialValue), evaluator(NULL), isset(false)
+ECFExpression::ECFExpression(const std::string &initialValue, Scope scope)
+: value(initialValue), scope(scope), evaluator(NULL), isset(false)
 {
 	createEvaluator();
 }
@@ -100,6 +100,8 @@ ECFExpression::~ECFExpression()
 ECFExpression::ECFExpression(const ECFExpression &other)
 {
 	value = other.value;
+	scope = other.scope;
+	parameters = other.parameters;
 	evaluator = NULL;
 	if (other.evaluator != NULL) {
 		evaluator = other.evaluator->copy();
@@ -111,6 +113,8 @@ ECFExpression& ECFExpression::operator=(const ECFExpression &other)
 {
 	if (this != &other) {
 		value = other.value;
+		scope = other.scope;
+		parameters = other.parameters;
 		if (evaluator != NULL) {
 			delete evaluator;
 			evaluator = NULL;
@@ -178,13 +182,13 @@ void ECFHarmonicExpression::init()
 
 
 ECFHarmonicExpression::ECFHarmonicExpression()
-: type(Type::COMPONENTS)
+: type(Type::COMPONENTS), magnitude(ECFExpression::Scope::EGPS), phase(ECFExpression::Scope::EGPS)
 {
 	init();
 }
 
 ECFHarmonicExpression::ECFHarmonicExpression(const std::string &initialValue)
-: type(Type::COMPONENTS), magnitude(initialValue), phase(initialValue)
+: type(Type::COMPONENTS), magnitude(initialValue, ECFExpression::Scope::EGPS), phase(initialValue, ECFExpression::Scope::EGPS)
 {
 	init();
 }
@@ -201,14 +205,14 @@ void ECFHarmonicExpressionVector::init()
 	REGISTER(phase, ECFMetaData().setdescription({ "Phase." }));
 }
 
-ECFHarmonicExpressionVector::ECFHarmonicExpressionVector(DIMENSION *dimension)
-: type(Type::COMPONENTS), magnitude(dimension), phase(dimension)
+ECFHarmonicExpressionVector::ECFHarmonicExpressionVector(DIMENSION *dimension, ECFExpression::Scope scope)
+: type(Type::COMPONENTS), magnitude(dimension, scope), phase(dimension, scope)
 {
 	init();
 }
 
-ECFHarmonicExpressionVector::ECFHarmonicExpressionVector(DIMENSION *dimension, const std::string &initialValue)
-: type(Type::COMPONENTS), magnitude(dimension, initialValue), phase(dimension, initialValue)
+ECFHarmonicExpressionVector::ECFHarmonicExpressionVector(DIMENSION *dimension, const std::string &initialValue, ECFExpression::Scope scope)
+: type(Type::COMPONENTS), magnitude(dimension, initialValue, scope), phase(dimension, initialValue, scope)
 {
 	init();
 }
@@ -246,20 +250,20 @@ ECFExpressionVector& ECFExpressionVector::operator=(const ECFExpressionVector &o
 	return *this;
 }
 
-ECFExpressionVector::ECFExpressionVector(DIMENSION *dimension)
-: dimension(dimension)
+ECFExpressionVector::ECFExpressionVector(DIMENSION *dimension, ECFExpression::Scope scope)
+: data{ {scope}, {scope}, {scope} }, dimension(dimension)
 {
 	init();
 }
 
-ECFExpressionVector::ECFExpressionVector(DIMENSION *dimension, const std::string &initialValue)
-: data{ {initialValue}, {initialValue}, {initialValue}}, dimension(dimension)
+ECFExpressionVector::ECFExpressionVector(DIMENSION *dimension, const std::string &initialValue, ECFExpression::Scope scope)
+: data{ {initialValue, scope}, {initialValue, scope}, {initialValue, scope}}, dimension(dimension)
 {
 	init();
 }
 
-ECFExpressionOptionalVector::ECFExpressionOptionalVector(DIMENSION *dimension)
-: ECFExpressionVector(dimension)
+ECFExpressionOptionalVector::ECFExpressionOptionalVector(DIMENSION *dimension, ECFExpression::Scope scope)
+: ECFExpressionVector(dimension, scope), all(scope)
 {
 	REGISTER(all, ECFMetaData()
 			.setdescription({ "all-directions." })

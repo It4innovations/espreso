@@ -24,7 +24,6 @@ public:
 	ExpressionEvaluator(const ExpressionEvaluator &other);
 	~ExpressionEvaluator();
 
-	Type type() { return Type::EXPRESSION; }
 	virtual Evaluator* copy() const { return new ExpressionEvaluator(*this); }
 
 	void evalVector(esint size, esint increment, const Params &params, double *results) const;

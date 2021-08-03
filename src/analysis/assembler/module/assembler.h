@@ -53,15 +53,15 @@ protected:
 	template<typename Ttype>
 	void validateRegionSettings(const std::string &name, const std::map<std::string, Ttype> &settings);
 
-	bool examineMaterialParameter(const std::string &material, const std::string &name, const ECFExpression &settings, ExternalElementValue &externalValue, int dimension);
+	bool examineMaterialParameter(const std::string &material, const std::string &name, ECFExpression &settings, ExternalElementValue &externalValue, int dimension);
 
 	template<class TSecond>
-	bool examineElementParameter(const std::string &name, const std::map<std::string, TSecond> &settings, ExternalElementValue &externalValue, int dimension, std::function<Evaluator*(const TSecond &expr)> getevaluator);
-	bool examineElementParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExternalElementValue &externalValue);
-	bool examineElementParameter(const std::string &name, const std::map<std::string, ECFExpressionVector> &settings, ExternalElementValue &externalValue, int dimension);
+	bool examineElementParameter(const std::string &name, std::map<std::string, TSecond> &settings, ExternalElementValue &externalValue, int dimension, std::function<ECFExpression*(TSecond &expr)> getExpr);
+	bool examineElementParameter(const std::string &name, std::map<std::string, ECFExpression> &settings, ExternalElementValue &externalValue);
+	bool examineElementParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings, ExternalElementValue &externalValue, int dimension);
 
-	void examineBoundaryParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExternalBoundaryValue &value);
-	void examineBoundaryParameter(const std::string &name, const std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection);
+	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpression> &settings, ExternalBoundaryValue &value);
+	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection);
 
 	std::vector<ParameterData*> parameters;
 	int version;

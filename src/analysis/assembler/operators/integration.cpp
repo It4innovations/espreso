@@ -45,7 +45,6 @@ void _boundaryIntegration(Module &module)
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		module.integration.boundary.jacobian.regions[r].addInput(module.coords.boundary.node.regions[r]);
 		module.integration.boundary.jacobian.regions[r].addInput(module.integration.boundary.dN.regions[r]);
-		module.integration.boundary.jacobian.regions[r].isset = true;
 		module.integration.boundary.jacobian.regions[r].resize();
 		module.addParameter(module.integration.boundary.jacobian.regions[r]);
 

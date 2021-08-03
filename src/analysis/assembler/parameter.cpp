@@ -51,7 +51,7 @@ int ElementParameterData::intervals()
 }
 
 BoundaryParameterData::BoundaryParameterData(int region, PerElementSize mask)
-: ParameterData(mask, intervals(region)), region(region), isset(false)
+: ParameterData(mask, intervals(region)), region(region)
 {
 
 }

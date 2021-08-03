@@ -11,9 +11,19 @@
 
 namespace espreso {
 
-void fromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementValue &value);
+void fromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementNodesValue &value);
+void fromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementGPsValue &value);
 void fromExpression(AX_HeatTransfer &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values);
 void fromExpression(AX_Acoustic &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values);
+
+void evaluateFromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementGPsValue &value);
+void evaluateFromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementNodesValue &value);
+
+void averageEnodesToNodes(const ParameterData &from, NodeData &to);
+void copyNodesToEnodes(AX_HeatTransfer &module, const NodeData &from, ParameterData &to);
+void copyNodesToBnodes(AX_HeatTransfer &module, const NodeData &from, ParameterData &to, size_t region);
+
+void moveEnodesToGPs(AX_HeatTransfer &module, const ParameterData &from, ParameterData &to, int dimension);
 
 void baseFunction(AX_HeatTransfer &module);
 void elementCoordinates(AX_HeatTransfer &module);

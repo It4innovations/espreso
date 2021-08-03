@@ -367,9 +367,9 @@ void LoadStepIterator::prepareExpressions()
 		}
 	}
 
-	for (auto fnc = info::ecf->functions.begin(); fnc != info::ecf->functions.end(); ++fnc) {
-		parameters.push_back({ fnc->first });
-	}
+//	for (auto fnc = info::ecf->functions.begin(); fnc != info::ecf->functions.end(); ++fnc) {
+//		parameters.push_back({ fnc->first });
+//	}
 
 	for (auto it = ECFExpression::parametrized.begin(); it != ECFExpression::parametrized.end(); ++it) {
 		ECFExpression *expression = *it;

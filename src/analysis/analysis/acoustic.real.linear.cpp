@@ -7,10 +7,10 @@
 #include "analysis/linearsystem/mklpdsssystem.h"
 #include "analysis/linearsystem/multigridsystem.h"
 
-#include "config/ecf/physics/acoustic.h"
-
+#include "basis/expression/variable.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/stepinfo.h"
+#include "config/ecf/physics/acoustic.h"
 #include "output/output.h"
 
 using namespace espreso;
@@ -35,6 +35,8 @@ void AX_AcousticRealLinear::init()
 	scheme.init(system);
 	assembler.init(scheme);
 
+	Variable::list.global.insert(std::make_pair("FREQUENCY", Variable()));
+
 	info::mesh->output->updateMonitors(step::TYPE::FREQUENCY);
 }
 
@@ -42,6 +44,7 @@ void AX_AcousticRealLinear::run()
 {
 	step::Frequency frequency;
 	scheme.initFrequency(frequency);
+	Variable::list.global["FREQUENCY"].val = &frequency.current;
 
 	while (frequency.current != frequency.final) {
 		scheme.nextFrequency(frequency);

@@ -122,7 +122,6 @@ struct HeatQ: public ActionOperator {
 //			q.data[gpindex] += heatFlow.data[gpindex] / area;
 			q.data[gpindex] += heatFlux.data[gpindex];
 			q.data[gpindex] += htc.data[gpindex] * extTemp.data[gpindex];
-			printf("q[%lu] = %f\n", gpindex, q.data[gpindex]);
 		}
 	}
 
@@ -164,10 +163,8 @@ struct HeatRHS2D: public ActionOperator {
 	{
 		for (size_t n = 0; n < nodes; ++n) {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-				printf("J=%f w=%f q=%f N=%f\n", J.data[gpindex], weight.data[gpindex], q.data[gpindex], N.data[gpindex * nodes + n]);
 				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * q.data[gpindex] * N.data[gpindex * nodes + n];
 //				rhs.data[n] += thickness.data[gpindex] * J.data[gpindex] * weight.data[gpindex] * q.data[gpindex] * N.data[gpindex * nodes + n];
-				printf("rhs[%lu] = %f\n", n, rhs.data[n]);
 			}
 		}
 	}

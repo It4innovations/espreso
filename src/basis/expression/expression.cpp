@@ -23,6 +23,11 @@ bool Expression::isValid(const std::string &str, std::vector<std::string> variab
 	return parser.compile(str, expression);
 }
 
+bool Expression::collectVariables(const std::string &str, std::vector<std::string> &variables)
+{
+	return exprtk::collect_variables(str, variables);
+}
+
 void Expression::parse()
 {
 	if (!isValid(_str, _variables)) {

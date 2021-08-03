@@ -3,11 +3,13 @@
 #define SRC_ANALYSIS_ASSEMBLER_MODULE_HEATTRANSFER_H_
 
 #include "assembler.h"
+#include "config/holders/expression.h"
 #include "math2/primitives/vector_sparse.h"
 #include "math2/primitives/matrix_info.h"
 #include "math2/generalization/matrix_base.h"
 
 #include <cstddef>
+#include <map>
 
 namespace espreso {
 
@@ -86,8 +88,11 @@ public:
 	Matrix_Base<double> *K, *M;
 	Vector_Base<double> *rhs, *x;
 
+	std::map<std::string, ECFExpression> initialTemperature;
+
 protected:
 	void initTemperature();
+	void initParameters();
 	void printVersions();
 };
 

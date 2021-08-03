@@ -15,15 +15,26 @@ struct BoundaryRegionStore;
 struct ElementsRegionStore;
 
 struct ECFExpression {
+	enum class Scope {
+		GLOBAL,
+		ELEMENT,
+		ENODES,
+		EGPS,
+		BNODES,
+		BGPS,
+		NODE
+	};
+
 	static std::vector<ECFExpression*> parametrized; // parametrized expressions
 
 	std::string value;
+	Scope scope;
 	std::vector<std::string> parameters;
 	Evaluator *evaluator;
 	bool isset;
 
-	ECFExpression();
-	ECFExpression(const std::string &initialValue);
+	ECFExpression(Scope scope);
+	ECFExpression(const std::string &initialValue, Scope scope);
 	ECFExpression(const ECFExpression &other);
 	ECFExpression& operator=(const ECFExpression &other);
 	~ECFExpression();
@@ -59,8 +70,8 @@ struct ECFExpressionVector: public ECFDescription {
 
 	ECFExpressionVector(const ECFExpressionVector &other);
 	ECFExpressionVector& operator=(const ECFExpressionVector &other);
-	ECFExpressionVector(DIMENSION *dimension);
-	ECFExpressionVector(DIMENSION *dimension, const std::string &initialValue);
+	ECFExpressionVector(DIMENSION *dimension, ECFExpression::Scope scope);
+	ECFExpressionVector(DIMENSION *dimension, const std::string &initialValue, ECFExpression::Scope scope);
 
 	static bool forall(const std::map<std::string, ECFExpressionVector> &parameter, std::function<bool(const ECFExpression &expr)> fnc);
 
@@ -76,8 +87,8 @@ struct ECFHarmonicExpressionVector: public ECFDescription {
 	Type type;
 	ECFExpressionVector magnitude, phase;
 
-	ECFHarmonicExpressionVector(DIMENSION *dimension);
-	ECFHarmonicExpressionVector(DIMENSION *dimension, const std::string &initialValue);
+	ECFHarmonicExpressionVector(DIMENSION *dimension, ECFExpression::Scope scope);
+	ECFHarmonicExpressionVector(DIMENSION *dimension, const std::string &initialValue, ECFExpression::Scope scope);
 
 	static bool forall(const std::map<std::string, ECFHarmonicExpressionVector> &parameter, std::function<bool(const ECFExpression &expr)> fnc);
 
@@ -88,7 +99,7 @@ protected:
 struct ECFExpressionOptionalVector: public ECFExpressionVector {
 	ECFExpression all;
 
-	ECFExpressionOptionalVector(DIMENSION *dimension);
+	ECFExpressionOptionalVector(DIMENSION *dimension, ECFExpression::Scope scope);
 
 	static bool forall(const std::map<std::string, ECFExpressionOptionalVector> &parameter, std::function<bool(const ECFExpression &expr)> fnc);
 };

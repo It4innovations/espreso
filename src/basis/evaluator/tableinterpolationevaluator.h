@@ -14,7 +14,6 @@ class TableInterpolationEvaluator: public Evaluator {
 public:
 	TableInterpolationEvaluator(const std::vector<std::pair<double, double> > &table);
 
-	Type type() { return Type::TABLE_INTERPOLATION; }
 	Evaluator* copy() const { return new TableInterpolationEvaluator(*this); }
 
 	void evalVector(esint size, esint increment, const Params &params, double *results) const;

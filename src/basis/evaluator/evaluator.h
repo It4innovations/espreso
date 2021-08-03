@@ -12,17 +12,25 @@ namespace espreso {
 
 class Evaluator {
 
-protected:
-	enum class Type: int {
-		DEFAULT,
-		CONST,
-		EXPRESSION,
-		TABLE,
-		TABLE_INTERPOLATION,
-		ARRAY
+public:
+	struct Variable {
+		enum class Type {
+			GLOBAL,
+			PER_ELEMENT,
+			PER_NODE,
+			PER_GP
+		};
+
+		std::string name;
+		Type type;
+		int eregion, bregion;
+
+		double *val;
+		int offset, increment;
 	};
 
-public:
+	static std::vector<Variable> variableList;
+
 	struct Params {
 		struct General {
 			double *val;
@@ -57,7 +65,6 @@ public:
 		Params& disp(const double *disp) { _disp = disp; return *this; }
 	};
 
-	virtual Type type() { return Type::DEFAULT; }
 	virtual Evaluator* copy() const { return new Evaluator(*this); }
 
 	virtual ~Evaluator() {};

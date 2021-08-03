@@ -1,19 +1,25 @@
 
 #include "assembler.hpp"
 
-#include "basis/evaluator/evaluator.h"
+#include "basis/evaluator/expressionevaluator.h"
+#include "basis/expression/expression.h"
+#include "basis/expression/variable.h"
 #include "basis/utilities/parser.h"
+#include "basis/utilities/utils.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"
 #include "mesh/store/domainstore.h"
+#include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "analysis/assembler/operators/expression.h"
 
 #include <algorithm>
+
+#include "basis/utilities/print.h"
 
 using namespace espreso;
 
@@ -38,7 +44,7 @@ void Assembler::iterate()
 			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
 				size_t elementsInInterval = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
 
-				for(size_t element = 0; element < elementsInInterval; ++element) {
+				for (size_t element = 0; element < elementsInInterval; ++element) {
 					for (auto op = elementOps[i].begin(); op != elementOps[i].end(); ++op) {
 						if((*op)->update) {
 							if(element == 0 || !(*op)->isconst) {
@@ -155,8 +161,14 @@ void Assembler::printMaterials(const std::map<std::string, std::string> &setting
 	}
 }
 
-bool Assembler::examineMaterialParameter(const std::string &material, const std::string &name, const ECFExpression &settings, ExternalElementValue &externalValue, int dimension)
+bool Assembler::examineMaterialParameter(const std::string &material, const std::string &name, ECFExpression &settings, ExternalElementValue &externalValue, int dimension)
 {
+	if (settings.evaluator == nullptr) {
+		if (!Variable::create(settings)) {
+			eslog::warning("   %18s:  %69s \n", name.c_str(), "INVALID EXPRESSION");
+			return false;
+		}
+	}
 	if (settings.evaluator->variables.size()) {
 		std::string params = Parser::join(", ", settings.evaluator->variables);
 		eslog::info("   %18s:  %*s       FNC( %s )\n", name.c_str(), 55 - params.size(), "", params.c_str());
@@ -169,19 +181,19 @@ bool Assembler::examineMaterialParameter(const std::string &material, const std:
 			externalValue.evaluator[externalValue.dimension * i + dimension] = settings.evaluator;
 		}
 	}
-	return settings.evaluator->isset;
+	return true;
 }
 
-bool Assembler::examineElementParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExternalElementValue &externalValue)
+bool Assembler::examineElementParameter(const std::string &name, std::map<std::string, ECFExpression> &settings, ExternalElementValue &externalValue)
 {
-	return examineElementParameter<ECFExpression>(name, settings, externalValue, 0, [] (const ECFExpression &expr) { return expr.evaluator; });
+	return examineElementParameter<ECFExpression>(name, settings, externalValue, 0, [] (ECFExpression &expr) { return &expr; });
 }
-bool Assembler::examineElementParameter(const std::string &name, const std::map<std::string, ECFExpressionVector> &settings, ExternalElementValue &externalValue, int dimension)
+bool Assembler::examineElementParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings, ExternalElementValue &externalValue, int dimension)
 {
-	return examineElementParameter<ECFExpressionVector>(name, settings, externalValue, dimension, [&] (const ECFExpressionVector &expr) { return expr.data[dimension].evaluator; });
+	return examineElementParameter<ECFExpressionVector>(name, settings, externalValue, dimension, [&] (ECFExpressionVector &expr) { return &expr.data[dimension]; });
 }
 
-void Assembler::examineBoundaryParameter(const std::string &name, const std::map<std::string, ECFExpression> &settings, ExternalBoundaryValue &externalValue)
+bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpression> &settings, ExternalBoundaryValue &externalValue)
 {
 	if (settings.size()) {
 		eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
@@ -190,6 +202,10 @@ void Assembler::examineBoundaryParameter(const std::string &name, const std::map
 		for (auto reg = info::mesh->boundaryRegions.begin(); reg != info::mesh->boundaryRegions.end(); ++reg, ++rindex) {
 			auto ms = settings.find((*reg)->name);
 			if (ms != settings.end()) {
+				if (!Variable::create(ms->second, rindex)) {
+					eslog::warning("   %30s:  %57s \n", (*reg)->name.c_str(), "INVALID EXPRESSION");
+					return false;
+				}
 				Evaluator *evaluator = ms->second.evaluator;
 				externalValue.evaluator[externalValue.dimension * rindex] = evaluator;
 				if (evaluator->variables.size()) {
@@ -202,10 +218,12 @@ void Assembler::examineBoundaryParameter(const std::string &name, const std::map
 		}
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 	}
+	return true;
 }
 
-void Assembler::examineBoundaryParameter(const std::string &name, const std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection)
+bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection)
 {
+	return false;
 //	if (settings.size()) {
 //		eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
 //

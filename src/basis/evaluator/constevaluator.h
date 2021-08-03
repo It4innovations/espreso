@@ -11,7 +11,6 @@ class ConstEvaluator: public Evaluator {
 public:
 	ConstEvaluator(double value): _value(value) {}
 
-	Type type() { return Type::CONST; }
 	virtual Evaluator* copy() const { return new ConstEvaluator(*this); }
 
 	void evalVector(esint size, esint increment, const Params &params, double *results) const;

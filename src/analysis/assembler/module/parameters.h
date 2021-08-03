@@ -36,14 +36,14 @@ struct ParametersTemperature {
 	struct Initial {
 		static NodeData *output;
 
-		ElementExternalParameter<enodes> node;
-		ElementExternalParameter<egps> gp;
+		ElementNodesExternalParameter<enodes> node;
+		ElementGPsExternalParameter<egps> gp;
 		Boundary boundary;
 	};
 
 	Initial initial;
-	ElementParameter<enodes> node;
-	ElementExternalParameter<egps> gp;
+	ElementNodesExternalParameter<enodes> node;
+	ElementGPsExternalParameter<egps> gp;
 	Boundary boundary;
 };
 
@@ -58,14 +58,14 @@ struct ParametersAcousticPressure {
 	struct Initial {
 		static NodeData *output;
 
-		ElementExternalParameter<enodes> node;
-		ElementExternalParameter<egps> gp;
+		ElementGPsExternalParameter<enodes> node;
+		ElementGPsExternalParameter<egps> gp;
 		Boundary boundary;
 	};
 
 	Initial initial;
 	ElementParameter<enodes> node;
-	ElementExternalParameter<egps> gp;
+	ElementGPsExternalParameter<egps> gp;
 	Boundary boundary;
 };
 
@@ -77,7 +77,7 @@ struct ParametersCoordinates {
 	};
 
 	ElementParameter<ndim * enodes> node;
-	ElementExternalParameter<ndim * egps> gp;
+	ElementGPsExternalParameter<ndim * egps> gp;
 	Boundary boundary;
 };
 
@@ -122,21 +122,21 @@ struct ParametersIntegrationSimd {
 };
 
 struct ParametersCoordinateSystem {
-	ElementExternalParameter<egps> cartesian2D;
-	ElementExternalParameter<ndim * egps> cartesian3D, spherical;
-	ElementExternalParameter<2 * egps> cylindric;
+	ElementGPsExternalParameter<egps> cartesian2D;
+	ElementGPsExternalParameter<ndim * egps> cartesian3D, spherical;
+	ElementGPsExternalParameter<2 * egps> cylindric;
 };
 
 struct ParametersMaterial {
 	struct Model {
-		ElementExternalParameter<egps> isotropic;
-		ElementExternalParameter<ndim * egps> diagonal;
-		ElementExternalParameter<3 * egps> symmetric2D;
-		ElementExternalParameter<6 * egps> symmetric3D;
-		ElementExternalParameter<ndim * ndim * egps> anisotropic;
+		ElementGPsExternalParameter<egps> isotropic;
+		ElementGPsExternalParameter<ndim * egps> diagonal;
+		ElementGPsExternalParameter<3 * egps> symmetric2D;
+		ElementGPsExternalParameter<6 * egps> symmetric3D;
+		ElementGPsExternalParameter<ndim * ndim * egps> anisotropic;
 	};
 
-	ElementExternalParameter<egps> density, heatCapacity;
+	ElementGPsExternalParameter<egps> density, heatCapacity;
 	Model model;
 
 	ElementParameter<egps> mass;
@@ -149,7 +149,7 @@ struct ParametersThickness {
 		BoundaryExternalParameter<egps> gp;
 	};
 
-	ElementExternalParameter<egps> gp;
+	ElementGPsExternalParameter<egps> gp;
 	Boundary boundary;
 };
 
@@ -158,13 +158,13 @@ struct ParametersTranslationMotions {
 	double sigma;
 	bool CAU, SUPG;
 
-	ElementExternalParameter<ndim * egps> gp;
+	ElementGPsExternalParameter<ndim * egps> gp;
 	ElementParameter<enodes * enodes> stiffness;
 	ElementParameter<enodes> rhs;
 };
 
 struct ParametersElementNodeFunction {
-	ElementExternalParameter<enodes> node;
+	ElementGPsExternalParameter<enodes> node;
 };
 
 struct ParametersBoundaryFunction {

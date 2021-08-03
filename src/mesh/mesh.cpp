@@ -1487,11 +1487,11 @@ void Mesh::printDecompositionStatistics()
 	Communication::allReduce(&mesh.variance, NULL, sizeof(mesh.variance) / sizeof(double), MPI_DOUBLE, MPI_SUM);
 	mesh.var();
 
+	eslog::info("\n ================================== DECOMPOSITION STATISTICS ================================= \n");
 	if (info::ecf->output.logger == OutputConfiguration::LOGGER::PARSER) {
 		eslog::info("decomposition: clusters per MPI: %d\n", mesh.stats.mpi.max.clusters);
 		return;
 	}
-	eslog::info(" ================================== DECOMPOSITION STATISTICS ================================= \n");
 	if (!_withFETI || mesh.stats.mpi.max.clusters > 1) {
 		eslog::info(" ============================================================================================= \n");
 		eslog::info("  PER MPI STATISTICS         %12s %12s %12s %12s %12s \n", "MIN", "MAX", "AVG", "VAR", "IMBALANCE");

@@ -2,6 +2,8 @@
 #include "acoustic.h"
 #include "assembler.hpp"
 
+#include "basis/expression/variable.h"
+
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"

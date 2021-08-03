@@ -5,7 +5,7 @@
 using namespace espreso;
 
 RotorDynamicsConfiguration::RotationAxisConfiguration::RotationAxisConfiguration(DIMENSION dimension)
-: dimension(dimension), center(&this->dimension, "0"), orientation(&this->dimension, "0")
+: dimension(dimension), center(&this->dimension, "0", ECFExpression::Scope::EGPS), orientation(&this->dimension, "0", ECFExpression::Scope::EGPS)
 {
 	REGISTER(center, ECFMetaData()
 			.setname("Center")
@@ -116,7 +116,9 @@ RotorDynamicsConfiguration::RotorDynamicsConfiguration(DIMENSION dimension)
 }
 
 RotatingForceConfiguration::RotatingForceConfiguration(DIMENSION *dimension)
-: rotation_axis(dimension)
+: rotation_axis(dimension, ECFExpression::Scope::BGPS), rotation_radius(ECFExpression::Scope::BGPS),
+  unbalance_mass(ECFExpression::Scope::BGPS), unbalance_phase_angle(ECFExpression::Scope::BGPS),
+  location(ECFExpression::Scope::BGPS)
 {
 	rotation_axis.x.value = rotation_axis.y.value = "0";
 	rotation_axis.z.value = "1";
@@ -140,7 +142,7 @@ RotatingForceConfiguration::RotatingForceConfiguration(DIMENSION *dimension)
 }
 
 NonlinerSpringConfiguration::NonlinerSpringConfiguration(DIMENSION *dimension)
-: direction(dimension)
+: direction(dimension, ECFExpression::Scope::BGPS), force(ECFExpression::Scope::BGPS), force_derivative(ECFExpression::Scope::BGPS)
 {
 	support = Support::SLIDING;
 	REGISTER(support, ECFMetaData()
@@ -165,54 +167,56 @@ StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfigurati
 	REGISTER(temperature, ECFMetaData()
 			.setdescription({ "The name of a region.", "Temperature of a given region." })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "MY_REGION", "275.15" }));
+			.setpattern({ "MY_REGION", "275.15" }),
+			ECFExpression::Scope::NODE);
 	REGISTER(normal_pressure, ECFMetaData()
 			.setdescription({ "The name of a region.", "Normal pressure on a given region." })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "MY_REGION", "0" }));
+			.setpattern({ "MY_REGION", "0" }),
+			ECFExpression::Scope::BGPS);
 
 	REGISTER(force, ECFMetaData()
 			.setdescription({ "The name of a region.", "Force on a given region." })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION" }),
-			dimension);
+			dimension, ECFExpression::Scope::BNODES);
 
 	REGISTER(angular_velocity, ECFMetaData()
 			.setdescription({ "The name of a region.", "Angular velocity of a given region." })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })
 			.setpattern({ "MY_REGION" }),
-			dimension);
+			dimension, ECFExpression::Scope::BGPS);
 
 	REGISTER(normal_direction, ECFMetaData()
 			.setdescription({ "The name of a region.", "Normal direction of a given region." })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION" }),
-			dimension);
+			dimension, ECFExpression::Scope::BGPS);
 
 	REGISTER(obstacle, ECFMetaData()
 			.setdescription({ "The name of a region.", "Obstacle for a given region." })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION" }),
-			dimension);
+			dimension, ECFExpression::Scope::BGPS);
 
 	REGISTER(acceleration, ECFMetaData()
 			.setdescription({ "The name of a region.", "Acceleration of a given region." })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })
 			.setpattern({ "MY_REGION" }),
-			dimension, "0");
+			dimension, "0", ECFExpression::Scope::BGPS);
 
 
 	REGISTER(displacement, ECFMetaData()
 			.setdescription({ "The name of a region.", "Fixed displacement of a given region." })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION" }),
-			dimension);
+			dimension, ECFExpression::Scope::BGPS);
 
 	REGISTER(harmonic_force, ECFMetaData()
 			.setdescription({ "The name of a region.", "Harmonic force" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION", }),
-			dimension);
+			dimension, ECFExpression::Scope::BGPS);
 
 	REGISTER(nonlinear_spring, ECFMetaData()
 			.setdescription({ "The name of a region.", "Non-linear spring" })

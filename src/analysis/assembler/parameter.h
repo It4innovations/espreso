@@ -106,6 +106,9 @@ protected:
 	ExternalElementValue(int dimension): dimension(dimension) {}
 };
 
+struct ExternalElementGPsValue: public ExternalElementValue { using ExternalElementValue::ExternalElementValue; };
+struct ExternalElementNodesValue: public ExternalElementValue { using ExternalElementValue::ExternalElementValue; };
+
 struct ElementParameterData: public ParameterData {
 	ElementParameterData(PerElementSize mask);
 
@@ -122,11 +125,17 @@ struct ElementParameter: public ElementParameterData {
 };
 
 template<int mask>
-struct ElementExternalParameter: public ElementParameter<mask> {
-	ExternalElementValue externalValue;
-	std::vector<int> isset;
+struct ElementGPsExternalParameter: public ElementParameter<mask> {
+	ExternalElementGPsValue externalValue;
 
-	ElementExternalParameter(): externalValue(*this), isset(ElementParameterData::intervals(), 0) { }
+	ElementGPsExternalParameter(): externalValue(*this) { }
+};
+
+template<int mask>
+struct ElementNodesExternalParameter: public ElementParameter<mask> {
+	ExternalElementNodesValue externalValue;
+
+	ElementNodesExternalParameter(): externalValue(*this) { }
 };
 
 struct BoundaryParameterData: public ParameterData {
@@ -140,7 +149,6 @@ struct BoundaryParameterData: public ParameterData {
 	void resizeAligned(size_t alignment, double init = .0);
 
 	int region;
-	int isset;
 };
 
 struct BoundaryParameterPack {
@@ -184,9 +192,9 @@ struct BoundaryExternalParameter: public BoundaryParameter<mask> {
 
 template <class Settings>
 struct BoundaryParameterSettings: public ParameterSettings<Settings> {
-	BoundaryParameterSettings(int region): ParameterSettings<Settings>(1), region(region), isset(false) {}
+	BoundaryParameterSettings(int region): ParameterSettings<Settings>(1), region(region) {}
 
-	int region, isset;
+	int region;
 };
 
 template <class Settings>

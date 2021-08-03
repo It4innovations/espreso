@@ -6,8 +6,9 @@
 
 espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfiguration(ECF *ECF)
 : dimension(DIMENSION::D3),
-  scaling(&dimension, "1"),
-  translation(&dimension, "0"),
+  offset(ECFExpression::Scope::NODE),
+  scaling(&dimension, "1", ECFExpression::Scope::NODE),
+  translation(&dimension, "0", ECFExpression::Scope::NODE),
   coordinate_system(&dimension),
   override(true),
   _ECF(ECF)
@@ -61,7 +62,7 @@ espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfigurat
 }
 
 espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECF *ECF)
-: function("R"),
+: function("R", ECFExpression::Scope::GLOBAL),
   external_ffd(ECF)
 {
 

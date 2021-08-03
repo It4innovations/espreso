@@ -4,16 +4,24 @@
 #include "analysis/acoustic.real.linear.h"
 #include "analysis/heat.steadystate.linear.h"
 
+#include "basis/expression/expression.h"
+#include "basis/expression/variable.h"
+#include "basis/utilities/parser.h"
 #include "esinfo/ecfinfo.h"
+#include "esinfo/eslog.h"
 #include "esinfo/meshinfo.h"
 #include "output/output.h"
-
-#include <cstdio>
 
 using namespace espreso;
 
 void Looper::run()
 {
+	Variable::gather(info::mesh->boundaryRegions.size());
+
+	for (auto range = info::ecf->ranges.begin(); range != info::ecf->ranges.end(); ++range) {
+//		range->second.parameter
+	}
+
 	Analysis *analysis;
 
 	switch (info::ecf->physics) {
