@@ -18,12 +18,12 @@ struct ECFExpression {
 	static std::vector<ECFExpression*> parametrized; // parametrized expressions
 
 	std::string value;
-	std::vector<std::string> restriction, parameters;
+	std::vector<std::string> parameters;
 	Evaluator *evaluator;
 	bool isset;
 
-	ECFExpression(const std::vector<std::string> &variables);
-	ECFExpression(const std::vector<std::string> &variables, const std::string &initialValue);
+	ECFExpression();
+	ECFExpression(const std::string &initialValue);
 	ECFExpression(const ECFExpression &other);
 	ECFExpression& operator=(const ECFExpression &other);
 	~ECFExpression();
@@ -41,8 +41,8 @@ struct ECFHarmonicExpression: public ECFDescription {
 	Type type;
 	ECFExpression magnitude, phase;
 
-	ECFHarmonicExpression(const std::vector<std::string> &variables);
-	ECFHarmonicExpression(const std::vector<std::string> &variables, const std::string &initialValue);
+	ECFHarmonicExpression();
+	ECFHarmonicExpression(const std::string &initialValue);
 
 	static bool forall(const std::map<std::string, ECFHarmonicExpression> &parameter, std::function<bool(const ECFExpression &expr)> fnc);
 
@@ -59,8 +59,8 @@ struct ECFExpressionVector: public ECFDescription {
 
 	ECFExpressionVector(const ECFExpressionVector &other);
 	ECFExpressionVector& operator=(const ECFExpressionVector &other);
-	ECFExpressionVector(DIMENSION *dimension, const std::vector<std::string> &variables);
-	ECFExpressionVector(DIMENSION *dimension, const std::vector<std::string> &variables, const std::string &initialValue);
+	ECFExpressionVector(DIMENSION *dimension);
+	ECFExpressionVector(DIMENSION *dimension, const std::string &initialValue);
 
 	static bool forall(const std::map<std::string, ECFExpressionVector> &parameter, std::function<bool(const ECFExpression &expr)> fnc);
 
@@ -76,8 +76,8 @@ struct ECFHarmonicExpressionVector: public ECFDescription {
 	Type type;
 	ECFExpressionVector magnitude, phase;
 
-	ECFHarmonicExpressionVector(DIMENSION *dimension, const std::vector<std::string> &variables);
-	ECFHarmonicExpressionVector(DIMENSION *dimension, const std::vector<std::string> &variables, const std::string &initialValue);
+	ECFHarmonicExpressionVector(DIMENSION *dimension);
+	ECFHarmonicExpressionVector(DIMENSION *dimension, const std::string &initialValue);
 
 	static bool forall(const std::map<std::string, ECFHarmonicExpressionVector> &parameter, std::function<bool(const ECFExpression &expr)> fnc);
 
@@ -88,7 +88,7 @@ protected:
 struct ECFExpressionOptionalVector: public ECFExpressionVector {
 	ECFExpression all;
 
-	ECFExpressionOptionalVector(DIMENSION *dimension, const std::vector<std::string> &variables);
+	ECFExpressionOptionalVector(DIMENSION *dimension);
 
 	static bool forall(const std::map<std::string, ECFExpressionOptionalVector> &parameter, std::function<bool(const ECFExpression &expr)> fnc);
 };

@@ -25,14 +25,12 @@ AcousticLoadStepConfiguration::AcousticLoadStepConfiguration(DIMENSION *D)
 			.setdescription({ "The name of a region.", "Pressure" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "0" })
-			.setdynamic(),
-			ECFMetaData::getboundaryconditionvariables());
+			.setdynamic());
 	REGISTER(normal_acceleration, ECFMetaData()
 			.setdescription({ "The name of a region.", "Normal Acceleration" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "0" })
-			.setdynamic(),
-			ECFMetaData::getboundaryconditionvariables());
+			.setdynamic());
 }
 
 AcousticConfiguration::AcousticConfiguration(DIMENSION d)

@@ -5,7 +5,7 @@
 using namespace espreso;
 
 RotorDynamicsConfiguration::RotationAxisConfiguration::RotationAxisConfiguration(DIMENSION dimension)
-: dimension(dimension), center(&this->dimension, ECFMetaData::getcoordinatevariables(), "0"), orientation(&this->dimension, ECFMetaData::getcoordinatevariables(), "0")
+: dimension(dimension), center(&this->dimension, "0"), orientation(&this->dimension, "0")
 {
 	REGISTER(center, ECFMetaData()
 			.setname("Center")
@@ -116,11 +116,7 @@ RotorDynamicsConfiguration::RotorDynamicsConfiguration(DIMENSION dimension)
 }
 
 RotatingForceConfiguration::RotatingForceConfiguration(DIMENSION *dimension)
-: rotation_axis(dimension, ECFMetaData::getcoordinatevariables()),
-  rotation_radius(ECFMetaData::getcoordinatevariables()),
-  unbalance_mass(ECFMetaData::getcoordinatevariables()),
-  unbalance_phase_angle(ECFMetaData::getcoordinatevariables()),
-  location(ECFMetaData::getcoordinatevariables())
+: rotation_axis(dimension)
 {
 	rotation_axis.x.value = rotation_axis.y.value = "0";
 	rotation_axis.z.value = "1";
@@ -144,9 +140,7 @@ RotatingForceConfiguration::RotatingForceConfiguration(DIMENSION *dimension)
 }
 
 NonlinerSpringConfiguration::NonlinerSpringConfiguration(DIMENSION *dimension)
-: direction(dimension, ECFMetaData::getboundaryconditionvariables()),
-  force({ "DISPLACEMENT" }),
-  force_derivative({ "DISPLACEMENT" })
+: direction(dimension)
 {
 	support = Support::SLIDING;
 	REGISTER(support, ECFMetaData()
@@ -171,56 +165,54 @@ StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfigurati
 	REGISTER(temperature, ECFMetaData()
 			.setdescription({ "The name of a region.", "Temperature of a given region." })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "MY_REGION", "275.15" }),
-			ECFMetaData::getboundaryconditionvariables());
+			.setpattern({ "MY_REGION", "275.15" }));
 	REGISTER(normal_pressure, ECFMetaData()
 			.setdescription({ "The name of a region.", "Normal pressure on a given region." })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
-			.setpattern({ "MY_REGION", "0" }),
-			ECFMetaData::getboundaryconditionvariables());
+			.setpattern({ "MY_REGION", "0" }));
 
 	REGISTER(force, ECFMetaData()
 			.setdescription({ "The name of a region.", "Force on a given region." })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION" }),
-			dimension, ECFMetaData::getboundaryconditionvariables());
+			dimension);
 
 	REGISTER(angular_velocity, ECFMetaData()
 			.setdescription({ "The name of a region.", "Angular velocity of a given region." })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })
 			.setpattern({ "MY_REGION" }),
-			dimension, ECFMetaData::getboundaryconditionvariables());
+			dimension);
 
 	REGISTER(normal_direction, ECFMetaData()
 			.setdescription({ "The name of a region.", "Normal direction of a given region." })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION" }),
-			dimension, ECFMetaData::getboundaryconditionvariables());
+			dimension);
 
 	REGISTER(obstacle, ECFMetaData()
 			.setdescription({ "The name of a region.", "Obstacle for a given region." })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION" }),
-			dimension, ECFMetaData::getboundaryconditionvariables());
+			dimension);
 
 	REGISTER(acceleration, ECFMetaData()
 			.setdescription({ "The name of a region.", "Acceleration of a given region." })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })
 			.setpattern({ "MY_REGION" }),
-			dimension, ECFMetaData::getboundaryconditionvariables(), "0");
+			dimension, "0");
 
 
 	REGISTER(displacement, ECFMetaData()
 			.setdescription({ "The name of a region.", "Fixed displacement of a given region." })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION" }),
-			dimension, ECFMetaData::getboundaryconditionvariables());
+			dimension);
 
 	REGISTER(harmonic_force, ECFMetaData()
 			.setdescription({ "The name of a region.", "Harmonic force" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION", }),
-			dimension, ECFMetaData::getharmonicvariables());
+			dimension);
 
 	REGISTER(nonlinear_spring, ECFMetaData()
 			.setdescription({ "The name of a region.", "Non-linear spring" })

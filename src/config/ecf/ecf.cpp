@@ -66,7 +66,6 @@ const PhysicsConfiguration* ECF::_getPhysics() const
 }
 
 FunctionDefinition::FunctionDefinition()
-: function({})
 {
 	loadstep = -1;
 	REGISTER(loadstep, ECFMetaData()

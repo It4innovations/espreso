@@ -6,9 +6,8 @@
 
 espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfiguration(ECF *ECF)
 : dimension(DIMENSION::D3),
-  offset(ECFMetaData::getboundaryconditionvariables()),
-  scaling(&dimension, ECFMetaData::getboundaryconditionvariables(), "1"),
-  translation(&dimension, ECFMetaData::getboundaryconditionvariables(), "0"),
+  scaling(&dimension, "1"),
+  translation(&dimension, "0"),
   coordinate_system(&dimension),
   override(true),
   _ECF(ECF)
@@ -62,7 +61,7 @@ espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfigurat
 }
 
 espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECF *ECF)
-: function({ "R" }, "R"),
+: function("R"),
   external_ffd(ECF)
 {
 

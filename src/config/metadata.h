@@ -139,11 +139,6 @@ struct ECFMetaData {
 
 	ECFMetaData& addoption(const ECFOption &option) { options.push_back(option); return *this; }
 
-	static std::vector<std::string> getcoordinatevariables() { return { "X", "Y", "Z" }; }
-	static std::vector<std::string> getboundaryconditionvariables() { return { "X", "Y", "Z", "INITIAL_TEMPERATURE", "TEMPERATURE", "TIME", "FREQUENCY" }; }
-	static std::vector<std::string> getharmonicvariables() { return { "X", "Y", "Z", "TIME", "FREQUENCY" }; }
-	static std::vector<std::string> getmaterialvariables() { return { "X", "Y", "Z", "TIME", "TEMPERATURE" }; }
-
 	void checkdescription(const std::string &name, size_t size) const;
 	void checkdatatype(const std::string &name, size_t size) const;
 	void checkpattern(const std::string &name, size_t size) const;

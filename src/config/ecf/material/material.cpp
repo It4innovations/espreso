@@ -9,7 +9,6 @@ using namespace espreso;
 MaterialBaseConfiguration::MaterialBaseConfiguration(DIMENSION *D, PHYSICAL_MODEL physicalModel, bool *phase_change)
 : physical_model(physicalModel), material_model(MATERIAL_MODEL::LINEAR_ELASTIC),
   coordinate_system(D),
-  density(ECFMetaData::getmaterialvariables()), heat_capacity(ECFMetaData::getmaterialvariables()),
   linear_elastic_properties(D), hyper_elastic_properties(D), thermal_expansion(D),
   thermal_conductivity(D),
   _phase_change(phase_change)

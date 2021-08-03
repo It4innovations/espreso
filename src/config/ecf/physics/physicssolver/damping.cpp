@@ -5,7 +5,6 @@
 using namespace espreso;
 
 DirectDampingConfiguration::DirectDampingConfiguration()
-: mass({ "TIME" }), stiffness({ "TIME" })
 {
 	stiffness.value = "0";
 	REGISTER(stiffness, ECFMetaData()
@@ -19,7 +18,6 @@ DirectDampingConfiguration::DirectDampingConfiguration()
 }
 
 RatioDampingConfiguration::RatioDampingConfiguration()
-: ratio({ "TIME" }), frequency({ "TIME" })
 {
 	ratio.value = "0";
 	REGISTER(ratio, ECFMetaData()
@@ -50,7 +48,6 @@ RayleighDampingConfiguration::RayleighDampingConfiguration()
 }
 
 HarmonicRayleighDampingConfiguration::HarmonicRayleighDampingConfiguration()
-: structural_damping_coefficient({ "TIME" })
 {
 	structural_damping_coefficient.value = "0";
 	REGISTER(structural_damping_coefficient, ECFMetaData()

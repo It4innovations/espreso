@@ -5,18 +5,6 @@
 using namespace espreso;
 
 ConvectionConfiguration::ConvectionConfiguration()
-: heat_transfer_coefficient(ECFMetaData::getboundaryconditionvariables()),
-  external_temperature(ECFMetaData::getboundaryconditionvariables()),
-  wall_height(ECFMetaData::getboundaryconditionvariables()),
-  tilt_angle(ECFMetaData::getboundaryconditionvariables()),
-  diameter(ECFMetaData::getboundaryconditionvariables()),
-  plate_length(ECFMetaData::getboundaryconditionvariables()),
-  fluid_velocity(ECFMetaData::getboundaryconditionvariables()),
-  plate_distance(ECFMetaData::getboundaryconditionvariables()),
-  length(ECFMetaData::getboundaryconditionvariables()),
-  experimental_constant(ECFMetaData::getboundaryconditionvariables()),
-  volume_fraction(ECFMetaData::getboundaryconditionvariables()),
-  absolute_pressure(ECFMetaData::getboundaryconditionvariables())
 {
 	type = TYPE::USER;
 	REGISTER(type, ECFMetaData()
@@ -95,8 +83,6 @@ ConvectionConfiguration::ConvectionConfiguration()
 }
 
 RadiationConfiguration::RadiationConfiguration()
-: emissivity(ECFMetaData::getboundaryconditionvariables()),
-  external_temperature(ECFMetaData::getboundaryconditionvariables())
 {
 	REGISTER(emissivity, ECFMetaData()
 			.setdescription({ "Emissivity" })
@@ -107,14 +93,6 @@ RadiationConfiguration::RadiationConfiguration()
 }
 
 BioHeatSourceConfiguration::BioHeatSourceConfiguration()
-: arteriar_blood_temperature(ECFMetaData::getboundaryconditionvariables()),
-  blood_specific_heat(ECFMetaData::getboundaryconditionvariables()),
-  blood_density(ECFMetaData::getboundaryconditionvariables()),
-  metabolic_heat_source(ECFMetaData::getboundaryconditionvariables()),
-  blood_perfusion(ECFMetaData::getboundaryconditionvariables()),
-  reference_temperature(ECFMetaData::getboundaryconditionvariables()),
-  physical_activity_scatter_factor(ECFMetaData::getboundaryconditionvariables()),
-  mu(ECFMetaData::getboundaryconditionvariables())
 {
 	REGISTER(arteriar_blood_temperature, ECFMetaData()
 		.setdescription({ "Arteriar blood temperature." })
@@ -175,33 +153,29 @@ HeatTransferLoadStepConfiguration::HeatTransferLoadStepConfiguration(DIMENSION *
 			.setdescription({ "The name of a region.", "Temperature" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "273.15" })
-			.setdynamic(),
-			ECFMetaData::getboundaryconditionvariables());
+			.setdynamic());
 	REGISTER(heat_source, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat source" })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "273.15" })
-			.setdynamic(),
-			ECFMetaData::getboundaryconditionvariables());
+			.setdynamic());
 	REGISTER(translation_motions, ECFMetaData()
 			.setdescription({ "The name of a region.", "Translation motion" })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })
 			.setpattern({ "MY_REGION" })
 			.setdynamic(),
-			D, ECFMetaData::getboundaryconditionvariables(), "0");
+			D, "0");
 
 	REGISTER(heat_flux, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat flux" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "500" })
-			.setdynamic(),
-			ECFMetaData::getboundaryconditionvariables());
+			.setdynamic());
 	REGISTER(heat_flow, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat flow" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "500" })
-			.setdynamic(),
-			ECFMetaData::getboundaryconditionvariables());
+			.setdynamic());
 
 	REGISTER(bio_heat, ECFMetaData()
 			.setdescription({ "The name of a region.", "Bio heat" })

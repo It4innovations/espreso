@@ -67,7 +67,7 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dim, MaterialConfi
 			.setdescription({ "The name of a region.", "Initial temperature" })
 			.setpattern({ "MY_REGION", "273.15" })
 			.setdynamic(),
-			ECFMetaData().getboundaryconditionvariables(), "273.15");
+			"273.15");
 
 	if (dimension == DIMENSION::D2) {
 		REGISTER(thickness, ECFMetaData()
@@ -75,6 +75,6 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dim, MaterialConfi
 				.setdescription({ "The name of a region.", "Thickness" })
 				.setpattern({ "MY_REGION", "1" })
 				.setdynamic(),
-				ECFMetaData().getboundaryconditionvariables(), "1");
+				"1");
 	}
 }

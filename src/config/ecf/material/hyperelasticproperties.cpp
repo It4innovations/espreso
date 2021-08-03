@@ -4,21 +4,7 @@
 
 espreso::HyperElasticPropertiesConfiguration::HyperElasticPropertiesConfiguration(DIMENSION *D)
 : model(MODEL::NEO_HOOKEN_CMP),
-  dimension(D),
-  E(ECFMetaData::getmaterialvariables()),
-  mi(ECFMetaData::getmaterialvariables()),
-  d(ECFMetaData::getmaterialvariables()),
-  G(ECFMetaData::getmaterialvariables()),
-  lambdaL(ECFMetaData::getmaterialvariables()),
-  C10(ECFMetaData::getmaterialvariables()),
-  C01(ECFMetaData::getmaterialvariables()),
-  C11(ECFMetaData::getmaterialvariables()),
-  C02(ECFMetaData::getmaterialvariables()),
-  C20(ECFMetaData::getmaterialvariables()),
-  C30(ECFMetaData::getmaterialvariables()),
-  C21(ECFMetaData::getmaterialvariables()),
-  C12(ECFMetaData::getmaterialvariables()),
-  C03(ECFMetaData::getmaterialvariables())
+  dimension(D)
 {
 	REGISTER(model, ECFMetaData()
 			.setdescription({ "Material model." })
