@@ -112,6 +112,8 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 	mklpdss.external->msglvl = 0;
 	mklpdss.external->comm = MPI_Comm_c2f(info::mpi::comm);
 
+	eslog::solver("     - ---- LINEAR SOLVER -------------------------------------------------------------- -\n");
+	eslog::solver("     - | SOLVER ::     MKL                       TYPE :: PARALLEL DIRECT SPARSE SOLVER | -\n");
 	switch (A.cluster.type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		eslog::solver("     - | MATRIX TYPE ::                               REAL SYMMETRIC POSITIVE DEFINITE | -\n");

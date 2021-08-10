@@ -95,17 +95,6 @@ void Variable::analyze(ECFExpression &expr, size_t region)
 
 	for (size_t i = 0; i < variables.size(); ++i) {
 		std::string variable = Parser::uppercase(variables[i]);
-
-		if (Variable::list.global.find(variable) != Variable::list.global.end()) {
-			expr.parameters.push_back(variable);
-			continue;
-		}
-
-		if (StringCompare::caseInsensitivePreffix("GLOBAL__", variable)) {
-			Variable::list.global.insert(std::make_pair(variable.substr(8), Variable{}));
-			expr.parameters.push_back(variable.substr(8));
-			continue;
-		}
 		if (StringCompare::caseInsensitivePreffix("BNODES__", variable)) {
 			Variable::list.region[region].enodes.insert(std::make_pair(variable.substr(8), Variable{}));
 			expr.parameters.push_back(variable.substr(8));
@@ -116,19 +105,14 @@ void Variable::analyze(ECFExpression &expr, size_t region)
 			expr.parameters.push_back(variable.substr(6));
 			continue;
 		}
-		if (StringCompare::caseInsensitivePreffix("NODE__", variable)) {
-			Variable::list.node.insert(std::make_pair(variable.substr(6), Variable{}));
-			expr.parameters.push_back(variable.substr(6));
-			continue;
+		if (!Variable::list.global.count(variable)) {
+			switch (expr.scope) {
+			case ECFExpression::Scope::BNODES: Variable::list.region[region].enodes.insert(std::make_pair(variable, Variable{})); break;
+			case ECFExpression::Scope::BGPS: Variable::list.region[region].egps.insert(std::make_pair(variable, Variable{})); break;
+			default: continue;
+			}
+			expr.parameters.push_back(variable);
 		}
-		switch (expr.scope) {
-		case ECFExpression::Scope::GLOBAL: Variable::list.global.insert(std::make_pair(variable, Variable{})); break;
-		case ECFExpression::Scope::BNODES: Variable::list.region[region].enodes.insert(std::make_pair(variable, Variable{})); break;
-		case ECFExpression::Scope::BGPS: Variable::list.region[region].egps.insert(std::make_pair(variable, Variable{})); break;
-		case ECFExpression::Scope::NODE: Variable::list.node.insert(std::make_pair(variable, Variable{})); break;
-		default: continue;
-		}
-		expr.parameters.push_back(variable);
 	}
 }
 

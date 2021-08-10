@@ -10,6 +10,7 @@
 #include "basis/expression/variable.h"
 #include "config/ecf/physics/heattransfer.h"
 #include "esinfo/meshinfo.h"
+#include "esinfo/eslog.hpp"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
 #include "output/output.h"
@@ -24,6 +25,9 @@ AX_HeatSteadyStateLinear::AX_HeatSteadyStateLinear(HeatTransferGlobalSettings &g
 
 void AX_HeatSteadyStateLinear::init()
 {
+	eslog::info("\n ============================================================================================= \n");
+	eslog::info(" == ANALYSIS                                                            LINEAR STEADY STATE == \n");
+
 	switch (configuration.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI:    system = new AX_FETISystem<double>(configuration.feti); break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE:   system = new AX_MultigridSystem<double>(configuration.hypre); break;
@@ -61,6 +65,9 @@ void AX_HeatSteadyStateLinear::run()
 
 	assembler.updateSolution();
 	info::mesh->output->updateSolution(time);
+
+	eslog::info(" ============================================================================================= \n");
+	eslog::info(" = ================================================================= run time %12.3f s =\n\n", eslog::duration());
 }
 
 

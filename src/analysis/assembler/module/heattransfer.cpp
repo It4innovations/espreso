@@ -126,8 +126,7 @@ void AX_HeatTransfer::init(AX_SteadyState &scheme)
 
 void AX_HeatTransfer::analyze()
 {
-	eslog::info("\n ============================================================================================= \n");
-	eslog::info("  PHYSICS                                                                    HEAT TRANSFER 2D  \n");
+	eslog::info(" == PHYSICS                                                                HEAT TRANSFER 2D == \n");
 	eslog::info(" ============================================================================================= \n");
 	bool correct = true;
 
@@ -318,7 +317,7 @@ void AX_HeatTransfer::analyze()
 	} else {
 		eslog::info("  PHYSICS CONFIGURATION VALIDATION                                                       FAIL  \n");
 	}
-	eslog::info(" ============================================================================================= \n");
+	eslog::info(" ============================================================================================= \n\n");
 	if (!correct) {
 		eslog::globalerror("                                                               INVALID CONFIGURATION DETECTED \n");
 	}
