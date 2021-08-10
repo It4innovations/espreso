@@ -4,6 +4,7 @@
 #include "basis/evaluator/expressionevaluator.h"
 #include "basis/expression/expression.h"
 #include "basis/utilities/parser.h"
+#include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 #include "config/holders/expression.h"
 
@@ -13,6 +14,10 @@ using namespace espreso;
 
 void Variable::gather(size_t regions)
 {
+	for (auto range = info::ecf->ranges.begin(); range != info::ecf->ranges.end(); ++range) {
+		Variable::list.global[range->first] = Variable(0, 0, &range->second.value);
+	}
+
 	for (auto it = ECFExpression::parametrized.begin(); it != ECFExpression::parametrized.end(); ++it) {
 		std::string &expr = (*it)->value;
 		for (size_t i = 0; i + 1 < expr.size(); ++i) {
@@ -26,6 +31,11 @@ void Variable::gather(size_t regions)
 
 		for (size_t i = 0; i < variables.size(); ++i) {
 			std::string variable = Parser::uppercase(variables[i]);
+
+			if (Variable::list.global.find(variable) != Variable::list.global.end()) {
+				(*it)->parameters.push_back(variable);
+				continue;
+			}
 
 			if (StringCompare::caseInsensitivePreffix("GLOBAL__", variable)) {
 				Variable::list.global.insert(std::make_pair(variable.substr(8), Variable{}));
@@ -85,6 +95,11 @@ void Variable::analyze(ECFExpression &expr, size_t region)
 
 	for (size_t i = 0; i < variables.size(); ++i) {
 		std::string variable = Parser::uppercase(variables[i]);
+
+		if (Variable::list.global.find(variable) != Variable::list.global.end()) {
+			expr.parameters.push_back(variable);
+			continue;
+		}
 
 		if (StringCompare::caseInsensitivePreffix("GLOBAL__", variable)) {
 			Variable::list.global.insert(std::make_pair(variable.substr(8), Variable{}));
@@ -158,12 +173,17 @@ bool Variable::create(ECFExpression &expr)
 		default: break;
 		}
 
+		std::map<std::string, Variable>::iterator it;
 		if (map == nullptr) {
-			return false;
-		}
-		auto it = map->find(variable);
-		if (it == map->end()) {
-			return false;
+			if ((it = Variable::list.global.find(variable)) == Variable::list.global.end()) {
+				return false;
+			}
+		} else {
+			if ((it = map->find(variable)) == map->end()) {
+				if ((it = Variable::list.global.find(variable)) == Variable::list.global.end()) {
+					return false;
+				}
+			}
 		}
 		if (it->second.val == nullptr) {
 			return false;
@@ -212,12 +232,17 @@ bool Variable::create(ECFExpression &expr, size_t region)
 		default: break;
 		}
 
+		std::map<std::string, Variable>::iterator it;
 		if (map == nullptr) {
-			return false;
-		}
-		auto it = map->find(variable);
-		if (it == map->end()) {
-			return false;
+			if ((it = Variable::list.global.find(variable)) == Variable::list.global.end()) {
+				return false;
+			}
+		} else {
+			if ((it = map->find(variable)) == map->end()) {
+				if ((it = Variable::list.global.find(variable)) == Variable::list.global.end()) {
+					return false;
+				}
+			}
 		}
 		if (it->second.val == nullptr) {
 			return false;

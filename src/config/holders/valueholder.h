@@ -57,7 +57,7 @@ inline std::string ECFValueHolder<ECFExpression>::getValue() const
 template <>
 inline std::string ECFValueHolder<ECFRange>::getValue() const
 {
-	return value.min + " : " + value.max + " : " + value.step;
+	return std::to_string(value.min) + " : " + std::to_string(value.max) + " : " + std::to_string(value.step);
 }
 
 template <>
@@ -85,10 +85,13 @@ inline bool ECFValueHolder<ECFRange>::_setValue(const std::string &value)
 	if (range.size() != 3) {
 		return false;
 	}
-	this->value.min = range[0];
-	this->value.max = range[1];
-	this->value.step = range[2];
-	return true;
+
+	std::stringstream ss0(Parser::strip(range[0])); ss0 >> this->value.min;
+	std::stringstream ss1(Parser::strip(range[1])); ss1 >> this->value.max;
+	std::stringstream ss2(Parser::strip(range[2])); ss2 >> this->value.step;
+	this->value.value = this->value.min;
+
+	return ss0.eof() && !ss0.fail() && ss1.eof() && !ss1.fail() && ss2.eof() && !ss2.fail();
 }
 
 template <>

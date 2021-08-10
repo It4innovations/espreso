@@ -18,9 +18,9 @@ void Looper::run()
 {
 	Variable::gather(info::mesh->boundaryRegions.size());
 
-	for (auto range = info::ecf->ranges.begin(); range != info::ecf->ranges.end(); ++range) {
-//		range->second.parameter
-	}
+//	for (auto range = info::ecf->ranges.begin(); range != info::ecf->ranges.end(); ++range) {
+//
+//	}
 
 	Analysis *analysis;
 
