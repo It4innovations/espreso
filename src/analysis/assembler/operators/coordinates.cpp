@@ -65,6 +65,16 @@ void _elementCoordinates(Module &module)
 	if (info::mesh->dimension == 3 && (it = Variable::list.egps.find("COORDINATE_Z")) != Variable::list.egps.end()) {
 		it->second = Variable(2, info::mesh->dimension, module.coords.gp.data->datatarray().data());
 	}
+
+	if ((it = Variable::list.node.find("COORDINATE_X")) != Variable::list.node.end()) {
+		it->second = Variable(0, 3, &info::mesh->nodes->coordinates->datatarray().data()->x);
+	}
+	if ((it = Variable::list.node.find("COORDINATE_Y")) != Variable::list.node.end()) {
+		it->second = Variable(1, 3, &info::mesh->nodes->coordinates->datatarray().data()->x);
+	}
+	if (info::mesh->dimension == 3 && (it = Variable::list.node.find("COORDINATE_Z")) != Variable::list.node.end()) {
+		it->second = Variable(2, 3, &info::mesh->nodes->coordinates->datatarray().data()->x);
+	}
 }
 
 template <class Module>
@@ -121,17 +131,6 @@ void _boundaryCoordinates(Module &module)
 			}
 			if (info::mesh->dimension == 3 && (it = Variable::list.region[r].egps.find("COORDINATE_Z")) != Variable::list.region[r].egps.end()) {
 				it->second = Variable(2, info::mesh->dimension, module.coords.boundary.gp.regions[r].data->datatarray().data());
-			}
-		} else {
-			auto it = Variable::list.node.end();
-			if ((it = Variable::list.node.find("COORDINATE_X")) != Variable::list.node.end()) {
-				it->second = Variable(0, info::mesh->dimension, &info::mesh->nodes->coordinates->datatarray().data()->x);
-			}
-			if ((it = Variable::list.node.find("COORDINATE_Y")) != Variable::list.node.end()) {
-				it->second = Variable(1, info::mesh->dimension, &info::mesh->nodes->coordinates->datatarray().data()->x);
-			}
-			if (info::mesh->dimension == 3 && (it = Variable::list.node.find("COORDINATE_Z")) != Variable::list.node.end()) {
-				it->second = Variable(2, info::mesh->dimension, &info::mesh->nodes->coordinates->datatarray().data()->x);
 			}
 		}
 	}
