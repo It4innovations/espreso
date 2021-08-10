@@ -112,10 +112,10 @@ public:
 		if (thread.tag == SharedData::TAG::MONITORS) {
 			DirectOutputExecutor::monitors(thread.type);
 		}
-		if (thread.type == step::TYPE::TIME) {
+		if (thread.tag == SharedData::TAG::SOLUTION && thread.type == step::TYPE::TIME) {
 			DirectOutputExecutor::solution(thread.time);
 		}
-		if (thread.type == step::TYPE::FREQUENCY) {
+		if (thread.tag == SharedData::TAG::SOLUTION && thread.type == step::TYPE::FREQUENCY) {
 			DirectOutputExecutor::solution(thread.frequency);
 		}
 	}
