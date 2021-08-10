@@ -393,7 +393,7 @@ void AX_HeatTransfer::fillDirichlet(Vector_Sparse<double> &dirichlet)
 		it->second.evaluator->evalSelectedSparse(
 				region->nodes->datatarray().size(),
 				region->nodes->datatarray().data(),
-				Evaluator::Params().coords(3, reinterpret_cast<double*>(info::mesh->nodes->coordinates->datatarray().data())),
+				it->second.evaluator->params,
 				values.data() + offset);
 		offset += region->nodes->datatarray().size();
 	}

@@ -86,6 +86,10 @@ void AX_Acoustic::analyze()
 		acousticMass(*this);
 	}
 
+	if (configuration.acoustic_pressure.size()) {
+		correct &= examineBoundaryParameter("ACOUSTIC_PRESSURE", configuration.acoustic_pressure, dirichlet.gp.externalValues);
+		fromExpression(*this, dirichlet.gp, dirichlet.gp.externalValues);
+	}
 	if (configuration.normal_acceleration.size()) {
 		examineBoundaryParameter("NORMAL ACCELERATION", configuration.normal_acceleration, normalAcceleration.gp.externalValues);
 		fromExpression(*this, normalAcceleration.gp, normalAcceleration.gp.externalValues);
@@ -177,7 +181,7 @@ void AX_Acoustic::fillDirichlet(Vector_Sparse<double> &dirichlet)
 		it->second.evaluator->evalSelectedSparse(
 				region->nodes->datatarray().size(),
 				region->nodes->datatarray().data(),
-				Evaluator::Params().coords(3, reinterpret_cast<double*>(info::mesh->nodes->coordinates->datatarray().data())),
+				it->second.evaluator->params,
 				values.data() + offset);
 		offset += region->nodes->datatarray().size();
 	}
