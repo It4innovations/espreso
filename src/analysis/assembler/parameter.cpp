@@ -24,6 +24,9 @@ ParameterData::~ParameterData()
 	for (size_t i = 0; i < inputs.size(); ++i) {
 		delete inputs[i];
 	}
+	if (data) {
+		delete data;
+	}
 }
 
 ExternalElementValue::ExternalElementValue(ParameterData &parameter)

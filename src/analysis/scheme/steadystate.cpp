@@ -10,6 +10,25 @@
 
 using namespace espreso;
 
+AX_SteadyState::AX_SteadyState()
+: K{}, f{}, x{}
+{
+
+}
+
+AX_SteadyState::~AX_SteadyState()
+{
+	if (K) {
+		delete K;
+	}
+	if (f) {
+		delete f;
+	}
+	if (x) {
+		delete x;
+	}
+}
+
 void AX_SteadyState::setTime(step::Time &time, double current)
 {
 	time.shift = current;

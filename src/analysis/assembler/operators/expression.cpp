@@ -14,6 +14,7 @@
 #include "mesh/store/boundaryregionstore.h"
 
 #include <algorithm>
+#include <memory>
 
 namespace espreso {
 
@@ -82,7 +83,7 @@ void _evaluateFromExpression(AX_HeatTransfer &module, ParameterData &parameter, 
 	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		for (int d = 0; d < value.dimension && value.evaluator[i * value.dimension + d]; ++d) {
 //			if (value.evaluator[i * value.dimension + d]->)
-			auto op = instantiate<AX_HeatTransfer::NGP, Operator>(i, parameter, value.evaluator[i * value.dimension + d], d, value.dimension);
+			std::unique_ptr<ActionOperator> op(instantiate<AX_HeatTransfer::NGP, Operator>(i, parameter, value.evaluator[i * value.dimension + d], d, value.dimension));
 			size_t elementsInInterval = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
 
 			for (size_t element = 0; element < elementsInInterval; ++element) {

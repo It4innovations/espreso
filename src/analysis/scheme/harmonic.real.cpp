@@ -10,6 +10,37 @@
 
 using namespace espreso;
 
+AX_HarmonicReal::AX_HarmonicReal(HarmonicSolverConfiguration &configuration, int dofs)
+: configuration(configuration), dofs(dofs), K{}, M{}, C{}, re{}, im{}
+{
+
+}
+
+AX_HarmonicReal::~AX_HarmonicReal()
+{
+	if (K) {
+		delete K;
+	}
+	if (M) {
+		delete M;
+	}
+	if (C) {
+		delete C;
+	}
+	if (re.f) {
+		delete re.f;
+	}
+	if (re.x) {
+		delete re.x;
+	}
+	if (im.f) {
+		delete im.f;
+	}
+	if (im.x) {
+		delete im.x;
+	}
+}
+
 void AX_HarmonicReal::initFrequency(step::Frequency &frequency)
 {
 	frequency.shift = (configuration.max_frequency - configuration.min_frequency) / configuration.num_samples;

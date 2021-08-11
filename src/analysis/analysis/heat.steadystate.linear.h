@@ -16,6 +16,7 @@ class AX_HeatSteadyStateLinear: public Analysis {
 
 public:
 	AX_HeatSteadyStateLinear(HeatTransferGlobalSettings &gsettings, HeatTransferLoadStepConfiguration &configuration);
+	~AX_HeatSteadyStateLinear();
 
 	void init();
 	void run();

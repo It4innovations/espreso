@@ -11,6 +11,9 @@ template<typename T> struct AX_LinearSystem;
 
 struct AX_SteadyState {
 
+	AX_SteadyState();
+	~AX_SteadyState();
+
 	void setTime(step::Time &time, double current);
 
 	void init(AX_LinearSystem<double> *system);

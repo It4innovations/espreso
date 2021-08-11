@@ -12,8 +12,8 @@ template<typename T> struct AX_LinearSystem;
 
 struct AX_HarmonicReal {
 
-	AX_HarmonicReal(HarmonicSolverConfiguration &configuration, int dofs)
-	: configuration(configuration), dofs(dofs), K{}, M{}, C{}, re{}, im{} {}
+	AX_HarmonicReal(HarmonicSolverConfiguration &configuration, int dofs);
+	~AX_HarmonicReal();
 
 	void initFrequency(step::Frequency &frequency);
 	void nextFrequency(step::Frequency &frequency);
@@ -30,13 +30,11 @@ struct AX_HarmonicReal {
 
 	HarmonicSolverConfiguration &configuration;
 
-	struct Fragment {
-		Vector_Base<double> *f, *x;
-	};
-
 	int dofs;
 	Matrix_Base<double> *K, *M, *C;
-	Fragment re, im;
+	struct {
+		Vector_Base<double> *f, *x;
+	} re, im;
 };
 
 }

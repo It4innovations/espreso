@@ -23,6 +23,13 @@ AX_HeatSteadyStateLinear::AX_HeatSteadyStateLinear(HeatTransferGlobalSettings &g
 
 }
 
+AX_HeatSteadyStateLinear::~AX_HeatSteadyStateLinear()
+{
+	if (system) {
+		delete system;
+	}
+}
+
 void AX_HeatSteadyStateLinear::init()
 {
 	eslog::info("\n ============================================================================================= \n");
