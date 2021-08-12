@@ -31,9 +31,7 @@ size_t ElementsRegionStore::packedFullSize() const
 	size_t packedSize = RegionStore::packedFullSize();
 
 	packedSize += utils::packedSize(elements);
-
 	packedSize += utils::packedSize(eintervals);
-
 	packedSize += utils::packedSize(bodies);
 	packedSize += utils::packedSize(bodyElements);
 	packedSize += utils::packedSize(bodyFaces);

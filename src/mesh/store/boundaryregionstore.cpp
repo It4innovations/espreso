@@ -68,11 +68,7 @@ size_t BoundaryRegionStore::packedFullSize() const
 	if (epointers != NULL) {
 		packedSize += sizeof(size_t) + epointers->datatarray().size() * sizeof(int);
 	}
-	packedSize += 1;
-	if (emembership != NULL) {
-		packedSize += sizeof(size_t) + emembership->datatarray().size() * sizeof(esint);
-	}
-
+	packedSize += utils::packedSize(emembership);
 	packedSize += utils::packedSize(eintervals);
 	packedSize += utils::packedSize(eintervalsDistribution);
 
@@ -99,7 +95,6 @@ void BoundaryRegionStore::packFull(char* &p) const
 		utils::pack(eindices, p);
 	}
 	utils::pack(emembership, p);
-
 	utils::pack(eintervals, p);
 	utils::pack(eintervalsDistribution, p);
 }
