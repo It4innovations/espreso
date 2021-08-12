@@ -188,6 +188,16 @@ Output::Output()
 	if (info::ecf->output.monitors_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
 		_direct->insert(new Monitoring());
 	}
+
+	if (_direct->writers.size() == 0) {
+		delete _direct;
+		_direct = nullptr;
+	}
+
+	if (_async->writers.size() == 0) {
+		delete _async;
+		_async = nullptr;
+	}
 }
 
 Output::~Output()

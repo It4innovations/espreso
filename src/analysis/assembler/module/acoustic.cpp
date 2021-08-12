@@ -29,6 +29,18 @@ AX_Acoustic::AX_Acoustic(AX_Acoustic *previous, AcousticGlobalSettings &gsetting
 
 }
 
+void AX_Acoustic::initParameters()
+{
+	if (ParametersAcousticPressure::Initial::output == nullptr) {
+		ParametersAcousticPressure::Initial::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_ACOUSTIC_PRESSURE");
+		Variable::list.node["INITIAL_ACOUSTIC_PRESSURE"] = Variable(0, 1, ParametersAcousticPressure::Initial::output->data.data());
+	}
+	if (ParametersAcousticPressure::output == nullptr) {
+		ParametersAcousticPressure::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "ACOUSTIC_PRESSURE");
+		Variable::list.node["ACOUSTIC_PRESSURE"] = Variable(0, 1, ParametersAcousticPressure::output->data.data());
+	}
+}
+
 void AX_Acoustic::init(AX_HarmonicReal &scheme)
 {
 	K = scheme.K;
@@ -48,9 +60,6 @@ void AX_Acoustic::analyze()
 	eslog::info("  PHYSICS                                                                       ACOUSTIC REAL  \n");
 	eslog::info(" ============================================================================================= \n");
 
-	ParametersAcousticPressure::Initial::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_ACOUSTIC_PRESSURE");
-	ParametersAcousticPressure::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "ACOUSTIC_PRESSURE");
-
 	if (info::mesh->dimension == 2) {
 		setMaterials(info::ecf->acoustic_2d.material_set);
 		validateRegionSettings("MATERIAL", info::ecf->acoustic_2d.material_set);
@@ -60,6 +69,8 @@ void AX_Acoustic::analyze()
 		setMaterials(info::ecf->acoustic_2d.material_set);
 		validateRegionSettings("MATERIAL", info::ecf->acoustic_3d.material_set);
 	}
+
+	initParameters();
 
 	baseFunction(*this);
 	elementCoordinates(*this);

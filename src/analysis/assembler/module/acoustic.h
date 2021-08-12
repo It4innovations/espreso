@@ -73,6 +73,9 @@ public:
 
 	Matrix_Base<double> *K, *M, *C;
 	Fragment re, im;
+
+protected:
+	void initParameters();
 };
 
 }

@@ -28,32 +28,36 @@ AX_HeatTransfer::AX_HeatTransfer(AX_HeatTransfer *previous, HeatTransferGlobalSe
 
 void AX_HeatTransfer::initParameters()
 {
-	ParametersTemperature::Initial::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_TEMPERATURE");
-	ParametersTemperature::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "TEMPERATURE");
-	if (info::ecf->output.results_selection.translation_motions) {
-		ParametersTranslationMotions::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "TRANSLATION_MOTION");
-	}
-	if (info::ecf->output.results_selection.gradient) {
-		ParametersGradient::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "GRADIENT");
-	}
-	if (info::ecf->output.results_selection.flux) {
-		ParametersFlux::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUX");
-	}
-
-	Variable::list.node["INITIAL_TEMPERATURE"] = Variable(0, 1, ParametersTemperature::Initial::output->data.data());
-	Variable::list.node["TEMPERATURE"] = Variable(0, 1, ParametersTemperature::output->data.data());
-
 	if (info::mesh->dimension == 2) {
 		initialTemperature = info::ecf->heat_transfer_2d.initial_temperature;
 	}
 	if (info::mesh->dimension == 3) {
 		initialTemperature = info::ecf->heat_transfer_3d.initial_temperature;
 	}
-	for (auto it = initialTemperature.begin(); it != initialTemperature.end(); ++it) {
-		it->second.scope = ECFExpression::Scope::ENODES;
-		for (auto p = it->second.parameters.begin(); p != it->second.parameters.end(); ++p) {
-			Variable::list.enodes.insert(std::make_pair(*p, Variable()));
+
+	if (ParametersTemperature::Initial::output == nullptr) {
+		ParametersTemperature::Initial::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_TEMPERATURE");
+
+		Variable::list.node["INITIAL_TEMPERATURE"] = Variable(0, 1, ParametersTemperature::Initial::output->data.data());
+		for (auto it = initialTemperature.begin(); it != initialTemperature.end(); ++it) {
+			it->second.scope = ECFExpression::Scope::ENODES;
+			for (auto p = it->second.parameters.begin(); p != it->second.parameters.end(); ++p) {
+				Variable::list.enodes.insert(std::make_pair(*p, Variable()));
+			}
 		}
+	}
+	if (ParametersTemperature::output == nullptr) {
+		ParametersTemperature::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "TEMPERATURE");
+		Variable::list.node["TEMPERATURE"] = Variable(0, 1, ParametersTemperature::output->data.data());
+	}
+	if (info::ecf->output.results_selection.translation_motions && ParametersTranslationMotions::output == nullptr) {
+		ParametersTranslationMotions::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "TRANSLATION_MOTION");
+	}
+	if (info::ecf->output.results_selection.gradient && ParametersGradient::output == nullptr) {
+		ParametersGradient::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "GRADIENT");
+	}
+	if (info::ecf->output.results_selection.flux && ParametersFlux::output == nullptr) {
+		ParametersFlux::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUX");
 	}
 }
 
