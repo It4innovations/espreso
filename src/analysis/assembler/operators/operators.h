@@ -38,7 +38,7 @@ void elementCoordinates(AX_Acoustic &module);
 void elementIntegration(AX_Acoustic &module);
 void acousticStiffness(AX_Acoustic &module);
 void acousticMass(AX_Acoustic &module);
-//void acousticBoundaryMass(AX_Acoustic &module);
+void acousticBoundaryMass(AX_Acoustic &module);
 void acousticRHS(AX_Acoustic &module);
 void addFiller(AX_Acoustic &module);
 

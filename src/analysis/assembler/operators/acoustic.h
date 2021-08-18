@@ -272,6 +272,47 @@ struct AcousticsBoundaryMass: public ActionOperator {
 	}
 };
 
+template <size_t nodes, size_t gps>
+struct AcousticsBoundaryMass: public ActionOperator {
+	InputParameterIterator N, weight, determinant;
+	OutputParameterIterator boundaryMass;
+
+	AcousticsBoundaryMass(
+		int interval,
+		const ParameterData &N,
+		const ParameterData &weight,
+		const ParameterData &determinant,
+		ParameterData &boundaryMass)
+	: ActionOperator(interval, boundaryMass.isconst[interval], boundaryMass.update[interval]),
+	  N(N, interval),
+	  weight(weight, interval, 0),
+	  determinant(determinant, interval),
+	  boundaryMass(boundaryMass, interval)
+	{
+		if (update) {
+			std::fill((boundaryMass.data->begin() + interval)->data(), (boundaryMass.data->begin() + interval + 1)->data(), 0);
+		}
+	}
+
+	void operator++()
+	{
+		++N; ++determinant;
+		++boundaryMass;
+	}
+
+	void operator()()
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			ADDMN1M1N<nodes>(determinant[gpindex] * weight[gpindex], N.data + nodes * gpindex, boundaryMass.data);
+		}
+	}
+
+	void reset()
+	{
+
+	}
+};
+
 
 }
 
