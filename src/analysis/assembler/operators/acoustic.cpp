@@ -7,6 +7,8 @@
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
 
+#include <iostream>
+
 namespace espreso {
 
 void acousticStiffness(AX_Acoustic &module)
@@ -37,6 +39,31 @@ void acousticMass(AX_Acoustic &module)
 		module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticMass>(interval, module.controller, module.integration.N, module.integration.weight, module.integration.jacobiDeterminant, module.elements.mass));
 	}
 }
+
+void acousticBoundaryMass(AX_Acoustic &module)
+{
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		module.elements.boundary.mass.regions[r].addInput(module.integration.boundary.N.regions[r]);
+		module.elements.boundary.mass.regions[r].addInput(module.integration.boundary.jacobian.regions[r]);
+		module.elements.boundary.mass.regions[r].addInput(module.integration.boundary.weight.regions[r]);
+
+		module.elements.boundary.mass.regions[r].resize();
+		
+
+		module.addParameter(module.elements.boundary.mass.regions[r]);
+		
+		for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+		/*
+			module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticsBoundaryMass>(r, interval,
+				module.integration.boundary.N.regions[r],
+				module.integration.boundary.weight.regions[r],
+				module.integration.boundary.jacobian.regions[r],
+				module.elements.boundary.mass.regions[r]));
+		*/
+		}
+	}
+}
+
 
 void acousticRHS(AX_Acoustic &module)
 {

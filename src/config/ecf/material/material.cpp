@@ -8,7 +8,7 @@ using namespace espreso;
 
 MaterialBaseConfiguration::MaterialBaseConfiguration(DIMENSION *D, PHYSICAL_MODEL physicalModel, bool *phase_change)
 : physical_model(physicalModel), material_model(MATERIAL_MODEL::LINEAR_ELASTIC),
-  coordinate_system(D), density(ECFExpression::Scope::EGPS), heat_capacity(ECFExpression::Scope::EGPS),
+  coordinate_system(D), density(ECFExpression::Scope::EGPS), speed_of_sound(ECFExpression::Scope::EGPS), heat_capacity(ECFExpression::Scope::EGPS),
   linear_elastic_properties(D), hyper_elastic_properties(D), thermal_expansion(D),
   thermal_conductivity(D),
   _phase_change(phase_change)
@@ -25,6 +25,15 @@ MaterialBaseConfiguration::MaterialBaseConfiguration(DIMENSION *D, PHYSICAL_MODE
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.allowonly([&] () { return !*_phase_change; })
 			.addconstraint(ECFCondition(*_phase_change, ECFCondition::EQUALS, false)));
+
+	speed_of_sound.value = "343"; // [m/s] default for air
+	ecfdescription->registerParameter("speed_of_sound", speed_of_sound, ECFMetaData()
+			.setdescription({ "Speed of sound" })
+			.setdatatype({ ECFDataType::EXPRESSION })
+			.allowonly([&] () { return !*_phase_change && PHYSICAL_MODEL::ACOUSTICS; }));
+			/*
+			.addconstraint(ECFCondition(*_phase_change, ECFCondition::EQUALS, false)));
+			*/
 
 	ecfdescription->registerParameter("CP", heat_capacity, ECFMetaData()
 			.setname("Heat capacity")

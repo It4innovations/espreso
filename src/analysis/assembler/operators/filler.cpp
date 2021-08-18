@@ -53,7 +53,18 @@ void addFiller(AX_Acoustic &module)
 		_add<1>(module, module.M, module.elements.mass);
 	}
 	if (module.C != nullptr) {
-		_add<1>(module, module.C, module.elements.damping);
+		// ???? _add<1>(module, module.C, module.elements.boundary.mass);
+
+		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+			if (info::mesh->boundaryRegions[r]->dimension && module.elements.boundary.mass.regions[r].data != NULL) {
+				for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
+					double *data = module.C->mapping.boundary[r][interval].data;
+					const esint *position = module.C->mapping.boundary[r][interval].position;
+					module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, MatrixFullFiller>(r, interval, module.elements.boundary.mass.regions[r], data, position));
+				}
+			}
+		}
+
 	}
 
 	if (module.re.rhs != nullptr) {

@@ -50,7 +50,7 @@ AcousticLoadStepConfiguration::AcousticLoadStepConfiguration(DIMENSION *D)
 }
 
 AcousticConfiguration::AcousticConfiguration(DIMENSION d)
-: PhysicsConfiguration(d, MaterialConfiguration::PHYSICAL_MODEL::ACOUSTIC),
+: PhysicsConfiguration(d, MaterialConfiguration::PHYSICAL_MODEL::ACOUSTICS),
   AcousticGlobalSettings(ecfdescription),
   dimension(d)
 {

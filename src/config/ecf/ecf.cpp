@@ -55,10 +55,10 @@ const PhysicsConfiguration* ECF::_getPhysics() const
 		return &structural_mechanics_2d;
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
 		return &structural_mechanics_3d;
-	case PhysicsConfiguration::TYPE::ACOUSTIC_2D:
-		return &acoustic_2d;
-	case PhysicsConfiguration::TYPE::ACOUSTIC_3D:
-		return &acoustic_3d;
+	case PhysicsConfiguration::TYPE::ACOUSTICS_2D:
+		return &acoustics_2d;
+	case PhysicsConfiguration::TYPE::ACOUSTICS_3D:
+		return &acoustics_3d;
 	default:
 		eslog::globalerror("Request for unknown physics.");
 		return NULL;
@@ -153,8 +153,8 @@ void ECF::_init()
 			.addoption(ECFOption().setname("HEAT_TRANSFER_3D").setdescription("Heat transfer 3D."))
 			.addoption(ECFOption().setname("STRUCTURAL_MECHANICS_2D").setdescription("Structural mechanics 2D."))
 			.addoption(ECFOption().setname("STRUCTURAL_MECHANICS_3D").setdescription("Structural mechanics 3D."))
-			.addoption(ECFOption().setname("ACOUSTIC_2D").setdescription("Acoustic 2D."))
-			.addoption(ECFOption().setname("ACOUSTIC_3D").setdescription("Acoustic 3D.")));
+			.addoption(ECFOption().setname("ACOUSTICS_2D").setdescription("Acoustics 2D."))
+			.addoption(ECFOption().setname("ACOUSTICS_3D").setdescription("Acoustics 3D.")));
 
 	REGISTER(thermo_elasticity_2d, ECFMetaData()
 			.setdescription({ "Coupled physics" })
@@ -174,12 +174,12 @@ void ECF::_init()
 	REGISTER(structural_mechanics_3d, ECFMetaData()
 			.setdescription({ "Structural mechanics 3D" })
 			.allowonly([&] () { return physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D; }));
-	REGISTER(acoustic_2d, ECFMetaData()
-			.setdescription({ "Acoustic 2D" })
-			.allowonly([&] () { return physics == PhysicsConfiguration::TYPE::ACOUSTIC_2D; }));
-	REGISTER(acoustic_3d, ECFMetaData()
-			.setdescription({ "Acoustic 3D" })
-			.allowonly([&] () { return physics == PhysicsConfiguration::TYPE::ACOUSTIC_3D; }));
+	REGISTER(acoustics_2d, ECFMetaData()
+			.setdescription({ "Acoustics 2D" })
+			.allowonly([&] () { return physics == PhysicsConfiguration::TYPE::ACOUSTICS_2D; }));
+	REGISTER(acoustics_3d, ECFMetaData()
+			.setdescription({ "Acoustics 3D" })
+			.allowonly([&] () { return physics == PhysicsConfiguration::TYPE::ACOUSTICS_3D; }));
 
 	REGISTER(output, ECFMetaData()
 			.setdescription({ "Output configurations." }));
@@ -193,8 +193,8 @@ ECF::ECF()
   heat_transfer_3d(DIMENSION::D3),
   structural_mechanics_2d(DIMENSION::D2),
   structural_mechanics_3d(DIMENSION::D3),
-  acoustic_2d(DIMENSION::D2),
-  acoustic_3d(DIMENSION::D3),
+  acoustics_2d(DIMENSION::D2),
+  acoustics_3d(DIMENSION::D3),
   output(this)
 {
 	info::ecf = this;

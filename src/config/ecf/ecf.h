@@ -79,8 +79,8 @@ struct ECF: public ECFDescription {
 	HeatTransferConfiguration heat_transfer_3d;
 	StructuralMechanicsConfiguration structural_mechanics_2d;
 	StructuralMechanicsConfiguration structural_mechanics_3d;
-	AcousticConfiguration acoustic_2d;
-	AcousticConfiguration acoustic_3d;
+	AcousticConfiguration acoustics_2d;
+	AcousticConfiguration acoustics_3d;
 
 	OutputConfiguration output;
 

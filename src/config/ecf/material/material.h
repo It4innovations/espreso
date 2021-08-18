@@ -17,7 +17,7 @@ struct MaterialBaseConfiguration: public ECFDescription {
 	enum PHYSICAL_MODEL {
 		THERMAL              = 1 << 0,
 		STRUCTURAL_MECHANICS = 1 << 1,
-		ACOUSTIC             = 1 << 2
+		ACOUSTICS            = 1 << 2
 	};
 
 	enum class MATERIAL_MODEL {
@@ -31,6 +31,7 @@ struct MaterialBaseConfiguration: public ECFDescription {
 	CoordinateSystemConfiguration coordinate_system;
 
 	ECFExpression density;
+	ECFExpression speed_of_sound;
 	ECFExpression heat_capacity;
 	LinearElasticPropertiesConfiguration linear_elastic_properties;
 	HyperElasticPropertiesConfiguration hyper_elastic_properties;

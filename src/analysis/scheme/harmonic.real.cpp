@@ -63,7 +63,7 @@ void AX_HarmonicReal::init(AX_LinearSystem<double> *system)
 {
 	system->setMapping(K = system->assembler.A->copyPattern());
 	system->setMapping(M = system->assembler.A->copyPattern());
-//	system->setMapping(C = system->assembler.A->copyPattern());
+	system->setMapping(C = system->assembler.A->copyPattern());
 	system->setMapping(re.f = system->assembler.b->copyPattern());
 	system->setMapping(re.x = system->assembler.b->copyPattern());
 	system->setMapping(im.f = system->assembler.b->copyPattern());
@@ -105,6 +105,7 @@ void AX_HarmonicReal::storeScheme(step::Frequency &frequency)
 	if (info::ecf->output.print_matrices) {
 		K->store(utils::filename(utils::debugDirectory() + "/scheme", "K").c_str());
 		M->store(utils::filename(utils::debugDirectory() + "/scheme", "M").c_str());
+		C->store(utils::filename(utils::debugDirectory() + "/scheme", "C").c_str());
 		re.f->store(utils::filename(utils::debugDirectory() + "/scheme", "f.re").c_str());
 		im.f->store(utils::filename(utils::debugDirectory() + "/scheme", "f.im").c_str());
 	}

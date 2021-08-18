@@ -139,14 +139,14 @@ Mesh::Mesh()
 {
 	dimension = 0;
 	switch (info::ecf->physics) {
-	case PhysicsConfiguration::TYPE::ACOUSTIC_2D:
+	case PhysicsConfiguration::TYPE::ACOUSTICS_2D:
 	case PhysicsConfiguration::TYPE::THERMO_ELASTICITY_2D:
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D:
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D:
 	case PhysicsConfiguration::TYPE::SHALLOW_WATER_2D:
 		dimension = 2;
 		break;
-	case PhysicsConfiguration::TYPE::ACOUSTIC_3D:
+	case PhysicsConfiguration::TYPE::ACOUSTICS_3D:
 	case PhysicsConfiguration::TYPE::THERMO_ELASTICITY_3D:
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D:
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
@@ -259,13 +259,13 @@ void Mesh::analyze()
 {
 	// check FETI
 	switch (info::ecf->physics) {
-	case PhysicsConfiguration::TYPE::ACOUSTIC_2D:
-		for (auto step = info::ecf->acoustic_2d.load_steps_settings.begin(); step != info::ecf->acoustic_2d.load_steps_settings.end(); ++step) {
+	case PhysicsConfiguration::TYPE::ACOUSTICS_2D:
+		for (auto step = info::ecf->acoustics_2d.load_steps_settings.begin(); step != info::ecf->acoustics_2d.load_steps_settings.end(); ++step) {
 			_withFETI |= step->second.solver == LoadStepSolverConfiguration::SOLVER::FETI;
 		}
 		break;
-	case PhysicsConfiguration::TYPE::ACOUSTIC_3D:
-		for (auto step = info::ecf->acoustic_3d.load_steps_settings.begin(); step != info::ecf->acoustic_3d.load_steps_settings.end(); ++step) {
+	case PhysicsConfiguration::TYPE::ACOUSTICS_3D:
+		for (auto step = info::ecf->acoustics_3d.load_steps_settings.begin(); step != info::ecf->acoustics_3d.load_steps_settings.end(); ++step) {
 			_withFETI |= step->second.solver == LoadStepSolverConfiguration::SOLVER::FETI;
 		}
 		break;

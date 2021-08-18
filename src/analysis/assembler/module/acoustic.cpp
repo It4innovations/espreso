@@ -61,13 +61,13 @@ void AX_Acoustic::analyze()
 	eslog::info(" ============================================================================================= \n");
 
 	if (info::mesh->dimension == 2) {
-		setMaterials(info::ecf->acoustic_2d.material_set);
-		validateRegionSettings("MATERIAL", info::ecf->acoustic_2d.material_set);
-		validateRegionSettings("THICKNESS", info::ecf->acoustic_2d.thickness);
+		setMaterials(info::ecf->acoustics_2d.material_set);
+		validateRegionSettings("MATERIAL", info::ecf->acoustics_2d.material_set);
+		validateRegionSettings("THICKNESS", info::ecf->acoustics_2d.thickness);
 	}
 	if (info::mesh->dimension == 3) {
-		setMaterials(info::ecf->acoustic_2d.material_set);
-		validateRegionSettings("MATERIAL", info::ecf->acoustic_3d.material_set);
+		setMaterials(info::ecf->acoustics_2d.material_set);
+		validateRegionSettings("MATERIAL", info::ecf->acoustics_3d.material_set);
 	}
 
 	initParameters();
@@ -81,10 +81,10 @@ void AX_Acoustic::analyze()
 	if (step::step.loadstep == 0) {
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 		if (info::mesh->dimension == 2) {
-			printMaterials(info::ecf->acoustic_2d.material_set);
+			printMaterials(info::ecf->acoustics_2d.material_set);
 		}
 		if (info::mesh->dimension == 3) {
-			printMaterials(info::ecf->acoustic_3d.material_set);
+			printMaterials(info::ecf->acoustics_3d.material_set);
 		}
 
 		eslog::info(" ============================================================================================= \n");
@@ -95,6 +95,9 @@ void AX_Acoustic::analyze()
 	}
 	if (M != nullptr) {
 		acousticMass(*this);
+	}
+	if (C != nullptr) {
+		acousticBoundaryMass(*this);
 	}
 
 	if (configuration.acoustic_pressure.size()) {
@@ -135,7 +138,7 @@ void AX_Acoustic::next()
 		M->touched = true;
 	}
 	if (C != nullptr) {
-//		C->fill(0);
+		C->fill(0);
 		C->touched = true;
 	}
 	if (re.rhs != nullptr) {
@@ -149,10 +152,6 @@ void AX_Acoustic::next()
 
 	iterate();
 	controller.resetUpdate();
-
-//	std::cout << "COO[nd]: " << *coords.node.data << "\n";
-//	std::cout << "stiffness: " << *elements.stiffness.data << "\n";
-//	std::cout << "mass: " << *elements.mass.data << "\n";
 }
 
 void AX_Acoustic::initDirichlet(Vector_Sparse<double> &dirichlet)

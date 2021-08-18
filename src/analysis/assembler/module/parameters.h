@@ -15,6 +15,7 @@ template <int dimension>
 struct ParametersElements {
 	struct Boundary {
 		BoundaryParameter<dimension * dimension * enodes * enodes> stiffness;
+		BoundaryParameter<dimension * dimension * enodes * enodes> mass;
 		BoundaryParameter<dimension * enodes> rhs;
 	};
 
