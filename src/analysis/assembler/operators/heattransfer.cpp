@@ -13,6 +13,8 @@ void heatStiffness(AX_HeatTransfer &module)
 {
 	if (info::mesh->dimension == 2) {
 		module.elements.stiffness.addInput(module.thickness.gp);
+	} else {
+		module.thickness.gp.resize();
 	}
 	module.elements.stiffness.addInput(module.integration.dND);
 	module.elements.stiffness.addInput(module.integration.weight);

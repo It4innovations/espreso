@@ -130,7 +130,7 @@ void AX_HeatTransfer::init(AX_SteadyState &scheme)
 
 void AX_HeatTransfer::analyze()
 {
-	eslog::info(" == PHYSICS                                                                HEAT TRANSFER 2D == \n");
+	eslog::info(" == PHYSICS                                                                   HEAT TRANSFER == \n");
 	eslog::info(" ============================================================================================= \n");
 	bool correct = true;
 

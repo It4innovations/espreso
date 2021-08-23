@@ -27,6 +27,7 @@ void Looper::run()
 	switch (info::ecf->physics) {
 	case PhysicsConfiguration::TYPE::ACOUSTIC_2D:      analysis = new AX_AcousticRealLinear   (info::ecf->acoustic_2d     , info::ecf->acoustic_2d.load_steps_settings.at(1)); break;
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D: analysis = new AX_HeatSteadyStateLinear(info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(1)); break;
+	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D: analysis = new AX_HeatSteadyStateLinear(info::ecf->heat_transfer_3d, info::ecf->heat_transfer_3d.load_steps_settings.at(1)); break;
 	}
 
 	analysis->init();
