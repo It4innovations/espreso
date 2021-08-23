@@ -194,7 +194,7 @@ Output::Output()
 		_direct = nullptr;
 	}
 
-	if (_async->writers.size() == 0) {
+	if (_async && _async->writers.size() == 0) {
 		delete _async;
 		_async = nullptr;
 	}
