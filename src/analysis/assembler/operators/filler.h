@@ -9,8 +9,7 @@ namespace espreso {
 
 struct MatrixFiller: public ActionOperator {
 	MatrixFiller(int interval, const ParameterData &local, double *global, const esint *position)
-	: ActionOperator(interval, false, true),
-	  local(local, interval),
+	: local(local, interval),
 	  global(global), position(position) {}
 
 	InputParameterIterator local;
@@ -22,7 +21,7 @@ struct MatrixFiller: public ActionOperator {
 		// increment by operator()
 	}
 
-	void reset()
+	void move(int n)
 	{
 
 	}
@@ -73,8 +72,7 @@ struct MatrixFullFiller: public MatrixFiller {
 template<size_t nodes, size_t gps, size_t dimension>
 struct VectorFiller: public ActionOperator {
 	VectorFiller(int interval, const ParameterData &rhs, double *global, const esint *position)
-	: ActionOperator(interval, false, true),
-	  rhs(rhs, interval),
+	: rhs(rhs, interval),
 	  global(global), position(position) {}
 
 	InputParameterIterator rhs;
@@ -86,16 +84,16 @@ struct VectorFiller: public ActionOperator {
 		// increment by operator()
 	}
 
+	void move(int n)
+	{
+
+	}
+
 	void operator()()
 	{
 		for (size_t r = 0; r < nodes * dimension; ++r) {
 			global[*position++] += *rhs.data++;
 		}
-	}
-
-	void reset()
-	{
-
 	}
 };
 

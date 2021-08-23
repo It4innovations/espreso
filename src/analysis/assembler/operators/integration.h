@@ -16,8 +16,7 @@ struct ElementJacobian: public ActionOperator {
 			ParameterData &inversion,
 			ParameterData &det,
 			ParameterData &dND)
-	: ActionOperator(interval, false, inversion.update[interval] || det.update[interval] || dND.update[interval]),
-	  coords(coordinates, interval),
+	: coords(coordinates, interval),
 	  dN(dN, interval, 0),
 	  inv(inversion, interval),
 	  det(det, interval),
@@ -35,16 +34,17 @@ struct ElementJacobian: public ActionOperator {
 		++inv; ++det; ++dND;
 	}
 
+	void move(int n)
+	{
+		coords += n;
+		inv += n; det += n; dND += n;
+	}
+
 	ElementJacobian& operator+=(const size_t rhs)
 	{
 		coords +=rhs;
 		inv += rhs; det += rhs; dND += rhs;
 		return *this;
-	}
-
-	void reset()
-	{
-
 	}
 };
 
@@ -126,8 +126,7 @@ struct BoundaryJacobian: public ActionOperator {
 			const ParameterData &coordinates,
 			const ParameterData &dN,
 			ParameterData &jacobian)
-	: ActionOperator(interval, jacobian.isconst[interval], jacobian.update[interval]),
-	  coords(coordinates, interval),
+	: coords(coordinates, interval),
 	  dN(dN, interval, 0),
 	  jacobian(jacobian, interval)
 	{ }
@@ -141,9 +140,10 @@ struct BoundaryJacobian: public ActionOperator {
 		++jacobian;
 	}
 
-	void reset()
+	void move(int n)
 	{
-
+		coords += n;
+		jacobian += n;
 	}
 };
 

@@ -81,9 +81,8 @@ void averageEnodesToNodes(const ParameterData &from, NodeData &to)
 
 void copyNodesToEnodes(AX_HeatTransfer &module, const NodeData &from, ParameterData &to)
 {
-	to.addInput(info::mesh->nodes->coordinates);
-	to.resize();
-	module.addParameter(to);
+	module.controller.addInput(to, info::mesh->nodes->coordinates);
+	module.controller.prepare(to);
 
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
 		auto procNodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
@@ -98,9 +97,8 @@ void copyNodesToEnodes(AX_HeatTransfer &module, const NodeData &from, ParameterD
 
 void copyNodesToBnodes(AX_HeatTransfer &module, const NodeData &from, ParameterData &to, size_t region)
 {
-	to.addInput(info::mesh->boundaryRegions[region]->elements);
-	to.resize();
-	module.addParameter(to);
+	module.controller.addInput(to, info::mesh->boundaryRegions[region]->elements);
+	module.controller.prepare(to);
 
 	for(size_t interval = 0; interval < info::mesh->boundaryRegions[region]->eintervals.size(); ++interval) {
 		auto procNodes = info::mesh->boundaryRegions[region]->elements->cbegin() + info::mesh->boundaryRegions[region]->eintervals[interval].begin;

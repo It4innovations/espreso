@@ -9,8 +9,7 @@ namespace espreso {
 
 struct CopyConductivity: public ActionOperator {
 	CopyConductivity(int interval, const ParameterData &input, ParameterData &output)
-	: ActionOperator(interval, output.isconst[interval], output.update[interval]),
-	  input(input, interval),
+	: input(input, interval),
 	  output(output, interval)
 	{
 
@@ -25,9 +24,10 @@ struct CopyConductivity: public ActionOperator {
 		++output;
 	}
 
-	void reset()
+	void move(int n)
 	{
-
+		input += n;
+		output += n;
 	}
 };
 

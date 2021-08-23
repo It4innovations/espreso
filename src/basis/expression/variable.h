@@ -24,15 +24,20 @@ struct Variable {
 	static void analyze(ECFExpression &expr, size_t region);
 	static bool create(ECFExpression &expr);
 	static bool create(ECFExpression &expr, size_t region);
+
+	static const Variable& get();
+
 	static void print();
 
-	Variable(): offset{0}, increment{0}, val{nullptr} {}
-	Variable(int offset, int increment, double *val): offset{offset}, increment{increment}, val{val} {}
-
-//	std::string name;
+	Variable(): offset{0}, increment{0}, val{nullptr}, isconst{0}, update{1}, isconst_interval{nullptr}, version_interval{nullptr} {}
+	Variable(int offset, int increment, double *val, int isconst, int update): offset{offset}, increment{increment}, val{val}, isconst{isconst}, update{update}, isconst_interval{nullptr}, version_interval{nullptr} {}
+	Variable(int offset, int increment, double *val, const std::vector<int> &isconst, const std::vector<int> &version): offset{offset}, increment{increment}, val{val}, isconst{0}, update{1}, isconst_interval{&isconst}, version_interval{&version} {}
 
 	int offset, increment;
 	double *val;
+
+	int isconst, update;
+	const std::vector<int> *isconst_interval, *version_interval;
 };
 
 }

@@ -12,9 +12,6 @@
 #include "esinfo/ecfinfo.h"
 #include "esinfo/systeminfo.h"
 
-#include "analysis/analysis/acoustic.real.linear.h"
-#include "analysis/analysis/heat.steadystate.linear.h"
-
 using namespace espreso;
 
 void ECF::init()

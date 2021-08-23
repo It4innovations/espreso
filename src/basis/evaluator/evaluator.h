@@ -2,6 +2,7 @@
 #ifndef SRC_BASIS_EVALUATOR_EVALUATOR_H_
 #define SRC_BASIS_EVALUATOR_EVALUATOR_H_
 
+#include "basis/expression/variable.h"
 #include "esinfo/stepinfo.h"
 #include "math/simd/simd.h"
 
@@ -13,28 +14,11 @@ namespace espreso {
 class Evaluator {
 
 public:
-	struct Variable {
-		enum class Type {
-			GLOBAL,
-			PER_ELEMENT,
-			PER_NODE,
-			PER_GP
-		};
-
-		std::string name;
-		Type type;
-		int eregion, bregion;
-
-		double *val;
-		int offset, increment;
-	};
-
-	static std::vector<Variable> variableList;
-
 	struct Params {
 		struct General {
 			double *val;
 			int offset, increment;
+			Variable *variable;
 		};
 
 		int _ncoors;

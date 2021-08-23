@@ -38,7 +38,7 @@ void AX_HeatTransfer::initParameters()
 	if (ParametersTemperature::Initial::output == nullptr) {
 		ParametersTemperature::Initial::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_TEMPERATURE");
 
-		Variable::list.node["INITIAL_TEMPERATURE"] = Variable(0, 1, ParametersTemperature::Initial::output->data.data());
+		Variable::list.node["INITIAL_TEMPERATURE"] = Variable(0, 1, ParametersTemperature::Initial::output->data.data(), false, true);
 		for (auto it = initialTemperature.begin(); it != initialTemperature.end(); ++it) {
 			it->second.scope = ECFExpression::Scope::ENODES;
 			for (auto p = it->second.parameters.begin(); p != it->second.parameters.end(); ++p) {
@@ -48,7 +48,7 @@ void AX_HeatTransfer::initParameters()
 	}
 	if (ParametersTemperature::output == nullptr) {
 		ParametersTemperature::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "TEMPERATURE");
-		Variable::list.node["TEMPERATURE"] = Variable(0, 1, ParametersTemperature::output->data.data());
+		Variable::list.node["TEMPERATURE"] = Variable(0, 1, ParametersTemperature::output->data.data(), false, true);
 	}
 	if (info::ecf->output.results_selection.translation_motions && ParametersTranslationMotions::output == nullptr) {
 		ParametersTranslationMotions::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "TRANSLATION_MOTION");
@@ -108,7 +108,7 @@ void AX_HeatTransfer::initTemperature()
 	if ((it = Variable::list.egps.find("TEMPERATURE"))!= Variable::list.egps.end()) {
 		copyNodesToEnodes(*this, *ParametersTemperature::output, temp.node);
 		moveEnodesToGPs(*this, temp.node, temp.gp, 1);
-		Variable::list.egps["TEMPERATURE"] = Variable(0, 1, temp.gp.data->datatarray().data());
+		Variable::list.egps["TEMPERATURE"] = Variable(0, 1, temp.gp.data->datatarray().data(), false, true);
 	}
 //	ParametersTemperature::output->data = ParametersTemperature::Initial::output->data;
 //	CopyElementParameters(temp.initial.node, temp.node, "COPY INITIAL TEMPERATURE TO ELEMENT NODES").buildAndExecute(*this);
@@ -346,15 +346,7 @@ void AX_HeatTransfer::next()
 
 	iterate();
 
-//	std::cout << "COO[nd]: " << *coords.node.data << "\n";
-//	std::cout << "COO[gp]: " << *coords.gp.data << "\n";
-//	std::cout << "thick: " << *thickness.gp.data << "\n";
-//	std::cout << "cart: " << *cooSystem.cartesian2D.data << "\n";
-//	std::cout << "iso: " << *material.model.isotropic.data << "\n";
-//	std::cout << "dia: " << *material.model.diagonal.data << "\n";
-//	std::cout << "cond-iso: " << *material.conductivityIsotropic.data << "\n";
-//	std::cout << "cond-dia: " << *material.conductivity.data << "\n";
-//	std::cout << "stiffness: " << *elements.stiffness.data << "\n";
+	printVersions();
 }
 
 void AX_HeatTransfer::initDirichlet(Vector_Sparse<double> &dirichlet)
@@ -414,70 +406,70 @@ void AX_HeatTransfer::updateSolution()
 
 void AX_HeatTransfer::printVersions()
 {
-	printParamtereStats("integration.weight", integration.weight);
-	printParamtereStats("integration.N", integration.N);
-	printParamtereStats("integration.dN", integration.dN);
-	printParamtereStats("integration.dND", integration.dND);
-	printParamtereStats("integration.jacobiDeterminant", integration.jacobiDeterminant);
-	printParamtereStats("integration.jacobiInversion", integration.jacobiInversion);
+	printParamterStats("integration.weight", integration.weight);
+	printParamterStats("integration.N", integration.N);
+	printParamterStats("integration.dN", integration.dN);
+	printParamterStats("integration.dND", integration.dND);
+	printParamterStats("integration.jacobiDeterminant", integration.jacobiDeterminant);
+	printParamterStats("integration.jacobiInversion", integration.jacobiInversion);
 
-	printParamtereStats("coords.node", coords.node);
-	printParamtereStats("coords.gp", coords.gp);
+	printParamterStats("coords.node", coords.node);
+	printParamterStats("coords.gp", coords.gp);
 
-	printParamtereStats("thickness.gp", thickness.gp);
+	printParamterStats("thickness.gp", thickness.gp);
 
-	printParamtereStats("cooSystem.cartesian2D", cooSystem.cartesian2D);
-	printParamtereStats("cooSystem.cartesian3D", cooSystem.cartesian3D);
-	printParamtereStats("cooSystem.cylindric", cooSystem.cylindric);
-	printParamtereStats("cooSystem.spherical", cooSystem.spherical);
+	printParamterStats("cooSystem.cartesian2D", cooSystem.cartesian2D);
+	printParamterStats("cooSystem.cartesian3D", cooSystem.cartesian3D);
+	printParamterStats("cooSystem.cylindric", cooSystem.cylindric);
+	printParamterStats("cooSystem.spherical", cooSystem.spherical);
 
-	printParamtereStats("material.model.isotropic", material.model.isotropic);
-	printParamtereStats("material.model.diagonal", material.model.diagonal);
-	printParamtereStats("material.model.symmetric2D", material.model.symmetric2D);
-	printParamtereStats("material.model.symmetric3D", material.model.symmetric3D);
-	printParamtereStats("material.model.anisotropic", material.model.anisotropic);
+	printParamterStats("material.model.isotropic", material.model.isotropic);
+	printParamterStats("material.model.diagonal", material.model.diagonal);
+	printParamterStats("material.model.symmetric2D", material.model.symmetric2D);
+	printParamterStats("material.model.symmetric3D", material.model.symmetric3D);
+	printParamterStats("material.model.anisotropic", material.model.anisotropic);
 
-	printParamtereStats("material.conductivityIsotropic", material.conductivityIsotropic);
-	printParamtereStats("material.conductivity", material.conductivity);
-	printParamtereStats("material.density", material.density);
-	printParamtereStats("material.heatCapacity", material.heatCapacity);
-	printParamtereStats("material.mass", material.mass);
+	printParamterStats("material.conductivityIsotropic", material.conductivityIsotropic);
+	printParamterStats("material.conductivity", material.conductivity);
+	printParamterStats("material.density", material.density);
+	printParamterStats("material.heatCapacity", material.heatCapacity);
+	printParamterStats("material.mass", material.mass);
 
-	printParamtereStats("temp.initial.output", temp.initial.output);
-	printParamtereStats("temp.initial.node", temp.initial.node);
-	printParamtereStats("temp.initial.gp", temp.initial.gp);
-	printParamtereStats("temp.output", temp.output);
-	printParamtereStats("temp.node", temp.node);
-	printParamtereStats("temp.gp", temp.gp);
+	printParamterStats("temp.initial.output", temp.initial.output);
+	printParamterStats("temp.initial.node", temp.initial.node);
+	printParamterStats("temp.initial.gp", temp.initial.gp);
+	printParamterStats("temp.output", temp.output);
+	printParamterStats("temp.node", temp.node);
+	printParamterStats("temp.gp", temp.gp);
 
-	printParamtereStats("translationMotions.output", translationMotions.output);
-	printParamtereStats("translationMotions.gp", translationMotions.gp);
-	printParamtereStats("translationMotions.stiffness", translationMotions.stiffness);
-	printParamtereStats("translationMotions.rhs", translationMotions.rhs);
+	printParamterStats("translationMotions.output", translationMotions.output);
+	printParamterStats("translationMotions.gp", translationMotions.gp);
+	printParamterStats("translationMotions.stiffness", translationMotions.stiffness);
+	printParamterStats("translationMotions.rhs", translationMotions.rhs);
 
-	printParamtereStats("elements.stiffness", elements.stiffness);
-	printParamtereStats("elements.mass", elements.mass);
-	printParamtereStats("elements.rhs", elements.rhs);
+	printParamterStats("elements.stiffness", elements.stiffness);
+	printParamterStats("elements.mass", elements.mass);
+	printParamterStats("elements.rhs", elements.rhs);
 
 	if (gradient.output)
 	{
-		printParamtereStats("gradient.output", gradient.output);
+		printParamterStats("gradient.output", gradient.output);
 	}
 
-	printParamtereStats("gradient.xi", gradient.xi);
+	printParamterStats("gradient.xi", gradient.xi);
 
 	if (flux.output)
 	{
-		printParamtereStats("flux.output", flux.output);
+		printParamterStats("flux.output", flux.output);
 	}
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		printf("REGION: %s\n", info::mesh->boundaryRegions[r]->name.c_str());
-		printParamtereStats("convection.heatTransferCoeficient.gp", convection.heatTransferCoeficient.gp.regions[r]);
-		printParamtereStats("convection.externalTemperature.gp", convection.externalTemperature.gp.regions[r]);
+		printParamterStats("convection.heatTransferCoeficient.gp", convection.heatTransferCoeficient.gp.regions[r]);
+		printParamterStats("convection.externalTemperature.gp", convection.externalTemperature.gp.regions[r]);
 
-		printParamtereStats("heatFlow.gp", heatFlow.gp.regions[r]);
-		printParamtereStats("heatFlux.gp", heatFlux.gp.regions[r]);
-		printParamtereStats("q.gp", q.gp.regions[r]);
+		printParamterStats("heatFlow.gp", heatFlow.gp.regions[r]);
+		printParamterStats("heatFlux.gp", heatFlux.gp.regions[r]);
+		printParamterStats("q.gp", q.gp.regions[r]);
 	}
 }

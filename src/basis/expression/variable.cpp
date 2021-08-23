@@ -15,7 +15,7 @@ using namespace espreso;
 void Variable::gather(size_t regions)
 {
 	for (auto range = info::ecf->ranges.begin(); range != info::ecf->ranges.end(); ++range) {
-		Variable::list.global[range->first] = Variable(0, 0, &range->second.value);
+		Variable::list.global[range->first] = Variable(0, 0, &range->second.value, false, true);
 	}
 
 	for (auto it = ECFExpression::parametrized.begin(); it != ECFExpression::parametrized.end(); ++it) {
@@ -173,7 +173,7 @@ bool Variable::create(ECFExpression &expr)
 			return false;
 		}
 
-		params.general.push_back(Evaluator::Params::General{it->second.val, it->second.offset, it->second.increment});
+		params.general.push_back(Evaluator::Params::General{it->second.val, it->second.offset, it->second.increment, &it->second});
 	}
 	expr.evaluator = new ExpressionEvaluator(expr.value, expr.parameters);
 	expr.evaluator->params = params;
@@ -232,7 +232,7 @@ bool Variable::create(ECFExpression &expr, size_t region)
 			return false;
 		}
 
-		params.general.push_back(Evaluator::Params::General{it->second.val, it->second.offset, it->second.increment});
+		params.general.push_back(Evaluator::Params::General{it->second.val, it->second.offset, it->second.increment, &it->second});
 	}
 	expr.evaluator = new ExpressionEvaluator(expr.value, expr.parameters);
 	expr.evaluator->params = params;

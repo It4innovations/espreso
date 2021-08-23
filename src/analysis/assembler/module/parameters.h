@@ -7,6 +7,7 @@
 
 namespace espreso {
 
+class NodeData;
 class ElementData;
 class ConvectionConfiguration;
 

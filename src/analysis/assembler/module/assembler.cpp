@@ -80,25 +80,25 @@ void Assembler::iterate()
 
 void Assembler::updateVersions()
 {
-	for (size_t p = 0; p < parameters.size(); ++p) {
-		for (size_t ii = 0; ii < parameters[p]->version.size(); ++ii) {
-			if (parameters[p]->version[ii] == -1) {
-				parameters[p]->version[ii] = 0;
-				parameters[p]->update[ii] = 1;
-			} else {
-				parameters[p]->update[ii] = 0;
-				for (size_t i = 0; i < parameters[p]->inputs.size(); ++i) {
-					if (parameters[p]->version[ii] < parameters[p]->inputs[i]->version(ii)) {
-						parameters[p]->version[ii] = parameters[p]->inputs[i]->version(ii);
-						parameters[p]->update[ii] = 1;
-					}
-				}
-			}
-		}
-	}
+//	for (size_t p = 0; p < parameters.size(); ++p) {
+//		for (size_t ii = 0; ii < parameters[p]->version.size(); ++ii) {
+//			if (parameters[p]->version[ii] == -1) {
+//				parameters[p]->version[ii] = 0;
+//				parameters[p]->update[ii] = 1;
+//			} else {
+//				parameters[p]->update[ii] = 0;
+//				for (size_t i = 0; i < parameters[p]->inputs.size(); ++i) {
+//					if (parameters[p]->version[ii] < parameters[p]->inputs[i]->version(ii)) {
+//						parameters[p]->version[ii] = parameters[p]->inputs[i]->version(ii);
+//						parameters[p]->update[ii] = 1;
+//					}
+//				}
+//			}
+//		}
+//	}
 }
 
-void Assembler::printParamtereStats(const char* name, ParameterData &parameter)
+void Assembler::printParamterStats(const char* name, ParameterData &parameter)
 {
 	printf("parameter[update/version/isconst]:  ");
 	for (size_t i = 0; i < parameter.isconst.size(); ++i) {
@@ -111,7 +111,7 @@ void Assembler::printParamtereStats(const char* name, ParameterData &parameter)
 	printf(" %s\n", name);
 }
 
-void Assembler::printParamtereStats(const char* name, NamedData *data)
+void Assembler::printParamterStats(const char* name, NamedData *data)
 {
 	printf("nameddata[update/version/isconst]:   [-/%d/ ] %s\n", data->version, name);
 }

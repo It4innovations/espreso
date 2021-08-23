@@ -33,11 +33,11 @@ void AX_Acoustic::initParameters()
 {
 	if (ParametersAcousticPressure::Initial::output == nullptr) {
 		ParametersAcousticPressure::Initial::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_ACOUSTIC_PRESSURE");
-		Variable::list.node["INITIAL_ACOUSTIC_PRESSURE"] = Variable(0, 1, ParametersAcousticPressure::Initial::output->data.data());
+		Variable::list.node["INITIAL_ACOUSTIC_PRESSURE"] = Variable(0, 1, ParametersAcousticPressure::Initial::output->data.data(), false, true);
 	}
 	if (ParametersAcousticPressure::output == nullptr) {
 		ParametersAcousticPressure::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "ACOUSTIC_PRESSURE");
-		Variable::list.node["ACOUSTIC_PRESSURE"] = Variable(0, 1, ParametersAcousticPressure::output->data.data());
+		Variable::list.node["ACOUSTIC_PRESSURE"] = Variable(0, 1, ParametersAcousticPressure::output->data.data(), false, true);
 	}
 }
 

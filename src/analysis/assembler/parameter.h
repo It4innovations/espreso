@@ -12,8 +12,6 @@ namespace espreso {
 
 class Evaluator;
 class ECFExpression;
-class NodeData;
-class ElementData;
 
 enum ElementSizeMask: int {
 	ndim   = 1 << 6,
@@ -44,45 +42,11 @@ struct ParameterSettings {
 };
 
 struct ParameterData {
-	struct InputHolder {
-		virtual int version(int interval) const = 0;
-		virtual ~InputHolder() {}
-	};
-
-	struct InputHolderParameterData: public InputHolder {
-		const ParameterData &p;
-
-		int version(int interval) const { return p.version[interval]; }
-		InputHolderParameterData(const ParameterData &p): p(p) {}
-	};
-
-	template <typename TEBoundaries, typename TEData>
-	struct InputHolderSerializedEData: public InputHolder {
-		const serializededata<TEBoundaries, TEData>* p;
-
-		int version(int interval) const { return 0; } // do we need versioned edata?
-		InputHolderSerializedEData(const serializededata<TEBoundaries, TEData>* p): p(p) {}
-	};
-
-	struct InputHolderNamedData: public InputHolder {
-		const NamedData* p;
-
-		int version(int interval) const { return p->version; }
-		InputHolderNamedData(const NamedData* p): p(p) {}
-	};
-
 	PerElementSize size;
+	int intervals;
 	serializededata<esint, double>* data;
 
 	ParameterData(PerElementSize mask, int intervals);
-
-	void addInput(const ParameterData &p);
-	void addInput(const serializededata<esint, esint>* p);
-	void addInput(const serializededata<esint, Point>* p);
-	void addInput(const NodeData* p);
-	void addInput(const ElementData* p);
-
-	void addInput(int interval, const serializededata<esint, Point>* p);
 
 	void setConstness(bool constness);
 
@@ -93,7 +57,6 @@ struct ParameterData {
 	virtual ~ParameterData();
 
 	std::vector<int> isconst, update, version;
-	std::vector<InputHolder*> inputs;
 };
 
 struct ExternalElementValue {
@@ -156,13 +119,13 @@ struct BoundaryParameterPack {
 
 	BoundaryParameterPack(PerElementSize mask);
 
-	template <class Parameter>
-	void addInput(const Parameter &p)
-	{
-		for (size_t r = 0; r < regions.size(); ++r) {
-			regions[r].addInput(p);
-		}
-	}
+//	template <class Parameter>
+//	void addInput(const Parameter &p)
+//	{
+//		for (size_t r = 0; r < regions.size(); ++r) {
+//			regions[r].addInput(p);
+//		}
+//	}
 
 	void resize()
 	{
@@ -219,7 +182,6 @@ struct InputParameterIterator {
 	const int inc;
 	const double * __restrict__ data;
 
-	InputParameterIterator(const double * data, int increment): inc(increment), data(data) {}
 	InputParameterIterator(const ParameterData &info, esint interval)
 	: inc(info.isconst[interval] ? 0 : info.increment(info.size, interval)), data((info.data->begin() + interval)->data()) {}
 	InputParameterIterator(const ParameterData &info, esint interval, PerElementSize size)
@@ -235,7 +197,6 @@ struct OutputParameterIterator {
 	const int inc;
 	double * __restrict__ data;
 
-	OutputParameterIterator(double * data, int increment): inc(increment), data(data) {}
 	OutputParameterIterator(ParameterData &info, esint interval)
 	: inc(info.isconst[interval] ? 0 : info.increment(info.size, interval)), data((info.data->begin() + interval)->data()) { }
 	OutputParameterIterator(ParameterData &info, esint interval, PerElementSize size)

@@ -11,8 +11,7 @@ namespace espreso {
 template<size_t nodes, size_t gps, size_t dimension>
 struct FromNodesToGaussPoints: public ActionOperator {
 	FromNodesToGaussPoints(int interval, const ParameterData &N, const ParameterData &nodeData, ParameterData &gpData)
-	: ActionOperator(interval, gpData.isconst[interval], gpData.update[interval]),
-	  N(N, interval, 0),
+	: N(N, interval, 0),
 	  n(nodeData, interval),
 	  gp(gpData, interval)
 	{
@@ -34,9 +33,9 @@ struct FromNodesToGaussPoints: public ActionOperator {
 		++n; ++gp;
 	}
 
-	void reset()
+	void move(int n)
 	{
-
+		this->n += n; gp += n;
 	}
 };
 

@@ -11,9 +11,8 @@
 namespace espreso {
 
 struct CoordinatesToElementNodes: public ActionOperator {
-	CoordinatesToElementNodes(serializededata<esint, esint>::const_iterator procNodes, ParameterData &ncoordinates, int interval)
-	: ActionOperator(interval, ncoordinates.isconst[interval], ncoordinates.update[interval]),
-	  procNodes(procNodes),
+	CoordinatesToElementNodes(int interval, serializededata<esint, esint>::const_iterator procNodes, ParameterData &ncoordinates)
+	: procNodes(procNodes),
 	  ncoordinates(ncoordinates, interval, ndim)
 	{
 
@@ -27,15 +26,15 @@ struct CoordinatesToElementNodes: public ActionOperator {
 		++procNodes;
 	}
 
+	void move(int n)
+	{
+		procNodes += n;
+	}
+
 	CoordinatesToElementNodes& operator+=(const int rhs)
 	{
 		procNodes += rhs;
 		return *this;
-	}
-
-	void reset()
-	{
-
 	}
 };
 

@@ -18,8 +18,7 @@ struct Stiffness: public ActionOperator {
 			const ParameterData &xi,
 			const ParameterData &thickness,
 			ParameterData &stiffness)
-	: ActionOperator(interval, stiffness.isconst[interval], stiffness.update[interval]),
-	  dND(dND, interval),
+	: dND(dND, interval),
 	  weight(weight, interval, 0),
 	  determinant(determinant, interval),
 	  conductivity(conductivity, interval),
@@ -41,16 +40,17 @@ struct Stiffness: public ActionOperator {
 		++stiffness;
 	}
 
+	void move(int n)
+	{
+		dND += n; determinant += n; conductivity += n; xi += n; thickness += n;
+		stiffness += n;
+	}
+
 	Stiffness& operator+=(const size_t rhs)
 	{
 		dND += rhs; determinant += rhs; conductivity += rhs; xi += rhs; thickness += rhs;
 		stiffness += rhs;
 		return *this;
-	}
-
-	void reset()
-	{
-
 	}
 };
 
@@ -105,8 +105,7 @@ struct Stiffness3DHeat: public Stiffness {
 template<size_t nodes, size_t gps>
 struct HeatQ: public ActionOperator {
 	HeatQ(int interval, double area, const ParameterData &heatFlow, const ParameterData &heatFlux, const ParameterData &htc, const ParameterData &extTemp, ParameterData &q)
-	: ActionOperator(interval, q.isconst[interval], q.update[interval]),
-	  area(area), heatFlow(heatFlow, interval),
+	: area(area), heatFlow(heatFlow, interval),
 	  heatFlux(heatFlux, interval),
 	  htc(htc, interval), extTemp(extTemp, interval),
 	  q(q, interval)
@@ -132,9 +131,11 @@ struct HeatQ: public ActionOperator {
 		++q;
 	}
 
-	void reset()
+	void move(int n)
 	{
-
+		heatFlow += n; heatFlux += n;
+		htc += n; extTemp += n;
+		q += n;
 	}
 
 	double area;
@@ -145,8 +146,7 @@ struct HeatQ: public ActionOperator {
 template<size_t nodes, size_t gps>
 struct HeatRHS2D: public ActionOperator {
 	HeatRHS2D(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &thickness, const ParameterData &q, ParameterData &rhs)
-	: ActionOperator(interval, rhs.isconst[interval], rhs.update[interval]),
-	  N(N, interval),
+	: N(N, interval),
 	  weight(weight, interval),
 	  J(J, interval),
 //	  thickness(thickness, interval), // TODO
@@ -177,17 +177,19 @@ struct HeatRHS2D: public ActionOperator {
 		++rhs;
 	}
 
-	void reset()
+	void move(int n)
 	{
-
+		weight += n; J += n;
+//		thickness += n;
+		q += n;
+		rhs += n;
 	}
 };
 
 template<size_t nodes, size_t gps>
 struct HeatRHS3D: public ActionOperator {
 	HeatRHS3D(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &q, ParameterData &rhs)
-	: ActionOperator(interval, rhs.isconst[interval], rhs.update[interval]),
-	  N(N, interval),
+	: N(N, interval),
 	  weight(weight, interval),
 	  J(J, interval),
 	  q(q, interval),
@@ -218,9 +220,11 @@ struct HeatRHS3D: public ActionOperator {
 		++rhs;
 	}
 
-	void reset()
+	void move(int n)
 	{
-
+		weight += n; J += n;
+		q += n;
+		rhs += n;
 	}
 };
 

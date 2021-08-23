@@ -23,7 +23,7 @@ void averageEnodesToNodes(const ParameterData &from, NodeData &to);
 void copyNodesToEnodes(AX_HeatTransfer &module, const NodeData &from, ParameterData &to);
 void copyNodesToBnodes(AX_HeatTransfer &module, const NodeData &from, ParameterData &to, size_t region);
 
-void moveEnodesToGPs(AX_HeatTransfer &module, const ParameterData &from, ParameterData &to, int dimension);
+void moveEnodesToGPs(AX_HeatTransfer &module, ParameterData &from, ParameterData &to, int dimension);
 
 void baseFunction(AX_HeatTransfer &module);
 void elementCoordinates(AX_HeatTransfer &module);

@@ -25,12 +25,19 @@ void _fromExpression(AX_HeatTransfer &module, ParameterData &parameter, External
 		return;
 	}
 
-	parameter.resize();
-	module.addParameter(parameter);
+	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
+		for (int d = 0; d < value.dimension && value.evaluator[i * value.dimension + d]; ++d) {
+			for (size_t p = 0; p < value.evaluator[i * value.dimension + d]->params.general.size(); ++p) {
+				module.controller.addInput(parameter, value.evaluator[i * value.dimension + d]->params.general[p].variable);
+			}
+		}
+	}
+
+	module.controller.prepare(parameter);
 
 	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		for (int d = 0; d < value.dimension && value.evaluator[i * value.dimension + d]; ++d) {
-			module.elementOps[i].emplace_back(instantiate<AX_HeatTransfer::NGP, Operator>(i, parameter, value.evaluator[i * value.dimension + d], d, value.dimension));
+			module.elementOps[i].emplace_back(instantiate<AX_HeatTransfer::NGP, Operator>(i, module.controller, parameter, value.evaluator[i * value.dimension + d], d, value.dimension));
 		}
 	}
 }
@@ -45,20 +52,21 @@ void fromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalE
 	_fromExpression<ExpressionsToGPs>(module, parameter, value);
 }
 
-template <template<size_t, size_t> typename Operator>
-void _fromExpression(AX_HeatTransfer &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values)
+template <typename Module, template<size_t, size_t> typename Operator>
+void _fromExpression(Module &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values)
 {
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		for (int d = 0; d < values.dimension && values.evaluator[r * values.dimension + d]; ++d) {
-			// add input parameters
+			for (size_t p = 0; p < values.evaluator[r * values.dimension + d]->params.general.size(); ++p) {
+				module.controller.addInput(parameter.regions[r], values.evaluator[r * values.dimension + d]->params.general[p].variable);
+			}
 		}
 
 		if (std::any_of(values.evaluator.begin() + r * values.dimension, values.evaluator.begin() + r * values.dimension + values.dimension, [] (const Evaluator *ev) { return ev != NULL; })) {
-			parameter.regions[r].resize();
-			module.addParameter(parameter.regions[r]);
+			module.controller.prepare(parameter.regions[r]);
 			for (int d = 0; d < values.dimension && values.evaluator[r * values.dimension + d]; ++d) {
 				for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-					module.boundaryOps[r][i].emplace_back(instantiate<AX_HeatTransfer::NGP, Operator>(r, i, parameter.regions[r], values.evaluator[r * values.dimension + d], d, values.dimension));
+					module.boundaryOps[r][i].emplace_back(instantiate<AX_HeatTransfer::NGP, Operator>(r, i, module.controller, parameter.regions[r], values.evaluator[r * values.dimension + d], d, values.dimension));
 				}
 			}
 		}
@@ -67,7 +75,12 @@ void _fromExpression(AX_HeatTransfer &module, BoundaryParameterPack &parameter, 
 
 void fromExpression(AX_HeatTransfer &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values)
 {
-	_fromExpression<ExpressionsToGPs>(module, parameter, values);
+	_fromExpression<AX_HeatTransfer, ExpressionsToGPs>(module, parameter, values);
+}
+
+void fromExpression(AX_Acoustic &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values)
+{
+	_fromExpression<AX_Acoustic, ExpressionsToGPs>(module, parameter, values);
 }
 
 template <template<size_t, size_t> typename Operator>
@@ -77,13 +90,12 @@ void _evaluateFromExpression(AX_HeatTransfer &module, ParameterData &parameter, 
 		return;
 	}
 
-	parameter.resize();
-	module.addParameter(parameter);
+	module.controller.prepare(parameter);
 
 	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		for (int d = 0; d < value.dimension && value.evaluator[i * value.dimension + d]; ++d) {
 //			if (value.evaluator[i * value.dimension + d]->)
-			std::unique_ptr<ActionOperator> op(instantiate<AX_HeatTransfer::NGP, Operator>(i, parameter, value.evaluator[i * value.dimension + d], d, value.dimension));
+			std::unique_ptr<ActionOperator> op(instantiate<AX_HeatTransfer::NGP, Operator>(i, module.controller, parameter, value.evaluator[i * value.dimension + d], d, value.dimension));
 			size_t elementsInInterval = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
 
 			for (size_t element = 0; element < elementsInInterval; ++element) {
@@ -104,25 +116,6 @@ void evaluateFromExpression(AX_HeatTransfer &module, ParameterData &parameter, E
 void evaluateFromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementGPsValue &value)
 {
 	_evaluateFromExpression<ExpressionsToGPs>(module, parameter, value);
-}
-
-void fromExpression(AX_Acoustic &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values)
-{
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-		for (int d = 0; d < values.dimension && values.evaluator[r * values.dimension + d]; ++d) {
-			// add input parameters
-		}
-
-		if (std::any_of(values.evaluator.begin() + r * values.dimension, values.evaluator.begin() + r * values.dimension + values.dimension, [] (const Evaluator *ev) { return ev != NULL; })) {
-			parameter.regions[r].resize();
-			module.addParameter(parameter.regions[r]);
-			for (int d = 0; d < values.dimension && values.evaluator[r * values.dimension + d]; ++d) {
-				for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-					module.boundaryOps[r][i].emplace_back(instantiate<AX_HeatTransfer::NGP, ExpressionsToGPs>(r, i, parameter.regions[r], values.evaluator[r * values.dimension + d], d, values.dimension));
-				}
-			}
-		}
-	}
 }
 
 }

@@ -11,8 +11,7 @@ namespace espreso {
 template <size_t nodes, size_t gps, size_t dimension>
 struct CopyParameter: public ActionOperator {
 	CopyParameter(int interval, const ParameterData &from, ParameterData &to)
-	: ActionOperator(interval, to.isconst[interval], to.update[interval]),
-	  from(from, interval),
+	: from(from, interval),
 	  to(to, interval)
 	{
 
@@ -27,6 +26,12 @@ struct CopyParameter: public ActionOperator {
 		++to;
 	}
 
+	void move(int n)
+	{
+		from += n;
+		to += n;
+	}
+
 	void operator()()
 	{
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
@@ -35,18 +40,12 @@ struct CopyParameter: public ActionOperator {
 			}
 		}
 	}
-
-	void reset()
-	{
-
-	}
 };
 
 template <size_t dimension>
 struct CopyNodesToEnodes: public ActionOperator {
 	CopyNodesToEnodes(int interval, const NodeData &from, serializededata<esint, esint>::const_iterator procNodes, ParameterData &to)
-	: ActionOperator(interval, to.isconst[interval], to.update[interval]),
-	  from(from),
+	: from(from),
 	  procNodes(procNodes),
 	  to(to, interval)
 	{
@@ -60,20 +59,22 @@ struct CopyNodesToEnodes: public ActionOperator {
 	void operator++()
 	{
 		++procNodes;
+		++to;
+	}
+
+	void move(int n)
+	{
+		procNodes += n;
 	}
 
 	void operator()()
 	{
-		for (auto n = procNodes->begin(); n != procNodes->end(); ++n) {
+		size_t i = 0;
+		for (auto n = procNodes->begin(); n != procNodes->end(); ++n, ++i) {
 			for (size_t d = 0; d < dimension; ++d) {
-				to[*n * dimension + d] = from.data[*n * dimension + d];
+				to[i * dimension + d] = from.data[*n * dimension + d];
 			}
 		}
-	}
-
-	void reset()
-	{
-
 	}
 };
 

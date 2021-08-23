@@ -3,26 +3,18 @@
 #define SRC_ANALYSIS_ASSEMBLER_MODULE_ASSEMBLER_H_
 
 #include "parameters.h"
+#include "analysis/assembler/controller.h"
 #include "analysis/assembler/operator.h"
 
-#include "analysis/composer/elementmapping.h"
-#include "math2/primitives/vector_sparse.h"
-#include "math2/primitives/matrix_info.h"
-#include "math2/generalization/matrix_base.h"
-
-#include <memory>
 #include <vector>
 #include <map>
 #include <functional>
 
 namespace espreso {
 
-struct Evaluator;
 struct ECFExpression;
 struct ECFExpressionVector;
 class ConvectionConfiguration;
-struct SolverDataProvider;
-class Vectors;
 
 class Assembler
 {
@@ -32,11 +24,7 @@ public:
 
 	virtual bool hasKernel(int domain) =0;
 
-	void addParameter(ParameterData &parameter)
-	{
-		parameters.push_back(&parameter);
-	}
-
+	ParameterController controller;
 	std::vector<std::vector<std::unique_ptr<ActionOperator> > > elementOps, elementRes;
 	std::vector<std::vector<std::vector<std::unique_ptr<ActionOperator> > > > boundaryOps, boundaryRes;
 
@@ -45,8 +33,8 @@ protected:
 
 	void updateVersions();
 
-	void printParamtereStats(const char* name, ParameterData &parameter);
-	void printParamtereStats(const char* name, NamedData *data);
+	void printParamterStats(const char* name, ParameterData &parameter);
+	void printParamterStats(const char* name, NamedData *data);
 
 	void setMaterials(const std::map<std::string, std::string> &settings);
 	void printMaterials(const std::map<std::string, std::string> &settings);
@@ -63,7 +51,6 @@ protected:
 	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpression> &settings, ExternalBoundaryValue &value);
 	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection);
 
-	std::vector<ParameterData*> parameters;
 	int version;
 };
 

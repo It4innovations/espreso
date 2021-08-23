@@ -12,7 +12,7 @@
 
 using namespace espreso;
 
-ParameterData::ParameterData(PerElementSize mask, int intervals): size(mask), data(NULL)
+ParameterData::ParameterData(PerElementSize mask, int intervals): size(mask), intervals(intervals), data(NULL)
 {
 	isconst.resize(intervals, 1);
 	update.resize(intervals, 1);
@@ -21,12 +21,14 @@ ParameterData::ParameterData(PerElementSize mask, int intervals): size(mask), da
 
 ParameterData::~ParameterData()
 {
-	for (size_t i = 0; i < inputs.size(); ++i) {
-		delete inputs[i];
-	}
 	if (data) {
 		delete data;
 	}
+}
+
+void ParameterData::setConstness(bool constness)
+{
+	std::fill(isconst.begin(), isconst.end(), constness);
 }
 
 ExternalElementValue::ExternalElementValue(ParameterData &parameter)
@@ -76,50 +78,6 @@ BoundaryParameterPack::BoundaryParameterPack(PerElementSize mask)
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		regions.emplace_back(BoundaryParameterData(r, size));
 	}
-}
-
-void ParameterData::addInput(const ParameterData &p)
-{
-	inputs.push_back(new InputHolderParameterData(p));
-	for (size_t i = 0; i < isconst.size(); ++i) {
-		isconst[i] = isconst[i] && p.isconst[i];
-	}
-}
-
-// currently we assume that serialized data are never updated
-void ParameterData::addInput(const serializededata<esint, esint>* p)
-{
-	inputs.push_back(new InputHolderSerializedEData<esint, esint>(p));
-	setConstness(false);
-}
-
-void ParameterData::addInput(const serializededata<esint, Point>* p)
-{
-	inputs.push_back(new InputHolderSerializedEData<esint, Point>(p));
-	setConstness(false);
-}
-
-void ParameterData::addInput(const NodeData* p)
-{
-	inputs.push_back(new InputHolderNamedData(p));
-	setConstness(false);
-}
-
-void ParameterData::addInput(const ElementData* p)
-{
-	inputs.push_back(new InputHolderNamedData(p));
-	setConstness(false);
-}
-
-void ParameterData::addInput(int interval, const serializededata<esint, Point>* p)
-{
-	inputs.push_back(new InputHolderSerializedEData<esint, Point>(p));
-	isconst[interval] = false;
-}
-
-void ParameterData::setConstness(bool constness)
-{
-	std::fill(isconst.begin(), isconst.end(), constness);
 }
 
 void ElementParameterData::resize(double init)

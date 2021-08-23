@@ -10,11 +10,9 @@ namespace espreso {
 
 struct ExpressionsToParameter: public ActionOperator {
 	ExpressionsToParameter(int interval, ParameterData &parameter, Evaluator *evaluator, size_t offset, size_t size)
-	: ActionOperator(interval, parameter.isconst[interval], parameter.update[interval]),
-	  data(parameter, interval),
+	: data(parameter, interval),
 	  evaluator(evaluator),
 	  params(evaluator->params),
-	  interval(interval),
 	  offset(offset), size(size)
 	{
 
@@ -23,36 +21,36 @@ struct ExpressionsToParameter: public ActionOperator {
 	OutputParameterIterator data;
 	Evaluator *evaluator;
 	Evaluator::Params params;
-	size_t interval;
 	size_t offset, size;
-
-	void operator++()
-	{
-		++data;
-	}
-
-	void next()
-	{
-		for (size_t i = 0; i < params.general.size(); ++i) {
-			params.general[i].val += params.general[i].increment;
-		}
-	}
-
-	void reset()
-	{
-
-	}
 };
 
 template <size_t nodes, size_t gps>
 struct ExpressionsToNodes: public ExpressionsToParameter {
 	using ExpressionsToParameter::ExpressionsToParameter;
 
+	double results[nodes];
+
+	void operator++()
+	{
+		++data;
+		for (size_t i = 0; i < params.general.size(); ++i) {
+			params.general[i].val += nodes * params.general[i].increment;
+		}
+	}
+
+	void move(int n)
+	{
+		data += n;
+		for (size_t i = 0; i < params.general.size(); ++i) {
+			params.general[i].val += n * nodes * params.general[i].increment;
+		}
+	}
+
 	void operator()()
 	{
+		evaluator->evalVector(nodes, params, results);
 		for (size_t n = 0; n < nodes; ++n) {
-			data[n * size + offset] = evaluator->eval(params);
-			next();
+			data[n * size + offset] = results[n];
 		}
 	}
 };
@@ -61,11 +59,29 @@ template <size_t nodes, size_t gps>
 struct ExpressionsToGPs: public ExpressionsToParameter {
 	using ExpressionsToParameter::ExpressionsToParameter;
 
+	double results[gps];
+
+	void operator++()
+	{
+		++data;
+		for (size_t i = 0; i < params.general.size(); ++i) {
+			params.general[i].val += gps * params.general[i].increment;
+		}
+	}
+
+	void move(int n)
+	{
+		data += n;
+		for (size_t i = 0; i < params.general.size(); ++i) {
+			params.general[i].val += n * gps * params.general[i].increment;
+		}
+	}
+
 	void operator()()
 	{
+		evaluator->evalVector(gps, params, results);
 		for (size_t n = 0; n < gps; ++n) {
-			data[n * size + offset] = evaluator->eval(params);
-			next();
+			data[n * size + offset] = results[n];
 		}
 	}
 };

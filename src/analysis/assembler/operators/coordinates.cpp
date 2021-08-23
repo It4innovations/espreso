@@ -16,64 +16,62 @@ namespace espreso {
 template <class Module>
 void _elementCoordinates(Module &module)
 {
-	module.coords.node.addInput(info::mesh->nodes->coordinates);
-	module.coords.node.resize();
-	module.addParameter(module.coords.node);
+	module.controller.addInput(module.coords.node, info::mesh->nodes->coordinates);
+	module.controller.prepare(module.coords.node);
 
 	bool toGPs = Variable::list.egps.count("COORDINATE_X") || Variable::list.egps.count("COORDINATE_Y") || Variable::list.egps.count("COORDINATE_Z");
 	if (toGPs) {
-		module.coords.gp.addInput(module.coords.node);
-		module.coords.gp.resize();
-		module.addParameter(module.coords.gp);
+		module.controller.addInput(module.coords.gp, module.coords.node);
+		module.controller.prepare(module.coords.gp);
 	}
 
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
 		auto procNodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
 		if (info::mesh->dimension == 2) {
-			module.elementOps[interval].emplace_back(new Coordinates2DToElementNodes(procNodes, module.coords.node, interval));
+			module.elementOps[interval].emplace_back(instantiate<Coordinates2DToElementNodes>(interval, module.controller, procNodes, module.coords.node));
 		}
 		if (info::mesh->dimension == 3) {
-			module.elementOps[interval].emplace_back(new Coordinates3DToElementNodes(procNodes, module.coords.node, interval));
+			module.elementOps[interval].emplace_back(instantiate<Coordinates3DToElementNodes>(interval, module.controller, procNodes, module.coords.node));
 		}
 		if (toGPs) {
 			if (info::mesh->dimension == 2) {
-				module.elementOps[interval].emplace_back(instantiate<typename Module::NGP, 2, FromNodesToGaussPoints>(interval, module.integration.N, module.coords.node, module.coords.gp));
+				module.elementOps[interval].emplace_back(instantiate<typename Module::NGP, 2, FromNodesToGaussPoints>(interval, module.controller, module.integration.N, module.coords.node, module.coords.gp));
 			}
 			if (info::mesh->dimension == 3) {
-				module.elementOps[interval].emplace_back(instantiate<typename Module::NGP, 3, FromNodesToGaussPoints>(interval, module.integration.N, module.coords.node, module.coords.gp));
+				module.elementOps[interval].emplace_back(instantiate<typename Module::NGP, 3, FromNodesToGaussPoints>(interval, module.controller, module.integration.N, module.coords.node, module.coords.gp));
 			}
 		}
 	}
 
 	auto it = Variable::list.enodes.end();
 	if ((it = Variable::list.enodes.find("COORDINATE_X")) != Variable::list.enodes.end()) {
-		it->second = Variable(0, info::mesh->dimension, module.coords.node.data->datatarray().data());
+		it->second = Variable(0, info::mesh->dimension, module.coords.node.data->datatarray().data(), module.coords.node.isconst, module.coords.node.version);
 	}
 	if ((it = Variable::list.enodes.find("COORDINATE_Y")) != Variable::list.enodes.end()) {
-		it->second = Variable(1, info::mesh->dimension, module.coords.node.data->datatarray().data());
+		it->second = Variable(1, info::mesh->dimension, module.coords.node.data->datatarray().data(), module.coords.node.isconst, module.coords.node.version);
 	}
 	if (info::mesh->dimension == 3 && (it = Variable::list.enodes.find("COORDINATE_Z")) != Variable::list.enodes.end()) {
-		it->second = Variable(2, info::mesh->dimension, module.coords.node.data->datatarray().data());
+		it->second = Variable(2, info::mesh->dimension, module.coords.node.data->datatarray().data(), module.coords.node.isconst, module.coords.node.version);
 	}
 
 	if ((it = Variable::list.egps.find("COORDINATE_X")) != Variable::list.egps.end()) {
-		it->second = Variable(0, info::mesh->dimension, module.coords.gp.data->datatarray().data());
+		it->second = Variable(0, info::mesh->dimension, module.coords.gp.data->datatarray().data(), module.coords.gp.isconst, module.coords.gp.version);
 	}
 	if ((it = Variable::list.egps.find("COORDINATE_Y")) != Variable::list.egps.end()) {
-		it->second = Variable(1, info::mesh->dimension, module.coords.gp.data->datatarray().data());
+		it->second = Variable(1, info::mesh->dimension, module.coords.gp.data->datatarray().data(), module.coords.gp.isconst, module.coords.gp.version);
 	}
 	if (info::mesh->dimension == 3 && (it = Variable::list.egps.find("COORDINATE_Z")) != Variable::list.egps.end()) {
-		it->second = Variable(2, info::mesh->dimension, module.coords.gp.data->datatarray().data());
+		it->second = Variable(2, info::mesh->dimension, module.coords.gp.data->datatarray().data(), module.coords.gp.isconst, module.coords.gp.version);
 	}
 
 	if ((it = Variable::list.node.find("COORDINATE_X")) != Variable::list.node.end()) {
-		it->second = Variable(0, 3, &info::mesh->nodes->coordinates->datatarray().data()->x);
+		it->second = Variable(0, 3, &info::mesh->nodes->coordinates->datatarray().data()->x, false, true);
 	}
 	if ((it = Variable::list.node.find("COORDINATE_Y")) != Variable::list.node.end()) {
-		it->second = Variable(1, 3, &info::mesh->nodes->coordinates->datatarray().data()->x);
+		it->second = Variable(1, 3, &info::mesh->nodes->coordinates->datatarray().data()->x, false, true);
 	}
 	if (info::mesh->dimension == 3 && (it = Variable::list.node.find("COORDINATE_Z")) != Variable::list.node.end()) {
-		it->second = Variable(2, 3, &info::mesh->nodes->coordinates->datatarray().data()->x);
+		it->second = Variable(2, 3, &info::mesh->nodes->coordinates->datatarray().data()->x, false, true);
 	}
 }
 
@@ -84,53 +82,52 @@ void _boundaryCoordinates(Module &module)
 		if (info::mesh->boundaryRegions[r]->dimension) {
 			bool toGPs = Variable::list.region[r].egps.count("COORDINATE_X") || Variable::list.region[r].egps.count("COORDINATE_Y") || Variable::list.region[r].egps.count("COORDINATE_Z");
 
-			module.coords.boundary.node.regions[r].addInput(info::mesh->nodes->coordinates);
-			module.coords.boundary.node.regions[r].resize();
-			module.addParameter(module.coords.boundary.node.regions[r]);
+			module.controller.addInput(module.coords.boundary.node.regions[r], info::mesh->nodes->coordinates);
+			module.controller.prepare(module.coords.boundary.node.regions[r]);
 
 			if (toGPs) {
-				module.coords.boundary.gp.regions[r].addInput(module.coords.boundary.node.regions[r]);
-				module.coords.boundary.gp.regions[r].resize();
-				module.addParameter(module.coords.boundary.gp.regions[r]);
+				module.controller.addInput(module.coords.boundary.gp.regions[r], module.coords.boundary.node.regions[r]);
+				module.controller.prepare(module.coords.boundary.gp.regions[r]);
 			}
 
 			for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
 				auto procNodes = info::mesh->boundaryRegions[r]->elements->cbegin() + info::mesh->boundaryRegions[r]->eintervals[interval].begin;
 				if (info::mesh->dimension == 2) {
-					module.boundaryOps[r][interval].emplace_back(new Coordinates2DToElementNodes(procNodes, module.coords.boundary.node.regions[r], interval));
+
+					module.boundaryOps[r][interval].emplace_back(instantiate<Coordinates2DToElementNodes>(interval, module.controller, procNodes, module.coords.boundary.node.regions[r]));
 				}
 				if (info::mesh->dimension == 3) {
-					module.boundaryOps[r][interval].emplace_back(new Coordinates3DToElementNodes(procNodes, module.coords.boundary.node.regions[r], interval));
+					module.boundaryOps[r][interval].emplace_back(instantiate<Coordinates3DToElementNodes>(interval, module.controller, procNodes, module.coords.boundary.node.regions[r]));
 				}
 				if (toGPs) {
 					if (info::mesh->dimension == 2) {
-						module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, 2, FromNodesToGaussPoints>(r, interval, module.integration.boundary.N.regions[r], module.coords.boundary.node.regions[r], module.coords.boundary.gp.regions[r]));
+						module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, 2, FromNodesToGaussPoints>(r, interval, module.controller, module.integration.boundary.N.regions[r], module.coords.boundary.node.regions[r], module.coords.boundary.gp.regions[r]));
 					}
 					if (info::mesh->dimension == 3) {
-						module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, 3, FromNodesToGaussPoints>(r, interval, module.integration.boundary.N.regions[r], module.coords.boundary.node.regions[r], module.coords.boundary.gp.regions[r]));
+						module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, 3, FromNodesToGaussPoints>(r, interval, module.controller, module.integration.boundary.N.regions[r], module.coords.boundary.node.regions[r], module.coords.boundary.gp.regions[r]));
 					}
 				}
 			}
 
 			auto it = Variable::list.region[r].enodes.end();
 			if ((it = Variable::list.region[r].enodes.find("COORDINATE_X")) != Variable::list.region[r].enodes.end()) {
-				it->second = Variable(0, info::mesh->dimension, module.coords.boundary.node.regions[r].data->datatarray().data());
+				it->second = Variable(0, info::mesh->dimension, module.coords.boundary.node.regions[r].data->datatarray().data(), module.coords.boundary.node.regions[r].isconst, module.coords.boundary.node.regions[r].version);
 			}
 			if ((it = Variable::list.region[r].enodes.find("COORDINATE_Y")) != Variable::list.region[r].enodes.end()) {
-				it->second = Variable(1, info::mesh->dimension, module.coords.boundary.node.regions[r].data->datatarray().data());
+				it->second = Variable(1, info::mesh->dimension, module.coords.boundary.node.regions[r].data->datatarray().data(), module.coords.boundary.node.regions[r].isconst, module.coords.boundary.node.regions[r].version);
 			}
 			if (info::mesh->dimension == 3 && (it = Variable::list.region[r].enodes.find("COORDINATE_Z")) != Variable::list.region[r].enodes.end()) {
-				it->second = Variable(2, info::mesh->dimension, module.coords.boundary.node.regions[r].data->datatarray().data());
+				it->second = Variable(2, info::mesh->dimension, module.coords.boundary.node.regions[r].data->datatarray().data(), module.coords.boundary.node.regions[r].isconst, module.coords.boundary.node.regions[r].version);
 			}
 
 			if ((it = Variable::list.region[r].egps.find("COORDINATE_X")) != Variable::list.region[r].egps.end()) {
-				it->second = Variable(0, info::mesh->dimension, module.coords.boundary.gp.regions[r].data->datatarray().data());
+				it->second = Variable(0, info::mesh->dimension, module.coords.boundary.gp.regions[r].data->datatarray().data(), module.coords.boundary.gp.regions[r].isconst, module.coords.boundary.gp.regions[r].version);
 			}
 			if ((it = Variable::list.region[r].egps.find("COORDINATE_Y")) != Variable::list.region[r].egps.end()) {
-				it->second = Variable(1, info::mesh->dimension, module.coords.boundary.gp.regions[r].data->datatarray().data());
+				it->second = Variable(1, info::mesh->dimension, module.coords.boundary.gp.regions[r].data->datatarray().data(), module.coords.boundary.gp.regions[r].isconst, module.coords.boundary.gp.regions[r].version);
 			}
 			if (info::mesh->dimension == 3 && (it = Variable::list.region[r].egps.find("COORDINATE_Z")) != Variable::list.region[r].egps.end()) {
-				it->second = Variable(2, info::mesh->dimension, module.coords.boundary.gp.regions[r].data->datatarray().data());
+				it->second = Variable(2, info::mesh->dimension, module.coords.boundary.gp.regions[r].data->datatarray().data(), module.coords.boundary.gp.regions[r].isconst, module.coords.boundary.gp.regions[r].version);
 			}
 		}
 	}
