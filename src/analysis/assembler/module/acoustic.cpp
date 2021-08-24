@@ -123,7 +123,8 @@ void AX_Acoustic::analyze()
 
 void AX_Acoustic::next()
 {
-	updateVersions();
+	controller.setUpdate();
+//	printVersions();
 
 	if (K != nullptr) {
 		K->fill(0);
@@ -147,10 +148,11 @@ void AX_Acoustic::next()
 	}
 
 	iterate();
+	controller.resetUpdate();
 
-	std::cout << "COO[nd]: " << *coords.node.data << "\n";
-	std::cout << "stiffness: " << *elements.stiffness.data << "\n";
-	std::cout << "mass: " << *elements.mass.data << "\n";
+//	std::cout << "COO[nd]: " << *coords.node.data << "\n";
+//	std::cout << "stiffness: " << *elements.stiffness.data << "\n";
+//	std::cout << "mass: " << *elements.mass.data << "\n";
 }
 
 void AX_Acoustic::initDirichlet(Vector_Sparse<double> &dirichlet)

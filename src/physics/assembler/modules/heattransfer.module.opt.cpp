@@ -523,7 +523,7 @@ void HeatTransferModuleOpt::solutionChanged(Vectors *solution)
 	VectorDense tmp(temp.output->data.size(), temp.output->data.data());
 	tmp.fillData(solution->at(0));
 
-	temp.output->version = ++version;
+	temp.output->updated = ++version;
 	updateVersions();
 	for (auto op = builders.begin(); op != builders.end(); ++op) {
 		(*op)->now();

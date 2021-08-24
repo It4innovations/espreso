@@ -31,10 +31,8 @@ public:
 protected:
 	void iterate();
 
-	void updateVersions();
-
-	void printParamterStats(const char* name, ParameterData &parameter);
-	void printParamterStats(const char* name, NamedData *data);
+	void printParameterStats(const char* name, ParameterData &parameter);
+	void printParameterStats(const char* name, NamedData *data);
 
 	void setMaterials(const std::map<std::string, std::string> &settings);
 	void printMaterials(const std::map<std::string, std::string> &settings);

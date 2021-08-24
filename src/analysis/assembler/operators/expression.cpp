@@ -27,8 +27,9 @@ void _fromExpression(AX_HeatTransfer &module, ParameterData &parameter, External
 
 	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		for (int d = 0; d < value.dimension && value.evaluator[i * value.dimension + d]; ++d) {
+			parameter.update[i] = 1;
 			for (size_t p = 0; p < value.evaluator[i * value.dimension + d]->params.general.size(); ++p) {
-				module.controller.addInput(parameter, value.evaluator[i * value.dimension + d]->params.general[p].variable);
+				module.controller.addInput(i, parameter, value.evaluator[i * value.dimension + d]->params.general[p].variable);
 			}
 		}
 	}
@@ -65,6 +66,7 @@ void _fromExpression(Module &module, BoundaryParameterPack &parameter, ExternalB
 		if (std::any_of(values.evaluator.begin() + r * values.dimension, values.evaluator.begin() + r * values.dimension + values.dimension, [] (const Evaluator *ev) { return ev != NULL; })) {
 			module.controller.prepare(parameter.regions[r]);
 			for (int d = 0; d < values.dimension && values.evaluator[r * values.dimension + d]; ++d) {
+				std::fill(parameter.regions[r].update.begin(), parameter.regions[r].update.end(), 1);
 				for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
 					module.boundaryOps[r][i].emplace_back(instantiate<AX_HeatTransfer::NGP, Operator>(r, i, module.controller, parameter.regions[r], values.evaluator[r * values.dimension + d], d, values.dimension));
 				}

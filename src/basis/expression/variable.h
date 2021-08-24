@@ -29,15 +29,15 @@ struct Variable {
 
 	static void print();
 
-	Variable(): offset{0}, increment{0}, val{nullptr}, isconst{0}, update{1}, isconst_interval{nullptr}, version_interval{nullptr} {}
-	Variable(int offset, int increment, double *val, int isconst, int update): offset{offset}, increment{increment}, val{val}, isconst{isconst}, update{update}, isconst_interval{nullptr}, version_interval{nullptr} {}
-	Variable(int offset, int increment, double *val, const std::vector<int> &isconst, const std::vector<int> &version): offset{offset}, increment{increment}, val{val}, isconst{0}, update{1}, isconst_interval{&isconst}, version_interval{&version} {}
+	Variable(): offset{0}, increment{0}, val{nullptr}, isconst{0}, update{1}, isconst_interval{nullptr}, update_interval{nullptr} {}
+	Variable(int offset, int increment, double *val, int isconst, int update): offset{offset}, increment{increment}, val{val}, isconst{isconst}, update{update}, isconst_interval{nullptr}, update_interval{nullptr} {}
+	Variable(int offset, int increment, double *val, const std::vector<int> &isconst, const std::vector<int> &update): offset{offset}, increment{increment}, val{val}, isconst{0}, update{1}, isconst_interval{&isconst}, update_interval{&update} {}
 
 	int offset, increment;
 	double *val;
 
 	int isconst, update;
-	const std::vector<int> *isconst_interval, *version_interval;
+	const std::vector<int> *isconst_interval, *update_interval;
 };
 
 }

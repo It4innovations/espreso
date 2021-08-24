@@ -29,6 +29,7 @@ struct CoordinatesToElementNodes: public ActionOperator {
 	void move(int n)
 	{
 		procNodes += n;
+		ncoordinates += n * procNodes->size();
 	}
 
 	CoordinatesToElementNodes& operator+=(const int rhs)

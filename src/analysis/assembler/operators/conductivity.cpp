@@ -44,7 +44,6 @@ void thermalConductivity(AX_HeatTransfer &module)
 			case ThermalConductivityConfiguration::MODEL::DIAGONAL: module.elementOps[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, CopyDiagonal2DConductivity>(interval, module.controller, module.material.model.diagonal, module.material.conductivity)); break;
 			case ThermalConductivityConfiguration::MODEL::SYMMETRIC: module.elementOps[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, CopySymmetric2DConductivity>(interval, module.controller, module.material.model.symmetric2D, module.material.conductivity)); break;
 			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC: module.elementOps[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, CopyAnisotropic2DConductivity>(interval, module.controller, module.material.model.anisotropic, module.material.conductivity)); break;
-				break;
 			}
 
 //			switch (mat->coordinate_system.type) {
@@ -60,7 +59,6 @@ void thermalConductivity(AX_HeatTransfer &module)
 			case ThermalConductivityConfiguration::MODEL::DIAGONAL: module.elementOps[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, CopyDiagonal3DConductivity>(interval, module.controller, module.material.model.diagonal, module.material.conductivity)); break;
 			case ThermalConductivityConfiguration::MODEL::SYMMETRIC: module.elementOps[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, CopySymmetric3DConductivity>(interval, module.controller, module.material.model.symmetric2D, module.material.conductivity)); break;
 			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC: module.elementOps[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, CopyAnisotropic3DConductivity>(interval, module.controller, module.material.model.anisotropic, module.material.conductivity)); break;
-				break;
 			}
 
 //			switch (mat->coordinate_system.type) {
@@ -69,6 +67,10 @@ void thermalConductivity(AX_HeatTransfer &module)
 //			case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: iterate_elements_gps<typename Assembler::NGP>(Cylindrical3DCoordinateSystem(module.coords.gp, module.cooSystem.cylindric, module.material.conductivity, interval)); break;
 //				break;
 //			}
+		}
+		switch (mat->thermal_conductivity.model) {
+			case ThermalConductivityConfiguration::MODEL::ISOTROPIC: module.material.conductivity.update[interval] = -1; break;
+			default: module.material.conductivityIsotropic.update[interval] = -1; break;
 		}
 	}
 }

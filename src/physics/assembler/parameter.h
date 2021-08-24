@@ -66,7 +66,7 @@ struct ParameterData {
 	struct InputHolderNamedData: public InputHolder {
 		const NamedData* p;
 
-		int version(int interval) const { return p->version; }
+		int version(int interval) const { return p->updated; }
 		InputHolderNamedData(const NamedData* p): p(p) {}
 	};
 

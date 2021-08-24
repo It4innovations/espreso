@@ -16,7 +16,6 @@ ParameterData::ParameterData(PerElementSize mask, int intervals): size(mask), in
 {
 	isconst.resize(intervals, 1);
 	update.resize(intervals, 1);
-	version.resize(intervals, -1);
 }
 
 ParameterData::~ParameterData()

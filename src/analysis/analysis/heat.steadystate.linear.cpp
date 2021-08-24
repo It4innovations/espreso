@@ -58,7 +58,7 @@ void AX_HeatSteadyStateLinear::run()
 	scheme.setTime(time, configuration.duration_time);
 	Variable::list.global["TIME"].val = &time.current;
 
-	assembler.next();
+	assembler.evaluate();
 	scheme.composeSystem(system);
 	assembler.fillDirichlet(*system->solver.dirichlet);
 

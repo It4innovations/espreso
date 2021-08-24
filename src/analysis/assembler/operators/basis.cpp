@@ -42,7 +42,6 @@ void _baseFunction(Module &module)
 	{
 		int index = 0;
 		for (auto ei = info::mesh->elements->eintervals.begin(); ei != info::mesh->elements->eintervals.end(); ++ei, ++index) {
-			module.integration.N.version[index] = module.integration.dN.version[index] = module.integration.weight.version[index] = 0;
 			module.integration.N.update[index] = module.integration.dN.update[index] = module.integration.weight.update[index] = 0;
 
 			double *n = (module.integration.N.data->begin() + index)->data();
@@ -61,7 +60,6 @@ void _baseFunction(Module &module)
 
 			int index = 0;
 			for (auto ei = info::mesh->boundaryRegions[r]->eintervals.begin(); ei != info::mesh->boundaryRegions[r]->eintervals.end(); ++ei, ++index) {
-				module.integration.boundary.N.regions[r].version[index] = module.integration.boundary.dN.regions[r].version[index] = module.integration.boundary.weight.regions[r].version[index] = 0;
 				module.integration.boundary.N.regions[r].update[index] = module.integration.boundary.dN.regions[r].update[index] = module.integration.boundary.weight.regions[r].update[index] = 0;
 
 				double *n = (module.integration.boundary.N.regions[r].data->begin() + index)->data();

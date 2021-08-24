@@ -54,6 +54,9 @@ void Assembler::iterate()
 						}
 					}
 				}
+				for (auto op = elementOps[i].begin(); op != elementOps[i].end(); ++op) {
+					(**op).move(-elementsInInterval);
+				}
 			}
 
 			for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
@@ -71,6 +74,10 @@ void Assembler::iterate()
 								}
 							}
 						}
+
+						for (auto op = boundaryOps[r][i].begin(); op != boundaryOps[r][i].end(); ++op) {
+							(**op).move(-elementsInInterval);
+						}
 					}
 				}
 			}
@@ -78,42 +85,22 @@ void Assembler::iterate()
 	}
 }
 
-void Assembler::updateVersions()
+void Assembler::printParameterStats(const char* name, ParameterData &parameter)
 {
-//	for (size_t p = 0; p < parameters.size(); ++p) {
-//		for (size_t ii = 0; ii < parameters[p]->version.size(); ++ii) {
-//			if (parameters[p]->version[ii] == -1) {
-//				parameters[p]->version[ii] = 0;
-//				parameters[p]->update[ii] = 1;
-//			} else {
-//				parameters[p]->update[ii] = 0;
-//				for (size_t i = 0; i < parameters[p]->inputs.size(); ++i) {
-//					if (parameters[p]->version[ii] < parameters[p]->inputs[i]->version(ii)) {
-//						parameters[p]->version[ii] = parameters[p]->inputs[i]->version(ii);
-//						parameters[p]->update[ii] = 1;
-//					}
-//				}
-//			}
-//		}
-//	}
-}
-
-void Assembler::printParamterStats(const char* name, ParameterData &parameter)
-{
-	printf("parameter[update/version/isconst]:  ");
-	for (size_t i = 0; i < parameter.isconst.size(); ++i) {
-		if (parameter.version[i] == -1) {
-			printf(" [ / / ]");
+	printf("parameter[isconst/update]:  ");
+	for (size_t i = 0; i < parameter.update.size(); ++i) {
+		if (parameter.data) {
+			printf(" [%c/%c]", parameter.isconst[i] ? 'C' : ' ', parameter.update[i] > 0 ? 'U' : ' ');
 		} else {
-			printf(" [%c/%d/%c]", parameter.update[i] ? 'U' : ' ', parameter.version[i], parameter.isconst[i] ? 'C' : ' ');
+			printf(" [-/-]");
 		}
 	}
 	printf(" %s\n", name);
 }
 
-void Assembler::printParamterStats(const char* name, NamedData *data)
+void Assembler::printParameterStats(const char* name, NamedData *data)
 {
-	printf("nameddata[update/version/isconst]:   [-/%d/ ] %s\n", data->version, name);
+	printf("nameddata[isconst/update]:   [ /%c] %s\n", data->updated ? 'U' : ' ', name);
 }
 
 void Assembler::setMaterials(const std::map<std::string, std::string> &settings)

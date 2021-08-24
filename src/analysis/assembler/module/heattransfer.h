@@ -45,7 +45,7 @@ public:
 
 	void init(AX_SteadyState &scheme);
 	void analyze();
-	void next();
+	void evaluate();
 
 	void initDirichlet(Vector_Sparse<double> &dirichlet);
 	void fillDirichlet(Vector_Sparse<double> &dirichlet);

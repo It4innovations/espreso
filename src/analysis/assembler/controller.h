@@ -15,14 +15,14 @@
 namespace espreso {
 
 struct InputHolder {
-	virtual int version(int interval) const = 0;
+	virtual int updated(int interval) const = 0;
 	virtual ~InputHolder() {}
 };
 
 struct InputHolderParameterData: public InputHolder {
 	const ParameterData &p;
 
-	int version(int interval) const { return p.version[interval]; }
+	int updated(int interval) const { return p.update[interval]; }
 	InputHolderParameterData(const ParameterData &p): p(p) {}
 };
 
@@ -37,21 +37,26 @@ struct InputHolderParameterData: public InputHolder {
 struct InputHolderNamedData: public InputHolder {
 	const NamedData* p;
 
-	int version(int interval) const { return p->version; }
+	int updated(int interval) const { return p->updated; }
 	InputHolderNamedData(const NamedData* p): p(p) {}
 };
 
 struct InputVariable: public InputHolder {
+	int interval;
 	const Variable* v;
 
-	int version(int interval) const { return v->version_interval ? (*v->version_interval)[interval] : v->update; }
-	InputVariable(const Variable* v): v(v) {}
+	InputVariable(int interval, const Variable* v): interval(interval), v(v) {}
+	int updated(int interval) const
+	{
+		if (this->interval == -1 || this->interval == interval) {
+			return v->update_interval ? (*v->update_interval)[interval] : v->update;
+		}
+		return 0;
+	}
 };
 
 struct ParameterStatus {
 	ParameterStatus(const ParameterData& parameter): operators(parameter.intervals) {}
-
-	void setConstness(bool constness);
 
 	virtual ~ParameterStatus()
 	{
@@ -83,10 +88,49 @@ public:
 		prepare(other...);
 	}
 
+	void setUpdate()
+	{
+		for (auto param = parameters.begin(); param != parameters.end(); ++param) {
+			for (size_t i = 0; i < param->first->update.size(); ++i) {
+				switch (param->first->update[i]) {
+				case -1: break; // -1 -> never update
+				case 0:
+					for (size_t j = 0; j < param->second.inputs.size(); ++j) {
+						param->first->update[i] += param->second.inputs[j]->updated(i);
+					}
+					break;
+				default:
+					break;
+				}
+			}
+		}
+	}
+
+	void resetUpdate()
+	{
+		for (auto param = parameters.begin(); param != parameters.end(); ++param) {
+			for (size_t i = 0; i < param->first->update.size(); ++i) {
+				if (param->first->update[i] != -1) {
+					param->first->update[i] = 0;
+				}
+			}
+		}
+	}
+
+	void addOperator(int interval, ParameterData &parameter, ActionOperator *op)
+	{
+		_get(parameter)->second.operators[interval].push_back(op);
+	}
+
 	template <typename TEBoundaries, typename TEData>
 	void addInput(int interval, ParameterData &parameter, const serializededata<TEBoundaries, TEData>* other)
 	{
 		_addInput(interval, parameter, other);
+	}
+
+	void addInput(int interval, ParameterData &parameter, const Variable *v)
+	{
+		_addInput(interval, parameter, v);
 	}
 
 	template <typename Input>
@@ -135,6 +179,12 @@ protected:
 //		_get(parameter)->second.inputs.push_back(new InputHolderSerializedEData<TEBoundaries, TEData>(other));
 	}
 
+	void _addInput(ParameterData &parameter, const Variable *v)
+	{
+		parameter.setConstness(false);
+		_get(parameter)->second.inputs.push_back(new InputVariable(-1, v));
+	}
+
 	template <typename TEBoundaries, typename TEData>
 	void _addInput(int interval, ParameterData &parameter, const serializededata<TEBoundaries, TEData>* other)
 	{
@@ -142,10 +192,10 @@ protected:
 //		_get(parameter)->second.inputs.push_back(new InputHolderSerializedEData<TEBoundaries, TEData>(other));
 	}
 
-	void _addInput(ParameterData &parameter, const Variable *v)
+	void _addInput(int interval, ParameterData &parameter, const Variable *v)
 	{
-//		parameter.isconst[interval] = false;
-//		_get(parameter)->second.inputs.push_back(new InputHolderSerializedEData<TEBoundaries, TEData>(other));
+		parameter.isconst[interval] = false;
+		_get(parameter)->second.inputs.push_back(new InputVariable(interval, v));
 	}
 };
 

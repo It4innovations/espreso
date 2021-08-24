@@ -45,23 +45,23 @@ void _elementCoordinates(Module &module)
 
 	auto it = Variable::list.enodes.end();
 	if ((it = Variable::list.enodes.find("COORDINATE_X")) != Variable::list.enodes.end()) {
-		it->second = Variable(0, info::mesh->dimension, module.coords.node.data->datatarray().data(), module.coords.node.isconst, module.coords.node.version);
+		it->second = Variable(0, info::mesh->dimension, module.coords.node.data->datatarray().data(), module.coords.node.isconst, module.coords.node.update);
 	}
 	if ((it = Variable::list.enodes.find("COORDINATE_Y")) != Variable::list.enodes.end()) {
-		it->second = Variable(1, info::mesh->dimension, module.coords.node.data->datatarray().data(), module.coords.node.isconst, module.coords.node.version);
+		it->second = Variable(1, info::mesh->dimension, module.coords.node.data->datatarray().data(), module.coords.node.isconst, module.coords.node.update);
 	}
 	if (info::mesh->dimension == 3 && (it = Variable::list.enodes.find("COORDINATE_Z")) != Variable::list.enodes.end()) {
-		it->second = Variable(2, info::mesh->dimension, module.coords.node.data->datatarray().data(), module.coords.node.isconst, module.coords.node.version);
+		it->second = Variable(2, info::mesh->dimension, module.coords.node.data->datatarray().data(), module.coords.node.isconst, module.coords.node.update);
 	}
 
 	if ((it = Variable::list.egps.find("COORDINATE_X")) != Variable::list.egps.end()) {
-		it->second = Variable(0, info::mesh->dimension, module.coords.gp.data->datatarray().data(), module.coords.gp.isconst, module.coords.gp.version);
+		it->second = Variable(0, info::mesh->dimension, module.coords.gp.data->datatarray().data(), module.coords.gp.isconst, module.coords.gp.update);
 	}
 	if ((it = Variable::list.egps.find("COORDINATE_Y")) != Variable::list.egps.end()) {
-		it->second = Variable(1, info::mesh->dimension, module.coords.gp.data->datatarray().data(), module.coords.gp.isconst, module.coords.gp.version);
+		it->second = Variable(1, info::mesh->dimension, module.coords.gp.data->datatarray().data(), module.coords.gp.isconst, module.coords.gp.update);
 	}
 	if (info::mesh->dimension == 3 && (it = Variable::list.egps.find("COORDINATE_Z")) != Variable::list.egps.end()) {
-		it->second = Variable(2, info::mesh->dimension, module.coords.gp.data->datatarray().data(), module.coords.gp.isconst, module.coords.gp.version);
+		it->second = Variable(2, info::mesh->dimension, module.coords.gp.data->datatarray().data(), module.coords.gp.isconst, module.coords.gp.update);
 	}
 
 	if ((it = Variable::list.node.find("COORDINATE_X")) != Variable::list.node.end()) {
@@ -111,23 +111,23 @@ void _boundaryCoordinates(Module &module)
 
 			auto it = Variable::list.region[r].enodes.end();
 			if ((it = Variable::list.region[r].enodes.find("COORDINATE_X")) != Variable::list.region[r].enodes.end()) {
-				it->second = Variable(0, info::mesh->dimension, module.coords.boundary.node.regions[r].data->datatarray().data(), module.coords.boundary.node.regions[r].isconst, module.coords.boundary.node.regions[r].version);
+				it->second = Variable(0, info::mesh->dimension, module.coords.boundary.node.regions[r].data->datatarray().data(), module.coords.boundary.node.regions[r].isconst, module.coords.boundary.node.regions[r].update);
 			}
 			if ((it = Variable::list.region[r].enodes.find("COORDINATE_Y")) != Variable::list.region[r].enodes.end()) {
-				it->second = Variable(1, info::mesh->dimension, module.coords.boundary.node.regions[r].data->datatarray().data(), module.coords.boundary.node.regions[r].isconst, module.coords.boundary.node.regions[r].version);
+				it->second = Variable(1, info::mesh->dimension, module.coords.boundary.node.regions[r].data->datatarray().data(), module.coords.boundary.node.regions[r].isconst, module.coords.boundary.node.regions[r].update);
 			}
 			if (info::mesh->dimension == 3 && (it = Variable::list.region[r].enodes.find("COORDINATE_Z")) != Variable::list.region[r].enodes.end()) {
-				it->second = Variable(2, info::mesh->dimension, module.coords.boundary.node.regions[r].data->datatarray().data(), module.coords.boundary.node.regions[r].isconst, module.coords.boundary.node.regions[r].version);
+				it->second = Variable(2, info::mesh->dimension, module.coords.boundary.node.regions[r].data->datatarray().data(), module.coords.boundary.node.regions[r].isconst, module.coords.boundary.node.regions[r].update);
 			}
 
 			if ((it = Variable::list.region[r].egps.find("COORDINATE_X")) != Variable::list.region[r].egps.end()) {
-				it->second = Variable(0, info::mesh->dimension, module.coords.boundary.gp.regions[r].data->datatarray().data(), module.coords.boundary.gp.regions[r].isconst, module.coords.boundary.gp.regions[r].version);
+				it->second = Variable(0, info::mesh->dimension, module.coords.boundary.gp.regions[r].data->datatarray().data(), module.coords.boundary.gp.regions[r].isconst, module.coords.boundary.gp.regions[r].update);
 			}
 			if ((it = Variable::list.region[r].egps.find("COORDINATE_Y")) != Variable::list.region[r].egps.end()) {
-				it->second = Variable(1, info::mesh->dimension, module.coords.boundary.gp.regions[r].data->datatarray().data(), module.coords.boundary.gp.regions[r].isconst, module.coords.boundary.gp.regions[r].version);
+				it->second = Variable(1, info::mesh->dimension, module.coords.boundary.gp.regions[r].data->datatarray().data(), module.coords.boundary.gp.regions[r].isconst, module.coords.boundary.gp.regions[r].update);
 			}
 			if (info::mesh->dimension == 3 && (it = Variable::list.region[r].egps.find("COORDINATE_Z")) != Variable::list.region[r].egps.end()) {
-				it->second = Variable(2, info::mesh->dimension, module.coords.boundary.gp.regions[r].data->datatarray().data(), module.coords.boundary.gp.regions[r].isconst, module.coords.boundary.gp.regions[r].version);
+				it->second = Variable(2, info::mesh->dimension, module.coords.boundary.gp.regions[r].data->datatarray().data(), module.coords.boundary.gp.regions[r].isconst, module.coords.boundary.gp.regions[r].update);
 			}
 		}
 	}

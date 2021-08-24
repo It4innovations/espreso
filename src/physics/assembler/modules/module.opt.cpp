@@ -51,7 +51,7 @@ void ModuleOpt::printParamtereStats(const char* name, ParameterData &parameter)
 
 void ModuleOpt::printParamtereStats(const char* name, NamedData *data)
 {
-	printf("nameddata[update/version/isconst]:   [-/%d/ ] %s\n", data->version, name);
+	printf("nameddata[update/version/isconst]:   [-/%d/ ] %s\n", data->updated, name);
 }
 
 void ModuleOpt::setMaterials(const std::map<std::string, std::string> &settings)

@@ -56,7 +56,7 @@ struct ParameterData {
 	virtual void resizeAligned(size_t alignment, double init = .0) =0;
 	virtual ~ParameterData();
 
-	std::vector<int> isconst, update, version;
+	std::vector<int> isconst, update;
 };
 
 struct ExternalElementValue {
@@ -91,14 +91,20 @@ template<int mask>
 struct ElementGPsExternalParameter: public ElementParameter<mask> {
 	ExternalElementGPsValue externalValue;
 
-	ElementGPsExternalParameter(): externalValue(*this) { }
+	ElementGPsExternalParameter(): externalValue(*this)
+	{
+		std::fill(this->update.begin(), this->update.end(), false);
+	}
 };
 
 template<int mask>
 struct ElementNodesExternalParameter: public ElementParameter<mask> {
 	ExternalElementNodesValue externalValue;
 
-	ElementNodesExternalParameter(): externalValue(*this) { }
+	ElementNodesExternalParameter(): externalValue(*this)
+	{
+		std::fill(this->update.begin(), this->update.end(), false);
+	}
 };
 
 struct BoundaryParameterData: public ParameterData {
@@ -118,21 +124,6 @@ struct BoundaryParameterPack {
 	std::vector<BoundaryParameterData> regions;
 
 	BoundaryParameterPack(PerElementSize mask);
-
-//	template <class Parameter>
-//	void addInput(const Parameter &p)
-//	{
-//		for (size_t r = 0; r < regions.size(); ++r) {
-//			regions[r].addInput(p);
-//		}
-//	}
-
-	void resize()
-	{
-		for (size_t r = 0; r < regions.size(); ++r) {
-			regions[r].resize();
-		}
-	}
 
 	PerElementSize size;
 };
