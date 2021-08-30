@@ -48,16 +48,16 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs)
 		}
 	};
 
-	esint Ksize = 0, RHSsize = 0;
+	esint Asize = 0, RHSsize = 0;
 	for (auto e = info::mesh->elements->nodes->cbegin(); e != info::mesh->elements->nodes->cend(); ++e) {
 		RHSsize += e->size() * dofs;
-		Ksize += size(e->size() * dofs);
+		Asize += size(e->size() * dofs);
 	}
 
-	std::vector<IJ> KPattern(Ksize);
+	std::vector<IJ> APattern(Asize);
 	std::vector<esint> RHSPattern(RHSsize);
 
-	IJ *Koffset = KPattern.data();
+	IJ *Aoffset = APattern.data();
 	esint *RHSoffset = RHSPattern.data();
 
 	for (auto e = info::mesh->elements->nodes->cbegin(); e != info::mesh->elements->nodes->cend(); ++e) {
@@ -67,31 +67,31 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs)
 				*RHSoffset = info::mesh->nodes->uniqInfo.position[*n] * dofs + dof;
 			}
 		}
-		fill(Koffset, _RHS, RHSoffset);
+		fill(Aoffset, _RHS, RHSoffset);
 	}
 
-	std::vector<IJ> KData = KPattern;
+	std::vector<IJ> AData = APattern;
 	std::vector<esint> RHSData = RHSPattern;
 
-	utils::sortAndRemoveDuplicates(KPattern);
+	utils::sortAndRemoveDuplicates(APattern);
 	utils::sortAndRemoveDuplicates(RHSPattern);
 
 	pattern->elements.size = dofs * (info::mesh->nodes->uniqInfo.nhalo + info::mesh->nodes->uniqInfo.size);
-	pattern->elements.row.reserve(KPattern.size());
-	pattern->elements.column.reserve(KPattern.size());
-	pattern->elements.K.reserve(KData.size());
-	pattern->elements.f.reserve(RHSData.size());
+	pattern->elements.row.reserve(APattern.size());
+	pattern->elements.column.reserve(APattern.size());
+	pattern->elements.A.reserve(AData.size());
+	pattern->elements.b.reserve(RHSData.size());
 
-	for (size_t i = 0; i < KPattern.size(); ++i) {
-		pattern->elements.row.push_back(KPattern[i].row);
-		pattern->elements.column.push_back(KPattern[i].column);
+	for (size_t i = 0; i < APattern.size(); ++i) {
+		pattern->elements.row.push_back(APattern[i].row);
+		pattern->elements.column.push_back(APattern[i].column);
 	}
 
-	for (size_t i = 0; i < KData.size(); ++i) {
-		pattern->elements.K.push_back(std::lower_bound(KPattern.begin(), KPattern.end(), KData[i]) - KPattern.begin());
+	for (size_t i = 0; i < AData.size(); ++i) {
+		pattern->elements.A.push_back(std::lower_bound(APattern.begin(), APattern.end(), AData[i]) - APattern.begin());
 	}
 	for (size_t i = 0; i < RHSData.size(); ++i) {
-		pattern->elements.f.push_back(std::lower_bound(RHSPattern.begin(), RHSPattern.end(), RHSData[i]) - RHSPattern.begin());
+		pattern->elements.b.push_back(std::lower_bound(RHSPattern.begin(), RHSPattern.end(), RHSData[i]) - RHSPattern.begin());
 	}
 
 	std::vector<esint> belement(dofs * 8);
@@ -99,13 +99,13 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs)
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
 
-			Ksize = 0; RHSsize = 0;
+			Asize = 0; RHSsize = 0;
 			for (auto e = info::mesh->boundaryRegions[r]->elements->begin(); e != info::mesh->boundaryRegions[r]->elements->end(); ++e) {
 				RHSsize += e->size() * dofs;
-				Ksize += size(e->size() * dofs);
+				Asize += size(e->size() * dofs);
 			}
-			pattern->bregion[r].f.reserve(RHSsize);
-			pattern->bregion[r].K.reserve(Ksize);
+			pattern->bregion[r].b.reserve(RHSsize);
+			pattern->bregion[r].A.reserve(Asize);
 
 			for (auto e = info::mesh->boundaryRegions[r]->elements->begin(); e != info::mesh->boundaryRegions[r]->elements->end(); ++e) {
 				belement.clear();
@@ -115,9 +115,9 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs)
 					}
 				}
 				for (size_t i = 0; i < belement.size(); ++i) {
-					pattern->bregion[r].f.push_back(std::lower_bound(RHSPattern.begin(), RHSPattern.end(), belement[i]) - RHSPattern.begin());
+					pattern->bregion[r].b.push_back(std::lower_bound(RHSPattern.begin(), RHSPattern.end(), belement[i]) - RHSPattern.begin());
 					for (size_t j = 0; j < belement.size(); ++j) {
-						pattern->bregion[r].K.push_back(std::lower_bound(KPattern.begin(), KPattern.end(), IJ{belement[i], belement[j]}) - KPattern.begin());
+						pattern->bregion[r].A.push_back(std::lower_bound(APattern.begin(), APattern.end(), IJ{belement[i], belement[j]}) - APattern.begin());
 					}
 				}
 			}
