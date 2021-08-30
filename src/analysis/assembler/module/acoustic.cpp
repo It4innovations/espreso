@@ -97,7 +97,8 @@ void AX_Acoustic::analyze()
 		acousticMass(*this);
 	}
 	if (C != nullptr) {
-		acousticBoundaryMass(*this);
+		// boundary conditions have to added according to boundary settings below
+//		acousticBoundaryMass(*this);
 	}
 
 	if (configuration.acoustic_pressure.size()) {
@@ -107,6 +108,10 @@ void AX_Acoustic::analyze()
 	if (configuration.normal_acceleration.size()) {
 		examineBoundaryParameter("NORMAL ACCELERATION", configuration.normal_acceleration, normalAcceleration.gp.externalValues);
 		fromExpression(*this, normalAcceleration.gp, normalAcceleration.gp.externalValues);
+	}
+	if (configuration.impedance.size()) {
+		examineBoundaryParameter("IMPEDANCE", configuration.impedance, impedance.gp.externalValues);
+		fromExpression(*this, impedance.gp, impedance.gp.externalValues);
 	}
 	acousticRHS(*this);
 

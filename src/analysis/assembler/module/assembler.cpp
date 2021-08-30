@@ -358,3 +358,32 @@ bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::
 //		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 //	}
 }
+
+bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::string, ImpedanceConfiguration> &settings, ExternalBoundaryValue &impedance)
+{
+	if (settings.size()) {
+		eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
+
+		int rindex = 0;
+		for (auto reg = info::mesh->boundaryRegions.begin(); reg != info::mesh->boundaryRegions.end(); ++reg, ++rindex) {
+			auto ms = settings.find((*reg)->name);
+			if (ms != settings.end()) {
+				if (!Variable::create(ms->second.impedance, rindex)) {
+					eslog::warning("   %30s:  %57s \n", (*reg)->name.c_str(), "INVALID EXPRESSION");
+					return false;
+				}
+				Evaluator *evaluator = ms->second.impedance.evaluator;
+				impedance.evaluator[impedance.dimension * rindex] = evaluator;
+				if (evaluator->variables.size()) {
+					std::string params = Parser::join(", ", evaluator->variables);
+					eslog::info("   %30s:  %*s       FNC( %s )\n", (*reg)->name.c_str(), 43 - params.size(), "", params.c_str());
+				} else {
+					eslog::info("   %30s:  %57g \n", (*reg)->name.c_str(), evaluator->eval(Evaluator::Params()));
+				}
+			}
+		}
+		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+	}
+
+	return true;
+}

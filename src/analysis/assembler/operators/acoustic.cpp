@@ -69,21 +69,45 @@ void acousticRHS(AX_Acoustic &module)
 {
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
-			if (module.normalAcceleration.gp.regions[r].data == NULL) {
+			if (
+					module.normalAcceleration.gp.regions[r].data == NULL &&
+					module.impedance.gp.regions[r].data == NULL) {
 				continue;
+			}
+
+			if (module.normalAcceleration.gp.regions[r].data == NULL) {
+				module.normalAcceleration.gp.regions[r].resize();
+				module.addParameter(module.normalAcceleration.gp.regions[r]);
+			}
+
+			bool withoutImpedance;
+			if ((withoutImpedance = (module.impedance.gp.regions[r].data == NULL))) {
+				module.impedance.gp.regions[r].resize();
+				module.addParameter(module.impedance.gp.regions[r]);
 			}
 
 //			if (info::mesh->dimension == 2) {
 //				module.elements.boundary.rhs.regions[r].addInput(module.thickness.boundary.gp.regions[r]);
 //			}
-			module.controller.addInput(module.q.gp.regions[r], module.normalAcceleration.gp.regions[r]);
+			module.controller.addInput(module.q.gp.regions[r], module.normalAcceleration.gp.regions[r], module.impedance.gp.regions[r]);
 			module.controller.addInput(module.elements.boundary.rhs.regions[r], module.q.gp.regions[r], module.integration.boundary.jacobian.regions[r], module.integration.boundary.weight.regions[r]);
+			if (!withoutImpedance) {
+				module.controller.addInput(module.elements.boundary.mass.regions[r], module.impedance.gp.regions[r], module.integration.boundary.N.regions[r], module.integration.boundary.jacobian.regions[r], module.integration.boundary.weight.regions[r]);
+			}
 
 			for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
 				module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticQ>(r, interval, module.controller,
 						1, // info::mesh->boundaryRegions[r]->area,
 						module.normalAcceleration.gp.regions[r],
+						module.impedance.gp.regions[r],
 						module.q.gp.regions[r]));
+
+				if (!withoutImpedance) {
+					module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticsBoundaryMass>(r, interval,
+							module.integration.boundary.N.regions[r], module.integration.boundary.weight.regions[r], module.integration.boundary.jacobian.regions[r],
+							module.impedance.gp.regions[r],
+							module.elements.boundary.mass.regions[r]));
+				}
 
 				if (info::mesh->dimension == 2) {
 					module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticRHS2D>(r, interval, module.controller,

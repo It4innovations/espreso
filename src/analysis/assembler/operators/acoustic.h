@@ -113,8 +113,11 @@ struct AcousticMass: public ActionOperator {
 
 template <size_t nodes, size_t gps>
 struct AcousticQ: public ActionOperator {
-	AcousticQ(int interval, double area, const ParameterData &g,  ParameterData &q)
-	: area(area), g(g, interval),
+	AcousticQ(int interval, double area, const ParameterData &g,  ParameterData &impedance, ParameterData &q)
+	: ActionOperator(interval, g.isconst[interval], g.update[interval]),
+	  area(area),
+	  g(g, interval),
+	  impedance(impedance, interval),
 	  q(q, interval)
 	{
 //		if (update) {
@@ -142,7 +145,7 @@ struct AcousticQ: public ActionOperator {
 	}
 
 	double area;
-	InputParameterIterator g;
+	InputParameterIterator g, impedance;
 	OutputParameterIterator q;
 };
 
@@ -228,7 +231,7 @@ struct AcousticRHS3D: public ActionOperator {
 
 template <size_t nodes, size_t gps>
 struct AcousticsBoundaryMass: public ActionOperator {
-	InputParameterIterator N, weight, determinant;
+	InputParameterIterator N, weight, determinant, impedance;
 	OutputParameterIterator boundaryMass;
 
 	AcousticsBoundaryMass(
@@ -236,21 +239,23 @@ struct AcousticsBoundaryMass: public ActionOperator {
 		const ParameterData &N,
 		const ParameterData &weight,
 		const ParameterData &determinant,
+		const ParameterData &impedance,
 		ParameterData &boundaryMass)
 	: ActionOperator(interval, boundaryMass.isconst[interval], boundaryMass.update[interval]),
 	  N(N, interval),
 	  weight(weight, interval, 0),
 	  determinant(determinant, interval),
+	  impedance(impedance, interval),
 	  boundaryMass(boundaryMass, interval)
 	{
-		if (update) {
-			std::fill((boundaryMass.data->begin() + interval)->data(), (boundaryMass.data->begin() + interval + 1)->data(), 0);
-		}
+//		if (update) {
+//			std::fill((boundaryMass.data->begin() + interval)->data(), (boundaryMass.data->begin() + interval + 1)->data(), 0);
+//		}
 	}
 
 	void operator++()
 	{
-		++N; ++determinant;
+		++impedance, ++N; ++determinant;
 		++boundaryMass;
 	}
 

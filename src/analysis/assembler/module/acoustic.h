@@ -61,7 +61,7 @@ public:
 	ParametersIntegration integration;
 	ParametersCoordinates coords;
 
-	ParametersBoundaryFunction dirichlet, normalAcceleration, q;
+	ParametersBoundaryFunction dirichlet, normalAcceleration, impedance, q;
 
 	ParametersElements<1> elements;
 

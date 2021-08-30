@@ -15,6 +15,7 @@ namespace espreso {
 struct ECFExpression;
 struct ECFExpressionVector;
 class ConvectionConfiguration;
+struct ImpedanceConfiguration;
 
 class Assembler
 {
@@ -48,6 +49,7 @@ protected:
 
 	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpression> &settings, ExternalBoundaryValue &value);
 	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection);
+	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ImpedanceConfiguration> &settings, ExternalBoundaryValue &impedance);
 
 	int version;
 };
