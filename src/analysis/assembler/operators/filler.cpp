@@ -58,7 +58,7 @@ void addFiller(AX_Acoustic &module)
 				for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
 					double *data = module.C->mapping.boundary[r][interval].data;
 					const esint *position = module.C->mapping.boundary[r][interval].position;
-					module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, MatrixFullFiller>(r, interval, module.elements.boundary.mass.regions[r], data, position));
+					module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, MatrixFullFiller>(r, interval, module.controller, module.elements.boundary.mass.regions[r], data, position));
 				}
 			}
 		}

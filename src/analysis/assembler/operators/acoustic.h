@@ -114,8 +114,7 @@ struct AcousticMass: public ActionOperator {
 template <size_t nodes, size_t gps>
 struct AcousticQ: public ActionOperator {
 	AcousticQ(int interval, double area, const ParameterData &g,  ParameterData &impedance, ParameterData &q)
-	: ActionOperator(interval, g.isconst[interval], g.update[interval]),
-	  area(area),
+	: area(area),
 	  g(g, interval),
 	  impedance(impedance, interval),
 	  q(q, interval)
@@ -241,8 +240,7 @@ struct AcousticsBoundaryMass: public ActionOperator {
 		const ParameterData &determinant,
 		const ParameterData &impedance,
 		ParameterData &boundaryMass)
-	: ActionOperator(interval, boundaryMass.isconst[interval], boundaryMass.update[interval]),
-	  N(N, interval),
+	: N(N, interval),
 	  weight(weight, interval, 0),
 	  determinant(determinant, interval),
 	  impedance(impedance, interval),
@@ -255,8 +253,14 @@ struct AcousticsBoundaryMass: public ActionOperator {
 
 	void operator++()
 	{
-		++impedance, ++N; ++determinant;
+		++determinant;
 		++boundaryMass;
+	}
+
+	void move(int n)
+	{
+		determinant += n;
+		boundaryMass += n;
 	}
 
 	void operator()()
@@ -264,11 +268,6 @@ struct AcousticsBoundaryMass: public ActionOperator {
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			ADDMN1M1N<nodes>(determinant[gpindex] * weight[gpindex], N.data + nodes * gpindex, boundaryMass.data);
 		}
-	}
-
-	void reset()
-	{
-
 	}
 };
 

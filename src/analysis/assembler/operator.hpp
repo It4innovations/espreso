@@ -12,7 +12,7 @@
 namespace espreso {
 
 template <class NGP, template <size_t N, size_t GP> class Operator, class ... Args>
-static inline ActionOperator* instantiate(int code, size_t interval, Args&& ... args)
+static inline ActionOperator* _instantiate(int code, size_t interval, Args&& ... args)
 {
 	switch (code) {
 	case static_cast<size_t>(Element::CODE::LINE2):     return new Operator< 2, NGP::LINE2    >(interval, std::forward<Args>(args)...); break;
@@ -35,7 +35,7 @@ static inline ActionOperator* instantiate(int code, size_t interval, Args&& ... 
 
 
 template <class NGP, size_t DIM, template <size_t N, size_t GP, size_t dimension> class Operator, class ... Args>
-static inline ActionOperator* instantiate(int code, size_t interval, Args&& ... args)
+static inline ActionOperator* _instantiate(int code, size_t interval, Args&& ... args)
 {
 	switch (code) {
 	case static_cast<size_t>(Element::CODE::LINE2):     return new Operator< 2, NGP::LINE2    , DIM>(interval, std::forward<Args>(args)...); break;
@@ -65,25 +65,25 @@ static inline ActionOperator* instantiate(size_t interval, ParameterController &
 template <class NGP, template <size_t N, size_t GP> class Operator, class ... Args>
 static inline ActionOperator* instantiate(size_t interval, ParameterController &controller, Args&& ... args)
 {
-	return instantiate<NGP, Operator, Args...>(info::mesh->elements->eintervals[interval].code, interval, std::forward<Args>(args)...);
+	return _instantiate<NGP, Operator, Args...>(info::mesh->elements->eintervals[interval].code, interval, std::forward<Args>(args)...);
 }
 
 template <class NGP, size_t DIM, template <size_t N, size_t GP, size_t dimension> class Operator, class ... Args>
 static inline ActionOperator* instantiate(size_t interval, ParameterController &controller, Args&& ... args)
 {
-	return instantiate<NGP, DIM, Operator, Args...>(info::mesh->elements->eintervals[interval].code, interval, std::forward<Args>(args)...);
+	return _instantiate<NGP, DIM, Operator, Args...>(info::mesh->elements->eintervals[interval].code, interval, std::forward<Args>(args)...);
 }
 
 template <class NGP, template <size_t N, size_t GP> class Operator, class ... Args>
 static inline ActionOperator* instantiate(size_t region, size_t interval, ParameterController &controller, Args&& ... args)
 {
-	return instantiate<NGP, Operator, Args...>(info::mesh->boundaryRegions[region]->eintervals[interval].code, interval, std::forward<Args>(args)...);
+	return _instantiate<NGP, Operator, Args...>(info::mesh->boundaryRegions[region]->eintervals[interval].code, interval, std::forward<Args>(args)...);
 }
 
 template <class NGP, size_t DIM, template <size_t N, size_t GP, size_t dimension> class Operator, class ... Args>
 static inline ActionOperator* instantiate(size_t region, size_t interval, ParameterController &controller, Args&& ... args)
 {
-	return instantiate<NGP, DIM, Operator, Args...>(info::mesh->boundaryRegions[region]->eintervals[interval].code, interval, std::forward<Args>(args)...);
+	return _instantiate<NGP, DIM, Operator, Args...>(info::mesh->boundaryRegions[region]->eintervals[interval].code, interval, std::forward<Args>(args)...);
 }
 
 }
