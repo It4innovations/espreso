@@ -58,6 +58,18 @@ struct UniformNodesDistributedPattern {
 			m->mapping.elements[i].position = elements.K.data() + offset;
 			offset += (info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin) * Mesh::edata[info::mesh->elements->eintervals[i].code].nodes * Mesh::edata[info::mesh->elements->eintervals[i].code].nodes;
 		}
+
+		m->mapping.boundary.resize(info::mesh->boundaryRegions.size());
+		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+			if (info::mesh->boundaryRegions[r]->dimension) {
+				m->mapping.boundary[r].resize(info::mesh->boundaryRegions[r]->eintervals.size());
+				for (size_t i = 0, offset = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+					m->mapping.boundary[r][i].data = m->cluster.vals;
+					m->mapping.boundary[r][i].position = bregion[r].K.data() + offset;
+					offset += (info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin) * Mesh::edata[info::mesh->boundaryRegions[r]->eintervals[i].code].nodes;
+				}
+			}
+		}
 	}
 
 	template<typename T>
