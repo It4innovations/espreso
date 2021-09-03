@@ -59,31 +59,41 @@ static inline ActionOperator* _instantiate(int code, size_t interval, Args&& ...
 template <class Operator, class ... Args>
 static inline ActionOperator* instantiate(size_t interval, ParameterController &controller, Args&& ... args)
 {
-	return new Operator(interval, std::forward<Args>(args)...);
+	auto op = new Operator(interval, std::forward<Args>(args)...);
+	op->isconst = controller.getConstness(interval, args...);
+	return op;
 }
 
 template <class NGP, template <size_t N, size_t GP> class Operator, class ... Args>
 static inline ActionOperator* instantiate(size_t interval, ParameterController &controller, Args&& ... args)
 {
-	return _instantiate<NGP, Operator, Args...>(info::mesh->elements->eintervals[interval].code, interval, std::forward<Args>(args)...);
+	auto op = _instantiate<NGP, Operator, Args...>(info::mesh->elements->eintervals[interval].code, interval, std::forward<Args>(args)...);
+	op->isconst = controller.getConstness(interval, args...);
+	return op;
 }
 
 template <class NGP, size_t DIM, template <size_t N, size_t GP, size_t dimension> class Operator, class ... Args>
 static inline ActionOperator* instantiate(size_t interval, ParameterController &controller, Args&& ... args)
 {
-	return _instantiate<NGP, DIM, Operator, Args...>(info::mesh->elements->eintervals[interval].code, interval, std::forward<Args>(args)...);
+	auto op = _instantiate<NGP, DIM, Operator, Args...>(info::mesh->elements->eintervals[interval].code, interval, std::forward<Args>(args)...);
+	op->isconst = controller.getConstness(interval, args...);
+	return op;
 }
 
 template <class NGP, template <size_t N, size_t GP> class Operator, class ... Args>
 static inline ActionOperator* instantiate(size_t region, size_t interval, ParameterController &controller, Args&& ... args)
 {
-	return _instantiate<NGP, Operator, Args...>(info::mesh->boundaryRegions[region]->eintervals[interval].code, interval, std::forward<Args>(args)...);
+	auto op = _instantiate<NGP, Operator, Args...>(info::mesh->boundaryRegions[region]->eintervals[interval].code, interval, std::forward<Args>(args)...);
+	op->isconst = controller.getConstness(interval, args...);
+	return op;
 }
 
 template <class NGP, size_t DIM, template <size_t N, size_t GP, size_t dimension> class Operator, class ... Args>
 static inline ActionOperator* instantiate(size_t region, size_t interval, ParameterController &controller, Args&& ... args)
 {
-	return _instantiate<NGP, DIM, Operator, Args...>(info::mesh->boundaryRegions[region]->eintervals[interval].code, interval, std::forward<Args>(args)...);
+	auto op = _instantiate<NGP, DIM, Operator, Args...>(info::mesh->boundaryRegions[region]->eintervals[interval].code, interval, std::forward<Args>(args)...);
+	op->isconst = controller.getConstness(interval, args...);
+	return op;
 }
 
 }

@@ -111,7 +111,13 @@ void Assembler::iterate()
 					}
 				}
 				for (auto op = elementOps[i].begin(); op != elementOps[i].end(); ++op) {
-					(**op).move(-elementsInInterval);
+					if((*op)->update) {
+						if((*op)->isconst) {
+							(*op)->move(-1);
+						} else {
+							(*op)->move(-elementsInInterval);
+						}
+					}
 				}
 			}
 
@@ -132,7 +138,13 @@ void Assembler::iterate()
 						}
 
 						for (auto op = boundaryOps[r][i].begin(); op != boundaryOps[r][i].end(); ++op) {
-							(**op).move(-elementsInInterval);
+							if((*op)->update) {
+								if((*op)->isconst) {
+									(*op)->move(-1);
+								} else {
+									(*op)->move(-elementsInInterval);
+								}
+							}
 						}
 					}
 				}

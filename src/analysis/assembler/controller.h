@@ -117,6 +117,25 @@ public:
 		}
 	}
 
+	bool getConstness(size_t interval)
+	{
+		return true;
+	}
+
+	template <typename T, typename ...Other>
+	typename std::enable_if<std::is_base_of<ParameterData, T>::value, bool>::type
+	getConstness(size_t interval, const T &parameter, Other&... other)
+	{
+		return parameter.isconst[interval] && getConstness(interval, other...);
+	}
+
+	template <typename T, typename ...Other>
+	typename std::enable_if<!std::is_base_of<ParameterData, T>::value, bool>::type
+	getConstness(size_t interval, const T &parameter, Other&... other)
+	{
+		return getConstness(interval, other...);
+	}
+
 	void addOperator(int interval, ParameterData &parameter, ActionOperator *op)
 	{
 		_get(parameter)->second.operators[interval].push_back(op);
