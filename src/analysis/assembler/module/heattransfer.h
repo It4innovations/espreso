@@ -3,6 +3,7 @@
 #define SRC_ANALYSIS_ASSEMBLER_MODULE_HEATTRANSFER_H_
 
 #include "assembler.h"
+#include "config/ecf/physics/heattransfer.h"
 #include "config/holders/expression.h"
 #include "math2/primitives/vector_sparse.h"
 #include "math2/primitives/matrix_info.h"
@@ -47,8 +48,15 @@ public:
 	void analyze();
 	void evaluate();
 
-	void initDirichlet(Vector_Sparse<double> &dirichlet);
-	void fillDirichlet(Vector_Sparse<double> &dirichlet);
+	void initDirichlet(Vector_Sparse<double> &dirichlet)
+	{
+		Assembler::initDirichlet(configuration.temperature, dirichlet);
+	}
+
+	void fillDirichlet(Vector_Sparse<double> &dirichlet)
+	{
+		Assembler::fillDirichlet(configuration.temperature, dirichlet);
+	}
 
 	void updateSolution();
 
@@ -82,8 +90,6 @@ public:
 	ParametersGradient gradient;
 	ParametersGradient gradientSimd;
 	ParametersFlux flux;
-
-	std::vector<esint> dirichletIndices, dirichletPermutation;
 
 	Matrix_Base<double> *K, *M;
 	Vector_Base<double> *rhs, *x;

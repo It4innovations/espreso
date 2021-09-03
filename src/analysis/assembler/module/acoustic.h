@@ -3,6 +3,7 @@
 #define SRC_ANALYSIS_ASSEMBLER_MODULE_ACOUSTIC_H_
 
 #include "assembler.h"
+#include "config/ecf/physics/acoustic.h"
 #include "math2/primitives/vector_sparse.h"
 #include "math2/primitives/matrix_info.h"
 #include "math2/generalization/matrix_base.h"
@@ -45,8 +46,15 @@ public:
 	void analyze();
 	void next();
 
-	void initDirichlet(Vector_Sparse<double> &dirichlet);
-	void fillDirichlet(Vector_Sparse<double> &dirichlet);
+	void initDirichlet(Vector_Sparse<double> &dirichlet)
+	{
+		Assembler::initDirichlet(configuration.acoustic_pressure, dirichlet);
+	}
+
+	void fillDirichlet(Vector_Sparse<double> &dirichlet)
+	{
+		Assembler::fillDirichlet(configuration.acoustic_pressure, dirichlet);
+	}
 
 	void updateSolution();
 

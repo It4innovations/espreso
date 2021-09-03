@@ -159,56 +159,6 @@ void AX_Acoustic::next()
 	controller.resetUpdate();
 }
 
-void AX_Acoustic::initDirichlet(Vector_Sparse<double> &dirichlet)
-{
-	size_t dsize = 0;
-	for (auto it = configuration.acoustic_pressure.begin(); it != configuration.acoustic_pressure.end(); ++it) {
-		BoundaryRegionStore *region = info::mesh->bregion(it->first);
-		dsize += region->nodes->datatarray().size();
-	}
-	dirichletIndices.reserve(dsize);
-	for (auto it = configuration.acoustic_pressure.begin(); it != configuration.acoustic_pressure.end(); ++it) {
-		BoundaryRegionStore *region = info::mesh->bregion(it->first);
-		dirichletIndices.insert(dirichletIndices.end(), region->nodes->datatarray().begin(), region->nodes->datatarray().end());
-	}
-	dirichletPermutation.resize(dsize);
-	std::iota(dirichletPermutation.begin(), dirichletPermutation.end(), 0);
-	std::sort(dirichletPermutation.begin(), dirichletPermutation.end(), [&] (const esint &i, const esint &j) { return dirichletIndices[i] < dirichletIndices[j]; });
-	dsize = 0;
-	for (auto i = dirichletPermutation.begin(); i != dirichletPermutation.end(); ++i) {
-		if (i == dirichletPermutation.begin() || dirichletIndices[*i] != dirichletIndices[*(i - 1)]) {
-			++dsize;
-		}
-	}
-	dirichlet.resize(info::mesh->nodes->IDs->datatarray().size(), dsize);
-	auto dir = dirichlet.indices;
-	for (auto i = dirichletPermutation.begin(); i != dirichletPermutation.end(); ++i) {
-		if (i == dirichletPermutation.begin() || dirichletIndices[*i] != dirichletIndices[*(i - 1)]) {
-			*dir++ = dirichletIndices[*i];
-		}
-	}
-}
-
-void AX_Acoustic::fillDirichlet(Vector_Sparse<double> &dirichlet)
-{
-	size_t offset = 0;
-	std::vector<double> values(dirichletPermutation.size());
-	for (auto it = configuration.acoustic_pressure.begin(); it != configuration.acoustic_pressure.end(); ++it) {
-		BoundaryRegionStore *region = info::mesh->bregion(it->first);
-		it->second.evaluator->evalSelectedSparse(
-				region->nodes->datatarray().size(),
-				region->nodes->datatarray().data(),
-				it->second.evaluator->params,
-				values.data() + offset);
-		offset += region->nodes->datatarray().size();
-	}
-
-	for (size_t i = 0; i < dirichletPermutation.size(); ++i) {
-		dirichlet.vals[i] = values[dirichletPermutation[i]];
-	}
-	dirichlet.touched = true;
-}
-
 void AX_Acoustic::updateSolution()
 {
 	re.x->store(ParametersAcousticPressure::output->data);

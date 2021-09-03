@@ -5,6 +5,7 @@
 #include "parameters.h"
 #include "analysis/assembler/controller.h"
 #include "analysis/assembler/operator.h"
+#include "math2/primitives/vector_sparse.h"
 
 #include <vector>
 #include <map>
@@ -32,6 +33,9 @@ public:
 protected:
 	void iterate();
 
+	void initDirichlet(std::map<std::string, ECFExpression> &settings, Vector_Sparse<double> &dirichlet);
+	void fillDirichlet(std::map<std::string, ECFExpression> &settings, Vector_Sparse<double> &dirichlet);
+
 	void printParameterStats(const char* name, ParameterData &parameter);
 	void printParameterStats(const char* name, NamedData *data);
 
@@ -52,6 +56,7 @@ protected:
 	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ImpedanceConfiguration> &settings, ExternalBoundaryValue &impedance);
 
 	int version;
+	std::vector<esint> dirichletIndices, dirichletPermutation;
 };
 
 }
