@@ -118,7 +118,7 @@ struct HeatQ: public ActionOperator {
 	void operator()()
 	{
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-//			q.data[gpindex] += heatFlow.data[gpindex] / area;
+			q.data[gpindex] += heatFlow.data[gpindex] / area;
 			q.data[gpindex] += heatFlux.data[gpindex];
 			q.data[gpindex] += htc.data[gpindex] * extTemp.data[gpindex];
 		}
