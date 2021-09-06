@@ -99,6 +99,7 @@ public:
 protected:
 	void initTemperature();
 	void initParameters();
+	void printVolume();
 	void printVersions();
 };
 
