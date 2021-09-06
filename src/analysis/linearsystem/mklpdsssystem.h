@@ -4,6 +4,7 @@
 
 #include "linearsystem.h"
 #include "analysis/analysis/heat.steadystate.linear.h"
+#include "analysis/analysis/heat.steadystate.nonlinear.h"
 #include "analysis/analysis/acoustic.real.linear.h"
 //#include "analysis/analysis/heat.steadystate.nonlinear.h"
 //#include "analysis/analysis/heat.transient.linear.h"
@@ -63,7 +64,8 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 		math::multiplyPattern(solver.dirichlet, assembler.dirichlet, 1, 2);
 	}
 
-	void init(AX_HeatSteadyStateLinear *analysis)
+	template<typename HeatSteadyState>
+	void _initHeat(HeatSteadyState *analysis)
 	{
 		assembler.A.type = solver.A.type = analysis->assembler.matrixType();
 		assembler.pattern.set(1);
@@ -76,6 +78,16 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 
 		analysis->assembler.initDirichlet(solver.dirichlet);
 		AX_LinearSystem<T>::assembler.dirichlet = AX_LinearSystem<T>::solver.dirichlet = &solver.dirichlet;
+	}
+
+	void init(AX_HeatSteadyStateLinear *analysis)
+	{
+		_initHeat(analysis);
+	}
+
+	void init(AX_HeatSteadyStateNonLinear *analysis)
+	{
+		_initHeat(analysis);
 	}
 
 //	void init(AX_HeatSteadyStateNonLinear *analysis)

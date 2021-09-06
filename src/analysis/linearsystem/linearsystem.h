@@ -9,8 +9,8 @@
 namespace espreso {
 
 class AX_HeatSteadyStateLinear;
+class AX_HeatSteadyStateNonLinear;
 class AX_AcousticRealLinear;
-//class AX_HeatSteadyStateNonLinear;
 //class AX_HeatTransientLinear;
 //class AX_HeatTransientNonLinear;
 //class AX_StructuralMechanicsHarmonicComplexLinear;
@@ -37,6 +37,7 @@ struct AX_LinearSystem {
 
 	virtual void init(AX_AcousticRealLinear       *analysis) =0;
 	virtual void init(AX_HeatSteadyStateLinear    *analysis) =0;
+	virtual void init(AX_HeatSteadyStateNonLinear *analysis) =0;
 //	virtual void init(AX_HeatSteadyStateNonLinear *analysis) =0;
 //	virtual void init(AX_HeatTransientLinear      *analysis) =0;
 //	virtual void init(AX_HeatTransientNonLinear   *analysis) =0;

@@ -72,6 +72,17 @@ struct AX_DirectSystem: AX_LinearSystem<T> {
 		AX_LinearSystem<T>::assembler.x = AX_LinearSystem<T>::solver.x = &solver.x;
 	}
 
+	void init(AX_HeatSteadyStateNonLinear *analysis)
+	{
+		solver.pattern.set(1);
+		solver.pattern.fill(solver.A);
+		solver.pattern.fill(solver.b);
+		solver.pattern.fill(solver.x);
+		AX_LinearSystem<T>::assembler.A = AX_LinearSystem<T>::solver.A = &solver.A;
+		AX_LinearSystem<T>::assembler.b = AX_LinearSystem<T>::solver.b = &solver.b;
+		AX_LinearSystem<T>::assembler.x = AX_LinearSystem<T>::solver.x = &solver.x;
+	}
+
 //	void init(AX_HeatSteadyStateNonLinear *analysis)
 //	{
 //

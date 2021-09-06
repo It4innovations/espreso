@@ -42,6 +42,11 @@ struct AX_MultigridSystem: AX_LinearSystem<T> {
 
 	}
 
+	void init(AX_HeatSteadyStateNonLinear *analysis)
+	{
+
+	}
+
 //	void init(AX_HeatSteadyStateNonLinear *analysis)
 //	{
 //
