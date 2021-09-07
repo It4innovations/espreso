@@ -96,7 +96,6 @@ HEAT_TRANSFER_2D {
 
       NONLINEAR_SOLVER {
         METHOD                   NEWTON_RAPHSON;
-
         CHECK_TEMPERATURE                  TRUE;
         CHECK_HEAT                        FALSE;
         REQUESTED_TEMPERATURE_RESIDUAL   0.0001;

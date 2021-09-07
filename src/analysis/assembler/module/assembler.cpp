@@ -98,6 +98,11 @@ void Assembler::iterate()
 	for (int t = 0; t < info::env::threads; ++t) {
 		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
+//				std::vector<int> updated;
+//				for (auto op = elementOps[i].begin(); op != elementOps[i].end(); ++op) {
+//					updated.push_back((*op)->update);
+//				}
+//				std::cout << updated;
 				size_t elementsInInterval = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
 
 				for (size_t element = 0; element < elementsInInterval; ++element) {
@@ -155,7 +160,7 @@ void Assembler::iterate()
 
 void Assembler::printParameterStats(const char* name, ParameterData &parameter)
 {
-	printf("parameter[isconst/update]:  ");
+	printf("parameter [isconst/update]:  ");
 	for (size_t i = 0; i < parameter.update.size(); ++i) {
 		if (parameter.data) {
 			printf(" [%c/%c]", parameter.isconst[i] ? 'C' : ' ', parameter.update[i] > 0 ? 'U' : ' ');
@@ -168,7 +173,7 @@ void Assembler::printParameterStats(const char* name, ParameterData &parameter)
 
 void Assembler::printParameterStats(const char* name, NamedData *data)
 {
-	printf("nameddata[isconst/update]:   [ /%c] %s\n", data->updated ? 'U' : ' ', name);
+	printf("nameddata [isconst/update]:   [ /%c] %s\n", data->updated ? 'U' : ' ', name);
 }
 
 void Assembler::setMaterials(const std::map<std::string, std::string> &settings)

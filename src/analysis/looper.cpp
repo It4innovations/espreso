@@ -11,6 +11,7 @@
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.h"
 #include "esinfo/meshinfo.h"
+#include "esinfo/stepinfo.h"
 #include "output/output.h"
 
 using namespace espreso;
@@ -23,10 +24,11 @@ void Looper::run()
 //
 //	}
 
+	step::Step step;
 	Analysis *analysis;
 
 	switch (info::ecf->physics) {
-	case PhysicsConfiguration::TYPE::ACOUSTICS_2D:     analysis = new AX_AcousticRealLinear   (info::ecf->acoustics_2d     , info::ecf->acoustics_2d.load_steps_settings.at(1)); break;
+	case PhysicsConfiguration::TYPE::ACOUSTICS_2D:     analysis = new AX_AcousticRealLinear(info::ecf->acoustics_2d, info::ecf->acoustics_2d.load_steps_settings.at(1)); break;
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D:
 		switch (info::ecf->heat_transfer_2d.load_steps_settings.at(1).mode) {
 		case LoadStepSolverConfiguration::MODE::LINEAR : analysis = new AX_HeatSteadyStateLinear(info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(1)); break;
@@ -42,5 +44,5 @@ void Looper::run()
 	}
 
 	analysis->init();
-	analysis->run();
+	analysis->run(step);
 }

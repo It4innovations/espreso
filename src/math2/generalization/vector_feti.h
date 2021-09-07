@@ -2,10 +2,10 @@
 #ifndef SRC_MATH2_GENERALIZATION_VECTOR_FETI_H_
 #define SRC_MATH2_GENERALIZATION_VECTOR_FETI_H_
 
-
 #include "vector_base.h"
 #include "math2/math2.h"
 #include "math2/utils/utils_feti.h"
+#include "wrappers/mpi/communication.h"
 
 #include <vector>
 
@@ -124,6 +124,11 @@ public:
 				math::sum(domains[d], alpha, static_cast<const Vector_FETI<Vector, T>*>(a)->domains[d], beta, static_cast<const Vector_FETI<Vector, T>*>(b)->domains[d], offset, size, step);
 			}
 		}
+	}
+
+	void addTo(const T &alpha, Vector_Sparse<T> *a) const
+	{
+
 	}
 
 	double norm()

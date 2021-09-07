@@ -43,12 +43,12 @@ struct ParameterSettings {
 
 struct ParameterData {
 	PerElementSize size;
-	int intervals;
 	serializededata<esint, double>* data;
 
 	ParameterData(PerElementSize mask, int intervals);
 
 	void setConstness(bool constness);
+	void setUpdate(int value);
 
 	virtual int increment(int interval) const =0;
 	virtual int increment(PerElementSize size, int interval) const =0;
@@ -56,6 +56,7 @@ struct ParameterData {
 	virtual void resizeAligned(size_t alignment, double init = .0) =0;
 	virtual ~ParameterData();
 
+	std::string name;
 	std::vector<int> isconst, update;
 };
 

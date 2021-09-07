@@ -6,6 +6,9 @@
 #include <vector>
 
 namespace espreso {
+
+namespace step { struct Step; }
+
 namespace utils {
 
 std::string getFileDirectory(const std::string &file);
@@ -16,6 +19,7 @@ void copyFile(const std::string &source, const std::string &destination);
 bool exists(const std::string &path);
 void remove(const std::string &path);
 std::string debugDirectory();
+std::string debugDirectory(step::Step &step);
 std::string prepareFile(const std::string &directory, const std::string &name, int domain = -1);
 std::string filename(const std::string &directory, const std::string &name);
 void listDirectory(const std::string &dir, std::vector<std::string> &files);

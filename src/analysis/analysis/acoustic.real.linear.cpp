@@ -40,7 +40,7 @@ void AX_AcousticRealLinear::init()
 	info::mesh->output->updateMonitors(step::TYPE::FREQUENCY);
 }
 
-void AX_AcousticRealLinear::run()
+void AX_AcousticRealLinear::run(step::Step &step)
 {
 	step::Frequency frequency;
 	scheme.initFrequency(frequency);
@@ -57,8 +57,8 @@ void AX_AcousticRealLinear::run()
 
 		scheme.storeScheme(frequency);
 
-		system->update(assembler);
-		system->solve();
+		system->update(step, assembler);
+		system->solve(step);
 
 		scheme.extractSolution(system);
 		scheme.storeSolution(frequency);

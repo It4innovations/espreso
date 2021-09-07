@@ -65,6 +65,7 @@ struct CopyNodesToEnodes: public ActionOperator {
 	void move(int n)
 	{
 		procNodes += n;
+		to += n;
 	}
 
 	void operator()()

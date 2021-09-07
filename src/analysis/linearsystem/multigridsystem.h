@@ -82,12 +82,12 @@ struct AX_MultigridSystem: AX_LinearSystem<T> {
 //
 //	}
 
-	void update(AX_Acoustic &assembler)
+	void update(step::Step &step, AX_Acoustic &assembler)
 	{
 
 	}
 
-	void update(AX_HeatTransfer &assembler)
+	void update(step::Step &step, AX_HeatTransfer &assembler)
 	{
 
 	}
@@ -126,7 +126,7 @@ struct AX_MultigridSystem: AX_LinearSystem<T> {
 //
 //	}
 
-	bool solve()
+	bool solve(step::Step &step)
 	{
 		printf("Multigrid solve\n");
 		return false;

@@ -29,6 +29,13 @@ public:
 //		return m;
 //	}
 
+	void commit()
+	{
+		for (size_t d = 0; d < domains.size(); ++d) {
+			math::commit(domains[d]);
+		}
+	}
+
 	Matrix_FETI* copyPattern()
 	{
 		Matrix_FETI<Matrix, T> *m = new Matrix_FETI<Matrix, T>();

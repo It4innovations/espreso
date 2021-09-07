@@ -10,7 +10,10 @@ namespace espreso {
 struct MatrixFiller: public ActionOperator {
 	MatrixFiller(int interval, const ParameterData &local, double *global, const esint *position)
 	: local(local, interval),
-	  global(global), position(position) {}
+	  global(global), position(position)
+	{
+
+	}
 
 	InputParameterIterator local;
 	double *global;
@@ -20,16 +23,17 @@ struct MatrixFiller: public ActionOperator {
 	{
 		// increment by operator()
 	}
-
-	void move(int n)
-	{
-
-	}
 };
 
 template<size_t nodes, size_t gps, size_t dimension>
 struct MatrixUpperFiller: public MatrixFiller {
 	using MatrixFiller::MatrixFiller;
+
+	void move(int n)
+	{
+		local += n;
+		position += n * ((nodes * dimension * (nodes * dimension - 1)) / 2 + nodes * dimension);
+	}
 
 	void operator()()
 	{
@@ -45,6 +49,12 @@ template<size_t nodes, size_t gps, size_t dimension>
 struct MatrixLowerFiller: public MatrixFiller {
 	using MatrixFiller::MatrixFiller;
 
+	void move(int n)
+	{
+		local += n;
+		position += n * ((nodes * dimension * (nodes * dimension - 1)) / 2 + nodes * dimension);
+	}
+
 	void operator()()
 	{
 		for (size_t r = 0; r < nodes * dimension; ++r, local.data += nodes * dimension) {
@@ -58,6 +68,12 @@ struct MatrixLowerFiller: public MatrixFiller {
 template<size_t nodes, size_t gps, size_t dimension>
 struct MatrixFullFiller: public MatrixFiller {
 	using MatrixFiller::MatrixFiller;
+
+	void move(int n)
+	{
+		local += n;
+		position += n * nodes * dimension * nodes * dimension;
+	}
 
 	void operator()()
 	{
@@ -86,7 +102,8 @@ struct VectorFiller: public ActionOperator {
 
 	void move(int n)
 	{
-
+		rhs += n;
+		position += n * nodes * dimension;
 	}
 
 	void operator()()

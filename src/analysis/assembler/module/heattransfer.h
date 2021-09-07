@@ -82,7 +82,7 @@ public:
 	ParametersElementNodeFunction heatSource;
 
 	ParametersConvection convection;
-	ParametersBoundaryFunction dirichlet, temperature, heatFlow, heatFlux, q;
+	ParametersBoundaryFunction dirichlet, heatFlow, heatFlux, q;
 
 	ParametersElements<1> elements;
 	ParametersElements<1> elementsSimd;
@@ -99,8 +99,11 @@ public:
 protected:
 	void initTemperature();
 	void initParameters();
+	void initNames();
 	void printVolume();
 	void printVersions();
+
+	void _evaluate();
 };
 
 }

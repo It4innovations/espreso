@@ -25,6 +25,8 @@ public:
 		clear();
 	}
 
+	void info(const Matrix_Distributed<Matrix_CSR, T> &A) const;
+
 	bool set(const Matrix_Distributed<Matrix_CSR, T> &A);
 	bool update(const Matrix_Distributed<Matrix_CSR, T> &A);
 	bool solve(const Vector_Distributed<Vector_Dense, T> &b, Vector_Distributed<Vector_Dense, T> &x);

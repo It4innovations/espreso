@@ -87,6 +87,23 @@ bool _call(MKLPDSS<T> &mklpdss, esint phase)
 }
 
 template<typename T>
+void _info(const Matrix_Distributed<Matrix_CSR, T> &A)
+{
+	eslog::info("     == LINEAR SOLVER :: MKL                      TYPE :: PARALLEL DIRECT SPARSE SOLVER == \n");
+	switch (A.cluster.type) {
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+		eslog::info("     == MATRIX TYPE ::                                 REAL SYMMETRIC POSITIVE DEFINITE == \n");
+		break;
+	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
+		eslog::info("     == MATRIX TYPE ::                                        REAL SYMMETRIC INDEFINITE == \n");
+		break;
+	case Matrix_Type::REAL_UNSYMMETRIC:
+		eslog::info("     == MATRIX TYPE ::                        REAL NONSYMMETRIC (STRUCTURALY SYMMETRIC) == \n");
+		break;
+	}
+}
+
+template<typename T>
 bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 {
 #ifdef HAVE_MKLPDSS
@@ -112,18 +129,10 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 	mklpdss.external->msglvl = 0;
 	mklpdss.external->comm = MPI_Comm_c2f(info::mpi::comm);
 
-	eslog::solver("     - ---- LINEAR SOLVER -------------------------------------------------------------- -\n");
-	eslog::solver("     - | SOLVER ::     MKL                       TYPE :: PARALLEL DIRECT SPARSE SOLVER | -\n");
 	switch (A.cluster.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-		eslog::solver("     - | MATRIX TYPE ::                               REAL SYMMETRIC POSITIVE DEFINITE | -\n");
-		mklpdss.external->mtype = 2; break;
-	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
-		eslog::solver("     - | MATRIX TYPE ::                                      REAL SYMMETRIC INDEFINITE | -\n");
-		mklpdss.external->mtype = -2; break;
-	case Matrix_Type::REAL_UNSYMMETRIC:
-		eslog::solver("     - | MATRIX TYPE ::                      REAL NONSYMMETRIC (STRUCTURALY SYMMETRIC) | -\n");
-		mklpdss.external->mtype = 1; break;
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE: mklpdss.external->mtype =  2; break;
+	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:        mklpdss.external->mtype = -2; break;
+	case Matrix_Type::REAL_UNSYMMETRIC:                 mklpdss.external->mtype =  1; break;
 	}
 
 	// pick only upper triangle (since composer does not set correct dirichlet in symmetric matrices)
@@ -163,7 +172,7 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 		}
 	}
 	bool status = _call(mklpdss, 11);
-	eslog::solver("     - | SYMBOLIC FACTORIZATION                                             %8.3f s | -\n", eslog::time() - start);
+	eslog::solver("       - SYMBOLIC FACTORIZATION                                             %8.3f s -  \n", eslog::time() - start);
 	return status;
 #endif
 }
@@ -191,7 +200,7 @@ bool _update(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 		}
 	}
 	bool status = _call(mklpdss, 22);
-	eslog::solver("     - | NUMERICAL FACTORIZATION                                            %8.3f s | -\n", eslog::time() - start);
+	eslog::solver("       - NUMERICAL FACTORIZATION                                            %8.3f s -  \n", eslog::time() - start);
 	return status;
 #endif
 }
@@ -206,8 +215,7 @@ bool _solve(MKLPDSS<T> &mklpdss, const Vector_Distributed<Vector_Dense, T> &b, V
 
 	bool status = _call(mklpdss, 33); // solve at once
 //	_data.x.scatterToUpper();
-	eslog::solver("     - | SOLVER TIME                                                        %8.3f s | -\n", eslog::time() - start);
-	eslog::solver("     - --------------------------------------------------------------------------------- -\n");
+	eslog::solver("       - SOLVER TIME                                                        %8.3f s -  \n", eslog::time() - start);
 	return status;
 #endif
 }
@@ -219,6 +227,9 @@ void _clear(MKLPDSS<T> &mklpdss)
 	delete mklpdss.external;
 #endif
 }
+
+template<> void MKLPDSS<double>::info(const Matrix_Distributed<Matrix_CSR, double> &A) const { _info(A); }
+template<> void MKLPDSS<std::complex<double> >::info(const Matrix_Distributed<Matrix_CSR, std::complex<double> > &A) const { _info(A); }
 
 template<> bool MKLPDSS<double>::set(const Matrix_Distributed<Matrix_CSR, double> &A) { return _set(*this, A); }
 template<> bool MKLPDSS<std::complex<double> >::set(const Matrix_Distributed<Matrix_CSR, std::complex<double> > &A) { return _set(*this, A); }

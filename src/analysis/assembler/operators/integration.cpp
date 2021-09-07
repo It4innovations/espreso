@@ -33,19 +33,21 @@ template <class Module>
 void _boundaryIntegration(Module &module)
 {
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-		module.controller.addInput(module.integration.boundary.jacobian.regions[r], module.coords.boundary.node.regions[r], module.integration.boundary.dN.regions[r]);
-		module.controller.prepare(module.integration.boundary.jacobian.regions[r]);
+		if (info::mesh->boundaryRegions[r]->dimension) {
+			module.controller.addInput(module.integration.boundary.jacobian.regions[r], module.coords.boundary.node.regions[r], module.integration.boundary.dN.regions[r]);
+			module.controller.prepare(module.integration.boundary.jacobian.regions[r]);
 
-		for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
-			if (info::mesh->boundaryRegions[r]->dimension == 2) {
-				module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, BoundaryFaceJacobian>(r, interval, module.controller, module.coords.boundary.node.regions[r], module.integration.boundary.dN.regions[r], module.integration.boundary.jacobian.regions[r]));
-			}
-			if (info::mesh->boundaryRegions[r]->dimension == 1) {
-				if (info::mesh->dimension == 3) {
-					module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, BoundaryEdge3DJacobian>(r, interval, module.controller, module.coords.boundary.node.regions[r], module.integration.boundary.dN.regions[r], module.integration.boundary.jacobian.regions[r]));
+			for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
+				if (info::mesh->boundaryRegions[r]->dimension == 2) {
+					module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, BoundaryFaceJacobian>(r, interval, module.controller, module.coords.boundary.node.regions[r], module.integration.boundary.dN.regions[r], module.integration.boundary.jacobian.regions[r]));
 				}
-				if (info::mesh->dimension == 2) {
-					module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, BoundaryEdge2DJacobian>(r, interval, module.controller, module.coords.boundary.node.regions[r], module.integration.boundary.dN.regions[r], module.integration.boundary.jacobian.regions[r]));
+				if (info::mesh->boundaryRegions[r]->dimension == 1) {
+					if (info::mesh->dimension == 3) {
+						module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, BoundaryEdge3DJacobian>(r, interval, module.controller, module.coords.boundary.node.regions[r], module.integration.boundary.dN.regions[r], module.integration.boundary.jacobian.regions[r]));
+					}
+					if (info::mesh->dimension == 2) {
+						module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, BoundaryEdge2DJacobian>(r, interval, module.controller, module.coords.boundary.node.regions[r], module.integration.boundary.dN.regions[r], module.integration.boundary.jacobian.regions[r]));
+					}
 				}
 			}
 		}

@@ -8,6 +8,8 @@
 
 namespace espreso {
 
+namespace step { struct Step; }
+
 class AX_HeatSteadyStateLinear;
 class AX_HeatSteadyStateNonLinear;
 class AX_AcousticRealLinear;
@@ -35,6 +37,8 @@ struct AX_LinearSystem {
 
 	virtual ~AX_LinearSystem() {}
 
+	virtual void info() const {};
+
 	virtual void init(AX_AcousticRealLinear       *analysis) =0;
 	virtual void init(AX_HeatSteadyStateLinear    *analysis) =0;
 	virtual void init(AX_HeatSteadyStateNonLinear *analysis) =0;
@@ -46,8 +50,8 @@ struct AX_LinearSystem {
 //	virtual void init(AX_StructuralMechanicsSteadyStateLinear     *analysis) =0;
 //	virtual void init(AX_StructuralMechanicsTransientLinear       *analysis) =0;
 
-	virtual void update(AX_Acoustic     &assembler) =0;
-	virtual void update(AX_HeatTransfer &assembler) =0;
+	virtual void update(step::Step &step, AX_Acoustic     &assembler) =0;
+	virtual void update(step::Step &step, AX_HeatTransfer &assembler) =0;
 //	virtual void update(AX_HeatSteadyStateNonLinear *analysis, bool A, bool b) =0;
 //	virtual void update(AX_HeatTransientLinear      *analysis, bool A, bool b) =0;
 //	virtual void update(AX_HeatTransientNonLinear   *analysis, bool A, bool b) =0;
@@ -56,7 +60,7 @@ struct AX_LinearSystem {
 //	virtual void update(AX_StructuralMechanicsSteadyStateLinear     *analysis, bool A, bool b) =0;
 //	virtual void update(AX_StructuralMechanicsTransientLinear       *analysis, bool A, bool b) =0;
 
-	virtual bool solve() =0;
+	virtual bool solve(step::Step &step) =0;
 
 	Template assembler, solver;
 };

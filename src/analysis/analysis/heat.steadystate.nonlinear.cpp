@@ -18,7 +18,7 @@
 using namespace espreso;
 
 AX_HeatSteadyStateNonLinear::AX_HeatSteadyStateNonLinear(HeatTransferGlobalSettings &gsettings, HeatTransferLoadStepConfiguration &configuration)
-: gsettings(gsettings), configuration(configuration), assembler{nullptr, gsettings, configuration}, scheme{}, system{}
+: gsettings(gsettings), configuration(configuration), assembler{nullptr, gsettings, configuration}, solver(configuration.nonlinear_solver), scheme{}, system{}
 
 {
 
@@ -45,6 +45,7 @@ void AX_HeatSteadyStateNonLinear::init()
 	case LoadStepSolverConfiguration::SOLVER::WSMP:    system = new AX_DirectSystem<double>(configuration.wsmp); break;
 	}
 	system->init(this);
+	solver.init(system);
 	scheme.init(system);
 	assembler.init(scheme);
 
@@ -53,29 +54,18 @@ void AX_HeatSteadyStateNonLinear::init()
 	info::mesh->output->updateMonitors(step::TYPE::TIME);
 }
 
-void AX_HeatSteadyStateNonLinear::run()
+void AX_HeatSteadyStateNonLinear::run(step::Step &step)
 {
 	step::Time time;
 	scheme.setTime(time, configuration.duration_time);
 	Variable::list.global["TIME"].val = &time.current;
 
-	assembler.evaluate();
-	scheme.composeSystem(system);
-	assembler.fillDirichlet(*system->solver.dirichlet);
+	solver.run(step, time, assembler, scheme, system);
 
-	scheme.storeScheme(time);
-
-	system->update(assembler);
-	system->solve();
-
-	scheme.extractSolution(system);
-	scheme.storeSolution(time);
-
-	assembler.updateSolution();
 	info::mesh->output->updateSolution(time);
 
 	eslog::info(" ============================================================================================= \n");
-	eslog::info(" = ================================================================= run time %12.3f s =\n\n", eslog::duration());
+	eslog::info(" =================================================================== run time %12.3f s =\n\n", eslog::duration());
 }
 
 

@@ -5,6 +5,7 @@
 #include "analysis.h"
 #include "analysis/assembler/module/heattransfer.h"
 #include "analysis/scheme/steadystate.h"
+#include "analysis/solver/newtonraphson.h"
 #include "analysis/linearsystem/linearsystem.h"
 
 namespace espreso {
@@ -19,12 +20,13 @@ public:
 	~AX_HeatSteadyStateNonLinear();
 
 	void init();
-	void run();
+	void run(step::Step &step);
 
 	HeatTransferGlobalSettings &gsettings;
 	HeatTransferLoadStepConfiguration &configuration;
 
 	AX_HeatTransfer assembler;
+	AX_NewtonRaphson solver;
 	AX_SteadyState scheme;
 
 	AX_LinearSystem<double> *system;

@@ -94,14 +94,19 @@ namespace math {
 	template <typename T> void scale(const T &alpha, Matrix_CSR<T>    &x) { scale(x.nnz            , alpha, x.vals, 1); }
 	template <typename T> void scale(const T &alpha, Matrix_IJV<T>    &x) { scale(x.nnz            , alpha, x.vals, 1); }
 
-	// x = alpha * x + beta * y
+	// x = alpha * y
 	template <typename T> void add(Vector_Dense<T>  &x, const T &alpha, const Vector_Dense<T>  &y) { add(x.size           , x.vals, 1, alpha, y.vals, 1); }
 	template <typename T> void add(Vector_Sparse<T> &x, const T &alpha, const Vector_Sparse<T> &y) { add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
 	template <typename T> void add(Matrix_Dense<T>  &x, const T &alpha, const Matrix_Dense<T>  &y) { add(x.nrows * x.ncols, x.vals, 1, alpha, y.vals, 1); }
 	template <typename T> void add(Matrix_CSR<T>    &x, const T &alpha, const Matrix_CSR<T>    &y) { add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
 	template <typename T> void add(Matrix_IJV<T>    &x, const T &alpha, const Matrix_IJV<T>    &y) { add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
+	template <typename T> void add(Vector_Sparse<T> &x, const T &alpha, const Vector_Dense<T>  &y) {
+		for (esint i = 0; i < x.nnz; ++i) {
+			x.vals[i] += alpha * y.vals[x.indices[i]];
+		}
+	}
 
-	// x += beta * y [.. offset -> size  / step]
+	// x += alpha * y [.. offset -> size  / step]
 	template <typename T> void add(Vector_Dense<T>  &x, const T &alpha, const Vector_Dense<T>  &y, int offset, int size, int step);
 	template <typename T> void add(Vector_Sparse<T> &x, const T &alpha, const Vector_Sparse<T> &y, int offset, int size, int step);
 	template <typename T> void add(Matrix_Dense<T>  &x, const T &alpha, const Matrix_Dense<T>  &y, int rowOffset, int colOffset, int size, int step);
@@ -122,11 +127,11 @@ namespace math {
 	template <typename T> void sum(Matrix_CSR<T>    &x, const T &alpha, const Matrix_CSR<T>    &y, const T &beta, const Matrix_CSR<T>    &z, int rowOffset, int colOffset, int size, int step);
 	template <typename T> void sum(Matrix_IJV<T>    &x, const T &alpha, const Matrix_IJV<T>    &y, const T &beta, const Matrix_IJV<T>    &z, int rowOffset, int colOffset, int size, int step);
 
-	template <typename T> void dot(const Vector_Dense<T>  &x, const Vector_Dense<T>  &y) { dot(x.size, x.vals, 1, y.vals, 1); }
-	template <typename T> void dot(const Vector_Sparse<T> &x, const Vector_Sparse<T> &y) { dot(x.nnz , x.vals, 1, y.vals, 1); }
+	template <typename T> T dot(const Vector_Dense<T>  &x, const Vector_Dense<T>  &y) { return dot(x.size, x.vals, 1, y.vals, 1); }
+	template <typename T> T dot(const Vector_Sparse<T> &x, const Vector_Sparse<T> &y) { return dot(x.nnz , x.vals, 1, y.vals, 1); }
 
-	template <typename T> void norm(const Vector_Dense<T>  &x) { norm(x.size, x.vals, 1); }
-	template <typename T> void norm(const Vector_Sparse<T> &x) { norm(x.nnz , x.vals, 1); }
+	template <typename T> T norm(const Vector_Dense<T>  &x) { return norm(x.size, x.vals, 1); }
+	template <typename T> T norm(const Vector_Sparse<T> &x) { return norm(x.nnz , x.vals, 1); }
 
 	template <typename T> T max(const Vector_Dense<T> &x)
 	{

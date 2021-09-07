@@ -5,6 +5,7 @@
 #include "vector_base.h"
 #include "math2/math2.h"
 #include "math2/utils/dofs_distribution.h"
+#include "wrappers/mpi/communication.h"
 
 #include <vector>
 
@@ -97,9 +98,16 @@ public:
 		}
 	}
 
+	void addTo(const T &alpha, Vector_Sparse<T> *a) const
+	{
+		math::add(*a, alpha, cluster);
+	}
+
 	double norm()
 	{
-		return 0;
+		double dot = math::dot(cluster.size - distribution.halo.size(), cluster.vals + distribution.halo.size(), 1, cluster.vals + distribution.halo.size(), 1);
+		Communication::allReduce(&dot, NULL, 1, MPI_DOUBLE, MPI_SUM);
+		return std::sqrt(dot);
 	}
 
 	double max()

@@ -18,6 +18,7 @@
 #include "basis/utilities/sysutils.h"
 #include "config/ecf/linearsolver/mklpdss.h"
 #include "esinfo/ecfinfo.h"
+#include "esinfo/eslog.h"
 #include "math2/generalization/matrix_distributed.h"
 #include "wrappers/mklpdss/w.mkl.pdss.h"
 
@@ -26,7 +27,7 @@ namespace espreso {
 template <typename T>
 struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 
-	AX_MKLPDSSSystem(MKLPDSSConfiguration &configuration): mklpdss(configuration) {}
+	AX_MKLPDSSSystem(MKLPDSSConfiguration &configuration): mklpdss(configuration), set(true) {}
 
 	void setMapping(Matrix_Base<T> *A) const
 	{
@@ -36,6 +37,11 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 	void setMapping(Vector_Base<T> *x) const
 	{
 		assembler.pattern.setMap(dynamic_cast<Vector_Distributed<Vector_Dense, T>*>(x));
+	}
+
+	void info() const
+	{
+		mklpdss.info(solver.A);
 	}
 
 	void init(AX_AcousticRealLinear *analysis)
@@ -125,29 +131,33 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 //
 //	}
 
-	void _update()
+	void _update(step::Step &step)
 	{
-		mklpdss.set(solver.A);
+		if (set) {
+			mklpdss.set(solver.A);
+			set = false;
+		}
 		if (solver.A.touched || solver.b.touched || solver.dirichlet.touched) {
 			setDirichlet(solver.A, solver.b, solver.dirichlet);
 			mklpdss.update(solver.A);
 		}
 
 		if (info::ecf->output.print_matrices) {
-			math::store(solver.A, utils::filename(utils::debugDirectory() + "/system", "A").c_str());
-			math::store(solver.b, utils::filename(utils::debugDirectory() + "/system", "b").c_str());
-			math::store(solver.dirichlet, utils::filename(utils::debugDirectory() + "/system", "dirichlet").c_str());
+			eslog::storedata(" STORE: system/{A, b, dirichlet}\n");
+			math::store(solver.A, utils::filename(utils::debugDirectory(step) + "/system", "A").c_str());
+			math::store(solver.b, utils::filename(utils::debugDirectory(step) + "/system", "b").c_str());
+			math::store(solver.dirichlet, utils::filename(utils::debugDirectory(step) + "/system", "dirichlet").c_str());
 		}
 	}
 
-	void update(AX_Acoustic &assembler)
+	void update(step::Step &step, AX_Acoustic &assembler)
 	{
-		_update();
+		_update(step);
 	}
 
-	void update(AX_HeatTransfer &assembler)
+	void update(step::Step &step, AX_HeatTransfer &assembler)
 	{
-		_update();
+		_update(step);
 	}
 
 //	void prepare(AX_HeatSteadyStateNonLinear *analysis)
@@ -184,11 +194,12 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 //
 //	}
 
-	bool solve()
+	bool solve(step::Step &step)
 	{
 		if (mklpdss.solve(solver.b, solver.x)) {
 			if (info::ecf->output.print_matrices) {
-				math::store(solver.x, utils::filename(utils::debugDirectory() + "/system", "x").c_str());
+				eslog::storedata(" STORE: system/{x}\n");
+				math::store(solver.x, utils::filename(utils::debugDirectory(step) + "/system", "x").c_str());
 			}
 			return true;
 		}
@@ -204,6 +215,7 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 	} assembler, solver;
 
 	MKLPDSS<T> mklpdss;
+	bool set;
 };
 
 void setDirichlet(Matrix_Distributed<Matrix_CSR, double> &A, Vector_Distributed<Vector_Dense, double> &b, const Vector_Sparse<double> &dirichlet);

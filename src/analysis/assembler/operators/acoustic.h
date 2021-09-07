@@ -53,6 +53,7 @@ struct Stiffness2DAcoustic: public AcousticStiffness {
 
 	void operator()()
 	{
+		std::fill(stiffness.data, stiffness.data + stiffness.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			ADDMN2M2N<nodes>(determinant[gpindex] * weight[gpindex], dND.data + 2 * nodes * gpindex, stiffness.data);
 		}
@@ -65,6 +66,7 @@ struct Stiffness3DAcoustic: public AcousticStiffness {
 
 	void operator()()
 	{
+		std::fill(stiffness.data, stiffness.data + stiffness.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			ADDMN3M3N<nodes>(determinant[gpindex] * weight[gpindex], dND.data + 3 * nodes * gpindex, stiffness.data);
 		}
@@ -104,6 +106,7 @@ struct AcousticMass: public ActionOperator {
 
 	void operator()()
 	{
+		std::fill(mass.data, mass.data + mass.inc, 0);
 		// double kappa = omega / speedOfSound
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			ADDMN1M1N<nodes>(determinant[gpindex] * weight[gpindex] /*  * kappa[gpindex] * kappa[gpindex] */, N.data + nodes * gpindex, mass.data);
@@ -119,13 +122,12 @@ struct AcousticQ: public ActionOperator {
 	  impedance(impedance, interval),
 	  q(q, interval)
 	{
-//		if (update) {
-//			std::fill((q.data->begin() + interval)->data(), (q.data->begin() + interval + 1)->data(), 0);
-//		}
+
 	}
 
 	void operator()()
 	{
+		std::fill(q.data, q.data + q.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			q.data[gpindex] += g.data[gpindex] / area;
 		}
@@ -164,6 +166,7 @@ struct AcousticRHS2D: public ActionOperator {
 
 	void operator()()
 	{
+		std::fill(rhs.data, rhs.data + rhs.inc, 0);
 		for (size_t n = 0; n < nodes; ++n) {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * q.data[gpindex] * N.data[gpindex * nodes + n];
@@ -195,9 +198,7 @@ struct AcousticRHS3D: public ActionOperator {
 	  q(q, interval),
 	  rhs(rhs, interval)
 	{
-//		if (update) {
-//			std::fill((rhs.data->begin() + interval)->data(), (rhs.data->begin() + interval + 1)->data(), 0);
-//		}
+
 	}
 
 	InputParameterIterator N, weight, J;
@@ -206,6 +207,7 @@ struct AcousticRHS3D: public ActionOperator {
 
 	void operator()()
 	{
+		std::fill(rhs.data, rhs.data + rhs.inc, 0);
 		for (size_t n = 0; n < nodes; ++n) {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * q.data[gpindex] * N.data[gpindex * nodes + n];
@@ -246,9 +248,7 @@ struct AcousticsBoundaryMass: public ActionOperator {
 	  impedance(impedance, interval),
 	  boundaryMass(boundaryMass, interval)
 	{
-//		if (update) {
-//			std::fill((boundaryMass.data->begin() + interval)->data(), (boundaryMass.data->begin() + interval + 1)->data(), 0);
-//		}
+
 	}
 
 	void operator++()
@@ -265,6 +265,7 @@ struct AcousticsBoundaryMass: public ActionOperator {
 
 	void operator()()
 	{
+		std::fill(boundaryMass.data, boundaryMass.data + boundaryMass.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			ADDMN1M1N<nodes>(determinant[gpindex] * weight[gpindex], N.data + nodes * gpindex, boundaryMass.data);
 		}

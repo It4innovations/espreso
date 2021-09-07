@@ -69,8 +69,11 @@ void thermalConductivity(AX_HeatTransfer &module)
 //			}
 		}
 		switch (mat->thermal_conductivity.model) {
-			case ThermalConductivityConfiguration::MODEL::ISOTROPIC: module.material.conductivity.update[interval] = -1; break;
-			default: module.material.conductivityIsotropic.update[interval] = -1; break;
+			case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
+				module.material.conductivity.update[interval] = -1;
+				break;
+			default:
+				module.material.conductivityIsotropic.update[interval] = -1;
 		}
 	}
 }

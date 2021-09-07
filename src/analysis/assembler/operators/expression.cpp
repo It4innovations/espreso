@@ -85,39 +85,4 @@ void fromExpression(AX_Acoustic &module, BoundaryParameterPack &parameter, Exter
 	_fromExpression<AX_Acoustic, ExpressionsToGPs>(module, parameter, values);
 }
 
-template <template<size_t, size_t> typename Operator>
-void _evaluateFromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementValue &value)
-{
-	if (std::all_of(value.evaluator.begin(), value.evaluator.end(), [] (const Evaluator *ev) { return ev == NULL; })) {
-		return;
-	}
-
-	module.controller.prepare(parameter);
-
-	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-		for (int d = 0; d < value.dimension && value.evaluator[i * value.dimension + d]; ++d) {
-//			if (value.evaluator[i * value.dimension + d]->)
-			std::unique_ptr<ActionOperator> op(instantiate<AX_HeatTransfer::NGP, Operator>(i, module.controller, parameter, value.evaluator[i * value.dimension + d], d, value.dimension));
-			size_t elementsInInterval = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
-
-			for (size_t element = 0; element < elementsInInterval; ++element) {
-				if(element == 0 || !op->isconst) {
-					(*op)();
-					++(*op);
-				}
-			}
-		}
-	}
-}
-
-void evaluateFromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementNodesValue &value)
-{
-	_evaluateFromExpression<ExpressionsToNodes>(module, parameter, value);
-}
-
-void evaluateFromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementGPsValue &value)
-{
-	_evaluateFromExpression<ExpressionsToGPs>(module, parameter, value);
-}
-
 }

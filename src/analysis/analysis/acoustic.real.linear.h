@@ -18,7 +18,7 @@ public:
 	AX_AcousticRealLinear(AcousticGlobalSettings &gsettings, AcousticLoadStepConfiguration &configuration);
 
 	void init();
-	void run();
+	void run(step::Step &step);
 
 	AcousticGlobalSettings &gsettings;
 	AcousticLoadStepConfiguration &configuration;

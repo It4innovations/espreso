@@ -3,6 +3,7 @@
 #define SRC_MATH2_GENERALIZATION_VECTOR_BASE_H_
 
 #include "analysis/composer/elementmapping.h"
+#include "math2/primitives/vector_sparse.h"
 
 #include <vector>
 
@@ -29,6 +30,8 @@ public:
 	virtual void add(const T &alpha, const Vector_Base *a, int offset, int size, int step) =0;
 	virtual void sum(const T &alpha, const Vector_Base *a, const T &beta, const Vector_Base *b) =0;
 	virtual void sum(const T &alpha, const Vector_Base *a, const T &beta, const Vector_Base *b, int offset, int size, int step) =0;
+
+	virtual void addTo(const T &alpha, Vector_Sparse<T> *a) const =0;
 
 	virtual double norm() =0;
 	virtual double max() =0;

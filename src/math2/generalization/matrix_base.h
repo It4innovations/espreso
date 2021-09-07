@@ -16,6 +16,8 @@ public:
 
 	virtual ~Matrix_Base() {};
 
+	virtual void commit() =0;
+
 //	virtual Matrix_Base* copy() =0;
 	virtual Matrix_Base* copyPattern() =0;
 	virtual void store(const char *file) =0;

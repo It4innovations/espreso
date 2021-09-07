@@ -26,9 +26,7 @@ struct Stiffness: public ActionOperator {
 	  thickness(thickness, interval),
 	  stiffness(stiffness, interval)
 	{
-		if (update) {
-			std::fill((stiffness.data->begin() + interval)->data(), (stiffness.data->begin() + interval + 1)->data(), 0);
-		}
+
 	}
 
 	InputParameterIterator dND, weight, determinant, conductivity, xi, thickness;
@@ -60,6 +58,7 @@ struct Stiffness2DHeatIsotropic: public Stiffness {
 
 	void operator()()
 	{
+		std::fill(stiffness.data, stiffness.data + stiffness.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			ADDMN2M2N<nodes>(thickness[gpindex] * xi[gpindex] * determinant[gpindex] * weight[gpindex] * conductivity[gpindex], dND.data + 2 * nodes * gpindex, stiffness.data);
 		}
@@ -72,6 +71,7 @@ struct Stiffness2DHeat: public Stiffness {
 
 	void operator()()
 	{
+		std::fill(stiffness.data, stiffness.data + stiffness.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			ADDMN2M22M2N<nodes>(thickness[gpindex] * xi[gpindex] * determinant[gpindex] * weight[gpindex], conductivity.data + 4 * gpindex, dND.data + 2 * nodes * gpindex, stiffness.data);
 		}
@@ -84,6 +84,7 @@ struct Stiffness3DHeatIsotropic: public Stiffness {
 
 	void operator()()
 	{
+		std::fill(stiffness.data, stiffness.data + stiffness.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			ADDMN3M3N<nodes>(xi[gpindex] * determinant[gpindex] * weight[gpindex] * conductivity[gpindex], dND.data + 3 * nodes * gpindex, stiffness.data);
 		}
@@ -96,6 +97,7 @@ struct Stiffness3DHeat: public Stiffness {
 
 	void operator()()
 	{
+		std::fill(stiffness.data, stiffness.data + stiffness.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			ADDMN3M33M3N<nodes>(xi[gpindex] * determinant[gpindex] * weight[gpindex], conductivity.data + 9 * gpindex, dND.data + 3 * nodes * gpindex, stiffness.data);
 		}
@@ -110,13 +112,12 @@ struct HeatQ: public ActionOperator {
 	  htc(htc, interval), extTemp(extTemp, interval),
 	  q(q, interval)
 	{
-//		if (update) {
-//			std::fill((q.data->begin() + interval)->data(), (q.data->begin() + interval + 1)->data(), 0);
-//		}
+
 	}
 
 	void operator()()
 	{
+		std::fill(q.data, q.data + q.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			q.data[gpindex] += heatFlow.data[gpindex] / area;
 			q.data[gpindex] += heatFlux.data[gpindex];
@@ -161,6 +162,7 @@ struct HeatRHS2D: public ActionOperator {
 
 	void operator()()
 	{
+		std::fill(rhs.data, rhs.data + rhs.inc, 0);
 		for (size_t n = 0; n < nodes; ++n) {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * q.data[gpindex] * N.data[gpindex * nodes + n];
@@ -195,9 +197,7 @@ struct HeatRHS3D: public ActionOperator {
 	  q(q, interval),
 	  rhs(rhs, interval)
 	{
-//		if (update) {
-//			std::fill((rhs.data->begin() + interval)->data(), (rhs.data->begin() + interval + 1)->data(), 0);
-//		}
+
 	}
 
 	InputParameterIterator N, weight, J;
@@ -206,6 +206,7 @@ struct HeatRHS3D: public ActionOperator {
 
 	void operator()()
 	{
+		std::fill(rhs.data, rhs.data + rhs.inc, 0);
 		for (size_t n = 0; n < nodes; ++n) {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * q.data[gpindex] * N.data[gpindex * nodes + n];

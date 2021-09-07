@@ -85,6 +85,17 @@ std::string debugDirectory()
 	return path.str();
 }
 
+std::string debugDirectory(step::Step &step)
+{
+	std::stringstream path;
+	path << info::ecf->outpath << "/DEBUG";
+	path << "/loadstep" << step.loadstep;
+	path << "/substep" << step.substep;
+	path << "/iteration" << step.iteration;
+	path << "/" << info::mpi::rank;
+	return path.str();
+}
+
 std::string prepareFile(const std::string &directory, const std::string &name, int domain)
 {
 	createDirectory(directory);

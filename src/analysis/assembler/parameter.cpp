@@ -12,7 +12,7 @@
 
 using namespace espreso;
 
-ParameterData::ParameterData(PerElementSize mask, int intervals): size(mask), intervals(intervals), data(NULL)
+ParameterData::ParameterData(PerElementSize mask, int intervals): size(mask), data(NULL)
 {
 	isconst.resize(intervals, 1);
 	update.resize(intervals, 1);
@@ -28,6 +28,11 @@ ParameterData::~ParameterData()
 void ParameterData::setConstness(bool constness)
 {
 	std::fill(isconst.begin(), isconst.end(), constness);
+}
+
+void ParameterData::setUpdate(int value)
+{
+	std::fill(update.begin(), update.end(), value);
 }
 
 ExternalElementValue::ExternalElementValue(ParameterData &parameter)

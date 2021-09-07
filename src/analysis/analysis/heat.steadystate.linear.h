@@ -19,7 +19,7 @@ public:
 	~AX_HeatSteadyStateLinear();
 
 	void init();
-	void run();
+	void run(step::Step &step);
 
 	HeatTransferGlobalSettings &gsettings;
 	HeatTransferLoadStepConfiguration &configuration;

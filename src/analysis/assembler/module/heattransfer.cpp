@@ -82,8 +82,8 @@ void AX_HeatTransfer::initTemperature()
 		}
 		examineElementParameter("INITIAL TEMPERATURE", initialTemperature, temp.initial.node.externalValue);
 	}
-//	iterate();
-	evaluateFromExpression(*this, temp.initial.node, temp.initial.node.externalValue);
+	fromExpression(*this, temp.initial.node, temp.initial.node.externalValue);
+	_evaluate();
 
 //	for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
 //		AX_HeatTransfer::insertParameters(it->second.evaluator);
@@ -92,6 +92,7 @@ void AX_HeatTransfer::initTemperature()
 //	temp.initial.node.builder->buildAndExecute(*this);
 
 	averageEnodesToNodes(temp.initial.node, *ParametersTemperature::Initial::output);
+	ParametersTemperature::output->data = ParametersTemperature::Initial::output->data;
 
 //	if (info::mesh->dimension == 2 && info::ecf->heat_transfer_2d.init_temp_respect_bc) {
 //		CopyBoundaryRegionsSettingToNodes(configuration.temperature, *ParametersTemperature::Initial::output, "SET INITIAL TEMPERATURE ACCORDING TO DIRICHLET").buildAndExecute(*this);
@@ -167,6 +168,7 @@ void AX_HeatTransfer::init(AX_SteadyState &scheme)
 	rhs = scheme.f;
 	x = scheme.x;
 
+	initNames();
 	analyze();
 }
 
@@ -194,7 +196,7 @@ void AX_HeatTransfer::analyze()
 	elementCoordinates(*this);
 	elementIntegration(*this);
 
-	evaluate(); // fill coordinates, compute determinants
+	_evaluate(); // fill coordinates, compute determinants
 	printVolume();
 
 	initTemperature();
@@ -341,6 +343,7 @@ void AX_HeatTransfer::analyze()
 	}
 
 	gradient.xi.resize(1);
+	controller.prepare(gradient.xi);
 	heatStiffness(*this);
 
 	if (configuration.temperature.size()) {
@@ -374,7 +377,7 @@ void AX_HeatTransfer::analyze()
 void AX_HeatTransfer::evaluate()
 {
 	controller.setUpdate();
-	printVersions();
+//	printVersions();
 
 	if (K != nullptr) {
 		K->fill(0);
@@ -392,16 +395,97 @@ void AX_HeatTransfer::evaluate()
 	iterate();
 
 	controller.resetUpdate();
+
+	if (temp.gp.data) {
+		std::cout << "T: " << *temp.gp.data << "\n";
+	}
+
+	if (material.conductivityIsotropic.data) {
+		std::cout << "C: " << *material.conductivityIsotropic.data << "\n";
+	}
+
+	if (elements.stiffness.data) {
+		std::cout << "K: " << *elements.stiffness.data << "\n";
+	}
+}
+
+void AX_HeatTransfer::_evaluate()
+{
+	controller.setUpdate();
+	iterate();
+	controller.resetUpdate();
 }
 
 void AX_HeatTransfer::updateSolution()
 {
 	x->store(ParametersTemperature::output->data);
+	temp.node.setUpdate(1);
+}
+
+void AX_HeatTransfer::initNames()
+{
+	integration.weight.name = "integration.weight";
+	integration.N.name = "integration.N";
+	integration.dN.name = "integration.dN";
+	integration.dND.name = "integration.dND";
+	integration.jacobiDeterminant.name = "integration.jacobiDeterminant";
+	integration.jacobiInversion.name = "integration.jacobiInversion";
+
+	coords.node.name = "coords.node";
+	coords.gp.name = "coords.gp";
+
+	thickness.gp.name = "thickness.gp";
+
+	cooSystem.cartesian2D.name = "cooSystem.cartesian2D";
+	cooSystem.cartesian3D.name = "cooSystem.cartesian3D";
+	cooSystem.cylindric.name = "cooSystem.cylindric";
+	cooSystem.spherical.name = "cooSystem.spherical";
+
+	material.model.isotropic.name = "material.model.isotropic";
+	material.model.diagonal.name = "material.model.diagonal";
+	material.model.symmetric2D.name = "material.model.symmetric2D";
+	material.model.symmetric3D.name = "material.model.symmetric3D";
+	material.model.anisotropic.name = "material.model.anisotropic";
+
+	material.conductivityIsotropic.name = "material.conductivityIsotropic";
+	material.conductivity.name = "material.conductivity";
+	material.density.name = "material.density";
+	material.heatCapacity.name = "material.heatCapacity";
+	material.mass.name = "material.mass";
+
+	temp.initial.node.name = "temp.initial.node";
+	temp.initial.gp.name = "temp.initial.gp";
+	temp.node.name = "temp.node";
+	temp.gp.name = "temp.gp";
+
+	translationMotions.gp.name = "translationMotions.gp";
+	translationMotions.stiffness.name = "translationMotions.stiffness";
+	translationMotions.rhs.name = "translationMotions.rhs";
+
+	elements.stiffness.name = "elements.stiffness";
+	elements.mass.name = "elements.mass";
+	elements.rhs.name = "elements.rhs";
+
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		integration.boundary.N.regions[r].name = info::mesh->boundaryRegions[r]->name + "::integration.boundary.N";
+		integration.boundary.dN.regions[r].name = info::mesh->boundaryRegions[r]->name + "::integration.boundary.dN";
+		integration.boundary.weight.regions[r].name = info::mesh->boundaryRegions[r]->name + "::integration.boundary.weight";
+		integration.boundary.jacobian.regions[r].name = info::mesh->boundaryRegions[r]->name + "::integration.boundary.jacobian";
+
+		coords.boundary.node.regions[r].name = info::mesh->boundaryRegions[r]->name + "::coords.boundary.node";
+		coords.boundary.gp.regions[r].name = info::mesh->boundaryRegions[r]->name + "::coords.boundary.gp";
+
+		convection.heatTransferCoeficient.gp.regions[r].name = info::mesh->boundaryRegions[r]->name + "::convection.heatTransferCoeficient.gp";
+		convection.externalTemperature.gp.regions[r].name = info::mesh->boundaryRegions[r]->name + "::convection.externalTemperature.gp";
+
+		heatFlow.gp.regions[r].name = info::mesh->boundaryRegions[r]->name + "::heatFlow.gp";
+		heatFlux.gp.regions[r].name = info::mesh->boundaryRegions[r]->name + "::heatFlux.gp";
+		q.gp.regions[r].name = info::mesh->boundaryRegions[r]->name + "::q.gp";
+	}
 }
 
 void AX_HeatTransfer::printVersions()
 {
-	return;
 	printParameterStats("integration.weight", integration.weight);
 	printParameterStats("integration.N", integration.N);
 	printParameterStats("integration.dN", integration.dN);
@@ -461,6 +545,15 @@ void AX_HeatTransfer::printVersions()
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		printf("REGION: %s\n", info::mesh->boundaryRegions[r]->name.c_str());
+
+		printParameterStats("integration.boundary.N", integration.boundary.N.regions[r]);
+		printParameterStats("integration.boundary.dN", integration.boundary.dN.regions[r]);
+		printParameterStats("integration.boundary.weight", integration.boundary.weight.regions[r]);
+		printParameterStats("integration.boundary.jacobian", integration.boundary.jacobian.regions[r]);
+
+		printParameterStats("coords.boundary.node", coords.boundary.node.regions[r]);
+		printParameterStats("coords.boundary.gp", coords.boundary.gp.regions[r]);
+
 		printParameterStats("convection.heatTransferCoeficient.gp", convection.heatTransferCoeficient.gp.regions[r]);
 		printParameterStats("convection.externalTemperature.gp", convection.externalTemperature.gp.regions[r]);
 

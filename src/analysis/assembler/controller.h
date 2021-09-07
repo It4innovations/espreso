@@ -22,7 +22,7 @@ struct InputHolder {
 struct InputHolderParameterData: public InputHolder {
 	const ParameterData &p;
 
-	int updated(int interval) const { return p.update[interval]; }
+	int updated(int interval) const { return p.update[interval] == -1 ? 0 : p.update[interval]; }
 	InputHolderParameterData(const ParameterData &p): p(p) {}
 };
 
@@ -56,7 +56,7 @@ struct InputVariable: public InputHolder {
 };
 
 struct ParameterStatus {
-	ParameterStatus(const ParameterData& parameter): operators(parameter.intervals) {}
+	ParameterStatus(const ParameterData& parameter): operators(parameter.update.size()) {}
 
 	virtual ~ParameterStatus()
 	{
@@ -90,7 +90,8 @@ public:
 
 	void setUpdate()
 	{
-		for (auto param = parameters.begin(); param != parameters.end(); ++param) {
+		for (size_t i = 0; i < parameterOrder.size(); ++i) {
+			auto param = parameters.find(parameterOrder[i]);
 			for (size_t i = 0; i < param->first->update.size(); ++i) {
 				switch (param->first->update[i]) {
 				case -1: break; // -1 -> never update
@@ -101,6 +102,9 @@ public:
 					break;
 				default:
 					break;
+				}
+				for (size_t j = 0; j < param->second.operators[i].size(); ++j) {
+					param->second.operators[i][j]->update += param->first->update[i] == -1 ? 0 : param->first->update[i];
 				}
 			}
 		}
@@ -115,30 +119,9 @@ public:
 				}
 			}
 		}
-	}
-
-	bool getConstness(size_t interval)
-	{
-		return true;
-	}
-
-	template <typename T, typename ...Other>
-	typename std::enable_if<std::is_base_of<ParameterData, T>::value, bool>::type
-	getConstness(size_t interval, const T &parameter, Other&... other)
-	{
-		return parameter.isconst[interval] && getConstness(interval, other...);
-	}
-
-	template <typename T, typename ...Other>
-	typename std::enable_if<!std::is_base_of<ParameterData, T>::value, bool>::type
-	getConstness(size_t interval, const T &parameter, Other&... other)
-	{
-		return getConstness(interval, other...);
-	}
-
-	void addOperator(int interval, ParameterData &parameter, ActionOperator *op)
-	{
-		_get(parameter)->second.operators[interval].push_back(op);
+		for (size_t i = 0; i < actions.size(); ++i) {
+			actions[i]->update = false;
+		}
 	}
 
 	template <typename TEBoundaries, typename TEData>
@@ -165,13 +148,24 @@ public:
 		addInput(parameter, other...);
 	}
 
+	template <typename ...Parameters>
+	void addOperator(ActionOperator *op, size_t interval, Parameters&... parameters)
+	{
+		actions.push_back(op);
+		_addOperator(op, interval, parameters...);
+		op->isconst = _getConstness(interval, parameters...);
+	}
+
 protected:
+	std::vector<ParameterData*> parameterOrder;
 	std::unordered_map<ParameterData*, ParameterStatus> parameters;
+	std::vector<ActionOperator*> actions;
 
 	std::unordered_map<ParameterData*, ParameterStatus>::iterator _get(ParameterData &parameter)
 	{
 		auto it = parameters.find(&parameter);
 		if (it == parameters.end()) {
+			parameterOrder.push_back(&parameter);
 			return parameters.insert(std::make_pair(&parameter, ParameterStatus(parameter))).first;
 		}
 		return it;
@@ -215,6 +209,54 @@ protected:
 	{
 		parameter.isconst[interval] = false;
 		_get(parameter)->second.inputs.push_back(new InputVariable(interval, v));
+	}
+
+	template <typename T>
+	typename std::enable_if<std::is_base_of<ParameterData, T>::value>::type
+	_addOperator(T &parameter, ActionOperator *op, size_t interval)
+	{
+		auto it = parameters.find(&parameter);
+		if (it != parameters.end()) {
+			it->second.operators[interval].push_back(op);
+		}
+	}
+
+	template <typename T>
+	typename std::enable_if<!std::is_base_of<ParameterData, T>::value>::type
+	_addOperator(T &parameter, ActionOperator *op, size_t interval)
+	{
+
+	}
+
+	void _addOperator(ActionOperator *op, size_t interval)
+	{
+
+	}
+
+	template <typename Parameter, typename ...Other>
+	void _addOperator(ActionOperator *op, size_t interval, Parameter &parameter, Other&... other)
+	{
+		_addOperator(parameter, op, interval);
+		_addOperator(op, interval, other...);
+	}
+
+	bool _getConstness(size_t interval)
+	{
+		return true;
+	}
+
+	template <typename T, typename ...Other>
+	typename std::enable_if<std::is_base_of<ParameterData, T>::value, bool>::type
+	_getConstness(size_t interval, const T &parameter, Other&... other)
+	{
+		return parameter.isconst[interval] && _getConstness(interval, other...);
+	}
+
+	template <typename T, typename ...Other>
+	typename std::enable_if<!std::is_base_of<ParameterData, T>::value, bool>::type
+	_getConstness(size_t interval, const T &parameter, Other&... other)
+	{
+		return _getConstness(interval, other...);
 	}
 };
 

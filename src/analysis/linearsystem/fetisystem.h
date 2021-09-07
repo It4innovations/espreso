@@ -107,12 +107,12 @@ struct AX_FETISystem: AX_LinearSystem<T> {
 //
 //	}
 
-	void update(AX_Acoustic &assembler)
+	void update(step::Step &step, AX_Acoustic &assembler)
 	{
 
 	}
 
-	void update(AX_HeatTransfer &assembler)
+	void update(step::Step &step, AX_HeatTransfer &assembler)
 	{
 //		if (solver.A.touched || solver.b.touched || solver.dirichlet.touched) {
 			updateKernels(*this, assembler);
@@ -154,7 +154,7 @@ struct AX_FETISystem: AX_LinearSystem<T> {
 //
 //	}
 
-	bool solve()
+	bool solve(step::Step &step)
 	{
 		printf("FETI solve\n");
 		return false;

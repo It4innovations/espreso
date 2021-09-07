@@ -52,23 +52,20 @@ void AX_HeatSteadyStateLinear::init()
 	info::mesh->output->updateMonitors(step::TYPE::TIME);
 }
 
-void AX_HeatSteadyStateLinear::run()
+void AX_HeatSteadyStateLinear::run(step::Step &step)
 {
 	step::Time time;
 	scheme.setTime(time, configuration.duration_time);
 	Variable::list.global["TIME"].val = &time.current;
 
 	assembler.evaluate();
-	scheme.composeSystem(system);
+	scheme.composeSystem(step, system);
 	assembler.fillDirichlet(*system->solver.dirichlet);
 
-	scheme.storeScheme(time);
+	system->update(step, assembler);
+	system->solve(step);
 
-	system->update(assembler);
-	system->solve();
-
-	scheme.extractSolution(system);
-	scheme.storeSolution(time);
+	scheme.extractSolution(step, system);
 
 	assembler.updateSolution();
 	info::mesh->output->updateSolution(time);

@@ -27,6 +27,11 @@ public:
 //		return m;
 //	}
 
+	void commit()
+	{
+		math::commit(cluster);
+	}
+
 	Matrix_Distributed* copyPattern()
 	{
 		Matrix_Distributed<Matrix, T> *m = new Matrix_Distributed<Matrix, T>();

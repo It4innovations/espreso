@@ -3,6 +3,7 @@
 #include "analysis/linearsystem/linearsystem.h"
 #include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
+#include "esinfo/eslog.h"
 #include "esinfo/stepinfo.h"
 #include "config/ecf/physics/physicssolver/harmonic.h"
 
@@ -103,6 +104,7 @@ void AX_HarmonicReal::extractSolution(AX_LinearSystem<double> *system)
 void AX_HarmonicReal::storeScheme(step::Frequency &frequency)
 {
 	if (info::ecf->output.print_matrices) {
+		eslog::storedata(" STORE: scheme/{K, M, C, f.re, f.im}\n");
 		K->store(utils::filename(utils::debugDirectory() + "/scheme", "K").c_str());
 		M->store(utils::filename(utils::debugDirectory() + "/scheme", "M").c_str());
 		C->store(utils::filename(utils::debugDirectory() + "/scheme", "C").c_str());
@@ -114,6 +116,7 @@ void AX_HarmonicReal::storeScheme(step::Frequency &frequency)
 void AX_HarmonicReal::storeSolution(step::Frequency &frequency)
 {
 	if (info::ecf->output.print_matrices) {
+		eslog::storedata(" STORE: scheme/{x.re, x.im}\n");
 		re.x->store(utils::filename(utils::debugDirectory() + "/scheme", "x.re").c_str());
 		im.x->store(utils::filename(utils::debugDirectory() + "/scheme", "x.im").c_str());
 	}
