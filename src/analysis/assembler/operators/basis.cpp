@@ -53,7 +53,7 @@ void _baseFunction(Module &module)
 	}
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-		if (info::mesh->boundaryRegions[r]->dimension) {
+		if (info::mesh->boundaryRegions[r]->dimension && info::mesh->boundaryRegions[r]->eintervals.size()) {
 			module.integration.boundary.N.regions[r].resize();
 			module.integration.boundary.dN.regions[r].resize();
 			module.integration.boundary.weight.regions[r].resize();

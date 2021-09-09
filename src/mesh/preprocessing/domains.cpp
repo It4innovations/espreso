@@ -180,7 +180,7 @@ void computeRegionsBoundaryIntervals(const ElementStore *elements, const DomainS
 			store->eintervalsDistribution.resize(domains->size + 1);
 			auto ei = store->eintervals.begin();
 			for (esint d = 0; d < domains->size; ++d) {
-				while (ei != store->eintervals.end() && ei->domain <= d) {
+				while (ei != store->eintervals.end() && ei->domain <= domains->offset + d) {
 					++ei;
 				}
 				store->eintervalsDistribution[d + 1] = ei - store->eintervals.begin();
