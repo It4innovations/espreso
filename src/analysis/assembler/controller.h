@@ -48,10 +48,7 @@ struct InputVariable: public InputHolder {
 	InputVariable(int interval, const Variable* v): interval(interval), v(v) {}
 	int updated(int interval) const
 	{
-		if (this->interval == -1 || this->interval == interval) {
-			return v->update_interval ? (*v->update_interval)[interval] : v->update;
-		}
-		return 0;
+		return v->update(interval) != -1 ? v->update(interval) : 0;
 	}
 };
 

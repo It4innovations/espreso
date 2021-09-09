@@ -3,6 +3,7 @@
 #define SRC_PHYSICS_ASSEMBLER_OPERATORS_EXPRESSION_H_
 
 #include "basis/evaluator/evaluator.h"
+#include "basis/expression/variable.h"
 #include "analysis/assembler/operator.h"
 #include "analysis/assembler/parameter.h"
 
@@ -15,7 +16,9 @@ struct ExpressionsToParameter: public ActionOperator {
 	  params(evaluator->params),
 	  offset(offset), size(size)
 	{
-
+		for (size_t i = 0; i < params.general.size(); ++i) {
+			params.general[i].variable->set(interval, params.general[i]);
+		}
 	}
 
 	OutputParameterIterator data;

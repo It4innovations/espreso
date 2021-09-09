@@ -1,5 +1,6 @@
 
 #include "variable.h"
+#include "basis/containers/serializededata.h"
 #include "basis/evaluator/evaluator.h"
 #include "basis/evaluator/expressionevaluator.h"
 #include "basis/expression/expression.h"
@@ -7,6 +8,7 @@
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 #include "config/holders/expression.h"
+#include "mesh/store/nameddata.h"
 
 decltype(espreso::Variable::list) espreso::Variable::list;
 
@@ -15,7 +17,7 @@ using namespace espreso;
 void Variable::gather(size_t regions)
 {
 	for (auto range = info::ecf->ranges.begin(); range != info::ecf->ranges.end(); ++range) {
-		Variable::list.global[range->first] = Variable(0, 0, &range->second.value, false, true);
+		Variable::list.global[range->first] = new RangeVariable(range->second);
 	}
 
 	for (auto it = ECFExpression::parametrized.begin(); it != ECFExpression::parametrized.end(); ++it) {
@@ -38,48 +40,48 @@ void Variable::gather(size_t regions)
 			}
 
 			if (StringCompare::caseInsensitivePreffix("GLOBAL__", variable)) {
-				Variable::list.global.insert(std::make_pair(variable.substr(8), Variable{}));
+				Variable::list.global.insert(std::make_pair(variable.substr(8), nullptr));
 				(*it)->parameters.push_back(variable.substr(8));
 				continue;
 			}
 			if (StringCompare::caseInsensitivePreffix("ELEMENT__", variable)) {
-				Variable::list.element.insert(std::make_pair(variable.substr(9), Variable{}));
+				Variable::list.element.insert(std::make_pair(variable.substr(9), nullptr));
 				(*it)->parameters.push_back(variable.substr(9));
 				continue;
 			}
 			if (StringCompare::caseInsensitivePreffix("ENODES__", variable)) {
-				Variable::list.enodes.insert(std::make_pair(variable.substr(8), Variable{}));
+				Variable::list.enodes.insert(std::make_pair(variable.substr(8), nullptr));
 				(*it)->parameters.push_back(variable.substr(8));
 				continue;
 			}
 			if (StringCompare::caseInsensitivePreffix("EGPS__", variable)) {
-				Variable::list.egps.insert(std::make_pair(variable.substr(6), Variable{}));
+				Variable::list.egps.insert(std::make_pair(variable.substr(6), nullptr));
 				(*it)->parameters.push_back(variable.substr(6));
 				continue;
 			}
 //			if (StringCompare::caseInsensitivePreffix("BNODES__", variable)) {
-//				Variable::list.region.front().enodes.insert(std::make_pair(variable.substr(8), Variable{}));
+//				Variable::list.region.front().enodes.insert(std::make_pair(variable.substr(8), nullptr));
 //				(*it)->parameters.push_back(variable.substr(8));
 //				continue;
 //			}
 //			if (StringCompare::caseInsensitivePreffix("BGPS__", variable)) {
-//				Variable::list.region.front().egps.insert(std::make_pair(variable.substr(6), Variable{}));
+//				Variable::list.region.front().egps.insert(std::make_pair(variable.substr(6), nullptr));
 //				(*it)->parameters.push_back(variable.substr(6));
 //				continue;
 //			}
 			if (StringCompare::caseInsensitivePreffix("NODE__", variable)) {
-				Variable::list.node.insert(std::make_pair(variable.substr(6), Variable{}));
+				Variable::list.node.insert(std::make_pair(variable.substr(6), nullptr));
 				(*it)->parameters.push_back(variable.substr(6));
 				continue;
 			}
 			switch ((*it)->scope) {
-			case ECFExpression::Scope::GLOBAL: Variable::list.global.insert(std::make_pair(variable, Variable{})); break;
-			case ECFExpression::Scope::ELEMENT: Variable::list.element.insert(std::make_pair(variable, Variable{})); break;
-			case ECFExpression::Scope::ENODES: Variable::list.enodes.insert(std::make_pair(variable, Variable{})); break;
-			case ECFExpression::Scope::EGPS: Variable::list.egps.insert(std::make_pair(variable, Variable{})); break;
-//			case ECFExpression::Scope::BNODES: Variable::list.region.front().enodes.insert(std::make_pair(variable, Variable{})); break;
-//			case ECFExpression::Scope::BGPS: Variable::list.region.front().egps.insert(std::make_pair(variable, Variable{})); break;
-			case ECFExpression::Scope::NODE: Variable::list.node.insert(std::make_pair(variable, Variable{})); break;
+			case ECFExpression::Scope::GLOBAL: Variable::list.global.insert(std::make_pair(variable, nullptr)); break;
+			case ECFExpression::Scope::ELEMENT: Variable::list.element.insert(std::make_pair(variable, nullptr)); break;
+			case ECFExpression::Scope::ENODES: Variable::list.enodes.insert(std::make_pair(variable, nullptr)); break;
+			case ECFExpression::Scope::EGPS: Variable::list.egps.insert(std::make_pair(variable, nullptr)); break;
+//			case ECFExpression::Scope::BNODES: Variable::list.region.front().enodes.insert(std::make_pair(variable, nullptr)); break;
+//			case ECFExpression::Scope::BGPS: Variable::list.region.front().egps.insert(std::make_pair(variable, nullptr)); break;
+			case ECFExpression::Scope::NODE: Variable::list.node.insert(std::make_pair(variable, nullptr)); break;
 			default: continue;
 			}
 			(*it)->parameters.push_back(variable);
@@ -96,19 +98,19 @@ void Variable::analyze(ECFExpression &expr, size_t region)
 	for (size_t i = 0; i < variables.size(); ++i) {
 		std::string variable = Parser::uppercase(variables[i]);
 		if (StringCompare::caseInsensitivePreffix("BNODES__", variable)) {
-			Variable::list.region[region].enodes.insert(std::make_pair(variable.substr(8), Variable{}));
+			Variable::list.region[region].enodes.insert(std::make_pair(variable.substr(8), nullptr));
 			expr.parameters.push_back(variable.substr(8));
 			continue;
 		}
 		if (StringCompare::caseInsensitivePreffix("BGPS__", variable)) {
-			Variable::list.region[region].egps.insert(std::make_pair(variable.substr(6), Variable{}));
+			Variable::list.region[region].egps.insert(std::make_pair(variable.substr(6), nullptr));
 			expr.parameters.push_back(variable.substr(6));
 			continue;
 		}
 		if (!Variable::list.global.count(variable)) {
 			switch (expr.scope) {
-			case ECFExpression::Scope::BNODES: Variable::list.region[region].enodes.insert(std::make_pair(variable, Variable{})); break;
-			case ECFExpression::Scope::BGPS: Variable::list.region[region].egps.insert(std::make_pair(variable, Variable{})); break;
+			case ECFExpression::Scope::BNODES: Variable::list.region[region].enodes.insert(std::make_pair(variable, nullptr)); break;
+			case ECFExpression::Scope::BGPS: Variable::list.region[region].egps.insert(std::make_pair(variable, nullptr)); break;
 			default: continue;
 			}
 			expr.parameters.push_back(variable);
@@ -125,7 +127,7 @@ bool Variable::create(ECFExpression &expr)
 	Evaluator::Params params;
 
 	for (size_t i = 0; i < variables.size(); ++i) {
-		std::map<std::string, Variable> *map = nullptr;
+		std::map<std::string, Variable*> *map = nullptr;
 		std::string variable = Parser::uppercase(variables[i]);
 
 		if (StringCompare::caseInsensitivePreffix("GLOBAL__", variable)) {
@@ -157,7 +159,7 @@ bool Variable::create(ECFExpression &expr)
 		default: break;
 		}
 
-		std::map<std::string, Variable>::iterator it;
+		std::map<std::string, Variable*>::iterator it;
 		if (map == nullptr) {
 			if ((it = Variable::list.global.find(variable)) == Variable::list.global.end()) {
 				return false;
@@ -169,11 +171,7 @@ bool Variable::create(ECFExpression &expr)
 				}
 			}
 		}
-		if (it->second.val == nullptr) {
-			return false;
-		}
-
-		params.general.push_back(Evaluator::Params::General{it->second.val, it->second.offset, it->second.increment, &it->second});
+		params.general.push_back(Evaluator::Params::General{nullptr, 0, 0, it->second}); // we will set parameter later for each interval
 	}
 	expr.evaluator = new ExpressionEvaluator(expr.value, expr.parameters);
 	expr.evaluator->params = params;
@@ -189,7 +187,7 @@ bool Variable::create(ECFExpression &expr, size_t region)
 	Evaluator::Params params;
 
 	for (size_t i = 0; i < variables.size(); ++i) {
-		std::map<std::string, Variable> *map = nullptr;
+		std::map<std::string, Variable*> *map = nullptr;
 		std::string variable = Parser::uppercase(variables[i]);
 
 		if (StringCompare::caseInsensitivePreffix("GLOBAL__", variable)) {
@@ -216,7 +214,7 @@ bool Variable::create(ECFExpression &expr, size_t region)
 		default: break;
 		}
 
-		std::map<std::string, Variable>::iterator it;
+		std::map<std::string, Variable*>::iterator it;
 		if (map == nullptr) {
 			if ((it = Variable::list.global.find(variable)) == Variable::list.global.end()) {
 				return false;
@@ -228,11 +226,7 @@ bool Variable::create(ECFExpression &expr, size_t region)
 				}
 			}
 		}
-		if (it->second.val == nullptr) {
-			return false;
-		}
-
-		params.general.push_back(Evaluator::Params::General{it->second.val, it->second.offset, it->second.increment, &it->second});
+		params.general.push_back(Evaluator::Params::General{nullptr, 0, 0, it->second});
 	}
 	expr.evaluator = new ExpressionEvaluator(expr.value, expr.parameters);
 	expr.evaluator->params = params;
@@ -242,13 +236,9 @@ bool Variable::create(ECFExpression &expr, size_t region)
 
 void Variable::print()
 {
-	auto _print = [] (std::map<std::string, Variable> &map) {
+	auto _print = [] (std::map<std::string, Variable*> &map) {
 		for (auto it = map.begin(); it != map.end(); ++it) {
-			if (it->second.val) {
-				eslog::info(" =   %s %*s = \n", it->first.c_str(), 86 - it->first.size(), "");
-			} else {
-				eslog::info(" =   %s %*s = \n", it->first.c_str(), 86 - it->first.size(), "UNINITIALIZED");
-			}
+			eslog::info(" =   %s %*s = \n", it->first.c_str(), 86 - it->first.size(), "");
 		}
 	};
 
@@ -263,4 +253,218 @@ void Variable::print()
 	eslog::info(" = PER NODE VARIABLES ======================================================================== \n");
 	_print(list.node);
 	eslog::info(" ============================================================================================= \n");
+}
+
+void Variable::clear()
+{
+	auto remove = [] (std::map<std::string, Variable*> &map) {
+		for (auto it = map.begin(); it != map.end(); ++it) {
+			if (it->second) {
+				delete it->second;
+			}
+		}
+	};
+
+	remove(list.global);
+	remove(list.element);
+	remove(list.enodes);
+	remove(list.egps);
+	remove(list.node);
+}
+
+RangeVariable::RangeVariable(ECFRange &range)
+: previous(range.value == 0 ? 1 : 0), range(range)
+{
+
+}
+
+void RangeVariable::set(size_t interval, Evaluator::Params::General &param) const
+{
+	param.increment = 0;
+	param.offset = 0;
+	param.val = &range.value;
+}
+
+int RangeVariable::update(size_t interval) const
+{
+	return previous != range.value;
+}
+
+int RangeVariable::isconst(size_t interval) const
+{
+	return true;
+}
+
+void RangeVariable::updated()
+{
+	previous = range.value;
+}
+
+TimeVariable::TimeVariable(step::Time &time)
+: previous(time.current == 0 ? 1 : 0), time(time)
+{
+
+}
+
+void TimeVariable::set(size_t interval, Evaluator::Params::General &param) const
+{
+	param.increment = 0;
+	param.offset = 0;
+	param.val = &time.current;
+}
+
+int TimeVariable::update(size_t interval) const
+{
+	return previous != time.current;
+}
+
+int TimeVariable::isconst(size_t interval) const
+{
+	return true;
+}
+
+void TimeVariable::updated()
+{
+	previous = time.current;
+}
+
+FrequencyVariable::FrequencyVariable(step::Frequency &frequency)
+: previous(frequency.current == 0 ? 1 : 0), frequency(frequency)
+{
+
+}
+
+void FrequencyVariable::set(size_t interval, Evaluator::Params::General &param) const
+{
+	param.increment = 0;
+	param.offset = 0;
+	param.val = &frequency.current;
+}
+
+int FrequencyVariable::update(size_t interval) const
+{
+	return previous != frequency.current;
+}
+
+int FrequencyVariable::isconst(size_t interval) const
+{
+	return true;
+}
+
+void FrequencyVariable::updated()
+{
+	previous = frequency.current;
+}
+
+OutputVariable::OutputVariable(NamedData *data, int offset, int size)
+: data(data), offset(offset), size(size)
+{
+
+}
+
+void OutputVariable::set(size_t interval, Evaluator::Params::General &param) const
+{
+	param.increment = size;
+	param.offset = offset;
+	param.val = data->data.data();
+}
+
+int OutputVariable::update(size_t interval) const
+{
+	return data->updated;
+}
+
+int OutputVariable::isconst(size_t interval) const
+{
+	return false;
+}
+
+void OutputVariable::updated()
+{
+	data->updated = false;
+}
+
+
+SerializedEdataVariable::SerializedEdataVariable(serializededata<esint, double> *data, int offset, int size)
+: data(data), offset(offset), size(size)
+{
+
+}
+
+void SerializedEdataVariable::set(size_t interval, Evaluator::Params::General &param) const
+{
+	param.increment = size;
+	param.offset = offset;
+	param.val = data->begin(interval)->data();
+}
+
+int SerializedEdataVariable::update(size_t interval) const
+{
+	return false; // implement updating mechanism
+}
+
+int SerializedEdataVariable::isconst(size_t interval) const
+{
+	return false;
+}
+
+void SerializedEdataVariable::updated()
+{
+
+}
+
+SerializedPointsVariable::SerializedPointsVariable(serializededata<esint, Point> *data, int offset)
+: data(data), offset(offset)
+{
+
+}
+
+void SerializedPointsVariable::set(size_t interval, Evaluator::Params::General &param) const
+{
+	param.increment = 3;
+	param.offset = offset;
+	param.val = &data->begin(interval)->data()->x;
+}
+
+int SerializedPointsVariable::update(size_t interval) const
+{
+	return false;
+}
+
+int SerializedPointsVariable::isconst(size_t interval) const
+{
+	return false;
+}
+
+void SerializedPointsVariable::updated()
+{
+
+}
+
+ParameterVariable::ParameterVariable(serializededata<esint, double> *data, std::vector<int> &isconst, std::vector<int> &update, int offset, int size)
+: data(data), constness(isconst), updating(update), offset(offset), size(size)
+{
+
+}
+
+void ParameterVariable::set(size_t interval, Evaluator::Params::General &param) const
+{
+	param.increment = size;
+	param.offset = offset;
+	param.val = (data->begin() + interval)->data();
+}
+
+int ParameterVariable::update(size_t interval) const
+{
+	return updating[interval];
+}
+
+int ParameterVariable::isconst(size_t interval) const
+{
+	return constness[interval];
+}
+
+void ParameterVariable::updated()
+{
+
 }

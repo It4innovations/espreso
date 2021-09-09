@@ -35,7 +35,7 @@ void AX_AcousticRealLinear::init()
 	scheme.init(system);
 	assembler.init(scheme);
 
-	Variable::list.global.insert(std::make_pair("FREQUENCY", Variable()));
+	Variable::list.global.insert(std::make_pair("FREQUENCY", nullptr));
 
 	info::mesh->output->updateMonitors(step::TYPE::FREQUENCY);
 }
@@ -44,7 +44,7 @@ void AX_AcousticRealLinear::run(step::Step &step)
 {
 	step::Frequency frequency;
 	scheme.initFrequency(frequency);
-	Variable::list.global["FREQUENCY"].val = &frequency.current;
+	Variable::list.global["FREQUENCY"] = new FrequencyVariable(frequency);
 
 	while (frequency.current != frequency.final) {
 		scheme.nextFrequency(frequency);

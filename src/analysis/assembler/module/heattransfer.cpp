@@ -38,17 +38,17 @@ void AX_HeatTransfer::initParameters()
 	if (ParametersTemperature::Initial::output == nullptr) {
 		ParametersTemperature::Initial::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_TEMPERATURE");
 
-		Variable::list.node["INITIAL_TEMPERATURE"] = Variable(0, 1, ParametersTemperature::Initial::output->data.data(), false, true);
+		Variable::list.node["INITIAL_TEMPERATURE"] = new OutputVariable(ParametersTemperature::Initial::output, 0, 1);
 		for (auto it = initialTemperature.begin(); it != initialTemperature.end(); ++it) {
 			it->second.scope = ECFExpression::Scope::ENODES;
 			for (auto p = it->second.parameters.begin(); p != it->second.parameters.end(); ++p) {
-				Variable::list.enodes.insert(std::make_pair(*p, Variable()));
+				Variable::list.enodes.insert(std::make_pair(*p, nullptr));
 			}
 		}
 	}
 	if (ParametersTemperature::output == nullptr) {
 		ParametersTemperature::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "TEMPERATURE");
-		Variable::list.node["TEMPERATURE"] = Variable(0, 1, ParametersTemperature::output->data.data(), false, true);
+		Variable::list.node["TEMPERATURE"] = new OutputVariable(ParametersTemperature::output, 0, 1);
 	}
 	if (info::ecf->output.results_selection.translation_motions && ParametersTranslationMotions::output == nullptr) {
 		ParametersTranslationMotions::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "TRANSLATION_MOTION");
@@ -109,7 +109,7 @@ void AX_HeatTransfer::initTemperature()
 	if ((it = Variable::list.egps.find("TEMPERATURE"))!= Variable::list.egps.end()) {
 		copyNodesToEnodes(*this, *ParametersTemperature::output, temp.node);
 		moveEnodesToGPs(*this, temp.node, temp.gp, 1);
-		Variable::list.egps["TEMPERATURE"] = Variable(0, 1, temp.gp.data->datatarray().data(), false, true);
+		Variable::list.egps["TEMPERATURE"] = new ParameterVariable(temp.gp.data, temp.gp.isconst, temp.gp.update, 0, 1);
 	}
 //	ParametersTemperature::output->data = ParametersTemperature::Initial::output->data;
 //	CopyElementParameters(temp.initial.node, temp.node, "COPY INITIAL TEMPERATURE TO ELEMENT NODES").buildAndExecute(*this);
@@ -396,17 +396,17 @@ void AX_HeatTransfer::evaluate()
 
 	controller.resetUpdate();
 
-	if (temp.gp.data) {
-		std::cout << "T: " << *temp.gp.data << "\n";
-	}
-
-	if (material.conductivityIsotropic.data) {
-		std::cout << "C: " << *material.conductivityIsotropic.data << "\n";
-	}
-
-	if (elements.stiffness.data) {
-		std::cout << "K: " << *elements.stiffness.data << "\n";
-	}
+//	if (temp.gp.data) {
+//		std::cout << "T: " << *temp.gp.data << "\n";
+//	}
+//
+//	if (material.conductivityIsotropic.data) {
+//		std::cout << "C: " << *material.conductivityIsotropic.data << "\n";
+//	}
+//
+//	if (elements.stiffness.data) {
+//		std::cout << "K: " << *elements.stiffness.data << "\n";
+//	}
 }
 
 void AX_HeatTransfer::_evaluate()

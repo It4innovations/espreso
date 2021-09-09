@@ -2,7 +2,6 @@
 #ifndef SRC_BASIS_EVALUATOR_EVALUATOR_H_
 #define SRC_BASIS_EVALUATOR_EVALUATOR_H_
 
-#include "basis/expression/variable.h"
 #include "esinfo/stepinfo.h"
 #include "math/simd/simd.h"
 
@@ -10,6 +9,8 @@
 #include <vector>
 
 namespace espreso {
+
+struct Variable;
 
 class Evaluator {
 

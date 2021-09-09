@@ -49,7 +49,7 @@ void AX_HeatSteadyStateNonLinear::init()
 	scheme.init(system);
 	assembler.init(scheme);
 
-	Variable::list.global.insert(std::make_pair("TIME", Variable()));
+	Variable::list.global.insert(std::make_pair("TIME", nullptr));
 
 	info::mesh->output->updateMonitors(step::TYPE::TIME);
 }
@@ -58,7 +58,7 @@ void AX_HeatSteadyStateNonLinear::run(step::Step &step)
 {
 	step::Time time;
 	scheme.setTime(time, configuration.duration_time);
-	Variable::list.global["TIME"].val = &time.current;
+	Variable::list.global["TIME"] = new TimeVariable(time);
 
 	solver.run(step, time, assembler, scheme, system);
 

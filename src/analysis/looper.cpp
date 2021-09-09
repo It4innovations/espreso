@@ -45,4 +45,6 @@ void Looper::run()
 
 	analysis->init();
 	analysis->run(step);
+
+	Variable::clear();
 }
