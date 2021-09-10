@@ -138,7 +138,7 @@ struct ParametersMaterial {
 		ElementGPsExternalParameter<ndim * ndim * egps> anisotropic;
 	};
 
-	ElementGPsExternalParameter<egps> density, heatCapacity;
+	ElementGPsExternalParameter<egps> density, speed_of_sound, heatCapacity;
 	Model model;
 
 	ElementParameter<egps> mass;

@@ -101,7 +101,15 @@ template <typename T> void add(Matrix_Dense<T> &x, const T &beta, const Matrix_D
 
 template <typename T> void add(Matrix_CSR<T> &x, const T &beta, const Matrix_CSR<T> &y, int rowOffset, int colOffset, int size, int step)
 {
-
+	// assume the same pattern for y and z
+	// x has 2 times larger pattern
+	for (esint r = 0; r < y.nrows; r++) {
+		for (esint c = 0; c < y.rows[r + 1] - y.rows[r]; c++) {
+			esint tr = step * (r / size) + rowOffset + r % size;
+			esint tc = step * (c / size) + colOffset + c % size;
+			x.vals[x.rows[tr] + tc - _Matrix_CSR_Pattern::Indexing] = beta * y.vals[y.rows[r] + c - _Matrix_CSR_Pattern::Indexing];
+		}
+	}
 }
 
 template <typename T> void add(Matrix_IJV<T> &x, const T &beta, const Matrix_IJV<T> &y, int rowOffset, int colOffset, int size, int step)
@@ -129,12 +137,12 @@ template <typename T> void sum(Matrix_CSR<T> &x, const T &alpha, const Matrix_CS
 	// assume the same pattern for y and z
 	// x has 2 times larger pattern
 	for (esint r = 0; r < y.nrows; r++) {
-	for (esint c = 0; c < y.rows[r + 1] - y.rows[r]; c++) {
-		esint tr = step * (r / size) + rowOffset + r % size;
-		esint tc = step * (c / size) + colOffset + c % size;
-		x.vals[x.rows[tr] + tc - _Matrix_CSR_Pattern::Indexing] = alpha * y.vals[y.rows[r] + c - _Matrix_CSR_Pattern::Indexing] + beta * z.vals[y.rows[r] + c - _Matrix_CSR_Pattern::Indexing];
+		for (esint c = 0; c < y.rows[r + 1] - y.rows[r]; c++) {
+			esint tr = step * (r / size) + rowOffset + r % size;
+			esint tc = step * (c / size) + colOffset + c % size;
+			x.vals[x.rows[tr] + tc - _Matrix_CSR_Pattern::Indexing] = alpha * y.vals[y.rows[r] + c - _Matrix_CSR_Pattern::Indexing] + beta * z.vals[y.rows[r] + c - _Matrix_CSR_Pattern::Indexing];
+		}
 	}
-}
 }
 
 template <typename T> void sum(Matrix_IJV<T> &x   , const T &alpha, const Matrix_IJV<T> &y   , const T &beta, const Matrix_IJV<T> &z   , int rowOffset, int colOffset, int size, int step)

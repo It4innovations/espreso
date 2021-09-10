@@ -82,6 +82,9 @@ void AX_HarmonicReal::composeSystem(step::Frequency &frequency, AX_LinearSystem<
 	system->solver.A->sum(1., K, -frequency.angular * frequency.angular, M, 0   , 0   , dofs, 2 * dofs);
 	system->solver.A->sum(1., K, -frequency.angular * frequency.angular, M, dofs, dofs, dofs, 2 * dofs);
 
+	system->solver.A->add(-frequency.angular, C, 0, dofs, dofs, 2 * dofs);
+	system->solver.A->add(frequency.angular, C, dofs, 0, dofs, 2 * dofs);
+
 	system->solver.b->touched = true;
 	system->solver.b->fill(0);
 	system->solver.b->add(1., re.f, 0   , dofs, 2 * dofs);

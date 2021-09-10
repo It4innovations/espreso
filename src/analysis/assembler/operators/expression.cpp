@@ -18,8 +18,8 @@
 
 namespace espreso {
 
-template <template<size_t, size_t> class Operator>
-void _fromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementValue &value)
+template <typename Module, template<size_t, size_t> class Operator>
+void _fromExpression(Module &module, ParameterData &parameter, ExternalElementValue &value)
 {
 	if (std::all_of(value.evaluator.begin(), value.evaluator.end(), [] (const Evaluator *ev) { return ev == NULL; })) {
 		return;
@@ -38,19 +38,24 @@ void _fromExpression(AX_HeatTransfer &module, ParameterData &parameter, External
 
 	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		for (int d = 0; d < value.dimension && value.evaluator[i * value.dimension + d]; ++d) {
-			module.elementOps[i].emplace_back(instantiate<AX_HeatTransfer::NGP, Operator>(i, module.controller, parameter, value.evaluator[i * value.dimension + d], d, value.dimension));
+			module.elementOps[i].emplace_back(instantiate<typename Module::NGP, Operator>(i, module.controller, parameter, value.evaluator[i * value.dimension + d], d, value.dimension));
 		}
 	}
 }
 
 void fromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementNodesValue &value)
 {
-	_fromExpression<ExpressionsToNodes>(module, parameter, value);
+	_fromExpression<AX_HeatTransfer, ExpressionsToNodes>(module, parameter, value);
 }
 
 void fromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementGPsValue &value)
 {
-	_fromExpression<ExpressionsToGPs>(module, parameter, value);
+	_fromExpression<AX_HeatTransfer, ExpressionsToGPs>(module, parameter, value);
+}
+
+void fromExpression(AX_Acoustic &module, ParameterData &parameter, ExternalElementGPsValue &value)
+{
+	_fromExpression<AX_Acoustic, ExpressionsToGPs>(module, parameter, value);
 }
 
 template <typename Module>

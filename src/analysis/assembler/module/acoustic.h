@@ -48,7 +48,7 @@ public:
 
 	void updateSolution();
 
-	Matrix_Type matrixType() { return Matrix_Type::REAL_SYMMETRIC_INDEFINITE; }
+	Matrix_Type matrixType() { return Matrix_Type::REAL_UNSYMMETRIC; }
 	bool hasKernel(int domain) { return true; }
 
 	AcousticGlobalSettings &gsettings;
@@ -61,6 +61,7 @@ public:
 
 	ParametersBoundaryNodeFunction pressure;
 	ParametersBoundaryFunction normalAcceleration, impedance, q;
+	ParametersMaterial material;
 
 	ParametersElements<1> elements;
 

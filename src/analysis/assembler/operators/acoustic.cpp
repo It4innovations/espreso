@@ -24,10 +24,10 @@ void acousticStiffness(AX_Acoustic &module)
 
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
 		if (info::mesh->dimension == 2) {
-			module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, Stiffness2DAcoustic>(interval, module.controller, module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant, module.elements.stiffness));
+			module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, Stiffness2DAcoustic>(interval, module.controller, module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant, module.material.density, module.elements.stiffness));
 		}
 		if (info::mesh->dimension == 3) {
-			module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, Stiffness2DAcoustic>(interval, module.controller, module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant, module.elements.stiffness));
+			module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, Stiffness2DAcoustic>(interval, module.controller, module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant, module.material.density, module.elements.stiffness));
 		}
 	}
 }
@@ -37,36 +37,16 @@ void acousticMass(AX_Acoustic &module)
 	if (info::mesh->dimension == 2) {
 //		module.elements.stiffness.addInput(module.thickness.gp);
 	}
-	module.controller.addInput(module.elements.mass, module.integration.N, module.integration.weight, module.integration.jacobiDeterminant);
+	module.controller.addInput(module.elements.mass, module.integration.N, module.integration.weight, module.integration.jacobiDeterminant, module.material.density, module.material.speed_of_sound);
 	module.controller.prepare(module.elements.mass);
 
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
-		module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticMass>(interval, module.controller, module.integration.N, module.integration.weight, module.integration.jacobiDeterminant, module.elements.mass));
+		module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticMass>(interval, module.controller, module.integration.N, module.integration.weight, module.integration.jacobiDeterminant, module.material.density, module.material.speed_of_sound ,module.elements.mass));
 	}
 }
 
 void acousticBoundaryMass(AX_Acoustic &module)
 {
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-		module.elements.boundary.mass.regions[r].addInput(module.integration.boundary.N.regions[r]);
-		module.elements.boundary.mass.regions[r].addInput(module.integration.boundary.jacobian.regions[r]);
-		module.elements.boundary.mass.regions[r].addInput(module.integration.boundary.weight.regions[r]);
-
-		module.elements.boundary.mass.regions[r].resize();
-		
-
-		module.addParameter(module.elements.boundary.mass.regions[r]);
-		
-		for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
-		/*
-			module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticsBoundaryMass>(r, interval,
-				module.integration.boundary.N.regions[r],
-				module.integration.boundary.weight.regions[r],
-				module.integration.boundary.jacobian.regions[r],
-				module.elements.boundary.mass.regions[r]));
-		*/
-		}
-	}
 }
 
 

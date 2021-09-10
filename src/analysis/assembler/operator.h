@@ -11,7 +11,7 @@ struct ActionOperator {
 
 	int isconst, update;
 
-	ActionOperator(): isconst(0), update(1) {}
+	ActionOperator(): isconst(1), update(1) {}
 	virtual ~ActionOperator() {}
 
 	virtual void operator++() =0;

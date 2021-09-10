@@ -86,6 +86,22 @@ void AX_Acoustic::analyze()
 
 	if (step::step.loadstep == 0) {
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+
+		eslog::info("\n  MATERIALS                                                                                    \n");
+		eslog::info(" --------------------------------------------------------------------------------------------- \n");
+
+		for (size_t i = 0; i < info::mesh->materials.size(); ++i) {
+			eslog::info(" --- %s ---%*s \n", info::mesh->materials[i]->name.c_str(), 84 - info::mesh->materials[i]->name.size(), "");
+			MaterialConfiguration *mat = info::mesh->materials[i];
+			correct &= examineMaterialParameter(mat->name, "DENSITY", mat->density, material.density.externalValue, 0);
+			correct &= examineMaterialParameter(mat->name, "SPEED_OF_SOUND", mat->speed_of_sound, material.speed_of_sound.externalValue, 0);
+		}
+
+		fromExpression(*this, material.density, material.density.externalValue);
+		fromExpression(*this, material.speed_of_sound, material.speed_of_sound.externalValue);
+
+		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+
 		if (info::mesh->dimension == 2) {
 			printMaterials(info::ecf->acoustics_2d.material_set);
 		}
@@ -95,6 +111,7 @@ void AX_Acoustic::analyze()
 
 		eslog::info(" ============================================================================================= \n");
 	}
+
 
 	if (K != nullptr) {
 		acousticStiffness(*this);

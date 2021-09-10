@@ -15,6 +15,8 @@ void fromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalE
 void fromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementGPsValue &value);
 void fromExpression(AX_HeatTransfer &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values);
 void fromExpression(AX_Acoustic &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values);
+void fromExpression(AX_Acoustic &module, ParameterData &parameter, ExternalElementGPsValue &value);
+
 
 void evaluateFromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementGPsValue &value);
 void evaluateFromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementNodesValue &value);
