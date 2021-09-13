@@ -20,6 +20,8 @@
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.h"
 #include "math2/generalization/matrix_distributed.h"
+#include "math2/utils/dofs_distribution.h"
+#include "math2/utils/utils_distributed.h"
 #include "wrappers/mklpdss/w.mkl.pdss.h"
 
 namespace espreso {
@@ -57,7 +59,7 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 		AX_LinearSystem<T>::assembler.dirichlet = &assembler.dirichlet;
 
 		solver.A.type = analysis->assembler.matrixType();
-		solver.pattern.set(2);
+		solver.pattern.set(2, solver.A.distribution, solver.A.synchronization);
 		solver.pattern.fill(solver.A);
 		solver.pattern.fill(solver.b);
 		solver.pattern.fill(solver.x);
@@ -74,7 +76,7 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 	void _initHeat(HeatSteadyState *analysis)
 	{
 		assembler.A.type = solver.A.type = analysis->assembler.matrixType();
-		assembler.pattern.set(1);
+		assembler.pattern.set(1, solver.A.distribution, solver.A.synchronization);
 		assembler.pattern.fill(solver.A);
 		assembler.pattern.fill(solver.b);
 		assembler.pattern.fill(solver.x);
@@ -138,7 +140,8 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 			set = false;
 		}
 		if (solver.A.touched || solver.b.touched || solver.dirichlet.touched) {
-			setDirichlet(solver.A, solver.b, solver.dirichlet);
+//			synchronization.gatherFromUpper(solver.A.cluster.vals);
+			setDirichlet(solver.A, solver.b, solver.dirichlet, solver.A.distribution);
 			mklpdss.update(solver.A);
 		}
 
@@ -218,7 +221,7 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 	bool set;
 };
 
-void setDirichlet(Matrix_Distributed<Matrix_CSR, double> &A, Vector_Distributed<Vector_Dense, double> &b, const Vector_Sparse<double> &dirichlet);
+void setDirichlet(Matrix_Distributed<Matrix_CSR, double> &A, Vector_Distributed<Vector_Dense, double> &b, const Vector_Sparse<double> &dirichlet, const DOFsDistribution &distribution);
 
 }
 

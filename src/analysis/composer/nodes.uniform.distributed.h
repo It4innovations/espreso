@@ -14,6 +14,7 @@
 #include "math2/generalization/vector_distributed.h"
 #include "math2/generalization/matrix_distributed.h"
 #include "math2/utils/dofs_distribution.h"
+#include "math2/utils/utils_distributed.h"
 
 #include <vector>
 
@@ -22,21 +23,22 @@ namespace espreso {
 struct UniformNodesDistributedPattern {
 
 	struct RegionInfo {
-		esint size;
+		esint nrows, ncols;
 		std::vector<esint> row, column; // row, column indices
-		std::vector<esint> A, b; // permutations
+		std::vector<esint> A, b; // local permutations
+		std::vector<std::vector<esint> > nA, nb; // neighbors permutations
 	};
 
 	UniformNodesDistributedPattern();
 	~UniformNodesDistributedPattern();
 
 	void set(int dofs);
+	void set(int dofs, DOFsDistribution &distribution, DataSynchronization &synchronization);
 
 	template<typename T>
 	void fill(Vector_Distributed<Vector_Dense, T> &v)
 	{
-		v.cluster.resize(elements.size);
-		fillDistribution(v.distribution);
+		v.cluster.resize(elements.nrows);
 	}
 
 	template<typename T>
@@ -44,9 +46,9 @@ struct UniformNodesDistributedPattern {
 	{
 		m.cluster.type = m.type;
 		m.cluster.shape = m.shape;
-		m.cluster.resize(elements.size, elements.size, elements.row.size());
+		// we set square matrix in order to be able to call local operations (e.g., apply)
+		m.cluster.resize(elements.nrows, elements.nrows, elements.row.size());
 		fillCSR(m.cluster.rows, m.cluster.cols);
-		fillDistribution(m.distribution);
 	}
 
 	template<typename T>
@@ -96,7 +98,6 @@ struct UniformNodesDistributedPattern {
 	}
 
 	void fillCSR(esint *rows, esint *cols);
-	void fillDistribution(DOFsDistribution &distribution);
 
 	int dofs;
 	RegionInfo elements;

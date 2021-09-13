@@ -32,7 +32,7 @@ UniformNodesDistributedPattern::~UniformNodesDistributedPattern()
 
 }
 
-void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs)
+void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDistribution &distribution, DataSynchronization &synchronization, bool onlyPattern)
 {
 	pattern->dofs = dofs;
 	auto size = [] (int size) {
@@ -76,7 +76,37 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs)
 	utils::sortAndRemoveDuplicates(APattern);
 	utils::sortAndRemoveDuplicates(RHSPattern);
 
-	pattern->elements.size = dofs * (info::mesh->nodes->uniqInfo.nhalo + info::mesh->nodes->uniqInfo.size);
+	// send halo rows to the holder process
+	std::vector<std::vector<IJ> > sPatter(info::mesh->neighbors.size()), rPatter(info::mesh->neighbors.size());
+	size_t max_halo = std::lower_bound(APattern.begin(), APattern.end(), info::mesh->nodes->uniqInfo.nhalo + 1, [] (const IJ &ij, esint i) { return ij.row < i; }) - APattern.begin();
+	for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
+		sPatter[n].reserve(max_halo);
+	}
+
+	auto ranks = info::mesh->nodes->ranks->cbegin();
+	auto begin = APattern.begin(), end = begin;
+	for (esint n = 0; n < info::mesh->nodes->uniqInfo.nhalo; ++n, ++ranks, begin = end) {
+		while (begin->row == (++end)->row);
+		auto neigh = info::mesh->neighbors.begin();
+		for (auto r = ranks->begin(); r != ranks->end(); ++r) {
+			while (*r < *neigh) { ++neigh; }
+			if (*r != info::mpi::rank) {
+				sPatter[neigh - info::mesh->neighbors.begin()].insert(sPatter[neigh - info::mesh->neighbors.begin()].end(), begin, end);
+			}
+		}
+	}
+
+	if (!Communication::receiveUpperUnknownSize(sPatter, rPatter, info::mesh->neighbors)) {
+		eslog::internalFailure("exchange K pattern.\n");
+	}
+
+	for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
+		APattern.insert(APattern.end(), rPatter[n].begin(), rPatter[n].end());
+	}
+	utils::sortAndRemoveDuplicates(APattern);
+
+	pattern->elements.nrows = dofs * (info::mesh->nodes->uniqInfo.nhalo + info::mesh->nodes->uniqInfo.size);
+	pattern->elements.ncols = dofs * info::mesh->nodes->uniqInfo.totalSize;
 	pattern->elements.row.reserve(APattern.size());
 	pattern->elements.column.reserve(APattern.size());
 	pattern->elements.A.reserve(AData.size());
@@ -92,6 +122,13 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs)
 	}
 	for (size_t i = 0; i < RHSData.size(); ++i) {
 		pattern->elements.b.push_back(std::lower_bound(RHSPattern.begin(), RHSPattern.end(), RHSData[i]) - RHSPattern.begin());
+	}
+
+	pattern->elements.nA.resize(info::mesh->neighbors.size());
+	for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
+		for (size_t i = 0; i < rPatter[n].size(); ++i) {
+			pattern->elements.nA[n].push_back(std::lower_bound(APattern.begin(), APattern.end(), rPatter[n][i]) - APattern.begin());
+		}
 	}
 
 	std::vector<esint> belement(dofs * 8);
@@ -123,28 +160,11 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs)
 			}
 		}
 	}
-}
 
-void UniformNodesDistributedPattern::set(int dofs)
-{
-	fillPermutation(this, dofs);
-}
-
-void UniformNodesDistributedPattern::fillCSR(esint *rows, esint *cols)
-{
-	rows[0] = cols[0] = _Matrix_CSR_Pattern::Indexing;
-	size_t r = 1;
-	for (size_t c = 1; c < elements.column.size(); ++c) {
-		cols[c] = elements.column[c] + _Matrix_CSR_Pattern::Indexing;
-		if (elements.row[c] != elements.row[c - 1]) {
-			rows[r++] = c + _Matrix_CSR_Pattern::Indexing;
-		}
+	if (onlyPattern) {
+		return;
 	}
-	rows[r] = elements.column.size() + _Matrix_CSR_Pattern::Indexing;
-}
 
-void UniformNodesDistributedPattern::fillDistribution(DOFsDistribution &distribution)
-{
 	distribution.begin = dofs * info::mesh->nodes->uniqInfo.offset;
 	distribution.end = dofs * (info::mesh->nodes->uniqInfo.offset + info::mesh->nodes->uniqInfo.size);
 	distribution.totalSize = dofs * info::mesh->nodes->uniqInfo.totalSize;
@@ -159,8 +179,49 @@ void UniformNodesDistributedPattern::fillDistribution(DOFsDistribution &distribu
 		}
 	}
 
-	std::vector<esint> sBuffer = { distribution.begin };
-	if (!Communication::gatherUniformNeighbors(sBuffer, distribution.neighDOF, distribution.neighbors)) {
+	std::vector<esint> dBuffer = { distribution.begin };
+	if (!Communication::gatherUniformNeighbors(dBuffer, distribution.neighDOF, distribution.neighbors)) {
 		eslog::internalFailure("cannot exchange matrix distribution info.\n");
 	}
+
+	ranks = info::mesh->nodes->ranks->cbegin();
+	begin = end = APattern.begin();
+	synchronization.sBuffer.resize(info::mesh->neighbors.size());
+	synchronization.rBuffer.resize(info::mesh->neighbors.size());
+	for (size_t n = 0; n < info::mesh->neighbors.size() && info::mesh->neighbors[n] < info::mpi::rank; ++n, end = begin) {
+		synchronization.nStart.push_back(begin - APattern.begin());
+		while (ranks->front() == info::mesh->neighbors[n]) {
+			++ranks;
+			auto rbegin = end;
+			while (rbegin->row == (++end)->row);
+		}
+		synchronization.sBuffer[n].resize(end - begin);
+		synchronization.rBuffer[n].resize(rPatter[n].size());
+	}
+	synchronization.rIndices = pattern->elements.nA;
+}
+
+void UniformNodesDistributedPattern::set(int dofs)
+{
+	DOFsDistribution distribution;
+	DataSynchronization synchronization;
+	fillPermutation(this, dofs, distribution, synchronization, true);
+}
+
+void UniformNodesDistributedPattern::set(int dofs, DOFsDistribution &distribution, DataSynchronization &synchronization)
+{
+	fillPermutation(this, dofs, distribution, synchronization, false);
+}
+
+void UniformNodesDistributedPattern::fillCSR(esint *rows, esint *cols)
+{
+	rows[0] = cols[0] = _Matrix_CSR_Pattern::Indexing;
+	size_t r = 1;
+	for (size_t c = 1; c < elements.column.size(); ++c) {
+		cols[c] = elements.column[c] + _Matrix_CSR_Pattern::Indexing;
+		if (elements.row[c] != elements.row[c - 1]) {
+			rows[r++] = c + _Matrix_CSR_Pattern::Indexing;
+		}
+	}
+	rows[r] = elements.column.size() + _Matrix_CSR_Pattern::Indexing;
 }

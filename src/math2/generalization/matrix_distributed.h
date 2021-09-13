@@ -6,6 +6,7 @@
 #include "matrix_base.h"
 #include "math2/math2.h"
 #include "math2/utils/dofs_distribution.h"
+#include "math2/utils/utils_distributed.h"
 
 #include <vector>
 
@@ -100,6 +101,7 @@ public:
 
 	Matrix<T> cluster;
 	DOFsDistribution distribution;
+	DataSynchronization synchronization;
 };
 
 }

@@ -62,7 +62,7 @@ void Assembler::initDirichlet(std::map<std::string, ECFExpression> &settings, Ve
 	auto dir = dirichlet.indices;
 	for (auto i = dirichletPermutation.begin(); i != dirichletPermutation.end(); ++i) {
 		if (i == dirichletPermutation.begin() || dirichletIndices[*i] != dirichletIndices[*(i - 1)]) {
-			*dir++ = dirichletIndices[*i];
+			*dir++ = info::mesh->nodes->uniqInfo.position[dirichletIndices[*i]];
 		}
 	}
 	std::sort(dirichletIndices.begin(), dirichletIndices.end());

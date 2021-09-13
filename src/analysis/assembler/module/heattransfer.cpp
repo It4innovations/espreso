@@ -396,17 +396,17 @@ void AX_HeatTransfer::evaluate()
 
 	controller.resetUpdate();
 
-//	if (temp.gp.data) {
-//		std::cout << "T: " << *temp.gp.data << "\n";
-//	}
-//
-//	if (material.conductivityIsotropic.data) {
-//		std::cout << "C: " << *material.conductivityIsotropic.data << "\n";
-//	}
-//
-//	if (elements.stiffness.data) {
-//		std::cout << "K: " << *elements.stiffness.data << "\n";
-//	}
+	if (temp.gp.data) {
+		std::cout << "T: " << *temp.gp.data << "\n";
+	}
+
+	if (material.conductivityIsotropic.data) {
+		std::cout << "C: " << *material.conductivityIsotropic.data << "\n";
+	}
+
+	if (elements.stiffness.data) {
+		std::cout << "K: " << *elements.stiffness.data << "\n";
+	}
 }
 
 void AX_HeatTransfer::_evaluate()
