@@ -2,6 +2,8 @@
 #ifndef SRC_ANALYSIS_SOLVER_NEWTONRAPHSON_H_
 #define SRC_ANALYSIS_SOLVER_NEWTONRAPHSON_H_
 
+#include "analysis/linearsystem/linearsystem.h"
+
 namespace espreso {
 
 namespace step { struct Step; struct Time; }
@@ -12,7 +14,6 @@ template<typename T> struct Matrix_Base;
 class NonLinearSolverConfiguration;
 class AX_HeatTransfer;
 class AX_SteadyState;
-template<typename T> struct AX_LinearSystem;
 
 class AX_NewtonRaphson {
 

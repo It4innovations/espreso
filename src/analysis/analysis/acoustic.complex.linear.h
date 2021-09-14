@@ -28,7 +28,7 @@ public:
 	AX_Acoustic assembler;
 	AX_HarmonicComplex scheme;
 
-	AX_LinearSystem<std::complex<double> > *system;
+	AX_LinearSystem<double, std::complex<double> > *system;
 };
 
 }

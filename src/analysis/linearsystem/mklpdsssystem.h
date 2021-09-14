@@ -7,13 +7,6 @@
 #include "analysis/analysis/heat.steadystate.nonlinear.h"
 #include "analysis/analysis/acoustic.real.linear.h"
 #include "analysis/analysis/acoustic.complex.linear.h"
-//#include "analysis/analysis/heat.steadystate.nonlinear.h"
-//#include "analysis/analysis/heat.transient.linear.h"
-//#include "analysis/analysis/heat.transient.nonlinear.h"
-//#include "analysis/analysis/structuralmechanics.harmonic.complex.linear.h"
-//#include "analysis/analysis/structuralmechanics.harmonic.real.linear.h"
-//#include "analysis/analysis/structuralmechanics.steadystate.linear.h"
-//#include "analysis/analysis/structuralmechanics.transient.linear.h"
 
 #include "analysis/composer/nodes.uniform.distributed.h"
 #include "basis/utilities/sysutils.h"
@@ -27,19 +20,19 @@
 
 namespace espreso {
 
-template <typename T>
-struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
+template <typename Assembler, typename Solver>
+struct AX_MKLPDSSSystemData: public AX_LinearSystem<Assembler, Solver> {
 
-	AX_MKLPDSSSystem(MKLPDSSConfiguration &configuration): mklpdss(configuration), set(true) {}
+	AX_MKLPDSSSystemData(MKLPDSSConfiguration &configuration): mklpdss(configuration) {}
 
-	void setMapping(Matrix_Base<T> *A) const
+	void setMapping(Matrix_Base<Assembler> *A) const
 	{
-		assembler.pattern.setMap(dynamic_cast<Matrix_Distributed<Matrix_CSR, T>*>(A));
+		assembler.pattern.setMap(dynamic_cast<Matrix_Distributed<Matrix_CSR, Assembler>*>(A));
 	}
 
-	void setMapping(Vector_Base<T> *x) const
+	void setMapping(Vector_Base<Assembler> *x) const
 	{
-		assembler.pattern.setMap(dynamic_cast<Vector_Distributed<Vector_Dense, T>*>(x));
+		assembler.pattern.setMap(dynamic_cast<Vector_Distributed<Vector_Dense, Assembler>*>(x));
 	}
 
 	void info() const
@@ -47,125 +40,13 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 		mklpdss.info(solver.A);
 	}
 
-	void init(AX_AcousticRealLinear *analysis)
+	void set(step::Step &step)
 	{
-		// assembler.A.type = analysis->assembler.matrixType();
-		// assembler.pattern.set(1);
-		// assembler.pattern.fill(assembler.A);
-		// assembler.pattern.fill(assembler.b);
-		// assembler.pattern.fill(assembler.x);
-		// AX_LinearSystem<T>::assembler.A = &assembler.A;
-		// AX_LinearSystem<T>::assembler.b = &assembler.b;
-		// AX_LinearSystem<T>::assembler.x = &assembler.x;
-		// AX_LinearSystem<T>::assembler.dirichlet = &assembler.dirichlet;
-
-		// solver.A.type = analysis->assembler.matrixType();
-		// solver.pattern.set(2);
-		// solver.pattern.fill(solver.A);
-		// solver.pattern.fill(solver.b);
-		// solver.pattern.fill(solver.x);
-		// AX_LinearSystem<T>::solver.A = &solver.A;
-		// AX_LinearSystem<T>::solver.b = &solver.b;
-		// AX_LinearSystem<T>::solver.x = &solver.x;
-		// AX_LinearSystem<T>::solver.dirichlet = &solver.dirichlet;
-
-		// analysis->assembler.initDirichlet(assembler.dirichlet);
-		// math::multiplyPattern(solver.dirichlet, assembler.dirichlet, 1, 2);
+		mklpdss.set(solver.A);
 	}
 
-	void init(AX_AcousticComplexLinear *analysis)
+	void update(step::Step &step)
 	{
-		assembler.A.type = analysis->assembler.matrixType();
-		assembler.pattern.set(1);
-		assembler.pattern.fill(assembler.A);
-		assembler.pattern.fill(assembler.b);
-		assembler.pattern.fill(assembler.x);
-		AX_LinearSystem<T>::assembler.A = &assembler.A;
-		AX_LinearSystem<T>::assembler.b = &assembler.b;
-		AX_LinearSystem<T>::assembler.x = &assembler.x;
-		AX_LinearSystem<T>::assembler.dirichlet = &assembler.dirichlet;
-
-		solver.A.type = analysis->assembler.matrixType();
-		solver.pattern.set(1, solver.A.distribution, solver.A.synchronization);
-		solver.pattern.fill(solver.A);
-		solver.pattern.fill(solver.b);
-		solver.pattern.fill(solver.x);
-		AX_LinearSystem<T>::solver.A = &solver.A;
-		AX_LinearSystem<T>::solver.b = &solver.b;
-		AX_LinearSystem<T>::solver.x = &solver.x;
-		AX_LinearSystem<T>::solver.dirichlet = &solver.dirichlet;
-
-		assembler.pattern.dirichlet(assembler.dirichlet, analysis->configuration.acoustic_pressure);
-		// math::multiplyPattern(solver.dirichlet, assembler.dirichlet, 1, 2);
-	}
-
-	template<typename HeatSteadyState>
-	void _initHeat(HeatSteadyState *analysis)
-	{
-//		assembler.A.type = solver.A.type = analysis->assembler.matrixType();
-//		assembler.pattern.set(1, solver.A.distribution, solver.A.synchronization);
-//		assembler.pattern.fill(solver.A);
-//		assembler.pattern.fill(solver.b);
-//		assembler.pattern.fill(solver.x);
-//		AX_LinearSystem<T>::assembler.A = AX_LinearSystem<T>::solver.A = &solver.A;
-//		AX_LinearSystem<T>::assembler.b = AX_LinearSystem<T>::solver.b = &solver.b;
-//		AX_LinearSystem<T>::assembler.x = AX_LinearSystem<T>::solver.x = &solver.x;
-//
-//		assembler.pattern.dirichlet(solver.dirichlet, analysis->configuration.temperature);
-//		AX_LinearSystem<T>::assembler.dirichlet = AX_LinearSystem<T>::solver.dirichlet = &solver.dirichlet;
-	}
-
-	void init(AX_HeatSteadyStateLinear *analysis)
-	{
-		_initHeat(analysis);
-	}
-
-	void init(AX_HeatSteadyStateNonLinear *analysis)
-	{
-		_initHeat(analysis);
-	}
-
-//	void init(AX_HeatSteadyStateNonLinear *analysis)
-//	{
-//
-//	}
-//
-//	void init(AX_HeatTransientLinear *analysis)
-//	{
-//
-//	}
-//
-//	void init(AX_HeatTransientNonLinear *analysis)
-//	{
-//
-//	}
-//
-//	void init(AX_StructuralMechanicsHarmonicComplexLinear *analysis)
-//	{
-//
-//	}
-//
-//	void init(AX_StructuralMechanicsHarmonicRealLinear *analysis)
-//	{
-//
-//	}
-//
-//	void init(AX_StructuralMechanicsSteadyStateLinear *analysis)
-//	{
-//
-//	}
-//
-//	void init(AX_StructuralMechanicsTransientLinear *analysis)
-//	{
-//
-//	}
-
-	void _update(step::Step &step)
-	{
-		if (set) {
-			mklpdss.set(solver.A);
-			set = false;
-		}
 		if (solver.A.touched || solver.b.touched || solver.dirichlet.touched) {
 //			synchronization.gatherFromUpper(solver.A.cluster.vals);
 			setDirichlet(solver.A, solver.b, solver.dirichlet.cluster, solver.A.distribution);
@@ -179,50 +60,6 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 			math::store(solver.dirichlet, utils::filename(utils::debugDirectory(step) + "/system", "dirichlet").c_str());
 		}
 	}
-
-	void update(step::Step &step, AX_Acoustic &assembler)
-	{
-		_update(step);
-	}
-
-	void update(step::Step &step, AX_HeatTransfer &assembler)
-	{
-		_update(step);
-	}
-
-//	void prepare(AX_HeatSteadyStateNonLinear *analysis)
-//	{
-//
-//	}
-//
-//	void prepare(AX_HeatTransientLinear *analysis)
-//	{
-//
-//	}
-//
-//	void prepare(AX_HeatTransientNonLinear *analysis)
-//	{
-//
-//	}
-//
-//	void prepare(AX_StructuralMechanicsHarmonicComplexLinear *analysis)
-//	{
-//
-//	}
-//	void prepare(AX_StructuralMechanicsHarmonicRealLinear *analysis)
-//	{
-//
-//	}
-//
-//	void prepare(AX_StructuralMechanicsSteadyStateLinear *analysis)
-//	{
-//
-//	}
-//
-//	void prepare(AX_StructuralMechanicsTransientLinear *analysis)
-//	{
-//
-//	}
 
 	bool solve(step::Step &step)
 	{
@@ -245,11 +82,104 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 		Vector_Distributed<Vector_Sparse, Type> dirichlet;
 	};
 	
-	Data<double> assembler;
-	Data<T> solver;
+	Data<Assembler> assembler;
+	Data<Solver> solver;
 
-	MKLPDSS<T> mklpdss;
-	bool set;
+	MKLPDSS<Solver> mklpdss;
+};
+
+template <typename Analysis> struct AX_MKLPDSSSystem {};
+
+inline void _initDirect(AX_MKLPDSSSystemData<double, double> &system, std::map<std::string, ECFExpression> &dirichlet)
+{
+	system.assembler.pattern.set(1, system.solver.A.distribution, system.solver.A.synchronization);
+	system.assembler.pattern.fill(system.solver.A);
+	system.assembler.pattern.fill(system.solver.b);
+	system.assembler.pattern.fill(system.solver.x);
+	system.AX_LinearSystem<double>::assembler.A = system.AX_LinearSystem<double>::solver.A = &system.solver.A;
+	system.AX_LinearSystem<double>::assembler.b = system.AX_LinearSystem<double>::solver.b = &system.solver.b;
+	system.AX_LinearSystem<double>::assembler.x = system.AX_LinearSystem<double>::solver.x = &system.solver.x;
+
+	system.assembler.pattern.dirichlet(system.solver.dirichlet, dirichlet);
+	system.AX_LinearSystem<double>::assembler.dirichlet = system.AX_LinearSystem<double>::solver.dirichlet = &system.solver.dirichlet;
+}
+
+template <> struct AX_MKLPDSSSystem<AX_HeatSteadyStateLinear>: public AX_MKLPDSSSystemData<double, double> {
+
+	AX_MKLPDSSSystem(AX_HeatSteadyStateLinear *analysis, MKLPDSSConfiguration &configuration)
+	: AX_MKLPDSSSystemData(configuration)
+	{
+		_initDirect(*this, analysis->configuration.temperature);
+	}
+};
+
+template <> struct AX_MKLPDSSSystem<AX_HeatSteadyStateNonLinear>: public AX_MKLPDSSSystemData<double, double> {
+
+	AX_MKLPDSSSystem(AX_HeatSteadyStateNonLinear *analysis, MKLPDSSConfiguration &configuration)
+	: AX_MKLPDSSSystemData(configuration)
+	{
+		_initDirect(*this, analysis->configuration.temperature);
+	}
+};
+
+template <> struct AX_MKLPDSSSystem<AX_AcousticRealLinear>: public AX_MKLPDSSSystemData<double, double> {
+
+	AX_MKLPDSSSystem(AX_AcousticRealLinear *analysis, MKLPDSSConfiguration &configuration)
+	: AX_MKLPDSSSystemData(configuration)
+	{
+		assembler.A.type = analysis->assembler.matrixType();
+		assembler.pattern.set(1);
+		assembler.pattern.fill(assembler.A);
+		assembler.pattern.fill(assembler.b);
+		assembler.pattern.fill(assembler.x);
+		this->AX_LinearSystem<double>::assembler.A = &assembler.A;
+		this->AX_LinearSystem<double>::assembler.b = &assembler.b;
+		this->AX_LinearSystem<double>::assembler.x = &assembler.x;
+		this->AX_LinearSystem<double>::assembler.dirichlet = &assembler.dirichlet;
+
+		solver.A.type = analysis->assembler.matrixType();
+		solver.pattern.set(2);
+		solver.pattern.fill(solver.A);
+		solver.pattern.fill(solver.b);
+		solver.pattern.fill(solver.x);
+		this->AX_LinearSystem<double>::solver.A = &solver.A;
+		this->AX_LinearSystem<double>::solver.b = &solver.b;
+		this->AX_LinearSystem<double>::solver.x = &solver.x;
+		this->AX_LinearSystem<double>::solver.dirichlet = &solver.dirichlet;
+
+		assembler.pattern.dirichlet(solver.dirichlet, analysis->configuration.acoustic_pressure);
+		math::multiplyPattern(solver.dirichlet.cluster, assembler.dirichlet.cluster, 1, 2);
+	}
+};
+
+template <> struct AX_MKLPDSSSystem<AX_AcousticComplexLinear>: public AX_MKLPDSSSystemData<double, std::complex<double> > {
+
+	AX_MKLPDSSSystem(AX_AcousticComplexLinear *analysis, MKLPDSSConfiguration &configuration)
+	: AX_MKLPDSSSystemData(configuration)
+	{
+//		assembler.A.type = analysis->assembler.matrixType();
+//		assembler.pattern.set(1);
+//		assembler.pattern.fill(assembler.A);
+//		assembler.pattern.fill(assembler.b);
+//		assembler.pattern.fill(assembler.x);
+//		AX_LinearSystem<double>::assembler.A = &assembler.A;
+//		AX_LinearSystem<double>::assembler.b = &assembler.b;
+//		AX_LinearSystem<double>::assembler.x = &assembler.x;
+//		AX_LinearSystem<double>::assembler.dirichlet = &assembler.dirichlet;
+//
+//		solver.A.type = analysis->assembler.matrixType();
+//		solver.pattern.set(2);
+//		solver.pattern.fill(solver.A);
+//		solver.pattern.fill(solver.b);
+//		solver.pattern.fill(solver.x);
+//		AX_LinearSystem<double>::solver.A = &solver.A;
+//		AX_LinearSystem<double>::solver.b = &solver.b;
+//		AX_LinearSystem<double>::solver.x = &solver.x;
+//		AX_LinearSystem<double>::solver.dirichlet = &solver.dirichlet;
+
+//		assembler.pattern.dirichlet(solver.dirichlet, analysis->configuration.acoustic_pressure);
+//		math::multiplyPattern(solver.dirichlet.cluster, assembler.dirichlet.cluster, 1, 2);
+	}
 };
 
 void setDirichlet(Matrix_Distributed<Matrix_CSR, double> &A, Vector_Distributed<Vector_Dense, double> &b, const Vector_Sparse<double> &dirichlet, const DOFsDistribution &distribution);

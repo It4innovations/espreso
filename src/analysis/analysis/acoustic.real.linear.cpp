@@ -23,15 +23,15 @@ AX_AcousticRealLinear::AX_AcousticRealLinear(AcousticGlobalSettings &gsettings, 
 
 void AX_AcousticRealLinear::init()
 {
-	switch (configuration.solver) {
-	case LoadStepSolverConfiguration::SOLVER::FETI:    system = new AX_FETISystem<double>(configuration.feti); break;
-	case LoadStepSolverConfiguration::SOLVER::HYPRE:   system = new AX_MultigridSystem<double>(configuration.hypre); break;
-	case LoadStepSolverConfiguration::SOLVER::MKLPDSS: system = new AX_MKLPDSSSystem<double>(configuration.mklpdss); break;
-	case LoadStepSolverConfiguration::SOLVER::PARDISO: system = new AX_DirectSystem<double>(configuration.pardiso); break;
-	case LoadStepSolverConfiguration::SOLVER::SUPERLU: system = new AX_DirectSystem<double>(configuration.superlu); break;
-	case LoadStepSolverConfiguration::SOLVER::WSMP:    system = new AX_DirectSystem<double>(configuration.wsmp); break;
-	}
-	system->init(this);
+//	switch (configuration.solver) {
+//	case LoadStepSolverConfiguration::SOLVER::FETI:    system = new AX_FETISystem<double>(configuration.feti); break;
+//	case LoadStepSolverConfiguration::SOLVER::HYPRE:   system = new AX_MultigridSystem<double>(configuration.hypre); break;
+//	case LoadStepSolverConfiguration::SOLVER::MKLPDSS: system = new AX_MKLPDSSSystem<double>(configuration.mklpdss); break;
+//	case LoadStepSolverConfiguration::SOLVER::PARDISO: system = new AX_DirectSystem<double>(configuration.pardiso); break;
+//	case LoadStepSolverConfiguration::SOLVER::SUPERLU: system = new AX_DirectSystem<double>(configuration.superlu); break;
+//	case LoadStepSolverConfiguration::SOLVER::WSMP:    system = new AX_DirectSystem<double>(configuration.wsmp); break;
+//	}
+	system = new AX_MKLPDSSSystem<AX_AcousticRealLinear>(this, configuration.mklpdss);
 	scheme.init(system);
 	assembler.init(scheme, system->assembler.dirichlet);
 
@@ -56,7 +56,7 @@ void AX_AcousticRealLinear::run(step::Step &step)
 
 		scheme.storeScheme(frequency);
 
-		system->update(step, assembler);
+		system->update(step);
 		system->solve(step);
 
 		scheme.extractSolution(system);

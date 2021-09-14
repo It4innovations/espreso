@@ -2,12 +2,13 @@
 #ifndef SRC_ANALYSIS_SCHEME_STEADYSTATE_H_
 #define SRC_ANALYSIS_SCHEME_STEADYSTATE_H_
 
+#include "analysis/linearsystem/linearsystem.h"
+
 namespace espreso {
 
 namespace step { struct Step; struct Time; }
 template<typename T> struct Vector_Base;
 template<typename T> struct Matrix_Base;
-template<typename T> struct AX_LinearSystem;
 
 struct AX_SteadyState {
 

@@ -76,7 +76,8 @@ bool AX_NewtonRaphson::run(step::Step &step, step::Time &time, AX_HeatTransfer &
 	assembler.evaluate();
 	scheme.composeSystem(step, system);
 
-	system->update(step, assembler);
+	system->set(step);
+	system->update(step);
 	system->solve(step);
 
 	scheme.extractSolution(step, system);
@@ -102,7 +103,7 @@ bool AX_NewtonRaphson::run(step::Step &step, step::Time &time, AX_HeatTransfer &
 //		U->addTo(-1, system->solver.dirichlet);
 		system->solver.dirichlet->add(-1, U);
 
-		system->update(step, assembler);
+		system->update(step);
 		system->solve(step);
 
 		if (checkTemp(step, assembler, scheme, system)) {

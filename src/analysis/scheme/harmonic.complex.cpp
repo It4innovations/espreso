@@ -59,7 +59,7 @@ void AX_HarmonicComplex::nextFrequency(step::Frequency &frequency)
 	frequency.angular = 2 * M_PI * frequency.current;
 }
 
-void AX_HarmonicComplex::init(AX_ComplexLinearSystem*system)
+void AX_HarmonicComplex::init(AX_LinearSystem<double, std::complex<double> > *system)
 {
 	/* ???????
 	system->setMapping(K = system->assembler.A->copyPattern());
@@ -72,7 +72,7 @@ void AX_HarmonicComplex::init(AX_ComplexLinearSystem*system)
 	*/
 }
 
-void AX_HarmonicComplex::composeSystem(step::Frequency &frequency, AX_ComplexLinearSystem *system)
+void AX_HarmonicComplex::composeSystem(step::Frequency &frequency, AX_LinearSystem<double, std::complex<double> > *system)
 {
 	#if 0
 	// A = [
@@ -98,15 +98,16 @@ void AX_HarmonicComplex::composeSystem(step::Frequency &frequency, AX_ComplexLin
 	// system->solver.A->sum(std::complex<double>(1.0), ???)
 }
 
-void AX_HarmonicComplex::composeDirichlet(AX_ComplexLinearSystem *system)
+void AX_HarmonicComplex::composeDirichlet(AX_LinearSystem<double, std::complex<double> > *system)
 {
 	// math::fill(*system->solver.dirichlet, std::complex<double>(0.0));
 	// math::add(*system->solver.dirichlet, std::complex<double>(1.0), *system->assembler.dirichlet, 0   , dofs, dofs);
 	// math::add(*system->solver.dirichlet, 1., *system->assembler.dirichlet, dofs, dofs, 2 * dofs);
 }
 
-void AX_HarmonicComplex::extractSolution(AX_ComplexLinearSystem *system)
+void AX_HarmonicComplex::extractSolution(AX_LinearSystem<double, std::complex<double> > *system)
 {
+
 }
 
 void AX_HarmonicComplex::storeScheme(step::Frequency &frequency)

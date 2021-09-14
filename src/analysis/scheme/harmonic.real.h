@@ -2,13 +2,14 @@
 #ifndef SRC_ANALYSIS_SCHEME_HARMONIC_REAL_H_
 #define SRC_ANALYSIS_SCHEME_HARMONIC_REAL_H_
 
+#include "analysis/linearsystem/linearsystem.h"
+
 namespace espreso {
 
 struct HarmonicSolverConfiguration;
 namespace step { struct Frequency; }
 template<typename T> struct Vector_Base;
 template<typename T> struct Matrix_Base;
-template<typename T> struct AX_LinearSystem;
 
 struct AX_HarmonicReal {
 
