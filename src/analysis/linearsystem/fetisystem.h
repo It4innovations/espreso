@@ -50,8 +50,8 @@ struct AX_FETISystem: AX_LinearSystem<T> {
 		this->assembler.b = this->solver.b = &b;
 		this->assembler.x = this->solver.x = &x;
 
-		analysis->assembler.initDirichlet(dirichlet);
-		this->assembler.dirichlet = this->solver.dirichlet = &dirichlet;
+//		analysis->assembler.initDirichlet(dirichlet);
+//		this->assembler.dirichlet = this->solver.dirichlet = &dirichlet;
 
 		initKernels(*this, analysis->assembler);
 	}
@@ -66,8 +66,8 @@ struct AX_FETISystem: AX_LinearSystem<T> {
 		this->assembler.b = this->solver.b = &b;
 		this->assembler.x = this->solver.x = &x;
 
-		analysis->assembler.initDirichlet(dirichlet);
-		this->assembler.dirichlet = this->solver.dirichlet = &dirichlet;
+//		analysis->assembler.initDirichlet(dirichlet);
+//		this->assembler.dirichlet = this->solver.dirichlet = &dirichlet;
 
 		initKernels(*this, analysis->assembler);
 	}

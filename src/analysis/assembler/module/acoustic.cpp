@@ -24,7 +24,7 @@
 using namespace espreso;
 
 AX_Acoustic::AX_Acoustic(AX_Acoustic *previous, AcousticGlobalSettings &gsettings, AcousticLoadStepConfiguration &configuration)
-: gsettings(gsettings), configuration(configuration), K{}, M{}, C{}, re{}, im{}
+: gsettings(gsettings), configuration(configuration), K{}, M{}, C{}, re{}, im{}, dirichlet{}
 {
 
 }
@@ -41,15 +41,16 @@ void AX_Acoustic::initParameters()
 	}
 }
 
-void AX_Acoustic::init(AX_HarmonicReal &scheme)
+void AX_Acoustic::init(AX_HarmonicReal &scheme, Vector_Base<double> *dirichlet)
 {
-	K = scheme.K;
-	M = scheme.M;
-	C = scheme.C;
-	re.rhs = scheme.re.f;
-	im.rhs = scheme.im.f;
-	re.x = scheme.re.x;
-	im.x = scheme.im.x;
+	this->K = scheme.K;
+	this->M = scheme.M;
+	this->C = scheme.C;
+	this->re.rhs = scheme.re.f;
+	this->im.rhs = scheme.im.f;
+	this->re.x = scheme.re.x;
+	this->im.x = scheme.im.x;
+	this->dirichlet = dirichlet;
 
 	analyze();
 }
@@ -59,6 +60,8 @@ void AX_Acoustic::analyze()
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info("  PHYSICS                                                                       ACOUSTIC REAL  \n");
 	eslog::info(" ============================================================================================= \n");
+
+	bool correct = true;
 
 	if (info::mesh->dimension == 2) {
 		setMaterials(info::ecf->acoustics_2d.material_set);
@@ -76,7 +79,10 @@ void AX_Acoustic::analyze()
 	elementCoordinates(*this);
 	elementIntegration(*this);
 
-	bool correct = true;
+	if (configuration.acoustic_pressure.size()) {
+		correct &= examineBoundaryParameter("FIXED ACOUSTIC PRESSURE ON BOUNDARIES", configuration.acoustic_pressure, pressure.node.externalValues);
+		fromExpression(*this, pressure.node, pressure.node.externalValues);
+	}
 
 	if (step::step.loadstep == 0) {
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
@@ -101,10 +107,6 @@ void AX_Acoustic::analyze()
 //		acousticBoundaryMass(*this);
 	}
 
-	if (configuration.acoustic_pressure.size()) {
-		correct &= examineBoundaryParameter("ACOUSTIC_PRESSURE", configuration.acoustic_pressure, dirichlet.gp.externalValues);
-		fromExpression(*this, dirichlet.gp, dirichlet.gp.externalValues);
-	}
 	if (configuration.normal_acceleration.size()) {
 		examineBoundaryParameter("NORMAL ACCELERATION", configuration.normal_acceleration, normalAcceleration.gp.externalValues);
 		fromExpression(*this, normalAcceleration.gp, normalAcceleration.gp.externalValues);
@@ -153,6 +155,10 @@ void AX_Acoustic::next()
 	if (im.rhs != nullptr) {
 		im.rhs->fill(0);
 		im.rhs->touched = true;
+	}
+
+	if (dirichlet != nullptr) {
+		dirichlet->touched = true;
 	}
 
 	iterate();

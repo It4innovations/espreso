@@ -90,9 +90,9 @@ void AX_HarmonicReal::composeSystem(step::Frequency &frequency, AX_LinearSystem<
 
 void AX_HarmonicReal::composeDirichlet(AX_LinearSystem<double> *system)
 {
-	math::fill(*system->solver.dirichlet, 0.);
-	math::add(*system->solver.dirichlet, 1., *system->assembler.dirichlet, 0   , dofs, 2 * dofs);
-	math::add(*system->solver.dirichlet, 1., *system->assembler.dirichlet, dofs, dofs, 2 * dofs);
+	system->solver.dirichlet->fill(0);
+	system->solver.dirichlet->add(1, system->assembler.dirichlet, 0   , dofs, 2 * dofs);
+//	system->solver.dirichlet->add(1, system->assembler.dirichlet, dofs, dofs, 2 * dofs);
 }
 
 void AX_HarmonicReal::extractSolution(AX_LinearSystem<double> *system)

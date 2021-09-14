@@ -15,6 +15,7 @@ template <class NGP, template <size_t N, size_t GP> class Operator, class ... Ar
 static inline ActionOperator* _instantiate(int code, size_t interval, Args&& ... args)
 {
 	switch (code) {
+	case static_cast<size_t>(Element::CODE::POINT1):    return new Operator< 1, NGP::POINT1   >(interval, std::forward<Args>(args)...); break;
 	case static_cast<size_t>(Element::CODE::LINE2):     return new Operator< 2, NGP::LINE2    >(interval, std::forward<Args>(args)...); break;
 	case static_cast<size_t>(Element::CODE::LINE3):     return new Operator< 3, NGP::LINE3    >(interval, std::forward<Args>(args)...); break;
 	case static_cast<size_t>(Element::CODE::TRIANGLE3): return new Operator< 3, NGP::TRIANGLE3>(interval, std::forward<Args>(args)...); break;
@@ -38,6 +39,7 @@ template <class NGP, size_t DIM, template <size_t N, size_t GP, size_t dimension
 static inline ActionOperator* _instantiate(int code, size_t interval, Args&& ... args)
 {
 	switch (code) {
+	case static_cast<size_t>(Element::CODE::POINT1):    return new Operator< 1, NGP::POINT1   , DIM>(interval, std::forward<Args>(args)...); break;
 	case static_cast<size_t>(Element::CODE::LINE2):     return new Operator< 2, NGP::LINE2    , DIM>(interval, std::forward<Args>(args)...); break;
 	case static_cast<size_t>(Element::CODE::LINE3):     return new Operator< 3, NGP::LINE3    , DIM>(interval, std::forward<Args>(args)...); break;
 	case static_cast<size_t>(Element::CODE::TRIANGLE3): return new Operator< 3, NGP::TRIANGLE3, DIM>(interval, std::forward<Args>(args)...); break;
@@ -83,17 +85,29 @@ static inline ActionOperator* instantiate(size_t interval, ParameterController &
 template <class NGP, template <size_t N, size_t GP> class Operator, class ... Args>
 static inline ActionOperator* instantiate(size_t region, size_t interval, ParameterController &controller, Args&& ... args)
 {
-	auto op = _instantiate<NGP, Operator, Args...>(info::mesh->boundaryRegions[region]->eintervals[interval].code, interval, std::forward<Args>(args)...);
-	controller.addOperator(op, interval, args...);
-	return op;
+	if (info::mesh->boundaryRegions[region]->dimension) {
+		auto op = _instantiate<NGP, Operator, Args...>(info::mesh->boundaryRegions[region]->eintervals[interval].code, interval, std::forward<Args>(args)...);
+		controller.addOperator(op, interval, args...);
+		return op;
+	} else {
+		auto op = _instantiate<NGP, Operator, Args...>(static_cast<size_t>(Element::CODE::POINT1), interval, std::forward<Args>(args)...);
+		controller.addOperator(op, interval, args...);
+		return op;
+	}
 }
 
 template <class NGP, size_t DIM, template <size_t N, size_t GP, size_t dimension> class Operator, class ... Args>
 static inline ActionOperator* instantiate(size_t region, size_t interval, ParameterController &controller, Args&& ... args)
 {
-	auto op = _instantiate<NGP, DIM, Operator, Args...>(info::mesh->boundaryRegions[region]->eintervals[interval].code, interval, std::forward<Args>(args)...);
-	controller.addOperator(op, interval, args...);
-	return op;
+	if (info::mesh->boundaryRegions[region]->dimension) {
+		auto op = _instantiate<NGP, DIM, Operator, Args...>(info::mesh->boundaryRegions[region]->eintervals[interval].code, interval, std::forward<Args>(args)...);
+		controller.addOperator(op, interval, args...);
+		return op;
+	} else {
+		auto op = _instantiate<NGP, DIM, Operator, Args...>(static_cast<size_t>(Element::CODE::POINT1), interval, std::forward<Args>(args)...);
+		controller.addOperator(op, interval, args...);
+		return op;
+	}
 }
 
 }

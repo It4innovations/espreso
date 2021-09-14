@@ -42,19 +42,9 @@ public:
 
 	AX_Acoustic(AX_Acoustic *previous, AcousticGlobalSettings &gsettings, AcousticLoadStepConfiguration &configuration);
 
-	void init(AX_HarmonicReal &scheme);
+	void init(AX_HarmonicReal &scheme, Vector_Base<double> *dirichlet);
 	void analyze();
 	void next();
-
-	void initDirichlet(Vector_Sparse<double> &dirichlet)
-	{
-		Assembler::initDirichlet(configuration.acoustic_pressure, dirichlet);
-	}
-
-	void fillDirichlet(Vector_Sparse<double> &dirichlet)
-	{
-		Assembler::fillDirichlet(configuration.acoustic_pressure, dirichlet);
-	}
 
 	void updateSolution();
 
@@ -69,7 +59,8 @@ public:
 	ParametersIntegration integration;
 	ParametersCoordinates coords;
 
-	ParametersBoundaryFunction dirichlet, normalAcceleration, impedance, q;
+	ParametersBoundaryNodeFunction pressure;
+	ParametersBoundaryFunction normalAcceleration, impedance, q;
 
 	ParametersElements<1> elements;
 
@@ -81,6 +72,7 @@ public:
 
 	Matrix_Base<double> *K, *M, *C;
 	Fragment re, im;
+	Vector_Base<double> *dirichlet;
 
 protected:
 	void initParameters();

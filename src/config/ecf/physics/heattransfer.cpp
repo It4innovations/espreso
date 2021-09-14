@@ -162,7 +162,7 @@ HeatTransferLoadStepConfiguration::HeatTransferLoadStepConfiguration(DIMENSION *
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "273.15" })
 			.setdynamic(),
-			ECFExpression::Scope::NODE);
+			ECFExpression::Scope::BNODES);
 	REGISTER(heat_source, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat source" })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })

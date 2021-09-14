@@ -75,7 +75,7 @@ bool AX_NewtonRaphson::run(step::Step &step, step::Time &time, AX_HeatTransfer &
 	step.iteration = 0;
 	assembler.evaluate();
 	scheme.composeSystem(step, system);
-	assembler.fillDirichlet(*system->solver.dirichlet);
+//	assembler.fillDirichlet(*system->solver.dirichlet);
 
 	system->update(step, assembler);
 	system->solve(step);
@@ -100,8 +100,9 @@ bool AX_NewtonRaphson::run(step::Step &step, step::Time &time, AX_HeatTransfer &
 			R->store(utils::filename(utils::debugDirectory(step) + "/scheme", "R").c_str());
 		}
 
-		assembler.fillDirichlet(*system->solver.dirichlet);
-		U->addTo(-1, system->solver.dirichlet);
+//		assembler.fillDirichlet(*system->solver.dirichlet);
+//		U->addTo(-1, system->solver.dirichlet);
+		system->solver.dirichlet->add(-1, U);
 
 		system->update(step, assembler);
 		system->solve(step);

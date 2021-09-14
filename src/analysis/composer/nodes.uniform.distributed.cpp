@@ -133,18 +133,18 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDist
 
 	std::vector<esint> belement(dofs * 8);
 	pattern->bregion.resize(info::mesh->boundaryRegions.size());
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
 
 			Asize = 0; RHSsize = 0;
-			for (auto e = info::mesh->boundaryRegions[r]->elements->begin(); e != info::mesh->boundaryRegions[r]->elements->end(); ++e) {
+			for (auto e = info::mesh->boundaryRegions[r]->elements->cbegin(); e != info::mesh->boundaryRegions[r]->elements->cend(); ++e) {
 				RHSsize += e->size() * dofs;
 				Asize += size(e->size() * dofs);
 			}
 			pattern->bregion[r].b.reserve(RHSsize);
 			pattern->bregion[r].A.reserve(Asize);
 
-			for (auto e = info::mesh->boundaryRegions[r]->elements->begin(); e != info::mesh->boundaryRegions[r]->elements->end(); ++e) {
+			for (auto e = info::mesh->boundaryRegions[r]->elements->cbegin(); e != info::mesh->boundaryRegions[r]->elements->cend(); ++e) {
 				belement.clear();
 				for (int dof = 0; dof < dofs; ++dof) {
 					for (auto n = e->begin(); n != e->end(); ++n) {
@@ -156,6 +156,17 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDist
 					for (size_t j = 0; j < belement.size(); ++j) {
 						pattern->bregion[r].A.push_back(std::lower_bound(APattern.begin(), APattern.end(), IJ{belement[i], belement[j]}) - APattern.begin());
 					}
+				}
+			}
+		} else {
+			pattern->bregion[r].b.reserve(info::mesh->boundaryRegions[r]->nodes->datatarray().size());
+			for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().cbegin(); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(); ++n) {
+				belement.clear();
+				for (int dof = 0; dof < dofs; ++dof) {
+					belement.push_back(info::mesh->nodes->uniqInfo.position[*n] * dofs + dof);
+				}
+				for (size_t i = 0; i < belement.size(); ++i) {
+					pattern->bregion[r].b.push_back(std::lower_bound(RHSPattern.begin(), RHSPattern.end(), belement[i]) - RHSPattern.begin());
 				}
 			}
 		}

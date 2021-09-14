@@ -28,8 +28,7 @@ struct AX_LinearSystem {
 
 	struct Template {
 		Matrix_Base<T> *A;
-		Vector_Base<T> *x, *b;
-		Vector_Sparse<T> *dirichlet;
+		Vector_Base<T> *x, *b, *dirichlet;
 	};
 
 	virtual void setMapping(Matrix_Base<T> *A) const =0;

@@ -169,6 +169,10 @@ struct ParametersElementNodeFunction {
 	ElementGPsExternalParameter<enodes> node;
 };
 
+struct ParametersBoundaryNodeFunction {
+	BoundaryExternalParameter<enodes> node;
+};
+
 struct ParametersBoundaryFunction {
 	BoundaryExternalParameter<egps> gp;
 };

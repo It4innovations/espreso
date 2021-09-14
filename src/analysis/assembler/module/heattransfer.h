@@ -44,19 +44,9 @@ public:
 
 	AX_HeatTransfer(AX_HeatTransfer *previous, HeatTransferGlobalSettings &gsettings, HeatTransferLoadStepConfiguration &configuration);
 
-	void init(AX_SteadyState &scheme);
+	void init(AX_SteadyState &scheme, Vector_Base<double> *dirichlet);
 	void analyze();
 	void evaluate();
-
-	void initDirichlet(Vector_Sparse<double> &dirichlet)
-	{
-		Assembler::initDirichlet(configuration.temperature, dirichlet);
-	}
-
-	void fillDirichlet(Vector_Sparse<double> &dirichlet)
-	{
-		Assembler::fillDirichlet(configuration.temperature, dirichlet);
-	}
 
 	void updateSolution();
 
@@ -82,7 +72,8 @@ public:
 	ParametersElementNodeFunction heatSource;
 
 	ParametersConvection convection;
-	ParametersBoundaryFunction dirichlet, heatFlow, heatFlux, q;
+	ParametersBoundaryNodeFunction temperature;
+	ParametersBoundaryFunction heatFlow, heatFlux, q;
 
 	ParametersElements<1> elements;
 	ParametersElements<1> elementsSimd;
@@ -92,12 +83,12 @@ public:
 	ParametersFlux flux;
 
 	Matrix_Base<double> *K, *M;
-	Vector_Base<double> *rhs, *x;
+	Vector_Base<double> *rhs, *x, *dirichlet;
 
 	std::map<std::string, ECFExpression> initialTemperature;
 
 protected:
-	void initTemperature();
+	bool initTemperature();
 	void initParameters();
 	void initNames();
 	void printVolume();

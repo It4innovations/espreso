@@ -45,7 +45,7 @@ void AX_HeatSteadyStateLinear::init()
 	}
 	system->init(this);
 	scheme.init(system);
-	assembler.init(scheme);
+	assembler.init(scheme, system->assembler.dirichlet);
 
 	Variable::list.global.insert(std::make_pair("TIME", nullptr));
 
@@ -60,7 +60,7 @@ void AX_HeatSteadyStateLinear::run(step::Step &step)
 
 	assembler.evaluate();
 	scheme.composeSystem(step, system);
-	assembler.fillDirichlet(*system->solver.dirichlet);
+//	assembler.fillDirichlet(*system->solver.dirichlet);
 
 	system->update(step, assembler);
 	system->solve(step);

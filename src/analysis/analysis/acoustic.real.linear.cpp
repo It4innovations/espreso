@@ -33,7 +33,7 @@ void AX_AcousticRealLinear::init()
 	}
 	system->init(this);
 	scheme.init(system);
-	assembler.init(scheme);
+	assembler.init(scheme, system->assembler.dirichlet);
 
 	Variable::list.global.insert(std::make_pair("FREQUENCY", nullptr));
 
@@ -52,7 +52,6 @@ void AX_AcousticRealLinear::run(step::Step &step)
 		assembler.next();
 		scheme.composeSystem(frequency, system);
 
-		assembler.fillDirichlet(*system->assembler.dirichlet);
 		scheme.composeDirichlet(system);
 
 		scheme.storeScheme(frequency);

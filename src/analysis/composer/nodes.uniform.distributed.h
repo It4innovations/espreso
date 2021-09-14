@@ -4,7 +4,10 @@
 
 #include "elementmapping.h"
 
+#include "basis/containers/serializededata.h"
+#include "basis/utilities/utils.h"
 #include "esinfo/meshinfo.h"
+#include "config/holders/expression.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/boundaryregionstore.h"
 
@@ -93,6 +96,38 @@ struct UniformNodesDistributedPattern {
 					v->mapping.boundary[r][i].position = bregion[r].b.data() + offset;
 					offset += (info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin) * Mesh::edata[info::mesh->boundaryRegions[r]->eintervals[i].code].nodes;
 				}
+			}
+		}
+	}
+
+	template<typename T>
+	void dirichlet(Vector_Distributed<Vector_Sparse, T> &v, std::map<std::string, ECFExpression> &settings)
+	{
+		std::vector<esint> indices;
+		for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+			const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
+			if (settings.find(region->name) != settings.end()) {
+				indices.insert(indices.end(), region->nodes->datatarray().begin(), region->nodes->datatarray().end());
+			}
+		}
+		bregion[0].b = indices; // use the first region to store indices permutation;
+		utils::sortAndRemoveDuplicates(indices);
+		v.cluster.resize(elements.nrows, indices.size());
+		for (size_t i = 0; i < indices.size(); ++i) {
+			v.cluster.indices[i] = indices[i];
+		}
+		for (size_t i = 0; i < bregion[0].b.size(); ++i) {
+			bregion[0].b[i] = std::lower_bound(indices.begin(), indices.end(), bregion[0].b[i]) - indices.begin();
+		}
+
+		v.mapping.boundary.resize(info::mesh->boundaryRegions.size());
+		for (size_t r = 1, offset = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+			const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
+			if (settings.find(region->name) != settings.end()) {
+				v.mapping.boundary[r].resize(1);
+				v.mapping.boundary[r].front().data = v.cluster.vals;
+				v.mapping.boundary[r].front().position = bregion[0].b.data() + offset;
+				offset += region->nodes->datatarray().size();
 			}
 		}
 	}

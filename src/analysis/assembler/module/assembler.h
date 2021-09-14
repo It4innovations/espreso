@@ -33,9 +33,6 @@ public:
 protected:
 	void iterate();
 
-	void initDirichlet(std::map<std::string, ECFExpression> &settings, Vector_Sparse<double> &dirichlet);
-	void fillDirichlet(std::map<std::string, ECFExpression> &settings, Vector_Sparse<double> &dirichlet);
-
 	void printParameterStats(const char* name, ParameterData &parameter);
 	void printParameterStats(const char* name, NamedData *data);
 

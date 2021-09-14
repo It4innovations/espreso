@@ -97,19 +97,48 @@ struct VectorFiller: public ActionOperator {
 
 	void operator++()
 	{
-		// increment by operator()
+		++rhs;
 	}
 
 	void move(int n)
 	{
-		rhs += n;
+		rhs += n * rhs.inc;
 		position += n * nodes * dimension;
 	}
 
 	void operator()()
 	{
 		for (size_t r = 0; r < nodes * dimension; ++r) {
-			global[*position++] += *rhs.data++;
+			global[*position++] += rhs.data[r];
+		}
+	}
+};
+
+template<size_t nodes, size_t gps, size_t dimension>
+struct VectorSetter: public ActionOperator {
+	VectorSetter(int interval, const ParameterData &rhs, double *global, const esint *position)
+	: rhs(rhs, interval),
+	  global(global), position(position) {}
+
+	InputParameterIterator rhs;
+	double *global;
+	const esint *position;
+
+	void operator++()
+	{
+		++rhs;
+	}
+
+	void move(int n)
+	{
+		rhs += n * rhs.inc;
+		position += n * nodes * dimension;
+	}
+
+	void operator()()
+	{
+		for (size_t r = 0; r < nodes * dimension; ++r) {
+			global[*position++] = rhs.data[r];
 		}
 	}
 };

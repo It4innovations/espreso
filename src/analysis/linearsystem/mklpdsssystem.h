@@ -68,8 +68,8 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 		AX_LinearSystem<T>::solver.x = &solver.x;
 		AX_LinearSystem<T>::solver.dirichlet = &solver.dirichlet;
 
-		analysis->assembler.initDirichlet(assembler.dirichlet);
-		math::multiplyPattern(solver.dirichlet, assembler.dirichlet, 1, 2);
+		assembler.pattern.dirichlet(assembler.dirichlet, analysis->configuration.acoustic_pressure);
+		math::multiplyPattern(solver.dirichlet.cluster, assembler.dirichlet.cluster, 1, 2);
 	}
 
 	template<typename HeatSteadyState>
@@ -84,7 +84,7 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 		AX_LinearSystem<T>::assembler.b = AX_LinearSystem<T>::solver.b = &solver.b;
 		AX_LinearSystem<T>::assembler.x = AX_LinearSystem<T>::solver.x = &solver.x;
 
-		analysis->assembler.initDirichlet(solver.dirichlet);
+		assembler.pattern.dirichlet(solver.dirichlet, analysis->configuration.temperature);
 		AX_LinearSystem<T>::assembler.dirichlet = AX_LinearSystem<T>::solver.dirichlet = &solver.dirichlet;
 	}
 
@@ -141,7 +141,7 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 		}
 		if (solver.A.touched || solver.b.touched || solver.dirichlet.touched) {
 //			synchronization.gatherFromUpper(solver.A.cluster.vals);
-			setDirichlet(solver.A, solver.b, solver.dirichlet, solver.A.distribution);
+			setDirichlet(solver.A, solver.b, solver.dirichlet.cluster, solver.A.distribution);
 			mklpdss.update(solver.A);
 		}
 
@@ -214,7 +214,7 @@ struct AX_MKLPDSSSystem: public AX_LinearSystem<T> {
 
 		Matrix_Distributed<Matrix_CSR, T> A;
 		Vector_Distributed<Vector_Dense, T> x, b;
-		Vector_Sparse<T> dirichlet;
+		Vector_Distributed<Vector_Sparse, T> dirichlet;
 	} assembler, solver;
 
 	MKLPDSS<T> mklpdss;

@@ -93,7 +93,6 @@ void _boundaryCoordinates(Module &module)
 			for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
 				auto procNodes = info::mesh->boundaryRegions[r]->elements->cbegin() + info::mesh->boundaryRegions[r]->eintervals[interval].begin;
 				if (info::mesh->dimension == 2) {
-
 					module.boundaryOps[r][interval].emplace_back(instantiate<Coordinates2DToElementNodes>(interval, module.controller, procNodes, module.coords.boundary.node.regions[r]));
 				}
 				if (info::mesh->dimension == 3) {
@@ -108,27 +107,42 @@ void _boundaryCoordinates(Module &module)
 					}
 				}
 			}
+		} else {
+			if (Variable::list.region[r].enodes.count("COORDINATE_X") || Variable::list.region[r].enodes.count("COORDINATE_Y") || Variable::list.region[r].enodes.count("COORDINATE_Z")) {
+				module.controller.addInput(module.coords.boundary.node.regions[r], info::mesh->nodes->coordinates);
+				module.controller.prepare(module.coords.boundary.node.regions[r]);
 
-			auto it = Variable::list.region[r].enodes.end();
-			if ((it = Variable::list.region[r].enodes.find("COORDINATE_X")) != Variable::list.region[r].enodes.end()) {
-				it->second = new ParameterVariable(module.coords.boundary.node.regions[r].data, module.coords.boundary.node.regions[r].isconst, module.coords.boundary.node.regions[r].update, 0, info::mesh->dimension);
+				for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+					auto nodes = info::mesh->boundaryRegions[r]->nodes->cbegin(t);
+					if (info::mesh->dimension == 2) {
+						module.boundaryOps[r][t].emplace_back(instantiate<Coordinates2DToElementNodes>(t, module.controller, nodes, module.coords.boundary.node.regions[r]));
+					}
+					if (info::mesh->dimension == 3) {
+						module.boundaryOps[r][t].emplace_back(instantiate<Coordinates3DToElementNodes>(t, module.controller, nodes, module.coords.boundary.node.regions[r]));
+					}
+				}
 			}
-			if ((it = Variable::list.region[r].enodes.find("COORDINATE_Y")) != Variable::list.region[r].enodes.end()) {
-				it->second = new ParameterVariable(module.coords.boundary.node.regions[r].data, module.coords.boundary.node.regions[r].isconst, module.coords.boundary.node.regions[r].update, 1, info::mesh->dimension);
-			}
-			if (info::mesh->dimension == 3 && (it = Variable::list.region[r].enodes.find("COORDINATE_Z")) != Variable::list.region[r].enodes.end()) {
-				it->second = new ParameterVariable(module.coords.boundary.node.regions[r].data, module.coords.boundary.node.regions[r].isconst, module.coords.boundary.node.regions[r].update, 2, info::mesh->dimension);
-			}
+		}
 
-			if ((it = Variable::list.region[r].egps.find("COORDINATE_X")) != Variable::list.region[r].egps.end()) {
-				it->second = new ParameterVariable(module.coords.boundary.gp.regions[r].data, module.coords.boundary.gp.regions[r].isconst, module.coords.boundary.gp.regions[r].update, 0, info::mesh->dimension);
-			}
-			if ((it = Variable::list.region[r].egps.find("COORDINATE_Y")) != Variable::list.region[r].egps.end()) {
-				it->second = new ParameterVariable(module.coords.boundary.gp.regions[r].data, module.coords.boundary.gp.regions[r].isconst, module.coords.boundary.gp.regions[r].update, 1, info::mesh->dimension);
-			}
-			if (info::mesh->dimension == 3 && (it = Variable::list.region[r].egps.find("COORDINATE_Z")) != Variable::list.region[r].egps.end()) {
-				it->second = new ParameterVariable(module.coords.boundary.gp.regions[r].data, module.coords.boundary.gp.regions[r].isconst, module.coords.boundary.gp.regions[r].update, 2, info::mesh->dimension);
-			}
+		auto it = Variable::list.region[r].enodes.end();
+		if ((it = Variable::list.region[r].enodes.find("COORDINATE_X")) != Variable::list.region[r].enodes.end()) {
+			it->second = new ParameterVariable(module.coords.boundary.node.regions[r].data, module.coords.boundary.node.regions[r].isconst, module.coords.boundary.node.regions[r].update, 0, info::mesh->dimension);
+		}
+		if ((it = Variable::list.region[r].enodes.find("COORDINATE_Y")) != Variable::list.region[r].enodes.end()) {
+			it->second = new ParameterVariable(module.coords.boundary.node.regions[r].data, module.coords.boundary.node.regions[r].isconst, module.coords.boundary.node.regions[r].update, 1, info::mesh->dimension);
+		}
+		if (info::mesh->dimension == 3 && (it = Variable::list.region[r].enodes.find("COORDINATE_Z")) != Variable::list.region[r].enodes.end()) {
+			it->second = new ParameterVariable(module.coords.boundary.node.regions[r].data, module.coords.boundary.node.regions[r].isconst, module.coords.boundary.node.regions[r].update, 2, info::mesh->dimension);
+		}
+
+		if ((it = Variable::list.region[r].egps.find("COORDINATE_X")) != Variable::list.region[r].egps.end()) {
+			it->second = new ParameterVariable(module.coords.boundary.gp.regions[r].data, module.coords.boundary.gp.regions[r].isconst, module.coords.boundary.gp.regions[r].update, 0, info::mesh->dimension);
+		}
+		if ((it = Variable::list.region[r].egps.find("COORDINATE_Y")) != Variable::list.region[r].egps.end()) {
+			it->second = new ParameterVariable(module.coords.boundary.gp.regions[r].data, module.coords.boundary.gp.regions[r].isconst, module.coords.boundary.gp.regions[r].update, 1, info::mesh->dimension);
+		}
+		if (info::mesh->dimension == 3 && (it = Variable::list.region[r].egps.find("COORDINATE_Z")) != Variable::list.region[r].egps.end()) {
+			it->second = new ParameterVariable(module.coords.boundary.gp.regions[r].data, module.coords.boundary.gp.regions[r].isconst, module.coords.boundary.gp.regions[r].update, 2, info::mesh->dimension);
 		}
 	}
 }
@@ -138,6 +152,11 @@ void elementCoordinates(AX_HeatTransfer &module)
 	_elementCoordinates(module);
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		auto temp = module.configuration.temperature.find(info::mesh->boundaryRegions[r]->name);
+		if (temp != module.configuration.temperature.end()) {
+			Variable::analyze(temp->second, r);
+		}
+
 		auto flow = module.configuration.heat_flow.find(info::mesh->boundaryRegions[r]->name);
 		if (flow != module.configuration.heat_flow.end()) {
 			Variable::analyze(flow->second, r);

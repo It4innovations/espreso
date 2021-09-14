@@ -53,7 +53,7 @@ void fromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalE
 	_fromExpression<ExpressionsToGPs>(module, parameter, value);
 }
 
-template <typename Module, template<size_t, size_t> typename Operator>
+template <typename Module>
 void _fromExpression(Module &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values)
 {
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
@@ -67,8 +67,14 @@ void _fromExpression(Module &module, BoundaryParameterPack &parameter, ExternalB
 			module.controller.prepare(parameter.regions[r]);
 			for (int d = 0; d < values.dimension && values.evaluator[r * values.dimension + d]; ++d) {
 				std::fill(parameter.regions[r].update.begin(), parameter.regions[r].update.end(), 1);
-				for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-					module.boundaryOps[r][i].emplace_back(instantiate<AX_HeatTransfer::NGP, Operator>(r, i, module.controller, parameter.regions[r], values.evaluator[r * values.dimension + d], d, values.dimension));
+				if (info::mesh->boundaryRegions[r]->dimension) {
+					for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+						module.boundaryOps[r][i].emplace_back(instantiate<AX_HeatTransfer::NGP, ExpressionsToGPs>(r, i, module.controller, parameter.regions[r], values.evaluator[r * values.dimension + d], d, values.dimension));
+					}
+				} else {
+					for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+						module.boundaryOps[r][t].emplace_back(instantiate<AX_HeatTransfer::NGP, ExpressionsToNodes>(r, t, module.controller, parameter.regions[r], values.evaluator[r * values.dimension + d], d, values.dimension));
+					}
 				}
 			}
 		}
@@ -77,12 +83,12 @@ void _fromExpression(Module &module, BoundaryParameterPack &parameter, ExternalB
 
 void fromExpression(AX_HeatTransfer &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values)
 {
-	_fromExpression<AX_HeatTransfer, ExpressionsToGPs>(module, parameter, values);
+	_fromExpression<AX_HeatTransfer>(module, parameter, values);
 }
 
 void fromExpression(AX_Acoustic &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values)
 {
-	_fromExpression<AX_Acoustic, ExpressionsToGPs>(module, parameter, values);
+	_fromExpression<AX_Acoustic>(module, parameter, values);
 }
 
 }

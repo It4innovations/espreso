@@ -241,6 +241,9 @@ void BoundaryParameterData::resizeAligned(size_t alignment, double init)
 
 int BoundaryParameterData::increment(int interval) const
 {
+	if (info::mesh->boundaryRegions[region]->dimension == 0) {
+		return size.n * std::pow(info::mesh->dimension, size.ndimension);
+	}
 	return
 			size.n *
 			std::pow(info::mesh->dimension, size.ndimension) *
@@ -251,6 +254,9 @@ int BoundaryParameterData::increment(int interval) const
 
 int BoundaryParameterData::increment(PerElementSize size, int interval) const
 {
+	if (info::mesh->boundaryRegions[region]->dimension == 0) {
+		return size.n * std::pow(info::mesh->dimension, size.ndimension);
+	}
 	return
 			size.n *
 			std::pow(info::mesh->dimension, size.ndimension) *

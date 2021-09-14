@@ -21,7 +21,7 @@
 using namespace espreso;
 
 AX_HeatTransfer::AX_HeatTransfer(AX_HeatTransfer *previous, HeatTransferGlobalSettings &gsettings, HeatTransferLoadStepConfiguration &configuration)
-: gsettings(gsettings), configuration(configuration), K{}, M{}, rhs{}, x{}
+: gsettings(gsettings), configuration(configuration), K{}, M{}, rhs{}, x{}, dirichlet{}
 {
 
 }
@@ -61,7 +61,7 @@ void AX_HeatTransfer::initParameters()
 	}
 }
 
-void AX_HeatTransfer::initTemperature()
+bool AX_HeatTransfer::initTemperature()
 {
 	// This code has to solve problem that initial temperature is set to elements regions, but we need it in nodes
 	// 1. settings -> nodeInitialTemperature
@@ -69,6 +69,13 @@ void AX_HeatTransfer::initTemperature()
 	// 3. Dirichlet -> initialTemperature (if 'init_temp_respect_bc')
 	// 4. initialTemperature -> nodeInitialTemperature (TODO: check the correction with TB)
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	bool correct = true;
+
+	if (configuration.temperature.size()) {
+		correct &= examineBoundaryParameter("FIXED TEMPERATURE ON BOUNDARIES", configuration.temperature, temperature.node.externalValues);
+		fromExpression(*this, temperature.node, temperature.node.externalValues);
+	}
 
 	if (info::mesh->dimension == 2) {
 		if (info::ecf->heat_transfer_2d.init_temp_respect_bc) {
@@ -117,6 +124,8 @@ void AX_HeatTransfer::initTemperature()
 //	builders.push_back(new ElementsGaussPointsBuilder<1>(integration.N, temp.node, temp.gp, "INTEGRATE TEMPERATURE INTO ELEMENTS GAUSS POINTS"));
 //	builders.push_back(new CopyNodesToBoundaryNodes(*ParametersTemperature::output, temp.boundary.node, "COPY TEMPERATURE TO BOUNDARY NODES"));
 //	builders.push_back(new BoundaryGaussPointsBuilder<1>(integration.boundary.N, temp.boundary.node, temp.boundary.gp, "INTEGRATE TEMPERATURE INTO BOUNDARY GAUSS POINTS"));
+
+	return correct;
 }
 
 void AX_HeatTransfer::printVolume()
@@ -162,11 +171,12 @@ void AX_HeatTransfer::printVolume()
 	eslog::info(" ============================================================================================= \n");
 }
 
-void AX_HeatTransfer::init(AX_SteadyState &scheme)
+void AX_HeatTransfer::init(AX_SteadyState &scheme, Vector_Base<double> *dirichlet)
 {
-	K = scheme.K;
-	rhs = scheme.f;
-	x = scheme.x;
+	this->K = scheme.K;
+	this->rhs = scheme.f;
+	this->x = scheme.x;
+	this->dirichlet = dirichlet;
 
 	initNames();
 	analyze();
@@ -199,7 +209,7 @@ void AX_HeatTransfer::analyze()
 	_evaluate(); // fill coordinates, compute determinants
 	printVolume();
 
-	initTemperature();
+	correct &= initTemperature();
 
 //	Variable::print();
 
@@ -346,10 +356,6 @@ void AX_HeatTransfer::analyze()
 	controller.prepare(gradient.xi);
 	heatStiffness(*this);
 
-	if (configuration.temperature.size()) {
-		correct &= examineBoundaryParameter("TEMPERATURE", configuration.temperature, dirichlet.gp.externalValues);
-		fromExpression(*this, dirichlet.gp, dirichlet.gp.externalValues);
-	}
 	if (configuration.heat_flow.size()) {
 		correct &= examineBoundaryParameter("HEAT FLOW", configuration.heat_flow, heatFlow.gp.externalValues);
 		fromExpression(*this, heatFlow.gp, heatFlow.gp.externalValues);
@@ -391,22 +397,26 @@ void AX_HeatTransfer::evaluate()
 		rhs->fill(0);
 		rhs->touched = true;
 	}
+	if (dirichlet != nullptr) {
+//		dirichlet->fill(0);
+		dirichlet->touched = true;
+	}
 
 	iterate();
 
 	controller.resetUpdate();
 
-	if (temp.gp.data) {
-		std::cout << "T: " << *temp.gp.data << "\n";
-	}
-
-	if (material.conductivityIsotropic.data) {
-		std::cout << "C: " << *material.conductivityIsotropic.data << "\n";
-	}
-
-	if (elements.stiffness.data) {
-		std::cout << "K: " << *elements.stiffness.data << "\n";
-	}
+//	if (temp.gp.data) {
+//		std::cout << "T: " << *temp.gp.data << "\n";
+//	}
+//
+//	if (material.conductivityIsotropic.data) {
+//		std::cout << "C: " << *material.conductivityIsotropic.data << "\n";
+//	}
+//
+//	if (elements.stiffness.data) {
+//		std::cout << "K: " << *elements.stiffness.data << "\n";
+//	}
 }
 
 void AX_HeatTransfer::_evaluate()

@@ -47,6 +47,17 @@ void store(Vector_Distributed<Vector_Dense, double> &x, const char* file)
 }
 
 template <>
+void store(Vector_Distributed<Vector_Sparse, double> &x, const char* file)
+{
+	Vector_Sparse<double> _x;
+	_x.size = x.cluster.size - x.distribution.halo.size();
+	_x.nnz = x.cluster.nnz - x.distribution.halo.size();
+	_x.indices = x.cluster.indices + x.distribution.halo.size();
+	_x.vals = x.cluster.vals + x.distribution.halo.size();
+	store(_x, file);
+}
+
+template <>
 void store(Vector_FETI<Vector_Dense, double> &x, const char* file)
 {
 	for (size_t d = 0; d < x.domains.size(); ++d) {

@@ -2,6 +2,7 @@
 #ifndef BASIS_UTILITIES_UTILS_H_
 #define BASIS_UTILITIES_UTILS_H_
 
+#include <cstddef>
 #include <vector>
 
 namespace espreso {

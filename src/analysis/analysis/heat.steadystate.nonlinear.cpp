@@ -47,7 +47,7 @@ void AX_HeatSteadyStateNonLinear::init()
 	system->init(this);
 	solver.init(system);
 	scheme.init(system);
-	assembler.init(scheme);
+	assembler.init(scheme, system->assembler.dirichlet);
 
 	Variable::list.global.insert(std::make_pair("TIME", nullptr));
 
