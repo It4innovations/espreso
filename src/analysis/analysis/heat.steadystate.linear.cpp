@@ -60,7 +60,6 @@ void AX_HeatSteadyStateLinear::run(step::Step &step)
 
 	assembler.evaluate();
 	scheme.composeSystem(step, system);
-//	assembler.fillDirichlet(*system->solver.dirichlet);
 
 	system->update(step, assembler);
 	system->solve(step);

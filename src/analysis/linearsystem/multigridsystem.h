@@ -37,6 +37,11 @@ struct AX_MultigridSystem: AX_LinearSystem<T> {
 
 	}
 
+	void init(AX_AcousticComplexLinear *analysis)
+	{
+
+	}
+
 	void init(AX_HeatSteadyStateLinear *analysis)
 	{
 

@@ -103,24 +103,24 @@ public:
 		math::add(*a, alpha, cluster);
 	}
 
-	double norm()
+	T norm()
 	{
-		double dot = math::dot(cluster.size - distribution.halo.size(), cluster.vals + distribution.halo.size(), 1, cluster.vals + distribution.halo.size(), 1);
+		T dot = math::dot(cluster.size - distribution.halo.size(), cluster.vals + distribution.halo.size(), 1, cluster.vals + distribution.halo.size(), 1);
 		Communication::allReduce(&dot, NULL, 1, MPI_DOUBLE, MPI_SUM);
 		return std::sqrt(dot);
 	}
 
-	double max()
+	T max()
 	{
 		return 0;
 	}
 
-	double absmax()
+	T absmax()
 	{
 		return 0;
 	}
 
-	double dot(const Vector_Base<T> *other)
+	T dot(const Vector_Base<T> *other)
 	{
 		return 0;
 	}

@@ -6,6 +6,8 @@
 
 #include "analysis/composer/elementmapping.h"
 
+#include <complex>
+
 namespace espreso {
 
 template <typename T>
@@ -28,7 +30,10 @@ public:
 	virtual void scale(const T &alpha) =0;
 	virtual void add(const T &alpha, const Matrix_Base *a) =0;
 	virtual void add(const T &alpha, const Matrix_Base *a, int rowOffset, int colOffset, int size, int step) =0;
-	virtual void sum(const T &alpha, const Matrix_Base *a, const T &beta, const Matrix_Base *b) =0;
+
+	virtual void sum(const double &alpha, const Matrix_Base<double> *a, const double &beta, const Matrix_Base<double> *b) =0;
+	virtual void sum(const std::complex<double> &alpha, const Matrix_Base<std::complex<double>> *a, const std::complex<double> &beta, const Matrix_Base<std::complex<double>> *b) =0;
+
 	virtual void sum(const T &alpha, const Matrix_Base *a, const T &beta, const Matrix_Base *b, int rowOffset, int colOffset, int size, int step) =0;
 
 	virtual void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out) =0;

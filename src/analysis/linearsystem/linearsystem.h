@@ -13,6 +13,7 @@ namespace step { struct Step; }
 class AX_HeatSteadyStateLinear;
 class AX_HeatSteadyStateNonLinear;
 class AX_AcousticRealLinear;
+class AX_AcousticComplexLinear;
 //class AX_HeatTransientLinear;
 //class AX_HeatTransientNonLinear;
 //class AX_StructuralMechanicsHarmonicComplexLinear;
@@ -26,9 +27,11 @@ class AX_Acoustic;
 template <typename T>
 struct AX_LinearSystem {
 
+	template <typename Type>
 	struct Template {
-		Matrix_Base<T> *A;
-		Vector_Base<T> *x, *b, *dirichlet;
+		Matrix_Base<Type> *A;
+		Vector_Base<Type> *x, *b;
+		Vector_Base<Type> *dirichlet;
 	};
 
 	virtual void setMapping(Matrix_Base<T> *A) const =0;
@@ -39,6 +42,7 @@ struct AX_LinearSystem {
 	virtual void info() const {};
 
 	virtual void init(AX_AcousticRealLinear       *analysis) =0;
+	virtual void init(AX_AcousticComplexLinear    *analysis) =0;
 	virtual void init(AX_HeatSteadyStateLinear    *analysis) =0;
 	virtual void init(AX_HeatSteadyStateNonLinear *analysis) =0;
 //	virtual void init(AX_HeatSteadyStateNonLinear *analysis) =0;
@@ -61,7 +65,8 @@ struct AX_LinearSystem {
 
 	virtual bool solve(step::Step &step) =0;
 
-	Template assembler, solver;
+	Template<double> assembler;
+	Template<T> solver;
 };
 
 }

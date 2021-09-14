@@ -131,22 +131,22 @@ public:
 
 	}
 
-	double norm()
+	T norm()
 	{
 		return 0;
 	}
 
-	double max()
+	T max()
 	{
 		return 0;
 	}
 
-	double absmax()
+	T absmax()
 	{
 		return 0;
 	}
 
-	double dot(const Vector_Base<T> *other)
+	T dot(const Vector_Base<T> *other)
 	{
 		return 0;
 	}

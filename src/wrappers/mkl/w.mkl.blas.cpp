@@ -71,6 +71,16 @@ double dot(const esint size, const double *x, const esint incX, const double *y,
 }
 
 template <>
+std::complex<double> dot(const esint size, const std::complex<double> *x, const esint incX, const std::complex<double> *y, const esint incY)
+{
+	std::complex<double> dot = 0;
+#ifdef HAVE_MKL
+	cblas_cdotu_sub(size, x, incX, y, incY, &dot);
+#endif
+	return dot;
+}
+
+template <>
 double norm(const esint size, const double *x, const esint incX)
 {
 	double norm = 0;

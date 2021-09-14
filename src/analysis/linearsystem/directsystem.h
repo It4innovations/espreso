@@ -44,6 +44,25 @@ struct AX_DirectSystem: AX_LinearSystem<T> {
 
 	void init(AX_AcousticRealLinear *analysis)
 	{
+		// assembler.pattern.set(1);
+		// assembler.pattern.fill(assembler.A);
+		// assembler.pattern.fill(assembler.b);
+		// assembler.pattern.fill(assembler.x);
+		// AX_LinearSystem<T>::assembler.A = &assembler.A;
+		// AX_LinearSystem<T>::assembler.b = &assembler.b;
+		// AX_LinearSystem<T>::assembler.x = &assembler.x;
+
+		// solver.pattern.set(2);
+		// solver.pattern.fill(solver.A);
+		// solver.pattern.fill(solver.b);
+		// solver.pattern.fill(solver.x);
+		// AX_LinearSystem<T>::solver.A = &solver.A;
+		// AX_LinearSystem<T>::solver.b = &solver.b;
+		// AX_LinearSystem<T>::solver.x = &solver.x;
+	}
+
+	void init(AX_AcousticComplexLinear *analysis)
+	{
 
 	}
 
@@ -54,7 +73,13 @@ struct AX_DirectSystem: AX_LinearSystem<T> {
 
 	void init(AX_HeatSteadyStateNonLinear *analysis)
 	{
-
+		// solver.pattern.set(1);
+		// solver.pattern.fill(solver.A);
+		// solver.pattern.fill(solver.b);
+		// solver.pattern.fill(solver.x);
+		// AX_LinearSystem<T>::assembler.A = AX_LinearSystem<T>::solver.A = &solver.A;
+		// AX_LinearSystem<T>::assembler.b = AX_LinearSystem<T>::solver.b = &solver.b;
+		// AX_LinearSystem<T>::assembler.x = AX_LinearSystem<T>::solver.x = &solver.x;
 	}
 
 //	void init(AX_HeatSteadyStateNonLinear *analysis)
@@ -142,12 +167,17 @@ struct AX_DirectSystem: AX_LinearSystem<T> {
 		return false;
 	}
 
+	template <typename Type>
 	struct Data {
 		UniformNodesDistributedPattern pattern;
 
-		Matrix_Distributed<Matrix_CSR, T> A;
-		Vector_Distributed<Vector_Dense, T> x, b;
-	} assembler, solver;
+		Matrix_Distributed<Matrix_CSR, Type> A;
+		Vector_Distributed<Vector_Dense, Type> x, b;
+		Vector_Sparse<Type> dirichlet;
+	};
+	
+	Data<double> assembler;
+	Data<T> solver;
 };
 
 }

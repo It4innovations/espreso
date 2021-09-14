@@ -319,46 +319,46 @@ void espreso::initGluing(AX_FETISystem<double> &solver)
 
 void espreso::initKernels(AX_FETISystem<double> &solver, AX_HeatTransfer &assembler)
 {
-	solver.N1.domains.resize(solver.A.domains.size());
-	solver.N2.domains.resize(solver.A.domains.size());
-	solver.RegMat.domains.resize(solver.A.domains.size());
+	// solver.N1.domains.resize(solver.A.domains.size());
+	// solver.N2.domains.resize(solver.A.domains.size());
+	// solver.RegMat.domains.resize(solver.A.domains.size());
 
-	#pragma omp parallel for
-	for (size_t d = 0; d < solver.A.domains.size(); ++d) {
-		if (assembler.hasKernel(d)) {
-			solver.N1.domains[d].resize(solver.A.domains[d].nrows, 1);
-			solver.N1.domains[d].type = Matrix_Type::REAL_UNSYMMETRIC;
+	// #pragma omp parallel for
+	// for (size_t d = 0; d < solver.A.domains.size(); ++d) {
+	// 	if (assembler.hasKernel(d)) {
+	// 		solver.N1.domains[d].resize(solver.A.domains[d].nrows, 1);
+	// 		solver.N1.domains[d].type = Matrix_Type::REAL_UNSYMMETRIC;
 
-			solver.RegMat.domains[d].resize(solver.A.domains[d].nrows, solver.A.domains[d].ncols, 1);
-			solver.RegMat.domains[d].type = solver.A.domains[d].type;
+	// 		solver.RegMat.domains[d].resize(solver.A.domains[d].nrows, solver.A.domains[d].ncols, 1);
+	// 		solver.RegMat.domains[d].type = solver.A.domains[d].type;
 
-			solver.RegMat.domains[d].rows[0] = solver.RegMat.domains[d].cols[0] = _Matrix_CSR_Pattern::Indexing;
-			std::fill(solver.RegMat.domains[d].rows + 1, solver.RegMat.domains[d].rows + solver.RegMat.domains[d].nrows + 1, _Matrix_CSR_Pattern::Indexing + 1);
-		}
-	}
+	// 		solver.RegMat.domains[d].rows[0] = solver.RegMat.domains[d].cols[0] = _Matrix_CSR_Pattern::Indexing;
+	// 		std::fill(solver.RegMat.domains[d].rows + 1, solver.RegMat.domains[d].rows + solver.RegMat.domains[d].nrows + 1, _Matrix_CSR_Pattern::Indexing + 1);
+	// 	}
+	// }
 }
 
 void espreso::updateKernels(AX_FETISystem<double> &solver, AX_HeatTransfer &assembler)
 {
-	#pragma omp parallel for
-	for (size_t d = 0; d < solver.A.domains.size(); ++d) {
-		if (assembler.hasKernel(d)) {
-			Vector_Dense<double> diag;
-			diag.resize(solver.A.domains[d].nrows);
-			math::getDiagonal(solver.A.domains[d], diag);
-			solver.RegMat.domains[d].vals[0] = math::max(diag);
+	// #pragma omp parallel for
+	// for (size_t d = 0; d < solver.A.domains.size(); ++d) {
+	// 	if (assembler.hasKernel(d)) {
+	// 		Vector_Dense<double> diag;
+	// 		diag.resize(solver.A.domains[d].nrows);
+	// 		math::getDiagonal(solver.A.domains[d], diag);
+	// 		solver.RegMat.domains[d].vals[0] = math::max(diag);
 
-			if (solver.configuration.method != FETIConfiguration::METHOD::HYBRID_FETI) { // N1 orthogonal for whole cluster
-				esint crows = 0;
-				for (esint dd = 0; dd < info::mesh->domains->size; dd++) {
-					if (info::mesh->domains->cluster[d] == info::mesh->domains->cluster[dd]) {
-						crows += solver.A.domains[dd].nrows;
-					}
-				}
-				math::fill(solver.N1.domains[d], 1.0 / std::sqrt(crows));
-			} else {
-				math::fill(solver.N1.domains[d], 1.0 / std::sqrt(solver.A.domains[d].nrows));
-			}
-		}
-	}
+	// 		if (solver.configuration.method != FETIConfiguration::METHOD::HYBRID_FETI) { // N1 orthogonal for whole cluster
+	// 			esint crows = 0;
+	// 			for (esint dd = 0; dd < info::mesh->domains->size; dd++) {
+	// 				if (info::mesh->domains->cluster[d] == info::mesh->domains->cluster[dd]) {
+	// 					crows += solver.A.domains[dd].nrows;
+	// 				}
+	// 			}
+	// 			math::fill(solver.N1.domains[d], 1.0 / std::sqrt(crows));
+	// 		} else {
+	// 			math::fill(solver.N1.domains[d], 1.0 / std::sqrt(solver.A.domains[d].nrows));
+	// 		}
+	// 	}
+	// }
 }

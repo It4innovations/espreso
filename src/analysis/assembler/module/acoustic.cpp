@@ -10,6 +10,7 @@
 
 #include "analysis/assembler/operators/operators.h"
 #include "analysis/scheme/harmonic.real.h"
+#include "analysis/scheme/harmonic.complex.h"
 
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
@@ -42,6 +43,20 @@ void AX_Acoustic::initParameters()
 }
 
 void AX_Acoustic::init(AX_HarmonicReal &scheme, Vector_Base<double> *dirichlet)
+{
+	this->K = scheme.K;
+	this->M = scheme.M;
+	this->C = scheme.C;
+	this->re.rhs = scheme.re.f;
+	this->im.rhs = scheme.im.f;
+	this->re.x = scheme.re.x;
+	this->im.x = scheme.im.x;
+	this->dirichlet = dirichlet;
+
+	analyze();
+}
+
+void AX_Acoustic::init(AX_HarmonicComplex &scheme, Vector_Base<double> *dirichlet)
 {
 	this->K = scheme.K;
 	this->M = scheme.M;

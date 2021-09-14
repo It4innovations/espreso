@@ -12,8 +12,8 @@
 namespace espreso {
 namespace math {
 
-template <>
-void store(Vector_Dense<double> &x, const char* file)
+template <typename T>
+void _store(Vector_Dense<T> &x, const char* file)
 {
 	std::ofstream os(std::string(file) + ".txt");
 	os.precision(15);
@@ -24,8 +24,11 @@ void store(Vector_Dense<double> &x, const char* file)
 	}
 }
 
-template <>
-void store(Vector_Sparse<double> &x, const char* file)
+template <> void store(Vector_Dense<double> &x, const char* file) { _store(x, file); }
+template <> void store(Vector_Dense<std::complex<double> > &x, const char* file) { _store(x, file); }
+
+template <typename T>
+void _store(Vector_Sparse<T> &x, const char* file)
 {
 	std::ofstream os(std::string(file) + ".txt");
 	os.precision(15);
@@ -37,19 +40,25 @@ void store(Vector_Sparse<double> &x, const char* file)
 	}
 }
 
-template <>
-void store(Vector_Distributed<Vector_Dense, double> &x, const char* file)
+template <> void store(Vector_Sparse<double> &x, const char* file) { _store(x, file); }
+template <> void store(Vector_Sparse<std::complex<double> > &x, const char* file) { _store(x, file); }
+
+template <typename T>
+void _store(Vector_Distributed<Vector_Dense, T> &x, const char* file)
 {
-	Vector_Dense<double> _x;
+	Vector_Dense<T> _x;
 	_x.size = x.cluster.size - x.distribution.halo.size();
 	_x.vals = x.cluster.vals + x.distribution.halo.size();
 	store(_x, file);
 }
 
-template <>
-void store(Vector_Distributed<Vector_Sparse, double> &x, const char* file)
+template <> void store(Vector_Distributed<Vector_Dense, double> &x, const char* file) { _store(x, file); }
+template <> void store(Vector_Distributed<Vector_Dense, std::complex<double> > &x, const char* file) { _store(x, file); }
+
+template <typename T>
+void _store(Vector_Distributed<Vector_Sparse, T> &x, const char* file)
 {
-	Vector_Sparse<double> _x;
+	Vector_Sparse<T> _x;
 	_x.size = x.cluster.size - x.distribution.halo.size();
 	_x.nnz = x.cluster.nnz - x.distribution.halo.size();
 	_x.indices = x.cluster.indices + x.distribution.halo.size();
@@ -57,16 +66,22 @@ void store(Vector_Distributed<Vector_Sparse, double> &x, const char* file)
 	store(_x, file);
 }
 
-template <>
-void store(Vector_FETI<Vector_Dense, double> &x, const char* file)
+template <> void store(Vector_Distributed<Vector_Sparse, double> &x, const char* file) { _store(x, file); }
+template <> void store(Vector_Distributed<Vector_Sparse, std::complex<double> > &x, const char* file) { _store(x, file); }
+
+template <typename T>
+void _store(Vector_FETI<Vector_Dense, T> &x, const char* file)
 {
 	for (size_t d = 0; d < x.domains.size(); ++d) {
 		store(x.domains[d], (std::string(file) + std::to_string(d)).c_str());
 	}
 }
 
-template <>
-void store(Matrix_Dense<double> &A, const char* file)
+template <> void store(Vector_FETI<Vector_Dense, double> &x, const char* file) { _store(x, file); }
+template <> void store(Vector_FETI<Vector_Dense, std::complex<double> > &x, const char* file) { _store(x, file); }
+
+template <typename T>
+void _store(Matrix_Dense<T> &A, const char* file)
 {
 	std::ofstream os(std::string(file) + ".txt");
 	os << std::setw(6) << A.nrows << " " << std::setw(6) << A.ncols << "\n";
@@ -81,8 +96,11 @@ void store(Matrix_Dense<double> &A, const char* file)
 	}
 }
 
-template <>
-void store(Matrix_CSR<double> &A, const char* file)
+template <> void store(Matrix_Dense<double> &A, const char* file) { _store(A, file); }
+template <> void store(Matrix_Dense<std::complex<double> > &A, const char* file) { _store(A, file); }
+
+template <typename T>
+void _store(Matrix_CSR<T> &A, const char* file)
 {
 	std::ofstream os(std::string(file) + ".txt");
 	os << std::setw(6) << A.nrows << " " << std::setw(6) << A.ncols << " " << std::setw(6) << A.nnz << "\n";
@@ -98,8 +116,11 @@ void store(Matrix_CSR<double> &A, const char* file)
 	}
 }
 
-template <>
-void store(Matrix_IJV<double> &A, const char* file)
+template <> void store(Matrix_CSR<double> &A, const char* file) { _store<double>(A, file); }
+template <> void store(Matrix_CSR<std::complex<double>> &A, const char* file) { _store<std::complex<double>>(A, file); }
+
+template <typename T>
+void _store(Matrix_IJV<T> &A, const char* file)
 {
 	std::ofstream os(std::string(file) + ".txt");
 	os << std::setw(6) << A.nrows << " " << std::setw(6) << A.ncols << " " << std::setw(6) << A.nnz << "\n";
@@ -113,10 +134,13 @@ void store(Matrix_IJV<double> &A, const char* file)
 	}
 }
 
-template <>
-void store(Matrix_Distributed<Matrix_CSR, double> &A, const char* file)
+template <> void store(Matrix_IJV<double> &A, const char* file) { _store<double>(A, file); }
+template <> void store(Matrix_IJV<std::complex<double>> &A, const char* file) { _store<std::complex<double>>(A, file); }
+
+template <typename T>
+void _store(Matrix_Distributed<Matrix_CSR, T> &A, const char* file)
 {
-	Matrix_CSR<double> _A;
+	Matrix_CSR<T> _A;
 	esint prefix = A.cluster.rows[A.distribution.halo.size()] - _Matrix_CSR_Pattern::Indexing;
 	_A.nrows = A.cluster.nrows - A.distribution.halo.size();
 	_A.ncols = A.cluster.ncols;
@@ -127,29 +151,41 @@ void store(Matrix_Distributed<Matrix_CSR, double> &A, const char* file)
 	store(_A, file);
 }
 
-template <>
-void store(Matrix_FETI<Matrix_Dense, double> &A, const char* file)
+template <> void store(Matrix_Distributed<Matrix_CSR, double> &A, const char* file) { _store<double>(A, file); }
+template <> void store(Matrix_Distributed<Matrix_CSR, std::complex<double> > &A, const char* file) { _store<std::complex<double>>(A, file); }
+
+template <typename T>
+void _store(Matrix_FETI<Matrix_Dense, T> &A, const char* file)
 {
 	for (size_t d = 0; d < A.domains.size(); ++d) {
 		store(A.domains[d], (std::string(file) + std::to_string(d)).c_str());
 	}
 }
 
-template <>
-void store(Matrix_FETI<Matrix_CSR, double> &A, const char* file)
+template <> void store(Matrix_FETI<Matrix_Dense, double> &A, const char* file) { _store<double>(A, file); }
+template <> void store(Matrix_FETI<Matrix_Dense, std::complex<double> > &A, const char* file) { _store<std::complex<double>>(A, file); }
+
+template <typename T>
+void _store(Matrix_FETI<Matrix_CSR, T> &A, const char* file)
 {
 	for (size_t d = 0; d < A.domains.size(); ++d) {
 		store(A.domains[d], (std::string(file) + std::to_string(d)).c_str());
 	}
 }
 
-template <>
-void store(Matrix_FETI<Matrix_IJV, double> &A, const char* file)
+template <> void store(Matrix_FETI<Matrix_CSR, double> &A, const char* file) { _store<double>(A, file); }
+template <> void store(Matrix_FETI<Matrix_CSR, std::complex<double> > &A, const char* file) { _store<std::complex<double>>(A, file); }
+
+template <typename T>
+void _store(Matrix_FETI<Matrix_IJV, T> &A, const char* file)
 {
 	for (size_t d = 0; d < A.domains.size(); ++d) {
 		store(A.domains[d], (std::string(file) + std::to_string(d)).c_str());
 	}
 }
+
+template <> void store(Matrix_FETI<Matrix_IJV, double> &A, const char* file) { _store<double>(A, file); }
+template <> void store(Matrix_FETI<Matrix_IJV, std::complex<double> > &A, const char* file) { _store<std::complex<double>>(A, file); }
 
 }
 }

@@ -89,3 +89,8 @@ void espreso::setDirichlet(Matrix_Distributed<Matrix_CSR, double> &A, Vector_Dis
 		}
 	}
 }
+
+
+void espreso::setDirichlet(Matrix_Distributed<Matrix_CSR, std::complex<double>> &A, Vector_Distributed<Vector_Dense, std::complex<double>> &b, const Vector_Sparse<std::complex<double>> &dirichlet, const DOFsDistribution &distribution)
+{
+}

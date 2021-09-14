@@ -33,10 +33,10 @@ public:
 
 	virtual void addTo(const T &alpha, Vector_Sparse<T> *a) const =0;
 
-	virtual double norm() =0;
-	virtual double max() =0;
-	virtual double absmax() =0;
-	virtual double dot(const Vector_Base *other) =0;
+	virtual T norm() =0;
+	virtual T max() =0;
+	virtual T absmax() =0;
+	virtual T dot(const Vector_Base *other) =0;
 
 	ElementMapping<T> mapping;
 	bool touched;

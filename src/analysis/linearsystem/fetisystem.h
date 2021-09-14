@@ -40,36 +40,35 @@ struct AX_FETISystem: AX_LinearSystem<T> {
 
 	}
 
+	void init(AX_AcousticComplexLinear *analysis)
+	{
+
+	}
+
 	void init(AX_HeatSteadyStateLinear *analysis)
 	{
-		pattern.set(1, analysis->assembler.matrixType());
-		pattern.fill(A);
-		pattern.fill(b);
-		pattern.fill(x);
-		this->assembler.A = this->solver.A = &A;
-		this->assembler.b = this->solver.b = &b;
-		this->assembler.x = this->solver.x = &x;
-
-//		analysis->assembler.initDirichlet(dirichlet);
-//		this->assembler.dirichlet = this->solver.dirichlet = &dirichlet;
-
-		initKernels(*this, analysis->assembler);
+//		pattern.set(1, analysis->assembler.matrixType());
+//		pattern.fill(A);
+//		pattern.fill(b);
+//		pattern.fill(x);
+//		this->assembler.A = this->solver.A = &A;
+//		this->assembler.b = this->solver.b = &b;
+//		this->assembler.x = this->solver.x = &x;
+//
+//		initKernels(*this, analysis->assembler);
 	}
 
 	void init(AX_HeatSteadyStateNonLinear *analysis)
 	{
-		pattern.set(1, analysis->assembler.matrixType());
-		pattern.fill(A);
-		pattern.fill(b);
-		pattern.fill(x);
-		this->assembler.A = this->solver.A = &A;
-		this->assembler.b = this->solver.b = &b;
-		this->assembler.x = this->solver.x = &x;
-
-//		analysis->assembler.initDirichlet(dirichlet);
-//		this->assembler.dirichlet = this->solver.dirichlet = &dirichlet;
-
-		initKernels(*this, analysis->assembler);
+//		pattern.set(1, analysis->assembler.matrixType());
+//		pattern.fill(A);
+//		pattern.fill(b);
+//		pattern.fill(x);
+//		this->assembler.A = this->solver.A = &A;
+//		this->assembler.b = this->solver.b = &b;
+//		this->assembler.x = this->solver.x = &x;
+//
+//		initKernels(*this, analysis->assembler);
 	}
 
 //	void init(AX_HeatSteadyStateNonLinear *analysis)
@@ -115,7 +114,7 @@ struct AX_FETISystem: AX_LinearSystem<T> {
 	void update(step::Step &step, AX_HeatTransfer &assembler)
 	{
 //		if (solver.A.touched || solver.b.touched || solver.dirichlet.touched) {
-			updateKernels(*this, assembler);
+			//updateKernels(*this, assembler);
 //		}
 	}
 
@@ -163,15 +162,15 @@ struct AX_FETISystem: AX_LinearSystem<T> {
 	FETIConfiguration &configuration;
 	UniformNodesFETIPattern pattern;
 
-	Matrix_FETI<Matrix_CSR, T> A;
-	Vector_FETI<Vector_Dense, T> x, b;
-	Vector_Sparse<T> dirichlet;
+	// Matrix_FETI<Matrix_CSR, T> A;
+	// Vector_FETI<Vector_Dense, T> x, b;
+	// Vector_Sparse<T> dirichlet;
 
-	Matrix_FETI<Matrix_CSR, T> RegMat;
-	Matrix_FETI<Matrix_Dense, T> N1, N2;
-	Matrix_FETI<Matrix_IJV, T> B1, B0;
+	// Matrix_FETI<Matrix_CSR, T> RegMat;
+	// Matrix_FETI<Matrix_Dense, T> N1, N2;
+	// Matrix_FETI<Matrix_IJV, T> B1, B0;
 
-	Vector_FETI<Vector_Dense, T> B1c, B1duplication;
+	// Vector_FETI<Vector_Dense, T> B1c, B1duplication;
 
 //	FETISystemSolver solver;
 };
