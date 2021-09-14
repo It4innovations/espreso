@@ -71,7 +71,7 @@ struct UniformNodesDistributedPattern {
 				for (size_t i = 0, offset = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
 					m->mapping.boundary[r][i].data = m->cluster.vals;
 					m->mapping.boundary[r][i].position = bregion[r].A.data() + offset;
-					offset += (info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin) * Mesh::edata[info::mesh->boundaryRegions[r]->eintervals[i].code].nodes;
+					offset += (info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin) * Mesh::edata[info::mesh->boundaryRegions[r]->eintervals[i].code].nodes * Mesh::edata[info::mesh->boundaryRegions[r]->eintervals[i].code].nodes;
 				}
 			}
 		}
