@@ -72,16 +72,12 @@ public:
 
 	void add(const T &alpha, const Vector_Base<T> *a)
 	{
-		if (dynamic_cast<const Vector_Distributed<Vector, T>*>(a)) {
-			math::add<T>(cluster, alpha, static_cast<const Vector_Distributed<Vector, T>*>(a)->cluster);
-		}
+		a->addTo(alpha, this);
 	}
 
 	void add(const T &alpha, const Vector_Base<T> *a, int offset, int size, int step)
 	{
-		if (dynamic_cast<const Vector_Distributed<Vector, T>*>(a)) {
-			math::add<T>(cluster, alpha, static_cast<const Vector_Distributed<Vector, T>*>(a)->cluster, offset, size, step);
-		}
+		a->addTo(alpha, this, offset, size, step);
 	}
 
 	void sum(const T &alpha, const Vector_Base<T> *a, const T &beta, const Vector_Base<T> *b)
@@ -96,11 +92,6 @@ public:
 		if (dynamic_cast<const Vector_Distributed<Vector, T>*>(a) && dynamic_cast<const Vector_Distributed<Vector, T>*>(b)) {
 			math::sum(cluster, alpha, static_cast<const Vector_Distributed<Vector, T>*>(a)->cluster, beta, static_cast<const Vector_Distributed<Vector, T>*>(b)->cluster, offset, size, step);
 		}
-	}
-
-	void addTo(const T &alpha, Vector_Sparse<T> *a) const
-	{
-		math::add(*a, alpha, cluster);
 	}
 
 	T norm()
@@ -127,6 +118,27 @@ public:
 
 	Vector<T> cluster;
 	DOFsDistribution distribution;
+
+protected:
+	void addTo(const T &alpha, Vector_Distributed<Vector_Dense, T> *a) const
+	{
+		math::add(a->cluster, alpha, cluster);
+	}
+
+	void addTo(const T &alpha, Vector_Distributed<Vector_Sparse, T> *a) const
+	{
+		math::add(a->cluster, alpha, cluster);
+	}
+
+	void addTo(const T &alpha, Vector_Distributed<Vector_Dense, T> *a, int offset, int size, int step) const
+	{
+		math::add(a->cluster, alpha, cluster, offset, size, step);
+	}
+
+	void addTo(const T &alpha, Vector_Distributed<Vector_Sparse, T> *a, int offset, int size, int step) const
+	{
+		math::add(a->cluster, alpha, cluster, offset, size, step);
+	}
 };
 
 }

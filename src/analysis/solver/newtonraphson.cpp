@@ -100,7 +100,7 @@ bool AX_NewtonRaphson::run(step::Step &step, step::Time &time, AX_HeatTransfer &
 			R->store(utils::filename(utils::debugDirectory(step) + "/scheme", "R").c_str());
 		}
 
-//		U->addTo(-1, system->solver.dirichlet);
+		// why not to set dirichlet to 0 for all iterations??
 		system->solver.dirichlet->add(-1, U);
 
 		system->update(step);

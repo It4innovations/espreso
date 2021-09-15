@@ -109,6 +109,7 @@ template <> struct AX_MKLPDSSSystem<AX_HeatSteadyStateLinear>: public AX_MKLPDSS
 	AX_MKLPDSSSystem(AX_HeatSteadyStateLinear *analysis, MKLPDSSConfiguration &configuration)
 	: AX_MKLPDSSSystemData(configuration)
 	{
+		solver.A.type = analysis->assembler.matrixType();
 		_initDirect(*this, analysis->configuration.temperature);
 	}
 };
@@ -118,6 +119,7 @@ template <> struct AX_MKLPDSSSystem<AX_HeatSteadyStateNonLinear>: public AX_MKLP
 	AX_MKLPDSSSystem(AX_HeatSteadyStateNonLinear *analysis, MKLPDSSConfiguration &configuration)
 	: AX_MKLPDSSSystemData(configuration)
 	{
+		solver.A.type = analysis->assembler.matrixType();
 		_initDirect(*this, analysis->configuration.temperature);
 	}
 };

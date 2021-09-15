@@ -25,16 +25,18 @@
 using namespace espreso;
 
 Assembler::Assembler()
-: elementOps(info::mesh->elements->eintervals.size()), elementRes(info::mesh->elements->eintervals.size()),
-  boundaryOps(info::mesh->boundaryRegions.size()), boundaryRes(info::mesh->boundaryRegions.size()),
+: elementOps(info::mesh->elements->eintervals.size()), elementFiller(info::mesh->elements->eintervals.size()), elementRes(info::mesh->elements->eintervals.size()),
+  boundaryOps(info::mesh->boundaryRegions.size()), boundaryFiller(info::mesh->boundaryRegions.size()), boundaryRes(info::mesh->boundaryRegions.size()),
   version(0)
 {
 	for (size_t i = 0; i < info::mesh->boundaryRegions.size(); ++i) {
 		if (info::mesh->boundaryRegions[i]->dimension) {
 			boundaryOps[i].resize(info::mesh->boundaryRegions[i]->eintervals.size());
+			boundaryFiller[i].resize(info::mesh->boundaryRegions[i]->eintervals.size());
 			boundaryRes[i].resize(info::mesh->boundaryRegions[i]->eintervals.size());
 		} else {
 			boundaryOps[i].resize(info::mesh->boundaryRegions[i]->nodes->threads());
+			boundaryFiller[i].resize(info::mesh->boundaryRegions[i]->nodes->threads());
 			boundaryRes[i].resize(info::mesh->boundaryRegions[i]->nodes->threads());
 		}
 	}
@@ -123,6 +125,54 @@ void Assembler::iterate()
 							(*op)->move(-info::mesh->boundaryRegions[r]->nodes->datatarray().size(t));
 						}
 					}
+				}
+			}
+		}
+	}
+}
+
+void Assembler::fill()
+{
+	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
+		size_t elementsInInterval = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
+
+		for (size_t element = 0; element < elementsInInterval; ++element) {
+			for (auto op = elementFiller[i].begin(); op != elementFiller[i].end(); ++op) {
+				(**op)();
+				++(**op);
+			}
+		}
+
+		for (auto op = elementFiller[i].begin(); op != elementFiller[i].end(); ++op) {
+			(*op)->move(-elementsInInterval);
+		}
+	}
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (info::mesh->boundaryRegions[r]->dimension) {
+			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+				size_t elementsInInterval = info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin;
+
+				for(size_t element = 0; element < elementsInInterval; ++element) {
+					for (auto op = boundaryFiller[r][i].begin(); op != boundaryFiller[r][i].end(); ++op) {
+						(**op)();
+						++(**op);
+					}
+				}
+
+				for (auto op = boundaryFiller[r][i].begin(); op != boundaryFiller[r][i].end(); ++op) {
+					(*op)->move(-elementsInInterval);
+				}
+			}
+		} else {
+			for (int t = 0; t < info::env::threads; ++t) {
+				for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().begin(t); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(t); ++n) {
+					for (auto op = boundaryFiller[r][t].begin(); op != boundaryFiller[r][t].end(); ++op) {
+						(**op)();
+						++(**op);
+					}
+				}
+				for (auto op = boundaryFiller[r][t].begin(); op != boundaryFiller[r][t].end(); ++op) {
+					(*op)->move(-info::mesh->boundaryRegions[r]->nodes->datatarray().size(t));
 				}
 			}
 		}

@@ -27,11 +27,12 @@ public:
 	virtual bool hasKernel(int domain) =0;
 
 	ParameterController controller;
-	std::vector<std::vector<std::unique_ptr<ActionOperator> > > elementOps, elementRes;
-	std::vector<std::vector<std::vector<std::unique_ptr<ActionOperator> > > > boundaryOps, boundaryRes;
+	std::vector<std::vector<std::unique_ptr<ActionOperator> > > elementOps, elementFiller, elementRes;
+	std::vector<std::vector<std::vector<std::unique_ptr<ActionOperator> > > > boundaryOps, boundaryFiller, boundaryRes;
 
 protected:
 	void iterate();
+	void fill();
 
 	void printParameterStats(const char* name, ParameterData &parameter);
 	void printParameterStats(const char* name, NamedData *data);

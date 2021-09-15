@@ -126,11 +126,6 @@ public:
 		}
 	}
 
-	void addTo(const T &alpha, Vector_Sparse<T> *a) const
-	{
-
-	}
-
 	T norm()
 	{
 		return 0;

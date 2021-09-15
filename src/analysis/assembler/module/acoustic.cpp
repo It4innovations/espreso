@@ -194,6 +194,7 @@ void AX_Acoustic::next()
 	}
 
 	iterate();
+	fill();
 	controller.resetUpdate();
 }
 

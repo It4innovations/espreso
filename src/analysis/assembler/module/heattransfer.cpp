@@ -403,6 +403,7 @@ void AX_HeatTransfer::evaluate()
 	}
 
 	iterate();
+	fill();
 
 	controller.resetUpdate();
 

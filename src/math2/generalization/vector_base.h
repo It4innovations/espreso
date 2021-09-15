@@ -9,6 +9,9 @@
 
 namespace espreso {
 
+template <typename T> class Vector_Dense;
+template <template<typename> typename Vector, typename T> class Vector_Distributed;
+
 template <typename T>
 class Vector_Base
 {
@@ -31,8 +34,6 @@ public:
 	virtual void sum(const T &alpha, const Vector_Base *a, const T &beta, const Vector_Base *b) =0;
 	virtual void sum(const T &alpha, const Vector_Base *a, const T &beta, const Vector_Base *b, int offset, int size, int step) =0;
 
-	virtual void addTo(const T &alpha, Vector_Sparse<T> *a) const =0;
-
 	virtual T norm() =0;
 	virtual T max() =0;
 	virtual T absmax() =0;
@@ -40,6 +41,11 @@ public:
 
 	ElementMapping<T> mapping;
 	bool touched;
+
+	virtual void addTo(const T &alpha, Vector_Distributed<Vector_Dense, T> *a) const =0;
+	virtual void addTo(const T &alpha, Vector_Distributed<Vector_Sparse, T> *a) const =0;
+	virtual void addTo(const T &alpha, Vector_Distributed<Vector_Dense, T> *a, int offset, int size, int step) const =0;
+	virtual void addTo(const T &alpha, Vector_Distributed<Vector_Sparse, T> *a, int offset, int size, int step) const =0;
 };
 
 }
