@@ -45,7 +45,7 @@ void AX_HeatSteadyStateLinear::init()
 //	}
 	system = new AX_MKLPDSSSystem<AX_HeatSteadyStateLinear>(this, configuration.mklpdss);
 	scheme.init(system);
-	assembler.init(scheme, system->assembler.dirichlet);
+	assembler.init(scheme);
 
 	Variable::list.global.insert(std::make_pair("TIME", nullptr));
 

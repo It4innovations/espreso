@@ -23,7 +23,7 @@ struct AX_SteadyState {
 	void extractSolution(step::Step &step, AX_LinearSystem<double> *system);
 
 	Matrix_Base<double> *K;
-	Vector_Base<double> *f, *x;
+	Vector_Base<double> *f, *x, *dirichlet;
 };
 
 }

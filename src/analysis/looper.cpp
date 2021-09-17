@@ -29,7 +29,12 @@ void Looper::run()
 	Analysis *analysis;
 
 	switch (info::ecf->physics) {
-	case PhysicsConfiguration::TYPE::ACOUSTICS_2D:     analysis = new AX_AcousticComplexLinear(info::ecf->acoustics_2d, info::ecf->acoustics_2d.load_steps_settings.at(1)); break;
+	case PhysicsConfiguration::TYPE::ACOUSTICS_2D:
+		switch (info::ecf->acoustics_2d.load_steps_settings.at(1).system) {
+		case AcousticLoadStepConfiguration::SYSTEM::REAL: analysis = new AX_AcousticRealLinear(info::ecf->acoustics_2d, info::ecf->acoustics_2d.load_steps_settings.at(1)); break;
+		case AcousticLoadStepConfiguration::SYSTEM::COMPLEX: analysis = new AX_AcousticComplexLinear(info::ecf->acoustics_2d, info::ecf->acoustics_2d.load_steps_settings.at(1)); break;
+		}
+		break;
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D:
 		switch (info::ecf->heat_transfer_2d.load_steps_settings.at(1).mode) {
 		case LoadStepSolverConfiguration::MODE::LINEAR : analysis = new AX_HeatSteadyStateLinear(info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(1)); break;

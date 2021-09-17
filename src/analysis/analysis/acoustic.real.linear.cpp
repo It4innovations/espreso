@@ -33,7 +33,7 @@ void AX_AcousticRealLinear::init()
 //	}
 	system = new AX_MKLPDSSSystem<AX_AcousticRealLinear>(this, configuration.mklpdss);
 	scheme.init(system);
-	assembler.init(scheme, system->assembler.dirichlet);
+	assembler.init(scheme);
 
 	Variable::list.global.insert(std::make_pair("FREQUENCY", nullptr));
 
@@ -46,21 +46,19 @@ void AX_AcousticRealLinear::run(step::Step &step)
 	scheme.initFrequency(frequency);
 	Variable::list.global["FREQUENCY"] = new FrequencyVariable(frequency);
 
+
+
 	while (frequency.current != frequency.final) {
 		scheme.nextFrequency(frequency);
 
-		assembler.next();
+		assembler.evaluate();
 		scheme.composeSystem(frequency, system);
 
-		scheme.composeDirichlet(system);
-
-		scheme.storeScheme(frequency);
-
+		system->set(step);
 		system->update(step);
 		system->solve(step);
 
-		scheme.extractSolution(system);
-		scheme.storeSolution(frequency);
+		scheme.extractSolution(frequency, system);
 
 		assembler.updateSolution();
 		info::mesh->output->updateSolution(frequency);

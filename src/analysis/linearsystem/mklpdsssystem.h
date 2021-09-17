@@ -35,6 +35,11 @@ struct AX_MKLPDSSSystemData: public AX_LinearSystem<Assembler, Solver> {
 		assembler.pattern.setMap(dynamic_cast<Vector_Distributed<Vector_Dense, Assembler>*>(x));
 	}
 
+	void setDirichletMapping(Vector_Base<Assembler> *x) const
+	{
+		assembler.pattern.setDirichletMap(dynamic_cast<Vector_Distributed<Vector_Sparse, Assembler>*>(x));
+	}
+
 	void info() const
 	{
 		mklpdss.info(solver.A);
@@ -48,7 +53,6 @@ struct AX_MKLPDSSSystemData: public AX_LinearSystem<Assembler, Solver> {
 	void update(step::Step &step)
 	{
 		if (solver.A.touched || solver.b.touched || solver.dirichlet.touched) {
-//			synchronization.gatherFromUpper(solver.A.cluster.vals);
 			setDirichlet(solver.A, solver.b, solver.dirichlet.cluster, solver.A.distribution);
 			mklpdss.update(solver.A);
 		}
@@ -92,16 +96,16 @@ template <typename Analysis> struct AX_MKLPDSSSystem {};
 
 inline void _initDirect(AX_MKLPDSSSystemData<double, double> &system, std::map<std::string, ECFExpression> &dirichlet)
 {
-	system.assembler.pattern.set(1, system.solver.A.distribution, system.solver.A.synchronization);
+	system.assembler.pattern.set(dirichlet, 1, system.solver.A.distribution, system.solver.A.synchronization);
 	system.assembler.pattern.fill(system.solver.A);
 	system.assembler.pattern.fill(system.solver.b);
 	system.assembler.pattern.fill(system.solver.x);
-	system.AX_LinearSystem<double>::assembler.A = system.AX_LinearSystem<double>::solver.A = &system.solver.A;
-	system.AX_LinearSystem<double>::assembler.b = system.AX_LinearSystem<double>::solver.b = &system.solver.b;
-	system.AX_LinearSystem<double>::assembler.x = system.AX_LinearSystem<double>::solver.x = &system.solver.x;
+	system.assembler.pattern.fill(system.solver.dirichlet);
 
-	system.assembler.pattern.dirichlet(system.solver.dirichlet, dirichlet);
-	system.AX_LinearSystem<double>::assembler.dirichlet = system.AX_LinearSystem<double>::solver.dirichlet = &system.solver.dirichlet;
+	system.AX_LinearSystem::assembler.A = system.AX_LinearSystem::solver.A = &system.solver.A;
+	system.AX_LinearSystem::assembler.b = system.AX_LinearSystem::solver.b = &system.solver.b;
+	system.AX_LinearSystem::assembler.x = system.AX_LinearSystem::solver.x = &system.solver.x;
+	system.AX_LinearSystem::assembler.dirichlet = system.AX_LinearSystem::solver.dirichlet = &system.solver.dirichlet;
 }
 
 template <> struct AX_MKLPDSSSystem<AX_HeatSteadyStateLinear>: public AX_MKLPDSSSystemData<double, double> {
@@ -130,27 +134,26 @@ template <> struct AX_MKLPDSSSystem<AX_AcousticRealLinear>: public AX_MKLPDSSSys
 	: AX_MKLPDSSSystemData(configuration)
 	{
 		assembler.A.type = analysis->assembler.matrixType();
-		assembler.pattern.set(1);
+		assembler.pattern.set(analysis->configuration.acoustic_pressure, 1);
 		assembler.pattern.fill(assembler.A);
 		assembler.pattern.fill(assembler.b);
 		assembler.pattern.fill(assembler.x);
-		this->AX_LinearSystem<double>::assembler.A = &assembler.A;
-		this->AX_LinearSystem<double>::assembler.b = &assembler.b;
-		this->AX_LinearSystem<double>::assembler.x = &assembler.x;
-		this->AX_LinearSystem<double>::assembler.dirichlet = &assembler.dirichlet;
+		assembler.pattern.fill(assembler.dirichlet);
+		this->AX_LinearSystem::assembler.A = &assembler.A;
+		this->AX_LinearSystem::assembler.b = &assembler.b;
+		this->AX_LinearSystem::assembler.x = &assembler.x;
+		this->AX_LinearSystem::assembler.dirichlet = &assembler.dirichlet;
 
 		solver.A.type = analysis->assembler.matrixType();
-		solver.pattern.set(2);
+		solver.pattern.set(analysis->configuration.acoustic_pressure, 2, solver.A.distribution, solver.A.synchronization);
 		solver.pattern.fill(solver.A);
 		solver.pattern.fill(solver.b);
 		solver.pattern.fill(solver.x);
-		this->AX_LinearSystem<double>::solver.A = &solver.A;
-		this->AX_LinearSystem<double>::solver.b = &solver.b;
-		this->AX_LinearSystem<double>::solver.x = &solver.x;
-		this->AX_LinearSystem<double>::solver.dirichlet = &solver.dirichlet;
-
-		assembler.pattern.dirichlet(solver.dirichlet, analysis->configuration.acoustic_pressure);
-		math::multiplyPattern(solver.dirichlet.cluster, assembler.dirichlet.cluster, 1, 2);
+		solver.pattern.fill(solver.dirichlet);
+		this->AX_LinearSystem::solver.A = &solver.A;
+		this->AX_LinearSystem::solver.b = &solver.b;
+		this->AX_LinearSystem::solver.x = &solver.x;
+		this->AX_LinearSystem::solver.dirichlet = &solver.dirichlet;
 	}
 };
 
@@ -159,28 +162,27 @@ template <> struct AX_MKLPDSSSystem<AX_AcousticComplexLinear>: public AX_MKLPDSS
 	AX_MKLPDSSSystem(AX_AcousticComplexLinear *analysis, MKLPDSSConfiguration &configuration)
 	: AX_MKLPDSSSystemData(configuration)
 	{
-//		assembler.A.type = analysis->assembler.matrixType();
-//		assembler.pattern.set(1);
-//		assembler.pattern.fill(assembler.A);
-//		assembler.pattern.fill(assembler.b);
-//		assembler.pattern.fill(assembler.x);
-//		AX_LinearSystem<double>::assembler.A = &assembler.A;
-//		AX_LinearSystem<double>::assembler.b = &assembler.b;
-//		AX_LinearSystem<double>::assembler.x = &assembler.x;
-//		AX_LinearSystem<double>::assembler.dirichlet = &assembler.dirichlet;
-//
-//		solver.A.type = analysis->assembler.matrixType();
-//		solver.pattern.set(2);
-//		solver.pattern.fill(solver.A);
-//		solver.pattern.fill(solver.b);
-//		solver.pattern.fill(solver.x);
-//		AX_LinearSystem<double>::solver.A = &solver.A;
-//		AX_LinearSystem<double>::solver.b = &solver.b;
-//		AX_LinearSystem<double>::solver.x = &solver.x;
-//		AX_LinearSystem<double>::solver.dirichlet = &solver.dirichlet;
+		assembler.A.type = analysis->assembler.matrixType();
+		assembler.pattern.set(analysis->configuration.acoustic_pressure, 1);
+		assembler.pattern.fill(assembler.A);
+		assembler.pattern.fill(assembler.b);
+		assembler.pattern.fill(assembler.x);
+		assembler.pattern.fill(assembler.dirichlet);
+		this->AX_LinearSystem::assembler.A = &assembler.A;
+		this->AX_LinearSystem::assembler.b = &assembler.b;
+		this->AX_LinearSystem::assembler.x = &assembler.x;
+		this->AX_LinearSystem::assembler.dirichlet = &assembler.dirichlet;
 
-//		assembler.pattern.dirichlet(solver.dirichlet, analysis->configuration.acoustic_pressure);
-//		math::multiplyPattern(solver.dirichlet.cluster, assembler.dirichlet.cluster, 1, 2);
+		solver.A.type = analysis->assembler.matrixType();
+		solver.pattern.set(analysis->configuration.acoustic_pressure, 1, solver.A.distribution, solver.A.synchronization);
+		solver.pattern.fill(solver.A);
+		solver.pattern.fill(solver.b);
+		solver.pattern.fill(solver.x);
+		solver.pattern.fill(solver.dirichlet);
+		this->AX_LinearSystem::solver.A = &solver.A;
+		this->AX_LinearSystem::solver.b = &solver.b;
+		this->AX_LinearSystem::solver.x = &solver.x;
+		this->AX_LinearSystem::solver.dirichlet = &solver.dirichlet;
 	}
 };
 

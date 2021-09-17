@@ -14,8 +14,7 @@ namespace espreso {
 
 struct AcousticGlobalSettings;
 struct AcousticLoadStepConfiguration;
-struct AX_HarmonicReal;
-struct AX_HarmonicComplex;
+struct AX_Harmonic;
 
 class AX_Acoustic: public Assembler
 {
@@ -43,10 +42,9 @@ public:
 
 	AX_Acoustic(AX_Acoustic *previous, AcousticGlobalSettings &gsettings, AcousticLoadStepConfiguration &configuration);
 
-	void init(AX_HarmonicReal &scheme, Vector_Base<double> *dirichlet);
-	void init(AX_HarmonicComplex &scheme, Vector_Base<double> *dirichlet);
+	void init(AX_Harmonic &scheme);
 	void analyze();
-	void next();
+	void evaluate();
 
 	void updateSolution();
 
@@ -67,15 +65,12 @@ public:
 
 	ParametersElements<1> elements;
 
-	std::vector<esint> dirichletIndices, dirichletPermutation;
-
 	struct Fragment {
-		Vector_Base<double> *rhs, *x;
+		Vector_Base<double> *rhs, *x, *dirichlet;
 	};
 
 	Matrix_Base<double> *K, *M, *C;
 	Fragment re, im;
-	Vector_Base<double> *dirichlet;
 
 protected:
 	void initParameters();

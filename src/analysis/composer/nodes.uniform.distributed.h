@@ -26,17 +26,26 @@ namespace espreso {
 struct UniformNodesDistributedPattern {
 
 	struct RegionInfo {
-		esint nrows, ncols;
+		esint nrows, ncols, dirichlet;
 		std::vector<esint> row, column; // row, column indices
-		std::vector<esint> A, b; // local permutations
+		std::vector<esint> A, b, indices; // local permutations
 		std::vector<std::vector<esint> > nA, nb; // neighbors permutations
 	};
 
 	UniformNodesDistributedPattern();
 	~UniformNodesDistributedPattern();
 
-	void set(int dofs);
-	void set(int dofs, DOFsDistribution &distribution, DataSynchronization &synchronization);
+	void set(std::map<std::string, ECFExpression> &settings, int dofs);
+	void set(std::map<std::string, ECFExpression> &settings, int dofs, DOFsDistribution &distribution, DataSynchronization &synchronization);
+
+	template<typename T>
+	void fill(Vector_Distributed<Vector_Sparse, T> &v)
+	{
+		v.cluster.resize(elements.nrows, bregion[0].indices.size());
+		for (size_t i = 0; i < bregion[0].indices.size(); ++i) {
+			v.cluster.indices[i] = bregion[0].indices[i];
+		}
+	}
 
 	template<typename T>
 	void fill(Vector_Distributed<Vector_Dense, T> &v)
@@ -101,33 +110,18 @@ struct UniformNodesDistributedPattern {
 	}
 
 	template<typename T>
-	void dirichlet(Vector_Distributed<Vector_Sparse, T> &v, std::map<std::string, ECFExpression> &settings)
+	void setDirichletMap(Vector_Distributed<Vector_Sparse, T> *v) const
 	{
-		std::vector<esint> indices;
-		for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-			const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
-			if (settings.find(region->name) != settings.end()) {
-				indices.insert(indices.end(), region->nodes->datatarray().begin(), region->nodes->datatarray().end());
-			}
-		}
-		bregion[0].b = indices; // use the first region to store indices permutation;
-		utils::sortAndRemoveDuplicates(indices);
-		v.cluster.resize(elements.nrows, indices.size());
-		for (size_t i = 0; i < indices.size(); ++i) {
-			v.cluster.indices[i] = indices[i];
-		}
-		for (size_t i = 0; i < bregion[0].b.size(); ++i) {
-			bregion[0].b[i] = std::lower_bound(indices.begin(), indices.end(), bregion[0].b[i]) - indices.begin();
-		}
-
-		v.mapping.boundary.resize(info::mesh->boundaryRegions.size());
+		v->mapping.boundary.resize(info::mesh->boundaryRegions.size());
 		for (size_t r = 1, offset = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 			const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
-			if (settings.find(region->name) != settings.end()) {
-				v.mapping.boundary[r].resize(1);
-				v.mapping.boundary[r].front().data = v.cluster.vals;
-				v.mapping.boundary[r].front().position = bregion[0].b.data() + offset;
-				offset += region->nodes->datatarray().size();
+			if (bregion[r].dirichlet) {
+				v->mapping.boundary[r].resize(info::mesh->boundaryRegions[r]->nodes->threads());
+				for (size_t t = 0; t < v->mapping.boundary[r].size(); ++t) {
+					v->mapping.boundary[r].front().data = v->cluster.vals;
+					v->mapping.boundary[r].front().position = bregion[0].b.data() + offset;
+					offset += region->nodes->datatarray().size(t);
+				}
 			}
 		}
 	}

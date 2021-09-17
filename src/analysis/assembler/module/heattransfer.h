@@ -44,7 +44,7 @@ public:
 
 	AX_HeatTransfer(AX_HeatTransfer *previous, HeatTransferGlobalSettings &gsettings, HeatTransferLoadStepConfiguration &configuration);
 
-	void init(AX_SteadyState &scheme, Vector_Base<double> *dirichlet);
+	void init(AX_SteadyState &scheme);
 	void analyze();
 	void evaluate();
 

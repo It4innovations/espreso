@@ -26,6 +26,7 @@ struct AX_LinearSystem {
 
 	virtual void setMapping(Matrix_Base<Assembler> *A) const =0;
 	virtual void setMapping(Vector_Base<Assembler> *x) const =0;
+	virtual void setDirichletMapping(Vector_Base<Assembler> *x) const =0;
 
 	virtual ~AX_LinearSystem() {}
 

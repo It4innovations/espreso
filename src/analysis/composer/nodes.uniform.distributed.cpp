@@ -212,16 +212,48 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDist
 	synchronization.rIndices = pattern->elements.nA;
 }
 
-void UniformNodesDistributedPattern::set(int dofs)
+static void dirichlet(UniformNodesDistributedPattern *pattern, std::map<std::string, ECFExpression> &settings, int dofs)
+{
+	size_t size = 0;
+	std::vector<esint> indices;
+	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
+		if (settings.find(region->name) != settings.end()) {
+			size += region->nodes->datatarray().size();
+			pattern->bregion[r].dirichlet = true;
+		}
+	}
+
+	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
+		if (pattern->bregion[r].dirichlet) {
+			for (auto n = region->nodes->datatarray().cbegin(); n != region->nodes->datatarray().cend(); ++n) {
+				for (int d = 0; d < dofs; ++d) {
+					indices.push_back(*n * dofs + d);
+				}
+			}
+		}
+	}
+	pattern->bregion[0].b = indices; // use the first region to store indices permutation;
+	utils::sortAndRemoveDuplicates(indices);
+	pattern->bregion[0].indices = indices;
+	for (size_t i = 0; i < pattern->bregion[0].b.size(); ++i) {
+		pattern->bregion[0].b[i] = std::lower_bound(indices.begin(), indices.end(), pattern->bregion[0].b[i]) - indices.begin();
+	}
+}
+
+void UniformNodesDistributedPattern::set(std::map<std::string, ECFExpression> &settings, int dofs)
 {
 	DOFsDistribution distribution;
 	DataSynchronization synchronization;
 	fillPermutation(this, dofs, distribution, synchronization, true);
+	dirichlet(this, settings, dofs);
 }
 
-void UniformNodesDistributedPattern::set(int dofs, DOFsDistribution &distribution, DataSynchronization &synchronization)
+void UniformNodesDistributedPattern::set(std::map<std::string, ECFExpression> &settings, int dofs, DOFsDistribution &distribution, DataSynchronization &synchronization)
 {
 	fillPermutation(this, dofs, distribution, synchronization, false);
+	dirichlet(this, settings, dofs);
 }
 
 void UniformNodesDistributedPattern::fillCSR(esint *rows, esint *cols)

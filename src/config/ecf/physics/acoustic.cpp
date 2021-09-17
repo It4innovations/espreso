@@ -29,6 +29,13 @@ ImpedanceConfiguration::ImpedanceConfiguration()
 
 AcousticLoadStepConfiguration::AcousticLoadStepConfiguration(DIMENSION *D)
 {
+	system = SYSTEM::REAL;
+	REGISTER(system, ECFMetaData()
+			.setdescription({ "Linear system type" })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("REAL").setdescription("Solve with real values."))
+			.addoption(ECFOption().setname("COMPLEX").setdescription("Solve with complex values.")));
+
 	REGISTER(acoustic_pressure, ECFMetaData()
 			.setdescription({ "The name of a region.", "Pressure" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })

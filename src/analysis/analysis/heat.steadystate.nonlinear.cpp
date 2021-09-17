@@ -47,7 +47,7 @@ void AX_HeatSteadyStateNonLinear::init()
 	system = new AX_MKLPDSSSystem<AX_HeatSteadyStateNonLinear>(this, configuration.mklpdss);
 	solver.init(system);
 	scheme.init(system);
-	assembler.init(scheme, system->assembler.dirichlet);
+	assembler.init(scheme);
 
 	Variable::list.global.insert(std::make_pair("TIME", nullptr));
 

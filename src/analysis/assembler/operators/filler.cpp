@@ -85,11 +85,11 @@ void addFiller(AX_Acoustic &module)
 		}
 	}
 
-	if (module.dirichlet != nullptr) {
+	if (module.re.dirichlet != nullptr) {
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 			if (module.pressure.node.regions[r].data) {
 				for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-					module.boundaryFiller[r][t].emplace_back(instantiate<AX_HeatTransfer::NGP, 1, VectorSetter>(r, t, module.controller, module.pressure.node.regions[r], module.dirichlet->mapping.boundary[r][t].data, module.dirichlet->mapping.boundary[r][t].position));
+					module.boundaryFiller[r][t].emplace_back(instantiate<AX_HeatTransfer::NGP, 1, VectorSetter>(r, t, module.controller, module.pressure.node.regions[r], module.re.dirichlet->mapping.boundary[r][t].data, module.re.dirichlet->mapping.boundary[r][t].position));
 					module.boundaryFiller[r][t].back()->isconst = false;
 				}
 			}

@@ -11,65 +11,6 @@
 
 using namespace espreso;
 
-AX_HarmonicReal::AX_HarmonicReal(HarmonicSolverConfiguration &configuration, int dofs)
-: configuration(configuration), dofs(dofs), K{}, M{}, C{}, re{}, im{}
-{
-
-}
-
-AX_HarmonicReal::~AX_HarmonicReal()
-{
-	if (K) {
-		delete K;
-	}
-	if (M) {
-		delete M;
-	}
-	if (C) {
-		delete C;
-	}
-	if (re.f) {
-		delete re.f;
-	}
-	if (re.x) {
-		delete re.x;
-	}
-	if (im.f) {
-		delete im.f;
-	}
-	if (im.x) {
-		delete im.x;
-	}
-}
-
-void AX_HarmonicReal::initFrequency(step::Frequency &frequency)
-{
-	frequency.shift = (configuration.max_frequency - configuration.min_frequency) / configuration.num_samples;
-	frequency.start = configuration.min_frequency;
-	frequency.current = frequency.start;
-	frequency.angular = 2 * M_PI * frequency.current;
-	frequency.final = configuration.max_frequency;
-}
-
-void AX_HarmonicReal::nextFrequency(step::Frequency &frequency)
-{
-	frequency.current += frequency.shift;
-	if (frequency.current + frequency.precision >= frequency.final) {
-		frequency.current = frequency.final;
-	}
-	frequency.angular = 2 * M_PI * frequency.current;
-}
-
-void AX_HarmonicReal::init(AX_LinearSystem<double> *system)
-{
-	system->setMapping(K = system->assembler.A->copyPattern());
-	system->setMapping(M = system->assembler.A->copyPattern());
-	system->setMapping(C = system->assembler.A->copyPattern());
-	system->setMapping(re.f = system->assembler.b->copyPattern());
-	system->setMapping(re.x = system->assembler.b->copyPattern());
-	system->setMapping(im.f = system->assembler.b->copyPattern());
-	system->setMapping(im.x = system->assembler.b->copyPattern());
-}
 
 void AX_HarmonicReal::composeSystem(step::Frequency &frequency, AX_LinearSystem<double> *system)
 {
@@ -83,41 +24,35 @@ void AX_HarmonicReal::composeSystem(step::Frequency &frequency, AX_LinearSystem<
 	system->solver.A->sum(1., K, -frequency.angular * frequency.angular, M, dofs, dofs, dofs, 2 * dofs);
 
 	system->solver.A->add(-frequency.angular, C, 0, dofs, dofs, 2 * dofs);
-	system->solver.A->add(frequency.angular, C, dofs, 0, dofs, 2 * dofs);
+	system->solver.A->add( frequency.angular, C, dofs, 0, dofs, 2 * dofs);
 
 	system->solver.b->touched = true;
 	system->solver.b->fill(0);
 	system->solver.b->add(1., re.f, 0   , dofs, 2 * dofs);
 	system->solver.b->add(1., im.f, dofs, dofs, 2 * dofs);
-}
 
-void AX_HarmonicReal::composeDirichlet(AX_LinearSystem<double> *system)
-{
+	system->solver.dirichlet->touched = true;
 	system->solver.dirichlet->fill(0);
-	system->solver.dirichlet->add(1, system->assembler.dirichlet, 0   , dofs, 2 * dofs);
-//	system->solver.dirichlet->add(1, system->assembler.dirichlet, dofs, dofs, 2 * dofs);
-}
+	system->solver.dirichlet->add(1, re.dirichlet, 0   , dofs, 2 * dofs);
+	system->solver.dirichlet->add(1, im.dirichlet, dofs, dofs, 2 * dofs);
 
-void AX_HarmonicReal::extractSolution(AX_LinearSystem<double> *system)
-{
-	re.x->fillData(system->solver.x, 0   , dofs, 2 * dofs);
-	im.x->fillData(system->solver.x, dofs, dofs, 2 * dofs);
-}
-
-void AX_HarmonicReal::storeScheme(step::Frequency &frequency)
-{
 	if (info::ecf->output.print_matrices) {
-		eslog::storedata(" STORE: scheme/{K, M, C, f.re, f.im}\n");
+		eslog::storedata(" STORE: scheme/{K, M, C, f.re, f.im, dirichlet.re, dirichlet.im}\n");
 		K->store(utils::filename(utils::debugDirectory() + "/scheme", "K").c_str());
 		M->store(utils::filename(utils::debugDirectory() + "/scheme", "M").c_str());
 		C->store(utils::filename(utils::debugDirectory() + "/scheme", "C").c_str());
 		re.f->store(utils::filename(utils::debugDirectory() + "/scheme", "f.re").c_str());
 		im.f->store(utils::filename(utils::debugDirectory() + "/scheme", "f.im").c_str());
+		re.dirichlet->store(utils::filename(utils::debugDirectory() + "/scheme", "dirichlet.re").c_str());
+		im.dirichlet->store(utils::filename(utils::debugDirectory() + "/scheme", "dirichlet.im").c_str());
 	}
 }
 
-void AX_HarmonicReal::storeSolution(step::Frequency &frequency)
+void AX_HarmonicReal::extractSolution(step::Frequency &frequency, AX_LinearSystem<double> *system)
 {
+	re.x->fillData(system->solver.x, 0   , dofs, 2 * dofs);
+	im.x->fillData(system->solver.x, dofs, dofs, 2 * dofs);
+
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: scheme/{x.re, x.im}\n");
 		re.x->store(utils::filename(utils::debugDirectory() + "/scheme", "x.re").c_str());

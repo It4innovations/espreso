@@ -54,8 +54,23 @@ protected:
 	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ImpedanceConfiguration> &settings, ExternalBoundaryValue &impedance);
 
 	int version;
-	std::vector<esint> dirichletIndices, dirichletPermutation;
 };
+
+template <typename T>
+static void reset(T *t)
+{
+	if (t) {
+		t->fill(0);
+		t->touched = true;
+	}
+}
+
+template <typename T, typename ...Other>
+static void reset(T *t, Other... other)
+{
+	reset(t);
+	reset(other...);
+}
 
 }
 

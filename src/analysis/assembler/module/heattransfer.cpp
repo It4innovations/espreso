@@ -171,12 +171,12 @@ void AX_HeatTransfer::printVolume()
 	eslog::info(" ============================================================================================= \n");
 }
 
-void AX_HeatTransfer::init(AX_SteadyState &scheme, Vector_Base<double> *dirichlet)
+void AX_HeatTransfer::init(AX_SteadyState &scheme)
 {
 	this->K = scheme.K;
 	this->rhs = scheme.f;
 	this->x = scheme.x;
-	this->dirichlet = dirichlet;
+	this->dirichlet = scheme.dirichlet;
 
 	initNames();
 	analyze();
@@ -385,22 +385,7 @@ void AX_HeatTransfer::evaluate()
 	controller.setUpdate();
 //	printVersions();
 
-	if (K != nullptr) {
-		K->fill(0);
-		K->touched = true;
-	}
-	if (M != nullptr) {
-		M->fill(0);
-		M->touched = true;
-	}
-	if (rhs != nullptr) {
-		rhs->fill(0);
-		rhs->touched = true;
-	}
-	if (dirichlet != nullptr) {
-//		dirichlet->fill(0);
-		dirichlet->touched = true;
-	}
+	reset(K, M, rhs, dirichlet);
 
 	iterate();
 	fill();

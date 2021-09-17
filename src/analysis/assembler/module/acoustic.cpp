@@ -9,8 +9,7 @@
 #include "esinfo/meshinfo.h"
 
 #include "analysis/assembler/operators/operators.h"
-#include "analysis/scheme/harmonic.real.h"
-#include "analysis/scheme/harmonic.complex.h"
+#include "analysis/scheme/harmonic.h"
 
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
@@ -25,7 +24,7 @@
 using namespace espreso;
 
 AX_Acoustic::AX_Acoustic(AX_Acoustic *previous, AcousticGlobalSettings &gsettings, AcousticLoadStepConfiguration &configuration)
-: gsettings(gsettings), configuration(configuration), K{}, M{}, C{}, re{}, im{}, dirichlet{}
+: gsettings(gsettings), configuration(configuration), K{}, M{}, C{}, re{}, im{}
 {
 
 }
@@ -42,7 +41,7 @@ void AX_Acoustic::initParameters()
 	}
 }
 
-void AX_Acoustic::init(AX_HarmonicReal &scheme, Vector_Base<double> *dirichlet)
+void AX_Acoustic::init(AX_Harmonic &scheme)
 {
 	this->K = scheme.K;
 	this->M = scheme.M;
@@ -51,21 +50,8 @@ void AX_Acoustic::init(AX_HarmonicReal &scheme, Vector_Base<double> *dirichlet)
 	this->im.rhs = scheme.im.f;
 	this->re.x = scheme.re.x;
 	this->im.x = scheme.im.x;
-	this->dirichlet = dirichlet;
-
-	analyze();
-}
-
-void AX_Acoustic::init(AX_HarmonicComplex &scheme, Vector_Base<double> *dirichlet)
-{
-	this->K = scheme.K;
-	this->M = scheme.M;
-	this->C = scheme.C;
-	this->re.rhs = scheme.re.f;
-	this->im.rhs = scheme.im.f;
-	this->re.x = scheme.re.x;
-	this->im.x = scheme.im.x;
-	this->dirichlet = dirichlet;
+	this->re.dirichlet = scheme.re.dirichlet;
+	this->im.dirichlet = scheme.im.dirichlet;
 
 	analyze();
 }
@@ -163,35 +149,12 @@ void AX_Acoustic::analyze()
 	}
 }
 
-void AX_Acoustic::next()
+void AX_Acoustic::evaluate()
 {
 	controller.setUpdate();
 //	printVersions();
 
-	if (K != nullptr) {
-		K->fill(0);
-		K->touched = true;
-	}
-	if (M != nullptr) {
-		M->fill(0);
-		M->touched = true;
-	}
-	if (C != nullptr) {
-		C->fill(0);
-		C->touched = true;
-	}
-	if (re.rhs != nullptr) {
-		re.rhs->fill(0);
-		re.rhs->touched = true;
-	}
-	if (im.rhs != nullptr) {
-		im.rhs->fill(0);
-		im.rhs->touched = true;
-	}
-
-	if (dirichlet != nullptr) {
-		dirichlet->touched = true;
-	}
+	reset(K, M, C, re.rhs, im.rhs, re.dirichlet, im.dirichlet);
 
 	iterate();
 	fill();

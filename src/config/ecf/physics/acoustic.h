@@ -23,6 +23,13 @@ struct ImpedanceConfiguration: public ECFDescription {
 
 struct AcousticLoadStepConfiguration: public AcousticLoadStepSolverConfiguration {
 
+	enum class SYSTEM {
+		REAL,
+		COMPLEX
+	};
+
+	SYSTEM system;
+
 	std::map<std::string, ECFExpression> acoustic_pressure, normal_acceleration;
 	std::map<std::string, ImpedanceConfiguration> impedance;
 
