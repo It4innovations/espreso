@@ -54,13 +54,14 @@ void AX_AcousticRealLinear::run(step::Step &step)
 		assembler.evaluate();
 		scheme.composeSystem(frequency, system);
 
+		system->info();
 		system->set(step);
 		system->update(step);
 		system->solve(step);
 
 		scheme.extractSolution(frequency, system);
-
 		assembler.updateSolution();
+
 		info::mesh->output->updateSolution(frequency);
 	}
 }

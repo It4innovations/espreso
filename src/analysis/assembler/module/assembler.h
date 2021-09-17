@@ -60,7 +60,7 @@ template <typename T>
 static void reset(T *t)
 {
 	if (t) {
-		t->fill(0);
+		t->set(0);
 		t->touched = true;
 	}
 }

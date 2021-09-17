@@ -88,7 +88,7 @@ bool AX_NewtonRaphson::run(step::Step &step, step::Time &time, AX_HeatTransfer &
 		eslog::info("     == ------------------------------------------------------------------------------- == \n");
 		eslog::info("\n     == EQUILIBRIUM ITERATION                                                      [%2d] == \n", step.iteration);
 
-		U->fillData(system->solver.x);
+		U->copy(system->solver.x);
 
 		assembler.evaluate();
 		scheme.composeSystem(step, system);

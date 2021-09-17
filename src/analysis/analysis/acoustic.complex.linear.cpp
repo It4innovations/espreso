@@ -52,6 +52,7 @@ void AX_AcousticComplexLinear::run(step::Step &step)
 		assembler.evaluate();
 		scheme.composeSystem(frequency, system);
 
+		system->info();
 		system->set(step);
 		system->update(step);
 		system->solve(step);

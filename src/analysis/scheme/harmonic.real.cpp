@@ -19,22 +19,24 @@ void AX_HarmonicReal::composeSystem(step::Frequency &frequency, AX_LinearSystem<
 	//              iC    K - omega^2 * M
 	// ]
 	system->solver.A->touched = true;
-	system->solver.A->fill(0);
-	system->solver.A->sum(1., K, -frequency.angular * frequency.angular, M, 0   , 0   , dofs, 2 * dofs);
-	system->solver.A->sum(1., K, -frequency.angular * frequency.angular, M, dofs, dofs, dofs, 2 * dofs);
+	system->solver.A->set(0);
+	system->solver.A->copy(K, 0   , 0   , dofs, 2 * dofs);
+	system->solver.A->copy(K, dofs, dofs, dofs, 2 * dofs);
+	system->solver.A->add(-frequency.angular * frequency.angular, M, 0   , 0   , dofs, 2 * dofs);
+	system->solver.A->add(-frequency.angular * frequency.angular, M, dofs, dofs, dofs, 2 * dofs);
 
 	system->solver.A->add(-frequency.angular, C, 0, dofs, dofs, 2 * dofs);
 	system->solver.A->add( frequency.angular, C, dofs, 0, dofs, 2 * dofs);
 
 	system->solver.b->touched = true;
-	system->solver.b->fill(0);
-	system->solver.b->add(1., re.f, 0   , dofs, 2 * dofs);
-	system->solver.b->add(1., im.f, dofs, dofs, 2 * dofs);
+	system->solver.b->set(0);
+	system->solver.b->copy(re.f, 0   , dofs, 2 * dofs);
+	system->solver.b->copy(im.f, dofs, dofs, 2 * dofs);
 
 	system->solver.dirichlet->touched = true;
-	system->solver.dirichlet->fill(0);
-	system->solver.dirichlet->add(1, re.dirichlet, 0   , dofs, 2 * dofs);
-	system->solver.dirichlet->add(1, im.dirichlet, dofs, dofs, 2 * dofs);
+	system->solver.dirichlet->set(0);
+	system->solver.dirichlet->copy(re.dirichlet, 0   , dofs, 2 * dofs);
+	system->solver.dirichlet->copy(im.dirichlet, dofs, dofs, 2 * dofs);
 
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: scheme/{K, M, C, f.re, f.im, dirichlet.re, dirichlet.im}\n");
@@ -50,8 +52,8 @@ void AX_HarmonicReal::composeSystem(step::Frequency &frequency, AX_LinearSystem<
 
 void AX_HarmonicReal::extractSolution(step::Frequency &frequency, AX_LinearSystem<double> *system)
 {
-	re.x->fillData(system->solver.x, 0   , dofs, 2 * dofs);
-	im.x->fillData(system->solver.x, dofs, dofs, 2 * dofs);
+	re.x->copy(system->solver.x, 0   , dofs, 2 * dofs);
+	im.x->copy(system->solver.x, dofs, dofs, 2 * dofs);
 
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: scheme/{x.re, x.im}\n");

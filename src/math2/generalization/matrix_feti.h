@@ -53,15 +53,15 @@ public:
 		math::store(*this, file);
 	}
 
-	void fill(const T &value)
+	void set(const T &value)
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < domains.size(); ++d) {
-			math::fill(domains[d], value);
+			math::set(domains[d], value);
 		}
 	}
 
-	void fillData(const Matrix_Base<T> *in)
+	void copy(const Matrix_Base<T> *in)
 	{
 		if (dynamic_cast<const Matrix_FETI<Matrix, T>*>(in)) {
 			#pragma omp parallel for
@@ -99,36 +99,36 @@ public:
 		}
 	}
 
-	void sum(const double &alpha, const Matrix_Base<double> *a, const double &beta, const Matrix_Base<double> *b)
-	{
-		if (dynamic_cast<const Matrix_FETI<Matrix, T>*>(a) && dynamic_cast<const Matrix_FETI<Matrix, T>*>(b)) {
-			#pragma omp parallel for
-			for (size_t d = 0; d < domains.size(); ++d) {
-				math::sum(domains[d], alpha, static_cast<const Matrix_FETI<Matrix, T>*>(a)->domains[d], beta, static_cast<const Matrix_FETI<Matrix, T>*>(b)->domains[d]);
-			}
-		}
-	}
-
-	void sum(const std::complex<double> &alpha, const Matrix_Base<std::complex<double>> *a, const std::complex<double> &beta, const Matrix_Base<std::complex<double>> *b)
-	{
-		if (dynamic_cast<const Matrix_FETI<Matrix, T>*>(a) && dynamic_cast<const Matrix_FETI<Matrix, T>*>(b)) {
-			#pragma omp parallel for
-			for (size_t d = 0; d < domains.size(); ++d) {
-				math::sum(domains[d], alpha, static_cast<const Matrix_FETI<Matrix, T>*>(a)->domains[d], beta, static_cast<const Matrix_FETI<Matrix, T>*>(b)->domains[d]);
-			}
-		}
-	}
-
-
-	void sum(const T &alpha, const Matrix_Base<T> *a, const T &beta, const Matrix_Base<T> *b, int rowOffset, int colOffset, int size, int step)
-	{
-		if (dynamic_cast<const Matrix_FETI<Matrix, T>*>(a) && dynamic_cast<const Matrix_FETI<Matrix, T>*>(b)) {
-			#pragma omp parallel for
-			for (size_t d = 0; d < domains.size(); ++d) {
-				math::sum(domains[d], alpha, static_cast<const Matrix_FETI<Matrix, T>*>(a)->domains[d], beta, static_cast<const Matrix_FETI<Matrix, T>*>(b)->domains[d], rowOffset, colOffset, size, step);
-			}
-		}
-	}
+//	void sum(const double &alpha, const Matrix_Base<double> *a, const double &beta, const Matrix_Base<double> *b)
+//	{
+//		if (dynamic_cast<const Matrix_FETI<Matrix, T>*>(a) && dynamic_cast<const Matrix_FETI<Matrix, T>*>(b)) {
+//			#pragma omp parallel for
+//			for (size_t d = 0; d < domains.size(); ++d) {
+//				math::sum(domains[d], alpha, static_cast<const Matrix_FETI<Matrix, T>*>(a)->domains[d], beta, static_cast<const Matrix_FETI<Matrix, T>*>(b)->domains[d]);
+//			}
+//		}
+//	}
+//
+//	void sum(const std::complex<double> &alpha, const Matrix_Base<std::complex<double>> *a, const std::complex<double> &beta, const Matrix_Base<std::complex<double>> *b)
+//	{
+//		if (dynamic_cast<const Matrix_FETI<Matrix, T>*>(a) && dynamic_cast<const Matrix_FETI<Matrix, T>*>(b)) {
+//			#pragma omp parallel for
+//			for (size_t d = 0; d < domains.size(); ++d) {
+//				math::sum(domains[d], alpha, static_cast<const Matrix_FETI<Matrix, T>*>(a)->domains[d], beta, static_cast<const Matrix_FETI<Matrix, T>*>(b)->domains[d]);
+//			}
+//		}
+//	}
+//
+//
+//	void sum(const T &alpha, const Matrix_Base<T> *a, const T &beta, const Matrix_Base<T> *b, int rowOffset, int colOffset, int size, int step)
+//	{
+//		if (dynamic_cast<const Matrix_FETI<Matrix, T>*>(a) && dynamic_cast<const Matrix_FETI<Matrix, T>*>(b)) {
+//			#pragma omp parallel for
+//			for (size_t d = 0; d < domains.size(); ++d) {
+//				math::sum(domains[d], alpha, static_cast<const Matrix_FETI<Matrix, T>*>(a)->domains[d], beta, static_cast<const Matrix_FETI<Matrix, T>*>(b)->domains[d], rowOffset, colOffset, size, step);
+//			}
+//		}
+//	}
 
 	void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out)
 	{

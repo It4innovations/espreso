@@ -12,30 +12,17 @@
 
 namespace espreso {
 
-template <template<typename> typename Matrix, typename T>
-class Matrix_Distributed: public Matrix_Base<T>
-{
+template <typename Parent, typename M, template<typename> typename Matrix, typename T>
+class Matrix_Distributed_Common: public Parent {
 public:
-	~Matrix_Distributed()
-	{
-
-	}
-
-//	Matrix_Distributed* copy()
-//	{
-//		Matrix_Distributed<Matrix, T> *m = new Matrix_Distributed<Matrix, T>();
-//		m->cluster.resize(cluster);
-//		return m;
-//	}
-
 	void commit()
 	{
 		math::commit(cluster);
 	}
 
-	Matrix_Distributed* copyPattern()
+	Parent* copyPattern()
 	{
-		Matrix_Distributed<Matrix, T> *m = new Matrix_Distributed<Matrix, T>();
+		M *m = new M();
 		m->type = m->cluster.type = this->type;
 		m->shape = m->cluster.shape = this->shape;
 		m->cluster.pattern(cluster);
@@ -44,19 +31,12 @@ public:
 
 	void store(const char *file)
 	{
-		math::store(*this, file);
+		math::store(*static_cast<M*>(this), file);
 	}
 
-	void fill(const T &value)
+	void set(const T &value)
 	{
-		math::fill(cluster, value);
-	}
-
-	void fillData(const Matrix_Base<T> *in)
-	{
-		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(in)) {
-			math::copy(cluster, static_cast<const Matrix_Distributed<Matrix, T>*>(in)->cluster);
-		}
+		math::set(cluster, value);
 	}
 
 	void scale(const T &alpha)
@@ -64,45 +44,17 @@ public:
 		math::scale(alpha, cluster);
 	}
 
+	void copy(const Matrix_Base<T> *in)
+	{
+		if (dynamic_cast<const M*>(in)) {
+			math::copy(cluster, static_cast<const M*>(in)->cluster);
+		}
+	}
+
 	void add(const T &alpha, const Matrix_Base<T> *a)
 	{
-		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a)) {
-			math::add(cluster, alpha, static_cast<const Matrix_Distributed<Matrix, T>*>(a)->cluster);
-		}
-	}
-
-	void add(const T &alpha, const Matrix_Base<T> *a, int rowOffset, int colOffset, int size, int step)
-	{
-		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a)) {
-			math::add(cluster, alpha, static_cast<const Matrix_Distributed<Matrix, T>*>(a)->cluster, rowOffset, colOffset, size, step);
-		}
-	}
-
-	void add_imag(const double &alpha, const Matrix_Base<double> *a)
-	{
-		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a)) {
-			math::add_im(cluster, alpha, static_cast<const Matrix_Distributed<Matrix, double>*>(a)->cluster);
-		}
-	}
-
-	void sum(const double &alpha, const Matrix_Base<double> *a, const double &beta, const Matrix_Base<double> *b)
-	{
-		if (dynamic_cast<const Matrix_Distributed<Matrix, double>*>(a) && dynamic_cast<const Matrix_Distributed<Matrix, double>*>(b)) {
-			math::sum(cluster, alpha, static_cast<const Matrix_Distributed<Matrix, double>*>(a)->cluster, beta, static_cast<const Matrix_Distributed<Matrix, double>*>(b)->cluster);
-		}
-	}
-
-	void sum(const std::complex<double> &alpha, const Matrix_Base<std::complex<double>> *a, const std::complex<double> &beta, const Matrix_Base<std::complex<double>> *b)
-	{
-		// if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a) && dynamic_cast<const Matrix_Distributed<Matrix, T>*>(b)) {
-		// 	math::sum(cluster, alpha, static_cast<const Matrix_Distributed<Matrix, T>*>(a)->cluster, beta, static_cast<const Matrix_Distributed<Matrix, T>*>(b)->cluster);
-		// }
-	}
-
-	void sum(const T &alpha, const Matrix_Base<T> *a, const T &beta, const Matrix_Base<T> *b,  int rowOffset, int colOffset, int size, int step)
-	{
-		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a) && dynamic_cast<const Matrix_Distributed<Matrix, T>*>(b)) {
-			math::sum(cluster, alpha, static_cast<const Matrix_Distributed<Matrix, T>*>(a)->cluster, beta, static_cast<const Matrix_Distributed<Matrix, T>*>(b)->cluster, rowOffset, colOffset, size, step);
+		if (dynamic_cast<const M*>(a)) {
+			math::add(cluster, alpha, static_cast<const M*>(a)->cluster);
 		}
 	}
 
@@ -116,6 +68,57 @@ public:
 	Matrix<T> cluster;
 	DOFsDistribution distribution;
 	DataSynchronization synchronization;
+
+};
+
+template <template<typename> typename Matrix, typename T>
+class Matrix_Distributed: public Matrix_Distributed_Common<Matrix_Base<T>, Matrix_Distributed<Matrix, T>, Matrix, T> {
+public:
+	void copy(const Matrix_Base<T> *in, int rowOffset, int colOffset, int size, int step)
+	{
+		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(in)) {
+			math::copy(this->cluster, static_cast<const Matrix_Distributed<Matrix, T>*>(in)->cluster, rowOffset, colOffset, size, step);
+		}
+	}
+
+	void add(const T &alpha, const Matrix_Base<T> *a, int rowOffset, int colOffset, int size, int step)
+	{
+		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a)) {
+			math::add(this->cluster, alpha, static_cast<const Matrix_Distributed<Matrix, T>*>(a)->cluster, rowOffset, colOffset, size, step);
+		}
+	}
+};
+
+template <template<typename> typename Matrix, typename T>
+class Matrix_Distributed<Matrix, std::complex<T> >: public Matrix_Distributed_Common<Matrix_Base<std::complex<T> >, Matrix_Distributed<Matrix, std::complex<T> >, Matrix, std::complex<T> > {
+public:
+	void copyReal(const Matrix_Base<T> *in)
+	{
+		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(in)) {
+			math::copy(this->cluster, 0, static_cast<const Matrix_Distributed<Matrix, T>*>(in)->cluster);
+		}
+	}
+
+	void copyImag(const Matrix_Base<T> *in)
+	{
+		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(in)) {
+			math::copy(this->cluster, 1, static_cast<const Matrix_Distributed<Matrix, T>*>(in)->cluster);
+		}
+	}
+
+	void addReal(const T &alpha, const Matrix_Base<T> *a)
+	{
+		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a)) {
+			math::add(this->cluster, 0, alpha, static_cast<const Matrix_Distributed<Matrix, T>*>(a)->cluster);
+		}
+	}
+
+	void addImag(const T &alpha, const Matrix_Base<T> *a)
+	{
+		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a)) {
+			math::add(this->cluster, 1, alpha, static_cast<const Matrix_Distributed<Matrix, T>*>(a)->cluster);
+		}
+	}
 };
 
 }

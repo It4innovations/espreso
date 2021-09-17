@@ -50,15 +50,23 @@ public:
 		//
 	}
 
-	void fill(const T &value)
+	void set(const T &value)
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < domains.size(); ++d) {
-			math::fill(domains[d], value);
+			math::set(domains[d], value);
 		}
 	}
 
-	void fillData(const Vector_Base<T> *in)
+	void scale(const T &alpha)
+	{
+		#pragma omp parallel for
+		for (size_t d = 0; d < domains.size(); ++d) {
+			math::scale(alpha, domains[d]);
+		}
+	}
+
+	void copy(const Vector_Base<T> *in)
 	{
 		if (dynamic_cast<const Vector_FETI<Vector, T>*>(in)) {
 			#pragma omp parallel for
@@ -68,21 +76,13 @@ public:
 		}
 	}
 
-	void fillData(const Vector_Base<T> *in, int offset, int size, int step)
+	void copy(const Vector_Base<T> *in, int offset, int size, int step)
 	{
 		if (dynamic_cast<const Vector_FETI<Vector, T>*>(in)) {
 			#pragma omp parallel for
 			for (size_t d = 0; d < domains.size(); ++d) {
 				math::copy(domains[d], static_cast<const Vector_FETI<Vector, T>*>(in)->domains[d], offset, size, step);
 			}
-		}
-	}
-
-	void scale(const T &alpha)
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < domains.size(); ++d) {
-			math::scale(alpha, domains[d]);
 		}
 	}
 
@@ -106,25 +106,25 @@ public:
 		}
 	}
 
-	void sum(const T &alpha, const Vector_Base<T> *a, const T &beta, const Vector_Base<T> *b)
-	{
-		if (dynamic_cast<const Vector_FETI<Vector, T>*>(a) && dynamic_cast<const Vector_FETI<Vector, T>*>(b)) {
-			#pragma omp parallel for
-			for (size_t d = 0; d < domains.size(); ++d) {
-				math::sum(domains[d], alpha, static_cast<const Vector_FETI<Vector, T>*>(a)->domains[d], beta, static_cast<const Vector_FETI<Vector, T>*>(b)->domains[d]);
-			}
-		}
-	}
-
-	void sum(const T &alpha, const Vector_Base<T> *a, const T &beta, const Vector_Base<T> *b, int offset, int size, int step)
-	{
-		if (dynamic_cast<const Vector_FETI<Vector, T>*>(a) && dynamic_cast<const Vector_FETI<Vector, T>*>(b)) {
-			#pragma omp parallel for
-			for (size_t d = 0; d < domains.size(); ++d) {
-				math::sum(domains[d], alpha, static_cast<const Vector_FETI<Vector, T>*>(a)->domains[d], beta, static_cast<const Vector_FETI<Vector, T>*>(b)->domains[d], offset, size, step);
-			}
-		}
-	}
+//	void sum(const T &alpha, const Vector_Base<T> *a, const T &beta, const Vector_Base<T> *b)
+//	{
+//		if (dynamic_cast<const Vector_FETI<Vector, T>*>(a) && dynamic_cast<const Vector_FETI<Vector, T>*>(b)) {
+//			#pragma omp parallel for
+//			for (size_t d = 0; d < domains.size(); ++d) {
+//				math::sum(domains[d], alpha, static_cast<const Vector_FETI<Vector, T>*>(a)->domains[d], beta, static_cast<const Vector_FETI<Vector, T>*>(b)->domains[d]);
+//			}
+//		}
+//	}
+//
+//	void sum(const T &alpha, const Vector_Base<T> *a, const T &beta, const Vector_Base<T> *b, int offset, int size, int step)
+//	{
+//		if (dynamic_cast<const Vector_FETI<Vector, T>*>(a) && dynamic_cast<const Vector_FETI<Vector, T>*>(b)) {
+//			#pragma omp parallel for
+//			for (size_t d = 0; d < domains.size(); ++d) {
+//				math::sum(domains[d], alpha, static_cast<const Vector_FETI<Vector, T>*>(a)->domains[d], beta, static_cast<const Vector_FETI<Vector, T>*>(b)->domains[d], offset, size, step);
+//			}
+//		}
+//	}
 
 	T norm()
 	{

@@ -13,22 +13,42 @@ void AX_HarmonicComplex::composeSystem(step::Frequency &frequency, AX_LinearSyst
 {
 	// A = K - omega^2 * M + iC
 	system->solver.A->touched = true;
-	system->solver.A->fill(0);
-
-	system->solver.A->sum(1., K, -frequency.angular * frequency.angular, M);
-	system->solver.A->add_imag(frequency.angular, C);
+	system->solver.A->set(std::complex<double>(0, 0));
+	system->solver.A->copyReal(K);
+	system->solver.A->addReal(-frequency.angular * frequency.angular, M);
+	system->solver.A->addImag(frequency.angular, C);
 
 	system->solver.b->touched = true;
-	system->solver.b->fill(0);
-	system->solver.b->add(1., re.f);
-	system->solver.b->add_imag(1., im.f);
+	system->solver.b->copyReal(re.f);
+	system->solver.b->copyImag(im.f);
+
+	system->solver.dirichlet->touched = true;
+	system->solver.dirichlet->set(std::complex<double>(0, 0));
+	system->solver.dirichlet->copyReal(re.dirichlet);
+	system->solver.dirichlet->copyImag(im.dirichlet);
+
+	if (info::ecf->output.print_matrices) {
+		eslog::storedata(" STORE: scheme/{K, M, C, f.re, f.im, dirichlet.re, dirichlet.im}\n");
+		K->store(utils::filename(utils::debugDirectory() + "/scheme", "K").c_str());
+		M->store(utils::filename(utils::debugDirectory() + "/scheme", "M").c_str());
+		C->store(utils::filename(utils::debugDirectory() + "/scheme", "C").c_str());
+		re.f->store(utils::filename(utils::debugDirectory() + "/scheme", "f.re").c_str());
+		im.f->store(utils::filename(utils::debugDirectory() + "/scheme", "f.im").c_str());
+		re.dirichlet->store(utils::filename(utils::debugDirectory() + "/scheme", "dirichlet.re").c_str());
+		im.dirichlet->store(utils::filename(utils::debugDirectory() + "/scheme", "dirichlet.im").c_str());
+	}
 }
 
 void AX_HarmonicComplex::extractSolution(step::Frequency &frequency, AX_LinearSystem<double, std::complex<double> > *system)
 {
-	math::fill(*system->solver.dirichlet, std::complex<double>(0.0));
-	math::add(*system->solver.dirichlet, 1.0, *system->assembler.dirichlet);
+	system->solver.x->copyRealTo(re.x);
+	system->solver.x->copyImagTo(im.x);
+
+	if (info::ecf->output.print_matrices) {
+		eslog::storedata(" STORE: scheme/{x.re, x.im}\n");
+		re.x->store(utils::filename(utils::debugDirectory() + "/scheme", "x.re").c_str());
+		im.x->store(utils::filename(utils::debugDirectory() + "/scheme", "x.im").c_str());
+	}
 }
 
-}
 
