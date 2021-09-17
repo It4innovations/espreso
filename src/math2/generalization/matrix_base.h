@@ -28,8 +28,11 @@ public:
 	virtual void fillData(const Matrix_Base *in) =0;
 
 	virtual void scale(const T &alpha) =0;
+	
 	virtual void add(const T &alpha, const Matrix_Base *a) =0;
 	virtual void add(const T &alpha, const Matrix_Base *a, int rowOffset, int colOffset, int size, int step) =0;
+
+	virtual void add_imag(const double &alpha, const Matrix_Base<double> *a) =0;
 
 	virtual void sum(const double &alpha, const Matrix_Base<double> *a, const double &beta, const Matrix_Base<double> *b) =0;
 	virtual void sum(const std::complex<double> &alpha, const Matrix_Base<std::complex<double>> *a, const std::complex<double> &beta, const Matrix_Base<std::complex<double>> *b) =0;

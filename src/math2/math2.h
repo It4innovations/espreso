@@ -82,6 +82,10 @@ namespace math {
 	template <typename T> void copy(Matrix_CSR<T>    &x, const Matrix_CSR<T>    &y) { copy(x.nnz            , x.vals, 1, y.vals, 1); }
 	template <typename T> void copy(Matrix_IJV<T>    &x, const Matrix_IJV<T>    &y) { copy(x.nnz            , x.vals, 1, y.vals, 1); }
 
+	template <typename T> void copy(Matrix_CSR<std::complex<T>>    &x, const Matrix_CSR<T>    &y) {
+		copy(x.nnz, reinterpret_cast<T*>(x.vals), 2, y.vals, 1);
+	}
+
 	template <typename T> void copy(Vector_Dense<T>  &x, const Vector_Dense<T>  &y, int offset, int size, int step);
 	template <typename T> void copy(Vector_Sparse<T> &x, const Vector_Sparse<T> &y, int offset, int size, int step);
 	template <typename T> void copy(Matrix_Dense<T>  &x, const Matrix_Dense<T>  &y, int rowOffset, int colOffset, int size, int step);
@@ -93,6 +97,7 @@ namespace math {
 	template <typename T> void scale(const T &alpha, Matrix_Dense<T>  &x) { scale(x.nrows * x.ncols, alpha, x.vals, 1); }
 	template <typename T> void scale(const T &alpha, Matrix_CSR<T>    &x) { scale(x.nnz            , alpha, x.vals, 1); }
 	template <typename T> void scale(const T &alpha, Matrix_IJV<T>    &x) { scale(x.nnz            , alpha, x.vals, 1); }
+	template <typename T> void scale(const T &alpha, Matrix_CSR<std::complex<T>>    &x) { scale(x.nnz, alpha, reinterpret_cast<T*>(x.vals), 2); }
 
 	// x = alpha * y
 	template <typename T> void add(Vector_Dense<T>  &x, const T &alpha, const Vector_Dense<T>  &y) { add(x.size           , x.vals, 1, alpha, y.vals, 1); }
@@ -112,6 +117,15 @@ namespace math {
 	}
 
 	// x += alpha * y [.. offset -> size  / step]
+	template <typename T> void add(Vector_Sparse<std::complex<T>> &x, const T &alpha, const Vector_Sparse<T> &y) { add(x.nnz, reinterpret_cast<T*>(x.vals), 2, alpha, y.vals, 1); }
+	template <typename T> void add(Vector_Dense<std::complex<T>>  &x, const T &alpha, const Vector_Dense<T>  &y) { add(x.size, reinterpret_cast<T*>(x.vals), 2, alpha, y.vals, 1); }
+	template <typename T> void add(Matrix_CSR<std::complex<T>>    &x, const T &alpha, const Matrix_CSR<T>    &y) { add(x.nnz, reinterpret_cast<T*>(x.vals), 2, alpha, y.vals, 1); }
+
+	template <typename T> void add_im(Vector_Dense<std::complex<T>>  &x, const T &alpha, const Vector_Dense<T>  &y) { add(x.size, reinterpret_cast<T*>(x.vals)+1, 2, alpha, y.vals, 1); }
+	template <typename T> void add_im(Vector_Dense<T>  &x, const T &alpha, const Vector_Dense<T>  &y) { /* ??? */ }
+	template <typename T> void add_im(Matrix_CSR<std::complex<T>>    &x, const T &alpha, const Matrix_CSR<T>    &y) { add(x.nnz, reinterpret_cast<T*>(x.vals)+1, 2, alpha, y.vals, 1); }
+	template <typename T> void add_im(Matrix_CSR<T>    &x, const T &alpha, const Matrix_CSR<T>    &y) { /* ??? */ }
+
 	template <typename T> void add(Vector_Dense<T>  &x, const T &alpha, const Vector_Dense<T>  &y, int offset, int size, int step);
 	template <typename T> void add(Vector_Sparse<T> &x, const T &alpha, const Vector_Sparse<T> &y, int offset, int size, int step);
 	template <typename T> void add(Vector_Sparse<T> &x, const T &alpha, const Vector_Dense<T>  &y, int offset, int size, int step) {
@@ -132,6 +146,8 @@ namespace math {
 	template <typename T> void sum(Matrix_Dense<T>  &x, const T &alpha, const Matrix_Dense<T>  &y, const T &beta, const Matrix_Dense<T>  &z) { copy(x, y); scale(alpha, x); add(x, beta, z); }
 	template <typename T> void sum(Matrix_CSR<T>    &x, const T &alpha, const Matrix_CSR<T>    &y, const T &beta, const Matrix_CSR<T>    &z) { copy(x, y); scale(alpha, x); add(x, beta, z); }
 	template <typename T> void sum(Matrix_IJV<T>    &x, const T &alpha, const Matrix_IJV<T>    &y, const T &beta, const Matrix_IJV<T>    &z) { copy(x, y); scale(alpha, x); add(x, beta, z); }
+	
+	template <typename T> void sum(Matrix_CSR<std::complex<T>>    &x, const T &alpha, const Matrix_CSR<T>    &y, const T &beta, const Matrix_CSR<T>    &z) { copy(x, y); scale(alpha, x); add(x, beta, z); }
 
 	// x = alpha * y + beta * z [.. offset -> size  / step]
 	template <typename T> void sum(Vector_Dense<T>  &x, const T &alpha, const Vector_Dense<T>  &y, const T &beta, const Vector_Dense<T>  &z, int offset, int size, int step);

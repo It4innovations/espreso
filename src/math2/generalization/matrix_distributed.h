@@ -78,11 +78,18 @@ public:
 		}
 	}
 
+	void add_imag(const double &alpha, const Matrix_Base<double> *a)
+	{
+		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a)) {
+			math::add_im(cluster, alpha, static_cast<const Matrix_Distributed<Matrix, double>*>(a)->cluster);
+		}
+	}
+
 	void sum(const double &alpha, const Matrix_Base<double> *a, const double &beta, const Matrix_Base<double> *b)
 	{
-		// if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a) && dynamic_cast<const Matrix_Distributed<Matrix, T>*>(b)) {
-		// 	math::sum(cluster, alpha, static_cast<const Matrix_Distributed<Matrix, T>*>(a)->cluster, beta, static_cast<const Matrix_Distributed<Matrix, T>*>(b)->cluster);
-		// }
+		if (dynamic_cast<const Matrix_Distributed<Matrix, double>*>(a) && dynamic_cast<const Matrix_Distributed<Matrix, double>*>(b)) {
+			math::sum(cluster, alpha, static_cast<const Matrix_Distributed<Matrix, double>*>(a)->cluster, beta, static_cast<const Matrix_Distributed<Matrix, double>*>(b)->cluster);
+		}
 	}
 
 	void sum(const std::complex<double> &alpha, const Matrix_Base<std::complex<double>> *a, const std::complex<double> &beta, const Matrix_Base<std::complex<double>> *b)

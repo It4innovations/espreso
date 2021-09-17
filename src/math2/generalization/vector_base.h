@@ -5,6 +5,7 @@
 #include "analysis/composer/elementmapping.h"
 #include "math2/primitives/vector_sparse.h"
 
+#include <complex>
 #include <vector>
 
 namespace espreso {
@@ -29,8 +30,12 @@ public:
 	virtual void fillData(const Vector_Base *in, int offset, int size, int step) =0;
 
 	virtual void scale(const T &alpha) =0;
-	virtual void add(const T &alpha, const Vector_Base *a) =0;
+	//virtual void add(const T &alpha, const Vector_Base *a) =0;
+	//virtual void add(const double &alpha, const Vector_Base<std::complex<double>> *a) =0;
+	virtual void add(const double &alpha, const Vector_Base<double> *a) =0;
 	virtual void add(const T &alpha, const Vector_Base *a, int offset, int size, int step) =0;
+	virtual void add_imag(const double &alpha, const Vector_Base<double> *a) =0;
+
 	virtual void sum(const T &alpha, const Vector_Base *a, const T &beta, const Vector_Base *b) =0;
 	virtual void sum(const T &alpha, const Vector_Base *a, const T &beta, const Vector_Base *b, int offset, int size, int step) =0;
 

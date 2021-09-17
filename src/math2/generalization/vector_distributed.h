@@ -70,7 +70,7 @@ public:
 		math::scale(alpha, cluster);
 	}
 
-	void add(const T &alpha, const Vector_Base<T> *a)
+	void add(const double &alpha, const Vector_Base<double> *a)
 	{
 		a->addTo(alpha, this);
 	}
@@ -78,6 +78,12 @@ public:
 	void add(const T &alpha, const Vector_Base<T> *a, int offset, int size, int step)
 	{
 		a->addTo(alpha, this, offset, size, step);
+	}
+
+	void add_imag(const double &alpha, const Vector_Base<double> *a) {
+		if (dynamic_cast<const Vector_Distributed<Vector, double>*>(a)) {
+			math::add_im<double>(cluster, alpha, static_cast<const Vector_Distributed<Vector, double>*>(a)->cluster);
+		}
 	}
 
 	void sum(const T &alpha, const Vector_Base<T> *a, const T &beta, const Vector_Base<T> *b)
