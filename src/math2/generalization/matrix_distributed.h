@@ -48,16 +48,12 @@ public:
 
 	void copy(const Matrix_Base<T> *in)
 	{
-		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(in)) {
-			math::copy(cluster, static_cast<const Matrix_Distributed<Matrix, T>*>(in)->cluster);
-		}
+		in->copyTo(static_cast<Matrix_Distributed<Matrix, T>*>(this));
 	}
 
 	void add(const T &alpha, const Matrix_Base<T> *a)
 	{
-		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a)) {
-			math::add(cluster, alpha, static_cast<const Matrix_Distributed<Matrix, T>*>(a)->cluster);
-		}
+		a->addTo(alpha, static_cast<Matrix_Distributed<Matrix, T>*>(this));
 	}
 
 	void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out)
@@ -65,6 +61,36 @@ public:
 		if (dynamic_cast<const Vector_Distributed<Vector_Dense, T>*>(in) && dynamic_cast<const Vector_Distributed<Vector_Dense, T>*>(out)) {
 			math::apply<T>(static_cast<Vector_Distributed<Vector_Dense, T>*>(out)->cluster, alpha, cluster, beta, static_cast<const Vector_Distributed<Vector_Dense, T>*>(in)->cluster);
 		}
+	}
+
+	void copyTo(Matrix_Distributed<Matrix_Dense, T> *a) const
+	{
+		eslog::error("call empty function getDiagonal\n");
+	}
+
+	void copyTo(Matrix_Distributed<Matrix_CSR, T> *a) const
+	{
+		eslog::error("call empty function getDiagonal\n");
+	}
+
+	void copyTo(Matrix_Distributed<Matrix_IJV, T> *a) const
+	{
+		eslog::error("call empty function getDiagonal\n");
+	}
+
+	void addTo(const T &alpha, Matrix_Distributed<Matrix_Dense, T> *a) const
+	{
+		eslog::error("call empty function getDiagonal\n");
+	}
+
+	void addTo(const T &alpha, Matrix_Distributed<Matrix_CSR, T> *a) const
+	{
+		eslog::error("call empty function getDiagonal\n");
+	}
+
+	void addTo(const T &alpha, Matrix_Distributed<Matrix_IJV, T> *a) const
+	{
+		eslog::error("call empty function getDiagonal\n");
 	}
 
 	Matrix<T> cluster;
@@ -78,16 +104,102 @@ class Matrix_Distributed: public Matrix_Distributed_Common<Matrix, T> {
 public:
 	void copy(const Matrix_Base<T> *in, int rowOffset, int colOffset, int size, int step)
 	{
-		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(in)) {
-			math::copy(this->cluster, static_cast<const Matrix_Distributed<Matrix, T>*>(in)->cluster, rowOffset, colOffset, size, step);
-		}
+		in->copyTo(this, rowOffset, colOffset, size, step);
 	}
 
 	void add(const T &alpha, const Matrix_Base<T> *a, int rowOffset, int colOffset, int size, int step)
 	{
-		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a)) {
-			math::add(this->cluster, alpha, static_cast<const Matrix_Distributed<Matrix, T>*>(a)->cluster, rowOffset, colOffset, size, step);
-		}
+		a->addTo(alpha, this, rowOffset, colOffset, size, step);
+	}
+
+	void copyTo(Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
+	{
+		math::copy(a->cluster, this->cluster, rowOffset, colOffset, size, step);
+	}
+
+	void copyTo(Matrix_Distributed<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
+	{
+		math::copy(a->cluster, this->cluster, rowOffset, colOffset, size, step);
+	}
+
+	void copyTo(Matrix_Distributed<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
+	{
+		math::copy(a->cluster, this->cluster, rowOffset, colOffset, size, step);
+	}
+
+	void addTo(const T &alpha, Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void addTo(const T &alpha, Matrix_Distributed<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void addTo(const T &alpha, Matrix_Distributed<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void copyToReal(Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void copyToReal(Matrix_Distributed<Matrix_CSR, std::complex<T> > *a) const
+	{
+		math::copy(a->cluster, 0, this->cluster);
+	}
+
+	void copyToReal(Matrix_Distributed<Matrix_IJV, std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void copyToImag(Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void copyToImag(Matrix_Distributed<Matrix_CSR, std::complex<T> > *a) const
+	{
+		math::copy(a->cluster, 1, this->cluster);
+	}
+
+	void copyToImag(Matrix_Distributed<Matrix_IJV, std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void addToReal(const T &alpha, Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void addToReal(const T &alpha, Matrix_Distributed<Matrix_CSR  , std::complex<T> > *a) const
+	{
+		math::add(a->cluster, 0, alpha, this->cluster);
+	}
+
+	void addToReal(const T &alpha, Matrix_Distributed<Matrix_IJV  , std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void addToImag(const T &alpha, Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void addToImag(const T &alpha, Matrix_Distributed<Matrix_CSR  , std::complex<T> > *a) const
+	{
+		math::add(a->cluster, 1, alpha, this->cluster);
+	}
+
+	void addToImag(const T &alpha, Matrix_Distributed<Matrix_IJV  , std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
 	}
 };
 
@@ -96,30 +208,22 @@ class Matrix_Distributed<Matrix, std::complex<T> >: public Matrix_Distributed_Co
 public:
 	void copyReal(const Matrix_Base<T> *in)
 	{
-		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(in)) {
-			math::copy(this->cluster, 0, static_cast<const Matrix_Distributed<Matrix, T>*>(in)->cluster);
-		}
+		in->copyToReal(this);
 	}
 
 	void copyImag(const Matrix_Base<T> *in)
 	{
-		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(in)) {
-			math::copy(this->cluster, 1, static_cast<const Matrix_Distributed<Matrix, T>*>(in)->cluster);
-		}
+		in->copyToImag(this);
 	}
 
 	void addReal(const T &alpha, const Matrix_Base<T> *a)
 	{
-		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a)) {
-			math::add(this->cluster, 0, alpha, static_cast<const Matrix_Distributed<Matrix, T>*>(a)->cluster);
-		}
+		a->addToReal(alpha, this);
 	}
 
 	void addImag(const T &alpha, const Matrix_Base<T> *a)
 	{
-		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a)) {
-			math::add(this->cluster, 1, alpha, static_cast<const Matrix_Distributed<Matrix, T>*>(a)->cluster);
-		}
+		a->addToImag(alpha, this);
 	}
 };
 

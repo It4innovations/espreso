@@ -12,19 +12,19 @@
 
 namespace espreso {
 
-template <typename Parent, typename V, template<typename> typename Vector, typename T>
-class Vector_Distributed_Common: public Parent {
+template <template<typename> typename Vector, typename T>
+class Vector_Distributed_Common: public Vector_Base<T> {
 public:
-	Parent* copyPattern()
+	Vector_Base<T>* copyPattern()
 	{
-		V *m = new V();
+		Vector_Distributed<Vector, T> *m = new Vector_Distributed<Vector, T>();
 		m->cluster.pattern(cluster);
 		return m;
 	}
 
 	void store(const char *file)
 	{
-		math::store(*static_cast<V*>(this), file);
+		math::store(*static_cast<Vector_Distributed<Vector, T>*>(this), file);
 	}
 
 	void set(const T &value)
@@ -39,14 +39,12 @@ public:
 
 	void copy(const Vector_Base<T> *in)
 	{
-		if (dynamic_cast<const Vector_Distributed<Vector, T>*>(in)) {
-			math::copy(cluster, static_cast<const Vector_Distributed<Vector, T>*>(in)->cluster);
-		}
+		in->copyTo(static_cast<Vector_Distributed<Vector, T>*>(this));
 	}
 
 	void add(const T &alpha, const Vector_Base<T> *a)
 	{
-		a->addTo(alpha, static_cast<V*>(this));
+		a->addTo(alpha, static_cast<Vector_Distributed<Vector, T>*>(this));
 	}
 
 	T norm()
@@ -74,6 +72,16 @@ public:
 		return 0;
 	}
 
+	void copyTo(Vector_Distributed<Vector_Dense , T> *a) const
+	{
+		math::copy(a->cluster, cluster);
+	}
+
+	void copyTo(Vector_Distributed<Vector_Sparse, T> *a) const
+	{
+		math::copy(a->cluster, cluster);
+	}
+
 	void addTo(const T &alpha, Vector_Distributed<Vector_Dense, T> *a) const
 	{
 		math::add(a->cluster, alpha, cluster);
@@ -90,7 +98,7 @@ public:
 
 
 template <template<typename> typename Vector, typename T>
-class Vector_Distributed: public Vector_Distributed_Common<Vector_Base<T>, Vector_Distributed<Vector, T>, Vector, T> {
+class Vector_Distributed: public Vector_Distributed_Common<Vector, T> {
 public:
 	void store(std::vector<double> &output)
 	{
@@ -99,16 +107,64 @@ public:
 		}
 	}
 
+	void copyReal(const Vector_Distributed<Vector_Dense , std::complex<T> > *a)
+	{
+		math::copy(this->cluster, a->cluster, 0);
+	}
+
+	void copyReal(const Vector_Distributed<Vector_Sparse, std::complex<T> > *a)
+	{
+		math::copy(this->cluster, a->cluster, 0);
+	}
+
+	void copyImag(const Vector_Distributed<Vector_Dense , std::complex<T> > *a)
+	{
+		math::copy(this->cluster, a->cluster, 1);
+	}
+
+	void copyImag(const Vector_Distributed<Vector_Sparse, std::complex<T> > *a)
+	{
+		math::copy(this->cluster, a->cluster, 1);
+	}
+
+	void copyToReal(Vector_Distributed<Vector_Dense , std::complex<T> > *a) const
+	{
+		math::copy(a->cluster, 0, this->cluster);
+	}
+
+	void copyToReal(Vector_Distributed<Vector_Sparse, std::complex<T> > *a) const
+	{
+		math::copy(a->cluster, 0, this->cluster);
+	}
+
+	void copyToImag(Vector_Distributed<Vector_Dense , std::complex<T> > *a) const
+	{
+		math::copy(a->cluster, 1, this->cluster);
+	}
+
+	void copyToImag(Vector_Distributed<Vector_Sparse, std::complex<T> > *a) const
+	{
+		math::copy(a->cluster, 1, this->cluster);
+	}
+
 	void copy(const Vector_Base<T> *in, int offset, int size, int step)
 	{
-		if (dynamic_cast<const Vector_Distributed<Vector, T>*>(in)) {
-			math::copy(this->cluster, static_cast<const Vector_Distributed<Vector, T>*>(in)->cluster, offset, size, step);
-		}
+		in->copyTo(this, offset, size, step);
 	}
 
 	void add(const T &alpha, const Vector_Base<double> *a, int offset, int size, int step)
 	{
 		a->addTo(alpha, this, offset, size, step);
+	}
+
+	void copyTo(Vector_Distributed<Vector_Dense, T> *a, int offset, int size, int step) const
+	{
+		math::copy(a->cluster, this->cluster, offset, size, step);
+	}
+
+	void copyTo(Vector_Distributed<Vector_Sparse, T> *a, int offset, int size, int step) const
+	{
+		math::copy(a->cluster, this->cluster, offset, size, step);
 	}
 
 	void addTo(const T &alpha, Vector_Distributed<Vector_Dense, double> *a, int offset, int size, int step) const
@@ -123,7 +179,7 @@ public:
 };
 
 template <template<typename> typename Vector, typename T>
-class Vector_Distributed<Vector, std::complex<T> >: public Vector_Distributed_Common<Vector_Base<std::complex<T> >, Vector_Distributed<Vector, std::complex<T> >, Vector, std::complex<T> > {
+class Vector_Distributed<Vector, std::complex<T> >: public Vector_Distributed_Common<Vector, std::complex<T> > {
 public:
 	void store(std::vector<double> &output)
 	{
@@ -134,30 +190,22 @@ public:
 
 	void copyReal(const Vector_Base<T> *in)
 	{
-		if (dynamic_cast<const Vector_Distributed<Vector, T >*>(in)) {
-			math::copy(this->cluster, 0, static_cast<const Vector_Distributed<Vector, T >*>(in)->cluster);
-		}
+		in->copyToReal(this);
 	}
 
 	void copyImag(const Vector_Base<T> *in)
 	{
-		if (dynamic_cast<const Vector_Distributed<Vector, T >*>(in)) {
-			math::copy(this->cluster, 1, static_cast<const Vector_Distributed<Vector, T >*>(in)->cluster);
-		}
+		in->copyToImag(this);
 	}
 
 	void copyRealTo(Vector_Base<T> *in) const
 	{
-		if (dynamic_cast<const Vector_Distributed<Vector, T >*>(in)) {
-			math::copy(static_cast<Vector_Distributed<Vector, T >*>(in)->cluster, this->cluster, 0);
-		}
+		in->copyReal(this);
 	}
 
 	void copyImagTo(Vector_Base<T> *in) const
 	{
-		if (dynamic_cast<const Vector_Distributed<Vector, T >*>(in)) {
-			math::copy(static_cast<Vector_Distributed<Vector, T >*>(in)->cluster, this->cluster, 1);
-		}
+		in->copyImag(this);
 	}
 };
 
