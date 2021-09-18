@@ -235,7 +235,7 @@ void fillPermutation(UniformNodesFETIPattern *pattern, int dofs, Matrix_Type typ
 	switch (type) {
 	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE: size = sizeUpper; fill = fillUpper; break;
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE: size = sizeUpper; fill = fillUpper; break;
-	case Matrix_Type::REAL_UNSYMMETRIC: size = sizeFull; fill = fillFull; break;
+	case Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC: size = sizeFull; fill = fillFull; break;
 	}
 
 	auto ebegin = info::mesh->elements->nodes->cbegin() + info::mesh->domains->elements[domain];

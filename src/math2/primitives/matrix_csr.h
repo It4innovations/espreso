@@ -30,12 +30,12 @@ template <typename T>
 class Matrix_CSR: public _Matrix_CSR<T>
 {
 public:
-	Matrix_CSR(): _Matrix_CSR<T>{}, type{Matrix_Type::REAL_UNSYMMETRIC}, shape{Matrix_Shape::FULL}, _external{nullptr}, _allocated{}
+	Matrix_CSR(): _Matrix_CSR<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _external{nullptr}, _allocated{}
 	{
 
 	}
 
-	Matrix_CSR(const Matrix_CSR &other): _Matrix_CSR<T>{}, type{Matrix_Type::REAL_UNSYMMETRIC}, shape{Matrix_Shape::FULL}, _external{nullptr}, _allocated{}
+	Matrix_CSR(const Matrix_CSR &other): _Matrix_CSR<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _external{nullptr}, _allocated{}
 	{
 		type = other.type;
 		shape = other.shape;
@@ -50,7 +50,7 @@ public:
 		}
 	}
 
-	Matrix_CSR(Matrix_CSR &&other): _Matrix_CSR<T>{}, type{Matrix_Type::REAL_UNSYMMETRIC}, shape{Matrix_Shape::FULL}, _external{nullptr}, _allocated{}
+	Matrix_CSR(Matrix_CSR &&other): _Matrix_CSR<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _external{nullptr}, _allocated{}
 	{
 		type = other.type;
 		shape = other.shape;

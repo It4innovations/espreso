@@ -33,12 +33,6 @@ struct MKLPDSSDataHolder {
 
 	Matrix_CSR<T> A;
 	Vector_Dense<T> b, x;
-//
-//	esint *rowPtrs;
-//	esint *colIndices;
-//	double *values;
-//	double *rhsValues;
-//	double *solution;
 };
 
 }
@@ -97,8 +91,27 @@ void _info(const Matrix_Distributed<Matrix_CSR, T> &A)
 	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
 		eslog::info("     == MATRIX TYPE ::                                        REAL SYMMETRIC INDEFINITE == \n");
 		break;
-	case Matrix_Type::REAL_UNSYMMETRIC:
+	case Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC:
 		eslog::info("     == MATRIX TYPE ::                        REAL NONSYMMETRIC (STRUCTURALY SYMMETRIC) == \n");
+		break;
+	case Matrix_Type::REAL_NONSYMMETRIC:
+		eslog::info("     == MATRIX TYPE ::                                                REAL NONSYMMETRIC == \n");
+		break;
+
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+		eslog::info("     == MATRIX TYPE ::                              COMPLEX_HERMITIAN_POSITIVE_DEFINITE == \n");
+		break;
+	case Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE:
+		eslog::info("     == MATRIX TYPE ::                                     COMPLEX_HERMITIAN_INDEFINITE == \n");
+		break;
+	case Matrix_Type::COMPLEX_SYMMETRIC:
+		eslog::info("     == MATRIX TYPE ::                                                COMPLEX_SYMMETRIC == \n");
+		break;
+	case Matrix_Type::COMPLEX_STRUCTURALLY_SYMMETRIC:
+		eslog::info("     == MATRIX TYPE ::                                   COMPLEX_STRUCTURALLY_SYMMETRIC == \n");
+		break;
+	case Matrix_Type::COMPLEX_NONSYMMETRIC:
+		eslog::info("     == MATRIX TYPE ::                                             COMPLEX_NONSYMMETRIC == \n");
 		break;
 	}
 }
@@ -130,9 +143,15 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 	mklpdss.external->comm = MPI_Comm_c2f(info::mpi::comm);
 
 	switch (A.cluster.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE: mklpdss.external->mtype =  2; break;
-	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:        mklpdss.external->mtype = -2; break;
-	case Matrix_Type::REAL_UNSYMMETRIC:                 mklpdss.external->mtype =  1; break;
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:    mklpdss.external->mtype =  2; break;
+	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:           mklpdss.external->mtype = -2; break;
+	case Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC:         mklpdss.external->mtype =  1; break;
+	case Matrix_Type::REAL_NONSYMMETRIC:                   mklpdss.external->mtype = 11; break;
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE: mklpdss.external->mtype =  4; break;
+	case Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE:        mklpdss.external->mtype = -4; break;
+	case Matrix_Type::COMPLEX_SYMMETRIC:                   mklpdss.external->mtype =  6; break;
+	case Matrix_Type::COMPLEX_STRUCTURALLY_SYMMETRIC:      mklpdss.external->mtype =  3; break;
+	case Matrix_Type::COMPLEX_NONSYMMETRIC:                mklpdss.external->mtype = 13; break;
 	}
 
 	// pick only upper triangle (since composer does not set correct dirichlet in symmetric matrices)

@@ -26,12 +26,12 @@ template <typename T>
 class Matrix_Dense: public _Matrix_Dense<T>
 {
 public:
-	Matrix_Dense(): _Matrix_Dense<T>{}, type{Matrix_Type::REAL_UNSYMMETRIC}, shape{Matrix_Shape::FULL}, _external{nullptr}, _allocated{}
+	Matrix_Dense(): _Matrix_Dense<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _external{nullptr}, _allocated{}
 	{
 
 	}
 
-	Matrix_Dense(const Matrix_Dense &other): _Matrix_Dense<T>{}, type{Matrix_Type::REAL_UNSYMMETRIC}, shape{Matrix_Shape::FULL}, _external{nullptr}, _allocated{}
+	Matrix_Dense(const Matrix_Dense &other): _Matrix_Dense<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _external{nullptr}, _allocated{}
 	{
 		this->type = other.type;
 		this->shape = other.shape;
@@ -42,7 +42,7 @@ public:
 		}
 	}
 
-	Matrix_Dense(Matrix_Dense &&other): _Matrix_Dense<T>{}, type{Matrix_Type::REAL_UNSYMMETRIC}, shape{Matrix_Shape::FULL}, _external{nullptr}, _allocated{}
+	Matrix_Dense(Matrix_Dense &&other): _Matrix_Dense<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _external{nullptr}, _allocated{}
 	{
 		this->type = other.type;
 		this->shape = other.shape;

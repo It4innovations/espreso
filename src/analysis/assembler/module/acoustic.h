@@ -48,7 +48,7 @@ public:
 
 	void updateSolution();
 
-	Matrix_Type matrixType() { return Matrix_Type::REAL_UNSYMMETRIC; }
+	Matrix_Type matrixType() { return Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC; }
 	bool hasKernel(int domain) { return true; }
 
 	AcousticGlobalSettings &gsettings;

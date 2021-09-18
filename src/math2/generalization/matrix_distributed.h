@@ -12,17 +12,19 @@
 
 namespace espreso {
 
-template <typename Parent, typename M, template<typename> typename Matrix, typename T>
-class Matrix_Distributed_Common: public Parent {
+template <template<typename> typename Matrix, typename T> class Matrix_Distributed;
+
+template <template<typename> typename Matrix, typename T>
+class Matrix_Distributed_Common: public Matrix_Base<T> {
 public:
 	void commit()
 	{
 		math::commit(cluster);
 	}
 
-	Parent* copyPattern()
+	Matrix_Base<T>* copyPattern()
 	{
-		M *m = new M();
+		Matrix_Distributed<Matrix, T> *m = new Matrix_Distributed<Matrix, T>();
 		m->type = m->cluster.type = this->type;
 		m->shape = m->cluster.shape = this->shape;
 		m->cluster.pattern(cluster);
@@ -31,7 +33,7 @@ public:
 
 	void store(const char *file)
 	{
-		math::store(*static_cast<M*>(this), file);
+		math::store(*static_cast<Matrix_Distributed<Matrix, T>*>(this), file);
 	}
 
 	void set(const T &value)
@@ -46,15 +48,15 @@ public:
 
 	void copy(const Matrix_Base<T> *in)
 	{
-		if (dynamic_cast<const M*>(in)) {
-			math::copy(cluster, static_cast<const M*>(in)->cluster);
+		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(in)) {
+			math::copy(cluster, static_cast<const Matrix_Distributed<Matrix, T>*>(in)->cluster);
 		}
 	}
 
 	void add(const T &alpha, const Matrix_Base<T> *a)
 	{
-		if (dynamic_cast<const M*>(a)) {
-			math::add(cluster, alpha, static_cast<const M*>(a)->cluster);
+		if (dynamic_cast<const Matrix_Distributed<Matrix, T>*>(a)) {
+			math::add(cluster, alpha, static_cast<const Matrix_Distributed<Matrix, T>*>(a)->cluster);
 		}
 	}
 
@@ -72,7 +74,7 @@ public:
 };
 
 template <template<typename> typename Matrix, typename T>
-class Matrix_Distributed: public Matrix_Distributed_Common<Matrix_Base<T>, Matrix_Distributed<Matrix, T>, Matrix, T> {
+class Matrix_Distributed: public Matrix_Distributed_Common<Matrix, T> {
 public:
 	void copy(const Matrix_Base<T> *in, int rowOffset, int colOffset, int size, int step)
 	{
@@ -90,7 +92,7 @@ public:
 };
 
 template <template<typename> typename Matrix, typename T>
-class Matrix_Distributed<Matrix, std::complex<T> >: public Matrix_Distributed_Common<Matrix_Base<std::complex<T> >, Matrix_Distributed<Matrix, std::complex<T> >, Matrix, std::complex<T> > {
+class Matrix_Distributed<Matrix, std::complex<T> >: public Matrix_Distributed_Common<Matrix, std::complex<T> > {
 public:
 	void copyReal(const Matrix_Base<T> *in)
 	{

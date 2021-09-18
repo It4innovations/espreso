@@ -157,7 +157,7 @@ void apply(Vector_Dense<double> &y, const double &alpha, Matrix_CSR<double> &a, 
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		descr.type = SPARSE_MATRIX_TYPE_SYMMETRIC;
 		break;
-	case Matrix_Type::REAL_UNSYMMETRIC:
+	case Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC:
 		descr.type = SPARSE_MATRIX_TYPE_GENERAL;
 		break;
 	}
@@ -182,7 +182,7 @@ void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &a
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		descr.type = SPARSE_MATRIX_TYPE_SYMMETRIC;
 		break;
-	case Matrix_Type::REAL_UNSYMMETRIC:
+	case Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC:
 		descr.type = SPARSE_MATRIX_TYPE_GENERAL;
 		break;
 	}
@@ -207,7 +207,7 @@ void apply(Vector_Dense<double> &y, const double &alpha, Matrix_IJV<double> &a, 
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		descr.type = SPARSE_MATRIX_TYPE_SYMMETRIC;
 		break;
-	case Matrix_Type::REAL_UNSYMMETRIC:
+	case Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC:
 		descr.type = SPARSE_MATRIX_TYPE_GENERAL;
 		break;
 	}
@@ -232,7 +232,7 @@ void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &a
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		descr.type = SPARSE_MATRIX_TYPE_SYMMETRIC;
 		break;
-	case Matrix_Type::REAL_UNSYMMETRIC:
+	case Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC:
 		descr.type = SPARSE_MATRIX_TYPE_GENERAL;
 		break;
 	}

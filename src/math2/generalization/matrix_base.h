@@ -10,24 +10,25 @@
 
 namespace espreso {
 
-template <typename M, typename T>
+template <typename T> class Matrix_Base;
+
+template <typename T>
 class Matrix_Base_Common {
 public:
-	Matrix_Base_Common(): type(Matrix_Type::REAL_UNSYMMETRIC), shape(Matrix_Shape::FULL), touched(false) {}
+	Matrix_Base_Common(Matrix_Type type): type(type), shape(Matrix_Shape::FULL), touched(false) {}
 
 	virtual ~Matrix_Base_Common() {};
 
 	virtual void commit() =0;
 
-//	virtual Matrix_Base* copy() =0;
-	virtual M* copyPattern() =0;
+	virtual Matrix_Base<T>* copyPattern() =0;
 	virtual void store(const char *file) =0;
 
 	virtual void set(const T &value) =0;
 	virtual void scale(const T &alpha) =0;
 
-	virtual void copy(const M *in) =0;
-	virtual void add(const T &alpha, const M *a) =0;
+	virtual void copy(const Matrix_Base<T> *in) =0;
+	virtual void add(const T &alpha, const Matrix_Base<T> *a) =0;
 	virtual void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out) =0;
 
 	Matrix_Type type;
@@ -37,20 +38,22 @@ public:
 };
 
 template <typename T>
-class Matrix_Base: public Matrix_Base_Common<Matrix_Base<T>, T> {
+class Matrix_Base: public Matrix_Base_Common<T> {
 public:
+	Matrix_Base(): Matrix_Base_Common<T>(Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC) {}
 	virtual ~Matrix_Base() {}
 
-	using Matrix_Base_Common<Matrix_Base<T>, T>::copy;
-	using Matrix_Base_Common<Matrix_Base<T>, T>::add;
+	using Matrix_Base_Common<T>::copy;
+	using Matrix_Base_Common<T>::add;
 
 	virtual void copy(const Matrix_Base<T> *in, int rowOffset, int colOffset, int size, int step) =0;
 	virtual void add(const T &alpha, const Matrix_Base<T> *a, int rowOffset, int colOffset, int size, int step) =0;
 };
 
 template <typename T>
-class Matrix_Base<std::complex<T> >: public Matrix_Base_Common<Matrix_Base<std::complex<T> >, std::complex<T> > {
+class Matrix_Base<std::complex<T> >: public Matrix_Base_Common<std::complex<T> > {
 public:
+	Matrix_Base(): Matrix_Base_Common<std::complex<T> >(Matrix_Type::COMPLEX_STRUCTURALLY_SYMMETRIC) {}
 	virtual ~Matrix_Base() {}
 
 	virtual void copyReal(const Matrix_Base<T> *in) =0;
