@@ -165,7 +165,7 @@ void computeRegionsBoundaryIntervals(const ElementStore *elements, const DomainS
 						begin = currect - permutation.begin();
 					}
 					if (eregion[*prev] != eregion[*currect]) {
-						while (elements->eintervals[eregion[*currect]].domain >= (esint)*dend) {
+						while (elements->eintervals[eregion[*currect]].domain >= domains->offset + (esint)*dend) {
 							distribution.push_back(currect - permutation.begin());
 							++dend;
 						}
