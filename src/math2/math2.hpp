@@ -7,6 +7,36 @@
 namespace espreso {
 namespace math {
 
+template <typename T> void copy(Matrix_Dense<T>  &x, const Matrix_CSR<T>   &y)
+{
+	eslog::error("call empty function copy\n");
+}
+
+template <typename T> void copy(Matrix_Dense<T>  &x, const Matrix_IJV<T>   &y)
+{
+	eslog::error("call empty function copy\n");
+}
+
+template <typename T> void copy(Matrix_CSR<T>    &x, const Matrix_Dense<T> &y)
+{
+	eslog::error("call empty function copy\n");
+}
+
+template <typename T> void copy(Matrix_CSR<T>    &x, const Matrix_IJV<T>   &y)
+{
+	eslog::error("call empty function copy\n");
+}
+
+template <typename T> void copy(Matrix_IJV<T>    &x, const Matrix_Dense<T> &y)
+{
+	eslog::error("call empty function copy\n");
+}
+
+template <typename T> void copy(Matrix_IJV<T>    &x, const Matrix_CSR<T>   &y)
+{
+	eslog::error("call empty function copy\n");
+}
+
 template <typename T> void copy(Vector_Dense<T> &x, const Vector_Dense<T> &y, int offset, int size, int step)
 {
 	if (x.size < y.size) {
@@ -111,6 +141,36 @@ template <typename T> void copy(Matrix_IJV<T> &x, const Matrix_CSR<T> &y, int ro
 template <typename T> void copy(Matrix_IJV<T> &x, const Matrix_IJV<T> &y, int rowOffset, int colOffset, int size, int step)
 {
 	eslog::error("call empty function copy\n");
+}
+
+template <typename T> void add(Matrix_Dense<T>  &x, const T &alpha, const Matrix_CSR<T>   &y)
+{
+	eslog::error("call empty function add\n");
+}
+
+template <typename T> void add(Matrix_Dense<T>  &x, const T &alpha, const Matrix_IJV<T>   &y)
+{
+	eslog::error("call empty function add\n");
+}
+
+template <typename T> void add(Matrix_CSR<T>    &x, const T &alpha, const Matrix_Dense<T> &y)
+{
+	eslog::error("call empty function add\n");
+}
+
+template <typename T> void add(Matrix_CSR<T>    &x, const T &alpha, const Matrix_IJV<T>   &y)
+{
+	eslog::error("call empty function add\n");
+}
+
+template <typename T> void add(Matrix_IJV<T>    &x, const T &alpha, const Matrix_Dense<T> &y)
+{
+	eslog::error("call empty function add\n");
+}
+
+template <typename T> void add(Matrix_IJV<T>    &x, const T &alpha, const Matrix_CSR<T>   &y)
+{
+	eslog::error("call empty function add\n");
 }
 
 template <typename T> void add(Vector_Dense<T> &x, const T &beta, const Vector_Dense<T> &y, int offset, int size, int step)

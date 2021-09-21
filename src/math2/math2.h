@@ -84,6 +84,14 @@ namespace math {
 	template <typename T> void copy(Matrix_CSR<T>    &x, const Matrix_CSR<T>    &y) { copy(x.nnz            , x.vals, 1, y.vals, 1); }
 	template <typename T> void copy(Matrix_IJV<T>    &x, const Matrix_IJV<T>    &y) { copy(x.nnz            , x.vals, 1, y.vals, 1); }
 
+	// type converters
+	template <typename T> void copy(Matrix_Dense<T>  &x, const Matrix_CSR<T>   &y);
+	template <typename T> void copy(Matrix_Dense<T>  &x, const Matrix_IJV<T>   &y);
+	template <typename T> void copy(Matrix_CSR<T>    &x, const Matrix_Dense<T> &y);
+	template <typename T> void copy(Matrix_CSR<T>    &x, const Matrix_IJV<T>   &y);
+	template <typename T> void copy(Matrix_IJV<T>    &x, const Matrix_Dense<T> &y);
+	template <typename T> void copy(Matrix_IJV<T>    &x, const Matrix_CSR<T>   &y);
+
 	// type to type with offsets
 	template <typename T> void copy(Vector_Dense<T>  &x, const Vector_Dense<T>  &y, int offset, int size, int step);
 	template <typename T> void copy(Vector_Sparse<T> &x, const Vector_Sparse<T> &y, int offset, int size, int step);
@@ -149,6 +157,13 @@ namespace math {
 			x.vals[y.indices[i]] += alpha * y.vals[i];
 		}
 	}
+
+	template <typename T> void add(Matrix_Dense<T>  &x, const T &alpha, const Matrix_CSR<T>   &y);
+	template <typename T> void add(Matrix_Dense<T>  &x, const T &alpha, const Matrix_IJV<T>   &y);
+	template <typename T> void add(Matrix_CSR<T>    &x, const T &alpha, const Matrix_Dense<T> &y);
+	template <typename T> void add(Matrix_CSR<T>    &x, const T &alpha, const Matrix_IJV<T>   &y);
+	template <typename T> void add(Matrix_IJV<T>    &x, const T &alpha, const Matrix_Dense<T> &y);
+	template <typename T> void add(Matrix_IJV<T>    &x, const T &alpha, const Matrix_CSR<T>   &y);
 
 	// x += alpha * y [.. offset -> size  / step]
 	template <typename T> void add(Vector_Sparse<std::complex<T>> &x, const int offsetX, const T &alpha, const Vector_Sparse<T> &y) { add(x.nnz, reinterpret_cast<T*>(x.vals) + offsetX, 2, alpha, y.vals, 1); }

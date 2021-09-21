@@ -5,6 +5,8 @@
 #include "vector_distributed.h"
 #include "matrix_base.h"
 #include "math2/math2.h"
+#include "math2/primitives/matrix_dense.h"
+#include "math2/generalization/matrix_distributed.h"
 #include "math2/utils/dofs_distribution.h"
 #include "math2/utils/utils_distributed.h"
 
@@ -65,38 +67,37 @@ public:
 
 	void copyTo(Matrix_Distributed<Matrix_Dense, T> *a) const
 	{
-		eslog::error("call empty function getDiagonal\n");
+		math::copy(a->cluster, this->cluster);
 	}
 
 	void copyTo(Matrix_Distributed<Matrix_CSR, T> *a) const
 	{
-		eslog::error("call empty function getDiagonal\n");
+		math::copy(a->cluster, this->cluster);
 	}
 
 	void copyTo(Matrix_Distributed<Matrix_IJV, T> *a) const
 	{
-		eslog::error("call empty function getDiagonal\n");
+		math::copy(a->cluster, this->cluster);
 	}
 
 	void addTo(const T &alpha, Matrix_Distributed<Matrix_Dense, T> *a) const
 	{
-		eslog::error("call empty function getDiagonal\n");
+		math::add(a->cluster, alpha, this->cluster);
 	}
 
 	void addTo(const T &alpha, Matrix_Distributed<Matrix_CSR, T> *a) const
 	{
-		eslog::error("call empty function getDiagonal\n");
+		math::add(a->cluster, alpha, this->cluster);
 	}
 
 	void addTo(const T &alpha, Matrix_Distributed<Matrix_IJV, T> *a) const
 	{
-		eslog::error("call empty function getDiagonal\n");
+		math::add(a->cluster, alpha, this->cluster);
 	}
 
 	Matrix<T> cluster;
 	DOFsDistribution distribution;
 	DataSynchronization synchronization;
-
 };
 
 template <template<typename> typename Matrix, typename T>
@@ -129,17 +130,17 @@ public:
 
 	void addTo(const T &alpha, Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
-		eslog::error("call empty function\n");
+		math::add(a->cluster, alpha, this->cluster, rowOffset, colOffset, size, step);
 	}
 
 	void addTo(const T &alpha, Matrix_Distributed<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
-		eslog::error("call empty function\n");
+		math::add(a->cluster, alpha, this->cluster, rowOffset, colOffset, size, step);
 	}
 
 	void addTo(const T &alpha, Matrix_Distributed<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
-		eslog::error("call empty function\n");
+		math::add(a->cluster, alpha, this->cluster, rowOffset, colOffset, size, step);
 	}
 
 	void copyToReal(Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const
