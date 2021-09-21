@@ -61,7 +61,6 @@ static void reset(T *t)
 {
 	if (t) {
 		t->set(0);
-		t->touched = true;
 	}
 }
 
@@ -69,6 +68,22 @@ template <typename T, typename ...Other>
 static void reset(T *t, Other... other)
 {
 	reset(t);
+	reset(other...);
+}
+
+template <typename T>
+static void update(T *t)
+{
+	if (t) {
+		t->update();
+		t->touched = true;
+	}
+}
+
+template <typename T, typename ...Other>
+static void update(T *t, Other... other)
+{
+	update(t);
 	reset(other...);
 }
 

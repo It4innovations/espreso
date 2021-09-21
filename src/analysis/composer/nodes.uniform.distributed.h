@@ -29,14 +29,12 @@ struct UniformNodesDistributedPattern {
 		esint nrows, ncols, dirichlet;
 		std::vector<esint> row, column; // row, column indices
 		std::vector<esint> A, b, indices; // local permutations
-		std::vector<std::vector<esint> > nA, nb; // neighbors permutations
 	};
 
 	UniformNodesDistributedPattern();
 	~UniformNodesDistributedPattern();
 
-	void set(std::map<std::string, ECFExpression> &settings, int dofs);
-	void set(std::map<std::string, ECFExpression> &settings, int dofs, DOFsDistribution &distribution, DataSynchronization &synchronization);
+	void set(std::map<std::string, ECFExpression> &settings, int dofs, DOFsDistribution &distribution);
 
 	template<typename T>
 	void fill(Vector_Distributed<Vector_Sparse, T> &v)
@@ -59,7 +57,7 @@ struct UniformNodesDistributedPattern {
 		m.cluster.type = m.type;
 		m.cluster.shape = m.shape;
 		// we set square matrix in order to be able to call local operations (e.g., apply)
-		m.cluster.resize(elements.nrows, elements.nrows, elements.row.size());
+		m.cluster.resize(elements.nrows, elements.ncols, elements.row.size());
 		fillCSR(m.cluster.rows, m.cluster.cols);
 	}
 

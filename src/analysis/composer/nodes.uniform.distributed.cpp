@@ -32,7 +32,7 @@ UniformNodesDistributedPattern::~UniformNodesDistributedPattern()
 
 }
 
-void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDistribution &distribution, DataSynchronization &synchronization, bool onlyPattern)
+void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDistribution &distribution, bool onlyPattern)
 {
 	pattern->dofs = dofs;
 	auto size = [] (int size) {
@@ -89,8 +89,8 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDist
 		while (begin->row == (++end)->row);
 		auto neigh = info::mesh->neighbors.begin();
 		for (auto r = ranks->begin(); r != ranks->end(); ++r) {
-			while (*r < *neigh) { ++neigh; }
 			if (*r != info::mpi::rank) {
+				while (*neigh < *r) { ++neigh; }
 				sPatter[neigh - info::mesh->neighbors.begin()].insert(sPatter[neigh - info::mesh->neighbors.begin()].end(), begin, end);
 			}
 		}
@@ -122,13 +122,6 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDist
 	}
 	for (size_t i = 0; i < RHSData.size(); ++i) {
 		pattern->elements.b.push_back(std::lower_bound(RHSPattern.begin(), RHSPattern.end(), RHSData[i]) - RHSPattern.begin());
-	}
-
-	pattern->elements.nA.resize(info::mesh->neighbors.size());
-	for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
-		for (size_t i = 0; i < rPatter[n].size(); ++i) {
-			pattern->elements.nA[n].push_back(std::lower_bound(APattern.begin(), APattern.end(), rPatter[n][i]) - APattern.begin());
-		}
 	}
 
 	std::vector<esint> belement(dofs * 8);
@@ -181,7 +174,7 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDist
 	distribution.totalSize = dofs * info::mesh->nodes->uniqInfo.totalSize;
 
 	distribution.neighbors = info::mesh->neighbors;
-	distribution.neighDOF.resize(distribution.neighbors.size());
+	distribution.neighDOF.resize(distribution.neighbors.size() + 1, distribution.begin); // the last is my offset
 	distribution.halo.clear();
 	distribution.halo.reserve(dofs * info::mesh->nodes->uniqInfo.nhalo);
 	for (esint n = 0; n < info::mesh->nodes->uniqInfo.nhalo; ++n) {
@@ -197,19 +190,6 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDist
 
 	ranks = info::mesh->nodes->ranks->cbegin();
 	begin = end = APattern.begin();
-	synchronization.sBuffer.resize(info::mesh->neighbors.size());
-	synchronization.rBuffer.resize(info::mesh->neighbors.size());
-	for (size_t n = 0; n < info::mesh->neighbors.size() && info::mesh->neighbors[n] < info::mpi::rank; ++n, end = begin) {
-		synchronization.nStart.push_back(begin - APattern.begin());
-		while (ranks->front() == info::mesh->neighbors[n]) {
-			++ranks;
-			auto rbegin = end;
-			while (rbegin->row == (++end)->row);
-		}
-		synchronization.sBuffer[n].resize(end - begin);
-		synchronization.rBuffer[n].resize(rPatter[n].size());
-	}
-	synchronization.rIndices = pattern->elements.nA;
 }
 
 static void dirichlet(UniformNodesDistributedPattern *pattern, std::map<std::string, ECFExpression> &settings, int dofs)
@@ -242,23 +222,16 @@ static void dirichlet(UniformNodesDistributedPattern *pattern, std::map<std::str
 	}
 }
 
-void UniformNodesDistributedPattern::set(std::map<std::string, ECFExpression> &settings, int dofs)
+void UniformNodesDistributedPattern::set(std::map<std::string, ECFExpression> &settings, int dofs, DOFsDistribution &distribution)
 {
-	DOFsDistribution distribution;
-	DataSynchronization synchronization;
-	fillPermutation(this, dofs, distribution, synchronization, true);
-	dirichlet(this, settings, dofs);
-}
-
-void UniformNodesDistributedPattern::set(std::map<std::string, ECFExpression> &settings, int dofs, DOFsDistribution &distribution, DataSynchronization &synchronization)
-{
-	fillPermutation(this, dofs, distribution, synchronization, false);
+	fillPermutation(this, dofs, distribution, false);
 	dirichlet(this, settings, dofs);
 }
 
 void UniformNodesDistributedPattern::fillCSR(esint *rows, esint *cols)
 {
-	rows[0] = cols[0] = _Matrix_CSR_Pattern::Indexing;
+	rows[0] = _Matrix_CSR_Pattern::Indexing;
+	cols[0] = elements.column.front() + _Matrix_CSR_Pattern::Indexing;
 	size_t r = 1;
 	for (size_t c = 1; c < elements.column.size(); ++c) {
 		cols[c] = elements.column[c] + _Matrix_CSR_Pattern::Indexing;

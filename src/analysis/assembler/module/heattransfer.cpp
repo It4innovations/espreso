@@ -390,6 +390,8 @@ void AX_HeatTransfer::evaluate()
 	iterate();
 	fill();
 
+	update(K, M, rhs);
+
 	controller.resetUpdate();
 
 //	if (temp.gp.data) {

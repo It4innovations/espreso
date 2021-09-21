@@ -6,7 +6,6 @@
 #include "matrix_base.h"
 #include "math2/math2.h"
 #include "math2/primitives/matrix_dense.h"
-#include "math2/generalization/matrix_distributed.h"
 #include "math2/utils/dofs_distribution.h"
 #include "math2/utils/utils_distributed.h"
 
@@ -24,12 +23,19 @@ public:
 		math::commit(cluster);
 	}
 
+	void update()
+	{
+		synchronization->gatherFromUpper(*static_cast<Matrix_Distributed<Matrix, T>*>(this));
+	}
+
 	Matrix_Base<T>* copyPattern()
 	{
 		Matrix_Distributed<Matrix, T> *m = new Matrix_Distributed<Matrix, T>();
 		m->type = m->cluster.type = this->type;
 		m->shape = m->cluster.shape = this->shape;
 		m->cluster.pattern(cluster);
+		m->distribution = this->distribution;
+		m->synchronization = this->synchronization;
 		return m;
 	}
 
@@ -96,8 +102,8 @@ public:
 	}
 
 	Matrix<T> cluster;
-	DOFsDistribution distribution;
-	DataSynchronization synchronization;
+	DOFsDistribution *distribution;
+	Data_Synchronization<Matrix, T> *synchronization;
 };
 
 template <template<typename> typename Matrix, typename T>

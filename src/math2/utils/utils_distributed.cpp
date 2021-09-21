@@ -4,30 +4,175 @@
 #include "esinfo/eslog.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/meshinfo.h"
+#include "math2/primitives/matrix_csr.h"
+#include "math2/generalization/matrix_distributed.h"
 #include "wrappers/mpi/communication.h"
 
 #include <cstring>
+#include <complex>
 
-using namespace espreso;
+namespace espreso {
 
-void DataSynchronization::gatherFromUpper(double *vals)
+template <typename T>
+void _init(Data_Synchronization<Matrix_CSR, T> *sync, Matrix_Distributed<Matrix_CSR, T> &m)
 {
-	for (size_t n = 0; n < info::mesh->neighbors.size() && info::mesh->neighbors[n] < info::mpi::rank; ++n) {
-		memcpy(sBuffer[n].data(), vals + nStart[n], sizeof(double) * sBuffer[n].size());
+	if (info::mpi::size == 1 || sync->neighbors.size()) {
+		return;
+	}
+	sync->neighbors = m.distribution->neighbors;
+	sync->sBuffer.resize(sync->neighbors.size());
+	sync->rBuffer.resize(sync->neighbors.size());
+	sync->rOffset.resize(sync->neighbors.size());
+
+	std::vector<std::vector<esint> > sbuffer(sync->neighbors.size()), rbuffer(sync->neighbors.size());
+
+	const Matrix_CSR<T> &csr = m.cluster;
+
+	auto halo = m.distribution->halo.begin();
+	for (size_t n = 0, r = 0; n < sync->neighbors.size() && sync->neighbors[n] < info::mpi::rank; ++n) {
+		size_t size = 0;
+		sync->nOffset.push_back(csr.rows[r] - _Matrix_CSR_Pattern::Indexing);
+		while (halo != m.distribution->halo.end() && *halo < m.distribution->neighDOF[n + 1]) {
+			sbuffer[n].push_back(*halo);
+			sbuffer[n].push_back(csr.rows[r + 1] - csr.rows[r]);
+			size += csr.rows[r + 1] - csr.rows[r];
+			for (esint c = csr.rows[r]; c < csr.rows[r + 1]; ++c) {
+				sbuffer[n].push_back(csr.cols[c - _Matrix_CSR_Pattern::Indexing]);
+			}
+			++halo; ++r;
+		}
+		sync->sBuffer[n].resize(size);
 	}
 
-	if (!Communication::receiveUpperUnknownSize(sBuffer, rBuffer, info::mesh->neighbors)) {
+	if (!Communication::receiveUpperUnknownSize(sbuffer, rbuffer, sync->neighbors)) {
+		eslog::internalFailure("receive MatrixCSRDistribution pattern.\n");
+	}
+
+	for (size_t n = 0; n < sync->neighbors.size(); ++n) {
+		for (size_t i = 0; i < rbuffer[n].size(); ) {
+			esint *c = csr.cols + csr.rows[rbuffer[n][i++] - m.distribution->begin + m.distribution->halo.size()] - _Matrix_CSR_Pattern::Indexing;
+			esint columns = rbuffer[n][i++];
+			for (esint cc = 0; cc < columns; ++cc, ++i) {
+				while (*c != rbuffer[n][i]) { ++c; }
+				sync->rOffset[n].push_back(c - csr.cols);
+			}
+		}
+		sync->rBuffer[n].resize(sync->rOffset[n].size());
+	}
+}
+
+template <typename T>
+void _gatherFromUpper(Data_Synchronization<Matrix_CSR, T> *sync, Matrix_Distributed<Matrix_CSR, T> &m)
+{
+	for (size_t n = 0; n < info::mesh->neighbors.size() && info::mesh->neighbors[n] < info::mpi::rank; ++n) {
+		memcpy(sync->sBuffer[n].data(), m.cluster.vals + sync->nOffset[n], sizeof(double) * sync->sBuffer[n].size());
+	}
+
+	if (!Communication::receiveUpperUnknownSize(sync->sBuffer, sync->rBuffer, info::mesh->neighbors)) {
 		eslog::internalFailure("receive MatrixCSRDistribution data.\n");
 	}
 
 	for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
-		for (size_t i = 0; i < rIndices[n].size(); ++i) {
-			vals[rIndices[n][i]] += rBuffer[n][i];
+		for (size_t i = 0; i < sync->rOffset[n].size(); ++i) {
+			m.cluster.vals[sync->rOffset[n][i]] += sync->rBuffer[n][i];
 		}
 	}
 }
 
-void DataSynchronization::scatterToUpper(double *vals)
+template<> void Data_Synchronization<Matrix_CSR, double>::init(Matrix_Distributed<Matrix_CSR, double> &m) { _init(this, m); }
+template<> void Data_Synchronization<Matrix_CSR, std::complex<double> >::init(Matrix_Distributed<Matrix_CSR, std::complex<double> > &m) { _init(this, m); }
+
+template<> void Data_Synchronization<Matrix_CSR, double>::gatherFromUpper(Matrix_Distributed<Matrix_CSR, double> &m) { _gatherFromUpper(this, m); }
+template<> void Data_Synchronization<Matrix_CSR, std::complex<double> >::gatherFromUpper(Matrix_Distributed<Matrix_CSR, std::complex<double> > &m) { _gatherFromUpper(this, m); }
+
+
+template <typename T>
+void _init(Data_Synchronization<Vector_Dense, T> *sync, Vector_Distributed<Vector_Dense, T> &v)
 {
+//	m.synchronization->neighbors = m.distribution->neighbors;
+//	m.synchronization->sBuffer.resize(m.synchronization->neighbors.size());
+//	m.synchronization->rBuffer.resize(m.synchronization->neighbors.size());
+//	m.synchronization->rIndices.resize(m.synchronization->neighbors.size());
+//	m.synchronization->sIndices.resize(m.synchronization->neighbors.size());
+
+//	std::vector<std::vector<esint> > sbuffer(m.synchronization->neighbors.size()), rbuffer(m.synchronization->neighbors.size());
+//
+//	auto halo = m.distribution->halo.begin();
+//	for (size_t n = 0; n < m.synchronization->neighbors.size() && m.synchronization->neighbors[n] < info::mpi::rank; ++n) {
+//		while (halo != m.distribution->end() && *halo < m.distribution->neighDOF[n + 1]) {
+//			printf("row: %d\n", *halo);
+//			++halo;
+//		}
+////		for (esint r = ; r < ; ++r) {
+////			sbuffer[n].push_back(matrix->halo[r]);
+////			sbuffer[n].push_back(matrix->rows[r + 1] - matrix->rows[r]);
+////			for (esint c = matrix->rows[r]; c < matrix->rows[r + 1]; ++c) {
+////				sbuffer[n].push_back(matrix->cols[c - matrix->rows[0]]);
+////			}
+////		}
+////		m.synchronization->sBuffer[n].resize(matrix->rows[matrix->nintervals[2 * n + 1]] - matrix->rows[matrix->nintervals[2 * n]]);
+//	}
+
+//	if (!Communication::receiveUpperUnknownSize(sbuffer, rbuffer, m.synchronization->neighbors)) {
+//		eslog::internalFailure("receive MatrixCSRDistribution pattern.\n");
+//	}
+//
+//	for (size_t n = 0; n < m.synchronization->neighbors.size(); ++n) {
+//		for (size_t i = 0; i < rbuffer[n].size(); ) {
+//			esint *c = matrix->cols + matrix->rows[rbuffer[n][i++] - matrix->distribution[info::mpi::rank] + matrix->nhalo] - 1;
+//			esint columns = rbuffer[n][i++];
+//			for (esint cc = 0; cc < columns; ++cc, ++i) {
+//				while (*c != rbuffer[n][i]) { ++c; }
+//				rIndices[n].push_back(c - matrix->cols);
+//			}
+//		}
+//		m.synchronization->rBuffer[n].resize(rIndices[n].size());
+//	}
+}
+
+template <typename T>
+void _gatherFromUpper(Data_Synchronization<Vector_Dense, T> *sync, Vector_Distributed<Vector_Dense, T> &v)
+{
+//	for (size_t n = 0; n < info::mesh->neighbors.size() && info::mesh->neighbors[n] < info::mpi::rank; ++n) {
+//		memcpy(sBuffer[n].data(), vals + nStart[n], sizeof(double) * sBuffer[n].size());
+//	}
+//
+//	if (!Communication::receiveUpperUnknownSize(sBuffer, rBuffer, info::mesh->neighbors)) {
+//		eslog::internalFailure("receive MatrixCSRDistribution data.\n");
+//	}
+//
+//	for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
+//		for (size_t i = 0; i < rIndices[n].size(); ++i) {
+//			vals[rIndices[n][i]] += rBuffer[n][i];
+//		}
+//	}
+}
+
+template <typename T>
+void _scatterToUpper(Data_Synchronization<Vector_Dense, T> *sync, Vector_Distributed<Vector_Dense, T> &v)
+{
+//	for (size_t n = 0; n < info::mesh->neighbors.size() && info::mesh->neighbors[n] < info::mpi::rank; ++n) {
+//		memcpy(sBuffer[n].data(), vals + nStart[n], sizeof(double) * sBuffer[n].size());
+//	}
+//
+//	if (!Communication::receiveUpperUnknownSize(sBuffer, rBuffer, info::mesh->neighbors)) {
+//		eslog::internalFailure("receive MatrixCSRDistribution data.\n");
+//	}
+//
+//	for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
+//		for (size_t i = 0; i < rIndices[n].size(); ++i) {
+//			vals[rIndices[n][i]] += rBuffer[n][i];
+//		}
+//	}
+}
+
+template<> void Data_Synchronization<Vector_Dense, double>::init(Vector_Distributed<Vector_Dense, double> &v) { _init(this, v); }
+template<> void Data_Synchronization<Vector_Dense, std::complex<double> >::init(Vector_Distributed<Vector_Dense, std::complex<double> > &v) { _init(this, v); }
+
+template<> void Data_Synchronization<Vector_Dense, double>::gatherFromUpper(Vector_Distributed<Vector_Dense, double> &v) { _gatherFromUpper(this, v); }
+template<> void Data_Synchronization<Vector_Dense, std::complex<double> >::gatherFromUpper(Vector_Distributed<Vector_Dense, std::complex<double> > &v) { _gatherFromUpper(this, v); }
+
+template<> void Data_Synchronization<Vector_Dense, double>::scatterToUpper(Vector_Distributed<Vector_Dense, double> &v) { _scatterToUpper(this, v); }
+template<> void Data_Synchronization<Vector_Dense, std::complex<double> >::scatterToUpper(Vector_Distributed<Vector_Dense, std::complex<double> > &v) { _scatterToUpper(this, v); }
 
 }

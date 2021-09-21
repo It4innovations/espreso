@@ -6,6 +6,7 @@
 #include "esinfo/eslog.h"
 #include "math2/math2.h"
 #include "math2/utils/dofs_distribution.h"
+#include "math2/utils/utils_distributed.h"
 #include "wrappers/mpi/communication.h"
 
 #include <vector>
@@ -15,10 +16,17 @@ namespace espreso {
 template <template<typename> typename Vector, typename T>
 class Vector_Distributed_Common: public Vector_Base<T> {
 public:
+	void update()
+	{
+		synchronization->gatherFromUpper(*static_cast<Vector_Distributed<Vector, T>*>(this));
+	}
+
 	Vector_Base<T>* copyPattern()
 	{
 		Vector_Distributed<Vector, T> *m = new Vector_Distributed<Vector, T>();
 		m->cluster.pattern(cluster);
+		m->distribution = this->distribution;
+		m->synchronization = this->synchronization;
 		return m;
 	}
 
@@ -49,7 +57,7 @@ public:
 
 	T norm()
 	{
-		T dot = math::dot(cluster.size - distribution.halo.size(), cluster.vals + distribution.halo.size(), 1, cluster.vals + distribution.halo.size(), 1);
+		T dot = math::dot(cluster.size - distribution->halo.size(), cluster.vals + distribution->halo.size(), 1, cluster.vals + distribution->halo.size(), 1);
 		Communication::allReduce(&dot, NULL, 1, MPI_DOUBLE, MPI_SUM);
 		return std::sqrt(dot);
 	}
@@ -93,7 +101,8 @@ public:
 	}
 
 	Vector<T> cluster;
-	DOFsDistribution distribution;
+	DOFsDistribution *distribution;
+	Data_Synchronization<Vector, T> *synchronization;
 };
 
 

@@ -47,8 +47,8 @@ template <typename T>
 void _store(Vector_Distributed<Vector_Dense, T> &x, const char* file)
 {
 	Vector_Dense<T> _x;
-	_x.size = x.cluster.size - x.distribution.halo.size();
-	_x.vals = x.cluster.vals + x.distribution.halo.size();
+	_x.size = x.cluster.size - x.distribution->halo.size();
+	_x.vals = x.cluster.vals + x.distribution->halo.size();
 	store(_x, file);
 }
 
@@ -59,10 +59,10 @@ template <typename T>
 void _store(Vector_Distributed<Vector_Sparse, T> &x, const char* file)
 {
 	Vector_Sparse<T> _x;
-	_x.size = x.cluster.size - x.distribution.halo.size();
-	_x.nnz = x.cluster.nnz - x.distribution.halo.size();
-	_x.indices = x.cluster.indices + x.distribution.halo.size();
-	_x.vals = x.cluster.vals + x.distribution.halo.size();
+	_x.size = x.cluster.size - x.distribution->halo.size();
+	_x.nnz = x.cluster.nnz - x.distribution->halo.size();
+	_x.indices = x.cluster.indices + x.distribution->halo.size();
+	_x.vals = x.cluster.vals + x.distribution->halo.size();
 	store(_x, file);
 }
 
@@ -100,7 +100,7 @@ template <> void store(Matrix_Dense<double> &A, const char* file) { _store(A, fi
 template <> void store(Matrix_Dense<std::complex<double> > &A, const char* file) { _store(A, file); }
 
 template <typename T>
-void _store(Matrix_CSR<T> &A, const char* file)
+void _store(Matrix_CSR<T> &A, const char* file, esint offset = 0)
 {
 	std::ofstream os(std::string(file) + ".txt");
 	os << std::setw(6) << A.nrows << " " << std::setw(6) << A.ncols << " " << std::setw(6) << A.nnz << "\n";
@@ -109,7 +109,7 @@ void _store(Matrix_CSR<T> &A, const char* file)
 	os << std::showpos;
 	for (esint r = 0; r < A.nrows; r++) {
 		for (esint c = A.rows[r]; c < A.rows[r + 1]; c++) {
-			os << std::setw(6) << r + _Matrix_CSR_Pattern::Indexing << " ";
+			os << std::setw(6) << offset + r + _Matrix_CSR_Pattern::Indexing << " ";
 			os << std::setw(6) << A.cols[c - _Matrix_CSR_Pattern::Indexing] << " ";
 			os << std::setw(25) << std::scientific << A.vals[c - _Matrix_CSR_Pattern::Indexing] << "\n";
 		}
@@ -141,14 +141,13 @@ template <typename T>
 void _store(Matrix_Distributed<Matrix_CSR, T> &A, const char* file)
 {
 	Matrix_CSR<T> _A;
-	esint prefix = A.cluster.rows[A.distribution.halo.size()] - _Matrix_CSR_Pattern::Indexing;
-	_A.nrows = A.cluster.nrows - A.distribution.halo.size();
+	_A.nrows = A.cluster.nrows - A.distribution->halo.size();
 	_A.ncols = A.cluster.ncols;
-	_A.nnz = A.cluster.nnz - prefix;
-	_A.rows = A.cluster.rows + A.distribution.halo.size();
-	_A.cols = A.cluster.cols + prefix;
-	_A.vals = A.cluster.vals + prefix;
-	store(_A, file);
+	_A.nnz = A.cluster.nnz - (A.cluster.rows[A.distribution->halo.size()] - _Matrix_CSR_Pattern::Indexing);
+	_A.rows = A.cluster.rows + A.distribution->halo.size();
+	_A.cols = A.cluster.cols;
+	_A.vals = A.cluster.vals;
+	_store(_A, file, A.distribution->begin);
 }
 
 template <> void store(Matrix_Distributed<Matrix_CSR, double> &A, const char* file) { _store<double>(A, file); }

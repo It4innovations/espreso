@@ -123,7 +123,7 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 	double start = eslog::time();
 
 	mklpdss.external = new MKLPDSSDataHolder<T>();
-	mklpdss.external->n = A.distribution.totalSize;
+	mklpdss.external->n = A.distribution->totalSize;
 
 	mklpdss.external->maxfct = 1; // dummy
 	mklpdss.external->mnum = 1; // dummy
@@ -136,8 +136,8 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 	mklpdss.external->iparm[1] = info::mpi::size > 1 ? 10 : 3; // MPI or parallel
 	// Matrix input format.
 	mklpdss.external->iparm[39] = 2; // distributed A, x, rhs
-	mklpdss.external->iparm[40] = A.distribution.begin + 1;
-	mklpdss.external->iparm[41] = A.distribution.end;
+	mklpdss.external->iparm[40] = A.distribution->begin + 1;
+	mklpdss.external->iparm[41] = A.distribution->end;
 
 	mklpdss.external->msglvl = 0;
 	mklpdss.external->comm = MPI_Comm_c2f(info::mpi::comm);
@@ -156,10 +156,10 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 
 	// pick only upper triangle (since composer does not set correct dirichlet in symmetric matrices)
 	if (A.cluster.type == Matrix_Type::REAL_SYMMETRIC_INDEFINITE || A.cluster.type == Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
-		esint nhalo = A.distribution.halo.size();
+		esint nhalo = A.distribution->halo.size();
 		for (esint i = nhalo; i < A.cluster.nrows; i++) {
 			for (esint c = A.cluster.rows[i] - _Matrix_CSR_Pattern::Indexing; c < A.cluster.rows[i + 1] - _Matrix_CSR_Pattern::Indexing; ++c) {
-				if (A.distribution.begin + i - nhalo <= A.cluster.cols[c] - _Matrix_CSR_Pattern::Indexing) {
+				if (A.distribution->begin + i - nhalo <= A.cluster.cols[c] - _Matrix_CSR_Pattern::Indexing) {
 					++mklpdss.external->A.nnz;
 				}
 			}
@@ -168,14 +168,14 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 		mklpdss.external->A.rows[0] = _Matrix_CSR_Pattern::Indexing;
 		for (esint i = nhalo, offset = 0; i < A.cluster.nrows; i++) {
 			for (esint c = A.cluster.rows[i] - _Matrix_CSR_Pattern::Indexing; c < A.cluster.rows[i + 1] - _Matrix_CSR_Pattern::Indexing; ++c) {
-				if (A.distribution.begin + i - nhalo <= A.cluster.cols[c] - _Matrix_CSR_Pattern::Indexing) {
+				if (A.distribution->begin + i - nhalo <= A.cluster.cols[c] - _Matrix_CSR_Pattern::Indexing) {
 					mklpdss.external->A.cols[offset++] = A.cluster.cols[c];
 				}
 			}
 			mklpdss.external->A.rows[i - nhalo + 1] = offset + _Matrix_CSR_Pattern::Indexing;
 		}
 	} else {
-		esint nhalo = A.distribution.halo.size();
+		esint nhalo = A.distribution->halo.size();
 		for (esint i = nhalo; i < A.cluster.nrows; i++) {
 			for (esint c = A.cluster.rows[i] - _Matrix_CSR_Pattern::Indexing; c < A.cluster.rows[i + 1] - _Matrix_CSR_Pattern::Indexing; ++c) {
 				++mklpdss.external->A.nnz;
@@ -202,16 +202,16 @@ bool _update(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 #ifdef HAVE_MKLPDSS
 	double start = eslog::time();
 	if (A.cluster.type == Matrix_Type::REAL_SYMMETRIC_INDEFINITE || A.cluster.type == Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
-		esint nhalo = A.distribution.halo.size();
+		esint nhalo = A.distribution->halo.size();
 		for (esint i = nhalo, offset = 0; i < A.cluster.nrows; i++) {
 			for (esint c = A.cluster.rows[i] - _Matrix_CSR_Pattern::Indexing; c < A.cluster.rows[i + 1] - _Matrix_CSR_Pattern::Indexing; ++c) {
-				if (A.distribution.begin + i - nhalo <= A.cluster.cols[c] - _Matrix_CSR_Pattern::Indexing) {
+				if (A.distribution->begin + i - nhalo <= A.cluster.cols[c] - _Matrix_CSR_Pattern::Indexing) {
 					mklpdss.external->A.vals[offset++] = A.cluster.vals[c];
 				}
 			}
 		}
 	} else {
-		esint nhalo = A.distribution.halo.size();
+		esint nhalo = A.distribution->halo.size();
 		for (esint i = nhalo, offset = 0; i < A.cluster.nrows; i++) {
 			for (esint c = A.cluster.rows[i] - _Matrix_CSR_Pattern::Indexing; c < A.cluster.rows[i + 1] - _Matrix_CSR_Pattern::Indexing; ++c) {
 				mklpdss.external->A.vals[offset++] = A.cluster.vals[c];
@@ -228,8 +228,8 @@ template<typename T>
 bool _solve(MKLPDSS<T> &mklpdss, const Vector_Distributed<Vector_Dense, T> &b, Vector_Distributed<Vector_Dense, T> &x)
 {
 #ifdef HAVE_MKLPDSS
-	mklpdss.external->b.vals = b.cluster.vals + b.distribution.halo.size();
-	mklpdss.external->x.vals = x.cluster.vals + x.distribution.halo.size();
+	mklpdss.external->b.vals = b.cluster.vals + b.distribution->halo.size();
+	mklpdss.external->x.vals = x.cluster.vals + x.distribution->halo.size();
 	double start = eslog::time();
 
 	bool status = _call(mklpdss, 33); // solve at once

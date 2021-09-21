@@ -68,7 +68,7 @@ void espreso::setDirichlet(Matrix_Distributed<Matrix_CSR, double> &A, Vector_Dis
 
 	std::vector<std::vector<__Dirichlet__> > sBuffer(info::mesh->neighbors.size()), rBuffer(info::mesh->neighbors.size());
 	for (size_t n = 0, i = 0; n < info::mesh->neighbors.size(); n++) {
-		while (i < tosend.size() && n + 1 < distribution.neighDOF.size() && tosend[i].row < distribution.neighDOF[n + 1]) {
+		while (i < tosend.size() && tosend[i].row < distribution.neighDOF[n + 1]) {
 			sBuffer[n].push_back(tosend[i++]);
 		}
 	}
