@@ -192,10 +192,10 @@ template <> struct AX_MKLPDSSSystem<AX_AcousticRealLinear>: public AX_MKLPDSSSys
 	AX_MKLPDSSSystem(AX_AcousticRealLinear *analysis, MKLPDSSConfiguration &configuration)
 	: AX_MKLPDSSSystemData(configuration)
 	{
-		assembler.A.type = analysis->assembler.matrixType();
+		assembler.A.type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
 		_fillAssembler(this, analysis->configuration.acoustic_pressure, 1);
 
-		solver.A.type = analysis->assembler.matrixType();
+		solver.A.type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
 		_fillSolver(this, analysis->configuration.acoustic_pressure, 2);
 	}
 };
@@ -205,10 +205,15 @@ template <> struct AX_MKLPDSSSystem<AX_AcousticComplexLinear>: public AX_MKLPDSS
 	AX_MKLPDSSSystem(AX_AcousticComplexLinear *analysis, MKLPDSSConfiguration &configuration)
 	: AX_MKLPDSSSystemData(configuration)
 	{
-		assembler.A.type = analysis->assembler.matrixType();
+		assembler.A.type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
 		_fillAssembler(this, analysis->configuration.acoustic_pressure, 1);
 
-		solver.A.type = analysis->assembler.matrixType();
+		if (analysis->configuration.impedance.size()) {
+			solver.A.type = Matrix_Type::COMPLEX_SYMMETRIC;
+		} else {
+			solver.A.type = Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE;
+		}
+
 		_fillSolver(this, analysis->configuration.acoustic_pressure, 1);
 	}
 };

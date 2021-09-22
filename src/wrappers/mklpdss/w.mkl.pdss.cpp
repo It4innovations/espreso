@@ -48,6 +48,15 @@ void _check()
 #endif
 }
 
+bool _isSymmetric(Matrix_Type type)
+{
+	return type == Matrix_Type::REAL_SYMMETRIC_INDEFINITE
+	    || type == Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE
+		|| type == Matrix_Type::COMPLEX_SYMMETRIC
+		|| type == Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE
+		|| type == Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE;
+}
+
 template<typename T>
 bool _call(MKLPDSS<T> &mklpdss, esint phase)
 {
@@ -155,8 +164,8 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 	}
 
 	// pick only upper triangle (since composer does not set correct dirichlet in symmetric matrices)
-	if (A.cluster.type == Matrix_Type::REAL_SYMMETRIC_INDEFINITE || A.cluster.type == Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
-		esint nhalo = A.distribution->halo.size();
+	if (_isSymmetric(A.cluster.type)) {
+		esint nhalo = A.distribution.halo.size();
 		for (esint i = nhalo; i < A.cluster.nrows; i++) {
 			for (esint c = A.cluster.rows[i] - _Matrix_CSR_Pattern::Indexing; c < A.cluster.rows[i + 1] - _Matrix_CSR_Pattern::Indexing; ++c) {
 				if (A.distribution->begin + i - nhalo <= A.cluster.cols[c] - _Matrix_CSR_Pattern::Indexing) {
@@ -201,8 +210,8 @@ bool _update(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 {
 #ifdef HAVE_MKLPDSS
 	double start = eslog::time();
-	if (A.cluster.type == Matrix_Type::REAL_SYMMETRIC_INDEFINITE || A.cluster.type == Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE) {
-		esint nhalo = A.distribution->halo.size();
+	if (_isSymmetric(A.cluster.type)) {
+		esint nhalo = A.distribution.halo.size();
 		for (esint i = nhalo, offset = 0; i < A.cluster.nrows; i++) {
 			for (esint c = A.cluster.rows[i] - _Matrix_CSR_Pattern::Indexing; c < A.cluster.rows[i + 1] - _Matrix_CSR_Pattern::Indexing; ++c) {
 				if (A.distribution->begin + i - nhalo <= A.cluster.cols[c] - _Matrix_CSR_Pattern::Indexing) {
