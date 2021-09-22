@@ -112,12 +112,17 @@ bool AX_HeatTransfer::initTemperature()
 //	ElementsGaussPointsBuilder<1>(integration.N, temp.initial.node, temp.initial.gp, "INTEGRATE INITIAL TEMPERATURE INTO ELEMENTS GAUSS POINTS").buildAndExecute(*this);
 //	BoundaryGaussPointsBuilder<1>(integration.boundary.N, temp.initial.boundary.node, temp.initial.boundary.gp, "INTEGRATE INITIAL TEMPERATURE INTO BOUNDARY GAUSS POINTS").buildAndExecute(*this);
 
-	auto it = Variable::list.egps.end();
-	if ((it = Variable::list.egps.find("TEMPERATURE"))!= Variable::list.egps.end()) {
+	if (Variable::list.egps.find("TEMPERATURE") != Variable::list.egps.end() || ParametersGradient::output) {
 		copyNodesToEnodes(*this, *ParametersTemperature::output, temp.node);
+	}
+
+	if (Variable::list.egps.find("TEMPERATURE") != Variable::list.egps.end()) {
 		moveEnodesToGPs(*this, temp.node, temp.gp, 1);
 		Variable::list.egps["TEMPERATURE"] = new ParameterVariable(temp.gp.data, temp.gp.isconst, temp.gp.update, 0, 1);
 	}
+
+
+
 //	ParametersTemperature::output->data = ParametersTemperature::Initial::output->data;
 //	CopyElementParameters(temp.initial.node, temp.node, "COPY INITIAL TEMPERATURE TO ELEMENT NODES").buildAndExecute(*this);
 //	builders.push_back(new CopyNodesToElementsNodes(*ParametersTemperature::output, temp.node, "COPY TEMPERATURE TO ELEMENTS NODES"));
@@ -368,6 +373,9 @@ void AX_HeatTransfer::analyze()
 
 	addFiller(*this);
 
+	outputGradient(*this);
+	outputFlux(*this);
+
 	eslog::info(" ============================================================================================= \n");
 	if (correct) {
 		eslog::info("  PHYSICS CONFIGURATION VALIDATION                                                       PASS  \n");
@@ -417,7 +425,7 @@ void AX_HeatTransfer::_evaluate()
 void AX_HeatTransfer::updateSolution()
 {
 	x->store(ParametersTemperature::output->data);
-	temp.node.setUpdate(1);
+	results(); // do we need an update mechanism?
 }
 
 void AX_HeatTransfer::initNames()

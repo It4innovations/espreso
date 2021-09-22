@@ -179,6 +179,90 @@ void Assembler::fill()
 	}
 }
 
+void Assembler::results()
+{
+	#pragma omp parallel for
+	for (int t = 0; t < info::env::threads; ++t) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
+			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
+				size_t elementsInInterval = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
+
+				for (size_t element = 0; element < elementsInInterval; ++element) {
+					for (auto op = elementRes[i].begin(); op != elementRes[i].end(); ++op) {
+//						if((*op)->update) {
+//							if(element == 0 || !(*op)->isconst) {
+								(**op)();
+								++(**op);
+//							}
+//						}
+					}
+				}
+				for (auto op = elementRes[i].begin(); op != elementRes[i].end(); ++op) {
+//					if((*op)->update) {
+//						if((*op)->isconst) {
+//							(*op)->move(-1);
+//						} else {
+							(*op)->move(-elementsInInterval);
+//						}
+//					}
+				}
+			}
+
+			for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+				if (info::mesh->boundaryRegions[r]->dimension) {
+					for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
+						size_t elementsInInterval = info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin;
+
+						for(size_t element = 0; element < elementsInInterval; ++element) {
+							for (auto op = boundaryRes[r][i].begin(); op != boundaryRes[r][i].end(); ++op) {
+//								if((*op)->update) {
+//									if(element == 0 || !(*op)->isconst) {
+										(**op)();
+										++(**op);
+//									}
+//								}
+							}
+						}
+
+						for (auto op = boundaryRes[r][i].begin(); op != boundaryRes[r][i].end(); ++op) {
+//							if((*op)->update) {
+//								if((*op)->isconst) {
+//									(*op)->move(-1);
+//								} else {
+									(*op)->move(-elementsInInterval);
+//								}
+//							}
+						}
+					}
+				}
+			}
+		}
+		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+			if (info::mesh->boundaryRegions[r]->dimension == 0) {
+				for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().begin(t); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(t); ++n) {
+					for (auto op = boundaryRes[r][t].begin(); op != boundaryRes[r][t].end(); ++op) {
+//						if((*op)->update) {
+//							if(n == info::mesh->boundaryRegions[r]->nodes->datatarray().begin(t) || !(*op)->isconst) {
+								(**op)();
+								++(**op);
+//							}
+//						}
+					}
+				}
+				for (auto op = boundaryRes[r][t].begin(); op != boundaryRes[r][t].end(); ++op) {
+//					if((*op)->update) {
+//						if((*op)->isconst) {
+//							(*op)->move(-1);
+//						} else {
+							(*op)->move(-info::mesh->boundaryRegions[r]->nodes->datatarray().size(t));
+//						}
+//					}
+				}
+			}
+		}
+	}
+}
+
 void Assembler::printParameterStats(const char* name, ParameterData &parameter)
 {
 	printf("parameter [isconst/update]:  ");

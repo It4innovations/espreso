@@ -33,6 +33,7 @@ public:
 protected:
 	void iterate();
 	void fill();
+	void results();
 
 	void printParameterStats(const char* name, ParameterData &parameter);
 	void printParameterStats(const char* name, NamedData *data);
