@@ -163,9 +163,9 @@ void APIDataProvider::storeSolution(std::vector<FETI4IReal> &solution)
 //	TODO: FIX ME
 //	memcpy(kernel->solutions.back().vals, solution.data(), sizeof(double) * solution.size());
 	if (step::step.type == step::TYPE::TIME) {
-		info::mesh->output->updateSolution(step::time);
+		info::mesh->output->updateSolution(step::step, step::time);
 	}
 	if (step::step.type == step::TYPE::FREQUENCY) {
-		info::mesh->output->updateSolution(step::frequency);
+		info::mesh->output->updateSolution(step::step, step::frequency);
 	}
 }

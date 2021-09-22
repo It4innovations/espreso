@@ -320,14 +320,26 @@ void Monitoring::updateMonitors(step::TYPE type)
 	}
 }
 
-void Monitoring::updateSolution(const step::Time &time)
+void Monitoring::updateSolution(const step::Step &step, const step::Time &time)
 {
+	updateSolution();
 
+	if (info::mpi::rank == 0) {
+		fprintf(_runFile, "%8d %c %8d %c ", step.loadstep + 1, delimiter, step.substep + 1, delimiter);
+		fprintf(_runFile, "%12.6f %c ", time.current, delimiter);
+		storeSolution();
+	}
 }
 
-void Monitoring::updateSolution(const step::Frequency &frequency)
+void Monitoring::updateSolution(const step::Step &step, const step::Frequency &frequency)
 {
+	updateSolution();
 
+	if (info::mpi::rank == 0) {
+		fprintf(_runFile, "%8d %c %8d %c ", step.loadstep + 1, delimiter, step.substep + 1, delimiter);
+		fprintf(_runFile, "%12.4f %c ", frequency.current, delimiter);
+		storeSolution();
+	}
 }
 
 void Monitoring::updateSolution()
@@ -346,46 +358,19 @@ void Monitoring::updateSolution()
 	for (size_t i = 0; i < _nedata.size(); offset += _nedata[i++].first->nstatistics()) {
 		_nedata[i].first->statistics(_nedata[i].second->nodes->datatarray(), _nedata[i].second->nodeInfo.totalSize, _statistics.data() + offset);
 	}
+}
 
-	if (info::mpi::rank) {
-		return;
+void Monitoring::storeSolution()
+{
+	for (size_t i = 0; i < _monitors.size(); i++) {
+		if (_monitors[i].data != NULL) {
+			fprintf(_runFile, "% *e %c ", _monitors[i].printSize - 2, *_monitors[i].data, delimiter);
+		} else {
+			fprintf(_runFile, "%*c ", _monitors[i].printSize, delimiter);
+		}
 	}
-
-	if (step::outstep.type == step::TYPE::FTT) {
-		if (step::isFirst()) {
-			std::string fttFilePath = _path + _directory + std::to_string(step::outfrequency.current);
-			utils::createDirectory(fttFilePath);
-			_fttFile = fopen((fttFilePath + "/" + std::string(info::ecf->name.c_str()) + ".emr").c_str(), "w");
-		}
-
-		// TODO:: store monitorings
-
-		if (step::isLast()) {
-			if (_fttFile) {
-				fclose(_fttFile);
-				_fttFile = NULL;
-			}
-		}
-	} else {
-		fprintf(_runFile, "%8d %c %8d %c ", step::outstep.loadstep + 1, delimiter, step::outstep.substep + 1, delimiter);
-		switch (step::outstep.type) {
-		case step::TYPE::TIME:
-			fprintf(_runFile, "%12.6f %c ", step::outtime.current, delimiter); break;
-		case step::TYPE::FREQUENCY:
-			fprintf(_runFile, "%12.4f %c ", step::outfrequency.current, delimiter); break;
-		default: break;
-		}
-
-		for (size_t i = 0; i < _monitors.size(); i++) {
-			if (_monitors[i].data != NULL) {
-				fprintf(_runFile, "% *e %c ", _monitors[i].printSize - 2, *_monitors[i].data, delimiter);
-			} else {
-				fprintf(_runFile, "%*c ", _monitors[i].printSize, delimiter);
-			}
-		}
-		fprintf(_runFile, "\n");
-		fflush(_runFile);
-	}
+	fprintf(_runFile, "\n");
+	fflush(_runFile);
 }
 
 

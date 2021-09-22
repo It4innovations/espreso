@@ -69,12 +69,12 @@ void STL::updateMonitors(step::TYPE type)
 
 }
 
-void STL::updateSolution(const step::Time &time)
+void STL::updateSolution(const step::Step &step, const step::Time &time)
 {
 	// TODO
 }
 
-void STL::updateSolution(const step::Frequency &frequency)
+void STL::updateSolution(const step::Step &step, const step::Frequency &frequency)
 {
 	// TODO
 }

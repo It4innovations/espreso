@@ -132,12 +132,12 @@ void VTKLegacy::updateMonitors(step::TYPE type)
 {
 }
 
-void VTKLegacy::updateSolution(const step::Time &time)
+void VTKLegacy::updateSolution(const step::Step &step, const step::Time &time)
 {
 	updateSolution(_path + _directory, _name, "." + std::to_string(time.current) + _suffix);
 }
 
-void VTKLegacy::updateSolution(const step::Frequency &frequency)
+void VTKLegacy::updateSolution(const step::Step &step, const step::Frequency &frequency)
 {
 	updateSolution(_path + _directory, _name, "." + std::to_string(frequency.current) + _suffix);
 }

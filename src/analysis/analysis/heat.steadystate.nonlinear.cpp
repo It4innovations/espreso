@@ -62,7 +62,7 @@ void AX_HeatSteadyStateNonLinear::run(step::Step &step)
 
 	solver.run(step, time, assembler, scheme, system);
 
-	info::mesh->output->updateSolution(time);
+	info::mesh->output->updateSolution(step, time);
 
 	eslog::info(" ============================================================================================= \n");
 	eslog::info(" =================================================================== run time %12.3f s =\n\n", eslog::duration());

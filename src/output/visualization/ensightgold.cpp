@@ -117,13 +117,13 @@ void EnSightGold::updateMonitors(step::TYPE type)
 	}
 }
 
-void EnSightGold::updateSolution(const step::Time &time)
+void EnSightGold::updateSolution(const step::Step &step, const step::Time &time)
 {
 	_times.push_back(time.current);
 	updateSolution();
 }
 
-void EnSightGold::updateSolution(const step::Frequency &frequency)
+void EnSightGold::updateSolution(const step::Step &step, const step::Frequency &frequency)
 {
 	_times.push_back(frequency.current);
 	updateSolution();

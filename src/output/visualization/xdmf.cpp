@@ -407,7 +407,7 @@ void XDMF::updateMonitors(step::TYPE type)
 
 }
 
-void XDMF::updateSolution(const step::Time &time)
+void XDMF::updateSolution(const step::Step &step, const step::Time &time)
 {
 	size_t rindex = 0;
 	if (_data->iteration) {
@@ -493,7 +493,7 @@ void XDMF::updateSolution(const step::Time &time)
 	++_data->iteration;
 }
 
-void XDMF::updateSolution(const step::Frequency &frequency)
+void XDMF::updateSolution(const step::Step &step, const step::Frequency &frequency)
 {
 
 }

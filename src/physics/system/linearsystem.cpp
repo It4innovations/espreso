@@ -163,10 +163,10 @@ void LinearSystem::processSolution()
 {
 	assembler()->composer->processSolution();
 	if (step::step.type == step::TYPE::TIME) {
-		info::mesh->output->updateSolution(step::time);
+		info::mesh->output->updateSolution(step::step, step::time);
 	}
 	if (step::step.type == step::TYPE::FREQUENCY) {
-		info::mesh->output->updateSolution(step::frequency);
+		info::mesh->output->updateSolution(step::step, step::frequency);
 	}
 	eslog::checkpointln("PHYSICS SOLVER: SOLUTION PROCESSED");
 }

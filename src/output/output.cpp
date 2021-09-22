@@ -36,8 +36,8 @@ struct OutputExecutor {
 
 	virtual void mesh() = 0;
 	virtual void monitors(step::TYPE type) = 0;
-	virtual void solution(const step::Time &time) = 0;
-	virtual void solution(const step::Frequency &frequency) = 0;
+	virtual void solution(const step::Step &step, const step::Time &time) = 0;
+	virtual void solution(const step::Step &step, const step::Frequency &frequency) = 0;
 
 	std::vector<OutputWriter*> writers;
 };
@@ -58,17 +58,17 @@ public:
 		}
 	}
 
-	virtual void solution(const step::Time &time)
+	virtual void solution(const step::Step &step, const step::Time &time)
 	{
 		for (size_t i = 0; i < writers.size(); ++i) {
-			writers[i]->updateSolution(time);
+			writers[i]->updateSolution(step, time);
 		}
 	}
 
-	virtual void solution(const step::Frequency &frequency)
+	virtual void solution(const step::Step &step, const step::Frequency &frequency)
 	{
 		for (size_t i = 0; i < writers.size(); ++i) {
-			writers[i]->updateSolution(frequency);
+			writers[i]->updateSolution(step, frequency);
 		}
 	}
 };
@@ -84,12 +84,13 @@ class AsyncOutputExecutor: public DirectOutputExecutor, public Pthread::Executor
 			DUMMY
 		} tag;
 		step::TYPE type;
+		step::Step step;
 		step::Time time;
 		step::Frequency frequency;
 
 		SharedData(TAG tag, step::TYPE type): tag(tag), type(type) {}
-		SharedData(TAG tag, const step::Time &time): tag(tag), type(step::TYPE::TIME), time(time) {}
-		SharedData(TAG tag, const step::Frequency &frequency): tag(tag), type(step::TYPE::FREQUENCY), frequency(frequency) {}
+		SharedData(TAG tag, const step::Step &step, const step::Time &time): tag(tag), type(step.type), step(step), time(time) {}
+		SharedData(TAG tag, const step::Step &step, const step::Frequency &frequency): tag(tag), type(step.type), step(step), frequency(frequency) {}
 	} app, thread;
 
 public:
@@ -113,10 +114,10 @@ public:
 			DirectOutputExecutor::monitors(thread.type);
 		}
 		if (thread.tag == SharedData::TAG::SOLUTION && thread.type == step::TYPE::TIME) {
-			DirectOutputExecutor::solution(thread.time);
+			DirectOutputExecutor::solution(thread.step, thread.time);
 		}
 		if (thread.tag == SharedData::TAG::SOLUTION && thread.type == step::TYPE::FREQUENCY) {
-			DirectOutputExecutor::solution(thread.frequency);
+			DirectOutputExecutor::solution(thread.step, thread.frequency);
 		}
 	}
 
@@ -132,15 +133,15 @@ public:
 		Pthread::call();
 	}
 
-	virtual void solution(const step::Time &time)
+	virtual void solution(const step::Step &step, const step::Time &time)
 	{
-		app = SharedData(SharedData::TAG::SOLUTION, time);
+		app = SharedData(SharedData::TAG::SOLUTION, step, time);
 		Pthread::call();
 	}
 
-	virtual void solution(const step::Frequency &frequency)
+	virtual void solution(const step::Step &step, const step::Frequency &frequency)
 	{
-		app = SharedData(SharedData::TAG::SOLUTION, frequency);
+		app = SharedData(SharedData::TAG::SOLUTION, step, frequency);
 		Pthread::call();
 	}
 };
@@ -221,19 +222,19 @@ void Output::updateMonitors(step::TYPE type)
 	}
 }
 
-void Output::updateSolution(const step::Time &time)
+void Output::updateSolution(const step::Step &step, const step::Time &time)
 {
 	if (_allowed) {
-		if (_async) { _async->solution(time); }
-		if (_direct) { _direct->solution(time); }
+		if (_async) { _async->solution(step, time); }
+		if (_direct) { _direct->solution(step, time); }
 	}
 }
 
-void Output::updateSolution(const step::Frequency &frequency)
+void Output::updateSolution(const step::Step &step, const step::Frequency &frequency)
 {
 	if (_allowed) {
-		if (_async) { _async->solution(frequency); }
-		if (_direct) { _direct->solution(frequency); }
+		if (_async) { _async->solution(step, frequency); }
+		if (_direct) { _direct->solution(step, frequency); }
 	}
 }
 

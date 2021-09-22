@@ -31,13 +31,13 @@ void InSitu::updateMonitors(step::TYPE type)
 
 }
 
-void InSitu::updateSolution(const step::Time &time)
+void InSitu::updateSolution(const step::Step &step, const step::Time &time)
 {
 	_catalyst->update();
 	sleep(info::ecf->output.catalyst_sleep_time);
 }
 
-void InSitu::updateSolution(const step::Frequency &frequency)
+void InSitu::updateSolution(const step::Step &step, const step::Frequency &frequency)
 {
 	_catalyst->update();
 	sleep(info::ecf->output.catalyst_sleep_time);

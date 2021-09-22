@@ -68,7 +68,7 @@ void AX_HeatSteadyStateLinear::run(step::Step &step)
 	scheme.extractSolution(step, system);
 
 	assembler.updateSolution();
-	info::mesh->output->updateSolution(time);
+	info::mesh->output->updateSolution(step, time);
 
 	eslog::info(" ============================================================================================= \n");
 	eslog::info(" = ================================================================= run time %12.3f s =\n\n", eslog::duration());

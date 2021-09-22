@@ -60,6 +60,6 @@ void AX_AcousticComplexLinear::run(step::Step &step)
 		scheme.extractSolution(frequency, system);
 
 		assembler.updateSolution();
-		info::mesh->output->updateSolution(frequency);
+		info::mesh->output->updateSolution(step, frequency);
 	}
 }

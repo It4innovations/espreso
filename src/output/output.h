@@ -18,8 +18,8 @@ public:
 	virtual void updateMesh() =0;
 	virtual void updateMonitors(step::TYPE type) =0;
 
-	virtual void updateSolution(const step::Time &time) =0;
-	virtual void updateSolution(const step::Frequency &frequency) =0;
+	virtual void updateSolution(const step::Step &step, const step::Time &time) =0;
+	virtual void updateSolution(const step::Step &step, const step::Frequency &frequency) =0;
 
 	virtual ~OutputWriter() {};
 
@@ -39,8 +39,8 @@ public:
 	void updateMesh();
 	void updateMonitors(step::TYPE type);
 
-	void updateSolution(const step::Time &time);
-	void updateSolution(const step::Frequency &frequency);
+	void updateSolution(const step::Step &step, const step::Time &time);
+	void updateSolution(const step::Step &step, const step::Frequency &frequency);
 
 	void suppress();
 	void permit();

@@ -100,12 +100,12 @@ void Netgen::updateMonitors(step::TYPE type)
 
 }
 
-void Netgen::updateSolution(const step::Time &time)
+void Netgen::updateSolution(const step::Step &step, const step::Time &time)
 {
 	// TODO
 }
 
-void Netgen::updateSolution(const step::Frequency &frequency)
+void Netgen::updateSolution(const step::Step &step, const step::Frequency &frequency)
 {
 	// TODO
 }

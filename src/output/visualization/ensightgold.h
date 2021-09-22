@@ -22,8 +22,8 @@ public:
 
 	void updateMesh();
 	void updateMonitors(step::TYPE type);
-	void updateSolution(const step::Time &time);
-	void updateSolution(const step::Frequency &frequency);
+	void updateSolution(const step::Step &step, const step::Time &time);
+	void updateSolution(const step::Step &step, const step::Frequency &frequency);
 
 protected:
 	void updateSolution();
