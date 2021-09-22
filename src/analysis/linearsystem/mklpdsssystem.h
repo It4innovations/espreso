@@ -68,6 +68,7 @@ struct AX_MKLPDSSSystemData: public AX_LinearSystem<Assembler, Solver> {
 	bool solve(step::Step &step)
 	{
 		if (mklpdss.solve(solver.b, solver.x)) {
+			solver.x.synchronize();
 			if (info::ecf->output.print_matrices) {
 				eslog::storedata(" STORE: system/{x}\n");
 				math::store(solver.x, utils::filename(utils::debugDirectory(step) + "/system", "x").c_str());

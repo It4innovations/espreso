@@ -49,7 +49,8 @@ struct Data_Synchronization<Matrix_CSR, T> {
 template <typename T>
 struct Data_Synchronization<Vector_Dense, T> {
 	std::vector<std::vector<T> > sBuffer, rBuffer;
-	std::vector<std::vector<esint> > sIndices, rIndices;
+	std::vector<std::vector<esint> > rOffset;
+	std::vector<esint> nOffset;
 	std::vector<int> neighbors;
 
 	void init(Vector_Distributed<Vector_Dense, T> &v);

@@ -21,6 +21,11 @@ public:
 		synchronization->gatherFromUpper(*static_cast<Vector_Distributed<Vector, T>*>(this));
 	}
 
+	void synchronize()
+	{
+		synchronization->scatterToUpper(*static_cast<Vector_Distributed<Vector, T>*>(this));
+	}
+
 	Vector_Base<T>* copyPattern()
 	{
 		Vector_Distributed<Vector, T> *m = new Vector_Distributed<Vector, T>();
