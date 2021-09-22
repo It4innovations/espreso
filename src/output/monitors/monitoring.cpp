@@ -289,7 +289,7 @@ void Monitoring::updateMonitors(step::TYPE type)
 
 		// 2. line with parameters
 		fprintf(_runFile, "%8s %c %8s %c ", "loadstep", delimiter, "substep", delimiter);
-		switch (step::outstep.type) {
+		switch (type) {
 		case step::TYPE::TIME:
 			fprintf(_runFile, "%12s %c", "time", delimiter); break;
 		case step::TYPE::FREQUENCY:
