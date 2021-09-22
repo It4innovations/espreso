@@ -78,7 +78,7 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDist
 
 	// send halo rows to the holder process
 	std::vector<std::vector<IJ> > sPatter(info::mesh->neighbors.size()), rPatter(info::mesh->neighbors.size());
-	size_t max_halo = std::lower_bound(APattern.begin(), APattern.end(), info::mesh->nodes->uniqInfo.nhalo + 1, [] (const IJ &ij, esint i) { return ij.row < i; }) - APattern.begin();
+	size_t max_halo = std::lower_bound(APattern.begin(), APattern.end(), dofs * info::mesh->nodes->uniqInfo.nhalo + 1, [] (const IJ &ij, esint i) { return ij.row < i; }) - APattern.begin();
 	for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
 		sPatter[n].reserve(max_halo);
 	}
@@ -86,7 +86,7 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDist
 	auto ranks = info::mesh->nodes->ranks->cbegin();
 	auto begin = APattern.begin(), end = begin;
 	for (esint n = 0; n < info::mesh->nodes->uniqInfo.nhalo; ++n, ++ranks, begin = end) {
-		while (begin->row == (++end)->row);
+		while (begin->row + dofs > (++end)->row);
 		auto neigh = info::mesh->neighbors.begin();
 		for (auto r = ranks->begin(); r != ranks->end(); ++r) {
 			if (*r != info::mpi::rank) {
@@ -187,9 +187,6 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDist
 	if (!Communication::gatherUniformNeighbors(dBuffer, distribution.neighDOF, distribution.neighbors)) {
 		eslog::internalFailure("cannot exchange matrix distribution info.\n");
 	}
-
-	ranks = info::mesh->nodes->ranks->cbegin();
-	begin = end = APattern.begin();
 }
 
 static void dirichlet(UniformNodesDistributedPattern *pattern, std::map<std::string, ECFExpression> &settings, int dofs)

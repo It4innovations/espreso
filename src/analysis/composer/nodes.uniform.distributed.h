@@ -26,7 +26,7 @@ namespace espreso {
 struct UniformNodesDistributedPattern {
 
 	struct RegionInfo {
-		esint nrows, ncols, dirichlet;
+		esint nrows = 0, ncols = 0, dirichlet = 0;
 		std::vector<esint> row, column; // row, column indices
 		std::vector<esint> A, b, indices; // local permutations
 	};
