@@ -11,3 +11,4 @@ void espreso::setDirichlet(Matrix_Distributed<Matrix_CSR, std::complex<double>> 
 {
 	_setDirichlet<std::complex<double>>(A, b, dirichlet, distribution);
 }
+
