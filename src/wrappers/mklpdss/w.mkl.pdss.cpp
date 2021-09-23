@@ -51,7 +51,7 @@ void _check()
 bool _isSymmetric(Matrix_Type type)
 {
 	return type == Matrix_Type::REAL_SYMMETRIC_INDEFINITE
-	    || type == Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE
+		|| type == Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE
 		|| type == Matrix_Type::COMPLEX_SYMMETRIC
 		|| type == Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE
 		|| type == Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE;
@@ -242,7 +242,6 @@ bool _solve(MKLPDSS<T> &mklpdss, const Vector_Distributed<Vector_Dense, T> &b, V
 	double start = eslog::time();
 
 	bool status = _call(mklpdss, 33); // solve at once
-//	_data.x.scatterToUpper();
 	eslog::solver("       - SOLVER TIME                                                        %8.3f s -  \n", eslog::time() - start);
 	return status;
 #endif

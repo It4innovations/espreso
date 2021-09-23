@@ -85,7 +85,7 @@ template <typename T, typename ...Other>
 static void update(T *t, Other... other)
 {
 	update(t);
-	reset(other...);
+	update(other...);
 }
 
 }

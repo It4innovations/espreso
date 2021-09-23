@@ -152,12 +152,10 @@ void AX_Acoustic::analyze()
 void AX_Acoustic::evaluate()
 {
 	controller.setUpdate();
-//	printVersions();
-
 	reset(K, M, C, re.rhs, im.rhs, re.dirichlet, im.dirichlet);
-
 	iterate();
 	fill();
+	update(K, M, C, re.rhs, im.rhs, re.dirichlet, im.dirichlet);
 	controller.resetUpdate();
 }
 
