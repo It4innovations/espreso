@@ -15,6 +15,7 @@ class ESPRESOTest:
     skip_hypre = os.getenv("SKIP_HYPRE", False)
     skip_mklpdss = os.getenv("SKIP_MKLPDSS", False)
     oversub = os.getenv("OVERSUB", False)
+    create = os.getenv("CREATE", False)
 
     root = os.path.dirname(os.path.dirname(__file__))
     feti4itester = os.path.join(root, "build", "test.feti4i")
@@ -146,6 +147,20 @@ class ESPRESOTest:
         for row, (row1, row2) in enumerate(zip(table1, table2)):
             for column, (value1, value2) in enumerate(zip(row1, row2)):
                 compare(value1.strip(), value2.strip())
+
+    @staticmethod
+    def create_emr(preset):
+        if ESPRESOTest.checker:
+            return
+        
+        emr = os.path.join(ESPRESOTest.path, "results", "last", ESPRESOTest.ecf.replace(".ecf", ".emr"))
+        if not os.path.isfile(emr):
+            ESPRESOTest.raise_error("Missing monitoring report '{0}'.".format(emr))
+
+        try:
+            shutil.copyfile(emr, os.path.join(ESPRESOTest.path, preset))
+        except OSError:
+            ESPRESOTest.raise_error("Cannot copy emr file")
 
     @staticmethod
     def compare_mesh(preset, output):
