@@ -371,9 +371,9 @@ template<> void fill<Element::CODE::LINE3>(size_t gps, double *N, double *dN, do
 	case 3: {
 		double s[3] = { -sqrt(3 / 5.0), 0, sqrt(3 / 5.0) };
 
-		w[0] = -sqrt(3 / 5.0);
-		w[1] = 0;
-		w[2] = sqrt(3 / 5.0);
+		w[0] = 5/9.0;
+		w[1] = 8/9.0;
+		w[2] = 5/9.0;
 		for (size_t gp = 0; gp < gps; gp++) {
 			N[gp * nodes + 0] = 0.5 * (s[gp] - 1) * s[gp];
 			N[gp * nodes + 1] = 0.5 * (s[gp] + 1) * s[gp];
