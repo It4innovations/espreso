@@ -4,7 +4,7 @@
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/utils.h"
 #include "esinfo/envinfo.h"
-#include "esinfo/eslog.h"
+#include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"
 
 #include "mesh/store/elementstore.h"
@@ -32,8 +32,12 @@ UniformNodesDistributedPattern::~UniformNodesDistributedPattern()
 
 }
 
-void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDistribution &distribution, bool onlyPattern)
+void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDistribution &distribution)
 {
+	double start = eslog::time();
+	eslog::info(" == LINEAR SYSTEM                                                               DISTRIBUTED == \n");
+	eslog::info(" == DOFS PER NODE                                                                         %d == \n", dofs);
+
 	pattern->dofs = dofs;
 	auto size = [] (int size) {
 		return size * size;
@@ -125,7 +129,6 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDist
 	}
 
 	std::vector<esint> belement(dofs * 8);
-	pattern->bregion.resize(info::mesh->boundaryRegions.size());
 	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
 
@@ -165,10 +168,6 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDist
 		}
 	}
 
-	if (onlyPattern) {
-		return;
-	}
-
 	distribution.begin = dofs * info::mesh->nodes->uniqInfo.offset;
 	distribution.end = dofs * (info::mesh->nodes->uniqInfo.offset + info::mesh->nodes->uniqInfo.size);
 	distribution.totalSize = dofs * info::mesh->nodes->uniqInfo.totalSize;
@@ -187,12 +186,23 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDist
 	if (!Communication::gatherUniformNeighbors(dBuffer, distribution.neighDOF, distribution.neighbors)) {
 		eslog::internalFailure("cannot exchange matrix distribution info.\n");
 	}
+
+	size_t nonzeros[2] = { pattern->elements.row.size(), pattern->bregion[0].b.size() };
+	Communication::allReduce(&nonzeros, NULL, 2, MPITools::getType<size_t>().mpitype, MPI_SUM);
+
+	eslog::info(" == DIRICHLET SIZE                                                           %14lu == \n", nonzeros[1]);
+	eslog::info(" == LINEAR SYSTEM SIZE                                                       %14d == \n", distribution.totalSize);
+	eslog::info(" == NON-ZERO VALUES                                                          %14lu == \n", nonzeros[0]);
+	eslog::info(" == NON-ZERO FILL-IN RATIO                                                          %5.4f\% == \n", 100.0 * nonzeros[0] / distribution.totalSize / distribution.totalSize);
+	eslog::info(" == COMPOSITION RUNTIME                                                          %8.3f s == \n", eslog::time() - start);
+	eslog::info(" ============================================================================================= \n");
 }
 
 static void dirichlet(UniformNodesDistributedPattern *pattern, std::map<std::string, ECFExpression> &settings, int dofs)
 {
 	size_t size = 0;
 	std::vector<esint> indices;
+	pattern->bregion.resize(info::mesh->boundaryRegions.size());
 	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (settings.find(region->name) != settings.end()) {
@@ -221,8 +231,8 @@ static void dirichlet(UniformNodesDistributedPattern *pattern, std::map<std::str
 
 void UniformNodesDistributedPattern::set(std::map<std::string, ECFExpression> &settings, int dofs, DOFsDistribution &distribution)
 {
-	fillPermutation(this, dofs, distribution, false);
 	dirichlet(this, settings, dofs);
+	fillPermutation(this, dofs, distribution);
 }
 
 void UniformNodesDistributedPattern::fillCSR(esint *rows, esint *cols)

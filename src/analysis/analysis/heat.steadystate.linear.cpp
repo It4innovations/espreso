@@ -34,6 +34,8 @@ void AX_HeatSteadyStateLinear::init()
 {
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" == ANALYSIS                                                            LINEAR STEADY STATE == \n");
+	eslog::info(" == PHYSICS                                                                   HEAT TRANSFER == \n");
+	eslog::info(" ============================================================================================= \n");
 
 //	switch (configuration.solver) {
 //	case LoadStepSolverConfiguration::SOLVER::FETI:    system = new AX_FETISystem<double>(configuration.feti); break;
@@ -58,20 +60,33 @@ void AX_HeatSteadyStateLinear::run(step::Step &step)
 	scheme.setTime(time, configuration.duration_time);
 	Variable::list.global["TIME"] = new TimeVariable(time);
 
+	eslog::info("\n ============================================================================================= \n");
+	eslog::info(" = RUN THE SOLVER                                                DURATION TIME: %10.4f s = \n", configuration.duration_time);
+	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
+	system->info();
+	system->set(step);
+	eslog::info(" ============================================================================================= \n\n");
+
+	eslog::info(" ============================================================================================= \n");
+	eslog::info(" = LOAD STEP %2d                                                              TIME %10.4f = \n", step::step.loadstep + 1, time.current);
+	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
+	double start = eslog::time();
 	assembler.evaluate();
 	scheme.composeSystem(step, system);
+	eslog::info("       = ----------------------------------------------------------------------------- = \n");
+	eslog::info("       = SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
 
-	system->set(step);
 	system->update(step);
 	system->solve(step);
 
+	double solution = eslog::time();
 	scheme.extractSolution(step, system);
-
 	assembler.updateSolution();
 	info::mesh->output->updateSolution(step, time);
+	eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
+	eslog::info("       = ----------------------------------------------------------------------------- = \n");
 
-	eslog::info(" ============================================================================================= \n");
-	eslog::info(" = ================================================================= run time %12.3f s =\n\n", eslog::duration());
+	eslog::info(" ====================================================================== solved in %8.3f s = \n\n", eslog::time() - start);
 }
 
 

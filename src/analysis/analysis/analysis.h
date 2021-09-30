@@ -15,6 +15,7 @@ struct Analysis {
 	virtual void run(step::Step &step) =0;
 
 };
+
 }
 
 #endif /* SRC_ANALYSIS_ANALYSIS_ANALYSIS_H_ */

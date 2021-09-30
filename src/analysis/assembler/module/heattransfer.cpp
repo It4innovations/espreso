@@ -130,6 +130,7 @@ bool AX_HeatTransfer::initTemperature()
 //	builders.push_back(new CopyNodesToBoundaryNodes(*ParametersTemperature::output, temp.boundary.node, "COPY TEMPERATURE TO BOUNDARY NODES"));
 //	builders.push_back(new BoundaryGaussPointsBuilder<1>(integration.boundary.N, temp.boundary.node, temp.boundary.gp, "INTEGRATE TEMPERATURE INTO BOUNDARY GAUSS POINTS"));
 
+	results();
 	return correct;
 }
 
@@ -189,8 +190,8 @@ void AX_HeatTransfer::init(AX_SteadyState &scheme)
 
 void AX_HeatTransfer::analyze()
 {
-	eslog::info(" == PHYSICS                                                                   HEAT TRANSFER == \n");
-	eslog::info(" ============================================================================================= \n");
+	double start = eslog::time();
+	eslog::info("\n ============================================================================================= \n");
 	bool correct = true;
 
 	if (info::mesh->dimension == 2) {
@@ -376,16 +377,12 @@ void AX_HeatTransfer::analyze()
 	outputGradient(*this);
 	outputFlux(*this);
 
-	eslog::info(" ============================================================================================= \n");
 	if (correct) {
-		eslog::info("  PHYSICS CONFIGURATION VALIDATION                                                       PASS  \n");
+		eslog::info("  PHYSICS CONFIGURED                                                               %8.3f s \n", eslog::time() - start);
 	} else {
-		eslog::info("  PHYSICS CONFIGURATION VALIDATION                                                       FAIL  \n");
+		eslog::globalerror("  PHYSICS CONFIGURATION FAILED                                                         \n");
 	}
-	eslog::info(" ============================================================================================= \n\n");
-	if (!correct) {
-		eslog::globalerror("                                                               INVALID CONFIGURATION DETECTED \n");
-	}
+	eslog::info(" ============================================================================================= \n");
 }
 
 void AX_HeatTransfer::evaluate()
@@ -409,6 +406,7 @@ void AX_HeatTransfer::updateSolution()
 {
 	x->store(ParametersTemperature::output->data);
 	results(); // do we need an update mechanism?
+	temp.node.setUpdate(1);
 }
 
 void AX_HeatTransfer::initNames()

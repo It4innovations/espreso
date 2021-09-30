@@ -92,35 +92,35 @@ bool _call(MKLPDSS<T> &mklpdss, esint phase)
 template<typename T>
 void _info(const Matrix_Distributed<Matrix_CSR, T> &A)
 {
-	eslog::info("     == LINEAR SOLVER :: MKL                      TYPE :: PARALLEL DIRECT SPARSE SOLVER == \n");
+	eslog::info(" = LINEAR SOLVER :: MKL                                TYPE :: PARALLEL DIRECT SPARSE SOLVER = \n");
 	switch (A.cluster.type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-		eslog::info("     == MATRIX TYPE ::                                 REAL SYMMETRIC POSITIVE DEFINITE == \n");
+		eslog::info(" = MATRIX TYPE ::                                           REAL SYMMETRIC POSITIVE DEFINITE = \n");
 		break;
 	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
-		eslog::info("     == MATRIX TYPE ::                                        REAL SYMMETRIC INDEFINITE == \n");
+		eslog::info(" = MATRIX TYPE ::                                                  REAL SYMMETRIC INDEFINITE = \n");
 		break;
 	case Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC:
-		eslog::info("     == MATRIX TYPE ::                        REAL NONSYMMETRIC (STRUCTURALY SYMMETRIC) == \n");
+		eslog::info(" = MATRIX TYPE ::                                  REAL NONSYMMETRIC (STRUCTURALY SYMMETRIC) = \n");
 		break;
 	case Matrix_Type::REAL_NONSYMMETRIC:
-		eslog::info("     == MATRIX TYPE ::                                                REAL NONSYMMETRIC == \n");
+		eslog::info(" = MATRIX TYPE ::                                                          REAL NONSYMMETRIC = \n");
 		break;
 
 	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		eslog::info("     == MATRIX TYPE ::                              COMPLEX_HERMITIAN_POSITIVE_DEFINITE == \n");
+		eslog::info(" = MATRIX TYPE ::                                        COMPLEX_HERMITIAN_POSITIVE_DEFINITE = \n");
 		break;
 	case Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE:
-		eslog::info("     == MATRIX TYPE ::                                     COMPLEX_HERMITIAN_INDEFINITE == \n");
+		eslog::info(" = MATRIX TYPE ::                                               COMPLEX_HERMITIAN_INDEFINITE = \n");
 		break;
 	case Matrix_Type::COMPLEX_SYMMETRIC:
-		eslog::info("     == MATRIX TYPE ::                                                COMPLEX_SYMMETRIC == \n");
+		eslog::info(" = MATRIX TYPE ::                                                          COMPLEX_SYMMETRIC = \n");
 		break;
 	case Matrix_Type::COMPLEX_STRUCTURALLY_SYMMETRIC:
-		eslog::info("     == MATRIX TYPE ::                                   COMPLEX_STRUCTURALLY_SYMMETRIC == \n");
+		eslog::info(" = MATRIX TYPE ::                                             COMPLEX_STRUCTURALLY_SYMMETRIC = \n");
 		break;
 	case Matrix_Type::COMPLEX_NONSYMMETRIC:
-		eslog::info("     == MATRIX TYPE ::                                             COMPLEX_NONSYMMETRIC == \n");
+		eslog::info(" = MATRIX TYPE ::                                                       COMPLEX_NONSYMMETRIC = \n");
 		break;
 	}
 }
@@ -200,7 +200,7 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 		}
 	}
 	bool status = _call(mklpdss, 11);
-	eslog::solver("       - SYMBOLIC FACTORIZATION                                             %8.3f s -  \n", eslog::time() - start);
+	eslog::solver(" = PREPARE PERSISTENT DATA (SYMBOLIC FACTORIZATION)                               %8.3f s = \n", eslog::time() - start);
 	return status;
 #endif
 }

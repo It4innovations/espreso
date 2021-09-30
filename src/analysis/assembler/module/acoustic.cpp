@@ -58,10 +58,8 @@ void AX_Acoustic::init(AX_Harmonic &scheme)
 
 void AX_Acoustic::analyze()
 {
+	double start = eslog::time();
 	eslog::info("\n ============================================================================================= \n");
-	eslog::info("  PHYSICS                                                                       ACOUSTIC REAL  \n");
-	eslog::info(" ============================================================================================= \n");
-
 	bool correct = true;
 
 	if (info::mesh->dimension == 2) {
@@ -86,8 +84,6 @@ void AX_Acoustic::analyze()
 	}
 
 	if (step::step.loadstep == 0) {
-		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-
 		eslog::info("\n  MATERIALS                                                                                    \n");
 		eslog::info(" --------------------------------------------------------------------------------------------- \n");
 
@@ -139,14 +135,11 @@ void AX_Acoustic::analyze()
 
 	eslog::info(" ============================================================================================= \n");
 	if (correct) {
-		eslog::info("  PHYSICS CONFIGURATION VALIDATION                                                       PASS  \n");
+		eslog::info("  PHYSICS CONFIGURED                                                               %8.3f s \n", eslog::time() - start);
 	} else {
-		eslog::info("  PHYSICS CONFIGURATION VALIDATION                                                       FAIL  \n");
+		eslog::globalerror("  PHYSICS CONFIGURATION FAILED                                                         \n");
 	}
 	eslog::info(" ============================================================================================= \n");
-	if (!correct) {
-		eslog::globalerror("                                                               INVALID CONFIGURATION DETECTED \n");
-	}
 }
 
 void AX_Acoustic::evaluate()
