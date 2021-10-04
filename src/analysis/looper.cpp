@@ -43,7 +43,7 @@ void Looper::run()
 		break;
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D:
 		switch (info::ecf->heat_transfer_3d.load_steps_settings.at(1).mode) {
-		case LoadStepSolverConfiguration::MODE::LINEAR : analysis = new AX_HeatSteadyStateNonLinear(info::ecf->heat_transfer_3d, info::ecf->heat_transfer_3d.load_steps_settings.at(1)); break;
+		case LoadStepSolverConfiguration::MODE::LINEAR : analysis = new AX_HeatSteadyStateLinear(info::ecf->heat_transfer_3d, info::ecf->heat_transfer_3d.load_steps_settings.at(1)); break;
 		case LoadStepSolverConfiguration::MODE::NONLINEAR : analysis = new AX_HeatSteadyStateNonLinear(info::ecf->heat_transfer_3d, info::ecf->heat_transfer_3d.load_steps_settings.at(1)); break;
 		}
 		break;
