@@ -76,7 +76,7 @@ template <typename T>
 static void update(T *t)
 {
 	if (t) {
-		t->update();
+		t->synchronize();
 		t->touched = true;
 	}
 }

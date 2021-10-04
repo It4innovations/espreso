@@ -15,7 +15,7 @@
 #include "esinfo/eslog.h"
 #include "math2/generalization/matrix_distributed.h"
 #include "math2/utils/dofs_distribution.h"
-#include "math2/utils/utils_distributed.h"
+#include "math2/utils/distributed/synchronization.h"
 #include "wrappers/mklpdss/w.mkl.pdss.h"
 
 namespace espreso {
@@ -68,7 +68,7 @@ struct AX_MKLPDSSSystemData: public AX_LinearSystem<Assembler, Solver> {
 	bool solve(step::Step &step)
 	{
 		if (mklpdss.solve(solver.b, solver.x)) {
-			solver.x.synchronize();
+			solver.x.scatter();
 			if (info::ecf->output.print_matrices) {
 				eslog::storedata(" STORE: system/{x}\n");
 				math::store(solver.x, utils::filename(utils::debugDirectory(step) + "/system", "x").c_str());
@@ -184,6 +184,7 @@ template <> struct AX_MKLPDSSSystem<AX_HeatSteadyStateNonLinear>: public AX_MKLP
 	{
 		assembler.A.type = solver.A.type = analysis->assembler.matrixType();
 		_fillDirect(this, analysis->configuration.temperature, 1);
+		solver.A.initApply();
 	}
 };
 

@@ -193,7 +193,7 @@ void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDist
 	eslog::info(" == DIRICHLET SIZE                                                           %14lu == \n", nonzeros[1]);
 	eslog::info(" == LINEAR SYSTEM SIZE                                                       %14d == \n", distribution.totalSize);
 	eslog::info(" == NON-ZERO VALUES                                                          %14lu == \n", nonzeros[0]);
-	eslog::info(" == NON-ZERO FILL-IN RATIO                                                          %5.4f\% == \n", 100.0 * nonzeros[0] / distribution.totalSize / distribution.totalSize);
+	eslog::info(" == NON-ZERO FILL-IN RATIO                                                         %7.4f\% == \n", 100.0 * nonzeros[0] / distribution.totalSize / distribution.totalSize);
 	eslog::info(" == COMPOSITION RUNTIME                                                          %8.3f s == \n", eslog::time() - start);
 	eslog::info(" ============================================================================================= \n");
 }

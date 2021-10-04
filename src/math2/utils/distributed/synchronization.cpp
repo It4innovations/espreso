@@ -1,5 +1,5 @@
 
-#include "utils_distributed.h"
+#include "synchronization.h"
 
 #include "esinfo/eslog.h"
 #include "esinfo/mpiinfo.h"
@@ -19,6 +19,7 @@ void _init(Data_Synchronization<Matrix_CSR, T> *sync, Matrix_Distributed<Matrix_
 	if (info::mpi::size == 1 || sync->neighbors.size()) {
 		return;
 	}
+
 	sync->neighbors = m.distribution->neighbors;
 	sync->sBuffer.resize(sync->neighbors.size());
 	sync->rBuffer.resize(sync->neighbors.size());
@@ -79,11 +80,32 @@ void _gatherFromUpper(Data_Synchronization<Matrix_CSR, T> *sync, Matrix_Distribu
 	}
 }
 
+template <typename T>
+void _scatterToUpper(Data_Synchronization<Matrix_CSR, T> *sync, Matrix_Distributed<Matrix_CSR, T> &m)
+{
+	for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
+		for (size_t i = 0; i < sync->rOffset[n].size(); ++i) {
+			sync->rBuffer[n][i] = m.cluster.vals[sync->rOffset[n][i]];
+		}
+	}
+
+	if (!Communication::receiveUpperUnknownSize(sync->rBuffer, sync->sBuffer, info::mesh->neighbors)) {
+		eslog::internalFailure("receive MatrixCSRDistribution data.\n");
+	}
+
+	for (size_t n = 0; n < info::mesh->neighbors.size() && info::mesh->neighbors[n] < info::mpi::rank; ++n) {
+		memcpy(m.cluster.vals + sync->nOffset[n], sync->sBuffer[n].data(), sizeof(double) * sync->sBuffer[n].size());
+	}
+}
+
 template<> void Data_Synchronization<Matrix_CSR, double>::init(Matrix_Distributed<Matrix_CSR, double> &m) { _init(this, m); }
 template<> void Data_Synchronization<Matrix_CSR, std::complex<double> >::init(Matrix_Distributed<Matrix_CSR, std::complex<double> > &m) { _init(this, m); }
 
 template<> void Data_Synchronization<Matrix_CSR, double>::gatherFromUpper(Matrix_Distributed<Matrix_CSR, double> &m) { _gatherFromUpper(this, m); }
 template<> void Data_Synchronization<Matrix_CSR, std::complex<double> >::gatherFromUpper(Matrix_Distributed<Matrix_CSR, std::complex<double> > &m) { _gatherFromUpper(this, m); }
+
+template<> void Data_Synchronization<Matrix_CSR, double>::scatterToUpper(Matrix_Distributed<Matrix_CSR, double> &m) { _scatterToUpper(this, m); }
+template<> void Data_Synchronization<Matrix_CSR, std::complex<double> >::scatterToUpper(Matrix_Distributed<Matrix_CSR, std::complex<double> > &m) { _scatterToUpper(this, m); }
 
 
 template <typename T>
@@ -165,3 +187,5 @@ template<> void Data_Synchronization<Vector_Dense, double>::scatterToUpper(Vecto
 template<> void Data_Synchronization<Vector_Dense, std::complex<double> >::scatterToUpper(Vector_Distributed<Vector_Dense, std::complex<double> > &v) { _scatterToUpper(this, v); }
 
 }
+
+

@@ -81,6 +81,8 @@ public:
 		_Vector_Dense<T>::operator=(_allocated);
 	}
 
+	_Vector_Dense<T> _allocated;
+
 protected:
 	template <typename Type>
 	void swap(Type &v, Type &u)
@@ -107,8 +109,6 @@ protected:
 	{
 		if (v.vals) { delete[] v.vals; v.vals = nullptr; }
 	}
-
-	_Vector_Dense<T> _allocated;
 };
 
 }

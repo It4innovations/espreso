@@ -19,7 +19,7 @@ public:
 	Vector_Base_Common(): touched(false) {}
 	virtual ~Vector_Base_Common() {};
 
-	virtual void update() =0;
+	virtual void synchronize() =0;
 
 	virtual Vector_Base<T>* copyPattern() =0;
 	virtual void store(const char *file) =0;

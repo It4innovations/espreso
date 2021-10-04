@@ -85,6 +85,7 @@ public:
 	}
 
 	bool touched;
+	_Vector_Sparse<T> _allocated;
 
 protected:
 	template <typename Type>
@@ -129,8 +130,6 @@ protected:
 		if (v.indices) { delete[] v.indices; v.indices = nullptr; }
 		if (v.vals) { delete[] v.vals; v.vals = nullptr; }
 	}
-
-	_Vector_Sparse<T> _allocated;
 };
 
 }

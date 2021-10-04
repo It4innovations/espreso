@@ -112,6 +112,7 @@ public:
 	Matrix_Type type;
 	Matrix_Shape shape;
 	Matrix_CSR_External_Representation *_external;
+	_Matrix_CSR<T> _allocated;
 
 protected:
 	template <typename Type>
@@ -168,8 +169,6 @@ protected:
 		if (m.cols) { delete[] m.cols; m.cols = nullptr; }
 		if (m.vals) { delete[] m.vals; m.vals = nullptr; }
 	}
-
-	_Matrix_CSR<T> _allocated;
 };
 
 }

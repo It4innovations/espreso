@@ -24,7 +24,7 @@ public:
 	virtual ~Matrix_Base_Common() {};
 
 	virtual void commit() =0;
-	virtual void update() =0;
+	virtual void synchronize() =0;
 
 	virtual Matrix_Base<T>* copyPattern() =0;
 	virtual void store(const char *file) =0;

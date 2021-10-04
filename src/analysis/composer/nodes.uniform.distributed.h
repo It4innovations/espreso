@@ -17,7 +17,7 @@
 #include "math2/generalization/vector_distributed.h"
 #include "math2/generalization/matrix_distributed.h"
 #include "math2/utils/dofs_distribution.h"
-#include "math2/utils/utils_distributed.h"
+#include "math2/utils/distributed/synchronization.h"
 
 #include <vector>
 

@@ -99,6 +99,7 @@ bool AX_NewtonRaphson::run(step::Step &step, step::Time &time, AX_HeatTransfer &
 
 		system->solver.A->apply(1, system->solver.x, 0, R);
 		system->solver.b->add(-1, R);
+
 		// why not to set dirichlet to 0 for all iterations??
 		system->solver.dirichlet->add(-1, U);
 

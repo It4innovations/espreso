@@ -6,7 +6,7 @@
 #include "esinfo/eslog.h"
 #include "math2/math2.h"
 #include "math2/utils/dofs_distribution.h"
-#include "math2/utils/utils_distributed.h"
+#include "math2/utils/distributed/synchronization.h"
 #include "wrappers/mpi/communication.h"
 
 #include <vector>
@@ -16,12 +16,12 @@ namespace espreso {
 template <template<typename> typename Vector, typename T>
 class Vector_Distributed_Common: public Vector_Base<T> {
 public:
-	void update()
+	void synchronize()
 	{
-		synchronization->gatherFromUpper(*static_cast<Vector_Distributed<Vector, T>*>(this));
+		synchronization->synchronize(*static_cast<Vector_Distributed<Vector, T>*>(this));
 	}
 
-	void synchronize()
+	void scatter()
 	{
 		synchronization->scatterToUpper(*static_cast<Vector_Distributed<Vector, T>*>(this));
 	}

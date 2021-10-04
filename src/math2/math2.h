@@ -205,7 +205,7 @@ namespace math {
 		eslog::error("call empty function getDiagonal\n");
 	}
 
-	template <class T> void store(T &x, const char* file);
+	template <class T> void store(const T &x, const char* file);
 
 } // math
 } // espreso

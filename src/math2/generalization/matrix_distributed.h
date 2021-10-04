@@ -7,7 +7,8 @@
 #include "math2/math2.h"
 #include "math2/primitives/matrix_dense.h"
 #include "math2/utils/dofs_distribution.h"
-#include "math2/utils/utils_distributed.h"
+#include "math2/utils/distributed/apply.h"
+#include "math2/utils/distributed/synchronization.h"
 
 #include <vector>
 
@@ -20,10 +21,15 @@ class Matrix_Distributed_Common: public Matrix_Base<T> {
 public:
 	void commit()
 	{
-		math::commit(cluster);
+		applyData.commit(*static_cast<Matrix_Distributed<Matrix, T>*>(this));
 	}
 
-	void update()
+	void initApply()
+	{
+		applyData.init(*static_cast<Matrix_Distributed<Matrix, T>*>(this));
+	}
+
+	void synchronize()
 	{
 		synchronization->gatherFromUpper(*static_cast<Matrix_Distributed<Matrix, T>*>(this));
 	}
@@ -35,6 +41,7 @@ public:
 		m->shape = m->cluster.shape = this->shape;
 		m->cluster.pattern(cluster);
 		m->distribution = this->distribution;
+		m->applyData = this->applyData;
 		m->synchronization = this->synchronization;
 		return m;
 	}
@@ -67,7 +74,7 @@ public:
 	void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out)
 	{
 		if (dynamic_cast<const Vector_Distributed<Vector_Dense, T>*>(in) && dynamic_cast<const Vector_Distributed<Vector_Dense, T>*>(out)) {
-			math::apply<T>(static_cast<Vector_Distributed<Vector_Dense, T>*>(out)->cluster, alpha, cluster, beta, static_cast<const Vector_Distributed<Vector_Dense, T>*>(in)->cluster);
+			applyData.apply(static_cast<Vector_Distributed<Vector_Dense, T>*>(out), alpha, beta, static_cast<const Vector_Distributed<Vector_Dense, T>*>(in));
 		}
 	}
 
@@ -103,6 +110,7 @@ public:
 
 	Matrix<T> cluster;
 	DOFsDistribution *distribution;
+	Data_Apply<Matrix, T> applyData;
 	Data_Synchronization<Matrix, T> *synchronization;
 };
 
