@@ -116,8 +116,8 @@ struct UniformNodesDistributedPattern {
 			if (bregion[r].dirichlet) {
 				v->mapping.boundary[r].resize(info::mesh->boundaryRegions[r]->nodes->threads());
 				for (size_t t = 0; t < v->mapping.boundary[r].size(); ++t) {
-					v->mapping.boundary[r].front().data = v->cluster.vals;
-					v->mapping.boundary[r].front().position = bregion[0].b.data() + offset;
+					v->mapping.boundary[r][t].data = v->cluster.vals;
+					v->mapping.boundary[r][t].position = bregion[0].b.data() + offset;
 					offset += region->nodes->datatarray().size(t);
 				}
 			}

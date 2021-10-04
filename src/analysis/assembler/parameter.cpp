@@ -72,7 +72,11 @@ int BoundaryParameterData::regions()
 
 int BoundaryParameterData::intervals(int region)
 {
-	return std::max(1, (int)info::mesh->boundaryRegions[region]->eintervals.size());
+	if (info::mesh->boundaryRegions[region]->dimension == 0) {
+		return info::env::threads;
+	} else {
+		return info::mesh->boundaryRegions[region]->eintervals.size();
+	}
 }
 
 BoundaryParameterPack::BoundaryParameterPack(PerElementSize mask)
@@ -195,7 +199,7 @@ void BoundaryParameterData::resize(double init)
 	if (info::mesh->boundaryRegions[region]->dimension == 0) {
 		esint dimension = size.n * std::pow(info::mesh->dimension, size.ndimension);
 		if (isconst[0]) {
-			data = new serializededata<esint, double>(dimension, tarray<double>(1, dimension, init));
+			data = new serializededata<esint, double>(dimension, tarray<double>(info::env::threads, info::env::threads * dimension, init));
 		} else {
 			data = new serializededata<esint, double>(dimension, tarray<double>(info::mesh->boundaryRegions[region]->nodes->datatarray().distribution(), dimension, init));
 		}
