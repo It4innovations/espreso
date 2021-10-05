@@ -58,12 +58,12 @@ struct CartesianRotation3D: CoordinateRotation {
 	void operator()()
 	{
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			angle[3 * gpindex + 0] = std::cos(M_PI * rotation[3 * gpindex + 0] / 180);
-			angle[3 * gpindex + 1] = std::cos(M_PI * rotation[3 * gpindex + 1] / 180);
-			angle[3 * gpindex + 2] = std::cos(M_PI * rotation[3 * gpindex + 2] / 180);
-			angle[3 * gpindex + 3] = std::sin(M_PI * rotation[3 * gpindex + 0] / 180);
-			angle[3 * gpindex + 4] = std::sin(M_PI * rotation[3 * gpindex + 1] / 180);
-			angle[3 * gpindex + 5] = std::sin(M_PI * rotation[3 * gpindex + 2] / 180);
+			angle[6 * gpindex + 0] = std::cos(M_PI * rotation[3 * gpindex + 0] / 180);
+			angle[6 * gpindex + 1] = std::cos(M_PI * rotation[3 * gpindex + 1] / 180);
+			angle[6 * gpindex + 2] = std::cos(M_PI * rotation[3 * gpindex + 2] / 180);
+			angle[6 * gpindex + 3] = std::sin(M_PI * rotation[3 * gpindex + 0] / 180);
+			angle[6 * gpindex + 4] = std::sin(M_PI * rotation[3 * gpindex + 1] / 180);
+			angle[6 * gpindex + 5] = std::sin(M_PI * rotation[3 * gpindex + 2] / 180);
 		}
 	}
 };
@@ -90,12 +90,12 @@ struct CylindricalRotation3D: CoordinateRotation {
 	{
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			double rot = std::atan2(coordinates[3 * gpindex + 1] - rotation[2 * gpindex + 1], coordinates[3 * gpindex + 0] - rotation[2 * gpindex + 0]);
-			angle[3 * gpindex + 0] = 1;
-			angle[3 * gpindex + 1] = 1;
-			angle[3 * gpindex + 2] = std::cos(rot);
-			angle[3 * gpindex + 3] = 0;
-			angle[3 * gpindex + 4] = 0;
-			angle[3 * gpindex + 5] = std::sin(rot);
+			angle[6 * gpindex + 0] = 1;
+			angle[6 * gpindex + 1] = 1;
+			angle[6 * gpindex + 2] = std::cos(rot);
+			angle[6 * gpindex + 3] = 0;
+			angle[6 * gpindex + 4] = 0;
+			angle[6 * gpindex + 5] = std::sin(rot);
 		}
 	}
 };
@@ -114,12 +114,12 @@ struct SphericalRotation3D: CoordinateRotation {
 			double r = std::sqrt(x * x + y * y + z * z);
 			double elevation = r < 1e-15 ? 0 : std::atan2(std::sqrt(z * z + x * x), y);
 
-			angle[3 * gpindex + 0] = 1;
-			angle[3 * gpindex + 1] = std::cos(elevation);
-			angle[3 * gpindex + 2] = std::cos(azimut);
-			angle[3 * gpindex + 3] = 0;
-			angle[3 * gpindex + 4] = std::sin(elevation);
-			angle[3 * gpindex + 5] = std::sin(azimut);
+			angle[6 * gpindex + 0] = 1;
+			angle[6 * gpindex + 1] = std::cos(elevation);
+			angle[6 * gpindex + 2] = std::cos(azimut);
+			angle[6 * gpindex + 3] = 0;
+			angle[6 * gpindex + 4] = std::sin(elevation);
+			angle[6 * gpindex + 5] = std::sin(azimut);
 		}
 	}
 };

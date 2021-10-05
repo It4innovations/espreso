@@ -292,7 +292,7 @@ void AX_HeatTransfer::analyze()
 				}
 				break;
 			case ThermalConductivityConfiguration::MODEL::SYMMETRIC:
-				eslog::info("         CONDUCTIVITY:                                                             SYMMETRIC \n");
+				eslog::info("         CONDUCTIVITY:                                                              SYMMETRIC \n");
 				if (info::mesh->dimension == 2) {
 					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.symmetric2D.externalValue, 0);
 					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.symmetric2D.externalValue, 1);
