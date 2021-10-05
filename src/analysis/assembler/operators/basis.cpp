@@ -191,20 +191,20 @@ template<> void fill<Element::CODE::TETRA4>(size_t gps, double *N, double *dN, d
 			N[gp * nodes + 2] = t[gp];
 			N[gp * nodes + 3] = 1.0 - r[gp] - s[gp] - t[gp];
 
-			dN[3  *gp * nodes + 0 * nodes + 0] =  1.0;
-			dN[3  *gp * nodes + 0 * nodes + 1] =  0.0;
-			dN[3  *gp * nodes + 0 * nodes + 2] =  0.0;
-			dN[3  *gp * nodes + 0 * nodes + 3] = -1.0;
+			dN[3 * gp * nodes + 0 * nodes + 0] =  1.0;
+			dN[3 * gp * nodes + 0 * nodes + 1] =  0.0;
+			dN[3 * gp * nodes + 0 * nodes + 2] =  0.0;
+			dN[3 * gp * nodes + 0 * nodes + 3] = -1.0;
 
-			dN[3  *gp * nodes + 1 * nodes + 0] =  0.0;
-			dN[3  *gp * nodes + 1 * nodes + 1] =  1.0;
-			dN[3  *gp * nodes + 1 * nodes + 2] =  0.0;
-			dN[3  *gp * nodes + 1 * nodes + 3] = -1.0;
+			dN[3 * gp * nodes + 1 * nodes + 0] =  0.0;
+			dN[3 * gp * nodes + 1 * nodes + 1] =  0.0;
+			dN[3 * gp * nodes + 1 * nodes + 2] =  1.0;
+			dN[3 * gp * nodes + 1 * nodes + 3] = -1.0;
 
-			dN[3  *gp * nodes + 2 * nodes + 0] =  0.0;
-			dN[3  *gp * nodes + 2 * nodes + 1] =  0.0;
-			dN[3  *gp * nodes + 2 * nodes + 2] =  1.0;
-			dN[3  *gp * nodes + 2 * nodes + 3] = -1.0;
+			dN[3 * gp * nodes + 2 * nodes + 0] =  0.0;
+			dN[3 * gp * nodes + 2 * nodes + 1] =  1.0;
+			dN[3 * gp * nodes + 2 * nodes + 2] =  0.0;
+			dN[3 * gp * nodes + 2 * nodes + 3] = -1.0;
 		}
 	} break;
 	}
@@ -540,26 +540,26 @@ template<> void fill<Element::CODE::TETRA10>(size_t gps, double *N, double *dN, 
 			dN[3 * gp * nodes + 0 * nodes + 9] = -4.0 * t[gp];
 
 			dN[3 * gp * nodes + 1 * nodes + 0] = 0;
-			dN[3 * gp * nodes + 1 * nodes + 1] = 4.0 * s[gp] - 1.0;
-			dN[3 * gp * nodes + 1 * nodes + 2] = 0 ;
-			dN[3 * gp * nodes + 1 * nodes + 3] = 4.0 * r[gp] + 4.0 * s[gp] + 4.0 * t[gp] - 3.0;
-			dN[3 * gp * nodes + 1 * nodes + 4] = 4.0 * r[gp];
-			dN[3 * gp * nodes + 1 * nodes + 5] = 4.0 * t[gp];
-			dN[3 * gp * nodes + 1 * nodes + 6] = 0;
+			dN[3 * gp * nodes + 1 * nodes + 1] = 0;
+			dN[3 * gp * nodes + 1 * nodes + 2] = 4.0 * t[gp] - 1.0;
+			dN[3 * gp * nodes + 1 * nodes + 3] = 4.0 * r[gp] + 4.0 * s[gp] + 4.0* t[gp]  - 3.0;
+			dN[3 * gp * nodes + 1 * nodes + 4] = 0;
+			dN[3 * gp * nodes + 1 * nodes + 5] = 4.0 * s[gp];
+			dN[3 * gp * nodes + 1 * nodes + 6] = 4.0 * r[gp];
 			dN[3 * gp * nodes + 1 * nodes + 7] = -4.0 * r[gp];
-			dN[3 * gp * nodes + 1 * nodes + 8] = -4.0 * r[gp] - 8.0 * s[gp] - 4.0 * t[gp] + 4.0;
-			dN[3 * gp * nodes + 1 * nodes + 9] = -4.0 * t[gp];
+			dN[3 * gp * nodes + 1 * nodes + 8] = -4.0 * s[gp];
+			dN[3 * gp * nodes + 1 * nodes + 9] = -4.0 * r[gp] - 4.0 * s[gp] - 8.0 * t[gp] + 4.0;
 
 			dN[3 * gp * nodes + 2 * nodes + 0] = 0;
-			dN[3 * gp * nodes + 2 * nodes + 1] = 0;
-			dN[3 * gp * nodes + 2 * nodes + 2] = 4.0 * t[gp] - 1.0;
-			dN[3 * gp * nodes + 2 * nodes + 3] = 4.0 * r[gp] + 4.0 * s[gp] + 4.0* t[gp]  - 3.0;
-			dN[3 * gp * nodes + 2 * nodes + 4] = 0;
-			dN[3 * gp * nodes + 2 * nodes + 5] = 4.0 * s[gp];
-			dN[3 * gp * nodes + 2 * nodes + 6] = 4.0 * r[gp];
+			dN[3 * gp * nodes + 2 * nodes + 1] = 4.0 * s[gp] - 1.0;
+			dN[3 * gp * nodes + 2 * nodes + 2] = 0 ;
+			dN[3 * gp * nodes + 2 * nodes + 3] = 4.0 * r[gp] + 4.0 * s[gp] + 4.0 * t[gp] - 3.0;
+			dN[3 * gp * nodes + 2 * nodes + 4] = 4.0 * r[gp];
+			dN[3 * gp * nodes + 2 * nodes + 5] = 4.0 * t[gp];
+			dN[3 * gp * nodes + 2 * nodes + 6] = 0;
 			dN[3 * gp * nodes + 2 * nodes + 7] = -4.0 * r[gp];
-			dN[3 * gp * nodes + 2 * nodes + 8] = -4.0 * s[gp];
-			dN[3 * gp * nodes + 2 * nodes + 9] = -4.0 * r[gp] - 4.0 * s[gp] - 8.0 * t[gp] + 4.0;
+			dN[3 * gp * nodes + 2 * nodes + 8] = -4.0 * r[gp] - 8.0 * s[gp] - 4.0 * t[gp] + 4.0;
+			dN[3 * gp * nodes + 2 * nodes + 9] = -4.0 * t[gp];
 		}
 	} break;
 	}
