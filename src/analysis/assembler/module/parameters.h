@@ -127,6 +127,9 @@ struct ParametersCoordinateSystem {
 	ElementGPsExternalParameter<egps> cartesian2D;
 	ElementGPsExternalParameter<ndim * egps> cartesian3D, spherical;
 	ElementGPsExternalParameter<2 * egps> cylindric;
+
+	ElementParameter<2 * egps> angle2D;
+	ElementParameter<6 * egps> angle3D;
 };
 
 struct ParametersMaterial {

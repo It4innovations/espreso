@@ -8,136 +8,170 @@
 
 namespace espreso {
 
-struct CoordinateSystem: public Operator {
-	CoordinateSystem(
+struct CoordinateRotation: public ActionOperator {
+	CoordinateRotation(
+			int interval,
 			const ParameterData &coordinates,
 			const ParameterData &rotation,
-			ParameterData &matrix,
-			int interval,
-			int update = 1)
-	: Operator(interval, matrix.isconst[interval], update && matrix.update[interval]),
-	  coordinates(coordinates, interval),
+			ParameterData &angle)
+	: coordinates(coordinates, interval),
 	  rotation(rotation, interval),
-	  matrix(matrix, interval)
+	  angle(angle, interval)
 	{
 
 	}
 
-	InputParameterIterator coordinates, rotation;
-	OutputParameterIterator matrix;
+	InputParameterIterator coordinates, rotation; // rotation -> angle for cartesian, center for cylinder and sphere
+	OutputParameterIterator angle;
 
 	void operator++()
 	{
 		++coordinates; ++rotation;
-		++matrix;
+		++angle;
+	}
+
+	void move(int n)
+	{
+		coordinates += n;
+		rotation += n;
+		angle += n;
 	}
 };
 
-struct Cartesian2DCoordinateSystem: CoordinateSystem {
-	Cartesian2DCoordinateSystem(
-			const ParameterData &coordinates,
-			const ElementExternalParameter<egps> &rotation,
-			ParameterData &matrix,
-			int interval): CoordinateSystem(coordinates, rotation, matrix, interval, rotation.isset[interval]), fixedRotation(rotation.isconst[interval])
-	{
-		angle();
-	}
+template<size_t nodes, size_t gps>
+struct CartesianRotation2D: CoordinateRotation {
+	using CoordinateRotation::CoordinateRotation;
 
-	double sin, cos;
-	const bool fixedRotation;
-
-	void angle()
+	void operator()()
 	{
-		sin = std::sin(M_PI * rotation[0] / 180);
-		cos = std::cos(M_PI * rotation[0] / 180);
-	}
-
-	template<int nodes, int gps>
-	void operator()(int gpindex)
-	{
-		if (!fixedRotation) {
-			angle();
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			angle[2 * gpindex + 0] = std::cos(M_PI * rotation[gpindex] / 180);
+			angle[2 * gpindex + 1] = std::sin(M_PI * rotation[gpindex] / 180);
 		}
-		rotate2x2(cos, sin, matrix.data + 4 * gpindex);
 	}
 };
 
-struct Cylindrical2DCoordinateSystem: CoordinateSystem {
-	using CoordinateSystem::CoordinateSystem;
+template<size_t nodes, size_t gps>
+struct CartesianRotation3D: CoordinateRotation {
+	using CoordinateRotation::CoordinateRotation;
 
-	template<int nodes, int gps>
-	void operator()(int gpindex)
+	void operator()()
 	{
-		double angle = std::atan2(coordinates[2 * gpindex + 1] - rotation[2 * gpindex + 1], coordinates[2 * gpindex + 0] - rotation[2 * gpindex + 0]);
-		double cos = std::cos(angle);
-		double sin = std::sin(angle);
-		rotate2x2(cos, sin, matrix.data + 4 * gpindex);
-	}
-};
-
-struct Cartesian3DCoordinateSystem: CoordinateSystem {
-	Cartesian3DCoordinateSystem(
-			const ParameterData &coordinates,
-			const ElementExternalParameter<ndim * egps> &rotation,
-			ParameterData &matrix,
-			int interval): CoordinateSystem(coordinates, rotation, matrix, interval, rotation.isset[interval]), fixedRotation(rotation.isconst[interval])
-	{
-		angle();
-	}
-
-	double sin[3], cos[3];
-	const bool fixedRotation;
-
-	void angle()
-	{
-		sin[0] = std::sin(M_PI * rotation[0] / 180);
-		sin[1] = std::sin(M_PI * rotation[1] / 180);
-		sin[2] = std::sin(M_PI * rotation[2] / 180);
-		cos[0] = std::cos(M_PI * rotation[0] / 180);
-		cos[1] = std::cos(M_PI * rotation[1] / 180);
-		cos[2] = std::cos(M_PI * rotation[2] / 180);
-	}
-
-	template<int nodes, int gps>
-	void operator()(int gpindex)
-	{
-		if (!fixedRotation) {
-			angle();
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			angle[3 * gpindex + 0] = std::cos(M_PI * rotation[3 * gpindex + 0] / 180);
+			angle[3 * gpindex + 1] = std::cos(M_PI * rotation[3 * gpindex + 1] / 180);
+			angle[3 * gpindex + 2] = std::cos(M_PI * rotation[3 * gpindex + 2] / 180);
+			angle[3 * gpindex + 3] = std::sin(M_PI * rotation[3 * gpindex + 0] / 180);
+			angle[3 * gpindex + 4] = std::sin(M_PI * rotation[3 * gpindex + 1] / 180);
+			angle[3 * gpindex + 5] = std::sin(M_PI * rotation[3 * gpindex + 2] / 180);
 		}
-		rotate3x3(cos, sin, matrix.data + 9 * gpindex);
 	}
 };
 
-struct Cylindrical3DCoordinateSystem: CoordinateSystem {
-	using CoordinateSystem::CoordinateSystem;
+template<size_t nodes, size_t gps>
+struct CylindricalRotation2D: CoordinateRotation {
+	using CoordinateRotation::CoordinateRotation;
 
-	template<int nodes, int gps>
-	void operator()(int gpindex)
+	void operator()()
 	{
-		double angle = std::atan2(coordinates[3 * gpindex + 1] - rotation[2 * gpindex + 1], coordinates[3 * gpindex + 0] - rotation[2 * gpindex + 0]);
-		double cos[3] = { 1, 1, std::cos(angle) };
-		double sin[3] = { 0, 0, std::sin(angle) };
-		rotate3x3(cos, sin, matrix.data + 9 * gpindex);
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			double rot = std::atan2(coordinates[2 * gpindex + 1] - rotation[2 * gpindex + 1], coordinates[2 * gpindex + 0] - rotation[2 * gpindex + 0]);
+			angle[2 * gpindex + 0] = std::cos(rot);
+			angle[2 * gpindex + 1] = std::sin(rot);
+		}
 	}
 };
 
-struct Spherical3DCoordinateSystem: CoordinateSystem {
-	using CoordinateSystem::CoordinateSystem;
+template<size_t nodes, size_t gps>
+struct CylindricalRotation3D: CoordinateRotation {
+	using CoordinateRotation::CoordinateRotation;
 
-	template<int nodes, int gps>
-	void operator()(int gpindex)
+	void operator()()
 	{
-		double x = coordinates[3 * gpindex + 0] - rotation[3 * gpindex + 0];
-		double y = coordinates[3 * gpindex + 1] - rotation[3 * gpindex + 1];
-		double z = coordinates[3 * gpindex + 2] - rotation[3 * gpindex + 2];
-		double azimut = std::atan2(y, x);
-		double r = std::sqrt(x * x + y * y + z * z);
-		double elevation = r < 1e-15 ? 0 : std::atan2(std::sqrt(z * z + x * x), y);
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			double rot = std::atan2(coordinates[3 * gpindex + 1] - rotation[2 * gpindex + 1], coordinates[3 * gpindex + 0] - rotation[2 * gpindex + 0]);
+			angle[3 * gpindex + 0] = 1;
+			angle[3 * gpindex + 1] = 1;
+			angle[3 * gpindex + 2] = std::cos(rot);
+			angle[3 * gpindex + 3] = 0;
+			angle[3 * gpindex + 4] = 0;
+			angle[3 * gpindex + 5] = std::sin(rot);
+		}
+	}
+};
 
-		double cos[3] = { 1, std::cos(elevation), std::cos(azimut) };
-		double sin[3] = { 0, std::sin(elevation), std::sin(azimut) };
+template<size_t nodes, size_t gps>
+struct SphericalRotation3D: CoordinateRotation {
+	using CoordinateRotation::CoordinateRotation;
 
-		rotate3x3(cos, sin, matrix.data + 9 * gpindex);
+	void operator()()
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			double x = coordinates[3 * gpindex + 0] - rotation[3 * gpindex + 0];
+			double y = coordinates[3 * gpindex + 1] - rotation[3 * gpindex + 1];
+			double z = coordinates[3 * gpindex + 2] - rotation[3 * gpindex + 2];
+			double azimut = std::atan2(y, x);
+			double r = std::sqrt(x * x + y * y + z * z);
+			double elevation = r < 1e-15 ? 0 : std::atan2(std::sqrt(z * z + x * x), y);
+
+			angle[3 * gpindex + 0] = 1;
+			angle[3 * gpindex + 1] = std::cos(elevation);
+			angle[3 * gpindex + 2] = std::cos(azimut);
+			angle[3 * gpindex + 3] = 0;
+			angle[3 * gpindex + 4] = std::sin(elevation);
+			angle[3 * gpindex + 5] = std::sin(azimut);
+		}
+	}
+};
+
+struct ConductivityRotation: public ActionOperator {
+	ConductivityRotation(
+			int interval,
+			const ParameterData &angle,
+			ParameterData &result)
+	: angle(angle, interval),
+	  result(result, interval)
+	{
+
+	}
+
+	InputParameterIterator angle;
+	OutputParameterIterator result;
+
+	void operator++()
+	{
+		++angle;
+		++result;
+	}
+
+	void move(int n)
+	{
+		angle += n;
+		result += n;
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct ConductivityRotation2D: ConductivityRotation {
+	using ConductivityRotation::ConductivityRotation;
+
+	void operator()()
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			rotate2x2(angle[2 * gpindex + 0], angle[2 * gpindex + 1], result.data + 4 * gpindex);
+		}
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct ConductivityRotation3D: ConductivityRotation {
+	using ConductivityRotation::ConductivityRotation;
+
+	void operator()()
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			rotate3x3(angle.data + 6 * gpindex, angle.data + 6 * gpindex + 3, result.data + 9 * gpindex);
+		}
 	}
 };
 
