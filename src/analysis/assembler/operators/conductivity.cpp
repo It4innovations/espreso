@@ -93,7 +93,7 @@ void thermalConductivity(AX_HeatTransfer &module)
 			switch (mat->thermal_conductivity.model) {
 			case ThermalConductivityConfiguration::MODEL::ISOTROPIC: module.elementOps[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, 1, CopyParameter>(interval, module.controller, module.material.model.isotropic, module.material.conductivityIsotropic)); break;
 			case ThermalConductivityConfiguration::MODEL::DIAGONAL: module.elementOps[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, CopyDiagonal3DConductivity>(interval, module.controller, module.material.model.diagonal, module.material.conductivity)); break;
-			case ThermalConductivityConfiguration::MODEL::SYMMETRIC: module.elementOps[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, CopySymmetric3DConductivity>(interval, module.controller, module.material.model.symmetric2D, module.material.conductivity)); break;
+			case ThermalConductivityConfiguration::MODEL::SYMMETRIC: module.elementOps[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, CopySymmetric3DConductivity>(interval, module.controller, module.material.model.symmetric3D, module.material.conductivity)); break;
 			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC: module.elementOps[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, CopyAnisotropic3DConductivity>(interval, module.controller, module.material.model.anisotropic, module.material.conductivity)); break;
 			}
 
