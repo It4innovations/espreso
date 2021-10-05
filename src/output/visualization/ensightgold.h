@@ -39,7 +39,7 @@ protected:
 	std::string _fixedDataPath;
 	std::vector<std::string> _variables;
 	std::vector<double> _times;
-	EnsightBinaryOutputWriter _writer;
+	EnsightASCIIOutputWriter _writer;
 };
 
 class EnSightGold::FTT: public EnSightGold {
