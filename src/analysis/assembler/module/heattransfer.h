@@ -50,9 +50,6 @@ public:
 
 	void updateSolution();
 
-	Matrix_Type matrixType() { return Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE; }
-	bool hasKernel(int domain) { return true; }
-
 	HeatTransferGlobalSettings &gsettings;
 	HeatTransferLoadStepConfiguration &configuration;
 

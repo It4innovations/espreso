@@ -63,12 +63,10 @@ void AX_Acoustic::analyze()
 	bool correct = true;
 
 	if (info::mesh->dimension == 2) {
-		setMaterials(info::ecf->acoustics_2d.material_set);
 		validateRegionSettings("MATERIAL", info::ecf->acoustics_2d.material_set);
 		validateRegionSettings("THICKNESS", info::ecf->acoustics_2d.thickness);
 	}
 	if (info::mesh->dimension == 3) {
-		setMaterials(info::ecf->acoustics_2d.material_set);
 		validateRegionSettings("MATERIAL", info::ecf->acoustics_3d.material_set);
 	}
 

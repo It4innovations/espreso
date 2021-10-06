@@ -281,34 +281,6 @@ void Assembler::printParameterStats(const char* name, NamedData *data)
 	printf("nameddata [isconst/update]:   [ /%c] %s\n", data->updated ? 'U' : ' ', name);
 }
 
-void Assembler::setMaterials(const std::map<std::string, std::string> &settings)
-{
-	for (auto ei = info::mesh->elements->eintervals.begin(); ei != info::mesh->elements->eintervals.end(); ++ei) {
-		int region = ei->region;
-		if (region == -1) { // intersected regions
-			for (auto rindex = ei->regions.begin(); rindex != ei->regions.end(); ++rindex) {
-				if (settings.find(info::mesh->elementsRegions[*rindex]->name) != settings.end()) {
-					region = *rindex;
-				}
-			}
-		}
-
-		if (region == -1 || settings.find(info::mesh->elementsRegions[region]->name) == settings.end()) {
-			region = 0;
-		}
-		auto mat = settings.find(info::mesh->elementsRegions[region]->name);
-		if (mat == settings.end()) {
-			eslog::error("Invalid material configuration: a region without a material settings found.\n");
-		}
-
-		for (size_t i = 0; i < info::mesh->materials.size(); ++i) {
-			if (StringCompare::caseInsensitiveEq(info::mesh->materials[i]->name, mat->second)) {
-				ei->material = i;
-			}
-		}
-	}
-}
-
 void Assembler::printMaterials(const std::map<std::string, std::string> &settings)
 {
 	for (auto reg = info::mesh->elementsRegions.begin() + 1; reg != info::mesh->elementsRegions.end(); ++reg) {

@@ -195,13 +195,11 @@ void AX_HeatTransfer::analyze()
 	bool correct = true;
 
 	if (info::mesh->dimension == 2) {
-		setMaterials(info::ecf->heat_transfer_2d.material_set);
 		validateRegionSettings("MATERIAL", info::ecf->heat_transfer_2d.material_set);
 		validateRegionSettings("THICKNESS", info::ecf->heat_transfer_2d.thickness);
 		validateRegionSettings("INITIAL TEMPERATURE", info::ecf->heat_transfer_2d.initial_temperature);
 	}
 	if (info::mesh->dimension == 3) {
-		setMaterials(info::ecf->heat_transfer_3d.material_set);
 		validateRegionSettings("MATERIAL", info::ecf->heat_transfer_3d.material_set);
 		validateRegionSettings("INITIAL TEMPERATURE", info::ecf->heat_transfer_3d.initial_temperature);
 	}

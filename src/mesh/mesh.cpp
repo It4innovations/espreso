@@ -596,16 +596,16 @@ void Mesh::partitiate(int ndomains)
 	profiler::synccheckpoint("domain_decomposition");
 	eslog::checkpointln("MESH: MESH DECOMPOSED");
 
-	profiler::synccheckpoint("preprocess_boundary_regions");
-
 	mesh::computeElementIntervals(domains, elements);
 	mesh::computeRegionsElementIntervals(elements, elementsRegions);
-	mesh::computeRegionsBoundaryIntervals(elements, domains, boundaryRegions, contactInterfaces);
 	profiler::synccheckpoint("arrange_element_regions");
 	eslog::checkpointln("MESH: ELEMENT REGIONS ARRANGED");
 
+	mesh::computeRegionsBoundaryIntervals(elements, domains, boundaryRegions, contactInterfaces);
 	profiler::synccheckpoint("arrange_boundary_regions");
 	eslog::checkpointln("MESH: BOUNDARY REGIONS ARRANGED");
+
+	mesh::setMaterialsToRegions(elements, elementsRegions, materials, info::ecf->getPhysics()->material_set);
 
 	if (_withFETI) {
 		mesh::computeNodeDomainDistribution(elements, nodes, domains, neighborsWithMe);

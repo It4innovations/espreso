@@ -12,6 +12,7 @@
 #include "mesh/store/fetidatastore.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/utils.h"
+#include "basis/utilities/parser.h"
 #include "wrappers/mpi/communication.h"
 
 #include "esinfo/envinfo.h"
@@ -101,6 +102,34 @@ void computeElementIntervals(const DomainStore *domains, ElementStore *elements)
 	elements->eintervalsDistribution.push_back(elements->eintervals.size());
 	profiler::syncend("elements_intervals");
 	eslog::checkpointln("MESH: ELEMENTS INTERVALS COMPUTED");
+}
+
+void setMaterialsToRegions(ElementStore *elements, const std::vector<ElementsRegionStore*> &elementsRegions, const std::vector<MaterialConfiguration*> materials, const std::map<std::string, std::string> &material_set)
+{
+	for (auto ei = elements->eintervals.begin(); ei != elements->eintervals.end(); ++ei) {
+		int region = ei->region;
+		if (region == -1) { // intersected regions
+			for (auto rindex = ei->regions.begin(); rindex != ei->regions.end(); ++rindex) {
+				if (material_set.find(elementsRegions[*rindex]->name) != material_set.end()) {
+					region = *rindex;
+				}
+			}
+		}
+
+		if (region == -1 || material_set.find(elementsRegions[region]->name) == material_set.end()) {
+			region = 0;
+		}
+		auto mat = material_set.find(elementsRegions[region]->name);
+		if (mat == material_set.end()) {
+			eslog::error("Invalid material configuration: a region without a material settings found.\n");
+		}
+
+		for (size_t i = 0; i < materials.size(); ++i) {
+			if (StringCompare::caseInsensitiveEq(materials[i]->name, mat->second)) {
+				ei->material = i;
+			}
+		}
+	}
 }
 
 void computeRegionsElementIntervals(const ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions)

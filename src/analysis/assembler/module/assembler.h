@@ -24,8 +24,6 @@ public:
 	Assembler();
 	virtual ~Assembler() {}
 
-	virtual bool hasKernel(int domain) =0;
-
 	ParameterController controller;
 	std::vector<std::vector<std::unique_ptr<ActionOperator> > > elementOps, elementFiller, elementRes;
 	std::vector<std::vector<std::vector<std::unique_ptr<ActionOperator> > > > boundaryOps, boundaryFiller, boundaryRes;
@@ -38,7 +36,6 @@ protected:
 	void printParameterStats(const char* name, ParameterData &parameter);
 	void printParameterStats(const char* name, NamedData *data);
 
-	void setMaterials(const std::map<std::string, std::string> &settings);
 	void printMaterials(const std::map<std::string, std::string> &settings);
 	template<typename Ttype>
 	void validateRegionSettings(const std::string &name, const std::map<std::string, Ttype> &settings);
