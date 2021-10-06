@@ -20,8 +20,8 @@
 
 using namespace espreso;
 
-AX_HeatTransfer::AX_HeatTransfer(AX_HeatTransfer *previous, HeatTransferGlobalSettings &gsettings, HeatTransferLoadStepConfiguration &configuration)
-: gsettings(gsettings), configuration(configuration), K{}, M{}, rhs{}, x{}, dirichlet{}
+AX_HeatTransfer::AX_HeatTransfer(AX_HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
+: settings(settings), configuration(configuration), K{}, M{}, rhs{}, x{}, dirichlet{}
 {
 
 }

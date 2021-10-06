@@ -42,7 +42,7 @@ public:
 		static const size_t HEXA20    = 8;
 	};
 
-	AX_HeatTransfer(AX_HeatTransfer *previous, HeatTransferGlobalSettings &gsettings, HeatTransferLoadStepConfiguration &configuration);
+	AX_HeatTransfer(AX_HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
 
 	void init(AX_SteadyState &scheme);
 	void analyze();
@@ -50,7 +50,7 @@ public:
 
 	void updateSolution();
 
-	HeatTransferGlobalSettings &gsettings;
+	HeatTransferGlobalSettings &settings;
 	HeatTransferLoadStepConfiguration &configuration;
 
 	ParametersIntegration integration;

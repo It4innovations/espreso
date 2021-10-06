@@ -10,19 +10,19 @@
 
 namespace espreso {
 
-struct HeatTransferGlobalSettings;
+struct HeatTransferConfiguration;
 struct HeatTransferLoadStepConfiguration;
 
 class AX_HeatSteadyStateNonLinear: public Analysis {
 
 public:
-	AX_HeatSteadyStateNonLinear(HeatTransferGlobalSettings &gsettings, HeatTransferLoadStepConfiguration &configuration);
+	AX_HeatSteadyStateNonLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
 	~AX_HeatSteadyStateNonLinear();
 
 	void init();
 	void run(step::Step &step);
 
-	HeatTransferGlobalSettings &gsettings;
+	HeatTransferConfiguration &settings;
 	HeatTransferLoadStepConfiguration &configuration;
 
 	AX_HeatTransfer assembler;

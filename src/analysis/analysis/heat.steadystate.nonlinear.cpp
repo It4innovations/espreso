@@ -17,8 +17,8 @@
 
 using namespace espreso;
 
-AX_HeatSteadyStateNonLinear::AX_HeatSteadyStateNonLinear(HeatTransferGlobalSettings &gsettings, HeatTransferLoadStepConfiguration &configuration)
-: gsettings(gsettings), configuration(configuration), assembler{nullptr, gsettings, configuration}, solver(configuration.nonlinear_solver), scheme{}, system{}
+AX_HeatSteadyStateNonLinear::AX_HeatSteadyStateNonLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
+: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, solver(configuration.nonlinear_solver), scheme{}, system{}
 
 {
 

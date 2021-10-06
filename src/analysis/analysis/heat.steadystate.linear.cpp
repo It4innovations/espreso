@@ -17,8 +17,8 @@
 
 using namespace espreso;
 
-AX_HeatSteadyStateLinear::AX_HeatSteadyStateLinear(HeatTransferGlobalSettings &gsettings, HeatTransferLoadStepConfiguration &configuration)
-: gsettings(gsettings), configuration(configuration), assembler{nullptr, gsettings, configuration}, scheme{}, system{}
+AX_HeatSteadyStateLinear::AX_HeatSteadyStateLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
+: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, scheme{}, system{}
 {
 
 }
