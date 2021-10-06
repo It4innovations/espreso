@@ -172,7 +172,14 @@ template <> struct AX_MKLPDSSSystem<AX_HeatSteadyStateLinear>: public AX_MKLPDSS
 	AX_MKLPDSSSystem(AX_HeatSteadyStateLinear *analysis, MKLPDSSConfiguration &configuration)
 	: AX_MKLPDSSSystemData(configuration)
 	{
-		assembler.A.type = solver.A.type = analysis->assembler.matrixType();
+		assembler.A.type = solver.A.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+		for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+			const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
+			if (mat->thermal_conductivity.model == ThermalConductivityConfiguration::MODEL::ANISOTROPIC) {
+				assembler.A.type = solver.A.type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
+			}
+		}
+
 		_fillDirect(this, analysis->configuration.temperature, 1);
 	}
 };
@@ -182,7 +189,14 @@ template <> struct AX_MKLPDSSSystem<AX_HeatSteadyStateNonLinear>: public AX_MKLP
 	AX_MKLPDSSSystem(AX_HeatSteadyStateNonLinear *analysis, MKLPDSSConfiguration &configuration)
 	: AX_MKLPDSSSystemData(configuration)
 	{
-		assembler.A.type = solver.A.type = analysis->assembler.matrixType();
+		assembler.A.type = solver.A.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+		for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+			const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
+			if (mat->thermal_conductivity.model == ThermalConductivityConfiguration::MODEL::ANISOTROPIC) {
+				assembler.A.type = solver.A.type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
+			}
+		}
+
 		_fillDirect(this, analysis->configuration.temperature, 1);
 		solver.A.initApply();
 	}
