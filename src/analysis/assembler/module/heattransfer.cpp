@@ -28,18 +28,11 @@ AX_HeatTransfer::AX_HeatTransfer(AX_HeatTransfer *previous, HeatTransferConfigur
 
 void AX_HeatTransfer::initParameters()
 {
-	if (info::mesh->dimension == 2) {
-		initialTemperature = info::ecf->heat_transfer_2d.initial_temperature;
-	}
-	if (info::mesh->dimension == 3) {
-		initialTemperature = info::ecf->heat_transfer_3d.initial_temperature;
-	}
-
 	if (ParametersTemperature::Initial::output == nullptr) {
 		ParametersTemperature::Initial::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_TEMPERATURE");
 
 		Variable::list.node["INITIAL_TEMPERATURE"] = new OutputVariable(ParametersTemperature::Initial::output, 0, 1);
-		for (auto it = initialTemperature.begin(); it != initialTemperature.end(); ++it) {
+		for (auto it = settings.initial_temperature.begin(); it != settings.initial_temperature.end(); ++it) {
 			it->second.scope = ECFExpression::Scope::ENODES;
 			for (auto p = it->second.parameters.begin(); p != it->second.parameters.end(); ++p) {
 				Variable::list.enodes.insert(std::make_pair(*p, nullptr));
@@ -77,18 +70,10 @@ bool AX_HeatTransfer::initTemperature()
 		fromExpression(*this, temperature.node, temperature.node.externalValues);
 	}
 
-	if (info::mesh->dimension == 2) {
-		if (info::ecf->heat_transfer_2d.init_temp_respect_bc) {
-			temp.initial.node.setConstness(false);
-		}
-		examineElementParameter("INITIAL TEMPERATURE", initialTemperature, temp.initial.node.externalValue);
+	if (settings.init_temp_respect_bc) {
+		temp.initial.node.setConstness(false);
 	}
-	if (info::mesh->dimension == 3) {
-		if (info::ecf->heat_transfer_3d.init_temp_respect_bc) {
-			temp.initial.node.setConstness(false);
-		}
-		examineElementParameter("INITIAL TEMPERATURE", initialTemperature, temp.initial.node.externalValue);
-	}
+	examineElementParameter("INITIAL TEMPERATURE", settings.initial_temperature, temp.initial.node.externalValue);
 	fromExpression(*this, temp.initial.node, temp.initial.node.externalValue);
 	_evaluate();
 
@@ -194,15 +179,9 @@ void AX_HeatTransfer::analyze()
 	eslog::info("\n ============================================================================================= \n");
 	bool correct = true;
 
-	if (info::mesh->dimension == 2) {
-		validateRegionSettings("MATERIAL", info::ecf->heat_transfer_2d.material_set);
-		validateRegionSettings("THICKNESS", info::ecf->heat_transfer_2d.thickness);
-		validateRegionSettings("INITIAL TEMPERATURE", info::ecf->heat_transfer_2d.initial_temperature);
-	}
-	if (info::mesh->dimension == 3) {
-		validateRegionSettings("MATERIAL", info::ecf->heat_transfer_3d.material_set);
-		validateRegionSettings("INITIAL TEMPERATURE", info::ecf->heat_transfer_3d.initial_temperature);
-	}
+	validateRegionSettings("MATERIAL", settings.material_set);
+	validateRegionSettings("INITIAL TEMPERATURE", settings.initial_temperature);
+	validateRegionSettings("THICKNESS", settings.thickness);
 
 	initParameters();
 
@@ -219,7 +198,7 @@ void AX_HeatTransfer::analyze()
 
 	if (step::step.loadstep == 0) {
 		if (info::mesh->dimension == 2) {
-			correct &= examineElementParameter("THICKNESS", info::ecf->heat_transfer_2d.thickness, thickness.gp.externalValue);
+			correct &= examineElementParameter("THICKNESS", settings.thickness, thickness.gp.externalValue);
 			fromExpression(*this, thickness.gp, thickness.gp.externalValue);
 		}
 
@@ -344,12 +323,7 @@ void AX_HeatTransfer::analyze()
 		fromExpression(*this, material.heatCapacity, material.heatCapacity.externalValue);
 
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-		if (info::mesh->dimension == 2) {
-			printMaterials(info::ecf->heat_transfer_2d.material_set);
-		}
-		if (info::mesh->dimension == 3) {
-			printMaterials(info::ecf->heat_transfer_3d.material_set);
-		}
+		printMaterials(settings.material_set);
 
 		thermalConductivity(*this);
 

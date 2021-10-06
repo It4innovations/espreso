@@ -15,12 +15,12 @@ struct AcousticLoadStepConfiguration;
 class AX_AcousticRealLinear: public Analysis {
 
 public:
-	AX_AcousticRealLinear(AcousticGlobalSettings &gsettings, AcousticLoadStepConfiguration &configuration);
+	AX_AcousticRealLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
 
 	void init();
 	void run(step::Step &step);
 
-	AcousticGlobalSettings &gsettings;
+	AcousticConfiguration &settings;
 	AcousticLoadStepConfiguration &configuration;
 
 	AX_Acoustic assembler;

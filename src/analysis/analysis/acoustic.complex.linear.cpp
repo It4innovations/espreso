@@ -16,8 +16,8 @@
 
 using namespace espreso;
 
-AX_AcousticComplexLinear::AX_AcousticComplexLinear(AcousticGlobalSettings &gsettings, AcousticLoadStepConfiguration &configuration)
-: gsettings(gsettings), configuration(configuration), assembler{nullptr, gsettings, configuration}, scheme{configuration.harmonic_solver, 1}, system{}
+AX_AcousticComplexLinear::AX_AcousticComplexLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration)
+: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, scheme{configuration.harmonic_solver, 1}, system{}
 {
 
 }

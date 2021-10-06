@@ -14,7 +14,7 @@
 
 namespace espreso {
 
-struct HeatTransferGlobalSettings;
+struct HeatTransferConfiguration;
 struct HeatTransferLoadStepConfiguration;
 struct AX_SteadyState;
 
@@ -50,7 +50,7 @@ public:
 
 	void updateSolution();
 
-	HeatTransferGlobalSettings &settings;
+	HeatTransferConfiguration &settings;
 	HeatTransferLoadStepConfiguration &configuration;
 
 	ParametersIntegration integration;
@@ -81,8 +81,6 @@ public:
 
 	Matrix_Base<double> *K, *M;
 	Vector_Base<double> *rhs, *x, *dirichlet;
-
-	std::map<std::string, ECFExpression> initialTemperature;
 
 protected:
 	bool initTemperature();

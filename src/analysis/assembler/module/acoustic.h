@@ -12,7 +12,7 @@
 
 namespace espreso {
 
-struct AcousticGlobalSettings;
+struct AcousticConfiguration;
 struct AcousticLoadStepConfiguration;
 struct AX_Harmonic;
 
@@ -40,7 +40,7 @@ public:
 		static const size_t HEXA20    = 8;
 	};
 
-	AX_Acoustic(AX_Acoustic *previous, AcousticGlobalSettings &gsettings, AcousticLoadStepConfiguration &configuration);
+	AX_Acoustic(AX_Acoustic *previous, AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
 
 	void init(AX_Harmonic &scheme);
 	void analyze();
@@ -51,7 +51,7 @@ public:
 	Matrix_Type matrixType() { return Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC; }
 	bool hasKernel(int domain) { return true; }
 
-	AcousticGlobalSettings &gsettings;
+	AcousticConfiguration &settings;
 	AcousticLoadStepConfiguration &configuration;
 
 	ParametersAcousticPressure acoustic_pressure;

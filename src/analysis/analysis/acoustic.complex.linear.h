@@ -11,18 +11,18 @@
 
 namespace espreso {
 
-struct AcousticGlobalSettings;
+struct AcousticConfiguration;
 struct AcousticLoadStepConfiguration;
 
 class AX_AcousticComplexLinear: public Analysis {
 
 public:
-	AX_AcousticComplexLinear(AcousticGlobalSettings &gsettings, AcousticLoadStepConfiguration &configuration);
+	AX_AcousticComplexLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
 
 	void init();
 	void run(step::Step &step);
 
-	AcousticGlobalSettings &gsettings;
+	AcousticConfiguration &settings;
 	AcousticLoadStepConfiguration &configuration;
 
 	AX_Acoustic assembler;

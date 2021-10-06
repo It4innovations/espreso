@@ -23,8 +23,8 @@
 
 using namespace espreso;
 
-AX_Acoustic::AX_Acoustic(AX_Acoustic *previous, AcousticGlobalSettings &gsettings, AcousticLoadStepConfiguration &configuration)
-: gsettings(gsettings), configuration(configuration), K{}, M{}, C{}, re{}, im{}
+AX_Acoustic::AX_Acoustic(AX_Acoustic *previous, AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration)
+: settings(settings), configuration(configuration), K{}, M{}, C{}, re{}, im{}
 {
 
 }
@@ -62,13 +62,8 @@ void AX_Acoustic::analyze()
 	eslog::info("\n ============================================================================================= \n");
 	bool correct = true;
 
-	if (info::mesh->dimension == 2) {
-		validateRegionSettings("MATERIAL", info::ecf->acoustics_2d.material_set);
-		validateRegionSettings("THICKNESS", info::ecf->acoustics_2d.thickness);
-	}
-	if (info::mesh->dimension == 3) {
-		validateRegionSettings("MATERIAL", info::ecf->acoustics_3d.material_set);
-	}
+	validateRegionSettings("MATERIAL", settings.material_set);
+	validateRegionSettings("THICKNESS", settings.thickness);
 
 	initParameters();
 
@@ -97,12 +92,7 @@ void AX_Acoustic::analyze()
 
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 
-		if (info::mesh->dimension == 2) {
-			printMaterials(info::ecf->acoustics_2d.material_set);
-		}
-		if (info::mesh->dimension == 3) {
-			printMaterials(info::ecf->acoustics_3d.material_set);
-		}
+		printMaterials(settings.material_set);
 
 		eslog::info(" ============================================================================================= \n");
 	}
