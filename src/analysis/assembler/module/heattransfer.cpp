@@ -13,6 +13,8 @@
 #include "analysis/assembler/operators/operators.h"
 #include "analysis/scheme/steadystate.h"
 
+#include "wrappers/mpi/communication.h"
+
 #include <numeric>
 #include <algorithm>
 
@@ -121,7 +123,7 @@ bool AX_HeatTransfer::initTemperature()
 
 void AX_HeatTransfer::printVolume()
 {
-	std::vector<double> volume(info::mesh->elementsRegions.size());
+	std::vector<double> volume(info::mesh->elementsRegions.size() + info::mesh->boundaryRegions.size());
 	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
 		for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 			if (info::mesh->elements->eintervals[i].region == (esint)r || (info::mesh->elements->eintervals[i].region == 0 && r == info::mesh->elementsRegions.size() - 1)) {
@@ -135,16 +137,17 @@ void AX_HeatTransfer::printVolume()
 		}
 	}
 
-	std::vector<double> surface(info::mesh->boundaryRegions.size());
 	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
 			auto begin = integration.boundary.jacobian.regions[r].data->datatarray().begin();
 			auto end = integration.boundary.jacobian.regions[r].data->datatarray().end();
 			for (auto det = begin; det != end; ++det) {
-				surface[r] += *det;
+				volume[info::mesh->elementsRegions.size() + r] += *det;
 			}
 		}
 	}
+
+	Communication::allReduce(volume, Communication::OP::SUM);
 
 	eslog::info("  ELEMENT REGION VOLUME                                                                        \n");
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - \n");
@@ -155,8 +158,8 @@ void AX_HeatTransfer::printVolume()
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - \n");
 	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
-			eslog::info("     %30s :                                            %e   \n", info::mesh->boundaryRegions[r]->name.c_str(), surface[r]);
-			info::mesh->boundaryRegions[r]->area = surface[r];
+			eslog::info("     %30s :                                            %e   \n", info::mesh->boundaryRegions[r]->name.c_str(), volume[info::mesh->elementsRegions.size() + r]);
+			info::mesh->boundaryRegions[r]->area = volume[info::mesh->elementsRegions.size() + r];
 		}
 	}
 	eslog::info(" ============================================================================================= \n");
