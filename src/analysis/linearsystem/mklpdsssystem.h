@@ -14,7 +14,7 @@
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.h"
 #include "math2/generalization/matrix_distributed.h"
-#include "math2/utils/dofs_distribution.h"
+#include "math2/utils/distributed/distribution.h"
 #include "math2/utils/distributed/synchronization.h"
 #include "wrappers/mklpdss/w.mkl.pdss.h"
 
@@ -169,8 +169,8 @@ inline void _fillDirect(AX_MKLPDSSSystemData<A, S> *system, std::map<std::string
 
 template <> struct AX_MKLPDSSSystem<AX_HeatSteadyStateLinear>: public AX_MKLPDSSSystemData<double, double> {
 
-	AX_MKLPDSSSystem(AX_HeatSteadyStateLinear *analysis, MKLPDSSConfiguration &configuration)
-	: AX_MKLPDSSSystemData(configuration)
+	AX_MKLPDSSSystem(AX_HeatSteadyStateLinear *analysis)
+	: AX_MKLPDSSSystemData(analysis->configuration.mklpdss)
 	{
 		assembler.A.type = solver.A.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 		for (auto mat = analysis->settings.material_set.begin(); mat != analysis->settings.material_set.end(); ++mat) {
@@ -185,8 +185,8 @@ template <> struct AX_MKLPDSSSystem<AX_HeatSteadyStateLinear>: public AX_MKLPDSS
 
 template <> struct AX_MKLPDSSSystem<AX_HeatSteadyStateNonLinear>: public AX_MKLPDSSSystemData<double, double> {
 
-	AX_MKLPDSSSystem(AX_HeatSteadyStateNonLinear *analysis, MKLPDSSConfiguration &configuration)
-	: AX_MKLPDSSSystemData(configuration)
+	AX_MKLPDSSSystem(AX_HeatSteadyStateNonLinear *analysis)
+	: AX_MKLPDSSSystemData(analysis->configuration.mklpdss)
 	{
 		assembler.A.type = solver.A.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 		for (auto mat = analysis->settings.material_set.begin(); mat != analysis->settings.material_set.end(); ++mat) {
@@ -202,8 +202,8 @@ template <> struct AX_MKLPDSSSystem<AX_HeatSteadyStateNonLinear>: public AX_MKLP
 
 template <> struct AX_MKLPDSSSystem<AX_AcousticRealLinear>: public AX_MKLPDSSSystemData<double, double> {
 
-	AX_MKLPDSSSystem(AX_AcousticRealLinear *analysis, MKLPDSSConfiguration &configuration)
-	: AX_MKLPDSSSystemData(configuration)
+	AX_MKLPDSSSystem(AX_AcousticRealLinear *analysis)
+	: AX_MKLPDSSSystemData(analysis->configuration.mklpdss)
 	{
 		assembler.A.type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
 		_fillAssembler(this, analysis->configuration.acoustic_pressure, 1);
@@ -215,8 +215,8 @@ template <> struct AX_MKLPDSSSystem<AX_AcousticRealLinear>: public AX_MKLPDSSSys
 
 template <> struct AX_MKLPDSSSystem<AX_AcousticComplexLinear>: public AX_MKLPDSSSystemData<double, std::complex<double> > {
 
-	AX_MKLPDSSSystem(AX_AcousticComplexLinear *analysis, MKLPDSSConfiguration &configuration)
-	: AX_MKLPDSSSystemData(configuration)
+	AX_MKLPDSSSystem(AX_AcousticComplexLinear *analysis)
+	: AX_MKLPDSSSystemData(analysis->configuration.mklpdss)
 	{
 		assembler.A.type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
 		_fillAssembler(this, analysis->configuration.acoustic_pressure, 1);

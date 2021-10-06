@@ -5,7 +5,6 @@
 #include "elementmapping.h"
 
 #include "basis/containers/serializededata.h"
-#include "basis/utilities/utils.h"
 #include "esinfo/meshinfo.h"
 #include "config/holders/expression.h"
 #include "mesh/store/elementstore.h"
@@ -16,7 +15,7 @@
 #include "math2/primitives/matrix_csr.h"
 #include "math2/generalization/vector_distributed.h"
 #include "math2/generalization/matrix_distributed.h"
-#include "math2/utils/dofs_distribution.h"
+#include "math2/utils/distributed/distribution.h"
 #include "math2/utils/distributed/synchronization.h"
 
 #include <vector>

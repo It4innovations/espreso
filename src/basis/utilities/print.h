@@ -15,6 +15,7 @@
 #include "math/vector.dense.distributed.h"
 #include "math/vector.sparse.h"
 #include "math/domainindices.h"
+#include "math2/utils/decomposed/decomposition.h"
 #include <iostream>
 #include <ostream>
 #include <iomanip>
@@ -202,6 +203,12 @@ std::ostream& operator<< (std::ostream& os, const serializededata<TEBoundaries, 
 }
 
 inline std::ostream& operator<< (std::ostream& os, const DI &di)
+{
+	os << di.domain << ":" << di.index;
+	return os;
+}
+
+inline std::ostream& operator<< (std::ostream& os, const DIndex &di)
 {
 	os << di.domain << ":" << di.index;
 	return os;

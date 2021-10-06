@@ -81,6 +81,17 @@ template <> void store(const Vector_FETI<Vector_Dense, double> &x, const char* f
 template <> void store(const Vector_FETI<Vector_Dense, std::complex<double> > &x, const char* file) { _store(x, file); }
 
 template <typename T>
+void _store(const Vector_FETI<Vector_Sparse, T> &x, const char* file)
+{
+	for (size_t d = 0; d < x.domains.size(); ++d) {
+		store(x.domains[d], (std::string(file) + std::to_string(d)).c_str());
+	}
+}
+
+template <> void store(const Vector_FETI<Vector_Sparse, double> &x, const char* file) { _store(x, file); }
+template <> void store(const Vector_FETI<Vector_Sparse, std::complex<double> > &x, const char* file) { _store(x, file); }
+
+template <typename T>
 void _store(const Matrix_Dense<T> &A, const char* file)
 {
 	std::ofstream os(std::string(file) + ".txt");

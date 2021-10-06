@@ -6,179 +6,138 @@
 #include "analysis/analysis/heat.steadystate.linear.h"
 #include "analysis/analysis/heat.steadystate.nonlinear.h"
 #include "analysis/analysis/acoustic.real.linear.h"
-//#include "analysis/analysis/heat.transient.linear.h"
-//#include "analysis/analysis/heat.transient.nonlinear.h"
-//#include "analysis/analysis/structuralmechanics.harmonic.complex.linear.h"
-//#include "analysis/analysis/structuralmechanics.harmonic.real.linear.h"
-//#include "analysis/analysis/structuralmechanics.steadystate.linear.h"
-//#include "analysis/analysis/structuralmechanics.transient.linear.h"
+#include "analysis/analysis/acoustic.complex.linear.h"
 
 #include "analysis/composer/nodes.uniform.feti.h"
-#include "config/ecf/linearsolver/feti.h"
-
-#include "math2/generalization/matrix_feti.h"
+#include "basis/utilities/sysutils.h"
+#include "esinfo/ecfinfo.h"
+#include "esinfo/eslog.h"
+#include "axfeti/feti.h"
 
 namespace espreso {
 
-template <typename T>
-struct AX_FETISystem: AX_LinearSystem<T> {
+template <typename Assembler, typename Solver>
+struct AX_FETISystemData: public AX_LinearSystem<Assembler, Solver> {
 
-	AX_FETISystem(FETIConfiguration &configuration): configuration(configuration) {}
+	AX_FETISystemData(FETIConfiguration &configuration) {}
 
-	void setMapping(Matrix_Base<T> *A) const
+	void setMapping(Matrix_Base<Assembler> *A) const
 	{
-		pattern.setMap(dynamic_cast<Matrix_FETI<Matrix_CSR, T>*>(A));
+		assembler.pattern.setMap(dynamic_cast<Matrix_FETI<Matrix_CSR, Assembler>*>(A));
 	}
 
-	void setMapping(Vector_Base<T> *x) const
+	void setMapping(Vector_Base<Assembler> *x) const
 	{
-		pattern.setMap(dynamic_cast<Vector_FETI<Vector_Dense, T>*>(x));
+		assembler.pattern.setMap(dynamic_cast<Vector_FETI<Vector_Dense, Assembler>*>(x));
 	}
 
-	void init(AX_AcousticRealLinear *analysis)
+	void setDirichletMapping(Vector_Base<Assembler> *x) const
 	{
-
+		assembler.pattern.setDirichletMap(dynamic_cast<Vector_Distributed<Vector_Sparse, Assembler>*>(x));
 	}
 
-	void init(AX_AcousticComplexLinear *analysis)
+	void info() const
 	{
-
+//		feti.info(solver.A);
 	}
 
-	void init(AX_HeatSteadyStateLinear *analysis)
+	void set(step::Step &step)
 	{
-//		pattern.set(1, analysis->assembler.matrixType());
-//		pattern.fill(A);
-//		pattern.fill(b);
-//		pattern.fill(x);
-//		this->assembler.A = this->solver.A = &A;
-//		this->assembler.b = this->solver.b = &b;
-//		this->assembler.x = this->solver.x = &x;
-//
-//		initKernels(*this, analysis->assembler);
+//		feti.set(solver.A);
 	}
 
-	void init(AX_HeatSteadyStateNonLinear *analysis)
-	{
-//		pattern.set(1, analysis->assembler.matrixType());
-//		pattern.fill(A);
-//		pattern.fill(b);
-//		pattern.fill(x);
-//		this->assembler.A = this->solver.A = &A;
-//		this->assembler.b = this->solver.b = &b;
-//		this->assembler.x = this->solver.x = &x;
-//
-//		initKernels(*this, analysis->assembler);
-	}
-
-//	void init(AX_HeatSteadyStateNonLinear *analysis)
-//	{
-//		pattern.set(1, analysis->assembler.matrixType());
-//	}
-//
-//	void init(AX_HeatTransientLinear *analysis)
-//	{
-//		pattern.set(1, analysis->assembler.matrixType());
-//	}
-//
-//	void init(AX_HeatTransientNonLinear *analysis)
-//	{
-//		pattern.set(1, analysis->assembler.matrixType());
-//	}
-//
-//	void init(AX_StructuralMechanicsHarmonicComplexLinear *analysis)
-//	{
-//
-//	}
-//
-//	void init(AX_StructuralMechanicsHarmonicRealLinear *analysis)
-//	{
-//
-//	}
-//
-//	void init(AX_StructuralMechanicsSteadyStateLinear *analysis)
-//	{
-//
-//	}
-//
-//	void init(AX_StructuralMechanicsTransientLinear *analysis)
-//	{
-//
-//	}
-
-	void update(step::Step &step, AX_Acoustic &assembler)
+	void update(step::Step &step)
 	{
 
 	}
-
-	void update(step::Step &step, AX_HeatTransfer &assembler)
-	{
-//		if (solver.A.touched || solver.b.touched || solver.dirichlet.touched) {
-			//updateKernels(*this, assembler);
-//		}
-	}
-
-//	void prepare(AX_HeatSteadyStateNonLinear *analysis)
-//	{
-//
-//	}
-//
-//	void prepare(AX_HeatTransientLinear *analysis)
-//	{
-//
-//	}
-//
-//	void prepare(AX_HeatTransientNonLinear *analysis)
-//	{
-//
-//	}
-//
-//	void prepare(AX_StructuralMechanicsHarmonicComplexLinear *analysis)
-//	{
-//
-//	}
-//
-//	void prepare(AX_StructuralMechanicsHarmonicRealLinear *analysis)
-//	{
-//
-//	}
-//
-//	void prepare(AX_StructuralMechanicsSteadyStateLinear *analysis)
-//	{
-//
-//	}
-//
-//	void prepare(AX_StructuralMechanicsTransientLinear *analysis)
-//	{
-//
-//	}
 
 	bool solve(step::Step &step)
 	{
-		printf("FETI solve\n");
+
 		return false;
 	}
 
-	FETIConfiguration &configuration;
-	UniformNodesFETIPattern pattern;
+	template <typename Type>
+	struct Data {
+		UniformNodesFETIPattern pattern;
 
-	// Matrix_FETI<Matrix_CSR, T> A;
-	// Vector_FETI<Vector_Dense, T> x, b;
-	// Vector_Sparse<T> dirichlet;
+		Matrix_FETI<Matrix_CSR, Type> K;
+		Vector_FETI<Vector_Dense, Type> x, f;
+		Vector_Distributed<Vector_Sparse, Type> dirichlet;
 
-	// Matrix_FETI<Matrix_CSR, T> RegMat;
-	// Matrix_FETI<Matrix_Dense, T> N1, N2;
-	// Matrix_FETI<Matrix_IJV, T> B1, B0;
+		DOFsDecomposition decomposition;
+	};
 
-	// Vector_FETI<Vector_Dense, T> B1c, B1duplication;
+	Data<Assembler> assembler;
+	Data<Solver> solver;
 
-//	FETISystemSolver solver;
+	AX_FETI<Solver> feti;
 };
 
-void initGluing(AX_FETISystem<double> &solver);
+template <typename Analysis> struct AX_FETISystem {};
 
-void initKernels(AX_FETISystem<double> &solver, AX_HeatTransfer &assembler);
-void updateKernels(AX_FETISystem<double> &solver, AX_HeatTransfer &assembler);
+template <typename A, typename S>
+inline void _fillDirect(AX_FETISystemData<A, S> *system, std::map<std::string, ECFExpression> &dirichlet, int dofs)
+{
+	system->assembler.pattern.set(dirichlet, dofs, system->solver.decomposition, system->solver.K.shape);
+	system->assembler.pattern.fill(system->solver.K);
+	system->assembler.pattern.fill(system->solver.f);
+	system->assembler.pattern.fill(system->solver.x);
+	system->assembler.pattern.fill(system->solver.dirichlet);
+
+	system->assembler.dirichlet.distribution = system->assembler.K.decomposition = system->assembler.f.decomposition = system->assembler.x.decomposition = &system->solver.decomposition;
+	system->solver.dirichlet.distribution = system->solver.K.decomposition = system->solver.f.decomposition = system->solver.x.decomposition = &system->solver.decomposition;
+
+	system->AX_LinearSystem<A, S>::assembler.A = system->AX_LinearSystem<A, S>::solver.A = &system->solver.K;
+	system->AX_LinearSystem<A, S>::assembler.b = system->AX_LinearSystem<A, S>::solver.b = &system->solver.f;
+	system->AX_LinearSystem<A, S>::assembler.x = system->AX_LinearSystem<A, S>::solver.x = &system->solver.x;
+	system->AX_LinearSystem<A, S>::assembler.dirichlet = system->AX_LinearSystem<A, S>::solver.dirichlet = &system->solver.dirichlet;
+}
+
+template <> struct AX_FETISystem<AX_HeatSteadyStateLinear>: public AX_FETISystemData<double, double> {
+
+	AX_FETISystem(AX_HeatSteadyStateLinear *analysis)
+	: AX_FETISystemData(analysis->configuration.feti)
+	{
+		assembler.K.type = solver.K.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+		assembler.K.shape = solver.K.shape = Matrix_Shape::UPPER;
+		for (auto mat = analysis->settings.material_set.begin(); mat != analysis->settings.material_set.end(); ++mat) {
+			if (analysis->settings.materials.find(mat->second)->second.thermal_conductivity.model == ThermalConductivityConfiguration::MODEL::ANISOTROPIC) {
+				assembler.K.type = solver.K.type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
+				assembler.K.shape = solver.K.shape = Matrix_Shape::FULL;
+			}
+		}
+
+		_fillDirect(this, analysis->configuration.temperature, 1);
+	}
+};
+
+template <> struct AX_FETISystem<AX_HeatSteadyStateNonLinear>: public AX_FETISystemData<double, double> {
+
+	AX_FETISystem(AX_HeatSteadyStateNonLinear *analysis)
+	: AX_FETISystemData(analysis->configuration.feti)
+	{
+
+	}
+};
+
+template <> struct AX_FETISystem<AX_AcousticRealLinear>: public AX_FETISystemData<double, double> {
+
+	AX_FETISystem(AX_AcousticRealLinear *analysis)
+	: AX_FETISystemData(analysis->configuration.feti)
+	{
+
+	}
+};
+
+template <> struct AX_FETISystem<AX_AcousticComplexLinear>: public AX_FETISystemData<double, std::complex<double> > {
+
+	AX_FETISystem(AX_AcousticComplexLinear *analysis)
+	: AX_FETISystemData(analysis->configuration.feti)
+	{
+
+	}
+};
 
 }
 

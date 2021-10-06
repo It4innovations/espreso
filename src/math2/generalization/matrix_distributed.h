@@ -6,7 +6,7 @@
 #include "matrix_base.h"
 #include "math2/math2.h"
 #include "math2/primitives/matrix_dense.h"
-#include "math2/utils/dofs_distribution.h"
+#include "math2/utils/distributed/distribution.h"
 #include "math2/utils/distributed/apply.h"
 #include "math2/utils/distributed/synchronization.h"
 
@@ -93,6 +93,21 @@ public:
 		math::copy(a->cluster, this->cluster);
 	}
 
+	void copyTo(Matrix_FETI<Matrix_Dense, T> *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void copyTo(Matrix_FETI<Matrix_CSR, T> *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void copyTo(Matrix_FETI<Matrix_IJV, T> *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
 	void addTo(const T &alpha, Matrix_Distributed<Matrix_Dense, T> *a) const
 	{
 		math::add(a->cluster, alpha, this->cluster);
@@ -106,6 +121,21 @@ public:
 	void addTo(const T &alpha, Matrix_Distributed<Matrix_IJV, T> *a) const
 	{
 		math::add(a->cluster, alpha, this->cluster);
+	}
+
+	void addTo(const T &alpha, Matrix_FETI<Matrix_Dense, T> *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void addTo(const T &alpha, Matrix_FETI<Matrix_CSR, T> *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void addTo(const T &alpha, Matrix_FETI<Matrix_IJV, T> *a) const
+	{
+		eslog::error("call empty function\n");
 	}
 
 	Matrix<T> cluster;
@@ -142,6 +172,21 @@ public:
 		math::copy(a->cluster, this->cluster, rowOffset, colOffset, size, step);
 	}
 
+	void copyTo(Matrix_FETI<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void copyTo(Matrix_FETI<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void copyTo(Matrix_FETI<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
+	{
+		eslog::error("call empty function\n");
+	}
+
 	void addTo(const T &alpha, Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
 		math::add(a->cluster, alpha, this->cluster, rowOffset, colOffset, size, step);
@@ -157,6 +202,21 @@ public:
 		math::add(a->cluster, alpha, this->cluster, rowOffset, colOffset, size, step);
 	}
 
+	void addTo(const T &alpha, Matrix_FETI<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void addTo(const T &alpha, Matrix_FETI<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void addTo(const T &alpha, Matrix_FETI<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
+	{
+		eslog::error("call empty function\n");
+	}
+
 	void copyToReal(Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const
 	{
 		eslog::error("call empty function\n");
@@ -168,6 +228,21 @@ public:
 	}
 
 	void copyToReal(Matrix_Distributed<Matrix_IJV, std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void copyToReal(Matrix_FETI<Matrix_Dense, std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void copyToReal(Matrix_FETI<Matrix_CSR, std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void copyToReal(Matrix_FETI<Matrix_IJV, std::complex<T> > *a) const
 	{
 		eslog::error("call empty function\n");
 	}
@@ -187,6 +262,21 @@ public:
 		eslog::error("call empty function\n");
 	}
 
+	void copyToImag(Matrix_FETI<Matrix_Dense, std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void copyToImag(Matrix_FETI<Matrix_CSR, std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void copyToImag(Matrix_FETI<Matrix_IJV, std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
 	void addToReal(const T &alpha, Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const
 	{
 		eslog::error("call empty function\n");
@@ -202,6 +292,21 @@ public:
 		eslog::error("call empty function\n");
 	}
 
+	void addToReal(const T &alpha, Matrix_FETI<Matrix_Dense, std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void addToReal(const T &alpha, Matrix_FETI<Matrix_CSR  , std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void addToReal(const T &alpha, Matrix_FETI<Matrix_IJV  , std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
 	void addToImag(const T &alpha, Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const
 	{
 		eslog::error("call empty function\n");
@@ -213,6 +318,21 @@ public:
 	}
 
 	void addToImag(const T &alpha, Matrix_Distributed<Matrix_IJV  , std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void addToImag(const T &alpha, Matrix_FETI<Matrix_Dense, std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void addToImag(const T &alpha, Matrix_FETI<Matrix_CSR  , std::complex<T> > *a) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void addToImag(const T &alpha, Matrix_FETI<Matrix_IJV  , std::complex<T> > *a) const
 	{
 		eslog::error("call empty function\n");
 	}

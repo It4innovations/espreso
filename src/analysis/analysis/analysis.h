@@ -13,7 +13,6 @@ struct Analysis {
 
 	virtual void init() =0;
 	virtual void run(step::Step &step) =0;
-
 };
 
 }

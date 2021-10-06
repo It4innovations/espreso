@@ -3,8 +3,8 @@
 #include "esinfo/meshinfo.h"
 #include "mesh/store/domainstore.h"
 
-void espreso::initGluing(AX_FETISystem<double> &solver)
-{
+//void espreso::initGluing(AX_FETISystem<double> &solver)
+//{
 //	B1Dirichlet.initDomains(K.domains);
 //	B1c.initDomains(DataDecomposition::DUPLICATION::SPLIT, K.domains);
 //	B1Gluing.initDomains(K.domains);
@@ -315,10 +315,10 @@ void espreso::initGluing(AX_FETISystem<double> &solver)
 //		VALS[d].clear();
 //		GAPS[d].clear();
 //	}
-}
-
-void espreso::initKernels(AX_FETISystem<double> &solver, AX_HeatTransfer &assembler)
-{
+//}
+//
+//void espreso::initKernels(AX_FETISystem<double> &solver, AX_HeatTransfer &assembler)
+//{
 	// solver.N1.domains.resize(solver.A.domains.size());
 	// solver.N2.domains.resize(solver.A.domains.size());
 	// solver.RegMat.domains.resize(solver.A.domains.size());
@@ -336,10 +336,10 @@ void espreso::initKernels(AX_FETISystem<double> &solver, AX_HeatTransfer &assemb
 	// 		std::fill(solver.RegMat.domains[d].rows + 1, solver.RegMat.domains[d].rows + solver.RegMat.domains[d].nrows + 1, _Matrix_CSR_Pattern::Indexing + 1);
 	// 	}
 	// }
-}
-
-void espreso::updateKernels(AX_FETISystem<double> &solver, AX_HeatTransfer &assembler)
-{
+//}
+//
+//void espreso::updateKernels(AX_FETISystem<double> &solver, AX_HeatTransfer &assembler)
+//{
 	// #pragma omp parallel for
 	// for (size_t d = 0; d < solver.A.domains.size(); ++d) {
 	// 	if (assembler.hasKernel(d)) {
@@ -361,4 +361,4 @@ void espreso::updateKernels(AX_FETISystem<double> &solver, AX_HeatTransfer &asse
 	// 		}
 	// 	}
 	// }
-}
+//}

@@ -1,5 +1,6 @@
 
 #include "nodes.uniform.distributed.h"
+#include "ij.h"
 
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/utils.h"
@@ -15,12 +16,6 @@
 
 using namespace espreso;
 
-struct IJ { esint row, column; };
-
-inline bool operator==(const IJ &left, const IJ &right) { return left.row == right.row && left.column == right.column; }
-inline bool operator!=(const IJ &left, const IJ &right) { return !(left == right); }
-inline bool operator <(const IJ &left, const IJ &right) { return left.row == right.row ? left.column < right.column : left.row < right.row; }
-
 UniformNodesDistributedPattern::UniformNodesDistributedPattern()
 : dofs(0)
 {
@@ -32,7 +27,7 @@ UniformNodesDistributedPattern::~UniformNodesDistributedPattern()
 
 }
 
-void fillPermutation(UniformNodesDistributedPattern *pattern, int dofs, DOFsDistribution &distribution)
+void buildPattern(UniformNodesDistributedPattern *pattern, int dofs, DOFsDistribution &distribution)
 {
 	double start = eslog::time();
 	eslog::info(" == LINEAR SYSTEM                                                               DISTRIBUTED == \n");
@@ -232,7 +227,7 @@ static void dirichlet(UniformNodesDistributedPattern *pattern, std::map<std::str
 void UniformNodesDistributedPattern::set(std::map<std::string, ECFExpression> &settings, int dofs, DOFsDistribution &distribution)
 {
 	dirichlet(this, settings, dofs);
-	fillPermutation(this, dofs, distribution);
+	buildPattern(this, dofs, distribution);
 }
 
 void UniformNodesDistributedPattern::fillCSR(esint *rows, esint *cols)

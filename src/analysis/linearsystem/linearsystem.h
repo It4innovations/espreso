@@ -3,17 +3,13 @@
 #define SRC_ANALYSIS_LINEARSOLVER_LINEARSOLVER_H_
 
 #include "analysis/composer/elementmapping.h"
+#include "config/ecf/physics/physicssolver/loadstep.h"
 #include "math2/math2.h"
 #include "math2/generalization/matrix_base.h"
 
 namespace espreso {
 
 namespace step { struct Step; }
-
-class AX_HeatSteadyStateLinear;
-class AX_HeatSteadyStateNonLinear;
-class AX_AcousticRealLinear;
-class AX_AcousticComplexLinear;
 
 template <typename Assembler, typename Solver = Assembler>
 struct AX_LinearSystem {

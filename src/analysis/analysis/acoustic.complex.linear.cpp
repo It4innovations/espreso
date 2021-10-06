@@ -2,11 +2,7 @@
 #include "analysis.h"
 #include "acoustic.complex.linear.h"
 
-#include "analysis/linearsystem/directsystem.h"
-#include "analysis/linearsystem/fetisystem.h"
-#include "analysis/linearsystem/mklpdsssystem.h"
-#include "analysis/linearsystem/multigridsystem.h"
-
+#include "analysis/linearsystem/linearsystem.hpp"
 #include "basis/expression/variable.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"
@@ -28,15 +24,8 @@ void AX_AcousticComplexLinear::init()
 	eslog::info(" == ANALYSIS                                                               HARMONIC COMPLEX == \n");
 	eslog::info(" == PHYSICS                                                                        ACOUSTIC == \n");
 	eslog::info(" ============================================================================================= \n");
-//	switch (configuration.solver) {
-//	case LoadStepSolverConfiguration::SOLVER::FETI:    system = new AX_FETISystem<std::complex<double>>(configuration.feti); break;
-//	case LoadStepSolverConfiguration::SOLVER::HYPRE:   system = new AX_MultigridSystem<std::complex<double>>(configuration.hypre); break;
-//	case LoadStepSolverConfiguration::SOLVER::MKLPDSS: system = new AX_MKLPDSSSystem<std::complex<double>>(configuration.mklpdss); break;
-//	case LoadStepSolverConfiguration::SOLVER::PARDISO: system = new AX_DirectSystem<std::complex<double>>(configuration.pardiso); break;
-//	case LoadStepSolverConfiguration::SOLVER::SUPERLU: system = new AX_DirectSystem<std::complex<double>>(configuration.superlu); break;
-//	case LoadStepSolverConfiguration::SOLVER::WSMP:    system = new AX_DirectSystem<std::complex<double>>(configuration.wsmp); break;
-//	}
-	system = new AX_MKLPDSSSystem<AX_AcousticComplexLinear>(this, configuration.mklpdss);
+
+	initSystem(system, this);
 	scheme.init(system);
 	assembler.init(scheme);
 

@@ -41,19 +41,19 @@ void AX_SteadyState::init(AX_LinearSystem<double> *system)
 
 void AX_SteadyState::composeSystem(step::Step &step, AX_LinearSystem<double> *system)
 {
-	system->solver.A->touched = true;
-	system->solver.A->copy(K);
-	system->solver.b->touched = true;
-	system->solver.b->copy(f);
-	system->solver.dirichlet->touched = true;
-	system->solver.dirichlet->copy(dirichlet);
-
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: scheme/{K, f}\n");
 		K->store(utils::filename(utils::debugDirectory(step) + "/scheme", "K").c_str());
 		f->store(utils::filename(utils::debugDirectory(step) + "/scheme", "f").c_str());
 		dirichlet->store(utils::filename(utils::debugDirectory(step) + "/scheme", "dirichlet").c_str());
 	}
+
+	system->solver.A->touched = true;
+	system->solver.A->copy(K);
+	system->solver.b->touched = true;
+	system->solver.b->copy(f);
+	system->solver.dirichlet->touched = true;
+	system->solver.dirichlet->copy(dirichlet);
 }
 
 void AX_SteadyState::extractSolution(step::Step &step, AX_LinearSystem<double> *system)

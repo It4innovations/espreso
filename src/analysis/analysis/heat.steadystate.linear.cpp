@@ -2,11 +2,7 @@
 #include "analysis.h"
 #include "heat.steadystate.linear.h"
 
-#include "analysis/linearsystem/directsystem.h"
-#include "analysis/linearsystem/fetisystem.h"
-#include "analysis/linearsystem/mklpdsssystem.h"
-#include "analysis/linearsystem/multigridsystem.h"
-
+#include "analysis/linearsystem/linearsystem.hpp"
 #include "basis/expression/variable.h"
 #include "config/ecf/physics/heattransfer.h"
 #include "esinfo/meshinfo.h"
@@ -37,15 +33,7 @@ void AX_HeatSteadyStateLinear::init()
 	eslog::info(" == PHYSICS                                                                   HEAT TRANSFER == \n");
 	eslog::info(" ============================================================================================= \n");
 
-//	switch (configuration.solver) {
-//	case LoadStepSolverConfiguration::SOLVER::FETI:    system = new AX_FETISystem<double>(configuration.feti); break;
-//	case LoadStepSolverConfiguration::SOLVER::HYPRE:   system = new AX_MultigridSystem<double>(configuration.hypre); break;
-//	case LoadStepSolverConfiguration::SOLVER::MKLPDSS: system = new AX_MKLPDSSSystem<double>(configuration.mklpdss); break;
-//	case LoadStepSolverConfiguration::SOLVER::PARDISO: system = new AX_DirectSystem<double>(configuration.pardiso); break;
-//	case LoadStepSolverConfiguration::SOLVER::SUPERLU: system = new AX_DirectSystem<double>(configuration.superlu); break;
-//	case LoadStepSolverConfiguration::SOLVER::WSMP:    system = new AX_DirectSystem<double>(configuration.wsmp); break;
-//	}
-	system = new AX_MKLPDSSSystem<AX_HeatSteadyStateLinear>(this, configuration.mklpdss);
+	initSystem(system, this);
 	scheme.init(system);
 	assembler.init(scheme);
 

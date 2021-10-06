@@ -15,6 +15,7 @@ template <typename T> class Matrix_CSR;
 template <typename T> class Matrix_IJV;
 template <typename T> class Matrix_Dense;
 template <template<typename> typename Matrix, typename T> class Matrix_Distributed;
+template <template<typename> typename Matrix, typename T> class Matrix_FETI;
 
 template <typename T>
 class Matrix_Base_Common {
@@ -39,9 +40,15 @@ public:
 	virtual void copyTo(Matrix_Distributed<Matrix_Dense, T> *a) const =0;
 	virtual void copyTo(Matrix_Distributed<Matrix_CSR, T> *a) const =0;
 	virtual void copyTo(Matrix_Distributed<Matrix_IJV, T> *a) const =0;
+	virtual void copyTo(Matrix_FETI<Matrix_Dense, T> *a) const =0;
+	virtual void copyTo(Matrix_FETI<Matrix_CSR, T> *a) const =0;
+	virtual void copyTo(Matrix_FETI<Matrix_IJV, T> *a) const =0;
 	virtual void addTo(const T &alpha, Matrix_Distributed<Matrix_Dense, T> *a) const =0;
 	virtual void addTo(const T &alpha, Matrix_Distributed<Matrix_CSR, T> *a) const =0;
 	virtual void addTo(const T &alpha, Matrix_Distributed<Matrix_IJV, T> *a) const =0;
+	virtual void addTo(const T &alpha, Matrix_FETI<Matrix_Dense, T> *a) const =0;
+	virtual void addTo(const T &alpha, Matrix_FETI<Matrix_CSR, T> *a) const =0;
+	virtual void addTo(const T &alpha, Matrix_FETI<Matrix_IJV, T> *a) const =0;
 
 	Matrix_Type type;
 	Matrix_Shape shape;
@@ -66,23 +73,44 @@ public:
 	virtual void copyTo(Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const =0;
 	virtual void copyTo(Matrix_Distributed<Matrix_CSR, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
 	virtual void copyTo(Matrix_Distributed<Matrix_IJV, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
+	virtual void copyTo(Matrix_FETI<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const =0;
+	virtual void copyTo(Matrix_FETI<Matrix_CSR, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
+	virtual void copyTo(Matrix_FETI<Matrix_IJV, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
+
 	virtual void addTo(const T &alpha, Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const =0;
 	virtual void addTo(const T &alpha, Matrix_Distributed<Matrix_CSR, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
 	virtual void addTo(const T &alpha, Matrix_Distributed<Matrix_IJV, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
+	virtual void addTo(const T &alpha, Matrix_FETI<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const =0;
+	virtual void addTo(const T &alpha, Matrix_FETI<Matrix_CSR, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
+	virtual void addTo(const T &alpha, Matrix_FETI<Matrix_IJV, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
 
 	virtual void copyToReal(Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const =0;
 	virtual void copyToReal(Matrix_Distributed<Matrix_CSR  , std::complex<T> > *a) const =0;
 	virtual void copyToReal(Matrix_Distributed<Matrix_IJV  , std::complex<T> > *a) const =0;
+	virtual void copyToReal(Matrix_FETI<Matrix_Dense, std::complex<T> > *a) const =0;
+	virtual void copyToReal(Matrix_FETI<Matrix_CSR  , std::complex<T> > *a) const =0;
+	virtual void copyToReal(Matrix_FETI<Matrix_IJV  , std::complex<T> > *a) const =0;
+
 	virtual void copyToImag(Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const =0;
 	virtual void copyToImag(Matrix_Distributed<Matrix_CSR  , std::complex<T> > *a) const =0;
 	virtual void copyToImag(Matrix_Distributed<Matrix_IJV  , std::complex<T> > *a) const =0;
+	virtual void copyToImag(Matrix_FETI<Matrix_Dense, std::complex<T> > *a) const =0;
+	virtual void copyToImag(Matrix_FETI<Matrix_CSR  , std::complex<T> > *a) const =0;
+	virtual void copyToImag(Matrix_FETI<Matrix_IJV  , std::complex<T> > *a) const =0;
 
 	virtual void addToReal(const T &alpha, Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const =0;
 	virtual void addToReal(const T &alpha, Matrix_Distributed<Matrix_CSR  , std::complex<T> > *a) const =0;
 	virtual void addToReal(const T &alpha, Matrix_Distributed<Matrix_IJV  , std::complex<T> > *a) const =0;
+	virtual void addToReal(const T &alpha, Matrix_FETI<Matrix_Dense, std::complex<T> > *a) const =0;
+	virtual void addToReal(const T &alpha, Matrix_FETI<Matrix_CSR  , std::complex<T> > *a) const =0;
+	virtual void addToReal(const T &alpha, Matrix_FETI<Matrix_IJV  , std::complex<T> > *a) const =0;
+
 	virtual void addToImag(const T &alpha, Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const =0;
 	virtual void addToImag(const T &alpha, Matrix_Distributed<Matrix_CSR  , std::complex<T> > *a) const =0;
 	virtual void addToImag(const T &alpha, Matrix_Distributed<Matrix_IJV  , std::complex<T> > *a) const =0;
+	virtual void addToImag(const T &alpha, Matrix_FETI<Matrix_Dense, std::complex<T> > *a) const =0;
+	virtual void addToImag(const T &alpha, Matrix_FETI<Matrix_CSR  , std::complex<T> > *a) const =0;
+	virtual void addToImag(const T &alpha, Matrix_FETI<Matrix_IJV  , std::complex<T> > *a) const =0;
 };
 
 template <typename T>
