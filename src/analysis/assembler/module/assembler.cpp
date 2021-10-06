@@ -1,6 +1,7 @@
 
 #include "assembler.hpp"
 
+#include "analysis/assembler/operators/expression.h"
 #include "basis/evaluator/expressionevaluator.h"
 #include "basis/expression/expression.h"
 #include "basis/expression/variable.h"
@@ -15,7 +16,8 @@
 #include "mesh/store/elementstore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/boundaryregionstore.h"
-#include "analysis/assembler/operators/expression.h"
+
+#include "wrappers/mpi/communication.h"
 
 #include <algorithm>
 #include <numeric>
@@ -261,6 +263,59 @@ void Assembler::results()
 			}
 		}
 	}
+}
+
+
+void Assembler::printVolume(const ParametersIntegration &integration)
+{
+	std::vector<double> volume(info::mesh->elementsRegions.size() + info::mesh->boundaryRegions.size());
+	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
+		for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
+			size_t gps = integration.weight.increment(i);
+			if (info::mesh->elements->eintervals[i].region == (esint)r || (info::mesh->elements->eintervals[i].region == 0 && r == info::mesh->elementsRegions.size() - 1)) {
+				auto det = (integration.jacobiDeterminant.data->begin() + i)->data();
+				auto weight = (integration.weight.data->begin() + i)->data();
+				for (esint e = info::mesh->elements->eintervals[i].begin; e < info::mesh->elements->eintervals[i].end; ++e) {
+					for (size_t gp = 0; gp < gps; ++gp, ++det) {
+						volume[0] += *det * weight[gp];
+						volume[r] += *det * weight[gp];
+					}
+				}
+			}
+		}
+	}
+
+	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (info::mesh->boundaryRegions[r]->dimension) {
+			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+				size_t gps = integration.boundary.weight.regions[r].increment(i);
+				auto det = (integration.boundary.jacobian.regions[r].data->begin() + i)->begin();
+				auto weight = (integration.boundary.weight.regions[r].data->begin() + i)->begin();
+				for (esint e = info::mesh->boundaryRegions[r]->eintervals[i].begin; e < info::mesh->boundaryRegions[r]->eintervals[i].end; ++e) {
+					for (size_t gp = 0; gp < gps; ++gp, ++det) {
+						volume[info::mesh->elementsRegions.size() + r] += *det * weight[gp];
+					}
+				}
+			}
+		}
+	}
+
+	Communication::allReduce(volume, Communication::OP::SUM);
+
+	eslog::info("  ELEMENT REGION VOLUME                                                                        \n");
+	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - \n");
+	for (size_t r = 0; r < info::mesh->elementsRegions.size(); ++r) {
+		eslog::info("     %30s :                                            %e   \n", info::mesh->elementsRegions[r]->name.c_str(), volume[r]);
+	}
+	eslog::info("\n  BOUDNARY REGION SURFACE                                                                      \n");
+	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - \n");
+	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (info::mesh->boundaryRegions[r]->dimension) {
+			eslog::info("     %30s :                                            %e   \n", info::mesh->boundaryRegions[r]->name.c_str(), volume[info::mesh->elementsRegions.size() + r]);
+			info::mesh->boundaryRegions[r]->area = volume[info::mesh->elementsRegions.size() + r];
+		}
+	}
+	eslog::info(" ============================================================================================= \n");
 }
 
 void Assembler::printParameterStats(const char* name, ParameterData &parameter)

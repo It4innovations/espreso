@@ -13,8 +13,6 @@
 #include "analysis/assembler/operators/operators.h"
 #include "analysis/scheme/steadystate.h"
 
-#include "wrappers/mpi/communication.h"
-
 #include <numeric>
 #include <algorithm>
 
@@ -121,50 +119,6 @@ bool AX_HeatTransfer::initTemperature()
 	return correct;
 }
 
-void AX_HeatTransfer::printVolume()
-{
-	std::vector<double> volume(info::mesh->elementsRegions.size() + info::mesh->boundaryRegions.size());
-	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
-		for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-			if (info::mesh->elements->eintervals[i].region == (esint)r || (info::mesh->elements->eintervals[i].region == 0 && r == info::mesh->elementsRegions.size() - 1)) {
-				auto begin = (integration.jacobiDeterminant.data->begin() + i)->data();
-				auto end = (integration.jacobiDeterminant.data->begin() + (i + 1))->data();
-				for (auto det = begin; det != end; ++det) {
-					volume[0] += *det;
-					volume[r] += *det;
-				}
-			}
-		}
-	}
-
-	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-		if (info::mesh->boundaryRegions[r]->dimension) {
-			auto begin = integration.boundary.jacobian.regions[r].data->datatarray().begin();
-			auto end = integration.boundary.jacobian.regions[r].data->datatarray().end();
-			for (auto det = begin; det != end; ++det) {
-				volume[info::mesh->elementsRegions.size() + r] += *det;
-			}
-		}
-	}
-
-	Communication::allReduce(volume, Communication::OP::SUM);
-
-	eslog::info("  ELEMENT REGION VOLUME                                                                        \n");
-	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - \n");
-	for (size_t r = 0; r < info::mesh->elementsRegions.size(); ++r) {
-		eslog::info("     %30s :                                            %e   \n", info::mesh->elementsRegions[r]->name.c_str(), volume[r]);
-	}
-	eslog::info("\n  BOUDNARY REGION SURFACE                                                                      \n");
-	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - \n");
-	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-		if (info::mesh->boundaryRegions[r]->dimension) {
-			eslog::info("     %30s :                                            %e   \n", info::mesh->boundaryRegions[r]->name.c_str(), volume[info::mesh->elementsRegions.size() + r]);
-			info::mesh->boundaryRegions[r]->area = volume[info::mesh->elementsRegions.size() + r];
-		}
-	}
-	eslog::info(" ============================================================================================= \n");
-}
-
 void AX_HeatTransfer::init(AX_SteadyState &scheme)
 {
 	this->K = scheme.K;
@@ -193,7 +147,7 @@ void AX_HeatTransfer::analyze()
 	elementIntegration(*this);
 
 	_evaluate(); // fill coordinates, compute determinants
-	printVolume();
+	printVolume(integration);
 
 	correct &= initTemperature();
 

@@ -33,6 +33,7 @@ protected:
 	void fill();
 	void results();
 
+	void printVolume(const ParametersIntegration &integration);
 	void printParameterStats(const char* name, ParameterData &parameter);
 	void printParameterStats(const char* name, NamedData *data);
 

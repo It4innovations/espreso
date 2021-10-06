@@ -86,7 +86,6 @@ protected:
 	bool initTemperature();
 	void initParameters();
 	void initNames();
-	void printVolume();
 	void printVersions();
 
 	void _evaluate();
