@@ -1,5 +1,5 @@
 
-#include "fetisystem.h"
+#include "analysis/linearsystem/fetisystem.h"
 #include "esinfo/meshinfo.h"
 #include "mesh/store/domainstore.h"
 
