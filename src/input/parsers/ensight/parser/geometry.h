@@ -88,8 +88,7 @@ protected:
 	std::vector<char> _parts;
 	std::vector<Coordinates> _coordinates;
 	std::vector<Elements> _elements;
-	std::vector<std::string> _regions;			//SMAZAT
-	std::vector<esint> _regionsData;		//SMAZAT
+
 
 };
 

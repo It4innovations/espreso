@@ -9,7 +9,7 @@
 #include <numeric>
 
 using namespace espreso;
-//test
+//test karolina git
 EnsightGeometry::EnsightGeometry(InputFilePack &geofile)
 : _geofile(geofile), _header{ Format::UNKNOWN, IDs::UNKNOWN, IDs::UNKNOWN }
 {
@@ -331,8 +331,73 @@ void EnsightGeometry::parseBinary(MeshBuilder &mesh)
 
 void EnsightGeometry::scanASCII()
 {
+	DistributedScanner parser;
 
+	auto addelement = [&] (const char *c, Elements::Type type) {
+		while (*c != '\n') { c++; } c++;
+		int nn = atof(c);
+		while (*c != '\n') { c++; } c++;
+		int offset = _geofile.distribution[info::mpi::rank] + (c - _geofile.begin);
+		_elements.push_back(Elements(type, offset, nn));
+	};
 
+	auto skipelements = [&] (const char *c, int enodes) -> int {
+		while (*c != '\n') { c++; } c++;
+		int nn = atof(c);
+		return (((enodes * 10) + 1) * nn);
+	};
+
+	auto addcoordinates = [&] (const char *c) {
+		while (*c != '\n') { *c++; } c++;
+		int count = atof(c);
+		while (*c != '\n') { c++; } c++;
+		_coordinates.push_back(Coordinates(_geofile.distribution[info::mpi::rank] + (c - _geofile.begin), count));
+
+	};
+
+	auto skipcoordinates = [&] (const char *c) -> size_t {
+		while (*c != '\n') { c++; } c++;
+		int count = atof(c);
+		while (*c != '\n') { c++; } c++;
+		return (13 * count);
+
+	};	
+
+	auto addparts = [&] (const char *c, std::vector<char> &vector) {
+		while (*c != '\n') { *c++; } c++;
+		while (*c != '\n') { *c++; } c++;
+		size_t size = vector.size();
+		vector.resize(size + 80);		
+		while (*c != '\n'){	
+			vector[size++] = *c++;
+		}
+	};	
+
+	
+	parser.add("part"       , [&] (const char *c) { addparts(c, _parts); });
+	parser.add("coordinates", [&] (const char *c) { addcoordinates(c); }                       , [&] (const char *c) { return skipcoordinates(c); });
+
+	parser.add("point"      , [&] (const char *c) { addelement(c, Elements::Type::POINT); }    , [&] (const char *c) { return skipelements(c,  1); });
+	parser.add("bar2"       , [&] (const char *c) { addelement(c, Elements::Type::BAR2); }     , [&] (const char *c) { return skipelements(c,  2); });
+	parser.add("bar3"       , [&] (const char *c) { addelement(c, Elements::Type::BAR3); }     , [&] (const char *c) { return skipelements(c,  3); });
+	parser.add("tria3"      , [&] (const char *c) { addelement(c, Elements::Type::TRIA3); }    , [&] (const char *c) { return skipelements(c,  3); });
+	parser.add("tria6"      , [&] (const char *c) { addelement(c, Elements::Type::TRIA6); }    , [&] (const char *c) { return skipelements(c,  6); });
+	parser.add("quad4"      , [&] (const char *c) { addelement(c, Elements::Type::QUAD4); }    , [&] (const char *c) { return skipelements(c,  4); });
+	parser.add("quad8"      , [&] (const char *c) { addelement(c, Elements::Type::QUAD8); }    , [&] (const char *c) { return skipelements(c,  8); });
+	parser.add("tetra4"     , [&] (const char *c) { addelement(c, Elements::Type::TETRA4); }   , [&] (const char *c) { return skipelements(c,  4); });
+	parser.add("tetra10"    , [&] (const char *c) { addelement(c, Elements::Type::TETRA10); }  , [&] (const char *c) { return skipelements(c,  10); });
+	parser.add("pyramid5"   , [&] (const char *c) { addelement(c, Elements::Type::PYRAMID5); } , [&] (const char *c) { return skipelements(c,  5); });
+	parser.add("pyramid13"  , [&] (const char *c) { addelement(c, Elements::Type::PYRAMID13); }, [&] (const char *c) { return skipelements(c, 13); });
+	parser.add("penta6"     , [&] (const char *c) { addelement(c, Elements::Type::PENTA6); }   , [&] (const char *c) { return skipelements(c,  6); });
+	parser.add("penta15"    , [&] (const char *c) { addelement(c, Elements::Type::PENTA15); }  , [&] (const char *c) { return skipelements(c, 15); });
+	parser.add("hexa8"      , [&] (const char *c) { addelement(c, Elements::Type::HEXA8); }    , [&] (const char *c) { return skipelements(c,  8); });
+	parser.add("hexa20"     , [&] (const char *c) { addelement(c, Elements::Type::HEXA20); }   , [&] (const char *c) { return skipelements(c, 20); });
+
+	parser.add("nsided"     , [&] (const char *c) { eslog::error("Ensight parser error: ESPRESO does not support nsided elements.\n"); });
+	parser.add("nfaced"     , [&] (const char *c) { eslog::error("Ensight parser error: ESPRESO does not support nfaced elements.\n"); });
+	
+	parser.scan(_geofile);
+	parser.synchronize(_parts, _coordinates, _elements);
 
 
 }
@@ -340,7 +405,6 @@ void EnsightGeometry::parseASCII(MeshBuilder &mesh)
 {
 	auto toLineEnd = [] (const char* &c) {
 		while (*c != '\n') { c++; }
-		//while (*c != ' ') { c++; }
 		c++;
 	};
 
@@ -354,19 +418,17 @@ void EnsightGeometry::parseASCII(MeshBuilder &mesh)
 	};
 
 	auto alignElement = [] (size_t x, int y, int z) {
-		//return (x - y) % ((z * 10) + 1) == 0 ? x : x + ((z * 10) + 1) - ((x - y) % ((z * 10) + 1));
 		return (x - y) % ((z * 10) + 1) == 0 ? x : x + ((z * 10) + 1) - ((x - y) % ((z * 10) + 1));
 	};	
-	
 
 	auto copyStringToVec = [] (const char* &c, std::vector<char> &vector){
 		size_t size = vector.size();
 		vector.resize(size + 80);
-		//while (*c != '\n'){
 		while (*c != '\n'){	
 			vector[size++] = *c++;
 		}
 	};
+
 	auto removeEmptyCharacters = [] (std::string partName){
 		for (size_t i = 0; i < partName.length(); i++){
 			if (partName[i] == '\000' || partName[i] == ' '){
@@ -376,182 +438,43 @@ void EnsightGeometry::parseASCII(MeshBuilder &mesh)
 		return partName;
 	};
 
-	std::vector <esint> vecOfPointNodes;
-	std::vector <esint> vecOfElementNodes;
 	std::string partName;
-	int esize, ecount, partID;
-	Element::CODE code;
-	std::vector<char> vecOfPartName;
-	Communication::serialize([&] () {
-		for (const char *c = _geofile.begin; c < _geofile.end; ++c) {
-			if (memcmp("coordinates", c, 11) == 0) {
-				toLineEnd(c);
-				int n = std::atoi(c);
-				toLineEnd(c);
-				_coordinates.push_back(Coordinates(_geofile.distribution[info::mpi::rank] + (c - _geofile.begin), n));
-			}
-
-				///////////////////////////////
-				////////////////// SCAN OBJECTS
-				///////////////////////////////
-			Elements::Type elementType;
-			
-			if (memcmp("part", c, 4) == 0){elementType = Elements::Type::POINT;
-					toLineEnd(c);
-					//partID = std::atoi(c);
-					toLineEnd(c);
-					copyStringToVec(c, _parts);
-
-			} else if (memcmp("point", c, 5) == 0){elementType = Elements::Type::POINT;
-				toLineEnd(c);
-				ecount = std::atoi(c);
-				toLineEnd(c);
-				_elements.push_back(Elements(elementType, _geofile.distribution[info::mpi::rank] + (c - _geofile.begin), ecount));
-
-			} else if (memcmp("quad4", c, 5) == 0){elementType = Elements::Type::QUAD4;
-				toLineEnd(c);
-				ecount = std::atoi(c);
-				toLineEnd(c);
-				_elements.push_back(Elements(elementType, _geofile.distribution[info::mpi::rank] + (c - _geofile.begin), ecount));
-
-			} else if (memcmp("bar2", c, 4) == 0){elementType = Elements::Type::BAR2; 
-				toLineEnd(c);
-				ecount = std::atoi(c);
-				toLineEnd(c);
-				_elements.push_back(Elements(elementType, _geofile.distribution[info::mpi::rank] + (c - _geofile.begin), ecount));
-
-			} else if (memcmp("tria3", c, 5) == 0){elementType = Elements::Type::TRIA3; 
-				toLineEnd(c);
-				ecount = std::atoi(c);
-				toLineEnd(c);
-				_elements.push_back(Elements(elementType, _geofile.distribution[info::mpi::rank] + (c - _geofile.begin), ecount));
-
-			} else if (memcmp("tetra4", c, 6) == 0){elementType = Elements::Type::TETRA4; 
-				toLineEnd(c);
-				ecount = std::atoi(c);
-				toLineEnd(c);
-				_elements.push_back(Elements(elementType, _geofile.distribution[info::mpi::rank] + (c - _geofile.begin), ecount));
-
-			} else if (memcmp("pyramid5", c, 8) == 0){elementType = Elements::Type::PYRAMID5; 
-				toLineEnd(c);
-				ecount = std::atoi(c);
-				toLineEnd(c);
-				_elements.push_back(Elements(elementType, _geofile.distribution[info::mpi::rank] + (c - _geofile.begin), ecount));
-
-			} else if (memcmp("penta6", c, 6) == 0){elementType = Elements::Type::PENTA6; 
-				toLineEnd(c);
-				ecount = std::atoi(c);
-				toLineEnd(c);
-				_elements.push_back(Elements(elementType, _geofile.distribution[info::mpi::rank] + (c - _geofile.begin), ecount));
-
-			} else if (memcmp("hexa8", c, 5) == 0){elementType = Elements::Type::HEXA8; 
-				toLineEnd(c);
-				ecount = std::atoi(c);
-				toLineEnd(c);
-				_elements.push_back(Elements(elementType, _geofile.distribution[info::mpi::rank] + (c - _geofile.begin), ecount));
-
-			} else if (memcmp("bar3", c, 4) == 0){elementType = Elements::Type::BAR3; 
-				toLineEnd(c);
-				ecount = std::atoi(c);
-				toLineEnd(c);
-				_elements.push_back(Elements(elementType, _geofile.distribution[info::mpi::rank] + (c - _geofile.begin), ecount));
-
-			} else if (memcmp("tria6", c, 5) == 0){elementType = Elements::Type::TRIA6; 
-				toLineEnd(c);
-				ecount = std::atoi(c);
-				toLineEnd(c);
-				_elements.push_back(Elements(elementType, _geofile.distribution[info::mpi::rank] + (c - _geofile.begin), ecount));
-
-			} else if (memcmp("quad8", c, 5) == 0){elementType = Elements::Type::QUAD8; 
-				toLineEnd(c);
-				ecount = std::atoi(c);
-				toLineEnd(c);
-				_elements.push_back(Elements(elementType, _geofile.distribution[info::mpi::rank] + (c - _geofile.begin), ecount));
-
-			} else if (memcmp("tetra10", c, 5) == 0){elementType = Elements::Type::TETRA10; 
-				toLineEnd(c);
-				ecount = std::atoi(c);
-				toLineEnd(c);
-				_elements.push_back(Elements(elementType, _geofile.distribution[info::mpi::rank] + (c - _geofile.begin), ecount));
-
-			} else if (memcmp("pyramid13", c, 9) == 0){elementType = Elements::Type::PYRAMID13; 
-				toLineEnd(c);
-				ecount = std::atoi(c);
-				toLineEnd(c);
-				_elements.push_back(Elements(elementType, _geofile.distribution[info::mpi::rank] + (c - _geofile.begin), ecount));
-
-			} else if (memcmp("penta15", c, 7) == 0){elementType = Elements::Type::PENTA15; 
-				toLineEnd(c);
-				ecount = std::atoi(c);
-				toLineEnd(c);
-				_elements.push_back(Elements(elementType, _geofile.distribution[info::mpi::rank] + (c - _geofile.begin), ecount));
-
-			} else if (memcmp("hexa20", c, 6) == 0){elementType = Elements::Type::HEXA20; 
-				toLineEnd(c);
-				ecount = std::atoi(c);
-				toLineEnd(c);
-				_elements.push_back(Elements(elementType, _geofile.distribution[info::mpi::rank] + (c - _geofile.begin), ecount));
-
-			}
-
-		}
-
-	});
-
-	DistributedScanner scanner;
-	scanner.synchronize(_parts, _coordinates, _elements);
-	
-	Communication::serialize([&] () {
-		printf("parts: %lu\n", _parts.size() / 80);
-
-		printf("file: %ld - %ld\n", _geofile.distribution[info::mpi::rank], _geofile.distribution[info::mpi::rank + 1]);
-		for (size_t i = 0; i < _coordinates.size(); ++i){
-			printf("coo[%d]: offset=%lu, nn=%d\n", info::mpi::rank, _coordinates[i].offset, _coordinates[i].nn);
-		}
-
-		for (size_t i = 0; i < _elements.size(); ++i){
-			printf("elements[%d]: offset=%lu, ne=%d, type=%d\n", info::mpi::rank, _elements[i].offset, _elements[i].ne, (int)_elements[i].type);
-		}
-	});
-
+	int esize; 
 	int rank = info::mpi::rank, size = info::mpi::size, etype;
-	///////////////////////////////
-	////////////////////// ELEMENTS
-	///////////////////////////////
-	printf("start offset %d, end offset %d, MPI PROCES %d\n", _geofile.distribution[info::mpi::rank], _geofile.distribution[info::mpi::rank+1], info::mpi::rank);
+	Element::CODE code;
+	////////////////////// ELEMENTS PARSING
 	size_t parts = _parts.size() / 80;
 	size_t coordinate_id_offset = 0;
 	size_t element_id_offset = 0;
 	for (size_t p = 0, e = 0; p < parts; ++p) {
-
-		/////
+		
 		std::string textString(_parts.cbegin() + 80 * p, _parts.cbegin() + 80 * p + 80);
-		//printf("stringFor %s\n",textString.c_str());
 		textString = removeEmptyCharacters(textString);
-		/////
-		//printf("parse part: %s\n", textString.c_str());
-
-		//printf("TODO: parse coordinates with index: %d, id_offset: %d\n", p, coordinate_id_offset);
 		bool isNregion = false;
 		std::vector<int> eids;
 		for (; e < _elements.size() && (p + 1 == parts || _elements[e].offset < _coordinates[p + 1].offset); ++e){
 			isNregion = false;
 
-			if 		(_elements[e].type == Elements::Type::POINT)	{esize = 1;		etype = 0; 		isNregion = true;}
-			else if (_elements[e].type == Elements::Type::BAR2)		{esize = 2;		etype = 1;		isNregion = false;}
-			else if (_elements[e].type == Elements::Type::TRIA3) 	{esize = 3;		etype = 2;		isNregion = false;}
-			else if (_elements[e].type == Elements::Type::QUAD4) 	{esize = 4;		etype = 3;		isNregion = false;}
-			else if (_elements[e].type == Elements::Type::TETRA4) 	{esize = 4;		etype = 4;		isNregion = false;}
-			else if (_elements[e].type == Elements::Type::PYRAMID5) {esize = 5;		etype = 5;		isNregion = false;}
-			else if (_elements[e].type == Elements::Type::PENTA6) 	{esize = 6;		etype = 6;		isNregion = false;}
-			else if (_elements[e].type == Elements::Type::HEXA8) 	{esize = 8;		etype = 7;		isNregion = false;}
-			else if (_elements[e].type == Elements::Type::BAR3) 	{esize = 3;		etype = 8;		isNregion = false;}
-			else if (_elements[e].type == Elements::Type::TRIA6) 	{esize = 6;		etype = 9;		isNregion = false;}
-			else if (_elements[e].type == Elements::Type::QUAD8) 	{esize = 8;		etype = 10;		isNregion = false;}
-			else if (_elements[e].type == Elements::Type::TETRA10) 	{esize = 10;	etype = 11;		isNregion = false;}
-			else if (_elements[e].type == Elements::Type::PYRAMID13){esize = 13;	etype = 12;		isNregion = false;}
-			else if (_elements[e].type == Elements::Type::PENTA15) 	{esize = 15;	etype = 13;		isNregion = false;}
-			else if (_elements[e].type == Elements::Type::HEXA20) 	{esize = 20;	etype = 14;		isNregion = false;}
+			switch (_elements[e].type){
+			case Elements::Type::POINT		:esize = 1; etype = 0; code = Element::CODE::POINT1; isNregion = true; break;
+			case Elements::Type::BAR2		:esize = 2;	etype = 1; code = Element::CODE::LINE2; isNregion = false; break;
+			case Elements::Type::TRIA3 		:esize = 3;	etype = 2; code = Element::CODE::TRIANGLE3; isNregion = false; break;
+			case Elements::Type::QUAD4 		:esize = 4;	etype = 3; code = Element::CODE::SQUARE4; isNregion = false; break;
+			case Elements::Type::TETRA4 	:esize = 4;	etype = 4; code = Element::CODE::TETRA4; isNregion = false; break;
+			case Elements::Type::PYRAMID5 	:esize = 5;	etype = 5; code = Element::CODE::PYRAMID5; isNregion = false; break;
+			case Elements::Type::PENTA6 	:esize = 6;	etype = 6; code = Element::CODE::PRISMA6; isNregion = false; break;
+			case Elements::Type::HEXA8 		:esize = 8;	etype = 7; code = Element::CODE::HEXA8; isNregion = false; break;
+			case Elements::Type::BAR3 		:esize = 3;	etype = 8; code = Element::CODE::LINE3; isNregion = false; break;
+			case Elements::Type::TRIA6 		:esize = 6;	etype = 9; code = Element::CODE::TRIANGLE6; isNregion = false; break;
+			case Elements::Type::QUAD8 		:esize = 8;	etype = 10; code = Element::CODE::SQUARE8; isNregion = false; break;
+			case Elements::Type::TETRA10 	:esize = 10; etype = 11; code = Element::CODE::TETRA10; isNregion = false; break;
+			case Elements::Type::PYRAMID13	:esize = 13; etype = 12; code = Element::CODE::PYRAMID13; isNregion = false; break;
+			case Elements::Type::PENTA15 	:esize = 15; etype = 13; code = Element::CODE::PRISMA15; isNregion = false; break;
+			case Elements::Type::HEXA20 	:esize = 20; etype = 14; code = Element::CODE::HEXA20; isNregion = false; break;
+			case Elements::Type::NSIDED		:esize = 0;	 code = Element::CODE::SIZE; break; // not supported
+			case Elements::Type::NFACED		:esize = 0; code = Element::CODE::SIZE; break; // not supported
+			default: esize = 0; code = Element::CODE::SIZE;
+			}
 
 			size_t E = std::max(_elements[e].offset, _geofile.distribution[info::mpi::rank]);
 			size_t F = std::min(_elements[e].offset + _elements[e].ne * ((esize * 10) + 1), _geofile.distribution[info::mpi::rank + 1]);
@@ -563,16 +486,14 @@ void EnsightGeometry::parseASCII(MeshBuilder &mesh)
 				F -= _geofile.distribution[info::mpi::rank];
 
 				int cc = 0;
-				//printf("\npush ");
+
 				for (const char *d = _geofile.begin + E; d < _geofile.begin + F; d += 10) {
 					if (isNregion == true){
 						eids.push_back(atof(d) - 1 + coordinate_id_offset);
 						++d;
-
 					} else {
 						mesh.enodes.push_back(atof(d) - 1 + coordinate_id_offset);
 						++cc;
-						//printf("%d ", mesh.enodes.back());
 						if (cc % esize == 0) {
 							eids.push_back(element_id_offset + eid_offset);
 							mesh.eIDs.push_back(element_id_offset + eid_offset);
@@ -596,14 +517,9 @@ void EnsightGeometry::parseASCII(MeshBuilder &mesh)
 		
 		// go to another part
 		coordinate_id_offset += _coordinates[p].nn;
-		//printf(" - - - -- - - - - - \n");
 	}
 
-
-
-	///////////////////////////////
-	//////////////////////// COORDS
-	/////////////////////////////// 
+	//////////////////////// COORDINATES PARSING
 	std::vector<double> vectorOfXcoords;
 	std::vector<double> vectorOfYcoords;
 	std::vector<double> vectorOfZcoords;
@@ -615,18 +531,18 @@ void EnsightGeometry::parseASCII(MeshBuilder &mesh)
 
 	for (size_t i = 0; i < _coordinates.size(); ++i) {
 
-		// najdi zacatek a konec parsovani
+		// find begin and end of parsing
 		size_t A = std::max(_coordinates[i].offset, _geofile.distribution[info::mpi::rank]);
 		size_t B = std::min(_coordinates[i].offset + 3 * 13 * _coordinates[i].nn, _geofile.distribution[info::mpi::rank + 1]);
 
 		if (A < B) {
 
-			// posun na zacatek
+			// move to begin
 			A = align(A, _coordinates[i].offset);
 			A -= _geofile.distribution[info::mpi::rank];
 			B -= _geofile.distribution[info::mpi::rank];
 
-			// hledani cisla procesu offset a endcoords
+			// find process number of begin and end of coordinates block
 			std::vector<size_t>::iterator low1, low2;
 			low1 = std::lower_bound(_geofile.distribution.begin(), _geofile.distribution.end(), _coordinates[i].offset);
 			low2 = std::lower_bound(_geofile.distribution.begin(), _geofile.distribution.end(), _coordinates[i].offset + 3 * 13 * _coordinates[i].nn);
@@ -635,11 +551,8 @@ void EnsightGeometry::parseASCII(MeshBuilder &mesh)
 			vecOfCoordsOffsetProcesses.push_back(cooOffsetProcess);
 			vecOfEndOfCoordsProcesses.push_back(cooEndProcess);
 
-
-
-			// parsovani
+			// parsing
 			for (const char *c = _geofile.begin + A; c < _geofile.begin + B; ++c) {
-				//printf("%c%c%c\n", *c, *(c  +1), *(c + 2));
 				vector.push_back(atof(c));
 				toLineEnd(c);
 				c--;
@@ -647,15 +560,15 @@ void EnsightGeometry::parseASCII(MeshBuilder &mesh)
 			
 			int TAG = 0;
 
-			// posilani dat
+			// data sending
 			if (rank > cooOffsetProcess && rank <= cooEndProcess) {
 				MPI_Send(vector.data(), vector.size(), MPI_DOUBLE, cooOffsetProcess, TAG, MPI_COMM_WORLD);
 				vector.clear();
-			// prijimam
+			// data receiving
 			} else if (rank == cooOffsetProcess){
 				for (int r = rank + 1; r <= cooEndProcess; ++r) {
-					size_t _A = std::max(_coordinates[i].offset, _geofile.distribution[r]);//r
-					size_t _B = std::min(_coordinates[i].offset + 3 * 13 * _coordinates[i].nn, _geofile.distribution[r + 1]);//r+1
+					size_t _A = std::max(_coordinates[i].offset, _geofile.distribution[r]);
+					size_t _B = std::min(_coordinates[i].offset + 3 * 13 * _coordinates[i].nn, _geofile.distribution[r + 1]);
 					_A = align(_A, _coordinates[i].offset);
 					_B = align(_B, _coordinates[i].offset);
 					size_t _C = (_B - _A) / 13;
@@ -669,20 +582,17 @@ void EnsightGeometry::parseASCII(MeshBuilder &mesh)
 
 
 	}
-	///////////////////////////////
-	///////////// ROZDELENI DLE XYZ
-	/////////////////////////////// 
-
+	////////////////////// DIVIDE BY XYZ
 	for (int rankNr = 0; rankNr < info::mpi::size; rankNr++){
 		if (rank == rankNr){
-			//urceni poctu nodu ve vektoru
+			// determine number of nodes in vector
 			for (int i = 0; i < _coordinates.size(); i++){
 				if (_coordinates[i].offset >= _geofile.distribution[info::mpi::rank] && _coordinates[i].offset < _geofile.distribution[info::mpi::rank+1]){
 					vecOfNodes.push_back(_coordinates[i].nn);
 				}
 			}
 			int prev = 0;
-			//sorting xyz
+			// sorting xyz
 			for (int x = 0; x < vecOfNodes.size(); x++){
 				for (int i = prev; i < prev + vecOfNodes[x]; i++){
 					vectorOfXcoords.push_back(vector[i]);
@@ -698,12 +608,10 @@ void EnsightGeometry::parseASCII(MeshBuilder &mesh)
 		} 
 	}
 
-	///////////////////////////////
-	////////COORDS AND nIDs TO MESH
-	///////////////////////////////
+	////////////////////// COORDS AND nIDs TO MESH
 	int nID = 0, prevNodes = 0;
 
-	//spocti nody v predchozich procesech
+	// count nodes in previous processes
 	for (size_t i = 0; i < _coordinates.size(); i++){
 		if (_coordinates[i].offset < _geofile.distribution[info::mpi::rank]){
 			prevNodes = _coordinates[i].nn + prevNodes;
@@ -714,16 +622,4 @@ void EnsightGeometry::parseASCII(MeshBuilder &mesh)
 		mesh.nIDs.push_back(prevNodes + nID);
 		nID++;
 	}
-
-
-
-	vectorOfXcoords.clear();
-	vectorOfYcoords.clear();
-	vectorOfZcoords.clear();
-	vector.clear();
-	vectorOfXcoords.resize(0);
-	vectorOfYcoords.resize(0);
-	vectorOfZcoords.resize(0);
-	vector.resize(0);
-	printf("a");
 }
