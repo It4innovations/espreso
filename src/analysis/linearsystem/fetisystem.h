@@ -7,19 +7,18 @@
 #include "analysis/analysis/heat.steadystate.nonlinear.h"
 #include "analysis/analysis/acoustic.real.linear.h"
 #include "analysis/analysis/acoustic.complex.linear.h"
-
 #include "analysis/composer/nodes.uniform.feti.h"
+#include "axfeti/feti.h"
 #include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.h"
-#include "axfeti/feti.h"
 
 namespace espreso {
 
 template <typename Assembler, typename Solver>
 struct AX_FETISystemData: public AX_LinearSystem<Assembler, Solver> {
 
-	AX_FETISystemData(FETIConfiguration &configuration) {}
+	AX_FETISystemData(FETIConfiguration &configuration): feti(configuration) {}
 
 	void setMapping(Matrix_Base<Assembler> *A) const
 	{
@@ -39,16 +38,6 @@ struct AX_FETISystemData: public AX_LinearSystem<Assembler, Solver> {
 	void info() const
 	{
 //		feti.info(solver.A);
-	}
-
-	void set(step::Step &step)
-	{
-//		feti.set(solver.A);
-	}
-
-	void update(step::Step &step)
-	{
-
 	}
 
 	bool solve(step::Step &step)
@@ -72,7 +61,49 @@ struct AX_FETISystemData: public AX_LinearSystem<Assembler, Solver> {
 	Data<Solver> solver;
 
 	AX_FETI<Solver> feti;
+	typename AX_FETI<Solver>::Regularization regularization;
+	typename AX_FETI<Solver>::EqualityConstraints equalityConstraints;
 };
+
+template <typename T>
+void composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename AX_FETI<T>::EqualityConstraints &equalityConstraints, bool redundantLagrange);
+template <typename T>
+void evaluateEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename AX_FETI<T>::EqualityConstraints &equalityConstraints, bool redundantLagrange);
+
+void composeHeatTransferKernel(const Matrix_CSR<double> &K, Matrix_Dense<double> &R, Matrix_CSR<double> &RegMat);
+void evaluateHeatTransferKernel(const Matrix_CSR<double> &K, Matrix_Dense<double> &R, Matrix_CSR<double> &RegMat);
+
+template <typename Assembler, typename Solver>
+void setEqualityConstraints(AX_FETISystemData<Assembler, Solver> *system, step::Step &step)
+{
+	composeEqualityConstraints(system->solver.K, system->solver.dirichlet, system->equalityConstraints, system->feti.configuration.redundant_lagrange);
+	if (info::ecf->output.print_matrices) {
+		eslog::storedata(" STORE: system/{B1Dirichlet, B1c, B1Gluing, B1Duplication}\n");
+		math::store(system->equalityConstraints.B1Dirichlet, utils::filename(utils::debugDirectory(step) + "/system", "B1Dirichlet").c_str());
+		math::store(system->equalityConstraints.B1Gluing, utils::filename(utils::debugDirectory(step) + "/system", "B1Gluing").c_str());
+		math::store(system->equalityConstraints.B1c, utils::filename(utils::debugDirectory(step) + "/system", "B1c").c_str());
+		math::store(system->equalityConstraints.B1Duplication, utils::filename(utils::debugDirectory(step) + "/system", "B1Duplication").c_str());
+	}
+}
+
+template <typename Assembler, typename Solver>
+void setHeatTransferKernel(AX_FETISystemData<Assembler, Solver> *system, step::Step &step)
+{
+	system->regularization.R1.domains.resize(system->solver.K.domains.size());
+	system->regularization.R2.domains.resize(system->solver.K.domains.size());
+	system->regularization.RegMat.domains.resize(system->solver.K.domains.size());
+
+	#pragma omp parallel for
+	for (size_t d = 0; d < system->solver.K.domains.size(); ++d) {
+		// TODO: some domains can be without kernel
+		composeHeatTransferKernel(system->solver.K.domains[d], system->regularization.R1.domains[d], system->regularization.RegMat.domains[d]);
+	}
+	if (info::ecf->output.print_matrices) {
+		eslog::storedata(" STORE: system/{R, RegMat}\n");
+		math::store(system->regularization.R1, utils::filename(utils::debugDirectory(step) + "/system", "R").c_str());
+		math::store(system->regularization.RegMat, utils::filename(utils::debugDirectory(step) + "/system", "RegMat").c_str());
+	}
+}
 
 template <typename Analysis> struct AX_FETISystem {};
 
@@ -96,8 +127,7 @@ inline void _fillDirect(AX_FETISystemData<A, S> *system, std::map<std::string, E
 
 template <> struct AX_FETISystem<AX_HeatSteadyStateLinear>: public AX_FETISystemData<double, double> {
 
-	AX_FETISystem(AX_HeatSteadyStateLinear *analysis)
-	: AX_FETISystemData(analysis->configuration.feti)
+	AX_FETISystem(AX_HeatSteadyStateLinear *analysis): AX_FETISystemData(analysis->configuration.feti)
 	{
 		assembler.K.type = solver.K.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 		assembler.K.shape = solver.K.shape = Matrix_Shape::UPPER;
@@ -110,12 +140,33 @@ template <> struct AX_FETISystem<AX_HeatSteadyStateLinear>: public AX_FETISystem
 
 		_fillDirect(this, analysis->configuration.temperature, 1);
 	}
+
+	void set(step::Step &step)
+	{
+		setEqualityConstraints(this, step);
+		setHeatTransferKernel(this, step);
+		feti.set(solver.K, regularization, equalityConstraints);
+	}
+
+	void update(step::Step &step)
+	{
+
+	}
 };
 
 template <> struct AX_FETISystem<AX_HeatSteadyStateNonLinear>: public AX_FETISystemData<double, double> {
 
-	AX_FETISystem(AX_HeatSteadyStateNonLinear *analysis)
-	: AX_FETISystemData(analysis->configuration.feti)
+	AX_FETISystem(AX_HeatSteadyStateNonLinear *analysis): AX_FETISystemData(analysis->configuration.feti)
+	{
+
+	}
+
+	void set(step::Step &step)
+	{
+		setEqualityConstraints(this, step);
+	}
+
+	void update(step::Step &step)
 	{
 
 	}
@@ -123,8 +174,17 @@ template <> struct AX_FETISystem<AX_HeatSteadyStateNonLinear>: public AX_FETISys
 
 template <> struct AX_FETISystem<AX_AcousticRealLinear>: public AX_FETISystemData<double, double> {
 
-	AX_FETISystem(AX_AcousticRealLinear *analysis)
-	: AX_FETISystemData(analysis->configuration.feti)
+	AX_FETISystem(AX_AcousticRealLinear *analysis): AX_FETISystemData(analysis->configuration.feti)
+	{
+
+	}
+
+	void set(step::Step &step)
+	{
+		setEqualityConstraints(this, step);
+	}
+
+	void update(step::Step &step)
 	{
 
 	}
@@ -134,6 +194,16 @@ template <> struct AX_FETISystem<AX_AcousticComplexLinear>: public AX_FETISystem
 
 	AX_FETISystem(AX_AcousticComplexLinear *analysis)
 	: AX_FETISystemData(analysis->configuration.feti)
+	{
+
+	}
+
+	void set(step::Step &step)
+	{
+		setEqualityConstraints(this, step);
+	}
+
+	void update(step::Step &step)
 	{
 
 	}

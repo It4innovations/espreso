@@ -143,6 +143,36 @@ template <typename T> void copy(Matrix_IJV<T> &x, const Matrix_IJV<T> &y, int ro
 	eslog::error("call empty function copy\n");
 }
 
+template <typename T> void copy(Matrix_Dense<std::complex<T> > &x, const int offsetX, const Matrix_CSR<T>   &y)
+{
+	eslog::error("call empty function copy\n");
+}
+
+template <typename T> void copy(Matrix_Dense<std::complex<T> > &x, const int offsetX, const Matrix_IJV<T>   &y)
+{
+	eslog::error("call empty function copy\n");
+}
+
+template <typename T> void copy(Matrix_CSR<std::complex<T> >   &x, const int offsetX, const Matrix_Dense<T> &y)
+{
+	eslog::error("call empty function copy\n");
+}
+
+template <typename T> void copy(Matrix_CSR<std::complex<T> >   &x, const int offsetX, const Matrix_IJV<T>   &y)
+{
+	eslog::error("call empty function copy\n");
+}
+
+template <typename T> void copy(Matrix_IJV<std::complex<T> >   &x, const int offsetX, const Matrix_Dense<T> &y)
+{
+	eslog::error("call empty function copy\n");
+}
+
+template <typename T> void copy(Matrix_IJV<std::complex<T> >   &x, const int offsetX, const Matrix_CSR<T>   &y)
+{
+	eslog::error("call empty function copy\n");
+}
+
 template <typename T> void add(Matrix_Dense<T>  &x, const T &alpha, const Matrix_CSR<T>   &y)
 {
 	eslog::error("call empty function add\n");
@@ -189,6 +219,36 @@ template <typename T> void add(Vector_Sparse<T> &x, const T &beta, const Vector_
 			x.vals[i * step + offset + j] += beta * y.vals[i * size + j];
 		}
 	}
+}
+
+template <typename T> void add(Matrix_Dense<std::complex<T>> &x, const int offsetX, const T &alpha, const Matrix_CSR<T>   &y)
+{
+	eslog::error("call empty function add\n");
+}
+
+template <typename T> void add(Matrix_Dense<std::complex<T>> &x, const int offsetX, const T &alpha, const Matrix_IJV<T>   &y)
+{
+	eslog::error("call empty function add\n");
+}
+
+template <typename T> void add(Matrix_CSR<std::complex<T>>   &x, const int offsetX, const T &alpha, const Matrix_Dense<T> &y)
+{
+	eslog::error("call empty function add\n");
+}
+
+template <typename T> void add(Matrix_CSR<std::complex<T>>   &x, const int offsetX, const T &alpha, const Matrix_IJV<T>   &y)
+{
+	eslog::error("call empty function add\n");
+}
+
+template <typename T> void add(Matrix_IJV<std::complex<T>>   &x, const int offsetX, const T &alpha, const Matrix_Dense<T> &y)
+{
+	eslog::error("call empty function add\n");
+}
+
+template <typename T> void add(Matrix_IJV<std::complex<T>>   &x, const int offsetX, const T &alpha, const Matrix_CSR<T>   &y)
+{
+	eslog::error("call empty function add\n");
 }
 
 template <typename T> void add(Matrix_Dense<T> &x, const T &beta, const Matrix_Dense<T> &y, int rowOffset, int colOffset, int size, int step)
@@ -242,6 +302,17 @@ template <typename T> void add(Matrix_IJV<T> &x, const T &beta, const Matrix_CSR
 template <typename T> void add(Matrix_IJV<T> &x, const T &beta, const Matrix_IJV<T> &y, int rowOffset, int colOffset, int size, int step)
 {
 	eslog::error("call empty function add\n");
+}
+
+template <typename T> void orthonormalize(Matrix_Dense<T> &m)
+{
+	for (esint r = 0; r < m.nrows; ++r) {
+		for (esint rr = 0; rr < r; ++rr) {
+			double scale = math::dot(m.ncols, m.vals + rr * m.ncols, 1, m.vals + r * m.ncols, 1) / math::dot(m.ncols, m.vals + rr * m.ncols, 1, m.vals + rr * m.ncols, 1);
+			math::add(m.ncols, m.vals + r * m.ncols, 1, -scale, m.vals + rr * m.ncols, 1);
+		}
+		math::scale(m.ncols, 1. / math::norm(m.ncols, m.vals + r * m.ncols, 1), m.vals + r * m.ncols, 1);
+	}
 }
 
 }

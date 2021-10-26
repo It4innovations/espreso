@@ -14,7 +14,13 @@ inline bool operator!=(const DIndex &left, const DIndex &right) { return !(left 
 inline bool operator <(const DIndex &left, const DIndex &right) { return left.domain == right.domain ? left.index < right.index : left.domain < right.domain; }
 
 struct DOFsDecomposition: public DOFsDistribution {
+	esint dbegin, dend, dtotal;
+	std::vector<esint> neighDomain; // first domain index per neighbor, the last is MY OFFSET
+
+	std::vector<esint> sharedDOFs;
 	serializededata<esint, DIndex> *dmap;
+
+	bool ismy(esint domain) const { return dbegin <= domain && domain < dend; }
 };
 
 }

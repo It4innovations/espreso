@@ -1,0 +1,14 @@
+
+#ifndef SRC_AXFETI_ITERATIVESOLVER_ITERATIVESOLVER_H_
+#define SRC_AXFETI_ITERATIVESOLVER_ITERATIVESOLVER_H_
+
+namespace espreso {
+
+template <typename T>
+class IterativeSolver {
+
+};
+
+}
+
+#endif /* SRC_AXFETI_ITERATIVESOLVER_ITERATIVESOLVER_H_ */

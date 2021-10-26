@@ -177,7 +177,21 @@ void fillDecomposition(UniformNodesFETIPattern *pattern, int dofs, DOFsDecomposi
 	datadistribution[info::env::threads] = dofs * distribution[info::env::threads] < DOFDistribution.size() ? DOFDistribution[dofs * distribution[info::env::threads]] : DOFDistribution.back();
 	distribution[info::env::threads] = dofs * distribution[info::env::threads] + 1;
 
+	decomposition.dbegin = info::mesh->domains->offset;
+	decomposition.dend = info::mesh->domains->offset + info::mesh->domains->size;
+	decomposition.dtotal = info::mesh->domains->totalSize;
+	decomposition.neighDomain.resize(info::mesh->neighbors.size() + 1);
+	for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
+		decomposition.neighDomain[n] = info::mesh->domains->distribution[info::mesh->neighbors[n]];
+	}
+	decomposition.neighDomain.back() = decomposition.dbegin;
 	decomposition.dmap = new serializededata<esint, DIndex>(tarray<esint>(distribution, DOFDistribution), tarray<DIndex>(datadistribution, DOFData));
+	esint index = 0;
+	for (auto dmap = decomposition.dmap->cbegin(); dmap != decomposition.dmap->cend(); ++dmap, ++index) {
+		if (dmap->size() > 1) {
+			decomposition.sharedDOFs.push_back(index);
+		}
+	}
 
 	decomposition.begin = dofs * info::mesh->nodes->uniqInfo.offset;
 	decomposition.end = dofs * (info::mesh->nodes->uniqInfo.offset + info::mesh->nodes->uniqInfo.size);

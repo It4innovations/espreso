@@ -153,11 +153,17 @@ void apply(Vector_Dense<double> &y, const double &alpha, Matrix_CSR<double> &a, 
 #ifdef HAVE_MKL
 	matrix_descr descr;
 	switch (a.type) {
-	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE:
+	case Matrix_Type::COMPLEX_SYMMETRIC:
 		descr.type = SPARSE_MATRIX_TYPE_SYMMETRIC;
 		break;
 	case Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC:
+	case Matrix_Type::REAL_NONSYMMETRIC:
+	case Matrix_Type::COMPLEX_STRUCTURALLY_SYMMETRIC:
+	case Matrix_Type::COMPLEX_NONSYMMETRIC:
 		descr.type = SPARSE_MATRIX_TYPE_GENERAL;
 		break;
 	}
@@ -178,11 +184,17 @@ void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &a
 #ifdef HAVE_MKL
 	matrix_descr descr;
 	switch (a.type) {
-	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE:
+	case Matrix_Type::COMPLEX_SYMMETRIC:
 		descr.type = SPARSE_MATRIX_TYPE_SYMMETRIC;
 		break;
 	case Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC:
+	case Matrix_Type::REAL_NONSYMMETRIC:
+	case Matrix_Type::COMPLEX_STRUCTURALLY_SYMMETRIC:
+	case Matrix_Type::COMPLEX_NONSYMMETRIC:
 		descr.type = SPARSE_MATRIX_TYPE_GENERAL;
 		break;
 	}
@@ -203,11 +215,17 @@ void apply(Vector_Dense<double> &y, const double &alpha, Matrix_IJV<double> &a, 
 #ifdef HAVE_MKL
 	matrix_descr descr;
 	switch (a.type) {
-	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE:
+	case Matrix_Type::COMPLEX_SYMMETRIC:
 		descr.type = SPARSE_MATRIX_TYPE_SYMMETRIC;
 		break;
 	case Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC:
+	case Matrix_Type::REAL_NONSYMMETRIC:
+	case Matrix_Type::COMPLEX_STRUCTURALLY_SYMMETRIC:
+	case Matrix_Type::COMPLEX_NONSYMMETRIC:
 		descr.type = SPARSE_MATRIX_TYPE_GENERAL;
 		break;
 	}
@@ -228,11 +246,17 @@ void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &a
 #ifdef HAVE_MKL
 	matrix_descr descr;
 	switch (a.type) {
-	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE:
+	case Matrix_Type::COMPLEX_SYMMETRIC:
 		descr.type = SPARSE_MATRIX_TYPE_SYMMETRIC;
 		break;
 	case Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC:
+	case Matrix_Type::REAL_NONSYMMETRIC:
+	case Matrix_Type::COMPLEX_STRUCTURALLY_SYMMETRIC:
+	case Matrix_Type::COMPLEX_NONSYMMETRIC:
 		descr.type = SPARSE_MATRIX_TYPE_GENERAL;
 		break;
 	}
