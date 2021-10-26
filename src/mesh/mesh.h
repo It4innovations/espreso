@@ -56,6 +56,7 @@ public:
 	void toBuffer();
 	void printMeshStatistics();
 	void printDecompositionStatistics();
+	size_t meshSize();
 
 	ElementsRegionStore* allElements()
 	{

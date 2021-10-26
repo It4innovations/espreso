@@ -603,6 +603,51 @@ void Mesh::preprocess()
 	eslog::endln("MESH: PREPROCESSING FINISHED");
 }
 
+size_t Mesh::meshSize()
+{
+	size_t packedSize = 0;
+
+	packedSize += utils::packedSize(dimension);
+	packedSize += utils::packedSize(preferedDomains);
+
+	packedSize += elements->packedFullSize();
+	packedSize += nodes->packedFullSize();
+
+	packedSize += utils::packedSize(elementsRegions.size());
+	for (size_t i = 0; i < elementsRegions.size(); i++) {
+		packedSize += elementsRegions[i]->packedFullSize();
+	}
+	packedSize += utils::packedSize(boundaryRegions.size());
+	for (size_t i = 0; i < boundaryRegions.size(); i++) {
+		packedSize += boundaryRegions[i]->packedFullSize();
+	}
+	packedSize += utils::packedSize(contactInterfaces.size());
+	for (size_t i = 0; i < contactInterfaces.size(); i++) {
+		packedSize += contactInterfaces[i]->packedFullSize();
+	}
+
+	packedSize += domains->packedFullSize();
+	packedSize += clusters->packedFullSize();
+	packedSize += bodies->packedFullSize();
+
+	packedSize += FETIData->packedFullSize();
+
+	packedSize += surface->packedFullSize();
+	packedSize += domainsSurface->packedFullSize();
+	packedSize += contact->packedFullSize();
+
+	packedSize += utils::packedSize(neighbors);
+	packedSize += utils::packedSize(neighborsWithMe);
+	packedSize += utils::packedSize(_omitClusterization);
+	packedSize += utils::packedSize(_omitDecomposition);
+	packedSize += utils::packedSize(_withGUI);
+	packedSize += utils::packedSize(_withFETI);
+	packedSize += utils::packedSize(_withBEM);
+	packedSize += utils::packedSize(_withEdgeDual);
+
+	return packedSize;
+}
+
 void Mesh::duplicate()
 {
 	eslog::startln("MESH: CREATE DUPLICATED INSTANCES", "DUPLICATION");
@@ -610,43 +655,7 @@ void Mesh::duplicate()
 	size_t packedSize = 0;
 
 	if (info::mpi::irank == 0) {
-		packedSize += utils::packedSize(dimension);
-		packedSize += utils::packedSize(preferedDomains);
-
-		packedSize += elements->packedFullSize();
-		packedSize += nodes->packedFullSize();
-
-		packedSize += utils::packedSize(elementsRegions.size());
-		for (size_t i = 0; i < elementsRegions.size(); i++) {
-			packedSize += elementsRegions[i]->packedFullSize();
-		}
-		packedSize += utils::packedSize(boundaryRegions.size());
-		for (size_t i = 0; i < boundaryRegions.size(); i++) {
-			packedSize += boundaryRegions[i]->packedFullSize();
-		}
-		packedSize += utils::packedSize(contactInterfaces.size());
-		for (size_t i = 0; i < contactInterfaces.size(); i++) {
-			packedSize += contactInterfaces[i]->packedFullSize();
-		}
-
-		packedSize += domains->packedFullSize();
-		packedSize += clusters->packedFullSize();
-		packedSize += bodies->packedFullSize();
-
-		packedSize += FETIData->packedFullSize();
-
-		packedSize += surface->packedFullSize();
-		packedSize += domainsSurface->packedFullSize();
-		packedSize += contact->packedFullSize();
-
-		packedSize += utils::packedSize(neighbors);
-		packedSize += utils::packedSize(neighborsWithMe);
-		packedSize += utils::packedSize(_omitClusterization);
-		packedSize += utils::packedSize(_omitDecomposition);
-		packedSize += utils::packedSize(_withGUI);
-		packedSize += utils::packedSize(_withFETI);
-		packedSize += utils::packedSize(_withBEM);
-		packedSize += utils::packedSize(_withEdgeDual);
+		packedSize = meshSize();
 	}
 
 	Communication::broadcast(&packedSize, sizeof(size_t), MPI_BYTE, 0, MPITools::instances);
@@ -1445,7 +1454,6 @@ void Mesh::printDecompositionStatistics()
 	Communication::allReduce(&mesh.variance, NULL, sizeof(mesh.variance) / sizeof(double), MPI_DOUBLE, MPI_SUM);
 	mesh.var();
 
-	eslog::info(" ================================== DECOMPOSITION STATISTICS ================================= \n");
 	if (info::ecf->output.logger == OutputConfiguration::LOGGER::PARSER) {
 		eslog::info("decomposition: clusters per MPI: %d\n", mesh.stats.mpi.max.clusters);
 		return;
