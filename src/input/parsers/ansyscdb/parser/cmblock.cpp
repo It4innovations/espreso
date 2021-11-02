@@ -92,6 +92,10 @@ bool CMBlock::readData(std::vector<esint> &indices)
 	std::vector<esint> tdistribution = tarray<esint>::distribute(threads, size);
 	std::vector<std::vector<esint> > tindices(threads);
 
+	if (first == last) {
+		return true;
+	}
+
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		std::vector<char> value(valueLength + 1);
