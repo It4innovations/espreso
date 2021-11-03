@@ -39,6 +39,7 @@ void NeperLoader::load()
 	body.resize(etype.size());
 	material.resize(etype.size());
 	profiler::synccheckpoint("parse");
+	meshfile.clear();
 	profiler::syncend("neper");
 	eslog::endln("NEPER PARSER: GEOMETRY PARSED");
 }

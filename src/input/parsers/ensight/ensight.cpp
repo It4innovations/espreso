@@ -48,6 +48,7 @@ void EnsightLoader::load()
 	body.resize(etype.size());
 	material.resize(etype.size());
 	profiler::synccheckpoint("parse");
+	geofile.clear();
 	profiler::syncend("ensight");
 	eslog::endln("ENSIGHT PARSER: GEOMETRY PARSED");
 }

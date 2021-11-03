@@ -40,6 +40,7 @@ void NetgenNeutralLoader::load()
 	body.resize(etype.size());
 	material.resize(etype.size());
 	profiler::synccheckpoint("parse");
+	meshfile.clear();
 	profiler::syncend("netgen");
 	eslog::endln("NETGEN PARSER: GEOMETRY PARSED");
 }

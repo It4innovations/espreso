@@ -51,6 +51,7 @@ void AnsysCDBLoader::load()
 		std::fill(material.begin(), material.end(), 0);
 	}
 	profiler::synccheckpoint("parse");
+	_file.clear();
 	profiler::syncend("ansys_cdb");
 	eslog::endln("ANSYS CDB PARSER: DATA PARSED");
 }

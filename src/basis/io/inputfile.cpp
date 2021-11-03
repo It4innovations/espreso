@@ -27,9 +27,15 @@ InputFilePack::InputFilePack(size_t minchunk, size_t overlap)
 
 InputFilePack::~InputFilePack()
 {
-	for (size_t i = 0; i < files.size(); ++i) {
-		delete files[i];
-	}
+	clear();
+}
+
+void InputFilePack::clear()
+{
+        for (size_t i = 0; i < files.size(); ++i) {
+                delete files[i];
+        }
+	files.clear();
 }
 
 void InputFilePack::commitFiles(const std::vector<std::string> &filepaths)
@@ -38,12 +44,6 @@ void InputFilePack::commitFiles(const std::vector<std::string> &filepaths)
 	for (size_t i = 0; i < paths.size(); ++i) {
 		files.push_back(new InputFile());
 	}
-}
-
-void InputFilePack::commitFiles(const std::string &name, InputFile &file)
-{
-	paths.push_back(name);
-	files.push_back(&file);
 }
 
 bool InputFilePack::next()

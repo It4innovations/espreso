@@ -38,11 +38,11 @@ struct InputFilePack: public InputFile {
 	size_t size() { return files.size(); }
 
 	void commitFiles(const std::vector<std::string> &filepaths);
-	void commitFiles(const std::string &name, InputFile &file);
 	bool next();
 
 	void prepare();
 	void read();
+	void clear();
 
 	size_t fileindex;
 	size_t minchunk, overlap;

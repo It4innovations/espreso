@@ -85,6 +85,7 @@ void VTKLegacyLoader::load()
 	body.resize(etype.size());
 	material.resize(etype.size());
 	profiler::synccheckpoint("parse");
+	pack.clear();
 	profiler::syncend("vtk_legacy");
 	eslog::endln("VTK PARSER: GEOMETRY PARSED");
 }

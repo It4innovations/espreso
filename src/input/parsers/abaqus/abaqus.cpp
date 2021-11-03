@@ -55,6 +55,7 @@ void AbaqusLoader::load()
 	if (!_configuration.keep_material_sets) {
 		std::fill(material.begin(), material.end(), 0);
 	}
+	_pfile.clear();
 	eslog::endln("ABAQUS: DATA PARSED");
 }
 
