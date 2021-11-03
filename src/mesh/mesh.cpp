@@ -165,6 +165,7 @@ Mesh::~Mesh()
 
 	delete elements;
 	delete nodes;
+	delete domains;
 	delete FETIData;
 	delete surface;
 	delete domainsSurface;
