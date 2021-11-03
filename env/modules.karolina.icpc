@@ -1,6 +1,7 @@
 ml intel/2020b
 ml ParMETIS/4.0.3-intel-2020b
 ml HDF5/1.10.6-intel-2020b-parallel
+ml Valgrind/3.16.1-intel-2020b
 
 export MPICXX=mpiicpc
 export CXX=icpc
