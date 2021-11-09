@@ -16,16 +16,18 @@ def teardown():
 def by():
     path = os.path.join("/", "data", "espreso", "mesiotest", "drillbit")
     ansys = os.path.join(path, "drillbit.dat")
-    ensight = os.path.join(path, "drillbit.case")
+    ensightBinary = os.path.join(path, "drillbit.case")
+    ensightAscii = os.path.join(path, "drillbitAscii.case")
     vtk = os.path.join(path, "drillbit.*.vtk")
     xdmf = os.path.join(path, "drillbit.xmf")
 
     os.path.exists(ansys)
-    os.path.exists(ensight)
+    os.path.exists(ensightBinary)
+    os.path.exists(ensightAscii)
     os.path.exists(vtk)
     os.path.exists(xdmf)
     for p in range(2, 16, 2):
-        for format, file in [ ("ANSYS_CDB", ansys), ("ENSIGHT", ensight), ("VTK_LEGACY", vtk), ("XDMF", xdmf) ]:
+        for format, file in [ ("ANSYS_CDB", ansys), ("ENSIGHT", ensightBinary), ("ENSIGHT", ensightAscii), ("VTK_LEGACY", vtk), ("XDMF", xdmf) ]:
             for readers in [ 1, 3, 13 ]:
                 if readers < p:
                     yield run, file, format, p, readers, "POSIX"

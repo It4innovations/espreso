@@ -16,16 +16,18 @@ def teardown():
 def by():
     path = os.path.join("/", "data", "espreso", "mesiotest", "brake")
     ansys = os.path.join(path, "brake.dat")
-    ensight = os.path.join(path, "brake.case")
+    ensightBinary = os.path.join(path, "brake.case")
+    ensightAscii = os.path.join(path, "brakeAscii.case")
     vtk = os.path.join(path, "brake.*.vtk")
     xdmf = os.path.join(path, "brake.xmf")
 
     os.path.exists(ansys)
-    os.path.exists(ensight)
+    os.path.exists(ensightBinary)
+    os.path.exists(ensightAscii)
     os.path.exists(vtk)
     os.path.exists(xdmf)
     for p in range(1, 32, 3):
-        for format, file in [ ("ANSYS_CDB", ansys), ("ENSIGHT", ensight), ("VTK_LEGACY", vtk), ("XDMF", xdmf) ]:
+        for format, file in [ ("ANSYS_CDB", ansys), ("ENSIGHT", ensightBinary), ("ENSIGHT", ensightAscii), ("VTK_LEGACY", vtk), ("XDMF", xdmf) ]:
             for readers in [ 1, 7, 19, 29 ]:
                 if readers < p:
                     yield run, file, format, p, readers, [ "POSIX", "MPI", "MPI_COLLECTIVE" ][int((p / 3) % 3)]
