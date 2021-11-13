@@ -29,15 +29,6 @@ class EnsightGeometry {
 		Format format;
 		IDs nodeIDs, elementIDs;
 	};
-	
-	struct Regions { 																				//SMAZAT
-		Regions(): offset(0), id(0), name(0) {}
-		Regions(size_t offset, int id, std::string name): offset(offset), id(id), name(name) {}
-
-		size_t offset;
-		int id;
-		std::string name;
-	};
 
 	struct Coordinates {
 		Coordinates(): offset(0), nn(0) {}
@@ -45,7 +36,6 @@ class EnsightGeometry {
 
 		size_t offset;
 		int nn;
-
 	};
 
 	struct Elements {
@@ -63,10 +53,6 @@ class EnsightGeometry {
 		Type type;
 		size_t offset;
 		int ne;
-
-
-
-
 	};
 
 public:
@@ -88,10 +74,7 @@ protected:
 	std::vector<char> _parts;
 	std::vector<Coordinates> _coordinates;
 	std::vector<Elements> _elements;
-
-
 };
-
 }
 
 #endif /* SRC_INPUT_FORMATS_ENSIGHT_PARSER_GEOMETRY_H_ */

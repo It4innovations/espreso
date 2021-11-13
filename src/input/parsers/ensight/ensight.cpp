@@ -26,7 +26,7 @@ void EnsightLoader::load()
 	profiler::synccheckpoint("casefile");
 	eslog::checkpointln("ENSIGHT PARSER: CASEFILE READ");
 
-	InputFilePack geofile(32);
+	InputFilePack geofile;
 	geofile.commitFiles({ casefile.geometry });
 	geofile.prepare();
 	profiler::synccheckpoint("prepare_reader");

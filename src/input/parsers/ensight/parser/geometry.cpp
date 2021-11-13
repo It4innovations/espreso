@@ -9,7 +9,7 @@
 #include <numeric>
 
 using namespace espreso;
-//test karolina git
+
 EnsightGeometry::EnsightGeometry(InputFilePack &geofile)
 : _geofile(geofile), _header{ Format::UNKNOWN, IDs::UNKNOWN, IDs::UNKNOWN }
 {
@@ -40,32 +40,36 @@ void EnsightGeometry::header()
 {
 	// root always has header
 	if (info::mpi::rank == 0) {
+		const char *ndesc = _geofile.begin, *edesc = _geofile.begin;
 		if (memcmp(_geofile.begin, "C Binary", 8) == 0) {
 			_header.format = Format::BINARY;
-
-			size_t ndesc = 240, edesc = 320;
-			if (DistributedScanner::check(_geofile.begin + ndesc, "node id ")) {
-				if (DistributedScanner::check(_geofile.begin + ndesc + 8, "off")) { _header.nodeIDs = IDs::OFF; }
-				if (DistributedScanner::check(_geofile.begin + ndesc + 8, "given")) { _header.nodeIDs = IDs::GIVEN; }
-				if (DistributedScanner::check(_geofile.begin + ndesc + 8, "assign")) { _header.nodeIDs = IDs::ASSIGN; }
-				if (DistributedScanner::check(_geofile.begin + ndesc + 8, "ignore")) { _header.nodeIDs = IDs::INGNORE; }
-			}
-			if (DistributedScanner::check(_geofile.begin + edesc, "element id ")) {
-				if (DistributedScanner::check(_geofile.begin + edesc + 11, "off")) { _header.elementIDs = IDs::OFF; }
-				if (DistributedScanner::check(_geofile.begin + edesc + 11, "given")) { _header.elementIDs = IDs::GIVEN; }
-				if (DistributedScanner::check(_geofile.begin + edesc + 11, "assign")) { _header.elementIDs = IDs::ASSIGN; }
-				if (DistributedScanner::check(_geofile.begin + edesc + 11, "ignore")) { _header.elementIDs = IDs::INGNORE; }
-			}
+			ndesc += 240, edesc += 320;
 		} else {
 			_header.format = Format::ASCII;
+			while (*ndesc++ != '\n');
+			while (*ndesc++ != '\n');
+			edesc = ndesc;
+			while (*edesc++ != '\n');
+		}
+		if (DistributedScanner::check(ndesc, "node id ")) {
+			if (DistributedScanner::check(ndesc + 8, "off")) { _header.nodeIDs = IDs::OFF; }
+			if (DistributedScanner::check(ndesc + 8, "given")) { _header.nodeIDs = IDs::GIVEN; }
+			if (DistributedScanner::check(ndesc + 8, "assign")) { _header.nodeIDs = IDs::ASSIGN; }
+			if (DistributedScanner::check(ndesc + 8, "ignore")) { _header.nodeIDs = IDs::INGNORE; }
+		}
+		if (DistributedScanner::check(edesc, "element id ")) {
+			if (DistributedScanner::check(edesc + 11, "off")) { _header.elementIDs = IDs::OFF; }
+			if (DistributedScanner::check(edesc + 11, "given")) { _header.elementIDs = IDs::GIVEN; }
+			if (DistributedScanner::check(edesc + 11, "assign")) { _header.elementIDs = IDs::ASSIGN; }
+			if (DistributedScanner::check(edesc + 11, "ignore")) { _header.elementIDs = IDs::INGNORE; }
 		}
 	}
 
 	Communication::broadcast(&_header, sizeof(Header), MPI_BYTE, 0);
 
-	/*if (_header.format == Format::UNKNOWN || _header.nodeIDs == IDs::UNKNOWN || _header.elementIDs == IDs::UNKNOWN) {
+	if (_header.format == Format::UNKNOWN || _header.nodeIDs == IDs::UNKNOWN || _header.elementIDs == IDs::UNKNOWN) {
 		eslog::globalerror("MESIO internal error: cannot recognize EnSight Gold geometry format.\n");
-	}*/
+	}
 }
 
 void EnsightGeometry::scanBinary()
@@ -334,46 +338,43 @@ void EnsightGeometry::scanASCII()
 	DistributedScanner parser;
 
 	auto addelement = [&] (const char *c, Elements::Type type) {
-		while (*c != '\n') { c++; } c++;
+		while (*c++ != '\n');
 		int nn = atof(c);
-		while (*c != '\n') { c++; } c++;
+		while (*c++ != '\n');
 		int offset = _geofile.distribution[info::mpi::rank] + (c - _geofile.begin);
 		_elements.push_back(Elements(type, offset, nn));
 	};
 
 	auto skipelements = [&] (const char *c, int enodes) -> int {
-		while (*c != '\n') { c++; } c++;
+		while (*c++ != '\n');
 		int nn = atof(c);
-		return (((enodes * 10) + 1) * nn);
+		return (enodes * 10 + 1) * nn;
 	};
 
 	auto addcoordinates = [&] (const char *c) {
-		while (*c != '\n') { *c++; } c++;
+		while (*c++ != '\n');
 		int count = atof(c);
-		while (*c != '\n') { c++; } c++;
+		while (*c++ != '\n');
 		_coordinates.push_back(Coordinates(_geofile.distribution[info::mpi::rank] + (c - _geofile.begin), count));
-
 	};
 
 	auto skipcoordinates = [&] (const char *c) -> size_t {
-		while (*c != '\n') { c++; } c++;
+		while (*c++ != '\n');
 		int count = atof(c);
-		while (*c != '\n') { c++; } c++;
-		return (13 * count);
-
-	};	
+		while (*c++ != '\n');
+		return 13 * count;
+	};
 
 	auto addparts = [&] (const char *c, std::vector<char> &vector) {
-		while (*c != '\n') { *c++; } c++;
-		while (*c != '\n') { *c++; } c++;
+		while (*c++ != '\n');
+		while (*c++ != '\n');
 		size_t size = vector.size();
-		vector.resize(size + 80);		
-		while (*c != '\n'){	
+		vector.resize(size + 80);
+		while (*c != '\n'){
 			vector[size++] = *c++;
 		}
-	};	
+	};
 
-	
 	parser.add("part"       , [&] (const char *c) { addparts(c, _parts); });
 	parser.add("coordinates", [&] (const char *c) { addcoordinates(c); }                       , [&] (const char *c) { return skipcoordinates(c); });
 
@@ -395,231 +396,138 @@ void EnsightGeometry::scanASCII()
 
 	parser.add("nsided"     , [&] (const char *c) { eslog::error("Ensight parser error: ESPRESO does not support nsided elements.\n"); });
 	parser.add("nfaced"     , [&] (const char *c) { eslog::error("Ensight parser error: ESPRESO does not support nfaced elements.\n"); });
-	
+
 	parser.scan(_geofile);
 	parser.synchronize(_parts, _coordinates, _elements);
-
-
 }
+
 void EnsightGeometry::parseASCII(MeshBuilder &mesh)
 {
-	auto toLineEnd = [] (const char* &c) {
-		while (*c != '\n') { c++; }
-		c++;
-	};
-
-	auto align = [] (size_t x, int y) {
-		return (x - y) % 13 == 0 ? x : x + 13 - ((x - y) % 13);
-	};
-
-	auto toNextNumber = [] (const char* &c) {
-		while (*c == ' ' || *c == '\n') { c++; }
-		c++;
-	};
-
-	auto alignElement = [] (size_t x, int y, int z) {
-		return (x - y) % ((z * 10) + 1) == 0 ? x : x + ((z * 10) + 1) - ((x - y) % ((z * 10) + 1));
-	};	
-
-	auto copyStringToVec = [] (const char* &c, std::vector<char> &vector){
-		size_t size = vector.size();
-		vector.resize(size + 80);
-		while (*c != '\n'){	
-			vector[size++] = *c++;
+	// skip ids: currently we always generate them
+	if (_header.nodeIDs == IDs::GIVEN || _header.nodeIDs == IDs::INGNORE) {
+		for (size_t i = 0; i < _coordinates.size(); ++i) {
+			_coordinates[i].offset += _coordinates[i].nn * 11;
 		}
-	};
-
-	auto removeEmptyCharacters = [] (std::string partName){
-		for (size_t i = 0; i < partName.length(); i++){
-			if (partName[i] == '\000' || partName[i] == ' '){
-				partName.erase(partName.begin() + i, partName.end());
-			}
+	}
+	if (_header.elementIDs == IDs::GIVEN || _header.elementIDs == IDs::INGNORE) {
+		for (size_t i = 0; i < _elements.size(); ++i) {
+			_elements[i].offset += _elements[i].ne * 11;
 		}
-		return partName;
-	};
-
-	std::string partName;
-	int esize; 
-	int rank = info::mpi::rank, size = info::mpi::size, etype;
-	Element::CODE code;
-	////////////////////// ELEMENTS PARSING
-	size_t parts = _parts.size() / 80;
-	size_t coordinate_id_offset = 0;
-	size_t element_id_offset = 0;
-	for (size_t p = 0, e = 0; p < parts; ++p) {
-		
-		std::string textString(_parts.cbegin() + 80 * p, _parts.cbegin() + 80 * p + 80);
-		textString = removeEmptyCharacters(textString);
-		bool isNregion = false;
-		std::vector<int> eids;
-		for (; e < _elements.size() && (p + 1 == parts || _elements[e].offset < _coordinates[p + 1].offset); ++e){
-			isNregion = false;
-
-			switch (_elements[e].type){
-			case Elements::Type::POINT		:esize = 1; etype = 0; code = Element::CODE::POINT1; isNregion = true; break;
-			case Elements::Type::BAR2		:esize = 2;	etype = 1; code = Element::CODE::LINE2; isNregion = false; break;
-			case Elements::Type::TRIA3 		:esize = 3;	etype = 2; code = Element::CODE::TRIANGLE3; isNregion = false; break;
-			case Elements::Type::QUAD4 		:esize = 4;	etype = 3; code = Element::CODE::SQUARE4; isNregion = false; break;
-			case Elements::Type::TETRA4 	:esize = 4;	etype = 4; code = Element::CODE::TETRA4; isNregion = false; break;
-			case Elements::Type::PYRAMID5 	:esize = 5;	etype = 5; code = Element::CODE::PYRAMID5; isNregion = false; break;
-			case Elements::Type::PENTA6 	:esize = 6;	etype = 6; code = Element::CODE::PRISMA6; isNregion = false; break;
-			case Elements::Type::HEXA8 		:esize = 8;	etype = 7; code = Element::CODE::HEXA8; isNregion = false; break;
-			case Elements::Type::BAR3 		:esize = 3;	etype = 8; code = Element::CODE::LINE3; isNregion = false; break;
-			case Elements::Type::TRIA6 		:esize = 6;	etype = 9; code = Element::CODE::TRIANGLE6; isNregion = false; break;
-			case Elements::Type::QUAD8 		:esize = 8;	etype = 10; code = Element::CODE::SQUARE8; isNregion = false; break;
-			case Elements::Type::TETRA10 	:esize = 10; etype = 11; code = Element::CODE::TETRA10; isNregion = false; break;
-			case Elements::Type::PYRAMID13	:esize = 13; etype = 12; code = Element::CODE::PYRAMID13; isNregion = false; break;
-			case Elements::Type::PENTA15 	:esize = 15; etype = 13; code = Element::CODE::PRISMA15; isNregion = false; break;
-			case Elements::Type::HEXA20 	:esize = 20; etype = 14; code = Element::CODE::HEXA20; isNregion = false; break;
-			case Elements::Type::NSIDED		:esize = 0;	 code = Element::CODE::SIZE; break; // not supported
-			case Elements::Type::NFACED		:esize = 0; code = Element::CODE::SIZE; break; // not supported
-			default: esize = 0; code = Element::CODE::SIZE;
-			}
-
-			size_t E = std::max(_elements[e].offset, _geofile.distribution[info::mpi::rank]);
-			size_t F = std::min(_elements[e].offset + _elements[e].ne * ((esize * 10) + 1), _geofile.distribution[info::mpi::rank + 1]);
-			if (E < F) {
-				E = alignElement(E, _elements[e].offset, esize);
-				F = alignElement(F, _elements[e].offset, esize);
-				int eid_offset = (E - _elements[e].offset) / ((10 * esize) + 1);
-				E -= _geofile.distribution[info::mpi::rank];
-				F -= _geofile.distribution[info::mpi::rank];
-
-				int cc = 0;
-
-				for (const char *d = _geofile.begin + E; d < _geofile.begin + F; d += 10) {
-					if (isNregion == true){
-						eids.push_back(atof(d) - 1 + coordinate_id_offset);
-						++d;
-					} else {
-						mesh.enodes.push_back(atof(d) - 1 + coordinate_id_offset);
-						++cc;
-						if (cc % esize == 0) {
-							eids.push_back(element_id_offset + eid_offset);
-							mesh.eIDs.push_back(element_id_offset + eid_offset);
-							++eid_offset;
-							mesh.esize.push_back(esize);
-							mesh.etype.push_back(etype);
-							++d;
-						}
-						
-					}
-				}
-			}
-			element_id_offset += _elements[e].ne;
-
-		}
-		if (isNregion == true){
-			mesh.nregions[textString] = eids;
-		} else {
-			mesh.eregions[textString] = eids;
-		}
-		
-		// go to another part
-		coordinate_id_offset += _coordinates[p].nn;
 	}
 
-	//////////////////////// COORDINATES PARSING
-	std::vector<double> vectorOfXcoords;
-	std::vector<double> vectorOfYcoords;
-	std::vector<double> vectorOfZcoords;
-	std::vector<double> vector;
-	std::vector<double> vector2;
-	std::vector<size_t> vecOfCoordsOffsetProcesses;
-	std::vector<size_t> vecOfEndOfCoordsProcesses;
-	std::vector<int> vecOfNodes;
+	auto align = [] (size_t current, size_t begin) {
+		return (current - begin) % 13 == 0 ? current : current + 13 - ((current - begin) % 13);
+	};
 
-	for (size_t i = 0; i < _coordinates.size(); ++i) {
-
-		// find begin and end of parsing
+	for (size_t i = 0, offset = 0; i < _coordinates.size(); offset += _coordinates[i++].nn) {
+		std::vector<float> coordinates;
 		size_t A = std::max(_coordinates[i].offset, _geofile.distribution[info::mpi::rank]);
 		size_t B = std::min(_coordinates[i].offset + 3 * 13 * _coordinates[i].nn, _geofile.distribution[info::mpi::rank + 1]);
-
 		if (A < B) {
-
-			// move to begin
 			A = align(A, _coordinates[i].offset);
 			A -= _geofile.distribution[info::mpi::rank];
 			B -= _geofile.distribution[info::mpi::rank];
 
-			// find process number of begin and end of coordinates block
-			std::vector<size_t>::iterator low1, low2;
-			low1 = std::lower_bound(_geofile.distribution.begin(), _geofile.distribution.end(), _coordinates[i].offset);
-			low2 = std::lower_bound(_geofile.distribution.begin(), _geofile.distribution.end(), _coordinates[i].offset + 3 * 13 * _coordinates[i].nn);
-			size_t cooOffsetProcess = low1 - _geofile.distribution.begin() - 1;
-			size_t cooEndProcess = low2 - _geofile.distribution.begin() - 1;
-			vecOfCoordsOffsetProcesses.push_back(cooOffsetProcess);
-			vecOfEndOfCoordsProcesses.push_back(cooEndProcess);
-
-			// parsing
-			for (const char *c = _geofile.begin + A; c < _geofile.begin + B; ++c) {
-				vector.push_back(atof(c));
-				toLineEnd(c);
-				c--;
+			for (const char *c = _geofile.begin + A; c < _geofile.begin + B; c += 13) {
+				coordinates.push_back(atof(c));
 			}
-			
-			int TAG = 0;
 
-			// data sending
-			if (rank > cooOffsetProcess && rank <= cooEndProcess) {
-				MPI_Send(vector.data(), vector.size(), MPI_DOUBLE, cooOffsetProcess, TAG, MPI_COMM_WORLD);
-				vector.clear();
-			// data receiving
-			} else if (rank == cooOffsetProcess){
-				for (int r = rank + 1; r <= cooEndProcess; ++r) {
-					size_t _A = std::max(_coordinates[i].offset, _geofile.distribution[r]);
-					size_t _B = std::min(_coordinates[i].offset + 3 * 13 * _coordinates[i].nn, _geofile.distribution[r + 1]);
-					_A = align(_A, _coordinates[i].offset);
-					_B = align(_B, _coordinates[i].offset);
-					size_t _C = (_B - _A) / 13;
-					vector2.resize(_C);
-					MPI_Recv(vector2.data(), vector2.size(), MPI_DOUBLE, r, TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-					vector.insert(vector.end(), vector2.begin(), vector2.end());
+			int start = std::lower_bound(_geofile.distribution.begin(), _geofile.distribution.end(), _coordinates[i].offset) - _geofile.distribution.begin() - 1;
+			int end = std::lower_bound(_geofile.distribution.begin(), _geofile.distribution.end(), _coordinates[i].offset + 3 * 13 * _coordinates[i].nn) - _geofile.distribution.begin() - 1;
 
+			if (start == info::mpi::rank) {
+				std::vector<float, initless_allocator<float> > rbuffer(3 * _coordinates[i].nn);
+				std::copy(coordinates.begin(), coordinates.end(), rbuffer.begin());
+				MPI_Request req[end - start];
+				for (int r = start + 1; r < end; ++r) {
+					size_t rbegin = align(_geofile.distribution[r], _coordinates[i].offset);
+					size_t rend = align(_geofile.distribution[r + 1], _coordinates[i].offset);
+					MPI_Irecv(rbuffer.data() + rbegin / 13, (rend - rbegin) / 13, MPI_FLOAT, r, 0, info::mpi::comm, req + (r - start));
+				}
+				mesh.nIDs.reserve(mesh.coordinates.size() + _coordinates[i].nn);
+				mesh.coordinates.reserve(mesh.coordinates.size() + _coordinates[i].nn);
+				MPI_Waitall(end - start, req, MPI_STATUSES_IGNORE);
+				for (int n = 0; n < _coordinates[i].nn; ++n) {
+					mesh.nIDs.push_back(offset + n);
+					mesh.coordinates.push_back(Point(rbuffer[n + _coordinates[i].nn * 0], rbuffer[n + _coordinates[i].nn * 1], rbuffer[n + _coordinates[i].nn * 2]));
+				}
+			} else {
+				MPI_Send(coordinates.data(), coordinates.size(), MPI_FLOAT, start, 0, info::mpi::comm);
+			}
+		}
+	}
+
+	auto alignElement = [] (size_t current, size_t begin, int line) {
+		return (current - begin) % line == 0 ? current : current + line - ((current - begin) % line);
+	};
+
+	size_t parts = _parts.size() / 80;
+	size_t coordinate_id_offset = 0;
+	size_t element_id_offset = 0;
+	for (size_t p = 0, e = 0; p < parts; ++p) {
+		auto begin = _parts.begin() + p * 80;
+		auto end = _parts.begin() + p * 80;
+		while (*end != 0) { ++end; }
+		std::string name = std::string(begin, end);
+		int esize;
+		Element::CODE code;
+		std::vector<int> eids;
+		for (; e < _elements.size() && (p + 1 == parts || _elements[e].offset < _coordinates[p + 1].offset); ++e){
+			switch (_elements[e].type){
+			case Elements::Type::POINT     : esize =  1; code = Element::CODE::POINT1;    break;
+			case Elements::Type::BAR2      : esize =  2; code = Element::CODE::LINE2;     break;
+			case Elements::Type::TRIA3     : esize =  3; code = Element::CODE::TRIANGLE3; break;
+			case Elements::Type::QUAD4     : esize =  4; code = Element::CODE::SQUARE4;   break;
+			case Elements::Type::TETRA4    : esize =  4; code = Element::CODE::TETRA4;    break;
+			case Elements::Type::PYRAMID5  : esize =  5; code = Element::CODE::PYRAMID5;  break;
+			case Elements::Type::PENTA6    : esize =  6; code = Element::CODE::PRISMA6;   break;
+			case Elements::Type::HEXA8     : esize =  8; code = Element::CODE::HEXA8;     break;
+			case Elements::Type::BAR3      : esize =  3; code = Element::CODE::LINE3;     break;
+			case Elements::Type::TRIA6     : esize =  6; code = Element::CODE::TRIANGLE6; break;
+			case Elements::Type::QUAD8     : esize =  8; code = Element::CODE::SQUARE8;   break;
+			case Elements::Type::TETRA10   : esize = 10; code = Element::CODE::TETRA10;   break;
+			case Elements::Type::PYRAMID13 : esize = 13; code = Element::CODE::PYRAMID13; break;
+			case Elements::Type::PENTA15   : esize = 15; code = Element::CODE::PRISMA15;  break;
+			case Elements::Type::HEXA20    : esize = 20; code = Element::CODE::HEXA20;    break;
+			case Elements::Type::NSIDED    : esize =  0; code = Element::CODE::SIZE;      break; // not supported
+			case Elements::Type::NFACED    : esize =  0; code = Element::CODE::SIZE;      break; // not supported
+			default                        : esize =  0; code = Element::CODE::SIZE;
+			}
+
+			size_t E = std::max(_elements[e].offset, _geofile.distribution[info::mpi::rank]);
+			size_t F = std::min(_elements[e].offset + _elements[e].ne * (esize * 10 + 1), _geofile.distribution[info::mpi::rank + 1]);
+			if (E < F) {
+				E = alignElement(E, _elements[e].offset, 10 * esize + 1);
+				F = alignElement(F, _elements[e].offset, esize);
+				int eid_offset = (E - _elements[e].offset) / (10 * esize + 1);
+				E -= _geofile.distribution[info::mpi::rank];
+				F -= _geofile.distribution[info::mpi::rank];
+
+				if (code == Element::CODE::POINT1){
+					for (const char *d = _geofile.begin + E; d < _geofile.begin + F; d += 11, ++eid_offset) {
+						eids.push_back(atof(d) - 1 + coordinate_id_offset);
+					}
+				} else {
+					for (const char *d = _geofile.begin + E; d < _geofile.begin + F; d += 10 * esize + 1, ++eid_offset) {
+						eids.push_back(element_id_offset + eid_offset);
+						for (int n = 0; n < esize; ++n) {
+							mesh.enodes.push_back(atof(d + 10 * n) - 1 + coordinate_id_offset);
+						}
+					}
+					mesh.eIDs.insert(mesh.eIDs.end(), eids.begin(), eids.end());
+					mesh.esize.resize(mesh.eIDs.size(), esize);
+					mesh.etype.resize(mesh.eIDs.size(), (int)code);
+					element_id_offset += _elements[e].ne;
 				}
 			}
 		}
-
-
-	}
-	////////////////////// DIVIDE BY XYZ
-	for (int rankNr = 0; rankNr < info::mpi::size; rankNr++){
-		if (rank == rankNr){
-			// determine number of nodes in vector
-			for (int i = 0; i < _coordinates.size(); i++){
-				if (_coordinates[i].offset >= _geofile.distribution[info::mpi::rank] && _coordinates[i].offset < _geofile.distribution[info::mpi::rank+1]){
-					vecOfNodes.push_back(_coordinates[i].nn);
-				}
-			}
-			int prev = 0;
-			// sorting xyz
-			for (int x = 0; x < vecOfNodes.size(); x++){
-				for (int i = prev; i < prev + vecOfNodes[x]; i++){
-					vectorOfXcoords.push_back(vector[i]);
-				}
-				for (int i = prev + vecOfNodes[x]; i < prev + vecOfNodes[x] * 2; i++){
-					vectorOfYcoords.push_back(vector[i]);
-				}	
-				for (int i = prev + vecOfNodes[x] * 2; i < prev + vecOfNodes[x] * 3; i++){
-					vectorOfZcoords.push_back(vector[i]);
-				}
-				prev = prev + vecOfNodes[x] * 3;
-			}
-		} 
-	}
-
-	////////////////////// COORDS AND nIDs TO MESH
-	int nID = 0, prevNodes = 0;
-
-	// count nodes in previous processes
-	for (size_t i = 0; i < _coordinates.size(); i++){
-		if (_coordinates[i].offset < _geofile.distribution[info::mpi::rank]){
-			prevNodes = _coordinates[i].nn + prevNodes;
+		if (code == Element::CODE::POINT1){
+			mesh.nregions[name] = eids;
+		} else {
+			mesh.eregions[name] = eids;
 		}
-	}
-	for (size_t l = 0; l < vectorOfXcoords.size(); ++l){
-		mesh.coordinates.push_back(Point(vectorOfXcoords[l], vectorOfYcoords[l], vectorOfZcoords[l]));
-		mesh.nIDs.push_back(prevNodes + nID);
-		nID++;
+
+		// go to another part
+		coordinate_id_offset += _coordinates[p].nn;
 	}
 }
