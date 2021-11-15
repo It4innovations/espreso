@@ -438,15 +438,15 @@ void EnsightGeometry::parseASCII(MeshBuilder &mesh)
 			if (start == info::mpi::rank) {
 				std::vector<float, initless_allocator<float> > rbuffer(3 * _coordinates[i].nn);
 				std::copy(coordinates.begin(), coordinates.end(), rbuffer.begin());
-				MPI_Request req[end - start];
-				for (int r = start + 1; r < end; ++r) {
-					size_t rbegin = align(_geofile.distribution[r], _coordinates[i].offset);
-					size_t rend = align(_geofile.distribution[r + 1], _coordinates[i].offset);
-					MPI_Irecv(rbuffer.data() + rbegin / 13, (rend - rbegin) / 13, MPI_FLOAT, r, 0, info::mpi::comm, req + (r - start));
+				std::vector<MPI_Request> req(end - start);
+				for (int r = start + 1; r <= end; ++r) {
+					size_t rbegin = align(std::max(_coordinates[i].offset, _geofile.distribution[r]), _coordinates[i].offset) - _coordinates[i].offset;
+					size_t rend = align(std::min(_coordinates[i].offset + 3 * 13 * _coordinates[i].nn, _geofile.distribution[r + 1]), _coordinates[i].offset) - _coordinates[i].offset;
+					MPI_Irecv(rbuffer.data() + rbegin / 13, (rend - rbegin) / 13, MPI_FLOAT, r, 0, info::mpi::comm, req.data() + (r - start - 1));
 				}
 				mesh.nIDs.reserve(mesh.coordinates.size() + _coordinates[i].nn);
 				mesh.coordinates.reserve(mesh.coordinates.size() + _coordinates[i].nn);
-				MPI_Waitall(end - start, req, MPI_STATUSES_IGNORE);
+				MPI_Waitall(end - start, req.data(), MPI_STATUSES_IGNORE);
 				for (int n = 0; n < _coordinates[i].nn; ++n) {
 					mesh.nIDs.push_back(offset + n);
 					mesh.coordinates.push_back(Point(rbuffer[n + _coordinates[i].nn * 0], rbuffer[n + _coordinates[i].nn * 1], rbuffer[n + _coordinates[i].nn * 2]));
@@ -470,9 +470,10 @@ void EnsightGeometry::parseASCII(MeshBuilder &mesh)
 		while (*end != 0) { ++end; }
 		std::string name = std::string(begin, end);
 		int esize;
-		Element::CODE code;
+		Element::CODE code = Element::CODE::SIZE;
 		std::vector<esint> eids;
-		for (; e < _elements.size() && (p + 1 == parts || _elements[e].offset < _coordinates[p + 1].offset); ++e){
+		size_t prevsize = mesh.eIDs.size();
+		for (; e < _elements.size() && (p + 1 == parts || _elements[e].offset < _coordinates[p + 1].offset); ++e) {
 			switch (_elements[e].type){
 			case Elements::Type::POINT     : esize =  1; code = Element::CODE::POINT1;    break;
 			case Elements::Type::BAR2      : esize =  2; code = Element::CODE::LINE2;     break;
@@ -498,7 +499,7 @@ void EnsightGeometry::parseASCII(MeshBuilder &mesh)
 			size_t F = std::min(_elements[e].offset + _elements[e].ne * (esize * 10 + 1), _geofile.distribution[info::mpi::rank + 1]);
 			if (E < F) {
 				E = alignElement(E, _elements[e].offset, 10 * esize + 1);
-				F = alignElement(F, _elements[e].offset, esize);
+				F = alignElement(F, _elements[e].offset, 10 * esize + 1);
 				int eid_offset = (E - _elements[e].offset) / (10 * esize + 1);
 				E -= _geofile.distribution[info::mpi::rank];
 				F -= _geofile.distribution[info::mpi::rank];
@@ -509,22 +510,21 @@ void EnsightGeometry::parseASCII(MeshBuilder &mesh)
 					}
 				} else {
 					for (const char *d = _geofile.begin + E; d < _geofile.begin + F; d += 10 * esize + 1, ++eid_offset) {
-						eids.push_back(element_id_offset + eid_offset);
+						mesh.eIDs.push_back(element_id_offset + eid_offset);
 						for (int n = 0; n < esize; ++n) {
 							mesh.enodes.push_back(atof(d + 10 * n) - 1 + coordinate_id_offset);
 						}
 					}
-					mesh.eIDs.insert(mesh.eIDs.end(), eids.begin(), eids.end());
 					mesh.esize.resize(mesh.eIDs.size(), esize);
 					mesh.etype.resize(mesh.eIDs.size(), (int)code);
-					element_id_offset += _elements[e].ne;
 				}
 			}
+			element_id_offset += _elements[e].ne;
 		}
 		if (code == Element::CODE::POINT1){
 			mesh.nregions[name] = eids;
 		} else {
-			mesh.eregions[name] = eids;
+			mesh.eregions[name].assign(mesh.eIDs.begin() + prevsize, mesh.eIDs.end());
 		}
 
 		// go to another part
