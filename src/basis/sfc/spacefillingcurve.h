@@ -24,41 +24,6 @@ struct SpaceFillingCurve {
 	size_t buckets(size_t depth) const { return std::pow((size_t)1 << depth, _dimension); }
 	size_t bucketSize() const { return _dimension == 2 ? 4 : 8; }
 
-	// depth 0 = full grid (1 x 1 x 1)
-	void setLevel(size_t depth) { _refinedsfc.resize(depth + 1); }
-	bool hasLevel(size_t depth) const { return depth < _refinedsfc.size() && _refinedsfc[depth].size(); }
-
-	void recurce(size_t index) { _refinedsfc.back().push_back(index); }
-	void finishLevel(size_t depth);
-
-	const std::vector<size_t>& sfcRefined(size_t depth) { return _refinedsfc[depth]; }
-	const std::vector<size_t>& xyzRefined(size_t depth) { return _refinedxyz[depth]; }
-
-	void SCFToXYZ();
-
-	void iterateBuckets(size_t begin, size_t end, std::function<void(size_t depth, size_t index)> callback) const;
-	void iterateBuckets(size_t begin, size_t end, std::function<void(size_t depth, size_t x, size_t y)> callback) const
-	{
-		size_t x, y;
-		iterateBuckets(begin, end, [&] (size_t depth, size_t index) {
-			D1toD2((size_t)1 << depth, index, x, y);
-			callback(depth, x, y);
-		});
-	}
-	void iterateBuckets(size_t begin, size_t end, std::function<void(size_t depth, size_t x, size_t y, size_t z)> callback) const
-	{
-		size_t x, y, z;
-		iterateBuckets(begin, end, [&] (size_t depth, size_t index) {
-			D1toD3((size_t)1 << depth, index, x, y, z);
-			callback(depth, x, y, z);
-		});
-	}
-
-	// computed from SFC recursion
-	void addSFCNeighbors(size_t depth, size_t index, std::vector<std::pair<size_t, size_t> > &neighbors);
-	void addXYNeighbors(size_t depth, size_t x, size_t y, std::vector<std::pair<size_t, size_t> > &neighbors);
-	void addXYZNeighbors(size_t depth, size_t x, size_t y, size_t z, std::vector<std::pair<size_t, size_t> > &neighbors);
-
 	// computed from splitters
 	void addSFCNeighbors(size_t depth, size_t index, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors);
 	void addXYNeighbors(size_t depth, size_t x, size_t y, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors);
@@ -92,9 +57,6 @@ protected:
 	size_t _dimension;
 	size_t _depth, _n;
 	Point _origin, _size;
-
-	std::vector<std::vector<size_t> > _refinedsfc, _refinedxyz;
-
 private:
 	std::pair<size_t, size_t> getXYZBucket(size_t depth, size_t x, size_t y, size_t z);
 };

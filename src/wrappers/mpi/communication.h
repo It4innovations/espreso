@@ -136,7 +136,6 @@ struct Communication {
 		SPLITTERS, ALLREDUCE, SCATTERV, SCATTER;
 	};
 
-	static bool computeSFCBalancedBorders(SpaceFillingCurve &sfc, std::vector<esint> &sfcbuckets, std::vector<esint> &permutation, std::vector<esint> &sfcborders);
 	static bool computeSplitters(std::vector<esint> &keys, std::vector<esint> &permutation, std::vector<esint> &splitters, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype, typename Talloc=std::allocator<Ttype> >
