@@ -34,6 +34,13 @@ static inline void _pushWithString(std::vector<esint> &data, const char *begin, 
 	size = next - c;
 }
 
+static inline void _push(std::vector<float> &data, const char* c, size_t &size)
+{
+	char* next;
+	data.push_back(strtof(c, &next));
+	size = next - c;
+}
+
 static inline void _push(std::vector<double> &data, const char* c, size_t &size)
 {
 	char* next;
@@ -204,6 +211,11 @@ void ASCIIParser::parseWithStrings(std::vector<esint> &data, InputFile &file, si
 }
 
 void ASCIIParser::parse(std::vector<esint> &data, InputFile &file, size_t begin, size_t end)
+{
+	_parse(data, file, begin, end);
+}
+
+void ASCIIParser::parse(std::vector<float> &data, InputFile &file, size_t begin, size_t end)
 {
 	_parse(data, file, begin, end);
 }

@@ -20,6 +20,7 @@ public:
 	static int keyend(const char *c);
 
 	static void parse(std::vector<esint> &data, InputFile &file, size_t begin, size_t end);
+	static void parse(std::vector<float> &data, InputFile &file, size_t begin, size_t end);
 	static void parse(std::vector<double> &data, InputFile &file, size_t begin, size_t end);
 	static void parse(std::vector<esint> &ids, std::vector<Point> &coordinates, InputFile &file, size_t begin, size_t end);
 
