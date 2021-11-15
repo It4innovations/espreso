@@ -471,7 +471,7 @@ void EnsightGeometry::parseASCII(MeshBuilder &mesh)
 		std::string name = std::string(begin, end);
 		int esize;
 		Element::CODE code;
-		std::vector<int> eids;
+		std::vector<esint> eids;
 		for (; e < _elements.size() && (p + 1 == parts || _elements[e].offset < _coordinates[p + 1].offset); ++e){
 			switch (_elements[e].type){
 			case Elements::Type::POINT     : esize =  1; code = Element::CODE::POINT1;    break;
