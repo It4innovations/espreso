@@ -425,9 +425,11 @@ void EnsightGeometry::parseASCII(MeshBuilder &mesh)
 		size_t A = std::max(_coordinates[i].offset, _geofile.distribution[info::mpi::rank]);
 		size_t B = std::min(_coordinates[i].offset + 3 * 13 * _coordinates[i].nn, _geofile.distribution[info::mpi::rank + 1]);
 		if (A < B) {
-			A = align(A, _coordinates[i].offset);
-			B = align(B, _coordinates[i].offset);
-			ASCIIParser::parse(coordinates, _geofile, A, B);
+			A = align(A, _coordinates[i].offset) - _geofile.distribution[info::mpi::rank];
+			B = align(B, _coordinates[i].offset) - _geofile.distribution[info::mpi::rank];
+			for (const char *c = _geofile.begin + A; c < _geofile.begin + B; c += 13) {
+				coordinates.push_back(atof(c));
+			}
 
 			int start = std::lower_bound(_geofile.distribution.begin(), _geofile.distribution.end(), _coordinates[i].offset) - _geofile.distribution.begin() - 1;
 			int end = std::lower_bound(_geofile.distribution.begin(), _geofile.distribution.end(), _coordinates[i].offset + 3 * 13 * _coordinates[i].nn) - _geofile.distribution.begin() - 1;
