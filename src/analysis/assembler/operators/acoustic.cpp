@@ -27,7 +27,7 @@ void acousticStiffness(AX_Acoustic &module)
 			module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, Stiffness2DAcoustic>(interval, module.controller, module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant, module.material.density, module.elements.stiffness));
 		}
 		if (info::mesh->dimension == 3) {
-			module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, Stiffness2DAcoustic>(interval, module.controller, module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant, module.material.density, module.elements.stiffness));
+			module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, Stiffness3DAcoustic>(interval, module.controller, module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant, module.material.density, module.elements.stiffness));
 		}
 	}
 }
