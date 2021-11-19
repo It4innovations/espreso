@@ -21,8 +21,7 @@ def by():
     xdmf = os.path.join(path, "fan_part.xmf")
 
     os.path.exists(ansys)
-    os.path.exists(ensightBinary)
-    os.path.exists(ensightAscii)
+    os.path.exists(ensight)
     os.path.exists(xdmf)
     for p in range(8, 32):
         for format, file in [ ("ANSYS_CDB", ansys), ("ENSIGHT", ensight), ("XDMF", xdmf) ]:
