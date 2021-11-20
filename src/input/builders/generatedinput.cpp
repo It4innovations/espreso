@@ -94,7 +94,7 @@ void GeneratedInput::removeDanglingNodes()
 	std::vector<esint> usedNodes = _meshData.enodes;
 	utils::sortAndRemoveDuplicates(usedNodes);
 
-	std::vector<Point> coordinates;
+	std::vector<_Point<esfloat> > coordinates;
 	std::vector<esint> nIDs, ndist, noffset(_meshData.nIDs.size());
 	std::vector<int> nranks;
 

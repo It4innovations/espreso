@@ -152,6 +152,20 @@ tarray<TType>::tarray(const std::vector<size_t> &distribution, const std::vector
 }
 
 template <typename TType>
+template <typename TOther>
+tarray<TType>::tarray(const std::vector<size_t> &distribution, TOther begin, TOther end)
+: _size(end - begin), _data(NULL), _distribution(distribution)
+{
+	if (_size) {
+		_data = new TType[_size];
+		#pragma omp parallel for
+		for (size_t t = 1; t < _distribution.size(); t++) {
+			std::copy(begin + _distribution[t - 1], begin + _distribution[t], _data + _distribution[t - 1]);
+		}
+	}
+}
+
+template <typename TType>
 tarray<TType>::tarray(const std::vector<size_t> &distribution, size_t duplication, TType init)
 : _size(duplication * distribution.back()), _data(NULL), _distribution(distribution)
 {

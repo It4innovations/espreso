@@ -21,7 +21,7 @@ protected:
 	void linkup();
 	void exchangeBoundary();
 
-	HilbertCurve _sfc;
+	HilbertCurve<esfloat> _sfc;
 
 	std::vector<esint> _nIDs;
 	std::vector<esint> _nBuckets, _eBuckets;

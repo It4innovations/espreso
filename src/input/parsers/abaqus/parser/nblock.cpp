@@ -49,12 +49,12 @@ NList& NList::parse(const char* begin)
 	return *this;
 }
 
-bool NList::readData(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
+bool NList::readData(std::vector<esint> &nIDs, std::vector<_Point<esfloat> > &coordinates, double scaleFactor)
 {
 	return index_solid_line_x_y_z(nIDs, coordinates, scaleFactor);
 }
 
-bool NList::index_x_y_z(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
+bool NList::index_x_y_z(std::vector<esint> &nIDs, std::vector<_Point<esfloat> > &coordinates, double scaleFactor)
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -97,7 +97,7 @@ bool NList::index_x_y_z(std::vector<esint> &nIDs, std::vector<Point> &coordinate
 	return true;
 }
 
-bool NList::index_solid_line_x_y_z(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
+bool NList::index_solid_line_x_y_z(std::vector<esint> &nIDs, std::vector<_Point<esfloat> > &coordinates, double scaleFactor)
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
 

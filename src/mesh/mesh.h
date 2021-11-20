@@ -100,7 +100,7 @@ public:
 	std::vector<int> neighborsWithMe;
 
 	std::vector<const MaterialConfiguration*> materials;
-	std::map<std::string, Point > orientation;
+	std::map<std::string, _Point<esfloat> > orientation;
 
 	Output *output;
 

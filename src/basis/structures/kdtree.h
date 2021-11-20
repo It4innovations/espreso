@@ -9,6 +9,7 @@
 
 namespace espreso {
 
+template <typename T>
 class KDTree {
 	enum: size_t { defaultBucketSize = 8 };
 
@@ -24,8 +25,28 @@ class KDTree {
 	};
 
 public:
-	KDTree(const std::vector<Point> &coordinates, size_t bucketsize = defaultBucketSize);
-	KDTree(const std::vector<Point> &coordinates, Point &min, Point &max);
+	KDTree(const std::vector<_Point<T> > &coordinates, size_t bucketsize = defaultBucketSize)
+	: coordinates(coordinates)
+	{
+		if (coordinates.size()) {
+			min = coordinates.front();
+			max = coordinates.front();
+			for (size_t i = 1; i < coordinates.size(); ++i) {
+				min.x = std::min(coordinates[i].x, min.x);
+				min.y = std::min(coordinates[i].y, min.y);
+				min.z = std::min(coordinates[i].z, min.z);
+				max.x = std::max(coordinates[i].x, max.x);
+				max.y = std::max(coordinates[i].y, max.y);
+				max.z = std::max(coordinates[i].z, max.z);
+			}
+		}
+		build(bucketsize);
+	}
+	KDTree(const std::vector<_Point<T> > &coordinates, _Point<T>  &min, _Point<T>  &max)
+	: coordinates(coordinates), min(min), max(max)
+	{
+		build();
+	}
 
 	esint begin(esint interval)
 	{
@@ -51,7 +72,7 @@ public:
 
 		esint out = -1;
 
-		Point centroid;
+		_Point<T> centroid;
 
 		for(i = b; i < e; ++i){
 			centroid += this->coordinates[this->permutation[i]];
@@ -80,7 +101,7 @@ public:
 		return this->leaf_intervals.size();
 	};
 
-	void boxMin(esint interval, Point &min) {
+	void boxMin(esint interval, _Point<T> &min) {
 		min = this->min;
 		esint parent = interval / 2;
 		while (parent) {
@@ -94,10 +115,10 @@ public:
 		}
 	}
 
-	const std::vector<Point> &coordinates;
+	const std::vector<_Point<T> > &coordinates;
 
 	esint levels;
-	Point min, max, size;
+	_Point<T>  min, max, size;
 	std::vector<esint> permutation;
 	std::vector<splitter> splitters;
 	std::vector<leaf_intervals> leaf_intervals;

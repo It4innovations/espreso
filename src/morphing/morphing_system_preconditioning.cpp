@@ -29,7 +29,7 @@ MorphingMatrixPreconditioner::MorphingMatrixPreconditioner(
     }
 	nsparse_points = 2;
 
-    KDTree T(points_local, nsparse_points);
+    KDTree<double> T(points_local, nsparse_points);
     esint nbuckets = T.getNLeaves();
 
     std::vector<esint> sparse_point_indices_global(nbuckets);

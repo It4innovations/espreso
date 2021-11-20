@@ -386,7 +386,7 @@ esint getSFCDecomposition(const ElementStore *elements, const NodeStore *nodes, 
 	profiler::syncstart("get_sfc_decomposition");
 	int threads = info::env::OMP_NUM_THREADS;
 
-	HilbertCurve sfc(info::mesh->dimension, SFCDEPTH, nodes->coordinates->datatarray().size(), nodes->coordinates->datatarray().data());
+	HilbertCurve<double> sfc(info::mesh->dimension, SFCDEPTH, nodes->coordinates->datatarray().size(), nodes->coordinates->datatarray().data());
 
 	std::vector<esint> buckets(elements->epointers->datatarray().size()), borders;
 	std::vector<esint> permutation(elements->epointers->datatarray().size());
@@ -408,7 +408,7 @@ esint getSFCDecomposition(const ElementStore *elements, const NodeStore *nodes, 
 	if (!Communication::computeSplitters(buckets, permutation, borders)) {
 		eslog::internalFailure("cannot compute splitters.\n");
 	}
-	borders.back() = sfc.buckets(sfc.depth());
+	borders.back() = sfc.buckets(sfc.depth);
 //	Communication::computeSFCBalancedBorders(sfc, buckets, permutation, borders);
 	profiler::synccheckpoint("compute_splitters");
 

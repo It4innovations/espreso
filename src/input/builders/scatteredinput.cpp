@@ -33,6 +33,9 @@ ScatteredInput::ScatteredInput(MeshBuilder &meshData)
 
 	eslog::startln("BUILDER: BUILD SCATTERED MESH", "BUILDER");
 
+	serialize();
+	eslog::checkpointln("BUILDER: DATA SERIALIZED");
+
 	balance();
 	eslog::checkpointln("BUILDER: DATA BALANCED");
 
@@ -301,7 +304,7 @@ void ScatteredInput::clusterize()
 	}
 
 	profiler::synccheckpoint("compute_splitters");
-	_bucketsBorders.back() = _sfc.buckets(_sfc.depth());
+	_bucketsBorders.back() = _sfc.buckets(_sfc.depth);
 
 	_nregsize = _meshData.nregions.size() / (8 * sizeof(esint)) + 1;
 	_eregsize = _meshData.eregions.size() / (8 * sizeof(esint)) + 1;
@@ -456,7 +459,7 @@ void ScatteredInput::computeSFCNeighbors()
 	size_t index = _bucketsBorders[info::mpi::rank];
 	size_t last = _bucketsBorders[info::mpi::rank + 1];
 	while (index < last) {
-		size_t depth = _sfc.depth(), bsize = 1;
+		size_t depth = _sfc.depth, bsize = 1;
 		while (depth > 1 && index % (bsize * _sfc.bucketSize()) == 0 && index + (bsize * _sfc.bucketSize()) < last) {
 			--depth;
 			bsize *= _sfc.bucketSize();
@@ -473,7 +476,7 @@ void ScatteredInput::computeSFCNeighbors()
 	utils::sortAndRemoveDuplicates(neighbors);
 
 	for (size_t i = 0; i < neighbors.size(); i++) {
-		size_t bstep = _sfc.buckets(_sfc.depth()) / _sfc.buckets(neighbors[i].first);
+		size_t bstep = _sfc.buckets(_sfc.depth) / _sfc.buckets(neighbors[i].first);
 		neighbors[i].first = neighbors[i].second * bstep;
 		neighbors[i].second = neighbors[i].second * bstep + bstep;
 	}
@@ -548,7 +551,7 @@ void ScatteredInput::mergeDuplicatedNodes()
 	profiler::synccheckpoint("compute_border_nodes");
 
 	std::vector<esint> offsets, ids, regions;
-	std::vector<Point> coordinates;
+	std::vector<_Point<esfloat> > coordinates;
 	std::vector<std::vector<esint> > sBuffer(_sfcNeighbors.size()), rBuffer(_sfcNeighbors.size());
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t i = 0; i < toneighs[t].size(); ++i) {

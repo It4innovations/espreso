@@ -2,6 +2,7 @@
 #ifndef SRC_INPUT_MESHDATA_H_
 #define SRC_INPUT_MESHDATA_H_
 
+#include "basis/containers/allocators.h"
 #include "basis/containers/point.h"
 
 #include <vector>
@@ -16,6 +17,23 @@ namespace espreso {
 
 struct InputTransformationConfiguration;
 
+struct PackedNodes {
+	std::vector<esint, initless_allocator<esint> > distribution;
+	std::vector<char, initless_allocator<char> > data;
+	size_t regions = 0, values = 0;
+
+	size_t size() const { return sizeof(esint) + 3 * sizeof(esfloat) + regions + values; }
+
+	esint& offset(const size_t &n) { return *reinterpret_cast<esint*>(data.data() + (n * size())); }
+	Point& point (const size_t &n) { return *reinterpret_cast<Point*>(data.data() + (n * size() + sizeof(esint))); }
+};
+
+struct PackedElements {
+	std::vector<esint, initless_allocator<esint> > distribution;
+	std::vector<char, initless_allocator<char>> data;
+	int regions, values;
+};
+
 struct MeshData {
 	enum class TYPE {
 		GENERAL,
@@ -28,8 +46,14 @@ struct MeshData {
 	TYPE type;
 	bool removeDuplicates = false;
 
+	class RegionData {
+		std::string name;
+		std::vector<esint> ids;
+		std::vector<esfloat> values;
+	};
+
 	std::vector<esint> nIDs;       // nodes IDs [arbitrary numbers]
-	std::vector<Point> coordinates;  // nodes coordinates
+	std::vector<_Point<esfloat> > coordinates;  // nodes coordinates
 
 	std::vector<esint> eIDs;       // elements IDs [arbitrary numbers]
 	std::vector<esint> esize;      // the number of nodes for a given element [4, 4, 4]         e0 has 4 nodes
@@ -40,11 +64,16 @@ struct MeshData {
 
 	std::map<std::string, std::vector<esint> > eregions; // elements regions <name, list of IDs>
 	std::map<std::string, std::vector<esint> > nregions; // nodes regions <name, list of IDs>
+	std::map<std::string, RegionData> edata; // region -> elements data <name, values>
+	std::map<std::string, RegionData> ndata; // region -> nodes data <name, values>
 
-	std::map<std::string, Point > orientation;
+	std::map<std::string, _Point<esfloat> > orientation;
 };
 
 struct MeshBuilder: public MeshData {
+
+	PackedNodes nodes;
+	PackedElements elements;
 
 	struct Duplicate {
 		esint id, target;
@@ -60,7 +89,7 @@ struct MeshBuilder: public MeshData {
 	struct Geometry { // for transformations
 		esint nids, eids;
 		std::pair<size_t, size_t> nodes, elements, enodes;
-		std::vector<std::pair<size_t, size_t>> nregsize, eregsize;
+		std::vector<std::pair<size_t, size_t> > nregsize, eregsize;
 	};
 
 	MeshBuilder(TYPE type = TYPE::GENERAL): MeshData(type) {}

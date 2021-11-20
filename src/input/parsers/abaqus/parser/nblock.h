@@ -21,11 +21,11 @@ struct NList: public AbaqusParser {
 	NList();
 	NList& parse(const char* begin);
 
-	bool readData(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor);
+	bool readData(std::vector<esint> &nIDs, std::vector<_Point<esfloat> > &coordinates, double scaleFactor);
 
 protected:
-	bool index_x_y_z(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor);
-	bool index_solid_line_x_y_z(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor);
+	bool index_x_y_z(std::vector<esint> &nIDs, std::vector<_Point<esfloat> > &coordinates, double scaleFactor);
+	bool index_solid_line_x_y_z(std::vector<esint> &nIDs, std::vector<_Point<esfloat> > &coordinates, double scaleFactor);
 };
 
 }

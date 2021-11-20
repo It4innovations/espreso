@@ -29,9 +29,10 @@ using namespace espreso;
 void Input::clip()
 {
 	if (info::ecf->input.clipping_box.apply) {
-		std::set<esint> removed;
-		std::vector<esint> nids;
-		std::vector<Point> coordinates;
+		std::vector<esint> nids, rdist = { 0 };
+		std::vector<int> rdata;
+		std::vector<_Point<esfloat> > coordinates;
+		std::vector<esint> nstatus(_meshData.coordinates.size(), -1);
 		const ClippingBox &box = info::ecf->input.clipping_box;
 		for (size_t n = 0; n < _meshData.coordinates.size(); ++n) {
 			if (!(
@@ -85,6 +86,41 @@ void Input::clip()
 		profiler::synccheckpoint("geometry_clipped");
 		eslog::checkpointln("BUILDER: GEOMETRY CLIPPED");
 	}
+}
+
+void Input::serialize()
+{
+	if (_meshData.nIDs.size() != _meshData.coordinates.size()) {
+		eslog::internalFailure("the size of MeshData::nIDs != MeshData::coordinates.\n");
+	}
+
+	// offset, coordinates
+	_meshData.nodes.regions = 0;
+	_meshData.nodes.values = 0;
+	_meshData.nodes.data.resize(_meshData.nIDs.size() * _meshData.nodes.size());
+
+	if (std::is_sorted(_meshData.nIDs.begin(), _meshData.nIDs.end())) {
+//		#pragma omp parallel for
+		for (size_t n = 0; n < _meshData.nIDs.size(); ++n) {
+			_meshData.nodes.offset(n) = _meshData.nIDs[n];
+			_meshData.nodes.point(n) = _meshData.coordinates[n];
+		}
+	} else {
+
+	}
+
+	if (_meshData.eIDs.size() != _meshData.esize.size()) {
+		eslog::internalFailure("the size of MeshData::eIDs != MeshData::esize.\n");
+	}
+	if (_meshData.eIDs.size() != _meshData.etype.size()) {
+		eslog::internalFailure("the size of MeshData::eIDs != MeshData::etype.\n");
+	}
+
+	// offset, type, nodes
+	size_t elementsize = _meshData.nIDs.size() * (sizeof(esint) + sizeof(int)) + _meshData.enodes.size() * sizeof(esint);
+
+	_meshData.elements.distribution.resize(_meshData.esize.size() + 1);
+	_meshData.elements.data.resize(elementsize);
 }
 
 void Input::balance()
@@ -709,7 +745,7 @@ void Input::fillNodes()
 	info::mesh->nodes->distribution = tarray<size_t>::distribute(threads, _meshData.coordinates.size());
 
 	info::mesh->nodes->IDs = new serializededata<esint, esint>(1, tarray<esint>(info::mesh->nodes->distribution, _meshData.nIDs));
-	info::mesh->nodes->coordinates = new serializededata<esint, Point>(1, tarray<Point>(info::mesh->nodes->distribution, _meshData.coordinates));
+	info::mesh->nodes->coordinates = new serializededata<esint, Point >(1, tarray<Point>(info::mesh->nodes->distribution, _meshData.coordinates.cbegin(), _meshData.coordinates.cend()));
 
 	std::vector<size_t> rdistribution = info::mesh->nodes->distribution, rdatadistribution = info::mesh->nodes->distribution;
 	for (size_t t = 1; t < threads; t++) {
@@ -1220,12 +1256,12 @@ void Input::coupleDuplicateNodes()
 	profiler::syncend("couple_duplicate_nodes");
 }
 
-void Input::searchDuplicateNodes(std::vector<Point> &coordinates, std::vector<esint> &ids, std::function<void(esint id, esint target)> merge)
+void Input::searchDuplicateNodes(std::vector<_Point<esfloat> > &coordinates, std::vector<esint> &ids, std::function<void(esint id, esint target)> merge)
 {
 	profiler::syncstart("search_duplicate_nodes");
 	profiler::syncparam("size", coordinates.size());
 
-	KDTree tree(coordinates);
+	KDTree<esfloat> tree(coordinates);
 
 	profiler::synccheckpoint("kdtree_build");
 	profiler::param("kdtree_levels", tree.levels);
@@ -1240,7 +1276,7 @@ void Input::searchDuplicateNodes(std::vector<Point> &coordinates, std::vector<es
 			continue;
 		}
 
-		Point min;
+		_Point<esfloat> min;
 		tree.boxMin(i, min);
 
 		auto check = [&] (esint p, esint begin, esint end) {

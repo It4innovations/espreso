@@ -19,6 +19,8 @@ protected:
 
 	void clip();
 
+	void serialize();
+
 	void balance();
 	void balanceNodes();
 	void balancePermutedNodes();
@@ -50,7 +52,7 @@ protected:
 	void searchDuplicateNodes();
 	void coupleDuplicateNodes();
 
-	void searchDuplicateNodes(std::vector<Point> &coordinates, std::vector<esint> &ids, std::function<void(esint id, esint target)> merge);
+	void searchDuplicateNodes(std::vector<_Point<esfloat> > &coordinates, std::vector<esint> &ids, std::function<void(esint id, esint target)> merge);
 
 	MeshBuilder &_meshData;
 	std::vector<esint> _nDistribution, _eDistribution, _etypeDistribution;

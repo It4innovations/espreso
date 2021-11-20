@@ -11,24 +11,25 @@
 #include <limits>
 #include <algorithm>
 
-using namespace espreso;
+namespace espreso {
 
-SpaceFillingCurve::SpaceFillingCurve(size_t dimension, size_t depth, size_t npoints, Point* coordinates)
-: _dimension(dimension), _depth(depth), _n((size_t)1 << depth)
+template <typename T>
+static void _build(SpaceFillingCurve<T> *sfc, size_t dimension, size_t depth, size_t npoints, _Point<T>* coordinates)
 {
-	if (_dimension != 2 && _dimension != 3) {
-		eslog::globalerror("incorrect mesh dimension ='%ld'.\n", _dimension);
+	if (dimension != 2 && dimension != 3) {
+		eslog::globalerror("incorrect mesh dimension ='%ld'.\n", dimension);
 	}
+
 	size_t threads = info::env::OMP_NUM_THREADS;
 
 	double dmax = std::numeric_limits<double>::max();
-	std::vector<Point> mins(threads, Point(dmax, dmax, dmax)), maxs(threads, Point(-dmax, -dmax, -dmax));
+	std::vector<_Point<T> > mins(threads, Point(dmax, dmax, dmax)), maxs(threads, _Point<T>(-dmax, -dmax, -dmax));
 
 	std::vector<size_t> cdistribution = tarray<size_t>::distribute(threads, npoints);
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		Point tmin = Point(dmax, dmax, dmax), tmax = Point(-dmax, -dmax, -dmax);
+		_Point<T> tmin = _Point<T>(dmax, dmax, dmax), tmax = _Point<T>(-dmax, -dmax, -dmax);
 		for (size_t i = cdistribution[t]; i < cdistribution[t + 1]; i++) {
 			tmin.x = std::min(tmin.x, coordinates[i].x);
 			tmin.y = std::min(tmin.y, coordinates[i].y);
@@ -51,36 +52,37 @@ SpaceFillingCurve::SpaceFillingCurve(size_t dimension, size_t depth, size_t npoi
 		maxs[0].z = std::max(maxs[t].z, maxs[0].z);
 	}
 
-	Communication::allReduce(&mins[0].x, &_origin.x, 3, MPI_DOUBLE, MPI_MIN);
-	Communication::allReduce(&maxs[0].x, &_size.x, 3, MPI_DOUBLE, MPI_MAX);
+	Communication::allReduce(&mins[0].x, &sfc->origin.x, 3, MPITools::getType<esfloat>().mpitype, MPI_MIN);
+	Communication::allReduce(&maxs[0].x, &sfc->size.x, 3, MPITools::getType<esfloat>().mpitype, MPI_MAX);
 
-	_size -= _origin - Point(1e-6, 1e-6, 1e-6);
+	sfc->size -= sfc->origin - Point(1e-6, 1e-6, 1e-6);
 }
 
-void SpaceFillingCurve::addSFCNeighbors(size_t depth, size_t index, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors)
+template <typename T>
+static void _addSFCNeighbors(SpaceFillingCurve<T> *sfc, size_t depth, size_t index, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors)
 {
 	size_t x, y, z = 0, nsize;
-	if (_dimension == 2) {
-		D1toD2((size_t)1 << depth, index, x, y);
+	if (sfc->dimension == 2) {
+		sfc->D1toD2((size_t)1 << depth, index, x, y);
 		nsize = neighbors.size();
-		addXYNeighbors(depth, x, y, splitters, neighbors);
+		sfc->addXYNeighbors(depth, x, y, splitters, neighbors);
 		for (size_t i = nsize; i < neighbors.size(); i++) {
 			size_t n = (size_t)1 << neighbors[i].first;
-			neighbors[i].second = D2toD1(n, neighbors[i].second % n, neighbors[i].second / n);
+			neighbors[i].second = sfc->D2toD1(n, neighbors[i].second % n, neighbors[i].second / n);
 		}
 	}
-	if (_dimension == 3) {
-		D1toD3((size_t)1 << depth, index, x, y, z);
+	if (sfc->dimension == 3) {
+		sfc->D1toD3((size_t)1 << depth, index, x, y, z);
 		nsize = neighbors.size();
-		addXYZNeighbors(depth, x, y, z, splitters, neighbors);
+		sfc->addXYZNeighbors(depth, x, y, z, splitters, neighbors);
 		for (size_t i = nsize; i < neighbors.size(); i++) {
 			size_t n = (size_t)1 << neighbors[i].first;
-			neighbors[i].second = D3toD1(n, neighbors[i].second % n, neighbors[i].second % (n * n) / n, neighbors[i].second / (n * n));
+			neighbors[i].second = sfc->D3toD1(n, neighbors[i].second % n, neighbors[i].second % (n * n) / n, neighbors[i].second / (n * n));
 		}
 	}
 }
 
-std::pair<size_t, size_t> SpaceFillingCurve::getXYZBucket(size_t depth, size_t x, size_t y, size_t z)
+static std::pair<size_t, size_t> _getXYZBucket(size_t depth, size_t x, size_t y, size_t z)
 {
 	std::pair<size_t, size_t> bucket;
 
@@ -103,7 +105,8 @@ std::pair<size_t, size_t> SpaceFillingCurve::getXYZBucket(size_t depth, size_t x
 	return bucket;
 }
 
-void SpaceFillingCurve::addXYNeighbors(size_t depth, size_t x, size_t y, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors)
+template <typename T>
+static void _addXYNeighbors(SpaceFillingCurve<T> *sfc, size_t depth, size_t x, size_t y, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors)
 {
 	std::vector<std::pair<size_t, size_t> > potential;
 
@@ -115,13 +118,13 @@ void SpaceFillingCurve::addXYNeighbors(size_t depth, size_t x, size_t y, std::ve
 			if (x + ox < n && y + oy < n) {
 
 				potential.clear();
-				potential.push_back(getXYZBucket(depth, x + ox, y + oy, 0));
+				potential.push_back(_getXYZBucket(depth, x + ox, y + oy, 0));
 
 				// neighbors should be finer
 				for (size_t i = 0; i < potential.size(); i++) {
 					size_t n = (size_t)1 << potential[i].first;
-					size_t bucket = D2toD1(n, potential[i].second % n, potential[i].second / n);
-					size_t bstep = this->buckets(this->depth()) / this->buckets(potential[i].first);
+					size_t bucket = sfc->D2toD1(n, potential[i].second % n, potential[i].second / n);
+					size_t bstep = sfc->buckets(sfc->depth) / sfc->buckets(potential[i].first);
 					esint first = bucket * bstep;
 					esint last  = bucket * bstep + bstep;
 
@@ -146,7 +149,8 @@ void SpaceFillingCurve::addXYNeighbors(size_t depth, size_t x, size_t y, std::ve
 	}
 }
 
-void SpaceFillingCurve::addXYZNeighbors(size_t depth, size_t x, size_t y, size_t z, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors)
+template <typename T>
+static void _addXYZNeighbors(SpaceFillingCurve<T> *sfc, size_t depth, size_t x, size_t y, size_t z, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors)
 {
 	std::vector<std::pair<size_t, size_t> > potential;
 
@@ -159,12 +163,12 @@ void SpaceFillingCurve::addXYZNeighbors(size_t depth, size_t x, size_t y, size_t
 				if (x + ox < n && y + oy < n && z + oz < n) {
 
 					potential.clear();
-					potential.push_back(getXYZBucket(depth, x + ox, y + oy, z + oz));
+					potential.push_back(_getXYZBucket(depth, x + ox, y + oy, z + oz));
 
 					for (size_t i = 0; i < potential.size(); i++) {
 						size_t n = (size_t)1 << potential[i].first;
-						size_t bucket = D3toD1(n, potential[i].second % n, potential[i].second % (n * n) / n, potential[i].second / (n * n));
-						size_t bstep = this->buckets(this->depth()) / this->buckets(potential[i].first);
+						size_t bucket = sfc->D3toD1(n, potential[i].second % n, potential[i].second % (n * n) / n, potential[i].second / (n * n));
+						size_t bstep = sfc->buckets(sfc->depth) / sfc->buckets(potential[i].first);
 						esint first = bucket * bstep;
 						esint last  = bucket * bstep + bstep;
 
@@ -193,6 +197,27 @@ void SpaceFillingCurve::addXYZNeighbors(size_t depth, size_t x, size_t y, size_t
 	}
 }
 
+template <>
+SpaceFillingCurve<float>::SpaceFillingCurve(size_t dimension, size_t depth, size_t npoints, _Point<float>* coordinates)
+: dimension(dimension), depth(depth), n((size_t)1 << depth)
+{
+	_build(this, dimension, depth, npoints, coordinates);
+}
 
+template <>
+SpaceFillingCurve<double>::SpaceFillingCurve(size_t dimension, size_t depth, size_t npoints, _Point<double>* coordinates)
+: dimension(dimension), depth(depth), n((size_t)1 << depth)
+{
+	_build(this, dimension, depth, npoints, coordinates);
+}
 
+template <> void SpaceFillingCurve<float>::addSFCNeighbors(size_t depth, size_t index, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) { _addSFCNeighbors(this, depth, index, splitters, neighbors); }
+template <> void SpaceFillingCurve<double>::addSFCNeighbors(size_t depth, size_t index, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) { _addSFCNeighbors(this, depth, index, splitters, neighbors); }
 
+template <> void SpaceFillingCurve<float>::addXYNeighbors(size_t depth, size_t x, size_t y, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) { _addXYNeighbors(this, depth, x, y, splitters, neighbors); }
+template <> void SpaceFillingCurve<double>::addXYNeighbors(size_t depth, size_t x, size_t y, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) { _addXYNeighbors(this, depth, x, y, splitters, neighbors); }
+
+template <> void SpaceFillingCurve<float>::addXYZNeighbors(size_t depth, size_t x, size_t y, size_t z, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) { _addXYZNeighbors(this, depth, x, y, z, splitters, neighbors); }
+template <> void SpaceFillingCurve<double>::addXYZNeighbors(size_t depth, size_t x, size_t y, size_t z, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) { _addXYZNeighbors(this, depth, x, y, z, splitters, neighbors); }
+
+}

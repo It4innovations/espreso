@@ -48,7 +48,7 @@ static inline void _push(std::vector<double> &data, const char* c, size_t &size)
 	size = next - c;
 }
 
-static inline void _push(std::vector<Point> &data, const char* c, size_t &size)
+static inline void _push(std::vector<_Point<esfloat> > &data, const char* c, size_t &size)
 {
 	char* next;
 	const char* _c = c;
@@ -123,19 +123,19 @@ void ASCIIParser::_parse(std::vector<TType> &data, InputFile &file, size_t begin
 	profiler::syncend("parse_ascii");
 }
 
-void ASCIIParser::parse(std::vector<esint> &ids, std::vector<Point> &coordinates, InputFile &file, size_t begin, size_t end)
+void ASCIIParser::parse(std::vector<esint> &ids, std::vector<_Point<esfloat> > &coordinates, InputFile &file, size_t begin, size_t end)
 {
 	profiler::syncstart("parse_ascii_mixed");
 	std::vector<size_t> tdistribution;
 	setDistribution(file, begin, end, tdistribution, true);
 
 	std::vector<std::vector<esint> > tids(info::env::OMP_NUM_THREADS);
-	std::vector<std::vector<Point> > tcoords(info::env::OMP_NUM_THREADS);
+	std::vector<std::vector<_Point<esfloat> > > tcoords(info::env::OMP_NUM_THREADS);
 
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
 		std::vector<esint> _ids;
-		std::vector<Point> _coords;
+		std::vector<_Point<esfloat> > _coords;
 		_ids.reserve((tdistribution[t + 1] - tdistribution[t]) / 2);
 		_coords.reserve((tdistribution[t + 1] - tdistribution[t]) / 2);
 		size_t begin = tdistribution[t], size;
@@ -226,6 +226,11 @@ void ASCIIParser::parse(std::vector<double> &data, InputFile &file, size_t begin
 }
 
 void ASCIIParser::addmore(std::vector<esint> &data, InputFile &file, size_t n, size_t end)
+{
+	_addmore(data, file, n, end);
+}
+
+void ASCIIParser::addmore(std::vector<float> &data, InputFile &file, size_t n, size_t end)
 {
 	_addmore(data, file, n, end);
 }

@@ -12,7 +12,6 @@
 namespace espreso {
 
 struct ProcessesReduction;
-class SpaceFillingCurve;
 
 class MPIOperations {
 	friend class MPITools;

@@ -123,7 +123,7 @@ void SequentialInput::removeDanglingNodes()
 	}
 	utils::sortAndRemoveDuplicates(usedNodes);
 
-	std::vector<Point> coordinates;
+	std::vector<_Point<esfloat> > coordinates;
 	std::vector<esint> nIDs, ndist, noffset(usedNodes.back() + 1);
 	std::vector<int> nranks;
 	coordinates.reserve(_meshData.nIDs.size());

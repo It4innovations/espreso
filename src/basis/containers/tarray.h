@@ -23,6 +23,8 @@ public:
 	tarray(const std::vector<std::vector<TType> > &data);
 	tarray(const std::vector<TType> &data);
 	tarray(const std::vector<size_t> &distribution, const std::vector<TType> &data);
+	template <typename TOther>
+	tarray(const std::vector<size_t> &distribution, TOther begin, TOther end);
 	tarray(const std::vector<size_t> &distribution, size_t duplication, TType init = TType{});
 
 	tarray(const tarray<TType> &other);

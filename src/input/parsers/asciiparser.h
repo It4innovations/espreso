@@ -22,9 +22,10 @@ public:
 	static void parse(std::vector<esint> &data, InputFile &file, size_t begin, size_t end);
 	static void parse(std::vector<float> &data, InputFile &file, size_t begin, size_t end);
 	static void parse(std::vector<double> &data, InputFile &file, size_t begin, size_t end);
-	static void parse(std::vector<esint> &ids, std::vector<Point> &coordinates, InputFile &file, size_t begin, size_t end);
+	static void parse(std::vector<esint> &ids, std::vector<_Point<esfloat> > &coordinates, InputFile &file, size_t begin, size_t end);
 
 	static void addmore(std::vector<esint> &data, InputFile &file, size_t n, size_t end);
+	static void addmore(std::vector<float> &data, InputFile &file, size_t n, size_t end);
 	static void addmore(std::vector<double> &data, InputFile &file, size_t n, size_t end);
 
 	// go through integers and set pointers to non-integers to -(non-string position)

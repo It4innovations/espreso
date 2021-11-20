@@ -9,7 +9,7 @@
 
 using namespace espreso;
 
-bool OpenFOAMPoints::readData(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor)
+bool OpenFOAMPoints::readData(std::vector<esint> &nIDs, std::vector<_Point<esfloat> > &coordinates, double scaleFactor)
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
 

@@ -282,7 +282,7 @@ void NeperMshMesh::parseASCII(MeshBuilder &mesh)
 	}
 
 	std::vector<esint> polyid, groups;
-	std::vector<Point> orientation;
+	std::vector<_Point<esfloat> > orientation;
 	ASCIIParser::parse(polyid, orientation, _meshfile, _elsetOrientations.front().begin, _elsetOrientations.front().end);
 	if (_groups.size()) {
 		ASCIIParser::parse(groups, _meshfile, _groups.front().begin, _groups.front().end);

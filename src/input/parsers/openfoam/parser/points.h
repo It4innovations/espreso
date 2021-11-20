@@ -13,7 +13,7 @@ struct OpenFOAMPoints: public OpenFOAMCollectiveParser {
 
 	OpenFOAMPoints(const char *begin, const char *end): OpenFOAMCollectiveParser(begin, end) {}
 
-	bool readData(std::vector<esint> &nIDs, std::vector<Point> &coordinates, double scaleFactor);
+	bool readData(std::vector<esint> &nIDs, std::vector<_Point<esfloat> > &coordinates, double scaleFactor);
 };
 
 }
