@@ -10,6 +10,8 @@ namespace espreso {
 template <typename Assembler, typename Solver, typename Analysis>
 void initSystem(AX_LinearSystem<Assembler, Solver>* &system, Analysis *analysis)
 {
+	system = new AX_MKLPDSSSystem<Analysis>(analysis);
+	return;
 	switch (analysis->configuration.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI:    system = new AX_FETISystem<Analysis>(analysis); break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
