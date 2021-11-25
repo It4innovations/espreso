@@ -36,8 +36,14 @@ ScatteredInput::ScatteredInput(MeshBuilder &meshData)
 	serialize();
 	eslog::checkpointln("BUILDER: DATA SERIALIZED");
 
-	balance();
-	eslog::checkpointln("BUILDER: DATA BALANCED");
+	connect();
+	eslog::checkpointln("BUILDER: DATA CONNECTED");
+
+	MPI_Finalize();
+	exit(0);
+
+//	balance();
+//	eslog::checkpointln("BUILDER: DATA BALANCED");
 
 	assignRegions(_meshData.eregions, _meshData.eIDs, _eDistribution, _eregsize, _eregions);
 	assignRegions(_meshData.nregions, _meshData.nIDs, _nDistribution, _nregsize, _nregions);

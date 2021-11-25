@@ -50,6 +50,14 @@ public:
 		profiler::syncend("synchronize");
 	}
 
+	template<typename ...TArgs>
+	void sort(TArgs& ...args)
+	{
+		profiler::syncstart("sort");
+		_sort(args...);
+		profiler::syncend("sort");
+	}
+
 protected:
 	struct Keyword {
 		int offset, size;
@@ -61,6 +69,24 @@ protected:
 	void _synchronize()
 	{
 		Communication::allGatherUnknownSize(_packedData);
+	}
+
+	template<typename TKeyword>
+	void _sort(std::vector<TKeyword> &keywords)
+	{
+		std::sort(keywords.begin(), keywords.end(), [&] (const TKeyword &key1, const TKeyword &key2) {
+			if (key1.fileindex == key2.fileindex) {
+				return key1.offset < key2.offset;
+			}
+			return key1.fileindex < key2.fileindex;
+		});
+	}
+
+	template<typename TKeyword, typename ...TArgs>
+	void _sort(std::vector<TKeyword> &keywords, TArgs& ...args)
+	{
+		_sort(keywords);
+		_sort(args...);
 	}
 
 	template<typename TData>

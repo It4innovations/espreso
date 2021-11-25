@@ -18,20 +18,73 @@ namespace espreso {
 struct InputTransformationConfiguration;
 
 struct PackedNodes {
+	struct Node {
+		Node(char *node)
+		: offset(*reinterpret_cast<esint*>(node)),
+		  coordinate(*reinterpret_cast<_Point<esfloat>*>(node + sizeof(esint)))
+		{
+
+		}
+
+		esint &offset;
+		_Point<esfloat> &coordinate;
+	};
+
 	std::vector<esint, initless_allocator<esint> > distribution;
 	std::vector<char, initless_allocator<char> > data;
-	size_t regions = 0, values = 0;
+	size_t nodes, regions = 0, values = 0;
 
-	size_t size() const { return sizeof(esint) + 3 * sizeof(esfloat) + regions + values; }
+	Node operator[](size_t n) { return Node{data.data() + n * _size}; }
 
-	esint& offset(const size_t &n) { return *reinterpret_cast<esint*>(data.data() + (n * size())); }
-	Point& point (const size_t &n) { return *reinterpret_cast<Point*>(data.data() + (n * size() + sizeof(esint))); }
+	// ID, coordinates, regions bit-array, value
+	void set(size_t nodes, size_t regions, size_t values)
+	{
+		this->nodes = nodes;
+		this->regions = regions;
+		this->values = values;
+		_size = sizeof(esint) + 3 * sizeof(esfloat) + regions + values;
+		data.resize(nodes * _size);
+	}
+
+protected:
+	size_t _size;
 };
 
 struct PackedElements {
+	struct Element {
+		Element(char *element)
+		: offset(*reinterpret_cast<esint*>(element)),
+		  type(*reinterpret_cast<int*>(element + sizeof(esint))),
+		  nodes(*reinterpret_cast<int*>(element + sizeof(esint) + sizeof(int))),
+		  node(reinterpret_cast<esint*>(element + sizeof(esint) + sizeof(int) + sizeof(int)))
+		{
+
+		}
+
+		esint &offset;
+		int &type;
+		int &nodes;
+		esint *node;
+	};
+
 	std::vector<esint, initless_allocator<esint> > distribution;
-	std::vector<char, initless_allocator<char>> data;
-	int regions, values;
+	std::vector<char, initless_allocator<char> > data;
+	size_t elements, regions, values;
+
+	Element operator[](size_t e) { return Element{data.data() + distribution[e]}; }
+
+	void set(const std::vector<esint> &esize, size_t regions, size_t values)
+	{
+		this->elements = esize.size();
+		this->regions = regions;
+		this->values = values;
+		distribution.resize(esize.size() + 1);
+		distribution[0] = 0;
+		for (size_t e = 0; e < esize.size(); ++e) {
+			distribution[e + 1] = distribution[e] + sizeof(esint) + sizeof(int) + sizeof(int) + esize[e] * sizeof(esint) + regions + values;
+		}
+		data.resize(distribution.back());
+	}
 };
 
 struct MeshData {
@@ -46,26 +99,20 @@ struct MeshData {
 	TYPE type;
 	bool removeDuplicates = false;
 
-	class RegionData {
-		std::string name;
-		std::vector<esint> ids;
-		std::vector<esfloat> values;
-	};
-
-	std::vector<esint> nIDs;       // nodes IDs [arbitrary numbers]
+	std::vector<esint> nIDs;         // nodes IDs [arbitrary numbers]
 	std::vector<_Point<esfloat> > coordinates;  // nodes coordinates
 
-	std::vector<esint> eIDs;       // elements IDs [arbitrary numbers]
-	std::vector<esint> esize;      // the number of nodes for a given element [4, 4, 4]         e0 has 4 nodes
-	std::vector<esint> enodes;     // elements nodes                          [0, 1, 5, 4, ...] e0 has nodes 0, 1, 5, 4
+	std::vector<esint> eIDs;         // elements IDs [arbitrary numbers]
+	std::vector<int> esize;          // the number of nodes for a given element [4, 4, 4]         e0 has 4 nodes
+	std::vector<esint> enodes;       // elements nodes                          [0, 1, 5, 4, ...] e0 has nodes 0, 1, 5, 4
 	std::vector<int> etype;          // elements types [from Element::CODE]
 	std::vector<int> body;           // elements bodies
 	std::vector<int> material;       // elements materials
 
 	std::map<std::string, std::vector<esint> > eregions; // elements regions <name, list of IDs>
 	std::map<std::string, std::vector<esint> > nregions; // nodes regions <name, list of IDs>
-	std::map<std::string, RegionData> edata; // region -> elements data <name, values>
-	std::map<std::string, RegionData> ndata; // region -> nodes data <name, values>
+	std::map<std::string, std::map<std::string, std::vector<esfloat> > > edata; // parameter -> elements data <region, values>
+	std::map<std::string, std::map<std::string, std::vector<esfloat> > > ndata; // parameter -> nodes data <region, values>
 
 	std::map<std::string, _Point<esfloat> > orientation;
 };

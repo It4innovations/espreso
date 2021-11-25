@@ -13,6 +13,23 @@ public:
 		Ensight_Gold
 	};
 
+	struct Variable {
+		enum class Type {
+			NODE,
+			ELEMENT
+		};
+
+		int dimension, time;
+		Type type;
+		std::string name, path;
+
+		Variable(int dimension, Type type, int time, const std::string &name, const std::string &path)
+		: dimension(dimension), time(time), type(type), name(name), path(path)
+		{
+
+		}
+	};
+
 	EnsightCasefile(const std::string &path);
 
 	void parse();
@@ -20,8 +37,8 @@ public:
 	std::string path;
 	Type type;
 	std::string geometry;
-	std::vector<std::string> variables;
-	std::vector<double> times;
+	std::vector<Variable> variables;
+	std::vector<std::vector<double> > times;
 };
 
 }

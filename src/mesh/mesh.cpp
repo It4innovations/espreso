@@ -13,6 +13,7 @@
 #include "basis/utilities/packing.h"
 #include "wrappers/mpi/communication.h"
 
+#include "input/input.h"
 #include "input/builders/input.h"
 #include "input/parsers/ansyscdb/ansyscdb.h"
 #include "input/parsers/openfoam/openfoam.h"
@@ -86,31 +87,56 @@ void Mesh::init()
 void Mesh::load()
 {
 	profiler::syncstart("load");
-	MeshBuilder *data = NULL;
+//	MeshBuilder *data = NULL;
+//	switch (info::ecf->input_type) {
+//	case ECF::INPUT_TYPE::EXTERNAL_FILE:
+//		switch (info::ecf->input.format) {
+//		case InputConfiguration::FORMAT::ANSYS_CDB:      data = new AnsysCDBLoader     (info::ecf->input); break;
+//		case InputConfiguration::FORMAT::OPENFOAM:       data = new OpenFOAMLoader     (info::ecf->input); break;
+//		case InputConfiguration::FORMAT::ABAQUS:         data = new AbaqusLoader       (info::ecf->input); break;
+//		case InputConfiguration::FORMAT::XDMF:           data = new XDMFLoader         (info::ecf->input); break;
+//		case InputConfiguration::FORMAT::ENSIGHT:        data = new EnsightLoader      (info::ecf->input); break;
+//		case InputConfiguration::FORMAT::VTK_LEGACY:     data = new VTKLegacyLoader    (info::ecf->input); break;
+//		case InputConfiguration::FORMAT::NETGET:         data = new NetgenNeutralLoader(info::ecf->input); break;
+//		case InputConfiguration::FORMAT::NEPER:          data = new NeperLoader        (info::ecf->input); break;
+//		case InputConfiguration::FORMAT::GMSH:           data = new GMSHGenerator      (info::ecf->input); break;
+//		case InputConfiguration::FORMAT::NGLIB:          data = new NGLibGenerator     (info::ecf->input); break;
+//		}
+//		break;
+//	case ECF::INPUT_TYPE::GENERATOR:
+//	default:
+//		data = new MeshGenerator(info::ecf->generator);
+//	}
+//
+//	data->load();
+//	data->build();
+//
+//	delete data;
+
+	Input *input;
 	switch (info::ecf->input_type) {
 	case ECF::INPUT_TYPE::EXTERNAL_FILE:
 		switch (info::ecf->input.format) {
-		case InputConfiguration::FORMAT::ANSYS_CDB:      data = new AnsysCDBLoader     (info::ecf->input); break;
-		case InputConfiguration::FORMAT::OPENFOAM:       data = new OpenFOAMLoader     (info::ecf->input); break;
-		case InputConfiguration::FORMAT::ABAQUS:         data = new AbaqusLoader       (info::ecf->input); break;
-		case InputConfiguration::FORMAT::XDMF:           data = new XDMFLoader         (info::ecf->input); break;
-		case InputConfiguration::FORMAT::ENSIGHT:        data = new EnsightLoader      (info::ecf->input); break;
-		case InputConfiguration::FORMAT::VTK_LEGACY:     data = new VTKLegacyLoader    (info::ecf->input); break;
-		case InputConfiguration::FORMAT::NETGET:         data = new NetgenNeutralLoader(info::ecf->input); break;
-		case InputConfiguration::FORMAT::NEPER:          data = new NeperLoader        (info::ecf->input); break;
-		case InputConfiguration::FORMAT::GMSH:           data = new GMSHGenerator      (info::ecf->input); break;
-		case InputConfiguration::FORMAT::NGLIB:          data = new NGLibGenerator     (info::ecf->input); break;
+//		case InputConfiguration::FORMAT::ANSYS_CDB:  input = new AnsysCDBLoader     (info::ecf->input); break;
+//		case InputConfiguration::FORMAT::OPENFOAM:   input = new OpenFOAMLoader     (info::ecf->input); break;
+//		case InputConfiguration::FORMAT::ABAQUS:     input = new AbaqusLoader       (info::ecf->input); break;
+//		case InputConfiguration::FORMAT::XDMF:       input = new XDMFLoader         (info::ecf->input); break;
+		case InputConfiguration::FORMAT::ENSIGHT: input = new InputEnsight(); break;
+//		case InputConfiguration::FORMAT::VTK_LEGACY: input = new VTKLegacyLoader    (info::ecf->input); break;
+//		case InputConfiguration::FORMAT::NETGET:     input = new NetgenNeutralLoader(info::ecf->input); break;
+//		case InputConfiguration::FORMAT::NEPER:      input = new NeperLoader        (info::ecf->input); break;
+//		case InputConfiguration::FORMAT::GMSH:       input = new GMSHGenerator      (info::ecf->input); break;
+//		case InputConfiguration::FORMAT::NGLIB:      input = new NGLibGenerator     (info::ecf->input); break;
 		}
 		break;
 	case ECF::INPUT_TYPE::GENERATOR:
 	default:
-		data = new MeshGenerator(info::ecf->generator);
+		break;
+//		input = new MeshGenerator(info::ecf->generator);
 	}
 
-	data->load();
-	data->build();
-
-	delete data;
+	input->load(info::ecf->input);
+	input->build(*info::mesh);
 
 	profiler::syncend("load");
 }

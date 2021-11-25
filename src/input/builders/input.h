@@ -20,6 +20,7 @@ protected:
 	void clip();
 
 	void serialize();
+	void connect();
 
 	void balance();
 	void balanceNodes();

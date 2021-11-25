@@ -26,7 +26,7 @@ def configure(ctx):
     ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
     ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
 
-    ctx.env.append_unique("DEFINES", [ "esfloat=float" ])
+    ctx.env.append_unique("DEFINES", [ "esfloat=double" ])
     if ctx.options.intwidth == "32":
         ctx.env.append_unique("DEFINES", [ "esint=int", "esint_mpi=MPI_INT" ])
         ctx.env.append_unique("DEFINES_API", [ "FETI4I_INT_WIDTH=32", "MESIO_INT_WIDTH=32" ])

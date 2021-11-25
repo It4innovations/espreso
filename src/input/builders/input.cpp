@@ -24,6 +24,8 @@
 #include <numeric>
 #include <set>
 
+#include "basis/utilities/print.h"
+
 using namespace espreso;
 
 void Input::clip()
@@ -94,20 +96,21 @@ void Input::serialize()
 		eslog::internalFailure("the size of MeshData::nIDs != MeshData::coordinates.\n");
 	}
 
-	// offset, coordinates
-	_meshData.nodes.regions = 0;
-	_meshData.nodes.values = 0;
-	_meshData.nodes.data.resize(_meshData.nIDs.size() * _meshData.nodes.size());
+
+	_meshData.nodes.set(_meshData.nIDs.size(), 0, 0);
 
 	if (std::is_sorted(_meshData.nIDs.begin(), _meshData.nIDs.end())) {
 //		#pragma omp parallel for
 		for (size_t n = 0; n < _meshData.nIDs.size(); ++n) {
-			_meshData.nodes.offset(n) = _meshData.nIDs[n];
-			_meshData.nodes.point(n) = _meshData.coordinates[n];
+			_meshData.nodes[n].offset = _meshData.nIDs[n];
+			_meshData.nodes[n].coordinate = _meshData.coordinates[n];
 		}
 	} else {
-
+		eslog::internalFailure("Implement a loader for non-sorted nodes.\n");
 	}
+
+	std::vector<esint>().swap(_meshData.nIDs);
+	std::vector<_Point<esfloat> >().swap(_meshData.coordinates);
 
 	if (_meshData.eIDs.size() != _meshData.esize.size()) {
 		eslog::internalFailure("the size of MeshData::eIDs != MeshData::esize.\n");
@@ -116,11 +119,78 @@ void Input::serialize()
 		eslog::internalFailure("the size of MeshData::eIDs != MeshData::etype.\n");
 	}
 
-	// offset, type, nodes
-	size_t elementsize = _meshData.nIDs.size() * (sizeof(esint) + sizeof(int)) + _meshData.enodes.size() * sizeof(esint);
+	_meshData.elements.set(_meshData.esize, 0, 0);
 
-	_meshData.elements.distribution.resize(_meshData.esize.size() + 1);
-	_meshData.elements.data.resize(elementsize);
+	if (std::is_sorted(_meshData.eIDs.begin(), _meshData.eIDs.end())) {
+//		#pragma omp parallel for
+		for (size_t e = 0, edist = 0; e < _meshData.eIDs.size(); edist += _meshData.esize[e++]) {
+			_meshData.elements[e].offset = _meshData.eIDs[e];
+			_meshData.elements[e].type = _meshData.etype[e];
+			_meshData.elements[e].nodes = _meshData.esize[e];
+			for (int n = 0; n < _meshData.elements[e].nodes; ++ n) {
+				*_meshData.elements[e].node = _meshData.enodes[edist + n];
+			}
+		}
+	} else {
+		eslog::internalFailure("Implement a loader for non-sorted elements.\n");
+	}
+
+	std::vector<esint>().swap(_meshData.eIDs);
+	std::vector<int>().swap(_meshData.etype);
+	std::vector<int>().swap(_meshData.esize);
+	std::vector<esint>().swap(_meshData.enodes);
+}
+
+void Input::connect()
+{
+	size_t nregions = _meshData.nregions.size();
+	size_t eregions = _meshData.eregions.size();
+	size_t nvalues = _meshData.ndata.size();
+	size_t evalues = _meshData.edata.size();
+
+	std::vector<esint> rintervals, voffsets, vsum(nregions * nvalues + eregions * evalues);
+	rintervals.reserve(2 * (nregions + eregions));
+	voffsets.reserve(nregions * nvalues + eregions * evalues);
+	for (auto reg = _meshData.nregions.begin(); reg != _meshData.nregions.end(); ++reg) {
+		if (reg->second.size() == 2) {
+			rintervals.push_back(reg->second[0]);
+			rintervals.push_back(reg->second[1]);
+		} else if (reg->second.size() != 0) {
+			eslog::internalFailure("Implement a loader for non-intervaled regions.\n");
+		}
+		for (auto val = _meshData.ndata.begin(); val != _meshData.ndata.end(); ++val) {
+			esint values = 0;
+			auto it = val->second.find(reg->first);
+			if (it != val->second.end()) {
+				values = it->second.size();
+			}
+			voffsets.push_back(values);
+		}
+	}
+	for (auto reg = _meshData.eregions.begin(); reg != _meshData.eregions.end(); ++reg) {
+		if (reg->second.size() == 2) {
+			rintervals.push_back(reg->second[0]);
+			rintervals.push_back(reg->second[1]);
+		} else if (reg->second.size() != 0) {
+			eslog::internalFailure("Implement a loader for non-intervaled regions.\n");
+		}
+		for (auto val = _meshData.edata.begin(); val != _meshData.edata.end(); ++val) {
+			esint values = 0;
+			auto it = val->second.find(reg->first);
+			if (it != val->second.end()) {
+				values = it->second.size();
+			}
+			voffsets.push_back(values);
+		}
+	}
+
+	Communication::allReduce(rintervals.data(), NULL, rintervals.size(), MPITools::getType<esint>().mpitype, MPI_MAX);
+	Communication::exscan(vsum, voffsets);
+
+	std::cout << rintervals;
+	std::cout << voffsets;
+
+//	size_t nvalues = _meshData..size();
 }
 
 void Input::balance()

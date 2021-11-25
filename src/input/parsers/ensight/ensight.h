@@ -2,19 +2,19 @@
 #ifndef SRC_INPUT_FORMATS_ENSIGHT_ENSIGHT_H_
 #define SRC_INPUT_FORMATS_ENSIGHT_ENSIGHT_H_
 
-#include "input/meshbuilder.h"
+#include "input/input.h"
 
 namespace espreso {
 
 class InputConfiguration;
 
-class EnsightLoader: public MeshBuilder {
+class InputEnsight: public Input {
 public:
-	EnsightLoader(const InputConfiguration &configuration);
-	void load();
+	void load(const InputConfiguration &configuration);
+	void build(Mesh &mesh);
 
 protected:
-	const InputConfiguration &_configuration;
+	OrderedMeshDatabase database;
 };
 
 }
