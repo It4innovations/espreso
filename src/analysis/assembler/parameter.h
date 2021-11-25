@@ -90,9 +90,9 @@ struct ElementParameter: public ElementParameterData {
 
 template<int mask>
 struct ElementGPsExternalParameter: public ElementParameter<mask> {
-	ExternalElementGPsValue externalValue;
+	ExternalElementGPsValue externalValues;
 
-	ElementGPsExternalParameter(): externalValue(*this)
+	ElementGPsExternalParameter(): externalValues(*this)
 	{
 		std::fill(this->update.begin(), this->update.end(), false);
 	}
@@ -100,9 +100,9 @@ struct ElementGPsExternalParameter: public ElementParameter<mask> {
 
 template<int mask>
 struct ElementNodesExternalParameter: public ElementParameter<mask> {
-	ExternalElementNodesValue externalValue;
+	ExternalElementNodesValue externalValues;
 
-	ElementNodesExternalParameter(): externalValue(*this)
+	ElementNodesExternalParameter(): externalValues(*this)
 	{
 		std::fill(this->update.begin(), this->update.end(), false);
 	}

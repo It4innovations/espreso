@@ -169,7 +169,7 @@ struct ParametersTranslationMotions {
 };
 
 struct ParametersElementNodeFunction {
-	ElementGPsExternalParameter<enodes> node;
+	ElementGPsExternalParameter<egps> gp;
 };
 
 struct ParametersBoundaryNodeFunction {

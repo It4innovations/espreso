@@ -73,8 +73,8 @@ bool AX_HeatTransfer::initTemperature()
 	if (settings.init_temp_respect_bc) {
 		temp.initial.node.setConstness(false);
 	}
-	examineElementParameter("INITIAL TEMPERATURE", settings.initial_temperature, temp.initial.node.externalValue);
-	fromExpression(*this, temp.initial.node, temp.initial.node.externalValue);
+	examineElementParameter("INITIAL TEMPERATURE", settings.initial_temperature, temp.initial.node.externalValues);
+	fromExpression(*this, temp.initial.node, temp.initial.node.externalValues);
 	_evaluate();
 
 //	for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
@@ -155,8 +155,8 @@ void AX_HeatTransfer::analyze()
 
 	if (step::step.loadstep == 0) {
 		if (info::mesh->dimension == 2) {
-			correct &= examineElementParameter("THICKNESS", settings.thickness, thickness.gp.externalValue);
-			fromExpression(*this, thickness.gp, thickness.gp.externalValue);
+			correct &= examineElementParameter("THICKNESS", settings.thickness, thickness.gp.externalValues);
+			fromExpression(*this, thickness.gp, thickness.gp.externalValues);
 		}
 
 		///////////////////////////////////// Set materials and check if there is not any incorrect region intersection
@@ -171,12 +171,12 @@ void AX_HeatTransfer::analyze()
 			case CoordinateSystemConfiguration::TYPE::CARTESIAN:
 				eslog::info("    COORDINATE SYSTEM:                                                              CARTESIAN \n");
 				if (info::mesh->dimension == 2) {
-					examineMaterialParameter(mat->name, "ROTATION.Z", mat->coordinate_system.rotation.z, cooSystem.cartesian2D.externalValue, 0);
+					examineMaterialParameter(mat->name, "ROTATION.Z", mat->coordinate_system.rotation.z, cooSystem.cartesian2D.externalValues, 0);
 				}
 				if (info::mesh->dimension == 3) {
-					examineMaterialParameter(mat->name, "ROTATION.X", mat->coordinate_system.rotation.x, cooSystem.cartesian3D.externalValue, 0);
-					examineMaterialParameter(mat->name, "ROTATION.Y", mat->coordinate_system.rotation.y, cooSystem.cartesian3D.externalValue, 1);
-					examineMaterialParameter(mat->name, "ROTATION.Z", mat->coordinate_system.rotation.z, cooSystem.cartesian3D.externalValue, 2);
+					examineMaterialParameter(mat->name, "ROTATION.X", mat->coordinate_system.rotation.x, cooSystem.cartesian3D.externalValues, 0);
+					examineMaterialParameter(mat->name, "ROTATION.Y", mat->coordinate_system.rotation.y, cooSystem.cartesian3D.externalValues, 1);
+					examineMaterialParameter(mat->name, "ROTATION.Z", mat->coordinate_system.rotation.z, cooSystem.cartesian3D.externalValues, 2);
 				}
 				break;
 			case CoordinateSystemConfiguration::TYPE::SPHERICAL:
@@ -185,99 +185,99 @@ void AX_HeatTransfer::analyze()
 				}
 				if (info::mesh->dimension == 3) {
 					eslog::info("    COORDINATE SYSTEM:                                                              SPHERICAL \n");
-					examineMaterialParameter(mat->name, "CENTER.X", mat->coordinate_system.center.x, cooSystem.spherical.externalValue, 0);
-					examineMaterialParameter(mat->name, "CENTER.Y", mat->coordinate_system.center.y, cooSystem.spherical.externalValue, 1);
-					examineMaterialParameter(mat->name, "CENTER.Z", mat->coordinate_system.center.z, cooSystem.spherical.externalValue, 2);
+					examineMaterialParameter(mat->name, "CENTER.X", mat->coordinate_system.center.x, cooSystem.spherical.externalValues, 0);
+					examineMaterialParameter(mat->name, "CENTER.Y", mat->coordinate_system.center.y, cooSystem.spherical.externalValues, 1);
+					examineMaterialParameter(mat->name, "CENTER.Z", mat->coordinate_system.center.z, cooSystem.spherical.externalValues, 2);
 				}
 				break;
 			case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
 				eslog::info("    COORDINATE SYSTEM:                                                            CYLINDRICAL \n");
 				if (info::mesh->dimension == 2) {
-					examineMaterialParameter(mat->name, "CENTER.X", mat->coordinate_system.center.x, cooSystem.cylindric.externalValue, 0);
-					examineMaterialParameter(mat->name, "CENTER.Y", mat->coordinate_system.center.y, cooSystem.cylindric.externalValue, 1);
+					examineMaterialParameter(mat->name, "CENTER.X", mat->coordinate_system.center.x, cooSystem.cylindric.externalValues, 0);
+					examineMaterialParameter(mat->name, "CENTER.Y", mat->coordinate_system.center.y, cooSystem.cylindric.externalValues, 1);
 				}
 				if (info::mesh->dimension == 3) {
-					examineMaterialParameter(mat->name, "CENTER.X", mat->coordinate_system.center.x, cooSystem.cylindric.externalValue, 0);
-					examineMaterialParameter(mat->name, "CENTER.Y", mat->coordinate_system.center.y, cooSystem.cylindric.externalValue, 1);
+					examineMaterialParameter(mat->name, "CENTER.X", mat->coordinate_system.center.x, cooSystem.cylindric.externalValues, 0);
+					examineMaterialParameter(mat->name, "CENTER.Y", mat->coordinate_system.center.y, cooSystem.cylindric.externalValues, 1);
 				}
 				break;
 			}
 			eslog::info("                                                                                               \n");
 
-			correct &= examineMaterialParameter(mat->name, "DENSITY", mat->density, material.density.externalValue, 0);
-			correct &= examineMaterialParameter(mat->name, "HEAT CAPACITY", mat->heat_capacity, material.heatCapacity.externalValue, 0);
+			correct &= examineMaterialParameter(mat->name, "DENSITY", mat->density, material.density.externalValues, 0);
+			correct &= examineMaterialParameter(mat->name, "HEAT CAPACITY", mat->heat_capacity, material.heatCapacity.externalValues, 0);
 			eslog::info("                                                                                               \n");
 
 		switch (mat->thermal_conductivity.model) {
 			case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
 				eslog::info("         CONDUCTIVITY:                                                              ISOTROPIC \n");
-				correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.isotropic.externalValue, 0);
+				correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.isotropic.externalValues, 0);
 				break;
 			case ThermalConductivityConfiguration::MODEL::DIAGONAL:
 				eslog::info("         CONDUCTIVITY:                                                               DIAGONAL \n");
 				if (info::mesh->dimension == 2) {
-					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.diagonal.externalValue, 0);
-					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.diagonal.externalValue, 1);
+					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.diagonal.externalValues, 0);
+					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.diagonal.externalValues, 1);
 				}
 				if (info::mesh->dimension == 3) {
-					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.diagonal.externalValue, 0);
-					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.diagonal.externalValue, 1);
-					correct &= examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), material.model.diagonal.externalValue, 2);
+					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.diagonal.externalValues, 0);
+					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.diagonal.externalValues, 1);
+					correct &= examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), material.model.diagonal.externalValues, 2);
 				}
 				break;
 			case ThermalConductivityConfiguration::MODEL::SYMMETRIC:
 				eslog::info("         CONDUCTIVITY:                                                              SYMMETRIC \n");
 				if (info::mesh->dimension == 2) {
-					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.symmetric2D.externalValue, 0);
-					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.symmetric2D.externalValue, 1);
-					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.symmetric2D.externalValue, 2);
+					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.symmetric2D.externalValues, 0);
+					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.symmetric2D.externalValues, 1);
+					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.symmetric2D.externalValues, 2);
 				}
 				if (info::mesh->dimension == 3) {
-					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.symmetric3D.externalValue, 0);
-					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.symmetric3D.externalValue, 1);
-					correct &= examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), material.model.symmetric3D.externalValue, 2);
-					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.symmetric3D.externalValue, 3);
-					correct &= examineMaterialParameter(mat->name, "KYZ", mat->thermal_conductivity.values.get(1, 2), material.model.symmetric3D.externalValue, 4);
-					correct &= examineMaterialParameter(mat->name, "KXZ", mat->thermal_conductivity.values.get(0, 2), material.model.symmetric3D.externalValue, 5);
+					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.symmetric3D.externalValues, 0);
+					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.symmetric3D.externalValues, 1);
+					correct &= examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), material.model.symmetric3D.externalValues, 2);
+					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.symmetric3D.externalValues, 3);
+					correct &= examineMaterialParameter(mat->name, "KYZ", mat->thermal_conductivity.values.get(1, 2), material.model.symmetric3D.externalValues, 4);
+					correct &= examineMaterialParameter(mat->name, "KXZ", mat->thermal_conductivity.values.get(0, 2), material.model.symmetric3D.externalValues, 5);
 				}
 				break;
 			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC:
 				eslog::info("         CONDUCTIVITY:                                                            ANISOTROPIC \n");
 				if (info::mesh->dimension == 2) {
-					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.anisotropic.externalValue, 0);
-					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.anisotropic.externalValue, 1);
-					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.anisotropic.externalValue, 2);
-					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(1, 0), material.model.anisotropic.externalValue, 3);
+					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.anisotropic.externalValues, 0);
+					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.anisotropic.externalValues, 1);
+					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.anisotropic.externalValues, 2);
+					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(1, 0), material.model.anisotropic.externalValues, 3);
 				}
 				if (info::mesh->dimension == 3) {
-					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.anisotropic.externalValue, 0);
-					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.anisotropic.externalValue, 1);
-					correct &= examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), material.model.anisotropic.externalValue, 2);
-					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.anisotropic.externalValue, 3);
-					correct &= examineMaterialParameter(mat->name, "KYZ", mat->thermal_conductivity.values.get(1, 2), material.model.anisotropic.externalValue, 4);
-					correct &= examineMaterialParameter(mat->name, "KXZ", mat->thermal_conductivity.values.get(0, 2), material.model.anisotropic.externalValue, 5);
-					correct &= examineMaterialParameter(mat->name, "KYX", mat->thermal_conductivity.values.get(1, 0), material.model.anisotropic.externalValue, 6);
-					correct &= examineMaterialParameter(mat->name, "KZY", mat->thermal_conductivity.values.get(2, 1), material.model.anisotropic.externalValue, 7);
-					correct &= examineMaterialParameter(mat->name, "KZX", mat->thermal_conductivity.values.get(2, 0), material.model.anisotropic.externalValue, 8);
+					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.anisotropic.externalValues, 0);
+					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.anisotropic.externalValues, 1);
+					correct &= examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), material.model.anisotropic.externalValues, 2);
+					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.anisotropic.externalValues, 3);
+					correct &= examineMaterialParameter(mat->name, "KYZ", mat->thermal_conductivity.values.get(1, 2), material.model.anisotropic.externalValues, 4);
+					correct &= examineMaterialParameter(mat->name, "KXZ", mat->thermal_conductivity.values.get(0, 2), material.model.anisotropic.externalValues, 5);
+					correct &= examineMaterialParameter(mat->name, "KYX", mat->thermal_conductivity.values.get(1, 0), material.model.anisotropic.externalValues, 6);
+					correct &= examineMaterialParameter(mat->name, "KZY", mat->thermal_conductivity.values.get(2, 1), material.model.anisotropic.externalValues, 7);
+					correct &= examineMaterialParameter(mat->name, "KZX", mat->thermal_conductivity.values.get(2, 0), material.model.anisotropic.externalValues, 8);
 				}
 				break;
 			}
 			eslog::info("                                                                                               \n");
 		}
 
-		fromExpression(*this, cooSystem.cartesian2D, cooSystem.cartesian2D.externalValue);
-		fromExpression(*this, cooSystem.cartesian3D, cooSystem.cartesian3D.externalValue);
-		fromExpression(*this, cooSystem.spherical, cooSystem.spherical.externalValue);
-		fromExpression(*this, cooSystem.cylindric, cooSystem.cylindric.externalValue);
+		fromExpression(*this, cooSystem.cartesian2D, cooSystem.cartesian2D.externalValues);
+		fromExpression(*this, cooSystem.cartesian3D, cooSystem.cartesian3D.externalValues);
+		fromExpression(*this, cooSystem.spherical, cooSystem.spherical.externalValues);
+		fromExpression(*this, cooSystem.cylindric, cooSystem.cylindric.externalValues);
 
-		fromExpression(*this, material.model.isotropic, material.model.isotropic.externalValue);
-		fromExpression(*this, material.model.diagonal, material.model.diagonal.externalValue);
-		fromExpression(*this, material.model.symmetric2D, material.model.symmetric2D.externalValue);
-		fromExpression(*this, material.model.symmetric3D, material.model.symmetric3D.externalValue);
-		fromExpression(*this, material.model.anisotropic, material.model.anisotropic.externalValue);
+		fromExpression(*this, material.model.isotropic, material.model.isotropic.externalValues);
+		fromExpression(*this, material.model.diagonal, material.model.diagonal.externalValues);
+		fromExpression(*this, material.model.symmetric2D, material.model.symmetric2D.externalValues);
+		fromExpression(*this, material.model.symmetric3D, material.model.symmetric3D.externalValues);
+		fromExpression(*this, material.model.anisotropic, material.model.anisotropic.externalValues);
 
-		fromExpression(*this, material.density, material.density.externalValue);
-		fromExpression(*this, material.heatCapacity, material.heatCapacity.externalValue);
+		fromExpression(*this, material.density, material.density.externalValues);
+		fromExpression(*this, material.heatCapacity, material.heatCapacity.externalValues);
 
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 		printMaterials(settings.material_set);

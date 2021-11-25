@@ -83,12 +83,12 @@ void AX_Acoustic::analyze()
 		for (size_t i = 0; i < info::mesh->materials.size(); ++i) {
 			eslog::info(" --- %s ---%*s \n", info::mesh->materials[i]->name.c_str(), 84 - info::mesh->materials[i]->name.size(), "");
 			MaterialConfiguration *mat = info::mesh->materials[i];
-			correct &= examineMaterialParameter(mat->name, "DENSITY", mat->density, material.density.externalValue, 0);
-			correct &= examineMaterialParameter(mat->name, "SPEED_OF_SOUND", mat->speed_of_sound, material.speed_of_sound.externalValue, 0);
+			correct &= examineMaterialParameter(mat->name, "DENSITY", mat->density, material.density.externalValues, 0);
+			correct &= examineMaterialParameter(mat->name, "SPEED_OF_SOUND", mat->speed_of_sound, material.speed_of_sound.externalValues, 0);
 		}
 
-		fromExpression(*this, material.density, material.density.externalValue);
-		fromExpression(*this, material.speed_of_sound, material.speed_of_sound.externalValue);
+		fromExpression(*this, material.density, material.density.externalValues);
+		fromExpression(*this, material.speed_of_sound, material.speed_of_sound.externalValues);
 
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 

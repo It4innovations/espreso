@@ -87,7 +87,7 @@ void thermalConductivity(AX_HeatTransfer &module)
 			if (mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
 				switch (mat->coordinate_system.type) {
 				case CoordinateSystemConfiguration::TYPE::CARTESIAN:
-					if (module.cooSystem.cartesian2D.externalValue.evaluator[interval]->isset) {
+					if (module.cooSystem.cartesian2D.externalValues.evaluator[interval]->isset) {
 						module.elementOps[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, CartesianRotation2D>(interval, module.controller, module.coords.gp, module.cooSystem.cartesian2D, module.cooSystem.angle2D));
 						module.elementOps[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, ConductivityRotation2D>(interval, module.controller, module.cooSystem.angle2D, module.material.conductivity));
 					}
@@ -112,7 +112,7 @@ void thermalConductivity(AX_HeatTransfer &module)
 			if (mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
 				switch (mat->coordinate_system.type) {
 				case CoordinateSystemConfiguration::TYPE::CARTESIAN:
-					if (module.cooSystem.cartesian3D.externalValue.evaluator[interval]->isset) {
+					if (module.cooSystem.cartesian3D.externalValues.evaluator[interval]->isset) {
 						module.elementOps[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, CartesianRotation3D>(interval, module.controller, module.coords.gp, module.cooSystem.cartesian3D, module.cooSystem.angle3D));
 						module.elementOps[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, ConductivityRotation3D>(interval, module.controller, module.cooSystem.angle3D, module.material.conductivity));
 					}
