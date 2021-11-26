@@ -105,6 +105,47 @@ struct Stiffness3DHeat: public Stiffness {
 };
 
 template<size_t nodes, size_t gps>
+struct HeatRHS: public ActionOperator {
+	HeatRHS(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &heatSource, ParameterData &rhs)
+	: N(N, interval),
+	  weight(weight, interval),
+	  J(J, interval),
+	  heatSource(heatSource, interval),
+	  rhs(rhs, interval)
+	{
+
+	}
+
+	InputParameterIterator N, weight, J;
+	InputParameterIterator heatSource;
+	OutputParameterIterator rhs;
+
+	void operator()()
+	{
+		std::fill(rhs.data, rhs.data + rhs.inc, 0);
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * heatSource.data[gpindex] * N.data[gpindex * nodes + n];
+			}
+		}
+	}
+
+	void operator++()
+	{
+		++weight; ++J;
+		++heatSource;
+		++rhs;
+	}
+
+	void move(int n)
+	{
+		weight += n; J += n;
+		heatSource += n;
+		rhs += n;
+	}
+};
+
+template<size_t nodes, size_t gps>
 struct HeatQ: public ActionOperator {
 	HeatQ(int interval, double area, const ParameterData &heatFlow, const ParameterData &heatFlux, const ParameterData &htc, const ParameterData &extTemp, ParameterData &q)
 	: area(area), heatFlow(heatFlow, interval),

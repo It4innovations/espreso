@@ -41,6 +41,11 @@ void addFiller(AX_HeatTransfer &module)
 				}
 			}
 		}
+		for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+			if (module.heatSource.gp.isSet(interval)) {
+				module.elementFiller[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, 1, VectorFiller>(interval, module.controller, module.elements.rhs, module.rhs->mapping.elements[interval].data, module.rhs->mapping.elements[interval].position));
+			}
+		}
 	}
 
 	if (module.dirichlet != nullptr) {

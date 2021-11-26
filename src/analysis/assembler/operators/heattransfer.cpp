@@ -57,6 +57,18 @@ void heatStiffness(AX_HeatTransfer &module)
 
 void heatRHS(AX_HeatTransfer &module)
 {
+	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+		module.controller.addInput(module.elements.rhs, module.heatSource.gp, module.integration.N, module.integration.weight, module.integration.jacobiDeterminant);
+		module.controller.prepare(module.elements.rhs);
+		if (module.heatSource.gp.isSet(interval)) {
+			module.elementOps[interval].emplace_back(
+				instantiate<AX_HeatTransfer::NGP, HeatRHS>(interval, module.controller,
+						module.integration.N, module.integration.weight, module.integration.jacobiDeterminant,
+						module.heatSource.gp,
+						module.elements.rhs));
+		}
+	}
+
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
 			bool isSet = module.heatFlow.gp.isSet(r) || module.heatFlux.gp.isSet(r) || module.convection.heatTransferCoeficient.gp.isSet(r);

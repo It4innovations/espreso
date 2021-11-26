@@ -291,6 +291,10 @@ void AX_HeatTransfer::analyze()
 	controller.prepare(gradient.xi);
 	heatStiffness(*this);
 
+	if (configuration.heat_source.size()) {
+		correct &= examineElementParameter("HEAT SOURCE", configuration.heat_source, heatSource.gp.externalValues);
+		fromExpression(*this, heatSource.gp, heatSource.gp.externalValues);
+	}
 	if (configuration.heat_flow.size()) {
 		correct &= examineBoundaryParameter("HEAT FLOW", configuration.heat_flow, heatFlow.gp.externalValues);
 		fromExpression(*this, heatFlow.gp, heatFlow.gp.externalValues);
@@ -306,6 +310,7 @@ void AX_HeatTransfer::analyze()
 	outputGradient(*this);
 	outputFlux(*this);
 
+	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 	if (correct) {
 		eslog::info("  PHYSICS CONFIGURED                                                               %8.3f s \n", eslog::time() - start);
 	} else {
@@ -378,6 +383,8 @@ void AX_HeatTransfer::initNames()
 	translationMotions.stiffness.name = "translationMotions.stiffness";
 	translationMotions.rhs.name = "translationMotions.rhs";
 
+	heatSource.gp.name = "heatSource.gp";
+
 	elements.stiffness.name = "elements.stiffness";
 	elements.mass.name = "elements.mass";
 	elements.rhs.name = "elements.rhs";
@@ -442,6 +449,8 @@ void AX_HeatTransfer::printVersions()
 	printParameterStats("translationMotions.gp", translationMotions.gp);
 	printParameterStats("translationMotions.stiffness", translationMotions.stiffness);
 	printParameterStats("translationMotions.rhs", translationMotions.rhs);
+
+	printParameterStats("heatSource.gp", heatSource.gp);
 
 	printParameterStats("elements.stiffness", elements.stiffness);
 	printParameterStats("elements.mass", elements.mass);
