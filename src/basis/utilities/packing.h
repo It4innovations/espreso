@@ -10,6 +10,23 @@
 namespace espreso {
 namespace utils {
 
+template <typename Out, typename In>
+size_t reinterpret_size(size_t n)
+{
+	size_t inbytes = n * sizeof(In);
+	size_t outbytes = inbytes / sizeof(Out);
+	if (inbytes % sizeof(Out)) {
+		++outbytes;
+	}
+	return outbytes;
+}
+
+template <typename Out, typename In>
+Out* reinterpret_end(In *data, size_t n)
+{
+	return reinterpret_cast<Out*>(data) + reinterpret_size<Out, In>(n);
+}
+
 template<typename Ttype> size_t packedSize(const Ttype &data);
 
 template<>

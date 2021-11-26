@@ -1,207 +1,141 @@
 
 #include "builder.h"
 
+#include "basis/utilities/packing.h"
 #include "esinfo/eslog.h"
 #include "wrappers/mpi/communication.h"
 
 namespace espreso {
 namespace builder {
 
-struct PackedNodes {
-	struct Node {
-		Node(char *node)
-		: offset(*reinterpret_cast<esint*>(node)),
-		  coordinate(*reinterpret_cast<_Point<esfloat>*>(node + sizeof(esint)))
-		{
+struct OrderedMesh: public OrderedMeshDatabase {
+	esint nchunk, noffset, nsize, ntotal;
+	esint echunk, eoffset, esize, etotal;
 
+	static void edist(std::vector<Element::CODE> &ecodes, std::vector<esint> &dist)
+	{
+		dist.push_back(0);
+		for (size_t e = 0; e < ecodes.size(); ++e) {
+			dist.push_back(dist.back() + Mesh::edata[(int)ecodes[e]].nodes);
 		}
-
-		esint &offset;
-		_Point<esfloat> &coordinate;
-	};
-
-	std::vector<esint, initless_allocator<esint> > distribution;
-	std::vector<char, initless_allocator<char> > data;
-	size_t nodes, regions = 0, values = 0;
-
-	Node operator[](size_t n) { return Node{data.data() + n * _size}; }
-
-	// ID, coordinates, regions bit-array, value
-	void set(size_t nodes, size_t regions, size_t values)
-	{
-		this->nodes = nodes;
-		this->regions = regions;
-		this->values = values;
-		_size = sizeof(esint) + 3 * sizeof(esfloat) + regions + values;
-		data.resize(nodes * _size);
-	}
-
-	void print()
-	{
-		Communication::serialize([&] () {
-			printf(" === rank %d ===\n", info::mpi::rank);
-			for (size_t n = 0; n < nodes; ++n) {
-				Node node{data.data() + n * _size};
-				printf("%d: %f %f %f\n", node.offset, node.coordinate.x, node.coordinate.y, node.coordinate.z);
-			}
-		});
-	}
-
-protected:
-	size_t _size;
-};
-
-struct PackedElements {
-	struct Element {
-		Element(char *element)
-		: offset(*reinterpret_cast<esint*>(element)),
-		  type(*reinterpret_cast<int*>(element + sizeof(esint))),
-		  nodes(*reinterpret_cast<int*>(element + sizeof(esint) + sizeof(int))),
-		  node(reinterpret_cast<esint*>(element + sizeof(esint) + sizeof(int) + sizeof(int)))
-		{
-
-		}
-
-		esint &offset;
-		int &type;
-		int &nodes;
-		esint *node;
-	};
-
-	std::vector<esint, initless_allocator<esint> > distribution;
-	std::vector<char, initless_allocator<char> > data;
-	size_t elements, regions, values;
-
-	Element operator[](size_t e) { return Element{data.data() + distribution[e]}; }
-
-	void set(const std::vector<esint> &esize, size_t regions, size_t values)
-	{
-		this->elements = esize.size();
-		this->regions = regions;
-		this->values = values;
-		distribution.resize(esize.size() + 1);
-		distribution[0] = 0;
-		for (size_t e = 0; e < esize.size(); ++e) {
-			distribution[e + 1] = distribution[e] + sizeof(esint) + sizeof(int) + sizeof(int) + esize[e] * sizeof(esint) + regions + values;
-		}
-		data.resize(distribution.back());
-	}
-
-	void print()
-	{
-		Communication::serialize([&] () {
-			printf(" === rank %d ===\n", info::mpi::rank);
-			for (size_t e = 0; e < elements; ++e) {
-				Element element{data.data() + distribution[e]};
-				printf("%d: %d %d ->", element.offset, element.type, element.nodes);
-				for (int n = 0; n < element.nodes; ++n) {
-					printf(" %d", element.node[n]);
-				}
-				printf("\n");
-			}
-		});
 	}
 };
 
-struct _Mesh {
-	size_t nchunk, nsize;
-	size_t echunk, esize;
-
-	PackedNodes nodes;
-	PackedElements elements;
-};
-
-static void connect(OrderedMeshDatabase &database, _Mesh &mesh)
+static void balance(OrderedMeshDatabase &database, OrderedMesh &mesh)
 {
-	if (database.noffset.size() != database.coordinates.size()) {
-		eslog::internalFailure("the size of OrderedMeshDatabase::noffset != OrderedMeshDatabase::coordinates.\n");
+	esint total[2] = { (esint)database.coordinates.size(), (esint)database.etype.size() };
+	Communication::allReduce(total, NULL, 2, MPITools::getType<esint>().mpitype, MPI_SUM);
+
+	mesh.ntotal = total[0];
+	mesh.etotal = total[1];
+	mesh.nsize = mesh.nchunk = total[0] / info::mpi::size + ((total[0] % info::mpi::size) ? 1 : 0);
+	mesh.esize = mesh.echunk = total[1] / info::mpi::size + ((total[1] % info::mpi::size) ? 1 : 0);
+	mesh.noffset = std::min(mesh.nchunk * info::mpi::rank, mesh.ntotal);
+	mesh.eoffset = std::min(mesh.echunk * info::mpi::rank, mesh.etotal);
+	if (mesh.ntotal <= mesh.noffset + mesh.nsize) {
+		mesh.nsize = mesh.ntotal - mesh.noffset;
+	}
+	if (mesh.etotal <= mesh.eoffset + mesh.esize) {
+		mesh.esize = mesh.etotal - mesh.eoffset;
 	}
 
-	mesh.nodes.set(database.coordinates.size(), 0, 0);
+	std::vector<esint> sBuffer, rBuffer, edist;
+	OrderedMesh::edist(database.etype, edist);
+	std::sort(database.noffsets.begin(), database.noffsets.end());
+	std::sort(database.eoffsets.begin(), database.eoffsets.end());
 
-	#pragma omp parallel for
-	for (size_t n = 0; n < database.noffset.size(); ++n) {
-		mesh.nodes[n].offset = database.noffset[n];
-		mesh.nodes[n].coordinate = database.coordinates[n];
-	}
-	database.clearNodes();
-
-	if (database.eoffset.size() != database.esize.size()) {
-		eslog::internalFailure("the size of OrderedMeshDatabase::eoffset != OrderedMeshDatabase::esize.\n");
-	}
-	if (database.eoffset.size() != database.etype.size()) {
-		eslog::internalFailure("the size of OrderedMeshDatabase::eoffset != OrderedMeshDatabase::etype.\n");
-	}
-	mesh.elements.set(database.esize, 0, 0);
-
-	for (size_t e = 0, edist = 0; e < database.eoffset.size(); edist += database.esize[e++]) {
-		mesh.elements[e].offset = database.eoffset[e];
-		mesh.elements[e].type = database.etype[e];
-		mesh.elements[e].nodes = database.esize[e];
-		for (int n = 0; n < mesh.elements[e].nodes; ++ n) {
-			mesh.elements[e].node[n] = database.enodes[edist + n];
+	{ // compute size of the send buffer
+		size_t ssize = 0;
+		std::vector<OrderedMeshDatabase::Offset>::const_iterator nit = database.noffsets.cbegin();
+		std::vector<OrderedMeshDatabase::Offset>::const_iterator eit = database.eoffsets.cbegin();
+		esint nbegin = 0, nend = 0, ebegin = 0, eend = 0;
+		for (int r = 0; r < info::mpi::size; ++r) {
+			ssize += 4;
+			while (OrderedMeshDatabase::chunk(mesh.nchunk, r, database.noffsets, nit, nbegin, nend)) {
+				ssize += 2;
+				ssize += utils::reinterpret_size<esint, _Point<esfloat> >(nend - nbegin);
+			}
+			while (OrderedMeshDatabase::chunk(mesh.echunk, r, database.eoffsets, eit, ebegin, eend)) {
+				ssize += 2;
+				ssize += utils::reinterpret_size<esint, char>(eend - ebegin);
+				ssize += edist[eend] - edist[ebegin];
+			}
 		}
+		sBuffer.reserve(ssize);
 	}
-	database.clearElements();
 
-	mesh.nodes.print();
-	mesh.elements.print();
+	{ // build the send buffer
+		std::vector<OrderedMeshDatabase::Offset>::const_iterator nit = database.noffsets.cbegin();
+		std::vector<OrderedMeshDatabase::Offset>::const_iterator eit = database.eoffsets.cbegin();
+		esint nbegin = 0, nend = 0, ebegin = 0, eend = 0;
+		for (int r = 0; r < info::mpi::size; ++r) {
+			size_t prevsize = sBuffer.size();
+			sBuffer.push_back(0); // total size
+			sBuffer.push_back(r); // target
+			sBuffer.push_back(0); // nodes
+			sBuffer.push_back(0); // elements
 
-	Communication::serialize([&] () {
-		printf(" === rank %d ===\n", info::mpi::rank);
-		printf(" === nvalues ===\n");
-		for (size_t i = 0; i < database.nvalues.size(); ++i) {
-			for (size_t j = 0; j < database.nvalues[i].values.size(); ++j) {
-				for (size_t k = 0; k < database.nvalues[i].values[j].values.size(); ++k) {
-					printf("%d: %f\n", database.nvalues[i].values[j].begin + k, database.nvalues[i].values[j].values[k]);
+			while (OrderedMeshDatabase::chunk(mesh.nchunk, r, database.noffsets, nit, nbegin, nend)) {
+				sBuffer.push_back(nit->offset + nbegin - nit->start);
+				sBuffer.push_back(nend - nbegin);
+				sBuffer.insert(sBuffer.end(), reinterpret_cast<esint*>(database.coordinates.data() + nbegin), utils::reinterpret_end<esint>(database.coordinates.data() + nbegin, nend - nbegin));
+				++sBuffer[prevsize + 2];
+			}
+			while (OrderedMeshDatabase::chunk(mesh.echunk, r, database.eoffsets, eit, ebegin, eend)) {
+				sBuffer.push_back(eit->offset + ebegin - eit->start);
+				sBuffer.push_back(eend - ebegin);
+				sBuffer.insert(sBuffer.end(), reinterpret_cast<esint*>(database.etype.data() + ebegin), utils::reinterpret_end<esint>(database.etype.data() + ebegin, eend - ebegin));
+				sBuffer.insert(sBuffer.end(), reinterpret_cast<esint*>(database.enodes.data() + edist[ebegin]), utils::reinterpret_end<esint>(database.enodes.data() + edist[ebegin], edist[eend] - edist[ebegin]));
+				++sBuffer[prevsize + 3];
+			}
+			sBuffer[prevsize] = sBuffer.size() - prevsize;
+		}
+
+		database.clearNodes();
+		database.clearElements();
+		database.clearValues();
+	}
+
+	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
+		eslog::internalFailure("Cannot balance parsed data.\n");
+	}
+	std::vector<esint>().swap(sBuffer);
+
+	mesh.coordinates.resize(mesh.nsize);
+	mesh.etype.resize(mesh.esize);
+
+	size_t offset = 0;
+	for (int r = 0; r < info::mpi::size; ++r) {
+		++offset; // totalsize
+		++offset; // my rank
+		esint nblocks = rBuffer[offset++];
+		esint eblocks = rBuffer[offset++];
+		for (esint n = 0; n < nblocks; ++n) {
+			esint coffset = rBuffer[offset++];
+			esint csize = rBuffer[offset++];
+			memcpy(mesh.coordinates.data() + coffset - mesh.noffset, reinterpret_cast<_Point<esfloat>*>(rBuffer.data() + offset), csize * sizeof(_Point<esfloat>));
+			offset += utils::reinterpret_size<esint, _Point<esfloat> >(csize);
+		}
+		for (esint e = 0; e < eblocks; ++e) {
+			esint eoffset = rBuffer[offset++];
+			esint esize = rBuffer[offset++];
+			memcpy(mesh.etype.data() + eoffset - mesh.eoffset, reinterpret_cast<char*>(rBuffer.data() + offset), esize);
+			offset += utils::reinterpret_size<esint, char>(esize);
+			for (esint en = 0; en < esize; ++en) {
+				for (int nn = 0; nn < Mesh::edata[(int)mesh.etype[eoffset - mesh.eoffset + en]].nodes; ++nn) {
+					mesh.enodes.push_back(rBuffer[offset++]);
 				}
 			}
 		}
-		printf(" === evalues ===\n");
-		for (size_t i = 0; i < database.evalues.size(); ++i) {
-			for (size_t j = 0; j < database.evalues[i].values.size(); ++j) {
-				for (size_t k = 0; k < database.evalues[i].values[j].values.size(); ++k) {
-					printf("%d: %f\n", database.evalues[i].values[j].begin + k, database.evalues[i].values[j].values[k]);
-				}
-			}
-		}
-	});
-
-	size_t totalsize[2] = { mesh.nodes.nodes, mesh.elements.elements };
-	Communication::allReduce(totalsize, NULL, 2, MPITools::getType<size_t>().mpitype, MPI_SUM);
-
-	mesh.nsize = totalsize[0];
-	mesh.esize = totalsize[1];
-	mesh.nchunk = mesh.nsize / info::mpi::size + (mesh.nsize % info::mpi::size ? 1 : 0);
-	mesh.echunk = mesh.esize / info::mpi::size + (mesh.esize % info::mpi::size ? 1 : 0);
-
-//	std::vector<esint> sBuffer, rBuffer;
-//	sBuffer.reserve(3 * info::mpi::size + _meshData.nIDs.size() + _meshData.coordinates.size() * sizeof(Point) / sizeof(esint));
-//	size_t prevsize;
-//	auto nbegin = permutation.begin();
-//	for (int r = 0; r < info::mpi::size; r++) {
-//		prevsize = sBuffer.size();
-//		sBuffer.push_back(0); // total size
-//		sBuffer.push_back(r); // target
-//		sBuffer.push_back(0); // number of coordinates
-//
-//		auto n = nbegin;
-//		for ( ; n != permutation.end() && _meshData.nIDs[*n] < _nDistribution[r + 1]; ++n) {
-//			sBuffer.push_back(_meshData.nIDs[*n]);
-//			sBuffer.insert(sBuffer.end(), reinterpret_cast<const esint*>(_meshData.coordinates.data() + *n), reinterpret_cast<const esint*>(_meshData.coordinates.data() + *n + 1));
-//		}
-//		sBuffer[prevsize + 2] = n - nbegin;
-//		nbegin = n;
-//
-//		sBuffer[prevsize] = sBuffer.size() - prevsize;
-//	}
+	}
 }
 
 static void buildSequential(OrderedMeshDatabase &database, Mesh &mesh)
 {
-	_Mesh internal;
+	OrderedMesh internal;
 
-	connect(database, internal);
+	balance(database, internal);
+//	connect(database, internal);
 }
 
 void build(OrderedMeshDatabase &database, Mesh &mesh)
@@ -213,10 +147,10 @@ void build(OrderedMeshDatabase &database, Mesh &mesh)
 
 	eslog::startln("BUILDER: BUILD SCATTERED MESH", "BUILDER");
 
-	_Mesh internal;
+	OrderedMesh internal;
 
-	connect(database, internal);
-	eslog::checkpointln("BUILDER: DATA CONNECTED");
+	balance(database, internal);
+	eslog::checkpointln("BUILDER: DATA BALANCED");
 
 	MPI_Finalize();
 	exit(0);

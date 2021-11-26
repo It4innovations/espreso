@@ -14,14 +14,14 @@ template <typename TEData> class edata;
 
 struct Element {
 
-	enum class TYPE: int {
+	enum class TYPE: char {
 		POINT  = 0,
 		LINE   = 1,
 		PLANE  = 2,
 		VOLUME = 3,
 	};
 
-	enum class CODE: int {
+	enum class CODE: char {
 		POINT1, // 0
 
 		// without mid-points

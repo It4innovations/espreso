@@ -97,13 +97,13 @@ void EnsightGeometry::parse()
 			FileBlock block(_geofile, _keywords.coordinates[p].offset, 3 * csize * _keywords.coordinates[p].nn, csize, info::mpi::rank);
 			if (block.size) {
 				if (_keywords.header.format == EnsightKeywords::Format::ASCII) {
-					coordinates.reserve(block.size / csize);
+					coordinates.reserve(block.size);
 					for (const char *cc = _geofile.begin + block.begin; cc < _geofile.begin + block.end; cc += csize) {
 						coordinates.push_back(atof(cc));
 					}
 				} else {
-					coordinates.resize(block.size / csize);
-					memcpy(coordinates.data(), _geofile.begin + block.begin, block.size);
+					coordinates.resize(block.size);
+					memcpy(coordinates.data(), _geofile.begin + block.begin, block.bytesize);
 				}
 
 				int start = std::lower_bound(_geofile.distribution.begin(), _geofile.distribution.end(), _keywords.coordinates[p].offset) - _geofile.distribution.begin() - 1;
@@ -115,13 +115,12 @@ void EnsightGeometry::parse()
 					std::vector<MPI_Request> req(end - start);
 					for (int r = start + 1; r <= end; ++r) {
 						FileBlock rblock(_geofile, _keywords.coordinates[p].offset, csize * _keywords.coordinates[p].nn, csize, r);
-						MPI_Irecv(rbuffer.data() + rblock.prevsize / csize, rblock.size / csize, MPI_FLOAT, r, 0, info::mpi::comm, req.data() + (r - start - 1));
+						MPI_Irecv(rbuffer.data() + rblock.prevsize, rblock.size, MPI_FLOAT, r, 0, info::mpi::comm, req.data() + (r - start - 1));
 					}
-					_database.noffset.reserve(_database.coordinates.size() + _keywords.coordinates[p].nn);
+					_database.noffsets.push_back(OrderedMeshDatabase::Offset{coffset, (esint)_database.coordinates.size(), _keywords.coordinates[p].nn});
 					_database.coordinates.reserve(_database.coordinates.size() + _keywords.coordinates[p].nn);
 					MPI_Waitall(end - start, req.data(), MPI_STATUSES_IGNORE);
 					for (int n = 0; n < _keywords.coordinates[p].nn; ++n) {
-						_database.noffset.push_back(coffset + n);
 						_database.coordinates.push_back(_Point<esfloat>(rbuffer[n + _keywords.coordinates[p].nn * 0], rbuffer[n + _keywords.coordinates[p].nn * 1], rbuffer[n + _keywords.coordinates[p].nn * 2]));
 					}
 				} else {
@@ -136,26 +135,21 @@ void EnsightGeometry::parse()
 			FileBlock block(_geofile, _keywords.elements[e].offset, (enodes * esize + esuffix) * _keywords.elements[e].ne, enodes * esize + esuffix, info::mpi::rank);
 			if (block.size) {
 				if (_keywords.header.format == EnsightKeywords::Format::ASCII) {
-					elements.reserve(enodes * ((block.end - block.begin) / (enodes * esize + esuffix)));
-					for (const char *d = _geofile.begin + block.begin; d < _geofile.begin + block.end; d += enodes * esize + esuffix) {
+					elements.reserve(enodes * block.size);
+					for (const char *d = _geofile.begin + block.begin; d < _geofile.begin + block.end; d += block.step) {
 						for (int n = 0; n < enodes; ++n) {
 							elements.push_back(atol(d + 10 * n));
 						}
 					}
 				} else {
-					elements.resize(enodes * block.size / (enodes * esize + esuffix));
-					memcpy(elements.data(), _geofile.begin + block.begin, block.size);
+					elements.resize(enodes * block.size);
+					memcpy(elements.data(), _geofile.begin + block.begin, block.bytesize);
 				}
 
 				if (_keywords.elements[e].getCode() != Element::CODE::POINT1) {
-					esint boffset = block.prevsize / (enodes * esize + esuffix);
-					esint bsize = block.size / (enodes * esize + esuffix);
-					_database.etype.resize(_database.etype.size() + bsize, (int)_keywords.elements[e].getCode());
-					_database.esize.resize(_database.esize.size() + bsize, enodes);
+					_database.eoffsets.push_back(OrderedMeshDatabase::Offset{(esint)_database.etype.size(), eoffset + (esint)block.prevsize, (esint)block.size});
+					_database.etype.resize(_database.etype.size() + block.size, _keywords.elements[e].getCode());
 					_database.enodes.reserve(_database.enodes.size() + elements.size());
-					for (esint i = 0; i < bsize; ++i) {
-						_database.eoffset.push_back(eoffset + boffset + i);
-					}
 					for (size_t n = 0; n < elements.size(); ++n) {
 						_database.enodes.push_back(elements[n] + coffset);
 					}
@@ -168,7 +162,7 @@ void EnsightGeometry::parse()
 				if (_database.eregions.empty() || _database.eregions.back().name.compare(name)) {
 					_database.eregions.push_back(OrderedMeshDatabase::Region{ name, eoffset, eoffset + _keywords.elements[e].ne });
 				} else {
-					_database.eregions.back().end += _keywords.elements[e].ne;
+					_database.eregions.back().size += _keywords.elements[e].ne;
 				}
 				eoffset += _keywords.elements[e].ne;
 			}

@@ -80,16 +80,16 @@ void EnsightVariables::parse()
 			FileBlock block(_variables, offset[i], size[i], vsize, info::mpi::rank);
 			if (block.size) {
 				if (_keywords.header.format == EnsightKeywords::Format::ASCII) {
-					data.reserve(block.size / vsize);
+					data.reserve(block.size);
 					for (const char *cc = _variables.begin + block.begin; cc < _variables.begin + block.end; cc += vsize) {
 						data.push_back(atof(cc));
 					}
 				} else {
-					data.resize(block.size / vsize);
-					memcpy(data.data(), _variables.begin + block.begin, block.size);
+					data.resize(block.size);
+					memcpy(data.data(), _variables.begin + block.begin, block.bytesize);
 				}
 
-				esint coffset = voffset / vsize + block.prevsize / vsize;
+				esint coffset = voffset / vsize + block.prevsize;
 				if (values.dimension == 1) {
 					values.values.push_back({coffset, values.dimension});
 					values.values.back().values.assign(data.begin(), data.end());
