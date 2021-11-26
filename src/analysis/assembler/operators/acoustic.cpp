@@ -54,13 +54,11 @@ void acousticRHS(AX_Acoustic &module)
 {
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
-			if (
-					module.normalAcceleration.gp.regions[r].data == NULL &&
-					module.impedance.gp.regions[r].data == NULL) {
+			if (!module.normalAcceleration.gp.isSet(r) && !module.impedance.gp.isSet(r)) {
 				continue;
 			}
 
-			bool impedance = module.impedance.gp.regions[r].data != NULL;
+			bool impedance = module.impedance.gp.isSet(r);
 			module.controller.prepare(module.normalAcceleration.gp.regions[r], module.impedance.gp.regions[r]);
 
 //			if (info::mesh->dimension == 2) {

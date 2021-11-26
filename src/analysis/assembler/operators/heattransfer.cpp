@@ -59,11 +59,8 @@ void heatRHS(AX_HeatTransfer &module)
 {
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
-			if (
-					module.heatFlow.gp.regions[r].data == NULL &&
-					module.heatFlux.gp.regions[r].data == NULL &&
-					module.convection.heatTransferCoeficient.gp.regions[r].data == NULL
-					) {
+			bool isSet = module.heatFlow.gp.isSet(r) || module.heatFlux.gp.isSet(r) || module.convection.heatTransferCoeficient.gp.isSet(r);
+			if (!isSet) {
 				continue;
 			}
 

@@ -94,7 +94,12 @@ struct ElementGPsExternalParameter: public ElementParameter<mask> {
 
 	ElementGPsExternalParameter(): externalValues(*this)
 	{
-		std::fill(this->update.begin(), this->update.end(), false);
+		std::fill(this->update.begin(), this->update.end(), -1);
+	}
+
+	bool isSet(size_t interval)
+	{
+		return this->update[interval] != -1;
 	}
 };
 
@@ -118,6 +123,11 @@ struct BoundaryParameterData: public ParameterData {
 	void resize(double init = .0);
 	void resizeAligned(size_t alignment, double init = .0);
 
+	bool isSet()
+	{
+		return data != nullptr;
+	}
+
 	int region;
 };
 
@@ -125,6 +135,11 @@ struct BoundaryParameterPack {
 	std::vector<BoundaryParameterData> regions;
 
 	BoundaryParameterPack(PerElementSize mask);
+
+	bool isSet(size_t region)
+	{
+		return regions[region].isSet();
+	}
 
 	PerElementSize size;
 };
