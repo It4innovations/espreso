@@ -25,8 +25,8 @@ namespace utils {
 		return sizesToOffsets(sizes, std::vector<Ttype>(sizes.front().size()));
 	}
 
-	template<typename Ttype, typename Tpermutation>
-	void permute(std::vector<Ttype> &data, const std::vector<Tpermutation> &permutation, size_t elementsize = 1);
+	template<typename Ttype, typename Talloc, typename Tpermutation, typename Tpermalloc>
+	void permute(std::vector<Ttype, Talloc> &data, const std::vector<Tpermutation, Tpermalloc> &permutation, size_t elementsize = 1);
 
 	template<typename Ttype>
 	void threadDistributionToFullDistribution(std::vector<std::vector<Ttype> > &distribution);

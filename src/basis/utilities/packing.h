@@ -10,6 +10,24 @@
 namespace espreso {
 namespace utils {
 
+template <typename T>
+void clearVector(T &vector)
+{
+	T().swap(vector);
+}
+
+inline void clearVectors()
+{
+
+}
+
+template <typename T, typename ...TOther>
+void clearVectors(T &vector, TOther... other)
+{
+	clearVector(vector);
+	clearVectors(other...);
+}
+
 template <typename Out, typename In>
 size_t reinterpret_size(size_t n)
 {

@@ -366,26 +366,19 @@ static void getMedian(esint *keys, esint targetsum, esint tolerance, esint begin
 	profiler::end("get_median");
 }
 
-bool Communication::computeSplitters(std::vector<esint> &keys, std::vector<esint> &permutation, std::vector<esint> &splitters, MPIGroup *group)
+bool Communication::computeSplitters(const std::vector<esint, initless_allocator<esint> > &keys, std::vector<esint, initless_allocator<esint> > &permutation, std::vector<esint> &splitters, esint keysTotal, esint bucketsTotal, MPIGroup *group)
 {
 	profiler::syncstart("compute_splitters");
 	profiler::syncparam("keys", keys.size());
 	splitters.resize(group->size + 1);
 	MPIType type = MPITools::getType<esint>();
 
-	esint size, mysize = keys.size();
-	esint max, mymax = 0;
-	if (keys.size()) {
-		mymax = keys[permutation.back()];
-	}
-	MPI_Allreduce(&mymax, &max, 1, MPITools::getType<esint>().mpitype, MPI_MAX, group->communicator);
-	MPI_Allreduce(&mysize, &size, 1, MPITools::getType<esint>().mpitype, MPI_SUM, group->communicator);
-	splitters.back() = max + 1;
+	splitters.back() = bucketsTotal;
 	profiler::synccheckpoint("reduce_stats");
 
-	std::vector<esint> targetDistribution = tarray<esint>::distribute(group->size, size), distribution(group->size + 1);
-	distribution.back() = size;
-	esint tolerance = 0.25 * std::ceil(size / (double)group->size);
+	std::vector<esint> targetDistribution = tarray<esint>::distribute(group->size, keysTotal), distribution(group->size + 1);
+	distribution.back() = keysTotal;
+	esint tolerance = 0.25 * std::ceil(keysTotal / (double)group->size);
 
 	std::vector<esint> prevsend, send, recv, recvmid, recvmerge;
 	send.reserve(keys.size());
@@ -484,7 +477,7 @@ bool Communication::computeSplitters(std::vector<esint> &keys, std::vector<esint
 	splitters.front() = 0;
 	for (auto it = splitters.rbegin(); it != splitters.rend(); ++it) {
 		if (*it == 0) {
-			*it = max + 1;
+			*it = bucketsTotal;
 		} else {
 			break;
 		}

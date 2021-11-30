@@ -305,9 +305,9 @@ void ScatteredInput::clusterize()
 //	}
 	profiler::synccheckpoint("sort");
 
-	if (!Communication::computeSplitters(_eBuckets, epermutation, _bucketsBorders)) {
-		eslog::error("MESIO internal error: cannot balance SFC.\n");
-	}
+//	if (!Communication::computeSplitters(_eBuckets, epermutation, _bucketsBorders)) {
+//		eslog::error("MESIO internal error: cannot balance SFC.\n");
+//	}
 
 	profiler::synccheckpoint("compute_splitters");
 	_bucketsBorders.back() = _sfc.buckets(_sfc.depth);

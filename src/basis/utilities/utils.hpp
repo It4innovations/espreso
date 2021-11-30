@@ -32,10 +32,10 @@ std::vector<Ttype> sizesToOffsets(std::vector<std::vector<Ttype> > &sizes, const
 	return sum;
 }
 
-template<typename Ttype, typename Tpermutation>
-void permute(std::vector<Ttype> &data, const std::vector<Tpermutation> &permutation, size_t elementsize)
+template<typename Ttype, typename Talloc, typename Tpermutation, typename Tpermalloc>
+void permute(std::vector<Ttype, Talloc> &data, const std::vector<Tpermutation, Tpermalloc> &permutation, size_t elementsize)
 {
-	std::vector<Ttype> _data(data.size());
+	std::vector<Ttype, Talloc> _data(data.size());
 	_data.swap(data);
 	for (size_t e = 0; e < elementsize; e++) {
 		for (size_t i = 0; i < data.size() / elementsize; i++) {

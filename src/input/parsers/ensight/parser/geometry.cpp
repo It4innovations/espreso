@@ -59,6 +59,7 @@ void EnsightGeometry::scan()
 		fillScanner<EnsightBinaryGeometryKeywordParser>(_geofile, scanner, _keywords);
 	}
 
+	int dimension;
 	scanner.scan(_geofile);
 	scanner.synchronize(_keywords.parts, _keywords.coordinates, _keywords.elements);
 }

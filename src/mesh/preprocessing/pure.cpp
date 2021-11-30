@@ -388,8 +388,9 @@ esint getSFCDecomposition(const ElementStore *elements, const NodeStore *nodes, 
 
 	HilbertCurve<double> sfc(info::mesh->dimension, SFCDEPTH, nodes->coordinates->datatarray().size(), nodes->coordinates->datatarray().data());
 
-	std::vector<esint> buckets(elements->epointers->datatarray().size()), borders;
-	std::vector<esint> permutation(elements->epointers->datatarray().size());
+	std::vector<esint, initless_allocator<esint> > buckets(elements->epointers->datatarray().size());
+	std::vector<esint, initless_allocator<esint> > permutation(elements->epointers->datatarray().size());
+	std::vector<esint> borders;
 
 	#pragma omp parallel for
 	for (int t = 0; t < threads; t++) {
@@ -405,11 +406,9 @@ esint getSFCDecomposition(const ElementStore *elements, const NodeStore *nodes, 
 	});
 	profiler::synccheckpoint("sfc_buckets");
 
-	if (!Communication::computeSplitters(buckets, permutation, borders)) {
+	if (!Communication::computeSplitters(buckets, permutation, borders, elements->distribution.process.totalSize, sfc.buckets(sfc.depth))) {
 		eslog::internalFailure("cannot compute splitters.\n");
 	}
-	borders.back() = sfc.buckets(sfc.depth);
-//	Communication::computeSFCBalancedBorders(sfc, buckets, permutation, borders);
 	profiler::synccheckpoint("compute_splitters");
 
 	if (elements->epointers->datatarray().size()) {

@@ -59,7 +59,7 @@ static void _build(SpaceFillingCurve<T> *sfc, size_t dimension, size_t depth, si
 }
 
 template <typename T>
-static void _addSFCNeighbors(SpaceFillingCurve<T> *sfc, size_t depth, size_t index, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors)
+static void _addSFCNeighbors(const SpaceFillingCurve<T> *sfc, size_t depth, size_t index, const std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors)
 {
 	size_t x, y, z = 0, nsize;
 	if (sfc->dimension == 2) {
@@ -106,7 +106,7 @@ static std::pair<size_t, size_t> _getXYZBucket(size_t depth, size_t x, size_t y,
 }
 
 template <typename T>
-static void _addXYNeighbors(SpaceFillingCurve<T> *sfc, size_t depth, size_t x, size_t y, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors)
+static void _addXYNeighbors(const SpaceFillingCurve<T> *sfc, size_t depth, size_t x, size_t y, const std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors)
 {
 	std::vector<std::pair<size_t, size_t> > potential;
 
@@ -150,7 +150,7 @@ static void _addXYNeighbors(SpaceFillingCurve<T> *sfc, size_t depth, size_t x, s
 }
 
 template <typename T>
-static void _addXYZNeighbors(SpaceFillingCurve<T> *sfc, size_t depth, size_t x, size_t y, size_t z, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors)
+static void _addXYZNeighbors(const SpaceFillingCurve<T> *sfc, size_t depth, size_t x, size_t y, size_t z, const std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors)
 {
 	std::vector<std::pair<size_t, size_t> > potential;
 
@@ -211,13 +211,13 @@ SpaceFillingCurve<double>::SpaceFillingCurve(size_t dimension, size_t depth, siz
 	_build(this, dimension, depth, npoints, coordinates);
 }
 
-template <> void SpaceFillingCurve<float>::addSFCNeighbors(size_t depth, size_t index, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) { _addSFCNeighbors(this, depth, index, splitters, neighbors); }
-template <> void SpaceFillingCurve<double>::addSFCNeighbors(size_t depth, size_t index, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) { _addSFCNeighbors(this, depth, index, splitters, neighbors); }
+template <> void SpaceFillingCurve<float>::addSFCNeighbors(size_t depth, size_t index, const std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) const { _addSFCNeighbors(this, depth, index, splitters, neighbors); }
+template <> void SpaceFillingCurve<double>::addSFCNeighbors(size_t depth, size_t index, const std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) const { _addSFCNeighbors(this, depth, index, splitters, neighbors); }
 
-template <> void SpaceFillingCurve<float>::addXYNeighbors(size_t depth, size_t x, size_t y, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) { _addXYNeighbors(this, depth, x, y, splitters, neighbors); }
-template <> void SpaceFillingCurve<double>::addXYNeighbors(size_t depth, size_t x, size_t y, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) { _addXYNeighbors(this, depth, x, y, splitters, neighbors); }
+template <> void SpaceFillingCurve<float>::addXYNeighbors(size_t depth, size_t x, size_t y, const std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) const { _addXYNeighbors(this, depth, x, y, splitters, neighbors); }
+template <> void SpaceFillingCurve<double>::addXYNeighbors(size_t depth, size_t x, size_t y, const std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) const { _addXYNeighbors(this, depth, x, y, splitters, neighbors); }
 
-template <> void SpaceFillingCurve<float>::addXYZNeighbors(size_t depth, size_t x, size_t y, size_t z, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) { _addXYZNeighbors(this, depth, x, y, z, splitters, neighbors); }
-template <> void SpaceFillingCurve<double>::addXYZNeighbors(size_t depth, size_t x, size_t y, size_t z, std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) { _addXYZNeighbors(this, depth, x, y, z, splitters, neighbors); }
+template <> void SpaceFillingCurve<float>::addXYZNeighbors(size_t depth, size_t x, size_t y, size_t z, const std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) const { _addXYZNeighbors(this, depth, x, y, z, splitters, neighbors); }
+template <> void SpaceFillingCurve<double>::addXYZNeighbors(size_t depth, size_t x, size_t y, size_t z, const std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) const { _addXYZNeighbors(this, depth, x, y, z, splitters, neighbors); }
 
 }

@@ -269,8 +269,8 @@ void Input::balance()
 	profiler::syncparam("elements", _meshData.eIDs.size());
 	profiler::syncparam("enodes", _meshData.enodes.size());
 
-	Communication::computeSplitters(_meshData.nIDs, npermutation, _nDistribution);
-	Communication::computeSplitters(_meshData.eIDs, epermutation, _eDistribution);
+//	Communication::computeSplitters(_meshData.nIDs, npermutation, _nDistribution);
+//	Communication::computeSplitters(_meshData.eIDs, epermutation, _eDistribution);
 	profiler::synccheckpoint("compute_splitters");
 
 	std::vector<esint> sBuffer, rBuffer;
@@ -415,9 +415,9 @@ void Input::balancePermutedNodes()
 	std::iota(permutation.begin(), permutation.end(), 0);
 	std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) { return _meshData.nIDs[i] < _meshData.nIDs[j]; });
 
-	if (!Communication::computeSplitters(_meshData.nIDs, permutation, _nDistribution)) {
-		eslog::error("MESIO internal error: cannot compute permuted nodes splitters.\n");
-	}
+//	if (!Communication::computeSplitters(_meshData.nIDs, permutation, _nDistribution)) {
+//		eslog::error("MESIO internal error: cannot compute permuted nodes splitters.\n");
+//	}
 
 	std::vector<esint> sBuffer, rBuffer;
 	sBuffer.reserve(3 * info::mpi::size + _meshData.nIDs.size() + _meshData.coordinates.size() * sizeof(Point) / sizeof(esint));
@@ -523,9 +523,9 @@ void Input::balancePermutedElements()
 	std::iota(permutation.begin(), permutation.end(), 0);
 	std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) { return _meshData.eIDs[i] < _meshData.eIDs[j]; });
 
-	if (!Communication::computeSplitters(_meshData.eIDs, permutation, _eDistribution)) {
-		eslog::error("MESIO internal error: cannot compute permuted elements splitters.\n");
-	}
+//	if (!Communication::computeSplitters(_meshData.eIDs, permutation, _eDistribution)) {
+//		eslog::error("MESIO internal error: cannot compute permuted elements splitters.\n");
+//	}
 
 	std::vector<esint> edist({ 0 });
 	edist.reserve(_meshData.esize.size() + 1);

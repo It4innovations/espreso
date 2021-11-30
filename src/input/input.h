@@ -57,8 +57,8 @@ struct OrderedMeshDatabase {
 
 	std::vector<_Point<esfloat>, initless_allocator<_Point<esfloat> > > coordinates;
 
-	std::vector<Element::CODE> etype;
-	std::vector<esint> enodes;
+	std::vector<Element::CODE, initless_allocator<Element::CODE> > etype;
+	std::vector<esint, initless_allocator<esint> > enodes;
 
 	std::vector<Offset> noffsets, eoffsets;
 	std::vector<Region> nregions, eregions;
@@ -95,8 +95,8 @@ struct OrderedMeshDatabase {
 	void clearElements()
 	{
 		std::vector<Offset>().swap(eoffsets);
-		std::vector<Element::CODE>().swap(etype);
-		std::vector<esint>().swap(enodes);
+		std::vector<Element::CODE, initless_allocator<Element::CODE> >().swap(etype);
+		std::vector<esint, initless_allocator<esint> >().swap(enodes);
 	}
 
 	void clearRegions()
