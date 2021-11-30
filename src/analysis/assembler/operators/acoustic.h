@@ -6,7 +6,83 @@
 #include "analysis/assembler/parameter.h"
 #include "analysis/assembler/math.hpp"
 
+#include <iostream>
+
 namespace espreso {
+
+struct AcousticDipole: public ActionOperator {
+	AcousticDipole(
+			int interval,
+			const ParameterData &dND,
+			const ParameterData &weight,
+			const ParameterData &determinant,
+			const ParameterData &density,
+			const ParameterData &q,
+			ParameterData &dipole)
+
+	: dND(dND, interval),
+	  weight(weight, interval, 0),
+	  determinant(determinant, interval),
+	  density(density, interval),
+	  q(q, interval),
+	  dipole(dipole, interval)
+	{
+	}
+
+	InputParameterIterator dND, weight, determinant, density, q;
+	OutputParameterIterator dipole;
+
+	void operator++()
+	{
+		++dND;
+		++determinant;;
+		++dipole;
+		++density;
+		++q;
+	}
+
+	void move(int n)
+	{
+		dND += n;
+		determinant += n;
+		dipole += n;
+		density += n;
+		q += n;
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct AcousticDipole2D: public AcousticDipole {
+	using AcousticDipole::AcousticDipole;
+
+	void operator()()
+	{
+		std::fill(dipole.data, dipole.data + dipole.inc, 0);
+
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+				dipole.data[n] += (determinant[gpindex] * weight[gpindex] / density[gpindex]) * (q[2 * gpindex + 0] * dND[gpindex * nodes * 2 + 0 * nodes + n] + q[2 * gpindex + 1] * dND[gpindex * nodes * 2 + 1 * nodes + n]);
+			}
+		}
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct AcousticDipole3D: public AcousticDipole {
+	using AcousticDipole::AcousticDipole;
+	
+	void operator()()
+	{
+		std::fill(dipole.data, dipole.data + dipole.inc, 0);
+
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+				dipole.data[n] += (determinant[gpindex] * weight[gpindex] / density[gpindex]) * (q[3 * gpindex + 0] * dND[gpindex * nodes * 3 + 0 * nodes + n] + q[3 * gpindex + 1] * dND[gpindex * nodes * 3 + 1 * nodes + n] + q[3 * gpindex + 2] * dND[gpindex * nodes * 3 + 2 * nodes + n]);
+			}
+		}
+	}
+};
+
 
 struct AcousticStiffness: public ActionOperator {
 	AcousticStiffness(
@@ -122,6 +198,7 @@ struct AcousticMass: public ActionOperator {
 		}
 	}
 };
+
 
 template <size_t nodes, size_t gps>
 struct AcousticQ: public ActionOperator {

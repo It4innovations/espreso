@@ -10,8 +10,6 @@
 
 #include <iostream>
 
-#include <iostream>
-
 namespace espreso {
 
 void acousticStiffness(AX_Acoustic &module)
@@ -49,9 +47,37 @@ void acousticBoundaryMass(AX_Acoustic &module)
 {
 }
 
-
 void acousticRHS(AX_Acoustic &module)
 {
+	module.controller.addInput(module.elements.monopole, module.monopoleSource.gp,
+							   module.integration.N, module.integration.weight, module.integration.jacobiDeterminant,
+							   module.material.density);
+	module.controller.prepare(module.elements.monopole);
+
+	module.controller.addInput(module.elements.dipole, module.dipoleSource.gp, module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant);
+	module.controller.prepare(module.elements.dipole);
+
+	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+		// info::mesh->elements->eintervals[interval].region
+		module.elementOps[interval].emplace_back(
+			instantiate<AX_Acoustic::NGP, AcousticRHS2D>(interval, module.controller,
+							module.integration.N, module.integration.weight, module.integration.jacobiDeterminant,
+							module.monopoleSource.gp,
+							module.elements.monopole)
+		);
+
+		if (info::mesh->dimension == 2)
+		{
+			module.elementOps[interval].emplace_back(
+				instantiate<AX_Acoustic::NGP, AcousticDipole2D>(interval, module.controller,
+								module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant,
+								module.material.density,
+								module.dipoleSource.gp,
+								module.elements.dipole)
+			);
+		}
+	}
+
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
 			if (!module.normalAcceleration.gp.isSet(r) && !module.impedance.gp.isSet(r)) {

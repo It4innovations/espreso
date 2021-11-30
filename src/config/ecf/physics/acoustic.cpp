@@ -36,12 +36,26 @@ AcousticLoadStepConfiguration::AcousticLoadStepConfiguration(DIMENSION *D)
 			.addoption(ECFOption().setname("REAL").setdescription("Solve with real values."))
 			.addoption(ECFOption().setname("COMPLEX").setdescription("Solve with complex values.")));
 
+	REGISTER(monopole_source, ECFMetaData()
+			.setdescription({ "The name of a region.", "Monopole source" })
+			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
+			.setpattern({ "MY_REGION", "273.15" })
+			.setdynamic(),
+			ECFExpression::Scope::EGPS);
+
+	REGISTER(dipole_source, ECFMetaData()
+			.setdescription({ "The name of a region.", "Dipole source." })
+			.setdatatype({ ECFDataType::ELEMENTS_REGION })
+			.setpattern({ "MY_REGION" }),
+			D, ECFExpression::Scope::BGPS);
+
 	REGISTER(acoustic_pressure, ECFMetaData()
 			.setdescription({ "The name of a region.", "Pressure" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "0" })
 			.setdynamic(),
 			ECFExpression::Scope::NODE);
+
 	REGISTER(normal_acceleration, ECFMetaData()
 			.setdescription({ "The name of a region.", "Normal Acceleration" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })

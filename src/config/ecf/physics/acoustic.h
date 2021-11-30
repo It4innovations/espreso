@@ -30,7 +30,8 @@ struct AcousticLoadStepConfiguration: public AcousticLoadStepSolverConfiguration
 
 	SYSTEM system;
 
-	std::map<std::string, ECFExpression> acoustic_pressure, normal_acceleration;
+	std::map<std::string, ECFExpression> acoustic_pressure, normal_acceleration, monopole_source;
+	std::map<std::string, ECFExpressionVector> dipole_source;
 	std::map<std::string, ImpedanceConfiguration> impedance;
 
 	AcousticLoadStepConfiguration(DIMENSION *D);

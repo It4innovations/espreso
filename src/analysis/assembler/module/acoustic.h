@@ -55,13 +55,15 @@ public:
 	AcousticLoadStepConfiguration &configuration;
 
 	ParametersAcousticPressure acoustic_pressure;
-
 	ParametersIntegration integration;
 	ParametersCoordinates coords;
 
 	ParametersBoundaryNodeFunction pressure;
 	ParametersBoundaryFunction normalAcceleration, impedance, q;
 	ParametersMaterial material;
+
+	ParameterMonopoleSource monopoleSource;
+	ParameterDipoleSource dipoleSource;
 
 	ParametersElements<1> elements;
 

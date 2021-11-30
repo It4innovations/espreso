@@ -24,6 +24,9 @@ struct ParametersElements {
 	ElementParameter<dimension * dimension * enodes * enodes> damping;
 	ElementParameter<dimension * enodes> rhs;
 
+	ElementParameter<dimension * enodes> monopole;
+	ElementParameter<dimension * enodes> dipole;
+
 	Boundary boundary;
 };
 
@@ -207,6 +210,14 @@ struct ParametersGradient {
 
 struct ParametersFlux {
 	static ElementData *output;
+};
+
+struct ParameterMonopoleSource {
+	ElementGPsExternalParameter<egps> gp;
+};
+
+struct ParameterDipoleSource {
+	ElementGPsExternalParameter<ndim * egps> gp;
 };
 
 }

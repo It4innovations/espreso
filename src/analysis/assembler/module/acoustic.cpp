@@ -117,6 +117,31 @@ void AX_Acoustic::analyze()
 		examineBoundaryParameter("IMPEDANCE", configuration.impedance, impedance.gp.externalValues);
 		fromExpression(*this, impedance.gp, impedance.gp.externalValues);
 	}
+	if (configuration.monopole_source.size()) {
+		correct &= examineElementParameter("MONOPOLE DOMAIN SOURCE", configuration.monopole_source, monopoleSource.gp.externalValue);
+		fromExpression(*this, monopoleSource.gp, monopoleSource.gp.externalValue);
+	}
+	if (configuration.dipole_source.size()) {
+		correct &= examineElementParameter("DIPOLE_DOMAIN_SOURCE.X", configuration.dipole_source, dipoleSource.gp.externalValue, 0);
+		correct &= examineElementParameter("DIPOLE_DOMAIN_SOURCE.Y", configuration.dipole_source, dipoleSource.gp.externalValue, 1);
+		if (info::mesh->dimension == 3) {
+			correct &= examineElementParameter("DIPOLE_DOMAIN_SOURCE.Z", configuration.dipole_source, dipoleSource.gp.externalValue, 2);
+		}
+		fromExpression(*this, dipoleSource.gp, dipoleSource.gp.externalValue);
+	}
+	
+	
+	
+	integration.weight.name = "integration.weight";
+	integration.N.name = "integration.N";
+	integration.dN.name = "integration.dN";
+	integration.dND.name = "integration.dND";
+	integration.jacobiDeterminant.name = "integration.jacobiDeterminant";
+	integration.jacobiInversion.name = "integration.jacobiInversion";
+	elements.monopole.name = "elements.monopole";
+	elements.dipole.name = "elements.dipole";
+	material.density.name = "material.density";
+	
 	acousticRHS(*this);
 
 	addFiller(*this);
