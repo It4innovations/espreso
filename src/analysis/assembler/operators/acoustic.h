@@ -59,10 +59,8 @@ struct AcousticDipole2D: public AcousticDipole {
 	{
 		std::fill(dipole.data, dipole.data + dipole.inc, 0);
 
-		for (size_t n = 0; n < nodes; ++n) {
-			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-				dipole.data[n] += (determinant[gpindex] * weight[gpindex] / density[gpindex]) * (q[2 * gpindex + 0] * dND[gpindex * nodes * 2 + 0 * nodes + n] + q[2 * gpindex + 1] * dND[gpindex * nodes * 2 + 1 * nodes + n]);
-			}
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			ADDM12M2N<nodes>(determinant[gpindex] * weight[gpindex] / density[gpindex], q.data + 2 * gpindex, dND.data + gpindex * nodes * 2, dipole.data);
 		}
 	}
 };
@@ -75,10 +73,8 @@ struct AcousticDipole3D: public AcousticDipole {
 	{
 		std::fill(dipole.data, dipole.data + dipole.inc, 0);
 
-		for (size_t n = 0; n < nodes; ++n) {
-			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-				dipole.data[n] += (determinant[gpindex] * weight[gpindex] / density[gpindex]) * (q[3 * gpindex + 0] * dND[gpindex * nodes * 3 + 0 * nodes + n] + q[3 * gpindex + 1] * dND[gpindex * nodes * 3 + 1 * nodes + n] + q[3 * gpindex + 2] * dND[gpindex * nodes * 3 + 2 * nodes + n]);
-			}
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			ADDM13M3N<nodes>(determinant[gpindex] * weight[gpindex] / density[gpindex], q.data + 3 * gpindex, dND.data + gpindex * nodes * 3, dipole.data);
 		}
 	}
 };

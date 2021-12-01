@@ -76,6 +76,16 @@ void acousticRHS(AX_Acoustic &module)
 								module.elements.dipole)
 			);
 		}
+		else if (info::mesh->dimension == 3)
+		{
+			module.elementOps[interval].emplace_back(
+				instantiate<AX_Acoustic::NGP, AcousticDipole3D>(interval, module.controller,
+								module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant,
+								module.material.density,
+								module.dipoleSource.gp,
+								module.elements.dipole)
+			);
+		}
 	}
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {

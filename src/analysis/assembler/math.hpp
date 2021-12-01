@@ -352,6 +352,22 @@ static inline void ADDMN3M33M3N(const double &sumscale, const double * __restric
 	}
 }
 
+template<size_t N>
+static inline void ADDM12M2N(const double &sumscale, const double * __restrict__ m12, const double * __restrict__ m2N, double * __restrict__ result)
+{
+	for (size_t n = 0; n < N; ++n) {
+		result[0 + n] += sumscale * (m12[0] * m2N[n] + m12[1] * m2N[N + n]);
+	}
+}
+
+template<size_t N>
+static inline void ADDM13M3N(const double &sumscale, const double * __restrict__ m13, const double * __restrict__ m3N, double * __restrict__ result)
+{
+	for (size_t n = 0; n < N; ++n) {
+		result[n] += sumscale * (m13[0] * m3N[n] + m13[1] * m3N[N + n] + m13[2] * m3N[2 * N + n]);
+	}
+}
+
 }
 
 #endif /* SRC_PHYSICS_ASSEMBLER_MATH_HPP_ */

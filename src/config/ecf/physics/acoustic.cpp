@@ -47,7 +47,7 @@ AcousticLoadStepConfiguration::AcousticLoadStepConfiguration(DIMENSION *D)
 			.setdescription({ "The name of a region.", "Dipole source." })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })
 			.setpattern({ "MY_REGION" }),
-			D, ECFExpression::Scope::BGPS);
+			D, ECFExpression::Scope::EGPS);
 
 	REGISTER(acoustic_pressure, ECFMetaData()
 			.setdescription({ "The name of a region.", "Pressure" })
