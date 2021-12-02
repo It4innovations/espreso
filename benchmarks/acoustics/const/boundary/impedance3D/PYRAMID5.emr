@@ -1,0 +1,5 @@
+         ;          ;              ;         TOP         ;         TOP         ;        BOTTOM       ;        BOTTOM       ;     ALL_ELEMENTS    ;     ALL_ELEMENTS    ;     ALL_ELEMENTS    ;
+loadstep ;  substep ;    frequency ;  ACOUSTIC_PRESSURE  ;  ACOUSTIC_PRESSURE  ;  ACOUSTIC_PRESSURE  ;  ACOUSTIC_PRESSURE  ;  ACOUSTIC_PRESSURE  ;  ACOUSTIC_PRESSURE  ;  ACOUSTIC_PRESSURE  ;
+         ;          ;              ;        <MAX>        ;        <MIN>        ;        <MAX>        ;        <MIN>        ;        <MAX>        ;        <MIN>        ;      <AVERAGE>      ;
+
+       1 ;        1 ;     500.0000 ;        1.000000e+02 ;        1.000000e+02 ;       -6.527244e+01 ;       -6.527244e+01 ;        1.262693e+02 ;       -1.252798e+02 ;        2.017695e+01 ; 

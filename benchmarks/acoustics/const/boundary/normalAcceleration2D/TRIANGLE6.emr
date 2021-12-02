@@ -1,0 +1,5 @@
+         ;          ;              ;       GAMMA_3       ;       GAMMA_3       ;       GAMMA_1       ;       GAMMA_1       ;     ALL_ELEMENTS    ;     ALL_ELEMENTS    ;     ALL_ELEMENTS    ;       GAMMA_2       ;       GAMMA_2       ;       GAMMA_2       ;
+loadstep ;  substep ;    frequency ;  ACOUSTIC_PRESSURE  ;  ACOUSTIC_PRESSURE  ;  ACOUSTIC_PRESSURE  ;  ACOUSTIC_PRESSURE  ;  ACOUSTIC_PRESSURE  ;  ACOUSTIC_PRESSURE  ;  ACOUSTIC_PRESSURE  ;  ACOUSTIC_PRESSURE  ;  ACOUSTIC_PRESSURE  ;  ACOUSTIC_PRESSURE  ;
+         ;          ;              ;        <MAX>        ;        <MIN>        ;        <MAX>        ;        <MIN>        ;        <MAX>        ;        <MIN>        ;      <AVERAGE>      ;        <MIN>        ;        <MAX>        ;      <AVERAGE>      ;
+
+       1 ;        1 ;     500.0000 ;        1.000000e+02 ;        1.000000e+02 ;       -1.107627e+02 ;       -1.107630e+02 ;        1.138195e+02 ;       -1.138196e+02 ;       -8.772335e+00 ;       -1.138194e+02 ;        1.138193e+02 ;       -8.772290e+00 ; 
