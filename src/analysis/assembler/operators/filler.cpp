@@ -81,8 +81,12 @@ void addFiller(AX_Acoustic &module)
 	}
 
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
-		module.elementFiller[interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, VectorFiller>(interval, module.controller, module.elements.monopole, module.re.rhs->mapping.elements[interval].data, module.re.rhs->mapping.elements[interval].position));
-		module.elementFiller[interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, VectorFiller>(interval, module.controller, module.elements.dipole, module.re.rhs->mapping.elements[interval].data, module.re.rhs->mapping.elements[interval].position));
+		if (module.monopoleSource.gp.isSet(interval)) {
+			module.elementFiller[interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, VectorFiller>(interval, module.controller, module.elements.monopole, module.re.rhs->mapping.elements[interval].data, module.re.rhs->mapping.elements[interval].position));
+		}
+		if (module.dipoleSource.gp.isSet(interval)) {
+			module.elementFiller[interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, VectorFiller>(interval, module.controller, module.elements.dipole, module.re.rhs->mapping.elements[interval].data, module.re.rhs->mapping.elements[interval].position));
+		}
 	}
 
 	if (module.re.rhs != nullptr) {

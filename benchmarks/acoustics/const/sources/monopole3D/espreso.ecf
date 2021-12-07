@@ -90,9 +90,6 @@ ACOUSTICS_3D {
         NUM_SAMPLES                    1;
       }
 
-      # TODO: REMOVE THIS
-      DIPOLE_SOURCE { ALL_ELEMENTS { X 0; Y 0; Z 0; } }
-
       MONOPOLE_SOURCE {
         ALL_ELEMENTS 300;
       }
