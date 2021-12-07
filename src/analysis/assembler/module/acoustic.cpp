@@ -118,16 +118,16 @@ void AX_Acoustic::analyze()
 		fromExpression(*this, impedance.gp, impedance.gp.externalValues);
 	}
 	if (configuration.monopole_source.size()) {
-		correct &= examineElementParameter("MONOPOLE DOMAIN SOURCE", configuration.monopole_source, monopoleSource.gp.externalValue);
-		fromExpression(*this, monopoleSource.gp, monopoleSource.gp.externalValue);
+		correct &= examineElementParameter("MONOPOLE DOMAIN SOURCE", configuration.monopole_source, monopoleSource.gp.externalValues);
+		fromExpression(*this, monopoleSource.gp, monopoleSource.gp.externalValues);
 	}
 	if (configuration.dipole_source.size()) {
-		correct &= examineElementParameter("DIPOLE_DOMAIN_SOURCE.X", configuration.dipole_source, dipoleSource.gp.externalValue, 0);
-		correct &= examineElementParameter("DIPOLE_DOMAIN_SOURCE.Y", configuration.dipole_source, dipoleSource.gp.externalValue, 1);
+		correct &= examineElementParameter("DIPOLE_DOMAIN_SOURCE.X", configuration.dipole_source, dipoleSource.gp.externalValues, 0);
+		correct &= examineElementParameter("DIPOLE_DOMAIN_SOURCE.Y", configuration.dipole_source, dipoleSource.gp.externalValues, 1);
 		if (info::mesh->dimension == 3) {
-			correct &= examineElementParameter("DIPOLE_DOMAIN_SOURCE.Z", configuration.dipole_source, dipoleSource.gp.externalValue, 2);
+			correct &= examineElementParameter("DIPOLE_DOMAIN_SOURCE.Z", configuration.dipole_source, dipoleSource.gp.externalValues, 2);
 		}
-		fromExpression(*this, dipoleSource.gp, dipoleSource.gp.externalValue);
+		fromExpression(*this, dipoleSource.gp, dipoleSource.gp.externalValues);
 	}
 	
 	
