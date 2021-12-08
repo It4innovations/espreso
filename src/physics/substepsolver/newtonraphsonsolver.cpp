@@ -192,7 +192,8 @@ bool NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 					(system->builder->matrices & Builder::Request::R)  ? 'R' : ' ',
 					(system->builder->matrices & Builder::Request::f)  ? 'f' : ' ');
 
-		system->solve();
+		bool ret = system->solve();
+		if (!ret) return false;
 		if (_configuration.check_second_residual) {
 			computeDual();
 		}
@@ -261,7 +262,8 @@ bool NewtonRaphson::solve(LoadStepSolver &loadStepSolver)
 				(system->builder->matrices & Builder::Request::C) ? 'C' : ' ',
 				(system->builder->matrices & Builder::Request::R) ? 'R' : ' ',
 				(system->builder->matrices & Builder::Request::f) ? 'f' : ' ');
-		system->solve();
+		bool ret = system->solve();
+		if (!ret) return false;
 		if (_configuration.check_second_residual) {
 			computeDual();
 		}
