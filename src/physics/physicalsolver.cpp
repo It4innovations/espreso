@@ -364,16 +364,17 @@ void PhysicalSolver::runSingle(PhysicalSolver &solver, TPhysics &configuration)
 					info::mesh->partitiate(info::ecf->input.decomposition.domains);
 					updateDecomposition = false;
 				}
-				LinearSystem *prev = solver.system;
-				solver.system = getSystem(prev, configuration, configuration, loadStepSettings, configuration.dimension);
-				solver.subStepSolver->system = solver.system; // = getSubStepSolver(prev.subStepSolver, loadStepSettings, solver.system);
+				PhysicalSolver prev = solver;
+				solver.system = getSystem(prev.system, configuration, configuration, loadStepSettings, configuration.dimension);
+				solver.subStepSolver = getSubStepSolver(prev.subStepSolver, loadStepSettings, solver.system);
 				solver.loadStepSolver->system = solver.system; // = getLoadStepSolver(prev.loadStepSolver, loadStepSettings, solver.system, solver.subStepSolver);
+				solver.loadStepSolver->subStepSolver = solver.subStepSolver;
 				solver.loadStepSolver->updateSystem();
+				prev.loadStepSolver = NULL;
 				bool ret = solver.loadStepSolver->runNextSubstep();
 				if (!ret) {
 					step::toPrevious();
 				}
-				delete prev;
 				return ret;
 			});
 
