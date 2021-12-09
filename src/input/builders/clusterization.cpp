@@ -168,8 +168,7 @@ void clusterize(OrderedMesh &mesh, ClusteredMesh &clustered)
 	#pragma omp parallel for
 	for (int r = 0; r < info::mpi::size; ++r) {
 		std::sort(npermutation.begin() + nborders[r], npermutation.begin() + nborders[r + 1]);
-		// we have to elements sorted according to etype
-//		std::sort(epermutation.begin() + eborders[r], epermutation.begin() + eborders[r + 1]);
+		std::sort(epermutation.begin() + eborders[r], epermutation.begin() + eborders[r + 1]);
 	}
 
 	std::vector<esint, initless_allocator<esint> > sBuffer, rBuffer;
@@ -202,13 +201,13 @@ void clusterize(OrderedMesh &mesh, ClusteredMesh &clustered)
 		char *pbuffer = reinterpret_cast<char*>(sBuffer.data() + sBuffer.size());
 		sBuffer.resize(sBuffer.size() + utils::reinterpret_size<esint, _Point<esfloat> >(nborders[r + 1] - nborders[r]));
 		for (esint n = nborders[r]; n < nborders[r + 1]; ++n, pbuffer += sizeof(_Point<esfloat>)) {
-			memcpy(pbuffer, mesh.coordinates.data() + n, sizeof(_Point<esfloat>));
+			memcpy(pbuffer, mesh.coordinates.data() + npermutation[n], sizeof(_Point<esfloat>));
 		}
 
 		char *tbuffer = reinterpret_cast<char*>(sBuffer.data() + sBuffer.size());
 		sBuffer.resize(sBuffer.size() + utils::reinterpret_size<esint, char>(eborders[r + 1] - eborders[r]));
 		for (esint e = eborders[r]; e < eborders[r + 1]; ++e, ++tbuffer) {
-			memcpy(tbuffer, mesh.etype.data() + e, sizeof(Element::CODE));
+			memcpy(tbuffer, mesh.etype.data() + epermutation[e], sizeof(Element::CODE));
 		}
 		for (esint e = eborders[r]; e < eborders[r + 1]; ++e) {
 			sBuffer.push_back(epermutation[e] + mesh.eoffset);
@@ -252,6 +251,7 @@ void clusterize(OrderedMesh &mesh, ClusteredMesh &clustered)
 		clustered.eoffsets.reserve(elementsTotal);
 		clustered.etype.reserve(elementsTotal);
 		clustered.enodes.reserve(enodesTotal);
+		clustered.edist.reserve(elementsTotal + 1);
 	}
 
 	clustered.edist.push_back(0);

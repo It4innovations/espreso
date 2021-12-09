@@ -42,6 +42,11 @@ public:
 	static void load();
 	static void finish();
 	static Element edata[(int)Element::CODE::SIZE];
+	template <typename TCode>
+	static inline const Element& element(const TCode &code)
+	{
+		return edata[(int)code];
+	}
 
 	Mesh();
 	~Mesh();

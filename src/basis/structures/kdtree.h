@@ -25,25 +25,25 @@ class KDTree {
 	};
 
 public:
-	KDTree(const std::vector<_Point<T> > &coordinates, size_t bucketsize = defaultBucketSize)
-	: coordinates(coordinates)
+	KDTree(const _Point<T> *cbegin, const _Point<T> *cend, size_t bucketsize = defaultBucketSize)
+	: cbegin(cbegin), cend(cend)
 	{
-		if (coordinates.size()) {
-			min = coordinates.front();
-			max = coordinates.front();
-			for (size_t i = 1; i < coordinates.size(); ++i) {
-				min.x = std::min(coordinates[i].x, min.x);
-				min.y = std::min(coordinates[i].y, min.y);
-				min.z = std::min(coordinates[i].z, min.z);
-				max.x = std::max(coordinates[i].x, max.x);
-				max.y = std::max(coordinates[i].y, max.y);
-				max.z = std::max(coordinates[i].z, max.z);
+		if (cend != cbegin) {
+			min = *cbegin;
+			max = *cbegin;
+			for (auto c = cbegin + 1; c != cend; ++c) {
+				min.x = std::min(c->x, min.x);
+				min.y = std::min(c->y, min.y);
+				min.z = std::min(c->z, min.z);
+				max.x = std::max(c->x, max.x);
+				max.y = std::max(c->y, max.y);
+				max.z = std::max(c->z, max.z);
 			}
 		}
 		build(bucketsize);
 	}
-	KDTree(const std::vector<_Point<T> > &coordinates, _Point<T>  &min, _Point<T>  &max)
-	: coordinates(coordinates), min(min), max(max)
+	KDTree(const _Point<T> *cbegin, const _Point<T> *cend, _Point<T>  &min, _Point<T>  &max)
+	: cbegin(cbegin), cend(cend), min(min), max(max)
 	{
 		build();
 	}
@@ -75,14 +75,14 @@ public:
 		_Point<T> centroid;
 
 		for(i = b; i < e; ++i){
-			centroid += this->coordinates[this->permutation[i]];
+			centroid += coo(this->permutation[i]);
 		}
 		centroid /= (e-b);
 
 		for(i = b; i < e; ++i){
-			dx = this->coordinates[this->permutation[i]][0] - centroid[0];
-			dy = this->coordinates[this->permutation[i]][1] - centroid[1];
-			dz = this->coordinates[this->permutation[i]][2] - centroid[2];
+			dx = coo(this->permutation[i])[0] - centroid[0];
+			dy = coo(this->permutation[i])[1] - centroid[1];
+			dz = coo(this->permutation[i])[2] - centroid[2];
 			d = dx*dx + dy*dy + dz*dz;
 
 			if(d < dmin || out == -1){
@@ -115,7 +115,12 @@ public:
 		}
 	}
 
-	const std::vector<_Point<T> > &coordinates;
+	const _Point<T>& coo(esint i) const
+	{
+		return *(cbegin + i);
+	}
+
+	const _Point<T> *cbegin, *cend;
 
 	esint levels;
 	_Point<T>  min, max, size;

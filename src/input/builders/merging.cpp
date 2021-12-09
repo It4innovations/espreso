@@ -12,13 +12,17 @@
 #include "wrappers/mpi/communication.h"
 
 #include <functional>
+#include <algorithm>
+#include <numeric>
+#include <unordered_map>
+#include <unordered_set>
 
 namespace espreso {
 namespace builder {
 
-static void searchDuplicateNodes(std::vector<_Point<esfloat> > &coordinates, std::function<void(esint origin, esint target)> merge)
+static void searchDuplicateNodes(std::vector<_Point<esfloat>, initless_allocator<_Point<esfloat> > > &coordinates, std::function<void(esint origin, esint target)> merge)
 {
-	KDTree<esfloat> tree(coordinates);
+	KDTree<esfloat> tree(coordinates.data(), coordinates.data() + coordinates.size());
 
 	profiler::synccheckpoint("kdtree_build");
 	profiler::param("kdtree_levels", tree.levels);
@@ -115,7 +119,7 @@ static void searchDuplicateNodes(std::vector<_Point<esfloat> > &coordinates, std
 	}
 }
 
-void mergeDuplicatedNodes(const HilbertCurve<esfloat> &sfc, ClusteredMesh &clustered)
+void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, ClusteredMesh &clustered)
 {
 	std::vector<esint> cdistribution = tarray<esint>::distribute(info::env::OMP_NUM_THREADS, clustered.noffsets.size());
 
@@ -186,7 +190,7 @@ void mergeDuplicatedNodes(const HilbertCurve<esfloat> &sfc, ClusteredMesh &clust
 	}
 
 	std::vector<esint> offsets;
-	std::vector<_Point<esfloat> > coordinates;
+	std::vector<_Point<esfloat>, initless_allocator<_Point<esfloat> > > coordinates;
 	std::vector<std::vector<esint> > sBuffer(clustered.neighbors.size()), rBuffer(clustered.neighbors.size());
 	{ // build send buffer
 		auto ni = clustered.neighbors.begin();
@@ -258,7 +262,6 @@ void mergeDuplicatedNodes(const HilbertCurve<esfloat> &sfc, ClusteredMesh &clust
 		clustered.noffsets.resize(clustered.noffsets.size() - toerase.size());
 	}
 
-//	std::vector<std::pair<esint, esint> > buckets;
 	if (toinsert.size()) {
 		utils::sortAndRemoveDuplicates(toinsert);
 		clustered.coordinates.resize(clustered.coordinates.size() + toinsert.size());
@@ -266,43 +269,204 @@ void mergeDuplicatedNodes(const HilbertCurve<esfloat> &sfc, ClusteredMesh &clust
 		for (size_t i = clustered.noffsets.size() - toinsert.size(), j = 0; j < toinsert.size(); ++i, ++j) {
 			clustered.noffsets[i] = offsets[toinsert[j]];
 			clustered.coordinates[i] = coordinates[toinsert[j]];
-//			buckets.push_back(std::make_pair(clustered.noffsets[i], sfc.getBucket(clustered.coordinates[i])));
-//			for (size_t r = 0; r < _nregsize; ++r) {
-//				_nregions[i * _nregsize + r] = regions[toinsert[j] * _nregsize + r];
-//			}
 		}
 	}
-//	{
-//		// update original buckets
-//		Communication::allGatherUnknownSize(buckets);
-//		for (size_t i = 0; i < buckets.size(); ++i) {
-//			if (_nDistribution[info::mpi::rank] <= buckets[i].first && buckets[i].first < _nDistribution[info::mpi::rank + 1]) {
-//				auto it = std::lower_bound(_nIDs.begin(), _nIDs.end(), buckets[i].first);
-//				if (it != _nIDs.end() && *it == buckets[i].first) {
-//					_nBuckets[it - _nIDs.begin()] = buckets[i].second;
-//				} else {
-//					eslog::internalFailure("cannot update duplicated node bucket.\n");
-//				}
-//			}
-//		}
-//	}
-//
-	// we need to sum regions for all duplicate nodes
-	// there can be more optimal solution, but this keep the rest of the code unchanged
-//	searchDuplicateNodes(clustered.coordinates, [&] (esint origin, esint target) {
-////		clustered._duplicateNodes.push_back(MeshBuilder::Duplicate{ clustered.noffsets[origin], clustered.noffsets[target], origin, target });
-//	});
-//	std::sort(clustered._duplicateNodes.begin(), clustered._duplicateNodes.end(), MeshBuilder::Duplicate());
-//	for (auto dup = _meshData._duplicateNodes.begin(); dup != _meshData._duplicateNodes.end(); ++dup) {
-//		for (size_t i = 0; i < _nregsize; i++) {
-//			_nregions[_nregsize * dup->toffset + i] |= _nregions[_nregsize * dup->idoffset + i];
-//		}
-//	}
-//	for (auto dup = _meshData._duplicateNodes.begin(); dup != _meshData._duplicateNodes.end(); ++dup) {
-//		for (size_t i = 0; i < _nregsize; i++) {
-//			_nregions[_nregsize * dup->idoffset + i] |= _nregions[_nregsize * dup->toffset + i];
-//		}
-//	}
+
+	searchDuplicateNodes(clustered.coordinates, [&] (esint origin, esint target) {
+		clustered.nduplication.push_back({ target, origin });
+	});
+	std::sort(clustered.nduplication.begin(), clustered.nduplication.end());
+
+	std::unordered_map<esint, esint> dmap;
+	for (size_t n = 0; n < clustered.nduplication.size(); ++n) {
+		dmap[clustered.nduplication[n].duplication] = clustered.nduplication[n].origin;
+	}
+}
+
+void searchParentAndDuplicatedElements(ClusteredMesh &linked)
+{
+	// eoffset, etype, enodes; ....
+	std::vector<std::vector<esint> > sBuffer(linked.neighbors.size()), rBuffer(linked.neighbors.size());
+	if (linked.neighbors.size()) { // duplicated elements have to have all nodes held by other rank
+		std::vector<int> neighbors;
+		for (size_t e = 0; e < linked.eoffsets.size(); ++e) {
+			neighbors.assign(linked.neighbors.begin(), linked.neighbors.end());
+			for (esint n = linked.edist[e]; n < linked.edist[e + 1]; ++n) {
+				size_t intersection = 0, current = 0;
+				for (int r = linked.rankDistribution[linked.g2l[linked.enodes[n]]]; r < linked.rankDistribution[linked.g2l[linked.enodes[n]] + 1]; ++r) {
+					while (current < neighbors.size() && neighbors[current] < linked.rankData[r]) { ++current; }
+					if (current < neighbors.size() && neighbors[current] == linked.rankData[r]) {
+						neighbors[intersection++] = neighbors[current++];
+					}
+				}
+				neighbors.resize(intersection);
+			}
+			esint roffset = 0;
+			for (auto r = neighbors.begin(); r != neighbors.end(); ++r) {
+				while (linked.neighbors[roffset] < *r) { ++roffset; }
+				sBuffer[roffset].push_back(linked.eoffsets[e]);
+				sBuffer[roffset].push_back((esint)linked.etype[e]);
+				for (esint n = linked.edist[e]; n < linked.edist[e + 1]; ++n) {
+					sBuffer[roffset].push_back(linked.enodes[n]);
+				}
+			}
+		}
+	}
+
+	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, linked.neighbors)) {
+		eslog::internalFailure("cannot exchange duplicated elements.\n");
+	}
+	utils::clearVector(sBuffer);
+
+	auto getMinimal = [&] (esint nsize, esint *nodes) {
+		esint min = linked.g2l[nodes[0]];
+		for (int n = 1; n < nsize; ++n) {
+			esint current = linked.g2l[nodes[n]];
+			if (linked.coordinates[current].x < linked.coordinates[min].x) {
+				min = current;
+			} else if (linked.coordinates[current].x == linked.coordinates[min].x && current < min) {
+				min = current;
+			}
+		}
+		return min;
+	};
+
+	std::vector<esint> mapDist(linked.noffsets.size() + 1);
+	std::vector<esint, initless_allocator<esint> > mapData;
+
+	for (size_t e = 0; e < linked.eoffsets.size(); ++e) {
+		if (Mesh::edata[(int)linked.etype[e]].dimension == linked.dimension) {
+			++mapDist[getMinimal(linked.edist[e + 1] - linked.edist[e], linked.enodes.data() + linked.edist[e])];
+		} else {
+			for (esint n = linked.edist[e]; n < linked.edist[e + 1]; ++n) {
+				++mapDist[linked.g2l[linked.enodes[n]]];
+			}
+		}
+	}
+	for (size_t r = 0; r < rBuffer.size(); ++r) {
+		for (size_t i = 0; i < rBuffer[r].size(); i += 2 + Mesh::edata[rBuffer[r][i + 1]].nodes) {
+			if (Mesh::edata[rBuffer[r][i + 1]].dimension == linked.dimension) {
+				++mapDist[getMinimal(Mesh::edata[rBuffer[r][i + 1]].nodes, rBuffer[r].data() + i + 2)];
+			} else {
+				for (int n = 0; n < Mesh::edata[rBuffer[r][i + 1]].nodes; ++n) {
+					++mapDist[linked.g2l[rBuffer[r][i + 2 + n]]];
+				}
+			}
+		}
+	}
+	utils::sizesToOffsets(mapDist);
+	mapData.resize(mapDist.back());
+
+	std::vector<std::pair<esint, esint> > rmap;
+	std::vector<esint> _mapDist = mapDist;
+
+	for (size_t e = 0; e < linked.eoffsets.size(); ++e) {
+		if (Mesh::edata[(int)linked.etype[e]].dimension == linked.dimension) {
+			mapData[_mapDist[getMinimal(linked.edist[e + 1] - linked.edist[e], linked.enodes.data() + linked.edist[e])]++] = e;
+		} else {
+			for (esint n = linked.edist[e]; n < linked.edist[e + 1]; ++n) {
+				mapData[_mapDist[linked.g2l[linked.enodes[n]]]++] = e;
+			}
+		}
+	}
+	for (size_t r = 0; r < rBuffer.size(); ++r) {
+		for (size_t i = 0; i < rBuffer[r].size(); i += 2 + Mesh::edata[rBuffer[r][i + 1]].nodes) {
+			if (Mesh::edata[rBuffer[r][i + 1]].dimension == linked.dimension) {
+				mapData[_mapDist[getMinimal(Mesh::edata[rBuffer[r][i + 1]].nodes, rBuffer[r].data() + i + 2)]++] = linked.eoffsets.size() + rmap.size();
+				rmap.push_back({ (esint)r, (esint)i });
+			} else {
+				for (int n = 0; n < Mesh::edata[rBuffer[r][i + 1]].nodes; ++n) {
+					mapData[_mapDist[linked.g2l[rBuffer[r][i + 2 + n]]]++] = linked.eoffsets.size() + rmap.size();
+				}
+				rmap.push_back({ (esint)r, (esint)i });
+			}
+		}
+	}
+	utils::clearVector(_mapDist);
+
+	struct __parent__ {
+		esint boundary;
+		esint parent;
+	};
+
+	std::vector<__parent__> parents;
+	std::vector<esint, initless_allocator<esint> > shared, tmpShared;
+	auto merge = [&] (esint nsize, esint *nodes) {
+		esint min = linked.g2l[nodes[0]];
+		shared.assign(mapData.begin() + mapDist[min], mapData.begin() + mapDist[min + 1]);
+		for (esint n = 1; n < nsize; ++n) {
+			esint current = linked.g2l[nodes[n]];
+			tmpShared.swap(shared);
+			shared.resize(tmpShared.size() + mapDist[current + 1] - mapDist[current]);
+			std::merge(mapData.begin() + mapDist[current], mapData.begin() + mapDist[current + 1], tmpShared.begin(), tmpShared.end(), shared.begin());
+			if (linked.coordinates[current].x < linked.coordinates[min].x) {
+				min = current;
+			} else if (linked.coordinates[current].x == linked.coordinates[min].x && current < min) {
+				min = current;
+			}
+		}
+		return min;
+	};
+
+	std::unordered_set<esint> duplicated;
+	std::vector<esint> _checkBuffer;
+	_checkBuffer.reserve(2 * 20);
+	auto areSame = [&] (esint size1, esint *nodes1, esint size2, esint *nodes2) {
+		if (size1 == size2) {
+			_checkBuffer.clear();
+			for (esint n = 0; n < size1; ++n) { _checkBuffer.push_back(linked.g2l[nodes1[n]]); }
+			for (esint n = 0; n < size2; ++n) { _checkBuffer.push_back(linked.g2l[nodes2[n]]); }
+			std::sort(_checkBuffer.begin(), _checkBuffer.begin() + size1);
+			std::sort(_checkBuffer.begin() + size1, _checkBuffer.end());
+			return memcmp(_checkBuffer.data(), _checkBuffer.data() + size1, sizeof(esint) * size1) == 0;
+		}
+		return false;
+	};
+	for (size_t e1 = 0; e1 < linked.eoffsets.size(); ++e1) {
+		if (Mesh::edata[(int)linked.etype[e1]].dimension == linked.dimension) {
+			esint min = merge(linked.edist[e1 + 1] - linked.edist[e1], linked.enodes.data() + linked.edist[e1]);
+			if (duplicated.count(e1) == 0) {
+				for (esint n = mapDist[min]; n < mapDist[min + 1]; ++n) {
+					size_t e2 = mapData[n];
+					if (e1 < e2) { // if e2 is lower, the pair was already processed
+						if (e2 < linked.eoffsets.size() && Mesh::element(linked.etype[e2]).dimension == linked.dimension) { // local
+							if (areSame(linked.edist[e1 + 1] - linked.edist[e1], linked.enodes.data() + linked.edist[e1], linked.edist[e2 + 1] - linked.edist[e2], linked.enodes.data() + linked.edist[e2])) {
+								linked.eduplication.push_back({ linked.eoffsets[e1], linked.eoffsets[e2] });
+								duplicated.insert(e2);
+							}
+						} else { // from neighbors
+							const auto &r = rmap[e2 - linked.eoffsets.size()];
+							if (Mesh::element(rBuffer[r.first][r.second + 1]).dimension == linked.dimension) {
+								if (areSame(linked.edist[e1 + 1] - linked.edist[e1], linked.enodes.data() + linked.edist[e1], Mesh::element(rBuffer[r.first][r.second + 1]).nodes, rBuffer[r.first].data() + r.second + 2)) {
+									linked.eduplication.push_back({ linked.eoffsets[e1], rBuffer[r.first][r.second] });
+									duplicated.insert(e2);
+								}
+							}
+						}
+					}
+				}
+			}
+
+			for (auto begin = shared.begin(), end = begin; end != shared.end(); begin = end) {
+				while (end != shared.end() && *begin == *end) { ++end; }
+				if (end - begin > 1) { // at least Line2
+					size_t e2 = *begin;
+					if (e2 < linked.eoffsets.size()) {
+						if (Mesh::element(linked.etype[e2]).nodes == end - begin) {
+							parents.push_back({ linked.eoffsets[e2], linked.eoffsets[e1] });
+						}
+					} else {
+						auto &roffset = rmap[e2 - linked.eoffsets.size()];
+						if (Mesh::element(rBuffer[roffset.first][roffset.second + 1]).nodes == end - begin) {
+							parents.push_back({ rBuffer[roffset.first][roffset.second], linked.eoffsets[e1] });
+						}
+					}
+				}
+			}
+		}
+	}
+	std::sort(linked.eduplication.begin(), linked.eduplication.end());
+	// process parents
 }
 
 }

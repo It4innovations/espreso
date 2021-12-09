@@ -1331,7 +1331,7 @@ void Input::searchDuplicateNodes(std::vector<_Point<esfloat> > &coordinates, std
 	profiler::syncstart("search_duplicate_nodes");
 	profiler::syncparam("size", coordinates.size());
 
-	KDTree<esfloat> tree(coordinates);
+	KDTree<esfloat> tree(coordinates.data(), coordinates.data() + coordinates.size());
 
 	profiler::synccheckpoint("kdtree_build");
 	profiler::param("kdtree_levels", tree.levels);

@@ -60,6 +60,7 @@ template<> void Element::init<Element::CODE::POINT1>()
 {
 	type = Element::TYPE::POINT;
 	code = Element::CODE::POINT1;
+	dimension = 0;
 	nodes = 1;
 	coarseNodes = 1;
 	nCommonFace = 1;
@@ -70,6 +71,7 @@ template<> void Element::init<Element::CODE::LINE2>()
 {
 	type = Element::TYPE::LINE;
 	code = Element::CODE::LINE2;
+	dimension = 1;
 	nodes = 2;
 	coarseNodes = 2;
 	nCommonFace = 1;
@@ -80,6 +82,7 @@ template<> void Element::init<Element::CODE::LINE3>()
 {
 	type = Element::TYPE::LINE;
 	code = Element::CODE::LINE3;
+	dimension = 1;
 	nodes = 3;
 	coarseNodes = 2;
 	nCommonFace = 1;
@@ -90,6 +93,7 @@ template<> void Element::init<Element::CODE::TRIANGLE3>()
 {
 	type = Element::TYPE::PLANE;
 	code = Element::CODE::TRIANGLE3;
+	dimension = 2;
 	nodes = 3;
 	coarseNodes = 3;
 	nCommonFace = 2;
@@ -119,6 +123,7 @@ template<> void Element::init<Element::CODE::TRIANGLE6>()
 {
 	type = Element::TYPE::PLANE;
 	code = Element::CODE::TRIANGLE6;
+	dimension = 2;
 	nodes = 6;
 	coarseNodes = 3;
 	nCommonFace = 3;
@@ -151,6 +156,7 @@ template<> void Element::init<Element::CODE::SQUARE4>()
 {
 	type = Element::TYPE::PLANE;
 	code = Element::CODE::SQUARE4;
+	dimension = 2;
 	nodes = 4;
 	coarseNodes = 4;
 	nCommonFace = 3;
@@ -182,6 +188,7 @@ template<> void Element::init<Element::CODE::SQUARE8>()
 {
 	type = Element::TYPE::PLANE;
 	code = Element::CODE::SQUARE8;
+	dimension = 2;
 	nodes = 8;
 	coarseNodes = 4;
 	nCommonFace = 3;
@@ -217,6 +224,7 @@ template<> void Element::init<Element::CODE::TETRA4>()
 {
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::TETRA4;
+	dimension = 3;
 	nodes = 4;
 	coarseNodes = 4;
 	nCommonFace = 3;
@@ -260,6 +268,7 @@ template<> void Element::init<Element::CODE::TETRA10>()
 {
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::TETRA10;
+	dimension = 3;
 	nodes = 10;
 	coarseNodes = 4;
 	nCommonFace = 4;
@@ -319,6 +328,7 @@ template<> void Element::init<Element::CODE::PYRAMID5>()
 {
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::PYRAMID5;
+	dimension = 3;
 	nodes = 5;
 	coarseNodes = 5;
 	nCommonFace = 3;
@@ -370,6 +380,7 @@ template<> void Element::init<Element::CODE::PYRAMID13>()
 {
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::PYRAMID13;
+	dimension = 3;
 	nodes = 13;
 	coarseNodes = 5;
 	nCommonFace = 4;
@@ -442,6 +453,7 @@ template<> void Element::init<Element::CODE::PRISMA6>()
 {
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::PRISMA6;
+	dimension = 3;
 	nodes = 6;
 	coarseNodes = 6;
 	nCommonFace = 3;
@@ -496,6 +508,7 @@ template<> void Element::init<Element::CODE::PRISMA15>()
 {
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::PRISMA15;
+	dimension = 3;
 	nodes = 15;
 	coarseNodes = 6;
 	nCommonFace = 4;
@@ -572,6 +585,7 @@ template<> void Element::init<Element::CODE::HEXA8>()
 {
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::HEXA8;
+	dimension = 3;
 	nodes = 8;
 	coarseNodes = 8;
 	nCommonFace = 3;
@@ -630,6 +644,7 @@ template<> void Element::init<Element::CODE::HEXA20>()
 {
 	type = Element::TYPE::VOLUME;
 	code = Element::CODE::HEXA20;
+	dimension = 3;
 	nodes = 20;
 	coarseNodes = 8;
 	nCommonFace = 4;

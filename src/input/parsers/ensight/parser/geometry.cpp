@@ -59,7 +59,6 @@ void EnsightGeometry::scan()
 		fillScanner<EnsightBinaryGeometryKeywordParser>(_geofile, scanner, _keywords);
 	}
 
-	int dimension;
 	scanner.scan(_geofile);
 	scanner.synchronize(_keywords.parts, _keywords.coordinates, _keywords.elements);
 }
@@ -152,7 +151,7 @@ void EnsightGeometry::parse()
 					_database.etype.resize(_database.etype.size() + block.size, _keywords.elements[e].getCode());
 					_database.enodes.reserve(_database.enodes.size() + elements.size());
 					for (size_t n = 0; n < elements.size(); ++n) {
-						_database.enodes.push_back(elements[n] + coffset);
+						_database.enodes.push_back(elements[n] + coffset - 1);
 					}
 				}
 			}

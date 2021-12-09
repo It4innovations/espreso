@@ -15,20 +15,22 @@ namespace espreso {
 template <typename T>
 static void _build(KDTree<T> *tree, size_t bucketsize)
 {
+	size_t csize = tree->cend - tree->cbegin;
+
 	auto compxyz = [&] (esint i, esint j) {
-		if (tree->coordinates[i].x == tree->coordinates[j].x) {
-			if (tree->coordinates[i].y == tree->coordinates[j].y) {
-				return tree->coordinates[i].z < tree->coordinates[j].z;
+		if (tree->coo(i).x == tree->coo(j).x) {
+			if (tree->coo(i).y == tree->coo(j).y) {
+				return tree->coo(i).z < tree->coo(j).z;
 			}
-			return tree->coordinates[i].y < tree->coordinates[j].y;
+			return tree->coo(i).y < tree->coo(j).y;
 		}
-		return tree->coordinates[i].x < tree->coordinates[j].x;
+		return tree->coo(i).x < tree->coo(j).x;
 	};
 
 	tree->size = tree->max - tree->min;
-	tree->permutation.resize(tree->coordinates.size());
+	tree->permutation.resize(csize);
 	std::iota(tree->permutation.begin(), tree->permutation.end(), 0);
-	tree->levels = tree->coordinates.size() < bucketsize ? 0 : std::floor(std::log2(tree->coordinates.size() / bucketsize));
+	tree->levels = csize < bucketsize ? 0 : std::floor(std::log2(csize / bucketsize));
 	tree->splitters.resize(std::exp2(tree->levels));
 
 	_Point<T> box = tree->size; // uniform division (denoted by the level)
@@ -56,18 +58,18 @@ static void _build(KDTree<T> *tree, size_t bucketsize)
 			
 
 			std::nth_element(tree->permutation.begin() + begin, tree->permutation.begin() + tree->splitters[index].index, tree->permutation.begin() + end, [&] (esint i, esint j) {
-				return tree->coordinates[i][tree->splitters[index].d] < tree->coordinates[j][tree->splitters[index].d];
+				return tree->coo(i)[tree->splitters[index].d] < tree->coo(j)[tree->splitters[index].d];
 			});
 			if (end - begin) {
-				tree->splitters[index].value = tree->coordinates[tree->permutation[tree->splitters[index].index]][tree->splitters[index].d];
+				tree->splitters[index].value = tree->coo(tree->permutation[tree->splitters[index].index])[tree->splitters[index].d];
 			}
 			while ( // move to the last coordinate with the same value as mid
 					tree->splitters[index].index + 1 < end &&
-					tree->coordinates[tree->permutation[tree->splitters[index].index]][tree->splitters[index].d] == tree->coordinates[tree->permutation[tree->splitters[index].index + 1]][tree->splitters[index].d]) {
+					tree->coo(tree->permutation[tree->splitters[index].index])[tree->splitters[index].d] == tree->coo(tree->permutation[tree->splitters[index].index + 1])[tree->splitters[index].d]) {
 				++tree->splitters[index].index;
 			}
 			for (esint c = tree->splitters[index].index + 2; c < end; ++c) { // there can be another in the rest of array
-				if (tree->coordinates[tree->permutation[tree->splitters[index].index]][tree->splitters[index].d] == tree->coordinates[tree->permutation[c]][tree->splitters[index].d]) {
+				if (tree->coo(tree->permutation[tree->splitters[index].index])[tree->splitters[index].d] == tree->coo(tree->permutation[c])[tree->splitters[index].d]) {
 					std::swap(tree->permutation[++tree->splitters[index].index], tree->permutation[c--]);
 				}
 			}

@@ -78,6 +78,7 @@ void balance(OrderedMeshDatabase &database, OrderedMesh &mesh)
 				sBuffer.push_back(eit->offset + ebegin - eit->start);
 				sBuffer.push_back(eend - ebegin);
 				sBuffer.push_back(edist[eend] - edist[ebegin]);
+				// it can cause Invalid read message with Valgrind (we touch after etype array but we never use that data)
 				sBuffer.insert(sBuffer.end(), reinterpret_cast<esint*>(database.etype.data() + ebegin), utils::reinterpret_end<esint>(database.etype.data() + ebegin, eend - ebegin));
 				sBuffer.insert(sBuffer.end(), database.enodes.data() + edist[ebegin], database.enodes.data() + edist[eend]);
 				++sBuffer[prevsize + 3];

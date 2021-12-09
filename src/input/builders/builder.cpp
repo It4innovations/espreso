@@ -51,14 +51,22 @@ void build(OrderedMeshDatabase &database, Mesh &mesh)
 	computeSFCNeighbors(sfc, clustered);
 	eslog::checkpointln("BUILDER: NEIGHBORS APPROXIMATED");
 
-	mergeDuplicatedNodes(sfc, clustered);
+	searchDuplicatedNodes(sfc, clustered);
 	eslog::checkpointln("BUILDER: DUPLICATED NODES FOUND");
 
-	groupElementTypes(clustered);
-	eslog::checkpointln("BUILDER: ELEMENTS GROUPED");
+	ClusteredMesh linked;
 
-	linkup(clustered);
+	linkup(clustered, linked);
 	eslog::checkpointln("BUILDER: LINKED UP");
+
+	searchParentAndDuplicatedElements(linked);
+	eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
+
+	fillNodes(linked, mesh);
+	eslog::checkpointln("BUILDER: NODES FILLED");
+
+	fillElements(linked, mesh);
+	eslog::checkpointln("BUILDER: ELEMENTS FILLED");
 
 	MPI_Finalize();
 	exit(0);

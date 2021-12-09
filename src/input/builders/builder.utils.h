@@ -6,11 +6,21 @@
 #include "input/input.h"
 #include "mesh/mesh.h"
 
+#include <string>
+#include <vector>
+#include <unordered_map>
+
 namespace espreso {
 namespace builder {
 
 struct PackedData {
 	std::vector<esint> distribution, data;
+};
+
+struct DataDuplication {
+	esint origin, duplication;
+
+	bool operator<(const DataDuplication &other) const { if (origin == other.origin) { return duplication < other.duplication; } return origin < other.origin; }
 };
 
 struct OrderedMesh: public OrderedMeshDatabase {
@@ -30,8 +40,11 @@ struct ClusteredMesh: public OrderedMeshDatabase {
 	std::vector<esint> noffsets, eoffsets;
 
 	std::vector<esint> edist;
-	std::vector<size_t> typeDistribution;
 	std::vector<int> neighbors;
+
+	std::unordered_map<esint, esint> g2l;
+	std::vector<DataDuplication> nduplication, eduplication;
+	std::vector<esint> rankDistribution, rankData;
 };
 
 // balancing
@@ -43,13 +56,15 @@ void clusterize(OrderedMesh &mesh, ClusteredMesh &clustered);
 void computeSFCNeighbors(const HilbertCurve<esfloat> &sfc, ClusteredMesh &clustered);
 
 // merging
-void mergeDuplicatedNodes(const HilbertCurve<esfloat> &sfc, ClusteredMesh &clustered);
-
-// sorting
-void groupElementTypes(ClusteredMesh &clustered);
+void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, ClusteredMesh &clustered);
+void searchParentAndDuplicatedElements(ClusteredMesh &linked);
 
 //linking
-void linkup(ClusteredMesh &clustered);
+void linkup(ClusteredMesh &clustered, ClusteredMesh &linked);
+
+// filler
+void fillNodes(ClusteredMesh &linked, Mesh &mesh);
+void fillElements(ClusteredMesh &linked, Mesh &mesh);
 
 }
 }
