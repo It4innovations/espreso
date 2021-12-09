@@ -149,10 +149,7 @@ bool LinearSystem::solve()
 		if (!ret) return false;
 	}
 	
-	ret = autoopt::solver::evaluate([&] () {
-		return solver()->linearSolver->solve();
-	});
-	if (!ret) return false;
+	ret = solver()->linearSolver->solve();
 
 
 	if (info::ecf->output.print_matrices) {

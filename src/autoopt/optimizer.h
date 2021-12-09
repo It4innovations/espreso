@@ -15,8 +15,7 @@ class AutoOptimizer {
 public:
 	virtual ~AutoOptimizer() {}
 
-	virtual bool set(std::function<bool(void)> fnc)=0;
-	virtual bool run(std::function<bool(void)> fnc)=0;
+	virtual bool call(std::function<bool(void)> fnc)=0;
 
 protected:
 	AutoOptimizer() {}
@@ -27,8 +26,7 @@ class EmptyOptimizer : public AutoOptimizer {
 public:
 	EmptyOptimizer() {}
 
-	bool set(std::function<bool(void)> fnc) override;
-	bool run(std::function<bool(void)> fnc) override;
+	bool call(std::function<bool(void)> fnc) override;
 };
 
 class EvolutionaryOptimizer : public AutoOptimizer {
@@ -36,8 +34,7 @@ class EvolutionaryOptimizer : public AutoOptimizer {
 public:
 	EvolutionaryOptimizer(const AutoOptimizationConfiguration& configuration, std::vector<ECFParameter*>& parameters);
 
-	bool set(std::function<bool(void)> fnc) override;
-	bool run(std::function<bool(void)> fnc) override;
+	bool call(std::function<bool(void)> fnc) override;
 
 protected:
 	OptimizationProxy m_proxy;

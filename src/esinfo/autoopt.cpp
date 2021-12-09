@@ -27,7 +27,7 @@ void init(LoadStepSolverConfiguration &loadStep, DecompositionConfiguration &dec
 			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.scaling),
 			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.method),
 			decomposition.ecfdescription->getParameter(&decomposition.domains),
-			loadStep.ecfdescription->getParameter(&loadStep.solver)
+			// loadStep.ecfdescription->getParameter(&loadStep.solver)
 		};
 		autoopt = new EvolutionaryOptimizer(info::ecf->auto_optimization, opt_parameters);
 	} else {
@@ -37,12 +37,7 @@ void init(LoadStepSolverConfiguration &loadStep, DecompositionConfiguration &dec
 
 void update(std::function<bool(void)> fnc)
 {
-	while (!autoopt->set(fnc));
-}
-
-bool evaluate(std::function<bool(void)> fnc)
-{
-	return autoopt->run(fnc);
+	while (!autoopt->call(fnc));
 }
 
 }
