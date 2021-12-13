@@ -8,7 +8,7 @@
 namespace espreso {
 namespace builder {
 
-void build(OrderedMeshDatabase &database, Mesh &mesh);
+void build(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, Mesh &mesh);
 
 }
 }

@@ -3,6 +3,7 @@
 #define SRC_INPUT_SCATTEREDINPUT_H_
 
 #include "input.h"
+#include "basis/containers/allocators.h"
 #include "basis/sfc/hilbertcurve.h"
 
 namespace espreso {
@@ -27,7 +28,7 @@ protected:
 	std::vector<esint> _nBuckets, _eBuckets;
 
 	// distribution across processes
-	std::vector<esint> _bucketsBorders;
+	ivector<esint> _bucketsBorders;
 	std::vector<int> _sfcNeighbors;
 };
 

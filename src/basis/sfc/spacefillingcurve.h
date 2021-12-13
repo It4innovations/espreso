@@ -2,6 +2,7 @@
 #ifndef SRC_BASIS_SFC_SPACEFILLINGCURVE_H_
 #define SRC_BASIS_SFC_SPACEFILLINGCURVE_H_
 
+#include "basis/containers/allocators.h"
 #include "basis/containers/point.h"
 
 #include <cstddef>
@@ -24,9 +25,9 @@ struct SpaceFillingCurve {
 	size_t bucketSize() const { return dimension == 2 ? 4 : 8; }
 
 	// computed from splitters
-	void addSFCNeighbors(size_t depth, size_t index, const std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) const;
-	void addXYNeighbors(size_t depth, size_t x, size_t y, const std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) const;
-	void addXYZNeighbors(size_t depth, size_t x, size_t y, size_t z, const std::vector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) const;
+	void addSFCNeighbors(size_t depth, size_t index, const ivector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) const;
+	void addXYNeighbors(size_t depth, size_t x, size_t y, const ivector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) const;
+	void addXYZNeighbors(size_t depth, size_t x, size_t y, size_t z, const ivector<esint> &splitters, std::vector<std::pair<size_t, size_t> > &neighbors) const;
 
 	size_t getBucket(const _Point<T> &p) const { return dimension == 2 ? D2toD1(p) : D3toD1(p); }
 	size_t getBucket(const double &value, int d) const { return std::floor(n * (value - origin[d]) / size[d]);}

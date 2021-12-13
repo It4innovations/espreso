@@ -14,7 +14,7 @@ public:
 	void build(Mesh &mesh);
 
 protected:
-	OrderedMeshDatabase database;
+	InputMesh<OrderedNodes, OrderedElements, OrderedRegions> mesh;
 };
 
 }

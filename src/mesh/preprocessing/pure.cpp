@@ -390,7 +390,7 @@ esint getSFCDecomposition(const ElementStore *elements, const NodeStore *nodes, 
 
 	std::vector<esint, initless_allocator<esint> > buckets(elements->epointers->datatarray().size());
 	std::vector<esint, initless_allocator<esint> > permutation(elements->epointers->datatarray().size());
-	std::vector<esint> borders;
+	std::vector<esint, initless_allocator<esint> > borders;
 
 	#pragma omp parallel for
 	for (int t = 0; t < threads; t++) {

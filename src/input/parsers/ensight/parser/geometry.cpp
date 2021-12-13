@@ -11,8 +11,8 @@
 
 using namespace espreso;
 
-EnsightGeometry::EnsightGeometry(InputFilePack &geofile, OrderedMeshDatabase &database)
-: _geofile(geofile), _database(database)
+EnsightGeometry::EnsightGeometry(InputFilePack &geofile)
+: _geofile(geofile)
 {
 
 }
@@ -63,7 +63,7 @@ void EnsightGeometry::scan()
 	scanner.synchronize(_keywords.parts, _keywords.coordinates, _keywords.elements);
 }
 
-void EnsightGeometry::parse()
+void EnsightGeometry::parse(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &mesh)
 {
 	size_t csize, esize, esuffix;
 	if (_keywords.header.format == EnsightKeywords::Format::ASCII) {
@@ -117,11 +117,11 @@ void EnsightGeometry::parse()
 						FileBlock rblock(_geofile, _keywords.coordinates[p].offset, csize * _keywords.coordinates[p].nn, csize, r);
 						MPI_Irecv(rbuffer.data() + rblock.prevsize, rblock.size, MPI_FLOAT, r, 0, info::mpi::comm, req.data() + (r - start - 1));
 					}
-					_database.noffsets.push_back(OrderedMeshDatabase::Offset{coffset, (esint)_database.coordinates.size(), _keywords.coordinates[p].nn});
-					_database.coordinates.reserve(_database.coordinates.size() + _keywords.coordinates[p].nn);
+					mesh.nodes->offsets.push_back(DatabaseOffset{coffset, (esint)mesh.nodes->coordinates.size(), _keywords.coordinates[p].nn});
+					mesh.nodes->coordinates.reserve(mesh.nodes->coordinates.size() + _keywords.coordinates[p].nn);
 					MPI_Waitall(end - start, req.data(), MPI_STATUSES_IGNORE);
 					for (int n = 0; n < _keywords.coordinates[p].nn; ++n) {
-						_database.coordinates.push_back(_Point<esfloat>(rbuffer[n + _keywords.coordinates[p].nn * 0], rbuffer[n + _keywords.coordinates[p].nn * 1], rbuffer[n + _keywords.coordinates[p].nn * 2]));
+						mesh.nodes->coordinates.push_back(_Point<esfloat>(rbuffer[n + _keywords.coordinates[p].nn * 0], rbuffer[n + _keywords.coordinates[p].nn * 1], rbuffer[n + _keywords.coordinates[p].nn * 2]));
 					}
 				} else {
 					MPI_Send(coordinates.data(), coordinates.size(), MPI_FLOAT, start, 0, info::mpi::comm);
@@ -147,22 +147,22 @@ void EnsightGeometry::parse()
 				}
 
 				if (_keywords.elements[e].getCode() != Element::CODE::POINT1) {
-					_database.eoffsets.push_back(OrderedMeshDatabase::Offset{(esint)_database.etype.size(), eoffset + (esint)block.prevsize, (esint)block.size});
-					_database.etype.resize(_database.etype.size() + block.size, _keywords.elements[e].getCode());
-					_database.enodes.reserve(_database.enodes.size() + elements.size());
+					mesh.elements->offsets.push_back(DatabaseOffset{(esint)mesh.elements->etype.size(), eoffset + (esint)block.prevsize, (esint)block.size});
+					mesh.elements->etype.resize(mesh.elements->etype.size() + block.size, _keywords.elements[e].getCode());
+					mesh.elements->enodes.reserve(mesh.elements->enodes.size() + elements.size());
 					for (size_t n = 0; n < elements.size(); ++n) {
-						_database.enodes.push_back(elements[n] + coffset - 1);
+						mesh.elements->enodes.push_back(elements[n] + coffset - 1);
 					}
 				}
 			}
 
 			if (_keywords.elements[e].getCode() == Element::CODE::POINT1) {
-				_database.nregions.push_back(OrderedMeshDatabase::Region{ name, coffset, coffset + _keywords.coordinates[p].nn });
+				mesh.regions->nodes.push_back(OrderedRegions::Region{ name, coffset, coffset + _keywords.coordinates[p].nn });
 			} else {
-				if (_database.eregions.empty() || _database.eregions.back().name.compare(name)) {
-					_database.eregions.push_back(OrderedMeshDatabase::Region{ name, eoffset, eoffset + _keywords.elements[e].ne });
+				if (mesh.regions->elements.empty() || mesh.regions->elements.back().name.compare(name)) {
+					mesh.regions->elements.push_back(OrderedRegions::Region{ name, eoffset, eoffset + _keywords.elements[e].ne });
 				} else {
-					_database.eregions.back().size += _keywords.elements[e].ne;
+					mesh.regions->elements.back().size += _keywords.elements[e].ne;
 				}
 				eoffset += _keywords.elements[e].ne;
 			}

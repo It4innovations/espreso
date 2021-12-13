@@ -3,6 +3,7 @@
 #define SRC_BASIS_CONTAINERS_ALLOCATORS_H_
 
 #include <memory>
+#include <vector>
 
 namespace espreso {
 
@@ -27,6 +28,8 @@ public:
 		a_t::construct(static_cast<A&>(*this), ptr, std::forward<Args>(args)...);
 	}
 };
+
+template <typename T> using ivector = std::vector<T, initless_allocator<T> >;
 
 }
 

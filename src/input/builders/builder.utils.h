@@ -13,58 +13,100 @@
 namespace espreso {
 namespace builder {
 
-struct PackedData {
-	std::vector<esint> distribution, data;
+/**
+ * ORDERED DATA
+ */
+
+struct OrderedDataDistribution {
+	esint chunk, offset, size, total;
 };
+
+struct OrderedNodesBalanced: OrderedDataDistribution {
+	ivector<_Point<esfloat> > coordinates;
+};
+
+struct OrderedElementsBalanced: OrderedDataDistribution {
+	ivector<Element::CODE> etype;
+	ivector<esint> edist, enodes;
+};
+
+/**
+ * CLUSTERD DATA
+ */
 
 struct DataDuplication {
 	esint origin, duplication;
-
 	bool operator<(const DataDuplication &other) const { if (origin == other.origin) { return duplication < other.duplication; } return origin < other.origin; }
+	bool operator!=(const DataDuplication &other) const { return origin != other.origin || duplication != other.duplication; }
 };
 
-struct OrderedMesh: public OrderedMeshDatabase {
-	int dimension;
-	esint nchunk, noffset, nsize, ntotal;
-	esint echunk, eoffset, esize, etotal;
-
-	std::vector<esint> edist;
-	PackedData ndata, edata;
+struct ClusteredDataDistribution {
+	ivector<esint> offsets;
 };
 
-struct ClusteredMesh: public OrderedMeshDatabase {
-	int dimension;
-	size_t buckets;
-	std::vector<esint, initless_allocator<esint> > nbuckets, ebuckets;
-	std::vector<esint> splitters;
-	std::vector<esint> noffsets, eoffsets;
+struct ClusteredNodes: ClusteredDataDistribution {
+	ivector<_Point<esfloat> > coordinates;
+};
 
-	std::vector<esint> edist;
+struct MergedNodes: ClusteredNodes {
+	std::vector<DataDuplication> duplication;
+};
+
+struct LinkedNodes: MergedNodes {
 	std::vector<int> neighbors;
-
+	ivector<esint> rankDistribution, rankData;
 	std::unordered_map<esint, esint> g2l;
-	std::vector<DataDuplication> nduplication, eduplication;
-	std::vector<esint> rankDistribution, rankData;
+};
+
+struct ClusteredElements: ClusteredDataDistribution {
+	ivector<Element::CODE> etype;
+	ivector<esint> edist, enodes;
+};
+
+struct MergedElements: ClusteredElements {
+	std::vector<DataDuplication> duplication;
+};
+
+template <typename TNodes, typename TElements>
+struct TemporalMesh {
+	TNodes *nodes;
+	TElements *elements;
+
+	TemporalMesh()
+	: nodes(new TNodes()), elements(new TElements())
+	{
+
+	}
+
+	~TemporalMesh()
+	{
+		clear();
+	}
+
+	void clear()
+	{
+		if (nodes) { delete nodes; nodes = nullptr; }
+		if (elements) { delete elements; elements = nullptr; }
+	}
 };
 
 // balancing
-void balance(OrderedMeshDatabase &database, OrderedMesh &mesh);
+void balance(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered, int &dimension);
 
 // clusterization
-void assignBuckets(const OrderedMesh &mesh, const HilbertCurve<esfloat> &sfc, ClusteredMesh &clustered);
-void clusterize(OrderedMesh &mesh, ClusteredMesh &clustered);
-void computeSFCNeighbors(const HilbertCurve<esfloat> &sfc, ClusteredMesh &clustered);
+void assignBuckets(const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered, const HilbertCurve<esfloat> &sfc, ivector<esint> &nbuckets, ivector<esint> &ebuckets);
+void clusterize(TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered, ivector<esint> &nbuckets, ivector<esint> &ebuckets, esint buckets, TemporalMesh<ClusteredNodes, ClusteredElements> &clustered, ivector<esint> &splitters);
+void computeSFCNeighbors(const HilbertCurve<esfloat> &sfc, const TemporalMesh<ClusteredNodes, ClusteredElements> &clustered, const ivector<esint> &splitters, std::vector<int> &sfcNeighbors);
 
 // merging
-void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, ClusteredMesh &clustered);
-void searchParentAndDuplicatedElements(ClusteredMesh &linked);
+void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, const std::vector<int> &sfcNeighbors, ClusteredNodes *clustered, MergedNodes *merged);
+void searchParentAndDuplicatedElements(TemporalMesh<LinkedNodes, ClusteredElements> &linked, TemporalMesh<LinkedNodes, MergedElements> &prepared, int meshDimension);
 
 //linking
-void linkup(ClusteredMesh &clustered, ClusteredMesh &linked);
+void linkup(TemporalMesh<MergedNodes, ClusteredElements> &merged, TemporalMesh<LinkedNodes, ClusteredElements> &linked);
 
 // filler
-void fillNodes(ClusteredMesh &linked, Mesh &mesh);
-void fillElements(ClusteredMesh &linked, Mesh &mesh);
+void fillMesh(TemporalMesh<LinkedNodes, MergedElements> &prepared, OrderedRegions &regions, Mesh &mesh);
 
 }
 }

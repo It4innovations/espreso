@@ -3,6 +3,7 @@
 #define SRC_INPUT_FORMATS_ENSIGHT_PARSER_GEOMETRY_H_
 
 #include "keywords.h"
+#include "input/input.h"
 
 #include <string>
 #include <vector>
@@ -16,14 +17,13 @@ class EnsightGeometry {
 friend class EnsightVariables;
 
 public:
-	EnsightGeometry(InputFilePack &geofile, OrderedMeshDatabase &database);
+	EnsightGeometry(InputFilePack &geofile);
 
 	void scan();
-	void parse();
+	void parse(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &mesh);
 
 protected:
 	InputFilePack &_geofile;
-	OrderedMeshDatabase &_database;
 
 	EnsightKeywords _keywords;
 };

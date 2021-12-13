@@ -83,8 +83,8 @@ void threadDistributionToFullDistribution(std::vector<Ttype> &data, const std::v
 	}
 }
 
-template<typename Ttype>
-void removeDuplicates(std::vector<Ttype> &data, size_t begin)
+template<typename Ttype, typename Talloc>
+void removeDuplicates(std::vector<Ttype, Talloc> &data, size_t begin)
 {
 	if (data.size() == begin) {
 		return;
@@ -99,8 +99,8 @@ void removeDuplicates(std::vector<Ttype> &data, size_t begin)
 	data.resize(unique + 1);
 }
 
-template<typename Ttype>
-void sortAndRemoveDuplicates(std::vector<Ttype> &data, size_t begin)
+template<typename Ttype, typename Talloc>
+void sortAndRemoveDuplicates(std::vector<Ttype, Talloc> &data, size_t begin)
 {
 	std::sort(data.begin() + begin, data.end());
 	removeDuplicates(data, begin);

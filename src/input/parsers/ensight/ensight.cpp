@@ -34,12 +34,12 @@ void InputEnsight::load(const InputConfiguration &configuration)
 
 	geofile.next();
 
-	EnsightGeometry geometry(geofile, database);
+	EnsightGeometry geometry(geofile);
 	geometry.scan();
 	profiler::synccheckpoint("scan");
 	eslog::checkpointln("ENSIGHT PARSER: GEOMETRY SCANNED");
 
-	geometry.parse();
+	geometry.parse(mesh);
 	profiler::synccheckpoint("parse");
 	eslog::checkpointln("ENSIGHT PARSER: GEOMETRY PARSED");
 
@@ -71,7 +71,7 @@ void InputEnsight::load(const InputConfiguration &configuration)
 	profiler::synccheckpoint("read_variables");
 	eslog::checkpointln("ENSIGHT PARSER: VARIABLES READ");
 
-	EnsightVariables variables(casefile, geometry, datafiles, database);
+	EnsightVariables variables(casefile, geometry, datafiles);
 	variables.scan();
 	profiler::synccheckpoint("scan_variables");
 	eslog::checkpointln("ENSIGHT PARSER: VARIABLES SCANNED");
@@ -79,11 +79,11 @@ void InputEnsight::load(const InputConfiguration &configuration)
 	variables.parse();
 	profiler::synccheckpoint("parse_variables");
 	profiler::syncend("ensight");
-	eslog::checkpointln("ENSIGHT PARSER: VARIABLES PARSED");
+	eslog::endln("ENSIGHT PARSER: VARIABLES PARSED");
 }
 
 void InputEnsight::build(Mesh &mesh)
 {
-	builder::build(database, mesh);
+	builder::build(this->mesh, mesh);
 }
 

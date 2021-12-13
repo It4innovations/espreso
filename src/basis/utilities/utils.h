@@ -34,11 +34,11 @@ namespace utils {
 	template<typename Ttype>
 	void threadDistributionToFullDistribution(std::vector<Ttype> &data, const std::vector<size_t> &distribution);
 
-	template<typename Ttype>
-	void removeDuplicates(std::vector<Ttype> &data, size_t begin = 0);
+	template<typename Ttype, typename Talloc>
+	void removeDuplicates(std::vector<Ttype, Talloc> &data, size_t begin = 0);
 
-	template<typename Ttype>
-	void sortAndRemoveDuplicates(std::vector<Ttype> &data, size_t begin = 0);
+	template<typename Ttype, typename Talloc>
+	void sortAndRemoveDuplicates(std::vector<Ttype, Talloc> &data, size_t begin = 0);
 
 	template<typename Ttype>
 	void sortAndRemoveDuplicates(std::vector<std::vector<Ttype> > &data);

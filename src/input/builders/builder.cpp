@@ -16,127 +16,63 @@
 namespace espreso {
 namespace builder {
 
-static void buildSequential(OrderedMeshDatabase &database, Mesh &mesh)
-{
-	OrderedMesh _mesh;
-}
+//static void buildSequential(OrderedMeshDatabase &database, Mesh &mesh)
+//{
+//	OrderedMesh _mesh;
+//}
 
-void build(OrderedMeshDatabase &database, Mesh &mesh)
+void build(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, Mesh &mesh)
 {
 	if (info::mpi::size == 1) {
-		buildSequential(database, mesh);
+//		buildSequential(database, mesh);
 		return;
 	}
 
-	eslog::startln("BUILDER: BUILD SCATTERED MESH", "BUILDER");
+	eslog::startln("BUILDER: PROCESS ORDERED MESH", "BUILDER");
 
-	OrderedMesh ordered;
+	TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> ordered;
+	TemporalMesh<ClusteredNodes, ClusteredElements> clustered;
+	TemporalMesh<MergedNodes, ClusteredElements> merged;
+	TemporalMesh<LinkedNodes, ClusteredElements> linked;
+	TemporalMesh<LinkedNodes, MergedElements> prepared;
 
-	balance(database, ordered);
+	ivector<esint> nbuckets, ebuckets, splitters;
+
+	balance(input, ordered, mesh.dimension);
 	eslog::checkpointln("BUILDER: DATA BALANCED");
 
-	Communication::allReduce(&ordered.dimension, NULL, 1, MPI_INT, MPI_MAX); // we reduce dimension here in order to be able measure inbalances in the 'balance' function
-	HilbertCurve<esfloat> sfc(ordered.dimension, SFCDEPTH, ordered.coordinates.size(), ordered.coordinates.data());
-
+	Communication::allReduce(&mesh.dimension, NULL, 1, MPI_INT, MPI_MAX); // we reduce dimension here in order to be able measure inbalances in the 'balance' function
+	HilbertCurve<esfloat> sfc(mesh.dimension, SFCDEPTH, ordered.nodes->coordinates.size(), ordered.nodes->coordinates.data());
 	eslog::checkpointln("BUILDER: SFC BUILT");
 
-	ClusteredMesh clustered;
-
-	assignBuckets(ordered, sfc, clustered);
+	assignBuckets(ordered, sfc, nbuckets, ebuckets);
 	eslog::checkpointln("BUILDER: SFC BUCKETS ASSIGNED");
 
-	clusterize(ordered, clustered);
+	clusterize(ordered, nbuckets, ebuckets, sfc.buckets(sfc.depth), clustered, splitters);
+	ordered.clear();
+	utils::clearVectors(nbuckets, ebuckets);
 	eslog::checkpointln("BUILDER: MESH CLUSTERIZED");
 
-	computeSFCNeighbors(sfc, clustered);
+	computeSFCNeighbors(sfc, clustered, splitters, linked.nodes->neighbors); // neighbors are approximated here
 	eslog::checkpointln("BUILDER: NEIGHBORS APPROXIMATED");
 
-	searchDuplicatedNodes(sfc, clustered);
+	searchDuplicatedNodes(sfc, splitters, linked.nodes->neighbors, clustered.nodes, merged.nodes);
+	delete merged.elements; merged.elements = clustered.elements; clustered.elements = nullptr;
+	clustered.clear();
+	utils::clearVector(splitters);
 	eslog::checkpointln("BUILDER: DUPLICATED NODES FOUND");
 
-	ClusteredMesh linked;
-
-	linkup(clustered, linked);
+	linkup(merged, linked);
+	merged.clear();
 	eslog::checkpointln("BUILDER: LINKED UP");
 
-	searchParentAndDuplicatedElements(linked);
+	searchParentAndDuplicatedElements(linked, prepared, mesh.dimension);
+	linked.clear();
 	eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
 
-	fillNodes(linked, mesh);
-	eslog::checkpointln("BUILDER: NODES FILLED");
-
-	fillElements(linked, mesh);
-	eslog::checkpointln("BUILDER: ELEMENTS FILLED");
-
-	MPI_Finalize();
-	exit(0);
-
-////	balance();
-////	eslog::checkpointln("BUILDER: DATA BALANCED");
-//
-//	assignRegions(_meshData.eregions, _meshData.eIDs, _eDistribution, _eregsize, _eregions);
-//	assignRegions(_meshData.nregions, _meshData.nIDs, _nDistribution, _nregsize, _nregions);
-//	eslog::checkpointln("BUILDER: REGION ASSIGNED");
-//
-////	reindexRegions();
-//
-//	assignNBuckets();
-//	eslog::checkpointln("BUILDER: NODES BUCKETS COMPUTED");
-//
-//	assignEBuckets();
-//	eslog::checkpointln("BUILDER: ELEMENTS BUCKETS ASSIGNED");
-//
-//	clusterize();
-//	eslog::checkpointln("BUILDER: ELEMENTS CLUSTERED");
-//
-//	computeSFCNeighbors();
-//	eslog::checkpointln("BUILDER: NEIGHBORS APPROXIMATED");
-//
-//	if (_meshData.removeDuplicates) {
-//		mergeDuplicatedNodes();
-//		eslog::checkpointln("BUILDER: DUPLICATED NODES MERGED");
-//	}
-//
-//	sortElements();
-//	eslog::checkpointln("BUILDER: ELEMENTS SORTED");
-//
-//	linkup();
-//	fillNeighbors();
-//	eslog::checkpointln("BUILDER: LINKED UP");
-//
-//	sortNodes();
-//	eslog::checkpointln("BUILDER: NODES SORTED");
-//
-//	reindexElementNodes();
-//	eslog::checkpointln("BUILDER: ELEMENTS NODES REINDEXED");
-//
-//	if (_meshData.removeDuplicates) {
-//		removeDuplicateElements();
-//		eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS REMOVED");
-//	}
-//
-//	fillNodes();
-//	eslog::checkpointln("BUILDER: NODES FILLED");
-//
-//	fillElements();
-//	eslog::checkpointln("BUILDER: ELEMENTS SORTED");
-//
-//	if (info::mesh->nodes->elements == NULL) {
-//		mesh::linkNodesAndElements(info::mesh->elements, info::mesh->nodes, info::mesh->neighbors);
-//	}
-//
-//	exchangeBoundary();
-//	eslog::checkpointln("BUILDER: BOUNDARY EXCHANGED");
-//
-//	fillRegions(_meshData.eregions, _eregsize, _eregions);
-//	fillRegions(_meshData.nregions, _nregsize, _nregions);
-//	fillElementRegions();
-//	fillBoundaryRegions();
-//	fillNodeRegions();
-//	eslog::checkpointln("BUILDER: REGIONS FILLED");
-//
-//	reindexBoundaryNodes();
-//	eslog::endln("BUILDER: BOUNDARY NODES REINDEXED");
+	fillMesh(prepared, *input.regions, mesh);
+	prepared.clear();
+	eslog::endln("BUILDER: MESH BUILT");
 }
 
 }

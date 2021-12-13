@@ -136,7 +136,7 @@ struct Communication {
 		SPLITTERS, ALLREDUCE, SCATTERV, SCATTER;
 	};
 
-	static bool computeSplitters(const std::vector<esint, initless_allocator<esint> > &keys, std::vector<esint, initless_allocator<esint> > &permutation, std::vector<esint> &splitters, esint keysTotal, esint bucketsTotal, MPIGroup *group = MPITools::procs);
+	static bool computeSplitters(const ivector<esint> &keys, ivector<esint> &permutation, ivector<esint> &splitters, esint keysTotal, esint bucketsTotal, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype, typename Talloc=std::allocator<Ttype> >
 	static bool allToAllWithDataSizeAndTarget(const std::vector<Ttype, Talloc> &sBuffer, std::vector<Ttype, Talloc> &rBuffer, int left = 0, int right = MPITools::procs->size, MPIGroup *group = MPITools::procs);

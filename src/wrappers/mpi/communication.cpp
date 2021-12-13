@@ -366,11 +366,11 @@ static void getMedian(esint *keys, esint targetsum, esint tolerance, esint begin
 	profiler::end("get_median");
 }
 
-bool Communication::computeSplitters(const std::vector<esint, initless_allocator<esint> > &keys, std::vector<esint, initless_allocator<esint> > &permutation, std::vector<esint> &splitters, esint keysTotal, esint bucketsTotal, MPIGroup *group)
+bool Communication::computeSplitters(const ivector<esint> &keys, ivector<esint> &permutation, ivector<esint> &splitters, esint keysTotal, esint bucketsTotal, MPIGroup *group)
 {
 	profiler::syncstart("compute_splitters");
 	profiler::syncparam("keys", keys.size());
-	splitters.resize(group->size + 1);
+	splitters.resize(group->size + 1, 0);
 	MPIType type = MPITools::getType<esint>();
 
 	splitters.back() = bucketsTotal;
@@ -473,7 +473,7 @@ bool Communication::computeSplitters(const std::vector<esint, initless_allocator
 	}
 	profiler::synccheckpoint("set_splitters");
 
-	Communication::allReduce(splitters, Communication::OP::MAX, 0, group->size);
+	Communication::allReduce(splitters.data(), NULL, splitters.size(), MPITools::getType<esint>().mpitype, MPI_MAX, group);
 	splitters.front() = 0;
 	for (auto it = splitters.rbegin(); it != splitters.rend(); ++it) {
 		if (*it == 0) {
