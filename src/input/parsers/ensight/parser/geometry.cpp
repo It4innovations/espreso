@@ -114,7 +114,7 @@ void EnsightGeometry::parse(InputMesh<OrderedNodes, OrderedElements, OrderedRegi
 					std::copy(coordinates.begin(), coordinates.end(), rbuffer.begin());
 					std::vector<MPI_Request> req(end - start);
 					for (int r = start + 1; r <= end; ++r) {
-						FileBlock rblock(_geofile, _keywords.coordinates[p].offset, csize * _keywords.coordinates[p].nn, csize, r);
+						FileBlock rblock(_geofile, _keywords.coordinates[p].offset, 3 * csize * _keywords.coordinates[p].nn, csize, r);
 						MPI_Irecv(rbuffer.data() + rblock.prevsize, rblock.size, MPI_FLOAT, r, 0, info::mpi::comm, req.data() + (r - start - 1));
 					}
 					mesh.nodes->offsets.push_back(DatabaseOffset{coffset, (esint)mesh.nodes->coordinates.size(), _keywords.coordinates[p].nn});
@@ -147,7 +147,7 @@ void EnsightGeometry::parse(InputMesh<OrderedNodes, OrderedElements, OrderedRegi
 				}
 
 				if (_keywords.elements[e].getCode() != Element::CODE::POINT1) {
-					mesh.elements->offsets.push_back(DatabaseOffset{(esint)mesh.elements->etype.size(), eoffset + (esint)block.prevsize, (esint)block.size});
+					mesh.elements->offsets.push_back(DatabaseOffset{eoffset + (esint)block.prevsize, (esint)mesh.elements->etype.size(), (esint)block.size});
 					mesh.elements->etype.resize(mesh.elements->etype.size() + block.size, _keywords.elements[e].getCode());
 					mesh.elements->enodes.reserve(mesh.elements->enodes.size() + elements.size());
 					for (size_t n = 0; n < elements.size(); ++n) {

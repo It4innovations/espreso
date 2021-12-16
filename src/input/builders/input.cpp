@@ -24,8 +24,6 @@
 #include <numeric>
 #include <set>
 
-#include "basis/utilities/print.h"
-
 using namespace espreso;
 
 void Input::clip()
@@ -186,11 +184,6 @@ void Input::connect()
 
 	Communication::allReduce(rintervals.data(), NULL, rintervals.size(), MPITools::getType<esint>().mpitype, MPI_MAX);
 	Communication::exscan(vsum, voffsets);
-
-	std::cout << rintervals;
-	std::cout << voffsets;
-
-//	size_t nvalues = _meshData..size();
 }
 
 void Input::balance()

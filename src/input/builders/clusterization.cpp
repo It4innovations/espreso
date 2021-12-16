@@ -23,7 +23,10 @@ void assignBuckets(const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalan
 	nbuckets.resize(ordered.nodes->coordinates.size());
 	ebuckets.resize(ordered.elements->etype.size());
 
-	#pragma omp parallel for
+	esint local = 0;
+	ivector<esint> &closest = ebuckets; // reuse memory
+
+	#pragma omp parallel for reduction(+:local)
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; t++) {
 
 		// nbuckets -> just ask SFC to get bucket
@@ -33,13 +36,15 @@ void assignBuckets(const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalan
 
 		// ebuckets -> we need to choose a node and ask a neighboring process to a bucket
 		for (size_t e = edistribution[t]; e < edistribution[t + 1]; ++e) {
-			ebuckets[e] = ordered.elements->enodes[ordered.elements->edist[e]];
+			closest[e] = ordered.elements->enodes[ordered.elements->edist[e]];
 			for (esint n = ordered.elements->edist[e]; n < ordered.elements->edist[e + 1]; n++) {
 				if (ordered.elements->enodes[n] / ordered.nodes->chunk == info::mpi::rank) {
-					ebuckets[e] = nbuckets[ordered.elements->enodes[n] - ordered.nodes->offset];
+					closest[e] = ordered.elements->enodes[n];
+					++local;
+					break;
 				} else {
 					if (std::abs(ebuckets[e] / ordered.nodes->chunk - info::mpi::rank) > std::abs(ordered.elements->enodes[n] / ordered.nodes->chunk - info::mpi::rank)) {
-						ebuckets[e] = ordered.elements->enodes[n];
+						closest[e] = ordered.elements->enodes[n];
 					}
 				}
 			}
@@ -47,12 +52,11 @@ void assignBuckets(const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalan
 	}
 
 	// TODO: measure if it is better to avoid sorting
-	std::vector<esint, initless_allocator<esint> > permutation(ebuckets.size());
+	std::vector<esint, initless_allocator<esint> > permutation(closest.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
-	std::sort(permutation.begin(), permutation.end(), [&] (const esint &i, const esint &j) { return ebuckets[i] < ebuckets[j]; });
+	std::sort(permutation.begin(), permutation.end(), [&] (const esint &i, const esint &j) { return closest[i] < closest[j]; });
 
-	size_t skipped = 0;
-	std::vector<esint> sBuffer, rBuffer;
+	ivector<esint> sBuffer, rBuffer;
 	{ // build buffer with required nodes
 		sBuffer.reserve(permutation.size() + 3 * info::mpi::size);
 		auto p = permutation.begin();
@@ -63,13 +67,10 @@ void assignBuckets(const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalan
 			sBuffer.push_back(info::mpi::rank);
 
 			if (r == info::mpi::rank) {
-				while (p != permutation.end() && ebuckets[*p] < ordered.nodes->chunk * (r + 1)) {
-					++skipped;
-					++p;
-				}
+				p += local;
 			} else {
-				while (p != permutation.end() && ebuckets[*p] < ordered.nodes->chunk * (r + 1)) {
-					sBuffer.push_back(ebuckets[*p++]);
+				while (p != permutation.end() && closest[*p] < ordered.nodes->chunk * (r + 1)) {
+					sBuffer.push_back(closest[*p++]);
 				}
 			}
 			sBuffer[prevsize] = sBuffer.size() - prevsize;
@@ -81,26 +82,22 @@ void assignBuckets(const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalan
 	}
 
 	{ // requests are not sorted according to rank -> reorder them
-		std::vector<esint>().swap(sBuffer);
-		sBuffer.resize(rBuffer.size());
+		utils::clearVector(sBuffer);
+		sBuffer.reserve(rBuffer.size());
 
-		std::vector<esint, initless_allocator<esint> > toRankOffset(info::mpi::size + 1);
+		ivector<esint> toRankOffset(info::mpi::size);
 		auto buffer = rBuffer.begin();
 		for (int r = 0; r < info::mpi::size; ++r) {
-			toRankOffset[*(buffer + 2)] = *buffer;
+			toRankOffset[*(buffer + 2)] = buffer - rBuffer.begin();
 			buffer += *buffer;
 		}
-		utils::sizesToOffsets(toRankOffset.data(), toRankOffset.data() + toRankOffset.size(), 0);
 
-		for (size_t offset = 0; offset < rBuffer.size(); ) {
-			esint size = rBuffer[offset++];
-			++offset; // my rank
-			int toRank = rBuffer[offset++];
-			sBuffer[toRankOffset[toRank] + 0] = size;
-			sBuffer[toRankOffset[toRank] + 1] = toRank;
-			sBuffer[toRankOffset[toRank] + 2] = info::mpi::rank;
-			for (esint n = toRankOffset[toRank] + 3; n < toRankOffset[toRank + 1]; ++n) {
-				sBuffer[n] = nbuckets[rBuffer[offset++] - ordered.nodes->offset];
+		for (int r = 0; r < info::mpi::size; ++r) {
+			sBuffer.push_back(rBuffer[toRankOffset[r]]);
+			sBuffer.push_back(r);
+			sBuffer.push_back(info::mpi::rank);
+			for (esint n = 3; n < rBuffer[toRankOffset[r]]; ++n) {
+				sBuffer.push_back(nbuckets[rBuffer[toRankOffset[r] + n] - ordered.nodes->offset]);
 			}
 		}
 	}
@@ -109,26 +106,27 @@ void assignBuckets(const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalan
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
 		eslog::internalFailure("return nodes buckets.\n");
 	}
-	std::vector<esint>().swap(sBuffer);
+	utils::clearVector(sBuffer);
 
 	{ // returned nodes are in different order than send requests -> reorder them
-		std::vector<esint, initless_allocator<esint> > toRankOffset(info::mpi::size + 1);
+		ivector<esint> toRankOffset(info::mpi::size);
 		auto buffer = rBuffer.begin();
 		for (int r = 0; r < info::mpi::size; ++r) {
-			toRankOffset[*(buffer + 2)] = *buffer;
+			toRankOffset[*(buffer + 2)] = buffer - rBuffer.begin();
 			buffer += *buffer;
 		}
-		utils::sizesToOffsets(toRankOffset.data(), toRankOffset.data() + toRankOffset.size(), 0);
 
 		size_t p = 0;
 		for (int r = 0; r < info::mpi::size; ++r) {
 			esint offset = toRankOffset[r];
 			esint size = rBuffer[offset++];
-			offset++; // my rank
-			offset++; // r
+			++offset; // my rank
+			++offset; // r
 
 			if (r == info::mpi::rank) {
-				p += skipped;
+				for (esint i = 0; i < local; ++i, ++p) {
+					ebuckets[permutation[p]] = nbuckets[closest[permutation[p]] - ordered.nodes->offset];
+				}
 			} else {
 				for (esint n = 3; n < size; ++n) {
 					ebuckets[permutation[p++]] = rBuffer[offset++];
@@ -169,7 +167,7 @@ void clusterize(TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ord
 		std::sort(epermutation.begin() + eborders[r], epermutation.begin() + eborders[r + 1]);
 	}
 
-	std::vector<esint, initless_allocator<esint> > sBuffer, rBuffer;
+	ivector<esint> sBuffer, rBuffer;
 
 	{ // compute size of the send buffer
 		size_t ssize = 0;
@@ -224,7 +222,7 @@ void clusterize(TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ord
 	}
 	utils::clearVector(sBuffer);
 
-	std::vector<size_t, initless_allocator<size_t> > roffset(info::mpi::size);
+	ivector<size_t> roffset(info::mpi::size);
 	{ // preallocate vectors
 		esint nodesTotal = 0, elementsTotal = 0, enodesTotal = 0;
 		for (size_t offset = 0; offset < rBuffer.size();) {
@@ -274,9 +272,10 @@ void clusterize(TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ord
 			clustered.elements->edist.push_back(clustered.elements->enodes.size());
 		}
 	}
+	ordered.clear();
 }
 
-void computeSFCNeighbors(const HilbertCurve<esfloat> &sfc, const TemporalMesh<ClusteredNodes, ClusteredElements> &clustered, const ivector<esint> &splitters, std::vector<int> &sfcNeighbors)
+void computeSFCNeighbors(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, std::vector<int> &sfcNeighbors)
 {
 	std::vector<std::pair<size_t, size_t> > neighbors;
 

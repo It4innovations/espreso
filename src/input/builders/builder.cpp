@@ -16,15 +16,31 @@
 namespace espreso {
 namespace builder {
 
-//static void buildSequential(OrderedMeshDatabase &database, Mesh &mesh)
-//{
-//	OrderedMesh _mesh;
-//}
+static void buildSequential(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, Mesh &mesh)
+{
+	eslog::startln("BUILDER: PROCESS ORDERED MESH", "BUILDER");
+
+	TemporalSequentialMesh<ClusteredNodes, ClusteredElements> clustered;
+	TemporalSequentialMesh<MergedNodes, ClusteredElements> merged;
+	TemporalSequentialMesh<MergedNodes, MergedElements> prepared;
+
+	initialize(input, clustered, mesh.dimension);
+	eslog::checkpointln("BUILDER: DATA INITIALIZED");
+
+	searchDuplicatedNodes(clustered, merged);
+	eslog::checkpointln("BUILDER: DUPLICATED NODES FOUND");
+
+	searchParentAndDuplicatedElements(merged, prepared, mesh.dimension);
+	eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
+
+	fillMesh(prepared, *input.regions, mesh);
+	eslog::endln("BUILDER: MESH BUILT");
+}
 
 void build(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, Mesh &mesh)
 {
 	if (info::mpi::size == 1) {
-//		buildSequential(database, mesh);
+		buildSequential(input, mesh);
 		return;
 	}
 
@@ -49,29 +65,23 @@ void build(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, Mesh
 	eslog::checkpointln("BUILDER: SFC BUCKETS ASSIGNED");
 
 	clusterize(ordered, nbuckets, ebuckets, sfc.buckets(sfc.depth), clustered, splitters);
-	ordered.clear();
 	utils::clearVectors(nbuckets, ebuckets);
 	eslog::checkpointln("BUILDER: MESH CLUSTERIZED");
 
-	computeSFCNeighbors(sfc, clustered, splitters, linked.nodes->neighbors); // neighbors are approximated here
+	computeSFCNeighbors(sfc, splitters, linked.nodes->neighbors); // neighbors are approximated here
 	eslog::checkpointln("BUILDER: NEIGHBORS APPROXIMATED");
 
-	searchDuplicatedNodes(sfc, splitters, linked.nodes->neighbors, clustered.nodes, merged.nodes);
-	delete merged.elements; merged.elements = clustered.elements; clustered.elements = nullptr;
-	clustered.clear();
+	searchDuplicatedNodes(sfc, splitters, linked.nodes->neighbors, clustered, merged);
 	utils::clearVector(splitters);
 	eslog::checkpointln("BUILDER: DUPLICATED NODES FOUND");
 
 	linkup(merged, linked);
-	merged.clear();
 	eslog::checkpointln("BUILDER: LINKED UP");
 
 	searchParentAndDuplicatedElements(linked, prepared, mesh.dimension);
-	linked.clear();
 	eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
 
 	fillMesh(prepared, *input.regions, mesh);
-	prepared.clear();
 	eslog::endln("BUILDER: MESH BUILT");
 }
 

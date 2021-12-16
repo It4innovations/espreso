@@ -35,9 +35,9 @@ struct OrderedElementsBalanced: OrderedDataDistribution {
  */
 
 struct DataDuplication {
-	esint origin, duplication;
-	bool operator<(const DataDuplication &other) const { if (origin == other.origin) { return duplication < other.duplication; } return origin < other.origin; }
-	bool operator!=(const DataDuplication &other) const { return origin != other.origin || duplication != other.duplication; }
+	esint origin, duplicate;
+	bool operator<(const DataDuplication &other) const { if (origin == other.origin) { return duplicate < other.duplicate; } return origin < other.origin; }
+	bool operator!=(const DataDuplication &other) const { return origin != other.origin || duplicate != other.duplicate; }
 };
 
 struct ClusteredDataDistribution {
@@ -90,16 +90,26 @@ struct TemporalMesh {
 	}
 };
 
+template <typename TNodes, typename TElements>
+struct TemporalSequentialMesh: TemporalMesh<TNodes, TElements> {};
+
+// sequential
+void initialize(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, TemporalSequentialMesh<ClusteredNodes, ClusteredElements> &clustered, int &dimension);
+
+
 // balancing
 void balance(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered, int &dimension);
 
 // clusterization
 void assignBuckets(const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered, const HilbertCurve<esfloat> &sfc, ivector<esint> &nbuckets, ivector<esint> &ebuckets);
 void clusterize(TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered, ivector<esint> &nbuckets, ivector<esint> &ebuckets, esint buckets, TemporalMesh<ClusteredNodes, ClusteredElements> &clustered, ivector<esint> &splitters);
-void computeSFCNeighbors(const HilbertCurve<esfloat> &sfc, const TemporalMesh<ClusteredNodes, ClusteredElements> &clustered, const ivector<esint> &splitters, std::vector<int> &sfcNeighbors);
+void computeSFCNeighbors(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, std::vector<int> &sfcNeighbors);
 
 // merging
-void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, const std::vector<int> &sfcNeighbors, ClusteredNodes *clustered, MergedNodes *merged);
+void searchDuplicatedNodes(TemporalSequentialMesh<ClusteredNodes, ClusteredElements> &clustered, TemporalSequentialMesh<MergedNodes, ClusteredElements> &merged);
+void searchParentAndDuplicatedElements(TemporalSequentialMesh<MergedNodes, ClusteredElements> &merged, TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, int meshDimension);
+
+void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, const std::vector<int> &sfcNeighbors, TemporalMesh<ClusteredNodes, ClusteredElements> &clustered, TemporalMesh<MergedNodes, ClusteredElements> &merged);
 void searchParentAndDuplicatedElements(TemporalMesh<LinkedNodes, ClusteredElements> &linked, TemporalMesh<LinkedNodes, MergedElements> &prepared, int meshDimension);
 
 //linking
@@ -107,6 +117,7 @@ void linkup(TemporalMesh<MergedNodes, ClusteredElements> &merged, TemporalMesh<L
 
 // filler
 void fillMesh(TemporalMesh<LinkedNodes, MergedElements> &prepared, OrderedRegions &regions, Mesh &mesh);
+void fillMesh(TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, OrderedRegions &regions, Mesh &mesh);
 
 }
 }

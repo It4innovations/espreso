@@ -20,7 +20,7 @@
 namespace espreso {
 namespace builder {
 
-static void searchDuplicateNodes(std::vector<_Point<esfloat>, initless_allocator<_Point<esfloat> > > &coordinates, std::function<void(esint origin, esint target)> merge)
+static void treeSearch(std::vector<_Point<esfloat>, initless_allocator<_Point<esfloat> > > &coordinates, std::function<void(esint origin, esint target)> merge)
 {
 	KDTree<esfloat> tree(coordinates.data(), coordinates.data() + coordinates.size());
 
@@ -119,9 +119,46 @@ static void searchDuplicateNodes(std::vector<_Point<esfloat>, initless_allocator
 	}
 }
 
-void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, const std::vector<int> &sfcNeighbors, ClusteredNodes *clustered, MergedNodes *merged)
+static void localSearch(MergedNodes *merged)
 {
-	std::vector<esint> cdistribution = tarray<esint>::distribute(info::env::OMP_NUM_THREADS, clustered->offsets.size());
+	treeSearch(merged->coordinates, [&] (esint origin, esint target) {
+		merged->duplication.push_back({ target, origin });
+	});
+	std::sort(merged->duplication.begin(), merged->duplication.end());
+
+	// set origin to the last occurrence -> it simplify linking step
+	for (auto begin = merged->duplication.begin(), end = begin; begin != merged->duplication.end(); begin = end) {
+		while (end != merged->duplication.end() && begin->origin == end->origin) { ++end; }
+		esint max = std::max((end - 1)->origin, (end - 1)->duplicate);
+		for (auto it = begin; it != end; ++it) {
+			if (it->duplicate == max) {
+				std::swap(it->duplicate, it->origin);
+			} else {
+				it->origin = max;
+			}
+		}
+	}
+	std::sort(merged->duplication.begin(), merged->duplication.end());
+}
+
+void searchDuplicatedNodes(TemporalSequentialMesh<ClusteredNodes, ClusteredElements> &clustered, TemporalSequentialMesh<MergedNodes, ClusteredElements> &merged)
+{
+	if (info::mpi::size != 1) {
+		eslog::internalFailure("usage of a sequential method during a parallel run.\n");
+	}
+	merged.nodes->coordinates.swap(clustered.nodes->coordinates);
+	merged.nodes->offsets.swap(clustered.nodes->offsets);
+	localSearch(merged.nodes);
+
+	delete merged.elements;
+	merged.elements = clustered.elements;
+	clustered.elements = nullptr;
+	clustered.clear();
+}
+
+void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, const std::vector<int> &sfcNeighbors, TemporalMesh<ClusteredNodes, ClusteredElements> &clustered, TemporalMesh<MergedNodes, ClusteredElements> &merged)
+{
+	std::vector<esint> cdistribution = tarray<esint>::distribute(info::env::OMP_NUM_THREADS, clustered.nodes->offsets.size());
 
 	double eps = info::ecf->input.duplication_tolerance;
 	eps += info::ecf->input.duplication_tolerance * 1e-6;
@@ -142,11 +179,11 @@ void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, const ivector<esint
 		for (esint n = cdistribution[t]; n < cdistribution[t + 1]; ++n) {
 			int hit[6] = { 0, 0, 0, 0, 0, 0};
 			for (size_t d = 0; d < sfc.dimension; ++d) {
-				size_t origin = sfc.getBucket(clustered->coordinates[n][d], d);
-				if (sfc.getBucket(clustered->coordinates[n][d] - eps, d) < origin) {
+				size_t origin = sfc.getBucket(clustered.nodes->coordinates[n][d], d);
+				if (sfc.getBucket(clustered.nodes->coordinates[n][d] - eps, d) < origin) {
 					hit[2 * d + 0] = -1;
 				}
-				if (sfc.getBucket(clustered->coordinates[n][d] + eps, d) > origin) {
+				if (sfc.getBucket(clustered.nodes->coordinates[n][d] + eps, d) > origin) {
 					hit[2 * d + 1] = +1;
 				}
 			}
@@ -156,7 +193,7 @@ void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, const ivector<esint
 				for (int y = hit[2]; y <= hit[3]; ++y) {
 					for (int z = hit[4]; z <= hit[5]; ++z) {
 						if (x || y || z) {
-							size_t b = sfc.getBucket(clustered->coordinates[n] + Point(x * eps, y * eps, z * eps));
+							size_t b = sfc.getBucket(clustered.nodes->coordinates[n] + Point(x * eps, y * eps, z * eps));
 							int nn = std::lower_bound(splitters.begin(), splitters.end(), b + 1) - splitters.begin() - 1;
 							if (nn != info::mpi::rank) {
 								if (neighs.size() == 0 || neighs.back() != nn) {
@@ -200,7 +237,7 @@ void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, const ivector<esint
 
 			for (auto n = begin; n != end; ++n) {
 				offsets.push_back(n->offset);
-				coordinates.push_back(clustered->coordinates[n->offset]);
+				coordinates.push_back(clustered.nodes->coordinates[n->offset]);
 			}
 			esint nodes = end - begin;
 			sBuffer[*ni].resize(1 + nodes + utils::reinterpret_size<esint, _Point<esfloat> >(nodes));
@@ -237,7 +274,7 @@ void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, const ivector<esint
 	}
 
 	std::vector<size_t> toinsert, toerase;
-	searchDuplicateNodes(coordinates, [&] (esint origin, esint target) {
+	treeSearch(coordinates, [&] (esint origin, esint target) {
 		if (origin < mynodes && mynodes <= target) { // I have duplicate
 			toerase.push_back(offsets[origin]);
 		}
@@ -254,17 +291,17 @@ void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, const ivector<esint
 		utils::sortAndRemoveDuplicates(toinsert);
 	}
 
-	size_t size = clustered->offsets.size();
+	size_t size = clustered.nodes->offsets.size();
 	ClusteredNodes *from, *to;
 	if (toerase.size() >= toinsert.size()) { // reuse memory
-		clustered->offsets.swap(merged->offsets);
-		clustered->coordinates.swap(merged->coordinates);
-		from = to = merged;
+		clustered.nodes->offsets.swap(merged.nodes->offsets);
+		clustered.nodes->coordinates.swap(merged.nodes->coordinates);
+		from = to = merged.nodes;
 	} else {
-		merged->offsets.resize(size + toinsert.size() - toerase.size());
-		merged->coordinates.resize(size + toinsert.size() - toerase.size());
-		from = clustered;
-		to = merged;
+		merged.nodes->offsets.resize(size + toinsert.size() - toerase.size());
+		merged.nodes->coordinates.resize(size + toinsert.size() - toerase.size());
+		from = clustered.nodes;
+		to = merged.nodes;
 	}
 
 	if (toerase.size()) {
@@ -291,25 +328,155 @@ void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, const ivector<esint
 		}
 	}
 
-	searchDuplicateNodes(merged->coordinates, [&] (esint origin, esint target) {
-		merged->duplication.push_back({ target, origin });
-	});
-	std::sort(merged->duplication.begin(), merged->duplication.end());
+	localSearch(merged.nodes);
+
+	delete merged.elements;
+	merged.elements = clustered.elements;
+	clustered.elements = nullptr;
+	clustered.clear();
+}
+
+void searchParentAndDuplicatedElements(TemporalSequentialMesh<MergedNodes, ClusteredElements> &merged, TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, int meshDimension)
+{
+	{ // build nodes
+		ivector<esint> usedNodes(merged.nodes->offsets.size());
+		std::iota(usedNodes.begin(), usedNodes.end(), 0);
+		for (size_t n = 0; n < merged.nodes->duplication.size(); ++n) {
+			usedNodes[merged.nodes->duplication[n].duplicate] = merged.nodes->duplication[n].origin;
+		}
+
+		prepared.nodes->offsets.swap(merged.nodes->offsets);
+		prepared.nodes->coordinates.swap(merged.nodes->coordinates);
+
+		for (size_t n = 0, offset = 0; n < usedNodes.size(); ++n) {
+			if (usedNodes[n] == (esint)n) {
+				usedNodes[n] = offset++;
+			}
+		}
+
+		size_t offset = 0;
+		for (size_t n = 0; n < usedNodes.size(); ++n) {
+			if (usedNodes[n] <= (esint)n) {
+				prepared.nodes->offsets[offset] = prepared.nodes->offsets[n];
+				prepared.nodes->coordinates[offset] = prepared.nodes->coordinates[n];
+				++offset;
+			} else {
+				usedNodes[n] = usedNodes[usedNodes[n]];
+			}
+		}
+		prepared.nodes->offsets.resize(offset);
+		prepared.nodes->coordinates.resize(offset);
+
+		for (size_t n = 0; n < merged.elements->enodes.size(); ++n) {
+			merged.elements->enodes[n] = usedNodes[merged.elements->enodes[n]];
+		}
+	}
+
+	std::unordered_set<esint> duplicateElement;
+
+	auto getMinimal = [&] (esint nsize, esint *nodes) {
+		esint min = nodes[0];
+		for (int n = 1; n < nsize; ++n) {
+			esint current = nodes[n];
+			if (prepared.nodes->coordinates[current].x < prepared.nodes->coordinates[min].x) {
+				min = current;
+			} else if (prepared.nodes->coordinates[current].x == prepared.nodes->coordinates[min].x && current < min) {
+				min = current;
+			}
+		}
+		return min;
+	};
+
+	std::vector<esint> mapDist(prepared.nodes->offsets.size() + 1);
+	ivector<esint> mapData;
+
+	for (size_t e = 0; e < merged.elements->offsets.size(); ++e) {
+		if (Mesh::element(merged.elements->etype[e]).dimension == meshDimension) {
+			++mapDist[getMinimal(merged.elements->edist[e + 1] - merged.elements->edist[e], merged.elements->enodes.data() + merged.elements->edist[e])];
+		}
+	}
+	utils::sizesToOffsets(mapDist);
+	mapData.resize(mapDist.back());
+
+	std::vector<esint> _mapDist = mapDist;
+	for (size_t e = 0; e < merged.elements->offsets.size(); ++e) {
+		if (Mesh::element(merged.elements->etype[e]).dimension == meshDimension) {
+			mapData[_mapDist[getMinimal(merged.elements->edist[e + 1] - merged.elements->edist[e], merged.elements->enodes.data() + merged.elements->edist[e])]++] = e;
+		}
+	}
+	utils::clearVector(_mapDist);
+
+	std::vector<esint> _checkBuffer;
+	_checkBuffer.reserve(2 * 20);
+	auto areSame = [&] (esint size1, esint *nodes1, esint size2, esint *nodes2) {
+		if (size1 == size2) {
+			_checkBuffer.clear();
+			for (esint n = 0; n < size1; ++n) { _checkBuffer.push_back(nodes1[n]); }
+			for (esint n = 0; n < size2; ++n) { _checkBuffer.push_back(nodes2[n]); }
+			std::sort(_checkBuffer.begin(), _checkBuffer.begin() + size1);
+			std::sort(_checkBuffer.begin() + size1, _checkBuffer.end());
+			return memcmp(_checkBuffer.data(), _checkBuffer.data() + size1, sizeof(esint) * size1) == 0;
+		}
+		return false;
+	};
+	for (size_t e1 = 0; e1 < merged.elements->offsets.size(); ++e1) {
+		if (Mesh::element(merged.elements->etype[e1]).dimension == meshDimension && duplicateElement.count(e1) == 0) {
+			esint min = getMinimal(merged.elements->edist[e1 + 1] - merged.elements->edist[e1], merged.elements->enodes.data() + merged.elements->edist[e1]);
+			for (esint n = mapDist[min]; n < mapDist[min + 1]; ++n) {
+				size_t e2 = mapData[n];
+				if (e1 < e2) { // if e2 is lower, the pair was already processed
+					if (Mesh::element(merged.elements->etype[e2]).dimension == meshDimension && areSame(merged.elements->edist[e1 + 1] - merged.elements->edist[e1], merged.elements->enodes.data() + merged.elements->edist[e1], merged.elements->edist[e2 + 1] - merged.elements->edist[e2], merged.elements->enodes.data() + merged.elements->edist[e2])) {
+						prepared.elements->duplication.push_back({ merged.elements->offsets[e1], merged.elements->offsets[e2] });
+						duplicateElement.insert(e2);
+					}
+				}
+			}
+		}
+	}
+	std::sort(prepared.elements->duplication.begin(), prepared.elements->duplication.end());
+
+	{ // build elements
+		prepared.elements->offsets.swap(merged.elements->offsets);
+		prepared.elements->etype.swap(merged.elements->etype);
+		prepared.elements->enodes.swap(merged.elements->enodes);
+		prepared.elements->edist.swap(merged.elements->edist);
+		size_t offset = 0, enodes = 0;
+		for (size_t e = 0; e < prepared.elements->offsets.size(); ++e) {
+			if (duplicateElement.count(e) == 0) {
+				prepared.elements->etype[offset] = prepared.elements->etype[e];
+				prepared.elements->offsets[offset] = prepared.elements->offsets[e];
+				for (esint n = prepared.elements->edist[e]; n < prepared.elements->edist[e + 1]; ++n) {
+					prepared.elements->enodes[enodes++] = prepared.elements->enodes[n];
+				}
+				prepared.elements->edist[offset] = enodes - (prepared.elements->edist[e + 1] - prepared.elements->edist[e]);
+				++offset;
+			}
+		}
+		prepared.elements->offsets.resize(offset);
+		prepared.elements->etype.resize(offset);
+		prepared.elements->edist.resize(offset + 1);
+		prepared.elements->edist.back() = enodes;
+		prepared.elements->enodes.resize(enodes);
+	}
+
+	merged.clear();
 }
 
 void searchParentAndDuplicatedElements(TemporalMesh<LinkedNodes, ClusteredElements> &linked, TemporalMesh<LinkedNodes, MergedElements> &prepared, int meshDimension)
 {
-	std::unordered_set<esint> duplicateCandidate;
+	// duplicate boundary is adept to duplication only
+	std::unordered_set<esint> duplicateBoundary, duplicateElement;
 
-	// eoffset, etype, enodes; ....
+	// eoffset, etype, enodes; .... + project all enodes
 	std::vector<std::vector<esint> > sBuffer(linked.nodes->neighbors.size()), rBuffer(linked.nodes->neighbors.size());
 	if (linked.nodes->neighbors.size()) { // duplicated elements have to have all nodes held by other rank
 		std::vector<int> neighbors;
 		for (size_t e = 0; e < linked.elements->offsets.size(); ++e) {
 			neighbors.assign(linked.nodes->neighbors.begin(), linked.nodes->neighbors.end());
 			for (esint n = linked.elements->edist[e]; n < linked.elements->edist[e + 1]; ++n) {
+				esint local = linked.nodes->g2l[linked.elements->enodes[n]];
 				size_t intersection = 0, current = 0;
-				for (int r = linked.nodes->rankDistribution[linked.nodes->g2l[linked.elements->enodes[n]]]; r < linked.nodes->rankDistribution[linked.nodes->g2l[linked.elements->enodes[n]] + 1]; ++r) {
+				for (int r = linked.nodes->rankDistribution[local]; r < linked.nodes->rankDistribution[local + 1]; ++r) {
 					while (current < neighbors.size() && neighbors[current] < linked.nodes->rankData[r]) { ++current; }
 					if (current < neighbors.size() && neighbors[current] == linked.nodes->rankData[r]) {
 						neighbors[intersection++] = neighbors[current++];
@@ -326,8 +493,8 @@ void searchParentAndDuplicatedElements(TemporalMesh<LinkedNodes, ClusteredElemen
 					sBuffer[roffset].push_back(linked.elements->enodes[n]);
 				}
 			}
-			if (neighbors.size()) {
-				duplicateCandidate.insert(e);
+			if (neighbors.size() && Mesh::element(linked.elements->etype[e]).dimension < meshDimension) {
+				duplicateBoundary.insert(e);
 			}
 		}
 	}
@@ -351,13 +518,13 @@ void searchParentAndDuplicatedElements(TemporalMesh<LinkedNodes, ClusteredElemen
 	};
 
 	std::vector<esint> mapDist(linked.nodes->offsets.size() + 1);
-	std::vector<esint, initless_allocator<esint> > mapData;
+	ivector<esint> mapData;
 
 	for (size_t e = 0; e < linked.elements->offsets.size(); ++e) {
 		if (Mesh::element(linked.elements->etype[e]).dimension == meshDimension) {
 			++mapDist[getMinimal(linked.elements->edist[e + 1] - linked.elements->edist[e], linked.elements->enodes.data() + linked.elements->edist[e])];
 		} else {
-			if (duplicateCandidate.count(e)) { // we have to search a parent for each sent elements
+			if (duplicateBoundary.count(e)) { // we have to search a parent for each sent elements
 				for (esint n = linked.elements->edist[e]; n < linked.elements->edist[e + 1]; ++n) {
 					++mapDist[linked.nodes->g2l[linked.elements->enodes[n]]];
 				}
@@ -385,7 +552,7 @@ void searchParentAndDuplicatedElements(TemporalMesh<LinkedNodes, ClusteredElemen
 		if (Mesh::element(linked.elements->etype[e]).dimension == meshDimension) {
 			mapData[_mapDist[getMinimal(linked.elements->edist[e + 1] - linked.elements->edist[e], linked.elements->enodes.data() + linked.elements->edist[e])]++] = e;
 		} else {
-			if (duplicateCandidate.count(e)) {
+			if (duplicateBoundary.count(e)) {
 				for (esint n = linked.elements->edist[e]; n < linked.elements->edist[e + 1]; ++n) {
 					mapData[_mapDist[linked.nodes->g2l[linked.elements->enodes[n]]]++] = e;
 				}
@@ -396,18 +563,17 @@ void searchParentAndDuplicatedElements(TemporalMesh<LinkedNodes, ClusteredElemen
 		for (size_t i = 0; i < rBuffer[r].size(); i += 2 + Mesh::element(rBuffer[r][i + 1]).nodes) {
 			if (Mesh::element(rBuffer[r][i + 1]).dimension == meshDimension) {
 				mapData[_mapDist[getMinimal(Mesh::element(rBuffer[r][i + 1]).nodes, rBuffer[r].data() + i + 2)]++] = linked.elements->offsets.size() + recvMap.size();
-				recvMap.push_back({ (esint)r, (esint)i });
 			} else {
 				for (int n = 0; n < Mesh::element(rBuffer[r][i + 1]).nodes; ++n) {
 					mapData[_mapDist[linked.nodes->g2l[rBuffer[r][i + 2 + n]]]++] = linked.elements->offsets.size() + recvMap.size();
 				}
-				recvMap.push_back({ (esint)r, (esint)i });
 			}
+			recvMap.push_back({ (esint)r, (esint)i });
 		}
 	}
 	utils::clearVector(_mapDist);
 
-	std::vector<esint, initless_allocator<esint> > shared, tmpShared;
+	ivector<esint> shared, tmpShared;
 	auto merge = [&] (esint nsize, esint *nodes) {
 		esint min = linked.nodes->g2l[nodes[0]];
 		shared.assign(mapData.begin() + mapDist[min], mapData.begin() + mapDist[min + 1]);
@@ -446,23 +612,26 @@ void searchParentAndDuplicatedElements(TemporalMesh<LinkedNodes, ClusteredElemen
 		return false;
 	};
 	for (size_t e1 = 0; e1 < linked.elements->offsets.size(); ++e1) {
-		if (Mesh::element(linked.elements->etype[e1]).dimension == meshDimension) {
+		if (Mesh::element(linked.elements->etype[e1]).dimension == meshDimension && duplicateElement.count(e1) == 0) {
 			esint min = merge(linked.elements->edist[e1 + 1] - linked.elements->edist[e1], linked.elements->enodes.data() + linked.elements->edist[e1]);
-			if (duplicateCandidate.count(e1) == 0) {
-				for (esint n = mapDist[min]; n < mapDist[min + 1]; ++n) {
-					size_t e2 = mapData[n];
-					if (e1 < e2) { // if e2 is lower, the pair was already processed
-						if (e2 < linked.elements->offsets.size() && Mesh::element(linked.elements->etype[e2]).dimension == meshDimension) { // local
-							if (areSame(linked.elements->edist[e1 + 1] - linked.elements->edist[e1], linked.elements->enodes.data() + linked.elements->edist[e1], linked.elements->edist[e2 + 1] - linked.elements->edist[e2], linked.elements->enodes.data() + linked.elements->edist[e2])) {
-								prepared.elements->duplication.push_back({ linked.elements->offsets[e1], linked.elements->offsets[e2] });
-								duplicateCandidate.insert(e2);
-							}
-						} else { // from neighbors
-							const auto &r = recvMap[e2 - linked.elements->offsets.size()];
-							if (Mesh::element(rBuffer[r.first][r.second + 1]).dimension == meshDimension) {
-								if (areSame(linked.elements->edist[e1 + 1] - linked.elements->edist[e1], linked.elements->enodes.data() + linked.elements->edist[e1], Mesh::element(rBuffer[r.first][r.second + 1]).nodes, rBuffer[r.first].data() + r.second + 2)) {
+			for (esint n = mapDist[min]; n < mapDist[min + 1]; ++n) {
+				size_t e2 = mapData[n];
+				if (e1 < e2) { // if e2 is lower, the pair was already processed
+					if (e2 < linked.elements->offsets.size()) { // local
+						if (Mesh::element(linked.elements->etype[e2]).dimension == meshDimension && areSame(linked.elements->edist[e1 + 1] - linked.elements->edist[e1], linked.elements->enodes.data() + linked.elements->edist[e1], linked.elements->edist[e2 + 1] - linked.elements->edist[e2], linked.elements->enodes.data() + linked.elements->edist[e2])) {
+							prepared.elements->duplication.push_back({ linked.elements->offsets[e1], linked.elements->offsets[e2] });
+							duplicateElement.insert(e2);
+						}
+					} else { // from neighbors
+						const auto &r = recvMap[e2 - linked.elements->offsets.size()];
+						if (Mesh::element(rBuffer[r.first][r.second + 1]).dimension == meshDimension) {
+							if (areSame(linked.elements->edist[e1 + 1] - linked.elements->edist[e1], linked.elements->enodes.data() + linked.elements->edist[e1], Mesh::element(rBuffer[r.first][r.second + 1]).nodes, rBuffer[r.first].data() + r.second + 2)) {
+								if (linked.elements->offsets[e1] < rBuffer[r.first][r.second]) {
 									prepared.elements->duplication.push_back({ linked.elements->offsets[e1], rBuffer[r.first][r.second] });
-									duplicateCandidate.insert(e2);
+									// element is removed on the neighboring process
+								} else {
+									prepared.elements->duplication.push_back({ rBuffer[r.first][r.second], linked.elements->offsets[e1] });
+									duplicateElement.insert(e1);
 								}
 							}
 						}
@@ -514,11 +683,6 @@ void searchParentAndDuplicatedElements(TemporalMesh<LinkedNodes, ClusteredElemen
 	}
 
 	{ // build elements
-		std::unordered_map<esint, esint> dmap;
-		for (size_t n = 0; n < prepared.elements->duplication.size(); ++n) {
-			dmap[prepared.elements->duplication[n].duplication] = prepared.elements->duplication[n].origin;
-		}
-
 		prepared.elements->offsets.swap(linked.elements->offsets);
 		prepared.elements->etype.swap(linked.elements->etype);
 		prepared.elements->enodes.swap(linked.elements->enodes);
@@ -526,17 +690,13 @@ void searchParentAndDuplicatedElements(TemporalMesh<LinkedNodes, ClusteredElemen
 		size_t offset = 0, enodes = 0;
 		for (size_t e = 0; e < prepared.elements->offsets.size(); ++e) {
 			bool insert = true;
-			if (duplicateCandidate.count(e)) {
-				if (Mesh::element(prepared.elements->etype[e]).dimension == meshDimension) {
-					if (dmap.find(prepared.elements->offsets[e]) != dmap.end()) {
-						insert = false;
-					}
-				} else {
-					insert = false;
-					auto p = std::lower_bound(parents.begin(), parents.end(), __parent__{ prepared.elements->offsets[e], 0, 0 });
-					if (p != parents.end() && p->offset == prepared.elements->offsets[e] && p->rank == info::mpi::rank) {
-						insert = true;
-					}
+			if (Mesh::element(prepared.elements->etype[e]).dimension == meshDimension) {
+				insert = duplicateElement.count(e) == 0;
+			} else {
+				insert = false;
+				auto p = std::lower_bound(parents.begin(), parents.end(), __parent__{ prepared.elements->offsets[e], 0, 0 });
+				if (p != parents.end() && p->offset == prepared.elements->offsets[e] && p->rank == info::mpi::rank) {
+					insert = true;
 				}
 			}
 			if (insert) {
@@ -545,7 +705,7 @@ void searchParentAndDuplicatedElements(TemporalMesh<LinkedNodes, ClusteredElemen
 				for (esint n = prepared.elements->edist[e]; n < prepared.elements->edist[e + 1]; ++n) {
 					prepared.elements->enodes[enodes++] = prepared.elements->enodes[n];
 				}
-				prepared.elements->edist[e] = enodes - (prepared.elements->edist[e + 1] - prepared.elements->edist[e]);
+				prepared.elements->edist[offset] = enodes - (prepared.elements->edist[e + 1] - prepared.elements->edist[e]);
 				++offset;
 			}
 		}
@@ -559,7 +719,7 @@ void searchParentAndDuplicatedElements(TemporalMesh<LinkedNodes, ClusteredElemen
 	{ // build nodes
 		std::unordered_map<esint, esint> dmap;
 		for (size_t n = 0; n < linked.nodes->duplication.size(); ++n) {
-			dmap[linked.nodes->duplication[n].duplication] = linked.nodes->g2l[linked.nodes->duplication[n].origin];
+			dmap[linked.nodes->duplication[n].duplicate] = linked.nodes->g2l[linked.nodes->duplication[n].origin];
 		}
 		std::unordered_map<esint, esint> rmap;
 		for (size_t n = 0; n < linked.nodes->neighbors.size(); ++n) {
@@ -620,11 +780,15 @@ void searchParentAndDuplicatedElements(TemporalMesh<LinkedNodes, ClusteredElemen
 				for (esint r = prepared.nodes->rankDistribution[n]; r < prepared.nodes->rankDistribution[n + 1]; ++r) {
 					if (rindex == removed.size() || removed[rindex].first != prepared.nodes->offsets[n] || removed[rindex].second != prepared.nodes->rankData[r]) {
 						prepared.nodes->rankData[ranks++] = prepared.nodes->rankData[r];
-						++neighbors[rmap[prepared.nodes->rankData[r]]];
+						if (prepared.nodes->rankData[r] != info::mpi::rank) {
+							++neighbors[rmap[prepared.nodes->rankData[r]]];
+						}
+					}
+					if (rindex < removed.size() && removed[rindex].first == prepared.nodes->offsets[n] && removed[rindex].second == prepared.nodes->rankData[r]) {
+						++rindex;
 					}
 				}
-				prepared.nodes->rankDistribution[n] = rdist;
-				++offset;
+				prepared.nodes->rankDistribution[offset++] = rdist;
 			}
 		}
 		prepared.nodes->offsets.resize(offset);
@@ -638,6 +802,7 @@ void searchParentAndDuplicatedElements(TemporalMesh<LinkedNodes, ClusteredElemen
 			}
 		}
 	}
+	linked.clear();
 }
 
 }

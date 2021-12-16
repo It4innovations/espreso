@@ -1184,6 +1184,7 @@ bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype, Tallo
 
 	Ttype mybegin = movebefore(send, group->rank, 0, send.size());
 	Ttype myend = movebefore(send, group->rank + 1, mybegin, send.size());
+	rBuffer.clear();
 	rBuffer.insert(rBuffer.end(), send.begin() + mybegin, send.begin() + myend);
 
 	profiler::synccheckpoint("init");

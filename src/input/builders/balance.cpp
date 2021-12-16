@@ -7,12 +7,14 @@
 #include "esinfo/eslog.h"
 #include "wrappers/mpi/communication.h"
 
+#include <numeric>
+
 namespace espreso {
 namespace builder {
 
 static bool chunk(const esint &mpichunk, const int &rank, const std::vector<DatabaseOffset> &offsets, std::vector<DatabaseOffset>::const_iterator &it, esint &begin, esint &end)
 {
-	if (it != offsets.end() && end == it->global + it->size) {
+	if (it != offsets.end() && end == it->local + it->size) {
 		++it;
 	}
 	if (it == offsets.end()) {
