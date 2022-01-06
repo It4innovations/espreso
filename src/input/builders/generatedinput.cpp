@@ -22,6 +22,9 @@ GeneratedInput::GeneratedInput(MeshBuilder &meshData, bool needSynchronization)
 	eslog::startln("BUILDER: BUILD GENERATED MESH", "BUILDER");
 	profiler::syncstart("generated_input");
 
+	searchDuplicateNodes();
+	coupleDuplicateNodes();
+
 	removeDanglingNodes();
 	profiler::synccheckpoint("remove_dangling");
 	eslog::checkpointln("BUILDER: DANGLING NODES REMOVED");

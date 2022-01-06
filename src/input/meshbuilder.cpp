@@ -186,6 +186,16 @@ void MeshBuilder::duplicate(Geometry &source, int instance)
 	_duplicate(body, source.elements.first, source.elements.second, 0);
 	_duplicate(material, source.elements.first, source.elements.second, 0);
 
+	if (_nranks.size()) {
+		_nrankdist.reserve(_nrankdist.size() + (source.nodes.second - source.nodes.first));
+		for (size_t i = source.nodes.first; i < source.nodes.second; ++i) {
+			_nrankdist.push_back(_nrankdist.back() + _nrankdist[i + 1] - _nrankdist[i]);
+			for (int r = _nrankdist[i]; r < _nrankdist[i + 1]; ++r) {
+				_nranks.push_back(_nranks[r]);
+			}
+		}
+	}
+
 	auto reg = nregions.begin();
 	for (size_t r = 0; r < nregions.size(); ++r, ++reg) {
 		_duplicate(reg->second, source.nregsize[r].first, source.nregsize[r].second, instance * source.nids);
