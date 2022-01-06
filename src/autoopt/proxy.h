@@ -54,6 +54,7 @@ public:
 		int dimension) const;
 	void writeAlgorithm() const;
 	void writeEvaluation(double evaluation) const;
+	void writeTime(double time) const;
 
 private:
 	const AutoOptimizationConfiguration& m_config;
@@ -69,8 +70,8 @@ public:
 	~OptimizationProxy();
 
 	void setNextConfiguration();
-	void setConfigurationEvaluation(double value);
-	void setConfigurationForbidden();
+	void setConfigurationEvaluation(double value, double realtime);
+	void setConfigurationForbidden(double realtime);
 
 private:
 	std::vector<ECFParameter*> m_params;

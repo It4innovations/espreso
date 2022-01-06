@@ -36,14 +36,18 @@ bool EvolutionaryOptimizer::call(std::function<bool(void)> fnc)
 
 	int g_ret = 0;
 	Communication::allReduce(&l_ret, &g_ret, 1, MPI_INT, MPI_MIN);
+
+	double realtime = end - start;
+	double maxtime = 0;
+	Communication::allReduce(&realtime, &maxtime, 1, MPI_DOUBLE, MPI_MAX);
 	
 	if (!g_ret)
 	{
-		this->m_proxy.setConfigurationForbidden();
+		this->m_proxy.setConfigurationForbidden(maxtime);
 	}
 	else 
 	{
-		this->m_proxy.setConfigurationEvaluation(end - start);
+		this->m_proxy.setConfigurationEvaluation(maxtime, maxtime);
 	}
 
 	return static_cast<bool>(g_ret);

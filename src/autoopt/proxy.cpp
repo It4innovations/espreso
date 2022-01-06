@@ -367,6 +367,23 @@ void OutputManager::writeEvaluation(double evaluation) const
 	}
 }
 
+void OutputManager::writeTime(double time) const
+{
+	std::stringstream ss;
+
+	switch(info::ecf->output.logger) {
+		case OutputConfiguration::LOGGER::USER:
+			ss << time;
+			eslog::solver("     - | AUTOMATIC OPTIMIZATION :: TIME                   %28s | -\n",
+			ss.str().c_str());
+			break;
+		case OutputConfiguration::LOGGER::PARSER:
+		default:
+			ss << "autoopt: time=" << time << "\n";
+			eslog::info(ss.str().c_str());
+	}
+}
+
 OptimizationProxy::OptimizationProxy(
 	std::vector<ECFParameter*>& parameters,
 	const AutoOptimizationConfiguration& configuration
@@ -460,21 +477,20 @@ void OptimizationProxy::setNextConfiguration()
 	}
 }
 
-void OptimizationProxy::setConfigurationEvaluation(double value)
+void OptimizationProxy::setConfigurationEvaluation(double value, double realtime)
 {
-	double maxtime = 0;
-	Communication::reduce(&value, &maxtime, 1, MPI_DOUBLE, MPI_MAX, 0);
-
 	if (info::mpi::rank == 0)
-	{ this->m_alg->evaluateCurrentSpecimen(maxtime); }
+	{ this->m_alg->evaluateCurrentSpecimen(value); }
+	this->m_output.writeTime(realtime);
 }
 
-void OptimizationProxy::setConfigurationForbidden()
+void OptimizationProxy::setConfigurationForbidden(double realtime)
 {
 	if (info::mpi::rank != 0) return;
 
 	this->m_forbiddens.push_back(m_last_conf);
 	this->m_alg->evaluateCurrentSpecimen(std::numeric_limits<double>::max());
+	this->m_output.writeTime(realtime);
 }
 
 bool OptimizationProxy::isForbidden(std::vector<double>& configuration)
