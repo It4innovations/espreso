@@ -160,10 +160,10 @@ void VTKLegacyGeometry::header()
 		if (_pack.distribution[info::mpi::rank] == 0 && _pack.distribution[info::mpi::rank + 1] != 0) {
 			_header.push_back({ _pack, _pack.begin });
 			if (_header.back().format == Format::UNKNOWN) {
-				eslog::error("VTK Legacy parser: file '%s' has unknown VTK file format.\n", _pack.paths[_pack.fileindex].c_str());
+				eslog::error("VTK Legacy parser: file '%s' has unknown VTK file format.\n", _pack.files[_pack.fileindex]->name.c_str());
 			}
 			if (_header.back().dataset == DataSet::UNKNOWN) {
-				eslog::error("VTK Legacy parser: file '%s' unsupported DATASET TYPE.\n", _pack.paths[_pack.fileindex].c_str());
+				eslog::error("VTK Legacy parser: file '%s' unsupported DATASET TYPE.\n", _pack.files[_pack.fileindex]->name.c_str());
 			}
 		}
 	}
@@ -247,7 +247,7 @@ void VTKLegacyGeometry::scanASCII()
 	std::sort(_cells.begin(), _cells.end(), [] (Cells &c1, Cells &c2) { return c1.fileindex < c2.fileindex; });
 	std::sort(_cellTypes.begin(), _cellTypes.end(), [] (CellTypes &t1, CellTypes &t2) { return t1.fileindex < t2.fileindex; });
 
-	std::vector<std::vector<size_t> > offsets(_pack.size());
+	std::vector<std::vector<size_t> > offsets(_pack.files.size());
 	addoffset(offsets, _points, _cells, _cellTypes, _pointData, _cellData);
 	for (size_t i = 0; i < offsets.size(); ++i) {
 		offsets[i].push_back(_pack.files[i]->distribution.back());
@@ -258,11 +258,11 @@ void VTKLegacyGeometry::scanASCII()
 
 void VTKLegacyGeometry::parseASCII(MeshBuilder &mesh, const std::vector<std::string> &names)
 {
-	std::vector<std::vector<double> > points(_pack.size());
-	std::vector<std::vector<esint> > cells(_pack.size()), celltypes(_pack.size());
+	std::vector<std::vector<double> > points(_pack.files.size());
+	std::vector<std::vector<esint> > cells(_pack.files.size()), celltypes(_pack.files.size());
 
-	std::vector<size_t> npoints(_pack.size());
-	std::vector<int> mindim(_pack.size(), 4), maxdim(_pack.size()), _mindim(_pack.size(), 4), _maxdim(_pack.size());
+	std::vector<size_t> npoints(_pack.files.size());
+	std::vector<int> mindim(_pack.files.size(), 4), maxdim(_pack.files.size()), _mindim(_pack.files.size(), 4), _maxdim(_pack.files.size());
 
 	while (_pack.next()) {
 		// only mandatory parts
@@ -279,14 +279,14 @@ void VTKLegacyGeometry::parseASCII(MeshBuilder &mesh, const std::vector<std::str
 		}
 	}
 
-	std::vector<size_t> dummy(_pack.size());
+	std::vector<size_t> dummy(_pack.files.size());
 	Communication::exscan(dummy, npoints);
-	Communication::allReduce(_mindim.data(), mindim.data(), _pack.size(), MPI_INT, MPI_MIN);
-	Communication::allReduce(_maxdim.data(), maxdim.data(), _pack.size(), MPI_INT, MPI_MAX);
+	Communication::allReduce(_mindim.data(), mindim.data(), _pack.files.size(), MPI_INT, MPI_MIN);
+	Communication::allReduce(_maxdim.data(), maxdim.data(), _pack.files.size(), MPI_INT, MPI_MAX);
 
 	while (_pack.next()) {
 		if (mindim[_pack.fileindex] != maxdim[_pack.fileindex]) {
-			eslog::globalerror("VTK Legacy parser: not implemented parsing of a file with various elements dimension: '%s'.\n", _pack.paths[_pack.fileindex].c_str());
+			eslog::globalerror("VTK Legacy parser: not implemented parsing of a file with various elements dimension: '%s'.\n", _pack.files[_pack.fileindex]->name.c_str());
 		}
 	}
 

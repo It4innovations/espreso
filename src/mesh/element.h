@@ -46,9 +46,11 @@ struct Element {
 		PRISMA15, // 13
 		HEXA20, // 14
 
-		NOT_SUPPORTED,
+		POLYGON, // 15
+		POLYHEDRON, // 16
 
-		// number of element types
+		NOT_SUPPORTED, // to be deleted
+
 		SIZE
 	};
 

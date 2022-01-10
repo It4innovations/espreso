@@ -95,6 +95,7 @@ struct TemporalSequentialMesh: TemporalMesh<TNodes, TElements> {};
 
 // sequential
 void initialize(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, TemporalSequentialMesh<ClusteredNodes, ClusteredElements> &clustered, int &dimension);
+void initialize(InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedUniqueFacesRegions> &input, TemporalSequentialMesh<ClusteredNodes, ClusteredElements> &clustered, int &dimension);
 
 
 // balancing
@@ -107,10 +108,12 @@ void computeSFCNeighbors(const HilbertCurve<esfloat> &sfc, const ivector<esint> 
 
 // merging
 void searchDuplicatedNodes(TemporalSequentialMesh<ClusteredNodes, ClusteredElements> &clustered, TemporalSequentialMesh<MergedNodes, ClusteredElements> &merged);
-void searchParentAndDuplicatedElements(TemporalSequentialMesh<MergedNodes, ClusteredElements> &merged, TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, int meshDimension);
+void searchDuplicatedElements(TemporalSequentialMesh<MergedNodes, ClusteredElements> &merged, TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, int meshDimension);
 
 void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, const std::vector<int> &sfcNeighbors, TemporalMesh<ClusteredNodes, ClusteredElements> &clustered, TemporalMesh<MergedNodes, ClusteredElements> &merged);
 void searchParentAndDuplicatedElements(TemporalMesh<LinkedNodes, ClusteredElements> &linked, TemporalMesh<LinkedNodes, MergedElements> &prepared, int meshDimension);
+
+void buildElementsFromFaces();
 
 //linking
 void linkup(TemporalMesh<MergedNodes, ClusteredElements> &merged, TemporalMesh<LinkedNodes, ClusteredElements> &linked);

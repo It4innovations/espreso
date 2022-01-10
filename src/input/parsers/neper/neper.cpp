@@ -20,8 +20,7 @@ void NeperLoader::load()
 	eslog::startln("NEPER PARSER: STARTED", "NEPER PARSER");
 	profiler::syncstart("neper");
 
-	InputFilePack meshfile;
-	meshfile.commitFiles({ _configuration.path });
+	InputFilePack meshfile({ _configuration.path });
 	meshfile.prepare();
 	profiler::synccheckpoint("prepare_reader");
 	eslog::checkpointln("NEPER PARSER: MESH READER PREPARED");
@@ -39,7 +38,6 @@ void NeperLoader::load()
 	body.resize(etype.size());
 	material.resize(etype.size());
 	profiler::synccheckpoint("parse");
-	meshfile.clear();
 	profiler::syncend("neper");
 	eslog::endln("NEPER PARSER: GEOMETRY PARSED");
 }

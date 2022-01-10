@@ -65,8 +65,7 @@ void VTKLegacyLoader::load()
 		eslog::globalerror("VTK PARSER: incorrect path to VTK files: '%s'\n", _configuration.path.c_str());
 	}
 
-	InputFilePack pack;
-	pack.commitFiles(filepaths);
+	InputFilePack pack(filepaths);
 	pack.prepare();
 	profiler::synccheckpoint("prepare_reader");
 	eslog::checkpointln("VTK PARSER: GEOMETRY READER PREPARED");
@@ -85,7 +84,6 @@ void VTKLegacyLoader::load()
 	body.resize(etype.size());
 	material.resize(etype.size());
 	profiler::synccheckpoint("parse");
-	pack.clear();
 	profiler::syncend("vtk_legacy");
 	eslog::endln("VTK PARSER: GEOMETRY PARSED");
 }

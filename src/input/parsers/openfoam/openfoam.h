@@ -1,52 +1,22 @@
 
-#ifndef SRC_INPUT_OPENFOAM_OPENFOAM_H_
-#define SRC_INPUT_OPENFOAM_OPENFOAM_H_
+#ifndef SRC_INPUT_FORMATS_OPENFOAM_OPENFOAM_H_
+#define SRC_INPUT_FORMATS_OPENFOAM_OPENFOAM_H_
 
-#include "input/meshbuilder.h"
-#include "basis/io/inputfile.h"
-
-#include <cstddef>
-#include <string>
-#include <vector>
+#include "input/input.h"
 
 namespace espreso {
 
 class InputConfiguration;
-class Mesh;
-struct OpenFOAMSet;
 
-struct OpenFOAMData: public MeshBuilder {
-	esint nelements;
-	std::vector<esint> fIDs, fsize, fnodes, owner, neighbor;
-};
-
-class OpenFOAMLoader: public OpenFOAMData {
-
+class InputOpenFoam: public Input {
 public:
-	static std::string cellprefix;
-	OpenFOAMLoader(const InputConfiguration &configuration);
-	void load();
+	void load(const InputConfiguration &configuration);
+	void build(Mesh &mesh);
 
 protected:
-	void readData();
-	void parseData();
-
-	void buildFaces();
-
-	void collectFaces();
-	void buildElements();
-
-	const InputConfiguration &_configuration;
-
-	InputFile _points, _faces, _owner, _neighbor, _boundary;
-	InputFile _pointZones, _faceZones, _cellZones;
-
-	std::vector<OpenFOAMSet> _sets;
-	std::vector<esint> _fdist, _edist;
+	InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedUniqueFacesRegions> mesh;
 };
 
 }
 
-
-
-#endif /* SRC_INPUT_OPENFOAM_OPENFOAM_H_ */
+#endif /* SRC_INPUT_FORMATS_OPENFOAM_OPENFOAM_H_ */

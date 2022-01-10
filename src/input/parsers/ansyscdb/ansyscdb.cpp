@@ -16,7 +16,7 @@
 using namespace espreso;
 
 AnsysCDBLoader::AnsysCDBLoader(const InputConfiguration &configuration)
-: _configuration(configuration), _file(32 * MAX_LINE_STEP * MAX_LINE_SIZE, MAX_LINE_STEP * MAX_LINE_SIZE)
+: _configuration(configuration), _file({ _configuration.path }, 32 * MAX_LINE_STEP * MAX_LINE_SIZE, MAX_LINE_STEP * MAX_LINE_SIZE)
 {
 
 }
@@ -26,7 +26,6 @@ void AnsysCDBLoader::load()
 	eslog::startln("ANSYS CDB PARSER: STARTED", "ANSYS CDB PARSER");
 	profiler::syncstart("ansys_cdb");
 
-	_file.commitFiles({ _configuration.path });
 	_file.prepare();
 	profiler::synccheckpoint("prepare_reader");
 	eslog::checkpointln("ANSYS CDB PARSER: READER PREPARED");
@@ -51,7 +50,6 @@ void AnsysCDBLoader::load()
 		std::fill(material.begin(), material.end(), 0);
 	}
 	profiler::synccheckpoint("parse");
-	_file.clear();
 	profiler::syncend("ansys_cdb");
 	eslog::endln("ANSYS CDB PARSER: DATA PARSED");
 }

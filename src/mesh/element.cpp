@@ -730,4 +730,18 @@ template<> void Element::init<Element::CODE::HEXA20>()
 	triangles = new serializededata<int, int>(3, tringles);
 }
 
+template<> void Element::init<Element::CODE::POLYGON>()
+{
+	type = Element::TYPE::PLANE;
+	code = Element::CODE::POLYGON;
+	dimension = 2;
+}
+
+template<> void Element::init<Element::CODE::POLYHEDRON>()
+{
+	type = Element::TYPE::VOLUME;
+	code = Element::CODE::POLYHEDRON;
+	dimension = 3;
+}
+
 }

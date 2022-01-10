@@ -9,6 +9,7 @@ namespace espreso {
 namespace builder {
 
 void build(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, Mesh &mesh);
+void build(InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedUniqueFacesRegions> &input, Mesh &mesh);
 
 }
 }

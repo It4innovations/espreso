@@ -14,40 +14,79 @@ struct MPISubset;
 struct MPIGroup;
 
 struct InputFile {
-	friend class InputFilePack;
+	friend class FilePack;
+	static size_t size(const std::string &file);
 
-	InputFile();
+	InputFile(const std::string &name);
+	~InputFile();
+
+	void swap(InputFile *other)
+	{
+		std::swap(begin, other->begin);
+		std::swap(end, other->end);
+		std::swap(hardend, other->hardend);
+		data.swap(other->data);
+		distribution.swap(other->distribution);
+		std::swap(totalSize, other->totalSize);
+		name.swap(other->name);
+		std::swap(maxchunk, other->maxchunk);
+		std::swap(loader, other->loader);
+	}
+
+	void setDistribution(const std::vector<size_t> &distribution);
 
 	const char *begin, *end, *hardend;
 	std::vector<char, initless_allocator<char> > data;
 	std::vector<size_t> distribution;
 
+	size_t totalSize;
+	std::string name;
 protected:
+	InputFile();
+
 	size_t maxchunk;
+	Loader* loader;
 };
 
 struct Metadata: public InputFile {
 
+	Metadata(const std::string &name): InputFile(name) {}
+
 	void read(const std::string &filename);
 };
 
-struct InputFilePack: public InputFile {
-	InputFilePack(size_t minchunk = 64 * 1024, size_t overlap = 1024);
-	~InputFilePack();
+struct FilePack: public InputFile {
+	FilePack();
+	FilePack(const std::vector<std::string> &filepaths);
+	~FilePack();
 
-	size_t size() { return files.size(); }
-
-	void commitFiles(const std::vector<std::string> &filepaths);
+	InputFile* add(const std::string &name);
 	bool next();
+
+	void setTotalSizes();
+
+	size_t fileindex;
+	std::vector<InputFile*> files;
+};
+
+struct InputFilePack: public FilePack {
+	InputFilePack(size_t minchunk = 64 * 1024, size_t overlap = 1024);
+	InputFilePack(const std::vector<std::string> &filepaths, size_t minchunk = 64 * 1024, size_t overlap = 1024);
 
 	void prepare();
 	void read();
-	void clear();
 
-	size_t fileindex;
 	size_t minchunk, overlap;
-	std::vector<std::string> paths;
-	std::vector<InputFile*> files;
+};
+
+struct AsyncFilePack: public FilePack {
+	AsyncFilePack();
+	AsyncFilePack(const std::vector<std::string> &filepaths);
+
+	void iread();
+	void wait();
+
+	const size_t overlap = 0; // find better value
 };
 
 }

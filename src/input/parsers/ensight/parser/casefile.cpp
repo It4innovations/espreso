@@ -21,8 +21,7 @@ EnsightCasefile::EnsightCasefile(const std::string &path)
 void EnsightCasefile::parse()
 {
 	// currently read only geometry
-	Metadata casefile;
-	casefile.read(path);
+	Metadata casefile(path);
 
 	bool ingeometry = false, invariable = false, intime = false;
 	size_t timesteps = 0, timeset = 0;

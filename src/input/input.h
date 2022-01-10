@@ -4,6 +4,7 @@
 
 #include "basis/containers/allocators.h"
 #include "basis/containers/point.h"
+#include "basis/io/inputfile.h"
 #include "mesh/element.h"
 
 #include <string>
@@ -22,6 +23,10 @@ public:
 	virtual ~Input() {}
 };
 
+struct AsyncParameters {
+	AsyncFilePack files;
+};
+
 // offset -> index to vector of data
 struct DatabaseOffset {
 	esint global;
@@ -30,15 +35,33 @@ struct DatabaseOffset {
 	bool operator<(const DatabaseOffset &other) { return global < other.global; }
 };
 
+struct OrderedUniqueNodes {
+	ivector<_Point<esfloat> > coordinates;
+};
+
+struct OrderedUniqueElements {
+	ivector<Element::CODE> etype;
+	ivector<esint> enodes;
+};
+
+struct OrderedUniqueFaces {
+	ivector<Element::CODE> etype;
+	ivector<esint> enodes;
+};
+
+struct OrderedUniqueFacesRegions: AsyncParameters {
+	ivector<esint> owner, neighbor;
+};
+
 struct OrderedNodes {
 	std::vector<DatabaseOffset> offsets;
-	std::vector<_Point<esfloat>, initless_allocator<_Point<esfloat> > > coordinates;
+	ivector<_Point<esfloat> > coordinates;
 };
 
 struct OrderedElements {
 	std::vector<DatabaseOffset> offsets;
-	std::vector<Element::CODE, initless_allocator<Element::CODE> > etype;
-	std::vector<esint, initless_allocator<esint> > enodes;
+	ivector<Element::CODE> etype;
+	ivector<esint> enodes;
 };
 
 struct OrderedRegions {

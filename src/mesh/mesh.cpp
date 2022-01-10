@@ -118,7 +118,7 @@ void Mesh::load()
 	case ECF::INPUT_TYPE::EXTERNAL_FILE:
 		switch (info::ecf->input.format) {
 //		case InputConfiguration::FORMAT::ANSYS_CDB:  input = new AnsysCDBLoader     (info::ecf->input); break;
-//		case InputConfiguration::FORMAT::OPENFOAM:   input = new OpenFOAMLoader     (info::ecf->input); break;
+		case InputConfiguration::FORMAT::OPENFOAM: input = new InputOpenFoam(); break;
 //		case InputConfiguration::FORMAT::ABAQUS:     input = new AbaqusLoader       (info::ecf->input); break;
 //		case InputConfiguration::FORMAT::XDMF:       input = new XDMFLoader         (info::ecf->input); break;
 		case InputConfiguration::FORMAT::ENSIGHT: input = new InputEnsight(); break;

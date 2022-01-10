@@ -336,7 +336,7 @@ void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, const ivector<esint
 	clustered.clear();
 }
 
-void searchParentAndDuplicatedElements(TemporalSequentialMesh<MergedNodes, ClusteredElements> &merged, TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, int meshDimension)
+void searchDuplicatedElements(TemporalSequentialMesh<MergedNodes, ClusteredElements> &merged, TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, int meshDimension)
 {
 	{ // build nodes
 		ivector<esint> usedNodes(merged.nodes->offsets.size());
@@ -803,6 +803,11 @@ void searchParentAndDuplicatedElements(TemporalMesh<LinkedNodes, ClusteredElemen
 		}
 	}
 	linked.clear();
+}
+
+void buildElementsFromFaces()
+{
+
 }
 
 }

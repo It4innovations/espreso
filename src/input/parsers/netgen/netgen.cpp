@@ -21,8 +21,7 @@ void NetgenNeutralLoader::load()
 	eslog::startln("NETGEN PARSER: STARTED", "NETGEN PARSER");
 	profiler::syncstart("netgen");
 
-	InputFilePack meshfile;
-	meshfile.commitFiles({ _configuration.path });
+	InputFilePack meshfile({ _configuration.path });
 	meshfile.prepare();
 	profiler::synccheckpoint("prepare_reader");
 	eslog::checkpointln("NETGEN PARSER: MESH READER PREPARED");
@@ -40,7 +39,6 @@ void NetgenNeutralLoader::load()
 	body.resize(etype.size());
 	material.resize(etype.size());
 	profiler::synccheckpoint("parse");
-	meshfile.clear();
 	profiler::syncend("netgen");
 	eslog::endln("NETGEN PARSER: GEOMETRY PARSED");
 }

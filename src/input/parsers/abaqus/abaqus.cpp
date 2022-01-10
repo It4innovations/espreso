@@ -25,7 +25,7 @@
 using namespace espreso;
 
 AbaqusLoader::AbaqusLoader(const InputConfiguration &configuration)
-: _configuration(configuration), _pfile(32 * MAX_LINE_STEP * MAX_LINE_SIZE, MAX_LINE_STEP * MAX_LINE_SIZE)
+: _configuration(configuration), _pfile({ _configuration.path }, 32 * MAX_LINE_STEP * MAX_LINE_SIZE, MAX_LINE_STEP * MAX_LINE_SIZE)
 {
 
 }
@@ -36,7 +36,6 @@ void AbaqusLoader::load()
 	eslog::param("database", _configuration.path.c_str());
 	eslog::ln();
 
-	_pfile.commitFiles({ _configuration.path });
 	_pfile.prepare();
 	eslog::checkpointln("ABAQUS: READING PREPARED");
 
@@ -55,7 +54,6 @@ void AbaqusLoader::load()
 	if (!_configuration.keep_material_sets) {
 		std::fill(material.begin(), material.end(), 0);
 	}
-	_pfile.clear();
 	eslog::endln("ABAQUS: DATA PARSED");
 }
 

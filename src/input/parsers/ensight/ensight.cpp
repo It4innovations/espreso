@@ -22,8 +22,7 @@ void InputEnsight::load(const InputConfiguration &configuration)
 	profiler::synccheckpoint("casefile");
 	eslog::checkpointln("ENSIGHT PARSER: CASEFILE READ");
 
-	InputFilePack geofile;
-	geofile.commitFiles({ casefile.geometry });
+	InputFilePack geofile({ casefile.geometry });
 	geofile.prepare();
 	profiler::synccheckpoint("prepare_reader");
 	eslog::checkpointln("ENSIGHT PARSER: GEOMETRY READER PREPARED");
@@ -60,8 +59,7 @@ void InputEnsight::load(const InputConfiguration &configuration)
 		}
 	}
 
-	InputFilePack datafiles;
-	datafiles.commitFiles(files);
+	InputFilePack datafiles(files);
 
 	datafiles.prepare();
 	profiler::synccheckpoint("prepare_variables");
