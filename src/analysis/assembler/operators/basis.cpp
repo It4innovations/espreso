@@ -99,11 +99,11 @@ template<> void fill<Element::CODE::LINE2>(size_t gps, double *N, double *dN, do
 		for (size_t gp = 0; gp < gps; gp++) {
 			w[gp] = 1;
 
-			N[gp * nodes + 0] = (1 + s[gp]) * 0.5;
-			N[gp * nodes + 1] = (1 - s[gp]) * 0.5;
+			N[gp * nodes + 0] = (1 - s[gp]) * 0.5;
+			N[gp * nodes + 1] = (1 + s[gp]) * 0.5;
 
-			dN[gp * nodes + 0] =  0.5;
-			dN[gp * nodes + 1] = -0.5;
+			dN[gp * nodes + 0] = -0.5;
+			dN[gp * nodes + 1] =  0.5;
 		}
 	} break;
 	}
