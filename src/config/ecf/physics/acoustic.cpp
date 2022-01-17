@@ -63,6 +63,13 @@ AcousticLoadStepConfiguration::AcousticLoadStepConfiguration(DIMENSION *D)
 			.setdynamic(),
 			ECFExpression::Scope::BGPS);
 
+	REGISTER(acceleration, ECFMetaData()
+			.setdescription({ "The name of a region.", "Acceleration" })
+			.setdatatype({ ECFDataType::BOUNDARY_REGION })
+			.setpattern({ "MY_REGION" })
+			.setdynamic(),
+			D, ECFExpression::Scope::BGPS);
+
 	REGISTER(impedance, ECFMetaData()
 			.setdescription({ "The name of a region.", "Impedance" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
