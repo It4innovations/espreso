@@ -45,11 +45,9 @@ struct OrderedUniqueElements {
 };
 
 struct OrderedUniqueFaces {
+	esint elements;
 	ivector<Element::CODE> etype;
 	ivector<esint> enodes;
-};
-
-struct OrderedUniqueFacesRegions: AsyncParameters {
 	ivector<esint> owner, neighbor;
 };
 

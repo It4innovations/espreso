@@ -8,11 +8,13 @@
 
 namespace espreso {
 
-struct OpenFOAMLabelList: FoamFile, FoamFileDistribution {
+struct OpenFOAMLabelList: FoamFile, RawFoamFile {
 
-	void scan(InputFile *file)
+	OpenFOAMLabelList(InputFile *input): RawFoamFile(input) {}
+
+	void scan()
 	{
-		FoamFile::scan(file, *this);
+		scanFile(*this);
 	}
 
 	void parse(ivector<esint> &list);

@@ -4,6 +4,8 @@
 
 #include "basis/io/inputfile.h"
 
+#include "mpi.h"
+
 namespace espreso {
 
 #define MAX_CHAR_LENGTH 256L
@@ -40,16 +42,22 @@ struct FoamFileHeader {
 	}
 };
 
-struct FoamFileDistribution {
+struct RawFoamFile {
 	struct Distribution { size_t offset, size; const char *c; };
+
+	RawFoamFile(InputFile *input): input(input) {}
+
 	std::vector<Distribution> distribution;
+	InputFile *input;
 };
 
 struct FoamFile {
 	FoamFileHeader header;
 	size_t size = 0, begin = 0, end = 0;
 
-	void scan(InputFile *file, FoamFileDistribution &distribution);
+	static void init();
+	static void synchronize(const std::vector<FoamFile*> &files);
+	static void finish();
 
 	FoamFile& operator^=(const FoamFile &other) // used in MPI Reduce function
 	{
@@ -59,6 +67,13 @@ struct FoamFile {
 		end = std::max(end, other.end);
 		return *this;
 	}
+
+protected:
+	void scanFile(RawFoamFile &file);
+
+private:
+	static MPI_Datatype oftype;
+	static MPI_Op ofop;
 };
 
 }

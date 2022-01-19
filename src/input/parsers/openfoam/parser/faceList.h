@@ -9,11 +9,13 @@
 
 namespace espreso {
 
-struct OpenFOAMFaceList: FoamFile, FoamFileDistribution {
+struct OpenFOAMFaceList: FoamFile, RawFoamFile {
 
-	void scan(InputFile *file)
+	OpenFOAMFaceList(InputFile *input): RawFoamFile(input) {}
+
+	void scan()
 	{
-		FoamFile::scan(file, *this);
+		scanFile(*this);
 	}
 
 	void parse(ivector<Element::CODE> &type, ivector<esint> &enodes);

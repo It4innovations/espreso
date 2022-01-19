@@ -10,11 +10,14 @@ class InputConfiguration;
 
 class InputOpenFoam: public Input {
 public:
+	InputOpenFoam();
+	~InputOpenFoam();
+
 	void load(const InputConfiguration &configuration);
 	void build(Mesh &mesh);
 
 protected:
-	InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedUniqueFacesRegions> mesh;
+	InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> mesh;
 };
 
 }

@@ -9,11 +9,13 @@
 
 namespace espreso {
 
-struct OpenFOAMVectorField: FoamFile, FoamFileDistribution {
+struct OpenFOAMVectorField: FoamFile, RawFoamFile {
 
-	void scan(InputFile *file)
+	OpenFOAMVectorField(InputFile *input): RawFoamFile(input) {}
+
+	void scan()
 	{
-		FoamFile::scan(file, *this);
+		scanFile(*this);
 	}
 
 	void parse(ivector<_Point<esfloat> > &coordinates);

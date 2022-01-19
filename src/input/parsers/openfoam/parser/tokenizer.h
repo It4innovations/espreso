@@ -27,6 +27,12 @@ const char* toEmpty(const char* c)
 	return c;
 }
 
+const char* toEnd(const char* c)
+{
+	while (*c++ != ';');
+	return c;
+}
+
 const char* toFoamFile(const char* c)
 {
 	while (true) {
@@ -45,7 +51,7 @@ dictionary dict(const char* c)
 	dict.keyword.begin = toNonEmpty(c);
 	dict.keyword.end = toEmpty(dict.keyword.begin);
 	dict.value.begin = toNonEmpty(dict.keyword.end);
-	dict.value.end = toEmpty(dict.value.begin);
+	dict.value.end = toEnd(dict.value.begin);
 	return dict;
 }
 

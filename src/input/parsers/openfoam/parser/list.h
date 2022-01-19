@@ -8,11 +8,13 @@
 
 namespace espreso {
 
-class OpenFOAMList: FoamFile, FoamFileDistribution {
+class OpenFOAMList: FoamFile, RawFoamFile {
 
-	void scan(InputFile *file)
+	OpenFOAMList(InputFile *input): RawFoamFile(input) {}
+
+	void scan()
 	{
-		FoamFile::scan(file, *this);
+		scanFile(*this);
 	}
 
 	void parse(ivector<esint> &list);
