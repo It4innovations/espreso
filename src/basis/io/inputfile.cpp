@@ -15,15 +15,15 @@ using namespace espreso;
 
 InputFile::InputFile()
 : begin(nullptr), end(nullptr), hardend(nullptr),
-  totalSize(0), name{},
+  overlap(0), totalSize(0), name{},
   maxchunk(0), loader(nullptr)
 {
 
 }
 
-InputFile::InputFile(const std::string &name)
+InputFile::InputFile(const std::string &name, size_t overlap)
 : begin(nullptr), end(nullptr), hardend(nullptr),
-  totalSize(0), name(name),
+  overlap(overlap), totalSize(0), name(name),
   maxchunk(0), loader(nullptr)
 {
 
@@ -48,22 +48,22 @@ void InputFile::setDistribution(const std::vector<size_t> &distribution)
 {
 	this->distribution = distribution;
 	this->distribution.back() = totalSize;
-	data.reserve(this->distribution[info::mpi::rank + MPITools::subset->within.size] - this->distribution[info::mpi::rank] + 1000);
+	data.reserve(this->distribution[info::mpi::rank + MPITools::subset->within.size] - this->distribution[info::mpi::rank] + overlap);
 	data.resize(this->distribution[info::mpi::rank + MPITools::subset->within.size] - this->distribution[info::mpi::rank]);
-	data.resize(this->distribution[info::mpi::rank + MPITools::subset->within.size] - this->distribution[info::mpi::rank] + 1000, 0);
+	data.resize(this->distribution[info::mpi::rank + MPITools::subset->within.size] - this->distribution[info::mpi::rank] + overlap, 0);
 }
 
-FilePack::FilePack()
-: fileindex(-1)
+FilePack::FilePack(size_t minchunk, size_t overlap)
+: minchunk(minchunk), overlap(overlap), fileindex(-1)
 {
 
 }
 
-FilePack::FilePack(const std::vector<std::string> &filepaths)
-: fileindex(-1)
+FilePack::FilePack(const std::vector<std::string> &filepaths, size_t minchunk, size_t overlap)
+: minchunk(minchunk), overlap(overlap), fileindex(-1)
 {
 	for (size_t i = 0; i < filepaths.size(); ++i) {
-		files.push_back(new InputFile(filepaths[i]));
+		files.push_back(new InputFile(filepaths[i], overlap));
 	}
 }
 
@@ -77,7 +77,7 @@ FilePack::~FilePack()
 
 InputFile* FilePack::add(const std::string &name)
 {
-	files.push_back(new InputFile(name));
+	files.push_back(new InputFile(name, overlap));
 	return files.back();
 }
 
@@ -109,13 +109,13 @@ void FilePack::setTotalSizes()
 }
 
 InputFilePack::InputFilePack(size_t minchunk, size_t overlap)
-: minchunk(minchunk), overlap(overlap)
+: FilePack(minchunk, overlap)
 {
 
 }
 
 InputFilePack::InputFilePack(const std::vector<std::string> &filepaths, size_t minchunk, size_t overlap)
-: FilePack(filepaths), minchunk(minchunk), overlap(overlap)
+: FilePack(filepaths, minchunk, overlap)
 {
 
 }
@@ -316,19 +316,21 @@ void InputFilePack::read()
 	eslog::endln("READER: ALIGNED");
 }
 
-AsyncFilePack::AsyncFilePack()
+AsyncFilePack::AsyncFilePack(size_t overlap)
+: FilePack(0, overlap)
 {
 
 }
 
-AsyncFilePack::AsyncFilePack(const std::vector<std::string> &filepaths)
-: FilePack(filepaths)
+AsyncFilePack::AsyncFilePack(const std::vector<std::string> &filepaths, size_t overlap)
+: FilePack(filepaths, 0, overlap)
 {
 
 }
 
-void AsyncFilePack::iread()
+void AsyncFilePack::iread(std::function<void(void)> callback)
 {
+	this->callback = callback;
 	while (next()) {
 		size_t chunkoffset = distribution[info::mpi::rank];
 		size_t chunksize = distribution[std::min(info::mpi::rank + MPITools::subset->within.size, info::mpi::size)] - chunkoffset;
@@ -344,6 +346,9 @@ void AsyncFilePack::iread()
 		if (chunksize) {
 			if (loader->open(*MPITools::procs, name)) {
 				eslog::error("LOADER: cannot read file '%s'\n", name.c_str());
+			}
+			if (chunks > 1) {
+				eslog::error("LOADER: implement non-blocking multi-chunks reader\n");
 			}
 			for (size_t c = 0; c < chunks; ++c) {
 				size_t size = std::min(chunkmax, data.size() - overlap - c * chunkmax);
@@ -365,16 +370,31 @@ void AsyncFilePack::wait()
 	while (next()) {
 		loader->wait(); // waitall??
 	}
+
+	// overlap data
+	std::vector<char, initless_allocator<char> > sBuffer(files.size() * overlap), rBuffer(files.size() * overlap);
+	while (next()) {
+		memcpy(sBuffer.data() + fileindex * overlap, data.data(), overlap);
+	}
+	Communication::receiveUpper(sBuffer, rBuffer);
+	while (next()) {
+		if (info::mpi::rank + 1 != info::mpi::size) {
+			memcpy(data.data() + data.size() - overlap, rBuffer.data() + fileindex * overlap, overlap);
+		}
+	}
+
+	callback();
+	callback = [] () {};
 }
 
-void Metadata::read(const std::string &filename)
+void Metadata::read()
 {
 	profiler::syncstart("metadata_read");
 	distribution.resize(2);
 	if (info::mpi::rank == 0) {
 		POSIXLoader loader;
-		if (loader.open(MPITools::singleton->across, filename)) {
-			eslog::error("MESIO error: cannot load metadata file '%s'\n", filename.c_str());
+		if (loader.open(MPITools::singleton->across, name)) {
+			eslog::error("MESIO error: cannot load metadata file '%s'\n", name.c_str());
 		}
 		distribution = { 0, loader.size() };
 		data.resize(distribution.back());

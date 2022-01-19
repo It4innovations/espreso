@@ -6,6 +6,7 @@
 
 #include <string>
 #include <vector>
+#include <functional>
 
 namespace espreso {
 
@@ -17,7 +18,7 @@ struct InputFile {
 	friend class FilePack;
 	static size_t size(const std::string &file);
 
-	InputFile(const std::string &name);
+	InputFile(const std::string &name, size_t overlap);
 	~InputFile();
 
 	void swap(InputFile *other)
@@ -39,7 +40,7 @@ struct InputFile {
 	std::vector<char, initless_allocator<char> > data;
 	std::vector<size_t> distribution;
 
-	size_t totalSize;
+	size_t overlap, totalSize;
 	std::string name;
 protected:
 	InputFile();
@@ -50,14 +51,14 @@ protected:
 
 struct Metadata: public InputFile {
 
-	Metadata(const std::string &name): InputFile(name) {}
+	Metadata(const std::string &name): InputFile(name, 0) { read(); }
 
-	void read(const std::string &filename);
+	void read();
 };
 
 struct FilePack: public InputFile {
-	FilePack();
-	FilePack(const std::vector<std::string> &filepaths);
+	FilePack(size_t minchunk, size_t overlap);
+	FilePack(const std::vector<std::string> &filepaths, size_t minchunk, size_t overlap);
 	~FilePack();
 
 	InputFile* add(const std::string &name);
@@ -65,6 +66,7 @@ struct FilePack: public InputFile {
 
 	void setTotalSizes();
 
+	const size_t minchunk, overlap;
 	size_t fileindex;
 	std::vector<InputFile*> files;
 };
@@ -75,18 +77,16 @@ struct InputFilePack: public FilePack {
 
 	void prepare();
 	void read();
-
-	size_t minchunk, overlap;
 };
 
 struct AsyncFilePack: public FilePack {
-	AsyncFilePack();
-	AsyncFilePack(const std::vector<std::string> &filepaths);
+	AsyncFilePack(size_t overlap = 1024);
+	AsyncFilePack(const std::vector<std::string> &filepaths, size_t overlap = 1024);
 
-	void iread();
+	void iread(std::function<void(void)> callback);
 	void wait();
 
-	const size_t overlap = 0; // find better value
+	std::function<void(void)> callback;
 };
 
 }

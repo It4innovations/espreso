@@ -57,7 +57,7 @@ protected:
 };
 
 struct MPILoader: public Loader {
-	MPILoader(): MPIfile(nullptr), request(nullptr) {}
+	MPILoader(): MPIfile(nullptr), request(nullptr), waiting{false} {}
 	~MPILoader() { if (MPIfile) MPI_File_close(&MPIfile); }
 
 	int open(MPIGroup &group, const std::string &file)
@@ -80,20 +80,25 @@ struct MPILoader: public Loader {
 	void iread(char *data, size_t offset, size_t size)
 	{
 		MPI_File_iread_at(MPIfile, offset, data, size, MPI_BYTE, &request);
+		waiting = true;
 	}
 
 	void wait()
 	{
-		MPI_Wait(&request, MPI_STATUS_IGNORE);
+		if (waiting) {
+			MPI_Wait(&request, MPI_STATUS_IGNORE);
+			waiting = false;
+		}
 	}
 
 protected:
 	MPI_File MPIfile;
 	MPI_Request request;
+	bool waiting;
 };
 
 struct MPICollectiveLoader: public Loader {
-	MPICollectiveLoader(): MPIfile(nullptr), request(nullptr) {}
+	MPICollectiveLoader(): MPIfile(nullptr), request(nullptr), waiting{false} {}
 	~MPICollectiveLoader() { if (MPIfile) MPI_File_close(&MPIfile); }
 
 	int open(MPIGroup &group, const std::string &file)
@@ -116,16 +121,21 @@ struct MPICollectiveLoader: public Loader {
 	void iread(char *data, size_t offset, size_t size)
 	{
 		MPI_File_iread_at_all(MPIfile, offset, data, size, MPI_BYTE, &request);
+		waiting = true;
 	}
 
 	void wait()
 	{
-		MPI_Wait(&request, MPI_STATUS_IGNORE);
+		if (waiting) {
+			MPI_Wait(&request, MPI_STATUS_IGNORE);
+			waiting = false;
+		}
 	}
 
 protected:
 	MPI_File MPIfile;
 	MPI_Request request;
+	bool waiting;
 };
 
 }
