@@ -7,10 +7,11 @@
 #include "basis/utilities/packing.h"
 #include "basis/utilities/utils.h"
 #include "esinfo/ecfinfo.h"
-#include "esinfo/eslog.h"
+#include "esinfo/eslog.hpp"
 #include "esinfo/envinfo.h"
 #include "wrappers/mpi/communication.h"
 
+#include <array>
 #include <functional>
 #include <algorithm>
 #include <numeric>
@@ -141,7 +142,7 @@ static void localSearch(MergedNodes *merged)
 	std::sort(merged->duplication.begin(), merged->duplication.end());
 }
 
-void searchDuplicatedNodes(TemporalSequentialMesh<ClusteredNodes, ClusteredElements> &clustered, TemporalSequentialMesh<MergedNodes, ClusteredElements> &merged)
+void searchDuplicatedNodes(const TemporalSequentialMesh<ClusteredNodes, ClusteredElements> &clustered, const TemporalSequentialMesh<MergedNodes, ClusteredElements> &merged)
 {
 	if (info::mpi::size != 1) {
 		eslog::internalFailure("usage of a sequential method during a parallel run.\n");
@@ -150,13 +151,14 @@ void searchDuplicatedNodes(TemporalSequentialMesh<ClusteredNodes, ClusteredEleme
 	merged.nodes->offsets.swap(clustered.nodes->offsets);
 	localSearch(merged.nodes);
 
-	delete merged.elements;
-	merged.elements = clustered.elements;
-	clustered.elements = nullptr;
-	clustered.clear();
+	merged.elements->offsets.swap(clustered.elements->offsets);
+	merged.elements->etype.swap(clustered.elements->etype);
+	merged.elements->edist.swap(clustered.elements->edist);
+	merged.elements->enodes.swap(clustered.elements->enodes);
+	utils::clearVectors(clustered.elements->etype, clustered.elements->enodes, clustered.elements->edist, clustered.elements->offsets);
 }
 
-void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, const std::vector<int> &sfcNeighbors, TemporalMesh<ClusteredNodes, ClusteredElements> &clustered, TemporalMesh<MergedNodes, ClusteredElements> &merged)
+void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, const std::vector<int> &sfcNeighbors, const TemporalMesh<ClusteredNodes, ClusteredElements> &clustered, const TemporalMesh<MergedNodes, ClusteredElements> &merged)
 {
 	std::vector<esint> cdistribution = tarray<esint>::distribute(info::env::OMP_NUM_THREADS, clustered.nodes->offsets.size());
 
@@ -330,13 +332,14 @@ void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, const ivector<esint
 
 	localSearch(merged.nodes);
 
-	delete merged.elements;
-	merged.elements = clustered.elements;
-	clustered.elements = nullptr;
-	clustered.clear();
+	merged.elements->offsets.swap(clustered.elements->offsets);
+	merged.elements->etype.swap(clustered.elements->etype);
+	merged.elements->edist.swap(clustered.elements->edist);
+	merged.elements->enodes.swap(clustered.elements->enodes);
+	utils::clearVectors(clustered.elements->etype, clustered.elements->enodes, clustered.elements->edist, clustered.elements->offsets);
 }
 
-void searchDuplicatedElements(TemporalSequentialMesh<MergedNodes, ClusteredElements> &merged, TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, int meshDimension)
+void searchDuplicatedElements(const TemporalSequentialMesh<MergedNodes, ClusteredElements> &merged, const TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, int meshDimension)
 {
 	{ // build nodes
 		ivector<esint> usedNodes(merged.nodes->offsets.size());
@@ -459,10 +462,11 @@ void searchDuplicatedElements(TemporalSequentialMesh<MergedNodes, ClusteredEleme
 		prepared.elements->enodes.resize(enodes);
 	}
 
-	merged.clear();
+	utils::clearVectors(merged.nodes->coordinates, merged.nodes->duplication, merged.nodes->offsets);
+	utils::clearVectors(merged.elements->etype, merged.elements->enodes, merged.elements->edist, merged.elements->offsets);
 }
 
-void searchParentAndDuplicatedElements(TemporalMesh<LinkedNodes, ClusteredElements> &linked, TemporalMesh<LinkedNodes, MergedElements> &prepared, int meshDimension)
+void searchParentAndDuplicatedElements(const TemporalMesh<LinkedNodes, ClusteredElements> &linked, const TemporalMesh<LinkedNodes, MergedElements> &prepared, int meshDimension)
 {
 	// duplicate boundary is adept to duplication only
 	std::unordered_set<esint> duplicateBoundary, duplicateElement;
@@ -802,12 +806,195 @@ void searchParentAndDuplicatedElements(TemporalMesh<LinkedNodes, ClusteredElemen
 			}
 		}
 	}
-	linked.clear();
+	utils::clearVectors(linked.nodes->coordinates, linked.nodes->offsets, linked.nodes->duplication, linked.nodes->rankData, linked.nodes->rankDistribution, linked.nodes->neighbors);
+	utils::clearVectors(linked.elements->offsets, linked.elements->etype, linked.elements->enodes, linked.elements->edist);
 }
 
-void buildElementsFromFaces()
+void reindexToLocal(const TemporalMesh<LinkedNodes, MergedElements> &linked)
 {
+	for (size_t n = 0; n < linked.elements->enodes.size(); ++n) {
+		linked.elements->enodes[n] = linked.nodes->g2l[linked.elements->enodes[n]];
+	}
+}
 
+struct __element_builder__ {
+		const ivector<esint> &nodes, &dist, &owner, &neighbor;
+
+		__element_builder__(OrderedFacesBalanced &faces, ivector<esint> &opermutation, ivector<esint> &npermutation, esint e)
+		: nodes(faces.enodes), dist(faces.edist), owner(faces.owner), neighbor(faces.neighbor),
+		  it(owner, neighbor, opermutation, npermutation, e) { }
+
+		struct __element__ {
+			int triangles = 0, squares = 0, others = 0;
+
+			void add(const esint &nodes)
+			{
+				switch (nodes) {
+				case 3: ++triangles; break;
+				case 4: ++squares; break;
+				default: ++others;
+				}
+			}
+
+			Element::CODE code()
+			{
+				if (triangles == 4 && squares == 0 && others == 0) { return Element::CODE::TETRA4; }
+				if (triangles == 4 && squares == 1 && others == 0) { return Element::CODE::PYRAMID5; }
+				if (triangles == 2 && squares == 3 && others == 0) { return Element::CODE::PRISMA6; }
+				if (triangles == 0 && squares == 6 && others == 0) { return Element::CODE::HEXA8; }
+				return Element::CODE::NOT_SUPPORTED;
+			}
+		} element;
+
+		struct __eiterator__ {
+			ivector<esint>::iterator obegin, oend, nbegin, nend, olast, nlast;
+
+			__eiterator__(const ivector<esint> &owner, const ivector<esint> &neighbor, ivector<esint> &opermutation, ivector<esint> &npermutation, esint e)
+			{
+				obegin = oend = std::lower_bound(opermutation.begin(), opermutation.end(), e, [&owner] (const esint &p, const esint &e) { return owner[p] < e; });
+				nbegin = nend = std::lower_bound(npermutation.begin(), npermutation.end(), e, [&neighbor] (const esint &p, const esint &e) { return neighbor[p] < e; });
+				olast = opermutation.end();
+				nlast = npermutation.end();
+			}
+
+			void next()
+			{
+				obegin = oend;
+				nbegin = nend;
+			}
+
+			void remove(ivector<esint>::iterator &begin, ivector<esint>::iterator &it)
+			{
+				std::swap(*begin , *it);
+				++begin;
+			}
+		} it;
+
+		void count(const esint &e)
+		{
+			element.triangles = element.squares = element.others = 0;
+			while (it.oend != it.olast && owner[*it.oend] == e) { element.add(dist[*it.oend + 1] - dist[*it.oend]); ++it.oend; }
+			while (it.nend != it.nlast && neighbor[*it.nend] == e) { element.add(dist[*it.nend + 1] - dist[*it.nend]); ++it.nend; }
+		}
+
+		template <int N>
+		bool check(const esint *face, const std::array<esint*, N> &nodes)
+		{
+			for (int i = 0; i < N; ++i) {
+				if (face[i] == *nodes[0] && face[(i + 1) % N] == *nodes[1]) {
+					for (int j = 2; j < N; ++j) { *nodes[j] = face[(i + j) % N]; } return true;
+				}
+				if (face[i] == *nodes[0] && face[(i + N - 1) % N] == *nodes[1]) {
+					for (int j = 2; j < N; ++j) { *nodes[j] = face[(i - j + N) % N]; } return true;
+				}
+			}
+			return false;
+		}
+
+		template <int N>
+		void finish(const std::array<esint*, N> &nodes)
+		{
+			for (auto ii = it.obegin; ii != it.oend; ++ii) {
+				if (dist[*ii + 1] - dist[*ii] == N && check<N>(this->nodes.data() + dist[*ii], nodes)) {
+					it.remove(it.obegin, ii); return;
+				}
+			}
+			for (auto ii = it.nbegin; ii != it.nend; ++ii) {
+				if (dist[*ii + 1] - dist[*ii] == N && check<N>(this->nodes.data() + dist[*ii], nodes)) {
+					it.remove(it.nbegin, ii); return;
+				}
+			}
+		}
+
+		template <int N>
+		void pushFirst(const std::array<esint*, N> &nodes)
+		{
+			if (it.obegin != it.oend) {
+				for (int i = 0; i < N; ++i) { *nodes[i] = this->nodes[dist[*it.obegin] + N - i - 1]; }
+				++it.obegin;
+			} else {
+				for (int i = 0; i < N; ++i) { *nodes[i] = this->nodes[dist[*it.nbegin] + i]; }
+				++it.nbegin;
+			}
+		}
+	};
+
+static void buildElements(OrderedFacesBalanced *faces, OrderedElementsBalanced *elements)
+{
+	std::vector<esint> edistribution = tarray<esint>::distribute(info::env::OMP_NUM_THREADS, faces->owner.size());
+
+	ivector<esint> opermutation(faces->owner.size()), npermutation(faces->neighbor.size());
+	std::iota(opermutation.begin(), opermutation.end(), 0);
+	std::sort(opermutation.begin(), opermutation.end(), [&] (const esint &i, const esint &j) { return faces->owner[i] != faces->owner[j] ? faces->owner[i] < faces->owner[j] : i < j; });
+	std::iota(npermutation.begin(), npermutation.end(), 0);
+	std::sort(npermutation.begin(), npermutation.end(), [&] (const esint &i, const esint &j) { return faces->neighbor[i] != faces->neighbor[j] ? faces->neighbor[i] < faces->neighbor[j] : i < j; });
+
+	elements->etype.reserve(elements->size);
+	// to be parallelized
+	for (int t = 0; t < info::env::OMP_NUM_THREADS; t++) {
+		__element_builder__ builder(*faces, opermutation, npermutation, edistribution[t] + faces->offset);
+		for (esint e = edistribution[t]; builder.it.oend != opermutation.end() && builder.it.nend != npermutation.end(); ++e, builder.it.next()) {
+			builder.count(e + faces->offset);
+			elements->etype.push_back(builder.element.code());
+			elements->enodes.resize(elements->enodes.size() + Mesh::element(elements->etype.back()).nodes, -1);
+			auto nodes = elements->enodes.data() + elements->enodes.size() - Mesh::element(elements->etype.back()).nodes;
+			switch (elements->etype.back()) {
+			case Element::CODE::TETRA4:
+				builder.pushFirst<3>({ nodes, nodes + 1, nodes + 2 });
+				builder.finish<3>({ nodes, nodes + 1, nodes + 3 });
+				break;
+			case Element::CODE::PYRAMID5:
+				builder.pushFirst<4>({ nodes, nodes + 1, nodes + 2, nodes + 3 });
+				builder.finish<3>({ nodes, nodes + 1, nodes + 4 });
+				break;
+			case Element::CODE::PRISMA6:
+				builder.pushFirst<3>({ nodes, nodes + 1, nodes + 2 });
+				builder.finish<4>({ nodes, nodes + 1, nodes + 4, nodes + 3 });
+				builder.finish<3>({ nodes + 3, nodes + 4, nodes + 5 });
+				break;
+			case Element::CODE::HEXA8:
+				builder.pushFirst<4>({ nodes, nodes + 1, nodes + 5, nodes + 4 });
+				builder.finish<4>({ nodes + 5, nodes + 1, nodes + 2, nodes + 6 });
+				builder.finish<4>({ nodes + 0, nodes + 4, nodes + 7, nodes + 3 });
+				break;
+			default:
+				eslog::internalFailure("not implemented element type [eid: %d, tria:%d, square: %d, other: %d]\n", e + faces->offset, builder.element.triangles, builder.element.squares, builder.element.others);
+			}
+		}
+	}
+
+	elements->edist.reserve(elements->etype.size() + 1);
+	elements->edist.push_back(0);
+	for (size_t e = 0; e < elements->etype.size(); ++e) {
+		if (elements->etype[e] != Element::CODE::POLYGON && elements->etype[e] != Element::CODE::POLYHEDRON) {
+			elements->edist.push_back(elements->edist.back() + Mesh::element(elements->etype[e]).nodes);
+		} else {
+			elements->edist.push_back(elements->edist.back() + elements->enodes[elements->edist.back()]);
+		}
+	}
+}
+
+void buildElementsFromFaces(const TemporalSequentialMesh<MergedNodes, OrderedFacesBalanced> &clustered, const TemporalSequentialMesh<MergedNodes, MergedElements> &prepared)
+{
+	prepared.nodes->offsets.swap(clustered.nodes->offsets);
+	prepared.nodes->coordinates.swap(clustered.nodes->coordinates);
+
+	OrderedElementsBalanced balanced;
+	buildElements(clustered.elements, &balanced);
+	prepared.elements->etype.swap(balanced.etype);
+	prepared.elements->enodes.swap(balanced.enodes);
+	prepared.elements->edist.swap(balanced.edist);
+}
+
+void buildElementsFromFaces(const TemporalMesh<OrderedNodesBalanced, OrderedFacesBalanced> &grouped, const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered)
+{
+	ordered.nodes->OrderedDataDistribution::operator=(*grouped.nodes);
+	ordered.elements->OrderedDataDistribution::operator=(*grouped.elements);
+
+	ordered.nodes->coordinates.swap(grouped.nodes->coordinates);
+	buildElements(grouped.elements, ordered.elements);
+
+	utils::clearVectors(grouped.elements->etype, grouped.elements->edist, grouped.elements->enodes, grouped.elements->foffset, grouped.elements->owner, grouped.elements->neighbor);
 }
 
 }

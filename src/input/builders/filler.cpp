@@ -15,7 +15,7 @@
 namespace espreso {
 namespace builder {
 
-void fillMesh(TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, OrderedRegions &regions, Mesh &mesh)
+void fillMesh(const TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, OrderedRegions &regions, Mesh &mesh)
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
 
@@ -84,10 +84,11 @@ void fillMesh(TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, Ord
 	mesh.neighbors = { };
 	mesh.neighborsWithMe = { 0 };
 
-	prepared.clear();
+	utils::clearVectors(prepared.nodes->coordinates, prepared.nodes->offsets, prepared.nodes->duplication);
+	utils::clearVectors(prepared.elements->offsets, prepared.elements->etype, prepared.elements->enodes, prepared.elements->edist, prepared.elements->duplication);
 }
 
-void fillMesh(TemporalMesh<LinkedNodes, MergedElements> &prepared, OrderedRegions &regions, Mesh &mesh)
+void fillMesh(const TemporalMesh<LinkedNodes, MergedElements> &prepared, OrderedRegions &regions, Mesh &mesh)
 {
 //	Communication::serialize([&] () {
 //		for (size_t i = 0; i < prepared.nodes->neighbors.size(); ++i) {
@@ -203,7 +204,8 @@ void fillMesh(TemporalMesh<LinkedNodes, MergedElements> &prepared, OrderedRegion
 	mesh.neighborsWithMe.resize(mesh.neighbors.size() + 1);
 	std::merge(mesh.neighbors.begin(), mesh.neighbors.end(), &info::mpi::rank, &info::mpi::rank + 1, mesh.neighborsWithMe.begin());
 
-	prepared.clear();
+	utils::clearVectors(prepared.nodes->coordinates, prepared.nodes->offsets, prepared.nodes->duplication, prepared.nodes->rankData, prepared.nodes->rankDistribution, prepared.nodes->neighbors);
+	utils::clearVectors(prepared.elements->offsets, prepared.elements->etype, prepared.elements->enodes, prepared.elements->edist, prepared.elements->duplication, prepared.elements->duplication);
 }
 
 }

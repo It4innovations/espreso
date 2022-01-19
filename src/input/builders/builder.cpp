@@ -13,8 +13,6 @@
 #include <numeric>
 #include <algorithm>
 
-#include "basis/utilities/print.h"
-
 namespace espreso {
 namespace builder {
 
@@ -77,24 +75,54 @@ void build(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, Mesh
 	eslog::endln("BUILDER: MESH BUILT");
 }
 
-void build(InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedUniqueFacesRegions> &input, Mesh &mesh)
+void build(InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &input, Mesh &mesh)
 {
 	eslog::startln("BUILDER: PROCESS FACED MESH", "BUILDER");
+	mesh.dimension = 3;
 	if (info::mpi::size == 1) {
-		TemporalSequentialMesh<ClusteredNodes, ClusteredElements> prepared;
+		TemporalSequentialMesh<MergedNodes, OrderedFacesBalanced> grouped;
+		TemporalSequentialMesh<MergedNodes, MergedElements> prepared;
 
-		initialize(input, prepared, mesh.dimension);
+		initialize(input, grouped);
 		eslog::checkpointln("BUILDER: DATA INITIALIZED");
 
-		input.regions->files.wait();
-//		fillMesh(prepared, *input.regions, mesh);
-	} else {
+		buildElementsFromFaces(grouped, prepared);
+		eslog::checkpointln("BUILDER: ELEMENTS CREATED");
 
+		fillMesh(prepared, *input.regions, mesh);
+	} else {
+		TemporalMesh<OrderedNodesBalanced, OrderedFacesBalanced> grouped;
+		TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> ordered;
+		TemporalMesh<MergedNodes, MergedElements> clustered;
+		TemporalMesh<LinkedNodes, MergedElements> linked;
+
+		balance(input, grouped);
+		eslog::checkpointln("BUILDER: DATA BALANCED");
+
+		buildElementsFromFaces(grouped, ordered);
+		eslog::checkpointln("BUILDER: ELEMENTS CREATED");
+
+		ivector<esint> nbuckets, ebuckets, splitters;
+		HilbertCurve<esfloat> sfc(mesh.dimension, SFCDEPTH, ordered.nodes->coordinates.size(), ordered.nodes->coordinates.data());
+		eslog::checkpointln("BUILDER: SFC BUILT");
+
+		assignBuckets(ordered, sfc, nbuckets, ebuckets);
+		eslog::checkpointln("BUILDER: SFC BUCKETS ASSIGNED");
+
+		clusterize(ordered, nbuckets, ebuckets, sfc.buckets(sfc.depth), clustered, splitters);
+		utils::clearVectors(nbuckets, ebuckets);
+		eslog::checkpointln("BUILDER: MESH CLUSTERIZED");
+
+		computeSFCNeighbors(sfc, splitters, linked.nodes->neighbors); // neighbors are approximated here
+		eslog::checkpointln("BUILDER: NEIGHBORS APPROXIMATED");
+
+		linkup(clustered, linked);
+		reindexToLocal(linked);
+		eslog::checkpointln("BUILDER: LINKED UP");
+
+		fillMesh(linked, *input.regions, mesh);
 	}
 	eslog::endln("BUILDER: MESH BUILT");
-
-	MPI_Finalize();
-	exit(0);
 }
 
 }

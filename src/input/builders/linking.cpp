@@ -15,10 +15,10 @@ namespace espreso {
 namespace builder {
 
 // some nodes are not at SFC neighboring processes -> fix this situation
-static void exchangeUnknown(TemporalMesh<MergedNodes, ClusteredElements> &merged, TemporalMesh<LinkedNodes, ClusteredElements> &linked, std::vector<esint> &adjacent, std::vector<std::vector<esint> > &send, std::vector<std::vector<esint> > &recv);
+static void exchangeUnknown(const TemporalMesh<MergedNodes, ClusteredElements> &merged, const TemporalMesh<LinkedNodes, ClusteredElements> &linked, std::vector<esint> &adjacent, std::vector<std::vector<esint> > &send, std::vector<std::vector<esint> > &recv);
 
 // this method can be optimized by requesting nodes to closest buckets only
-void linkup(TemporalMesh<MergedNodes, ClusteredElements> &merged, TemporalMesh<LinkedNodes, ClusteredElements> &linked)
+void linkup(const TemporalMesh<MergedNodes, ClusteredElements> &merged, const TemporalMesh<LinkedNodes, ClusteredElements> &linked)
 {
 	eslog::startln("LINKUP: CONNECTING CLUSTERS", "LINKUP");
 
@@ -334,11 +334,10 @@ void linkup(TemporalMesh<MergedNodes, ClusteredElements> &merged, TemporalMesh<L
 		linked.elements->edist.swap(merged.elements->edist);
 	}
 
-	merged.clear();
 	eslog::endln("LINKUP: LINKED UP");
 }
 
-static void exchangeUnknown(TemporalMesh<MergedNodes, ClusteredElements> &merged, TemporalMesh<LinkedNodes, ClusteredElements> &linked, std::vector<esint> &adjacent, std::vector<std::vector<esint> > &send, std::vector<std::vector<esint> > &recv)
+static void exchangeUnknown(const TemporalMesh<MergedNodes, ClusteredElements> &merged, const TemporalMesh<LinkedNodes, ClusteredElements> &linked, std::vector<esint> &adjacent, std::vector<std::vector<esint> > &send, std::vector<std::vector<esint> > &recv)
 {
 	auto permute = [&] () {
 		ivector<int> permutation(linked.nodes->neighbors.size());

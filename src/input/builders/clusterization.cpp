@@ -136,7 +136,7 @@ void assignBuckets(const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalan
 	}
 }
 
-void clusterize(TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered, ivector<esint> &nbuckets, ivector<esint> &ebuckets, esint buckets, TemporalMesh<ClusteredNodes, ClusteredElements> &clustered, ivector<esint> &splitters)
+void clusterize(const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered, ivector<esint> &nbuckets, ivector<esint> &ebuckets, esint buckets, const TemporalMesh<ClusteredNodes, ClusteredElements> &clustered, ivector<esint> &splitters)
 {
 	std::vector<esint, initless_allocator<esint> > npermutation(nbuckets.size()), epermutation(ebuckets.size());
 	std::iota(npermutation.begin(), npermutation.end(), 0);
@@ -214,7 +214,9 @@ void clusterize(TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ord
 		}
 		sBuffer[prevsize] = sBuffer.size() - prevsize;
 	}
-	ordered.clear();
+
+	utils::clearVectors(ordered.nodes->coordinates);
+	utils::clearVectors(ordered.elements->etype, ordered.elements->enodes, ordered.elements->edist);
 	utils::clearVectors(nborders, eborders, npermutation, epermutation);
 
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
@@ -272,7 +274,6 @@ void clusterize(TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ord
 			clustered.elements->edist.push_back(clustered.elements->enodes.size());
 		}
 	}
-	ordered.clear();
 }
 
 void computeSFCNeighbors(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, std::vector<int> &sfcNeighbors)
