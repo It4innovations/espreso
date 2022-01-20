@@ -183,6 +183,10 @@ struct ParametersBoundaryFunction {
 	BoundaryExternalParameter<egps> gp;
 };
 
+struct ParametersBoundaryVectorFunction {
+	BoundaryExternalParameter<ndim * egps> gp;
+};
+
 struct ParametersConvection {
 	struct ExternalParameter {
 		BoundaryExternalParameter<egps> gp;

@@ -113,6 +113,14 @@ void AX_Acoustic::analyze()
 		examineBoundaryParameter("NORMAL ACCELERATION", configuration.normal_acceleration, normalAcceleration.gp.externalValues);
 		fromExpression(*this, normalAcceleration.gp, normalAcceleration.gp.externalValues);
 	}
+	if (configuration.acceleration.size()) {
+		correct &= examineBoundaryParameter("ACCELERATION.X", configuration.acceleration, acceleration.gp.externalValues, 0);
+		correct &= examineBoundaryParameter("ACCELERATION.Y", configuration.acceleration, acceleration.gp.externalValues, 1);
+		if (info::mesh->dimension == 3) {
+			correct &= examineBoundaryParameter("ACCELERATION.Z", configuration.acceleration,  acceleration.gp.externalValues, 2);
+		}
+		fromExpression(*this, acceleration.gp, acceleration.gp.externalValues);
+	}
 	if (configuration.impedance.size()) {
 		examineBoundaryParameter("IMPEDANCE", configuration.impedance, impedance.gp.externalValues);
 		fromExpression(*this, impedance.gp, impedance.gp.externalValues);

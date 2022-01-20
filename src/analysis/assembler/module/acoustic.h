@@ -59,11 +59,14 @@ public:
 	ParametersCoordinates coords;
 
 	ParametersBoundaryNodeFunction pressure;
-	ParametersBoundaryFunction normalAcceleration, impedance, q;
+	ParametersBoundaryFunction normalAcceleration, impedance, q, proj_acceleration;
+	ParametersBoundaryVectorFunction acceleration;
 	ParametersMaterial material;
 
 	ParameterMonopoleSource monopoleSource;
 	ParameterDipoleSource dipoleSource;
+
+	ParametersBoundaryVectorFunction normals;
 
 	ParametersElements<1> elements;
 

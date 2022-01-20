@@ -7,6 +7,7 @@
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/boundaryregionstore.h"
+#include "analysis/assembler/operators/boundarynormals.h"
 
 #include <iostream>
 
@@ -85,16 +86,13 @@ void acousticRHS(AX_Acoustic &module)
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
-			if (!module.normalAcceleration.gp.isSet(r) && !module.impedance.gp.isSet(r)) {
+			if (!module.normalAcceleration.gp.isSet(r) && !module.impedance.gp.isSet(r) && !module.acceleration.gp.isSet(r)) {
 				continue;
 			}
 
 			bool impedance = module.impedance.gp.isSet(r);
 			module.controller.prepare(module.normalAcceleration.gp.regions[r], module.impedance.gp.regions[r]);
 
-//			if (info::mesh->dimension == 2) {
-//				module.elements.boundary.rhs.regions[r].addInput(module.thickness.boundary.gp.regions[r]);
-//			}
 			module.controller.addInput(module.q.gp.regions[r], module.normalAcceleration.gp.regions[r], module.impedance.gp.regions[r]);
 			module.controller.addInput(module.elements.boundary.rhs.regions[r], module.q.gp.regions[r], module.integration.boundary.jacobian.regions[r], module.integration.boundary.weight.regions[r]);
 			module.controller.prepare(module.q.gp.regions[r], module.elements.boundary.rhs.regions[r]);
@@ -102,6 +100,12 @@ void acousticRHS(AX_Acoustic &module)
 				module.controller.addInput(module.elements.boundary.mass.regions[r], module.impedance.gp.regions[r], module.integration.boundary.N.regions[r], module.integration.boundary.jacobian.regions[r], module.integration.boundary.weight.regions[r]);
 				module.controller.prepare(module.elements.boundary.mass.regions[r]);
 			}
+
+			module.controller.addInput(module.normals.gp.regions[r], module.integration.boundary.dN.regions[r], module.coords.boundary.node.regions[r]);
+			module.controller.prepare(module.normals.gp.regions[r]);
+
+			module.controller.addInput(module.proj_acceleration.gp.regions[r], module.acceleration.gp.regions[r], module.normals.gp.regions[r], module.integration.boundary.N.regions[r], module.integration.boundary.jacobian.regions[r], module.integration.boundary.weight.regions[r]);
+			module.controller.prepare(module.proj_acceleration.gp.regions[r]);
 
 			for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
 				module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticQ>(r, interval, module.controller,
@@ -118,13 +122,37 @@ void acousticRHS(AX_Acoustic &module)
 				}
 
 				if (info::mesh->dimension == 2) {
+					if (module.acceleration.gp.isSet(r)) {
+						module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, BoundaryNormal2D>(r, interval, module.controller,
+								module.integration.boundary.dN.regions[r],
+								module.coords.boundary.node.regions[r],
+								module.normals.gp.regions[r]));
+						module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticAcceleration2D>(r, interval, module.controller,
+							module.integration.boundary.N.regions[r], module.integration.boundary.weight.regions[r], module.integration.boundary.jacobian.regions[r],
+							module.normals.gp.regions[r],
+							module.acceleration.gp.regions[r],
+							module.proj_acceleration.gp.regions[r]
+						));
+					}
 					module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticRHS2D>(r, interval, module.controller,
 							module.integration.boundary.N.regions[r], module.integration.boundary.weight.regions[r], module.integration.boundary.jacobian.regions[r],
-//							module.thickness.boundary.gp.regions[r],
 							module.q.gp.regions[r],
 							module.elements.boundary.rhs.regions[r]));
 				}
 				if (info::mesh->dimension == 3) {
+					if (module.acceleration.gp.isSet(r)) {
+						module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, BoundaryNormal3D>(r, interval, module.controller,
+								module.integration.boundary.dN.regions[r],
+								module.coords.boundary.node.regions[r],
+								module.normals.gp.regions[r]));
+						module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticAcceleration3D>(r, interval, module.controller,
+							module.integration.boundary.N.regions[r], module.integration.boundary.weight.regions[r], module.integration.boundary.jacobian.regions[r],
+							module.normals.gp.regions[r],
+							module.acceleration.gp.regions[r],
+							module.proj_acceleration.gp.regions[r]
+						));
+					}
+
 					module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticRHS3D>(r, interval, module.controller,
 							module.integration.boundary.N.regions[r], module.integration.boundary.weight.regions[r], module.integration.boundary.jacobian.regions[r],
 							module.q.gp.regions[r],

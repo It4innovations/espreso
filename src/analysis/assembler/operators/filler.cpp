@@ -96,6 +96,12 @@ void addFiller(AX_Acoustic &module)
 					module.boundaryFiller[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, VectorFiller>(r, interval, module.controller, module.elements.boundary.rhs.regions[r], module.re.rhs->mapping.boundary[r][interval].data, module.re.rhs->mapping.boundary[r][interval].position));
 				}
 			}
+			
+			if (info::mesh->boundaryRegions[r]->dimension && module.acceleration.gp.isSet(r)) {
+				for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
+					module.boundaryFiller[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, VectorFiller>(r, interval, module.controller, module.proj_acceleration.gp.regions[r], module.re.rhs->mapping.boundary[r][interval].data, module.re.rhs->mapping.boundary[r][interval].position));
+				}
+			}
 		}
 	}
 

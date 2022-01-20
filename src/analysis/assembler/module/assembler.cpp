@@ -413,6 +413,12 @@ bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::
 	return true;
 }
 
+bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings, ExternalBoundaryValue &externalValue, int dimension)
+{
+	return examineBoundaryParameter<ECFExpressionVector>(name, settings, externalValue, dimension, [&] (ECFExpressionVector &expr) { return &expr.data[dimension]; });
+}
+
+
 bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection)
 {
 	return false;
@@ -592,3 +598,4 @@ bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::
 
 	return true;
 }
+

@@ -108,3 +108,34 @@ bool Assembler::examineElementParameter(const std::string &name, std::map<std::s
 	}
 	return false;
 }
+
+template<class TSecond>
+bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::string, TSecond> &settings, ExternalBoundaryValue &externalValue, int dimension, std::function<ECFExpression*(TSecond &expr)> getExpr)
+{
+	if (settings.size()) {
+		eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
+
+		int rindex = 0;
+		for (auto reg = info::mesh->boundaryRegions.begin(); reg != info::mesh->boundaryRegions.end(); ++reg, ++rindex) {
+			auto ms = settings.find((*reg)->name);
+			if (ms != settings.end()) {
+				ECFExpression* expr = getExpr(settings.begin()->second);
+				if (expr->evaluator == nullptr) {
+					if (!Variable::create(*expr)) {
+						eslog::warning("   %30s:  %*s \n", (*reg)->name.c_str(), 60 - (*reg)->name.size(), "INVALID EXPRESSION");
+						return false;
+					}
+				}
+				if (expr->evaluator->variables.size()) {
+					std::string params = Parser::join(", ", expr->evaluator->variables);
+					eslog::info("   %30s:  %*s       FNC( %s )\n", (*reg)->name.c_str(), 43 - params.size(), "", params.c_str());
+				} else {
+					eslog::info("   %30s:  %57g \n", (*reg)->name.c_str(), expr->evaluator->eval(Evaluator::Params()));
+				}
+				externalValue.evaluator[externalValue.dimension * rindex + dimension] = expr->evaluator;
+			}
+		}
+		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+	}
+	return true;
+}

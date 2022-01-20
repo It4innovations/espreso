@@ -233,6 +233,94 @@ struct AcousticQ: public ActionOperator {
 };
 
 template <size_t nodes, size_t gps>
+struct AcousticAcceleration2D: public ActionOperator {
+
+	InputParameterIterator N, weight, J;
+	InputParameterIterator normals, acceleration_vector;
+	OutputParameterIterator rhs;
+
+	AcousticAcceleration2D(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &normals, const ParameterData &acceleration_vector, ParameterData &rhs)
+	: N(N, interval),
+	  weight(weight, interval),
+	  J(J, interval),
+	  normals(normals, interval),
+	  acceleration_vector(acceleration_vector, interval),
+	  rhs(rhs, interval)
+	{ }
+
+	void operator++()
+	{
+		++weight; ++J;
+		++normals;
+		++acceleration_vector;
+		++rhs;
+	}
+
+	void move(int n)
+	{
+		weight += n; J += n;
+		normals += n;
+		acceleration_vector += n;
+		rhs += n;
+	}
+
+	void operator()()
+	{
+		std::fill(rhs.data, rhs.data + rhs.inc, 0);
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+				double proj = normals.data[2*gpindex + 0] * acceleration_vector.data[2*gpindex + 0] + normals.data[2*gpindex + 1] * acceleration_vector.data[2*gpindex + 1];
+				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * (-proj) * N.data[gpindex * nodes + n];
+			}
+		}
+	}
+};
+
+template <size_t nodes, size_t gps>
+struct AcousticAcceleration3D: public ActionOperator {
+
+	InputParameterIterator N, weight, J;
+	InputParameterIterator normals, acceleration_vector;
+	OutputParameterIterator rhs;
+
+	AcousticAcceleration3D(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &normals, const ParameterData &acceleration_vector, ParameterData &rhs)
+	: N(N, interval),
+	  weight(weight, interval),
+	  J(J, interval),
+	  normals(normals, interval),
+	  acceleration_vector(acceleration_vector, interval),
+	  rhs(rhs, interval)
+	{ }
+
+	void operator++()
+	{
+		++weight; ++J;
+		++normals;
+		++acceleration_vector;
+		++rhs;
+	}
+
+	void move(int n)
+	{
+		weight += n; J += n;
+		normals += n;
+		acceleration_vector += n;
+		rhs += n;
+	}
+
+	void operator()()
+	{
+		std::fill(rhs.data, rhs.data + rhs.inc, 0);
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+				double proj = normals.data[3*gpindex + 0] * acceleration_vector.data[3*gpindex + 0] + normals.data[3*gpindex + 1] * acceleration_vector.data[3*gpindex + 1]  + normals.data[3*gpindex + 2] * acceleration_vector.data[3*gpindex + 2];
+				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * (-proj) * N.data[gpindex * nodes + n];
+			}
+		}
+	}
+};
+
+template <size_t nodes, size_t gps>
 struct AcousticRHS2D: public ActionOperator {
 	AcousticRHS2D(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &q, ParameterData &rhs)
 	: N(N, interval),
@@ -355,7 +443,6 @@ struct AcousticsBoundaryMass: public ActionOperator {
 		}
 	}
 };
-
 
 }
 
