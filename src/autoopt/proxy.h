@@ -27,6 +27,7 @@ public:
 	int generateParameterNumber();
 	double generateDecimal();
 	std::vector<double> generateConfiguration();
+	std::vector<double> generateVerifiedConfiguration();
 	double checkParameter(int id, double value);
 	bool areParameterValuesEqual(int id, double val1, double val2);
 	double getParameterMin(int id);
@@ -43,6 +44,9 @@ private:
 
 	double _checkParameter_immediate_rounding(int id, double value);
 	double _checkParameter_no_rounding(int id, double value);
+
+	std::vector<double> generateRandomConfiguration();
+	std::vector<std::vector<double> > m_verconfs;
 };
 
 class OutputManager

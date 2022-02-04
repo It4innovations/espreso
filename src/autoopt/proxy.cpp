@@ -19,7 +19,63 @@ ParameterManager::ParameterManager(std::vector<ECFParameter*>& parameters, int p
   m_generator(std::chrono::high_resolution_clock::now().time_since_epoch().count()),
   m_dist_decimal(0.0f, 1.0f), m_dist_dimension(0, parameters.size() - 1),
   m_dist_population(0, population - 1)
-{ }
+{
+	this->m_verconfs = {
+		{0, 2, 0, 0, 0},
+		{0, 2, 0, 1, 0},
+		{0, 2, 1, 0, 0},
+		{0, 2, 1, 1, 0},
+		{0, 3, 0, 0, 0},
+		{0, 3, 0, 1, 0},
+		{0, 3, 1, 0, 0},
+		{0, 3, 1, 1, 0},
+		{1, 0, 1, 0, 0},
+		{1, 0, 1, 1, 0},
+		{1, 1, 0, 0, 0},
+		{1, 2, 0, 0, 0},
+		{1, 2, 0, 1, 0},
+		{1, 2, 1, 0, 0},
+		{1, 2, 1, 1, 0},
+		{1, 3, 0, 0, 0},
+		{1, 3, 0, 1, 0},
+		{1, 3, 1, 0, 0},
+		{1, 3, 1, 1, 0},
+		{1, 4, 0, 0, 0},
+		{1, 4, 0, 1, 0},
+		{1, 4, 1, 0, 0},
+		{1, 4, 1, 1, 0},
+		{2, 2, 0, 0, 0},
+		{2, 2, 0, 1, 0},
+		{2, 2, 1, 0, 0},
+		{2, 2, 1, 1, 0},
+		{2, 3, 0, 0, 0},
+		{2, 3, 0, 1, 0},
+		{2, 3, 1, 0, 0},
+		{2, 3, 1, 1, 0},
+		{3, 0, 0, 0, 0},
+		{3, 0, 0, 1, 0},
+		{3, 0, 1, 1, 0},
+		{3, 1, 0, 0, 0},
+		{3, 1, 1, 0, 0},
+		{3, 1, 1, 1, 0},
+		{3, 2, 0, 0, 0},
+		{3, 2, 0, 1, 0},
+		{3, 2, 1, 0, 0},
+		{3, 2, 1, 1, 0},
+		{3, 3, 0, 0, 0},
+		{3, 3, 0, 1, 0},
+		{3, 3, 1, 0, 0},
+		{3, 3, 1, 1, 0},
+		{3, 4, 0, 0, 0},
+		{3, 4, 0, 1, 0},
+		{3, 4, 1, 0, 0},
+		{3, 4, 1, 1, 0},
+		{3, 6, 0, 0, 0},
+		{3, 6, 0, 1, 0},
+		{3, 6, 1, 0, 0},
+		{3, 6, 1, 1, 0},
+	};
+}
 
 int ParameterManager::count() const
 {
@@ -53,11 +109,89 @@ double ParameterManager::generateDecimal()
 
 std::vector<double> ParameterManager::generateConfiguration()
 {
+	return this->generateRandomConfiguration();
+}
+
+std::vector<double> ParameterManager::generateRandomConfiguration()
+{
 	std::vector<double> configuration;
 	for (auto it = m_params.begin(); it != m_params.end(); ++it)
 	{
 		ECFDataType dt = (*it)->metadata.datatype.front();
 		if (dt == ECFDataType::INTEGER)
+		{
+			configuration.push_back( m_generator() - m_generator() );
+		}
+		else if (dt == ECFDataType::POSITIVE_INTEGER)
+		{
+			configuration.push_back(m_generator() % m_generator.max() + 1);
+		}
+		else if (dt == ECFDataType::NONNEGATIVE_INTEGER)
+		{
+			if ((*it)->metadata.range)
+			{
+				std::uniform_int_distribution<int> dist(
+					std::atoi((*it)->metadata.range->min.c_str()),
+					std::atoi((*it)->metadata.range->max.c_str())
+				);
+				configuration.push_back( dist(m_generator) );
+			}
+			else 
+			{ configuration.push_back(m_generator()); }
+		}
+		else if (dt == ECFDataType::FLOAT)
+		{
+			configuration.push_back(
+				(double)(m_generator() - m_generator())
+				+ generateDecimal()
+			);
+		}
+		else if (dt == ECFDataType::OPTION)
+		{
+			std::uniform_int_distribution<int> dist(0, (*it)->metadata.options.size() - 1);
+			configuration.push_back( dist(m_generator) );
+		}
+		else if (dt == ECFDataType::ENUM_FLAGS)
+		{
+			std::uniform_int_distribution<int> dist(0, (*it)->metadata.options.size() - 1);
+			configuration.push_back( dist(m_generator) );
+		}
+		else if (dt == ECFDataType::BOOL)
+		{
+			std::uniform_int_distribution<int> dist(0, 1);
+			configuration.push_back( dist(m_generator) );
+		}
+		else
+		{
+			eslog::globalerror("Optimization - UNKNOWN PARAMETER DATA TYPE!\n");
+		}
+	}
+
+	return configuration;
+}
+
+std::vector<double> ParameterManager::generateVerifiedConfiguration()
+{
+	std::vector<double> configuration;
+	
+	std::uniform_int_distribution<int> dist(0, m_verconfs.size() - 1);
+	std::vector<double>& verconf = this->m_verconfs[dist(m_generator)];
+
+	for (auto it = m_params.begin(); it != m_params.end(); ++it)
+	{
+		ECFDataType dt = (*it)->metadata.datatype.front();
+		
+		if ((*it)->name.compare("preconditioner") == 0)
+		{ configuration.push_back(verconf[0]); }
+		else if ((*it)->name.compare("iterative_solver") == 0)
+		{ configuration.push_back(verconf[1]); }
+		else if ((*it)->name.compare("redundant_lagrange") == 0)
+		{ configuration.push_back(verconf[2]); }
+		else if ((*it)->name.compare("scaling") == 0)
+		{ configuration.push_back(verconf[3]); }
+		else if ((*it)->name.compare("method") == 0)
+		{ configuration.push_back(verconf[4]); }
+		else if (dt == ECFDataType::INTEGER)
 		{
 			configuration.push_back( m_generator() - m_generator() );
 		}

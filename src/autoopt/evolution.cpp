@@ -179,7 +179,7 @@ DEAlgorithm::DEAlgorithm(ParameterManager& manager, OutputManager& output,
   isInitializing(true), F(F), CR(CR)
 {
 	for (int s = 0; s < population; s++) {
-		m_specimens.push_back(m_manager.generateConfiguration());
+		m_specimens.push_back(m_manager.generateVerifiedConfiguration());
 	}
 	this->current = m_specimens.begin();
 }

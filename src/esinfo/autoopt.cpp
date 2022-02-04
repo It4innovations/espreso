@@ -21,10 +21,10 @@ void init(LoadStepSolverConfiguration &loadStep, DecompositionConfiguration &dec
 		opt_parameters = {
 			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.preconditioner),
 			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.iterative_solver),
-			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.regularization),
 			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.redundant_lagrange),
-			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.B0_type),
 			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.scaling),
+			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.regularization),
+			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.B0_type),
 			loadStep.feti.ecfdescription->getParameter(&loadStep.feti.method),
 			decomposition.ecfdescription->getParameter(&decomposition.domains),
 			// loadStep.ecfdescription->getParameter(&loadStep.solver)

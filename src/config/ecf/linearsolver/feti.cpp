@@ -19,8 +19,8 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.addoption(ECFOption().setname("NONE").setdescription("Without precodition."))
 			.addoption(ECFOption().setname("LUMPED").setdescription("Lumped precodition."))
 			.addoption(ECFOption().setname("WEIGHT_FUNCTION").setdescription("Precondition by weight function."))
-			.addoption(ECFOption().setname("DIRICHLET").setdescription("Dirichler precodition."))
-			.addoption(ECFOption().setname("SUPER_DIRICHLET").setdescription("Diagonal Dirichlet precodition.")));
+			.addoption(ECFOption().setname("DIRICHLET").setdescription("Dirichler precodition.")));
+			// .addoption(ECFOption().setname("SUPER_DIRICHLET").setdescription("Diagonal Dirichlet precodition.")));
 
 	precision = 1e-5;
 	REGISTER(precision, ECFMetaData()
