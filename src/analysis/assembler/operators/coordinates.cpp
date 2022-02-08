@@ -147,32 +147,58 @@ void _boundaryCoordinates(Module &module)
 	}
 }
 
+void _analyzeBoundaryCondition(std::map<std::string, ECFExpression> &bc)
+{
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		auto region = bc.find(info::mesh->boundaryRegions[r]->name);
+		if (region != bc.end()) {
+			Variable::analyze(region->second, r);
+		}
+	}
+}
+
+void _analyzeBoundaryCondition(std::map<std::string, ECFExpressionVector> &bc)
+{
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		auto region = bc.find(info::mesh->boundaryRegions[r]->name);
+		if (region != bc.end()) {
+			Variable::analyze(region->second.x, r);
+			Variable::analyze(region->second.y, r);
+			if (info::mesh->dimension == 3) {
+				Variable::analyze(region->second.z, r);
+			}
+		}
+	}
+}
+
+void _analyzeBoundaryCondition(std::map<std::string, ImpedanceConfiguration> &bc)
+{
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		auto region = bc.find(info::mesh->boundaryRegions[r]->name);
+		if (region != bc.end()) {
+			Variable::analyze(region->second.impedance, r);
+		}
+	}
+}
+
 void elementCoordinates(AX_HeatTransfer &module)
 {
 	_elementCoordinates(module);
 
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-		auto temp = module.configuration.temperature.find(info::mesh->boundaryRegions[r]->name);
-		if (temp != module.configuration.temperature.end()) {
-			Variable::analyze(temp->second, r);
-		}
-
-		auto flow = module.configuration.heat_flow.find(info::mesh->boundaryRegions[r]->name);
-		if (flow != module.configuration.heat_flow.end()) {
-			Variable::analyze(flow->second, r);
-		}
-
-		auto flux = module.configuration.heat_flux.find(info::mesh->boundaryRegions[r]->name);
-		if (flux != module.configuration.heat_flux.end()) {
-			Variable::analyze(flux->second, r);
-		}
-	}
+	_analyzeBoundaryCondition(module.configuration.temperature);
+	_analyzeBoundaryCondition(module.configuration.heat_flow);
+	_analyzeBoundaryCondition(module.configuration.heat_flux);
 	_boundaryCoordinates(module);
 }
 
 void elementCoordinates(AX_Acoustic &module)
 {
 	_elementCoordinates(module);
+
+	_analyzeBoundaryCondition(module.configuration.acoustic_pressure);
+	_analyzeBoundaryCondition(module.configuration.normal_acceleration);
+	_analyzeBoundaryCondition(module.configuration.acceleration);
+	_analyzeBoundaryCondition(module.configuration.impedance);
 	_boundaryCoordinates(module);
 }
 

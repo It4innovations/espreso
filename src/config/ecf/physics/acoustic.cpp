@@ -54,7 +54,7 @@ AcousticLoadStepConfiguration::AcousticLoadStepConfiguration(DIMENSION *D)
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "0" })
 			.setdynamic(),
-			ECFExpression::Scope::NODE);
+			ECFExpression::Scope::BGPS);
 
 	REGISTER(normal_acceleration, ECFMetaData()
 			.setdescription({ "The name of a region.", "Normal Acceleration" })

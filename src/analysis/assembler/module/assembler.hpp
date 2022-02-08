@@ -9,6 +9,7 @@
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/elementsregionstore.h"
+#include "mesh/store/boundaryregionstore.h"
 
 using namespace espreso;
 
@@ -121,7 +122,7 @@ bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::
 			if (ms != settings.end()) {
 				ECFExpression* expr = getExpr(settings.begin()->second);
 				if (expr->evaluator == nullptr) {
-					if (!Variable::create(*expr)) {
+					if (!Variable::create(*expr, rindex)) {
 						eslog::warning("   %30s:  %*s \n", (*reg)->name.c_str(), 60 - (*reg)->name.size(), "INVALID EXPRESSION");
 						return false;
 					}
