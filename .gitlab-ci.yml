@@ -107,6 +107,30 @@ GUI:
     - ./waf configure --with-gui
     - ./waf -j8
 
+HEAT_TRANSFER:
+  stage: espreso
+  only:
+    refs:
+      - schedules
+    variables:
+      - $ASSEMBLER
+  script:
+    - ./waf configure
+    - ./waf -j8
+    - nosetests -v benchmarks/heatTransfer
+
+ACOUSTICS:
+  stage: espreso
+  only:
+    refs:
+      - schedules
+    variables:
+      - $ASSEMBLER
+  script:
+    - ./waf configure
+    - ./waf -j8
+    - nosetests -v benchmarks/acoustics
+
 HEAT:
   stage: espreso
   only:
@@ -241,6 +265,8 @@ CONTACT:
     - ./waf configure
     - ./waf -j8
     - nosetests -v benchmarks/contact
+
+
 
 APITEST:
   stage: feti4i
