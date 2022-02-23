@@ -43,6 +43,10 @@ void LinearPlaneGenerator::pushEdge(std::vector<esint> &elements, std::vector<es
 
 void LinearPlaneGenerator::pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const
 {
+	nodes.push_back(indices[0]);
+	nodes.push_back(indices[1]);
+	nodes.push_back(indices[2]);
+	nodes.push_back(indices[3]);
 	return;
 }
 

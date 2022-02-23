@@ -47,6 +47,15 @@ void QuadraticPlaneGenerator::pushEdge(std::vector<esint> &elements, std::vector
 
 void QuadraticPlaneGenerator::pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const
 {
+	nodes.push_back(indices[0]);
+	nodes.push_back(indices[1]);
+	nodes.push_back(indices[2]);
+	nodes.push_back(indices[3]);
+	nodes.push_back(indices[4]);
+	nodes.push_back(indices[5]);
+	nodes.push_back(indices[6]);
+	nodes.push_back(indices[7]);
+	nodes.push_back(indices[8]);
 	return;
 }
 
