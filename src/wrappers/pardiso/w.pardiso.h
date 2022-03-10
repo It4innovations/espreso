@@ -14,20 +14,20 @@ struct PARDISOParameters {
 	int called;
 
 	PARDISOParameters(): pt{}, called(0)
-		{
-			for (esint i = 0 ; i < 64; i++) {
-				pt[i] = NULL;
-				iparm[i] = 0;
-				dparm[i] = 0;
-			}
-			maxfct = 1;
-			mnum  = 1;
-			mtype = 11; // most general for us
-			phase = 0;
-			msglvl = 0;
-			error = 0;
-			perm = NULL;
+	{
+		for (esint i = 0 ; i < 64; i++) {
+			pt[i] = NULL;
+			iparm[i] = 0;
+			dparm[i] = 0;
 		}
+		maxfct = 1;
+		mnum  = 1;
+		mtype = 11; // most general for us
+		phase = 0;
+		msglvl = 0;
+		error = 0;
+		perm = NULL;
+	}
 };
 }
 

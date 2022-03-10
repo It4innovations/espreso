@@ -40,11 +40,6 @@ struct AX_MKLPDSSSystemData: public AX_LinearSystem<Assembler, Solver> {
 		assembler.pattern.setDirichletMap(dynamic_cast<Vector_Distributed<Vector_Sparse, Assembler>*>(x));
 	}
 
-	void info() const
-	{
-		mklpdss.info(solver.A);
-	}
-
 	void set(step::Step &step)
 	{
 		mklpdss.set(solver.A);

@@ -41,17 +41,18 @@ int Communication::TAG::R_UP_UNKNOWN      =  6 * __GAP__;
 int Communication::TAG::GATHER_UNIFORM    =  7 * __GAP__;
 int Communication::TAG::GATHER_UNKNOWN    =  8 * __GAP__;
 int Communication::TAG::ALLGATHER_UNKNOWN =  9 * __GAP__;
-int Communication::TAG::BCAST_UNKNOWN     =  0 * __GAP__;
-int Communication::TAG::BALANCE           = 11 * __GAP__;
-int Communication::TAG::ALL_TO_ALLV       = 12 * __GAP__;
-int Communication::TAG::EXSCAN            = 13 * __GAP__;
-int Communication::TAG::DISTRIBUTION      = 14 * __GAP__;
-int Communication::TAG::SEND_VARIOUS      = 15 * __GAP__;
-int Communication::TAG::ALL_TO_ALL_OPT    = 16 * __GAP__;
-int Communication::TAG::SPLITTERS         = 17 * __GAP__;
-int Communication::TAG::ALLREDUCE         = 18 * __GAP__;
-int Communication::TAG::SCATTERV          = 19 * __GAP__;
-int Communication::TAG::SCATTER           = 20 * __GAP__;
+int Communication::TAG::ALLGATHER_INPLACE = 10 * __GAP__;
+int Communication::TAG::BCAST_UNKNOWN     = 11 * __GAP__;
+int Communication::TAG::BALANCE           = 12 * __GAP__;
+int Communication::TAG::ALL_TO_ALLV       = 13 * __GAP__;
+int Communication::TAG::EXSCAN            = 14 * __GAP__;
+int Communication::TAG::DISTRIBUTION      = 15 * __GAP__;
+int Communication::TAG::SEND_VARIOUS      = 16 * __GAP__;
+int Communication::TAG::ALL_TO_ALL_OPT    = 17 * __GAP__;
+int Communication::TAG::SPLITTERS         = 18 * __GAP__;
+int Communication::TAG::ALLREDUCE         = 19 * __GAP__;
+int Communication::TAG::SCATTERV          = 20 * __GAP__;
+int Communication::TAG::SCATTER           = 21 * __GAP__;
 
 template<typename Ttype>
 static void _scan(void *in, void *out, int *len, MPI_Datatype *datatype)
@@ -694,6 +695,22 @@ bool Communication::reduce(void *in, void *out, size_t size, MPI_Datatype type, 
 		MPI_Reduce(in, out, size, type, op, root, group->communicator);
 	}
 	profiler::syncend("mpi_reduce");
+	return true;
+}
+
+bool Communication::exscan(void *in, void *out, size_t size, MPI_Datatype type, MPI_Op op, MPIGroup *group)
+{
+	if (size != (size_t)(int)size) {
+		return false;
+	}
+	profiler::syncstart("mpi_exscan");
+	profiler::syncparam("size", size);
+	if (out == NULL) {
+		MPI_Exscan(MPI_IN_PLACE, in, size, type, op, group->communicator);
+	} else {
+		MPI_Exscan(in, out, size, type, op, group->communicator);
+	}
+	profiler::syncend("mpi_allreduce");
 	return true;
 }
 

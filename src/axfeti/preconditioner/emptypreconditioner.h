@@ -8,7 +8,11 @@ namespace espreso {
 
 template <typename T>
 class EmptyPreconditioner: public Preconditioner<T> {
+public:
+	EmptyPreconditioner(AX_FETI<T> *feti): Preconditioner<T>(feti) {}
 
+	void info() {}
+	void update() {}
 };
 
 }

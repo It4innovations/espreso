@@ -7,7 +7,7 @@
 
 namespace espreso {
 
-struct Matrix_CSR_External_Representation
+struct Matrix_CSR_External_Representation: public PARDISOParameters
 {
 	sparse_matrix_t inspector;
 };

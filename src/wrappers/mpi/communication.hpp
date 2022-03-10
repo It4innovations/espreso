@@ -717,6 +717,56 @@ bool Communication::allGatherUnknownSize(std::vector<Ttype> &data, MPIGroup *gro
 }
 
 template <typename Ttype>
+bool Communication::allGatherInplace(Ttype *data, esint offset, esint size, MPIGroup *group)
+{
+	int left = 0;
+	int right = left + group->size;
+	int rank = left + group->rank;
+
+	esint nextOffset = offset, nextSize = size;
+
+	MPIType type(MPITools::getType<Ttype>());
+	RecursiveHalving rh(rank, left, right);
+	int levels = std::ceil(std::log2(group->size));
+
+	auto receive = [&] (int source) {
+		int recvsize;
+		MPI_Status status;
+		MPI_Probe(source, TAG::ALLGATHER_INPLACE, group->communicator, &status);
+		MPI_Get_count(&status, type.mpitype, &recvsize);
+		if (source < rank) {
+			nextOffset = offset - recvsize;
+			MPI_Recv(data + nextOffset, recvsize, type.mpitype, source, TAG::ALLGATHER_INPLACE, group->communicator, MPI_STATUS_IGNORE);
+		} else {
+			MPI_Recv(data + offset + size, recvsize, type.mpitype, source, TAG::ALLGATHER_INPLACE, group->communicator, MPI_STATUS_IGNORE);
+		}
+		nextSize = size + recvsize;
+	};
+
+	while (levels) {
+		if (rh.recurse(levels--)) {
+			if (rh.islower()) {
+				if (rh.ispaired()) {
+					MPI_Send(data + offset, size * type.mpisize, type.mpitype, rh.twin, TAG::ALLGATHER_INPLACE, group->communicator);
+					receive(rh.twin);
+				} else {
+					receive(rh.mid);
+				}
+			} else {
+				receive(rh.twin);
+				MPI_Send(data + offset, size * type.mpisize, type.mpitype, rh.twin, TAG::ALLGATHER_INPLACE, group->communicator);
+				if (rh.treatodd()) {
+					MPI_Send(data + offset, size * type.mpisize, type.mpitype, rh.mid - 1, TAG::ALLGATHER_INPLACE, group->communicator);
+				}
+			}
+			offset = nextOffset;
+			size = nextSize;
+		}
+	}
+	return true;
+}
+
+template <typename Ttype>
 bool Communication::uniqueAllGatherUnknownSize(std::vector<Ttype> &data, MPIGroup *group)
 {
 	profiler::syncstart("comm_unique_allgather_unknown_size");

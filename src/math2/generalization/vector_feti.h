@@ -32,6 +32,7 @@ public:
 		for (size_t d = 0; d < domains.size(); ++d) {
 			m->domains[d].pattern(domains[d]);
 		}
+		m->decomposition = decomposition;
 		return m;
 	}
 
@@ -149,16 +150,26 @@ public:
 	DOFsDecomposition *decomposition;
 };
 
-
 template <template<typename> typename Vector, typename T>
 class Vector_FETI: public Vector_FETI_Common<Vector, T> {
+
+	void _store(const std::vector<Vector_Dense<double> > &domains, const DOFsDecomposition *decomposition, std::vector<double> &output)
+	{
+		auto dmap = decomposition->dmap->cbegin();
+		for (size_t i = 0; i < output.size(); ++i) {
+			for (auto di = dmap->begin(); di != dmap->end(); ++di) {
+				if (decomposition->ismy(di->domain)) {
+					output[i] = domains[di->domain - decomposition->dbegin].vals[di->index];
+					break; // we assume synchronization inside the solver
+				}
+			}
+		}
+	}
+
 public:
 	void store(std::vector<double> &output)
 	{
-//		for (size_t i = 0; i < output.size(); ++i) {
-//			output[i] = this->cluster.vals[i];
-//		}
-		eslog::error("call empty function\n");
+		_store(this->domains, this->decomposition, output);
 	}
 
 	void copyReal(const Vector_Distributed<Vector_Dense , std::complex<T> > *a)

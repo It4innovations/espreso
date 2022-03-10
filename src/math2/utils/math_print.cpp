@@ -197,5 +197,35 @@ void _store(const Matrix_FETI<Matrix_IJV, T> &A, const char* file)
 template <> void store(const Matrix_FETI<Matrix_IJV, double> &A, const char* file) { _store<double>(A, file); }
 template <> void store(const Matrix_FETI<Matrix_IJV, std::complex<double> > &A, const char* file) { _store<std::complex<double>>(A, file); }
 
+template <>
+void store(const std::vector<esint> &v, const char* file)
+{
+	std::ofstream os(std::string(file) + ".txt");
+
+	for (size_t i = 0; i < v.size(); i++) {
+		os << std::setw(6) << v[i] << "\n";
+	}
+}
+
+template <>
+void store(const std::vector<std::vector<esint> > &v, const char* file)
+{
+	for (size_t d = 0; d < v.size(); ++d) {
+		store(v[d], (std::string(file) + std::to_string(d)).c_str());
+	}
+}
+
+template <>
+void store(const serializededata<esint, int> &L2MPI, const char* file)
+{
+	std::ofstream os(std::string(file) + ".txt");
+	for (auto l = L2MPI.cbegin(); l != L2MPI.cend(); ++l) {
+		for (auto p = l->begin(); p != l->end(); ++p) {
+			os << *p << " ";
+		}
+		os << "\n";
+	}
+}
+
 }
 }

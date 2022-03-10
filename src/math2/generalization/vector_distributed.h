@@ -130,7 +130,6 @@ public:
 	Data_Synchronization<Vector, T> *synchronization;
 };
 
-
 template <template<typename> typename Vector, typename T>
 class Vector_Distributed: public Vector_Distributed_Common<Vector, T> {
 public:

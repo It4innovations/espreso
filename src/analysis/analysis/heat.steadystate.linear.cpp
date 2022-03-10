@@ -51,7 +51,6 @@ void AX_HeatSteadyStateLinear::run(step::Step &step)
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" = RUN THE SOLVER                                                DURATION TIME: %10.4f s = \n", configuration.duration_time);
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-	system->info();
 	system->set(step);
 	eslog::info(" ============================================================================================= \n\n");
 

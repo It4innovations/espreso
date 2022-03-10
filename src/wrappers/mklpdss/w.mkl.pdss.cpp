@@ -129,6 +129,7 @@ template<typename T>
 bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 {
 #ifdef HAVE_MKLPDSS
+	_info(A); // print the info before call the solver
 	double start = eslog::time();
 
 	mklpdss.external = new MKLPDSSDataHolder<T>();
@@ -254,9 +255,6 @@ void _clear(MKLPDSS<T> &mklpdss)
 	delete mklpdss.external;
 #endif
 }
-
-template<> void MKLPDSS<double>::info(const Matrix_Distributed<Matrix_CSR, double> &A) const { _info(A); }
-template<> void MKLPDSS<std::complex<double> >::info(const Matrix_Distributed<Matrix_CSR, std::complex<double> > &A) const { _info(A); }
 
 template<> bool MKLPDSS<double>::set(const Matrix_Distributed<Matrix_CSR, double> &A) { return _set(*this, A); }
 template<> bool MKLPDSS<std::complex<double> >::set(const Matrix_Distributed<Matrix_CSR, std::complex<double> > &A) { return _set(*this, A); }

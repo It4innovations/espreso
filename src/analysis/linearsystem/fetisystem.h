@@ -35,14 +35,15 @@ struct AX_FETISystemData: public AX_LinearSystem<Assembler, Solver> {
 		assembler.pattern.setDirichletMap(dynamic_cast<Vector_Distributed<Vector_Sparse, Assembler>*>(x));
 	}
 
-	void info() const
-	{
-//		feti.info(solver.A);
-	}
-
 	bool solve(step::Step &step)
 	{
-
+		if (feti.solve(step, solver.f, solver.x)) {
+			if (info::ecf->output.print_matrices) {
+				eslog::storedata(" STORE: system/{x}\n");
+				math::store(solver.x, utils::filename(utils::debugDirectory(step) + "/system", "x").c_str());
+			}
+			return true;
+		}
 		return false;
 	}
 
@@ -77,13 +78,6 @@ template <typename Assembler, typename Solver>
 void setEqualityConstraints(AX_FETISystemData<Assembler, Solver> *system, step::Step &step)
 {
 	composeEqualityConstraints(system->solver.K, system->solver.dirichlet, system->equalityConstraints, system->feti.configuration.redundant_lagrange);
-	if (info::ecf->output.print_matrices) {
-		eslog::storedata(" STORE: system/{B1Dirichlet, B1c, B1Gluing, B1Duplication}\n");
-		math::store(system->equalityConstraints.B1Dirichlet, utils::filename(utils::debugDirectory(step) + "/system", "B1Dirichlet").c_str());
-		math::store(system->equalityConstraints.B1Gluing, utils::filename(utils::debugDirectory(step) + "/system", "B1Gluing").c_str());
-		math::store(system->equalityConstraints.B1c, utils::filename(utils::debugDirectory(step) + "/system", "B1c").c_str());
-		math::store(system->equalityConstraints.B1Duplication, utils::filename(utils::debugDirectory(step) + "/system", "B1Duplication").c_str());
-	}
 }
 
 template <typename Assembler, typename Solver>
@@ -93,10 +87,37 @@ void setHeatTransferKernel(AX_FETISystemData<Assembler, Solver> *system, step::S
 	system->regularization.R2.domains.resize(system->solver.K.domains.size());
 	system->regularization.RegMat.domains.resize(system->solver.K.domains.size());
 
+	system->regularization.RegMat.type = system->solver.K.type;
+	system->regularization.RegMat.shape = system->solver.K.shape;
 	#pragma omp parallel for
 	for (size_t d = 0; d < system->solver.K.domains.size(); ++d) {
 		// TODO: some domains can be without kernel
 		composeHeatTransferKernel(system->solver.K.domains[d], system->regularization.R1.domains[d], system->regularization.RegMat.domains[d]);
+	}
+}
+
+template <typename Assembler, typename Solver>
+void evaluateEqualityConstraints(AX_FETISystemData<Assembler, Solver> *system, step::Step &step)
+{
+	evaluateEqualityConstraints(system->solver.K, system->solver.dirichlet, system->equalityConstraints, system->feti.configuration.redundant_lagrange);
+	if (info::ecf->output.print_matrices) {
+		eslog::storedata(" STORE: system/{B1, B1c, B1Duplication, D2C, C2G, L2MPI}\n");
+		math::store(system->equalityConstraints.B1, utils::filename(utils::debugDirectory(step) + "/system", "B1").c_str());
+		math::store(system->equalityConstraints.B1c, utils::filename(utils::debugDirectory(step) + "/system", "B1c").c_str());
+		math::store(system->equalityConstraints.B1Duplication, utils::filename(utils::debugDirectory(step) + "/system", "B1Duplication").c_str());
+		math::store(system->equalityConstraints.D2C, utils::filename(utils::debugDirectory(step) + "/system", "D2C").c_str());
+		math::store(system->equalityConstraints.C2G, utils::filename(utils::debugDirectory(step) + "/system", "C2G").c_str());
+		math::store(*system->equalityConstraints.L2MPI, utils::filename(utils::debugDirectory(step) + "/system", "L2MPI").c_str());
+	}
+}
+
+template <typename Assembler, typename Solver>
+void evaluateHeatTransferKernel(AX_FETISystemData<Assembler, Solver> *system, step::Step &step)
+{
+	#pragma omp parallel for
+	for (size_t d = 0; d < system->solver.K.domains.size(); ++d) {
+		// TODO: some domains can be without kernel
+		evaluateHeatTransferKernel(system->solver.K.domains[d], system->regularization.R1.domains[d], system->regularization.RegMat.domains[d]);
 	}
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: system/{R, RegMat}\n");
@@ -145,12 +166,14 @@ template <> struct AX_FETISystem<AX_HeatSteadyStateLinear>: public AX_FETISystem
 	{
 		setEqualityConstraints(this, step);
 		setHeatTransferKernel(this, step);
-		feti.set(solver.K, regularization, equalityConstraints);
+		feti.set(step, solver.K, regularization, equalityConstraints);
 	}
 
 	void update(step::Step &step)
 	{
-
+		evaluateEqualityConstraints(this, step);
+		evaluateHeatTransferKernel(this, step);
+		feti.update(step, solver.K);
 	}
 };
 

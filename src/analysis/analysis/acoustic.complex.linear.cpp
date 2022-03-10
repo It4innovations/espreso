@@ -42,7 +42,6 @@ void AX_AcousticComplexLinear::run(step::Step &step)
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" = RUN THE SOLVER                       FREQUENCY: MIN %10.4f, MAX %10.4f, STEPS %3d = \n", configuration.harmonic_solver.min_frequency, configuration.harmonic_solver.max_frequency, configuration.harmonic_solver.num_samples);
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-	system->info();
 	system->set(step);
 	eslog::info(" ============================================================================================= \n\n");
 

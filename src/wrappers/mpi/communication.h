@@ -129,7 +129,7 @@ struct Communication {
 		EX_KNOWN, EX_UNKNOWN,
 		R_LOW_KNOWN, R_LOW_UNKNOWN,
 		R_UP_KNOWN, R_UP_UNKNOWN,
-		GATHER_UNIFORM, GATHER_UNKNOWN, ALLGATHER_UNKNOWN, BCAST_UNKNOWN,
+		GATHER_UNIFORM, GATHER_UNKNOWN, ALLGATHER_UNKNOWN, ALLGATHER_INPLACE, BCAST_UNKNOWN,
 		BALANCE, ALL_TO_ALLV,
 		EXSCAN, DISTRIBUTION,
 		SEND_VARIOUS, ALL_TO_ALL_OPT,
@@ -185,6 +185,9 @@ struct Communication {
 	static bool allGatherUnknownSize(std::vector<Ttype> &data, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
+	static bool allGatherInplace(Ttype *data, esint offset, esint size, MPIGroup *group = MPITools::procs);
+
+	template <typename Ttype>
 	static bool uniqueAllGatherUnknownSize(std::vector<Ttype> &data, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
@@ -221,6 +224,7 @@ struct Communication {
 	static bool barrier(MPIGroup *group = MPITools::procs);
 	static bool broadcast(void *data, size_t size, MPI_Datatype type, int root, MPIGroup *group = MPITools::procs);
 	static bool reduce(void *in, void *out, size_t size, MPI_Datatype type, MPI_Op op, int root, MPIGroup *group = MPITools::procs);
+	static bool exscan(void *in, void *out, size_t size, MPI_Datatype type, MPI_Op op, MPIGroup *group = MPITools::procs);
 	static bool allReduce(void *in, void *out, size_t size, MPI_Datatype type, MPI_Op op, MPIGroup *group = MPITools::procs);
 	static bool allGather(void *in, void *out, size_t size, MPI_Datatype type, MPIGroup *group = MPITools::procs);
 

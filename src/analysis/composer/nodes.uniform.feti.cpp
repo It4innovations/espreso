@@ -181,8 +181,9 @@ void fillDecomposition(UniformNodesFETIPattern *pattern, int dofs, DOFsDecomposi
 	decomposition.dend = info::mesh->domains->offset + info::mesh->domains->size;
 	decomposition.dtotal = info::mesh->domains->totalSize;
 	decomposition.neighDomain.resize(info::mesh->neighbors.size() + 1);
+	auto ddist = info::mesh->domains->gatherProcDistribution(); // remove this
 	for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
-		decomposition.neighDomain[n] = info::mesh->domains->distribution[info::mesh->neighbors[n]];
+		decomposition.neighDomain[n] = ddist[info::mesh->neighbors[n]];
 	}
 	decomposition.neighDomain.back() = decomposition.dbegin;
 	decomposition.dmap = new serializededata<esint, DIndex>(tarray<esint>(distribution, DOFDistribution), tarray<DIndex>(datadistribution, DOFData));

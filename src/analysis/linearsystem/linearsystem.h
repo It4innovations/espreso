@@ -26,8 +26,6 @@ struct AX_LinearSystem {
 
 	virtual ~AX_LinearSystem() {}
 
-	virtual void info() const {};
-
 	virtual void set(step::Step &step) =0;
 	virtual void update(step::Step &step) =0;
 	virtual bool solve(step::Step &step) =0;

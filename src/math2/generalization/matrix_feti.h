@@ -19,7 +19,55 @@ class Matrix_FETI_Common: public Matrix_Base<T> {
 public:
 	void commit()
 	{
-//		applyData.commit(*static_cast<Matrix_FETI<Matrix, T>*>(this));
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::commit(this->domains[d]);
+		}
+	}
+
+	void symbolicFactorization()
+	{
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::symbolicFactorization(this->domains[d]);
+		}
+	}
+
+	void numericalFactorization()
+	{
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::numericalFactorization(this->domains[d]);
+		}
+	}
+
+	void combine(const Matrix_FETI<Matrix, T> &A, const Matrix_FETI<Matrix, T> &B)
+	{
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			if (A.domains[d].type != B.domains[d].type) {
+				eslog::error("cannot combine matrices of different types.\n");
+			}
+			if (A.domains[d].shape != B.domains[d].shape) {
+				eslog::error("cannot combine matrices of different shapes.\n");
+			}
+		}
+		this->type = A.type;
+		this->shape = A.shape;
+		this->domains.resize(A.domains.size());
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			this->domains[d].type = A.domains[d].type;
+			this->domains[d].shape = A.domains[d].shape;
+			math::combine(this->domains[d], A.domains[d], B.domains[d]);
+		}
+	}
+
+	void sumCombined(const T &alpha, const Matrix_FETI<Matrix, T> &A, const Matrix_FETI<Matrix, T> &B)
+	{
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::sumCombined(this->domains[d], alpha, A.domains[d], B.domains[d]);
+		}
 	}
 
 	void initApply()

@@ -85,7 +85,7 @@ std::string debugDirectory()
 	return path.str();
 }
 
-std::string debugDirectory(step::Step &step)
+std::string debugDirectory(const step::Step &step)
 {
 	std::stringstream path;
 	path << info::ecf->outpath << "/DEBUG";

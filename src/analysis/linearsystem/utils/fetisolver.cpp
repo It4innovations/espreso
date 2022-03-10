@@ -1,5 +1,6 @@
 
 #include "analysis/linearsystem/fetisystem.h"
+#include "basis/utilities/utils.h"
 #include "esinfo/meshinfo.h"
 #include "math2/generalization/matrix_feti.h"
 #include "math2/primitives/matrix_dense.h"
@@ -12,12 +13,13 @@ namespace espreso {
 template <typename T>
 void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename AX_FETI<T>::EqualityConstraints &equalityConstraints, bool redundantLagrange)
 {
-	equalityConstraints.B1Dirichlet.domains.resize(K.domains.size());
+	equalityConstraints.B1.domains.resize(K.domains.size());
 	equalityConstraints.B1c.domains.resize(K.domains.size());
-	equalityConstraints.B1Gluing.domains.resize(K.domains.size());
-//	B1Inequality.initDomains(K.domains);
 	equalityConstraints.B1Duplication.domains.resize(K.domains.size());
 //	B1gap.initDomains(DataDecomposition::DUPLICATION::DUPLICATE, K.domains);
+	equalityConstraints.D2C.resize(K.domains.size());
+
+	std::vector<esint> lsize, l2mpi;
 
 	esint doffset = 0;
 	auto map = K.decomposition->dmap->cbegin();
@@ -29,7 +31,7 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 	}
 
 	// dirichlet size (offset for the first gluing lambda)
-	esint dsize = Communication::exscan(doffset);
+	esint dsize = Communication::exscan(doffset), coffset = 0;
 
 	std::vector<std::vector<esint> > ROWS(K.domains.size()), COLS(K.domains.size());
 	std::vector<std::vector<T> > VALS(K.domains.size()), DUPS(K.domains.size());
@@ -39,27 +41,28 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 		map += dirichlet.cluster.indices[i] - prev;
 		for (auto di = map->begin(); di != map->end(); ++di) {
 			if (K.decomposition->ismy(di->domain)) {
-//				B1Map.push_back(doffset);
-//				B1Map.push_back(0);
-				ROWS[di->domain - K.decomposition->dbegin].push_back(1 + doffset++);
+				lsize.push_back(0);
+				equalityConstraints.C2G.push_back(doffset++);
+				equalityConstraints.D2C[di->domain - K.decomposition->dbegin].push_back(coffset++);
+				ROWS[di->domain - K.decomposition->dbegin].push_back(1 + ROWS[di->domain - K.decomposition->dbegin].size());
 				COLS[di->domain - K.decomposition->dbegin].push_back(1 + di->index);
 				VALS[di->domain - K.decomposition->dbegin].push_back(1);
 			}
 		}
 	}
 
-	for (size_t d = 0; d < K.domains.size(); ++d) {
-		equalityConstraints.B1Dirichlet.domains[d].resize(dsize, K.domains[d].nrows, ROWS[d].size());
-		equalityConstraints.B1c.domains[d].resize(VALS[d].size());
-		std::copy(ROWS[d].begin(), ROWS[d].end(), equalityConstraints.B1Dirichlet.domains[d].rows);
-		std::copy(COLS[d].begin(), COLS[d].end(), equalityConstraints.B1Dirichlet.domains[d].cols);
-		std::copy(VALS[d].begin(), VALS[d].end(), equalityConstraints.B1Dirichlet.domains[d].vals);
-		std::fill(equalityConstraints.B1c.domains[d].vals, equalityConstraints.B1c.domains[d].vals + equalityConstraints.B1c.domains[d].size, 0);
-
-		ROWS[d].clear();
-		COLS[d].clear();
-		VALS[d].clear();
-	}
+//	for (size_t d = 0; d < K.domains.size(); ++d) {
+//		equalityConstraints.B1Dirichlet.domains[d].resize(dsize, K.domains[d].nrows, ROWS[d].size());
+//		equalityConstraints.B1c.domains[d].resize(VALS[d].size());
+//		std::copy(ROWS[d].begin(), ROWS[d].end(), equalityConstraints.B1Dirichlet.domains[d].rows);
+//		std::copy(COLS[d].begin(), COLS[d].end(), equalityConstraints.B1Dirichlet.domains[d].cols);
+//		std::copy(VALS[d].begin(), VALS[d].end(), equalityConstraints.B1Dirichlet.domains[d].vals);
+//		std::fill(equalityConstraints.B1c.domains[d].vals, equalityConstraints.B1c.domains[d].vals + equalityConstraints.B1c.domains[d].size, 0);
+//
+//		ROWS[d].clear();
+//		COLS[d].clear();
+//		VALS[d].clear();
+//	}
 
 //	// MORTAR matrices
 //	esint mortarRows = 0;
@@ -108,7 +111,7 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 ////		std::cout << "MAP: " << B1Map;
 ////	});
 
-	esint goffset = 0;
+	esint goffset = 0, lastNeigh = info::mesh->neighbors.size();
 	std::vector<std::vector<esint> > sBuffer(info::mesh->neighbors.size()), rBuffer(info::mesh->neighbors.size());
 
 	auto fillbuffer = [&] (espreso::serializededata<esint, espreso::DIndex>::const_iterator &dmap) -> bool {
@@ -116,7 +119,7 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 			esint roffset = 0, prev = -1;
 			for (auto di = dmap->begin(); di != dmap->end(); ++di) {
 				if (!K.decomposition->ismy(di->domain)) {
-					while (K.decomposition->neighDomain[roffset + 1] <= di->domain) {
+					while (roffset + 1 < lastNeigh && K.decomposition->neighDomain[roffset + 1] <= di->domain) {
 						++roffset;
 					}
 					if (prev != roffset) {
@@ -167,6 +170,7 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 
 	Matrix_Dense<double> multiplicity;
 	multiplicity.resize(maxMultiplicity - 1, maxMultiplicity);
+	math::set(multiplicity, 0.0);
 	for (esint r = 0; r < multiplicity.nrows; ++r) {
 		multiplicity.vals[r * multiplicity.ncols + r] = 1;
 		multiplicity.vals[r * multiplicity.ncols + r + 1] = -1;
@@ -193,7 +197,7 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 					}
 				} else {
 					esint roffset = 0;
-					while (K.decomposition->neighDomain[roffset + 1] <= map->begin()->domain) {
+					while (roffset + 1 < lastNeigh && K.decomposition->neighDomain[roffset + 1] <= map->begin()->domain) {
 						++roffset;
 					}
 					lambda = rBuffer[roffset][boffset[roffset]++];
@@ -202,35 +206,38 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 					for (auto di1 = map->begin(); di1 != map->end(); ++di1) {
 						for (auto di2 = di1 + 1; di2 != map->end(); ++di2) {
 							if (K.decomposition->ismy(di1->domain) || K.decomposition->ismy(di2->domain)) {
-//								B1Map.push_back(lambda);
-//								B1Map.push_back(0);
+								equalityConstraints.C2G.push_back(lambda);
+								lsize.push_back(0);
 
 								if (K.decomposition->ismy(di1->domain)) {
-									ROWS[di1->domain - K.decomposition->dbegin].push_back(lambda + 1);
+									equalityConstraints.D2C[di1->domain - K.decomposition->dbegin].push_back(coffset);
+									ROWS[di1->domain - K.decomposition->dbegin].push_back(1 + ROWS[di1->domain - K.decomposition->dbegin].size());
 									COLS[di1->domain - K.decomposition->dbegin].push_back(di1->index + 1);
 									VALS[di1->domain - K.decomposition->dbegin].push_back(1);
 									DUPS[di1->domain - K.decomposition->dbegin].push_back(1. / map->size());
 								} else {
-//									esint roffset = 0;
-//									while (K.decomposition->neighDomain[roffset + 1] <= di1->domain) {
-//										++roffset;
-//									}
-//									++B1Map.back();
-//									B1Map.push_back(K.neighbors[roffset]);
+									esint roffset = 0;
+									while (roffset + 1 < lastNeigh && K.decomposition->neighDomain[roffset + 1] <= di1->domain) {
+										++roffset;
+									}
+									++lsize.back();
+									l2mpi.push_back(roffset);
 								}
 								if (K.decomposition->ismy(di2->domain)) {
-									ROWS[di2->domain - K.decomposition->dbegin].push_back(lambda + 1);
+									equalityConstraints.D2C[di2->domain - K.decomposition->dbegin].push_back(coffset);
+									ROWS[di2->domain - K.decomposition->dbegin].push_back(1 + ROWS[di2->domain - K.decomposition->dbegin].size());
 									COLS[di2->domain - K.decomposition->dbegin].push_back(di2->index + 1);
 									VALS[di2->domain - K.decomposition->dbegin].push_back(-1);
 									DUPS[di2->domain - K.decomposition->dbegin].push_back(1. / map->size());
 								} else {
-//									esint roffset = 0;
-//									while (K.decomposition->neighDomain[roffset + 1] <= di2->domain) {
-//										++roffset;
-//									}
-//									++B1Map.back();
-//									B1Map.push_back(K.neighbors[roffset]);
+									esint roffset = 0;
+									while (roffset + 1 < lastNeigh && K.decomposition->neighDomain[roffset + 1] <= di2->domain) {
+										++roffset;
+									}
+									++lsize.back();
+									l2mpi.push_back(roffset);
 								}
+								++coffset;
 							}
 							++lambda;
 						}
@@ -251,25 +258,24 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 					}
 					for (size_t link = 0; link + 1 < map->size(); ++link) {
 						if (myfirst <= link + 1) {
-//							B1Map.push_back(lambda);
-//							size_t mapCounter = B1Map.size();
-//							B1Map.push_back(0);
-
+							equalityConstraints.C2G.push_back(lambda);
+							lsize.push_back(0);
 							for (size_t i = 0; i <= link + 1; ++i) {
 								if (K.decomposition->ismy(map->at(i).domain)) {
-									ROWS[map->at(i).domain - K.decomposition->dbegin].push_back(lambda + 1);
+									equalityConstraints.D2C[map->at(i).domain - K.decomposition->dbegin].push_back(coffset);
+									ROWS[map->at(i).domain - K.decomposition->dbegin].push_back(1 + ROWS[map->at(i).domain - K.decomposition->dbegin].size());
 									COLS[map->at(i).domain - K.decomposition->dbegin].push_back(map->at(i).index + 1);
 									VALS[map->at(i).domain - K.decomposition->dbegin].push_back(multiplicity.vals[link * multiplicity.ncols + i]);
 									DUPS[map->at(i).domain - K.decomposition->dbegin].push_back(1. / map->size());
 								} else {
-//									esint roffset = 0;
-//									while (K.distribution[K.neighbors[roffset] + 1] <= map->at(i).domain) {
-//										++roffset;
-//									}
-//									if (B1Map[mapCounter] == 0 || B1Map.back() != K.neighbors[roffset]) {
-//										++B1Map[mapCounter];
-//										B1Map.push_back(K.neighbors[roffset]);
-//									}
+									esint roffset = 0;
+									while (roffset + 1 < lastNeigh && K.decomposition->neighDomain[roffset + 1] <= map->at(i).domain) {
+										++roffset;
+									}
+									if (lsize.back() == 0 || l2mpi.back() != roffset) {
+										++lsize.back();
+										l2mpi.push_back(roffset);
+									}
 								}
 							}
 						}
@@ -281,18 +287,22 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 	}
 
 	for (size_t d = 0; d < K.domains.size(); ++d) {
-		equalityConstraints.B1Gluing.domains[d].resize(gsize, K.domains[d].nrows, ROWS[d].size());
+		equalityConstraints.B1.domains[d].resize(gsize, K.domains[d].nrows, ROWS[d].size());
 		equalityConstraints.B1Duplication.domains[d].resize(DUPS[d].size());
 
-		std::copy(ROWS[d].begin(), ROWS[d].end(), equalityConstraints.B1Gluing.domains[d].rows);
-		std::copy(COLS[d].begin(), COLS[d].end(), equalityConstraints.B1Gluing.domains[d].cols);
-		std::copy(VALS[d].begin(), VALS[d].end(), equalityConstraints.B1Gluing.domains[d].vals);
+		std::copy(ROWS[d].begin(), ROWS[d].end(), equalityConstraints.B1.domains[d].rows);
+		std::copy(COLS[d].begin(), COLS[d].end(), equalityConstraints.B1.domains[d].cols);
+		std::copy(VALS[d].begin(), VALS[d].end(), equalityConstraints.B1.domains[d].vals);
 		std::copy(DUPS[d].begin(), DUPS[d].end(), equalityConstraints.B1Duplication.domains[d].vals);
 
 		ROWS[d].clear();
 		COLS[d].clear();
 		VALS[d].clear();
 	}
+
+	lsize.push_back(0);
+	utils::sizesToOffsets(lsize);
+	equalityConstraints.L2MPI = new serializededata<esint, int>(lsize, l2mpi);
 
 //	esint ioffset = 0;
 //	map = K.dmap->cbegin();
@@ -341,9 +351,11 @@ void composeHeatTransferKernel(const Matrix_CSR<double> &K, Matrix_Dense<double>
 {
 	R.resize(K.nrows, 1);
 	R.type = Matrix_Type::REAL_NONSYMMETRIC;
+	R.shape = Matrix_Shape::FULL;
 
 	RegMat.resize(K.nrows, K.ncols, 1);
 	RegMat.type = K.type;
+	RegMat.shape = K.shape;
 
 	RegMat.rows[0] = RegMat.cols[0] = _Matrix_CSR_Pattern::Indexing;
 	std::fill(RegMat.rows + 1, RegMat.rows + RegMat.nrows + 1, RegMat.rows[0] + 1);
@@ -351,11 +363,9 @@ void composeHeatTransferKernel(const Matrix_CSR<double> &K, Matrix_Dense<double>
 
 void evaluateHeatTransferKernel(const Matrix_CSR<double> &K, Matrix_Dense<double> &R, Matrix_CSR<double> &RegMat)
 {
-//	Vector_Dense<double> diag;
-//	diag.resize(solver.A.domains[d].nrows);
-//	math::getDiagonal(solver.A.domains[d], diag);
-//	solver.RegMat.domains[d].vals[0] = math::max(diag);
-//
+	RegMat.vals[0] = math::getDiagonalMax(K);
+	math::set(R, 1.0 / std::sqrt(K.nrows));
+
 //	if (solver.configuration.method != FETIConfiguration::METHOD::HYBRID_FETI) { // N1 orthogonal for whole cluster
 //		esint crows = 0;
 //		for (esint dd = 0; dd < info::mesh->domains->size; dd++) {
