@@ -118,7 +118,8 @@ OutputConfiguration::OutputConfiguration(const ECF *root)
 			.addoption(ECFOption().setname("ENSIGHT").setdescription("EnSight format."))
 			.addoption(ECFOption().setname("XDMF").setdescription("XDMF format."))
 			.addoption(ECFOption().setname("STL_SURFACE").setdescription("Surface of bodies in STL format."))
-			.addoption(ECFOption().setname("NETGEN").setdescription("Netgen neutral format (only for tetrahedral meshes).")));
+			.addoption(ECFOption().setname("NETGEN").setdescription("Netgen neutral format (only for tetrahedral meshes)."))
+			.addoption(ECFOption().setname("OPENVDB").setdescription("OpenVDB volume format.")));
 
 	mode = MODE::PTHREAD;
 	REGISTER(mode, ECFMetaData()

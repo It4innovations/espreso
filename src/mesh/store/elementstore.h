@@ -51,6 +51,8 @@ struct ElementStore {
 	serializededata<esint, esint>* faceNeighbors;
 	serializededata<esint, esint>* edgeNeighbors;
 
+	serializededata<esint, esint>* volumeIndices;
+
 	serializededata<esint, double>* stiffness;
 
 	std::vector<ElementsInterval> eintervals;

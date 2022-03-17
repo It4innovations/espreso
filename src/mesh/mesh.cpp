@@ -535,6 +535,8 @@ void Mesh::computePersistentParameters()
 		eslog::checkpointln("MESH: BODIES SURFACE COMPUTED");
 	}
 
+	mesh::computeVolumeIndices(elements, nodes);
+
 	eslog::checkpointln("MESH: BODIES COMPUTED");
 	eslog::checkpointln("MESH: BOUNDARY REGIONS COMPOSED");
 }

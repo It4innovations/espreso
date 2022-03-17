@@ -27,6 +27,8 @@ ElementStore::ElementStore()
   faceNeighbors(NULL),
   edgeNeighbors(NULL),
 
+  volumeIndices(NULL),
+
   stiffness(NULL)
 {
 
@@ -49,6 +51,7 @@ size_t ElementStore::packedFullSize() const
 	packedSize += utils::packedSize(regions);
 	packedSize += utils::packedSize(faceNeighbors);
 	packedSize += utils::packedSize(edgeNeighbors);
+	packedSize += utils::packedSize(volumeIndices);
 	packedSize += utils::packedSize(stiffness);
 
 	packedSize += 1;
@@ -82,6 +85,7 @@ void ElementStore::packFull(char* &p) const
 	utils::pack(regions, p);
 	utils::pack(faceNeighbors, p);
 	utils::pack(edgeNeighbors, p);
+	utils::pack(volumeIndices, p);
 	utils::pack(stiffness, p);
 
 	utils::pack(epointers != NULL, p);
@@ -118,6 +122,7 @@ void ElementStore::unpackFull(const char* &p)
 	utils::unpack(regions, p);
 	utils::unpack(faceNeighbors, p);
 	utils::unpack(edgeNeighbors, p);
+	utils::unpack(volumeIndices, p);
 	utils::unpack(stiffness, p);
 
 	bool notnull;
@@ -288,6 +293,8 @@ ElementStore::~ElementStore()
 	if (faceNeighbors != NULL) { delete faceNeighbors; }
 	if (edgeNeighbors != NULL) { delete edgeNeighbors; }
 
+	if (volumeIndices != NULL) { delete volumeIndices; }
+
 	if (stiffness != NULL) { delete stiffness; }
 
 	for (size_t i = 0; i < data.size(); i++) {
@@ -328,6 +335,8 @@ void ElementStore::permute(const std::vector<esint> &permutation, const std::vec
 
 	if (faceNeighbors != NULL) { faceNeighbors->permute(permutation, threading); }
 	if (edgeNeighbors != NULL) { edgeNeighbors->permute(permutation, threading); }
+
+	if (volumeIndices != NULL) { volumeIndices->permute(permutation, threading); }
 
 	if (stiffness != NULL) { stiffness->permute(permutation, threading); }
 

@@ -80,7 +80,8 @@ struct OutputConfiguration: public ECFDescription {
 		ENSIGHT,
 		XDMF,
 		STL_SURFACE,
-		NETGEN
+		NETGEN,
+		OPENVDB
 	};
 
 	enum class WRITER {
