@@ -416,14 +416,14 @@ void UniformNodesFETIPattern::set(std::map<std::string, ECFExpression> &settings
 
 void UniformNodesFETIPattern::fillCSR(esint *rows, esint *cols, esint domain)
 {
-	rows[0] = _Matrix_CSR_Pattern::Indexing;
-	cols[0] = elements[domain].column.front() + _Matrix_CSR_Pattern::Indexing;
+	rows[0] = Indexing::CSR;
+	cols[0] = elements[domain].column.front() + Indexing::CSR;
 	size_t r = 1;
 	for (size_t c = 1; c < elements[domain].column.size(); ++c) {
-		cols[c] = elements[domain].column[c] + _Matrix_CSR_Pattern::Indexing;
+		cols[c] = elements[domain].column[c] + Indexing::CSR;
 		if (elements[domain].row[c] != elements[domain].row[c - 1]) {
-			rows[r++] = c + _Matrix_CSR_Pattern::Indexing;
+			rows[r++] = c + Indexing::CSR;
 		}
 	}
-	rows[r] = elements[domain].column.size() + _Matrix_CSR_Pattern::Indexing;
+	rows[r] = elements[domain].column.size() + Indexing::CSR;
 }

@@ -232,14 +232,14 @@ void UniformNodesDistributedPattern::set(std::map<std::string, ECFExpression> &s
 
 void UniformNodesDistributedPattern::fillCSR(esint *rows, esint *cols)
 {
-	rows[0] = _Matrix_CSR_Pattern::Indexing;
-	cols[0] = elements.column.front() + _Matrix_CSR_Pattern::Indexing;
+	rows[0] = Indexing::CSR;
+	cols[0] = elements.column.front() + Indexing::CSR;
 	size_t r = 1;
 	for (size_t c = 1; c < elements.column.size(); ++c) {
-		cols[c] = elements.column[c] + _Matrix_CSR_Pattern::Indexing;
+		cols[c] = elements.column[c] + Indexing::CSR;
 		if (elements.row[c] != elements.row[c - 1]) {
-			rows[r++] = c + _Matrix_CSR_Pattern::Indexing;
+			rows[r++] = c + Indexing::CSR;
 		}
 	}
-	rows[r] = elements.column.size() + _Matrix_CSR_Pattern::Indexing;
+	rows[r] = elements.column.size() + Indexing::CSR;
 }

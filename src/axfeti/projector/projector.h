@@ -4,6 +4,9 @@
 
 #include "axfeti/feti.h"
 
+#include "math2/feti/vector_dual.h"
+#include "math2/feti/vector_kernel.h"
+
 namespace espreso {
 
 template <typename T>
@@ -17,7 +20,13 @@ public:
 	virtual void info() =0;
 	virtual void update() =0;
 
+	virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) =0;
+	virtual void applyGtInvGGt(const Vector_Kernel<T> &x, Vector_Dual<T> &y) =0;
+	virtual void applyInvGGtG(const Vector_Dual<T> &x, Vector_Kernel<T> &y) =0;
+
 	AX_FETI<T> *feti;
+
+	Vector_Kernel<T> e;
 };
 
 }

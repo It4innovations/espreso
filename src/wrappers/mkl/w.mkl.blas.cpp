@@ -91,7 +91,7 @@ double norm(const esint size, const double *x, const esint incX)
 }
 
 template <>
-void apply(Vector_Dense<double> &y, const double &alpha, Matrix_Dense<double> &a, const double &beta, const Vector_Dense<double> &x)
+void apply(Vector_Dense<double> &y, const double &alpha, const Matrix_Dense<double> &a, const double &beta, const Vector_Dense<double> &x)
 {
 #ifdef HAVE_MKL
 	cblas_dgemv(CBLAS_LAYOUT::CblasRowMajor, CBLAS_TRANSPOSE::CblasNoTrans, a.nrows, a.ncols, alpha, a.vals, a.ncols, x.vals, 1, beta, y.vals, 1);
@@ -99,7 +99,7 @@ void apply(Vector_Dense<double> &y, const double &alpha, Matrix_Dense<double> &a
 }
 
 template <>
-void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &alpha, Matrix_Dense<std::complex<double> > &a, const std::complex<double> &beta, const Vector_Dense<std::complex<double> > &x)
+void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &alpha, const Matrix_Dense<std::complex<double> > &a, const std::complex<double> &beta, const Vector_Dense<std::complex<double> > &x)
 {
 #ifdef HAVE_MKL
 	cblas_zgemv(CBLAS_LAYOUT::CblasRowMajor, CBLAS_TRANSPOSE::CblasNoTrans, a.nrows, a.ncols, &alpha, a.vals, a.ncols, x.vals, 1, &beta, y.vals, 1);

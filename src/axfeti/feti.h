@@ -6,6 +6,7 @@
 #include "math2/generalization/matrix_distributed.h"
 #include "math2/generalization/matrix_feti.h"
 #include "math2/generalization/vector_feti.h"
+#include "math2/feti/lmap.h"
 
 namespace espreso {
 
@@ -22,6 +23,8 @@ public:
 		esint domains, clusters;
 		esint R1offset, R2offset;
 		esint R1size, R2size;
+		esint R1totalSize, R2totalSize;
+		esint lambdasLocal, lambdasTotal;
 	};
 
 	struct Regularization {
@@ -30,16 +33,18 @@ public:
 	};
 
 	struct EqualityConstraints {
-		std::vector<std::vector<esint> > D2C; // domains to cluster
-		std::vector<esint> C2G; // cluster to global
-		serializededata<esint, int> *L2MPI = nullptr; // lambda to MPI processes
-		Matrix_FETI<Matrix_IJV, T> B1;
-		Vector_FETI<Vector_Dense, T> B1c, B1Duplication;
+		struct Domain {
+			esint nhalo;
+			std::vector<esint> D2C;
 
-		~EqualityConstraints()
-		{
-			if (L2MPI) delete L2MPI;
-		}
+			Matrix_CSR<T> B1;
+			Vector_Dense<T> duplication;
+		};
+
+		esint global, nhalo, paired, local, nn;
+		std::vector<LMAP> lmap;
+		std::vector<Domain> domain;
+		Vector_Dense<T> c;
 	};
 
 	AX_FETI(FETIConfiguration &configuration): configuration(configuration) {}
@@ -47,8 +52,8 @@ public:
 	void info() const;
 
 	bool set(const step::Step &step, Matrix_FETI<Matrix_CSR, T> &K, const Regularization &regularization, const EqualityConstraints &equalityConstraints);
-	bool update(const step::Step &step, Matrix_FETI<Matrix_CSR, T> &K);
-	bool solve(const step::Step &step, const Vector_FETI<Vector_Dense, T> &f, Vector_FETI<Vector_Dense, T> &x);
+	bool update(const step::Step &step, Matrix_FETI<Matrix_CSR, T> &K, Vector_FETI<Vector_Dense, T> &f);
+	bool solve(const step::Step &step, Vector_FETI<Vector_Dense, T> &x);
 
 	FETIConfiguration &configuration;
 	SystemInfo sinfo;
@@ -57,6 +62,9 @@ public:
 	const Matrix_FETI<Matrix_CSR, T> *K = nullptr;
 	const Regularization *regularization = nullptr;
 	const EqualityConstraints *equalityConstraints = nullptr;
+
+	Vector_FETI<Vector_Dense, T> *f = nullptr;
+	Vector_FETI<Vector_Dense, T> *x = nullptr;
 
 	IterativeSolver<T> *iterativeSolver = nullptr;
 	Preconditioner<T> *preconditioner = nullptr;

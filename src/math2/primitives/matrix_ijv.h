@@ -8,18 +8,10 @@ namespace espreso {
 
 struct Matrix_IJV_External_Representation;
 
-struct _Matrix_IJV_Pattern {
+template <typename T>
+struct _Matrix_IJV {
 	esint nrows, ncols, nnz, *rows, *cols;
-};
-
-template <typename T>
-struct _Matrix_IJV_Vals {
 	T *vals;
-};
-
-template <typename T>
-struct _Matrix_IJV: public _Matrix_IJV_Pattern, public _Matrix_IJV_Vals<T> {
-
 };
 
 template <typename T>
@@ -135,7 +127,7 @@ protected:
 		m.nnz = nnz;
 	}
 
-	void realloc(_Matrix_IJV<T> &m, const _Matrix_IJV_Pattern &other)
+	void realloc(_Matrix_IJV<T> &m, const _Matrix_IJV<T> &other)
 	{
 		if (m.rows) { delete[] m.rows; m.rows = nullptr; }
 		if (m.cols) { delete[] m.cols; m.cols = nullptr; }

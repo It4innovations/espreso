@@ -25,22 +25,6 @@ public:
 		}
 	}
 
-	void symbolicFactorization()
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::symbolicFactorization(this->domains[d]);
-		}
-	}
-
-	void numericalFactorization()
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::numericalFactorization(this->domains[d]);
-		}
-	}
-
 	void combine(const Matrix_FETI<Matrix, T> &A, const Matrix_FETI<Matrix, T> &B)
 	{
 		for (size_t d = 0; d < this->domains.size(); ++d) {

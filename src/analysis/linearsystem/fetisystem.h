@@ -37,7 +37,7 @@ struct AX_FETISystemData: public AX_LinearSystem<Assembler, Solver> {
 
 	bool solve(step::Step &step)
 	{
-		if (feti.solve(step, solver.f, solver.x)) {
+		if (feti.solve(step, solver.x)) {
 			if (info::ecf->output.print_matrices) {
 				eslog::storedata(" STORE: system/{x}\n");
 				math::store(solver.x, utils::filename(utils::debugDirectory(step) + "/system", "x").c_str());
@@ -67,9 +67,9 @@ struct AX_FETISystemData: public AX_LinearSystem<Assembler, Solver> {
 };
 
 template <typename T>
-void composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename AX_FETI<T>::EqualityConstraints &equalityConstraints, bool redundantLagrange);
+void composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename AX_FETI<T>::EqualityConstraints &eq, bool redundantLagrange);
 template <typename T>
-void evaluateEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename AX_FETI<T>::EqualityConstraints &equalityConstraints, bool redundantLagrange);
+void evaluateEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename AX_FETI<T>::EqualityConstraints &eq, bool redundantLagrange);
 
 void composeHeatTransferKernel(const Matrix_CSR<double> &K, Matrix_Dense<double> &R, Matrix_CSR<double> &RegMat);
 void evaluateHeatTransferKernel(const Matrix_CSR<double> &K, Matrix_Dense<double> &R, Matrix_CSR<double> &RegMat);
@@ -101,13 +101,14 @@ void evaluateEqualityConstraints(AX_FETISystemData<Assembler, Solver> *system, s
 {
 	evaluateEqualityConstraints(system->solver.K, system->solver.dirichlet, system->equalityConstraints, system->feti.configuration.redundant_lagrange);
 	if (info::ecf->output.print_matrices) {
-		eslog::storedata(" STORE: system/{B1, B1c, B1Duplication, D2C, C2G, L2MPI}\n");
-		math::store(system->equalityConstraints.B1, utils::filename(utils::debugDirectory(step) + "/system", "B1").c_str());
-		math::store(system->equalityConstraints.B1c, utils::filename(utils::debugDirectory(step) + "/system", "B1c").c_str());
-		math::store(system->equalityConstraints.B1Duplication, utils::filename(utils::debugDirectory(step) + "/system", "B1Duplication").c_str());
-		math::store(system->equalityConstraints.D2C, utils::filename(utils::debugDirectory(step) + "/system", "D2C").c_str());
-		math::store(system->equalityConstraints.C2G, utils::filename(utils::debugDirectory(step) + "/system", "C2G").c_str());
-		math::store(*system->equalityConstraints.L2MPI, utils::filename(utils::debugDirectory(step) + "/system", "L2MPI").c_str());
+		eslog::storedata(" STORE: system/{B1, B1c, B1Duplication, D2C, LMAP}\n");
+		math::store(system->equalityConstraints.c, utils::filename(utils::debugDirectory(step) + "/system", "B1c").c_str());
+		for (size_t d = 0; d < system->equalityConstraints.domain.size(); ++d) {
+			math::store(system->equalityConstraints.domain[d].B1, utils::filename(utils::debugDirectory(step) + "/system", "B1" + std::to_string(d)).c_str());
+			math::store(system->equalityConstraints.domain[d].duplication, utils::filename(utils::debugDirectory(step) + "/system", "B1Duplication" + std::to_string(d)).c_str());
+			math::store(system->equalityConstraints.domain[d].D2C, utils::filename(utils::debugDirectory(step) + "/system", "D2C" + std::to_string(d)).c_str());
+			math::store(system->equalityConstraints.lmap, utils::filename(utils::debugDirectory(step) + "/system", "LMAP").c_str());
+		}
 	}
 }
 
@@ -173,7 +174,12 @@ template <> struct AX_FETISystem<AX_HeatSteadyStateLinear>: public AX_FETISystem
 	{
 		evaluateEqualityConstraints(this, step);
 		evaluateHeatTransferKernel(this, step);
-		feti.update(step, solver.K);
+		feti.update(step, solver.K, solver.f);
+		if (info::ecf->output.print_matrices) {
+			eslog::storedata(" STORE: system/{K, f}\n");
+			math::store(solver.K, utils::filename(utils::debugDirectory(step) + "/system", "K").c_str());
+			math::store(solver.f, utils::filename(utils::debugDirectory(step) + "/system", "f").c_str());
+		}
 	}
 };
 

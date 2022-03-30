@@ -168,36 +168,36 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 	if (_isSymmetric(A.cluster.type)) {
 		esint nhalo = A.distribution->halo.size();
 		for (esint i = nhalo; i < A.cluster.nrows; i++) {
-			for (esint c = A.cluster.rows[i] - _Matrix_CSR_Pattern::Indexing; c < A.cluster.rows[i + 1] - _Matrix_CSR_Pattern::Indexing; ++c) {
-				if (A.distribution->begin + i - nhalo <= A.cluster.cols[c] - _Matrix_CSR_Pattern::Indexing) {
+			for (esint c = A.cluster.rows[i] - Indexing::CSR; c < A.cluster.rows[i + 1] - Indexing::CSR; ++c) {
+				if (A.distribution->begin + i - nhalo <= A.cluster.cols[c] - Indexing::CSR) {
 					++mklpdss.external->A.nnz;
 				}
 			}
 		}
 		mklpdss.external->A.resize(A.cluster.nrows - nhalo, A.cluster.ncols, mklpdss.external->A.nnz);
-		mklpdss.external->A.rows[0] = _Matrix_CSR_Pattern::Indexing;
+		mklpdss.external->A.rows[0] = Indexing::CSR;
 		for (esint i = nhalo, offset = 0; i < A.cluster.nrows; i++) {
-			for (esint c = A.cluster.rows[i] - _Matrix_CSR_Pattern::Indexing; c < A.cluster.rows[i + 1] - _Matrix_CSR_Pattern::Indexing; ++c) {
-				if (A.distribution->begin + i - nhalo <= A.cluster.cols[c] - _Matrix_CSR_Pattern::Indexing) {
+			for (esint c = A.cluster.rows[i] - Indexing::CSR; c < A.cluster.rows[i + 1] - Indexing::CSR; ++c) {
+				if (A.distribution->begin + i - nhalo <= A.cluster.cols[c] - Indexing::CSR) {
 					mklpdss.external->A.cols[offset++] = A.cluster.cols[c];
 				}
 			}
-			mklpdss.external->A.rows[i - nhalo + 1] = offset + _Matrix_CSR_Pattern::Indexing;
+			mklpdss.external->A.rows[i - nhalo + 1] = offset + Indexing::CSR;
 		}
 	} else {
 		esint nhalo = A.distribution->halo.size();
 		for (esint i = nhalo; i < A.cluster.nrows; i++) {
-			for (esint c = A.cluster.rows[i] - _Matrix_CSR_Pattern::Indexing; c < A.cluster.rows[i + 1] - _Matrix_CSR_Pattern::Indexing; ++c) {
+			for (esint c = A.cluster.rows[i] - Indexing::CSR; c < A.cluster.rows[i + 1] - Indexing::CSR; ++c) {
 				++mklpdss.external->A.nnz;
 			}
 		}
 		mklpdss.external->A.resize(A.cluster.nrows - nhalo, A.cluster.ncols, mklpdss.external->A.nnz);
-		mklpdss.external->A.rows[0] = _Matrix_CSR_Pattern::Indexing;
+		mklpdss.external->A.rows[0] = Indexing::CSR;
 		for (esint i = nhalo, offset = 0; i < A.cluster.nrows; i++) {
-			for (esint c = A.cluster.rows[i] - _Matrix_CSR_Pattern::Indexing; c < A.cluster.rows[i + 1] - _Matrix_CSR_Pattern::Indexing; ++c) {
+			for (esint c = A.cluster.rows[i] - Indexing::CSR; c < A.cluster.rows[i + 1] - Indexing::CSR; ++c) {
 				mklpdss.external->A.cols[offset++] = A.cluster.cols[c];
 			}
-			mklpdss.external->A.rows[i - nhalo + 1] = offset + _Matrix_CSR_Pattern::Indexing;
+			mklpdss.external->A.rows[i - nhalo + 1] = offset + Indexing::CSR;
 		}
 	}
 	bool status = _call(mklpdss, 11);
@@ -214,8 +214,8 @@ bool _update(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 	if (_isSymmetric(A.cluster.type)) {
 		esint nhalo = A.distribution->halo.size();
 		for (esint i = nhalo, offset = 0; i < A.cluster.nrows; i++) {
-			for (esint c = A.cluster.rows[i] - _Matrix_CSR_Pattern::Indexing; c < A.cluster.rows[i + 1] - _Matrix_CSR_Pattern::Indexing; ++c) {
-				if (A.distribution->begin + i - nhalo <= A.cluster.cols[c] - _Matrix_CSR_Pattern::Indexing) {
+			for (esint c = A.cluster.rows[i] - Indexing::CSR; c < A.cluster.rows[i + 1] - Indexing::CSR; ++c) {
+				if (A.distribution->begin + i - nhalo <= A.cluster.cols[c] - Indexing::CSR) {
 					mklpdss.external->A.vals[offset++] = A.cluster.vals[c];
 				}
 			}
@@ -223,7 +223,7 @@ bool _update(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 	} else {
 		esint nhalo = A.distribution->halo.size();
 		for (esint i = nhalo, offset = 0; i < A.cluster.nrows; i++) {
-			for (esint c = A.cluster.rows[i] - _Matrix_CSR_Pattern::Indexing; c < A.cluster.rows[i + 1] - _Matrix_CSR_Pattern::Indexing; ++c) {
+			for (esint c = A.cluster.rows[i] - Indexing::CSR; c < A.cluster.rows[i + 1] - Indexing::CSR; ++c) {
 				mklpdss.external->A.vals[offset++] = A.cluster.vals[c];
 			}
 		}

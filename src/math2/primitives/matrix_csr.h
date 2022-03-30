@@ -8,28 +8,20 @@ namespace espreso {
 
 struct Matrix_CSR_External_Representation;
 
-struct _Matrix_CSR_Pattern {
-	enum: int {
-		Indexing = 1
-	};
-
+template <typename T>
+struct _Matrix_CSR {
 	esint nrows, ncols, nnz, *rows, *cols;
-};
-
-template <typename T>
-struct _Matrix_CSR_Vals {
 	T *vals;
-};
-
-template <typename T>
-struct _Matrix_CSR: public _Matrix_CSR_Pattern, public _Matrix_CSR_Vals<T> {
-
 };
 
 template <typename T>
 class Matrix_CSR: public _Matrix_CSR<T>
 {
 public:
+	enum: int {
+		Indexing = 1
+	};
+
 	Matrix_CSR(): _Matrix_CSR<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _external{nullptr}, _allocated{}
 	{
 
@@ -148,7 +140,7 @@ protected:
 		m.nnz = nnz;
 	}
 
-	void realloc(_Matrix_CSR<T> &m, const _Matrix_CSR_Pattern &other)
+	void realloc(_Matrix_CSR<T> &m, const _Matrix_CSR<T> &other)
 	{
 		if (m.rows) { delete[] m.rows; m.rows = nullptr; }
 		if (m.cols) { delete[] m.cols; m.cols = nullptr; }

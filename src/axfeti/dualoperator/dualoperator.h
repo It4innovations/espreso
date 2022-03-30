@@ -3,6 +3,9 @@
 #define SRC_AXFETI_DUALOPERATOR_DUALOPERATOR_H_
 
 #include "axfeti/feti.h"
+#include "math2/feti/vector_dual.h"
+
+#include <vector>
 
 namespace espreso {
 
@@ -17,9 +20,13 @@ public:
 	virtual void info() =0;
 	virtual void update() =0;
 
+	// y = F * x
+	virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) =0;
+
 	AX_FETI<T> *feti;
 
-	Matrix_FETI<Matrix_CSR, T> Kplus;
+	std::vector<Matrix_CSR<T> > Kplus;
+	Vector_Dual<T> d;
 };
 
 }

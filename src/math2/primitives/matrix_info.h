@@ -4,6 +4,11 @@
 
 namespace espreso {
 
+struct Indexing {
+	const static int CSR = 1;
+	const static int IJV = 1;
+};
+
 enum Matrix_Type: int {
 	REAL_SYMMETRIC_POSITIVE_DEFINITE,
 	REAL_SYMMETRIC_INDEFINITE,

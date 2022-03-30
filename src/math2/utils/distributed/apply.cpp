@@ -63,15 +63,15 @@ void _init(Data_Apply<Matrix_CSR, T> *data, Matrix_Distributed<Matrix_CSR, T> &m
 	std::set<esint> lower, higher;
 	std::vector<std::set<esint> > send(data->neighbors.size());
 	for (esint r = nhalo; r < matrix.nrows; ++r) {
-		for (esint c = matrix.rows[r] - _Matrix_CSR_Pattern::Indexing; c < matrix.rows[r + 1] - _Matrix_CSR_Pattern::Indexing; ++c) {
-			if (matrix.cols[c] - _Matrix_CSR_Pattern::Indexing < m.distribution->begin) {
-				lower.insert(matrix.cols[c] - _Matrix_CSR_Pattern::Indexing);
-				auto n = std::lower_bound(data->nDOF.begin(), data->nDOF.end(), matrix.cols[c] - _Matrix_CSR_Pattern::Indexing + 1) - data->nDOF.begin() - 1;
+		for (esint c = matrix.rows[r] - Indexing::CSR; c < matrix.rows[r + 1] - Indexing::CSR; ++c) {
+			if (matrix.cols[c] - Indexing::CSR < m.distribution->begin) {
+				lower.insert(matrix.cols[c] - Indexing::CSR);
+				auto n = std::lower_bound(data->nDOF.begin(), data->nDOF.end(), matrix.cols[c] - Indexing::CSR + 1) - data->nDOF.begin() - 1;
 				send[n].insert(r);
 			}
-			if (m.distribution->end <= matrix.cols[c] - _Matrix_CSR_Pattern::Indexing) {
-				higher.insert(matrix.cols[c] - _Matrix_CSR_Pattern::Indexing);
-				auto n = std::lower_bound(data->nDOF.begin(), data->nDOF.end(), matrix.cols[c] - _Matrix_CSR_Pattern::Indexing + 1) - data->nDOF.begin() - 1;
+			if (m.distribution->end <= matrix.cols[c] - Indexing::CSR) {
+				higher.insert(matrix.cols[c] - Indexing::CSR);
+				auto n = std::lower_bound(data->nDOF.begin(), data->nDOF.end(), matrix.cols[c] - Indexing::CSR + 1) - data->nDOF.begin() - 1;
 				send[n].insert(r);
 			}
 		}
@@ -108,17 +108,17 @@ void _init(Data_Apply<Matrix_CSR, T> *data, Matrix_Distributed<Matrix_CSR, T> &m
 	data->v.size = data->m.ncols;
 	data->v._allocated.vals = data->v.vals = new T[data->m.ncols];
 
-	data->m.rows[0] = _Matrix_CSR_Pattern::Indexing;
+	data->m.rows[0] = Indexing::CSR;
 	for (esint r = nhalo, i = 1; r < matrix.nrows; ++r, ++i) {
 		data->m.rows[i] = data->m.rows[i - 1] + matrix.rows[r + 1] - matrix.rows[r];
 	}
 
 	std::vector<esint> _lower(lower.begin(), lower.end()), _higher(higher.begin(), higher.end());
-	for (esint i = 0, c = matrix.rows[nhalo] - _Matrix_CSR_Pattern::Indexing; i < data->m.nnz; ++i, ++c) {
-		if (matrix.cols[c] - _Matrix_CSR_Pattern::Indexing < m.distribution->begin) {
-			data->m.cols[i] = std::lower_bound(_lower.begin(), _lower.end(), matrix.cols[c] - _Matrix_CSR_Pattern::Indexing) - _lower.begin() + _Matrix_CSR_Pattern::Indexing;
-		} else if (m.distribution->end <= matrix.cols[c] - _Matrix_CSR_Pattern::Indexing) {
-			data->m.cols[i] = std::lower_bound(_higher.begin(), _higher.end(), matrix.cols[c] - _Matrix_CSR_Pattern::Indexing) - _higher.begin() + _lower.size() + msize + _Matrix_CSR_Pattern::Indexing;
+	for (esint i = 0, c = matrix.rows[nhalo] - Indexing::CSR; i < data->m.nnz; ++i, ++c) {
+		if (matrix.cols[c] - Indexing::CSR < m.distribution->begin) {
+			data->m.cols[i] = std::lower_bound(_lower.begin(), _lower.end(), matrix.cols[c] - Indexing::CSR) - _lower.begin() + Indexing::CSR;
+		} else if (m.distribution->end <= matrix.cols[c] - Indexing::CSR) {
+			data->m.cols[i] = std::lower_bound(_higher.begin(), _higher.end(), matrix.cols[c] - Indexing::CSR) - _higher.begin() + _lower.size() + msize + Indexing::CSR;
 		} else {
 			data->m.cols[i] = matrix.cols[c] - m.distribution->begin + _lower.size();
 		}
@@ -128,7 +128,7 @@ void _init(Data_Apply<Matrix_CSR, T> *data, Matrix_Distributed<Matrix_CSR, T> &m
 template <typename T>
 void _commit(Data_Apply<Matrix_CSR, T> *data, Matrix_Distributed<Matrix_CSR, T> &m)
 {
-	data->m.vals = m.cluster.vals + m.cluster.rows[m.distribution->halo.size()] - _Matrix_CSR_Pattern::Indexing;
+	data->m.vals = m.cluster.vals + m.cluster.rows[m.distribution->halo.size()] - Indexing::CSR;
 	math::commit(data->m);
 }
 

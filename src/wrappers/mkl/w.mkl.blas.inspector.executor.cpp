@@ -44,7 +44,7 @@ int _pardisoType(const Matrix_CSR<T> &x)
 }
 
 template<typename T>
-bool _callPardiso(esint phase, Matrix_CSR<T> &m, esint nrhs, T *rhs, T *solution)
+bool _callPardiso(esint phase, const Matrix_CSR<T> &m, esint nrhs, T *rhs, T *solution)
 {
 	m._external->phase = phase;
 	pardiso(
@@ -215,7 +215,7 @@ void free(Matrix_IJV<std::complex<double> > &x)
 }
 
 template <>
-void symbolicFactorization(Matrix_CSR<double> &x)
+void symbolicFactorization(const Matrix_CSR<double> &x)
 {
 #ifdef HAVE_MKL
 	_callPardiso<double>(11, x, 0, nullptr, nullptr);
@@ -223,7 +223,7 @@ void symbolicFactorization(Matrix_CSR<double> &x)
 }
 
 template <>
-void symbolicFactorization(Matrix_CSR<std::complex<double> > &x)
+void symbolicFactorization(const Matrix_CSR<std::complex<double> > &x)
 {
 #ifdef HAVE_MKL
 	_callPardiso<std::complex<double> >(11, x, 0, nullptr, nullptr);
@@ -231,7 +231,7 @@ void symbolicFactorization(Matrix_CSR<std::complex<double> > &x)
 }
 
 template <>
-void numericalFactorization(Matrix_CSR<double> &x)
+void numericalFactorization(const Matrix_CSR<double> &x)
 {
 #ifdef HAVE_MKL
 	_callPardiso<double>(22, x, 0, nullptr, nullptr);
@@ -239,7 +239,7 @@ void numericalFactorization(Matrix_CSR<double> &x)
 }
 
 template <>
-void numericalFactorization(Matrix_CSR<std::complex<double> > &x)
+void numericalFactorization(const Matrix_CSR<std::complex<double> > &x)
 {
 #ifdef HAVE_MKL
 	_callPardiso<std::complex<double> >(22, x, 0, nullptr, nullptr);
@@ -247,7 +247,7 @@ void numericalFactorization(Matrix_CSR<std::complex<double> > &x)
 }
 
 template <>
-void solve(Matrix_CSR<double> &x, Vector_Dense<double> &rhs, Vector_Dense<double> &solution)
+void solve(const Matrix_CSR<double> &x, Vector_Dense<double> &rhs, Vector_Dense<double> &solution)
 {
 #ifdef HAVE_MKL
 	_callPardiso<double>(33, x, 1, rhs.vals, solution.vals);
@@ -255,7 +255,7 @@ void solve(Matrix_CSR<double> &x, Vector_Dense<double> &rhs, Vector_Dense<double
 }
 
 template <>
-void solve(Matrix_CSR<double> &x, Matrix_Dense<double> &rhs, Matrix_Dense<double> &solution)
+void solve(const Matrix_CSR<double> &x, Matrix_Dense<double> &rhs, Matrix_Dense<double> &solution)
 {
 #ifdef HAVE_MKL
 	_callPardiso<double>(33, x, rhs.nrows, rhs.vals, solution.vals);
@@ -263,7 +263,7 @@ void solve(Matrix_CSR<double> &x, Matrix_Dense<double> &rhs, Matrix_Dense<double
 }
 
 template <>
-void solve(Matrix_CSR<std::complex<double> > &x, Vector_Dense<std::complex<double> > &rhs, Vector_Dense<std::complex<double> > &solution)
+void solve(const Matrix_CSR<std::complex<double> > &x, Vector_Dense<std::complex<double> > &rhs, Vector_Dense<std::complex<double> > &solution)
 {
 #ifdef HAVE_MKL
 	_callPardiso<std::complex<double> >(33, x, 1, rhs.vals, solution.vals);
@@ -271,7 +271,7 @@ void solve(Matrix_CSR<std::complex<double> > &x, Vector_Dense<std::complex<doubl
 }
 
 template <>
-void solve(Matrix_CSR<std::complex<double> > &x, Matrix_Dense<std::complex<double> > &rhs, Matrix_Dense<std::complex<double> > &solution)
+void solve(const Matrix_CSR<std::complex<double> > &x, Matrix_Dense<std::complex<double> > &rhs, Matrix_Dense<std::complex<double> > &solution)
 {
 #ifdef HAVE_MKL
 	_callPardiso<std::complex<double> >(33, x, rhs.nrows, rhs.vals, solution.vals);
@@ -279,7 +279,7 @@ void solve(Matrix_CSR<std::complex<double> > &x, Matrix_Dense<std::complex<doubl
 }
 
 template <>
-void apply(Vector_Dense<double> &y, const double &alpha, Matrix_CSR<double> &a, const double &beta, const Vector_Dense<double> &x)
+void apply(Vector_Dense<double> &y, const double &alpha, const Matrix_CSR<double> &a, const double &beta, const Vector_Dense<double> &x)
 {
 #ifdef HAVE_MKL
 	matrix_descr descr;
@@ -310,7 +310,7 @@ void apply(Vector_Dense<double> &y, const double &alpha, Matrix_CSR<double> &a, 
 }
 
 template <>
-void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &alpha, Matrix_CSR<std::complex<double> > &a, const std::complex<double> &beta, const Vector_Dense<std::complex<double> > &x)
+void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &alpha, const Matrix_CSR<std::complex<double> > &a, const std::complex<double> &beta, const Vector_Dense<std::complex<double> > &x)
 {
 #ifdef HAVE_MKL
 	matrix_descr descr;
@@ -341,7 +341,7 @@ void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &a
 }
 
 template <>
-void apply(Vector_Dense<double> &y, const double &alpha, Matrix_IJV<double> &a, const double &beta, const Vector_Dense<double> &x)
+void apply(Vector_Dense<double> &y, const double &alpha, const Matrix_IJV<double> &a, const double &beta, const Vector_Dense<double> &x)
 {
 #ifdef HAVE_MKL
 	matrix_descr descr;
@@ -372,7 +372,7 @@ void apply(Vector_Dense<double> &y, const double &alpha, Matrix_IJV<double> &a, 
 }
 
 template <>
-void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &alpha, Matrix_IJV<std::complex<double> > &a, const std::complex<double> &beta, const Vector_Dense<std::complex<double> > &x)
+void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &alpha, const Matrix_IJV<std::complex<double> > &a, const std::complex<double> &beta, const Vector_Dense<std::complex<double> > &x)
 {
 #ifdef HAVE_MKL
 	matrix_descr descr;

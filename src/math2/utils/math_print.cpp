@@ -1,10 +1,14 @@
 
 #include "math2/math2.h"
 #include "math2/primitives/vector_dense.h"
+#include "math2/feti/lmap.h"
+#include "math2/feti/vector_dual.h"
+#include "math2/feti/vector_kernel.h"
 #include "math2/generalization/vector_distributed.h"
 #include "math2/generalization/vector_feti.h"
 #include "math2/generalization/matrix_distributed.h"
 #include "math2/generalization/matrix_feti.h"
+#include "esinfo/meshinfo.h"
 
 #include <fstream>
 #include <iomanip>
@@ -120,9 +124,9 @@ void _store(const Matrix_CSR<T> &A, const char* file, esint offset = 0)
 	os << std::showpos;
 	for (esint r = 0; r < A.nrows; r++) {
 		for (esint c = A.rows[r]; c < A.rows[r + 1]; c++) {
-			os << std::setw(6) << offset + r + _Matrix_CSR_Pattern::Indexing << " ";
-			os << std::setw(6) << A.cols[c - _Matrix_CSR_Pattern::Indexing] << " ";
-			os << std::setw(25) << std::scientific << A.vals[c - _Matrix_CSR_Pattern::Indexing] << "\n";
+			os << std::setw(6) << offset + r + A.rows[0] << " ";
+			os << std::setw(6) << A.cols[c - A.rows[0]] << " ";
+			os << std::setw(25) << std::scientific << A.vals[c - A.rows[0]] << "\n";
 		}
 	}
 }
@@ -154,7 +158,7 @@ void _store(const Matrix_Distributed<Matrix_CSR, T> &A, const char* file)
 	Matrix_CSR<T> _A;
 	_A.nrows = A.cluster.nrows - A.distribution->halo.size();
 	_A.ncols = A.cluster.ncols;
-	_A.nnz = A.cluster.nnz - (A.cluster.rows[A.distribution->halo.size()] - _Matrix_CSR_Pattern::Indexing);
+	_A.nnz = A.cluster.nnz - (A.cluster.rows[A.distribution->halo.size()] - Indexing::CSR);
 	_A.rows = A.cluster.rows + A.distribution->halo.size();
 	_A.cols = A.cluster.cols;
 	_A.vals = A.cluster.vals;
@@ -216,15 +220,40 @@ void store(const std::vector<std::vector<esint> > &v, const char* file)
 }
 
 template <>
-void store(const serializededata<esint, int> &L2MPI, const char* file)
+void store(const std::vector<LMAP> &lmap, const char* file)
 {
 	std::ofstream os(std::string(file) + ".txt");
-	for (auto l = L2MPI.cbegin(); l != L2MPI.cend(); ++l) {
-		for (auto p = l->begin(); p != l->end(); ++p) {
-			os << *p << " ";
+	for (auto l = lmap.cbegin(); l != lmap.cend(); ++l) {
+		if (l->neigh < 0) {
+			os << std::setw(4) << l->offset << ": " << l->from << "->" << l->to << "\n";
+		} else {
+			os << std::setw(4) << l->offset << ": " << l->from << "->" << l->to << "::" << info::mesh->neighbors[l->neigh] << "\n";
 		}
-		os << "\n";
 	}
+}
+
+template <>
+void store(const Vector_Dual<double> &x, const char* file)
+{
+	math::store(static_cast<espreso::Vector_Dense<double> >(x), file);
+}
+
+template <>
+void store(const Vector_Dual<std::complex<double> > &x, const char* file)
+{
+	math::store(static_cast<espreso::Vector_Dense<std::complex<double> > >(x), file);
+}
+
+template <>
+void store(const Vector_Kernel<double> &x, const char* file)
+{
+	math::store(static_cast<espreso::Vector_Dense<double> >(x), file);
+}
+
+template <>
+void store(const Vector_Kernel<std::complex<double> > &x, const char* file)
+{
+	math::store(static_cast<espreso::Vector_Dense<std::complex<double> > >(x), file);
 }
 
 }

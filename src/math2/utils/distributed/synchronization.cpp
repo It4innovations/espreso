@@ -32,13 +32,13 @@ void _init(Data_Synchronization<Matrix_CSR, T> *sync, Matrix_Distributed<Matrix_
 	auto halo = m.distribution->halo.begin();
 	for (size_t n = 0, r = 0; n < sync->neighbors.size() && sync->neighbors[n] < info::mpi::rank; ++n) {
 		size_t size = 0;
-		sync->nOffset.push_back(csr.rows[r] - _Matrix_CSR_Pattern::Indexing);
+		sync->nOffset.push_back(csr.rows[r] - Indexing::CSR);
 		while (halo != m.distribution->halo.end() && *halo < m.distribution->neighDOF[n + 1]) {
 			sbuffer[n].push_back(*halo);
 			sbuffer[n].push_back(csr.rows[r + 1] - csr.rows[r]);
 			size += csr.rows[r + 1] - csr.rows[r];
 			for (esint c = csr.rows[r]; c < csr.rows[r + 1]; ++c) {
-				sbuffer[n].push_back(csr.cols[c - _Matrix_CSR_Pattern::Indexing]);
+				sbuffer[n].push_back(csr.cols[c - Indexing::CSR]);
 			}
 			++halo; ++r;
 		}
@@ -51,7 +51,7 @@ void _init(Data_Synchronization<Matrix_CSR, T> *sync, Matrix_Distributed<Matrix_
 
 	for (size_t n = 0; n < sync->neighbors.size(); ++n) {
 		for (size_t i = 0; i < rbuffer[n].size(); ) {
-			esint *c = csr.cols + csr.rows[rbuffer[n][i++] - m.distribution->begin + m.distribution->halo.size()] - _Matrix_CSR_Pattern::Indexing;
+			esint *c = csr.cols + csr.rows[rbuffer[n][i++] - m.distribution->begin + m.distribution->halo.size()] - Indexing::CSR;
 			esint columns = rbuffer[n][i++];
 			for (esint cc = 0; cc < columns; ++cc, ++i) {
 				while (*c != rbuffer[n][i]) { ++c; }

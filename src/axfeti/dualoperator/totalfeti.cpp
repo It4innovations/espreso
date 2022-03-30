@@ -7,29 +7,119 @@
 
 namespace espreso {
 
+template <typename T> static void _applyBt(TotalFETI<T> *dual, size_t d, const Vector_Dual<T> &in, Vector_Dense<T> &out);
+template <typename T> static void _applyB(TotalFETI<T> *dual, const std::vector<Vector_Dense<T> > &in, Vector_Dual<T> &out);
+template <typename T> static void _print(TotalFETI<T> *dual);
+
 template <typename T>
 static void _info(TotalFETI<T> *dual)
 {
-	eslog::info(" = DOMAINS                                                                          %8d = \n", dual->feti->sinfo.domains);
+	eslog::info(" = TOTAL FETI OPERATOR PROPERTIES                                                            = \n");
+	eslog::info(" =   DUAL SIZE                                                                     %9d = \n", dual->feti->sinfo.lambdasTotal);
+	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
+	// power method to Eigen values
+	// B * Bt = eye
+	// pseudo inverse
 }
 
+/*
+ * prepare buffers and call symbolic factorization that is independent on the Kplus values
+ */
 template <typename T>
 static void _set(TotalFETI<T> *dual)
 {
-	dual->Kplus.combine(*dual->feti->K, dual->feti->regularization->RegMat);
-	dual->Kplus.commit();
-	dual->Kplus.symbolicFactorization();
+	Vector_Dual<T>::set(dual->feti->equalityConstraints->nhalo, dual->feti->sinfo.lambdasLocal);
+
+	dual->Kplus.resize(dual->feti->K->domains.size());
+	dual->d.resize(dual->feti->sinfo.lambdasLocal);
+	dual->Btx.resize(dual->feti->K->domains.size());
+	dual->KplusBtx.resize(dual->feti->K->domains.size());
+
+	#pragma omp parallel for
+	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
+		dual->Kplus[d].type = dual->feti->K->domains[d].type;
+		dual->Kplus[d].shape = dual->feti->K->domains[d].shape;
+		math::combine(dual->Kplus[d], dual->feti->K->domains[d], dual->feti->regularization->RegMat.domains[d]);
+		math::commit(dual->Kplus[d]);
+		math::symbolicFactorization(dual->Kplus[d]);
+
+		dual->Btx[d].resize(dual->feti->K->domains[d].nrows);
+		dual->KplusBtx[d].resize(dual->feti->K->domains[d].nrows);
+		math::set(dual->Btx[d], T{0});
+	}
 }
 
 template <typename T>
 static void _update(TotalFETI<T> *dual)
 {
-	dual->Kplus.sumCombined(T{1}, *dual->feti->K, dual->feti->regularization->RegMat);
-	dual->Kplus.numericalFactorization();
+	#pragma omp parallel for
+	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
+		math::sumCombined(dual->Kplus[d], T{1}, dual->feti->K->domains[d], dual->feti->regularization->RegMat.domains[d]);
+		math::numericalFactorization(dual->Kplus[d]);
+		math::solve(dual->Kplus[d], dual->feti->f->domains[d], dual->KplusBtx[d]);
+	}
+	_applyB(dual, dual->KplusBtx, dual->d);
+	dual->d.synchronize();
+	dual->d.add(T{-1}, dual->feti->equalityConstraints->c);
 
+	_print(dual);
+}
+
+template <typename T>
+static void _apply(TotalFETI<T> *dual, const Vector_Dual<T> &x, Vector_Dual<T> &y)
+{
+	#pragma omp parallel for
+	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
+		_applyBt(dual, d, x, dual->Btx[d]);
+		math::solve(dual->Kplus[d], dual->Btx[d], dual->KplusBtx[d]);
+	}
+	_applyB(dual, dual->KplusBtx, y);
+}
+
+template <typename T>
+static void _applyBt(TotalFETI<T> *dual, size_t d, const Vector_Dual<T> &in, Vector_Dense<T> &out)
+{
+	const typename AX_FETI<T>::EqualityConstraints::Domain &L = dual->feti->equalityConstraints->domain[d];
+
+	// compare performance of the loop and set function
+	//	for (esint i = 0; i < L->B1.domains[d].nnz; ++i) {
+	//		out.vals[L->B1.domains[d].cols[i]] = 0;
+	//	}
+	math::set(out, T{0});
+
+	// check performance with loop unrolling?
+	for (esint r = 0; r < L.B1.nrows; ++r) {
+		for (esint c = L.B1.rows[r]; c < L.B1.rows[r + 1]; ++c) {
+			out.vals[L.B1.cols[c]] += L.B1.vals[c] * in.vals[L.D2C[r]];
+		}
+	}
+}
+
+// TODO: threaded implementation + more efficient 'beta' scale
+template <typename T>
+static void _applyB(TotalFETI<T> *dual, const std::vector<Vector_Dense<T> > &in, Vector_Dual<T> &out)
+{
+	const typename AX_FETI<T>::EqualityConstraints *L = dual->feti->equalityConstraints;
+
+	math::set(out, T{0});
+	for (size_t d = 0; d < L->domain.size(); ++d) {
+		for (esint r = 0; r < L->domain[d].B1.nrows; ++r) {
+			for (esint c = L->domain[d].B1.rows[r]; c < L->domain[d].B1.rows[r + 1]; ++c) {
+				out.vals[L->domain[d].D2C[r]] += L->domain[d].B1.vals[c] * in[d].vals[L->domain[d].B1.cols[c]];
+			}
+		}
+	}
+}
+
+template <typename T>
+static void _print(TotalFETI<T> *dual)
+{
 	if (info::ecf->output.print_matrices) {
-		eslog::storedata(" STORE: feti/{Kplus}\n");
-		math::store(dual->Kplus, utils::filename(utils::debugDirectory(*dual->feti->step) + "/feti", "Kplus").c_str());
+		eslog::storedata(" STORE: feti/dualop/{Kplus}\n");
+		for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
+			math::store(dual->Kplus[d], utils::filename(utils::debugDirectory(*dual->feti->step) + "/feti/dualop", (std::string("Kplus") + std::to_string(d)).c_str()).c_str());
+		}
+		math::store(dual->d, utils::filename(utils::debugDirectory(*dual->feti->step) + "/feti/dualop", "d").c_str());
 	}
 }
 
@@ -41,5 +131,8 @@ template <> void TotalFETI<std::complex<double> >::info() { _info<std::complex<d
 
 template <> void TotalFETI<double>::update() { _update<double>(this); }
 template <> void TotalFETI<std::complex<double> >::update() { _update<std::complex<double> >(this); }
+
+template <> void TotalFETI<double>::apply(const Vector_Dual<double> &x, Vector_Dual<double> &y) { _apply(this, x, y); }
+template <> void TotalFETI<std::complex<double> >::apply(const Vector_Dual<std::complex<double> > &x, Vector_Dual<std::complex<double> > &y) { _apply(this, x, y); }
 
 }

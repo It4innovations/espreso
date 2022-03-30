@@ -4,18 +4,10 @@
 
 namespace espreso {
 
-struct _Vector_Dense_Pattern {
+template <typename T>
+struct _Vector_Dense {
 	esint size;
-};
-
-template <typename T>
-struct _Vector_Dense_Vals {
 	T *vals;
-};
-
-template <typename T>
-struct _Vector_Dense: public _Vector_Dense_Pattern, public _Vector_Dense_Vals<T> {
-
 };
 
 template <typename T>
@@ -81,19 +73,25 @@ public:
 		_Vector_Dense<T>::operator=(_allocated);
 	}
 
+	void swap(Vector_Dense &other)
+	{
+		swap(*this, other);
+		swap(_allocated, other._allocated);
+	}
+
 	_Vector_Dense<T> _allocated;
 
 protected:
 	template <typename Type>
-	void swap(Type &v, Type &u)
+	void _swap(Type &v, Type &u)
 	{
 		Type tmp = v; v = u; u = tmp;
 	}
 
 	void swap(_Vector_Dense<T> &v, _Vector_Dense<T> &u)
 	{
-		swap(v.size, u.size);
-		swap(v.vals, u.vals);
+		_swap(v.size, u.size);
+		_swap(v.vals, u.vals);
 	}
 
 	void realloc(_Vector_Dense<T> &v, esint size)

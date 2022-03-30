@@ -45,6 +45,12 @@ struct FETIConfiguration: public ECFDescription {
 		MAGIC = 5
 	};
 
+	enum class STOPPING_CRITERION {
+		RELATIVE,
+		ABSOLUTE,
+		ARIOLI // https://www.researchgate.net/publication/30411264_A_stopping_criterion_for_the_Conjugate_Gradient_algorithm_in_a_finite_element_method_framework
+	};
+
 	enum class CONJ_PROJECTOR {
 		/// No conj projector
 		NONE = 0,
@@ -125,6 +131,7 @@ struct FETIConfiguration: public ECFDescription {
 	ITERATIVE_SOLVER iterative_solver;
 	PRECONDITIONER preconditioner;
 	REGULARIZATION regularization;
+	STOPPING_CRITERION stopping_criterion;
 	REGULARIZATION_VERSION regularization_version;
 	CONJ_PROJECTOR conjugate_projector;
 

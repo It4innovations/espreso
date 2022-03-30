@@ -8,18 +8,10 @@ namespace espreso {
 
 struct Matrix_Dense_External_Representation;
 
-struct _Matrix_Dense_Pattern {
+template <typename T>
+struct _Matrix_Dense {
 	esint nrows, ncols;
-};
-
-template <typename T>
-struct _Matrix_Dense_Vals {
 	T *vals;
-};
-
-template <typename T>
-struct _Matrix_Dense: public _Matrix_Dense_Pattern, public _Matrix_Dense_Vals<T> {
-
 };
 
 template <typename T>

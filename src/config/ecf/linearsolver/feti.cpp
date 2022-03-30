@@ -58,6 +58,13 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.addoption(ECFOption().setname("ANALYTIC").setdescription("Analytic regularization provided by a particular physics."))
 			.addoption(ECFOption().setname("ALGEBRAIC").setdescription("Regularization based on NULL PIVOTS.")));
 
+	stopping_criterion = STOPPING_CRITERION::RELATIVE;
+	REGISTER(stopping_criterion, ECFMetaData()
+			.setdescription({ "Stopping criterion" })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("RELATIVE").setdescription("Relative stopping."))
+			.addoption(ECFOption().setname("ABSOLUTE").setdescription("Absolute stopping.")));
+
 	regularization_version = REGULARIZATION_VERSION::FIX_POINTS;
 	REGISTER(regularization_version, ECFMetaData()
 			.setdescription({ "Regularization version." })

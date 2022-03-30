@@ -12,18 +12,11 @@ public:
 	PCPG(AX_FETI<T> *feti);
 
 	void info();
-	void update();
+	void solve(IterativeSolverInfo &info);
 
-//	void run(A, b, Proj, Prec)
-//	{
-//		w = Proj.leftapply(x);
-//		z = A.apply(w);
-//		zz = Prec.apply(z);
-//		Proj.righ
+	Vector_Dual<T> l, r, w, p;
 
-//		evaluate(x);
-//	}
-
+	Vector_Dual<T> x, Fp;
 };
 
 }

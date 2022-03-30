@@ -109,7 +109,7 @@ template <typename T> void copy(Matrix_CSR<T> &x, const Matrix_CSR<T> &y, int ro
 //			for (esint c = 0; c < y.rows[r + 1] - y.rows[r]; c++) {
 //				esint tr = step * (r / size) + rowOffset + r % size;
 //				esint tc = step * (c / size) + colOffset + c % size;
-//				x.vals[x.rows[tr] + tc - _Matrix_CSR_Pattern::Indexing] = y.vals[y.rows[r] + c - _Matrix_CSR_Pattern::Indexing];
+//				x.vals[x.rows[tr] + tc - Indexing::CSR] = y.vals[y.rows[r] + c - Indexing::CSR];
 //			}
 //		}
 	} else {
@@ -117,7 +117,7 @@ template <typename T> void copy(Matrix_CSR<T> &x, const Matrix_CSR<T> &y, int ro
 			for (esint c = 0; c < y.rows[r + 1] - y.rows[r]; c++) {
 				esint tr = step * (r / size) + rowOffset + r % size;
 				esint tc = step * (c / size) + colOffset + c % size;
-				x.vals[x.rows[tr] + tc - _Matrix_CSR_Pattern::Indexing] = y.vals[y.rows[r] + c - _Matrix_CSR_Pattern::Indexing];
+				x.vals[x.rows[tr] + tc - Indexing::CSR] = y.vals[y.rows[r] + c - Indexing::CSR];
 			}
 		}
 	}
@@ -279,7 +279,7 @@ template <typename T> void add(Matrix_CSR<T> &x, const T &beta, const Matrix_CSR
 		for (esint c = 0; c < y.rows[r + 1] - y.rows[r]; c++) {
 			esint tr = step * (r / size) + rowOffset + r % size;
 			esint tc = step * (c / size) + colOffset + c % size;
-			x.vals[x.rows[tr] + tc - _Matrix_CSR_Pattern::Indexing] += beta * y.vals[y.rows[r] + c - _Matrix_CSR_Pattern::Indexing];
+			x.vals[x.rows[tr] + tc - Indexing::CSR] += beta * y.vals[y.rows[r] + c - Indexing::CSR];
 		}
 	}
 }

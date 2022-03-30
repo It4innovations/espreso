@@ -276,6 +276,7 @@ void internalFailure(const char* msg)
 void error(const char* msg)
 {
 	logger->error(msg);
+	utils::printStack();
 	fflush(stderr);
 	exit(EXIT_FAILURE);
 }

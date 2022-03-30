@@ -4,18 +4,10 @@
 
 namespace espreso {
 
-struct _Vector_Sparse_Pattern {
+template <typename T>
+struct _Vector_Sparse {
 	esint size, nnz, *indices;
-};
-
-template <typename T>
-struct _Vector_Sparse_Vals {
 	T *vals;
-};
-
-template <typename T>
-struct _Vector_Sparse: public _Vector_Sparse_Pattern, public _Vector_Sparse_Vals<T> {
-
 };
 
 template <typename T>
@@ -113,7 +105,7 @@ protected:
 		v.nnz = nnz;
 	}
 
-	void realloc(_Vector_Sparse<T> &v, const _Vector_Sparse_Pattern &other)
+	void realloc(_Vector_Sparse<T> &v, const _Vector_Sparse<T> &other)
 	{
 		if (v.indices) { delete[] v.indices; v.indices = nullptr; }
 

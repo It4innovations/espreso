@@ -1,7 +1,7 @@
 
 #include "projector.h"
+#include "orthogonal/tfetisymmetric.h"
 
-#include "orthogonal.h"
 
 namespace espreso {
 
@@ -10,7 +10,7 @@ static Projector<T>* _set(AX_FETI<T> *feti)
 {
 //	switch (feti->configuration.projector) {
 		eslog::info(" = PROJECTOR                                                                      ORTHOGONAL = \n");
-		return new Orthogonal<T>(feti);
+		return new OrthogonalTFETISymmetric<T>(feti);
 //	}
 }
 
