@@ -88,15 +88,27 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	profiler::syncstart("compute_volume_indices");
 
 	// uniform grid
-	esint grid_size = 21;
+	esint grid_size = 30;
 	std::vector<int> grid(grid_size * grid_size);
+
+    /*store(grid_size, grid);
+    profiler::syncend("compute_volume_indices");
+    eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
+    return;*/
+
 	double z = 0.0;
 	/*Point grid_start = Point(-0.5, 0.5, z);
 	Point grid_end = Point(0.5, -0.5, z);*/
 //    Point grid_start = Point(-0.55, 0.55, z); // left + up
 //    Point grid_end = Point(0.45, -0.45, z);
-    Point grid_start = Point(-0.45, 0.45, z); // right + down
-    Point grid_end = Point(0.55, -0.55, z);
+//    Point grid_start = Point(-0.45, 0.45, z); // right + down
+//    Point grid_end = Point(0.55, -0.55, z);
+//    Point grid_start = Point(-0.05, 0.8, z); // projection
+//    Point grid_end = Point(0.8, -0.8, z);
+//    Point grid_start = Point(-0.55, 0.55, z); // bigger
+//    Point grid_end = Point(0.55, -0.55, z);
+    Point grid_start = Point(-0.8, 0.8, z); // projection 2
+    Point grid_end = Point(0.8, -0.8, z);
 	Point grid_offset = Point(((Point(grid_end.x, grid_start.y, z) - grid_start).length())/(grid_size - 1),
 							((Point(grid_start.x, grid_end.y, z) - grid_start).length())/(grid_size - 1), z);
 	printf("offset: %f %f %f\n", grid_offset.x, grid_offset.y, grid_offset.z);
@@ -122,6 +134,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		int max_x_inx = (el_max.x - grid_start.x)/grid_offset.x;
 		int max_y_inx = (grid_start.y - el_min.y)/grid_offset.y;
 
+		// loop through grid points
 		for(int x = min_x_inx; x <= max_x_inx; x++){
 			for(int y = min_y_inx; y <= max_y_inx; y++){
 				// point in polygon
@@ -143,7 +156,9 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 				}
 				
 				// save polygon index if point is in polygon
-				grid[y*grid_size + x] = cn%2? eindex : 0;
+				if(cn%2){
+					grid[y*grid_size + x] = eindex;
+				}
 				printf("cn %d\n", cn);
 				printf("cell index %d\n", grid[y*grid_size + x]);
 
