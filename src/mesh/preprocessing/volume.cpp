@@ -88,13 +88,14 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	profiler::syncstart("compute_volume_indices");
 
 	// uniform grid
-	esint grid_size = 30;
+	esint grid_size = 11;
+	int voxels = grid_size - 1;
 	std::vector<int> grid(grid_size * grid_size);
 
-    /*store(grid_size, grid);
-    profiler::syncend("compute_volume_indices");
-    eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
-    return;*/
+    // store(grid_size, grid);
+    // profiler::syncend("compute_volume_indices");
+    // eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
+    // return;
 
 	double z = 0.0;
 	/*Point grid_start = Point(-0.5, 0.5, z);
@@ -105,12 +106,15 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 //    Point grid_end = Point(0.55, -0.55, z);
 //    Point grid_start = Point(-0.05, 0.8, z); // projection
 //    Point grid_end = Point(0.8, -0.8, z);
-//    Point grid_start = Point(-0.55, 0.55, z); // bigger
-//    Point grid_end = Point(0.55, -0.55, z);
-    Point grid_start = Point(-0.8, 0.8, z); // projection 2
-    Point grid_end = Point(0.8, -0.8, z);
-	Point grid_offset = Point(((Point(grid_end.x, grid_start.y, z) - grid_start).length())/(grid_size - 1),
-							((Point(grid_start.x, grid_end.y, z) - grid_start).length())/(grid_size - 1), z);
+    Point grid_start = Point(-0.55, 0.55, z); // bigger
+    Point grid_end = Point(0.55, -0.55, z);
+    // Point grid_start = Point(-0.8, 0.8, z); // projection 2
+    // Point grid_end = Point(0.8, -0.8, z);
+	// Point grid_start = Point(0.0, 1.0, 0.0); // 3D
+    // Point grid_end = Point(1.0, 0.0, 1.0);
+	Point grid_offset = Point((grid_end.x - grid_start.x)/voxels,
+							(grid_start.y - grid_end.y)/voxels, 
+							(grid_end.z - grid_start.z)/voxels);
 	printf("offset: %f %f %f\n", grid_offset.x, grid_offset.y, grid_offset.z);
 
 	// elements cycle
