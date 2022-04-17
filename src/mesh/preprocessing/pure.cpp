@@ -1952,7 +1952,7 @@ void computeRegionsElementDistribution(const ElementStore *elements, std::vector
 	}
 	profiler::syncend("regions element distribution");
 
-	eslog::checkpointln("MESH: ELEMENTS REGIONS DISTRIBUTION COMPUTED");
+	eslog::checkpointln("MESH: EREGIONS DISTRIBUTION COMPUTED");
 }
 
 } // namespace mesh

@@ -21,7 +21,7 @@
 using namespace espreso;
 
 AX_HeatTransfer::AX_HeatTransfer(AX_HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), K{}, M{}, rhs{}, x{}, dirichlet{}
+: settings(settings), configuration(configuration)
 {
 
 }
@@ -119,21 +119,12 @@ bool AX_HeatTransfer::initTemperature()
 	return correct;
 }
 
-void AX_HeatTransfer::init(AX_SteadyState &scheme)
-{
-	this->K = scheme.K;
-	this->rhs = scheme.f;
-	this->x = scheme.x;
-	this->dirichlet = scheme.dirichlet;
-
-	initNames();
-	analyze();
-}
-
 void AX_HeatTransfer::analyze()
 {
 	double start = eslog::time();
 	eslog::info("\n ============================================================================================= \n");
+	initNames();
+
 	bool correct = true;
 
 	validateRegionSettings("MATERIAL", settings.material_set);
@@ -305,8 +296,6 @@ void AX_HeatTransfer::analyze()
 	}
 	heatRHS(*this);
 
-	addFiller(*this);
-
 	outputGradient(*this);
 	outputFlux(*this);
 
@@ -319,13 +308,18 @@ void AX_HeatTransfer::analyze()
 	eslog::info(" ============================================================================================= \n");
 }
 
-void AX_HeatTransfer::evaluate()
+void AX_HeatTransfer::connect(AX_SteadyState &scheme)
+{
+	addFiller(*this, scheme);
+}
+
+void AX_HeatTransfer::evaluate(AX_SteadyState &scheme)
 {
 	controller.setUpdate();
-	reset(K, M, rhs, dirichlet);
+	reset(scheme.K, scheme.f, scheme.dirichlet);
 	iterate();
 	fill();
-	update(K, M, rhs);
+	update(scheme.K, scheme.f);
 	controller.resetUpdate();
 }
 
@@ -336,9 +330,9 @@ void AX_HeatTransfer::_evaluate()
 	controller.resetUpdate();
 }
 
-void AX_HeatTransfer::updateSolution()
+void AX_HeatTransfer::updateSolution(AX_SteadyState &scheme)
 {
-	x->store(ParametersTemperature::output->data);
+	scheme.x->store(ParametersTemperature::output->data);
 	results(); // do we need an update mechanism?
 	temp.node.setUpdate(1);
 }

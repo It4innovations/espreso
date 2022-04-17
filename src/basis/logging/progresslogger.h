@@ -28,6 +28,12 @@ public:
 		static_cast<TStream*>(this)->_output(buffer);
 	}
 
+	void accumulated(const char* region)
+	{
+//		snprintf(buffer, BUFFER_SIZE, "%*s%s", static_cast<TStream*>(this)->level, " ", region);
+//		static_cast<TStream*>(this)->_output(buffer);
+	}
+
 	void end(const char* region)
 	{
 		snprintf(buffer, BUFFER_SIZE, "%*s%s", static_cast<TStream*>(this)->level, " ", region);

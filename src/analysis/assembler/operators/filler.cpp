@@ -4,6 +4,7 @@
 #include "analysis/assembler/operator.hpp"
 #include "analysis/assembler/module/acoustic.h"
 #include "analysis/assembler/module/heattransfer.h"
+#include "analysis/scheme/steadystate.h"
 
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
@@ -24,37 +25,28 @@ void _add(Module &module, Matrix_Base<double> *A, ParameterData &parameter)
 	}
 }
 
-void addFiller(AX_HeatTransfer &module)
+void addFiller(AX_HeatTransfer &module, AX_SteadyState &scheme)
 {
-	if (module.K != nullptr) {
-		_add<1>(module, module.K, module.elements.stiffness);
-	}
-	if (module.M != nullptr) {
-		_add<1>(module, module.M, module.elements.mass);
-	}
+	_add<1>(module, scheme.K, module.elements.stiffness);
 
-	if (module.rhs != nullptr) {
-		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-			if (info::mesh->boundaryRegions[r]->dimension && module.elements.boundary.rhs.isSet(r)) {
-				for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
-					module.boundaryFiller[r][interval].emplace_back(instantiate<AX_HeatTransfer::NGP, 1, VectorFiller>(r, interval, module.controller, module.elements.boundary.rhs.regions[r], module.rhs->mapping.boundary[r][interval].data, module.rhs->mapping.boundary[r][interval].position));
-				}
-			}
-		}
-		for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
-			if (module.heatSource.gp.isSet(interval)) {
-				module.elementFiller[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, 1, VectorFiller>(interval, module.controller, module.elements.rhs, module.rhs->mapping.elements[interval].data, module.rhs->mapping.elements[interval].position));
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (info::mesh->boundaryRegions[r]->dimension && module.elements.boundary.rhs.isSet(r)) {
+			for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
+				module.boundaryFiller[r][interval].emplace_back(instantiate<AX_HeatTransfer::NGP, 1, VectorFiller>(r, interval, module.controller, module.elements.boundary.rhs.regions[r], scheme.f->mapping.boundary[r][interval].data, scheme.f->mapping.boundary[r][interval].position));
 			}
 		}
 	}
+	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+		if (module.heatSource.gp.isSet(interval)) {
+			module.elementFiller[interval].emplace_back(instantiate<AX_HeatTransfer::NGP, 1, VectorFiller>(interval, module.controller, module.elements.rhs, scheme.f->mapping.elements[interval].data, scheme.f->mapping.elements[interval].position));
+		}
+	}
 
-	if (module.dirichlet != nullptr) {
-		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-			if (module.temperature.node.isSet(r)) {
-				for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-					module.boundaryFiller[r][t].emplace_back(instantiate<AX_HeatTransfer::NGP, 1, VectorSetter>(r, t, module.controller, module.temperature.node.regions[r], module.dirichlet->mapping.boundary[r][t].data, module.dirichlet->mapping.boundary[r][t].position));
-					module.boundaryFiller[r][t].back()->isconst = false;
-				}
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (module.temperature.node.isSet(r)) {
+			for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+				module.boundaryFiller[r][t].emplace_back(instantiate<AX_HeatTransfer::NGP, 1, VectorSetter>(r, t, module.controller, module.temperature.node.regions[r], scheme.dirichlet->mapping.boundary[r][t].data, scheme.dirichlet->mapping.boundary[r][t].position));
+				module.boundaryFiller[r][t].back()->isconst = false;
 			}
 		}
 	}

@@ -51,6 +51,7 @@ bool _set(AX_FETI<T> *feti, const step::Step &step, const Matrix_FETI<Matrix_CSR
 	feti->equalityConstraints = &equalityConstraints;
 
 	setInfo<T>(feti);
+	eslog::checkpointln("FETI: SET INFO");
 
 	feti->iterativeSolver = IterativeSolver<T>::set(feti);
 	feti->projector = Projector<T>::set(feti);
@@ -67,9 +68,9 @@ bool _update(AX_FETI<T> *feti, const step::Step &step, const Matrix_FETI<Matrix_
 {
 	feti->f = &f;
 
+	feti->projector->update();
 	feti->dualOperator->update();
 	feti->preconditioner->update();
-	feti->projector->update();
 	return true;
 }
 

@@ -137,6 +137,7 @@ struct FETIConfiguration: public ECFDescription {
 
 	size_t geneo_size, restart_iteration, num_restart;
 
+	bool exhaustive_info;
 	bool orthogonal_K_kernels;
 	bool redundant_lagrange, scaling;
 

@@ -19,7 +19,7 @@ public:
 	AX_HeatSteadyStateNonLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
 	~AX_HeatSteadyStateNonLinear();
 
-	void init();
+	void analyze();
 	void run(step::Step &step);
 
 	HeatTransferConfiguration &settings;

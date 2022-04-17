@@ -155,6 +155,11 @@ void checkpoint(const char* name)
 	logger->checkpoint(name);
 }
 
+void accumulated(const char* name)
+{
+	logger->accumulated(name);
+}
+
 void end(const char* name)
 {
 	logger->end(name);
@@ -182,6 +187,12 @@ void startln(const char* name, const char* section)
 void checkpointln(const char* name)
 {
 	checkpoint(name);
+	ln();
+}
+
+void accumulatedln(const char* name)
+{
+	accumulated(name);
 	ln();
 }
 

@@ -420,7 +420,7 @@ void computeRegionsBoundaryDistribution(NodeStore *nodes, std::vector<BoundaryRe
 	}
 
 	profiler::syncend("compute_regions_boudary_distribution");
-	eslog::checkpointln("MESH: BOUDANRY REGIONS DISTRIBUTION COMPUTED");
+	eslog::checkpointln("MESH: BREGIONS DISTRIBUTION COMPUTED");
 }
 
 void synchronizeRegionNodes(const NodeStore *nodes, const std::vector<int> &neighbors, std::vector<RegionStore*> &regions)

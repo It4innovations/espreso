@@ -46,6 +46,7 @@ static void mergeEvents(void *in, void *out, int *len, MPI_Datatype *datatype)
 		switch ((static_cast<TimeLogger::EventStatistics*>(out) + i)->type) {
 		case TimeLogger::Event::START:
 		case TimeLogger::Event::CHECKPOINT:
+		case TimeLogger::Event::ACCUMULATED:
 		case TimeLogger::Event::END:
 			outmin.time = std::min(outmin.time, inmin.time);
 			outmax.time = std::max(outmax.time, inmax.time);
@@ -136,6 +137,7 @@ void TimeLogger::finish()
 			events[i].data.time -= initClockTime;
 			events[i].duration.time = 0;
 			break;
+		case Event::ACCUMULATED:
 		case Event::CHECKPOINT:
 			events[i].data.time -= prev.back();
 			events[i].duration.time -= begin.back();
@@ -231,6 +233,8 @@ void TimeLogger::finish()
 							statistics[i].avg.time, statistics[i].min.time, statistics[i].max.time, statistics[end].davg.time);
 				}
 				break;
+			case Event::ACCUMULATED:
+				break;
 			case Event::END:
 				denyparam = 0;
 				if (depth == printeddepth) {
@@ -315,6 +319,8 @@ void TimeLogger::finish()
 				++depth;
 				break;
 			case Event::CHECKPOINT:
+				break;
+			case Event::ACCUMULATED:
 				if (depth == printeddepth) {
 					if (std::find(duplications.begin(), duplications.end(), events[i].name) != duplications.end()) {
 						if (std::find(printed.begin(), printed.end(), events[i].name) == printed.end()) {
@@ -374,6 +380,7 @@ void TimeLogger::finish()
 			uniques.push_back({});
 			duplications.push_back({});
 			break;
+		case Event::ACCUMULATED:
 		case Event::CHECKPOINT:
 			if (std::find(uniques.back().begin(), uniques.back().end(), events[i].name) == uniques.back().end()) {
 				uniques.back().push_back(events[i].name);

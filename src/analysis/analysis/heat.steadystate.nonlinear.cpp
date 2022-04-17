@@ -27,25 +27,25 @@ AX_HeatSteadyStateNonLinear::~AX_HeatSteadyStateNonLinear()
 	}
 }
 
-void AX_HeatSteadyStateNonLinear::init()
+void AX_HeatSteadyStateNonLinear::analyze()
 {
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" == ANALYSIS                                                        NON-LINEAR STEADY STATE == \n");
 	eslog::info(" == PHYSICS                                                                   HEAT TRANSFER == \n");
 	eslog::info(" ============================================================================================= \n");
 
-	initSystem(system, this);
-	solver.init(system);
-	scheme.init(system);
-	assembler.init(scheme);
-
 	Variable::list.global.insert(std::make_pair("TIME", nullptr));
-
+	assembler.analyze();
 	info::mesh->output->updateMonitors(step::TYPE::TIME);
 }
 
 void AX_HeatSteadyStateNonLinear::run(step::Step &step)
 {
+	initSystem(system, this);
+	solver.init(system);
+	scheme.init(system);
+	assembler.connect(scheme);
+
 	step::Time time;
 	scheme.setTime(time, configuration.duration_time);
 	Variable::list.global["TIME"] = new TimeVariable(time);

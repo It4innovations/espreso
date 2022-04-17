@@ -18,12 +18,14 @@ void finish();
 void always();
 void start(const char* name, const char* section);
 void checkpoint(const char* name);
+void accumulated(const char* name);
 void end(const char* name);
 void ln();
 void nextStep(int step);
 
 void startln(const char* name, const char* section);
 void checkpointln(const char* name);
+void accumulatedln(const char* name);
 void endln(const char* name);
 
 void param(const char* name, const int &value);

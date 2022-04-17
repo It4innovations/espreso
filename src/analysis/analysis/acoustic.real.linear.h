@@ -17,7 +17,7 @@ class AX_AcousticRealLinear: public Analysis {
 public:
 	AX_AcousticRealLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
 
-	void init();
+	void analyze();
 	void run(step::Step &step);
 
 	AcousticConfiguration &settings;

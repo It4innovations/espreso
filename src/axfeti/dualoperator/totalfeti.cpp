@@ -15,11 +15,14 @@ template <typename T>
 static void _info(TotalFETI<T> *dual)
 {
 	eslog::info(" = TOTAL FETI OPERATOR PROPERTIES                                                            = \n");
+	eslog::info(" =   DOMAINS                                                                       %9d = \n", dual->feti->sinfo.domains);
 	eslog::info(" =   DUAL SIZE                                                                     %9d = \n", dual->feti->sinfo.lambdasTotal);
+	if (dual->feti->configuration.exhaustive_info) {
+		// power method to Eigen values
+		// B * Bt = eye
+		// pseudo inverse
+	}
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-	// power method to Eigen values
-	// B * Bt = eye
-	// pseudo inverse
 }
 
 /*
@@ -40,13 +43,18 @@ static void _set(TotalFETI<T> *dual)
 		dual->Kplus[d].type = dual->feti->K->domains[d].type;
 		dual->Kplus[d].shape = dual->feti->K->domains[d].shape;
 		math::combine(dual->Kplus[d], dual->feti->K->domains[d], dual->feti->regularization->RegMat.domains[d]);
-		math::commit(dual->Kplus[d]);
-		math::symbolicFactorization(dual->Kplus[d]);
-
 		dual->Btx[d].resize(dual->feti->K->domains[d].nrows);
 		dual->KplusBtx[d].resize(dual->feti->K->domains[d].nrows);
 		math::set(dual->Btx[d], T{0});
 	}
+	eslog::checkpointln("FETI: SET TOTAL-FETI OPERATOR");
+
+	#pragma omp parallel for
+	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
+		math::commit(dual->Kplus[d]);
+		math::symbolicFactorization(dual->Kplus[d]);
+	}
+	eslog::checkpointln("FETI: TFETI SYMBOLIC FACTORIZATION");
 }
 
 template <typename T>
@@ -55,12 +63,22 @@ static void _update(TotalFETI<T> *dual)
 	#pragma omp parallel for
 	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
 		math::sumCombined(dual->Kplus[d], T{1}, dual->feti->K->domains[d], dual->feti->regularization->RegMat.domains[d]);
+	}
+	eslog::checkpointln("FETI: UPDATE TOTAL-FETI OPERATOR");
+	#pragma omp parallel for
+	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
 		math::numericalFactorization(dual->Kplus[d]);
+	}
+	eslog::checkpointln("FETI: TFETI NUMERICAL FACTORIZATION");
+
+	#pragma omp parallel for
+	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
 		math::solve(dual->Kplus[d], dual->feti->f->domains[d], dual->KplusBtx[d]);
 	}
 	_applyB(dual, dual->KplusBtx, dual->d);
 	dual->d.synchronize();
 	dual->d.add(T{-1}, dual->feti->equalityConstraints->c);
+	eslog::checkpointln("FETI: COMPUTE DUAL RHS [d]");
 
 	_print(dual);
 }

@@ -37,13 +37,16 @@ struct AX_FETISystemData: public AX_LinearSystem<Assembler, Solver> {
 
 	bool solve(step::Step &step)
 	{
+		eslog::startln("FETI: RUN LINEAR SYSTEM", "FETI[SOLVE]");
 		if (feti.solve(step, solver.x)) {
 			if (info::ecf->output.print_matrices) {
 				eslog::storedata(" STORE: system/{x}\n");
 				math::store(solver.x, utils::filename(utils::debugDirectory(step) + "/system", "x").c_str());
 			}
+			eslog::endln("FETI: LINEAR SYSTEM SOLVED");
 			return true;
 		}
+		eslog::endln("FETI: LINEAR SYSTEM SOLVED");
 		return false;
 	}
 
@@ -165,21 +168,29 @@ template <> struct AX_FETISystem<AX_HeatSteadyStateLinear>: public AX_FETISystem
 
 	void set(step::Step &step)
 	{
+		eslog::startln("FETI: SETTING LINEAR SYSTEM", "FETI[SET]");
 		setEqualityConstraints(this, step);
+		eslog::checkpointln("FETI: SET B1");
 		setHeatTransferKernel(this, step);
+		eslog::checkpointln("FETI: SET KERNELS");
 		feti.set(step, solver.K, regularization, equalityConstraints);
+		eslog::endln("FETI: LINEAR SYSTEM SET");
 	}
 
 	void update(step::Step &step)
 	{
+		eslog::startln("FETI: UPDATING LINEAR SYSTEM", "FETI[UPDATE]");
 		evaluateEqualityConstraints(this, step);
+		eslog::checkpointln("FETI: UPDATE B1");
 		evaluateHeatTransferKernel(this, step);
+		eslog::checkpointln("FETI: UPDATE KERNELS");
 		feti.update(step, solver.K, solver.f);
 		if (info::ecf->output.print_matrices) {
 			eslog::storedata(" STORE: system/{K, f}\n");
 			math::store(solver.K, utils::filename(utils::debugDirectory(step) + "/system", "K").c_str());
 			math::store(solver.f, utils::filename(utils::debugDirectory(step) + "/system", "f").c_str());
 		}
+		eslog::endln("FETI: LINEAR SYSTEM UPDATED");
 	}
 };
 

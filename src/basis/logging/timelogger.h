@@ -27,7 +27,7 @@ public:
 		} data;
 
 		enum {
-			START, CHECKPOINT, END, LOADSTEP,
+			START, CHECKPOINT, ACCUMULATED, END, LOADSTEP,
 			INT, LONG, SIZE, DOUBLE
 		} type;
 	};
@@ -56,6 +56,11 @@ public:
 	void checkpoint(const char* region)
 	{
 		_events.push_back(Event{ region, Event::Data{ .time = time() }, Event::CHECKPOINT });
+	}
+
+	void accumulated(const char* region)
+	{
+		_events.push_back(Event{ region, Event::Data{ .time = time() }, Event::ACCUMULATED });
 	}
 
 	void end(const char* region)

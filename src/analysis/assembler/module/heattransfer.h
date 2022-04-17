@@ -44,11 +44,11 @@ public:
 
 	AX_HeatTransfer(AX_HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
 
-	void init(AX_SteadyState &scheme);
 	void analyze();
-	void evaluate();
 
-	void updateSolution();
+	void connect(AX_SteadyState &scheme);
+	void evaluate(AX_SteadyState &scheme);
+	void updateSolution(AX_SteadyState &scheme);
 
 	HeatTransferConfiguration &settings;
 	HeatTransferLoadStepConfiguration &configuration;
@@ -78,9 +78,6 @@ public:
 	ParametersGradient gradient;
 	ParametersGradient gradientSimd;
 	ParametersFlux flux;
-
-	Matrix_Base<double> *K, *M;
-	Vector_Base<double> *rhs, *x, *dirichlet;
 
 protected:
 	bool initTemperature();

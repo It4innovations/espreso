@@ -19,6 +19,7 @@ using namespace espreso;
 
 void Looper::run()
 {
+	eslog::startln("ESPRESO: SIMULATION STARTED", "SIMULATION");
 	Variable::gather(info::mesh->boundaryRegions.size());
 
 //	for (auto range = info::ecf->ranges.begin(); range != info::ecf->ranges.end(); ++range) {
@@ -55,8 +56,11 @@ void Looper::run()
 		break;
 	}
 
-	analysis->init();
+	analysis->analyze();
+	eslog::checkpointln("SIMULATION: PHYSICS ANALYSED");
 	analysis->run(step);
 
+	delete analysis;
 	Variable::clear();
+	eslog::endln("SIMULATION: DATA CLEARED");
 }

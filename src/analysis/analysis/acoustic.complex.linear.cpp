@@ -18,7 +18,7 @@ AX_AcousticComplexLinear::AX_AcousticComplexLinear(AcousticConfiguration &settin
 
 }
 
-void AX_AcousticComplexLinear::init()
+void AX_AcousticComplexLinear::analyze()
 {
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" == ANALYSIS                                                               HARMONIC COMPLEX == \n");

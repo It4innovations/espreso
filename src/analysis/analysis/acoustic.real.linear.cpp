@@ -18,7 +18,7 @@ AX_AcousticRealLinear::AX_AcousticRealLinear(AcousticConfiguration &settings, Ac
 
 }
 
-void AX_AcousticRealLinear::init()
+void AX_AcousticRealLinear::analyze()
 {
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" == ANALYSIS                                                                  HARMONIC REAL == \n");

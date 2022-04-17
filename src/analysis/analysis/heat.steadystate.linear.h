@@ -18,7 +18,7 @@ public:
 	AX_HeatSteadyStateLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
 	~AX_HeatSteadyStateLinear();
 
-	void init();
+	void analyze();
 	void run(step::Step &step);
 
 	HeatTransferConfiguration &settings;

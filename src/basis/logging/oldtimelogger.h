@@ -27,6 +27,11 @@ public:
 
 	}
 
+	void accumulated(const char* region)
+	{
+
+	}
+
 	void end(const char* region)
 	{
 

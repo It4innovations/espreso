@@ -50,7 +50,7 @@ bool AX_NewtonRaphson::checkTemp(step::Step &step, AX_HeatTransfer &assembler, A
 		eslog::info("      == TEMPERATURE NORM, CRITERIA [CONVERGED]              %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.requested_first_residual);
 	}
 
-	assembler.updateSolution();
+	assembler.updateSolution(scheme);
 	return !(norm > configuration.requested_first_residual);
 }
 
@@ -74,7 +74,7 @@ bool AX_NewtonRaphson::run(step::Step &step, step::Time &time, AX_HeatTransfer &
 
 	double start = eslog::time();
 	step.iteration = 0;
-	assembler.evaluate();
+	assembler.evaluate(scheme);
 	scheme.composeSystem(step, system);
 	eslog::info("      == ----------------------------------------------------------------------------- == \n");
 	eslog::info("      == SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
@@ -84,7 +84,7 @@ bool AX_NewtonRaphson::run(step::Step &step, step::Time &time, AX_HeatTransfer &
 
 	double solution = eslog::time();
 	scheme.extractSolution(step, system);
-	assembler.updateSolution();
+	assembler.updateSolution(scheme);
 	eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
 	eslog::info("      == ----------------------------------------------------------------------------- == \n");
 
@@ -94,7 +94,7 @@ bool AX_NewtonRaphson::run(step::Step &step, step::Time &time, AX_HeatTransfer &
 
 		start = eslog::time();
 		U->copy(system->solver.x);
-		assembler.evaluate();
+		assembler.evaluate(scheme);
 		scheme.composeSystem(step, system);
 
 		system->solver.A->apply(1, system->solver.x, 0, R);

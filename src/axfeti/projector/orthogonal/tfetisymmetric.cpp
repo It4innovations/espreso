@@ -33,8 +33,11 @@ static void _info(OrthogonalTFETISymmetric<T> *projector)
 	eslog::info(" = ORTHOGONAL PROJECTOR PROPERTIES                                                           = \n");
 	eslog::info(" =   GGt SIZE                                                                      %9d = \n", projector->GGt.nrows);
 	eslog::info(" =   GGt FILL-IN [\%]                                                                %8.4f = \n", 100.0 * nnz / (projector->GGt.nrows * projector->GGt.nrows));
+	if (projector->feti->configuration.exhaustive_info) {
+		// PPt = eye
+	}
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-	// PPt = eye
+
 }
 
 template <typename T>
@@ -80,6 +83,7 @@ static void _update(OrthogonalTFETISymmetric<T> *projector)
 		math::apply(_e, T{1}, _Rt, T{0}, projector->feti->f->domains[d]);
 	}
 	projector->e.synchronize();
+	eslog::checkpointln("FETI: COMPUTE DUAL RHS [e]");
 
 	_updateG(projector);
 	if (projector->feti->equalityConstraints->global) {
@@ -87,6 +91,7 @@ static void _update(OrthogonalTFETISymmetric<T> *projector)
 	} else {
 		_updateSparseGGt(projector);
 	}
+
 	_print(projector);
 }
 
@@ -238,6 +243,7 @@ static void _setG(OrthogonalTFETISymmetric<T> *projector)
 			}
 		}
 	}
+	eslog::checkpointln("FETI: SET G");
 }
 
 template <typename T>
@@ -326,12 +332,15 @@ static void _setSparseGGt(OrthogonalTFETISymmetric<T> *projector)
 		eslog::error("cannot gather GGt cols.\n");
 	}
 
+	eslog::checkpointln("FETI: GATHER GGT INDICES");
+
 	projector->GGt.shape = Matrix_Shape::UPPER;
 	projector->GGt.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 	math::commit(projector->GGt);
 	math::symbolicFactorization(projector->GGt);
 
 	projector->invGGt.resize(projector->G.nrows, projector->GGt.ncols);
+	eslog::checkpointln("FETI: GGT SYMBOLIC FACTORIZATION");
 }
 
 template <typename T>
@@ -359,6 +368,7 @@ static void _updateG(OrthogonalTFETISymmetric<T> *projector)
 			}
 		}
 	}
+	eslog::checkpointln("FETI: UPDATE G");
 }
 
 template <typename T>
@@ -428,6 +438,9 @@ static void _updateSparseGGt(OrthogonalTFETISymmetric<T> *projector)
 	if (!Communication::allGatherInplace(projector->GGt.vals, projector->GGtOffset, projector->GGtSize)) {
 		eslog::error("cannot gather GGt vals.\n");
 	}
+	eslog::checkpointln("FETI: GATHER GGT VALUES");
+	math::numericalFactorization(projector->GGt);
+	eslog::checkpointln("FETI: GGT NUMERICAL FACTORIZATION");
 
 	Matrix_Dense<T> eye;
 	eye.resize(projector->G.nrows, projector->feti->sinfo.R1totalSize);
@@ -435,9 +448,8 @@ static void _updateSparseGGt(OrthogonalTFETISymmetric<T> *projector)
 	for (esint r = 0; r < projector->G.nrows; ++r) {
 		eye.vals[r * projector->feti->sinfo.R1totalSize + projector->feti->sinfo.R1offset + r] = T{1};
 	}
-
-	math::numericalFactorization(projector->GGt);
 	math::solve(projector->GGt, eye, projector->invGGt);
+	eslog::checkpointln("FETI: COMPUTE GGT INVERSE");
 }
 
 template <typename T>

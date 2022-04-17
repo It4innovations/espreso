@@ -100,15 +100,6 @@ int main(int argc, char **argv)
 		eslog::endln("ESPRESO: DATABASE CONVERTED");
 	} else {
 		profiler::syncstart("physical_solver");
-/*		LoadStepIterator steps;
-		steps.prepareExpressions();
-		eslog::checkpointln("ESPRESO: EXPRESSIONS CHECKED");
-		while (steps.next()) {
-			eslog::checkpoint("ESPRESO: PHYSICS SOLVED");
-			eslog::param("LOADSTEP", step::step.loadstep);
-			eslog::ln();
-		}
-*/
 		Looper looper;
 		looper.run();
 		profiler::syncend("physical_solver");

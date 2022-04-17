@@ -17,6 +17,7 @@ public:
 	virtual void always() =0;
 	virtual void start(const char* n, const char* section) =0;
 	virtual void checkpoint(const char* n) =0;
+	virtual void accumulated(const char* n) =0;
 	virtual void end(const char* n) =0;
 	virtual void ln() =0;
 	virtual void nextLoadStep(int step) =0;
@@ -131,6 +132,14 @@ public:
 	}
 
 	template<class Logger>
+	void accumulated(const char* n)
+	{
+		if (Logger::isAllowed()) {
+			Logger::accumulated(n);
+		}
+	}
+
+	template<class Logger>
 	void end(const char* n)
 	{
 		if (Logger::isAllowed()) {
@@ -226,6 +235,7 @@ public:
 	__ES__FORALL(always, , );
 	__ES__FORALL(start, __ES__PACK(const char* n, const char* section), __ES__PACK(n, section));
 	__ES__FORALL(checkpoint, const char* n, n);
+	__ES__FORALL(accumulated, const char* n, n);
 	__ES__FORALL(end, const char* n, n);
 	__ES__FORALL(ln, , );
 	__ES__FORALL(nextLoadStep, int step, step);
