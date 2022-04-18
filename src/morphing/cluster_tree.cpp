@@ -194,7 +194,8 @@ void ClusterTree::doCreateClusterTree(Cluster *C, esint s) {
 			}
 		}
 	}
-	MATH::upDense3x3EigenValuesEigenVectors(&this->varMatrix[0], &this->eigenvalues[0], &this->eigenvectors[0]);
+	eslog::error("call upDense3x3EigenValuesEigenVectors\n");
+//	MATH::upDense3x3EigenValuesEigenVectors(&this->varMatrix[0], &this->eigenvalues[0], &this->eigenvectors[0]);
 	
 	// find the largest eigenvalue
 	double maxEig = 0;

@@ -3,10 +3,10 @@
 #define SRC_AXFETI_FETI_H_
 
 #include "config/ecf/linearsolver/feti.h"
-#include "math2/generalization/matrix_distributed.h"
-#include "math2/generalization/matrix_feti.h"
-#include "math2/generalization/vector_feti.h"
-#include "math2/feti/lmap.h"
+#include "math/generalization/matrix_distributed.h"
+#include "math/generalization/matrix_feti.h"
+#include "math/generalization/vector_feti.h"
+#include "math/feti/lmap.h"
 
 namespace espreso {
 

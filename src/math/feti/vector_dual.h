@@ -3,7 +3,7 @@
 #define SRC_MATH2_FETI_VECTOR_DUAL_H_
 
 #include "esinfo/envinfo.h"
-#include "math2/primitives/vector_dense.h"
+#include "math/primitives/vector_dense.h"
 #include "wrappers/mpi/communication.h"
 
 #include <vector>

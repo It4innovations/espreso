@@ -4,7 +4,6 @@
 #include "basis/utilities/utils.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/meshinfo.h"
-#include "math/matrix.dense.h"
 #include "mesh/store/domainstore.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"

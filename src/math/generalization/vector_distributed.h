@@ -4,9 +4,9 @@
 
 #include "vector_base.h"
 #include "esinfo/eslog.h"
-#include "math2/math2.h"
-#include "math2/utils/distributed/distribution.h"
-#include "math2/utils/distributed/synchronization.h"
+#include "math/math.h"
+#include "math/utils/distributed/distribution.h"
+#include "math/utils/distributed/synchronization.h"
 #include "wrappers/mpi/communication.h"
 
 #include <vector>

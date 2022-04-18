@@ -3,7 +3,7 @@
 #define SRC_AXFETI_DUALOPERATOR_DUALOPERATOR_H_
 
 #include "axfeti/feti.h"
-#include "math2/feti/vector_dual.h"
+#include "math/feti/vector_dual.h"
 
 #include <vector>
 

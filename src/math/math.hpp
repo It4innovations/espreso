@@ -2,7 +2,7 @@
 #ifndef SRC_MATH2_MATH2_HPP_
 #define SRC_MATH2_MATH2_HPP_
 
-#include "math2.h"
+#include "math.h"
 
 namespace espreso {
 namespace math {

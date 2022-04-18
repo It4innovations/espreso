@@ -35,13 +35,13 @@ public:
 
 	double& precision();
 
-	void insertK(FETIConfiguration &configuration, const MatrixCSRFETI &K, const MatrixCSRFETI &origK, const MatrixDenseFETI &N1, const MatrixDenseFETI &N2, const MatrixCSRFETI &RegMat);
-	void insertB1(const MatrixIJVFETI &B1Dirichlet, const VectorDenseFETI &c, const MatrixIJVFETI &B1Gluing, const VectorDenseFETI &duplication, const MatrixIJVFETI &B1Inequality, const VectorDenseFETI &gap, const std::vector<esint> &B1Map);
-	void insertB0(const MatrixIJVFETI &B0);
-	void insertRHS(const VectorsDenseFETI &f);
-
-	void update(FETIConfiguration &configuration);
-	void solve(FETIConfiguration &configuration, VectorsDenseFETI &x, VectorsDenseFETI &y);
+//	void insertK(FETIConfiguration &configuration, const MatrixCSRFETI &K, const MatrixCSRFETI &origK, const MatrixDenseFETI &N1, const MatrixDenseFETI &N2, const MatrixCSRFETI &RegMat);
+//	void insertB1(const MatrixIJVFETI &B1Dirichlet, const VectorDenseFETI &c, const MatrixIJVFETI &B1Gluing, const VectorDenseFETI &duplication, const MatrixIJVFETI &B1Inequality, const VectorDenseFETI &gap, const std::vector<esint> &B1Map);
+//	void insertB0(const MatrixIJVFETI &B0);
+//	void insertRHS(const VectorsDenseFETI &f);
+//
+//	void update(FETIConfiguration &configuration);
+//	void solve(FETIConfiguration &configuration, VectorsDenseFETI &x, VectorsDenseFETI &y);
 
 	virtual ~FETISystemSolver();
 

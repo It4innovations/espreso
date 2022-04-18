@@ -4,8 +4,8 @@
 
 #include "vector_base.h"
 #include "esinfo/eslog.h"
-#include "math2/math2.h"
-#include "math2/utils/decomposed/decomposition.h"
+#include "math/math.h"
+#include "math/utils/decomposed/decomposition.h"
 
 #include <vector>
 

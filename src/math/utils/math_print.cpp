@@ -1,13 +1,13 @@
 
-#include "math2/math2.h"
-#include "math2/primitives/vector_dense.h"
-#include "math2/feti/lmap.h"
-#include "math2/feti/vector_dual.h"
-#include "math2/feti/vector_kernel.h"
-#include "math2/generalization/vector_distributed.h"
-#include "math2/generalization/vector_feti.h"
-#include "math2/generalization/matrix_distributed.h"
-#include "math2/generalization/matrix_feti.h"
+#include "math/math.h"
+#include "math/primitives/vector_dense.h"
+#include "math/feti/lmap.h"
+#include "math/feti/vector_dual.h"
+#include "math/feti/vector_kernel.h"
+#include "math/generalization/vector_distributed.h"
+#include "math/generalization/vector_feti.h"
+#include "math/generalization/matrix_distributed.h"
+#include "math/generalization/matrix_feti.h"
 #include "esinfo/meshinfo.h"
 
 #include <fstream>

@@ -5,8 +5,8 @@
 #include "dualoperator/totalfeti.h"
 #include "preconditioner/preconditioner.h"
 
-#include "math2/generalization/matrix_feti.h"
-#include "math2/generalization/vector_feti.h"
+#include "math/generalization/matrix_feti.h"
+#include "math/generalization/vector_feti.h"
 
 namespace espreso {
 

@@ -539,13 +539,14 @@ void LowRankBlock::generateBlocksImplicit(const Cluster *L, const Cluster *R, do
 		
 
 		//we check for terminating condition satisfaction
-		double norm_new_row = espreso::MATH::vecDot(this->ncols, &cross_row->at(0));
-		double norm_new_col = espreso::MATH::vecDot(this->nrows, &cross_col->at(0));
+		eslog::error("call vecDot\n");
+		double norm_new_row = 0; //espreso::MATH::vecDot(this->ncols, &cross_row->at(0));
+		double norm_new_col = 0; //espreso::MATH::vecDot(this->nrows, &cross_col->at(0));
 		double new_cross_norm = norm_new_row * norm_new_col;
 		
 		approx_norm += new_cross_norm;
 		for ( esint i = 0; i < this->rank; ++i ) {
-		  approx_norm += 2.0f * espreso::MATH::vecDot(this->ncols, &cross_row->at(0), &data_rows[i]->at(0)) * espreso::MATH::vecDot(this->nrows, &cross_col->at(0), &data_cols[i]->at(0));
+//		  approx_norm += 2.0f * espreso::MATH::vecDot(this->ncols, &cross_row->at(0), &data_rows[i]->at(0)) * espreso::MATH::vecDot(this->nrows, &cross_col->at(0), &data_cols[i]->at(0));
 		}
 		
 		this->rank++;
@@ -710,13 +711,14 @@ void matrix_ACA::apply(const double* x, double* y, double alpha, double beta, bo
 		return;
 	}
 
+	eslog::error("call vecScale, vecAdd\n");
 	esint dim = (transpose?this->ncols:this->nrows);
-	MATH::vecScale(dim, beta, y);
+//	MATH::vecScale(dim, beta, y);
 	
 	#pragma omp parallel
   	{
 		esint tid = omp_get_thread_num( );
-		MATH::vecScale(dim, 0.0, this->y_tmp[tid].data());
+//		MATH::vecScale(dim, 0.0, this->y_tmp[tid].data());
 
 		for(auto &M: this->aca_blocks_threaded[tid]){
 			M->apply(x, &this->y_tmp[tid][0], alpha, 1.0f, transpose);
@@ -724,7 +726,7 @@ void matrix_ACA::apply(const double* x, double* y, double alpha, double beta, bo
 	}
 	
 	for(esint i = 0; i < (esint)this->y_tmp.size(); ++i){
-		MATH::vecAdd(dim, y, 1.0, this->y_tmp[i].data());
+//		MATH::vecAdd(dim, y, 1.0, this->y_tmp[i].data());
 	}
 }
 

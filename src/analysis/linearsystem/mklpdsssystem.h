@@ -13,9 +13,9 @@
 #include "config/ecf/linearsolver/mklpdss.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.h"
-#include "math2/generalization/matrix_distributed.h"
-#include "math2/utils/distributed/distribution.h"
-#include "math2/utils/distributed/synchronization.h"
+#include "math/generalization/matrix_distributed.h"
+#include "math/utils/distributed/distribution.h"
+#include "math/utils/distributed/synchronization.h"
 #include "wrappers/mklpdss/w.mkl.pdss.h"
 
 namespace espreso {

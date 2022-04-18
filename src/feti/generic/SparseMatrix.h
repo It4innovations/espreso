@@ -1,7 +1,7 @@
 
 #include "feti/generic/utils.h"
 #include "config/ecf/linearsolver/feti.h"
-#include "math/matrix.h"
+#include "math/primitives/matrix_info.h"
 
 //class SparseSolverCPU;
 
@@ -49,7 +49,7 @@ public:
 	esint  haloRows;	// number of rows that have to be skipped in the case of direct solver
 	esint  minCol, maxCol;
 	char type;		// 'G' for general or 'S' for symmetric
-	MatrixType mtype;
+	Matrix_Type mtype;
 	char uplo; 		// 'L' for lower or 'U' for upper
 	esint extern_lda; // leading dimension of the array holding 2 SCs in the device memory
 

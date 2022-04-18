@@ -10,13 +10,13 @@
 #include "mesh/store/elementstore.h"
 #include "mesh/store/boundaryregionstore.h"
 
-#include "math2/primitives/vector_dense.h"
-#include "math2/primitives/matrix_info.h"
-#include "math2/primitives/matrix_csr.h"
-#include "math2/generalization/vector_distributed.h"
-#include "math2/generalization/matrix_distributed.h"
-#include "math2/utils/distributed/distribution.h"
-#include "math2/utils/distributed/synchronization.h"
+#include "math/primitives/vector_dense.h"
+#include "math/primitives/matrix_info.h"
+#include "math/primitives/matrix_csr.h"
+#include "math/generalization/vector_distributed.h"
+#include "math/generalization/matrix_distributed.h"
+#include "math/utils/distributed/distribution.h"
+#include "math/utils/distributed/synchronization.h"
 
 #include <vector>
 

@@ -4,8 +4,8 @@
 #include "esinfo/eslog.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/meshinfo.h"
-#include "math2/primitives/matrix_csr.h"
-#include "math2/generalization/matrix_distributed.h"
+#include "math/primitives/matrix_csr.h"
+#include "math/generalization/matrix_distributed.h"
 #include "wrappers/mpi/communication.h"
 
 #include <cstring>

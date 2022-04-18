@@ -80,26 +80,26 @@ def build(ctx):
     ctx.env["STLIB_MARKER"] = ["-Wl,-Bstatic,--start-group"]
     ctx.env.prepend_value("SHLIB_MARKER", "-Wl,--end-group")
 
-    fetisources = (
-       "src/feti/dataholder.cpp",
-       "src/feti/generic/Domain.cpp",
-       "src/feti/generic/SparseMatrix.cpp",
-       "src/feti/generic/utils.cpp",
-       "src/feti/generic/timeeval.cpp",
-       "src/feti/generic/FETISystemSolver.cpp",
-       "src/feti/specific/cluster.cpp",
-       "src/feti/specific/itersolver.cpp",
-       "src/feti/specific/cpu/clustercpu.cpp",
-       "src/feti/specific/cpu/itersolvercpu.cpp",
-       "src/feti/specific/cpu/DenseSolverMKL.cpp",
-    )
+#     fetisources = (
+#        "src/feti/dataholder.cpp",
+#        "src/feti/generic/Domain.cpp",
+#        "src/feti/generic/SparseMatrix.cpp",
+#        "src/feti/generic/utils.cpp",
+#        "src/feti/generic/timeeval.cpp",
+#        "src/feti/generic/FETISystemSolver.cpp",
+#        "src/feti/specific/cluster.cpp",
+#        "src/feti/specific/itersolver.cpp",
+#        "src/feti/specific/cpu/clustercpu.cpp",
+#        "src/feti/specific/cpu/itersolvercpu.cpp",
+#        "src/feti/specific/cpu/DenseSolverMKL.cpp",
+#     )
 
-    if ctx.env["DEFINES_SOLVER"][0] == "SOLVER_MKL":
-        feti = fetisources + ("src/feti/specific/cpu/SparseSolverMKL.cpp",)
-    if ctx.env["DEFINES_SOLVER"][0] == "SOLVER_PARDISO":
-        feti = fetisources + ("src/feti/specific/cpu/SparseSolverPARDISO.cpp",)
-    if ctx.env["DEFINES_SOLVER"][0] == "SOLVER_CUDA":
-        feti = fetisources + ("src/feti/specific/cpu/SparseSolverMKL.cpp", "src/feti/specific/acc/clusterGPU.cpp", "src/feti/specific/acc/itersolverGPU.cpp",)
+#     if ctx.env["DEFINES_SOLVER"][0] == "SOLVER_MKL":
+#         feti = fetisources + ("src/feti/specific/cpu/SparseSolverMKL.cpp",)
+#     if ctx.env["DEFINES_SOLVER"][0] == "SOLVER_PARDISO":
+#         feti = fetisources + ("src/feti/specific/cpu/SparseSolverPARDISO.cpp",)
+#     if ctx.env["DEFINES_SOLVER"][0] == "SOLVER_CUDA":
+#         feti = fetisources + ("src/feti/specific/cpu/SparseSolverMKL.cpp", "src/feti/specific/acc/clusterGPU.cpp", "src/feti/specific/acc/itersolverGPU.cpp",)
 
     features = "cxx cxxshlib"
     ctx.lib = ctx.shlib
@@ -107,7 +107,7 @@ def build(ctx):
         features = "cxx"
         ctx.lib = ctx.stlib
 
-    prefix = "nb"
+    prefix = "es"
     ctx.checker = []
     ctx.mesio = []
     ctx.espreso = []
@@ -150,35 +150,35 @@ def build(ctx):
     ctx.program(source=["src/api/api.mesio.cpp"], target="test.mesio", includes="include", use=ctx.checker + ctx.mesio + ["API", "mesioapi"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
 
     ctx.build_espreso(ctx.path.ant_glob('src/analysis/**/*.cpp'), "analysis")
-    ctx.build_espreso(ctx.path.ant_glob('src/physics/**/*.cpp'), "physics")
+#     ctx.build_espreso(ctx.path.ant_glob('src/physics/**/*.cpp'), "physics")
     ctx.build_espreso(ctx.path.ant_glob('src/morphing/**/*.cpp'), "devel")
     ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math")
     ctx.build_espreso(ctx.path.ant_glob('src/math2/**/*.cpp'), "math2")
     ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cuda/**/*.cpp'), "wcuda", [ "CUDA" ])
-    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'), "whypre", [ "HYPRE" ])
+#     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'), "whypre", [ "HYPRE" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mklpdss/**/*.cpp'), "wmklpdss", [ "MKLPDSS", "MKL" ])
-    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/pardiso/**/*.cpp'), "wpardiso", [ "PARDISO", "MKL" ])
-    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/superlu/**/*.cpp'), "wsuperlu", [ "SUPERLU", "MKL" ])
-    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/wsmp/**/*.cpp'), "wwsmp", [ "WSMP" ])
+#     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/pardiso/**/*.cpp'), "wpardiso", [ "PARDISO", "MKL" ])
+#     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/superlu/**/*.cpp'), "wsuperlu", [ "SUPERLU", "MKL" ])
+#     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/wsmp/**/*.cpp'), "wwsmp", [ "WSMP" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/csparse/**/*.cpp'), "wcsparse", [ "CSPARSE" ])
-    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/bem/**/*.cpp'), "wbem", [ "BEM" ])
+#     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/bem/**/*.cpp'), "wbem", [ "BEM" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/nvtx/**/*.cpp'), "wnvtx", [ "NVTX" ])
     if ctx.env["HAVE_MATH"]:
-        if ctx.env.NVCC:
-            ctx.build_espreso(ctx.path.ant_glob('src/feti/specific/acc/**/*.cu'), "cudakernels", [ "CUDA" ])
-        ctx.build_espreso(feti, "feti", [ "SOLVER", "PARDISO", "MKL" ])
-        ctx.build_espreso(ctx.path.ant_glob('src/axfeti/**/*.cpp'), "axfeti")
+#         if ctx.env.NVCC:
+#             ctx.build_espreso(ctx.path.ant_glob('src/feti/specific/acc/**/*.cu'), "cudakernels", [ "CUDA" ])
+#         ctx.build_espreso(feti, "feti", [ "SOLVER", "PARDISO", "MKL" ])
+        ctx.build_espreso(ctx.path.ant_glob('src/axfeti/**/*.cpp'), "axfeti", [ "MKL" ])
 
     ctx.program(source="src/app/ecfchecker.cpp", target="ecfchecker", use=ctx.checker)
     ctx.program(source="src/app/mesio.cpp", target="mesio", use=ctx.checker + ctx.mesio, stlib=ctx.options.stlibs, lib=ctx.options.libs)
     if ctx.env["HAVE_MATH"]:
         ctx.program(source="src/app/espreso.cpp",target="espreso", use=ctx.checker + ctx.mesio + ctx.espreso, stlib=ctx.options.stlibs, lib=ctx.options.libs)
 
-        ctx.lib(source="src/api/wrapper.feti4i.cpp", target="feti4i", includes="include", use=ctx.checker + ctx.mesio + ctx.espreso + ["API"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
-        ctx.program(source=["src/api/api.feti4i.cpp", "src/api/api.feti4i.dataprovider.cpp"], target="test.feti4i", includes="include", use=ctx.checker + ctx.mesio + ctx.espreso + ["API", "feti4i"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
-        ctx.program(source="src/api/example.feti4i.cpp", target="example.feti4i", includes="include", use=ctx.checker + ctx.mesio + ctx.espreso + ["API", "feti4i"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
+#         ctx.lib(source="src/api/wrapper.feti4i.cpp", target="feti4i", includes="include", use=ctx.checker + ctx.mesio + ctx.espreso + ["API"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
+#         ctx.program(source=["src/api/api.feti4i.cpp", "src/api/api.feti4i.dataprovider.cpp"], target="test.feti4i", includes="include", use=ctx.checker + ctx.mesio + ctx.espreso + ["API", "feti4i"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
+#         ctx.program(source="src/api/example.feti4i.cpp", target="example.feti4i", includes="include", use=ctx.checker + ctx.mesio + ctx.espreso + ["API", "feti4i"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
 
     if ctx.env.with_gui:
         ctx.objects(source=ctx.path.ant_glob("**/*.ui"), target="ui")

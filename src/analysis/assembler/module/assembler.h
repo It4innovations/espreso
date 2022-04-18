@@ -5,7 +5,7 @@
 #include "parameters.h"
 #include "analysis/assembler/controller.h"
 #include "analysis/assembler/operator.h"
-#include "math2/primitives/vector_sparse.h"
+#include "math/primitives/vector_sparse.h"
 
 #include <vector>
 #include <map>

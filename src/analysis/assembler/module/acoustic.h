@@ -4,9 +4,9 @@
 
 #include "assembler.h"
 #include "config/ecf/physics/acoustic.h"
-#include "math2/primitives/vector_sparse.h"
-#include "math2/primitives/matrix_info.h"
-#include "math2/generalization/matrix_base.h"
+#include "math/primitives/vector_sparse.h"
+#include "math/primitives/matrix_info.h"
+#include "math/generalization/matrix_base.h"
 
 #include <vector>
 

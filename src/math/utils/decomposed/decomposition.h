@@ -3,7 +3,7 @@
 #define SRC_MATH2_UTILS_DECOMPOSED_DECOMPOSITION_H_
 
 #include "basis/containers/serializededata.h"
-#include "math2/utils/distributed/distribution.h"
+#include "math/utils/distributed/distribution.h"
 
 namespace espreso {
 

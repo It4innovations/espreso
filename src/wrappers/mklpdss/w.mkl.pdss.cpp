@@ -1,7 +1,7 @@
 
 #include "w.mkl.pdss.h"
 #include "esinfo/mpiinfo.h"
-#include "math2/primitives/matrix_csr.h"
+#include "math/primitives/matrix_csr.h"
 
 #include "wrappers/mpi/communication.h"
 #include "esinfo/eslog.hpp"

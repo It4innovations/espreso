@@ -2,7 +2,7 @@
 #ifndef SRC_MATH2_UTILS_DISTRIBUTED_APPLY_H_
 #define SRC_MATH2_UTILS_DISTRIBUTED_APPLY_H_
 
-#include "math2/primitives/matrix_csr.h"
+#include "math/primitives/matrix_csr.h"
 
 #include <vector>
 

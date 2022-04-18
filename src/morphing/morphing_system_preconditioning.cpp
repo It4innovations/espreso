@@ -115,12 +115,14 @@ void MorphingMatrixPreconditioner::updateInverseRowSparseOnly(esint idx){
         this->sparse_system_mem.begin()
 	);
 
-	MATH::SOLVER::directUpperSymetricIndefiniteColumnMajor(
-		this->nrows - 1,  
-		&this->sparse_system_mem[0],
-		1, 
-		&this->basis_vector[1]
-	);
+	eslog::error("call directUpperSymetricIndefiniteColumnMajor\n");
+
+//	MATH::SOLVER::directUpperSymetricIndefiniteColumnMajor(
+//		this->nrows - 1,
+//		&this->sparse_system_mem[0],
+//		1,
+//		&this->basis_vector[1]
+//	);
 
 	std::copy(
 		this->basis_vector.begin(), 
@@ -158,12 +160,13 @@ void MorphingMatrixPreconditioner::updateInverseRow(
 		}
 	}	
 
-	MATH::SOLVER::directUpperSymetricIndefiniteColumnMajor(
-		this->nrows,  
-		&this->sparse_system_mem[0],
-		1, 
-		&this->basis_vector[0]
-	);
+	eslog::error("call directUpperSymetricIndefiniteColumnMajor\n");
+//	MATH::SOLVER::directUpperSymetricIndefiniteColumnMajor(
+//		this->nrows,
+//		&this->sparse_system_mem[0],
+//		1,
+//		&this->basis_vector[0]
+//	);
 	
 	std::copy(
 		this->basis_vector.begin(), 
@@ -277,8 +280,8 @@ void MorphingMatrixPreconditioner::apply(
         // y_global[i] = x_global[i];
     // }
 	
-	
-	MATH::vecScale(this->dim_id + this->nreg_dim, beta / info::mpi::size, y_global);
+	eslog::error("call vecScale\n");
+//	MATH::vecScale(this->dim_id + this->nreg_dim, beta / info::mpi::size, y_global);
 	
 	size_t ri, ci;
 	double v;

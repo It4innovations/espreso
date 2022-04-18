@@ -4,8 +4,8 @@
 
 #include "axfeti/feti.h"
 
-#include "math2/feti/vector_dual.h"
-#include "math2/feti/vector_kernel.h"
+#include "math/feti/vector_dual.h"
+#include "math/feti/vector_kernel.h"
 
 namespace espreso {
 

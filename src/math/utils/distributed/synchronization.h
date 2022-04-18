@@ -5,7 +5,7 @@
 #include "esinfo/eslog.h"
 #include <vector>
 
-#include "math2/primitives/matrix_csr.h"
+#include "math/primitives/matrix_csr.h"
 #include "wrappers/mpi/communication.h"
 #include "mesh/store/nodestore.h"
 

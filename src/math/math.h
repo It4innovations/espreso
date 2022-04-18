@@ -1,164 +1,318 @@
 
-#ifndef SRC_WRAPPERS_MATH_MATH_H_
-#define SRC_WRAPPERS_MATH_MATH_H_
+#ifndef SRC_MATH2_MATH2_H_
+#define SRC_MATH2_MATH2_H_
+
+#include "esinfo/eslog.h"
+#include "primitives/vector_dense.h"
+#include "primitives/vector_sparse.h"
+#include "primitives/matrix_dense.h"
+#include "primitives/matrix_csr.h"
+#include "primitives/matrix_ijv.h"
+
+#include <complex>
 
 namespace espreso {
+namespace math { // interface to wrappers
 
-enum class MatrixType: int;
-class MorphingMatrix;
+	// utility functions allowing the Intel inspector-executor model
+	template <typename T> void commit(Matrix_Dense<T> &x);
+	template <typename T> void commit(Matrix_CSR<T> &x);
+	template <typename T> void commit(Matrix_IJV<T> &x);
 
-namespace MATH {
+	template <typename T> void free(Matrix_Dense<T> &x);
+	template <typename T> void free(Matrix_CSR<T> &x);
+	template <typename T> void free(Matrix_IJV<T> &x);
 
-	class CSRHandlerData;
-	class CSRHandler {
-	public:
-		CSRHandler(esint nrows, esint ncols, esint nnz, esint *rows, esint *cols, double *vals);
-		~CSRHandler();
+	template <typename T> void symbolicFactorization(const Matrix_CSR<T> &x);
+	template <typename T> void numericalFactorization(const Matrix_CSR<T> &x);
+	template <typename T> void solve(const Matrix_CSR<T> &x, Vector_Dense<T> &rhs, Vector_Dense<T> &solution);
+	template <typename T> void solve(const Matrix_CSR<T> &x, Matrix_Dense<T> &rhs, Matrix_Dense<T> &solution);
 
-		void sizes(esint &rows, esint &cols, esint &nnz) const;
-		void data(esint* &mRows, esint* &mCols, double* &mVals) const;
+	// y = alpha * A * x + beta * y
+	template <typename T> void apply(Vector_Dense<T> &y, const T &alpha, const Matrix_Dense<T> &a, const T &beta, const Vector_Dense<T> &x);
+	template <typename T> void apply(Vector_Dense<T> &y, const T &alpha, const Matrix_CSR<T>   &a, const T &beta, const Vector_Dense<T> &x);
+	template <typename T> void apply(Vector_Dense<T> &y, const T &alpha, const Matrix_IJV<T>   &a, const T &beta, const Vector_Dense<T> &x);
 
-		CSRHandlerData *inner;
-	};
-
-	class IJVHandlerData;
-	class IJVHandler {
-	public:
-		IJVHandler(esint nrows, esint ncols, esint nnz, esint *rows, esint *cols, double *vals);
-		~IJVHandler();
-
-		IJVHandlerData *inner;
-	};
-
-	void setNumberOfThreads(int numberOfThreads);
-
-	void upCSRMatVecProduct(CSRHandler *A, double *vals, double *result);
-	void upCSRMatVecProduct(esint rows, esint cols, esint *mRows, esint *mCols, float *mVals, float *vVals, float *result);
-	void upCSRMatVecProduct(esint rows, esint cols, esint *mRows, esint *mCols, double *mVals, double *vVals, double *result);
-	void CSRMatVecProduct(CSRHandler *A, double *vals, double *result);
-	// C = op(A) * B with memory leak!!
-	void CSRMatCSRMatProduct(CSRHandler *C, CSRHandler *A, CSRHandler *B, bool transposeA);
-
-	// WARNING: do not use this function
-	void CSRTranspose(CSRHandler *A, CSRHandler *At);
-
-	void CSRTranspose(esint rows, esint cols, esint *aRows, esint *aCols, double *aVals, esint *bRows, esint *bCols, double *bVals);
-	void CSRRemoveLower(esint rows, esint cols, esint *aRows, esint *aCols, double *aVals);
-
-	void vecScale(esint size, float alpha, float *vVals);
-	void vecScale(esint size, double alpha, double *vVals);
-
-	double vecDot(esint size, double *vVals);
-	double vecDot(esint size, double *a, double *b);
-	void vecAdd(esint size, double *result, double alpha, double *other);
-	void vecAddSparse(esint size, double *result, double alpha, esint *indices, double *other);
-	void vecAddToSparse(esint size, double *result, double alpha, esint *indices, double *other);
-	void vecSum(esint size, double *result, double alpha, double *a, double beta, double *b);
-
-	void vecDenseToSparse(esint size, esint *indices, double *sparse, double *dense);
-
-	double vecNorm(esint size, float *vVals);
-	double vecNorm(esint size, double *vVals);
-
-	void upDense3x3EigenValues(double *mVals, double *eigenValues);
-	void upDense3x3EigenValuesEigenVectors(double *mVals, double *eigenValues, double *eigenVectors);
-
-	esint vecNormMaxIndex(esint size, float *vVals);
-	esint vecNormMaxIndex(esint size, double *vVals);
-
-	void DenseTranspose(esint rows, esint cols, double *vals);
-	void DenseMinGeneralizedEigenVectors(esint msize, double *A, double *B, esint n, double *lambdas, double *vectors);
-
-	void DenseRowsOrthonormalization(esint rows, esint cols, double *vals);
-
-	// C = alpha * A * B + beta * C
-	void DenseMatDenseMatRowMajorProduct(
-			double alpha, bool transposeA, esint aRows, esint aCols, double* aVals,
-			bool transposeB, esint bRows, esint bCols, double* bVals,
-			double beta, double* cVals);
-	// B = A \ B,  A in R^nrowsA.nrowsA, B in R^nrowsA.ncolsB
-	void DenseMatDenseMatRowMajorSystemSolve(int nrowsA, int ncolsB, double *A, double *B);
-
-	void CSRMatFactorizeSymbolic(MatrixType type, CSRHandler *A);
-	void CSRMatFactorizeNumeric(MatrixType type, CSRHandler *A);
-	void CSRMatFactorize(MatrixType type, CSRHandler *A);
-	void CSRMatSolve(MatrixType type, CSRHandler *A, esint nrhs, double *rhs, double *solution);
-	void CSRMatClearFactors(CSRHandler *A);
-
-	inline double determinant2x2(double *values)
+	// x = value
+	template <typename T>
+	void set(const esint size, T *x, const int incX, const T &value)
 	{
-		return values[0] * values[3] - values[1] * values[2];
+		for (esint i = 0; i < size; i += incX) {
+			x[i] = value;
+		}
 	}
 
-	inline double determinant3x3(double *values)
+	// x = y
+	template <typename T>
+	void copy(const esint size, T *x, const int incX, const T *y, const int incY);
+
+	// x *= alpha
+	template <typename T>
+	void scale(const esint size, const T &alpha, T *x, const int incX);
+
+	// x += alpha * y
+	template <typename T>
+	void add(const esint size, T *x, const int incX, const T &alpha, const T *y, const int incY);
+
+	template <typename T>
+	T dot(const esint size, const T *x, const int incX, const T *y, const int incY);
+
+	template <typename T>
+	T norm(const esint size, const T *x, const int incX);
+
+	// x = alpha * y + beta * z
+//	template <typename T>
+//	void sum(const esint size, T *x, const esint incX, const T &alpha, const T *y, const esint incY);
+
+} // math (interface to wrappers)
+} // espreso
+
+namespace espreso {
+namespace math {
+
+	template <typename T> void multiplyPattern(Vector_Dense<T>  &x, const Vector_Dense<T>  &y, int size, int multipicity);
+	template <typename T> void multiplyPattern(Vector_Sparse<T> &x, const Vector_Sparse<T> &y, int size, int multipicity);
+	template <typename T> void multiplyPattern(Matrix_Dense<T>  &x, const Matrix_Dense<T>  &y, int size, int multipicity);
+	template <typename T> void multiplyPattern(Matrix_CSR<T>    &x, const Matrix_CSR<T>    &y, int size, int multipicity);
+	template <typename T> void multiplyPattern(Matrix_IJV<T>    &x, const Matrix_IJV<T>    &y, int size, int multipicity);
+
+	template <typename T> void set(Vector_Dense<T>  &x, const T &value) { set(x.size           , x.vals, 1, value); }
+	template <typename T> void set(Vector_Sparse<T> &x, const T &value) { set(x.nnz            , x.vals, 1, value); }
+	template <typename T> void set(Matrix_Dense<T>  &x, const T &value) { set(x.nrows * x.ncols, x.vals, 1, value); }
+	template <typename T> void set(Matrix_CSR<T>    &x, const T &value) { set(x.nnz            , x.vals, 1, value); }
+	template <typename T> void set(Matrix_IJV<T>    &x, const T &value) { set(x.nnz            , x.vals, 1, value); }
+
+	// type to type
+	template <typename T> void copy(Vector_Dense<T>  &x, const Vector_Dense<T>  &y) { copy(x.size           , x.vals, 1, y.vals, 1); }
+	template <typename T> void copy(Vector_Sparse<T> &x, const Vector_Sparse<T> &y) { copy(x.nnz            , x.vals, 1, y.vals, 1); }
+	template <typename T> void copy(Matrix_Dense<T>  &x, const Matrix_Dense<T>  &y) { copy(x.nrows * x.ncols, x.vals, 1, y.vals, 1); }
+	template <typename T> void copy(Matrix_CSR<T>    &x, const Matrix_CSR<T>    &y) { copy(x.nnz            , x.vals, 1, y.vals, 1); }
+	template <typename T> void copy(Matrix_IJV<T>    &x, const Matrix_IJV<T>    &y) { copy(x.nnz            , x.vals, 1, y.vals, 1); }
+
+	// type converters
+	template <typename T> void copy(Matrix_Dense<T>  &x, const Matrix_CSR<T>   &y);
+	template <typename T> void copy(Matrix_Dense<T>  &x, const Matrix_IJV<T>   &y);
+	template <typename T> void copy(Matrix_CSR<T>    &x, const Matrix_Dense<T> &y);
+	template <typename T> void copy(Matrix_CSR<T>    &x, const Matrix_IJV<T>   &y);
+	template <typename T> void copy(Matrix_IJV<T>    &x, const Matrix_Dense<T> &y);
+	template <typename T> void copy(Matrix_IJV<T>    &x, const Matrix_CSR<T>   &y);
+
+	// type to type with offsets
+	template <typename T> void copy(Vector_Dense<T>  &x, const Vector_Dense<T>  &y, int offset, int size, int step);
+	template <typename T> void copy(Vector_Sparse<T> &x, const Vector_Sparse<T> &y, int offset, int size, int step);
+	template <typename T> void copy(Vector_Dense<T>  &x, const Vector_Sparse<T> &y, int offset, int size, int step);
+	template <typename T> void copy(Vector_Sparse<T> &x, const Vector_Dense<T>  &y, int offset, int size, int step);
+	template <typename T> void copy(Matrix_Dense<T>  &x, const Matrix_Dense<T>  &y, int rowOffset, int colOffset, int size, int step);
+	template <typename T> void copy(Matrix_Dense<T>  &x, const Matrix_CSR<T>    &y, int rowOffset, int colOffset, int size, int step);
+	template <typename T> void copy(Matrix_Dense<T>  &x, const Matrix_IJV<T>    &y, int rowOffset, int colOffset, int size, int step);
+	template <typename T> void copy(Matrix_CSR<T>    &x, const Matrix_Dense<T>  &y, int rowOffset, int colOffset, int size, int step);
+	template <typename T> void copy(Matrix_CSR<T>    &x, const Matrix_CSR<T>    &y, int rowOffset, int colOffset, int size, int step);
+	template <typename T> void copy(Matrix_CSR<T>    &x, const Matrix_IJV<T>    &y, int rowOffset, int colOffset, int size, int step);
+	template <typename T> void copy(Matrix_IJV<T>    &x, const Matrix_Dense<T>  &y, int rowOffset, int colOffset, int size, int step);
+	template <typename T> void copy(Matrix_IJV<T>    &x, const Matrix_CSR<T>    &y, int rowOffset, int colOffset, int size, int step);
+	template <typename T> void copy(Matrix_IJV<T>    &x, const Matrix_IJV<T>    &y, int rowOffset, int colOffset, int size, int step);
+
+	// real to complex
+	template <typename T> void copy(Matrix_Dense<std::complex<T> > &x, const int offsetX, const Matrix_CSR<T>   &y);
+	template <typename T> void copy(Matrix_Dense<std::complex<T> > &x, const int offsetX, const Matrix_IJV<T>   &y);
+	template <typename T> void copy(Matrix_CSR<std::complex<T> >   &x, const int offsetX, const Matrix_Dense<T> &y);
+	template <typename T> void copy(Matrix_CSR<std::complex<T> >   &x, const int offsetX, const Matrix_IJV<T>   &y);
+	template <typename T> void copy(Matrix_IJV<std::complex<T> >   &x, const int offsetX, const Matrix_Dense<T> &y);
+	template <typename T> void copy(Matrix_IJV<std::complex<T> >   &x, const int offsetX, const Matrix_CSR<T>   &y);
+
+	template <typename T> void copy(Matrix_Dense<std::complex<T> >  &x, const int offsetX, const Matrix_Dense<T>  &y) { copy(x.nrows * x.ncols, reinterpret_cast<T*>(x.vals) + offsetX, 2, y.vals, 1); }
+	template <typename T> void copy(Matrix_CSR<std::complex<T> >    &x, const int offsetX, const Matrix_CSR<T>    &y) { copy(x.nnz            , reinterpret_cast<T*>(x.vals) + offsetX, 2, y.vals, 1); }
+	template <typename T> void copy(Matrix_IJV<std::complex<T> >    &x, const int offsetX, const Matrix_IJV<T>    &y) { copy(x.nnz            , reinterpret_cast<T*>(x.vals) + offsetX, 2, y.vals, 1); }
+	template <typename T> void copy(Vector_Dense<std::complex<T> >  &x, const int offsetX, const Vector_Dense<T>  &y) { copy(x.size           , reinterpret_cast<T*>(x.vals) + offsetX, 2, y.vals, 1); }
+	template <typename T> void copy(Vector_Sparse<std::complex<T> > &x, const int offsetX, const Vector_Sparse<T> &y) { copy(x.nnz            , reinterpret_cast<T*>(x.vals) + offsetX, 2, y.vals, 1); }
+	template <typename T> void copy(Vector_Dense<std::complex<T> >  &x, const int offsetX, const Vector_Sparse<T> &y) { eslog::error("call empty function copy\n"); }
+	template <typename T> void copy(Vector_Sparse<std::complex<T> > &x, const int offsetX, const Vector_Dense<T>  &y) { eslog::error("call empty function copy\n"); }
+
+	// complex to real
+	template <typename T> void copy(Vector_Dense<T >  &x, const Vector_Dense<std::complex<T> >  &y, const int offsetY) { copy(x.size, x.vals, 1, reinterpret_cast<T*>(y.vals) + offsetY, 2); }
+	template <typename T> void copy(Vector_Sparse<T > &x, const Vector_Sparse<std::complex<T> > &y, const int offsetY) { copy(x.nnz , x.vals, 1, reinterpret_cast<T*>(y.vals) + offsetY, 2); }
+	template <typename T> void copy(Vector_Dense<T >  &x, const Vector_Sparse<std::complex<T> > &y, const int offsetY) { eslog::error("call empty function copy\n"); }
+	template <typename T> void copy(Vector_Sparse<T > &x, const Vector_Dense<std::complex<T> >  &y, const int offsetY) { eslog::error("call empty function copy\n"); }
+
+	template <typename T> void copy(Vector_Dense<T> &x, const Vector_Sparse<T> &y)
 	{
-		return
-			+ values[0] * values[4] * values[8]
-			+ values[1] * values[5] * values[6]
-			+ values[2] * values[3] * values[7]
-			- values[2] * values[4] * values[6]
-			- values[1] * values[3] * values[8]
-			- values[0] * values[5] * values[7];
+		for (esint i = 0; i < y.nnz; ++i) {
+			x.vals[y.indices[i]] = y.vals[i];
+		}
+	}
+	template <typename T> void copy(Vector_Sparse<T> &x, const Vector_Dense<T> &y)
+	{
+		for (esint i = 0; i < x.nnz; ++i) {
+			x.vals[i] = y.vals[x.indices[i]];
+		}
 	}
 
-	inline void Dense2x2inverse(const double *m, double *inv, double det)
+	template <typename T> void scale(const T &alpha, Vector_Dense<T>  &x) { scale(x.size           , alpha, x.vals, 1); }
+	template <typename T> void scale(const T &alpha, Vector_Sparse<T> &x) { scale(x.nnz            , alpha, x.vals, 1); }
+	template <typename T> void scale(const T &alpha, Matrix_Dense<T>  &x) { scale(x.nrows * x.ncols, alpha, x.vals, 1); }
+	template <typename T> void scale(const T &alpha, Matrix_CSR<T>    &x) { scale(x.nnz            , alpha, x.vals, 1); }
+	template <typename T> void scale(const T &alpha, Matrix_IJV<T>    &x) { scale(x.nnz            , alpha, x.vals, 1); }
+
+	// x = alpha * y
+	template <typename T> void add(Vector_Dense<T>  &x, const T &alpha, const Vector_Dense<T>  &y) { add(x.size           , x.vals, 1, alpha, y.vals, 1); }
+	template <typename T> void add(Vector_Sparse<T> &x, const T &alpha, const Vector_Sparse<T> &y) { add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
+	template <typename T> void add(Matrix_Dense<T>  &x, const T &alpha, const Matrix_Dense<T>  &y) { add(x.nrows * x.ncols, x.vals, 1, alpha, y.vals, 1); }
+	template <typename T> void add(Matrix_CSR<T>    &x, const T &alpha, const Matrix_CSR<T>    &y) { add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
+	template <typename T> void add(Matrix_IJV<T>    &x, const T &alpha, const Matrix_IJV<T>    &y) { add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
+	template <typename T> void add(Vector_Sparse<T> &x, const T &alpha, const Vector_Dense<T>  &y)
 	{
-		double detJx = 1 / det;
-		inv[0] =   detJx * m[3];
-		inv[1] = - detJx * m[1];
-		inv[2] = - detJx * m[2];
-		inv[3] =   detJx * m[0];
+		for (esint i = 0; i < x.nnz; ++i) {
+			x.vals[i] += alpha * y.vals[x.indices[i]];
+		}
+	}
+	template <typename T> void add(Vector_Dense<T> &x, const T &alpha, const Vector_Sparse<T>  &y)
+	{
+		for (esint i = 0; i < y.nnz; ++i) {
+			x.vals[y.indices[i]] += alpha * y.vals[i];
+		}
 	}
 
-	inline void Dense3x3inverse(const double *m, double *inv, double det)
-	{
-		double detJx = 1 / det;
-		inv[0] = detJx * ( m[8] * m[4] - m[7] * m[5]);
-		inv[1] = detJx * (-m[8] * m[1] + m[7] * m[2]);
-		inv[2] = detJx * ( m[5] * m[1] - m[4] * m[2]);
-		inv[3] = detJx * (-m[8] * m[3] + m[6] * m[5]);
-		inv[4] = detJx * ( m[8] * m[0] - m[6] * m[2]);
-		inv[5] = detJx * (-m[5] * m[0] + m[3] * m[2]);
-		inv[6] = detJx * ( m[7] * m[3] - m[6] * m[4]);
-		inv[7] = detJx * (-m[7] * m[0] + m[6] * m[1]);
-		inv[8] = detJx * ( m[4] * m[0] - m[3] * m[1]);
+	template <typename T> void add(Matrix_Dense<T>  &x, const T &alpha, const Matrix_CSR<T>   &y);
+	template <typename T> void add(Matrix_Dense<T>  &x, const T &alpha, const Matrix_IJV<T>   &y);
+	template <typename T> void add(Matrix_CSR<T>    &x, const T &alpha, const Matrix_Dense<T> &y);
+	template <typename T> void add(Matrix_CSR<T>    &x, const T &alpha, const Matrix_IJV<T>   &y);
+	template <typename T> void add(Matrix_IJV<T>    &x, const T &alpha, const Matrix_Dense<T> &y);
+	template <typename T> void add(Matrix_IJV<T>    &x, const T &alpha, const Matrix_CSR<T>   &y);
+
+	// x += alpha * y [.. offset -> size  / step]
+	template <typename T> void add(Matrix_Dense<std::complex<T>> &x, const int offsetX, const T &alpha, const Matrix_CSR<T>   &y);
+	template <typename T> void add(Matrix_Dense<std::complex<T>> &x, const int offsetX, const T &alpha, const Matrix_IJV<T>   &y);
+	template <typename T> void add(Matrix_CSR<std::complex<T>>   &x, const int offsetX, const T &alpha, const Matrix_Dense<T> &y);
+	template <typename T> void add(Matrix_CSR<std::complex<T>>   &x, const int offsetX, const T &alpha, const Matrix_IJV<T>   &y);
+	template <typename T> void add(Matrix_IJV<std::complex<T>>   &x, const int offsetX, const T &alpha, const Matrix_Dense<T> &y);
+	template <typename T> void add(Matrix_IJV<std::complex<T>>   &x, const int offsetX, const T &alpha, const Matrix_CSR<T>   &y);
+
+	template <typename T> void add(Matrix_Dense<std::complex<T>>  &x, const int offsetX, const T &alpha, const Matrix_Dense<T>  &y) { add(x.nrows * x.ncols, reinterpret_cast<T*>(x.vals) + offsetX, 2, alpha, y.vals, 1); }
+	template <typename T> void add(Matrix_CSR<std::complex<T>>    &x, const int offsetX, const T &alpha, const Matrix_CSR<T>    &y) { add(x.nnz            , reinterpret_cast<T*>(x.vals) + offsetX, 2, alpha, y.vals, 1); }
+	template <typename T> void add(Matrix_IJV<std::complex<T>>    &x, const int offsetX, const T &alpha, const Matrix_IJV<T>    &y) { add(x.nnz            , reinterpret_cast<T*>(x.vals) + offsetX, 2, alpha, y.vals, 1); }
+	template <typename T> void add(Vector_Sparse<std::complex<T>> &x, const int offsetX, const T &alpha, const Vector_Sparse<T> &y) { add(x.nnz            , reinterpret_cast<T*>(x.vals) + offsetX, 2, alpha, y.vals, 1); }
+	template <typename T> void add(Vector_Dense<std::complex<T>>  &x, const int offsetX, const T &alpha, const Vector_Dense<T>  &y) { add(x.size           , reinterpret_cast<T*>(x.vals) + offsetX, 2, alpha, y.vals, 1); }
+
+	template <typename T> void add(Vector_Dense<T>  &x, const T &alpha, const Vector_Dense<T>  &y, int offset, int size, int step);
+	template <typename T> void add(Vector_Sparse<T> &x, const T &alpha, const Vector_Sparse<T> &y, int offset, int size, int step);
+	template <typename T> void add(Vector_Sparse<T> &x, const T &alpha, const Vector_Dense<T>  &y, int offset, int size, int step) {
+		eslog::error("call empty function add\n");
+	}
+	template <typename T> void add(Vector_Dense<T>  &x, const T &alpha, const Vector_Sparse<T> &y, int offset, int size, int step) {
+		eslog::error("call empty function add\n");
 	}
 
-	namespace SOLVER {
+	template <typename T> void add(Matrix_Dense<T>  &x, const T &alpha, const Matrix_Dense<T>  &y, int rowOffset, int colOffset, int size, int step);
+	template <typename T> void add(Matrix_CSR<T>    &x, const T &alpha, const Matrix_CSR<T>    &y, int rowOffset, int colOffset, int size, int step);
+	template <typename T> void add(Matrix_IJV<T>    &x, const T &alpha, const Matrix_IJV<T>    &y, int rowOffset, int colOffset, int size, int step);
 
-		void GMRESUpCRSMat(
-				esint rows, esint cols, esint *mRows, esint *mCols, double *mVals,
-				double *rhsVals, double *results,
-				double tolerance, esint maxIterations, esint &itercount);
+	template <typename T> void combine(Matrix_CSR<T> &C, const Matrix_CSR<T> &A, const Matrix_CSR<T> &B)
+	{
+		if (A.nrows != B.nrows || A.ncols != B.ncols) {
+			eslog::error("invalid matrices sizes.\n");
+		}
+		esint nnz = 0;
+		for (esint r = 0; r < A.nrows; ++r) {
+			esint *beginA = A.cols + A.rows[r    ] - Indexing::CSR;
+			esint *endA   = A.cols + A.rows[r + 1] - Indexing::CSR;
+			esint *beginB = B.cols + B.rows[r    ] - Indexing::CSR;
+			esint *endB   = B.cols + B.rows[r + 1] - Indexing::CSR;
+			while (true) {
+				if (beginA == endA) { nnz += endB - beginB; break; }
+				if (beginB == endB) { nnz += endA - beginA; break; }
+				if (*beginA == *beginB) {
+					++beginA; ++beginB;
+				} else {
+					if (*beginA < *beginB) {
+						++beginA;
+					} else {
+						++beginB;
+					}
+				}
+				++nnz;
+			}
+		}
+		C.resize(A.nrows, A.ncols, nnz);
+		esint *r = C.rows, *c = C.cols;
+		for (esint i = 0; i < A.nrows; ++i, ++r) {
+			*r = c - C.cols + Indexing::CSR;
+			esint *bA = A.cols + A.rows[i    ] - Indexing::CSR;
+			esint *eA = A.cols + A.rows[i + 1] - Indexing::CSR;
+			esint *bB = B.cols + B.rows[i    ] - Indexing::CSR;
+			esint *eB = B.cols + B.rows[i + 1] - Indexing::CSR;
+			while (true) {
+				if (bA == eA) { while (bB != eB) { *c++ = *bB++;} break; }
+				if (bB == eB) { while (bA != eA) { *c++ = *bA++;} break; }
+				if (*bA == *bB) {
+					*c++ = *bA++; bB++;
+				} else {
+					if (*bA < *bB) {
+						*c++ = *bA++;
+					} else {
+						*c++ = *bB++;
+					}
+				}
+			}
+		}
+		*r = c - C.cols + Indexing::CSR;
+	}
 
-		void GMRESDenseRowMajorMat(
-				esint rows, esint cols, double *mVals,
-				double *rhsVals, double *results,
-				double tolerance, esint maxIterations, esint &itercount);
+	template <typename T> void sumCombined(Matrix_CSR<T> &C, const T &alpha, const Matrix_CSR<T> &A, const Matrix_CSR<T> &B)
+	{
+		if (A.nrows != B.nrows || A.ncols != B.ncols) {
+			eslog::error("invalid matrices sizes.\n");
+		}
+		for (esint r = 0; r < A.nrows; ++r) {
+			esint *bA = A.cols + A.rows[r    ] - Indexing::CSR;
+			esint *eA = A.cols + A.rows[r + 1] - Indexing::CSR;
+			esint *bB = B.cols + B.rows[r    ] - Indexing::CSR;
+			esint *eB = B.cols + B.rows[r + 1] - Indexing::CSR;
+			esint *bC = C.cols + C.rows[r    ] - Indexing::CSR;
+			esint *eC = C.cols + C.rows[r + 1] - Indexing::CSR;
+			while (bC != eC) {
+				C.vals[bC - C.cols] = 0;
+				if (bA != eA && *bC == *bA) { C.vals[bC - C.cols] += A.vals[bA++ - A.cols]; }
+				if (bB != eB && *bC == *bB) { C.vals[bC - C.cols] += B.vals[bB++ - B.cols]; }
+				++bC;
+			}
+		}
+	}
 
-		void GMRESUpperSymetricColumnMajorMat(
-				esint cols, double *mVals,
-				double *rhsVals, double *results,
-				double tolerance, esint maxIterations, esint &itercount);
+	template <typename T> T dot(const Vector_Dense<T>  &x, const Vector_Dense<T>  &y) { return dot(x.size, x.vals, 1, y.vals, 1); }
+	template <typename T> T dot(const Vector_Sparse<T> &x, const Vector_Sparse<T> &y) { return dot(x.nnz , x.vals, 1, y.vals, 1); }
 
-		esint directUpperSymetricIndefiniteColumnMajor(
-				esint cols, double *m_packed_values,
-				esint nrhs, double *rhsVals);
-				
-		esint GMRESolverInternal_ACA(
-			const MorphingMatrix *M,
-			double *rhsVals, 
-			double *results,
-			double tolerance, 
-			esint maxIterations, 
-			esint &itercount
-		);
-		
-	};
-};
+	template <typename T> T norm(const Vector_Dense<T>  &x) { return norm(x.size, x.vals, 1); }
+	template <typename T> T norm(const Vector_Sparse<T> &x) { return norm(x.nnz , x.vals, 1); }
 
-}
+	template <typename T> T max(const Vector_Dense<T> &x)
+	{
+		T max = x.vals[0];
+		for (esint i = 0; i < x.size; ++i) {
+			if (max < x.vals[i]) {
+				max = x.vals[i];
+			}
+		}
+		return max;
+	}
 
+	template <typename T> T getDiagonalMax(const Matrix_CSR<T> &m)
+	{
+		T max = m.vals[0];
+		for (esint r = 0; r < m.nrows; ++r) {
+			esint *c = m.cols + m.rows[r] - Indexing::CSR;
+			while (*c != r + Indexing::CSR) { ++c; }
+			max = std::max(max, m.vals[c - m.cols]);
+		}
+		return max;
+	}
 
+	template <typename T> void orthonormalize(Matrix_Dense<T> &m);
 
-#endif /* SRC_WRAPPERS_MATH_MATH_H_ */
+	template <class T> void store(const T &x, const char* file);
+
+} // math
+} // espreso
+
+#include "math.hpp"
+
+#endif /* SRC_MATH2_MATH2_H_ */

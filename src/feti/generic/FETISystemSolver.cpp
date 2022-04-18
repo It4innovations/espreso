@@ -79,21 +79,21 @@ void FETISystemSolver::init()
 
 void FETISystemSolver::update()
 {
-	insertK(configuration, _data.K, _data.origK, _data.N1, _data.N2, _data.RegMat);
-	insertB1(_data.B1Dirichlet, _data.B1c, _data.B1Gluing, _data.B1duplication, _data.B1Inequality, _data.B1gap, _data.B1Map);
-	insertB0(_data.B0);
-	insertRHS(_data.f);
-
-	while(!optimizer->set([&]() {
-		update(configuration);
-		return true;
-	}));
+//	insertK(configuration, _data.K, _data.origK, _data.N1, _data.N2, _data.RegMat);
+//	insertB1(_data.B1Dirichlet, _data.B1c, _data.B1Gluing, _data.B1duplication, _data.B1Inequality, _data.B1gap, _data.B1Map);
+//	insertB0(_data.B0);
+//	insertRHS(_data.f);
+//
+//	while(!optimizer->set([&]() {
+//		update(configuration);
+//		return true;
+//	}));
 }
 
 void FETISystemSolver::solve()
 {
-	solve(configuration, _data.x, _data.y);
-	_data.x.averageDuplications();
+//	solve(configuration, _data.x, _data.y);
+//	_data.x.averageDuplications();
 }
 
 double& FETISystemSolver::precision()
@@ -131,159 +131,159 @@ FETISystemSolver::~FETISystemSolver() {
 	}
 }
 
-void FETISystemSolver::insertK(FETIConfiguration &configuration, const MatrixCSRFETI &K, const MatrixCSRFETI &origK, const MatrixDenseFETI &N1, const MatrixDenseFETI &N2, const MatrixCSRFETI &RegMat)
-{
-	auto setType = [] (SparseMatrix &m, MatrixType type) {
-		m.mtype = type;
-		switch (type) {
-		case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-			m.type = 'S'; break;
-		case MatrixType::REAL_SYMMETRIC_INDEFINITE:
-			m.type = 'S'; break;
-		case MatrixType::REAL_UNSYMMETRIC:
-			m.type = 'G'; break;
-		}
-	};
+//void FETISystemSolver::insertK(FETIConfiguration &configuration, const MatrixCSRFETI &K, const MatrixCSRFETI &origK, const MatrixDenseFETI &N1, const MatrixDenseFETI &N2, const MatrixCSRFETI &RegMat)
+//{
+//	auto setType = [] (SparseMatrix &m, MatrixType type) {
+//		m.mtype = type;
+//		switch (type) {
+//		case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+//			m.type = 'S'; break;
+//		case MatrixType::REAL_SYMMETRIC_INDEFINITE:
+//			m.type = 'S'; break;
+//		case MatrixType::REAL_UNSYMMETRIC:
+//			m.type = 'G'; break;
+//		}
+//	};
+//
+//	_inner->holder.decomposition = &K;
+//
+//	_inner->holder.K.resize(K.domains);
+//	_inner->holder.origK.resize(K.domains);
+//	_inner->holder.N1.resize(K.domains);
+//	_inner->holder.N2.resize(K.domains);
+//	_inner->holder.origKN1.resize(K.domains);
+//	_inner->holder.origKN2.resize(K.domains);
+//	_inner->holder.RegMat.resize(K.domains);
+//	#pragma omp parallel for
+//	for (esint d = 0; d < K.domains; ++d) {
+//		_inner->holder.K[d].rows = K[d].nrows;
+//		_inner->holder.K[d].cols = K[d].ncols;
+//		_inner->holder.K[d].nnz = K[d].nnz;
+//		setType(_inner->holder.K[d], K[d].type);
+//
+//		_inner->holder.K[d].CSR_I_row_indices.assign(K[d].rows, K[d].rows + K[d].nrows + 1);
+//		_inner->holder.K[d].CSR_J_col_indices.assign(K[d].cols, K[d].cols + K[d].nnz);
+//		_inner->holder.K[d].CSR_V_values.assign(K[d].vals, K[d].vals + K[d].nnz);
+//
+//		if (
+//				configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_R ||
+//				configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_K) {
+//
+//			_inner->holder.origK[d].rows = origK[d].nrows;
+//			_inner->holder.origK[d].cols = origK[d].ncols;
+//			_inner->holder.origK[d].nnz = origK[d].nnz;
+//			setType(_inner->holder.origK[d], origK[d].type);
+//
+//			_inner->holder.origK[d].CSR_I_row_indices.assign(origK[d].rows, origK[d].rows + origK[d].nrows + 1);
+//			_inner->holder.origK[d].CSR_J_col_indices.assign(origK[d].cols, origK[d].cols + origK[d].nnz);
+//			_inner->holder.origK[d].CSR_V_values.assign(origK[d].vals, origK[d].vals + origK[d].nnz);
+//		}
+//
+//		if (configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
+//			_inner->holder.N1[d].rows = N1[d].nrows;
+//			_inner->holder.N1[d].cols = N1[d].ncols;
+//			_inner->holder.N1[d].nnz = N1[d].nrows * N1[d].ncols;
+//			_inner->holder.N2[d].rows = N2[d].nrows;
+//			_inner->holder.N2[d].cols = N2[d].ncols;
+//			_inner->holder.N2[d].nnz = N2[d].nrows * N2[d].ncols;
+//			_inner->holder.RegMat[d].rows = RegMat[d].nrows;
+//			_inner->holder.RegMat[d].cols = RegMat[d].ncols;
+//			_inner->holder.RegMat[d].nnz = RegMat[d].nnz;
+//
+//			// from ROWMAYOR to COLMAYOR
+//			_inner->holder.N1[d].dense_values.clear();
+//			_inner->holder.N1[d].dense_values.reserve(N1[d].nrows * N1[d].ncols);
+//			for (esint c = 0; c < N1[d].ncols; ++c) {
+//				for (esint r = 0; r < N1[d].nrows; ++r) {
+//					_inner->holder.N1[d].dense_values.push_back(N1[d][r][c]);
+//				}
+//			}
+//			_inner->holder.N2[d].dense_values.clear();
+//			_inner->holder.N2[d].dense_values.reserve(N2[d].nrows * N2[d].ncols);
+//			for (esint c = 0; c < N2[d].ncols; ++c) {
+//				for (esint r = 0; r < N2[d].nrows; ++r) {
+//					_inner->holder.N2[d].dense_values.push_back(N2[d][r][c]);
+//				}
+//			}
+//
+//			if ((esint)_inner->holder.RegMat[d].CSR_V_values.size() != RegMat[d].nnz) {
+//				_inner->holder.RegMat[d].CSR_I_row_indices.assign(RegMat[d].rows, RegMat[d].rows + RegMat[d].nrows + 1);
+//				_inner->holder.RegMat[d].CSR_J_col_indices.assign(RegMat[d].cols, RegMat[d].cols + RegMat[d].nnz);
+//			}
+//			_inner->holder.RegMat[d].CSR_V_values.assign(RegMat[d].vals, RegMat[d].vals + RegMat[d].nnz);
+//
+//			if (RegMat[d].nnz) {
+//				_inner->holder.K[d].MatAddInPlace(_inner->holder.RegMat[d], 'N', 1);
+//			}
+//			_inner->holder.RegMat[d].ConvertToCOO(1);
+//
+//			// WARN: only non-empty matrix can have type, otherwise solver fails
+//			if (_inner->holder.N1[d].rows && _inner->holder.N1[d].cols) {
+//				setType(_inner->holder.N1[d], N1[d].type);
+//			}
+//			if (_inner->holder.N2[d].rows && _inner->holder.N2[d].cols) {
+//				setType(_inner->holder.N2[d], N2[d].type);
+//			}
+//			if (_inner->holder.RegMat[d].rows && _inner->holder.RegMat[d].cols) {
+//				setType(_inner->holder.RegMat[d], RegMat[d].type);
+//			}
+//
+//			if (
+//					configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_R ||
+//					configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_K) {
+//
+//				_inner->holder.origKN1[d] = _inner->holder.N1[d];
+//				_inner->holder.origKN2[d] = _inner->holder.N2[d];
+//			}
+//		}
+//	}
+//}
 
-	_inner->holder.decomposition = &K;
-
-	_inner->holder.K.resize(K.domains);
-	_inner->holder.origK.resize(K.domains);
-	_inner->holder.N1.resize(K.domains);
-	_inner->holder.N2.resize(K.domains);
-	_inner->holder.origKN1.resize(K.domains);
-	_inner->holder.origKN2.resize(K.domains);
-	_inner->holder.RegMat.resize(K.domains);
-	#pragma omp parallel for
-	for (esint d = 0; d < K.domains; ++d) {
-		_inner->holder.K[d].rows = K[d].nrows;
-		_inner->holder.K[d].cols = K[d].ncols;
-		_inner->holder.K[d].nnz = K[d].nnz;
-		setType(_inner->holder.K[d], K[d].type);
-
-		_inner->holder.K[d].CSR_I_row_indices.assign(K[d].rows, K[d].rows + K[d].nrows + 1);
-		_inner->holder.K[d].CSR_J_col_indices.assign(K[d].cols, K[d].cols + K[d].nnz);
-		_inner->holder.K[d].CSR_V_values.assign(K[d].vals, K[d].vals + K[d].nnz);
-
-		if (
-				configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_R ||
-				configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_K) {
-
-			_inner->holder.origK[d].rows = origK[d].nrows;
-			_inner->holder.origK[d].cols = origK[d].ncols;
-			_inner->holder.origK[d].nnz = origK[d].nnz;
-			setType(_inner->holder.origK[d], origK[d].type);
-
-			_inner->holder.origK[d].CSR_I_row_indices.assign(origK[d].rows, origK[d].rows + origK[d].nrows + 1);
-			_inner->holder.origK[d].CSR_J_col_indices.assign(origK[d].cols, origK[d].cols + origK[d].nnz);
-			_inner->holder.origK[d].CSR_V_values.assign(origK[d].vals, origK[d].vals + origK[d].nnz);
-		}
-
-		if (configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
-			_inner->holder.N1[d].rows = N1[d].nrows;
-			_inner->holder.N1[d].cols = N1[d].ncols;
-			_inner->holder.N1[d].nnz = N1[d].nrows * N1[d].ncols;
-			_inner->holder.N2[d].rows = N2[d].nrows;
-			_inner->holder.N2[d].cols = N2[d].ncols;
-			_inner->holder.N2[d].nnz = N2[d].nrows * N2[d].ncols;
-			_inner->holder.RegMat[d].rows = RegMat[d].nrows;
-			_inner->holder.RegMat[d].cols = RegMat[d].ncols;
-			_inner->holder.RegMat[d].nnz = RegMat[d].nnz;
-
-			// from ROWMAYOR to COLMAYOR
-			_inner->holder.N1[d].dense_values.clear();
-			_inner->holder.N1[d].dense_values.reserve(N1[d].nrows * N1[d].ncols);
-			for (esint c = 0; c < N1[d].ncols; ++c) {
-				for (esint r = 0; r < N1[d].nrows; ++r) {
-					_inner->holder.N1[d].dense_values.push_back(N1[d][r][c]);
-				}
-			}
-			_inner->holder.N2[d].dense_values.clear();
-			_inner->holder.N2[d].dense_values.reserve(N2[d].nrows * N2[d].ncols);
-			for (esint c = 0; c < N2[d].ncols; ++c) {
-				for (esint r = 0; r < N2[d].nrows; ++r) {
-					_inner->holder.N2[d].dense_values.push_back(N2[d][r][c]);
-				}
-			}
-
-			if ((esint)_inner->holder.RegMat[d].CSR_V_values.size() != RegMat[d].nnz) {
-				_inner->holder.RegMat[d].CSR_I_row_indices.assign(RegMat[d].rows, RegMat[d].rows + RegMat[d].nrows + 1);
-				_inner->holder.RegMat[d].CSR_J_col_indices.assign(RegMat[d].cols, RegMat[d].cols + RegMat[d].nnz);
-			}
-			_inner->holder.RegMat[d].CSR_V_values.assign(RegMat[d].vals, RegMat[d].vals + RegMat[d].nnz);
-
-			if (RegMat[d].nnz) {
-				_inner->holder.K[d].MatAddInPlace(_inner->holder.RegMat[d], 'N', 1);
-			}
-			_inner->holder.RegMat[d].ConvertToCOO(1);
-
-			// WARN: only non-empty matrix can have type, otherwise solver fails
-			if (_inner->holder.N1[d].rows && _inner->holder.N1[d].cols) {
-				setType(_inner->holder.N1[d], N1[d].type);
-			}
-			if (_inner->holder.N2[d].rows && _inner->holder.N2[d].cols) {
-				setType(_inner->holder.N2[d], N2[d].type);
-			}
-			if (_inner->holder.RegMat[d].rows && _inner->holder.RegMat[d].cols) {
-				setType(_inner->holder.RegMat[d], RegMat[d].type);
-			}
-
-			if (
-					configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_R ||
-					configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_K) {
-
-				_inner->holder.origKN1[d] = _inner->holder.N1[d];
-				_inner->holder.origKN2[d] = _inner->holder.N2[d];
-			}
-		}
-	}
-}
-
-void FETISystemSolver::insertB1(const MatrixIJVFETI &B1Dirichlet, const VectorDenseFETI &c, const MatrixIJVFETI &B1Gluing, const VectorDenseFETI &duplication, const MatrixIJVFETI &B1Inequality, const VectorDenseFETI &gap, const std::vector<esint> &B1Map)
-{
-	_inner->holder.B1.resize(B1Dirichlet.domains);
-	_inner->holder.B1c.resize(B1Dirichlet.domains);
-	_inner->holder.B1duplication.resize(B1Dirichlet.domains);
-	_inner->holder.LB.resize(B1Dirichlet.domains);
-	#pragma omp parallel for
-	for (esint d = 0; d < B1Dirichlet.domains; ++d) {
-		_inner->holder.B1[d].rows = B1Inequality[d].nrows;
-		_inner->holder.B1[d].cols = B1Dirichlet[d].ncols;
-		_inner->holder.B1[d].nnz = B1Dirichlet[d].nnz + B1Gluing[d].nnz + B1Inequality[d].nnz;
-		_inner->holder.B1[d].mtype = B1Dirichlet[d].type;
-
-		if ((esint)_inner->holder.B1[d].I_row_indices.size() != B1Dirichlet[d].nnz + B1Gluing[d].nnz) {
-			_inner->holder.B1[d].I_row_indices.clear();
-			_inner->holder.B1[d].I_row_indices.insert(_inner->holder.B1[d].I_row_indices.end(), B1Dirichlet[d].rows, B1Dirichlet[d].rows + B1Dirichlet[d].nnz);
-			_inner->holder.B1[d].I_row_indices.insert(_inner->holder.B1[d].I_row_indices.end(), B1Gluing[d].rows, B1Gluing[d].rows + B1Gluing[d].nnz);
-			_inner->holder.B1[d].I_row_indices.insert(_inner->holder.B1[d].I_row_indices.end(), B1Inequality[d].rows, B1Inequality[d].rows + B1Inequality[d].nnz);
-
-			_inner->holder.B1[d].J_col_indices.clear();
-			_inner->holder.B1[d].J_col_indices.insert(_inner->holder.B1[d].J_col_indices.end(), B1Dirichlet[d].cols, B1Dirichlet[d].cols + B1Dirichlet[d].nnz);
-			_inner->holder.B1[d].J_col_indices.insert(_inner->holder.B1[d].J_col_indices.end(), B1Gluing[d].cols, B1Gluing[d].cols + B1Gluing[d].nnz);
-			_inner->holder.B1[d].J_col_indices.insert(_inner->holder.B1[d].J_col_indices.end(), B1Inequality[d].cols, B1Inequality[d].cols + B1Inequality[d].nnz);
-		}
-
-		_inner->holder.B1[d].V_values.clear();
-		_inner->holder.B1[d].V_values.insert(_inner->holder.B1[d].V_values.end(), B1Dirichlet[d].vals, B1Dirichlet[d].vals + B1Dirichlet[d].nnz);
-		_inner->holder.B1[d].V_values.insert(_inner->holder.B1[d].V_values.end(), B1Gluing[d].vals, B1Gluing[d].vals + B1Gluing[d].nnz);
-		_inner->holder.B1[d].V_values.insert(_inner->holder.B1[d].V_values.end(), B1Inequality[d].vals, B1Inequality[d].vals + B1Inequality[d].nnz);
-
-		_inner->holder.B1c[d].clear();
-		_inner->holder.B1c[d].insert(_inner->holder.B1c[d].end(), c[d].vals, c[d].vals + c[d].size);
-		_inner->holder.B1c[d].resize(c[d].size + duplication[d].size, 0);
-		_inner->holder.B1c[d].insert(_inner->holder.B1c[d].end(), gap[d].vals, gap[d].vals + gap[d].size);
-
-		_inner->holder.B1duplication[d].clear();
-		_inner->holder.B1duplication[d].resize(c[d].size, 1); // dirichlet put always 1
-		_inner->holder.B1duplication[d].insert(_inner->holder.B1duplication[d].end(), duplication[d].vals, duplication[d].vals + duplication[d].size);
-		_inner->holder.B1duplication[d].resize(_inner->holder.B1duplication[d].size() + gap[d].size, 1); // can it be arbitrary ??
-
-		_inner->holder.LB[d].resize(c[d].size + duplication[d].size, -std::numeric_limits<double>::infinity());
-		_inner->holder.LB[d].resize(_inner->holder.LB[d].size() + B1Inequality[d].nnz, 0);
-	}
-
-	_inner->holder.B1Map = B1Map;
+//void FETISystemSolver::insertB1(const MatrixIJVFETI &B1Dirichlet, const VectorDenseFETI &c, const MatrixIJVFETI &B1Gluing, const VectorDenseFETI &duplication, const MatrixIJVFETI &B1Inequality, const VectorDenseFETI &gap, const std::vector<esint> &B1Map)
+//{
+//	_inner->holder.B1.resize(B1Dirichlet.domains);
+//	_inner->holder.B1c.resize(B1Dirichlet.domains);
+//	_inner->holder.B1duplication.resize(B1Dirichlet.domains);
+//	_inner->holder.LB.resize(B1Dirichlet.domains);
+//	#pragma omp parallel for
+//	for (esint d = 0; d < B1Dirichlet.domains; ++d) {
+//		_inner->holder.B1[d].rows = B1Inequality[d].nrows;
+//		_inner->holder.B1[d].cols = B1Dirichlet[d].ncols;
+//		_inner->holder.B1[d].nnz = B1Dirichlet[d].nnz + B1Gluing[d].nnz + B1Inequality[d].nnz;
+//		_inner->holder.B1[d].mtype = B1Dirichlet[d].type;
+//
+//		if ((esint)_inner->holder.B1[d].I_row_indices.size() != B1Dirichlet[d].nnz + B1Gluing[d].nnz) {
+//			_inner->holder.B1[d].I_row_indices.clear();
+//			_inner->holder.B1[d].I_row_indices.insert(_inner->holder.B1[d].I_row_indices.end(), B1Dirichlet[d].rows, B1Dirichlet[d].rows + B1Dirichlet[d].nnz);
+//			_inner->holder.B1[d].I_row_indices.insert(_inner->holder.B1[d].I_row_indices.end(), B1Gluing[d].rows, B1Gluing[d].rows + B1Gluing[d].nnz);
+//			_inner->holder.B1[d].I_row_indices.insert(_inner->holder.B1[d].I_row_indices.end(), B1Inequality[d].rows, B1Inequality[d].rows + B1Inequality[d].nnz);
+//
+//			_inner->holder.B1[d].J_col_indices.clear();
+//			_inner->holder.B1[d].J_col_indices.insert(_inner->holder.B1[d].J_col_indices.end(), B1Dirichlet[d].cols, B1Dirichlet[d].cols + B1Dirichlet[d].nnz);
+//			_inner->holder.B1[d].J_col_indices.insert(_inner->holder.B1[d].J_col_indices.end(), B1Gluing[d].cols, B1Gluing[d].cols + B1Gluing[d].nnz);
+//			_inner->holder.B1[d].J_col_indices.insert(_inner->holder.B1[d].J_col_indices.end(), B1Inequality[d].cols, B1Inequality[d].cols + B1Inequality[d].nnz);
+//		}
+//
+//		_inner->holder.B1[d].V_values.clear();
+//		_inner->holder.B1[d].V_values.insert(_inner->holder.B1[d].V_values.end(), B1Dirichlet[d].vals, B1Dirichlet[d].vals + B1Dirichlet[d].nnz);
+//		_inner->holder.B1[d].V_values.insert(_inner->holder.B1[d].V_values.end(), B1Gluing[d].vals, B1Gluing[d].vals + B1Gluing[d].nnz);
+//		_inner->holder.B1[d].V_values.insert(_inner->holder.B1[d].V_values.end(), B1Inequality[d].vals, B1Inequality[d].vals + B1Inequality[d].nnz);
+//
+//		_inner->holder.B1c[d].clear();
+//		_inner->holder.B1c[d].insert(_inner->holder.B1c[d].end(), c[d].vals, c[d].vals + c[d].size);
+//		_inner->holder.B1c[d].resize(c[d].size + duplication[d].size, 0);
+//		_inner->holder.B1c[d].insert(_inner->holder.B1c[d].end(), gap[d].vals, gap[d].vals + gap[d].size);
+//
+//		_inner->holder.B1duplication[d].clear();
+//		_inner->holder.B1duplication[d].resize(c[d].size, 1); // dirichlet put always 1
+//		_inner->holder.B1duplication[d].insert(_inner->holder.B1duplication[d].end(), duplication[d].vals, duplication[d].vals + duplication[d].size);
+//		_inner->holder.B1duplication[d].resize(_inner->holder.B1duplication[d].size() + gap[d].size, 1); // can it be arbitrary ??
+//
+//		_inner->holder.LB[d].resize(c[d].size + duplication[d].size, -std::numeric_limits<double>::infinity());
+//		_inner->holder.LB[d].resize(_inner->holder.LB[d].size() + B1Inequality[d].nnz, 0);
+//	}
+//
+//	_inner->holder.B1Map = B1Map;
 //	_inner->holder.B1clustersMap.clear();
 //	for (esint d = 0; d < B1Dirichlet.domains; ++d) {
 //		for (esint i = 0; i < B1Dirichlet[d].nnz; i++) {
@@ -308,174 +308,174 @@ void FETISystemSolver::insertB1(const MatrixIJVFETI &B1Dirichlet, const VectorDe
 //		}
 //		std::sort(_inner->holder.B1clustersMap.begin() + size, _inner->holder.B1clustersMap.end());
 //	}
-}
-
-void FETISystemSolver::insertB0(const MatrixIJVFETI &B0)
-{
-	_inner->holder.B0.resize(B0.domains);
-
-	#pragma omp parallel for
-	for (esint d = 0; d < B0.domains; ++d) {
-		_inner->holder.B0[d].rows = B0[d].nrows;
-		_inner->holder.B0[d].cols = B0[d].ncols;
-		_inner->holder.B0[d].nnz = B0[d].nnz;
-		_inner->holder.B0[d].mtype = B0[d].type;
-		switch (_inner->holder.B0[d].mtype) {
-		case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-			_inner->holder.B0[d].type = 'S'; break;
-		case MatrixType::REAL_SYMMETRIC_INDEFINITE:
-			_inner->holder.B0[d].type = 'S'; break;
-		case MatrixType::REAL_UNSYMMETRIC:
-			_inner->holder.B0[d].type = 'G'; break;
-		}
-
-		if ((esint)_inner->holder.B0[d].I_row_indices.size() != B0[d].nnz) {
-			_inner->holder.B0[d].I_row_indices.assign(B0[d].rows, B0[d].rows + B0[d].nnz);
-			_inner->holder.B0[d].J_col_indices.assign(B0[d].cols, B0[d].cols + B0[d].nnz);
-		}
-
-		_inner->holder.B0[d].V_values.clear();
-		_inner->holder.B0[d].V_values.assign(B0[d].vals, B0[d].vals + B0[d].nnz);
-	}
-}
-
-void FETISystemSolver::insertRHS(const VectorsDenseFETI &f)
-{
-	_inner->holder.F.resize(f.holder()->domains);
-	#pragma omp parallel for
-	for (esint d = 0; d < f.holder()->domains; ++d) {
-		_inner->holder.F[d].assign(f[0][d].vals, f[0][d].vals + f[0][d].size);
-	}
-}
+//}
+//
+//void FETISystemSolver::insertB0(const MatrixIJVFETI &B0)
+//{
+//	_inner->holder.B0.resize(B0.domains);
+//
+//	#pragma omp parallel for
+//	for (esint d = 0; d < B0.domains; ++d) {
+//		_inner->holder.B0[d].rows = B0[d].nrows;
+//		_inner->holder.B0[d].cols = B0[d].ncols;
+//		_inner->holder.B0[d].nnz = B0[d].nnz;
+//		_inner->holder.B0[d].mtype = B0[d].type;
+//		switch (_inner->holder.B0[d].mtype) {
+//		case MatrixType::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+//			_inner->holder.B0[d].type = 'S'; break;
+//		case MatrixType::REAL_SYMMETRIC_INDEFINITE:
+//			_inner->holder.B0[d].type = 'S'; break;
+//		case MatrixType::REAL_UNSYMMETRIC:
+//			_inner->holder.B0[d].type = 'G'; break;
+//		}
+//
+//		if ((esint)_inner->holder.B0[d].I_row_indices.size() != B0[d].nnz) {
+//			_inner->holder.B0[d].I_row_indices.assign(B0[d].rows, B0[d].rows + B0[d].nnz);
+//			_inner->holder.B0[d].J_col_indices.assign(B0[d].cols, B0[d].cols + B0[d].nnz);
+//		}
+//
+//		_inner->holder.B0[d].V_values.clear();
+//		_inner->holder.B0[d].V_values.assign(B0[d].vals, B0[d].vals + B0[d].nnz);
+//	}
+//}
+//
+//void FETISystemSolver::insertRHS(const VectorsDenseFETI &f)
+//{
+//	_inner->holder.F.resize(f.holder()->domains);
+//	#pragma omp parallel for
+//	for (esint d = 0; d < f.holder()->domains; ++d) {
+//		_inner->holder.F[d].assign(f[0][d].vals, f[0][d].vals + f[0][d].size);
+//	}
+//}
 
 // make partial initialization according to updated matrices
-void FETISystemSolver::update(FETIConfiguration &configuration)
-{
-	// TODO update appropriate solver objects and stop steeling matrices! :)
-	// factorization and preconditioners and HFETI preprocessing
-
-	delete _inner->cluster;
-	delete _inner->solver;
-
-	//instance->computeKernels(configuration.regularization, configuration.sc_size);
-
-	_inner->holder.B0.resize(info::mesh->domains->size);
-	_inner->holder.N1.resize(info::mesh->domains->size);
-	_inner->holder.N2.resize(info::mesh->domains->size);
-	_inner->holder.RegMat.resize(info::mesh->domains->size);
-
-	std::string type;
-	switch (configuration.method) {
-	case FETIConfiguration::METHOD::TOTAL_FETI:
-		type = "FETI, ";
-		break;
-	case FETIConfiguration::METHOD::HYBRID_FETI:
-		type = "HFETI, ";
-		break;
-	}
-	switch (configuration.iterative_solver) {
-	case FETIConfiguration::ITERATIVE_SOLVER::PCG:
-		type += "PCG, ";
-		break;
-	case FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG:
-		type += "ORTL PCG, ";
-		break;
-	case FETIConfiguration::ITERATIVE_SOLVER::pipePCG:
-		type += "PIPE PCG, ";
-		break;
-	case FETIConfiguration::ITERATIVE_SOLVER::GMRES:
-		type += "GMRES, ";
-		break;
-	case FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB:
-		type += "BICGSTAB, ";
-		break;
-	case FETIConfiguration::ITERATIVE_SOLVER::QPCE:
-		type += "QPCE, ";
-		break;
-	case FETIConfiguration::ITERATIVE_SOLVER::PCG_CP:
-		type += "PCG CP, ";
-		break;
-	case FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP:
-		type += "ORT PCG CP, ";
-		break;
-	}
-	switch (configuration.preconditioner) {
-	case FETIConfiguration::PRECONDITIONER::NONE:
-		type += "NONE";
-		break;
-	case FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION:
-		type += "WEIGHTS";
-		break;
-	case FETIConfiguration::PRECONDITIONER::LUMPED:
-		type += "LUMPED";
-		break;
-	case FETIConfiguration::PRECONDITIONER::DIRICHLET:
-		type += "DIRICHLET";
-		break;
-	case FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET:
-		type += "SDIRICHLET";
-		break;
-	case FETIConfiguration::PRECONDITIONER::MAGIC:
-		type += "MAGIC";
-		break;
-	}
-
-	eslog::solver("     - ---- LINEAR SOLVER -------------------------------------------------------------- -\n");
-	eslog::solver("     - | SOLVER :: ESPRESO        TYPE :: %44s | -\n", type.c_str());
-
-	_inner->cluster = new SuperClusterCPU(configuration, &_inner->holder);
-	_inner->solver  = new IterSolver(configuration);
-
-	init(info::mesh->neighbors, configuration);
-
-	if (info::ecf->output.print_matrices > 0) {
-		eslog::storedata(" STORE MATRICES FOR FETI ITER SOLVER\n");
-		std::string prefix = utils::debugDirectory() + "/fetisolver/init";
-		_inner->cluster->printInitData(prefix.c_str(), info::ecf->output.print_matrices);
-	}
-}
-
-// run solver and store primal and dual solution
-void FETISystemSolver::solve(FETIConfiguration &configuration, VectorsDenseFETI &x, VectorsDenseFETI &y)
-{
-	if (
-			std::any_of(_inner->holder.K.begin(), _inner->holder.K.end(), [] (const SparseMatrix &K) { return K.mtype == MatrixType::REAL_UNSYMMETRIC; }) &&
-			configuration.iterative_solver != FETIConfiguration::ITERATIVE_SOLVER::GMRES &&
-			configuration.iterative_solver != FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB) {
-
-		eslog::error("Invalid Linear Solver configuration: Only GMRES and BICGSTAB can solve unsymmetric system.\n");
-	}
-
-	double start = eslog::time();
-	eslog::solver("     - | REQUESTED STOPPING CRITERIA                                      %e | -\n", configuration.precision);
-
-	while (!optimizer->run([&] () {
-		int ret = Solve(_inner->holder.F, _inner->holder.primalSolution, _inner->holder.dualSolution);
-		if (ret >= 0) return true;
-		
-		switch (ret)
-		{
-			case -1:
-				eslog::info("Regular CG with conjugate projector not implemented yet.\n");
-				break;
-			case -2:
-				eslog::info("FETI Geneo requires dirichlet preconditioner.\n");
-			default:
-				break;
-		}
-		return false;
-	}));
-
-
-	#pragma omp parallel for
-	for (size_t d = 0; d < _inner->holder.F.size(); ++d) {
-		memcpy(x[0][d].vals, _inner->holder.primalSolution[d].data(), sizeof(double) * _inner->holder.F[d].size());
-		memcpy(y[0][d].vals, _inner->holder.dualSolution[d].data(), sizeof(double) * _inner->holder.F[d].size());
-	}
-
-	eslog::solver("     - | SOLVER TIME                                                        %8.3f s | -\n", eslog::time() - start);
-	eslog::solver("     - --------------------------------------------------------------------------------- -\n");
-}
+//void FETISystemSolver::update(FETIConfiguration &configuration)
+//{
+//	// TODO update appropriate solver objects and stop steeling matrices! :)
+//	// factorization and preconditioners and HFETI preprocessing
+//
+//	delete _inner->cluster;
+//	delete _inner->solver;
+//
+//	//instance->computeKernels(configuration.regularization, configuration.sc_size);
+//
+//	_inner->holder.B0.resize(info::mesh->domains->size);
+//	_inner->holder.N1.resize(info::mesh->domains->size);
+//	_inner->holder.N2.resize(info::mesh->domains->size);
+//	_inner->holder.RegMat.resize(info::mesh->domains->size);
+//
+//	std::string type;
+//	switch (configuration.method) {
+//	case FETIConfiguration::METHOD::TOTAL_FETI:
+//		type = "FETI, ";
+//		break;
+//	case FETIConfiguration::METHOD::HYBRID_FETI:
+//		type = "HFETI, ";
+//		break;
+//	}
+//	switch (configuration.iterative_solver) {
+//	case FETIConfiguration::ITERATIVE_SOLVER::PCG:
+//		type += "PCG, ";
+//		break;
+//	case FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG:
+//		type += "ORTL PCG, ";
+//		break;
+//	case FETIConfiguration::ITERATIVE_SOLVER::pipePCG:
+//		type += "PIPE PCG, ";
+//		break;
+//	case FETIConfiguration::ITERATIVE_SOLVER::GMRES:
+//		type += "GMRES, ";
+//		break;
+//	case FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB:
+//		type += "BICGSTAB, ";
+//		break;
+//	case FETIConfiguration::ITERATIVE_SOLVER::QPCE:
+//		type += "QPCE, ";
+//		break;
+//	case FETIConfiguration::ITERATIVE_SOLVER::PCG_CP:
+//		type += "PCG CP, ";
+//		break;
+//	case FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP:
+//		type += "ORT PCG CP, ";
+//		break;
+//	}
+//	switch (configuration.preconditioner) {
+//	case FETIConfiguration::PRECONDITIONER::NONE:
+//		type += "NONE";
+//		break;
+//	case FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION:
+//		type += "WEIGHTS";
+//		break;
+//	case FETIConfiguration::PRECONDITIONER::LUMPED:
+//		type += "LUMPED";
+//		break;
+//	case FETIConfiguration::PRECONDITIONER::DIRICHLET:
+//		type += "DIRICHLET";
+//		break;
+//	case FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET:
+//		type += "SDIRICHLET";
+//		break;
+//	case FETIConfiguration::PRECONDITIONER::MAGIC:
+//		type += "MAGIC";
+//		break;
+//	}
+//
+//	eslog::solver("     - ---- LINEAR SOLVER -------------------------------------------------------------- -\n");
+//	eslog::solver("     - | SOLVER :: ESPRESO        TYPE :: %44s | -\n", type.c_str());
+//
+//	_inner->cluster = new SuperClusterCPU(configuration, &_inner->holder);
+//	_inner->solver  = new IterSolver(configuration);
+//
+//	init(info::mesh->neighbors, configuration);
+//
+//	if (info::ecf->output.print_matrices > 0) {
+//		eslog::storedata(" STORE MATRICES FOR FETI ITER SOLVER\n");
+//		std::string prefix = utils::debugDirectory() + "/fetisolver/init";
+//		_inner->cluster->printInitData(prefix.c_str(), info::ecf->output.print_matrices);
+//	}
+//}
+//
+//// run solver and store primal and dual solution
+//void FETISystemSolver::solve(FETIConfiguration &configuration, VectorsDenseFETI &x, VectorsDenseFETI &y)
+//{
+//	if (
+//			std::any_of(_inner->holder.K.begin(), _inner->holder.K.end(), [] (const SparseMatrix &K) { return K.mtype == MatrixType::REAL_UNSYMMETRIC; }) &&
+//			configuration.iterative_solver != FETIConfiguration::ITERATIVE_SOLVER::GMRES &&
+//			configuration.iterative_solver != FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB) {
+//
+//		eslog::error("Invalid Linear Solver configuration: Only GMRES and BICGSTAB can solve unsymmetric system.\n");
+//	}
+//
+//	double start = eslog::time();
+//	eslog::solver("     - | REQUESTED STOPPING CRITERIA                                      %e | -\n", configuration.precision);
+//
+//	while (!optimizer->run([&] () {
+//		int ret = Solve(_inner->holder.F, _inner->holder.primalSolution, _inner->holder.dualSolution);
+//		if (ret >= 0) return true;
+//
+//		switch (ret)
+//		{
+//			case -1:
+//				eslog::info("Regular CG with conjugate projector not implemented yet.\n");
+//				break;
+//			case -2:
+//				eslog::info("FETI Geneo requires dirichlet preconditioner.\n");
+//			default:
+//				break;
+//		}
+//		return false;
+//	}));
+//
+//
+//	#pragma omp parallel for
+//	for (size_t d = 0; d < _inner->holder.F.size(); ++d) {
+//		memcpy(x[0][d].vals, _inner->holder.primalSolution[d].data(), sizeof(double) * _inner->holder.F[d].size());
+//		memcpy(y[0][d].vals, _inner->holder.dualSolution[d].data(), sizeof(double) * _inner->holder.F[d].size());
+//	}
+//
+//	eslog::solver("     - | SOLVER TIME                                                        %8.3f s | -\n", eslog::time() - start);
+//	eslog::solver("     - --------------------------------------------------------------------------------- -\n");
+//}
 
 
 void FETISystemSolver::setup_HTFETI() {

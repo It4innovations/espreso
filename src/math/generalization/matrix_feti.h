@@ -1,151 +1,204 @@
 
-#ifndef SRC_MATH2_GENERALIZATION_MATRIX_DISTRIBUTED_H_
-#define SRC_MATH2_GENERALIZATION_MATRIX_DISTRIBUTED_H_
+#ifndef SRC_MATH2_GENERALIZATION_MATRIX_FETI_H_
+#define SRC_MATH2_GENERALIZATION_MATRIX_FETI_H_
 
-#include "vector_distributed.h"
+#include "vector_feti.h"
 #include "matrix_base.h"
-#include "math2/math2.h"
-#include "math2/primitives/matrix_dense.h"
-#include "math2/utils/distributed/distribution.h"
-#include "math2/utils/distributed/apply.h"
-#include "math2/utils/distributed/synchronization.h"
+#include "math/math.h"
+#include "math/primitives/matrix_dense.h"
+#include "math/utils/decomposed/decomposition.h"
 
 #include <vector>
 
 namespace espreso {
 
-template <template<typename> typename Matrix, typename T> class Matrix_Distributed;
+template <template<typename> typename Matrix, typename T> class Matrix_FETI;
 
 template <template<typename> typename Matrix, typename T>
-class Matrix_Distributed_Common: public Matrix_Base<T> {
+class Matrix_FETI_Common: public Matrix_Base<T> {
 public:
 	void commit()
 	{
-		applyData.commit(*static_cast<Matrix_Distributed<Matrix, T>*>(this));
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::commit(this->domains[d]);
+		}
+	}
+
+	void combine(const Matrix_FETI<Matrix, T> &A, const Matrix_FETI<Matrix, T> &B)
+	{
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			if (A.domains[d].type != B.domains[d].type) {
+				eslog::error("cannot combine matrices of different types.\n");
+			}
+			if (A.domains[d].shape != B.domains[d].shape) {
+				eslog::error("cannot combine matrices of different shapes.\n");
+			}
+		}
+		this->type = A.type;
+		this->shape = A.shape;
+		this->domains.resize(A.domains.size());
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			this->domains[d].type = A.domains[d].type;
+			this->domains[d].shape = A.domains[d].shape;
+			math::combine(this->domains[d], A.domains[d], B.domains[d]);
+		}
+	}
+
+	void sumCombined(const T &alpha, const Matrix_FETI<Matrix, T> &A, const Matrix_FETI<Matrix, T> &B)
+	{
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::sumCombined(this->domains[d], alpha, A.domains[d], B.domains[d]);
+		}
 	}
 
 	void initApply()
 	{
-		applyData.init(*static_cast<Matrix_Distributed<Matrix, T>*>(this));
+//		applyData.init(*static_cast<Matrix_FETI<Matrix, T>*>(this));
 	}
 
 	void synchronize()
 	{
-		synchronization->gatherFromUpper(*static_cast<Matrix_Distributed<Matrix, T>*>(this));
+//		synchronization->gatherFromUpper(*static_cast<Matrix_FETI<Matrix, T>*>(this));
 	}
 
 	Matrix_Base<T>* copyPattern()
 	{
-		Matrix_Distributed<Matrix, T> *m = new Matrix_Distributed<Matrix, T>();
-		m->type = m->cluster.type = this->type;
-		m->shape = m->cluster.shape = this->shape;
-		m->cluster.pattern(cluster);
-		m->distribution = this->distribution;
-		m->applyData = this->applyData;
-		m->synchronization = this->synchronization;
+		Matrix_FETI<Matrix, T> *m = new Matrix_FETI<Matrix, T>();
+		m->type = this->type;
+		m->shape = this->shape;
+		m->domains.resize(domains.size());
+		#pragma omp parallel for
+		for (size_t d = 0; d < domains.size(); ++d) {
+			m->domains[d].type = domains[d].type;
+			m->domains[d].shape = domains[d].shape;
+			m->domains[d].pattern(domains[d]);
+		}
 		return m;
 	}
 
 	void store(const char *file)
 	{
-		math::store(*static_cast<Matrix_Distributed<Matrix, T>*>(this), file);
+		math::store(*static_cast<Matrix_FETI<Matrix, T>*>(this), file);
 	}
 
 	void set(const T &value)
 	{
-		math::set(cluster, value);
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::set(this->domains[d], value);
+		}
 	}
 
 	void scale(const T &alpha)
 	{
-		math::scale(alpha, cluster);
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::scale(alpha, this->domains[d]);
+		}
 	}
 
 	void copy(const Matrix_Base<T> *in)
 	{
-		in->copyTo(static_cast<Matrix_Distributed<Matrix, T>*>(this));
+		in->copyTo(static_cast<Matrix_FETI<Matrix, T>*>(this));
 	}
 
 	void add(const T &alpha, const Matrix_Base<T> *a)
 	{
-		a->addTo(alpha, static_cast<Matrix_Distributed<Matrix, T>*>(this));
+		a->addTo(alpha, static_cast<Matrix_FETI<Matrix, T>*>(this));
 	}
 
 	void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out)
 	{
-		if (dynamic_cast<const Vector_Distributed<Vector_Dense, T>*>(in) && dynamic_cast<const Vector_Distributed<Vector_Dense, T>*>(out)) {
-			applyData.apply(static_cast<Vector_Distributed<Vector_Dense, T>*>(out), alpha, beta, static_cast<const Vector_Distributed<Vector_Dense, T>*>(in));
-		}
+		eslog::error("call empty function\n");
 	}
 
 	void copyTo(Matrix_Distributed<Matrix_Dense, T> *a) const
 	{
-		math::copy(a->cluster, this->cluster);
+		eslog::error("call empty function\n");
 	}
 
 	void copyTo(Matrix_Distributed<Matrix_CSR, T> *a) const
 	{
-		math::copy(a->cluster, this->cluster);
+		eslog::error("call empty function\n");
 	}
 
 	void copyTo(Matrix_Distributed<Matrix_IJV, T> *a) const
 	{
-		math::copy(a->cluster, this->cluster);
+		eslog::error("call empty function\n");
 	}
 
 	void copyTo(Matrix_FETI<Matrix_Dense, T> *a) const
 	{
-		eslog::error("call empty function\n");
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::copy(a->domains[d], this->domains[d]);
+		}
 	}
 
 	void copyTo(Matrix_FETI<Matrix_CSR, T> *a) const
 	{
-		eslog::error("call empty function\n");
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::copy(a->domains[d], this->domains[d]);
+		}
 	}
 
 	void copyTo(Matrix_FETI<Matrix_IJV, T> *a) const
 	{
-		eslog::error("call empty function\n");
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::copy(a->domains[d], this->domains[d]);
+		}
 	}
 
 	void addTo(const T &alpha, Matrix_Distributed<Matrix_Dense, T> *a) const
 	{
-		math::add(a->cluster, alpha, this->cluster);
+		eslog::error("call empty function\n");
 	}
 
 	void addTo(const T &alpha, Matrix_Distributed<Matrix_CSR, T> *a) const
 	{
-		math::add(a->cluster, alpha, this->cluster);
+		eslog::error("call empty function\n");
 	}
 
 	void addTo(const T &alpha, Matrix_Distributed<Matrix_IJV, T> *a) const
 	{
-		math::add(a->cluster, alpha, this->cluster);
+		eslog::error("call empty function\n");
 	}
 
 	void addTo(const T &alpha, Matrix_FETI<Matrix_Dense, T> *a) const
 	{
-		eslog::error("call empty function\n");
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::add(a->domains[d], alpha, this->domains[d]);
+		}
 	}
 
 	void addTo(const T &alpha, Matrix_FETI<Matrix_CSR, T> *a) const
 	{
-		eslog::error("call empty function\n");
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::add(a->domains[d], alpha, this->domains[d]);
+		}
 	}
 
 	void addTo(const T &alpha, Matrix_FETI<Matrix_IJV, T> *a) const
 	{
-		eslog::error("call empty function\n");
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::add(a->domains[d], alpha, this->domains[d]);
+		}
 	}
 
-	Matrix<T> cluster;
-	DOFsDistribution *distribution;
-	Data_Apply<Matrix, T> applyData;
-	Data_Synchronization<Matrix, T> *synchronization;
+	std::vector<Matrix<T> > domains;
+	DOFsDecomposition *decomposition;
 };
 
 template <template<typename> typename Matrix, typename T>
-class Matrix_Distributed: public Matrix_Distributed_Common<Matrix, T> {
+class Matrix_FETI: public Matrix_FETI_Common<Matrix, T> {
 public:
 	void copy(const Matrix_Base<T> *in, int rowOffset, int colOffset, int size, int step)
 	{
@@ -159,62 +212,80 @@ public:
 
 	void copyTo(Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
-		math::copy(a->cluster, this->cluster, rowOffset, colOffset, size, step);
+		eslog::error("call empty function\n");
 	}
 
 	void copyTo(Matrix_Distributed<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
-		math::copy(a->cluster, this->cluster, rowOffset, colOffset, size, step);
+		eslog::error("call empty function\n");
 	}
 
 	void copyTo(Matrix_Distributed<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
-		math::copy(a->cluster, this->cluster, rowOffset, colOffset, size, step);
+		eslog::error("call empty function\n");
 	}
 
 	void copyTo(Matrix_FETI<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
-		eslog::error("call empty function\n");
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::copy(a->domains[d], this->domains[d], rowOffset, colOffset, size, step);
+		}
 	}
 
 	void copyTo(Matrix_FETI<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
-		eslog::error("call empty function\n");
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::copy(a->domains[d], this->domains[d], rowOffset, colOffset, size, step);
+		}
 	}
 
 	void copyTo(Matrix_FETI<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
-		eslog::error("call empty function\n");
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::copy(a->domains[d], this->domains[d], rowOffset, colOffset, size, step);
+		}
 	}
 
 	void addTo(const T &alpha, Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
-		math::add(a->cluster, alpha, this->cluster, rowOffset, colOffset, size, step);
+		eslog::error("call empty function\n");
 	}
 
 	void addTo(const T &alpha, Matrix_Distributed<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
-		math::add(a->cluster, alpha, this->cluster, rowOffset, colOffset, size, step);
+		eslog::error("call empty function\n");
 	}
 
 	void addTo(const T &alpha, Matrix_Distributed<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
-		math::add(a->cluster, alpha, this->cluster, rowOffset, colOffset, size, step);
+		eslog::error("call empty function\n");
 	}
 
 	void addTo(const T &alpha, Matrix_FETI<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
-		eslog::error("call empty function\n");
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::add(a->domains[d], alpha, this->domains[d], rowOffset, colOffset, size, step);
+		}
 	}
 
 	void addTo(const T &alpha, Matrix_FETI<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
-		eslog::error("call empty function\n");
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::add(a->domains[d], alpha, this->domains[d], rowOffset, colOffset, size, step);
+		}
 	}
 
 	void addTo(const T &alpha, Matrix_FETI<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
-		eslog::error("call empty function\n");
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::add(a->domains[d], alpha, this->domains[d], rowOffset, colOffset, size, step);
+		}
 	}
 
 	void copyToReal(Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const
@@ -224,7 +295,7 @@ public:
 
 	void copyToReal(Matrix_Distributed<Matrix_CSR, std::complex<T> > *a) const
 	{
-		math::copy(a->cluster, 0, this->cluster);
+		eslog::error("call empty function\n");
 	}
 
 	void copyToReal(Matrix_Distributed<Matrix_IJV, std::complex<T> > *a) const
@@ -239,7 +310,10 @@ public:
 
 	void copyToReal(Matrix_FETI<Matrix_CSR, std::complex<T> > *a) const
 	{
-		eslog::error("call empty function\n");
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::copy(a->domains[d], 0, this->domains[d]);
+		}
 	}
 
 	void copyToReal(Matrix_FETI<Matrix_IJV, std::complex<T> > *a) const
@@ -254,7 +328,7 @@ public:
 
 	void copyToImag(Matrix_Distributed<Matrix_CSR, std::complex<T> > *a) const
 	{
-		math::copy(a->cluster, 1, this->cluster);
+		eslog::error("call empty function\n");
 	}
 
 	void copyToImag(Matrix_Distributed<Matrix_IJV, std::complex<T> > *a) const
@@ -269,7 +343,10 @@ public:
 
 	void copyToImag(Matrix_FETI<Matrix_CSR, std::complex<T> > *a) const
 	{
-		eslog::error("call empty function\n");
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::copy(a->domains[d], 1, this->domains[d]);
+		}
 	}
 
 	void copyToImag(Matrix_FETI<Matrix_IJV, std::complex<T> > *a) const
@@ -284,7 +361,7 @@ public:
 
 	void addToReal(const T &alpha, Matrix_Distributed<Matrix_CSR  , std::complex<T> > *a) const
 	{
-		math::add(a->cluster, 0, alpha, this->cluster);
+		eslog::error("call empty function\n");
 	}
 
 	void addToReal(const T &alpha, Matrix_Distributed<Matrix_IJV  , std::complex<T> > *a) const
@@ -299,7 +376,10 @@ public:
 
 	void addToReal(const T &alpha, Matrix_FETI<Matrix_CSR  , std::complex<T> > *a) const
 	{
-		eslog::error("call empty function\n");
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::add(a->domains[d], 0, alpha, this->domains[d]);
+		}
 	}
 
 	void addToReal(const T &alpha, Matrix_FETI<Matrix_IJV  , std::complex<T> > *a) const
@@ -314,7 +394,7 @@ public:
 
 	void addToImag(const T &alpha, Matrix_Distributed<Matrix_CSR  , std::complex<T> > *a) const
 	{
-		math::add(a->cluster, 1, alpha, this->cluster);
+		eslog::error("call empty function\n");
 	}
 
 	void addToImag(const T &alpha, Matrix_Distributed<Matrix_IJV  , std::complex<T> > *a) const
@@ -329,7 +409,10 @@ public:
 
 	void addToImag(const T &alpha, Matrix_FETI<Matrix_CSR  , std::complex<T> > *a) const
 	{
-		eslog::error("call empty function\n");
+		#pragma omp parallel for
+		for (size_t d = 0; d < this->domains.size(); ++d) {
+			math::add(a->domains[d], 1, alpha, this->domains[d]);
+		}
 	}
 
 	void addToImag(const T &alpha, Matrix_FETI<Matrix_IJV  , std::complex<T> > *a) const
@@ -339,7 +422,7 @@ public:
 };
 
 template <template<typename> typename Matrix, typename T>
-class Matrix_Distributed<Matrix, std::complex<T> >: public Matrix_Distributed_Common<Matrix, std::complex<T> > {
+class Matrix_FETI<Matrix, std::complex<T> >: public Matrix_FETI_Common<Matrix, std::complex<T> > {
 public:
 	void copyReal(const Matrix_Base<T> *in)
 	{
@@ -364,4 +447,4 @@ public:
 
 }
 
-#endif /* SRC_MATH2_GENERALIZATION_MATRIX_DISTRIBUTED_H_ */
+#endif /* SRC_MATH2_GENERALIZATION_MATRIX_FETI_H_ */

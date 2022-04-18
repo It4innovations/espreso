@@ -19,11 +19,10 @@
 #include "config/configuration.h"
 #include "mesh/mesh.h"
 #include "output/output.h"
-#include "physics/loadstepiterator.h"
 
-#include "math2/math2.h"
-#include "math2/generalization/matrix_feti.h"
-#include "math2/generalization/vector_feti.h"
+#include "math/math.h"
+#include "math/generalization/matrix_feti.h"
+#include "math/generalization/vector_feti.h"
 #include "analysis/looper.h"
 
 using namespace espreso;

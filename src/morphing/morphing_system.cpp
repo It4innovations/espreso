@@ -824,7 +824,8 @@ void MorphingMatrix::apply(
 	bool transpose
 ) const {
 	
-	MATH::vecScale((transpose?this->ncols:this->nrows), beta / info::mpi::size, y_global);
+	eslog::error("call vecScale\n");
+//	MATH::vecScale((transpose?this->ncols:this->nrows), beta / info::mpi::size, y_global);
 	esint bi;
 	esint bo;
 	
