@@ -6,7 +6,7 @@
 #include "config/ecf/physics/acoustic.h"
 #include "math/primitives/vector_sparse.h"
 #include "math/primitives/matrix_info.h"
-#include "math/generalization/matrix_base.h"
+#include "math/physics/matrix_base.h"
 
 #include <vector>
 

@@ -20,9 +20,6 @@
 #include "mesh/mesh.h"
 #include "output/output.h"
 
-#include "math/math.h"
-#include "math/generalization/matrix_feti.h"
-#include "math/generalization/vector_feti.h"
 #include "analysis/looper.h"
 
 using namespace espreso;

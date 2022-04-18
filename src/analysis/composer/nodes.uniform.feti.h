@@ -14,9 +14,9 @@
 #include "math/primitives/vector_dense.h"
 #include "math/primitives/matrix_info.h"
 #include "math/primitives/matrix_csr.h"
-#include "math/generalization/vector_distributed.h"
-#include "math/generalization/vector_feti.h"
-#include "math/generalization/matrix_feti.h"
+#include "math/physics/vector_distributed.h"
+#include "math/physics/vector_feti.h"
+#include "math/physics/matrix_feti.h"
 #include "math/utils/decomposed/decomposition.h"
 
 namespace espreso {

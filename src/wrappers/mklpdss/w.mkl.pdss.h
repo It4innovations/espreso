@@ -3,7 +3,7 @@
 #define SRC_WRAPPERS_MKLPDSS_W_MKL_PDSS_H_
 
 #include "config/ecf/linearsolver/mklpdss.h"
-#include "math/generalization/matrix_distributed.h"
+#include "math/physics/matrix_distributed.h"
 
 namespace espreso {
 

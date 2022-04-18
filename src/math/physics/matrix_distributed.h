@@ -4,7 +4,7 @@
 
 #include "vector_distributed.h"
 #include "matrix_base.h"
-#include "math/math.h"
+#include "math/physics/math.physics.h"
 #include "math/primitives/matrix_dense.h"
 #include "math/utils/distributed/distribution.h"
 #include "math/utils/distributed/apply.h"

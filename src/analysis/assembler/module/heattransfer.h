@@ -7,7 +7,7 @@
 #include "config/holders/expression.h"
 #include "math/primitives/vector_sparse.h"
 #include "math/primitives/matrix_info.h"
-#include "math/generalization/matrix_base.h"
+#include "math/physics/matrix_base.h"
 
 #include <cstddef>
 #include <map>

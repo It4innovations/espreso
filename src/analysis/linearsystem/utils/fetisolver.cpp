@@ -3,7 +3,7 @@
 #include "basis/containers/allocators.h"
 #include "basis/utilities/utils.h"
 #include "esinfo/meshinfo.h"
-#include "math/generalization/matrix_feti.h"
+#include "math/physics/matrix_feti.h"
 #include "math/primitives/matrix_dense.h"
 #include "mesh/store/domainstore.h"
 

@@ -4,10 +4,10 @@
 #include "math/feti/lmap.h"
 #include "math/feti/vector_dual.h"
 #include "math/feti/vector_kernel.h"
-#include "math/generalization/vector_distributed.h"
-#include "math/generalization/vector_feti.h"
-#include "math/generalization/matrix_distributed.h"
-#include "math/generalization/matrix_feti.h"
+#include "math/physics/vector_distributed.h"
+#include "math/physics/vector_feti.h"
+#include "math/physics/matrix_distributed.h"
+#include "math/physics/matrix_feti.h"
 #include "esinfo/meshinfo.h"
 
 #include <fstream>

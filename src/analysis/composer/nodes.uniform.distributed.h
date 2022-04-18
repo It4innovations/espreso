@@ -13,8 +13,8 @@
 #include "math/primitives/vector_dense.h"
 #include "math/primitives/matrix_info.h"
 #include "math/primitives/matrix_csr.h"
-#include "math/generalization/vector_distributed.h"
-#include "math/generalization/matrix_distributed.h"
+#include "math/physics/vector_distributed.h"
+#include "math/physics/matrix_distributed.h"
 #include "math/utils/distributed/distribution.h"
 #include "math/utils/distributed/synchronization.h"
 

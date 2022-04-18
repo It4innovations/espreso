@@ -5,9 +5,6 @@
 #include "dualoperator/totalfeti.h"
 #include "preconditioner/preconditioner.h"
 
-#include "math/generalization/matrix_feti.h"
-#include "math/generalization/vector_feti.h"
-
 namespace espreso {
 
 template <typename T>

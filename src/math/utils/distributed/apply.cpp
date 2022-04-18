@@ -7,7 +7,7 @@
 #include "esinfo/meshinfo.h"
 #include "math/math.h"
 #include "math/primitives/matrix_csr.h"
-#include "math/generalization/matrix_distributed.h"
+#include "math/physics/matrix_distributed.h"
 #include "wrappers/mpi/communication.h"
 
 #include <complex>

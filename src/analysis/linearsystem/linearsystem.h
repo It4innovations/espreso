@@ -5,7 +5,7 @@
 #include "analysis/composer/elementmapping.h"
 #include "config/ecf/physics/physicssolver/loadstep.h"
 #include "math/math.h"
-#include "math/generalization/matrix_base.h"
+#include "math/physics/matrix_base.h"
 
 namespace espreso {
 

@@ -5,7 +5,7 @@
 #include "esinfo/mpiinfo.h"
 #include "esinfo/meshinfo.h"
 #include "math/primitives/matrix_csr.h"
-#include "math/generalization/matrix_distributed.h"
+#include "math/physics/matrix_distributed.h"
 #include "wrappers/mpi/communication.h"
 
 #include <cstring>
