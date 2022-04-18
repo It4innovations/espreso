@@ -22,6 +22,7 @@ template <typename T>
 class TotalFETI: public DualOperator<T> {
 public:
 	TotalFETI(AX_FETI<T> *feti);
+	~TotalFETI();
 
 	void info();
 	void update();

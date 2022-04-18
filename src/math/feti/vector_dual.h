@@ -18,28 +18,45 @@ struct Vector_Dual: public Vector_Dense<T> {
 		align = 8U
 	};
 
-	static void set(esint nhalo, esint size)
+	static void set(esint nhalo, esint size, const std::vector<LMAP> &lmap, const std::vector<int> &neighbors)
 	{
 		Vector_Dual<T>::nhalo = nhalo;
+		Vector_Dual<T>::size = size;
 		Vector_Dual<T>::halo.resize(size + align);
+		Vector_Dual<T>::neighbors = neighbors;
 		void* _vals = static_cast<void*>(Vector_Dual<T>::halo.vals);
 		size_t _size = size + align;
 		Vector_Dual<T>::halo.vals = static_cast<T*>(std::align(alignof(T), sizeof(T), _vals, _size));
 		Vector_Dual<T>::halo.size = size;
+
+		Vector_Dual<T>::distribution.resize(neighbors.size() + 1, size);
+		esint toneigh = size, n = 0;
+		for (auto map = lmap.begin(); map != lmap.end(); ++map) {
+			if (map->neigh == LMAP::LOCAL || map->neigh == LMAP::DIRICHLET) {
+				toneigh = map->offset;
+				break;
+			}
+			Vector_Dual<T>::distribution[map->neigh] = std::min(Vector_Dual<T>::distribution[map->neigh], map->offset);
+			n = map->neigh;
+		}
+		for (size_t nn = n; nn < neighbors.size(); ++nn) {
+			Vector_Dual<T>::distribution[nn + 1] = toneigh;
+		}
 	}
 
-	void resize(esint size)
+	void resize()
 	{
-		Vector_Dense<T>::resize(size + align);
+		Vector_Dense<T>::resize(Vector_Dual<T>::size + align);
 		void* _vals = static_cast<void*>(Vector_Dense<T>::vals);
-		size_t _size = size + align;
+		size_t _size = Vector_Dual<T>::size + align;
 		Vector_Dense<T>::vals = static_cast<T*>(std::align(alignof(T), sizeof(T), _vals, _size));
-		Vector_Dense<T>::size = size;
+		Vector_Dense<T>::size = Vector_Dual<T>::size;
 	}
 
 	void synchronize()
 	{
-//		Communication::allGatherInplace(this->vals, Vector_Kernel<T>::offset, Vector_Kernel<T>::size);
+		Communication::exchangeKnownSizeInPlace(this->vals, Vector_Dual<T>::halo.vals, Vector_Dual<T>::distribution, Vector_Dual<T>::neighbors);
+		math::add<T>(Vector_Dual<T>::nhalo, this->vals, 1, 1, Vector_Dual<T>::halo.vals, 1);
 	}
 
 	void copyTo(Vector_Dense<T> &to) const
@@ -89,14 +106,22 @@ struct Vector_Dual: public Vector_Dense<T> {
 	}
 
 protected:
-	static esint nhalo;
+	static esint nhalo, size;
 	static Vector_Dense<T> halo;
+	static std::vector<esint> distribution;
+	static std::vector<int> neighbors;
 };
 
 template <typename T>
 esint Vector_Dual<T>::nhalo = 0;
 template <typename T>
+esint Vector_Dual<T>::size = 0;
+template <typename T>
 Vector_Dense<T> Vector_Dual<T>::halo;
+template <typename T>
+std::vector<esint> Vector_Dual<T>::distribution;
+template <typename T>
+std::vector<esint> Vector_Dual<T>::neighbors;
 
 }
 

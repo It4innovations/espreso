@@ -31,10 +31,8 @@ static void _info(TotalFETI<T> *dual)
 template <typename T>
 static void _set(TotalFETI<T> *dual)
 {
-	Vector_Dual<T>::set(dual->feti->equalityConstraints->nhalo, dual->feti->sinfo.lambdasLocal);
-
 	dual->Kplus.resize(dual->feti->K->domains.size());
-	dual->d.resize(dual->feti->sinfo.lambdasLocal);
+	dual->d.resize();
 	dual->Btx.resize(dual->feti->K->domains.size());
 	dual->KplusBtx.resize(dual->feti->K->domains.size());
 
@@ -55,6 +53,15 @@ static void _set(TotalFETI<T> *dual)
 		math::symbolicFactorization(dual->Kplus[d]);
 	}
 	eslog::checkpointln("FETI: TFETI SYMBOLIC FACTORIZATION");
+}
+
+template <typename T>
+static void _free(TotalFETI<T> *dual)
+{
+	#pragma omp parallel for
+	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
+		math::free(dual->Kplus[d]);
+	}
 }
 
 template <typename T>
@@ -143,6 +150,9 @@ static void _print(TotalFETI<T> *dual)
 
 template <> TotalFETI<double>::TotalFETI(AX_FETI<double> *feti): DualOperator(feti) { _set<double>(this); }
 template <> TotalFETI<std::complex<double> >::TotalFETI(AX_FETI<std::complex<double> > *feti): DualOperator(feti) { _set<std::complex<double> >(this); }
+
+template <> TotalFETI<double>::~TotalFETI() { _free<double>(this); }
+template <> TotalFETI<std::complex<double> >::~TotalFETI() { _free<std::complex<double> >(this); }
 
 template <> void TotalFETI<double>::info() { _info<double>(this); }
 template <> void TotalFETI<std::complex<double> >::info() { _info<std::complex<double> >(this); }

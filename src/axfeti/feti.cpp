@@ -17,10 +17,11 @@ static void setInfo(AX_FETI<T> *feti)
 		feti->sinfo.R1size = offset[0] = size[2] += feti->regularization->R1.domains[d].ncols;
 		feti->sinfo.R2size = offset[1] = size[3] += feti->regularization->R2.domains[d].ncols;
 	}
-	feti->sinfo.lambdasLocal = size[4] = feti->equalityConstraints->global + feti->equalityConstraints->paired + feti->equalityConstraints->local + feti->equalityConstraints->nn;
+	feti->sinfo.lambdasLocal = feti->equalityConstraints->global + feti->equalityConstraints->paired + feti->equalityConstraints->local + feti->equalityConstraints->nn;
+	size[4] = feti->sinfo.lambdasLocal - feti->equalityConstraints->nhalo;
 
 	Communication::exscan(offset, NULL, 2, MPITools::getType<esint>().mpitype, MPI_SUM);
-	Communication::allReduce(size, NULL, 4, MPITools::getType<esint>().mpitype, MPI_SUM);
+	Communication::allReduce(size, NULL, 5, MPITools::getType<esint>().mpitype, MPI_SUM);
 	feti->sinfo.domains = size[0];
 	feti->sinfo.R1totalSize = size[2];
 	feti->sinfo.R2totalSize = size[3];
@@ -48,6 +49,9 @@ bool _set(AX_FETI<T> *feti, const step::Step &step, const Matrix_FETI<Matrix_CSR
 	feti->equalityConstraints = &equalityConstraints;
 
 	setInfo<T>(feti);
+	Vector_Dual<T>::set(feti->equalityConstraints->nhalo, feti->sinfo.lambdasLocal, equalityConstraints.lmap, K.decomposition->neighbors);
+	Vector_Kernel<T>::set(feti->sinfo.R1offset, feti->sinfo.R1size, feti->sinfo.R1totalSize);
+
 	eslog::checkpointln("FETI: SET INFO");
 
 	feti->iterativeSolver = IterativeSolver<T>::set(feti);

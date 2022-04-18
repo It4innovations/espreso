@@ -45,11 +45,9 @@ static void _set(OrthogonalTFETISymmetric<T> *projector)
 {
 	const typename AX_FETI<T>::EqualityConstraints *L = projector->feti->equalityConstraints;
 
-	Vector_Kernel<T>::set(projector->feti->sinfo.R1offset, projector->feti->sinfo.R1size, projector->feti->sinfo.R1totalSize);
-
-	projector->e.resize(projector->feti->sinfo.R1totalSize);
-	projector->Gx.resize(projector->feti->sinfo.R1totalSize);
-	projector->iGGtGx.resize(projector->feti->sinfo.R1totalSize);
+	projector->e.resize();
+	projector->Gx.resize();
+	projector->iGGtGx.resize();
 
 	projector->mapHalo = 0;
 	while (L->lmap[projector->mapHalo].from < projector->feti->sinfo.R1offset) { ++projector->mapHalo; }
@@ -64,6 +62,12 @@ static void _set(OrthogonalTFETISymmetric<T> *projector)
 	} else {
 		_setSparseGGt(projector);
 	}
+}
+
+template <typename T>
+static void _free(OrthogonalTFETISymmetric<T> *projector)
+{
+	math::free(projector->GGt);
 }
 
 template <typename T>
@@ -512,6 +516,9 @@ static void _print(OrthogonalTFETISymmetric<T> *projector)
 
 template <> OrthogonalTFETISymmetric<double>::OrthogonalTFETISymmetric(AX_FETI<double> *feti): Projector(feti) { _set<double>(this); }
 template <> OrthogonalTFETISymmetric<std::complex<double> >::OrthogonalTFETISymmetric(AX_FETI<std::complex<double> > *feti): Projector(feti) { _set<std::complex<double> >(this); }
+
+template <> OrthogonalTFETISymmetric<double>::~OrthogonalTFETISymmetric() { _free<double>(this); }
+template <> OrthogonalTFETISymmetric<std::complex<double> >::~OrthogonalTFETISymmetric() { _free<std::complex<double> >(this); }
 
 template <> void OrthogonalTFETISymmetric<double>::info() { _info<double>(this); }
 template <> void OrthogonalTFETISymmetric<std::complex<double> >::info() { _info<std::complex<double> >(this); }

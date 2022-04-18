@@ -75,15 +75,13 @@ static void _info(PCPG<T> *solver)
 template <typename T>
 static void _set(PCPG<T> *solver)
 {
-	esint lambdas = solver->feti->sinfo.lambdasLocal;
+	solver->l.resize();
+	solver->r.resize();
+	solver->w.resize();
+	solver->p.resize();
 
-	solver->l.resize(lambdas);
-	solver->r.resize(lambdas);
-	solver->w.resize(lambdas);
-	solver->p.resize(lambdas);
-
-	solver->x.resize(lambdas);
-	solver->Fp.resize(lambdas);
+	solver->x.resize();
+	solver->Fp.resize();
 }
 
 template <typename T>

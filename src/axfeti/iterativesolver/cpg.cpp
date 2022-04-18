@@ -49,15 +49,13 @@ static void _info(CPG<T> *solver)
 template <typename T>
 static void _set(CPG<T> *solver)
 {
-	esint lambdas = solver->feti->sinfo.lambdasLocal;
+	solver->l.resize();
+	solver->r.resize();
+	solver->w.resize();
+	solver->p.resize();
 
-	solver->l.resize(lambdas);
-	solver->r.resize(lambdas);
-	solver->w.resize(lambdas);
-	solver->p.resize(lambdas);
-
-	solver->x.resize(lambdas);
-	solver->Fp.resize(lambdas);
+	solver->x.resize();
+	solver->Fp.resize();
 }
 
 template <> CPG<double>::CPG(AX_FETI<double> *feti): IterativeSolver<double>(feti) { _set<double>(this); }
@@ -110,15 +108,15 @@ template <> void CPG<double>::solve(IterativeSolverInfo &info)
 		w.add(beta, p); w.swap(p);                  // p = w + beta * p  (w is not used anymore)
 		eslog::accumulatedln("cpg: update p");      //
 
-		if (info.iterations % 10 == 0) {
-			eslog::info("       = %9d        %9.4e        %9.4e        %9.4e      %7.2e = \n", info.iterations, ww, ww, ww, eslog::time() - start);
-		}
-		if (std::sqrt(ww) < feti->configuration.precision) {
-			if (info.iterations % 10 != 0) {
-				eslog::info("       = %9d        %9.4e        %9.4e        %9.4e      %7.2e = \n", info.iterations, ww, ww, ww, eslog::time() - start);
-			}
+		double anorm = std::sqrt(ww);
+		if (anorm < feti->configuration.precision) {
+			eslog::info("       = %9d        %9.4e        %9.4e        %9.4e      %7.2e = \n", info.iterations, anorm, anorm, anorm, eslog::time() - start);
 			eslog::accumulatedln("cpg: check criteria");
 			break;
+		} else {
+			if (info.iterations % 1 == 0 || info.iterations + 1 == feti->configuration.max_iterations) {
+				eslog::info("       = %9d        %9.4e        %9.4e        %9.4e      %7.2e = \n", info.iterations, anorm, anorm, anorm, eslog::time() - start);
+			}
 		}
 		ww = _ww; // keep ww for the next iteration
 		eslog::accumulatedln("cpg: check criteria");

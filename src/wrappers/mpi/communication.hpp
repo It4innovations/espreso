@@ -146,6 +146,33 @@ bool Communication::exchangeKnownSize(const std::vector<Ttype> &sBuffer, std::ve
 	return true;
 }
 
+template <typename Ttype>
+bool Communication::exchangeKnownSizeInPlace(const Ttype* sBuffer, Ttype* rBuffer, const std::vector<esint> &distribution, const std::vector<int> &neighbors, MPIGroup *group)
+{
+	profiler::syncstart("comm_exchange_known_size");
+	profiler::syncparam("neighbors", neighbors.size());
+	MPIType type(MPITools::getType<Ttype>());
+
+	std::vector<MPI_Request> req(2 * neighbors.size());
+
+	for (size_t n = 0; n < neighbors.size(); n++) {
+		MPI_Isend(const_cast<Ttype*>(sBuffer) + distribution[n], type.mpisize * (distribution[n + 1] - distribution[n]), type.mpitype, neighbors[n], TAG::EX_KNOWN, group->communicator, req.data() + 2 * n);
+	}
+
+	for (size_t n = 0; n < neighbors.size(); n++) {
+		MPI_Irecv(rBuffer + distribution[n], type.mpisize * (distribution[n + 1] - distribution[n]), type.mpitype, neighbors[n], TAG::EX_KNOWN, group->communicator, req.data() + 2 * n + 1);
+	}
+	profiler::synccheckpoint("msg_prepared");
+
+	MPI_Waitall(2 * neighbors.size(), req.data(), MPI_STATUSES_IGNORE);
+	if (group->communicator == MPI_COMM_WORLD) {
+		++TAG::EX_KNOWN;
+	}
+	profiler::synccheckpoint("waitall");
+	profiler::syncend("comm_exchange_known_size");
+	return true;
+}
+
 
 template <typename Ttype>
 bool Communication::exchangeUnknownSize(const std::vector<std::vector<Ttype> > &sBuffer, std::vector<std::vector<Ttype> > &rBuffer, const std::vector<int> &neighbors, MPIGroup *group)

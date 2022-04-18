@@ -81,7 +81,7 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 			}
 		}
 
-		std::vector<esint, initless_allocator<esint> > permutation(lmap.size());
+		std::vector<esint, initless_allocator<esint> > permutation(lmap.size()), backpermutation(lmap.size());
 		std::iota(permutation.begin(), permutation.end(), 0);
 		std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) {
 			int ni = K.decomposition->ismy(lmap[i].from) && K.decomposition->ismy(lmap[i].to);
@@ -96,14 +96,16 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 			return lmap[i].from < lmap[j].from;
 		});
 
+
 		NeighOffset noffset(K.decomposition);
 		eq.lmap.push_back({ lmap[*permutation.begin()].from, lmap[*permutation.begin()].to, 0, noffset(lmap[*permutation.begin()].from, lmap[*permutation.begin()].to) });
+		eq.nhalo = K.decomposition->dbegin <= eq.lmap.back().from ? 0L : permutation.size();
 		for (auto p = permutation.begin(); p != permutation.end(); ++p) {
+			esint offset = backpermutation[*p] = p - permutation.begin();
 			if (eq.lmap.back().from != lmap[*p].from || eq.lmap.back().to != lmap[*p].to) {
-				esint offset = p - permutation.begin();
 				eq.lmap.push_back({ lmap[*p].from, lmap[*p].to, offset, noffset(lmap[*p].from, lmap[*p].to) });
-				if (eq.lmap.back().from < K.decomposition->dbegin) {
-					eq.nhalo = offset;
+				if (K.decomposition->dbegin <= eq.lmap.back().from) {
+					eq.nhalo = std::min(eq.nhalo, offset);
 				}
 			}
 		}
@@ -113,11 +115,11 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 			dpermutation[d].resize(COLS[d].size());
 			std::iota(dpermutation[d].begin(), dpermutation[d].end(), 0);
 			std::sort(dpermutation[d].begin(), dpermutation[d].end(), [&] (esint i, esint j) {
-				return permutation[D2C[d][i]] < permutation[D2C[d][j]];
+				return backpermutation[D2C[d][i]] < backpermutation[D2C[d][j]];
 			});
 			eq.domain[d].D2C.reserve(dpermutation[d].size());
 			for (auto p = dpermutation[d].begin(); p != dpermutation[d].end(); ++p) {
-				eq.domain[d].D2C.push_back(permutation[D2C[d][*p]]);
+				eq.domain[d].D2C.push_back(backpermutation[D2C[d][*p]]);
 			}
 		}
 	}

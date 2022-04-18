@@ -26,6 +26,7 @@ template <typename T>
 class OrthogonalTFETISymmetric: public Projector<T> {
 public:
 	OrthogonalTFETISymmetric(AX_FETI<T> *feti);
+	~OrthogonalTFETISymmetric();
 
 	void info();
 	void update();
