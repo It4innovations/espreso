@@ -20,7 +20,17 @@ struct DOFsDecomposition: public DOFsDistribution {
 	std::vector<esint> sharedDOFs;
 	serializededata<esint, DIndex> *dmap;
 
-	bool ismy(esint domain) const { return dbegin <= domain && domain < dend; }
+	bool ismy(esint domain) const
+	{
+		return dbegin <= domain && domain < dend;
+	}
+
+	int noffset(esint domain) const
+	{
+		size_t n = 0;
+		while (n + 1 < neighbors.size() && neighDomain[n + 1] <= domain) { ++n; }
+		return n;
+	}
 };
 
 }

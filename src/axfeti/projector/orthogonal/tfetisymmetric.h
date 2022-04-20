@@ -38,14 +38,12 @@ public:
 	Matrix_CSR<T> G, GGt;
 	Matrix_Dense<T> invGGt;
 
-	Vector_Kernel<T> Gx, iGGtGx;
+	Vector_Kernel<T> Gx; // we need whole vector
+	Vector_Dense<T> iGGtGx; // only local part is sufficient
 
-//	Matrix_CSR<T> nnG, localG, GGt;
-//	Matrix_Dense<T> invGGt;
-//	esint nnGPreRows;
-//	std::unordered_map<esint, esint> nnGMap; // global column to nnG row
-	size_t GGtOffset, GGtSize, mapHalo, mapNN, mapLocal;
+	size_t GGtOffset, GGtSize;
 	std::vector<esint> Roffset;
+	std::vector<std::pair<esint, esint> > Goffset; // offset to G for each LMAL
 	std::vector<std::vector<std::pair<esint, esint> > > nKernels; // n, offset
 	std::vector<std::vector<T> > sBuffer, rBuffer;
 };

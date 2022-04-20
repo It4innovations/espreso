@@ -10,7 +10,10 @@ namespace espreso {
 struct IterativeSolverInfo {
 	enum class ERROR: int {
 		OK = 0,
-		CONVERGENCE_ERROR
+		STAGNATION,
+		MAX_ITERATIONS_REACHED,
+		INVALID_DATA,
+		CONVERGENCE_ERROR,
 	};
 
 	ERROR error = ERROR::OK;

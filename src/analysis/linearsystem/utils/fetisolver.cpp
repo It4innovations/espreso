@@ -27,22 +27,6 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 		}
 	};
 
-	struct NeighOffset {
-		int n = 0, last = 0;
-		const DOFsDecomposition *decomposition;
-
-		NeighOffset(const DOFsDecomposition *decomposition): decomposition(decomposition) { last = decomposition->neighbors.size(); }
-
-		int operator()(esint from, esint to) {
-			if (decomposition->dbegin <= from && to < decomposition->dend) {
-				return LMAP::LOCAL;
-			}
-			esint domain = from < decomposition->dbegin ? from : to;
-			while (n + 1 < last && decomposition->neighDomain[n + 1] <= domain) { ++n; }
-			return n;
-		}
-	};
-
 	eq.global = eq.nhalo = eq.paired = eq.nn = eq.local = 0;
 	eq.domain.resize(K.domains.size());
 
@@ -51,8 +35,9 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 	std::vector<std::vector<esint, initless_allocator<esint> > > dpermutation(K.domains.size());
 
 	if (redundantLagrange && K.decomposition->sharedDOFs.size()) {
+		int local = K.decomposition->neighbors.size(); // we need to sort them at the end
 		HasDirichlet hasDirichlet(dirichlet);
-		struct __map__ { int from, to, offset; };
+		struct __map__ { int from, to, offset, neigh; };
 		std::vector<__map__> lmap;
 
 		auto map = K.decomposition->dmap->cbegin();
@@ -64,16 +49,20 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 				for (auto di2 = di1 + 1; di2 != map->end(); ++di2) {
 					if (K.decomposition->ismy(di1->domain) || K.decomposition->ismy(di2->domain)) {
 
-						lmap.push_back({ di1->domain, di2->domain, eq.paired });
+						lmap.push_back({ di1->domain, di2->domain, eq.paired, local });
 						if (K.decomposition->ismy(di1->domain)) {
 							D2C[di1->domain - K.decomposition->dbegin].push_back(eq.paired);
 							COLS[di1->domain - K.decomposition->dbegin].push_back(di1->index);
 							VALS[di1->domain - K.decomposition->dbegin].push_back(1);
+						} else {
+							lmap.back().neigh = K.decomposition->noffset(di1->domain);
 						}
 						if (K.decomposition->ismy(di2->domain)) {
 							D2C[di2->domain - K.decomposition->dbegin].push_back(eq.paired);
 							COLS[di2->domain - K.decomposition->dbegin].push_back(di2->index);
 							VALS[di2->domain - K.decomposition->dbegin].push_back(-1);
+						} else {
+							lmap.back().neigh = K.decomposition->noffset(di2->domain);
 						}
 						++eq.paired;
 					}
@@ -84,9 +73,9 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 		std::vector<esint, initless_allocator<esint> > permutation(lmap.size()), backpermutation(lmap.size());
 		std::iota(permutation.begin(), permutation.end(), 0);
 		std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) {
-			int ni = K.decomposition->ismy(lmap[i].from) && K.decomposition->ismy(lmap[i].to);
-			int nj = K.decomposition->ismy(lmap[j].from) && K.decomposition->ismy(lmap[j].to);
-			if (ni != nj) { return ni < nj; } // neighbor first
+			if (lmap[i].neigh != lmap[j].neigh) {
+				return lmap[i].neigh < lmap[j].neigh;
+			}
 			if (lmap[i].from == lmap[j].from) {
 				if (lmap[i].to == lmap[j].to) {
 					return lmap[i].offset < lmap[j].offset;
@@ -96,14 +85,12 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 			return lmap[i].from < lmap[j].from;
 		});
 
-
-		NeighOffset noffset(K.decomposition);
-		eq.lmap.push_back({ lmap[*permutation.begin()].from, lmap[*permutation.begin()].to, 0, noffset(lmap[*permutation.begin()].from, lmap[*permutation.begin()].to) });
+		eq.lmap.push_back({ lmap[*permutation.begin()].from, lmap[*permutation.begin()].to, 0, lmap[*permutation.begin()].neigh == local ? LMAP::LOCAL : lmap[*permutation.begin()].neigh });
 		eq.nhalo = K.decomposition->dbegin <= eq.lmap.back().from ? 0L : permutation.size();
 		for (auto p = permutation.begin(); p != permutation.end(); ++p) {
 			esint offset = backpermutation[*p] = p - permutation.begin();
 			if (eq.lmap.back().from != lmap[*p].from || eq.lmap.back().to != lmap[*p].to) {
-				eq.lmap.push_back({ lmap[*p].from, lmap[*p].to, offset, noffset(lmap[*p].from, lmap[*p].to) });
+				eq.lmap.push_back({ lmap[*p].from, lmap[*p].to, offset, lmap[*p].neigh == local ? LMAP::LOCAL : lmap[*p].neigh });
 				if (K.decomposition->dbegin <= eq.lmap.back().from) {
 					eq.nhalo = std::min(eq.nhalo, offset);
 				}
@@ -125,7 +112,6 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 	}
 
 	if (dirichlet.cluster.nnz) {
-		std::vector<std::vector<T> > C(K.domains.size());
 		auto map = K.decomposition->dmap->cbegin();
 		for (esint i = 0, prev = 0; i < dirichlet.cluster.nnz; prev = dirichlet.cluster.indices[i++]) {
 			map += dirichlet.cluster.indices[i] - prev;
@@ -133,26 +119,24 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 				if (K.decomposition->ismy(di->domain)) {
 					COLS[di->domain - K.decomposition->dbegin].push_back(di->index);
 					VALS[di->domain - K.decomposition->dbegin].push_back(1);
-					C[di->domain - K.decomposition->dbegin].push_back(dirichlet.cluster.vals[i]);
 					++eq.local;
 				}
 			}
 		}
-		eq.c.resize(eq.paired + eq.local);
-		std::vector<esint> doffset(K.domains.size());
-		for (esint d = 0, offset = eq.paired; d < (esint)K.domains.size(); ++d) {
-			if (COLS[d].size() != dpermutation[d].size()) {
-				eq.lmap.push_back({ K.decomposition->dbegin + d, K.decomposition->dbegin + d, offset, LMAP::DIRICHLET });
-				doffset[d] = offset;
-				std::copy(C[d].begin(), C[d].end(), eq.c.vals + offset);
-				offset += COLS[d].size() - dpermutation[d].size();
-			}
+	}
+	eq.c.resize(eq.paired + eq.local);
+	std::vector<esint> doffset(K.domains.size());
+	for (esint d = 0, offset = eq.paired; d < (esint)K.domains.size(); ++d) {
+		if (COLS[d].size() != dpermutation[d].size()) {
+			eq.lmap.push_back({ K.decomposition->dbegin + d, K.decomposition->dbegin + d, offset, LMAP::DIRICHLET });
+			doffset[d] = offset;
+			offset += COLS[d].size() - dpermutation[d].size();
 		}
-		#pragma omp parallel for
-		for (size_t d = 0; d < K.domains.size(); ++d) {
-			for (size_t i = dpermutation[d].size(), j = 0; i < COLS[d].size(); ++i) {
-				eq.domain[d].D2C.push_back(doffset[d] + j++);
-			}
+	}
+	#pragma omp parallel for
+	for (size_t d = 0; d < K.domains.size(); ++d) {
+		for (size_t i = dpermutation[d].size(), j = 0; i < COLS[d].size(); ++i) {
+			eq.domain[d].D2C.push_back(doffset[d] + j++);
 		}
 	}
 
@@ -172,14 +156,25 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 			eq.domain[d].B1.vals[i] = 1;
 		}
 	}
+
+	eq.ordered.reserve(eq.lmap.size());
+	for (size_t i = 0; i < eq.lmap.size(); ++i) {
+		eq.ordered.push_back(i);
+	}
+	std::sort(eq.ordered.begin(), eq.ordered.end(), [&] (esint i, esint j) {
+		if (eq.lmap[i].from == eq.lmap[j].from) {
+			return eq.lmap[i].to < eq.lmap[j].to;
+		}
+		return eq.lmap[i].from < eq.lmap[j].from;
+	});
 }
 
 template <typename T>
 void _evaluateEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename AX_FETI<T>::EqualityConstraints &eq, bool redundantLagrange)
 {
 	// TODO: store Dirichlet directly to 'c'
+	math::set(eq.c, T{0});
 	if (dirichlet.cluster.nnz) {
-		math::set(eq.c, T{0});
 		std::vector<std::vector<T> > C(K.domains.size());
 		auto map = K.decomposition->dmap->cbegin();
 		for (esint i = 0, prev = 0; i < dirichlet.cluster.nnz; prev = dirichlet.cluster.indices[i++]) {

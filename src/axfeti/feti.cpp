@@ -93,8 +93,18 @@ bool _solve(AX_FETI<T> *feti, const step::Step &step, Vector_FETI<Vector_Dense, 
 
 	switch (info.error) {
 	case IterativeSolverInfo::ERROR::OK: break;
+	case IterativeSolverInfo::ERROR::STAGNATION:
+
+		eslog::info("       = FETI SOLVER ERROR                                   NONDECREASING CONVERGENCE = \n");
+		break;
+	case IterativeSolverInfo::ERROR::MAX_ITERATIONS_REACHED:
+		eslog::info("       = FETI SOLVER ERROR                                  MAXIMUM ITERATIONS REACHED = \n");
+		break;
+	case IterativeSolverInfo::ERROR::INVALID_DATA:
+		eslog::info("       = FETI SOLVER ERROR                                          INVALID INPUT DATA = \n");
+		break;
 	case IterativeSolverInfo::ERROR::CONVERGENCE_ERROR:
-		eslog::info("       =                           FETI SOLVER DOES NOT CONVERGE TO THE REQUESTED NORM = \n");
+		eslog::info("       = FETI SOLVER ERROR              SOLVER DOES NOT CONVERGE TO THE REQUESTED NORM = \n");
 		break;
 	}
 	eslog::info("       = ITERATIONS TOTAL                                                    %9d = \n", info.iterations);

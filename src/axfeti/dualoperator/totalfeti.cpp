@@ -134,6 +134,7 @@ static void _applyB(TotalFETI<T> *dual, const std::vector<Vector_Dense<T> > &in,
 			}
 		}
 	}
+	out.synchronize();
 }
 
 template <typename T>

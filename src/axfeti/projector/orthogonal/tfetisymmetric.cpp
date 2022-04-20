@@ -20,8 +20,8 @@ template <typename T> static void _updateSparseGGt(OrthogonalTFETISymmetric<T> *
 template <typename T> static void _updateDenseGGt(OrthogonalTFETISymmetric<T> *projector);
 
 template <typename T> static void _applyG(OrthogonalTFETISymmetric<T> *projector, const Vector_Dual<T> &in, Vector_Kernel<T> &out);
-template <typename T> static void _applyInvGGt(OrthogonalTFETISymmetric<T> *projector, const Vector_Kernel<T> &in, Vector_Kernel<T> &out);
-template <typename T> static void _applyGt(OrthogonalTFETISymmetric<T> *projector, const Vector_Kernel<T> &in, Vector_Dual<T> &out);
+template <typename T> static void _applyInvGGt(OrthogonalTFETISymmetric<T> *projector, const Vector_Kernel<T> &in, Vector_Dense<T> &out);
+template <typename T> static void _applyGt(OrthogonalTFETISymmetric<T> *projector, const Vector_Dense<T> &in, Vector_Dual<T> &out);
 
 template <typename T> static void _print(OrthogonalTFETISymmetric<T> *projector);
 
@@ -43,18 +43,9 @@ static void _info(OrthogonalTFETISymmetric<T> *projector)
 template <typename T>
 static void _set(OrthogonalTFETISymmetric<T> *projector)
 {
-	const typename AX_FETI<T>::EqualityConstraints *L = projector->feti->equalityConstraints;
-
 	projector->e.resize();
 	projector->Gx.resize();
-	projector->iGGtGx.resize();
-
-	projector->mapHalo = 0;
-	while (L->lmap[projector->mapHalo].from < projector->feti->sinfo.R1offset) { ++projector->mapHalo; }
-	projector->mapNN = projector->mapHalo;
-	while (projector->mapNN < L->lmap.size() && L->lmap[projector->mapNN].neigh != LMAP::LOCAL && L->lmap[projector->mapNN].neigh != LMAP::DIRICHLET) { ++projector->mapNN; }
-	projector->mapLocal = projector->mapNN;
-	while (projector->mapLocal < L->lmap.size() && L->lmap[projector->mapLocal].neigh != LMAP::DIRICHLET) { ++projector->mapLocal; }
+	projector->iGGtGx.resize(projector->feti->sinfo.R1size);
 
 	_setG(projector);
 	if (projector->feti->equalityConstraints->global) {
@@ -102,7 +93,7 @@ static void _update(OrthogonalTFETISymmetric<T> *projector)
 template <typename T>
 static void _apply(OrthogonalTFETISymmetric<T> *projector, const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
-	x.copyTo(y);
+	x.copyToWithoutHalo(y);
 	_applyG(projector, x, projector->Gx);
 	_applyInvGGt(projector, projector->Gx, projector->iGGtGx);
 	_applyGt(projector, projector->iGGtGx, y);
@@ -123,6 +114,47 @@ static void _applyInvGGtG(OrthogonalTFETISymmetric<T> *projector, const Vector_D
 	_applyInvGGt(projector, projector->Gx, y);
 }
 
+template <typename T> static void _applyG(OrthogonalTFETISymmetric<T> *projector, const Vector_Dual<T> &in, Vector_Kernel<T> &out)
+{
+	#pragma omp parallel for
+	for (int t = 0; t < info::env::threads; ++t) {
+		for (size_t r = Vector_Kernel<T>::distribution[t]; r < Vector_Kernel<T>::distribution[t + 1]; ++r) {
+			out.vals[r + Vector_Kernel<T>::offset] = T{0};
+			for (esint c = projector->G.rows[r]; c < projector->G.rows[r + 1]; ++c) {
+				out.vals[r + Vector_Kernel<T>::offset] += projector->G.vals[c] * in.vals[projector->G.cols[c]];
+			}
+		}
+	}
+	out.synchronize();
+}
+
+template <typename T> static void _applyInvGGt(OrthogonalTFETISymmetric<T> *projector, const Vector_Kernel<T> &in, Vector_Dense<T> &out)
+{
+	#pragma omp parallel for
+	for (int t = 0; t < info::env::threads; ++t) {
+		Matrix_Dense<T> a;
+		Vector_Dense<T> y;
+		a.ncols = projector->invGGt.ncols;
+		a.nrows = y.size = Vector_Kernel<T>::distribution[t + 1] - Vector_Kernel<T>::distribution[t];
+
+		a.vals = projector->invGGt.vals + projector->invGGt.ncols * Vector_Kernel<T>::distribution[t];
+		y.vals = out.vals + Vector_Kernel<T>::distribution[t];
+
+		math::apply(y, T{-1}, a, T{0}, in);
+	}
+}
+
+// TODO: threaded implementation: utilize properties of B of gluing two domains
+template <typename T> static void _applyGt(OrthogonalTFETISymmetric<T> *projector, const Vector_Dense<T> &in, Vector_Dual<T> &out)
+{
+	for (esint r = 0; r < projector->G.nrows; ++r) {
+		for (esint c = projector->G.rows[r]; c < projector->G.rows[r + 1]; ++c) {
+			out.vals[projector->G.cols[c]] += projector->G.vals[c] * in.vals[r];
+		}
+	}
+	out.synchronize();
+}
+
 struct LMAPSize {
 	LMAPSize(std::vector<LMAP>::const_iterator end, esint lambdas): end(end), lambdas(lambdas) { }
 
@@ -136,49 +168,6 @@ struct LMAPSize {
 
 	std::vector<LMAP>::const_iterator end;
 	esint lambdas;
-};
-
-struct LMAPOrder {
-	LMAPOrder(const std::vector<LMAP> &map, size_t halo, size_t nn): map(map), halo(halo), nn(nn) { }
-
-	std::vector<LMAP>::const_iterator next(esint domain) {
-		std::vector<LMAP>::const_iterator hpair = map.cend(), nnpair = map.cend();
-		if (
-				halo < map.size() &&
-				(map.cbegin() + halo)->neigh != LMAP::LOCAL &&
-				(map.cbegin() + halo)->neigh != LMAP::DIRICHLET &&
-				(map.cbegin() + halo)->from == domain) {
-			hpair = map.cbegin() + halo;
-		}
-		if (
-				nn < map.size() &&
-				(map.cbegin() + nn)->neigh == LMAP::LOCAL &&
-				(map.cbegin() + nn)->from == domain) {
-			nnpair = map.cbegin() + nn;
-		}
-		if (hpair == map.cend() || hpair->from != domain) {
-			if (nn < map.size() && (map.cbegin() + nn)->from == domain) {
-				++nn;
-				return nnpair;
-			}
-			return map.cend();
-		}
-		if (nnpair == map.cend() || nnpair->from != domain) {
-			if (halo < map.size() && (map.cbegin() + halo)->from == domain) {
-				++halo;
-				return hpair;
-			}
-			return map.cend();
-		}
-		if (hpair->to < nnpair->to) {
-			return map.cbegin() + halo++;
-		} else {
-			return map.cbegin() + nn++;
-		}
-	}
-
-	const std::vector<LMAP> &map;
-	size_t halo, nn;
 };
 
 template <typename T>
@@ -224,6 +213,7 @@ static void _setG(OrthogonalTFETISymmetric<T> *projector)
 	projector->G.resize(nrows, projector->feti->sinfo.lambdasLocal, projector->G.rows[projector->G.nrows]);
 
 	std::vector<esint> rpointer(projector->G.nrows);
+	projector->Goffset.reserve(L->lmap.size());
 	for (auto map = L->lmap.cbegin(); map != L->lmap.cend(); ++map) {
 		auto add = [&] (esint domain) {
 			domain -= K->decomposition->dbegin;
@@ -236,13 +226,17 @@ static void _setG(OrthogonalTFETISymmetric<T> *projector)
 			}
 		};
 
+		projector->Goffset.push_back(std::make_pair(-1, -1));
 		if (map->neigh == LMAP::DIRICHLET) {
 			add(map->from);
+			projector->Goffset.back().first = rpointer[projector->Roffset[map->from - K->decomposition->dbegin]];
 		} else {
 			if (K->decomposition->ismy(map->from)) {
+				projector->Goffset.back().first = rpointer[projector->Roffset[map->from - K->decomposition->dbegin]];
 				add(map->from);
 			}
 			if (K->decomposition->ismy(map->to)) {
+				projector->Goffset.back().second = rpointer[projector->Roffset[map->to - K->decomposition->dbegin]];
 				add(map->to);
 			}
 		}
@@ -265,12 +259,14 @@ static void _setSparseGGt(OrthogonalTFETISymmetric<T> *projector)
 	LMAPSize lsize(L->lmap.cend(), projector->feti->sinfo.lambdasLocal);
 	std::vector<std::vector<std::pair<esint, esint> > > kernels(K->decomposition->neighbors.size());
 	std::vector<esint> nsize(K->decomposition->neighbors.size());
-	for (auto map = L->lmap.cbegin(); map != L->lmap.cbegin() + projector->mapHalo; ++map) {
-		kernels[map->neigh].push_back(std::make_pair(R->R1.domains[map->to - K->decomposition->dbegin].ncols, projector->feti->sinfo.R1offset + projector->Roffset[map->to - K->decomposition->dbegin]));
-		nsize[map->neigh] += lsize(map) * R->R1.domains[map->to - K->decomposition->dbegin].ncols;
-	}
-	for (auto map = L->lmap.cbegin() + projector->mapHalo; map != L->lmap.cbegin() + projector->mapNN; ++map) {
-		projector->nKernels[map->neigh].push_back(std::make_pair(-1, -1)); // dummy
+	for (auto p = L->ordered.begin(); p != L->ordered.end(); ++p) {
+		if (L->lmap[*p].from < K->decomposition->dbegin) { // halo
+			kernels[L->lmap[*p].neigh].push_back(std::make_pair(R->R1.domains[L->lmap[*p].to - K->decomposition->dbegin].ncols, projector->feti->sinfo.R1offset + projector->Roffset[L->lmap[*p].to - K->decomposition->dbegin]));
+			nsize[L->lmap[*p].neigh] += lsize(L->lmap.cbegin() + *p) * R->R1.domains[L->lmap[*p].to - K->decomposition->dbegin].ncols;
+		}
+		if (K->decomposition->dend <= L->lmap[*p].to) { // holder
+			projector->nKernels[L->lmap[*p].neigh].push_back(std::make_pair(-1, L->lmap[*p].from));
+		}
 	}
 
 	if (!Communication::receiveUpperKnownSize(kernels, projector->nKernels, K->decomposition->neighbors)) {
@@ -279,14 +275,14 @@ static void _setSparseGGt(OrthogonalTFETISymmetric<T> *projector)
 
 	projector->GGtOffset = projector->G.nrows;
 	std::vector<esint> noffset(K->decomposition->neighbors.size());
-	for (auto map = L->lmap.cbegin() + projector->mapHalo; map != L->lmap.cbegin() + projector->mapLocal; ++map) {
-		if (map->neigh != LMAP::LOCAL) {
-			projector->GGtOffset += R->R1.domains[map->from - K->decomposition->dbegin].ncols * projector->nKernels[map->neigh][noffset[map->neigh]++].first;
-		} else {
-			projector->GGtOffset += R->R1.domains[map->from - K->decomposition->dbegin].ncols * R->R1.domains[map->to - K->decomposition->dbegin].ncols;
+	for (auto p = L->ordered.begin(); p != L->ordered.end(); ++p) {
+		if (K->decomposition->dend <= L->lmap[*p].to) { // holder
+			projector->GGtOffset += R->R1.domains[L->lmap[*p].from - K->decomposition->dbegin].ncols * projector->nKernels[L->lmap[*p].neigh][noffset[L->lmap[*p].neigh]++].first;
+		}
+		if (L->lmap[*p].neigh == LMAP::LOCAL) {
+			projector->GGtOffset += R->R1.domains[L->lmap[*p].from - K->decomposition->dbegin].ncols * R->R1.domains[L->lmap[*p].to - K->decomposition->dbegin].ncols;
 		}
 	}
-
 	projector->GGtSize = projector->GGtOffset;
 	Communication::exscan(&projector->GGtOffset, nullptr, 1, MPITools::getType(projector->GGtOffset).mpitype, MPI_SUM);
 	if (info::mpi::rank == 0) {
@@ -298,24 +294,26 @@ static void _setSparseGGt(OrthogonalTFETISymmetric<T> *projector)
 
 	esint GGtOffset = projector->GGtOffset;
 	projector->GGt.rows[0] = IDX;
-	LMAPOrder order(L->lmap, projector->mapHalo, projector->mapNN);
 	std::fill(noffset.begin(), noffset.end(), 0);
-	for (size_t d = 0, r = projector->feti->sinfo.R1offset + 1; d < K->domains.size(); ++d) {
+	for (size_t d = 0, i = 0, r = projector->feti->sinfo.R1offset + 1; d < K->domains.size(); ++d) {
+		while (i < L->ordered.size() && L->lmap[L->ordered[i]].from - K->decomposition->dbegin < (esint)d) { ++i; }
 		for (esint k = 0; k < R->R1.domains[d].ncols; ++k, ++r) {
+			size_t j = i;
 			projector->GGt.cols[GGtOffset++] = projector->feti->sinfo.R1offset + projector->Roffset[d] + IDX; // diagonal is always filled
-			std::vector<LMAP>::const_iterator next;
-			while ((next = order.next(K->decomposition->dbegin + d)) != L->lmap.cend()) {
+			while (j < L->ordered.size() && L->lmap[L->ordered[j]].from - K->decomposition->dbegin == (esint)d) {
+				auto next = L->lmap.cbegin() + L->ordered[j];
 				if (next->neigh == LMAP::LOCAL) {
 					for (esint c = 0; c < R->R1.domains[next->to - K->decomposition->dbegin].ncols; ++c) {
 						projector->GGt.cols[GGtOffset++] = projector->feti->sinfo.R1offset + projector->Roffset[next->to - K->decomposition->dbegin] + c + IDX;
 					}
-				} else {
+				} else if (next->neigh != LMAP::DIRICHLET) {
 					for (esint c = 0; c < projector->nKernels[next->neigh][noffset[next->neigh]].first; ++c) {
 						projector->GGt.cols[GGtOffset++] = projector->nKernels[next->neigh][noffset[next->neigh]].second + c + IDX;
 					}
 					nsize[next->neigh] += lsize(next) * projector->nKernels[next->neigh][noffset[next->neigh]].first;
 					++noffset[next->neigh];
 				}
+				++j;
 			}
 			projector->GGt.rows[r] = GGtOffset + IDX;
 		}
@@ -387,17 +385,14 @@ static void _updateSparseGGt(OrthogonalTFETISymmetric<T> *projector)
 	}
 
 	LMAPSize lsize(L->lmap.cend(), projector->feti->sinfo.lambdasLocal);
-	std::vector<esint> rpointer(projector->G.rows, projector->G.rows + projector->G.nrows);
-	for (auto map = L->lmap.cbegin(); map != L->lmap.cbegin() + projector->mapHalo; ++map) {
-		esint r = projector->Roffset[map->to - K->decomposition->dbegin];
-		while (projector->G.cols[rpointer[r]] < map->offset) { ++rpointer[r]; }
-		esint size = lsize(map);
-		for (esint k = 1; k < R->R1.domains[map->to - K->decomposition->dbegin].ncols; ++k) {
-			rpointer[r + k] = rpointer[r];
-		}
-		for (esint k = 0; k < R->R1.domains[map->to - K->decomposition->dbegin].ncols; ++k) {
-			projector->sBuffer[map->neigh].insert(projector->sBuffer[map->neigh].end(), projector->G.vals + rpointer[r + k], projector->G.vals + rpointer[r + k] + size);
-			rpointer[r + k] += size;
+	for (auto p = L->ordered.begin(); p != L->ordered.end(); ++p) {
+		if (L->lmap[*p].from < K->decomposition->dbegin) { // halo
+			esint r = projector->Roffset[L->lmap[*p].to - K->decomposition->dbegin];
+			esint size = lsize(L->lmap.cbegin() + *p);
+			for (esint k = 0; k < R->R1.domains[L->lmap[*p].to - K->decomposition->dbegin].ncols; ++k) {
+				esint rbegin = projector->G.rows[r + k] + projector->Goffset[*p].second;
+				projector->sBuffer[L->lmap[*p].neigh].insert(projector->sBuffer[L->lmap[*p].neigh].end(), projector->G.vals + rbegin, projector->G.vals + rbegin + size);
+			}
 		}
 	}
 
@@ -406,9 +401,9 @@ static void _updateSparseGGt(OrthogonalTFETISymmetric<T> *projector)
 	}
 
 	esint GGtOffset = projector->GGtOffset;
-	LMAPOrder order(L->lmap, projector->mapHalo, projector->mapNN);
-	std::vector<esint> noffset(K->decomposition->neighbors.size()), npointer(K->decomposition->neighbors.size());;
-	for (size_t d = 0, r = 0; d < K->domains.size(); ++d) {
+	std::vector<esint> noffset(K->decomposition->neighbors.size()), npointer(K->decomposition->neighbors.size());
+	for (size_t d = 0, i = 0, r = 0; d < K->domains.size(); ++d) {
+		while (i < L->ordered.size() && L->lmap[L->ordered[i]].from - K->decomposition->dbegin < (esint)d) { ++i; }
 		for (esint k = 0; k < R->R1.domains[d].ncols; ++k, ++r) {
 			auto mult = [] (const T *a, const T *b, esint size) {
 				T sum = 0;
@@ -418,23 +413,25 @@ static void _updateSparseGGt(OrthogonalTFETISymmetric<T> *projector)
 				return sum;
 			};
 
+			size_t j = i;
 			projector->GGt.vals[GGtOffset++] = mult(projector->G.vals + projector->G.rows[r], projector->G.vals + projector->G.rows[r], projector->G.rows[r + 1] - projector->G.rows[r]);
-			std::vector<LMAP>::const_iterator next;
-			while ((next = order.next(K->decomposition->dbegin + d)) != L->lmap.cend()) {
+			while (j < L->ordered.size() && L->lmap[L->ordered[j]].from - K->decomposition->dbegin == (esint)d) {
+				esint fbegin = projector->G.rows[r + k] + projector->Goffset[L->ordered[j]].first;
+				auto next = L->lmap.cbegin() + L->ordered[j];
 				if (next->neigh == LMAP::LOCAL) {
 					esint to = next->to - K->decomposition->dbegin, size = lsize(next);
 					for (esint c = 0; c < R->R1.domains[to].ncols; ++c) {
-						projector->GGt.vals[GGtOffset++] = mult(projector->G.vals + rpointer[r + c], projector->G.vals + rpointer[to + c], size);
-						rpointer[r + c] += size;
-						rpointer[to + c] += size;
+						esint tbegin = projector->G.rows[projector->Roffset[to] + c] + projector->Goffset[L->ordered[j]].second;
+						projector->GGt.vals[GGtOffset++] = mult(projector->G.vals + fbegin, projector->G.vals + tbegin, size);
 					}
-				} else {
+				} else if (next->neigh != LMAP::DIRICHLET) {
 					esint size = lsize(next);
 					for (esint c = 0; c < projector->nKernels[next->neigh][noffset[next->neigh]].first; ++c) {
-						projector->GGt.vals[GGtOffset++] = mult(projector->G.vals + rpointer[r + c], projector->rBuffer[next->neigh].data() + npointer[next->neigh], size);
+						projector->GGt.vals[GGtOffset++] = mult(projector->G.vals + fbegin, projector->rBuffer[next->neigh].data() + npointer[next->neigh], size);
 						npointer[next->neigh] += size;
 					}
 				}
+				++j;
 			}
 		}
 	}
@@ -460,46 +457,6 @@ template <typename T>
 static void _updateDenseGGt(OrthogonalTFETISymmetric<T> *projector)
 {
 
-}
-
-template <typename T> static void _applyG(OrthogonalTFETISymmetric<T> *projector, const Vector_Dual<T> &in, Vector_Kernel<T> &out)
-{
-	#pragma omp parallel for
-	for (int t = 0; t < info::env::threads; ++t) {
-		for (size_t r = Vector_Kernel<T>::distribution[t]; r < Vector_Kernel<T>::distribution[t + 1]; ++r) {
-			out.vals[r] = T{0};
-			for (esint c = projector->G.rows[r]; c < projector->G.rows[r + 1]; ++c) {
-				out.vals[r] += projector->G.vals[c] * in.vals[projector->G.cols[c]];
-			}
-		}
-	}
-	out.synchronize();
-}
-
-template <typename T> static void _applyInvGGt(OrthogonalTFETISymmetric<T> *projector, const Vector_Kernel<T> &in, Vector_Kernel<T> &out)
-{
-	#pragma omp parallel for
-	for (int t = 0; t < info::env::threads; ++t) {
-		Matrix_Dense<T> a;
-		Vector_Dense<T> y;
-		a.ncols = projector->invGGt.ncols;
-		a.nrows = y.size = Vector_Kernel<T>::distribution[t + 1] - Vector_Kernel<T>::distribution[t];
-
-		a.vals = projector->invGGt.vals + projector->invGGt.ncols * Vector_Kernel<T>::distribution[t];
-		y.vals = out.vals + Vector_Kernel<T>::distribution[t];
-
-		math::apply(y, T{-1}, a, T{0}, in);
-	}
-}
-
-// TODO: threaded implementation: utilize properties of B of gluing two domains
-template <typename T> static void _applyGt(OrthogonalTFETISymmetric<T> *projector, const Vector_Kernel<T> &in, Vector_Dual<T> &out)
-{
-	for (esint r = 0; r < projector->G.nrows; ++r) {
-		for (esint c = projector->G.rows[r]; c < projector->G.rows[r + 1]; ++c) {
-			out.vals[projector->G.cols[c]] += projector->G.vals[c] * in.vals[r];
-		}
-	}
 }
 
 template <typename T>

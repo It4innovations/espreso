@@ -46,6 +46,7 @@ public:
 
 		esint global, nhalo, paired, local, nn;
 		std::vector<LMAP> lmap;
+		std::vector<esint> ordered;
 		std::vector<Domain> domain;
 		Vector_Dense<T> c;
 	};

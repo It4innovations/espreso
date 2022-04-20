@@ -57,7 +57,9 @@ template <> void IterativeSolver<double>::setInfo(IterativeSolverInfo &info, con
 	case FETIConfiguration::STOPPING_CRITERION::ARIOLI:   info.norm.dual.criteria = info.norm.dual.arioli; break;
 	}
 
-	eslog::info("       - %9d        %9.4e         %9.4e        %9.4e               - \n", info.iterations, info.norm.dual.relative, info.norm.dual.absolute, info.norm.dual.arioli);
+	if (info.converged) {
+		eslog::info("       - %9d        %9.4e         %9.4e        %9.4e               - \n", info.iterations, info.norm.dual.relative, info.norm.dual.absolute, info.norm.dual.arioli);
+	}
 	info.stagnation.buffer.resize(configuration.max_stagnation, info.norm.dual.criteria);
 }
 
@@ -77,17 +79,22 @@ template <> void IterativeSolver<double>::updateInfo(IterativeSolverInfo &info, 
 
 	info.stagnation.buffer[info.stagnation.p] = info.norm.dual.criteria;
 	info.stagnation.p = (info.stagnation.p + 1) % configuration.max_stagnation;
-	if (info.stagnation.buffer[info.stagnation.p] < info.norm.dual.criteria) {
-		info.error = IterativeSolverInfo::ERROR::CONVERGENCE_ERROR;
+	if (configuration.max_stagnation <= info.iterations && info.stagnation.buffer[info.stagnation.p] < info.norm.dual.criteria) {
+		info.error = IterativeSolverInfo::ERROR::STAGNATION;
 		info.converged = true;
 	}
 
 	if (info.iterations == feti->configuration.max_iterations && !info.converged) {
-		info.error = IterativeSolverInfo::ERROR::CONVERGENCE_ERROR;
+		info.error = IterativeSolverInfo::ERROR::MAX_ITERATIONS_REACHED;
 		info.converged = true;
 	}
 
-	if (info.converged || info.iterations % feti->configuration.print_iteration == 0) {
+	if (std::isnan(info.norm.dual.criteria)) {
+		info.error = IterativeSolverInfo::ERROR::INVALID_DATA;
+		info.converged = true;
+	}
+
+	if (info.converged || (info.iterations - 1) % feti->configuration.print_iteration == 0) {
 		eslog::info("       - %9d        %9.4e         %9.4e        %9.4e      %7.2e - \n", info.iterations, info.norm.dual.relative, info.norm.dual.absolute, info.norm.dual.arioli, eslog::time() - info.time.current);
 	}
 	if (info.converged) {

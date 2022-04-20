@@ -21,7 +21,7 @@ struct Vector_Dual: public Vector_Dense<T> {
 	static void set(esint nhalo, esint size, const std::vector<LMAP> &lmap, const std::vector<int> &neighbors)
 	{
 		Vector_Dual<T>::nhalo = nhalo;
-		Vector_Dual<T>::size = size;
+		Vector_Dual<T>::localSize = size;
 		Vector_Dual<T>::halo.resize(size + align);
 		Vector_Dual<T>::neighbors = neighbors;
 		void* _vals = static_cast<void*>(Vector_Dual<T>::halo.vals);
@@ -29,34 +29,35 @@ struct Vector_Dual: public Vector_Dense<T> {
 		Vector_Dual<T>::halo.vals = static_cast<T*>(std::align(alignof(T), sizeof(T), _vals, _size));
 		Vector_Dual<T>::halo.size = size;
 
+		Vector_Dual<T>::nshared = size;
 		Vector_Dual<T>::distribution.resize(neighbors.size() + 1, size);
-		esint toneigh = size, n = 0;
+		esint n = 0;
 		for (auto map = lmap.begin(); map != lmap.end(); ++map) {
 			if (map->neigh == LMAP::LOCAL || map->neigh == LMAP::DIRICHLET) {
-				toneigh = map->offset;
+				Vector_Dual<T>::nshared = map->offset;
 				break;
 			}
 			Vector_Dual<T>::distribution[map->neigh] = std::min(Vector_Dual<T>::distribution[map->neigh], map->offset);
 			n = map->neigh;
 		}
 		for (size_t nn = n; nn < neighbors.size(); ++nn) {
-			Vector_Dual<T>::distribution[nn + 1] = toneigh;
+			Vector_Dual<T>::distribution[nn + 1] = Vector_Dual<T>::nshared;
 		}
 	}
 
 	void resize()
 	{
-		Vector_Dense<T>::resize(Vector_Dual<T>::size + align);
+		Vector_Dense<T>::resize(Vector_Dual<T>::localSize + align);
 		void* _vals = static_cast<void*>(Vector_Dense<T>::vals);
-		size_t _size = Vector_Dual<T>::size + align;
+		size_t _size = Vector_Dual<T>::localSize + align;
 		Vector_Dense<T>::vals = static_cast<T*>(std::align(alignof(T), sizeof(T), _vals, _size));
-		Vector_Dense<T>::size = Vector_Dual<T>::size;
+		Vector_Dense<T>::size = Vector_Dual<T>::localSize;
 	}
 
 	void synchronize()
 	{
 		Communication::exchangeKnownSizeInPlace(this->vals, Vector_Dual<T>::halo.vals, Vector_Dual<T>::distribution, Vector_Dual<T>::neighbors);
-		math::add<T>(Vector_Dual<T>::nhalo, this->vals, 1, 1, Vector_Dual<T>::halo.vals, 1);
+		math::add<T>(Vector_Dual<T>::nshared, this->vals, 1, 1, Vector_Dual<T>::halo.vals, 1);
 	}
 
 	void copyTo(Vector_Dense<T> &to) const
@@ -71,6 +72,18 @@ struct Vector_Dual: public Vector_Dense<T> {
 //		for (esint i = 0; i < this->size; ++i) {
 //			math::copy(to, *this);
 //		}
+	}
+
+	void copyToWithoutHalo(Vector_Dense<T> &to) const
+	{
+		#pragma omp parallel for
+		for (esint i = 0; i < nhalo; ++i) {
+			to.vals[i] = T{0};
+		}
+		#pragma omp parallel for
+		for (esint i = nhalo; i < this->size; ++i) {
+			to.vals[i] = this->vals[i];
+		}
 	}
 
 	void scale(const T &alpha)
@@ -106,7 +119,7 @@ struct Vector_Dual: public Vector_Dense<T> {
 	}
 
 protected:
-	static esint nhalo, size;
+	static esint nhalo, nshared, localSize;
 	static Vector_Dense<T> halo;
 	static std::vector<esint> distribution;
 	static std::vector<int> neighbors;
@@ -115,7 +128,9 @@ protected:
 template <typename T>
 esint Vector_Dual<T>::nhalo = 0;
 template <typename T>
-esint Vector_Dual<T>::size = 0;
+esint Vector_Dual<T>::nshared = 0;
+template <typename T>
+esint Vector_Dual<T>::localSize = 0;
 template <typename T>
 Vector_Dense<T> Vector_Dual<T>::halo;
 template <typename T>
