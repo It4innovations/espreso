@@ -8,11 +8,30 @@
 namespace espreso {
 
 struct IterativeSolverInfo {
-	enum ERROR {
-
+	enum class ERROR: int {
+		OK = 0,
+		CONVERGENCE_ERROR
 	};
 
-	size_t iterations;
+	ERROR error = ERROR::OK;
+	size_t iterations = 0;
+	bool converged = false;
+
+	struct Norm {
+		struct Dual {
+			double absolute, relative, arioli, initial, ksi, criteria;
+		} dual;
+		double primal;
+	} norm;
+
+	struct Time {
+		double current, total;
+	} time;
+
+	struct Stagnation {
+		std::vector<double> buffer;
+		int p = 0;
+	} stagnation;
 };
 
 template <typename T>
@@ -26,6 +45,8 @@ public:
 	virtual void info() =0;
 	virtual void solve(IterativeSolverInfo &info) =0;
 
+	void setInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const T &ww);
+	void updateInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const T &ww, const T &psi, const T &ry);
 	void reconstructSolution(const Vector_Dual<T> &l, const Vector_Dual<T> &r);
 
 	AX_FETI<T> *feti;

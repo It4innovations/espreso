@@ -27,9 +27,19 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdescription({ "Precision" })
 			.setdatatype({ ECFDataType::FLOAT }));
 
-	max_iterations = 200;
+	print_iteration = 10;
+	REGISTER(print_iteration, ECFMetaData()
+			.setdescription({ "Print only iterations divided by this number." })
+			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
+
+	max_iterations = 0;
 	REGISTER(max_iterations, ECFMetaData()
 			.setdescription({ "Max iterations" })
+			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
+
+	max_stagnation = 10;
+	REGISTER(max_stagnation, ECFMetaData()
+			.setdescription({ "Max stagnation steps." })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
 	num_directions = 3;

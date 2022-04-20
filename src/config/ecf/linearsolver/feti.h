@@ -124,7 +124,9 @@ struct FETIConfiguration: public ECFDescription {
 	};
 
 	double precision;
+	size_t print_iteration;
 	size_t max_iterations;
+	size_t max_stagnation;
 	size_t num_directions;
 
 	METHOD method;

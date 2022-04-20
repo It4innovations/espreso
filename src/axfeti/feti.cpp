@@ -5,6 +5,8 @@
 #include "dualoperator/totalfeti.h"
 #include "preconditioner/preconditioner.h"
 
+#include "esinfo/eslog.hpp"
+
 namespace espreso {
 
 template <typename T>
@@ -43,6 +45,7 @@ void _info(const AX_FETI<T> *feti)
 template <typename T>
 bool _set(AX_FETI<T> *feti, const step::Step &step, const Matrix_FETI<Matrix_CSR, T> &K, const typename AX_FETI<T>::Regularization &regularization, const typename AX_FETI<T>::EqualityConstraints &equalityConstraints)
 {
+	double start = eslog::time();
 	feti->step = &step;
 	feti->K = &K;
 	feti->regularization = &regularization;
@@ -61,27 +64,42 @@ bool _set(AX_FETI<T> *feti, const step::Step &step, const Matrix_FETI<Matrix_CSR
 
 	_info(feti);
 
+	eslog::info(" = FETI SOLVER SET                                                                %8.3f s = \n", eslog::time() - start);
 	return true;
 }
 
 template <typename T>
 bool _update(AX_FETI<T> *feti, const step::Step &step, const Matrix_FETI<Matrix_CSR, T> &K, Vector_FETI<Vector_Dense, T> &f)
 {
+	double start = eslog::time();
 	feti->f = &f;
 
 	feti->projector->update();
 	feti->dualOperator->update();
 	feti->preconditioner->update();
+
+	eslog::info("       = FETI SOLVER UPDATED                                                %8.3f s = \n", eslog::time() - start);
 	return true;
 }
 
 template <typename T>
 bool _solve(AX_FETI<T> *feti, const step::Step &step, Vector_FETI<Vector_Dense, T> &x)
 {
+	double start = eslog::time();
 	feti->x = &x;
 
 	IterativeSolverInfo info;
 	feti->iterativeSolver->solve(info);
+
+	switch (info.error) {
+	case IterativeSolverInfo::ERROR::OK: break;
+	case IterativeSolverInfo::ERROR::CONVERGENCE_ERROR:
+		eslog::info("       =                           FETI SOLVER DOES NOT CONVERGE TO THE REQUESTED NORM = \n");
+		break;
+	}
+	eslog::info("       = ITERATIONS TOTAL                                                    %9d = \n", info.iterations);
+	eslog::info("       = FETI SOLVER TIME                                                   %8.3f s = \n", eslog::time() - start);
+	eslog::info("       = ----------------------------------------------------------------------------- = \n");
 
 	for (size_t d = 0; d < x.domains.size(); ++d) {
 		x.set(0);

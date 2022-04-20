@@ -53,6 +53,7 @@ static void _set(CPG<T> *solver)
 	solver->r.resize();
 	solver->w.resize();
 	solver->p.resize();
+//	solver->r0.resize();
 
 	solver->x.resize();
 	solver->Fp.resize();
@@ -70,31 +71,28 @@ template <> void CPG<double>::solve(IterativeSolverInfo &info)
 	Projector<double> *P = feti->projector;
 
 	P->applyGtInvGGt(P->e, l);             // l = Gt * inv(GGt) * e
+
 	F->apply(l, r);                        // r = d - F * l
 	r.scale(-1);                           //
 	r.add(1, F->d);                        //
+
 	P->apply(r, w);                        // w = P * r
 	w.copyTo(p);                           // p = w
 	l.copyTo(x);                           // x = l
 
-	// r0 = r;
-	// rho = dt * l
+//	r.copyTo(r0);
+//	double rho = F->d.dot(l), rr, r0x;
 
-	// iter:  (rho + r0 * x)
-
-	eslog::info("       = ----------------------------------------------------------------------------- = \n");
-	eslog::info("       = ITERATION      RELATIVE NORM      ABSOLUTE NORM      ARIOLI NORM     TIME [s] = \n");
-	eslog::info("       = - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - = \n");
 	eslog::checkpointln("FETI: CPG INITIALIZATION");
 	eslog::startln("CPG: ITERATIONS STARTED", "cpg");
 	double ww = w.dot();
-	for (info.iterations = 0; info.iterations < feti->configuration.max_iterations; ++info.iterations) {
-		double start = eslog::time();
-
+	setInfo(info, feti->configuration, ww);
+	while (!info.converged) {
 		F->apply(p, Fp);                            //
 		eslog::accumulatedln("cpg: apply F");       // gamma = (w, w) / (p, F * p)
 		double pFp = p.dot(Fp), gamma = ww / pFp;   //
 		eslog::accumulatedln("cpg: dot(p, Fp)");    //
+
 
 		x.add(gamma, p);                            // x = x + gamma * p
 		r.add(-gamma, Fp);                          // r = r - gamma * F * p
@@ -108,16 +106,10 @@ template <> void CPG<double>::solve(IterativeSolverInfo &info)
 		w.add(beta, p); w.swap(p);                  // p = w + beta * p  (w is not used anymore)
 		eslog::accumulatedln("cpg: update p");      //
 
-		double anorm = std::sqrt(ww);
-		if (anorm < feti->configuration.precision) {
-			eslog::info("       = %9d        %9.4e        %9.4e        %9.4e      %7.2e = \n", info.iterations, anorm, anorm, anorm, eslog::time() - start);
-			eslog::accumulatedln("cpg: check criteria");
-			break;
-		} else {
-			if (info.iterations % 1 == 0 || info.iterations + 1 == feti->configuration.max_iterations) {
-				eslog::info("       = %9d        %9.4e        %9.4e        %9.4e      %7.2e = \n", info.iterations, anorm, anorm, anorm, eslog::time() - start);
-			}
-		}
+//		rr = r.dot(), r0x = r0.dot(x);
+//		eslog::accumulatedln("cpg: dot(r, r), dot(r0, x)");
+
+		updateInfo(info, feti->configuration, ww, 0, 0);
 		ww = _ww; // keep ww for the next iteration
 		eslog::accumulatedln("cpg: check criteria");
 	}
