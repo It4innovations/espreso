@@ -21,7 +21,8 @@ template <typename T> static void _updateDenseGGt(OrthogonalTFETISymmetric<T> *p
 
 template <typename T> static void _applyG(OrthogonalTFETISymmetric<T> *projector, const Vector_Dual<T> &in, Vector_Kernel<T> &out);
 template <typename T> static void _applyInvGGt(OrthogonalTFETISymmetric<T> *projector, const Vector_Kernel<T> &in, Vector_Dense<T> &out);
-template <typename T> static void _applyGt(OrthogonalTFETISymmetric<T> *projector, const Vector_Dense<T> &in, Vector_Dual<T> &out);
+template <typename T> static void _applyGt(OrthogonalTFETISymmetric<T> *projector, const Vector_Dense<T> &in, const T &alpha, Vector_Dual<T> &out);
+template <typename T> static void _applyR(OrthogonalTFETISymmetric<T> *projector, const Vector_Dense<T> &in, Vector_FETI<Vector_Dense, T> &out);
 
 template <typename T> static void _print(OrthogonalTFETISymmetric<T> *projector);
 
@@ -96,7 +97,7 @@ static void _apply(OrthogonalTFETISymmetric<T> *projector, const Vector_Dual<T> 
 	x.copyToWithoutHalo(y);
 	_applyG(projector, x, projector->Gx);
 	_applyInvGGt(projector, projector->Gx, projector->iGGtGx);
-	_applyGt(projector, projector->iGGtGx, y);
+	_applyGt(projector, projector->iGGtGx, T{-1}, y);
 }
 
 template <typename T>
@@ -104,14 +105,15 @@ static void _applyGtInvGGt(OrthogonalTFETISymmetric<T> *projector, const Vector_
 {
 	math::set(y, T{0});
 	_applyInvGGt(projector, x, projector->iGGtGx);
-	_applyGt(projector, projector->iGGtGx, y);
+	_applyGt(projector, projector->iGGtGx, T{-1}, y);
 }
 
 template <typename T>
-static void _applyInvGGtG(OrthogonalTFETISymmetric<T> *projector, const Vector_Dual<T> &x, Vector_Kernel<T> &y)
+static void _applyRInvGGtG(OrthogonalTFETISymmetric<T> *projector, const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y)
 {
 	_applyG(projector, x, projector->Gx);
-	_applyInvGGt(projector, projector->Gx, y);
+	_applyInvGGt(projector, projector->Gx, projector->iGGtGx);
+	_applyR(projector, projector->iGGtGx, y);
 }
 
 template <typename T> static void _applyG(OrthogonalTFETISymmetric<T> *projector, const Vector_Dual<T> &in, Vector_Kernel<T> &out)
@@ -140,19 +142,31 @@ template <typename T> static void _applyInvGGt(OrthogonalTFETISymmetric<T> *proj
 		a.vals = projector->invGGt.vals + projector->invGGt.ncols * Vector_Kernel<T>::distribution[t];
 		y.vals = out.vals + Vector_Kernel<T>::distribution[t];
 
-		math::apply(y, T{-1}, a, T{0}, in);
+		math::apply(y, T{1}, a, T{0}, in);
 	}
 }
 
 // TODO: threaded implementation: utilize properties of B of gluing two domains
-template <typename T> static void _applyGt(OrthogonalTFETISymmetric<T> *projector, const Vector_Dense<T> &in, Vector_Dual<T> &out)
+template <typename T> static void _applyGt(OrthogonalTFETISymmetric<T> *projector, const Vector_Dense<T> &in, const T &alpha, Vector_Dual<T> &out)
 {
 	for (esint r = 0; r < projector->G.nrows; ++r) {
 		for (esint c = projector->G.rows[r]; c < projector->G.rows[r + 1]; ++c) {
-			out.vals[projector->G.cols[c]] += projector->G.vals[c] * in.vals[r];
+			out.vals[projector->G.cols[c]] += alpha * projector->G.vals[c] * in.vals[r];
 		}
 	}
 	out.synchronize();
+}
+
+template <typename T> static void _applyR(OrthogonalTFETISymmetric<T> *projector, const Vector_Dense<T> &in, Vector_FETI<Vector_Dense, T> &out)
+{
+	#pragma omp parallel for
+	for (size_t d = 0; d < out.domains.size(); ++d) {
+		Vector_Dense<T> y;
+		y.size = projector->feti->regularization->R1.domains[d].ncols;
+		y.vals = in.vals + projector->Roffset[d];
+
+		math::apply(out.domains[d], T{1}, projector->feti->regularization->R1.domains[d], T{0}, y);
+	}
 }
 
 struct LMAPSize {
@@ -489,8 +503,8 @@ template <> void OrthogonalTFETISymmetric<std::complex<double> >::apply(const Ve
 template <> void OrthogonalTFETISymmetric<double>::applyGtInvGGt(const Vector_Kernel<double> &x, Vector_Dual<double> &y) { _applyGtInvGGt(this, x, y); }
 template <> void OrthogonalTFETISymmetric<std::complex<double> >::applyGtInvGGt(const Vector_Kernel<std::complex<double> > &x, Vector_Dual<std::complex<double> > &y) { _applyGtInvGGt(this, x, y); }
 
-template <> void OrthogonalTFETISymmetric<double>::applyInvGGtG(const Vector_Dual<double> &x, Vector_Kernel<double> &y) { _applyInvGGtG(this, x, y); }
-template <> void OrthogonalTFETISymmetric<std::complex<double> >::applyInvGGtG(const Vector_Dual<std::complex<double> > &x, Vector_Kernel<std::complex<double> > &y) { _applyInvGGtG(this, x, y); }
+template <> void OrthogonalTFETISymmetric<double>::applyRInvGGtG(const Vector_Dual<double> &x, Vector_FETI<Vector_Dense, double> &y) { _applyRInvGGtG(this, x, y); }
+template <> void OrthogonalTFETISymmetric<std::complex<double> >::applyRInvGGtG(const Vector_Dual<std::complex<double> > &x, Vector_FETI<Vector_Dense, std::complex<double> > &y) { _applyRInvGGtG(this, x, y); }
 
 }
 

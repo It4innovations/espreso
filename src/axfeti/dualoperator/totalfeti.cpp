@@ -102,6 +102,18 @@ static void _apply(TotalFETI<T> *dual, const Vector_Dual<T> &x, Vector_Dual<T> &
 }
 
 template <typename T>
+static void _toPrimal(TotalFETI<T> *dual, const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y)
+{
+	#pragma omp parallel for
+	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
+		_applyBt(dual, d, x, dual->Btx[d]);
+		math::copy(dual->KplusBtx[d], dual->feti->f->domains[d]);
+		math::add(dual->KplusBtx[d], T{-1}, dual->Btx[d]);
+		math::solve(dual->Kplus[d], dual->KplusBtx[d], y.domains[d]);
+	}
+}
+
+template <typename T>
 static void _applyBt(TotalFETI<T> *dual, size_t d, const Vector_Dual<T> &in, Vector_Dense<T> &out)
 {
 	const typename AX_FETI<T>::EqualityConstraints::Domain &L = dual->feti->equalityConstraints->domain[d];
@@ -163,5 +175,8 @@ template <> void TotalFETI<std::complex<double> >::update() { _update<std::compl
 
 template <> void TotalFETI<double>::apply(const Vector_Dual<double> &x, Vector_Dual<double> &y) { _apply(this, x, y); }
 template <> void TotalFETI<std::complex<double> >::apply(const Vector_Dual<std::complex<double> > &x, Vector_Dual<std::complex<double> > &y) { _apply(this, x, y); }
+
+template <> void TotalFETI<double>::toPrimal(const Vector_Dual<double> &x, Vector_FETI<Vector_Dense, double> &y) { _toPrimal(this, x, y); }
+template <> void TotalFETI<std::complex<double> >::toPrimal(const Vector_Dual<std::complex<double> > &x, Vector_FETI<Vector_Dense, std::complex<double> > &y) { _toPrimal(this, x, y); }
 
 }

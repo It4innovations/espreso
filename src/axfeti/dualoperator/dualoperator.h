@@ -23,6 +23,9 @@ public:
 	// y = F * x
 	virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) =0;
 
+	// y = K+(f - Bt * x)
+	virtual void toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y) =0;
+
 	AX_FETI<T> *feti;
 
 	std::vector<Matrix_CSR<T> > Kplus;

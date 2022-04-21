@@ -110,10 +110,6 @@ bool _solve(AX_FETI<T> *feti, const step::Step &step, Vector_FETI<Vector_Dense, 
 	eslog::info("       = ITERATIONS TOTAL                                                    %9d = \n", info.iterations);
 	eslog::info("       = FETI SOLVER TIME                                                   %8.3f s = \n", eslog::time() - start);
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");
-
-	for (size_t d = 0; d < x.domains.size(); ++d) {
-		x.set(0);
-	}
 	return true;
 }
 

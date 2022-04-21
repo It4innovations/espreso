@@ -3,6 +3,10 @@
 
 #include "cpg.h"
 #include "pcpg.h"
+#include "axfeti/projector/projector.h"
+#include "axfeti/dualoperator/dualoperator.h"
+
+#include "math/feti/vector_kernel.h"
 
 #include "esinfo/eslog.hpp"
 
@@ -34,7 +38,16 @@ static IterativeSolver<T>* _set(AX_FETI<T> *feti)
 template <typename T>
 void _reconstructSolution(IterativeSolver<T> *solver, const Vector_Dual<T> &l, const Vector_Dual<T> &r)
 {
+	Projector<T> *P = solver->feti->projector;
+	DualOperator<T> *F = solver->feti->dualOperator;
 
+	F->toPrimal(l, solver->iKfBtL);
+	P->applyRInvGGtG(r, solver->Ra);
+	#pragma omp parallel for
+	for (size_t d = 0; d < solver->feti->K->domains.size(); ++d) {
+		math::copy(solver->feti->x->domains[d], solver->iKfBtL.domains[d]);
+		math::add(solver->feti->x->domains[d], T{1}, solver->Ra.domains[d]);
+	}
 }
 
 template <> void IterativeSolver<double>::setInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const double &ww)

@@ -22,7 +22,7 @@ public:
 
 	virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) =0;
 	virtual void applyGtInvGGt(const Vector_Kernel<T> &x, Vector_Dual<T> &y) =0;
-	virtual void applyInvGGtG(const Vector_Dual<T> &x, Vector_Kernel<T> &y) =0;
+	virtual void applyRInvGGtG(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y) =0;
 
 	AX_FETI<T> *feti;
 

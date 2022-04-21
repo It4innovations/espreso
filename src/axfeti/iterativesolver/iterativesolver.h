@@ -4,6 +4,8 @@
 
 #include "axfeti/feti.h"
 #include "math/feti/vector_dual.h"
+#include "math/feti/vector_kernel.h"
+#include "math/physics/vector_feti.h"
 
 namespace espreso {
 
@@ -42,7 +44,18 @@ class IterativeSolver {
 public:
 	static IterativeSolver<T>* set(AX_FETI<T> *feti);
 
-	IterativeSolver(AX_FETI<T> *feti): feti(feti) {}
+	IterativeSolver(AX_FETI<T> *feti): feti(feti)
+	{
+		iKfBtL.domains.resize(feti->K->domains.size());
+		Ra.domains.resize(feti->K->domains.size());
+
+		#pragma omp parallel for
+		for (size_t d = 0; d < feti->K->domains.size(); ++d) {
+			iKfBtL.domains[d].resize(feti->K->domains[d].nrows);
+			Ra.domains[d].resize(feti->K->domains[d].nrows);
+		}
+	}
+
 	virtual ~IterativeSolver() {}
 
 	virtual void info() =0;
@@ -53,8 +66,11 @@ public:
 	void reconstructSolution(const Vector_Dual<T> &l, const Vector_Dual<T> &r);
 
 	AX_FETI<T> *feti;
+
+	Vector_FETI<Vector_Dense, T> iKfBtL, Ra;
 };
 
 }
 
 #endif /* SRC_AXFETI_ITERATIVESOLVER_ITERATIVESOLVER_H_ */
+

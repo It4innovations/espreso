@@ -156,7 +156,7 @@ class Vector_FETI: public Vector_FETI_Common<Vector, T> {
 	void _store(const std::vector<Vector_Dense<double> > &domains, const DOFsDecomposition *decomposition, std::vector<double> &output)
 	{
 		auto dmap = decomposition->dmap->cbegin();
-		for (size_t i = 0; i < output.size(); ++i) {
+		for (size_t i = 0; i < output.size(); ++i, ++dmap) {
 			for (auto di = dmap->begin(); di != dmap->end(); ++di) {
 				if (decomposition->ismy(di->domain)) {
 					output[i] = domains[di->domain - decomposition->dbegin].vals[di->index];

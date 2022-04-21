@@ -33,7 +33,7 @@ public:
 
 	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 	void applyGtInvGGt(const Vector_Kernel<T> &x, Vector_Dual<T> &y);
-	void applyInvGGtG(const Vector_Dual<T> &x, Vector_Kernel<T> &y);
+	void applyRInvGGtG(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y);
 
 	Matrix_CSR<T> G, GGt;
 	Matrix_Dense<T> invGGt;
