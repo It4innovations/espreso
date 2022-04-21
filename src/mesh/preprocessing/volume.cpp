@@ -24,6 +24,8 @@ namespace mesh {
 
 bool triangle_ray_intersect(Point p0, Point p1, Point v0, Point v1, Point v2);
 bool edge_ray_intersect(Point p, Point v0, Point v1);
+double face_solid_angle_contribution(Point p, Point v0, Point v1, Point v2);
+double solid_angle(Point a, Point b, Point c);
 
 void store(const esint &voxels, const std::vector<int> &grid)
 {
@@ -172,7 +174,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
     // eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
     // return;
 
-	double z = 0.0;
+	//double z = 0.0;
 	/*Point grid_start = Point(-0.5, 0.5, z);
 	Point grid_end = Point(0.5, -0.5, z);*/
 //    Point grid_start = Point(-0.55, 0.55, z); // left + up
@@ -185,8 +187,10 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
     // Point grid_end = Point(0.55, -0.55, z);
     // Point grid_start = Point(-0.8, 0.8, z); // projection 2
     // Point grid_end = Point(0.8, -0.8, z);
-	Point grid_start = Point(-0.1, 1.1, -0.1); // 3D
-    Point grid_end = Point(1.1, -0.1, 1.1);
+	// Point grid_start = Point(-0.1, 1.1, -0.1); // 3D
+    // Point grid_end = Point(1.1, -0.1, 1.1);
+	Point grid_start = Point(0.0, 1.0, 0.0); // 3D
+    Point grid_end = Point(1.0, 0.0, 1.0);
 	Point grid_offset = Point((grid_end.x - grid_start.x)/voxels,
 							(grid_start.y - grid_end.y)/voxels, 
 							(grid_end.z - grid_start.z)/voxels);
@@ -210,9 +214,9 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		}
 
 		// grid part in BB
-		int min_x_inx = (el_min.x - grid_start.x)/grid_offset.x + 1;
-		int min_y_inx = (grid_start.y - el_max.y)/grid_offset.y + 1;
-		int min_z_inx = (el_min.z - grid_start.z)/grid_offset.z + 1;
+		int min_x_inx = (el_min.x - grid_start.x)/grid_offset.x;
+		int min_y_inx = (grid_start.y - el_max.y)/grid_offset.y;
+		int min_z_inx = (el_min.z - grid_start.z)/grid_offset.z;
 		int max_x_inx = (el_max.x - grid_start.x)/grid_offset.x;
 		int max_y_inx = (grid_start.y - el_min.y)/grid_offset.y;
 		int max_z_inx = (el_max.z - grid_start.z)/grid_offset.z;
@@ -221,37 +225,65 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		for(int x = min_x_inx; x <= max_x_inx; x++){
 			for(int y = min_y_inx; y <= max_y_inx; y++){
 				for(int z = min_z_inx; z <= max_z_inx; z++){
-					// point in polygon/polyhedron
+					// point in element
 					Point p = Point(grid_start.x + x*grid_offset.x, grid_start.y - y*grid_offset.y, grid_start.z + z*grid_offset.z);
-					int cn = 0;
+					int cn = 0; // cn
 
 					if(dim == 3){
 						// loop through faces
 						printf("faces:\n");
-						Point p1 = Point(el_max.x, p.y, p.z);
+						//Point p1 = Point(el_max.x, p.y, p.z); // cn
+						double total_angle = 0;
+						bool is_p_face_vertex = false;
 
 						auto faces = elements->epointers->datatarray()[eindex]->faces;
 						for (auto face = faces->begin(); face != faces->end(); ++face) {
 
 							if(face->end() - face->begin() == 3){ // triangle
-								if(triangle_ray_intersect(p, p1, nodes->coordinates->datatarray()[e->at(*(face->begin()))],
-																nodes->coordinates->datatarray()[e->at(*(face->begin() + 1))],
-																nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))])){
-									cn++;
+								// if(triangle_ray_intersect(p, p1, nodes->coordinates->datatarray()[e->at(*(face->begin()))],
+								// 								nodes->coordinates->datatarray()[e->at(*(face->begin() + 1))],
+								// 								nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))])){
+								// 	cn++;
+								// }
+
+								Point v0 = nodes->coordinates->datatarray()[e->at(*(face->begin()))];
+								Point v1 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 1))];
+								Point v2 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))];
+
+								if(v0 == p || v1 == p || v2 == p){
+									is_p_face_vertex = true;
+									break;
 								}
+
+								total_angle += face_solid_angle_contribution(p, v0, v1, v2);
+
 							} else { // rectangle
-							    // intersect for two triangles
-                                if(triangle_ray_intersect(p, p1, nodes->coordinates->datatarray()[e->at(*(face->begin()))],
-                                                          nodes->coordinates->datatarray()[e->at(*(face->begin() + 1))],
-                                                          nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))])){
-                                    cn++;
-                                    continue;
-                                }
-                                if(triangle_ray_intersect(p, p1, nodes->coordinates->datatarray()[e->at(*(face->begin()))],
-                                                          nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))],
-                                                          nodes->coordinates->datatarray()[e->at(*(face->begin() + 3))])){
-                                    cn++;
-                                }
+							    // two triangles
+                                // if(triangle_ray_intersect(p, p1, nodes->coordinates->datatarray()[e->at(*(face->begin()))],
+                                //                           nodes->coordinates->datatarray()[e->at(*(face->begin() + 1))],
+                                //                           nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))])){
+                                //     cn++;
+                                //     continue;
+                                // }
+                                // if(triangle_ray_intersect(p, p1, nodes->coordinates->datatarray()[e->at(*(face->begin()))],
+                                //                           nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))],
+                                //                           nodes->coordinates->datatarray()[e->at(*(face->begin() + 3))])){
+                                //     cn++;
+                                // }
+
+								Point v0 = nodes->coordinates->datatarray()[e->at(*(face->begin()))];
+								Point v1 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 1))];
+								Point v2 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))];
+								Point v3 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 3))];
+								
+								if(v0 == p || v1 == p || v2 == p || v3 == p){
+									is_p_face_vertex = true;
+									break;
+								}
+
+								total_angle += face_solid_angle_contribution(p, v0, v1, v2);
+								total_angle += face_solid_angle_contribution(p, v0, v2, v3);
+
 							}
 
 							for (auto n = face->begin(); n != face->end(); ++n) {
@@ -260,6 +292,21 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 							}
 							printf("\n");
 						}
+
+						// save element index if point is in the element
+						if(is_p_face_vertex || fabs(total_angle) > 0.0){ // inside
+							grid[z*grid_size*grid_size + y*grid_size + x] = eindex;
+
+							if(is_p_face_vertex){
+								printf("on surface\n");
+							} else {
+								printf("inside: %.02f PI\n", fabs(total_angle)/M_PI);
+							}
+							
+						} else {
+							printf("outside: %.02f PI\n", fabs(total_angle)/M_PI);
+						}
+						
 
 					} else { // dim == 2
 						// loop through edges
@@ -281,10 +328,10 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 					}
 					
 					// save polygon index if point is in polygon
-					if(cn%2){ // cn id odd
-						grid[z*grid_size*grid_size + y*grid_size + x] = eindex; 
-					}
-					printf("cn %d\n", cn);
+					// if(cn%2){ // cn is odd
+					// 	grid[z*grid_size*grid_size + y*grid_size + x] = eindex; 
+					// }
+					// printf("cn %d\n", cn); //cn
 					printf("cell index %d\n", grid[z*grid_size*grid_size + y*grid_size + x]);
 				}
 			}
@@ -368,6 +415,42 @@ bool edge_ray_intersect(Point p, Point v0, Point v1){
         }
     }
     return false;
+}
+
+double face_solid_angle_contribution(Point p, Point v0, Point v1, Point v2){
+	Point vec_a = v0 - p;
+	Point vec_b = v1 - p;
+	Point vec_c = v2 - p;
+
+	double angle = solid_angle(vec_a, vec_b, vec_c);
+
+	Point u = v1 - v0;
+	Point v = v2 - v0;
+	Point n = Point::cross(u, v);
+
+	Point p_vec = p - v0;
+	double dot = n * p_vec;
+
+	int factor;
+	if(dot > 0){
+		factor = 1;
+	} else {
+		factor = -1;
+	}
+
+	return factor * angle;
+}
+
+double solid_angle(Point a, Point b, Point c){
+	a.normalize();
+	b.normalize();
+	c.normalize();
+
+	double numer = Point::cross(a, b) * c;
+	double denom = 1 + (a * b) + (b * c) + (c * a);
+
+	double angle = 2 * atan2(numer, denom);
+	return fabs(angle);
 }
 
 }
