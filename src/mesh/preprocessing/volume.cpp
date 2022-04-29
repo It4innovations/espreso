@@ -159,20 +159,38 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	//usleep(20 * 1000000);
 
 	// uniform grid
-	esint grid_size = 12;
+	esint grid_size = 100;
 	int voxels = grid_size - 1;
 	int dim = info::mesh->dimension;
 	std::vector<int> grid;
+	int grid_init_value = -1;
 	if(dim == 3){
 		grid.resize(grid_size * grid_size * grid_size);
+		fill(grid.begin(), grid.end(), grid_init_value);
 	} else { // dim == 2
         grid.resize(grid_size * grid_size);
+		fill(grid.begin(), grid.end(), grid_init_value);
 	}
 
     // store(grid_size, grid);
     // profiler::syncend("compute_volume_indices");
     // eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
     // return;
+
+	// find BB of the mesh
+	const Point &p_min_max = nodes->coordinates->datatarray()[*(elements->nodes->cbegin()->begin())];
+	Point mesh_min = Point(p_min_max.x, p_min_max.y, p_min_max.z);
+	Point mesh_max = Point(p_min_max.x, p_min_max.y, p_min_max.z);
+	for (auto e = elements->nodes->cbegin(); e != elements->nodes->cend(); ++e) {
+		for (auto n = e->begin(); n != e->end(); ++n) {
+			Point &p = nodes->coordinates->datatarray()[*n];
+			//printf("%f %f %f\n", p.x, p.y, p.z);
+
+			p.minmax(mesh_min, mesh_max);
+		}
+	}
+	printf("mesh min: %f %f %f\n", mesh_min.x, mesh_min.y, mesh_min.z);
+	printf("mesh max: %f %f %f\n", mesh_max.x, mesh_max.y, mesh_max.z);
 
 	//double z = 0.0;
 	/*Point grid_start = Point(-0.5, 0.5, z);
@@ -189,8 +207,10 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
     // Point grid_end = Point(0.8, -0.8, z);
 	// Point grid_start = Point(-0.1, 1.1, -0.1); // 3D
     // Point grid_end = Point(1.1, -0.1, 1.1);
-	Point grid_start = Point(0.0, 1.0, 0.0); // 3D
-    Point grid_end = Point(1.0, 0.0, 1.0);
+	// Point grid_start = Point(0.0, 1.0, 0.0); // 3D
+    // Point grid_end = Point(1.0, 0.0, 1.0);
+	Point grid_start = Point(mesh_min.x, mesh_max.y, mesh_min.z); // brake...
+    Point grid_end = Point(mesh_max.x, mesh_min.y, mesh_max.z);
 	Point grid_offset = Point((grid_end.x - grid_start.x)/voxels,
 							(grid_start.y - grid_end.y)/voxels, 
 							(grid_end.z - grid_start.z)/voxels);
@@ -205,10 +225,10 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		Point el_min = Point(p_min_max.x, p_min_max.y, p_min_max.z);
 		Point el_max = Point(p_min_max.x, p_min_max.y, p_min_max.z);
 
-        printf("element vertices:\n");
+        //printf("element vertices:\n");
 		for (auto n = e->begin(); n != e->end(); ++n) {
 			Point &p = nodes->coordinates->datatarray()[*n];
-			printf("%f %f %f\n", p.x, p.y, p.z);
+			//printf("%f %f %f\n", p.x, p.y, p.z);
 
 			p.minmax(el_min, el_max);
 		}
@@ -225,13 +245,19 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		for(int x = min_x_inx; x <= max_x_inx; x++){
 			for(int y = min_y_inx; y <= max_y_inx; y++){
 				for(int z = min_z_inx; z <= max_z_inx; z++){
-					// point in element
+					// skip point, which is already assigned to some element
+					int grid_inx_1d = z*grid_size*grid_size + y*grid_size + x;
+					if(grid[grid_inx_1d] != -1){
+						continue;
+					}
+
+					// test point in element
 					Point p = Point(grid_start.x + x*grid_offset.x, grid_start.y - y*grid_offset.y, grid_start.z + z*grid_offset.z);
 					int cn = 0; // cn
 
 					if(dim == 3){
 						// loop through faces
-						printf("faces:\n");
+						//printf("faces:\n");
 						//Point p1 = Point(el_max.x, p.y, p.z); // cn
 						double total_angle = 0;
 						bool is_p_face_vertex = false;
@@ -239,7 +265,10 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 						auto faces = elements->epointers->datatarray()[eindex]->faces;
 						for (auto face = faces->begin(); face != faces->end(); ++face) {
 
-							if(face->end() - face->begin() == 3){ // triangle
+							int num_verts = face->end() - face->begin();
+							//printf("num face verts: %d\n", num_verts);
+
+							if(num_verts == 3 || num_verts == 6){ // triangle
 								// if(triangle_ray_intersect(p, p1, nodes->coordinates->datatarray()[e->at(*(face->begin()))],
 								// 								nodes->coordinates->datatarray()[e->at(*(face->begin() + 1))],
 								// 								nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))])){
@@ -286,25 +315,25 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 
 							}
 
-							for (auto n = face->begin(); n != face->end(); ++n) {
-								const Point &p = nodes->coordinates->datatarray()[e->at(*n)];
-								printf("%f %f %f\n", p.x, p.y, p.z);
-							}
-							printf("\n");
+							//for (auto n = face->begin(); n != face->end(); ++n) {
+								//const Point &p = nodes->coordinates->datatarray()[e->at(*n)];
+								//printf("%f %f %f\n", p.x, p.y, p.z);
+							//}
+							//printf("\n");
 						}
 
 						// save element index if point is in the element
 						if(is_p_face_vertex || fabs(total_angle) > 0.0){ // inside
-							grid[z*grid_size*grid_size + y*grid_size + x] = eindex;
+							grid[grid_inx_1d] = eindex;
 
 							if(is_p_face_vertex){
 								printf("on surface\n");
 							} else {
-								printf("inside: %.02f PI\n", fabs(total_angle)/M_PI);
+								//printf("inside: %.02f PI\n", fabs(total_angle)/M_PI);
 							}
 							
 						} else {
-							printf("outside: %.02f PI\n", fabs(total_angle)/M_PI);
+							//printf("outside: %.02f PI\n", fabs(total_angle)/M_PI);
 						}
 						
 
@@ -332,14 +361,14 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 					// 	grid[z*grid_size*grid_size + y*grid_size + x] = eindex; 
 					// }
 					// printf("cn %d\n", cn); //cn
-					printf("cell index %d\n", grid[z*grid_size*grid_size + y*grid_size + x]);
+					//printf("cell index %d\n", grid[z*grid_size*grid_size + y*grid_size + x]);
 				}
 			}
 		}
 
 		// printf("min %f %f %f\n", el_min.x, el_min.y, el_min.z);
 		// printf("max %f %f %f\n", el_max.x, el_max.y, el_max.z);
-		printf("\n");
+		//printf("\n");
 	}
 
 	if(dim == 3){
