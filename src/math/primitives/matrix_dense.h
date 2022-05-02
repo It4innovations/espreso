@@ -3,6 +3,7 @@
 #define SRC_MATH2_PRIMITIVES_MATRIX_DENSE_H_
 
 #include "matrix_info.h"
+#include "slice.h"
 
 namespace espreso {
 
@@ -68,6 +69,11 @@ public:
 		clear(_allocated);
 	}
 
+	_Matrix_Dense<T>& allocated()
+	{
+		return _allocated;
+	}
+
 	void resize(esint nrows, esint ncols)
 	{
 		realloc(_allocated, nrows, ncols);
@@ -85,8 +91,15 @@ public:
 		_Matrix_Dense<T>::operator=(_allocated);
 	}
 
+	void slice(const Slice &rows, const Slice &cols)
+	{
+		submatrix[0] = rows;
+		submatrix[1] = cols;
+	}
+
 	Matrix_Type type;
 	Matrix_Shape shape;
+	Slice submatrix[2];
 	Matrix_Dense_External_Representation *_external;
 
 protected:
@@ -121,6 +134,7 @@ protected:
 
 	_Matrix_Dense<T> _allocated;
 };
+
 
 }
 

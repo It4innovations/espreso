@@ -12,7 +12,6 @@ public:
 	CPG(AX_FETI<T> *feti);
 
 	void info();
-	void update();
 	void solve(IterativeSolverInfo &info);
 
 	Vector_Dual<T> l, r, w, p;

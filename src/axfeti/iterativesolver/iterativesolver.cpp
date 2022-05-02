@@ -3,6 +3,7 @@
 
 #include "cpg.h"
 #include "pcpg.h"
+#include "orthocpg.h"
 #include "axfeti/projector/projector.h"
 #include "axfeti/dualoperator/dualoperator.h"
 
@@ -26,6 +27,14 @@ static IterativeSolver<T>* _set(AX_FETI<T> *feti)
 		}
 	case FETIConfiguration::ITERATIVE_SOLVER::pipePCG:
 	case FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG:
+		if (feti->configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE) {
+			eslog::info(" = ITERATIVE SOLVER                      CONJUGATE PROJECTED GRADIENT WITH ORTHOGONALIZATION = \n");
+			return new OrthogonalizedCPG<T>(feti);
+		} else {
+			eslog::info(" = ITERATIVE SOLVER       PRECONDITIONED CONJUGATE PROJECTED GRADIENT WITH ORTHOGONALIZATION = \n");
+//			return new OrthogonalizedPCPG<T>(feti);
+			return new OrthogonalizedCPG<T>(feti);
+		}
 	case FETIConfiguration::ITERATIVE_SOLVER::GMRES:
 	case FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB:
 	case FETIConfiguration::ITERATIVE_SOLVER::QPCE:

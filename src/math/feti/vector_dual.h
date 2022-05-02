@@ -14,18 +14,16 @@ namespace espreso {
 template <typename T>
 struct Vector_Dual: public Vector_Dense<T> {
 
-	enum: size_t {
-		align = 8U
-	};
+	template <typename Type> friend struct Matrix_Dual_Orthogonal;
 
 	static void set(esint nhalo, esint size, const std::vector<LMAP> &lmap, const std::vector<int> &neighbors)
 	{
 		Vector_Dual<T>::nhalo = nhalo;
 		Vector_Dual<T>::localSize = size;
-		Vector_Dual<T>::halo.resize(size + align);
+		Vector_Dual<T>::halo.resize(size + alignof(T));
 		Vector_Dual<T>::neighbors = neighbors;
 		void* _vals = static_cast<void*>(Vector_Dual<T>::halo.vals);
-		size_t _size = size + align;
+		size_t _size = size + alignof(T);
 		Vector_Dual<T>::halo.vals = static_cast<T*>(std::align(alignof(T), sizeof(T), _vals, _size));
 		Vector_Dual<T>::halo.size = size;
 
@@ -47,9 +45,10 @@ struct Vector_Dual: public Vector_Dense<T> {
 
 	void resize()
 	{
-		Vector_Dense<T>::resize(Vector_Dual<T>::localSize + align);
+		// aligned header + space at the end
+		Vector_Dense<T>::resize(Vector_Dual<T>::localSize + 2 * alignof(T));
 		void* _vals = static_cast<void*>(Vector_Dense<T>::vals);
-		size_t _size = Vector_Dual<T>::localSize + align;
+		size_t _size = Vector_Dense<T>::size;
 		Vector_Dense<T>::vals = static_cast<T*>(std::align(alignof(T), sizeof(T), _vals, _size));
 		Vector_Dense<T>::size = Vector_Dual<T>::localSize;
 	}

@@ -32,6 +32,8 @@ namespace math { // interface to wrappers
 	template <typename T> void apply(Vector_Dense<T> &y, const T &alpha, const Matrix_Dense<T> &a, const T &beta, const Vector_Dense<T> &x);
 	template <typename T> void apply(Vector_Dense<T> &y, const T &alpha, const Matrix_CSR<T>   &a, const T &beta, const Vector_Dense<T> &x);
 	template <typename T> void apply(Vector_Dense<T> &y, const T &alpha, const Matrix_IJV<T>   &a, const T &beta, const Vector_Dense<T> &x);
+	// y = alpha * At * x + beta * y
+	template <typename T> void applyT(Vector_Dense<T> &y, const T &alpha, const Matrix_Dense<T> &a, const T &beta, const Vector_Dense<T> &x);
 
 	// x = value
 	template <typename T>

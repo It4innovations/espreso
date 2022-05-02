@@ -1,7 +1,6 @@
 
 #include "cpg.h"
 
-#include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 #include "axfeti/projector/projector.h"
