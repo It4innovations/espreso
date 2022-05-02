@@ -80,12 +80,18 @@ void evaluateHeatTransferKernel(const Matrix_CSR<double> &K, Matrix_Dense<double
 template <typename Assembler, typename Solver>
 void setEqualityConstraints(AX_FETISystemData<Assembler, Solver> *system, step::Step &step)
 {
+	if (system->feti.configuration.redundant_lagrange) {
+		eslog::info(" = LAGRANGE MULTIPLIERS                                                            REDUNDANT = \n");
+	} else {
+		eslog::info(" = LAGRANGE MULTIPLIERS                                                          ORTHONORMAL = \n");
+	}
 	composeEqualityConstraints(system->solver.K, system->solver.dirichlet, system->equalityConstraints, system->feti.configuration.redundant_lagrange);
 }
 
 template <typename Assembler, typename Solver>
 void setHeatTransferKernel(AX_FETISystemData<Assembler, Solver> *system, step::Step &step)
 {
+	eslog::info(" = REGULARIZATION                                                                   ANALYTIC = \n");
 	system->regularization.R1.domains.resize(system->solver.K.domains.size());
 	system->regularization.R2.domains.resize(system->solver.K.domains.size());
 	system->regularization.RegMat.domains.resize(system->solver.K.domains.size());
@@ -173,6 +179,7 @@ template <> struct AX_FETISystem<AX_HeatSteadyStateLinear>: public AX_FETISystem
 		eslog::checkpointln("FETI: SET B1");
 		setHeatTransferKernel(this, step);
 		eslog::checkpointln("FETI: SET KERNELS");
+		eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 		feti.set(step, solver.K, regularization, equalityConstraints);
 		eslog::endln("FETI: LINEAR SYSTEM SET");
 	}
