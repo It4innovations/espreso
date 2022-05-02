@@ -1,6 +1,10 @@
 
 import sys, os, logging, subprocess, types
 
+libs_blas=[ "blas", "mkl" ]
+libs_spblas=[ "mkl" ]
+libs_solvers=[ "mkl", "pardiso", "cxsparse" ]
+
 def configure(ctx):
     ctx.env.with_gui = ctx.options.with_gui
     ctx.env.static = ctx.options.static
@@ -9,7 +13,9 @@ def configure(ctx):
 
     ctx.msg("Setting int width to", ctx.options.intwidth)
     ctx.msg("Setting build mode to", ctx.options.mode)
-    ctx.msg("Setting solver to", ctx.options.solver)
+    ctx.msg("Setting BLAS library to", ctx.options.use_blas)
+    ctx.msg("Setting SpBLAS library to", ctx.options.use_spblas)
+    ctx.msg("Setting sparse solver library to", ctx.options.use_solver)
 
     """ Set compilers """
     ctx.find_program(ctx.options.mpicxx, var="MPICXX")
@@ -21,7 +27,6 @@ def configure(ctx):
     ctx.env.CXX = ctx.env.LINK_CXX = ctx.env.MPICXX
 
     """ Set default compilers flags"""
-
     ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
     ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
 
@@ -51,10 +56,9 @@ def configure(ctx):
     """ Recurse to third party libraries wrappers"""
     recurse(ctx)
 
-    if ctx.options.solver.upper() == "PARDISO" and "HAVE_PARDISO" not in ctx.env.DEFINES_PARDISO:
-        ctx.options.solver = "mkl"
-        Logs.error("Cannot find PARDISO library. Set --pardiso=PATH_TO_PARDISO to use PARDISO solver")
-    ctx.env["DEFINES_SOLVER"] = [ "SOLVER_" + ctx.options.solver.upper() ]
+    ctx.env.append_unique("DEFINES_"+ctx.options.use_blas.upper(), "USE_BLAS_"+ctx.options.use_blas.upper())
+    ctx.env.append_unique("DEFINES_"+ctx.options.use_spblas.upper(), "USE_SPBLAS_"+ctx.options.use_spblas.upper())
+    ctx.env.append_unique("DEFINES_"+ctx.options.use_solver.upper(), "USE_SOLVER_"+ctx.options.use_solver.upper())
 
     if ctx.options.with_nvtx:
         ctx.env.append_unique("CXXFLAGS", [ "-DUSE_NVTX" ]) # NVTX profiling tags
@@ -79,27 +83,6 @@ def build(ctx):
     # find better solution by waf
     ctx.env["STLIB_MARKER"] = ["-Wl,-Bstatic,--start-group"]
     ctx.env.prepend_value("SHLIB_MARKER", "-Wl,--end-group")
-
-#     fetisources = (
-#        "src/feti/dataholder.cpp",
-#        "src/feti/generic/Domain.cpp",
-#        "src/feti/generic/SparseMatrix.cpp",
-#        "src/feti/generic/utils.cpp",
-#        "src/feti/generic/timeeval.cpp",
-#        "src/feti/generic/FETISystemSolver.cpp",
-#        "src/feti/specific/cluster.cpp",
-#        "src/feti/specific/itersolver.cpp",
-#        "src/feti/specific/cpu/clustercpu.cpp",
-#        "src/feti/specific/cpu/itersolvercpu.cpp",
-#        "src/feti/specific/cpu/DenseSolverMKL.cpp",
-#     )
-
-#     if ctx.env["DEFINES_SOLVER"][0] == "SOLVER_MKL":
-#         feti = fetisources + ("src/feti/specific/cpu/SparseSolverMKL.cpp",)
-#     if ctx.env["DEFINES_SOLVER"][0] == "SOLVER_PARDISO":
-#         feti = fetisources + ("src/feti/specific/cpu/SparseSolverPARDISO.cpp",)
-#     if ctx.env["DEFINES_SOLVER"][0] == "SOLVER_CUDA":
-#         feti = fetisources + ("src/feti/specific/cpu/SparseSolverMKL.cpp", "src/feti/specific/acc/clusterGPU.cpp", "src/feti/specific/acc/itersolverGPU.cpp",)
 
     features = "cxx cxxshlib"
     ctx.lib = ctx.shlib
@@ -152,10 +135,9 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/analysis/**/*.cpp'), "analysis")
 #     ctx.build_espreso(ctx.path.ant_glob('src/physics/**/*.cpp'), "physics")
     ctx.build_espreso(ctx.path.ant_glob('src/morphing/**/*.cpp'), "devel")
-    ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math")
-    ctx.build_espreso(ctx.path.ant_glob('src/math2/**/*.cpp'), "math2")
+    ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "MKL", "PARDISO" ])
     ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
-    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL", "PARDISO" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cuda/**/*.cpp'), "wcuda", [ "CUDA" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'), "whypre", [ "HYPRE" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mklpdss/**/*.cpp'), "wmklpdss", [ "MKLPDSS", "MKL" ])
@@ -163,18 +145,17 @@ def build(ctx):
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/superlu/**/*.cpp'), "wsuperlu", [ "SUPERLU", "MKL" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/wsmp/**/*.cpp'), "wwsmp", [ "WSMP" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/csparse/**/*.cpp'), "wcsparse", [ "CSPARSE" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cxsparse/**/*.cpp'), "wcxsparse", [ "CXSPARSE" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/bem/**/*.cpp'), "wbem", [ "BEM" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/nvtx/**/*.cpp'), "wnvtx", [ "NVTX" ])
-    if ctx.env["HAVE_MATH"]:
 #         if ctx.env.NVCC:
 #             ctx.build_espreso(ctx.path.ant_glob('src/feti/specific/acc/**/*.cu'), "cudakernels", [ "CUDA" ])
 #         ctx.build_espreso(feti, "feti", [ "SOLVER", "PARDISO", "MKL" ])
-        ctx.build_espreso(ctx.path.ant_glob('src/axfeti/**/*.cpp'), "axfeti", [ "MKL" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/axfeti/**/*.cpp'), "axfeti", [ "MKL", "PARDISO", "CXSPARSE" ])
 
     ctx.program(source="src/app/ecfchecker.cpp", target="ecfchecker", use=ctx.checker)
     ctx.program(source="src/app/mesio.cpp", target="mesio", use=ctx.checker + ctx.mesio, stlib=ctx.options.stlibs, lib=ctx.options.libs)
-    if ctx.env["HAVE_MATH"]:
-        ctx.program(source="src/app/espreso.cpp",target="espreso", use=ctx.checker + ctx.mesio + ctx.espreso, stlib=ctx.options.stlibs, lib=ctx.options.libs)
+    ctx.program(source="src/app/espreso.cpp",target="espreso", use=ctx.checker + ctx.mesio + ctx.espreso, stlib=ctx.options.stlibs, lib=ctx.options.libs)
 
 #         ctx.lib(source="src/api/wrapper.feti4i.cpp", target="feti4i", includes="include", use=ctx.checker + ctx.mesio + ctx.espreso + ["API"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
 #         ctx.program(source=["src/api/api.feti4i.cpp", "src/api/api.feti4i.dataprovider.cpp"], target="test.feti4i", includes="include", use=ctx.checker + ctx.mesio + ctx.espreso + ["API", "feti4i"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
@@ -198,8 +179,12 @@ def options(opt):
     opt.compiler = opt.add_option_group("Compiler options")
     opt.decomposers = opt.add_option_group("Third party graph partition tools")
     opt.math = opt.add_option_group("Third party math libraries")
-    opt.solvers = opt.add_option_group("Third party solvers")
+    opt.solvers = opt.add_option_group("Third party sparse solvers")
     opt.other = opt.add_option_group("Other third party libraries")
+
+    opt.math.add_option("--use_blas", action="store", default="mkl", choices=libs_blas, help="Set BLAS library to use: {} [default: %default].".format(libs_blas))
+    opt.math.add_option("--use_spblas", action="store", default="mkl", choices=libs_spblas, help="Set SpBLAS library to use: {} [default: %default].".format(libs_spblas))
+    opt.solvers.add_option("--use_solver", action="store", default="mkl", choices=libs_solvers, help="Set sparse solver library to use: {} [default: %default].".format(libs_solvers))
 
     opt.compiler.add_option("--mpicxx",
         action="store",
@@ -271,39 +256,19 @@ def options(opt):
     recurse(opt)
 
 def print_available(ctx):
-    def _print(msg, err, libs, color="RED"):
+    def _print(msg, libs):
         libs = [lib for lib in libs if "HAVE_" + lib.upper() in ctx.env["DEFINES_" + lib.upper()]]
         ctx.start_msg(msg)
-        if len(libs) == 0:
-            ctx.end_msg(err, color=color)
-        else:
-            ctx.end_msg("[ " + ", ".join(libs) + " ]", color="BLUE")
-        return bool(len(libs))
+        ctx.end_msg("[ " + ", ".join(libs) + " ]", color="BLUE")
 
-    ctx.env["HAVE_MESH_GENERATOR"] = _print(
-        "Available tools for mesh generation",
-        "NOT FOUND",
-        [ "gmsh", "nglib" ],
-        "YELLOW")
-
-    ctx.env["HAVE_DECOMPOSERS"] = _print(
-        "Available graph partitioning tools",
-        "NOT FOUND [ESPRESO FUNCTIONALITY IS SIGNIFICANTLY LIMITED]",
-        [ "metis", "parmetis", "scotch", "ptscotch", "kahip" ])
-    ctx.env["HAVE_MATH"] = _print(
-        "Available math libraries",
-        "NOT FOUND [ESPRESO SOLVER CANNOT BE COMPILED]",
-        [ "mkl" ])
-    _print(
-        "Available third party solvers",
-        "NOT FOUND",
-        [ "mklpdss", "hypre", "pardiso", "superlu", "wsmp", "csparse" ],
-        "YELLOW")
-    _print(
-        "Available miscellaneous libraries",
-        "NOT FOUND",
-        [ "pthread", "hdf5", "bem", "catalyst", "cuda" ],
-        "YELLOW")
+    _print("Available mesh generators", [ "gmsh", "nglib" ])
+    _print("Available graph partitioners", [ "metis", "scotch", "kahip"])
+    _print("Available distributed graph partitioners", [ "parmetis", "ptscotch" ])
+    _print("Available BLAS libraries", libs_blas)
+    _print("Available SpBLAS libraries", libs_spblas)
+    _print("Available sparse solvers", libs_solvers)
+    _print("Available distributed sparse solvers", [ "mklpdss", "hypre", "superlu", "wsmp" ])
+    _print("Available miscellaneous libraries", [ "hdf5", "pthread" ])
 
 """ Recurse to third party libraries wrappers"""
 def recurse(ctx):
@@ -328,6 +293,7 @@ def recurse(ctx):
     ctx.recurse("src/wrappers/superlu")
     ctx.recurse("src/wrappers/wsmp")
     ctx.recurse("src/wrappers/csparse")
+    ctx.recurse("src/wrappers/cxsparse")
 
     """ Other """
     ctx.recurse("src/wrappers/pthread")
@@ -377,7 +343,7 @@ def link_cxx(self, *k, **kw):
     header = dict()
     self.env.stash()
     if "header_name" in kw:
-        header = dict(header_name=kw["header_name"], define_name="", defines=["HAVE_" + kw["name"].upper()], includes=includes)
+        header = dict(header_name=kw["header_name"], define_name="", includes=includes)
         header.update(general)
         header["msg"] = "Checking for '{0}' header".format(kw["name"])
         if not self.check_cxx(**header):
@@ -406,6 +372,7 @@ def link_cxx(self, *k, **kw):
                 self.env.revert()
                 return False
 
+    self.env.append_unique("DEFINES_"+kw["name"].upper(), "HAVE_" + kw["name"].upper())
     return True
 
 from waflib.TaskGen import after_method, feature

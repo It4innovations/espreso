@@ -3,7 +3,7 @@ def options(opt):
     opt.other.add_option("--nglib", action="store", type="string", metavar="NGLIB_ROOT", default="", help="Path to Netgen library.")
 
 def configure(ctx):
-    if "HAVE_GMSH" in ctx.env["DEFINES_GMSH"]:
+    if "HAVE_GMSH" in ctx.env.DEFINES_GMSH:
         ctx.msg("Checking for 'nglib' header", "skipped (incompatible with GMSH)", color="YELLOW")
         return
     if ctx.link_cxx(name="nglib", header_name="cstddef nglib.h", libs=["nglib"], root=ctx.options.nglib):

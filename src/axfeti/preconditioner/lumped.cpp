@@ -3,7 +3,7 @@
 
 #include "esinfo/eslog.hpp"
 
-using namespace espreso;
+namespace espreso {
 
 template <typename T>
 static void _info(Lumped<T> *dual)
@@ -36,3 +36,5 @@ template <> void Lumped<std::complex<double> >::info() { _info<std::complex<doub
 
 template <> void Lumped<double>::update() { _update<double>(this); }
 template <> void Lumped<std::complex<double> >::update() { _update<std::complex<double> >(this); }
+
+}

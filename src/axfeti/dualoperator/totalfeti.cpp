@@ -49,7 +49,7 @@ static void _set(TotalFETI<T> *dual)
 
 	#pragma omp parallel for
 	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
-		math::commit(dual->Kplus[d]);
+		math::initSolver(dual->Kplus[d]);
 		math::symbolicFactorization(dual->Kplus[d]);
 	}
 	eslog::checkpointln("FETI: TFETI SYMBOLIC FACTORIZATION");
@@ -60,7 +60,7 @@ static void _free(TotalFETI<T> *dual)
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
-		math::free(dual->Kplus[d]);
+		math::freeSolver(dual->Kplus[d]);
 	}
 }
 

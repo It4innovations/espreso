@@ -5,7 +5,6 @@
 
 #ifdef HAVE_MKL
 #include "mkl_lapacke.h"
-#endif
 
 using namespace espreso;
 
@@ -60,3 +59,5 @@ using namespace espreso;
 //	LAPACKE_dgesv(LAPACK_ROW_MAJOR, nra, ncb, a, nra, ipiv, b, ncb);
 //#endif
 //}
+
+#endif

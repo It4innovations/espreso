@@ -87,6 +87,7 @@ bool _call(MKLPDSS<T> &mklpdss, esint phase)
 	}
 	return mklpdss.external->error == 0;
 #endif
+	return false;
 }
 
 template<typename T>
@@ -204,6 +205,7 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 	eslog::solver(" = PREPARE PERSISTENT DATA (SYMBOLIC FACTORIZATION)                               %8.3f s = \n", eslog::time() - start);
 	return status;
 #endif
+	return false;
 }
 
 template<typename T>
@@ -232,6 +234,7 @@ bool _update(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 	eslog::solver("       - NUMERICAL FACTORIZATION                                            %8.3f s -  \n", eslog::time() - start);
 	return status;
 #endif
+	return false;
 }
 
 template<typename T>
@@ -246,6 +249,7 @@ bool _solve(MKLPDSS<T> &mklpdss, const Vector_Distributed<Vector_Dense, T> &b, V
 	eslog::solver("       - SOLVER TIME                                                        %8.3f s -  \n", eslog::time() - start);
 	return status;
 #endif
+	return false;
 }
 
 template<typename T>

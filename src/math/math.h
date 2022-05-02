@@ -1,6 +1,6 @@
 
-#ifndef SRC_MATH2_MATH2_H_
-#define SRC_MATH2_MATH2_H_
+#ifndef SRC_MATH_MATH_H_
+#define SRC_MATH_MATH_H_
 
 #include "esinfo/eslog.h"
 #include "primitives/vector_dense.h"
@@ -9,31 +9,14 @@
 #include "primitives/matrix_csr.h"
 #include "primitives/matrix_ijv.h"
 
+#include "wrappers/math.blas.h"
+#include "wrappers/math.spblas.h"
+#include "wrappers/math.solver.h"
+
 #include <complex>
 
 namespace espreso {
 namespace math { // interface to wrappers
-
-	// utility functions allowing the Intel inspector-executor model
-	template <typename T> void commit(Matrix_Dense<T> &x);
-	template <typename T> void commit(Matrix_CSR<T> &x);
-	template <typename T> void commit(Matrix_IJV<T> &x);
-
-	template <typename T> void free(Matrix_Dense<T> &x);
-	template <typename T> void free(Matrix_CSR<T> &x);
-	template <typename T> void free(Matrix_IJV<T> &x);
-
-	template <typename T> void symbolicFactorization(const Matrix_CSR<T> &x);
-	template <typename T> void numericalFactorization(const Matrix_CSR<T> &x);
-	template <typename T> void solve(const Matrix_CSR<T> &x, Vector_Dense<T> &rhs, Vector_Dense<T> &solution);
-	template <typename T> void solve(const Matrix_CSR<T> &x, Matrix_Dense<T> &rhs, Matrix_Dense<T> &solution);
-
-	// y = alpha * A * x + beta * y
-	template <typename T> void apply(Vector_Dense<T> &y, const T &alpha, const Matrix_Dense<T> &a, const T &beta, const Vector_Dense<T> &x);
-	template <typename T> void apply(Vector_Dense<T> &y, const T &alpha, const Matrix_CSR<T>   &a, const T &beta, const Vector_Dense<T> &x);
-	template <typename T> void apply(Vector_Dense<T> &y, const T &alpha, const Matrix_IJV<T>   &a, const T &beta, const Vector_Dense<T> &x);
-	// y = alpha * At * x + beta * y
-	template <typename T> void applyT(Vector_Dense<T> &y, const T &alpha, const Matrix_Dense<T> &a, const T &beta, const Vector_Dense<T> &x);
 
 	// x = value
 	template <typename T>
@@ -43,28 +26,6 @@ namespace math { // interface to wrappers
 			x[i] = value;
 		}
 	}
-
-	// x = y
-	template <typename T>
-	void copy(const esint size, T *x, const int incX, const T *y, const int incY);
-
-	// x *= alpha
-	template <typename T>
-	void scale(const esint size, const T &alpha, T *x, const int incX);
-
-	// x += alpha * y
-	template <typename T>
-	void add(const esint size, T *x, const int incX, const T &alpha, const T *y, const int incY);
-
-	template <typename T>
-	T dot(const esint size, const T *x, const int incX, const T *y, const int incY);
-
-	template <typename T>
-	T norm(const esint size, const T *x, const int incX);
-
-	// x = alpha * y + beta * z
-//	template <typename T>
-//	void sum(const esint size, T *x, const esint incX, const T &alpha, const T *y, const esint incY);
 
 } // math (interface to wrappers)
 } // espreso
@@ -77,24 +38,6 @@ namespace math {
 	template <typename T> void set(Matrix_Dense<T>  &x, const T &value) { set(x.nrows * x.ncols, x.vals, 1, value); }
 	template <typename T> void set(Matrix_CSR<T>    &x, const T &value) { set(x.nnz            , x.vals, 1, value); }
 	template <typename T> void set(Matrix_IJV<T>    &x, const T &value) { set(x.nnz            , x.vals, 1, value); }
-
-	template <typename T> void copy(Vector_Dense<T>  &x, const Vector_Dense<T>  &y) { copy(x.size           , x.vals, 1, y.vals, 1); }
-	template <typename T> void copy(Vector_Sparse<T> &x, const Vector_Sparse<T> &y) { copy(x.nnz            , x.vals, 1, y.vals, 1); }
-	template <typename T> void copy(Matrix_Dense<T>  &x, const Matrix_Dense<T>  &y) { copy(x.nrows * x.ncols, x.vals, 1, y.vals, 1); }
-	template <typename T> void copy(Matrix_CSR<T>    &x, const Matrix_CSR<T>    &y) { copy(x.nnz            , x.vals, 1, y.vals, 1); }
-	template <typename T> void copy(Matrix_IJV<T>    &x, const Matrix_IJV<T>    &y) { copy(x.nnz            , x.vals, 1, y.vals, 1); }
-
-	template <typename T> void scale(const T &alpha, Vector_Dense<T>  &x) { scale(x.size           , alpha, x.vals, 1); }
-	template <typename T> void scale(const T &alpha, Vector_Sparse<T> &x) { scale(x.nnz            , alpha, x.vals, 1); }
-	template <typename T> void scale(const T &alpha, Matrix_Dense<T>  &x) { scale(x.nrows * x.ncols, alpha, x.vals, 1); }
-	template <typename T> void scale(const T &alpha, Matrix_CSR<T>    &x) { scale(x.nnz            , alpha, x.vals, 1); }
-	template <typename T> void scale(const T &alpha, Matrix_IJV<T>    &x) { scale(x.nnz            , alpha, x.vals, 1); }
-
-	template <typename T> void add(Vector_Dense<T>  &x, const T &alpha, const Vector_Dense<T>  &y) { add(x.size           , x.vals, 1, alpha, y.vals, 1); }
-	template <typename T> void add(Vector_Sparse<T> &x, const T &alpha, const Vector_Sparse<T> &y) { add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
-	template <typename T> void add(Matrix_Dense<T>  &x, const T &alpha, const Matrix_Dense<T>  &y) { add(x.nrows * x.ncols, x.vals, 1, alpha, y.vals, 1); }
-	template <typename T> void add(Matrix_CSR<T>    &x, const T &alpha, const Matrix_CSR<T>    &y) { add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
-	template <typename T> void add(Matrix_IJV<T>    &x, const T &alpha, const Matrix_IJV<T>    &y) { add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
 
 	template <typename T> void combine(Matrix_CSR<T> &C, const Matrix_CSR<T> &A, const Matrix_CSR<T> &B)
 	{
@@ -168,12 +111,6 @@ namespace math {
 		}
 	}
 
-	template <typename T> T dot(const Vector_Dense<T>  &x, const Vector_Dense<T>  &y) { return dot(x.size, x.vals, 1, y.vals, 1); }
-	template <typename T> T dot(const Vector_Sparse<T> &x, const Vector_Sparse<T> &y) { return dot(x.nnz , x.vals, 1, y.vals, 1); }
-
-	template <typename T> T norm(const Vector_Dense<T>  &x) { return norm(x.size, x.vals, 1); }
-	template <typename T> T norm(const Vector_Sparse<T> &x) { return norm(x.nnz , x.vals, 1); }
-
 	template <typename T> T max(const Vector_Dense<T> &x)
 	{
 		T max = x.vals[0];
@@ -196,13 +133,20 @@ namespace math {
 		return max;
 	}
 
-	template <typename T> void orthonormalize(Matrix_Dense<T> &m);
+	template <typename T> void orthonormalize(Matrix_Dense<T> &m)
+	{
+		for (esint r = 0; r < m.nrows; ++r) {
+			for (esint rr = 0; rr < r; ++rr) {
+				double scale = math::dot(m.ncols, m.vals + rr * m.ncols, 1, m.vals + r * m.ncols, 1) / math::dot(m.ncols, m.vals + rr * m.ncols, 1, m.vals + rr * m.ncols, 1);
+				math::add(m.ncols, m.vals + r * m.ncols, 1, -scale, m.vals + rr * m.ncols, 1);
+			}
+			math::scale(m.ncols, 1. / math::norm(m.ncols, m.vals + r * m.ncols, 1), m.vals + r * m.ncols, 1);
+		}
+	}
 
 	template <class T> void store(const T &x, const char* file);
 
 } // math
 } // espreso
 
-#include "math.hpp"
-
-#endif /* SRC_MATH2_MATH2_H_ */
+#endif /* SRC_MATH_MATH_H_ */

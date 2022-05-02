@@ -59,7 +59,7 @@ static void _set(OrthogonalTFETISymmetric<T> *projector)
 template <typename T>
 static void _free(OrthogonalTFETISymmetric<T> *projector)
 {
-	math::free(projector->GGt);
+	math::freeSolver(projector->GGt);
 }
 
 template <typename T>
@@ -352,7 +352,7 @@ static void _setSparseGGt(OrthogonalTFETISymmetric<T> *projector)
 
 	projector->GGt.shape = Matrix_Shape::UPPER;
 	projector->GGt.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-	math::commit(projector->GGt);
+	math::initSolver(projector->GGt);
 	math::symbolicFactorization(projector->GGt);
 
 	projector->invGGt.resize(projector->G.nrows, projector->GGt.ncols);

@@ -3,7 +3,7 @@
 
 #include "esinfo/eslog.hpp"
 
-using namespace espreso;
+namespace espreso {
 
 template <typename T>
 static void _info(WeightFunction<T> *dual)
@@ -36,3 +36,5 @@ template <> void WeightFunction<std::complex<double> >::info() { _info<std::comp
 
 template <> void WeightFunction<double>::update() { _update<double>(this); }
 template <> void WeightFunction<std::complex<double> >::update() { _update<std::complex<double> >(this); }
+
+}
