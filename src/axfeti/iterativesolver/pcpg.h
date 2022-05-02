@@ -14,7 +14,7 @@ public:
 	void info();
 	void solve(IterativeSolverInfo &info);
 
-	Vector_Dual<T> l, r, w, p;
+	Vector_Dual<T> l, r, w, y, z, p;
 
 	Vector_Dual<T> x, Fp;
 };

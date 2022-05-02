@@ -17,5 +17,4 @@ public:
 
 }
 
-
 #endif /* SRC_AXFETI_PRECONDITIONER_EMPTYPRECONDITIONER_H_ */

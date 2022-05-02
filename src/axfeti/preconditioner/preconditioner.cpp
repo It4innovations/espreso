@@ -1,7 +1,10 @@
 
 #include "preconditioner.h"
 
+#include "dirichlet.h"
 #include "emptypreconditioner.h"
+#include "lumped.h"
+#include "weightfunction.h"
 
 namespace espreso {
 
@@ -14,8 +17,17 @@ static Preconditioner<T>* _set(AX_FETI<T> *feti)
 		return new EmptyPreconditioner<T>(feti);
 		break;
 	case FETIConfiguration::PRECONDITIONER::LUMPED:
+		eslog::info(" = PRECONDITIONER                                                                     LUMPED = \n");
+		return new Lumped<T>(feti);
+		break;
 	case FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION:
+		eslog::info(" = PRECONDITIONER                                                            WEIGHT FUNCTION = \n");
+		return new WeightFunction<T>(feti);
+		break;
 	case FETIConfiguration::PRECONDITIONER::DIRICHLET:
+		eslog::info(" = PRECONDITIONER                                                                  DIRICHLET = \n");
+		return new Dirichlet<T>(feti);
+		break;
 	case FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET:
 	case FETIConfiguration::PRECONDITIONER::MAGIC:
 	default: return nullptr;
