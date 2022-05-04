@@ -35,25 +35,7 @@ struct Variable {
 	static bool create(ECFExpression &expr, size_t region);
 	static void clear();
 
-	static const Variable& get();
-
 	static void print();
-
-//	Variable(): offset{0}, increment{0}, val{nullptr}, isconst{0}, update{1}, isconst_interval{nullptr}, update_interval{nullptr} {}
-//	Variable(int offset, int increment, double *val, int isconst, int update): offset{offset}, increment{increment}, val{val}, isconst{isconst}, update{update}, isconst_interval{nullptr}, update_interval{nullptr} {}
-//	Variable(int offset, int increment, double *val, const std::vector<int> &isconst, const std::vector<int> &update): offset{offset}, increment{increment}, val{val}, isconst{0}, update{1}, isconst_interval{&isconst}, update_interval{&update} {}
-//
-//	int offset, increment;
-//	double *val;
-//
-//	int isconst, update;
-//	const std::vector<int> *isconst_interval, *update_interval;
-
-//	Variable() {}
-//	Variable(std::function<void(size_t interval, Evaluator::Params::General &param)> set, std::function<int(size_t interval)> update): set(set), update(update) {}
-//
-//	std::function<void(size_t interval, Evaluator::Params::General &param)> set;
-//	std::function<int(size_t interval)> update;
 
 	virtual ~Variable() {}
 

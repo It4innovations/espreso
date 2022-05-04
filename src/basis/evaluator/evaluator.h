@@ -22,32 +22,7 @@ public:
 			Variable *variable;
 		};
 
-		int _ncoors;
-		const double* _coors;
-		const double* _inittemp;
-		const double* _temp;
-		const double* _disp;
-		double _time;
-		double _frequency;
-
 		std::vector<General> general;
-
-		Params(): _ncoors(0), _coors(NULL), _inittemp(NULL), _temp(NULL), _disp(NULL), _time(step::time.current), _frequency(step::frequency.current) {}
-
-		int ncoords() { return _ncoors; }
-		const double* coords() { return _coors; }
-		const double* inittemp() { return _inittemp; }
-		const double* temp() { return _temp; }
-		double time() { return _time; }
-		double freq() { return _frequency; }
-		const double* disp() { return _disp; }
-
-		Params& coords(int ncoords, const double *coords) { _ncoors = ncoords; _coors = coords; return *this; }
-		Params& inittemp(const double *inittemp) { _inittemp = inittemp; return *this; }
-		Params& temp(const double *temp) { _temp = temp; return *this; }
-		Params& time(double  time) { _time = time; return *this; }
-		Params& freq(double  freq) { _frequency = freq; return *this; }
-		Params& disp(const double *disp) { _disp = disp; return *this; }
 	};
 
 	virtual Evaluator* copy() const { return new Evaluator(*this); }
@@ -124,12 +99,6 @@ public:
 	virtual double evaluate(double r) const { return 0; }
 
 	virtual std::string getEXPRTKForm() const { return ""; }
-
-	bool isConstant() const;
-	bool isCoordinateDependent() const;
-	bool isTimeDependent() const;
-	bool isFrequencyDependent() const;
-	bool isTemperatureDependent() const;
 
 	Params params;
 	std::vector<std::string> variables;
