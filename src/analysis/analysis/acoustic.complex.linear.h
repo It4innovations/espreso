@@ -22,6 +22,7 @@ public:
 	void analyze();
 	void run(step::Step &step);
 
+	step::Frequency frequency;
 	AcousticConfiguration &settings;
 	AcousticLoadStepConfiguration &configuration;
 

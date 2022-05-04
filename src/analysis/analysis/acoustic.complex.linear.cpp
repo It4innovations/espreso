@@ -25,19 +25,18 @@ void AX_AcousticComplexLinear::analyze()
 	eslog::info(" == PHYSICS                                                                        ACOUSTIC == \n");
 	eslog::info(" ============================================================================================= \n");
 
-	initSystem(system, this);
-	scheme.init(system);
-	assembler.init(scheme);
-
-	Variable::list.global.insert(std::make_pair("FREQUENCY", nullptr));
+	Variable::list.global.insert(std::make_pair("FREQUENCY", new FrequencyVariable(frequency)));
+	assembler.analyze();
 	info::mesh->output->updateMonitors(step::TYPE::FREQUENCY);
 }
 
 void AX_AcousticComplexLinear::run(step::Step &step)
 {
-	step::Frequency frequency;
+	initSystem(system, this);
+	eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
+	scheme.init(system);
+	assembler.connect(scheme);
 	scheme.initFrequency(frequency);
-	Variable::list.global["FREQUENCY"] = new FrequencyVariable(frequency);
 
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" = RUN THE SOLVER                       FREQUENCY: MIN %10.4f, MAX %10.4f, STEPS %3d = \n", configuration.harmonic_solver.min_frequency, configuration.harmonic_solver.max_frequency, configuration.harmonic_solver.num_samples);
@@ -52,7 +51,7 @@ void AX_AcousticComplexLinear::run(step::Step &step)
 		eslog::info(" = LOAD STEP %2d                                                         FREQUENCY %10.4f = \n", step::step.loadstep + 1, frequency.current);
 		eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 
-		assembler.evaluate();
+		assembler.evaluate(scheme);
 		scheme.composeSystem(frequency, system);
 		eslog::info("       = ----------------------------------------------------------------------------- = \n");
 		eslog::info("       = SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
@@ -62,7 +61,7 @@ void AX_AcousticComplexLinear::run(step::Step &step)
 
 		double solution = eslog::time();
 		scheme.extractSolution(frequency, system);
-		assembler.updateSolution();
+		assembler.updateSolution(scheme);
 		info::mesh->output->updateSolution(step, frequency);
 		eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
 		eslog::info("       = ----------------------------------------------------------------------------- = \n");

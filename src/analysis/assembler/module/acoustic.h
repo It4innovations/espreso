@@ -42,14 +42,11 @@ public:
 
 	AX_Acoustic(AX_Acoustic *previous, AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
 
-	void init(AX_Harmonic &scheme);
 	void analyze();
-	void evaluate();
 
-	void updateSolution();
-
-	Matrix_Type matrixType() { return Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC; }
-	bool hasKernel(int domain) { return true; }
+	void connect(AX_Harmonic &scheme);
+	void evaluate(AX_Harmonic &scheme);
+	void updateSolution(AX_Harmonic &scheme);
 
 	AcousticConfiguration &settings;
 	AcousticLoadStepConfiguration &configuration;
@@ -69,14 +66,6 @@ public:
 	ParametersBoundaryVectorFunction normals;
 
 	ParametersElements<1> elements;
-
-	struct Fragment {
-		Vector_Base<double> *rhs, *x, *dirichlet;
-	};
-
-	Matrix_Base<double> *K, *M, *C;
-	Fragment re, im;
-
 protected:
 	void initParameters();
 };

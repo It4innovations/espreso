@@ -34,7 +34,7 @@ void AX_HeatSteadyStateNonLinear::analyze()
 	eslog::info(" == PHYSICS                                                                   HEAT TRANSFER == \n");
 	eslog::info(" ============================================================================================= \n");
 
-	Variable::list.global.insert(std::make_pair("TIME", nullptr));
+	Variable::list.global.insert(std::make_pair("TIME", new TimeVariable(time)));
 	assembler.analyze();
 	info::mesh->output->updateMonitors(step::TYPE::TIME);
 }
@@ -45,10 +45,7 @@ void AX_HeatSteadyStateNonLinear::run(step::Step &step)
 	solver.init(system);
 	scheme.init(system);
 	assembler.connect(scheme);
-
-	step::Time time;
 	scheme.setTime(time, configuration.duration_time);
-	Variable::list.global["TIME"] = new TimeVariable(time);
 
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" = RUN THE SOLVER                                                DURATION TIME: %10.4f s = \n", configuration.duration_time);

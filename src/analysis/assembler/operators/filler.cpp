@@ -5,6 +5,7 @@
 #include "analysis/assembler/module/acoustic.h"
 #include "analysis/assembler/module/heattransfer.h"
 #include "analysis/scheme/steadystate.h"
+#include "analysis/scheme/harmonic.h"
 
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
@@ -52,58 +53,48 @@ void addFiller(AX_HeatTransfer &module, AX_SteadyState &scheme)
 	}
 }
 
-void addFiller(AX_Acoustic &module)
+void addFiller(AX_Acoustic &module, AX_Harmonic &scheme)
 {
-	if (module.K != nullptr) {
-		_add<1>(module, module.K, module.elements.stiffness);
-	}
-	if (module.M != nullptr) {
-		_add<1>(module, module.M, module.elements.mass);
-	}
-	if (module.C != nullptr) {
-		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-			if (info::mesh->boundaryRegions[r]->dimension && module.elements.boundary.mass.isSet(r)) {
-				for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
-					double *data = module.C->mapping.boundary[r][interval].data;
-					const esint *position = module.C->mapping.boundary[r][interval].position;
-					module.boundaryFiller[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, MatrixFullFiller>(r, interval, module.controller, module.elements.boundary.mass.regions[r], data, position));
-				}
+	_add<1>(module, scheme.K, module.elements.stiffness);
+	_add<1>(module, scheme.M, module.elements.mass);
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (info::mesh->boundaryRegions[r]->dimension && module.elements.boundary.mass.isSet(r)) {
+			for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
+				double *data = scheme.C->mapping.boundary[r][interval].data;
+				const esint *position = scheme.C->mapping.boundary[r][interval].position;
+				module.boundaryFiller[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, MatrixFullFiller>(r, interval, module.controller, module.elements.boundary.mass.regions[r], data, position));
 			}
 		}
 	}
 
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
 		if (module.monopoleSource.gp.isSet(interval)) {
-			module.elementFiller[interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, VectorFiller>(interval, module.controller, module.elements.monopole, module.re.rhs->mapping.elements[interval].data, module.re.rhs->mapping.elements[interval].position));
+			module.elementFiller[interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, VectorFiller>(interval, module.controller, module.elements.monopole, scheme.re.f->mapping.elements[interval].data, scheme.re.f->mapping.elements[interval].position));
 		}
 		if (module.dipoleSource.gp.isSet(interval)) {
-			module.elementFiller[interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, VectorFiller>(interval, module.controller, module.elements.dipole, module.re.rhs->mapping.elements[interval].data, module.re.rhs->mapping.elements[interval].position));
+			module.elementFiller[interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, VectorFiller>(interval, module.controller, module.elements.dipole, scheme.re.f->mapping.elements[interval].data, scheme.re.f->mapping.elements[interval].position));
 		}
 	}
 
-	if (module.re.rhs != nullptr) {
-		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-			if (info::mesh->boundaryRegions[r]->dimension && module.elements.boundary.rhs.isSet(r)) {
-				for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
-					module.boundaryFiller[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, VectorFiller>(r, interval, module.controller, module.elements.boundary.rhs.regions[r], module.re.rhs->mapping.boundary[r][interval].data, module.re.rhs->mapping.boundary[r][interval].position));
-				}
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (info::mesh->boundaryRegions[r]->dimension && module.elements.boundary.rhs.isSet(r)) {
+			for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
+				module.boundaryFiller[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, VectorFiller>(r, interval, module.controller, module.elements.boundary.rhs.regions[r], scheme.re.f->mapping.boundary[r][interval].data, scheme.re.f->mapping.boundary[r][interval].position));
 			}
-			
-			if (info::mesh->boundaryRegions[r]->dimension && module.acceleration.gp.isSet(r)) {
-				for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
-					module.boundaryFiller[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, VectorFiller>(r, interval, module.controller, module.proj_acceleration.gp.regions[r], module.re.rhs->mapping.boundary[r][interval].data, module.re.rhs->mapping.boundary[r][interval].position));
-				}
+		}
+
+		if (info::mesh->boundaryRegions[r]->dimension && module.acceleration.gp.isSet(r)) {
+			for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
+				module.boundaryFiller[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, 1, VectorFiller>(r, interval, module.controller, module.proj_acceleration.gp.regions[r], scheme.re.f->mapping.boundary[r][interval].data, scheme.re.f->mapping.boundary[r][interval].position));
 			}
 		}
 	}
 
-	if (module.re.dirichlet != nullptr) {
-		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-			if (module.pressure.node.isSet(r)) {
-				for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-					module.boundaryFiller[r][t].emplace_back(instantiate<AX_HeatTransfer::NGP, 1, VectorSetter>(r, t, module.controller, module.pressure.node.regions[r], module.re.dirichlet->mapping.boundary[r][t].data, module.re.dirichlet->mapping.boundary[r][t].position));
-					module.boundaryFiller[r][t].back()->isconst = false;
-				}
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (module.pressure.node.isSet(r)) {
+			for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+				module.boundaryFiller[r][t].emplace_back(instantiate<AX_HeatTransfer::NGP, 1, VectorSetter>(r, t, module.controller, module.pressure.node.regions[r], scheme.re.dirichlet->mapping.boundary[r][t].data, scheme.re.dirichlet->mapping.boundary[r][t].position));
+				module.boundaryFiller[r][t].back()->isconst = false;
 			}
 		}
 	}

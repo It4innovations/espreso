@@ -24,7 +24,7 @@
 using namespace espreso;
 
 AX_Acoustic::AX_Acoustic(AX_Acoustic *previous, AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), K{}, M{}, C{}, re{}, im{}
+: settings(settings), configuration(configuration)
 {
 
 }
@@ -39,21 +39,6 @@ void AX_Acoustic::initParameters()
 		ParametersAcousticPressure::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "ACOUSTIC_PRESSURE");
 		Variable::list.node["ACOUSTIC_PRESSURE"] = new OutputVariable(ParametersAcousticPressure::output, 0, 1);
 	}
-}
-
-void AX_Acoustic::init(AX_Harmonic &scheme)
-{
-	this->K = scheme.K;
-	this->M = scheme.M;
-	this->C = scheme.C;
-	this->re.rhs = scheme.re.f;
-	this->im.rhs = scheme.im.f;
-	this->re.x = scheme.re.x;
-	this->im.x = scheme.im.x;
-	this->re.dirichlet = scheme.re.dirichlet;
-	this->im.dirichlet = scheme.im.dirichlet;
-
-	analyze();
 }
 
 void AX_Acoustic::analyze()
@@ -98,16 +83,10 @@ void AX_Acoustic::analyze()
 	}
 
 
-	if (K != nullptr) {
-		acousticStiffness(*this);
-	}
-	if (M != nullptr) {
-		acousticMass(*this);
-	}
-	if (C != nullptr) {
-		// boundary conditions have to added according to boundary settings below
-//		acousticBoundaryMass(*this);
-	}
+	acousticStiffness(*this);
+	acousticMass(*this);
+	// boundary conditions have to added according to boundary settings below
+//	acousticBoundaryMass(*this);
 
 	if (configuration.normal_acceleration.size()) {
 		examineBoundaryParameter("NORMAL ACCELERATION", configuration.normal_acceleration, normalAcceleration.gp.externalValues);
@@ -138,8 +117,6 @@ void AX_Acoustic::analyze()
 		fromExpression(*this, dipoleSource.gp, dipoleSource.gp.externalValues);
 	}
 	
-	
-	
 	integration.weight.name = "integration.weight";
 	integration.N.name = "integration.N";
 	integration.dN.name = "integration.dN";
@@ -152,8 +129,6 @@ void AX_Acoustic::analyze()
 	
 	acousticRHS(*this);
 
-	addFiller(*this);
-
 	eslog::info(" ============================================================================================= \n");
 	if (correct) {
 		eslog::info("  PHYSICS CONFIGURED                                                               %8.3f s \n", eslog::time() - start);
@@ -163,17 +138,22 @@ void AX_Acoustic::analyze()
 	eslog::info(" ============================================================================================= \n");
 }
 
-void AX_Acoustic::evaluate()
+void AX_Acoustic::connect(AX_Harmonic &scheme)
+{
+	addFiller(*this, scheme);
+}
+
+void AX_Acoustic::evaluate(AX_Harmonic &scheme)
 {
 	controller.setUpdate();
-	reset(K, M, C, re.rhs, im.rhs, re.dirichlet, im.dirichlet);
+	reset(scheme.K, scheme.M, scheme.C, scheme.re.f, scheme.im.f, scheme.re.dirichlet, scheme.im.dirichlet);
 	iterate();
 	fill();
-	update(K, M, C, re.rhs, im.rhs, re.dirichlet, im.dirichlet);
+	update(scheme.K, scheme.M, scheme.C, scheme.re.f, scheme.im.f, scheme.re.dirichlet, scheme.im.dirichlet);
 	controller.resetUpdate();
 }
 
-void AX_Acoustic::updateSolution()
+void AX_Acoustic::updateSolution(AX_Harmonic &scheme)
 {
-	re.x->store(ParametersAcousticPressure::output->data);
+	scheme.re.x->store(ParametersAcousticPressure::output->data);
 }

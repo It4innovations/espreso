@@ -150,6 +150,12 @@ bool Variable::create(ECFExpression &expr)
 			map = &Variable::list.node;
 			variable = variable.substr(6);
 		}
+
+		if (Variable::list.global.find(variable) != Variable::list.global.end()) {
+			params.general.push_back(Evaluator::Params::General{nullptr, 0, 0, Variable::list.global.find(variable)->second});
+			continue;
+		}
+
 		switch (expr.scope) {
 		case ECFExpression::Scope::GLOBAL: map = &Variable::list.global; break;
 		case ECFExpression::Scope::ELEMENT: map = &Variable::list.element; break;
