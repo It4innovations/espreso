@@ -191,7 +191,9 @@ protected:
 
 	void _addInput(ParameterData &parameter, const Variable *v)
 	{
-		parameter.setConstness(false);
+		for (size_t i = 0; i < parameter.isconst.size(); ++i) {
+			parameter.isconst[i] &= v->isconst(i);
+		}
 		_get(parameter)->second.inputs.push_back(new InputVariable(-1, v));
 	}
 
@@ -204,7 +206,7 @@ protected:
 
 	void _addInput(int interval, ParameterData &parameter, const Variable *v)
 	{
-		parameter.isconst[interval] = false;
+		parameter.isconst[interval] &= v->isconst(interval);
 		_get(parameter)->second.inputs.push_back(new InputVariable(interval, v));
 	}
 
