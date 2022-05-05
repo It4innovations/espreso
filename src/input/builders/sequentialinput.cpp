@@ -20,6 +20,8 @@ SequentialInput::SequentialInput(MeshBuilder &mesh)
 	eslog::startln("BUILDER: BUILD SEQUENTIAL MESH", "BUILDER");
 	profiler::syncstart("sequential_input");
 
+	clip();
+
 	if (_meshData.removeDuplicates) {
 		searchDuplicateNodes();
 		coupleDuplicateNodes();
@@ -92,8 +94,6 @@ SequentialInput::SequentialInput(MeshBuilder &mesh)
 	info::mesh->neighborsWithMe.push_back(0);
 	profiler::synccheckpoint("fill_rank");
 	eslog::checkpointln("BUILDER: RANKS FILLED");
-
-	clip();
 
 	fillNodes();
 	profiler::synccheckpoint("fill_nodes");
