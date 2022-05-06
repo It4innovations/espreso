@@ -1,6 +1,0 @@
-
-def options(opt):
-    opt.solvers.add_option("--cxsparse", action="store", type="string", metavar="CS_ROOT", default="", help="Path to CXSPARSE root directory.")
-
-def configure(ctx):
-    ctx.link_cxx(name="cxsparse", header_name=["cs.h"], libs=["cxsparse"])

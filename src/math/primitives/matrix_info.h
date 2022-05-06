@@ -5,8 +5,8 @@
 namespace espreso {
 
 struct Indexing {
-	const static int CSR = 1;
-	const static int IJV = 1;
+	const static int CSR;
+	const static int IJV;
 };
 
 enum Matrix_Type: int {

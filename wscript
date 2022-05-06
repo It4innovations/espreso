@@ -2,8 +2,8 @@
 import sys, os, logging, subprocess, types
 
 libs_blas=[ "blas", "mkl" ]
-libs_spblas=[ "mkl" ]
-libs_solvers=[ "mkl", "pardiso", "cxsparse" ]
+libs_spblas=[ "mkl", "suitesparse" ]
+libs_solvers=[ "mkl", "pardiso", "suitesparse" ]
 
 def configure(ctx):
     ctx.env.with_gui = ctx.options.with_gui
@@ -38,8 +38,6 @@ def configure(ctx):
         ctx.env.append_unique("DEFINES_API", [ "FETI4I_INT_WIDTH=64", "MESIO_INT_WIDTH=64" ])
 
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-Wall" ])
-    ctx.env.append_unique("CXXFLAGS_PHYSICS", [ "-ffast-math" ])
-
     ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
     if ctx.options.mode == "release":
         ctx.env.append_unique("CXXFLAGS", [ "-O3", "-g", "-march=native" ])
@@ -59,6 +57,9 @@ def configure(ctx):
     ctx.env.append_unique("DEFINES_"+ctx.options.use_blas.upper(), "USE_BLAS_"+ctx.options.use_blas.upper())
     ctx.env.append_unique("DEFINES_"+ctx.options.use_spblas.upper(), "USE_SPBLAS_"+ctx.options.use_spblas.upper())
     ctx.env.append_unique("DEFINES_"+ctx.options.use_solver.upper(), "USE_SOLVER_"+ctx.options.use_solver.upper())
+    ctx.env.use_blas = ctx.options.use_blas;
+    ctx.env.use_spblas = ctx.options.use_spblas;
+    ctx.env.use_solver = ctx.options.use_solver;
 
     if ctx.options.with_nvtx:
         ctx.env.append_unique("CXXFLAGS", [ "-DUSE_NVTX" ]) # NVTX profiling tags
@@ -135,7 +136,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/analysis/**/*.cpp'), "analysis")
 #     ctx.build_espreso(ctx.path.ant_glob('src/physics/**/*.cpp'), "physics")
     ctx.build_espreso(ctx.path.ant_glob('src/morphing/**/*.cpp'), "devel")
-    ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "MKL", "PARDISO" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "MKL", "PARDISO", "SUITESPARSE" ])
     ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL", "PARDISO" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cuda/**/*.cpp'), "wcuda", [ "CUDA" ])
@@ -145,13 +146,13 @@ def build(ctx):
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/superlu/**/*.cpp'), "wsuperlu", [ "SUPERLU", "MKL" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/wsmp/**/*.cpp'), "wwsmp", [ "WSMP" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/csparse/**/*.cpp'), "wcsparse", [ "CSPARSE" ])
-    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cxsparse/**/*.cpp'), "wcxsparse", [ "CXSPARSE" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/suitesparse/**/*.cpp'), "wsuitesparse", [ "SUITESPARSE" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/bem/**/*.cpp'), "wbem", [ "BEM" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/nvtx/**/*.cpp'), "wnvtx", [ "NVTX" ])
 #         if ctx.env.NVCC:
 #             ctx.build_espreso(ctx.path.ant_glob('src/feti/specific/acc/**/*.cu'), "cudakernels", [ "CUDA" ])
 #         ctx.build_espreso(feti, "feti", [ "SOLVER", "PARDISO", "MKL" ])
-    ctx.build_espreso(ctx.path.ant_glob('src/axfeti/**/*.cpp'), "axfeti", [ "MKL", "PARDISO", "CXSPARSE" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/axfeti/**/*.cpp'), "axfeti")
 
     ctx.program(source="src/app/ecfchecker.cpp", target="ecfchecker", use=ctx.checker)
     ctx.program(source="src/app/mesio.cpp", target="mesio", use=ctx.checker + ctx.mesio, stlib=ctx.options.stlibs, lib=ctx.options.libs)
@@ -182,9 +183,9 @@ def options(opt):
     opt.solvers = opt.add_option_group("Third party sparse solvers")
     opt.other = opt.add_option_group("Other third party libraries")
 
-    opt.math.add_option("--use_blas", action="store", default="mkl", choices=libs_blas, help="Set BLAS library to use: {} [default: %default].".format(libs_blas))
-    opt.math.add_option("--use_spblas", action="store", default="mkl", choices=libs_spblas, help="Set SpBLAS library to use: {} [default: %default].".format(libs_spblas))
-    opt.solvers.add_option("--use_solver", action="store", default="mkl", choices=libs_solvers, help="Set sparse solver library to use: {} [default: %default].".format(libs_solvers))
+    opt.math.add_option("--use-blas", action="store", default="mkl", choices=libs_blas, help="Set BLAS library to use: {} [default: %default].".format(libs_blas))
+    opt.math.add_option("--use-spblas", action="store", default="mkl", choices=libs_spblas, help="Set SpBLAS library to use: {} [default: %default].".format(libs_spblas))
+    opt.solvers.add_option("--use-solver", action="store", default="mkl", choices=libs_solvers, help="Set sparse solver library to use: {} [default: %default].".format(libs_solvers))
 
     opt.compiler.add_option("--mpicxx",
         action="store",
@@ -293,7 +294,7 @@ def recurse(ctx):
     ctx.recurse("src/wrappers/superlu")
     ctx.recurse("src/wrappers/wsmp")
     ctx.recurse("src/wrappers/csparse")
-    ctx.recurse("src/wrappers/cxsparse")
+    ctx.recurse("src/wrappers/suitesparse")
 
     """ Other """
     ctx.recurse("src/wrappers/pthread")
@@ -321,11 +322,13 @@ def show(ctx):
     ctx.msg("CXX", " ".join(ctx.env.CXX))
     ctx.msg("DEFINES", " ".join(ctx.env.DEFINES))
     ctx.msg("CXXFLAGS", " ".join(ctx.env.CXXFLAGS))
+    ctx.msg("BLAS", ctx.env.use_blas)
+    ctx.msg("SpBLAS", ctx.env.use_spblas)
+    ctx.msg("sparse solver", ctx.env.use_solver)
     print_available(ctx)
 
 def env(ctx):
     print(ctx.env)
-
 
 def link_cxx(self, *k, **kw):
     includes = []

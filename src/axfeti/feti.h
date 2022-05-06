@@ -56,7 +56,7 @@ public:
 
 	void info() const;
 
-	bool set(const step::Step &step, Matrix_FETI<Matrix_CSR, T> &K, const Regularization &regularization, const EqualityConstraints &equalityConstraints);
+	bool set(const step::Step &step, Matrix_FETI<Matrix_CSR, T> &K, Regularization &regularization, EqualityConstraints &equalityConstraints);
 	bool update(const step::Step &step, Matrix_FETI<Matrix_CSR, T> &K, Vector_FETI<Vector_Dense, T> &f);
 	bool solve(const step::Step &step, Vector_FETI<Vector_Dense, T> &x);
 
@@ -64,9 +64,9 @@ public:
 	SystemInfo sinfo;
 
 	const step::Step *step = nullptr;
-	const Matrix_FETI<Matrix_CSR, T> *K = nullptr;
-	const Regularization *regularization = nullptr;
-	const EqualityConstraints *equalityConstraints = nullptr;
+	Matrix_FETI<Matrix_CSR, T> *K = nullptr;
+	Regularization *regularization = nullptr;
+	EqualityConstraints *equalityConstraints = nullptr;
 
 	Vector_FETI<Vector_Dense, T> *f = nullptr;
 	Vector_FETI<Vector_Dense, T> *x = nullptr;

@@ -43,7 +43,7 @@ void _info(const AX_FETI<T> *feti)
 }
 
 template <typename T>
-bool _set(AX_FETI<T> *feti, const step::Step &step, const Matrix_FETI<Matrix_CSR, T> &K, const typename AX_FETI<T>::Regularization &regularization, const typename AX_FETI<T>::EqualityConstraints &equalityConstraints)
+bool _set(AX_FETI<T> *feti, const step::Step &step, Matrix_FETI<Matrix_CSR, T> &K, typename AX_FETI<T>::Regularization &regularization, typename AX_FETI<T>::EqualityConstraints &equalityConstraints)
 {
 	double start = eslog::time();
 	feti->step = &step;
@@ -69,7 +69,7 @@ bool _set(AX_FETI<T> *feti, const step::Step &step, const Matrix_FETI<Matrix_CSR
 }
 
 template <typename T>
-bool _update(AX_FETI<T> *feti, const step::Step &step, const Matrix_FETI<Matrix_CSR, T> &K, Vector_FETI<Vector_Dense, T> &f)
+bool _update(AX_FETI<T> *feti, const step::Step &step, Matrix_FETI<Matrix_CSR, T> &K, Vector_FETI<Vector_Dense, T> &f)
 {
 	double start = eslog::time();
 	feti->f = &f;
@@ -122,8 +122,8 @@ static void _free(AX_FETI<T> *feti)
 	delete feti->preconditioner;
 }
 
-template <> bool AX_FETI<double>::set(const step::Step &step, Matrix_FETI<Matrix_CSR, double> &K, const Regularization &regularization, const EqualityConstraints &equalityConstraints) { return _set(this, step, K, regularization, equalityConstraints); }
-template <> bool AX_FETI<std::complex<double> >::set(const step::Step &step, Matrix_FETI<Matrix_CSR, std::complex<double> > &K, const Regularization &regularization, const EqualityConstraints &equalityConstraints) { return _set(this, step, K, regularization, equalityConstraints); }
+template <> bool AX_FETI<double>::set(const step::Step &step, Matrix_FETI<Matrix_CSR, double> &K, Regularization &regularization, EqualityConstraints &equalityConstraints) { return _set(this, step, K, regularization, equalityConstraints); }
+template <> bool AX_FETI<std::complex<double> >::set(const step::Step &step, Matrix_FETI<Matrix_CSR, std::complex<double> > &K, Regularization &regularization, EqualityConstraints &equalityConstraints) { return _set(this, step, K, regularization, equalityConstraints); }
 
 template <> bool AX_FETI<double>::update(const step::Step &step, Matrix_FETI<Matrix_CSR, double> &K, Vector_FETI<Vector_Dense, double> &f) { return _update(this, step, K, f); }
 template <> bool AX_FETI<std::complex<double> >::update(const step::Step &step, Matrix_FETI<Matrix_CSR, std::complex<double> > &K, Vector_FETI<Vector_Dense, std::complex<double> > &f) { return _update(this, step, K, f); }
