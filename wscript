@@ -10,12 +10,8 @@ def configure(ctx):
     ctx.env.static = ctx.options.static
     ctx.options.with_cuda = ctx.options.with_cuda or ctx.options.solver.upper() == "CUDA"
     ctx.link_cxx = types.MethodType(link_cxx, ctx)
-
-    ctx.msg("Setting int width to", ctx.options.intwidth)
-    ctx.msg("Setting build mode to", ctx.options.mode)
-    ctx.msg("Setting BLAS library to", ctx.options.use_blas)
-    ctx.msg("Setting SpBLAS library to", ctx.options.use_spblas)
-    ctx.msg("Setting sparse solver library to", ctx.options.use_solver)
+    ctx.env.intwidth = ctx.options.intwidth
+    ctx.env.mode = ctx.options.mode
 
     """ Set compilers """
     ctx.find_program(ctx.options.mpicxx, var="MPICXX")
@@ -53,7 +49,9 @@ def configure(ctx):
 
     """ Recurse to third party libraries wrappers"""
     recurse(ctx)
-
+    ctx.options.use_blas = set_libs(ctx, libs_blas, ctx.options.use_blas)
+    ctx.options.use_spblas = set_libs(ctx, libs_spblas, ctx.options.use_spblas)
+    ctx.options.use_solver = set_libs(ctx, libs_solvers, ctx.options.use_solver)
     ctx.env.append_unique("DEFINES_"+ctx.options.use_blas.upper(), "USE_BLAS_"+ctx.options.use_blas.upper())
     ctx.env.append_unique("DEFINES_"+ctx.options.use_spblas.upper(), "USE_SPBLAS_"+ctx.options.use_spblas.upper())
     ctx.env.append_unique("DEFINES_"+ctx.options.use_solver.upper(), "USE_SOLVER_"+ctx.options.use_solver.upper())
@@ -64,7 +62,7 @@ def configure(ctx):
     if ctx.options.with_nvtx:
         ctx.env.append_unique("CXXFLAGS", [ "-DUSE_NVTX" ]) # NVTX profiling tags
 
-    print_available(ctx)
+    settings(ctx)
 
 def build(ctx):
     def is_git_directory(path = '.'):
@@ -136,7 +134,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/analysis/**/*.cpp'), "analysis")
 #     ctx.build_espreso(ctx.path.ant_glob('src/physics/**/*.cpp'), "physics")
     ctx.build_espreso(ctx.path.ant_glob('src/morphing/**/*.cpp'), "devel")
-    ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "MKL", "PARDISO", "SUITESPARSE" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "MKL", "PARDISO", "SUITESPARSE", "CBLAS" ])
     ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cblas/**/*.cpp'), "wblas", [ "CBLAS" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL", "PARDISO" ])
@@ -257,20 +255,52 @@ def options(opt):
 
     recurse(opt)
 
+def set_libs(ctx, libs, default):
+    use = default
+    for lib in libs:
+        if "HAVE_"+lib.upper() in ctx.env["DEFINES_"+lib.upper()]:
+            use = lib
+            if lib is default:
+                return lib
+    return use
+
+def settings(ctx):
+    print_available(ctx)
+
+    ctx.msg("                               int width", ctx.env.intwidth)
+    ctx.msg("                                    mode", ctx.env.mode)
+    ctx.msg("                                    BLAS", ctx.env.use_blas)
+    ctx.msg("                                  SpBLAS", ctx.env.use_spblas)
+    ctx.msg("                           sparse solver", ctx.env.use_solver)
+    ctx.env.mesio = ctx.env.decomposers or ctx.env.dist_decomposers
+    ctx.env.espreso = ctx.env.blas and ctx.env.spblas and ctx.env.solvers
+    if ctx.env.mesio and ctx.env.espreso:
+        ctx.msg("            MESIO, ESPRESO configuration", "passed");
+    else:
+        if ctx.env.decomposers or ctx.env.dist_decomposers:
+            ctx.msg("                     MESIO configuration", "passed");
+        else:
+            ctx.msg("                     MESIO configuration", "partialy passed");
+        if ctx.env.blas and ctx.env.spblas and ctx.env.solvers:
+            ctx.msg("                   ESPRESO configuration", "passed");
+        else:
+            ctx.msg("                   ESPRESO configuration", "failed");
+
 def print_available(ctx):
     def _print(msg, libs):
         libs = [lib for lib in libs if "HAVE_" + lib.upper() in ctx.env["DEFINES_" + lib.upper()]]
         ctx.start_msg(msg)
         ctx.end_msg("[ " + ", ".join(libs) + " ]", color="BLUE")
+        return len(libs)
 
-    _print("Available mesh generators", [ "gmsh", "nglib" ])
-    _print("Available graph partitioners", [ "metis", "scotch", "kahip"])
-    _print("Available distributed graph partitioners", [ "parmetis", "ptscotch" ])
-    _print("Available BLAS libraries", libs_blas)
-    _print("Available SpBLAS libraries", libs_spblas)
-    _print("Available sparse solvers", libs_solvers)
-    _print("Available distributed sparse solvers", [ "mklpdss", "hypre", "superlu", "wsmp" ])
-    _print("Available miscellaneous libraries", [ "hdf5", "pthread" ])
+    ctx.env.generators       = _print("                         mesh generators", [ "gmsh", "nglib" ])
+    ctx.env.decomposers      = _print("                      graph partitioners", [ "metis", "scotch", "kahip"])
+    ctx.env.dist_decomposers = _print("          distributed graph partitioners", [ "parmetis", "ptscotch" ])
+    ctx.env.blas             = _print("                          BLAS libraries", libs_blas)
+    ctx.env.spblas           = _print("                        SpBLAS libraries", libs_spblas)
+    ctx.env.solvers          = _print("                          sparse solvers", libs_solvers)
+    ctx.env.dist_solvers     = _print("              distributed sparse solvers", [ "mklpdss", "hypre", "superlu", "wsmp" ])
+    ctx.env.other            = _print("                 miscellaneous libraries", [ "hdf5", "pthread" ])
 
 """ Recurse to third party libraries wrappers"""
 def recurse(ctx):
@@ -320,14 +350,7 @@ class ShowEnv(BuildContext):
 def show(ctx):
     ctx.logger = logging.getLogger('show')
     ctx.logger.handlers = Logs.log_handler()
-
-    ctx.msg("CXX", " ".join(ctx.env.CXX))
-    ctx.msg("DEFINES", " ".join(ctx.env.DEFINES))
-    ctx.msg("CXXFLAGS", " ".join(ctx.env.CXXFLAGS))
-    ctx.msg("BLAS", ctx.env.use_blas)
-    ctx.msg("SpBLAS", ctx.env.use_spblas)
-    ctx.msg("sparse solver", ctx.env.use_solver)
-    print_available(ctx)
+    settings(ctx)
 
 def env(ctx):
     print(ctx.env)

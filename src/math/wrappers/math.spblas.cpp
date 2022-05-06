@@ -4,6 +4,7 @@
 #include "esinfo/eslog.h"
 
 #ifndef HAVE_MKL
+#ifndef HAVE_SUITESPARSE
 
 namespace espreso {
 namespace math {
@@ -108,4 +109,5 @@ void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &a
 }
 }
 
+#endif
 #endif

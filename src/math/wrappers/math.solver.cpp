@@ -4,6 +4,7 @@
 
 #ifndef HAVE_MKL
 #ifndef HAVE_PARDISO
+#ifndef HAVE_SUITESPARSE
 
 namespace espreso {
 namespace math {
@@ -83,5 +84,6 @@ void freeSolver(const Matrix_CSR<std::complex<double> > &x)
 }
 }
 
+#endif
 #endif
 #endif
