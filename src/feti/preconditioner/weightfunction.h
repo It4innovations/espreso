@@ -15,6 +15,8 @@ public:
 	void update() {}
 
 	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+
+	std::vector<Vector_Dense<T> > Btx;
 };
 
 }
