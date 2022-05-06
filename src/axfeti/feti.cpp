@@ -113,6 +113,15 @@ bool _solve(AX_FETI<T> *feti, const step::Step &step, Vector_FETI<Vector_Dense, 
 	return true;
 }
 
+template <typename T>
+static void _free(AX_FETI<T> *feti)
+{
+	delete feti->iterativeSolver;
+	delete feti->projector;
+	delete feti->dualOperator;
+	delete feti->preconditioner;
+}
+
 template <> bool AX_FETI<double>::set(const step::Step &step, Matrix_FETI<Matrix_CSR, double> &K, const Regularization &regularization, const EqualityConstraints &equalityConstraints) { return _set(this, step, K, regularization, equalityConstraints); }
 template <> bool AX_FETI<std::complex<double> >::set(const step::Step &step, Matrix_FETI<Matrix_CSR, std::complex<double> > &K, const Regularization &regularization, const EqualityConstraints &equalityConstraints) { return _set(this, step, K, regularization, equalityConstraints); }
 
@@ -121,5 +130,8 @@ template <> bool AX_FETI<std::complex<double> >::update(const step::Step &step, 
 
 template <> bool AX_FETI<double>::solve(const step::Step &step, Vector_FETI<Vector_Dense, double> &x) { return _solve(this, step, x); }
 template <> bool AX_FETI<std::complex<double> >::solve(const step::Step &step, Vector_FETI<Vector_Dense, std::complex<double> > &x) { return _solve(this, step, x); }
+
+template <> AX_FETI<double>::~AX_FETI() { _free(this); }
+template <> AX_FETI<std::complex<double> >::~AX_FETI() { _free(this); }
 
 }

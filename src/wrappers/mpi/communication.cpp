@@ -170,9 +170,7 @@ void MPIGroup::split(int color, int key)
 
 MPIGroup::~MPIGroup()
 {
-	if (communicator != MPI_COMM_NULL) {
-		MPI_Comm_free(&communicator);
-	}
+	MPI_Comm_free(&communicator);
 }
 
 MPISubset::MPISubset(int max_mpi_procs)
@@ -255,6 +253,9 @@ void MPITools::finish()
 	}
 	if (procs) {
 		delete procs;
+	}
+	if (node) {
+		delete node;
 	}
 
 	if (subset) {

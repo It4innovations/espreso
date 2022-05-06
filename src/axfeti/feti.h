@@ -52,6 +52,7 @@ public:
 	};
 
 	AX_FETI(FETIConfiguration &configuration): configuration(configuration) {}
+	~AX_FETI();
 
 	void info() const;
 
