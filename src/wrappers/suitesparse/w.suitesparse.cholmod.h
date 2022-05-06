@@ -75,10 +75,10 @@ static inline void update(cholmod_sparse *A, const Matrix_CSR<std::complex<doubl
 
 static inline void update(cholmod_dense *A, const Matrix_Dense<double> &M)
 {
-	A->nrow = M.nrows;
-	A->ncol = M.ncols;
+	A->nrow = M.ncols;
+	A->ncol = M.nrows;
 	A->nzmax = M.ncols * M.nrows;
-	A->d = M.nrows;
+	A->d = M.ncols;
 	A->x = M.vals;
 	A->xtype = CHOLMOD_REAL;
 	A->dtype = CHOLMOD_DOUBLE;
