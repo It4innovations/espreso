@@ -18,6 +18,7 @@ struct DOFsDecomposition: public DOFsDistribution {
 	std::vector<esint> neighDomain; // first domain index per neighbor, the last is MY OFFSET
 
 	std::vector<esint> sharedDOFs;
+	std::vector<esint> fixedDOFs;
 	serializededata<esint, DIndex> *dmap = nullptr;
 
 	bool ismy(esint domain) const

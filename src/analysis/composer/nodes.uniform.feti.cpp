@@ -374,10 +374,9 @@ void buildPattern(UniformNodesFETIPattern *pattern, int dofs, DOFsDecomposition 
 	}
 }
 
-static void dirichlet(UniformNodesFETIPattern *pattern, std::map<std::string, ECFExpression> &settings, int dofs)
+static void dirichlet(UniformNodesFETIPattern *pattern, std::map<std::string, ECFExpression> &settings, int dofs, DOFsDecomposition &decomposition)
 {
 	size_t size = 0;
-	std::vector<esint> indices;
 	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (settings.find(region->name) != settings.end()) {
@@ -391,17 +390,17 @@ static void dirichlet(UniformNodesFETIPattern *pattern, std::map<std::string, EC
 		if (pattern->dirichletInfo.dirichlet) {
 			for (auto n = region->nodes->datatarray().cbegin(); n != region->nodes->datatarray().cend(); ++n) {
 				for (int d = 0; d < dofs; ++d) {
-					indices.push_back(*n * dofs + d);
+					decomposition.fixedDOFs.push_back(*n * dofs + d);
 				}
 			}
 		}
 	}
 	pattern->dirichletInfo.size = dofs * info::mesh->nodes->uniqInfo.offset;
-	pattern->dirichletInfo.f = indices; // use the first region to store indices permutation;
-	utils::sortAndRemoveDuplicates(indices);
-	pattern->dirichletInfo.indices = indices;
+	pattern->dirichletInfo.f = decomposition.fixedDOFs; // use the first region to store indices permutation;
+	utils::sortAndRemoveDuplicates(decomposition.fixedDOFs);
+	pattern->dirichletInfo.indices = decomposition.fixedDOFs;
 	for (size_t i = 0; i < pattern->dirichletInfo.f.size(); ++i) {
-		pattern->dirichletInfo.f[i] = std::lower_bound(indices.begin(), indices.end(), pattern->dirichletInfo.f[i]) - indices.begin();
+		pattern->dirichletInfo.f[i] = std::lower_bound(decomposition.fixedDOFs.begin(), decomposition.fixedDOFs.end(), pattern->dirichletInfo.f[i]) - decomposition.fixedDOFs.begin();
 	}
 }
 
@@ -411,7 +410,7 @@ void UniformNodesFETIPattern::set(std::map<std::string, ECFExpression> &settings
 	for (esint domain = 0; domain < info::mesh->domains->size; ++domain) {
 		buildPattern(this, dofs, decomposition, shape, domain);
 	}
-	dirichlet(this, settings, dofs);
+	dirichlet(this, settings, dofs, decomposition);
 }
 
 void UniformNodesFETIPattern::fillCSR(esint *rows, esint *cols, esint domain)

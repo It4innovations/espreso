@@ -1,5 +1,6 @@
 
 #include "weightfunction.h"
+#include "feti/common/applyB.h"
 
 #include "esinfo/eslog.hpp"
 
@@ -18,14 +19,13 @@ template <typename T>
 static void _set(WeightFunction<T> *wf)
 {
 	wf->Btx.resize(wf->feti->K->domains.size());
-	wf->KBtx.resize(wf->feti->K->domains.size());
 
 	#pragma omp parallel for
 	for (size_t d = 0; d < wf->feti->K->domains.size(); ++d) {
 		wf->Btx[d].resize(wf->feti->K->domains[d].nrows);
 	}
 
-	eslog::checkpointln("FETI: SET LUMPED PRECONDITIONER");
+	eslog::checkpointln("FETI: SET WEIGHT FUNCTION PRECONDITIONER");
 }
 
 template <typename T>
