@@ -1,6 +1,6 @@
 #include "w.csparse.h"
 
-#ifdef HAVE_CSPARSE
+#ifdef HAVE_CSPARSE_OLD
 #include "cs.h"
 #include "esinfo/eslog.h"
 

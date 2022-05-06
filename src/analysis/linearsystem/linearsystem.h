@@ -12,7 +12,7 @@ namespace espreso {
 namespace step { struct Step; }
 
 template <typename Assembler, typename Solver = Assembler>
-struct AX_LinearSystem {
+struct LinearSystem {
 
 	template <typename Type>
 	struct System {
@@ -24,7 +24,7 @@ struct AX_LinearSystem {
 	virtual void setMapping(Vector_Base<Assembler> *x) const =0;
 	virtual void setDirichletMapping(Vector_Base<Assembler> *x) const =0;
 
-	virtual ~AX_LinearSystem() {}
+	virtual ~LinearSystem() {}
 
 	virtual void set(step::Step &step) =0;
 	virtual void update(step::Step &step) =0;

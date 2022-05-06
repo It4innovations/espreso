@@ -13,25 +13,25 @@
 
 using namespace espreso;
 
-AX_NewtonRaphson::AX_NewtonRaphson(NonLinearSolverConfiguration &configuration)
+NewtonRaphson::NewtonRaphson(NonLinearSolverConfiguration &configuration)
 : configuration(configuration), U(nullptr), R(nullptr)
 {
 
 }
 
-AX_NewtonRaphson::~AX_NewtonRaphson()
+NewtonRaphson::~NewtonRaphson()
 {
 
 }
 
-void AX_NewtonRaphson::init(AX_LinearSystem<double> *system)
+void NewtonRaphson::init(LinearSystem<double> *system)
 {
 	U = system->solver.x->copyPattern();
 	R = system->solver.x->copyPattern();
 	system->solver.A->commit();
 }
 
-bool AX_NewtonRaphson::checkTemp(step::Step &step, AX_HeatTransfer &assembler, AX_SteadyState &scheme, AX_LinearSystem<double> *system)
+bool NewtonRaphson::checkTemp(step::Step &step, HeatTransfer &assembler, SteadyState &scheme, LinearSystem<double> *system)
 {
 	double solution = eslog::time();
 	double solutionNumerator = system->solver.x->norm();
@@ -54,7 +54,7 @@ bool AX_NewtonRaphson::checkTemp(step::Step &step, AX_HeatTransfer &assembler, A
 	return !(norm > configuration.requested_first_residual);
 }
 
-bool AX_NewtonRaphson::run(step::Step &step, step::Time &time, AX_HeatTransfer &assembler, AX_SteadyState &scheme, AX_LinearSystem<double> *system)
+bool NewtonRaphson::run(step::Step &step, step::Time &time, HeatTransfer &assembler, SteadyState &scheme, LinearSystem<double> *system)
 {
 	eslog::info("      =================================================================================== \n");
 	eslog::info("      ==  NEWTON RAPHSON CONVERGENCE CRITERIA                                          == \n");

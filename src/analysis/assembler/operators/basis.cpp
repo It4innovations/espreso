@@ -72,12 +72,12 @@ void _baseFunction(Module &module)
 	}
 }
 
-void baseFunction(AX_HeatTransfer &module)
+void baseFunction(HeatTransfer &module)
 {
 	_baseFunction(module);
 }
 
-void baseFunction(AX_Acoustic &module)
+void baseFunction(Acoustic &module)
 {
 	_baseFunction(module);
 }

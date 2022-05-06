@@ -12,10 +12,10 @@ namespace espreso {
 struct AcousticGlobalSettings;
 struct AcousticLoadStepConfiguration;
 
-class AX_AcousticRealLinear: public Analysis {
+class AcousticRealLinear: public Analysis {
 
 public:
-	AX_AcousticRealLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
+	AcousticRealLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
 
 	void analyze();
 	void run(step::Step &step);
@@ -24,10 +24,10 @@ public:
 	AcousticConfiguration &settings;
 	AcousticLoadStepConfiguration &configuration;
 
-	AX_Acoustic assembler;
-	AX_HarmonicReal scheme;
+	Acoustic assembler;
+	HarmonicReal scheme;
 
-	AX_LinearSystem<double> *system;
+	LinearSystem<double> *system;
 };
 
 }

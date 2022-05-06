@@ -13,20 +13,20 @@
 
 using namespace espreso;
 
-AX_HeatSteadyStateLinear::AX_HeatSteadyStateLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
+HeatSteadyStateLinear::HeatSteadyStateLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
 : settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, scheme{}, system{}
 {
 
 }
 
-AX_HeatSteadyStateLinear::~AX_HeatSteadyStateLinear()
+HeatSteadyStateLinear::~HeatSteadyStateLinear()
 {
 	if (system) {
 		delete system;
 	}
 }
 
-void AX_HeatSteadyStateLinear::analyze()
+void HeatSteadyStateLinear::analyze()
 {
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" == ANALYSIS                                                            LINEAR STEADY STATE == \n");
@@ -38,7 +38,7 @@ void AX_HeatSteadyStateLinear::analyze()
 	info::mesh->output->updateMonitors(step::TYPE::TIME);
 }
 
-void AX_HeatSteadyStateLinear::run(step::Step &step)
+void HeatSteadyStateLinear::run(step::Step &step)
 {
 	initSystem(system, this);
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");

@@ -16,9 +16,9 @@ namespace espreso {
 
 struct HeatTransferConfiguration;
 struct HeatTransferLoadStepConfiguration;
-struct AX_SteadyState;
+struct SteadyState;
 
-class AX_HeatTransfer: public Assembler
+class HeatTransfer: public Assembler
 {
 public:
 	struct NGP {
@@ -42,13 +42,13 @@ public:
 		static const size_t HEXA20    = 8;
 	};
 
-	AX_HeatTransfer(AX_HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
+	HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
 
 	void analyze();
 
-	void connect(AX_SteadyState &scheme);
-	void evaluate(AX_SteadyState &scheme);
-	void updateSolution(AX_SteadyState &scheme);
+	void connect(SteadyState &scheme);
+	void evaluate(SteadyState &scheme);
+	void updateSolution(SteadyState &scheme);
 
 	HeatTransferConfiguration &settings;
 	HeatTransferLoadStepConfiguration &configuration;

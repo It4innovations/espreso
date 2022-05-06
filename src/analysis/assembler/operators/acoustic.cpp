@@ -13,7 +13,7 @@
 
 namespace espreso {
 
-void acousticStiffness(AX_Acoustic &module)
+void acousticStiffness(Acoustic &module)
 {
 	if (info::mesh->dimension == 2) {
 //		module.controller.addInput(module.elements.stiffness, module.thickness.gp);
@@ -23,15 +23,15 @@ void acousticStiffness(AX_Acoustic &module)
 
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
 		if (info::mesh->dimension == 2) {
-			module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, Stiffness2DAcoustic>(interval, module.controller, module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant, module.material.density, module.elements.stiffness));
+			module.elementOps[interval].emplace_back(instantiate<Acoustic::NGP, Stiffness2DAcoustic>(interval, module.controller, module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant, module.material.density, module.elements.stiffness));
 		}
 		if (info::mesh->dimension == 3) {
-			module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, Stiffness3DAcoustic>(interval, module.controller, module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant, module.material.density, module.elements.stiffness));
+			module.elementOps[interval].emplace_back(instantiate<Acoustic::NGP, Stiffness3DAcoustic>(interval, module.controller, module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant, module.material.density, module.elements.stiffness));
 		}
 	}
 }
 
-void acousticMass(AX_Acoustic &module)
+void acousticMass(Acoustic &module)
 {
 	if (info::mesh->dimension == 2) {
 //		module.elements.stiffness.addInput(module.thickness.gp);
@@ -40,15 +40,15 @@ void acousticMass(AX_Acoustic &module)
 	module.controller.prepare(module.elements.mass);
 
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
-		module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticMass>(interval, module.controller, module.integration.N, module.integration.weight, module.integration.jacobiDeterminant, module.material.density, module.material.speed_of_sound ,module.elements.mass));
+		module.elementOps[interval].emplace_back(instantiate<Acoustic::NGP, AcousticMass>(interval, module.controller, module.integration.N, module.integration.weight, module.integration.jacobiDeterminant, module.material.density, module.material.speed_of_sound ,module.elements.mass));
 	}
 }
 
-void acousticBoundaryMass(AX_Acoustic &module)
+void acousticBoundaryMass(Acoustic &module)
 {
 }
 
-void acousticRHS(AX_Acoustic &module)
+void acousticRHS(Acoustic &module)
 {
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
 		if (module.monopoleSource.gp.isSet(interval)) {
@@ -57,7 +57,7 @@ void acousticRHS(AX_Acoustic &module)
 								module.material.density);
 			module.controller.prepare(module.elements.monopole);
 
-			module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticRHS2D>(interval, module.controller,
+			module.elementOps[interval].emplace_back(instantiate<Acoustic::NGP, AcousticRHS2D>(interval, module.controller,
 								module.integration.N, module.integration.weight, module.integration.jacobiDeterminant,
 								module.monopoleSource.gp,
 								module.elements.monopole));
@@ -68,14 +68,14 @@ void acousticRHS(AX_Acoustic &module)
 			module.controller.prepare(module.elements.dipole);
 
 			if (info::mesh->dimension == 2) {
-				module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticDipole2D>(interval, module.controller,
+				module.elementOps[interval].emplace_back(instantiate<Acoustic::NGP, AcousticDipole2D>(interval, module.controller,
 									module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant,
 									module.material.density,
 									module.dipoleSource.gp,
 									module.elements.dipole));
 			}
 			if (info::mesh->dimension == 3) {
-				module.elementOps[interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticDipole3D>(interval, module.controller,
+				module.elementOps[interval].emplace_back(instantiate<Acoustic::NGP, AcousticDipole3D>(interval, module.controller,
 									module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant,
 									module.material.density,
 									module.dipoleSource.gp,
@@ -108,14 +108,14 @@ void acousticRHS(AX_Acoustic &module)
 			module.controller.prepare(module.proj_acceleration.gp.regions[r]);
 
 			for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
-				module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticQ>(r, interval, module.controller,
+				module.boundaryOps[r][interval].emplace_back(instantiate<Acoustic::NGP, AcousticQ>(r, interval, module.controller,
 						1, // info::mesh->boundaryRegions[r]->area,
 						module.normalAcceleration.gp.regions[r],
 						module.impedance.gp.regions[r],
 						module.q.gp.regions[r]));
 
 				if (impedance) {
-					module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticsBoundaryMass>(r, interval, module.controller,
+					module.boundaryOps[r][interval].emplace_back(instantiate<Acoustic::NGP, AcousticsBoundaryMass>(r, interval, module.controller,
 							module.integration.boundary.N.regions[r], module.integration.boundary.weight.regions[r], module.integration.boundary.jacobian.regions[r],
 							module.impedance.gp.regions[r],
 							module.elements.boundary.mass.regions[r]));
@@ -123,29 +123,29 @@ void acousticRHS(AX_Acoustic &module)
 
 				if (info::mesh->dimension == 2) {
 					if (module.acceleration.gp.isSet(r)) {
-						module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, BoundaryNormal2D>(r, interval, module.controller,
+						module.boundaryOps[r][interval].emplace_back(instantiate<Acoustic::NGP, BoundaryNormal2D>(r, interval, module.controller,
 								module.integration.boundary.dN.regions[r],
 								module.coords.boundary.node.regions[r],
 								module.normals.gp.regions[r]));
-						module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticAcceleration2D>(r, interval, module.controller,
+						module.boundaryOps[r][interval].emplace_back(instantiate<Acoustic::NGP, AcousticAcceleration2D>(r, interval, module.controller,
 							module.integration.boundary.N.regions[r], module.integration.boundary.weight.regions[r], module.integration.boundary.jacobian.regions[r],
 							module.normals.gp.regions[r],
 							module.acceleration.gp.regions[r],
 							module.proj_acceleration.gp.regions[r]
 						));
 					}
-					module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticRHS2D>(r, interval, module.controller,
+					module.boundaryOps[r][interval].emplace_back(instantiate<Acoustic::NGP, AcousticRHS2D>(r, interval, module.controller,
 							module.integration.boundary.N.regions[r], module.integration.boundary.weight.regions[r], module.integration.boundary.jacobian.regions[r],
 							module.q.gp.regions[r],
 							module.elements.boundary.rhs.regions[r]));
 				}
 				if (info::mesh->dimension == 3) {
 					if (module.acceleration.gp.isSet(r)) {
-						module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, BoundaryNormal3D>(r, interval, module.controller,
+						module.boundaryOps[r][interval].emplace_back(instantiate<Acoustic::NGP, BoundaryNormal3D>(r, interval, module.controller,
 								module.integration.boundary.dN.regions[r],
 								module.coords.boundary.node.regions[r],
 								module.normals.gp.regions[r]));
-						module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticAcceleration3D>(r, interval, module.controller,
+						module.boundaryOps[r][interval].emplace_back(instantiate<Acoustic::NGP, AcousticAcceleration3D>(r, interval, module.controller,
 							module.integration.boundary.N.regions[r], module.integration.boundary.weight.regions[r], module.integration.boundary.jacobian.regions[r],
 							module.normals.gp.regions[r],
 							module.acceleration.gp.regions[r],
@@ -153,7 +153,7 @@ void acousticRHS(AX_Acoustic &module)
 						));
 					}
 
-					module.boundaryOps[r][interval].emplace_back(instantiate<AX_Acoustic::NGP, AcousticRHS3D>(r, interval, module.controller,
+					module.boundaryOps[r][interval].emplace_back(instantiate<Acoustic::NGP, AcousticRHS3D>(r, interval, module.controller,
 							module.integration.boundary.N.regions[r], module.integration.boundary.weight.regions[r], module.integration.boundary.jacobian.regions[r],
 							module.q.gp.regions[r],
 							module.elements.boundary.rhs.regions[r]));

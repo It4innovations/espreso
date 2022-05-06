@@ -12,13 +12,13 @@
 
 using namespace espreso;
 
-AX_AcousticRealLinear::AX_AcousticRealLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration)
+AcousticRealLinear::AcousticRealLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration)
 : settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, scheme{configuration.harmonic_solver, 1}, system{}
 {
 
 }
 
-void AX_AcousticRealLinear::analyze()
+void AcousticRealLinear::analyze()
 {
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" == ANALYSIS                                                                  HARMONIC REAL == \n");
@@ -30,7 +30,7 @@ void AX_AcousticRealLinear::analyze()
 	info::mesh->output->updateMonitors(step::TYPE::FREQUENCY);
 }
 
-void AX_AcousticRealLinear::run(step::Step &step)
+void AcousticRealLinear::run(step::Step &step)
 {
 	initSystem(system, this);
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");

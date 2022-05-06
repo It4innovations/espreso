@@ -13,21 +13,21 @@
 
 using namespace espreso;
 
-AX_HeatSteadyStateNonLinear::AX_HeatSteadyStateNonLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
+HeatSteadyStateNonLinear::HeatSteadyStateNonLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
 : settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, solver(configuration.nonlinear_solver), scheme{}, system{}
 
 {
 
 }
 
-AX_HeatSteadyStateNonLinear::~AX_HeatSteadyStateNonLinear()
+HeatSteadyStateNonLinear::~HeatSteadyStateNonLinear()
 {
 	if (system) {
 		delete system;
 	}
 }
 
-void AX_HeatSteadyStateNonLinear::analyze()
+void HeatSteadyStateNonLinear::analyze()
 {
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" == ANALYSIS                                                        NON-LINEAR STEADY STATE == \n");
@@ -39,7 +39,7 @@ void AX_HeatSteadyStateNonLinear::analyze()
 	info::mesh->output->updateMonitors(step::TYPE::TIME);
 }
 
-void AX_HeatSteadyStateNonLinear::run(step::Step &step)
+void HeatSteadyStateNonLinear::run(step::Step &step)
 {
 	initSystem(system, this);
 	solver.init(system);

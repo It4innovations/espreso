@@ -12,13 +12,13 @@
 
 using namespace espreso;
 
-AX_AcousticComplexLinear::AX_AcousticComplexLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration)
+AcousticComplexLinear::AcousticComplexLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration)
 : settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, scheme{configuration.harmonic_solver, 1}, system{}
 {
 
 }
 
-void AX_AcousticComplexLinear::analyze()
+void AcousticComplexLinear::analyze()
 {
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" == ANALYSIS                                                               HARMONIC COMPLEX == \n");
@@ -30,7 +30,7 @@ void AX_AcousticComplexLinear::analyze()
 	info::mesh->output->updateMonitors(step::TYPE::FREQUENCY);
 }
 
-void AX_AcousticComplexLinear::run(step::Step &step)
+void AcousticComplexLinear::run(step::Step &step)
 {
 	initSystem(system, this);
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");

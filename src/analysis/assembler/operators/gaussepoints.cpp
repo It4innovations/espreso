@@ -20,7 +20,7 @@ void _moveEnodesToGPs(Module &module, ParameterData &from, ParameterData &to, in
 	}
 }
 
-void moveEnodesToGPs(AX_HeatTransfer &module, ParameterData &from, ParameterData &to, int dimension)
+void moveEnodesToGPs(HeatTransfer &module, ParameterData &from, ParameterData &to, int dimension)
 {
 	_moveEnodesToGPs(module, from, to, dimension);
 }

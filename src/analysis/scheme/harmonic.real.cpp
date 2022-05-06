@@ -12,7 +12,7 @@
 using namespace espreso;
 
 
-void AX_HarmonicReal::composeSystem(step::Frequency &frequency, AX_LinearSystem<double> *system)
+void HarmonicReal::composeSystem(step::Frequency &frequency, LinearSystem<double> *system)
 {
 	// A = [
 	// K - omega^2 * M                -iC
@@ -50,7 +50,7 @@ void AX_HarmonicReal::composeSystem(step::Frequency &frequency, AX_LinearSystem<
 	}
 }
 
-void AX_HarmonicReal::extractSolution(step::Frequency &frequency, AX_LinearSystem<double> *system)
+void HarmonicReal::extractSolution(step::Frequency &frequency, LinearSystem<double> *system)
 {
 	re.x->copy(system->solver.x, 0   , dofs, 2 * dofs);
 	im.x->copy(system->solver.x, dofs, dofs, 2 * dofs);

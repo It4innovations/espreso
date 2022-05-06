@@ -43,19 +43,19 @@ void _fromExpression(Module &module, ParameterData &parameter, ExternalElementVa
 	}
 }
 
-void fromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementNodesValue &value)
+void fromExpression(HeatTransfer &module, ParameterData &parameter, ExternalElementNodesValue &value)
 {
-	_fromExpression<AX_HeatTransfer, ExpressionsToNodes>(module, parameter, value);
+	_fromExpression<HeatTransfer, ExpressionsToNodes>(module, parameter, value);
 }
 
-void fromExpression(AX_HeatTransfer &module, ParameterData &parameter, ExternalElementGPsValue &value)
+void fromExpression(HeatTransfer &module, ParameterData &parameter, ExternalElementGPsValue &value)
 {
-	_fromExpression<AX_HeatTransfer, ExpressionsToGPs>(module, parameter, value);
+	_fromExpression<HeatTransfer, ExpressionsToGPs>(module, parameter, value);
 }
 
-void fromExpression(AX_Acoustic &module, ParameterData &parameter, ExternalElementGPsValue &value)
+void fromExpression(Acoustic &module, ParameterData &parameter, ExternalElementGPsValue &value)
 {
-	_fromExpression<AX_Acoustic, ExpressionsToGPs>(module, parameter, value);
+	_fromExpression<Acoustic, ExpressionsToGPs>(module, parameter, value);
 }
 
 template <typename Module>
@@ -74,11 +74,11 @@ void _fromExpression(Module &module, BoundaryParameterPack &parameter, ExternalB
 				std::fill(parameter.regions[r].update.begin(), parameter.regions[r].update.end(), 1);
 				if (info::mesh->boundaryRegions[r]->dimension) {
 					for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-						module.boundaryOps[r][i].emplace_back(instantiate<AX_HeatTransfer::NGP, ExpressionsToGPs>(r, i, module.controller, parameter.regions[r], values.evaluator[r * values.dimension + d], d, values.dimension));
+						module.boundaryOps[r][i].emplace_back(instantiate<HeatTransfer::NGP, ExpressionsToGPs>(r, i, module.controller, parameter.regions[r], values.evaluator[r * values.dimension + d], d, values.dimension));
 					}
 				} else {
 					for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-						module.boundaryOps[r][t].emplace_back(instantiate<AX_HeatTransfer::NGP, ExpressionsToNodes>(r, t, module.controller, parameter.regions[r], values.evaluator[r * values.dimension + d], d, values.dimension));
+						module.boundaryOps[r][t].emplace_back(instantiate<HeatTransfer::NGP, ExpressionsToNodes>(r, t, module.controller, parameter.regions[r], values.evaluator[r * values.dimension + d], d, values.dimension));
 					}
 				}
 			}
@@ -86,14 +86,14 @@ void _fromExpression(Module &module, BoundaryParameterPack &parameter, ExternalB
 	}
 }
 
-void fromExpression(AX_HeatTransfer &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values)
+void fromExpression(HeatTransfer &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values)
 {
-	_fromExpression<AX_HeatTransfer>(module, parameter, values);
+	_fromExpression<HeatTransfer>(module, parameter, values);
 }
 
-void fromExpression(AX_Acoustic &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values)
+void fromExpression(Acoustic &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values)
 {
-	_fromExpression<AX_Acoustic>(module, parameter, values);
+	_fromExpression<Acoustic>(module, parameter, values);
 }
 
 }

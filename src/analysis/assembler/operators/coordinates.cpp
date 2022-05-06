@@ -181,7 +181,7 @@ void _analyzeBoundaryCondition(std::map<std::string, ImpedanceConfiguration> &bc
 	}
 }
 
-void elementCoordinates(AX_HeatTransfer &module)
+void elementCoordinates(HeatTransfer &module)
 {
 	_elementCoordinates(module);
 
@@ -191,7 +191,7 @@ void elementCoordinates(AX_HeatTransfer &module)
 	_boundaryCoordinates(module);
 }
 
-void elementCoordinates(AX_Acoustic &module)
+void elementCoordinates(Acoustic &module)
 {
 	_elementCoordinates(module);
 

@@ -6,12 +6,12 @@
 
 namespace espreso {
 
-struct AX_HarmonicComplex: public AX_Harmonic {
+struct HarmonicComplex: public Harmonic {
 
-	AX_HarmonicComplex(HarmonicSolverConfiguration &configuration, int dofs): AX_Harmonic(configuration, dofs) {}
+	HarmonicComplex(HarmonicSolverConfiguration &configuration, int dofs): Harmonic(configuration, dofs) {}
 
-	void composeSystem(step::Frequency &frequency, AX_LinearSystem<double, std::complex<double> > *system);
-	void extractSolution(step::Frequency &frequency, AX_LinearSystem<double, std::complex<double> > *system);
+	void composeSystem(step::Frequency &frequency, LinearSystem<double, std::complex<double> > *system);
+	void extractSolution(step::Frequency &frequency, LinearSystem<double, std::complex<double> > *system);
 };
 
 }

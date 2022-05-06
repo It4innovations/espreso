@@ -9,7 +9,7 @@
 
 using namespace espreso;
 
-void AX_HarmonicComplex::composeSystem(step::Frequency &frequency, AX_LinearSystem<double, std::complex<double> > *system)
+void HarmonicComplex::composeSystem(step::Frequency &frequency, LinearSystem<double, std::complex<double> > *system)
 {
 	// A = K - omega^2 * M + iC
 	system->solver.A->touched = true;
@@ -39,7 +39,7 @@ void AX_HarmonicComplex::composeSystem(step::Frequency &frequency, AX_LinearSyst
 	}
 }
 
-void AX_HarmonicComplex::extractSolution(step::Frequency &frequency, AX_LinearSystem<double, std::complex<double> > *system)
+void HarmonicComplex::extractSolution(step::Frequency &frequency, LinearSystem<double, std::complex<double> > *system)
 {
 	system->solver.x->copyRealTo(re.x);
 	system->solver.x->copyImagTo(im.x);

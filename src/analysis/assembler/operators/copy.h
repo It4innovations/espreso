@@ -90,7 +90,7 @@ struct CopyNodesToEnodes: public ActionOperator {
 //	const ParameterData &from;
 //	ParameterData &to;
 //
-//	CopyParameters(AX_HeatTransfer &module, const ParameterData &from, ParameterData &to, const char *name)
+//	CopyParameters(HeatTransfer &module, const ParameterData &from, ParameterData &to, const char *name)
 //	: TParent(name), assembler(assembler), from(from), to(to)
 //	{
 //		to.addInput(from);
@@ -126,7 +126,7 @@ struct CopyNodesToEnodes: public ActionOperator {
 //	const NodeData &from;
 //	BoundaryParameterPack &to;
 //
-//	CopyNodesToBoundaryNodes(AX_HeatTransfer &module, const NodeData &from, BoundaryParameterPack &to, const char *name): OperatorBuilder(name), from(from), to(to)
+//	CopyNodesToBoundaryNodes(HeatTransfer &module, const NodeData &from, BoundaryParameterPack &to, const char *name): OperatorBuilder(name), from(from), to(to)
 //	{
 //		for (size_t r = 0; r < to.regions.size(); ++r) {
 //			to.regions[r].isset = true;

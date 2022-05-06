@@ -12,20 +12,20 @@ template<typename T> struct Vector_Base;
 template<typename T> struct Matrix_Base;
 
 class NonLinearSolverConfiguration;
-class AX_HeatTransfer;
-class AX_SteadyState;
+class HeatTransfer;
+class SteadyState;
 
-class AX_NewtonRaphson {
+class NewtonRaphson {
 
 public:
-	AX_NewtonRaphson(NonLinearSolverConfiguration &configuration);
-	~AX_NewtonRaphson();
+	NewtonRaphson(NonLinearSolverConfiguration &configuration);
+	~NewtonRaphson();
 
-	void init(AX_LinearSystem<double> *system);
-	bool run(step::Step &step, step::Time &time, AX_HeatTransfer &assembler, AX_SteadyState &scheme, AX_LinearSystem<double> *system);
+	void init(LinearSystem<double> *system);
+	bool run(step::Step &step, step::Time &time, HeatTransfer &assembler, SteadyState &scheme, LinearSystem<double> *system);
 
 protected:
-	bool checkTemp(step::Step &step, AX_HeatTransfer &assembler, AX_SteadyState &scheme, AX_LinearSystem<double> *system);
+	bool checkTemp(step::Step &step, HeatTransfer &assembler, SteadyState &scheme, LinearSystem<double> *system);
 
 	NonLinearSolverConfiguration &configuration;
 

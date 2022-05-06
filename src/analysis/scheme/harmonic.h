@@ -11,16 +11,16 @@ namespace step { struct Frequency; }
 template<typename T> struct Vector_Base;
 template<typename T> struct Matrix_Base;
 
-struct AX_Harmonic {
+struct Harmonic {
 
-	AX_Harmonic(HarmonicSolverConfiguration &configuration, int dofs);
-	~AX_Harmonic();
+	Harmonic(HarmonicSolverConfiguration &configuration, int dofs);
+	~Harmonic();
 
 	void initFrequency(step::Frequency &frequency);
 	void nextFrequency(step::Frequency &frequency);
 
 	template <typename Assembler, typename Solver>
-	void init(AX_LinearSystem<Assembler, Solver> *system)
+	void init(LinearSystem<Assembler, Solver> *system)
 	{
 		system->setMapping(K = system->assembler.A->copyPattern());
 		system->setMapping(M = system->assembler.A->copyPattern());

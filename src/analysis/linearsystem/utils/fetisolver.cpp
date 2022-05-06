@@ -13,7 +13,7 @@
 namespace espreso {
 
 template <typename T>
-void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename AX_FETI<T>::EqualityConstraints &eq, bool redundantLagrange)
+void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename FETI<T>::EqualityConstraints &eq, bool redundantLagrange)
 {
 	struct HasDirichlet {
 		esint index = 0;
@@ -170,7 +170,7 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 }
 
 template <typename T>
-void _evaluateEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename AX_FETI<T>::EqualityConstraints &eq, bool redundantLagrange)
+void _evaluateEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename FETI<T>::EqualityConstraints &eq, bool redundantLagrange)
 {
 	// TODO: store Dirichlet directly to 'c'
 	math::set(eq.c, T{0});
@@ -226,10 +226,10 @@ void evaluateHeatTransferKernel(const Matrix_CSR<double> &K, Matrix_Dense<double
 //	}
 }
 
-template <> void composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, double> &K, const Vector_Distributed<Vector_Sparse, double> &dirichlet, AX_FETI<double>::EqualityConstraints &equalityConstraints, bool redundantLagrange) { _composeEqualityConstraints(K, dirichlet, equalityConstraints, redundantLagrange); }
-template <> void composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, std::complex<double> > &K, const Vector_Distributed<Vector_Sparse, std::complex<double> > &dirichlet, AX_FETI<std::complex<double> >::EqualityConstraints &equalityConstraints, bool redundantLagrange) { _composeEqualityConstraints(K, dirichlet, equalityConstraints, redundantLagrange); }
+template <> void composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, double> &K, const Vector_Distributed<Vector_Sparse, double> &dirichlet, FETI<double>::EqualityConstraints &equalityConstraints, bool redundantLagrange) { _composeEqualityConstraints(K, dirichlet, equalityConstraints, redundantLagrange); }
+template <> void composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, std::complex<double> > &K, const Vector_Distributed<Vector_Sparse, std::complex<double> > &dirichlet, FETI<std::complex<double> >::EqualityConstraints &equalityConstraints, bool redundantLagrange) { _composeEqualityConstraints(K, dirichlet, equalityConstraints, redundantLagrange); }
 
-template <> void evaluateEqualityConstraints(const Matrix_FETI<Matrix_CSR, double> &K, const Vector_Distributed<Vector_Sparse, double> &dirichlet, AX_FETI<double>::EqualityConstraints &equalityConstraints, bool redundantLagrange) { _evaluateEqualityConstraints(K, dirichlet, equalityConstraints, redundantLagrange); }
-template <> void evaluateEqualityConstraints(const Matrix_FETI<Matrix_CSR, std::complex<double> > &K, const Vector_Distributed<Vector_Sparse, std::complex<double> > &dirichlet, AX_FETI<std::complex<double> >::EqualityConstraints &equalityConstraints, bool redundantLagrange) { _evaluateEqualityConstraints(K, dirichlet, equalityConstraints, redundantLagrange); }
+template <> void evaluateEqualityConstraints(const Matrix_FETI<Matrix_CSR, double> &K, const Vector_Distributed<Vector_Sparse, double> &dirichlet, FETI<double>::EqualityConstraints &equalityConstraints, bool redundantLagrange) { _evaluateEqualityConstraints(K, dirichlet, equalityConstraints, redundantLagrange); }
+template <> void evaluateEqualityConstraints(const Matrix_FETI<Matrix_CSR, std::complex<double> > &K, const Vector_Distributed<Vector_Sparse, std::complex<double> > &dirichlet, FETI<std::complex<double> >::EqualityConstraints &equalityConstraints, bool redundantLagrange) { _evaluateEqualityConstraints(K, dirichlet, equalityConstraints, redundantLagrange); }
 
 }

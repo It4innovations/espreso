@@ -79,7 +79,7 @@ void averageEnodesToNodes(const ParameterData &from, NodeData &to)
 	}
 }
 
-void copyNodesToEnodes(AX_HeatTransfer &module, const NodeData &from, ParameterData &to)
+void copyNodesToEnodes(HeatTransfer &module, const NodeData &from, ParameterData &to)
 {
 	module.controller.addInput(to, info::mesh->nodes->coordinates);
 	module.controller.prepare(to);
@@ -96,7 +96,7 @@ void copyNodesToEnodes(AX_HeatTransfer &module, const NodeData &from, ParameterD
 	}
 }
 
-void copyNodesToBnodes(AX_HeatTransfer &module, const NodeData &from, ParameterData &to, size_t region)
+void copyNodesToBnodes(HeatTransfer &module, const NodeData &from, ParameterData &to, size_t region)
 {
 	module.controller.addInput(to, info::mesh->boundaryRegions[region]->elements);
 	module.controller.prepare(to);

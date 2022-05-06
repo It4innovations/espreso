@@ -8,7 +8,7 @@
 #include "analysis/analysis/acoustic.real.linear.h"
 #include "analysis/analysis/acoustic.complex.linear.h"
 #include "analysis/composer/nodes.uniform.feti.h"
-#include "axfeti/feti.h"
+#include "feti/feti.h"
 #include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.h"
@@ -16,9 +16,9 @@
 namespace espreso {
 
 template <typename Assembler, typename Solver>
-struct AX_FETISystemData: public AX_LinearSystem<Assembler, Solver> {
+struct FETISystemData: public LinearSystem<Assembler, Solver> {
 
-	AX_FETISystemData(FETIConfiguration &configuration): feti(configuration) {}
+	FETISystemData(FETIConfiguration &configuration): feti(configuration) {}
 
 	void setMapping(Matrix_Base<Assembler> *A) const
 	{
@@ -64,21 +64,21 @@ struct AX_FETISystemData: public AX_LinearSystem<Assembler, Solver> {
 	Data<Assembler> assembler;
 	Data<Solver> solver;
 
-	AX_FETI<Solver> feti;
-	typename AX_FETI<Solver>::Regularization regularization;
-	typename AX_FETI<Solver>::EqualityConstraints equalityConstraints;
+	FETI<Solver> feti;
+	typename FETI<Solver>::Regularization regularization;
+	typename FETI<Solver>::EqualityConstraints equalityConstraints;
 };
 
 template <typename T>
-void composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename AX_FETI<T>::EqualityConstraints &eq, bool redundantLagrange);
+void composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename FETI<T>::EqualityConstraints &eq, bool redundantLagrange);
 template <typename T>
-void evaluateEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename AX_FETI<T>::EqualityConstraints &eq, bool redundantLagrange);
+void evaluateEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename FETI<T>::EqualityConstraints &eq, bool redundantLagrange);
 
 void composeHeatTransferKernel(const Matrix_CSR<double> &K, Matrix_Dense<double> &R, Matrix_CSR<double> &RegMat);
 void evaluateHeatTransferKernel(const Matrix_CSR<double> &K, Matrix_Dense<double> &R, Matrix_CSR<double> &RegMat);
 
 template <typename Assembler, typename Solver>
-void setEqualityConstraints(AX_FETISystemData<Assembler, Solver> *system, step::Step &step)
+void setEqualityConstraints(FETISystemData<Assembler, Solver> *system, step::Step &step)
 {
 	if (system->feti.configuration.redundant_lagrange) {
 		eslog::info(" = LAGRANGE MULTIPLIERS                                                            REDUNDANT = \n");
@@ -89,7 +89,7 @@ void setEqualityConstraints(AX_FETISystemData<Assembler, Solver> *system, step::
 }
 
 template <typename Assembler, typename Solver>
-void setHeatTransferKernel(AX_FETISystemData<Assembler, Solver> *system, step::Step &step)
+void setHeatTransferKernel(FETISystemData<Assembler, Solver> *system, step::Step &step)
 {
 	eslog::info(" = REGULARIZATION                                                                   ANALYTIC = \n");
 	system->regularization.R1.domains.resize(system->solver.K.domains.size());
@@ -106,7 +106,7 @@ void setHeatTransferKernel(AX_FETISystemData<Assembler, Solver> *system, step::S
 }
 
 template <typename Assembler, typename Solver>
-void evaluateEqualityConstraints(AX_FETISystemData<Assembler, Solver> *system, step::Step &step)
+void evaluateEqualityConstraints(FETISystemData<Assembler, Solver> *system, step::Step &step)
 {
 	evaluateEqualityConstraints(system->solver.K, system->solver.dirichlet, system->equalityConstraints, system->feti.configuration.redundant_lagrange);
 	if (info::ecf->output.print_matrices) {
@@ -122,7 +122,7 @@ void evaluateEqualityConstraints(AX_FETISystemData<Assembler, Solver> *system, s
 }
 
 template <typename Assembler, typename Solver>
-void evaluateHeatTransferKernel(AX_FETISystemData<Assembler, Solver> *system, step::Step &step)
+void evaluateHeatTransferKernel(FETISystemData<Assembler, Solver> *system, step::Step &step)
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < system->solver.K.domains.size(); ++d) {
@@ -136,10 +136,10 @@ void evaluateHeatTransferKernel(AX_FETISystemData<Assembler, Solver> *system, st
 	}
 }
 
-template <typename Analysis> struct AX_FETISystem {};
+template <typename Analysis> struct FETISystem {};
 
 template <typename A, typename S>
-inline void _fillDirect(AX_FETISystemData<A, S> *system, std::map<std::string, ECFExpression> &dirichlet, int dofs)
+inline void _fillDirect(FETISystemData<A, S> *system, std::map<std::string, ECFExpression> &dirichlet, int dofs)
 {
 	system->assembler.pattern.set(dirichlet, dofs, system->solver.decomposition, system->solver.K.shape);
 	system->assembler.pattern.fill(system->solver.K);
@@ -150,15 +150,15 @@ inline void _fillDirect(AX_FETISystemData<A, S> *system, std::map<std::string, E
 	system->assembler.dirichlet.distribution = system->assembler.K.decomposition = system->assembler.f.decomposition = system->assembler.x.decomposition = &system->solver.decomposition;
 	system->solver.dirichlet.distribution = system->solver.K.decomposition = system->solver.f.decomposition = system->solver.x.decomposition = &system->solver.decomposition;
 
-	system->AX_LinearSystem<A, S>::assembler.A = system->AX_LinearSystem<A, S>::solver.A = &system->solver.K;
-	system->AX_LinearSystem<A, S>::assembler.b = system->AX_LinearSystem<A, S>::solver.b = &system->solver.f;
-	system->AX_LinearSystem<A, S>::assembler.x = system->AX_LinearSystem<A, S>::solver.x = &system->solver.x;
-	system->AX_LinearSystem<A, S>::assembler.dirichlet = system->AX_LinearSystem<A, S>::solver.dirichlet = &system->solver.dirichlet;
+	system->LinearSystem<A, S>::assembler.A = system->LinearSystem<A, S>::solver.A = &system->solver.K;
+	system->LinearSystem<A, S>::assembler.b = system->LinearSystem<A, S>::solver.b = &system->solver.f;
+	system->LinearSystem<A, S>::assembler.x = system->LinearSystem<A, S>::solver.x = &system->solver.x;
+	system->LinearSystem<A, S>::assembler.dirichlet = system->LinearSystem<A, S>::solver.dirichlet = &system->solver.dirichlet;
 }
 
-template <> struct AX_FETISystem<AX_HeatSteadyStateLinear>: public AX_FETISystemData<double, double> {
+template <> struct FETISystem<HeatSteadyStateLinear>: public FETISystemData<double, double> {
 
-	AX_FETISystem(AX_HeatSteadyStateLinear *analysis): AX_FETISystemData(analysis->configuration.feti)
+	FETISystem(HeatSteadyStateLinear *analysis): FETISystemData(analysis->configuration.feti)
 	{
 		assembler.K.type = solver.K.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 		assembler.K.shape = solver.K.shape = Matrix_Shape::UPPER;
@@ -201,9 +201,9 @@ template <> struct AX_FETISystem<AX_HeatSteadyStateLinear>: public AX_FETISystem
 	}
 };
 
-template <> struct AX_FETISystem<AX_HeatSteadyStateNonLinear>: public AX_FETISystemData<double, double> {
+template <> struct FETISystem<HeatSteadyStateNonLinear>: public FETISystemData<double, double> {
 
-	AX_FETISystem(AX_HeatSteadyStateNonLinear *analysis): AX_FETISystemData(analysis->configuration.feti)
+	FETISystem(HeatSteadyStateNonLinear *analysis): FETISystemData(analysis->configuration.feti)
 	{
 
 	}
@@ -219,9 +219,9 @@ template <> struct AX_FETISystem<AX_HeatSteadyStateNonLinear>: public AX_FETISys
 	}
 };
 
-template <> struct AX_FETISystem<AX_AcousticRealLinear>: public AX_FETISystemData<double, double> {
+template <> struct FETISystem<AcousticRealLinear>: public FETISystemData<double, double> {
 
-	AX_FETISystem(AX_AcousticRealLinear *analysis): AX_FETISystemData(analysis->configuration.feti)
+	FETISystem(AcousticRealLinear *analysis): FETISystemData(analysis->configuration.feti)
 	{
 
 	}
@@ -237,10 +237,10 @@ template <> struct AX_FETISystem<AX_AcousticRealLinear>: public AX_FETISystemDat
 	}
 };
 
-template <> struct AX_FETISystem<AX_AcousticComplexLinear>: public AX_FETISystemData<double, std::complex<double> > {
+template <> struct FETISystem<AcousticComplexLinear>: public FETISystemData<double, std::complex<double> > {
 
-	AX_FETISystem(AX_AcousticComplexLinear *analysis)
-	: AX_FETISystemData(analysis->configuration.feti)
+	FETISystem(AcousticComplexLinear *analysis)
+	: FETISystemData(analysis->configuration.feti)
 	{
 
 	}

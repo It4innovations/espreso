@@ -10,7 +10,7 @@
 
 using namespace espreso;
 
-AX_Harmonic::AX_Harmonic(HarmonicSolverConfiguration &configuration, int dofs)
+Harmonic::Harmonic(HarmonicSolverConfiguration &configuration, int dofs)
 : configuration(configuration), dofs(dofs), K{}, M{}, C{}, re{}, im{}
 {
 
@@ -18,12 +18,12 @@ AX_Harmonic::AX_Harmonic(HarmonicSolverConfiguration &configuration, int dofs)
 
 
 
-AX_Harmonic::~AX_Harmonic()
+Harmonic::~Harmonic()
 {
 	clear(K, M, C, re.f, im.f, re.x, im.x, re.dirichlet, im.dirichlet);
 }
 
-void AX_Harmonic::initFrequency(step::Frequency &frequency)
+void Harmonic::initFrequency(step::Frequency &frequency)
 {
 	frequency.shift = (configuration.max_frequency - configuration.min_frequency) / configuration.num_samples;
 	frequency.start = configuration.min_frequency;
@@ -32,7 +32,7 @@ void AX_Harmonic::initFrequency(step::Frequency &frequency)
 	frequency.final = configuration.max_frequency;
 }
 
-void AX_Harmonic::nextFrequency(step::Frequency &frequency)
+void Harmonic::nextFrequency(step::Frequency &frequency)
 {
 	frequency.current += frequency.shift;
 	if (frequency.current + frequency.precision >= frequency.final) {

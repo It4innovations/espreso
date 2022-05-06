@@ -14,10 +14,10 @@ namespace espreso {
 struct AcousticConfiguration;
 struct AcousticLoadStepConfiguration;
 
-class AX_AcousticComplexLinear: public Analysis {
+class AcousticComplexLinear: public Analysis {
 
 public:
-	AX_AcousticComplexLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
+	AcousticComplexLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
 
 	void analyze();
 	void run(step::Step &step);
@@ -26,10 +26,10 @@ public:
 	AcousticConfiguration &settings;
 	AcousticLoadStepConfiguration &configuration;
 
-	AX_Acoustic assembler;
-	AX_HarmonicComplex scheme;
+	Acoustic assembler;
+	HarmonicComplex scheme;
 
-	AX_LinearSystem<double, std::complex<double> > *system;
+	LinearSystem<double, std::complex<double> > *system;
 };
 
 }

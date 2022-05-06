@@ -21,9 +21,9 @@
 namespace espreso {
 
 template <typename Assembler, typename Solver>
-struct AX_MKLPDSSSystemData: public AX_LinearSystem<Assembler, Solver> {
+struct MKLPDSSSystemData: public LinearSystem<Assembler, Solver> {
 
-	AX_MKLPDSSSystemData(MKLPDSSConfiguration &configuration): mklpdss(configuration) {}
+	MKLPDSSSystemData(MKLPDSSConfiguration &configuration): mklpdss(configuration) {}
 
 	void setMapping(Matrix_Base<Assembler> *A) const
 	{
@@ -94,10 +94,10 @@ struct AX_MKLPDSSSystemData: public AX_LinearSystem<Assembler, Solver> {
 	MKLPDSS<Solver> mklpdss;
 };
 
-template <typename Analysis> struct AX_MKLPDSSSystem {};
+template <typename Analysis> struct MKLPDSSSystem {};
 
 template <typename A, typename S>
-inline void _fillAssembler(AX_MKLPDSSSystemData<A, S> *system, std::map<std::string, ECFExpression> &dirichlet, int dofs)
+inline void _fillAssembler(MKLPDSSSystemData<A, S> *system, std::map<std::string, ECFExpression> &dirichlet, int dofs)
 {
 	system->assembler.pattern.set(dirichlet, dofs, system->assembler.distribution);
 	system->assembler.pattern.fill(system->assembler.A);
@@ -111,14 +111,14 @@ inline void _fillAssembler(AX_MKLPDSSSystemData<A, S> *system, std::map<std::str
 	system->assembler.A.synchronization = &system->assembler.sync.A;
 	system->assembler.b.synchronization = system->assembler.x.synchronization = &system->assembler.sync.b;
 
-	system->AX_LinearSystem<A, S>::assembler.A = &system->assembler.A;
-	system->AX_LinearSystem<A, S>::assembler.b = &system->assembler.b;
-	system->AX_LinearSystem<A, S>::assembler.x = &system->assembler.x;
-	system->AX_LinearSystem<A, S>::assembler.dirichlet = &system->assembler.dirichlet;
+	system->LinearSystem<A, S>::assembler.A = &system->assembler.A;
+	system->LinearSystem<A, S>::assembler.b = &system->assembler.b;
+	system->LinearSystem<A, S>::assembler.x = &system->assembler.x;
+	system->LinearSystem<A, S>::assembler.dirichlet = &system->assembler.dirichlet;
 }
 
 template <typename A, typename S>
-inline void _fillSolver(AX_MKLPDSSSystemData<A, S> *system, std::map<std::string, ECFExpression> &dirichlet, int dofs)
+inline void _fillSolver(MKLPDSSSystemData<A, S> *system, std::map<std::string, ECFExpression> &dirichlet, int dofs)
 {
 	system->solver.pattern.set(dirichlet, dofs, system->solver.distribution);
 	system->solver.pattern.fill(system->solver.A);
@@ -132,14 +132,14 @@ inline void _fillSolver(AX_MKLPDSSSystemData<A, S> *system, std::map<std::string
 	system->solver.A.synchronization = &system->solver.sync.A;
 	system->solver.b.synchronization = system->solver.x.synchronization = &system->solver.sync.b;
 
-	system->AX_LinearSystem<A, S>::solver.A = &system->solver.A;
-	system->AX_LinearSystem<A, S>::solver.b = &system->solver.b;
-	system->AX_LinearSystem<A, S>::solver.x = &system->solver.x;
-	system->AX_LinearSystem<A, S>::solver.dirichlet = &system->solver.dirichlet;
+	system->LinearSystem<A, S>::solver.A = &system->solver.A;
+	system->LinearSystem<A, S>::solver.b = &system->solver.b;
+	system->LinearSystem<A, S>::solver.x = &system->solver.x;
+	system->LinearSystem<A, S>::solver.dirichlet = &system->solver.dirichlet;
 }
 
 template <typename A, typename S>
-inline void _fillDirect(AX_MKLPDSSSystemData<A, S> *system, std::map<std::string, ECFExpression> &dirichlet, int dofs)
+inline void _fillDirect(MKLPDSSSystemData<A, S> *system, std::map<std::string, ECFExpression> &dirichlet, int dofs)
 {
 	system->assembler.pattern.set(dirichlet, dofs, system->solver.distribution);
 	system->assembler.pattern.fill(system->solver.A);
@@ -156,16 +156,16 @@ inline void _fillDirect(AX_MKLPDSSSystemData<A, S> *system, std::map<std::string
 	system->assembler.A.synchronization = &system->solver.sync.A;
 	system->assembler.b.synchronization = system->assembler.x.synchronization = &system->solver.sync.b;
 
-	system->AX_LinearSystem<A, S>::assembler.A = system->AX_LinearSystem<A, S>::solver.A = &system->solver.A;
-	system->AX_LinearSystem<A, S>::assembler.b = system->AX_LinearSystem<A, S>::solver.b = &system->solver.b;
-	system->AX_LinearSystem<A, S>::assembler.x = system->AX_LinearSystem<A, S>::solver.x = &system->solver.x;
-	system->AX_LinearSystem<A, S>::assembler.dirichlet = system->AX_LinearSystem<A, S>::solver.dirichlet = &system->solver.dirichlet;
+	system->LinearSystem<A, S>::assembler.A = system->LinearSystem<A, S>::solver.A = &system->solver.A;
+	system->LinearSystem<A, S>::assembler.b = system->LinearSystem<A, S>::solver.b = &system->solver.b;
+	system->LinearSystem<A, S>::assembler.x = system->LinearSystem<A, S>::solver.x = &system->solver.x;
+	system->LinearSystem<A, S>::assembler.dirichlet = system->LinearSystem<A, S>::solver.dirichlet = &system->solver.dirichlet;
 }
 
-template <> struct AX_MKLPDSSSystem<AX_HeatSteadyStateLinear>: public AX_MKLPDSSSystemData<double, double> {
+template <> struct MKLPDSSSystem<HeatSteadyStateLinear>: public MKLPDSSSystemData<double, double> {
 
-	AX_MKLPDSSSystem(AX_HeatSteadyStateLinear *analysis)
-	: AX_MKLPDSSSystemData(analysis->configuration.mklpdss)
+	MKLPDSSSystem(HeatSteadyStateLinear *analysis)
+	: MKLPDSSSystemData(analysis->configuration.mklpdss)
 	{
 		assembler.A.type = solver.A.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 		for (auto mat = analysis->settings.material_set.begin(); mat != analysis->settings.material_set.end(); ++mat) {
@@ -178,10 +178,10 @@ template <> struct AX_MKLPDSSSystem<AX_HeatSteadyStateLinear>: public AX_MKLPDSS
 	}
 };
 
-template <> struct AX_MKLPDSSSystem<AX_HeatSteadyStateNonLinear>: public AX_MKLPDSSSystemData<double, double> {
+template <> struct MKLPDSSSystem<HeatSteadyStateNonLinear>: public MKLPDSSSystemData<double, double> {
 
-	AX_MKLPDSSSystem(AX_HeatSteadyStateNonLinear *analysis)
-	: AX_MKLPDSSSystemData(analysis->configuration.mklpdss)
+	MKLPDSSSystem(HeatSteadyStateNonLinear *analysis)
+	: MKLPDSSSystemData(analysis->configuration.mklpdss)
 	{
 		assembler.A.type = solver.A.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 		for (auto mat = analysis->settings.material_set.begin(); mat != analysis->settings.material_set.end(); ++mat) {
@@ -195,10 +195,10 @@ template <> struct AX_MKLPDSSSystem<AX_HeatSteadyStateNonLinear>: public AX_MKLP
 	}
 };
 
-template <> struct AX_MKLPDSSSystem<AX_AcousticRealLinear>: public AX_MKLPDSSSystemData<double, double> {
+template <> struct MKLPDSSSystem<AcousticRealLinear>: public MKLPDSSSystemData<double, double> {
 
-	AX_MKLPDSSSystem(AX_AcousticRealLinear *analysis)
-	: AX_MKLPDSSSystemData(analysis->configuration.mklpdss)
+	MKLPDSSSystem(AcousticRealLinear *analysis)
+	: MKLPDSSSystemData(analysis->configuration.mklpdss)
 	{
 		assembler.A.type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
 		_fillAssembler(this, analysis->configuration.acoustic_pressure, 1);
@@ -208,10 +208,10 @@ template <> struct AX_MKLPDSSSystem<AX_AcousticRealLinear>: public AX_MKLPDSSSys
 	}
 };
 
-template <> struct AX_MKLPDSSSystem<AX_AcousticComplexLinear>: public AX_MKLPDSSSystemData<double, std::complex<double> > {
+template <> struct MKLPDSSSystem<AcousticComplexLinear>: public MKLPDSSSystemData<double, std::complex<double> > {
 
-	AX_MKLPDSSSystem(AX_AcousticComplexLinear *analysis)
-	: AX_MKLPDSSSystemData(analysis->configuration.mklpdss)
+	MKLPDSSSystem(AcousticComplexLinear *analysis)
+	: MKLPDSSSystemData(analysis->configuration.mklpdss)
 	{
 		assembler.A.type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
 		_fillAssembler(this, analysis->configuration.acoustic_pressure, 1);

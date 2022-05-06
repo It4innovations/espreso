@@ -14,9 +14,9 @@ namespace espreso {
 
 struct AcousticConfiguration;
 struct AcousticLoadStepConfiguration;
-struct AX_Harmonic;
+struct Harmonic;
 
-class AX_Acoustic: public Assembler
+class Acoustic: public Assembler
 {
 public:
 	struct NGP {
@@ -40,13 +40,13 @@ public:
 		static const size_t HEXA20    = 8;
 	};
 
-	AX_Acoustic(AX_Acoustic *previous, AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
+	Acoustic(Acoustic *previous, AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
 
 	void analyze();
 
-	void connect(AX_Harmonic &scheme);
-	void evaluate(AX_Harmonic &scheme);
-	void updateSolution(AX_Harmonic &scheme);
+	void connect(Harmonic &scheme);
+	void evaluate(Harmonic &scheme);
+	void updateSolution(Harmonic &scheme);
 
 	AcousticConfiguration &settings;
 	AcousticLoadStepConfiguration &configuration;

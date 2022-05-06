@@ -151,7 +151,7 @@ def build(ctx):
 #         if ctx.env.NVCC:
 #             ctx.build_espreso(ctx.path.ant_glob('src/feti/specific/acc/**/*.cu'), "cudakernels", [ "CUDA" ])
 #         ctx.build_espreso(feti, "feti", [ "SOLVER", "PARDISO", "MKL" ])
-    ctx.build_espreso(ctx.path.ant_glob('src/axfeti/**/*.cpp'), "axfeti")
+    ctx.build_espreso(ctx.path.ant_glob('src/feti/**/*.cpp'), "feti")
 
     ctx.program(source="src/app/ecfchecker.cpp", target="ecfchecker", use=ctx.checker)
     ctx.program(source="src/app/mesio.cpp", target="mesio", use=ctx.checker + ctx.mesio, stlib=ctx.options.stlibs, lib=ctx.options.libs)

@@ -9,7 +9,7 @@
 
 namespace espreso {
 
-void heatStiffness(AX_HeatTransfer &module)
+void heatStiffness(HeatTransfer &module)
 {
 	if (info::mesh->dimension == 2) {
 		module.controller.addInput(module.elements.stiffness, module.thickness.gp);
@@ -24,14 +24,14 @@ void heatStiffness(AX_HeatTransfer &module)
 		if (mat->thermal_conductivity.model == ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
 			if (info::mesh->dimension == 2) {
 				module.elementOps[interval].emplace_back(
-						instantiate<AX_HeatTransfer::NGP, Stiffness2DHeatIsotropic>(interval, module.controller,
+						instantiate<HeatTransfer::NGP, Stiffness2DHeatIsotropic>(interval, module.controller,
 								module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant,
 								module.material.conductivityIsotropic,
 								module.gradient.xi, module.thickness.gp, module.elements.stiffness));
 			}
 			if (info::mesh->dimension == 3) {
 				module.elementOps[interval].emplace_back(
-						instantiate<AX_HeatTransfer::NGP, Stiffness3DHeatIsotropic>(interval, module.controller,
+						instantiate<HeatTransfer::NGP, Stiffness3DHeatIsotropic>(interval, module.controller,
 								module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant,
 								module.material.conductivityIsotropic,
 								module.gradient.xi, module.thickness.gp, module.elements.stiffness));
@@ -39,14 +39,14 @@ void heatStiffness(AX_HeatTransfer &module)
 		} else {
 			if (info::mesh->dimension == 2) {
 				module.elementOps[interval].emplace_back(
-						instantiate<AX_HeatTransfer::NGP, Stiffness2DHeat>(interval, module.controller,
+						instantiate<HeatTransfer::NGP, Stiffness2DHeat>(interval, module.controller,
 								module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant,
 								module.material.conductivity,
 								module.gradient.xi, module.thickness.gp, module.elements.stiffness));
 			}
 			if (info::mesh->dimension == 3) {
 				module.elementOps[interval].emplace_back(
-						instantiate<AX_HeatTransfer::NGP, Stiffness3DHeat>(interval, module.controller,
+						instantiate<HeatTransfer::NGP, Stiffness3DHeat>(interval, module.controller,
 								module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant,
 								module.material.conductivity,
 								module.gradient.xi, module.thickness.gp, module.elements.stiffness));
@@ -55,14 +55,14 @@ void heatStiffness(AX_HeatTransfer &module)
 	}
 }
 
-void heatRHS(AX_HeatTransfer &module)
+void heatRHS(HeatTransfer &module)
 {
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
 		module.controller.addInput(module.elements.rhs, module.heatSource.gp, module.integration.N, module.integration.weight, module.integration.jacobiDeterminant);
 		module.controller.prepare(module.elements.rhs);
 		if (module.heatSource.gp.isSet(interval)) {
 			module.elementOps[interval].emplace_back(
-				instantiate<AX_HeatTransfer::NGP, HeatRHS>(interval, module.controller,
+				instantiate<HeatTransfer::NGP, HeatRHS>(interval, module.controller,
 						module.integration.N, module.integration.weight, module.integration.jacobiDeterminant,
 						module.heatSource.gp,
 						module.elements.rhs));
@@ -86,7 +86,7 @@ void heatRHS(AX_HeatTransfer &module)
 			module.controller.prepare(module.q.gp.regions[r], module.elements.boundary.rhs.regions[r]);
 
 			for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
-				module.boundaryOps[r][interval].emplace_back(instantiate<AX_HeatTransfer::NGP, HeatQ>(r, interval, module.controller,
+				module.boundaryOps[r][interval].emplace_back(instantiate<HeatTransfer::NGP, HeatQ>(r, interval, module.controller,
 						info::mesh->boundaryRegions[r]->area,
 						module.heatFlow.gp.regions[r],
 						module.heatFlux.gp.regions[r],
@@ -94,13 +94,13 @@ void heatRHS(AX_HeatTransfer &module)
 						module.q.gp.regions[r]));
 
 				if (info::mesh->dimension == 2) {
-					module.boundaryOps[r][interval].emplace_back(instantiate<AX_HeatTransfer::NGP, HeatRHS2D>(r, interval, module.controller,
+					module.boundaryOps[r][interval].emplace_back(instantiate<HeatTransfer::NGP, HeatRHS2D>(r, interval, module.controller,
 							module.integration.boundary.N.regions[r], module.integration.boundary.weight.regions[r], module.integration.boundary.jacobian.regions[r],
 							module.thickness.boundary.gp.regions[r], module.q.gp.regions[r],
 							module.elements.boundary.rhs.regions[r]));
 				}
 				if (info::mesh->dimension == 3) {
-					module.boundaryOps[r][interval].emplace_back(instantiate<AX_HeatTransfer::NGP, HeatRHS3D>(r, interval, module.controller,
+					module.boundaryOps[r][interval].emplace_back(instantiate<HeatTransfer::NGP, HeatRHS3D>(r, interval, module.controller,
 							module.integration.boundary.N.regions[r], module.integration.boundary.weight.regions[r], module.integration.boundary.jacobian.regions[r],
 							module.q.gp.regions[r],
 							module.elements.boundary.rhs.regions[r]));

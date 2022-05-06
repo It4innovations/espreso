@@ -20,13 +20,13 @@
 
 using namespace espreso;
 
-AX_HeatTransfer::AX_HeatTransfer(AX_HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
+HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
 : settings(settings), configuration(configuration)
 {
 
 }
 
-void AX_HeatTransfer::initParameters()
+void HeatTransfer::initParameters()
 {
 	if (ParametersTemperature::Initial::output == nullptr) {
 		ParametersTemperature::Initial::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_TEMPERATURE");
@@ -54,7 +54,7 @@ void AX_HeatTransfer::initParameters()
 	}
 }
 
-bool AX_HeatTransfer::initTemperature()
+bool HeatTransfer::initTemperature()
 {
 	// This code has to solve problem that initial temperature is set to elements regions, but we need it in nodes
 	// 1. settings -> nodeInitialTemperature
@@ -78,7 +78,7 @@ bool AX_HeatTransfer::initTemperature()
 	_evaluate();
 
 //	for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
-//		AX_HeatTransfer::insertParameters(it->second.evaluator);
+//		HeatTransfer::insertParameters(it->second.evaluator);
 //	}
 //
 //	temp.initial.node.builder->buildAndExecute(*this);
@@ -119,7 +119,7 @@ bool AX_HeatTransfer::initTemperature()
 	return correct;
 }
 
-void AX_HeatTransfer::analyze()
+void HeatTransfer::analyze()
 {
 	double start = eslog::time();
 	eslog::info("\n ============================================================================================= \n");
@@ -308,12 +308,12 @@ void AX_HeatTransfer::analyze()
 	eslog::info(" ============================================================================================= \n");
 }
 
-void AX_HeatTransfer::connect(AX_SteadyState &scheme)
+void HeatTransfer::connect(SteadyState &scheme)
 {
 	addFiller(*this, scheme);
 }
 
-void AX_HeatTransfer::evaluate(AX_SteadyState &scheme)
+void HeatTransfer::evaluate(SteadyState &scheme)
 {
 	controller.setUpdate();
 	reset(scheme.K, scheme.f, scheme.dirichlet);
@@ -323,21 +323,21 @@ void AX_HeatTransfer::evaluate(AX_SteadyState &scheme)
 	controller.resetUpdate();
 }
 
-void AX_HeatTransfer::_evaluate()
+void HeatTransfer::_evaluate()
 {
 	controller.setUpdate();
 	iterate();
 	controller.resetUpdate();
 }
 
-void AX_HeatTransfer::updateSolution(AX_SteadyState &scheme)
+void HeatTransfer::updateSolution(SteadyState &scheme)
 {
 	scheme.x->store(ParametersTemperature::output->data);
 	results(); // do we need an update mechanism?
 	temp.node.setUpdate(1);
 }
 
-void AX_HeatTransfer::initNames()
+void HeatTransfer::initNames()
 {
 	integration.weight.name = "integration.weight";
 	integration.N.name = "integration.N";
@@ -401,7 +401,7 @@ void AX_HeatTransfer::initNames()
 	}
 }
 
-void AX_HeatTransfer::printVersions()
+void HeatTransfer::printVersions()
 {
 	printParameterStats("integration.weight", integration.weight);
 	printParameterStats("integration.N", integration.N);

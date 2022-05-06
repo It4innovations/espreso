@@ -54,13 +54,13 @@ void _boundaryIntegration(Module &module)
 	}
 }
 
-void elementIntegration(AX_HeatTransfer &module)
+void elementIntegration(HeatTransfer &module)
 {
 	_elementIntegration(module);
 	_boundaryIntegration(module);
 }
 
-void elementIntegration(AX_Acoustic &module)
+void elementIntegration(Acoustic &module)
 {
 	_elementIntegration(module);
 	_boundaryIntegration(module);

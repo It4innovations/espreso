@@ -23,13 +23,13 @@
 
 using namespace espreso;
 
-AX_Acoustic::AX_Acoustic(AX_Acoustic *previous, AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration)
+Acoustic::Acoustic(Acoustic *previous, AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration)
 : settings(settings), configuration(configuration)
 {
 
 }
 
-void AX_Acoustic::initParameters()
+void Acoustic::initParameters()
 {
 	if (ParametersAcousticPressure::Initial::output == nullptr) {
 		ParametersAcousticPressure::Initial::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_ACOUSTIC_PRESSURE");
@@ -41,7 +41,7 @@ void AX_Acoustic::initParameters()
 	}
 }
 
-void AX_Acoustic::analyze()
+void Acoustic::analyze()
 {
 	double start = eslog::time();
 	eslog::info("\n ============================================================================================= \n");
@@ -138,12 +138,12 @@ void AX_Acoustic::analyze()
 	eslog::info(" ============================================================================================= \n");
 }
 
-void AX_Acoustic::connect(AX_Harmonic &scheme)
+void Acoustic::connect(Harmonic &scheme)
 {
 	addFiller(*this, scheme);
 }
 
-void AX_Acoustic::evaluate(AX_Harmonic &scheme)
+void Acoustic::evaluate(Harmonic &scheme)
 {
 	controller.setUpdate();
 	reset(scheme.K, scheme.M, scheme.C, scheme.re.f, scheme.im.f, scheme.re.dirichlet, scheme.im.dirichlet);
@@ -153,7 +153,7 @@ void AX_Acoustic::evaluate(AX_Harmonic &scheme)
 	controller.resetUpdate();
 }
 
-void AX_Acoustic::updateSolution(AX_Harmonic &scheme)
+void Acoustic::updateSolution(Harmonic &scheme)
 {
 	scheme.re.x->store(ParametersAcousticPressure::output->data);
 }
