@@ -6,6 +6,7 @@
 #include "esinfo/eslog.hpp"
 #include "feti/projector/projector.h"
 #include "feti/dualoperator/dualoperator.h"
+#include "feti/preconditioner/preconditioner.h"
 
 namespace espreso {
 
@@ -17,7 +18,7 @@ namespace espreso {
 // p_0: L => w_0
 
 // loop
-// gamma_k: 1 => (p_k,w_k) / (p_k, F * p_k)
+// gamma_k: 1 => (y_k,w_k) / (p_k, F * p_k)
 //   x_k+1: L => x_k + gama_k * p_k
 //   r_k+1: L => r_k - gama_k * F * p_k
 //   w_k+1: L => r_k+1 - Gt * inv(GGt) * G * r_k+1 :: (I - Q) * r_k+1
@@ -41,7 +42,11 @@ static void _info(PCPG<T> *solver)
 		break;
 	}
 	eslog::info(" =   PRECISION                                                                      %.2e = \n", solver->feti->configuration.precision);
-	eslog::info(" =   MAX_ITERATIONS                                                                  %7d = \n", solver->feti->configuration.max_iterations);
+	if (solver->feti->configuration.max_iterations == 0) {
+		eslog::info(" =   MAX_ITERATIONS                                                                     AUTO = \n");
+	} else {
+		eslog::info(" =   MAX_ITERATIONS                                                                  %7d = \n", solver->feti->configuration.max_iterations);
+	}
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
 
@@ -68,57 +73,69 @@ template <> void PCPG<std::complex<double> >::info() { _info<std::complex<double
 
 template <> void PCPG<double>::solve(IterativeSolverInfo &info)
 {
-//	DualOperator<double> *F = feti->dualOperator;
-//	Projector<double> *P = feti->projector;
-//
-//	P->applyGtInvGGt(P->e, l);             // l = Gt * inv(GGt) * e
-//
-//	F->apply(l, r);                        // r = d - F * l
-//	r.scale(-1);                           //
-//	r.add(1, F->d);                        //
-//
-//	P->apply(r, w);                        // w = P * r
-//	w.copyTo(p);                           // p = w
-//	l.copyTo(x);                           // x = l
-//
-////	r.copyTo(r0);
-////	double rho = F->d.dot(l), rr, r0x;
-//
-//	eslog::checkpointln("FETI: CPG INITIALIZATION");
-//	eslog::startln("CPG: ITERATIONS STARTED", "cpg");
-//	double pw = w.dot(y);
-//	setInfo(info, feti->configuration, pw);
-//	while (!info.converged) {
-//		F->apply(p, Fp);                            //
-//		eslog::accumulatedln("cpg: apply F");       // gamma = (w, w) / (p, F * p)
-//		double pFp = p.dot(Fp), gamma = pw / pFp;   //
-//		eslog::accumulatedln("cpg: dot(p, Fp)");    //
-//
-//
-//		x.add(gamma, p);                            // x = x + gamma * p
-//		r.add(-gamma, Fp);                          // r = r - gamma * F * p
-//		eslog::accumulatedln("cpg: update x, r");   //
-//
-//		P->apply(r, w);                             // w = P * r
-//		eslog::accumulatedln("cpg: apply P");       //
-//
-//		double _yw = w.dot(y), beta = _yw / pw;      // beta = (w+1, w+1) / (w, w)
-//		eslog::accumulatedln("cpg: dot(w, w)");     //
-//		w.add(beta, p); w.swap(p);                  // p = w + beta * p  (w is not used anymore)
-//		eslog::accumulatedln("cpg: update p");      //
-//
-////		rr = r.dot(), r0x = r0.dot(x);
-////		eslog::accumulatedln("cpg: dot(r, r), dot(r0, x)");
-//
-//		updateInfo(info, feti->configuration, pw, 0, 0);
-//		pw = _yw; // keep ww for the next iteration
-//		eslog::accumulatedln("cpg: check criteria");
-//	}
-//	eslog::endln("cpg: finished");
-//	eslog::checkpointln("FETI: CPG ITERATIONS");
-//	reconstructSolution(x, r);
-//	eslog::checkpointln("FETI: SOLUTION RECONSTRUCTION");
-//	eslog::info("       = ----------------------------------------------------------------------------- = \n");
+	DualOperator<double> *F = feti->dualOperator;
+	Projector<double> *P = feti->projector;
+	Preconditioner<double> *S = feti->preconditioner;
+
+	P->applyGtInvGGt(P->e, l);             // l = Gt * inv(GGt) * e
+
+	F->apply(l, r);                        // r = d - F * l
+	r.scale(-1);                           //
+	r.add(1, F->d);                        //
+
+	P->apply(r, w);                        // w = P * r
+	S->apply(w, z);                        // z = S * w
+	P->apply(z, y);                        // y = P * z (y = P * S * w)
+
+	y.copyTo(p);                           // p = w
+	l.copyTo(x);                           // x = l
+
+	eslog::checkpointln("FETI: CPG INITIALIZATION");
+	eslog::startln("PCPG: ITERATIONS STARTED", "pcpg");
+	double yw = y.dot(w);
+	setInfo(info, feti->configuration, yw);
+	while (!info.converged) {
+		// gamma = (y, w) / (p, F * p)
+		F->apply(p, Fp);
+		eslog::accumulatedln("pcpg: apply F");
+		double pFp = p.dot(Fp), gamma = yw / pFp;
+		eslog::accumulatedln("pcpg: dot(p, Fp)");
+
+		// x = x + gamma * p
+		// r = r - gamma * F * p
+		x.add(gamma, p);
+		r.add(-gamma, Fp);
+		eslog::accumulatedln("pcpg: update x, r");
+
+		// w = P * r
+		P->apply(r, w);
+		eslog::accumulatedln("pcpg: apply P * r");
+
+		// z = S * w
+		S->apply(w, z);
+		eslog::accumulatedln("pcpg: apply S * w");
+
+		// y = P * z
+		P->apply(z, y);
+		eslog::accumulatedln("pcpg: apply P * z");
+
+		// beta = (y+1, w+1) / (y, w)
+		double _yw = y.dot(w), beta = _yw / yw;
+		eslog::accumulatedln("pcpg: dot(y, w)");
+
+		// p = y + beta * p  (y is not used anymore)
+		y.add(beta, p); y.swap(p);
+		eslog::accumulatedln("pcpg: update p");
+
+		updateInfo(info, feti->configuration, yw, 0, 0);
+		yw = _yw; // keep ww for the next iteration
+		eslog::accumulatedln("pcpg: check criteria");
+	}
+	eslog::endln("pcpg: finished");
+	eslog::checkpointln("FETI: PCPG ITERATIONS");
+	reconstructSolution(x, r);
+	eslog::checkpointln("FETI: SOLUTION RECONSTRUCTION");
+	eslog::info("       = ----------------------------------------------------------------------------- = \n");
 }
 
 template <> void PCPG<std::complex<double> >::solve(IterativeSolverInfo &info)

@@ -1,5 +1,6 @@
 
 #include "totalfeti.h"
+#include "feti/common/applyB.h"
 
 #include "basis/utilities/sysutils.h"
 #include "esinfo/eslog.hpp"
@@ -7,8 +8,6 @@
 
 namespace espreso {
 
-template <typename T> static void _applyBt(TotalFETI<T> *dual, size_t d, const Vector_Dual<T> &in, Vector_Dense<T> &out);
-template <typename T> static void _applyB(TotalFETI<T> *dual, const std::vector<Vector_Dense<T> > &in, Vector_Dual<T> &out);
 template <typename T> static void _print(TotalFETI<T> *dual);
 
 template <typename T>
@@ -82,7 +81,7 @@ static void _update(TotalFETI<T> *dual)
 	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
 		math::solve(dual->Kplus[d], dual->feti->f->domains[d], dual->KplusBtx[d]);
 	}
-	_applyB(dual, dual->KplusBtx, dual->d);
+	applyB(dual->feti, dual->KplusBtx, dual->d);
 	dual->d.synchronize();
 	dual->d.add(T{-1}, dual->feti->equalityConstraints->c);
 	eslog::checkpointln("FETI: COMPUTE DUAL RHS [d]");
@@ -95,10 +94,10 @@ static void _apply(TotalFETI<T> *dual, const Vector_Dual<T> &x, Vector_Dual<T> &
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
-		_applyBt(dual, d, x, dual->Btx[d]);
+		applyBt(dual->feti, d, x, dual->Btx[d]);
 		math::solve(dual->Kplus[d], dual->Btx[d], dual->KplusBtx[d]);
 	}
-	_applyB(dual, dual->KplusBtx, y);
+	applyB(dual->feti, dual->KplusBtx, y);
 }
 
 template <typename T>
@@ -106,47 +105,11 @@ static void _toPrimal(TotalFETI<T> *dual, const Vector_Dual<T> &x, Vector_FETI<V
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
-		_applyBt(dual, d, x, dual->Btx[d]);
+		applyBt(dual->feti, d, x, dual->Btx[d]);
 		math::copy(dual->KplusBtx[d], dual->feti->f->domains[d]);
 		math::add(dual->KplusBtx[d], T{-1}, dual->Btx[d]);
 		math::solve(dual->Kplus[d], dual->KplusBtx[d], y.domains[d]);
 	}
-}
-
-template <typename T>
-static void _applyBt(TotalFETI<T> *dual, size_t d, const Vector_Dual<T> &in, Vector_Dense<T> &out)
-{
-	const typename FETI<T>::EqualityConstraints::Domain &L = dual->feti->equalityConstraints->domain[d];
-
-	// compare performance of the loop and set function
-	//	for (esint i = 0; i < L->B1.domains[d].nnz; ++i) {
-	//		out.vals[L->B1.domains[d].cols[i]] = 0;
-	//	}
-	math::set(out, T{0});
-
-	// check performance with loop unrolling?
-	for (esint r = 0; r < L.B1.nrows; ++r) {
-		for (esint c = L.B1.rows[r]; c < L.B1.rows[r + 1]; ++c) {
-			out.vals[L.B1.cols[c]] += L.B1.vals[c] * in.vals[L.D2C[r]];
-		}
-	}
-}
-
-// TODO: threaded implementation + more efficient 'beta' scale
-template <typename T>
-static void _applyB(TotalFETI<T> *dual, const std::vector<Vector_Dense<T> > &in, Vector_Dual<T> &out)
-{
-	const typename FETI<T>::EqualityConstraints *L = dual->feti->equalityConstraints;
-
-	math::set(out, T{0});
-	for (size_t d = 0; d < L->domain.size(); ++d) {
-		for (esint r = 0; r < L->domain[d].B1.nrows; ++r) {
-			for (esint c = L->domain[d].B1.rows[r]; c < L->domain[d].B1.rows[r + 1]; ++c) {
-				out.vals[L->domain[d].D2C[r]] += L->domain[d].B1.vals[c] * in[d].vals[L->domain[d].B1.cols[c]];
-			}
-		}
-	}
-	out.synchronize();
 }
 
 template <typename T>

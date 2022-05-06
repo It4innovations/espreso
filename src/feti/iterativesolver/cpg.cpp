@@ -41,7 +41,11 @@ static void _info(CPG<T> *solver)
 		break;
 	}
 	eslog::info(" =   PRECISION                                                                      %.2e = \n", solver->feti->configuration.precision);
-	eslog::info(" =   MAX_ITERATIONS                                                                  %7d = \n", solver->feti->configuration.max_iterations);
+	if (solver->feti->configuration.max_iterations == 0) {
+		eslog::info(" =   MAX_ITERATIONS                                                                     AUTO = \n");
+	} else {
+		eslog::info(" =   MAX_ITERATIONS                                                                  %7d = \n", solver->feti->configuration.max_iterations);
+	}
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
 

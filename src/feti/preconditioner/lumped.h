@@ -10,9 +10,14 @@ template <typename T>
 class Lumped: public Preconditioner<T> {
 public:
 	Lumped(FETI<T> *feti): Preconditioner<T>(feti) {}
+	~Lumped();
 
 	void info() {}
 	void update() {}
+
+	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+
+	std::vector<Vector_Dense<T> > Btx, KBtx;
 };
 
 }
