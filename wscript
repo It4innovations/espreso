@@ -1,7 +1,7 @@
 
 import sys, os, logging, subprocess, types
 
-libs_blas=[ "blas", "mkl" ]
+libs_blas=[ "cblas", "mkl" ]
 libs_spblas=[ "mkl", "suitesparse" ]
 libs_solvers=[ "mkl", "pardiso", "suitesparse" ]
 
@@ -138,6 +138,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/morphing/**/*.cpp'), "devel")
     ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "MKL", "PARDISO", "SUITESPARSE" ])
     ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cblas/**/*.cpp'), "wblas", [ "CBLAS" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL", "PARDISO" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cuda/**/*.cpp'), "wcuda", [ "CUDA" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'), "whypre", [ "HYPRE" ])
@@ -284,17 +285,18 @@ def recurse(ctx):
     ctx.recurse("src/wrappers/kahip")
 
     """ Math libraries"""
+    ctx.recurse("src/wrappers/cblas")
+    ctx.recurse("src/wrappers/pardiso")
     ctx.recurse("src/wrappers/mkl")
+    ctx.recurse("src/wrappers/suitesparse")
     ctx.recurse("src/wrappers/cuda")
+    ctx.recurse("src/wrappers/csparse")
 
     """ Solvers """
     ctx.recurse("src/wrappers/mklpdss")
     ctx.recurse("src/wrappers/hypre")
-    ctx.recurse("src/wrappers/pardiso")
     ctx.recurse("src/wrappers/superlu")
     ctx.recurse("src/wrappers/wsmp")
-    ctx.recurse("src/wrappers/csparse")
-    ctx.recurse("src/wrappers/suitesparse")
 
     """ Other """
     ctx.recurse("src/wrappers/pthread")
