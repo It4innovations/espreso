@@ -11,6 +11,7 @@
 
 #include "wrappers/math.blas.h"
 #include "wrappers/math.spblas.h"
+#include "wrappers/math.lapack.h"
 #include "wrappers/math.solver.h"
 
 #include <complex>

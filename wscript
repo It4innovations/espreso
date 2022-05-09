@@ -3,6 +3,7 @@ import sys, os, logging, subprocess, types
 
 libs_blas=[ "cblas", "mkl" ]
 libs_spblas=[ "mkl", "suitesparse" ]
+libs_lapack=[ "mkl", "lapacke" ]
 libs_solvers=[ "mkl", "pardiso", "suitesparse" ]
 
 def configure(ctx):
@@ -51,12 +52,15 @@ def configure(ctx):
     recurse(ctx)
     ctx.options.use_blas = set_libs(ctx, libs_blas, ctx.options.use_blas)
     ctx.options.use_spblas = set_libs(ctx, libs_spblas, ctx.options.use_spblas)
+    ctx.options.use_lapack = set_libs(ctx, libs_lapack, ctx.options.use_lapack)
     ctx.options.use_solver = set_libs(ctx, libs_solvers, ctx.options.use_solver)
     ctx.env.append_unique("DEFINES_"+ctx.options.use_blas.upper(), "USE_BLAS_"+ctx.options.use_blas.upper())
     ctx.env.append_unique("DEFINES_"+ctx.options.use_spblas.upper(), "USE_SPBLAS_"+ctx.options.use_spblas.upper())
+    ctx.env.append_unique("DEFINES_"+ctx.options.use_lapack.upper(), "USE_LAPACK_"+ctx.options.use_lapack.upper())
     ctx.env.append_unique("DEFINES_"+ctx.options.use_solver.upper(), "USE_SOLVER_"+ctx.options.use_solver.upper())
     ctx.env.use_blas = ctx.options.use_blas;
     ctx.env.use_spblas = ctx.options.use_spblas;
+    ctx.env.use_lapack = ctx.options.use_lapack;
     ctx.env.use_solver = ctx.options.use_solver;
 
     if ctx.options.with_nvtx:
@@ -137,6 +141,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "MKL", "PARDISO", "SUITESPARSE", "CBLAS" ])
     ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cblas/**/*.cpp'), "wblas", [ "CBLAS" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/lapacke/**/*.cpp'), "wlapacke", [ "LAPACKE" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL", "PARDISO" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cuda/**/*.cpp'), "wcuda", [ "CUDA" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'), "whypre", [ "HYPRE" ])
@@ -184,6 +189,7 @@ def options(opt):
 
     opt.math.add_option("--use-blas", action="store", default="mkl", choices=libs_blas, help="Set BLAS library to use: {} [default: %default].".format(libs_blas))
     opt.math.add_option("--use-spblas", action="store", default="mkl", choices=libs_spblas, help="Set SpBLAS library to use: {} [default: %default].".format(libs_spblas))
+    opt.math.add_option("--use-lapack", action="store", default="mkl", choices=libs_lapack, help="Set LAPACk library to use: {} [default: %default].".format(libs_lapack))
     opt.solvers.add_option("--use-solver", action="store", default="mkl", choices=libs_solvers, help="Set sparse solver library to use: {} [default: %default].".format(libs_solvers))
 
     opt.compiler.add_option("--mpicxx",
@@ -271,6 +277,7 @@ def settings(ctx):
     ctx.msg("                                    mode", ctx.env.mode)
     ctx.msg("                                    BLAS", ctx.env.use_blas)
     ctx.msg("                                  SpBLAS", ctx.env.use_spblas)
+    ctx.msg("                                  LAPACK", ctx.env.use_lapack)
     ctx.msg("                           sparse solver", ctx.env.use_solver)
     ctx.env.mesio = ctx.env.decomposers or ctx.env.dist_decomposers
     ctx.env.espreso = ctx.env.blas and ctx.env.spblas and ctx.env.solvers
@@ -298,6 +305,7 @@ def print_available(ctx):
     ctx.env.dist_decomposers = _print("          distributed graph partitioners", [ "parmetis", "ptscotch" ])
     ctx.env.blas             = _print("                          BLAS libraries", libs_blas)
     ctx.env.spblas           = _print("                        SpBLAS libraries", libs_spblas)
+    ctx.env.lapack           = _print("                        LAPACK libraries", libs_lapack)
     ctx.env.solvers          = _print("                          sparse solvers", libs_solvers)
     ctx.env.dist_solvers     = _print("              distributed sparse solvers", [ "mklpdss", "hypre", "superlu", "wsmp" ])
     ctx.env.other            = _print("                 miscellaneous libraries", [ "hdf5", "pthread" ])
@@ -316,6 +324,7 @@ def recurse(ctx):
 
     """ Math libraries"""
     ctx.recurse("src/wrappers/cblas")
+    ctx.recurse("src/wrappers/lapacke")
     ctx.recurse("src/wrappers/pardiso")
     ctx.recurse("src/wrappers/mkl")
     ctx.recurse("src/wrappers/suitesparse")

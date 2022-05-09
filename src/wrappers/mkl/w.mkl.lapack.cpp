@@ -4,9 +4,11 @@
 #include "esinfo/eslog.h"
 
 #ifdef HAVE_MKL
+#ifdef USE_LAPACK_MKL
 #include "mkl_lapacke.h"
 
-using namespace espreso;
+namespace espreso {
+namespace math {
 
 //void MATH::upDense3x3EigenValues(double *mVals, double *eigenValues)
 //{
@@ -60,4 +62,8 @@ using namespace espreso;
 //#endif
 //}
 
+}
+}
+
+#endif
 #endif
