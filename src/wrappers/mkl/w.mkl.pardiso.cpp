@@ -49,84 +49,106 @@ bool _callPardiso(esint phase, const Matrix_CSR<T> &m, esint nrhs, T *rhs, T *so
 }
 
 template <>
-void initSolver(Matrix_CSR<double> &x)
+void initSolver(Matrix_CSR<double> &m)
 {
-	x._solver = new Matrix_CSR_Solver();
-	x._solver->mtype = _pardisoType(x);
-	pardisoinit(x._solver->pt, &x._solver->mtype, x._solver->iparm);
-	x._solver->iparm[0] = 1;			/* No solver default */
-	x._solver->iparm[1] = 2;			/* Fill-in reordering from METIS */
-	x._solver->iparm[2] = 1; 			//by default the solver runs with single thread
-	x._solver->iparm[9] = 13;			/* Perturb the pivot elements with 1E-13 */
-	x._solver->iparm[10] = 1;			/* Use nonsymmetric permutation and scaling MPS */
+	m._solver = new Matrix_CSR_Solver();
+	m._solver->mtype = _pardisoType(m);
+	pardisoinit(m._solver->pt, &m._solver->mtype, m._solver->iparm);
+	m._solver->iparm[0] = 1;			/* No solver default */
+	m._solver->iparm[1] = 2;			/* Fill-in reordering from METIS */
+	m._solver->iparm[9] = 13;			/* Perturb the pivot elements with 1E-13 */
 }
 
 template <>
-void initSolver(Matrix_CSR<std::complex<double> > &x)
+void initSolver(Matrix_CSR<std::complex<double> > &m)
 {
-	x._solver = new Matrix_CSR_Solver();
-	x._solver->mtype = _pardisoType(x);
-	pardisoinit(x._solver->pt, &x._solver->mtype, x._solver->iparm);
-	x._solver->iparm[0] = 1;			/* No solver default */
-	x._solver->iparm[1] = 2;			/* Fill-in reordering from METIS */
-	x._solver->iparm[2] = 1; 			//by default the solver runs with single thread
-	x._solver->iparm[9] = 13;			/* Perturb the pivot elements with 1E-13 */
-	x._solver->iparm[10] = 1;			/* Use nonsymmetric permutation and scaling MPS */
+	m._solver = new Matrix_CSR_Solver();
+	m._solver->mtype = _pardisoType(m);
+	pardisoinit(m._solver->pt, &m._solver->mtype, m._solver->iparm);
+	m._solver->iparm[0] = 1;			/* No solver default */
+	m._solver->iparm[1] = 2;			/* Fill-in reordering from METIS */
+	m._solver->iparm[9] = 13;			/* Perturb the pivot elements with 1E-13 */
 }
 
 template <>
-void symbolicFactorization(const Matrix_CSR<double> &x)
+void symbolicFactorization(const Matrix_CSR<double> &m)
 {
-	_callPardiso<double>(11, x, 0, nullptr, nullptr);
+	_callPardiso<double>(11, m, 0, nullptr, nullptr);
 }
 
 template <>
-void symbolicFactorization(const Matrix_CSR<std::complex<double> > &x)
+void symbolicFactorization(const Matrix_CSR<std::complex<double> > &m)
 {
-	x._solver->mtype = _pardisoType(x);
-	pardisoinit(x._solver->pt, &x._solver->mtype, x._solver->iparm);
-	x._solver->iparm[0] = 1;			/* No solver default */
-	x._solver->iparm[1] = 2;			/* Fill-in reordering from METIS */
-	x._solver->iparm[2] = 1; 			//by default the solver runs with single thread
-	x._solver->iparm[9] = 13;			/* Perturb the pivot elements with 1E-13 */
-	x._solver->iparm[10] = 1;			/* Use nonsymmetric permutation and scaling MPS */
-	_callPardiso<std::complex<double> >(11, x, 0, nullptr, nullptr);
+	_callPardiso<std::complex<double> >(11, m, 0, nullptr, nullptr);
 }
 
 template <>
-void numericalFactorization(const Matrix_CSR<double> &x)
+void numericalFactorization(const Matrix_CSR<double> &m)
 {
-	_callPardiso<double>(22, x, 0, nullptr, nullptr);
+	_callPardiso<double>(22, m, 0, nullptr, nullptr);
 }
 
 template <>
-void numericalFactorization(const Matrix_CSR<std::complex<double> > &x)
+void numericalFactorization(const Matrix_CSR<std::complex<double> > &m)
 {
-	_callPardiso<std::complex<double> >(22, x, 0, nullptr, nullptr);
+	_callPardiso<std::complex<double> >(22, m, 0, nullptr, nullptr);
 }
 
 template <>
-void solve(const Matrix_CSR<double> &x, Vector_Dense<double> &rhs, Vector_Dense<double> &solution)
+void solve(const Matrix_CSR<double> &m, Vector_Dense<double> &rhs, Vector_Dense<double> &solution)
 {
-	_callPardiso<double>(33, x, 1, rhs.vals, solution.vals);
+	_callPardiso<double>(33, m, 1, rhs.vals, solution.vals);
 }
 
 template <>
-void solve(const Matrix_CSR<double> &x, Matrix_Dense<double> &rhs, Matrix_Dense<double> &solution)
+void solve(const Matrix_CSR<double> &m, Matrix_Dense<double> &rhs, Matrix_Dense<double> &solution)
 {
-	_callPardiso<double>(33, x, rhs.nrows, rhs.vals, solution.vals);
+	_callPardiso<double>(33, m, rhs.nrows, rhs.vals, solution.vals);
 }
 
 template <>
-void solve(const Matrix_CSR<std::complex<double> > &x, Vector_Dense<std::complex<double> > &rhs, Vector_Dense<std::complex<double> > &solution)
+void solve(const Matrix_CSR<std::complex<double> > &m, Vector_Dense<std::complex<double> > &rhs, Vector_Dense<std::complex<double> > &solution)
 {
-	_callPardiso<std::complex<double> >(33, x, 1, rhs.vals, solution.vals);
+	_callPardiso<std::complex<double> >(33, m, 1, rhs.vals, solution.vals);
 }
 
 template <>
-void solve(const Matrix_CSR<std::complex<double> > &x, Matrix_Dense<std::complex<double> > &rhs, Matrix_Dense<std::complex<double> > &solution)
+void solve(const Matrix_CSR<std::complex<double> > &m, Matrix_Dense<std::complex<double> > &rhs, Matrix_Dense<std::complex<double> > &solution)
 {
-	_callPardiso<std::complex<double> >(33, x, rhs.nrows, rhs.vals, solution.vals);
+	_callPardiso<std::complex<double> >(33, m, rhs.nrows, rhs.vals, solution.vals);
+}
+
+template <typename T>
+void _computeSC(const Matrix_CSR<T> &m, Matrix_Dense<T> &sc)
+{
+	Matrix_Dense<T> full; full.resize(sc.nrows, sc.nrows);
+	Vector_Dense<esint> perm; perm.resize(m.nrows);
+	for (esint i = 0; i < sc.nrows; ++i) { perm.vals[i] = 1; }
+	for (esint i = sc.nrows; i < m.nrows; ++i) { perm.vals[i] = 0; }
+
+	m._solver->iparm[35] = 1;
+	m._solver->perm = perm.vals;
+	_callPardiso<T>(12, m, 0, nullptr, full.vals);
+	m._solver->perm = nullptr;
+	m._solver->iparm[35] = 0;
+
+	for (esint r = 0, i = 0; r < sc.nrows; ++r) {
+		for (esint c = r; c < sc.ncols; ++c, ++i) {
+			sc.vals[i] = full.vals[r * sc.ncols + c];
+		}
+	}
+}
+
+template <>
+void computeSC(const Matrix_CSR<double> &m, Matrix_Dense<double> &sc)
+{
+	_computeSC(m, sc);
+}
+
+template <>
+void computeSC(const Matrix_CSR<std::complex<double> > &m, Matrix_Dense<std::complex<double> > &sc)
+{
+	_computeSC(m, sc);
 }
 
 template <>

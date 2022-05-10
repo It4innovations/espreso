@@ -11,7 +11,7 @@ struct Matrix_Dense_External_Representation;
 
 template <typename T>
 struct _Matrix_Dense {
-	esint nrows, ncols;
+	esint nrows, ncols, nnz;
 	T *vals;
 };
 
@@ -24,21 +24,22 @@ public:
 
 	}
 
-	Matrix_Dense(const Matrix_Dense &other): _Matrix_Dense<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _external{nullptr}, _allocated{}
+	Matrix_Dense(const Matrix_Dense &other): _Matrix_Dense<T>{}, _external{nullptr}, _allocated{}
 	{
 		this->type = other.type;
 		this->shape = other.shape;
-		realloc(_allocated, other.nrows, other.ncols);
+		realloc(_allocated, this->shape, other.nrows, other.ncols);
 		_Matrix_Dense<T>::operator=(_allocated);
-		for (esint i = 0; i < other.nrows * other.ncols; ++i) {
+		for (esint i = 0; i < other.nnz; ++i) {
 			this->vals[i] = other.vals[i];
 		}
 	}
 
-	Matrix_Dense(Matrix_Dense &&other): _Matrix_Dense<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _external{nullptr}, _allocated{}
+	Matrix_Dense(Matrix_Dense &&other): _Matrix_Dense<T>{}, _allocated{}
 	{
 		this->type = other.type;
 		this->shape = other.shape;
+		swap(this->_external, other._external);
 		swap(*this, other);
 		swap(_allocated, other._allocated);
 	}
@@ -76,7 +77,7 @@ public:
 
 	void resize(esint nrows, esint ncols)
 	{
-		realloc(_allocated, nrows, ncols);
+		realloc(_allocated, shape, nrows, ncols);
 		_Matrix_Dense<T>::operator=(_allocated);
 	}
 
@@ -87,7 +88,7 @@ public:
 
 	void pattern(const Matrix_Dense &other)
 	{
-		realloc(_allocated, other.nrows, other.ncols);
+		realloc(_allocated, other.shape, other.nrows, other.ncols);
 		_Matrix_Dense<T>::operator=(_allocated);
 	}
 
@@ -116,14 +117,21 @@ protected:
 		swap(m.vals, n.vals);
 	}
 
-	void realloc(_Matrix_Dense<T> &m, esint nrows, esint ncols)
+	void realloc(_Matrix_Dense<T> &m, const Matrix_Shape &shape, esint nrows, esint ncols)
 	{
+		esint nnz;
+		if (shape == Matrix_Shape::FULL) {
+			nnz = nrows * ncols;
+		} else {
+			nnz = (nrows * ncols - nrows) / 2 + nrows;
+		}
 		if (m.nrows * m.ncols < nrows * ncols) {
 			clear(m);
-			m.vals = new T[nrows * ncols];
+			m.vals = new T[nnz];
 		}
 		m.nrows = nrows;
 		m.ncols = ncols;
+		m.nnz = nnz;
 	}
 
 	void clear(_Matrix_Dense<T> &m)

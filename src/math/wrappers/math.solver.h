@@ -17,6 +17,8 @@ namespace math {
 	template <typename T> void solve(const Matrix_CSR<T> &x, Vector_Dense<T> &rhs, Vector_Dense<T> &solution);
 	template <typename T> void solve(const Matrix_CSR<T> &x, Matrix_Dense<T> &rhs, Matrix_Dense<T> &solution);
 
+	template <typename T> void computeSC(const Matrix_CSR<T> &x, Matrix_Dense<T> &sc);
+
 	template <typename T> void freeSolver(Matrix_CSR<T> &x);
 }
 }

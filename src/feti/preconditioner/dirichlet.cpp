@@ -22,19 +22,19 @@ static void _set(Dirichlet<T> *dirichlet)
 {
 	dirichlet->Btx.resize(dirichlet->feti->K->domains.size());
 	dirichlet->KBtx.resize(dirichlet->feti->K->domains.size());
+	dirichlet->sc.resize(dirichlet->feti->K->domains.size());
 
 	#pragma omp parallel for
 	for (size_t d = 0; d < dirichlet->feti->K->domains.size(); ++d) {
 		math::initSolver(dirichlet->feti->K->domains[d]);
-		math::symbolicFactorization(dirichlet->feti->K->domains[d]);
 		dirichlet->Btx[d].resize(dirichlet->feti->K->domains[d].nrows);
 		dirichlet->KBtx[d].resize(dirichlet->feti->K->domains[d].nrows);
-	}
+		dirichlet->sc[d].shape = Matrix_Shape::UPPER;
 
-	const auto &dir = dirichlet->feti->K->decomposition->fixedDOFs;
-	const auto &gluing = dirichlet->feti->K->decomposition->sharedDOFs;
-	dirichlet->surface.resize(gluing.size() + dir.size());
-	std::set_union(gluing.begin(), gluing.end(), dir.begin(), dir.end(), dirichlet->surface.begin());
+		const typename FETI<T>::EqualityConstraints::Domain &L = dirichlet->feti->equalityConstraints->domain[d];
+		esint sc_size = *std::max_element(L.B1.cols, L.B1.cols + L.B1.nnz) + 1;
+		dirichlet->sc[d].resize(sc_size, sc_size);
+	}
 
 	eslog::checkpointln("FETI: SET DIRICHLET PRECONDITIONER");
 }
@@ -54,7 +54,7 @@ static void _update(Dirichlet<T> *dirichlet)
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < dirichlet->feti->K->domains.size(); ++d) {
-		math::numericalFactorization(dirichlet->feti->K->domains[d]);
+		math::computeSC(dirichlet->feti->K->domains[d], dirichlet->sc[d]);
 	}
 }
 
@@ -64,7 +64,7 @@ static void _apply(Dirichlet<T> *dirichlet, const Vector_Dual<T> &x, Vector_Dual
 	#pragma omp parallel for
 	for (size_t d = 0; d < dirichlet->feti->K->domains.size(); ++d) {
 		applyBt(dirichlet->feti, d, x, dirichlet->Btx[d]);
-		math::solve(dirichlet->feti->K->domains[d], dirichlet->Btx[d], dirichlet->KBtx[d]);
+		math::apply(dirichlet->KBtx[d], T{1}, dirichlet->sc[d], T{0}, dirichlet->Btx[d]);
 	}
 	applyB(dirichlet->feti, dirichlet->KBtx, y);
 }

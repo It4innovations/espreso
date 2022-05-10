@@ -3,7 +3,6 @@
 #define SRC_FETI_PRECONDITIONER_DIRICHLET_H_
 
 #include "preconditioner.h"
-#include "basis/containers/allocators.h"
 
 namespace espreso {
 
@@ -19,8 +18,7 @@ public:
 	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
 	std::vector<Vector_Dense<T> > Btx, KBtx;
-
-	std::vector<esint, initless_allocator<esint> > surface;
+	std::vector<Matrix_Dense<T> > sc;
 };
 
 }
