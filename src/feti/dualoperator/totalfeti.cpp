@@ -30,6 +30,8 @@ static void _info(TotalFETI<T> *dual)
 template <typename T>
 static void _set(TotalFETI<T> *dual)
 {
+	const typename FETI<T>::EqualityConstraints *L = dual->feti->equalityConstraints;
+
 	dual->Kplus.resize(dual->feti->K->domains.size());
 	dual->d.resize();
 	dual->Btx.resize(dual->feti->K->domains.size());
@@ -51,6 +53,20 @@ static void _set(TotalFETI<T> *dual)
 		math::initSolver(dual->Kplus[d]);
 		math::symbolicFactorization(dual->Kplus[d]);
 	}
+
+	if (dual->feti->configuration.restricted_dual) {
+		dual->KplusSurface.resize(dual->feti->K->domains.size());
+
+		#pragma omp parallel for
+		for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
+			dual->KplusSurface[d].shallowCopy(dual->Kplus[d]);
+			esint surfaceSize = *std::max_element(L->domain[d].B1.cols, L->domain[d].B1.cols + L->domain[d].B1.nnz) + 1;
+
+			math::initSolver(dual->KplusSurface[d]);
+			math::restrictToSurface(dual->KplusSurface[d], surfaceSize);
+			math::symbolicFactorization(dual->KplusSurface[d]);
+		}
+	}
 	eslog::checkpointln("FETI: TFETI SYMBOLIC FACTORIZATION");
 }
 
@@ -60,6 +76,9 @@ static void _free(TotalFETI<T> *dual)
 	#pragma omp parallel for
 	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
 		math::freeSolver(dual->Kplus[d]);
+		if (dual->feti->configuration.restricted_dual) {
+			math::freeSolver(dual->KplusSurface[d]);
+		}
 	}
 }
 
@@ -74,6 +93,9 @@ static void _update(TotalFETI<T> *dual)
 	#pragma omp parallel for
 	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
 		math::numericalFactorization(dual->Kplus[d]);
+		if (dual->feti->configuration.restricted_dual) {
+			math::numericalFactorization(dual->KplusSurface[d]);
+		}
 	}
 	eslog::checkpointln("FETI: TFETI NUMERICAL FACTORIZATION");
 
@@ -95,7 +117,11 @@ static void _apply(TotalFETI<T> *dual, const Vector_Dual<T> &x, Vector_Dual<T> &
 	#pragma omp parallel for
 	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
 		applyBt(dual->feti, d, x, dual->Btx[d]);
-		math::solve(dual->Kplus[d], dual->Btx[d], dual->KplusBtx[d]);
+		if (dual->feti->configuration.restricted_dual) {
+			math::solve(dual->KplusSurface[d], dual->Btx[d], dual->KplusBtx[d]);
+		} else {
+			math::solve(dual->Kplus[d], dual->Btx[d], dual->KplusBtx[d]);
+		}
 	}
 	applyB(dual->feti, dual->KplusBtx, y);
 }

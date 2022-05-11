@@ -53,6 +53,18 @@ void initSolver(Matrix_CSR<std::complex<double> > &A)
 }
 
 template <>
+void restrictToSurface(Matrix_CSR<double> &m, esint surfaceSize)
+{
+	// implement me
+}
+
+template <>
+void restrictToSurface(Matrix_CSR<std::complex<double> > &m, esint surfaceSize)
+{
+	// implement me
+}
+
+template <>
 void symbolicFactorization(const Matrix_CSR<double> &A)
 {
 	switch (A.type) {

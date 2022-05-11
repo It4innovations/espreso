@@ -9,7 +9,7 @@ namespace espreso {
 template <typename T>
 class Dirichlet: public Preconditioner<T> {
 public:
-	Dirichlet(FETI<T> *feti): Preconditioner<T>(feti) {}
+	Dirichlet(FETI<T> *feti);
 	~Dirichlet();
 
 	void info();

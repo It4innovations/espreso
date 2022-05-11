@@ -102,6 +102,13 @@ public:
 		this->cols = other.cols;
 	}
 
+	void shallowCopy(const Matrix_CSR &other)
+	{
+		type = other.type;
+		shape = other.shape;
+		_Matrix_CSR<T>::operator=(other);
+	}
+
 	Matrix_Type type;
 	Matrix_Shape shape;
 	Matrix_CSR_External_Representation *_spblas;

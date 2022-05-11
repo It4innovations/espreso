@@ -142,6 +142,7 @@ struct FETIConfiguration: public ECFDescription {
 	bool exhaustive_info;
 	bool orthogonal_K_kernels;
 	bool redundant_lagrange, scaling;
+	bool restricted_dual;
 
 	B0_TYPE B0_type;
 

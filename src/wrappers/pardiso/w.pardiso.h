@@ -28,6 +28,11 @@ struct PARDISOParameters {
 		error = 0;
 		perm = NULL;
 	}
+
+	~PARDISOParameters()
+	{
+		if (perm) delete perm;
+	}
 };
 }
 

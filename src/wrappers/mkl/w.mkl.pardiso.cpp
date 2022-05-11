@@ -71,6 +71,25 @@ void initSolver(Matrix_CSR<std::complex<double> > &m)
 }
 
 template <>
+void restrictToSurface(Matrix_CSR<double> &m, esint surfaceSize)
+{
+	m._solver->iparm[30] = 1;
+	m._solver->perm = new esint[m.nrows];
+	for (esint i = 0; i < surfaceSize; ++i) { m._solver->perm[i] = 1; }
+	for (esint i = surfaceSize; i < m.nrows; ++i) { m._solver->perm[i] = 0; }
+
+}
+
+template <>
+void restrictToSurface(Matrix_CSR<std::complex<double> > &m, esint surfaceSize)
+{
+	m._solver->iparm[30] = 1;
+	m._solver->perm = new esint[m.nrows];
+	for (esint i = 0; i < surfaceSize; ++i) { m._solver->perm[i] = 1; }
+	for (esint i = surfaceSize; i < m.nrows; ++i) { m._solver->perm[i] = 0; }
+}
+
+template <>
 void symbolicFactorization(const Matrix_CSR<double> &m)
 {
 	_callPardiso<double>(11, m, 0, nullptr, nullptr);
@@ -127,9 +146,9 @@ void _computeSC(const Matrix_CSR<T> &m, Matrix_Dense<T> &sc)
 	for (esint i = sc.nrows; i < m.nrows; ++i) { perm.vals[i] = 0; }
 
 	m._solver->iparm[35] = 1;
-	m._solver->perm = perm.vals;
+	std::swap(m._solver->perm, perm.vals);
 	_callPardiso<T>(12, m, 0, nullptr, full.vals);
-	m._solver->perm = nullptr;
+	std::swap(m._solver->perm, perm.vals);
 	m._solver->iparm[35] = 0;
 
 	for (esint r = 0, i = 0; r < sc.nrows; ++r) {

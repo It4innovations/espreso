@@ -124,6 +124,11 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdescription({ "Scaling" })
 			.setdatatype({ ECFDataType::BOOL }));
 
+	restricted_dual = true;
+	REGISTER(restricted_dual, ECFMetaData()
+			.setdescription({ "Compute Kplus only from K surface." })
+			.setdatatype({ ECFDataType::BOOL }));
+
 	B0_type = B0_TYPE::KERNELS;
 	REGISTER(B0_type, ECFMetaData()
 			.setdescription({ "HFETI averaging" })

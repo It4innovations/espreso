@@ -9,10 +9,10 @@ namespace espreso {
 template <typename T>
 class WeightFunction: public Preconditioner<T> {
 public:
-	WeightFunction(FETI<T> *feti): Preconditioner<T>(feti) {}
+	WeightFunction(FETI<T> *feti);
 
-	void info() {}
-	void update() {}
+	void info();
+	void update();
 
 	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
