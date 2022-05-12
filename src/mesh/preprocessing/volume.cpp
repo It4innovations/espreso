@@ -216,6 +216,11 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 							(grid_end.z - grid_start.z)/voxels);
 	printf("offset: %f %f %f\n", grid_offset.x, grid_offset.y, grid_offset.z);
 
+	// debug
+	FILE * pFile;
+   	pFile = fopen ("volume_debug.txt","w");
+	fprintf(pFile, "x;y;z;x_inx;y_inx;z_inx;element_inx\n");
+
 	// elements cycle
 	int eindex = 0;
 	for (auto e = elements->nodes->cbegin(); e != elements->nodes->cend(); ++e, ++eindex) {
@@ -370,6 +375,18 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		// printf("max %f %f %f\n", el_max.x, el_max.y, el_max.z);
 		//printf("\n");
 	}
+
+	//debug
+	for(int i = 0; i < grid.size(); i++){
+		int z = i/(grid_size*grid_size);
+		int y = (i-z*grid_size*grid_size)/grid_size;
+		int x = i - z*grid_size*grid_size - y*grid_size;	
+
+		fprintf(pFile, "%f;%f;%f;%d;%d;%d;%d\n", grid_start.x + x*grid_offset.x, grid_start.y - y*grid_offset.y, grid_start.z + z*grid_offset.z, x, y, z, grid[i]); // fprintf(pFile, "x;y;z;x_inx;y_inx;z_inx;element_inx;face_vertex;total_angle\n");
+	}	
+	fclose (pFile);
+
+	//grid[81*grid_size*grid_size + 87*grid_size + 3] = 0; // x==3 && y==87 && z==81
 
 	if(dim == 3){
         store3D(grid_size, grid);
