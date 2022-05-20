@@ -155,9 +155,6 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 {
 	profiler::syncstart("compute_volume_indices");
 
-	//debug
-	//usleep(20 * 1000000);
-
 	// uniform grid
 	esint grid_size = 100;
 	int voxels = grid_size - 1;
@@ -217,9 +214,15 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	printf("offset: %f %f %f\n", grid_offset.x, grid_offset.y, grid_offset.z);
 
 	// debug
-	FILE * pFile;
-   	pFile = fopen ("volume_debug.txt","w");
-	fprintf(pFile, "x;y;z;x_inx;y_inx;z_inx;element_inx\n");
+	// FILE * pFile;
+   	// pFile = fopen ("volume_debug.txt","w");
+	// fprintf(pFile, "x;y;z;x_inx;y_inx;z_inx;element_inx\n");
+
+	// FILE * pFile_element;
+   	// pFile_element = fopen ("./debug_files/point_element.txt","w");
+
+	//FILE * pFile_hist;
+   	//pFile_hist = fopen ("./debug_files/angle_results.txt","w");
 
 	// elements cycle
 	int eindex = 0;
@@ -318,6 +321,15 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 								total_angle += face_solid_angle_contribution(p, v0, v1, v2);
 								total_angle += face_solid_angle_contribution(p, v0, v2, v3);
 
+								// debug
+								//if(x==3 && y==87 && z==82){
+									// fprintf(pFile_element, "%f;%f;%f\n", v0.x, v0.y, v0.z);
+									// fprintf(pFile_element, "%f;%f;%f\n", v1.x, v1.y, v1.z);
+									// fprintf(pFile_element, "%f;%f;%f\n", v2.x, v2.y, v2.z);
+									// fprintf(pFile_element, "%f;%f;%f\n", v3.x, v3.y, v3.z);
+									// printf("point %f %f %f\n", p.x, p.y, p.z);
+								//}
+
 							}
 
 							//for (auto n = face->begin(); n != face->end(); ++n) {
@@ -327,8 +339,11 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 							//printf("\n");
 						}
 
+						//debug
+						//fprintf(pFile_hist, "%f\n", fabs(total_angle));
+
 						// save element index if point is in the element
-						if(is_p_face_vertex || fabs(total_angle) > 0.0){ // inside
+						if(is_p_face_vertex || fabs(total_angle) > 6.0){ // 2pi or 4pi -> inside
 							grid[grid_inx_1d] = eindex;
 
 							if(is_p_face_vertex){
@@ -377,14 +392,16 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	}
 
 	//debug
-	for(int i = 0; i < grid.size(); i++){
-		int z = i/(grid_size*grid_size);
-		int y = (i-z*grid_size*grid_size)/grid_size;
-		int x = i - z*grid_size*grid_size - y*grid_size;	
+	// for(int i = 0; i < grid.size(); i++){
+	// 	int z = i/(grid_size*grid_size);
+	// 	int y = (i-z*grid_size*grid_size)/grid_size;
+	// 	int x = i - z*grid_size*grid_size - y*grid_size;	
 
-		fprintf(pFile, "%f;%f;%f;%d;%d;%d;%d\n", grid_start.x + x*grid_offset.x, grid_start.y - y*grid_offset.y, grid_start.z + z*grid_offset.z, x, y, z, grid[i]); // fprintf(pFile, "x;y;z;x_inx;y_inx;z_inx;element_inx;face_vertex;total_angle\n");
-	}	
-	fclose (pFile);
+	// 	fprintf(pFile, "%f;%f;%f;%d;%d;%d;%d\n", grid_start.x + x*grid_offset.x, grid_start.y - y*grid_offset.y, grid_start.z + z*grid_offset.z, x, y, z, grid[i]); // fprintf(pFile, "x;y;z;x_inx;y_inx;z_inx;element_inx;face_vertex;total_angle\n");
+	// }	
+	// fclose(pFile);
+	// fclose(pFile_element);
+	// fclose(pFile_hist);
 
 	//grid[81*grid_size*grid_size + 87*grid_size + 3] = 0; // x==3 && y==87 && z==81
 
