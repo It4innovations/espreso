@@ -88,7 +88,7 @@ void store(const esint &voxels, const std::vector<int> &grid)
 	}
 }
 
-void store3D(const esint &voxels, const std::vector<int> &grid)
+void store3D(const esint &voxels, const std::vector<int> &grid, Point origin, Point grid_offset)
 {
     std::ofstream casefile("volume.case");
     casefile
@@ -127,7 +127,7 @@ void store3D(const esint &voxels, const std::vector<int> &grid)
     geo.precision(5);
     geo.setf(std::ios::scientific);
     geo.setf(std::ios::showpos);
-    geo << 0. << "\n" << 0. << "\n" << 0. << "\n" << 1. / voxels << "\n" << -1. / voxels << "\n" << 1. / voxels << "\n";
+    geo << origin.x << "\n" << origin.y << "\n" << origin.z << "\n" << grid_offset.x << "\n" << -grid_offset.y << "\n" << grid_offset.z << "\n";
 
     std::stringstream ss; ss << std::setw(4) << std::setfill('0') << 0;
     std::ofstream volume("VOLUME." + ss.str());
@@ -406,7 +406,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	//grid[81*grid_size*grid_size + 87*grid_size + 3] = 0; // x==3 && y==87 && z==81
 
 	if(dim == 3){
-        store3D(grid_size, grid);
+        store3D(grid_size, grid, grid_start, grid_offset);
 	} else {
         store(grid_size, grid);
 	}
