@@ -90,65 +90,65 @@ void store(const esint &voxels, const std::vector<int> &grid)
 
 void store3D(const esint &voxels, const std::vector<int> &grid, Point origin, Point grid_offset)
 {
-    std::ofstream casefile("volume.case");
-    casefile
-            << "\n"
-            << "FORMAT\n"
-            << "type: ensight gold\n"
-            << "\n"
-            << "GEOMETRY\n"
-            << "model: volume.geo\n"
-            << "\n"
-            << "VARIABLE\n"
-            << "scalar per node: 1 VOLUME VOLUME.****\n"
-            << "\n"
-            << "TIME\n"
-            << "time set:               1\n"
-            << "number of steps:        1\n"
-            << "filename start numbers: 0\n"
-            << "filename increment:     1\n"
-            << "time values: 0\n";
+	std::ofstream casefile("volume.case");
+	casefile
+			<< "\n"
+			<< "FORMAT\n"
+			<< "type: ensight gold\n"
+			<< "\n"
+			<< "GEOMETRY\n"
+			<< "model: volume.geo\n"
+			<< "\n"
+			<< "VARIABLE\n"
+			<< "scalar per node: 1 VOLUME VOLUME.****\n"
+			<< "\n"
+			<< "TIME\n"
+			<< "time set:               1\n"
+			<< "number of steps:        1\n"
+			<< "filename start numbers: 0\n"
+			<< "filename increment:     1\n"
+			<< "time values: 0\n";
 
-    std::ofstream geo("volume.geo");
-    geo
-            << "Output of our simple app for testing different ways of parallelization.\n"
-            << "You can open this file by majority of visualization tools (e.g., by ParaView: 'paraview heatflow.case')\n"
-            << "node id off\n"
-            << "element id off\n"
-            << "part\n"
-            << "         1\n"
-            << "3D uniform-elements (description line for part 1)\n"
-            << "block uniform\n";
-    geo.width(10); geo << voxels;
-    geo.width(10); geo << voxels;
-    geo.width(10); geo << voxels;
-    geo << "\n";
+	std::ofstream geo("volume.geo");
+	geo
+			<< "Output of our simple app for testing different ways of parallelization.\n"
+			<< "You can open this file by majority of visualization tools (e.g., by ParaView: 'paraview heatflow.case')\n"
+			<< "node id off\n"
+			<< "element id off\n"
+			<< "part\n"
+			<< "         1\n"
+			<< "3D uniform-elements (description line for part 1)\n"
+			<< "block uniform\n";
+	geo.width(10); geo << voxels;
+	geo.width(10); geo << voxels;
+	geo.width(10); geo << voxels;
+	geo << "\n";
 
-    geo.precision(5);
-    geo.setf(std::ios::scientific);
-    geo.setf(std::ios::showpos);
-    geo << origin.x << "\n" << origin.y << "\n" << origin.z << "\n" << grid_offset.x << "\n" << -grid_offset.y << "\n" << grid_offset.z << "\n";
+	geo.precision(5);
+	geo.setf(std::ios::scientific);
+	geo.setf(std::ios::showpos);
+	geo << origin.x << "\n" << origin.y << "\n" << origin.z << "\n" << grid_offset.x << "\n" << -grid_offset.y << "\n" << grid_offset.z << "\n";
 
-    std::stringstream ss; ss << std::setw(4) << std::setfill('0') << 0;
-    std::ofstream volume("VOLUME." + ss.str());
+	std::stringstream ss; ss << std::setw(4) << std::setfill('0') << 0;
+	std::ofstream volume("VOLUME." + ss.str());
 
-    volume
-            << "VOLUME\n"
-            << "part\n"
-            << "         1\n"
-            << "coordinates\n";
+	volume
+			<< "VOLUME\n"
+			<< "part\n"
+			<< "         1\n"
+			<< "coordinates\n";
 
-    volume.precision(5);
-    volume.setf(std::ios::scientific);
-    volume.setf(std::ios::showpos);
+	volume.precision(5);
+	volume.setf(std::ios::scientific);
+	volume.setf(std::ios::showpos);
 
-    for (esint t = 0; t < voxels; ++t) {
-        for (esint r = 0; r < voxels; ++r) {
-            for (esint c = 0; c < voxels; ++c) {
-                volume << grid[t * voxels * voxels + r * voxels + c] << "\n";
-            }
-        }
-    }
+	for (esint t = 0; t < voxels; ++t) {
+		for (esint r = 0; r < voxels; ++r) {
+			for (esint c = 0; c < voxels; ++c) {
+				volume << grid[t * voxels * voxels + r * voxels + c] << "\n";
+			}
+		}
+	}
 }
 
 void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
@@ -165,14 +165,14 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		grid.resize(grid_size * grid_size * grid_size);
 		fill(grid.begin(), grid.end(), grid_init_value);
 	} else { // dim == 2
-        grid.resize(grid_size * grid_size);
+		grid.resize(grid_size * grid_size);
 		fill(grid.begin(), grid.end(), grid_init_value);
 	}
 
-    // store(grid_size, grid);
-    // profiler::syncend("compute_volume_indices");
-    // eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
-    // return;
+	// store(grid_size, grid);
+	// profiler::syncend("compute_volume_indices");
+	// eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
+	// return;
 
 	// find BB of the mesh
 	const Point &p_min_max = nodes->coordinates->datatarray()[*(elements->nodes->cbegin()->begin())];
@@ -198,16 +198,16 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 //    Point grid_end = Point(0.55, -0.55, z);
 //    Point grid_start = Point(-0.05, 0.8, z); // projection
 //    Point grid_end = Point(0.8, -0.8, z);
-    // Point grid_start = Point(-0.55, 0.55, z); // bigger
-    // Point grid_end = Point(0.55, -0.55, z);
-    // Point grid_start = Point(-0.8, 0.8, z); // projection 2
-    // Point grid_end = Point(0.8, -0.8, z);
+	// Point grid_start = Point(-0.55, 0.55, z); // bigger
+	// Point grid_end = Point(0.55, -0.55, z);
+	// Point grid_start = Point(-0.8, 0.8, z); // projection 2
+	// Point grid_end = Point(0.8, -0.8, z);
 	// Point grid_start = Point(-0.1, 1.1, -0.1); // 3D
-    // Point grid_end = Point(1.1, -0.1, 1.1);
+	// Point grid_end = Point(1.1, -0.1, 1.1);
 	// Point grid_start = Point(0.0, 1.0, 0.0); // 3D
-    // Point grid_end = Point(1.0, 0.0, 1.0);
+	// Point grid_end = Point(1.0, 0.0, 1.0);
 	Point grid_start = Point(mesh_min.x, mesh_max.y, mesh_min.z); // brake...
-    Point grid_end = Point(mesh_max.x, mesh_min.y, mesh_max.z);
+	Point grid_end = Point(mesh_max.x, mesh_min.y, mesh_max.z);
 	Point grid_offset = Point((grid_end.x - grid_start.x)/voxels,
 							(grid_start.y - grid_end.y)/voxels, 
 							(grid_end.z - grid_start.z)/voxels);
@@ -233,7 +233,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		Point el_min = Point(p_min_max.x, p_min_max.y, p_min_max.z);
 		Point el_max = Point(p_min_max.x, p_min_max.y, p_min_max.z);
 
-        //printf("element vertices:\n");
+		//printf("element vertices:\n");
 		for (auto n = e->begin(); n != e->end(); ++n) {
 			Point &p = nodes->coordinates->datatarray()[*n];
 			//printf("%f %f %f\n", p.x, p.y, p.z);
@@ -295,18 +295,18 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 								total_angle += face_solid_angle_contribution(p, v0, v1, v2);
 
 							} else { // rectangle
-							    // two triangles
-                                // if(triangle_ray_intersect(p, p1, nodes->coordinates->datatarray()[e->at(*(face->begin()))],
-                                //                           nodes->coordinates->datatarray()[e->at(*(face->begin() + 1))],
-                                //                           nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))])){
-                                //     cn++;
-                                //     continue;
-                                // }
-                                // if(triangle_ray_intersect(p, p1, nodes->coordinates->datatarray()[e->at(*(face->begin()))],
-                                //                           nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))],
-                                //                           nodes->coordinates->datatarray()[e->at(*(face->begin() + 3))])){
-                                //     cn++;
-                                // }
+								// two triangles
+								// if(triangle_ray_intersect(p, p1, nodes->coordinates->datatarray()[e->at(*(face->begin()))],
+								//                           nodes->coordinates->datatarray()[e->at(*(face->begin() + 1))],
+								//                           nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))])){
+								//     cn++;
+								//     continue;
+								// }
+								// if(triangle_ray_intersect(p, p1, nodes->coordinates->datatarray()[e->at(*(face->begin()))],
+								//                           nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))],
+								//                           nodes->coordinates->datatarray()[e->at(*(face->begin() + 3))])){
+								//     cn++;
+								// }
 
 								Point v0 = nodes->coordinates->datatarray()[e->at(*(face->begin()))];
 								Point v1 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 1))];
@@ -406,9 +406,9 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	//grid[81*grid_size*grid_size + 87*grid_size + 3] = 0; // x==3 && y==87 && z==81
 
 	if(dim == 3){
-        store3D(grid_size, grid, grid_start, grid_offset);
+		store3D(grid_size, grid, grid_start, grid_offset);
 	} else {
-        store(grid_size, grid);
+		store(grid_size, grid);
 	}
 	profiler::syncend("compute_volume_indices");
 	eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
@@ -454,7 +454,7 @@ bool triangle_ray_intersect(Point p0, Point p1, Point v0, Point v1, Point v2){
 	d = uv * uv - uu*vv;
 
 	// get and test parametric coords
-    double s, t;
+	double s, t;
 	s = (uv * wv - vv * wu) / d;
 	if(s < 0.0 || s > 1.0){ // i is outside the triangle
 		return false;
@@ -468,16 +468,16 @@ bool triangle_ray_intersect(Point p0, Point p1, Point v0, Point v1, Point v2){
 }
 
 bool edge_ray_intersect(Point p, Point v0, Point v1){
-    if(((v0.y <= p.y) && (v1.y > p.y)) // upward crossing
-       || ((v0.y > p.y) && (v1.y <= p.y))) { //downward crossing
-        // edge-ray intersect
-        float vt = (float)(p.y - v0.y) / (v1.y - v0.y);
-        float x_intersect = v0.x + vt*(v1.x - v0.x);
-        if(p.x < x_intersect){
-            return true; //valid crossing right of p.x
-        }
-    }
-    return false;
+	if(((v0.y <= p.y) && (v1.y > p.y)) // upward crossing
+	   || ((v0.y > p.y) && (v1.y <= p.y))) { //downward crossing
+		// edge-ray intersect
+		float vt = (float)(p.y - v0.y) / (v1.y - v0.y);
+		float x_intersect = v0.x + vt*(v1.x - v0.x);
+		if(p.x < x_intersect){
+			return true; //valid crossing right of p.x
+		}
+	}
+	return false;
 }
 
 double face_solid_angle_contribution(Point p, Point v0, Point v1, Point v2){
