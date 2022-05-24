@@ -97,7 +97,7 @@ inline void unpack(Ttype &data, const char* &p)
 template<>
 inline void unpack(std::string &data, const char* &p)
 {
-	size_t size;
+	size_t size = 0;
 	std::memcpy(&size, p, packedSize(size));
 	p += packedSize(size);
 	data = std::string(p, size);
@@ -107,7 +107,7 @@ inline void unpack(std::string &data, const char* &p)
 template<>
 inline void unpack(std::vector<std::string> &data, const char* &p)
 {
-	size_t size;
+	size_t size = 0;
 	std::memcpy(&size, p, packedSize(size));
 	p += packedSize(size);
 
@@ -122,7 +122,7 @@ inline void unpack(std::vector<std::string> &data, const char* &p)
 template<typename Ttype>
 inline void unpack(std::vector<Ttype> &data, const char* &p)
 {
-	size_t size;
+	size_t size = 0;
 	std::memcpy(&size, p, packedSize(size));
 	p += packedSize(size);
 

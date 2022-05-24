@@ -2,6 +2,7 @@
 #ifndef SRC_INPUT_PARSERS_MIXEDELEMENTSPARSER_H_
 #define SRC_INPUT_PARSERS_MIXEDELEMENTSPARSER_H_
 
+#include <cstddef>
 #include <vector>
 #include <functional>
 

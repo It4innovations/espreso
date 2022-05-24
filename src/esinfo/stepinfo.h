@@ -36,7 +36,7 @@ struct Time {
 	double final = 1;
 	double precision = 1e-8;
 
-	inline bool isLast(const Step &step = step, const Duplicate &duplicate = duplicate) const {
+	inline bool isLast(const Step &step, const Duplicate &duplicate) const {
 		if (duplicate.instances == 1) {
 			return current == final;
 		} else {
@@ -53,7 +53,7 @@ struct Frequency {
 	double precision = 1e-8;
 	double angular = 0;
 
-	inline bool isLast(const Step &step = step, const Duplicate &duplicate = duplicate) const {
+	inline bool isLast(const Step &step, const Duplicate &duplicate) const {
 		if (duplicate.instances == 1) {
 			return current == final;
 		} else {
