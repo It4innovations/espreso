@@ -9,6 +9,7 @@
 #include "visualization/stl.h"
 #include "visualization/netgen.h"
 #include "visualization/insitu.h"
+#include "visualization/openvdb.h"
 
 #include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
@@ -113,6 +114,7 @@ Output::Output()
 		case OutputConfiguration::FORMAT::XDMF: writer = new XDMF(); break;
 		case OutputConfiguration::FORMAT::STL_SURFACE: writer = new STL(); break;
 		case OutputConfiguration::FORMAT::NETGEN: writer = new Netgen(); break;
+		case OutputConfiguration::FORMAT::OPENVDB: writer = new OpenVDB(); break;
 		default:
 			eslog::internalFailure("implement the selected output format.\n");
 		}

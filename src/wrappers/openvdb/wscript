@@ -1,0 +1,12 @@
+
+def options(opt):
+    opt.other.add_option("--openvdb", action="store", type="string", metavar="OPENVDB_ROOT", default="", help="Path to OpenVDB.")
+
+def configure(ctx):
+    ctx.env.stash()
+    test = ctx.test_dict("OpenVDB")
+    test["mandatory"] = False
+    test["header_name"] = ["openvdb/openvdb.h"]
+    test["lib"] = ["openvdb", "tbb"]
+    if not ctx.check_cxx(**test):
+        ctx.env.revert()

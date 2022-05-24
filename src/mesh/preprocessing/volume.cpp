@@ -2,6 +2,8 @@
 #include "meshpreprocessing.h"
 
 #include "basis/containers/serializededata.h"
+#include "basis/utilities/utils.h"
+#include "esinfo/envinfo.h"
 #include "esinfo/eslog.h"
 #include "esinfo/mpiinfo.h"
 #include "mesh/mesh.h"
@@ -224,6 +226,21 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	//FILE * pFile_hist;
    	//pFile_hist = fopen ("./debug_files/angle_results.txt","w");
 
+	std::vector<std::vector<esint> > vdistribution(info::env::OMP_NUM_THREADS);
+	std::vector<std::vector<_Point<int> > > vdata(info::env::OMP_NUM_THREADS);
+	vdistribution[0].push_back(0);
+
+	// DUMMY LOOP: REMOVE IT!
+	#pragma omp parallel for
+	for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
+		for (auto e = elements->nodes->cbegin(t); e != elements->nodes->cend(t); ++e) {
+			vdata[t].push_back(_Point<int>(t, t, t));
+			vdistribution[t].push_back(vdata[t].size());
+		}
+	}
+	utils::threadDistributionToFullDistribution(vdistribution); // this is usefull function
+	// END OF DUMMY LOOP
+
 	// elements cycle
 	int eindex = 0;
 	for (auto e = elements->nodes->cbegin(); e != elements->nodes->cend(); ++e, ++eindex) {
@@ -410,6 +427,8 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	} else {
 		store(grid_size, grid);
 	}
+
+	elements->volumeIndices = new serializededata<esint, _Point<int> >(vdistribution, vdata);
 	profiler::syncend("compute_volume_indices");
 	eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
 }

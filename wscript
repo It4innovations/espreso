@@ -5,6 +5,7 @@ def configure(ctx):
     ctx.env.with_gui = ctx.options.with_gui
     ctx.env.static = ctx.options.static
     ctx.options.with_cuda = ctx.options.with_cuda or ctx.options.solver.upper() == "CUDA"
+    ctx.test_dict = types.MethodType(test_dict, ctx)
     ctx.link_cxx = types.MethodType(link_cxx, ctx)
 
     ctx.msg("Setting int width to", ctx.options.intwidth)
@@ -32,7 +33,7 @@ def configure(ctx):
         ctx.env.append_unique("DEFINES", [ "esint=long", "esint_mpi=MPI_LONG" ])
         ctx.env.append_unique("DEFINES_API", [ "FETI4I_INT_WIDTH=64", "MESIO_INT_WIDTH=64" ])
 
-    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-Wall" ])  # -fopenmp
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14", "-Wall" ])  # -fopenmp
     ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
     if ctx.options.mode == "release":
         ctx.env.append_unique("CXXFLAGS", [ "-O3", "-g" ])
@@ -138,6 +139,7 @@ def build(ctx):
     ctx.build_mesio(ctx.path.ant_glob('src/wrappers/hdf5/**/*.cpp'), "whdf5", [ "HDF5" ])
     ctx.build_mesio(ctx.path.ant_glob('src/wrappers/gmsh/**/*.cpp'), "wgmsh", [ "GMSH" ])
     ctx.build_mesio(ctx.path.ant_glob('src/wrappers/nglib/**/*.cpp'), "wnglib", [ "NGLIB" ])
+    ctx.build_mesio(ctx.path.ant_glob('src/wrappers/openvdb/**/*.cpp'), "wopenvdb", [ "OPENVDB" ])
     ctx.build_mesio(ctx.path.ant_glob('src/wrappers/metis/**/*.cpp'), "wmetis", [ "METIS" ])
     ctx.build_mesio(ctx.path.ant_glob('src/wrappers/parmetis/**/*.cpp'), "wparmetis", [ "PARMETIS" ])
     ctx.build_mesio(ctx.path.ant_glob('src/wrappers/scotch/**/*.cpp'), "wscotch", [ "SCOTCH" ])
@@ -297,7 +299,7 @@ def print_available(ctx):
     _print(
         "Available miscellaneous libraries",
         "NOT FOUND",
-        [ "pthread", "hdf5", "bem", "catalyst", "cuda" ],
+        [ "pthread", "hdf5", "bem", "catalyst", "cuda", "openvdb" ],
         "YELLOW")
 
 """ Recurse to third party libraries wrappers"""
@@ -332,6 +334,7 @@ def recurse(ctx):
     ctx.recurse("src/wrappers/bem")
     ctx.recurse("src/wrappers/catalyst")
     ctx.recurse("src/wrappers/nvtx")
+    ctx.recurse("src/wrappers/openvdb")
 
 from waflib import Logs
 from waflib.Build import BuildContext
@@ -355,6 +358,13 @@ def show(ctx):
 def env(ctx):
     print(ctx.env)
 
+def test_dict(self, name):
+    test = dict()
+    test["msg"] = "Checking for " + name
+    test["define_name"] = ""
+    test["defines"] = "HAVE_" + name.upper()
+    test["name"] = test["uselib_store"] = name.upper()
+    return test
 
 def link_cxx(self, *k, **kw):
     includes = []
