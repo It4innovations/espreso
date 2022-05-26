@@ -8,5 +8,6 @@ def configure(ctx):
     test["mandatory"] = False
     test["header_name"] = ["openvdb/openvdb.h"]
     test["lib"] = ["openvdb", "tbb"]
+    test["defines"].append("OPENVDB_3_ABI_COMPATIBLE")
     if not ctx.check_cxx(**test):
         ctx.env.revert()

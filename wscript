@@ -362,7 +362,7 @@ def test_dict(self, name):
     test = dict()
     test["msg"] = "Checking for " + name
     test["define_name"] = ""
-    test["defines"] = "HAVE_" + name.upper()
+    test["defines"] = ["HAVE_" + name.upper()]
     test["name"] = test["uselib_store"] = name.upper()
     return test
 
