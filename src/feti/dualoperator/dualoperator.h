@@ -28,7 +28,6 @@ public:
 
 	FETI<T> *feti;
 
-	std::vector<Matrix_CSR<T> > Kplus;
 	Vector_Dual<T> d;
 };
 

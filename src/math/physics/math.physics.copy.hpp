@@ -10,7 +10,15 @@ namespace math {
 
 template <typename T> void copy(Matrix_Dense<T>  &x, const Matrix_CSR<T>   &y)
 {
-	eslog::error("call empty function copy\n");
+	if (x.nrows != y.nrows || x.ncols != y.ncols) {
+		eslog::error("matrices have incorrect dimensions.\n");
+	}
+	math::set(x, T{0});
+	for (esint r = 0; r < y.nrows; ++r) {
+		for (esint c = y.rows[r]; c < y.rows[r + 1]; ++c) {
+			x.vals[r * x.ncols + y.cols[c]] = y.vals[c];
+		}
+	}
 }
 
 template <typename T> void copy(Matrix_Dense<T>  &x, const Matrix_IJV<T>   &y)

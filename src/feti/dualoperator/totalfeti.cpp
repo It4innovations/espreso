@@ -49,6 +49,7 @@ static void _set(TotalFETI<T> *dual)
 	}
 	eslog::checkpointln("FETI: SET TOTAL-FETI OPERATOR");
 
+	double start = eslog::time();
 	#pragma omp parallel for
 	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
 		math::initSolver(dual->Kplus[d]);
@@ -60,6 +61,7 @@ static void _set(TotalFETI<T> *dual)
 
 		math::symbolicFactorization(dual->Kplus[d], suffix);
 	}
+	printf("symbolic fact: %fs\n", eslog::time() - start);
 	eslog::checkpointln("FETI: TFETI SYMBOLIC FACTORIZATION");
 }
 
@@ -80,10 +82,12 @@ static void _update(TotalFETI<T> *dual)
 		math::sumCombined(dual->Kplus[d], T{1}, dual->feti->K->domains[d], dual->feti->regularization->RegMat.domains[d]);
 	}
 	eslog::checkpointln("FETI: UPDATE TOTAL-FETI OPERATOR");
+	double start = eslog::time();
 	#pragma omp parallel for
 	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
 		math::numericalFactorization(dual->Kplus[d]);
 	}
+	printf("numerical fact: %fs\n", eslog::time() - start);
 	eslog::checkpointln("FETI: TFETI NUMERICAL FACTORIZATION");
 
 	#pragma omp parallel for

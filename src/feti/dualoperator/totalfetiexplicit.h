@@ -1,8 +1,8 @@
 
-#ifndef SRC_FETI_DUALOPERATOR_TOTALFETI_H_
-#define SRC_FETI_DUALOPERATOR_TOTALFETI_H_
+#ifndef SRC_FETI_DUALOPERATOR_TOTALFETIEXPLICIT_H_
+#define SRC_FETI_DUALOPERATOR_TOTALFETIEXPLICIT_H_
 
-#include "dualoperator.h"
+#include "totalfeti.h"
 
 namespace espreso {
 
@@ -19,24 +19,22 @@ namespace espreso {
  */
 
 template <typename T>
-class TotalFETI: public DualOperator<T> {
+class TotalFETIExplicit: public TotalFETI<T> {
 public:
-	TotalFETI(FETI<T> *feti);
-	~TotalFETI();
+	TotalFETIExplicit(FETI<T> *feti);
+	~TotalFETIExplicit();
 
 	void info();
 	void update();
 
-	// y = B * K+ * Bt * x
+	// y = F * x
 	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 	// y = K+(f - Bt * x)
 	void toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y);
 
-	std::vector<Matrix_CSR<T> > Kplus;
-	std::vector<Vector_Dense<T> > Btx, KplusBtx;
-	math::VectorSparsity sparsity;
+	std::vector<Matrix_Dense<T> > F;
 };
 
 }
 
-#endif /* SRC_FETI_DUALOPERATOR_TOTALFETI_H_ */
+#endif /* SRC_FETI_DUALOPERATOR_TOTALFETIEXPLICIT_H_ */

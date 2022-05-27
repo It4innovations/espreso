@@ -73,7 +73,6 @@ void initSolver(Matrix_CSR<std::complex<double> > &m)
 template <>
 void symbolicFactorization(const Matrix_CSR<double> &m, esint fixedSuffix)
 {
-	printf("suffix = %d\n", fixedSuffix);
 	if (fixedSuffix) {
 		m._solver->iparm[30] = 1;
 		m._solver->perm = new esint[m.nrows];
@@ -155,7 +154,6 @@ void solve(const Matrix_CSR<std::complex<double> > &m, Matrix_Dense<std::complex
 template <typename T>
 void _computeSC(const Matrix_CSR<T> &m, Matrix_Dense<T> &sc)
 {
-	printf("sc = %d / %d\n", sc.nrows, m.nrows);
 	Matrix_Dense<T> full; full.resize(sc.nrows, sc.nrows);
 	Vector_Dense<esint> perm; perm.resize(m.nrows);
 	for (esint i = 0                 ; i < m.nrows - sc.nrows; ++i) { perm.vals[i] = 0; }

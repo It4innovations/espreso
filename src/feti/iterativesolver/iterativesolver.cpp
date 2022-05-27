@@ -11,6 +11,8 @@
 
 #include "esinfo/eslog.hpp"
 
+#include <limits>
+
 namespace espreso {
 
 template <typename T>
