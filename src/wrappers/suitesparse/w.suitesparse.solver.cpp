@@ -53,19 +53,7 @@ void initSolver(Matrix_CSR<std::complex<double> > &A)
 }
 
 template <>
-void restrictToSurface(Matrix_CSR<double> &m, esint surfaceSize)
-{
-	// implement me
-}
-
-template <>
-void restrictToSurface(Matrix_CSR<std::complex<double> > &m, esint surfaceSize)
-{
-	// implement me
-}
-
-template <>
-void symbolicFactorization(const Matrix_CSR<double> &A)
+void symbolicFactorization(const Matrix_CSR<double> &A, esint fixedSuffix)
 {
 	switch (A.type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -79,7 +67,7 @@ void symbolicFactorization(const Matrix_CSR<double> &A)
 }
 
 template <>
-void symbolicFactorization(const Matrix_CSR<std::complex<double> > &A)
+void symbolicFactorization(const Matrix_CSR<std::complex<double> > &A, esint fixedSuffix)
 {
 	switch (A.type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -121,7 +109,7 @@ void numericalFactorization(const Matrix_CSR<std::complex<double> > &A)
 }
 
 template <>
-void solve(const Matrix_CSR<double> &A, Vector_Dense<double> &b, Vector_Dense<double> &x)
+void solve(const Matrix_CSR<double> &A, Vector_Dense<double> &b, Vector_Dense<double> &x, VectorSparsity sparsity)
 {
 	switch (A.type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -137,7 +125,7 @@ void solve(const Matrix_CSR<double> &A, Vector_Dense<double> &b, Vector_Dense<do
 }
 
 template <>
-void solve(const Matrix_CSR<double> &A, Matrix_Dense<double> &b, Matrix_Dense<double> &x)
+void solve(const Matrix_CSR<double> &A, Matrix_Dense<double> &b, Matrix_Dense<double> &x, VectorSparsity sparsity)
 {
 	switch (A.type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -153,7 +141,7 @@ void solve(const Matrix_CSR<double> &A, Matrix_Dense<double> &b, Matrix_Dense<do
 }
 
 template <>
-void solve(const Matrix_CSR<std::complex<double> > &A, Vector_Dense<std::complex<double> > &b, Vector_Dense<std::complex<double> > &x)
+void solve(const Matrix_CSR<std::complex<double> > &A, Vector_Dense<std::complex<double> > &b, Vector_Dense<std::complex<double> > &x, VectorSparsity sparsity)
 {
 	switch (A.type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -169,7 +157,7 @@ void solve(const Matrix_CSR<std::complex<double> > &A, Vector_Dense<std::complex
 }
 
 template <>
-void solve(const Matrix_CSR<std::complex<double> > &A, Matrix_Dense<std::complex<double> > &b, Matrix_Dense<std::complex<double> > &x)
+void solve(const Matrix_CSR<std::complex<double> > &A, Matrix_Dense<std::complex<double> > &b, Matrix_Dense<std::complex<double> > &x, VectorSparsity sparsity)
 {
 	switch (A.type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -182,6 +170,18 @@ void solve(const Matrix_CSR<std::complex<double> > &A, Matrix_Dense<std::complex
 	default:
 		break; // UMPAPCK
 	}
+}
+
+template <>
+void computeSC(const Matrix_CSR<double> &m, Matrix_Dense<double> &sc)
+{
+	eslog::error("Implement Schur complement via SuiteSparse.\n");
+}
+
+template <>
+void computeSC(const Matrix_CSR<std::complex<double> > &m, Matrix_Dense<std::complex<double> > &sc)
+{
+	eslog::error("Implement Schur complement via SuiteSparse.\n");
 }
 
 template <>

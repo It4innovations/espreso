@@ -71,7 +71,21 @@ void fillDecomposition(UniformNodesFETIPattern *pattern, int dofs, DOFsDecomposi
 			tarray<DIndex>(info::mesh->nodes->domains->datatarray().distribution(), 1));
 	std::vector<std::vector<esint> > dindex(info::mesh->domains->size);
 
-	// order: lambdas, dirichlet, other
+	// order: inner, lambdas, dirichlet
+	{ // go through the rest dofs
+		esint index = 0;
+		auto fix = decomposition.fixedDOFs.begin();
+		auto dmap = decomposition.dmap->begin();
+		for (auto domains = info::mesh->nodes->domains->begin(); domains != info::mesh->nodes->domains->end(); ++domains, ++dmap, ++index) {
+			if (fix == decomposition.fixedDOFs.end() || *fix != index) {
+				if (domains->size() == 1) {
+					dmap->begin()->domain = *domains->begin();
+					dmap->begin()->index = pattern->elements[dmap->begin()->domain - decomposition.dbegin].size++;
+				}
+			}
+			if (fix != decomposition.fixedDOFs.end() && *fix == index) ++fix;
+		}
+	}
 	{ // go through shared nodes
 		esint index = 0;
 		auto fix = decomposition.fixedDOFs.begin();
@@ -102,20 +116,6 @@ void fillDecomposition(UniformNodesFETIPattern *pattern, int dofs, DOFsDecomposi
 			if (decomposition.ismy(*d)) {
 				di->index = pattern->elements[*d - decomposition.dbegin].size++;
 			}
-		}
-	}
-	{ // go through the rest dofs
-		esint index = 0;
-		auto fix = decomposition.fixedDOFs.begin();
-		auto dmap = decomposition.dmap->begin();
-		for (auto domains = info::mesh->nodes->domains->begin(); domains != info::mesh->nodes->domains->end(); ++domains, ++dmap, ++index) {
-			if (fix == decomposition.fixedDOFs.end() || *fix != index) {
-				if (domains->size() == 1) {
-					dmap->begin()->domain = *domains->begin();
-					dmap->begin()->index = pattern->elements[dmap->begin()->domain - decomposition.dbegin].size++;
-				}
-			}
-			if (fix != decomposition.fixedDOFs.end() && *fix == index) ++fix;
 		}
 	}
 }

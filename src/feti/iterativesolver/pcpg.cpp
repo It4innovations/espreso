@@ -128,7 +128,7 @@ template <> void PCPG<double>::solve(IterativeSolverInfo &info)
 		eslog::accumulatedln("pcpg: update p");
 
 		updateInfo(info, feti->configuration, yw, 0, 0);
-		yw = _yw; // keep ww for the next iteration
+		yw = _yw; // keep yw for the next iteration
 		eslog::accumulatedln("pcpg: check criteria");
 	}
 	eslog::endln("pcpg: finished");

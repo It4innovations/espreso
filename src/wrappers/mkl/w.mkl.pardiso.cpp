@@ -71,33 +71,29 @@ void initSolver(Matrix_CSR<std::complex<double> > &m)
 }
 
 template <>
-void restrictToSurface(Matrix_CSR<double> &m, esint surfaceSize)
+void symbolicFactorization(const Matrix_CSR<double> &m, esint fixedSuffix)
 {
-	m._solver->iparm[30] = 1;
-	m._solver->perm = new esint[m.nrows];
-	for (esint i = 0; i < surfaceSize; ++i) { m._solver->perm[i] = 1; }
-	for (esint i = surfaceSize; i < m.nrows; ++i) { m._solver->perm[i] = 0; }
+	printf("suffix = %d\n", fixedSuffix);
+	if (fixedSuffix) {
+		m._solver->iparm[30] = 1;
+		m._solver->perm = new esint[m.nrows];
+		for (esint i = 0          ; i < fixedSuffix; ++i) { m._solver->perm[i] = 0; }
+		for (esint i = fixedSuffix; i < m.nrows    ; ++i) { m._solver->perm[i] = 1; }
+	}
 
-}
-
-template <>
-void restrictToSurface(Matrix_CSR<std::complex<double> > &m, esint surfaceSize)
-{
-	m._solver->iparm[30] = 1;
-	m._solver->perm = new esint[m.nrows];
-	for (esint i = 0; i < surfaceSize; ++i) { m._solver->perm[i] = 1; }
-	for (esint i = surfaceSize; i < m.nrows; ++i) { m._solver->perm[i] = 0; }
-}
-
-template <>
-void symbolicFactorization(const Matrix_CSR<double> &m)
-{
 	_callPardiso<double>(11, m, 0, nullptr, nullptr);
 }
 
 template <>
-void symbolicFactorization(const Matrix_CSR<std::complex<double> > &m)
+void symbolicFactorization(const Matrix_CSR<std::complex<double> > &m, esint fixedSuffix)
 {
+	if (fixedSuffix) {
+		m._solver->iparm[30] = 1;
+		m._solver->perm = new esint[m.nrows];
+		for (esint i = 0          ; i < fixedSuffix; ++i) { m._solver->perm[i] = 0; }
+		for (esint i = fixedSuffix; i < m.nrows    ; ++i) { m._solver->perm[i] = 1; }
+	}
+
 	_callPardiso<std::complex<double> >(11, m, 0, nullptr, nullptr);
 }
 
@@ -113,37 +109,57 @@ void numericalFactorization(const Matrix_CSR<std::complex<double> > &m)
 	_callPardiso<std::complex<double> >(22, m, 0, nullptr, nullptr);
 }
 
-template <>
-void solve(const Matrix_CSR<double> &m, Vector_Dense<double> &rhs, Vector_Dense<double> &solution)
+// https://www.intel.com/content/www/us/en/develop/documentation/onemkl-developer-reference-c/top/sparse-solver-routines/onemkl-pardiso-parallel-direct-sparse-solver-iface/pardiso-iparm-parameter.html
+int _sparsity(VectorSparsity sparsity)
 {
+	if (sparsity == (VectorSparsity::SPARSE_RHS | VectorSparsity::SPARSE_SOLUTION)) {
+		return 1;
+	}
+	if (sparsity == VectorSparsity::SPARSE_RHS) {
+		return 2;
+	}
+	if (sparsity == VectorSparsity::SPARSE_RHS) {
+		return 3;
+	}
+	return 0;
+}
+
+template <>
+void solve(const Matrix_CSR<double> &m, Vector_Dense<double> &rhs, Vector_Dense<double> &solution, VectorSparsity sparsity)
+{
+	m._solver->iparm[30] = _sparsity(sparsity);
 	_callPardiso<double>(33, m, 1, rhs.vals, solution.vals);
 }
 
 template <>
-void solve(const Matrix_CSR<double> &m, Matrix_Dense<double> &rhs, Matrix_Dense<double> &solution)
+void solve(const Matrix_CSR<double> &m, Matrix_Dense<double> &rhs, Matrix_Dense<double> &solution, VectorSparsity sparsity)
 {
+	m._solver->iparm[30] = _sparsity(sparsity);
 	_callPardiso<double>(33, m, rhs.nrows, rhs.vals, solution.vals);
 }
 
 template <>
-void solve(const Matrix_CSR<std::complex<double> > &m, Vector_Dense<std::complex<double> > &rhs, Vector_Dense<std::complex<double> > &solution)
+void solve(const Matrix_CSR<std::complex<double> > &m, Vector_Dense<std::complex<double> > &rhs, Vector_Dense<std::complex<double> > &solution, VectorSparsity sparsity)
 {
+	m._solver->iparm[30] = _sparsity(sparsity);
 	_callPardiso<std::complex<double> >(33, m, 1, rhs.vals, solution.vals);
 }
 
 template <>
-void solve(const Matrix_CSR<std::complex<double> > &m, Matrix_Dense<std::complex<double> > &rhs, Matrix_Dense<std::complex<double> > &solution)
+void solve(const Matrix_CSR<std::complex<double> > &m, Matrix_Dense<std::complex<double> > &rhs, Matrix_Dense<std::complex<double> > &solution, VectorSparsity sparsity)
 {
+	m._solver->iparm[30] = _sparsity(sparsity);
 	_callPardiso<std::complex<double> >(33, m, rhs.nrows, rhs.vals, solution.vals);
 }
 
 template <typename T>
 void _computeSC(const Matrix_CSR<T> &m, Matrix_Dense<T> &sc)
 {
+	printf("sc = %d / %d\n", sc.nrows, m.nrows);
 	Matrix_Dense<T> full; full.resize(sc.nrows, sc.nrows);
 	Vector_Dense<esint> perm; perm.resize(m.nrows);
-	for (esint i = 0; i < sc.nrows; ++i) { perm.vals[i] = 1; }
-	for (esint i = sc.nrows; i < m.nrows; ++i) { perm.vals[i] = 0; }
+	for (esint i = 0                 ; i < m.nrows - sc.nrows; ++i) { perm.vals[i] = 0; }
+	for (esint i = m.nrows - sc.nrows; i < m.nrows           ; ++i) { perm.vals[i] = 1; }
 
 	m._solver->iparm[35] = 1;
 	std::swap(m._solver->perm, perm.vals);
@@ -151,9 +167,9 @@ void _computeSC(const Matrix_CSR<T> &m, Matrix_Dense<T> &sc)
 	std::swap(m._solver->perm, perm.vals);
 	m._solver->iparm[35] = 0;
 
-	for (esint r = 0, i = 0; r < sc.nrows; ++r) {
-		for (esint c = r; c < sc.ncols; ++c, ++i) {
-			sc.vals[i] = full.vals[r * sc.ncols + c];
+	for (esint r = 0, i = 0; r < full.nrows; ++r) {
+		for (esint c = r; c < full.ncols; ++c, ++i) {
+			sc.vals[i] = full.vals[r * full.ncols + c];
 		}
 	}
 }
