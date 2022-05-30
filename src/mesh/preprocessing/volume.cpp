@@ -171,11 +171,6 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		fill(grid.begin(), grid.end(), grid_init_value);
 	}
 
-	// store(grid_size, grid);
-	// profiler::syncend("compute_volume_indices");
-	// eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
-	// return;
-
 	// find BB of the mesh
 	const Point &p_min_max = nodes->coordinates->datatarray()[*(elements->nodes->cbegin()->begin())];
 	Point mesh_min = Point(p_min_max.x, p_min_max.y, p_min_max.z);
@@ -191,24 +186,8 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	printf("mesh min: %f %f %f\n", mesh_min.x, mesh_min.y, mesh_min.z);
 	printf("mesh max: %f %f %f\n", mesh_max.x, mesh_max.y, mesh_max.z);
 
-	//double z = 0.0;
-	/*Point grid_start = Point(-0.5, 0.5, z);
-	Point grid_end = Point(0.5, -0.5, z);*/
-//    Point grid_start = Point(-0.55, 0.55, z); // left + up
-//    Point grid_end = Point(0.45, -0.45, z);
-//    Point grid_start = Point(-0.45, 0.45, z); // right + down
-//    Point grid_end = Point(0.55, -0.55, z);
-//    Point grid_start = Point(-0.05, 0.8, z); // projection
-//    Point grid_end = Point(0.8, -0.8, z);
-	// Point grid_start = Point(-0.55, 0.55, z); // bigger
-	// Point grid_end = Point(0.55, -0.55, z);
-	// Point grid_start = Point(-0.8, 0.8, z); // projection 2
-	// Point grid_end = Point(0.8, -0.8, z);
-	// Point grid_start = Point(-0.1, 1.1, -0.1); // 3D
-	// Point grid_end = Point(1.1, -0.1, 1.1);
-	// Point grid_start = Point(0.0, 1.0, 0.0); // 3D
-	// Point grid_end = Point(1.0, 0.0, 1.0);
-	Point grid_start = Point(mesh_min.x, mesh_max.y, mesh_min.z); // brake...
+	// grid setting
+	Point grid_start = Point(mesh_min.x, mesh_max.y, mesh_min.z);
 	Point grid_end = Point(mesh_max.x, mesh_min.y, mesh_max.z);
 	Point grid_offset = Point((grid_end.x - grid_start.x)/voxels,
 							(grid_start.y - grid_end.y)/voxels, 
@@ -233,180 +212,157 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	// DUMMY LOOP: REMOVE IT!
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
-		for (auto e = elements->nodes->cbegin(t); e != elements->nodes->cend(t); ++e) {
-			vdata[t].push_back(_Point<int>(t, t, t));
-			vdistribution[t].push_back(vdata[t].size());
+	auto epointers = elements->epointers->cbegin(t);
+		for (auto e = elements->nodes->cbegin(t); e != elements->nodes->cend(t); ++e, ++epointers) {
+			//vdata[t].push_back(_Point<int>(t, t, t));
+			//vdistribution[t].push_back(vdata[t].size());
 		}
 	}
-	utils::threadDistributionToFullDistribution(vdistribution); // this is usefull function
+	//utils::threadDistributionToFullDistribution(vdistribution); // this is usefull function
 	// END OF DUMMY LOOP
 
 	// elements cycle
-	int eindex = 0;
-	for (auto e = elements->nodes->cbegin(); e != elements->nodes->cend(); ++e, ++eindex) {
+	#pragma omp parallel for
+	for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
+	auto epointers = elements->epointers->cbegin(t);
+		for (auto e = elements->nodes->cbegin(t); e != elements->nodes->cend(t); ++e, ++epointers) {
+		
+			// find BB of the element
+			const Point &p_min_max = nodes->coordinates->datatarray()[*(e->begin())];
+			Point el_min = Point(p_min_max.x, p_min_max.y, p_min_max.z);
+			Point el_max = Point(p_min_max.x, p_min_max.y, p_min_max.z);
 
-		// find BB of the element
-		const Point &p_min_max = nodes->coordinates->datatarray()[*(e->begin())];
-		Point el_min = Point(p_min_max.x, p_min_max.y, p_min_max.z);
-		Point el_max = Point(p_min_max.x, p_min_max.y, p_min_max.z);
+			for (auto n = e->begin(); n != e->end(); ++n) {
+				Point &p = nodes->coordinates->datatarray()[*n];
+				p.minmax(el_min, el_max);
+			}
 
-		//printf("element vertices:\n");
-		for (auto n = e->begin(); n != e->end(); ++n) {
-			Point &p = nodes->coordinates->datatarray()[*n];
-			//printf("%f %f %f\n", p.x, p.y, p.z);
+			// grid part in BB
+			int min_x_inx = (el_min.x - grid_start.x)/grid_offset.x;
+			int min_y_inx = (grid_start.y - el_max.y)/grid_offset.y;
+			int min_z_inx = (el_min.z - grid_start.z)/grid_offset.z;
+			int max_x_inx = (el_max.x - grid_start.x)/grid_offset.x;
+			int max_y_inx = (grid_start.y - el_min.y)/grid_offset.y;
+			int max_z_inx = (el_max.z - grid_start.z)/grid_offset.z;
 
-			p.minmax(el_min, el_max);
-		}
-
-		// grid part in BB
-		int min_x_inx = (el_min.x - grid_start.x)/grid_offset.x;
-		int min_y_inx = (grid_start.y - el_max.y)/grid_offset.y;
-		int min_z_inx = (el_min.z - grid_start.z)/grid_offset.z;
-		int max_x_inx = (el_max.x - grid_start.x)/grid_offset.x;
-		int max_y_inx = (grid_start.y - el_min.y)/grid_offset.y;
-		int max_z_inx = (el_max.z - grid_start.z)/grid_offset.z;
-
-		// loop through grid part points
-		for(int x = min_x_inx; x <= max_x_inx; x++){
-			for(int y = min_y_inx; y <= max_y_inx; y++){
-				for(int z = min_z_inx; z <= max_z_inx; z++){
-					// skip point, which is already assigned to some element
-					int grid_inx_1d = z*grid_size*grid_size + y*grid_size + x;
-					if(grid[grid_inx_1d] != -1){
-						continue;
-					}
-
-					// test point in element
-					Point p = Point(grid_start.x + x*grid_offset.x, grid_start.y - y*grid_offset.y, grid_start.z + z*grid_offset.z);
-					int cn = 0; // cn
-
-					if(dim == 3){
-						// loop through faces
-						//printf("faces:\n");
-						//Point p1 = Point(el_max.x, p.y, p.z); // cn
-						double total_angle = 0;
-						bool is_p_face_vertex = false;
-
-						auto faces = elements->epointers->datatarray()[eindex]->faces;
-						for (auto face = faces->begin(); face != faces->end(); ++face) {
-
-							int num_verts = face->end() - face->begin();
-							//printf("num face verts: %d\n", num_verts);
-
-							if(num_verts == 3 || num_verts == 6){ // triangle
-								// if(triangle_ray_intersect(p, p1, nodes->coordinates->datatarray()[e->at(*(face->begin()))],
-								// 								nodes->coordinates->datatarray()[e->at(*(face->begin() + 1))],
-								// 								nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))])){
-								// 	cn++;
-								// }
-
-								Point v0 = nodes->coordinates->datatarray()[e->at(*(face->begin()))];
-								Point v1 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 1))];
-								Point v2 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))];
-
-								if(v0 == p || v1 == p || v2 == p){
-									is_p_face_vertex = true;
-									break;
-								}
-
-								total_angle += face_solid_angle_contribution(p, v0, v1, v2);
-
-							} else { // rectangle
-								// two triangles
-								// if(triangle_ray_intersect(p, p1, nodes->coordinates->datatarray()[e->at(*(face->begin()))],
-								//                           nodes->coordinates->datatarray()[e->at(*(face->begin() + 1))],
-								//                           nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))])){
-								//     cn++;
-								//     continue;
-								// }
-								// if(triangle_ray_intersect(p, p1, nodes->coordinates->datatarray()[e->at(*(face->begin()))],
-								//                           nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))],
-								//                           nodes->coordinates->datatarray()[e->at(*(face->begin() + 3))])){
-								//     cn++;
-								// }
-
-								Point v0 = nodes->coordinates->datatarray()[e->at(*(face->begin()))];
-								Point v1 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 1))];
-								Point v2 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))];
-								Point v3 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 3))];
-								
-								if(v0 == p || v1 == p || v2 == p || v3 == p){
-									is_p_face_vertex = true;
-									break;
-								}
-
-								total_angle += face_solid_angle_contribution(p, v0, v1, v2);
-								total_angle += face_solid_angle_contribution(p, v0, v2, v3);
-
-								// debug
-								//if(x==3 && y==87 && z==82){
-									// fprintf(pFile_element, "%f;%f;%f\n", v0.x, v0.y, v0.z);
-									// fprintf(pFile_element, "%f;%f;%f\n", v1.x, v1.y, v1.z);
-									// fprintf(pFile_element, "%f;%f;%f\n", v2.x, v2.y, v2.z);
-									// fprintf(pFile_element, "%f;%f;%f\n", v3.x, v3.y, v3.z);
-									// printf("point %f %f %f\n", p.x, p.y, p.z);
-								//}
-
-							}
-
-							//for (auto n = face->begin(); n != face->end(); ++n) {
-								//const Point &p = nodes->coordinates->datatarray()[e->at(*n)];
-								//printf("%f %f %f\n", p.x, p.y, p.z);
-							//}
-							//printf("\n");
+			// loop through grid part points
+			for(int x = min_x_inx; x <= max_x_inx; x++){
+				for(int y = min_y_inx; y <= max_y_inx; y++){
+					for(int z = min_z_inx; z <= max_z_inx; z++){
+						// skip point, which is already assigned to some element
+						int grid_inx_1d = z*grid_size*grid_size + y*grid_size + x;
+						if(grid[grid_inx_1d] != -1){
+							continue;
 						}
 
-						//debug
-						//fprintf(pFile_hist, "%f\n", fabs(total_angle));
+						// test point in element
+						Point p = Point(grid_start.x + x*grid_offset.x, grid_start.y - y*grid_offset.y, grid_start.z + z*grid_offset.z);
 
-						// save element index if point is in the element
-						if(is_p_face_vertex || fabs(total_angle) > 6.0){ // 2pi or 4pi -> inside
-							grid[grid_inx_1d] = eindex;
+						if(dim == 3){
+							// loop through faces
+							//printf("faces:\n");
+							//Point p1 = Point(el_max.x, p.y, p.z); // cn
+							double total_angle = 0;
+							bool is_p_face_vertex = false;
 
-							if(is_p_face_vertex){
-								printf("on surface\n");
-							} else {
-								//printf("inside: %.02f PI\n", fabs(total_angle)/M_PI);
+							auto faces = epointers->at(0)->faces;
+							for (auto face = faces->begin(); face != faces->end(); ++face) {
+
+								int num_verts = face->end() - face->begin();
+								//printf("num face verts: %d\n", num_verts);
+
+								if(num_verts == 3 || num_verts == 6){ // triangle
+									Point v0 = nodes->coordinates->datatarray()[e->at(*(face->begin()))];
+									Point v1 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 1))];
+									Point v2 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))];
+
+									if(v0 == p || v1 == p || v2 == p){
+										is_p_face_vertex = true;
+										break;
+									}
+
+									total_angle += face_solid_angle_contribution(p, v0, v1, v2);
+
+								} else { // rectangle
+									Point v0 = nodes->coordinates->datatarray()[e->at(*(face->begin()))];
+									Point v1 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 1))];
+									Point v2 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))];
+									Point v3 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 3))];
+									
+									if(v0 == p || v1 == p || v2 == p || v3 == p){
+										is_p_face_vertex = true;
+										break;
+									}
+
+									total_angle += face_solid_angle_contribution(p, v0, v1, v2);
+									total_angle += face_solid_angle_contribution(p, v0, v2, v3);
+
+									// debug
+									//if(x==3 && y==87 && z==82){
+										// fprintf(pFile_element, "%f;%f;%f\n", v0.x, v0.y, v0.z);
+										// fprintf(pFile_element, "%f;%f;%f\n", v1.x, v1.y, v1.z);
+										// fprintf(pFile_element, "%f;%f;%f\n", v2.x, v2.y, v2.z);
+										// fprintf(pFile_element, "%f;%f;%f\n", v3.x, v3.y, v3.z);
+										// printf("point %f %f %f\n", p.x, p.y, p.z);
+									//}
+
+								}
 							}
-							
-						} else {
-							//printf("outside: %.02f PI\n", fabs(total_angle)/M_PI);
-						}
-						
 
-					} else { // dim == 2
-						// loop through edges
-						for (auto n = e->begin(); n != e->end() - 1; ++n) { 
-							Point &v0 = nodes->coordinates->datatarray()[*n];
-							Point &v1 = nodes->coordinates->datatarray()[*(n+1)];
+							//debug
+							//fprintf(pFile_hist, "%f\n", fabs(total_angle));
 
+							// save element index if point is in the element
+							if(is_p_face_vertex || fabs(total_angle) > 6.0){ // 2pi or 4pi -> inside
+								grid[grid_inx_1d] = 0;		
+								vdata[t].push_back(_Point<int>(x, y, z));
+							}
+
+						} else { // dim == 2
+							int cn = 0; // cn
+
+							// loop through edges
+							for (auto n = e->begin(); n != e->end() - 1; ++n) {
+								Point &v0 = nodes->coordinates->datatarray()[*n];
+								Point &v1 = nodes->coordinates->datatarray()[*(n+1)];
+
+								if(edge_ray_intersect(p, v0, v1)){
+									cn++;
+								}
+							}
+
+							// last edge
+							Point &v0 = nodes->coordinates->datatarray()[*(e->end() - 1)];
+							Point &v1 = nodes->coordinates->datatarray()[*(e->begin())];
 							if(edge_ray_intersect(p, v0, v1)){
 								cn++;
 							}
-						}
 
-						// last edge
-						Point &v0 = nodes->coordinates->datatarray()[*(e->end() - 1)];
-						Point &v1 = nodes->coordinates->datatarray()[*(e->begin())];
-						if(edge_ray_intersect(p, v0, v1)){
-							cn++;
+							// save polygon index if point is in polygon
+							if(cn%2){ // cn is odd
+								grid[z*grid_size*grid_size + y*grid_size + x] = 0; 
+							}
 						}
 					}
-					
-					// save polygon index if point is in polygon
-					// if(cn%2){ // cn is odd
-					// 	grid[z*grid_size*grid_size + y*grid_size + x] = eindex; 
-					// }
-					// printf("cn %d\n", cn); //cn
-					//printf("cell index %d\n", grid[z*grid_size*grid_size + y*grid_size + x]);
 				}
 			}
+			vdistribution[t].push_back(vdata[t].size());
 		}
-
-		// printf("min %f %f %f\n", el_min.x, el_min.y, el_min.z);
-		// printf("max %f %f %f\n", el_max.x, el_max.y, el_max.z);
-		//printf("\n");
 	}
+	// combine thread data
+	std::vector<esint> distribution;
+	std::vector<_Point<int> > data;
+	utils::threadDistributionToFullDistribution(vdistribution);
+
+	for (int t = 0; t < info::env::OMP_NUM_THREADS; t++){
+		distribution.reserve(distribution.size() + vdistribution[t].size());
+		data.reserve(data.size() + vdata[t].size());
+
+		distribution.insert(distribution.end(), vdistribution[t].begin(), vdistribution[t].end());
+		data.insert(data.end(), vdata[t].begin(), vdata[t].end());
+	}
+	printf("here");
+
 
 	//debug
 	// for(int i = 0; i < grid.size(); i++){
@@ -428,7 +384,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		store(grid_size, grid);
 	}
 
-	elements->volumeIndices = new serializededata<esint, _Point<int> >(vdistribution, vdata);
+	elements->volumeIndices = new serializededata<esint, _Point<int> >(distribution, data);
 	profiler::syncend("compute_volume_indices");
 	eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
 }
