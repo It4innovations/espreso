@@ -209,18 +209,6 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	std::vector<std::vector<_Point<int> > > vdata(info::env::OMP_NUM_THREADS);
 	vdistribution[0].push_back(0);
 
-	// DUMMY LOOP: REMOVE IT!
-	#pragma omp parallel for
-	for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
-	auto epointers = elements->epointers->cbegin(t);
-		for (auto e = elements->nodes->cbegin(t); e != elements->nodes->cend(t); ++e, ++epointers) {
-			//vdata[t].push_back(_Point<int>(t, t, t));
-			//vdistribution[t].push_back(vdata[t].size());
-		}
-	}
-	//utils::threadDistributionToFullDistribution(vdistribution); // this is usefull function
-	// END OF DUMMY LOOP
-
 	// elements cycle
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
