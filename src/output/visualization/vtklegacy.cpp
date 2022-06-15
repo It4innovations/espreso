@@ -221,8 +221,8 @@ esint VTKLegacy::insertElements(const ElementsRegionStore *store, const std::vec
 {
 	esint enodes = 0;
 	for (size_t i = 0; i < store->distribution.code.size(); i++) {
-		if (store->distribution.code[i].size) {
-			enodes += store->distribution.code[i].size * Mesh::edata[i].nodes;
+		if (store->distribution.code[i].totalSize) {
+			enodes += store->distribution.code[i].totalSize * Mesh::edata[i].nodes;
 		}
 	}
 
