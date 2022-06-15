@@ -216,6 +216,12 @@ OutputConfiguration::OutputConfiguration(const ECF *root)
 	settings = debug = false;
 	catalyst = false;
 	catalyst_sleep_time = 0;
+
+	volume_density = 100;
+	REGISTER(volume_density, ECFMetaData()
+			.setdescription({ "Volume density for the shortest direction." })
+			.setdatatype({ ECFDataType::BOOL }));
+
 	REGISTER(settings, ECFMetaData()
 			.setdescription({ "Store settings" })
 			.setdatatype({ ECFDataType::BOOL }));

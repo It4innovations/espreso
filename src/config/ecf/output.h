@@ -141,6 +141,7 @@ struct OutputConfiguration: public ECFDescription {
 
 	bool settings, debug, catalyst;
 	size_t catalyst_sleep_time;
+	size_t volume_density;
 
 	bool collected;
 

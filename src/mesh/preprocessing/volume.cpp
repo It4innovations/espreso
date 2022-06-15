@@ -5,6 +5,7 @@
 #include "basis/utilities/utils.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/eslog.h"
+#include "esinfo/ecfinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
@@ -158,7 +159,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	profiler::syncstart("compute_volume_indices");
 
 	// uniform grid
-	esint grid_size = 100;
+	esint grid_size = info::ecf->output.volume_density;
 	int voxels = grid_size - 1;
 	int dim = info::mesh->dimension;
 	std::vector<int> grid;
