@@ -90,10 +90,11 @@ template <> void PCPG<double>::solve(IterativeSolverInfo &info)
 	y.copyTo(p);                           // p = w
 	l.copyTo(x);                           // x = l
 
-	eslog::checkpointln("FETI: CPG INITIALIZATION");
-	eslog::startln("PCPG: ITERATIONS STARTED", "pcpg");
 	double yw = y.dot(w);
 	setInfo(info, feti->configuration, yw);
+
+	eslog::checkpointln("FETI: CPG INITIALIZATION");
+	eslog::startln("PCPG: ITERATIONS STARTED", "pcpg");
 	while (!info.converged) {
 		// gamma = (y, w) / (p, F * p)
 		F->apply(p, Fp);

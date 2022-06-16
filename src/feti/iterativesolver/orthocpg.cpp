@@ -89,10 +89,11 @@ template <> void OrthogonalizedCPG<double>::solve(IterativeSolverInfo &info)
 	w.copyTo(p);                           // p = w
 	l.copyTo(x);                           // x = l
 
-	eslog::checkpointln("FETI: CPG INITIALIZATION");
-	eslog::startln("ORTHOGONAL CPG: ITERATIONS STARTED", "orthocpg");
 	double ww = w.dot();
 	setInfo(info, feti->configuration, ww);
+
+	eslog::checkpointln("FETI: CPG INITIALIZATION");
+	eslog::startln("ORTHOGONAL CPG: ITERATIONS STARTED", "orthocpg");
 	while (!info.converged) {
 		// gamma = (w, w) / (p, F * p)
 		Fpi.next(Fp);

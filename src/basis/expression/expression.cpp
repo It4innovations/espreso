@@ -1,8 +1,10 @@
 
 #include "expression.h"
-//#include "esinfo/eslog.hpp"
+#include "esinfo/eslog.hpp"
 
 //#include "exprtk.hpp"
+
+#include <sstream>
 
 using namespace espreso;
 
@@ -84,7 +86,10 @@ Expression& Expression::operator=(const Expression &other)
 double Expression::evaluate() const
 {
 //	return _expression->value();
-	return 0;
+	double value;
+	std::stringstream str(_str);
+	str >> value;
+	return value;
 }
 
 

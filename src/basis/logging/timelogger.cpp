@@ -36,12 +36,18 @@ static void mergeEvents(void *in, void *out, int *len, MPI_Datatype *datatype)
 		TimeLogger::Event::Data &indmin = (static_cast<TimeLogger::EventStatistics*>(in) + i)->dmin;
 		TimeLogger::Event::Data &indmax = (static_cast<TimeLogger::EventStatistics*>(in) + i)->dmax;
 		TimeLogger::Event::Data &indavg = (static_cast<TimeLogger::EventStatistics*>(in) + i)->davg;
+		TimeLogger::Event::Data &insmin = (static_cast<TimeLogger::EventStatistics*>(in) + i)->smin;
+		TimeLogger::Event::Data &insmax = (static_cast<TimeLogger::EventStatistics*>(in) + i)->smax;
+		TimeLogger::Event::Data &insavg = (static_cast<TimeLogger::EventStatistics*>(in) + i)->savg;
 		TimeLogger::Event::Data &outmin = (static_cast<TimeLogger::EventStatistics*>(out) + i)->min;
 		TimeLogger::Event::Data &outmax = (static_cast<TimeLogger::EventStatistics*>(out) + i)->max;
 		TimeLogger::Event::Data &outavg = (static_cast<TimeLogger::EventStatistics*>(out) + i)->avg;
 		TimeLogger::Event::Data &outdmin = (static_cast<TimeLogger::EventStatistics*>(out) + i)->dmin;
 		TimeLogger::Event::Data &outdmax = (static_cast<TimeLogger::EventStatistics*>(out) + i)->dmax;
 		TimeLogger::Event::Data &outdavg = (static_cast<TimeLogger::EventStatistics*>(out) + i)->davg;
+		TimeLogger::Event::Data &outsmin = (static_cast<TimeLogger::EventStatistics*>(out) + i)->smin;
+		TimeLogger::Event::Data &outsmax = (static_cast<TimeLogger::EventStatistics*>(out) + i)->smax;
+		TimeLogger::Event::Data &outsavg = (static_cast<TimeLogger::EventStatistics*>(out) + i)->savg;
 
 		switch ((static_cast<TimeLogger::EventStatistics*>(out) + i)->type) {
 		case TimeLogger::Event::START:
@@ -54,6 +60,9 @@ static void mergeEvents(void *in, void *out, int *len, MPI_Datatype *datatype)
 			outdmin.time = std::min(outdmin.time, indmin.time);
 			outdmax.time = std::max(outdmax.time, indmax.time);
 			outdavg.time += indavg.time;
+			outsmin.time = std::min(outsmin.time, insmin.time);
+			outsmax.time = std::max(outsmax.time, insmax.time);
+			outsavg.time += insavg.time;
 			break;
 		case TimeLogger::Event::INT:
 			outmin.ivalue = std::min(outmin.ivalue, inmin.ivalue);
@@ -91,27 +100,9 @@ static void printdata(
 	std::string savg = std::to_string(avg);
 	std::string smin = std::to_string(min);
 	std::string smax = std::to_string(max);
-	char sratio[6], simb[6] = "> 100";
+	char sratio[6], simb[6];
 	snprintf(sratio, 6, "%5.2f", 100 * avg / sectiontime);
-	if (max / min <= 100) {
-		snprintf(simb, 6, "%5.2f", max / min);
-	}
-	savg[8] = smin[8] = smax[8] = '\0';
-	sratio[5] = simb[5] = '\0';
-	eslog::info(format, fullname.c_str(), savg.c_str(), smin.c_str(), smax.c_str(), sratio, simb);
-}
-
-static void printdata(
-		const char* format, const char* name, const char* suffix,
-		double avg, double sectiontime)
-{
-	std::string fullname = std::string(name) + std::string(suffix);;
-	sectiontime /= info::mpi::size;
-	std::string savg = std::to_string(avg);
-	std::string smin = std::to_string(avg);
-	std::string smax = std::to_string(avg);
-	char sratio[6], simb[6] = "> 100";
-	snprintf(sratio, 6, "%5.2f", 100 * avg / sectiontime);
+	snprintf(simb, 6, "%5.2f", max / min);
 	savg[8] = smin[8] = smax[8] = '\0';
 	sratio[5] = simb[5] = '\0';
 	eslog::info(format, fullname.c_str(), savg.c_str(), smin.c_str(), smax.c_str(), sratio, simb);
@@ -126,21 +117,30 @@ void TimeLogger::finish()
 
 	std::vector<EventStatistics> events(_events.begin(), _events.end());
 	std::vector<double> prev(10), begin(10);
+	std::vector<std::vector<const char*> > accumulated;
+	std::vector<size_t> block;
 
 	size_t namewidth = 43;
 
 	for (size_t i = 0; i < events.size(); i++) {
 		switch (events[i].type) {
 		case Event::START:
+			block.push_back(i);
 			prev.push_back(events[i].data.time);
 			begin.push_back(events[i].data.time);
 			events[i].data.time -= initClockTime;
 			events[i].duration.time = 0;
+			accumulated.push_back({});
 			break;
 		case Event::ACCUMULATED:
+			if (std::find(accumulated.back().begin(), accumulated.back().end(), events[i].name) == accumulated.back().end()) {
+				accumulated.back().push_back(events[i].name);
+			}
+			/* no break */
 		case Event::CHECKPOINT:
 			events[i].data.time -= prev.back();
 			events[i].duration.time -= begin.back();
+			events[i].sum.time = events[i].data.time;
 			prev.back() += events[i].data.time;
 			namewidth = std::max(namewidth, strlen(events[i].name));
 			break;
@@ -150,6 +150,18 @@ void TimeLogger::finish()
 			prev.pop_back();
 			begin.pop_back();
 			namewidth = std::max(namewidth, strlen(events[i].name));
+			for (auto acc = accumulated.back().begin(); acc != accumulated.back().end(); ++acc) {
+				double sum = 0;
+				for (size_t j = block.back(); j < i; ++j) {
+					if (*acc == events[j].name) {
+						sum += events[j].data.time;
+						// it is enough to have final sum in the last accumulated event
+						events[j].savg.time = events[j].smin.time = events[j].smax.time = events[j].sum.time = sum;
+					}
+				}
+			}
+			accumulated.pop_back();
+			block.pop_back();
 			break;
 		default:
 			namewidth = std::max(namewidth, strlen(events[i].name) + 2);
@@ -326,19 +338,21 @@ void TimeLogger::finish()
 						if (std::find(printed.begin(), printed.end(), events[i].name) == printed.end()) {
 							printed.push_back(events[i].name);
 							int counter = 0;
-							double avg = 0, min = duration, max = 0;
+							double min = duration, max = 0, savg, smin, smax;
 							for (size_t j = start; j <= end; j++) {
 								if (events[i].name == events[j].name) {
 									min = std::min(min, statistics[j].min.time);
 									max = std::max(max, statistics[j].max.time);
-									avg += statistics[j].avg.time / info::mpi::size;
+									savg = statistics[j].savg.time;
+									smin = statistics[j].smin.time;
+									smax = statistics[j].smax.time;
 									++counter;
 								}
 							}
 							eslog::info("   %s [%dx]\n", events[i].name, counter);
 							printdata(dataformat, events[i].name, " [1]", statistics[i].avg.time, statistics[i].min.time, statistics[i].max.time, statistics[end].davg.time);
-							printdata(dataformat, events[i].name, " [~]", avg / counter, statistics[end].davg.time);
-							printdata(dataformat, events[i].name, " [+]", avg, statistics[end].davg.time);
+							printdata(dataformat, events[i].name, " [~]", savg / counter, min, max, statistics[end].davg.time);
+							printdata(dataformat, events[i].name, " [+]", savg, smin, smax, statistics[end].davg.time);
 						}
 					}
 				}

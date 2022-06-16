@@ -35,11 +35,13 @@ public:
 	struct EventStatistics: public Event {
 		Data min, max, avg;
 		Data duration, dmin, dmax, davg;
+		Data sum, smin, smax, savg; // for accumulated events
 
 		EventStatistics(const Event &event)
 		: Event(event),
 		  min(event.data), max(event.data), avg(event.data),
-		  duration(event.data), dmin(event.data), dmax(event.data), davg(event.data)
+		  duration(event.data), dmin(event.data), dmax(event.data), davg(event.data),
+		  sum(event.data), smin(event.data), smax(event.data), savg(event.data)
 		{ }
 	};
 
