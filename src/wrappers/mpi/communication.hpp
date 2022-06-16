@@ -636,29 +636,29 @@ bool Communication::gatherUnknownSize(const std::vector<Ttype, Talloc> &sBuffer,
 		return true;
 	}
 
-	int size = type.mpisize * sBuffer.size();
-	std::vector<int> rSizes(group->size), rOffsets(group->size);
-	MPI_Gather(&size, 1, MPI_INT, rSizes.data(), 1, MPI_INT, 0, group->communicator);
-
-	if (!group->rank) {
-		size = 0;
-		for (size_t i = 0; i < rSizes.size(); i++) {
-			rOffsets[i] = size;
-			size += rSizes[i];
-		}
-		rBuffer.resize(size / type.mpisize);
-	}
-
-	// bullxmpi violate MPI standard (cast away constness)
-	MPI_Gatherv(const_cast<Ttype*>(sBuffer.data()), type.mpisize * sBuffer.size(), type.mpitype, rBuffer.data(), rSizes.data(), rOffsets.data(), type.mpitype, 0, group->communicator);
-
-	offsets.resize(group->size + 1);
-	for (size_t i = 0; i < rOffsets.size(); i++) {
-		offsets[i] = rOffsets[i] / type.mpisize;
-	}
-	offsets.back() = (rOffsets.back() + rSizes.back()) / type.mpisize;
-	profiler::syncend("comm_gather_unknown_size");
-	return true;
+//	int size = type.mpisize * sBuffer.size();
+//	std::vector<int> rSizes(group->size), rOffsets(group->size);
+//	MPI_Gather(&size, 1, MPI_INT, rSizes.data(), 1, MPI_INT, 0, group->communicator);
+//
+//	if (!group->rank) {
+//		size = 0;
+//		for (size_t i = 0; i < rSizes.size(); i++) {
+//			rOffsets[i] = size;
+//			size += rSizes[i];
+//		}
+//		rBuffer.resize(size / type.mpisize);
+//	}
+//
+//	// bullxmpi violate MPI standard (cast away constness)
+//	MPI_Gatherv(const_cast<Ttype*>(sBuffer.data()), type.mpisize * sBuffer.size(), type.mpitype, rBuffer.data(), rSizes.data(), rOffsets.data(), type.mpitype, 0, group->communicator);
+//
+//	offsets.resize(group->size + 1);
+//	for (size_t i = 0; i < rOffsets.size(); i++) {
+//		offsets[i] = rOffsets[i] / type.mpisize;
+//	}
+//	offsets.back() = (rOffsets.back() + rSizes.back()) / type.mpisize;
+//	profiler::syncend("comm_gather_unknown_size");
+//	return true;
 }
 template <typename Ttype>
 bool Communication::allGatherUnknownSize(std::vector<Ttype> &data, MPIGroup *group)
@@ -724,23 +724,23 @@ bool Communication::allGatherUnknownSize(std::vector<Ttype> &data, MPIGroup *gro
 		return true;
 	}
 
-	int size = type.mpisize * data.size();
-	std::vector<int> rSizes(group->size), rOffsets(group->size);
-	MPI_Allgather(&size, 1, MPI_INT, rSizes.data(), 1, MPI_INT, group->communicator);
-
-	std::vector<Ttype> rdata;
-	size = 0;
-	for (size_t i = 0; i < rSizes.size(); i++) {
-		rOffsets[i] = size;
-		size += rSizes[i];
-	}
-	rdata.resize(size / type.mpisize);
-
-	MPI_Allgatherv(data.data(), type.mpisize * data.size(), type.mpitype, rdata.data(), rSizes.data(), rOffsets.data(), type.mpitype, group->communicator);
-
-	rdata.swap(data);
-	profiler::syncend("comm_allgather_unknown_size");
-	return true;
+//	int size = type.mpisize * data.size();
+//	std::vector<int> rSizes(group->size), rOffsets(group->size);
+//	MPI_Allgather(&size, 1, MPI_INT, rSizes.data(), 1, MPI_INT, group->communicator);
+//
+//	std::vector<Ttype> rdata;
+//	size = 0;
+//	for (size_t i = 0; i < rSizes.size(); i++) {
+//		rOffsets[i] = size;
+//		size += rSizes[i];
+//	}
+//	rdata.resize(size / type.mpisize);
+//
+//	MPI_Allgatherv(data.data(), type.mpisize * data.size(), type.mpitype, rdata.data(), rSizes.data(), rOffsets.data(), type.mpitype, group->communicator);
+//
+//	rdata.swap(data);
+//	profiler::syncend("comm_allgather_unknown_size");
+//	return true;
 }
 
 template <typename Ttype>

@@ -42,7 +42,7 @@ ExpressionEvaluator::ExpressionEvaluator(const ExpressionEvaluator &other)
 	variables = other.variables;
 }
 
-void ExpressionEvaluator::evalVector(esint size, esint increment, const Params &params, double *results) const
+void ExpressionEvaluator::evalVectorInc(esint size, esint increment, const Params &params, double *results) const
 {
 	int thread = omp_get_thread_num();
 	for (esint i = 0; i < size; ++i) {
@@ -53,7 +53,7 @@ void ExpressionEvaluator::evalVector(esint size, esint increment, const Params &
 	}
 }
 
-void ExpressionEvaluator::evalVectorSimd(esint size, esint increment, const Params &params, double *results) const
+void ExpressionEvaluator::evalVectorSimdInc(esint size, esint increment, const Params &params, double *results) const
 {
 	int thread = omp_get_thread_num();
 	for (esint i = 0; i < size; i+=SIMD::size) {
@@ -66,7 +66,7 @@ void ExpressionEvaluator::evalVectorSimd(esint size, esint increment, const Para
 	}
 }
 
-void ExpressionEvaluator::evalFiltered(esint size, esint increment, const esint *elements, const esint *distribution, const Params &params, double *results) const
+void ExpressionEvaluator::evalFilteredInc(esint size, esint increment, const esint *elements, const esint *distribution, const Params &params, double *results) const
 {
 	int thread = omp_get_thread_num();
 	for (esint i = 0; i < size; ++i) {
@@ -79,7 +79,7 @@ void ExpressionEvaluator::evalFiltered(esint size, esint increment, const esint 
 	}
 }
 
-void ExpressionEvaluator::evalSelectedSparse(esint size, esint increment, const esint *selection, const Params &params, double *results) const
+void ExpressionEvaluator::evalSelectedSparseInc(esint size, esint increment, const esint *selection, const Params &params, double *results) const
 {
 	int thread = omp_get_thread_num();
 	for (esint i = 0; i < size; ++i) {
@@ -90,7 +90,7 @@ void ExpressionEvaluator::evalSelectedSparse(esint size, esint increment, const 
 	}
 }
 
-void ExpressionEvaluator::evalSelectedDense(esint size, esint increment, const esint *selection, const Params &params, double *results) const
+void ExpressionEvaluator::evalSelectedDenseInc(esint size, esint increment, const esint *selection, const Params &params, double *results) const
 {
 	int thread = omp_get_thread_num();
 	for (esint i = 0; i < size; ++i) {

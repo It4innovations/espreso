@@ -11,6 +11,7 @@ struct QuadraticVolumeGenerator: public ElementGenerator {
 	QuadraticVolumeGenerator();
 
 	void pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeEdge edge) const;
+	void pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const;
 	void pushTriangleNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const;
 	void pushSquareNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const;
 

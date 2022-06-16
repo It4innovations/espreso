@@ -19,9 +19,9 @@ protected:
 	SphereGenerator(const SphereGeneratorConfiguration &configuration);
 	virtual ~SphereGenerator() {}
 
-	virtual void nodes(MeshBuilder &mesh);
-	virtual void neighbors(MeshBuilder &mesh);
-	virtual void regions(const SphereGeneratorConfiguration &configuration, MeshBuilder &mesh);
+	void nodes(MeshBuilder &mesh);
+	void neighbors(MeshBuilder &mesh);
+	void regions(const SphereGeneratorConfiguration &configuration, MeshBuilder &mesh);
 
 	enum class SIDE : int {
 		UP = 0,

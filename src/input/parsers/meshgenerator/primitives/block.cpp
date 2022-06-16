@@ -353,7 +353,6 @@ void BlockGenerator::edgesRegion(const BlockBorder &border, MeshBuilder &mesh, s
 	case 3:
 		eslog::error("Implement a selection of edges inside 3D interval.\n");
 		break;
-		break;
 	}
 
 	elements.resize(mesh.etype.size() - begin);
@@ -389,7 +388,6 @@ void BlockGenerator::facesRegion(const BlockBorder &border, MeshBuilder &mesh, s
 		break;
 	case 3:
 		eslog::error("Implement a selection of faces inside 3D interval.\n");
-		break;
 		break;
 	}
 

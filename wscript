@@ -1,9 +1,9 @@
 
 import sys, os, logging, subprocess, types
 
-libs_blas=[ "cblas", "mkl" ]
+libs_blas=[ "cblas", "sslblas", "mkl" ]
 libs_spblas=[ "mkl", "suitesparse" ]
-libs_lapack=[ "mkl", "lapacke" ]
+libs_lapack=[ "mkl", "lapacke", "ssllapack" ]
 libs_solvers=[ "mkl", "pardiso", "suitesparse" ]
 
 def configure(ctx):
@@ -34,7 +34,7 @@ def configure(ctx):
         ctx.env.append_unique("DEFINES", [ "esint=long" ])
         ctx.env.append_unique("DEFINES_API", [ "FETI4I_INT_WIDTH=64", "MESIO_INT_WIDTH=64" ])
 
-    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11", "-Wall" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11" ])
     ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
     if ctx.options.mode == "release":
         ctx.env.append_unique("CXXFLAGS", [ "-O3", "-g", "-march=native" ])
@@ -138,10 +138,12 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/analysis/**/*.cpp'), "analysis")
 #     ctx.build_espreso(ctx.path.ant_glob('src/physics/**/*.cpp'), "physics")
     ctx.build_espreso(ctx.path.ant_glob('src/morphing/**/*.cpp'), "devel")
-    ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "MKL", "PARDISO", "SUITESPARSE", "CBLAS" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "MKL", "PARDISO", "SUITESPARSE", "CBLAS", "SSLBLAS" ])
     ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cblas/**/*.cpp'), "wblas", [ "CBLAS" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/sslblas/**/*.cpp'), "wsslblas", [ "SSLBLAS" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/lapacke/**/*.cpp'), "wlapacke", [ "LAPACKE" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/ssllapack/**/*.cpp'), "wssllapack", [ "SSLLAPACK" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL", "PARDISO" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cuda/**/*.cpp'), "wcuda", [ "CUDA" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'), "whypre", [ "HYPRE" ])
@@ -324,7 +326,9 @@ def recurse(ctx):
 
     """ Math libraries"""
     ctx.recurse("src/wrappers/cblas")
+    ctx.recurse("src/wrappers/sslblas")
     ctx.recurse("src/wrappers/lapacke")
+    ctx.recurse("src/wrappers/ssllapack")
     ctx.recurse("src/wrappers/pardiso")
     ctx.recurse("src/wrappers/mkl")
     ctx.recurse("src/wrappers/suitesparse")
@@ -401,10 +405,10 @@ def link_cxx(self, *k, **kw):
         libs = dict(stlib=kw["libs"], libpath=libpath, msg="Checking for '{0}' library".format(kw["name"]))
         libs.update(general)
         libs.update(header)
+        libs["msg"] = "Checking for '{0}' library".format(kw["name"])
         if not self.options.static or not self.check_cxx(**libs):
             libs["lib"] = libs["stlib"]
             libs.pop("stlib")
-            libs["msg"] = "Checking for '{0}' library".format(kw["name"])
             if not self.check_cxx(**libs):
                 self.env.revert()
                 return False

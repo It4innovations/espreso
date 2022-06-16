@@ -200,32 +200,32 @@ public:
 template <template<typename> typename Matrix, typename T>
 class Matrix_FETI: public Matrix_FETI_Common<Matrix, T> {
 public:
-	void copy(const Matrix_Base<T> *in, int rowOffset, int colOffset, int size, int step)
+	void copySliced(const Matrix_Base<T> *in, int rowOffset, int colOffset, int size, int step)
 	{
-		in->copyTo(this, rowOffset, colOffset, size, step);
+		in->copyToSliced(this, rowOffset, colOffset, size, step);
 	}
 
-	void add(const T &alpha, const Matrix_Base<T> *a, int rowOffset, int colOffset, int size, int step)
+	void addSliced(const T &alpha, const Matrix_Base<T> *a, int rowOffset, int colOffset, int size, int step)
 	{
-		a->addTo(alpha, this, rowOffset, colOffset, size, step);
+		a->addToSliced(alpha, this, rowOffset, colOffset, size, step);
 	}
 
-	void copyTo(Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyTo(Matrix_Distributed<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
+	void copyToSliced(Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void copyTo(Matrix_Distributed<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
+	void copyToSliced(Matrix_Distributed<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void copyTo(Matrix_FETI<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
+	void copyToSliced(Matrix_Distributed<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void copyToSliced(Matrix_FETI<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < this->domains.size(); ++d) {
@@ -233,7 +233,7 @@ public:
 		}
 	}
 
-	void copyTo(Matrix_FETI<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
+	void copyToSliced(Matrix_FETI<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < this->domains.size(); ++d) {
@@ -241,7 +241,7 @@ public:
 		}
 	}
 
-	void copyTo(Matrix_FETI<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
+	void copyToSliced(Matrix_FETI<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < this->domains.size(); ++d) {
@@ -249,22 +249,22 @@ public:
 		}
 	}
 
-	void addTo(const T &alpha, Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
+	void addToSliced(const T &alpha, Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void addTo(const T &alpha, Matrix_Distributed<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
+	void addToSliced(const T &alpha, Matrix_Distributed<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void addTo(const T &alpha, Matrix_Distributed<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
+	void addToSliced(const T &alpha, Matrix_Distributed<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void addTo(const T &alpha, Matrix_FETI<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
+	void addToSliced(const T &alpha, Matrix_FETI<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < this->domains.size(); ++d) {
@@ -272,7 +272,7 @@ public:
 		}
 	}
 
-	void addTo(const T &alpha, Matrix_FETI<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
+	void addToSliced(const T &alpha, Matrix_FETI<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < this->domains.size(); ++d) {
@@ -280,7 +280,7 @@ public:
 		}
 	}
 
-	void addTo(const T &alpha, Matrix_FETI<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
+	void addToSliced(const T &alpha, Matrix_FETI<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < this->domains.size(); ++d) {

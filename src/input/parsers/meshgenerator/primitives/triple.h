@@ -10,16 +10,16 @@ template <typename Ttype>
 struct Triple {
 	Ttype x, y, z;
 
-	Triple(): x(0), y(0), z(0) {};
+	Triple(): x(0), y(0), z(0) {}
 
 	template <typename TOther1, typename TOther2, typename TOther3>
-	Triple(TOther1 x, TOther2 y, TOther3 z): x(x), y(y), z(z) {};
+	Triple(TOther1 x, TOther2 y, TOther3 z): x(x), y(y), z(z) {}
 
 	template <typename TOther>
-	Triple(TOther* p): x(p[0]), y(p[1]), z(p[2]) {};
+	Triple(TOther* p): x(p[0]), y(p[1]), z(p[2]) {}
 
 	template <typename TOther>
-	Triple(const Triple<TOther> &p): x(p.x), y(p.y), z(p.z) {};
+	Triple(const Triple<TOther> &p): x(p.x), y(p.y), z(p.z) {}
 
 	template <typename TOther>
 	operator Triple<TOther>() { return Triple<TOther>(x, y, z); }

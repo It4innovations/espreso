@@ -712,7 +712,7 @@ void matrix_ACA::apply(const double* x, double* y, double alpha, double beta, bo
 	}
 
 	eslog::error("call vecScale, vecAdd\n");
-	esint dim = (transpose?this->ncols:this->nrows);
+//	esint dim = (transpose?this->ncols:this->nrows);
 //	MATH::vecScale(dim, beta, y);
 	
 	#pragma omp parallel

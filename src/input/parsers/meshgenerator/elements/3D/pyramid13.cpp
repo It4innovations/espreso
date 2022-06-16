@@ -186,10 +186,10 @@ void Pyramid13Generator::pushNodes(std::vector<esint> &nodes, const std::vector<
 
 void Pyramid13Generator::pushEdge(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeEdge edge) const
 {
-	return
-	pushNodes(elements, indices, edge);
-	esize.push_back(3);
-	etype.push_back((int)Element::CODE::LINE3);
+	return;
+//	pushNodes(elements, indices, edge);
+//	esize.push_back(3);
+//	etype.push_back((int)Element::CODE::LINE3);
 }
 
 void Pyramid13Generator::pushFace(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeFace face) const

@@ -23,11 +23,11 @@ protected:
 	GridGenerator(const SphereGeneratorConfiguration &configuration);
 	virtual ~GridGenerator() {}
 
-	virtual void init();
+	void init();
 	virtual void nodes(MeshBuilder &mesh);
-	virtual void elements(MeshBuilder &mesh);
-	virtual void neighbors(MeshBuilder &mesh);
-	virtual void regions(const GridGeneratorConfiguration &configuration, MeshBuilder &mesh);
+	void elements(MeshBuilder &mesh);
+	void neighbors(MeshBuilder &mesh);
+	void regions(const GridGeneratorConfiguration &configuration, MeshBuilder &mesh);
 
 	GridSettings _settings;
 	BlockGenerator _block;

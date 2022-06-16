@@ -22,7 +22,7 @@ class HeatTransfer: public Assembler
 {
 public:
 	struct NGP {
-		static const size_t POINT1 = 0;
+		static const size_t POINT1 = 1;
 
 		static const size_t LINE2 = 2;
 		static const size_t LINE3 = 3;

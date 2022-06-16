@@ -332,7 +332,7 @@ void HeatTransfer::_evaluate()
 
 void HeatTransfer::updateSolution(SteadyState &scheme)
 {
-	scheme.x->store(ParametersTemperature::output->data);
+	scheme.x->storeTo(ParametersTemperature::output->data);
 	results(); // do we need an update mechanism?
 	temp.node.setUpdate(1);
 }

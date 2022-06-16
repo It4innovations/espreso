@@ -21,7 +21,7 @@ TableEvaluator::TableEvaluator(
 //	}
 }
 
-void TableEvaluator::evalVector(esint size, esint increment, const Params &params, double *results) const
+void TableEvaluator::evalVectorInc(esint size, esint increment, const Params &params, double *results) const
 {
 //	std::vector<size_t> cell(_dimension);
 //
@@ -41,7 +41,7 @@ void TableEvaluator::evalVector(esint size, esint increment, const Params &param
 //	}
 }
 
-void TableEvaluator::evalFiltered(esint size, esint increment, const esint *elements, const esint *distribution, const Params &params, double *results) const
+void TableEvaluator::evalFilteredInc(esint size, esint increment, const esint *elements, const esint *distribution, const Params &params, double *results) const
 {
 //	std::vector<size_t> cell(_dimension);
 //
@@ -63,7 +63,7 @@ void TableEvaluator::evalFiltered(esint size, esint increment, const esint *elem
 //	}
 }
 
-void TableEvaluator::evalSelectedSparse(esint size, esint increment, const esint *selection, const Params &params, double *results) const
+void TableEvaluator::evalSelectedSparseInc(esint size, esint increment, const esint *selection, const Params &params, double *results) const
 {
 //	std::vector<size_t> cell(_dimension);
 //
@@ -83,7 +83,7 @@ void TableEvaluator::evalSelectedSparse(esint size, esint increment, const esint
 //	}
 }
 
-void TableEvaluator::evalSelectedDense(esint size, esint increment, const esint *selection, const Params &params, double *results) const
+void TableEvaluator::evalSelectedDenseInc(esint size, esint increment, const esint *selection, const Params &params, double *results) const
 {
 //	std::vector<size_t> cell(_dimension);
 //

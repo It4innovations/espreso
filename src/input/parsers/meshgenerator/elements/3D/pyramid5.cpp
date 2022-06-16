@@ -103,10 +103,10 @@ void Pyramid5Generator::pushNodes(std::vector<esint> &nodes, const std::vector<e
 
 void Pyramid5Generator::pushEdge(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeEdge edge) const
 {
-	return
-	pushNodes(elements, indices, edge);
-	esize.push_back(2);
-	etype.push_back((int)Element::CODE::LINE2);
+	return;
+//	pushNodes(elements, indices, edge);
+//	esize.push_back(2);
+//	etype.push_back((int)Element::CODE::LINE2);
 }
 
 void Pyramid5Generator::pushFace(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeFace face) const

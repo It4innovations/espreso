@@ -15,7 +15,7 @@ class NeperMshMesh {
 		size_t offset, begin, end;
 		int rbegin, rend;
 
-		Keyword(): offset(-1), begin(-1), end(-1), rbegin(-1), rend(-1) {}
+		Keyword(): offset((size_t)-1), begin((size_t)-1), end((size_t)-1), rbegin(-1), rend(-1) {}
 		Keyword(InputFilePack &pack, const char *c);
 	};
 

@@ -159,7 +159,7 @@ OutputWriter::OutputWriter()
 
 void OutputWriter::createOutputDirectory()
 {
-	utils::createDirectory({ _path, _directory });
+	utils::createDirectory(std::vector<std::string>{ _path, _directory });
 }
 
 Output::Output()

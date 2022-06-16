@@ -41,29 +41,29 @@ public:
 		return value;
 	}
 
-	virtual void evalVector(esint size, const Params &params, double *results) const
+	void evalVector(esint size, const Params &params, double *results) const
 	{
-		evalVector(size, 1, params, results);
+		evalVectorInc(size, 1, params, results);
 	}
 
-	virtual void evalVector(esint size, esint increment, const Params &params, double *results) const
+	virtual void evalVectorInc(esint size, esint increment, const Params &params, double *results) const
 	{
 		for (esint i = 0; i < size; ++i) {
 			results[i * increment] = 0;
 		}
 	}
 
-	virtual void evalVectorSimd(esint size, esint increment, const Params &params, double *results) const
+	void evalVectorSimd(esint size, esint increment, const Params &params, double *results) const
 	{
-		evalVector(size, 1, params, results);
+		evalVectorInc(size, 1, params, results);
 	}
 
-	virtual void evalFiltered(esint size, const esint *elements, const esint *distribution, const Params &params, double *results) const
+	void evalFiltered(esint size, const esint *elements, const esint *distribution, const Params &params, double *results) const
 	{
-		evalFiltered(size, 1, elements, distribution, params, results);
+		evalFilteredInc(size, 1, elements, distribution, params, results);
 	}
 
-	virtual void evalFiltered(esint size, esint increment, const esint *elements, const esint *distribution, const Params &params, double *results) const
+	virtual void evalFilteredInc(esint size, esint increment, const esint *elements, const esint *distribution, const Params &params, double *results) const
 	{
 		for (esint i = 0; i < size; ++i) {
 			for (esint e = distribution[elements[i]]; e < distribution[elements[i] + 1]; ++e) {
@@ -72,24 +72,24 @@ public:
 		}
 	}
 
-	virtual void evalSelectedSparse(esint size, const esint *selection, const Params &params, double *results) const
+	void evalSelectedSparse(esint size, const esint *selection, const Params &params, double *results) const
 	{
-		evalSelectedSparse(size, 1, selection, params, results);
+		evalSelectedSparseInc(size, 1, selection, params, results);
 	}
 
-	virtual void evalSelectedSparse(esint size, esint increment, const esint *selection, const Params &params, double *results) const
+	virtual void evalSelectedSparseInc(esint size, esint increment, const esint *selection, const Params &params, double *results) const
 	{
 		for (esint i = 0; i < size; ++i) {
 			results[i * increment] = 0;
 		}
 	}
 
-	virtual void evalSelectedDense(esint size, const esint *selection, const Params &params, double *results) const
+	void evalSelectedDense(esint size, const esint *selection, const Params &params, double *results) const
 	{
-		evalSelectedDense(size, 1, selection, params, results);
+		evalSelectedDenseInc(size, 1, selection, params, results);
 	}
 
-	virtual void evalSelectedDense(esint size, esint increment, const esint *selection, const Params &params, double *results) const
+	virtual void evalSelectedDenseInc(esint size, esint increment, const esint *selection, const Params &params, double *results) const
 	{
 		for (esint i = 0; i < size; ++i) {
 			results[selection[i] * increment] = 0;

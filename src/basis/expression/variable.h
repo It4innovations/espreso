@@ -20,14 +20,15 @@ struct NamedData;
 
 
 struct Variable {
-	static struct {
+	struct List {
 		struct Region {
 			std::map<std::string, Variable*> enodes, egps;
 		};
 
 		std::map<std::string, Variable*> global, element, enodes, egps, node;
 		std::vector<Region> region;
-	} list;
+	};
+	static List list;
 
 	static void gather(size_t regions);
 	static void analyze(ECFExpression &expr, size_t region);

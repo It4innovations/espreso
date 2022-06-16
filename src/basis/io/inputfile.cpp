@@ -20,7 +20,7 @@ InputFile::InputFile()
 }
 
 InputFilePack::InputFilePack(size_t minchunk, size_t overlap)
-: fileindex(-1), minchunk(minchunk), overlap(overlap)
+: fileindex((size_t)-1), minchunk(minchunk), overlap(overlap)
 {
 
 }
@@ -61,7 +61,7 @@ bool InputFilePack::next()
 		distribution = files[fileindex]->distribution;
 		return true;
 	}
-	fileindex = -1;
+	fileindex = (size_t)-1;
 	return false;
 }
 

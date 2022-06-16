@@ -13,7 +13,7 @@ TableInterpolationEvaluator::TableInterpolationEvaluator(const std::vector<std::
 	}
 }
 
-void TableInterpolationEvaluator::evalVector(esint size, esint increment, const Params &params, double *results) const
+void TableInterpolationEvaluator::evalVectorInc(esint size, esint increment, const Params &params, double *results) const
 {
 //	for (esint i = 0; i < size; ++i) {
 //		if (params._temp[i] < _table[0].first) {
@@ -32,7 +32,7 @@ void TableInterpolationEvaluator::evalVector(esint size, esint increment, const 
 //	}
 }
 
-void TableInterpolationEvaluator::evalFiltered(esint size, esint increment, const esint *elements, const esint *distribution, const Params &params, double *results) const
+void TableInterpolationEvaluator::evalFilteredInc(esint size, esint increment, const esint *elements, const esint *distribution, const Params &params, double *results) const
 {
 //	for (esint i = 0; i < size; ++i) {
 //		for (esint e = distribution[elements[i]]; e < distribution[elements[i] + 1]; ++e) {
@@ -53,7 +53,7 @@ void TableInterpolationEvaluator::evalFiltered(esint size, esint increment, cons
 //	}
 }
 
-void TableInterpolationEvaluator::evalSelectedSparse(esint size, esint increment, const esint *selection, const Params &params, double *results) const
+void TableInterpolationEvaluator::evalSelectedSparseInc(esint size, esint increment, const esint *selection, const Params &params, double *results) const
 {
 //	for (esint i = 0; i < size; ++i) {
 //		if (params._temp[selection[i]] < _table[0].first) {
@@ -72,7 +72,7 @@ void TableInterpolationEvaluator::evalSelectedSparse(esint size, esint increment
 //	}
 }
 
-void TableInterpolationEvaluator::evalSelectedDense(esint size, esint increment, const esint *selection, const Params &params, double *results) const
+void TableInterpolationEvaluator::evalSelectedDenseInc(esint size, esint increment, const esint *selection, const Params &params, double *results) const
 {
 //	for (esint i = 0; i < size; ++i) {
 //		if (params._temp[selection[i]] < _table[0].first) {

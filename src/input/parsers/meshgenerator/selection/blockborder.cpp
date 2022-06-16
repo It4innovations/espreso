@@ -66,9 +66,9 @@ BlockBorder::BlockBorder(const std::string &interval)
 
 size_t BlockBorder::dimension() const
 {
-	if (start.x == end.x && (excludeStart.x || excludeEnd.x)) { return -1; }
-	if (start.y == end.y && (excludeStart.y || excludeEnd.y)) { return -1; }
-	if (start.z == end.z && (excludeStart.z || excludeEnd.z)) { return -1; }
+	if (start.x == end.x && (excludeStart.x || excludeEnd.x)) { return (size_t)-1; }
+	if (start.y == end.y && (excludeStart.y || excludeEnd.y)) { return (size_t)-1; }
+	if (start.z == end.z && (excludeStart.z || excludeEnd.z)) { return (size_t)-1; }
 
 	size_t dimension = 3;
 	if (start.x == end.x) { dimension--; }

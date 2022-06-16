@@ -15,19 +15,15 @@ static Preconditioner<T>* _set(FETI<T> *feti)
 	case FETIConfiguration::PRECONDITIONER::NONE:
 		eslog::info(" = PRECONDITIONER                                                                       NONE = \n");
 		return new EmptyPreconditioner<T>(feti);
-		break;
 	case FETIConfiguration::PRECONDITIONER::LUMPED:
 		eslog::info(" = PRECONDITIONER                                                                     LUMPED = \n");
 		return new Lumped<T>(feti);
-		break;
 	case FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION:
 		eslog::info(" = PRECONDITIONER                                                            WEIGHT FUNCTION = \n");
 		return new WeightFunction<T>(feti);
-		break;
 	case FETIConfiguration::PRECONDITIONER::DIRICHLET:
 		eslog::info(" = PRECONDITIONER                                                                  DIRICHLET = \n");
 		return new Dirichlet<T>(feti);
-		break;
 	case FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET:
 	case FETIConfiguration::PRECONDITIONER::MAGIC:
 	default: return nullptr;

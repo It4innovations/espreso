@@ -175,7 +175,7 @@ void NeperMshMesh::parseASCII(MeshBuilder &mesh)
 	mesh.esize.reserve(mesh.eIDs.capacity());
 	mesh.enodes.reserve(mesh.eIDs.capacity() * 8);
 	for (size_t i = 0; i < edata.size(); ) {
-		esint id, type, dim, tags, enodes = 0;
+		esint id, type, dim, enodes = 0;
 		size_t tag0, tag1;
 		id = edata[i++];
 		switch (edata[i++]) {
@@ -194,7 +194,7 @@ void NeperMshMesh::parseASCII(MeshBuilder &mesh)
 		case 18: dim = 3; type = (int)Element::CODE::PRISMA15;  enodes = 15; break;
 		case 10: eslog::error("MESIO internal error: unsupported element SQUARE with 9 nodes."); break;
 		}
-		switch (tags = edata[i++]) { // tags
+		switch (edata[i++]) { // tags
 		case 0: break;
 		case 1: tag0 = edata[i++]; break;
 		case 2: tag0 = edata[i++]; tag1 = edata[i++]; break;

@@ -54,12 +54,12 @@ ECFParameter* ECFParameter::_triggerParameterGet(ECFParameter* parameter)
 
 ECFParameter* ECFParameter::getParameter(const std::string &name)
 {
-	return _triggerParameterGet(_getParameter(name));
+	return _triggerParameterGet(_getNamedParameter(name));
 }
 
 ECFParameter* ECFParameter::getParameter(const char* name)
 {
-	return _triggerParameterGet(_getParameter(std::string(name)));
+	return _triggerParameterGet(_getNamedParameter(std::string(name)));
 }
 
 ECFParameter* ECFParameter::getParameter(const void* data)
@@ -96,7 +96,7 @@ bool ECFObject::_setValue(const std::string &value)
 	return false;
 }
 
-ECFParameter* ECFObject::_getParameter(const std::string &name)
+ECFParameter* ECFObject::_getNamedParameter(const std::string &name)
 {
 	for (size_t i = 0; i < parameters.size(); i++) {
 		if (StringCompare::caseInsensitiveEq(name, parameters[i]->name)) {
@@ -118,10 +118,10 @@ ECFParameter* ECFObject::_getParameter(const void* data)
 
 ECFParameter* ECFObject::getWithError(const std::string &name)
 {
-	if (_getParameter(name) == NULL) {
+	if (_getNamedParameter(name) == NULL) {
 		eslog::globalerror("ECF ERROR: Object '%s' has no parameter '%s'.\n", this->name.c_str(), name.c_str());
 	}
-	return _getParameter(name);
+	return _getNamedParameter(name);
 }
 
 ECFParameter* ECFObject::registerAdditionalParameter(ECFParameter* parameter)

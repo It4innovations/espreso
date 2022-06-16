@@ -483,7 +483,7 @@ double MorphingMatrix::calculateConstantShift(
 	}
 	
 	return 1.0f;
-	return std::sqrt(out);
+//	return std::sqrt(out);
 }
 
 void MorphingMatrix::recalculateB(

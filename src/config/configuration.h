@@ -39,7 +39,7 @@ struct ECFParameter {
 	virtual ~ECFParameter() {};
 protected:
 	virtual bool _setValue(const std::string &value) =0;
-	virtual ECFParameter* _getParameter(const std::string &name) =0;
+	virtual ECFParameter* _getNamedParameter(const std::string &name) =0;
 	virtual ECFParameter* _getParameter(const void* data) =0;
 	virtual ECFParameter* _triggerParameterGet(ECFParameter* parameter);
 
@@ -59,7 +59,7 @@ struct ECFSeparator: public ECFParameter {
 
 protected:
 	bool _setValue(const std::string &value) { return false; }
-	ECFParameter* _getParameter(const std::string &name) { return NULL; }
+	ECFParameter* _getNamedParameter(const std::string &name) { return NULL; }
 	ECFParameter* _getParameter(const void* data) { return NULL; }
 };
 
@@ -71,7 +71,7 @@ struct ECFValue: public ECFParameter {
 	virtual ECFParameter* getPattern() const { return NULL; }
 
 protected:
-	ECFParameter* _getParameter(const std::string &name) { return NULL; }
+	ECFParameter* _getNamedParameter(const std::string &name) { return NULL; }
 	ECFParameter* _getParameter(const void* data) { return NULL; }
 };
 
@@ -121,7 +121,7 @@ struct ECFObject: public ECFParameter {
 	ECFParameter* addSpace();
 
 	virtual bool _setValue(const std::string &value);
-	virtual ECFParameter* _getParameter(const std::string &name);
+	virtual ECFParameter* _getNamedParameter(const std::string &name);
 	virtual ECFParameter* _getParameter(const void* data);
 
 	/////////// PARAMETER ///////////

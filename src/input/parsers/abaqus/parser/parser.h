@@ -25,8 +25,8 @@ struct AbaqusParser {
 	int fRank, lRank;
 
 	AbaqusParser()
-	: header(-1),
-	  first(-1), last(-1), fRank(-1), lRank(-1) {}
+	: header((size_t)-1),
+	  first((size_t)-1), last((size_t)-1), fRank(-1), lRank(-1) {}
 
 	void fillIndices(const char* header, const char* data);
 	void fillIndices(const char* header, const char* first, const char* last);

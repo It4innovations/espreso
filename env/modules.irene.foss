@@ -1,0 +1,8 @@
+module load flavor/buildtarget/x86_64 suitesparse/5.8.1 python3/3.8.10 metis/5.1.0 parmetis/4.0.3
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/ccc/products2/mpfr-4.1.0/Rhel_8__aarch64-a64fx/system/default/lib
+
+export CPATH=$CPATH:$METIS_INCDIR:$PARMETIS_INCDIR:$SUITESPARSE_INCDIR
+export LIBRARY_PATH=$LIBRARY_PATH:$METIS_LIBDIR:$PARMETIS_LIBDIR:$SSL_LIBDIR:$SUITESPARSE_LIBDIR
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/espreso/build

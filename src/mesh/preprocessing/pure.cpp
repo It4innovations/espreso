@@ -426,34 +426,34 @@ esint getSFCDecomposition(const ElementStore *elements, const NodeStore *nodes, 
 	profiler::syncend("get_sfc_decomposition");
 	return 0;
 
-	std::vector<Point> dcenters(info::mpi::size), sumcenters(info::mpi::size);
-	std::vector<esint> dsize(info::mpi::size), sumsize(info::mpi::size);
-
-	for (size_t e = 0; e < elements->epointers->datatarray().size(); ++e) {
-		dcenters[partition[e]] += elements->centers->datatarray()[e];
-		++dsize[partition[e]];
-	}
-
-	Communication::allReduce(dcenters.data(), sumcenters.data(), 3 * info::mpi::size, MPI_DOUBLE, MPI_SUM);
-	Communication::allReduce(dsize.data(), sumsize.data(), info::mpi::size, MPITools::getType<esint>().mpitype, MPI_SUM);
-
-	for (int r = 0; r < info::mpi::size; ++r) {
-		dcenters[r] = sumcenters[r] / sumsize[r];
-	}
-
-	#pragma omp parallel for
-	for (int t = 0; t < threads; t++) {
-		for (size_t e = elements->epointers->datatarray().distribution()[t]; e < elements->epointers->datatarray().distribution()[t + 1]; ++e) {
-			Point &center = elements->centers->datatarray()[e];
-			for (int r = 0; r < info::mpi::size; ++r) {
-				if ((dcenters[r] - center).length() < (dcenters[partition[e]] - center).length()) {
-					partition[e] = r;
-				}
-			}
-		}
-	}
-
-	return 0; // edge cut is not computed
+//	std::vector<Point> dcenters(info::mpi::size), sumcenters(info::mpi::size);
+//	std::vector<esint> dsize(info::mpi::size), sumsize(info::mpi::size);
+//
+//	for (size_t e = 0; e < elements->epointers->datatarray().size(); ++e) {
+//		dcenters[partition[e]] += elements->centers->datatarray()[e];
+//		++dsize[partition[e]];
+//	}
+//
+//	Communication::allReduce(dcenters.data(), sumcenters.data(), 3 * info::mpi::size, MPI_DOUBLE, MPI_SUM);
+//	Communication::allReduce(dsize.data(), sumsize.data(), info::mpi::size, MPITools::getType<esint>().mpitype, MPI_SUM);
+//
+//	for (int r = 0; r < info::mpi::size; ++r) {
+//		dcenters[r] = sumcenters[r] / sumsize[r];
+//	}
+//
+//	#pragma omp parallel for
+//	for (int t = 0; t < threads; t++) {
+//		for (size_t e = elements->epointers->datatarray().distribution()[t]; e < elements->epointers->datatarray().distribution()[t + 1]; ++e) {
+//			Point &center = elements->centers->datatarray()[e];
+//			for (int r = 0; r < info::mpi::size; ++r) {
+//				if ((dcenters[r] - center).length() < (dcenters[partition[e]] - center).length()) {
+//					partition[e] = r;
+//				}
+//			}
+//		}
+//	}
+//
+//	return 0; // edge cut is not computed
 }
 
 esint callParallelDecomposer(const ElementStore *elements, const NodeStore *nodes, std::vector<esint> &eframes, std::vector<esint> &eneighbors, std::vector<esint> &partition)
@@ -758,7 +758,7 @@ void computeContinuousClusterization(const ElementStore *elements, const NodeSto
 	struct __dinfo__ {
 		esint domain, proc, elements, fixed;
 
-		bool operator<(const esint &domain) { return this->domain < domain; }
+		bool operator<(const esint &domain) const { return this->domain < domain; }
 	};
 
 	std::vector<__dinfo__> sBuffer, gBuffer;

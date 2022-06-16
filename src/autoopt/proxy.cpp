@@ -284,7 +284,7 @@ double ParameterManager::_checkParameter_no_rounding(int id, double value)
 OutputManager::OutputManager(const AutoOptimizationConfiguration& configuration)
 : m_config(configuration) {}
 
-const void OutputManager::writeConfiguration(const char type,
+void OutputManager::writeConfiguration(const char type,
 	std::vector<double>& configuration)
 {
 	std::stringstream ss;

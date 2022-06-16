@@ -14,8 +14,9 @@ bool ParMETIS::islinked()
 {
 #ifdef HAVE_PARMETIS
 	return true;
-#endif
+#else
 	return false;
+#endif
 }
 
 esint ParMETIS::call(

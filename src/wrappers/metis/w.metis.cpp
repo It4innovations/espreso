@@ -13,8 +13,9 @@ bool METIS::islinked()
 {
 #ifdef HAVE_METIS
 	return true;
-#endif
+#else
 	return false;
+#endif
 }
 
 esint METIS::call(

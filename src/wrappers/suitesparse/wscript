@@ -3,4 +3,4 @@ def options(opt):
     opt.solvers.add_option("--suitesparse", action="store", type="string", metavar="SUITESPARSE_ROOT", default="", help="Path to SUITE SPARSE root directory.")
 
 def configure(ctx):
-    ctx.link_cxx(name="suitesparse", header_name=["cholmod.h"], libs=["cholmod", "amd", "colamd", "camd", "ccolamd", "metis", "lapack", "blas"])
+    ctx.link_cxx(name="suitesparse", header_name=["cholmod.h"], libs=["cholmod"])

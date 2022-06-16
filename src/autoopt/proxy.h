@@ -50,7 +50,7 @@ class OutputManager
 public:
 	OutputManager(const AutoOptimizationConfiguration& configuration);
 
-	const void writeConfiguration(const char type, std::vector<double>& configuration);
+	void writeConfiguration(const char type, std::vector<double>& configuration);
 
 private:
 	const AutoOptimizationConfiguration& m_config;

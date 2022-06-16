@@ -155,5 +155,5 @@ void Acoustic::evaluate(Harmonic &scheme)
 
 void Acoustic::updateSolution(Harmonic &scheme)
 {
-	scheme.re.x->store(ParametersAcousticPressure::output->data);
+	scheme.re.x->storeTo(ParametersAcousticPressure::output->data);
 }

@@ -172,7 +172,7 @@ struct ECFEnumHolder: public ECFValue {
 				return true;
 			}
 		}
-		size_t index = -1;
+		size_t index = (size_t)-1;
 		for (size_t i = 0; i < metadata.options.size(); i++) {
 			if (StringCompare::caseInsensitiveEq(value, metadata.options[i].name)) {
 				index = i;

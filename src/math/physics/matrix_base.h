@@ -67,22 +67,22 @@ public:
 	using Matrix_Base_Common<T>::add;
 	using Matrix_Base_Common<T>::addTo;
 
-	virtual void copy(const Matrix_Base<T> *in, int rowOffset, int colOffset, int size, int step) =0;
-	virtual void add(const T &alpha, const Matrix_Base<T> *a, int rowOffset, int colOffset, int size, int step) =0;
+	virtual void copySliced(const Matrix_Base<T> *in, int rowOffset, int colOffset, int size, int step) =0;
+	virtual void addSliced(const T &alpha, const Matrix_Base<T> *a, int rowOffset, int colOffset, int size, int step) =0;
 
-	virtual void copyTo(Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void copyTo(Matrix_Distributed<Matrix_CSR, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void copyTo(Matrix_Distributed<Matrix_IJV, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void copyTo(Matrix_FETI<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void copyTo(Matrix_FETI<Matrix_CSR, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void copyTo(Matrix_FETI<Matrix_IJV, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
+	virtual void copyToSliced(Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const =0;
+	virtual void copyToSliced(Matrix_Distributed<Matrix_CSR, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
+	virtual void copyToSliced(Matrix_Distributed<Matrix_IJV, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
+	virtual void copyToSliced(Matrix_FETI<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const =0;
+	virtual void copyToSliced(Matrix_FETI<Matrix_CSR, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
+	virtual void copyToSliced(Matrix_FETI<Matrix_IJV, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
 
-	virtual void addTo(const T &alpha, Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void addTo(const T &alpha, Matrix_Distributed<Matrix_CSR, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void addTo(const T &alpha, Matrix_Distributed<Matrix_IJV, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void addTo(const T &alpha, Matrix_FETI<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void addTo(const T &alpha, Matrix_FETI<Matrix_CSR, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void addTo(const T &alpha, Matrix_FETI<Matrix_IJV, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
+	virtual void addToSliced(const T &alpha, Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const =0;
+	virtual void addToSliced(const T &alpha, Matrix_Distributed<Matrix_CSR, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
+	virtual void addToSliced(const T &alpha, Matrix_Distributed<Matrix_IJV, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
+	virtual void addToSliced(const T &alpha, Matrix_FETI<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const =0;
+	virtual void addToSliced(const T &alpha, Matrix_FETI<Matrix_CSR, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
+	virtual void addToSliced(const T &alpha, Matrix_FETI<Matrix_IJV, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
 
 	virtual void copyToReal(Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const =0;
 	virtual void copyToReal(Matrix_Distributed<Matrix_CSR  , std::complex<T> > *a) const =0;

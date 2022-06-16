@@ -167,7 +167,7 @@ class Vector_FETI: public Vector_FETI_Common<Vector, T> {
 	}
 
 public:
-	void store(std::vector<double> &output)
+	void storeTo(std::vector<double> &output)
 	{
 		_store(this->domains, this->decomposition, output);
 	}
@@ -276,27 +276,27 @@ public:
 		}
 	}
 
-	void copy(const Vector_Base<T> *in, int offset, int size, int step)
+	void copySliced(const Vector_Base<T> *in, int offset, int size, int step)
 	{
-		in->copyTo(this, offset, size, step);
+		in->copyToSliced(this, offset, size, step);
 	}
 
-	void add(const T &alpha, const Vector_Base<double> *a, int offset, int size, int step)
+	void addSliced(const T &alpha, const Vector_Base<double> *a, int offset, int size, int step)
 	{
-		a->addTo(alpha, this, offset, size, step);
+		a->addToSliced(alpha, this, offset, size, step);
 	}
 
-	void copyTo(Vector_Distributed<Vector_Dense, T> *a, int offset, int size, int step) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyTo(Vector_Distributed<Vector_Sparse, T> *a, int offset, int size, int step) const
+	void copyToSliced(Vector_Distributed<Vector_Dense, T> *a, int offset, int size, int step) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void copyTo(Vector_FETI<Vector_Dense, T> *a, int offset, int size, int step) const
+	void copyToSliced(Vector_Distributed<Vector_Sparse, T> *a, int offset, int size, int step) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void copyToSliced(Vector_FETI<Vector_Dense, T> *a, int offset, int size, int step) const
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < this->domains.size(); ++d) {
@@ -304,7 +304,7 @@ public:
 		}
 	}
 
-	void copyTo(Vector_FETI<Vector_Sparse, T> *a, int offset, int size, int step) const
+	void copyToSliced(Vector_FETI<Vector_Sparse, T> *a, int offset, int size, int step) const
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < this->domains.size(); ++d) {
@@ -312,17 +312,17 @@ public:
 		}
 	}
 
-	void addTo(const T &alpha, Vector_Distributed<Vector_Dense, double> *a, int offset, int size, int step) const
+	void addToSliced(const T &alpha, Vector_Distributed<Vector_Dense, double> *a, int offset, int size, int step) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void addTo(const T &alpha, Vector_Distributed<Vector_Sparse, double> *a, int offset, int size, int step) const
+	void addToSliced(const T &alpha, Vector_Distributed<Vector_Sparse, double> *a, int offset, int size, int step) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void addTo(const T &alpha, Vector_FETI<Vector_Dense, double> *a, int offset, int size, int step) const
+	void addToSliced(const T &alpha, Vector_FETI<Vector_Dense, double> *a, int offset, int size, int step) const
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < this->domains.size(); ++d) {
@@ -330,7 +330,7 @@ public:
 		}
 	}
 
-	void addTo(const T &alpha, Vector_FETI<Vector_Sparse, double> *a, int offset, int size, int step) const
+	void addToSliced(const T &alpha, Vector_FETI<Vector_Sparse, double> *a, int offset, int size, int step) const
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < this->domains.size(); ++d) {
@@ -342,7 +342,7 @@ public:
 template <template<typename> typename Vector, typename T>
 class Vector_FETI<Vector, std::complex<T> >: public Vector_FETI_Common<Vector, std::complex<T> > {
 public:
-	void store(std::vector<double> &output)
+	void storeTo(std::vector<double> &output)
 	{
 //		for (size_t i = 0; i < output.size(); ++i) {
 //			output[i] = this->cluster.vals[i].real();

@@ -10,11 +10,11 @@ template <typename TType>
 class _Point {
 
 public:
-	_Point(): x(0), y(0), z(0) { };
-	_Point(TType value): x(value), y(value), z(value) { };
-	_Point(TType x, TType y, TType z): x(x), y(y), z(z) { };
+	_Point(): x(0), y(0), z(0) { }
+	_Point(TType value): x(value), y(value), z(value) { }
+	_Point(TType x, TType y, TType z): x(x), y(y), z(z) { }
 	template<typename TOther>
-	_Point(const _Point<TOther> &p): x(p.x), y(p.y), z(p.z) { };
+	_Point(const _Point<TOther> &p): x(p.x), y(p.y), z(p.z) { }
 
 	TType& operator[](int i)
 	{

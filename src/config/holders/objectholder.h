@@ -15,10 +15,10 @@ struct ECFValueMap: public ECFObject {
 	ECFValueMap(std::map<TParameter, TValue> &value, TArgs... args): value(value), args(args...) {}
 	ECFValueMap(std::map<TParameter, TValue> &value, std::tuple<TArgs...> &args): value(value), args(args) {}
 
-	virtual ECFParameter* _getParameter(const std::string &name)
+	virtual ECFParameter* _getNamedParameter(const std::string &name)
 	{
-		if (ECFObject::_getParameter(name) != NULL) {
-			return ECFObject::_getParameter(name);
+		if (ECFObject::_getNamedParameter(name) != NULL) {
+			return ECFObject::_getNamedParameter(name);
 		}
 		TParameter key;
 		if (ECFValueHolder<TParameter>(key).setValue(name)) {
@@ -60,10 +60,10 @@ struct ECFEnumMap: public ECFObject {
 
 	ECFEnumMap(std::map<TParameter, TValue> &value): value(value) {}
 
-	virtual ECFParameter* _getParameter(const std::string &name)
+	virtual ECFParameter* _getNamedParameter(const std::string &name)
 	{
-		if (ECFObject::_getParameter(name) != NULL) {
-			return ECFObject::_getParameter(name);
+		if (ECFObject::_getNamedParameter(name) != NULL) {
+			return ECFObject::_getNamedParameter(name);
 		}
 		TParameter key;
 		if (ECFValueHolder<TParameter>(key).setValue(name)) {
@@ -103,10 +103,10 @@ struct ECFObjectMap: public ECFObject {
 	ECFObjectMap(std::map<TParameter, TObject> &value, TArgs... args): value(value), args(args...) {}
 	ECFObjectMap(std::map<TParameter, TObject> &value, std::tuple<TArgs...> &args): value(value), args(args) {}
 
-	virtual ECFParameter* _getParameter(const std::string &name)
+	virtual ECFParameter* _getNamedParameter(const std::string &name)
 	{
-		if (ECFObject::_getParameter(name) != NULL) {
-			return ECFObject::_getParameter(name);
+		if (ECFObject::_getNamedParameter(name) != NULL) {
+			return ECFObject::_getNamedParameter(name);
 		}
 		TParameter key;
 		if (ECFValueHolder<TParameter>(key).setValue(name)) {
@@ -157,10 +157,10 @@ struct ECFValueMapMap: public ECFObject {
 
 	ECFValueMapMap(std::map<TParameter1, std::map<TParameter2, TValue> > &value): value(value) {}
 
-	virtual ECFParameter* _getParameter(const std::string &name)
+	virtual ECFParameter* _getNamedParameter(const std::string &name)
 	{
-		if (ECFObject::_getParameter(name) != NULL) {
-			return ECFObject::_getParameter(name);
+		if (ECFObject::_getNamedParameter(name) != NULL) {
+			return ECFObject::_getNamedParameter(name);
 		}
 		TParameter1 key;
 		if (ECFValueHolder<TParameter1>(key).setValue(name)) {
@@ -203,10 +203,10 @@ struct ECFObjectMapMap: public ECFObject {
 
 	ECFObjectMapMap(std::map<TParameter1, std::map<TParameter2, TObject> > &value, TArgs... args): value(value), args(args...) {}
 
-	virtual ECFParameter* _getParameter(const std::string &name)
+	virtual ECFParameter* _getNamedParameter(const std::string &name)
 	{
-		if (ECFObject::_getParameter(name) != NULL) {
-			return ECFObject::_getParameter(name);
+		if (ECFObject::_getNamedParameter(name) != NULL) {
+			return ECFObject::_getNamedParameter(name);
 		}
 		TParameter1 key;
 		if (ECFValueHolder<TParameter1>(key).setValue(name)) {

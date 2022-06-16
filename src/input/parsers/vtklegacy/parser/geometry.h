@@ -34,7 +34,7 @@ class VTKLegacyGeometry {
 		size_t offset, begin, end;
 		int rank;
 
-		Keyword(): fileindex(-1), offset(-1), begin(-1), end(-1), rank(-1) {}
+		Keyword(): fileindex((size_t)-1), offset((size_t)-1), begin((size_t)-1), end((size_t)-1), rank(-1) {}
 		Keyword(InputFilePack &pack, const char *c);
 	};
 

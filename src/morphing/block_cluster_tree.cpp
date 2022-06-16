@@ -264,9 +264,6 @@ esint BlockClusterTree::createTree( BlockCluster* C, esint depth ){
 		
 		return 1;
 	}
-	
-	return 1;
-
 }
 
 

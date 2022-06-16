@@ -24,10 +24,10 @@ public:
 
 	virtual Evaluator* copy() const { return new TableEvaluator(*this); }
 
-	void evalVector(esint size, esint increment, const Params &params, double *results) const;
-	void evalFiltered(esint size, esint increment, const esint *elements, const esint *distribution, const Params &params, double *results) const;
-	void evalSelectedSparse(esint size, esint increment, const esint *selection, const Params &params, double *results) const;
-	void evalSelectedDense(esint size, esint increment, const esint *selection, const Params &params, double *results) const;
+	void evalVectorInc(esint size, esint increment, const Params &params, double *results) const;
+	void evalFilteredInc(esint size, esint increment, const esint *elements, const esint *distribution, const Params &params, double *results) const;
+	void evalSelectedSparseInc(esint size, esint increment, const esint *selection, const Params &params, double *results) const;
+	void evalSelectedDenseInc(esint size, esint increment, const esint *selection, const Params &params, double *results) const;
 
 	std::string getEXPRTKForm() const;
 

@@ -48,6 +48,11 @@ void Prisma15Generator::pushElements(std::vector<esint> &elements, const std::ve
 	elements.push_back(indices[15]);
 }
 
+void Prisma15Generator::pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeEdge edge) const
+{
+
+}
+
 void Prisma15Generator::pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const
 {
 	switch (face) {

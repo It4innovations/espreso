@@ -9,7 +9,7 @@ namespace espreso {
 
 struct OpenFOAMParser {
 
-	const char *begin, *end;;
+	const char *begin, *end;
 
 	OpenFOAMParser(const char *begin, const char *end);
 

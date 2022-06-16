@@ -66,12 +66,17 @@ void QuadraticVolumeGenerator::pushNodes(std::vector<esint> &nodes, const std::v
 //	}
 }
 
+void QuadraticVolumeGenerator::pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const
+{
+
+}
+
 void QuadraticVolumeGenerator::pushEdge(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeEdge edge) const
 {
 	return;
-	pushNodes(elements, indices, edge);
-	esize.push_back(3);
-	etype.push_back((int)Element::CODE::LINE3);
+//	pushNodes(elements, indices, edge);
+//	esize.push_back(3);
+//	etype.push_back((int)Element::CODE::LINE3);
 }
 
 void QuadraticVolumeGenerator::pushSquareNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const

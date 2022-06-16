@@ -22,9 +22,9 @@ protected:
 	GridSetGenerator(const GridSetGeneratorConfiguration &configuration);
 	virtual ~GridSetGenerator() {}
 
-	virtual void init(const GridSetGeneratorConfiguration &configuration);
-	virtual void nodes(MeshBuilder &mesh);
-	virtual void regions(const GridSetGeneratorConfiguration &configuration, MeshBuilder &mesh);
+	void init(const GridSetGeneratorConfiguration &configuration);
+	void nodes(MeshBuilder &mesh);
+	void regions(const GridSetGeneratorConfiguration &configuration, MeshBuilder &mesh);
 
 	esint _gridIndex;
 	esint _gridNodeOffset;
