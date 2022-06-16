@@ -69,15 +69,7 @@ def configure(ctx):
     settings(ctx)
 
 def build(ctx):
-    def is_git_directory(path = '.'):
-        return subprocess.call(['git', '-C', path, 'status'], stderr=subprocess.STDOUT, stdout = open(os.devnull, 'w')) == 0
-
-    if is_git_directory():
-        commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).rstrip().decode()
-    else:
-        commit = "unknown"
-
-    ctx.env.append_unique("DEFINES_INFO", [ '__ESCOMMIT__=\"{0}\"'.format(commit) ])
+    ctx.env.append_unique("DEFINES_INFO", [ '__ESCOMMIT__=\"{0}\"'.format(get_commit()) ])
     ctx.env.append_unique("DEFINES_INFO", [ '__ESCXX__=\"{0}\"'.format(ctx.env.CXX[0]) ])
     ctx.env.append_unique("DEFINES_INFO", [ '__ESBUILDPATH__=\"{0}\"'.format(ctx.bldnode.abspath()) ])
     ctx.env.append_unique("DEFINES_INFO", [ '__ESCXXFLAGS__=\"{0}\"'.format(" ".join(ctx.env.CXXFLAGS)) ])
@@ -350,6 +342,20 @@ def recurse(ctx):
     ctx.recurse("src/wrappers/catalyst")
     ctx.recurse("src/wrappers/nvtx")
 
+def get_commit():
+    def is_git_directory(path = '.'):
+        return subprocess.call(['git', '-C', path, 'status'], stderr=subprocess.STDOUT, stdout = open(os.devnull, 'w')) == 0
+
+    if is_git_directory():
+        commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).rstrip().decode()
+        changed = subprocess.call(['git', 'diff', "--quiet", 'HEAD'], stderr=subprocess.STDOUT, stdout = open(os.devnull, 'w')) == 1
+        if changed:
+            return commit + "+"
+        else:
+            return commit
+    else:
+        return "unknown"
+
 from waflib import Logs
 from waflib.Build import BuildContext
 class ShowConfiguration(BuildContext):
@@ -360,6 +366,10 @@ class ShowEnv(BuildContext):
     cmd = "env"
     fun = "env"
 
+class GetInfo(BuildContext):
+    cmd = "info"
+    fun = "info"
+
 def show(ctx):
     ctx.logger = logging.getLogger('show')
     ctx.logger.handlers = Logs.log_handler()
@@ -367,6 +377,18 @@ def show(ctx):
 
 def env(ctx):
     print(ctx.env)
+
+def info(ctx):
+    parameters = [
+        ("commit", get_commit()),
+        ("int_width", ctx.env.intwidth),
+        ("mode", ctx.env.mode),
+        ("BLAS", ctx.env.use_blas),
+        ("SpBLAS", ctx.env.use_spblas),
+        ("LAPACK", ctx.env.use_lapack),
+        ("solver", ctx.env.use_solver)
+        ]
+    print("_".join(map(lambda setting: "{}-{}".format(setting[0], setting[1]), parameters)))
 
 def link_cxx(self, *k, **kw):
     includes = []

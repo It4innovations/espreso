@@ -22,18 +22,18 @@ class ESPRESOTest:
     espreso = os.path.join(root, "build", "espreso")
     ecfchecker = os.path.join(root, "build", "ecfchecker")
     waf = os.path.join(root, "waf")
-    mpirun = [ "mpirun", "-n" ]
 
     env = dict(os.environ)
-    env["MKL_NUM_THREADS"] = "1"
-    env["OMP_NUM_THREADS"] = "4"
-    env["SOLVER_NUM_THREADS"] = "4"
-    env["PAR_NUM_THREADS"] = "4"
+
+    if "MPIRUN" in env:
+        mpirun = env["MPIRUN"].split()
+    else:
+        mpirun = [ "mpirun", "-n" ]
     env["OMPI_MCA_rmaps_base_oversubscribe"] = "1"
 
     path = ""
     ecf = "espreso.ecf"
-    processes = 4
+    processes = 1
     args = []
     store_results = False
     external = False
@@ -43,6 +43,19 @@ class ESPRESOTest:
     @staticmethod
     def has_snailwatch():
         return snailwatch and "SNAILWATCH_URL" in os.environ and "SNAILWATCH_TOKEN"in os.environ
+
+    def get_commit():
+        def is_git_directory(path = '.'):
+            return subprocess.call(['git', '-C', path, 'status'], stderr=subprocess.STDOUT, stdout = open(os.devnull, 'w')) == 0
+
+        if is_git_directory():
+            return subprocess.check_output(["git", "rev-parse", "HEAD"]).rstrip().decode()
+
+    def get_info():
+        info = subprocess.check_output([ESPRESOTest.waf, "info"]).rstrip().decode()
+        for line in info.splitlines():
+            if line.startswith("commit"):
+                return line
 
     @staticmethod
     def has_solver(solver):
@@ -66,16 +79,12 @@ class ESPRESOTest:
     def run_program(program):
         ESPRESOTest._program = copy.deepcopy(program)
         program.append("--OUTPUT::LOGGER=PARSER")
-        program.append("-vv")
+        program.append("-vvttt")
         if not ESPRESOTest.store_results:
             program.append("--OUTPUT::RESULTS_STORE_FREQUENCY=NEVER")
+            program.append("--OUTPUT::MODE=SYNC")
         if ESPRESOTest.has_snailwatch():
             program.append("-m")
-
-        print("\n==========")
-        print(". env/threading.default {0}".format(ESPRESOTest.env["OMP_NUM_THREADS"]))
-        print(" ".join(program))
-        print("==========")
 
         def _popen():
             return subprocess.Popen(program, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=ESPRESOTest.path, env=ESPRESOTest.env)
@@ -202,6 +211,38 @@ class ESPRESOTest:
             if line.startswith("decomposition: "):
                 if int(line.split(":")[2]) != 1:
                     ESPRESOTest.raise_error("non-continuous cluster found.\n")
+
+    @staticmethod
+    def extract(output, values):
+        if ESPRESOTest.checker:
+            return
+
+        def parse(line):
+            stats = dict()
+            for stat in line.split(",")[1:]:
+                stats[str(stat.split("=")[0].strip(" '"))] = float(stat.split("=")[1].strip(" '"))
+            return stats
+
+        measurement = dict()
+        for line in output.splitlines():
+            for value in values:
+                if value in line:
+                    measurement[value] = parse(line)
+                    break
+        return measurement
+
+    @staticmethod
+    def report_mesurement(tab, functions):
+        output = open(os.path.join(ESPRESOTest.path, ESPRESOTest.get_info().lstrip("commit-") + ".csv"), "w")
+        output.write("{0:{width}}".format("", width=50))
+        for instance in tab:
+            output.write(",{0:>{width}}".format("_".join(map(str, instance[0])), width=15))
+        output.write("\n")
+        for fnc in functions:
+            output.write("{0:{width}}".format("{} [{}]".format(fnc[0], fnc[1].upper()), width=50))
+            for instance in tab:
+                output.write(",{0:>{width}}".format(instance[1][fnc[0]][fnc[1]], width=15))
+            output.write("\n")
 
     @staticmethod
     def report(timereport):
