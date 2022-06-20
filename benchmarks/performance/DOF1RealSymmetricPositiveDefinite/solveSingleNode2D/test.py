@@ -35,14 +35,15 @@ class SingleNodePerformance(unittest.TestCase):
                 file = open(filename, "r")
                 for line in file:
                     mpirun, procs, args = ESPRESOTest.parse_run_command(line)
-                    for etype in [ "SQUARE4" ]: #, "SQUARE8", "TRIANGLE3", "TRIANGLE6" ]:
-                        for size in range(7, 8):
+                    for etype in [ "SQUARE4", "SQUARE8", "TRIANGLE3", "TRIANGLE6" ]:
+                        for size in range(7, 18):
                             e = math.sqrt(2 ** size) - 1
                             yield run, int(procs), etype, int(args[1]), int(args[2]), int(args[3]), int(args[4]), int(e), int(e), mpirun
 
 def run(procs, etype, cx, cy, dx, dy, ex, ey, mpirun):
     ESPRESOTest.mpirun = mpirun
     ESPRESOTest.processes = procs
+    ESPRESOTest.set_threads(multiprocessing.cpu_count() / procs)
     ESPRESOTest.args[0] = etype
     ESPRESOTest.args[1] = cx
     ESPRESOTest.args[2] = cy

@@ -77,6 +77,15 @@ class ESPRESOTest:
         return mpirun, processes, args
 
     @staticmethod
+    def set_threads(threads):
+        threads = int(threads)
+        ESPRESOTest.env["MKL_NUM_THREADS"] = str(1)
+        ESPRESOTest.env["OMP_NUM_THREADS"] = str(threads)
+        ESPRESOTest.env["SOLVER_NUM_THREADS"] = str(threads)
+        ESPRESOTest.env["PAR_NUM_THREADS"] = str(threads)
+
+
+    @staticmethod
     def has_solver(solver):
         program = [ ESPRESOTest.waf, "show" ]
         output, error = subprocess.Popen(program, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()

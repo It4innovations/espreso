@@ -29,6 +29,7 @@ class SequentialPerformance(unittest.TestCase):
                 yield run, etype, int(math.sqrt(2 ** size) - 1)
 
 def run(etype, size):
+    ESPRESOTest.set_threads(1)
     ESPRESOTest.args[0] = etype
     ESPRESOTest.args[1] = size
     ESPRESOTest.args[2] = size
