@@ -17,7 +17,7 @@ struct OpenVDBWrapperData {
 	{
 		grid = openvdb::FloatGrid::create();
 		grid->setGridClass(openvdb::GRID_LEVEL_SET);
-		// grid->setName("density");
+		grid->setName("density");
 	}
 
 	~OpenVDBWrapperData()
@@ -66,12 +66,12 @@ void OpenVDBWrapper::store(const char *name, const serializededata<esint, _Point
 	openvdb::FloatGrid::Accessor accessor = _data->grid->getAccessor();
 
 	auto value = data->data.cbegin();
-	for (auto voxels = emap->begin(); voxels != emap->end(); ++voxels) {
+	for (auto voxels = emap->begin(); voxels != emap->end(); ++voxels, value += data->dimension) {
 		for (auto voxel = voxels->begin(); voxel != voxels->end(); ++voxel) {
 			openvdb::Coord xyz(voxel->x, voxel->y, voxel->z);
 			accessor.setValue(xyz, (float)*value);
 
-			for (int d = 0; d < data->dimension; ++d, ++value) { // is it possible to store more dimensional data?
+			for (int d = 0; d < data->dimension; ++d) { // is it possible to store more dimensional data?
 				// printf("%d %d %d -> %f\n", voxel->x, voxel->y, voxel->z, *value);
 			}
 		}
