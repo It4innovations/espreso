@@ -180,16 +180,28 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		for (auto n = e->begin(); n != e->end(); ++n) {
 			Point &p = nodes->coordinates->datatarray()[*n];
 			//printf("%f %f %f\n", p.x, p.y, p.z);
-
 			p.minmax(mesh_min, mesh_max);
 		}
 	}
-	printf("mesh min: %f %f %f\n", mesh_min.x, mesh_min.y, mesh_min.z);
-	printf("mesh max: %f %f %f\n", mesh_max.x, mesh_max.y, mesh_max.z);
+
+	double min_x_global, min_y_global, min_z_global;
+	double max_x_global, max_y_global, max_z_global;
+	MPI_Allreduce(&mesh_min.x, &min_x_global, 1, MPI_DOUBLE, MPI_MIN, info::mpi::comm);
+	MPI_Allreduce(&mesh_min.y, &min_y_global, 1, MPI_DOUBLE, MPI_MIN, info::mpi::comm);
+	MPI_Allreduce(&mesh_min.z, &min_z_global, 1, MPI_DOUBLE, MPI_MIN, info::mpi::comm);
+
+	MPI_Allreduce(&mesh_max.x, &max_x_global, 1, MPI_DOUBLE, MPI_MAX, info::mpi::comm);
+	MPI_Allreduce(&mesh_max.y, &max_y_global, 1, MPI_DOUBLE, MPI_MAX, info::mpi::comm);
+	MPI_Allreduce(&mesh_max.z, &max_z_global, 1, MPI_DOUBLE, MPI_MAX, info::mpi::comm);
+
+	Point mesh_min_global = Point(min_x_global, min_y_global, min_z_global);
+	Point mesh_max_global = Point(max_x_global, max_y_global, max_z_global);
+	printf("global mesh min: %f %f %f\n", mesh_min_global.x, mesh_min_global.y, mesh_min_global.z);
+	printf("global mesh max: %f %f %f\n", mesh_max_global.x, mesh_max_global.y, mesh_max_global.z);
 
 	// grid setting
-	Point grid_start = Point(mesh_min.x, mesh_max.y, mesh_min.z);
-	Point grid_end = Point(mesh_max.x, mesh_min.y, mesh_max.z);
+	Point grid_start = Point(mesh_min_global.x, mesh_max_global.y, mesh_min_global.z);
+	Point grid_end = Point(mesh_max_global.x, mesh_min_global.y, mesh_max_global.z);
 	Point grid_offset = Point((grid_end.x - grid_start.x)/voxels,
 							(grid_start.y - grid_end.y)/voxels, 
 							(grid_end.z - grid_start.z)/voxels);
