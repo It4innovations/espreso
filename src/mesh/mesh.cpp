@@ -575,7 +575,7 @@ void Mesh::partitiate(int ndomains)
 		distribution.push_back(0);
 		for (esint p = 0, offset = 0; p < ndomains; ++p, offset += psize) {
 			distribution.push_back(offset + psize);
-			std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) {
+			std::sort(permutation.begin() + offset, permutation.begin() + offset + psize, [&] (esint i, esint j) {
 				auto ireg = (elements->regions->begin() + i)->data();
 				auto jreg = (elements->regions->begin() + j)->data();
 				auto cmp = memcmp(ireg, jreg, sizeof(esint) * elements->regions->edataSize());
@@ -583,7 +583,7 @@ void Mesh::partitiate(int ndomains)
 					return i < j;
 				}
 				return cmp < 0;
-		});
+			});
 		}
 		_omitDecomposition = false; // only the first run
 	} else {
