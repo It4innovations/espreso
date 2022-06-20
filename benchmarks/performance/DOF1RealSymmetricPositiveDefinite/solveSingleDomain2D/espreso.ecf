@@ -21,6 +21,8 @@ GENERATOR {
     NODES {
       BOTTOM   <1 , 1> <0 , 1> <0 , 0>;
       TOP      <0 , 0> <0 , 1> <0 , 0>;
+      LEFT     <0 , 1> <0 , 0> <0 , 0>;
+      RIGHT    <0 , 1> <1 , 1> <0 , 0>;
     }
 
     ELEMENT_TYPE          [ARG0];
@@ -33,8 +35,8 @@ GENERATOR {
     CLUSTERS_Y                 1;
     CLUSTERS_Z                 1;
 
-    DOMAINS_X                  1;
-    DOMAINS_Y                  1;
+    DOMAINS_X                 32;
+    DOMAINS_Y                 32;
     DOMAINS_Z                  1;
 
     ELEMENTS_X            [ARG1];
@@ -86,6 +88,8 @@ HEAT_TRANSFER_2D {
       TEMPERATURE {
         TOP      100;
         BOTTOM   300;
+        LEFT     200;
+        RIGHT    200;
       }
     }
   }

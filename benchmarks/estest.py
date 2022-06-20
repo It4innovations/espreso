@@ -29,6 +29,14 @@ class ESPRESOTest:
         mpirun = env["MPIRUN"].split()
     else:
         mpirun = [ "mpirun", "-n" ]
+    if "MPILIB" in env:
+        mpilib = env["MPILIB"].strip()
+    else:
+        mpilib = ""
+    if "SYSTEM" in env:
+        system = env["SYSTEM"].strip()
+    else:
+        system = "workstation"
     env["OMPI_MCA_rmaps_base_oversubscribe"] = "1"
 
     path = ""
@@ -56,6 +64,17 @@ class ESPRESOTest:
         for line in info.splitlines():
             if line.startswith("commit"):
                 return line
+
+    @staticmethod
+    def parse_run_command(command):
+        mpirun = command.split("espreso")[0].split()
+        procs = mpirun.index("-n")
+        mpirun.pop(procs)
+        processes = mpirun[procs]
+        mpirun.pop(procs)
+        mpirun = mpirun + ["-n"]
+        args = command.split("espreso.ecf")[1].split()
+        return mpirun, processes, args
 
     @staticmethod
     def has_solver(solver):

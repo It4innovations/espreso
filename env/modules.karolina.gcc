@@ -4,3 +4,7 @@ ml mkl/2020.4.304
 
 export MPICXX=mpic++
 export CXX=g++
+
+# performance benchamrks
+export MPILIB=openmpi
+export SYSTEM=karolina
