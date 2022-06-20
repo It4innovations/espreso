@@ -25,12 +25,13 @@ struct Vector_Kernel: public Vector_Dense<T> {
 		Vector_Kernel<T>::totalSize = totalSize;
 		Vector_Kernel<T>::distribution.resize(info::env::threads + 1);
 		size_t chunk = align / sizeof(T);
-		size_t tsize = size / chunk;
+		size_t tsize = std::max(size / chunk, 1UL);
 		for (size_t t = 1; t < Vector_Kernel<T>::distribution.size(); ++t) {
 			Vector_Kernel<T>::distribution[t] = Vector_Kernel<T>::distribution[t - 1] + tsize * chunk;
 			if (size % chunk < t - 1) {
 				Vector_Kernel<T>::distribution[t] += chunk;
 			}
+			Vector_Kernel<T>::distribution[t] = std::min(Vector_Kernel<T>::distribution[t], (size_t)size);
 		}
 		Vector_Kernel<T>::distribution.back() = size;
 	}
