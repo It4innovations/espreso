@@ -31,7 +31,7 @@ struct PARDISOParameters {
 
 	~PARDISOParameters()
 	{
-		if (perm) delete perm;
+		if (perm) delete[] perm;
 	}
 };
 }
