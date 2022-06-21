@@ -260,62 +260,31 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 						Point p = Point(grid_start.x + x*grid_offset.x, grid_start.y - y*grid_offset.y, grid_start.z + z*grid_offset.z);
 
 						if(dim == 3){
-							// loop through faces
-							//printf("faces:\n");
-							//Point p1 = Point(el_max.x, p.y, p.z); // cn
+							// loop through triangles
 							double total_angle = 0;
-							bool is_p_face_vertex = false;
+							bool is_p_triangle_vertex = false;
 
-							auto faces = epointers->at(0)->faces;
-							for (auto face = faces->begin(); face != faces->end(); ++face) {
+							auto triangles = epointers->at(0)->triangles;
+							for (auto triangle = triangles->begin(); triangle != triangles->end(); ++triangle) {
 
-								int num_verts = face->end() - face->begin();
-								//printf("num face verts: %d\n", num_verts);
+								Point v0 = nodes->coordinates->datatarray()[e->at(*(triangle->begin()))];
+								Point v1 = nodes->coordinates->datatarray()[e->at(*(triangle->begin() + 1))];
+								Point v2 = nodes->coordinates->datatarray()[e->at(*(triangle->begin() + 2))];
 
-								if(num_verts == 3 || num_verts == 6){ // triangle
-									Point v0 = nodes->coordinates->datatarray()[e->at(*(face->begin()))];
-									Point v1 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 1))];
-									Point v2 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))];
-
-									if(v0 == p || v1 == p || v2 == p){
-										is_p_face_vertex = true;
-										break;
-									}
-
-									total_angle += face_solid_angle_contribution(p, v0, v1, v2);
-
-								} else { // rectangle
-									Point v0 = nodes->coordinates->datatarray()[e->at(*(face->begin()))];
-									Point v1 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 1))];
-									Point v2 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 2))];
-									Point v3 = nodes->coordinates->datatarray()[e->at(*(face->begin() + 3))];
-									
-									if(v0 == p || v1 == p || v2 == p || v3 == p){
-										is_p_face_vertex = true;
-										break;
-									}
-
-									total_angle += face_solid_angle_contribution(p, v0, v1, v2);
-									total_angle += face_solid_angle_contribution(p, v0, v2, v3);
-
-									// debug
-									//if(x==3 && y==87 && z==82){
-										// fprintf(pFile_element, "%f;%f;%f\n", v0.x, v0.y, v0.z);
-										// fprintf(pFile_element, "%f;%f;%f\n", v1.x, v1.y, v1.z);
-										// fprintf(pFile_element, "%f;%f;%f\n", v2.x, v2.y, v2.z);
-										// fprintf(pFile_element, "%f;%f;%f\n", v3.x, v3.y, v3.z);
-										// printf("point %f %f %f\n", p.x, p.y, p.z);
-									//}
-
+								if(v0 == p || v1 == p || v2 == p){
+									is_p_triangle_vertex = true;
+									break;
 								}
+
+								total_angle += face_solid_angle_contribution(p, v0, v1, v2);
 							}
 
 							//debug
 							//fprintf(pFile_hist, "%f\n", fabs(total_angle));
 
 							// save element index if point is in the element
-							if(is_p_face_vertex || fabs(total_angle) > 6.0){ // 2pi or 4pi -> inside
-								grid[grid_inx_1d] = 0;		
+							if(is_p_triangle_vertex || fabs(total_angle) > 6.0){ // 2pi or 4pi -> inside
+								grid[grid_inx_1d] = 0;	
 								vdata[t].push_back(_Point<int>(x, y, z));
 							}
 

@@ -136,7 +136,6 @@ template<> void Element::init<Element::CODE::TRIANGLE6>()
 		0, 3, 5,
 		3, 1, 4,
 		4, 2, 5,
-		5, 0, 3,
 		3, 4, 5
 	};
 
@@ -245,8 +244,16 @@ template<> void Element::init<Element::CODE::TETRA4>()
 		2, 3
 	};
 
+	std::vector<int> tringles = {
+		2, 1, 0,
+		0, 1, 3,
+		1, 2, 3,
+		2, 0, 3
+	};
+
 	edges = new serializededata<int, int>(2, epoints);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
+	triangles = new serializededata<int, int>(3, tringles);
 }
 
 template<> void Element::init<Element::CODE::TETRA10>()
@@ -281,8 +288,31 @@ template<> void Element::init<Element::CODE::TETRA10>()
 		2, 3, 9,
 	};
 
+	std::vector<int> tringles = {
+		2, 5, 6,
+		5, 1, 4,
+		4, 0, 6,
+		5, 4, 6,
+
+		0, 4, 7,
+		4, 1, 8,
+		8, 3, 7,
+		4, 8, 7,
+
+		1, 5, 8,
+		5, 2, 9,
+		9, 3, 8,
+		5, 9, 8,
+
+		2, 6, 9,
+		6, 0, 7,
+		7, 3, 9,
+		6, 7, 9
+	};
+
 	edges = new serializededata<int, int>(3, epoints);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
+	triangles = new serializededata<int, int>(3, tringles);
 }
 
 template<> void Element::init<Element::CODE::PYRAMID5>()
@@ -322,8 +352,18 @@ template<> void Element::init<Element::CODE::PYRAMID5>()
 		3, 4,
 	};
 
+	std::vector<int> tringles = {
+		3, 2, 1,
+		3, 1, 0,
+		0, 1, 4,
+		1, 2, 4,
+		2, 3, 4,
+		3, 0, 4
+	};
+
 	edges = new serializededata<int, int>(2, epoints);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
+	triangles = new serializededata<int, int>(3, tringles);
 }
 
 template<> void Element::init<Element::CODE::PYRAMID13>()
@@ -364,8 +404,38 @@ template<> void Element::init<Element::CODE::PYRAMID13>()
 		3, 4, 12,
 	};
 
+	std::vector<int> tringles = {
+		 3,  7,  8,
+		 7,  2,  6,
+		 6,  1,  5,
+		 5,  0,  8,
+		 7,  6,  5,
+		 7,  5,  8,
+
+		 0,  5,  9,
+		 5,  1, 10,
+		10,  4,  9,
+		 5, 10,  9,
+
+		 1,  6, 10,
+		 6,  2, 11,
+		11,  4, 10,
+		 6, 11, 10,
+
+		 2,  7, 11,
+		 7,  3, 12,
+		12,  4, 11,
+		 7, 12, 11,
+
+		 3,  8, 12,
+		 8,  0,  9,
+		 9,  4, 12,
+		 8,  9, 12
+	};
+
 	edges = new serializededata<int, int>(3, epoints);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
+	triangles = new serializededata<int, int>(3, tringles);
 }
 
 template<> void Element::init<Element::CODE::PRISMA6>()
@@ -406,8 +476,20 @@ template<> void Element::init<Element::CODE::PRISMA6>()
 		2, 5,
 	};
 
+	std::vector<int> tringles = {
+		0, 1, 2,
+		4, 3, 5,
+		0, 3, 4,
+		0, 4, 1,
+		1, 4, 5,
+		1, 5, 2,
+		3, 0, 2,
+		3, 2, 5
+	};
+
 	edges = new serializededata<int, int>(2, epoints);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
+	triangles = new serializededata<int, int>(3, tringles);
 }
 
 template<> void Element::init<Element::CODE::PRISMA15>()
@@ -448,8 +530,42 @@ template<> void Element::init<Element::CODE::PRISMA15>()
 		2, 5, 14,
 	};
 
+	std::vector<int> tringles = {
+		 0,  6,  8,
+		 6,  1,  7,
+		 7,  2,  8,
+		 6,  7,  8,
+
+		 4,  9, 10,
+		 9,  3, 11,
+		11,  5, 10,
+		 9, 11, 10,
+
+		 0, 12,  6,
+		12,  3,  9,
+		 9,  4, 13,
+		13,  1,  6,
+		12,  9, 13,
+		12, 13,  6,
+
+		 1, 13,  7,
+		13,  4, 10,
+		10,  5, 14,
+		14,  2,  7,
+		13, 10, 14,
+		13, 14,  7,
+
+		 3, 12, 11,
+		12,  0,  8,
+		 8,  2, 14,
+		14,  5, 11,
+		12,  8, 14,
+		12, 14, 11
+	};
+
 	edges = new serializededata<int, int>(3, epoints);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
+	triangles = new serializededata<int, int>(3, tringles);
 }
 
 template<> void Element::init<Element::CODE::HEXA8>()
@@ -490,9 +606,24 @@ template<> void Element::init<Element::CODE::HEXA8>()
 		3, 7,
 	};
 
+	std::vector<int> tringles = {
+		3, 2, 1,
+		3, 1, 0,
+		4, 5, 6,
+		4, 6, 7,
+		0, 1, 5,
+		0, 5, 4,
+		1, 2, 6,
+		1, 6, 5,
+		2, 3, 7,
+		2, 7, 6,
+		3, 0, 4,
+		3, 4, 7
+	};
+
 	edges = new serializededata<int, int>(2, epoints);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
-
+	triangles = new serializededata<int, int>(3, tringles);
 }
 
 template<> void Element::init<Element::CODE::HEXA20>()
@@ -535,8 +666,53 @@ template<> void Element::init<Element::CODE::HEXA20>()
 		3, 7, 19,
 	};
 
+	std::vector<int> tringles = {
+		 3, 10, 11,
+		10,  2,  9,
+		 9,  1,  8,
+		 8,  0, 11,
+		10,  9,  8,
+		10,  8, 11,
+
+		 4, 12, 15,
+		12,  5, 13,
+		13,  6, 14,
+		14,  7, 15,
+		12, 13, 14,
+		12, 14, 15,
+
+		 0,  8, 16,
+		 8,  1, 17,
+		17,  5, 12,
+		12,  4, 16,
+		 8, 17, 12,
+		 8, 12, 16,
+
+		 1,  9, 17,
+		 9,  2, 18,
+		18,  6, 13,
+		13,  5, 17,
+		 9, 18, 13,
+		 9, 13, 17,
+
+		 2, 10, 18,
+		10,  3, 19,
+		19,  7, 14,
+		14,  6, 18,
+		10, 19, 14,
+		10, 14, 18,
+
+		 3, 11, 19,
+		11,  0, 16,
+		16,  4, 15,
+		15,  7, 19,
+		11, 16, 15,
+		11, 15, 19
+	};
+
 	edges = new serializededata<int, int>(3, epoints);
 	edgepointers = new serializededata<int, Element*>(1, epointers);
+	triangles = new serializededata<int, int>(3, tringles);
 }
 
 }
