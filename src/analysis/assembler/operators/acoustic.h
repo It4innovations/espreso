@@ -7,6 +7,7 @@
 #include "analysis/assembler/math.hpp"
 
 #include <iostream>
+#include <complex>
 
 namespace espreso {
 
@@ -440,6 +441,51 @@ struct AcousticsBoundaryMass: public ActionOperator {
 		std::fill(boundaryMass.data, boundaryMass.data + boundaryMass.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			ADDMN1M1N<nodes>(determinant[gpindex] * weight[gpindex] / impedance[gpindex], N.data + nodes * gpindex, boundaryMass.data);
+		}
+	}
+};
+
+template <size_t nodes>
+struct AcousticsPointSource_Flow: public ActionOperator {
+	InputParameterIterator flowRate, phase;
+	OutputParameterIterator sourceAmplitude;
+
+	AcousticsPointSource_Flow(
+		int interval,
+		const ParameterData &flowRate,
+		const ParameterData &phase,
+		ParameterData &sourceAmplitude)
+	: flowRate(flowRate, interval),
+	  phase(phase, interval),
+	  sourceAmplitude(sourceAmplitude, interval)
+	{
+
+	}
+
+	void operator++()
+	{
+		++flowRate;
+		++phase;
+		++sourceAmplitude;
+	}
+
+	void move(int n)
+	{
+		flowRate += n;
+		phase += n;
+		sourceAmplitude += n;
+	}
+
+	void operator()()
+	{
+		const double omega = 100;
+		const double density = 1.25;
+		const std::complex<double> i(0, 1);
+
+		for (size_t n = 0; n < nodes; ++n) {
+			std::complex<double> amplitude = std::exp(i * phase.data[n]) * i * omega * density *  flowRate.data[n] / (4.0 * M_PI);
+			this->rhs.data[n] = amplitude.real();
+			// ?? pridat imag slozku
 		}
 	}
 };

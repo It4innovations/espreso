@@ -60,6 +60,8 @@ public:
 	ParametersBoundaryVectorFunction acceleration;
 	ParametersMaterial material;
 
+	ParametersBoundaryNodeFunction pointSource;
+
 	ParameterMonopoleSource monopoleSource;
 	ParameterDipoleSource dipoleSource;
 

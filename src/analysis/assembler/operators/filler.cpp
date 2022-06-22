@@ -93,9 +93,16 @@ void addFiller(Acoustic &module, Harmonic &scheme)
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (module.pressure.node.isSet(r)) {
 			for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-				module.boundaryFiller[r][t].emplace_back(instantiate<HeatTransfer::NGP, 1, VectorSetter>(r, t, module.controller, module.pressure.node.regions[r], scheme.re.dirichlet->mapping.boundary[r][t].data, scheme.re.dirichlet->mapping.boundary[r][t].position));
+				module.boundaryFiller[r][t].emplace_back(instantiate<Acoustic::NGP, 1, VectorSetter>(r, t, module.controller, module.pressure.node.regions[r], scheme.re.dirichlet->mapping.boundary[r][t].data, scheme.re.dirichlet->mapping.boundary[r][t].position));
 				module.boundaryFiller[r][t].back()->isconst = false;
 			}
+
+		if (module.pointSource.node.isSet(r)) {
+			for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+				module.boundaryFiller[r][t].emplace_back(instantiate<Acoustic::NGP, 1, VectorSetter>(r, t, module.controller, module.pointSource.node.regions[r], scheme.re.dirichlet->mapping.boundary[r][t].data, scheme.re.dirichlet->mapping.boundary[r][t].position));
+				module.boundaryFiller[r][t].back()->isconst = false;
+			}
+		}
 		}
 	}
 }

@@ -21,6 +21,21 @@ struct ImpedanceConfiguration: public ECFDescription {
 	ImpedanceConfiguration();
 };
 
+struct PointSourceConfiguration: public ECFDescription {
+
+	enum class TYPE {
+		USER,
+		POWER,
+		INTENSITY,
+		FLOW
+	};
+
+	TYPE type;
+	ECFExpression volume_flow, phase, reference_intensity, distance_from_source, reference_power, source_amplitude;
+
+	PointSourceConfiguration();
+};
+
 struct AcousticLoadStepConfiguration: public AcousticLoadStepSolverConfiguration {
 
 	enum class SYSTEM {
@@ -33,6 +48,7 @@ struct AcousticLoadStepConfiguration: public AcousticLoadStepSolverConfiguration
 	std::map<std::string, ECFExpression> acoustic_pressure, normal_acceleration, monopole_source;
 	std::map<std::string, ECFExpressionVector> dipole_source, acceleration;
 	std::map<std::string, ImpedanceConfiguration> impedance;
+	std::map<std::string, PointSourceConfiguration> point_source;
 
 	AcousticLoadStepConfiguration(DIMENSION *D);
 };

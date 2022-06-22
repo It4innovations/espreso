@@ -17,6 +17,7 @@ struct ECFExpression;
 struct ECFExpressionVector;
 class ConvectionConfiguration;
 struct ImpedanceConfiguration;
+struct PointSourceConfiguration;
 
 class Assembler
 {
@@ -53,6 +54,8 @@ protected:
 	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpression> &settings, ExternalBoundaryValue &value);
 	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection);
 	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ImpedanceConfiguration> &settings, ExternalBoundaryValue &impedance);
+	bool examineBoundaryParameter(const std::string &name, std::map<std::string, PointSourceConfiguration> &settings, ExternalBoundaryValue &point_source);
+
 	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings, ExternalBoundaryValue &externalValue, int dimension);
 
 	int version;

@@ -116,6 +116,10 @@ void Acoustic::analyze()
 		}
 		fromExpression(*this, dipoleSource.gp, dipoleSource.gp.externalValues);
 	}
+	if (configuration.point_source.size()) {
+		correct &= examineBoundaryParameter("POINT SOURCES", configuration.point_source, pointSource.node.externalValues);
+		fromExpression(*this, pointSource.node, pointSource.node.externalValues);
+	}
 	
 	integration.weight.name = "integration.weight";
 	integration.N.name = "integration.N";

@@ -27,6 +27,48 @@ ImpedanceConfiguration::ImpedanceConfiguration()
 			.setdatatype({ ECFDataType::EXPRESSION }));
 }
 
+PointSourceConfiguration::PointSourceConfiguration()
+: volume_flow(ECFExpression::Scope::BGPS),
+  phase(ECFExpression::Scope::BGPS),
+  reference_intensity(ECFExpression::Scope::BGPS),
+  distance_from_source(ECFExpression::Scope::BGPS),
+  reference_power(ECFExpression::Scope::BGPS),
+  source_amplitude(ECFExpression::Scope::BGPS)
+{
+	type = TYPE::USER;
+	REGISTER(type, ECFMetaData()
+			.setdescription({ "Point source type" })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("USER").setdescription("User defined."))
+			.addoption(ECFOption().setname("POWER").setdescription("Power."))
+			.addoption(ECFOption().setname("INTENSITY").setdescription("Intensity."))
+			.addoption(ECFOption().setname("FLOW").setdescription("Flow.")));
+
+	REGISTER(volume_flow, ECFMetaData()
+			.setdescription({ "Volume flow rate" })
+			.setdatatype({ ECFDataType::EXPRESSION }));
+
+	REGISTER(phase, ECFMetaData()
+			.setdescription({ "Phase" })
+			.setdatatype({ ECFDataType::EXPRESSION }));
+
+	REGISTER(reference_intensity, ECFMetaData()
+			.setdescription({ "Free space reference intensity" })
+			.setdatatype({ ECFDataType::EXPRESSION }));
+
+	REGISTER(distance_from_source, ECFMetaData()
+			.setdescription({ "Distance from center" })
+			.setdatatype({ ECFDataType::EXPRESSION }));
+
+	REGISTER(reference_power, ECFMetaData()
+			.setdescription({ "Free space reference power" })
+			.setdatatype({ ECFDataType::EXPRESSION }));
+
+	REGISTER(source_amplitude, ECFMetaData()
+			.setdescription({ "Source amplitude" })
+			.setdatatype({ ECFDataType::EXPRESSION }));
+}
+
 AcousticLoadStepConfiguration::AcousticLoadStepConfiguration(DIMENSION *D)
 {
 	system = SYSTEM::REAL;
@@ -74,6 +116,12 @@ AcousticLoadStepConfiguration::AcousticLoadStepConfiguration(DIMENSION *D)
 			.setdescription({ "The name of a region.", "Impedance" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION"})
+			.setdynamic());
+
+	REGISTER(point_source, ECFMetaData()
+			.setdescription({ "The name of a region.", "Point source" })
+			.setdatatype({ ECFDataType::BOUNDARY_REGION })
+			.setpattern({ "MY_REGION" })
 			.setdynamic());
 }
 
