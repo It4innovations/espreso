@@ -82,6 +82,11 @@ void InputEnsight::load(const InputConfiguration &configuration)
 
 void InputEnsight::build(Mesh &mesh)
 {
-	builder::build(this->mesh, mesh);
+	builder::buildOrderedFEM(this->mesh, mesh);
+}
+
+void InputEnsight::variables(Mesh &mesh)
+{
+
 }
 

@@ -12,6 +12,7 @@ class InputEnsight: public Input {
 public:
 	void load(const InputConfiguration &configuration);
 	void build(Mesh &mesh);
+	void variables(Mesh &mesh);
 
 protected:
 	InputMesh<OrderedNodes, OrderedElements, OrderedRegions> mesh;

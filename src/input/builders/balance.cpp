@@ -44,7 +44,7 @@ static void distribute(OrderedDataDistribution &distribution, const esint &total
 	}
 }
 
-void balance(const InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered, int &dimension)
+void balanceFEM(const InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered, int &dimension)
 {
 	esint total[2] = { (esint)input.nodes->coordinates.size(), (esint)input.elements->etype.size() };
 	Communication::allReduce(total, NULL, 2, MPITools::getType<esint>().mpitype, MPI_SUM);
@@ -171,7 +171,7 @@ void balance(const InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &inp
 	}
 }
 
-void balance(const InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &input, const TemporalMesh<OrderedNodesBalanced, OrderedFacesBalanced> &ordered)
+void balanceFVM(const InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &input, const TemporalMesh<OrderedNodesBalanced, OrderedFacesBalanced> &ordered)
 {
 	std::vector<esint> sum(4), offset = { (esint)input.nodes->coordinates.size(), (esint)input.elements->etype.size(), (esint)input.elements->owner.size(), (esint)input.elements->neighbor.size() };
 	std::vector<esint> fdistribution = Communication::getDistribution<esint>(input.elements->etype.size());

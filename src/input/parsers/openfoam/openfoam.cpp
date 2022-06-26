@@ -79,5 +79,10 @@ void InputOpenFoam::load(const InputConfiguration &configuration)
 
 void InputOpenFoam::build(Mesh &mesh)
 {
-	builder::build(this->mesh, mesh);
+	builder::buildOrderedFVM(this->mesh, mesh);
+}
+
+void InputOpenFoam::variables(Mesh &mesh)
+{
+
 }

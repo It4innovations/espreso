@@ -12,7 +12,7 @@
 namespace espreso {
 namespace builder {
 
-void initialize(const InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, const TemporalSequentialMesh<ClusteredNodes, ClusteredElements> &clustered, int &dimension)
+void initializeSequentialFEM(const InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, const TemporalSequentialMesh<ClusteredNodes, ClusteredElements> &clustered, int &dimension)
 {
 	if (info::mpi::size != 1) {
 		eslog::internalFailure("usage of a sequential method during a parallel run.\n");
@@ -45,7 +45,7 @@ void initialize(const InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &
 	std::iota(clustered.elements->offsets.begin(), clustered.elements->offsets.end(), 0);
 }
 
-void initialize(const InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &input, const TemporalSequentialMesh<MergedNodes, OrderedFacesBalanced> &clustered)
+void initializeSequentialFVM(const InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &input, const TemporalSequentialMesh<MergedNodes, OrderedFacesBalanced> &clustered)
 {
 	if (info::mpi::size != 1) {
 		eslog::internalFailure("usage of a sequential method during a parallel run.\n");

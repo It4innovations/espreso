@@ -137,6 +137,7 @@ void Mesh::load()
 
 	input->load(info::ecf->input);
 	input->build(*info::mesh);
+	input->variables(*info::mesh);
 
 	profiler::syncend("load");
 }

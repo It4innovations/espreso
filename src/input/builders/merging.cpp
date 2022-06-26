@@ -158,7 +158,7 @@ void searchDuplicatedNodes(const TemporalSequentialMesh<ClusteredNodes, Clustere
 	utils::clearVectors(clustered.elements->etype, clustered.elements->enodes, clustered.elements->edist, clustered.elements->offsets);
 }
 
-void searchDuplicatedNodes(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, const std::vector<int> &sfcNeighbors, const TemporalMesh<ClusteredNodes, ClusteredElements> &clustered, const TemporalMesh<MergedNodes, ClusteredElements> &merged)
+void searchDuplicatedNodesWithSFC(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, const std::vector<int> &sfcNeighbors, const TemporalMesh<ClusteredNodes, ClusteredElements> &clustered, const TemporalMesh<MergedNodes, ClusteredElements> &merged)
 {
 	std::vector<esint> cdistribution = tarray<esint>::distribute(info::env::OMP_NUM_THREADS, clustered.nodes->offsets.size());
 

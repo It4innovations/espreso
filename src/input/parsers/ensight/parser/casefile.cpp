@@ -13,7 +13,7 @@
 using namespace espreso;
 
 EnsightCasefile::EnsightCasefile(const std::string &path)
-: path(path), type(Type::Ensight_Gold)
+: path(path), type(Type::UNKNOWN)
 {
 	parse();
 }
@@ -23,29 +23,45 @@ void EnsightCasefile::parse()
 	// currently read only geometry
 	Metadata casefile(path);
 
-	bool ingeometry = false, invariable = false, intime = false;
+	bool informat = false, ingeometry = false, invariable = false, intime = false;
 	size_t timesteps = 0, timeset = 0;
 
 	const char* current = casefile.begin;
+	auto check = [&current,&casefile] (const char *parameter) {
+		return current + strlen(parameter) < casefile.end && memcmp(current, parameter, strlen(parameter)) == 0;
+	};
+
 	while (current < casefile.end) {
 		while (current < casefile.end && *current++ != '\n'); // go to the line end
 		while (current < casefile.end && *current == '\n') { current++; } // start at new line
-		if (current + 8 < casefile.end && memcmp(current, "GEOMETRY", 8) == 0) {
+		if (check("FORMAT")) {
+			informat = true;
+			ingeometry = invariable = intime = false;
+			continue;
+		}
+		if (check("GEOMETRY")) {
 			ingeometry = true;
-			invariable = intime = false;
+			informat = invariable = intime = false;
 			continue;
 		}
-		if (current + 8 < casefile.end && memcmp(current, "VARIABLE", 8) == 0) {
+		if (check("VARIABLE")) {
 			invariable = true;
-			ingeometry = intime = false;
+			informat = ingeometry = intime = false;
 			continue;
 		}
-		if (current + 4 < casefile.end && memcmp(current, "TIME", 4) == 0) {
+		if (check("TIME")) {
 			intime = true;
-			ingeometry = invariable = false;
+			informat = ingeometry = invariable = false;
 			continue;
 		}
-		if (ingeometry && current + 6 < casefile.end && memcmp(current, "model:", 6) == 0) {
+		if (informat && check("type:")) {
+			while (*current++ != ':');
+			while (*current == ' ' || *current == '\t') { ++current; }
+			if (check("ensight gold")) {
+				type = Type::ENSIGHT_GOLD;
+			}
+		}
+		if (ingeometry && check("model:")) {
 			while (*current++ != ':');
 			while (*current == ' ' || *current == '\t') { ++current; }
 			const char* begin = current;
@@ -55,10 +71,10 @@ void EnsightCasefile::parse()
 		if (invariable) {
 			Variable::Type type;
 			int dimension = 0, time = -1;
-			if (current + 6 < casefile.end && memcmp(current, "scalar", 6) == 0) {
+			if (check("scalar")) {
 				dimension = 1;
 			}
-			if (current + 6 < casefile.end && memcmp(current, "vector", 6) == 0) {
+			if (check("vector")) {
 				dimension = 3;
 			}
 			if (current + 15 < casefile.end && memcmp(current + 7, "per node", 8) == 0) {
@@ -88,11 +104,11 @@ void EnsightCasefile::parse()
 			}
 		}
 		if (intime) {
-			if (current + 15 < casefile.end && memcmp(current, "number of steps", 15) == 0) {
+			if (check("number of steps")) {
 				while (*current++ != ':');
 				timesteps = strtol(current, NULL, 10);
 			}
-			if (current + 8 < casefile.end && memcmp(current, "time set", 8) == 0) {
+			if (check("time set")) {
 				while (*current++ != ':');
 				timeset = strtol(current, NULL, 10);
 				if (times.size() < timeset) {
@@ -100,7 +116,7 @@ void EnsightCasefile::parse()
 				}
 				--timeset;
 			}
-			if (current + 11 < casefile.end && memcmp(current, "time values", 11) == 0) {
+			if (check("time values")) {
 				const char *start = current;
 				while (*start++ != ':');
 				for (size_t s = 0; s < timesteps; ++s) {
@@ -110,6 +126,10 @@ void EnsightCasefile::parse()
 				}
 			}
 		}
+	}
+
+	if (type == Type::UNKNOWN) {
+		eslog::globalerror("Only Ensight Gold is supported.\n");
 	}
 
 	geometry = utils::getFileDirectory(path) + "/" + geometry;

@@ -16,7 +16,7 @@
 namespace espreso {
 namespace builder {
 
-void build(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, Mesh &mesh)
+void buildOrderedFEM(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, Mesh &mesh)
 {
 	eslog::startln("BUILDER: PROCESS ORDERED MESH", "BUILDER");
 	if (info::mpi::size == 1) {
@@ -24,7 +24,7 @@ void build(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, Mesh
 		TemporalSequentialMesh<MergedNodes, ClusteredElements> merged;
 		TemporalSequentialMesh<MergedNodes, MergedElements> prepared;
 
-		initialize(input, clustered, mesh.dimension);
+		initializeSequentialFEM(input, clustered, mesh.dimension);
 		eslog::checkpointln("BUILDER: DATA INITIALIZED");
 
 		searchDuplicatedNodes(clustered, merged);
@@ -33,7 +33,7 @@ void build(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, Mesh
 		searchDuplicatedElements(merged, prepared, mesh.dimension);
 		eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
 
-		fillMesh(prepared, *input.regions, mesh);
+		fillSequentialMesh(prepared, *input.regions, mesh);
 	} else {
 		TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> ordered;
 		TemporalMesh<ClusteredNodes, ClusteredElements> clustered;
@@ -43,7 +43,7 @@ void build(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, Mesh
 
 		ivector<esint> nbuckets, ebuckets, splitters;
 
-		balance(input, ordered, mesh.dimension);
+		balanceFEM(input, ordered, mesh.dimension);
 		eslog::checkpointln("BUILDER: DATA BALANCED");
 
 		Communication::allReduce(&mesh.dimension, NULL, 1, MPI_INT, MPI_MAX); // we reduce dimension here in order to be able measure inbalances in the 'balance' function
@@ -60,7 +60,7 @@ void build(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, Mesh
 		computeSFCNeighbors(sfc, splitters, linked.nodes->neighbors); // neighbors are approximated here
 		eslog::checkpointln("BUILDER: NEIGHBORS APPROXIMATED");
 
-		searchDuplicatedNodes(sfc, splitters, linked.nodes->neighbors, clustered, merged);
+		searchDuplicatedNodesWithSFC(sfc, splitters, linked.nodes->neighbors, clustered, merged);
 		utils::clearVector(splitters);
 		eslog::checkpointln("BUILDER: DUPLICATED NODES FOUND");
 
@@ -75,7 +75,7 @@ void build(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, Mesh
 	eslog::endln("BUILDER: MESH BUILT");
 }
 
-void build(InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &input, Mesh &mesh)
+void buildOrderedFVM(InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &input, Mesh &mesh)
 {
 	eslog::startln("BUILDER: PROCESS FACED MESH", "BUILDER");
 	mesh.dimension = 3;
@@ -83,20 +83,20 @@ void build(InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &in
 		TemporalSequentialMesh<MergedNodes, OrderedFacesBalanced> grouped;
 		TemporalSequentialMesh<MergedNodes, MergedElements> prepared;
 
-		initialize(input, grouped);
+		initializeSequentialFVM(input, grouped);
 		eslog::checkpointln("BUILDER: DATA INITIALIZED");
 
 		buildElementsFromFaces(grouped, prepared);
 		eslog::checkpointln("BUILDER: ELEMENTS CREATED");
 
-		fillMesh(prepared, *input.regions, mesh);
+		fillSequentialMesh(prepared, *input.regions, mesh);
 	} else {
 		TemporalMesh<OrderedNodesBalanced, OrderedFacesBalanced> grouped;
 		TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> ordered;
 		TemporalMesh<MergedNodes, MergedElements> clustered;
 		TemporalMesh<LinkedNodes, MergedElements> linked;
 
-		balance(input, grouped);
+		balanceFVM(input, grouped);
 		eslog::checkpointln("BUILDER: DATA BALANCED");
 
 		buildElementsFromFaces(grouped, ordered);

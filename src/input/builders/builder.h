@@ -8,8 +8,8 @@
 namespace espreso {
 namespace builder {
 
-void build(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, Mesh &mesh);
-void build(InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &input, Mesh &mesh);
+void buildOrderedFEM(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, Mesh &mesh);
+void buildOrderedFVM(InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &input, Mesh &mesh);
 
 }
 }

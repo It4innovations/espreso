@@ -19,12 +19,9 @@ class Input {
 public:
 	virtual void load(const InputConfiguration &configuration) = 0;
 	virtual void build(Mesh &mesh) = 0;
+	virtual void variables(Mesh &mesh) = 0;
 
 	virtual ~Input() {}
-};
-
-struct AsyncParameters {
-	AsyncFilePack files;
 };
 
 // offset -> index to vector of data

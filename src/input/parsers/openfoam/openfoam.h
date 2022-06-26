@@ -15,6 +15,7 @@ public:
 
 	void load(const InputConfiguration &configuration);
 	void build(Mesh &mesh);
+	void variables(Mesh &mesh);
 
 protected:
 	InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> mesh;

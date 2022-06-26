@@ -10,7 +10,8 @@ namespace espreso {
 class EnsightCasefile {
 public:
 	enum class Type {
-		Ensight_Gold
+		UNKNOWN,
+		ENSIGHT_GOLD
 	};
 
 	struct Variable {

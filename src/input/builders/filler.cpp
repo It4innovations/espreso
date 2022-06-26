@@ -15,7 +15,7 @@
 namespace espreso {
 namespace builder {
 
-void fillMesh(const TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, OrderedRegions &regions, Mesh &mesh)
+void fillSequentialMesh(const TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, OrderedRegions &regions, Mesh &mesh)
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
 
