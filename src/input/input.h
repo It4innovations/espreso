@@ -62,7 +62,8 @@ struct OrderedElements {
 struct OrderedRegions {
 	struct Region {
 		std::string name;
-		esint offset, size;
+		int dimension;
+		esint start, end;
 	};
 
 	std::vector<Region> nodes, elements;

@@ -156,13 +156,17 @@ void EnsightGeometry::parse(InputMesh<OrderedNodes, OrderedElements, OrderedRegi
 				}
 			}
 
-			if (_keywords.elements[e].getCode() == Element::CODE::POINT1) {
-				mesh.regions->nodes.push_back(OrderedRegions::Region{ name, coffset, coffset + _keywords.coordinates[p].nn });
+			int dimension = Mesh::element(_keywords.elements[e].getCode()).dimension;
+			if (dimension == 0) {
+				mesh.regions->nodes.push_back(OrderedRegions::Region{ name, dimension, coffset, coffset + _keywords.coordinates[p].nn });
 			} else {
 				if (mesh.regions->elements.empty() || mesh.regions->elements.back().name.compare(name)) {
-					mesh.regions->elements.push_back(OrderedRegions::Region{ name, eoffset, eoffset + _keywords.elements[e].ne });
+					mesh.regions->elements.push_back(OrderedRegions::Region{ name, dimension, eoffset, eoffset + _keywords.elements[e].ne });
 				} else {
-					mesh.regions->elements.back().size += _keywords.elements[e].ne;
+					if (mesh.regions->elements.back().dimension != dimension) {
+						eslog::globalerror("cannot mix faces and elements to a same region.\n");
+					}
+					mesh.regions->elements.back().end += _keywords.elements[e].ne;
 				}
 				eoffset += _keywords.elements[e].ne;
 			}

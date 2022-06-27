@@ -15,36 +15,50 @@
 namespace espreso {
 namespace builder {
 
-void fillSequentialMesh(const TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, OrderedRegions &regions, Mesh &mesh)
+void fillNodes(const MergedNodes *nodes, OrderedRegions &regions, Mesh &mesh)
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
 
-	// nodes
+	mesh.nodes->size = nodes->offsets.size();
+	mesh.nodes->distribution = tarray<size_t>::distribute(threads, nodes->offsets.size());
 
-	mesh.nodes->size = prepared.nodes->offsets.size();
-	mesh.nodes->distribution = tarray<size_t>::distribute(threads, prepared.nodes->offsets.size());
-
-	mesh.nodes->IDs = new serializededata<esint, esint>(1, tarray<esint>(mesh.nodes->distribution, prepared.nodes->offsets.begin(), prepared.nodes->offsets.end()));
-	mesh.nodes->coordinates = new serializededata<esint, Point >(1, tarray<Point>(mesh.nodes->distribution, prepared.nodes->coordinates.cbegin(), prepared.nodes->coordinates.cend()));
-
-	std::vector<size_t> rdistribution = mesh.nodes->distribution, rdatadistribution = mesh.nodes->distribution;
-	++rdistribution[threads];
-
-	mesh.nodes->ranks = new serializededata<esint, int>(tarray<esint>(rdistribution, 1UL, 0), tarray<int>(rdatadistribution, 1UL, 0));
-	std::iota(mesh.nodes->ranks->boundarytarray().begin(), mesh.nodes->ranks->boundarytarray().end(), 0);
+	mesh.nodes->IDs = new serializededata<esint, esint>(1, tarray<esint>(mesh.nodes->distribution, nodes->offsets.begin(), nodes->offsets.end()));
+	mesh.nodes->coordinates = new serializededata<esint, Point >(1, tarray<Point>(mesh.nodes->distribution, nodes->coordinates.cbegin(), nodes->coordinates.cend()));
 
 	mesh.boundaryRegions.push_back(new BoundaryRegionStore("ALL_NODES"));
 	mesh.boundaryRegions.back()->nodes = new serializededata<esint, esint>(1, tarray<esint>(threads, mesh.nodes->size));
 	std::iota(mesh.boundaryRegions.back()->nodes->datatarray().begin(), mesh.boundaryRegions.back()->nodes->datatarray().end(), 0);
 
-	// elements
+	for (auto region = regions.nodes.begin(); region != regions.nodes.end(); ++region) {
+		mesh.boundaryRegions.push_back(new BoundaryRegionStore(region->name));
+		esint rsize = 0;
+		for (size_t i = 0; i < nodes->offsets.size(); ++i) {
+			if (region->start <= nodes->offsets[i] && nodes->offsets[i] < region->end) {
+				++rsize;
+			}
+		}
+		mesh.boundaryRegions.back()->nodes = new serializededata<esint, esint>(1, tarray<esint>(threads, rsize));
+		for (size_t i = 0, j = 0; i < nodes->offsets.size(); ++i) {
+			if (region->start <= nodes->offsets[i] && nodes->offsets[i] < region->end) {
+				mesh.boundaryRegions.back()->nodes->datatarray()[j++] = i;
+			}
+		}
+	}
+}
+
+void fillElements(const MergedElements *elements, OrderedRegions &regions, Mesh &mesh)
+{
+	size_t threads = info::env::OMP_NUM_THREADS;
 
 	size_t esize = 0;
-	for (size_t e = 0; e < prepared.elements->etype.size(); ++e) {
-		if (Mesh::element(prepared.elements->etype[e]).dimension == mesh.dimension) {
+	for (size_t e = 0; e < elements->etype.size(); ++e) {
+		if (Mesh::element(elements->etype[e]).dimension == mesh.dimension) {
 			++esize;
 		}
 	}
+
+	esint eoffset = esize;
+	esint totalSize = Communication::exscan(eoffset);
 	std::vector<size_t> edistribution = tarray<size_t>::distribute(threads, esize);
 
 	std::vector<std::vector<esint> > tedist(threads), tnodes(threads), eIDs(threads);
@@ -52,14 +66,14 @@ void fillSequentialMesh(const TemporalSequentialMesh<MergedNodes, MergedElements
 
 	esize = 0;
 	tedist.front().push_back(0);
-	for (size_t e = 0, t = 0; e < prepared.elements->etype.size(); ++e) {
-		if (Mesh::element(prepared.elements->etype[e]).dimension == mesh.dimension) {
-			eIDs[t].push_back(esize); // = prepared.elements->offsets[e]
-			for (esint n = 0; n < Mesh::element(prepared.elements->etype[e]).nodes; ++n) {
-				tnodes[t].push_back(prepared.elements->enodes[prepared.elements->edist[e] + n]);
+	for (size_t e = 0, t = 0; e < elements->etype.size(); ++e) {
+		if (Mesh::element(elements->etype[e]).dimension == mesh.dimension) {
+			eIDs[t].push_back(eoffset + esize); // = elements->offsets[e]
+			for (esint n = 0; n < Mesh::element(elements->etype[e]).nodes; ++n) {
+				tnodes[t].push_back(elements->enodes[elements->edist[e] + n]);
 			}
 			tedist[t].push_back(tnodes[t].size());
-			epointers[t].push_back(&Mesh::edata[(int)prepared.elements->etype[e]]);
+			epointers[t].push_back(&Mesh::edata[(int)elements->etype[e]]);
 
 			++esize;
 			if (esize == edistribution[t + 1]) {
@@ -68,10 +82,10 @@ void fillSequentialMesh(const TemporalSequentialMesh<MergedNodes, MergedElements
 		}
 	}
 
-	mesh.elements->distribution.process.offset = 0;
-	mesh.elements->distribution.process.next = esize;
+	mesh.elements->distribution.process.offset = eoffset;
+	mesh.elements->distribution.process.next = eoffset + esize;
 	mesh.elements->distribution.process.size = esize;
-	mesh.elements->distribution.process.totalSize = esize;
+	mesh.elements->distribution.process.totalSize = totalSize;
 	mesh.elements->distribution.threads = edistribution;
 	mesh.elements->IDs = new serializededata<esint, esint>(1, eIDs);
 	mesh.elements->nodes = new serializededata<esint, esint>(tedist, tnodes);
@@ -80,6 +94,80 @@ void fillSequentialMesh(const TemporalSequentialMesh<MergedNodes, MergedElements
 	mesh.elementsRegions.push_back(new ElementsRegionStore("ALL_ELEMENTS"));
 	mesh.elementsRegions.back()->elements = new serializededata<esint, esint>(1, tarray<esint>(threads, esize));
 	std::iota(mesh.elementsRegions.back()->elements->datatarray().begin(), mesh.elementsRegions.back()->elements->datatarray().end(), 0);
+
+	for (auto region = regions.elements.begin(); region != regions.elements.end(); ++region) {
+		esint rsize = 0, rnodes = 0;
+		for (size_t i = 0; i < elements->offsets.size(); ++i) {
+			if (region->start <= elements->offsets[i] && elements->offsets[i] < region->end) {
+				++rsize;
+				rnodes += Mesh::element(elements->etype[i]).nodes;
+			}
+		}
+		if (region->dimension == mesh.dimension) {
+			mesh.elementsRegions.push_back(new ElementsRegionStore(region->name));
+			mesh.elementsRegions.back()->elements = new serializededata<esint, esint>(1, tarray<esint>(threads, rsize));
+			for (size_t i = 0, j = 0; i < elements->offsets.size(); ++i) {
+				if (region->start <= elements->offsets[i] && elements->offsets[i] < region->end) {
+					mesh.elementsRegions.back()->elements->datatarray()[j++] = i;
+				}
+			}
+		} else {
+			std::vector<std::vector<esint> > tbedist(threads), tbnodes(threads);
+			std::vector<std::vector<Element*> > tbepointers(threads);
+			std::vector<size_t> edistribution = tarray<size_t>::distribute(threads, rsize);
+			std::vector<esint> eregiondist(rsize + 1);
+			for (size_t i = 0, e = 0; i < elements->offsets.size(); ++i) {
+				if (region->start <= elements->offsets[i] && elements->offsets[i] < region->end) {
+					eregiondist[e + 1] = eregiondist[e] + Mesh::element(elements->etype[i]).nodes;
+					++e;
+				}
+			}
+
+			#pragma omp parallel for
+			for (size_t t = 0; t < threads; t++) {
+				tbedist[t].clear();
+				if (t == 0) {
+					tbedist[t].insert(tbedist[t].end(), eregiondist.begin() + edistribution[t], eregiondist.begin() + edistribution[t + 1] + 1);
+				} else {
+					tbedist[t].insert(tbedist[t].end(), eregiondist.begin() + edistribution[t] + 1, eregiondist.begin() + edistribution[t + 1] + 1);
+				}
+
+				tbnodes[t].resize(eregiondist[edistribution[t + 1]] - eregiondist[edistribution[t]]);
+				tbepointers[t].resize(edistribution[t + 1] - edistribution[t]);
+				for (size_t i = 0, e = 0, index = 0; i < elements->offsets.size(); ++i) {
+					if (region->start <= elements->offsets[i] && elements->offsets[i] < region->end) {
+						tbepointers[t][e] = &Mesh::edata[(int)elements->etype[i]];
+						for (esint n = elements->edist[i]; n < elements->edist[i + 1]; ++n, ++index) {
+							tbnodes[t][index] = elements->enodes[n];
+						}
+						++e;
+					}
+				}
+			}
+
+			mesh.boundaryRegions.push_back(new BoundaryRegionStore(region->name));
+			mesh.boundaryRegions.back()->dimension = region->dimension;
+			mesh.boundaryRegions.back()->originalDimension = region->dimension;
+			mesh.boundaryRegions.back()->distribution.threads = edistribution;
+			mesh.boundaryRegions.back()->elements = new serializededata<esint, esint>(tbedist, tbnodes);
+			mesh.boundaryRegions.back()->epointers = new serializededata<esint, Element*>(1, tbepointers);
+		}
+	}
+}
+
+void fillSequentialMesh(const TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, OrderedRegions &regions, Mesh &mesh)
+{
+	size_t threads = info::env::OMP_NUM_THREADS;
+
+	fillNodes(prepared.nodes, regions, mesh);
+
+	std::vector<size_t> rdistribution = mesh.nodes->distribution, rdatadistribution = mesh.nodes->distribution;
+	++rdistribution[threads];
+
+	mesh.nodes->ranks = new serializededata<esint, int>(tarray<esint>(rdistribution, 1UL, 0), tarray<int>(rdatadistribution, 1UL, 0));
+	std::iota(mesh.nodes->ranks->boundarytarray().begin(), mesh.nodes->ranks->boundarytarray().end(), 0);
+
+	fillElements(prepared.elements, regions, mesh);
 
 	mesh.neighbors = { };
 	mesh.neighborsWithMe = { 0 };
@@ -125,13 +213,7 @@ void fillMesh(const TemporalMesh<LinkedNodes, MergedElements> &prepared, Ordered
 
 	size_t threads = info::env::OMP_NUM_THREADS;
 
-	// nodes
-
-	mesh.nodes->size = prepared.nodes->offsets.size();
-	mesh.nodes->distribution = tarray<size_t>::distribute(threads, prepared.nodes->offsets.size());
-
-	mesh.nodes->IDs = new serializededata<esint, esint>(1, tarray<esint>(mesh.nodes->distribution, prepared.nodes->offsets.begin(), prepared.nodes->offsets.end()));
-	mesh.nodes->coordinates = new serializededata<esint, Point >(1, tarray<Point>(mesh.nodes->distribution, prepared.nodes->coordinates.cbegin(), prepared.nodes->coordinates.cend()));
+	fillNodes(prepared.nodes, regions, mesh);
 
 	std::vector<size_t> rdistribution = mesh.nodes->distribution, rdatadistribution = mesh.nodes->distribution;
 	for (size_t t = 1; t < threads; t++) {
@@ -149,56 +231,8 @@ void fillMesh(const TemporalMesh<LinkedNodes, MergedElements> &prepared, Ordered
 			tarray<esint>(rdistribution, prepared.nodes->rankDistribution.begin(), prepared.nodes->rankDistribution.end()),
 			tarray<int>(rdatadistribution, prepared.nodes->rankData.begin(), prepared.nodes->rankData.end()));
 
-	mesh.boundaryRegions.push_back(new BoundaryRegionStore("ALL_NODES"));
-	mesh.boundaryRegions.back()->nodes = new serializededata<esint, esint>(1, tarray<esint>(threads, mesh.nodes->size));
-	std::iota(mesh.boundaryRegions.back()->nodes->datatarray().begin(), mesh.boundaryRegions.back()->nodes->datatarray().end(), 0);
 
-	// elements
-
-	size_t esize = 0;
-	for (size_t e = 0; e < prepared.elements->etype.size(); ++e) {
-		if (Mesh::element(prepared.elements->etype[e]).dimension == mesh.dimension) {
-			++esize;
-		}
-	}
-
-	esint eoffset = esize;
-	esint totalSize = Communication::exscan(eoffset);
-	std::vector<size_t> edistribution = tarray<size_t>::distribute(threads, esize);
-
-	std::vector<std::vector<esint> > tedist(threads), tnodes(threads), eIDs(threads);
-	std::vector<std::vector<Element*> > epointers(threads);
-
-	esize = 0;
-	tedist.front().push_back(0);
-	for (size_t e = 0, t = 0; e < prepared.elements->etype.size(); ++e) {
-		if (Mesh::element(prepared.elements->etype[e]).dimension == mesh.dimension) {
-			eIDs[t].push_back(eoffset + esize); // = prepared.elements->offsets[e]
-			for (esint n = 0; n < Mesh::element(prepared.elements->etype[e]).nodes; ++n) {
-				tnodes[t].push_back(prepared.elements->enodes[prepared.elements->edist[e] + n]);
-			}
-			tedist[t].push_back(tnodes[t].size());
-			epointers[t].push_back(&Mesh::edata[(int)prepared.elements->etype[e]]);
-
-			++esize;
-			if (esize == edistribution[t + 1]) {
-				++t;
-			}
-		}
-	}
-
-	mesh.elements->distribution.process.offset = eoffset;
-	mesh.elements->distribution.process.next = eoffset + esize;
-	mesh.elements->distribution.process.size = esize;
-	mesh.elements->distribution.process.totalSize = totalSize;
-	mesh.elements->distribution.threads = edistribution;
-	mesh.elements->IDs = new serializededata<esint, esint>(1, eIDs);
-	mesh.elements->nodes = new serializededata<esint, esint>(tedist, tnodes);
-	mesh.elements->epointers = new serializededata<esint, Element*>(1, epointers);
-
-	mesh.elementsRegions.push_back(new ElementsRegionStore("ALL_ELEMENTS"));
-	mesh.elementsRegions.back()->elements = new serializededata<esint, esint>(1, tarray<esint>(threads, esize));
-	std::iota(mesh.elementsRegions.back()->elements->datatarray().begin(), mesh.elementsRegions.back()->elements->datatarray().end(), 0);
+	fillElements(prepared.elements, regions, mesh);
 
 	mesh.neighbors = prepared.nodes->neighbors;
 	mesh.neighborsWithMe.resize(mesh.neighbors.size() + 1);

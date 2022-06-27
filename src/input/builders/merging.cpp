@@ -696,7 +696,7 @@ void searchParentAndDuplicatedElements(const TemporalMesh<LinkedNodes, Clustered
 			bool insert = true;
 			if (Mesh::element(prepared.elements->etype[e]).dimension == meshDimension) {
 				insert = duplicateElement.count(e) == 0;
-			} else {
+			} else if (duplicateBoundary.count(e)) { // without duplication the parent is always local
 				insert = false;
 				auto p = std::lower_bound(parents.begin(), parents.end(), __parent__{ prepared.elements->offsets[e], 0, 0 });
 				if (p != parents.end() && p->offset == prepared.elements->offsets[e] && p->rank == info::mpi::rank) {
