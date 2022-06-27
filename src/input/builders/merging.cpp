@@ -494,7 +494,7 @@ void searchParentAndDuplicatedElements(const TemporalMesh<LinkedNodes, Clustered
 				sBuffer[roffset].push_back(linked.elements->offsets[e]);
 				sBuffer[roffset].push_back((esint)linked.elements->etype[e]);
 				for (esint n = linked.elements->edist[e]; n < linked.elements->edist[e + 1]; ++n) {
-					sBuffer[roffset].push_back(linked.elements->enodes[n]);
+					sBuffer[roffset].push_back(linked.nodes->offsets[linked.nodes->g2l[linked.elements->enodes[n]]]);
 				}
 			}
 			if (neighbors.size() && Mesh::element(linked.elements->etype[e]).dimension < meshDimension) {
@@ -541,6 +541,9 @@ void searchParentAndDuplicatedElements(const TemporalMesh<LinkedNodes, Clustered
 				++mapDist[getMinimal(Mesh::element(rBuffer[r][i + 1]).nodes, rBuffer[r].data() + i + 2)];
 			} else {
 				for (int n = 0; n < Mesh::element(rBuffer[r][i + 1]).nodes; ++n) {
+					if (linked.nodes->g2l.count(rBuffer[r][i + 2 + n]) == 0) {
+						eslog::error("unknown node was received.\n");
+					}
 					++mapDist[linked.nodes->g2l[rBuffer[r][i + 2 + n]]];
 				}
 			}
