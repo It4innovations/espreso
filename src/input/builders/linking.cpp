@@ -183,13 +183,12 @@ void linkup(const TemporalMesh<MergedNodes, ClusteredElements> &merged, const Te
 				size += rankDistribution[ni + 1] - rankDistribution[ni];
 				if (duplicationIndex[ni] != -1) {
 					if (ni == merged.nodes->duplication[duplicationIndex[ni]].duplicate) {
+						ni = merged.nodes->duplication[duplicationIndex[ni]].origin;
+					}
+					esint di = duplicationIndex[ni];
+					while (di >= 0 && ni == merged.nodes->duplication[di].origin) {
 						size += 2;
-					} else {
-						esint di = duplicationIndex[ni];
-						while (di >= 0 && ni == merged.nodes->duplication[di].origin) {
-							size += 2;
-							--di;
-						}
+						--di;
 					}
 				}
 			}
@@ -206,17 +205,14 @@ void linkup(const TemporalMesh<MergedNodes, ClusteredElements> &merged, const Te
 				}
 				if (duplicationIndex[ni] != -1) {
 					if (ni == merged.nodes->duplication[duplicationIndex[ni]].duplicate) {
+						ni = merged.nodes->duplication[duplicationIndex[ni]].origin;
+					}
+					esint di = duplicationIndex[ni];
+					while (di >= 0 && ni == merged.nodes->duplication[di].origin) {
 						++sBuffer[n][prevsize + 1];
-						sBuffer[n].push_back(merged.nodes->offsets[merged.nodes->duplication[duplicationIndex[ni]].origin]);
-						sBuffer[n].push_back(merged.nodes->offsets[merged.nodes->duplication[duplicationIndex[ni]].duplicate]);
-					} else {
-						esint di = duplicationIndex[ni];
-						while (di >= 0 && ni == merged.nodes->duplication[di].origin) {
-							++sBuffer[n][prevsize + 1];
-							sBuffer[n].push_back(merged.nodes->offsets[merged.nodes->duplication[di].origin]);
-							sBuffer[n].push_back(merged.nodes->offsets[merged.nodes->duplication[di].duplicate]);
-							--di;
-						}
+						sBuffer[n].push_back(merged.nodes->offsets[merged.nodes->duplication[di].origin]);
+						sBuffer[n].push_back(merged.nodes->offsets[merged.nodes->duplication[di].duplicate]);
+						--di;
 					}
 				}
 			}

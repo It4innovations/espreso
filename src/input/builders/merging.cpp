@@ -494,7 +494,7 @@ void searchParentAndDuplicatedElements(const TemporalMesh<LinkedNodes, Clustered
 				sBuffer[roffset].push_back(linked.elements->offsets[e]);
 				sBuffer[roffset].push_back((esint)linked.elements->etype[e]);
 				for (esint n = linked.elements->edist[e]; n < linked.elements->edist[e + 1]; ++n) {
-					sBuffer[roffset].push_back(linked.nodes->offsets[linked.nodes->g2l[linked.elements->enodes[n]]]);
+					sBuffer[roffset].push_back(linked.elements->enodes[n]);
 				}
 			}
 			if (neighbors.size() && Mesh::element(linked.elements->etype[e]).dimension < meshDimension) {
