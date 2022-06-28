@@ -7,6 +7,7 @@
 namespace espreso {
 
 class InputConfiguration;
+struct EnsightData;
 
 class InputEnsight: public Input {
 public:
@@ -14,7 +15,10 @@ public:
 	void build(Mesh &mesh);
 	void variables(Mesh &mesh);
 
+	~InputEnsight();
+
 protected:
+	EnsightData *data;
 	InputMesh<OrderedNodes, OrderedElements, OrderedRegions> mesh;
 };
 

@@ -59,6 +59,11 @@ struct OrderedElements {
 	ivector<esint> enodes;
 };
 
+struct OrderedValues {
+	std::vector<DatabaseOffset> offsets;
+	ivector<esfloat> data;
+};
+
 struct OrderedRegions {
 	struct Region {
 		std::string name;

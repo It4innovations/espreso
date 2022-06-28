@@ -28,10 +28,12 @@ struct InputFile {
 		std::swap(hardend, other->hardend);
 		data.swap(other->data);
 		distribution.swap(other->distribution);
+		std::swap(overlap, other->overlap);
 		std::swap(totalSize, other->totalSize);
 		name.swap(other->name);
 		std::swap(maxchunk, other->maxchunk);
 		std::swap(loader, other->loader);
+
 	}
 
 	void setDistribution(const std::vector<size_t> &distribution);
@@ -43,7 +45,7 @@ struct InputFile {
 	size_t overlap, totalSize;
 	std::string name;
 protected:
-	InputFile();
+	InputFile(size_t overlap);
 
 	size_t maxchunk;
 	Loader* loader;
@@ -66,7 +68,7 @@ struct FilePack: public InputFile {
 
 	void setTotalSizes();
 
-	const size_t minchunk, overlap;
+	const size_t minchunk;
 	size_t fileindex;
 	std::vector<InputFile*> files;
 };
@@ -83,10 +85,8 @@ struct AsyncFilePack: public FilePack {
 	AsyncFilePack(size_t overlap = 1024);
 	AsyncFilePack(const std::vector<std::string> &filepaths, size_t overlap = 1024);
 
-	void iread(std::function<void(void)> callback);
+	void iread();
 	void wait();
-
-	std::function<void(void)> callback;
 };
 
 }

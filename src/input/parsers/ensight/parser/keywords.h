@@ -119,7 +119,7 @@ struct EnsightKeywords {
 };
 
 template <typename Parser>
-void fillScanner(const InputFilePack &file, DistributedScanner &scanner, EnsightKeywords &keywords)
+void fillScanner(const FilePack &file, DistributedScanner &scanner, EnsightKeywords &keywords)
 {
 	scanner.add("part"       , [&] (const char *c) { Parser::addPart(file, c, keywords); });
 	scanner.add("coordinates", [&] (const char *c) { Parser::addCoordinates(file, c, keywords); }, [&] (const char *c) { return Parser::skipCoordinates(c); });
@@ -145,36 +145,36 @@ void fillScanner(const InputFilePack &file, DistributedScanner &scanner, Ensight
 }
 
 struct EnsightASCIIGeometryKeywordParser {
-	static void addPart(const InputFilePack &file, const char *c, EnsightKeywords &keywords);
-	static void addCoordinates(const InputFilePack &file, const char *c, EnsightKeywords &keywords);
-	static void addElements(const InputFilePack &file, const char *c, EnsightKeywords &keywords, EnsightKeywords::Elements::Type type);
+	static void addPart(const FilePack &file, const char *c, EnsightKeywords &keywords);
+	static void addCoordinates(const FilePack &file, const char *c, EnsightKeywords &keywords);
+	static void addElements(const FilePack &file, const char *c, EnsightKeywords &keywords, EnsightKeywords::Elements::Type type);
 
 	static size_t skipCoordinates(const char *c);
 	static size_t skipElements(const char *c, int enodes);
 };
 
 struct EnsightBinaryGeometryKeywordParser {
-	static void addPart(const InputFilePack &file, const char *c, EnsightKeywords &keywords);
-	static void addCoordinates(const InputFilePack &file, const char *c, EnsightKeywords &keywords);
-	static void addElements(const InputFilePack &file, const char *c, EnsightKeywords &keywords, EnsightKeywords::Elements::Type type);
+	static void addPart(const FilePack &file, const char *c, EnsightKeywords &keywords);
+	static void addCoordinates(const FilePack &file, const char *c, EnsightKeywords &keywords);
+	static void addElements(const FilePack &file, const char *c, EnsightKeywords &keywords, EnsightKeywords::Elements::Type type);
 
 	static size_t skipCoordinates(const char *c);
 	static size_t skipElements(const char *c, int enodes);
 };
 
 struct EnsightASCIIVariableKeywordParser {
-	static void addPart(const InputFilePack &file, const char *c, EnsightKeywords &keywords);
-	static void addCoordinates(const InputFilePack &file, const char *c, EnsightKeywords &keywords);
-	static void addElements(const InputFilePack &file, const char *c, EnsightKeywords &keywords, EnsightKeywords::Elements::Type type);
+	static void addPart(const FilePack &file, const char *c, EnsightKeywords &keywords);
+	static void addCoordinates(const FilePack &file, const char *c, EnsightKeywords &keywords);
+	static void addElements(const FilePack &file, const char *c, EnsightKeywords &keywords, EnsightKeywords::Elements::Type type);
 
 	static size_t skipCoordinates(const char *c);
 	static size_t skipElements(const char *c, int enodes);
 };
 
 struct EnsightBinaryVariableKeywordParser {
-	static void addPart(const InputFilePack &file, const char *c, EnsightKeywords &keywords);
-	static void addCoordinates(const InputFilePack &file, const char *c, EnsightKeywords &keywords);
-	static void addElements(const InputFilePack &file, const char *c, EnsightKeywords &keywords, EnsightKeywords::Elements::Type type);
+	static void addPart(const FilePack &file, const char *c, EnsightKeywords &keywords);
+	static void addCoordinates(const FilePack &file, const char *c, EnsightKeywords &keywords);
+	static void addElements(const FilePack &file, const char *c, EnsightKeywords &keywords, EnsightKeywords::Elements::Type type);
 
 	static size_t skipCoordinates(const char *c);
 	static size_t skipElements(const char *c, int enodes);

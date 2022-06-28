@@ -23,7 +23,7 @@ struct FileBlock {
 		}
 	}
 
-	FileBlock(const InputFilePack &file, size_t start, size_t size, size_t step, int rank)
+	FileBlock(const FilePack &file, size_t start, size_t size, size_t step, int rank)
 	: prevsize(0),
 	  size(0),
 	  nextsize(0),

@@ -55,17 +55,17 @@ void InputOpenFoam::load(const InputConfiguration &configuration)
 	asyncPack.setTotalSizes();
 	owner.input->setDistribution(tarray<size_t>::distribute(info::mpi::size, owner.input->totalSize));
 	neighbour.input->setDistribution(tarray<size_t>::distribute(info::mpi::size, neighbour.input->totalSize));
-	asyncPack.iread([&] () {
-		owner.scan(); neighbour.scan();
-		FoamFile::synchronize({ &owner, &neighbour });
-		owner.parse(mesh.elements->owner); neighbour.parse(mesh.elements->neighbor);
-		std::vector<std::string> info = Parser::split(owner.header.note, " ");
-		for (size_t i = 0; i < info.size(); ++i) {
-			if (StringCompare::caseSensitivePreffix("nCells", info[i])) {
-				mesh.elements->elements = std::strtol(Parser::split(info[i], ":")[1].c_str(), nullptr, 10);
-			}
-		}
-	});
+//	asyncPack.iread([&] () {
+//		owner.scan(); neighbour.scan();
+//		FoamFile::synchronize({ &owner, &neighbour });
+//		owner.parse(mesh.elements->owner); neighbour.parse(mesh.elements->neighbor);
+//		std::vector<std::string> info = Parser::split(owner.header.note, " ");
+//		for (size_t i = 0; i < info.size(); ++i) {
+//			if (StringCompare::caseSensitivePreffix("nCells", info[i])) {
+//				mesh.elements->elements = std::strtol(Parser::split(info[i], ":")[1].c_str(), nullptr, 10);
+//			}
+//		}
+//	});
 
 	points.parse(mesh.nodes->coordinates);
 	faces.parse(mesh.elements->etype, mesh.elements->enodes);

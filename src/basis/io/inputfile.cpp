@@ -13,9 +13,9 @@
 
 using namespace espreso;
 
-InputFile::InputFile()
+InputFile::InputFile(size_t overlap)
 : begin(nullptr), end(nullptr), hardend(nullptr),
-  overlap(0), totalSize(0), name{},
+  overlap(overlap), totalSize(0), name{},
   maxchunk(0), loader(nullptr)
 {
 
@@ -54,13 +54,13 @@ void InputFile::setDistribution(const std::vector<size_t> &distribution)
 }
 
 FilePack::FilePack(size_t minchunk, size_t overlap)
-: minchunk(minchunk), overlap(overlap), fileindex(-1)
+: InputFile(overlap), minchunk(minchunk), fileindex(-1)
 {
 
 }
 
 FilePack::FilePack(const std::vector<std::string> &filepaths, size_t minchunk, size_t overlap)
-: minchunk(minchunk), overlap(overlap), fileindex(-1)
+: InputFile(overlap), minchunk(minchunk), fileindex(-1)
 {
 	for (size_t i = 0; i < filepaths.size(); ++i) {
 		files.push_back(new InputFile(filepaths[i], overlap));
@@ -328,10 +328,12 @@ AsyncFilePack::AsyncFilePack(const std::vector<std::string> &filepaths, size_t o
 
 }
 
-void AsyncFilePack::iread(std::function<void(void)> callback)
+void AsyncFilePack::iread()
 {
-	this->callback = callback;
+	setTotalSizes();
 	while (next()) {
+		setDistribution(tarray<size_t>::distribute(info::mpi::size, totalSize, minchunk));
+
 		size_t chunkoffset = distribution[info::mpi::rank];
 		size_t chunksize = distribution[std::min(info::mpi::rank + MPITools::subset->within.size, info::mpi::size)] - chunkoffset;
 		size_t chunkmax = INT32_MAX;
@@ -382,9 +384,6 @@ void AsyncFilePack::wait()
 			memcpy(data.data() + data.size() - overlap, rBuffer.data() + fileindex * overlap, overlap);
 		}
 	}
-
-	callback();
-	callback = [] () {};
 }
 
 void Metadata::read()

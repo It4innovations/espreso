@@ -12,15 +12,15 @@ struct OrderedMeshDatabase;
 
 class EnsightVariables {
 public:
-	EnsightVariables(const EnsightCasefile &casefile, const EnsightGeometry &geofile, InputFilePack &variables);
+	EnsightVariables(const EnsightCasefile &casefile, const EnsightGeometry &geofile, AsyncFilePack &variables);
 
 	void scan();
-	void parse();
+	void parse(Mesh &mesh);
 
 protected:
 	const EnsightCasefile &_casefile;
 	const EnsightGeometry &_geofile;
-	InputFilePack &_variables;
+	AsyncFilePack &_variables;
 
 	EnsightKeywords _keywords;
 };

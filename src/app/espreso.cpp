@@ -18,6 +18,8 @@
 #include "config/reader/reader.h"
 #include "config/configuration.h"
 #include "mesh/mesh.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/elementstore.h"
 #include "output/output.h"
 #include "physics/physicalsolver.h"
 
@@ -89,7 +91,7 @@ int main(int argc, char **argv)
 	profiler::syncend("mesh_output");
 
 	if (Mesh::convertDatabase()) {
-		if (info::ecf->output.store_decomposition > 1) {
+		if (info::mesh->nodes->data.size() || info::mesh->elements->data.size()) {
 			info::mesh->output->updateMonitors();
 			info::mesh->output->updateSolution();
 		}

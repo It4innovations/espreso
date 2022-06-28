@@ -3,7 +3,7 @@
 
 using namespace espreso;
 
-void EnsightASCIIGeometryKeywordParser::addPart(const InputFilePack &file, const char *c, EnsightKeywords &keywords)
+void EnsightASCIIGeometryKeywordParser::addPart(const FilePack &file, const char *c, EnsightKeywords &keywords)
 {
 	while (*c++ != '\n');
 	int number = std::atof(c);
@@ -11,14 +11,14 @@ void EnsightASCIIGeometryKeywordParser::addPart(const InputFilePack &file, const
 	keywords.parts.push_back(EnsightKeywords::Part(file.fileindex, file.distribution[info::mpi::rank] + (c - file.begin), number, c));
 }
 
-void EnsightBinaryGeometryKeywordParser::addPart(const InputFilePack &file, const char *c, EnsightKeywords &keywords)
+void EnsightBinaryGeometryKeywordParser::addPart(const FilePack &file, const char *c, EnsightKeywords &keywords)
 {
 	int number;
 	memcpy(&number, c + 80, sizeof(int));
 	keywords.parts.push_back(EnsightKeywords::Part(file.fileindex, file.distribution[info::mpi::rank] + (c - file.begin), number, c + 84));
 }
 
-void EnsightASCIIVariableKeywordParser::addPart(const InputFilePack &file, const char *c, EnsightKeywords &keywords)
+void EnsightASCIIVariableKeywordParser::addPart(const FilePack &file, const char *c, EnsightKeywords &keywords)
 {
 	const char *_c = c;
 	while (*c++ != '\n');
@@ -27,7 +27,7 @@ void EnsightASCIIVariableKeywordParser::addPart(const InputFilePack &file, const
 	keywords.parts.push_back(EnsightKeywords::Part(file.fileindex, file.distribution[info::mpi::rank] + (c - file.begin), number, _c));
 }
 
-void EnsightBinaryVariableKeywordParser::addPart(const InputFilePack &file, const char *c, EnsightKeywords &keywords)
+void EnsightBinaryVariableKeywordParser::addPart(const FilePack &file, const char *c, EnsightKeywords &keywords)
 {
 	int number;
 	memcpy(&number, c + 80, sizeof(int));
@@ -35,7 +35,7 @@ void EnsightBinaryVariableKeywordParser::addPart(const InputFilePack &file, cons
 }
 
 
-void EnsightASCIIGeometryKeywordParser::addCoordinates(const InputFilePack &file, const char *c, EnsightKeywords &keywords)
+void EnsightASCIIGeometryKeywordParser::addCoordinates(const FilePack &file, const char *c, EnsightKeywords &keywords)
 {
 	while (*c++ != '\n');
 	int count = atof(c);
@@ -50,7 +50,7 @@ size_t EnsightASCIIGeometryKeywordParser::skipCoordinates(const char *c)
 	return 13 * 3 * count;
 }
 
-void EnsightBinaryGeometryKeywordParser::addCoordinates(const InputFilePack &file, const char *c, EnsightKeywords &keywords)
+void EnsightBinaryGeometryKeywordParser::addCoordinates(const FilePack &file, const char *c, EnsightKeywords &keywords)
 {
 	int count;
 	memcpy(&count, c + 80, sizeof(int));
@@ -64,7 +64,7 @@ size_t EnsightBinaryGeometryKeywordParser::skipCoordinates(const char *c)
 	return count * 3 * sizeof(float);
 }
 
-void EnsightASCIIVariableKeywordParser::addCoordinates(const InputFilePack &file, const char *c, EnsightKeywords &keywords)
+void EnsightASCIIVariableKeywordParser::addCoordinates(const FilePack &file, const char *c, EnsightKeywords &keywords)
 {
 	// we need to get count from geometry file
 	while (*c++ != '\n');
@@ -76,7 +76,7 @@ size_t EnsightASCIIVariableKeywordParser::skipCoordinates(const char *c)
 	return 0;
 }
 
-void EnsightBinaryVariableKeywordParser::addCoordinates(const InputFilePack &file, const char *c, EnsightKeywords &keywords)
+void EnsightBinaryVariableKeywordParser::addCoordinates(const FilePack &file, const char *c, EnsightKeywords &keywords)
 {
 	keywords.coordinates.push_back(EnsightKeywords::Coordinates(file.fileindex, file.distribution[info::mpi::rank] + (c - file.begin) + 80, -1));
 }
@@ -87,7 +87,7 @@ size_t EnsightBinaryVariableKeywordParser::skipCoordinates(const char *c)
 }
 
 
-void EnsightASCIIGeometryKeywordParser::addElements(const InputFilePack &file, const char *c, EnsightKeywords &keywords, EnsightKeywords::Elements::Type type)
+void EnsightASCIIGeometryKeywordParser::addElements(const FilePack &file, const char *c, EnsightKeywords &keywords, EnsightKeywords::Elements::Type type)
 {
 	while (*c++ != '\n');
 	int nn = atof(c);
@@ -102,7 +102,7 @@ size_t EnsightASCIIGeometryKeywordParser::skipElements(const char *c, int enodes
 	return (enodes * 10 + 1) * nn;
 }
 
-void EnsightBinaryGeometryKeywordParser::addElements(const InputFilePack &file, const char *c, EnsightKeywords &keywords, EnsightKeywords::Elements::Type type)
+void EnsightBinaryGeometryKeywordParser::addElements(const FilePack &file, const char *c, EnsightKeywords &keywords, EnsightKeywords::Elements::Type type)
 {
 	int nn;
 	memcpy(&nn, c + 80, sizeof(int));
@@ -115,7 +115,7 @@ size_t EnsightBinaryGeometryKeywordParser::skipElements(const char *c, int enode
 	return enodes * nn * sizeof(int);
 }
 
-void EnsightASCIIVariableKeywordParser::addElements(const InputFilePack &file, const char *c, EnsightKeywords &keywords, EnsightKeywords::Elements::Type type)
+void EnsightASCIIVariableKeywordParser::addElements(const FilePack &file, const char *c, EnsightKeywords &keywords, EnsightKeywords::Elements::Type type)
 {
 	while (*c++ != '\n');
 	keywords.elements.push_back(EnsightKeywords::Elements(file.fileindex, file.distribution[info::mpi::rank] + (c - file.begin), type, -1));
@@ -126,7 +126,7 @@ size_t EnsightASCIIVariableKeywordParser::skipElements(const char *c, int enodes
 	return 0;
 }
 
-void EnsightBinaryVariableKeywordParser::addElements(const InputFilePack &file, const char *c, EnsightKeywords &keywords, EnsightKeywords::Elements::Type type)
+void EnsightBinaryVariableKeywordParser::addElements(const FilePack &file, const char *c, EnsightKeywords &keywords, EnsightKeywords::Elements::Type type)
 {
 	keywords.elements.push_back(EnsightKeywords::Elements(file.fileindex, file.distribution[info::mpi::rank] + (c - file.begin) + 80, type, -1));
 }
