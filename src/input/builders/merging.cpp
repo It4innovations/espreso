@@ -350,6 +350,7 @@ void searchDuplicatedElements(const TemporalSequentialMesh<MergedNodes, Clustere
 
 		prepared.nodes->offsets.swap(merged.nodes->offsets);
 		prepared.nodes->coordinates.swap(merged.nodes->coordinates);
+		prepared.nodes->duplication.swap(merged.nodes->duplication);
 
 		for (size_t n = 0, offset = 0; n < usedNodes.size(); ++n) {
 			if (usedNodes[n] == (esint)n) {
@@ -462,7 +463,7 @@ void searchDuplicatedElements(const TemporalSequentialMesh<MergedNodes, Clustere
 		prepared.elements->enodes.resize(enodes);
 	}
 
-	utils::clearVectors(merged.nodes->coordinates, merged.nodes->duplication, merged.nodes->offsets);
+	utils::clearVectors(merged.nodes->coordinates, merged.nodes->offsets);
 	utils::clearVectors(merged.elements->etype, merged.elements->enodes, merged.elements->edist, merged.elements->offsets);
 }
 
@@ -738,6 +739,7 @@ void searchParentAndDuplicatedElements(const TemporalMesh<LinkedNodes, Clustered
 		prepared.nodes->coordinates.swap(linked.nodes->coordinates);
 		prepared.nodes->rankDistribution.swap(linked.nodes->rankDistribution);
 		prepared.nodes->rankData.swap(linked.nodes->rankData);
+		prepared.nodes->duplication.swap(linked.nodes->duplication);
 
 		std::vector<esint> usedNode(prepared.nodes->offsets.size() + 1);
 		for (size_t n = 0; n < prepared.elements->enodes.size(); ++n) {
@@ -809,7 +811,7 @@ void searchParentAndDuplicatedElements(const TemporalMesh<LinkedNodes, Clustered
 			}
 		}
 	}
-	utils::clearVectors(linked.nodes->coordinates, linked.nodes->offsets, linked.nodes->duplication, linked.nodes->rankData, linked.nodes->rankDistribution, linked.nodes->neighbors);
+	utils::clearVectors(linked.nodes->coordinates, linked.nodes->offsets, linked.nodes->rankData, linked.nodes->rankDistribution, linked.nodes->neighbors);
 	utils::clearVectors(linked.elements->offsets, linked.elements->etype, linked.elements->enodes, linked.elements->edist);
 }
 

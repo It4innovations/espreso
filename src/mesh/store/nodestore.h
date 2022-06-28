@@ -44,6 +44,7 @@ struct NodeStore {
 	serializededata<esint, esint>* IDs;
 	serializededata<esint, esint>* elements;
 
+	serializededata<esint, esint>* outputOffset; // offset from/to the database
 	serializededata<esint, Point>* originCoordinates;
 	serializededata<esint, Point>* coordinates;
 	serializededata<esint, int>* ranks;

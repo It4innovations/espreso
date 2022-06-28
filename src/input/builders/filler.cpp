@@ -2,6 +2,7 @@
 #include "builder.utils.h"
 
 #include "basis/containers/serializededata.h"
+#include "basis/utilities/utils.h"
 #include "esinfo/envinfo.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
@@ -15,6 +16,43 @@
 namespace espreso {
 namespace builder {
 
+static serializededata<esint, esint>* outputOffset(const std::vector<DataDuplication> &duplication, const serializededata<esint, esint> *offset)
+{
+	size_t threads = info::env::OMP_NUM_THREADS;
+
+	std::vector<std::vector<esint> > odist(threads), odata(threads);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; ++t) {
+		std::vector<esint> tdist, tdata;
+		if (t == 0) {
+			tdist.push_back(0);
+		}
+		auto dup = std::lower_bound(duplication.begin(), duplication.end(), DataDuplication{-1, *offset->datatarray().cbegin(t)});
+		for (auto IDs = offset->datatarray().cbegin(t); IDs != offset->datatarray().cend(t); ++IDs) {
+			while (dup != duplication.end() && dup->origin < *IDs) {
+				++dup; // skip removed nodes
+			}
+			bool pushOrigin = true;
+			while (dup != duplication.end() && dup->origin == *IDs) {
+				if (dup->duplicate > dup->origin) {
+					tdata.push_back(dup->origin);
+					pushOrigin = false;
+				}
+				tdata.push_back(dup->duplicate);
+				++dup;
+			}
+			if (pushOrigin) {
+				tdata.push_back(*IDs);
+			}
+			tdist.push_back(tdata.size());
+		}
+		odist[t].swap(tdist);
+		odata[t].swap(tdata);
+	}
+	utils::threadDistributionToFullDistribution(odist);
+	return new serializededata<esint, esint>(odist, odata);
+}
+
 void fillNodes(const MergedNodes *nodes, OrderedRegions &regions, Mesh &mesh)
 {
 	size_t threads = info::env::OMP_NUM_THREADS;
@@ -24,6 +62,7 @@ void fillNodes(const MergedNodes *nodes, OrderedRegions &regions, Mesh &mesh)
 
 	mesh.nodes->IDs = new serializededata<esint, esint>(1, tarray<esint>(mesh.nodes->distribution, nodes->offsets.begin(), nodes->offsets.end()));
 	mesh.nodes->coordinates = new serializededata<esint, Point >(1, tarray<Point>(mesh.nodes->distribution, nodes->coordinates.cbegin(), nodes->coordinates.cend()));
+	mesh.nodes->outputOffset = outputOffset(nodes->duplication, mesh.nodes->IDs);
 
 	mesh.boundaryRegions.push_back(new BoundaryRegionStore("ALL_NODES"));
 	mesh.boundaryRegions.back()->nodes = new serializededata<esint, esint>(1, tarray<esint>(threads, mesh.nodes->size));
@@ -90,6 +129,7 @@ void fillElements(const MergedElements *elements, OrderedRegions &regions, Mesh 
 	mesh.elements->offset = new serializededata<esint, esint>(1, toffset);
 	mesh.elements->nodes = new serializededata<esint, esint>(tedist, tnodes);
 	mesh.elements->epointers = new serializededata<esint, Element*>(1, epointers);
+	mesh.elements->outputOffset = outputOffset(elements->duplication, mesh.elements->offset);
 
 	mesh.elementsRegions.push_back(new ElementsRegionStore("ALL_ELEMENTS"));
 	mesh.elementsRegions.back()->elements = new serializededata<esint, esint>(1, tarray<esint>(threads, esize));

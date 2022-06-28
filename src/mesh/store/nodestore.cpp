@@ -19,6 +19,7 @@ NodeStore::NodeStore()
   distribution({0, 0}),
   IDs(NULL),
   elements(NULL),
+  outputOffset(NULL),
   originCoordinates(NULL),
   coordinates(NULL),
   ranks(NULL),
@@ -41,6 +42,7 @@ size_t NodeStore::packedFullSize() const
 
 	packedSize += utils::packedSize(IDs);
 	packedSize += utils::packedSize(elements);
+	packedSize += utils::packedSize(outputOffset);
 	packedSize += utils::packedSize(originCoordinates);
 	packedSize += utils::packedSize(coordinates);
 	packedSize += utils::packedSize(ranks);
@@ -66,6 +68,7 @@ void NodeStore::packFull(char* &p) const
 
 	utils::pack(IDs, p);
 	utils::pack(elements, p);
+	utils::pack(outputOffset, p);
 	utils::pack(originCoordinates, p);
 	utils::pack(coordinates, p);
 	utils::pack(ranks, p);
@@ -89,6 +92,7 @@ void NodeStore::unpackFull(const char* &p)
 
 	utils::unpack(IDs, p);
 	utils::unpack(elements, p);
+	utils::unpack(outputOffset, p);
 	utils::unpack(originCoordinates, p);
 	utils::unpack(coordinates, p);
 	utils::unpack(ranks, p);
@@ -223,6 +227,7 @@ NodeStore::~NodeStore()
 	if (IDs != NULL) { delete IDs; }
 	if (elements != NULL) { delete elements; }
 
+	if (outputOffset != NULL) { delete outputOffset; }
 	if (originCoordinates != NULL) { delete originCoordinates; }
 	if (coordinates != NULL) { delete coordinates; }
 	if (ranks != NULL) { delete ranks; }
@@ -252,6 +257,7 @@ void NodeStore::permute(const std::vector<esint> &permutation, const std::vector
 	if (IDs != NULL) { IDs->permute(permutation, distribution); }
 	if (elements != NULL) { elements->permute(permutation, distribution); }
 
+	if (outputOffset != NULL) { outputOffset->permute(permutation, distribution); }
 	if (originCoordinates != NULL) { originCoordinates->permute(permutation, distribution); }
 	if (coordinates != NULL) { coordinates->permute(permutation, distribution); }
 	if (ranks != NULL) { ranks->permute(permutation, distribution); }
