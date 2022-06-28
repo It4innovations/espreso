@@ -15,6 +15,7 @@ using namespace espreso;
 
 ElementStore::ElementStore()
 : offset(NULL),
+  outputOffset(NULL),
   nodes(NULL),
   centers(NULL),
 
@@ -43,6 +44,7 @@ size_t ElementStore::packedFullSize() const
 	packedSize += utils::packedSize(distribution.code);
 
 	packedSize += utils::packedSize(offset);
+	packedSize += utils::packedSize(outputOffset);
 	packedSize += utils::packedSize(nodes);
 	packedSize += utils::packedSize(centers);
 	packedSize += utils::packedSize(body);
@@ -77,6 +79,7 @@ void ElementStore::packFull(char* &p) const
 	utils::pack(distribution.code, p);
 
 	utils::pack(offset, p);
+	utils::pack(outputOffset, p);
 	utils::pack(nodes, p);
 	utils::pack(centers, p);
 	utils::pack(body, p);
@@ -114,6 +117,7 @@ void ElementStore::unpackFull(const char* &p)
 	utils::unpack(distribution.code, p);
 
 	utils::unpack(offset, p);
+	utils::unpack(outputOffset, p);
 	utils::unpack(nodes, p);
 	utils::unpack(centers, p);
 	utils::unpack(body, p);
@@ -281,6 +285,7 @@ void ElementStore::unpackData(const char* &p)
 ElementStore::~ElementStore()
 {
 	if (offset != NULL) { delete offset; }
+	if (outputOffset != NULL) { delete outputOffset; }
 	if (nodes != NULL) { delete nodes; }
 	if (centers != NULL) { delete centers; }
 
@@ -307,6 +312,7 @@ void ElementStore::store(const std::string &file)
 	std::ofstream os(file + std::to_string(info::mpi::rank) + ".txt");
 
 	Store::storedata(os, "offset", offset);
+	Store::storedata(os, "outputOffset", outputOffset);
 	Store::storedata(os, "nodes", nodes);
 	Store::storedata(os, "centers", centers);
 
@@ -323,6 +329,7 @@ void ElementStore::permute(const std::vector<esint> &permutation, const std::vec
 	distribution.threads = threading;
 
 	if (offset != NULL) { offset->permute(permutation, threading); }
+	if (outputOffset != NULL) { outputOffset->permute(permutation, threading); }
 	if (nodes != NULL) { nodes->permute(permutation, threading); }
 	if (centers != NULL) { centers->permute(permutation, threading); }
 

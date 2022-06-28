@@ -39,6 +39,7 @@ struct ElementStore {
 	ElementsDistributionInfo distribution;
 
 	serializededata<esint, esint>* offset;
+	serializededata<esint, esint>* outputOffset; // offset from/to the database
 	serializededata<esint, esint>* nodes;
 	serializededata<esint, Point>* centers;
 
