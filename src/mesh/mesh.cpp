@@ -463,7 +463,7 @@ void Mesh::reclusterize()
 		profiler::synccheckpoint("reclusterize");
 	}
 
-	esint minsize = elements->IDs->datatarray().size();
+	esint minsize = elements->offset->datatarray().size();
 	Communication::allReduce(&minsize, NULL, 1, MPITools::getType<esint>().mpitype, MPI_MIN);
 	if (minsize == 0) {
 		eslog::globalerror("ESPRESO quit computation: process without any elements detected.\n");

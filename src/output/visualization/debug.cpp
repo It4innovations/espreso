@@ -249,7 +249,7 @@ void DebugOutput::faceNeighbors()
 	output._writer.groupData();
 
 	esint esize = 0, gesize;
-	auto id = output._mesh.elements->IDs->begin();
+	auto id = output._mesh.elements->offset->begin();
 	for (auto neigh = output._mesh.elements->faceNeighbors->begin(); neigh != output._mesh.elements->faceNeighbors->end(); ++neigh, ++id) {
 		for (auto n = neigh->begin(); n != neigh->end(); ++n) {
 			if (id->front() < *n) {
@@ -263,7 +263,7 @@ void DebugOutput::faceNeighbors()
 		output._writer.cells(gesize, gesize + 2 * gesize);
 	}
 
-	id = output._mesh.elements->IDs->begin();
+	id = output._mesh.elements->offset->begin();
 	for (auto neigh = output._mesh.elements->faceNeighbors->begin(); neigh != output._mesh.elements->faceNeighbors->end(); ++neigh, ++id) {
 		for (auto n = neigh->begin(); n != neigh->end(); ++n) {
 			if (id->front() < *n) {
@@ -277,7 +277,7 @@ void DebugOutput::faceNeighbors()
 	if (Visualization::isRoot()) {
 		output._writer.celltypes(gesize);
 	}
-	id = output._mesh.elements->IDs->begin();
+	id = output._mesh.elements->offset->begin();
 	for (auto neigh = output._mesh.elements->faceNeighbors->begin(); neigh != output._mesh.elements->faceNeighbors->end(); ++neigh, ++id) {
 		for (auto n = neigh->begin(); n != neigh->end(); ++n) {
 			if (id->front() < *n) {
@@ -316,7 +316,7 @@ void DebugOutput::meshDual(std::vector<esint> &frames, std::vector<esint> &neigh
 	output._writer.groupData();
 
 	esint esize = 0, gesize;
-	auto id = output._mesh.elements->IDs->begin();
+	auto id = output._mesh.elements->offset->begin();
 	for (size_t e = 0; e < frames.size() - 1; ++e, ++id) {
 		for (auto n = frames[e]; n != frames[e + 1]; ++n) {
 			if (id->front() < neighbors[n]) {
@@ -330,7 +330,7 @@ void DebugOutput::meshDual(std::vector<esint> &frames, std::vector<esint> &neigh
 		output._writer.cells(gesize, gesize + 2 * gesize);
 	}
 
-	id = output._mesh.elements->IDs->begin();
+	id = output._mesh.elements->offset->begin();
 	for (size_t e = 0; e < frames.size() - 1; ++e, ++id) {
 		for (auto n = frames[e]; n != frames[e + 1]; ++n) {
 			if (id->front() < neighbors[n]) {
@@ -344,7 +344,7 @@ void DebugOutput::meshDual(std::vector<esint> &frames, std::vector<esint> &neigh
 	if (Visualization::isRoot()) {
 		output._writer.celltypes(gesize);
 	}
-	id = output._mesh.elements->IDs->begin();
+	id = output._mesh.elements->offset->begin();
 	for (size_t e = 0; e < frames.size() - 1; ++e, ++id) {
 		for (auto n = frames[e]; n != frames[e + 1]; ++n) {
 			if (id->front() < neighbors[n]) {

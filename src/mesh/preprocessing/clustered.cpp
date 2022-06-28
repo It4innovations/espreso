@@ -159,7 +159,7 @@ ElementStore* exchangeHalo(ElementStore *elements, NodeStore *nodes, std::vector
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		const auto &IDs = elements->IDs->datatarray();
+		const auto &IDs = elements->offset->datatarray();
 		const auto &body = elements->body->datatarray();
 		const auto &material = elements->material->datatarray();
 		const auto &epointer = elements->epointers->datatarray();
@@ -201,16 +201,16 @@ ElementStore* exchangeHalo(ElementStore *elements, NodeStore *nodes, std::vector
 	}
 
 	ElementStore *halo = new ElementStore();
-	halo->IDs = new serializededata<esint, esint>(1, hid);
+	halo->offset = new serializededata<esint, esint>(1, hid);
 	halo->body = new serializededata<esint, int>(1, hbody);
 	halo->material = new serializededata<esint, int>(1, hmaterial);
 	halo->epointers = new serializededata<esint, Element*>(1, hcode);
 	halo->regions = new serializededata<esint, esint>(rsize, hregions);
 
-	halo->distribution.process.size = halo->IDs->datatarray().size();
-	halo->distribution.threads = halo->IDs->datatarray().distribution();
+	halo->distribution.process.size = halo->offset->datatarray().size();
+	halo->distribution.threads = halo->offset->datatarray().distribution();
 
-	const auto &hIDs = halo->IDs->datatarray();
+	const auto &hIDs = halo->offset->datatarray();
 	std::vector<esint> permutation(hIDs.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
 	std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) { return hIDs[i] < hIDs[j]; });
@@ -319,7 +319,7 @@ void computeRegionsBoundaryElementsFromNodes(const NodeStore *nodes, const Eleme
 										addFace();
 									}
 								} else {
-									neighbor = std::lower_bound(halo->IDs->datatarray().begin(), halo->IDs->datatarray().end(), neighbor) - halo->IDs->datatarray().begin();
+									neighbor = std::lower_bound(halo->offset->datatarray().begin(), halo->offset->datatarray().end(), neighbor) - halo->offset->datatarray().begin();
 									if (memcmp(regions.data() + element * rsize, halo->regions->datatarray().data() + neighbor * rsize, sizeof(esint) * rsize) != 0) {
 										addFace();
 									}
@@ -1281,7 +1281,7 @@ void computeRegionsSurface(ElementStore *elements, NodeStore *nodes, ElementStor
 				for (size_t n = 0; n < neighs->size(); ++n) {
 					if (neighs->at(n) != -1 && r) {
 						if (neighs->at(n) < eBegin || eEnd <= neighs->at(n)) {
-							hindex = std::lower_bound(halo->IDs->datatarray().begin(), halo->IDs->datatarray().end(), neighs->at(n)) - halo->IDs->datatarray().begin();
+							hindex = std::lower_bound(halo->offset->datatarray().begin(), halo->offset->datatarray().end(), neighs->at(n)) - halo->offset->datatarray().begin();
 							addFace = memcmp(regions.data() + *e * rsize, halo->regions->datatarray().data() + hindex * rsize, sizeof(esint) * rsize);
 						} else {
 							addFace = memcmp(regions.data() + *e * rsize, regions.data() + (neighs->at(n) - eBegin) * rsize, sizeof(esint) * rsize);

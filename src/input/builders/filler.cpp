@@ -61,14 +61,14 @@ void fillElements(const MergedElements *elements, OrderedRegions &regions, Mesh 
 	esint totalSize = Communication::exscan(eoffset);
 	std::vector<size_t> edistribution = tarray<size_t>::distribute(threads, esize);
 
-	std::vector<std::vector<esint> > tedist(threads), tnodes(threads), eIDs(threads);
+	std::vector<std::vector<esint> > tedist(threads), tnodes(threads), toffset(threads);
 	std::vector<std::vector<Element*> > epointers(threads);
 
 	esize = 0;
 	tedist.front().push_back(0);
 	for (size_t e = 0, t = 0; e < elements->etype.size(); ++e) {
 		if (Mesh::element(elements->etype[e]).dimension == mesh.dimension) {
-			eIDs[t].push_back(eoffset + esize); // = elements->offsets[e]
+			toffset[t].push_back(eoffset + esize); // = elements->offsets[e]
 			for (esint n = 0; n < Mesh::element(elements->etype[e]).nodes; ++n) {
 				tnodes[t].push_back(elements->enodes[elements->edist[e] + n]);
 			}
@@ -87,7 +87,7 @@ void fillElements(const MergedElements *elements, OrderedRegions &regions, Mesh 
 	mesh.elements->distribution.process.size = esize;
 	mesh.elements->distribution.process.totalSize = totalSize;
 	mesh.elements->distribution.threads = edistribution;
-	mesh.elements->IDs = new serializededata<esint, esint>(1, eIDs);
+	mesh.elements->offset = new serializededata<esint, esint>(1, toffset);
 	mesh.elements->nodes = new serializededata<esint, esint>(tedist, tnodes);
 	mesh.elements->epointers = new serializededata<esint, Element*>(1, epointers);
 

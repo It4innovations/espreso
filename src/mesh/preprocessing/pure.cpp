@@ -72,7 +72,7 @@ void computeNodesDuplication(NodeStore *nodes, std::vector<int> &neighborsWithMe
 
 void linkNodesAndElements(ElementStore *elements, NodeStore *nodes, const std::vector<int> &neighbors)
 {
-	linkNodesAndElements(nodes, neighbors, nodes->elements, elements->nodes, elements->IDs, true);
+	linkNodesAndElements(nodes, neighbors, nodes->elements, elements->nodes, elements->offset, true);
 }
 
 void linkNodesAndElements(
@@ -244,7 +244,7 @@ void computeElementsFaceNeighbors(NodeStore *nodes, ElementStore *elements, cons
 			nodes->elements,
 			elements->faceNeighbors,
 			elements->nodes,
-			elements->IDs,
+			elements->offset,
 			elements->epointers,
 			[] (Element *e) { return e->faces; },
 			false, // there are max 1 neighbor
@@ -261,7 +261,7 @@ void computeElementsEdgeNeighbors(NodeStore *nodes, ElementStore *elements, cons
 			nodes->elements,
 			elements->edgeNeighbors,
 			elements->nodes,
-			elements->IDs,
+			elements->offset,
 			elements->epointers,
 			[] (Element *e) { return e->edges; },
 			true, // we need to know the number of neighbors
@@ -725,8 +725,8 @@ int getStronglyConnectedComponents(const ElementStore *elements, std::vector<int
 	component.clear();
 	component.resize(elements->faceNeighbors->structures(), -1);
 	int nextID = 0;
-	esint ebegin = elements->IDs->datatarray().front();
-	esint eend = elements->IDs->datatarray().back();
+	esint ebegin = elements->offset->datatarray().front();
+	esint eend = elements->offset->datatarray().back();
 	for (size_t e = 0; e < component.size(); ++e) {
 		std::vector<esint> stack;
 		if (component[e] == -1) {
@@ -851,7 +851,7 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 
 			std::vector<int> ttt;
 			std::vector<bool> tflags(info::mpi::size, false);
-			for (size_t e = elements->IDs->datatarray().distribution()[t]; e < elements->IDs->datatarray().distribution()[t + 1]; ++e) {
+			for (size_t e = elements->offset->datatarray().distribution()[t]; e < elements->offset->datatarray().distribution()[t + 1]; ++e) {
 				if (partition[e] != info::mpi::rank) {
 					tflags[partition[e]] = true;
 				}
@@ -921,15 +921,15 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 
 	// Step 1: Serialize element data
 
-	std::vector<esint> regionElementMask(elements->IDs->datatarray().size() * eregionsBitMaskSize);
+	std::vector<esint> regionElementMask(elements->offset->datatarray().size() * eregionsBitMaskSize);
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		esint maskOffset = 0;
 		for (size_t r = 0; r < elementsRegions.size(); r++) {
 			maskOffset = r / (8 * sizeof(esint));
 			esint bit = (esint)1 << (r % (8 * sizeof(esint)));
-			auto begin = std::lower_bound(elementsRegions[r]->elements->datatarray().begin(), elementsRegions[r]->elements->datatarray().end(), elements->IDs->datatarray().distribution()[t]);
-			auto end = std::lower_bound(elementsRegions[r]->elements->datatarray().begin(), elementsRegions[r]->elements->datatarray().end(), elements->IDs->datatarray().distribution()[t + 1]);
+			auto begin = std::lower_bound(elementsRegions[r]->elements->datatarray().begin(), elementsRegions[r]->elements->datatarray().end(), elements->offset->datatarray().distribution()[t]);
+			auto end = std::lower_bound(elementsRegions[r]->elements->datatarray().begin(), elementsRegions[r]->elements->datatarray().end(), elements->offset->datatarray().distribution()[t + 1]);
 			for (auto i = begin; i != end; ++i) {
 				regionElementMask[*i * eregionsBitMaskSize + maskOffset] |= bit;
 			}
@@ -938,7 +938,7 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto IDs = elements->IDs->datatarray().data();
+		auto IDs = elements->offset->datatarray().data();
 		auto body = elements->body->datatarray().data();
 		auto material = elements->material->datatarray().data();
 		auto epointer = elements->epointers->datatarray().data();
@@ -963,16 +963,16 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 		}
 
 		// estimation
-		telemsIDs.reserve(1.5 * elements->IDs->datatarray().size() / threads);
-		telemsBody.reserve(1.5 * elements->IDs->datatarray().size() / threads);
-		telemsMaterial.reserve(1.5 * elements->IDs->datatarray().size() / threads);
-		telemsEpointer.reserve(1.5 * elements->IDs->datatarray().size() / threads);
-		telemsNodesDistribution.reserve(1.5 * elements->IDs->datatarray().size() / threads);
-		telemsNeighborsDistribution.reserve(1.5 * elements->IDs->datatarray().size() / threads);
-		telemsRegions.reserve(1.5 * elements->IDs->datatarray().size() / threads);
+		telemsIDs.reserve(1.5 * elements->offset->datatarray().size() / threads);
+		telemsBody.reserve(1.5 * elements->offset->datatarray().size() / threads);
+		telemsMaterial.reserve(1.5 * elements->offset->datatarray().size() / threads);
+		telemsEpointer.reserve(1.5 * elements->offset->datatarray().size() / threads);
+		telemsNodesDistribution.reserve(1.5 * elements->offset->datatarray().size() / threads);
+		telemsNeighborsDistribution.reserve(1.5 * elements->offset->datatarray().size() / threads);
+		telemsRegions.reserve(1.5 * elements->offset->datatarray().size() / threads);
 
 		size_t target;
-		for (size_t e = elements->IDs->datatarray().distribution()[t]; e < elements->IDs->datatarray().distribution()[t + 1]; ++e, ++enodes, ++eneighbors) {
+		for (size_t e = elements->offset->datatarray().distribution()[t]; e < elements->offset->datatarray().distribution()[t + 1]; ++e, ++enodes, ++eneighbors) {
 			if (partition[e] == info::mpi::rank) {
 				telemsIDs.push_back(IDs[e]);
 				telemsBody.push_back(body[e]);
@@ -1033,8 +1033,8 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 		}
 	}
 
-	esint eBegin = Communication::getDistribution(elements->IDs->datatarray().size())[info::mpi::rank];
-	esint eEnd = eBegin + elements->IDs->datatarray().size();
+	esint eBegin = Communication::getDistribution(elements->offset->datatarray().size())[info::mpi::rank];
+	esint eEnd = eBegin + elements->offset->datatarray().size();
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
@@ -1432,7 +1432,7 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 		elemDistribution[t] = elemDistribution[t - 1] + elemsIDs[t - 1].size();
 	}
 
-	newElements->IDs = new serializededata<esint, esint>(1, elemsIDs);
+	newElements->offset = new serializededata<esint, esint>(1, elemsIDs);
 	newElements->body = new serializededata<esint, int>(1, elemsBody);
 	newElements->material = new serializededata<esint, int>(1, elemsMaterial);
 	newElements->epointers = new serializededata<esint, Element*>(1, elemsEpointer);
@@ -1442,8 +1442,8 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 
 	newElements->faceNeighbors = new serializededata<esint, esint>(elemsNeighborsDistribution, elemsNeighborsData);
 
-	newElements->distribution.process.size = newElements->IDs->structures();
-	newElements->distribution.threads = newElements->IDs->datatarray().distribution();
+	newElements->distribution.process.size = newElements->offset->structures();
+	newElements->distribution.threads = newElements->offset->datatarray().distribution();
 
 	// Step 5: Balance node data to threads
 	std::vector<size_t> nodeDistribution(threads);
@@ -1799,7 +1799,7 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 
 	newNodes->ranks = new serializededata<esint, int>(rankBoundaries, rankData);
 
-	std::iota(newElements->IDs->datatarray().begin(), newElements->IDs->datatarray().end(), eIDsNEW[info::mpi::rank]);
+	std::iota(newElements->offset->datatarray().begin(), newElements->offset->datatarray().end(), eIDsNEW[info::mpi::rank]);
 	newElements->distribution.process.offset = eIDsNEW[info::mpi::rank];
 	newElements->distribution.process.totalSize = elements->distribution.process.totalSize;
 	std::swap(elements, newElements);

@@ -56,7 +56,7 @@ void FacesEdgesUniformDistributedComposer::_initDOFMap()
 	#pragma omp parallel for
 	for (int t = 0; t < threads; t++) {
 		esint dsize = 0;
-		auto eID = info::mesh->elements->IDs->datatarray().cbegin(t);
+		auto eID = info::mesh->elements->offset->datatarray().cbegin(t);
 		auto faces = info::mesh->elements->faceNeighbors->cbegin(t);
 		for (size_t n = info::mesh->elements->distribution.threads[t]; n < info::mesh->elements->distribution.threads[t + 1]; ++n, ++faces, ++eID) {
 			for (auto face = faces->begin(); face != faces->end(); ++face) {
@@ -68,7 +68,7 @@ void FacesEdgesUniformDistributedComposer::_initDOFMap()
 		faceOffset[t] = dsize;
 
 		dsize = 0;
-		eID = info::mesh->elements->IDs->datatarray().cbegin(t);
+		eID = info::mesh->elements->offset->datatarray().cbegin(t);
 		auto edges = info::mesh->elements->edgeNeighbors->cbegin(t);
 		for (size_t n = info::mesh->elements->distribution.threads[t]; n < info::mesh->elements->distribution.threads[t + 1]; ++n, ++edges, ++eID) {
 			for (auto edge = edges->begin(); edge != edges->end(); edge += *edge + 1) {
@@ -108,7 +108,7 @@ void FacesEdgesUniformDistributedComposer::_initDOFMap()
 			tdist.push_back(0);
 		}
 
-		auto eID = info::mesh->elements->IDs->datatarray().cbegin(t);
+		auto eID = info::mesh->elements->offset->datatarray().cbegin(t);
 		auto faces = info::mesh->elements->faceNeighbors->cbegin(t);
 		auto edges = info::mesh->elements->edgeNeighbors->cbegin(t);
 		auto nodes = info::mesh->elements->nodes->cbegin(t);
@@ -215,7 +215,7 @@ void FacesEdgesUniformDistributedComposer::_initDOFMap()
 
 	#pragma omp parallel for
 	for (int t = 0; t < threads; t++) {
-		auto eID = info::mesh->elements->IDs->datatarray().cbegin(t);
+		auto eID = info::mesh->elements->offset->datatarray().cbegin(t);
 		auto faces = info::mesh->elements->faceNeighbors->cbegin(t);
 		auto edges = info::mesh->elements->edgeNeighbors->cbegin(t);
 		auto nodes = info::mesh->elements->nodes->cbegin(t);

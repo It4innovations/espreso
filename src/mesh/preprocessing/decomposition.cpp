@@ -101,8 +101,8 @@ void computeComponentDual(const ElementStore *elements, esint coffset, esint csi
 		esint id, component;
 	};
 
-	esint ebegin = elements->IDs->datatarray().front();
-	esint eend = elements->IDs->datatarray().back();
+	esint ebegin = elements->offset->datatarray().front();
+	esint eend = elements->offset->datatarray().back();
 	std::vector<esint> eIDs{ eend };
 	std::vector<std::vector<esint> > rIDs(neighbors.size(), { 0 });
 	if (!Communication::exchangeKnownSize(eIDs, rIDs, neighbors)) {
@@ -531,9 +531,9 @@ void permuteElements(ElementStore *elements, NodeStore *nodes, DomainStore *doma
 		}
 	};
 
-	esint firstID = elements->IDs->datatarray().front();
+	esint firstID = elements->offset->datatarray().front();
 	elements->permute(permutation, tdistribution);
-	std::iota(elements->IDs->datatarray().begin(), elements->IDs->datatarray().end(), firstID);
+	std::iota(elements->offset->datatarray().begin(), elements->offset->datatarray().end(), firstID);
 
 	globalremap(elements->faceNeighbors, false);
 	globalremap(nodes->elements, true);

@@ -317,8 +317,8 @@ void FETI4ICreateInstance(
 	matrix->mesh.elements->distribution.process.next = matrix->mesh.elements->distribution.process.offset + matrix->mesh.elements->distribution.process.size;
 	matrix->mesh.elements->distribution.process.totalSize = Communication::exscan(matrix->mesh.elements->distribution.process.offset);
 	matrix->mesh.elements->distribution.threads = matrix->mesh.elements->epointers->datatarray().distribution();
-	matrix->mesh.elements->IDs = new serializededata<esint, esint>(1, tarray<esint>(matrix->mesh.elements->distribution.threads, 1));
-	std::iota(matrix->mesh.elements->IDs->datatarray().begin(), matrix->mesh.elements->IDs->datatarray().end(), matrix->mesh.elements->distribution.process.offset);
+	matrix->mesh.elements->offset = new serializededata<esint, esint>(1, tarray<esint>(matrix->mesh.elements->distribution.threads, 1));
+	std::iota(matrix->mesh.elements->offset->datatarray().begin(), matrix->mesh.elements->offset->datatarray().end(), matrix->mesh.elements->distribution.process.offset);
 
 	mesh::computeNodesDuplication(matrix->mesh.nodes, matrix->mesh.neighborsWithMe);
 	mesh::computeElementsFaceNeighbors(matrix->mesh.nodes, matrix->mesh.elements, matrix->mesh.neighbors);
