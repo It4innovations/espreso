@@ -41,10 +41,6 @@ int main(int argc, char **argv)
 	eslog::checkpointln("MESIO: RUN INITIALIZED");
 
 	Mesh::load();
-	eslog::checkpointln("MESIO: MESH LOADED");
-
-	info::mesh->preprocess();
-	eslog::checkpointln("MESIO: MESH PREPROCESSED");
 	info::mesh->printMeshStatistics();
 	info::mesh->printDecompositionStatistics();
 

@@ -209,9 +209,7 @@ public:
 	template<class Logger>
 	void output(const char* msg, VerboseArg::COLOR color)
 	{
-		if (Logger::verbosity) {
-			Logger::output(msg, color);
-		}
+		Logger::output(msg, color);
 	}
 
 	template<class Logger>

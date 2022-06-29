@@ -11,11 +11,16 @@ namespace espreso {
 #define PREBUFFER_SIZE 4 * BUFFER_SIZE
 
 template <class TStream>
-class ProgressLogger {
+class ProgressLogger: public Verbosity<TStream, 'v'>{
 
 	char buffer[BUFFER_SIZE];
 
 public:
+	ProgressLogger()
+	{
+		this->verbosity = 0;
+	}
+
 	void start(const char* region, const char* section)
 	{
 		snprintf(buffer, BUFFER_SIZE, "%*s%s", static_cast<TStream*>(this)->level, " ", region);
@@ -85,7 +90,7 @@ public:
 	}
 };
 
-class ProgressFileLogger: public ProgressLogger<ProgressFileLogger>, public Verbosity<ProgressFileLogger, 'v'> {
+class ProgressFileLogger: public ProgressLogger<ProgressFileLogger> {
 public:
 	void initOutput()
 	{
@@ -131,7 +136,7 @@ protected:
 	char prebuffer[PREBUFFER_SIZE] = { 0 };
 };
 
-class ProgressTerminalLogger: public ProgressLogger<ProgressTerminalLogger >, public Verbosity<ProgressTerminalLogger, 'v'> {
+class ProgressTerminalLogger: public ProgressLogger<ProgressTerminalLogger > {
 public:
 	void initOutput()
 	{

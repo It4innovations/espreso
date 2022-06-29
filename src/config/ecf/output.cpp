@@ -76,7 +76,7 @@ OutputConfiguration::OutputConfiguration(const ECF *root)
 			.setdescription({ "A name of logging directory" })
 			.setdatatype({ ECFDataType::STRING }));
 
-	verbose_level = 1;
+	verbose_level = 0;
 	REGISTER(verbose_level, ECFMetaData()
 			.setdescription({ "Verbose level [0-3]." })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
