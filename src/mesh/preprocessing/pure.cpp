@@ -878,14 +878,14 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 
 	ElementStore *newElements = new ElementStore();
 
-	std::vector<std::vector<esint> >    elemsIDs(threads);
-	std::vector<std::vector<int> >      elemsBody(threads);
-	std::vector<std::vector<int> >      elemsMaterial(threads);
+	std::vector<std::vector<esint> >    elemsOffset(threads);
 	std::vector<std::vector<Element*> > elemsEpointer(threads);
 	std::vector<std::vector<esint> >    elemsNodesDistribution(threads);
 	std::vector<std::vector<esint> >    elemsNodesData(threads);
 	std::vector<std::vector<esint> >    elemsNeighborsDistribution(threads);
 	std::vector<std::vector<esint> >    elemsNeighborsData(threads);
+	std::vector<std::vector<esint> >    elemsOutputDistribution(threads);
+	std::vector<std::vector<esint> >    elemsOutputData(threads);
 	std::vector<std::vector<esint> >    elemsRegions(threads);
 
 	NodeStore *newNodes = new NodeStore();
@@ -894,6 +894,8 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 	std::vector<std::vector<Point> >  nodesCoordinates(threads);
 	std::vector<std::vector<esint> >  nodesElemsDistribution(threads);
 	std::vector<std::vector<esint> >  nodesElemsData(threads);
+	std::vector<std::vector<esint> >  nodesOutputDistribution(threads);
+	std::vector<std::vector<esint> >  nodesOutputData(threads);
 	std::vector<std::vector<esint> >  nodesRegions(threads);
 
 	std::vector<std::vector<std::vector<esint> > >    boundaryEDistribution(boundaryRegions.size(), std::vector<std::vector<esint> >(threads));
@@ -907,7 +909,7 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 	// serialize data that have to be exchanged
 	// the first thread value denotes the thread data size
 
-	// threads x target x elements(id, body, material, code, dualsize, dualdata, nodesize, nodeindices)
+	// threads x target x elements(id, code, dualsize, dualdata, nodesize, nodeindices, outputOffsetSize, OutputOffsetData)
 	std::vector<std::vector<std::vector<esint> > > sElements(threads, std::vector<std::vector<esint> >(targets.size(), std::vector<esint>({ 0 })));
 	std::vector<std::vector<esint> > rElements;
 
@@ -938,45 +940,42 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto IDs = elements->offset->datatarray().data();
-		auto body = elements->body->datatarray().data();
-		auto material = elements->material->datatarray().data();
+		auto offset = elements->offset->datatarray().data();
 		auto epointer = elements->epointers->datatarray().data();
 		auto enodes = elements->nodes->cbegin(t);
 		auto eneighbors = elements->faceNeighbors->cbegin(t);
+		auto output = elements->outputOffset->cbegin(t);
 		auto nIDs = nodes->IDs->datatarray().data();
 
 		std::vector<std::vector<esint> > tsElements(targets.size(), std::vector<esint>({ 0 }));
 
-		std::vector<esint>  telemsIDs;
-		std::vector<int>      telemsBody;
-		std::vector<int>      telemsMaterial;
+		std::vector<esint>  telemsOffset;
 		std::vector<Element*> telemsEpointer;
 		std::vector<esint>  telemsNodesDistribution;
 		std::vector<esint>  telemsNodesData;
 		std::vector<esint>  telemsNeighborsDistribution;
 		std::vector<esint>  telemsNeighborsData;
+		std::vector<esint>  telemsOutputDistribution;
+		std::vector<esint>  telemsOutputData;
 		std::vector<esint>  telemsRegions;
 		if (t == 0) {
 			telemsNodesDistribution.push_back(0);
 			telemsNeighborsDistribution.push_back(0);
+			telemsOutputDistribution.push_back(0);
 		}
 
 		// estimation
-		telemsIDs.reserve(1.5 * elements->offset->datatarray().size() / threads);
-		telemsBody.reserve(1.5 * elements->offset->datatarray().size() / threads);
-		telemsMaterial.reserve(1.5 * elements->offset->datatarray().size() / threads);
+		telemsOffset.reserve(1.5 * elements->offset->datatarray().size() / threads);
 		telemsEpointer.reserve(1.5 * elements->offset->datatarray().size() / threads);
 		telemsNodesDistribution.reserve(1.5 * elements->offset->datatarray().size() / threads);
 		telemsNeighborsDistribution.reserve(1.5 * elements->offset->datatarray().size() / threads);
+		telemsOutputDistribution.reserve(1.5 * elements->offset->datatarray().size() / threads);
 		telemsRegions.reserve(1.5 * elements->offset->datatarray().size() / threads);
 
 		size_t target;
-		for (size_t e = elements->offset->datatarray().distribution()[t]; e < elements->offset->datatarray().distribution()[t + 1]; ++e, ++enodes, ++eneighbors) {
+		for (size_t e = elements->offset->datatarray().distribution()[t]; e < elements->offset->datatarray().distribution()[t + 1]; ++e, ++enodes, ++eneighbors, ++output) {
 			if (partition[e] == info::mpi::rank) {
-				telemsIDs.push_back(IDs[e]);
-				telemsBody.push_back(body[e]);
-				telemsMaterial.push_back(material[e]);
+				telemsOffset.push_back(offset[e]);
 				telemsEpointer.push_back(epointer[e]);
 				for (auto n = enodes->begin(); n != enodes->end(); ++n) {
 					telemsNodesData.push_back(nIDs[*n]);
@@ -984,28 +983,32 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 				telemsNodesDistribution.push_back(telemsNodesData.size());
 				telemsNeighborsData.insert(telemsNeighborsData.end(), eneighbors->begin(), eneighbors->end());
 				telemsNeighborsDistribution.push_back(telemsNeighborsData.size());
+				telemsOutputData.insert(telemsOutputData.end(), output->begin(), output->end());
+				telemsOutputDistribution.push_back(telemsOutputData.size());
 				telemsRegions.insert(telemsRegions.end(), regionElementMask.begin() + e * eregionsBitMaskSize, regionElementMask.begin() + (e + 1) * eregionsBitMaskSize);
 			} else {
 				target = t2i(partition[e]);
-				tsElements[target].insert(tsElements[target].end(), { IDs[e], body[e], material[e], static_cast<int>(epointer[e]->code) });
+				tsElements[target].insert(tsElements[target].end(), { offset[e], static_cast<int>(epointer[e]->code) });
 				tsElements[target].push_back(enodes->size());
 				for (auto n = enodes->begin(); n != enodes->end(); ++n) {
 					tsElements[target].push_back(nIDs[*n]);
 				}
 				tsElements[target].push_back(eneighbors->size());
 				tsElements[target].insert(tsElements[target].end(), eneighbors->begin(), eneighbors->end());
+				tsElements[target].push_back(output->size());
+				tsElements[target].insert(tsElements[target].end(), output->begin(), output->end());
 				tsElements[target].insert(tsElements[target].end(), regionElementMask.begin() + e * eregionsBitMaskSize, regionElementMask.begin() + (e + 1) * eregionsBitMaskSize);
 			}
 		}
 
-		elemsIDs[t].swap(telemsIDs);
-		elemsBody[t].swap(telemsBody);
-		elemsMaterial[t].swap(telemsMaterial);
+		elemsOffset[t].swap(telemsOffset);
 		elemsEpointer[t].swap(telemsEpointer);
 		elemsNodesDistribution[t].swap(telemsNodesDistribution);
 		elemsNodesData[t].swap(telemsNodesData);
 		elemsNeighborsDistribution[t].swap(telemsNeighborsDistribution);
 		elemsNeighborsData[t].swap(telemsNeighborsData);
+		elemsOutputDistribution[t].swap(telemsOutputDistribution);
+		elemsOutputData[t].swap(telemsOutputData);
 		elemsRegions[t].swap(telemsRegions);
 
 		sElements[t].swap(tsElements);
@@ -1033,7 +1036,8 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 		}
 	}
 
-	esint eBegin = Communication::getDistribution(elements->offset->datatarray().size())[info::mpi::rank];
+	esint eBegin = elements->offset->datatarray().size();
+	Communication::exscan(eBegin);
 	esint eEnd = eBegin + elements->offset->datatarray().size();
 
 	#pragma omp parallel for
@@ -1041,15 +1045,19 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 		const auto &IDs = nodes->IDs->datatarray();
 		const auto &coordinates = nodes->coordinates->datatarray();
 		auto elems = nodes->elements->cbegin(t);
+		auto output = nodes->outputOffset->cbegin(t);
 
 		std::vector<esint>  tnodesIDs;
 		std::vector<Point>    tnodesCoordinates;
 		std::vector<esint>  tnodesElemsDistribution;
 		std::vector<esint>  tnodesElemsData;
+		std::vector<esint>  tnodesOutputDistribution;
+		std::vector<esint>  tnodesOutputData;
 		std::vector<esint>  tnodesRegions;
 
 		if (t == 0) {
 			tnodesElemsDistribution.push_back(0);
+			tnodesOutputDistribution.push_back(0);
 		}
 
 		std::vector<std::vector<esint> > tsNodes(targets.size(), std::vector<esint>({ 0 }));
@@ -1057,11 +1065,12 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 		tnodesIDs.reserve(1.5 * nodes->IDs->datatarray().size() / threads);
 		tnodesCoordinates.reserve(1.5 * nodes->IDs->datatarray().size() / threads);
 		tnodesElemsDistribution.reserve(1.5 * nodes->IDs->datatarray().size() / threads);
+		tnodesOutputDistribution.reserve(1.5 * nodes->IDs->datatarray().size() / threads);
 		tnodesRegions.reserve(1.5 * nodes->IDs->datatarray().size() / threads);
 
 		size_t target;
 		std::vector<bool> last(targets.size() + 1); // targets + me
-		for (size_t n = nodes->IDs->datatarray().distribution()[t]; n < nodes->IDs->datatarray().distribution()[t + 1]; ++n, ++elems) {
+		for (size_t n = nodes->IDs->datatarray().distribution()[t]; n < nodes->IDs->datatarray().distribution()[t + 1]; ++n, ++elems, ++output) {
 			std::fill(last.begin(), last.end(), false);
 			for (auto e = elems->begin(); e != elems->end(); ++e) {
 				if (eBegin <= *e && *e < eEnd) {
@@ -1071,6 +1080,8 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 						tsNodes[target].insert(tsNodes[target].end(), reinterpret_cast<const esint*>(coordinates.data() + n), reinterpret_cast<const esint*>(coordinates.data() + n + 1));
 						tsNodes[target].push_back(elems->size());
 						tsNodes[target].insert(tsNodes[target].end(), elems->begin(), elems->end());
+						tsNodes[target].push_back(output->size());
+						tsNodes[target].insert(tsNodes[target].end(), output->begin(), output->end());
 						tsNodes[target].insert(tsNodes[target].end(), regionNodeMask.begin() + n * bregionsBitMaskSize, regionNodeMask.begin() + (n + 1) * bregionsBitMaskSize);
 						last[target] = true;
 					}
@@ -1079,6 +1090,8 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 						tnodesCoordinates.push_back(coordinates[n]);
 						tnodesElemsData.insert(tnodesElemsData.end(), elems->begin(), elems->end());
 						tnodesElemsDistribution.push_back(tnodesElemsData.size());
+						tnodesOutputData.insert(tnodesOutputData.end(), output->begin(), output->end());
+						tnodesOutputDistribution.push_back(tnodesOutputData.size());
 						tnodesRegions.insert(tnodesRegions.end(), regionNodeMask.begin() + n * bregionsBitMaskSize, regionNodeMask.begin() + (n + 1) * bregionsBitMaskSize);
 						last.back() = true;
 					}
@@ -1090,6 +1103,8 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 		nodesCoordinates[t].swap(tnodesCoordinates);
 		nodesElemsDistribution[t].swap(tnodesElemsDistribution);
 		nodesElemsData[t].swap(tnodesElemsData);
+		nodesOutputDistribution[t].swap(tnodesOutputDistribution);
+		nodesOutputData[t].swap(tnodesOutputData);
 		nodesRegions[t].swap(tnodesRegions);
 
 		sNodes[t].swap(tsNodes);
@@ -1222,25 +1237,24 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 		#pragma omp parallel for
 		for (size_t t = 0; t < threads; t++) {
 
-			std::vector<esint>  telemsIDs;
-			std::vector<int>      telemsBody;
-			std::vector<int>      telemsMaterial;
+			std::vector<esint>  telemsOffset;
 			std::vector<Element*> telemsEpointer;
 			std::vector<esint>  telemsNodesDistribution;
 			std::vector<esint>  telemsNodesData;
 			std::vector<esint>  telemsNeighborsDistribution;
 			std::vector<esint>  telemsNeighborsData;
+			std::vector<esint>  telemsOutputDistribution;
+			std::vector<esint>  telemsOutputData;
 			std::vector<esint>  telemsRegions;
 
-			telemsIDs.reserve(rdistribution[t + 1] - rdistribution[t]);
-			telemsBody.reserve(rdistribution[t + 1] - rdistribution[t]);
-			telemsMaterial.reserve(rdistribution[t + 1] - rdistribution[t]);
+			telemsOffset.reserve(rdistribution[t + 1] - rdistribution[t]);
 			telemsEpointer.reserve(rdistribution[t + 1] - rdistribution[t]);
 			telemsNodesDistribution.reserve(rdistribution[t + 1] - rdistribution[t] + 1);
 			telemsNeighborsDistribution.reserve(rdistribution[t + 1] - rdistribution[t] + 1);
+			telemsOutputDistribution.reserve(rdistribution[t + 1] - rdistribution[t] + 1);
 			telemsRegions.reserve(rdistribution[t + 1] - rdistribution[t]);
 
-			esint distOffset = 0, neighOffset = 0;
+			esint distOffset = 0, neighOffset = 0, outputOffset;
 
 			if (elemsNodesDistribution[t].size()) {
 				distOffset = elemsNodesDistribution[t].back();
@@ -1248,17 +1262,21 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 			if (elemsNeighborsDistribution[t].size()) {
 				neighOffset = elemsNeighborsDistribution[t].back();
 			}
+			if (elemsOutputDistribution[t].size()) {
+				outputOffset = elemsOutputDistribution[t].back();
+			}
 			if (t == 0 && elemsNodesDistribution[t].size() == 0) {
 				telemsNodesDistribution.push_back(0);
 			}
 			if (t == 0 && elemsNeighborsDistribution[t].size() == 0) {
 				telemsNeighborsDistribution.push_back(0);
 			}
+			if (t == 0 && elemsOutputDistribution[t].size() == 0) {
+				telemsOutputDistribution.push_back(0);
+			}
 
 			for (size_t e = rdistribution[t] + 1; e < rdistribution[t + 1]; ) {
-				telemsIDs.push_back(rElements[i][e++]);
-				telemsBody.push_back(rElements[i][e++]);
-				telemsMaterial.push_back(rElements[i][e++]);
+				telemsOffset.push_back(rElements[i][e++]);
 				telemsEpointer.push_back(&Mesh::edata[rElements[i][e++]]);
 				telemsNodesData.insert(telemsNodesData.end(), rElements[i].begin() + e + 1, rElements[i].begin() + e + 1 + rElements[i][e]);
 				telemsNodesDistribution.push_back(telemsNodesData.size() + distOffset);
@@ -1266,18 +1284,21 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 				telemsNeighborsData.insert(telemsNeighborsData.end(), rElements[i].begin() + e + 1, rElements[i].begin() + e + 1 + rElements[i][e]);
 				telemsNeighborsDistribution.push_back(telemsNeighborsData.size() + neighOffset);
 				e += rElements[i][e++]; // neighbors + neighbors size
+				telemsOutputData.insert(telemsOutputData.end(), rElements[i].begin() + e + 1, rElements[i].begin() + e + 1 + rElements[i][e]);
+				telemsOutputDistribution.push_back(telemsOutputData.size() + outputOffset);
+				e += rElements[i][e++]; // output + output size
 				telemsRegions.insert(telemsRegions.end(), rElements[i].begin() + e, rElements[i].begin() + e + eregionsBitMaskSize);
 				e += eregionsBitMaskSize;
 			}
 
-			elemsIDs[t].insert(elemsIDs[t].end(), telemsIDs.begin(), telemsIDs.end());
-			elemsBody[t].insert(elemsBody[t].end(), telemsBody.begin(), telemsBody.end());
-			elemsMaterial[t].insert(elemsMaterial[t].end(), telemsMaterial.begin(), telemsMaterial.end());
+			elemsOffset[t].insert(elemsOffset[t].end(), telemsOffset.begin(), telemsOffset.end());
 			elemsEpointer[t].insert(elemsEpointer[t].end(), telemsEpointer.begin(), telemsEpointer.end());
 			elemsNodesDistribution[t].insert(elemsNodesDistribution[t].end(), telemsNodesDistribution.begin(), telemsNodesDistribution.end());
 			elemsNodesData[t].insert(elemsNodesData[t].end(), telemsNodesData.begin(), telemsNodesData.end());
 			elemsNeighborsDistribution[t].insert(elemsNeighborsDistribution[t].end(), telemsNeighborsDistribution.begin(), telemsNeighborsDistribution.end());
 			elemsNeighborsData[t].insert(elemsNeighborsData[t].end(), telemsNeighborsData.begin(), telemsNeighborsData.end());
+			elemsOutputDistribution[t].insert(elemsOutputDistribution[t].end(), telemsOutputDistribution.begin(), telemsOutputDistribution.end());
+			elemsOutputData[t].insert(elemsOutputData[t].end(), telemsOutputData.begin(), telemsOutputData.end());
 			elemsRegions[t].insert(elemsRegions[t].end(), telemsRegions.begin(), telemsRegions.end());
 		}
 	}
@@ -1306,6 +1327,8 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 			std::vector<Point>    tnodesCoordinates;
 			std::vector<esint>  tnodesElemsDistribution;
 			std::vector<esint>  tnodesElemsData;
+			std::vector<esint>  tnodesOutputDistribution;
+			std::vector<esint>  tnodesOutputData;
 			std::vector<esint>  tnodesRegions;
 			std::vector<esint>  tnodeSet;
 			std::vector<esint>  tnpermutation;
@@ -1313,22 +1336,30 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 			tnodesIDs.reserve(rdistribution[t + 1] - rdistribution[t]);
 			tnodesCoordinates.reserve(rdistribution[t + 1] - rdistribution[t]);
 			tnodesElemsDistribution.reserve(rdistribution[t + 1] - rdistribution[t]);
+			tnodesOutputDistribution.reserve(rdistribution[t + 1] - rdistribution[t]);
 			tnodesRegions.reserve(rdistribution[t + 1] - rdistribution[t]);
 			tnodeSet.reserve(rdistribution[t + 1] - rdistribution[t]);
 
-			esint distOffset = 0;
+			esint distOffset = 0, outputOffset = 0;
 
 			if (nodesElemsDistribution[t].size()) {
 				distOffset = nodesElemsDistribution[t].back();
 			}
+			if (nodesOutputDistribution[t].size()) {
+				outputOffset = nodesOutputDistribution[t].back();
+			}
 			if (t == 0 && nodesElemsDistribution[t].size() == 0) {
 				tnodesElemsDistribution.push_back(0);
+			}
+			if (t == 0 && nodesOutputDistribution[t].size() == 0) {
+				tnodesOutputDistribution.push_back(0);
 			}
 
 			for (size_t n = rdistribution[t] + 1; n < rdistribution[t + 1]; ) {
 				tnpermutation.push_back(n);
 				n += 1 + sizeof(Point) / sizeof(esint); // id, Point
 				n += 1 + rNodes[i][n]; // linksize, links
+				n += 1 + rNodes[i][n]; // outputsize, outputs
 				n += bregionsBitMaskSize; // region mask
 			}
 			std::sort(tnpermutation.begin(), tnpermutation.end(), [&] (esint n1, esint n2) {
@@ -1349,9 +1380,15 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 					memcpy(reinterpret_cast<void*>(&point), rNodes[i].data() + index, sizeof(Point));
 					tnodesCoordinates.push_back(point);
 					index += sizeof(Point) / sizeof(esint); // points
+
 					tnodesElemsData.insert(tnodesElemsData.end(), rNodes[i].begin() + index + 1, rNodes[i].begin() + index + 1 + rNodes[i][index]);
 					tnodesElemsDistribution.push_back(tnodesElemsData.size() + distOffset);
 					index += rNodes[i][index] + 1; // linksize + links
+
+					tnodesOutputData.insert(tnodesOutputData.end(), rNodes[i].begin() + index + 1, rNodes[i].begin() + index + 1 + rNodes[i][index]);
+					tnodesOutputDistribution.push_back(tnodesOutputData.size() + outputOffset);
+					index += rNodes[i][index] + 1; // outputsize + output
+
 					tnodesRegions.insert(tnodesRegions.end(), rNodes[i].begin() + index, rNodes[i].begin() + index + bregionsBitMaskSize);
 					index += bregionsBitMaskSize; // region mask
 				}
@@ -1361,6 +1398,8 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 			nodesCoordinates[t].insert(nodesCoordinates[t].end(), tnodesCoordinates.begin(), tnodesCoordinates.end());
 			nodesElemsDistribution[t].insert(nodesElemsDistribution[t].end(), tnodesElemsDistribution.begin(), tnodesElemsDistribution.end());
 			nodesElemsData[t].insert(nodesElemsData[t].end(), tnodesElemsData.begin(), tnodesElemsData.end());
+			nodesOutputDistribution[t].insert(nodesOutputDistribution[t].end(), tnodesOutputDistribution.begin(), tnodesOutputDistribution.end());
+			nodesOutputData[t].insert(nodesOutputData[t].end(), tnodesOutputData.begin(), tnodesOutputData.end());
 			nodesRegions[t].insert(nodesRegions[t].end(), tnodesRegions.begin(), tnodesRegions.end());
 			tnodeset[t].swap(tnodeSet);
 		}
@@ -1374,7 +1413,9 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 
 	utils::threadDistributionToFullDistribution(elemsNodesDistribution);
 	utils::threadDistributionToFullDistribution(elemsNeighborsDistribution);
+	utils::threadDistributionToFullDistribution(elemsOutputDistribution);
 	utils::threadDistributionToFullDistribution(nodesElemsDistribution);
+	utils::threadDistributionToFullDistribution(nodesOutputDistribution);
 
 	profiler::synccheckpoint("deserialize_nodes");
 	eslog::checkpointln("EXCHANGE EL: DESERIALIZE NODES");
@@ -1429,18 +1470,17 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 	// elements are redistributed later while decomposition -> distribution is not changed now
 	std::vector<size_t> elemDistribution(threads + 1);
 	for (size_t t = 1; t <= threads; t++) {
-		elemDistribution[t] = elemDistribution[t - 1] + elemsIDs[t - 1].size();
+		elemDistribution[t] = elemDistribution[t - 1] + elemsOffset[t - 1].size();
 	}
 
-	newElements->offset = new serializededata<esint, esint>(1, elemsIDs);
-	newElements->body = new serializededata<esint, int>(1, elemsBody);
-	newElements->material = new serializededata<esint, int>(1, elemsMaterial);
+	newElements->offset = new serializededata<esint, esint>(1, elemsOffset);
 	newElements->epointers = new serializededata<esint, Element*>(1, elemsEpointer);
 	newElements->nodes = new serializededata<esint, esint>(elemsNodesDistribution, elemsNodesData); // global IDs
 
 	newElements->regions = new serializededata<esint, esint>(eregionsBitMaskSize, elemsRegions);
 
 	newElements->faceNeighbors = new serializededata<esint, esint>(elemsNeighborsDistribution, elemsNeighborsData);
+	newElements->outputOffset = new serializededata<esint, esint>(elemsOutputDistribution, elemsOutputData);
 
 	newElements->distribution.process.size = newElements->offset->structures();
 	newElements->distribution.threads = newElements->offset->datatarray().distribution();
@@ -1458,6 +1498,7 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 	newNodes->IDs = new serializededata<esint, esint>(1, nodesIDs);
 	newNodes->coordinates = new serializededata<esint, Point>(1, nodesCoordinates);
 	newNodes->elements = new serializededata<esint, esint>(nodesElemsDistribution, nodesElemsData);
+	newNodes->outputOffset = new serializededata<esint, esint>(nodesOutputDistribution, nodesOutputData);
 	newNodes->size = newNodes->IDs->datatarray().size();
 	newNodes->distribution = newNodes->IDs->datatarray().distribution();
 
@@ -1516,18 +1557,18 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 	std::vector<size_t> eIDsNEW = Communication::getDistribution(newElements->epointers->datatarray().size());
 
 	for (size_t t = 1; t < threads; ++t) {
-		elemsIDs[0].insert(elemsIDs[0].end(), elemsIDs[t].begin(), elemsIDs[t].end());
+		elemsOffset[0].insert(elemsOffset[0].end(), elemsOffset[t].begin(), elemsOffset[t].end());
 	}
 
-	std::vector<esint> epermutation(elemsIDs[0].size());
+	std::vector<esint> epermutation(elemsOffset[0].size());
 	std::iota(epermutation.begin(), epermutation.end(), 0);
-	std::sort(epermutation.begin(), epermutation.end(), [&] (esint i, esint j) { return elemsIDs[0][i] < elemsIDs[0][j]; });
+	std::sort(epermutation.begin(), epermutation.end(), [&] (esint i, esint j) { return elemsOffset[0][i] < elemsOffset[0][j]; });
 
 	std::vector<esint> sortedElements(epermutation.size());
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; ++t) {
 		for (size_t e = elemDistribution[t]; e < elemDistribution[t + 1]; e++) {
-			sortedElements[e] = elemsIDs[0][epermutation[e]];
+			sortedElements[e] = elemsOffset[0][epermutation[e]];
 		}
 		utils::sortAndRemoveDuplicates(nodesElemsData[t]);
 	}
