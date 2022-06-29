@@ -154,12 +154,19 @@ void fillElements(const MergedElements *elements, OrderedRegions &regions, Mesh 
 		} else {
 			std::vector<std::vector<esint> > tbedist(threads), tbnodes(threads);
 			std::vector<std::vector<Element*> > tbepointers(threads);
-			std::vector<size_t> edistribution = tarray<size_t>::distribute(threads, rsize);
+			std::vector<size_t> erdistribution = tarray<size_t>::distribute(threads, rsize);
 			std::vector<esint> eregiondist(rsize + 1);
+			std::vector<size_t> fullDistribution = { 0 };
 			for (size_t i = 0, e = 0; i < elements->offsets.size(); ++i) {
 				if (region->start <= elements->offsets[i] && elements->offsets[i] < region->end) {
 					eregiondist[e + 1] = eregiondist[e] + Mesh::element(elements->etype[i]).nodes;
+					if (e == 0) {
+						fullDistribution.front() = i;
+					}
 					++e;
+				}
+				if (erdistribution[fullDistribution.size()] == e) {
+					fullDistribution.push_back(i + 1);
 				}
 			}
 
@@ -167,20 +174,19 @@ void fillElements(const MergedElements *elements, OrderedRegions &regions, Mesh 
 			for (size_t t = 0; t < threads; t++) {
 				tbedist[t].clear();
 				if (t == 0) {
-					tbedist[t].insert(tbedist[t].end(), eregiondist.begin() + edistribution[t], eregiondist.begin() + edistribution[t + 1] + 1);
+					tbedist[t].insert(tbedist[t].end(), eregiondist.begin() + erdistribution[t], eregiondist.begin() + erdistribution[t + 1] + 1);
 				} else {
-					tbedist[t].insert(tbedist[t].end(), eregiondist.begin() + edistribution[t] + 1, eregiondist.begin() + edistribution[t + 1] + 1);
+					tbedist[t].insert(tbedist[t].end(), eregiondist.begin() + erdistribution[t] + 1, eregiondist.begin() + erdistribution[t + 1] + 1);
 				}
 
-				tbnodes[t].resize(eregiondist[edistribution[t + 1]] - eregiondist[edistribution[t]]);
-				tbepointers[t].resize(edistribution[t + 1] - edistribution[t]);
-				for (size_t i = 0, e = 0, index = 0; i < elements->offsets.size(); ++i) {
+				tbnodes[t].resize(eregiondist[erdistribution[t + 1]] - eregiondist[erdistribution[t]]);
+				tbepointers[t].resize(erdistribution[t + 1] - erdistribution[t]);
+				for (size_t i = fullDistribution[t], e = 0, index = 0; i < fullDistribution[t + 1]; ++i) {
 					if (region->start <= elements->offsets[i] && elements->offsets[i] < region->end) {
-						tbepointers[t][e] = &Mesh::edata[(int)elements->etype[i]];
+						tbepointers[t][e++] = &Mesh::edata[(int)elements->etype[i]];
 						for (esint n = elements->edist[i]; n < elements->edist[i + 1]; ++n, ++index) {
 							tbnodes[t][index] = elements->enodes[n];
 						}
-						++e;
 					}
 				}
 			}
@@ -188,7 +194,7 @@ void fillElements(const MergedElements *elements, OrderedRegions &regions, Mesh 
 			mesh.boundaryRegions.push_back(new BoundaryRegionStore(region->name));
 			mesh.boundaryRegions.back()->dimension = region->dimension;
 			mesh.boundaryRegions.back()->originalDimension = region->dimension;
-			mesh.boundaryRegions.back()->distribution.threads = edistribution;
+			mesh.boundaryRegions.back()->distribution.threads = erdistribution;
 			mesh.boundaryRegions.back()->elements = new serializededata<esint, esint>(tbedist, tbnodes);
 			mesh.boundaryRegions.back()->epointers = new serializededata<esint, Element*>(1, tbepointers);
 		}
