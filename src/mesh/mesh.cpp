@@ -137,7 +137,13 @@ void Mesh::load()
 
 	input->load(info::ecf->input);
 	input->build(*info::mesh);
+	eslog::checkpointln("ESPRESO: MESH LOADED");
+
+	info::mesh->preprocess();
+	eslog::checkpointln("ESPRESO: MESH PREPROCESSED");
+
 	input->variables(*info::mesh);
+	eslog::checkpointln("ESPRESO: VARIABLES LOADED");
 
 	profiler::syncend("load");
 }

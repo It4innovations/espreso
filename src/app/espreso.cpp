@@ -69,9 +69,6 @@ int main(int argc, char **argv)
 	if (info::mpi::irank == 0) {
 		profiler::syncstart("mesh_preprocessing");
 		Mesh::load();
-		eslog::checkpointln("ESPRESO: MESH LOADED");
-		info::mesh->preprocess();
-		eslog::checkpointln("ESPRESO: MESH PREPROCESSED");
 	}
 	if (info::mpi::isize > 1) {
 		info::mesh->duplicate();
