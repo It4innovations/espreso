@@ -71,6 +71,19 @@ struct MergedElements: ClusteredElements {
 	std::vector<DataDuplication> duplication;
 };
 
+inline size_t size(const OrderedNodesBalanced &data)
+{
+	return data.coordinates.size() * sizeof(_Point<esfloat>);
+}
+
+inline size_t size(const OrderedElementsBalanced &data)
+{
+	return
+			data.etype.size() * sizeof(Element::CODE) +
+			data.edist.size() * sizeof(esint) +
+			data.enodes.size() * sizeof(esint);
+}
+
 template <typename TNodes, typename TElements>
 struct TemporalMesh {
 	TNodes *nodes;

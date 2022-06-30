@@ -67,6 +67,7 @@ void EnsightCasefile::parse()
 			const char* begin = current;
 			while (*current != '\n') { ++current; };
 			geometry = std::string(begin, current);
+			eslog::info(" == GEOFILE %*s == \n", 79, geometry.c_str());
 		}
 		if (invariable) {
 			Variable::Type type;
@@ -108,11 +109,20 @@ void EnsightCasefile::parse()
 				while (*current++ != ':');
 				timesteps = strtol(current, NULL, 10);
 			}
+			if (check("filename start numbers")) {
+				while (*current++ != ':');
+				timesets[timeset].tstart = strtol(current, NULL, 10);
+			}
+			if (check("filename increment")) {
+				while (*current++ != ':');
+				timesets[timeset].tinc = strtol(current, NULL, 10);
+				timesets[timeset].tend = timesets[timeset].tstart + timesteps * timesets[timeset].tinc;
+			}
 			if (check("time set")) {
 				while (*current++ != ':');
 				timeset = strtol(current, NULL, 10);
-				if (times.size() < timeset) {
-					times.resize(timeset);
+				if (timesets.size() < timeset) {
+					timesets.resize(timeset);
 				}
 				--timeset;
 			}
@@ -121,7 +131,7 @@ void EnsightCasefile::parse()
 				while (*start++ != ':');
 				for (size_t s = 0; s < timesteps; ++s) {
 					char *end;
-					times[timeset].push_back(strtod(start, &end));
+					timesets[timeset].values.push_back(strtod(start, &end));
 					start = end;
 				}
 			}

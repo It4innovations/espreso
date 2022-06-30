@@ -627,7 +627,31 @@ void Mesh::partitiate(int ndomains)
 void Mesh::preprocess()
 {
 	profiler::syncstart("meshing");
+	eslog::info(" ===================================== MESH PREPROCESSING ===================== %12.3f s\n", eslog::duration());
+	eslog::info(" ============================================================================================= \n");
+
 	analyze();
+	if (_omitClusterization) {
+		eslog::info(" == CLUSTERIZATION %72s == \n", "SKIPPED");
+	} else {
+		switch (info::ecf->input.decomposition.parallel_decomposer) {
+		case DecompositionConfiguration::ParallelDecomposer::HILBERT_CURVE: eslog::info(" == CLUSTERIZATION %72s == \n", "HILBERT SFC"); break;
+		case DecompositionConfiguration::ParallelDecomposer::PARMETIS: eslog::info(" == CLUSTERIZATION %72s == \n", "PARMETIS"); break;
+		case DecompositionConfiguration::ParallelDecomposer::PTSCOTCH: eslog::info(" == CLUSTERIZATION %72s == \n", "PT-SCOTCH"); break;
+		default: break;
+		}
+	}
+	if (_omitDecomposition) {
+		eslog::info(" == DOMAIN DECOMPOSITION %66s == \n", "SKIPPED");
+	} else {
+		switch (info::ecf->input.decomposition.sequential_decomposer) {
+		case DecompositionConfiguration::SequentialDecomposer::METIS: eslog::info(" == DOMAIN DECOMPOSITION %66s == \n", "METIS"); break;
+		case DecompositionConfiguration::SequentialDecomposer::SCOTCH: eslog::info(" == DOMAIN DECOMPOSITION %66s == \n", "SCOTCH"); break;
+		case DecompositionConfiguration::SequentialDecomposer::KAHIP: eslog::info(" == DOMAIN DECOMPOSITION %66s == \n", "KAHIP"); break;
+		default: break;
+		}
+	}
+
 
 	eslog::startln("MESH: PREPROCESSING STARTED", "MESHING");
 
@@ -636,6 +660,7 @@ void Mesh::preprocess()
 	partitiate(preferedDomains);
 
 	DebugOutput::mesh();
+	eslog::info(" ============================================================================================= \n\n");
 	profiler::syncend("meshing");
 	eslog::endln("MESH: PREPROCESSING FINISHED");
 }

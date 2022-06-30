@@ -83,6 +83,54 @@ struct InputMesh {
 	InputMesh(): nodes(new TNodes()), elements(new TElements()), regions(new TRegions()) { }
 };
 
+inline size_t size(const OrderedUniqueNodes &data)
+{
+	return data.coordinates.size() * sizeof(_Point<esfloat>);
+}
+
+inline size_t size(const OrderedUniqueElements &data)
+{
+	return data.etype.size() * sizeof(Element::CODE) + data.enodes.size() * sizeof(esint);
+}
+
+inline size_t size(const OrderedUniqueFaces &data)
+{
+	return
+			data.etype.size() * sizeof(Element::CODE) +
+			data.enodes.size() * sizeof(esint) +
+			data.owner.size() * sizeof(esint) +
+			data.neighbor.size() * sizeof(esint);
+}
+
+inline size_t size(const OrderedNodes &data)
+{
+	return
+			data.offsets.size() * sizeof(DatabaseOffset) +
+			data.coordinates.size() * sizeof(_Point<esfloat>);
+}
+
+inline size_t size(const OrderedElements &data)
+{
+	return
+			data.offsets.size() * sizeof(DatabaseOffset) +
+			data.etype.size() * sizeof(Element::CODE) +
+			data.enodes.size() * sizeof(esint);
+}
+
+inline size_t size(const OrderedValues &data)
+{
+	return
+			data.offsets.size() * sizeof(DatabaseOffset) +
+			data.data.size() * sizeof(esfloat);
+}
+
+inline size_t size(const OrderedRegions &data)
+{
+	return
+			data.nodes.size() * sizeof(OrderedRegions::Region) +
+			data.elements.size() * sizeof(OrderedRegions::Region);
+}
+
 }
 
 #endif /* SRC_INPUT_INPUT_H_ */

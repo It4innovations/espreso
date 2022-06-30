@@ -4,7 +4,7 @@
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/packing.h"
 #include "basis/utilities/utils.h"
-#include "esinfo/eslog.h"
+#include "esinfo/eslog.hpp"
 #include "wrappers/mpi/communication.h"
 
 #include <numeric>
@@ -48,6 +48,9 @@ void balanceFEM(const InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &
 {
 	esint total[2] = { (esint)input.nodes->coordinates.size(), (esint)input.elements->etype.size() };
 	Communication::allReduce(total, NULL, 2, MPITools::getType<esint>().mpitype, MPI_SUM);
+
+	eslog::info(" == TOTAL NUMBER OF NODES %65d == \n", total[0]);
+	eslog::info(" == TOTAL NUMBER OF ELEMENTS %62d == \n", total[1]);
 
 	distribute(*ordered.nodes, total[0]);
 	distribute(*ordered.elements, total[1]);

@@ -211,7 +211,7 @@ void print()
 	}
 	int asynchronousThread = info::ecf->output.mode == OutputConfiguration::MODE::PTHREAD;
 
-	eslog::info(" ================================ SYSTEM AND ENVIRONMENT INFO ================================ \n");
+	eslog::info(" ================================ SYSTEM AND ENVIRONMENT INFO ================= %12.3f s\n", eslog::duration());
 	eslog::info(" ============================================================================================= \n");
 
 	eslog::info(" == CPU MODEL NAME %*s == \n", 72, cpuinfo.modelName);
@@ -237,7 +237,7 @@ void print()
 	eslog::info(" == MPI PROCESSES PER NODE %*d == \n", 64, ppn);
 	eslog::info(" == MPI PINNED DOMAIN SIZE %*d == \n", 64, info::system::pinnedDomainSize());
 
-	eslog::info(" ============================================================================================= \n");
+	eslog::info(" ============================================================================================= \n\n");
 }
 
 void setSignals()

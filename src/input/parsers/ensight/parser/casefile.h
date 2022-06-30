@@ -20,15 +20,20 @@ public:
 			ELEMENT
 		};
 
-		int dimension, time;
+		int dimension, timeset;
 		Type type;
 		std::string name, path;
 
-		Variable(int dimension, Type type, int time, const std::string &name, const std::string &path)
-		: dimension(dimension), time(time), type(type), name(name), path(path)
+		Variable(int dimension, Type type, int timeset, const std::string &name, const std::string &path)
+		: dimension(dimension), timeset(timeset), type(type), name(name), path(path)
 		{
 
 		}
+	};
+
+	struct TimeSet {
+		int tstart, tend, tinc;
+		std::vector<double> values;
 	};
 
 	EnsightCasefile(const std::string &path);
@@ -39,7 +44,7 @@ public:
 	Type type;
 	std::string geometry;
 	std::vector<Variable> variables;
-	std::vector<std::vector<double> > times;
+	std::vector<TimeSet> timesets;
 };
 
 }

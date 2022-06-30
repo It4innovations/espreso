@@ -4,7 +4,7 @@
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/packing.h"
 #include "basis/utilities/utils.h"
-#include "esinfo/eslog.h"
+#include "esinfo/eslog.hpp"
 #include "wrappers/mpi/communication.h"
 
 #include <numeric>
@@ -17,6 +17,9 @@ void initializeSequentialFEM(const InputMesh<OrderedNodes, OrderedElements, Orde
 	if (info::mpi::size != 1) {
 		eslog::internalFailure("usage of a sequential method during a parallel run.\n");
 	}
+
+	eslog::info(" == TOTAL NUMBER OF NODES %65d == \n", input.nodes->coordinates.size());
+	eslog::info(" == TOTAL NUMBER OF ELEMENTS %62d == \n", input.elements->etype.size());
 
 	clustered.nodes->coordinates.swap(input.nodes->coordinates);
 	clustered.elements->etype.swap(input.elements->etype);

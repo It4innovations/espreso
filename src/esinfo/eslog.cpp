@@ -103,7 +103,7 @@ void printRunInfo(int *argc, char ***argv)
 	divide(cmd, width, ":/ ");
 	divide(outpath, width);
 
-	eslog::info(" ====================================== ESPRESO RUN INFO ===================================== \n");
+	eslog::info(" ====================================== ESPRESO RUN INFO ====================== %12.3f s\n", eslog::duration());
 	eslog::info(" ============================================================================================= \n");
 	eslog::info(" == CXX      %*s == \n", width, cxx.c_str());
 	eslog::info(" == CXXFLAGS %*s == \n", width, info::system::cxxflags());
