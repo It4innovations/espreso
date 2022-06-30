@@ -29,6 +29,8 @@ namespace mpi {
 	void init(MPI_Comm comm);
 	bool divide(int meshDuplication);
 	void finish();
+
+	void print();
 }
 }
 }

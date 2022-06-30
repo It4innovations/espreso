@@ -1,10 +1,17 @@
 
 #include "systeminfo.h"
-#include "eslog.h"
-#include "mpi.h"
+#include "eslog.hpp"
+#include "ecfinfo.h"
+#include "envinfo.h"
+#include "wrappers/mpi/communication.h"
 
 #include <csignal>
 #include <cstdlib>
+#include <cstring>
+#include <thread>
+#include <fstream>
+#include <sched.h>
+#include <vector>
 
 static void signalHandler(int signal)
 {
@@ -40,11 +47,6 @@ namespace system {
 OPERATIONSYSTEM os()
 {
 	return OPERATIONSYSTEM::UNIX;
-}
-
-INSTRUCTIONSET instructionSet()
-{
-	return INSTRUCTIONSET::SSE;
 }
 
 const char* commit()
@@ -90,6 +92,152 @@ int MPI_Init_thread_provided_level()
 #else
 	return MPI_THREAD_SINGLE;
 #endif
+}
+
+int hwthreads()
+{
+	return std::thread::hardware_concurrency();
+}
+
+CPUInfo cpuinfo()
+{
+	CPUInfo info;
+
+	std::ifstream is("/proc/cpuinfo");
+
+	int siblings;
+	std::string param, colon, value;
+	while (is.good()) {
+		getline(is, param, '\t');
+		getline(is, colon, ':');
+		getline(is, value, '\n');
+		if (strcmp(param.c_str(), "model name") == 0) {
+			strcpy(info.modelName, value.c_str());
+		}
+		if (strcmp(param.c_str(), "physical id") == 0) {
+			info.sockets = std::max(std::stoi(value.c_str(), nullptr, 10), info.sockets);
+		}
+		if (strcmp(param.c_str(), "siblings") == 0) {
+			siblings = std::stoi(value.c_str(), nullptr, 10);
+		}
+		if (strcmp(param.c_str(), "cpu cores") == 0) {
+			info.cores = std::stoi(value.c_str(), nullptr, 10);
+		}
+	}
+	info.hyperthreading = siblings != info.cores;
+	info.sockets++;
+
+	return info;
+}
+
+long pinnedDomainSize()
+{
+	cpu_set_t affinity;
+	sched_getaffinity(0, sizeof(cpu_set_t), &affinity);
+	return CPU_COUNT(&affinity);
+}
+
+bool pinningIntersection()
+{
+	cpu_set_t affinity;
+	sched_getaffinity(0, sizeof(cpu_set_t), &affinity);
+
+	std::vector<int> count(hwthreads());
+	for (size_t i = 0; i < count.size(); ++i) {
+		count[i] = CPU_ISSET(i, &affinity) ? 1 : 0;
+	}
+	Communication::allReduce(count.data(), nullptr, count.size(), MPI_INT, MPI_SUM, MPITools::node);
+	for (size_t i = 0; i < count.size(); ++i) {
+		if (count[i] > 1) {
+			return true;
+		}
+	}
+	return false;
+}
+
+long MemTotal, MemFree, MemAvailable;
+
+long memoryTotal()
+{
+	if (MemTotal == 0) { // total memory is persistent
+		std::ifstream meminfo("/proc/meminfo");
+		std::string name, unit;
+
+		meminfo >> name >> MemTotal >> unit;
+		meminfo >> name >> MemFree >> unit;
+		meminfo >> name >> MemAvailable >> unit;
+	}
+	return MemTotal;
+}
+
+long memoryAvail()
+{
+	std::ifstream meminfo("/proc/meminfo");
+	std::string name, unit;
+
+	meminfo >> name >> MemTotal >> unit;
+	meminfo >> name >> MemFree >> unit;
+	meminfo >> name >> MemAvailable >> unit;
+	return MemAvailable;
+}
+
+const char* simd()
+{
+#if defined(__AVX512F__) && defined(__AVX512DQ__)
+	return "AVX-512";
+#elif defined(__AVX__)
+	return "AVX";
+#elif defined(__SSE2__)
+	return "SSE2";
+#elif defined(__SSE__)
+	return "SSE2";
+#else
+	return "UNKNOWN";
+#endif
+}
+
+void print()
+{
+	int ppn = MPITools::node->size;
+	int threads = info::system::hwthreads();
+	int nodes = info::mpi::size / ppn;
+	const char* simd = info::system::simd();
+	auto cpuinfo = info::system::cpuinfo();
+
+	double memTotal = 0, memAvail = 0;
+	if (info::mpi::rank == 0) {
+		memAvail = info::system::memoryAvail();
+		memTotal = info::system::memoryTotal();
+	}
+	int asynchronousThread = info::ecf->output.mode == OutputConfiguration::MODE::PTHREAD;
+
+	eslog::info(" ================================ SYSTEM AND ENVIRONMENT INFO ================================ \n");
+	eslog::info(" ============================================================================================= \n");
+
+	eslog::info(" == CPU MODEL NAME %*s == \n", 72, cpuinfo.modelName);
+	eslog::info(" == NODES %*d == \n", 81, nodes);
+	eslog::info(" == SOCKETS PER NODE %*d == \n", 70, cpuinfo.sockets);
+	eslog::info(" == CORES PER SOCKET %*d == \n", 70, cpuinfo.cores);
+	eslog::info(" == HYPERTHREADING %*s == \n", 72, cpuinfo.hyperthreading ? "ON" : "OFF");
+	eslog::info(" == HWTHREADS PER NODE %*d == \n", 68, threads);
+	eslog::info(" == SIMD INSTRUCTION SET %*s == \n", 70 - strlen(simd), simd);
+	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
+
+	eslog::info(" == AVAILABLE MEMORY PER NODE [GB] %*.2f == \n", 56, memAvail / 1024 / 1024);
+	eslog::info(" == TOTAL MEMORY PER NODE [GB] %*.2f == \n", 60, memTotal / 1024 / 1024);
+	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
+
+	eslog::info(" == MPI_COMM_WORLD %*d == \n", 72, info::mpi::size);
+	eslog::info(" == OMP_NUM_THREADS %*d == \n", 71, info::env::OMP_NUM_THREADS);
+	eslog::info(" == NUMBER OF ASYNCHRONOUS P-THREADS %*d == \n", 54, asynchronousThread);
+
+	eslog::info(" == USED HWTHREADS PER NODE   %*d / %d == \n", 56 - threads / 100, ppn * (info::env::OMP_NUM_THREADS + asynchronousThread), threads);
+	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
+
+	eslog::info(" == MPI PROCESSES PER NODE %*d == \n", 64, ppn);
+	eslog::info(" == MPI PINNED DOMAIN SIZE %*d == \n", 64, info::system::pinnedDomainSize());
+
+	eslog::info(" ============================================================================================= \n");
 }
 
 void setSignals()
