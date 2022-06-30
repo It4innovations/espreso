@@ -10,11 +10,6 @@ namespace system {
 		UNIX
 	};
 
-	enum class INSTRUCTIONSET {
-		SSE,
-		AVX
-	};
-
 	enum class BUILD_MODE {
 		RELEASE,
 		DEVEL,
@@ -22,9 +17,15 @@ namespace system {
 		PROFILE
 	};
 
+	struct CPUInfo {
+		char modelName[200];
+		int sockets = 0;
+		int cores;
+		bool hyperthreading = 0;
+	};
+
 	// dummy yet
 	OPERATIONSYSTEM os();
-	INSTRUCTIONSET instructionSet();
 
 	constexpr BUILD_MODE buildmode()
 	{
@@ -39,9 +40,19 @@ namespace system {
 	const char* cxx();
 	const char* buildpath();
 	const char* cxxflags();
+	const char* simd();
+
 	int MPI_Init_thread_provided_level();
 
+	CPUInfo cpuinfo();
+	int hwthreads();
+	long pinnedDomainSize();
+	bool pinningIntersection();
+	long memoryTotal();
+	long memoryAvail();
+
 	void setSignals();
+	void print();
 }
 }
 }

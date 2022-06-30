@@ -79,7 +79,7 @@ void printRunInfo(int *argc, char ***argv)
 	std::string cxx = info::system::cxx();
 	std::string mesh = info::ecf->input.path;
 	std::string runpath(info::env::pwd() ? info::env::pwd() : "");
-	std::string exe(std::string(info::system::buildpath()) + "/" + info::ecf->exe);
+	std::string exe(info::ecf->exe);
 	std::string cmd((*argv)[0]);
 	std::string ecffile(info::ecf->ecffile);
 	std::string outpath(info::ecf->outpath);
@@ -109,34 +109,41 @@ void printRunInfo(int *argc, char ***argv)
 	eslog::info(" == CXXFLAGS %*s == \n", width, info::system::cxxflags());
 	eslog::info(" == COMMIT   %*s == \n", width, info::system::commit());
 	eslog::info(" == BINARY   %*s == \n", width, exe.c_str());
-	eslog::info(" == DATE [YYYY-MM-DD]   %*s == \n", width - 11, date);
-	eslog::info(" == TIME [HH-MM-SS]    %*s == \n", width - 10, time);
-	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
-	eslog::info(" == COMMAND  %*s == \n", width, cmd.c_str());
-	eslog::info(" == MPI_COMM_WORLD %*d == \n", width - 6, info::mpi::size);
-	eslog::info(" == OMP_NUM_THREADS %*d == \n", width - 7, info::env::OMP_NUM_THREADS);
-	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
-	eslog::info(" == NUMBER OF LOADERS %*d == \n", width - 9, MPITools::subset->acrosssize);
-	eslog::info(" == NUMBER OF WRITTERS %*d == \n", width - 10, MPITools::subset->acrosssize);
-	switch (info::ecf->output.mode) {
-	case OutputConfiguration::MODE::SYNC  : eslog::info(" == STORING MODE %*s == \n", width - 4, "SYNCHRONIZED"); break;
-	case OutputConfiguration::MODE::PTHREAD: eslog::info(" == STORING MODE %*s == \n", width - 4, "SEPARETED P-THREAD"); break;
-	}
 	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
 	eslog::info(" == RUN PATH %*s == \n", width, runpath.c_str());
 	eslog::info(" == ECF      %*s == \n", width, ecffile.c_str());
-	switch (info::ecf->input_type) {
-	case ECF::INPUT_TYPE::EXTERNAL_FILE: eslog::info(" == MESH     %*s == \n", width, mesh.c_str()); break;
-	case ECF::INPUT_TYPE::GENERATOR:     eslog::info(" == MESH     %*s == \n", width, "GENERATOR"); break;
-	}
-	eslog::info(" == OUTPUT   %*s == \n", width, outpath.c_str());
-	eslog::info(" ============================================================================================= \n");
+	eslog::info(" == DATE [YYYY-MM-DD]   %*s == \n", width - 11, date);
+	eslog::info(" == TIME [HH-MM-SS]    %*s == \n", width - 10, time);
+	eslog::info(" ============================================================================================= \n\n");
+
+	info::system::print();
 }
 
 void finish()
 {
 	eslog::info("\n ======================================== RUN FINISHED ======================================= \n");
+
+	int ppn = MPITools::node->size;
+	int hwthreads = info::system::hwthreads();
+	int asynchronousThread = info::ecf->output.mode == OutputConfiguration::MODE::PTHREAD;
+	if (ppn * (info::env::OMP_NUM_THREADS + asynchronousThread) > hwthreads) {
+		eslog::warning(" ============================================================================================= \n");
+		eslog::warning(" =                                 MPI * THREADS > HWTHREADS                                 = \n");
+		eslog::warning(" ============================================================================================= \n");
+	}
+	if (info::system::pinningIntersection()) {
+		eslog::warning(" ============================================================================================= \n");
+		eslog::warning(" =                        MORE THREADS WAS PINNED TO THE SAME HWTHREAD                       = \n");
+		eslog::warning(" ============================================================================================= \n");
+	}
+	if (info::system::pinnedDomainSize() < info::env::OMP_NUM_THREADS + asynchronousThread) {
+		eslog::warning(" ============================================================================================= \n");
+		eslog::warning(" =                              PINNED DOMAIN < SPAWNED THREADS                              = \n");
+		eslog::warning(" ============================================================================================= \n");
+	}
+
 	logger->finish();
+
 	if (logger) delete logger;
 }
 

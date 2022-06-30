@@ -1,6 +1,7 @@
 
 #include "mpiinfo.h"
-#include "eslog.hpp"
+#include "eslog.h"
+#include "systeminfo.h"
 #include "wrappers/mpi/communication.h"
 
 int espreso::info::mpi::rank = 0;
