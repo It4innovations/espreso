@@ -46,44 +46,50 @@ void FoamFile::finish()
 	MPI_Type_free(&oftype);
 }
 
+void parse(FoamFileHeader &header, const oftoken::dictionary &dict)
+{
+	auto keyword = [dict] (const char *keyword) {
+		return memcmp(dict.keyword.begin, keyword, std::min((size_t)(dict.keyword.end - dict.keyword.begin), strlen(keyword))) == 0;
+	};
+	auto value = [dict] (const char *value) {
+		return memcmp(dict.value.begin, value, std::min((size_t)(dict.value.end - dict.value.begin), strlen(value))) == 0;
+	};
+
+	if (keyword("version")) {
+		char *end;
+		header.version = strtol(dict.value.begin, &end, 10);
+		header.subversion = strtol(++end, NULL, 10);
+	}
+	if (keyword("format")) {
+		if (value("ascii")) { header.format = FoamFileHeader::Format::ASCII; }
+		if (value("binary")) { header.format = FoamFileHeader::Format::BINARY; }
+	}
+	if (keyword("arch")) {
+		memcpy(header.arch, dict.value.begin + 1, std::min(dict.value.end - dict.value.begin - 3, MAX_CHAR_LENGTH));
+	}
+	if (keyword("note")) {
+		memcpy(header.note, dict.value.begin + 1, std::min(dict.value.end - dict.value.begin - 3, MAX_CHAR_LENGTH));
+	}
+	if (keyword("class")) {
+		if (value("faceList")) { header.foamClass = FoamFileHeader::Class::faceList; }
+		if (value("labelList")) { header.foamClass = FoamFileHeader::Class::labelList; }
+		if (value("vectorField")) { header.foamClass = FoamFileHeader::Class::vectorField; }
+	}
+	if (keyword("location")) {
+		memcpy(header.location, dict.value.begin + 1, std::min(dict.value.end - dict.value.begin - 3, MAX_CHAR_LENGTH));
+	}
+	if (keyword("object")) {
+		memcpy(header.object, dict.value.begin, std::min(dict.value.end - dict.value.begin - 1, MAX_CHAR_LENGTH));
+	}
+}
+
 const char* FoamFileHeader::read(InputFile *file)
 {
 	if (file->distribution[info::mpi::rank] == 0 && file->distribution[info::mpi::rank + 1] != 0) {
 		const char *c = oftoken::toFoamFile(file->begin);
 		while (*c != '}') {
 			oftoken::dictionary dict = oftoken::dict(c);
-			auto keyword = [dict] (const char *keyword) {
-				return memcmp(dict.keyword.begin, keyword, std::min((size_t)(dict.keyword.end - dict.keyword.begin), strlen(keyword))) == 0;
-			};
-			auto value = [dict] (const char *value) {
-				return memcmp(dict.value.begin, value, std::min((size_t)(dict.value.end - dict.value.begin), strlen(value))) == 0;
-			};
-			if (keyword("version")) {
-				char *end;
-				version = strtol(dict.value.begin, &end, 10);
-				subversion = strtol(++end, NULL, 10);
-			}
-			if (keyword("format")) {
-				if (value("ascii")) { format = Format::ASCII; }
-				if (value("binary")) { format = Format::BINARY; }
-			}
-			if (keyword("arch")) {
-				memcpy(arch, dict.value.begin + 1, std::min(dict.value.end - dict.value.begin - 3, MAX_CHAR_LENGTH));
-			}
-			if (keyword("note")) {
-				memcpy(note, dict.value.begin + 1, std::min(dict.value.end - dict.value.begin - 3, MAX_CHAR_LENGTH));
-			}
-			if (keyword("class")) {
-				if (value("faceList")) { foamClass = Class::faceList; }
-				if (value("labelList")) { foamClass = Class::labelList; }
-				if (value("vectorField")) { foamClass = Class::vectorField; }
-			}
-			if (keyword("location")) {
-				memcpy(location, dict.value.begin + 1, std::min(dict.value.end - dict.value.begin - 3, MAX_CHAR_LENGTH));
-			}
-			if (keyword("object")) {
-				memcpy(object, dict.value.begin, std::min(dict.value.end - dict.value.begin - 1, MAX_CHAR_LENGTH));
-			}
+			parse(*this, dict);
 			c = dict.value.end;
 			while (*c++ != '\n');
 		}
@@ -97,6 +103,26 @@ const char* FoamFileHeader::read(InputFile *file)
 		return c;
 	}
 	return file->begin;
+}
+
+void FoamFileHeader::read(std::ifstream &is)
+{
+	oftoken::toFoamFile(is);
+	char line[256];
+	is.getline(line, 256);
+	while(line[0] != '}') {
+		oftoken::dictionary dict = oftoken::dict(line);
+		parse(*this, dict);
+		is.getline(line, 256);
+	}
+	is.getline(line, 256);
+
+	if (format == Format::UNKNOWN) {
+		eslog::internalFailure("unknown format of Open FOAM file (%s/%s).\n", location, object);
+	}
+	if (foamClass == Class::unknown) {
+		eslog::internalFailure("unknown class of Open FOAM file (%s/%s).\n", location, object);
+	}
 }
 
 void FoamFile::scanFile(RawFoamFile &file)

@@ -18,6 +18,22 @@
 namespace espreso {
 namespace builder {
 
+static void regionInfo(Mesh &mesh)
+{
+	int bregions = 0, nregions = 0;
+	for (size_t r = 1; r < mesh.boundaryRegions.size(); ++r) {
+		if (mesh.boundaryRegions[r]->dimension) {
+			++bregions;
+		} else {
+			++nregions;
+		}
+	}
+	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
+	eslog::info(" == ELEMENTS REGIONS %70d == \n", mesh.elementsRegions.size() - 1);
+	eslog::info(" == BOUNDARY REGIONS %70d == \n", bregions);
+	eslog::info(" == NODES REGIONS %73d == \n", nregions);
+}
+
 void buildOrderedFEM(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, Mesh &mesh)
 {
 	eslog::startln("BUILDER: PROCESS ORDERED MESH", "BUILDER");
@@ -86,18 +102,8 @@ void buildOrderedFEM(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &i
 
 		fillMesh(prepared, *input.regions, mesh);
 	}
-	int bregions = 0, nregions = 0;
-	for (size_t r = 1; r < mesh.boundaryRegions.size(); ++r) {
-		if (mesh.boundaryRegions[r]->dimension) {
-			++bregions;
-		} else {
-			++nregions;
-		}
-	}
-	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
-	eslog::info(" == ELEMENTS REGIONS %70d == \n", mesh.elementsRegions.size() - 1);
-	eslog::info(" == BOUNDARY REGIONS %70d == \n", bregions);
-	eslog::info(" == NODES REGIONS %73d == \n", nregions);
+
+	regionInfo(mesh);
 	eslog::info(" ============================================================================================= \n\n");
 	eslog::endln("BUILDER: MESH BUILT");
 }
@@ -149,6 +155,73 @@ void buildOrderedFVM(InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRe
 
 		fillMesh(linked, *input.regions, mesh);
 	}
+	eslog::endln("BUILDER: MESH BUILT");
+}
+
+void buildDecomposedFVM(InputMesh<OrderedNodes, OrderedFaces, OrderedRegions> &input, Mesh &mesh)
+{
+	eslog::startln("BUILDER: PROCESS FACED MESH", "BUILDER");
+	eslog::info(" ================================== DECOMPOSED FVM BUILDER ==================== %12.3f s\n", eslog::duration());
+	eslog::info(" ============================================================================================= \n");
+	mesh.dimension = 3;
+	eslog::info(" == MESH DIMENSION %72d == \n", mesh.dimension);
+
+	if (info::mpi::size == 1) {
+		TemporalSequentialMesh<ClusteredNodes, OrderedFacesBalanced> grouped;
+		TemporalSequentialMesh<MergedNodes, OrderedFacesBalanced> merged;
+		TemporalSequentialMesh<MergedNodes, ClusteredElements> fem;
+		TemporalSequentialMesh<MergedNodes, MergedElements> prepared;
+
+		initializeSequentialFVM(input, grouped);
+		eslog::checkpointln("BUILDER: DATA INITIALIZED");
+
+		searchDuplicatedNodes(grouped, merged);
+		eslog::info(" == DUPLICATED NODES %70d == \n", merged.nodes->duplication.size());
+		eslog::checkpointln("BUILDER: DUPLICATED NODES FOUND");
+
+		buildElementsFromFaces(merged, fem);
+		eslog::checkpointln("BUILDER: ELEMENTS CREATED");
+
+		searchDuplicatedElements(fem, prepared, mesh.dimension);
+		eslog::info(" == DUPLICATED ELEMENTS %67d == \n", prepared.elements->duplication.size());
+		eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
+
+		fillSequentialMesh(prepared, *input.regions, mesh);
+	} else {
+		TemporalMesh<OrderedNodesBalanced, OrderedFacesBalanced> grouped;
+		TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> ordered;
+		TemporalMesh<MergedNodes, MergedElements> clustered;
+		TemporalMesh<LinkedNodes, MergedElements> linked;
+
+//		balanceFVM(input, grouped);
+//		eslog::checkpointln("BUILDER: DATA BALANCED");
+//
+//		buildElementsFromFaces(grouped, ordered);
+//		eslog::checkpointln("BUILDER: ELEMENTS CREATED");
+//
+//		ivector<esint> nbuckets, ebuckets, splitters;
+//		HilbertCurve<esfloat> sfc(mesh.dimension, SFCDEPTH, ordered.nodes->coordinates.size(), ordered.nodes->coordinates.data());
+//		eslog::checkpointln("BUILDER: SFC BUILT");
+//
+//		assignBuckets(ordered, sfc, nbuckets, ebuckets);
+//		eslog::checkpointln("BUILDER: SFC BUCKETS ASSIGNED");
+//
+//		clusterize(ordered, nbuckets, ebuckets, sfc.buckets(sfc.depth), clustered, splitters);
+//		utils::clearVectors(nbuckets, ebuckets);
+//		eslog::checkpointln("BUILDER: MESH CLUSTERIZED");
+//
+//		computeSFCNeighbors(sfc, splitters, linked.nodes->neighbors); // neighbors are approximated here
+//		eslog::checkpointln("BUILDER: NEIGHBORS APPROXIMATED");
+//
+//		linkup(clustered, linked);
+//		reindexToLocal(linked);
+//		eslog::checkpointln("BUILDER: LINKED UP");
+//
+//		fillMesh(linked, *input.regions, mesh);
+	}
+
+	regionInfo(mesh);
+	eslog::info(" ============================================================================================= \n\n");
 	eslog::endln("BUILDER: MESH BUILT");
 }
 

@@ -6,10 +6,11 @@
 #include "input/input.h"
 
 #include <cstddef>
+#include <fstream>
 
 namespace espreso {
 
-struct OpenFOAMVectorField: FoamFile, RawFoamFile {
+struct OpenFOAMVectorField: RawFoamFile, FoamFile {
 
 	OpenFOAMVectorField(InputFile *input): RawFoamFile(input) {}
 
@@ -19,6 +20,8 @@ struct OpenFOAMVectorField: FoamFile, RawFoamFile {
 	}
 
 	void parse(ivector<_Point<esfloat> > &coordinates);
+
+	static esint load(const std::string &file, ivector<_Point<esfloat> > &coordinates);
 };
 
 }

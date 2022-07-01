@@ -48,16 +48,15 @@ struct OrderedUniqueFaces {
 	ivector<esint> owner, neighbor;
 };
 
-struct OrderedNodes {
-	std::vector<DatabaseOffset> offsets;
-	ivector<_Point<esfloat> > coordinates;
+struct WithRegions {
+	std::vector<DatabaseOffset> offsets; // TODO: assume that there are always regions
 };
 
-struct OrderedElements {
-	std::vector<DatabaseOffset> offsets;
-	ivector<Element::CODE> etype;
-	ivector<esint> enodes;
-};
+struct OrderedNodes: OrderedUniqueNodes, WithRegions { };
+
+struct OrderedElements: OrderedUniqueElements, WithRegions { };
+
+struct OrderedFaces: OrderedUniqueFaces, WithRegions { };
 
 struct OrderedValues {
 	std::vector<DatabaseOffset> offsets;
@@ -81,6 +80,13 @@ struct InputMesh {
 	TRegions *regions;
 
 	InputMesh(): nodes(new TNodes()), elements(new TElements()), regions(new TRegions()) { }
+	~InputMesh()
+	{
+		if (nodes) delete nodes;
+		if (elements) delete elements;
+		if (regions) delete regions;
+	}
+
 };
 
 inline size_t size(const OrderedUniqueNodes &data)

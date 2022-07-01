@@ -22,7 +22,7 @@ inline void clearVectors()
 }
 
 template <typename T, typename ...TOther>
-void clearVectors(T &vector, TOther... other)
+void clearVectors(T &vector, TOther&... other)
 {
 	clearVector(vector);
 	clearVectors(other...);

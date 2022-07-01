@@ -2,6 +2,9 @@
 #include "vectorField.h"
 
 #include "esinfo/envinfo.h"
+#include "esinfo/eslog.h"
+
+#include <fstream>
 
 using namespace espreso;
 
@@ -37,4 +40,26 @@ void OpenFOAMVectorField::parse(ivector<_Point<esfloat> > &coordinates)
 			c += 2; // skip ")\n"
 		}
 	}
+}
+
+esint OpenFOAMVectorField::load(const std::string &file, ivector<_Point<esfloat> > &coordinates)
+{
+	std::ifstream is(file);
+	FoamFileHeader header(is);
+
+	esint points;
+	is >> points;
+	coordinates.reserve(coordinates.size() + points);
+	is.ignore(256, '(');
+	if (header.format == FoamFileHeader::Format::ASCII) {
+		for (esint p = 0; p < points; ++p) {
+			is.ignore(16, '(');
+			_Point<esfloat> coo;
+			is >> coo.x >> coo.y >> coo.z;
+			coordinates.push_back(coo);
+		}
+	} else {
+		eslog::error("implement OpenFOAM binary reader.\n");
+	}
+	return points;
 }

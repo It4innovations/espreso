@@ -19,6 +19,8 @@ struct OpenFOAMFaceList: FoamFile, RawFoamFile {
 	}
 
 	void parse(ivector<Element::CODE> &type, ivector<esint> &enodes);
+
+	static FoamFileHeader load(const std::string &file, ivector<Element::CODE> &type, ivector<esint> &enodes, esint offset);
 };
 
 }

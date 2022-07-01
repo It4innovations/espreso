@@ -6,6 +6,8 @@
 
 #include "mpi.h"
 
+#include <fstream>
+
 namespace espreso {
 
 #define MAX_CHAR_LENGTH 256L
@@ -25,6 +27,10 @@ struct FoamFileHeader {
 	char object[MAX_CHAR_LENGTH] = { 0 };
 
 	const char* read(InputFile *file);
+	void read(std::ifstream &is);
+
+	FoamFileHeader() {}
+	FoamFileHeader(std::ifstream &is) { read(is); }
 
 	FoamFileHeader& operator^=(const FoamFileHeader &other) // used in MPI Reduce function
 	{

@@ -19,19 +19,45 @@ namespace builder {
 
 struct OrderedDataDistribution {
 	esint chunk, offset, size, total;
+
+	void swap(OrderedDataDistribution *other) {
+		std::swap(chunk, other->chunk);
+		std::swap(offset, other->offset);
+		std::swap(size, other->size);
+		std::swap(total, other->total);
+	}
 };
 
 struct OrderedNodesBalanced: OrderedDataDistribution {
 	ivector<_Point<esfloat> > coordinates;
+
+	void swap(OrderedNodesBalanced *other) {
+		coordinates.swap(other->coordinates);
+		OrderedDataDistribution::swap(other);
+	}
 };
 
 struct OrderedElementsBalanced: OrderedDataDistribution {
 	ivector<Element::CODE> etype;
 	ivector<esint> edist, enodes;
+
+	void swap(OrderedElementsBalanced *other) {
+		etype.swap(other->etype);
+		edist.swap(other->edist);
+		enodes.swap(other->enodes);
+		OrderedDataDistribution::swap(other);
+	}
 };
 
 struct OrderedFacesBalanced: OrderedElementsBalanced {
 	ivector<esint> owner, neighbor, foffset;
+
+	void swap(OrderedFacesBalanced *other) {
+		owner.swap(other->owner);
+		neighbor.swap(other->neighbor);
+		foffset.swap(other->foffset);
+		OrderedElementsBalanced::swap(other);
+	}
 };
 
 /**
@@ -65,6 +91,12 @@ struct LinkedNodes: MergedNodes {
 struct ClusteredElements: ClusteredDataDistribution {
 	ivector<Element::CODE> etype;
 	ivector<esint> edist, enodes;
+
+	void swap(ClusteredElements *other) {
+		etype.swap(other->etype);
+		edist.swap(other->edist);
+		enodes.swap(other->enodes);
+	}
 };
 
 struct MergedElements: ClusteredElements {
@@ -118,11 +150,22 @@ private:
 };
 
 template <typename TNodes, typename TElements>
-struct TemporalSequentialMesh: TemporalMesh<TNodes, TElements> {};
+struct TemporalSequentialMesh: TemporalMesh<TNodes, TElements> {
+
+	TemporalSequentialMesh() {}
+
+	template <typename TNodesOther, typename TElementsOther>
+	TemporalSequentialMesh(const TemporalSequentialMesh<TNodesOther, TElementsOther> &other)
+	: TemporalMesh<TNodes, TElements>(other)
+	{
+
+	}
+};
 
 // sequential
 void initializeSequentialFEM(const InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, const TemporalSequentialMesh<ClusteredNodes, ClusteredElements> &clustered, int &dimension);
-void initializeSequentialFVM(const InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &input, const TemporalSequentialMesh<MergedNodes, OrderedFacesBalanced> &clustered);
+void initializeSequentialFVM(const InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &input, const TemporalSequentialMesh<ClusteredNodes, OrderedFacesBalanced> &clustered);
+void initializeSequentialFVM(const InputMesh<OrderedNodes, OrderedFaces, OrderedRegions> &input, const TemporalSequentialMesh<ClusteredNodes, OrderedFacesBalanced> &clustered);
 
 // balancing
 void balanceFEM(const InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered, int &dimension);
@@ -134,14 +177,20 @@ void clusterize(const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced
 void computeSFCNeighbors(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, std::vector<int> &sfcNeighbors);
 
 // merging
-void searchDuplicatedNodes(const TemporalSequentialMesh<ClusteredNodes, ClusteredElements> &clustered, const TemporalSequentialMesh<MergedNodes, ClusteredElements> &merged);
+void searchDuplicatedNodes(ClusteredNodes* clustered, MergedNodes* merged);
+template <typename TElements>
+void searchDuplicatedNodes(const TemporalSequentialMesh<ClusteredNodes, TElements> &clustered, const TemporalSequentialMesh<MergedNodes, TElements> &merged)
+{
+	searchDuplicatedNodes(clustered.nodes, merged.nodes);
+	merged.elements->swap(clustered.elements);
+}
 void searchDuplicatedElements(const TemporalSequentialMesh<MergedNodes, ClusteredElements> &merged, const TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, int meshDimension);
 
 void searchDuplicatedNodesWithSFC(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, const std::vector<int> &sfcNeighbors, const TemporalMesh<ClusteredNodes, ClusteredElements> &clustered, const TemporalMesh<MergedNodes, ClusteredElements> &merged);
 void searchParentAndDuplicatedElements(const TemporalMesh<LinkedNodes, ClusteredElements> &linked, const TemporalMesh<LinkedNodes, MergedElements> &prepared, int meshDimension);
 void reindexToLocal(const TemporalMesh<LinkedNodes, MergedElements> &linked);
 
-void buildElementsFromFaces(const TemporalSequentialMesh<MergedNodes, OrderedFacesBalanced> &clustered, const TemporalSequentialMesh<MergedNodes, MergedElements> &prepared);
+void buildElementsFromFaces(const TemporalSequentialMesh<MergedNodes, OrderedFacesBalanced> &clustered, const TemporalSequentialMesh<MergedNodes, ClusteredElements> &prepared);
 void buildElementsFromFaces(const TemporalMesh<OrderedNodesBalanced, OrderedFacesBalanced> &grouped, const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered);
 
 //linking

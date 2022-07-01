@@ -18,7 +18,28 @@ public:
 	void variables(Mesh &mesh);
 
 protected:
+	InputOpenFoam *loader;
+};
+
+class InputOpenFoamSequential: public InputOpenFoam {
+public:
 	InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> mesh;
+
+	void load(const InputConfiguration &configuration);
+	void build(Mesh &mesh);
+	void variables(Mesh &mesh);
+};
+
+class InputOpenFoamParallel: public InputOpenFoam {
+public:
+	InputOpenFoamParallel(esint domains): domains(domains) {}
+
+	InputMesh<OrderedNodes, OrderedFaces, OrderedRegions> mesh;
+	esint domains;
+
+	void load(const InputConfiguration &configuration);
+	void build(Mesh &mesh);
+	void variables(Mesh &mesh);
 };
 
 }

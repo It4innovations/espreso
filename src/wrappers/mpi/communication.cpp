@@ -527,6 +527,22 @@ bool Communication::reduce(void *in, void *out, size_t size, MPI_Datatype type, 
 	return true;
 }
 
+bool Communication::exscan(void *in, void *out, size_t size, MPI_Datatype type, MPI_Op op, MPIGroup *group)
+{
+	if (size != (size_t)(int)size) {
+		return false;
+	}
+	profiler::syncstart("mpi_reduce");
+	profiler::syncparam("size", size);
+	if (out == NULL) {
+		MPI_Exscan(MPI_IN_PLACE, in, size, type, op, group->communicator);
+	} else {
+		MPI_Exscan(in, out, size, type, op, group->communicator);
+	}
+	profiler::syncend("mpi_reduce");
+	return true;
+}
+
 bool Communication::allReduce(void *in, void *out, size_t size, MPI_Datatype type, MPI_Op op, MPIGroup *group)
 {
 	if (size != (size_t)(int)size) {

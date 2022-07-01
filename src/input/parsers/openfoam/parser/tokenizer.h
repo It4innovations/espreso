@@ -4,6 +4,7 @@
 
 #include <string>
 #include <cstring>
+#include <fstream>
 
 namespace espreso {
 namespace oftoken {
@@ -44,6 +45,19 @@ const char* toFoamFile(const char* c)
 		++c;
 	}
 }
+
+void toFoamFile(std::ifstream &is)
+{
+	while (is.good()) {
+		char line[256];
+		is.getline(line, 256);
+		if (memcmp(line, "FoamFile", 8) == 0) {
+			is.getline(line, 256);
+			return;
+		}
+	}
+}
+
 
 dictionary dict(const char* c)
 {

@@ -3,6 +3,7 @@
 
 #include "basis/utilities/utils.h"
 #include "esinfo/envinfo.h"
+#include "esinfo/eslog.h"
 
 using namespace espreso;
 
@@ -45,4 +46,36 @@ void OpenFOAMFaceList::parse(ivector<Element::CODE> &type, ivector<esint> &enode
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; t++) {
 		std::copy(nodes[t].begin(), nodes[t].end(), enodes.begin() + ncount[t]);
 	}
+}
+
+FoamFileHeader OpenFOAMFaceList::load(const std::string &file, ivector<Element::CODE> &type, ivector<esint> &enodes, esint offset)
+{
+	std::ifstream is(file);
+	FoamFileHeader header(is);
+
+	esint faces;
+	is >> faces;
+	type.reserve(type.size() + faces);
+	enodes.reserve(enodes.size() + faces * 4.1);
+	is.ignore(256, '(');
+	if (header.format == FoamFileHeader::Format::ASCII) {
+		for (esint f = 0; f < faces; ++f) {
+			esint size, node;
+			is >> size;
+			is.ignore(16, '(');
+			switch (size) {
+			case 3: type.push_back(Element::CODE::TRIANGLE3); break;
+			case 4: type.push_back(Element::CODE::SQUARE4); break;
+			default: type.push_back(Element::CODE::POLYGON); enodes.push_back(size);
+			}
+			for (esint n = 0; n < size; ++n) {
+				is >> node;
+				enodes.push_back(node + offset);
+			}
+			is.ignore(16, ')');
+		}
+	} else {
+		eslog::error("implement OpenFOAM binary reader.\n");
+	}
+	return header;
 }

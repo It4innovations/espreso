@@ -142,20 +142,14 @@ static void localSearch(MergedNodes *merged)
 	std::sort(merged->duplication.begin(), merged->duplication.end());
 }
 
-void searchDuplicatedNodes(const TemporalSequentialMesh<ClusteredNodes, ClusteredElements> &clustered, const TemporalSequentialMesh<MergedNodes, ClusteredElements> &merged)
+void searchDuplicatedNodes(ClusteredNodes* clustered, MergedNodes* merged)
 {
 	if (info::mpi::size != 1) {
 		eslog::internalFailure("usage of a sequential method during a parallel run.\n");
 	}
-	merged.nodes->coordinates.swap(clustered.nodes->coordinates);
-	merged.nodes->offsets.swap(clustered.nodes->offsets);
-	localSearch(merged.nodes);
-
-	merged.elements->offsets.swap(clustered.elements->offsets);
-	merged.elements->etype.swap(clustered.elements->etype);
-	merged.elements->edist.swap(clustered.elements->edist);
-	merged.elements->enodes.swap(clustered.elements->enodes);
-	utils::clearVectors(clustered.elements->etype, clustered.elements->enodes, clustered.elements->edist, clustered.elements->offsets);
+	merged->coordinates.swap(clustered->coordinates);
+	merged->offsets.swap(clustered->offsets);
+	localSearch(merged);
 }
 
 void searchDuplicatedNodesWithSFC(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, const std::vector<int> &sfcNeighbors, const TemporalMesh<ClusteredNodes, ClusteredElements> &clustered, const TemporalMesh<MergedNodes, ClusteredElements> &merged)
@@ -979,16 +973,22 @@ static void buildElements(OrderedFacesBalanced *faces, OrderedElementsBalanced *
 	}
 }
 
-void buildElementsFromFaces(const TemporalSequentialMesh<MergedNodes, OrderedFacesBalanced> &clustered, const TemporalSequentialMesh<MergedNodes, MergedElements> &prepared)
+void buildElementsFromFaces(const TemporalSequentialMesh<MergedNodes, OrderedFacesBalanced> &clustered, const TemporalSequentialMesh<MergedNodes, ClusteredElements> &prepared)
 {
 	prepared.nodes->offsets.swap(clustered.nodes->offsets);
 	prepared.nodes->coordinates.swap(clustered.nodes->coordinates);
+	prepared.nodes->duplication.swap(clustered.nodes->duplication);
 
 	OrderedElementsBalanced balanced;
+	balanced.OrderedDataDistribution::operator=(*clustered.elements);
 	buildElements(clustered.elements, &balanced);
 	prepared.elements->etype.swap(balanced.etype);
 	prepared.elements->enodes.swap(balanced.enodes);
 	prepared.elements->edist.swap(balanced.edist);
+	prepared.elements->offsets.resize(prepared.elements->etype.size());
+	std::iota(prepared.elements->offsets.begin(), prepared.elements->offsets.end(), 0);
+
+	utils::clearVectors(clustered.elements->etype, clustered.elements->edist, clustered.elements->enodes, clustered.elements->foffset, clustered.elements->owner, clustered.elements->neighbor);
 }
 
 void buildElementsFromFaces(const TemporalMesh<OrderedNodesBalanced, OrderedFacesBalanced> &grouped, const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered)

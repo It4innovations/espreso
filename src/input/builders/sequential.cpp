@@ -48,11 +48,18 @@ void initializeSequentialFEM(const InputMesh<OrderedNodes, OrderedElements, Orde
 	std::iota(clustered.elements->offsets.begin(), clustered.elements->offsets.end(), 0);
 }
 
-void initializeSequentialFVM(const InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &input, const TemporalSequentialMesh<MergedNodes, OrderedFacesBalanced> &clustered)
+static void _initializeSequentialFVM(const InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &input, const TemporalSequentialMesh<ClusteredNodes, OrderedFacesBalanced> &clustered)
 {
 	if (info::mpi::size != 1) {
 		eslog::internalFailure("usage of a sequential method during a parallel run.\n");
 	}
+
+	eslog::info(" == TOTAL NUMBER OF NODES %65lu == \n", input.nodes->coordinates.size());
+	eslog::info(" == TOTAL NUMBER OF ELEMENTS %62d == \n", input.elements->elements);
+
+	clustered.elements->offset = 0;
+	clustered.elements->size = input.elements->elements;
+	clustered.elements->total = input.elements->elements;
 
 	clustered.nodes->coordinates.swap(input.nodes->coordinates);
 	clustered.elements->etype.swap(input.elements->etype);
@@ -69,9 +76,29 @@ void initializeSequentialFVM(const InputMesh<OrderedUniqueNodes, OrderedUniqueFa
 			clustered.elements->edist.push_back(clustered.elements->edist.back() + clustered.elements->enodes[clustered.elements->edist.back()]);
 		}
 	}
+}
+
+void initializeSequentialFVM(const InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &input, const TemporalSequentialMesh<ClusteredNodes, OrderedFacesBalanced> &clustered)
+{
+	_initializeSequentialFVM(input, clustered);
 
 	clustered.nodes->offsets.resize(clustered.nodes->coordinates.size());
 	std::iota(clustered.nodes->offsets.begin(), clustered.nodes->offsets.end(), 0);
+}
+
+void initializeSequentialFVM(const InputMesh<OrderedNodes, OrderedFaces, OrderedRegions> &input, const TemporalSequentialMesh<ClusteredNodes, OrderedFacesBalanced> &clustered)
+{
+	InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> _input;
+	_input.nodes = input.nodes;
+	_input.elements = input.elements;
+	_input.regions = input.regions;
+	_initializeSequentialFVM(_input, clustered);
+	_input.nodes = nullptr; _input.elements = nullptr; _input.regions = nullptr;
+
+	clustered.nodes->offsets.resize(clustered.nodes->coordinates.size());
+	for (size_t i = 0; i < input.nodes->offsets.size(); ++i) {
+		std::iota(clustered.nodes->offsets.begin() + input.nodes->offsets[i].local, clustered.nodes->offsets.begin() + input.nodes->offsets[i].local + input.nodes->offsets[i].size, input.nodes->offsets[i].global);
+	}
 }
 
 }

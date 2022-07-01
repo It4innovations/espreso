@@ -29,6 +29,8 @@
 #include <numeric>
 #include <algorithm>
 
+#include "basis/utilities/print.h"
+
 namespace espreso {
 namespace mesh {
 
@@ -334,8 +336,16 @@ void computeElementsNeighbors(
 				} else {
 					tdata.push_back(intersection.size() ? intersection.front() : -1);
 					if (intersection.size() > 1) {
+						{
+							std::cout << "element: " << e << ", intersection: " << intersection;
+							std::cout << "me: " << *nodes << "\n";
+							for (size_t i = 0; i < intersection.size(); ++i) {
+								std::cout << i << ": " << *(enodes->cbegin() + intersection[i]) << "\n";
+							}
+						}
 						eslog::error("Input error: a face shared by 3 elements found.\n");
 					}
+
 				}
 				hasNeighbor = hasNeighbor | intersection.size();
 			}

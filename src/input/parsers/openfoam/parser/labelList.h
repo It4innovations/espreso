@@ -18,6 +18,8 @@ struct OpenFOAMLabelList: FoamFile, RawFoamFile {
 	}
 
 	void parse(ivector<esint> &list);
+
+	static FoamFileHeader load(const std::string &file, ivector<esint> &list, esint offset);
 };
 
 }
