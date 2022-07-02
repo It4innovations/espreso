@@ -5,6 +5,7 @@
 #include "esinfo/stepinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/ecfinfo.h"
+#include "wrappers/backward-cpp/w.backward.h"
 
 #include <execinfo.h>
 #include <dirent.h>
@@ -119,11 +120,12 @@ int nprocs()
 
 void printStack()
 {
-	pid_t pid = getpid();
-	std::string pstack = "pstack " + std::to_string(pid);
-	if (system(pstack.c_str())) {
-		// stack cannot be printed
-	}
+	BackWard::call();
+//	pid_t pid = getpid();
+//	std::string pstack = "gstack " + std::to_string(pid);
+//	if (system(pstack.c_str())) {
+//		// stack cannot be printed
+//	}
 }
 
 std::string getStack()

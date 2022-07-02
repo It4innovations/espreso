@@ -1,0 +1,49 @@
+
+def options(opt):
+    pass
+
+dw = {
+    "mandatory": False,
+    "header_name": ["dwarf.h", "elfutils/libdw.h", "elfutils/libdwfl.h"],
+    "lib": ["dw"],
+    "defines": ["HAVE_BACKWARD", "BACKWARD_HAS_DW"]
+}
+
+bdf = {
+    "mandatory": False,
+    "header_name": ["bfd.h"],
+    "lib": ["bfd"],
+    "defines": ["HAVE_BACKWARD", "BACKWARD_HAS_BFD"]
+}
+
+dwarf = {
+    "mandatory": False,
+    "header_name": ["dwarf.h", "libdwarf.h", "libelf.h"],
+    "lib": ["dwarf", "bfd"],
+    "defines": ["HAVE_BACKWARD", "BACKWARD_HAS_DWARF"]
+}
+
+def configure(ctx):
+    backward = ctx.test_dict("backward-cpp")
+    
+    def test(name, lib):  
+        ctx.env.stash()
+        test = ctx.test_dict(name)
+        test.update(lib)
+        status = ctx.check_cxx(**test)
+        ctx.env.revert()
+        return status
+    
+    if test("dw", dw):
+        backward.update(dw)
+        ctx.check_cxx(**backward)
+    elif test("dwarf", dwarf):
+        backward.update(dwarf)
+        ctx.check_cxx(**backward)
+    elif test("bdf", bdf):
+        backward.update(bdf)
+        ctx.check_cxx(**backward)
+    else:
+        backward["defines"] = ["HAVE_BACKWARD"]
+        ctx.check_cxx(**backward)
+
