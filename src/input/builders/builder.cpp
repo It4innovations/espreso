@@ -108,7 +108,7 @@ void buildOrderedFEM(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &i
 	eslog::endln("BUILDER: MESH BUILT");
 }
 
-void buildOrderedFVM(InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &input, Mesh &mesh)
+void buildOrderedFVM(InputMesh<OrderedNodes, OrderedFaces, OrderedRegions> &input, Mesh &mesh)
 {
 	eslog::startln("BUILDER: PROCESS FACED MESH", "BUILDER");
 	mesh.dimension = 3;

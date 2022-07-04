@@ -136,9 +136,9 @@ void InputOpenFoamParallel::load(const InputConfiguration &configuration)
 	esint offset[2] = { (esint)mesh.nodes->coordinates.size(), mesh.elements->elements }, nsum = 0, esum = 0;
 	Communication::exscan(offset, nullptr, 2, MPITools::getType<esint>().mpitype, MPI_SUM);
 	for (int d = info::mpi::rank, i = 0; d < domains; d += info::mpi::size, ++i) {
-		mesh.nodes->offsets.push_back(DatabaseOffset{offset[0] + nsum, nsum, nsize[i]});
+		mesh.nodes->blocks.push_back(DatabaseOffset{offset[0] + nsum, nsum, nsize[i]});
 		nsum += nsize[i];
-		mesh.elements->offsets.push_back(DatabaseOffset{offset[1] + esum, esum, esize[i]});
+		mesh.elements->blocks.push_back(DatabaseOffset{offset[1] + esum, esum, esize[i]});
 		esum += nsize[i];
 	}
 

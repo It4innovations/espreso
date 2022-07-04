@@ -24,42 +24,38 @@ public:
 	virtual ~Input() {}
 };
 
-// offset -> index to vector of data
 struct DatabaseOffset {
-	esint global;
-	esint local, size;
+	esint global, local, size;
 
 	bool operator<(const DatabaseOffset &other) { return global < other.global; }
 };
+typedef std::vector<DatabaseOffset> Blocks;
 
-struct OrderedUniqueNodes {
+struct OrderedNodes {
+	Blocks blocks;
+
 	ivector<_Point<esfloat> > coordinates;
 };
 
-struct OrderedUniqueElements {
+struct OrderedElements {
+	Blocks blocks;
+
 	ivector<Element::CODE> etype;
 	ivector<esint> enodes;
 };
 
-struct OrderedUniqueFaces {
+struct OrderedFaces {
+	Blocks blocks;
+
 	esint elements;
 	ivector<Element::CODE> etype;
 	ivector<esint> enodes;
 	ivector<esint> owner, neighbor;
 };
 
-struct WithRegions {
-	std::vector<DatabaseOffset> offsets; // TODO: assume that there are always regions
-};
-
-struct OrderedNodes: OrderedUniqueNodes, WithRegions { };
-
-struct OrderedElements: OrderedUniqueElements, WithRegions { };
-
-struct OrderedFaces: OrderedUniqueFaces, WithRegions { };
-
 struct OrderedValues {
-	std::vector<DatabaseOffset> offsets;
+	Blocks blocks;
+
 	ivector<esfloat> data;
 };
 
@@ -86,39 +82,19 @@ struct InputMesh {
 		if (elements) delete elements;
 		if (regions) delete regions;
 	}
-
 };
-
-inline size_t size(const OrderedUniqueNodes &data)
-{
-	return data.coordinates.size() * sizeof(_Point<esfloat>);
-}
-
-inline size_t size(const OrderedUniqueElements &data)
-{
-	return data.etype.size() * sizeof(Element::CODE) + data.enodes.size() * sizeof(esint);
-}
-
-inline size_t size(const OrderedUniqueFaces &data)
-{
-	return
-			data.etype.size() * sizeof(Element::CODE) +
-			data.enodes.size() * sizeof(esint) +
-			data.owner.size() * sizeof(esint) +
-			data.neighbor.size() * sizeof(esint);
-}
 
 inline size_t size(const OrderedNodes &data)
 {
 	return
-			data.offsets.size() * sizeof(DatabaseOffset) +
+			data.blocks.size() * sizeof(DatabaseOffset) +
 			data.coordinates.size() * sizeof(_Point<esfloat>);
 }
 
 inline size_t size(const OrderedElements &data)
 {
 	return
-			data.offsets.size() * sizeof(DatabaseOffset) +
+			data.blocks.size() * sizeof(DatabaseOffset) +
 			data.etype.size() * sizeof(Element::CODE) +
 			data.enodes.size() * sizeof(esint);
 }
@@ -126,7 +102,7 @@ inline size_t size(const OrderedElements &data)
 inline size_t size(const OrderedValues &data)
 {
 	return
-			data.offsets.size() * sizeof(DatabaseOffset) +
+			data.blocks.size() * sizeof(DatabaseOffset) +
 			data.data.size() * sizeof(esfloat);
 }
 

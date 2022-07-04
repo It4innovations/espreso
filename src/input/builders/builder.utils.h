@@ -164,12 +164,12 @@ struct TemporalSequentialMesh: TemporalMesh<TNodes, TElements> {
 
 // sequential
 void initializeSequentialFEM(const InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, const TemporalSequentialMesh<ClusteredNodes, ClusteredElements> &clustered, int &dimension);
-void initializeSequentialFVM(const InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &input, const TemporalSequentialMesh<ClusteredNodes, OrderedFacesBalanced> &clustered);
+void initializeSequentialFVM(const InputMesh<OrderedNodes, OrderedFaces, OrderedRegions> &input, const TemporalSequentialMesh<ClusteredNodes, OrderedFacesBalanced> &clustered);
 void initializeSequentialFVM(const InputMesh<OrderedNodes, OrderedFaces, OrderedRegions> &input, const TemporalSequentialMesh<ClusteredNodes, OrderedFacesBalanced> &clustered);
 
 // balancing
 void balanceFEM(const InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered, int &dimension);
-void balanceFVM(const InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &input, const TemporalMesh<OrderedNodesBalanced, OrderedFacesBalanced> &ordered);
+void balanceFVM(const InputMesh<OrderedNodes, OrderedFaces, OrderedRegions> &input, const TemporalMesh<OrderedNodesBalanced, OrderedFacesBalanced> &ordered);
 
 // clusterization
 void assignBuckets(const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered, const HilbertCurve<esfloat> &sfc, ivector<esint> &nbuckets, ivector<esint> &ebuckets);

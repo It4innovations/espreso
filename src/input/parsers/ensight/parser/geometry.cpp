@@ -117,7 +117,7 @@ void EnsightGeometry::parse(InputMesh<OrderedNodes, OrderedElements, OrderedRegi
 						FileBlock rblock(_geofile, _keywords.coordinates[p].offset, 3 * csize * _keywords.coordinates[p].nn, csize, r);
 						MPI_Irecv(rbuffer.data() + rblock.prevsize, rblock.size, MPI_FLOAT, r, 0, info::mpi::comm, req.data() + (r - start - 1));
 					}
-					mesh.nodes->offsets.push_back(DatabaseOffset{coffset, (esint)mesh.nodes->coordinates.size(), _keywords.coordinates[p].nn});
+					mesh.nodes->blocks.push_back(DatabaseOffset{coffset, (esint)mesh.nodes->coordinates.size(), _keywords.coordinates[p].nn});
 					mesh.nodes->coordinates.reserve(mesh.nodes->coordinates.size() + _keywords.coordinates[p].nn);
 					MPI_Waitall(end - start, req.data(), MPI_STATUSES_IGNORE);
 					for (int n = 0; n < _keywords.coordinates[p].nn; ++n) {
@@ -147,7 +147,7 @@ void EnsightGeometry::parse(InputMesh<OrderedNodes, OrderedElements, OrderedRegi
 				}
 
 				if (_keywords.elements[e].getCode() != Element::CODE::POINT1) {
-					mesh.elements->offsets.push_back(DatabaseOffset{eoffset + (esint)block.prevsize, (esint)mesh.elements->etype.size(), (esint)block.size});
+					mesh.elements->blocks.push_back(DatabaseOffset{eoffset + (esint)block.prevsize, (esint)mesh.elements->etype.size(), (esint)block.size});
 					mesh.elements->etype.resize(mesh.elements->etype.size() + block.size, _keywords.elements[e].getCode());
 					mesh.elements->enodes.reserve(mesh.elements->enodes.size() + elements.size());
 					for (size_t n = 0; n < elements.size(); ++n) {

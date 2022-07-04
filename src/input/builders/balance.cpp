@@ -12,20 +12,20 @@
 namespace espreso {
 namespace builder {
 
-static bool chunk(const esint &mpichunk, const int &rank, const std::vector<DatabaseOffset> &offsets, std::vector<DatabaseOffset>::const_iterator &it, esint &begin, esint &end)
+static bool chunk(const esint &mpichunk, const int &rank, const std::vector<DatabaseOffset> &blocks, std::vector<DatabaseOffset>::const_iterator &it, esint &begin, esint &end)
 {
-	if (it != offsets.end() && end == it->local + it->size) {
+	if (it != blocks.end() && end == it->local + it->size) {
 		++it;
 	}
-	if (it == offsets.end()) {
+	if (it == blocks.end()) {
 		return false;
 	}
 	if (it->global + end - it->local == mpichunk * (rank + 1)) {
 		return false;
 	}
 	begin = end = 0;
-	while (it != offsets.end() && it->global + it->size < mpichunk * rank) { ++it; }
-	if (it != offsets.end() && it->global < mpichunk * (rank + 1)) {
+	while (it != blocks.end() && it->global + it->size < mpichunk * rank) { ++it; }
+	if (it != blocks.end() && it->global < mpichunk * (rank + 1)) {
 		begin = std::max(it->global, mpichunk * rank);
 		end = std::min(it->global + it->size, mpichunk * (rank + 1));
 		begin = it->local + begin - it->global;
@@ -61,21 +61,21 @@ void balanceFEM(const InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &
 	for (size_t e = 0; e < input.elements->etype.size(); ++e) {
 		edist.push_back(edist.back() + Mesh::element(input.elements->etype[e]).nodes);
 	}
-	std::sort(input.nodes->offsets.begin(), input.nodes->offsets.end());
-	std::sort(input.elements->offsets.begin(), input.elements->offsets.end());
+	std::sort(input.nodes->blocks.begin(), input.nodes->blocks.end());
+	std::sort(input.elements->blocks.begin(), input.elements->blocks.end());
 
 	{ // compute size of the send buffer
 		size_t ssize = 0;
-		std::vector<DatabaseOffset>::const_iterator nit = input.nodes->offsets.cbegin();
-		std::vector<DatabaseOffset>::const_iterator eit = input.elements->offsets.cbegin();
+		std::vector<DatabaseOffset>::const_iterator nit = input.nodes->blocks.cbegin();
+		std::vector<DatabaseOffset>::const_iterator eit = input.elements->blocks.cbegin();
 		esint nbegin = 0, nend = 0, ebegin = 0, eend = 0;
 		for (int r = 0; r < info::mpi::size; ++r) {
 			ssize += 4;
-			while (chunk(ordered.nodes->chunk, r, input.nodes->offsets, nit, nbegin, nend)) {
+			while (chunk(ordered.nodes->chunk, r, input.nodes->blocks, nit, nbegin, nend)) {
 				ssize += 2;
 				ssize += utils::reinterpret_size<esint, _Point<esfloat> >(nend - nbegin);
 			}
-			while (chunk(ordered.elements->chunk, r, input.elements->offsets, eit, ebegin, eend)) {
+			while (chunk(ordered.elements->chunk, r, input.elements->blocks, eit, ebegin, eend)) {
 				ssize += 3;
 				ssize += utils::reinterpret_size<esint, char>(eend - ebegin);
 				ssize += edist[eend] - edist[ebegin];
@@ -85,8 +85,8 @@ void balanceFEM(const InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &
 	}
 
 	{ // build the send buffer
-		std::vector<DatabaseOffset>::const_iterator nit = input.nodes->offsets.cbegin();
-		std::vector<DatabaseOffset>::const_iterator eit = input.elements->offsets.cbegin();
+		std::vector<DatabaseOffset>::const_iterator nit = input.nodes->blocks.cbegin();
+		std::vector<DatabaseOffset>::const_iterator eit = input.elements->blocks.cbegin();
 		esint nbegin = 0, nend = 0, ebegin = 0, eend = 0;
 		for (int r = 0; r < info::mpi::size; ++r) {
 			size_t prevsize = sBuffer.size();
@@ -95,13 +95,13 @@ void balanceFEM(const InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &
 			sBuffer.push_back(0); // nodes
 			sBuffer.push_back(0); // elements
 
-			while (chunk(ordered.nodes->chunk, r, input.nodes->offsets, nit, nbegin, nend)) {
+			while (chunk(ordered.nodes->chunk, r, input.nodes->blocks, nit, nbegin, nend)) {
 				sBuffer.push_back(nit->global + nbegin - nit->local);
 				sBuffer.push_back(nend - nbegin);
 				sBuffer.insert(sBuffer.end(), reinterpret_cast<esint*>(input.nodes->coordinates.data() + nbegin), utils::reinterpret_end<esint>(input.nodes->coordinates.data() + nbegin, nend - nbegin));
 				++sBuffer[prevsize + 2];
 			}
-			while (chunk(ordered.elements->chunk, r, input.elements->offsets, eit, ebegin, eend)) {
+			while (chunk(ordered.elements->chunk, r, input.elements->blocks, eit, ebegin, eend)) {
 				sBuffer.push_back(eit->global + ebegin - eit->local);
 				sBuffer.push_back(eend - ebegin);
 				sBuffer.push_back(edist[eend] - edist[ebegin]);
@@ -114,8 +114,8 @@ void balanceFEM(const InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &
 		}
 
 		utils::clearVector(edist);
-		utils::clearVectors(input.nodes->coordinates, input.nodes->offsets);
-		utils::clearVectors(input.elements->etype, input.elements->enodes, input.elements->offsets);
+		utils::clearVectors(input.nodes->coordinates, input.nodes->blocks);
+		utils::clearVectors(input.elements->etype, input.elements->enodes, input.elements->blocks);
 	}
 
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
@@ -174,7 +174,7 @@ void balanceFEM(const InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &
 	}
 }
 
-void balanceFVM(const InputMesh<OrderedUniqueNodes, OrderedUniqueFaces, OrderedRegions> &input, const TemporalMesh<OrderedNodesBalanced, OrderedFacesBalanced> &ordered)
+void balanceFVM(const InputMesh<OrderedNodes, OrderedFaces, OrderedRegions> &input, const TemporalMesh<OrderedNodesBalanced, OrderedFacesBalanced> &ordered)
 {
 	std::vector<esint> sum(4), offset = { (esint)input.nodes->coordinates.size(), (esint)input.elements->etype.size(), (esint)input.elements->owner.size(), (esint)input.elements->neighbor.size() };
 	std::vector<esint> fdistribution = Communication::getDistribution<esint>(input.elements->etype.size());
