@@ -101,12 +101,12 @@ void InputOpenFoamSequential::load(const InputConfiguration &configuration)
 	FoamFile::synchronize({ &points, &faces, &owner, &neighbour });
 	profiler::synccheckpoint("scan");
 
-	points.parse(mesh.nodes->coordinates);
-	faces.parse(mesh.elements->etype, mesh.elements->enodes);
-	owner.parse(mesh.elements->owner);
-	neighbour.parse(mesh.elements->neighbor);
+	points.parse(nodes.coordinates);
+	faces.parse(elements.etype, elements.enodes);
+	owner.parse(elements.owner);
+	neighbour.parse(elements.neighbor);
 
-	mesh.elements->elements = numberOfCells(owner.header);
+	elements.elements = numberOfCells(owner.header);
 
 	eslog::info(" ============================================================================================= \n\n");
 	profiler::synccheckpoint("parse");
@@ -120,25 +120,26 @@ void InputOpenFoamParallel::load(const InputConfiguration &configuration)
 	eslog::info(" == NUMBER OF SUBDOMAINS %66d == \n", domains);
 	eslog::info(" == MESH %82s == \n", (configuration.path + "/processor*/constant/polyMesh/").c_str());
 
-	mesh.elements->elements = 0;
+	elements.elements = 0;
 	std::vector<esint> nsize(domains / info::mpi::size + 1), esize(domains / info::mpi::size + 1);
 	for (int d = info::mpi::rank, i = 0; d < domains; d += info::mpi::size, ++i) {
 		std::string dict = configuration.path + "/processor" + std::to_string(d) + "/constant/polyMesh/";
-		OpenFOAMFaceList::load(dict + "faces", mesh.elements->etype, mesh.elements->enodes, mesh.nodes->coordinates.size());
-		nsize[i] = OpenFOAMVectorField::load(dict + "points", mesh.nodes->coordinates);
+		OpenFOAMFaceList::load(dict + "faces", elements.etype, elements.enodes, nodes.coordinates.size());
+		nsize[i] = OpenFOAMVectorField::load(dict + "points", nodes.coordinates);
 
-		esize[i] = numberOfCells(OpenFOAMLabelList::load(dict + "owner", mesh.elements->owner, mesh.elements->elements));
-		OpenFOAMLabelList::load(dict + "neighbour", mesh.elements->neighbor, mesh.elements->elements);
-		mesh.elements->neighbor.resize(mesh.elements->owner.size(), -1);
-		mesh.elements->elements += esize[i];
+		esize[i] = numberOfCells(OpenFOAMLabelList::load(dict + "owner", elements.owner, elements.elements));
+		OpenFOAMLabelList::load(dict + "neighbour", elements.neighbor, elements.elements);
+		elements.neighbor.resize(elements.owner.size(), -1);
+		elements.elements += esize[i];
 	}
 
-	esint offset[2] = { (esint)mesh.nodes->coordinates.size(), mesh.elements->elements }, nsum = 0, esum = 0;
-	Communication::exscan(offset, nullptr, 2, MPITools::getType<esint>().mpitype, MPI_SUM);
+	std::vector<esint> offset = { (esint)nodes.coordinates.size(), elements.elements }, sum(2);
+	Communication::exscan(sum, offset);
+	esint nsum = 0, esum = 0;
 	for (int d = info::mpi::rank, i = 0; d < domains; d += info::mpi::size, ++i) {
-		mesh.nodes->blocks.push_back(DatabaseOffset{offset[0] + nsum, nsum, nsize[i]});
+		nodes.blocks.push_back(DatabaseOffset{offset[0] + nsum, nsum, nsize[i]});
 		nsum += nsize[i];
-		mesh.elements->blocks.push_back(DatabaseOffset{offset[1] + esum, esum, esize[i]});
+		elements.blocks.push_back(DatabaseOffset{offset[1] + esum, esum, esize[i]});
 		esum += nsize[i];
 	}
 
@@ -154,12 +155,12 @@ void InputOpenFoam::build(Mesh &mesh)
 
 void InputOpenFoamSequential::build(Mesh &mesh)
 {
-	builder::buildOrderedFVM(this->mesh, mesh);
+//	builder::buildOrderedFVM(this->mesh, mesh);
 }
 
 void InputOpenFoamParallel::build(Mesh &mesh)
 {
-	builder::buildDecomposedFVM(this->mesh, mesh);
+	builder::buildDecomposedFVM(nodes, elements, regions, mesh);
 }
 
 void InputOpenFoam::variables(Mesh &mesh)

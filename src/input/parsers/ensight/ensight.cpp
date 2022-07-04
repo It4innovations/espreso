@@ -75,7 +75,7 @@ void InputEnsight::load(const InputConfiguration &configuration)
 	profiler::synccheckpoint("scan");
 	eslog::checkpointln("ENSIGHT PARSER: GEOMETRY SCANNED");
 
-	data->geometry->parse(mesh);
+	data->geometry->parse(nodes, elements, regions);
 	profiler::synccheckpoint("parse");
 	eslog::checkpointln("ENSIGHT PARSER: GEOMETRY PARSED");
 
@@ -107,7 +107,7 @@ void InputEnsight::load(const InputConfiguration &configuration)
 
 void InputEnsight::build(Mesh &mesh)
 {
-	builder::buildOrderedFEM(this->mesh, mesh);
+	builder::buildOrderedFEM(nodes, elements, regions, mesh);
 }
 
 void InputEnsight::variables(Mesh &mesh)

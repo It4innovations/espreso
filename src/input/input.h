@@ -24,40 +24,39 @@ public:
 	virtual ~Input() {}
 };
 
-struct DatabaseOffset {
-	esint global, local, size;
-
-	bool operator<(const DatabaseOffset &other) { return global < other.global; }
-};
-typedef std::vector<DatabaseOffset> Blocks;
-
-struct OrderedNodes {
-	Blocks blocks;
-
+struct Nodes {
 	ivector<_Point<esfloat> > coordinates;
 };
 
-struct OrderedElements {
-	Blocks blocks;
-
+struct Elements {
 	ivector<Element::CODE> etype;
 	ivector<esint> enodes;
 };
 
-struct OrderedFaces {
-	Blocks blocks;
-
+struct Faces {
 	esint elements;
 	ivector<Element::CODE> etype;
 	ivector<esint> enodes;
 	ivector<esint> owner, neighbor;
 };
 
-struct OrderedValues {
-	Blocks blocks;
-
+struct Values {
 	ivector<esfloat> data;
 };
+
+// Databases with ordered nodes and elements
+struct DatabaseOffset {
+	esint global, local, size;
+};
+
+struct Blocks {
+	std::vector<DatabaseOffset> blocks;
+};
+
+struct OrderedNodes: Nodes, Blocks { };
+struct OrderedElements: Elements, Blocks { };
+struct OrderedFaces: Faces, Blocks { };
+struct OrderedValues: Values, Blocks { };
 
 struct OrderedRegions {
 	struct Region {
@@ -68,50 +67,6 @@ struct OrderedRegions {
 
 	std::vector<Region> nodes, elements;
 };
-
-template <typename TNodes, typename TElements, typename TRegions>
-struct InputMesh {
-	TNodes *nodes;
-	TElements *elements;
-	TRegions *regions;
-
-	InputMesh(): nodes(new TNodes()), elements(new TElements()), regions(new TRegions()) { }
-	~InputMesh()
-	{
-		if (nodes) delete nodes;
-		if (elements) delete elements;
-		if (regions) delete regions;
-	}
-};
-
-inline size_t size(const OrderedNodes &data)
-{
-	return
-			data.blocks.size() * sizeof(DatabaseOffset) +
-			data.coordinates.size() * sizeof(_Point<esfloat>);
-}
-
-inline size_t size(const OrderedElements &data)
-{
-	return
-			data.blocks.size() * sizeof(DatabaseOffset) +
-			data.etype.size() * sizeof(Element::CODE) +
-			data.enodes.size() * sizeof(esint);
-}
-
-inline size_t size(const OrderedValues &data)
-{
-	return
-			data.blocks.size() * sizeof(DatabaseOffset) +
-			data.data.size() * sizeof(esfloat);
-}
-
-inline size_t size(const OrderedRegions &data)
-{
-	return
-			data.nodes.size() * sizeof(OrderedRegions::Region) +
-			data.elements.size() * sizeof(OrderedRegions::Region);
-}
 
 }
 

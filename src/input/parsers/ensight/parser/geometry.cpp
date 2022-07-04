@@ -63,7 +63,7 @@ void EnsightGeometry::scan()
 	scanner.synchronize(_keywords.parts, _keywords.coordinates, _keywords.elements);
 }
 
-void EnsightGeometry::parse(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &mesh)
+void EnsightGeometry::parse(OrderedNodes &nodes, OrderedElements &elements, OrderedRegions &regions)
 {
 	size_t csize, esize, esuffix;
 	if (_keywords.header.format == EnsightKeywords::Format::ASCII) {
@@ -117,11 +117,11 @@ void EnsightGeometry::parse(InputMesh<OrderedNodes, OrderedElements, OrderedRegi
 						FileBlock rblock(_geofile, _keywords.coordinates[p].offset, 3 * csize * _keywords.coordinates[p].nn, csize, r);
 						MPI_Irecv(rbuffer.data() + rblock.prevsize, rblock.size, MPI_FLOAT, r, 0, info::mpi::comm, req.data() + (r - start - 1));
 					}
-					mesh.nodes->blocks.push_back(DatabaseOffset{coffset, (esint)mesh.nodes->coordinates.size(), _keywords.coordinates[p].nn});
-					mesh.nodes->coordinates.reserve(mesh.nodes->coordinates.size() + _keywords.coordinates[p].nn);
+					nodes.blocks.push_back(DatabaseOffset{coffset, (esint)nodes.coordinates.size(), _keywords.coordinates[p].nn});
+					nodes.coordinates.reserve(nodes.coordinates.size() + _keywords.coordinates[p].nn);
 					MPI_Waitall(end - start, req.data(), MPI_STATUSES_IGNORE);
 					for (int n = 0; n < _keywords.coordinates[p].nn; ++n) {
-						mesh.nodes->coordinates.push_back(_Point<esfloat>(rbuffer[n + _keywords.coordinates[p].nn * 0], rbuffer[n + _keywords.coordinates[p].nn * 1], rbuffer[n + _keywords.coordinates[p].nn * 2]));
+						nodes.coordinates.push_back(_Point<esfloat>(rbuffer[n + _keywords.coordinates[p].nn * 0], rbuffer[n + _keywords.coordinates[p].nn * 1], rbuffer[n + _keywords.coordinates[p].nn * 2]));
 					}
 				} else {
 					MPI_Send(coordinates.data(), coordinates.size(), MPI_FLOAT, start, 0, info::mpi::comm);
@@ -130,43 +130,43 @@ void EnsightGeometry::parse(InputMesh<OrderedNodes, OrderedElements, OrderedRegi
 		}
 
 		for (; e < _keywords.elements.size() && (p + 1 == _keywords.parts.size() || _keywords.elements[e].offset < _keywords.coordinates[p + 1].offset); ++e) {
-			std::vector<int> elements;
+			std::vector<int> edata;
 			int enodes = _keywords.elements[e].getSize();
 			FileBlock block(_geofile, _keywords.elements[e].offset, (enodes * esize + esuffix) * _keywords.elements[e].ne, enodes * esize + esuffix, info::mpi::rank);
 			if (block.size) {
 				if (_keywords.header.format == EnsightKeywords::Format::ASCII) {
-					elements.reserve(enodes * block.size);
+					edata.reserve(enodes * block.size);
 					for (const char *d = _geofile.begin + block.begin; d < _geofile.begin + block.end; d += block.step) {
 						for (int n = 0; n < enodes; ++n) {
-							elements.push_back(atol(d + 10 * n));
+							edata.push_back(atol(d + 10 * n));
 						}
 					}
 				} else {
-					elements.resize(enodes * block.size);
-					memcpy(elements.data(), _geofile.begin + block.begin, block.bytesize);
+					edata.resize(enodes * block.size);
+					memcpy(edata.data(), _geofile.begin + block.begin, block.bytesize);
 				}
 
 				if (_keywords.elements[e].getCode() != Element::CODE::POINT1) {
-					mesh.elements->blocks.push_back(DatabaseOffset{eoffset + (esint)block.prevsize, (esint)mesh.elements->etype.size(), (esint)block.size});
-					mesh.elements->etype.resize(mesh.elements->etype.size() + block.size, _keywords.elements[e].getCode());
-					mesh.elements->enodes.reserve(mesh.elements->enodes.size() + elements.size());
-					for (size_t n = 0; n < elements.size(); ++n) {
-						mesh.elements->enodes.push_back(elements[n] + coffset - 1);
+					elements.blocks.push_back(DatabaseOffset{eoffset + (esint)block.prevsize, (esint)elements.etype.size(), (esint)block.size});
+					elements.etype.resize(elements.etype.size() + block.size, _keywords.elements[e].getCode());
+					elements.enodes.reserve(elements.enodes.size() + edata.size());
+					for (size_t n = 0; n < edata.size(); ++n) {
+						elements.enodes.push_back(edata[n] + coffset - 1);
 					}
 				}
 			}
 
 			int dimension = Mesh::element(_keywords.elements[e].getCode()).dimension;
 			if (dimension == 0) {
-				mesh.regions->nodes.push_back(OrderedRegions::Region{ name, dimension, coffset, coffset + _keywords.coordinates[p].nn });
+				regions.nodes.push_back(OrderedRegions::Region{ name, dimension, coffset, coffset + _keywords.coordinates[p].nn });
 			} else {
-				if (mesh.regions->elements.empty() || mesh.regions->elements.back().name.compare(name)) {
-					mesh.regions->elements.push_back(OrderedRegions::Region{ name, dimension, eoffset, eoffset + _keywords.elements[e].ne });
+				if (regions.elements.empty() || regions.elements.back().name.compare(name)) {
+					regions.elements.push_back(OrderedRegions::Region{ name, dimension, eoffset, eoffset + _keywords.elements[e].ne });
 				} else {
-					if (mesh.regions->elements.back().dimension != dimension) {
+					if (regions.elements.back().dimension != dimension) {
 						eslog::globalerror("cannot mix faces and elements to a same region.\n");
 					}
-					mesh.regions->elements.back().end += _keywords.elements[e].ne;
+					regions.elements.back().end += _keywords.elements[e].ne;
 				}
 				eoffset += _keywords.elements[e].ne;
 			}

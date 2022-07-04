@@ -20,7 +20,7 @@ public:
 	EnsightGeometry(InputFilePack &geofile);
 
 	void scan();
-	void parse(InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &mesh);
+	void parse(OrderedNodes &nodes, OrderedElements &elements, OrderedRegions &regions);
 
 protected:
 	InputFilePack &_geofile;

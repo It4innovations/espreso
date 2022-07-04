@@ -6,63 +6,16 @@
 #include "input/input.h"
 #include "mesh/mesh.h"
 
-#include <string>
-#include <vector>
-#include <unordered_map>
-
 namespace espreso {
 namespace builder {
 
-/**
- * ORDERED DATA
- */
-
-struct OrderedDataDistribution {
+struct ChunkDistribution {
 	esint chunk, offset, size, total;
-
-	void swap(OrderedDataDistribution *other) {
-		std::swap(chunk, other->chunk);
-		std::swap(offset, other->offset);
-		std::swap(size, other->size);
-		std::swap(total, other->total);
-	}
 };
 
-struct OrderedNodesBalanced: OrderedDataDistribution {
-	ivector<_Point<esfloat> > coordinates;
-
-	void swap(OrderedNodesBalanced *other) {
-		coordinates.swap(other->coordinates);
-		OrderedDataDistribution::swap(other);
-	}
+struct ExplicitOffset {
+	ivector<esint> offsets;
 };
-
-struct OrderedElementsBalanced: OrderedDataDistribution {
-	ivector<Element::CODE> etype;
-	ivector<esint> edist, enodes;
-
-	void swap(OrderedElementsBalanced *other) {
-		etype.swap(other->etype);
-		edist.swap(other->edist);
-		enodes.swap(other->enodes);
-		OrderedDataDistribution::swap(other);
-	}
-};
-
-struct OrderedFacesBalanced: OrderedElementsBalanced {
-	ivector<esint> owner, neighbor, foffset;
-
-	void swap(OrderedFacesBalanced *other) {
-		owner.swap(other->owner);
-		neighbor.swap(other->neighbor);
-		foffset.swap(other->foffset);
-		OrderedElementsBalanced::swap(other);
-	}
-};
-
-/**
- * CLUSTERD DATA
- */
 
 struct DataDuplication {
 	esint origin, duplicate;
@@ -70,135 +23,171 @@ struct DataDuplication {
 	bool operator!=(const DataDuplication &other) const { return origin != other.origin || duplicate != other.duplicate; }
 };
 
-struct ClusteredDataDistribution {
-	ivector<esint> offsets;
-};
-
-struct ClusteredNodes: ClusteredDataDistribution {
-	ivector<_Point<esfloat> > coordinates;
-};
-
-struct MergedNodes: ClusteredNodes {
+struct Duplication {
 	std::vector<DataDuplication> duplication;
 };
 
-struct LinkedNodes: MergedNodes {
+struct NeighborsLinks {
 	std::vector<int> neighbors;
 	ivector<esint> rankDistribution, rankData;
-	std::unordered_map<esint, esint> g2l;
 };
 
-struct ClusteredElements: ClusteredDataDistribution {
-	ivector<Element::CODE> etype;
-	ivector<esint> edist, enodes;
+/**
+ * Nodes states
+ *
+ * 1. Ordered Nodes
+ *   Elements connectivities are described by 'offsets'. Hence, nodes are stored in blocks.
+ *   Nodes can be loaded arbitrary. Offsets are described by 'Blocks'.
+ *
+ * 2. Ordered Nodes Balanced
+ *   Nodes are sorted according to 'offset' and evenly distributed across all processes in chunks.
+ *
+ * 3. Clustered Nodes
+ *   Nodes are sorted according to 'coordinates' and evenly distributed across all processes in chunks.
+ *   Original 'offsets' need to be stored explicitly.
+ *
+ * 4. Merged Nodes
+ *   Clustered + All duplicated nodes were found.
+ *
+ * 5. Linked Nodes
+ *   Merged + Information about neighboring 'ranks' that hold the same nodes.
+ */
 
-	void swap(ClusteredElements *other) {
-		etype.swap(other->etype);
-		edist.swap(other->edist);
-		enodes.swap(other->enodes);
-	}
+struct OrderedNodesBalanced: Nodes, ChunkDistribution { };
+struct ClusteredNodes: Nodes, ExplicitOffset { };
+struct MergedNodes: Nodes, ExplicitOffset, Duplication { };
+struct LinkedNodes: Nodes, ExplicitOffset, Duplication, NeighborsLinks { };
+struct NodesHolder {
+	OrderedNodes ordered;
+	OrderedNodesBalanced balanced;
+	ClusteredNodes clustered;
+	MergedNodes merged;
+	LinkedNodes linked;
+
+	NodesHolder(OrderedNodes &&ordered): ordered(std::move(ordered)) {}
 };
 
-struct MergedElements: ClusteredElements {
-	std::vector<DataDuplication> duplication;
+/**
+ * Elements states
+ *
+ * 1. Ordered Elements
+ *   Elements connectivities are described by global 'offsets'.
+ *   Elements can be loaded arbitrary. Offsets are described by 'Blocks'.
+ *
+ * 2. Ordered Elements Balanced
+ *   Elements are sorted according to 'offset' and evenly distributed across all processes.
+ *
+ * 3. Clustered Elements
+ *   Elements are sorted according to 'coordinates' and evenly distributed across all processes.
+ *   Original 'offsets' need to be stored explicitly.
+ *
+ * 4. Merged Elements
+ *   Clustered + All duplicated and parents elements were found.
+ */
+
+struct OrderedElementsBalanced: Elements, ChunkDistribution { };
+struct ClusteredElements: Elements, ExplicitOffset { };
+struct MergedElements: Elements, ExplicitOffset, Duplication { };
+struct ElementsHolder {
+	OrderedElements ordered;
+	OrderedElementsBalanced balanced;
+	ClusteredElements clustered;
+	MergedElements merged;
+
+	ElementsHolder(OrderedElements &&ordered): ordered(std::move(ordered)) {}
 };
 
-inline size_t size(const OrderedNodesBalanced &data)
+/**
+ * Standard workflow for ordered database with regions.
+ *
+ *	  +-- NODES --+- ELEMENS -+
+ *    |-----------+-----------| <-- parallel parser provides data
+ * 1. | ORDERED   | ORDERED   | <-- initial setting for the builder
+ * 2. | BALANCED  | BALANCED  |
+ * 3. |-----------------------| <-- compute SFC and assign buckets
+ * 4. | CLUSTERED | CLUSTERED |
+ * 5. |-----------------------| <-- approximate neighbors
+ * 6. | MERGED    | CLUSTERED |
+ * 7. | LINKED    | CLUSTERED |
+ * 8. | LINKED    | MERGED    |
+ * 9. +-----------------------+ <-- fill the mesh
+ */
+
+void swap(Nodes &n1, Nodes &n2);
+void swap(Elements &e1, Elements &e2);
+
+// 1. -> 2.
+void trivialUpdate(OrderedNodes &ordered, OrderedNodesBalanced &balanced);
+void trivialUpdate(OrderedElements &ordered, OrderedElementsBalanced &balanced);
+void balanceFEM(OrderedNodes &inNodes, OrderedElements &inElements, OrderedNodesBalanced &outNodes, OrderedElementsBalanced &outElements);
+
+// 3.
+void assignBuckets(OrderedNodesBalanced &nodes, OrderedElementsBalanced &elements, const HilbertCurve<esfloat> &sfc, ivector<esint> &nbuckets, ivector<esint> &ebuckets);
+
+// 2. -> 4.
+void trivialUpdate(OrderedNodesBalanced &balanced, ClusteredNodes &clustered);
+void trivialUpdate(OrderedElementsBalanced &balanced, ClusteredElements &clustered);
+void clusterize(OrderedNodesBalanced &inNodes, OrderedElementsBalanced &inElements, ivector<esint> &nbuckets, ivector<esint> &ebuckets, esint buckets, ClusteredNodes &outNodes, ClusteredElements &outElements, ivector<esint> &splitters);
+
+// 4. -> 6.
+void trivialUpdate(ClusteredNodes &clustered, MergedNodes &merged);
+void exchangeSFCBoundaryNodes(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, const std::vector<int> &sfcNeighbors, ClusteredNodes &clustered);
+void searchDuplicatedNodes(ClusteredNodes &clustered, MergedNodes &merged);
+
+// 5.
+void computeSFCNeighbors(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, std::vector<int> &sfcNeighbors);
+
+// 6. -> 7.
+void trivialUpdate(MergedNodes &merged, LinkedNodes &linked);
+void mergeDuplicatedNodes(MergedNodes &merged); // 'linkup' has side-effect of removing duplicated nodes
+void linkup(MergedNodes &merged, LinkedNodes &linked, ClusteredElements &elements);
+
+// 7. -> 8.
+void trivialUpdate(ClusteredElements &clustered, MergedElements &merged);
+void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merged, LinkedNodes &nodes, int dimension);
+
+// 9.
+void fillNodes(LinkedNodes &nodes, OrderedRegions &regions, Mesh &mesh);
+void fillElements(MergedElements &elements, OrderedRegions &regions, Mesh &mesh);
+
+
+// utility functions
+
+inline size_t size(const Nodes &data)
 {
-	return data.coordinates.size() * sizeof(_Point<esfloat>);
+	return
+			data.coordinates.size() * sizeof(_Point<esfloat>);
 }
 
-inline size_t size(const OrderedElementsBalanced &data)
+inline size_t size(const Elements &data)
 {
 	return
 			data.etype.size() * sizeof(Element::CODE) +
-			data.edist.size() * sizeof(esint) +
 			data.enodes.size() * sizeof(esint);
 }
 
-template <typename TNodes, typename TElements>
-struct TemporalMesh {
-	TNodes *nodes;
-	TElements *elements;
-
-	TemporalMesh()
-	: nodes(new TNodes()), elements(new TElements()),
-	  _nodes(nodes), _elements(elements)
-	{
-
-	}
-
-	template <typename TNodesOther, typename TElementsOther>
-	TemporalMesh(const TemporalMesh<TNodesOther, TElementsOther> &other)
-	: nodes(dynamic_cast<TNodes*>(other.nodes)),
-	  elements(dynamic_cast<TElements*>(other.elements)),
-	  _nodes(nullptr), _elements(nullptr)
-	{
-
-	}
-
-	~TemporalMesh()
-	{
-		if (_nodes) { delete _nodes; }
-		if (_elements) { delete _elements; }
-	}
-
-private:
-	// instance holder that should be deleted at the end
-	TNodes *_nodes;
-	TElements *_elements;
-};
-
-template <typename TNodes, typename TElements>
-struct TemporalSequentialMesh: TemporalMesh<TNodes, TElements> {
-
-	TemporalSequentialMesh() {}
-
-	template <typename TNodesOther, typename TElementsOther>
-	TemporalSequentialMesh(const TemporalSequentialMesh<TNodesOther, TElementsOther> &other)
-	: TemporalMesh<TNodes, TElements>(other)
-	{
-
-	}
-};
-
-// sequential
-void initializeSequentialFEM(const InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, const TemporalSequentialMesh<ClusteredNodes, ClusteredElements> &clustered, int &dimension);
-void initializeSequentialFVM(const InputMesh<OrderedNodes, OrderedFaces, OrderedRegions> &input, const TemporalSequentialMesh<ClusteredNodes, OrderedFacesBalanced> &clustered);
-void initializeSequentialFVM(const InputMesh<OrderedNodes, OrderedFaces, OrderedRegions> &input, const TemporalSequentialMesh<ClusteredNodes, OrderedFacesBalanced> &clustered);
-
-// balancing
-void balanceFEM(const InputMesh<OrderedNodes, OrderedElements, OrderedRegions> &input, const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered, int &dimension);
-void balanceFVM(const InputMesh<OrderedNodes, OrderedFaces, OrderedRegions> &input, const TemporalMesh<OrderedNodesBalanced, OrderedFacesBalanced> &ordered);
-
-// clusterization
-void assignBuckets(const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered, const HilbertCurve<esfloat> &sfc, ivector<esint> &nbuckets, ivector<esint> &ebuckets);
-void clusterize(const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered, ivector<esint> &nbuckets, ivector<esint> &ebuckets, esint buckets, const TemporalMesh<ClusteredNodes, ClusteredElements> &clustered, ivector<esint> &splitters);
-void computeSFCNeighbors(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, std::vector<int> &sfcNeighbors);
-
-// merging
-void searchDuplicatedNodes(ClusteredNodes* clustered, MergedNodes* merged);
-template <typename TElements>
-void searchDuplicatedNodes(const TemporalSequentialMesh<ClusteredNodes, TElements> &clustered, const TemporalSequentialMesh<MergedNodes, TElements> &merged)
+inline size_t size(const Faces &data)
 {
-	searchDuplicatedNodes(clustered.nodes, merged.nodes);
-	merged.elements->swap(clustered.elements);
+	return
+			data.etype.size() * sizeof(Element::CODE) +
+			data.enodes.size() * sizeof(esint) +
+			data.owner.size() * sizeof(esint) +
+			data.neighbor.size() * sizeof(esint);
 }
-void searchDuplicatedElements(const TemporalSequentialMesh<MergedNodes, ClusteredElements> &merged, const TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, int meshDimension);
 
-void searchDuplicatedNodesWithSFC(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, const std::vector<int> &sfcNeighbors, const TemporalMesh<ClusteredNodes, ClusteredElements> &clustered, const TemporalMesh<MergedNodes, ClusteredElements> &merged);
-void searchParentAndDuplicatedElements(const TemporalMesh<LinkedNodes, ClusteredElements> &linked, const TemporalMesh<LinkedNodes, MergedElements> &prepared, int meshDimension);
-void reindexToLocal(const TemporalMesh<LinkedNodes, MergedElements> &linked);
+inline size_t size(const OrderedValues &data)
+{
+	return
+			data.blocks.size() * sizeof(DatabaseOffset) +
+			data.data.size() * sizeof(esfloat);
+}
 
-void buildElementsFromFaces(const TemporalSequentialMesh<MergedNodes, OrderedFacesBalanced> &clustered, const TemporalSequentialMesh<MergedNodes, ClusteredElements> &prepared);
-void buildElementsFromFaces(const TemporalMesh<OrderedNodesBalanced, OrderedFacesBalanced> &grouped, const TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> &ordered);
-
-//linking
-void linkup(const TemporalMesh<MergedNodes, ClusteredElements> &merged, const TemporalMesh<LinkedNodes, ClusteredElements> &linked);
-
-// filler
-void fillMesh(const TemporalMesh<LinkedNodes, MergedElements> &prepared, OrderedRegions &regions, Mesh &mesh);
-void fillSequentialMesh(const TemporalSequentialMesh<MergedNodes, MergedElements> &prepared, OrderedRegions &regions, Mesh &mesh);
+inline size_t size(const OrderedRegions &data)
+{
+	return
+			data.nodes.size() * sizeof(OrderedRegions::Region) +
+			data.elements.size() * sizeof(OrderedRegions::Region);
+}
 
 }
 }

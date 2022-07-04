@@ -19,7 +19,10 @@ public:
 
 protected:
 	EnsightData *data;
-	InputMesh<OrderedNodes, OrderedElements, OrderedRegions> mesh;
+
+	OrderedNodes nodes;
+	OrderedElements elements;
+	OrderedRegions regions;
 };
 
 }

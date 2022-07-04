@@ -18,7 +18,10 @@ public:
 	void variables(Mesh &mesh);
 
 protected:
-	InputMesh<OrderedNodes, OrderedFaces, OrderedRegions> mesh;
+	OrderedNodes nodes;
+	OrderedFaces elements;
+	OrderedRegions regions;
+
 	InputOpenFoam *loader;
 };
 
