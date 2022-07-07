@@ -13,7 +13,7 @@ namespace builder {
 //void buildDecomposedFVM(InputMesh<OrderedNodes, OrderedFaces, OrderedRegions> &input, Mesh &mesh);
 
 void buildOrderedFEM(OrderedNodes &nodes, OrderedElements &elements, OrderedRegions &regions, Mesh &mesh);
-void buildDecomposedFVM(OrderedNodes &nodes, OrderedFaces &elements, OrderedRegions &regions, Mesh &mesh);
+void buildDecomposedFVM(OrderedNodes &nodes, OrderedFaces &faces, OrderedRegions &regions, Mesh &mesh);
 
 }
 }

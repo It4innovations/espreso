@@ -19,7 +19,7 @@ public:
 
 protected:
 	OrderedNodes nodes;
-	OrderedFaces elements;
+	OrderedFaces faces;
 	OrderedRegions regions;
 
 	InputOpenFoam *loader;

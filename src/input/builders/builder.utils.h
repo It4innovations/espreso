@@ -64,6 +64,7 @@ struct NodesHolder {
 	MergedNodes merged;
 	LinkedNodes linked;
 
+	NodesHolder() = default;
 	NodesHolder(OrderedNodes &&ordered): ordered(std::move(ordered)) {}
 };
 
@@ -94,7 +95,16 @@ struct ElementsHolder {
 	ClusteredElements clustered;
 	MergedElements merged;
 
+	ElementsHolder() = default;
 	ElementsHolder(OrderedElements &&ordered): ordered(std::move(ordered)) {}
+};
+
+struct OrderedFacesBalanced: Faces { ChunkDistribution elements, faces; };
+struct FaceHolder {
+	OrderedFaces ordered;
+	OrderedFacesBalanced balanced;
+
+	FaceHolder(OrderedFaces &&ordered): ordered(std::move(ordered)) {}
 };
 
 /**
@@ -102,6 +112,7 @@ struct ElementsHolder {
  *
  *	  +-- NODES --+- ELEMENS -+
  *    |-----------+-----------| <-- parallel parser provides data
+ * 0. | FACES     | FACES     | <-- in the case of FVM
  * 1. | ORDERED   | ORDERED   | <-- initial setting for the builder
  * 2. | BALANCED  | BALANCED  |
  * 3. |-----------------------| <-- compute SFC and assign buckets
@@ -115,6 +126,11 @@ struct ElementsHolder {
 
 void swap(Nodes &n1, Nodes &n2);
 void swap(Elements &e1, Elements &e2);
+void swap(Faces &f1, Faces &f2);
+
+// 0.
+void trivialUpdate(OrderedFaces &ordered, OrderedFacesBalanced &balanced);
+void buildElementsFromFaces(OrderedFacesBalanced &faces, OrderedElementsBalanced &elements);
 
 // 1. -> 2.
 void trivialUpdate(OrderedNodes &ordered, OrderedNodesBalanced &balanced);
@@ -152,7 +168,6 @@ void fillElements(MergedElements &elements, OrderedRegions &regions, Mesh &mesh)
 
 
 // utility functions
-
 inline size_t size(const Nodes &data)
 {
 	return
@@ -169,8 +184,8 @@ inline size_t size(const Elements &data)
 inline size_t size(const Faces &data)
 {
 	return
-			data.etype.size() * sizeof(Element::CODE) +
-			data.enodes.size() * sizeof(esint) +
+			data.ftype.size() * sizeof(Element::CODE) +
+			data.fnodes.size() * sizeof(esint) +
 			data.owner.size() * sizeof(esint) +
 			data.neighbor.size() * sizeof(esint);
 }

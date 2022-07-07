@@ -19,6 +19,27 @@ void swap(Elements &e1, Elements &e2)
 	e1.enodes.swap(e2.enodes);
 }
 
+void swap(Faces &f1, Faces &f2)
+{
+	f1.ftype.swap(f2.ftype);
+	f1.fnodes.swap(f2.fnodes);
+	f1.owner.swap(f2.owner);
+	f1.neighbor.swap(f2.neighbor);
+}
+
+void trivialUpdate(OrderedFaces &ordered, OrderedFacesBalanced &balanced)
+{
+	swap(balanced, ordered);
+	balanced.elements.chunk = -1;
+	balanced.elements.offset = 0;
+	for (size_t i = 0; i < ordered.elements.blocks.size(); ++i) {
+		balanced.elements.offset += ordered.elements.blocks[i].size;
+	}
+	balanced.elements.size = balanced.elements.offset;
+	balanced.elements.total = Communication::exscan(balanced.elements.offset);
+	eslog::info(" == TOTAL NUMBER OF ELEMENTS %62d == \n", balanced.elements.total);
+}
+
 void trivialUpdate(OrderedNodes &ordered, OrderedNodesBalanced &balanced)
 {
 	swap(balanced, ordered);

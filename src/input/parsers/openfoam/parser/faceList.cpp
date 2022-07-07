@@ -24,7 +24,8 @@ void OpenFOAMFaceList::parse(ivector<Element::CODE> &type, ivector<esint> &enode
 			switch (size) {
 			case 3: type[i] = Element::CODE::TRIANGLE3; break;
 			case 4: type[i] = Element::CODE::SQUARE4; break;
-			default: type[i] = Element::CODE::POLYGON; tnodes.push_back(size);
+			default:
+				type[i] = Element::CODE::POLYGON; tnodes.push_back(size);
 			}
 			for (esint n = 0; n < size; ++n) {
 				tnodes.push_back(strtol(c, &next, 10)); c = next;

@@ -34,9 +34,8 @@ struct Elements {
 };
 
 struct Faces {
-	esint elements;
-	ivector<Element::CODE> etype;
-	ivector<esint> enodes;
+	ivector<Element::CODE> ftype;
+	ivector<esint> fnodes;
 	ivector<esint> owner, neighbor;
 };
 
@@ -55,7 +54,7 @@ struct Blocks {
 
 struct OrderedNodes: Nodes, Blocks { };
 struct OrderedElements: Elements, Blocks { };
-struct OrderedFaces: Faces, Blocks { };
+struct OrderedFaces: Faces { Blocks elements, faces; };
 struct OrderedValues: Values, Blocks { };
 
 struct OrderedRegions {
