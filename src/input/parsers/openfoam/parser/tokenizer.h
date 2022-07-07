@@ -16,21 +16,27 @@ bool isEmpty(const char &c)
 	return c == ' ' || c == '\n' || c == '\r' || c == '\t';
 }
 
-const char* toNonEmpty(const char* c)
+const char* toNonEmpty(const char* c, bool &inString)
 {
 	while (isEmpty(*c)) { ++c; }
 	return c;
 }
 
-const char* toEmpty(const char* c)
+const char* toEmpty(const char* c, bool &inString)
 {
-	while (!isEmpty(*c)) { ++c; }
+	while (!isEmpty(*c)) {
+		if (*c == '"') { inString = !inString; };
+		++c;
+	}
 	return c;
 }
 
-const char* toEnd(const char* c)
+const char* toEnd(const char* c, bool &inString)
 {
-	while (*c++ != ';');
+	while (*c != ';' || inString) {
+		if (*c == '"') { inString = !inString; }
+		++c;
+	}
 	return c;
 }
 
@@ -62,10 +68,11 @@ void toFoamFile(std::ifstream &is)
 dictionary dict(const char* c)
 {
 	dictionary dict;
-	dict.keyword.begin = toNonEmpty(c);
-	dict.keyword.end = toEmpty(dict.keyword.begin);
-	dict.value.begin = toNonEmpty(dict.keyword.end);
-	dict.value.end = toEnd(dict.value.begin);
+	bool inString = false;
+	dict.keyword.begin = toNonEmpty(c, inString);
+	dict.keyword.end = toEmpty(dict.keyword.begin, inString);
+	dict.value.begin = toNonEmpty(dict.keyword.end, inString);
+	dict.value.end = toEnd(dict.value.begin, inString);
 	return dict;
 }
 

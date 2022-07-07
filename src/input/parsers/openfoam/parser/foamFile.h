@@ -18,19 +18,20 @@ struct FoamFileHeader {
 	enum class Format { UNKNOWN, ASCII, BINARY }
 	format = Format::UNKNOWN;
 
-	enum class Class { unknown, faceList, labelList, vectorField }
+	enum class Class { unknown, faceList, faceCompactList, labelList, vectorField }
 	foamClass = Class::unknown;
 
 	char arch[MAX_CHAR_LENGTH] = { 0 };
 	char note[MAX_CHAR_LENGTH] = { 0 };
 	char location[MAX_CHAR_LENGTH] = { 0 };
 	char object[MAX_CHAR_LENGTH] = { 0 };
+	int label, scalar; // data width
 
 	const char* read(InputFile *file);
 	void read(std::ifstream &is);
 
-	FoamFileHeader() {}
-	FoamFileHeader(std::ifstream &is) { read(is); }
+	FoamFileHeader(): label(4), scalar(8) {}
+	FoamFileHeader(std::ifstream &is): label(4), scalar(8) { read(is); }
 
 	FoamFileHeader& operator^=(const FoamFileHeader &other) // used in MPI Reduce function
 	{
@@ -44,6 +45,8 @@ struct FoamFileHeader {
 			location[i] ^= other.location[i];
 			object[i] ^= other.object[i];
 		}
+		label = std::max(label, other.label);
+		scalar = std::max(scalar, other.scalar);
 		return *this;
 	}
 };

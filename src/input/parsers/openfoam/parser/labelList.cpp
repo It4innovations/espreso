@@ -6,6 +6,22 @@
 
 using namespace espreso;
 
+template <int T> static esint _parse(std::ifstream &is);
+
+template <> esint _parse<4>(std::ifstream &is)
+{
+	int number;
+	is.read(reinterpret_cast<char*>(&number), 4);
+	return number;
+}
+
+template <> esint _parse<8>(std::ifstream &is)
+{
+	long number;
+	is.read(reinterpret_cast<char*>(&number), 8);
+	return number;
+}
+
 void OpenFOAMLabelList::parse(ivector<esint> &list)
 {
 	list.resize(distribution.back().offset + distribution.back().size);
@@ -37,7 +53,12 @@ FoamFileHeader OpenFOAMLabelList::load(const std::string &file, ivector<esint> &
 			list.push_back(number + offset);
 		}
 	} else {
-		eslog::error("implement OpenFOAM binary reader.\n");
+		for (esint i = 0; i < size; ++i) {
+			switch (header.label) {
+			case 4: list.push_back(_parse<4>(is) + offset); break;
+			case 8: list.push_back(_parse<8>(is) + offset); break;
+			}
+		}
 	}
 	return header;
 }

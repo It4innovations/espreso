@@ -106,8 +106,6 @@ void InputOpenFoamSequential::load(const InputConfiguration &configuration)
 	owner.parse(this->faces.owner);
 	neighbour.parse(this->faces.neighbor);
 
-//	elements.cells = numberOfCells(owner.header);
-
 	eslog::info(" ============================================================================================= \n\n");
 	profiler::synccheckpoint("parse");
 	eslog::checkpointln("OPENFOAM PARSER: GEOMETRY PARSED");

@@ -65,13 +65,29 @@ void parse(FoamFileHeader &header, const oftoken::dictionary &dict)
 		if (value("binary")) { header.format = FoamFileHeader::Format::BINARY; }
 	}
 	if (keyword("arch")) {
-		memcpy(header.arch, dict.value.begin + 1, std::min(dict.value.end - dict.value.begin - 3, MAX_CHAR_LENGTH));
+		memcpy(header.arch, dict.value.begin + 1, std::min(dict.value.end - dict.value.begin - 2, MAX_CHAR_LENGTH));
+		if (memcmp(header.arch, "LSB;", 4) != 0) {
+			eslog::internalFailure("implement non LSB reader.\n");
+		}
+		if (memcmp(header.arch + 4, "label=32;", 9) == 0) {
+			header.label = 4;
+		}
+		if (memcmp(header.arch + 4, "label=64;", 9) == 0) {
+			header.label = 8;
+		}
+		if (memcmp(header.arch + 13, "scalar=32", 9) == 0) {
+			header.scalar = 4;
+		}
+		if (memcmp(header.arch + 13, "scalar=64", 9) == 0) {
+			header.scalar = 8;
+		}
 	}
 	if (keyword("note")) {
-		memcpy(header.note, dict.value.begin + 1, std::min(dict.value.end - dict.value.begin - 3, MAX_CHAR_LENGTH));
+		memcpy(header.note, dict.value.begin + 1, std::min(dict.value.end - dict.value.begin - 2, MAX_CHAR_LENGTH));
 	}
 	if (keyword("class")) {
 		if (value("faceList")) { header.foamClass = FoamFileHeader::Class::faceList; }
+		if (value("faceCompactList")) { header.foamClass = FoamFileHeader::Class::faceCompactList; }
 		if (value("labelList")) { header.foamClass = FoamFileHeader::Class::labelList; }
 		if (value("vectorField")) { header.foamClass = FoamFileHeader::Class::vectorField; }
 	}
