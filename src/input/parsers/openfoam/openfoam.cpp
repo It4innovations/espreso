@@ -120,7 +120,7 @@ void InputOpenFoamParallel::load(const InputConfiguration &configuration)
 
 	esint localCells = 0;
 	std::vector<esint> nsize(domains / info::mpi::size + 1), esize(domains / info::mpi::size + 1);
-	for (int d = info::mpi::rank, i = 0; d < domains; d += info::mpi::size, ++i) {
+	for (int d = info::mpi::rank, i = 0; d < 1; d += info::mpi::size, ++i) {
 		std::string dict = configuration.path + "/processor" + std::to_string(d) + "/constant/polyMesh/";
 		OpenFOAMFaceList::load(dict + "faces", faces.ftype, faces.fnodes, nodes.coordinates.size());
 		nsize[i] = OpenFOAMVectorField::load(dict + "points", nodes.coordinates);
@@ -134,7 +134,7 @@ void InputOpenFoamParallel::load(const InputConfiguration &configuration)
 	std::vector<esint> offset = { (esint)nodes.coordinates.size(), localCells }, sum(2);
 	Communication::exscan(sum, offset);
 	esint nsum = 0, esum = 0;
-	for (int d = info::mpi::rank, i = 0; d < domains; d += info::mpi::size, ++i) {
+	for (int d = info::mpi::rank, i = 0; d < 1; d += info::mpi::size, ++i) {
 		nodes.blocks.push_back(DatabaseOffset{offset[0] + nsum, nsum, nsize[i]});
 		nsum += nsize[i];
 		faces.elements.blocks.push_back(DatabaseOffset{offset[1] + esum, esum, esize[i]});

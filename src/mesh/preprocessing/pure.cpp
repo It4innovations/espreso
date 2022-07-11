@@ -75,17 +75,6 @@ void computeNodesDuplication(NodeStore *nodes, std::vector<int> &neighborsWithMe
 
 void linkNodesAndElements(ElementStore *elements, NodeStore *nodes, const std::vector<int> &neighbors)
 {
-	linkNodesAndElements(nodes, neighbors, nodes->elements, elements->nodes, elements->offset, elements->epointers);
-}
-
-void linkNodesAndElements(
-		const NodeStore *nodes,
-		const std::vector<int> &neighbors,
-		serializededata<esint, esint>* &nelements,
-		serializededata<esint, esint> *enodes,
-		serializededata<esint, esint> *eIDs,
-		serializededata<esint, Element*> *epointers)
-{
 	profiler::syncstart("link_nodes_and_elements");
 
 	struct __link__ { esint element, node; };
@@ -95,13 +84,13 @@ void linkNodesAndElements(
 
 	std::vector<esint> n2eDist(nodes->size + 1), n2eData;
 
-	auto nit = enodes->cbegin();
-	for (size_t e = 0; e < epointers->datatarray().size(); ++e, ++nit) {
-		PolyElement poly(epointers->datatarray()[e]->code, nit->begin());
+	auto nit = elements->nodes->cbegin();
+	for (size_t e = 0; e < elements->epointers->datatarray().size(); ++e, ++nit) {
+		PolyElement poly(elements->epointers->datatarray()[e]->code, nit->begin());
 		for (auto n = nit->begin(); n != nit->end(); ++n) {
 			if (poly.isNode(n - nit->begin()) && links.count(__link__{(esint)e, *n}) == 0) {
 				++n2eDist[*n];
-				links.insert(__link__{eIDs->datatarray()[e], *n});
+				links.insert(__link__{elements->offset->datatarray()[e], *n});
 			}
 		}
 	}
@@ -166,11 +155,11 @@ void linkNodesAndElements(
 		ddist[i] = n2eDist[bdist[i]];
 		bdist[i] += 1;
 	}
-	nelements = new serializededata<esint, esint>(tarray<esint>(bdist, n2eDist), tarray<esint>(ddist, n2eData));
+	nodes->elements = new serializededata<esint, esint>(tarray<esint>(bdist, n2eDist), tarray<esint>(ddist, n2eData));
 
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::MKL_NUM_THREADS; ++t) {
-		for (auto it = nelements->begin(t); it != nelements->end(t); ++it) {
+		for (auto it = nodes->elements->begin(t); it != nodes->elements->end(t); ++it) {
 			std::sort(it->begin(), it->end()); // TODO: remove sort
 		}
 	}
@@ -180,52 +169,9 @@ void linkNodesAndElements(
 	eslog::checkpointln("MESH: NODES AND ELEMENTS LINKED");
 }
 
-void computeElementsFaceNeighbors(NodeStore *nodes, ElementStore *elements, const std::vector<int> &neighbors)
-{
-	computeElementsNeighbors(
-			nodes,
-			neighbors,
-			nodes->elements,
-			elements->faceNeighbors,
-			elements->nodes,
-			elements->offset,
-			elements->epointers,
-			[] (Element *e) { return e->faces; },
-			false); // there are max 1 neighbor
-
-	DebugOutput::faceNeighbors();
-}
-
-void computeElementsEdgeNeighbors(NodeStore *nodes, ElementStore *elements, const std::vector<int> &neighbors)
-{
-	computeElementsNeighbors(
-			nodes,
-			neighbors,
-			nodes->elements,
-			elements->edgeNeighbors,
-			elements->nodes,
-			elements->offset,
-			elements->epointers,
-			[] (Element *e) { return e->edges; },
-			true); // we need to know the number of neighbors
-}
-
-void computeElementsNeighbors(
-		NodeStore *nodes,
-		const std::vector<int> &neighbors,
-		serializededata<esint, esint>* &nelements,
-		serializededata<esint, esint>* &eneighbors,
-		serializededata<esint, esint> *enodes,
-		serializededata<esint, esint> *eIDs,
-		serializededata<esint, Element*> *epointers,
-		std::function<serializededata<int, int>*(Element*)> across,
-		bool insertNeighSize)
+static void _computeElementsNeighbors(NodeStore *nodes, ElementStore *elements, bool faces)
 {
 	profiler::syncstart("compute_elements_neighbors");
-	if (nelements == NULL) {
-		linkNodesAndElements(nodes, neighbors, nelements, enodes, eIDs, epointers);
-	}
-
 	size_t threads = info::env::OMP_NUM_THREADS;
 
 	std::vector<std::vector<esint> > dualDistribution(threads);
@@ -233,27 +179,39 @@ void computeElementsNeighbors(
 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
-		auto nodes = enodes->cbegin(t);
+		auto enodes = elements->nodes->cbegin(t);
 
 		std::vector<esint> tdist, tdata, intersection;
 		if (t == 0) {
 			tdist.push_back(0);
 		}
-		for (size_t e = eIDs->datatarray().distribution()[t]; e < eIDs->datatarray().distribution()[t + 1]; ++e, ++nodes) {
+		for (size_t e = elements->offset->datatarray().distribution()[t]; e < elements->offset->datatarray().distribution()[t + 1]; ++e, ++enodes) {
 			bool hasNeighbor = false;
-			if (Element::encode(epointers->datatarray()[e]->code).code == Element::CODE::POLYGON || Element::encode(epointers->datatarray()[e]->code).code == Element::CODE::POLYHEDRON) {
+			switch (Element::encode(elements->epointers->datatarray()[e]->code).code) {
+			case Element::CODE::POLYGON: {
+				if (!faces) {
 
-			} else {
-				for (auto interface = across(epointers->datatarray()[e])->begin(); interface != across(epointers->datatarray()[e])->end(); ++interface) {
-					auto telements = nelements->cbegin() + nodes->at(*interface->begin());
+				}
+			} break;
+			case Element::CODE::POLYHEDRON: {
+				if (faces) {
+
+				} else {
+
+				}
+			} break;
+			default:
+				serializededata<int, int> *interfaces = faces ? elements->epointers->datatarray()[e]->faces : elements->epointers->datatarray()[e]->edges;
+				for (auto interface = interfaces->begin(); interface != interfaces->end(); ++interface) {
+					auto telements = nodes->elements->cbegin() + enodes->at(*interface->begin());
 					intersection.clear();
 					for (auto n = telements->begin(); n != telements->end(); ++n) {
-						if (*n != eIDs->datatarray()[e]) {
+						if (*n != elements->offset->datatarray()[e]) {
 							intersection.push_back(*n);
 						}
 					}
 					for (auto n = interface->begin() + 1; n != interface->end() && intersection.size(); ++n) {
-						telements = nelements->cbegin() + nodes->at(*n);
+						telements = nodes->elements->cbegin() + enodes->at(*n);
 						auto it1 = intersection.begin();
 						auto it2 = telements->begin();
 						auto last = intersection.begin();
@@ -272,19 +230,12 @@ void computeElementsNeighbors(
 						}
 						intersection.resize(last - intersection.begin());
 					}
-					if (insertNeighSize) {
+					if (!faces) {
 						tdata.push_back(intersection.size());
 						tdata.insert(tdata.end(), intersection.begin(), intersection.end());
 					} else {
 						tdata.push_back(intersection.size() ? intersection.front() : -1);
 						if (intersection.size() > 1) {
-							{
-								std::cout << "element: " << e << ", intersection: " << intersection;
-								std::cout << "me: " << *nodes << "\n";
-								for (size_t i = 0; i < intersection.size(); ++i) {
-										std::cout << i << ": " << *(enodes->cbegin() + intersection[i]) << "\n";
-								}
-							}
 							eslog::error("Input error: a face shared by 3 elements found.\n");
 						}
 
@@ -304,10 +255,25 @@ void computeElementsNeighbors(
 
 	utils::threadDistributionToFullDistribution(dualDistribution);
 
-	eneighbors = new serializededata<esint, esint>(dualDistribution, dualData);
+	if (faces) {
+		elements->faceNeighbors = new serializededata<esint, esint>(dualDistribution, dualData);
+	} else {
+		elements->edgeNeighbors = new serializededata<esint, esint>(dualDistribution, dualData);
+	}
 
 	profiler::syncend("compute_elements_neighbors");
 	eslog::checkpointln("MESH: ELEMENTS NEIGHBOURS COMPUTED");
+}
+
+void computeElementsFaceNeighbors(NodeStore *nodes, ElementStore *elements)
+{
+	_computeElementsNeighbors(nodes, elements, true);
+	DebugOutput::faceNeighbors();
+}
+
+void computeElementsEdgeNeighbors(NodeStore *nodes, ElementStore *elements)
+{
+	_computeElementsNeighbors(nodes, elements, false);
 }
 
 void computeElementsCenters(const NodeStore *nodes, ElementStore *elements)

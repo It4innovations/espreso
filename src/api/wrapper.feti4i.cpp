@@ -321,7 +321,8 @@ void FETI4ICreateInstance(
 	std::iota(matrix->mesh.elements->offset->datatarray().begin(), matrix->mesh.elements->offset->datatarray().end(), matrix->mesh.elements->distribution.process.offset);
 
 	mesh::computeNodesDuplication(matrix->mesh.nodes, matrix->mesh.neighborsWithMe);
-	mesh::computeElementsFaceNeighbors(matrix->mesh.nodes, matrix->mesh.elements, matrix->mesh.neighbors);
+	mesh::linkNodesAndElements(matrix->mesh.elements, matrix->mesh.nodes, matrix->mesh.neighbors);
+	mesh::computeElementsFaceNeighbors(matrix->mesh.nodes, matrix->mesh.elements);
 	mesh::sortNodes(matrix->mesh.nodes, matrix->mesh.elements, matrix->mesh.boundaryRegions);
 	matrix->mesh.partitiate(settings.domains);
 	if (settings.solver.method == FETIConfiguration::METHOD::HYBRID_FETI) {

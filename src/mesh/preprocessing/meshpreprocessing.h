@@ -3,10 +3,7 @@
 #define SRC_MESH_PREPROCESSING_MESHPREPROCESSING_H_
 
 #include <cstddef>
-#include <string>
 #include <vector>
-#include <map>
-#include <functional>
 
 namespace espreso {
 
@@ -36,26 +33,8 @@ namespace mesh {
 void computeNodesDuplication(NodeStore *nodes, std::vector<int> &neighborsWithMe);
 
 void linkNodesAndElements(ElementStore *elements, NodeStore *nodes, const std::vector<int> &neighbors);
-void linkNodesAndElements(
-		const NodeStore *nodes,
-		const std::vector<int> &neighbors,
-		serializededata<esint, esint>* &nelements,
-		serializededata<esint, esint> *enodes,
-		serializededata<esint, esint> *eIDs,
-		serializededata<esint, Element*> *epointers);
-
-void computeElementsFaceNeighbors(NodeStore *nodes, ElementStore *elements, const std::vector<int> &neighbors);
-void computeElementsEdgeNeighbors(NodeStore *nodes, ElementStore *elements, const std::vector<int> &neighbors);
-void computeElementsNeighbors(
-		NodeStore *nodes,
-		const std::vector<int> &neighbors,
-		serializededata<esint, esint>* &nelements,
-		serializededata<esint, esint>* &eneighbors,
-		serializededata<esint, esint> *enodes,
-		serializededata<esint, esint> *eIDs,
-		serializededata<esint, Element*> *epointers,
-		std::function<serializededata<int, int>*(Element*)> across,
-		bool insertNeighSize);
+void computeElementsFaceNeighbors(NodeStore *nodes, ElementStore *elements);
+void computeElementsEdgeNeighbors(NodeStore *nodes, ElementStore *elements);
 
 void computeElementsCenters(const NodeStore *nodes, ElementStore *elements);
 

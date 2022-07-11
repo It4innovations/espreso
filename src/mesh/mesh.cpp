@@ -444,9 +444,10 @@ void Mesh::analyze()
 
 void Mesh::reclusterize()
 {
-	mesh::computeElementsFaceNeighbors(nodes, elements, neighbors);
+	mesh::linkNodesAndElements(elements, nodes, neighbors);
+	mesh::computeElementsFaceNeighbors(nodes, elements);
 	if (_withEdgeDual) {
-		mesh::computeElementsEdgeNeighbors(nodes, elements, neighbors);
+		mesh::computeElementsEdgeNeighbors(nodes, elements);
 	}
 
 	if (!_omitClusterization) {
