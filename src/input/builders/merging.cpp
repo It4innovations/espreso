@@ -655,7 +655,7 @@ void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merge
 		// we need to inform about erased nodes
 		std::vector<std::vector<esint> > sRemoved(nodes.neighbors.size()), rRemoved(nodes.neighbors.size());
 		for (size_t n = 0; n < nodes.offsets.size(); ++n) {
-			if (usedNode[n] == usedNode[n + 1] && usedNode[g2l[merged.offsets[n]]] == usedNode[g2l[merged.offsets[n]] + 1]) {
+			if (usedNode[n] == usedNode[n + 1] && usedNode[g2l[nodes.offsets[n]]] == usedNode[g2l[nodes.offsets[n]] + 1]) {
 				for (esint r = nodes.rankDistribution[n]; r < nodes.rankDistribution[n + 1]; ++r) {
 					if (nodes.rankData[r] != info::mpi::rank) {
 						sRemoved[rmap[nodes.rankData[r]]].push_back(nodes.offsets[n]);
