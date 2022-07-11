@@ -28,6 +28,7 @@
 #include <vector>
 #include <numeric>
 #include <algorithm>
+#include <unordered_set>
 
 #include "basis/utilities/print.h"
 
@@ -74,7 +75,7 @@ void computeNodesDuplication(NodeStore *nodes, std::vector<int> &neighborsWithMe
 
 void linkNodesAndElements(ElementStore *elements, NodeStore *nodes, const std::vector<int> &neighbors)
 {
-	linkNodesAndElements(nodes, neighbors, nodes->elements, elements->nodes, elements->offset, true);
+	linkNodesAndElements(nodes, neighbors, nodes->elements, elements->nodes, elements->offset, elements->epointers);
 }
 
 void linkNodesAndElements(
@@ -83,155 +84,96 @@ void linkNodesAndElements(
 		serializededata<esint, esint>* &nelements,
 		serializededata<esint, esint> *enodes,
 		serializededata<esint, esint> *eIDs,
-		bool sortedIDs)
+		serializededata<esint, Element*> *epointers)
 {
 	profiler::syncstart("link_nodes_and_elements");
-	size_t threads = info::env::OMP_NUM_THREADS;
 
-	const serializededata<esint, esint> *nIDs = nodes->IDs;
-	const serializededata<esint, int> *nranks = nodes->ranks;
-	const std::vector<size_t> &ndistribution  = nodes->IDs->datatarray().distribution();
+	struct __link__ { esint element, node; };
+	struct __linkHash__ { size_t operator()(const __link__ &link) const { return std::hash<size_t>()((static_cast<size_t>(link.element) << 32) + static_cast<size_t>(link.node)); } };
+	struct __linkComp__ { bool operator()(const __link__ &l1, const __link__ &l2) const { return l1.element == l2.element && l1.node == l2.node; } };
+	std::unordered_set<__link__, __linkHash__, __linkComp__> links;
 
-	std::vector<esint> npermutation;
-	if (!sortedIDs) {
-		npermutation.resize(nIDs->datatarray().size());
-		std::iota(npermutation.begin(), npermutation.end(), 0);
-		std::sort(npermutation.begin(), npermutation.end(), [&] (esint i, esint j) {
-			return nIDs->datatarray()[i] < nIDs->datatarray()[j];
-		});
+	std::vector<esint> n2eDist(nodes->size + 1), n2eData;
+
+	auto nit = enodes->cbegin();
+	for (size_t e = 0; e < epointers->datatarray().size(); ++e, ++nit) {
+		PolyElement poly(epointers->datatarray()[e]->code, nit->begin());
+		for (auto n = nit->begin(); n != nit->end(); ++n) {
+			if (poly.isNode(n - nit->begin()) && links.count(__link__{(esint)e, *n}) == 0) {
+				++n2eDist[*n];
+				links.insert(__link__{eIDs->datatarray()[e], *n});
+			}
+		}
+	}
+	std::vector<esint> _n2eDist = n2eDist;
+	utils::sizesToOffsets(_n2eDist);
+	n2eData.resize(_n2eDist.back());
+	for (auto it = links.cbegin(); it != links.cend(); ++it) {
+		n2eData[_n2eDist[it->node]++] = it->element;
+	}
+	for (esint n = 0; n < nodes->size; ++n) {
+		_n2eDist[n] -= n2eDist[n];
 	}
 
-	// thread x neighbor x vector(from, to)
-	std::vector<std::vector<std::vector<std::pair<esint, esint> > > > sBuffer(threads);
-	std::vector<std::vector<std::pair<esint, esint> > > rBuffer(neighbors.size());
-	std::vector<std::pair<esint, esint> > localLinks;
-
-	localLinks.resize(enodes->cend()->begin() - enodes->cbegin()->begin());
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		auto tnodes = enodes->cbegin(t);
-		size_t offset = enodes->cbegin(t)->begin() - enodes->cbegin()->begin();
-
-		for (size_t e = eIDs->datatarray().distribution()[t]; e < eIDs->datatarray().distribution()[t + 1]; ++e, ++tnodes) {
-			for (auto n = tnodes->begin(); n != tnodes->end(); ++n, ++offset) {
-				localLinks[offset].first = *n;
-				localLinks[offset].second = eIDs->datatarray()[e];
+	std::vector<std::vector<esint> > sBuffer(neighbors.size()), rBuffer(neighbors.size());
+	auto ranks = nodes->ranks->cbegin();
+	for (esint n = 0; n < nodes->size; ++n, ++ranks) {
+		int r = 0;
+		for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {
+			if (*rank != info::mpi::rank) {
+				while (neighbors[r] < *rank) ++r;
+				sBuffer[r].push_back(-nodes->IDs->datatarray()[n]); // nIDs are negative
+				sBuffer[r].insert(sBuffer[r].end(), n2eData.begin() + _n2eDist[n], n2eData.begin() + _n2eDist[n + 1]);
 			}
 		}
 	}
 
-	utils::sortWithInplaceMerge(localLinks, enodes->datatarray().distribution());
-	profiler::synccheckpoint("local_links");
-
-	std::vector<size_t> tbegin(threads);
-	for (size_t t = 1; t < threads; t++) {
-		tbegin[t] = std::lower_bound(localLinks.begin() + tbegin[t - 1], localLinks.end(), ndistribution[t], [] (std::pair<esint, esint> &p, esint n) { return p.first < n; }) - localLinks.begin();
-	}
-
-	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		auto ranks = nranks->cbegin(t);
-		std::vector<std::vector<std::pair<esint, esint> > > tBuffer(neighbors.size());
-
-		auto begin = localLinks.begin() + tbegin[t];
-		auto end = begin;
-
-		for (size_t n = ndistribution[t]; n < ndistribution[t + 1]; ++n, ++ranks) {
-			while (begin != localLinks.end() && begin->first < (esint)n) ++begin;
-			if (begin != localLinks.end() && begin->first == (esint)n) {
-				end = begin;
-				while (end != localLinks.end() && end->first == begin->first) ++end;
-				esint nID = nIDs->datatarray()[begin->first];
-				for (auto it = begin; it != end; ++it) {
-					it->first = nID;
-				}
-				size_t i = 0;
-				for (auto rank = ranks->begin(); rank != ranks->end(); ++rank) {
-					if (*rank != info::mpi::rank) {
-						while (neighbors[i] < *rank) ++i;
-						tBuffer[i].insert(tBuffer[i].end(), begin, end);
-					}
-				}
-				begin = end;
-			}
-		}
-
-		sBuffer[t].swap(tBuffer);
-	}
-
-	for (size_t t = 1; t < threads; t++) {
-		for (size_t r = 0; r < sBuffer[0].size(); r++) {
-			sBuffer[0][r].insert(sBuffer[0][r].end(), sBuffer[t][r].begin(), sBuffer[t][r].end());
-		}
-	}
-
-	if (!sortedIDs) {
-		std::sort(localLinks.begin(), localLinks.end());
-		for (size_t n = 0; n < neighbors.size(); ++n) {
-			std::sort(sBuffer[0][n].begin(), sBuffer[0][n].end());
-		}
-	}
-	profiler::synccheckpoint("sbuffer");
-
-	if (!Communication::exchangeUnknownSize(sBuffer[0], rBuffer, neighbors)) {
+	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, neighbors)) {
 		eslog::internalFailure("addLinkFromTo - exchangeUnknownSize.\n");
 	}
-	profiler::synccheckpoint("exchange");
+	utils::clearVector(sBuffer);
 
-	std::vector<size_t> boundaries = { 0, localLinks.size() };
-	for (size_t r = 0; r < rBuffer.size(); r++) {
-		localLinks.insert(localLinks.end(), rBuffer[r].begin(), rBuffer[r].end());
-		boundaries.push_back(localLinks.size());
-	}
-
-	utils::mergeAppendedData(localLinks, boundaries);
-	if (!sortedIDs) {
-		for (size_t i = 0, j = 0; i < localLinks.size(); i++) {
-			while (nIDs->datatarray()[npermutation[j]] < localLinks[i].first) ++j;
-			localLinks[i].first = npermutation[j];
+	for (size_t r = 0; r < rBuffer.size(); ++r) {
+		auto it = rBuffer[r].begin();
+		while (it != rBuffer[r].end()) {
+			esint n = std::lower_bound(nodes->IDs->datatarray().begin(), nodes->IDs->datatarray().end(), -*it) - nodes->IDs->datatarray().begin();
+			*it++ = -n;
+			while (it != rBuffer[r].end() && 0 <= *it) {
+				++n2eDist[n];
+				++it;
+			}
 		}
-		std::sort(localLinks.begin(), localLinks.end());
+	}
+	utils::sizesToOffsets(n2eDist);
+	_n2eDist = n2eDist;
+	n2eData.resize(n2eDist.back());
+	for (auto it = links.cbegin(); it != links.cend(); ++it) {
+		n2eData[_n2eDist[it->node]++] = it->element;
+	}
+	for (size_t r = 0; r < rBuffer.size(); ++r) {
+		auto it = rBuffer[r].begin();
+		while (it != rBuffer[r].end()) {
+			esint n = -*it++;
+			while (it != rBuffer[r].end() && 0 <= *it) {
+				n2eData[_n2eDist[n]++] = *it;
+				++it;
+			}
+		}
 	}
 
-	std::vector<std::vector<esint> > linksBoundaries(threads);
-	std::vector<std::vector<esint> > linksData(threads);
+	std::vector<size_t> bdist = nodes->distribution, ddist = nodes->distribution;
+	for (size_t i = 1; i < nodes->distribution.size(); ++i) {
+		ddist[i] = n2eDist[bdist[i]];
+		bdist[i] += 1;
+	}
+	nelements = new serializededata<esint, esint>(tarray<esint>(bdist, n2eDist), tarray<esint>(ddist, n2eData));
 
 	#pragma omp parallel for
-	for (size_t t = 0; t < threads; t++) {
-		if (ndistribution[t] != ndistribution[t + 1]) {
-			auto llink = localLinks.begin();
-			if (sortedIDs) {
-				llink = std::lower_bound(localLinks.begin(), localLinks.end(), nIDs->datatarray()[ndistribution[t]], [] (std::pair<esint, esint> &p, esint n) { return p.first < n; });
-			} else {
-				llink = std::lower_bound(localLinks.begin(), localLinks.end(), ndistribution[t], [] (std::pair<esint, esint> &p, esint n) { return p.first < n; });
-			}
-			esint current;
-
-			std::vector<esint> tBoundaries, tData;
-			if (t == 0) {
-				tBoundaries.push_back(0);
-			}
-
-			for (size_t n = ndistribution[t]; n < ndistribution[t + 1] && llink != localLinks.end(); ++n) {
-				current = llink->first;
-				if (
-						(sortedIDs && current == nIDs->datatarray()[n]) ||
-						(!sortedIDs && current == (esint)n)) {
-
-					while (llink != localLinks.end() && current == llink->first) {
-						tData.push_back(llink->second);
-						++llink;
-					}
-				}
-				tBoundaries.push_back(llink - localLinks.begin());
-			}
-
-			linksBoundaries[t].swap(tBoundaries);
-			linksData[t].swap(tData);
+	for (int t = 0; t < info::env::MKL_NUM_THREADS; ++t) {
+		for (auto it = nelements->begin(t); it != nelements->end(t); ++it) {
+			std::sort(it->begin(), it->end()); // TODO: remove sort
 		}
 	}
-
-	nelements = new serializededata<esint, esint>(linksBoundaries, linksData);
 
 	profiler::synccheckpoint("rbuffer");
 	profiler::syncend("link_nodes_and_elements");
@@ -249,8 +191,7 @@ void computeElementsFaceNeighbors(NodeStore *nodes, ElementStore *elements, cons
 			elements->offset,
 			elements->epointers,
 			[] (Element *e) { return e->faces; },
-			false, // there are max 1 neighbor
-			true); // sorted nodes IDs
+			false); // there are max 1 neighbor
 
 	DebugOutput::faceNeighbors();
 }
@@ -266,8 +207,7 @@ void computeElementsEdgeNeighbors(NodeStore *nodes, ElementStore *elements, cons
 			elements->offset,
 			elements->epointers,
 			[] (Element *e) { return e->edges; },
-			true, // we need to know the number of neighbors
-			true); // sorted nodes IDs
+			true); // we need to know the number of neighbors
 }
 
 void computeElementsNeighbors(
@@ -279,12 +219,11 @@ void computeElementsNeighbors(
 		serializededata<esint, esint> *eIDs,
 		serializededata<esint, Element*> *epointers,
 		std::function<serializededata<int, int>*(Element*)> across,
-		bool insertNeighSize,
-		bool sortedIDs)
+		bool insertNeighSize)
 {
 	profiler::syncstart("compute_elements_neighbors");
 	if (nelements == NULL) {
-		linkNodesAndElements(nodes, neighbors, nelements, enodes, eIDs, sortedIDs);
+		linkNodesAndElements(nodes, neighbors, nelements, enodes, eIDs, epointers);
 	}
 
 	size_t threads = info::env::OMP_NUM_THREADS;
@@ -302,52 +241,56 @@ void computeElementsNeighbors(
 		}
 		for (size_t e = eIDs->datatarray().distribution()[t]; e < eIDs->datatarray().distribution()[t + 1]; ++e, ++nodes) {
 			bool hasNeighbor = false;
-			for (auto interface = across(epointers->datatarray()[e])->begin(); interface != across(epointers->datatarray()[e])->end(); ++interface) {
-				auto telements = nelements->cbegin() + nodes->at(*interface->begin());
-				intersection.clear();
-				for (auto n = telements->begin(); n != telements->end(); ++n) {
-					if (*n != eIDs->datatarray()[e]) {
-						intersection.push_back(*n);
-					}
-				}
-				for (auto n = interface->begin() + 1; n != interface->end() && intersection.size(); ++n) {
-					telements = nelements->cbegin() + nodes->at(*n);
-					auto it1 = intersection.begin();
-					auto it2 = telements->begin();
-					auto last = intersection.begin();
-					while (it1 != intersection.end()) {
-						while (it2 != telements->end() && *it2 < *it1) {
-							++it2;
-						}
-						if (it2 == telements->end()) {
-							break;
-						}
-						if (*it1 == *it2) {
-							*last++ = *it1++;
-						} else {
-							it1++;
+			if (Element::encode(epointers->datatarray()[e]->code).code == Element::CODE::POLYGON || Element::encode(epointers->datatarray()[e]->code).code == Element::CODE::POLYHEDRON) {
+
+			} else {
+				for (auto interface = across(epointers->datatarray()[e])->begin(); interface != across(epointers->datatarray()[e])->end(); ++interface) {
+					auto telements = nelements->cbegin() + nodes->at(*interface->begin());
+					intersection.clear();
+					for (auto n = telements->begin(); n != telements->end(); ++n) {
+						if (*n != eIDs->datatarray()[e]) {
+							intersection.push_back(*n);
 						}
 					}
-					intersection.resize(last - intersection.begin());
-				}
-				if (insertNeighSize) {
-					tdata.push_back(intersection.size());
-					tdata.insert(tdata.end(), intersection.begin(), intersection.end());
-				} else {
-					tdata.push_back(intersection.size() ? intersection.front() : -1);
-					if (intersection.size() > 1) {
-						{
-							std::cout << "element: " << e << ", intersection: " << intersection;
-							std::cout << "me: " << *nodes << "\n";
-							for (size_t i = 0; i < intersection.size(); ++i) {
-								std::cout << i << ": " << *(enodes->cbegin() + intersection[i]) << "\n";
+					for (auto n = interface->begin() + 1; n != interface->end() && intersection.size(); ++n) {
+						telements = nelements->cbegin() + nodes->at(*n);
+						auto it1 = intersection.begin();
+						auto it2 = telements->begin();
+						auto last = intersection.begin();
+						while (it1 != intersection.end()) {
+							while (it2 != telements->end() && *it2 < *it1) {
+								++it2;
+							}
+							if (it2 == telements->end()) {
+								break;
+							}
+							if (*it1 == *it2) {
+								*last++ = *it1++;
+							} else {
+								it1++;
 							}
 						}
-						eslog::error("Input error: a face shared by 3 elements found.\n");
+						intersection.resize(last - intersection.begin());
 					}
+					if (insertNeighSize) {
+						tdata.push_back(intersection.size());
+						tdata.insert(tdata.end(), intersection.begin(), intersection.end());
+					} else {
+						tdata.push_back(intersection.size() ? intersection.front() : -1);
+						if (intersection.size() > 1) {
+							{
+								std::cout << "element: " << e << ", intersection: " << intersection;
+								std::cout << "me: " << *nodes << "\n";
+								for (size_t i = 0; i < intersection.size(); ++i) {
+										std::cout << i << ": " << *(enodes->cbegin() + intersection[i]) << "\n";
+								}
+							}
+							eslog::error("Input error: a face shared by 3 elements found.\n");
+						}
 
+					}
+					hasNeighbor = hasNeighbor | intersection.size();
 				}
-				hasNeighbor = hasNeighbor | intersection.size();
 			}
 			tdist.push_back(tdata.size());
 //			if (!hasNeighbor && elements->distribution.size != 1) {
@@ -1942,8 +1885,16 @@ void computeElementDistribution(ElementStore *elements)
 {
 	profiler::syncstart("compute_element_distribution");
 	elements->distribution.clear();
-	for (auto epointer = elements->epointers->datatarray().begin(); epointer != elements->epointers->datatarray().end(); ++epointer) {
+	auto enodes = elements->nodes->cbegin();
+	for (auto epointer = elements->epointers->datatarray().begin(); epointer != elements->epointers->datatarray().end(); ++epointer, ++enodes) {
 		++elements->distribution.code[(int)(*epointer)->code].size;
+		if ((*epointer)->code == Element::CODE::POLYGON) {
+			elements->distribution.polygonNodes.size += enodes->size() - 1;
+		}
+		if ((*epointer)->code == Element::CODE::POLYHEDRON) {
+			elements->distribution.polyhedronFaces.size += enodes->front();
+			elements->distribution.polyhedronNodes.size += enodes->size() - enodes->front() - 1;
+		}
 	}
 	elements->distribution.process.size = elements->epointers->datatarray().size();
 
@@ -1951,12 +1902,22 @@ void computeElementDistribution(ElementStore *elements)
 	for (size_t i = 0; i < elements->distribution.code.size(); ++i) {
 		offset.push_back(elements->distribution.code[i].size);
 	}
+	offset.push_back(elements->distribution.polygonNodes.size);
+	offset.push_back(elements->distribution.polyhedronFaces.size);
+	offset.push_back(elements->distribution.polyhedronNodes.size);
+
 	sum.resize(offset.size());
 	Communication::exscan(sum, offset);
 	for (size_t i = 0; i < elements->distribution.code.size(); ++i) {
 		elements->distribution.code[i].offset = offset[i];
 		elements->distribution.code[i].totalSize = sum[i];
 	}
+	elements->distribution.polygonNodes.offset    = offset[elements->distribution.code.size() + 0];
+	elements->distribution.polyhedronNodes.offset = offset[elements->distribution.code.size() + 1];
+	elements->distribution.polyhedronFaces.offset = offset[elements->distribution.code.size() + 2];
+	elements->distribution.polygonNodes.totalSize    = sum[elements->distribution.code.size() + 0];
+	elements->distribution.polyhedronNodes.totalSize = sum[elements->distribution.code.size() + 1];
+	elements->distribution.polyhedronFaces.totalSize = sum[elements->distribution.code.size() + 2];
 
 	elements->distribution.process.offset = elements->distribution.process.size;
 	elements->distribution.process.totalSize = Communication::exscan(elements->distribution.process.offset);
@@ -1972,14 +1933,30 @@ void computeRegionsElementDistribution(const ElementStore *elements, std::vector
 	std::vector<esint> sum, offset;
 	for (size_t r = 0; r < elementsRegions.size(); r++) {
 		elementsRegions[r]->distribution.clear();
-		for (auto e = elementsRegions[r]->elements->datatarray().begin(); e != elementsRegions[r]->elements->datatarray().end(); ++e) {
+		auto enodes = elements->nodes->cbegin();
+		for (auto e = elementsRegions[r]->elements->datatarray().begin(); e != elementsRegions[r]->elements->datatarray().end(); ++e, ++enodes) {
 			++elementsRegions[r]->distribution.code[(int)elements->epointers->datatarray()[*e]->code].size;
+			if (elements->epointers->datatarray()[*e]->code == Element::CODE::POLYGON) {
+				elementsRegions[r]->distribution.polygonNodes.size += enodes->size() - 1;
+			}
+			if (elements->epointers->datatarray()[*e]->code == Element::CODE::POLYHEDRON) {
+				elementsRegions[r]->distribution.polyhedronFaces.size += enodes->front();
+				elementsRegions[r]->distribution.polyhedronNodes.size += enodes->size() - enodes->front() - 1;
+			}
 		}
-		for (size_t i = 0; i < elements->distribution.code.size(); i++) {
+
+		for (size_t i = 0; i < elements->distribution.code.size(); ++i) {
 			if (elements->distribution.code[i].totalSize) {
 				elementsRegions[r]->distribution.process.size += elementsRegions[r]->distribution.code[i].size;
 				elementsRegions[r]->distribution.process.next += elementsRegions[r]->distribution.code[i].size;
 				offset.push_back(elementsRegions[r]->distribution.code[i].size);
+				if (Mesh::element(i).code == Element::CODE::POLYGON) {
+					offset.push_back(elementsRegions[r]->distribution.polygonNodes.size);
+				}
+				if (Mesh::element(i).code == Element::CODE::POLYHEDRON) {
+					offset.push_back(elementsRegions[r]->distribution.polyhedronFaces.size);
+					offset.push_back(elementsRegions[r]->distribution.polyhedronNodes.size);
+				}
 			}
 		}
 		elementsRegions[r]->distribution.process.offset = elementsRegions[r]->distribution.process.size;
@@ -1994,6 +1971,16 @@ void computeRegionsElementDistribution(const ElementStore *elements, std::vector
 			if (elements->distribution.code[i].totalSize) {
 				elementsRegions[r]->distribution.code[i].offset = offset[j];
 				elementsRegions[r]->distribution.code[i].totalSize = sum[j++];
+				if (Mesh::element(i).code == Element::CODE::POLYGON) {
+					elementsRegions[r]->distribution.polygonNodes.offset = offset[j];
+					elementsRegions[r]->distribution.polygonNodes.totalSize = sum[j++];
+				}
+				if (Mesh::element(i).code == Element::CODE::POLYHEDRON) {
+					elementsRegions[r]->distribution.polyhedronFaces.offset = offset[j];
+					elementsRegions[r]->distribution.polyhedronFaces.totalSize = sum[j++];
+					elementsRegions[r]->distribution.polyhedronNodes.offset = offset[j];
+					elementsRegions[r]->distribution.polyhedronNodes.totalSize = sum[j++];
+				}
 			}
 		}
 		elementsRegions[r]->distribution.process.offset = offset[j];

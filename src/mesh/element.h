@@ -119,6 +119,9 @@ struct PolyElement {
 		if (omit == 1 && n == 0) {
 			return false; // POLYHEDRON
 		}
+		if (omit != -1 && omit < n) {
+			omit += nodes[omit] + 1;
+		}
 		if (n == omit) {
 			omit += nodes[omit] + 1;
 			return false;

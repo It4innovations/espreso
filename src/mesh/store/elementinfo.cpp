@@ -14,5 +14,5 @@ ElementsDistributionInfo::ElementsDistributionInfo()
 void ElementsDistributionInfo::clear()
 {
 	process = DistributedDataInfo();
-	std::fill(code.begin(), code.end(), DistributedDataInfo());
+	std::fill(code.begin(), code.end(), DistributionInfo());
 }

@@ -34,6 +34,9 @@ struct EnsightOutputWriter {
 		case Element::CODE::PRISMA15: return "penta15";
 		case Element::CODE::HEXA20: return "hexa20";
 
+		case Element::CODE::POLYGON: return "nsided";
+		case Element::CODE::POLYHEDRON: return "nfaced";
+
 		default:
 			return "";
 		}

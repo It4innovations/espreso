@@ -20,6 +20,7 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <functional>
 
 using namespace espreso;
 
@@ -251,6 +252,16 @@ void EnSightGold::geometry()
 		}
 	};
 
+	auto forEachElement = [] (const ElementsRegionStore *region, int etype, std::function<void(serializededata<esint, esint>::const_iterator)> callback) {
+		for (size_t i = 0; i < region->eintervals.size(); i++) {
+			if (region->eintervals[i].code == etype) {
+				for (esint e = region->eintervals[i].begin; e < region->eintervals[i].end; ++e) {
+					callback(info::mesh->elements->nodes->cbegin() + region->elements->datatarray()[e]);
+				}
+			}
+		}
+	};
+
 	esint part = 0;
 	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
 		const ElementsRegionStore *region = info::mesh->elementsRegions[r];
@@ -268,19 +279,51 @@ void EnSightGold::geometry()
 					_writer.int32(region->distribution.code[etype].totalSize);
 				}
 
-				for (size_t i = 0; i < region->eintervals.size(); i++) {
-					if (region->eintervals[i].code == etype) {
-						for (esint e = region->eintervals[i].begin; e < region->eintervals[i].end; ++e) {
-							auto element = info::mesh->elements->nodes->cbegin() + region->elements->datatarray()[e];
-							for (auto n = element->begin(); n != element->end(); ++n) {
-								_writer.enode(region->getPosition(*n) + 1);
-							}
-							_writer.eend();
+				if (Mesh::element(etype).code == Element::CODE::POLYGON) {
+					forEachElement(region, etype, [&] (serializededata<esint, esint>::const_iterator it) { _writer.int32(it->front()); });
+					_writer.groupData();
+					forEachElement(region, etype, [&] (serializededata<esint, esint>::const_iterator it) {
+						for (auto n = it->begin() + 1; n != it->end(); ++n) {
+							_writer.enode(region->getPosition(*n) + 1);
 						}
-					}
+						_writer.eend();
+					});
+					_writer.groupData();
 				}
-
-				_writer.groupData();
+				if (Mesh::element(etype).code == Element::CODE::POLYHEDRON) {
+					forEachElement(region, etype, [&] (serializededata<esint, esint>::const_iterator it) { _writer.int32(it->front()); });
+					_writer.groupData();
+					forEachElement(region, etype, [&] (serializededata<esint, esint>::const_iterator it) {
+						PolyElement poly(Element::decode(Element::CODE::POLYHEDRON, it->size()), it->begin());
+						for (size_t n = 1; n < it->size(); ++n) {
+							if (!poly.isNode(n)) {
+								_writer.int32(it->at(n));
+							}
+						}
+					});
+					_writer.groupData();
+					forEachElement(region, etype, [&] (serializededata<esint, esint>::const_iterator it) {
+						PolyElement poly(Element::decode(Element::CODE::POLYHEDRON, it->size()), it->begin());
+						for (size_t n = 2; n < it->size(); ++n) {
+							if (poly.isNode(n)) {
+								_writer.enode(region->getPosition(it->at(n)) + 1);
+							} else {
+								_writer.eend();
+							}
+						}
+						_writer.eend();
+					});
+					_writer.groupData();
+				}
+				if (Mesh::element(etype).code != Element::CODE::POLYGON && Mesh::element(etype).code != Element::CODE::POLYHEDRON) {
+					forEachElement(region, etype, [&] (serializededata<esint, esint>::const_iterator it) {
+						for (auto n = it->begin(); n != it->end(); ++n) {
+							_writer.enode(region->getPosition(*n) + 1);
+						}
+						_writer.eend();
+					});
+					_writer.groupData();
+				}
 			}
 		}
 	}
@@ -301,19 +344,42 @@ void EnSightGold::geometry()
 						_writer.int32(region->distribution.code[etype].totalSize);
 					}
 
-					for (size_t i = 0; i < region->eintervals.size(); i++) {
-						if (region->eintervals[i].code == etype) {
-							for (esint e = region->eintervals[i].begin; e < region->eintervals[i].end; ++e) {
-								auto element = region->elements->cbegin() + e;
-								for (auto n = element->begin(); n != element->end(); ++n) {
-									_writer.enode(region->getPosition(*n) + 1);
+					if (Mesh::element(etype).code == Element::CODE::POLYGON) {
+						for (size_t i = 0; i < region->eintervals.size(); i++) {
+							if (region->eintervals[i].code == etype) {
+								for (esint e = region->eintervals[i].begin; e < region->eintervals[i].end; ++e) {
+									auto element = region->elements->cbegin() + e;
+									_writer.int32(element->front());
 								}
-								_writer.eend();
 							}
 						}
+						_writer.groupData();
+						for (size_t i = 0; i < region->eintervals.size(); i++) {
+							if (region->eintervals[i].code == etype) {
+								for (esint e = region->eintervals[i].begin; e < region->eintervals[i].end; ++e) {
+									auto element = region->elements->cbegin() + e;
+									for (auto n = element->begin() + 1; n != element->end(); ++n) {
+										_writer.enode(region->getPosition(*n) + 1);
+									}
+									_writer.eend();
+								}
+							}
+						}
+						_writer.groupData();
+					} else {
+						for (size_t i = 0; i < region->eintervals.size(); i++) {
+							if (region->eintervals[i].code == etype) {
+								for (esint e = region->eintervals[i].begin; e < region->eintervals[i].end; ++e) {
+									auto element = region->elements->cbegin() + e;
+									for (auto n = element->begin(); n != element->end(); ++n) {
+										_writer.enode(region->getPosition(*n) + 1);
+									}
+									_writer.eend();
+								}
+							}
+						}
+						_writer.groupData();
 					}
-
-					_writer.groupData();
 				}
 			}
 		} else {

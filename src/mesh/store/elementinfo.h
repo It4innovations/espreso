@@ -14,6 +14,8 @@ struct ElementsDistributionInfo {
 	std::vector<size_t> threads;
 	DistributedDataInfo process;
 	std::vector<DistributionInfo> code;
+	DistributionInfo polyhedronFaces;
+	DistributionInfo polygonNodes, polyhedronNodes;
 
 	ElementsDistributionInfo();
 	void clear();

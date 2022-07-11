@@ -42,7 +42,7 @@ void linkNodesAndElements(
 		serializededata<esint, esint>* &nelements,
 		serializededata<esint, esint> *enodes,
 		serializededata<esint, esint> *eIDs,
-		bool sortedIDs);
+		serializededata<esint, Element*> *epointers);
 
 void computeElementsFaceNeighbors(NodeStore *nodes, ElementStore *elements, const std::vector<int> &neighbors);
 void computeElementsEdgeNeighbors(NodeStore *nodes, ElementStore *elements, const std::vector<int> &neighbors);
@@ -55,8 +55,7 @@ void computeElementsNeighbors(
 		serializededata<esint, esint> *eIDs,
 		serializededata<esint, Element*> *epointers,
 		std::function<serializededata<int, int>*(Element*)> across,
-		bool insertNeighSize,
-		bool sortedIDs);
+		bool insertNeighSize);
 
 void computeElementsCenters(const NodeStore *nodes, ElementStore *elements);
 

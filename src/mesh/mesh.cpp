@@ -891,6 +891,9 @@ void Mesh::printMeshStatistics()
 		case Element::CODE::PRISMA15: return "PRISMA15";
 		case Element::CODE::HEXA20: return "HEXA20";
 
+		case Element::CODE::POLYGON: return "POLYGON";
+		case Element::CODE::POLYHEDRON: return "POLYHEDRON";
+
 		default:
 			eslog::internalFailure("unknown element code.\n");
 			return "";
