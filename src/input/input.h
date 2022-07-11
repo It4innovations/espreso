@@ -52,10 +52,10 @@ struct Blocks {
 	std::vector<DatabaseOffset> blocks;
 };
 
-struct OrderedNodes: Nodes, Blocks { };
-struct OrderedElements: Elements, Blocks { };
-struct OrderedFaces: Faces { Blocks elements, faces; };
-struct OrderedValues: Values, Blocks { };
+struct NodesBlocks: Nodes, Blocks { };
+struct ElementsBlocks: Elements, Blocks { };
+struct FacesBlocks: Faces { Blocks elements, faces; };
+struct ValuesBlocks: Values, Blocks { };
 
 struct OrderedRegions {
 	struct Region {

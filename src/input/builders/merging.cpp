@@ -723,7 +723,7 @@ void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merge
 struct __element_builder__ {
 	const ivector<esint> &nodes, &dist, &owner, &neighbor;
 
-	__element_builder__(OrderedFacesBalanced &faces, ivector<esint> &fdist, ivector<esint> &opermutation, ivector<esint> &npermutation, esint e)
+	__element_builder__(Faces &faces, ivector<esint> &fdist, ivector<esint> &opermutation, ivector<esint> &npermutation, esint e)
 	: nodes(faces.fnodes), dist(fdist), owner(faces.owner), neighbor(faces.neighbor),
 	  it(owner, neighbor, opermutation, npermutation, e) { }
 
@@ -856,11 +856,9 @@ struct __element_builder__ {
 	}
 };
 
-void buildElementsFromFaces(OrderedFacesBalanced &faces, OrderedElementsBalanced &elements, OrderedNodes &nodes)
+static void _buildElementsFromFaces(Faces &faces, Elements &elements, NodesBlocks &nodes, esint eoffset, esint esize)
 {
-	std::swap(faces.elements, dynamic_cast<ChunkDistribution&>(elements));
-
-	std::vector<esint> edistribution = tarray<esint>::distribute(info::env::OMP_NUM_THREADS, elements.size);
+	std::vector<esint> edistribution = tarray<esint>::distribute(info::env::OMP_NUM_THREADS, esize);
 
 	ivector<esint> opermutation(faces.owner.size()), npermutation(faces.neighbor.size());
 	std::iota(opermutation.begin(), opermutation.end(), 0);
@@ -879,12 +877,12 @@ void buildElementsFromFaces(OrderedFacesBalanced &faces, OrderedElementsBalanced
 
 	}
 
-	elements.etype.reserve(elements.size);
+	elements.etype.reserve(esize);
 	elements.enodes.reserve(faces.fnodes.size());
 	// to be parallelized
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; t++) {
-		__element_builder__ builder(faces, fdist, opermutation, npermutation, edistribution[t] + elements.offset);
-		for (esint e = edistribution[t] + elements.offset; builder.it.oend != opermutation.end() && builder.it.nend != npermutation.end(); ++e, builder.it.next()) {
+		__element_builder__ builder(faces, fdist, opermutation, npermutation, edistribution[t] + eoffset);
+		for (esint e = edistribution[t] + eoffset; builder.it.oend != opermutation.end() && builder.it.nend != npermutation.end(); ++e, builder.it.next()) {
 			builder.count(e);
 			elements.etype.push_back(builder.element.code());
 			elements.enodes.resize(elements.enodes.size() + Element::encode(elements.etype.back()).nodes, -1);
@@ -918,6 +916,18 @@ void buildElementsFromFaces(OrderedFacesBalanced &faces, OrderedElementsBalanced
 	Communication::allReduce(poly, nullptr, 2, MPITools::getType<esint>().mpitype, MPI_SUM);
 	eslog::info(" == TOTAL NUMBER OF POLYGONS %62d == \n", poly[0]);
 	eslog::info(" == TOTAL NUMBER OF POLYHEDRONS %59d == \n", poly[1]);
+}
+
+void buildElementsFromFaces(OrderedFacesChunked &faces, OrderedElementsChunked &elements, NodesBlocks &nodes)
+{
+	std::swap(faces.elements, dynamic_cast<OrderedDistribution&>(elements));
+	_buildElementsFromFaces(faces, elements, nodes, elements.offset, elements.size);
+}
+
+void buildElementsFromFaces(OrderedFacesBalanced &faces, OrderedElementsBalanced &elements, NodesBlocks &nodes)
+{
+	std::swap(faces.elements, dynamic_cast<BalancedDistribution&>(elements));
+	_buildElementsFromFaces(faces, elements, nodes, elements.offset, elements.size);
 }
 
 }

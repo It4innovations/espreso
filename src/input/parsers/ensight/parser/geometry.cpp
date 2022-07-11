@@ -63,7 +63,7 @@ void EnsightGeometry::scan()
 	scanner.synchronize(_keywords.parts, _keywords.coordinates, _keywords.elements);
 }
 
-void EnsightGeometry::parse(OrderedNodes &nodes, OrderedElements &elements, OrderedRegions &regions)
+void EnsightGeometry::parse(NodesBlocks &nodes, ElementsBlocks &elements, OrderedRegions &regions)
 {
 	size_t csize, esize, esuffix;
 	if (_keywords.header.format == EnsightKeywords::Format::ASCII) {

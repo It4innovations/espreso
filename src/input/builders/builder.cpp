@@ -50,7 +50,7 @@ static void regionInfo(Mesh &mesh)
 	eslog::info(" == NODES REGIONS %73d == \n", nregions);
 }
 
-void buildOrderedFEM(OrderedNodes &nodes, OrderedElements &elements, OrderedRegions &regions, Mesh &mesh)
+void buildOrderedFEM(NodesBlocks &nodes, ElementsBlocks &elements, OrderedRegions &regions, Mesh &mesh)
 {
 	eslog::startln("BUILDER: PROCESS ORDERED MESH", "BUILDER");
 	eslog::param("OrderedNodes", size(nodes));
@@ -80,13 +80,13 @@ void buildOrderedFEM(OrderedNodes &nodes, OrderedElements &elements, OrderedRegi
 	 */
 	if (info::mpi::size == 1) {
 		// 1. -> 2. trivial
-		trivialUpdate(nh.ordered, nh.balanced);
-		trivialUpdate(eh.ordered, eh.balanced);
+		trivialUpdate(nh.blocks, nh.chunked);
+		trivialUpdate(eh.blocks, eh.chunked);
 		mesh.dimension = getDimension(eh.balanced);
 
 		// 2. -> 4. trivial
-		trivialUpdate(nh.balanced, nh.clustered);
-		trivialUpdate(eh.balanced, eh.clustered);
+		trivialUpdate(nh.chunked, nh.clustered);
+		trivialUpdate(eh.chunked, eh.clustered);
 		eslog::checkpointln("BUILDER: DATA INITIALIZED");
 
 		eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
@@ -106,7 +106,7 @@ void buildOrderedFEM(OrderedNodes &nodes, OrderedElements &elements, OrderedRegi
 		ivector<esint> nbuckets, ebuckets, splitters;
 
 		// 1. -> 2.
-		balanceFEM(nh.ordered, eh.ordered, nh.balanced, eh.balanced);
+		balanceFEM(nh.blocks, eh.blocks, nh.balanced, eh.balanced);
 		eslog::checkpointln("BUILDER: DATA BALANCED");
 		eslog::param("OrderedNodesBalanced", size(nh.balanced));
 		eslog::param("OrderedElementsBalanced", size(eh.balanced));
@@ -207,7 +207,7 @@ void buildOrderedFEM(OrderedNodes &nodes, OrderedElements &elements, OrderedRegi
 //	eslog::endln("BUILDER: MESH BUILT");
 //}
 
-void buildDecomposedFVM(OrderedNodes &nodes, OrderedFaces &faces, OrderedRegions &regions, Mesh &mesh)
+void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &regions, Mesh &mesh)
 {
 	eslog::startln("BUILDER: PROCESS FACED MESH", "BUILDER");
 	eslog::info(" ================================== DECOMPOSED FVM BUILDER ==================== %12.3f s\n", eslog::duration());
@@ -220,16 +220,16 @@ void buildDecomposedFVM(OrderedNodes &nodes, OrderedFaces &faces, OrderedRegions
 	ElementsHolder eh;
 
 	// 0. -> 1.
-	trivialUpdate(fh.ordered, fh.balanced);
-	buildElementsFromFaces(fh.balanced, eh.balanced, nh.ordered);
+	trivialUpdate(fh.blocks, fh.chunked);
+	buildElementsFromFaces(fh.chunked, eh.chunked, nh.blocks);
 
 	if (info::mpi::size == 1) {
 		// 1. -> 2. trivial
-		trivialUpdate(nh.ordered, nh.balanced);
+		trivialUpdate(nh.blocks, nh.chunked);
 
 		// 2. -> 4. trivial
-		trivialUpdate(nh.balanced, nh.clustered);
-		trivialUpdate(eh.balanced, eh.clustered);
+		trivialUpdate(nh.chunked, nh.clustered);
+		trivialUpdate(eh.chunked, eh.clustered);
 		eslog::checkpointln("BUILDER: DATA INITIALIZED");
 
 		eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
@@ -249,20 +249,20 @@ void buildDecomposedFVM(OrderedNodes &nodes, OrderedFaces &faces, OrderedRegions
 		ivector<esint> nbuckets, ebuckets, splitters;
 
 		// 1. -> 2. trivial
-		trivialUpdate(nh.ordered, nh.balanced);
-		eslog::param("OrderedNodesBalanced", size(nh.balanced));
-		eslog::param("OrderedElementsBalanced", size(eh.balanced));
-		eslog::param("OrderedTotalBalanced", size(nh.balanced) + size(nh.balanced));
+		trivialUpdate(nh.blocks, nh.chunked);
+		eslog::param("OrderedNodesChunked", size(nh.chunked));
+		eslog::param("OrderedElementsChunked", size(eh.chunked));
+		eslog::param("OrderedTotalChunked", size(nh.chunked) + size(nh.chunked));
 
 		// 3. synchronize mesh dimension and compute SFC
-		HilbertCurve<esfloat> sfc(mesh.dimension, SFCDEPTH, nh.balanced.coordinates.size(), nh.balanced.coordinates.data());
+		HilbertCurve<esfloat> sfc(mesh.dimension, SFCDEPTH, nh.chunked.coordinates.size(), nh.chunked.coordinates.data());
 		eslog::checkpointln("BUILDER: SFC BUILT");
 
-		assignBuckets(nh.balanced, eh.balanced, sfc, nbuckets, ebuckets);
+		assignBuckets(nh.chunked, eh.chunked, sfc, nbuckets, ebuckets);
 		eslog::checkpointln("BUILDER: SFC BUCKETS ASSIGNED");
 
 		// 2. -> 4.
-		clusterize(nh.balanced, eh.balanced, nbuckets, ebuckets, sfc.buckets(sfc.depth), nh.clustered, eh.clustered, splitters);
+		clusterize(nh.chunked, eh.chunked, nbuckets, ebuckets, sfc.buckets(sfc.depth), nh.clustered, eh.clustered, splitters);
 		utils::clearVectors(nbuckets, ebuckets);
 		eslog::checkpointln("BUILDER: MESH CLUSTERIZED");
 		eslog::param("ClusteredNodes", size(nh.clustered));

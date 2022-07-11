@@ -15,6 +15,22 @@
 namespace espreso {
 namespace builder {
 
+void assignBuckets(OrderedNodesChunked &nodes, OrderedElementsChunked &elements, const HilbertCurve<esfloat> &sfc, ivector<esint> &nbuckets, ivector<esint> &ebuckets)
+{
+	nbuckets.resize(nodes.size);
+	ebuckets.resize(elements.size);
+
+	// nbuckets -> just ask SFC to get bucket
+	for (esint n = 0; n < nodes.size; ++n) {
+		nbuckets[n] = sfc.getBucket(nodes.coordinates[n]);
+	}
+
+	// ebuckets -> just ask SFC to get bucket of the first node
+	for (esint e = 0, eoffset = 0; e < elements.size; eoffset += Element::encode(elements.etype[e++]).nodes) {
+		ebuckets[e] = sfc.getBucket(nodes.coordinates[elements.enodes[eoffset] - nodes.offset]);
+	}
+}
+
 void assignBuckets(OrderedNodesBalanced &nodes, OrderedElementsBalanced &elements, const HilbertCurve<esfloat> &sfc, ivector<esint> &nbuckets, ivector<esint> &ebuckets)
 {
 	nbuckets.resize(nodes.size);
@@ -134,7 +150,7 @@ void assignBuckets(OrderedNodesBalanced &nodes, OrderedElementsBalanced &element
 	}
 }
 
-void clusterize(OrderedNodesBalanced &inNodes, OrderedElementsBalanced &inElements, ivector<esint> &nbuckets, ivector<esint> &ebuckets, esint buckets, ClusteredNodes &outNodes, ClusteredElements &outElements, ivector<esint> &splitters)
+static void _clusterize(Nodes &inNodes, Elements &inElements, OrderedDistribution &ndistribution, OrderedDistribution &edistribution, ivector<esint> &nbuckets, ivector<esint> &ebuckets, esint buckets, ClusteredNodes &outNodes, ClusteredElements &outElements, ivector<esint> &splitters)
 {
 	std::vector<esint, initless_allocator<esint> > npermutation(nbuckets.size()), epermutation(ebuckets.size());
 	std::iota(npermutation.begin(), npermutation.end(), 0);
@@ -142,7 +158,7 @@ void clusterize(OrderedNodesBalanced &inNodes, OrderedElementsBalanced &inElemen
 	std::iota(epermutation.begin(), epermutation.end(), 0);
 	std::sort(epermutation.begin(), epermutation.end(), [&] (const esint &i, const esint &j) { return ebuckets[i] < ebuckets[j]; });
 
-	if (!Communication::computeSplitters(ebuckets, epermutation, splitters, inElements.total, buckets)) {
+	if (!Communication::computeSplitters(ebuckets, epermutation, splitters, edistribution.total, buckets)) {
 		eslog::internalFailure("cannot balance according to SFC.\n");
 	}
 
@@ -150,11 +166,11 @@ void clusterize(OrderedNodesBalanced &inNodes, OrderedElementsBalanced &inElemen
 	nborders[0] = eborders[0] = 0;
 	for (int r = 0; r < info::mpi::size; ++r) {
 		nborders[r + 1] = nborders[r];
-		while (nborders[r + 1] < inNodes.size && nbuckets[npermutation[nborders[r + 1]]] < splitters[r + 1]) {
+		while (nborders[r + 1] < ndistribution.size && nbuckets[npermutation[nborders[r + 1]]] < splitters[r + 1]) {
 			++nborders[r + 1];
 		}
 		eborders[r + 1] = eborders[r];
-		while (eborders[r + 1] < inElements.size && ebuckets[epermutation[eborders[r + 1]]] < splitters[r + 1]) {
+		while (eborders[r + 1] < edistribution.size && ebuckets[epermutation[eborders[r + 1]]] < splitters[r + 1]) {
 			++eborders[r + 1];
 		}
 	}
@@ -165,9 +181,9 @@ void clusterize(OrderedNodesBalanced &inNodes, OrderedElementsBalanced &inElemen
 		std::sort(epermutation.begin() + eborders[r], epermutation.begin() + eborders[r + 1]);
 	}
 
-	ivector<esint> edist(inElements.size + 1);
+	ivector<esint> edist(edistribution.size + 1);
 	edist[0] = 0;
-	for (esint e = 0; e < inElements.size; ++e) {
+	for (esint e = 0; e < edistribution.size; ++e) {
 		edist[e + 1] = edist[e] + Element::encode(inElements.etype[e]).nodes;
 	}
 
@@ -176,8 +192,8 @@ void clusterize(OrderedNodesBalanced &inNodes, OrderedElementsBalanced &inElemen
 	{ // compute size of the send buffer
 		size_t ssize = 0;
 		ssize += 6 * info::mpi::size;
-		ssize += inNodes.size; // noffsets
-		ssize += inElements.size; // eoffset
+		ssize += ndistribution.size; // noffsets
+		ssize += edistribution.size; // eoffset
 		ssize += inElements.enodes.size(); // enodes
 		for (int r = 0; r < info::mpi::size; ++r) {
 			ssize += utils::reinterpret_size<esint, _Point<esfloat> >(nborders[r + 1] - nborders[r]); // coordinates
@@ -196,7 +212,7 @@ void clusterize(OrderedNodesBalanced &inNodes, OrderedElementsBalanced &inElemen
 		sBuffer.push_back(0); // number of elements nodes
 
 		for (esint n = nborders[r]; n < nborders[r + 1]; ++n) {
-			sBuffer.push_back(npermutation[n] + inNodes.offset);
+			sBuffer.push_back(npermutation[n] + ndistribution.offset);
 		}
 		char *pbuffer = reinterpret_cast<char*>(sBuffer.data() + sBuffer.size());
 		sBuffer.resize(sBuffer.size() + utils::reinterpret_size<esint, _Point<esfloat> >(nborders[r + 1] - nborders[r]));
@@ -210,7 +226,7 @@ void clusterize(OrderedNodesBalanced &inNodes, OrderedElementsBalanced &inElemen
 			memcpy(tbuffer, inElements.etype.data() + epermutation[e], sizeof(Element::CODE));
 		}
 		for (esint e = eborders[r]; e < eborders[r + 1]; ++e) {
-			sBuffer.push_back(epermutation[e] + inElements.offset);
+			sBuffer.push_back(epermutation[e] + edistribution.offset);
 			for (esint en = edist[epermutation[e]]; en < edist[epermutation[e] + 1]; ++en) {
 				sBuffer.push_back(inElements.enodes[en]);
 			}
@@ -275,6 +291,16 @@ void clusterize(OrderedNodesBalanced &inNodes, OrderedElementsBalanced &inElemen
 			}
 		}
 	}
+}
+
+void clusterize(OrderedNodesChunked &inNodes, OrderedElementsChunked &inElements, ivector<esint> &nbuckets, ivector<esint> &ebuckets, esint buckets, ClusteredNodes &outNodes, ClusteredElements &outElements, ivector<esint> &splitters)
+{
+	_clusterize(inNodes, inElements, inNodes, inElements, nbuckets, ebuckets, buckets, outNodes, outElements, splitters);
+}
+
+void clusterize(OrderedNodesBalanced &inNodes, OrderedElementsBalanced &inElements, ivector<esint> &nbuckets, ivector<esint> &ebuckets, esint buckets, ClusteredNodes &outNodes, ClusteredElements &outElements, ivector<esint> &splitters)
+{
+	_clusterize(inNodes, inElements, inNodes, inElements, nbuckets, ebuckets, buckets, outNodes, outElements, splitters);
 }
 
 void computeSFCNeighbors(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, std::vector<int> &sfcNeighbors)

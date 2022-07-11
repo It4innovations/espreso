@@ -12,8 +12,8 @@ namespace builder {
 //void buildOrderedFVM(InputMesh<OrderedNodes, OrderedFaces, OrderedRegions> &input, Mesh &mesh);
 //void buildDecomposedFVM(InputMesh<OrderedNodes, OrderedFaces, OrderedRegions> &input, Mesh &mesh);
 
-void buildOrderedFEM(OrderedNodes &nodes, OrderedElements &elements, OrderedRegions &regions, Mesh &mesh);
-void buildDecomposedFVM(OrderedNodes &nodes, OrderedFaces &faces, OrderedRegions &regions, Mesh &mesh);
+void buildOrderedFEM(NodesBlocks &nodes, ElementsBlocks &elements, OrderedRegions &regions, Mesh &mesh);
+void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &regions, Mesh &mesh);
 
 }
 }

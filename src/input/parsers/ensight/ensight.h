@@ -20,8 +20,8 @@ public:
 protected:
 	EnsightData *data;
 
-	OrderedNodes nodes;
-	OrderedElements elements;
+	NodesBlocks nodes;
+	ElementsBlocks elements;
 	OrderedRegions regions;
 };
 

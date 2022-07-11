@@ -9,8 +9,12 @@
 namespace espreso {
 namespace builder {
 
-struct ChunkDistribution {
-	esint chunk, offset, size, total;
+struct OrderedDistribution {
+	esint offset, size, total;
+};
+
+struct BalancedDistribution: OrderedDistribution {
+	esint chunk;
 };
 
 struct ExplicitOffset {
@@ -39,7 +43,10 @@ struct NeighborsLinks {
  *   Elements connectivities are described by 'offsets'. Hence, nodes are stored in blocks.
  *   Nodes can be loaded arbitrary. Offsets are described by 'Blocks'.
  *
- * 2. Ordered Nodes Balanced
+ * 2a. Ordered Nodes Chunked
+ *   Nodes are sorted according to 'offset' and distributed across all processes in chunks (according to original decomposition).
+ *
+ * 2b. Ordered Nodes Balanced
  *   Nodes are sorted according to 'offset' and evenly distributed across all processes in chunks.
  *
  * 3. Clustered Nodes
@@ -53,19 +60,21 @@ struct NeighborsLinks {
  *   Merged + Information about neighboring 'ranks' that hold the same nodes.
  */
 
-struct OrderedNodesBalanced: Nodes, ChunkDistribution { };
+struct OrderedNodesChunked: Nodes, OrderedDistribution { };
+struct OrderedNodesBalanced: Nodes, BalancedDistribution { };
 struct ClusteredNodes: Nodes, ExplicitOffset { };
 struct MergedNodes: Nodes, ExplicitOffset, Duplication { };
 struct LinkedNodes: Nodes, ExplicitOffset, Duplication, NeighborsLinks { };
 struct NodesHolder {
-	OrderedNodes ordered;
+	NodesBlocks blocks;
+	OrderedNodesChunked chunked;
 	OrderedNodesBalanced balanced;
 	ClusteredNodes clustered;
 	MergedNodes merged;
 	LinkedNodes linked;
 
 	NodesHolder() = default;
-	NodesHolder(OrderedNodes &&ordered): ordered(std::move(ordered)) {}
+	NodesHolder(NodesBlocks &&blocks): blocks(std::move(blocks)) {}
 };
 
 /**
@@ -75,8 +84,13 @@ struct NodesHolder {
  *   Elements connectivities are described by global 'offsets'.
  *   Elements can be loaded arbitrary. Offsets are described by 'Blocks'.
  *
+ * 2. Ordered Elements Chunked
+ *   Elements are sorted according to 'offset' and distributed across all processes (according to origin decomposition).
+ *   All nodes are locally stored.
+ *
  * 2. Ordered Elements Balanced
  *   Elements are sorted according to 'offset' and evenly distributed across all processes.
+ *   Nodes are randomly stored.
  *
  * 3. Clustered Elements
  *   Elements are sorted according to 'coordinates' and evenly distributed across all processes.
@@ -86,25 +100,29 @@ struct NodesHolder {
  *   Clustered + All duplicated and parents elements were found.
  */
 
-struct OrderedElementsBalanced: Elements, ChunkDistribution { };
+struct OrderedElementsChunked: Elements, OrderedDistribution { };
+struct OrderedElementsBalanced: Elements, BalancedDistribution { };
 struct ClusteredElements: Elements, ExplicitOffset { };
 struct MergedElements: Elements, ExplicitOffset, Duplication { };
 struct ElementsHolder {
-	OrderedElements ordered;
+	ElementsBlocks blocks;
+	OrderedElementsChunked chunked;
 	OrderedElementsBalanced balanced;
 	ClusteredElements clustered;
 	MergedElements merged;
 
 	ElementsHolder() = default;
-	ElementsHolder(OrderedElements &&ordered): ordered(std::move(ordered)) {}
+	ElementsHolder(ElementsBlocks &&blocks): blocks(std::move(blocks)) {}
 };
 
-struct OrderedFacesBalanced: Faces { ChunkDistribution elements, faces; };
+struct OrderedFacesChunked: Faces { OrderedDistribution elements, faces; };
+struct OrderedFacesBalanced: Faces { BalancedDistribution elements, faces; };
 struct FaceHolder {
-	OrderedFaces ordered;
+	FacesBlocks blocks;
+	OrderedFacesChunked chunked;
 	OrderedFacesBalanced balanced;
 
-	FaceHolder(OrderedFaces &&ordered): ordered(std::move(ordered)) {}
+	FaceHolder(FacesBlocks &&blocks): blocks(std::move(blocks)) {}
 };
 
 /**
@@ -129,20 +147,27 @@ void swap(Elements &e1, Elements &e2);
 void swap(Faces &f1, Faces &f2);
 
 // 0.
-void trivialUpdate(OrderedFaces &ordered, OrderedFacesBalanced &balanced);
-void buildElementsFromFaces(OrderedFacesBalanced &faces, OrderedElementsBalanced &elements, OrderedNodes &nodes);
+void trivialUpdate(NodesBlocks &blocks, OrderedNodesChunked &chunked);
+void trivialUpdate(ElementsBlocks &blocks, OrderedElementsChunked &chunked);
+void trivialUpdate(FacesBlocks &blocks, OrderedFacesChunked &chunked);
+void buildElementsFromFaces(OrderedFacesChunked &faces, OrderedElementsChunked &elements, NodesBlocks &nodes);
+void buildElementsFromFaces(OrderedFacesBalanced &faces, OrderedElementsBalanced &elements, NodesBlocks &nodes);
 
 // 1. -> 2.
-void trivialUpdate(OrderedNodes &ordered, OrderedNodesBalanced &balanced);
-void trivialUpdate(OrderedElements &ordered, OrderedElementsBalanced &balanced);
-void balanceFEM(OrderedNodes &inNodes, OrderedElements &inElements, OrderedNodesBalanced &outNodes, OrderedElementsBalanced &outElements);
+void trivialUpdate(NodesBlocks &blocks, OrderedNodesBalanced &balanced);
+void trivialUpdate(ElementsBlocks &blocks, OrderedElementsBalanced &balanced);
+void balanceFEM(NodesBlocks &inNodes, ElementsBlocks &inElements, OrderedNodesBalanced &outNodes, OrderedElementsBalanced &outElements);
 
 // 3.
+void assignBuckets(OrderedNodesChunked &nodes, OrderedElementsChunked &elements, const HilbertCurve<esfloat> &sfc, ivector<esint> &nbuckets, ivector<esint> &ebuckets);
 void assignBuckets(OrderedNodesBalanced &nodes, OrderedElementsBalanced &elements, const HilbertCurve<esfloat> &sfc, ivector<esint> &nbuckets, ivector<esint> &ebuckets);
 
 // 2. -> 4.
+void trivialUpdate(OrderedNodesChunked &chunked, ClusteredNodes &clustered);
+void trivialUpdate(OrderedElementsChunked &chunked, ClusteredElements &clustered);
 void trivialUpdate(OrderedNodesBalanced &balanced, ClusteredNodes &clustered);
 void trivialUpdate(OrderedElementsBalanced &balanced, ClusteredElements &clustered);
+void clusterize(OrderedNodesChunked &inNodes, OrderedElementsChunked &inElements, ivector<esint> &nbuckets, ivector<esint> &ebuckets, esint buckets, ClusteredNodes &outNodes, ClusteredElements &outElements, ivector<esint> &splitters);
 void clusterize(OrderedNodesBalanced &inNodes, OrderedElementsBalanced &inElements, ivector<esint> &nbuckets, ivector<esint> &ebuckets, esint buckets, ClusteredNodes &outNodes, ClusteredElements &outElements, ivector<esint> &splitters);
 
 // 4. -> 6.
@@ -190,7 +215,7 @@ inline size_t size(const Faces &data)
 			data.neighbor.size() * sizeof(esint);
 }
 
-inline size_t size(const OrderedValues &data)
+inline size_t size(const ValuesBlocks &data)
 {
 	return
 			data.blocks.size() * sizeof(DatabaseOffset) +

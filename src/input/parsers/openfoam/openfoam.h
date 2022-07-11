@@ -18,8 +18,8 @@ public:
 	void variables(Mesh &mesh);
 
 protected:
-	OrderedNodes nodes;
-	OrderedFaces faces;
+	NodesBlocks nodes;
+	FacesBlocks faces;
 	OrderedRegions regions;
 
 	InputOpenFoam *loader;

@@ -27,22 +27,30 @@ void swap(Faces &f1, Faces &f2)
 	f1.neighbor.swap(f2.neighbor);
 }
 
-void trivialUpdate(OrderedFaces &ordered, OrderedFacesBalanced &balanced)
+void trivialUpdate(NodesBlocks &blocks, OrderedNodesChunked &chunked)
 {
-	swap(balanced, ordered);
-	balanced.elements.chunk = -1;
-	balanced.elements.offset = 0;
-	for (size_t i = 0; i < ordered.elements.blocks.size(); ++i) {
-		balanced.elements.offset += ordered.elements.blocks[i].size;
-	}
-	balanced.elements.size = balanced.elements.offset;
-	balanced.elements.total = Communication::exscan(balanced.elements.offset);
-	eslog::info(" == TOTAL NUMBER OF ELEMENTS %62d == \n", balanced.elements.total);
+	swap(chunked, blocks);
+	chunked.offset = chunked.coordinates.size();
+	chunked.size = chunked.offset;
+	chunked.total = Communication::exscan(chunked.offset);
+	eslog::info(" == TOTAL NUMBER OF NODES %65d == \n", chunked.total);
 }
 
-void trivialUpdate(OrderedNodes &ordered, OrderedNodesBalanced &balanced)
+void trivialUpdate(FacesBlocks &blocks, OrderedFacesChunked &chunked)
 {
-	swap(balanced, ordered);
+	swap(chunked, blocks);
+	chunked.elements.offset = 0;
+	for (size_t i = 0; i < blocks.elements.blocks.size(); ++i) {
+		chunked.elements.offset += blocks.elements.blocks[i].size;
+	}
+	chunked.elements.size = chunked.elements.offset;
+	chunked.elements.total = Communication::exscan(chunked.elements.offset);
+	eslog::info(" == TOTAL NUMBER OF ELEMENTS %62d == \n", chunked.elements.total);
+}
+
+void trivialUpdate(NodesBlocks &blocks, OrderedNodesBalanced &balanced)
+{
+	swap(balanced, blocks);
 	balanced.chunk = balanced.coordinates.size();
 	balanced.offset = balanced.chunk;
 	balanced.size = balanced.chunk;
@@ -50,9 +58,30 @@ void trivialUpdate(OrderedNodes &ordered, OrderedNodesBalanced &balanced)
 	eslog::info(" == TOTAL NUMBER OF NODES %65d == \n", balanced.total);
 }
 
+void trivialUpdate(OrderedNodesChunked &chunked, ClusteredNodes &clustered)
+{
+	swap(clustered, chunked);
+	clustered.offsets.resize(chunked.size);
+	std::iota(clustered.offsets.begin(), clustered.offsets.end(), chunked.offset);
+}
+
 void trivialUpdate(OrderedNodesBalanced &balanced, ClusteredNodes &clustered)
 {
 	swap(clustered, balanced);
+	clustered.offsets.resize(balanced.size);
+	std::iota(clustered.offsets.begin(), clustered.offsets.end(), balanced.offset);
+}
+
+void trivialUpdate(OrderedElementsChunked &chunked, ClusteredElements &clustered)
+{
+	swap(chunked, clustered);
+	clustered.offsets.resize(chunked.size);
+	std::iota(clustered.offsets.begin(), clustered.offsets.end(), chunked.offset);
+}
+
+void trivialUpdate(OrderedElementsBalanced &balanced, ClusteredElements &clustered)
+{
+	swap(balanced, clustered);
 	clustered.offsets.resize(balanced.size);
 	std::iota(clustered.offsets.begin(), clustered.offsets.end(), balanced.offset);
 }
@@ -75,21 +104,23 @@ void trivialUpdate(MergedNodes &merged, LinkedNodes &linked)
 	linked.rankData.resize(linked.offsets.size(), info::mpi::rank);
 }
 
-void trivialUpdate(OrderedElements &ordered, OrderedElementsBalanced &balanced)
+void trivialUpdate(ElementsBlocks &blocks, OrderedElementsChunked &chunked)
 {
-	swap(ordered, balanced);
+	swap(blocks, chunked);
+	chunked.offset = chunked.etype.size();
+	chunked.size = chunked.etype.size();
+	chunked.total = Communication::exscan(chunked.offset);
+	eslog::info(" == TOTAL NUMBER OF ELEMENTS %62d == \n", chunked.total);
+}
+
+void trivialUpdate(ElementsBlocks &blocks, OrderedElementsBalanced &balanced)
+{
+	swap(blocks, balanced);
 	balanced.chunk = balanced.etype.size();
 	balanced.offset = balanced.chunk;
 	balanced.size = balanced.chunk;
 	balanced.total = Communication::exscan(balanced.offset);
 	eslog::info(" == TOTAL NUMBER OF ELEMENTS %62d == \n", balanced.total);
-}
-
-void trivialUpdate(OrderedElementsBalanced &balanced, ClusteredElements &clustered)
-{
-	swap(balanced, clustered);
-	clustered.offsets.resize(balanced.size);
-	std::iota(clustered.offsets.begin(), clustered.offsets.end(), balanced.offset);
 }
 
 void trivialUpdate(ClusteredElements &clustered, MergedElements &merged)

@@ -52,7 +52,7 @@ void EnsightVariables::scan()
 
 void EnsightVariables::parse(Mesh &mesh)
 {
-	std::vector<OrderedValues> values(_variables.files.size());
+	std::vector<ValuesBlocks> values(_variables.files.size());
 
 	size_t c = 0, e = 0;
 	while (_variables.next()) {

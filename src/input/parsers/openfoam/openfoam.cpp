@@ -170,7 +170,7 @@ void InputOpenFoamSequential::build(Mesh &mesh)
 
 void InputOpenFoamParallel::build(Mesh &mesh)
 {
-	builder::buildDecomposedFVM(nodes, faces, regions, mesh);
+	builder::buildChunkedFVM(nodes, faces, regions, mesh);
 }
 
 void InputOpenFoam::variables(Mesh &mesh)

@@ -34,7 +34,7 @@ static bool chunk(const esint &mpichunk, const int &rank, const std::vector<Data
 	return begin != end;
 }
 
-static void distribute(ChunkDistribution &distribution, const esint &total)
+static void distribute(BalancedDistribution &distribution, const esint &total)
 {
 	distribution.total = total;
 	distribution.size = distribution.chunk = total / info::mpi::size + ((total % info::mpi::size) ? 1 : 0);
@@ -44,7 +44,7 @@ static void distribute(ChunkDistribution &distribution, const esint &total)
 	}
 }
 
-void balanceFEM(OrderedNodes &inNodes, OrderedElements &inElements, OrderedNodesBalanced &outNodes, OrderedElementsBalanced &outElements)
+void balanceFEM(NodesBlocks &inNodes, ElementsBlocks &inElements, OrderedNodesBalanced &outNodes, OrderedElementsBalanced &outElements)
 {
 	esint total[2] = { (esint)inNodes.coordinates.size(), (esint)inElements.etype.size() };
 	Communication::allReduce(total, NULL, 2, MPITools::getType<esint>().mpitype, MPI_SUM);
