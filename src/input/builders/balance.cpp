@@ -59,7 +59,7 @@ void balanceFEM(OrderedNodes &inNodes, OrderedElements &inElements, OrderedNodes
 	edist.reserve(inElements.etype.size() + 1);
 	edist.push_back(0);
 	for (size_t e = 0; e < inElements.etype.size(); ++e) {
-		edist.push_back(edist.back() + Mesh::element(inElements.etype[e]).nodes);
+		edist.push_back(edist.back() + Element::encode(inElements.etype[e]).nodes);
 	}
 
 	auto blockcomp = [] (const DatabaseOffset &me, const DatabaseOffset &other) { return me.global < other.global; };
@@ -79,7 +79,7 @@ void balanceFEM(OrderedNodes &inNodes, OrderedElements &inElements, OrderedNodes
 			}
 			while (chunk(outElements.chunk, r, inElements.blocks, eit, ebegin, eend)) {
 				ssize += 3;
-				ssize += utils::reinterpret_size<esint, char>(eend - ebegin);
+				ssize += utils::reinterpret_size<esint, Element::CODE>(eend - ebegin);
 				ssize += edist[eend] - edist[ebegin];
 			}
 		}
@@ -146,7 +146,7 @@ void balanceFEM(OrderedNodes &inNodes, OrderedElements &inElements, OrderedNodes
 			eintervals.push_back(std::make_pair(eoffset, offset));
 			esint esize = rBuffer[offset++];
 			esint enodes = rBuffer[offset++];
-			offset += utils::reinterpret_size<esint, char>(esize) + enodes;
+			offset += utils::reinterpret_size<esint, Element::CODE>(esize) + enodes;
 			enodesTotal += enodes;
 		}
 	}
@@ -156,10 +156,10 @@ void balanceFEM(OrderedNodes &inNodes, OrderedElements &inElements, OrderedNodes
 		esint eoffset = eintervals[i].first;
 		esint esize = rBuffer[eintervals[i].second++];
 		eintervals[i].second++; // enodes
-		memcpy(outElements.etype.data() + eoffset - outElements.offset, reinterpret_cast<char*>(rBuffer.data() + eintervals[i].second), esize);
-		eintervals[i].second += utils::reinterpret_size<esint, char>(esize);
+		memcpy(outElements.etype.data() + eoffset - outElements.offset, reinterpret_cast<Element::CODE*>(rBuffer.data() + eintervals[i].second), esize * sizeof(Element::CODE));
+		eintervals[i].second += utils::reinterpret_size<esint, Element::CODE>(esize);
 		for (esint en = 0; en < esize; ++en) {
-			for (int nn = 0; nn < Mesh::element(outElements.etype[eoffset - outElements.offset + en]).nodes; ++nn) {
+			for (int nn = 0; nn < Element::encode(outElements.etype[eoffset - outElements.offset + en]).nodes; ++nn) {
 				outElements.enodes.push_back(rBuffer[eintervals[i].second++]);
 			}
 		}
@@ -272,7 +272,7 @@ void balanceFEM(OrderedNodes &inNodes, OrderedElements &inElements, OrderedNodes
 //	edist.reserve(input.elements->etype.size() + 1);
 //	edist.push_back(0);
 //	for (size_t e = 0; e < input.elements->etype.size(); ++e) {
-//		edist.push_back(edist.back() + Mesh::element(input.elements->etype[e]).nodes);
+//		edist.push_back(edist.back() + Element::encode(input.elements->etype[e]).nodes);
 //	}
 //
 //	{ // compute size of the send buffer

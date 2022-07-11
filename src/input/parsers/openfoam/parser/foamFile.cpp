@@ -62,7 +62,7 @@ void parse(FoamFileHeader &header, const oftoken::dictionary &dict)
 	}
 	if (keyword("format")) {
 		if (value("ascii")) { header.format = FoamFileHeader::Format::ASCII; }
-		if (value("binary")) { header.format = FoamFileHeader::Format::BINARY; }
+		if (value("binary")) { header.format = FoamFileHeader::Format::binary; }
 	}
 	if (keyword("arch")) {
 		memcpy(header.arch, dict.value.begin + 1, std::min(dict.value.end - dict.value.begin - 2, MAX_CHAR_LENGTH));
@@ -110,7 +110,7 @@ const char* FoamFileHeader::read(InputFile *file)
 			while (*c++ != '\n');
 		}
 
-		if (format == Format::UNKNOWN) {
+		if (format == Format::unknown) {
 			eslog::internalFailure("unknown format of Open FOAM file (%s/%s).\n", location, object);
 		}
 		if (foamClass == Class::unknown) {
@@ -133,7 +133,7 @@ void FoamFileHeader::read(std::ifstream &is)
 	}
 	is.getline(line, 256);
 
-	if (format == Format::UNKNOWN) {
+	if (format == Format::unknown) {
 		eslog::internalFailure("unknown format of Open FOAM file (%s/%s).\n", location, object);
 	}
 	if (foamClass == Class::unknown) {

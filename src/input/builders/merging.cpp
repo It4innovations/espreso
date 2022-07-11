@@ -356,25 +356,28 @@ void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merge
 	std::vector<std::vector<esint> > sBuffer(nodes.neighbors.size()), rBuffer(nodes.neighbors.size());
 	if (nodes.neighbors.size()) { // duplicated elements have to have all nodes held by other rank
 		std::vector<int> neighbors;
-		for (size_t e = 0, eoffset = 0; e < clustered.offsets.size(); eoffset += Mesh::element(clustered.etype[e++]).nodes) {
+		for (size_t e = 0, eoffset = 0; e < clustered.offsets.size(); eoffset += Element::encode(clustered.etype[e++]).nodes) {
 			neighbors.assign(nodes.neighbors.begin(), nodes.neighbors.end());
-			for (size_t n = eoffset; n < eoffset + Mesh::element(clustered.etype[e]).nodes; ++n) {
-				esint local = g2l[clustered.enodes[n]];
-				size_t intersection = 0, current = 0;
-				for (int r = nodes.rankDistribution[local]; r < nodes.rankDistribution[local + 1]; ++r) {
-					while (current < neighbors.size() && neighbors[current] < nodes.rankData[r]) { ++current; }
-					if (current < neighbors.size() && neighbors[current] == nodes.rankData[r]) {
-						neighbors[intersection++] = neighbors[current++];
+			PolyElement poly(clustered.etype[e], clustered.enodes.data() + eoffset);
+			for (int n = 0; n < Element::encode(clustered.etype[e]).nodes; ++n) {
+				if (poly.isNode(n)) {
+					esint local = g2l[clustered.enodes[n + eoffset]];
+					size_t intersection = 0, current = 0;
+					for (int r = nodes.rankDistribution[local]; r < nodes.rankDistribution[local + 1]; ++r) {
+						while (current < neighbors.size() && neighbors[current] < nodes.rankData[r]) { ++current; }
+						if (current < neighbors.size() && neighbors[current] == nodes.rankData[r]) {
+							neighbors[intersection++] = neighbors[current++];
+						}
 					}
+					neighbors.resize(intersection);
 				}
-				neighbors.resize(intersection);
 			}
 			esint roffset = 0;
 			for (auto r = neighbors.begin(); r != neighbors.end(); ++r) {
 				while (nodes.neighbors[roffset] < *r) { ++roffset; }
 				sBuffer[roffset].push_back(clustered.offsets[e]);
 				sBuffer[roffset].push_back((esint)clustered.etype[e]);
-				for (size_t n = eoffset; n < eoffset + Mesh::element(clustered.etype[e]).nodes; ++n) {
+				for (size_t n = eoffset; n < eoffset + Element::encode(clustered.etype[e]).nodes; ++n) {
 					sBuffer[roffset].push_back(clustered.enodes[n]);
 				}
 			}
@@ -389,14 +392,19 @@ void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merge
 	}
 	utils::clearVector(sBuffer);
 
-	auto getMinimal = [&] (esint nsize, esint *enodes) {
-		esint min = g2l[enodes[0]];
-		for (int n = 1; n < nsize; ++n) {
-			esint current = g2l[enodes[n]];
-			if (nodes.coordinates[current].x < nodes.coordinates[min].x) {
-				min = current;
-			} else if (nodes.coordinates[current].x == nodes.coordinates[min].x && current < min) {
-				min = current;
+	auto getMinimal = [&] (const Element::CODE &code, esint *enodes) {
+		PolyElement poly(code, enodes);
+		int n = 0;
+		while (!poly.isNode(n)) ++n;
+		esint min = g2l[enodes[n]];
+		for (++n; n < Element::encode(code).nodes; ++n) {
+			if (poly.isNode(n)) {
+				esint current = g2l[enodes[n]];
+				if (nodes.coordinates[current].x < nodes.coordinates[min].x) {
+					min = current;
+				} else if (nodes.coordinates[current].x == nodes.coordinates[min].x && current < min) {
+					min = current;
+				}
 			}
 		}
 		return min;
@@ -405,55 +413,68 @@ void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merge
 	std::vector<esint> mapDist(nodes.offsets.size() + 1);
 	ivector<esint> mapData;
 
-	for (size_t e = 0, eoffset = 0; e < clustered.offsets.size(); eoffset += Mesh::element(clustered.etype[e++]).nodes) {
+	for (size_t e = 0, eoffset = 0; e < clustered.offsets.size(); eoffset += Element::encode(clustered.etype[e++]).nodes) {
 		if (Mesh::element(clustered.etype[e]).dimension == dimension) {
-			++mapDist[getMinimal(Mesh::element(clustered.etype[e]).nodes, clustered.enodes.data() + eoffset)];
+			++mapDist[getMinimal(clustered.etype[e], clustered.enodes.data() + eoffset)];
 		} else {
 			if (duplicateBoundary.count(e)) { // we have to search a parent for each sent elements
-				for (size_t n = eoffset; n < eoffset + Mesh::element(clustered.etype[e]).nodes; ++n) {
-					++mapDist[g2l[clustered.enodes[n]]];
+				PolyElement poly(clustered.etype[e], clustered.enodes.data() + eoffset);
+				for (int n = 0; n < Element::encode(clustered.etype[e]).nodes; ++n) {
+					if (poly.isNode(n)) {
+						++mapDist[g2l[clustered.enodes[n + eoffset]]];
+					}
 				}
 			}
 		}
 	}
+
 	for (size_t r = 0; r < rBuffer.size(); ++r) {
-		for (size_t i = 0; i < rBuffer[r].size(); i += 2 + Mesh::element(rBuffer[r][i + 1]).nodes) {
+		for (size_t i = 0; i < rBuffer[r].size(); i += 2 + Element::encode((Element::CODE)rBuffer[r][i + 1]).nodes) {
 			if (Mesh::element(rBuffer[r][i + 1]).dimension == dimension) {
-				++mapDist[getMinimal(Mesh::element(rBuffer[r][i + 1]).nodes, rBuffer[r].data() + i + 2)];
+				++mapDist[getMinimal((Element::CODE)rBuffer[r][i + 1], rBuffer[r].data() + i + 2)];
 			} else {
-				for (int n = 0; n < Mesh::element(rBuffer[r][i + 1]).nodes; ++n) {
-					if (g2l.count(rBuffer[r][i + 2 + n]) == 0) {
-						eslog::error("unknown node was received.\n");
+				PolyElement poly((Element::CODE)rBuffer[r][i + 1], rBuffer[r].data() + i + 2);
+				for (int n = 0; n < Element::encode((Element::CODE)rBuffer[r][i + 1]).nodes; ++n) {
+					if (poly.isNode(n)) {
+						if (g2l.count(rBuffer[r][i + 2 + n]) == 0) {
+							eslog::error("unknown node was received.\n");
+						}
+						++mapDist[g2l[rBuffer[r][i + 2 + n]]];
 					}
-					++mapDist[g2l[rBuffer[r][i + 2 + n]]];
 				}
 			}
 		}
 	}
 	utils::sizesToOffsets(mapDist);
-	mapData.resize(mapDist.back());
+	mapData.resize(mapDist.back(), -1);
 
 	std::vector<std::pair<esint, esint> > recvMap;
 	std::vector<esint> _mapDist = mapDist;
 
-	for (size_t e = 0, eoffset = 0; e < clustered.offsets.size(); eoffset += Mesh::element(clustered.etype[e++]).nodes) {
+	for (size_t e = 0, eoffset = 0; e < clustered.offsets.size(); eoffset += Element::encode(clustered.etype[e++]).nodes) {
 		if (Mesh::element(clustered.etype[e]).dimension == dimension) {
-			mapData[_mapDist[getMinimal(Mesh::element(clustered.etype[e]).nodes, clustered.enodes.data() + eoffset)]++] = e;
+			mapData[_mapDist[getMinimal(clustered.etype[e], clustered.enodes.data() + eoffset)]++] = e;
 		} else {
 			if (duplicateBoundary.count(e)) {
-				for (size_t n = eoffset; n < eoffset + Mesh::element(clustered.etype[e++]).nodes; ++n) {
-					mapData[_mapDist[g2l[clustered.enodes[n]]]++] = e;
+				PolyElement poly(clustered.etype[e], clustered.enodes.data() + eoffset);
+				for (int n = 0; n < Element::encode(clustered.etype[e]).nodes; ++n) {
+					if (poly.isNode(n)) {
+						mapData[_mapDist[g2l[clustered.enodes[n + eoffset]]]++] = e;
+					}
 				}
 			}
 		}
 	}
 	for (size_t r = 0; r < rBuffer.size(); ++r) {
-		for (size_t i = 0; i < rBuffer[r].size(); i += 2 + Mesh::element(rBuffer[r][i + 1]).nodes) {
+		for (size_t i = 0; i < rBuffer[r].size(); i += 2 + Element::encode((Element::CODE)rBuffer[r][i + 1]).nodes) {
 			if (Mesh::element(rBuffer[r][i + 1]).dimension == dimension) {
-				mapData[_mapDist[getMinimal(Mesh::element(rBuffer[r][i + 1]).nodes, rBuffer[r].data() + i + 2)]++] = clustered.offsets.size() + recvMap.size();
+				mapData[_mapDist[getMinimal((Element::CODE)rBuffer[r][i + 1], rBuffer[r].data() + i + 2)]++] = clustered.offsets.size() + recvMap.size();
 			} else {
-				for (int n = 0; n < Mesh::element(rBuffer[r][i + 1]).nodes; ++n) {
-					mapData[_mapDist[g2l[rBuffer[r][i + 2 + n]]]++] = clustered.offsets.size() + recvMap.size();
+				PolyElement poly((Element::CODE)rBuffer[r][i + 1], rBuffer[r].data() + i + 2);
+				for (int n = 0; n < Element::encode((Element::CODE)rBuffer[r][i + 1]).nodes; ++n) {
+					if (poly.isNode(n)) {
+						mapData[_mapDist[g2l[rBuffer[r][i + 2 + n]]]++] = clustered.offsets.size() + recvMap.size();
+					}
 				}
 			}
 			recvMap.push_back({ (esint)r, (esint)i });
@@ -462,18 +483,23 @@ void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merge
 	utils::clearVector(_mapDist);
 
 	ivector<esint> shared, tmpShared;
-	auto merge = [&] (esint nsize, esint *enodes) {
-		esint min = g2l[enodes[0]];
+	auto merge = [&] (const Element::CODE &code, const esint *enodes) {
+		PolyElement poly(code, enodes);
+		int n = 0;
+		while (!poly.isNode(n)) ++n;
+		esint min = g2l[enodes[n]];
 		shared.assign(mapData.begin() + mapDist[min], mapData.begin() + mapDist[min + 1]);
-		for (esint n = 1; n < nsize; ++n) {
-			esint current = g2l[enodes[n]];
-			tmpShared.swap(shared);
-			shared.resize(tmpShared.size() + mapDist[current + 1] - mapDist[current]);
-			std::merge(mapData.begin() + mapDist[current], mapData.begin() + mapDist[current + 1], tmpShared.begin(), tmpShared.end(), shared.begin());
-			if (nodes.coordinates[current].x < nodes.coordinates[min].x) {
-				min = current;
-			} else if (nodes.coordinates[current].x == nodes.coordinates[min].x && current < min) {
-				min = current;
+		for (++n; n < Element::encode(code).nodes; ++n) {
+			if (poly.isNode(n)) {
+				esint current = g2l[enodes[n]];
+				tmpShared.swap(shared);
+				shared.resize(tmpShared.size() + mapDist[current + 1] - mapDist[current]);
+				std::merge(mapData.begin() + mapDist[current], mapData.begin() + mapDist[current + 1], tmpShared.begin(), tmpShared.end(), shared.begin());
+				if (nodes.coordinates[current].x < nodes.coordinates[min].x) {
+					min = current;
+				} else if (nodes.coordinates[current].x == nodes.coordinates[min].x && current < min) {
+					min = current;
+				}
 			}
 		}
 		return min;
@@ -488,37 +514,39 @@ void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merge
 	std::vector<std::vector<__parent__> > rParents(nodes.neighbors.size());
 	std::vector<esint> _checkBuffer;
 	_checkBuffer.reserve(2 * 20);
-	auto areSame = [&] (esint size1, esint *nodes1, esint size2, esint *nodes2) {
-		if (size1 == size2) {
+	auto areSame = [&] (const Element::CODE &code1, esint *nodes1, const Element::CODE &code2, esint *nodes2) {
+		if (code1 == code2) {
 			_checkBuffer.clear();
-			for (esint n = 0; n < size1; ++n) { _checkBuffer.push_back(g2l[nodes1[n]]); }
-			for (esint n = 0; n < size2; ++n) { _checkBuffer.push_back(g2l[nodes2[n]]); }
-			std::sort(_checkBuffer.begin(), _checkBuffer.begin() + size1);
-			std::sort(_checkBuffer.begin() + size1, _checkBuffer.end());
-			return memcmp(_checkBuffer.data(), _checkBuffer.data() + size1, sizeof(esint) * size1) == 0;
+			PolyElement poly1(code1, nodes1), poly2(code2, nodes2);
+			for (esint n = 0; n < Element::encode(code1).nodes; ++n) { if (poly1.isNode(n)) _checkBuffer.push_back(g2l[nodes1[n]]); }
+			for (esint n = 0; n < Element::encode(code2).nodes; ++n) { if (poly2.isNode(n)) _checkBuffer.push_back(g2l[nodes2[n]]); }
+			std::sort(_checkBuffer.begin(), _checkBuffer.begin() + poly1.size);
+			std::sort(_checkBuffer.begin() + poly1.size, _checkBuffer.end());
+			return memcmp(_checkBuffer.data(), _checkBuffer.data() + poly1.size, sizeof(esint) * poly1.size) == 0;
 		}
 		return false;
 	};
 
 	std::vector<esint> edist = {0};
 	for (size_t e = 0; e < clustered.offsets.size(); ++e) {
-		edist.push_back(edist.back() + Mesh::element(clustered.etype[e]).nodes);
+		edist.push_back(edist.back() + Element::encode(clustered.etype[e]).nodes);
 	}
+
 	for (size_t e1 = 0; e1 < clustered.offsets.size(); ++e1) {
 		if (Mesh::element(clustered.etype[e1]).dimension == dimension && duplicateElement.count(e1) == 0) {
-			esint min = merge(Mesh::element(clustered.etype[e1]).nodes, clustered.enodes.data() + edist[e1]);
+			esint min = merge(clustered.etype[e1], clustered.enodes.data() + edist[e1]);
 			for (esint n = mapDist[min]; n < mapDist[min + 1]; ++n) {
 				size_t e2 = mapData[n];
 				if (e1 < e2) { // if e2 is lower, the pair was already processed
 					if (e2 < clustered.offsets.size()) { // local
-						if (Mesh::element(clustered.etype[e2]).dimension == dimension && areSame(edist[e1 + 1] - edist[e1], clustered.enodes.data() + edist[e1], edist[e2 + 1] - edist[e2], clustered.enodes.data() + edist[e2])) {
+						if (Mesh::element(clustered.etype[e2]).dimension == dimension && areSame(clustered.etype[e1], clustered.enodes.data() + edist[e1], clustered.etype[e2], clustered.enodes.data() + edist[e2])) {
 							merged.duplication.push_back({ clustered.offsets[e1], clustered.offsets[e2] });
 							duplicateElement.insert(e2);
 						}
 					} else { // from neighbors
 						const auto &r = recvMap[e2 - clustered.offsets.size()];
 						if (Mesh::element(rBuffer[r.first][r.second + 1]).dimension == dimension) {
-							if (areSame(edist[e1 + 1] - edist[e1], clustered.enodes.data() + edist[e1], Mesh::element(rBuffer[r.first][r.second + 1]).nodes, rBuffer[r.first].data() + r.second + 2)) {
+							if (areSame(clustered.etype[e1], clustered.enodes.data() + edist[e1], (Element::CODE)rBuffer[r.first][r.second + 1], rBuffer[r.first].data() + r.second + 2)) {
 								if (clustered.offsets[e1] < rBuffer[r.first][r.second]) {
 									merged.duplication.push_back({ clustered.offsets[e1], rBuffer[r.first][r.second] });
 									// element is removed on the neighboring process
@@ -537,12 +565,12 @@ void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merge
 				if (end - begin > 1) { // at least Line2
 					size_t e2 = *begin;
 					if (e2 < clustered.offsets.size()) {
-						if (Mesh::element(clustered.etype[e2]).nodes == end - begin) {
+						if (PolyElement(clustered.etype[e2], clustered.enodes.data() + edist[e2]).size == end - begin) {
 							parents.push_back({ clustered.offsets[e2], clustered.offsets[e1], info::mpi::rank });
 						}
 					} else {
 						auto &roffset = recvMap[e2 - clustered.offsets.size()];
-						if (Mesh::element(rBuffer[roffset.first][roffset.second + 1]).nodes == end - begin) {
+						if (PolyElement((Element::CODE)rBuffer[roffset.first][roffset.second + 1], rBuffer[roffset.first].data() + roffset.second + 2).size == end - begin) {
 							parents.push_back({ rBuffer[roffset.first][roffset.second], clustered.offsets[e1], info::mpi::rank });
 						}
 					}
@@ -562,13 +590,14 @@ void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merge
 
 	// linked.elements should have enough capacity to insert some other elements (see clusterization)
 	for (size_t r = 0; r < rBuffer.size(); ++r) {
-		for (size_t i = 0; i < rBuffer[r].size(); i += 2 + Mesh::element(rBuffer[r][i + 1]).nodes) {
+		for (size_t i = 0; i < rBuffer[r].size(); i += 2 + Element::encode((Element::CODE)rBuffer[r][i + 1]).nodes) {
 			if (Mesh::element(rBuffer[r][i + 1]).dimension < dimension) { // only boundary elements can be inserted
 				auto p = std::lower_bound(parents.begin(), parents.end(), __parent__{ rBuffer[r][i], 0, 0 });
 				if (p != parents.end() && p->offset == rBuffer[r][i] && p->rank == info::mpi::rank) {
 					clustered.offsets.push_back(rBuffer[r][i]);
 					clustered.etype.push_back((Element::CODE)rBuffer[r][i + 1]);
-					clustered.enodes.insert(clustered.enodes.end(), rBuffer[r].begin() + i + 2, rBuffer[r].begin() + i + 2 + Mesh::element(rBuffer[r][i + 1]).nodes);
+					clustered.enodes.insert(clustered.enodes.end(), rBuffer[r].begin() + i + 2, rBuffer[r].begin() + i + 2 + Element::encode((Element::CODE)rBuffer[r][i + 1]).nodes);
+					edist.push_back(edist.back() + Element::encode((Element::CODE)rBuffer[r][i + 1]).nodes);
 				}
 			}
 		}
@@ -699,14 +728,14 @@ struct __element_builder__ {
 	  it(owner, neighbor, opermutation, npermutation, e) { }
 
 	struct __element__ {
-		int triangles = 0, squares = 0, others = 0;
+		int triangles = 0, squares = 0, others = 0, enodes = 0;
 
 		void add(const esint &nodes)
 		{
 			switch (nodes) {
-			case 3: ++triangles; break;
-			case 4: ++squares; break;
-			default: ++others;
+			case 3: ++triangles; enodes += nodes + 1; break;
+			case 4: ++squares; enodes += nodes + 1; break;
+			default: ++others; enodes += nodes;
 			}
 		}
 
@@ -716,7 +745,7 @@ struct __element_builder__ {
 			if (triangles == 4 && squares == 1 && others == 0) { return Element::CODE::PYRAMID5; }
 			if (triangles == 2 && squares == 3 && others == 0) { return Element::CODE::PRISMA6; }
 			if (triangles == 0 && squares == 6 && others == 0) { return Element::CODE::HEXA8; }
-			return Element::CODE::NOT_SUPPORTED;
+			return Element::decode(Element::CODE::POLYHEDRON, enodes + 1);
 		}
 	} element;
 
@@ -746,9 +775,13 @@ struct __element_builder__ {
 
 	void count(const esint &e)
 	{
-		element.triangles = element.squares = element.others = 0;
-		while (it.oend != it.olast && owner[*it.oend] == e) { element.add(dist[*it.oend + 1] - dist[*it.oend]); ++it.oend; }
-		while (it.nend != it.nlast && neighbor[*it.nend] == e) { element.add(dist[*it.nend + 1] - dist[*it.nend]); ++it.nend; }
+		element.triangles = element.squares = element.others = element.enodes = 0;
+		while (it.oend != it.olast && owner[*it.oend] == e) {
+			element.add(dist[*it.oend + 1] - dist[*it.oend]); ++it.oend;
+		}
+		while (it.nend != it.nlast && neighbor[*it.nend] == e) {
+			element.add(dist[*it.nend + 1] - dist[*it.nend]); ++it.nend;
+		}
 	}
 
 	template <int N>
@@ -783,17 +816,47 @@ struct __element_builder__ {
 	template <int N>
 	void pushFirst(const std::array<esint*, N> &nodes)
 	{
-		if (it.obegin != it.oend) {
-			for (int i = 0; i < N; ++i) { *nodes[i] = this->nodes[dist[*it.obegin] + N - i - 1]; }
+		for (auto ii = it.obegin; ii != it.oend; ++ii) {
+			if (dist[*ii + 1] - dist[*ii] == N) {
+				for (int i = 0; i < N; ++i) { *nodes[i] = this->nodes[dist[*ii] + N - i - 1]; }
+				it.remove(it.obegin, ii); return;
+			}
+		}
+		for (auto ii = it.nbegin; ii != it.nend; ++ii) {
+			if (dist[*ii + 1] - dist[*ii] == N) {
+				for (int i = 0; i < N; ++i) { *nodes[i] = this->nodes[dist[*ii] + i]; }
+				it.remove(it.nbegin, ii); return;
+			}
+		}
+	}
+
+	void pushPolyhedron(esint* nodes)
+	{
+		int i = 0;
+		nodes[i++] = (it.oend - it.obegin) + (it.nend - it.nbegin);
+		while (it.obegin != it.oend) {
+			if (dist[*it.obegin + 1] - dist[*it.obegin] == 3 || dist[*it.obegin + 1] - dist[*it.obegin] == 4) {
+				nodes[i++] = dist[*it.obegin + 1] - dist[*it.obegin];
+			}
+			nodes[i++] = this->nodes[dist[*it.obegin]];
+			for (auto n = dist[*it.obegin + 1]; n > dist[*it.obegin] + 1; --n) {
+				nodes[i++] = this->nodes[n - 1];
+			}
 			++it.obegin;
-		} else {
-			for (int i = 0; i < N; ++i) { *nodes[i] = this->nodes[dist[*it.nbegin] + i]; }
+		}
+		while (it.nbegin != it.nend) {
+			if (dist[*it.nbegin + 1] - dist[*it.nbegin] == 3 || dist[*it.nbegin + 1] - dist[*it.nbegin] == 4) {
+				nodes[i++] = dist[*it.nbegin + 1] - dist[*it.nbegin];
+			}
+			for (auto n = dist[*it.nbegin]; n < dist[*it.nbegin + 1]; ++n) {
+				nodes[i++] = this->nodes[n];
+			}
 			++it.nbegin;
 		}
 	}
 };
 
-void buildElementsFromFaces(OrderedFacesBalanced &faces, OrderedElementsBalanced &elements)
+void buildElementsFromFaces(OrderedFacesBalanced &faces, OrderedElementsBalanced &elements, OrderedNodes &nodes)
 {
 	std::swap(faces.elements, dynamic_cast<ChunkDistribution&>(elements));
 
@@ -805,50 +868,56 @@ void buildElementsFromFaces(OrderedFacesBalanced &faces, OrderedElementsBalanced
 	std::iota(npermutation.begin(), npermutation.end(), 0);
 	std::sort(npermutation.begin(), npermutation.end(), [&] (const esint &i, const esint &j) { return faces.neighbor[i] != faces.neighbor[j] ? faces.neighbor[i] < faces.neighbor[j] : i < j; });
 
-	esint polyhedrons = 0;
+	esint poly[2] = { 0, 0 };
 	ivector<esint> fdist(faces.ftype.size() + 1);
 	fdist[0] = 0;
 	for (size_t e = 0; e < faces.ftype.size(); ++e) {
-		if (faces.ftype[e] == Element::CODE::POLYGON || faces.ftype[e] == Element::CODE::POLYHEDRON) {
-			++polyhedrons;
+		if (Element::encode(faces.ftype[e]).code == Element::CODE::POLYGON) {
+			++poly[0];
 		}
-		fdist[e + 1] = fdist[e] + Mesh::element(faces.ftype[e]).nodes;
+		fdist[e + 1] = fdist[e] + Element::encode(faces.ftype[e]).nodes;
+
 	}
-	eslog::info(" == TOTAL NUMBER OF POLYHEDRONS %59d == \n", Communication::exscan(polyhedrons));
 
 	elements.etype.reserve(elements.size);
+	elements.enodes.reserve(faces.fnodes.size());
 	// to be parallelized
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; t++) {
 		__element_builder__ builder(faces, fdist, opermutation, npermutation, edistribution[t] + elements.offset);
 		for (esint e = edistribution[t] + elements.offset; builder.it.oend != opermutation.end() && builder.it.nend != npermutation.end(); ++e, builder.it.next()) {
 			builder.count(e);
 			elements.etype.push_back(builder.element.code());
-			elements.enodes.resize(elements.enodes.size() + Mesh::element(elements.etype.back()).nodes, -1);
-			auto nodes = elements.enodes.data() + elements.enodes.size() - Mesh::element(elements.etype.back()).nodes;
+			elements.enodes.resize(elements.enodes.size() + Element::encode(elements.etype.back()).nodes, -1);
+			auto enodes = elements.enodes.data() + elements.enodes.size() - Element::encode(elements.etype.back()).nodes;
 			switch (elements.etype.back()) {
 			case Element::CODE::TETRA4:
-				builder.pushFirst<3>({ nodes, nodes + 1, nodes + 2 });
-				builder.finish<3>({ nodes, nodes + 1, nodes + 3 });
+				builder.pushFirst<3>({ enodes, enodes + 1, enodes + 2 });
+				builder.finish<3>({ enodes, enodes + 1, enodes + 3 });
 				break;
 			case Element::CODE::PYRAMID5:
-				builder.pushFirst<4>({ nodes, nodes + 1, nodes + 2, nodes + 3 });
-				builder.finish<3>({ nodes, nodes + 1, nodes + 4 });
+				builder.pushFirst<4>({ enodes, enodes + 1, enodes + 2, enodes + 3 });
+				builder.finish<3>({ enodes, enodes + 1, enodes + 4 });
 				break;
 			case Element::CODE::PRISMA6:
-				builder.pushFirst<3>({ nodes, nodes + 1, nodes + 2 });
-				builder.finish<4>({ nodes, nodes + 1, nodes + 4, nodes + 3 });
-				builder.finish<3>({ nodes + 3, nodes + 4, nodes + 5 });
+				builder.pushFirst<3>({ enodes + 3, enodes + 4, enodes + 5 });
+				builder.finish<4>({ enodes + 4, enodes + 3, enodes + 0, enodes + 1 });
+				builder.finish<3>({ enodes + 0, enodes + 1, enodes + 2 });
 				break;
 			case Element::CODE::HEXA8:
-				builder.pushFirst<4>({ nodes, nodes + 1, nodes + 5, nodes + 4 });
-				builder.finish<4>({ nodes + 5, nodes + 1, nodes + 2, nodes + 6 });
-				builder.finish<4>({ nodes + 0, nodes + 4, nodes + 7, nodes + 3 });
+				builder.pushFirst<4>({ enodes, enodes + 1, enodes + 5, enodes + 4 });
+				builder.finish<4>({ enodes + 5, enodes + 1, enodes + 2, enodes + 6 });
+				builder.finish<4>({ enodes + 0, enodes + 4, enodes + 7, enodes + 3 });
 				break;
 			default:
-				eslog::internalFailure("not implemented element type [eid: %d, tria:%d, square: %d, other: %d]\n", e, builder.element.triangles, builder.element.squares, builder.element.others);
+				++poly[1];
+				builder.pushPolyhedron(enodes);
 			}
 		}
 	}
+
+	Communication::allReduce(poly, nullptr, 2, MPITools::getType<esint>().mpitype, MPI_SUM);
+	eslog::info(" == TOTAL NUMBER OF POLYGONS %62d == \n", poly[0]);
+	eslog::info(" == TOTAL NUMBER OF POLYHEDRONS %59d == \n", poly[1]);
 }
 
 }

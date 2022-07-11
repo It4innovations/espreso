@@ -45,7 +45,7 @@ public:
 	template <typename TCode>
 	static inline const Element& element(const TCode &code)
 	{
-		return edata[(int)code];
+		return edata[(short)code & 255];
 	}
 
 	Mesh();

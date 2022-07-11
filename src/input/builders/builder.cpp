@@ -221,7 +221,7 @@ void buildDecomposedFVM(OrderedNodes &nodes, OrderedFaces &faces, OrderedRegions
 
 	// 0. -> 1.
 	trivialUpdate(fh.ordered, fh.balanced);
-	buildElementsFromFaces(fh.balanced, eh.balanced);
+	buildElementsFromFaces(fh.balanced, eh.balanced, nh.ordered);
 
 	if (info::mpi::size == 1) {
 		// 1. -> 2. trivial

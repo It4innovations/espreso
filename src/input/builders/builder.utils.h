@@ -130,7 +130,7 @@ void swap(Faces &f1, Faces &f2);
 
 // 0.
 void trivialUpdate(OrderedFaces &ordered, OrderedFacesBalanced &balanced);
-void buildElementsFromFaces(OrderedFacesBalanced &faces, OrderedElementsBalanced &elements);
+void buildElementsFromFaces(OrderedFacesBalanced &faces, OrderedElementsBalanced &elements, OrderedNodes &nodes);
 
 // 1. -> 2.
 void trivialUpdate(OrderedNodes &ordered, OrderedNodesBalanced &balanced);

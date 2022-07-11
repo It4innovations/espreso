@@ -65,21 +65,23 @@ bool Mesh::convertDatabase()
 
 void Mesh::init()
 {
-	edata[static_cast<int>(Element::CODE::POINT1   )]   .init<Element::CODE::POINT1   >();
-	edata[static_cast<int>(Element::CODE::LINE2    )]   .init<Element::CODE::LINE2    >();
-	edata[static_cast<int>(Element::CODE::TRIANGLE3)]   .init<Element::CODE::TRIANGLE3>();
-	edata[static_cast<int>(Element::CODE::SQUARE4  )]   .init<Element::CODE::SQUARE4  >();
-	edata[static_cast<int>(Element::CODE::TETRA4   )]   .init<Element::CODE::TETRA4   >();
-	edata[static_cast<int>(Element::CODE::PYRAMID5 )]   .init<Element::CODE::PYRAMID5 >();
-	edata[static_cast<int>(Element::CODE::PRISMA6  )]   .init<Element::CODE::PRISMA6  >();
-	edata[static_cast<int>(Element::CODE::HEXA8    )]   .init<Element::CODE::HEXA8    >();
-	edata[static_cast<int>(Element::CODE::LINE3    )]   .init<Element::CODE::LINE3    >();
-	edata[static_cast<int>(Element::CODE::TRIANGLE6)]   .init<Element::CODE::TRIANGLE6>();
-	edata[static_cast<int>(Element::CODE::SQUARE8  )]   .init<Element::CODE::SQUARE8  >();
-	edata[static_cast<int>(Element::CODE::TETRA10  )]   .init<Element::CODE::TETRA10  >();
-	edata[static_cast<int>(Element::CODE::PYRAMID13)]   .init<Element::CODE::PYRAMID13>();
-	edata[static_cast<int>(Element::CODE::PRISMA15 )]   .init<Element::CODE::PRISMA15 >();
-	edata[static_cast<int>(Element::CODE::HEXA20   )]   .init<Element::CODE::HEXA20   >();
+	edata[static_cast<int>(Element::CODE::POINT1    )]   .init<Element::CODE::POINT1    >();
+	edata[static_cast<int>(Element::CODE::LINE2     )]   .init<Element::CODE::LINE2     >();
+	edata[static_cast<int>(Element::CODE::TRIANGLE3 )]   .init<Element::CODE::TRIANGLE3 >();
+	edata[static_cast<int>(Element::CODE::SQUARE4   )]   .init<Element::CODE::SQUARE4   >();
+	edata[static_cast<int>(Element::CODE::TETRA4    )]   .init<Element::CODE::TETRA4    >();
+	edata[static_cast<int>(Element::CODE::PYRAMID5  )]   .init<Element::CODE::PYRAMID5  >();
+	edata[static_cast<int>(Element::CODE::PRISMA6   )]   .init<Element::CODE::PRISMA6   >();
+	edata[static_cast<int>(Element::CODE::HEXA8     )]   .init<Element::CODE::HEXA8     >();
+	edata[static_cast<int>(Element::CODE::LINE3     )]   .init<Element::CODE::LINE3     >();
+	edata[static_cast<int>(Element::CODE::TRIANGLE6 )]   .init<Element::CODE::TRIANGLE6 >();
+	edata[static_cast<int>(Element::CODE::SQUARE8   )]   .init<Element::CODE::SQUARE8   >();
+	edata[static_cast<int>(Element::CODE::TETRA10   )]   .init<Element::CODE::TETRA10   >();
+	edata[static_cast<int>(Element::CODE::PYRAMID13 )]   .init<Element::CODE::PYRAMID13 >();
+	edata[static_cast<int>(Element::CODE::PRISMA15  )]   .init<Element::CODE::PRISMA15  >();
+	edata[static_cast<int>(Element::CODE::HEXA20    )]   .init<Element::CODE::HEXA20    >();
+	edata[static_cast<int>(Element::CODE::POLYGON   )]   .init<Element::CODE::POLYGON   >();
+	edata[static_cast<int>(Element::CODE::POLYHEDRON)]   .init<Element::CODE::POLYHEDRON>();
 
 	info::mesh = new Mesh();
 }

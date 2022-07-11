@@ -124,14 +124,14 @@ void fillElements(MergedElements &elements, OrderedRegions &regions, Mesh &mesh)
 
 	esize = 0;
 	tedist.front().push_back(0);
-	for (size_t e = 0, enodes = 0, t = 0; e < elements.etype.size(); enodes += Mesh::element(elements.etype[e++]).nodes) {
+	for (size_t e = 0, enodes = 0, t = 0; e < elements.etype.size(); enodes += Element::encode(elements.etype[e++]).nodes) {
 		if (Mesh::element(elements.etype[e]).dimension == mesh.dimension) {
 			toffset[t].push_back(eoffset + esize); // = elements->offsets[e]
-			for (esint n = 0; n < Mesh::element(elements.etype[e]).nodes; ++n) {
+			for (esint n = 0; n < Element::encode(elements.etype[e]).nodes; ++n) {
 				tnodes[t].push_back(elements.enodes[enodes + n]);
 			}
 			tedist[t].push_back(tnodes[t].size());
-			epointers[t].push_back(&Mesh::edata[(int)elements.etype[e]]);
+			epointers[t].push_back(&Mesh::edata[(int)Element::encode(elements.etype[e]).code]);
 
 			++esize;
 			if (esize == edistribution[t + 1]) {
@@ -159,7 +159,7 @@ void fillElements(MergedElements &elements, OrderedRegions &regions, Mesh &mesh)
 		for (size_t i = 0; i < elements.offsets.size(); ++i) {
 			if (region->start <= elements.offsets[i] && elements.offsets[i] < region->end) {
 				++rsize;
-				rnodes += Mesh::element(elements.etype[i]).nodes;
+				rnodes += Element::encode(elements.etype[i]).nodes;
 			}
 		}
 		if (region->dimension == mesh.dimension) {

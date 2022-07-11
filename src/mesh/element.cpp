@@ -17,6 +17,17 @@ Element::~Element()
 	if (polygon != NULL) { delete polygon; }
 }
 
+Element::__encoded__ Element::encode(const Element::CODE &code)
+{
+	Element::__encoded__ encoded;
+	encoded.code = (Element::CODE)((short)code & 255);
+	encoded.nodes = (short)code >> 8;
+	if (encoded.code != Element::CODE::POLYGON && encoded.code != Element::CODE::POLYHEDRON) {
+		encoded.nodes = Mesh::element(code).nodes;
+	}
+	return encoded;
+}
+
 int Element::getIndex(edata<esint> &enodes, serializededata<int, int> *subindices, serializededata<int, Element*> *subpointers, edata<esint> &subnodes)
 {
 	int index = 0;

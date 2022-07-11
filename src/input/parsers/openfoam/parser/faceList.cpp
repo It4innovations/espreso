@@ -40,8 +40,7 @@ void OpenFOAMFaceList::parse(ivector<Element::CODE> &type, ivector<esint> &enode
 			switch (size) {
 			case 3: type[i] = Element::CODE::TRIANGLE3; break;
 			case 4: type[i] = Element::CODE::SQUARE4; break;
-			default:
-				type[i] = Element::CODE::POLYGON; tnodes.push_back(size);
+			default: type[i] = Element::decode(Element::CODE::POLYGON, size);
 			}
 			for (esint n = 0; n < size; ++n) {
 				tnodes.push_back(strtol(c, &next, 10)); c = next;
@@ -84,7 +83,9 @@ FoamFileHeader OpenFOAMFaceList::load(const std::string &file, ivector<Element::
 				switch (size) {
 				case 3: type.push_back(Element::CODE::TRIANGLE3); break;
 				case 4: type.push_back(Element::CODE::SQUARE4); break;
-				default: type.push_back(Element::CODE::POLYGON); enodes.push_back(size);
+				default:
+					type.push_back(Element::decode(Element::CODE::POLYGON, size + 1));
+					enodes.push_back(size);
 				}
 				for (esint n = 0; n < size; ++n) {
 					is >> node;
@@ -102,7 +103,9 @@ FoamFileHeader OpenFOAMFaceList::load(const std::string &file, ivector<Element::
 				switch (size) {
 				case 3: type.push_back(Element::CODE::TRIANGLE3); break;
 				case 4: type.push_back(Element::CODE::SQUARE4); break;
-				default: type.push_back(Element::CODE::POLYGON); enodes.push_back(size);
+				default:
+					type.push_back(Element::decode(Element::CODE::POLYGON, size + 1));
+					enodes.push_back(size);
 				}
 				for (esint n = 0; n < size; ++n) {
 					switch (header.label) {
@@ -130,7 +133,9 @@ FoamFileHeader OpenFOAMFaceList::load(const std::string &file, ivector<Element::
 				switch (dist[f] - dist[f - 1]) {
 				case 3: type.push_back(Element::CODE::TRIANGLE3); break;
 				case 4: type.push_back(Element::CODE::SQUARE4); break;
-				default: type.push_back(Element::CODE::POLYGON); enodes.push_back(dist[f] - dist[f - 1]);
+				default:
+					type.push_back(Element::decode(Element::CODE::POLYGON, dist[f] - dist[f - 1] + 1));
+					enodes.push_back(dist[f] - dist[f - 1]);
 				}
 				for (esint n = dist[f - 1]; n < dist[f]; ++n) {
 					esint node;
@@ -150,7 +155,9 @@ FoamFileHeader OpenFOAMFaceList::load(const std::string &file, ivector<Element::
 				switch (dist[f] - dist[f - 1]) {
 				case 3: type.push_back(Element::CODE::TRIANGLE3); break;
 				case 4: type.push_back(Element::CODE::SQUARE4); break;
-				default: type.push_back(Element::CODE::POLYGON); enodes.push_back(dist[f] - dist[f - 1]);
+				default:
+					type.push_back(Element::decode(Element::CODE::POLYGON, dist[f] - dist[f - 1] + 1));
+					enodes.push_back(dist[f] - dist[f - 1]);
 				}
 				for (esint n = dist[f - 1]; n < dist[f]; ++n) {
 					switch (header.label) {

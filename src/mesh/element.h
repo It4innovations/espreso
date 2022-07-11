@@ -21,7 +21,7 @@ struct Element {
 		VOLUME = 3,
 	};
 
-	enum class CODE: char {
+	enum class CODE: short {
 		POINT1, // 0
 
 		// without mid-points
@@ -91,6 +91,43 @@ struct Element {
 	virtual ~Element();
 
 	int getIndex(edata<esint> &enodes, serializededata<int, int> *subindices, serializededata<int, Element*> *subpointers, edata<esint> &subnodes);
+
+	static Element::CODE decode(const Element::CODE &code, const int &nodes)
+	{
+		return (Element::CODE)((int)code + (nodes << 8));
+	}
+
+	struct __encoded__ { Element::CODE code; int nodes; };
+	static __encoded__ encode(const Element::CODE &code);
+};
+
+struct PolyElement {
+	PolyElement(const Element::CODE &code, const esint *nodes): nodes(nodes), omit(-1)
+	{
+		size = Element::encode(code).nodes;
+		if (Element::encode(code).code == Element::CODE::POLYGON) {
+			omit = 0;
+			size = size - 1;
+		}
+		if (Element::encode(code).code == Element::CODE::POLYHEDRON) {
+			omit = 1;
+			size = size - nodes[0] - 1;
+		}
+	}
+
+	bool isNode(esint n) {
+		if (omit == 1 && n == 0) {
+			return false; // POLYHEDRON
+		}
+		if (n == omit) {
+			omit += nodes[omit] + 1;
+			return false;
+		}
+		return true;
+	}
+
+	const esint *nodes;
+	esint omit, size;
 };
 
 }

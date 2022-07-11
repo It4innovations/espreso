@@ -29,19 +29,24 @@ void assignBuckets(OrderedNodesBalanced &nodes, OrderedElementsBalanced &element
 	}
 
 	// ebuckets -> we need to choose a node and ask a neighboring process to a bucket
-	for (esint e = 0, eoffset = 0; e < elements.size; eoffset += Mesh::element(elements.etype[e++]).nodes) {
-		closest[e] = elements.enodes[eoffset];
-		for (esint n = eoffset; n < eoffset + Mesh::element(elements.etype[e]).nodes; n++) {
-			if (elements.enodes[n] / nodes.chunk == info::mpi::rank) {
-				closest[e] = elements.enodes[n];
-				++local;
-				break;
-			} else {
-				if (std::abs(ebuckets[e] / nodes.chunk - info::mpi::rank) > std::abs(elements.enodes[n] / nodes.chunk - info::mpi::rank)) {
-					closest[e] = elements.enodes[n];
+	for (esint e = 0, eoffset = 0; e < elements.size; eoffset += Element::encode(elements.etype[e++]).nodes) {
+		PolyElement poly(elements.etype[e], elements.enodes.data() + eoffset);
+		esint n = 0;
+		while (!poly.isNode(n)) ++n;
+        closest[e] = elements.enodes[n + eoffset];
+        for (++n; n < Element::encode(elements.etype[e]).nodes; ++n) {
+        	if (poly.isNode(n)) {
+				if (elements.enodes[n + eoffset] / nodes.chunk == info::mpi::rank) {
+					closest[e] = elements.enodes[n + eoffset];
+					++local;
+					break;
+				} else {
+					if (std::abs(ebuckets[e] / nodes.chunk - info::mpi::rank) > std::abs(elements.enodes[n + eoffset] / nodes.chunk - info::mpi::rank)) {
+						closest[e] = elements.enodes[n + eoffset];
+					}
 				}
-			}
-		}
+        	}
+        }
 	}
 
 	// TODO: measure if it is better to avoid sorting
@@ -163,7 +168,7 @@ void clusterize(OrderedNodesBalanced &inNodes, OrderedElementsBalanced &inElemen
 	ivector<esint> edist(inElements.size + 1);
 	edist[0] = 0;
 	for (esint e = 0; e < inElements.size; ++e) {
-		edist[e + 1] = edist[e] + Mesh::element(inElements.etype[e]).nodes;
+		edist[e + 1] = edist[e] + Element::encode(inElements.etype[e]).nodes;
 	}
 
 	ivector<esint> sBuffer, rBuffer;
@@ -171,12 +176,12 @@ void clusterize(OrderedNodesBalanced &inNodes, OrderedElementsBalanced &inElemen
 	{ // compute size of the send buffer
 		size_t ssize = 0;
 		ssize += 6 * info::mpi::size;
-		ssize += inNodes.size;
-		ssize += inElements.size;
-		ssize += inElements.enodes.size();
+		ssize += inNodes.size; // noffsets
+		ssize += inElements.size; // eoffset
+		ssize += inElements.enodes.size(); // enodes
 		for (int r = 0; r < info::mpi::size; ++r) {
-			ssize += utils::reinterpret_size<esint, _Point<esfloat> >(nborders[r + 1] - nborders[r]);
-			ssize += utils::reinterpret_size<esint, char>(eborders[r + 1] - eborders[r]);
+			ssize += utils::reinterpret_size<esint, _Point<esfloat> >(nborders[r + 1] - nborders[r]); // coordinates
+			ssize += utils::reinterpret_size<esint, Element::CODE>(eborders[r + 1] - eborders[r]); // etypes
 		}
 		sBuffer.reserve(ssize);
 	}
@@ -200,8 +205,8 @@ void clusterize(OrderedNodesBalanced &inNodes, OrderedElementsBalanced &inElemen
 		}
 
 		char *tbuffer = reinterpret_cast<char*>(sBuffer.data() + sBuffer.size());
-		sBuffer.resize(sBuffer.size() + utils::reinterpret_size<esint, char>(eborders[r + 1] - eborders[r]));
-		for (esint e = eborders[r]; e < eborders[r + 1]; ++e, ++tbuffer) {
+		sBuffer.resize(sBuffer.size() + utils::reinterpret_size<esint, Element::CODE>(eborders[r + 1] - eborders[r]));
+		for (esint e = eborders[r]; e < eborders[r + 1]; ++e, tbuffer += sizeof(Element::CODE)) {
 			memcpy(tbuffer, inElements.etype.data() + epermutation[e], sizeof(Element::CODE));
 		}
 		for (esint e = eborders[r]; e < eborders[r + 1]; ++e) {
@@ -265,7 +270,7 @@ void clusterize(OrderedNodesBalanced &inNodes, OrderedElementsBalanced &inElemen
 		offset += utils::reinterpret_size<esint, Element::CODE>(elements);
 		for (esint e = 0; e < elements; ++e) {
 			outElements.offsets.push_back(rBuffer[offset++]);
-			for (int en = 0; en < Mesh::element(outElements.etype[outElements.offsets.size() - 1]).nodes; ++en) {
+			for (int en = 0; en < Element::encode(outElements.etype[outElements.offsets.size() - 1]).nodes; ++en) {
 				outElements.enodes.push_back(rBuffer[offset++]);
 			}
 		}

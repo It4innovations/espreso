@@ -15,8 +15,8 @@ namespace espreso {
 struct FoamFileHeader {
 	int version = -1, subversion = -1;
 
-	enum class Format { UNKNOWN, ASCII, BINARY }
-	format = Format::UNKNOWN;
+	enum class Format { unknown, ASCII, binary }
+	format = Format::unknown;
 
 	enum class Class { unknown, faceList, faceCompactList, labelList, vectorField }
 	foamClass = Class::unknown;
