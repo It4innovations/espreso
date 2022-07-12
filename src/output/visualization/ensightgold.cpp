@@ -291,7 +291,9 @@ void EnSightGold::geometry()
 					_writer.groupData();
 				}
 				if (Mesh::element(etype).code == Element::CODE::POLYHEDRON) {
-					forEachElement(region, etype, [&] (serializededata<esint, esint>::const_iterator it) { _writer.int32(it->front()); });
+					forEachElement(region, etype, [&] (serializededata<esint, esint>::const_iterator it) {
+						_writer.int32(it->front());
+					});
 					_writer.groupData();
 					forEachElement(region, etype, [&] (serializededata<esint, esint>::const_iterator it) {
 						PolyElement poly(Element::decode(Element::CODE::POLYHEDRON, it->size()), it->begin());

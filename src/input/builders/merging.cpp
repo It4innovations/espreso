@@ -644,12 +644,22 @@ void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merge
 		std::vector<int> neighbors(nodes.neighbors.size());
 
 		std::vector<esint> usedNode(nodes.offsets.size() + 1);
-		for (size_t n = 0; n < merged.enodes.size(); ++n) {
-			usedNode[g2l[merged.enodes[n]]] = 1;
+		for (size_t e = 0, eoffset = 0; e < merged.etype.size(); eoffset += Element::encode(merged.etype[e++]).nodes) {
+			PolyElement poly(merged.etype[e], merged.enodes.data() + eoffset);
+			for (int n = 0; n < Element::encode(merged.etype[e]).nodes; ++n) {
+				if (poly.isNode(n)) {
+					usedNode[g2l[merged.enodes[n + eoffset]]] = 1;
+				}
+			}
 		}
 		utils::sizesToOffsets(usedNode);
-		for (size_t n = 0; n < merged.enodes.size(); ++n) {
-			merged.enodes[n] = usedNode[g2l[merged.enodes[n]]];
+		for (size_t e = 0, eoffset = 0; e < merged.etype.size(); eoffset += Element::encode(merged.etype[e++]).nodes) {
+			PolyElement poly(merged.etype[e], merged.enodes.data() + eoffset);
+			for (int n = 0; n < Element::encode(merged.etype[e]).nodes; ++n) {
+				if (poly.isNode(n)) {
+					merged.enodes[n + eoffset] = usedNode[g2l[merged.enodes[n + eoffset]]];
+				}
+			}
 		}
 
 		// we need to inform about erased nodes

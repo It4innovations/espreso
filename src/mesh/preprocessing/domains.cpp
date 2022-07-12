@@ -176,9 +176,17 @@ void computeNodeDomainDistribution(ElementStore *elements, NodeStore *nodes, Dom
 		std::vector<std::pair<esint, esint> > tdata;
 
 		for (size_t d = domains->distribution[t]; d != domains->distribution[t + 1]; ++d) {
-			std::vector<esint> dnodes(
-					(elements->nodes->begin() + domains->elements[d])->begin(),
-					(elements->nodes->begin() + domains->elements[d + 1])->begin());
+			std::vector<esint> dnodes;
+			auto ep = elements->epointers->datatarray().cbegin() + domains->elements[d];
+			auto enodes = elements->nodes->cbegin() + domains->elements[d];
+			for (esint e = domains->elements[d]; e < domains->elements[d + 1]; ++e) {
+				PolyElement poly(Element::decode((*ep)->code, enodes->size()), enodes->begin());
+				for (size_t n = 0; n < enodes->size(); ++n) {
+					if (poly.isNode(n)) {
+						dnodes.push_back(enodes->at(n));
+					}
+				}
+			}
 
 			utils::sortAndRemoveDuplicates(dnodes);
 			for (size_t i = 0; i < dnodes.size(); i++) {
@@ -283,12 +291,19 @@ void computeLocalIndices(ElementStore *elements, DomainStore *domains)
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		for (size_t d = domains->distribution[t]; d != domains->distribution[t + 1]; ++d) {
-			esint dbegin = (elements->nodes->begin() + domains->elements[d])->begin() - elements->nodes->datatarray().begin();
-			esint dend = (elements->nodes->begin() + domains->elements[d + 1])->begin() - elements->nodes->datatarray().begin();
-
-			std::vector<esint> dnodes(domains->nodes->datatarray().begin() + dbegin, domains->nodes->datatarray().begin() + dend);
+			std::vector<esint> dnodes;
+			auto ep = elements->epointers->datatarray().cbegin() + domains->elements[d];
+			auto enodes = elements->nodes->cbegin() + domains->elements[d];
+			for (esint e = domains->elements[d]; e < domains->elements[d + 1]; ++e) {
+				PolyElement poly(Element::decode((*ep)->code, enodes->size()), enodes->begin());
+				for (size_t n = 0; n < enodes->size(); ++n) {
+					if (poly.isNode(n)) {
+						dnodes.push_back(enodes->at(n));
+					}
+				}
+			}
 			utils::sortAndRemoveDuplicates(dnodes);
-			for (auto n = domains->nodes->datatarray().begin() + dbegin; n != domains->nodes->datatarray().begin() + dend; ++n) {
+			for (auto n = domains->nodes->datatarray().begin() + domains->elements[d]; n != domains->nodes->datatarray().begin() + domains->elements[d + 1]; ++n) {
 				*n = std::lower_bound(dnodes.begin(), dnodes.end(), *n) - dnodes.begin();
 			}
 		}

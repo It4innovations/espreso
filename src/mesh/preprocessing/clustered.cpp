@@ -621,7 +621,12 @@ void computeRegionsElementNodes(const NodeStore *nodes, const ElementStore *elem
 				esint prev = 0;
 				for (auto e = elementsRegions[r]->elements->datatarray().cbegin(t); e != elementsRegions[r]->elements->datatarray().cend(t); prev = *e++) {
 					enodes += *e - prev;
-					rnodes[t].insert(rnodes[t].end(), enodes->begin(), enodes->end());
+					PolyElement poly(Element::decode(elements->epointers->datatarray()[*e]->code, enodes->size()), enodes->begin());
+					for (size_t n = 0; n < enodes->size(); ++n) {
+						if (poly.isNode(n)) {
+							rnodes[t].push_back(enodes->at(n));
+						}
+					}
 				}
 				utils::sortAndRemoveDuplicates(rnodes[t]);
 			}
@@ -655,8 +660,22 @@ void computeRegionsBoundaryNodes(const std::vector<int> &neighbors, NodeStore *n
 	for (size_t r = 0; r < allRegions.size(); r++) {
 		if (allRegions[r]->nodes == NULL) {
 			std::vector<std::vector<esint> > nodes(threads);
-			nodes[0] = std::vector<esint>(allRegions[r]->elements->datatarray().begin(), allRegions[r]->elements->datatarray().end());
-			utils::sortAndRemoveDuplicates(nodes[0]);
+			#pragma omp parallel for
+			for (int t = 0; t < threads; t++) {
+				auto ep = allRegions[r]->epointers->datatarray().begin(t);
+				for (auto e = allRegions[r]->elements->cbegin(t); e != allRegions[r]->elements->cend(t); ++e, ++ep) {
+					PolyElement poly(Element::decode((*ep)->code, e->size()), e->begin());
+					for (size_t n = 0; n < e->size(); ++n) {
+						if (poly.isNode(n)) {
+							nodes[t].push_back(e->at(n));
+						}
+					}
+				}
+				utils::sortAndRemoveDuplicates(nodes[t]);
+			}
+			utils::mergeThreadedUniqueData(nodes);
+			nodes.resize(1);
+			nodes.resize(threads);
 			serializededata<esint, esint>::balance(1, nodes);
 			allRegions[r]->nodes = new serializededata<esint, esint>(1, nodes);
 		}
