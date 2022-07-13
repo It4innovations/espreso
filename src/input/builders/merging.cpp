@@ -248,12 +248,12 @@ void exchangeSFCBoundaryNodes(const HilbertCurve<esfloat> &sfc, const ivector<es
 	}
 
 	std::vector<esint> offsets;
-	std::vector<_Point<esfloat>, initless_allocator<_Point<esfloat> > > coordinates;
+	ivector<_Point<esfloat> > coordinates;
 	std::vector<std::vector<esint> > sBuffer(sfcNeighbors.size()), rBuffer(sfcNeighbors.size());
 	{ // build send buffer
-		auto ni = sfcNeighbors.begin();
-		for (auto begin = toneighs[0].begin(), end = begin; end != toneighs[0].end(); begin = end++) {
-			while (*ni < begin->target) { ++ni; }
+		size_t ni = 0;
+		for (auto begin = toneighs[0].begin(), end = begin; end != toneighs[0].end(); begin = end) {
+			while (sfcNeighbors[ni] < begin->target) { ++ni; }
 			while (end != toneighs[0].end() && begin->target == end->target) { ++end; }
 
 			for (auto n = begin; n != end; ++n) {
@@ -261,10 +261,10 @@ void exchangeSFCBoundaryNodes(const HilbertCurve<esfloat> &sfc, const ivector<es
 				coordinates.push_back(clustered.coordinates[n->offset]);
 			}
 			esint nodes = end - begin;
-			sBuffer[*ni].resize(1 + nodes + utils::reinterpret_size<esint, _Point<esfloat> >(nodes));
-			sBuffer[*ni][0] = nodes;
-			memcpy(sBuffer[*ni].data() + 1, offsets.data() + offsets.size() - nodes, nodes * sizeof(esint));
-			memcpy(sBuffer[*ni].data() + 1 + nodes, reinterpret_cast<esint*>(coordinates.data() + coordinates.size() - nodes), nodes * sizeof(_Point<esfloat>));
+			sBuffer[ni].resize(1 + nodes + utils::reinterpret_size<esint, _Point<esfloat> >(nodes));
+			sBuffer[ni][0] = nodes;
+			memcpy(sBuffer[ni].data() + 1, offsets.data() + offsets.size() - nodes, nodes * sizeof(esint));
+			memcpy(sBuffer[ni].data() + 1 + nodes, reinterpret_cast<esint*>(coordinates.data() + coordinates.size() - nodes), nodes * sizeof(_Point<esfloat>));
 		}
 	}
 	esint mynodes = offsets.size();
@@ -845,11 +845,15 @@ struct __element_builder__ {
 		int i = 0;
 		nodes[i++] = (it.oend - it.obegin) + (it.nend - it.nbegin);
 		while (it.obegin != it.oend) {
+			int header = 0;
 			if (dist[*it.obegin + 1] - dist[*it.obegin] == 3 || dist[*it.obegin + 1] - dist[*it.obegin] == 4) {
 				nodes[i++] = dist[*it.obegin + 1] - dist[*it.obegin];
+			} else {
+				header = 1;
+				nodes[i++] = this->nodes[dist[*it.obegin]];
 			}
-			nodes[i++] = this->nodes[dist[*it.obegin]];
-			for (auto n = dist[*it.obegin + 1]; n > dist[*it.obegin] + 1; --n) {
+
+			for (auto n = dist[*it.obegin + 1]; n > dist[*it.obegin] + header; --n) {
 				nodes[i++] = this->nodes[n - 1];
 			}
 			++it.obegin;

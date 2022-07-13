@@ -105,7 +105,7 @@ CPUInfo cpuinfo()
 
 	std::ifstream is("/proc/cpuinfo");
 
-	int siblings;
+	int siblings = 0;
 	std::string param, colon, value;
 	while (is.good()) {
 		getline(is, param, '\t');

@@ -27,7 +27,8 @@ void assignBuckets(OrderedNodesChunked &nodes, OrderedElementsChunked &elements,
 
 	// ebuckets -> just ask SFC to get bucket of the first node
 	for (esint e = 0, eoffset = 0; e < elements.size; eoffset += Element::encode(elements.etype[e++]).nodes) {
-		ebuckets[e] = sfc.getBucket(nodes.coordinates[elements.enodes[eoffset] - nodes.offset]);
+		// last node is always element node!
+		ebuckets[e] = sfc.getBucket(nodes.coordinates[elements.enodes[eoffset + Element::encode(elements.etype[e]).nodes - 1] - nodes.offset]);
 	}
 }
 
@@ -49,9 +50,9 @@ void assignBuckets(OrderedNodesBalanced &nodes, OrderedElementsBalanced &element
 		PolyElement poly(elements.etype[e], elements.enodes.data() + eoffset);
 		esint n = 0;
 		while (!poly.isNode(n)) ++n;
-        closest[e] = elements.enodes[n + eoffset];
-        for (++n; n < Element::encode(elements.etype[e]).nodes; ++n) {
-        	if (poly.isNode(n)) {
+		closest[e] = elements.enodes[n + eoffset];
+		for (++n; n < Element::encode(elements.etype[e]).nodes; ++n) {
+			if (poly.isNode(n)) {
 				if (elements.enodes[n + eoffset] / nodes.chunk == info::mpi::rank) {
 					closest[e] = elements.enodes[n + eoffset];
 					++local;
@@ -61,8 +62,8 @@ void assignBuckets(OrderedNodesBalanced &nodes, OrderedElementsBalanced &element
 						closest[e] = elements.enodes[n + eoffset];
 					}
 				}
-        	}
-        }
+			}
+		}
 	}
 
 	// TODO: measure if it is better to avoid sorting

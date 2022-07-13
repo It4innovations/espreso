@@ -172,7 +172,15 @@ void linkup(MergedNodes &merged, LinkedNodes &linked, ClusteredElements &element
 	// one instance of 'adjacent' can be probably bottleneck for more than 10k MPI processes
 	// hence, computation can be improved by computing adjacent to each process separately (based on SFC)
 
-	ivector<esint> required(elements.enodes.begin(), elements.enodes.end());
+	ivector<esint> required; required.reserve(elements.enodes.size());
+	for (size_t e = 0, eoffset = 0; e < elements.offsets.size(); eoffset += Element::encode(elements.etype[e++]).nodes) {
+		PolyElement poly(elements.etype[e], elements.enodes.data() + eoffset);
+		for (int n = 0; n < Element::encode(elements.etype[e]).nodes; ++n) {
+			if (poly.isNode(n)) {
+				required.push_back(elements.enodes[n + eoffset]);
+			}
+		}
+	}
 	std::vector<esint> adjacent; // nodes held by other processes
 	utils::sortAndRemoveDuplicates(required);
 	for (size_t offset = 0, node = 0; offset < merged.offsets.size() || node < required.size(); ++offset) {

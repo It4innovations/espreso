@@ -70,7 +70,7 @@ void EnsightCasefile::parse()
 			eslog::info(" == GEOFILE %*s == \n", 79, geometry.c_str());
 		}
 		if (invariable) {
-			Variable::Type type;
+			Variable::Type type = Variable::Type::NODE;
 			int dimension = 0, time = -1;
 			if (check("scalar")) {
 				dimension = 1;

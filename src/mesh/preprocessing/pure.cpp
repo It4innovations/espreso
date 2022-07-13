@@ -1208,7 +1208,7 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 			telemsOutputDistribution.reserve(rdistribution[t + 1] - rdistribution[t] + 1);
 			telemsRegions.reserve(rdistribution[t + 1] - rdistribution[t]);
 
-			esint distOffset = 0, neighOffset = 0, outputOffset;
+			esint distOffset = 0, neighOffset = 0, outputOffset = 0;
 
 			if (elemsNodesDistribution[t].size()) {
 				distOffset = elemsNodesDistribution[t].back();

@@ -97,7 +97,7 @@ FoamFileHeader OpenFOAMFaceList::load(const std::string &file, ivector<Element::
 			}
 		} else {
 			for (esint f = 0; f < faces; ++f) {
-				esint size, node;
+				esint size, node = 0;
 				switch (header.label) {
 				case 4: size = _parse<4>(is); break;
 				case 8: size = _parse<8>(is); break;
