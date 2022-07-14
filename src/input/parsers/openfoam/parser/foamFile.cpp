@@ -159,6 +159,7 @@ void FoamFile::scanFile(RawFoamFile &file)
 	file.distribution.resize(info::env::OMP_NUM_THREADS);
 	std::vector<size_t> tdistribution = tarray<size_t>::distribute(info::env::OMP_NUM_THREADS, file.input->end - c);
 
+	esint end = 0;
 	#pragma omp parallel for reduction(max:end)
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
 		const char* tc = file.input->begin + coffset + tdistribution[t];

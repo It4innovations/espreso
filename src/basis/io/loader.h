@@ -57,7 +57,7 @@ protected:
 };
 
 struct MPILoader: public Loader {
-	MPILoader(): MPIfile(nullptr), request(nullptr), waiting{false} {}
+	MPILoader(): MPIfile(nullptr), waiting{false} {}
 	~MPILoader() { if (MPIfile) MPI_File_close(&MPIfile); }
 
 	int open(MPIGroup &group, const std::string &file)
@@ -98,7 +98,7 @@ protected:
 };
 
 struct MPICollectiveLoader: public Loader {
-	MPICollectiveLoader(): MPIfile(nullptr), request(nullptr), waiting{false} {}
+	MPICollectiveLoader(): MPIfile(nullptr), waiting{false} {}
 	~MPICollectiveLoader() { if (MPIfile) MPI_File_close(&MPIfile); }
 
 	int open(MPIGroup &group, const std::string &file)
