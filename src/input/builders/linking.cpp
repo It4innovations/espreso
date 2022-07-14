@@ -69,6 +69,7 @@ static void exchangeUnknown(MergedNodes &merged, LinkedNodes &linked, std::vecto
 	std::sort(unknown.begin(), unknown.end());
 	eslog::checkpointln("LINKUP: UNKNOWN NODES EXCHANGED");
 	eslog::param("UnknownNodes", unknown.size());
+	eslog::ln();
 
 	struct __fnode__: __unode__ {
 		int holder;
@@ -194,6 +195,7 @@ void linkup(MergedNodes &merged, LinkedNodes &linked, ClusteredElements &element
 
 	eslog::checkpointln("LINKUP: ADJACENT NODES COMPUTED");
 	eslog::param("AdjacentNodes", adjacent.size());
+	eslog::ln();
 
 	std::vector<std::vector<esint> > requested(linked.neighbors.size());
 	if (!Communication::exchangeUnknownSize(adjacent, requested, linked.neighbors)) {

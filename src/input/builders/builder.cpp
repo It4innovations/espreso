@@ -56,6 +56,7 @@ void buildOrderedFEM(NodesBlocks &nodes, ElementsBlocks &elements, OrderedRegion
 	eslog::param("OrderedNodes", size(nodes));
 	eslog::param("OrderedElements", size(elements));
 	eslog::param("OrderedTotal", size(nodes) + size(elements));
+	eslog::ln();
 
 	eslog::info(" ==================================== ORDERED FEM BUILDER ===================== %12.3f s\n", eslog::duration());
 	eslog::info(" ============================================================================================= \n");
@@ -111,6 +112,7 @@ void buildOrderedFEM(NodesBlocks &nodes, ElementsBlocks &elements, OrderedRegion
 		eslog::param("OrderedNodesBalanced", size(nh.balanced));
 		eslog::param("OrderedElementsBalanced", size(eh.balanced));
 		eslog::param("OrderedTotalBalanced", size(nh.balanced) + size(nh.balanced));
+		eslog::ln();
 
 		// 3. synchronize mesh dimension and compute SFC
 		mesh.dimension = getDimension(eh.balanced);
@@ -126,6 +128,7 @@ void buildOrderedFEM(NodesBlocks &nodes, ElementsBlocks &elements, OrderedRegion
 		eslog::checkpointln("BUILDER: MESH CLUSTERIZED");
 		eslog::param("ClusteredNodes", size(nh.clustered));
 		eslog::param("ClusteredElements", size(eh.clustered));
+		eslog::ln();
 
 		// 5.
 		computeSFCNeighbors(sfc, splitters, nh.linked.neighbors); // neighbors are approximated here
@@ -142,11 +145,13 @@ void buildOrderedFEM(NodesBlocks &nodes, ElementsBlocks &elements, OrderedRegion
 		linkup(nh.merged, nh.linked, eh.clustered);
 		eslog::checkpointln("BUILDER: LINKED UP");
 		eslog::param("LinkedNodes", size(nh.linked));
+		eslog::ln();
 
 		// 7. -> 8.
 		mergeDuplicatedElements(eh.clustered, eh.merged, nh.linked, mesh.dimension);
 		eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
 		eslog::param("MergedElements", size(eh.merged));
+		eslog::ln();
 	}
 	// 9.
 	fillNodes(nh.linked, regions, mesh);
@@ -253,6 +258,7 @@ void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 		eslog::param("OrderedNodesChunked", size(nh.chunked));
 		eslog::param("OrderedElementsChunked", size(eh.chunked));
 		eslog::param("OrderedTotalChunked", size(nh.chunked) + size(nh.chunked));
+		eslog::ln();
 
 		// 3. synchronize mesh dimension and compute SFC
 		HilbertCurve<esfloat> sfc(mesh.dimension, SFCDEPTH, nh.chunked.coordinates.size(), nh.chunked.coordinates.data());
@@ -267,6 +273,7 @@ void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 		eslog::checkpointln("BUILDER: MESH CLUSTERIZED");
 		eslog::param("ClusteredNodes", size(nh.clustered));
 		eslog::param("ClusteredElements", size(eh.clustered));
+		eslog::ln();
 
 		// 5.
 		computeSFCNeighbors(sfc, splitters, nh.linked.neighbors); // neighbors are approximated here
@@ -283,11 +290,13 @@ void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 		linkup(nh.merged, nh.linked, eh.clustered);
 		eslog::checkpointln("BUILDER: LINKED UP");
 		eslog::param("LinkedNodes", size(nh.linked));
+		eslog::ln();
 
 		// 7. -> 8.
 		mergeDuplicatedElements(eh.clustered, eh.merged, nh.linked, mesh.dimension);
 		eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
 		eslog::param("MergedElements", size(eh.merged));
+		eslog::ln();
 	}
 
 	// 9.

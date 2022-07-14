@@ -220,7 +220,7 @@ void print()
 	eslog::info(" == CORES PER SOCKET %*d == \n", 70, cpuinfo.cores);
 	eslog::info(" == HYPERTHREADING %*s == \n", 72, cpuinfo.hyperthreading ? "ON" : "OFF");
 	eslog::info(" == HWTHREADS PER NODE %*d == \n", 68, threads);
-	eslog::info(" == SIMD INSTRUCTION SET %*s == \n", 70 - strlen(simd), simd);
+	eslog::info(" == SIMD INSTRUCTION SET %*s == \n", 66, simd);
 	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
 
 	eslog::info(" == AVAILABLE MEMORY PER NODE [GB] %*.2f == \n", 56, memAvail / 1024 / 1024);
