@@ -53,9 +53,9 @@ static void regionInfo(Mesh &mesh)
 void buildOrderedFEM(NodesBlocks &nodes, ElementsBlocks &elements, OrderedRegions &regions, Mesh &mesh)
 {
 	eslog::startln("BUILDER: PROCESS ORDERED MESH", "BUILDER");
-	eslog::param("OrderedNodes", size(nodes));
-	eslog::param("OrderedElements", size(elements));
-	eslog::param("OrderedTotal", size(nodes) + size(elements));
+	eslog::param("OrderedNodes", nodes.coordinates.size());
+	eslog::param("OrderedElements", elements.etype.size());
+	eslog::param("OrderedTotal[B]", size(nodes) + size(elements));
 	eslog::ln();
 
 	eslog::info(" ==================================== ORDERED FEM BUILDER ===================== %12.3f s\n", eslog::duration());
@@ -109,9 +109,9 @@ void buildOrderedFEM(NodesBlocks &nodes, ElementsBlocks &elements, OrderedRegion
 		// 1. -> 2.
 		balanceFEM(nh.blocks, eh.blocks, nh.balanced, eh.balanced);
 		eslog::checkpointln("BUILDER: DATA BALANCED");
-		eslog::param("OrderedNodesBalanced", size(nh.balanced));
-		eslog::param("OrderedElementsBalanced", size(eh.balanced));
-		eslog::param("OrderedTotalBalanced", size(nh.balanced) + size(nh.balanced));
+		eslog::param("OrderedNodesBalanced", nh.balanced.coordinates.size());
+		eslog::param("OrderedElementsBalanced", eh.balanced.etype.size());
+		eslog::param("OrderedTotalBalanced[B]", size(nh.balanced) + size(nh.balanced));
 		eslog::ln();
 
 		// 3. synchronize mesh dimension and compute SFC
@@ -126,8 +126,8 @@ void buildOrderedFEM(NodesBlocks &nodes, ElementsBlocks &elements, OrderedRegion
 		clusterize(nh.balanced, eh.balanced, nbuckets, ebuckets, sfc.buckets(sfc.depth), nh.clustered, eh.clustered, splitters);
 		utils::clearVectors(nbuckets, ebuckets);
 		eslog::checkpointln("BUILDER: MESH CLUSTERIZED");
-		eslog::param("ClusteredNodes", size(nh.clustered));
-		eslog::param("ClusteredElements", size(eh.clustered));
+		eslog::param("ClusteredNodes", nh.clustered.coordinates.size());
+		eslog::param("ClusteredElements", eh.clustered.etype.size());
 		eslog::ln();
 
 		// 5.
@@ -144,13 +144,13 @@ void buildOrderedFEM(NodesBlocks &nodes, ElementsBlocks &elements, OrderedRegion
 		// 6. -> 7.
 		linkup(nh.merged, nh.linked, eh.clustered);
 		eslog::checkpointln("BUILDER: LINKED UP");
-		eslog::param("LinkedNodes", size(nh.linked));
+		eslog::param("LinkedNodes", nh.linked.coordinates.size());
 		eslog::ln();
 
 		// 7. -> 8.
 		mergeDuplicatedElements(eh.clustered, eh.merged, nh.linked, mesh.dimension);
 		eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
-		eslog::param("MergedElements", size(eh.merged));
+		eslog::param("MergedElements", eh.merged.etype.size());
 		eslog::ln();
 	}
 	// 9.
@@ -255,9 +255,9 @@ void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 
 		// 1. -> 2. trivial
 		trivialUpdate(nh.blocks, nh.chunked);
-		eslog::param("OrderedNodesChunked", size(nh.chunked));
-		eslog::param("OrderedElementsChunked", size(eh.chunked));
-		eslog::param("OrderedTotalChunked", size(nh.chunked) + size(nh.chunked));
+		eslog::param("OrderedNodesChunked", nh.chunked.coordinates.size());
+		eslog::param("OrderedElementsChunked", eh.chunked.etype.size());
+		eslog::param("OrderedTotalChunked[B]", size(nh.chunked) + size(nh.chunked));
 		eslog::ln();
 
 		// 3. synchronize mesh dimension and compute SFC
@@ -271,8 +271,8 @@ void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 		clusterize(nh.chunked, eh.chunked, nbuckets, ebuckets, sfc.buckets(sfc.depth), nh.clustered, eh.clustered, splitters);
 		utils::clearVectors(nbuckets, ebuckets);
 		eslog::checkpointln("BUILDER: MESH CLUSTERIZED");
-		eslog::param("ClusteredNodes", size(nh.clustered));
-		eslog::param("ClusteredElements", size(eh.clustered));
+		eslog::param("ClusteredNodes", nh.clustered.coordinates.size());
+		eslog::param("ClusteredElements", eh.clustered.etype.size());
 		eslog::ln();
 
 		// 5.
@@ -289,13 +289,13 @@ void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 		// 6. -> 7.
 		linkup(nh.merged, nh.linked, eh.clustered);
 		eslog::checkpointln("BUILDER: LINKED UP");
-		eslog::param("LinkedNodes", size(nh.linked));
+		eslog::param("LinkedNodes", nh.linked.coordinates.size());
 		eslog::ln();
 
 		// 7. -> 8.
 		mergeDuplicatedElements(eh.clustered, eh.merged, nh.linked, mesh.dimension);
 		eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
-		eslog::param("MergedElements", size(eh.merged));
+		eslog::param("MergedElements", eh.merged.etype.size());
 		eslog::ln();
 	}
 
