@@ -896,7 +896,7 @@ static void _buildElementsFromFaces(Faces &faces, Elements &elements, NodesBlock
 	// to be parallelized
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; t++) {
 		__element_builder__ builder(faces, fdist, opermutation, npermutation, edistribution[t] + eoffset);
-		for (esint e = edistribution[t] + eoffset; builder.it.oend != opermutation.end() && builder.it.nend != npermutation.end(); ++e, builder.it.next()) {
+		for (esint e = edistribution[t] + eoffset; e < edistribution[t + 1] + eoffset; ++e, builder.it.next()) {
 			builder.count(e);
 			elements.etype.push_back(builder.element.code());
 			elements.enodes.resize(elements.enodes.size() + Element::encode(elements.etype.back()).nodes, -1);
