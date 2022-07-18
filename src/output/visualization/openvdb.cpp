@@ -30,8 +30,8 @@ void OpenVDB::updateSolution()
 	}
 
 	OpenVDBWrapper wrapper;
-	wrapper.setTransformation();
 	for (size_t di = 0; di < info::mesh->elements->data.size(); di++) { // go through all element values
-		wrapper.store(_filename.c_str(), info::mesh->elements->volumeIndices, info::mesh->elements->data[di]);
+		wrapper.add_grid(info::mesh->elements->volumeIndices, info::mesh->elements->data[di]);
 	}
+	wrapper.store_grids(_filename.c_str());
 }

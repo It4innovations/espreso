@@ -11,13 +11,16 @@
 
 namespace espreso {
 struct OpenVDBWrapperData {
-	openvdb::FloatGrid::Ptr grid;
+	openvdb::GridPtrVec grids;
+	openvdb::math::Mat4d mat_;
 
 	OpenVDBWrapperData()
 	{
-		grid = openvdb::FloatGrid::create();
-		grid->setGridClass(openvdb::GRID_LEVEL_SET);
-		grid->setName("density");
+		mat_ = openvdb::math::Mat4d(
+		1.0, 0.0, 0.0, 0.0,
+		0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 1.0, 0.0,
+		0.0, 0.0, 0.0, 1.0);
 	}
 
 	~OpenVDBWrapperData()
@@ -46,24 +49,14 @@ OpenVDBWrapper::~OpenVDBWrapper()
 #endif
 }
 
-void OpenVDBWrapper::setTransformation()
+void OpenVDBWrapper::add_grid(const serializededata<esint, _Point<int> > *emap, const ElementData *data)
 {
 #ifdef HAVE_OPENVDB
-	// there should be a real transformation computed from the mesh
-	openvdb::math::Mat4d mat_ = openvdb::math::Mat4d(
-		1.0, 0.0, 0.0, 0.0,
-		0.0, 1.0, 0.0, 0.0,
-		0.0, 0.0, 1.0, 0.0,
-		0.0, 0.0, 0.0, 1.0);
-
-	_data->grid->setTransform(openvdb::math::Transform::createLinearTransform(mat_));
-#endif
-}
-
-void OpenVDBWrapper::store(const char *name, const serializededata<esint, _Point<int> > *emap, const ElementData *data)
-{
-#ifdef HAVE_OPENVDB
-	openvdb::FloatGrid::Accessor accessor = _data->grid->getAccessor();
+	openvdb::FloatGrid::Ptr grid = openvdb::FloatGrid::create();
+	grid->setGridClass(openvdb::GRID_LEVEL_SET);
+	grid->setTransform(openvdb::math::Transform::createLinearTransform(_data->mat_));
+	grid->setName(data->name);
+	openvdb::FloatGrid::Accessor accessor = grid->getAccessor();
 
 	auto value = data->data.cbegin();
 	for (auto voxels = emap->begin(); voxels != emap->end(); ++voxels, value += data->dimension) {
@@ -77,7 +70,14 @@ void OpenVDBWrapper::store(const char *name, const serializededata<esint, _Point
 		}
 	}
 
-	openvdb::io::File(name).write({ _data->grid });
+	_data->grids.push_back(grid);
+#endif
+}
+
+void OpenVDBWrapper::store_grids(const char *name)
+{
+#ifdef HAVE_OPENVDB
+	openvdb::io::File(name).write(_data->grids);
 #endif
 }
 

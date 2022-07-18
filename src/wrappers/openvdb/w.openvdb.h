@@ -15,8 +15,8 @@ struct OpenVDBWrapper {
 	OpenVDBWrapper();
 	~OpenVDBWrapper();
 
-	void setTransformation();
-	void store(const char *name, const serializededata<esint, _Point<int> > *emap, const ElementData *data);
+	void add_grid(const serializededata<esint, _Point<int> > *emap, const ElementData *data);
+	void store_grids(const char *name);
 
 protected:
 	OpenVDBWrapperData *_data;
