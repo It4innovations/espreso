@@ -170,18 +170,11 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		}
 	}
 
-	double min_x_global, min_y_global, min_z_global;
-	double max_x_global, max_y_global, max_z_global;
-	MPI_Allreduce(&mesh_min.x, &min_x_global, 1, MPI_DOUBLE, MPI_MIN, info::mpi::comm);
-	MPI_Allreduce(&mesh_min.y, &min_y_global, 1, MPI_DOUBLE, MPI_MIN, info::mpi::comm);
-	MPI_Allreduce(&mesh_min.z, &min_z_global, 1, MPI_DOUBLE, MPI_MIN, info::mpi::comm);
+	Point mesh_min_global;
+	Point mesh_max_global;
+	MPI_Allreduce(&mesh_min, &mesh_min_global, 3, MPI_DOUBLE, MPI_MIN, info::mpi::comm);
+	MPI_Allreduce(&mesh_max, &mesh_max_global, 3, MPI_DOUBLE, MPI_MAX, info::mpi::comm);
 
-	MPI_Allreduce(&mesh_max.x, &max_x_global, 1, MPI_DOUBLE, MPI_MAX, info::mpi::comm);
-	MPI_Allreduce(&mesh_max.y, &max_y_global, 1, MPI_DOUBLE, MPI_MAX, info::mpi::comm);
-	MPI_Allreduce(&mesh_max.z, &max_z_global, 1, MPI_DOUBLE, MPI_MAX, info::mpi::comm);
-
-	Point mesh_min_global = Point(min_x_global, min_y_global, min_z_global);
-	Point mesh_max_global = Point(max_x_global, max_y_global, max_z_global);
 	printf("global mesh min: %f %f %f\n", mesh_min_global.x, mesh_min_global.y, mesh_min_global.z);
 	printf("global mesh max: %f %f %f\n", mesh_max_global.x, mesh_max_global.y, mesh_max_global.z);
 
