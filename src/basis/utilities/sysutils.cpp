@@ -96,13 +96,25 @@ std::string prepareFile(const std::string &directory, const std::string &name, i
 	}
 }
 
-void listDirectory(const std::string &dir, std::vector<std::string> &files)
+void listDirectoryFiles(const std::string &dir, std::vector<std::string> &files)
 {
 	DIR *d = opendir(dir.c_str());
 	dirent *dp;
 	while ((dp = readdir(d)) != NULL) {
 		if (dp->d_type == DT_REG) {
 			files.push_back(dp->d_name);
+		}
+	}
+	closedir(d);
+}
+
+void listDirectorySubdirectories(const std::string &dir, std::vector<std::string> &subdirectories)
+{
+	DIR *d = opendir(dir.c_str());
+	dirent *dp;
+	while ((dp = readdir(d)) != NULL) {
+		if (dp->d_type == DT_DIR) {
+			subdirectories.push_back(dp->d_name);
 		}
 	}
 	closedir(d);

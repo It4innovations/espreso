@@ -40,7 +40,7 @@ void OpenFOAMLabelList::parse(ivector<esint> &list)
 FoamFileHeader OpenFOAMLabelList::load(const std::string &file, ivector<esint> &list, esint offset)
 {
 	std::ifstream is(file);
-	FoamFileHeader header(is);
+	FoamFileHeader header; header.read(is);
 
 	esint size;
 	is >> size;

@@ -26,7 +26,7 @@ struct NamedData {
 	std::string name;
 	step::TYPE restriction;
 
-	std::vector<double> data, buffer, &store;
+	std::vector<esfloat> data, buffer, &store;
 
 	NamedData(int dimension, DataType datatype, const std::string &name);
 	NamedData(const char* &packedData);

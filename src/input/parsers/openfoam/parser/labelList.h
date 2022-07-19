@@ -2,15 +2,14 @@
 #ifndef SRC_INPUT_PARSERS_OPENFOAM_PARSER_CONTAINERS_LABELLIST_H_
 #define SRC_INPUT_PARSERS_OPENFOAM_PARSER_CONTAINERS_LABELLIST_H_
 
-#include "foamFile.h"
-
+#include "parallelFoamFile.h"
 #include <cstddef>
 
 namespace espreso {
 
-struct OpenFOAMLabelList: FoamFile, RawFoamFile {
+struct OpenFOAMLabelList: ParallelFoamFile, RawParallelFoamFile {
 
-	OpenFOAMLabelList(InputFile *input): RawFoamFile(input) {}
+	OpenFOAMLabelList(InputFile *input): RawParallelFoamFile(input) {}
 
 	void scan()
 	{

@@ -69,7 +69,7 @@ void OpenFOAMFaceList::parse(ivector<Element::CODE> &type, ivector<esint> &enode
 FoamFileHeader OpenFOAMFaceList::load(const std::string &file, ivector<Element::CODE> &type, ivector<esint> &enodes, esint offset)
 {
 	std::ifstream is(file);
-	FoamFileHeader header(is);
+	FoamFileHeader header; header.read(is);
 
 	if (header.foamClass == FoamFileHeader::Class::faceList) {
 		esint faces;

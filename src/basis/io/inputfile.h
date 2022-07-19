@@ -36,8 +36,6 @@ struct InputFile {
 
 	}
 
-	void setDistribution(const std::vector<size_t> &distribution);
-
 	const char *begin, *end, *hardend;
 	std::vector<char, initless_allocator<char> > data;
 	std::vector<size_t> distribution;
@@ -85,8 +83,8 @@ struct AsyncFilePack: public FilePack {
 	AsyncFilePack(size_t overlap = 1024);
 	AsyncFilePack(const std::vector<std::string> &filepaths, size_t overlap = 1024);
 
-	void iread();
-	void wait();
+	void iread(const MPIGroup &group);
+	void wait(const MPIGroup &group);
 };
 
 }

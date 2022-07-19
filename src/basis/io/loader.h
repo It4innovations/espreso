@@ -11,7 +11,7 @@ struct Loader {
 	Loader() {}
 	virtual ~Loader() {}
 
-	virtual int    open(MPIGroup &group, const std::string &file) =0;
+	virtual int    open(const MPIGroup &group, const std::string &file) =0;
 	virtual size_t size() =0;
 	virtual void   read(char *data, size_t offset, size_t size) =0;
 	virtual void   iread(char *data, size_t offset, size_t size) =0;
@@ -24,7 +24,7 @@ struct POSIXLoader: public Loader {
 	POSIXLoader(): f(nullptr) {}
 	~POSIXLoader() { if (f) fclose(f); }
 
-	int open(MPIGroup &group, const std::string &file)
+	int open(const MPIGroup &group, const std::string &file)
 	{
 		return (f = fopen(file.c_str(), "rb")) == NULL;
 	}
@@ -60,7 +60,7 @@ struct MPILoader: public Loader {
 	MPILoader(): MPIfile(nullptr), waiting{false} {}
 	~MPILoader() { if (MPIfile) MPI_File_close(&MPIfile); }
 
-	int open(MPIGroup &group, const std::string &file)
+	int open(const MPIGroup &group, const std::string &file)
 	{
 		return MPI_File_open(MPI_COMM_SELF, file.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &MPIfile);
 	}
@@ -101,7 +101,7 @@ struct MPICollectiveLoader: public Loader {
 	MPICollectiveLoader(): MPIfile(nullptr), waiting{false} {}
 	~MPICollectiveLoader() { if (MPIfile) MPI_File_close(&MPIfile); }
 
-	int open(MPIGroup &group, const std::string &file)
+	int open(const MPIGroup &group, const std::string &file)
 	{
 		return MPI_File_open(group.communicator, file.c_str(), MPI_MODE_RDONLY, MPI_INFO_NULL, &MPIfile);
 	}

@@ -44,14 +44,6 @@ size_t InputFile::size(const std::string &file)
 	return 0;
 }
 
-void InputFile::setDistribution(const std::vector<size_t> &distribution)
-{
-	this->distribution = distribution;
-	this->distribution.back() = totalSize;
-	data.reserve(this->distribution[info::mpi::rank + MPITools::subset->within.size] - this->distribution[info::mpi::rank] + overlap);
-	data.resize(this->distribution[info::mpi::rank + MPITools::subset->within.size] - this->distribution[info::mpi::rank]);
-	data.resize(this->distribution[info::mpi::rank + MPITools::subset->within.size] - this->distribution[info::mpi::rank] + overlap, 0);
-}
 
 FilePack::FilePack(size_t minchunk, size_t overlap)
 : InputFile(overlap), minchunk(minchunk), fileindex(-1)
@@ -328,14 +320,18 @@ AsyncFilePack::AsyncFilePack(const std::vector<std::string> &filepaths, size_t o
 
 }
 
-void AsyncFilePack::iread()
+void AsyncFilePack::iread(const MPIGroup &group)
 {
 	setTotalSizes();
 	while (next()) {
-		setDistribution(tarray<size_t>::distribute(info::mpi::size, totalSize, minchunk));
+		this->distribution = tarray<size_t>::distribute(group.size, totalSize, minchunk);
+		this->distribution.back() = totalSize;
+		data.reserve(this->distribution[group.rank + 1] - this->distribution[group.rank] + overlap);
+		data.resize(this->distribution[group.rank + 1] - this->distribution[group.rank]);
+		data.resize(this->distribution[group.rank + 1] - this->distribution[group.rank] + overlap, 0);
 
-		size_t chunkoffset = distribution[info::mpi::rank];
-		size_t chunksize = distribution[std::min(info::mpi::rank + MPITools::subset->within.size, info::mpi::size)] - chunkoffset;
+		size_t chunkoffset = distribution[group.rank];
+		size_t chunksize = distribution[group.rank + 1] - chunkoffset;
 		size_t chunkmax = INT32_MAX;
 		size_t chunks = chunksize / chunkmax + ((chunksize % chunkmax) ? 1 : 0);
 
@@ -346,7 +342,7 @@ void AsyncFilePack::iread()
 		}
 
 		if (chunksize) {
-			if (loader->open(*MPITools::procs, name)) {
+			if (loader->open(group, name)) {
 				eslog::error("LOADER: cannot read file '%s'\n", name.c_str());
 			}
 			if (chunks > 1) {
@@ -354,7 +350,7 @@ void AsyncFilePack::iread()
 			}
 			for (size_t c = 0; c < chunks; ++c) {
 				size_t size = std::min(chunkmax, data.size() - overlap - c * chunkmax);
-				loader->iread(data.data() + chunkoffset - distribution[info::mpi::rank], chunkoffset, size);
+				loader->iread(data.data() + chunkoffset - distribution[group.rank], chunkoffset, size);
 				chunkoffset += size;
 			}
 		}
@@ -367,7 +363,7 @@ void AsyncFilePack::iread()
 	}
 }
 
-void AsyncFilePack::wait()
+void AsyncFilePack::wait(const MPIGroup &group)
 {
 	while (next()) {
 		loader->wait(); // waitall??
@@ -378,9 +374,9 @@ void AsyncFilePack::wait()
 	while (next()) {
 		memcpy(sBuffer.data() + fileindex * overlap, data.data(), overlap);
 	}
-	Communication::receiveUpper(sBuffer, rBuffer);
+	Communication::receiveUpper(sBuffer, rBuffer, &group);
 	while (next()) {
-		if (info::mpi::rank + 1 != info::mpi::size) {
+		if (group.rank + 1 != group.size) {
 			memcpy(data.data() + data.size() - overlap, rBuffer.data() + fileindex * overlap, overlap);
 		}
 	}

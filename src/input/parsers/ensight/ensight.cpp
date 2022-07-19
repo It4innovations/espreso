@@ -99,7 +99,7 @@ void InputEnsight::load(const InputConfiguration &configuration)
 		}
 	}
 
-	data->datafiles->iread();
+	data->datafiles->iread(*MPITools::asynchronous);
 	eslog::info(" ============================================================================================= \n\n");
 	profiler::synccheckpoint("read_variables");
 	eslog::endln("ENSIGHT PARSER: READING VARIABLES STARTED");
@@ -144,7 +144,7 @@ void InputEnsight::variables(Mesh &mesh)
 	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
 	eslog::info(" == TOTAL VARIABLES SIZE %63.2f MB == \n", (double)totalSize / 1024 / 1024);
 
-	data->datafiles->wait();
+	data->datafiles->wait(*MPITools::asynchronous);
 	profiler::synccheckpoint("variables_loaded");
 	eslog::checkpointln("ENSIGHT VARIABLES: VARIABLES LOADED");
 

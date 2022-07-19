@@ -17,7 +17,8 @@ bool exists(const std::string &path);
 void remove(const std::string &path);
 std::string debugDirectory();
 std::string prepareFile(const std::string &directory, const std::string &name, int domain = -1);
-void listDirectory(const std::string &dir, std::vector<std::string> &files);
+void listDirectoryFiles(const std::string &dir, std::vector<std::string> &files);
+void listDirectorySubdirectories(const std::string &dir, std::vector<std::string> &files);
 
 void printStack();
 std::string getStack();

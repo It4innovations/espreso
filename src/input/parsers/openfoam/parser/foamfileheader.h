@@ -1,11 +1,8 @@
 
-#ifndef SRC_INPUT_PARSERS_OPENFOAM_PARSER_CONTAINERS_FOAMFILE_H_
-#define SRC_INPUT_PARSERS_OPENFOAM_PARSER_CONTAINERS_FOAMFILE_H_
+#ifndef SRC_INPUT_PARSERS_OPENFOAM_PARSER_FOAMFILEHEADER_H_
+#define SRC_INPUT_PARSERS_OPENFOAM_PARSER_FOAMFILEHEADER_H_
 
 #include "basis/io/inputfile.h"
-
-#include "mpi.h"
-
 #include <fstream>
 
 namespace espreso {
@@ -18,7 +15,10 @@ struct FoamFileHeader {
 	enum class Format { unknown, ASCII, binary }
 	format = Format::unknown;
 
-	enum class Class { unknown, faceList, faceCompactList, labelList, vectorField }
+	enum class Class {
+		unknown,
+		faceList, faceCompactList, labelList, vectorField,
+		pointVectorField, volScalarField, volVectorField, surfaceScalarField }
 	foamClass = Class::unknown;
 
 	char arch[MAX_CHAR_LENGTH] = { 0 };
@@ -30,8 +30,20 @@ struct FoamFileHeader {
 	const char* read(InputFile *file);
 	void read(std::ifstream &is);
 
+	int dimension()
+	{
+		switch (foamClass) {
+		case FoamFileHeader::Class::labelList:          return 1;
+		case FoamFileHeader::Class::vectorField:        return 3;
+		case FoamFileHeader::Class::pointVectorField:   return 3;
+		case FoamFileHeader::Class::volScalarField:     return 1;
+		case FoamFileHeader::Class::volVectorField:     return 3;
+		case FoamFileHeader::Class::surfaceScalarField: return 1;
+		default: return 0;
+		}
+	}
+
 	FoamFileHeader(): label(4), scalar(8) {}
-	FoamFileHeader(std::ifstream &is): label(4), scalar(8) { read(is); }
 
 	FoamFileHeader& operator^=(const FoamFileHeader &other) // used in MPI Reduce function
 	{
@@ -51,40 +63,6 @@ struct FoamFileHeader {
 	}
 };
 
-struct RawFoamFile {
-	struct Distribution { size_t offset, size; const char *c; };
-
-	RawFoamFile(InputFile *input): input(input) {}
-
-	std::vector<Distribution> distribution;
-	InputFile *input;
-};
-
-struct FoamFile {
-	FoamFileHeader header;
-	size_t size = 0, begin = 0, end = 0;
-
-	static void init();
-	static void synchronize(const std::vector<FoamFile*> &files);
-	static void finish();
-
-	FoamFile& operator^=(const FoamFile &other) // used in MPI Reduce function
-	{
-		header ^= other.header;
-		size = std::max(size, other.size);
-		begin = std::max(begin, other.begin);
-		end = std::max(end, other.end);
-		return *this;
-	}
-
-protected:
-	void scanFile(RawFoamFile &file);
-
-private:
-	static MPI_Datatype oftype;
-	static MPI_Op ofop;
-};
-
 }
 
-#endif /* SRC_INPUT_PARSERS_OPENFOAM_PARSER_CONTAINERS_FOAMFILE_H_ */
+#endif /* SRC_INPUT_PARSERS_OPENFOAM_PARSER_FOAMFILEHEADER_H_ */

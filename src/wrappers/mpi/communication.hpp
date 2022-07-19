@@ -385,7 +385,7 @@ bool Communication::receiveLowerUnknownSize(const std::vector<std::vector<Ttype>
 }
 
 template <typename Ttype, typename Talloc>
-bool Communication::receiveUpper(std::vector<Ttype, Talloc> &sBuffer, std::vector<Ttype, Talloc> &rBuffer, MPIGroup *group)
+bool Communication::receiveUpper(std::vector<Ttype, Talloc> &sBuffer, std::vector<Ttype, Talloc> &rBuffer, const MPIGroup *group)
 {
 	profiler::syncstart("comm_receive_upper");
 	profiler::syncparam("size", sBuffer.size());
@@ -933,12 +933,10 @@ std::vector<Ttype> Communication::getDistribution(Ttype size, MPIGroup *group)
 	MPIType type(MPITools::getType<Ttype>());
 	std::vector<Ttype> result(group->size + 1);
 	Ttype esize = size;
-	Communication::exscan(esize, group);
+	result.back() = Communication::exscan(esize, group);
 
 	profiler::synccheckpoint("exscan");
 	MPI_Allgather(&esize, type.mpisize, type.mpitype, result.data(), type.mpisize, type.mpitype, group->communicator);
-	result.back() = esize + size;
-	MPI_Bcast(&result.back(), type.mpisize, type.mpitype, group->size - 1, group->communicator);
 	profiler::synccheckpoint("allgather");
 	profiler::syncend("comm_get_distribution");
 	return result;

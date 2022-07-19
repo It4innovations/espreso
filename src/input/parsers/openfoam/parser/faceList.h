@@ -2,16 +2,16 @@
 #ifndef SRC_INPUT_PARSERS_OPENFOAM_PARSER_CONTAINERS_FACELIST_H_
 #define SRC_INPUT_PARSERS_OPENFOAM_PARSER_CONTAINERS_FACELIST_H_
 
-#include "foamFile.h"
+#include "parallelFoamFile.h"
 #include "mesh/element.h"
 
 #include <cstddef>
 
 namespace espreso {
 
-struct OpenFOAMFaceList: FoamFile, RawFoamFile {
+struct OpenFOAMFaceList: ParallelFoamFile, RawParallelFoamFile {
 
-	OpenFOAMFaceList(InputFile *input): RawFoamFile(input) {}
+	OpenFOAMFaceList(InputFile *input): RawParallelFoamFile(input) {}
 
 	void scan()
 	{

@@ -1,5 +1,5 @@
 
-#include "foamFile.h"
+#include "parallelFoamFile.h"
 #include "tokenizer.h"
 
 #include "basis/containers/tarray.hpp"
@@ -9,38 +9,38 @@
 
 using namespace espreso;
 
-MPI_Datatype FoamFile::oftype;
-MPI_Op FoamFile::ofop;
+MPI_Datatype ParallelFoamFile::oftype;
+MPI_Op ParallelFoamFile::ofop;
 
 static void _ofreduce(void *in, void *out, int *len, MPI_Datatype *datatype)
 {
 	for (int i = 0; i < *len; i++) {
-		*(reinterpret_cast<FoamFile*>(out) + i) ^= *(reinterpret_cast<FoamFile*>(in) + i);
+		*(reinterpret_cast<ParallelFoamFile*>(out) + i) ^= *(reinterpret_cast<ParallelFoamFile*>(in) + i);
 	}
 }
 
-void FoamFile::init()
+void ParallelFoamFile::init()
 {
-	MPI_Type_contiguous(sizeof(FoamFile), MPI_BYTE, &oftype);
+	MPI_Type_contiguous(sizeof(ParallelFoamFile), MPI_BYTE, &oftype);
 	MPI_Type_commit(&oftype);
 
 	MPI_Op_create(_ofreduce, 1, &ofop);
 }
 
-void FoamFile::synchronize(const std::vector<FoamFile*> &files)
+void ParallelFoamFile::synchronize(const std::vector<ParallelFoamFile*> &files)
 {
-	std::vector<FoamFile> ff(files.size());
+	std::vector<ParallelFoamFile> ff(files.size());
 	for (size_t i = 0; i < files.size(); ++i) {
 		ff[i] = *files[i];
 	}
-	Communication::allReduce(ff.data(), NULL, ff.size(), FoamFile::oftype, FoamFile::ofop);
+	Communication::allReduce(ff.data(), NULL, ff.size(), ParallelFoamFile::oftype, ParallelFoamFile::ofop);
 
 	for (size_t i = 0; i < files.size(); ++i) {
 		*files[i] = ff[i];
 	}
 }
 
-void FoamFile::finish()
+void ParallelFoamFile::finish()
 {
 	MPI_Op_free(&ofop);
 	MPI_Type_free(&oftype);
@@ -90,35 +90,36 @@ void parse(FoamFileHeader &header, const oftoken::dictionary &dict)
 		if (value("faceCompactList")) { header.foamClass = FoamFileHeader::Class::faceCompactList; }
 		if (value("labelList")) { header.foamClass = FoamFileHeader::Class::labelList; }
 		if (value("vectorField")) { header.foamClass = FoamFileHeader::Class::vectorField; }
+		if (value("pointVectorField")) { header.foamClass = FoamFileHeader::Class::pointVectorField; }
+		if (value("volScalarField")) { header.foamClass = FoamFileHeader::Class::volScalarField; }
+		if (value("volVectorField")) { header.foamClass = FoamFileHeader::Class::volVectorField; }
+		if (value("surfaceScalarField")) { header.foamClass = FoamFileHeader::Class::surfaceScalarField; }
 	}
 	if (keyword("location")) {
-		memcpy(header.location, dict.value.begin + 1, std::min(dict.value.end - dict.value.begin - 3, MAX_CHAR_LENGTH));
+		memcpy(header.location, dict.value.begin + 1, std::min(dict.value.end - dict.value.begin - 2, MAX_CHAR_LENGTH));
 	}
 	if (keyword("object")) {
-		memcpy(header.object, dict.value.begin, std::min(dict.value.end - dict.value.begin - 1, MAX_CHAR_LENGTH));
+		memcpy(header.object, dict.value.begin, std::min(dict.value.end - dict.value.begin, MAX_CHAR_LENGTH));
 	}
 }
 
 const char* FoamFileHeader::read(InputFile *file)
 {
-	if (file->distribution[info::mpi::rank] == 0 && file->distribution[info::mpi::rank + 1] != 0) {
-		const char *c = oftoken::toFoamFile(file->begin);
-		while (*c != '}') {
-			oftoken::dictionary dict = oftoken::dict(c);
-			parse(*this, dict);
-			c = dict.value.end;
-			while (*c++ != '\n');
-		}
-
-		if (format == Format::unknown) {
-			eslog::internalFailure("unknown format of Open FOAM file (%s/%s).\n", location, object);
-		}
-		if (foamClass == Class::unknown) {
-			eslog::internalFailure("unknown class of Open FOAM file (%s/%s).\n", location, object);
-		}
-		return c;
+	const char *c = oftoken::toFoamFile(file->begin);
+	while (*c != '}') {
+		oftoken::dictionary dict = oftoken::dict(c);
+		parse(*this, dict);
+		c = dict.value.end;
+		while (*c++ != '\n');
 	}
-	return file->begin;
+
+	if (format == Format::unknown) {
+		eslog::internalFailure("unknown format of Open FOAM file (%s/%s).\n", location, object);
+	}
+	if (foamClass == Class::unknown) {
+		eslog::internalFailure("unknown class of Open FOAM file (%s/%s).\n", location, object);
+	}
+	return c;
 }
 
 void FoamFileHeader::read(std::ifstream &is)
@@ -141,12 +142,13 @@ void FoamFileHeader::read(std::ifstream &is)
 	}
 }
 
-void FoamFile::scanFile(RawFoamFile &file)
+void ParallelFoamFile::scanFile(RawParallelFoamFile &file)
 {
 	DistributedScanner::align(*file.input, "\n");
 
-	const char *c = header.read(file.input);
+	const char *c = file.input->begin;
 	if (file.input->distribution[info::mpi::rank] == 0 && file.input->distribution[info::mpi::rank + 1] != 0) {
+		c = header.read(file.input);
 		while (*++c != '(');
 		begin = c - file.input->begin;
 		while (*c++ != '\n');
@@ -166,7 +168,7 @@ void FoamFile::scanFile(RawFoamFile &file)
 		const char* cend = file.input->begin + coffset + tdistribution[t + 1];
 		if (t && *(tc - 1) != '\n') { while (tc < cend && *tc++ != '\n'); } // start at the new line
 
-		RawFoamFile::Distribution dist{0, 0, tc};
+		RawParallelFoamFile::Distribution dist{0, 0, tc};
 		while (tc < cend) {
 			if (*tc == ')') { end = tc - file.input->begin; break; }
 			while (tc < cend && *tc++ != '\n');

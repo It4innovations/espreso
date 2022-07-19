@@ -2,7 +2,7 @@
 #ifndef SRC_INPUT_PARSERS_OPENFOAM_PARSER_CONTAINERS_VECTORFIELD_H_
 #define SRC_INPUT_PARSERS_OPENFOAM_PARSER_CONTAINERS_VECTORFIELD_H_
 
-#include "foamFile.h"
+#include "parallelFoamFile.h"
 #include "input/input.h"
 
 #include <cstddef>
@@ -10,9 +10,9 @@
 
 namespace espreso {
 
-struct OpenFOAMVectorField: RawFoamFile, FoamFile {
+struct OpenFOAMVectorField: RawParallelFoamFile, ParallelFoamFile {
 
-	OpenFOAMVectorField(InputFile *input): RawFoamFile(input) {}
+	OpenFOAMVectorField(InputFile *input): RawParallelFoamFile(input) {}
 
 	void scan()
 	{
@@ -22,6 +22,7 @@ struct OpenFOAMVectorField: RawFoamFile, FoamFile {
 	void parse(ivector<_Point<esfloat> > &coordinates);
 
 	static esint load(const std::string &file, ivector<_Point<esfloat> > &coordinates);
+	static void load(InputFile *input, std::vector<esfloat> &data);
 };
 
 }

@@ -35,7 +35,7 @@ void VTKLegacyLoader::load()
 		std::vector<char> serialized;
 		std::string dir = utils::getFileDirectory(_configuration.path);
 		if (info::mpi::rank == 0) {
-			utils::listDirectory(dir, allfiles);
+			utils::listDirectoryFiles(dir, allfiles);
 			serialized.push_back(0);
 			for (auto file = allfiles.begin(); file != allfiles.end(); ++file) {
 				++serialized[0];
