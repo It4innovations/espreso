@@ -30,7 +30,7 @@ bool edge_ray_intersect(Point p, Point v0, Point v1);
 double face_solid_angle_contribution(Point p, Point v0, Point v1, Point v2);
 double solid_angle(Point a, Point b, Point c);
 
-void store(const esint &voxels, const std::vector<int> &grid)
+void store(Point voxels, const std::vector<int> &grid)
 {
 	std::ofstream casefile("volume.case");
 	casefile
@@ -61,15 +61,15 @@ void store(const esint &voxels, const std::vector<int> &grid)
 	<< "         1\n"
 	<< "2D uniform-elements (description line for part 1)\n"
 	<< "block uniform\n";
-	geo.width(10); geo << voxels;
-	geo.width(10); geo << voxels;
+	geo.width(10); geo << voxels.x;
+	geo.width(10); geo << voxels.y;
 	geo.width(10); geo << 1;
 	geo << "\n";
 
 	geo.precision(5);
 	geo.setf(std::ios::scientific);
 	geo.setf(std::ios::showpos);
-	geo << 0. << "\n" << 0. << "\n" << 0. << "\n" << 1. / voxels << "\n" << -1. / voxels << "\n" << 0. << "\n";
+	geo << 0. << "\n" << 0. << "\n" << 0. << "\n" << 1. / voxels.x << "\n" << -1. / voxels.y << "\n" << 0. << "\n";
 
 	std::stringstream ss; ss << std::setw(4) << std::setfill('0') << 0;
 	std::ofstream volume("VOLUME." + ss.str());
@@ -84,14 +84,14 @@ void store(const esint &voxels, const std::vector<int> &grid)
 	volume.setf(std::ios::scientific);
 	volume.setf(std::ios::showpos);
 
-	for (esint r = 0; r < voxels; ++r) {
-		for (esint c = 0; c < voxels; ++c) {
-			volume << grid[r * voxels + c] << "\n";
+	for (esint r = 0; r < voxels.y; ++r) {
+		for (esint c = 0; c < voxels.x; ++c) {
+			volume << grid[r * voxels.x + c] << "\n";
 		}
 	}
 }
 
-void store3D(const esint &voxels, const std::vector<int> &grid, Point origin, Point grid_offset)
+void store3D(Point voxels, const std::vector<int> &grid, Point origin, double grid_offset)
 {
 	std::ofstream casefile("volume.case");
 	casefile
@@ -122,15 +122,15 @@ void store3D(const esint &voxels, const std::vector<int> &grid, Point origin, Po
 			<< "         1\n"
 			<< "3D uniform-elements (description line for part 1)\n"
 			<< "block uniform\n";
-	geo.width(10); geo << voxels;
-	geo.width(10); geo << voxels;
-	geo.width(10); geo << voxels;
+	geo.width(10); geo << voxels.x;
+	geo.width(10); geo << voxels.y;
+	geo.width(10); geo << voxels.z;
 	geo << "\n";
 
 	geo.precision(5);
 	geo.setf(std::ios::scientific);
 	geo.setf(std::ios::showpos);
-	geo << origin.x << "\n" << origin.y << "\n" << origin.z << "\n" << grid_offset.x << "\n" << -grid_offset.y << "\n" << grid_offset.z << "\n";
+	geo << origin.x << "\n" << origin.y << "\n" << origin.z << "\n" << grid_offset << "\n" << -grid_offset << "\n" << grid_offset << "\n";
 
 	std::stringstream ss; ss << std::setw(4) << std::setfill('0') << 0;
 	std::ofstream volume("VOLUME." + ss.str());
@@ -145,10 +145,10 @@ void store3D(const esint &voxels, const std::vector<int> &grid, Point origin, Po
 	volume.setf(std::ios::scientific);
 	volume.setf(std::ios::showpos);
 
-	for (esint t = 0; t < voxels; ++t) {
-		for (esint r = 0; r < voxels; ++r) {
-			for (esint c = 0; c < voxels; ++c) {
-				volume << grid[t * voxels * voxels + r * voxels + c] << "\n";
+	for (esint t = 0; t < voxels.z; ++t) {
+		for (esint r = 0; r < voxels.y; ++r) {
+			for (esint c = 0; c < voxels.x; ++c) {
+				volume << grid[t * voxels.y * voxels.x + r * voxels.x + c] << "\n";
 			}
 		}
 	}
@@ -157,20 +157,6 @@ void store3D(const esint &voxels, const std::vector<int> &grid, Point origin, Po
 void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 {
 	profiler::syncstart("compute_volume_indices");
-
-	// uniform grid
-	esint grid_size = info::ecf->output.volume_density;
-	int voxels = grid_size - 1;
-	int dim = info::mesh->dimension;
-	std::vector<int> grid;
-	int grid_init_value = -1;
-	if(dim == 3){
-		grid.resize(grid_size * grid_size * grid_size);
-		fill(grid.begin(), grid.end(), grid_init_value);
-	} else { // dim == 2
-		grid.resize(grid_size * grid_size);
-		fill(grid.begin(), grid.end(), grid_init_value);
-	}
 
 	// find BB of the mesh
 	const Point &p_min_max = nodes->coordinates->datatarray()[*(elements->nodes->cbegin()->begin())];
@@ -200,23 +186,24 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	printf("global mesh max: %f %f %f\n", mesh_max_global.x, mesh_max_global.y, mesh_max_global.z);
 
 	// grid setting
+	int grid_size_x = info::ecf->output.volume_density;
+	double grid_offset = (mesh_max_global.x - mesh_min_global.x)/(double)(grid_size_x - 1);	
+	printf("offset: %f\n", grid_offset);
+	Point grid_size = Point(grid_size_x, 
+						(int)((mesh_max_global.y - mesh_min_global.y)/grid_offset + 2.0),
+						(int)((mesh_max_global.z - mesh_min_global.z)/grid_offset + 2.0));
+	int dim = info::mesh->dimension;
+	std::vector<int> grid;
+	int grid_init_value = -1;
+	if(dim == 3){
+		grid.resize(grid_size.x * grid_size.y * grid_size.z);
+		fill(grid.begin(), grid.end(), grid_init_value);
+	} else { // dim == 2
+		grid.resize(grid_size.x * grid_size.y);
+		fill(grid.begin(), grid.end(), grid_init_value);
+	}
+
 	Point grid_start = Point(mesh_min_global.x, mesh_max_global.y, mesh_min_global.z);
-	Point grid_end = Point(mesh_max_global.x, mesh_min_global.y, mesh_max_global.z);
-	Point grid_offset = Point((grid_end.x - grid_start.x)/voxels,
-							(grid_start.y - grid_end.y)/voxels, 
-							(grid_end.z - grid_start.z)/voxels);
-	printf("offset: %f %f %f\n", grid_offset.x, grid_offset.y, grid_offset.z);
-
-	// debug
-	// FILE * pFile;
-   	// pFile = fopen ("volume_debug.txt","w");
-	// fprintf(pFile, "x;y;z;x_inx;y_inx;z_inx;element_inx\n");
-
-	// FILE * pFile_element;
-   	// pFile_element = fopen ("./debug_files/point_element.txt","w");
-
-	//FILE * pFile_hist;
-   	//pFile_hist = fopen ("./debug_files/angle_results.txt","w");
 
 	std::vector<std::vector<esint> > vdistribution(info::env::OMP_NUM_THREADS);
 	std::vector<std::vector<_Point<int> > > vdata(info::env::OMP_NUM_THREADS);
@@ -239,25 +226,25 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 			}
 
 			// grid part in BB
-			int min_x_inx = (el_min.x - grid_start.x)/grid_offset.x;
-			int min_y_inx = (grid_start.y - el_max.y)/grid_offset.y;
-			int min_z_inx = (el_min.z - grid_start.z)/grid_offset.z;
-			int max_x_inx = (el_max.x - grid_start.x)/grid_offset.x;
-			int max_y_inx = (grid_start.y - el_min.y)/grid_offset.y;
-			int max_z_inx = (el_max.z - grid_start.z)/grid_offset.z;
+			int min_x_inx = (el_min.x - grid_start.x)/grid_offset;
+			int min_y_inx = (grid_start.y - el_max.y)/grid_offset;
+			int min_z_inx = (el_min.z - grid_start.z)/grid_offset;
+			int max_x_inx = (el_max.x - grid_start.x)/grid_offset;
+			int max_y_inx = (grid_start.y - el_min.y)/grid_offset;
+			int max_z_inx = (el_max.z - grid_start.z)/grid_offset;
 
 			// loop through grid part points
 			for(int x = min_x_inx; x <= max_x_inx; x++){
 				for(int y = min_y_inx; y <= max_y_inx; y++){
 					for(int z = min_z_inx; z <= max_z_inx; z++){
 						// skip point, which is already assigned to some element
-						int grid_inx_1d = z*grid_size*grid_size + y*grid_size + x;
+						int grid_inx_1d = z*grid_size.y*grid_size.x + y*grid_size.x + x;
 						if(grid[grid_inx_1d] != -1){
 							continue;
 						}
 
 						// test point in element
-						Point p = Point(grid_start.x + x*grid_offset.x, grid_start.y - y*grid_offset.y, grid_start.z + z*grid_offset.z);
+						Point p = Point(grid_start.x + x*grid_offset, grid_start.y - y*grid_offset, grid_start.z + z*grid_offset);
 
 						if(dim == 3){
 							// loop through triangles
@@ -310,7 +297,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 
 							// save polygon index if point is in polygon
 							if(cn%2){ // cn is odd
-								grid[z*grid_size*grid_size + y*grid_size + x] = 0; 
+								grid[z*grid_size.y*grid_size.x + y*grid_size.x + x] = 0; 
 							}
 						}
 					}
@@ -332,21 +319,6 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		data.insert(data.end(), vdata[t].begin(), vdata[t].end());
 	}
 	printf("here");
-
-
-	//debug
-	// for(int i = 0; i < grid.size(); i++){
-	// 	int z = i/(grid_size*grid_size);
-	// 	int y = (i-z*grid_size*grid_size)/grid_size;
-	// 	int x = i - z*grid_size*grid_size - y*grid_size;	
-
-	// 	fprintf(pFile, "%f;%f;%f;%d;%d;%d;%d\n", grid_start.x + x*grid_offset.x, grid_start.y - y*grid_offset.y, grid_start.z + z*grid_offset.z, x, y, z, grid[i]); // fprintf(pFile, "x;y;z;x_inx;y_inx;z_inx;element_inx;face_vertex;total_angle\n");
-	// }	
-	// fclose(pFile);
-	// fclose(pFile_element);
-	// fclose(pFile_hist);
-
-	//grid[81*grid_size*grid_size + 87*grid_size + 3] = 0; // x==3 && y==87 && z==81
 
 	if(dim == 3){
 		store3D(grid_size, grid, grid_start, grid_offset);
