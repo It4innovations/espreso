@@ -29,8 +29,8 @@ using namespace espreso;
 void Input::clip()
 {
 	if (info::ecf->input.clipping_box.apply) {
-		std::vector<esint> nids, rdist = { 0 };
-		std::vector<int> rdata;
+		std::set<esint> removed;
+		std::vector<esint> nids;
 		std::vector<_Point<esfloat> > coordinates;
 		std::vector<esint> nstatus(_meshData.coordinates.size(), -1);
 		const ClippingBox &box = info::ecf->input.clipping_box;
