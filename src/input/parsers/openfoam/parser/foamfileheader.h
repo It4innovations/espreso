@@ -18,7 +18,7 @@ struct FoamFileHeader {
 	enum class Class {
 		unknown,
 		faceList, faceCompactList, labelList, vectorField,
-		pointVectorField, volScalarField, volVectorField, surfaceScalarField }
+		pointScalarField, pointVectorField, volScalarField, volVectorField, surfaceScalarField }
 	foamClass = Class::unknown;
 
 	char arch[MAX_CHAR_LENGTH] = { 0 };
@@ -35,6 +35,7 @@ struct FoamFileHeader {
 		switch (foamClass) {
 		case FoamFileHeader::Class::labelList:          return 1;
 		case FoamFileHeader::Class::vectorField:        return 3;
+		case FoamFileHeader::Class::pointScalarField:   return 1;
 		case FoamFileHeader::Class::pointVectorField:   return 3;
 		case FoamFileHeader::Class::volScalarField:     return 1;
 		case FoamFileHeader::Class::volVectorField:     return 3;

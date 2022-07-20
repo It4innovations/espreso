@@ -281,9 +281,9 @@ void InputOpenFoamParallel::variables(Mesh &mesh)
 			}
 		}
 		for (size_t v = 0; v < evariables.size(); ++v) {
-			for (esint e = nsize; e < nsize + esize; ++e) {
+			for (esint e = 0; e < esize; ++e) {
 				for (int d = 0; d < vheader[evariables[v]].dimension(); ++d) {
-					*c++ = data[v + nvariables.size()][vheader[evariables[v]].dimension() * (rBuffer[i + 5 + e] - edistribution[info::mpi::rank]) + d];
+					*c++ = data[v + nvariables.size()][vheader[evariables[v]].dimension() * (rBuffer[i + 5 + e + nsize] - edistribution[info::mpi::rank]) + d];
 				}
 			}
 		}
@@ -356,11 +356,25 @@ void InputOpenFoamParallel::ivariables(const InputConfiguration &configuration)
 		std::vector<std::string> subdirs;
 		utils::listDirectorySubdirectories(configuration.path + "/processor" + std::to_string(d), subdirs);
 
-		size_t max = 0;
-		for (size_t s = 1; s < subdirs.size(); ++s) {
-			if (std::strtof(subdirs[max].c_str(), nullptr) < std::strtof(subdirs[s].c_str(), nullptr)) {
-				max = s;
+		int max = -1;
+		float maxtime = 0;
+		for (size_t s = 0; s < subdirs.size(); ++s) {
+			char *strend;
+			float time = std::strtof(subdirs[s].c_str(), &strend);
+			if (max == -1) {
+				if (subdirs[s].c_str() != strend) {
+					max = s;
+					maxtime = time;
+				}
+			} else {
+				if (maxtime < time) {
+					max = s;
+					maxtime = time;
+				}
 			}
+		}
+		if (max == -1) {
+			break;
 		}
 		subdir = subdirs[max];
 
@@ -375,6 +389,7 @@ void InputOpenFoamParallel::ivariables(const InputConfiguration &configuration)
 			vheader[i].read(is);
 			std::string name;
 			switch (vheader[i].foamClass) {
+			case FoamFileHeader::Class::pointScalarField:   nvariables.push_back(i); name = "pointScalarField"; break;
 			case FoamFileHeader::Class::pointVectorField:   nvariables.push_back(i); name = "pointVectorField"; break;
 			case FoamFileHeader::Class::volScalarField:     evariables.push_back(i); name = "volScalarField"; break;
 			case FoamFileHeader::Class::volVectorField:     evariables.push_back(i); name = "volVectorField"; break;
@@ -385,11 +400,12 @@ void InputOpenFoamParallel::ivariables(const InputConfiguration &configuration)
 		}
 	}
 
-	for (int d = info::mpi::rank, i = 0; d < domains; d += info::mpi::size, ++i) {
-		for (size_t i = 0; i < files.size(); ++i) {
-			if (!skip[i]) {
-				variablePack.add(configuration.path + "/processor" + std::to_string(d) + "/" + subdir + "/" + files[i]);
-			}
+	for (int d = info::mpi::rank; d < domains; d += info::mpi::size) {
+		for (size_t v = 0; v < nvariables.size(); ++v) {
+			variablePack.add(configuration.path + "/processor" + std::to_string(d) + "/" + subdir + "/" + files[nvariables[v]]);
+		}
+		for (size_t v = 0; v < evariables.size(); ++v) {
+			variablePack.add(configuration.path + "/processor" + std::to_string(d) + "/" + subdir + "/" + files[evariables[v]]);
 		}
 	}
 	variablePack.iread(MPITools::singleton->across);

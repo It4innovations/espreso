@@ -90,6 +90,7 @@ void parse(FoamFileHeader &header, const oftoken::dictionary &dict)
 		if (value("faceCompactList")) { header.foamClass = FoamFileHeader::Class::faceCompactList; }
 		if (value("labelList")) { header.foamClass = FoamFileHeader::Class::labelList; }
 		if (value("vectorField")) { header.foamClass = FoamFileHeader::Class::vectorField; }
+		if (value("pointScalarField")) { header.foamClass = FoamFileHeader::Class::pointScalarField; }
 		if (value("pointVectorField")) { header.foamClass = FoamFileHeader::Class::pointVectorField; }
 		if (value("volScalarField")) { header.foamClass = FoamFileHeader::Class::volScalarField; }
 		if (value("volVectorField")) { header.foamClass = FoamFileHeader::Class::volVectorField; }
