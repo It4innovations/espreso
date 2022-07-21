@@ -57,6 +57,380 @@ static inline float face_solid_angle_contribution(const _Point<float> &p, const 
 	return dot > 0 ? angle : -angle;
 }
 
+static inline int is_out(const _Point<float> &p, const _Point<float> &v0, const _Point<float> &v1, const _Point<float> &v2){
+	_Point<float> u = v1 - v0;
+	_Point<float> v = v2 - v0;
+	_Point<float> n = _Point<float>::cross(u, v);
+
+	_Point<float> p_vec = p - v0;
+	float dot = n * p_vec;
+
+	return dot < 0 ? 1 : 0;
+}
+
+void computeVolumeIndicesOMOpt(ElementStore *elements, const NodeStore *nodes)
+{
+	profiler::syncstart("compute_volume_indices");
+
+	double start = eslog::time();
+
+	Point size(nodes->uniqInfo.max - nodes->uniqInfo.min), origin(nodes->uniqInfo.min);
+	double step = (1.001 * std::max(std::max(size.x, size.y), size.z)) / info::ecf->output.volume_density;
+	_Point<int> grid(std::floor(size.x / step) + 1, std::floor(size.y / step) + 1, std::floor(size.z / step) + 1);
+	eslog::info(" == VOLUMETRIC GRID %55d x %5d x %5d == \n", grid.x, grid.y, grid.z);
+
+	// set voxels to grid centers
+	origin -= (Point(grid) * step - size) / 2;
+	size = Point(grid) * step;
+
+//	printf("[%f %f %f] -> [%f %f %f]\n", origin.x, origin.y, origin.z, origin.x + size.x, origin.y + size.y, origin.z + size.z);
+
+	std::vector<std::vector<esint> > vdistribution(info::env::OMP_NUM_THREADS);
+	std::vector<std::vector<_Point<int> > > vdata(info::env::OMP_NUM_THREADS);
+	vdistribution[0].push_back(0);
+
+	Point *coordinates = nodes->coordinates->datatarray().data();
+
+	printf("init: %e\n", eslog::time() - start);
+	start = eslog::time();
+
+	double box = 0, angle = 0;
+	size_t count = 0, voxels = 0;
+
+	if(info::mesh->dimension == 3) {
+		#pragma omp parallel for
+		for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
+			auto epointers = elements->epointers->datatarray().begin(t);
+			size_t eindex = 1, printindex = 0;
+			for (auto e = elements->nodes->cbegin(t); e != elements->nodes->cend(t); ++e, ++epointers, ++eindex) {
+				if (eindex < 10) printf("voxels: %lu\n", voxels);
+				double ss = eslog::time();
+				Point coomin = coordinates[e->front()], coomax = coomin;
+				for (auto n = e->begin() + 1; n != e->end(); ++n) {
+					coordinates[*n].minmax(coomin, coomax);
+				}
+				_Point<float> pmin = (coomin - origin) / size, pmax = (coomax - origin) / size;
+				_Point<int> bmin(std::floor(pmin.x * grid.x), std::floor(pmin.y * grid.y), std::floor(pmin.z * grid.z));
+				_Point<int> bmax(std::ceil(pmax.x * grid.x), std::ceil(pmax.y * grid.y), std::ceil(pmax.z * grid.z));
+				box += eslog::time() - ss;
+				ss = eslog::time();
+
+				const char maskx = 0b00001111, masky = 0b00110011, maskz = 0b01010101, maskfull = 0b11111111, maskempty = ~maskfull;
+				std::function<void(_Point<int>, _Point<int>, char, char)> recurse = [&] (_Point<int> block, _Point<int> size, char mask, char wasin) {
+					const _Point<float> box[2] {
+						origin + _Point<float>(block) * step + .5 * step,
+						origin + _Point<float>(block + size) * step - .5 * step
+					};
+					const _Point<float> p[8] = {
+						{ box[0].x, box[0].y, box[0].z },
+						{ box[0].x, box[0].y, box[1].z },
+						{ box[0].x, box[1].y, box[0].z },
+						{ box[0].x, box[1].y, box[1].z },
+						{ box[1].x, box[0].y, box[0].z },
+						{ box[1].x, box[0].y, box[1].z },
+						{ box[1].x, box[1].y, box[0].z },
+						{ box[1].x, box[1].y, box[1].z }
+					};
+
+					if (eindex == printindex) printf("coarse [%d %d %d] :: [%d %d %d]\n", block.x, block.y, block.z, size.x, size.y, size.z);
+
+					char isin = wasin;
+					for (auto triangle = (*epointers)->triangles->begin(); triangle != (*epointers)->triangles->end(); ++triangle) {
+						const _Point<float> v0 = coordinates[e->at(triangle->at(0))], v1 = coordinates[e->at(triangle->at(1))], v2 = coordinates[e->at(triangle->at(2))];
+						for (int i = 0; i < 8; ++i) {
+							if ((mask & (1 << i)) && (isin & (1 << i))) {
+								++count;
+								isin &= ~(is_out(p[i], v0, v1, v2) << i);
+							}
+						}
+					}
+					if (eindex == printindex) {
+						for (int i = 0; i < 8; ++i) {
+							if (isin & (1 << i)) {
+								printf("in [%d] %d %d %d\n", i, block.x + size.x * ((i >> 2) & 1), block.y + size.y * ((i >> 1) & 1), block.z + size.z * (i & 1));
+							} else {
+								printf("out[%d] %d %d %d\n", i, block.x + size.x * ((i >> 2) & 1), block.y + size.y * ((i >> 1) & 1), block.z + size.z * (i & 1));
+							}
+						}
+					}
+
+					auto push = [&] (int index, char mask) {
+						size[index] >>= 1;
+						if (size[index] == 1) {
+							block[index] += ((isin & 1) ^ 1) * size[index];
+							vdata[t].push_back(-block - 1);
+							vdata[t].push_back(block + size);
+							voxels += size.x * size.y * size.z;
+							if (eindex == printindex) printf("push [%d %d %d] -> [%d %d %d]\n", block.x, block.y, block.z, size.x, size.y, size.z);
+						} else {
+							recurse(block, size, mask, isin);
+							block[index] += size[index];
+							recurse(block, size, ~mask, isin);
+						}
+					};
+					auto divide = [&] (int index, char mask) {
+						size[index] >>= 1;
+						if (size[index] == 1) { // we are surely in the deepest level
+							for (int i = 0; i < 8; ++i) {
+								if (isin & (1 << i)) {
+									vdata[t].push_back(_Point<int>(block.x + ((i >> 2) & 1), block.y + ((i >> 1) & 1), block.z + (i & 1)));
+									if (eindex == printindex) printf("push [%d %d %d]\n", vdata[t].back().x, vdata[t].back().y, vdata[t].back().z);
+									++voxels;
+								}
+							}
+						} else {
+							recurse(block, size, mask, isin);
+							block[index] += size[index];
+							recurse(block, size, ~mask, isin);
+						}
+					};
+
+					switch (isin) {
+					case maskfull:
+						if (eindex == printindex) printf("push [%d %d %d] -> [%d %d %d]\n", block.x, block.y, block.z, size.x, size.y, size.z);
+						vdata[t].push_back(-block - 1);
+						vdata[t].push_back(block + size);
+						voxels += size.x * size.y * size.z;
+						break;
+					case maskz:
+					case ~maskz:
+						push(2, maskz); break;
+					case masky:
+					case ~masky:
+						push(1, masky); break;
+					case maskx:
+					case ~maskx:
+						push(0, maskx); break;
+					case maskempty:
+						if (size.x == 2 && size.y == 2 && size.z == 2) {
+							break;
+						}
+						/* no break */
+					default:
+						if (size.x >= size.y && size.x >= size.z) { divide(0, maskx); return; }
+						if (size.y >= size.x && size.y >= size.z) { divide(1, masky); return; }
+						if (size.z >= size.y && size.z >= size.x) { divide(2, maskz); return; }
+					}
+				};
+
+				_Point<int> cstep(bmax - bmin); // minimal coarse step is 2
+				cstep.x = 1 << std::max((int)std::log2(cstep.x) - 1, 1);
+				cstep.y = 1 << std::max((int)std::log2(cstep.y) - 1, 1);
+				cstep.z = 1 << std::max((int)std::log2(cstep.z) - 1, 1);
+				_Point<int> cmin(cstep.x * (bmin.x / cstep.x), cstep.y * (bmin.y / cstep.y), cstep.z * (bmin.z / cstep.z));
+				_Point<int> cmax(cstep.x * (bmax.x / cstep.x + (bmax.x % cstep.x ? 1 : 0)), cstep.y * (bmax.y / cstep.y + (bmax.y % cstep.y ? 1 : 0)), cstep.z * (bmax.z / cstep.z + (bmax.z % cstep.z ? 1 : 0)));
+				_Point<int> block = cmin;
+
+				if (eindex == printindex) printf("minmax [%d %d %d] :: [%d %d %d]\n", cmin.x, cmin.y, cmin.z, cmax.x, cmax.y, cmax.z);
+				for (block.x = cmin.x ; block.x < cmax.x; block.x += cstep.x) {
+					for (block.y = cmin.y ; block.y < cmax.y; block.y += cstep.y) {
+						for (block.z = cmin.z; block.z < cmax.z; block.z += cstep.z) {
+							recurse(block, cstep, 0xff, 0xff);
+						}
+					}
+				}
+				angle += eslog::time() - ss;
+				vdistribution[t].push_back(vdata[t].size());
+			}
+		}
+	} else {
+		// TODO
+	}
+	printf("OMOpt process: %e, box: %e, angle: %e, count: %lu, apv: %e\n", eslog::time() - start, box, angle, count, angle / count);
+	start = eslog::time();
+
+	utils::threadDistributionToFullDistribution(vdistribution);
+	printf("points inside: %lu\n", voxels);
+
+//	elements->volumeGrid = grid;
+//	elements->volumeOrigin = origin;
+//	elements->volumeSize = size;
+//	elements->volumeIndices = new serializededata<esint, _Point<int> >(vdistribution, vdata);
+
+	printf("finish: %e\n", eslog::time() - start);
+
+	profiler::syncend("compute_volume_indices");
+	eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
+}
+
+void computeVolumeIndicesOMOpt2(ElementStore *elements, const NodeStore *nodes)
+{
+	profiler::syncstart("compute_volume_indices");
+
+	Point size(nodes->uniqInfo.max - nodes->uniqInfo.min), origin(nodes->uniqInfo.min);
+	double step = (1.0001 * std::max(std::max(size.x, size.y), size.z)) / info::ecf->output.volume_density;
+	_Point<int> grid(std::floor(size.x / step) + 1, std::floor(size.y / step) + 1, std::floor(size.z / step) + 1);
+	eslog::info(" == VOLUMETRIC GRID %55d x %5d x %5d == \n", grid.x, grid.y, grid.z);
+
+	// set voxels to grid centers
+	origin -= (Point(grid) * step - size) / 2;
+	size = Point(grid) * step;
+
+	std::vector<std::vector<esint> > vdistribution(info::env::OMP_NUM_THREADS);
+	std::vector<std::vector<esint> > vdata(info::env::OMP_NUM_THREADS);
+	vdistribution[0].push_back(0);
+
+	Point *coordinates = nodes->coordinates->datatarray().data();
+
+	if(info::mesh->dimension == 3) {
+		#pragma omp parallel for
+		for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
+			std::vector<int> tdata; tdata.reserve(10 * elements->distribution.process.size);
+			auto epointers = elements->epointers->datatarray().begin(t);
+			for (auto e = elements->nodes->cbegin(t); e != elements->nodes->cend(t); ++e, ++epointers) {
+				Point coomin = coordinates[e->front()], coomax = coomin;
+				for (auto n = e->begin() + 1; n != e->end(); ++n) {
+					coordinates[*n].minmax(coomin, coomax);
+				}
+				_Point<float> pmin = (coomin - origin) / size, pmax = (coomax - origin) / size;
+				_Point<int> bmin(std::floor(pmin.x * grid.x), std::floor(pmin.y * grid.y), std::floor(pmin.z * grid.z));
+				_Point<int> bmax(std::ceil(pmax.x * grid.x), std::ceil(pmax.y * grid.y), std::ceil(pmax.z * grid.z));
+
+				std::vector<char> isin((bmax.x - bmin.x) * (bmax.y - bmin.y) * (bmax.z - bmin.z) / 8 + 1, 255);
+				for (auto triangle = (*epointers)->triangles->begin(); triangle != (*epointers)->triangles->end(); ++triangle) {
+					const _Point<float> &v = coordinates[e->at(triangle->at(0))];
+					const _Point<float> n = _Point<float>::cross(coordinates[e->at(triangle->at(1))] - v, coordinates[e->at(triangle->at(2))] - v);
+
+					_Point<float> p = origin + _Point<float>(bmin) * step + .5 * step  -v;
+					for (int z = bmin.z, i = 0; z < bmax.z; ++z, p.z += step) {
+						for (int y = bmin.y; y < bmax.y; ++y, p.y += step) {
+							for (int x = bmin.x; x < bmax.x; ++x, ++i, p.x += step) {
+								isin[i / 8] &= ~((p * n < 0 ? 1 : 0) << (i % 8));
+							}
+							p.x = origin.x + bmin.x * step + .5 * step - v.x;
+						}
+						p.y = origin.y + bmin.y * step + .5 * step - v.y;
+					}
+				}
+				for (int z = bmin.z, i = 0; z < bmax.z; ++z) {
+					for (int y = bmin.y; y < bmax.y; ++y) {
+						for (int x = bmin.x; x < bmax.x; ++x, ++i) {
+							if (isin[i / 8] & (1 << (i % 8))) {
+								tdata.push_back(z * grid.y * grid.x + y * grid.x + x);
+							}
+						}
+					}
+				}
+				vdistribution[t].push_back(tdata.size());
+			}
+			vdata[t].swap(tdata);
+		}
+	} else {
+		// TODO
+	}
+
+	utils::threadDistributionToFullDistribution(vdistribution);
+
+	elements->volumeGrid = grid;
+	elements->volumeOrigin = origin;
+	elements->volumeSize = size;
+	elements->volumeIndices = new serializededata<esint, esint>(vdistribution, vdata);
+
+	profiler::syncend("compute_volume_indices");
+	eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
+}
+
+void computeVolumeIndicesOM(ElementStore *elements, const NodeStore *nodes)
+{
+	profiler::syncstart("compute_volume_indices");
+
+	double start = eslog::time();
+
+	Point size(nodes->uniqInfo.max - nodes->uniqInfo.min), origin(nodes->uniqInfo.min);
+	double step = (1.001 * std::max(std::max(size.x, size.y), size.z)) / info::ecf->output.volume_density;
+	_Point<int> grid(std::floor(size.x / step) + 1, std::floor(size.y / step) + 1, std::floor(size.z / step) + 1);
+	eslog::info(" == VOLUMETRIC GRID %55d x %5d x %5d == \n", grid.x, grid.y, grid.z);
+
+	// set voxels to grid centers
+	origin -= (Point(grid) * step - size) / 2;
+	size = Point(grid) * step;
+
+	std::vector<std::vector<esint> > vdistribution(info::env::OMP_NUM_THREADS);
+	std::vector<std::vector<_Point<int> > > vdata(info::env::OMP_NUM_THREADS);
+	vdistribution[0].push_back(0);
+
+	Point *coordinates = nodes->coordinates->datatarray().data();
+
+	printf("init: %e\n", eslog::time() - start);
+	start = eslog::time();
+
+	double box = 0, angle = 0;
+	size_t count = 0;
+
+	if(info::mesh->dimension == 3) {
+		#pragma omp parallel for
+		for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
+			auto epointers = elements->epointers->datatarray().begin(t);
+			esint eindex = 1;
+			for (auto e = elements->nodes->cbegin(t); e != elements->nodes->cend(t); ++e, ++epointers, ++eindex) {
+				double ss = eslog::time();
+				Point coomin = coordinates[e->front()], coomax = coomin;
+				for (auto n = e->begin() + 1; n != e->end(); ++n) {
+					coordinates[*n].minmax(coomin, coomax);
+				}
+				_Point<float> pmin = (coomin - origin) / size, pmax = (coomax - origin) / size;
+				_Point<int> bmin(std::floor(pmin.x * grid.x), std::floor(pmin.y * grid.y), std::floor(pmin.z * grid.z));
+				_Point<int> bmax(std::ceil(pmax.x * grid.x), std::ceil(pmax.y * grid.y), std::ceil(pmax.z * grid.z));
+				if (eindex == 1) printf("coarse [%f %f %f] :: [%f %f %f]\n", coomin.x, coomin.y, coomin.z, coomax.x, coomax.y, coomax.z);
+				box += eslog::time() - ss;
+				ss = eslog::time();
+
+				// loop through grid part points
+				for (int z = bmin.z, i = 0; z < bmax.z; ++z) {
+					for (int y = bmin.y; y < bmax.y; ++y) {
+						for (int x = bmin.x; x < bmax.x; ++x, ++i) {
+							const _Point<float> p = origin + _Point<float>(x, y, z) * step + .5 * step;
+
+//							float total_angle = 0;
+							bool isin = true;
+							for (auto triangle = (*epointers)->triangles->begin(); isin && triangle != (*epointers)->triangles->end(); ++triangle) {
+								const _Point<float> v0 = coordinates[e->at(triangle->at(0))], v1 = coordinates[e->at(triangle->at(1))], v2 = coordinates[e->at(triangle->at(2))];
+								if (v0 == p || v1 == p || v2 == p) {
+//									total_angle = 2 * M_PI;
+									break;
+								}
+								++count;
+								isin &= !is_out(p, v0, v1, v2);
+//								if (eindex == 1) {
+//									printf("%c", is_out(p, v0, v1, v2) ? '0' : '1');
+//								}
+//								total_angle += face_solid_angle_contribution(p, v0, v1, v2);
+							}
+//							if (eindex == 1) {
+//								printf("\n");
+//							}
+
+//							if(fabs(total_angle) > 6.0) { // 2pi or 4pi -> inside
+							if (isin) {
+								vdata[t].push_back(_Point<int>(x, y, z));
+							}
+						}
+					}
+				}
+				angle += eslog::time() - ss;
+				vdistribution[t].push_back(vdata[t].size());
+			}
+		}
+	} else {
+		// TODO
+	}
+	printf("OM process: %e, box: %e, angle: %e, count: %lu, apv: %e\n", eslog::time() - start, box, angle, count, angle / count);
+	start = eslog::time();
+
+	utils::threadDistributionToFullDistribution(vdistribution);
+	printf("points inside: %d\n", vdistribution.back().back());
+
+//	elements->volumeGrid = grid;
+//	elements->volumeOrigin = origin;
+//	elements->volumeSize = size;
+//	elements->volumeIndices = new serializededata<esint, _Point<int> >(vdistribution, vdata);
+
+	printf("finish: %e\n", eslog::time() - start);
+
+	profiler::syncend("compute_volume_indices");
+	eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
+}
+
 void store(Point voxels, const std::vector<int> &grid)
 {
 	std::ofstream casefile("volume.case");
@@ -338,111 +712,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		store(grid_size, grid);
 	}
 
-	elements->volumeIndices = new serializededata<esint, _Point<int> >(distribution, data);
-	profiler::syncend("compute_volume_indices");
-	eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
-}
-
-void OMcomputeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
-{
-	profiler::syncstart("compute_volume_indices");
-
-	double start = eslog::time();
-
-	Point size(nodes->uniqInfo.max - nodes->uniqInfo.min), origin(nodes->uniqInfo.min);
-	double step = (1.001 * std::max(std::max(size.x, size.y), size.z)) / info::ecf->output.volume_density;
-	_Point<int> grid(std::floor(size.x / step) + 1, std::floor(size.y / step) + 1, std::floor(size.z / step) + 1);
-	eslog::info(" == VOLUMETRIC GRID %55d x %5d x %5d == \n", grid.x, grid.y, grid.z);
-
-	// set voxels to grid centers
-	origin -= (Point(grid) * step - size) / 2;
-	size = Point(grid) * step;
-
-//	printf("[%f %f %f] -> [%f %f %f]\n", origin.x, origin.y, origin.z, origin.x + size.x, origin.y + size.y, origin.z + size.z);
-
-	std::vector<std::vector<esint> > vdistribution(info::env::OMP_NUM_THREADS);
-	std::vector<std::vector<_Point<int> > > vdata(info::env::OMP_NUM_THREADS);
-	vdistribution[0].push_back(0);
-
-	Point *coordinates = nodes->coordinates->datatarray().data();
-
-	printf("init: %e\n", eslog::time() - start);
-	start = eslog::time();
-
-	double box = 0, angle = 0;
-	size_t count = 0;
-
-	if(info::mesh->dimension == 3) {
-		#pragma omp parallel for
-		for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
-			auto epointers = elements->epointers->datatarray().begin(t);
-			size_t eindex = 1;
-			for (auto e = elements->nodes->cbegin(t); e != elements->nodes->cend(t); ++e, ++epointers, ++eindex) {
-
-				double ss = eslog::time();
-				// find BB of the element
-				Point cmin = coordinates[e->front()], cmax = cmin;
-				if (eindex == 0) printf("coo [%f %f %f]\n", coordinates[e->front()].x, coordinates[e->front()].y, coordinates[e->front()].z);
-				for (auto n = e->begin() + 1; n != e->end(); ++n) {
-					coordinates[*n].minmax(cmin, cmax);
-					if (eindex == 0) printf("coo [%f %f %f]\n", coordinates[*n].x, coordinates[*n].y, coordinates[*n].z);
-				}
-				_Point<float> pmin = (cmin - origin) / size, pmax = (cmax - origin) / size;
-				_Point<int> bmin(std::floor(pmin.x * grid.x), std::floor(pmin.y * grid.y), std::floor(pmin.z * grid.z));
-				_Point<int> bmax(std::ceil(pmax.x * grid.x), std::ceil(pmax.y * grid.y), std::ceil(pmax.z * grid.z));
-				if (eindex == 0) printf("[%f %f %f] -> [%f %f %f]\n", cmin.x, cmin.y, cmin.z, cmax.x, cmax.y, cmax.z);
-				if (eindex == 0) printf("[%d %d %d] -> [%d %d %d]\n", bmin.x, bmin.y, bmin.z, bmax.x, bmax.y, bmax.z);
-				box += eslog::time() - ss;
-				ss = eslog::time();
-
-				// loop through grid part points
-				for (int x = bmin.x; x < bmax.x; ++x) {
-					for (int y = bmin.y; y < bmax.y; ++y) {
-						for (int z = bmin.z; z < bmax.z; ++z) {
-							++count;
-							const _Point<float> p = origin + _Point<float>(x, y, z) * step + .5 * step;
-							if (eindex == 0) printf("[%f %f %f]\n", p.x, p.y, p.z);
-
-							// loop through triangles
-							float total_angle = 0;
-							for (auto triangle = (*epointers)->triangles->begin(); triangle != (*epointers)->triangles->end(); ++triangle) {
-								const _Point<float> v0 = coordinates[e->at(triangle->at(0))], v1 = coordinates[e->at(triangle->at(1))], v2 = coordinates[e->at(triangle->at(2))];
-								if (v0 == p || v1 == p || v2 == p) {
-									total_angle = 2 * M_PI;
-									break;
-								}
-
-								total_angle += face_solid_angle_contribution(p, v0, v1, v2);
-							}
-
-							if (eindex == 0) printf("angle: %f\n", total_angle);
-							// save element index if point is in the element
-							if(fabs(total_angle) > 6.0) { // 2pi or 4pi -> inside
-								vdata[t].push_back(_Point<int>(x, y, z));
-							}
-						}
-					}
-				}
-				angle += eslog::time() - ss;
-				vdistribution[t].push_back(vdata[t].size());
-			}
-		}
-	} else {
-		// TODO
-	}
-	printf("process: %e, box: %e, angle: %e, count: %lu, apv: %e\n", eslog::time() - start, box, angle, count, angle / count);
-	start = eslog::time();
-
-	utils::threadDistributionToFullDistribution(vdistribution);
-	printf("points inside: %d\n", vdistribution.back().back());
-
-	elements->volumeGrid = grid;
-	elements->volumeOrigin = origin;
-	elements->volumeSize = size;
-	elements->volumeIndices = new serializededata<esint, _Point<int> >(vdistribution, vdata);
-
-	printf("finish: %e\n", eslog::time() - start);
-
+//	elements->volumeIndices = new serializededata<esint, _Point<int> >(distribution, data);
 	profiler::syncend("compute_volume_indices");
 	eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
 }

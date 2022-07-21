@@ -54,7 +54,7 @@ struct ElementStore {
 
 	_Point<int> volumeGrid;
 	Point volumeOrigin, volumeSize;
-	serializededata<esint, _Point<int> >* volumeIndices;
+	serializededata<esint, esint>* volumeIndices;
 
 	serializededata<esint, double>* stiffness;
 
