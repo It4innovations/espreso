@@ -573,7 +573,7 @@ void Mesh::computePersistentParameters()
 	}
 
 	if (info::ecf->output.format == OutputConfiguration::FORMAT::OPENVDB) {
-		mesh::computeVolumeIndices(elements, nodes);
+		mesh::OMcomputeVolumeIndices(elements, nodes);
 	}
 
 	eslog::checkpointln("MESH: BODIES COMPUTED");

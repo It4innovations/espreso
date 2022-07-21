@@ -80,6 +80,7 @@ void computeRegionsSurface(ElementStore *elements, NodeStore *nodes, ElementStor
 void computeSurfaceElementNeighbors(NodeStore *nodes, std::vector<int> &neigbors, SurfaceStore *surface);
 
 void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes);
+void OMcomputeVolumeIndices(ElementStore *elements, const NodeStore *nodes);
 
 // methods for mesh decomposition
 //  - decompose elements to domains and intervals

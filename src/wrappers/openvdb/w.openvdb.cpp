@@ -6,6 +6,11 @@
 #include "esinfo/eslog.h"
 #include "mesh/store/elementstore.h"
 
+#include <fstream>
+#include <sstream>
+#include <iomanip>
+#include <numeric>
+
 #ifdef HAVE_OPENVDB
 #include <openvdb/openvdb.h>
 
@@ -33,10 +38,13 @@ struct OpenVDBWrapperData {
 
 using namespace espreso;
 
-OpenVDBWrapper::OpenVDBWrapper()
+OpenVDBWrapper::OpenVDBWrapper(const std::string &path, const std::string &directory, const std::string &name)
+: _path(path), _directory(directory), _name(name)
 {
 #ifndef HAVE_OPENVDB
-	eslog::globalerror("ESPRESO run-time error: cannot store output to OpenVDB (the library is not linked).\n");
+	eslog::warning("ESPRESO run-time warning: cannot store output to OpenVDB (the library is not linked).\n");
+	eslog::warning("ESPRESO run-time warning: EnSight format is used instead.\n");
+	_data = nullptr;
 #else
 	_data = new OpenVDBWrapperData();
 #endif

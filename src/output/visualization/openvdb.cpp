@@ -13,6 +13,7 @@
 using namespace espreso;
 
 OpenVDB::OpenVDB()
+: wrapper(_path, _directory, _name)
 {
 	_filename = _path + _directory + _name;
 	_step = 0;
@@ -25,7 +26,8 @@ OpenVDB::~OpenVDB()
 
 void OpenVDB::updateMesh()
 {
-
+	wrapper.setGrid(info::mesh->elements->volumeGrid, info::mesh->elements->volumeOrigin, info::mesh->elements->volumeSize);
+	wrapper.setData(info::mesh->elements->volumeGrid, info::mesh->elements->volumeIndices);
 }
 
 void OpenVDB::updateSolution()
