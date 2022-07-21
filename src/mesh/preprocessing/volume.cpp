@@ -27,8 +27,35 @@ namespace mesh {
 
 bool triangle_ray_intersect(Point p0, Point p1, Point v0, Point v1, Point v2);
 bool edge_ray_intersect(Point p, Point v0, Point v1);
-double face_solid_angle_contribution(Point p, Point v0, Point v1, Point v2);
-double solid_angle(Point a, Point b, Point c);
+
+static inline float solid_angle(_Point<float> &a, _Point<float> &b, _Point<float> &c){
+	a.normalize();
+	b.normalize();
+	c.normalize();
+
+	float numer = _Point<float>::cross(a, b) * c;
+	float denom = 1 + (a * b) + (b * c) + (c * a);
+
+	float angle = 2 * atan2f(numer, denom);
+	return fabsf(angle);
+}
+
+static inline float face_solid_angle_contribution(const _Point<float> &p, const _Point<float> &v0, const _Point<float> &v1, const _Point<float> &v2){
+	_Point<float> vec_a = v0 - p;
+	_Point<float> vec_b = v1 - p;
+	_Point<float> vec_c = v2 - p;
+
+	float angle = solid_angle(vec_a, vec_b, vec_c);
+
+	_Point<float> u = v1 - v0;
+	_Point<float> v = v2 - v0;
+	_Point<float> n = _Point<float>::cross(u, v);
+
+	_Point<float> p_vec = p - v0;
+	float dot = n * p_vec;
+
+	return dot > 0 ? angle : -angle;
+}
 
 void store(Point voxels, const std::vector<int> &grid)
 {
@@ -360,7 +387,7 @@ void OMcomputeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 					coordinates[*n].minmax(cmin, cmax);
 					if (eindex == 0) printf("coo [%f %f %f]\n", coordinates[*n].x, coordinates[*n].y, coordinates[*n].z);
 				}
-				Point pmin = (cmin - origin) / size, pmax = (cmax - origin) / size;
+				_Point<float> pmin = (cmin - origin) / size, pmax = (cmax - origin) / size;
 				_Point<int> bmin(std::floor(pmin.x * grid.x), std::floor(pmin.y * grid.y), std::floor(pmin.z * grid.z));
 				_Point<int> bmax(std::ceil(pmax.x * grid.x), std::ceil(pmax.y * grid.y), std::ceil(pmax.z * grid.z));
 				if (eindex == 0) printf("[%f %f %f] -> [%f %f %f]\n", cmin.x, cmin.y, cmin.z, cmax.x, cmax.y, cmax.z);
@@ -373,13 +400,13 @@ void OMcomputeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 					for (int y = bmin.y; y < bmax.y; ++y) {
 						for (int z = bmin.z; z < bmax.z; ++z) {
 							++count;
-							Point p = origin + Point(x, y, z) * step + .5 * step;
+							const _Point<float> p = origin + _Point<float>(x, y, z) * step + .5 * step;
 							if (eindex == 0) printf("[%f %f %f]\n", p.x, p.y, p.z);
 
 							// loop through triangles
-							double total_angle = 0;
+							float total_angle = 0;
 							for (auto triangle = (*epointers)->triangles->begin(); triangle != (*epointers)->triangles->end(); ++triangle) {
-								Point v0 = coordinates[e->at(triangle->at(0))], v1 = coordinates[e->at(triangle->at(1))], v2 = coordinates[e->at(triangle->at(2))];
+								const _Point<float> v0 = coordinates[e->at(triangle->at(0))], v1 = coordinates[e->at(triangle->at(1))], v2 = coordinates[e->at(triangle->at(2))];
 								if (v0 == p || v1 == p || v2 == p) {
 									total_angle = 2 * M_PI;
 									break;
@@ -484,42 +511,6 @@ bool edge_ray_intersect(Point p, Point v0, Point v1){
 		}
 	}
 	return false;
-}
-
-double face_solid_angle_contribution(Point p, Point v0, Point v1, Point v2){
-	Point vec_a = v0 - p;
-	Point vec_b = v1 - p;
-	Point vec_c = v2 - p;
-
-	double angle = solid_angle(vec_a, vec_b, vec_c);
-
-	Point u = v1 - v0;
-	Point v = v2 - v0;
-	Point n = Point::cross(u, v);
-
-	Point p_vec = p - v0;
-	double dot = n * p_vec;
-
-	int factor;
-	if(dot > 0){
-		factor = 1;
-	} else {
-		factor = -1;
-	}
-
-	return factor * angle;
-}
-
-double solid_angle(Point a, Point b, Point c){
-	a.normalize();
-	b.normalize();
-	c.normalize();
-
-	double numer = Point::cross(a, b) * c;
-	double denom = 1 + (a * b) + (b * c) + (c * a);
-
-	double angle = 2 * atan2(numer, denom);
-	return fabs(angle);
 }
 
 }
