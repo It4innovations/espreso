@@ -526,7 +526,6 @@ void Mesh::computePersistentParameters()
 			for (size_t r = 0; r < boundaryRegions.size(); r++) {
 				mesh::triangularizeBoundary(boundaryRegions[r]);
 			}
-			eslog::checkpointln("MESH: REGION SURFACE COMPUTED");
 		}
 
 		for (size_t r = 0; halo == NULL && r < boundaryRegions.size(); ++r) {
@@ -555,7 +554,6 @@ void Mesh::computePersistentParameters()
 		mesh::computeContactInterface(surface, contact);
 		mesh::arrangeContactInterfaces(contact, bodies, elementsRegions, contactInterfaces);
 		profiler::synccheckpoint("compute_contact_interface");
-		eslog::checkpointln("MESH: CONTACT INTERFACE COMPUTED");
 	}
 
 	mesh::computeRegionsBoundaryDistribution(nodes, boundaryRegions, contactInterfaces);
@@ -569,15 +567,12 @@ void Mesh::computePersistentParameters()
 			mesh::computeBodiesSurface(nodes, elements, elementsRegions, surface, neighbors);
 		}
 		mesh::triangularizeSurface(surface);
-		eslog::checkpointln("MESH: BODIES SURFACE COMPUTED");
 	}
 
 	if (info::ecf->output.format == OutputConfiguration::FORMAT::OPENVDB) {
 		mesh::computeVolumeIndicesOMOpt2(elements, nodes);
+//		mesh::computeVolumeIndices(elements, nodes);
 	}
-
-	eslog::checkpointln("MESH: BODIES COMPUTED");
-	eslog::checkpointln("MESH: BOUNDARY REGIONS COMPOSED");
 }
 
 void Mesh::partitiate(int ndomains)

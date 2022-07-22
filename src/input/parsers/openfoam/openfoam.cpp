@@ -201,6 +201,7 @@ void InputOpenFoamSequential::variables(Mesh &mesh)
 
 void InputOpenFoamParallel::variables(Mesh &mesh)
 {
+	eslog::startln("OPENFOAM VARIABLES LOADER: STARTED", "VARIABLES LOADER");
 	ivector<esint> nperm(mesh.nodes->size), eperm(mesh.elements->distribution.process.size);
 	std::iota(nperm.begin(), nperm.end(), 0);
 	std::sort(nperm.begin(), nperm.end(), [&] (esint i, esint j) { return (mesh.nodes->outputOffset->begin() + i)->front() < (mesh.nodes->outputOffset->begin() + j)->front(); });
@@ -249,7 +250,11 @@ void InputOpenFoamParallel::variables(Mesh &mesh)
 	sBuffer.clear();
 	sBuffer.reserve(info::mpi::size * 5 + datasize);
 
+	eslog::checkpointln("VARIABLES LOADER: PERMUTATION EXCHANGED");
+
 	variablePack.wait(MPITools::singleton->across);
+
+	eslog::checkpointln("VARIABLES LOADER: VARIABLES LOADED");
 
 	std::vector<std::vector<esfloat> > data(nvariables.size() + evariables.size());
 	for (int d = info::mpi::rank, offset = 0; d < domains; d += info::mpi::size, offset += nvariables.size() + evariables.size()) {
@@ -294,6 +299,7 @@ void InputOpenFoamParallel::variables(Mesh &mesh)
 		eslog::error("cannot exchange output data.\n");
 	}
 	sBuffer.clear();
+	eslog::checkpointln("VARIABLES LOADER: VARIABLES EXCHANGED");
 
 	std::vector<NamedData*> vdata;
 	for (size_t v = 0; v < nvariables.size(); ++v) {
@@ -338,6 +344,8 @@ void InputOpenFoamParallel::variables(Mesh &mesh)
 		}
 		eit += esize;
 	}
+
+	eslog::endln("VARIABLES LOADER: VARIABLES ASSIGNED");
 }
 
 void InputOpenFoamSequential::ivariables(const InputConfiguration &configuration)

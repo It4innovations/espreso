@@ -18,11 +18,11 @@
 namespace espreso {
 namespace builder {
 
-int getDimension(OrderedElementsBalanced &balanced)
+int getDimension(Elements &elements)
 {
 	int dimension = 0;
-	for (esint e = 0; e < balanced.size && dimension < 3; ++e) {
-		switch (Mesh::element(balanced.etype[e]).type) {
+	for (size_t e = 0; e < elements.etype.size() && dimension < 3; ++e) {
+		switch (Mesh::element(elements.etype[e]).type) {
 		case Element::TYPE::POINT:  dimension = std::max(0, dimension); break;
 		case Element::TYPE::LINE:   dimension = std::max(1, dimension); break;
 		case Element::TYPE::PLANE:  dimension = std::max(2, dimension); break;
@@ -83,7 +83,7 @@ void buildOrderedFEM(NodesBlocks &nodes, ElementsBlocks &elements, OrderedRegion
 		// 1. -> 2. trivial
 		trivialUpdate(nh.blocks, nh.chunked);
 		trivialUpdate(eh.blocks, eh.chunked);
-		mesh.dimension = getDimension(eh.balanced);
+		mesh.dimension = getDimension(eh.chunked);
 
 		// 2. -> 4. trivial
 		trivialUpdate(nh.chunked, nh.clustered);
