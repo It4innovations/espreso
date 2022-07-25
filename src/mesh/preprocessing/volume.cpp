@@ -165,7 +165,6 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	for (auto e = elements->nodes->cbegin(); e != elements->nodes->cend(); ++e) {
 		for (auto n = e->begin(); n != e->end(); ++n) {
 			Point &p = nodes->coordinates->datatarray()[*n];
-			//printf("%f %f %f\n", p.x, p.y, p.z);
 			p.minmax(mesh_min, mesh_max);
 		}
 	}
@@ -174,9 +173,6 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	Point mesh_max_global;
 	MPI_Allreduce(&mesh_min, &mesh_min_global, 3, MPI_DOUBLE, MPI_MIN, info::mpi::comm);
 	MPI_Allreduce(&mesh_max, &mesh_max_global, 3, MPI_DOUBLE, MPI_MAX, info::mpi::comm);
-
-	printf("global mesh min: %f %f %f\n", mesh_min_global.x, mesh_min_global.y, mesh_min_global.z);
-	printf("global mesh max: %f %f %f\n", mesh_max_global.x, mesh_max_global.y, mesh_max_global.z);
 
 	// grid setting
 	int grid_size_x = info::ecf->output.volume_density;
@@ -259,9 +255,6 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 								total_angle += face_solid_angle_contribution(p, v0, v1, v2);
 							}
 
-							//debug
-							//fprintf(pFile_hist, "%f\n", fabs(total_angle));
-
 							// save element index if point is in the element
 							if(is_p_triangle_vertex || fabs(total_angle) > 6.0){ // 2pi or 4pi -> inside
 								grid[grid_inx_1d] = 0;	
@@ -311,7 +304,6 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		distribution.insert(distribution.end(), vdistribution[t].begin(), vdistribution[t].end());
 		data.insert(data.end(), vdata[t].begin(), vdata[t].end());
 	}
-	printf("here");
 
 	if(dim == 3){
 		store3D(grid_size, grid, grid_start, grid_offset);

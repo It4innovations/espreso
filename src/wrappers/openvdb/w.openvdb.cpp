@@ -49,25 +49,46 @@ OpenVDBWrapper::~OpenVDBWrapper()
 #endif
 }
 
-void OpenVDBWrapper::add_grid(const serializededata<esint, _Point<int> > *emap, const ElementData *data)
+void OpenVDBWrapper::add_grid(std::vector<int> voxel_indices_dist, std::vector<_Point<int>> voxel_indices, std::vector<double> data, std::string data_name, int data_dimension)
 {
 #ifdef HAVE_OPENVDB
 	openvdb::FloatGrid::Ptr grid = openvdb::FloatGrid::create();
 	grid->setGridClass(openvdb::GRID_LEVEL_SET);
 	grid->setTransform(openvdb::math::Transform::createLinearTransform(_data->mat_));
-	grid->setName(data->name);
+	grid->setName(data_name);
 	openvdb::FloatGrid::Accessor accessor = grid->getAccessor();
 
-	auto value = data->data.cbegin();
-	for (auto voxels = emap->begin(); voxels != emap->end(); ++voxels, value += data->dimension) {
-		for (auto voxel = voxels->begin(); voxel != voxels->end(); ++voxel) {
-			openvdb::Coord xyz(voxel->x, voxel->y, voxel->z);
-			accessor.setValue(xyz, (float)*value);
-
-			for (int d = 0; d < data->dimension; ++d) { // is it possible to store more dimensional data?
-				// printf("%d %d %d -> %f\n", voxel->x, voxel->y, voxel->z, *value);
+	auto value = data.cbegin();
+	int max_voxel_inx = 0;
+	int new_max_voxel_inx = 0;
+	int false_voxels_count = 0;
+	for (int voxels_dist_inx = 0; voxels_dist_inx < voxel_indices_dist.size() - 1; voxels_dist_inx++, value += data_dimension) {
+		if(voxel_indices_dist[voxels_dist_inx] != -1){
+			if(voxel_indices_dist[voxels_dist_inx] + max_voxel_inx > new_max_voxel_inx){
+				new_max_voxel_inx = voxel_indices_dist[voxels_dist_inx] + max_voxel_inx;
 			}
-		}
+			if(voxel_indices_dist[voxels_dist_inx] == 0 && new_max_voxel_inx > max_voxel_inx){
+				max_voxel_inx = new_max_voxel_inx;
+			}
+
+			int start_voxel_inx = voxel_indices_dist[voxels_dist_inx] + max_voxel_inx + false_voxels_count;
+			int end_voxel_inx = voxel_indices_dist[voxels_dist_inx + 1] + max_voxel_inx + false_voxels_count;
+
+			int true_inx = start_voxel_inx;
+			for(int voxel_inx = start_voxel_inx; voxel_inx < end_voxel_inx; voxel_inx++, true_inx++){
+				while(voxel_indices[true_inx].x == -1){
+					false_voxels_count++;
+					true_inx++;
+				}
+				openvdb::Coord xyz(voxel_indices[true_inx].x, voxel_indices[true_inx].y, voxel_indices[true_inx].z);
+				accessor.setValue(xyz, (float)*value);
+			}
+
+			//	for (int d = 0; d < data_dimension; ++d) { // is it possible to store more dimensional data?
+					// printf("%d %d %d -> %f\n", voxel->x, voxel->y, voxel->z, *value);
+			//	}
+			//}
+		}		
 	}
 
 	_data->grids.push_back(grid);
