@@ -14,7 +14,8 @@ using namespace espreso;
 
 OpenVDB::OpenVDB()
 {
-	_filename = _path + _directory + _name + ".vdb";
+	_filename = _path + _directory + _name;
+	_step = 0;
 }
 
 OpenVDB::~OpenVDB()
@@ -78,7 +79,7 @@ void OpenVDB::updateSolution()
 		}
 	}
 	if(info::mpi::rank == 0) {
-		wrapper.store_grids(_filename.c_str());
-		// TODO delete grids for next timesteps
+		wrapper.store_grids((_filename + std::to_string(_step) + ".vdb").c_str());
+		_step++;
 	}		
 }

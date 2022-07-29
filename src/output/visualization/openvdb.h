@@ -18,6 +18,7 @@ public:
 
 protected:
 	std::string _filename;
+	int _step;
 };
 
 }
