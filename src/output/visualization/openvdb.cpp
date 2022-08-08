@@ -13,7 +13,6 @@
 using namespace espreso;
 
 OpenVDB::OpenVDB()
-: wrapper(_path, _directory, _name)
 {
 	_filename = _path + _directory + _name;
 	_step = 0;
@@ -26,8 +25,7 @@ OpenVDB::~OpenVDB()
 
 void OpenVDB::updateMesh()
 {
-	wrapper.setGrid(info::mesh->elements->volumeGrid, info::mesh->elements->volumeOrigin, info::mesh->elements->volumeSize);
-	wrapper.setData(info::mesh->elements->volumeGrid, info::mesh->elements->volumeIndices);
+
 }
 
 void OpenVDB::updateSolution()
@@ -61,8 +59,6 @@ void OpenVDB::updateSolution()
 	std::vector<_Point<int>> all_data;
 	all_data.resize(info::mpi::size * max_data_array_size);
 	MPI_Gather(data_vector.data(), max_data_array_size*3, MPI_INT, all_data.data(), max_data_array_size*3, MPI_INT, 0, info::mpi::comm);
-
-
 
 	OpenVDBWrapper wrapper;
 	for (size_t di = 0; di < info::mesh->elements->data.size(); di++) { // go through all element values

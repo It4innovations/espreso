@@ -38,12 +38,10 @@ struct OpenVDBWrapperData {
 
 using namespace espreso;
 
-OpenVDBWrapper::OpenVDBWrapper(const std::string &path, const std::string &directory, const std::string &name)
-: _path(path), _directory(directory), _name(name)
+OpenVDBWrapper::OpenVDBWrapper()
 {
 #ifndef HAVE_OPENVDB
 	eslog::warning("ESPRESO run-time warning: cannot store output to OpenVDB (the library is not linked).\n");
-	eslog::warning("ESPRESO run-time warning: EnSight format is used instead.\n");
 	_data = nullptr;
 #else
 	_data = new OpenVDBWrapperData();
