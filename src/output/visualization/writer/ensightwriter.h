@@ -56,22 +56,22 @@ struct EnsightBinaryOutputWriter: public OutputFilePack {
 		insert(80 - description.size(), '\0');
 	}
 
+	void int32ln(int value)
+	{
+		insert(sizeof(int), &value);
+	}
+
+	void float32ln(float value)
+	{
+		insert(sizeof(float), &value);
+	}
+
 	void int32(int value)
 	{
 		insert(sizeof(int), &value);
 	}
 
-	void float32(float value)
-	{
-		insert(sizeof(float), &value);
-	}
-
-	void enode(int value)
-	{
-		insert(sizeof(int), &value);
-	}
-
-	void eend()
+	void ln()
 	{
 
 	}
@@ -90,22 +90,22 @@ struct EnsightASCIIOutputWriter: public OutputFilePack {
 		insert(1, '\n');
 	}
 
-	void int32(int value)
+	void int32ln(int value)
 	{
 		insert(snprintf(buffer, bsize, "%10d\n", value));
 	}
 
-	void float32(float value)
+	void float32ln(float value)
 	{
 		insert(snprintf(buffer, bsize, "%12.5e\n", value));
 	}
 
-	void enode(int value)
+	void int32(int value)
 	{
 		insert(snprintf(buffer, bsize, "%10d", value));
 	}
 
-	void eend()
+	void ln()
 	{
 		insert(1, '\n');
 	}

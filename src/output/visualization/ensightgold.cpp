@@ -234,19 +234,19 @@ void EnSightGold::geometry()
 	auto nodes = [&] (const RegionStore *store) {
 		if (isRoot()) {
 			_writer.description("coordinates");
-			_writer.int32(store->nodeInfo.totalSize);
+			_writer.int32ln(store->nodeInfo.totalSize);
 		}
 
 		if (_withIDs) {
 			for (esint n = 0, i = store->nodeInfo.nhalo; n < store->nodeInfo.size; ++n, ++i) {
-				_writer.int32(info::mesh->nodes->IDs->datatarray()[store->nodes->datatarray()[i]]);
+				_writer.int32ln(info::mesh->nodes->IDs->datatarray()[store->nodes->datatarray()[i]]);
 			}
 			_writer.groupData();
 		}
 
 		for (int d = 0; d < 3; ++d) {
 			for (esint n = 0, i = store->nodeInfo.nhalo; n < store->nodeInfo.size; ++n, ++i) {
-				_writer.float32(info::mesh->nodes->coordinates->datatarray()[store->nodes->datatarray()[i]][d]);
+				_writer.float32ln(info::mesh->nodes->coordinates->datatarray()[store->nodes->datatarray()[i]][d]);
 			}
 			_writer.groupData();
 		}
@@ -267,7 +267,7 @@ void EnSightGold::geometry()
 		const ElementsRegionStore *region = info::mesh->elementsRegions[r];
 		if (isRoot()) {
 			_writer.description("part");
-			_writer.int32(++part);
+			_writer.int32ln(++part);
 			_writer.description(region->name);
 		}
 
@@ -276,30 +276,30 @@ void EnSightGold::geometry()
 			if (region->distribution.code[etype].totalSize) {
 				if (isRoot()) {
 					_writer.description(EnsightOutputWriter::codetotype(etype));
-					_writer.int32(region->distribution.code[etype].totalSize);
+					_writer.int32ln(region->distribution.code[etype].totalSize);
 				}
 
 				if (Mesh::element(etype).code == Element::CODE::POLYGON) {
-					forEachElement(region, etype, [&] (serializededata<esint, esint>::const_iterator it) { _writer.int32(it->front()); });
+					forEachElement(region, etype, [&] (serializededata<esint, esint>::const_iterator it) { _writer.int32ln(it->front()); });
 					_writer.groupData();
 					forEachElement(region, etype, [&] (serializededata<esint, esint>::const_iterator it) {
 						for (auto n = it->begin() + 1; n != it->end(); ++n) {
-							_writer.enode(region->getPosition(*n) + 1);
+							_writer.int32(region->getPosition(*n) + 1);
 						}
-						_writer.eend();
+						_writer.ln();
 					});
 					_writer.groupData();
 				}
 				if (Mesh::element(etype).code == Element::CODE::POLYHEDRON) {
 					forEachElement(region, etype, [&] (serializededata<esint, esint>::const_iterator it) {
-						_writer.int32(it->front());
+						_writer.int32ln(it->front());
 					});
 					_writer.groupData();
 					forEachElement(region, etype, [&] (serializededata<esint, esint>::const_iterator it) {
 						PolyElement poly(Element::decode(Element::CODE::POLYHEDRON, it->size()), it->begin());
 						for (size_t n = 1; n < it->size(); ++n) {
 							if (!poly.isNode(n)) {
-								_writer.int32(it->at(n));
+								_writer.int32ln(it->at(n));
 							}
 						}
 					});
@@ -308,21 +308,21 @@ void EnSightGold::geometry()
 						PolyElement poly(Element::decode(Element::CODE::POLYHEDRON, it->size()), it->begin());
 						for (size_t n = 2; n < it->size(); ++n) {
 							if (poly.isNode(n)) {
-								_writer.enode(region->getPosition(it->at(n)) + 1);
+								_writer.int32(region->getPosition(it->at(n)) + 1);
 							} else {
-								_writer.eend();
+								_writer.ln();
 							}
 						}
-						_writer.eend();
+						_writer.ln();
 					});
 					_writer.groupData();
 				}
 				if (Mesh::element(etype).code != Element::CODE::POLYGON && Mesh::element(etype).code != Element::CODE::POLYHEDRON) {
 					forEachElement(region, etype, [&] (serializededata<esint, esint>::const_iterator it) {
 						for (auto n = it->begin(); n != it->end(); ++n) {
-							_writer.enode(region->getPosition(*n) + 1);
+							_writer.int32(region->getPosition(*n) + 1);
 						}
-						_writer.eend();
+						_writer.ln();
 					});
 					_writer.groupData();
 				}
@@ -333,7 +333,7 @@ void EnSightGold::geometry()
 	auto boundary = [&] (const BoundaryRegionStore *region) {
 		if (isRoot()) {
 			_writer.description("part");
-			_writer.int32(++part);
+			_writer.int32ln(++part);
 			_writer.description(region->name);
 		}
 
@@ -343,7 +343,7 @@ void EnSightGold::geometry()
 				if (region->distribution.code[etype].totalSize) {
 					if (isRoot()) {
 						_writer.description(EnsightOutputWriter::codetotype(etype));
-						_writer.int32(region->distribution.code[etype].totalSize);
+						_writer.int32ln(region->distribution.code[etype].totalSize);
 					}
 
 					if (Mesh::element(etype).code == Element::CODE::POLYGON) {
@@ -351,7 +351,7 @@ void EnSightGold::geometry()
 							if (region->eintervals[i].code == etype) {
 								for (esint e = region->eintervals[i].begin; e < region->eintervals[i].end; ++e) {
 									auto element = region->elements->cbegin() + e;
-									_writer.int32(element->front());
+									_writer.int32ln(element->front());
 								}
 							}
 						}
@@ -361,9 +361,9 @@ void EnSightGold::geometry()
 								for (esint e = region->eintervals[i].begin; e < region->eintervals[i].end; ++e) {
 									auto element = region->elements->cbegin() + e;
 									for (auto n = element->begin() + 1; n != element->end(); ++n) {
-										_writer.enode(region->getPosition(*n) + 1);
+										_writer.int32(region->getPosition(*n) + 1);
 									}
-									_writer.eend();
+									_writer.ln();
 								}
 							}
 						}
@@ -374,9 +374,9 @@ void EnSightGold::geometry()
 								for (esint e = region->eintervals[i].begin; e < region->eintervals[i].end; ++e) {
 									auto element = region->elements->cbegin() + e;
 									for (auto n = element->begin(); n != element->end(); ++n) {
-										_writer.enode(region->getPosition(*n) + 1);
+										_writer.int32(region->getPosition(*n) + 1);
 									}
-									_writer.eend();
+									_writer.ln();
 								}
 							}
 						}
@@ -387,11 +387,11 @@ void EnSightGold::geometry()
 		} else {
 			if (isRoot()) {
 				_writer.description(EnsightOutputWriter::codetotype(static_cast<int>(Element::CODE::POINT1)));
-				_writer.int32(region->nodeInfo.totalSize);
+				_writer.int32ln(region->nodeInfo.totalSize);
 			}
 
 			for (esint i = 0; i < region->nodeInfo.size; ++i) {
-				_writer.int32(region->nodeInfo.offset + i + 1);
+				_writer.int32ln(region->nodeInfo.offset + i + 1);
 			}
 			_writer.groupData();
 		}
@@ -433,19 +433,19 @@ int EnSightGold::ndata(const NamedData *data)
 		for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++part) {
 			if (isRoot()) {
 				_writer.description("part");
-				_writer.int32(part);
+				_writer.int32ln(part);
 				_writer.description("coordinates");
 			}
 
 			const ElementsRegionStore *region = info::mesh->elementsRegions[r];
 			for (int d = 0; d < data->dimension; ++d) {
 				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
-					_writer.float32(data->store[nindex * data->dimension + d]);
+					_writer.float32ln(data->store[nindex * data->dimension + d]);
 				});
 			}
 			if (data->dimension == 2) {
 				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
-					_writer.float32(0);
+					_writer.float32ln(0);
 				});
 			}
 		}
@@ -453,18 +453,18 @@ int EnSightGold::ndata(const NamedData *data)
 		auto boundary = [&] (const BoundaryRegionStore *region) {
 			if (isRoot()) {
 				_writer.description("part");
-				_writer.int32(part);
+				_writer.int32ln(part);
 				_writer.description("coordinates");
 			}
 
 			for (int d = 0; d < data->dimension; ++d) {
 				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
-					_writer.float32(data->store[nindex * data->dimension + d]);
+					_writer.float32ln(data->store[nindex * data->dimension + d]);
 				});
 			}
 			if (data->dimension == 2) {
 				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
-					_writer.float32(0);
+					_writer.float32ln(0);
 				});
 			}
 		};
@@ -489,25 +489,25 @@ int EnSightGold::ndata(const NamedData *data)
 			for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++part) {
 				if (isRoot()) {
 					_writer.description("part");
-					_writer.int32(part);
+					_writer.int32ln(part);
 					_writer.description("coordinates");
 				}
 
 				const ElementsRegionStore *region = info::mesh->elementsRegions[r];
 				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
-					_writer.float32(data->store[nindex * data->dimension + d]);
+					_writer.float32ln(data->store[nindex * data->dimension + d]);
 				});
 			}
 
 			auto boundary = [&] (const BoundaryRegionStore *region) {
 				if (isRoot()) {
 					_writer.description("part");
-					_writer.int32(part);
+					_writer.int32ln(part);
 					_writer.description("coordinates");
 				}
 
 				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
-					_writer.float32(data->store[nindex * data->dimension + d]);
+					_writer.float32ln(data->store[nindex * data->dimension + d]);
 				});
 			};
 
@@ -550,7 +550,7 @@ int EnSightGold::edata(const NamedData *data)
 		for (size_t r = 1, part = 1; r < info::mesh->elementsRegions.size(); ++r, ++part) {
 			if (isRoot()) {
 				_writer.description("part");
-				_writer.int32(part);
+				_writer.int32ln(part);
 			}
 
 			for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
@@ -561,12 +561,12 @@ int EnSightGold::edata(const NamedData *data)
 
 					for (int d = 0; d < data->dimension; ++d) {
 						eiterator(info::mesh->elementsRegions[r], etype, [&] (const ElementsInterval &interval, esint eindex) {
-							_writer.float32(data->store[eindex * data->dimension + d]);
+							_writer.float32ln(data->store[eindex * data->dimension + d]);
 						});
 					}
 					if (data->dimension == 2) {
 						eiterator(info::mesh->elementsRegions[r], etype, [&] (const ElementsInterval &interval, esint eindex) {
-							_writer.float32(0);
+							_writer.float32ln(0);
 						});
 					}
 				}
@@ -585,7 +585,7 @@ int EnSightGold::edata(const NamedData *data)
 			for (size_t r = 1, part = 1; r < info::mesh->elementsRegions.size(); ++r, ++part) {
 				if (isRoot()) {
 					_writer.description("part");
-					_writer.int32(part);
+					_writer.int32ln(part);
 				}
 				for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
 					if (info::mesh->elementsRegions[r]->distribution.code[etype].totalSize) {
@@ -593,7 +593,7 @@ int EnSightGold::edata(const NamedData *data)
 							_writer.description(EnsightOutputWriter::codetotype(etype));
 						}
 						eiterator(info::mesh->elementsRegions[r], etype, [&] (const ElementsInterval &interval, esint eindex) {
-							_writer.float32(data->store[eindex * data->dimension + d]);
+							_writer.float32ln(data->store[eindex * data->dimension + d]);
 						});
 					}
 				}
@@ -613,7 +613,7 @@ void EnSightGold::decomposition()
 		for (size_t r = 1, part = 1; r < info::mesh->elementsRegions.size(); ++r, ++part) {
 			if (isRoot()) {
 				_writer.description("part");
-				_writer.int32(part);
+				_writer.int32ln(part);
 			}
 
 			for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
@@ -624,7 +624,7 @@ void EnSightGold::decomposition()
 					for (size_t i = 0; i < info::mesh->elementsRegions[r]->eintervals.size(); i++) {
 						if (info::mesh->elementsRegions[r]->eintervals[i].code == etype) {
 							for (esint e = info::mesh->elementsRegions[r]->eintervals[i].begin; e < info::mesh->elementsRegions[r]->eintervals[i].end; ++e) {
-								_writer.float32(callback(info::mesh->elementsRegions[r]->eintervals[i], info::mesh->elementsRegions[r]->elements->datatarray()[e]));
+								_writer.float32ln(callback(info::mesh->elementsRegions[r]->eintervals[i], info::mesh->elementsRegions[r]->elements->datatarray()[e]));
 							}
 						}
 					}

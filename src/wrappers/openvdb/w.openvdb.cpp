@@ -36,6 +36,7 @@ struct OpenVDBWrapperData {
 }
 #endif
 
+
 using namespace espreso;
 
 OpenVDBWrapper::OpenVDBWrapper()

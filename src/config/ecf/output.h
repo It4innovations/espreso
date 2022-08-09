@@ -78,6 +78,7 @@ struct OutputConfiguration: public ECFDescription {
 	enum class FORMAT {
 		VTK_LEGACY = 0,
 		ENSIGHT,
+		ENSIGHT_VOLUME,
 		XDMF,
 		STL_SURFACE,
 		NETGEN,

@@ -573,7 +573,10 @@ void Mesh::computePersistentParameters()
 		mesh::triangularizeSurface(surface);
 	}
 
-	if (info::ecf->output.format == OutputConfiguration::FORMAT::OPENVDB) {
+	if (
+			info::ecf->output.format == OutputConfiguration::FORMAT::OPENVDB ||
+			info::ecf->output.format == OutputConfiguration::FORMAT::ENSIGHT_VOLUME) {
+
 		mesh::computeVolumeIndicesOMOpt2(elements, nodes);
 //		mesh::computeVolumeIndices(elements, nodes);
 	}

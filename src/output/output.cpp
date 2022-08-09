@@ -5,6 +5,7 @@
 #include "visualization/visualization.h"
 #include "visualization/vtklegacy.h"
 #include "visualization/ensightgold.h"
+#include "visualization/ensightgold.volume.h"
 #include "visualization/xdmf.h"
 #include "visualization/stl.h"
 #include "visualization/netgen.h"
@@ -111,6 +112,7 @@ Output::Output()
 		switch (info::ecf->output.format) {
 		case OutputConfiguration::FORMAT::VTK_LEGACY: writer = new VTKLegacy(); break;
 		case OutputConfiguration::FORMAT::ENSIGHT: writer = new EnSightGold(); break;
+		case OutputConfiguration::FORMAT::ENSIGHT_VOLUME: writer = new EnSightGoldVolume(); break;
 		case OutputConfiguration::FORMAT::XDMF: writer = new XDMF(); break;
 		case OutputConfiguration::FORMAT::STL_SURFACE: writer = new STL(); break;
 		case OutputConfiguration::FORMAT::NETGEN: writer = new Netgen(); break;
