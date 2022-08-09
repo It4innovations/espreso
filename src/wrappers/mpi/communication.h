@@ -215,7 +215,7 @@ struct Communication {
 	static void allReduce(std::vector<Ttype> &data, OP op, int left = 0, int right = MPITools::procs->size, MPIGroup *group = MPITools::procs);
 
 	static bool barrier(MPIGroup *group = MPITools::procs);
-	static bool broadcast(void *data, size_t size, MPI_Datatype type, int root, MPIGroup *group = MPITools::procs);
+	static bool broadcast(void *data, size_t size, MPI_Datatype type, int root, const MPIGroup *group = MPITools::procs);
 	static bool reduce(void *in, void *out, size_t size, MPI_Datatype type, MPI_Op op, int root, MPIGroup *group = MPITools::procs);
 	static bool allReduce(void *in, void *out, size_t size, MPI_Datatype type, MPI_Op op, MPIGroup *group = MPITools::procs);
 	static bool allGather(void *in, void *out, size_t size, MPI_Datatype type, MPIGroup *group = MPITools::procs);

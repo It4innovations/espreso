@@ -209,7 +209,7 @@ void InputOpenFoamParallel::variables(Mesh &mesh)
 	std::sort(eperm.begin(), eperm.end(), [&] (esint i, esint j) { return (mesh.elements->outputOffset->begin() + i)->front() < (mesh.elements->outputOffset->begin() + j)->front(); });
 
 	std::vector<esint> sBuffer, rBuffer;
-	sBuffer.reserve(info::mpi::size * 4 + nperm.size() + eperm.size());
+	sBuffer.reserve(info::mpi::size * 5 + nperm.size() + eperm.size());
 
 	auto nit = nperm.begin(), eit = eperm.begin();
 	for (int t = 0; t < info::mpi::size; ++t) {

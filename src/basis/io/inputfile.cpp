@@ -86,15 +86,15 @@ bool FilePack::next()
 	return false;
 }
 
-void FilePack::setTotalSizes()
+void FilePack::setTotalSizes(const MPIGroup &group)
 {
 	std::vector<size_t> totalsize(files.size());
-	if (info::mpi::rank == 0) {
+	if (group.rank == 0) {
 		while (next()) {
 			totalsize[fileindex] = size(name);
 		}
 	}
-	Communication::broadcast(totalsize.data(), totalsize.size(), MPITools::getType<size_t>().mpitype, 0);
+	Communication::broadcast(totalsize.data(), totalsize.size(), MPITools::getType<size_t>().mpitype, 0, &group);
 	while (next()) {
 		totalSize = totalsize[fileindex];
 	}
@@ -115,7 +115,7 @@ InputFilePack::InputFilePack(const std::vector<std::string> &filepaths, size_t m
 void InputFilePack::prepare()
 {
 	profiler::syncstart("inputpack_prepare");
-	setTotalSizes();
+	setTotalSizes(MPITools::subset->across);
 	profiler::synccheckpoint("get_size");
 
 	{ // set a reasonable reorganization according to the stripe size setting (black magic)
@@ -322,7 +322,7 @@ AsyncFilePack::AsyncFilePack(const std::vector<std::string> &filepaths, size_t o
 
 void AsyncFilePack::iread(const MPIGroup &group)
 {
-	setTotalSizes();
+	setTotalSizes(group);
 	while (next()) {
 		this->distribution = tarray<size_t>::distribute(group.size, totalSize, minchunk);
 		this->distribution.back() = totalSize;

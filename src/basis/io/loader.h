@@ -5,6 +5,8 @@
 #include "wrappers/mpi/communication.h"
 #include <cstdio>
 
+#include "esinfo/mpiinfo.h"
+
 namespace espreso {
 
 struct Loader {

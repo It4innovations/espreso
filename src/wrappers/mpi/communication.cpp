@@ -495,7 +495,7 @@ bool Communication::barrier(MPIGroup *group)
 	return true;
 }
 
-bool Communication::broadcast(void *data, size_t size, MPI_Datatype type, int root, MPIGroup *group)
+bool Communication::broadcast(void *data, size_t size, MPI_Datatype type, int root, const MPIGroup *group)
 {
 	if (size != (size_t)(int)size) {
 		return false;

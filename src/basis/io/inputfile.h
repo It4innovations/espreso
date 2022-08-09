@@ -64,7 +64,7 @@ struct FilePack: public InputFile {
 	InputFile* add(const std::string &name);
 	bool next();
 
-	void setTotalSizes();
+	void setTotalSizes(const MPIGroup &group);
 
 	const size_t minchunk;
 	size_t fileindex;
