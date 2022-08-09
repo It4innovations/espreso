@@ -51,6 +51,7 @@ struct InputConfiguration: public ECFDescription {
 	bool omit_face_sets;
 	bool keep_material_sets;
 	bool convert_database;
+	bool compute_bodies;
 	double duplication_tolerance;
 
 	bool insert_orientation;

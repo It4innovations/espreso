@@ -70,6 +70,11 @@ InputConfiguration::InputConfiguration()
 			.setdescription({ "Convert database" })
 			.setdatatype({ ECFDataType::BOOL }));
 
+	compute_bodies = false;
+	REGISTER(compute_bodies, ECFMetaData()
+			.setdescription({ "Compute mesh bodies" })
+			.setdatatype({ ECFDataType::BOOL }));
+
 	duplication_tolerance = 1e-8;
 	REGISTER(duplication_tolerance, ECFMetaData()
 			.setdescription({ "Tolerance for merging nodes according to coordinates." })

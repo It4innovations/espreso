@@ -544,7 +544,11 @@ void Mesh::computePersistentParameters()
 		}
 	}
 
-	mesh::computeBodies(elements, bodies, elementsRegions, neighbors);
+	if (info::ecf->input.compute_bodies || info::ecf->input.contact_interfaces.size()) {
+		mesh::computeBodies(elements, bodies, elementsRegions, neighbors);
+	} else {
+		elements->body = new serializededata<esint, int>(1, tarray<int>(elements->distribution.threads, 1LU, 0));
+	}
 
 	if (info::ecf->input.contact_interfaces.size()) {
 		mesh::computeBodiesSurface(nodes, elements, elementsRegions, surface, neighbors);
