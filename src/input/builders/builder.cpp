@@ -231,6 +231,7 @@ void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 	if (info::mpi::size == 1) {
 		// 1. -> 2. trivial
 		trivialUpdate(nh.blocks, nh.chunked);
+		clip(nh.chunked, eh.chunked);
 
 		// 2. -> 4. trivial
 		trivialUpdate(nh.chunked, nh.clustered);
@@ -255,6 +256,7 @@ void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 
 		// 1. -> 2. trivial
 		trivialUpdate(nh.blocks, nh.chunked);
+		clip(nh.chunked, eh.chunked);
 		eslog::param("OrderedNodesChunked", nh.chunked.coordinates.size());
 		eslog::param("OrderedElementsChunked", eh.chunked.etype.size());
 		eslog::param("OrderedTotalChunked[B]", size(nh.chunked) + size(nh.chunked));

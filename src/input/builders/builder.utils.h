@@ -152,6 +152,7 @@ void trivialUpdate(ElementsBlocks &blocks, OrderedElementsChunked &chunked);
 void trivialUpdate(FacesBlocks &blocks, OrderedFacesChunked &chunked);
 void buildElementsFromFaces(OrderedFacesChunked &faces, OrderedElementsChunked &elements, NodesBlocks &nodes);
 void buildElementsFromFaces(OrderedFacesBalanced &faces, OrderedElementsBalanced &elements, NodesBlocks &nodes);
+void clip(OrderedNodesChunked &nodes, OrderedElementsChunked &elements);
 
 // 1. -> 2.
 void trivialUpdate(NodesBlocks &blocks, OrderedNodesBalanced &balanced);
