@@ -338,6 +338,120 @@ void exchangeSFCBoundaryNodes(const HilbertCurve<esfloat> &sfc, const ivector<es
 	}
 }
 
+void globalToLocal(ClusteredElements &clustered, MergedElements &merged, LinkedNodes &nodes)
+{
+	// duplicate boundary is adept to duplication only
+	std::unordered_map<esint, esint> g2l;
+
+	g2l.reserve(nodes.offsets.size() + nodes.duplication.size());
+	for (size_t n = 0; n < nodes.offsets.size(); ++n) {
+		g2l[nodes.offsets[n]] = n;
+	}
+	for (auto dup = nodes.duplication.begin(); dup != nodes.duplication.end(); ++dup) {
+		g2l[dup->duplicate] = g2l[dup->origin];
+	}
+
+	{ // build elements
+		swap(merged, clustered);
+		merged.offsets.swap(clustered.offsets);
+	}
+
+	{ // build nodes
+		std::unordered_map<esint, esint> dmap;
+		for (size_t n = 0; n < nodes.duplication.size(); ++n) {
+			dmap[nodes.duplication[n].duplicate] = g2l[nodes.duplication[n].origin];
+		}
+		std::unordered_map<esint, esint> rmap;
+		for (size_t n = 0; n < nodes.neighbors.size(); ++n) {
+			rmap[nodes.neighbors[n]] = n;
+		}
+		std::vector<int> neighbors(nodes.neighbors.size());
+
+		std::vector<esint> usedNode(nodes.offsets.size() + 1);
+		for (size_t e = 0, eoffset = 0; e < merged.etype.size(); eoffset += Element::encode(merged.etype[e++]).nodes) {
+			PolyElement poly(merged.etype[e], merged.enodes.data() + eoffset);
+			for (int n = 0; n < Element::encode(merged.etype[e]).nodes; ++n) {
+				if (poly.isNode(n)) {
+					usedNode[g2l[merged.enodes[n + eoffset]]] = 1;
+				}
+			}
+		}
+		utils::sizesToOffsets(usedNode);
+		for (size_t e = 0, eoffset = 0; e < merged.etype.size(); eoffset += Element::encode(merged.etype[e++]).nodes) {
+			PolyElement poly(merged.etype[e], merged.enodes.data() + eoffset);
+			for (int n = 0; n < Element::encode(merged.etype[e]).nodes; ++n) {
+				if (poly.isNode(n)) {
+					merged.enodes[n + eoffset] = usedNode[g2l[merged.enodes[n + eoffset]]];
+				}
+			}
+		}
+
+		// we need to inform about erased nodes
+		std::vector<std::vector<esint> > sRemoved(nodes.neighbors.size()), rRemoved(nodes.neighbors.size());
+		for (size_t n = 0; n < nodes.offsets.size(); ++n) {
+			if (usedNode[n] == usedNode[n + 1] && usedNode[g2l[nodes.offsets[n]]] == usedNode[g2l[nodes.offsets[n]] + 1]) {
+				for (esint r = nodes.rankDistribution[n]; r < nodes.rankDistribution[n + 1]; ++r) {
+					if (nodes.rankData[r] != info::mpi::rank) {
+						sRemoved[rmap[nodes.rankData[r]]].push_back(nodes.offsets[n]);
+					}
+				}
+			}
+		}
+
+		if (!Communication::exchangeUnknownSize(sRemoved, rRemoved, nodes.neighbors)) {
+			eslog::internalFailure("exchange removed nodes.\n");
+		}
+
+		std::vector<std::pair<esint, esint> > removed;
+		for (size_t r = 0; r < rRemoved.size(); ++r) {
+			for (size_t i = 0; i < rRemoved[r].size(); ++i) {
+				auto dup = dmap.find(rRemoved[r][i]);
+				if (dup != dmap.end()) {
+					removed.push_back(std::pair<esint, esint>(dup->second, nodes.neighbors[r]));
+				} else {
+					removed.push_back(std::pair<esint, esint>(rRemoved[r][i], nodes.neighbors[r]));
+				}
+			}
+		}
+		std::sort(removed.begin(), removed.end());
+
+		size_t offset = 0, ranks = 0, rindex = 0;
+		for (size_t n = 0; n < nodes.offsets.size(); ++n) {
+			if (usedNode[n] < usedNode[n + 1]) {
+				while (rindex < removed.size() && removed[rindex].first < nodes.offsets[n]) { ++rindex; }
+				nodes.offsets[offset] = nodes.offsets[n];
+				nodes.coordinates[offset] = nodes.coordinates[n];
+				size_t rdist = ranks;
+				for (esint r = nodes.rankDistribution[n]; r < nodes.rankDistribution[n + 1]; ++r) {
+					if (rindex == removed.size() || removed[rindex].first != nodes.offsets[n] || removed[rindex].second != nodes.rankData[r]) {
+						nodes.rankData[ranks++] = nodes.rankData[r];
+						if (nodes.rankData[r] != info::mpi::rank) {
+							++neighbors[rmap[nodes.rankData[r]]];
+						}
+					}
+					if (rindex < removed.size() && removed[rindex].first == nodes.offsets[n] && removed[rindex].second == nodes.rankData[r]) {
+						++rindex;
+					}
+				}
+				nodes.rankDistribution[offset++] = rdist;
+			}
+		}
+		nodes.offsets.resize(offset);
+		nodes.coordinates.resize(offset);
+		nodes.rankDistribution.resize(offset + 1);
+		nodes.rankDistribution.back() = ranks;
+		nodes.rankData.resize(ranks);
+		std::vector<int> neighs; neighs.swap(nodes.neighbors);
+		for (size_t n = 0; n < neighbors.size(); ++n) {
+			if (neighbors[n]) {
+				nodes.neighbors.push_back(neighs[n]);
+			}
+		}
+	}
+
+	eslog::info(" == DUPLICATED ELEMENTS %67lu == \n", 0);
+}
+
 void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merged, LinkedNodes &nodes, int dimension)
 {
 	// duplicate boundary is adept to duplication only

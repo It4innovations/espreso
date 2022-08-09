@@ -186,6 +186,7 @@ void linkup(MergedNodes &merged, LinkedNodes &linked, ClusteredElements &element
 // 7. -> 8.
 void trivialUpdate(ClusteredElements &clustered, MergedElements &merged);
 void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merged, LinkedNodes &nodes, int dimension);
+void globalToLocal(ClusteredElements &clustered, MergedElements &merged, LinkedNodes &nodes);
 
 // 9.
 void fillNodes(LinkedNodes &nodes, OrderedRegions &regions, Mesh &mesh);

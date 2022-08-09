@@ -248,7 +248,7 @@ void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 		trivialUpdate(nh.merged, nh.linked);
 
 		// 7. -> 8. just local search
-		mergeDuplicatedElements(eh.clustered, eh.merged, nh.linked, mesh.dimension);
+		globalToLocal(eh.clustered, eh.merged, nh.linked);
 		eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
 	} else {
 		ivector<esint> nbuckets, ebuckets, splitters;
@@ -293,7 +293,7 @@ void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 		eslog::ln();
 
 		// 7. -> 8.
-		mergeDuplicatedElements(eh.clustered, eh.merged, nh.linked, mesh.dimension);
+		globalToLocal(eh.clustered, eh.merged, nh.linked);
 		eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
 		eslog::param("MergedElements", eh.merged.etype.size());
 		eslog::ln();
