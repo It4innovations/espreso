@@ -3,7 +3,6 @@ def options(opt):
     opt.other.add_option("--openvdb", action="store", type="string", metavar="OPENVDB_ROOT", default="", help="Path to OpenVDB.")
 
 def configure(ctx):
-    return
     ctx.env.stash()
     test = ctx.test_dict("OpenVDB")
     test["mandatory"] = False

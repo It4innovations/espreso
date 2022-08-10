@@ -98,7 +98,7 @@ void OpenVDBWrapper::add_grid(std::vector<int> voxel_indices_dist, std::vector<_
 		}		
 	}
 
-	grid->pruneGrid(0.01); // increase sparseness
+//	grid->pruneGrid(0.01); // increase sparseness
 	_data->grids.push_back(grid);
 #endif
 }

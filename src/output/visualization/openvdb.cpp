@@ -5,6 +5,7 @@
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/eslog.h"
 #include "basis/containers/serializededata.h"
 
 #include <float.h>
@@ -35,6 +36,8 @@ void OpenVDB::updateSolution()
 		return;
 	}
 
+	if (_measure) { eslog::startln("OPENVDB: STORING STARTED", "OPENVDB"); }
+
 	// gather volume data
 	auto volume_data = info::mesh->elements->volumeIndices;
 	auto dist_array = volume_data->boundarytarray();
@@ -46,6 +49,8 @@ void OpenVDB::updateSolution()
 	esint data_array_size = data_array.size();
 	esint max_data_array_size;
 	MPI_Allreduce(&data_array_size, &max_data_array_size, 1, MPI_UNSIGNED, MPI_MAX, info::mpi::comm);
+
+	if (_measure) { eslog::checkpointln("OPENVDB: VOLUME SIZE REDUCED"); }
 
 	int filling_inx = -1;
 	std::vector<int> dist_vector(dist_array.begin(), dist_array.end());
@@ -59,6 +64,8 @@ void OpenVDB::updateSolution()
 	std::vector<_Point<int>> all_data;
 	all_data.resize(info::mpi::size * max_data_array_size);
 	MPI_Gather(data_vector.data(), max_data_array_size*3, MPI_INT, all_data.data(), max_data_array_size*3, MPI_INT, 0, info::mpi::comm);
+
+	if (_measure) { eslog::checkpointln("OPENVDB: VOLUME GATHERED"); }
 
 	OpenVDBWrapper wrapper;
 	for (size_t di = 0; di < info::mesh->elements->data.size(); di++) { // go through all element values
@@ -76,8 +83,11 @@ void OpenVDB::updateSolution()
 			wrapper.add_grid(all_dist, all_data, all_elements_data, info::mesh->elements->data[di]->name, info::mesh->elements->data[di]->dimension);
 		}
 	}
+	if (_measure) { eslog::checkpointln("OPENVDB: VOLUME INSERTED"); }
+
 	if(info::mpi::rank == 0) {
 		wrapper.store_grids((_filename + std::to_string(_step) + ".vdb").c_str());
 		_step++;
-	}		
+	}
+	if (_measure) { eslog::endln("OPENVDB: DATA STORED"); }
 }
