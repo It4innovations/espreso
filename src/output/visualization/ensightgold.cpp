@@ -78,6 +78,7 @@ void EnSightGold::updateMesh()
 
 void EnSightGold::updateSolution()
 {
+	if (_measure) { eslog::startln("ENSIGHT RESULTS: STORING STARTED", "ENSIGHT RESULTS"); }
 	EnSightGold *writer = this;
 
 	if (step::outstep.type == step::TYPE::FTT && step::outftt.isFirst()) {
@@ -155,12 +156,18 @@ void EnSightGold::updateSolution()
 		writer->casefile();
 	}
 
-	writer->_writer.reorder();
-	writer->_writer.write();
+	if (_measure) { eslog::checkpointln("ENSIGHT RESULTS: DATA INSERTED"); }
 
+	writer->_writer.reorder();
+	if (_measure) { eslog::checkpointln("ENSIGHT RESULTS: DATA REORDERED"); }
+
+	writer->_writer.write();
 	if (step::outstep.type == step::TYPE::FTT && step::outftt.isLast()) {
 		delete _ftt;
 	}
+
+	Communication::barrier(MPITools::asynchronous);
+	if (_measure) { eslog::endln("ENSIGHT RESULTS: DATA STORED"); }
 }
 
 std::string EnSightGold::dataname(const NamedData *data, int d)

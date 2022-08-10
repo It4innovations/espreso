@@ -68,6 +68,7 @@ void EnSightGoldVolume::updateMesh()
 
 void EnSightGoldVolume::updateSolution()
 {
+	if (_measure) { eslog::startln("ENSIGHT VOLUME: STORING STARTED", "ENSIGHT VOLUME"); }
 	switch (step::outstep.type) {
 	case step::TYPE::TIME:      _times.push_back(step::outtime.current); break;
 	case step::TYPE::FREQUENCY: _times.push_back(step::outfrequency.current); break;
@@ -151,6 +152,7 @@ void EnSightGoldVolume::updateSolution()
 			}
 		}
 	}
+	if (_measure) { eslog::checkpointln("ENSIGHT VOLUME: DATA CHUNKED"); }
 
 	size_t mychunk = std::min(gridsize - coffset, chunk);
 	for (size_t di = 0; di < info::mesh->elements->data.size(); di++) {
@@ -174,13 +176,17 @@ void EnSightGoldVolume::updateSolution()
 		file << _path + _directory + info::mesh->elements->data[di]->name + "." << std::setw(4) << std::setfill('0') << _times.size() + step::outduplicate.offset;
 		_writer.commitFile(file.str());
 	}
+	if (_measure) { eslog::checkpointln("ENSIGHT VOLUME: DATA INSERTED"); }
 
 	_writer.reorder();
-	_writer.write();
+	if (_measure) { eslog::checkpointln("ENSIGHT VOLUME: DATA REORDERED"); }
 
+	_writer.write();
 	if (isRoot()) {
 		casefile();
 	}
+
+	if (_measure) { eslog::endln("ENSIGHT VOLUME: DATA STORED"); }
 }
 
 std::string EnSightGoldVolume::dataname(const NamedData *data, int d)
