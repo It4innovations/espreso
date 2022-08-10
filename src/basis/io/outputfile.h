@@ -50,6 +50,11 @@ class OutputFilePack: public OutputFile {
 public:
 	~OutputFilePack();
 
+	void reserve(size_t size)
+	{
+		_buffer.reserve(size);
+	}
+
 	void groupData();
 	void commitFile(const std::string &name);
 

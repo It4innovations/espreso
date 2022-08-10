@@ -165,6 +165,7 @@ void EnSightGoldVolume::updateSolution()
 			_writer.description("coordinates");
 		}
 
+		_writer.reserve(output[di].size() * sizeof(double));
 		for (int d = 0; d < info::mesh->elements->data[di]->dimension; ++d) {
 			for (size_t c = 0; c < mychunk; ++c) {
 				_writer.float32ln(output[di][c * info::mesh->elements->data[di]->dimension + d]);
