@@ -107,6 +107,8 @@ void InputOpenFoamSequential::load(const InputConfiguration &configuration)
 	ParallelFoamFile::synchronize({ &points, &faces, &owner, &neighbour });
 	profiler::synccheckpoint("scan");
 
+	this->faces.elements.blocks.push_back(DatabaseOffset{0, 0, numberOfCells(owner.header)});
+
 	points.parse(this->nodes.coordinates);
 	faces.parse(this->faces.ftype, this->faces.fnodes);
 	owner.parse(this->faces.owner);
@@ -145,7 +147,7 @@ void InputOpenFoamParallel::load(const InputConfiguration &configuration)
 		nodes.blocks.push_back(DatabaseOffset{ndistribution[info::mpi::rank] + nsum, nsum, nsize[i]});
 		nsum += nsize[i];
 		faces.elements.blocks.push_back(DatabaseOffset{edistribution[info::mpi::rank] + esum, esum, esize[i]});
-		esum += nsize[i];
+		esum += esize[i];
 	}
 	nblocks = nodes.blocks;
 	eblocks = faces.elements.blocks;
@@ -181,7 +183,7 @@ void InputOpenFoam::build(Mesh &mesh)
 
 void InputOpenFoamSequential::build(Mesh &mesh)
 {
-//	builder::buildOrderedFVM(this->mesh, mesh);
+	builder::buildOrderedFVM(nodes, faces, regions, mesh);
 }
 
 void InputOpenFoamParallel::build(Mesh &mesh)

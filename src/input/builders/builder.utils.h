@@ -158,6 +158,7 @@ void clip(OrderedNodesChunked &nodes, OrderedElementsChunked &elements);
 void trivialUpdate(NodesBlocks &blocks, OrderedNodesBalanced &balanced);
 void trivialUpdate(ElementsBlocks &blocks, OrderedElementsBalanced &balanced);
 void balanceFEM(NodesBlocks &inNodes, ElementsBlocks &inElements, OrderedNodesBalanced &outNodes, OrderedElementsBalanced &outElements);
+void balanceFVM(NodesBlocks &inNodes, FacesBlocks &inFaces, OrderedNodesBalanced &outNodes, OrderedFacesBalanced &outFaces);
 
 // 3.
 void assignBuckets(OrderedNodesChunked &nodes, OrderedElementsChunked &elements, const HilbertCurve<esfloat> &sfc, ivector<esint> &nbuckets, ivector<esint> &ebuckets);

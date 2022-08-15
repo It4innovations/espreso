@@ -162,55 +162,106 @@ void buildOrderedFEM(NodesBlocks &nodes, ElementsBlocks &elements, OrderedRegion
 	eslog::endln("BUILDER: MESH BUILT");
 }
 
-//void buildOrderedFVM(InputMesh<OrderedNodes, OrderedFaces, OrderedRegions> &input, Mesh &mesh)
-//{
-//	eslog::startln("BUILDER: PROCESS FACED MESH", "BUILDER");
-//	mesh.dimension = 3;
-//	if (info::mpi::size == 1) {
-//		TemporalSequentialMesh<MergedNodes, OrderedFacesBalanced> grouped;
-//		TemporalSequentialMesh<MergedNodes, MergedElements> prepared;
-//
-//		initializeSequentialFVM(input, grouped);
-//		eslog::checkpointln("BUILDER: DATA INITIALIZED");
-//
-//		buildElementsFromFaces(grouped, prepared);
-//		eslog::checkpointln("BUILDER: ELEMENTS CREATED");
-//
-//		fillSequentialMesh(prepared, *input.regions, mesh);
-//	} else {
-//		TemporalMesh<OrderedNodesBalanced, OrderedFacesBalanced> grouped;
-//		TemporalMesh<OrderedNodesBalanced, OrderedElementsBalanced> ordered;
-//		TemporalMesh<MergedNodes, MergedElements> clustered;
-//		TemporalMesh<LinkedNodes, MergedElements> linked;
-//
-//		balanceFVM(input, grouped);
-//		eslog::checkpointln("BUILDER: DATA BALANCED");
-//
-//		buildElementsFromFaces(grouped, ordered);
-//		eslog::checkpointln("BUILDER: ELEMENTS CREATED");
-//
-//		ivector<esint> nbuckets, ebuckets, splitters;
-//		HilbertCurve<esfloat> sfc(mesh.dimension, SFCDEPTH, ordered.nodes->coordinates.size(), ordered.nodes->coordinates.data());
-//		eslog::checkpointln("BUILDER: SFC BUILT");
-//
-//		assignBuckets(ordered, sfc, nbuckets, ebuckets);
-//		eslog::checkpointln("BUILDER: SFC BUCKETS ASSIGNED");
-//
-//		clusterize(ordered, nbuckets, ebuckets, sfc.buckets(sfc.depth), clustered, splitters);
-//		utils::clearVectors(nbuckets, ebuckets);
-//		eslog::checkpointln("BUILDER: MESH CLUSTERIZED");
-//
-//		computeSFCNeighbors(sfc, splitters, linked.nodes->neighbors); // neighbors are approximated here
-//		eslog::checkpointln("BUILDER: NEIGHBORS APPROXIMATED");
-//
-//		linkup(clustered, linked);
-//		reindexToLocal(linked);
-//		eslog::checkpointln("BUILDER: LINKED UP");
-//
-//		fillMesh(linked, *input.regions, mesh);
-//	}
-//	eslog::endln("BUILDER: MESH BUILT");
-//}
+void buildOrderedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &regions, Mesh &mesh)
+{
+	eslog::startln("BUILDER: PROCESS FACED MESH", "BUILDER");
+	eslog::info(" ==================================== ORDERED FVM BUILDER ===================== %12.3f s\n", eslog::duration());
+	eslog::info(" ============================================================================================= \n");
+	mesh.dimension = 3;
+	eslog::info(" == MESH DIMENSION %72d == \n", mesh.dimension);
+
+	NodesHolder nh(std::move(nodes));
+	FaceHolder fh(std::move(faces));
+	ElementsHolder eh;
+
+	if (info::mpi::size == 1) {
+		// 0. -> 1.
+		trivialUpdate(fh.blocks, fh.chunked);
+		buildElementsFromFaces(fh.chunked, eh.chunked, nh.blocks);
+
+		// 1. -> 2. trivial
+		trivialUpdate(nh.blocks, nh.chunked);
+		clip(nh.chunked, eh.chunked);
+
+		// 2. -> 4. trivial
+		trivialUpdate(nh.chunked, nh.clustered);
+		trivialUpdate(eh.chunked, eh.clustered);
+		eslog::checkpointln("BUILDER: DATA INITIALIZED");
+
+		eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
+		// 4. skipped
+		// 5. -> 6. just local search
+		searchDuplicatedNodes(nh.clustered, nh.merged);
+		eslog::checkpointln("BUILDER: DUPLICATED NODES FOUND");
+
+		// 6. -> 7. trivial
+		mergeDuplicatedNodes(nh.merged); // fix 'linkup' side effect
+		trivialUpdate(nh.merged, nh.linked);
+
+		// 7. -> 8.
+		globalToLocal(eh.clustered, eh.merged, nh.linked);
+		eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
+	} else {
+		ivector<esint> nbuckets, ebuckets, splitters;
+
+		// 0. -> 1.
+		balanceFVM(nh.blocks, fh.blocks, nh.balanced, fh.balanced);
+		eslog::checkpointln("BUILDER: DATA BALANCED");
+
+		buildElementsFromFaces(fh.balanced, eh.balanced, nh.blocks);
+		eslog::param("OrderedNodesBalanced", nh.balanced.coordinates.size());
+		eslog::param("OrderedElementsBalanced", eh.balanced.etype.size());
+		eslog::param("OrderedTotalChunked[B]", size(nh.balanced) + size(nh.balanced));
+		eslog::ln();
+		eslog::checkpointln("BUILDER: ELEMENTS CREATED");
+
+		// 3. synchronize mesh dimension and compute SFC
+		HilbertCurve<esfloat> sfc(mesh.dimension, SFCDEPTH, nh.balanced.coordinates.size(), nh.balanced.coordinates.data());
+		eslog::checkpointln("BUILDER: SFC BUILT");
+
+		assignBuckets(nh.balanced, eh.balanced, sfc, nbuckets, ebuckets);
+		eslog::checkpointln("BUILDER: SFC BUCKETS ASSIGNED");
+
+		// 2. -> 4.
+		clusterize(nh.balanced, eh.balanced, nbuckets, ebuckets, sfc.buckets(sfc.depth), nh.clustered, eh.clustered, splitters);
+		utils::clearVectors(nbuckets, ebuckets);
+		eslog::checkpointln("BUILDER: MESH CLUSTERIZED");
+		eslog::param("ClusteredNodes", nh.clustered.coordinates.size());
+		eslog::param("ClusteredElements", eh.clustered.etype.size());
+		eslog::ln();
+
+		// 5.
+		computeSFCNeighbors(sfc, splitters, nh.linked.neighbors); // neighbors are approximated here
+		eslog::checkpointln("BUILDER: NEIGHBORS APPROXIMATED");
+		eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
+
+		// 4. -> 6.
+		exchangeSFCBoundaryNodes(sfc, splitters, nh.linked.neighbors, nh.clustered);
+		searchDuplicatedNodes(nh.clustered, nh.merged);
+		utils::clearVector(splitters);
+		eslog::checkpointln("BUILDER: DUPLICATED NODES FOUND");
+
+		// 6. -> 7.
+		linkup(nh.merged, nh.linked, eh.clustered);
+		eslog::checkpointln("BUILDER: LINKED UP");
+		eslog::param("LinkedNodes", nh.linked.coordinates.size());
+		eslog::ln();
+
+		// 7. -> 8.
+		globalToLocal(eh.clustered, eh.merged, nh.linked);
+		eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
+		eslog::param("MergedElements", eh.merged.etype.size());
+		eslog::ln();
+	}
+
+	// 9.
+	fillNodes(nh.linked, regions, mesh);
+	fillElements(eh.merged, regions, mesh);
+
+	regionInfo(mesh);
+	eslog::info(" ============================================================================================= \n\n");
+	eslog::endln("BUILDER: MESH BUILT");
+}
 
 void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &regions, Mesh &mesh)
 {
@@ -248,7 +299,7 @@ void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 		mergeDuplicatedNodes(nh.merged); // fix 'linkup' side effect
 		trivialUpdate(nh.merged, nh.linked);
 
-		// 7. -> 8. just local search
+		// 7. -> 8.
 		globalToLocal(eh.clustered, eh.merged, nh.linked);
 		eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
 	} else {
