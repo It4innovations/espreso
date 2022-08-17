@@ -195,8 +195,12 @@ static void _computeElementsNeighbors(NodeStore *nodes, ElementStore *elements, 
 	#pragma omp parallel for
 	for (size_t t = 0; t < threads; t++) {
 		auto enodes = elements->nodes->cbegin(t);
+		const auto &edist = elements->offset->datatarray().distribution();
 
 		std::vector<esint> tdist, tdata, intersection;
+		tdist.reserve(edist[t + 1] - edist[t] + 1);
+		tdata.reserve(tdist.capacity() * (faces ? 6 : 48));
+
 		if (t == 0) {
 			tdist.push_back(0);
 		}
@@ -244,7 +248,7 @@ static void _computeElementsNeighbors(NodeStore *nodes, ElementStore *elements, 
 			}
 		};
 
-		for (size_t e = elements->offset->datatarray().distribution()[t]; e < elements->offset->datatarray().distribution()[t + 1]; ++e, ++enodes) {
+		for (size_t e = edist[t]; e < edist[t + 1]; ++e, ++enodes) {
 			switch (Element::encode(elements->epointers->datatarray()[e]->code).code) {
 			case Element::CODE::POLYGON:
 				if (!faces) {
