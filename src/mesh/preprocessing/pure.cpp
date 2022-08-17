@@ -75,31 +75,30 @@ void linkNodesAndElements(ElementStore *elements, NodeStore *nodes, const std::v
 {
 	profiler::syncstart("link_nodes_and_elements");
 
-	struct __link__ { esint element, node; };
-	struct __linkHash__ { size_t operator()(const __link__ &link) const { return std::hash<size_t>()((static_cast<size_t>(link.element) << 32) + static_cast<size_t>(link.node)); } };
-	struct __linkComp__ { bool operator()(const __link__ &l1, const __link__ &l2) const { return l1.element == l2.element && l1.node == l2.node; } };
-	std::unordered_set<__link__, __linkHash__, __linkComp__> links;
-
-	std::vector<esint> n2eDist(nodes->size + 1), n2eData;
+	std::vector<esint> n2eDist(1 + nodes->size + 1), _n2eData;
 
 	auto nit = elements->nodes->cbegin();
 	for (size_t e = 0; e < elements->epointers->datatarray().size(); ++e, ++nit) {
 		PolyElement poly(Element::decode(elements->epointers->datatarray()[e]->code, nit->size()), nit->begin());
 		for (auto n = nit->begin(); n != nit->end(); ++n) {
-			if (poly.isNode(n - nit->begin()) && links.count(__link__{elements->offset->datatarray()[e], *n}) == 0) {
-				++n2eDist[*n];
-				links.insert(__link__{elements->offset->datatarray()[e], *n});
+			if (poly.isNode(n - nit->begin())) {
+				++n2eDist[*n + 1];
 			}
 		}
 	}
-	std::vector<esint> _n2eDist = n2eDist;
+
+	std::vector<esint> _n2eDist(n2eDist.begin(), n2eDist.end());
 	utils::sizesToOffsets(_n2eDist);
-	n2eData.resize(_n2eDist.back());
-	for (auto it = links.cbegin(); it != links.cend(); ++it) {
-		n2eData[_n2eDist[it->node]++] = it->element;
-	}
-	for (esint n = 0; n < nodes->size; ++n) {
-		_n2eDist[n] -= n2eDist[n];
+	_n2eData.resize(_n2eDist.back(), -1);
+
+	nit = elements->nodes->cbegin();
+	for (size_t e = 0; e < elements->epointers->datatarray().size(); ++e, ++nit) {
+		PolyElement poly(Element::decode(elements->epointers->datatarray()[e]->code, nit->size()), nit->begin());
+		for (auto n = nit->begin(); n != nit->end(); ++n) {
+			if (poly.isNode(n - nit->begin())) {
+				_n2eData[_n2eDist[*n + 1]++] = elements->offset->datatarray()[e];
+			}
+		}
 	}
 
 	std::vector<std::vector<esint> > sBuffer(neighbors.size()), rBuffer(neighbors.size());
@@ -110,7 +109,17 @@ void linkNodesAndElements(ElementStore *elements, NodeStore *nodes, const std::v
 			if (*rank != info::mpi::rank) {
 				while (neighbors[r] < *rank) ++r;
 				sBuffer[r].push_back(-nodes->IDs->datatarray()[n]); // nIDs are negative
-				sBuffer[r].insert(sBuffer[r].end(), n2eData.begin() + _n2eDist[n], n2eData.begin() + _n2eDist[n + 1]);
+				for (esint i = _n2eDist[n]; i < _n2eDist[n + 1]; ++i) {
+					// polygons can put more elements to the same node
+					if (i == _n2eDist[n] || _n2eData[i - 1] != _n2eData[i]) {
+						sBuffer[r].push_back(_n2eData[i]);
+					}
+				}
+			}
+		}
+		for (esint i = _n2eDist[n] + 1; i < _n2eDist[n + 1]; ++i) {
+			if (_n2eData[i - 1] == _n2eData[i]) {
+				--n2eDist[n + 1];
 			}
 		}
 	}
@@ -126,41 +135,49 @@ void linkNodesAndElements(ElementStore *elements, NodeStore *nodes, const std::v
 			esint n = std::lower_bound(nodes->IDs->datatarray().begin(), nodes->IDs->datatarray().end(), -*it) - nodes->IDs->datatarray().begin();
 			*it++ = -n;
 			while (it != rBuffer[r].end() && 0 <= *it) {
-				++n2eDist[n];
+				++n2eDist[n + 1];
 				++it;
 			}
 		}
 	}
+
 	utils::sizesToOffsets(n2eDist);
-	_n2eDist = n2eDist;
-	n2eData.resize(n2eDist.back());
-	for (auto it = links.cbegin(); it != links.cend(); ++it) {
-		n2eData[_n2eDist[it->node]++] = it->element;
-	}
-	for (size_t r = 0; r < rBuffer.size(); ++r) {
-		auto it = rBuffer[r].begin();
-		while (it != rBuffer[r].end()) {
+	ivector<esint> n2eData(n2eDist.back());
+	size_t neigh = 0;
+
+	auto insertNeigh = [&] () {
+		auto it = rBuffer[neigh].begin();
+		while (it != rBuffer[neigh].end()) {
 			esint n = -*it++;
-			while (it != rBuffer[r].end() && 0 <= *it) {
-				n2eData[_n2eDist[n]++] = *it;
+			while (it != rBuffer[neigh].end() && 0 <= *it) {
+				n2eData[n2eDist[n + 1]++] = *it;
 				++it;
 			}
 		}
+	};
+	while (neigh < neighbors.size() && neighbors[neigh] < info::mpi::rank) {
+		insertNeigh();
+		++neigh;
 	}
+	for (esint n = 0; n < nodes->size; ++n) {
+		for (esint i = _n2eDist[n]; i < _n2eDist[n + 1]; ++i) {
+			if (i == _n2eDist[n] || _n2eData[i - 1] != _n2eData[i]) {
+				n2eData[n2eDist[n + 1]++] = _n2eData[i];
+			}
+		}
+	}
+	while (neigh < neighbors.size()) {
+		insertNeigh();
+		++neigh;
+	}
+	n2eDist.pop_back();
 
 	std::vector<size_t> bdist = nodes->distribution, ddist = nodes->distribution;
 	for (size_t i = 1; i < nodes->distribution.size(); ++i) {
 		ddist[i] = n2eDist[bdist[i]];
 		bdist[i] += 1;
 	}
-	nodes->elements = new serializededata<esint, esint>(tarray<esint>(bdist, n2eDist), tarray<esint>(ddist, n2eData));
-
-	#pragma omp parallel for
-	for (int t = 0; t < info::env::MKL_NUM_THREADS; ++t) {
-		for (auto it = nodes->elements->begin(t); it != nodes->elements->end(t); ++it) {
-			std::sort(it->begin(), it->end()); // TODO: remove sort
-		}
-	}
+	nodes->elements = new serializededata<esint, esint>(tarray<esint>(bdist, n2eDist), tarray<esint>(ddist, n2eData.begin(), n2eData.end()));
 
 	profiler::synccheckpoint("rbuffer");
 	profiler::syncend("link_nodes_and_elements");
