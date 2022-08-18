@@ -42,7 +42,6 @@ int main(int argc, char **argv)
 
 	Mesh::load();
 	info::mesh->printMeshStatistics();
-	info::mesh->printDecompositionStatistics();
 
 	info::mesh->output->updateMesh();
 	eslog::endln("MESIO: MESH STORED");

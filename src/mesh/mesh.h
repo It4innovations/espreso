@@ -115,7 +115,7 @@ protected:
 	void reclusterize();
 	void computePersistentParameters();
 
-	bool _omitClusterization, _omitDecomposition;
+	bool _omitClusterization, _omitDecomposition, _omitDual;
 	bool _withGUI, _withFETI, _withBEM, _withEdgeDual;
 };
 

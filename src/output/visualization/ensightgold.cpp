@@ -645,10 +645,12 @@ void EnSightGold::decomposition()
 	store("DOMAIN", [&] (const ElementsInterval &interval, esint eindex) {
 		return interval.domain;
 	});
-	esint cluster = info::mesh->clusters->offset;
-	store("CLUSTER", [&] (const ElementsInterval &interval, esint eindex) {
-		return info::mesh->domains->cluster[interval.domain - info::mesh->domains->offset] + cluster;
-	});
+	if (info::mesh->domains->cluster.size()) {
+		esint cluster = info::mesh->clusters->offset;
+		store("CLUSTER", [&] (const ElementsInterval &interval, esint eindex) {
+			return info::mesh->domains->cluster[interval.domain - info::mesh->domains->offset] + cluster;
+		});
+	}
 	store("MPI", [&] (const ElementsInterval &interval, esint eindex) {
 		return info::mpi::rank;
 	});

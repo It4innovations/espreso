@@ -167,6 +167,7 @@ Mesh::Mesh()
   output(new Output()),
   _omitClusterization(false),
   _omitDecomposition(false),
+  _omitDual(false),
   _withGUI(false),
   _withFETI(false),
   _withBEM(false),
@@ -440,14 +441,23 @@ void Mesh::analyze()
 			info::ecf->input.decomposition.separate_etypes) {
 		_omitDecomposition = false;
 	}
+	if (info::ecf->input.convert_database) {
+		_omitDecomposition = true;
+	}
+
+	if (_omitDecomposition) {
+		_omitDual = true;
+	}
 }
 
 void Mesh::reclusterize()
 {
-	mesh::linkNodesAndElements(elements, nodes, neighbors);
-	mesh::computeElementsFaceNeighbors(nodes, elements);
-	if (_withEdgeDual) {
-		mesh::computeElementsEdgeNeighbors(nodes, elements);
+	if (!_omitDual) {
+		mesh::linkNodesAndElements(elements, nodes, neighbors);
+		mesh::computeElementsFaceNeighbors(nodes, elements);
+		if (_withEdgeDual) {
+			mesh::computeElementsEdgeNeighbors(nodes, elements);
+		}
 	}
 
 	if (!_omitClusterization) {
@@ -599,8 +609,10 @@ void Mesh::partitiate(int ndomains)
 		mesh::computeElementsDecomposition(elements, ndomains, distribution, permutation);
 	}
 	mesh::permuteElements(elements, nodes, domains, elementsRegions, boundaryRegions, contactInterfaces, neighbors, distribution, permutation);
-	mesh::computeDomainDual(nodes, elements, domains, neighbors, neighborsWithMe);
-	mesh::computeClustersDistribution(domains, clusters);
+	if (_withFETI) {
+		mesh::computeDomainDual(nodes, elements, domains, neighbors, neighborsWithMe);
+		mesh::computeClustersDistribution(domains, clusters);
+	}
 
 	profiler::synccheckpoint("domain_decomposition");
 	eslog::checkpointln("MESH: MESH DECOMPOSED");
@@ -1054,6 +1066,10 @@ void Mesh::printMeshStatistics()
 					contact->interfaces[(*it)->interfaceIndex].to.faces, contact->interfaces[(*it)->interfaceIndex].to.area);
 		}
 		break;
+	}
+
+	if (_withFETI) {
+		info::mesh->printDecompositionStatistics();
 	}
 }
 
