@@ -44,11 +44,14 @@ struct NodeStore {
 	serializededata<esint, esint>* IDs;
 	serializededata<esint, esint>* elements;
 
-	serializededata<esint, esint>* outputOffset; // offset from/to the database
+	serializededata<esint, esint>* inputOffset;
+	serializededata<esint, esint>* outputOffset;
 	serializededata<esint, Point>* originCoordinates;
 	serializededata<esint, Point>* coordinates;
 	serializededata<esint, int>* ranks;
 	serializededata<esint, int>* domains;
+	serializededata<esint, esint>* eregions;
+	serializededata<esint, esint>* bregions;
 
 	NodeUniquenessInfo uniqInfo;
 

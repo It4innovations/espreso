@@ -206,9 +206,9 @@ void InputOpenFoamParallel::variables(Mesh &mesh)
 	eslog::startln("OPENFOAM VARIABLES LOADER: STARTED", "VARIABLES LOADER");
 	ivector<esint> nperm(mesh.nodes->size), eperm(mesh.elements->distribution.process.size);
 	std::iota(nperm.begin(), nperm.end(), 0);
-	std::sort(nperm.begin(), nperm.end(), [&] (esint i, esint j) { return (mesh.nodes->outputOffset->begin() + i)->front() < (mesh.nodes->outputOffset->begin() + j)->front(); });
+	std::sort(nperm.begin(), nperm.end(), [&] (esint i, esint j) { return (mesh.nodes->inputOffset->begin() + i)->front() < (mesh.nodes->inputOffset->begin() + j)->front(); });
 	std::iota(eperm.begin(), eperm.end(), 0);
-	std::sort(eperm.begin(), eperm.end(), [&] (esint i, esint j) { return (mesh.elements->outputOffset->begin() + i)->front() < (mesh.elements->outputOffset->begin() + j)->front(); });
+	std::sort(eperm.begin(), eperm.end(), [&] (esint i, esint j) { return (mesh.elements->inputOffset->begin() + i)->front() < (mesh.elements->inputOffset->begin() + j)->front(); });
 
 	std::vector<esint> sBuffer, rBuffer;
 	sBuffer.reserve(info::mpi::size * 5 + nperm.size() + eperm.size());
@@ -216,8 +216,8 @@ void InputOpenFoamParallel::variables(Mesh &mesh)
 	auto nit = nperm.begin(), eit = eperm.begin();
 	for (int t = 0; t < info::mpi::size; ++t) {
 		auto nbegin = nit, ebegin = eit;
-		while (nit != nperm.end() && (mesh.nodes->outputOffset->begin() + *nit)->front() < ndistribution[t + 1]) { ++nit; }
-		while (eit != eperm.end() && (mesh.elements->outputOffset->begin() + *eit)->front() < edistribution[t + 1]) { ++eit; }
+		while (nit != nperm.end() && (mesh.nodes->inputOffset->begin() + *nit)->front() < ndistribution[t + 1]) { ++nit; }
+		while (eit != eperm.end() && (mesh.elements->inputOffset->begin() + *eit)->front() < edistribution[t + 1]) { ++eit; }
 
 		sBuffer.push_back(5 + (nit - nbegin) + (eit - ebegin)); // size
 		sBuffer.push_back(t); // target
@@ -225,10 +225,10 @@ void InputOpenFoamParallel::variables(Mesh &mesh)
 		sBuffer.push_back(nit - nbegin); // nodes
 		sBuffer.push_back(eit - ebegin); // elements
 		for (auto it = nbegin; it != nit; ++it) {
-			sBuffer.push_back((mesh.nodes->outputOffset->begin() + *it)->front());
+			sBuffer.push_back((mesh.nodes->inputOffset->begin() + *it)->front());
 		}
 		for (auto it = ebegin; it != eit; ++it) {
-			sBuffer.push_back((mesh.elements->outputOffset->begin() + *it)->front());
+			sBuffer.push_back((mesh.elements->inputOffset->begin() + *it)->front());
 		}
 	}
 

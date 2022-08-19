@@ -140,11 +140,10 @@ struct OutputConfiguration: public ECFDescription {
 
 	HarmonicOuputConfiguration frequency_to_time;
 
+	bool keep_input_ordering;
 	bool settings, debug, catalyst;
 	size_t catalyst_sleep_time;
 	size_t volume_density;
-
-	bool collected;
 
 	std::map<size_t, MonitorConfiguration> monitoring;
 

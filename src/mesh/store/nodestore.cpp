@@ -19,11 +19,14 @@ NodeStore::NodeStore()
   distribution({0, 0}),
   IDs(NULL),
   elements(NULL),
+  inputOffset(NULL),
   outputOffset(NULL),
   originCoordinates(NULL),
   coordinates(NULL),
   ranks(NULL),
-  domains(NULL)
+  domains(NULL),
+  eregions(NULL),
+  bregions(NULL)
 {
 
 }
@@ -42,11 +45,14 @@ size_t NodeStore::packedFullSize() const
 
 	packedSize += utils::packedSize(IDs);
 	packedSize += utils::packedSize(elements);
+	packedSize += utils::packedSize(inputOffset);
 	packedSize += utils::packedSize(outputOffset);
 	packedSize += utils::packedSize(originCoordinates);
 	packedSize += utils::packedSize(coordinates);
 	packedSize += utils::packedSize(ranks);
 	packedSize += utils::packedSize(domains);
+	packedSize += utils::packedSize(eregions);
+	packedSize += utils::packedSize(bregions);
 
 	packedSize += utils::packedSize(data.size());
 	for (size_t i = 0; i < data.size(); i++) {
@@ -68,11 +74,14 @@ void NodeStore::packFull(char* &p) const
 
 	utils::pack(IDs, p);
 	utils::pack(elements, p);
+	utils::pack(inputOffset, p);
 	utils::pack(outputOffset, p);
 	utils::pack(originCoordinates, p);
 	utils::pack(coordinates, p);
 	utils::pack(ranks, p);
 	utils::pack(domains, p);
+	utils::pack(eregions, p);
+	utils::pack(bregions, p);
 
 	utils::pack(data.size(), p);
 	for (size_t i = 0; i < data.size(); i++) {
@@ -92,11 +101,14 @@ void NodeStore::unpackFull(const char* &p)
 
 	utils::unpack(IDs, p);
 	utils::unpack(elements, p);
+	utils::unpack(inputOffset, p);
 	utils::unpack(outputOffset, p);
 	utils::unpack(originCoordinates, p);
 	utils::unpack(coordinates, p);
 	utils::unpack(ranks, p);
 	utils::unpack(domains, p);
+	utils::unpack(eregions, p);
+	utils::unpack(bregions, p);
 
 	size_t size;
 	utils::unpack(size, p);
@@ -227,11 +239,14 @@ NodeStore::~NodeStore()
 	if (IDs != NULL) { delete IDs; }
 	if (elements != NULL) { delete elements; }
 
+	if (inputOffset != NULL) { delete inputOffset; }
 	if (outputOffset != NULL) { delete outputOffset; }
 	if (originCoordinates != NULL) { delete originCoordinates; }
 	if (coordinates != NULL) { delete coordinates; }
 	if (ranks != NULL) { delete ranks; }
 	if (domains != NULL) { delete domains; }
+	if (eregions != NULL) { delete eregions; }
+	if (bregions != NULL) { delete bregions; }
 
 	for (size_t i = 0; i < data.size(); i++) {
 		delete data[i];
@@ -248,6 +263,8 @@ void NodeStore::store(const std::string &file)
 	Store::storedata(os, "coordinates", coordinates);
 	Store::storedata(os, "ranks", ranks);
 	Store::storedata(os, "domains", domains);
+	Store::storedata(os, "eregions", eregions);
+	Store::storedata(os, "bregions", bregions);
 }
 
 void NodeStore::permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution)
@@ -257,11 +274,14 @@ void NodeStore::permute(const std::vector<esint> &permutation, const std::vector
 	if (IDs != NULL) { IDs->permute(permutation, distribution); }
 	if (elements != NULL) { elements->permute(permutation, distribution); }
 
+	if (inputOffset != NULL) { inputOffset->permute(permutation, distribution); }
 	if (outputOffset != NULL) { outputOffset->permute(permutation, distribution); }
 	if (originCoordinates != NULL) { originCoordinates->permute(permutation, distribution); }
 	if (coordinates != NULL) { coordinates->permute(permutation, distribution); }
 	if (ranks != NULL) { ranks->permute(permutation, distribution); }
 	if (domains != NULL) { domains->permute(permutation, distribution); }
+	if (eregions != NULL) { eregions->permute(permutation, distribution); }
+	if (bregions != NULL) { bregions->permute(permutation, distribution); }
 }
 
 std::vector<esint> NodeStore::gatherNodeDistribution()

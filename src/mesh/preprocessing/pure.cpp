@@ -896,7 +896,7 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 		auto epointer = elements->epointers->datatarray().data();
 		auto enodes = elements->nodes->cbegin(t);
 		auto eneighbors = elements->faceNeighbors->cbegin(t);
-		auto output = elements->outputOffset->cbegin(t);
+		auto output = elements->inputOffset->cbegin(t);
 		auto nIDs = nodes->IDs->datatarray().data();
 
 		std::vector<std::vector<esint> > tsElements(targets.size(), std::vector<esint>({ 0 }));
@@ -1006,7 +1006,7 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 		const auto &IDs = nodes->IDs->datatarray();
 		const auto &coordinates = nodes->coordinates->datatarray();
 		auto elems = nodes->elements->cbegin(t);
-		auto output = nodes->outputOffset->cbegin(t);
+		auto output = nodes->inputOffset->cbegin(t);
 
 		std::vector<esint>  tnodesIDs;
 		std::vector<Point>    tnodesCoordinates;
@@ -1455,7 +1455,7 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 	newElements->regions = new serializededata<esint, esint>(eregionsBitMaskSize, elemsRegions);
 
 	newElements->faceNeighbors = new serializededata<esint, esint>(elemsNeighborsDistribution, elemsNeighborsData);
-	newElements->outputOffset = new serializededata<esint, esint>(elemsOutputDistribution, elemsOutputData);
+	newElements->inputOffset = new serializededata<esint, esint>(elemsOutputDistribution, elemsOutputData);
 
 	newElements->distribution.process.size = newElements->offset->structures();
 	newElements->distribution.threads = newElements->offset->datatarray().distribution();
@@ -1473,7 +1473,7 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 	newNodes->IDs = new serializededata<esint, esint>(1, nodesIDs);
 	newNodes->coordinates = new serializededata<esint, Point>(1, nodesCoordinates);
 	newNodes->elements = new serializededata<esint, esint>(nodesElemsDistribution, nodesElemsData);
-	newNodes->outputOffset = new serializededata<esint, esint>(nodesOutputDistribution, nodesOutputData);
+	newNodes->inputOffset = new serializededata<esint, esint>(nodesOutputDistribution, nodesOutputData);
 	newNodes->size = newNodes->IDs->datatarray().size();
 	newNodes->distribution = newNodes->IDs->datatarray().distribution();
 
@@ -1970,7 +1970,7 @@ void computeElementDistribution(ElementStore *elements)
 	eslog::checkpointln("MESH: ELEMENT DISTRIBUTION COMPUTED");
 }
 
-void computeRegionsElementDistribution(const ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions)
+void computeERegionsDistribution(ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions)
 {
 	profiler::syncstart("regions element distribution");
 	std::vector<esint> sum, offset;
@@ -1989,17 +1989,15 @@ void computeRegionsElementDistribution(const ElementStore *elements, std::vector
 		}
 
 		for (size_t i = 0; i < elements->distribution.code.size(); ++i) {
-			if (elements->distribution.code[i].totalSize) {
-				elementsRegions[r]->distribution.process.size += elementsRegions[r]->distribution.code[i].size;
-				elementsRegions[r]->distribution.process.next += elementsRegions[r]->distribution.code[i].size;
-				offset.push_back(elementsRegions[r]->distribution.code[i].size);
-				if (Mesh::element(i).code == Element::CODE::POLYGON) {
-					offset.push_back(elementsRegions[r]->distribution.polygonNodes.size);
-				}
-				if (Mesh::element(i).code == Element::CODE::POLYHEDRON) {
-					offset.push_back(elementsRegions[r]->distribution.polyhedronFaces.size);
-					offset.push_back(elementsRegions[r]->distribution.polyhedronNodes.size);
-				}
+			elementsRegions[r]->distribution.process.size += elementsRegions[r]->distribution.code[i].size;
+			elementsRegions[r]->distribution.process.next += elementsRegions[r]->distribution.code[i].size;
+			offset.push_back(elementsRegions[r]->distribution.code[i].size);
+			if (Mesh::element(i).code == Element::CODE::POLYGON) {
+				offset.push_back(elementsRegions[r]->distribution.polygonNodes.size);
+			}
+			if (Mesh::element(i).code == Element::CODE::POLYHEDRON) {
+				offset.push_back(elementsRegions[r]->distribution.polyhedronFaces.size);
+				offset.push_back(elementsRegions[r]->distribution.polyhedronNodes.size);
 			}
 		}
 		elementsRegions[r]->distribution.process.offset = elementsRegions[r]->distribution.process.size;
@@ -2011,19 +2009,17 @@ void computeRegionsElementDistribution(const ElementStore *elements, std::vector
 
 	for (size_t r = 0, j = 0; r < elementsRegions.size(); r++) {
 		for (size_t i = 0; i < elements->distribution.code.size(); i++) {
-			if (elements->distribution.code[i].totalSize) {
-				elementsRegions[r]->distribution.code[i].offset = offset[j];
-				elementsRegions[r]->distribution.code[i].totalSize = sum[j++];
-				if (Mesh::element(i).code == Element::CODE::POLYGON) {
-					elementsRegions[r]->distribution.polygonNodes.offset = offset[j];
-					elementsRegions[r]->distribution.polygonNodes.totalSize = sum[j++];
-				}
-				if (Mesh::element(i).code == Element::CODE::POLYHEDRON) {
-					elementsRegions[r]->distribution.polyhedronFaces.offset = offset[j];
-					elementsRegions[r]->distribution.polyhedronFaces.totalSize = sum[j++];
-					elementsRegions[r]->distribution.polyhedronNodes.offset = offset[j];
-					elementsRegions[r]->distribution.polyhedronNodes.totalSize = sum[j++];
-				}
+			elementsRegions[r]->distribution.code[i].offset = offset[j];
+			elementsRegions[r]->distribution.code[i].totalSize = sum[j++];
+			if (Mesh::element(i).code == Element::CODE::POLYGON) {
+				elementsRegions[r]->distribution.polygonNodes.offset = offset[j];
+				elementsRegions[r]->distribution.polygonNodes.totalSize = sum[j++];
+			}
+			if (Mesh::element(i).code == Element::CODE::POLYHEDRON) {
+				elementsRegions[r]->distribution.polyhedronFaces.offset = offset[j];
+				elementsRegions[r]->distribution.polyhedronFaces.totalSize = sum[j++];
+				elementsRegions[r]->distribution.polyhedronNodes.offset = offset[j];
+				elementsRegions[r]->distribution.polyhedronNodes.totalSize = sum[j++];
 			}
 		}
 		elementsRegions[r]->distribution.process.offset = offset[j];
@@ -2032,7 +2028,13 @@ void computeRegionsElementDistribution(const ElementStore *elements, std::vector
 	}
 	profiler::syncend("regions element distribution");
 
-	eslog::checkpointln("MESH: ELEMENTS REGIONS DISTR. COMPUTED");
+	elements->distribution.process = elementsRegions.front()->distribution.process;
+	elements->distribution.code = elementsRegions.front()->distribution.code;
+	elements->distribution.polygonNodes = elementsRegions.front()->distribution.polygonNodes;
+	elements->distribution.polyhedronNodes = elementsRegions.front()->distribution.polyhedronNodes;
+	elements->distribution.polyhedronFaces = elementsRegions.front()->distribution.polyhedronFaces;
+
+	eslog::checkpointln("MESH: EREGIONS DISTRIBUTION COMPUTED");
 }
 
 } // namespace mesh

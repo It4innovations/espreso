@@ -98,7 +98,7 @@ OutputConfiguration::OutputConfiguration(const ECF *root)
 			.setdescription({ "Print assembler matrices for debugging." })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
 
-	store_decomposition = 1;
+	store_decomposition = 0;
 	REGISTER(store_decomposition, ECFMetaData()
 			.setdescription({ "Store decomposition." })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
@@ -214,6 +214,11 @@ OutputConfiguration::OutputConfiguration(const ECF *root)
 
 	ecfdescription->addSeparator();
 
+	keep_input_ordering = false;
+	REGISTER(keep_input_ordering, ECFMetaData()
+			.setdescription({ "Nodes and elements are stored in the same order as in the input database." })
+			.setdatatype({ ECFDataType::BOOL }));
+
 	settings = debug = false;
 	catalyst = false;
 	catalyst_sleep_time = 0;
@@ -235,13 +240,6 @@ OutputConfiguration::OutputConfiguration(const ECF *root)
 	REGISTER(catalyst_sleep_time, ECFMetaData()
 			.setdescription({ "The sleep time between each time steps when catalyst is used" })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
-
-	ecfdescription->addSpace();
-
-	collected = true;
-	REGISTER(collected, ECFMetaData()
-			.setdescription({ "Collected results" })
-			.setdatatype({ ECFDataType::BOOL }));
 
 	ecfdescription->addSpace();
 

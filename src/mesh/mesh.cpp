@@ -150,6 +150,139 @@ void Mesh::load()
 	profiler::syncend("load");
 }
 
+/**
+ * LOAD BALANCING
+ *  - dual graph
+ *  - decomposition
+ *
+ * PHYSICAL PRE-PROCESSING
+ *  - parent elements
+ *  - node ordering
+ *  - element intervals
+ *  - compute bodies
+ *  - faces from nodes
+ *  - fix points,...
+ *
+ * OUTPUT PRE-PROCESSING
+ *  - separate regions
+ *  - global info (offset, size, total size)
+ *  - compute volume indices
+ *  - node ordering (get rid of this)
+ *  - elements intervals (get rid of this)
+ */
+
+void Mesh::preprocess()
+{
+	profiler::syncstart("meshing");
+	eslog::startln("MESH: PREPROCESSING STARTED", "MESHING");
+	eslog::info(" ===================================== MESH PREPROCESSING ===================== %12.3f s\n", eslog::duration());
+	eslog::info(" ============================================================================================= \n");
+
+	analyze();
+
+	switch (info::ecf->input.decomposition.parallel_decomposer) {
+	case DecompositionConfiguration::ParallelDecomposer::NONE:
+		eslog::info(" == CLUSTERIZATION %72s == \n", "SKIPPED");
+		break;
+	case DecompositionConfiguration::ParallelDecomposer::METIS:
+		if (balanceVolume) {
+			eslog::info(" == CLUSTERIZATION %72s == \n", "METIS [ELEMENTS COUNT, VOLUME]");
+		} else {
+			eslog::info(" == CLUSTERIZATION %72s == \n", "METIS [ELEMENTS COUNT]");
+		}
+		break;
+	case DecompositionConfiguration::ParallelDecomposer::PARMETIS:
+		if (balanceVolume) {
+			eslog::info(" == CLUSTERIZATION %72s == \n", "PARMETIS [ELEMENTS COUNT, VOLUME]");
+		} else {
+			eslog::info(" == CLUSTERIZATION %72s == \n", "PARMETIS [ELEMENTS COUNT]");
+		}
+		break;
+	case DecompositionConfiguration::ParallelDecomposer::HILBERT_CURVE:
+		if (balanceVolume) {
+			eslog::info(" == CLUSTERIZATION %72s == \n", "SFC [ELEMENTS COUNT, VOLUME]");
+		} else {
+			eslog::info(" == CLUSTERIZATION %72s == \n", "SFC [ELEMENTS COUNT]");
+		}
+		break;
+	case DecompositionConfiguration::ParallelDecomposer::PTSCOTCH:
+		if (balanceVolume) {
+			eslog::info(" == CLUSTERIZATION %72s == \n", "PT-SCOTCH [ELEMENTS COUNT, VOLUME]");
+		} else {
+			eslog::info(" == CLUSTERIZATION %72s == \n", "PT-SCOTCH [ELEMENTS COUNT]");
+		}
+		break;
+	}
+	switch (info::ecf->input.decomposition.sequential_decomposer) {
+	case DecompositionConfiguration::SequentialDecomposer::NONE:
+		eslog::info(" == DOMAIN DECOMPOSITION %66s == \n", "SKIPPED");
+		break;
+	case DecompositionConfiguration::SequentialDecomposer::METIS:
+		eslog::info(" == DOMAIN DECOMPOSITION %66s == \n", "METIS");
+		break;
+	case DecompositionConfiguration::SequentialDecomposer::SCOTCH:
+		eslog::info(" == DOMAIN DECOMPOSITION %66s == \n", "SCOTCH");
+		break;
+	case DecompositionConfiguration::SequentialDecomposer::KAHIP:
+		eslog::info(" == DOMAIN DECOMPOSITION %66s == \n", "KAHIP");
+		break;
+	}
+
+	eslog::info(" ==  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  == \n");
+	eslog::checkpointln("MESHING: ANALYSIS");
+
+	if (info::mpi::size > 1 && info::ecf->input.decomposition.parallel_decomposer != DecompositionConfiguration::ParallelDecomposer::NONE) {
+		eslog::startln("MESH: LOAD BALANCING", "LOAD BALANCING");
+		if (withDualGraph) {
+			mesh::linkNodesAndElements(elements, nodes, neighbors);
+			mesh::computeElementsFaceNeighbors(nodes, elements);
+		}
+		reclusterize();
+		eslog::endln("MESH: LOAD BALANCED");
+	}
+	esint minsize = elements->offset->datatarray().size();
+	Communication::allReduce(&minsize, NULL, 1, MPITools::getType<esint>().mpitype, MPI_MIN);
+	if (minsize == 0) {
+		eslog::globalerror("ESPRESO quit computation: process without any elements detected.\n");
+	}
+	eslog::checkpointln("MESHING: LOAD BALANCING");
+
+	if (!info::ecf->input.convert_database) {
+		eslog::startln("MESH: PHYSICAL PRE-PROCESSING", "PHYSICAL PRE-PROCESSING");
+		computePersistentParameters();
+		eslog::endln("MESH: PHYSICS READY");
+	}
+	eslog::checkpointln("MESHING: PHYSICAL PRE-PROCESSING");
+
+	if (info::ecf->output.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
+		eslog::startln("MESH: OUTPUT PRE-PROCESSING", "OUTPUT PRE-PROCESSING");
+		if (withSeparatedRegions) {
+			eslog::info(" == OUTPUT SYNCHRONIZATION %64s == \n", "PER REGION");
+
+			mesh::fillRegionMask(elements, elementsRegions);
+			mesh::processNamelessElements(elements, elementsRegions);
+
+			mesh::computeERegionsDistribution(elements, elementsRegions);
+			mesh::fillERegionsNodesMask(elementsRegions, elements, neighbors, nodes);
+
+			mesh::computeBRegionsDistribution(nodes, boundaryRegions, contactInterfaces);
+			mesh::fillBRegionsNodesMask(boundaryRegions, contactInterfaces, neighbors, nodes);
+
+			mesh::fillOutputOffset(nodes, elementsRegions, boundaryRegions, contactInterfaces, neighbors);
+		}
+
+		if (convertToVolume) {
+			eslog::info(" == OUTPUT SYNCHRONIZATION %64s == \n", "REGULAR GRID");
+		}
+		eslog::endln("MESH: OUTPUT READY");
+	}
+
+	DebugOutput::mesh();
+	eslog::info(" ============================================================================================= \n\n");
+	profiler::syncend("meshing");
+	eslog::endln("MESHING: OUTPUT PRE-PROCESSING");
+}
+
 void Mesh::finish()
 {
 	delete info::mesh;
@@ -165,9 +298,15 @@ Mesh::Mesh()
   contact(new ContactStore()),
 
   output(new Output()),
+  withDualGraph(true),
+  withSeparatedRegions(true),
+  convertToVolume(false),
+  balanceVolume(false),
   _omitClusterization(false),
   _omitDecomposition(false),
   _omitDual(false),
+  _omitRegionInfo(false),
+  _omitSynchronization(false),
   _withGUI(false),
   _withFETI(false),
   _withBEM(false),
@@ -317,6 +456,7 @@ void Mesh::analyze()
 		eslog::globalerror("Mesh: Not implemented physics.\n");
 		exit(0);
 	}
+
 	// TODO: resolve the problem with non-continuity with more bodies
 //	if (_withFETI) {
 //		info::ecf->input.decomposition.force_continuity = true;
@@ -448,133 +588,186 @@ void Mesh::analyze()
 	if (_omitDecomposition) {
 		_omitDual = true;
 	}
+
+	_omitRegionInfo = true;
+	_omitSynchronization = true;
+	if (
+			info::ecf->output.format == OutputConfiguration::FORMAT::OPENVDB ||
+			info::ecf->output.format == OutputConfiguration::FORMAT::ENSIGHT_VOLUME) {
+		_omitRegionInfo = true;
+		_omitSynchronization = true;
+	}
+
+	switch (info::ecf->input.decomposition.parallel_decomposer) {
+	case DecompositionConfiguration::ParallelDecomposer::NONE:
+	case DecompositionConfiguration::ParallelDecomposer::HILBERT_CURVE:
+		break;
+	case DecompositionConfiguration::ParallelDecomposer::METIS:
+	case DecompositionConfiguration::ParallelDecomposer::PARMETIS:
+	case DecompositionConfiguration::ParallelDecomposer::PTSCOTCH:
+		withDualGraph = true;
+		break;
+	}
+	switch (info::ecf->input.decomposition.sequential_decomposer) {
+	case DecompositionConfiguration::SequentialDecomposer::NONE:
+	case DecompositionConfiguration::SequentialDecomposer::KAHIP:
+		break;
+	case DecompositionConfiguration::SequentialDecomposer::METIS:
+	case DecompositionConfiguration::SequentialDecomposer::SCOTCH:
+		withDualGraph = true;
+		break;
+	}
+
+	switch (info::ecf->output.format) {
+	case OutputConfiguration::FORMAT::ENSIGHT:
+	case OutputConfiguration::FORMAT::NETGEN:
+	case OutputConfiguration::FORMAT::VTK_LEGACY:
+	case OutputConfiguration::FORMAT::XDMF:
+		withSeparatedRegions = true;
+		break;
+	case OutputConfiguration::FORMAT::ENSIGHT_VOLUME:
+	case OutputConfiguration::FORMAT::OPENVDB:
+	case OutputConfiguration::FORMAT::STL_SURFACE:
+		withSeparatedRegions = false;
+		convertToVolume = true;
+		break;
+	}
+
+	if (info::mpi::size == 1) {
+		info::ecf->input.decomposition.parallel_decomposer = DecompositionConfiguration::ParallelDecomposer::NONE;
+	}
+
+	if (_withFETI) {
+		if (info::ecf->input.decomposition.parallel_decomposer == DecompositionConfiguration::ParallelDecomposer::NONE) {
+			info::ecf->input.decomposition.parallel_decomposer = DecompositionConfiguration::ParallelDecomposer::PARMETIS;
+		}
+		if (info::ecf->input.decomposition.sequential_decomposer == DecompositionConfiguration::SequentialDecomposer::NONE) {
+			info::ecf->input.decomposition.sequential_decomposer = DecompositionConfiguration::SequentialDecomposer::METIS;
+		}
+	}
 }
 
 void Mesh::reclusterize()
 {
-	if (!_omitDual) {
-		mesh::linkNodesAndElements(elements, nodes, neighbors);
-		mesh::computeElementsFaceNeighbors(nodes, elements);
-		if (_withEdgeDual) {
-			mesh::computeElementsEdgeNeighbors(nodes, elements);
+//	if (!_omitDual) {
+//		mesh::linkNodesAndElements(elements, nodes, neighbors);
+//		mesh::computeElementsFaceNeighbors(nodes, elements);
+//		if (_withEdgeDual) {
+//			mesh::computeElementsEdgeNeighbors(nodes, elements);
+//		}
+//	}
+
+	if (info::ecf->input.decomposition.parallel_decomposer == DecompositionConfiguration::ParallelDecomposer::HILBERT_CURVE) {
+		mesh::computeElementsCenters(nodes, elements);
+	}
+	std::vector<esint> partition;
+	mesh::computeElementsClusterization(elements, nodes, partition);
+	mesh::exchangeElements(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe, partition);
+	if (info::ecf->input.decomposition.force_continuity) {
+		std::vector<int> component;
+		esint csize = mesh::getStronglyConnectedComponents(elements, component);
+		esint coffset = csize;
+		esint clusters = Communication::exscan(coffset);
+		if (clusters > info::mpi::size) {
+			std::vector<esint> dualDist, dualData;
+			mesh::computeComponentDual(elements, coffset, csize, component, neighbors, dualDist, dualData);
+			mesh::computeContinuousClusterization(elements, nodes, dualDist, dualData, coffset, csize, component, neighborsWithMe, partition);
+			mesh::exchangeElements(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe, partition);
 		}
 	}
+	profiler::synccheckpoint("reclusterize");
 
-	if (!_omitClusterization) {
-		if (info::ecf->input.decomposition.parallel_decomposer == DecompositionConfiguration::ParallelDecomposer::HILBERT_CURVE) {
-			mesh::computeElementsCenters(nodes, elements);
-		}
-		std::vector<esint> partition;
-		mesh::computeElementsClusterization(elements, nodes, partition);
-		mesh::exchangeElements(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe, partition);
-		if (info::ecf->input.decomposition.force_continuity) {
-			std::vector<int> component;
-			esint csize = mesh::getStronglyConnectedComponents(elements, component);
-			esint coffset = csize;
-			esint clusters = Communication::exscan(coffset);
-			if (clusters > info::mpi::size) {
-				std::vector<esint> dualDist, dualData;
-				mesh::computeComponentDual(elements, coffset, csize, component, neighbors, dualDist, dualData);
-				mesh::computeContinuousClusterization(elements, nodes, dualDist, dualData, coffset, csize, component, neighborsWithMe, partition);
-				mesh::exchangeElements(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe, partition);
-			}
-		}
-		profiler::synccheckpoint("reclusterize");
-	}
+//	mesh::sortNodes(nodes, elements, boundaryRegions);
 
-	esint minsize = elements->offset->datatarray().size();
-	Communication::allReduce(&minsize, NULL, 1, MPITools::getType<esint>().mpitype, MPI_MIN);
-	if (minsize == 0) {
-		eslog::globalerror("ESPRESO quit computation: process without any elements detected.\n");
-	}
-
-	mesh::sortNodes(nodes, elements, boundaryRegions);
-
-	// to be removed
-	NamedData *orientation = NULL, *poly = NULL;
-	if (info::ecf->input.insert_orientation) {
-		orientation = info::mesh->elements->appendData(3, NamedData::DataType::VECTOR, "ORIENTATION");
-		poly = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "POLY");
-	}
-
-	std::vector<ElementsRegionStore*> regions = elementsRegions;
-	elementsRegions.clear();
-	for (size_t r = 0; r < regions.size(); ++r) {
-		if (info::ecf->input.insert_orientation && StringCompare::caseInsensitivePreffix("poly", regions[r]->name)) {
-			auto it = this->orientation.find(regions[r]->name);
-			if (it != this->orientation.end()) {
-				for (size_t e = 0; e < regions[r]->elements->datatarray().size(); ++e) {
-					poly->data[regions[r]->elements->datatarray()[e]] = std::atoi(it->first.c_str() + 4);
-					orientation->data[3 * regions[r]->elements->datatarray()[e] + 0] = it->second.x;
-					orientation->data[3 * regions[r]->elements->datatarray()[e] + 1] = it->second.y;
-					orientation->data[3 * regions[r]->elements->datatarray()[e] + 2] = it->second.z;
-				}
-			}
-			delete regions[r];
-		} else {
-			elementsRegions.push_back(regions[r]);
-		}
-	}
+//	// to be removed
+//	NamedData *orientation = NULL, *poly = NULL;
+//	if (info::ecf->input.insert_orientation) {
+//		orientation = info::mesh->elements->appendData(3, NamedData::DataType::VECTOR, "ORIENTATION");
+//		poly = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "POLY");
+//	}
+//
+//	std::vector<ElementsRegionStore*> regions = elementsRegions;
+//	elementsRegions.clear();
+//	for (size_t r = 0; r < regions.size(); ++r) {
+//		if (info::ecf->input.insert_orientation && StringCompare::caseInsensitivePreffix("poly", regions[r]->name)) {
+//			auto it = this->orientation.find(regions[r]->name);
+//			if (it != this->orientation.end()) {
+//				for (size_t e = 0; e < regions[r]->elements->datatarray().size(); ++e) {
+//					poly->data[regions[r]->elements->datatarray()[e]] = std::atoi(it->first.c_str() + 4);
+//					orientation->data[3 * regions[r]->elements->datatarray()[e] + 0] = it->second.x;
+//					orientation->data[3 * regions[r]->elements->datatarray()[e] + 1] = it->second.y;
+//					orientation->data[3 * regions[r]->elements->datatarray()[e] + 2] = it->second.z;
+//				}
+//			}
+//			delete regions[r];
+//		} else {
+//			elementsRegions.push_back(regions[r]);
+//		}
+//	}
 }
 
 void Mesh::computePersistentParameters()
 {
 	setMaterials();
-	mesh::fillRegionMask(elements, elementsRegions);
-	mesh::processNamelessElements(elements, elementsRegions);
-	mesh::computeElementDistribution(elements);
-	mesh::computeRegionsElementDistribution(elements, elementsRegions);
+	if (!_omitRegionInfo) {
+		mesh::fillRegionMask(elements, elementsRegions);
+		mesh::processNamelessElements(elements, elementsRegions);
+	}
+	if (!_omitSynchronization) {
+		mesh::computeElementDistribution(elements);
+		mesh::computeERegionsDistribution(elements, elementsRegions);
 
-	{ // compute boundary element from nodes
-		ElementStore *halo = NULL;
-		if (info::ecf->getPhysics()->dimension == DIMENSION::D3 && _withGUI) {
-			halo = mesh::exchangeHalo(elements, nodes, neighbors);
-			mesh::computeRegionsSurface(elements, nodes, halo, elementsRegions, neighbors);
-			for (size_t r = 0; r < elementsRegions.size(); r++) {
-				mesh::triangularizeSurface(elementsRegions[r]->surface);
-			}
-			for (size_t r = 0; r < boundaryRegions.size(); r++) {
-				mesh::triangularizeBoundary(boundaryRegions[r]);
-			}
-		}
-
-		for (size_t r = 0; halo == NULL && r < boundaryRegions.size(); ++r) {
-			if (boundaryRegions[r]->originalDimension < boundaryRegions[r]->dimension) {
+		{ // compute boundary element from nodes
+			ElementStore *halo = NULL;
+			if (info::ecf->getPhysics()->dimension == DIMENSION::D3 && _withGUI) {
 				halo = mesh::exchangeHalo(elements, nodes, neighbors);
+				mesh::computeRegionsSurface(elements, nodes, halo, elementsRegions, neighbors);
+				for (size_t r = 0; r < elementsRegions.size(); r++) {
+					mesh::triangularizeSurface(elementsRegions[r]->surface);
+				}
+				for (size_t r = 0; r < boundaryRegions.size(); r++) {
+					mesh::triangularizeBoundary(boundaryRegions[r]);
+				}
+			}
+
+			for (size_t r = 0; halo == NULL && r < boundaryRegions.size(); ++r) {
+				if (boundaryRegions[r]->originalDimension < boundaryRegions[r]->dimension) {
+					halo = mesh::exchangeHalo(elements, nodes, neighbors);
+				}
+			}
+			for (size_t r = 0; r < boundaryRegions.size(); ++r) {
+				if (boundaryRegions[r]->originalDimension < boundaryRegions[r]->dimension) {
+					mesh::computeBRegionsElementsFromNodes(nodes, elements, halo, elementsRegions, boundaryRegions[r]);
+				}
+			}
+
+			if (halo) {
+				delete halo;
 			}
 		}
-		for (size_t r = 0; r < boundaryRegions.size(); ++r) {
-			if (boundaryRegions[r]->originalDimension < boundaryRegions[r]->dimension) {
-				mesh::computeRegionsBoundaryElementsFromNodes(nodes, elements, halo, elementsRegions, boundaryRegions[r]);
-			}
+
+		if (info::ecf->input.compute_bodies || info::ecf->input.contact_interfaces.size()) {
+			mesh::computeBodies(elements, bodies, elementsRegions, neighbors);
+		} else {
+			elements->body = new serializededata<esint, int>(1, tarray<int>(elements->distribution.threads, 1LU, 0));
 		}
 
-		if (halo) {
-			delete halo;
+		if (info::ecf->input.contact_interfaces.size()) {
+			mesh::computeBodiesSurface(nodes, elements, elementsRegions, surface, neighbors);
+			mesh::computeWarpedNormals(surface);
+			mesh::exchangeContactHalo(surface, contact);
+			mesh::findCloseElements(contact);
+			mesh::computeContactInterface(surface, contact);
+			mesh::arrangeContactInterfaces(contact, bodies, elementsRegions, contactInterfaces);
+			profiler::synccheckpoint("compute_contact_interface");
 		}
+
+		mesh::computeBRegionsDistribution(nodes, boundaryRegions, contactInterfaces);
+
+		mesh::computeERegionsNodes(nodes, elements, neighbors, elementsRegions);
+		mesh::computeBRegionsNodes(neighbors, nodes, boundaryRegions, contactInterfaces);
+		mesh::computeBRegionsParents(nodes, elements, boundaryRegions, contactInterfaces);
 	}
-
-	if (info::ecf->input.compute_bodies || info::ecf->input.contact_interfaces.size()) {
-		mesh::computeBodies(elements, bodies, elementsRegions, neighbors);
-	} else {
-		elements->body = new serializededata<esint, int>(1, tarray<int>(elements->distribution.threads, 1LU, 0));
-	}
-
-	if (info::ecf->input.contact_interfaces.size()) {
-		mesh::computeBodiesSurface(nodes, elements, elementsRegions, surface, neighbors);
-		mesh::computeWarpedNormals(surface);
-		mesh::exchangeContactHalo(surface, contact);
-		mesh::findCloseElements(contact);
-		mesh::computeContactInterface(surface, contact);
-		mesh::arrangeContactInterfaces(contact, bodies, elementsRegions, contactInterfaces);
-		profiler::synccheckpoint("compute_contact_interface");
-	}
-
-	mesh::computeRegionsBoundaryDistribution(nodes, boundaryRegions, contactInterfaces);
-
-	mesh::computeRegionsElementNodes(nodes, elements, neighbors, elementsRegions);
-	mesh::computeRegionsBoundaryNodes(neighbors, nodes, boundaryRegions, contactInterfaces);
-	mesh::computeRegionsBoundaryParents(nodes, elements, boundaryRegions, contactInterfaces);
 
 	if (info::ecf->getPhysics()->dimension == DIMENSION::D3 && info::ecf->output.format == OutputConfiguration::FORMAT::STL_SURFACE) {
 		if (info::ecf->input.contact_interfaces.size() == 0) {
@@ -614,11 +807,6 @@ void Mesh::partitiate(int ndomains)
 		mesh::computeClustersDistribution(domains, clusters);
 	}
 
-	profiler::synccheckpoint("domain_decomposition");
-	eslog::checkpointln("MESH: MESH DECOMPOSED");
-
-	profiler::synccheckpoint("preprocess_boundary_regions");
-
 	mesh::computeElementIntervals(domains, elements);
 	mesh::computeRegionsElementIntervals(elements, elementsRegions);
 	mesh::computeRegionsBoundaryIntervals(domains, boundaryRegions, contactInterfaces);
@@ -641,47 +829,6 @@ void Mesh::partitiate(int ndomains)
 		profiler::synccheckpoint("preprocess_surface");
 		eslog::checkpointln("MESH: DOMAIN SURFACE COMPUTED");
 	}
-}
-
-void Mesh::preprocess()
-{
-	profiler::syncstart("meshing");
-	eslog::info(" ===================================== MESH PREPROCESSING ===================== %12.3f s\n", eslog::duration());
-	eslog::info(" ============================================================================================= \n");
-
-	analyze();
-	if (_omitClusterization) {
-		eslog::info(" == CLUSTERIZATION %72s == \n", "SKIPPED");
-	} else {
-		switch (info::ecf->input.decomposition.parallel_decomposer) {
-		case DecompositionConfiguration::ParallelDecomposer::HILBERT_CURVE: eslog::info(" == CLUSTERIZATION %72s == \n", "HILBERT SFC"); break;
-		case DecompositionConfiguration::ParallelDecomposer::PARMETIS: eslog::info(" == CLUSTERIZATION %72s == \n", "PARMETIS"); break;
-		case DecompositionConfiguration::ParallelDecomposer::PTSCOTCH: eslog::info(" == CLUSTERIZATION %72s == \n", "PT-SCOTCH"); break;
-		default: break;
-		}
-	}
-	if (_omitDecomposition) {
-		eslog::info(" == DOMAIN DECOMPOSITION %66s == \n", "SKIPPED");
-	} else {
-		switch (info::ecf->input.decomposition.sequential_decomposer) {
-		case DecompositionConfiguration::SequentialDecomposer::METIS: eslog::info(" == DOMAIN DECOMPOSITION %66s == \n", "METIS"); break;
-		case DecompositionConfiguration::SequentialDecomposer::SCOTCH: eslog::info(" == DOMAIN DECOMPOSITION %66s == \n", "SCOTCH"); break;
-		case DecompositionConfiguration::SequentialDecomposer::KAHIP: eslog::info(" == DOMAIN DECOMPOSITION %66s == \n", "KAHIP"); break;
-		default: break;
-		}
-	}
-
-
-	eslog::startln("MESH: PREPROCESSING STARTED", "MESHING");
-
-	reclusterize();
-	computePersistentParameters();
-	partitiate(preferedDomains);
-
-	DebugOutput::mesh();
-	eslog::info(" ============================================================================================= \n\n");
-	profiler::syncend("meshing");
-	eslog::endln("MESH: PREPROCESSING FINISHED");
 }
 
 size_t Mesh::meshSize()

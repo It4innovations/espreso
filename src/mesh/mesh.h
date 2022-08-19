@@ -109,13 +109,15 @@ public:
 
 	Output *output;
 
+	bool withDualGraph, withSeparatedRegions, convertToVolume, balanceVolume;
+
 protected:
 	void analyze();
 	void setMaterials();
 	void reclusterize();
 	void computePersistentParameters();
 
-	bool _omitClusterization, _omitDecomposition, _omitDual;
+	bool _omitClusterization, _omitDecomposition, _omitDual, _omitRegionInfo, _omitSynchronization;
 	bool _withGUI, _withFETI, _withBEM, _withEdgeDual;
 };
 

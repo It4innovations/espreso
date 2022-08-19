@@ -47,7 +47,7 @@ void computeContinuousClusterization(const ElementStore *elements, const NodeSto
 
 void sortNodes(NodeStore *nodes, ElementStore *elements, std::vector<BoundaryRegionStore*> &boundaryRegions);
 void computeElementDistribution(ElementStore *elements);
-void computeRegionsElementDistribution(const ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions);
+void computeERegionsDistribution(ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions);
 
 
 // methods for clustered mesh
@@ -61,11 +61,14 @@ void processNamelessElements(ElementStore *elements, std::vector<ElementsRegionS
 ElementStore* exchangeHalo(ElementStore *elements, NodeStore *nodes, std::vector<int> &neighbors);
 
 void computeBodies(ElementStore *elements, BodyStore *bodies, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors);
-void computeRegionsElementNodes(const NodeStore *nodes, const ElementStore *elements, const std::vector<int> &neighbors, std::vector<ElementsRegionStore*> &elementsRegions);
-void computeRegionsBoundaryNodes(const std::vector<int> &neighbors, NodeStore *nodes, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
-void computeRegionsBoundaryElementsFromNodes(const NodeStore *nodes, const ElementStore *elements, const ElementStore *halo, const std::vector<ElementsRegionStore*> &elementsRegions, BoundaryRegionStore *bregion);
-void computeRegionsBoundaryDistribution(NodeStore *nodes, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
-void computeRegionsBoundaryParents(const NodeStore *nodes, const ElementStore *elements, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
+void fillERegionsNodesMask(const std::vector<ElementsRegionStore*> &elementsRegions, const ElementStore *elements, const std::vector<int> &neighbors, NodeStore *nodes);
+void fillBRegionsNodesMask(const std::vector<BoundaryRegionStore*> &boundaryRegions, const std::vector<ContactInterfaceStore*> &contactInterfaces, const std::vector<int> &neighbors, NodeStore *nodes);
+void computeERegionsNodes(const NodeStore *nodes, const ElementStore *elements, const std::vector<int> &neighbors, std::vector<ElementsRegionStore*> &elementsRegions);
+void computeBRegionsNodes(const std::vector<int> &neighbors, NodeStore *nodes, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
+void computeBRegionsElementsFromNodes(const NodeStore *nodes, const ElementStore *elements, const ElementStore *halo, const std::vector<ElementsRegionStore*> &elementsRegions, BoundaryRegionStore *bregion);
+void computeBRegionsDistribution(NodeStore *nodes, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
+void computeBRegionsParents(const NodeStore *nodes, const ElementStore *elements, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
+void fillOutputOffset(NodeStore *nodes, const std::vector<ElementsRegionStore*> &elementsRegions, const std::vector<BoundaryRegionStore*> &boundaryRegions, const std::vector<ContactInterfaceStore*> &contactInterfaces, const std::vector<int> &neighbors);
 
 void computeBodiesSurface(NodeStore *nodes, ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions, SurfaceStore *surface, std::vector<int> &neighbors);
 void computeWarpedNormals(SurfaceStore * surface);

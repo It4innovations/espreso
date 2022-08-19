@@ -48,6 +48,7 @@ EnSightGold::FTT::FTT(EnSightGold *parent)
 
 void EnSightGold::updateMesh()
 {
+	return;
 	if (_measure) { eslog::startln("ENSIGHT: STORING STARTED", "ENSIGHT"); }
 	profiler::syncstart("store_ensight");
 	if (info::mpi::irank == 0) {
@@ -78,6 +79,7 @@ void EnSightGold::updateMesh()
 
 void EnSightGold::updateSolution()
 {
+	return;
 	if (_measure) { eslog::startln("ENSIGHT RESULTS: STORING STARTED", "ENSIGHT RESULTS"); }
 	EnSightGold *writer = this;
 

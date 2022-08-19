@@ -45,7 +45,7 @@ KaHIPConfiguration::KaHIPConfiguration() {
 
 DecompositionConfiguration::DecompositionConfiguration()
 {
-	parallel_decomposer = ParallelDecomposer::PARMETIS;
+	parallel_decomposer = ParallelDecomposer::NONE;
 	REGISTER(parallel_decomposer, ECFMetaData()
 			.setdescription({ "Tool that is used for decomoposition. " })
 			.setdatatype({ ECFDataType::OPTION })
@@ -55,7 +55,7 @@ DecompositionConfiguration::DecompositionConfiguration()
 			.addoption(ECFOption().setname("PTSCOTCH").setdescription("PT-Scotch library."))
 			.addoption(ECFOption().setname("HILBERT_CURVE").setdescription("Sort elements centers according Hilbert space filling curve.")));
 
-	sequential_decomposer = SequentialDecomposer::METIS;
+	sequential_decomposer = SequentialDecomposer::NONE;
 	REGISTER(sequential_decomposer, ECFMetaData()
 			.setdescription({ "Tool that is used for decomoposition. " })
 			.setdatatype({ ECFDataType::OPTION })

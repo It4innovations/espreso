@@ -61,7 +61,7 @@ void fillNodes(LinkedNodes &nodes, OrderedRegions &regions, Mesh &mesh)
 
 	mesh.nodes->IDs = new serializededata<esint, esint>(1, tarray<esint>(mesh.nodes->distribution, nodes.offsets.begin(), nodes.offsets.end()));
 	mesh.nodes->coordinates = new serializededata<esint, Point >(1, tarray<Point>(mesh.nodes->distribution, nodes.coordinates.cbegin(), nodes.coordinates.cend()));
-	mesh.nodes->outputOffset = outputOffset(nodes.duplication, mesh.nodes->IDs);
+	mesh.nodes->inputOffset = outputOffset(nodes.duplication, mesh.nodes->IDs);
 
 	mesh.boundaryRegions.push_back(new BoundaryRegionStore("ALL_NODES"));
 	mesh.boundaryRegions.back()->nodes = new serializededata<esint, esint>(1, tarray<esint>(threads, mesh.nodes->size));
@@ -150,7 +150,7 @@ void fillElements(MergedElements &elements, OrderedRegions &regions, Mesh &mesh)
 	mesh.elements->epointers = new serializededata<esint, Element*>(1, epointers);
 
 	serializededata<esint, esint> out(1, tarray<esint>(edistribution, elements.offsets.begin(), elements.offsets.end())); // remove
-	mesh.elements->outputOffset = outputOffset(elements.duplication, &out);
+	mesh.elements->inputOffset = outputOffset(elements.duplication, &out);
 
 	mesh.elementsRegions.push_back(new ElementsRegionStore("ALL_ELEMENTS"));
 	mesh.elementsRegions.back()->elements = new serializededata<esint, esint>(1, tarray<esint>(threads, esize));
