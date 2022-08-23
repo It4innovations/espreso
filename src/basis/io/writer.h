@@ -61,6 +61,38 @@ protected:
 	MPI_File MPIfile;
 };
 
+class MPIAsyncWriter: public Writer {
+public:
+	MPIAsyncWriter(): MPIfile(NULL), rindex(0) {}
+
+	int open(MPIGroup &group, const std::string &file)
+	{
+		return MPI_File_open(MPI_COMM_SELF, file.c_str(), MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &MPIfile);
+	}
+
+	int open(MPIGroup &group, const std::string &file, size_t nrequests)
+	{
+		requests.resize(nrequests);
+		return open(group, file);
+	}
+
+	void store(const char* data, size_t offset, size_t size)
+	{
+		MPI_File_iwrite_at(MPIfile, offset, data, size, MPI_BYTE, &requests[rindex++]);
+	}
+
+	void close()
+	{
+		MPI_Waitall(rindex, requests.data(), MPI_STATUSES_IGNORE);
+		MPI_File_close(&MPIfile);
+	}
+
+protected:
+	MPI_File MPIfile;
+	int rindex;
+	std::vector<MPI_Request> requests;
+};
+
 // POSIX does not work
 //class POSIXWriter: public Writer {
 //public:

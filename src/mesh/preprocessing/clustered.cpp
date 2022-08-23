@@ -799,7 +799,7 @@ void fillOutputOffset(NodeStore *nodes, const std::vector<ElementsRegionStore*> 
 	std::vector<esint> offsets;
 	int uprank = std::lower_bound(neighbors.begin(), neighbors.end(), info::mpi::rank) - neighbors.begin();
 
-	auto check = [&offsets, &roffset] (size_t region, const esint *mask) {
+	auto check = [] (size_t region, const esint *mask) {
 		esint maskOffset = region / (8 * sizeof(esint));
 		esint bit = (esint)1 << (region % (8 * sizeof(esint)));
 		return mask[maskOffset] & bit;

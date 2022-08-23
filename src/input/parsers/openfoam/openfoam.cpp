@@ -254,7 +254,7 @@ void InputOpenFoamParallel::variables(Mesh &mesh)
 
 	eslog::checkpointln("VARIABLES LOADER: PERMUTATION EXCHANGED");
 
-	variablePack.wait(MPITools::singleton->across);
+	variablePack.wait(MPITools::singleton->within);
 
 	eslog::checkpointln("VARIABLES LOADER: VARIABLES LOADED");
 
@@ -418,5 +418,5 @@ void InputOpenFoamParallel::ivariables(const InputConfiguration &configuration)
 			variablePack.add(configuration.path + "/processor" + std::to_string(d) + "/" + subdir + "/" + files[evariables[v]]);
 		}
 	}
-	variablePack.iread(MPITools::singleton->across);
+	variablePack.iread(MPITools::singleton->within);
 }

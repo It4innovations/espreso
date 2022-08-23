@@ -31,8 +31,8 @@ GeometryData::GeometryData(XDMFGeometry *geometry, XDMFDataItem *geometrydata)
 
 void GeometryData::read(HDF5 &file)
 {
-	if (MPITools::subset->within.rank == 0) {
-		esint ncoordinates = distribution[info::mpi::rank + MPITools::subset->within.size] - distribution[info::mpi::rank];
+	if (MPITools::subset->across.rank == 0) {
+		esint ncoordinates = distribution[info::mpi::rank + MPITools::subset->across.size] - distribution[info::mpi::rank];
 		data.resize(ncoordinates * dimension);
 		file.read(name.c_str(), HDF5::FLOAT, data.data(), dimension, ncoordinates, distribution[info::mpi::rank]);
 	}

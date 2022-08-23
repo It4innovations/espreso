@@ -183,15 +183,13 @@ MPISubset::MPISubset(int max_mpi_procs)
 	int wcolor = info::mpi::rank / subsize;
 	int acolor = info::mpi::rank % subsize;
 
-	withinsize = subsize;
-	acrosssize = info::mpi::size / subsize + ((info::mpi::size % subsize) ? 1 : 0);
-	MPI_Comm_split(info::mpi::comm, wcolor, info::mpi::rank, &within.communicator);
-	MPI_Comm_rank(within.communicator, &within.rank);
-	MPI_Comm_size(within.communicator, &within.size);
-
-	MPI_Comm_split(info::mpi::comm, acolor, info::mpi::rank, &across.communicator);
+	MPI_Comm_split(info::mpi::comm, wcolor, info::mpi::rank, &across.communicator);
 	MPI_Comm_rank(across.communicator, &across.rank);
 	MPI_Comm_size(across.communicator, &across.size);
+
+	MPI_Comm_split(info::mpi::comm, acolor, info::mpi::rank, &within.communicator);
+	MPI_Comm_rank(within.communicator, &within.rank);
+	MPI_Comm_size(within.communicator, &within.size);
 	profiler::syncend("mpi_subset");
 }
 

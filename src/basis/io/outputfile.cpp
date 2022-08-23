@@ -48,7 +48,7 @@ void OutputFilePack::commitFile(const std::string &name)
 
 static int reorderedRank(int rank, int offset)
 {
-	int size = MPITools::subset->acrosssize * MPITools::subset->withinsize;
+	int size = MPITools::subset->across.size * MPITools::subset->within.size;
 	return (rank - offset + size) % size;
 }
 
@@ -77,8 +77,8 @@ void OutputFilePack::reorder()
 
 	{ // set a reasonable reorganization according to the stripe size setting (black magic)
 		size_t stripe = info::ecf->output.stripe_size;
-		size_t nwriters = MPITools::subset->acrosssize;
-		size_t reduction = MPITools::subset->withinsize;
+		size_t nwriters = MPITools::subset->within.size;
+		size_t reduction = MPITools::subset->across.size;
 		size_t stripeoffset = 0;
 		for (size_t i = 0; i < _files.size(); ++i) {
 			size_t mult = totalsize[i] / (stripe * nwriters) + ((totalsize[i] % (stripe * nwriters)) ? 1 : 0);
@@ -125,7 +125,7 @@ void OutputFilePack::reorder()
 			sBuffer.push_back(0); // total size
 			sBuffer.push_back(r); // target
 
-			if (r % MPITools::subset->withinsize == 0) { // target is writer
+			if (r % MPITools::subset->across.size == 0) { // target is writer
 				for (size_t j = 0; j < _files.size(); ++j) {
 					size_t begin = _files[j]->_distribution[reorderedRank(r, _files[j]->_offset)];
 					size_t end = _files[j]->_distribution[reorderedRank(r, _files[j]->_offset) + 1];
@@ -164,7 +164,7 @@ void OutputFilePack::reorder()
 	profiler::synccheckpoint("all_to_all");
 
 
-	if (MPITools::subset->within.rank == 0) {
+	if (MPITools::subset->across.rank == 0) {
 		for (size_t j = 0; j < _files.size(); ++j) {
 			int rr = reorderedRank(info::mpi::rank, _files[j]->_offset);
 			_files[j]->_buffer.resize(_files[j]->_distribution[rr + 1] - _files[j]->_distribution[rr]);
@@ -207,8 +207,8 @@ void OutputFilePack::write()
 
 		if (info::ecf->output.writer == OutputConfiguration::WRITER::MPI) {
 			MPIWriter writer;
-			if (MPITools::subset->within.rank == 0 && chunksize) {
-				if (writer.open(MPITools::subset->across, _files[i]->_name)) {
+			if (MPITools::subset->across.rank == 0 && chunksize) {
+				if (writer.open(MPITools::subset->within, _files[i]->_name)) {
 					eslog::error("WRITER: cannot create file '%s'\n", _files[i]->_name.c_str());
 				}
 
@@ -222,8 +222,8 @@ void OutputFilePack::write()
 		}
 		if (info::ecf->output.writer == OutputConfiguration::WRITER::MPI_COLLECTIVE) {
 			MPICollectiveWriter writer;
-			if (MPITools::subset->within.rank == 0) {
-				if (writer.open(MPITools::subset->across, _files[i]->_name)) {
+			if (MPITools::subset->across.rank == 0) {
+				if (writer.open(MPITools::subset->within, _files[i]->_name)) {
 					eslog::error("WRITER: cannot create file '%s'\n", _files[i]->_name.c_str());
 				}
 

@@ -111,6 +111,25 @@ struct EnsightASCIIOutputWriter: public OutputFilePack {
 	}
 };
 
+struct EnsightBinaryWriter: public OutputFilePack {
+
+	void description(const std::string &description)
+	{
+		insert(description.size(), description.data());
+		insert(80 - description.size(), '\0');
+	}
+
+	void float32(float value)
+	{
+		insert(sizeof(float), &value);
+	}
+
+	void int32(int value)
+	{
+		insert(sizeof(int), &value);
+	}
+};
+
 }
 
 

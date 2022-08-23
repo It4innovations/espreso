@@ -37,7 +37,7 @@ InputFile::~InputFile()
 size_t InputFile::size(const std::string &file)
 {
 	MPILoader loader;
-	if (!loader.open(MPITools::subset->across, file)) {
+	if (!loader.open(MPITools::subset->within, file)) {
 		return loader.size();
 	}
 	eslog::error("MESIO: file '%s' cannot be opened.\n", file.c_str());
@@ -115,13 +115,13 @@ InputFilePack::InputFilePack(const std::vector<std::string> &filepaths, size_t m
 void InputFilePack::prepare()
 {
 	profiler::syncstart("inputpack_prepare");
-	setTotalSizes(MPITools::subset->across);
+	setTotalSizes(MPITools::subset->within);
 	profiler::synccheckpoint("get_size");
 
 	{ // set a reasonable reorganization according to the stripe size setting (black magic)
 		size_t stripe = info::ecf->input.stripe_size;
-		size_t nloaders = MPITools::subset->acrosssize;
-		size_t reduction = MPITools::subset->withinsize;
+		size_t nloaders = MPITools::subset->within.size;
+		size_t reduction = MPITools::subset->across.size;
 		size_t stripeoffset = 0;
 
 		// increase the stripe size in order to read requested minimal amount of data for all processes
@@ -172,10 +172,10 @@ void InputFilePack::prepare()
 				}
 			}
 
-			if (MPITools::subset->within.rank == 0) {
-				data.reserve(distribution[info::mpi::rank + MPITools::subset->within.size] - distribution[info::mpi::rank] + overlap);
-				data.resize(distribution[info::mpi::rank + MPITools::subset->within.size] - distribution[info::mpi::rank]);
-				data.resize(distribution[info::mpi::rank + MPITools::subset->within.size] - distribution[info::mpi::rank] + overlap, 0);
+			if (MPITools::subset->across.rank == 0) {
+				data.reserve(distribution[info::mpi::rank + MPITools::subset->across.size] - distribution[info::mpi::rank] + overlap);
+				data.resize(distribution[info::mpi::rank + MPITools::subset->across.size] - distribution[info::mpi::rank]);
+				data.resize(distribution[info::mpi::rank + MPITools::subset->across.size] - distribution[info::mpi::rank] + overlap, 0);
 			}
 		}
 	}
@@ -192,12 +192,12 @@ void InputFilePack::read()
 		size_t chunkmax = INT32_MAX;
 		size_t chunks = chunk / chunkmax + ((chunk % chunkmax) ? 1 : 0);
 		size_t chunkoffset = distribution[info::mpi::rank];
-		size_t chunksize = distribution[std::min(info::mpi::rank + MPITools::subset->within.size, info::mpi::size)] - chunkoffset;
+		size_t chunksize = distribution[std::min(info::mpi::rank + MPITools::subset->across.size, info::mpi::size)] - chunkoffset;
 
 		if (info::ecf->input.loader == InputConfiguration::LOADER::MPI) {
 			MPILoader loader;
-			if (MPITools::subset->within.rank == 0 && chunksize) {
-				if (loader.open(MPITools::subset->across, name)) {
+			if (MPITools::subset->across.rank == 0 && chunksize) {
+				if (loader.open(MPITools::subset->within, name)) {
 					eslog::error("LOADER: cannot read file '%s'\n", name.c_str());
 				}
 				for (size_t c = 0; c < chunks; ++c) {
@@ -209,8 +209,8 @@ void InputFilePack::read()
 		}
 		if (info::ecf->input.loader == InputConfiguration::LOADER::MPI_COLLECTIVE) {
 			MPICollectiveLoader loader;
-			if (MPITools::subset->within.rank == 0) {
-				if (loader.open(MPITools::subset->across, name)) {
+			if (MPITools::subset->across.rank == 0) {
+				if (loader.open(MPITools::subset->within, name)) {
 					eslog::error("LOADER: cannot read file '%s'\n", name.c_str());
 				}
 				for (size_t c = 0; c < chunks; ++c) {
@@ -222,8 +222,8 @@ void InputFilePack::read()
 		}
 		if (info::ecf->input.loader == InputConfiguration::LOADER::POSIX) {
 			POSIXLoader loader;
-			if (MPITools::subset->within.rank == 0) {
-				if (loader.open(MPITools::subset->across, name)) {
+			if (MPITools::subset->across.rank == 0) {
+				if (loader.open(MPITools::subset->within, name)) {
 					eslog::error("LOADER: cannot read file '%s'\n", name.c_str());
 				}
 				loader.read(data.data(), chunkoffset, chunksize);
@@ -236,18 +236,18 @@ void InputFilePack::read()
 	eslog::checkpointln("READER: FILE READ");
 
 	profiler::syncstart("inputpack_postprocess");
-	int reduction = MPITools::subset->within.size;
+	int reduction = MPITools::subset->across.size;
 
 	if (reduction > 1) { // scatter data to non-readers
 		std::vector<size_t> displacement(reduction + 1);
 		std::vector<char> sBuffer, rBuffer;
 
-		int writer = info::mpi::rank - MPITools::subset->within.rank;
+		int writer = info::mpi::rank - MPITools::subset->across.rank;
 		size_t totalsize = 0;
 		while (next()) {
 			totalsize += distribution[writer + reduction] - distribution[writer];
 		}
-		if (MPITools::subset->within.rank == 0) {
+		if (MPITools::subset->across.rank == 0) {
 			sBuffer.reserve(totalsize);
 		}
 		for (int r = writer; r < writer + reduction; ++r) {
@@ -255,14 +255,14 @@ void InputFilePack::read()
 				size_t chunkoffset = distribution[r] - distribution[writer];
 				size_t chunksize = distribution[r + 1] - distribution[r];
 				displacement[r - writer + 1] += chunkoffset + chunksize;
-				if (MPITools::subset->within.rank == 0 && chunksize) {
+				if (MPITools::subset->across.rank == 0 && chunksize) {
 					sBuffer.insert(sBuffer.end(), data.begin() + chunkoffset, data.begin() + chunkoffset + chunksize);
 				}
 			}
 		}
 		profiler::synccheckpoint("sbuffer_data");
 
-		Communication::scatterv(sBuffer, rBuffer, displacement, &MPITools::subset->within);
+		Communication::scatterv(sBuffer, rBuffer, displacement, &MPITools::subset->across);
 		profiler::synccheckpoint("scatterv");
 
 		size_t roffset = 0;
@@ -388,7 +388,7 @@ void Metadata::read()
 	distribution.resize(2);
 	if (info::mpi::rank == 0) {
 		POSIXLoader loader;
-		if (loader.open(MPITools::singleton->across, name)) {
+		if (loader.open(MPITools::singleton->within, name)) {
 			eslog::error("MESIO error: cannot load metadata file '%s'\n", name.c_str());
 		}
 		distribution = { 0, loader.size() };

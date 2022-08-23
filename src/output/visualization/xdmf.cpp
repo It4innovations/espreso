@@ -335,19 +335,19 @@ void XDMF::updateMesh()
 	Communication::barrier(MPITools::asynchronous);
 	if (_measure) { eslog::checkpointln("XDMF: LIGHTDATA STORED"); }
 
-	if (_hdf5 == NULL && MPITools::subset->within.rank == 0) {
-		_hdf5 = new HDF5((_path + _directory + _name).c_str(), MPITools::subset->across, HDF5::MODE::WRITE);
+	if (_hdf5 == NULL && MPITools::subset->across.rank == 0) {
+		_hdf5 = new HDF5((_path + _directory + _name).c_str(), MPITools::subset->within, HDF5::MODE::WRITE);
 	}
 	profiler::synccheckpoint("init_hdf5");
 	Communication::barrier(MPITools::asynchronous);
 	if (_measure) { eslog::checkpointln("HDF5: HDF5 INITIALIZED"); }
 
-	if (MPITools::subset->withinsize > 1) { // gather data to writers
+	if (MPITools::subset->across.size > 1) { // gather data to writers
 		if (sizeof(int) != sizeof(float)) {
 			eslog::error("MESIO internal error: cannot gather data to writers.\n");
 		}
 		std::vector<int> sdata, rdata;
-		if (MPITools::subset->within.rank) { // without root data
+		if (MPITools::subset->across.rank) { // without root data
 			size_t totalsize = 0;
 			for (size_t i = 0; i < geometries.size(); ++i) {
 				totalsize += 1 + geometries[i].dimension * geometries[i].size;
@@ -365,10 +365,10 @@ void XDMF::updateMesh()
 				sdata.insert(sdata.end(), topologies[i].topology.begin(), topologies[i].topology.end());
 			}
 		}
-		Communication::gatherUnknownSize(sdata, rdata, &MPITools::subset->within);
-		if (MPITools::subset->within.rank == 0) {
+		Communication::gatherUnknownSize(sdata, rdata, &MPITools::subset->across);
+		if (MPITools::subset->across.rank == 0) {
 			size_t offset = 0;
-			for (int r = 1; r < MPITools::subset->within.size; r++) {
+			for (int r = 1; r < MPITools::subset->across.size; r++) {
 				for (size_t i = 0; i < geometries.size(); ++i) {
 					int size = rdata[offset++];
 					geometries[i].size += size;
@@ -388,7 +388,7 @@ void XDMF::updateMesh()
 	profiler::synccheckpoint("reorder");
 	if (_measure) { eslog::checkpointln("XDMF: GEOMETRY DATA REORDERED"); }
 
-	if (MPITools::subset->within.rank == 0) {
+	if (MPITools::subset->across.rank == 0) {
 		for (size_t i = 0; i < geometries.size(); ++i) {
 			_hdf5->append(geometries[i].name.c_str(), HDF5::FLOAT, HDF5::FLOAT, geometries[i].coordinates.data(), geometries[i].dimension, geometries[i].size, geometries[i].offset, geometries[i].totalsize);
 		}
@@ -456,9 +456,9 @@ void XDMF::updateSolution()
 		}
 	}
 
-	if (MPITools::subset->withinsize > 1) { // gather data to writers
+	if (MPITools::subset->across.size > 1) { // gather data to writers
 		std::vector<float> sdata, rdata;
-		if (MPITools::subset->within.rank) { // without root data
+		if (MPITools::subset->across.rank) { // without root data
 			size_t totalsize = 0;
 			for (size_t i = 0; i < attributes.size(); ++i) {
 				totalsize += 1 + attributes[i].values.size();
@@ -468,8 +468,8 @@ void XDMF::updateSolution()
 				sdata.insert(sdata.end(), attributes[i].values.begin(), attributes[i].values.end());
 			}
 		}
-		Communication::gatherUnknownSize(sdata, rdata, &MPITools::subset->within);
-		if (MPITools::subset->within.rank == 0) {
+		Communication::gatherUnknownSize(sdata, rdata, &MPITools::subset->across);
+		if (MPITools::subset->across.rank == 0) {
 			size_t offset = 0;
 			for (size_t i = 0; i < attributes.size(); ++i) {
 				esint size = rdata[offset++];
@@ -480,7 +480,7 @@ void XDMF::updateSolution()
 		}
 	}
 
-	if (MPITools::subset->within.rank == 0) {
+	if (MPITools::subset->across.rank == 0) {
 		for (size_t i = 0; i < attributes.size(); ++i) {
 			_hdf5->append(attributes[i].name.c_str(), HDF5::FLOAT, HDF5::FLOAT, attributes[i].values.data(), attributes[i].dimension, attributes[i].size, attributes[i].offset, attributes[i].totalsize);
 		}

@@ -54,8 +54,7 @@ class MPISubset {
 	friend class MPITools;
 
 public:
-	int withinsize, acrosssize;
-	MPIGroup within, across;
+	MPIGroup across, within;
 
 	MPISubset(int max_mpi_procs);
 private:

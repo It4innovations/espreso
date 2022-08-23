@@ -43,7 +43,7 @@ void InputEnsight::load(const InputConfiguration &configuration)
 
 	eslog::info(" ==================================== ENSIGHT GOLD LOADER ===================== %12.3f s\n", eslog::duration());
 	eslog::info(" ============================================================================================= \n");
-	eslog::info(" == NUMBER OF READERS %69d == \n", MPITools::subset->acrosssize);
+	eslog::info(" == NUMBER OF READERS %69d == \n", MPITools::subset->across.size);
 	switch (configuration.loader) {
 	case InputConfiguration::LOADER::MPI:            eslog::info(" == READER TYPE %75s == \n", "MPI I/O"); break;
 	case InputConfiguration::LOADER::MPI_COLLECTIVE: eslog::info(" == READER TYPE %75s == \n", "COLLECTIVE MPI I/O"); break;

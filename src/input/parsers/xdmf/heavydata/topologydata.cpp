@@ -76,8 +76,8 @@ TopologyData::TopologyData(XDMFTopology *topology, XDMFDataItem *topologydata)
 
 void TopologyData::read(HDF5 &file)
 {
-	if (MPITools::subset->within.rank == 0) {
-		esint nelements = distribution[info::mpi::rank + MPITools::subset->within.size] - distribution[info::mpi::rank];
+	if (MPITools::subset->across.rank == 0) {
+		esint nelements = distribution[info::mpi::rank + MPITools::subset->across.size] - distribution[info::mpi::rank];
 		data.reserve(esize * nelements + align);
 		data.resize(esize * nelements);
 		file.read(name.c_str(), HDF5::ESINT, data.data(), esize, nelements, distribution[info::mpi::rank]);

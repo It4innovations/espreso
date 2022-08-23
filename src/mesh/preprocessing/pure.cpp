@@ -432,14 +432,14 @@ esint callParallelDecomposer(const ElementStore *elements, const NodeStore *node
 
 	profiler::syncstart("call_parallel_decomposer");
 	if (info::mpi::size <= info::ecf->input.third_party_scalability_limit && info::ecf->input.decomposition.parallel_decomposer != DecompositionConfiguration::ParallelDecomposer::METIS) {
-		std::vector<esint> edistribution = Communication::getDistribution<esint>(partition.size(), &MPITools::subset->across);
+		std::vector<esint> edistribution = Communication::getDistribution<esint>(partition.size(), &MPITools::subset->within);
 
 		switch (info::ecf->input.decomposition.parallel_decomposer) {
 		case DecompositionConfiguration::ParallelDecomposer::NONE: break;
 		case DecompositionConfiguration::ParallelDecomposer::METIS: break; // never accessed
 		case DecompositionConfiguration::ParallelDecomposer::PARMETIS:
 			edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_PartKway,
-					MPITools::subset->across, edistribution.data(), eframes.data(), eneighbors.data(),
+					MPITools::subset->within, edistribution.data(), eframes.data(), eneighbors.data(),
 					0, NULL, 0, NULL, NULL, partition.data());
 
 			profiler::synccheckpoint("parmetis");
@@ -450,7 +450,7 @@ esint callParallelDecomposer(const ElementStore *elements, const NodeStore *node
 				while (1.01 * edgecut < prev) {
 					prev = edgecut;
 					edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_RefineKway,
-							MPITools::subset->across, edistribution.data(), eframes.data(), eneighbors.data(),
+							MPITools::subset->within, edistribution.data(), eframes.data(), eneighbors.data(),
 							0, NULL, 0, NULL, NULL, partition.data());
 				}
 				profiler::synccheckpoint("parmetis");
@@ -459,7 +459,7 @@ esint callParallelDecomposer(const ElementStore *elements, const NodeStore *node
 			break;
 		case DecompositionConfiguration::ParallelDecomposer::PTSCOTCH:
 			edgecut = PTScotch::call(
-					MPITools::subset->across, edistribution.data(), eframes.data(), eneighbors.data(),
+					MPITools::subset->within, edistribution.data(), eframes.data(), eneighbors.data(),
 					0, NULL, 0, NULL, NULL, partition.data());
 
 			profiler::synccheckpoint("ptscotch");
@@ -473,13 +473,13 @@ esint callParallelDecomposer(const ElementStore *elements, const NodeStore *node
 		std::vector<size_t> offsets;
 
 		if (info::ecf->input.decomposition.parallel_decomposer == DecompositionConfiguration::ParallelDecomposer::METIS) {
-			Communication::gatherUnknownSize(eframes, gframes, &MPITools::singleton->within);
-			Communication::gatherUnknownSize(eneighbors, gneighbors, &MPITools::singleton->within);
-			Communication::gatherUnknownSize(partition, gpartition, offsets, &MPITools::singleton->within);
+			Communication::gatherUnknownSize(eframes, gframes, &MPITools::singleton->across);
+			Communication::gatherUnknownSize(eneighbors, gneighbors, &MPITools::singleton->across);
+			Communication::gatherUnknownSize(partition, gpartition, offsets, &MPITools::singleton->across);
 		} else {
-			Communication::gatherUnknownSize(eframes, gframes, &MPITools::subset->within);
-			Communication::gatherUnknownSize(eneighbors, gneighbors, &MPITools::subset->within);
-			Communication::gatherUnknownSize(partition, gpartition, offsets, &MPITools::subset->within);
+			Communication::gatherUnknownSize(eframes, gframes, &MPITools::subset->across);
+			Communication::gatherUnknownSize(eneighbors, gneighbors, &MPITools::subset->across);
+			Communication::gatherUnknownSize(partition, gpartition, offsets, &MPITools::subset->across);
 		}
 
 		profiler::synccheckpoint("gather_dual");
@@ -510,22 +510,22 @@ esint callParallelDecomposer(const ElementStore *elements, const NodeStore *node
 			profiler::synccheckpoint("synchronize");
 			Communication::barrier();
 		} else {
-			if (MPITools::subset->within.rank == 0) {
+			if (MPITools::subset->across.rank == 0) {
 				fixframes();
-				edistribution = Communication::getDistribution<esint>(gpartition.size(), &MPITools::subset->across);
+				edistribution = Communication::getDistribution<esint>(gpartition.size(), &MPITools::subset->within);
 
 				switch (info::ecf->input.decomposition.parallel_decomposer) {
 				case DecompositionConfiguration::ParallelDecomposer::NONE: break;
 				case DecompositionConfiguration::ParallelDecomposer::METIS: break;// never accessed
 				case DecompositionConfiguration::ParallelDecomposer::PARMETIS:
 					edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_PartKway,
-							MPITools::subset->across, edistribution.data(), gframes.data(), gneighbors.data(),
+							MPITools::subset->within, edistribution.data(), gframes.data(), gneighbors.data(),
 							0, NULL, 0, NULL, NULL, gpartition.data());
 					profiler::checkpoint("parmetis");
 					break;
 				case DecompositionConfiguration::ParallelDecomposer::PTSCOTCH:
 					edgecut = PTScotch::call(
-							MPITools::subset->across, edistribution.data(), gframes.data(), gneighbors.data(),
+							MPITools::subset->within, edistribution.data(), gframes.data(), gneighbors.data(),
 							0, NULL, 0, NULL, NULL, gpartition.data());
 					profiler::checkpoint("ptscotch");
 					break;
@@ -534,7 +534,7 @@ esint callParallelDecomposer(const ElementStore *elements, const NodeStore *node
 			}
 
 			profiler::synccheckpoint("synchronize");
-			Communication::barrier(&MPITools::subset->within);
+			Communication::barrier(&MPITools::subset->across);
 		}
 
 		switch (info::ecf->input.decomposition.parallel_decomposer) {
@@ -549,28 +549,28 @@ esint callParallelDecomposer(const ElementStore *elements, const NodeStore *node
 				info::ecf->input.decomposition.parallel_decomposer == DecompositionConfiguration::ParallelDecomposer::PARMETIS &&
 				info::ecf->input.decomposition.parmetis_options.refinement) {
 
-			if (MPITools::subset->within.rank == 0) {
+			if (MPITools::subset->across.rank == 0) {
 				esint prev = 2 * edgecut;
 				while (1.01 * edgecut < prev) {
 					prev = edgecut;
 					edgecut = ParMETIS::call(ParMETIS::METHOD::ParMETIS_V3_RefineKway,
-							MPITools::subset->across, edistribution.data(), gframes.data(), gneighbors.data(),
+							MPITools::subset->within, edistribution.data(), gframes.data(), gneighbors.data(),
 							0, NULL, 0, NULL, NULL, gpartition.data());
 				}
 			}
-			Communication::barrier(&MPITools::subset->within);
+			Communication::barrier(&MPITools::subset->across);
 			profiler::synccheckpoint("refinement");
 			eslog::checkpointln("MESH: CLUSTERS REFINED BY PARMETIS");
 		}
 
 		if (info::ecf->input.decomposition.parallel_decomposer == DecompositionConfiguration::ParallelDecomposer::METIS) {
-			Communication::broadcastUnknownSize(offsets, &MPITools::singleton->within);
-			Communication::scatterv(gpartition, partition, offsets, &MPITools::singleton->within);
-			Communication::broadcast(&edgecut, 1, type.mpitype, 0, &MPITools::singleton->within);
+			Communication::broadcastUnknownSize(offsets, &MPITools::singleton->across);
+			Communication::scatterv(gpartition, partition, offsets, &MPITools::singleton->across);
+			Communication::broadcast(&edgecut, 1, type.mpitype, 0, &MPITools::singleton->across);
 		} else {
-			Communication::broadcastUnknownSize(offsets, &MPITools::subset->within);
-			Communication::scatterv(gpartition, partition, offsets, &MPITools::subset->within);
-			Communication::broadcast(&edgecut, 1, type.mpitype, 0, &MPITools::subset->within);
+			Communication::broadcastUnknownSize(offsets, &MPITools::subset->across);
+			Communication::scatterv(gpartition, partition, offsets, &MPITools::subset->across);
+			Communication::broadcast(&edgecut, 1, type.mpitype, 0, &MPITools::subset->across);
 		}
 
 

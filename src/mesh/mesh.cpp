@@ -144,8 +144,8 @@ void Mesh::load()
 	info::mesh->preprocess();
 	eslog::checkpointln("ESPRESO: MESH PREPROCESSED");
 
-	input->variables(*info::mesh);
-	eslog::checkpointln("ESPRESO: VARIABLES LOADED");
+//	input->variables(*info::mesh);
+//	eslog::checkpointln("ESPRESO: VARIABLES LOADED");
 
 	profiler::syncend("load");
 }

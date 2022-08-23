@@ -97,7 +97,7 @@ void GridData::read()
 	eslog::startln("HDF5: STARTED", "HDF5");
 
 	std::string hdffile = _lightdata.dir + "/" + Parser::split(_grids.front().geometrydata->data, ":")[0];
-	HDF5 hdf5(hdffile.c_str(), MPITools::subset->across, HDF5::MODE::READ);
+	HDF5 hdf5(hdffile.c_str(), MPITools::subset->within, HDF5::MODE::READ);
 	eslog::checkpointln("HDF5: INITIALIZED");
 
 	for (size_t i = 0; i < _grids.size(); ++i) {
@@ -106,13 +106,13 @@ void GridData::read()
 	}
 	eslog::checkpointln("HDF5: READ");
 
-	int reduction = MPITools::subset->within.size;
+	int reduction = MPITools::subset->across.size;
 
 	if (reduction > 1) { // scatter data to non-readers
 		std::vector<size_t> displacement(reduction + 1);
 		std::vector<char > sBuffer, rBuffer;
 
-		int writer = info::mpi::rank - MPITools::subset->within.rank;
+		int writer = info::mpi::rank - MPITools::subset->across.rank;
 
 		size_t totalsize = 0;
 		for (size_t i = 0; i < _grids.size(); ++i) {
@@ -125,7 +125,7 @@ void GridData::read()
 					size_t chunkoffset = _geometry[i].dimension * (_geometry[i].distribution[r] - _geometry[i].distribution[writer]);
 					size_t chunksize = _geometry[i].dimension * (_geometry[i].distribution[r + 1] - _geometry[i].distribution[r]);
 					displacement[r - writer + 1] += sizeof(float) * (chunkoffset + chunksize);
-					if (MPITools::subset->within.rank == 0 && chunksize) {
+					if (MPITools::subset->across.rank == 0 && chunksize) {
 						char* begin = reinterpret_cast<char*>(_geometry[i].data.data() + chunkoffset);
 						char* end = reinterpret_cast<char*>(_geometry[i].data.data() + chunkoffset + chunksize);
 						sBuffer.insert(sBuffer.end(), begin, end);
@@ -135,7 +135,7 @@ void GridData::read()
 					size_t chunkoffset = _topology[i].esize * ( _topology[i].distribution[r] - _topology[i].distribution[writer]);
 					size_t chunksize = _topology[i].esize * (_topology[i].distribution[r + 1] - _topology[i].distribution[r]);
 					displacement[r - writer + 1] += sizeof(esint) * (chunkoffset + chunksize);
-					if (MPITools::subset->within.rank == 0 && chunksize) {
+					if (MPITools::subset->across.rank == 0 && chunksize) {
 						char* begin = reinterpret_cast<char*>(_topology[i].data.data() + chunkoffset);
 						char* end = reinterpret_cast<char*>(_topology[i].data.data() + chunkoffset + chunksize);
 						sBuffer.insert(sBuffer.end(), begin, end);
@@ -144,7 +144,7 @@ void GridData::read()
 			}
 		}
 
-		Communication::scatterv(sBuffer, rBuffer, displacement, &MPITools::subset->within);
+		Communication::scatterv(sBuffer, rBuffer, displacement, &MPITools::subset->across);
 
 		for (size_t i = 0, roffset = 0; i < _grids.size(); ++i) {
 			{
