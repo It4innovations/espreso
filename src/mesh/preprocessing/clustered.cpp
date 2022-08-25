@@ -810,7 +810,7 @@ void fillOutputOffset(NodeStore *nodes, const std::vector<ElementsRegionStore*> 
 	auto emask = nodes->eregions->cbegin();
 	for (esint n = 0; n < nodes->size; ++n, ++nranks, ++bmask, ++emask) {
 		offsets.clear();
-		if (nranks->size() > 1 && nranks->front() == info::mpi::rank) {
+		if (nranks->front() == info::mpi::rank) {
 			size_t ri = 1; // skip ALL_NODES
 			for (size_t r = 1; r < boundaryRegions.size(); ++r, ++ri) {
 				if (check(ri, bmask->data())) {
