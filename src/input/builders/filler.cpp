@@ -86,18 +86,18 @@ void fillNodes(LinkedNodes &nodes, OrderedRegions &regions, Mesh &mesh)
 	std::vector<size_t> rdistribution = mesh.nodes->distribution, rdatadistribution = mesh.nodes->distribution;
 	for (size_t t = 1; t < threads; t++) {
 		++rdistribution[t];
-		if (rdistribution[t] < nodes.rankDistribution.size()) {
-			rdatadistribution[t] = nodes.rankDistribution[rdistribution[t]];
+		if (rdistribution[t] < nodes.ranks.distribution.size()) {
+			rdatadistribution[t] = nodes.ranks.distribution[rdistribution[t]];
 		} else {
-			rdatadistribution[t] = nodes.rankDistribution[rdistribution[threads] - 1];
+			rdatadistribution[t] = nodes.ranks.distribution[rdistribution[threads] - 1];
 		}
 	}
 	++rdistribution[threads];
-	rdatadistribution[threads] = nodes.rankDistribution[rdistribution[threads] - 1];
+	rdatadistribution[threads] = nodes.ranks.distribution[rdistribution[threads] - 1];
 
 	mesh.nodes->ranks = new serializededata<esint, int>(
-			tarray<esint>(rdistribution, nodes.rankDistribution.begin(), nodes.rankDistribution.end()),
-			tarray<int>(rdatadistribution, nodes.rankData.begin(), nodes.rankData.end()));
+			tarray<esint>(rdistribution, nodes.ranks.distribution.begin(), nodes.ranks.distribution.end()),
+			tarray<int>(rdatadistribution, nodes.ranks.data.begin(), nodes.ranks.data.end()));
 
 	mesh.neighbors = nodes.neighbors;
 	mesh.neighborsWithMe.resize(mesh.neighbors.size() + 1);

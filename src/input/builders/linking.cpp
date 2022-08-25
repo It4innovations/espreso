@@ -392,8 +392,8 @@ void linkup(MergedNodes &merged, LinkedNodes &linked, ClusteredElements &element
 		std::unordered_set<int> neighbors;
 		linked.offsets.reserve(required.size());
 		linked.coordinates.reserve(required.size());
-		linked.rankDistribution.reserve(required.size() + 1);
-		linked.rankDistribution.push_back(0);
+		linked.ranks.distribution.reserve(required.size() + 1);
+		linked.ranks.distribution.push_back(0);
 		for (auto dup = merged.duplication.begin(); dup != merged.duplication.end(); ++dup) {
 			linked.duplication.push_back({ merged.offsets[dup->origin], merged.offsets[dup->duplicate] }); // it can include unnecessary nodes
 		}
@@ -402,12 +402,12 @@ void linkup(MergedNodes &merged, LinkedNodes &linked, ClusteredElements &element
 			linked.offsets.push_back(offset);
 			linked.coordinates.push_back(*coo);
 			for (esint n = 0; n < nranks; ++n) {
-				linked.rankData.push_back(ranks[n]);
-				if (linked.rankData.back() != info::mpi::rank) {
-					neighbors.insert(linked.rankData.back());
+				linked.ranks.data.push_back(ranks[n]);
+				if (linked.ranks.data.back() != info::mpi::rank) {
+					neighbors.insert(linked.ranks.data.back());
 				}
 			}
-			linked.rankDistribution.push_back(linked.rankData.size());
+			linked.ranks.distribution.push_back(linked.ranks.data.size());
 		};
 
 		std::vector<esint> recvOffset(linked.neighbors.size()), rankOffset(linked.neighbors.size());

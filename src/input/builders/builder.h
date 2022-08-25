@@ -12,6 +12,8 @@ void buildOrderedFEM(NodesBlocks &nodes, ElementsBlocks &elements, OrderedRegion
 void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &regions, Mesh &mesh);
 void buildOrderedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &regions, Mesh &mesh);
 
+void buildDecomposedFEM(NodesDomain &nodes, Elements &elements, OrderedRegions &regions, Mesh &mesh);
+
 }
 }
 

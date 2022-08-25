@@ -390,9 +390,9 @@ void globalToLocal(ClusteredElements &clustered, MergedElements &merged, LinkedN
 		std::vector<std::vector<esint> > sRemoved(nodes.neighbors.size()), rRemoved(nodes.neighbors.size());
 		for (size_t n = 0; n < nodes.offsets.size(); ++n) {
 			if (usedNode[n] == usedNode[n + 1] && usedNode[g2l[nodes.offsets[n]]] == usedNode[g2l[nodes.offsets[n]] + 1]) {
-				for (esint r = nodes.rankDistribution[n]; r < nodes.rankDistribution[n + 1]; ++r) {
-					if (nodes.rankData[r] != info::mpi::rank) {
-						sRemoved[rmap[nodes.rankData[r]]].push_back(nodes.offsets[n]);
+				for (esint r = nodes.ranks.distribution[n]; r < nodes.ranks.distribution[n + 1]; ++r) {
+					if (nodes.ranks.data[r] != info::mpi::rank) {
+						sRemoved[rmap[nodes.ranks.data[r]]].push_back(nodes.offsets[n]);
 					}
 				}
 			}
@@ -422,25 +422,25 @@ void globalToLocal(ClusteredElements &clustered, MergedElements &merged, LinkedN
 				nodes.offsets[offset] = nodes.offsets[n];
 				nodes.coordinates[offset] = nodes.coordinates[n];
 				size_t rdist = ranks;
-				for (esint r = nodes.rankDistribution[n]; r < nodes.rankDistribution[n + 1]; ++r) {
-					if (rindex == removed.size() || removed[rindex].first != nodes.offsets[n] || removed[rindex].second != nodes.rankData[r]) {
-						nodes.rankData[ranks++] = nodes.rankData[r];
-						if (nodes.rankData[r] != info::mpi::rank) {
-							++neighbors[rmap[nodes.rankData[r]]];
+				for (esint r = nodes.ranks.distribution[n]; r < nodes.ranks.distribution[n + 1]; ++r) {
+					if (rindex == removed.size() || removed[rindex].first != nodes.offsets[n] || removed[rindex].second != nodes.ranks.data[r]) {
+						nodes.ranks.data[ranks++] = nodes.ranks.data[r];
+						if (nodes.ranks.data[r] != info::mpi::rank) {
+							++neighbors[rmap[nodes.ranks.data[r]]];
 						}
 					}
-					if (rindex < removed.size() && removed[rindex].first == nodes.offsets[n] && removed[rindex].second == nodes.rankData[r]) {
+					if (rindex < removed.size() && removed[rindex].first == nodes.offsets[n] && removed[rindex].second == nodes.ranks.data[r]) {
 						++rindex;
 					}
 				}
-				nodes.rankDistribution[offset++] = rdist;
+				nodes.ranks.distribution[offset++] = rdist;
 			}
 		}
 		nodes.offsets.resize(offset);
 		nodes.coordinates.resize(offset);
-		nodes.rankDistribution.resize(offset + 1);
-		nodes.rankDistribution.back() = ranks;
-		nodes.rankData.resize(ranks);
+		nodes.ranks.distribution.resize(offset + 1);
+		nodes.ranks.distribution.back() = ranks;
+		nodes.ranks.data.resize(ranks);
 		std::vector<int> neighs; neighs.swap(nodes.neighbors);
 		for (size_t n = 0; n < neighbors.size(); ++n) {
 			if (neighbors[n]) {
@@ -477,9 +477,9 @@ void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merge
 				if (poly.isNode(n)) {
 					esint local = g2l[clustered.enodes[n + eoffset]];
 					size_t intersection = 0, current = 0;
-					for (int r = nodes.rankDistribution[local]; r < nodes.rankDistribution[local + 1]; ++r) {
-						while (current < neighbors.size() && neighbors[current] < nodes.rankData[r]) { ++current; }
-						if (current < neighbors.size() && neighbors[current] == nodes.rankData[r]) {
+					for (int r = nodes.ranks.distribution[local]; r < nodes.ranks.distribution[local + 1]; ++r) {
+						while (current < neighbors.size() && neighbors[current] < nodes.ranks.data[r]) { ++current; }
+						if (current < neighbors.size() && neighbors[current] == nodes.ranks.data[r]) {
 							neighbors[intersection++] = neighbors[current++];
 						}
 					}
@@ -780,9 +780,9 @@ void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merge
 		std::vector<std::vector<esint> > sRemoved(nodes.neighbors.size()), rRemoved(nodes.neighbors.size());
 		for (size_t n = 0; n < nodes.offsets.size(); ++n) {
 			if (usedNode[n] == usedNode[n + 1] && usedNode[g2l[nodes.offsets[n]]] == usedNode[g2l[nodes.offsets[n]] + 1]) {
-				for (esint r = nodes.rankDistribution[n]; r < nodes.rankDistribution[n + 1]; ++r) {
-					if (nodes.rankData[r] != info::mpi::rank) {
-						sRemoved[rmap[nodes.rankData[r]]].push_back(nodes.offsets[n]);
+				for (esint r = nodes.ranks.distribution[n]; r < nodes.ranks.distribution[n + 1]; ++r) {
+					if (nodes.ranks.data[r] != info::mpi::rank) {
+						sRemoved[rmap[nodes.ranks.data[r]]].push_back(nodes.offsets[n]);
 					}
 				}
 			}
@@ -812,25 +812,25 @@ void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merge
 				nodes.offsets[offset] = nodes.offsets[n];
 				nodes.coordinates[offset] = nodes.coordinates[n];
 				size_t rdist = ranks;
-				for (esint r = nodes.rankDistribution[n]; r < nodes.rankDistribution[n + 1]; ++r) {
-					if (rindex == removed.size() || removed[rindex].first != nodes.offsets[n] || removed[rindex].second != nodes.rankData[r]) {
-						nodes.rankData[ranks++] = nodes.rankData[r];
-						if (nodes.rankData[r] != info::mpi::rank) {
-							++neighbors[rmap[nodes.rankData[r]]];
+				for (esint r = nodes.ranks.distribution[n]; r < nodes.ranks.distribution[n + 1]; ++r) {
+					if (rindex == removed.size() || removed[rindex].first != nodes.offsets[n] || removed[rindex].second != nodes.ranks.data[r]) {
+						nodes.ranks.data[ranks++] = nodes.ranks.data[r];
+						if (nodes.ranks.data[r] != info::mpi::rank) {
+							++neighbors[rmap[nodes.ranks.data[r]]];
 						}
 					}
-					if (rindex < removed.size() && removed[rindex].first == nodes.offsets[n] && removed[rindex].second == nodes.rankData[r]) {
+					if (rindex < removed.size() && removed[rindex].first == nodes.offsets[n] && removed[rindex].second == nodes.ranks.data[r]) {
 						++rindex;
 					}
 				}
-				nodes.rankDistribution[offset++] = rdist;
+				nodes.ranks.distribution[offset++] = rdist;
 			}
 		}
 		nodes.offsets.resize(offset);
 		nodes.coordinates.resize(offset);
-		nodes.rankDistribution.resize(offset + 1);
-		nodes.rankDistribution.back() = ranks;
-		nodes.rankData.resize(ranks);
+		nodes.ranks.distribution.resize(offset + 1);
+		nodes.ranks.distribution.back() = ranks;
+		nodes.ranks.data.resize(ranks);
 		std::vector<int> neighs; neighs.swap(nodes.neighbors);
 		for (size_t n = 0; n < neighbors.size(); ++n) {
 			if (neighbors[n]) {

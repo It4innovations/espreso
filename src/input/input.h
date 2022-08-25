@@ -48,10 +48,21 @@ struct DatabaseOffset {
 	esint global, local, size;
 };
 
+struct IregularVector {
+	ivector<esint> distribution, data;
+};
+
 struct Blocks {
 	std::vector<DatabaseOffset> blocks;
 };
 
+struct Domain {
+	ivector<esint> ids;
+	IregularVector ranks;
+	std::vector<int> neighbors;
+};
+
+struct NodesDomain: Nodes, Domain { };
 struct NodesBlocks: Nodes, Blocks { };
 struct ElementsBlocks: Elements, Blocks { };
 struct FacesBlocks: Faces { Blocks elements, faces; };

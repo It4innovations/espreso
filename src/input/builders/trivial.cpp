@@ -93,15 +93,24 @@ void trivialUpdate(ClusteredNodes &clustered, MergedNodes &merged)
 	merged.duplication.clear();
 }
 
+void trivialUpdate(NodesDomain &nodes, LinkedNodes &linked)
+{
+	swap(linked, nodes);
+	linked.offsets.swap(nodes.ids);
+	linked.neighbors.swap(nodes.neighbors);
+	linked.ranks.distribution.swap(nodes.ranks.distribution);
+	linked.ranks.data.swap(nodes.ranks.data);
+}
+
 void trivialUpdate(MergedNodes &merged, LinkedNodes &linked)
 {
 	swap(linked, merged);
 	linked.offsets.swap(merged.offsets);
 	linked.duplication.swap(merged.duplication);
 	linked.neighbors.clear();
-	linked.rankDistribution.resize(linked.offsets.size() + 1);
-	std::iota(linked.rankDistribution.begin(), linked.rankDistribution.end(), 0);
-	linked.rankData.resize(linked.offsets.size(), info::mpi::rank);
+	linked.ranks.distribution.resize(linked.offsets.size() + 1);
+	std::iota(linked.ranks.distribution.begin(), linked.ranks.distribution.end(), 0);
+	linked.ranks.data.resize(linked.offsets.size(), info::mpi::rank);
 }
 
 void trivialUpdate(ElementsBlocks &blocks, OrderedElementsChunked &chunked)
@@ -123,9 +132,17 @@ void trivialUpdate(ElementsBlocks &blocks, OrderedElementsBalanced &balanced)
 	eslog::info(" == TOTAL NUMBER OF ELEMENTS %62d == \n", balanced.total);
 }
 
+void trivialUpdate(Elements &elements, MergedElements &merged)
+{
+	swap(elements, merged);
+	merged.offsets.resize(merged.etype.size());
+	esint offset = merged.etype.size();
+	Communication::exscan(offset);
+	std::iota(merged.offsets.begin(), merged.offsets.end(), offset);
+}
+
 void trivialUpdate(ClusteredElements &clustered, MergedElements &merged)
 {
-	swap(clustered, merged);
 	swap(clustered, merged);
 	clustered.offsets.swap(merged.offsets);
 	merged.duplication.clear();

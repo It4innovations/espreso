@@ -53,16 +53,6 @@ using namespace espreso;
 
 Element Mesh::edata[(int)Element::CODE::SIZE];
 
-bool Mesh::convertDatabase()
-{
-	switch (info::ecf->input_type) {
-	case ECF::INPUT_TYPE::EXTERNAL_FILE:
-		return info::ecf->input.convert_database;
-	default:
-		return false;
-	}
-}
-
 void Mesh::init()
 {
 	edata[static_cast<int>(Element::CODE::POINT1    )]   .init<Element::CODE::POINT1    >();
@@ -131,10 +121,9 @@ void Mesh::load()
 //		case InputConfiguration::FORMAT::NGLIB:      input = new NGLibGenerator     (info::ecf->input); break;
 		}
 		break;
-	case ECF::INPUT_TYPE::GENERATOR:
+	case ECF::INPUT_TYPE::GENERATOR: input = new MeshGenerator(info::ecf->generator); break;
 	default:
 		break;
-//		input = new MeshGenerator(info::ecf->generator);
 	}
 
 	input->load(info::ecf->input);

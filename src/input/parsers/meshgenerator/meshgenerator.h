@@ -2,7 +2,8 @@
 #ifndef SRC_INPUT_MESHGENERATOR_MESHGENERATOR_H_
 #define SRC_INPUT_MESHGENERATOR_MESHGENERATOR_H_
 
-#include "input/meshbuilder.h"
+#include "input/input.h"
+#include "composition/generator.h"
 
 #include <cstddef>
 
@@ -11,15 +12,24 @@ namespace espreso {
 class InputGeneratorConfiguration;
 class Mesh;
 
-class MeshGenerator: public MeshBuilder {
+class MeshGenerator: public Input {
 public:
 	static double precision;
 
-	MeshGenerator(const InputGeneratorConfiguration &configuration);
-	void load();
+	MeshGenerator(InputGeneratorConfiguration &generator);
+	~MeshGenerator();
+
+	void load(const InputConfiguration &configuration);
+	void build(Mesh &mesh);
+	void variables(Mesh &mesh);
 
 protected:
-	const InputGeneratorConfiguration &_configuration;
+	InputGeneratorConfiguration &configuration;
+	Generator *generator;
+
+	NodesDomain nodes;
+	Elements elements;
+	OrderedRegions regions;
 };
 
 }
@@ -27,3 +37,4 @@ protected:
 
 
 #endif /* SRC_INPUT_MESHGENERATOR_MESHGENERATOR_H_ */
+

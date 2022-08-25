@@ -5,7 +5,6 @@
 #include "input/input.h"
 #include "parser/foamfileheader.h"
 
-
 namespace espreso {
 
 class InputConfiguration;

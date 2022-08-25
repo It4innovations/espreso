@@ -33,7 +33,7 @@ struct Duplication {
 
 struct NeighborsLinks {
 	std::vector<int> neighbors;
-	ivector<esint> rankDistribution, rankData;
+	IregularVector ranks;
 };
 
 /**
@@ -181,11 +181,13 @@ void searchDuplicatedNodes(ClusteredNodes &clustered, MergedNodes &merged);
 void computeSFCNeighbors(const HilbertCurve<esfloat> &sfc, const ivector<esint> &splitters, std::vector<int> &sfcNeighbors);
 
 // 6. -> 7.
+void trivialUpdate(NodesDomain &nodes, LinkedNodes &linked);
 void trivialUpdate(MergedNodes &merged, LinkedNodes &linked);
 void mergeDuplicatedNodes(MergedNodes &merged); // 'linkup' has side-effect of removing duplicated nodes
 void linkup(MergedNodes &merged, LinkedNodes &linked, ClusteredElements &elements);
 
 // 7. -> 8.
+void trivialUpdate(Elements &elements, MergedElements &merged);
 void trivialUpdate(ClusteredElements &clustered, MergedElements &merged);
 void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merged, LinkedNodes &nodes, int dimension);
 void globalToLocal(ClusteredElements &clustered, MergedElements &merged, LinkedNodes &nodes);

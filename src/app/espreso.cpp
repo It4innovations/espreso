@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 	}
 	profiler::syncend("mesh_output");
 
-	if (Mesh::convertDatabase()) {
+	if (info::ecf->input.convert_database) {
 		if (info::mesh->nodes->data.size() || info::mesh->elements->data.size()) {
 			info::mesh->output->updateMonitors();
 			info::mesh->output->updateSolution();

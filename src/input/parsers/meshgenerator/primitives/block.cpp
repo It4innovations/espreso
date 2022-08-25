@@ -23,6 +23,7 @@
 #include "basis/containers/point.h"
 #include "basis/utilities/utils.h"
 #include "esinfo/eslog.h"
+#include "esinfo/mpiinfo.h"
 #include "config/ecf/input/block.h"
 #include "config/ecf/input/generatorelements.h"
 
@@ -79,6 +80,26 @@ BlockGenerator::BlockGenerator(const BlockGeneratorConfiguration &configuration,
 BlockGenerator::~BlockGenerator()
 {
 	delete _element;
+}
+
+void BlockGenerator::coordinates(NodesDomain &nodes)
+{
+	Triple<size_t> block = _block.domains * _block.elements * (Triple<size_t>(_element->subnodes) - 1) + 1;
+	Triple<double> step = (_block.end - _block.start) / Triple<double>(block.x, block.y, block.z).steps();
+
+	nodes.coordinates.reserve(block.mul());
+	std::vector<double> p;
+	for (size_t z = 0; z < block.z; z++) {
+		for (size_t y = 0; y < block.y; y++) {
+			for (size_t x = 0; x < block.x; x++) {
+				p = {
+						MeshGenerator::precision * (_block.start.x + x * step.x),
+						MeshGenerator::precision * (_block.start.y + y * step.y),
+						MeshGenerator::precision * (_block.start.z + z * step.z)};
+				nodes.coordinates.push_back(Point(_block.projection.x(p), _block.projection.y(p), _block.projection.z(p)));
+			}
+		}
+	}
 }
 
 void BlockGenerator::coordinates(MeshBuilder &mesh)
@@ -145,6 +166,30 @@ void BlockGenerator::forEachElement(
 	}
 }
 
+void BlockGenerator::elements(Elements &elements)
+{
+	elements.etype.resize(_element->subelements * (_block.domains * _block.elements).mul(), _element->code);
+	elements.enodes.reserve(elements.etype.size() * _element->enodes);
+
+	std::vector<esint> enodes;
+	auto add = [&] (std::vector<esint> &indices) {
+		enodes.clear();
+		_element->pushElements(enodes, indices);
+		elements.enodes.insert(elements.enodes.end(), enodes.begin(), enodes.end());
+	};
+
+	auto restriction = [] (Triple<size_t> &offset) {};
+
+	Triple<size_t> offset;
+	for (offset.z = 0; offset.z < _block.domains.z; offset.z++) {
+		for (offset.y = 0; offset.y < _block.domains.y; offset.y++) {
+			for (offset.x = 0; offset.x < _block.domains.x; offset.x++) {
+				forEachElement(offset * _block.elements, (offset + 1) * _block.elements, add, restriction);
+			}
+		}
+	}
+}
+
 void BlockGenerator::elements(MeshBuilder &mesh)
 {
 	mesh.esize.resize(_element->subelements * (_block.domains * _block.elements).mul(), _element->enodes);
@@ -165,6 +210,55 @@ void BlockGenerator::elements(MeshBuilder &mesh)
 			}
 		}
 	}
+}
+
+void BlockGenerator::neighbors(const std::vector<int> &surroundings, Domain &domain)
+{
+	std::vector<int> sorted(surroundings.size());
+	std::iota(sorted.begin(), sorted.end(), 0);
+	std::sort(sorted.begin(), sorted.end(), [&] (int i, int j) { return surroundings[i] < surroundings[j]; });
+
+	Triple<size_t> count = _block.domains * _block.elements * (Triple<size_t>(_element->subnodes) - 1);
+	Triple<size_t> size = (count + 1).toSize();
+
+	std::vector<std::pair<esint, esint> > neighs;
+
+	for (int i = 0; i < 27; i++) {
+		if (surroundings[sorted[i]] < 0) {
+			continue;
+		}
+		size_t  sx = sorted[i] % 3 == 2 ? count.x : 0,
+				ex = sorted[i] % 3 != 0 ? count.x : 0,
+				sy = sorted[i] % 9 >= 6 ? count.y : 0,
+				ey = sorted[i] % 9 >= 3 ? count.y : 0,
+				sz = sorted[i] / 9 == 2 ? count.z : 0,
+				ez = sorted[i] / 9 >= 1 ? count.z : 0;
+
+		Triple<size_t> offset;
+		for (offset.x = sx; offset.x <= ex; offset.x++) {
+			for (offset.y = sy; offset.y <= ey; offset.y++) {
+				for (offset.z = sz; offset.z <= ez; offset.z++) {
+					neighs.push_back(std::make_pair((offset * size).sum(), surroundings[sorted[i]]));
+				}
+			}
+		}
+		if (surroundings[sorted[i]] != info::mpi::rank) {
+			domain.neighbors.push_back(surroundings[sorted[i]]);
+		}
+	}
+
+	std::sort(neighs.begin(), neighs.end());
+
+	domain.ranks.distribution.reserve(domain.ids.size() + 1);
+	domain.ranks.distribution.push_back(0);
+	domain.ranks.data.reserve(neighs.size());
+	for (size_t i = 0; i < neighs.size(); i++) {
+		if (i && neighs[i - 1].first != neighs[i].first) {
+			domain.ranks.distribution.push_back(domain.ranks.data.size());
+		}
+		domain.ranks.data.push_back(neighs[i].second);
+	}
+	domain.ranks.distribution.push_back(domain.ranks.data.size());
 }
 
 void BlockGenerator::neighbors(const std::vector<int> &surroundings, MeshBuilder &mesh)

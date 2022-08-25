@@ -162,6 +162,35 @@ void buildOrderedFEM(NodesBlocks &nodes, ElementsBlocks &elements, OrderedRegion
 	eslog::endln("BUILDER: MESH BUILT");
 }
 
+void buildDecomposedFEM(NodesDomain &nodes, Elements &elements, OrderedRegions &regions, Mesh &mesh)
+{
+	eslog::startln("BUILDER: PROCESS DECOMPOSED MESH", "BUILDER");
+	eslog::param("Nodes", nodes.coordinates.size());
+	eslog::param("Elements", elements.etype.size());
+	eslog::param("Total[B]", size(nodes) + size(elements));
+	eslog::ln();
+
+	eslog::info(" ================================== DECOMPOSED FEM BUILDER ===================== %12.3f s\n", eslog::duration());
+	eslog::info(" ============================================================================================= \n");
+
+	LinkedNodes linked;
+	MergedElements merged;
+
+	// 1. -> 8.
+	// remove dangling
+	// sort nodes?
+	trivialUpdate(nodes, linked);
+	trivialUpdate(elements, merged);
+
+	// 9.
+	fillNodes(linked, regions, mesh);
+	fillElements(merged, regions, mesh);
+
+	regionInfo(mesh);
+	eslog::info(" ============================================================================================= \n\n");
+	eslog::endln("BUILDER: MESH BUILT");
+}
+
 void buildOrderedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &regions, Mesh &mesh)
 {
 	eslog::startln("BUILDER: PROCESS FACED MESH", "BUILDER");

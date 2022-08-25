@@ -35,9 +35,6 @@ class Output;
 
 class Mesh {
 public:
-
-	static bool convertDatabase();
-
 	static void init();
 	static void load();
 	static void finish();

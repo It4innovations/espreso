@@ -14,6 +14,9 @@ enum class Pattern {
 	CHESSBOARD_BLACK
 };
 
+struct Domain;
+struct NodesDomain;
+struct Elements;
 struct BlockGeneratorConfiguration;
 struct BlockSettings;
 struct ElementGenerator;
@@ -27,6 +30,10 @@ public:
 	~BlockGenerator();
 
 	const ElementGenerator* element() const { return _element; }
+
+	void coordinates(NodesDomain &nodes);
+	void elements(Elements &elements);
+	void neighbors(const std::vector<int> &surroundings, Domain &domain);
 
 	void coordinates(MeshBuilder &mesh);
 	void elements(MeshBuilder &mesh);
