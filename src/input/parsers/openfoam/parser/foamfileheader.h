@@ -17,7 +17,7 @@ struct FoamFileHeader {
 
 	enum class Class {
 		unknown,
-		faceList, faceCompactList, labelList, vectorField,
+		faceList, faceCompactList, labelList, vectorField, polyBoundaryMesh,
 		pointScalarField, pointVectorField, volScalarField, volVectorField, surfaceScalarField }
 	foamClass = Class::unknown;
 

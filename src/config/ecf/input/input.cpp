@@ -21,6 +21,14 @@ ClippingBox::ClippingBox()
 	ecfdescription->registerParameter("max_z", max[2], ECFMetaData().setdescription({ "MAX.Z" }).setdatatype({ ECFDataType::FLOAT }));
 }
 
+OpenFOAMInputConfiguration::OpenFOAMInputConfiguration()
+{
+	direct_load = false;
+	REGISTER(direct_load, ECFMetaData()
+			.setdescription({ "Load without SFC redistribution." })
+			.setdatatype({ ECFDataType::BOOL }));
+}
+
 InputConfiguration::InputConfiguration()
 {
 	path = ".";
@@ -42,6 +50,8 @@ InputConfiguration::InputConfiguration()
 			.addoption(ECFOption().setname("NEPER").setdescription("Neper Msh format."))
 			.addoption(ECFOption().setname("GMSH").setdescription("GMSH mesh generator."))
 			.addoption(ECFOption().setname("NGLIB").setdescription("NGLib mesh generator.")));
+
+	REGISTER(openfoam, ECFMetaData().setdescription({ "OpenFOAM input loader parameters." }));
 
 	REGISTER(clipping_box, ECFMetaData().setdescription({ "Clipping box." }));
 

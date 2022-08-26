@@ -37,6 +37,7 @@ struct Faces {
 	ivector<Element::CODE> ftype;
 	ivector<esint> fnodes;
 	ivector<esint> owner, neighbor;
+	esint elements;
 };
 
 struct Values {
@@ -65,7 +66,7 @@ struct Domain {
 struct NodesDomain: Nodes, Domain { };
 struct NodesBlocks: Nodes, Blocks { };
 struct ElementsBlocks: Elements, Blocks { };
-struct FacesBlocks: Faces { Blocks elements, faces; };
+struct FacesBlocks: Faces { Blocks eblocks, fblocks; };
 struct ValuesBlocks: Values, Blocks { };
 
 struct OrderedRegions {

@@ -21,10 +21,6 @@ public:
 protected:
 	std::vector<DatabaseOffset> nblocks, eblocks;
 
-	NodesBlocks nodes;
-	FacesBlocks faces;
-	OrderedRegions regions;
-
 	std::vector<esint> ndistribution, edistribution;
 	std::vector<int> nvariables, svariables, evariables;
 	std::vector<FoamFileHeader> vheader;
@@ -39,6 +35,11 @@ public:
 	void build(Mesh &mesh);
 	void variables(Mesh &mesh);
 	void ivariables(const InputConfiguration &configuration);
+
+protected:
+	NodesBlocks nodes;
+	FacesBlocks faces;
+	OrderedRegions regions;
 };
 
 class InputOpenFoamParallel: public InputOpenFoam {
@@ -50,6 +51,27 @@ public:
 	void build(Mesh &mesh);
 	void variables(Mesh &mesh);
 	void ivariables(const InputConfiguration &configuration);
+
+protected:
+	NodesBlocks nodes;
+	FacesBlocks faces;
+	OrderedRegions regions;
+};
+
+class InputOpenFoamParallelDirect: public InputOpenFoam {
+public:
+	InputOpenFoamParallelDirect(esint domains): domains(domains) {}
+	esint domains;
+
+	void load(const InputConfiguration &configuration);
+	void build(Mesh &mesh);
+	void variables(Mesh &mesh);
+	void ivariables(const InputConfiguration &configuration);
+
+protected:
+	NodesDomain nodes;
+	Faces faces;
+	OrderedRegions regions;
 };
 
 }

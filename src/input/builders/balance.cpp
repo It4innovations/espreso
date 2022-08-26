@@ -185,7 +185,7 @@ void balanceFVM(NodesBlocks &inNodes, FacesBlocks &inFaces, OrderedNodesBalanced
 
 	std::vector<esint> fdistribution = Communication::getDistribution<esint>(sum[1]);
 	distribute(outNodes, sum[0]);
-	distribute(outFaces.elements, inFaces.elements.blocks.back().size);
+	distribute(outFaces.edist, inFaces.eblocks.blocks.back().size);
 
 	// 1. balance description of faces
 	ivector<esint> sBuffer, rBuffer, edist;
@@ -279,7 +279,7 @@ void balanceFVM(NodesBlocks &inNodes, FacesBlocks &inFaces, OrderedNodesBalanced
 		sBuffer.push_back(0); // total size
 		sBuffer.push_back(r); // target
 
-		while (oit != opermutation.end() && inFaces.owner[*oit] < (r + 1) * outFaces.elements.chunk) {
+		while (oit != opermutation.end() && inFaces.owner[*oit] < (r + 1) * outFaces.edist.chunk) {
 			sent[*oit] = r;
 			sBuffer.push_back(edist[*oit + 1] - edist[*oit]);
 			sBuffer.insert(sBuffer.end(), inFaces.fnodes.begin() + edist[*oit], inFaces.fnodes.begin() + edist[*oit + 1]);
@@ -287,7 +287,7 @@ void balanceFVM(NodesBlocks &inNodes, FacesBlocks &inFaces, OrderedNodesBalanced
 			sBuffer.push_back(*oit < (esint)inFaces.neighbor.size() ? inFaces.neighbor[*oit] : -1);
 			++oit;
 		}
-		while (nit != npermutation.end() && inFaces.neighbor[*nit] < (r + 1) * outFaces.elements.chunk) {
+		while (nit != npermutation.end() && inFaces.neighbor[*nit] < (r + 1) * outFaces.edist.chunk) {
 			if (sent[*nit] < r) {
 				sBuffer.push_back(edist[*nit + 1] - edist[*nit]);
 				sBuffer.insert(sBuffer.end(), inFaces.fnodes.begin() + edist[*nit], inFaces.fnodes.begin() + edist[*nit + 1]);
@@ -306,10 +306,10 @@ void balanceFVM(NodesBlocks &inNodes, FacesBlocks &inFaces, OrderedNodesBalanced
 	utils::clearVector(sBuffer);
 
 	// just estimations
-	outFaces.ftype.reserve(7 * outFaces.elements.chunk);
-	outFaces.fnodes.reserve(5 * 7 * outFaces.elements.chunk);
-	outFaces.owner.reserve(7 * outFaces.elements.chunk);
-	outFaces.neighbor.reserve(7 * outFaces.elements.chunk);
+	outFaces.ftype.reserve(7 * outFaces.edist.chunk);
+	outFaces.fnodes.reserve(5 * 7 * outFaces.edist.chunk);
+	outFaces.owner.reserve(7 * outFaces.edist.chunk);
+	outFaces.neighbor.reserve(7 * outFaces.edist.chunk);
 	for (esint r = 0, offset = 0; r < info::mpi::size; ++r) {
 		esint size = offset + rBuffer[offset];
 		offset += 2;

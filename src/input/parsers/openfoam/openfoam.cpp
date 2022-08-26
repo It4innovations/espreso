@@ -4,10 +4,12 @@
 #include "parser/faceList.h"
 #include "parser/labelList.h"
 #include "parser/vectorField.h"
+#include "parser/polyBoundaryMesh.h"
 
 #include "basis/containers/tarray.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/parser.h"
+#include "basis/utilities/utils.h"
 #include "basis/utilities/sysutils.h"
 #include "basis/io/inputfile.h"
 #include "basis/logging/profiler.h"
@@ -74,7 +76,11 @@ void InputOpenFoam::load(const InputConfiguration &configuration)
 	if (domains == 1) {
 		loader = new InputOpenFoamSequential();
 	} else {
-		loader = new InputOpenFoamParallel(domains);
+		if (configuration.openfoam.direct_load) {
+			loader = new InputOpenFoamParallelDirect(domains);
+		} else {
+			loader = new InputOpenFoamParallel(domains);
+		}
 	}
 	loader->load(configuration);
 
@@ -107,7 +113,7 @@ void InputOpenFoamSequential::load(const InputConfiguration &configuration)
 	ParallelFoamFile::synchronize({ &points, &faces, &owner, &neighbour });
 	profiler::synccheckpoint("scan");
 
-	this->faces.elements.blocks.push_back(DatabaseOffset{0, 0, numberOfCells(owner.header)});
+	this->faces.eblocks.blocks.push_back(DatabaseOffset{0, 0, numberOfCells(owner.header)});
 
 	points.parse(this->nodes.coordinates);
 	faces.parse(this->faces.ftype, this->faces.fnodes);
@@ -127,30 +133,30 @@ void InputOpenFoamParallel::load(const InputConfiguration &configuration)
 	eslog::info(" == NUMBER OF SUBDOMAINS %66d == \n", domains);
 	eslog::info(" == MESH %82s == \n", (configuration.path + "/processor*/constant/polyMesh/").c_str());
 
-	esint localCells = 0;
+	faces.elements = 0;
 	std::vector<esint> nsize(domains / info::mpi::size + 1), esize(domains / info::mpi::size + 1);
 	for (int d = info::mpi::rank, i = 0; d < domains; d += info::mpi::size, ++i) {
 		std::string dict = configuration.path + "/processor" + std::to_string(d) + "/constant/polyMesh/";
 		OpenFOAMFaceList::load(dict + "faces", faces.ftype, faces.fnodes, nodes.coordinates.size());
 		nsize[i] = OpenFOAMVectorField::load(dict + "points", nodes.coordinates);
 
-		esize[i] = numberOfCells(OpenFOAMLabelList::load(dict + "owner", faces.owner, localCells));
-		OpenFOAMLabelList::load(dict + "neighbour", faces.neighbor, localCells);
+		esize[i] = numberOfCells(OpenFOAMLabelList::load(dict + "owner", faces.owner, faces.elements));
+		OpenFOAMLabelList::load(dict + "neighbour", faces.neighbor, faces.elements);
 		faces.neighbor.resize(faces.owner.size(), -1);
-		localCells += esize[i];
+		faces.elements += esize[i];
 	}
 
 	ndistribution = Communication::getDistribution((esint)nodes.coordinates.size());
-	edistribution = Communication::getDistribution(localCells);
+	edistribution = Communication::getDistribution(faces.elements);
 	esint nsum = 0, esum = 0;
 	for (int d = info::mpi::rank, i = 0; d < domains; d += info::mpi::size, ++i) {
 		nodes.blocks.push_back(DatabaseOffset{ndistribution[info::mpi::rank] + nsum, nsum, nsize[i]});
 		nsum += nsize[i];
-		faces.elements.blocks.push_back(DatabaseOffset{edistribution[info::mpi::rank] + esum, esum, esize[i]});
+		faces.eblocks.blocks.push_back(DatabaseOffset{edistribution[info::mpi::rank] + esum, esum, esize[i]});
 		esum += esize[i];
 	}
 	nblocks = nodes.blocks;
-	eblocks = faces.elements.blocks;
+	eblocks = faces.eblocks.blocks;
 
 	// from local to global addressing
 	for (size_t f = 0, foffset = 0; f < faces.ftype.size(); foffset += Element::encode(faces.ftype[f++]).nodes) {
@@ -176,6 +182,104 @@ void InputOpenFoamParallel::load(const InputConfiguration &configuration)
 	eslog::checkpointln("OPENFOAM PARSER: GEOMETRY PARSED");
 }
 
+void InputOpenFoamParallelDirect::load(const InputConfiguration &configuration)
+{
+	eslog::info(" ============================= PARALLEL OPENFOAM DIRECT LOADER ================ %12.3f s\n", eslog::duration());
+	eslog::info(" ============================================================================================= \n");
+	eslog::info(" == NUMBER OF SUBDOMAINS %66d == \n", domains);
+	eslog::info(" == MESH %82s == \n", (configuration.path + "/processor*/constant/polyMesh/").c_str());
+
+	faces.elements = 0;
+	std::vector<esint> nsize(domains / info::mpi::size + 1), esize(domains / info::mpi::size + 1);
+	std::vector<OpenFOAMPolyBoundaryMesh::OpenFOAMBoundary> neighbors;
+	for (int d = info::mpi::rank, i = 0; d < domains; d += info::mpi::size, ++i) {
+		std::string dict = configuration.path + "/processor" + std::to_string(d) + "/constant/polyMesh/";
+
+		OpenFOAMPolyBoundaryMesh regions(dict + "boundary");
+		OpenFOAMFaceList::load(dict + "faces", faces.ftype, faces.fnodes, nodes.coordinates.size());
+		OpenFOAMLabelList::load(dict + "pointProcAddressing", nodes.ids, nodes.coordinates.size());
+		nsize[i] = OpenFOAMVectorField::load(dict + "points", nodes.coordinates);
+
+		esize[i] = numberOfCells(OpenFOAMLabelList::load(dict + "owner", faces.owner, faces.elements));
+		OpenFOAMLabelList::load(dict + "neighbour", faces.neighbor, faces.elements);
+		faces.neighbor.resize(faces.owner.size(), -1);
+
+		for (size_t b = 0; b < regions.boundaries.size(); ++b) {
+			if (regions.boundaries[b].type == OpenFOAMPolyBoundaryMesh::OpenFOAMBoundaryType::processor) {
+				neighbors.push_back(regions.boundaries[b]);
+				neighbors.back().startFace += faces.elements;
+			}
+		}
+		faces.elements += esize[i];
+	}
+
+	std::sort(neighbors.begin(), neighbors.end(), [] (const OpenFOAMPolyBoundaryMesh::OpenFOAMBoundary &b1, const OpenFOAMPolyBoundaryMesh::OpenFOAMBoundary &b2) { return b1.neighbor < b2.neighbor; });
+
+	ivector<esint> fdist(faces.ftype.size() + 1);
+	fdist[0] = 0;
+	for (size_t e = 0; e < faces.ftype.size(); ++e) {
+		fdist[e + 1] = fdist[e] + Element::encode(faces.ftype[e]).nodes;
+	}
+
+	nodes.ranks.distribution.resize(nodes.coordinates.size() + 2, 1);
+	nodes.ranks.distribution.front() = 0;
+	std::vector<int> lastRank(nodes.coordinates.size(), info::mpi::rank);
+	for (int d = info::mpi::rank, i = 0; d < domains; d += info::mpi::size, ++i) {
+		for (size_t n = 0; n < neighbors.size(); ++n) {
+			for (esint f = neighbors[n].startFace; f < neighbors[n].startFace + neighbors[n].nFaces; ++f) {
+				esint noffset = Element::encode(faces.ftype[f]).code == Element::CODE::POLYGON ? 1 : 0;
+				for (esint node = fdist[f] + noffset; node < fdist[f + 1]; ++node) {
+					if (lastRank[faces.fnodes[node]] != neighbors[n].neighbor) {
+						lastRank[faces.fnodes[node]] = neighbors[n].neighbor;
+						++nodes.ranks.distribution[faces.fnodes[node] + 1];
+					}
+				}
+			}
+		}
+	}
+
+	utils::sizesToOffsets(nodes.ranks.distribution.data(), nodes.ranks.distribution.data() + nodes.ranks.distribution.size());
+	nodes.ranks.data.resize(nodes.ranks.distribution.back(), info::mpi::rank);
+	std::fill(lastRank.begin(), lastRank.end(), info::mpi::rank);
+	for (int d = info::mpi::rank, i = 0; d < domains; d += info::mpi::size, ++i) {
+		size_t n = 0;
+		auto insert = [&] (const OpenFOAMPolyBoundaryMesh::OpenFOAMBoundary &neighbor) {
+			for (esint f = neighbor.startFace; f < neighbor.startFace + neighbor.nFaces; ++f) {
+				esint noffset = Element::encode(faces.ftype[f]).code == Element::CODE::POLYGON ? 1 : 0;
+				for (esint node = fdist[f] + noffset; node < fdist[f + 1]; ++node) {
+					if (lastRank[faces.fnodes[node]] != neighbors[n].neighbor) {
+						lastRank[faces.fnodes[node]] = neighbors[n].neighbor;
+						nodes.ranks.data[nodes.ranks.distribution[faces.fnodes[node] + 1]++] = neighbor.neighbor;
+					}
+				}
+			}
+		};
+		for (; n < neighbors.size() && neighbors[n].neighbor < info::mpi::rank; ++n) {
+			insert(neighbors[n]);
+		}
+		for (size_t c = 0; c < nodes.coordinates.size(); ++c) {
+			++nodes.ranks.distribution[c + 1];
+		}
+		for (; n < neighbors.size(); ++n) {
+			insert(neighbors[n]);
+		}
+	}
+	nodes.ranks.distribution.pop_back();
+
+	for (size_t n = 0; n < neighbors.size(); ++n) {
+		if (nodes.neighbors.size() == 0 || nodes.neighbors.back() != neighbors[n].neighbor) {
+			if (neighbors[n].neighbor != info::mpi::rank) {
+				nodes.neighbors.push_back(neighbors[n].neighbor);
+			}
+		}
+	}
+
+//	ivariables(configuration);
+	eslog::info(" ============================================================================================= \n\n");
+	profiler::synccheckpoint("parse");
+	eslog::checkpointln("OPENFOAM PARSER: GEOMETRY PARSED");
+}
+
 void InputOpenFoam::build(Mesh &mesh)
 {
 	loader->build(mesh);
@@ -189,6 +293,11 @@ void InputOpenFoamSequential::build(Mesh &mesh)
 void InputOpenFoamParallel::build(Mesh &mesh)
 {
 	builder::buildChunkedFVM(nodes, faces, regions, mesh);
+}
+
+void InputOpenFoamParallelDirect::build(Mesh &mesh)
+{
+	builder::buildDecomposedFVM(nodes, faces, regions, mesh);
 }
 
 void InputOpenFoam::variables(Mesh &mesh)
@@ -350,6 +459,11 @@ void InputOpenFoamParallel::variables(Mesh &mesh)
 	eslog::endln("VARIABLES LOADER: VARIABLES ASSIGNED");
 }
 
+void InputOpenFoamParallelDirect::variables(Mesh &mesh)
+{
+
+}
+
 void InputOpenFoamSequential::ivariables(const InputConfiguration &configuration)
 {
 
@@ -420,3 +534,10 @@ void InputOpenFoamParallel::ivariables(const InputConfiguration &configuration)
 	}
 	variablePack.iread(MPITools::singleton->within);
 }
+
+void InputOpenFoamParallelDirect::ivariables(const InputConfiguration &configuration)
+{
+
+}
+
+

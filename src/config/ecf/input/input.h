@@ -21,6 +21,12 @@ struct ClippingBox: public ECFDescription {
 	ClippingBox();
 };
 
+struct OpenFOAMInputConfiguration: public ECFDescription {
+	bool direct_load;
+
+	OpenFOAMInputConfiguration();
+};
+
 struct InputConfiguration: public ECFDescription {
 
 	enum class FORMAT {
@@ -44,6 +50,8 @@ struct InputConfiguration: public ECFDescription {
 
 	std::string path;
 	FORMAT format;
+
+	OpenFOAMInputConfiguration openfoam;
 
 	ClippingBox clipping_box;
 

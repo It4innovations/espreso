@@ -115,8 +115,8 @@ struct ElementsHolder {
 	ElementsHolder(ElementsBlocks &&blocks): blocks(std::move(blocks)) {}
 };
 
-struct OrderedFacesChunked: Faces { OrderedDistribution elements, faces; };
-struct OrderedFacesBalanced: Faces { BalancedDistribution elements, faces; };
+struct OrderedFacesChunked: Faces { OrderedDistribution edist, fdist; };
+struct OrderedFacesBalanced: Faces { BalancedDistribution edist, fdist; };
 struct FaceHolder {
 	FacesBlocks blocks;
 	OrderedFacesChunked chunked;
@@ -150,8 +150,7 @@ void swap(Faces &f1, Faces &f2);
 void trivialUpdate(NodesBlocks &blocks, OrderedNodesChunked &chunked);
 void trivialUpdate(ElementsBlocks &blocks, OrderedElementsChunked &chunked);
 void trivialUpdate(FacesBlocks &blocks, OrderedFacesChunked &chunked);
-void buildElementsFromFaces(OrderedFacesChunked &faces, OrderedElementsChunked &elements, NodesBlocks &nodes);
-void buildElementsFromFaces(OrderedFacesBalanced &faces, OrderedElementsBalanced &elements, NodesBlocks &nodes);
+void buildElementsFromFaces(Faces &faces, Elements &elements);
 void clip(OrderedNodesChunked &nodes, OrderedElementsChunked &elements);
 
 // 1. -> 2.

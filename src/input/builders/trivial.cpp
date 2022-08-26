@@ -39,13 +39,13 @@ void trivialUpdate(NodesBlocks &blocks, OrderedNodesChunked &chunked)
 void trivialUpdate(FacesBlocks &blocks, OrderedFacesChunked &chunked)
 {
 	swap(chunked, blocks);
-	chunked.elements.offset = 0;
-	for (size_t i = 0; i < blocks.elements.blocks.size(); ++i) {
-		chunked.elements.offset += blocks.elements.blocks[i].size;
+	chunked.edist.offset = 0;
+	for (size_t i = 0; i < blocks.eblocks.blocks.size(); ++i) {
+		chunked.edist.offset += blocks.eblocks.blocks[i].size;
 	}
-	chunked.elements.size = chunked.elements.offset;
-	chunked.elements.total = Communication::exscan(chunked.elements.offset);
-	eslog::info(" == TOTAL NUMBER OF ELEMENTS %62d == \n", chunked.elements.total);
+	chunked.edist.size = chunked.edist.offset;
+	chunked.edist.total = Communication::exscan(chunked.edist.offset);
+	eslog::info(" == TOTAL NUMBER OF ELEMENTS %62d == \n", chunked.edist.total);
 }
 
 void trivialUpdate(NodesBlocks &blocks, OrderedNodesBalanced &balanced)

@@ -191,6 +191,39 @@ void buildDecomposedFEM(NodesDomain &nodes, Elements &elements, OrderedRegions &
 	eslog::endln("BUILDER: MESH BUILT");
 }
 
+void buildDecomposedFVM(NodesDomain &nodes, Faces &faces, OrderedRegions &regions, Mesh &mesh)
+{
+	eslog::startln("BUILDER: PROCESS DECOMPOSED MESH", "BUILDER");
+	eslog::param("Nodes", nodes.coordinates.size());
+	eslog::param("Faces", faces.ftype.size());
+	eslog::param("Total[B]", size(nodes) + size(faces));
+	eslog::ln();
+
+	eslog::info(" ================================== DECOMPOSED FVM BUILDER ===================== %12.3f s\n", eslog::duration());
+	eslog::info(" ============================================================================================= \n");
+
+	// 0. -> 1.
+	Elements elements;
+	buildElementsFromFaces(faces, elements);
+
+	LinkedNodes linked;
+	MergedElements merged;
+
+	// 1. -> 8.
+	// remove dangling
+	// sort nodes?
+	trivialUpdate(nodes, linked);
+	trivialUpdate(elements, merged);
+
+	// 9.
+	fillNodes(linked, regions, mesh);
+	fillElements(merged, regions, mesh);
+
+	regionInfo(mesh);
+	eslog::info(" ============================================================================================= \n\n");
+	eslog::endln("BUILDER: MESH BUILT");
+}
+
 void buildOrderedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &regions, Mesh &mesh)
 {
 	eslog::startln("BUILDER: PROCESS FACED MESH", "BUILDER");
@@ -206,7 +239,8 @@ void buildOrderedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 	if (info::mpi::size == 1) {
 		// 0. -> 1.
 		trivialUpdate(fh.blocks, fh.chunked);
-		buildElementsFromFaces(fh.chunked, eh.chunked, nh.blocks);
+		dynamic_cast<OrderedDistribution&>(eh.chunked) = fh.chunked.edist;
+		buildElementsFromFaces(fh.chunked, eh.chunked);
 
 		// 1. -> 2. trivial
 		trivialUpdate(nh.blocks, nh.chunked);
@@ -237,7 +271,8 @@ void buildOrderedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 		balanceFVM(nh.blocks, fh.blocks, nh.balanced, fh.balanced);
 		eslog::checkpointln("BUILDER: DATA BALANCED");
 
-		buildElementsFromFaces(fh.balanced, eh.balanced, nh.blocks);
+		dynamic_cast<BalancedDistribution&>(eh.balanced) = fh.balanced.edist;
+		buildElementsFromFaces(fh.balanced, eh.balanced);
 		eslog::param("OrderedNodesBalanced", nh.balanced.coordinates.size());
 		eslog::param("OrderedElementsBalanced", eh.balanced.etype.size());
 		eslog::param("OrderedTotalChunked[B]", size(nh.balanced) + size(nh.balanced));
@@ -306,7 +341,8 @@ void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 
 	// 0. -> 1.
 	trivialUpdate(fh.blocks, fh.chunked);
-	buildElementsFromFaces(fh.chunked, eh.chunked, nh.blocks);
+	buildElementsFromFaces(fh.chunked, eh.chunked);
+	dynamic_cast<OrderedDistribution&>(eh.chunked) = fh.chunked.edist;
 
 	if (info::mpi::size == 1) {
 		// 1. -> 2. trivial
