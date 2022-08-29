@@ -312,12 +312,18 @@ void InputOpenFoamSequential::variables(Mesh &mesh)
 
 void InputOpenFoamParallel::variables(Mesh &mesh)
 {
+	double tstart = eslog::time();
+	double start = eslog::time();
+
 	eslog::startln("OPENFOAM VARIABLES LOADER: STARTED", "VARIABLES LOADER");
 	ivector<esint> nperm(mesh.nodes->size), eperm(mesh.elements->distribution.process.size);
 	std::iota(nperm.begin(), nperm.end(), 0);
 	std::sort(nperm.begin(), nperm.end(), [&] (esint i, esint j) { return (mesh.nodes->inputOffset->begin() + i)->front() < (mesh.nodes->inputOffset->begin() + j)->front(); });
 	std::iota(eperm.begin(), eperm.end(), 0);
 	std::sort(eperm.begin(), eperm.end(), [&] (esint i, esint j) { return (mesh.elements->inputOffset->begin() + i)->front() < (mesh.elements->inputOffset->begin() + j)->front(); });
+
+	double init = eslog::time() - start;
+	start = eslog::time();
 
 	std::vector<esint> sBuffer, rBuffer;
 	sBuffer.reserve(info::mpi::size * 5 + nperm.size() + eperm.size());
@@ -341,9 +347,15 @@ void InputOpenFoamParallel::variables(Mesh &mesh)
 		}
 	}
 
+	double send_buff = eslog::time() - start;
+	start = eslog::time();
+
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
 		eslog::error("cannot exchange output offsets.\n");
 	}
+
+	double exchange_perm = eslog::time() - start;
+	start = eslog::time();
 
 	esint datasize = 0, nvsize = 0, evsize = 0;
 	ivector<esint> rmap(info::mpi::size);
@@ -361,9 +373,15 @@ void InputOpenFoamParallel::variables(Mesh &mesh)
 	sBuffer.clear();
 	sBuffer.reserve(info::mpi::size * 5 + datasize);
 
+	double prepare_buff = eslog::time() - start;
+	start = eslog::time();
+
 	eslog::checkpointln("VARIABLES LOADER: PERMUTATION EXCHANGED");
 
 	variablePack.wait(MPITools::singleton->within);
+
+	double wait = eslog::time() - start;
+	start = eslog::time();
 
 	eslog::checkpointln("VARIABLES LOADER: VARIABLES LOADED");
 
@@ -376,6 +394,9 @@ void InputOpenFoamParallel::variables(Mesh &mesh)
 			OpenFOAMVectorField::load(variablePack.files[v + nvariables.size() + offset], data[v + nvariables.size()]);
 		}
 	}
+
+	double parse = eslog::time() - start;
+	start = eslog::time();
 
 	for (int r = 0; r < info::mpi::size; ++r) {
 		esint i = rmap[r];
@@ -405,12 +426,18 @@ void InputOpenFoamParallel::variables(Mesh &mesh)
 		}
 	}
 
+	double build_buff = eslog::time() - start;
+	start = eslog::time();
+
 	rBuffer.clear();
 	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
 		eslog::error("cannot exchange output data.\n");
 	}
 	sBuffer.clear();
 	eslog::checkpointln("VARIABLES LOADER: VARIABLES EXCHANGED");
+
+	double exchange_buff = eslog::time() - start;
+	start = eslog::time();
 
 	std::vector<NamedData*> vdata;
 	for (size_t v = 0; v < nvariables.size(); ++v) {
@@ -428,9 +455,15 @@ void InputOpenFoamParallel::variables(Mesh &mesh)
 		}
 	}
 
+	double vdata_push = eslog::time() - start;
+	start = eslog::time();
+
 	for (size_t i = 0; i < rBuffer.size(); i += rBuffer[i]) {
 		rmap[rBuffer[i + 2]] = i;
 	}
+
+	double rmap_fill = eslog::time() - start;
+	start = eslog::time();
 
 	nit = nperm.begin(), eit = eperm.begin();
 	for (int r = 0; r < info::mpi::size; ++r) {
@@ -456,7 +489,14 @@ void InputOpenFoamParallel::variables(Mesh &mesh)
 		eit += esize;
 	}
 
+	double fill = eslog::time() - start;
+	start = eslog::time();
+
 	eslog::endln("VARIABLES LOADER: VARIABLES ASSIGNED");
+
+	double duration = eslog::time() - tstart;
+//	printf("init:%6f, sbuff:%6f, experm:%6f, pbuff:%6f, wait:%6f, parse:%6f, bbuff:%6f, exbuff:%6f, vdata:%6f, rmap:%6f, fill:%6f\n", init, send_buff, exchange_perm, prepare_buff, wait, parse, build_buff, exchange_buff, vdata_push, rmap_fill, fill);
+	printf("init:%6f, sbuff:%6f, experm:%6f, pbuff:%6f, wait:%6f, parse:%6f, bbuff:%6f, exbuff:%6f, vdata:%6f, rmap:%6f, fill:%6f\n", init / duration, send_buff / duration, exchange_perm / duration, prepare_buff / duration, wait / duration, parse / duration, build_buff / duration, exchange_buff / duration, vdata_push / duration, rmap_fill / duration, fill / duration);
 }
 
 void InputOpenFoamParallelDirect::variables(Mesh &mesh)
@@ -518,6 +558,7 @@ void InputOpenFoamParallel::ivariables(const InputConfiguration &configuration)
 			case FoamFileHeader::Class::volScalarField:     evariables.push_back(i); name = "volScalarField"; break;
 			case FoamFileHeader::Class::volVectorField:     evariables.push_back(i); name = "volVectorField"; break;
 			case FoamFileHeader::Class::surfaceScalarField: svariables.push_back(i); name = "[skipped] surfaceScalarField"; skip[i] = true; break;
+			case FoamFileHeader::Class::surfaceVectorField: svariables.push_back(i); name = "[skipped] surfaceVectorField"; skip[i] = true; break;
 			default: name = "unknown"; break;
 			}
 			eslog::info(" == %*s%s%*s == \n", fullSubdir.size(), "", files[i].c_str(), 87 - files[i].size() - fullSubdir.size(), name.c_str());

@@ -18,7 +18,7 @@ struct FoamFileHeader {
 	enum class Class {
 		unknown,
 		faceList, faceCompactList, labelList, vectorField, polyBoundaryMesh,
-		pointScalarField, pointVectorField, volScalarField, volVectorField, surfaceScalarField }
+		pointScalarField, pointVectorField, volScalarField, volVectorField, surfaceScalarField, surfaceVectorField }
 	foamClass = Class::unknown;
 
 	char arch[MAX_CHAR_LENGTH] = { 0 };
