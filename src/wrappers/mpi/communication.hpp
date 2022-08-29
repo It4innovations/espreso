@@ -1165,7 +1165,10 @@ bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype, Tallo
 	profiler::syncparam("size", sBuffer.size());
 	MPIType type(MPITools::getType<Ttype>());
 	std::vector<Ttype, Talloc> prevsend, send, recv;
-	recv.reserve(sBuffer.size());
+	recv.reserve(1.2 * sBuffer.size());
+	rBuffer.reserve(recv.capacity());
+	send.reserve(2.5 * sBuffer.size());
+	prevsend.reserve(send.capacity());
 
 	send = sBuffer;
 

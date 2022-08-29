@@ -265,7 +265,7 @@ void buildOrderedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 
 		// 7. -> 8.
 		globalToLocal(eh.clustered, eh.merged, nh.linked);
-		eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
+		eslog::checkpointln("BUILDER: ELEMENTS NODES REINDEXED");
 	} else {
 		ivector<esint> nbuckets, ebuckets, splitters;
 
@@ -315,7 +315,7 @@ void buildOrderedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 
 		// 7. -> 8.
 		globalToLocal(eh.clustered, eh.merged, nh.linked);
-		eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
+		eslog::checkpointln("BUILDER: ELEMENTS NODES REINDEXED");
 		eslog::param("MergedElements", eh.merged.etype.size());
 		eslog::ln();
 	}
@@ -369,7 +369,7 @@ void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 
 		// 7. -> 8.
 		globalToLocal(eh.clustered, eh.merged, nh.linked);
-		eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
+		eslog::checkpointln("BUILDER: ELEMENTS NODES REINDEXED");
 	} else {
 		ivector<esint> nbuckets, ebuckets, splitters;
 
@@ -415,7 +415,7 @@ void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 
 		// 7. -> 8.
 		globalToLocal(eh.clustered, eh.merged, nh.linked);
-		eslog::checkpointln("BUILDER: DUPLICATED ELEMENTS FOUND");
+		eslog::checkpointln("BUILDER: ELEMENTS NODES REINDEXED");
 		eslog::param("MergedElements", eh.merged.etype.size());
 		eslog::ln();
 	}
