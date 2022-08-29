@@ -16,7 +16,7 @@ class OutFile {
 public:
 	struct Block { size_t fileoffset = 0, size = 0, offset = 0;  };
 	std::vector<Block> blocks;
-	std::vector<char, initless_allocator<esint> > data;
+	std::vector<char, initless_allocator<char> > data;
 
 	void prepare();
 	void open(const std::string &name);

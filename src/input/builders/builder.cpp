@@ -205,6 +205,7 @@ void buildDecomposedFVM(NodesDomain &nodes, Faces &faces, OrderedRegions &region
 	// 0. -> 1.
 	Elements elements;
 	buildElementsFromFaces(faces, elements);
+	eslog::checkpointln("BUILDER: ELEMENTS BUILT");
 
 	LinkedNodes linked;
 	MergedElements merged;
@@ -241,6 +242,7 @@ void buildOrderedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 		trivialUpdate(fh.blocks, fh.chunked);
 		dynamic_cast<OrderedDistribution&>(eh.chunked) = fh.chunked.edist;
 		buildElementsFromFaces(fh.chunked, eh.chunked);
+		eslog::checkpointln("BUILDER: ELEMENTS BUILT");
 
 		// 1. -> 2. trivial
 		trivialUpdate(nh.blocks, nh.chunked);
@@ -277,7 +279,7 @@ void buildOrderedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 		eslog::param("OrderedElementsBalanced", eh.balanced.etype.size());
 		eslog::param("OrderedTotalChunked[B]", size(nh.balanced) + size(nh.balanced));
 		eslog::ln();
-		eslog::checkpointln("BUILDER: ELEMENTS CREATED");
+		eslog::checkpointln("BUILDER: ELEMENTS BUILT");
 
 		// 3. synchronize mesh dimension and compute SFC
 		HilbertCurve<esfloat> sfc(mesh.dimension, SFCDEPTH, nh.balanced.coordinates.size(), nh.balanced.coordinates.data());
@@ -343,6 +345,7 @@ void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 	trivialUpdate(fh.blocks, fh.chunked);
 	buildElementsFromFaces(fh.chunked, eh.chunked);
 	dynamic_cast<OrderedDistribution&>(eh.chunked) = fh.chunked.edist;
+	eslog::checkpointln("BUILDER: ELEMENTS BUILT");
 
 	if (info::mpi::size == 1) {
 		// 1. -> 2. trivial
