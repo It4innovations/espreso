@@ -179,7 +179,7 @@ DEAlgorithm::DEAlgorithm(ParameterManager& manager, OutputManager& output,
   isInitializing(true), F(F), CR(CR)
 {
 	for (int s = 0; s < population; s++) {
-		m_specimens.push_back(m_manager.generateVerifiedConfiguration());
+		m_specimens.push_back(m_manager.generateConfiguration());
 	}
 	this->current = m_specimens.begin();
 }
@@ -200,6 +200,115 @@ std::vector<double>& DEAlgorithm::getCurrentSpecimen()
 }
 
 void DEAlgorithm::evaluateCurrentSpecimen(double value)
+{
+	if (isInitializing)
+	{
+		current->push_back(value);
+		m_output.writeEvaluation(value);
+		if (!this->best.size()) this->best = *current;
+		if (this->best.back() > value) this->best = *current;
+
+		if (++current == m_specimens.end())
+		{
+			isInitializing = false;
+			current = m_specimens.begin();
+			this->mutateSpecimen();
+		}
+	}
+	else
+	{
+		trial_vector.push_back(value);
+		m_output.writeEvaluation(value);
+
+		// SELECTION
+		if (trial_vector.back() < (*current).back())
+		{ new_generation.push_back(trial_vector); }
+		else
+		{ new_generation.push_back(*current); }
+
+		if (this->best.back() > new_generation.back().back())
+		{ this->best = new_generation.back(); }
+
+		// std::cout << "Best: " << this->best.back() << std::endl;
+
+		if (++current == m_specimens.end())
+		{
+			current = m_specimens.begin();
+			this->m_specimens = new_generation;
+			new_generation.clear();
+		}
+
+		this->mutateSpecimen();
+	}
+}
+
+void DEAlgorithm::mutateSpecimen()
+{
+	// Current individual position in the population
+	int s = std::distance(m_specimens.begin(), current);
+
+	// MUTATION
+	const int MUTATION_PARENTS = 3;
+	std::vector<double> parents[MUTATION_PARENTS];
+	int p_idx[MUTATION_PARENTS];
+	// Parent #1
+	while ( ( p_idx[0] = m_manager.generateSpecimenNumber() ) == s );
+	// Parent #2
+	do { p_idx[1] = m_manager.generateSpecimenNumber(); } 
+	while (s == p_idx[1] || p_idx[0] == p_idx[1]);
+	// Parent #3
+	do { p_idx[2] = m_manager.generateSpecimenNumber(); } 
+	while (s == p_idx[2] || p_idx[0] == p_idx[2] || p_idx[1] == p_idx[2]);
+
+	for (int i = 0; i < MUTATION_PARENTS; i++)
+	{ parents[i] = m_specimens[ p_idx[i] ]; }
+
+	std::vector<double> noisy_vector;
+	noisy_vector.resize(this->dimension);
+	for (int d = 0; d < this->dimension; d++)
+	{
+		noisy_vector[d] = m_manager.checkParameter(
+			d,
+			parents[0][d] + F * (parents[1][d] - parents[2][d])
+		);
+	}
+
+	// CROSSOVER
+	int J = m_manager.generateParameterNumber();
+	trial_vector.clear(); trial_vector.resize(this->dimension);
+	for (int i = 0; i < this->dimension; i++) {
+		trial_vector[i] = (m_manager.generateDecimal() < CR) || (i == J)
+			? noisy_vector[i] : (*current)[i];
+	}
+}
+
+DEOldAlgorithm::DEOldAlgorithm(ParameterManager& manager, OutputManager& output,
+	int population, double F, double CR)
+: EvolutionAlgorithm(manager, output), population(population), dimension(manager.count()),
+  isInitializing(true), F(F), CR(CR)
+{
+	for (int s = 0; s < population; s++) {
+		m_specimens.push_back(m_manager.generateVerifiedConfiguration());
+	}
+	this->current = m_specimens.begin();
+}
+
+std::vector<double>& DEOldAlgorithm::getCurrentSpecimen()
+{
+	if (isInitializing)
+	{
+		m_output.writeConfiguration('I', *current, dimension);
+		return *current;
+	}
+	else
+	{		
+		this->m_output.writeConfiguration('T', trial_vector, dimension);
+		// this->m_output.writeConfiguration('N', new_generation.back());
+		return trial_vector;
+	}
+}
+
+void DEOldAlgorithm::evaluateCurrentSpecimen(double value)
 {
 	if (isInitializing)
 	{
@@ -241,7 +350,7 @@ void DEAlgorithm::evaluateCurrentSpecimen(double value)
 	}
 }
 
-void DEAlgorithm::mutateSpecimen()
+void DEOldAlgorithm::mutateSpecimen()
 {
 	// MUTATION
 	const int MUTATION_PARENTS = 3;

@@ -113,6 +113,33 @@ private:
 	void mutateSpecimen();
 };
 
+class DEOldAlgorithm : public EvolutionAlgorithm
+{
+public:
+	DEOldAlgorithm(ParameterManager& manager, OutputManager& output,
+		int population, double F, double CR);
+
+	std::vector<double>& getCurrentSpecimen() override;
+	void evaluateCurrentSpecimen(double value) override;
+
+private:
+	const int population;
+	const int dimension;
+
+	int generation;
+	bool isInitializing;
+	std::vector<std::vector<double> >::iterator current;
+	std::vector<std::vector<double> > new_generation;
+	std::vector<double> trial_vector;
+
+	const double F;
+	const double CR;
+
+	std::vector<double> best;
+
+	void mutateSpecimen();
+};
+
 class SOMAAlgorithm : public EvolutionAlgorithm
 {
 public:
