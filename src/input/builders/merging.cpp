@@ -942,13 +942,13 @@ struct __element_builder__ {
 	{
 		for (auto ii = it.obegin; ii != it.oend; ++ii) {
 			if (dist[*ii + 1] - dist[*ii] == N) {
-				for (int i = 0; i < N; ++i) { *nodes[i] = this->nodes[dist[*ii] + N - i - 1]; }
+				for (int i = 0; i < N; ++i) { *nodes[i] = this->nodes[dist[*ii] + i]; }
 				it.remove(it.obegin, ii); return;
 			}
 		}
 		for (auto ii = it.nbegin; ii != it.nend; ++ii) {
 			if (dist[*ii + 1] - dist[*ii] == N) {
-				for (int i = 0; i < N; ++i) { *nodes[i] = this->nodes[dist[*ii] + i]; }
+				for (int i = 0; i < N; ++i) { *nodes[i] = this->nodes[dist[*ii] + N - i - 1]; }
 				it.remove(it.nbegin, ii); return;
 			}
 		}
@@ -959,25 +959,25 @@ struct __element_builder__ {
 		int i = 0;
 		nodes[i++] = (it.oend - it.obegin) + (it.nend - it.nbegin);
 		while (it.obegin != it.oend) {
-			int header = 0;
 			if (dist[*it.obegin + 1] - dist[*it.obegin] == 3 || dist[*it.obegin + 1] - dist[*it.obegin] == 4) {
 				nodes[i++] = dist[*it.obegin + 1] - dist[*it.obegin];
-			} else {
-				header = 1;
-				nodes[i++] = this->nodes[dist[*it.obegin]];
 			}
-
-			for (auto n = dist[*it.obegin + 1]; n > dist[*it.obegin] + header; --n) {
-				nodes[i++] = this->nodes[n - 1];
+			for (auto n = dist[*it.obegin]; n < dist[*it.obegin + 1]; ++n) {
+				nodes[i++] = this->nodes[n];
 			}
 			++it.obegin;
 		}
 		while (it.nbegin != it.nend) {
+			int header = 0;
 			if (dist[*it.nbegin + 1] - dist[*it.nbegin] == 3 || dist[*it.nbegin + 1] - dist[*it.nbegin] == 4) {
 				nodes[i++] = dist[*it.nbegin + 1] - dist[*it.nbegin];
+			} else {
+				header = 1;
+				nodes[i++] = this->nodes[dist[*it.nbegin]];
 			}
-			for (auto n = dist[*it.nbegin]; n < dist[*it.nbegin + 1]; ++n) {
-				nodes[i++] = this->nodes[n];
+
+			for (auto n = dist[*it.nbegin + 1]; n > dist[*it.nbegin] + header; --n) {
+				nodes[i++] = this->nodes[n - 1];
 			}
 			++it.nbegin;
 		}

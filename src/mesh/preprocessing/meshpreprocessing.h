@@ -60,6 +60,7 @@ void processNamelessElements(ElementStore *elements, std::vector<ElementsRegionS
 
 ElementStore* exchangeHalo(ElementStore *elements, NodeStore *nodes, std::vector<int> &neighbors);
 
+void computeBaseMeshInfo(ElementStore *elements, NodeStore *nodes);
 void computeBodies(ElementStore *elements, BodyStore *bodies, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors);
 void fillERegionsNodesMask(const std::vector<ElementsRegionStore*> &elementsRegions, const ElementStore *elements, const std::vector<int> &neighbors, NodeStore *nodes);
 void fillBRegionsNodesMask(const std::vector<BoundaryRegionStore*> &boundaryRegions, const std::vector<ContactInterfaceStore*> &contactInterfaces, const std::vector<int> &neighbors, NodeStore *nodes);

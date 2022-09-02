@@ -262,6 +262,9 @@ void Mesh::preprocess()
 
 		if (convertToVolume) {
 			eslog::info(" == OUTPUT SYNCHRONIZATION %64s == \n", "REGULAR GRID");
+			mesh::computeBaseMeshInfo(elements, nodes);
+			mesh::computeVolumeIndicesOMOpt2(elements, nodes);
+//			mesh::computeVolumeIndices(elements, nodes);
 		}
 		eslog::endln("MESH: OUTPUT READY");
 	}
@@ -1082,9 +1085,9 @@ void Mesh::printMeshStatistics()
 		eslog::info(" ============================================================================================= \n");
 		eslog::info("  %s%*s : %16s %16s %16s\n", "GEOMETRY", namesize - 26, " ", "MIN", "MAX", "LENGTH");
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "X-COORDINATES", elementsRegions.front()->nodeInfo.min.x, elementsRegions.front()->nodeInfo.max.x, elementsRegions.front()->nodeInfo.max.x - elementsRegions.front()->nodeInfo.min.x);
-		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "Y-COORDINATES", elementsRegions.front()->nodeInfo.min.y, elementsRegions.front()->nodeInfo.max.y, elementsRegions.front()->nodeInfo.max.y - elementsRegions.front()->nodeInfo.min.y);
-		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "Z-COORDINATES", elementsRegions.front()->nodeInfo.min.z, elementsRegions.front()->nodeInfo.max.z, elementsRegions.front()->nodeInfo.max.z - elementsRegions.front()->nodeInfo.min.z);
+		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "X-COORDINATES", nodes->uniqInfo.min.x, nodes->uniqInfo.max.x, nodes->uniqInfo.max.x - nodes->uniqInfo.min.x);
+		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "Y-COORDINATES", nodes->uniqInfo.min.y, nodes->uniqInfo.max.y, nodes->uniqInfo.max.y - nodes->uniqInfo.min.y);
+		eslog::info("  %*s : %16f %16f %16f\n", namesize - 18, "Z-COORDINATES", nodes->uniqInfo.min.z, nodes->uniqInfo.max.z, nodes->uniqInfo.max.z - nodes->uniqInfo.min.z);
 		eslog::info(" ============================================================================================= \n");
 
 		eslog::info(" %*s : %16s %16s\n", namesize, "REGION NAME", "ELEMENTS", "NODES");
@@ -1098,56 +1101,59 @@ void Mesh::printMeshStatistics()
 				eslog::info(" %*s : %16s\n", namesize, ename(etype).c_str(), Parser::stringwithcommas(elements->distribution.code[etype].totalSize).c_str());
 			}
 		}
-		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n\n");
+		if (withSeparatedRegions) {
+			eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n\n");
 
-		eslog::info("  %s [%3ld]%*s : %16s %16s\n", "ELEMS REGIONS SIZES", elementsRegions.size() - 1, namesize - 26, " ", Parser::stringwithcommas(nelements).c_str(), Parser::stringwithcommas(nelementsnodes).c_str());
-		eslog::info(" %*s : %16s %16s\n", namesize, elementsRegions.front()->name.c_str(), "", "");
-		for (size_t r = 1; r < elementsRegions.size(); r++) {
-			eslog::info(" %*s : %16s %16s\n", namesize, elementsRegions[r]->name.c_str(), Parser::stringwithcommas(elementsRegions[r]->distribution.process.totalSize).c_str(), Parser::stringwithcommas(elementsRegions[r]->nodeInfo.totalSize).c_str());
-		}
-		eslog::info("\n");
-		eslog::info("  %s [%3d]%*s : %16s %16s\n", "FACES REGIONS SIZES", fregs, namesize - 26, " ", Parser::stringwithcommas(nfaces).c_str(), Parser::stringwithcommas(nfacenodes).c_str());
-		for (size_t r = 0; r < boundaryRegions.size(); r++) {
-			if (boundaryRegions[r]->originalDimension == 2) {
-				eslog::info(" %*s : %16s %16s\n", namesize, boundaryRegions[r]->name.c_str(), Parser::stringwithcommas(boundaryRegions[r]->distribution.process.totalSize).c_str(), Parser::stringwithcommas(boundaryRegions[r]->nodeInfo.totalSize).c_str());
+			eslog::info("  %s [%3ld]%*s : %16s %16s\n", "ELEMS REGIONS SIZES", elementsRegions.size() - 1, namesize - 26, " ", Parser::stringwithcommas(nelements).c_str(), Parser::stringwithcommas(nelementsnodes).c_str());
+			eslog::info(" %*s : %16s %16s\n", namesize, elementsRegions.front()->name.c_str(), "", "");
+			for (size_t r = 1; r < elementsRegions.size(); r++) {
+				eslog::info(" %*s : %16s %16s\n", namesize, elementsRegions[r]->name.c_str(), Parser::stringwithcommas(elementsRegions[r]->distribution.process.totalSize).c_str(), Parser::stringwithcommas(elementsRegions[r]->nodeInfo.totalSize).c_str());
 			}
-		}
-		eslog::info("\n");
-		eslog::info("  %s [%3d]%*s : %16s %16s\n", "EDGES REGIONS SIZES", eregs, namesize - 26, " ", Parser::stringwithcommas(nedges).c_str(), Parser::stringwithcommas(nedgenodes).c_str());
-		for (size_t r = 0; r < boundaryRegions.size(); r++) {
-			if (boundaryRegions[r]->originalDimension == 1) {
-				eslog::info(" %*s : %16s %16s\n", namesize, boundaryRegions[r]->name.c_str(), Parser::stringwithcommas(boundaryRegions[r]->distribution.process.totalSize).c_str(), Parser::stringwithcommas(boundaryRegions[r]->nodeInfo.totalSize).c_str());
+			eslog::info("\n");
+			eslog::info("  %s [%3d]%*s : %16s %16s\n", "FACES REGIONS SIZES", fregs, namesize - 26, " ", Parser::stringwithcommas(nfaces).c_str(), Parser::stringwithcommas(nfacenodes).c_str());
+			for (size_t r = 0; r < boundaryRegions.size(); r++) {
+				if (boundaryRegions[r]->originalDimension == 2) {
+					eslog::info(" %*s : %16s %16s\n", namesize, boundaryRegions[r]->name.c_str(), Parser::stringwithcommas(boundaryRegions[r]->distribution.process.totalSize).c_str(), Parser::stringwithcommas(boundaryRegions[r]->nodeInfo.totalSize).c_str());
+				}
 			}
-		}
-		eslog::info("\n");
-		eslog::info("  %s [%3d]%*s : %16s %16s\n", "NODES REGIONS SIZES", nregs, namesize - 26, " ", " ", Parser::stringwithcommas(nnodes).c_str());
-		eslog::info(" %*s : %16s %16s\n", namesize, boundaryRegions.front()->name.c_str(), " ", " ");
-		for (size_t r = 1; r < boundaryRegions.size(); r++) {
-			if (boundaryRegions[r]->originalDimension == 0) {
-				eslog::info(" %*s : %16s %16s\n", namesize, boundaryRegions[r]->name.c_str(), " ", Parser::stringwithcommas(boundaryRegions[r]->nodeInfo.totalSize).c_str());
+			eslog::info("\n");
+			eslog::info("  %s [%3d]%*s : %16s %16s\n", "EDGES REGIONS SIZES", eregs, namesize - 26, " ", Parser::stringwithcommas(nedges).c_str(), Parser::stringwithcommas(nedgenodes).c_str());
+			for (size_t r = 0; r < boundaryRegions.size(); r++) {
+				if (boundaryRegions[r]->originalDimension == 1) {
+					eslog::info(" %*s : %16s %16s\n", namesize, boundaryRegions[r]->name.c_str(), Parser::stringwithcommas(boundaryRegions[r]->distribution.process.totalSize).c_str(), Parser::stringwithcommas(boundaryRegions[r]->nodeInfo.totalSize).c_str());
+				}
 			}
-		}
-		eslog::info(" ============================================================================================= \n");
-
-		eslog::info("  BODY STATISTICS %22s : %16s %16s %16s\n", "ELEMENTS REGION", "ELEMENTS", "FACES", "PROPORTION");
-		eslog::info(" ============================================================================================= \n");
-		eslog::info("  %38s : %16s %16s %9d BODIES\n", elementsRegions[0]->name.c_str(), Parser::stringwithcommas(ecountTotal).c_str(), Parser::stringwithcommas(scountTotal).c_str(), bodies->totalSize);
-		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-		for (size_t r = 1; r < elementsRegions.size(); r++) {
-			for (size_t b = 0; b < elementsRegions[r]->bodies.size(); ++b) {
-				if (elementsRegions[r]->bodyElements[b] == elementsRegions[0]->bodyElements[elementsRegions[r]->bodies[b]] && elementsRegions[r]->bodies.size() == 1) {
-					eslog::info("  %38s : %16s %16s %16s\n", b ? "" : elementsRegions[r]->name.c_str(),
-							Parser::stringwithcommas(elementsRegions[r]->bodyElements[b]).c_str(),
-							Parser::stringwithcommas(elementsRegions[r]->bodyFaces[b]).c_str(), "BODY=REGION");
-				} else {
-					double ratio = (double)elementsRegions[r]->bodyElements[b] / elementsRegions[0]->bodyElements[elementsRegions[r]->bodies[b]];
-					eslog::info("  %38s : %16s %16s %16f\n", b ? "" : elementsRegions[r]->name.c_str(),
-							Parser::stringwithcommas(elementsRegions[r]->bodyElements[b]).c_str(),
-							Parser::stringwithcommas(elementsRegions[r]->bodyFaces[b]).c_str(), ratio);
+			eslog::info("\n");
+			eslog::info("  %s [%3d]%*s : %16s %16s\n", "NODES REGIONS SIZES", nregs, namesize - 26, " ", " ", Parser::stringwithcommas(nnodes).c_str());
+			eslog::info(" %*s : %16s %16s\n", namesize, boundaryRegions.front()->name.c_str(), " ", " ");
+			for (size_t r = 1; r < boundaryRegions.size(); r++) {
+				if (boundaryRegions[r]->originalDimension == 0) {
+					eslog::info(" %*s : %16s %16s\n", namesize, boundaryRegions[r]->name.c_str(), " ", Parser::stringwithcommas(boundaryRegions[r]->nodeInfo.totalSize).c_str());
 				}
 			}
 		}
-		eslog::info(" ============================================================================================= \n");
+		if (info::ecf->input.contact_interfaces.size()) {
+			eslog::info(" ============================================================================================= \n");
+			eslog::info("  BODY STATISTICS %22s : %16s %16s %16s\n", "ELEMENTS REGION", "ELEMENTS", "FACES", "PROPORTION");
+			eslog::info(" ============================================================================================= \n");
+			eslog::info("  %38s : %16s %16s %9d BODIES\n", elementsRegions[0]->name.c_str(), Parser::stringwithcommas(ecountTotal).c_str(), Parser::stringwithcommas(scountTotal).c_str(), bodies->totalSize);
+			eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+			for (size_t r = 1; r < elementsRegions.size(); r++) {
+				for (size_t b = 0; b < elementsRegions[r]->bodies.size(); ++b) {
+					if (elementsRegions[r]->bodyElements[b] == elementsRegions[0]->bodyElements[elementsRegions[r]->bodies[b]] && elementsRegions[r]->bodies.size() == 1) {
+						eslog::info("  %38s : %16s %16s %16s\n", b ? "" : elementsRegions[r]->name.c_str(),
+								Parser::stringwithcommas(elementsRegions[r]->bodyElements[b]).c_str(),
+								Parser::stringwithcommas(elementsRegions[r]->bodyFaces[b]).c_str(), "BODY=REGION");
+					} else {
+						double ratio = (double)elementsRegions[r]->bodyElements[b] / elementsRegions[0]->bodyElements[elementsRegions[r]->bodies[b]];
+						eslog::info("  %38s : %16s %16s %16f\n", b ? "" : elementsRegions[r]->name.c_str(),
+								Parser::stringwithcommas(elementsRegions[r]->bodyElements[b]).c_str(),
+								Parser::stringwithcommas(elementsRegions[r]->bodyFaces[b]).c_str(), ratio);
+					}
+				}
+			}
+			eslog::info(" ============================================================================================= \n");
+		}
 
 		if (info::ecf->input.contact_interfaces.size()) {
 			eslog::info("  CONTACT INTERFACES %16s %12s : %27s %12s\n", "FACES", "AREA", "FACES", "AREA");

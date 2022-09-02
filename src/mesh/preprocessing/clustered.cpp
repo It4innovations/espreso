@@ -689,6 +689,84 @@ void fillNodeInfo(const NodeStore *nodes, size_t maskSize, const std::vector<esi
 	profiler::syncend("compute_node_info");
 }
 
+void computeBaseMeshInfo(ElementStore *elements, NodeStore *nodes)
+{
+	profiler::syncstart("base_mesh_info");
+	{ // elements
+		std::vector<esint> sum, offset;
+
+		auto ep = elements->epointers->datatarray().cbegin();
+		for (auto enodes = elements->nodes->cbegin(); enodes != elements->nodes->cend(); ++enodes, ++ep) {
+			++elements->distribution.code[(int)(*ep)->code].size;
+			if ((*ep)->code == Element::CODE::POLYGON) {
+				elements->distribution.polygonNodes.size += enodes->size() - 1;
+			}
+			if ((*ep)->code == Element::CODE::POLYHEDRON) {
+				elements->distribution.polyhedronFaces.size += enodes->front();
+				elements->distribution.polyhedronNodes.size += enodes->size() - enodes->front() - 1;
+			}
+		}
+		elements->distribution.process.size = 0;
+		for (size_t i = 0; i < elements->distribution.code.size(); ++i) {
+			elements->distribution.process.size += elements->distribution.code[i].size;
+			elements->distribution.process.next += elements->distribution.code[i].size;
+			offset.push_back(elements->distribution.code[i].size);
+			if (Mesh::element(i).code == Element::CODE::POLYGON) {
+				offset.push_back(elements->distribution.polygonNodes.size);
+			}
+			if (Mesh::element(i).code == Element::CODE::POLYHEDRON) {
+				offset.push_back(elements->distribution.polyhedronFaces.size);
+				offset.push_back(elements->distribution.polyhedronNodes.size);
+			}
+		}
+		elements->distribution.process.offset = elements->distribution.process.size;
+		offset.push_back(elements->distribution.process.offset);
+
+		sum.resize(offset.size());
+		Communication::exscan(sum, offset);
+
+		for (size_t i = 0, j = 0; i < elements->distribution.code.size(); i++) {
+			elements->distribution.code[i].offset = offset[j];
+			elements->distribution.code[i].totalSize = sum[j++];
+			if (Mesh::element(i).code == Element::CODE::POLYGON) {
+				elements->distribution.polygonNodes.offset = offset[j];
+				elements->distribution.polygonNodes.totalSize = sum[j++];
+			}
+			if (Mesh::element(i).code == Element::CODE::POLYHEDRON) {
+				elements->distribution.polyhedronFaces.offset = offset[j];
+				elements->distribution.polyhedronFaces.totalSize = sum[j++];
+				elements->distribution.polyhedronNodes.offset = offset[j];
+				elements->distribution.polyhedronNodes.totalSize = sum[j++];
+			}
+		}
+		elements->distribution.process.offset = offset.back();
+		elements->distribution.process.next += offset.back();
+		elements->distribution.process.totalSize = sum.back();
+		profiler::synccheckpoint("element_distribution");
+	}
+
+	{ // nodes
+		nodes->uniqInfo.offset = 0;
+		Point min = nodes->coordinates->datatarray().front(), max = min;
+
+		auto nranks = nodes->ranks->cbegin();
+		for (esint n = 0; n < nodes->size; ++n, ++nranks) {
+			if (nranks->front() == info::mpi::rank) {
+				nodes->coordinates->datatarray()[n].minmax(min, max);
+				++nodes->uniqInfo.offset;
+			}
+		}
+
+		nodes->uniqInfo.size = nodes->uniqInfo.offset;;
+		nodes->uniqInfo.totalSize = Communication::exscan(nodes->uniqInfo.offset);
+		Communication::allReduce(&min.x, &nodes->uniqInfo.min.x, 3, MPITools::getType(min.x).mpitype, MPI_MIN);
+		Communication::allReduce(&max.x, &nodes->uniqInfo.max.x, 3, MPITools::getType(max.x).mpitype, MPI_MAX);
+	}
+
+	profiler::syncend("base_mesh_info");
+
+	eslog::checkpointln("MESH: BASE MESH INFO COMPUTED");
+}
 
 void fillERegionsNodesMask(const std::vector<ElementsRegionStore*> &elementsRegions, const ElementStore *elements, const std::vector<int> &neighbors, NodeStore *nodes)
 {
