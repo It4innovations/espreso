@@ -54,6 +54,7 @@ static int numberOfSubdomains(const std::string &path)
 		}
 	}
 	Communication::allReduce(&domains, nullptr, 1, MPI_INT, MPI_MAX);
+	return 1024;
 	return domains;
 }
 
@@ -76,6 +77,7 @@ void InputOpenFoam::load(const InputConfiguration &configuration)
 	if (domains == 1) {
 		loader = new InputOpenFoamSequential();
 	} else {
+		domains = 1;
 		if (configuration.openfoam.direct_load) {
 			loader = new InputOpenFoamParallelDirect(domains);
 		} else {

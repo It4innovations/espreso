@@ -263,8 +263,8 @@ void Mesh::preprocess()
 		if (convertToVolume) {
 			eslog::info(" == OUTPUT SYNCHRONIZATION %64s == \n", "REGULAR GRID");
 			mesh::computeBaseMeshInfo(elements, nodes);
-			mesh::computeVolumeIndicesOMOpt2(elements, nodes);
-//			mesh::computeVolumeIndices(elements, nodes);
+			mesh::checkElementShape(elements, nodes);
+			mesh::computeVolumeIndices(elements, nodes);
 		}
 		eslog::endln("MESH: OUTPUT READY");
 	}
@@ -772,7 +772,7 @@ void Mesh::computePersistentParameters()
 			info::ecf->output.format == OutputConfiguration::FORMAT::OPENVDB ||
 			info::ecf->output.format == OutputConfiguration::FORMAT::ENSIGHT_VOLUME) {
 
-		mesh::computeVolumeIndicesOMOpt2(elements, nodes);
+		mesh::computeVolumeIndicesOM(elements, nodes);
 //		mesh::computeVolumeIndices(elements, nodes);
 	}
 }

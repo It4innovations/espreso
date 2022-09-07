@@ -48,6 +48,7 @@ struct ElementStore {
 	serializededata<esint, int>* material;
 	serializededata<esint, esint>* regions;
 	serializededata<esint, Element*>* epointers;
+	serializededata<esint, Element::SHAPE>* shape;
 
 	serializededata<esint, esint>* faceNeighbors;
 	serializededata<esint, esint>* edgeNeighbors;

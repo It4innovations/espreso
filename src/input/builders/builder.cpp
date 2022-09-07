@@ -182,6 +182,9 @@ void buildDecomposedFEM(NodesDomain &nodes, Elements &elements, OrderedRegions &
 	trivialUpdate(nodes, linked);
 	trivialUpdate(elements, merged);
 
+	rotateNormalsOut(linked, merged);
+	eslog::checkpointln("BUILDER: ELEMENTS NODES REORDERED");
+
 	// 9.
 	fillNodes(linked, regions, mesh);
 	fillElements(merged, regions, mesh);
@@ -266,6 +269,9 @@ void buildOrderedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 		// 7. -> 8.
 		globalToLocal(eh.clustered, eh.merged, nh.linked);
 		eslog::checkpointln("BUILDER: ELEMENTS NODES REINDEXED");
+
+		rotateNormalsOut(nh.linked, eh.merged);
+		eslog::checkpointln("BUILDER: ELEMENTS NODES REORDERED");
 	} else {
 		ivector<esint> nbuckets, ebuckets, splitters;
 
@@ -318,6 +324,9 @@ void buildOrderedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 		eslog::checkpointln("BUILDER: ELEMENTS NODES REINDEXED");
 		eslog::param("MergedElements", eh.merged.etype.size());
 		eslog::ln();
+
+		rotateNormalsOut(nh.linked, eh.merged);
+		eslog::checkpointln("BUILDER: ELEMENTS NODES REORDERED");
 	}
 
 	// 9.
@@ -370,6 +379,9 @@ void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 		// 7. -> 8.
 		globalToLocal(eh.clustered, eh.merged, nh.linked);
 		eslog::checkpointln("BUILDER: ELEMENTS NODES REINDEXED");
+
+		rotateNormalsOut(nh.linked, eh.merged);
+		eslog::checkpointln("BUILDER: ELEMENTS NODES REORDERED");
 	} else {
 		ivector<esint> nbuckets, ebuckets, splitters;
 
@@ -418,6 +430,9 @@ void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 		eslog::checkpointln("BUILDER: ELEMENTS NODES REINDEXED");
 		eslog::param("MergedElements", eh.merged.etype.size());
 		eslog::ln();
+
+		rotateNormalsOut(nh.linked, eh.merged);
+		eslog::checkpointln("BUILDER: ELEMENTS NODES REORDERED");
 	}
 
 	// 9.

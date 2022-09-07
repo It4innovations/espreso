@@ -192,6 +192,7 @@ void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merge
 void globalToLocal(ClusteredElements &clustered, MergedElements &merged, LinkedNodes &nodes);
 
 // 9.
+void rotateNormalsOut(LinkedNodes &nodes, MergedElements &elements);
 void fillNodes(LinkedNodes &nodes, OrderedRegions &regions, Mesh &mesh);
 void fillElements(MergedElements &elements, OrderedRegions &regions, Mesh &mesh);
 

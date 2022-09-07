@@ -83,10 +83,10 @@ void triangularizeBoundary(BoundaryRegionStore *boundary);
 void computeRegionsSurface(ElementStore *elements, NodeStore *nodes, ElementStore *halo, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors);
 void computeSurfaceElementNeighbors(NodeStore *nodes, std::vector<int> &neigbors, SurfaceStore *surface);
 
+void checkElementShape(ElementStore *elements, const NodeStore *nodes);
 void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes);
+void computeVolumeIndicesMH(ElementStore *elements, const NodeStore *nodes);
 void computeVolumeIndicesOM(ElementStore *elements, const NodeStore *nodes);
-void computeVolumeIndicesOMOpt(ElementStore *elements, const NodeStore *nodes);
-void computeVolumeIndicesOMOpt2(ElementStore *elements, const NodeStore *nodes);
 
 // methods for mesh decomposition
 //  - decompose elements to domains and intervals

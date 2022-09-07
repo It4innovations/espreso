@@ -1051,5 +1051,58 @@ void buildElementsFromFaces(Faces &faces, Elements &elements)
 	eslog::info(" == TOTAL NUMBER OF POLYHEDRONS %59d == \n", poly[1]);
 }
 
+void rotateNormalsOut(LinkedNodes &nodes, MergedElements &elements)
+{
+	std::vector<esint> edistribution = tarray<esint>::distribute(info::env::OMP_NUM_THREADS, elements.etype.size());
+
+	ivector<esint> edist(elements.etype.size() + 1);
+	edist[0] = 0;
+	for (size_t e = 0; e < elements.etype.size(); ++e) {
+		edist[e + 1] = edist[e] + Element::encode(elements.etype[e]).nodes;
+	}
+
+	auto distance = [&nodes] (esint t1, esint t2, esint t3, esint p) {
+		return (nodes.coordinates[p] - nodes.coordinates[t1]) * Point::cross(nodes.coordinates[t2] - nodes.coordinates[t1], nodes.coordinates[t3] - nodes.coordinates[t1]);
+	};
+
+	#pragma omp parallel for
+	for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
+		for (esint e = edistribution[t]; e < edistribution[t + 1]; ++e) {
+			esint *enodes = elements.enodes.data() + edist[e];
+			switch (elements.etype[e]) {
+			case Element::CODE::TETRA4:
+				if (distance(enodes[0], enodes[1], enodes[2], enodes[3]) < 0) {
+					std::swap(enodes[1], enodes[2]);
+				}
+				break;
+			case Element::CODE::PYRAMID5:
+				if (distance(enodes[0], enodes[1], enodes[2], enodes[4]) < 0) {
+					std::swap(enodes[0], enodes[2]);
+				}
+				break;
+			case Element::CODE::PRISMA6:
+				if (distance(enodes[0], enodes[1], enodes[2], enodes[3]) < 0) {
+					std::swap(enodes[0], enodes[3]);
+					std::swap(enodes[1], enodes[4]);
+					std::swap(enodes[2], enodes[5]);
+				}
+				break;
+			case Element::CODE::HEXA8:
+				if (distance(enodes[0], enodes[1], enodes[2], enodes[4]) < 0) {
+					std::swap(enodes[0], enodes[4]);
+					std::swap(enodes[1], enodes[5]);
+					std::swap(enodes[2], enodes[6]);
+					std::swap(enodes[3], enodes[7]);
+				}
+				break;
+			case Element::CODE::POLYHEDRON:
+			default:
+				eslog::error("not implemented normal rotation for the loaded element type: %d\n", (int)elements.etype[e]);
+				break;
+			}
+		}
+	}
+}
+
 }
 }
