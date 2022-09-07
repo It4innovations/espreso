@@ -65,6 +65,9 @@ class MPIAsyncWriter: public Writer {
 public:
 	MPIAsyncWriter(): MPIfile(NULL), rindex(0) {}
 
+	MPIAsyncWriter(const MPIAsyncWriter&) = delete;
+	MPIAsyncWriter& operator=(const MPIAsyncWriter&) = delete;
+
 	int open(MPIGroup &group, const std::string &file)
 	{
 		return MPI_File_open(MPI_COMM_SELF, file.c_str(), MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &MPIfile);

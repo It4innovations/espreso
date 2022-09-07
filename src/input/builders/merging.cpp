@@ -1064,12 +1064,15 @@ void rotateNormalsOut(LinkedNodes &nodes, MergedElements &elements)
 	auto distance = [&nodes] (esint t1, esint t2, esint t3, esint p) {
 		return (nodes.coordinates[p] - nodes.coordinates[t1]) * Point::cross(nodes.coordinates[t2] - nodes.coordinates[t1], nodes.coordinates[t3] - nodes.coordinates[t1]);
 	};
+	auto distancep = [&nodes] (esint t1, esint t2, esint t3, const Point &p) {
+		return (p - nodes.coordinates[t1]) * Point::cross(nodes.coordinates[t2] - nodes.coordinates[t1], nodes.coordinates[t3] - nodes.coordinates[t1]);
+	};
 
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
 		for (esint e = edistribution[t]; e < edistribution[t + 1]; ++e) {
 			esint *enodes = elements.enodes.data() + edist[e];
-			switch (elements.etype[e]) {
+			switch (Element::encode(elements.etype[e]).code) {
 			case Element::CODE::TETRA4:
 				if (distance(enodes[0], enodes[1], enodes[2], enodes[3]) < 0) {
 					std::swap(enodes[1], enodes[2]);
@@ -1095,10 +1098,31 @@ void rotateNormalsOut(LinkedNodes &nodes, MergedElements &elements)
 					std::swap(enodes[3], enodes[7]);
 				}
 				break;
-			case Element::CODE::POLYHEDRON:
+			case Element::CODE::POLYHEDRON: {
+				Point center;
+				PolyElement poly(elements.etype[e], enodes);
+				for (int n = 0; n < poly.size; ++n) {
+					if(poly.isNode(n)) {
+						center += nodes.coordinates[enodes[n]];
+					}
+				}
+				center /= poly.size - enodes[0] - 1;
+				for (int p = 0, n = 1; p < enodes[0]; ++p, n += enodes[n] + 1) {
+					if (enodes[n] == 3) {
+						if (distancep(enodes[n + 1], enodes[n + 2], enodes[n + 3], center) > 0) {
+							std::swap(enodes[n + 2], enodes[n + 3]);
+						}
+					} else {
+						if (distancep(enodes[n + 1], enodes[n + 2], enodes[n + 3], center) > 0 && distancep(enodes[n + 1], enodes[n + 2], enodes[n + 4], center) > 0) {
+							for (int nn = 0; nn < enodes[n] / 2; ++nn) {
+								std::swap(enodes[n + 1 + nn], enodes[n + enodes[n] - 1 - nn]);
+							}
+						}
+					}
+				}
+			} break;
 			default:
 				eslog::error("not implemented normal rotation for the loaded element type: %d\n", (int)elements.etype[e]);
-				break;
 			}
 		}
 	}

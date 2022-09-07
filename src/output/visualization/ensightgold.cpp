@@ -64,7 +64,6 @@ void EnSightGold::updateMesh()
 
 void EnSightGold::updateSolution()
 {
-	return;
 	if (_measure) { eslog::startln("ENSIGHT RESULTS: STORING STARTED", "ENSIGHT RESULTS"); }
 	EnSightGold *writer = this;
 
@@ -143,12 +142,12 @@ void EnSightGold::updateSolution()
 		writer->casefile();
 	}
 
-	if (_measure) { eslog::checkpointln("ENSIGHT RESULTS: DATA INSERTED"); }
+//	if (_measure) { eslog::checkpointln("ENSIGHT RESULTS: DATA STORED"); }
 
-	writer->_writer.reorder();
-	if (_measure) { eslog::checkpointln("ENSIGHT RESULTS: DATA REORDERED"); }
+//	writer->_writer.reorder();
+//	if (_measure) { eslog::checkpointln("ENSIGHT RESULTS: DATA REORDERED"); }
 
-	writer->_writer.write();
+//	writer->_writer.write();
 	if (step::outstep.type == step::TYPE::FTT && step::outftt.isLast()) {
 		delete _ftt;
 	}
@@ -184,9 +183,6 @@ void EnSightGold::casefile()
 	os << "\nVARIABLE";
 	os << "\n";
 	if (info::ecf->output.store_decomposition) {
-		os << "scalar per element: BODY    " << _fixedDataPath << "BODY" << "\n";
-		os << "scalar per element: DOMAIN  " << _fixedDataPath << "DOMAIN" << "\n";
-		os << "scalar per element: CLUSTER " << _fixedDataPath << "CLUSTER" << "\n";
 		os << "scalar per element: MPI     " << _fixedDataPath << "MPI" << "\n";
 	}
 	if (_times.size()) {
@@ -520,6 +516,7 @@ void EnSightGold::geometry()
 
 int EnSightGold::ndata(const NamedData *data)
 {
+	return 0;
 	if (!storeData(data)) {
 		return 0;
 	}
@@ -639,126 +636,253 @@ int EnSightGold::edata(const NamedData *data)
 		return 0;
 	}
 
-	auto eiterator = [&] (const ElementsRegionStore *region, int etype, std::function<void(const ElementsInterval &interval, esint eindex)> callback) {
-		for (size_t i = 0; i < region->eintervals.size(); i++) {
-			if (region->eintervals[i].code == etype) {
-				for (esint e = region->eintervals[i].begin; e < region->eintervals[i].end; ++e) {
-					callback(region->eintervals[i], region->elements->datatarray()[e]);
-				}
+	OutFile file;
+	std::stringstream filename;
+	filename << _path + _directory + dataname(data, 0) + "." << std::setw(4) << std::setfill('0') << _times.size() + step::outduplicate.offset;
+	int dimension = data->dataType == NamedData::DataType::VECTOR ? 3 : data->dimension;
+
+	size_t fileHeader = 80;
+	size_t partHeader = 80 + sizeof(int);
+	size_t elemHeader = 80;
+
+	size_t blocks = 0;
+	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
+		for (size_t c = 0; c < info::mesh->elementsRegions[r]->distribution.code.size(); ++c) {
+			if (info::mesh->elementsRegions[r]->distribution.code[c].totalSize) {
+				blocks += dimension;
 			}
-		}
-		_writer.groupData();
-	};
-
-	if (data->dataType == NamedData::DataType::VECTOR) {
-		std::stringstream file;
-		file << _path + _directory + dataname(data, 0) + "." << std::setw(4) << std::setfill('0') << _times.size() + step::outduplicate.offset;
-		if (isRoot()) {
-			_writer.description(dataname(data, 0));
-		}
-
-		for (size_t r = 1, part = 1; r < info::mesh->elementsRegions.size(); ++r, ++part) {
-			if (isRoot()) {
-				_writer.description("part");
-				_writer.int32ln(part);
-			}
-
-			for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
-				if (info::mesh->elementsRegions[r]->distribution.code[etype].totalSize) {
-					if (isRoot()) {
-						_writer.description(EnsightOutputWriter::codetotype(etype));
-					}
-
-					for (int d = 0; d < data->dimension; ++d) {
-						eiterator(info::mesh->elementsRegions[r], etype, [&] (const ElementsInterval &interval, esint eindex) {
-							_writer.float32ln(data->store[eindex * data->dimension + d]);
-						});
-					}
-					if (data->dimension == 2) {
-						eiterator(info::mesh->elementsRegions[r], etype, [&] (const ElementsInterval &interval, esint eindex) {
-							_writer.float32ln(0);
-						});
-					}
-				}
-			}
-		}
-		_writer.commitFile(file.str());
-	} else {
-		for (int d = 0; d < data->dimension; ++d) {
-			std::stringstream file;
-			file << _path + _directory + dataname(data, d) + "." << std::setw(4) << std::setfill('0') << _times.size() + step::outduplicate.offset;
-
-			if (isRoot()) {
-				_writer.description(dataname(data, 0));
-			}
-
-			for (size_t r = 1, part = 1; r < info::mesh->elementsRegions.size(); ++r, ++part) {
-				if (isRoot()) {
-					_writer.description("part");
-					_writer.int32ln(part);
-				}
-				for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
-					if (info::mesh->elementsRegions[r]->distribution.code[etype].totalSize) {
-						if (isRoot()) {
-							_writer.description(EnsightOutputWriter::codetotype(etype));
-						}
-						eiterator(info::mesh->elementsRegions[r], etype, [&] (const ElementsInterval &interval, esint eindex) {
-							_writer.float32ln(data->store[eindex * data->dimension + d]);
-						});
-					}
-				}
-			}
-			_writer.commitFile(file.str());
 		}
 	}
+	file.blocks.resize(blocks);
+
+	size_t block = 0, offset = fileHeader;
+	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
+		offset += partHeader;
+		size_t rbegin = block;
+		for (size_t c = 0; c < info::mesh->elementsRegions[r]->distribution.code.size(); ++c) {
+			if (info::mesh->elementsRegions[r]->distribution.code[c].totalSize) {
+				size_t tbegin = block;
+				offset += elemHeader;
+				for (int d = 0; d < dimension; ++d, ++block) {
+					file.blocks[block].fileoffset = offset + sizeof(float) * info::mesh->elementsRegions[r]->distribution.code[c].offset;
+					file.blocks[block].size = sizeof(float) * info::mesh->elementsRegions[r]->distribution.code[c].size;
+					offset += sizeof(float) * info::mesh->elementsRegions[r]->distribution.code[c].totalSize;
+				}
+				if (isRoot()) {
+					file.blocks[tbegin].fileoffset -= elemHeader;
+					file.blocks[tbegin].size += elemHeader;
+				}
+			}
+		}
+		if (isRoot()) {
+			file.blocks[rbegin].fileoffset -= partHeader;
+			file.blocks[rbegin].size += partHeader;
+		}
+	}
+	if (isRoot()) {
+		file.blocks.front().fileoffset = 0;
+		file.blocks.front().size += fileHeader;
+	}
+
+	file.prepare();
+	file.open(filename.str());
+
+	auto description = [] (char *data, const std::string &desc) {
+		memcpy(data, desc.data(), desc.size());
+		memset(data + desc.size(), ' ', 80 - desc.size());
+		data[79] = '\n';
+	};
+	auto descriptionWithSize = [] (char *data, const std::string &desc, int size) {
+		memcpy(data, desc.data(), desc.size());
+		memset(data + desc.size(), ' ', 80 - desc.size());
+		data[79] = '\n';
+		memcpy(data + 80, &size, sizeof(int));
+	};
+
+	auto fblocks = file.blocks;
+
+	if (isRoot()) {
+		description(file.data.data(), data->name);
+		fblocks[0].offset += fileHeader;
+		block = 0;
+		for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
+			descriptionWithSize(file.data.data() + fblocks[block].offset, "part", r);
+			fblocks[block].offset += partHeader;
+			for (size_t c = 0; c < info::mesh->elementsRegions[r]->distribution.code.size(); ++c) {
+				if (info::mesh->elementsRegions[r]->distribution.code[c].totalSize) {
+					block += dimension;
+				}
+			}
+		}
+	}
+
+	auto eheader = [&file, &fblocks, &description] (const RegionStore *region, const size_t &block, int code) {
+		if (isRoot()) {
+			description(file.data.data() + fblocks[block].offset, EnsightOutputWriter::codetotype(code));
+			fblocks[block].offset += 80;
+		}
+	};
+
+	auto eregion = [&] (const ElementsRegionStore *region, const size_t &block, Element::CODE code) {
+		const auto &ep = info::mesh->elements->epointers->datatarray();
+		esint esize = 0;
+		for (auto e = region->elements->datatarray().cbegin(); e != region->elements->datatarray().cend(); ++e) {
+			if (ep[*e]->code == code) {
+				for (int d = 0; d < data->dimension; ++d) {
+					float value = data->store[*e * dimension + d];
+					memcpy(file.data.data() + fblocks[block + d].offset, &value, sizeof(float));
+					fblocks[block + d].offset += sizeof(float);
+					++esize;
+				}
+
+			}
+		}
+		if (data->dataType == NamedData::DataType::VECTOR && data->dimension == 2) {
+			float value = 0;
+			for (esint e = 0; e < esize; ++e) {
+				memcpy(file.data.data() + fblocks[block + 2].offset, &value, sizeof(float));
+				fblocks[block + 2].offset += sizeof(float);
+			}
+		}
+	};
+
+	auto nextOutput = [] () {
+
+	};
+
+	block = 0;
+	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
+		for (size_t c = 0; c < info::mesh->elementsRegions[r]->distribution.code.size(); ++c) {
+			if (info::mesh->elementsRegions[r]->distribution.code[c].totalSize) {
+				eheader(info::mesh->elementsRegions[r], block, c);
+				eregion(info::mesh->elementsRegions[r], block, (Element::CODE)c);
+				for (int d = 0; d < dimension; ++d, ++block) {
+					file.store(block);
+				}
+				nextOutput();
+			}
+		}
+	}
+
+	file.close();
+
 	return 1;
 }
 
 void EnSightGold::decomposition()
 {
-	auto store = [&] (const std::string &name, std::function<double(const ElementsInterval &interval, esint eindex)> callback) {
-		if (isRoot()) {
-			_writer.description(name);
-		}
-		for (size_t r = 1, part = 1; r < info::mesh->elementsRegions.size(); ++r, ++part) {
-			if (isRoot()) {
-				_writer.description("part");
-				_writer.int32ln(part);
-			}
+	OutFile file;
+	std::stringstream filename;
+	filename << _path + _directory + "MPI";
 
-			for (int etype = 0; etype < static_cast<int>(Element::CODE::SIZE); etype++) {
-				if (info::mesh->elementsRegions[r]->distribution.code[etype].totalSize) {
-					if (isRoot()) {
-						_writer.description(EnsightOutputWriter::codetotype(etype));
-					}
-					for (size_t i = 0; i < info::mesh->elementsRegions[r]->eintervals.size(); i++) {
-						if (info::mesh->elementsRegions[r]->eintervals[i].code == etype) {
-							for (esint e = info::mesh->elementsRegions[r]->eintervals[i].begin; e < info::mesh->elementsRegions[r]->eintervals[i].end; ++e) {
-								_writer.float32ln(callback(info::mesh->elementsRegions[r]->eintervals[i], info::mesh->elementsRegions[r]->elements->datatarray()[e]));
-							}
-						}
-					}
-					_writer.groupData();
+	size_t fileHeader = 80;
+	size_t partHeader = 80 + sizeof(int);
+	size_t elemHeader = 80;
+
+	size_t blocks = 0;
+	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
+		for (size_t c = 0; c < info::mesh->elementsRegions[r]->distribution.code.size(); ++c) {
+			if (info::mesh->elementsRegions[r]->distribution.code[c].totalSize) {
+				++blocks;
+			}
+		}
+	}
+	file.blocks.resize(blocks);
+
+	size_t block = 0, offset = fileHeader;
+	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
+		offset += partHeader;
+		size_t rbegin = block;
+		for (size_t c = 0; c < info::mesh->elementsRegions[r]->distribution.code.size(); ++c) {
+			if (info::mesh->elementsRegions[r]->distribution.code[c].totalSize) {
+				offset += elemHeader;
+				file.blocks[block].fileoffset = offset + sizeof(float) * info::mesh->elementsRegions[r]->distribution.code[c].offset;
+				file.blocks[block].size = sizeof(float) * info::mesh->elementsRegions[r]->distribution.code[c].size;
+				offset += sizeof(float) * info::mesh->elementsRegions[r]->distribution.code[c].totalSize;
+				if (isRoot()) {
+					file.blocks[block].fileoffset -= elemHeader;
+					file.blocks[block].size += elemHeader;
+				}
+				++block;
+			}
+		}
+		if (isRoot()) {
+			file.blocks[rbegin].fileoffset -= partHeader;
+			file.blocks[rbegin].size += partHeader;
+		}
+	}
+	if (isRoot()) {
+		file.blocks.front().fileoffset = 0;
+		file.blocks.front().size += fileHeader;
+	}
+
+	file.prepare();
+	file.open(filename.str());
+
+	auto description = [] (char *data, const std::string &desc) {
+		memcpy(data, desc.data(), desc.size());
+		memset(data + desc.size(), ' ', 80 - desc.size());
+		data[79] = '\n';
+	};
+	auto descriptionWithSize = [] (char *data, const std::string &desc, int size) {
+		memcpy(data, desc.data(), desc.size());
+		memset(data + desc.size(), ' ', 80 - desc.size());
+		data[79] = '\n';
+		memcpy(data + 80, &size, sizeof(int));
+	};
+
+	auto fblocks = file.blocks;
+
+	if (isRoot()) {
+		description(file.data.data(), "MPI");
+		fblocks[0].offset += fileHeader;
+		block = 0;
+		for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
+			descriptionWithSize(file.data.data() + fblocks[block].offset, "part", r);
+			fblocks[block].offset += partHeader;
+			for (size_t c = 0; c < info::mesh->elementsRegions[r]->distribution.code.size(); ++c) {
+				if (info::mesh->elementsRegions[r]->distribution.code[c].totalSize) {
+					++block;
 				}
 			}
 		}
-		_writer.commitFile(_path + _directory + name);
+	}
+
+	auto eheader = [&file, &fblocks, &description] (const RegionStore *region, const size_t &block, int code) {
+		if (isRoot()) {
+			description(file.data.data() + fblocks[block].offset, EnsightOutputWriter::codetotype(code));
+			fblocks[block].offset += 80;
+		}
 	};
 
-	store("DOMAIN", [&] (const ElementsInterval &interval, esint eindex) {
-		return interval.domain;
-	});
-	if (info::mesh->domains->cluster.size()) {
-		esint cluster = info::mesh->clusters->offset;
-		store("CLUSTER", [&] (const ElementsInterval &interval, esint eindex) {
-			return info::mesh->domains->cluster[interval.domain - info::mesh->domains->offset] + cluster;
-		});
+	auto eregion = [&] (const ElementsRegionStore *region, const size_t &block, Element::CODE code) {
+		const auto &ep = info::mesh->elements->epointers->datatarray();
+		for (auto e = region->elements->datatarray().cbegin(); e != region->elements->datatarray().cend(); ++e) {
+			if (ep[*e]->code == code) {
+				float value = info::mpi::rank;
+				memcpy(file.data.data() + fblocks[block].offset, &value, sizeof(float));
+				fblocks[block].offset += sizeof(float);
+			}
+		}
+	};
+
+	auto nextOutput = [] () {
+
+	};
+
+	block = 0;
+	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
+		for (size_t c = 0; c < info::mesh->elementsRegions[r]->distribution.code.size(); ++c) {
+			if (info::mesh->elementsRegions[r]->distribution.code[c].totalSize) {
+				eheader(info::mesh->elementsRegions[r], block, c);
+				eregion(info::mesh->elementsRegions[r], block, (Element::CODE)c);
+				file.store(block);
+				++block;
+				nextOutput();
+			}
+		}
 	}
-	store("MPI", [&] (const ElementsInterval &interval, esint eindex) {
-		return info::mpi::rank;
-	});
-	store("BODY", [&] (const ElementsInterval &interval, esint eindex) {
-		return info::mesh->elements->body->datatarray()[eindex];
-	});
+
+	file.close();
 }
 
