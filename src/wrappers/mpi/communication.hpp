@@ -1175,16 +1175,16 @@ bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype, Tallo
 	MPI_Status status;
 	int recvsize, recvmidsize;
 
-	auto movebefore = [&] (std::vector<Ttype, Talloc> &data, int rank, Ttype begin, Ttype end) {
-		Ttype pos = begin;
+	auto movebefore = [&] (std::vector<Ttype, Talloc> &data, int rank, size_t begin, size_t end) {
+		size_t pos = begin;
 		while (pos < end && (int)data[pos + 1] < rank) {
 			pos += data[pos];
 		}
 		return pos;
 	};
 
-	Ttype mybegin = movebefore(send, group->rank, 0, send.size());
-	Ttype myend = movebefore(send, group->rank + 1, mybegin, send.size());
+	size_t mybegin = movebefore(send, group->rank, 0, send.size());
+	size_t myend = movebefore(send, group->rank + 1, mybegin, send.size());
 	rBuffer.clear();
 	rBuffer.insert(rBuffer.end(), send.begin() + mybegin, send.begin() + myend);
 
@@ -1203,10 +1203,10 @@ bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype, Tallo
 				// RECV:
 
 				// send: l1, l2, l3
-				Ttype my = movebefore(send, group->rank, 0, send.size());
-				Ttype upper = movebefore(send, rh.mid, my, send.size());
+				size_t my = movebefore(send, group->rank, 0, send.size());
+				size_t upper = movebefore(send, rh.mid, my, send.size());
 
-				if (type.mpisize * (send.size() - upper) > 1 << 30) {
+				if ((send.size() - upper) * type.mpisize >= 1UL << 31) {
 					profiler::syncend("comm_alltoall");
 					return false;
 				}
@@ -1226,8 +1226,8 @@ bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype, Tallo
 				// sBuffer: l1, l2, l3, l4, u1, u2, u3
 				// send: l1, l1, l2, l2, l3, l3, l4, l4
 
-				Ttype upper = movebefore(send, rh.mid, 0, send.size());
-				if (type.mpisize * (send.size() - upper) > 1 << 30) {
+				size_t upper = movebefore(send, rh.mid, 0, send.size());
+				if ((send.size() - upper) * type.mpisize >= 1UL << 31) {
 					profiler::syncend("comm_alltoall");
 					return false;
 				}
@@ -1245,10 +1245,10 @@ bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype, Tallo
 				send.swap(prevsend);
 				send.clear();
 
-				Ttype recvbegin = 0;
-				Ttype recvend = recvbegin;
-				Ttype sendbegin = 0;
-				Ttype sendend = sendbegin;
+				size_t recvbegin = 0;
+				size_t recvend = recvbegin;
+				size_t sendbegin = 0;
+				size_t sendend = sendbegin;
 				for (int r = rh.left; r < rh.mid; r++) {
 					recvbegin = recvend;
 					recvend = movebefore(recv, r + 1, recvbegin, recv.size());
@@ -1266,7 +1266,7 @@ bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype, Tallo
 		} else {
 			// UPPER half to LOWER half
 
-			Ttype upper = movebefore(send, rh.mid, 0, send.size());
+			size_t upper = movebefore(send, rh.mid, 0, send.size());
 
 			MPI_Probe(rh.twin, TAG::ALL_TO_ALL_OPT, group->communicator, &status);
 			MPI_Get_count(&status, type.mpitype, &recvsize);
@@ -1274,7 +1274,7 @@ bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype, Tallo
 			MPI_Recv(recv.data(), recvsize, type.mpitype, rh.twin, TAG::ALL_TO_ALL_OPT, group->communicator, MPI_STATUS_IGNORE);
 			profiler::checkpoint("recv");
 			profiler::param("size", recvsize * type.mpisize);
-			if (type.mpisize * upper > 1 << 30) {
+			if (upper * type.mpisize >= 1UL << 31) {
 				profiler::syncend("comm_alltoall");
 				return false;
 			}
@@ -1308,12 +1308,12 @@ bool Communication::allToAllWithDataSizeAndTarget(const std::vector<Ttype, Tallo
 			send.swap(prevsend);
 			send.clear();
 
-			Ttype recvbegin = 0;
-			Ttype recvend = recvbegin;
-			Ttype recvmidbegin = recvmidsize;
-			Ttype recvmidend = recvmidbegin;
-			Ttype sendbegin = movebefore(prevsend, rh.mid, 0, prevsend.size());
-			Ttype sendend = sendbegin;
+			size_t recvbegin = 0;
+			size_t recvend = recvbegin;
+			size_t recvmidbegin = recvmidsize;
+			size_t recvmidend = recvmidbegin;
+			size_t sendbegin = movebefore(prevsend, rh.mid, 0, prevsend.size());
+			size_t sendend = sendbegin;
 			for (int r = rh.mid; r < rh.right; r++) {
 				recvbegin = recvend;
 				recvend = movebefore(recv, r + 1, recvbegin, recvmidsize);
