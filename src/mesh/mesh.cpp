@@ -201,6 +201,9 @@ void Mesh::preprocess()
 			eslog::info(" == CLUSTERIZATION %72s == \n", "PT-SCOTCH [ELEMENTS COUNT]");
 		}
 		break;
+	case DecompositionConfiguration::ParallelDecomposer::VOLUME:
+		eslog::info(" == CLUSTERIZATION %72s == \n", "SFC [ELEMENTS COUNT, VOLUME]");
+		break;
 	}
 	switch (info::ecf->input.decomposition.sequential_decomposer) {
 	case DecompositionConfiguration::SequentialDecomposer::NONE:
@@ -222,8 +225,8 @@ void Mesh::preprocess()
 
 	if (info::mpi::size > 1 && info::ecf->input.decomposition.parallel_decomposer != DecompositionConfiguration::ParallelDecomposer::NONE) {
 		eslog::startln("MESH: LOAD BALANCING", "LOAD BALANCING");
+		mesh::linkNodesAndElements(elements, nodes, neighbors);
 		if (withDualGraph) {
-			mesh::linkNodesAndElements(elements, nodes, neighbors);
 			mesh::computeElementsFaceNeighbors(nodes, elements);
 		}
 		reclusterize();
@@ -290,8 +293,8 @@ Mesh::Mesh()
   contact(new ContactStore()),
 
   output(new Output()),
-  withDualGraph(true),
-  withSeparatedRegions(true),
+  withDualGraph(false),
+  withSeparatedRegions(false),
   convertToVolume(false),
   balanceVolume(false),
   _omitClusterization(false),
@@ -593,6 +596,7 @@ void Mesh::analyze()
 	switch (info::ecf->input.decomposition.parallel_decomposer) {
 	case DecompositionConfiguration::ParallelDecomposer::NONE:
 	case DecompositionConfiguration::ParallelDecomposer::HILBERT_CURVE:
+	case DecompositionConfiguration::ParallelDecomposer::VOLUME:
 		break;
 	case DecompositionConfiguration::ParallelDecomposer::METIS:
 	case DecompositionConfiguration::ParallelDecomposer::PARMETIS:
@@ -654,7 +658,11 @@ void Mesh::reclusterize()
 	}
 	std::vector<esint> partition;
 	mesh::computeElementsClusterization(elements, nodes, partition);
-	mesh::exchangeElements(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe, partition);
+	if (withDualGraph) {
+		mesh::exchangeElements(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe, partition);
+	} else {
+		mesh::exchangePureElements(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe, partition);
+	}
 	if (info::ecf->input.decomposition.force_continuity) {
 		std::vector<int> component;
 		esint csize = mesh::getStronglyConnectedComponents(elements, component);

@@ -42,6 +42,7 @@ int getStronglyConnectedComponents(const ElementStore *elements, std::vector<int
 void computeComponentDual(const ElementStore *elements, esint coffset, esint csize, const std::vector<int> &component, const std::vector<int> &neighbors, std::vector<esint> &dualDist, std::vector<esint> &dualData);
 
 void computeElementsClusterization(const ElementStore *elements, const NodeStore *nodes, std::vector<esint> &partition);
+void exchangePureElements(ElementStore* &elements, NodeStore* &nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe, const std::vector<esint> &partition);
 void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe, const std::vector<esint> &partition);
 void computeContinuousClusterization(const ElementStore *elements, const NodeStore *nodes, const std::vector<esint> &dualDist, const std::vector<esint> &dualData, esint coffset, esint csize, const std::vector<int> &component, const std::vector<int> &neighborsWithMe, std::vector<esint> &partition);
 

@@ -50,7 +50,8 @@ struct DecompositionConfiguration: public ECFDescription {
 		METIS,
 		PARMETIS,
 		PTSCOTCH,
-		HILBERT_CURVE
+		HILBERT_CURVE,
+		VOLUME,
 	};
 
 	enum class SequentialDecomposer {

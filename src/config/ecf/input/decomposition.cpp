@@ -53,7 +53,8 @@ DecompositionConfiguration::DecompositionConfiguration()
 			.addoption(ECFOption().setname("METIS").setdescription("METIS library (called by the root process)."))
 			.addoption(ECFOption().setname("PARMETIS").setdescription("ParMETIS library."))
 			.addoption(ECFOption().setname("PTSCOTCH").setdescription("PT-Scotch library."))
-			.addoption(ECFOption().setname("HILBERT_CURVE").setdescription("Sort elements centers according Hilbert space filling curve.")));
+			.addoption(ECFOption().setname("HILBERT_CURVE").setdescription("Sort elements centers according Hilbert space filling curve."))
+			.addoption(ECFOption().setname("VOLUME").setdescription("Balance elements volume.")));
 
 	sequential_decomposer = SequentialDecomposer::NONE;
 	REGISTER(sequential_decomposer, ECFMetaData()
