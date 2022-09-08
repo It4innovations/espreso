@@ -77,7 +77,7 @@ void EnSightGoldVolume::updateSolution()
 
 	int datasize = 0;
 	for (size_t di = 0; di < info::mesh->elements->data.size(); di++) {
-		datasize += info::mesh->elements->data[di]->dimension * sizeof(double) / sizeof(esint);
+		datasize += info::mesh->elements->data[di]->dimension;
 	}
 	if (info::mesh->elements->data.size() != _variables.size()) { // add support for unnamed data
 		_variables.clear();
@@ -95,6 +95,8 @@ void EnSightGoldVolume::updateSolution()
 	const auto &grid = info::mesh->elements->volumeGrid;
 	size_t gridsize = grid.x * grid.y * grid.z;
 	size_t chunk = gridsize / info::mpi::size + ((gridsize % info::mpi::size) ? 1 : 0);
+	size_t coffset = chunk * info::mpi::rank;
+	size_t mychunk = std::min(gridsize - coffset, chunk);
 
 	ivector<int> sBuffer, rBuffer;
 	std::vector<esint> offset(info::mpi::size + 1, 2);
@@ -120,8 +122,9 @@ void EnSightGoldVolume::updateSolution()
 			for (size_t di = 0; di < info::mesh->elements->data.size(); di++) {
 				NamedData *data = info::mesh->elements->data[di];
 				for (int d = 0; d < data->dimension; ++d) {
-					memcpy(sBuffer.data() + offset[target], data->data.data() + data->dimension * e + d, sizeof(double));
-					offset[target] += sizeof(double) / sizeof(esint);
+					float value = data->data[data->dimension * e + d];
+					memcpy(sBuffer.data() + offset[target], &value, sizeof(float));
+					++offset[target];
 				}
 			}
 		}
@@ -132,12 +135,27 @@ void EnSightGoldVolume::updateSolution()
 	}
 	utils::clearVector(sBuffer);
 
-	std::vector<std::vector<double> > output(info::mesh->elements->data.size());
+	if (_measure) { eslog::checkpointln("ENSIGHT VOLUME: DATA CHUNKED"); }
+
+	std::vector<float*> output(info::mesh->elements->data.size());
 	for (size_t di = 0; di < info::mesh->elements->data.size(); di++) {
-		output[di].resize(chunk * info::mesh->elements->data[di]->dimension);
+		NamedData *data = info::mesh->elements->data[di];
+		if (isRoot()) {
+			_writer.description(data->name);
+			_writer.description("part");
+			_writer.int32ln(1);
+			_writer.description("coordinates");
+		}
+
+		// TODO: multi-dimensional data
+		output[di] = (float*)_writer.enlarge(mychunk * info::mesh->elements->data[di]->dimension * sizeof(float));
+		_writer.groupData();
+
+		std::stringstream file;
+		file << _path + _directory + info::mesh->elements->data[di]->name + "." << std::setw(4) << std::setfill('0') << _times.size() + step::outduplicate.offset;
+		_writer.commitFile(file.str());
 	}
 
-	size_t coffset = chunk * info::mpi::rank;
 	for (esint r = 0, offset = 0, next = 0; r < info::mpi::size; ++r) {
 		next += rBuffer[offset++];
 		offset++; // source
@@ -146,43 +164,16 @@ void EnSightGoldVolume::updateSolution()
 			for (size_t di = 0; di < info::mesh->elements->data.size(); di++) {
 				NamedData *data = info::mesh->elements->data[di];
 				for (int d = 0; d < data->dimension; ++d) {
-					output[di][data->dimension * voxel + d] = reinterpret_cast<double&>(rBuffer[offset]);
-					offset += sizeof(double) / sizeof(esint);
+					output[di][d * mychunk + voxel] = reinterpret_cast<float&>(rBuffer[offset]);
+					++offset;
 				}
 			}
 		}
 	}
-	if (_measure) { eslog::checkpointln("ENSIGHT VOLUME: DATA CHUNKED"); }
 
-	size_t mychunk = std::min(gridsize - coffset, chunk);
-	for (size_t di = 0; di < info::mesh->elements->data.size(); di++) {
-		NamedData *data = info::mesh->elements->data[di];
-
-		if (isRoot()) {
-			_writer.description(data->name);
-			_writer.description("part");
-			_writer.int32ln(1);
-			_writer.description("coordinates");
-		}
-
-		_writer.reserve(output[di].size() * sizeof(double));
-		for (int d = 0; d < info::mesh->elements->data[di]->dimension; ++d) {
-			for (size_t c = 0; c < mychunk; ++c) {
-				_writer.float32ln(output[di][c * info::mesh->elements->data[di]->dimension + d]);
-			}
-			_writer.groupData();
-		}
-
-		std::stringstream file;
-		file << _path + _directory + info::mesh->elements->data[di]->name + "." << std::setw(4) << std::setfill('0') << _times.size() + step::outduplicate.offset;
-		_writer.commitFile(file.str());
-	}
 	if (_measure) { eslog::checkpointln("ENSIGHT VOLUME: DATA INSERTED"); }
 
-	_writer.reorder();
-	if (_measure) { eslog::checkpointln("ENSIGHT VOLUME: DATA REORDERED"); }
-
-	_writer.write();
+	_writer.directWrite();
 	if (isRoot()) {
 		casefile();
 	}

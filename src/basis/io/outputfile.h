@@ -50,9 +50,11 @@ class OutputFilePack: public OutputFile {
 public:
 	~OutputFilePack();
 
-	void reserve(size_t size)
+	char* enlarge(size_t size)
 	{
-		_buffer.reserve(size);
+		size_t bsize = _buffer.size();
+		_buffer.resize(bsize + size, 0);
+		return _buffer.data() + bsize;
 	}
 
 	void groupData();
@@ -60,6 +62,8 @@ public:
 
 	void reorder();
 	void write();
+
+	void directWrite();
 
 protected:
 	void clear();

@@ -242,3 +242,58 @@ void OutputFilePack::write()
 	clear();
 	profiler::syncend("write");
 }
+
+void OutputFilePack::directWrite()
+{
+	profiler::syncstart("direct_write");
+	switch (info::ecf->output.writer) {
+	case OutputConfiguration::WRITER::POSIX: eslog::internalFailure("POSIX writer does not work.\n"); break;
+	case OutputConfiguration::WRITER::MPI:
+	case OutputConfiguration::WRITER::MPI_COLLECTIVE:
+		break;
+	}
+
+	std::vector<size_t> fileoffset(_files.size()), totalsize(_files.size());
+	for (size_t i = 0; i < _files.size(); ++i) {
+		fileoffset[i] = _files[i]->_distribution.back();
+	}
+	Communication::exscan(totalsize, fileoffset, MPITools::asynchronous);
+
+	for (size_t i = 0; i < _files.size(); ++i) {
+		size_t size = _files[i]->_buffer.size();
+		size_t chunkmax = INT32_MAX;
+		size_t chunks = size / chunkmax + ((size % chunkmax) ? 1 : 0);
+
+		if (info::ecf->output.writer == OutputConfiguration::WRITER::MPI) {
+			MPIWriter writer;
+			if (MPITools::subset->across.rank == 0 && size) {
+				if (writer.open(MPITools::subset->within, _files[i]->_name)) {
+					eslog::error("WRITER: cannot create file '%s'\n", _files[i]->_name.c_str());
+				}
+
+				for (size_t c = 0; c < chunks; ++c) {
+					size_t size = std::min(chunkmax, _files[i]->_buffer.size() - c * chunkmax);
+					writer.store(_files[i]->_buffer.data() + c * chunkmax, fileoffset[i] + c * chunkmax, size);
+				}
+				writer.close();
+			}
+		}
+		if (info::ecf->output.writer == OutputConfiguration::WRITER::MPI_COLLECTIVE) {
+			MPICollectiveWriter writer;
+			if (MPITools::subset->across.rank == 0) {
+				if (writer.open(MPITools::subset->within, _files[i]->_name)) {
+					eslog::error("WRITER: cannot create file '%s'\n", _files[i]->_name.c_str());
+				}
+
+				for (size_t c = 0; c < chunks; ++c) {
+					size_t size = std::min(chunkmax, _files[i]->_buffer.size() - c * chunkmax);
+					writer.store(_files[i]->_buffer.data() + c * chunkmax, fileoffset[i] + c * chunkmax, size);
+				}
+				writer.close();
+			}
+		}
+	}
+
+	clear();
+	profiler::syncend("direct_write");
+}
