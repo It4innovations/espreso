@@ -50,7 +50,11 @@ void commit(Matrix_CSR<double> &x)
 {
 	x._spblas = new Matrix_CSR_External_Representation();
 	if (x.nnz) {
-		checkStatus(mkl_sparse_d_create_csr(&x._spblas->inspector, SPARSE_INDEX_BASE_ONE, x.nrows, x.ncols, x.rows, x.rows + 1, x.cols, x.vals));
+		switch (Indexing::CSR) {
+		case 0: checkStatus(mkl_sparse_d_create_csr(&x._spblas->inspector, SPARSE_INDEX_BASE_ZERO, x.nrows, x.ncols, x.rows, x.rows + 1, x.cols, x.vals)); break;
+		case 1: checkStatus(mkl_sparse_d_create_csr(&x._spblas->inspector, SPARSE_INDEX_BASE_ONE, x.nrows, x.ncols, x.rows, x.rows + 1, x.cols, x.vals)); break;
+		}
+
 	}
 }
 
@@ -59,7 +63,10 @@ void commit(Matrix_CSR<std::complex<double> > &x)
 {
 	x._spblas = new Matrix_CSR_External_Representation();
 	if (x.nnz) {
-		checkStatus(mkl_sparse_z_create_csr(&x._spblas->inspector, SPARSE_INDEX_BASE_ONE, x.nrows, x.ncols, x.rows, x.rows + 1, x.cols, x.vals));
+		switch (Indexing::CSR) {
+		case 0: checkStatus(mkl_sparse_z_create_csr(&x._spblas->inspector, SPARSE_INDEX_BASE_ZERO, x.nrows, x.ncols, x.rows, x.rows + 1, x.cols, x.vals)); break;
+		case 1: checkStatus(mkl_sparse_z_create_csr(&x._spblas->inspector, SPARSE_INDEX_BASE_ONE, x.nrows, x.ncols, x.rows, x.rows + 1, x.cols, x.vals)); break;
+		}
 	}
 }
 
@@ -68,7 +75,10 @@ void commit(Matrix_IJV<double> &x)
 {
 	x._spblas = new Matrix_IJV_External_Representation();
 	if (x.nnz) {
-		checkStatus(mkl_sparse_d_create_coo(&x._spblas->inspector, SPARSE_INDEX_BASE_ONE, x.nrows, x.ncols, x.nnz, x.rows, x.cols, x.vals));
+		switch (Indexing::CSR) {
+		case 0: checkStatus(mkl_sparse_d_create_coo(&x._spblas->inspector, SPARSE_INDEX_BASE_ZERO, x.nrows, x.ncols, x.nnz, x.rows, x.cols, x.vals)); break;
+		case 1: checkStatus(mkl_sparse_d_create_coo(&x._spblas->inspector, SPARSE_INDEX_BASE_ONE, x.nrows, x.ncols, x.nnz, x.rows, x.cols, x.vals)); break;
+		}
 	}
 }
 
@@ -77,7 +87,10 @@ void commit(Matrix_IJV<std::complex<double> > &x)
 {
 	x._spblas = new Matrix_IJV_External_Representation();
 	if (x.nnz) {
-		checkStatus(mkl_sparse_z_create_coo(&x._spblas->inspector, SPARSE_INDEX_BASE_ONE, x.nrows, x.ncols, x.nnz, x.rows, x.cols, x.vals));
+		switch (Indexing::CSR) {
+		case 0: checkStatus(mkl_sparse_z_create_coo(&x._spblas->inspector, SPARSE_INDEX_BASE_ZERO, x.nrows, x.ncols, x.nnz, x.rows, x.cols, x.vals)); break;
+		case 1: checkStatus(mkl_sparse_z_create_coo(&x._spblas->inspector, SPARSE_INDEX_BASE_ONE, x.nrows, x.ncols, x.nnz, x.rows, x.cols, x.vals)); break;
+		}
 	}
 }
 
