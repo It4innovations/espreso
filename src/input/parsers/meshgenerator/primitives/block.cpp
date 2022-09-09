@@ -91,15 +91,11 @@ void BlockGenerator::coordinates(MeshBuilder &mesh)
 	for (size_t z = 0; z < nodes.z; z++) {
 		for (size_t y = 0; y < nodes.y; y++) {
 			for (size_t x = 0; x < nodes.x; x++) {
-//				p = {
-//						MeshGenerator::precision * (_block.start.x + x * step.x),
-//						MeshGenerator::precision * (_block.start.y + y * step.y),
-//						MeshGenerator::precision * (_block.start.z + z * step.z)};
-//				mesh.coordinates.push_back(Point(_block.projection.x(p), _block.projection.y(p), _block.projection.z(p)));
-				mesh.coordinates.push_back(Point(
+				p = {
 						MeshGenerator::precision * (_block.start.x + x * step.x),
 						MeshGenerator::precision * (_block.start.y + y * step.y),
-						MeshGenerator::precision * (_block.start.z + z * step.z)));
+						MeshGenerator::precision * (_block.start.z + z * step.z)};
+				mesh.coordinates.push_back(Point(_block.projection.x(p), _block.projection.y(p), _block.projection.z(p)));
 			}
 		}
 	}
