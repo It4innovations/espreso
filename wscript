@@ -260,7 +260,7 @@ def set_libs(ctx, libs, default):
     for lib in libs:
         if "HAVE_"+lib.upper() in ctx.env["DEFINES_"+lib.upper()]:
             use = lib
-            if lib is default:
+            if lib == default:
                 return lib
     return use
 

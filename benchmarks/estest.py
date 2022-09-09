@@ -1,6 +1,5 @@
 
 import shutil, os, subprocess, copy
-from nose.plugins.skip import SkipTest
 
 try:
     import requests, git

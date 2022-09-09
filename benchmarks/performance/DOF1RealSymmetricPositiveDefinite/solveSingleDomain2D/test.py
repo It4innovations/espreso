@@ -25,7 +25,7 @@ class SequentialPerformance(unittest.TestCase):
 
     def test_performance(self):
         for etype in [ "SQUARE4", "SQUARE8", "TRIANGLE3", "TRIANGLE6" ]:
-            for size in range(7, 20):
+            for size in range(7, 15):
                 yield run, etype, int(math.sqrt(2 ** size) - 1)
 
 def run(etype, size):
