@@ -30,10 +30,12 @@ template <typename T>
 static void _info(OrthogonalTFETISymmetric<T> *projector)
 {
 	esint nnz = 2 * (projector->GGt.nnz - projector->GGt.nrows) + projector->GGt.nrows;
+	auto info = math::getSolverInfo(projector->GGt);
 
 	eslog::info(" = ORTHOGONAL PROJECTOR PROPERTIES                                                           = \n");
-	eslog::info(" =   GGt SIZE                                                                      %9d = \n", projector->GGt.nrows);
-	eslog::info(" =   GGt FILL-IN [\%]                                                                %8.4f = \n", 100.0 * nnz / (projector->GGt.nrows * projector->GGt.nrows));
+	eslog::info(" =   GGT ROWS                                                                      %9d = \n", projector->GGt.nrows);
+	eslog::info(" =   GGT NNZ                                                                       %9d = \n", nnz);
+	eslog::info(" =   GGT NNZ IN FACTORS                                                            %9d = \n", info.nnzL);
 	if (projector->feti->configuration.exhaustive_info) {
 		// PPt = eye
 	}

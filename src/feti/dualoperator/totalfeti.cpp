@@ -13,9 +13,26 @@ template <typename T> static void _print(TotalFETI<T> *dual);
 template <typename T>
 static void _info(TotalFETI<T> *dual)
 {
-	eslog::info(" = TOTAL FETI OPERATOR PROPERTIES                                                            = \n");
+	math::SolverInfo sum{0, 0}, min{INT32_MAX, INT32_MAX}, max{0, 0};
+	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
+		auto info = math::getSolverInfo(dual->Kplus[d]);
+		min.nnzA = std::min(min.nnzA, info.nnzA);
+		min.nnzL = std::min(min.nnzL, info.nnzL);
+		max.nnzA = std::max(max.nnzA, info.nnzA);
+		max.nnzL = std::max(max.nnzL, info.nnzL);
+		sum.nnzA += info.nnzA;
+		sum.nnzL += info.nnzL;
+	}
+
+	Communication::allReduce(&min.nnzA, nullptr, 3, MPI_INT, MPI_MIN);
+	Communication::allReduce(&max.nnzA, nullptr, 3, MPI_INT, MPI_MAX);
+	Communication::allReduce(&sum.nnzA, nullptr, 3, MPI_INT, MPI_SUM);
+
+	eslog::info(" = IMPLICIT TOTAL FETI OPERATOR                                                              = \n");
 	eslog::info(" =   DOMAINS                                                                       %9d = \n", dual->feti->sinfo.domains);
 	eslog::info(" =   DUAL SIZE                                                                     %9d = \n", dual->feti->sinfo.lambdasTotal);
+	eslog::info(" =   K+ NNZ                                                   %8.0f <%8d - %8d> = \n", (double)sum.nnzA / dual->feti->sinfo.domains, min.nnzA, max.nnzA);
+	eslog::info(" =   K+ NNZ IN FACTORS                                        %8.0f <%8d - %8d> = \n", (double)sum.nnzL / dual->feti->sinfo.domains, min.nnzL, max.nnzL);
 	if (dual->feti->configuration.exhaustive_info) {
 		// power method to Eigen values
 		// B * Bt = eye

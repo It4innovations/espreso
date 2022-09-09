@@ -42,7 +42,6 @@ template <> inline void _free<long, cholmod_dense>(cholmod_dense* object, cholmo
 template <> inline void _free<int, cholmod_factor>(cholmod_factor* object, cholmod_common &common) { cholmod_free_factor(&object, &common); }
 template <> inline void _free<long, cholmod_factor>(cholmod_factor* object, cholmod_common &common) { cholmod_l_free_factor(&object, &common); }
 
-
 template <typename T>
 static inline void set(cholmod_sparse *A, const Matrix_CSR<T> &M)
 {

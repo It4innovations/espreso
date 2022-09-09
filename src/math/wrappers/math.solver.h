@@ -16,6 +16,12 @@ namespace math {
 		SPARSE_SOLUTION = 1 << 1
 	};
 
+	struct SolverInfo {
+		int nnzA, nnzL;
+	};
+
+	const char* sparseSolver();
+
 	template <typename T> void initSolver(Matrix_CSR<T> &m);
 
 	template <typename T> void symbolicFactorization(const Matrix_CSR<T> &m, esint fixedSuffix = 0); // do not permute suffix
@@ -26,6 +32,8 @@ namespace math {
 	template <typename T> void computeSC(const Matrix_CSR<T> &m, Matrix_Dense<T> &sc);
 
 	template <typename T> void freeSolver(Matrix_CSR<T> &m);
+
+	template <typename T> SolverInfo getSolverInfo(const Matrix_CSR<T> &m);
 
 inline VectorSparsity operator|(const VectorSparsity &s1, const VectorSparsity &s2) { return (VectorSparsity)((int)s1 | (int)s2); }
 }

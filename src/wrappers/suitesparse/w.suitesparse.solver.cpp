@@ -26,6 +26,11 @@ struct Matrix_CSR_Solver {
 
 namespace math {
 
+const char* sparseSolver()
+{
+	return "SUITE SPARSE";
+}
+
 template <>
 void initSolver(Matrix_CSR<double> &A)
 {
@@ -173,13 +178,13 @@ void solve(const Matrix_CSR<std::complex<double> > &A, Matrix_Dense<std::complex
 }
 
 template <>
-void computeSC(const Matrix_CSR<double> &m, Matrix_Dense<double> &sc)
+void computeSC(const Matrix_CSR<double> &A, Matrix_Dense<double> &sc)
 {
 	eslog::error("Implement Schur complement via SuiteSparse.\n");
 }
 
 template <>
-void computeSC(const Matrix_CSR<std::complex<double> > &m, Matrix_Dense<std::complex<double> > &sc)
+void computeSC(const Matrix_CSR<std::complex<double> > &A, Matrix_Dense<std::complex<double> > &sc)
 {
 	eslog::error("Implement Schur complement via SuiteSparse.\n");
 }
@@ -191,7 +196,8 @@ void freeSolver(Matrix_CSR<double> &A)
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
 		_free<esint>(A._solver->cholmod.L, A._solver->cholmod.common);
-		_finish<esint>(A._solver->cholmod.common); break;
+		_finish<esint>(A._solver->cholmod.common);
+		break;
 	default:
 		break; // UMPAPCK
 	}
@@ -205,11 +211,43 @@ void freeSolver(Matrix_CSR<std::complex<double> > &A)
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
 		_free<esint>(A._solver->cholmod.L, A._solver->cholmod.common);
-		_finish<esint>(A._solver->cholmod.common); break;
+		_finish<esint>(A._solver->cholmod.common);
+		break;
 	default:
 		break; // UMPAPCK
 	}
 	delete A._solver;
+}
+
+template<typename T>
+static void _info(SolverInfo &info, const Matrix_CSR<T> &A)
+{
+	info.nnzA = A.nnz;
+	switch (A.type) {
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+		info.nnzL = A._solver->cholmod.common.lnz;
+		break;
+	default:
+		info.nnzL = 0;
+		break; // UMPAPCK
+	}
+}
+
+template <>
+SolverInfo getSolverInfo(const Matrix_CSR<double> &A)
+{
+	SolverInfo info;
+	_info(info, A);
+	return info;
+}
+
+template <>
+SolverInfo getSolverInfo(const Matrix_CSR<std::complex<double> > &A)
+{
+	SolverInfo info;
+	_info(info, A);
+	return info;
 }
 
 }

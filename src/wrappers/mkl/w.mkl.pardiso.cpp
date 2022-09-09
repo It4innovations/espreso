@@ -48,6 +48,11 @@ bool _callPardiso(esint phase, const Matrix_CSR<T> &m, esint nrhs, T *rhs, T *so
 	return m._solver->error == 0;
 }
 
+const char* sparseSolver()
+{
+	return "MKL PARDISO";
+}
+
 template <>
 void initSolver(Matrix_CSR<double> &m)
 {
@@ -196,6 +201,29 @@ void freeSolver(Matrix_CSR<std::complex<double> > &x)
 {
 	_callPardiso<std::complex<double> >(-1, x, 0, nullptr, nullptr);
 	delete x._solver;
+}
+
+template<typename T>
+static void _info(SolverInfo &info, const Matrix_CSR<T> &A)
+{
+	info.nnzA = A.nnz;
+	info.nnzL = A._solver->iparm[17];
+}
+
+template <>
+SolverInfo getSolverInfo(const Matrix_CSR<double> &A)
+{
+	SolverInfo info;
+	_info(info, A);
+	return info;
+}
+
+template <>
+SolverInfo getSolverInfo(const Matrix_CSR<std::complex<double> > &A)
+{
+	SolverInfo info;
+	_info(info, A);
+	return info;
 }
 
 }

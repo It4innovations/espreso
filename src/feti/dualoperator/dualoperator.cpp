@@ -3,6 +3,8 @@
 #include "totalfeti.h"
 #include "totalfetiexplicit.h"
 
+#include "esinfo/eslog.hpp"
+
 namespace espreso {
 
 template<typename T>
@@ -10,7 +12,7 @@ static DualOperator<T>* _set(FETI<T> *feti)
 {
 	switch (feti->configuration.method) {
 	case FETIConfiguration::METHOD::TOTAL_FETI:
-		eslog::info(" = LINEAR SOLVER                                                                  TOTAL FETI = \n");
+		eslog::info(" = DUAL OPERATOR                                                         IMPLICIT TOTAL FETI = \n");
 		return new TotalFETI<T>(feti);
 //		return new TotalFETIExplicit<T>(feti);
 	case FETIConfiguration::METHOD::HYBRID_FETI:
