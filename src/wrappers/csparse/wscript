@@ -2,8 +2,5 @@ def options(opt):
     pass
 
 def configure(ctx):
-    if not ctx.options.with_cuda:
-        return
-
     if int(ctx.options.intwidth) == 32:
         ctx.link_cxx(name="csparse", header_name=["cs.h"], libs=["cxsparse"], use=["CUDA"])

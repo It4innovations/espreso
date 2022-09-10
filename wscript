@@ -9,7 +9,6 @@ libs_solvers=[ "mkl", "pardiso", "suitesparse" ]
 def configure(ctx):
     ctx.env.with_gui = ctx.options.with_gui
     ctx.env.static = ctx.options.static
-    ctx.options.with_cuda = ctx.options.with_cuda or ctx.options.solver.upper() == "CUDA"
     ctx.link_cxx = types.MethodType(link_cxx, ctx)
     ctx.env.intwidth = ctx.options.intwidth
     ctx.env.mode = ctx.options.mode
@@ -230,18 +229,6 @@ def options(opt):
         default="release",
         choices=modes,
         help="ESPRESO build mode: " + ", ".join(modes) + " [default: %default]")
-
-    solvers=["mkl", "pardiso", "cuda"]
-    opt.compiler.add_option("--solver",
-        action="store",
-        default="mkl",
-        choices=solvers,
-        help="ESPRESO solver " + ", ".join(solvers) + " [default: %default]")
-
-    opt.compiler.add_option("--with-cuda",
-        action="store_true",
-        default=False,
-        help="Build ESPRESO with CUDA support.")
 
     opt.compiler.add_option("--static",
         action="store_true",
