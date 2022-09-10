@@ -222,6 +222,7 @@ void freeSolver(Matrix_CSR<std::complex<double> > &A)
 template<typename T>
 static void _info(SolverInfo &info, const Matrix_CSR<T> &A)
 {
+	info.rows = A.nrows;
 	info.nnzA = A.nnz;
 	switch (A.type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:

@@ -13,26 +13,33 @@ template <typename T> static void _print(TotalFETIImplicit<T> *dual);
 template <typename T>
 static void _info(TotalFETIImplicit<T> *dual)
 {
-	math::SolverInfo sum{0, 0}, min{INT32_MAX, INT32_MAX}, max{0, 0};
+	math::SolverInfo sum{0, 0, 0}, min{INT32_MAX, INT32_MAX, INT32_MAX}, max{0, 0, 0};
 	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
 		auto info = math::getSolverInfo(dual->Kplus[d]);
+		min.rows = std::min(min.rows, info.rows);
 		min.nnzA = std::min(min.nnzA, info.nnzA);
 		min.nnzL = std::min(min.nnzL, info.nnzL);
+		max.rows = std::max(max.rows, info.rows);
 		max.nnzA = std::max(max.nnzA, info.nnzA);
 		max.nnzL = std::max(max.nnzL, info.nnzL);
+		sum.rows += info.rows;
 		sum.nnzA += info.nnzA;
 		sum.nnzL += info.nnzL;
 	}
 
-	Communication::allReduce(&min.nnzA, nullptr, 3, MPI_INT, MPI_MIN);
-	Communication::allReduce(&max.nnzA, nullptr, 3, MPI_INT, MPI_MAX);
-	Communication::allReduce(&sum.nnzA, nullptr, 3, MPI_INT, MPI_SUM);
+	Communication::allReduce(&min.rows, nullptr, 3, MPI_INT, MPI_MIN);
+	Communication::allReduce(&max.rows, nullptr, 3, MPI_INT, MPI_MAX);
+	Communication::allReduce(&sum.rows, nullptr, 3, MPI_INT, MPI_SUM);
 
 	eslog::info(" = IMPLICIT TOTAL FETI OPERATOR                                                              = \n");
 	eslog::info(" =   DOMAINS                                                                       %9d = \n", dual->feti->sinfo.domains);
 	eslog::info(" =   DUAL SIZE                                                                     %9d = \n", dual->feti->sinfo.lambdasTotal);
+	eslog::info(" =   K+ ROWS                                                  %8.0f <%8d - %8d> = \n", (double)sum.rows / dual->feti->sinfo.domains, min.rows, max.rows);
 	eslog::info(" =   K+ NNZ                                                   %8.0f <%8d - %8d> = \n", (double)sum.nnzA / dual->feti->sinfo.domains, min.nnzA, max.nnzA);
 	eslog::info(" =   K+ NNZ IN FACTORS                                        %8.0f <%8d - %8d> = \n", (double)sum.nnzL / dual->feti->sinfo.domains, min.nnzL, max.nnzL);
+	if (dual->sparsity != math::VectorSparsity::DENSE) {
+		eslog::info(" =   K+ FACTORIZATION                                                        RESPECT SURFACE = \n");
+	}
 	if (dual->feti->configuration.exhaustive_info) {
 		// power method to Eigen values
 		// B * Bt = eye

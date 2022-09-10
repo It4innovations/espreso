@@ -9,140 +9,93 @@
 
 namespace espreso {
 
-template <typename T> static void _print(TotalFETIExplicit<T> *dual);
-
 template <typename T>
-static void _info(TotalFETIExplicit<T> *dual)
+TotalFETIExplicit<T>::TotalFETIExplicit(FETI<T> *feti)
+: TotalFETIImplicit<T>(feti)
 {
-	eslog::info(" = TOTAL FETI OPERATOR PROPERTIES                                                            = \n");
-	eslog::info(" =   DOMAINS                                                                       %9d = \n", dual->feti->sinfo.domains);
-	eslog::info(" =   DUAL SIZE                                                                     %9d = \n", dual->feti->sinfo.lambdasTotal);
-	if (dual->feti->configuration.exhaustive_info) {
-		// power method to Eigen values
-		// B * Bt = eye
-		// pseudo inverse
-	}
-	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-}
+	this->F.resize(this->feti->K->domains.size());
+	this->x.resize(this->feti->K->domains.size());
+	this->y.resize(this->feti->K->domains.size());
 
-/*
- * prepare buffers and call symbolic factorization that is independent on the Kplus values
- */
-template <typename T>
-static void _set(TotalFETIExplicit<T> *dual)
-{
-	dual->F.resize(dual->feti->K->domains.size());
-
-	const typename FETI<T>::EqualityConstraints *L = dual->feti->equalityConstraints;
+	const typename FETI<T>::EqualityConstraints *L = this->feti->equalityConstraints;
 	#pragma omp parallel for
-	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
-		dual->F[d].resize(L->domain[d].B1.nrows, L->domain[d].B1.nrows);
+	for (size_t d = 0; d < this->feti->K->domains.size(); ++d) {
+		this->F[d].resize(L->domain[d].B1.nrows, L->domain[d].B1.nrows);
+		this->x[d].resize(L->domain[d].B1.nrows);
+		this->y[d].resize(L->domain[d].B1.nrows);
 	}
 	eslog::checkpointln("FETI: TFETI SET EXPLICIT OPERATOR");
 }
 
 template <typename T>
-static void _free(TotalFETIExplicit<T> *dual)
+TotalFETIExplicit<T>::~TotalFETIExplicit()
 {
 
 }
 
 template <typename T>
-static void _update(TotalFETIExplicit<T> *dual)
+void TotalFETIExplicit<T>::info()
 {
-	const typename FETI<T>::EqualityConstraints *L = dual->feti->equalityConstraints;
+	TotalFETIImplicit<T>::info();
+}
 
-	#pragma omp parallel for
-	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
-		math::solve(dual->Kplus[d], dual->feti->f->domains[d], dual->KplusBtx[d], math::VectorSparsity::SPARSE_RHS);
-	}
+template <typename T>
+void TotalFETIExplicit<T>::update()
+{
+	TotalFETIImplicit<T>::update();
 
+	const typename FETI<T>::EqualityConstraints *L = this->feti->equalityConstraints;
 	
-	// #pragma omp parallel for
-	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
-		double start = eslog::time(), _start;
+	#pragma omp parallel for
+	for (size_t d = 0; d < this->feti->K->domains.size(); ++d) {
+		Vector_Dense<T> KplusBt, Bt;
+		KplusBt.resize(L->domain[d].B1.ncols);
+		Bt.resize(L->domain[d].B1.ncols);
 
-		_start = eslog::time();
-		Matrix_Dense<T> KplusBt, Bt;
-		KplusBt.resize(L->domain[d].B1.nrows, L->domain[d].B1.ncols);
-		Bt.resize(L->domain[d].B1.nrows, L->domain[d].B1.ncols);
-		printf("resize: %fs\n", eslog::time() - _start);
-
-		_start = eslog::time();
-		math::copy(Bt, L->domain[d].B1);
-		printf("copy: %fs\n", eslog::time() - _start);
-
-		_start = eslog::time();
-		math::solve(dual->Kplus[d], Bt, KplusBt, dual->sparsity);
-		printf("solve: %fs\n", eslog::time() - _start);
-
-		_start = eslog::time();
-		math::set(dual->F[d], T{0});
-		printf("setF: %fs\n", eslog::time() - _start);
-
-		_start = eslog::time();
 		for (esint r = 0; r < L->domain[d].B1.nrows; ++r) {
-			for (esint c = 0; c < L->domain[d].B1.nrows; ++c) {
-				for (esint k = L->domain[d].B1.rows[r]; k < L->domain[d].B1.rows[r + 1]; ++k) {
-					// printf("%d / %d::%d / %d::%d / %d\n", r * L->domain[d].B1.nrows + c, dual->F[d].nnz, k, L->domain[d].B1.nnz, c * L->domain[d].B1.ncols + L->domain[d].B1.cols[k], KplusBt.nnz);
-					dual->F[d].vals[r * L->domain[d].B1.nrows + c] += L->domain[d].B1.vals[k] * KplusBt.vals[c * L->domain[d].B1.ncols + L->domain[d].B1.cols[k]];
+			math::set(Bt, T{0});
+			for (esint c = L->domain[d].B1.rows[r]; c < L->domain[d].B1.rows[r + 1]; ++c) {
+				Bt.vals[L->domain[d].B1.cols[c]] = L->domain[d].B1.vals[c];
+			}
+			math::solve(this->Kplus[d], Bt, KplusBt, this->sparsity);
+
+			for (esint fr = 0; fr < L->domain[d].B1.nrows; ++fr) {
+				this->F[d].vals[fr * L->domain[d].B1.nrows + r] = 0;
+				for (esint fc = L->domain[d].B1.rows[fr]; fc < L->domain[d].B1.rows[fr + 1]; ++fc) {
+					this->F[d].vals[fr * L->domain[d].B1.nrows + r] += L->domain[d].B1.vals[fc] * KplusBt.vals[L->domain[d].B1.cols[fc]];
 				}
 			}
 		}
-		printf("mult: %fs\n", eslog::time() - _start);
-		printf("explicit B * K+ * Bt: %fs\n", eslog::time() - start);
 	}
-	
 
-	eslog::checkpointln("FETI: TFETI EXPLICIT DUAL ASSEMBLED");
-	_print(dual);
-}
+	eslog::checkpointln("FETI: TFETI (B * K+ * B') ASSEMBLED");
 
-template <typename T>
-static void _apply(TotalFETIExplicit<T> *dual, const Vector_Dual<T> &x, Vector_Dual<T> &y)
-{
-
-}
-
-template <typename T>
-static void _toPrimal(TotalFETIExplicit<T> *dual, const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y)
-{
-	#pragma omp parallel for
-	for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
-		applyBt(dual->feti, d, x, dual->Btx[d]);
-		math::copy(dual->KplusBtx[d], dual->feti->f->domains[d]);
-		math::add(dual->KplusBtx[d], T{-1}, dual->Btx[d]);
-		math::solve(dual->Kplus[d], dual->KplusBtx[d], y.domains[d]);
-	}
-}
-
-template <typename T>
-static void _print(TotalFETIExplicit<T> *dual)
-{
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: feti/dualop/{F}\n");
-		for (size_t d = 0; d < dual->feti->K->domains.size(); ++d) {
-			math::store(dual->Kplus[d], utils::filename(utils::debugDirectory(*dual->feti->step) + "/feti/dualop", (std::string("F") + std::to_string(d)).c_str()).c_str());
+		for (size_t d = 0; d < this->feti->K->domains.size(); ++d) {
+			math::store(this->F[d], utils::filename(utils::debugDirectory(*this->feti->step) + "/feti/dualop", (std::string("F") + std::to_string(d)).c_str()).c_str());
 		}
 	}
 }
 
-template <> TotalFETIExplicit<double>::TotalFETIExplicit(FETI<double> *feti): TotalFETIImplicit(feti) { _set<double>(this); }
-template <> TotalFETIExplicit<std::complex<double> >::TotalFETIExplicit(FETI<std::complex<double> > *feti): TotalFETIImplicit(feti) { _set<std::complex<double> >(this); }
+template <typename T>
+void TotalFETIExplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
+{
+	#pragma omp parallel for
+	for (size_t d = 0; d < this->feti->K->domains.size(); ++d) {
+		extractDomain(this->feti, d, x, this->x[d]);
+		math::apply(this->y[d], T{1}, this->F[d], T{0}, this->x[d]);
+	}
+	insertDomains(this->feti, this->y, y);
+}
 
-template <> TotalFETIExplicit<double>::~TotalFETIExplicit() { _free<double>(this); }
-template <> TotalFETIExplicit<std::complex<double> >::~TotalFETIExplicit() { _free<std::complex<double> >(this); }
+template <typename T>
+void TotalFETIExplicit<T>::toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y)
+{
+	TotalFETIImplicit<T>::toPrimal(x, y);
+}
 
-template <> void TotalFETIExplicit<double>::info() { _info<double>(this); }
-template <> void TotalFETIExplicit<std::complex<double> >::info() { _info<std::complex<double> >(this); }
-
-template <> void TotalFETIExplicit<double>::update() { TotalFETIImplicit::update(); _update<double>(this); }
-template <> void TotalFETIExplicit<std::complex<double> >::update() { TotalFETIImplicit::update(); _update<std::complex<double> >(this); }
-
-template <> void TotalFETIExplicit<double>::apply(const Vector_Dual<double> &x, Vector_Dual<double> &y) { TotalFETIImplicit::apply(x, y); }
-template <> void TotalFETIExplicit<std::complex<double> >::apply(const Vector_Dual<std::complex<double> > &x, Vector_Dual<std::complex<double> > &y) { TotalFETIImplicit::apply(x, y); }
-
-template <> void TotalFETIExplicit<double>::toPrimal(const Vector_Dual<double> &x, Vector_FETI<Vector_Dense, double> &y) { _toPrimal(this, x, y); }
-template <> void TotalFETIExplicit<std::complex<double> >::toPrimal(const Vector_Dual<std::complex<double> > &x, Vector_FETI<Vector_Dense, std::complex<double> > &y) { _toPrimal(this, x, y); }
+template class TotalFETIExplicit<double>;
+template class TotalFETIExplicit<std::complex<double> >;
 
 }

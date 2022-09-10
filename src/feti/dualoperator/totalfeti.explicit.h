@@ -33,6 +33,7 @@ public:
 	void toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y);
 
 	std::vector<Matrix_Dense<T> > F;
+	std::vector<Vector_Dense<T> > x, y;
 };
 
 }

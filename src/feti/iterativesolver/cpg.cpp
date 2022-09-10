@@ -1,6 +1,7 @@
 
 #include "cpg.h"
 
+#include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 #include "feti/projector/projector.h"
@@ -24,6 +25,15 @@ namespace espreso {
 //   w_k+1: L => r_k+1 - Gt * inv(GGt) * G * r_k+1 :: (I - Q) * r_k+1
 //  beta_k: 1 => (w_k+1,w_k+1) / (w_k,w_k)
 //   p_k+1: L => w_k+1 + beta_k * p_k
+
+template <typename T>
+static void _print(const char *name, const IterativeSolverInfo &info, const step::Step *step, const Vector_Dual<T> &v)
+{
+	if (info::ecf->output.print_matrices) {
+		eslog::storedata(" STORE: feti/cpg/{%s%s}\n", name, std::to_string(info.iterations).c_str());
+		math::store(v, utils::filename(utils::debugDirectory(*step) + "/feti/cpg", std::string(name) + std::to_string(info.iterations)).c_str());
+	}
+}
 
 template <typename T>
 static void _info(CPG<T> *solver)
@@ -85,6 +95,9 @@ template <> void CPG<double>::solve(IterativeSolverInfo &info)
 
 //	r.copyTo(r0);
 //	double rho = F->d.dot(l), rr, r0x;
+	_print("p", info, this->feti->step, p);
+	_print("x", info, this->feti->step, x);
+	_print("r", info, this->feti->step, r);
 
 	double ww = w.dot();
 	setInfo(info, feti->configuration, ww);
@@ -96,11 +109,13 @@ template <> void CPG<double>::solve(IterativeSolverInfo &info)
 		eslog::accumulatedln("cpg: apply F");       // gamma = (w, w) / (p, F * p)
 		double pFp = p.dot(Fp), gamma = ww / pFp;   //
 		eslog::accumulatedln("cpg: dot(p, Fp)");    //
-
+		_print("Fp", info, this->feti->step, Fp);
 
 		x.add(gamma, p);                            // x = x + gamma * p
 		r.add(-gamma, Fp);                          // r = r - gamma * F * p
 		eslog::accumulatedln("cpg: update x, r");   //
+		_print("x", info, this->feti->step, x);
+		_print("r", info, this->feti->step, r);
 
 		P->apply(r, w);                             // w = P * r
 		eslog::accumulatedln("cpg: apply P");       //
@@ -109,6 +124,7 @@ template <> void CPG<double>::solve(IterativeSolverInfo &info)
 		eslog::accumulatedln("cpg: dot(w, w)");     //
 		w.add(beta, p); w.swap(p);                  // p = w + beta * p  (w is not used anymore)
 		eslog::accumulatedln("cpg: update p");      //
+		_print("p", info, this->feti->step, p);
 
 //		rr = r.dot(), r0x = r0.dot(x);
 //		eslog::accumulatedln("cpg: dot(r, r), dot(r0, x)");

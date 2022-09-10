@@ -206,6 +206,7 @@ void freeSolver(Matrix_CSR<std::complex<double> > &x)
 template<typename T>
 static void _info(SolverInfo &info, const Matrix_CSR<T> &A)
 {
+	info.rows = A.nrows;
 	info.nnzA = A.nnz;
 	info.nnzL = A._solver->iparm[17];
 }

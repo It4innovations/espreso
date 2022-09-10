@@ -17,7 +17,7 @@ namespace math {
 	};
 
 	struct SolverInfo {
-		int nnzA, nnzL;
+		int rows, nnzA, nnzL;
 	};
 
 	const char* sparseSolver();
