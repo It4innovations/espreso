@@ -10,7 +10,9 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdescription({ "Type" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("TOTAL_FETI").setdescription("FETI with Dirichlet in B1."))
-			.addoption(ECFOption().setname("HYBRID_FETI").setdescription("HYBRID FETI with Dirichlet in B1.")));
+			.addoption(ECFOption().setname("HYBRID_FETI").setdescription("HYBRID FETI with Dirichlet in B1."))
+			.addoption(ECFOption().setname("IMPLICIT_TFETI").setdescription("Fx = (B * (K+ * (B' * x)))"))
+			.addoption(ECFOption().setname("EXPLICIT_TFETI").setdescription("Fx = (B * K+ * B') * x")));
 
 	preconditioner = PRECONDITIONER::DIRICHLET;
 	REGISTER(preconditioner, ECFMetaData()
@@ -124,7 +126,7 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdescription({ "Scaling" })
 			.setdatatype({ ECFDataType::BOOL }));
 
-	restricted_dual = true;
+	restricted_dual = false;
 	REGISTER(restricted_dual, ECFMetaData()
 			.setdescription({ "Compute Kplus only from K surface." })
 			.setdatatype({ ECFDataType::BOOL }));

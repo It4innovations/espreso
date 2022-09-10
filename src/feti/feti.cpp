@@ -1,8 +1,8 @@
 
 #include "feti.h"
+#include "dualoperator/dualoperator.h"
 #include "iterativesolver/pcpg.h"
 #include "projector/projector.h"
-#include "dualoperator/totalfeti.h"
 #include "preconditioner/preconditioner.h"
 
 #include "esinfo/eslog.hpp"

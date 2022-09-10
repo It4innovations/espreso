@@ -17,6 +17,10 @@ struct FETIConfiguration: public ECFDescription {
 		TOTAL_FETI = 0,
 		/// Hybrid Total FETI
 		HYBRID_FETI = 1,
+
+		IMPLICIT_TFETI,
+		EXPLICIT_TFETI,
+		ACCELERATED_TFETI
 	};
 
 	enum class ITERATIVE_SOLVER {

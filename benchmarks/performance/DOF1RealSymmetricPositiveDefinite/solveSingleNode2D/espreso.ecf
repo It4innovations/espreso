@@ -78,7 +78,7 @@ HEAT_TRANSFER_2D {
       SOLVER         FETI;
 
       FETI {
-        METHOD          TOTAL_FETI;
+        METHOD      IMPLICIT_TFETI;
         PRECONDITIONER        NONE;
         PRECISION            1E-09;
         ITERATIVE_SOLVER       PCG;

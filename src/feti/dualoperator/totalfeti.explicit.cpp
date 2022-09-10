@@ -1,5 +1,5 @@
 
-#include "totalfetiexplicit.h"
+#include "totalfeti.explicit.h"
 #include "feti/common/applyB.h"
 
 #include "basis/utilities/sysutils.h"
@@ -127,8 +127,8 @@ static void _print(TotalFETIExplicit<T> *dual)
 	}
 }
 
-template <> TotalFETIExplicit<double>::TotalFETIExplicit(FETI<double> *feti): TotalFETI(feti) { _set<double>(this); }
-template <> TotalFETIExplicit<std::complex<double> >::TotalFETIExplicit(FETI<std::complex<double> > *feti): TotalFETI(feti) { _set<std::complex<double> >(this); }
+template <> TotalFETIExplicit<double>::TotalFETIExplicit(FETI<double> *feti): TotalFETIImplicit(feti) { _set<double>(this); }
+template <> TotalFETIExplicit<std::complex<double> >::TotalFETIExplicit(FETI<std::complex<double> > *feti): TotalFETIImplicit(feti) { _set<std::complex<double> >(this); }
 
 template <> TotalFETIExplicit<double>::~TotalFETIExplicit() { _free<double>(this); }
 template <> TotalFETIExplicit<std::complex<double> >::~TotalFETIExplicit() { _free<std::complex<double> >(this); }
@@ -136,11 +136,11 @@ template <> TotalFETIExplicit<std::complex<double> >::~TotalFETIExplicit() { _fr
 template <> void TotalFETIExplicit<double>::info() { _info<double>(this); }
 template <> void TotalFETIExplicit<std::complex<double> >::info() { _info<std::complex<double> >(this); }
 
-template <> void TotalFETIExplicit<double>::update() { TotalFETI::update(); _update<double>(this); }
-template <> void TotalFETIExplicit<std::complex<double> >::update() { TotalFETI::update(); _update<std::complex<double> >(this); }
+template <> void TotalFETIExplicit<double>::update() { TotalFETIImplicit::update(); _update<double>(this); }
+template <> void TotalFETIExplicit<std::complex<double> >::update() { TotalFETIImplicit::update(); _update<std::complex<double> >(this); }
 
-template <> void TotalFETIExplicit<double>::apply(const Vector_Dual<double> &x, Vector_Dual<double> &y) { TotalFETI::apply(x, y); }
-template <> void TotalFETIExplicit<std::complex<double> >::apply(const Vector_Dual<std::complex<double> > &x, Vector_Dual<std::complex<double> > &y) { TotalFETI::apply(x, y); }
+template <> void TotalFETIExplicit<double>::apply(const Vector_Dual<double> &x, Vector_Dual<double> &y) { TotalFETIImplicit::apply(x, y); }
+template <> void TotalFETIExplicit<std::complex<double> >::apply(const Vector_Dual<std::complex<double> > &x, Vector_Dual<std::complex<double> > &y) { TotalFETIImplicit::apply(x, y); }
 
 template <> void TotalFETIExplicit<double>::toPrimal(const Vector_Dual<double> &x, Vector_FETI<Vector_Dense, double> &y) { _toPrimal(this, x, y); }
 template <> void TotalFETIExplicit<std::complex<double> >::toPrimal(const Vector_Dual<std::complex<double> > &x, Vector_FETI<Vector_Dense, std::complex<double> > &y) { _toPrimal(this, x, y); }

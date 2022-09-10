@@ -1,8 +1,8 @@
 
-#ifndef SRC_FETI_DUALOPERATOR_TOTALFETIEXPLICIT_H_
-#define SRC_FETI_DUALOPERATOR_TOTALFETIEXPLICIT_H_
+#ifndef SRC_FETI_DUALOPERATOR_TOTALFETI_EXPLICIT_H_
+#define SRC_FETI_DUALOPERATOR_TOTALFETI_EXPLICIT_H_
 
-#include "totalfeti.h"
+#include "totalfeti.implicit.h"
 
 namespace espreso {
 
@@ -19,7 +19,7 @@ namespace espreso {
  */
 
 template <typename T>
-class TotalFETIExplicit: public TotalFETI<T> {
+class TotalFETIExplicit: public TotalFETIImplicit<T> {
 public:
 	TotalFETIExplicit(FETI<T> *feti);
 	~TotalFETIExplicit();
@@ -37,4 +37,4 @@ public:
 
 }
 
-#endif /* SRC_FETI_DUALOPERATOR_TOTALFETIEXPLICIT_H_ */
+#endif /* SRC_FETI_DUALOPERATOR_TOTALFETI_EXPLICIT_H_ */

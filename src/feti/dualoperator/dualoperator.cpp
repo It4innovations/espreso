@@ -1,7 +1,7 @@
 
 #include "dualoperator.h"
-#include "totalfeti.h"
-#include "totalfetiexplicit.h"
+#include "totalfeti.implicit.h"
+#include "totalfeti.explicit.h"
 
 #include "esinfo/eslog.hpp"
 
@@ -12,8 +12,14 @@ static DualOperator<T>* _set(FETI<T> *feti)
 {
 	switch (feti->configuration.method) {
 	case FETIConfiguration::METHOD::TOTAL_FETI:
+	case FETIConfiguration::METHOD::IMPLICIT_TFETI:
 		eslog::info(" = DUAL OPERATOR                                                         IMPLICIT TOTAL FETI = \n");
-		return new TotalFETI<T>(feti);
+		return new TotalFETIImplicit<T>(feti);
+	case FETIConfiguration::METHOD::EXPLICIT_TFETI:
+		eslog::info(" = DUAL OPERATOR                                                         EXPLICIT TOTAL FETI = \n");
+		return new TotalFETIExplicit<T>(feti);
+	case FETIConfiguration::METHOD::ACCELERATED_TFETI:
+		eslog::info(" = DUAL OPERATOR                                                      ACCELERATED TOTAL FETI = \n");
 //		return new TotalFETIExplicit<T>(feti);
 	case FETIConfiguration::METHOD::HYBRID_FETI:
 	default: return nullptr;
