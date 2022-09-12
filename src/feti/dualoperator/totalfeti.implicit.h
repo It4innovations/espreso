@@ -25,12 +25,18 @@ public:
 	~TotalFETIImplicit();
 
 	void info();
+	void set();
 	void update();
 
 	// y = B * K+ * Bt * x
 	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 	// y = K+(f - Bt * x)
 	void toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y);
+
+protected:
+	void reduceInfo(math::SolverInfo &sum, math::SolverInfo &min, math::SolverInfo &max);
+	void printInfo(math::SolverInfo &sum, math::SolverInfo &min, math::SolverInfo &max);
+	void printMatrices();
 
 	std::vector<Matrix_CSR<T> > Kplus;
 	std::vector<Vector_Dense<T> > Btx, KplusBtx;

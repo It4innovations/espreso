@@ -5,26 +5,17 @@
 #include "basis/utilities/sysutils.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/ecfinfo.h"
-#include "math/physics/math.physics.copy.hpp"
 
 namespace espreso {
+
+template class TotalFETIExplicit<double>;
+template class TotalFETIExplicit<std::complex<double> >;
 
 template <typename T>
 TotalFETIExplicit<T>::TotalFETIExplicit(FETI<T> *feti)
 : TotalFETIImplicit<T>(feti)
 {
-	this->F.resize(this->feti->K->domains.size());
-	this->x.resize(this->feti->K->domains.size());
-	this->y.resize(this->feti->K->domains.size());
 
-	const typename FETI<T>::EqualityConstraints *L = this->feti->equalityConstraints;
-	#pragma omp parallel for
-	for (size_t d = 0; d < this->feti->K->domains.size(); ++d) {
-		this->F[d].resize(L->domain[d].B1.nrows, L->domain[d].B1.nrows);
-		this->x[d].resize(L->domain[d].B1.nrows);
-		this->y[d].resize(L->domain[d].B1.nrows);
-	}
-	eslog::checkpointln("FETI: TFETI SET EXPLICIT OPERATOR");
 }
 
 template <typename T>
@@ -36,7 +27,27 @@ TotalFETIExplicit<T>::~TotalFETIExplicit()
 template <typename T>
 void TotalFETIExplicit<T>::info()
 {
-	TotalFETIImplicit<T>::info();
+	math::SolverInfo sum, min, max;
+	TotalFETIImplicit<T>::reduceInfo(sum, min, max);
+
+	eslog::info(" = EXPLICIT TOTAL FETI OPERATOR                                                              = \n");
+	TotalFETIImplicit<T>::printInfo(sum, min, max);
+	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
+}
+
+template <typename T>
+void TotalFETIExplicit<T>::set()
+{
+	TotalFETIImplicit<T>::set();
+
+	this->F.resize(this->feti->K->domains.size());
+
+	const typename FETI<T>::EqualityConstraints *L = this->feti->equalityConstraints;
+	#pragma omp parallel for
+	for (size_t d = 0; d < this->feti->K->domains.size(); ++d) {
+		this->F[d].resize(L->domain[d].B1.nrows, L->domain[d].B1.nrows);
+	}
+	eslog::checkpointln("FETI: TFETI SET EXPLICIT OPERATOR");
 }
 
 template <typename T>
@@ -83,10 +94,10 @@ void TotalFETIExplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < this->feti->K->domains.size(); ++d) {
-		extractDomain(this->feti, d, x, this->x[d]);
-		math::apply(this->y[d], T{1}, this->F[d], T{0}, this->x[d]);
+		extractDomain(this->feti, d, x, this->Btx[d]);
+		math::apply(this->KplusBtx[d], T{1}, this->F[d], T{0}, this->Btx[d]);
 	}
-	insertDomains(this->feti, this->y, y);
+	insertDomains(this->feti, this->KplusBtx, y);
 }
 
 template <typename T>
@@ -94,8 +105,5 @@ void TotalFETIExplicit<T>::toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_
 {
 	TotalFETIImplicit<T>::toPrimal(x, y);
 }
-
-template class TotalFETIExplicit<double>;
-template class TotalFETIExplicit<std::complex<double> >;
 
 }

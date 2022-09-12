@@ -10,7 +10,7 @@ namespace espreso {
  * K+: KxK : block diagonal
  * B : LxK : from primal to dual
  *
- * y = F * x = B * K+ * Bt * x
+ * y = F * x = (B * K+ * Bt) * x
  *
  * Btx = Bt * x          :: x        -> Btx     : L -> K (per domain)
  * KplusBtx = K+ * Btx   :: Btx      -> KplusBtx: K -> K (per domain)
@@ -25,6 +25,7 @@ public:
 	~TotalFETIExplicit();
 
 	void info();
+	void set();
 	void update();
 
 	// y = F * x
@@ -32,8 +33,10 @@ public:
 	// y = K+(f - Bt * x)
 	void toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y);
 
+protected:
+	void printMatrices();
+
 	std::vector<Matrix_Dense<T> > F;
-	std::vector<Vector_Dense<T> > x, y;
 };
 
 }

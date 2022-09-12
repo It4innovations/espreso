@@ -10,20 +10,27 @@ namespace espreso {
 template<typename T>
 static DualOperator<T>* _set(FETI<T> *feti)
 {
+	DualOperator<T>* dual = nullptr;
 	switch (feti->configuration.method) {
 	case FETIConfiguration::METHOD::TOTAL_FETI:
 	case FETIConfiguration::METHOD::IMPLICIT_TFETI:
 		eslog::info(" = DUAL OPERATOR                                                         IMPLICIT TOTAL FETI = \n");
-		return new TotalFETIImplicit<T>(feti);
+		dual = new TotalFETIImplicit<T>(feti);
+		break;
 	case FETIConfiguration::METHOD::EXPLICIT_TFETI:
 		eslog::info(" = DUAL OPERATOR                                                         EXPLICIT TOTAL FETI = \n");
-		return new TotalFETIExplicit<T>(feti);
+		dual = new TotalFETIExplicit<T>(feti);
+		break;
 	case FETIConfiguration::METHOD::ACCELERATED_TFETI:
 		eslog::info(" = DUAL OPERATOR                                                      ACCELERATED TOTAL FETI = \n");
 //		return new TotalFETIExplicit<T>(feti);
+		break;
 	case FETIConfiguration::METHOD::HYBRID_FETI:
-	default: return nullptr;
+		break;
+	default: break;;
 	}
+	dual->set();
+	return dual;
 }
 
 template <> DualOperator<double>* DualOperator<double>::set(FETI<double> *feti) { return _set<double>(feti); }

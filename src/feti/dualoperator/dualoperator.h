@@ -18,6 +18,7 @@ public:
 	virtual ~DualOperator() {}
 
 	virtual void info() =0;
+	virtual void set() =0;
 	virtual void update() =0;
 
 	// y = F * x
