@@ -271,16 +271,22 @@ class ESPRESOTest:
                     line[key][stats[i]] = value
 
     @staticmethod
-    def report_mesurement(tab, functions):
-        output = open(os.path.join(ESPRESOTest.path, ESPRESOTest.get_info().lstrip("commit-") + ".csv"), "w")
+    def report_mesurement(name, tab, functions):
+        output = open(os.path.join(ESPRESOTest.path, name + "." + ESPRESOTest.get_info().lstrip("commit-") + ".csv"), "w")
         output.write("{0:{width}}".format("", width=50))
+        size = 0
         for instance in tab:
-            output.write(",{0:>{width}}".format("_".join(map(str, instance[0])), width=15))
+            size = max(size, len("_".join(map(str, instance[0]))) + 1)
+        for instance in tab:
+            output.write(",{0:>{width}}".format("_".join(map(str, instance[0])), width=size))
         output.write("\n")
         for fnc in functions:
             output.write("{0:{width}}".format("{} [{}]".format(fnc[0], fnc[1].upper()), width=50))
             for instance in tab:
-                output.write(",{0:>{width}}".format(instance[1][fnc[0]][fnc[1]], width=15))
+                if fnc[0] in instance[1]:
+                    output.write(",{0:>{width}}".format(instance[1][fnc[0]][fnc[1]], width=size))
+                else:
+                    output.write(",{0:>{width}}".format("", width=size))
             output.write("\n")
 
     @staticmethod

@@ -55,7 +55,7 @@ template <typename T>
 static void _set(TotalFETIImplicit<T> *dual)
 {
 	const typename FETI<T>::EqualityConstraints *L = dual->feti->equalityConstraints;
-	dual->sparsity = dual->feti->configuration.restricted_dual ? math::VectorSparsity::SPARSE_RHS | math::VectorSparsity::SPARSE_SOLUTION : math::VectorSparsity::DENSE;
+	dual->sparsity = dual->feti->configuration.partial_dual ? math::VectorSparsity::SPARSE_RHS | math::VectorSparsity::SPARSE_SOLUTION : math::VectorSparsity::DENSE;
 
 	dual->Kplus.resize(dual->feti->K->domains.size());
 	dual->d.resize();

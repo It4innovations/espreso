@@ -126,8 +126,8 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdescription({ "Scaling" })
 			.setdatatype({ ECFDataType::BOOL }));
 
-	restricted_dual = false;
-	REGISTER(restricted_dual, ECFMetaData()
+	partial_dual = false;
+	REGISTER(partial_dual, ECFMetaData()
 			.setdescription({ "Compute Kplus only from K surface." })
 			.setdatatype({ ECFDataType::BOOL }));
 
