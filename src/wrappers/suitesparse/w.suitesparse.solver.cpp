@@ -19,10 +19,12 @@ struct Matrix_CSR_Solver {
 		cholmod_factor *L;
 		cholmod_common common;
 
-		CHOLMOD(): A(new cholmod_sparse()), b(new cholmod_dense()), L(nullptr) { }
-		~CHOLMOD() { delete A; delete b; }
+		CHOLMOD(): A(nullptr), b(nullptr), L(nullptr) { }
+		~CHOLMOD() { if (A) delete A; if (b) delete b; if (L) delete L; }
 	} cholmod;
 };
+
+struct Matrix_CSC_Solver: public Matrix_CSR_Solver {};
 
 namespace math {
 
@@ -40,7 +42,7 @@ void initSolver(Matrix_CSR<double> &A)
 	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
 		_start<esint>(A._solver->cholmod.common); break;
 	default:
-		break; // UMPAPCK
+		break; // UMFPACK
 	}
 }
 
@@ -53,7 +55,7 @@ void initSolver(Matrix_CSR<std::complex<double> > &A)
 	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
 		_start<esint>(A._solver->cholmod.common); break;
 	default:
-		break; // UMPAPCK
+		break; // UMFPACK
 	}
 }
 
@@ -67,7 +69,7 @@ void symbolicFactorization(const Matrix_CSR<double> &A, esint fixedSuffix)
 		_analyze<esint>(A._solver->cholmod.L, A._solver->cholmod.A, A._solver->cholmod.common);
 		break;
 	default:
-		break; // UMPAPCK
+		break; // UMFPACK
 	}
 }
 
@@ -81,7 +83,7 @@ void symbolicFactorization(const Matrix_CSR<std::complex<double> > &A, esint fix
 		_analyze<esint>(A._solver->cholmod.L, A._solver->cholmod.A, A._solver->cholmod.common);
 		break;
 	default:
-		break; // UMPAPCK
+		break; // UMFPACK
 	}
 }
 
@@ -95,7 +97,7 @@ void numericalFactorization(const Matrix_CSR<double> &A)
 		_factorize<esint>(A._solver->cholmod.L, A._solver->cholmod.A, A._solver->cholmod.common);
 		break;
 	default:
-		break; // UMPAPCK
+		break; // UMFPACK
 	}
 }
 
@@ -109,7 +111,7 @@ void numericalFactorization(const Matrix_CSR<std::complex<double> > &A)
 		_factorize<esint>(A._solver->cholmod.L, A._solver->cholmod.A, A._solver->cholmod.common);
 		break;
 	default:
-		break; // UMPAPCK
+		break; // UMFPACK
 	}
 }
 
@@ -125,7 +127,7 @@ void solve(const Matrix_CSR<double> &A, Vector_Dense<double> &b, Vector_Dense<do
 		extract(_x, A._solver->cholmod.common, x);
 		break;
 	default:
-		break; // UMPAPCK
+		break; // UMFPACK
 	}
 }
 
@@ -141,7 +143,7 @@ void solve(const Matrix_CSR<double> &A, Matrix_Dense<double> &b, Matrix_Dense<do
 		extract(_x, A._solver->cholmod.common, x);
 		break;
 	default:
-		break; // UMPAPCK
+		break; // UMFPACK
 	}
 }
 
@@ -157,7 +159,7 @@ void solve(const Matrix_CSR<std::complex<double> > &A, Vector_Dense<std::complex
 		extract(_x, A._solver->cholmod.common, x);
 		break;
 	default:
-		break; // UMPAPCK
+		break; // UMFPACK
 	}
 }
 
@@ -173,7 +175,7 @@ void solve(const Matrix_CSR<std::complex<double> > &A, Matrix_Dense<std::complex
 		extract(_x, A._solver->cholmod.common, x);
 		break;
 	default:
-		break; // UMPAPCK
+		break; // UMFPACK
 	}
 }
 
@@ -199,7 +201,7 @@ void freeSolver(Matrix_CSR<double> &A)
 		_finish<esint>(A._solver->cholmod.common);
 		break;
 	default:
-		break; // UMPAPCK
+		break; // UMFPACK
 	}
 	delete A._solver;
 }
@@ -214,7 +216,7 @@ void freeSolver(Matrix_CSR<std::complex<double> > &A)
 		_finish<esint>(A._solver->cholmod.common);
 		break;
 	default:
-		break; // UMPAPCK
+		break; // UMFPACK
 	}
 	delete A._solver;
 }
@@ -231,7 +233,7 @@ static void _info(SolverInfo &info, const Matrix_CSR<T> &A)
 		break;
 	default:
 		info.nnzL = 0;
-		break; // UMPAPCK
+		break; // UMFPACK
 	}
 }
 
@@ -249,6 +251,88 @@ SolverInfo getSolverInfo(const Matrix_CSR<std::complex<double> > &A)
 	SolverInfo info;
 	_info(info, A);
 	return info;
+}
+
+template <>
+void getFactors(const Matrix_CSR<double> &A, Matrix_CSC<double> &L, Matrix_CSC<double> &U, Vector_Dense<int> &p)
+{
+	switch (A.type) {
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+		L._solver = new Matrix_CSC_Solver();
+		L._solver->cholmod.common = A._solver->cholmod.common;
+		cholmod_factor *copy;
+		_copyFactor<esint>(A._solver->cholmod.L, copy, A._solver->cholmod.common);
+		_factorToSparse<esint>(copy, L._solver->cholmod.A, L._solver->cholmod.common);
+		_free<esint>(copy, A._solver->cholmod.common);
+		L.nrows = L._solver->cholmod.A->nrow;
+		L.ncols = L._solver->cholmod.A->ncol;
+		L.nnz = L._solver->cholmod.A->nzmax;
+		L.rows = (esint*)L._solver->cholmod.A->p;
+		L.cols = (esint*)L._solver->cholmod.A->i;
+		L.vals = (double*)L._solver->cholmod.A->x;
+		L.type = A.type;
+		L.shape = Matrix_Shape::LOWER;
+//		p.size = L.nrows;
+//		p.vals = (esint*)A._solver->cholmod.L->Perm;
+		break;
+	default:
+		break; // UMFPACK
+	}
+}
+
+template <>
+void getFactors(const Matrix_CSR<std::complex<double> > &A, Matrix_CSC<std::complex<double> > &L, Matrix_CSC<std::complex<double> > &U, Vector_Dense<int> &p)
+{
+	switch (A.type) {
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+		L._solver = new Matrix_CSC_Solver();
+//		L._solver->cholmod.common = A._solver->cholmod.common;
+
+		_factorToSparse<esint>(A._solver->cholmod.L, L._solver->cholmod.A, A._solver->cholmod.common);
+		L.nrows = L._solver->cholmod.A->nrow;
+		L.ncols = L._solver->cholmod.A->ncol;
+		L.nnz = L._solver->cholmod.A->nzmax;
+		L.rows = (esint*)L._solver->cholmod.A->p;
+		L.cols = (esint*)L._solver->cholmod.A->i;
+		L.vals = (std::complex<double>*)L._solver->cholmod.A->z;
+		L.type = A.type;
+		L.shape = Matrix_Shape::LOWER;
+		p.size = L.nrows;
+		p.vals = (esint*)A._solver->cholmod.L->Perm;
+		break;
+	default:
+		break; // UMFPACK
+	}
+}
+
+template <>
+void freeFactor(Matrix_CSC<double> &L)
+{
+	switch (L.type) {
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+		_free<esint>(L._solver->cholmod.A, L._solver->cholmod.common);
+		delete L._solver;
+		break;
+	default:
+		break; // UMFPACK
+	}
+}
+
+template <>
+void freeFactor(Matrix_CSC<std::complex<double> > &L)
+{
+	switch (L.type) {
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+		_free<esint>(L._solver->cholmod.A, L._solver->cholmod.common);
+		delete L._solver;
+		break;
+	default:
+		break; // UMFPACK
+	}
 }
 
 }

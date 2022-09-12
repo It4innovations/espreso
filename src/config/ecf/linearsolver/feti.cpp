@@ -12,7 +12,8 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.addoption(ECFOption().setname("TOTAL_FETI").setdescription("FETI with Dirichlet in B1."))
 			.addoption(ECFOption().setname("HYBRID_FETI").setdescription("HYBRID FETI with Dirichlet in B1."))
 			.addoption(ECFOption().setname("IMPLICIT_TFETI").setdescription("Fx = (B * (K+ * (B' * x)))"))
-			.addoption(ECFOption().setname("EXPLICIT_TFETI").setdescription("Fx = (B * K+ * B') * x")));
+			.addoption(ECFOption().setname("EXPLICIT_TFETI").setdescription("Fx = (B * K+ * B') * x"))
+			.addoption(ECFOption().setname("ACCELERATED_TFETI").setdescription("Fx = (B * K+ * B') * x on accelerator")));
 
 	preconditioner = PRECONDITIONER::DIRICHLET;
 	REGISTER(preconditioner, ECFMetaData()

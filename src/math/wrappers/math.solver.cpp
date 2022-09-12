@@ -81,6 +81,43 @@ void freeSolver(const Matrix_CSR<std::complex<double> > &x)
 
 }
 
+template <>
+void freeFactor(Matrix_CSC<double> &m)
+{
+
+}
+
+template <>
+void freeFactor(Matrix_CSC<std::complex<double> > &m)
+{
+
+}
+
+template <>
+SolverInfo getSolverInfo(const Matrix_CSR<double> &m)
+{
+
+}
+
+template <>
+SolverInfo getSolverInfo(const Matrix_CSR<std::complex<double> > &m)
+{
+
+}
+
+template <>
+void getFactors(const Matrix_CSR<double> &m, Matrix_CSC<T> &L, Matrix_CSC<T> &U, Vector_Dense<int> &p)
+{
+	eslog::error("calling of empty sparse solver wrapper.\n");
+}
+
+template <>
+void getFactors(const Matrix_CSR<std::complex<double> > &m, Matrix_CSC<std::complex<double> > &L, Matrix_CSC<std::complex<double> > &U, Vector_Dense<int> &p)
+{
+	eslog::error("calling of empty sparse solver wrapper.\n");
+}
+
+
 }
 }
 

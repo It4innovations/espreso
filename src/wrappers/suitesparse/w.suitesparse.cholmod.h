@@ -28,23 +28,32 @@ template <> inline void _solve<long>(cholmod_dense* &x, cholmod_factor *L, cholm
 
 template <typename T> inline void _apply(cholmod_dense* Y, cholmod_sparse* A, cholmod_dense *X, double alpha[2], double beta[2], cholmod_common &common);
 template <> inline void _apply<int>(cholmod_dense* Y, cholmod_sparse* A, cholmod_dense *X, double alpha[2], double beta[2], cholmod_common &common) { cholmod_sdmult(A, 0, alpha, beta, X, Y, &common); }
-template <> inline void _apply<long>(cholmod_dense* Y, cholmod_sparse* A, cholmod_dense *X, double alpha[2], double beta[2], cholmod_common &common) { cholmod_sdmult(A, 0, alpha, beta, X, Y, &common); }
+template <> inline void _apply<long>(cholmod_dense* Y, cholmod_sparse* A, cholmod_dense *X, double alpha[2], double beta[2], cholmod_common &common) { cholmod_l_sdmult(A, 0, alpha, beta, X, Y, &common); }
+
+template <typename T> inline void _factorToSparse(cholmod_factor *L, cholmod_sparse* &A, cholmod_common &common);
+template <> inline void _factorToSparse<int>(cholmod_factor *L, cholmod_sparse* &A, cholmod_common &common) { A = cholmod_factor_to_sparse(L, &common); }
+template <> inline void _factorToSparse<long>(cholmod_factor *L, cholmod_sparse* &A, cholmod_common &common) { A = cholmod_l_factor_to_sparse(L, &common); }
+
+template <typename T> inline void _copyFactor(cholmod_factor *in, cholmod_factor* &out, cholmod_common &common);
+template <> inline void _copyFactor<int>(cholmod_factor *in, cholmod_factor* &out, cholmod_common &common) { out = cholmod_copy_factor(in, &common); }
+template <> inline void _copyFactor<long>(cholmod_factor *in, cholmod_factor* &out, cholmod_common &common) { out = cholmod_l_copy_factor(in, &common); }
 
 template <typename T> inline void _finish(cholmod_common &common);
 template <> inline void _finish<int>(cholmod_common &common) { cholmod_finish(&common); }
 template <> inline void _finish<long>(cholmod_common &common) { cholmod_l_finish(&common); }
 
-template <typename T, typename O> inline void _free(O* object, cholmod_common &common);
-template <> inline void _free<int, cholmod_sparse>(cholmod_sparse* object, cholmod_common &common) { cholmod_free_sparse(&object, &common); }
-template <> inline void _free<long, cholmod_sparse>(cholmod_sparse* object, cholmod_common &common) { cholmod_l_free_sparse(&object, &common); }
-template <> inline void _free<int, cholmod_dense>(cholmod_dense* object, cholmod_common &common) { cholmod_free_dense(&object, &common); }
-template <> inline void _free<long, cholmod_dense>(cholmod_dense* object, cholmod_common &common) { cholmod_l_free_dense(&object, &common); }
-template <> inline void _free<int, cholmod_factor>(cholmod_factor* object, cholmod_common &common) { cholmod_free_factor(&object, &common); }
-template <> inline void _free<long, cholmod_factor>(cholmod_factor* object, cholmod_common &common) { cholmod_l_free_factor(&object, &common); }
+template <typename T, typename O> inline void _free(O* &object, cholmod_common &common);
+template <> inline void _free<int, cholmod_sparse>(cholmod_sparse* &object, cholmod_common &common) { cholmod_free_sparse(&object, &common); }
+template <> inline void _free<long, cholmod_sparse>(cholmod_sparse* &object, cholmod_common &common) { cholmod_l_free_sparse(&object, &common); }
+template <> inline void _free<int, cholmod_dense>(cholmod_dense* &object, cholmod_common &common) { cholmod_free_dense(&object, &common); }
+template <> inline void _free<long, cholmod_dense>(cholmod_dense* &object, cholmod_common &common) { cholmod_l_free_dense(&object, &common); }
+template <> inline void _free<int, cholmod_factor>(cholmod_factor* &object, cholmod_common &common) { cholmod_free_factor(&object, &common); }
+template <> inline void _free<long, cholmod_factor>(cholmod_factor* &object, cholmod_common &common) { cholmod_l_free_factor(&object, &common); }
 
 template <typename T>
-static inline void set(cholmod_sparse *A, const Matrix_CSR<T> &M)
+static inline void set(cholmod_sparse* &A, const Matrix_CSR<T> &M)
 {
+	if (!A) A = new cholmod_sparse();
 	A->nrow = M.nrows;
 	A->ncol = M.ncols;
 	A->nzmax = M.nnz;
@@ -72,8 +81,9 @@ static inline void update(cholmod_sparse *A, const Matrix_CSR<std::complex<doubl
 	A->xtype = CHOLMOD_COMPLEX;
 }
 
-static inline void update(cholmod_dense *A, const Matrix_Dense<double> &M)
+static inline void update(cholmod_dense* &A, const Matrix_Dense<double> &M)
 {
+	if (!A) A = new cholmod_dense();
 	A->nrow = M.ncols;
 	A->ncol = M.nrows;
 	A->nzmax = M.ncols * M.nrows;
@@ -83,8 +93,9 @@ static inline void update(cholmod_dense *A, const Matrix_Dense<double> &M)
 	A->dtype = CHOLMOD_DOUBLE;
 }
 
-static inline void update(cholmod_dense *A, const Matrix_Dense<std::complex<double> > &M)
+static inline void update(cholmod_dense* &A, const Matrix_Dense<std::complex<double> > &M)
 {
+	if (!A) A = new cholmod_dense();
 	A->nrow = M.nrows;
 	A->ncol = M.ncols;
 	A->nzmax = M.ncols * M.nrows;
@@ -94,8 +105,9 @@ static inline void update(cholmod_dense *A, const Matrix_Dense<std::complex<doub
 	A->dtype = CHOLMOD_DOUBLE;
 }
 
-static inline void update(cholmod_dense *A, const Vector_Dense<double> &v)
+static inline void update(cholmod_dense* &A, const Vector_Dense<double> &v)
 {
+	if (!A) A = new cholmod_dense();
 	A->nrow = v.size;
 	A->ncol = 1;
 	A->nzmax = v.size;
@@ -105,8 +117,9 @@ static inline void update(cholmod_dense *A, const Vector_Dense<double> &v)
 	A->dtype = CHOLMOD_DOUBLE;
 }
 
-static inline void update(cholmod_dense *A, const Vector_Dense<std::complex<double> > &v)
+static inline void update(cholmod_dense* &A, const Vector_Dense<std::complex<double> > &v)
 {
+	if (!A) A = new cholmod_dense();
 	A->nrow = v.size;
 	A->ncol = 1;
 	A->nzmax = v.size;
