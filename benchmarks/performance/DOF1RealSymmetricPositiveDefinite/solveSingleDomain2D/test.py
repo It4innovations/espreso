@@ -6,6 +6,9 @@ tab = list()
 functions = [
     ("FETI: TFETI SYMBOLIC FACTORIZATION", "avg"),
     ("FETI[SET] TOTAL DURATION", "avg"),
+    ("K+ ROWS", "avg"),
+    ("K+ NNZ", "avg"),
+    ("K+ FACTORS NNZ", "avg"),
     ("FETI: TFETI NUMERICAL FACTORIZATION", "avg"),
     ("FETI[UPDATE] TOTAL DURATION", "avg"),
     ("cpg: apply F [~]", "avg"),
@@ -20,12 +23,15 @@ class SequentialPerformance(unittest.TestCase):
         ESPRESOTest.args = [ "etype", 2, 2 ]
     
     def tearDown(self):
+        ESPRESOTest.parse(tab, "K+ ROWS", ["avg", "min", "max"])
+        ESPRESOTest.parse(tab, "K+ NNZ", ["avg", "min", "max"])
+        ESPRESOTest.parse(tab, "K+ FACTORS NNZ", ["avg", "min", "max"])
         ESPRESOTest.report_mesurement(tab, functions)
         ESPRESOTest.clean()
 
     def test_performance(self):
         for etype in [ "SQUARE4", "SQUARE8", "TRIANGLE3", "TRIANGLE6" ]:
-            for size in range(7, 15):
+            for size in range(7, 14):
                 yield run, etype, int(math.sqrt(2 ** size) - 1)
 
 def run(etype, size):

@@ -35,7 +35,7 @@ static void _info(OrthogonalTFETISymmetric<T> *projector)
 	eslog::info(" = ORTHOGONAL PROJECTOR PROPERTIES                                                           = \n");
 	eslog::info(" =   GGT ROWS                                                                      %9d = \n", projector->GGt.nrows);
 	eslog::info(" =   GGT NNZ                                                                       %9d = \n", nnz);
-	eslog::info(" =   GGT NNZ IN FACTORS                                                            %9d = \n", info.nnzL);
+	eslog::info(" =   GGT FACTORS NNZ                                                               %9d = \n", info.nnzL);
 	if (projector->feti->configuration.exhaustive_info) {
 		// PPt = eye
 	}

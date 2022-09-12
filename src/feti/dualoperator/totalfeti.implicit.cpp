@@ -36,7 +36,7 @@ static void _info(TotalFETIImplicit<T> *dual)
 	eslog::info(" =   DUAL SIZE                                                                     %9d = \n", dual->feti->sinfo.lambdasTotal);
 	eslog::info(" =   K+ ROWS                                                  %8.0f <%8d - %8d> = \n", (double)sum.rows / dual->feti->sinfo.domains, min.rows, max.rows);
 	eslog::info(" =   K+ NNZ                                                   %8.0f <%8d - %8d> = \n", (double)sum.nnzA / dual->feti->sinfo.domains, min.nnzA, max.nnzA);
-	eslog::info(" =   K+ NNZ IN FACTORS                                        %8.0f <%8d - %8d> = \n", (double)sum.nnzL / dual->feti->sinfo.domains, min.nnzL, max.nnzL);
+	eslog::info(" =   K+ FACTORS NNZ                                           %8.0f <%8d - %8d> = \n", (double)sum.nnzL / dual->feti->sinfo.domains, min.nnzL, max.nnzL);
 	if (dual->sparsity != math::VectorSparsity::DENSE) {
 		eslog::info(" =   K+ FACTORIZATION                                                        RESPECT SURFACE = \n");
 	}

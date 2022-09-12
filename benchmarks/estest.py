@@ -1,5 +1,5 @@
 
-import shutil, os, subprocess, copy
+import shutil, os, subprocess, copy, re
 
 try:
     import requests, git
@@ -244,19 +244,31 @@ class ESPRESOTest:
         if ESPRESOTest.checker:
             return
 
-        def parse(line):
+        def parse(key, line):
             stats = dict()
-            for stat in line.split(",")[1:]:
-                stats[str(stat.split("=")[0].strip(" '"))] = float(stat.split("=")[1].strip(" '"))
-            return stats
+            if line.startswith("time"):
+                for stat in line.split(",")[1:]:
+                    stats[str(stat.split("=")[0].strip(" '"))] = float(stat.split("=")[1].strip(" '"))
+                return stats
+            else:
+                return line.replace(key, "").strip(" =");
 
         measurement = dict()
         for line in output.splitlines():
             for value in values:
                 if value in line:
-                    measurement[value] = parse(line)
+                    measurement[value] = parse(value, line)
                     break
         return measurement
+
+    @staticmethod
+    def parse(tab, key, stats):
+        for header, line in tab:
+            if isinstance(line[key], str):
+                values = re.findall(r'\d+', line[key])
+                line[key] = dict()
+                for i, value in enumerate(values):
+                    line[key][stats[i]] = value
 
     @staticmethod
     def report_mesurement(tab, functions):
