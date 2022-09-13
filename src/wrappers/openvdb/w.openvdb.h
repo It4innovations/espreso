@@ -18,7 +18,7 @@ struct OpenVDBWrapper {
 	OpenVDBWrapper();
 	~OpenVDBWrapper();
 
-	void add_grid(std::vector<int> voxel_indices_dist, std::vector<_Point<int>> voxel_indices, std::vector<double> data, std::string data_name, int data_dimension);
+	void add_grid(size_t distMax, size_t dataMax, esint *dist, _Point<short>* voxels, float *data, const std::string &name);
 	void store_grids(const char *name);
 
 protected:

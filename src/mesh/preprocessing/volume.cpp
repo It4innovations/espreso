@@ -211,7 +211,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 
 	Point size(nodes->uniqInfo.max - nodes->uniqInfo.min), origin(nodes->uniqInfo.min);
 	double step = (1.0001 * std::max(std::max(size.x, size.y), size.z)) / info::ecf->output.volume_density;
-	_Point<int> grid(std::floor(size.x / step) + 1, std::floor(size.y / step) + 1, std::floor(size.z / step) + 1);
+	_Point<short> grid(std::floor(size.x / step) + 1, std::floor(size.y / step) + 1, std::floor(size.z / step) + 1);
 	eslog::info(" == GRID DENSITY %58d x %5d x %5d == \n", grid.x, grid.y, grid.z);
 
 	// set voxels to grid centers
@@ -220,7 +220,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	size = Point(grid) * step;
 
 	std::vector<std::vector<esint> > vdistribution(info::env::OMP_NUM_THREADS);
-	std::vector<std::vector<esint> > vdata(info::env::OMP_NUM_THREADS);
+	std::vector<std::vector<_Point<short> > > vdata(info::env::OMP_NUM_THREADS);
 	vdistribution[0].push_back(0);
 
 	Point *coordinates = nodes->coordinates->datatarray().data();
@@ -234,7 +234,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		}
 	};
 
-	auto bboxIndices = [&origin, &size, &grid, &step] (const Point &min, const Point &max, _Point<int> &imin, _Point<int> &imax) {
+	auto bboxIndices = [&origin, &size, &grid, &step] (const Point &min, const Point &max, _Point<short> &imin, _Point<short> &imax) {
 		_Point<double> pmin = (min - origin) / size, pmax = (max - origin) / size;
 		imin.x = std::floor(pmin.x * grid.x);
 		imin.y = std::floor(pmin.y * grid.y);
@@ -265,11 +265,12 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		}
 	};
 
-	auto cutConvex = [&] (const _Point<int> &imin, const _Point<int> &imax, const _Point<double> &v, const _Point<double> &n, std::vector<char> &isin) {
+	auto cutConvex = [&] (const _Point<short> &imin, const _Point<short> &imax, const _Point<double> &v, const _Point<double> &n, std::vector<char> &isin) {
 		_Point<double> p = origin + _Point<double>(imin) * step - v;
-		for (int z = imin.z, i = 0; z < imax.z; ++z, p.z += step) {
-			for (int y = imin.y; y < imax.y; ++y, p.y += step) {
-				for (int x = imin.x; x < imax.x; ++x, ++i, p.x += step) {
+		int i = 0;
+		for (short z = imin.z; z < imax.z; ++z, p.z += step) {
+			for (short y = imin.y; y < imax.y; ++y, p.y += step) {
+				for (short x = imin.x; x < imax.x; ++x, ++i, p.x += step) {
 					isin[i / 8] &= ~((p * n < 0 ? 1 : 0) << (i % 8));
 				}
 				p.x = origin.x + imin.x * step - v.x;
@@ -278,11 +279,12 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		}
 	};
 
-	auto cutConcave = [&] (const _Point<int> &imin, const _Point<int> &imax, const _Point<double> &v, const _Point<double> &n, std::vector<char> &isin) {
+	auto cutConcave = [&] (const _Point<short> &imin, const _Point<short> &imax, const _Point<double> &v, const _Point<double> &n, std::vector<char> &isin) {
 		_Point<double> p = origin + _Point<double>(imin) * step - v;
-		for (int z = imin.z, i = 0; z < imax.z; ++z, p.z += step) {
-			for (int y = imin.y; y < imax.y; ++y, p.y += step) {
-				for (int x = imin.x; x < imax.x; ++x, ++i, p.x += step) {
+		int i = 0;
+		for (short z = imin.z; z < imax.z; ++z, p.z += step) {
+			for (short y = imin.y; y < imax.y; ++y, p.y += step) {
+				for (short x = imin.x; x < imax.x; ++x, ++i, p.x += step) {
 					isin[i / 8] &= ~((p * n < 0 ? 1 : 0) << (i % 8));
 				}
 				p.x = origin.x + imin.x * step - v.x;
@@ -295,12 +297,12 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 //		#pragma omp parallel for
 		for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
 			size_t eindex = 0;
-			std::vector<int> tdata; tdata.reserve(10 * elements->distribution.process.size);
+			std::vector<_Point<short> > tdata; tdata.reserve(10 * elements->distribution.process.size);
 			auto epointers = elements->epointers->datatarray().begin(t);
 			auto shape = elements->shape->datatarray().begin(t);
 			for (auto e = elements->nodes->cbegin(t); e != elements->nodes->cend(t); ++e, ++epointers, ++shape, ++eindex) {
 				Point coomin, coomax;
-				_Point<int> imin, imax;
+				_Point<short> imin, imax;
 				bbox((*epointers)->code, e->size(), e->data(), coomin, coomax);
 				bboxIndices(coomin, coomax, imin, imax);
 
@@ -339,11 +341,12 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 //						}
 					}
 				}
-				for (int z = imin.z, i = 0; z < imax.z; ++z) {
-					for (int y = imin.y; y < imax.y; ++y) {
-						for (int x = imin.x; x < imax.x; ++x, ++i) {
+				int i = 0;
+				for (short z = imin.z; z < imax.z; ++z) {
+					for (short y = imin.y; y < imax.y; ++y) {
+						for (short x = imin.x; x < imax.x; ++x, ++i) {
 							if (isin[i / 8] & (1 << (i % 8))) {
-								tdata.push_back(z * grid.y * grid.x + y * grid.x + x);
+								tdata.push_back(_Point<short>(x, y, z));
 							}
 						}
 					}
@@ -361,7 +364,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	elements->volumeGrid = grid;
 	elements->volumeOrigin = origin;
 	elements->volumeSize = size;
-	elements->volumeIndices = new serializededata<esint, esint>(vdistribution, vdata);
+	elements->volumeIndices = new serializededata<esint, _Point<short> >(vdistribution, vdata);
 
 	profiler::syncend("compute_volume_indices");
 	eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
@@ -379,7 +382,7 @@ void computeVolumeIndicesOM(ElementStore *elements, const NodeStore *nodes)
 
 	Point size(nodes->uniqInfo.max - nodes->uniqInfo.min), origin(nodes->uniqInfo.min);
 	double step = (1.0001 * std::max(std::max(size.x, size.y), size.z)) / info::ecf->output.volume_density;
-	_Point<int> grid(std::floor(size.x / step) + 1, std::floor(size.y / step) + 1, std::floor(size.z / step) + 1);
+	_Point<short> grid(std::floor(size.x / step) + 1, std::floor(size.y / step) + 1, std::floor(size.z / step) + 1);
 	eslog::info(" == GRID DENSITY %58d x %5d x %5d == \n", grid.x, grid.y, grid.z);
 
 	// set voxels to grid centers
@@ -388,7 +391,7 @@ void computeVolumeIndicesOM(ElementStore *elements, const NodeStore *nodes)
 	size = Point(grid) * step;
 
 	std::vector<std::vector<esint> > vdistribution(info::env::OMP_NUM_THREADS);
-	std::vector<std::vector<esint> > vdata(info::env::OMP_NUM_THREADS);
+	std::vector<std::vector<_Point<short> > > vdata(info::env::OMP_NUM_THREADS);
 	vdistribution[0].push_back(0);
 
 	Point *coordinates = nodes->coordinates->datatarray().data();
@@ -399,7 +402,7 @@ void computeVolumeIndicesOM(ElementStore *elements, const NodeStore *nodes)
 			size_t eclose = 0;
 			Point ppmax(10, 10, 10), ppboundmin, ppboundmax;
 			size_t eindex = 0;
-			std::vector<int> tdata; tdata.reserve(10 * elements->distribution.process.size);
+			std::vector<_Point<short> > tdata; tdata.reserve(10 * elements->distribution.process.size);
 			auto epointers = elements->epointers->datatarray().begin(t);
 			for (auto e = elements->nodes->cbegin(t); e != elements->nodes->cend(t); ++e, ++epointers, ++eindex) {
 				int cc = 0;
@@ -429,15 +432,15 @@ void computeVolumeIndicesOM(ElementStore *elements, const NodeStore *nodes)
 				}
 
 				_Point<double> pmin = (coomin - origin) / size, pmax = (coomax - origin) / size;
-				_Point<int> bmin(std::floor(pmin.x * grid.x), std::floor(pmin.y * grid.y), std::floor(pmin.z * grid.z));
-				_Point<int> bmax(std::ceil(pmax.x * grid.x), std::ceil(pmax.y * grid.y), std::ceil(pmax.z * grid.z));
+				_Point<short> bmin(std::floor(pmin.x * grid.x), std::floor(pmin.y * grid.y), std::floor(pmin.z * grid.z));
+				_Point<short> bmax(std::ceil(pmax.x * grid.x), std::ceil(pmax.y * grid.y), std::ceil(pmax.z * grid.z));
 
 				std::vector<char> isin((bmax.x - bmin.x) * (bmax.y - bmin.y) * (bmax.z - bmin.z) / 8 + 1, 255);
 				auto cut = [&] (const _Point<double> &v, const _Point<double> &n) {
 					_Point<double> p = origin + _Point<double>(bmin) * step - v;
-					for (int z = bmin.z, i = 0; z < bmax.z; ++z, p.z += step) {
-						for (int y = bmin.y; y < bmax.y; ++y, p.y += step) {
-							for (int x = bmin.x; x < bmax.x; ++x, ++i, p.x += step) {
+					for (short z = bmin.z, i = 0; z < bmax.z; ++z, p.z += step) {
+						for (short y = bmin.y; y < bmax.y; ++y, p.y += step) {
+							for (short x = bmin.x; x < bmax.x; ++x, ++i, p.x += step) {
 								isin[i / 8] &= ~((p * n < 0 ? 1 : 0) << (i % 8));
 							}
 							p.x = origin.x + bmin.x * step - v.x;
@@ -449,17 +452,17 @@ void computeVolumeIndicesOM(ElementStore *elements, const NodeStore *nodes)
 				if ((*epointers)->code == Element::CODE::POLYHEDRON) {
 					bool out = true;
 					_Point<double> p = origin + _Point<double>(bmin) * step;
-					for (int z = bmin.z; z < bmax.z; ++z, p.z += step) {
+					for (short z = bmin.z; z < bmax.z; ++z, p.z += step) {
 						if (coomin.z <= p.z && p.z <= coomax.z) {
 							out = false;
 						}
 					}
-					for (int y = bmin.y; y < bmax.y; ++y, p.y += step) {
+					for (short y = bmin.y; y < bmax.y; ++y, p.y += step) {
 						if (coomin.y <= p.y && p.y <= coomax.y) {
 							out = false;
 						}
 					}
-					for (int x = bmin.x; x < bmax.x; ++x, p.x += step) {
+					for (short x = bmin.x; x < bmax.x; ++x, p.x += step) {
 						if (coomin.x <= p.x && p.x <= coomax.x) {
 							out = false;
 						}
@@ -488,12 +491,12 @@ void computeVolumeIndicesOM(ElementStore *elements, const NodeStore *nodes)
 						cut(v, n);
 					}
 				}
-				for (int z = bmin.z, i = 0; z < bmax.z; ++z) {
-					for (int y = bmin.y; y < bmax.y; ++y) {
-						for (int x = bmin.x; x < bmax.x; ++x, ++i) {
+				for (short z = bmin.z, i = 0; z < bmax.z; ++z) {
+					for (short y = bmin.y; y < bmax.y; ++y) {
+						for (short x = bmin.x; x < bmax.x; ++x, ++i) {
 							if (isin[i / 8] & (1 << (i % 8))) {
 								printf("%d %d %d\n", x, y, z);
-								tdata.push_back(z * grid.y * grid.x + y * grid.x + x);
+								tdata.push_back(_Point<short>(x, y, z));
 							}
 						}
 					}
@@ -568,7 +571,7 @@ void computeVolumeIndicesOM(ElementStore *elements, const NodeStore *nodes)
 	elements->volumeGrid = grid;
 	elements->volumeOrigin = origin;
 	elements->volumeSize = size;
-	elements->volumeIndices = new serializededata<esint, esint>(vdistribution, vdata);
+	elements->volumeIndices = new serializededata<esint, _Point<short> >(vdistribution, vdata);
 
 	profiler::syncend("compute_volume_indices");
 	eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
@@ -621,7 +624,7 @@ void computeVolumeIndicesMH(ElementStore *elements, const NodeStore *nodes)
 	Point grid_start = Point(mesh_min_global.x, mesh_max_global.y, mesh_min_global.z);
 
 	std::vector<std::vector<esint> > vdistribution(info::env::OMP_NUM_THREADS);
-	std::vector<std::vector<esint> > vdata(info::env::OMP_NUM_THREADS);
+	std::vector<std::vector<_Point<short> > > vdata(info::env::OMP_NUM_THREADS);
 	vdistribution[0].push_back(0);
 
 	// elements cycle
@@ -684,8 +687,7 @@ void computeVolumeIndicesMH(ElementStore *elements, const NodeStore *nodes)
 							// save element index if point is in the element
 							if(is_p_triangle_vertex || fabs(total_angle) > 6.0){ // 2pi or 4pi -> inside
 								grid[grid_inx_1d] = 0;
-//								vdata[t].push_back(_Point<int>(x, y, z));
-								vdata[t].push_back(z * grid_size_x * grid_size_x + y * grid_size_x + x);
+								vdata[t].push_back(_Point<short>(x, y, z));
 							}
 
 						} else { // dim == 2
@@ -725,7 +727,7 @@ void computeVolumeIndicesMH(ElementStore *elements, const NodeStore *nodes)
 //	elements->volumeGrid = grid;
 //	elements->volumeOrigin = origin;
 //	elements->volumeSize = size;
-	elements->volumeIndices = new serializededata<esint, esint>(vdistribution, vdata);
+	elements->volumeIndices = new serializededata<esint, _Point<short> >(vdistribution, vdata);
 	profiler::syncend("compute_volume_indices");
 	eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
 }

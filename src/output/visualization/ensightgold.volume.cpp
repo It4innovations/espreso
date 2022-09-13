@@ -102,7 +102,8 @@ void EnSightGoldVolume::updateSolution()
 	std::vector<esint> offset(info::mpi::size + 1, 2);
 	for (auto voxels = info::mesh->elements->volumeIndices->begin(); voxels != info::mesh->elements->volumeIndices->end(); ++voxels) {
 		for (auto voxel = voxels->begin(); voxel != voxels->end(); ++voxel) {
-			offset[*voxel / chunk] += 1 + datasize;
+			esint index = voxel->z * grid.y * grid.x + voxel->y * grid.x + voxel->x;
+			offset[index / chunk] += 1 + datasize;
 		}
 	}
 	utils::sizesToOffsets(offset);
@@ -117,8 +118,9 @@ void EnSightGoldVolume::updateSolution()
 	esint e = 0;
 	for (auto voxels = info::mesh->elements->volumeIndices->begin(); voxels != info::mesh->elements->volumeIndices->end(); ++voxels, ++e) {
 		for (auto voxel = voxels->begin(); voxel != voxels->end(); ++voxel) {
-			int target = *voxel / chunk;
-			sBuffer[offset[target]++] = *voxel;
+			esint index = voxel->z * grid.y * grid.x + voxel->y * grid.x + voxel->x;
+			int target = index / chunk;
+			sBuffer[offset[target]++] = index;
 			for (size_t di = 0; di < info::mesh->elements->data.size(); di++) {
 				NamedData *data = info::mesh->elements->data[di];
 				for (int d = 0; d < data->dimension; ++d) {

@@ -14,6 +14,12 @@ inline MPIType MPITools::getType<char>()
 }
 
 template <>
+inline MPIType MPITools::getType<short>()
+{
+	return { MPI_SHORT };
+}
+
+template <>
 inline MPIType MPITools::getType<int>()
 {
 	return { MPI_INT };
