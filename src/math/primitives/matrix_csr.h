@@ -19,10 +19,6 @@ template <typename T>
 class Matrix_CSR: public _Matrix_CSR<T>
 {
 public:
-	enum: int {
-		Indexing = 1
-	};
-
 	Matrix_CSR(): _Matrix_CSR<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _spblas{nullptr}, _solver{nullptr}, _allocated{}
 	{
 

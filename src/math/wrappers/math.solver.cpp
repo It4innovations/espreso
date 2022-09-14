@@ -105,6 +105,28 @@ SolverInfo getSolverInfo(const Matrix_CSR<std::complex<double> > &m)
 
 }
 
+bool provideFactors()
+{
+	return false;
+}
+
+bool provideSC()
+{
+	return false;
+}
+
+template <>
+void computeSC(const Matrix_CSR<double> &m, Matrix_Dense<double> &sc)
+{
+
+}
+
+template <>
+void computeSC(const Matrix_CSR<std::complex<double> > &m, Matrix_Dense<std::complex<double> > &sc)
+{
+
+}
+
 template <>
 void getFactors(const Matrix_CSR<double> &m, Matrix_CSC<T> &L, Matrix_CSC<T> &U, Vector_Dense<int> &p)
 {

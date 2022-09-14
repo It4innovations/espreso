@@ -177,6 +177,11 @@ void _computeSC(const Matrix_CSR<T> &m, Matrix_Dense<T> &sc)
 	}
 }
 
+bool provideSC()
+{
+	return true;
+}
+
 template <>
 void computeSC(const Matrix_CSR<double> &m, Matrix_Dense<double> &sc)
 {
@@ -225,6 +230,35 @@ SolverInfo getSolverInfo(const Matrix_CSR<std::complex<double> > &A)
 	SolverInfo info;
 	_info(info, A);
 	return info;
+}
+
+bool provideFactors()
+{
+	return false;
+}
+
+template <>
+void getFactors(const Matrix_CSR<double> &A, Matrix_CSC<double> &L, Matrix_CSC<double> &U, Vector_Dense<int> &p)
+{
+	eslog::error("MKL PARDISO does not provide factors.\n");
+}
+
+template <>
+void getFactors(const Matrix_CSR<std::complex<double> > &A, Matrix_CSC<std::complex<double> > &L, Matrix_CSC<std::complex<double> > &U, Vector_Dense<int> &p)
+{
+	eslog::error("MKL PARDISO does not provide factors.\n");
+}
+
+template <>
+void freeFactor(Matrix_CSC<double> &L)
+{
+
+}
+
+template <>
+void freeFactor(Matrix_CSC<std::complex<double> > &L)
+{
+
 }
 
 }

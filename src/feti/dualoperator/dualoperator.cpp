@@ -23,8 +23,12 @@ static DualOperator<T>* _set(FETI<T> *feti)
 		dual = new TotalFETIExplicit<T>(feti);
 		break;
 	case FETIConfiguration::METHOD::ACCELERATED_TFETI:
-		eslog::info(" = DUAL OPERATOR                                                      ACCELERATED TOTAL FETI = \n");
-		dual = new TotalFETIExplicitAcc<T>(feti);
+		if (math::provideFactors()) {
+			eslog::info(" = DUAL OPERATOR                                                      ACCELERATED TOTAL FETI = \n");
+			dual = new TotalFETIExplicitAcc<T>(feti);
+		} else {
+			eslog::globalerror("Linked third party solver does not provide factors that are required for requested dual operator.\n");
+		}
 		break;
 	case FETIConfiguration::METHOD::HYBRID_FETI:
 		break;
