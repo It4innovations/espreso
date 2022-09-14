@@ -41,11 +41,15 @@ void TotalFETIExplicit<T>::set()
 	TotalFETIImplicit<T>::set();
 
 	this->F.resize(this->feti->K->domains.size());
+	this->in.resize(this->feti->K->domains.size());
+	this->out.resize(this->feti->K->domains.size());
 
 	const typename FETI<T>::EqualityConstraints *L = this->feti->equalityConstraints;
 	#pragma omp parallel for
 	for (size_t d = 0; d < this->feti->K->domains.size(); ++d) {
 		this->F[d].resize(L->domain[d].B1.nrows, L->domain[d].B1.nrows);
+		this->in[d].resize(L->domain[d].B1.nrows);
+		this->out[d].resize(L->domain[d].B1.nrows);
 	}
 	eslog::checkpointln("FETI: TFETI SET EXPLICIT OPERATOR");
 }
@@ -94,10 +98,10 @@ void TotalFETIExplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < this->feti->K->domains.size(); ++d) {
-		extractDomain(this->feti, d, x, this->Btx[d]);
-		math::apply(this->KplusBtx[d], T{1}, this->F[d], T{0}, this->Btx[d]);
+		extractDomain(this->feti, d, x, this->in[d]);
+		math::apply(this->out[d], T{1}, this->F[d], T{0}, this->in[d]);
 	}
-	insertDomains(this->feti, this->KplusBtx, y);
+	insertDomains(this->feti, this->out, y);
 }
 
 template <typename T>

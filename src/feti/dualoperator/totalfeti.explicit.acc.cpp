@@ -59,7 +59,7 @@ void TotalFETIExplicitAcc<T>::update()
 		case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
 			// TODO: copy factors to ACC, solve, ...
-			// results show be equal to this->F[d]
+			// results should be equal to this->F[d]
 			break;
 		default:
 			// TODO: implement non-symmetric case

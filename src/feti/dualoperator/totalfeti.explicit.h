@@ -37,6 +37,7 @@ protected:
 	void printMatrices();
 
 	std::vector<Matrix_Dense<T> > F;
+	std::vector<Vector_Dense<T> > in, out;
 };
 
 }
