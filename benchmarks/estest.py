@@ -106,7 +106,7 @@ class ESPRESOTest:
     def run_program(program):
         ESPRESOTest._program = copy.deepcopy(program)
         program.append("--OUTPUT::LOGGER=PARSER")
-        program.append("-vvttt")
+        program.append("-ttt")
         if not ESPRESOTest.store_results:
             program.append("--OUTPUT::RESULTS_STORE_FREQUENCY=NEVER")
             program.append("--OUTPUT::MODE=SYNC")
