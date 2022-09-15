@@ -197,13 +197,13 @@ template<> void fill<Element::CODE::TETRA4>(size_t gps, double *N, double *dN, d
 			dN[3 * gp * nodes + 0 * nodes + 3] = -1.0;
 
 			dN[3 * gp * nodes + 1 * nodes + 0] =  0.0;
-			dN[3 * gp * nodes + 1 * nodes + 1] =  1.0;
-			dN[3 * gp * nodes + 1 * nodes + 2] =  0.0;
+			dN[3 * gp * nodes + 1 * nodes + 1] =  0.0;
+			dN[3 * gp * nodes + 1 * nodes + 2] =  1.0;
 			dN[3 * gp * nodes + 1 * nodes + 3] = -1.0;
 
 			dN[3 * gp * nodes + 2 * nodes + 0] =  0.0;
-			dN[3 * gp * nodes + 2 * nodes + 1] =  0.0;
-			dN[3 * gp * nodes + 2 * nodes + 2] =  1.0;
+			dN[3 * gp * nodes + 2 * nodes + 1] =  1.0;
+			dN[3 * gp * nodes + 2 * nodes + 2] =  0.0;
 			dN[3 * gp * nodes + 2 * nodes + 3] = -1.0;
 		}
 	} break;
