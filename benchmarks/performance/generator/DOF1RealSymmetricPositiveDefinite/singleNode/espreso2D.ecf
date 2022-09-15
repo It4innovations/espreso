@@ -1,10 +1,19 @@
 # ESPRESO Configuration File
 
 DEFAULT_ARGS {
-  0     SQUARE4;
+  0          SQUARE4;
 
-  1           2;
-  2           2;
+  1                1;
+  2                1;
+
+  3                2;
+  4                2;
+
+  5                5;
+  6                5;
+
+  7                1;
+  8   IMPLICIT_TFETI;
 }
 
 INPUT_TYPE            GENERATOR;
@@ -13,9 +22,11 @@ PHYSICS        HEAT_TRANSFER_2D;
 GENERATOR {
   SHAPE   GRID;
 
+  UNIFORM_CLUSTERS        [ARG7];
+
   GRID {
-    LENGTH_X                   1;
-    LENGTH_Y                   1;
+    LENGTH_X      [ARG1] + 1 / 8;
+    LENGTH_Y      [ARG2] + 1 / 8;
     LENGTH_Z                   1;
 
     NODES {
@@ -78,11 +89,12 @@ HEAT_TRANSFER_2D {
       SOLVER         FETI;
 
       FETI {
-        METHOD      IMPLICIT_TFETI;
+        METHOD              [ARG8];
         PRECONDITIONER        NONE;
-        PRECISION            1E-09;
+        PRECISION            1E-05;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION   ALGEBRAIC;
+        PARTIAL_DUAL         FALSE;
       }
 
       TEMPERATURE {
@@ -91,45 +103,6 @@ HEAT_TRANSFER_2D {
         LEFT     200;
         RIGHT    200;
       }
-    }
-  }
-}
-
-OUTPUT {
-  RESULTS_STORE_FREQUENCY    NEVER;
-  MONITORS_STORE_FREQUENCY   NEVER;
-
-  STORE_RESULTS         ALL;
-
-  MONITORING {
-    1 {
-      REGION            TOP;
-      STATISTICS        MAX;
-      PROPERTY  TEMPERATURE;
-    }
-
-    2 {
-      REGION         BOTTOM;
-      STATISTICS        MIN;
-      PROPERTY  TEMPERATURE;
-    }
-
-    3 {
-      REGION   ALL_ELEMENTS;
-      STATISTICS        MAX;
-      PROPERTY     GRADIENT;
-    }
-
-    4 {
-      REGION   ALL_ELEMENTS;
-      STATISTICS        MAX;
-      PROPERTY         FLUX;
-    }
-
-    5 {
-      REGION   ALL_ELEMENTS;
-      STATISTICS        AVG;
-      PROPERTY  TEMPERATURE;
     }
   }
 }

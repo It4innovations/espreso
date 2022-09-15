@@ -4,7 +4,3 @@ export MPICXX=mpic++
 export CXX=g++
 
 export OMP_PROC_BIND=close
-
-# performance benchamrks
-export MPILIB=openmpi
-export SYSTEM=karolina

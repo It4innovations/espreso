@@ -6,7 +6,3 @@ ml Valgrind/3.16.1-intel-2020b
 export MPICXX=mpiicpc
 export CXX=icpc
 export LANG=C
-
-# performance benchamrks
-export MPILIB=intel
-export SYSTEM=karolina
