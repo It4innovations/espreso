@@ -8,6 +8,8 @@
 #include "math/primitives/matrix_csr.h"
 #include "math/primitives/matrix_csc.h"
 
+#include <cstddef>
+
 namespace espreso {
 namespace math {
 
@@ -18,7 +20,7 @@ namespace math {
 	};
 
 	struct SolverInfo {
-		int rows, nnzA, nnzL;
+		size_t rows, nnzA, nnzL;
 	};
 
 	const char* sparseSolver();

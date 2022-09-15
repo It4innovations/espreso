@@ -27,7 +27,7 @@ TotalFETIExplicit<T>::~TotalFETIExplicit()
 template <typename T>
 void TotalFETIExplicit<T>::info()
 {
-	math::SolverInfo sum, min, max;
+	DualOperatorInfo sum, min, max;
 	TotalFETIImplicit<T>::reduceInfo(sum, min, max);
 
 	eslog::info(" = EXPLICIT TOTAL FETI OPERATOR                                                              = \n");

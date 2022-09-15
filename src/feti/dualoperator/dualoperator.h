@@ -9,6 +9,10 @@
 
 namespace espreso {
 
+struct DualOperatorInfo: public math::SolverInfo {
+	size_t dualA;
+};
+
 template <typename T>
 class DualOperator {
 public:

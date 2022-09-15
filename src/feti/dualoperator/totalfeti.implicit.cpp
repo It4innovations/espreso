@@ -28,34 +28,39 @@ TotalFETIImplicit<T>::~TotalFETIImplicit()
 }
 
 template <typename T>
-void TotalFETIImplicit<T>::reduceInfo(math::SolverInfo &sum, math::SolverInfo &min, math::SolverInfo &max)
+void TotalFETIImplicit<T>::reduceInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max)
 {
-	sum.nnzA = sum.nnzL = sum.rows = 0;
-	min.nnzA = min.nnzL = min.rows = INT32_MAX;
-	max.nnzA = max.nnzL = max.rows = 0;
+	sum.nnzA = sum.nnzL = sum.rows = sum.dualA = 0;
+	min.nnzA = min.nnzL = min.rows = min.dualA = INT32_MAX;
+	max.nnzA = max.nnzL = max.rows = max.dualA = 0;
 	for (size_t d = 0; d < this->feti->K->domains.size(); ++d) {
 		auto info = math::getSolverInfo(this->Kplus[d]);
+		size_t dualA = this->feti->equalityConstraints->domain[d].B1.nrows;
 		min.rows = std::min(min.rows, info.rows);
 		min.nnzA = std::min(min.nnzA, info.nnzA);
 		min.nnzL = std::min(min.nnzL, info.nnzL);
+		min.dualA = std::min(min.dualA, dualA);
 		max.rows = std::max(max.rows, info.rows);
 		max.nnzA = std::max(max.nnzA, info.nnzA);
 		max.nnzL = std::max(max.nnzL, info.nnzL);
+		max.dualA = std::max(max.dualA, dualA);
 		sum.rows += info.rows;
 		sum.nnzA += info.nnzA;
 		sum.nnzL += info.nnzL;
+		sum.dualA += dualA;
 	}
 
-	Communication::allReduce(&min.rows, nullptr, 3, MPI_INT, MPI_MIN);
-	Communication::allReduce(&max.rows, nullptr, 3, MPI_INT, MPI_MAX);
-	Communication::allReduce(&sum.rows, nullptr, 3, MPI_INT, MPI_SUM);
+	Communication::allReduce(&min, nullptr, 4, MPITools::getType<size_t>().mpitype, MPI_MIN);
+	Communication::allReduce(&max, nullptr, 4, MPITools::getType<size_t>().mpitype, MPI_MAX);
+	Communication::allReduce(&sum, nullptr, 4, MPITools::getType<size_t>().mpitype, MPI_SUM);
 }
 
 template <typename T>
-void TotalFETIImplicit<T>::printInfo(math::SolverInfo &sum, math::SolverInfo &min, math::SolverInfo &max)
+void TotalFETIImplicit<T>::printInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max)
 {
 	eslog::info(" =   DOMAINS                                                                       %9d = \n", this->feti->sinfo.domains);
 	eslog::info(" =   DUAL SIZE                                                                     %9d = \n", this->feti->sinfo.lambdasTotal);
+	eslog::info(" =   B1 ROWS                                                  %8.0f <%8d - %8d> = \n", (double)sum.dualA / this->feti->sinfo.domains, min.dualA, max.dualA);
 	eslog::info(" =   K+ ROWS                                                  %8.0f <%8d - %8d> = \n", (double)sum.rows / this->feti->sinfo.domains, min.rows, max.rows);
 	eslog::info(" =   K+ NNZ                                                   %8.0f <%8d - %8d> = \n", (double)sum.nnzA / this->feti->sinfo.domains, min.nnzA, max.nnzA);
 	eslog::info(" =   K+ FACTORS NNZ                                           %8.0f <%8d - %8d> = \n", (double)sum.nnzL / this->feti->sinfo.domains, min.nnzL, max.nnzL);
@@ -72,7 +77,7 @@ void TotalFETIImplicit<T>::printInfo(math::SolverInfo &sum, math::SolverInfo &mi
 template <typename T>
 void TotalFETIImplicit<T>::info()
 {
-	math::SolverInfo sum, min, max;
+	DualOperatorInfo sum, min, max;
 	reduceInfo(sum, min, max);
 
 	eslog::info(" = IMPLICIT TOTAL FETI OPERATOR                                                              = \n");
