@@ -4,6 +4,7 @@
 
 #include "generatorelements.h"
 #include "config/description.h"
+#include "config/holders/expression.h"
 
 #include <string>
 
@@ -13,8 +14,8 @@ struct BlockGeneratorConfiguration: public ECFDescription {
 
 	GENERATOR_ELEMENT_TYPE element_type;
 
-	double start_x, start_y, start_z;
-	double length_x, length_y, length_z;
+	ECFExpression start_x, start_y, start_z;
+	ECFExpression length_x, length_y, length_z;
 
 	std::string projection_x, projection_y, projection_z;
 	std::string rotation_x, rotation_y, rotation_z;

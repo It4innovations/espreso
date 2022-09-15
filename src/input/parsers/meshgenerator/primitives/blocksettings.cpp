@@ -3,6 +3,7 @@
 #include "input/parsers/meshgenerator/meshgenerator.h"
 
 #include "config/ecf/input/block.h"
+#include "basis/evaluator/evaluator.h"
 
 using namespace espreso;
 
@@ -13,11 +14,11 @@ BlockSettings::BlockSettings(const BlockGeneratorConfiguration &configuration)
 	domains  = Triple<size_t>(configuration.domains_x, configuration.domains_y, configuration.domains_z);
 	elements = Triple<size_t>(configuration.elements_x, configuration.elements_y, configuration.elements_z);
 
-	start = Triple<esint>(configuration.start_x / MeshGenerator::precision, configuration.start_y / MeshGenerator::precision, configuration.start_z / MeshGenerator::precision);
+	start = Triple<esint>(configuration.start_x.evaluator->eval() / MeshGenerator::precision, configuration.start_y.evaluator->eval() / MeshGenerator::precision, configuration.start_z.evaluator->eval() / MeshGenerator::precision);
 	end   = Triple<esint>(
-			(esint)std::round((configuration.start_x + configuration.length_x) / (.1 * MeshGenerator::precision)) / 10,
-			(esint)std::round((configuration.start_y + configuration.length_y) / (.1 * MeshGenerator::precision)) / 10,
-			(esint)std::round((configuration.start_z + configuration.length_z) / (.1 * MeshGenerator::precision)) / 10);
+			(esint)std::round((configuration.start_x.evaluator->eval() + configuration.length_x.evaluator->eval()) / (.1 * MeshGenerator::precision)) / 10,
+			(esint)std::round((configuration.start_y.evaluator->eval() + configuration.length_y.evaluator->eval()) / (.1 * MeshGenerator::precision)) / 10,
+			(esint)std::round((configuration.start_z.evaluator->eval() + configuration.length_z.evaluator->eval()) / (.1 * MeshGenerator::precision)) / 10);
 }
 
 size_t BlockSettings::preferedDomains(const BlockGeneratorConfiguration &configuration)

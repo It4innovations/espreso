@@ -4,10 +4,12 @@
 #include "config/configuration.hpp"
 
 espreso::BlockGeneratorConfiguration::BlockGeneratorConfiguration()
+: start_x(ECFExpression::Scope::ENODES), start_y(ECFExpression::Scope::ENODES), start_z(ECFExpression::Scope::ENODES),
+  length_x(ECFExpression::Scope::ENODES), length_y(ECFExpression::Scope::ENODES), length_z(ECFExpression::Scope::ENODES)
 {
 	element_type = GENERATOR_ELEMENT_TYPE::HEXA8;
-	start_x = start_y = start_z = 0;
-	length_x = length_y = length_z = 1;
+	start_x.value = start_y.value = start_z.value = "0";
+	length_x.value = length_y.value = length_z.value = "1";
 	rotation_x = rotation_y = rotation_z = "0";
 	projection_x = "x";
 	projection_y = "y";
@@ -20,29 +22,29 @@ espreso::BlockGeneratorConfiguration::BlockGeneratorConfiguration()
 
 	REGISTER(start_x, ECFMetaData()
 			.setdescription({ "A x-coordinate of generated GRID." })
-			.setdatatype({ ECFDataType::FLOAT }));
+			.setdatatype({ ECFDataType::EXPRESSION }));
 
 	REGISTER(start_y, ECFMetaData()
 			.setdescription({ "A y-coordinate of generated GRID." })
-			.setdatatype({ ECFDataType::FLOAT }));
+			.setdatatype({ ECFDataType::EXPRESSION }));
 
 	REGISTER(start_z, ECFMetaData()
 			.setdescription({ "A z-coordinate of generated GRID." })
-			.setdatatype({ ECFDataType::FLOAT }));
+			.setdatatype({ ECFDataType::EXPRESSION }));
 
 	ecfdescription->addSpace();
 
 	REGISTER(length_x, ECFMetaData()
 			.setdescription({ "A x-length of generated GRID." })
-			.setdatatype({ ECFDataType::FLOAT }));
+			.setdatatype({ ECFDataType::EXPRESSION }));
 
 	REGISTER(length_y, ECFMetaData()
 			.setdescription({ "A y-length of generated GRID." })
-			.setdatatype({ ECFDataType::FLOAT }));
+			.setdatatype({ ECFDataType::EXPRESSION }));
 
 	REGISTER(length_z, ECFMetaData()
 			.setdescription({ "A z-length of generated GRID." })
-			.setdatatype({ ECFDataType::FLOAT }));
+			.setdatatype({ ECFDataType::EXPRESSION }));
 
 	ecfdescription->addSpace();
 
