@@ -130,13 +130,13 @@ void GridGenerator::neighbors(MeshBuilder &mesh)
 void GridGenerator::regions(const GridGeneratorConfiguration &configuration, MeshBuilder &mesh)
 {
 	for (auto it = configuration.nodes.begin(); it != configuration.nodes.end(); ++it) {
-		_block.nodesRegion(BlockBorder(it->second), mesh.nregions[it->first]);
+		_block.nodesRegion(BlockBorder(it->second, configuration), mesh.nregions[it->first]);
 	}
 	for (auto it = configuration.edges.begin(); it != configuration.edges.end(); ++it) {
-		_block.edgesRegion(BlockBorder(it->second), mesh, mesh.eregions[it->first]);
+		_block.edgesRegion(BlockBorder(it->second, configuration), mesh, mesh.eregions[it->first]);
 	}
 	for (auto it = configuration.faces.begin(); it != configuration.faces.end(); ++it) {
-		_block.facesRegion(BlockBorder(it->second), mesh, mesh.eregions[it->first]);
+		_block.facesRegion(BlockBorder(it->second, configuration), mesh, mesh.eregions[it->first]);
 	}
 	for (auto it = configuration.elements.begin(); it != configuration.elements.end(); ++it) {
 		if (StringCompare::caseInsensitiveEq("chessboard_white", it->second)) {
@@ -144,7 +144,7 @@ void GridGenerator::regions(const GridGeneratorConfiguration &configuration, Mes
 		} else if (StringCompare::caseInsensitiveEq("chessboard_black", it->second)) {
 			_block.pattern(_clusterOffset, _settings.blocks * _settings.clusters, mesh.eregions[it->first], Pattern::CHESSBOARD_BLACK, configuration.chessboard_size);
 		} else {
-			_block.elementsRegion(BlockBorder(it->second), mesh.eregions[it->first]);
+			_block.elementsRegion(BlockBorder(it->second, configuration), mesh.eregions[it->first]);
 		}
 	}
 }

@@ -3,15 +3,17 @@
 #define SRC_INPUT_GENERATOR_SELECTIONS_BLOCKBORDER_H_
 
 #include "input/parsers/meshgenerator/primitives/triple.h"
+#include "input/parsers/meshgenerator/primitives/block.h"
 #include "input/parsers/meshgenerator/elements/element.h"
 #include <string>
 
 namespace espreso {
 
 struct BlockSettings;
+struct BlockGeneratorConfiguration;
 
 struct BlockBorder {
-	BlockBorder(const std::string &interval);
+	BlockBorder(const std::string &interval, const BlockGeneratorConfiguration &block);
 
 	Triple<esint> start, end;
 	Triple<bool> excludeStart, excludeEnd;

@@ -4,6 +4,8 @@
 #include "input/parsers/meshgenerator/meshgenerator.h"
 
 #include "basis/utilities/parser.h"
+#include "basis/evaluator/expressionevaluator.h"
+#include "config/ecf/input/block.h"
 #include "esinfo/eslog.hpp"
 #include "input/parsers/meshgenerator/primitives/blocksettings.h"
 
@@ -11,7 +13,7 @@
 
 namespace espreso {
 
-BlockBorder::BlockBorder(const std::string &interval)
+BlockBorder::BlockBorder(const std::string &interval, const BlockGeneratorConfiguration &block)
 {
 	std::string str = interval;
 
@@ -53,9 +55,45 @@ BlockBorder::BlockBorder(const std::string &interval)
 
 		std::stringstream ss1(bounds[0]);
 		ss1 >> _start[i];
-
 		std::stringstream ss2(bounds[1]);
 		ss2 >> _end[i];
+
+		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[0]), "START_X")) {
+			_start[i] = block.start_x.evaluator->eval();
+		}
+		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[0]), "START_Y")) {
+			_start[i] = block.start_y.evaluator->eval();
+		}
+		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[0]), "START_Z")) {
+			_start[i] = block.start_z.evaluator->eval();
+		}
+		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[0]), "LENGTH_X")) {
+			_start[i] = block.length_x.evaluator->eval();
+		}
+		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[0]), "LENGTH_Y")) {
+			_start[i] = block.length_y.evaluator->eval();
+		}
+		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[0]), "LENGTH_Z")) {
+			_start[i] = block.length_z.evaluator->eval();
+		}
+		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[1]), "START_X")) {
+			_end[i] = block.start_x.evaluator->eval();
+		}
+		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[1]), "START_Y")) {
+			_end[i] = block.start_y.evaluator->eval();
+		}
+		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[1]), "START_Z")) {
+			_end[i] = block.start_z.evaluator->eval();
+		}
+		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[1]), "LENGTH_X")) {
+			_end[i] = block.length_x.evaluator->eval();
+		}
+		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[1]), "LENGTH_Y")) {
+			_end[i] = block.length_y.evaluator->eval();
+		}
+		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[1]), "LENGTH_Z")) {
+			_end[i] = block.length_z.evaluator->eval();
+		}
 	}
 
 	excludeStart = Triple<bool>(_excludeStart[0], _excludeStart[1], _excludeStart[2]);
@@ -223,3 +261,4 @@ CubeFace BlockBorder::getFace(const BlockSettings &block) const
 }
 
 }
+
