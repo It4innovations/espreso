@@ -28,17 +28,17 @@ GENERATOR {
   UNIFORM_CLUSTERS       [ARG10];
 
   GRID {
-    LENGTH_X          [ARG7] / 4;
-    LENGTH_Y          [ARG8] / 4;
-    LENGTH_Z          [ARG9] / 4;
+    LENGTH_X          ([ARG7] + 1) / 4;
+    LENGTH_Y          ([ARG8] + 1) / 4;
+    LENGTH_Z          ([ARG9] + 1) / 4;
 
     NODES {
-      BOTTOM   <1 , 1> <0 , 1> <0 , 1>;
-      TOP      <0 , 0> <0 , 1> <0 , 1>;
-      LEFT     <0 , 1> <0 , 0> <0 , 1>;
-      RIGHT    <0 , 1> <1 , 1> <0 , 1>;
-      FRONT    <0 , 1> <0 , 1> <0 , 0>;
-      BACK     <0 , 1> <0 , 1> <1 , 1>;
+      BOTTOM   <LENGTH_X , LENGTH_X> <START_Y  , LENGTH_Y> <START_Z  , LENGTH_Z>;
+      TOP      <START_X  , START_X > <START_Y  , LENGTH_Y> <START_Z  , LENGTH_Y>;
+      LEFT     <START_X  , LENGTH_X> <START_Y  , START_Y > <START_Z  , LENGTH_Z>;
+      RIGHT    <START_X  , LENGTH_X> <LENGTH_Y , LENGTH_Y> <START_Z  , LENGTH_Z>;
+      FRONT    <START_X  , LENGTH_X> <START_Y  , LENGTH_Y> <START_Z  , START_Z >;
+      BACK     <START_X  , LENGTH_X> <START_Y  , LENGTH_Y> <LENGTH_Z , LENGTH_Z>;
     }
 
     ELEMENT_TYPE          [ARG0];

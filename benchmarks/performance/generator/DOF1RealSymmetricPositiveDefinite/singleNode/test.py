@@ -59,9 +59,9 @@ domains3D  = [ 1, 1, 1 ]
 set(domains3D, threads, set(clusters3D, mpiprocs, 0, 3), 3)
 size = max(clusters3D[0] * domains3D[0], max(clusters3D[1] * domains3D[1], clusters3D[2] * domains3D[2]))
 
-domains3D[0] = 2 * domains3D[0] * (size // (clusters3D[0] * domains3D[0]))
-domains3D[1] = 2 * domains3D[1] * (size // (clusters3D[1] * domains3D[1]))
-domains3D[2] = 2 * domains3D[2] * (size // (clusters3D[2] * domains3D[2]))
+domains3D[0] = domains3D[0] * (size // (clusters3D[0] * domains3D[0]))
+domains3D[1] = domains3D[1] * (size // (clusters3D[1] * domains3D[1]))
+domains3D[2] = domains3D[2] * (size // (clusters3D[2] * domains3D[2]))
 
 clusters2D = [ 1, 1 ]
 domains2D  = [ 1, 1 ]
@@ -69,8 +69,8 @@ domains2D  = [ 1, 1 ]
 set(domains2D, threads, set(clusters2D, mpiprocs, 0, 2), 2)
 size = max(clusters2D[0] * domains2D[0], clusters3D[1] * domains3D[1])
 
-domains2D[0] = 2 * domains2D[0] * (size // (clusters2D[0] * domains2D[0]))
-domains2D[1] = 2 * domains2D[1] * (size // (clusters2D[1] * domains2D[1]))
+domains2D[0] = domains2D[0] * (size // (clusters2D[0] * domains2D[0]))
+domains2D[1] = domains2D[1] * (size // (clusters2D[1] * domains2D[1]))
 
 def report():
     def pick(uniform_domains, method):
@@ -89,7 +89,7 @@ def report():
     ESPRESOTest.parse(results, "K+ FACTORS NNZ", ["avg", "min", "max"])
     ESPRESOTest.parse(results, "ITERATIONS TOTAL", ["iterations"])
     for uniform_domains, method in testcases:
-        ESPRESOTest.report_mesurement("_".join([method, uniform_domains]), pick(uniform_domains, method), functions)
+        ESPRESOTest.report_mesurement("_".join([method, uniform_domains, mpiprocs, threads]), pick(uniform_domains, method), functions)
 
 class TotalFETIOperator2D(unittest.TestCase):
 

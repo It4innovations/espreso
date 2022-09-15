@@ -25,15 +25,15 @@ GENERATOR {
   UNIFORM_CLUSTERS        [ARG7];
 
   GRID {
-    LENGTH_X      [ARG1] + 1 / 8;
-    LENGTH_Y      [ARG2] + 1 / 8;
-    LENGTH_Z                   1;
+    LENGTH_X          ([ARG1] + 1) / 8;
+    LENGTH_Y          ([ARG2] + 1) / 8;
+    LENGTH_Z                         1;
 
     NODES {
-      BOTTOM   <1 , 1> <0 , 1> <0 , 0>;
-      TOP      <0 , 0> <0 , 1> <0 , 0>;
-      LEFT     <0 , 1> <0 , 0> <0 , 0>;
-      RIGHT    <0 , 1> <1 , 1> <0 , 0>;
+      BOTTOM   <LENGTH_X , LENGTH_X> <START_Y  , LENGTH_X> <0 , 0>;
+      TOP      <START_X  , START_X>  <START_Y  , LENGTH_Y> <0 , 0>;
+      LEFT     <START_X  , LENGTH_X> <START_Y  , START_Y>  <0 , 0>;
+      RIGHT    <START_X  , LENGTH_X> <LENGTH_Y , LENGTH_Y> <0 , 0>;
     }
 
     ELEMENT_TYPE          [ARG0];
