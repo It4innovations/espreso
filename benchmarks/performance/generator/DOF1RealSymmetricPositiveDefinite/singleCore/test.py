@@ -48,7 +48,7 @@ class TotalFETIOperator2D(unittest.TestCase):
         ESPRESOTest.args = [ "etype", "ex", "ey", "uniform_domains", "TFETI", "restricted_dual" ]
 
     def tearDown(self):
-        # report()
+        report()
         ESPRESOTest.clean()
 
     def test_performance(self):
@@ -61,10 +61,8 @@ class TotalFETIOperator2D(unittest.TestCase):
                     ey = 2 * ey
                 else:
                     ex = 2 * ex
-                print(ex, ey)
 
 def run2D(etype, ex, ey, uniform_domains, method, partial_dual):
-    return
     ESPRESOTest.args[0] = etype
     ESPRESOTest.args[1] = ex - 1
     ESPRESOTest.args[2] = ey - 1
@@ -90,13 +88,11 @@ class TotalFETIOperator3D(unittest.TestCase):
         ESPRESOTest.clean()
 
     def test_performance(self):
-        # for etype in [ "HEXA8", "HEXA20", "TETRA4", "TETRA10", "PRISMA6", "PRISMA15", "PYRAMID5", "PYRAMID13" ]:
-        for etype in [ "HEXA8" ]:
+        for etype, mult in [ ("HEXA8", 1), ("HEXA20", 2), ("TETRA4", 1), ("TETRA10", 2), ("PRISMA6", 1), ("PRISMA15", 2), ("PYRAMID5", 1), ("PYRAMID13", 2) ]:
             ex = ey = ez = 4
             while ex * ey * ez < 66000:
-                print(testcases)
                 for uniform_domains, method, partial_dual in testcases:
-                    yield run3D, etype, ex, ey, ez, uniform_domains, method, partial_dual
+                    yield run3D, etype, ex // mult, ey // mult, ez // mult, uniform_domains, method, partial_dual
                 if ex == ey and ey == ez:
                     ez = 2 * ez
                 else:
@@ -104,7 +100,6 @@ class TotalFETIOperator3D(unittest.TestCase):
                         ey = 2 * ey
                     else:
                         ex = 2 * ex
-                print(ex, ey, ez)
 
 def run3D(etype, ex, ey, ez, uniform_domains, method, partial_dual):
     ESPRESOTest.args[0] = etype
