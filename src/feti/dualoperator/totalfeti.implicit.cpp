@@ -30,29 +30,35 @@ TotalFETIImplicit<T>::~TotalFETIImplicit()
 template <typename T>
 void TotalFETIImplicit<T>::reduceInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max)
 {
-	sum.nnzA = sum.nnzL = sum.rows = sum.dualA = 0;
-	min.nnzA = min.nnzL = min.rows = min.dualA = INT32_MAX;
-	max.nnzA = max.nnzL = max.rows = max.dualA = 0;
+	const typename FETI<T>::EqualityConstraints *L = this->feti->equalityConstraints;
+
+	sum.nnzA = sum.nnzL = sum.rows = sum.dualA = sum.surfaceA = 0;
+	min.nnzA = min.nnzL = min.rows = min.dualA = min.surfaceA = INT32_MAX;
+	max.nnzA = max.nnzL = max.rows = max.dualA = max.surfaceA = 0;
 	for (size_t d = 0; d < this->feti->K->domains.size(); ++d) {
 		auto info = math::getSolverInfo(this->Kplus[d]);
-		size_t dualA = this->feti->equalityConstraints->domain[d].B1.nrows;
+		size_t dualA = L->domain[d].B1.nrows;
+		size_t surfaceA = info.rows - *std::min_element(L->domain[d].B1.cols, L->domain[d].B1.cols + L->domain[d].B1.nnz);
 		min.rows = std::min(min.rows, info.rows);
 		min.nnzA = std::min(min.nnzA, info.nnzA);
 		min.nnzL = std::min(min.nnzL, info.nnzL);
 		min.dualA = std::min(min.dualA, dualA);
+		min.surfaceA = std::min(min.surfaceA, surfaceA);
 		max.rows = std::max(max.rows, info.rows);
 		max.nnzA = std::max(max.nnzA, info.nnzA);
 		max.nnzL = std::max(max.nnzL, info.nnzL);
 		max.dualA = std::max(max.dualA, dualA);
+		max.surfaceA = std::max(max.surfaceA, surfaceA);
 		sum.rows += info.rows;
 		sum.nnzA += info.nnzA;
 		sum.nnzL += info.nnzL;
 		sum.dualA += dualA;
+		sum.surfaceA += surfaceA;
 	}
 
-	Communication::allReduce(&min, nullptr, 4, MPITools::getType<size_t>().mpitype, MPI_MIN);
-	Communication::allReduce(&max, nullptr, 4, MPITools::getType<size_t>().mpitype, MPI_MAX);
-	Communication::allReduce(&sum, nullptr, 4, MPITools::getType<size_t>().mpitype, MPI_SUM);
+	Communication::allReduce(&min, nullptr, 5, MPITools::getType<size_t>().mpitype, MPI_MIN);
+	Communication::allReduce(&max, nullptr, 5, MPITools::getType<size_t>().mpitype, MPI_MAX);
+	Communication::allReduce(&sum, nullptr, 5, MPITools::getType<size_t>().mpitype, MPI_SUM);
 }
 
 template <typename T>
@@ -64,6 +70,7 @@ void TotalFETIImplicit<T>::printInfo(DualOperatorInfo &sum, DualOperatorInfo &mi
 	eslog::info(" =   K+ ROWS                                                  %8.0f <%8d - %8d> = \n", (double)sum.rows / this->feti->sinfo.domains, min.rows, max.rows);
 	eslog::info(" =   K+ NNZ                                                   %8.0f <%8d - %8d> = \n", (double)sum.nnzA / this->feti->sinfo.domains, min.nnzA, max.nnzA);
 	eslog::info(" =   K+ FACTORS NNZ                                           %8.0f <%8d - %8d> = \n", (double)sum.nnzL / this->feti->sinfo.domains, min.nnzL, max.nnzL);
+	eslog::info(" =   K+ SURFACE                                               %8.0f <%8d - %8d> = \n", (double)sum.surfaceA / this->feti->sinfo.domains, min.surfaceA, max.surfaceA);
 	if (this->sparsity != math::VectorSparsity::DENSE) {
 		eslog::info(" =   K+ FACTORIZATION                                                        RESPECT SURFACE = \n");
 	}

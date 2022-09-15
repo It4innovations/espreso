@@ -10,7 +10,7 @@
 namespace espreso {
 
 struct DualOperatorInfo: public math::SolverInfo {
-	size_t dualA;
+	size_t dualA, surfaceA;
 };
 
 template <typename T>
