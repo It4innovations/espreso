@@ -9,6 +9,7 @@ functions = [
     ("OMP_NUM_THREADS", "size"),
     ("DOMAINS TOTAL", "size"),
     ("B1 ROWS", "avg"),
+    ("K+ SURFACE", "avg"),
     ("K+ ROWS", "avg"),
     ("K+ NNZ", "avg"),
     ("K+ FACTORS NNZ", "avg"),
@@ -84,6 +85,7 @@ def report():
     ESPRESOTest.parse(results, "OMP_NUM_THREADS", ["size"])
     ESPRESOTest.parse(results, "DOMAINS TOTAL", ["size"])
     ESPRESOTest.parse(results, "B1 ROWS", ["avg", "min", "max"])
+    ESPRESOTest.parse(results, "K+ SURFACE", ["avg", "min", "max"])
     ESPRESOTest.parse(results, "K+ ROWS", ["avg", "min", "max"])
     ESPRESOTest.parse(results, "K+ NNZ", ["avg", "min", "max"])
     ESPRESOTest.parse(results, "K+ FACTORS NNZ", ["avg", "min", "max"])
