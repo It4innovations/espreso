@@ -58,7 +58,7 @@ void TotalFETIImplicit<T>::reduceInfo(DualOperatorInfo &sum, DualOperatorInfo &m
 template <typename T>
 void TotalFETIImplicit<T>::printInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max)
 {
-	eslog::info(" =   DOMAINS                                                                       %9d = \n", this->feti->sinfo.domains);
+	eslog::info(" =   DOMAINS TOTAL                                                                 %9d = \n", this->feti->sinfo.domains);
 	eslog::info(" =   DUAL SIZE                                                                     %9d = \n", this->feti->sinfo.lambdasTotal);
 	eslog::info(" =   B1 ROWS                                                  %8.0f <%8d - %8d> = \n", (double)sum.dualA / this->feti->sinfo.domains, min.dualA, max.dualA);
 	eslog::info(" =   K+ ROWS                                                  %8.0f <%8d - %8d> = \n", (double)sum.rows / this->feti->sinfo.domains, min.rows, max.rows);
