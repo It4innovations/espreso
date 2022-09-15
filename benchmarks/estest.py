@@ -264,7 +264,7 @@ class ESPRESOTest:
     @staticmethod
     def parse(tab, key, stats):
         for header, line in tab:
-            if isinstance(line[key], str):
+            if key in line and isinstance(line[key], str):
                 values = re.findall(r'\d+', line[key])
                 line[key] = dict()
                 for i, value in enumerate(values):

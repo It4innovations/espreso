@@ -118,12 +118,13 @@ class TotalFETIOperator2D(unittest.TestCase):
                     ex = 2 * ex
 
 def run2D(etype, ex, ey, uniform_domains, method):
+    results.append(((etype, ex * ey, uniform_domains, method), {}))
     ESPRESOTest.args[0] = etype
     ESPRESOTest.args[5] = ex - 1
     ESPRESOTest.args[6] = ey - 1
     ESPRESOTest.args[7] = uniform_domains == "UNIFORM"
     ESPRESOTest.args[8] = method
-    results.append(((etype, ex * ey, uniform_domains, method), ESPRESOTest.extract(ESPRESOTest.run(), [e[0] for e in functions])))
+    results[-1] = ((etype, ex * ey, uniform_domains, method), ESPRESOTest.extract(ESPRESOTest.run(), [e[0] for e in functions]))
 
 run2D.performance = 1
 run2D.generator = 1
@@ -156,13 +157,14 @@ class TotalFETIOperator3D(unittest.TestCase):
                         ex = 2 * ex
 
 def run3D(etype, ex, ey, ez, uniform_domains, method):
+    results.append(((etype, ex * ey * ez, uniform_domains, method), {}))
     ESPRESOTest.args[0] = etype
     ESPRESOTest.args[7] = ex - 1
     ESPRESOTest.args[8] = ey - 1
     ESPRESOTest.args[9] = ez - 1
     ESPRESOTest.args[10] = uniform_domains == "UNIFORM"
     ESPRESOTest.args[11] = method
-    results.append(((etype, ex * ey * ez, uniform_domains, method), ESPRESOTest.extract(ESPRESOTest.run(), [e[0] for e in functions])))
+    results[-1] = ((etype, ex * ey * ez, uniform_domains, method), ESPRESOTest.extract(ESPRESOTest.run(), [e[0] for e in functions]))
 
 run3D.performance = 1
 run3D.generator = 1
