@@ -91,7 +91,7 @@ def report():
     ESPRESOTest.parse(results, "K+ FACTORS NNZ", ["avg", "min", "max"])
     ESPRESOTest.parse(results, "ITERATIONS TOTAL", ["iterations"])
     for uniform_domains, method in testcases:
-        ESPRESOTest.report_mesurement("_".join([method, uniform_domains, mpiprocs, threads]), pick(uniform_domains, method), functions)
+        ESPRESOTest.report_mesurement("_".join([method, uniform_domains, str(mpiprocs), str(threads)]), pick(uniform_domains, method), functions)
 
 class TotalFETIOperator2D(unittest.TestCase):
 
