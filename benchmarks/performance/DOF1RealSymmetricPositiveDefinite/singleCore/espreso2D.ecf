@@ -20,8 +20,8 @@ GENERATOR {
   UNIFORM_DOMAINS         [ARG3];
 
   GRID {
-    LENGTH_X                   1;
-    LENGTH_Y                   1;
+    LENGTH_X      [ARG1] + 1 / 8;
+    LENGTH_Y      [ARG2] + 1 / 8;
     LENGTH_Z                   1;
 
     NODES {
@@ -41,8 +41,8 @@ GENERATOR {
     CLUSTERS_Y                 1;
     CLUSTERS_Z                 1;
 
-    DOMAINS_X                 32;
-    DOMAINS_Y                 32;
+    DOMAINS_X                  8;
+    DOMAINS_Y                  8;
     DOMAINS_Z                  1;
 
     ELEMENTS_X            [ARG1];
@@ -86,7 +86,7 @@ HEAT_TRANSFER_2D {
       FETI {
         METHOD              [ARG4];
         PRECONDITIONER        NONE;
-        PRECISION            1E-09;
+        PRECISION            1E-05;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION   ALGEBRAIC;
         PARTIAL_DUAL        [ARG5];
@@ -98,45 +98,6 @@ HEAT_TRANSFER_2D {
         LEFT     200;
         RIGHT    200;
       }
-    }
-  }
-}
-
-OUTPUT {
-  RESULTS_STORE_FREQUENCY    NEVER;
-  MONITORS_STORE_FREQUENCY   NEVER;
-
-  STORE_RESULTS         ALL;
-
-  MONITORING {
-    1 {
-      REGION            TOP;
-      STATISTICS        MAX;
-      PROPERTY  TEMPERATURE;
-    }
-
-    2 {
-      REGION         BOTTOM;
-      STATISTICS        MIN;
-      PROPERTY  TEMPERATURE;
-    }
-
-    3 {
-      REGION   ALL_ELEMENTS;
-      STATISTICS        MAX;
-      PROPERTY     GRADIENT;
-    }
-
-    4 {
-      REGION   ALL_ELEMENTS;
-      STATISTICS        MAX;
-      PROPERTY         FLUX;
-    }
-
-    5 {
-      REGION   ALL_ELEMENTS;
-      STATISTICS        AVG;
-      PROPERTY  TEMPERATURE;
     }
   }
 }
