@@ -64,7 +64,7 @@ int main(int argc, char **argv)
 
 	if (info::mpi::irank == 0) {
 		profiler::syncstart("mesh_preprocessing");
-		Mesh::load();
+		info::mesh->load();
 		eslog::checkpointln("ESPRESO: MESH LOADED");
 		info::mesh->preprocess();
 		eslog::checkpointln("ESPRESO: MESH PREPROCESSED");

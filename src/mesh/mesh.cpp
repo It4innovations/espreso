@@ -6,6 +6,7 @@
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/eslog.hpp"
+#include "esinfo/systeminfo.h"
 
 #include "basis/containers/serializededata.h"
 #include "basis/logging/profiler.h"
@@ -111,7 +112,6 @@ void Mesh::load()
 	data->build();
 
 	delete data;
-
 	profiler::syncend("load");
 }
 
@@ -891,6 +891,10 @@ void Mesh::printMeshStatistics()
 		scountTotal += elementsRegions[0]->bodyFaces[b];
 	}
 
+	if (MPITools::node->rank == 0) {
+		info::system::memory::mesh = info::system::memoryAvail();
+	}
+
 	switch (info::ecf->output.logger) {
 	case OutputConfiguration::LOGGER::USER:
 		eslog::info(" ====================================== MESH STATISTICS ====================================== \n");
@@ -995,7 +999,6 @@ void Mesh::printMeshStatistics()
 				eslog::info("          %27s %12f : %27s %12f\n", Parser::stringwithcommas(iface.from.faces).c_str(), iface.from.area, Parser::stringwithcommas(iface.to.faces).c_str(), iface.to.area);
 			}
 		}
-		eslog::info(" ============================================================================================= \n");
 		break;
 	case OutputConfiguration::LOGGER::PARSER:
 		eslog::info(" ====================================== MESH STATISTICS ====================================== \n");
@@ -1018,6 +1021,8 @@ void Mesh::printMeshStatistics()
 		}
 		break;
 	}
+	eslog::info("  MESH MEMORY FOOTPRINT [GB] %64.2f  \n", (info::system::memory::init - info::system::memory::mesh) / 1024. / 1024.);
+	eslog::info(" ============================================================================================= \n");
 }
 
 struct __meshinfo__ {

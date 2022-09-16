@@ -6,6 +6,8 @@
 #include "preconditioner/preconditioner.h"
 
 #include "esinfo/eslog.hpp"
+#include "esinfo/systeminfo.h"
+#include "wrappers/mpi/communication.h"
 
 namespace espreso {
 
@@ -67,6 +69,11 @@ bool _set(FETI<T> *feti, const step::Step &step, Matrix_FETI<Matrix_CSR, T> &K, 
 	_info(feti);
 
 	eslog::info(" = FETI SOLVER SET                                                                %8.3f s = \n", eslog::time() - start);
+	if (MPITools::node->rank == 0) {
+		info::system::memory::solver = info::system::memoryAvail();
+	}
+	eslog::info(" = FETI SOLVER MEMORY FOOTPRINT [GB] %55.2f = \n", (info::system::memory::physics - info::system::memory::solver) / 1024. / 1024.);
+
 	return true;
 }
 

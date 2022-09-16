@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 	Mesh::init();
 	eslog::checkpointln("MESIO: RUN INITIALIZED");
 
-	Mesh::load();
+	info::mesh->load();
 	eslog::checkpointln("MESIO: MESH LOADED");
 
 	info::mesh->preprocess();

@@ -7,8 +7,10 @@
 #include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"
 #include "esinfo/stepinfo.h"
+#include "esinfo/systeminfo.h"
 #include "config/ecf/physics/acoustic.h"
 #include "output/output.h"
+#include "wrappers/mpi/communication.h"
 
 using namespace espreso;
 
@@ -37,6 +39,11 @@ void AcousticComplexLinear::run(step::Step &step)
 	scheme.init(system);
 	assembler.connect(scheme);
 	scheme.initFrequency(frequency);
+	if (MPITools::node->rank == 0) {
+		info::system::memory::physics = info::system::memoryAvail();
+	}
+	eslog::info("  PHYSICAL SOLVER MEMORY FOOTPRINT [GB] %53.2f  \n", (info::system::memory::mesh - info::system::memory::physics) / 1024. / 1024.);
+	eslog::info(" ============================================================================================= \n");
 
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" = RUN THE SOLVER                       FREQUENCY: MIN %10.4f, MAX %10.4f, STEPS %3d = \n", configuration.harmonic_solver.min_frequency, configuration.harmonic_solver.max_frequency, configuration.harmonic_solver.num_samples);

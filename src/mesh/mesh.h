@@ -39,12 +39,12 @@ public:
 	static bool convertDatabase();
 
 	static void init();
-	static void load();
 	static void finish();
 	static Element edata[(int)Element::CODE::SIZE];
 
 	Mesh();
 	~Mesh();
+	void load();
 	void preprocess();
 	void preprocessForGUI()
 	{

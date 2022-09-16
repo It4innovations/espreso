@@ -24,6 +24,10 @@ namespace system {
 		bool hyperthreading = 0;
 	};
 
+	struct memory {
+		static long total, init, mesh, physics, solver;
+	};
+
 	// dummy yet
 	OPERATIONSYSTEM os();
 

@@ -105,7 +105,7 @@ void MESIOLoad(
 	info::ecf->input.decomposition.domains = domains;
 	info::mesh->preferedDomains = domains;
 
-	Mesh::load();
+	info::mesh->load();
 	info::mesh->preprocess();
 
 	*mesio = new MESIOData();
