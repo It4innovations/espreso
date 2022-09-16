@@ -23,6 +23,13 @@ functions = [
     ("FETI[UPDATE] TOTAL DURATION", "avg"),
     ("FETI[SOLVE] TOTAL DURATION", "avg"),
 
+    ("MESH MEMORY FOOTPRINT", "size"),
+    ("PHYSICAL SOLVER MEMORY FOOTPRINT", "size"),
+    ("FETI SOLVER MEMORY FOOTPRINT", "size"),
+    ("TOTAL MEMORY PER NODE", "size"),
+
+    ("B1 ROWS", "min"),
+    ("B1 ROWS", "max"),
     ("FETI: TFETI SYMBOLIC FACTORIZATION", "min"),
     ("FETI: TFETI SYMBOLIC FACTORIZATION", "max"),
     ("FETI: TFETI NUMERICAL FACTORIZATION", "min"),
@@ -84,6 +91,10 @@ def report():
     ESPRESOTest.parse(results, "MPI_COMM_WORLD", ["size"])
     ESPRESOTest.parse(results, "OMP_NUM_THREADS", ["size"])
     ESPRESOTest.parse(results, "DOMAINS TOTAL", ["size"])
+    ESPRESOTest.parse(results, "MESH MEMORY FOOTPRINT", ["size"])
+    ESPRESOTest.parse(results, "PHYSICAL SOLVER MEMORY FOOTPRINT", ["size"])
+    ESPRESOTest.parse(results, "FETI SOLVER MEMORY FOOTPRINT", ["size"])
+    ESPRESOTest.parse(results, "TOTAL MEMORY PER NODE", ["size"])
     ESPRESOTest.parse(results, "B1 ROWS", ["avg", "min", "max"])
     ESPRESOTest.parse(results, "K+ SURFACE", ["avg", "min", "max"])
     ESPRESOTest.parse(results, "K+ ROWS", ["avg", "min", "max"])
