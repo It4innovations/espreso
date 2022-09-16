@@ -28,10 +28,21 @@ template <typename T>
 void TotalFETIExplicit<T>::info()
 {
 	DualOperatorInfo sum, min, max;
+	size_t minF = INT32_MAX, maxF = 0, sumF = 0;
+	for (size_t d = 0; d < this->F.size(); ++d) {
+		minF = std::min(minF, this->F[d].nrows * this->F[d].ncols * sizeof(double));
+		maxF = std::max(maxF, this->F[d].nrows * this->F[d].ncols * sizeof(double));
+		sumF += this->F[d].nrows * this->F[d].ncols * sizeof(double);
+	}
+
 	TotalFETIImplicit<T>::reduceInfo(sum, min, max);
+	Communication::allReduce(&minF, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_MIN);
+	Communication::allReduce(&maxF, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_MAX);
+	Communication::allReduce(&sumF, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_SUM);
 
 	eslog::info(" = EXPLICIT TOTAL FETI OPERATOR                                                              = \n");
 	TotalFETIImplicit<T>::printInfo(sum, min, max);
+	eslog::info(" =   F MEMORY [MB]                                            %8.2f <%8.2f - %8.2f> = \n", (double)sumF / this->F.size() / 1024. / 1024., minF / 1024. / 1024., maxF / 1024. / 1024.);
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
 
