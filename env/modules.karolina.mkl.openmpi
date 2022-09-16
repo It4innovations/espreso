@@ -1,4 +1,4 @@
-ml ParMETIS/4.0.3-foss-2020b OpenMPI/4.1.1-GCC-10.2.0 mkl/2020.4.304 Python/3.8.6-GCCcore-10.2.0 git/2.31.1
+ml ParMETIS/4.0.3-foss-2020b OpenMPI/4.1.1-GCC-10.2.0 mkl/2020.4.304 KAROLINA/FAKEintel Python/3.8.6-GCCcore-10.2.0 git/2.31.1
 
 export MPICXX=mpic++
 export CXX=g++
