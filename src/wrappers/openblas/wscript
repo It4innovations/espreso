@@ -1,0 +1,6 @@
+
+def options(opt):
+    opt.math.add_option("--openblas", action="store", type="string", metavar="OPENBLAS_ROOT", default="", help="Path to OpenBLAS root directory.")
+
+def configure(ctx):
+    ctx.link_cxx(name="openblas", header_name=["cblas.h"], libs=["openblas"])

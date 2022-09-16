@@ -6,6 +6,7 @@
 
 #ifndef HAVE_MKL
 #ifndef HAVE_CBLAS
+#ifndef HAVE_OPENBLAS
 
 namespace espreso {
 namespace math {
@@ -94,6 +95,7 @@ void applyT(Vector_Dense<std::complex<double> > &y, const std::complex<double> &
 }
 }
 
+#endif
 #endif
 #endif
 

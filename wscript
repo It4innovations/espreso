@@ -1,7 +1,7 @@
 
 import sys, os, logging, subprocess, types
 
-libs_blas=[ "cblas", "sslblas", "mkl" ]
+libs_blas=[ "cblas", "openblas", "sslblas", "mkl" ]
 libs_spblas=[ "mkl", "suitesparse" ]
 libs_lapack=[ "mkl", "lapacke", "ssllapack" ]
 libs_solvers=[ "mkl", "pardiso", "suitesparse" ]
@@ -129,9 +129,10 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/analysis/**/*.cpp'), "analysis")
 #     ctx.build_espreso(ctx.path.ant_glob('src/physics/**/*.cpp'), "physics")
     ctx.build_espreso(ctx.path.ant_glob('src/morphing/**/*.cpp'), "devel")
-    ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "MKL", "PARDISO", "SUITESPARSE", "CBLAS", "SSLBLAS" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "MKL", "PARDISO", "SUITESPARSE", "CBLAS", "OPENBLAS", "SSLBLAS" ])
     ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
-    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cblas/**/*.cpp'), "wblas", [ "CBLAS" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cblas/**/*.cpp'), "wcblas", [ "CBLAS" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/openblas/**/*.cpp'), "wopenblas", [ "OPENBLAS" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/sslblas/**/*.cpp'), "wsslblas", [ "SSLBLAS" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/lapacke/**/*.cpp'), "wlapacke", [ "LAPACKE" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/ssllapack/**/*.cpp'), "wssllapack", [ "SSLLAPACK" ])
@@ -305,6 +306,7 @@ def recurse(ctx):
 
     """ Math libraries"""
     ctx.recurse("src/wrappers/cblas")
+    ctx.recurse("src/wrappers/openblas")
     ctx.recurse("src/wrappers/sslblas")
     ctx.recurse("src/wrappers/lapacke")
     ctx.recurse("src/wrappers/ssllapack")
