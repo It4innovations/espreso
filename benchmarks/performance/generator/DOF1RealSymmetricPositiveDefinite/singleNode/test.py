@@ -23,13 +23,19 @@ functions = [
     ("FETI[UPDATE] TOTAL DURATION", "avg"),
     ("FETI[SOLVE] TOTAL DURATION", "avg"),
 
-    ("MESH MEMORY FOOTPRINT", "size"),
-    ("PHYSICAL SOLVER MEMORY FOOTPRINT", "size"),
-    ("FETI SOLVER MEMORY FOOTPRINT", "size"),
-    ("TOTAL MEMORY PER NODE", "size"),
+    ("K+ SOLVER MEMORY [MB]", "avg"),
+    ("F MEMORY [MB]", "avg"),
+    ("MESH MEMORY FOOTPRINT [GB]", "size"),
+    ("PHYSICAL SOLVER MEMORY FOOTPRINT [GB]", "size"),
+    ("FETI SOLVER MEMORY FOOTPRINT [GB]", "size"),
+    ("TOTAL MEMORY PER NODE [GB]", "size"),
 
     ("B1 ROWS", "min"),
     ("B1 ROWS", "max"),
+    ("K+ SOLVER MEMORY [MB]", "min"),
+    ("K+ SOLVER MEMORY [MB]", "max"),
+    ("F MEMORY [MB]", "min"),
+    ("F MEMORY [MB]", "max"),
     ("FETI: TFETI SYMBOLIC FACTORIZATION", "min"),
     ("FETI: TFETI SYMBOLIC FACTORIZATION", "max"),
     ("FETI: TFETI NUMERICAL FACTORIZATION", "min"),
@@ -91,15 +97,17 @@ def report():
     ESPRESOTest.parse(results, "MPI_COMM_WORLD", ["size"])
     ESPRESOTest.parse(results, "OMP_NUM_THREADS", ["size"])
     ESPRESOTest.parse(results, "DOMAINS TOTAL", ["size"])
-    ESPRESOTest.parse(results, "MESH MEMORY FOOTPRINT", ["size"])
-    ESPRESOTest.parse(results, "PHYSICAL SOLVER MEMORY FOOTPRINT", ["size"])
-    ESPRESOTest.parse(results, "FETI SOLVER MEMORY FOOTPRINT", ["size"])
-    ESPRESOTest.parse(results, "TOTAL MEMORY PER NODE", ["size"])
+    ESPRESOTest.parse(results, "MESH MEMORY FOOTPRINT [GB]", ["size"])
+    ESPRESOTest.parse(results, "PHYSICAL SOLVER MEMORY FOOTPRINT [GB]", ["size"])
+    ESPRESOTest.parse(results, "FETI SOLVER MEMORY FOOTPRINT [GB]", ["size"])
+    ESPRESOTest.parse(results, "TOTAL MEMORY PER NODE [GB]", ["size"])
     ESPRESOTest.parse(results, "B1 ROWS", ["avg", "min", "max"])
     ESPRESOTest.parse(results, "K+ SURFACE", ["avg", "min", "max"])
     ESPRESOTest.parse(results, "K+ ROWS", ["avg", "min", "max"])
     ESPRESOTest.parse(results, "K+ NNZ", ["avg", "min", "max"])
     ESPRESOTest.parse(results, "K+ FACTORS NNZ", ["avg", "min", "max"])
+    ESPRESOTest.parse(results, "K+ SOLVER MEMORY [MB]", ["avg", "min", "max"])
+    ESPRESOTest.parse(results, "F MEMORY [MB]", ["avg", "min", "max"])
     ESPRESOTest.parse(results, "ITERATIONS TOTAL", ["iterations"])
     for uniform_domains, method in testcases:
         ESPRESOTest.report_mesurement("_".join([method, uniform_domains, str(mpiprocs), str(threads)]), pick(uniform_domains, method), functions)

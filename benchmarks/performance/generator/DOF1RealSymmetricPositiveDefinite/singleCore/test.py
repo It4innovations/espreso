@@ -20,10 +20,10 @@ functions = [
     ("FETI[UPDATE] TOTAL DURATION", "avg"),
     ("FETI[SOLVE] TOTAL DURATION", "avg"),
 
-    ("MESH MEMORY FOOTPRINT", "size"),
-    ("PHYSICAL SOLVER MEMORY FOOTPRINT", "size"),
-    ("FETI SOLVER MEMORY FOOTPRINT", "size"),
-    ("TOTAL MEMORY PER NODE", "size"),
+    ("MESH MEMORY FOOTPRINT [GB]", "size"),
+    ("PHYSICAL SOLVER MEMORY FOOTPRINT [GB]", "size"),
+    ("FETI SOLVER MEMORY FOOTPRINT [GB]", "size"),
+    ("TOTAL MEMORY PER NODE [GB]", "size"),
     ]
 
 testcases = [ (x, y, z) for x, y, z in itertools.product([ "UNIFORM", "METIS" ], [ "IMPLICIT_TFETI", "EXPLICIT_TFETI" ], [ "FULL", "PARTIAL" ]) ]
@@ -41,11 +41,13 @@ def report():
     ESPRESOTest.parse(results, "K+ SURFACE", ["avg", "min", "max"])
     ESPRESOTest.parse(results, "K+ NNZ", ["avg", "min", "max"])
     ESPRESOTest.parse(results, "K+ FACTORS NNZ", ["avg", "min", "max"])
+    ESPRESOTest.parse(results, "K+ SOLVER MEMORY [MB]", ["avg", "min", "max"])
+    ESPRESOTest.parse(results, "F MEMORY [MB]", ["avg", "min", "max"])
     ESPRESOTest.parse(results, "ITERATIONS TOTAL", ["iterations"])
-    ESPRESOTest.parse(results, "MESH MEMORY FOOTPRINT", ["size"])
-    ESPRESOTest.parse(results, "PHYSICAL SOLVER MEMORY FOOTPRINT", ["size"])
-    ESPRESOTest.parse(results, "FETI SOLVER MEMORY FOOTPRINT", ["size"])
-    ESPRESOTest.parse(results, "TOTAL MEMORY PER NODE", ["size"])
+    ESPRESOTest.parse(results, "MESH MEMORY FOOTPRINT [GB]", ["size"])
+    ESPRESOTest.parse(results, "PHYSICAL SOLVER MEMORY FOOTPRINT [GB]", ["size"])
+    ESPRESOTest.parse(results, "FETI SOLVER MEMORY FOOTPRINT [GB]", ["size"])
+    ESPRESOTest.parse(results, "TOTAL MEMORY PER NODE [GB]", ["size"])
     for uniform_domains, method, partial_dual in testcases:
         ESPRESOTest.report_mesurement("_".join([method, partial_dual, uniform_domains]), pick(uniform_domains, method, partial_dual), functions)
 
