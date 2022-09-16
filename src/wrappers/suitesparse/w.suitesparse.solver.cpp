@@ -235,6 +235,7 @@ static void _info(SolverInfo &info, const Matrix_CSR<T> &A)
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
 		info.nnzL = A._solver->cholmod.common.lnz;
+		info.memoryL = A._solver->cholmod.common.memory_inuse;
 		break;
 	default:
 		info.nnzL = 0;

@@ -213,6 +213,7 @@ static void _info(SolverInfo &info, const Matrix_CSR<T> &A)
 {
 	info.rows = A.nrows;
 	info.nnzA = A.nnz;
+	info.memoryL = 1024 * (A._solver->iparm[15] + A._solver->iparm[16]);
 	info.nnzL = A._solver->iparm[17];
 }
 
