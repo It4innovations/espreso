@@ -31,13 +31,12 @@ using namespace espreso;
 InputOpenFoam::InputOpenFoam()
 : loader(nullptr)
 {
-	ParallelFoamFile::init();
+
 }
 
 InputOpenFoam::~InputOpenFoam()
 {
 	if (loader) delete loader;
-	ParallelFoamFile::finish();
 }
 
 static int numberOfSubdomains(const std::string &path)
@@ -71,6 +70,7 @@ static esint numberOfCells(const FoamFileHeader &header)
 void InputOpenFoam::load(const InputConfiguration &configuration)
 {
 	eslog::startln("OPENFOAM PARSER: STARTED", "OPENFOAM PARSER");
+	ParallelFoamFile::init();
 
 	int domains = numberOfSubdomains(configuration.path + "/system/decomposeParDict");
 	if (domains == 1) {
@@ -84,6 +84,7 @@ void InputOpenFoam::load(const InputConfiguration &configuration)
 	}
 	loader->load(configuration);
 
+	ParallelFoamFile::finish();
 	eslog::endln("OPENFOAM PARSER: PARSED");
 }
 

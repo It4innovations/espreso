@@ -136,6 +136,7 @@ void Mesh::load()
 	input->variables(*info::mesh);
 	eslog::checkpointln("ESPRESO: VARIABLES LOADED");
 
+	delete input;
 	profiler::syncend("load");
 }
 
