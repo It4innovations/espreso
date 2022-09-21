@@ -369,9 +369,9 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	profiler::syncend("compute_volume_indices");
 	eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
 
-	esint totalHits = vdistribution.back().back();
+	size_t totalHits = vdistribution.back().back();
 	Communication::allReduce(&totalHits, nullptr, 1, MPITools::getType(totalHits).mpitype, MPI_SUM);
-	eslog::info(" == NUMBER OF NON-EMPTY VOXELS %50d [%6.2f%%] == \n", totalHits, 100.0 * totalHits / (grid.x * grid.y * grid.z));
+	eslog::info(" == NUMBER OF NON-EMPTY VOXELS %50lu [%6.2f%%] == \n", totalHits, 100.0 * totalHits / ((size_t)grid.x * grid.y * grid.z));
 
 	eslog::checkpointln("MESH: VOLUME INDICES SYNCHRONIZATION");
 }

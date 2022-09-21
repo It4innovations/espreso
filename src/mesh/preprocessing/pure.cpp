@@ -417,8 +417,8 @@ esint getVolumeDecomposition(const ElementStore *elements, const NodeStore *node
 
 	std::vector<esint, initless_allocator<esint> > buckets(elements->epointers->datatarray().size());
 
-	float vsum = 0;
-	std::vector<float> volume(elements->epointers->datatarray().size());
+	double vsum = 0;
+	std::vector<double> volume(elements->epointers->datatarray().size());
 
 	#pragma omp parallel for
 	for (int t = 0; t < threads; t++) {
@@ -432,7 +432,7 @@ esint getVolumeDecomposition(const ElementStore *elements, const NodeStore *node
 					nodes->coordinates->datatarray()[enodes->at(n)].minmax(min, max);
 				}
 			}
-			auto box = max - min;
+			_Point<double> box = max - min;
 			volume[e] = box.x * box.y * box.z;
 			vsum += volume[e];
 		}
@@ -440,17 +440,17 @@ esint getVolumeDecomposition(const ElementStore *elements, const NodeStore *node
 
 	struct __transfer__ {
 		int from, to;
-		float volume;
+		double volume;
 		int elements = 0;
 	};
 
 	struct __neigh__ {
 		int rank;
-		float volume;
+		double volume;
 	};
 
-	std::vector<float> vdist = Communication::getDistribution(vsum);
-	float vavg = vdist.back() / info::mpi::size;
+	std::vector<double> vdist = Communication::getDistribution(vsum);
+	double vavg = vdist.back() / info::mpi::size;
 
 	std::vector<std::vector<int> > nrank(info::mpi::size);
 	std::vector<__transfer__> tr;
@@ -481,7 +481,7 @@ esint getVolumeDecomposition(const ElementStore *elements, const NodeStore *node
 		return volume[i] > volume[j];
 	});
 
-	float vprefix = 0;
+	double vprefix = 0;
 	size_t prefix = 0;
 	while (prefix < volume.size() && vprefix < vsum - vavg) {
 		vprefix += volume[permutation[prefix++]];
