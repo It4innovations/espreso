@@ -1,5 +1,5 @@
 
-#include "input.h"
+#include "inputold.h"
 #include "sequentialinput.h"
 #include "scatteredinput.h"
 
@@ -26,7 +26,7 @@
 
 using namespace espreso;
 
-void Input::clip()
+void InputOLD::clip()
 {
 	if (info::ecf->input.clipping_box.apply) {
 		std::set<esint> removed;
@@ -88,7 +88,7 @@ void Input::clip()
 	}
 }
 
-void Input::serialize()
+void InputOLD::serialize()
 {
 	if (_meshData.nIDs.size() != _meshData.coordinates.size()) {
 		eslog::internalFailure("the size of MeshData::nIDs != MeshData::coordinates.\n");
@@ -139,7 +139,7 @@ void Input::serialize()
 	std::vector<esint>().swap(_meshData.enodes);
 }
 
-void Input::connect()
+void InputOLD::connect()
 {
 	size_t nregions = _meshData.nregions.size();
 	size_t eregions = _meshData.eregions.size();
@@ -186,7 +186,7 @@ void Input::connect()
 	Communication::exscan(vsum, voffsets);
 }
 
-void Input::balance()
+void InputOLD::balance()
 {
 	profiler::syncstart("balance");
 	if (false) {
@@ -374,7 +374,7 @@ void Input::balance()
 	profiler::syncend("balance");
 }
 
-void Input::balanceNodes()
+void InputOLD::balanceNodes()
 {
 	std::vector<esint> cCurrent = Communication::getDistribution<esint>(_meshData.nIDs.size());
 	_nDistribution = tarray<esint>::distribute(info::mpi::size, cCurrent.back());
@@ -402,7 +402,7 @@ void Input::balanceNodes()
 	}
 }
 
-void Input::balancePermutedNodes()
+void InputOLD::balancePermutedNodes()
 {
 	std::vector<esint> permutation(_meshData.nIDs.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
@@ -457,7 +457,7 @@ void Input::balancePermutedNodes()
 	}
 }
 
-void Input::balanceElements()
+void InputOLD::balanceElements()
 {
 	std::vector<esint> eCurrent = Communication::getDistribution<esint>(_meshData.esize.size());
 	_eDistribution = tarray<esint>::distribute(info::mpi::size, eCurrent.back());
@@ -510,7 +510,7 @@ void Input::balanceElements()
 	}
 }
 
-void Input::balancePermutedElements()
+void InputOLD::balancePermutedElements()
 {
 	std::vector<esint> permutation(_meshData.eIDs.size());
 	std::iota(permutation.begin(), permutation.end(), 0);
@@ -585,7 +585,7 @@ void Input::balancePermutedElements()
 	}
 }
 
-void Input::sortNodes(bool withElementNodes)
+void InputOLD::sortNodes(bool withElementNodes)
 {
 	profiler::syncstart("sort_nodes");
 	profiler::syncparam("size", _meshData.nIDs.size());
@@ -632,7 +632,7 @@ void Input::sortNodes(bool withElementNodes)
 	profiler::syncend("sort_nodes");
 }
 
-void Input::sortElements()
+void InputOLD::sortElements()
 {
 	// this function also removes unsupported elements as their type = 0 = Point
 	auto ecomp = [&] (esint i, esint j) {
@@ -660,7 +660,7 @@ void Input::sortElements()
 	profiler::syncend("sort_elements");
 }
 
-void Input::sortElements(const std::vector<esint> &permutation)
+void InputOLD::sortElements(const std::vector<esint> &permutation)
 {
 	profiler::syncstart("permute_elements");
 	profiler::syncparam("size", permutation.size());
@@ -694,7 +694,7 @@ void Input::sortElements(const std::vector<esint> &permutation)
 }
 
 
-void Input::assignRegions(
+void InputOLD::assignRegions(
 		std::map<std::string, std::vector<esint> > &regions, std::vector<esint> &IDs,
 		std::vector<esint> &distribution,
 		size_t &rsize, std::vector<esint> &rbits)
@@ -778,7 +778,7 @@ void Input::assignRegions(
 	profiler::syncend("assign_regions");
 }
 
-void Input::fillRegions(std::map<std::string, std::vector<esint> > &regions, size_t &rsize, std::vector<esint> &rbits)
+void InputOLD::fillRegions(std::map<std::string, std::vector<esint> > &regions, size_t &rsize, std::vector<esint> &rbits)
 {
 	profiler::syncstart("fill_regions");
 	profiler::syncparam("regions", regions.size());
@@ -798,7 +798,7 @@ void Input::fillRegions(std::map<std::string, std::vector<esint> > &regions, siz
 	profiler::syncend("fill_regions");
 }
 
-void Input::fillNodes()
+void InputOLD::fillNodes()
 {
 	profiler::syncstart("fill_nodes");
 	profiler::syncparam("size", _meshData.coordinates.size());
@@ -830,7 +830,7 @@ void Input::fillNodes()
 	profiler::syncend("fill_nodes");
 }
 
-void Input::fillElements()
+void InputOLD::fillElements()
 {
 	profiler::syncstart("fill_elements");
 	size_t estart = info::mesh->dimension == 3 ? 0 : 1;
@@ -900,7 +900,7 @@ void Input::fillElements()
 	profiler::syncend("fill_elements");
 }
 
-void Input::fillNeighbors()
+void InputOLD::fillNeighbors()
 {
 	std::vector<int> realnranks = _meshData._nranks;
 	utils::sortAndRemoveDuplicates(realnranks);
@@ -916,7 +916,7 @@ void Input::fillNeighbors()
 	}
 }
 
-void Input::fillBoundaryRegions()
+void InputOLD::fillBoundaryRegions()
 {
 	if (info::ecf->input.omit_face_sets) {
 		return;
@@ -1027,7 +1027,7 @@ void Input::fillBoundaryRegions()
 	profiler::syncend("fill_boundary_regions");
 }
 
-void Input::fillNodeRegions()
+void InputOLD::fillNodeRegions()
 {
 	profiler::syncstart("fill_node_regions");
 	size_t threads = info::env::OMP_NUM_THREADS;
@@ -1039,7 +1039,7 @@ void Input::fillNodeRegions()
 	profiler::syncend("fill_node_regions");
 }
 
-void Input::fillElementRegions()
+void InputOLD::fillElementRegions()
 {
 	profiler::syncstart("fill_element_regions");
 	size_t threads = info::env::OMP_NUM_THREADS;
@@ -1067,7 +1067,7 @@ void Input::fillElementRegions()
 	profiler::syncend("fill_element_regions");
 }
 
-void Input::reindexElementNodes()
+void InputOLD::reindexElementNodes()
 {
 	profiler::syncstart("reindex_enodes");
 	int threads = info::env::OMP_NUM_THREADS;
@@ -1101,7 +1101,7 @@ void Input::reindexElementNodes()
 	profiler::syncend("reindex_enodes");
 }
 
-void Input::reindexBoundaryNodes()
+void InputOLD::reindexBoundaryNodes()
 {
 	profiler::syncstart("reindex_boundary_nodes");
 	size_t threads = info::env::OMP_NUM_THREADS;
@@ -1119,7 +1119,7 @@ void Input::reindexBoundaryNodes()
 	profiler::syncend("reindex_boundary_nodes");
 }
 
-void Input::removeDuplicateElements()
+void InputOLD::removeDuplicateElements()
 {
 	profiler::syncstart("remove_duplicated_elements");
 	if (!_meshData._edist.size()) {
@@ -1297,7 +1297,7 @@ void Input::removeDuplicateElements()
 	profiler::syncend("remove_duplicated_elements");
 }
 
-void Input::searchDuplicateNodes()
+void InputOLD::searchDuplicateNodes()
 {
 	searchDuplicateNodes(_meshData.coordinates, _meshData.nIDs, [&] (esint id, esint target) {
 		_meshData._duplicateNodes.push_back(MeshBuilder::Duplicate{ _meshData.nIDs[id], _meshData.nIDs[target], id, target });
@@ -1305,7 +1305,7 @@ void Input::searchDuplicateNodes()
 	std::sort(_meshData._duplicateNodes.begin(), _meshData._duplicateNodes.end(), MeshBuilder::Duplicate());
 }
 
-void Input::coupleDuplicateNodes()
+void InputOLD::coupleDuplicateNodes()
 {
 	profiler::syncstart("couple_duplicate_nodes");
 	for (auto n = _meshData.enodes.begin(); n != _meshData.enodes.end(); ++n) {
@@ -1319,7 +1319,7 @@ void Input::coupleDuplicateNodes()
 	profiler::syncend("couple_duplicate_nodes");
 }
 
-void Input::searchDuplicateNodes(std::vector<_Point<esfloat> > &coordinates, std::vector<esint> &ids, std::function<void(esint id, esint target)> merge)
+void InputOLD::searchDuplicateNodes(std::vector<_Point<esfloat> > &coordinates, std::vector<esint> &ids, std::function<void(esint id, esint target)> merge)
 {
 	profiler::syncstart("search_duplicate_nodes");
 	profiler::syncparam("size", coordinates.size());

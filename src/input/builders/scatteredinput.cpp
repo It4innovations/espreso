@@ -23,7 +23,7 @@
 using namespace espreso;
 
 ScatteredInput::ScatteredInput(MeshBuilder &meshData)
-: Input(meshData), _sfc(info::mesh->dimension, SFCDEPTH, _meshData.coordinates.size(), _meshData.coordinates.data())
+: InputOLD(meshData), _sfc(info::mesh->dimension, SFCDEPTH, _meshData.coordinates.size(), _meshData.coordinates.data())
 {
 	profiler::syncstart("scattered_input");
 

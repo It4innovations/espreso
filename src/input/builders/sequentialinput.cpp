@@ -15,7 +15,7 @@
 using namespace espreso;
 
 SequentialInput::SequentialInput(MeshBuilder &mesh)
-: Input(mesh)
+: InputOLD(mesh)
 {
 	eslog::startln("BUILDER: BUILD SEQUENTIAL MESH", "BUILDER");
 	profiler::syncstart("sequential_input");

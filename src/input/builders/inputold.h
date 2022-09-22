@@ -1,6 +1,6 @@
 
-#ifndef SRC_INPUT_INPUT_H_
-#define SRC_INPUT_INPUT_H_
+#ifndef SRC_INPUT_INPUTOLD_H_
+#define SRC_INPUT_INPUTOLD_H_
 
 #include "input/meshbuilder.h"
 
@@ -11,10 +11,10 @@
 
 namespace espreso {
 
-class Input {
+class InputOLD {
 
 protected:
-	Input(MeshBuilder &meshData)
+	InputOLD(MeshBuilder &meshData)
 	: _meshData(meshData), _eregsize(1), _nregsize(1) {}
 
 	void clip();
@@ -66,4 +66,4 @@ protected:
 
 
 
-#endif /* SRC_INPUT_INPUT_H_ */
+#endif /* SRC_INPUT_INPUTOLD_H_ */

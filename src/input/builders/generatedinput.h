@@ -2,11 +2,11 @@
 #ifndef SRC_INPUT_GENERATEDINPUT_H_
 #define SRC_INPUT_GENERATEDINPUT_H_
 
-#include "input.h"
+#include <input/builders/inputold.h>
 
 namespace espreso {
 
-class GeneratedInput: public Input {
+class GeneratedInput: public InputOLD {
 public:
 	GeneratedInput(MeshBuilder &dMesh, bool needSynchronization);
 

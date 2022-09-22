@@ -14,7 +14,6 @@
 #include "wrappers/mpi/communication.h"
 
 #include "input/input.h"
-#include "input/builders/input.h"
 #include "input/parsers/ansyscdb/ansyscdb.h"
 #include "input/parsers/openfoam/openfoam.h"
 #include "input/parsers/abaqus/abaqus.h"

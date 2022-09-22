@@ -2,13 +2,13 @@
 #ifndef SRC_INPUT_SCATTEREDINPUT_H_
 #define SRC_INPUT_SCATTEREDINPUT_H_
 
-#include "input.h"
+#include <input/builders/inputold.h>
 #include "basis/containers/allocators.h"
 #include "basis/sfc/hilbertcurve.h"
 
 namespace espreso {
 
-class ScatteredInput: public Input {
+class ScatteredInput: public InputOLD {
 public:
 	ScatteredInput(MeshBuilder &dMesh);
 

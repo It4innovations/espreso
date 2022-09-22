@@ -2,11 +2,11 @@
 #ifndef SRC_INPUT_SEQUENTIALINPUT_H_
 #define SRC_INPUT_SEQUENTIALINPUT_H_
 
-#include "input.h"
+#include <input/builders/inputold.h>
 
 namespace espreso {
 
-class SequentialInput: public Input {
+class SequentialInput: public InputOLD {
 public:
 	SequentialInput(MeshBuilder &mesh);
 

@@ -17,7 +17,7 @@
 using namespace espreso;
 
 GeneratedInput::GeneratedInput(MeshBuilder &meshData, bool needSynchronization)
-: Input(meshData)
+: InputOLD(meshData)
 {
 	eslog::startln("BUILDER: BUILD GENERATED MESH", "BUILDER");
 	profiler::syncstart("generated_input");
