@@ -182,9 +182,6 @@ void buildDecomposedFEM(NodesDomain &nodes, Elements &elements, OrderedRegions &
 	trivialUpdate(nodes, linked);
 	trivialUpdate(elements, merged);
 
-	rotateNormalsOut(linked, merged);
-	eslog::checkpointln("BUILDER: ELEMENTS NODES REORDERED");
-
 	// 9.
 	fillNodes(linked, regions, mesh);
 	fillElements(merged, regions, mesh);
@@ -218,6 +215,9 @@ void buildDecomposedFVM(NodesDomain &nodes, Faces &faces, OrderedRegions &region
 	// sort nodes?
 	trivialUpdate(nodes, linked);
 	trivialUpdate(elements, merged);
+
+	rotateNormalsOut(linked, merged);
+	eslog::checkpointln("BUILDER: ELEMENTS NODES REORDERED");
 
 	// 9.
 	fillNodes(linked, regions, mesh);
