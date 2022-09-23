@@ -40,7 +40,7 @@ size_t InputFile::size(const std::string &file)
 	if (!loader.open(MPITools::subset->within, file)) {
 		return loader.size();
 	}
-	eslog::error("MESIO: file '%s' cannot be opened.\n", file.c_str());
+//	eslog::error("MESIO: file '%s' cannot be opened.\n", file.c_str());
 	return 0;
 }
 
@@ -84,6 +84,15 @@ bool FilePack::next()
 	}
 	fileindex = -1;
 	return false;
+}
+
+void FilePack::clear()
+{
+	fileindex = -1;
+	for (size_t i = 0; i < files.size(); ++i) {
+		delete files[i];
+	}
+	files.clear();
 }
 
 void FilePack::setTotalSizes(const MPIGroup &group)

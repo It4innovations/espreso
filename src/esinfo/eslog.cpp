@@ -121,7 +121,7 @@ void printRunInfo(int *argc, char ***argv)
 
 void finish()
 {
-	eslog::info("\n ======================================== RUN FINISHED ======================================= \n");
+	eslog::info(" ======================================== RUN FINISHED ======================================= \n");
 
 	int ppn = MPITools::node->size;
 	int hwthreads = info::system::hwthreads();

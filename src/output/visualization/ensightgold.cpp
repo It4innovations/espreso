@@ -64,7 +64,11 @@ void EnSightGold::updateMesh()
 
 void EnSightGold::updateSolution()
 {
-	if (_measure) { eslog::startln("ENSIGHT RESULTS: STORING STARTED", "ENSIGHT RESULTS"); }
+	if (_measure) {
+		eslog::start("ENSIGHT RESULTS: STORING STARTED", "ENSIGHT RESULTS");
+		eslog::param("TIME", step::outtime.current);
+		eslog::ln();
+	}
 	EnSightGold *writer = this;
 
 	if (step::outstep.type == step::TYPE::FTT && step::outftt.isFirst()) {
@@ -313,12 +317,6 @@ void EnSightGold::geometry()
 	file.prepare();
 	if (_measure) { eslog::checkpointln("ENSIGHT: BLOCK ALLOCATED"); }
 
-//	Communication::serialize([&] () {
-//		for (size_t b = 0; b < file.blocks.size(); ++b) {
-//			printf("<%9lu - %9lu> (%9lu %9lu)\n", file.blocks[b].fileoffset, file.blocks[b].fileoffset + file.blocks[b].size, file.blocks[b].size, (file.blocks[b].size - 84) / 4);
-//		}
-//	}, MPITools::asynchronous);
-
 	file.open(_path + _geometry);
 	if (_measure) { eslog::checkpointln("ENSIGHT: MESH FILE OPENED"); }
 
@@ -516,117 +514,123 @@ void EnSightGold::geometry()
 
 int EnSightGold::ndata(const NamedData *data)
 {
-	return 0;
 	if (!storeData(data)) {
 		return 0;
 	}
 
-	auto niterator = [this] (esint size, esint *nodes, std::function<void(esint nindex)> callback) {
-		for (esint n = 0; n < size; ++n) {
-			callback(nodes[n]);
+	OutFile file;
+	std::stringstream filename;
+	filename << _path + _directory + dataname(data, 0) + "." << std::setw(4) << std::setfill('0') << _times.size() + step::outduplicate.offset;
+	int dimension = data->dataType == NamedData::DataType::VECTOR ? 3 : data->dimension;
+
+	size_t fileHeader = 80;
+	size_t partHeader = 80 + sizeof(int);
+	size_t coorHeader = 80;
+
+	std::vector<const RegionStore*> regions;
+	regions.insert(regions.end(), info::mesh->elementsRegions.begin() + 1, info::mesh->elementsRegions.end());
+	regions.insert(regions.end(), info::mesh->boundaryRegions.begin() + 1, info::mesh->boundaryRegions.end());
+	regions.insert(regions.end(), info::mesh->contactInterfaces.begin(), info::mesh->contactInterfaces.end());
+
+	size_t blocks = regions.size() * dimension;
+	file.blocks.resize(blocks);
+
+	size_t offset = fileHeader;
+	for (size_t r = 0; r < regions.size(); ++r) {
+		offset += partHeader + coorHeader;
+		for (int d = 0; d < dimension; ++d) {
+			file.blocks[r * dimension + d].fileoffset = offset + sizeof(float) * regions[r]->nodeInfo.offset;
+			file.blocks[r * dimension + d].size = sizeof(float) * regions[r]->nodeInfo.size;
+			offset += sizeof(float) * regions[r]->nodeInfo.totalSize;
 		}
-		_writer.groupData();
+		if (isRoot()) {
+			file.blocks[r * dimension].fileoffset -= partHeader + coorHeader;
+			file.blocks[r * dimension].size += partHeader + coorHeader;
+		}
+	}
+	if (isRoot()) {
+		file.blocks.front().fileoffset = 0;
+		file.blocks.front().size += fileHeader;
+	}
+
+	file.prepare();
+	file.open(filename.str());
+
+	auto description = [] (char *data, const std::string &desc) {
+		memcpy(data, desc.data(), desc.size());
+		memset(data + desc.size(), ' ', 80 - desc.size());
+		data[79] = '\n';
+	};
+	auto descriptionWithSize = [] (char *data, const std::string &desc, int size) {
+		memcpy(data, desc.data(), desc.size());
+		memset(data + desc.size(), ' ', 80 - desc.size());
+		data[79] = '\n';
+		memcpy(data + 80, &size, sizeof(int));
 	};
 
-	if (data->dataType == NamedData::DataType::VECTOR) {
-		std::stringstream file;
-		file << _path + _directory + dataname(data, 0) + "." << std::setw(4) << std::setfill('0') << _times.size() + step::outduplicate.offset;
+	auto nranks = info::mesh->nodes->ranks->cbegin();
+	auto bmask = info::mesh->nodes->bregions->cbegin();
+	auto emask = info::mesh->nodes->eregions->cbegin();
+	auto fblocks = file.blocks;
 
+	if (isRoot()) {
+		description(file.data.data(), data->name);
+		fblocks[0].offset += fileHeader;
+		for (size_t r = 0; r < regions.size(); ++r) {
+			descriptionWithSize(file.data.data() + fblocks[r * dimension].offset, "part", r + 1);
+			fblocks[r * dimension].offset += partHeader;
+		}
+	}
+
+	auto check = [] (size_t region, const esint *mask) {
+		esint maskOffset = region / (8 * sizeof(esint));
+		esint bit = (esint)1 << (region % (8 * sizeof(esint)));
+		return mask[maskOffset] & bit;
+	};
+
+	for (size_t r = 0; r < regions.size(); ++r) {
 		if (isRoot()) {
-			_writer.description(dataname(data, 0));
+			description(file.data.data() + fblocks[r * dimension].offset, "coordinates");
+			fblocks[r * dimension].offset += coorHeader;
 		}
+	}
 
-		int part = 1;
-		for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++part) {
-			if (isRoot()) {
-				_writer.description("part");
-				_writer.int32ln(part);
-				_writer.description("coordinates");
-			}
-
-			const ElementsRegionStore *region = info::mesh->elementsRegions[r];
-			for (int d = 0; d < data->dimension; ++d) {
-				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
-					_writer.float32ln(data->store[nindex * data->dimension + d]);
-				});
-			}
-			if (data->dimension == 2) {
-				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
-					_writer.float32ln(0);
-				});
-			}
-		}
-
-		auto boundary = [&] (const BoundaryRegionStore *region) {
-			if (isRoot()) {
-				_writer.description("part");
-				_writer.int32ln(part);
-				_writer.description("coordinates");
-			}
-
-			for (int d = 0; d < data->dimension; ++d) {
-				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
-					_writer.float32ln(data->store[nindex * data->dimension + d]);
-				});
-			}
-			if (data->dimension == 2) {
-				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
-					_writer.float32ln(0);
-				});
+	for (esint n = 0; n < info::mesh->nodes->size; ++n, ++nranks, ++bmask, ++emask) {
+		auto insert = [&file, &fblocks, &dimension] (const double *data, const size_t &bindex) {
+			for (int d = 0; d < dimension; ++d) {
+				float value = data[d];
+				memcpy(file.data.data() + fblocks[bindex + d].offset, &value, sizeof(float));
+				fblocks[bindex + d].offset += sizeof(float);
 			}
 		};
 
-		for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r, ++part) {
-			boundary(info::mesh->boundaryRegions[r]);
-		}
-		for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r, ++part) {
-			boundary(info::mesh->contactInterfaces[r]);
-		}
-		_writer.commitFile(file.str());
-	} else {
-		for (int d = 0; d < data->dimension; ++d) {
-			std::stringstream file;
-			file << _path + _directory + dataname(data, d) + "." << std::setw(4) << std::setfill('0') << _times.size() + step::outduplicate.offset;
-
-			if (isRoot()) {
-				_writer.description(dataname(data, d));
-			}
-
-			int part = 1;
-			for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++part) {
-				if (isRoot()) {
-					_writer.description("part");
-					_writer.int32ln(part);
-					_writer.description("coordinates");
+		if (nranks->front() == info::mpi::rank) {
+			size_t bindex = 0;
+			for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++bindex) {
+				if (check(r, emask->data())) {
+					insert(data->data.data() + dimension * n, bindex * dimension);
 				}
-
-				const ElementsRegionStore *region = info::mesh->elementsRegions[r];
-				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
-					_writer.float32ln(data->store[nindex * data->dimension + d]);
-				});
 			}
-
-			auto boundary = [&] (const BoundaryRegionStore *region) {
-				if (isRoot()) {
-					_writer.description("part");
-					_writer.int32ln(part);
-					_writer.description("coordinates");
+			size_t ri = 1;
+			for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r, ++ri, ++bindex) {
+				if (check(ri, bmask->data())) {
+					insert(data->data.data() + dimension * n, bindex * dimension);
 				}
-
-				niterator(region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo, [&] (esint nindex) {
-					_writer.float32ln(data->store[nindex * data->dimension + d]);
-				});
-			};
-
-			for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r, ++part) {
-				boundary(info::mesh->boundaryRegions[r]);
 			}
-			for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r, ++part) {
-				boundary(info::mesh->contactInterfaces[r]);
+			for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r, ++ri, ++bindex) {
+				if (check(ri, bmask->data())) {
+					insert(data->data.data() + dimension * n, bindex * dimension);
+				}
 			}
-			_writer.commitFile(file.str());
 		}
 	}
+
+	for (size_t r = 0; r < regions.size(); ++r) {
+		for (int d = 0; d < dimension; ++d) {
+			file.store(r * dimension + d);
+		}
+	}
+	file.close();
 	return 1;
 }
 

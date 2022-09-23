@@ -110,7 +110,12 @@ void InputEnsight::build(Mesh &mesh)
 	builder::buildOrderedFEM(nodes, elements, regions, mesh);
 }
 
-void InputEnsight::variables(Mesh &mesh)
+int InputEnsight::variables()
+{
+	return 1;
+}
+
+double InputEnsight::nextVariables(Mesh &mesh)
 {
 	eslog::startln("ENSIGHT VARIABLES: STARTED", "ENSIGHT VARIABLES");
 	eslog::info(" ================================== ENSIGHT VARIABLE LOADER =================== %12.3f s\n", eslog::duration());
@@ -158,5 +163,7 @@ void InputEnsight::variables(Mesh &mesh)
 	profiler::synccheckpoint("parse_variables");
 	profiler::syncend("ensight");
 	eslog::endln("ENSIGHT VARIABLES: VARIABLES PARSED");
+
+	return 1;
 }
 

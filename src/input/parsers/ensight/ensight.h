@@ -13,7 +13,9 @@ class InputEnsight: public Input {
 public:
 	void load(const InputConfiguration &configuration);
 	void build(Mesh &mesh);
-	void variables(Mesh &mesh);
+	double nextVariables(Mesh &mesh);
+
+	int variables();
 
 	~InputEnsight();
 

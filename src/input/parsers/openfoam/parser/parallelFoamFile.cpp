@@ -97,6 +97,7 @@ void parse(FoamFileHeader &header, const oftoken::dictionary &dict)
 		if (value("volVectorField")) { header.foamClass = FoamFileHeader::Class::volVectorField; }
 		if (value("surfaceScalarField")) { header.foamClass = FoamFileHeader::Class::surfaceScalarField; }
 		if (value("surfaceVectorField")) { header.foamClass = FoamFileHeader::Class::surfaceVectorField; }
+		if (value("dictionary")) { header.foamClass = FoamFileHeader::Class::dictionary; }
 	}
 	if (keyword("location")) {
 		memcpy(header.location, dict.value.begin + 1, std::min(dict.value.end - dict.value.begin - 2, MAX_CHAR_LENGTH));

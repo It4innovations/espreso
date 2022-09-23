@@ -170,7 +170,7 @@ void buildDecomposedFEM(NodesDomain &nodes, Elements &elements, OrderedRegions &
 	eslog::param("Total[B]", size(nodes) + size(elements));
 	eslog::ln();
 
-	eslog::info(" ================================== DECOMPOSED FEM BUILDER ===================== %12.3f s\n", eslog::duration());
+	eslog::info(" ================================= DECOMPOSED FEM BUILDER ====================== %12.3f s\n", eslog::duration());
 	eslog::info(" ============================================================================================= \n");
 
 	LinkedNodes linked;

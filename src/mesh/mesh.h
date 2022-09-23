@@ -53,6 +53,7 @@ public:
 		_withGUI = true;
 		preprocess();
 	}
+	void updateMesh();
 	void partitiate(int ndomains);
 	void duplicate();
 	void toBuffer();

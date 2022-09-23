@@ -14,7 +14,7 @@
 
 #include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
-#include "esinfo/eslog.h"
+#include "esinfo/eslog.hpp"
 #include "esinfo/stepinfo.h"
 #include "esinfo/meshinfo.h"
 #include "wrappers/pthread/w.pthread.h"
@@ -47,6 +47,7 @@ class DirectOutputExecutor: public OutputExecutor {
 public:
 	virtual void execute(int tag)
 	{
+		step::toOut();
 		for (size_t i = 0; i < writers.size(); ++i) {
 			if (tag == mesh) {
 				writers[i]->updateMesh();
@@ -71,7 +72,6 @@ public:
 	void copy(int tag)
 	{
 		info::mesh->toBuffer();
-		step::toOut();
 	}
 
 	void call(int tag)
@@ -140,8 +140,24 @@ Output::~Output()
 
 void Output::updateMesh()
 {
+	eslog::info(" ===================================== STORE GEOMETRY ========================= %12.3f s\n", eslog::duration());
+	switch (info::ecf->output.format) {
+	case OutputConfiguration::FORMAT::ENSIGHT:        eslog::info(" == OUTPUT FORMAT %73s == \n", "ENSIGHT"); break;
+	case OutputConfiguration::FORMAT::ENSIGHT_VOLUME: eslog::info(" == OUTPUT FORMAT %73s == \n", "ENSIGHT VOLUME"); break;
+	case OutputConfiguration::FORMAT::NETGEN:         eslog::info(" == OUTPUT FORMAT %73s == \n", "NETGET"); break;
+	case OutputConfiguration::FORMAT::OPENVDB:        eslog::info(" == OUTPUT FORMAT %73s == \n", "OPEN VDB"); break;
+	case OutputConfiguration::FORMAT::STL_SURFACE:    eslog::info(" == OUTPUT FORMAT %73s == \n", "STL SURFACE"); break;
+	case OutputConfiguration::FORMAT::VTK_LEGACY:     eslog::info(" == OUTPUT FORMAT %73s == \n", "VTK LEGACY"); break;
+	case OutputConfiguration::FORMAT::XDMF:           eslog::info(" == OUTPUT FORMAT %73s == \n", "XDMF"); break;
+	}
+
+	switch (info::ecf->output.mode) {
+	case OutputConfiguration::MODE::SYNC: eslog::info(" == OUTPUT MODE %75s == \n", "SYNC"); break;
+	case OutputConfiguration::MODE::PTHREAD: eslog::info(" == OUTPUT MODE %75s == \n", "PTHREAD"); break;
+	}
 	if (_async) { _async->execute(OutputExecutor::mesh); }
 	if (_direct) { _direct->execute(OutputExecutor::mesh); }
+	eslog::info(" ============================================================================================= \n\n");
 }
 
 void Output::updateMonitors()

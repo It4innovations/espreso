@@ -63,6 +63,7 @@ struct FilePack: public InputFile {
 
 	InputFile* add(const std::string &name);
 	bool next();
+	void clear();
 
 	void setTotalSizes(const MPIGroup &group);
 

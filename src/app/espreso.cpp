@@ -70,29 +70,8 @@ int main(int argc, char **argv)
 		profiler::syncstart("mesh_preprocessing");
 		Mesh::load();
 	}
-	if (info::mpi::isize > 1) {
-		info::mesh->duplicate();
-		eslog::checkpoint("ESPRESO: MESH DUPLICATED");
-		eslog::param("COPY", info::mpi::irank);
-		eslog::ln();
-	}
-	info::mesh->printMeshStatistics();
-	profiler::syncend("mesh_preprocessing");
 
-	profiler::syncstart("mesh_output");
-	info::mesh->output->updateMesh();
-	if (info::ecf->output.mode == OutputConfiguration::MODE::SYNC) {
-		eslog::checkpointln("ESPRESO: MESH STORED");
-	}
-	profiler::syncend("mesh_output");
-
-	if (info::ecf->input.convert_database) {
-		if (info::mesh->nodes->data.size() || info::mesh->elements->data.size()) {
-			info::mesh->output->updateMonitors();
-			info::mesh->output->updateSolution();
-		}
-		eslog::endln("ESPRESO: DATABASE CONVERTED");
-	} else {
+	if (!info::ecf->input.convert_database) {
 		profiler::syncstart("physical_solver");
 		PhysicalSolver::run();
 		profiler::syncend("physical_solver");

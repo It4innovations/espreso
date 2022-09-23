@@ -10,8 +10,8 @@
 #include "basis/containers/serializededata.h"
 #include "wrappers/mpi/communication.h"
 
-#include <float.h>
 #include <vector>
+#include <iomanip>
 
 using namespace espreso;
 
@@ -93,7 +93,9 @@ void OpenVDB::updateSolution()
 	if (_measure) { eslog::checkpointln("OPENVDB: VOLUME INSERTED"); }
 
 	if(info::mpi::rank == 0) {
-		wrapper.store_grids((_filename + std::to_string(_step) + ".vdb").c_str());
+		std::stringstream filename;
+		filename << _filename + "." << std::setw(4) << std::setfill('0') << std::to_string(_step) << ".vdb";
+		wrapper.store_grids(filename.str().c_str());
 		_step++;
 	}
 	if (_measure) { eslog::endln("OPENVDB: DATA STORED"); }

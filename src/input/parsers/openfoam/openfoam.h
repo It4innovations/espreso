@@ -7,6 +7,7 @@
 
 namespace espreso {
 
+struct NamedData;
 class InputConfiguration;
 
 class InputOpenFoam: public Input {
@@ -16,7 +17,9 @@ public:
 
 	void load(const InputConfiguration &configuration);
 	void build(Mesh &mesh);
-	void variables(Mesh &mesh);
+	double nextVariables(Mesh &mesh);
+
+	int variables();
 
 protected:
 	std::vector<DatabaseOffset> nblocks, eblocks;
@@ -26,6 +29,12 @@ protected:
 	std::vector<FoamFileHeader> vheader;
 	AsyncFilePack variablePack;
 
+	std::string variablePath;
+	size_t timestep;
+	std::vector<std::string> timesteps, variableNames;
+	std::vector<esint> variableRequests, variableRequestsMap;
+	std::vector<NamedData*> vdata;
+
 	InputOpenFoam *loader;
 };
 
@@ -33,7 +42,7 @@ class InputOpenFoamSequential: public InputOpenFoam {
 public:
 	void load(const InputConfiguration &configuration);
 	void build(Mesh &mesh);
-	void variables(Mesh &mesh);
+	double nextVariables(Mesh &mesh);
 	void ivariables(const InputConfiguration &configuration);
 
 protected:
@@ -49,13 +58,15 @@ public:
 
 	void load(const InputConfiguration &configuration);
 	void build(Mesh &mesh);
-	void variables(Mesh &mesh);
+	double nextVariables(Mesh &mesh);
 	void ivariables(const InputConfiguration &configuration);
 
 protected:
 	NodesBlocks nodes;
 	FacesBlocks faces;
 	OrderedRegions regions;
+
+	ivector<esint> nperm, eperm;
 };
 
 class InputOpenFoamParallelDirect: public InputOpenFoam {
@@ -65,7 +76,7 @@ public:
 
 	void load(const InputConfiguration &configuration);
 	void build(Mesh &mesh);
-	void variables(Mesh &mesh);
+	double nextVariables(Mesh &mesh);
 	void ivariables(const InputConfiguration &configuration);
 
 protected:

@@ -41,10 +41,6 @@ int main(int argc, char **argv)
 	eslog::checkpointln("MESIO: RUN INITIALIZED");
 
 	Mesh::load();
-	info::mesh->printMeshStatistics();
-
-	info::mesh->output->updateMesh();
-	eslog::endln("MESIO: MESH STORED");
 
 	Mesh::finish();
 	eslog::finish();

@@ -6,6 +6,7 @@
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/eslog.hpp"
+#include "esinfo/stepinfo.h"
 
 #include "basis/containers/serializededata.h"
 #include "basis/logging/profiler.h"
@@ -130,13 +131,47 @@ void Mesh::load()
 	eslog::checkpointln("ESPRESO: MESH LOADED");
 
 	info::mesh->preprocess();
+	info::mesh->printMeshStatistics();
 	eslog::checkpointln("ESPRESO: MESH PREPROCESSED");
+	profiler::syncend("mesh_preprocessing");
 
-	input->variables(*info::mesh);
-	eslog::checkpointln("ESPRESO: VARIABLES LOADED");
+	if (info::mpi::isize > 1) {
+		info::mesh->duplicate();
+		eslog::checkpoint("ESPRESO: MESH DUPLICATED");
+		eslog::param("COPY", info::mpi::irank);
+		eslog::ln();
+	}
+
+	profiler::syncstart("mesh_output");
+	info::mesh->output->updateMesh();
+	if (info::ecf->output.mode == OutputConfiguration::MODE::SYNC) {
+		eslog::checkpointln("ESPRESO: MESH STORED");
+	}
+	profiler::syncend("mesh_output");
+
+	if (input->variables()) {
+		eslog::info(" ===================================== LOAD VARIABLES ========================= %12.3f s\n", eslog::duration());
+		eslog::info(" ============================================================================================= \n");
+		for (; step::step.substep < input->variables(); ++step::step.substep) {
+			if (step::step.substep != 0) {
+				eslog::info(" ==  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  == \n");
+			}
+			step::time.current = input->nextVariables(*info::mesh);
+			if (step::step.substep == 0) {
+				info::mesh->output->updateMonitors();
+			}
+			info::mesh->output->updateSolution();
+		}
+		eslog::info(" ============================================================================================= \n\n");
+		eslog::checkpointln("ESPRESO: VARIABLES LOADED");
+	}
 
 	delete input;
 	profiler::syncend("load");
+
+	if (info::ecf->input.convert_database) {
+		eslog::endln("ESPRESO: DATABASE CONVERTED");
+	}
 }
 
 /**
@@ -276,6 +311,16 @@ void Mesh::preprocess()
 	eslog::info(" ============================================================================================= \n\n");
 	profiler::syncend("meshing");
 	eslog::endln("MESHING: OUTPUT PRE-PROCESSING");
+}
+
+void Mesh::updateMesh()
+{
+	if (info::ecf->output.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
+		if (convertToVolume) {
+			mesh::checkElementShape(elements, nodes);
+			mesh::computeVolumeIndices(elements, nodes);
+		}
+	}
 }
 
 void Mesh::finish()
@@ -1191,7 +1236,7 @@ void Mesh::printMeshStatistics()
 				eslog::info("          %27s %12f : %27s %12f\n", Parser::stringwithcommas(iface.from.faces).c_str(), iface.from.area, Parser::stringwithcommas(iface.to.faces).c_str(), iface.to.area);
 			}
 		}
-		eslog::info(" ============================================================================================= \n");
+		eslog::info(" ============================================================================================= \n\n");
 		break;
 	case OutputConfiguration::LOGGER::PARSER:
 		eslog::info(" ====================================== MESH STATISTICS ====================================== \n");
