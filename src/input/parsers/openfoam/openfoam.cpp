@@ -503,10 +503,18 @@ void InputOpenFoamParallel::ivariables(const InputConfiguration &configuration)
 		}
 		subdir = subdirs[max];
 
+		if (configuration.openfoam.time.size()) {
+			subdir = configuration.openfoam.time;
+		}
+
 		eslog::info(" == VARIABLES %77s == \n", "");
 		std::string fullSubdir = (configuration.path + "/processor*/" + subdir + "/");
 		eslog::info(" == %s%*s == \n", fullSubdir.c_str(), 87 - fullSubdir.size(), "");
-		utils::listDirectoryFiles(configuration.path + "/processor" + std::to_string(d) + "/" + subdir, files);
+		if (configuration.openfoam.variables.size()) {
+			files = Parser::split(configuration.openfoam.variables, ",");
+		} else {
+			utils::listDirectoryFiles(configuration.path + "/processor" + std::to_string(d) + "/" + subdir, files);
+		}
 		skip.resize(files.size(), false);
 		vheader.resize(files.size());
 		for (size_t i = 0; i < files.size(); ++i) {

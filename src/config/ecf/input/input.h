@@ -24,6 +24,8 @@ struct ClippingBox: public ECFDescription {
 struct OpenFOAMInputConfiguration: public ECFDescription {
 	bool direct_load;
 
+	std::string time, variables;
+
 	OpenFOAMInputConfiguration();
 };
 

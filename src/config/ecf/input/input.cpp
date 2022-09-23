@@ -27,6 +27,13 @@ OpenFOAMInputConfiguration::OpenFOAMInputConfiguration()
 	REGISTER(direct_load, ECFMetaData()
 			.setdescription({ "Load without SFC redistribution." })
 			.setdatatype({ ECFDataType::BOOL }));
+
+	REGISTER(time, ECFMetaData()
+			.setdescription({ "Load only specified time steps." })
+			.setdatatype({ ECFDataType::STRING }));
+	REGISTER(variables, ECFMetaData()
+			.setdescription({ "Load only specified variables." })
+			.setdatatype({ ECFDataType::STRING }));
 }
 
 InputConfiguration::InputConfiguration()
