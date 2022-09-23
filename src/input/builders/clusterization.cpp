@@ -7,6 +7,7 @@
 #include "basis/utilities/utils.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/envinfo.h"
+#include "esinfo/ecfinfo.h"
 #include "wrappers/mpi/communication.h"
 
 #include <numeric>
@@ -25,10 +26,36 @@ void assignBuckets(OrderedNodesChunked &nodes, OrderedElementsChunked &elements,
 		nbuckets[n] = sfc.getBucket(nodes.coordinates[n]);
 	}
 
+	if (info::ecf->input.clipping_box.apply) {
+		eslog::info(" == CLIPPED BOX           <%9f %9f> <%9f %9f> <%9f %9f> == \n",
+				info::ecf->input.clipping_box.min[0], info::ecf->input.clipping_box.max[0],
+				info::ecf->input.clipping_box.min[1], info::ecf->input.clipping_box.max[1],
+				info::ecf->input.clipping_box.min[2], info::ecf->input.clipping_box.max[2]);
+		eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
+
+		for (esint n = 0; n < nodes.size; ++n) {
+			const Point &p = nodes.coordinates[n];
+			if (
+					p.x < info::ecf->input.clipping_box.min[0] || info::ecf->input.clipping_box.max[0] < p.x ||
+					p.y < info::ecf->input.clipping_box.min[1] || info::ecf->input.clipping_box.max[1] < p.y ||
+					p.z < info::ecf->input.clipping_box.min[2] || info::ecf->input.clipping_box.max[2] < p.z) {
+
+				nbuckets[n] = -1; // filter node out
+			}
+		}
+	}
+
 	// ebuckets -> just ask SFC to get bucket of the first node
 	for (esint e = 0, eoffset = 0; e < elements.size; eoffset += Element::encode(elements.etype[e++]).nodes) {
 		// last node is always element node!
-		ebuckets[e] = sfc.getBucket(nodes.coordinates[elements.enodes[eoffset + Element::encode(elements.etype[e]).nodes - 1] - nodes.offset]);
+		ebuckets[e] = nbuckets[elements.enodes[eoffset + Element::encode(elements.etype[e]).nodes - 1] - nodes.offset];
+
+		PolyElement poly(elements.etype[e], elements.enodes.data() + eoffset);
+		for (esint n = 0; n < Element::encode(elements.etype[e]).nodes; ++n) {
+			if (poly.isNode(n)) {
+				ebuckets[e] = std::min(ebuckets[e], nbuckets[elements.enodes[eoffset + n] - nodes.offset]);
+			}
+		}
 	}
 }
 
@@ -159,12 +186,31 @@ static void _clusterize(Nodes &inNodes, Elements &inElements, OrderedDistributio
 	std::iota(epermutation.begin(), epermutation.end(), 0);
 	std::sort(epermutation.begin(), epermutation.end(), [&] (const esint &i, const esint &j) { return ebuckets[i] < ebuckets[j]; });
 
-	if (!Communication::computeSplitters(ebuckets, epermutation, splitters, edistribution.total, buckets)) {
-		eslog::internalFailure("cannot balance according to SFC.\n");
-	}
-
 	std::vector<esint, initless_allocator<esint> > nborders(info::mpi::size + 1), eborders(info::mpi::size + 1);
 	nborders[0] = eborders[0] = 0;
+
+	if (info::ecf->input.clipping_box.apply) {
+		while (nborders[0] < ndistribution.size && nbuckets[npermutation[nborders[0]]] < 0) {
+			++nborders[0];
+		}
+		while (eborders[0] < edistribution.size && ebuckets[epermutation[eborders[0]]] < 0) {
+			++eborders[0];
+		}
+		ivector<esint> filtered(ebuckets.size() - eborders[0]), fpermutation(ebuckets.size() - eborders[0]);
+		for (size_t e = 0; e < ebuckets.size() - eborders[0]; ++e) {
+			filtered[e] = ebuckets[epermutation[e + eborders[0]]];
+			fpermutation[e] = e;
+		}
+		esint cut = eborders[0];
+		if (!Communication::computeSplitters(filtered, fpermutation, splitters, edistribution.total - Communication::exscan(cut), buckets)) {
+			eslog::internalFailure("cannot balance according to SFC.\n");
+		}
+	} else {
+		if (!Communication::computeSplitters(ebuckets, epermutation, splitters, edistribution.total, buckets)) {
+			eslog::internalFailure("cannot balance according to SFC.\n");
+		}
+	}
+
 	for (int r = 0; r < info::mpi::size; ++r) {
 		nborders[r + 1] = nborders[r];
 		while (nborders[r + 1] < ndistribution.size && nbuckets[npermutation[nborders[r + 1]]] < splitters[r + 1]) {

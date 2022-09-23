@@ -151,7 +151,6 @@ void trivialUpdate(NodesBlocks &blocks, OrderedNodesChunked &chunked);
 void trivialUpdate(ElementsBlocks &blocks, OrderedElementsChunked &chunked);
 void trivialUpdate(FacesBlocks &blocks, OrderedFacesChunked &chunked);
 void buildElementsFromFaces(Faces &faces, Elements &elements);
-void clip(OrderedNodesChunked &nodes, OrderedElementsChunked &elements);
 
 // 1. -> 2.
 void trivialUpdate(NodesBlocks &blocks, OrderedNodesBalanced &balanced);
@@ -192,6 +191,7 @@ void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merge
 void globalToLocal(ClusteredElements &clustered, MergedElements &merged, LinkedNodes &nodes);
 
 // 9.
+void clip(LinkedNodes &nodes, MergedElements &elements);
 void rotateNormalsOut(LinkedNodes &nodes, MergedElements &elements);
 void fillNodes(LinkedNodes &nodes, OrderedRegions &regions, Mesh &mesh);
 void fillElements(MergedElements &elements, OrderedRegions &regions, Mesh &mesh);
