@@ -549,6 +549,7 @@ void InputOpenFoamParallel::ivariables(const InputConfiguration &configuration)
 		utils::listDirectorySubdirectories(configuration.path + "/processor" + std::to_string(d), subdirs);
 	}
 
+	std::vector<std::string> steps;
 	if (configuration.openfoam.time.size()) {
 		std::vector<std::string> values = Parser::split(configuration.openfoam.time, ":");
 		double min, max;
@@ -562,7 +563,7 @@ void InputOpenFoamParallel::ivariables(const InputConfiguration &configuration)
 			float time = std::strtof(subdirs[s].c_str(), &strend);
 			if (subdirs[s].c_str() != strend) {
 				if (min - 1e-9 <= time && time <= max + 1e9) {
-					timesteps.push_back(subdirs[s]);
+					steps.push_back(subdirs[s]);
 				}
 			}
 		}
@@ -585,12 +586,24 @@ void InputOpenFoamParallel::ivariables(const InputConfiguration &configuration)
 			}
 		}
 		if (max != -1) {
-			timesteps.push_back(subdirs[max]);
+			steps.push_back(subdirs[max]);
 		}
 	}
 
-	if (timesteps.size() == 0) {
+	if (steps.size() == 0) {
 		return;
+	}
+
+	std::vector<double> times(steps.size());
+	for (size_t t = 0; t < times.size(); ++t) {
+		std::stringstream ss(steps[t]);
+		ss >> times[t];
+	}
+	std::vector<int> perm(steps.size());
+	std::iota(perm.begin(), perm.end(), 0);
+	std::sort(perm.begin(), perm.end(), [&] (int i, int j) { return times[i] < times[j]; });
+	for (size_t i = 0; i < perm.size(); ++i) {
+		timesteps.push_back(steps[perm[i]]);
 	}
 
 	eslog::info(" == TIME STEPS       %70d == \n", timesteps.size());
