@@ -98,5 +98,6 @@ void OpenVDB::updateSolution()
 		wrapper.store_grids(filename.str().c_str());
 		_step++;
 	}
+	Communication::barrier();
 	if (_measure) { eslog::endln("OPENVDB: DATA STORED"); }
 }

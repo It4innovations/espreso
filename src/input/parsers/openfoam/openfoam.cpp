@@ -480,6 +480,7 @@ double InputOpenFoamParallel::nextVariables(Mesh &mesh)
 		}
 		eit += esize;
 	}
+	eslog::checkpointln("VARIABLES LOADER: VARIABLES ASSIGNED");
 
 	for (size_t v = 0; v < nvariables.size(); ++v) {
 		if (StringCompare::caseInsensitiveEq("points", vheader[nvariables[v]].object)) {
@@ -500,6 +501,7 @@ double InputOpenFoamParallel::nextVariables(Mesh &mesh)
 			} else {
 				std::fill(vdata[v]->data.begin(), vdata[v]->data.end(), 0);
 			}
+			eslog::checkpointln("VARIABLES LOADER: COORDINATES UPDATED");
 		}
 	}
 
@@ -523,7 +525,7 @@ double InputOpenFoamParallel::nextVariables(Mesh &mesh)
 		variablePack.iread(MPITools::singleton->within);
 	}
 
-	eslog::endln("VARIABLES LOADER: VARIABLES ASSIGNED");
+	eslog::endln("VARIABLES LOADER: FINISHED");
 
 	return time;
 }
