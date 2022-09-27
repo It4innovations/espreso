@@ -52,16 +52,17 @@ OpenVDBWrapper::~OpenVDBWrapper()
 #endif
 }
 
-void OpenVDBWrapper::add_grid(size_t distMax, size_t dataMax, esint *dist, _Point<short>* voxels, float *data, const std::string &name, const Point &origin, const Point &size, const _Point<short> &grid)
+void OpenVDBWrapper::add_grid(size_t distMax, size_t dataMax, esint *dist, _Point<short>* voxels, float *data, const std::string &name, const Point &origin, const Point &size, const _Point<short> &density)
 {
 #ifdef HAVE_OPENVDB
 	openvdb::FloatGrid::Ptr grid = openvdb::FloatGrid::create();
 	grid->setGridClass(openvdb::GRID_LEVEL_SET);
+	double x = size.x / density.x, y = size.y / density.y, z = size.z / density.z;
 	openvdb::math::Mat4d mat = openvdb::math::Mat4d(
-			size.x / grid.x, 0.0, 0.0, origin.x,
-			0.0, size.y / grid.y, 0.0, origin.y,
-			0.0, 0.0, size.z / grid.z, origin.z,
-			0.0, 0.0, 0.0, 1.0);
+			x, 0.0, 0.0, 0.0,
+			0.0, y, 0.0, 0.0,
+			0.0, 0.0, z, 0.0,
+			origin.x - .5 * x, origin.y - .5 * y, origin.z - .5 * z, 1.0);
 
 	grid->setTransform(openvdb::math::Transform::createLinearTransform(mat));
 	grid->setName(name);
