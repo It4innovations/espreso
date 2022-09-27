@@ -21,6 +21,18 @@ using namespace espreso;
 
 //#define SHARE_SC
 
+// #define CUDA_DEBUG
+
+#ifdef CUDA_DEBUG
+	void cudaSync() {
+		checkCudaErrors(cudaDeviceSynchronize());
+	}
+
+	#define CUDA_SYNC cudaSync();
+#else
+	#define CUDA_SYNC
+#endif
+
 ClusterGPU::~ClusterGPU() {
 	DestroyCudaStreamPool();
 
@@ -93,7 +105,7 @@ void ClusterGPU::GetGPU() {
 //		int local_id;
 //		MPI_Comm_rank(node_comm, &local_id);
 
-		size_t procs_per_gpu;
+		size_t procs_per_gpu = 0;
 
 		if(MPITools::node->size > nDevices)
 		{
@@ -1353,6 +1365,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
             // Record all the remaining work of the data stream into the event_data_preload
             checkCudaErrors(cudaEventRecord(gpus[g].event_data_preload, gpus[g].data_stream));
         }
+		CUDA_SYNC
 
 		// Prepared for multi-GPU per cluster
 		//#pragma omp parallel private(tid) num_threads(n_gpu)
@@ -1360,8 +1373,10 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
             // OMP thread IDs are mapped on GPU IDs
             // int g = omp_get_thread_num();
             // int tid = omp_get_thread_num();
+			int tid = 0;
             int g = 0;
             checkCudaErrors(cudaSetDevice(g + gpu_id));
+			CUDA_SYNC
             
             // Iterations in a chunk must be consequent because of preloading data (L, B)
             for (int i = gpus[g].start; i < gpus[g].end; i++) {
@@ -1379,38 +1394,45 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 				 (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.CSR_V_values.size(), (void*) gpus[g].h_array_d_csr_B_row_ptr[s_gpu],
                 (void*) gpus[g].h_array_d_csr_B_col_ind[s_gpu], (void*) gpus[g].h_array_d_csr_B_val[s_gpu],
                 spmm_csr_row_offsets_type, spmm_csr_col_ind_type, spmm_idx_base, compute_type));
+				CUDA_SYNC // an illegal memory access was encountered
                 // h_array_d_buffer used instead of h_array_d_X
                 checkCudaErrors(cusparseCreateDnMat(&h_array_h_matX[i], (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows,
 				 (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows,
                 (void*) gpus[g].h_array_d_buffer[s_gpu], compute_type, spmm_order));
+				CUDA_SYNC
                 checkCudaErrors(cusparseCreateDnMat(&h_array_h_matLSC[i], (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
 				 (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
                 (void*) gpus[g].h_array_d_lsc[i_gpu], compute_type, spmm_order));
                 POP_RANGE // Create SpMM objects
+				CUDA_SYNC
 
                 // Need to wait for finishing B_csr and L_csr data transfers from data preload (before loop)
                 checkCudaErrors(cudaStreamWaitEvent(gpus[g].h_array_stream[0], gpus[g].event_data_preload, 0));
+				CUDA_SYNC
                 // Need to wait for finishing L-Solve from the previous iteration
                 checkCudaErrors(cudaStreamWaitEvent(gpus[g].h_array_stream[s_gpu], gpus[g].event1, 0));
+				CUDA_SYNC
                 // Need to wait for finishing B_csr and L_csr data transfers started in the previous iteration - very unlikely - only for the case with data transfer longer than L-Solve
                 checkCudaErrors(cudaStreamWaitEvent(gpus[g].h_array_stream[s_gpu], gpus[g].event2, 0));
                 PUSH_RANGE("Transpose B_csr", 6)
                 // Transpose B to B^T
                 // CUSPARSE_CSR2CSC_ALG2 - faster, the same ordering not garanteed
                 // CUSPARSE_ACTION_SYMBOLIC most probably only for symmetric matrices
+				CUDA_SYNC
 
                 // Currently not necessary to get buffer size
-// #ifdef DEBUG
-//                 checkCudaErrors(cusparseCsr2cscEx2_bufferSize(gpus[g].h_array_handle[s_gpu], domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.CSR_V_values.size(), gpus[g].h_array_d_csr_B_val[s_gpu],
-//                  gpus[g].h_array_d_csr_B_row_ptr[s_gpu], gpus[g].h_array_d_csr_B_col_ind[s_gpu], gpus[g].h_array_d_csr_Bt_val[s_gpu], gpus[g].h_array_d_csr_Bt_row_ptr[s_gpu],
-//                   gpus[g].h_array_d_csr_Bt_col_ind[s_gpu], compute_type, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO, CUSPARSE_CSR2CSC_ALG1,
-//                    &solve_buffer_size));
-//                 printf("Thr %d GPU %d: LSC %d: Only %d (# CUDA streams) shared %f MB buffers for all domains and both solves\n", tid, g, i, n_streams_per_gpu, (double)solve_buffer_size / 1024.0 / 1024.0);
-//                 if(solve_buffer_size > CS_MAX(1024 * 1024, expected_buffer_size))
-//                     printf("CSparse LSC warning: Thr %d GPU %d: LSC %d: The calculated Csr2Csc buffer size (%f MB) is larger than the size of the used buffer (%f MB).\n",
-//                      tid, g, i, (double) solve_buffer_size / 1024.0 / 1024.0, (double) CS_MAX(1024 * 1024, expected_buffer_size) / 1024.0 / 1024.0);
-//                 checkCudaErrors(cudaDeviceSynchronize());
-// #endif
+#ifdef CUDA_DEBUG
+                printf("Thr %d GPU %d: LSC %d: %d CUDA streams share %f MB buffers for all domains and both solves\n", tid, g, i, n_streams_per_gpu, (double)expected_buffer_size / 1024.0 / 1024.0);
+                checkCudaErrors(cusparseCsr2cscEx2_bufferSize(gpus[g].h_array_handle[s_gpu], domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.CSR_V_values.size(), gpus[g].h_array_d_csr_B_val[s_gpu],
+                 gpus[g].h_array_d_csr_B_row_ptr[s_gpu], gpus[g].h_array_d_csr_B_col_ind[s_gpu], gpus[g].h_array_d_csr_Bt_val[s_gpu], gpus[g].h_array_d_csr_Bt_row_ptr[s_gpu],
+                  gpus[g].h_array_d_csr_Bt_col_ind[s_gpu], compute_type, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO, CUSPARSE_CSR2CSC_ALG1,
+                   &solve_buffer_size));
+                
+				if(solve_buffer_size > std::max((size_t) 1024 * 1024, expected_buffer_size))
+                    printf("CSparse LSC warning: Thr %d GPU %d: LSC %d: The calculated Csr2Csc buffer size (%f MB) is larger than the size of the used buffer (%f MB).\n",
+                     tid, g, i, (double) solve_buffer_size / 1024.0 / 1024.0, (double) std::max((size_t)1024 * 1024, expected_buffer_size) / 1024.0 / 1024.0);
+                CUDA_SYNC
+#endif
 
                 checkCudaErrors(cusparseCsr2cscEx2(gpus[g].h_array_handle[s_gpu], domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.CSR_V_values.size(), gpus[g].h_array_d_csr_B_val[s_gpu],
@@ -1418,6 +1440,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                 gpus[g].h_array_d_csr_Bt_row_ptr[s_gpu], gpus[g].h_array_d_csr_Bt_col_ind[s_gpu], compute_type, CUSPARSE_ACTION_NUMERIC,
                 CUSPARSE_INDEX_BASE_ZERO, CUSPARSE_CSR2CSC_ALG1, gpus[g].h_array_d_buffer[s_gpu]));
                 POP_RANGE // Transpose B_csr
+				CUDA_SYNC
 
                 PUSH_RANGE("Convert Bt_csr to dense", 0)
                 // Convert B^T from CSR to dense on device
@@ -1429,6 +1452,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                 gpus[g].h_array_d_csr_Bt_row_ptr[s_gpu], gpus[g].h_array_d_csr_Bt_col_ind[s_gpu], (double *) gpus[g].h_array_d_buffer[s_gpu],
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows));
                 POP_RANGE //Convert Bt_csr to dense
+				CUDA_SYNC
 
                 PUSH_RANGE("Input reordering", 1)
                 // Perform reordering of dense values by CS on device
@@ -1438,6 +1462,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                 cuda::IpvecReorderMrhs(gpus[g].h_array_d_pinv[s_gpu], (double *) gpus[g].h_array_d_buffer[s_gpu], gpus[g].h_array_d_X_reordered[s_gpu],
                 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, gpus[g].h_array_stream[s_gpu]); /* b = P'*x */
                 POP_RANGE // Input reordering
+				CUDA_SYNC
 
                 PUSH_RANGE("Querry workspace lsolve", 2)
                 /* step 3: query workspace */
@@ -1446,18 +1471,21 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, vec_L_nnz[i],
                  &solve_alpha, h_descrL, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
 				  domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_L[info_gpu], policy, &solve_buffer_size));
-                
+                CUDA_SYNC
+
 				if(solve_buffer_size > expected_buffer_size)
                     printf("CSparse LSC warning: GPU %d: LSC %d: The calculated solve buffer size (%f MB) is larger than the size of the used buffer (%f MB).\n",
                      g, i, (double) solve_buffer_size / 1024.0 / 1024.0, (double) expected_buffer_size / 1024.0 / 1024.0);
                 POP_RANGE // Querry workspace lsolve
-                
+                CUDA_SYNC
+
                 /* step 4: analysis */
                 PUSH_RANGE("Analysis lsolve", 3)
                 checkCudaErrors(cusparseDcsrsm2_analysis(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transL, solve_transB, domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows,
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, vec_L_nnz[i], &solve_alpha, h_descrL, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind,
                  gpus[g].h_array_d_X_reordered[s_gpu], domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_L[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
                 POP_RANGE // Analysis lsolve
+				CUDA_SYNC
 
                 // Overlap CSC U (L^T) transfer with L-Solve
                 PUSH_RANGE("U_csc memcpy HtD", 4)
@@ -1468,6 +1496,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                 checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_col_ptr, SYMMETRIC_SYSTEM ? vec_L_col_pointers[i] : vec_U_col_pointers[i],
 				 (domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows + 1) * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
                 POP_RANGE // U_csc memcpy HtD
+				CUDA_SYNC
 
                 /* step 5: solve X = L * X */
                 PUSH_RANGE("Lsolve", 5)
@@ -1476,11 +1505,14 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 				 &solve_alpha, h_descrL, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
                  domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_L[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
                 POP_RANGE // Lsolve
+				CUDA_SYNC
 
                 // Record all the remaining work of the compute stream into the event1
                 checkCudaErrors(cudaEventRecord(gpus[g].event1, gpus[g].h_array_stream[s_gpu]));
+				CUDA_SYNC
                 // Data stream waits until all current work in the compute stream is done
                 checkCudaErrors(cudaStreamWaitEvent(gpus[g].data_stream, gpus[g].event1, 0));
+				CUDA_SYNC
 
                 // Overlap CSR B and CSC L transfer for the following iteration with the L^T-Solve (U-Solve)
                 if((i_gpu + 1) < gpus[g].n_lsc_gpu) {
@@ -1488,19 +1520,25 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                     int s_gpu_following = (i_gpu + 1) % n_streams_per_gpu;
 					checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_val[s_gpu_following], vec_B1_comp_dom_copy[i + 1].CSR_V_values.data(),
 					 domains[gpus[g].h_array_lsc_id[i_gpu + 1]].B1_comp_dom.CSR_V_values.size() * sizeof(double), cudaMemcpyHostToDevice, gpus[g].data_stream));
+					CUDA_SYNC
                     checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_col_ind[s_gpu_following], vec_B1_comp_dom_copy[i + 1].CSR_J_col_indices.data(),
 					 domains[gpus[g].h_array_lsc_id[i_gpu + 1]].B1_comp_dom.CSR_V_values.size() * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
+					CUDA_SYNC
                     checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_row_ptr[s_gpu_following], vec_B1_comp_dom_copy[i + 1].CSR_I_row_indices.data(),
 					 (domains[gpus[g].h_array_lsc_id[i_gpu + 1]].B1_comp_dom.rows + 1) * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
                     POP_RANGE // B_csr+n_gpu memcpy HtD
+					CUDA_SYNC
 
                     PUSH_RANGE("L_csc+n_gpu memcpy HtD", 0)
                     checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_val, vec_L_values[i + 1], vec_L_nnz[i + 1] * sizeof(double),
 					 cudaMemcpyHostToDevice, gpus[g].data_stream));
+					CUDA_SYNC
                     checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_row_ind, vec_L_row_indexes[i + 1], vec_L_nnz[i + 1] * sizeof(int),
 					 cudaMemcpyHostToDevice, gpus[g].data_stream));
+					CUDA_SYNC
                     checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_col_ptr, vec_L_col_pointers[i + 1], (domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows + 1) * sizeof(int),
 					 cudaMemcpyHostToDevice, gpus[g].data_stream));
+					CUDA_SYNC
                     POP_RANGE // L_csc+n_gpu memcpy HtD
 
 					if(SYMMETRIC_SYSTEM) {
@@ -1512,13 +1550,16 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 						if(order) {
 							checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_q[s_gpu_following], vec_perm_2[i + 1],
 							domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
+							CUDA_SYNC
 						}
 						checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[s_gpu_following], vec_perm[i + 1],
 						 domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
+						CUDA_SYNC
 					}
 
                     // Record all the remaining work of the data stream into the event2
                     checkCudaErrors(cudaEventRecord(gpus[g].event2, gpus[g].data_stream));
+					CUDA_SYNC
                 }
 
                 /* step 6: query workspace */
@@ -1529,6 +1570,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, SYMMETRIC_SYSTEM ? vec_L_nnz[i] : vec_U_nnz[i],
 				 &solve_alpha, h_descrU, gpus[g].d_csc_U_val, gpus[g].d_csc_U_col_ptr, gpus[g].d_csc_U_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_U[info_gpu], policy, &solve_buffer_size));
+				CUDA_SYNC
 
                 if(solve_buffer_size > expected_buffer_size)
                     printf("CSparse LSC warning: GPU %d: LSC %d: The calculated solve buffer size (%f MB) is larger than the size of the used buffer (%f MB).\n",
@@ -1541,6 +1583,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, SYMMETRIC_SYSTEM ? vec_L_nnz[i] : vec_U_nnz[i],
                  &solve_alpha, h_descrU, gpus[g].d_csc_U_val, gpus[g].d_csc_U_col_ptr, gpus[g].d_csc_U_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_U[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
+				CUDA_SYNC
                 POP_RANGE // Analysis ltsolve
 
                 /* step 8: solve X = Lt\X */
@@ -1549,6 +1592,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, SYMMETRIC_SYSTEM ? vec_L_nnz[i] : vec_U_nnz[i],
 				 &solve_alpha, h_descrU, gpus[g].d_csc_U_val, gpus[g].d_csc_U_col_ptr, gpus[g].d_csc_U_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
 				domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_U[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
+				CUDA_SYNC
                 POP_RANGE // Ltsolve
 
                 PUSH_RANGE("Output reordering", 4)
@@ -1564,30 +1608,32 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 					domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, gpus[g].h_array_stream[s_gpu]);
                 }
                 POP_RANGE // Output reordering
-// #ifdef DEBUG
-//                 // Currently not necessary to get the buffer size (returns 0 for CSR algo)
-//                 checkCudaErrors(cusparseSpMM_bufferSize(gpus[g].h_array_handle[s_gpu], spmm_transB, spmm_transX, &spmm_alpha, h_array_h_matB[i],
-//                 h_array_h_matX[i], &spmm_beta, h_array_h_matLSC[i], compute_type, spmm_algo, &spmm_buffer_size));
-    
-//                 printf("Thr %d GPU %d: LSC %d: Calculated SpMM spmm_buffer_size = %f MB\n", tid, g, i, (double)spmm_buffer_size / 1024.0 / 1024.0);
-//                 if(spmm_buffer_size > (domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows * domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows * sizeof(double)))
-//                     printf("CSparse LSC warning: Thr %d GPU %d: LSC %d: The calculated SpMM buffer size (%f MB) is larger than the size of the used buffer (%f MB).\n",
-//                      tid, g, i, (double) spmm_buffer_size / 1024.0 / 1024.0, (double) (domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows * domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows * sizeof(double)) / 1024.0 / 1024.0);
-//                 checkCudaErrors(cudaDeviceSynchronize());
-// #endif
-                PUSH_RANGE("SpMM", 5)
+				CUDA_SYNC
+
+				PUSH_RANGE("SpMM", 5)
+#ifdef CUDA_DEBUG
+                // Currently not necessary to get the buffer size in production run (returns small size for CSR algo)
+                checkCudaErrors(cusparseSpMM_bufferSize(gpus[g].h_array_handle[s_gpu], spmm_transB, spmm_transX, &spmm_alpha, h_array_h_matB[i],
+                h_array_h_matX[i], &spmm_beta, h_array_h_matLSC[i], compute_type, spmm_algo, &spmm_buffer_size));
+				printf("Thr %d GPU %d: LSC %d: Calculated SpMM spmm_buffer_size = %zu B\n", tid, g, i, (double)spmm_buffer_size);
+                
+				if(spmm_buffer_size > (domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows * domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows * sizeof(double)))
+                    printf("CSparse LSC warning: Thr %d GPU %d: LSC %d: The calculated SpMM buffer size (%f MB) is larger than the size of the used buffer (%f MB).\n",
+                     tid, g, i, (double) spmm_buffer_size / 1024.0 / 1024.0, (double) (domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows * domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows * sizeof(double)) / 1024.0 / 1024.0);
+                CUDA_SYNC
+#endif
                 // h_array_d_buffer used instead of h_array_d_X
                 // h_array_d_X_reordered used instead of h_array_d_buffer
                 // LSC = B_cs * X
                 checkCudaErrors(cusparseSpMM(gpus[g].h_array_handle[s_gpu], spmm_transB, spmm_transX, &spmm_alpha, h_array_h_matB[i],
                 h_array_h_matX[i], &spmm_beta, h_array_h_matLSC[i], compute_type, spmm_algo, gpus[g].h_array_d_X_reordered[s_gpu]));
                 POP_RANGE // SpMM
+				CUDA_SYNC
 
                 PUSH_RANGE("Destroy CSRSM2 and SpMMobjects", 6);
                 checkCudaErrors(cusparseDestroySpMat(h_array_h_matB[i]));
                 checkCudaErrors(cusparseDestroyDnMat(h_array_h_matX[i]));
                 checkCudaErrors(cusparseDestroyDnMat(h_array_h_matLSC[i]));                
-                POP_RANGE // Destroy CSRSM2 and SpMMobjects
 
 				// TODO: Check - The first iteration probably should not do this
                 if(i_gpu % n_csrsm2_info_per_gpu == 0) {
@@ -1598,6 +1644,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                         checkCudaErrors(cusparseCreateCsrsm2Info(&gpus[g].h_array_info_U[j]));
                     }
                 }
+				POP_RANGE // Destroy CSRSM2 and SpMMobjects
                 POP_RANGE // LSC
             } // LSC loop
 
