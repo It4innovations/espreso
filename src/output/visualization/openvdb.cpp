@@ -87,7 +87,9 @@ void OpenVDB::updateSolution()
 		MPI_Gather(localValue.data(), size[0], MPI_FLOAT, globalValues.data(), size[0], MPI_FLOAT, 0, info::mpi::comm);
 
 		if(info::mpi::rank == 0) {
-			wrapper.add_grid(size[0], size[1], globalDist.data(), globalData.data(), globalValues.data(), info::mesh->elements->data[di]->name);
+			wrapper.add_grid(
+					size[0], size[1], globalDist.data(), globalData.data(), globalValues.data(), info::mesh->elements->data[di]->name,
+					info::mesh->elements->volumeOrigin, info::mesh->elements->volumeSize, info::mesh->elements->volumeGrid);
 		}
 	}
 	if (_measure) { eslog::checkpointln("OPENVDB: VOLUME INSERTED"); }

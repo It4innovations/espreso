@@ -18,15 +18,10 @@
 namespace espreso {
 struct OpenVDBWrapperData {
 	openvdb::GridPtrVec grids;
-	openvdb::math::Mat4d mat_;
 
 	OpenVDBWrapperData()
 	{
-		mat_ = openvdb::math::Mat4d(
-		1.0, 0.0, 0.0, 0.0,
-		0.0, 1.0, 0.0, 0.0,
-		0.0, 0.0, 1.0, 0.0,
-		0.0, 0.0, 0.0, 1.0);
+
 	}
 
 	~OpenVDBWrapperData()
@@ -57,12 +52,18 @@ OpenVDBWrapper::~OpenVDBWrapper()
 #endif
 }
 
-void OpenVDBWrapper::add_grid(size_t distMax, size_t dataMax, esint *dist, _Point<short>* voxels, float *data, const std::string &name)
+void OpenVDBWrapper::add_grid(size_t distMax, size_t dataMax, esint *dist, _Point<short>* voxels, float *data, const std::string &name, const Point &origin, const Point &size, const _Point<short> &grid)
 {
 #ifdef HAVE_OPENVDB
 	openvdb::FloatGrid::Ptr grid = openvdb::FloatGrid::create();
 	grid->setGridClass(openvdb::GRID_LEVEL_SET);
-	grid->setTransform(openvdb::math::Transform::createLinearTransform(_data->mat_));
+	openvdb::math::Mat4d mat = openvdb::math::Mat4d(
+			size.x / grid.x, 0.0, 0.0, origin.x,
+			0.0, size.y / grid.y, 0.0, origin.y,
+			0.0, 0.0, size.z / grid.z, origin.z,
+			0.0, 0.0, 0.0, 1.0);
+
+	grid->setTransform(openvdb::math::Transform::createLinearTransform(mat));
 	grid->setName(name);
 	openvdb::FloatGrid::Accessor accessor = grid->getAccessor();
 
