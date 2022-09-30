@@ -4,27 +4,34 @@
 
 #include "basis/containers/point.h"
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace espreso {
 
 struct OpenVDBWrapperData;
-
-template <typename TType> class _Point;
-template <typename TEBoundaries, typename TEData> class serializededata;
-struct ElementData;
+struct OpenVDBFloatWrapper;
 
 struct OpenVDBWrapper {
 
-	OpenVDBWrapper();
+	struct Data {};
+
+	struct FloatData: Data {
+		FloatData(const std::string &name);
+		void insert(esint elements, esint *dist, _Point<short>* voxels, float *data);
+
+		OpenVDBFloatWrapper *wrapper;
+	};
+
+	OpenVDBWrapper(const Point &origin, const Point &size, const _Point<short> &density);
 	~OpenVDBWrapper();
 
-	void add_grid(size_t distMax, size_t dataMax, esint *dist, _Point<short>* voxels, float *data, const std::string &name, const Point &origin, const Point &size, const _Point<short> &density);
-	void store_grids(const char *name);
+	FloatData* addFloat(const std::string &name);
+	void store(const std::string &file);
 
 protected:
-	OpenVDBWrapperData *_data;
+	OpenVDBWrapperData *_wrapper;
+	std::vector<Data*> _data;
 };
 
 }

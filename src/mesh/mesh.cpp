@@ -382,6 +382,7 @@ Mesh::~Mesh()
 	delete nodes;
 	delete domains;
 	delete clusters;
+	delete bodies;
 	delete FETIData;
 	delete surface;
 	delete domainsSurface;

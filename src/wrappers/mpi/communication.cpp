@@ -23,11 +23,11 @@ using namespace espreso;
 
 MPIOperations* MPITools::operations = NULL;
 MPIGroup* MPITools::procs = NULL;
-MPIGroup* MPITools::node = NULL;
 MPIGroup* MPITools::instances = NULL;
 MPIGroup* MPITools::global = NULL;
 MPIGroup* MPITools::asynchronous = NULL;
 
+MPISubset* MPITools::node = NULL;
 MPISubset* MPITools::subset = NULL;
 MPISubset* MPITools::singleton = NULL;
 
@@ -115,7 +115,7 @@ MPIOperations::~MPIOperations()
 
 MPIGroup::MPIGroup()
 {
-	MPI_Comm_dup(info::mpi::comm, &communicator);
+	communicator = info::mpi::comm;
 	rank = info::mpi::rank;
 	size = info::mpi::size;
 }
@@ -168,7 +168,7 @@ void MPIGroup::split(int color, int key)
 
 MPIGroup::~MPIGroup()
 {
-	if (communicator != MPI_COMM_NULL) {
+	if (communicator != MPI_COMM_NULL && communicator != info::mpi::comm) {
 		MPI_Comm_free(&communicator);
 	}
 }
@@ -193,6 +193,12 @@ MPISubset::MPISubset(int max_mpi_procs)
 	profiler::syncend("mpi_subset");
 }
 
+MPISubset::MPISubset(MPI_Comm &within, MPI_Comm &across)
+: across(across), within(within)
+{
+
+}
+
 void MPITools::init()
 {
 	operations = new MPIOperations();
@@ -201,9 +207,14 @@ void MPITools::init()
 	global = new MPIGroup(info::mpi::gcomm);
 	asynchronous = new MPIGroup(info::mpi::comm);
 
-	MPI_Comm nodeComm;
+	int nodeRank;
+	MPI_Comm nodeComm, nodeAcrossComm;
 	MPI_Comm_split_type(info::mpi::comm, MPI_COMM_TYPE_SHARED, info::mpi::rank, MPI_INFO_NULL, &nodeComm);
-	node = new MPIGroup(nodeComm);
+	MPI_Comm_rank(nodeComm, &nodeRank);
+	MPI_Comm_split(info::mpi::comm, nodeRank, info::mpi::rank, &nodeAcrossComm);
+	node = new MPISubset(nodeComm, nodeAcrossComm);
+	MPI_Comm_free(&nodeComm);
+	MPI_Comm_free(&nodeAcrossComm);
 
 	subset = new MPISubset(info::mpi::size);
 	singleton = new MPISubset(1);
@@ -229,10 +240,6 @@ void MPITools::reinit()
 	instances = new MPIGroup(info::mpi::icomm);
 	global = new MPIGroup(info::mpi::gcomm);
 	asynchronous = new MPIGroup(info::mpi::comm);
-
-	MPI_Comm nodeComm;
-	MPI_Comm_split_type(info::mpi::comm, MPI_COMM_TYPE_SHARED, info::mpi::rank, MPI_INFO_NULL, &nodeComm);
-	node = new MPIGroup(nodeComm);
 }
 
 void MPITools::finish()
@@ -253,6 +260,9 @@ void MPITools::finish()
 		delete procs;
 	}
 
+	if (node) {
+		delete node;
+	}
 	if (subset) {
 		delete subset;
 	}

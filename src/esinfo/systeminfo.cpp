@@ -146,7 +146,7 @@ bool pinningIntersection()
 	for (size_t i = 0; i < count.size(); ++i) {
 		count[i] = CPU_ISSET(i, &affinity) ? 1 : 0;
 	}
-	Communication::allReduce(count.data(), nullptr, count.size(), MPI_INT, MPI_SUM, MPITools::node);
+	Communication::allReduce(count.data(), nullptr, count.size(), MPI_INT, MPI_SUM, &MPITools::node->within);
 	for (size_t i = 0; i < count.size(); ++i) {
 		if (count[i] > 1) {
 			return true;
@@ -198,7 +198,7 @@ const char* simd()
 
 void print()
 {
-	int ppn = MPITools::node->size;
+	int ppn = MPITools::node->within.size;
 	int threads = info::system::hwthreads();
 	int nodes = info::mpi::size / ppn;
 	const char* simd = info::system::simd();

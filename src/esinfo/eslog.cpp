@@ -123,7 +123,7 @@ void finish()
 {
 	eslog::info(" ======================================== RUN FINISHED ======================================= \n");
 
-	int ppn = MPITools::node->size;
+	int ppn = MPITools::node->within.size;
 	int hwthreads = info::system::hwthreads();
 	int asynchronousThread = info::ecf->output.mode == OutputConfiguration::MODE::PTHREAD;
 	if (ppn * (info::env::OMP_NUM_THREADS + asynchronousThread) > hwthreads) {

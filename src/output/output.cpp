@@ -16,6 +16,7 @@
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/stepinfo.h"
+#include "esinfo/mpiinfo.h"
 #include "esinfo/meshinfo.h"
 #include "wrappers/pthread/w.pthread.h"
 
@@ -45,9 +46,8 @@ struct OutputExecutor {
 
 class DirectOutputExecutor: public OutputExecutor {
 public:
-	virtual void execute(int tag)
+	void call(int tag)
 	{
-		step::toOut();
 		for (size_t i = 0; i < writers.size(); ++i) {
 			if (tag == mesh) {
 				writers[i]->updateMesh();
@@ -60,11 +60,17 @@ public:
 			}
 		}
 	}
+
+	virtual void execute(int tag)
+	{
+		step::toOut();
+		call(tag);
+	}
 };
 
-class AsyncOutputExecutor: public DirectOutputExecutor, public Pthread::Executor, public Pthread {
+class AsyncOutputExecutor: public DirectOutputExecutor, public Async {
 public:
-	AsyncOutputExecutor(): Pthread(this)
+	AsyncOutputExecutor(): Async(this)
 	{
 
 	}
@@ -72,16 +78,17 @@ public:
 	void copy(int tag)
 	{
 		info::mesh->toBuffer();
+		step::toOut();
 	}
 
 	void call(int tag)
 	{
-		DirectOutputExecutor::execute(tag);
+		DirectOutputExecutor::call(tag);
 	}
 
 	void execute(int tag)
 	{
-		Pthread::call(tag);
+		Pthread::execute(tag);
 	}
 };
 

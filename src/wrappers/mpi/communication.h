@@ -57,6 +57,7 @@ public:
 	MPIGroup across, within;
 
 	MPISubset(int max_mpi_procs);
+	MPISubset(MPI_Comm &within, MPI_Comm &across);
 private:
 	MPISubset(MPISubset const&) = delete;
 	void operator=(MPISubset const&) = delete;
@@ -68,11 +69,11 @@ class MPITools
 public:
 	static MPIOperations *operations;
 	static MPIGroup *procs;
-	static MPIGroup *node;
 	static MPIGroup *instances;
 	static MPIGroup *global;
 	static MPIGroup *asynchronous;
 
+	static MPISubset *node;
 	static MPISubset *subset;
 	static MPISubset *singleton;
 

@@ -15,13 +15,18 @@ public:
 		virtual ~Executor() {};
 	};
 
-	Pthread();
 	Pthread(Executor *executor);
 	~Pthread();
-	void call(int tag);
+
+	void execute(int tag);
 
 protected:
 	SharedData * _shdata;
+};
+
+class Async: public Pthread, public Pthread::Executor {
+public:
+	Async(Pthread::Executor *executor): Pthread(executor) {}
 };
 
 }

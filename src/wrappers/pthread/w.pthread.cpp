@@ -3,6 +3,7 @@
 #include "basis/utilities/sysutils.h"
 
 #include <pthread.h>
+#include <atomic>
 
 namespace espreso {
 
@@ -14,7 +15,7 @@ struct SharedData {
 	pthread_spinlock_t computationLock;
 	pthread_mutex_t outputLock;
 
-	int tag;
+	std::atomic<int> tag;
 	bool finish;
 
 	SharedData(Pthread::Executor *executor): executor(executor), finish(false)
@@ -67,7 +68,9 @@ void* async(void *data)
 			pthread_spin_unlock(&shdata->computationLock);
 			break;
 		}
-		shdata->executor->call(shdata->tag);
+		int tag = std::atomic_load_explicit(&shdata->tag, std::memory_order_relaxed);
+		std::atomic_thread_fence(std::memory_order_acquire);
+		shdata->executor->call(tag);
 		pthread_spin_unlock(&shdata->computationLock);
 	}
 	return NULL;
@@ -88,11 +91,12 @@ Pthread::~Pthread()
 	delete _shdata;
 }
 
-void Pthread::call(int tag)
+void Pthread::execute(int tag)
 {
 	pthread_spin_lock(&_shdata->computationLock);
 	_shdata->executor->copy(tag);
-	_shdata->tag = tag;
+	std::atomic_thread_fence(std::memory_order_release);
+	std::atomic_store_explicit(&_shdata->tag, tag, std::memory_order_relaxed);
 	pthread_mutex_unlock(&_shdata->outputLock);
 }
 

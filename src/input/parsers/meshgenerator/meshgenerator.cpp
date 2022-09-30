@@ -34,7 +34,7 @@ MeshGenerator::MeshGenerator(InputGeneratorConfiguration &configuration)
 
 MeshGenerator::~MeshGenerator()
 {
-
+	delete generator;
 }
 
 void MeshGenerator::load(const InputConfiguration &configuration)
