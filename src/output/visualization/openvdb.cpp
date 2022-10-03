@@ -180,9 +180,9 @@ void OpenVDB::updateSolution()
 	displacementBuffer = (esint*)displacementBuffer + displacement.size() * MPITools::node->across.size * MPITools::node->within.rank;
 	voxelBuffer = (_Point<short>*)voxelBuffer + voxels.size() * MPITools::node->across.size * MPITools::node->within.rank;
 	valuesBuffer = (float*)valuesBuffer + values.size() * MPITools::node->across.size * MPITools::node->within.rank;
-	MPI_Gather(displacement.data(), displacement.size(), MPITools::getType<esint>().mpitype, displacementBuffer, displacement.size(), MPITools::getType<esint>().mpitype, node, MPITools::node->across.communicator);
-	MPI_Gather(voxels.data(), voxels.size() * sizeof(_Point<short>), MPI_BYTE, voxelBuffer, voxels.size() * sizeof(_Point<short>), MPI_BYTE, node, MPITools::node->across.communicator);
-	MPI_Gather(values.data(), values.size(), MPI_FLOAT, valuesBuffer, values.size(), MPI_FLOAT, node, MPITools::node->across.communicator);
+	Communication::gather(displacement.data(), displacementBuffer, displacement.size(), MPITools::getType<esint>().mpitype, node, &MPITools::node->across);
+	Communication::gather(voxels.data(), voxelBuffer, voxels.size() * sizeof(_Point<short>), MPI_BYTE, node, &MPITools::node->across);
+	Communication::gather(values.data(), valuesBuffer, values.size(), MPI_FLOAT, node, &MPITools::node->across);
 	if (node == MPITools::node->across.rank) {
 		MPI_Win_fence(0, volume->win);
 		if (volume->root == info::mpi::rank) { // copy data from window to local buffers, it allows to use detached thread

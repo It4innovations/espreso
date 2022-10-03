@@ -535,6 +535,18 @@ bool Communication::reduce(void *in, void *out, size_t size, MPI_Datatype type, 
 	return true;
 }
 
+bool Communication::gather(void *in, void *out, size_t size, MPI_Datatype type, int root, MPIGroup *group)
+{
+	if (size != (size_t)(int)size) {
+		return false;
+	}
+	profiler::syncstart("mpi_gather");
+	profiler::syncparam("size", size);
+	MPI_Gather(in, size, type, out, size, type, root, group->communicator);
+	profiler::syncend("mpi_gather");
+	return true;
+}
+
 bool Communication::allReduce(void *in, void *out, size_t size, MPI_Datatype type, MPI_Op op, MPIGroup *group)
 {
 	if (size != (size_t)(int)size) {
