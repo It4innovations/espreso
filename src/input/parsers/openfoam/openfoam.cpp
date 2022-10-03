@@ -562,7 +562,7 @@ void InputOpenFoamParallel::ivariables(const InputConfiguration &configuration)
 			char *strend;
 			float time = std::strtof(subdirs[s].c_str(), &strend);
 			if (subdirs[s].c_str() != strend) {
-				if (min - 1e-9 <= time && time <= max + 1e9) {
+				if (min - 1e-9 <= time && time <= max + 1e-9) {
 					steps.push_back(subdirs[s]);
 				}
 			}
