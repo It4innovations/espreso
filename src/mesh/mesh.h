@@ -9,6 +9,7 @@
 #include <vector>
 #include <map>
 #include <mutex>
+#include <condition_variable>
 
 namespace espreso {
 
@@ -36,6 +37,12 @@ class Output;
 
 class Mesh {
 public:
+	struct Guard {
+		int counter = 0;
+		std::mutex mutex;
+		std::condition_variable cv;
+	};
+
 	static void init();
 	static void load();
 	static void finish();
@@ -78,6 +85,8 @@ public:
 	bool onAllElements(const std::string &eregion) const;
 
 	bool hasPhaseChange() const;
+
+	Guard voxelization;
 
 	int dimension;
 	size_t preferedDomains;

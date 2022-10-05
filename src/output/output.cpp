@@ -79,6 +79,9 @@ public:
 	{
 		info::mesh->toBuffer();
 		step::toOut();
+		for (size_t i = 0; i < writers.size(); ++i) {
+			writers[i]->lock();
+		}
 	}
 
 	void call(int tag)

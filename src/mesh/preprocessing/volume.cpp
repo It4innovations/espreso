@@ -361,6 +361,9 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 
 	utils::threadDistributionToFullDistribution(vdistribution);
 
+	std::unique_lock<std::mutex> lk(info::mesh->voxelization.mutex);
+	info::mesh->voxelization.cv.wait(lk, [] { return info::mesh->voxelization.counter == 0; });
+
 	elements->volumeGrid = grid;
 	elements->volumeOrigin = origin;
 	elements->volumeSize = size;

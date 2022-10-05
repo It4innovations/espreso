@@ -16,6 +16,7 @@ public:
 	OpenVDB();
 	~OpenVDB();
 
+	void lock();
 	void updateMesh();
 	void updateSolution();
 

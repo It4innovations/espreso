@@ -13,6 +13,7 @@ class OutputWriter {
 public:
 	virtual bool storeStep() { return true; }
 
+	virtual void lock() {}
 	virtual void updateMesh() = 0;
 	virtual void updateMonitors() = 0;
 	virtual void updateSolution() = 0;

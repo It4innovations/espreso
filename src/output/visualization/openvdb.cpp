@@ -63,7 +63,7 @@ OpenVDB::~OpenVDB()
 
 void OpenVDB::updateMesh()
 {
-
+	// nothing is done here since we gather mesh to a different process each time step
 }
 
 void store(SharedVolume *volume)
@@ -95,6 +95,12 @@ void store(SharedVolume *volume)
 		--SharedVolume::counter;
 	}
 	SharedVolume::cv.notify_one();
+}
+
+void OpenVDB::lock()
+{
+	std::lock_guard<std::mutex> lk(info::mesh->voxelization.mutex);
+	++info::mesh->voxelization.counter;
 }
 
 void OpenVDB::updateSolution()
@@ -155,6 +161,11 @@ void OpenVDB::updateSolution()
 			++volume->nvalues;
 			values.resize(SharedVolume::size * volume->nvalues);
 		}
+	}
+	{
+		std::lock_guard<std::mutex> lk(info::mesh->voxelization.mutex);
+		--info::mesh->voxelization.counter;
+		info::mesh->voxelization.cv.notify_one();
 	}
 
 	if (_measure) { eslog::checkpointln("OPENVDB: DATA SERIALIZED"); }
