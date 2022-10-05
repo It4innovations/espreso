@@ -27,7 +27,7 @@ struct SharedVolume {
 
 	SharedVolume(const std::string &prefix, int step, int root)
 	: step(step), root(root),
-	  win{}, buffer{}, nvoxels{}, nvalues{}, displacement{}, voxels{}, values{}
+	  nvoxels{}, nvalues{}, displacement{}, voxels{}, values{}
 	{
 		std::stringstream name;
 		name << prefix + "." << std::setw(4) << std::setfill('0') << std::to_string(step) << ".vdb";
@@ -36,9 +36,6 @@ struct SharedVolume {
 
 	std::string filename;
 	int step, root;
-
-	MPI_Win win;
-	void *buffer;
 
 	esint nvoxels, nvalues;
 	esint* displacement;
@@ -162,45 +159,14 @@ void OpenVDB::updateSolution()
 
 	if (_measure) { eslog::checkpointln("OPENVDB: DATA SERIALIZED"); }
 
-	size_t localSize = sizeof(esint) * displacement.size() + sizeof(_Point<short>) * voxels.size() + sizeof(float) * values.size();
-	if (node == MPITools::node->across.rank) {
-		if (volume->root == info::mpi::rank) {
-			localSize = localSize * info::mpi::size;
-		} else {
-			localSize = 0;
-		}
-		MPI_Win_allocate_shared(localSize, 1, MPI_INFO_NULL, MPITools::node->within.communicator, &volume->buffer, &volume->win);
-		MPI_Aint size; int disp;
-		MPI_Win_shared_query(volume->win, rank, &size, &disp, &volume->buffer);
+	if (volume->root == info::mpi::rank) {
+		volume->displacement = new esint[displacement.size() * info::mpi::size];
+		volume->voxels = new _Point<short>[voxels.size() * info::mpi::size];
+		volume->values = new float[values.size() * info::mpi::size];
 	}
-
-	void *displacementBuffer = volume->buffer;
-	void *voxelBuffer = (esint*)displacementBuffer + displacement.size() * info::mpi::size;
-	void *valuesBuffer = (_Point<short>*)voxelBuffer + voxels.size() * info::mpi::size;
-	displacementBuffer = (esint*)displacementBuffer + displacement.size() * MPITools::node->across.size * MPITools::node->within.rank;
-	voxelBuffer = (_Point<short>*)voxelBuffer + voxels.size() * MPITools::node->across.size * MPITools::node->within.rank;
-	valuesBuffer = (float*)valuesBuffer + values.size() * MPITools::node->across.size * MPITools::node->within.rank;
-	Communication::gather(displacement.data(), displacementBuffer, displacement.size(), MPITools::getType<esint>().mpitype, node, &MPITools::node->across);
-	Communication::gather(voxels.data(), voxelBuffer, voxels.size() * sizeof(_Point<short>), MPI_BYTE, node, &MPITools::node->across);
-	Communication::gather(values.data(), valuesBuffer, values.size(), MPI_FLOAT, node, &MPITools::node->across);
-	if (node == MPITools::node->across.rank) {
-		MPI_Win_fence(0, volume->win);
-		if (volume->root == info::mpi::rank) { // copy data from window to local buffers, it allows to use detached thread
-			volume->displacement = new esint[displacement.size() * info::mpi::size];
-			volume->voxels = new _Point<short>[voxels.size() * info::mpi::size];
-			volume->values = new float[values.size() * info::mpi::size];
-
-			displacementBuffer = volume->buffer;
-			voxelBuffer = (esint*)displacementBuffer + displacement.size() * info::mpi::size;
-			valuesBuffer = (_Point<short>*)voxelBuffer + voxels.size() * info::mpi::size;
-
-			memcpy(volume->displacement, displacementBuffer, info::mpi::size * displacement.size() * sizeof(esint));
-			memcpy(volume->voxels, voxelBuffer, info::mpi::size * voxels.size() * sizeof(_Point<short>));
-			memcpy(volume->values, valuesBuffer, info::mpi::size * values.size() * sizeof(float));
-		}
-		MPI_Win_fence(0, volume->win);
-		MPI_Win_free(&volume->win);
-	}
+	Communication::gather(displacement.data(), volume->displacement, displacement.size(), MPITools::getType<esint>().mpitype, volume->root, MPITools::asynchronous);
+	Communication::gather(voxels.data(), volume->voxels, voxels.size() * sizeof(_Point<short>), MPI_BYTE, volume->root, MPITools::asynchronous);
+	Communication::gather(values.data(), volume->values, values.size(), MPI_FLOAT, volume->root, MPITools::asynchronous);
 
 	if (_measure) { eslog::checkpointln("OPENVDB: DATA GATHERED"); }
 
