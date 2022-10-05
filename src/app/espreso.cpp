@@ -75,10 +75,10 @@ int main(int argc, char **argv)
 		profiler::syncstart("physical_solver");
 		PhysicalSolver::run();
 		profiler::syncend("physical_solver");
-		eslog::endln("ESPRESO: SIMULATION FINISHED");
 	}
 
 	Mesh::finish();
+	eslog::endln("ESPRESO: ESPRESO FINISHED");
 	eslog::finish();
 	profiler::syncend("espreso");
 	profiler::print(); // need to be printed before MPI_Finalize

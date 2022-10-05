@@ -17,10 +17,12 @@
 #include "config/ecf/input/input.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/meshinfo.h"
 #include "input/builders/builder.h"
 #include "mesh/mesh.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
+#include "output/output.h"
 #include "wrappers/mpi/communication.h"
 
 #include <fstream>
@@ -505,13 +507,6 @@ double InputOpenFoamParallel::nextVariables(Mesh &mesh)
 		}
 	}
 
-	double time = 0;
-	for (int d = info::mpi::rank; d < info::mpi::size; d += info::mpi::size) { // only once
-		if (utils::exists(variablePath + "/processor" + std::to_string(d) + "/" + timesteps[timestep] + "/uniform/time")) {
-			time = OpenFOAMTime::value(variablePath + "/processor" + std::to_string(d) + "/" + timesteps[timestep] + "/uniform/time");
-		}
-	}
-
 	if (++timestep < timesteps.size()) {
 		variablePack.clear();
 		for (int d = info::mpi::rank; d < domains; d += info::mpi::size) {
@@ -523,9 +518,23 @@ double InputOpenFoamParallel::nextVariables(Mesh &mesh)
 			}
 		}
 		variablePack.iread(MPITools::singleton->within);
+		eslog::checkpointln("VARIABLES LOADER: IREAD NEXT TIME STEP");
 	}
 
-	eslog::endln("VARIABLES LOADER: FINISHED");
+	if (step::step.substep == 0) {
+		info::mesh->output->updateMonitors();
+	}
+	info::mesh->output->updateSolution();
+	eslog::checkpointln("VARIABLES LOADER: SOLUTION UPDATED");
+
+	double time = 0;
+	for (int d = info::mpi::rank; d < info::mpi::size; d += info::mpi::size) { // only once
+		if (utils::exists(variablePath + "/processor" + std::to_string(d) + "/" + timesteps[timestep - 1] + "/uniform/time")) {
+			time = OpenFOAMTime::value(variablePath + "/processor" + std::to_string(d) + "/" + timesteps[timestep - 1] + "/uniform/time");
+		}
+	}
+
+	eslog::endln("VARIABLES LOADER: TIME SET");
 
 	return time;
 }
@@ -560,7 +569,7 @@ void InputOpenFoamParallel::ivariables(const InputConfiguration &configuration)
 		}
 		for (size_t s = 0; s < subdirs.size(); ++s) {
 			char *strend;
-			float time = std::strtof(subdirs[s].c_str(), &strend);
+			double time = std::strtod(subdirs[s].c_str(), &strend);
 			if (subdirs[s].c_str() != strend) {
 				if (min - 1e-9 <= time && time <= max + 1e-9) {
 					steps.push_back(subdirs[s]);

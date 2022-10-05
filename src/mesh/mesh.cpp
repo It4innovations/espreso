@@ -157,21 +157,15 @@ void Mesh::load()
 				eslog::info(" ==  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  == \n");
 			}
 			step::time.current = input->nextVariables(*info::mesh);
-			if (step::step.substep == 0) {
-				info::mesh->output->updateMonitors();
-			}
-			info::mesh->output->updateSolution();
 		}
 		eslog::info(" ============================================================================================= \n\n");
 		eslog::checkpointln("ESPRESO: VARIABLES LOADED");
+	} else {
+		info::mesh->output->updateMonitors();
 	}
 
 	delete input;
 	profiler::syncend("load");
-
-	if (info::ecf->input.convert_database) {
-		eslog::endln("ESPRESO: DATABASE CONVERTED");
-	}
 }
 
 /**

@@ -43,6 +43,7 @@ int main(int argc, char **argv)
 	Mesh::load();
 
 	Mesh::finish();
+	eslog::endln("ESPRESO: MESIO FINISHED");
 	eslog::finish();
 	MPITools::finish();
 	ECF::finish();
