@@ -159,7 +159,9 @@ void Mesh::load()
 			step::time.current = input->nextVariables(*info::mesh);
 		}
 		eslog::info(" ============================================================================================= \n\n");
-		eslog::checkpointln("ESPRESO: VARIABLES LOADED");
+		eslog::checkpoint("ESPRESO: VARIABLES LOADED");
+		eslog::param("TIME STEPS", input->variables());
+		eslog::ln();
 	} else {
 		info::mesh->output->updateMonitors();
 	}

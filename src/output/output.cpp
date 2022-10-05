@@ -64,6 +64,11 @@ public:
 	virtual void execute(int tag)
 	{
 		step::toOut();
+		if (tag == mesh || tag == solution) {
+			for (size_t i = 0; i < writers.size(); ++i) {
+				writers[i]->lock();
+			}
+		}
 		call(tag);
 	}
 };
@@ -79,8 +84,10 @@ public:
 	{
 		info::mesh->toBuffer();
 		step::toOut();
-		for (size_t i = 0; i < writers.size(); ++i) {
-			writers[i]->lock();
+		if (tag == mesh || tag == solution) {
+			for (size_t i = 0; i < writers.size(); ++i) {
+				writers[i]->lock();
+			}
 		}
 	}
 

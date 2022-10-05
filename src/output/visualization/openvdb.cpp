@@ -64,6 +64,9 @@ OpenVDB::~OpenVDB()
 void OpenVDB::updateMesh()
 {
 	// nothing is done here since we gather mesh to a different process each time step
+	std::lock_guard<std::mutex> lk(info::mesh->voxelization.mutex);
+	--info::mesh->voxelization.counter;
+	info::mesh->voxelization.cv.notify_one();
 }
 
 void store(SharedVolume *volume)
@@ -124,7 +127,7 @@ void OpenVDB::updateSolution()
 	SharedVolume *volume = new SharedVolume(_filename, _step++, node * MPITools::node->within.size + rank);
 
 	volume->nvoxels = info::mesh->elements->volumeIndices->datatarray().size();
-	Communication::allReduce(&volume->nvoxels, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_MAX);
+	Communication::allReduce(&volume->nvoxels, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_MAX, MPITools::asynchronous);
 
 	ivector<esint> displacement;
 	ivector<_Point<short> > voxels;

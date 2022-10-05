@@ -245,7 +245,7 @@ void TimeLogger::finish()
 				}
 				break;
 			case Event::INT:
-				if (depth > 1 && ((depth == printeddepth && !denyparam) || allowparam)) {
+				if ((depth == printeddepth && !denyparam) || allowparam) {
 					eslog::info("    [param=%s] %*d  <%8d - %8d>         [%5.2f]\n",
 							events[i].name, namewidth - strlen(events[i].name) - 2,
 							statistics[i].avg.ivalue / info::mpi::size,
@@ -254,7 +254,7 @@ void TimeLogger::finish()
 				}
 				break;
 			case Event::LONG:
-				if (depth > 1 && ((depth == printeddepth && !denyparam) || allowparam)) {
+				if ((depth == printeddepth && !denyparam) || allowparam) {
 					eslog::info("    [param=%s] %*ld  <%8ld - %8ld>         [%5.2f]\n",
 							events[i].name, namewidth - strlen(events[i].name) - 2,
 							statistics[i].avg.lvalue / info::mpi::size,
@@ -263,7 +263,7 @@ void TimeLogger::finish()
 				}
 				break;
 			case Event::SIZE:
-				if (depth > 1 && ((depth == printeddepth && !denyparam) || allowparam)) {
+				if ((depth == printeddepth && !denyparam) || allowparam) {
 					eslog::info("    [param=%s] %*ld  <%8ld - %8ld>         [%5.2f]\n",
 							events[i].name, namewidth - strlen(events[i].name) - 2,
 							statistics[i].avg.svalue / info::mpi::size,
@@ -272,7 +272,7 @@ void TimeLogger::finish()
 				}
 				break;
 			case Event::DOUBLE:
-				if (depth > 1 && ((depth == printeddepth && !denyparam) || allowparam)) {
+				if ((depth == printeddepth && !denyparam) || allowparam) {
 					char avg[9], min[9], max[9];
 					snprintf(avg, 9, "%f", statistics[i].avg.dvalue / info::mpi::size);
 					snprintf(min, 9, "%f", statistics[i].min.dvalue);
