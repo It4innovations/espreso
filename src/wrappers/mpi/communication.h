@@ -18,7 +18,8 @@ class MPIOperations {
 	friend class MPITools;
 public:
 	MPI_Op mergeStatistics;
-	MPI_Datatype STATISTICS;
+	MPI_Datatype STATISTICS, VOXEL, VOXELS;
+	const int voxels = 32;
 
 private:
 	MPIOperations();

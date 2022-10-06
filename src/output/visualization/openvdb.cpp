@@ -128,6 +128,7 @@ void OpenVDB::updateSolution()
 
 	volume->nvoxels = info::mesh->elements->volumeIndices->datatarray().size();
 	Communication::allReduce(&volume->nvoxels, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_MAX, MPITools::asynchronous);
+	volume->nvoxels = volume->nvoxels + MPITools::operations->voxels - (volume->nvoxels % MPITools::operations->voxels);
 
 	ivector<esint> displacement;
 	ivector<_Point<short> > voxels;
@@ -179,7 +180,7 @@ void OpenVDB::updateSolution()
 		volume->values = new float[values.size() * info::mpi::size];
 	}
 	Communication::gather(displacement.data(), volume->displacement, displacement.size(), MPITools::getType<esint>().mpitype, volume->root, MPITools::asynchronous);
-	Communication::gather(voxels.data(), volume->voxels, voxels.size() * sizeof(_Point<short>), MPI_BYTE, volume->root, MPITools::asynchronous);
+	Communication::gather(voxels.data(), volume->voxels, voxels.size() / MPITools::operations->voxels, MPITools::operations->VOXELS, volume->root, MPITools::asynchronous);
 	Communication::gather(values.data(), volume->values, values.size(), MPI_FLOAT, volume->root, MPITools::asynchronous);
 
 	if (_measure) { eslog::checkpointln("OPENVDB: DATA GATHERED"); }
