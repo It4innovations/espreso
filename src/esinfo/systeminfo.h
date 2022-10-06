@@ -46,7 +46,8 @@ namespace system {
 
 	CPUInfo cpuinfo();
 	int hwthreads();
-	long pinnedDomainSize();
+	long mpiAffinity();
+	void forceAffinity(int size);
 	bool pinningIntersection();
 	long memoryTotal();
 	long memoryAvail();

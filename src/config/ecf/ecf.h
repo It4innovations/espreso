@@ -5,6 +5,7 @@
 #include "output.h"
 
 #include "pythontestgenerator.h"
+#include "system.h"
 
 #include "input/input.h"
 #include "input/generator.h"
@@ -64,6 +65,8 @@ struct ECF: public ECFDescription {
 	std::map<std::string, FunctionDefinition> functions;
 
 	FETI4ILibraryConfiguration feti4ilibrary;
+
+	SystemConfiguration system;
 
 	INPUT_TYPE input_type;
 	InputConfiguration input;

@@ -1,5 +1,5 @@
 
-#include <config/ecf/ecf.h>
+#include "ecf.h"
 #include "output.h"
 #include "config/configuration.hpp"
 

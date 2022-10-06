@@ -136,7 +136,7 @@ void finish()
 		eslog::warning(" =                        MORE THREADS WAS PINNED TO THE SAME HWTHREAD                       = \n");
 		eslog::warning(" ============================================================================================= \n");
 	}
-	if (info::system::pinnedDomainSize() < info::env::OMP_NUM_THREADS + asynchronousThread) {
+	if (info::system::mpiAffinity() < info::env::OMP_NUM_THREADS + asynchronousThread) {
 		eslog::warning(" ============================================================================================= \n");
 		eslog::warning(" =                              PINNED DOMAIN < SPAWNED THREADS                              = \n");
 		eslog::warning(" ============================================================================================= \n");

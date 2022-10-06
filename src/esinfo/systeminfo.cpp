@@ -130,11 +130,24 @@ CPUInfo cpuinfo()
 	return info;
 }
 
-long pinnedDomainSize()
+long mpiAffinity()
 {
 	cpu_set_t affinity;
 	sched_getaffinity(0, sizeof(cpu_set_t), &affinity);
 	return CPU_COUNT(&affinity);
+}
+
+void forceAffinity(int size)
+{
+	cpu_set_t affinity;
+	sched_getaffinity(0, sizeof(cpu_set_t), &affinity);
+	int first = 0;
+	while (!CPU_ISSET(first, &affinity)) ++first;
+	CPU_ZERO(&affinity);
+	for (int i = first; i < first + size; ++i) {
+		CPU_SET(i, &affinity);
+	}
+	sched_setaffinity(0, sizeof(cpu_set_t), &affinity);
 }
 
 bool pinningIntersection()
@@ -212,6 +225,13 @@ void print()
 		memTotal = info::system::memoryTotal();
 	}
 	int asynchronousThread = info::ecf->output.mode == OutputConfiguration::MODE::PTHREAD;
+	if (info::ecf->output.format == OutputConfiguration::FORMAT::OPENVDB) {
+		++asynchronousThread;
+	}
+
+	if (info::ecf->system.mpi_affinity) {
+		forceAffinity(info::ecf->system.mpi_affinity);
+	}
 
 	eslog::info(" ================================ SYSTEM AND ENVIRONMENT INFO ================= %12.3f s\n", eslog::duration());
 	eslog::info(" ============================================================================================= \n");
@@ -237,7 +257,7 @@ void print()
 	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
 
 	eslog::info(" == MPI PROCESSES PER NODE %64d == \n", ppn);
-	eslog::info(" == MPI PINNED DOMAIN SIZE %64d == \n", info::system::pinnedDomainSize());
+	eslog::info(" == MPI AFFINITY %74d == \n", info::system::mpiAffinity());
 	switch (secondRankNode) {
 	case 0: eslog::info(" == MPI PLACEMENT ORDER    %64s == \n", "NODE FIRST"); break;
 	case 1: eslog::info(" == MPI PLACEMENT ORDER    %64s == \n", "ACROSS NODES"); break;

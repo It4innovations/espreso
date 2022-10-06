@@ -121,6 +121,9 @@ void ECF::_init()
 	REGISTER(feti4ilibrary, ECFMetaData()
 			.setdescription({ "Settings for FETI4I library." }));
 
+	REGISTER(system, ECFMetaData()
+			.setdescription({ "System configuration." }));
+
 	ecfdescription->addSpace();
 
 	input_type = INPUT_TYPE::EXTERNAL_FILE;
