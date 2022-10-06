@@ -203,6 +203,8 @@ void print()
 	int nodes = info::mpi::size / ppn;
 	const char* simd = info::system::simd();
 	auto cpuinfo = info::system::cpuinfo();
+	int secondRankNode = info::mpi::rank == 1 ? MPITools::node->across.rank : 0;
+	Communication::allReduce(&secondRankNode, nullptr, 1, MPI_INT, MPI_MAX);
 
 	double memTotal = 0, memAvail = 0;
 	if (info::mpi::rank == 0) {
@@ -214,28 +216,33 @@ void print()
 	eslog::info(" ================================ SYSTEM AND ENVIRONMENT INFO ================= %12.3f s\n", eslog::duration());
 	eslog::info(" ============================================================================================= \n");
 
-	eslog::info(" == CPU MODEL NAME %*s == \n", 72, cpuinfo.modelName);
-	eslog::info(" == NODES %*d == \n", 81, nodes);
-	eslog::info(" == SOCKETS PER NODE %*d == \n", 70, cpuinfo.sockets);
-	eslog::info(" == CORES PER SOCKET %*d == \n", 70, cpuinfo.cores);
-	eslog::info(" == HYPERTHREADING %*s == \n", 72, cpuinfo.hyperthreading ? "ON" : "OFF");
-	eslog::info(" == HWTHREADS PER NODE %*d == \n", 68, threads);
-	eslog::info(" == SIMD INSTRUCTION SET %*s == \n", 66, simd);
+	eslog::info(" == CPU MODEL NAME %72s == \n", cpuinfo.modelName);
+	eslog::info(" == NODES %81d == \n", nodes);
+	eslog::info(" == SOCKETS PER NODE %70d == \n", cpuinfo.sockets);
+	eslog::info(" == CORES PER SOCKET %70d == \n", cpuinfo.cores);
+	eslog::info(" == HYPERTHREADING %72s == \n", cpuinfo.hyperthreading ? "ON" : "OFF");
+	eslog::info(" == HWTHREADS PER NODE %68d == \n", threads);
+	eslog::info(" == SIMD INSTRUCTION SET %66s == \n", simd);
 	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
 
-	eslog::info(" == AVAILABLE MEMORY PER NODE [GB] %*.2f == \n", 56, memAvail / 1024 / 1024);
-	eslog::info(" == TOTAL MEMORY PER NODE [GB] %*.2f == \n", 60, memTotal / 1024 / 1024);
+	eslog::info(" == AVAILABLE MEMORY PER NODE [GB] %56.2f == \n", memAvail / 1024 / 1024);
+	eslog::info(" == TOTAL MEMORY PER NODE [GB] %60.2f == \n", memTotal / 1024 / 1024);
 	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
 
-	eslog::info(" == MPI_COMM_WORLD %*d == \n", 72, info::mpi::size);
-	eslog::info(" == OMP_NUM_THREADS %*d == \n", 71, info::env::OMP_NUM_THREADS);
+	eslog::info(" == MPI_COMM_WORLD %72d == \n", info::mpi::size);
+	eslog::info(" == OMP_NUM_THREADS %71d == \n", info::env::OMP_NUM_THREADS);
 	eslog::info(" == NUMBER OF ASYNCHRONOUS P-THREADS %*d == \n", 54, asynchronousThread);
 
 	eslog::info(" == USED HWTHREADS PER NODE   %*d / %d == \n", 56 - threads / 100, ppn * (info::env::OMP_NUM_THREADS + asynchronousThread), threads);
 	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
 
-	eslog::info(" == MPI PROCESSES PER NODE %*d == \n", 64, ppn);
-	eslog::info(" == MPI PINNED DOMAIN SIZE %*d == \n", 64, info::system::pinnedDomainSize());
+	eslog::info(" == MPI PROCESSES PER NODE %64d == \n", ppn);
+	eslog::info(" == MPI PINNED DOMAIN SIZE %64d == \n", info::system::pinnedDomainSize());
+	switch (secondRankNode) {
+	case 0: eslog::info(" == MPI PLACEMENT ORDER    %64s == \n", "NODE FIRST"); break;
+	case 1: eslog::info(" == MPI PLACEMENT ORDER    %64s == \n", "ACROSS NODES"); break;
+	}
+
 
 	eslog::info(" ============================================================================================= \n\n");
 }
