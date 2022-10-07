@@ -90,6 +90,13 @@ OpenVDBWrapper::FloatData::FloatData(const std::string &name)
 #endif
 }
 
+OpenVDBWrapper::FloatData::~FloatData()
+{
+#ifdef HAVE_OPENVDB
+	delete wrapper;
+#endif
+}
+
 void OpenVDBWrapper::FloatData::insert(esint elements, esint *dist, _Point<short>* voxels, float *data)
 {
 #ifdef HAVE_OPENVDB

@@ -14,10 +14,11 @@ struct OpenVDBFloatWrapper;
 
 struct OpenVDBWrapper {
 
-	struct Data {};
+	struct Data { virtual ~Data() {} };
 
 	struct FloatData: Data {
 		FloatData(const std::string &name);
+		~FloatData();
 		void insert(esint elements, esint *dist, _Point<short>* voxels, float *data);
 
 		OpenVDBFloatWrapper *wrapper;

@@ -4,10 +4,14 @@
 
 #include "visualization.h"
 #include "basis/containers/allocators.h"
+#include "wrappers/mpi/communication.h"
 #include "wrappers/openvdb/w.openvdb.h"
 #include "wrappers/pthread/w.pthread.h"
 
 #include <string>
+#include <queue>
+
+struct SharedVolume;
 
 namespace espreso {
 
@@ -23,6 +27,15 @@ public:
 protected:
 	std::string _filename;
 	int _step;
+
+	struct OpenVDBData {
+		SharedVolume *volume;
+		MPI_Request req[3];
+
+		bool call();
+	};
+
+	std::queue<OpenVDBData> _postponed;
 };
 
 }

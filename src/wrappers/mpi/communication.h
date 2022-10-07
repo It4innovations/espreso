@@ -219,8 +219,11 @@ struct Communication {
 	static bool broadcast(void *data, size_t size, MPI_Datatype type, int root, const MPIGroup *group = MPITools::procs);
 	static bool reduce(void *in, void *out, size_t size, MPI_Datatype type, MPI_Op op, int root, MPIGroup *group = MPITools::procs);
 	static bool gather(void *in, void *out, size_t size, MPI_Datatype type, int root, MPIGroup *group = MPITools::procs);
+	static bool igather(void *in, void *out, size_t size, MPI_Datatype type, int root, MPI_Request &req, MPIGroup *group = MPITools::procs);
 	static bool allReduce(void *in, void *out, size_t size, MPI_Datatype type, MPI_Op op, MPIGroup *group = MPITools::procs);
 	static bool allGather(void *in, void *out, size_t size, MPI_Datatype type, MPIGroup *group = MPITools::procs);
+
+	static bool testAll(int size, MPI_Request* requests);
 
 	template <typename Ttype, typename Talloc=std::allocator<Ttype> >
 	static void scatterv(const std::vector<Ttype, Talloc> &sBuffer, std::vector<Ttype, Talloc> &rBuffer, std::vector<size_t> &displacement, MPIGroup *group = MPITools::procs);

@@ -529,7 +529,7 @@ bool Communication::reduce(void *in, void *out, size_t size, MPI_Datatype type, 
 	profiler::syncstart("mpi_reduce");
 	profiler::syncparam("size", size);
 	if (out == NULL) {
-		if (info::mpi::rank == root) {
+		if (group->rank == root) {
 			MPI_Reduce(MPI_IN_PLACE, in, size, type, op, root, group->communicator);
 		} else {
 			MPI_Reduce(in, NULL, size, type, op, root, group->communicator);
@@ -551,6 +551,33 @@ bool Communication::gather(void *in, void *out, size_t size, MPI_Datatype type, 
 	MPI_Gather(in, size, type, out, size, type, root, group->communicator);
 	profiler::syncend("mpi_gather");
 	return true;
+}
+
+bool Communication::igather(void *in, void *out, size_t size, MPI_Datatype type, int root, MPI_Request &req, MPIGroup *group)
+{
+	if (size != (size_t)(int)size) {
+		return false;
+	}
+	profiler::syncstart("mpi_gather");
+	profiler::syncparam("size", size);
+	if (out == nullptr) {
+		if (group->rank == root) {
+			MPI_Igather(MPI_IN_PLACE, size, type, in, size, type, root, group->communicator, &req);
+		} else {
+			MPI_Igather(in, size, type, out, size, type, root, group->communicator, &req);
+		}
+	} else {
+		MPI_Igather(in, size, type, out, size, type, root, group->communicator, &req);
+	}
+	profiler::syncend("mpi_gather");
+	return true;
+}
+
+bool Communication::testAll(int size, MPI_Request* requests)
+{
+	int flag;
+	MPI_Testall(size, requests, &flag, MPI_STATUSES_IGNORE);
+	return flag;
 }
 
 bool Communication::allReduce(void *in, void *out, size_t size, MPI_Datatype type, MPI_Op op, MPIGroup *group)
