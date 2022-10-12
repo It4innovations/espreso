@@ -165,6 +165,9 @@ void checkElementShape(ElementStore *elements, const NodeStore *nodes)
 {
 	profiler::syncstart("check_element_shape");
 
+	if (elements->shape) {
+		delete elements->shape;
+	}
 	elements->shape = new serializededata<esint, Element::SHAPE>(1, tarray<Element::SHAPE>(elements->distribution.threads, 1, Element::SHAPE::CONVEX));
 
 	#pragma omp parallel for
@@ -367,6 +370,9 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	elements->volumeGrid = grid;
 	elements->volumeOrigin = origin;
 	elements->volumeSize = size;
+	if (elements->volumeIndices) {
+		delete elements->volumeIndices;
+	}
 	elements->volumeIndices = new serializededata<esint, _Point<short> >(vdistribution, vdata);
 
 	profiler::syncend("compute_volume_indices");
