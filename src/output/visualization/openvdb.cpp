@@ -78,18 +78,20 @@ void store(SharedVolume *volume)
 {
 	if (volume->root == info::mpi::rank) {
 		OpenVDBWrapper wrapper(info::mesh->elements->volumeOrigin, info::mesh->elements->volumeSize, info::mesh->elements->volumeGrid);
+		int nvalue = 0;
 		for (size_t di = 0; di < info::mesh->elements->data.size(); di++) { // go through all element values
 			if (info::mesh->elements->data[di]->name.size()) {
 				OpenVDBWrapper::FloatData *data = wrapper.addFloat(info::mesh->elements->data[di]->name);
 				esint* displacement = volume->displacement;
 				_Point<short>* voxels = volume->voxels;
-				float* values = volume->values;
+				float* values = volume->values + nvalue * volume->size;
 				for (int r = 0; r < info::mpi::size; ++r) {
 					data->insert(volume->sizes[r], displacement, voxels, values);
 					displacement += volume->size + 1;
 					voxels += volume->nvoxels;
-					values += volume->size;
+					values += volume->size * volume->nvalues;
 				}
+				++nvalue;
 			}
 		}
 
@@ -153,7 +155,6 @@ void OpenVDB::updateSolution()
 
 	volume->nvoxels = info::mesh->elements->volumeIndices->datatarray().size();
 	Communication::allReduce(&volume->nvoxels, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_MAX, MPITools::asynchronous);
-	volume->nvoxels = volume->nvoxels + MPITools::operations->voxels - (volume->nvoxels % MPITools::operations->voxels);
 
 	for (size_t di = 0; di < info::mesh->elements->data.size(); di++) { // go through all element values
 		if (info::mesh->elements->data[di]->name.size()) {
@@ -177,7 +178,6 @@ void OpenVDB::updateSolution()
 	}
 
 	offset *= SharedVolume::size * volume->nvalues;
-	volume->nvalues = 0;
 	for (size_t di = 0; di < info::mesh->elements->data.size(); di++) { // go through all element values
 		if (info::mesh->elements->data[di]->name.size()) {
 			if (info::mesh->elements->data[di]->dimension == 1) {
@@ -192,8 +192,7 @@ void OpenVDB::updateSolution()
 					volume->values[offset + e] = std::sqrt(value);
 				}
 			}
-			++volume->nvalues;
-			offset += volume->nvalues;
+			offset += SharedVolume::size;
 		}
 	}
 
@@ -202,7 +201,7 @@ void OpenVDB::updateSolution()
 	_postponed.emplace();
 	_postponed.back().volume = volume;
 	Communication::igather(volume->displacement, nullptr, SharedVolume::size + 1, MPITools::getType<esint>().mpitype, volume->root, _postponed.back().req[0], MPITools::asynchronous);
-	Communication::igather(volume->voxels, nullptr, volume->nvoxels / MPITools::operations->voxels, MPITools::operations->VOXELS, volume->root, _postponed.back().req[1], MPITools::asynchronous);
+	Communication::igather(volume->voxels, nullptr, volume->nvoxels, MPITools::operations->VOXEL, volume->root, _postponed.back().req[1], MPITools::asynchronous);
 	Communication::igather(volume->values, nullptr, SharedVolume::size * volume->nvalues, MPI_FLOAT, volume->root, _postponed.back().req[2], MPITools::asynchronous);
 
 	if (_measure) { eslog::checkpointln("OPENVDB: DATA GATHERED"); }

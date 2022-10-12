@@ -142,9 +142,6 @@ void Mesh::load()
 		eslog::ln();
 	}
 
-	auto data = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "test");
-	std::iota(data->data.begin(), data->data.end(), info::mesh->elements->distribution.process.offset);
-
 	profiler::syncstart("mesh_output");
 	info::mesh->output->updateMesh();
 	if (info::ecf->output.mode == OutputConfiguration::MODE::SYNC) {
@@ -167,8 +164,8 @@ void Mesh::load()
 		eslog::ln();
 	} else {
 		info::mesh->output->updateMonitors();
+		info::mesh->output->updateSolution();
 	}
-	info::mesh->output->updateSolution();
 
 	delete input;
 	profiler::syncend("load");
