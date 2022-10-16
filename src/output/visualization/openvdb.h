@@ -30,7 +30,7 @@ protected:
 
 	struct OpenVDBData {
 		SharedVolume *volume;
-		MPI_Request req[3];
+		MPI_Request req[2];
 
 		bool call();
 	};

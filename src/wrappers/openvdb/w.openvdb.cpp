@@ -59,28 +59,25 @@ OpenVDBWrapper::OpenVDBWrapper(const Point &origin, const Point &size, const _Po
 
 OpenVDBWrapper::~OpenVDBWrapper()
 {
-#ifdef HAVE_OPENVDB
-	delete _wrapper;
 	for (size_t i = 0; i < _data.size(); ++i) {
 		delete _data[i];
 	}
+#ifdef HAVE_OPENVDB
+	delete _wrapper;
 #endif
 }
 
 OpenVDBWrapper::FloatData* OpenVDBWrapper::addFloat(const std::string &name)
 {
-#ifdef HAVE_OPENVDB
 	FloatData *data = new FloatData(name);
 	_data.push_back(data);
+#ifdef HAVE_OPENVDB
 	_wrapper->grids.push_back(data->wrapper->grid);
 	_wrapper->grids.back()->setGridClass(openvdb::GRID_LEVEL_SET);
 	_wrapper->grids.back()->setTransform(openvdb::math::Transform::createLinearTransform(_wrapper->mat));
 	_wrapper->grids.back()->setName(name);
-
-	return data;
-#else
-	return nullptr;
 #endif
+	return data;
 }
 
 OpenVDBWrapper::FloatData::FloatData(const std::string &name)
@@ -97,17 +94,15 @@ OpenVDBWrapper::FloatData::~FloatData()
 #endif
 }
 
-void OpenVDBWrapper::FloatData::insert(esint elements, esint *dist, _Point<short>* voxels, float *data)
+void OpenVDBWrapper::FloatData::insert(const VolumePacker &packer, char *voxels, float *values)
 {
 #ifdef HAVE_OPENVDB
 	openvdb::FloatGrid::Accessor accessor = wrapper->grid->getAccessor();
 
-	for (esint e = 0; e < elements; ++e) {
-		for (esint v = dist[e]; v < dist[e + 1]; ++v) {
-			openvdb::Coord xyz(voxels[v].x, voxels[v].y, voxels[v].z);
-			accessor.setValue(xyz, data[e]);
-		}
-	}
+	packer.unpack(voxels, [&] (const _Point<short> &voxel, const size_t &vindex) {
+		openvdb::Coord xyz(voxel.x, voxel.y, voxel.z);
+		accessor.setValue(xyz, values[vindex]);
+	});
 #endif
 }
 

@@ -105,18 +105,12 @@ MPIOperations::MPIOperations()
 	MPI_Op_create(_mergeStatistics, 1, &mergeStatistics);
 	MPI_Type_contiguous(sizeof(Statistics), MPI_BYTE, &STATISTICS);
 	MPI_Type_commit(&STATISTICS);
-	MPI_Type_contiguous(sizeof(_Point<short>), MPI_BYTE, &VOXEL);
-	MPI_Type_commit(&VOXEL);
-	MPI_Type_contiguous(voxels, VOXEL, &VOXELS);
-	MPI_Type_commit(&VOXELS);
 }
 
 MPIOperations::~MPIOperations()
 {
 	MPI_Op_free(&mergeStatistics);
 	MPI_Type_free(&STATISTICS);
-	MPI_Type_free(&VOXEL);
-	MPI_Type_free(&VOXELS);
 }
 
 MPIGroup::MPIGroup()
