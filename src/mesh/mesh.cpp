@@ -297,6 +297,9 @@ void Mesh::preprocess()
 
 		if (convertToVolume) {
 			eslog::info(" == OUTPUT SYNCHRONIZATION %64s == \n", "REGULAR GRID");
+
+			mesh::sortElementsSFC(elements, nodes, domains, elementsRegions, boundaryRegions, contactInterfaces, neighbors);
+
 			mesh::computeBaseMeshInfo(elements, nodes);
 			mesh::checkElementShape(elements, nodes);
 			mesh::computeVolumeIndices(elements, nodes);

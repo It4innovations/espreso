@@ -3103,6 +3103,36 @@ void sortNodes(NodeStore *nodes, ElementStore *elements, std::vector<BoundaryReg
 	eslog::checkpointln("MESH: NODES SORTED");
 }
 
+void sortElementsSFC(ElementStore *elements, NodeStore *nodes, DomainStore *domains, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces, std::vector<int> &neighbors)
+{
+	profiler::syncstart("compute SFC element permutation");
+	std::vector<esint> permutation(elements->distribution.process.size);
+	std::iota(permutation.begin(), permutation.end(), 0);
+
+	HilbertCurve<double> sfc(info::mesh->dimension, SFCDEPTH, nodes->coordinates->datatarray().size(), nodes->coordinates->datatarray().data());
+	std::vector<esint, initless_allocator<esint> > buckets(elements->epointers->datatarray().size());
+
+	double vsum = 0;
+	std::vector<double> volume(elements->epointers->datatarray().size());
+
+	#pragma omp parallel for
+	for (int t = 0; t < info::env::OMP_NUM_THREADS; t++) {
+		size_t e = elements->epointers->datatarray().distribution()[t];
+		for (auto enodes = elements->nodes->begin(t); enodes != elements->nodes->end(t); ++e, ++enodes) {
+			buckets[e] = sfc.getBucket(nodes->coordinates->datatarray()[enodes->back()]);
+		}
+	}
+
+	std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) { return buckets[i] < buckets[j]; });
+
+	std::vector<size_t> dist;
+	dist.push_back(0);
+	dist.push_back(elements->distribution.process.size);
+	permuteElements(elements, nodes, domains, elementsRegions, boundaryRegions, contactInterfaces, neighbors, dist, permutation);
+
+	profiler::syncend("compute SFC element permutation");
+}
+
 void computeElementDistribution(ElementStore *elements)
 {
 	profiler::syncstart("compute_element_distribution");

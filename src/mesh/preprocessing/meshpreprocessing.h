@@ -47,6 +47,7 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 void computeContinuousClusterization(const ElementStore *elements, const NodeStore *nodes, const std::vector<esint> &dualDist, const std::vector<esint> &dualData, esint coffset, esint csize, const std::vector<int> &component, const std::vector<int> &neighborsWithMe, std::vector<esint> &partition);
 
 void sortNodes(NodeStore *nodes, ElementStore *elements, std::vector<BoundaryRegionStore*> &boundaryRegions);
+void sortElementsSFC(ElementStore *elements, NodeStore *nodes, DomainStore *domains, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces, std::vector<int> &neighbors);
 void computeElementDistribution(ElementStore *elements);
 void computeERegionsDistribution(ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions);
 
