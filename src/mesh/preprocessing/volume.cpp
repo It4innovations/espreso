@@ -375,68 +375,6 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	}
 	elements->volumeIndices = new serializededata<esint, _Point<short> >(vdistribution, vdata);
 
-	esint cc = 0;
-	for (size_t i = 1; i < vdistribution[0].size(); ++i) {
-		if (1 < vdistribution[0][i] - vdistribution[0][i - 1]) {
-			++cc;
-		}
-	}
-
-	_Point<int> diff;
-	_Point<float> avg;
-	size_t count32 = vdata[0].size(), count16 = vdata[0].size(), count4 = vdata[0].size(), count8 = vdata[0].size(), count2 = vdata[0].size();
-	for (size_t i = 1; i < vdata[0].size(); ++i) {
-		avg.x += std::abs(vdata[0][i].x - vdata[0][i - 1].x);
-		avg.y += std::abs(vdata[0][i].y - vdata[0][i - 1].y);
-		avg.z += std::abs(vdata[0][i].z - vdata[0][i - 1].z);
-		diff.x = std::max(diff.x, std::abs(vdata[0][i].x - vdata[0][i - 1].x));
-		diff.y = std::max(diff.y, std::abs(vdata[0][i].y - vdata[0][i - 1].y));
-		diff.z = std::max(diff.z, std::abs(vdata[0][i].z - vdata[0][i - 1].z));
-		if (
-				31 < std::abs(vdata[0][i].x - vdata[0][i - 1].x) ||
-				31 < std::abs(vdata[0][i].y - vdata[0][i - 1].y) ||
-				31 < std::abs(vdata[0][i].z - vdata[0][i - 1].z)
-				) {
-			--count32;
-		}
-		if (
-				15 < std::abs(vdata[0][i].x - vdata[0][i - 1].x) ||
-				15 < std::abs(vdata[0][i].y - vdata[0][i - 1].y) ||
-				15 < std::abs(vdata[0][i].z - vdata[0][i - 1].z)
-				) {
-			--count16;
-		}
-		if (
-				7 < std::abs(vdata[0][i].x - vdata[0][i - 1].x) ||
-				7 < std::abs(vdata[0][i].y - vdata[0][i - 1].y) ||
-				7 < std::abs(vdata[0][i].z - vdata[0][i - 1].z)
-				) {
-			--count8;
-		}
-		if (
-				3 < std::abs(vdata[0][i].x - vdata[0][i - 1].x) ||
-				3 < std::abs(vdata[0][i].y - vdata[0][i - 1].y) ||
-				3 < std::abs(vdata[0][i].z - vdata[0][i - 1].z)
-				) {
-			--count4;
-		}
-		if (
-				1 < std::abs(vdata[0][i].x - vdata[0][i - 1].x) ||
-				1 < std::abs(vdata[0][i].y - vdata[0][i - 1].y) ||
-				1 < std::abs(vdata[0][i].z - vdata[0][i - 1].z)
-				) {
-			--count2;
-		}
-	}
-//	printf("count: %lu / %lu :: %d, avg: %f %f %f\n", count32, vdata[0].size(), cc, avg.x / vdata[0].size(), avg.y / vdata[0].size(), avg.z / vdata[0].size());
-	double c2 = count2;
-	double c4 = count4 - count2;
-	double c8 = count8 - count4;
-	double c16 = count16 - count8;
-	double c32 = count32 - count16;
-	double c = vdata[0].size() - count32;
-	printf("ssize32: 2:%f, 4:%f, 8:%f, 16:%f, 32:%f, %f, / %lu, dubled: %lu\n", c2 / vdata[0].size(), c4 / vdata[0].size(), c8 / vdata[0].size(), c16 / vdata[0].size(), c32 / vdata[0].size(), c / vdata[0].size(), vdata[0].size(), vdata[0].size() - vdistribution[0].size());
-
 	profiler::syncend("compute_volume_indices");
 	eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
 
