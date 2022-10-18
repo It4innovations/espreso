@@ -542,7 +542,16 @@ bool Communication::gather(void *in, void *out, size_t size, MPI_Datatype type, 
 	}
 	profiler::syncstart("mpi_gather");
 	profiler::syncparam("size", size);
-	MPI_Gather(in, size, type, out, size, type, root, group->communicator);
+	if (out == nullptr) {
+		if (group->rank == root) {
+			MPI_Gather(MPI_IN_PLACE, size, type, in, size, type, root, group->communicator);
+		} else {
+			MPI_Gather(in, size, type, out, size, type, root, group->communicator);
+		}
+	} else {
+		MPI_Gather(in, size, type, out, size, type, root, group->communicator);
+	}
+
 	profiler::syncend("mpi_gather");
 	return true;
 }
