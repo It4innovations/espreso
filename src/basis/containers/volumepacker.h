@@ -68,7 +68,7 @@ struct VolumePacker {
 				duplicate = true;
 			}
 		}
-		bytes = bytes / 8 + (bytes % 8 ? 1 : 0) + sizeof(size_t);
+		bytes = sizeof(size_t) + bytes / 8 + 1;
 		return bytes;
 	}
 
