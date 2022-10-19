@@ -49,7 +49,28 @@ std::condition_variable SharedVolume::cv;
 OpenVDB::OpenVDB()
 : _filename(_path + _directory + _name), _step(0)
 {
-
+	nranks.reserve(MPITools::node->within.size);
+	nranks.push_back(0);
+	int step = MPITools::node->within.size;
+	while (step) {
+		if (step % 2 == 0) {
+			step /= 2;
+			size_t size = nranks.size();
+			for (size_t i = 0; i < size; ++i) {
+				nranks.push_back(nranks[i] + step);
+			}
+		} else {
+			size_t size = nranks.size();
+			for (int s = 1; s < step; ++s) {
+				for (size_t i = 0; i < size; ++i) {
+					if (nranks[i] + s < MPITools::node->within.size) {
+						nranks.push_back(nranks[i] + s);
+					}
+				}
+			}
+			step = 0;
+		}
+	}
 }
 
 OpenVDB::~OpenVDB()
@@ -137,7 +158,7 @@ void OpenVDB::updateSolution()
 	}
 
 	int node = _step % MPITools::node->across.size;
-	int rank = (_step / MPITools::node->across.size) % MPITools::node->within.size;
+	int rank = nranks[(_step / MPITools::node->across.size) % MPITools::node->within.size];
 
 	SharedVolume *volume = new SharedVolume(_filename, _step++, node * MPITools::node->within.size + rank);
 

@@ -36,6 +36,7 @@ protected:
 	};
 
 	std::queue<OpenVDBData> _postponed;
+	std::vector<int> nranks;
 };
 
 }
