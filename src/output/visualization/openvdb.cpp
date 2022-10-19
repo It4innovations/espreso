@@ -163,12 +163,6 @@ void OpenVDB::updateSolution()
 	int offset = volume->root == info::mpi::rank ? info::mpi::rank : 0;
 	volume->packer.pack(info::mesh->elements->volumeIndices, volume->pack + offset * volume->nvoxels);
 
-	{ // we can unlock mesh (values are copied by asynchronous output automatically)
-		std::lock_guard<std::mutex> lk(info::mesh->voxelization.mutex);
-		--info::mesh->voxelization.counter;
-		info::mesh->voxelization.cv.notify_one();
-	}
-
 	offset *= volume->ndata * volume->nvalues;
 	for (size_t di = 0; di < info::mesh->elements->data.size(); di++) { // go through all element values
 		if (info::mesh->elements->data[di]->name.size()) {
@@ -190,6 +184,12 @@ void OpenVDB::updateSolution()
 			}
 			offset += volume->nvalues;
 		}
+	}
+
+	{ // we can unlock mesh (values are copied by asynchronous output automatically)
+		std::lock_guard<std::mutex> lk(info::mesh->voxelization.mutex);
+		--info::mesh->voxelization.counter;
+		info::mesh->voxelization.cv.notify_one();
 	}
 
 	if (_measure) { eslog::checkpointln("OPENVDB: DATA SERIALIZED"); }
