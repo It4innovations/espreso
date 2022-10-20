@@ -78,18 +78,15 @@ void assignBuckets(OrderedNodesBalanced &nodes, OrderedElementsBalanced &element
 		esint n = 0;
 		while (!poly.isNode(n)) ++n;
 		closest[e] = elements.enodes[n + eoffset];
-		for (++n; n < Element::encode(elements.etype[e]).nodes; ++n) {
+		for (++n; closest[e] / nodes.chunk != info::mpi::rank && n < Element::encode(elements.etype[e]).nodes; ++n) {
 			if (poly.isNode(n)) {
-				if (elements.enodes[n + eoffset] / nodes.chunk == info::mpi::rank) {
+				if (std::abs(ebuckets[e] / nodes.chunk - info::mpi::rank) > std::abs(elements.enodes[n + eoffset] / nodes.chunk - info::mpi::rank)) {
 					closest[e] = elements.enodes[n + eoffset];
-					++local;
-					break;
-				} else {
-					if (std::abs(ebuckets[e] / nodes.chunk - info::mpi::rank) > std::abs(elements.enodes[n + eoffset] / nodes.chunk - info::mpi::rank)) {
-						closest[e] = elements.enodes[n + eoffset];
-					}
 				}
 			}
+		}
+		if (closest[e] / nodes.chunk == info::mpi::rank) {
+			++local;
 		}
 	}
 
