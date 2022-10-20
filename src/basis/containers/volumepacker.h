@@ -60,7 +60,7 @@ struct VolumePacker {
 				} else {
 					int max = bits(diff);
 					if (max == 7) {
-						bytes += 3 + size.x + size.y + size.z;
+						bytes += 4 + size.x + size.y + size.z;
 					} else {
 						bytes += 4 + 3 * max;
 					}
@@ -116,8 +116,9 @@ struct VolumePacker {
 					stream.insert(&header, 3);
 				} else {
 					char max = bits(diff);
+					char header = (max << 1) | duplicate;
+					stream.insert(&header, 4);
 					if (max == 7) {
-						stream.insert(&max, 3);
 						if (size.x > 8) {
 							stream.insert(reinterpret_cast<const char*>(&v->x), 8);
 							stream.insert(reinterpret_cast<const char*>(&v->x) + 1, size.x - 8);
@@ -137,8 +138,6 @@ struct VolumePacker {
 							stream.insert(reinterpret_cast<const char*>(&v->z), size.z);
 						}
 					} else {
-						char header = (max << 1) | duplicate;
-						stream.insert(&header, 4);
 						if (max > 1) {
 							diff += _Point<short>((1 << (max - 1)) - 1);
 						}
@@ -205,7 +204,7 @@ struct VolumePacker {
 				voxel += diff;
 				break;
 			case 7:
-				duplicate = 1;
+				duplicate = stream.extract(1);
 				if (size.x > 8) {
 					stream.extract(reinterpret_cast<char*>(&voxel.x), 8);
 					stream.extract(reinterpret_cast<char*>(&voxel.x) + 1, size.x - 8);
