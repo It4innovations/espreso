@@ -3112,9 +3112,6 @@ void sortElementsSFC(ElementStore *elements, NodeStore *nodes, DomainStore *doma
 	HilbertCurve<double> sfc(info::mesh->dimension, SFCDEPTH, nodes->coordinates->datatarray().size(), nodes->coordinates->datatarray().data());
 	std::vector<esint, initless_allocator<esint> > buckets(elements->epointers->datatarray().size());
 
-	double vsum = 0;
-	std::vector<double> volume(elements->epointers->datatarray().size());
-
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; t++) {
 		size_t e = elements->epointers->datatarray().distribution()[t];
