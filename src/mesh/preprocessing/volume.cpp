@@ -161,53 +161,6 @@ static int ecode(const Element::CODE &code)
 	}
 }
 
-void checkElementShape(ElementStore *elements, const NodeStore *nodes)
-{
-	profiler::syncstart("check_element_shape");
-
-	if (elements->shape) {
-		delete elements->shape;
-	}
-	elements->shape = new serializededata<esint, Element::SHAPE>(1, tarray<Element::SHAPE>(elements->distribution.threads, 1, Element::SHAPE::CONVEX));
-
-	#pragma omp parallel for
-	for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
-		auto ep = elements->epointers->datatarray().cbegin(t);
-		auto shape = elements->shape->datatarray().begin(t);
-		for (auto enodes = elements->nodes->cbegin(t); enodes != elements->nodes->cend(t); ++enodes, ++ep, ++shape) {
-			switch ((*ep)->code) {
-			case Element::CODE::POINT1:
-			case Element::CODE::LINE2:
-			case Element::CODE::LINE3:
-			case Element::CODE::TRIANGLE3:
-			case Element::CODE::TETRA4:
-				break;
-			case Element::CODE::TRIANGLE6:
-			case Element::CODE::SQUARE4:
-			case Element::CODE::SQUARE8:
-			case Element::CODE::PYRAMID5:
-			case Element::CODE::TETRA10:
-			case Element::CODE::PYRAMID13:
-			case Element::CODE::PRISMA6:
-			case Element::CODE::PRISMA15:
-			case Element::CODE::HEXA8:
-			case Element::CODE::HEXA20:
-			case Element::CODE::POLYGON:
-				// TODO
-				break;
-			case Element::CODE::POLYHEDRON:
-				*shape = Element::SHAPE::CONCAVE;
-				break;
-			default:
-				break;
-			}
-		}
-	}
-
-	profiler::syncend("check_element_shape");
-	eslog::checkpointln("MESH: CHECK ELEMENT SHAPE");
-}
-
 void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 {
 	profiler::syncstart("compute_volume_indices");
@@ -216,6 +169,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	double step = (1.0001 * std::max(std::max(size.x, size.y), size.z)) / info::ecf->output.volume_density;
 	_Point<short> grid(std::floor(size.x / step) + 1, std::floor(size.y / step) + 1, std::floor(size.z / step) + 1);
 	eslog::info(" == GRID DENSITY %58d x %5d x %5d == \n", grid.x, grid.y, grid.z);
+	Point epsilon(step / 100);
 
 	// set voxels to grid centers
 	origin -= (Point(grid) * step - size) / 2;
@@ -227,7 +181,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	vdistribution[0].push_back(0);
 
 	Point *coordinates = nodes->coordinates->datatarray().data();
-	auto bbox = [&coordinates] (Element::CODE code, esint size, const esint *nodes, Point &min, Point &max) {
+	auto bbox = [&coordinates, &epsilon] (Element::CODE code, esint size, const esint *nodes, Point &min, Point &max) {
 		min = max = coordinates[nodes[size - 1]]; // the last node is always coordinate
 		PolyElement poly(Element::decode(code, size), nodes);
 		for (esint n = 0; n < size; ++n) {
@@ -235,6 +189,8 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 				coordinates[nodes[n]].minmax(min, max);
 			}
 		}
+		min -= epsilon;
+		max += epsilon;
 	};
 
 	auto bboxIndices = [&origin, &size, &grid, &step] (const Point &min, const Point &max, _Point<short> &imin, _Point<short> &imax) {
@@ -247,25 +203,23 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		imax.z = std::ceil(pmax.z * grid.z);
 
 		_Point<double> p = origin + _Point<double>(imin) * step;
-		bool allout = true;
+		int inside[3] = { 0, 0, 0 };
 		for (int z = imin.z; z < imax.z; ++z, p.z += step) {
 			if (min.z <= p.z && p.z <= max.z) {
-				allout = false;
+				++inside[2];
 			}
 		}
 		for (int y = imin.y; y < imax.y; ++y, p.y += step) {
 			if (min.y <= p.y && p.y <= max.y) {
-				allout = false;
+				++inside[1];
 			}
 		}
 		for (int x = imin.x; x < imax.x; ++x, p.x += step) {
 			if (min.x <= p.x && p.x <= max.x) {
-				allout = false;
+				++inside[0];
 			}
 		}
-		if (allout) {
-			imax = imin;
-		}
+		return inside[2] * inside[1] * inside[0];
 	};
 
 	auto cutConvex = [&] (const _Point<short> &imin, const _Point<short> &imax, const _Point<double> &v, const _Point<double> &n, std::vector<char> &isin) {
@@ -282,17 +236,17 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 		}
 	};
 
-	auto cutConcave = [&] (const _Point<short> &imin, const _Point<short> &imax, const _Point<double> &v, const _Point<double> &n, std::vector<char> &isin) {
-		_Point<double> p = origin + _Point<double>(imin) * step - v;
+	auto cutConcave = [&] (const _Point<short> &imin, const _Point<short> &imax, const _Point<double> &v0, const _Point<double> &v1, const _Point<double> &v2, std::vector<double> &angle) {
+		_Point<double> p = origin + _Point<double>(imin) * step;
 		int i = 0;
 		for (short z = imin.z; z < imax.z; ++z, p.z += step) {
 			for (short y = imin.y; y < imax.y; ++y, p.y += step) {
 				for (short x = imin.x; x < imax.x; ++x, ++i, p.x += step) {
-					isin[i / 8] &= ~((p * n < 0 ? 1 : 0) << (i % 8));
+					angle[i] += face_solid_angle_contribution(p, v0, v1, v2);
 				}
-				p.x = origin.x + imin.x * step - v.x;
+				p.x = origin.x + imin.x * step;
 			}
-			p.y = origin.y + imin.y * step - v.y;
+			p.y = origin.y + imin.y * step;
 		}
 	};
 
@@ -307,43 +261,58 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 				Point coomin, coomax;
 				_Point<short> imin, imax;
 				bbox((*epointers)->code, e->size(), e->data(), coomin, coomax);
-				bboxIndices(coomin, coomax, imin, imax);
+				if (bboxIndices(coomin, coomax, imin, imax) == 0) {
+					continue;
+				}
 
 				std::vector<char> isin((imax.x - imin.x) * (imax.y - imin.y) * (imax.z - imin.z) / 8 + 1, 255);
-				if ((*epointers)->code == Element::CODE::POLYHEDRON) {
-					for (esint p = 0, pp = 1; p < e->front(); ++p, pp += e->at(pp) + 1) {
-						// all polygons are in plane -> it is enough to check single triangle only
-						const _Point<double> &v = coordinates[e->at(pp + 1)];
-						_Point<double> n2, n1 = _Point<double>::cross(coordinates[e->at(pp + 2)] - v, coordinates[e->at(pp + 3)] - v);
-						if (e->at(pp) > 3) {
-							// 3 first points can be in the line
-							n2 = _Point<double>::cross(coordinates[e->at(pp + 2)] - v, coordinates[e->at(pp + 4)] - v);
-						}
-						if (n1.x * n1.x + n1.y * n1.y + n1.z * n1.z < n2.x * n2.x + n2.y * n2.y + n2.z * n2.z) {
-//							if (*shape == Element::SHAPE::CONVEX) {
-								cutConvex(imin, imax, v, n2, isin);
-//							} else {
-//								cutConcave(imin, imax, v, n2, isin);
-//							}
-						} else {
-//							if (*shape == Element::SHAPE::CONVEX) {
-								cutConvex(imin, imax, v, n1, isin);
-//							} else {
-//								cutConcave(imin, imax, v, n1, isin);
-//							}
-						}
-					}
-				} else {
+				std::vector<double> angle((imax.x - imin.x) * (imax.y - imin.y) * (imax.z - imin.z));
+				switch ((*epointers)->code) {
+				case Element::CODE::TETRA4: {
+					// cut planes
 					for (auto triangle = (*epointers)->triangles->begin(); triangle != (*epointers)->triangles->end(); ++triangle) {
 						const _Point<double> &v = coordinates[e->at(triangle->at(0))];
 						const _Point<double> n = _Point<double>::cross(coordinates[e->at(triangle->at(2))] - v, coordinates[e->at(triangle->at(1))] - v);
-//						if (*shape == Element::SHAPE::CONVEX) {
-							cutConvex(imin, imax, v, n, isin);
-//						} else {
-//							cutConcave(imin, imax, v, n, isin);
-//						}
+						cutConvex(imin, imax, v, n, isin);
+					}
+				} break;
+				case Element::CODE::POLYHEDRON: {
+					// compute the center of polygons since polygon can be non-planar!
+					for (esint p = 0, pp = 1; p < e->front(); ++p, pp += e->at(pp) + 1) {
+						Point pcenter;
+						for (esint i = 1; i <= e->at(pp); ++i) {
+							pcenter += coordinates[e->at(pp + i)];
+						}
+						pcenter /= e->at(pp);
+						for (esint i = 0; i < e->at(pp); ++i) {
+							const _Point<double> &v1 = coordinates[e->at(pp + 1 + i)];
+							const _Point<double> &v2 = coordinates[e->at(pp + 1 + (i + 1) % e->at(pp))];
+							cutConcave(imin, imax, pcenter, v1, v2, angle);
+						}
+					}
+					for (size_t i = 0; i < angle.size(); ++i) {
+						isin[i / 8] &= ~((fabs(angle[i]) < 6.0 ? 1 : 0) << (i % 8));
+					}
+				} break;
+				default:
+					for (auto face = (*epointers)->faces->begin(); face != (*epointers)->faces->end(); ++face) {
+						// compute the center of each face since face can be non-planar!
+						Point pcenter;
+						for (size_t i = 0; i < face->size(); ++i) {
+							pcenter += coordinates[e->at(face->at(i))];
+						}
+						pcenter /= face->size();
+						for (size_t i = 0; i < face->size(); ++i) {
+							const _Point<double> &v1 = coordinates[e->at(face->at(i))];
+							const _Point<double> &v2 = coordinates[e->at(face->at((i + 1) % face->size()))];
+							cutConcave(imin, imax, pcenter, v1, v2, angle);
+						}
+					}
+					for (size_t i = 0; i < angle.size(); ++i) {
+						isin[i / 8] &= ~((fabs(angle[i]) < 6.0 ? 1 : 0) << (i % 8));
 					}
 				}
+
 				int i = 0;
 				for (short z = imin.z; z < imax.z; ++z) {
 					for (short y = imin.y; y < imax.y; ++y) {
@@ -614,7 +583,7 @@ void computeVolumeIndicesMH(ElementStore *elements, const NodeStore *nodes)
 
 	// grid setting
 	int grid_size_x = info::ecf->output.volume_density;
-	double grid_offset = (mesh_max_global.x - mesh_min_global.x)/(double)(grid_size_x - 1);	
+	double grid_offset = (mesh_max_global.x - mesh_min_global.x)/(double)(grid_size_x - 1);
 	printf("offset: %f\n", grid_offset);
 	Point grid_size = Point(grid_size_x, 
 						(int)((mesh_max_global.y - mesh_min_global.y)/grid_offset + 2.0),

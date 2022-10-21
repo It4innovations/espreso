@@ -301,7 +301,6 @@ void Mesh::preprocess()
 			mesh::sortElementsSFC(elements, nodes, domains, elementsRegions, boundaryRegions, contactInterfaces, neighbors);
 
 			mesh::computeBaseMeshInfo(elements, nodes);
-			mesh::checkElementShape(elements, nodes);
 			mesh::computeVolumeIndices(elements, nodes);
 		}
 		eslog::endln("MESH: OUTPUT READY");
@@ -317,7 +316,6 @@ void Mesh::updateMesh()
 {
 	if (info::ecf->output.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
 		if (convertToVolume) {
-			mesh::checkElementShape(elements, nodes);
 			mesh::computeVolumeIndices(elements, nodes);
 		}
 	}
