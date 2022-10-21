@@ -634,9 +634,9 @@ void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merge
 			PolyElement poly1(code1, nodes1), poly2(code2, nodes2);
 			for (esint n = 0; n < Element::encode(code1).nodes; ++n) { if (poly1.isNode(n)) _checkBuffer.push_back(g2l[nodes1[n]]); }
 			for (esint n = 0; n < Element::encode(code2).nodes; ++n) { if (poly2.isNode(n)) _checkBuffer.push_back(g2l[nodes2[n]]); }
-			std::sort(_checkBuffer.begin(), _checkBuffer.begin() + poly1.size);
-			std::sort(_checkBuffer.begin() + poly1.size, _checkBuffer.end());
-			return memcmp(_checkBuffer.data(), _checkBuffer.data() + poly1.size, sizeof(esint) * poly1.size) == 0;
+			std::sort(_checkBuffer.begin(), _checkBuffer.begin() + poly1.nodes);
+			std::sort(_checkBuffer.begin() + poly1.nodes, _checkBuffer.end());
+			return memcmp(_checkBuffer.data(), _checkBuffer.data() + poly1.nodes, sizeof(esint) * poly1.nodes) == 0;
 		}
 		return false;
 	};
@@ -679,12 +679,12 @@ void mergeDuplicatedElements(ClusteredElements &clustered, MergedElements &merge
 				if (end - begin > 1) { // at least Line2
 					size_t e2 = *begin;
 					if (e2 < clustered.offsets.size()) {
-						if (PolyElement(clustered.etype[e2], clustered.enodes.data() + edist[e2]).size == end - begin) {
+						if (PolyElement(clustered.etype[e2], clustered.enodes.data() + edist[e2]).nodes == end - begin) {
 							parents.push_back({ clustered.offsets[e2], clustered.offsets[e1], info::mpi::rank });
 						}
 					} else {
 						auto &roffset = recvMap[e2 - clustered.offsets.size()];
-						if (PolyElement((Element::CODE)rBuffer[roffset.first][roffset.second + 1], rBuffer[roffset.first].data() + roffset.second + 2).size == end - begin) {
+						if (PolyElement((Element::CODE)rBuffer[roffset.first][roffset.second + 1], rBuffer[roffset.first].data() + roffset.second + 2).nodes == end - begin) {
 							parents.push_back({ rBuffer[roffset.first][roffset.second], clustered.offsets[e1], info::mpi::rank });
 						}
 					}
@@ -1061,12 +1061,12 @@ void rotateNormalsOut(LinkedNodes &nodes, MergedElements &elements)
 		edist[e + 1] = edist[e] + Element::encode(elements.etype[e]).nodes;
 	}
 
-	auto distance = [&nodes] (esint t1, esint t2, esint t3, esint p) {
-		return (nodes.coordinates[p] - nodes.coordinates[t1]) * Point::cross(nodes.coordinates[t2] - nodes.coordinates[t1], nodes.coordinates[t3] - nodes.coordinates[t1]);
+	auto dist = [] (const Point &p, const Point &v1, const Point &v2, const Point &v3) {
+		return (p - v1) * Point::cross((v2 - v1).normalize(), (v3 - v1).normalize());
 	};
-	auto distancep = [&nodes] (esint t1, esint t2, esint t3, const Point &p) {
-		return (p - nodes.coordinates[t1]) * Point::cross(nodes.coordinates[t2] - nodes.coordinates[t1], nodes.coordinates[t3] - nodes.coordinates[t1]);
-	};
+
+	auto distance = [&nodes,&dist] (esint t1, esint t2, esint t3, esint p) { return dist(nodes.coordinates[p], nodes.coordinates[t1], nodes.coordinates[t2], nodes.coordinates[t3]); };
+	auto distancep = [&nodes,&dist] (esint t1, esint t2, esint t3, const Point &p) { return dist(p, nodes.coordinates[t1], nodes.coordinates[t2], nodes.coordinates[t3]); };
 
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::OMP_NUM_THREADS; ++t) {
@@ -1106,14 +1106,19 @@ void rotateNormalsOut(LinkedNodes &nodes, MergedElements &elements)
 						center += nodes.coordinates[enodes[n]];
 					}
 				}
-				center /= poly.size - enodes[0] - 1;
+				center /= poly.nodes;
 				for (int p = 0, n = 1; p < enodes[0]; ++p, n += enodes[n] + 1) {
 					if (enodes[n] == 3) {
-						if (distancep(enodes[n + 1], enodes[n + 2], enodes[n + 3], center) > 0) {
+						if (distancep(enodes[n + 1], enodes[n + 2], enodes[n + 3], center) < 0) {
 							std::swap(enodes[n + 2], enodes[n + 3]);
 						}
 					} else {
-						if (distancep(enodes[n + 1], enodes[n + 2], enodes[n + 3], center) > 0 && distancep(enodes[n + 1], enodes[n + 2], enodes[n + 4], center) > 0) {
+						Point pcenter;
+						for (esint pn = 0; pn < enodes[n]; ++pn) {
+							pcenter += nodes.coordinates[enodes[n + pn + 1]];
+						}
+						pcenter /= enodes[n];
+						if (dist(pcenter, nodes.coordinates[enodes[n + 1]], nodes.coordinates[enodes[n + 2]], center) < 0) {
 							for (int nn = 0; nn < enodes[n] / 2; ++nn) {
 								std::swap(enodes[n + 1 + nn], enodes[n + enodes[n] - 1 - nn]);
 							}

@@ -1244,7 +1244,7 @@ void exchangePureElements(ElementStore* &elements, NodeStore* &nodes, std::vecto
 					for (size_t i = 1; i < nlinks.size(); ++i) {
 						if (nlinks[i - 1] == nlinks[i]) {
 							++counter;
-							if (counter == poly.size && eBegin <= nlinks[i]) {
+							if (counter == poly.nodes && eBegin <= nlinks[i]) {
 								emembership[e] = nlinks[i] - eBegin;
 								break;
 							}
@@ -2283,7 +2283,7 @@ void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<El
 					for (size_t i = 1; i < nlinks.size(); ++i) {
 						if (nlinks[i - 1] == nlinks[i]) {
 							++counter;
-							if (counter == poly.size && eBegin <= nlinks[i]) {
+							if (counter == poly.nodes && eBegin <= nlinks[i]) {
 								emembership[e] = nlinks[i] - eBegin;
 								break;
 							}

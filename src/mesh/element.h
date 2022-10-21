@@ -107,16 +107,16 @@ struct Element {
 };
 
 struct PolyElement {
-	PolyElement(const Element::CODE &code, const esint *nodes): nodes(nodes), omit(-1)
+	PolyElement(const Element::CODE &code, const esint *data): data(data), omit(-1)
 	{
-		size = Element::encode(code).nodes;
+		nodes = size = Element::encode(code).nodes;
 		if (Element::encode(code).code == Element::CODE::POLYGON) {
 			omit = 0;
-			size = size - 1;
+			nodes = size - 1;
 		}
 		if (Element::encode(code).code == Element::CODE::POLYHEDRON) {
 			omit = 1;
-			size = size - nodes[0] - 1;
+			nodes = size - data[0] - 1;
 		}
 	}
 
@@ -125,17 +125,17 @@ struct PolyElement {
 			return false; // POLYHEDRON
 		}
 		if (omit != -1 && omit < n) {
-			omit += nodes[omit] + 1;
+			omit += data[omit] + 1;
 		}
 		if (n == omit) {
-			omit += nodes[omit] + 1;
+			omit += data[omit] + 1;
 			return false;
 		}
 		return true;
 	}
 
-	const esint *nodes;
-	esint omit, size;
+	const esint *data;
+	esint omit, nodes, size;
 };
 
 }
