@@ -54,11 +54,6 @@ struct Element {
 		SIZE
 	};
 
-	enum class SHAPE: char {
-		CONVEX,
-		CONCAVE
-	};
-
 	TYPE type;
 	CODE code;
 	int dimension;

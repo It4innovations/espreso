@@ -24,7 +24,6 @@ ElementStore::ElementStore()
   material(NULL),
   regions(NULL),
   epointers(NULL),
-  shape(NULL),
 
   faceNeighbors(NULL),
   edgeNeighbors(NULL),
@@ -61,7 +60,6 @@ size_t ElementStore::packedFullSize() const
 	if (epointers != NULL) {
 		packedSize += sizeof(size_t) + epointers->datatarray().size() * sizeof(int);
 	}
-	packedSize += utils::packedSize(shape);
 
 	packedSize += utils::packedSize(eintervals);
 	packedSize += utils::packedSize(eintervalsDistribution);
@@ -102,7 +100,6 @@ void ElementStore::packFull(char* &p) const
 		}
 		utils::pack(eindices, p);
 	}
-	utils::pack(shape, p);
 
 	utils::pack(eintervals, p);
 	utils::pack(eintervalsDistribution, p);
@@ -145,7 +142,6 @@ void ElementStore::unpackFull(const char* &p)
 			epointers->datatarray()[i] = &Mesh::edata[eindices[i]];
 		}
 	}
-	utils::unpack(shape, p);
 
 	utils::unpack(eintervals, p);
 	utils::unpack(eintervalsDistribution, p);
@@ -298,7 +294,6 @@ ElementStore::~ElementStore()
 	if (material != NULL) { delete material; }
 	if (regions != NULL) { delete regions; }
 	if (epointers != NULL) { delete epointers; }
-	if (shape != NULL) { delete shape; }
 
 	if (faceNeighbors != NULL) { delete faceNeighbors; }
 	if (edgeNeighbors != NULL) { delete edgeNeighbors; }
@@ -344,7 +339,6 @@ void ElementStore::permute(const std::vector<esint> &permutation, const std::vec
 	if (regions != NULL) { regions->permute(permutation, threading); }
 
 	if (epointers != NULL) { epointers->permute(permutation, threading); }
-	if (shape != NULL) { shape->permute(permutation, threading); }
 
 	if (faceNeighbors != NULL) { faceNeighbors->permute(permutation, threading); }
 	if (edgeNeighbors != NULL) { edgeNeighbors->permute(permutation, threading); }

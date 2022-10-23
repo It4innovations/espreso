@@ -256,8 +256,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 			size_t eindex = 0;
 			std::vector<_Point<short> > tdata; tdata.reserve(10 * elements->distribution.process.size);
 			auto epointers = elements->epointers->datatarray().begin(t);
-			auto shape = elements->shape->datatarray().begin(t);
-			for (auto e = elements->nodes->cbegin(t); e != elements->nodes->cend(t); ++e, ++epointers, ++shape, ++eindex) {
+			for (auto e = elements->nodes->cbegin(t); e != elements->nodes->cend(t); ++e, ++epointers, ++eindex) {
 				Point coomin, coomax;
 				_Point<short> imin, imax;
 				bbox((*epointers)->code, e->size(), e->data(), coomin, coomax);
