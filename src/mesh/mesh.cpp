@@ -821,8 +821,7 @@ void Mesh::computePersistentParameters()
 			info::ecf->output.format == OutputConfiguration::FORMAT::OPENVDB ||
 			info::ecf->output.format == OutputConfiguration::FORMAT::ENSIGHT_VOLUME) {
 
-		mesh::computeVolumeIndicesOM(elements, nodes);
-//		mesh::computeVolumeIndices(elements, nodes);
+		mesh::computeVolumeIndices(elements, nodes);
 	}
 }
 
