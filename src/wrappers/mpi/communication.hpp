@@ -901,6 +901,33 @@ Ttype Communication::exscan(Ttype &value, MPIGroup *group)
 }
 
 template <typename Ttype>
+bool Communication::exscan(Ttype *in, Ttype *out, size_t size, MPI_Datatype type, MPI_Op op, MPIGroup *group)
+{
+	if (size != (size_t)(int)size) {
+		return false;
+	}
+	profiler::syncstart("mpi_exscan");
+	profiler::syncparam("size", size);
+	if (out == NULL) {
+		MPI_Exscan(MPI_IN_PLACE, in, size, type, op, group->communicator);
+		if (group->rank == 0) {
+			for (size_t i = 0; i < size; ++i) {
+				in[i] = 0;
+			}
+		}
+	} else {
+		MPI_Exscan(in, out, size, type, op, group->communicator);
+		if (group->rank == 0) {
+			for (size_t i = 0; i < size; ++i) {
+				out[i] = 0;
+			}
+		}
+	}
+	profiler::syncend("mpi_reduce");
+	return true;
+}
+
+template <typename Ttype>
 bool Communication::exscan(std::vector<Ttype> &sum, std::vector<Ttype> &offset, MPIGroup *group)
 {
 	profiler::syncstart("comm_exscan");

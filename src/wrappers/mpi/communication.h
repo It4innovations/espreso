@@ -199,6 +199,9 @@ struct Communication {
 	static bool exscan(std::vector<Ttype> &sum, std::vector<Ttype> &offset, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
+	static bool exscan(Ttype *in, Ttype *out, size_t size, MPI_Datatype type, MPI_Op op, MPIGroup *group = MPITools::procs);
+
+	template <typename Ttype>
 	static std::vector<Ttype> getDistribution(Ttype size, MPIGroup *group = MPITools::procs);
 
 	template <typename Ttype>
