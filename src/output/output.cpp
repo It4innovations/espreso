@@ -175,6 +175,7 @@ void Output::updateMesh()
 	if (_async) { _async->execute(OutputExecutor::mesh); }
 	if (_direct) { _direct->execute(OutputExecutor::mesh); }
 	eslog::info(" ============================================================================================= \n\n");
+	eslog::checkpointln("ESPRESO: MESH STORED");
 }
 
 void Output::updateMonitors()
@@ -183,6 +184,7 @@ void Output::updateMonitors()
 		if (_async) { _async->execute(OutputExecutor::monitors); }
 		if (_direct) { _direct->execute(OutputExecutor::monitors); }
 	}
+	eslog::checkpointln("MESH: MONITORS UPDATED");
 }
 
 void Output::updateSolution()
@@ -191,6 +193,7 @@ void Output::updateSolution()
 		if (_async) { _async->execute(OutputExecutor::solution); }
 		if (_direct) { _direct->execute(OutputExecutor::solution); }
 	}
+	eslog::checkpointln("MESH: SOLUTION UPDATED");
 }
 
 void Output::suppress()

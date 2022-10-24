@@ -17,14 +17,13 @@ public:
 
 	void load(const InputConfiguration &configuration);
 	void build(Mesh &mesh);
-	double nextVariables(Mesh &mesh);
 
+	void initVariables(Mesh &mesh);
+	void finishVariables();
 	int variables();
+	void nextVariables(Mesh &mesh);
 
 protected:
-	std::vector<DatabaseOffset> nblocks, eblocks;
-
-	std::vector<esint> ndistribution, edistribution;
 	std::vector<int> nvariables, svariables, evariables;
 	std::vector<FoamFileHeader> vheader;
 	AsyncFilePack variablePack;
@@ -32,8 +31,6 @@ protected:
 	std::string variablePath;
 	size_t timestep;
 	std::vector<std::string> timesteps, variableNames;
-	std::vector<esint> variableRequests, variableRequestsMap;
-	std::vector<NamedData*> vdata;
 
 	InputOpenFoam *loader;
 };
@@ -42,7 +39,10 @@ class InputOpenFoamSequential: public InputOpenFoam {
 public:
 	void load(const InputConfiguration &configuration);
 	void build(Mesh &mesh);
-	double nextVariables(Mesh &mesh);
+
+	void initVariables(Mesh &mesh);
+	void finishVariables();
+	void nextVariables(Mesh &mesh);
 	void ivariables(const InputConfiguration &configuration);
 
 protected:
@@ -58,15 +58,17 @@ public:
 
 	void load(const InputConfiguration &configuration);
 	void build(Mesh &mesh);
-	double nextVariables(Mesh &mesh);
+
+	void initVariables(Mesh &mesh);
+	void finishVariables();
+	void nextVariables(Mesh &mesh);
 	void ivariables(const InputConfiguration &configuration);
 
 protected:
 	NodesBlocks nodes;
 	FacesBlocks faces;
+	VariablesBlocks variables;
 	OrderedRegions regions;
-
-	ivector<esint> nperm, eperm;
 };
 
 class InputOpenFoamParallelDirect: public InputOpenFoam {
@@ -76,7 +78,10 @@ public:
 
 	void load(const InputConfiguration &configuration);
 	void build(Mesh &mesh);
-	double nextVariables(Mesh &mesh);
+
+	void initVariables(Mesh &mesh);
+	void finishVariables();
+	void nextVariables(Mesh &mesh);
 	void ivariables(const InputConfiguration &configuration);
 
 protected:

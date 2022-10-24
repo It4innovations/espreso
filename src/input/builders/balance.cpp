@@ -185,7 +185,7 @@ void balanceFVM(NodesBlocks &inNodes, FacesBlocks &inFaces, OrderedNodesBalanced
 
 	std::vector<esint> fdistribution = Communication::getDistribution<esint>(sum[1]);
 	distribute(outNodes, sum[0]);
-	distribute(outFaces.edist, inFaces.eblocks.blocks.back().size);
+	distribute(outFaces.edist, inFaces.edist.blocks.back().size);
 
 	// 1. balance description of faces
 	ivector<esint> sBuffer, rBuffer, edist;

@@ -19,9 +19,11 @@ class Input {
 public:
 	virtual void load(const InputConfiguration &configuration) = 0;
 	virtual void build(Mesh &mesh) = 0;
-	virtual double nextVariables(Mesh &mesh) = 0;
 
+	virtual void initVariables(Mesh &mesh) = 0;
+	virtual void finishVariables() = 0;
 	virtual int variables() = 0;
+	virtual void nextVariables(Mesh &mesh) = 0;
 
 	virtual ~Input() {}
 };
@@ -42,8 +44,20 @@ struct Faces {
 	esint elements;
 };
 
-struct Values {
-	ivector<esfloat> data;
+struct Variable {
+	int dimension;
+	std::string name;
+	std::vector<esfloat> data;
+
+	Variable(int dimenstion, const std::string &name): dimension(dimenstion), name(name) {}
+};
+
+struct VariableLoader;
+
+struct Variables {
+	std::vector<Variable> nodes, elements;
+
+	VariableLoader *loader; // filled by builder
 };
 
 // Databases with ordered nodes and elements
@@ -68,8 +82,8 @@ struct Domain {
 struct NodesDomain: Nodes, Domain { };
 struct NodesBlocks: Nodes, Blocks { };
 struct ElementsBlocks: Elements, Blocks { };
-struct FacesBlocks: Faces { Blocks eblocks, fblocks; };
-struct ValuesBlocks: Values, Blocks { };
+struct FacesBlocks: Faces { Blocks edist, fdist; };
+struct VariablesBlocks: Variables { Blocks edist, ndist; };
 
 struct OrderedRegions {
 	struct Region {

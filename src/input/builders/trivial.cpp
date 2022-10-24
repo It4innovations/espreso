@@ -40,8 +40,8 @@ void trivialUpdate(FacesBlocks &blocks, OrderedFacesChunked &chunked)
 {
 	swap(chunked, blocks);
 	chunked.edist.offset = 0;
-	for (size_t i = 0; i < blocks.eblocks.blocks.size(); ++i) {
-		chunked.edist.offset += blocks.eblocks.blocks[i].size;
+	for (size_t i = 0; i < blocks.edist.blocks.size(); ++i) {
+		chunked.edist.offset += blocks.edist.blocks[i].size;
 	}
 	chunked.edist.size = chunked.edist.offset;
 	chunked.edist.total = Communication::exscan(chunked.edist.offset);

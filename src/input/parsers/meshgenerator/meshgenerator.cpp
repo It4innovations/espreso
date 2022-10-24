@@ -52,9 +52,9 @@ void MeshGenerator::build(Mesh &mesh)
 	builder::buildDecomposedFEM(nodes, elements, regions, mesh);
 }
 
-double MeshGenerator::nextVariables(Mesh &mesh)
+void MeshGenerator::nextVariables(Mesh &mesh)
 {
-	return 0;
+
 }
 
 

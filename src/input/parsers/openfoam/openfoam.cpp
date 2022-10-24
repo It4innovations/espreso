@@ -118,7 +118,7 @@ void InputOpenFoamSequential::load(const InputConfiguration &configuration)
 	ParallelFoamFile::synchronize({ &points, &faces, &owner, &neighbour });
 	profiler::synccheckpoint("scan");
 
-	this->faces.eblocks.blocks.push_back(DatabaseOffset{0, 0, numberOfCells(owner.header)});
+	this->faces.edist.blocks.push_back(DatabaseOffset{0, 0, numberOfCells(owner.header)});
 
 	points.parse(this->nodes.coordinates);
 	faces.parse(this->faces.ftype, this->faces.fnodes);
@@ -139,45 +139,40 @@ void InputOpenFoamParallel::load(const InputConfiguration &configuration)
 	eslog::info(" == MESH %82s == \n", (configuration.path + "/processor*/constant/polyMesh/").c_str());
 
 	faces.elements = 0;
-	std::vector<esint> nsize(domains / info::mpi::size + 1), esize(domains / info::mpi::size + 1);
+	esint nsum = 0, esum = 0;
 	for (int d = info::mpi::rank, i = 0; d < domains; d += info::mpi::size, ++i) {
 		std::string dict = configuration.path + "/processor" + std::to_string(d) + "/constant/polyMesh/";
 		OpenFOAMFaceList::load(dict + "faces", faces.ftype, faces.fnodes, nodes.coordinates.size());
-		nsize[i] = OpenFOAMVectorField::load(dict + "points", nodes.coordinates);
+		nsum += OpenFOAMVectorField::load(dict + "points", nodes.coordinates);
 
-		esize[i] = numberOfCells(OpenFOAMLabelList::load(dict + "owner", faces.owner, faces.elements));
+		esum += numberOfCells(OpenFOAMLabelList::load(dict + "owner", faces.owner, faces.elements));
 		OpenFOAMLabelList::load(dict + "neighbour", faces.neighbor, faces.elements);
 		faces.neighbor.resize(faces.owner.size(), -1);
-		faces.elements += esize[i];
+		faces.elements = esum;
 	}
 
-	ndistribution = Communication::getDistribution((esint)nodes.coordinates.size());
-	edistribution = Communication::getDistribution(faces.elements);
-	esint nsum = 0, esum = 0;
-	for (int d = info::mpi::rank, i = 0; d < domains; d += info::mpi::size, ++i) {
-		nodes.blocks.push_back(DatabaseOffset{ndistribution[info::mpi::rank] + nsum, nsum, nsize[i]});
-		nsum += nsize[i];
-		faces.eblocks.blocks.push_back(DatabaseOffset{edistribution[info::mpi::rank] + esum, esum, esize[i]});
-		esum += esize[i];
-	}
-	nblocks = nodes.blocks;
-	eblocks = faces.eblocks.blocks;
+	esint offset[2] = { nsum, esum };
+	Communication::exscan<esint>(offset, nullptr, 2, MPITools::getType<esint>().mpitype, MPI_SUM);
+	nodes.blocks.push_back(DatabaseOffset{offset[0], 0, nsum});
+	faces.edist.blocks.push_back(DatabaseOffset{offset[1], 0, esum});
+	variables.ndist.blocks.push_back(nodes.blocks.back());
+	variables.edist.blocks.push_back(faces.edist.blocks.back());
 
 	// from local to global addressing
 	for (size_t f = 0, foffset = 0; f < faces.ftype.size(); foffset += Element::encode(faces.ftype[f++]).nodes) {
 		PolyElement poly(faces.ftype[f], faces.fnodes.data() + foffset);
 		for (int n = 0; n < Element::encode(faces.ftype[f]).nodes; ++n) {
 			if (poly.isNode(n)) {
-				faces.fnodes[n + foffset] += ndistribution[info::mpi::rank];
+				faces.fnodes[n + foffset] += offset[0];
 			}
 		}
 	}
 	for (size_t n = 0; n < faces.owner.size(); ++n) {
-		faces.owner[n] += edistribution[info::mpi::rank];
+		faces.owner[n] += offset[1];
 	}
 	for (size_t n = 0; n < faces.neighbor.size(); ++n) {
 		if (faces.neighbor[n] != -1) {
-			faces.neighbor[n] += edistribution[info::mpi::rank];
+			faces.neighbor[n] += offset[1];
 		}
 	}
 
@@ -302,208 +297,89 @@ void InputOpenFoamParallelDirect::build(Mesh &mesh)
 	builder::buildDecomposedFVM(nodes, faces, regions, mesh);
 }
 
+void InputOpenFoam::initVariables(Mesh &mesh)
+{
+	loader->initVariables(mesh);
+}
+
+void InputOpenFoamSequential::initVariables(Mesh &mesh)
+{
+
+}
+
+void InputOpenFoamParallel::initVariables(Mesh &mesh)
+{
+	eslog::startln("OPENFOAM VARIABLES LOADER: STARTED", "VARIABLES LOADER");
+	builder::chunkedValuesInit(variables, mesh);
+}
+
+void InputOpenFoamParallelDirect::initVariables(Mesh &mesh)
+{
+
+}
+
+void InputOpenFoam::finishVariables()
+{
+	loader->finishVariables();
+}
+
+void InputOpenFoamSequential::finishVariables()
+{
+
+}
+
+void InputOpenFoamParallel::finishVariables()
+{
+	builder::chunkedValuesFinish(variables);
+	eslog::endln("VARIABLES LOADER: FINISHED");
+}
+
+void InputOpenFoamParallelDirect::finishVariables()
+{
+
+}
+
 int InputOpenFoam::variables()
 {
 	return loader->timesteps.size();
 }
 
-double InputOpenFoam::nextVariables(Mesh &mesh)
+void InputOpenFoam::nextVariables(Mesh &mesh)
 {
 	return loader->nextVariables(mesh);
 }
 
-double InputOpenFoamSequential::nextVariables(Mesh &mesh)
+void InputOpenFoamSequential::nextVariables(Mesh &mesh)
 {
-	return 0;
+
 }
 
-double InputOpenFoamParallel::nextVariables(Mesh &mesh)
+void InputOpenFoamParallel::nextVariables(Mesh &mesh)
 {
-	eslog::start("OPENFOAM VARIABLES LOADER: STARTED", "VARIABLES LOADER");
-	eslog::param("TIME-STEP", timestep);
-	eslog::ln();
-
+	eslog::start("TIME STEP LOADER: STARTED", "TIME STEP LOADER");
 	eslog::info(" == TIME STEP %77s == \n", timesteps[timestep].c_str());
 
-	std::vector<esint> sBuffer, rBuffer, rmap(info::mpi::size);
-
-	if (timestep == 0) {
-		for (size_t v = 0; v < nvariables.size(); ++v) {
-			if (StringCompare::caseInsensitiveEq("points", vheader[nvariables[v]].object)) {
-				vdata.push_back(mesh.nodes->appendData(3, NamedData::DataType::VECTOR, "TRANSLATION")); // temporary store for coordinates
-			} else {
-				switch (vheader[nvariables[v]].dimension()) {
-				case 1: vdata.push_back(mesh.nodes->appendData(1, NamedData::DataType::SCALAR, vheader[nvariables[v]].object)); break;
-				case 3: vdata.push_back(mesh.nodes->appendData(3, NamedData::DataType::VECTOR, vheader[nvariables[v]].object)); break;
-				default: break;
-				}
-			}
+	if (info::mpi::rank == 0) {
+		if (utils::exists(variablePath + "/processor" + std::to_string(0) + "/" + timesteps[timestep] + "/uniform/time")) {
+			step::time.current = OpenFOAMTime::value(variablePath + "/processor" + std::to_string(0) + "/" + timesteps[timestep] + "/uniform/time");
 		}
-		for (size_t v = 0; v < evariables.size(); ++v) {
-			switch (vheader[evariables[v]].dimension()) {
-			case 1: vdata.push_back(mesh.elements->appendData(1, NamedData::DataType::SCALAR, vheader[evariables[v]].object)); break;
-			case 3: vdata.push_back(mesh.elements->appendData(3, NamedData::DataType::VECTOR, vheader[evariables[v]].object)); break;
-			default: break;
-			}
-		}
-
-		nperm.resize(mesh.nodes->size);
-		eperm.resize(mesh.elements->distribution.process.size);
-		std::iota(nperm.begin(), nperm.end(), 0);
-		std::sort(nperm.begin(), nperm.end(), [&] (esint i, esint j) { return (mesh.nodes->inputOffset->begin() + i)->front() < (mesh.nodes->inputOffset->begin() + j)->front(); });
-		std::iota(eperm.begin(), eperm.end(), 0);
-		std::sort(eperm.begin(), eperm.end(), [&] (esint i, esint j) { return (mesh.elements->inputOffset->begin() + i)->front() < (mesh.elements->inputOffset->begin() + j)->front(); });
-
-		sBuffer.reserve(info::mpi::size * 5 + nperm.size() + eperm.size());
-		auto nit = nperm.begin(), eit = eperm.begin();
-		for (int t = 0; t < info::mpi::size; ++t) {
-			auto nbegin = nit, ebegin = eit;
-			while (nit != nperm.end() && (mesh.nodes->inputOffset->begin() + *nit)->front() < ndistribution[t + 1]) { ++nit; }
-			while (eit != eperm.end() && (mesh.elements->inputOffset->begin() + *eit)->front() < edistribution[t + 1]) { ++eit; }
-
-			sBuffer.push_back(5 + (nit - nbegin) + (eit - ebegin)); // size
-			sBuffer.push_back(t); // target
-			sBuffer.push_back(info::mpi::rank); // source
-			sBuffer.push_back(nit - nbegin); // nodes
-			sBuffer.push_back(eit - ebegin); // elements
-			for (auto it = nbegin; it != nit; ++it) {
-				sBuffer.push_back((mesh.nodes->inputOffset->begin() + *it)->front());
-			}
-			for (auto it = ebegin; it != eit; ++it) {
-				sBuffer.push_back((mesh.elements->inputOffset->begin() + *it)->front());
-			}
-		}
-
-		if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, variableRequests)) {
-			eslog::error("cannot exchange output offsets.\n");
-		}
-
-		variableRequestsMap.resize(info::mpi::size);
-		for (size_t i = 0; i < variableRequests.size(); i += variableRequests[i]) {
-			variableRequestsMap[variableRequests[i + 2]] = i;
-		}
-		sBuffer.clear();
-		eslog::checkpointln("VARIABLES LOADER: PERMUTATION EXCHANGED");
 	}
+	Communication::broadcast(&step::time.current, 1, MPI_DOUBLE, 0);
 
 	variablePack.wait(MPITools::singleton->within);
 
-	eslog::checkpointln("VARIABLES LOADER: VARIABLES LOADED");
+	eslog::checkpointln("TIME STEP LOADER: VARIABLES LOADED");
 
-	std::vector<std::vector<esfloat> > data(nvariables.size() + evariables.size());
 	for (int d = info::mpi::rank, offset = 0; d < domains; d += info::mpi::size, offset += nvariables.size() + evariables.size()) {
 		for (size_t v = 0; v < nvariables.size(); ++v) {
 			if (variablePack.files[v + offset]->totalSize) {
-				OpenFOAMVectorField::load(variablePack.files[v + offset], data[v]);
-			} else {
-				data[v].resize(vheader[nvariables[v]].dimension() * mesh.nodes->size);
+				OpenFOAMVectorField::load(variablePack.files[v + offset], variables.nodes[v].data);
 			}
 		}
 		for (size_t v = 0; v < evariables.size(); ++v) {
 			if (variablePack.files[v + nvariables.size() + offset]->totalSize) {
-				OpenFOAMVectorField::load(variablePack.files[v + nvariables.size() + offset], data[v + nvariables.size()]);
-			} else {
-				data[v + nvariables.size()].resize(vheader[evariables[v]].dimension() * mesh.elements->distribution.process.size);
+				OpenFOAMVectorField::load(variablePack.files[v + nvariables.size() + offset], variables.elements[v].data);
 			}
-		}
-	}
-
-	esint datasize = 0, nvsize = 0, evsize = 0;
-	for (size_t v = 0; v < nvariables.size(); ++v) {
-		nvsize += vheader[nvariables[v]].dimension();
-	}
-	for (size_t v = 0; v < evariables.size(); ++v) {
-		evsize += vheader[evariables[v]].dimension();
-	}
-	for (size_t i = 0; i < variableRequests.size(); i += variableRequests[i]) {
-		datasize += utils::reinterpret_size<esint, esfloat>(nvsize * variableRequests[i + 3]);
-		datasize += utils::reinterpret_size<esint, esfloat>(evsize * variableRequests[i + 4]);
-	}
-	sBuffer.reserve(info::mpi::size * 5 + datasize);
-	for (int r = 0; r < info::mpi::size; ++r) {
-		esint i = variableRequestsMap[r];
-		esint nsize = variableRequests[i + 3];
-		esint esize = variableRequests[i + 4];
-		sBuffer.push_back(5 + utils::reinterpret_size<esint, esfloat>(nvsize * nsize + evsize * esize));
-		sBuffer.push_back(r);
-		sBuffer.push_back(info::mpi::rank);
-		sBuffer.push_back(nsize);
-		sBuffer.push_back(esize);
-		size_t size = sBuffer.size(); // it is useless if we called correctly sBuffer.reserve(...)
-		sBuffer.resize(sBuffer.size() + utils::reinterpret_size<esint, esfloat>(nvsize * nsize + evsize * esize));
-		esfloat *c = reinterpret_cast<esfloat*>(sBuffer.data() + size);
-		for (size_t v = 0; v < nvariables.size(); ++v) {
-			for (esint n = 0; n < nsize; ++n) {
-				for (int d = 0; d < vheader[nvariables[v]].dimension(); ++d) {
-					*c++ = data[v][vheader[nvariables[v]].dimension() * (variableRequests[i + 5 + n] - ndistribution[info::mpi::rank]) + d];
-				}
-			}
-		}
-		for (size_t v = 0; v < evariables.size(); ++v) {
-			for (esint e = 0; e < esize; ++e) {
-				for (int d = 0; d < vheader[evariables[v]].dimension(); ++d) {
-					*c++ = data[v + nvariables.size()][vheader[evariables[v]].dimension() * (variableRequests[i + 5 + e + nsize] - edistribution[info::mpi::rank]) + d];
-				}
-			}
-		}
-	}
-
-	rBuffer.clear();
-	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
-		eslog::error("cannot exchange output data.\n");
-	}
-	sBuffer.clear();
-	eslog::checkpointln("VARIABLES LOADER: VARIABLES EXCHANGED");
-
-	for (size_t i = 0; i < rBuffer.size(); i += rBuffer[i]) {
-		rmap[rBuffer[i + 2]] = i;
-	}
-
-	auto nit = nperm.begin(), eit = eperm.begin();
-	for (int r = 0; r < info::mpi::size; ++r) {
-		esint i = rmap[r];
-		esint nsize = rBuffer[i + 3];
-		esint esize = rBuffer[i + 4];
-		esfloat *c = reinterpret_cast<esfloat*>(rBuffer.data() + i + 5);
-		for (size_t v = 0; v < nvariables.size(); ++v) {
-			for (esint n = 0; n < nsize; ++n) {
-				for (int d = 0; d < vheader[nvariables[v]].dimension(); ++d) {
-					vdata[v]->data[*(nit + n) * vheader[nvariables[v]].dimension() + d] = *c++;
-				}
-			}
-		}
-		nit += nsize;
-		for (size_t v = 0; v < evariables.size(); ++v) {
-			for (esint e = 0; e < esize; ++e) {
-				for (int d = 0; d < vheader[evariables[v]].dimension(); ++d) {
-					vdata[v + nvariables.size()]->data[*(eit + e) * vheader[evariables[v]].dimension() + d] = *c++;
-				}
-			}
-		}
-		eit += esize;
-	}
-	eslog::checkpointln("VARIABLES LOADER: VARIABLES ASSIGNED");
-
-	for (size_t v = 0; v < nvariables.size(); ++v) {
-		if (StringCompare::caseInsensitiveEq("points", vheader[nvariables[v]].object)) {
-			if (variablePack.files[v]->totalSize) {
-				if (mesh.nodes->originCoordinates == nullptr) {
-					mesh.nodes->originCoordinates = mesh.nodes->coordinates;
-					mesh.nodes->coordinates = new serializededata<esint, Point>(*mesh.nodes->originCoordinates);
-				}
-				for (size_t n = 0; n < mesh.nodes->coordinates->datatarray().size(); ++n) {
-					mesh.nodes->coordinates->datatarray()[n].x = vdata[v]->data[3 * n + 0];
-					mesh.nodes->coordinates->datatarray()[n].y = vdata[v]->data[3 * n + 1];
-					mesh.nodes->coordinates->datatarray()[n].z = vdata[v]->data[3 * n + 2];
-					vdata[v]->data[3 * n + 0] = mesh.nodes->coordinates->datatarray()[n].x - mesh.nodes->originCoordinates->datatarray()[n].x;
-					vdata[v]->data[3 * n + 1] = mesh.nodes->coordinates->datatarray()[n].y - mesh.nodes->originCoordinates->datatarray()[n].y;
-					vdata[v]->data[3 * n + 2] = mesh.nodes->coordinates->datatarray()[n].z - mesh.nodes->originCoordinates->datatarray()[n].z;
-				}
-				mesh.updateMesh();
-			} else {
-				std::fill(vdata[v]->data.begin(), vdata[v]->data.end(), 0);
-			}
-			eslog::checkpointln("VARIABLES LOADER: COORDINATES UPDATED");
 		}
 	}
 
@@ -518,30 +394,16 @@ double InputOpenFoamParallel::nextVariables(Mesh &mesh)
 			}
 		}
 		variablePack.iread(MPITools::singleton->within);
-		eslog::checkpointln("VARIABLES LOADER: IREAD NEXT TIME STEP");
+		eslog::checkpointln("TIME STEP LOADER: IREAD NEXT TIME STEP");
 	}
 
-	if (step::step.substep == 0) {
-		info::mesh->output->updateMonitors();
-	}
-	info::mesh->output->updateSolution();
-	eslog::checkpointln("VARIABLES LOADER: SOLUTION UPDATED");
-
-	double time = 0;
-	for (int d = info::mpi::rank; d < info::mpi::size; d += info::mpi::size) { // only once
-		if (utils::exists(variablePath + "/processor" + std::to_string(d) + "/" + timesteps[timestep - 1] + "/uniform/time")) {
-			time = OpenFOAMTime::value(variablePath + "/processor" + std::to_string(d) + "/" + timesteps[timestep - 1] + "/uniform/time");
-		}
-	}
-
-	eslog::endln("VARIABLES LOADER: TIME SET");
-
-	return time;
+	builder::chunkedValuesNext(variables, mesh);
+	eslog::endln("TIME STEP LOADER: FINISHED");
 }
 
-double InputOpenFoamParallelDirect::nextVariables(Mesh &mesh)
+void InputOpenFoamParallelDirect::nextVariables(Mesh &mesh)
 {
-	return 0;
+
 }
 
 void InputOpenFoamSequential::ivariables(const InputConfiguration &configuration)
@@ -561,19 +423,18 @@ void InputOpenFoamParallel::ivariables(const InputConfiguration &configuration)
 	std::vector<std::string> steps;
 	if (configuration.openfoam.time.size()) {
 		std::vector<std::string> values = Parser::split(configuration.openfoam.time, ":");
-		double min, max;
-		std::stringstream smin(values[0]); smin >> min;
-		max = min;
-		if (values.size() == 2) {
-			std::stringstream smax(values[1]); smax >> max;
+		if (values.size() == 1) {
+			values.push_back(values.front());
 		}
 		for (size_t s = 0; s < subdirs.size(); ++s) {
-			char *strend;
-			double time = std::strtod(subdirs[s].c_str(), &strend);
-			if (subdirs[s].c_str() != strend) {
-				if (min - 1e-9 <= time && time <= max + 1e-9) {
-					steps.push_back(subdirs[s]);
-				}
+			if (StringCompare::caseInsensitiveEq(subdirs[s], values.front())) {
+				steps.push_back(subdirs[s]); continue;
+			}
+			if (StringCompare::caseInsensitiveEq(subdirs[s], values.back())) {
+				steps.push_back(subdirs[s]); continue;
+			}
+			if (StringCompare::caseInsensitive(values.front(), subdirs[s]) && StringCompare::caseInsensitive(subdirs[s], values.back())) {
+				steps.push_back(subdirs[s]); continue;
 			}
 		}
 	} else { // get the last subdir
@@ -661,6 +522,19 @@ void InputOpenFoamParallel::ivariables(const InputConfiguration &configuration)
 		}
 	}
 	variablePack.iread(MPITools::singleton->within);
+
+	for (int d = info::mpi::rank; d < info::mpi::size; d += info::mpi::size) {
+		for (size_t v = 0; v < nvariables.size(); ++v) {
+			if (StringCompare::caseInsensitiveEq("polyMesh/points", variableNames[nvariables[v]])) {
+				variables.nodes.push_back({vheader[nvariables[v]].dimension(), "coordinates"});
+			} else {
+				variables.nodes.push_back({vheader[nvariables[v]].dimension(), variableNames[nvariables[v]]});
+			}
+		}
+		for (size_t v = 0; v < evariables.size(); ++v) {
+			variables.elements.push_back({vheader[evariables[v]].dimension(), variableNames[evariables[v]]});
+		}
+	}
 }
 
 void InputOpenFoamParallelDirect::ivariables(const InputConfiguration &configuration)

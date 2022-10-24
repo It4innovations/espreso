@@ -125,6 +125,10 @@ struct FaceHolder {
 	FaceHolder(FacesBlocks &&blocks): blocks(std::move(blocks)) {}
 };
 
+struct OrderedVariablesChunked: Variables {
+
+};
+
 /**
  * Standard workflow for ordered database with regions.
  *
@@ -220,11 +224,16 @@ inline size_t size(const Faces &data)
 			data.neighbor.size() * sizeof(esint);
 }
 
-inline size_t size(const ValuesBlocks &data)
+inline size_t size(const VariablesBlocks &data)
 {
-	return
-			data.blocks.size() * sizeof(DatabaseOffset) +
-			data.data.size() * sizeof(esfloat);
+	size_t size = (data.ndist.blocks.size() + data.edist.blocks.size()) * sizeof(DatabaseOffset);
+	for (size_t i = 0; i < data.nodes.size(); ++i) {
+		size += data.nodes[i].data.size() * sizeof(esfloat);
+	}
+	for (size_t i = 0; i < data.elements.size(); ++i) {
+		size += data.elements[i].data.size() * sizeof(esfloat);
+	}
+	return size;
 }
 
 inline size_t size(const OrderedRegions &data)

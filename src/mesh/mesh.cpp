@@ -144,20 +144,22 @@ void Mesh::load()
 
 	profiler::syncstart("mesh_output");
 	info::mesh->output->updateMesh();
-	if (info::ecf->output.mode == OutputConfiguration::MODE::SYNC) {
-		eslog::checkpointln("ESPRESO: MESH STORED");
-	}
 	profiler::syncend("mesh_output");
 
 	if (input->variables()) {
 		eslog::info(" ===================================== LOAD VARIABLES ========================= %12.3f s\n", eslog::duration());
 		eslog::info(" ============================================================================================= \n");
+		input->initVariables(*info::mesh);
+		info::mesh->output->updateMonitors();
 		for (; step::step.substep < input->variables(); ++step::step.substep) {
 			if (step::step.substep != 0) {
 				eslog::info(" ==  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  == \n");
 			}
-			step::time.current = input->nextVariables(*info::mesh);
+			input->nextVariables(*info::mesh);
+			eslog::checkpointln("MESH: VARIABLES UPDATED");
+			info::mesh->output->updateSolution();
 		}
+		input->finishVariables();
 		eslog::info(" ============================================================================================= \n\n");
 		eslog::checkpoint("ESPRESO: VARIABLES LOADED");
 		eslog::param("TIME STEPS", input->variables());
