@@ -331,7 +331,7 @@ void TimeLogger::finish()
 							}
 							eslog::info("   %s [%dx]\n", events[i].name, counter);
 							printdata(dataformat, events[i].name, " [1]", statistics[i].avg.time, statistics[i].min.time, statistics[i].max.time, statistics[end].davg.time);
-							printdata(dataformat, events[i].name, " [~]", avg / (end - start + 1), statistics[end].davg.time);
+							printdata(dataformat, events[i].name, " [~]", avg / counter, statistics[end].davg.time);
 							printdata(dataformat, events[i].name, " [+]", avg, statistics[end].davg.time);
 						}
 					}
