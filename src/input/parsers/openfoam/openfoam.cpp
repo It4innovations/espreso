@@ -485,6 +485,9 @@ void InputOpenFoamParallel::ivariables(const InputConfiguration &configuration)
 	for (int d = info::mpi::rank; d < info::mpi::size; d += info::mpi::size) { // only once
 		if (configuration.openfoam.variables.size()) {
 			variableNames = Parser::split(configuration.openfoam.variables, ",");
+			for (size_t v = 0; v < variableNames.size(); ++v) {
+				variableNames[v] = Parser::strip(variableNames[v]);
+			}
 		} else {
 			utils::listDirectoryFiles(configuration.path + "/processor" + std::to_string(d) + "/" + timesteps.back(), variableNames);
 		}
