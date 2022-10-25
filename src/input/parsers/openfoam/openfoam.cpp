@@ -370,6 +370,13 @@ void InputOpenFoamParallel::nextVariables(Mesh &mesh)
 
 	eslog::checkpointln("TIME STEP LOADER: VARIABLES LOADED");
 
+	for (size_t v = 0; v < variables.nodes.size(); ++v) {
+		variables.nodes[v].data.clear();
+	}
+	for (size_t v = 0; v < variables.elements.size(); ++v) {
+		variables.elements[v].data.clear();
+	}
+
 	for (int d = info::mpi::rank, offset = 0; d < domains; d += info::mpi::size, offset += nvariables.size() + evariables.size()) {
 		for (size_t v = 0; v < nvariables.size(); ++v) {
 			if (variablePack.files[v + offset]->totalSize) {
