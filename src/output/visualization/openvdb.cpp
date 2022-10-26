@@ -167,6 +167,7 @@ void OpenVDB::updateSolution()
 	for (auto e = info::mesh->elements->volumeIndices->cbegin(); e != info::mesh->elements->volumeIndices->cend(); ++e) {
 		if (e->size()) ++datasize[1];
 	}
+
 	Communication::allReduce(datasize, nullptr, 2, MPITools::getType<size_t>().mpitype, MPI_MAX, MPITools::asynchronous);
 	volume->nvoxels = datasize[0];
 	volume->nvalues = datasize[1];
@@ -191,11 +192,11 @@ void OpenVDB::updateSolution()
 			for (auto indices = info::mesh->elements->volumeIndices->cbegin(); indices != info::mesh->elements->volumeIndices->cend(); ++indices, ++e) {
 				if (indices->size()) {
 					if (info::mesh->elements->data[di]->dimension == 1) {
-						volume->values[offset + i] = info::mesh->elements->data[di]->data[e];
+						volume->values[offset + i] = info::mesh->elements->data[di]->store[e];
 					} else {
 						float value = 0;
 						for (int d = 0; d < info::mesh->elements->data[di]->dimension; ++d) {
-							double &v = info::mesh->elements->data[di]->data[e * info::mesh->elements->data[di]->dimension + d];
+							double &v = info::mesh->elements->data[di]->store[e * info::mesh->elements->data[di]->dimension + d];
 							value += v * v;
 						}
 						volume->values[offset + i] = std::sqrt(value);

@@ -608,18 +608,18 @@ int EnSightGold::ndata(const NamedData *data)
 			size_t bindex = 0;
 			for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++bindex) {
 				if (check(r, emask->data())) {
-					insert(data->data.data() + dimension * n, bindex * dimension);
+					insert(data->store.data() + dimension * n, bindex * dimension);
 				}
 			}
 			size_t ri = 1;
 			for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r, ++ri, ++bindex) {
 				if (check(ri, bmask->data())) {
-					insert(data->data.data() + dimension * n, bindex * dimension);
+					insert(data->store.data() + dimension * n, bindex * dimension);
 				}
 			}
 			for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r, ++ri, ++bindex) {
 				if (check(ri, bmask->data())) {
-					insert(data->data.data() + dimension * n, bindex * dimension);
+					insert(data->store.data() + dimension * n, bindex * dimension);
 				}
 			}
 		}
