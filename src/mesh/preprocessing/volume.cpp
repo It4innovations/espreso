@@ -174,7 +174,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 							}
 						}
 						for (size_t i = 0; i < angle.size(); ++i) {
-							isin[i / 8] &= ~((fabs(angle[i]) < 6.0 ? 1 : 0) << (i % 8));
+							isin[i / 8] &= ~((fabs(angle[i]) < 1.0 ? 1 : 0) << (i % 8));
 						}
 					} break;
 					default:
@@ -192,7 +192,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 							}
 						}
 						for (size_t i = 0; i < angle.size(); ++i) {
-							isin[i / 8] &= ~((fabs(angle[i]) < 6.0 ? 1 : 0) << (i % 8));
+							isin[i / 8] &= ~((fabs(angle[i]) < 1.0 ? 1 : 0) << (i % 8));
 						}
 					}
 
