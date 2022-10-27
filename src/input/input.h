@@ -22,8 +22,8 @@ public:
 
 	virtual void initVariables(Mesh &mesh) = 0;
 	virtual void finishVariables() = 0;
-	virtual int variables() = 0;
-	virtual void nextVariables(Mesh &mesh) = 0;
+	virtual int timeSteps() = 0;
+	virtual void nextTimeStep(Mesh &mesh) = 0;
 
 	virtual ~Input() {}
 };

@@ -31,6 +31,8 @@ void EnsightCasefile::parse()
 		return current + strlen(parameter) < casefile.end && memcmp(current, parameter, strlen(parameter)) == 0;
 	};
 
+
+
 	while (current < casefile.end) {
 		while (current < casefile.end && *current++ != '\n'); // go to the line end
 		while (current < casefile.end && *current == '\n') { current++; } // start at new line
@@ -116,7 +118,7 @@ void EnsightCasefile::parse()
 			if (check("filename increment")) {
 				while (*current++ != ':');
 				timesets[timeset].tinc = strtol(current, NULL, 10);
-				timesets[timeset].tend = timesets[timeset].tstart + timesteps * timesets[timeset].tinc;
+				timesets[timeset].tend = timesets[timeset].tstart + (timesteps - 1) * timesets[timeset].tinc;
 			}
 			if (check("time set")) {
 				while (*current++ != ':');
@@ -143,4 +145,7 @@ void EnsightCasefile::parse()
 	}
 
 	geometry = utils::getFileDirectory(path) + "/" + geometry;
+	for (size_t v = 0; v < variables.size(); ++v) {
+		variables[v].path = utils::getFileDirectory(path) + "/" + variables[v].path;
+	}
 }

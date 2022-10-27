@@ -21,6 +21,13 @@ struct ClippingBox: public ECFDescription {
 	ClippingBox();
 };
 
+struct EnSightInputConfiguration: public ECFDescription {
+	int timeset;
+	std::string time, variables;
+
+	EnSightInputConfiguration();
+};
+
 struct OpenFOAMInputConfiguration: public ECFDescription {
 	bool direct_load;
 
@@ -53,6 +60,7 @@ struct InputConfiguration: public ECFDescription {
 	std::string path;
 	FORMAT format;
 
+	EnSightInputConfiguration ensight;
 	OpenFOAMInputConfiguration openfoam;
 
 	ClippingBox clipping_box;

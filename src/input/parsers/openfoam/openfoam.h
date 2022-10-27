@@ -20,8 +20,8 @@ public:
 
 	void initVariables(Mesh &mesh);
 	void finishVariables();
-	int variables();
-	void nextVariables(Mesh &mesh);
+	int timeSteps();
+	void nextTimeStep(Mesh &mesh);
 
 protected:
 	std::vector<int> nvariables, svariables, evariables;
@@ -42,7 +42,7 @@ public:
 
 	void initVariables(Mesh &mesh);
 	void finishVariables();
-	void nextVariables(Mesh &mesh);
+	void nextTimeStep(Mesh &mesh);
 	void ivariables(const InputConfiguration &configuration);
 
 protected:
@@ -61,7 +61,7 @@ public:
 
 	void initVariables(Mesh &mesh);
 	void finishVariables();
-	void nextVariables(Mesh &mesh);
+	void nextTimeStep(Mesh &mesh);
 	void ivariables(const InputConfiguration &configuration);
 
 protected:
@@ -81,7 +81,7 @@ public:
 
 	void initVariables(Mesh &mesh);
 	void finishVariables();
-	void nextVariables(Mesh &mesh);
+	void nextTimeStep(Mesh &mesh);
 	void ivariables(const InputConfiguration &configuration);
 
 protected:

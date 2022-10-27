@@ -146,23 +146,23 @@ void Mesh::load()
 	info::mesh->output->updateMesh();
 	profiler::syncend("mesh_output");
 
-	if (input->variables()) {
+	if (input->timeSteps()) {
 		eslog::info(" ===================================== LOAD VARIABLES ========================= %12.3f s\n", eslog::duration());
 		eslog::info(" ============================================================================================= \n");
 		input->initVariables(*info::mesh);
 		info::mesh->output->updateMonitors();
-		for (; step::step.substep < input->variables(); ++step::step.substep) {
+		for (; step::step.substep < input->timeSteps(); ++step::step.substep) {
 			if (step::step.substep != 0) {
 				eslog::info(" ==  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  == \n");
 			}
-			input->nextVariables(*info::mesh);
+			input->nextTimeStep(*info::mesh);
 			eslog::checkpointln("MESH: VARIABLES UPDATED");
 			info::mesh->output->updateSolution();
 		}
 		input->finishVariables();
 		eslog::info(" ============================================================================================= \n\n");
 		eslog::checkpoint("ESPRESO: VARIABLES LOADED");
-		eslog::param("TIME STEPS", input->variables());
+		eslog::param("TIME STEPS", input->timeSteps());
 		eslog::ln();
 	} else {
 		info::mesh->output->updateMonitors();

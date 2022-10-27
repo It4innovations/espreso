@@ -460,6 +460,193 @@ void buildChunkedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 	eslog::endln("BUILDER: MESH BUILT");
 }
 
+void orderedValuesInit(VariablesBlocks &variables, Mesh &mesh)
+{
+	variables.loader = new VariableLoader();
+	ChunkedVariables &chunked = variables.loader->chunked;
+
+	for (size_t v = 0; v < variables.nodes.size(); ++v) {
+		if (StringCompare::caseInsensitiveEq("coordinates", variables.nodes[v].name)) {
+			variables.loader->ndata.push_back(mesh.nodes->appendData(3, NamedData::DataType::VECTOR, "TRANSLATION")); // temporary store for coordinates
+		} else {
+			switch (variables.nodes[v].dimension) {
+			case 1: variables.loader->ndata.push_back(mesh.nodes->appendData(1, NamedData::DataType::SCALAR, variables.nodes[v].name)); break;
+			case 3: variables.loader->ndata.push_back(mesh.nodes->appendData(3, NamedData::DataType::VECTOR, variables.nodes[v].name)); break;
+			default: break;
+			}
+		}
+	}
+	for (size_t v = 0; v < variables.elements.size(); ++v) {
+		switch (variables.elements[v].dimension) {
+		case 1: variables.loader->edata.push_back(mesh.elements->appendData(1, NamedData::DataType::SCALAR, variables.elements[v].name)); break;
+		case 3: variables.loader->edata.push_back(mesh.elements->appendData(3, NamedData::DataType::VECTOR, variables.elements[v].name)); break;
+		default: break;
+		}
+	}
+
+//	chunked.nperm.resize(mesh.nodes->size);
+	chunked.eperm.resize(mesh.elements->distribution.process.size);
+//	std::iota(chunked.nperm.begin(), chunked.nperm.end(), 0);
+//	std::sort(chunked.nperm.begin(), chunked.nperm.end(), [&] (esint i, esint j) { return (mesh.nodes->inputOffset->begin() + i)->front() < (mesh.nodes->inputOffset->begin() + j)->front(); });
+	std::iota(chunked.eperm.begin(), chunked.eperm.end(), 0);
+	std::sort(chunked.eperm.begin(), chunked.eperm.end(), [&] (esint i, esint j) { return (mesh.elements->inputOffset->begin() + i)->front() < (mesh.elements->inputOffset->begin() + j)->front(); });
+
+	// there is only on block
+//	chunked.ndistribution = Communication::getDistribution(variables.ndist.blocks.back().size);
+	chunked.edistribution = Communication::getDistribution<esint>(variables.elements.front().data.size());
+
+	std::vector<esint> sBuffer;
+	sBuffer.reserve(info::mpi::size * 5 + chunked.nperm.size() + chunked.eperm.size());
+	auto nit = chunked.nperm.begin(), eit = chunked.eperm.begin();
+	for (int t = 0; t < info::mpi::size; ++t) {
+		auto nbegin = nit, ebegin = eit;
+		while (nit != chunked.nperm.end() && (mesh.nodes->inputOffset->begin() + *nit)->front() < chunked.ndistribution[t + 1]) { ++nit; }
+		while (eit != chunked.eperm.end() && (mesh.elements->inputOffset->begin() + *eit)->front() < chunked.edistribution[t + 1]) { ++eit; }
+
+		sBuffer.push_back(5 + (nit - nbegin) + (eit - ebegin)); // size
+		sBuffer.push_back(t); // target
+		sBuffer.push_back(info::mpi::rank); // source
+		sBuffer.push_back(nit - nbegin); // nodes
+		sBuffer.push_back(eit - ebegin); // elements
+		for (auto it = nbegin; it != nit; ++it) {
+			sBuffer.push_back((mesh.nodes->inputOffset->begin() + *it)->front());
+		}
+		for (auto it = ebegin; it != eit; ++it) {
+			sBuffer.push_back((mesh.elements->inputOffset->begin() + *it)->front());
+		}
+	}
+
+	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, chunked.variableRequests)) {
+		eslog::error("cannot exchange output offsets.\n");
+	}
+
+	chunked.variableRequestsMap.resize(info::mpi::size);
+	for (size_t i = 0; i < chunked.variableRequests.size(); i += chunked.variableRequests[i]) {
+		chunked.variableRequestsMap[chunked.variableRequests[i + 2]] = i;
+	}
+
+	chunked.datasize = chunked.nvsize = chunked.evsize = 0;
+	for (size_t v = 0; v < variables.nodes.size(); ++v) {
+		chunked.nvsize += variables.nodes[v].dimension;
+	}
+	for (size_t v = 0; v < variables.elements.size(); ++v) {
+		chunked.evsize += variables.elements[v].dimension;
+	}
+	for (size_t i = 0; i < chunked.variableRequests.size(); i += chunked.variableRequests[i]) {
+		chunked.datasize += utils::reinterpret_size<esint, esfloat>(chunked.nvsize * chunked.variableRequests[i + 3]);
+		chunked.datasize += utils::reinterpret_size<esint, esfloat>(chunked.evsize * chunked.variableRequests[i + 4]);
+	}
+
+	eslog::checkpointln("VARIABLES LOADER: PERMUTATION EXCHANGED");
+}
+
+void orderedValuesNext(VariablesBlocks &variables, Mesh &mesh)
+{
+	ChunkedVariables &chunked = variables.loader->chunked;
+
+	std::vector<esint> sBuffer, rBuffer;
+	sBuffer.reserve(info::mpi::size * 5 + chunked.datasize);
+	for (int r = 0; r < info::mpi::size; ++r) {
+		esint i = chunked.variableRequestsMap[r];
+		esint nsize = chunked.variableRequests[i + 3];
+		esint esize = chunked.variableRequests[i + 4];
+		sBuffer.push_back(5 + utils::reinterpret_size<esint, esfloat>(chunked.nvsize * nsize + chunked.evsize * esize));
+		sBuffer.push_back(r);
+		sBuffer.push_back(info::mpi::rank);
+		sBuffer.push_back(nsize);
+		sBuffer.push_back(esize);
+		size_t size = sBuffer.size(); // it is useless if we called correctly sBuffer.reserve(...)
+		sBuffer.resize(sBuffer.size() + utils::reinterpret_size<esint, esfloat>(chunked.nvsize * nsize + chunked.evsize * esize));
+		esfloat *c = reinterpret_cast<esfloat*>(sBuffer.data() + size);
+		for (size_t v = 0; v < variables.nodes.size(); ++v) {
+			if (variables.nodes[v].data.size()) {
+				for (esint n = 0; n < nsize; ++n) {
+					for (int d = 0; d < variables.nodes[v].dimension; ++d) {
+						*c++ = variables.nodes[v].data[variables.nodes[v].dimension * (chunked.variableRequests[i + 5 + n] - chunked.ndistribution[info::mpi::rank]) + d];
+					}
+				}
+			} else {
+				c += nsize * variables.nodes[v].dimension;
+			}
+		}
+		for (size_t v = 0; v < variables.elements.size(); ++v) {
+			if (variables.elements[v].data.size()) {
+				for (esint e = 0; e < esize; ++e) {
+					for (int d = 0; d < variables.elements[v].dimension; ++d) {
+						*c++ = variables.elements[v].data[variables.elements[v].dimension * (chunked.variableRequests[i + 5 + e + nsize] - chunked.edistribution[info::mpi::rank]) + d];
+					}
+				}
+			} else {
+				c += esize * variables.elements[v].dimension;
+			}
+		}
+	}
+
+	if (!Communication::allToAllWithDataSizeAndTarget(sBuffer, rBuffer)) {
+		eslog::error("cannot exchange output data.\n");
+	}
+	sBuffer.clear();
+	eslog::checkpointln("VARIABLES LOADER: VARIABLES EXCHANGED");
+
+	std::vector<esint> rmap(info::mpi::size);
+	for (size_t i = 0; i < rBuffer.size(); i += rBuffer[i]) {
+		rmap[rBuffer[i + 2]] = i;
+	}
+
+	auto nit = chunked.nperm.begin(), eit = chunked.eperm.begin();
+	for (int r = 0; r < info::mpi::size; ++r) {
+		esint i = rmap[r];
+		esint nsize = rBuffer[i + 3];
+		esint esize = rBuffer[i + 4];
+		esfloat *c = reinterpret_cast<esfloat*>(rBuffer.data() + i + 5);
+		for (size_t v = 0; v < variables.nodes.size(); ++v) {
+			for (esint n = 0; n < nsize; ++n) {
+				for (int d = 0; d < variables.nodes[v].dimension; ++d) {
+					variables.loader->ndata[v]->data[*(nit + n) * variables.nodes[v].dimension + d] = *c++;
+				}
+			}
+		}
+		nit += nsize;
+		for (size_t v = 0; v < variables.elements.size(); ++v) {
+			for (esint e = 0; e < esize; ++e) {
+				for (int d = 0; d < variables.elements[v].dimension; ++d) {
+					variables.loader->edata[v]->data[*(eit + e) * variables.elements[v].dimension + d] = *c++;
+				}
+			}
+		}
+		eit += esize;
+	}
+	eslog::checkpointln("VARIABLES LOADER: VARIABLES ASSIGNED");
+
+	for (size_t v = 0; v < variables.nodes.size(); ++v) {
+		if (StringCompare::caseInsensitiveEq("coordinates", variables.nodes[v].name)) {
+			if (variables.nodes[v].data.size()) {
+				if (mesh.nodes->originCoordinates == nullptr) {
+					mesh.nodes->originCoordinates = mesh.nodes->coordinates;
+					mesh.nodes->coordinates = new serializededata<esint, Point>(*mesh.nodes->originCoordinates);
+				}
+				for (size_t n = 0; n < mesh.nodes->coordinates->datatarray().size(); ++n) {
+					mesh.nodes->coordinates->datatarray()[n].x = variables.loader->ndata[v]->data[3 * n + 0];
+					mesh.nodes->coordinates->datatarray()[n].y = variables.loader->ndata[v]->data[3 * n + 1];
+					mesh.nodes->coordinates->datatarray()[n].z = variables.loader->ndata[v]->data[3 * n + 2];
+					variables.loader->ndata[v]->data[3 * n + 0] = mesh.nodes->coordinates->datatarray()[n].x - mesh.nodes->originCoordinates->datatarray()[n].x;
+					variables.loader->ndata[v]->data[3 * n + 1] = mesh.nodes->coordinates->datatarray()[n].y - mesh.nodes->originCoordinates->datatarray()[n].y;
+					variables.loader->ndata[v]->data[3 * n + 2] = mesh.nodes->coordinates->datatarray()[n].z - mesh.nodes->originCoordinates->datatarray()[n].z;
+				}
+				eslog::checkpointln("VARIABLES LOADER: COORDINATES UPDATED");
+				mesh.updateMesh();
+			} else {
+				std::fill(variables.loader->ndata[v]->data.begin(), variables.loader->ndata[v]->data.end(), 0);
+			}
+		}
+	}
+}
+
+void orderedValuesFinish(VariablesBlocks &variables)
+{
+	delete variables.loader;
+}
+
 void chunkedValuesInit(VariablesBlocks &variables, Mesh &mesh)
 {
 	variables.loader = new VariableLoader();
@@ -645,7 +832,6 @@ void chunkedValuesNext(VariablesBlocks &variables, Mesh &mesh)
 void chunkedValuesFinish(VariablesBlocks &variables)
 {
 	delete variables.loader;
-
 }
 
 }

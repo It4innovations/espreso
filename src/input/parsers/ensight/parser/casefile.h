@@ -23,9 +23,10 @@ public:
 		int dimension, timeset;
 		Type type;
 		std::string name, path;
+		int skip;
 
 		Variable(int dimension, Type type, int timeset, const std::string &name, const std::string &path)
-		: dimension(dimension), timeset(timeset), type(type), name(name), path(path)
+		: dimension(dimension), timeset(timeset), type(type), name(name), path(path), skip(false)
 		{
 
 		}

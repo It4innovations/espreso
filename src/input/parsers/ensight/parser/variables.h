@@ -15,7 +15,7 @@ public:
 	EnsightVariables(const EnsightCasefile &casefile, const EnsightGeometry &geofile, AsyncFilePack &variables);
 
 	void scan();
-	void parse(Mesh &mesh);
+	void parse(Mesh &mesh, VariablesBlocks &variables);
 
 protected:
 	const EnsightCasefile &_casefile;

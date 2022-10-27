@@ -21,6 +21,21 @@ ClippingBox::ClippingBox()
 	ecfdescription->registerParameter("max_z", max[2], ECFMetaData().setdescription({ "MAX.Z" }).setdatatype({ ECFDataType::FLOAT }));
 }
 
+EnSightInputConfiguration::EnSightInputConfiguration()
+{
+	timeset = 1;
+	REGISTER(timeset, ECFMetaData()
+			.setdescription({ "Used timeset." })
+			.setdatatype({ ECFDataType::STRING }));
+
+	REGISTER(time, ECFMetaData()
+			.setdescription({ "Load only specified time steps." })
+			.setdatatype({ ECFDataType::STRING }));
+	REGISTER(variables, ECFMetaData()
+			.setdescription({ "Load only specified variables." })
+			.setdatatype({ ECFDataType::STRING }));
+}
+
 OpenFOAMInputConfiguration::OpenFOAMInputConfiguration()
 {
 	direct_load = false;
@@ -58,6 +73,7 @@ InputConfiguration::InputConfiguration()
 			.addoption(ECFOption().setname("GMSH").setdescription("GMSH mesh generator."))
 			.addoption(ECFOption().setname("NGLIB").setdescription("NGLib mesh generator.")));
 
+	REGISTER(ensight, ECFMetaData().setdescription({ "EnSight input loader parameters." }));
 	REGISTER(openfoam, ECFMetaData().setdescription({ "OpenFOAM input loader parameters." }));
 
 	REGISTER(clipping_box, ECFMetaData().setdescription({ "Clipping box." }));

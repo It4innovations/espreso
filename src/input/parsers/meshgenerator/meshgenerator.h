@@ -24,8 +24,8 @@ public:
 
 	void initVariables(Mesh &mesh) {}
 	void finishVariables() {}
-	int variables() { return 0; }
-	void nextVariables(Mesh &mesh);
+	int timeSteps() { return 0; }
+	void nextTimeStep(Mesh &mesh);
 
 
 

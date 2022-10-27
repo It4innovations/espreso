@@ -342,22 +342,22 @@ void InputOpenFoamParallelDirect::finishVariables()
 
 }
 
-int InputOpenFoam::variables()
+int InputOpenFoam::timeSteps()
 {
 	return loader->timesteps.size();
 }
 
-void InputOpenFoam::nextVariables(Mesh &mesh)
+void InputOpenFoam::nextTimeStep(Mesh &mesh)
 {
-	return loader->nextVariables(mesh);
+	loader->nextTimeStep(mesh);
 }
 
-void InputOpenFoamSequential::nextVariables(Mesh &mesh)
+void InputOpenFoamSequential::nextTimeStep(Mesh &mesh)
 {
 
 }
 
-void InputOpenFoamParallel::nextVariables(Mesh &mesh)
+void InputOpenFoamParallel::nextTimeStep(Mesh &mesh)
 {
 	eslog::start("TIME STEP LOADER: STARTED", "TIME STEP LOADER");
 	eslog::info(" == TIME STEP %77s == \n", timesteps[timestep].c_str());
@@ -396,6 +396,8 @@ void InputOpenFoamParallel::nextVariables(Mesh &mesh)
 		}
 	}
 
+	eslog::checkpointln("TIME STEP LOADER: VARIABLES PARSED");
+
 	if (++timestep < timesteps.size()) {
 		variablePack.clear();
 		for (int d = info::mpi::rank; d < domains * mult; d += info::mpi::size) {
@@ -416,7 +418,7 @@ void InputOpenFoamParallel::nextVariables(Mesh &mesh)
 	eslog::endln("TIME STEP LOADER: FINISHED");
 }
 
-void InputOpenFoamParallelDirect::nextVariables(Mesh &mesh)
+void InputOpenFoamParallelDirect::nextTimeStep(Mesh &mesh)
 {
 
 }

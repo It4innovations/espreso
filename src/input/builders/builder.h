@@ -15,6 +15,11 @@ void buildOrderedFVM(NodesBlocks &nodes, FacesBlocks &faces, OrderedRegions &reg
 void buildDecomposedFEM(NodesDomain &nodes, Elements &elements, OrderedRegions &regions, Mesh &mesh);
 void buildDecomposedFVM(NodesDomain &nodes, Faces &faces, OrderedRegions &regions, Mesh &mesh);
 
+
+void orderedValuesInit(VariablesBlocks &variables, Mesh &mesh);
+void orderedValuesNext(VariablesBlocks &variables, Mesh &mesh);
+void orderedValuesFinish(VariablesBlocks &variables);
+
 void chunkedValuesInit(VariablesBlocks &variables, Mesh &mesh);
 void chunkedValuesNext(VariablesBlocks &variables, Mesh &mesh);
 void chunkedValuesFinish(VariablesBlocks &variables);

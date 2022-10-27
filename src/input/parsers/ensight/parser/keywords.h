@@ -50,7 +50,7 @@ struct EnsightKeywords {
 		std::string getName()
 		{
 			auto end = name;
-			while (*end != 0) { ++end; }
+			while (*end != 0 && *end != ' ' && *end != '\n') { ++end; }
 			return std::string(name, end);
 		}
 

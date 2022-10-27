@@ -11,13 +11,15 @@ struct EnsightData;
 
 class InputEnsight: public Input {
 public:
+	InputEnsight();
+
 	void load(const InputConfiguration &configuration);
 	void build(Mesh &mesh);
 
 	void initVariables(Mesh &mesh);
 	void finishVariables();
-	int variables();
-	void nextVariables(Mesh &mesh);
+	int timeSteps();
+	void nextTimeStep(Mesh &mesh);
 
 	~InputEnsight();
 
@@ -26,7 +28,11 @@ protected:
 
 	NodesBlocks nodes;
 	ElementsBlocks elements;
+	VariablesBlocks variables;
 	OrderedRegions regions;
+
+	int timeset;
+	size_t timestep;
 };
 
 }
