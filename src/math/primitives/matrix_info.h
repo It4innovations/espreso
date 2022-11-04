@@ -9,7 +9,7 @@ struct Indexing {
 	const static int IJV;
 };
 
-enum Matrix_Type: int {
+enum struct Matrix_Type: int {
 	REAL_SYMMETRIC_POSITIVE_DEFINITE,
 	REAL_SYMMETRIC_INDEFINITE,
 	REAL_STRUCTURALLY_SYMMETRIC,
@@ -22,7 +22,7 @@ enum Matrix_Type: int {
 	COMPLEX_NONSYMMETRIC,
 };
 
-enum Matrix_Shape: int {
+enum struct Matrix_Shape: int {
 	LOWER,
 	UPPER,
 	FULL
