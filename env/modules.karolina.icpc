@@ -2,6 +2,7 @@ ml intel/2020b
 ml ParMETIS/4.0.3-intel-2020b
 ml HDF5/1.10.6-intel-2020b-parallel
 ml Valgrind/3.16.1-intel-2020b
+ml OpenVDB/9.1.0-intel-2020b-Python-3.8.6
 
 export MPICXX=mpiicpc
 export CXX=icpc
