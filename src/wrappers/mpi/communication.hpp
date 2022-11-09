@@ -1093,7 +1093,7 @@ void Communication::allReduce(std::vector<Ttype> &data, OP op, int left, int rig
 		}
 		rh.exchanged();
 	}
-	if (group->communicator == MPI_COMM_WORLD && left == 0 && right == group->size - 1) {
+	if (group->communicator == MPI_COMM_WORLD && left == 0 && right == group->size) {
 		++TAG::ALLREDUCE;
 	}
 	profiler::end("comm_allreduce");
