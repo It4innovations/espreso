@@ -986,63 +986,61 @@ struct __element_builder__ {
 
 void buildElementsFromFaces(Faces &faces, Elements &elements)
 {
-	if (faces.ftype.size() == 0) {
-		return;
-	}
-
-	ivector<esint> opermutation(faces.owner.size()), npermutation(faces.neighbor.size());
-	std::iota(opermutation.begin(), opermutation.end(), 0);
-	std::sort(opermutation.begin(), opermutation.end(), [&] (const esint &i, const esint &j) { return faces.owner[i] != faces.owner[j] ? faces.owner[i] < faces.owner[j] : i < j; });
-	std::iota(npermutation.begin(), npermutation.end(), 0);
-	std::sort(npermutation.begin(), npermutation.end(), [&] (const esint &i, const esint &j) { return faces.neighbor[i] != faces.neighbor[j] ? faces.neighbor[i] < faces.neighbor[j] : i < j; });
-
-	esint min = faces.owner[opermutation.front()], max = std::max(faces.owner[opermutation.back()], faces.neighbor[npermutation.back()]);
-	for (auto n = npermutation.begin(); n != npermutation.end(); ++n) {
-		if (faces.neighbor[*n] != -1) {
-			min = std::min(min, faces.neighbor[*n]);
-		}
-	}
-
 	esint poly[2] = { 0, 0 };
-	ivector<esint> fdist(faces.ftype.size() + 1);
-	fdist[0] = 0;
-	for (size_t e = 0; e < faces.ftype.size(); ++e) {
-		if (Element::encode(faces.ftype[e]).code == Element::CODE::POLYGON) {
-			++poly[0];
-		}
-		fdist[e + 1] = fdist[e] + Element::encode(faces.ftype[e]).nodes;
-	}
+	if (faces.ftype.size()) {
+		ivector<esint> opermutation(faces.owner.size()), npermutation(faces.neighbor.size());
+		std::iota(opermutation.begin(), opermutation.end(), 0);
+		std::sort(opermutation.begin(), opermutation.end(), [&] (const esint &i, const esint &j) { return faces.owner[i] != faces.owner[j] ? faces.owner[i] < faces.owner[j] : i < j; });
+		std::iota(npermutation.begin(), npermutation.end(), 0);
+		std::sort(npermutation.begin(), npermutation.end(), [&] (const esint &i, const esint &j) { return faces.neighbor[i] != faces.neighbor[j] ? faces.neighbor[i] < faces.neighbor[j] : i < j; });
 
-	elements.etype.reserve(max - min + 1);
-	elements.enodes.reserve(faces.fnodes.size());
-	__element_builder__ builder(faces, fdist, opermutation, npermutation, min);
-	for (esint e = min; e <= max; ++e, builder.it.next()) {
-		builder.count(e);
-		elements.etype.push_back(builder.element.code());
-		elements.enodes.resize(elements.enodes.size() + Element::encode(elements.etype.back()).nodes, -1);
-		auto enodes = elements.enodes.data() + elements.enodes.size() - Element::encode(elements.etype.back()).nodes;
-		switch (elements.etype.back()) {
-		case Element::CODE::TETRA4:
-			builder.pushFirst<3>({ enodes, enodes + 1, enodes + 2 });
-			builder.finish<3>({ enodes, enodes + 1, enodes + 3 });
-			break;
-		case Element::CODE::PYRAMID5:
-			builder.pushFirst<4>({ enodes, enodes + 1, enodes + 2, enodes + 3 });
-			builder.finish<3>({ enodes, enodes + 1, enodes + 4 });
-			break;
-		case Element::CODE::PRISMA6:
-			builder.pushFirst<3>({ enodes + 3, enodes + 4, enodes + 5 });
-			builder.finish<4>({ enodes + 4, enodes + 3, enodes + 0, enodes + 1 });
-			builder.finish<3>({ enodes + 0, enodes + 1, enodes + 2 });
-			break;
-		case Element::CODE::HEXA8:
-			builder.pushFirst<4>({ enodes, enodes + 1, enodes + 5, enodes + 4 });
-			builder.finish<4>({ enodes + 5, enodes + 1, enodes + 2, enodes + 6 });
-			builder.finish<4>({ enodes + 0, enodes + 4, enodes + 7, enodes + 3 });
-			break;
-		default:
-			++poly[1];
-			builder.pushPolyhedron(enodes);
+		esint min = faces.owner[opermutation.front()], max = std::max(faces.owner[opermutation.back()], faces.neighbor[npermutation.back()]);
+		for (auto n = npermutation.begin(); n != npermutation.end(); ++n) {
+			if (faces.neighbor[*n] != -1) {
+				min = std::min(min, faces.neighbor[*n]);
+			}
+		}
+
+		ivector<esint> fdist(faces.ftype.size() + 1);
+		fdist[0] = 0;
+		for (size_t e = 0; e < faces.ftype.size(); ++e) {
+			if (Element::encode(faces.ftype[e]).code == Element::CODE::POLYGON) {
+				++poly[0];
+			}
+			fdist[e + 1] = fdist[e] + Element::encode(faces.ftype[e]).nodes;
+		}
+
+		elements.etype.reserve(max - min + 1);
+		elements.enodes.reserve(faces.fnodes.size());
+		__element_builder__ builder(faces, fdist, opermutation, npermutation, min);
+		for (esint e = min; e <= max; ++e, builder.it.next()) {
+			builder.count(e);
+			elements.etype.push_back(builder.element.code());
+			elements.enodes.resize(elements.enodes.size() + Element::encode(elements.etype.back()).nodes, -1);
+			auto enodes = elements.enodes.data() + elements.enodes.size() - Element::encode(elements.etype.back()).nodes;
+			switch (elements.etype.back()) {
+			case Element::CODE::TETRA4:
+				builder.pushFirst<3>({ enodes, enodes + 1, enodes + 2 });
+				builder.finish<3>({ enodes, enodes + 1, enodes + 3 });
+				break;
+			case Element::CODE::PYRAMID5:
+				builder.pushFirst<4>({ enodes, enodes + 1, enodes + 2, enodes + 3 });
+				builder.finish<3>({ enodes, enodes + 1, enodes + 4 });
+				break;
+			case Element::CODE::PRISMA6:
+				builder.pushFirst<3>({ enodes + 3, enodes + 4, enodes + 5 });
+				builder.finish<4>({ enodes + 4, enodes + 3, enodes + 0, enodes + 1 });
+				builder.finish<3>({ enodes + 0, enodes + 1, enodes + 2 });
+				break;
+			case Element::CODE::HEXA8:
+				builder.pushFirst<4>({ enodes, enodes + 1, enodes + 5, enodes + 4 });
+				builder.finish<4>({ enodes + 5, enodes + 1, enodes + 2, enodes + 6 });
+				builder.finish<4>({ enodes + 0, enodes + 4, enodes + 7, enodes + 3 });
+				break;
+			default:
+				++poly[1];
+				builder.pushPolyhedron(enodes);
+			}
 		}
 	}
 

@@ -137,18 +137,21 @@ void InputOpenFoamParallel::load(const InputConfiguration &configuration)
 	eslog::info(" ============================================================================================= \n");
 	eslog::info(" == NUMBER OF SUBDOMAINS %66d == \n", domains);
 	eslog::info(" == MESH %82s == \n", (configuration.path + "/processor*/constant/polyMesh/").c_str());
+	esint mult = domains < info::mpi::size ? info::mpi::size / domains : 1;
 
 	faces.elements = 0;
 	esint nsum = 0, esum = 0;
-	for (int d = info::mpi::rank, i = 0; d < domains; d += info::mpi::size, ++i) {
-		std::string dict = configuration.path + "/processor" + std::to_string(d) + "/constant/polyMesh/";
-		OpenFOAMFaceList::load(dict + "faces", faces.ftype, faces.fnodes, nodes.coordinates.size());
-		nsum += OpenFOAMVectorField::load(dict + "points", nodes.coordinates);
+	for (int d = info::mpi::rank, i = 0; d < domains * mult; d += info::mpi::size, ++i) {
+		if (info::mpi::rank % mult == 0) {
+			std::string dict = configuration.path + "/processor" + std::to_string(d / mult) + "/constant/polyMesh/";
+			OpenFOAMFaceList::load(dict + "faces", faces.ftype, faces.fnodes, nodes.coordinates.size());
+			nsum += OpenFOAMVectorField::load(dict + "points", nodes.coordinates);
 
-		esum += numberOfCells(OpenFOAMLabelList::load(dict + "owner", faces.owner, faces.elements));
-		OpenFOAMLabelList::load(dict + "neighbour", faces.neighbor, faces.elements);
-		faces.neighbor.resize(faces.owner.size(), -1);
-		faces.elements = esum;
+			esum += numberOfCells(OpenFOAMLabelList::load(dict + "owner", faces.owner, faces.elements));
+			OpenFOAMLabelList::load(dict + "neighbour", faces.neighbor, faces.elements);
+			faces.neighbor.resize(faces.owner.size(), -1);
+			faces.elements = esum;
+		}
 	}
 
 	esint offset[2] = { nsum, esum };
@@ -358,6 +361,7 @@ void InputOpenFoamParallel::nextVariables(Mesh &mesh)
 {
 	eslog::start("TIME STEP LOADER: STARTED", "TIME STEP LOADER");
 	eslog::info(" == TIME STEP %77s == \n", timesteps[timestep].c_str());
+	esint mult = domains < info::mpi::size ? info::mpi::size / domains : 1;
 
 	if (info::mpi::rank == 0) {
 		if (utils::exists(variablePath + "/processor" + std::to_string(0) + "/" + timesteps[timestep] + "/uniform/time")) {
@@ -377,27 +381,31 @@ void InputOpenFoamParallel::nextVariables(Mesh &mesh)
 		variables.elements[v].data.clear();
 	}
 
-	for (int d = info::mpi::rank, offset = 0; d < domains; d += info::mpi::size, offset += nvariables.size() + evariables.size()) {
-		for (size_t v = 0; v < nvariables.size(); ++v) {
-			if (variablePack.files[v + offset]->totalSize) {
-				OpenFOAMVectorField::load(variablePack.files[v + offset], variables.nodes[v].data);
+	for (int d = info::mpi::rank, offset = 0; d < domains * mult; d += info::mpi::size, offset += nvariables.size() + evariables.size()) {
+		if (info::mpi::rank % mult == 0) {
+			for (size_t v = 0; v < nvariables.size(); ++v) {
+				if (variablePack.files[v + offset]->totalSize) {
+					OpenFOAMVectorField::load(variablePack.files[v + offset], variables.nodes[v].data);
+				}
 			}
-		}
-		for (size_t v = 0; v < evariables.size(); ++v) {
-			if (variablePack.files[v + nvariables.size() + offset]->totalSize) {
-				OpenFOAMVectorField::load(variablePack.files[v + nvariables.size() + offset], variables.elements[v].data);
+			for (size_t v = 0; v < evariables.size(); ++v) {
+				if (variablePack.files[v + nvariables.size() + offset]->totalSize) {
+					OpenFOAMVectorField::load(variablePack.files[v + nvariables.size() + offset], variables.elements[v].data);
+				}
 			}
 		}
 	}
 
 	if (++timestep < timesteps.size()) {
 		variablePack.clear();
-		for (int d = info::mpi::rank; d < domains; d += info::mpi::size) {
-			for (size_t v = 0; v < nvariables.size(); ++v) {
-				variablePack.add(variablePath + "/processor" + std::to_string(d) + "/" + timesteps[timestep] + "/" + variableNames[nvariables[v]]);
-			}
-			for (size_t v = 0; v < evariables.size(); ++v) {
-				variablePack.add(variablePath + "/processor" + std::to_string(d) + "/" + timesteps[timestep] + "/" + variableNames[evariables[v]]);
+		for (int d = info::mpi::rank; d < domains * mult; d += info::mpi::size) {
+			if (info::mpi::rank % mult == 0) {
+				for (size_t v = 0; v < nvariables.size(); ++v) {
+					variablePack.add(variablePath + "/processor" + std::to_string(d / mult) + "/" + timesteps[timestep] + "/" + variableNames[nvariables[v]]);
+				}
+				for (size_t v = 0; v < evariables.size(); ++v) {
+					variablePack.add(variablePath + "/processor" + std::to_string(d / mult) + "/" + timesteps[timestep] + "/" + variableNames[evariables[v]]);
+				}
 			}
 		}
 		variablePack.iread(MPITools::singleton->within);
@@ -421,11 +429,11 @@ void InputOpenFoamSequential::ivariables(const InputConfiguration &configuration
 void InputOpenFoamParallel::ivariables(const InputConfiguration &configuration)
 {
 	eslog::info(" ==    -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -    == \n");
+	esint mult = domains < info::mpi::size ? info::mpi::size / domains : 1;
+	esint info = std::min(info::mpi::rank / mult, domains - 1);
 
 	std::vector<std::string> subdirs;
-	for (int d = info::mpi::rank; d < info::mpi::size; d += info::mpi::size) { // only once
-		utils::listDirectorySubdirectories(configuration.path + "/processor" + std::to_string(d), subdirs);
-	}
+	utils::listDirectorySubdirectories(configuration.path + "/processor" + std::to_string(info), subdirs);
 
 	std::vector<std::string> steps;
 	if (configuration.openfoam.time.size()) {
@@ -489,61 +497,59 @@ void InputOpenFoamParallel::ivariables(const InputConfiguration &configuration)
 
 	eslog::info(" == VARIABLES %77s == \n", "");
 	std::vector<int> skip;
-	for (int d = info::mpi::rank; d < info::mpi::size; d += info::mpi::size) { // only once
-		if (configuration.openfoam.variables.size()) {
-			variableNames = Parser::split(configuration.openfoam.variables, ",");
-			for (size_t v = 0; v < variableNames.size(); ++v) {
-				variableNames[v] = Parser::strip(variableNames[v]);
-			}
-		} else {
-			utils::listDirectoryFiles(configuration.path + "/processor" + std::to_string(d) + "/" + timesteps.back(), variableNames);
+	if (configuration.openfoam.variables.size()) {
+		variableNames = Parser::split(configuration.openfoam.variables, ",");
+		for (size_t v = 0; v < variableNames.size(); ++v) {
+			variableNames[v] = Parser::strip(variableNames[v]);
 		}
-		if (utils::exists(configuration.path + "/processor" + std::to_string(d) + "/" + timesteps.back() + "/polyMesh/points")) {
-			variableNames.push_back("polyMesh/points");
+	} else {
+		utils::listDirectoryFiles(configuration.path + "/processor" + std::to_string(info) + "/" + timesteps.back(), variableNames);
+	}
+	if (utils::exists(configuration.path + "/processor" + std::to_string(info) + "/" + timesteps.back() + "/polyMesh/points")) {
+		variableNames.push_back("polyMesh/points");
+	}
+	skip.resize(variableNames.size(), false);
+	vheader.resize(variableNames.size());
+	for (size_t i = 0; i < variableNames.size(); ++i) {
+		std::ifstream is(configuration.path + "/processor" + std::to_string(info) + "/" + timesteps.back() + "/" + variableNames[i]);
+		vheader[i].read(is);
+		std::string name;
+		switch (vheader[i].foamClass) {
+		case FoamFileHeader::Class::pointScalarField:   nvariables.push_back(i); name = "pointScalarField"; break;
+		case FoamFileHeader::Class::pointVectorField:   nvariables.push_back(i); name = "pointVectorField"; break;
+		case FoamFileHeader::Class::vectorField:        nvariables.push_back(i); name = "vectorField"; break;
+		case FoamFileHeader::Class::volScalarField:     evariables.push_back(i); name = "volScalarField"; break;
+		case FoamFileHeader::Class::volVectorField:     evariables.push_back(i); name = "volVectorField"; break;
+		case FoamFileHeader::Class::surfaceScalarField: svariables.push_back(i); name = "[skipped] surfaceScalarField"; skip[i] = true; break;
+		case FoamFileHeader::Class::surfaceVectorField: svariables.push_back(i); name = "[skipped] surfaceVectorField"; skip[i] = true; break;
+		default: name = "unknown"; break;
 		}
-		skip.resize(variableNames.size(), false);
-		vheader.resize(variableNames.size());
-		for (size_t i = 0; i < variableNames.size(); ++i) {
-			std::ifstream is(configuration.path + "/processor" + std::to_string(d) + "/" + timesteps.back() + "/" + variableNames[i]);
-			vheader[i].read(is);
-			std::string name;
-			switch (vheader[i].foamClass) {
-			case FoamFileHeader::Class::pointScalarField:   nvariables.push_back(i); name = "pointScalarField"; break;
-			case FoamFileHeader::Class::pointVectorField:   nvariables.push_back(i); name = "pointVectorField"; break;
-			case FoamFileHeader::Class::vectorField:        nvariables.push_back(i); name = "vectorField"; break;
-			case FoamFileHeader::Class::volScalarField:     evariables.push_back(i); name = "volScalarField"; break;
-			case FoamFileHeader::Class::volVectorField:     evariables.push_back(i); name = "volVectorField"; break;
-			case FoamFileHeader::Class::surfaceScalarField: svariables.push_back(i); name = "[skipped] surfaceScalarField"; skip[i] = true; break;
-			case FoamFileHeader::Class::surfaceVectorField: svariables.push_back(i); name = "[skipped] surfaceVectorField"; skip[i] = true; break;
-			default: name = "unknown"; break;
-			}
-			eslog::info(" == > %s %*s == \n", variableNames[i].c_str(), 84 - variableNames[i].size(), name.c_str());
-		}
+		eslog::info(" == > %s %*s == \n", variableNames[i].c_str(), 84 - variableNames[i].size(), name.c_str());
 	}
 
 	variablePath = configuration.path;
 
-	for (int d = info::mpi::rank; d < domains; d += info::mpi::size) {
-		for (size_t v = 0; v < nvariables.size(); ++v) {
-			variablePack.add(variablePath + "/processor" + std::to_string(d) + "/" + timesteps.front() + "/" + variableNames[nvariables[v]]);
-		}
-		for (size_t v = 0; v < evariables.size(); ++v) {
-			variablePack.add(variablePath + "/processor" + std::to_string(d) + "/" + timesteps.front() + "/" + variableNames[evariables[v]]);
+	for (int d = info::mpi::rank; d < domains * mult; d += info::mpi::size) {
+		if (info::mpi::rank % mult == 0) {
+			for (size_t v = 0; v < nvariables.size(); ++v) {
+				variablePack.add(variablePath + "/processor" + std::to_string(d / mult) + "/" + timesteps.front() + "/" + variableNames[nvariables[v]]);
+			}
+			for (size_t v = 0; v < evariables.size(); ++v) {
+				variablePack.add(variablePath + "/processor" + std::to_string(d / mult) + "/" + timesteps.front() + "/" + variableNames[evariables[v]]);
+			}
 		}
 	}
 	variablePack.iread(MPITools::singleton->within);
 
-	for (int d = info::mpi::rank; d < info::mpi::size; d += info::mpi::size) {
-		for (size_t v = 0; v < nvariables.size(); ++v) {
-			if (StringCompare::caseInsensitiveEq("polyMesh/points", variableNames[nvariables[v]])) {
-				variables.nodes.push_back({vheader[nvariables[v]].dimension(), "coordinates"});
-			} else {
-				variables.nodes.push_back({vheader[nvariables[v]].dimension(), variableNames[nvariables[v]]});
-			}
+	for (size_t v = 0; v < nvariables.size(); ++v) {
+		if (StringCompare::caseInsensitiveEq("polyMesh/points", variableNames[nvariables[v]])) {
+			variables.nodes.push_back({vheader[nvariables[v]].dimension(), "coordinates"});
+		} else {
+			variables.nodes.push_back({vheader[nvariables[v]].dimension(), variableNames[nvariables[v]]});
 		}
-		for (size_t v = 0; v < evariables.size(); ++v) {
-			variables.elements.push_back({vheader[evariables[v]].dimension(), variableNames[evariables[v]]});
-		}
+	}
+	for (size_t v = 0; v < evariables.size(); ++v) {
+		variables.elements.push_back({vheader[evariables[v]].dimension(), variableNames[evariables[v]]});
 	}
 }
 
