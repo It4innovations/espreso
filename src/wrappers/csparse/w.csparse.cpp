@@ -101,9 +101,6 @@ cs *MakeSym (cs *A) {
 
 
 void csparse::FactorizeChol(SparseMatrix& A, int order, int& L_nnz, int*& L_row_indexes, int*& L_col_pointers, double*& L_values, int*& perm) {
-    // A_cs in CSC format so transpose A in CSR
-    // A.MatTranspose();
-
     // Convert 1-based to 0-based indexing
     for(int& i : A.CSR_I_row_indices) {
         i--;
@@ -121,8 +118,6 @@ void csparse::FactorizeChol(SparseMatrix& A, int order, int& L_nnz, int*& L_row_
     A_cs->nz = -1; // # of entries in triplet matrix, -1 for compressed-col
     A_cs->nzmax = A.CSR_V_values.size();
 
-    // TODO: Must be tested!!!
-    eslog::warning("ESPRESO warning: CSparse FactorizeChol method not tested yet.\n");
     int sym = IsSym(A_cs);
     if (sym == -1)
         A_cs = cs_transpose (A_cs, 1);
@@ -152,9 +147,6 @@ void csparse::FactorizeChol(SparseMatrix& A, int order, int& L_nnz, int*& L_row_
     for(int& i : A.CSR_J_col_indices) {
         i++;
     }
-
-    // Convert back A from CSC to CSR
-    // A.MatTranspose();
 
     // Prevent deleting data
     S->pinv = NULL;
