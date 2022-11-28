@@ -3,6 +3,8 @@
 #include "math/wrappers/math.solver.h"
 #include "esinfo/eslog.h"
 
+#include <complex>
+
 #ifndef HAVE_MKL
 #ifndef HAVE_SUITESPARSE
 

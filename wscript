@@ -23,8 +23,15 @@ def configure(ctx):
     ctx.env.CXX = ctx.env.LINK_CXX = ctx.env.MPICXX
 
     """ Set default compilers flags"""
-    ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
-    ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
+    if ctx.options.flavor == "gnu":
+        ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
+        ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
+    if ctx.options.flavor == "intel":
+        ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])
+        ctx.env.append_unique("LINKFLAGS", [ "-qopenmp" ])
+    if ctx.options.flavor == "fujitsu":
+        ctx.env.append_unique("CXXFLAGS", [ "-march=armv8.2-a+sve", "-Kfast", "-KA64FX", "-KSVE", "-Kopenmp", "-SSL2" ])
+        ctx.env.append_unique("LINKFLAGS", [ "-march=armv8.2-a+sve", "-Kfast", "-KA64FX", "-KSVE", "-Kopenmp", "-SSL2" ])
 
     if ctx.options.intwidth == "32":
         ctx.env.append_unique("DEFINES", [ "esint=int" ])
@@ -36,7 +43,7 @@ def configure(ctx):
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++11" ])
     ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
     if ctx.options.mode == "release":
-        ctx.env.append_unique("CXXFLAGS", [ "-O3", "-g", "-march=native" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-O3", "-g" ])
     if ctx.options.mode == "devel":
         ctx.env.append_unique("CXXFLAGS", [ "-O2", "-g" ])
     if ctx.options.mode == "debug":
@@ -205,6 +212,13 @@ def options(opt):
         default="",
         help="C++ compiler flags (space separated list)")
 
+    flavor=["gnu", "intel", "fujitsu"]
+    opt.compiler.add_option("--flavor",
+        action="store",
+        default="gnu",
+        choices=flavor,
+        help="C++ compiler flavor: " + ", ".join(flavor) + " [default: %default]")
+
     opt.compiler.add_option("--stlibs",
         action="store",
         type="string",
@@ -255,6 +269,8 @@ def set_libs(ctx, libs, default):
 def settings(ctx):
     print_available(ctx)
 
+    ctx.msg("                                CXXFLAGS", ctx.env.CXXFLAGS)
+    ctx.msg("                               LINKFLAGS", ctx.env.LINKFLAGS)
     ctx.msg("                               int width", ctx.env.intwidth)
     ctx.msg("                                    mode", ctx.env.mode)
     ctx.msg("                                    BLAS", ctx.env.use_blas)
@@ -406,7 +422,7 @@ def link_cxx(self, *k, **kw):
             test = dict(execute=True)
             test.update(header)
             inc = [ "#include <{0}>\n".format(h) for h in kw["header_name"].split() ]
-            test["fragment"] = "{0}int main(int argc, char** argv) {{ {1} }}".format("".join(inc), kw["fragment"])
+            test["fragment"] = "{0}int main(int argc, char** argv) {{ {1} }}\n".format("".join(inc), kw["fragment"])
             test["msg"] = "Checking for '{0}' settings".format(kw["name"])
             if not self.check_cxx(**test):
                 self.env.revert()

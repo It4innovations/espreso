@@ -2,6 +2,8 @@
 #include "math/wrappers/math.solver.h"
 #include "esinfo/eslog.h"
 
+#include <complex>
+
 #ifndef HAVE_MKL
 #ifndef HAVE_PARDISO
 #ifndef HAVE_SUITESPARSE
@@ -10,73 +12,86 @@ namespace espreso {
 namespace math {
 
 template <>
-void initSolver(const Matrix_CSR<double> &x)
+void initSolver(Matrix_CSR<double> &A)
 {
 
 }
 
 template <>
-void initSolver(const Matrix_CSR<std::complex<double> > &x)
+void initSolver(Matrix_CSR<std::complex<double> > &A)
 {
 
 }
 
 template <>
-void symbolicFactorization(const Matrix_CSR<double> &x)
+void symbolicFactorization(const Matrix_CSR<double> &A, esint fixedSuffix)
 {
 
 }
 
 template <>
-void symbolicFactorization(const Matrix_CSR<std::complex<double> > &x)
+void symbolicFactorization(const Matrix_CSR<std::complex<double> > &A, esint fixedSuffix)
 {
 
 }
 
 template <>
-void numericalFactorization(const Matrix_CSR<double> &x)
+void numericalFactorization(const Matrix_CSR<double> &A)
 {
 
 }
 
 template <>
-void numericalFactorization(const Matrix_CSR<std::complex<double> > &x)
+void numericalFactorization(const Matrix_CSR<std::complex<double> > &A)
 {
 
 }
 
 template <>
-void solve(const Matrix_CSR<double> &x, Vector_Dense<double> &rhs, Vector_Dense<double> &solution)
+void solve(const Matrix_CSR<double> &A, Vector_Dense<double> &b, Vector_Dense<double> &x, VectorSparsity sparsity)
 {
 
 }
 
 template <>
-void solve(const Matrix_CSR<double> &x, Matrix_Dense<double> &rhs, Matrix_Dense<double> &solution)
+void solve(const Matrix_CSR<double> &A, Matrix_Dense<double> &b, Matrix_Dense<double> &x, VectorSparsity sparsity)
 {
 
 }
 
 template <>
-void solve(const Matrix_CSR<std::complex<double> > &x, Vector_Dense<std::complex<double> > &rhs, Vector_Dense<std::complex<double> > &solution)
-{
-	eslog::error("calling of empty sparse solver wrapper.\n");
-}
-
-template <>
-void solve(const Matrix_CSR<std::complex<double> > &x, Matrix_Dense<std::complex<double> > &rhs, Matrix_Dense<std::complex<double> > &solution)
+void solve(const Matrix_CSR<std::complex<double> > &A, Vector_Dense<std::complex<double> > &b, Vector_Dense<std::complex<double> > &x, VectorSparsity sparsity)
 {
 	eslog::error("calling of empty sparse solver wrapper.\n");
 }
 
 template <>
-void freeSolver(const Matrix_CSR<double> &x)
+void solve(const Matrix_CSR<std::complex<double> > &A, Matrix_Dense<std::complex<double> > &b, Matrix_Dense<std::complex<double> > &x, VectorSparsity sparsity)
+{
+	eslog::error("calling of empty sparse solver wrapper.\n");
+}
+
+template <>
+void computeSC(const Matrix_CSR<double> &m, Matrix_Dense<double> &sc)
+{
+        eslog::error("Implement Schur complement via SuiteSparse.\n");
+}
+
+template <>
+void computeSC(const Matrix_CSR<std::complex<double> > &m, Matrix_Dense<std::complex<double> > &sc)
+{
+        eslog::error("Implement Schur complement via SuiteSparse.\n");
+}
+
+
+template <>
+void freeSolver(Matrix_CSR<double> &A)
 {
 
 }
 
 template <>
-void freeSolver(const Matrix_CSR<std::complex<double> > &x)
+void freeSolver(Matrix_CSR<std::complex<double> > &A)
 {
 
 }
