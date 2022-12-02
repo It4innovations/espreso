@@ -85,6 +85,9 @@ private:
         cudaStream_t *h_array_stream;
         cusparseHandle_t *h_array_handle;
 
+        // Should be shared with itersolverGPU in the new dev branch
+        cublasHandle_t cublas_handle;
+
         cudaEvent_t event_data_preload;
         cudaEvent_t event1;
         cudaEvent_t event2;
@@ -100,6 +103,8 @@ private:
         int *d_csc_U_col_ptr;
         int *d_csc_U_row_ind;
         double *d_csc_U_val;
+
+        double *d_sym_full_lsc;
 
         int **h_array_d_csr_B_row_ptr;
         int **h_array_d_csr_B_col_ind;

@@ -1026,7 +1026,7 @@ void ClusterGPU::GetSchurComplement(bool USE_FLOAT, esint i) {
 	//////ESINFO(PROGRESS3) << Info::plain() << "s";
 
 	// if Schur complement is symmetric - then remove lower part - slower for GPU but more mem. efficient
-	if (configuration.schur_type == FETIConfiguration::MATRIX_STORAGE::SYMMETRIC) {
+	if (domains[i].K.type =='S' && configuration.schur_type == FETIConfiguration::MATRIX_STORAGE::SYMMETRIC) {
 		domains[i].B1Kplus.RemoveLowerDense();
 	}
 }
@@ -1110,12 +1110,21 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 			for (esint d = 0; d < n_lsc; d++) {
 				// Allocate device memory for LSCs
 				cuda::SetDevice(device_id);
-				cuda::Malloc((void**)&domains[lsc_on_gpu_ids[d]].B1Kplus.d_dense_values,
+
+				if (configuration.schur_type == FETIConfiguration::MATRIX_STORAGE::SYMMETRIC) {
+					cuda::Malloc((void**)&domains[lsc_on_gpu_ids[d]].B1Kplus.d_dense_values,
+				 	((domains[lsc_on_gpu_ids[d]].B1_comp_dom.rows * (domains[lsc_on_gpu_ids[d]].B1_comp_dom.rows + 1)) / 2 ) * sizeof(double));
+
+					domains[lsc_on_gpu_ids[d]].B1Kplus.type = 'S';
+				} else {
+					cuda::Malloc((void**)&domains[lsc_on_gpu_ids[d]].B1Kplus.d_dense_values,
 				 domains[lsc_on_gpu_ids[d]].B1_comp_dom.rows * domains[lsc_on_gpu_ids[d]].B1_comp_dom.rows * sizeof(double));
+					
+					domains[lsc_on_gpu_ids[d]].B1Kplus.type = 'G';
+				}
 				
 				domains[lsc_on_gpu_ids[d]].B1Kplus.cols = domains[lsc_on_gpu_ids[d]].B1_comp_dom.rows;
 				domains[lsc_on_gpu_ids[d]].B1Kplus.rows = domains[lsc_on_gpu_ids[d]].B1_comp_dom.rows;
-				domains[lsc_on_gpu_ids[d]].B1Kplus.type = 'G';
 
 				// TODO: This copy should be eliminated by setting 1-based indexing for B in cusparse routines and using original B1
 				vec_B1_comp_dom_copy[d] = domains[lsc_on_gpu_ids[d]].B1_comp_dom;
@@ -1261,12 +1270,17 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
         cusparseIndexType_t spmm_csr_col_ind_type = CUSPARSE_INDEX_32I;
         cusparseIndexBase_t spmm_idx_base = CUSPARSE_INDEX_BASE_ZERO;
 		
+		// cuBLAS settings
+		cublasFillMode_t upper = CUBLAS_FILL_MODE_UPPER;
+
 		// Allocate device arrays and initialize CUDA streams on all assigned GPUs
 		for (int g = 0; g < n_gpu; g++) {
             checkCudaErrors(cudaSetDevice(g + gpu_id));
 
             checkCudaErrors(cudaStreamCreateWithFlags(&gpus[g].data_stream, cudaStreamNonBlocking));
           
+		  	checkCudaErrors(cublasCreate(&gpus[g].cublas_handle));
+			
             for (int s = 0; s < n_streams_per_gpu; s++) {
                 checkCudaErrors(cudaStreamCreateWithFlags(&gpus[g].h_array_stream[s], cudaStreamNonBlocking));
                 checkCudaErrors(cusparseCreate(&gpus[g].h_array_handle[s]));
@@ -1319,6 +1333,10 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
             checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_U_row_ind, max_U_nnz * sizeof(int)));
             checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_U_col_ptr, (max_K_rows + 1) * sizeof(int)));
             checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_U_val, max_U_nnz * sizeof(double)));
+
+			if (SYMMETRIC_SYSTEM && configuration.schur_type == FETIConfiguration::MATRIX_STORAGE::SYMMETRIC) {
+				checkCudaErrors(cudaMalloc((void **)&gpus[g].d_sym_full_lsc, max_B1_rows * max_B1_rows * sizeof(double)));
+			}
         }
 		POP_RANGE  // END Prepare device arrays
 
@@ -1392,6 +1410,8 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                 int s_gpu = i_gpu % n_streams_per_gpu;
                 int info_gpu = i_gpu % n_csrsm2_info_per_gpu;
 
+				checkCudaErrors(cublasSetStream(gpus[g].cublas_handle, gpus[g].h_array_stream[s_gpu])); 
+
                 PUSH_RANGE("Create SpMM objects", 5)
                 // Create B, X, LSC cusparse matrix objects
                 checkCudaErrors(cusparseCreateCsr(&h_array_h_matB[i], (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
@@ -1404,10 +1424,17 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 				 (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows,
                 (void*) gpus[g].h_array_d_buffer[s_gpu], compute_type, spmm_order));
 				CUDA_SYNC
-                checkCudaErrors(cusparseCreateDnMat(&h_array_h_matLSC[i], (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
-				 (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
-                (void*) gpus[g].h_array_d_lsc[i_gpu], compute_type, spmm_order));
-                POP_RANGE // Create SpMM objects
+				
+				if (SYMMETRIC_SYSTEM && configuration.schur_type == FETIConfiguration::MATRIX_STORAGE::SYMMETRIC) {
+					checkCudaErrors(cusparseCreateDnMat(&h_array_h_matLSC[i], (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
+					(int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
+					(void*) gpus[g].d_sym_full_lsc, compute_type, spmm_order));
+				} else {
+					checkCudaErrors(cusparseCreateDnMat(&h_array_h_matLSC[i], (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
+					(int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
+					(void*) gpus[g].h_array_d_lsc[i_gpu], compute_type, spmm_order));
+				}
+				POP_RANGE // Create SpMM objects
 				CUDA_SYNC
 
                 // Need to wait for finishing B_csr and L_csr data transfers from data preload (before loop)
@@ -1692,6 +1719,15 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                 POP_RANGE // SpMM
 				CUDA_SYNC
 
+				if (SYMMETRIC_SYSTEM && configuration.schur_type == FETIConfiguration::MATRIX_STORAGE::SYMMETRIC) {
+					PUSH_RANGE("Remove triangle", 7)
+					checkCudaErrors(cublasDtrttp(gpus[g].cublas_handle, upper, 
+					domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, gpus[g].d_sym_full_lsc,
+                    domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, gpus[g].h_array_d_lsc[i_gpu]));
+					POP_RANGE // Remove triangle
+					CUDA_SYNC
+				}
+
                 PUSH_RANGE("Destroy CSRSM2 and SpMMobjects", 6);
                 checkCudaErrors(cusparseDestroySpMat(h_array_h_matB[i]));
                 checkCudaErrors(cusparseDestroyDnMat(h_array_h_matX[i]));
@@ -1756,6 +1792,10 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
             checkCudaErrors(cudaFree(gpus[g].d_csc_U_col_ptr));
             checkCudaErrors(cudaFree(gpus[g].d_csc_U_row_ind));
             checkCudaErrors(cudaFree(gpus[g].d_csc_U_val));
+			if (SYMMETRIC_SYSTEM && configuration.schur_type == FETIConfiguration::MATRIX_STORAGE::SYMMETRIC) {
+				checkCudaErrors(cudaFree(gpus[g].d_sym_full_lsc));
+			}
+			checkCudaErrors(cublasDestroy(gpus[g].cublas_handle));
 
             free(gpus[g].h_array_stream);
             free(gpus[g].h_array_handle);

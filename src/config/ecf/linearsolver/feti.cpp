@@ -155,12 +155,12 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.addoption(ECFOption().setname("ACC_DENSE").setdescription("Dense solver on Accelerator."))
 			.addoption(ECFOption().setname("CPU_SPARSE").setdescription("Sparse solver on CPU.")));
 
-	schur_type = MATRIX_STORAGE::GENERAL;
+	schur_type = MATRIX_STORAGE::SYMMETRIC;
 	REGISTER(schur_type, ECFMetaData()
 			.setdescription({ "Storage type for schur complement" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("GENERAL").setdescription("Store a full matrix."))
-			.addoption(ECFOption().setname("SYMMETRIC").setdescription("Store only triangle.")));
+			.addoption(ECFOption().setname("SYMMETRIC").setdescription("Store only upper triangle.")));
 
 	mp_pseudoinverse = false;
 	combine_sc_and_spds = keep_factors = true;
