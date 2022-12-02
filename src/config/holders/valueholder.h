@@ -25,8 +25,13 @@ struct ECFValueHolder: public ECFValue {
 
 	bool _setValue(const std::string &value)
 	{
+
 		std::stringstream ss(value);
-		ss >> this->value;
+		if (value.size() > 1 && value[0] == '0' && value[1] == 'x') {
+			ss >> std::hex >> this->value;
+		} else {
+			ss >> this->value;
+		}
 		return ss.eof() && !ss.fail();
 	}
 

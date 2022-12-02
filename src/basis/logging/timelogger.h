@@ -45,9 +45,14 @@ public:
 		{ }
 	};
 
-	void initOutput()
+	TimeLogger()
 	{
 		_events.reserve(1000000);
+	}
+
+	void initOutput()
+	{
+
 	}
 
 	void start(const char* region, const char* section)

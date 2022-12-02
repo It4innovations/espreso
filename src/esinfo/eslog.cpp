@@ -4,6 +4,7 @@
 #include "basis/logging/timelogger.h"
 #include "basis/logging/profiler.h"
 #include "wrappers/mpi/communication.h"
+#include "wrappers/papi/w.papi.h"
 #include "basis/utilities/sysutils.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/systeminfo.h"
@@ -114,6 +115,12 @@ void printRunInfo(int *argc, char ***argv)
 	eslog::info(" == ECF      %*s == \n", width, ecffile.c_str());
 	eslog::info(" == DATE [YYYY-MM-DD]   %*s == \n", width - 11, date);
 	eslog::info(" == TIME [HH-MM-SS]    %*s == \n", width - 10, time);
+	if (info::ecf->output.papi_event.size() && PAPI::isValid()) {
+		eslog::info(" == REPORTED PAPI EVENT %67s == \n", info::ecf->output.papi_event.c_str());
+	}
+	if (info::ecf->output.papi_code && PAPI::isValid()) {
+		eslog::info(" == REPORTED PAPI CODE                                                           0x%8x == \n", info::ecf->output.papi_code);
+	}
 	eslog::info(" ============================================================================================= \n\n");
 
 	info::system::print();

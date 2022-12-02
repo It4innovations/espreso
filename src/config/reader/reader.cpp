@@ -76,7 +76,7 @@ std::string ECFReader::_read(
 
 	opts.reserve(parameters.size() + 3);
 	for (size_t i = 0; i < parameters.size(); i++) {
-		opts.push_back({ parameters[i].first.c_str(), required_argument, 0, 'p' });
+		opts.push_back({ parameters[i].first.c_str(), required_argument, 0, 'x' });
 	}
 
 	option_index = 0;
@@ -104,7 +104,7 @@ std::string ECFReader::_read(
 	optind = 0;
 	while ((option = getopt_long(*argc, *argv, sopts.c_str(), opts.data(), &option_index)) != -1) {
 		switch (option) {
-		case 'p':
+		case 'x':
 			// parameters will be read after configuration file
 			break;
 		case 'h':
@@ -165,7 +165,7 @@ std::string ECFReader::_read(
 	optind = 0;
 	while ((option = getopt_long(*argc, *argv, sopts.c_str(), opts.data(), &option_index)) != -1) {
 		switch (option) {
-		case 'p':
+		case 'x':
 			if (!parameters[option_index].second->setValue(optarg)) {
 				eslog::globalerror("Parameter '%s' has wrong value '%s'\n", parameters[option_index].first.c_str(), optarg);
 			}

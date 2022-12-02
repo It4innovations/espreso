@@ -86,6 +86,15 @@ OutputConfiguration::OutputConfiguration(const ECF *root)
 			.setdescription({ "Measure level [0-3]." })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
 
+	papi_code = 0;
+	REGISTER(papi_code, ECFMetaData()
+			.setdescription({ "Reported PAPI event code." })
+			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
+
+	REGISTER(papi_event, ECFMetaData()
+			.setdescription({ "Reported PAPI event." })
+			.setdatatype({ ECFDataType::STRING }));
+
 	logger = LOGGER::USER;
 	REGISTER(logger, ECFMetaData()
 			.setdescription({ "Outpu logger settings" })

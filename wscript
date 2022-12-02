@@ -115,6 +115,7 @@ def build(ctx):
     ctx.build_checker(ctx.path.ant_glob('src/config/**/*.cpp'), "config")
     ctx.build_checker(ctx.path.ant_glob('src/basis/**/*.cpp'), "basis")
     ctx.build_checker(ctx.path.ant_glob('src/wrappers/mpi/**/*.cpp'), "wmpi")
+    ctx.build_checker(ctx.path.ant_glob('src/wrappers/papi/**/*.cpp'), "wpapi", [ "PAPI" ])
 
     ctx.build_mesio(ctx.path.ant_glob('src/mesh/**/*.cpp'), "mesh")
     ctx.build_mesio(ctx.path.ant_glob('src/input/**/*.cpp'), "input")
@@ -306,7 +307,7 @@ def print_available(ctx):
     ctx.env.lapack           = _print("                        LAPACK libraries", libs_lapack)
     ctx.env.solvers          = _print("                          sparse solvers", libs_solvers)
     ctx.env.dist_solvers     = _print("              distributed sparse solvers", [ "mklpdss", "hypre", "superlu", "wsmp" ])
-    ctx.env.other            = _print("                 miscellaneous libraries", [ "hdf5", "pthread" ])
+    ctx.env.other            = _print("                 miscellaneous libraries", [ "hdf5", "pthread", "PAPI" ])
 
 """ Recurse to third party libraries wrappers"""
 def recurse(ctx):
@@ -346,6 +347,7 @@ def recurse(ctx):
     ctx.recurse("src/wrappers/bem")
     ctx.recurse("src/wrappers/catalyst")
     ctx.recurse("src/wrappers/nvtx")
+    ctx.recurse("src/wrappers/papi")
 
 def get_commit():
     def is_git_directory(path = '.'):

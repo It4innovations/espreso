@@ -11,7 +11,7 @@
 #include "basis/logging/logger.h"
 #include "basis/logging/progresslogger.h"
 #include "basis/logging/timelogger.h"
-#include "basis/logging/oldtimelogger.h"
+#include "basis/logging/papicounters.h"
 #include "basis/logging/profiler.h"
 
 #include "config/reader/reader.h"
@@ -36,7 +36,7 @@ int main(int argc, char **argv)
 	MPITools::init();
 	profiler::synccheckpoint("mpi_init_tools");
 
-	eslog::init(new Logger<TimeLogger, ProgressTerminalLogger, ProgressFileLogger, OldTimeLogger>);
+	eslog::init(new Logger<TimeLogger, ProgressTerminalLogger, ProgressFileLogger, PAPICounters>);
 	profiler::synccheckpoint("init_loggers");
 	eslog::startln("ESPRESO: STARTED", "ESPRESO");
 
