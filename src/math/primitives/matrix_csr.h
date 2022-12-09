@@ -41,10 +41,11 @@ public:
 
 	Matrix_CSR(Matrix_CSR &&other): _Matrix_CSR<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _spblas{nullptr}, _allocated{}
 	{
+		swap(*static_cast<_Matrix_CSR<T>*>(this), *static_cast<_Matrix_CSR<T>*>(&other));
 		type = other.type;
 		shape = other.shape;
 		swap(_spblas, other._spblas);
-		swap(*this, other);
+		swap(_solver, other._solver);
 		swap(_allocated, other._allocated);
 	}
 
