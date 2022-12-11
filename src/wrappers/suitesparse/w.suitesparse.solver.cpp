@@ -8,6 +8,7 @@
 #ifdef USE_SOLVER_SUITESPARSE
 
 #include "wrappers/suitesparse/w.suitesparse.cholmod.h"
+#include "math/wrappers/math.spblas.h"
 
 namespace espreso {
 
@@ -181,20 +182,85 @@ void solve(const Matrix_CSR<std::complex<double> > &A, Matrix_Dense<std::complex
 
 bool provideSC()
 {
-	return false;
+	return true;
 }
 
-template <>
-void computeSC(const Matrix_CSR<double> &A, Matrix_Dense<double> &sc)
+template <typename T>
+void computeSC(const Matrix_CSR<T> &A, Matrix_Dense<T> &sc)
 {
-	eslog::error("Implement Schur complement via SuiteSparse.\n");
+	// computes the schur complement S = A22 - A21 * A11^{-1} * A12, where A = [A11, A12; A21, A22]
+
+	switch(A.type)
+	{
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+	{
+		if(A.shape != Matrix_Shape::UPPER)
+		{
+			eslog::error("Implement Schur complement for non-upper csr matrices.\n");
+		}
+
+		esint size_sc = sc.nrows;
+		esint size = A.nrows;
+		esint size_A11 = size - size_sc;
+
+		Matrix_CSR<T> A11_sp;
+		Matrix_CSR<T> A21t_sp; // = A12c_sp
+		Matrix_Dense<T> A22t_dn;
+		Matrix_Dense<T> A12t_dn;
+		submatrix<T>(A, A11_sp, 0, size_A11, 0, size_A11);
+		submatrix<T>(A, A21t_sp, 0, size_A11, size_A11, size, false, true); // = A12c_sp
+		submatrix<T>(A, A22t_dn, size_A11, size, size_A11, size, true, false, true);
+		submatrix<T>(A, A12t_dn, 0, size_A11, size_A11, size, true, false, true);
+
+		cholmod_common &cm_common = A._solver->cholmod.common;
+		cholmod_sparse *cm_A11_sp = new cholmod_sparse();
+		cholmod_sparse *cm_A21_sp = new cholmod_sparse();
+		cholmod_dense *cm_A22_dn = new cholmod_dense();
+		cholmod_dense *cm_A12_dn = new cholmod_dense();
+		cholmod_factor *cm_L;
+		cholmod_dense *cm_A11iA12_dn;
+
+		set(cm_A11_sp, A11_sp);
+		update(cm_A11_sp, A11_sp);
+		set(cm_A21_sp, A21t_sp);
+		update(cm_A21_sp, A21t_sp);
+		update(cm_A22_dn, A22t_dn);
+		update(cm_A12_dn, A12t_dn);
+
+		double alpha[2] = {-1,0};
+		double beta[2] = {1,0};
+
+		_analyze<esint>(cm_L, cm_A11_sp, cm_common);
+		_factorize<esint>(cm_L, cm_A11_sp, cm_common);
+		_solve<esint>(cm_A11iA12_dn, cm_L, cm_A12_dn, cm_common);
+		_apply<esint>(cm_A22_dn, cm_A21_sp, cm_A11iA12_dn, alpha, beta, cm_common);
+
+		if constexpr (std::is_same_v<T,double>) sc.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+		if constexpr (std::is_same_v<T,std::complex<double>>) sc.type = Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE;
+		sc.shape = Matrix_Shape::UPPER;
+		sc.resize(A22t_dn);
+		for(esint r = 0, i = 0; r < sc.nrows; ++r) {
+			for(esint c = r; c < sc.ncols; ++c, ++i) {
+				sc.vals[i] = A22t_dn.vals[r * sc.ncols + c];
+			}
+		}
+
+		delete cm_A11_sp;
+		delete cm_A21_sp;
+		delete cm_A22_dn;
+		delete cm_A12_dn;
+		_free<esint>(cm_L, cm_common);
+		_free<esint>(cm_A11iA12_dn, cm_common);
+		break;
+	}
+	default:
+		break; // UMFPACK
+	}
 }
 
-template <>
-void computeSC(const Matrix_CSR<std::complex<double> > &A, Matrix_Dense<std::complex<double> > &sc)
-{
-	eslog::error("Implement Schur complement via SuiteSparse.\n");
-}
+template void computeSC<double>(const Matrix_CSR<double> &A, Matrix_Dense<double> &sc);
+template void computeSC<std::complex<double>>(const Matrix_CSR<std::complex<double>> &A, Matrix_Dense<std::complex<double>> &sc);
 
 template <>
 void freeSolver(Matrix_CSR<double> &A)

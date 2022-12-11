@@ -50,62 +50,70 @@ template <> inline void _free<long, cholmod_dense>(cholmod_dense* &object, cholm
 template <> inline void _free<int, cholmod_factor>(cholmod_factor* &object, cholmod_common &common) { cholmod_free_factor(&object, &common); }
 template <> inline void _free<long, cholmod_factor>(cholmod_factor* &object, cholmod_common &common) { cholmod_l_free_factor(&object, &common); }
 
+template <typename T> constexpr int _getCholmodXtype();
+template <> constexpr int _getCholmodXtype<double>() { return CHOLMOD_REAL; }
+template <> constexpr int _getCholmodXtype<std::complex<double>>() { return CHOLMOD_COMPLEX; }
+
+template <typename T> constexpr int _getCholmodDtype();
+template <> constexpr int _getCholmodDtype<double>() { return CHOLMOD_DOUBLE; }
+template <> constexpr int _getCholmodDtype<std::complex<double>>() { return CHOLMOD_DOUBLE; }
+
+constexpr int _getCholmodStype(Matrix_Shape shape)
+{
+	switch(shape)
+	{
+	case Matrix_Shape::UPPER:
+		return 1;
+	case Matrix_Shape::LOWER:
+		return -1;
+	case Matrix_Shape::FULL:
+		return 0;
+	default:
+		return 0;
+	}
+}
+
 template <typename T>
 static inline void set(cholmod_sparse* &A, const Matrix_CSR<T> &M)
 {
 	if (!A) A = new cholmod_sparse();
-	A->nrow = M.nrows;
-	A->ncol = M.ncols;
+	A->nrow = M.ncols; // CSR -> CSC, therefore transposed. JUST array-transposed. NOT conjugate-transposed
+	A->ncol = M.nrows;
 	A->nzmax = M.nnz;
 
 	A->p = M.rows;
 	A->i = M.cols;
 	A->x = M.vals;
 
-	A->stype = -1; // CSR -> CSC
+	A->stype = (-1) * _getCholmodStype(M.shape); // (-1)* <=> CSR -> CSC
 	A->xtype = CHOLMOD_PATTERN;
-	A->dtype = CHOLMOD_DOUBLE;
+	A->dtype = _getCholmodDtype<T>();
 	A->sorted = 1;
 	A->packed = 1;
 }
 
-static inline void update(cholmod_sparse *A, const Matrix_CSR<double> &M)
+template <typename T>
+static inline void update(cholmod_sparse *A, const Matrix_CSR<T> &M)
 {
 	A->x = M.vals;
-	A->xtype = CHOLMOD_REAL;
+	A->xtype = _getCholmodXtype<T>();
 }
 
-static inline void update(cholmod_sparse *A, const Matrix_CSR<std::complex<double> > &M)
-{
-	A->x = M.vals;
-	A->xtype = CHOLMOD_COMPLEX;
-}
-
-static inline void update(cholmod_dense* &A, const Matrix_Dense<double> &M)
+template <typename T>
+static inline void update(cholmod_dense* &A, const Matrix_Dense<T> &M)
 {
 	if (!A) A = new cholmod_dense();
-	A->nrow = M.ncols;
+	A->nrow = M.ncols; // row-major -> column-major, therefore transposed. JUST array-transposed. NOT conjugate-transposed
 	A->ncol = M.nrows;
 	A->nzmax = M.ncols * M.nrows;
 	A->d = M.ncols;
 	A->x = M.vals;
-	A->xtype = CHOLMOD_REAL;
-	A->dtype = CHOLMOD_DOUBLE;
+	A->xtype = _getCholmodXtype<T>();
+	A->dtype = _getCholmodDtype<T>();
 }
 
-static inline void update(cholmod_dense* &A, const Matrix_Dense<std::complex<double> > &M)
-{
-	if (!A) A = new cholmod_dense();
-	A->nrow = M.nrows;
-	A->ncol = M.ncols;
-	A->nzmax = M.ncols * M.nrows;
-	A->d = M.nrows;
-	A->x = M.vals;
-	A->xtype = CHOLMOD_COMPLEX;
-	A->dtype = CHOLMOD_DOUBLE;
-}
-
-static inline void update(cholmod_dense* &A, const Vector_Dense<double> &v)
+template <typename T>
+static inline void update(cholmod_dense* &A, const Vector_Dense<T> &v)
 {
 	if (!A) A = new cholmod_dense();
 	A->nrow = v.size;
@@ -113,43 +121,21 @@ static inline void update(cholmod_dense* &A, const Vector_Dense<double> &v)
 	A->nzmax = v.size;
 	A->d = v.size;
 	A->x = v.vals;
-	A->xtype = CHOLMOD_REAL;
-	A->dtype = CHOLMOD_DOUBLE;
+	A->xtype = _getCholmodXtype<T>();
+	A->dtype = _getCholmodDtype<T>();
 }
 
-static inline void update(cholmod_dense* &A, const Vector_Dense<std::complex<double> > &v)
+template <typename T>
+static inline void extract(cholmod_dense *A, cholmod_common &common, Matrix_Dense<T> &M)
 {
-	if (!A) A = new cholmod_dense();
-	A->nrow = v.size;
-	A->ncol = 1;
-	A->nzmax = v.size;
-	A->d = v.size;
-	A->x = v.vals;
-	A->xtype = CHOLMOD_COMPLEX;
-	A->dtype = CHOLMOD_DOUBLE;
-}
-
-static inline void extract(cholmod_dense *A, cholmod_common &common, Matrix_Dense<double> &M)
-{
-	memcpy(M.vals, A->x, sizeof(double) * M.nrows * M.ncols);
+	memcpy(M.vals, A->x, sizeof(T) * M.nrows * M.ncols);
 	_free<esint>(A, common);
 }
 
-static inline void extract(cholmod_dense *A, cholmod_common &common, Matrix_Dense<std::complex<double> > &M)
+template <typename T>
+static inline void extract(cholmod_dense *A, cholmod_common &common, Vector_Dense<T> &v)
 {
-	memcpy(M.vals, A->x, sizeof(std::complex<double>) * M.nrows * M.ncols);
-	_free<esint>(A, common);
-}
-
-static inline void extract(cholmod_dense *A, cholmod_common &common, Vector_Dense<double> &v)
-{
-	memcpy(v.vals, A->x, sizeof(double) * v.size);
-	_free<esint>(A, common);
-}
-
-static inline void extract(cholmod_dense *A, cholmod_common &common, Vector_Dense<std::complex<double> > &v)
-{
-	memcpy(v.vals, A->x, sizeof(std::complex<double>) * v.size);
+	memcpy(v.vals, A->x, sizeof(T) * v.size);
 	_free<esint>(A, common);
 }
 
