@@ -160,6 +160,22 @@ void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &a
 	eslog::error("IJV matrix operations are not supported.\n");
 }
 
+
+template <typename T> void submatrix(const Matrix_CSR<T> &input, Matrix_Dense<T> &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans, bool conj, bool output_force_full)
+{
+	eslog::error("Implement extract block CSR->Dense in suitesparse spblas wrapper.\n");
+}
+
+template <typename T> void submatrix(const Matrix_CSR<T> &input, Matrix_CSR<T>   &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans, bool conj, bool output_force_full)
+{
+	eslog::error("Implement extract block CSR->CSR in suitesparse spblas wrapper.\n");
+}
+
+template void submatrix<double>(const Matrix_CSR<double> &, Matrix_Dense<double> &, esint, esint, esint, esint, bool, bool, bool);
+template void submatrix<double>(const Matrix_CSR<double> &, Matrix_CSR<double> &,   esint, esint, esint, esint, bool, bool, bool);
+template void submatrix<std::complex<double>>(const Matrix_CSR<std::complex<double>> &, Matrix_Dense<std::complex<double>> &, esint, esint, esint, esint, bool, bool, bool);
+template void submatrix<std::complex<double>>(const Matrix_CSR<std::complex<double>> &, Matrix_CSR<std::complex<double>> &,   esint, esint, esint, esint, bool, bool, bool);
+
 }
 }
 

@@ -24,6 +24,10 @@ namespace math {
 	template <typename T> void apply(Vector_Dense<T> &y, const T &alpha, const Matrix_CSR<T>   &a, const T &beta, const Vector_Dense<T> &x);
 	template <typename T> void apply(Vector_Dense<T> &y, const T &alpha, const Matrix_IJV<T>   &a, const T &beta, const Vector_Dense<T> &x);
 
+	// input = output[start_row:end_row, start_col:end_col]. Start inclusive, end exclusive
+	template <typename T> void submatrix(const Matrix_CSR<T> &input, Matrix_Dense<T> &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans = false, bool conj = false, bool output_force_full = false);
+	template <typename T> void submatrix(const Matrix_CSR<T> &input, Matrix_CSR<T>   &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans = false, bool conj = false, bool output_force_full = false);
+
 }
 }
 
