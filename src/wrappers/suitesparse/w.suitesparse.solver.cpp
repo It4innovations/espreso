@@ -190,13 +190,11 @@ void computeSC(const Matrix_CSR<T> &A, Matrix_Dense<T> &sc)
 {
 	// computes the schur complement S = A22 - A21 * A11^{-1} * A12, where A = [A11, A12; A21, A22]
 
-	switch(A.type)
-	{
+	switch(A.type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
 	{
-		if(A.shape != Matrix_Shape::UPPER)
-		{
+		if(A.shape != Matrix_Shape::UPPER) {
 			eslog::error("Implement Schur complement for non-upper csr matrices.\n");
 		}
 
@@ -236,8 +234,8 @@ void computeSC(const Matrix_CSR<T> &A, Matrix_Dense<T> &sc)
 		_solve<esint>(cm_A11iA12_dn, cm_L, cm_A12_dn, cm_common);
 		_apply<esint>(cm_A22_dn, cm_A21_sp, cm_A11iA12_dn, alpha, beta, cm_common);
 
-		if constexpr (std::is_same_v<T,double>) sc.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-		if constexpr (std::is_same_v<T,std::complex<double>>) sc.type = Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE;
+		if constexpr (std::is_same_v<T,double>) { sc.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE; }
+		if constexpr (std::is_same_v<T,std::complex<double>>) { sc.type = Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE; }
 		sc.shape = Matrix_Shape::UPPER;
 		sc.resize(A22t_dn);
 		for(esint r = 0, i = 0; r < sc.nrows; ++r) {
