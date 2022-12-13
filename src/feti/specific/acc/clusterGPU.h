@@ -91,6 +91,7 @@ private:
         cudaEvent_t event_data_preload;
         cudaEvent_t event1;
         cudaEvent_t event2;
+        cudaEvent_t event3;
 
         csrsm2Info_t *h_array_info_L;
         csrsm2Info_t *h_array_info_U;
@@ -124,6 +125,23 @@ private:
         // Permutation vectors
         int **h_array_d_pinv;
         int **h_array_d_q;
+
+        // CUDA pinned buffers
+        // Vectors and arrays mixed to check if cudaMallocHost is faster than cudaHostRegister
+        int* vec_L_row_indexes_pinned;
+        int* vec_L_col_pointers_pinned;
+        double* vec_L_values_pinned;
+        
+        int* vec_U_row_indexes_pinned;
+        int* vec_U_col_pointers_pinned;
+        double* vec_U_values_pinned;
+        
+        SEQ_VECTOR<int*> vec_perm_pinned;
+        SEQ_VECTOR<int*> vec_perm_2_pinned;
+        
+        SEQ_VECTOR<int*> vec_B1_col_indices_pinned;
+        SEQ_VECTOR<int*> vec_B1_row_indices_pinned;
+        SEQ_VECTOR<double*> vec_B1_values_pinned;
     } TGPU;
 
 // TODO Distribution of domains based on real size of LSC of each domain (# RHS)

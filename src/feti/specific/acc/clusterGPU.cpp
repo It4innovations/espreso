@@ -23,6 +23,9 @@ using namespace espreso;
 
 // #define CUDA_DEBUG
 
+// The CUDA_PINNED regions may be removed in future
+// #define CUDA_PINNED
+
 #ifdef CUDA_DEBUG
 	void cudaSync() {
 		checkCudaErrors(cudaDeviceSynchronize());
@@ -414,6 +417,15 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			vec_B1_rows[d] = domains[idx].B1_comp_dom.rows;
 			vec_B1_nnz[d] = domains[idx].B1_comp_dom.CSR_V_values.size();
 			vec_B1_size[d] = domains[idx].B1_comp_dom.rows * domains[idx].B1_comp_dom.cols;
+
+#ifdef CUDA_PINNED
+			checkCudaErrors(cudaHostRegister(vec_L_row_indexes[d], vec_L_nnz[d] * sizeof(int), cudaHostRegisterDefault));
+			checkCudaErrors(cudaHostRegister(vec_L_col_pointers[d], (domains[d].K.cols + 1) * sizeof(int), cudaHostRegisterDefault));
+			checkCudaErrors(cudaHostRegister(vec_L_values[d], vec_L_nnz[d] * sizeof(double), cudaHostRegisterDefault));
+			if(order) {
+				checkCudaErrors(cudaHostRegister(vec_perm[d], domains[d].K.rows * sizeof(int), cudaHostRegisterDefault));
+			}
+#endif
 		}
 	} else {
 		vec_U_nnz.resize(lsc_to_get_factors_ids.size());
@@ -438,6 +450,21 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 			vec_B1_rows[d] = domains[idx].B1_comp_dom.rows;
 			vec_B1_nnz[d] = domains[idx].B1_comp_dom.CSR_V_values.size();
 			vec_B1_size[d] = domains[idx].B1_comp_dom.rows * domains[idx].B1_comp_dom.cols;
+
+#ifdef CUDA_PINNED
+			checkCudaErrors(cudaHostRegister(vec_L_row_indexes[d], vec_L_nnz[d] * sizeof(int), cudaHostRegisterDefault));
+			checkCudaErrors(cudaHostRegister(vec_L_col_pointers[d], (domains[d].K.cols + 1) * sizeof(int), cudaHostRegisterDefault));
+			checkCudaErrors(cudaHostRegister(vec_L_values[d], vec_L_nnz[d] * sizeof(double), cudaHostRegisterDefault));
+
+			checkCudaErrors(cudaHostRegister(vec_U_row_indexes[d], vec_U_nnz[d] * sizeof(int), cudaHostRegisterDefault));
+			checkCudaErrors(cudaHostRegister(vec_U_col_pointers[d], (domains[d].K.cols + 1) * sizeof(int), cudaHostRegisterDefault));
+			checkCudaErrors(cudaHostRegister(vec_U_values[d], vec_U_nnz[d] * sizeof(double), cudaHostRegisterDefault));
+
+			if(order) {
+				checkCudaErrors(cudaHostRegister(vec_perm_2[d], domains[d].K.rows * sizeof(int), cudaHostRegisterDefault));
+			}
+			checkCudaErrors(cudaHostRegister(vec_perm[d], domains[d].K.rows * sizeof(int), cudaHostRegisterDefault));
+#endif
 		}
 	}
 	POP_RANGE // END Fact CSparse
@@ -1128,6 +1155,11 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 
 				// TODO: This copy should be eliminated by setting 1-based indexing for B in cusparse routines and using original B1
 				vec_B1_comp_dom_copy[d] = domains[lsc_on_gpu_ids[d]].B1_comp_dom;
+#ifdef CUDA_PINNED
+				checkCudaErrors(cudaHostRegister(vec_B1_comp_dom_copy[d].CSR_J_col_indices.data(), domains[d].B1_comp_dom.CSR_V_values.size() * sizeof(int), cudaHostRegisterDefault));
+				checkCudaErrors(cudaHostRegister(vec_B1_comp_dom_copy[d].CSR_I_row_indices.data(), (domains[d].B1_comp_dom.rows + 1) * sizeof(int), cudaHostRegisterDefault));
+				checkCudaErrors(cudaHostRegister(vec_B1_comp_dom_copy[d].CSR_V_values.data(), domains[d].B1_comp_dom.CSR_V_values.size() * sizeof(double), cudaHostRegisterDefault));
+#endif
 				// Convert 1-based to 0-based indexing
 				for(int& i : vec_B1_comp_dom_copy[d].CSR_I_row_indices) {
 					i--;
@@ -1152,6 +1184,11 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 
 				// TODO: This should be eliminated by setting 1-based indexing for B in cusparse routines
 				vec_B1_comp_dom_copy[d] = domains[lsc_on_gpu_ids[d]].B1_comp_dom;
+#ifdef CUDA_PINNED
+				checkCudaErrors(cudaHostRegister(vec_B1_comp_dom_copy[d].CSR_J_col_indices.data(), domains[d].B1_comp_dom.CSR_V_values.size() * sizeof(int), cudaHostRegisterDefault));
+				checkCudaErrors(cudaHostRegister(vec_B1_comp_dom_copy[d].CSR_I_row_indices.data(), (domains[d].B1_comp_dom.rows + 1) * sizeof(int), cudaHostRegisterDefault));
+				checkCudaErrors(cudaHostRegister(vec_B1_comp_dom_copy[d].CSR_V_values.data(), domains[d].B1_comp_dom.CSR_V_values.size() * sizeof(double), cudaHostRegisterDefault));
+#endif
 				// Convert 1-based to 0-based indexing
 				for(int& i : vec_B1_comp_dom_copy[d].CSR_I_row_indices) {
 					i--;
@@ -1174,11 +1211,11 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 		int n_gpu = 1;
 		int gpu_id = device_id;
 		// Array of gpu structs
-        TGPU *gpus = (TGPU*) malloc(n_gpu * sizeof(TGPU));
+		SEQ_VECTOR<TGPU> gpus(n_gpu);
 
 		// Distribute LSCs among GPUs in case of multi-GPU per cluster (sets gpus[g].n_lsc_gpu for the next step)
 		// Assign LSC device pointers
-		DistributeDomains(gpus, n_gpu, n_lsc);
+		DistributeDomains(gpus.data(), n_gpu, n_lsc);
 
 		// Allocate host arrays
 		// 1) For each GPU
@@ -1201,6 +1238,30 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 
 			gpus[g].h_array_d_pinv = (int **) malloc(n_streams_per_gpu * sizeof(int *));
 			gpus[g].h_array_d_q = (int **) malloc(n_streams_per_gpu * sizeof(int *));
+        	
+			gpus[g].vec_perm_pinned.resize(n_streams_per_gpu);
+        	gpus[g].vec_perm_2_pinned.resize(n_streams_per_gpu);
+
+        	gpus[g].vec_B1_col_indices_pinned.resize(n_streams_per_gpu);
+        	gpus[g].vec_B1_row_indices_pinned.resize(n_streams_per_gpu);
+        	gpus[g].vec_B1_values_pinned.resize(n_streams_per_gpu);
+
+			for (int s = 0; s < n_streams_per_gpu; s++) {
+				checkCudaErrors(cudaHostAlloc ( &gpus[g].vec_perm_pinned[s], max_K_rows * sizeof(int), cudaHostAllocDefault));
+				checkCudaErrors(cudaHostAlloc ( &gpus[g].vec_perm_2_pinned[s], max_K_rows * sizeof(int), cudaHostAllocDefault));
+
+				checkCudaErrors(cudaHostAlloc ( &gpus[g].vec_B1_col_indices_pinned[s], max_B1_nnz * sizeof(int), cudaHostAllocDefault));
+				checkCudaErrors(cudaHostAlloc ( &gpus[g].vec_B1_row_indices_pinned[s], (max_B1_rows + 1)  * sizeof(int), cudaHostAllocDefault));
+				checkCudaErrors(cudaHostAlloc ( &gpus[g].vec_B1_values_pinned[s], max_B1_nnz * sizeof(double), cudaHostAllocDefault));
+			}
+
+			checkCudaErrors(cudaHostAlloc ( &gpus[g].vec_L_row_indexes_pinned, max_L_nnz * sizeof(int), cudaHostAllocDefault));
+			checkCudaErrors(cudaHostAlloc ( &gpus[g].vec_L_col_pointers_pinned, (max_K_rows + 1) * sizeof(int), cudaHostAllocDefault));
+			checkCudaErrors(cudaHostAlloc ( &gpus[g].vec_L_values_pinned, max_L_nnz * sizeof(double), cudaHostAllocDefault));
+			
+			checkCudaErrors(cudaHostAlloc ( &gpus[g].vec_U_row_indexes_pinned, max_U_nnz * sizeof(int), cudaHostAllocDefault));
+			checkCudaErrors(cudaHostAlloc ( &gpus[g].vec_U_col_pointers_pinned, (max_K_rows + 1) * sizeof(int), cudaHostAllocDefault));
+			checkCudaErrors(cudaHostAlloc ( &gpus[g].vec_U_values_pinned, max_U_nnz * sizeof(double), cudaHostAllocDefault));
         }
 		// 2) cuSparse variables unique for each LSC
         // TODO check if one descriptor for all LSC is enough
@@ -1319,6 +1380,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
             checkCudaErrors(cudaEventCreateWithFlags(&gpus[g].event_data_preload, cudaEventDisableTiming));
             checkCudaErrors(cudaEventCreateWithFlags(&gpus[g].event1, cudaEventDisableTiming));
             checkCudaErrors(cudaEventCreateWithFlags(&gpus[g].event2, cudaEventDisableTiming));
+			checkCudaErrors(cudaEventCreateWithFlags(&gpus[g].event3, cudaEventDisableTiming));
 
             for (int i = 0; i < n_csrsm2_info_per_gpu; i++) {
                 checkCudaErrors(cusparseCreateCsrsm2Info(&gpus[g].h_array_info_L[i]));
@@ -1347,39 +1409,59 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 
             // Copy CSR B and CSC L for the first domain from host to device
             PUSH_RANGE("B_csr 0 memcpy HtD", 4)
-            checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_val[0], vec_B1_comp_dom_copy[idx].CSR_V_values.data(),
+			std::copy(vec_B1_comp_dom_copy[idx].CSR_V_values.begin(), vec_B1_comp_dom_copy[idx].CSR_V_values.end(), gpus[g].vec_B1_values_pinned[0]);
+            checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_val[0], gpus[g].vec_B1_values_pinned[0],
 			 vec_B1_comp_dom_copy[idx].CSR_V_values.size() * sizeof(double), cudaMemcpyHostToDevice, gpus[g].data_stream));
-			checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_col_ind[0], vec_B1_comp_dom_copy[idx].CSR_J_col_indices.data(),
+
+			std::copy(vec_B1_comp_dom_copy[idx].CSR_J_col_indices.begin(), vec_B1_comp_dom_copy[idx].CSR_J_col_indices.end(), gpus[g].vec_B1_col_indices_pinned[0]);
+			checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_col_ind[0], gpus[g].vec_B1_col_indices_pinned[0],
 			 vec_B1_comp_dom_copy[idx].CSR_V_values.size() * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-			checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_row_ptr[0], vec_B1_comp_dom_copy[idx].CSR_I_row_indices.data(),
+
+			std::copy(vec_B1_comp_dom_copy[idx].CSR_I_row_indices.begin(), vec_B1_comp_dom_copy[idx].CSR_I_row_indices.end(), gpus[g].vec_B1_row_indices_pinned[0]);
+			checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_row_ptr[0], gpus[g].vec_B1_row_indices_pinned[0],
 			 (domains[idx].B1_comp_dom.rows + 1) * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
             POP_RANGE
 
             PUSH_RANGE("L_csr 0 + perm memcpy HtD", 4)
 			if(SYMMETRIC_SYSTEM) {
 				// Copy L factor into the U arrays to allow L factor preloading now, it will be swaped before Lsolve
-				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_val, vec_L_values[idx], vec_L_nnz[idx] * sizeof(double),
+				std::copy(vec_L_values[idx], vec_L_values[idx] + vec_L_nnz[idx], gpus[g].vec_U_values_pinned);
+				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_val, gpus[g].vec_U_values_pinned, vec_L_nnz[idx] * sizeof(double),
 				cudaMemcpyHostToDevice, gpus[g].data_stream));
-				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_row_ind, vec_L_row_indexes[idx], vec_L_nnz[idx] * sizeof(int),
+				
+				std::copy(vec_L_row_indexes[idx], vec_L_row_indexes[idx] + vec_L_nnz[idx], gpus[g].vec_U_row_indexes_pinned);
+				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_row_ind, gpus[g].vec_U_row_indexes_pinned, vec_L_nnz[idx] * sizeof(int),
 				cudaMemcpyHostToDevice, gpus[g].data_stream));
-				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_col_ptr, vec_L_col_pointers[idx], (domains[idx].K.rows + 1) * sizeof(int),
+
+				std::copy(vec_L_col_pointers[idx], vec_L_col_pointers[idx] + (domains[idx].K.rows + 1), gpus[g].vec_U_col_pointers_pinned);
+				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_col_ptr, gpus[g].vec_U_col_pointers_pinned, (domains[idx].K.rows + 1) * sizeof(int),
 				cudaMemcpyHostToDevice, gpus[g].data_stream));
+				
 				if(order) {
-					checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[0], vec_perm[idx], domains[idx].K.rows * sizeof(int),
+					std::copy(vec_perm[idx], vec_perm[idx] + domains[idx].K.rows, gpus[g].vec_perm_pinned[0]);
+					checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[0], gpus[g].vec_perm_pinned[0], domains[idx].K.rows * sizeof(int),
 					 cudaMemcpyHostToDevice, gpus[g].data_stream));
 				}
             } else {
-				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_val, vec_L_values[idx], vec_L_nnz[idx] * sizeof(double),
+				std::copy(vec_L_values[idx], vec_L_values[idx] + vec_L_nnz[idx], gpus[g].vec_L_values_pinned);
+				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_val, gpus[g].vec_L_values_pinned, vec_L_nnz[idx] * sizeof(double),
 				cudaMemcpyHostToDevice, gpus[g].data_stream));
-				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_row_ind, vec_L_row_indexes[idx], vec_L_nnz[idx] * sizeof(int),
+
+				std::copy(vec_L_row_indexes[idx], vec_L_row_indexes[idx] + vec_L_nnz[idx], gpus[g].vec_L_row_indexes_pinned);
+				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_row_ind, gpus[g].vec_L_row_indexes_pinned, vec_L_nnz[idx] * sizeof(int),
 				cudaMemcpyHostToDevice, gpus[g].data_stream));
-				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_col_ptr, vec_L_col_pointers[idx], (domains[idx].K.rows + 1) * sizeof(int),
+
+				std::copy(vec_L_col_pointers[idx], vec_L_col_pointers[idx] + (domains[idx].K.rows + 1), gpus[g].vec_L_col_pointers_pinned);
+				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_col_ptr, gpus[g].vec_L_col_pointers_pinned, (domains[idx].K.rows + 1) * sizeof(int),
 				cudaMemcpyHostToDevice, gpus[g].data_stream));
+
 				if(order) {
-					checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_q[0], vec_perm_2[idx], domains[idx].K.rows * sizeof(int),
+					std::copy(vec_perm_2[idx], vec_perm_2[idx] + domains[idx].K.rows, gpus[g].vec_perm_2_pinned[0]);
+					checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_q[0], gpus[g].vec_perm_2_pinned[0], domains[idx].K.rows * sizeof(int),
 					 cudaMemcpyHostToDevice, gpus[g].data_stream));
 				}
-				checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[0], vec_perm[idx], domains[idx].K.rows * sizeof(int),
+				std::copy(vec_perm[idx], vec_perm[idx] + domains[idx].K.rows, gpus[g].vec_perm_pinned[0]);
+				checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[0], gpus[g].vec_perm_pinned[0], domains[idx].K.rows * sizeof(int),
 				 cudaMemcpyHostToDevice, gpus[g].data_stream));
             }
 			POP_RANGE
@@ -1437,7 +1519,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 				POP_RANGE // Create SpMM objects
 				CUDA_SYNC
 
-                // Need to wait for finishing B_csr and L_csr data transfers from data preload (before loop)
+                // Need to wait for finishing B_csr and L_csr data transfers from data preload (before loop, only once in the first iteration)
                 checkCudaErrors(cudaStreamWaitEvent(gpus[g].h_array_stream[0], gpus[g].event_data_preload, 0));
 				CUDA_SYNC
                 // Need to wait for finishing L-Solve from the previous iteration
@@ -1533,15 +1615,6 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                 POP_RANGE // Analysis lsolve
 				CUDA_SYNC
 
-                // Overlap CSC U factor transfer with L-Solve
-				if(SYMMETRIC_SYSTEM == false) {
-					PUSH_RANGE("U_csc memcpy HtD", 4)
-					checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_val, vec_U_values[i], vec_U_nnz[i] * sizeof(double), cudaMemcpyHostToDevice, gpus[g].data_stream));
-					checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_row_ind, vec_U_row_indexes[i], vec_U_nnz[i] * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-					checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_col_ptr, vec_U_col_pointers[i],	(domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows + 1) * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-					POP_RANGE // U_csc memcpy HtD
-					CUDA_SYNC
-				}
 
                 /* step 5: solve X = L * X */
                 PUSH_RANGE("Lsolve", 5)
@@ -1555,65 +1628,24 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                 // Record all the remaining work of the compute stream into the event1
                 checkCudaErrors(cudaEventRecord(gpus[g].event1, gpus[g].h_array_stream[s_gpu]));
 				CUDA_SYNC
-                // Data stream waits until all current work in the compute stream is done
-                checkCudaErrors(cudaStreamWaitEvent(gpus[g].data_stream, gpus[g].event1, 0));
-				CUDA_SYNC
 
-                // Overlap CSR B and CSC L transfer for the following iteration with the L^T-Solve (U-Solve)
-                if((i_gpu + 1) < gpus[g].n_lsc_gpu) {
-                    PUSH_RANGE("B_csr+n_gpu memcpy HtD", 6)
-                    int s_gpu_following = (i_gpu + 1) % n_streams_per_gpu;
-					checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_val[s_gpu_following], vec_B1_comp_dom_copy[i + 1].CSR_V_values.data(),
-					 domains[gpus[g].h_array_lsc_id[i_gpu + 1]].B1_comp_dom.CSR_V_values.size() * sizeof(double), cudaMemcpyHostToDevice, gpus[g].data_stream));
+				// Overlap CSC U factor transfer with L-Solve
+				if(SYMMETRIC_SYSTEM == false) {
+					PUSH_RANGE("U_csc memcpy HtD", 4)
+					std::copy(vec_U_values[i], vec_U_values[i] + vec_U_nnz[i], gpus[g].vec_U_values_pinned);
+					checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_val, gpus[g].vec_U_values_pinned, vec_U_nnz[i] * sizeof(double), cudaMemcpyHostToDevice, gpus[g].data_stream));
+					
+					std::copy(vec_U_row_indexes[i], vec_U_row_indexes[i] + vec_U_nnz[i], gpus[g].vec_U_row_indexes_pinned);
+					checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_row_ind, gpus[g].vec_U_row_indexes_pinned, vec_U_nnz[i] * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
+					
+					std::copy(vec_U_col_pointers[i], vec_U_col_pointers[i] + (domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows + 1), gpus[g].vec_U_col_pointers_pinned);
+					checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_col_ptr, gpus[g].vec_U_col_pointers_pinned,	(domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows + 1) * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
+					POP_RANGE // U_csc memcpy HtD
+					
+					// Record all the remaining work of the data stream into the event3
+                    checkCudaErrors(cudaEventRecord(gpus[g].event3, gpus[g].data_stream));
 					CUDA_SYNC
-                    checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_col_ind[s_gpu_following], vec_B1_comp_dom_copy[i + 1].CSR_J_col_indices.data(),
-					 domains[gpus[g].h_array_lsc_id[i_gpu + 1]].B1_comp_dom.CSR_V_values.size() * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-					CUDA_SYNC
-                    checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_row_ptr[s_gpu_following], vec_B1_comp_dom_copy[i + 1].CSR_I_row_indices.data(),
-					 (domains[gpus[g].h_array_lsc_id[i_gpu + 1]].B1_comp_dom.rows + 1) * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-                    POP_RANGE // B_csr+n_gpu memcpy HtD
-					CUDA_SYNC
-
-                    PUSH_RANGE("L_csc+n_gpu + perm memcpy HtD", 0)
-					if(SYMMETRIC_SYSTEM) {
-						// Preload L factors into U arrays, since the L arrays will be used for Lt-solve in this iteration
-						checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_val, vec_L_values[i + 1], vec_L_nnz[i + 1] * sizeof(double),
-						cudaMemcpyHostToDevice, gpus[g].data_stream));
-						CUDA_SYNC
-						checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_row_ind, vec_L_row_indexes[i + 1], vec_L_nnz[i + 1] * sizeof(int),
-						cudaMemcpyHostToDevice, gpus[g].data_stream));
-						CUDA_SYNC
-						checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_col_ptr, vec_L_col_pointers[i + 1], (domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows + 1) * sizeof(int),
-						cudaMemcpyHostToDevice, gpus[g].data_stream));
-						CUDA_SYNC
-						if(order) {
-							checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[s_gpu_following], vec_perm[i + 1],
-							domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-						}
-					} else {
-						checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_val, vec_L_values[i + 1], vec_L_nnz[i + 1] * sizeof(double),
-						cudaMemcpyHostToDevice, gpus[g].data_stream));
-						CUDA_SYNC
-						checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_row_ind, vec_L_row_indexes[i + 1], vec_L_nnz[i + 1] * sizeof(int),
-						cudaMemcpyHostToDevice, gpus[g].data_stream));
-						CUDA_SYNC
-						checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_col_ptr, vec_L_col_pointers[i + 1], (domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows + 1) * sizeof(int),
-						cudaMemcpyHostToDevice, gpus[g].data_stream));
-						if(order) {
-							checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_q[s_gpu_following], vec_perm_2[i + 1],
-							domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-							CUDA_SYNC
-						}
-						checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[s_gpu_following], vec_perm[i + 1],
-						 domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
-						CUDA_SYNC
-					}
-					POP_RANGE // L_csc+n_gpu + perm memcpy HtD
-
-                    // Record all the remaining work of the data stream into the event2
-                    checkCudaErrors(cudaEventRecord(gpus[g].event2, gpus[g].data_stream));
-					CUDA_SYNC
-                }
+				}
 
 				if(SYMMETRIC_SYSTEM) {
 					/* step 6: query workspace */
@@ -1641,7 +1673,6 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 
 					/* step 8: solve X = Lt\X */
 					PUSH_RANGE("Ltsolve", 3)
-					checkCudaErrors(cudaDeviceSynchronize());
 					checkCudaErrors(cusparseDcsrsm2_solve(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transU, solve_transB,
 					domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, vec_L_nnz[i],
 					&solve_alpha, h_descrL, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
@@ -1650,6 +1681,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 					POP_RANGE // Ltsolve
 
 				} else {
+					checkCudaErrors(cudaStreamWaitEvent(gpus[g].h_array_stream[s_gpu], gpus[g].event3, 0));
 					/* step 6: query workspace */
 					PUSH_RANGE("Querry workspace U solve", 1)
 					// TODO LU check correctness in case of problems
@@ -1683,6 +1715,86 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 					CUDA_SYNC
 					POP_RANGE // Usolve
 				}
+
+				// Data stream waits until all current work in the compute stream is done
+                checkCudaErrors(cudaStreamWaitEvent(gpus[g].data_stream, gpus[g].event1, 0));
+				CUDA_SYNC
+
+                // Overlap CSR B and CSC L transfer for the following iteration with the L^T-Solve (U-Solve)
+                if((i_gpu + 1) < gpus[g].n_lsc_gpu) {
+                    PUSH_RANGE("B_csr+n_gpu memcpy HtD", 6)
+                    int s_gpu_following = (i_gpu + 1) % n_streams_per_gpu;
+
+					std::copy(vec_B1_comp_dom_copy[i + 1].CSR_V_values.begin(), vec_B1_comp_dom_copy[i + 1].CSR_V_values.end(), gpus[g].vec_B1_values_pinned[s_gpu_following]);
+					checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_val[s_gpu_following], gpus[g].vec_B1_values_pinned[s_gpu_following],
+					 domains[gpus[g].h_array_lsc_id[i_gpu + 1]].B1_comp_dom.CSR_V_values.size() * sizeof(double), cudaMemcpyHostToDevice, gpus[g].data_stream));
+					CUDA_SYNC
+
+					std::copy(vec_B1_comp_dom_copy[i + 1].CSR_J_col_indices.begin(), vec_B1_comp_dom_copy[i + 1].CSR_J_col_indices.end(), gpus[g].vec_B1_col_indices_pinned[s_gpu_following]);
+                    checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_col_ind[s_gpu_following], gpus[g].vec_B1_col_indices_pinned[s_gpu_following],
+					 domains[gpus[g].h_array_lsc_id[i_gpu + 1]].B1_comp_dom.CSR_V_values.size() * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
+					CUDA_SYNC
+
+					std::copy(vec_B1_comp_dom_copy[i + 1].CSR_I_row_indices.begin(), vec_B1_comp_dom_copy[i + 1].CSR_I_row_indices.end(), gpus[g].vec_B1_row_indices_pinned[s_gpu_following]);
+                    checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_row_ptr[s_gpu_following], gpus[g].vec_B1_row_indices_pinned[s_gpu_following],
+					 (domains[gpus[g].h_array_lsc_id[i_gpu + 1]].B1_comp_dom.rows + 1) * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
+                    POP_RANGE // B_csr+n_gpu memcpy HtD
+					CUDA_SYNC
+
+                    PUSH_RANGE("L_csc+n_gpu + perm memcpy HtD", 0)
+					if(SYMMETRIC_SYSTEM) {
+						// Preload L factors into U arrays, since the L arrays will be used for Lt-solve in this iteration
+						std::copy(vec_L_values[i + 1], vec_L_values[i + 1] + vec_L_nnz[i + 1], gpus[g].vec_U_values_pinned);
+						checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_val, gpus[g].vec_U_values_pinned, vec_L_nnz[i + 1] * sizeof(double),
+						cudaMemcpyHostToDevice, gpus[g].data_stream));
+						CUDA_SYNC
+
+						std::copy(vec_L_row_indexes[i + 1], vec_L_row_indexes[i + 1] + vec_L_nnz[i + 1], gpus[g].vec_U_row_indexes_pinned);
+						checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_row_ind, gpus[g].vec_U_row_indexes_pinned, vec_L_nnz[i + 1] * sizeof(int),
+						cudaMemcpyHostToDevice, gpus[g].data_stream));
+						CUDA_SYNC
+
+						std::copy(vec_L_col_pointers[i + 1], vec_L_col_pointers[i + 1] + (domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows + 1), gpus[g].vec_U_col_pointers_pinned);
+						checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_col_ptr, gpus[g].vec_U_col_pointers_pinned, (domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows + 1) * sizeof(int),
+						cudaMemcpyHostToDevice, gpus[g].data_stream));
+						CUDA_SYNC
+						
+						if(order) {
+							std::copy(vec_perm[i + 1], vec_perm[i + 1] + domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows, gpus[g].vec_perm_pinned[s_gpu_following]);
+							checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[s_gpu_following], gpus[g].vec_perm_pinned[s_gpu_following],
+							domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
+						}
+					} else {
+						std::copy(vec_L_values[i + 1], vec_L_values[i + 1] + vec_L_nnz[i + 1], gpus[g].vec_L_values_pinned);
+						checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_val, gpus[g].vec_L_values_pinned, vec_L_nnz[i + 1] * sizeof(double),
+						cudaMemcpyHostToDevice, gpus[g].data_stream));
+						CUDA_SYNC
+						
+						std::copy(vec_L_row_indexes[i + 1], vec_L_row_indexes[i + 1] + vec_L_nnz[i + 1], gpus[g].vec_L_row_indexes_pinned);
+						checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_row_ind, gpus[g].vec_L_row_indexes_pinned, vec_L_nnz[i + 1] * sizeof(int),
+						cudaMemcpyHostToDevice, gpus[g].data_stream));
+						CUDA_SYNC
+						
+						std::copy(vec_L_col_pointers[i + 1], vec_L_col_pointers[i + 1] + (domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows + 1), gpus[g].vec_L_col_pointers_pinned);
+						checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_col_ptr, gpus[g].vec_L_col_pointers_pinned, (domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows + 1) * sizeof(int),
+						cudaMemcpyHostToDevice, gpus[g].data_stream));
+						if(order) {
+							std::copy(vec_perm_2[i + 1], vec_perm_2[i + 1] + domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows, gpus[g].vec_perm_2_pinned[s_gpu_following]);
+							checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_q[s_gpu_following], gpus[g].vec_perm_2_pinned[s_gpu_following],
+							domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
+							CUDA_SYNC
+						}
+						std::copy(vec_perm[i + 1], vec_perm[i + 1] + domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows, gpus[g].vec_perm_pinned[s_gpu_following]);
+						checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[s_gpu_following], gpus[g].vec_perm_pinned[s_gpu_following],
+						 domains[gpus[g].h_array_lsc_id[i_gpu + 1]].K.rows * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
+						CUDA_SYNC
+					}
+					POP_RANGE // L_csc+n_gpu + perm memcpy HtD
+
+                    // Record all the remaining work of the data stream into the event2
+                    checkCudaErrors(cudaEventRecord(gpus[g].event2, gpus[g].data_stream));
+					CUDA_SYNC
+                }
 
                 PUSH_RANGE("Output reordering", 4)
                 // Perform CS backward reordering on device
@@ -1755,6 +1867,13 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
             checkCudaErrors(cudaSetDevice(g + gpu_id));
             checkCudaErrors(cudaStreamDestroy(gpus[g].data_stream));
 
+			checkCudaErrors(cudaFreeHost(gpus[g].vec_L_row_indexes_pinned));
+			checkCudaErrors(cudaFreeHost(gpus[g].vec_L_col_pointers_pinned));
+			checkCudaErrors(cudaFreeHost(gpus[g].vec_L_values_pinned));
+			checkCudaErrors(cudaFreeHost(gpus[g].vec_U_row_indexes_pinned));
+			checkCudaErrors(cudaFreeHost(gpus[g].vec_U_col_pointers_pinned));
+			checkCudaErrors(cudaFreeHost(gpus[g].vec_U_values_pinned));
+
             for (int s = 0; s < n_streams_per_gpu; s++) {
                 checkCudaErrors(cudaStreamDestroy(gpus[g].h_array_stream[s]));
                 checkCudaErrors(cusparseDestroy(gpus[g].h_array_handle[s]));
@@ -1766,6 +1885,12 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                 checkCudaErrors(cudaFree(gpus[g].h_array_d_csr_Bt_col_ind[s]));
                 checkCudaErrors(cudaFree(gpus[g].h_array_d_csr_Bt_row_ptr[s]));
                 checkCudaErrors(cudaFree(gpus[g].h_array_d_csr_Bt_val[s]));
+
+				checkCudaErrors(cudaFreeHost(gpus[g].vec_perm_pinned[s]));
+				checkCudaErrors(cudaFreeHost(gpus[g].vec_perm_2_pinned[s]));
+				checkCudaErrors(cudaFreeHost(gpus[g].vec_B1_col_indices_pinned[s]));
+				checkCudaErrors(cudaFreeHost(gpus[g].vec_B1_row_indices_pinned[s]));
+				checkCudaErrors(cudaFreeHost(gpus[g].vec_B1_values_pinned[s]));
 
 				if(SYMMETRIC_SYSTEM) {
 					if(order) {
@@ -1781,6 +1906,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
             checkCudaErrors(cudaEventDestroy(gpus[g].event_data_preload));
             checkCudaErrors(cudaEventDestroy(gpus[g].event1));
             checkCudaErrors(cudaEventDestroy(gpus[g].event2));
+			checkCudaErrors(cudaEventDestroy(gpus[g].event3));
 
             for (int i = 0; i < n_csrsm2_info_per_gpu; i++) {
                 checkCudaErrors(cusparseDestroyCsrsm2Info(gpus[g].h_array_info_L[i]));
@@ -1820,16 +1946,46 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
         free(h_array_h_matB);
         free(h_array_h_matX);
         free(h_array_h_matLSC);
-        free(gpus);
 
 		// Free factors
 		#pragma omp parallel for
 		for (esint d = 0; d < n_lsc; d++) {
 			if (SYMMETRIC_SYSTEM) {
 				csparse::FreeCholFactor(vec_L_row_indexes[d], vec_L_col_pointers[d], vec_L_values[d], vec_perm[d]);
+#ifdef CUDA_PINNED
+				checkCudaErrors(cudaHostUnregister(vec_L_row_indexes[d]));
+				checkCudaErrors(cudaHostUnregister(vec_L_col_pointers[d]));
+				checkCudaErrors(cudaHostUnregister(vec_L_values[d]));
+
+				checkCudaErrors(cudaHostUnregister(vec_B1_comp_dom_copy[d].CSR_J_col_indices.data()));
+				checkCudaErrors(cudaHostUnregister(vec_B1_comp_dom_copy[d].CSR_I_row_indices.data()));
+				checkCudaErrors(cudaHostUnregister(vec_B1_comp_dom_copy[d].CSR_V_values.data()));
+
+				if(order) {
+					checkCudaErrors(cudaHostUnregister(vec_perm[d]));
+				}
+#endif
 			} else {
 				csparse::FreeLuFactors(vec_L_row_indexes[d], vec_L_col_pointers[d], vec_L_values[d],
 				vec_U_row_indexes[d], vec_U_col_pointers[d], vec_U_values[d], vec_perm[d], vec_perm_2[d]);
+#ifdef CUDA_PINNED
+				checkCudaErrors(cudaHostUnregister(vec_L_row_indexes[d]));
+				checkCudaErrors(cudaHostUnregister(vec_L_col_pointers[d]));
+				checkCudaErrors(cudaHostUnregister(vec_L_values[d]));
+
+				checkCudaErrors(cudaHostUnregister(vec_U_row_indexes[d]));
+				checkCudaErrors(cudaHostUnregister(vec_U_col_pointers[d]));
+				checkCudaErrors(cudaHostUnregister(vec_U_values[d]));
+
+				checkCudaErrors(cudaHostUnregister(vec_B1_comp_dom_copy[d].CSR_J_col_indices.data()));
+				checkCudaErrors(cudaHostUnregister(vec_B1_comp_dom_copy[d].CSR_I_row_indices.data()));
+				checkCudaErrors(cudaHostUnregister(vec_B1_comp_dom_copy[d].CSR_V_values.data()));
+
+				checkCudaErrors(cudaHostUnregister(vec_perm[d]));
+				if(order) {
+					checkCudaErrors(cudaHostUnregister(vec_perm_2[d]));
+				}
+#endif
 			}
 		}
 		POP_RANGE // END Free mem
