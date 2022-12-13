@@ -226,7 +226,12 @@ OutputConfiguration::OutputConfiguration(const ECF *root)
 	volume_density = 100;
 	REGISTER(volume_density, ECFMetaData()
 			.setdescription({ "Volume density for the shortest direction." })
-			.setdatatype({ ECFDataType::BOOL }));
+			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
+
+	volume_sleep = 0;
+	REGISTER(volume_sleep, ECFMetaData()
+			.setdescription({ "OpenVDB sleep time." })
+			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
 
 	REGISTER(settings, ECFMetaData()
 			.setdescription({ "Store settings" })

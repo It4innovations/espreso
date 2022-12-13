@@ -143,7 +143,7 @@ struct OutputConfiguration: public ECFDescription {
 	bool keep_input_ordering;
 	bool settings, debug, catalyst;
 	size_t catalyst_sleep_time;
-	size_t volume_density;
+	size_t volume_density, volume_sleep;
 
 	std::map<size_t, MonitorConfiguration> monitoring;
 

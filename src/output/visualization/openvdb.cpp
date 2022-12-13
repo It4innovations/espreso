@@ -6,6 +6,7 @@
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
 #include "esinfo/mpiinfo.h"
+#include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.h"
 #include "basis/containers/allocators.h"
 #include "basis/containers/serializededata.h"
@@ -16,6 +17,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <chrono>
 
 using namespace espreso;
 
@@ -149,6 +151,10 @@ void OpenVDB::updateSolution()
 	if (info::mesh->elements->volumeIndices == nullptr) {
 		eslog::warning("SET volumeIndices to store OpenVDB\n");
 		return;
+	}
+
+	if (info::ecf->output.volume_sleep) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(info::ecf->output.volume_sleep));
 	}
 
 	if (_measure) { eslog::startln("OPENVDB: STORING STARTED", "OPENVDB"); }
