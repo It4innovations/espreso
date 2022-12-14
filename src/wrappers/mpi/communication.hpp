@@ -32,6 +32,12 @@ inline MPIType MPITools::getType<long>()
 }
 
 template <>
+inline MPIType MPITools::getType<long long>()
+{
+	return { MPI_LONG_LONG, };
+}
+
+template <>
 inline MPIType MPITools::getType<size_t>()
 {
 	return { MPI_UNSIGNED_LONG };

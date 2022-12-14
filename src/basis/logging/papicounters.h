@@ -3,6 +3,7 @@
 #define SRC_BASIS_LOGGING_PAPICOUNTERS_H_
 
 #include "verbosity.h"
+#include "basis/containers/allocators.h"
 #include "esinfo/ecfinfo.h"
 #include "wrappers/papi/w.papi.h"
 
@@ -15,66 +16,55 @@ class PAPICounters: public Verbosity<PAPICounters, 'p'> {
 public:
 	struct Event {
 		const char* name;
-		long value;
-
 		enum Type {
-			START, CHECKPOINT, ACCUMULATED, END, LOADSTEP
+			START, CHECKPOINT, ACCUMULATED, END, DURATION, LOADSTEP
 		} type;
 	};
 
-	struct EventStatistics: public Event {
-		long min, max, avg;
-		long duration, dmin, dmax, davg;
-		long sum, smin, smax, savg; // for accumulated events
-
-		EventStatistics(const Event &event)
-		: Event(event),
-		  min(event.value), max(event.value), avg(event.value),
-		  duration(event.value), dmin(event.value), dmax(event.value), davg(event.value),
-		  sum(event.value), smin(event.value), smax(event.value), savg(event.value)
-		{ }
-	};
-
-	PAPICounters()
-	{
-		init = 0;
-	}
-
 	void initOutput()
 	{
-		if (info::ecf->output.papi_event.size()) {
+		papi.init();
+		if (papi.values) {
 			_events.reserve(1000000);
-			papi.init();
-			init = papi.read();
+			_values.resize(1000000 * papi.values);
+			papi.read(_values.data());
 		}
-		if (info::ecf->output.papi_code) {
-			_events.reserve(1000000);
-			papi.init();
-			init = papi.read();
+		for (size_t i = 1; i < _events.size(); ++i) {
+			for (int v = 0; v < papi.values; ++v) {
+				_values[papi.values * i + v] = _values[v];
+			}
 		}
-		for (size_t i = 0; i < _events.size(); ++i) {
-			_events[i].value = init;
+	}
+
+	void add(const char* region, Event::Type type)
+	{
+		if (_events.size() == _events.capacity()) {
+			_events.reserve(2 * _events.capacity());
+			_values.resize(2 * _values.capacity());
 		}
+		papi.read(_values.data() + papi.values * _events.size());
+		_events.push_back(Event{ region, type });
 	}
 
 	void start(const char* region, const char* section)
 	{
-		_events.push_back(Event{ section, papi.read(), Event::START });
+		add(section, Event::START);
 	}
 
 	void checkpoint(const char* region)
 	{
-		_events.push_back(Event{ region, papi.read(), Event::CHECKPOINT });
+		add(region, Event::CHECKPOINT);
 	}
 
 	void accumulated(const char* region)
 	{
-		_events.push_back(Event{ region, papi.read(), Event::ACCUMULATED });
+		add(region, Event::ACCUMULATED);
 	}
 
 	void end(const char* region)
 	{
-		_events.push_back(Event{ region, papi.read(), Event::END });
+		add(region, Event::END);
+		add(region, Event::DURATION);
 	}
 
 	void param(const char* name, const int &value)
@@ -109,7 +99,7 @@ public:
 
 	void nextLoadStep(int step)
 	{
-		_events.push_back(Event{ nullptr, papi.read(), Event::LOADSTEP });
+		add(nullptr, Event::LOADSTEP);
 	}
 
 	void output(const char* msg, VerboseArg::COLOR color)
@@ -125,8 +115,8 @@ public:
 	void finish();
 
 protected:
-	long init;
 	std::vector<Event> _events;
+	std::vector<long long, initless_allocator<long long> > _values;
 	PAPI papi;
 };
 

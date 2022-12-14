@@ -99,7 +99,7 @@ public:
 
 	void finish()
 	{
-		closeLogFile();
+
 	}
 
 	void _output(const char* msg)

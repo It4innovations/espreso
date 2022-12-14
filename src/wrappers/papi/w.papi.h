@@ -11,11 +11,10 @@ public:
 	~PAPI();
 
 	void init();
-	long read();
-	static bool isValid() { return status == 0; }
+	void read(long long *values);
 
+	static int status, values;
 private:
-	static int status;
 	int set;
 };
 

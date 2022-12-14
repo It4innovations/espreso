@@ -116,8 +116,7 @@ struct OutputConfiguration: public ECFDescription {
 
 	size_t verbose_level;
 	size_t measure_level;
-	unsigned int papi_code;
-	std::string papi_event;
+	std::string papi_events, papi_codes;
 	LOGGER logger;
 
 	size_t print_matrices, store_decomposition;
