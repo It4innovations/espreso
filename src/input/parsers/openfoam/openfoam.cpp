@@ -360,7 +360,7 @@ void InputOpenFoamSequential::nextTimeStep(Mesh &mesh)
 void InputOpenFoamParallel::nextTimeStep(Mesh &mesh)
 {
 	eslog::start("TIME STEP LOADER: STARTED", "TIME STEP LOADER");
-	eslog::info(" == TIME STEP %77s == \n", timesteps[timestep].c_str());
+	eslog::info(" == TIME STEP %5d / %5lu %63s == \n", timestep, timesteps.size(), timesteps[timestep].c_str());
 	esint mult = domains < info::mpi::size ? info::mpi::size / domains : 1;
 
 	if (info::mpi::rank == 0) {

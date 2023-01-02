@@ -7,7 +7,7 @@
 #include "mesh/store/elementstore.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/ecfinfo.h"
-#include "esinfo/eslog.h"
+#include "esinfo/eslog.hpp"
 #include "basis/containers/allocators.h"
 #include "basis/containers/serializededata.h"
 #include "wrappers/mpi/communication.h"
@@ -227,6 +227,7 @@ void OpenVDB::updateSolution()
 	Communication::igather(volume->pack, nullptr, volume->nvoxels, MPI_BYTE, volume->root, _postponed.back().req[0], MPITools::asynchronous);
 	Communication::igather(volume->values, nullptr, volume->ndata * volume->nvalues, MPI_FLOAT, volume->root, _postponed.back().req[1], MPITools::asynchronous);
 
+	eslog::info(" == VOXELS GATHERED      ROOT %6d, NODE %4d, VOXELS %10.2f MB, VALUES %10.2f MB == \n", volume->root, node, info::mpi::size * volume->nvoxels / 1024. / 1024., info::mpi::size * volume->ndata * volume->nvalues * 4 / 1024. / 1024.);
 	if (_measure) { eslog::checkpointln("OPENVDB: DATA GATHERED"); }
 
 	if (_postponed.front().call()) {
