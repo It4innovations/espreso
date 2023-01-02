@@ -1854,10 +1854,14 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                 checkCudaErrors(cusparseDestroyDnMat(h_array_h_matX[i]));
                 checkCudaErrors(cusparseDestroyDnMat(h_array_h_matLSC[i]));                
 
-				// TODO: Check - The first iteration probably should not do this
-                if(i_gpu % n_csrsm2_info_per_gpu == 0) {
+                if(i_gpu % n_csrsm2_info_per_gpu == 0 && i_gpu != 0) {
+					// The loop splited and synchronized due to a potential bug in CUDA 11.3.1 and later
+					// Crashes w/o sync.
                     for (int j = 0; j < n_csrsm2_info_per_gpu; j++) {
                         checkCudaErrors(cusparseDestroyCsrsm2Info(gpus[g].h_array_info_L[j]));
+                	}
+					checkCudaErrors(cudaStreamSynchronize(gpus[g].h_array_stream[s_gpu]));
+					for (int j = 0; j < n_csrsm2_info_per_gpu; j++) {
                         checkCudaErrors(cusparseDestroyCsrsm2Info(gpus[g].h_array_info_U[j]));
                         checkCudaErrors(cusparseCreateCsrsm2Info(&gpus[g].h_array_info_L[j]));
                         checkCudaErrors(cusparseCreateCsrsm2Info(&gpus[g].h_array_info_U[j]));
