@@ -423,7 +423,9 @@ void FETISystemSolver::update(FETIConfiguration &configuration)
 	eslog::solver("     - ---- LINEAR SOLVER -------------------------------------------------------------- -\n");
 	eslog::solver("     - | SOLVER :: ESPRESO        TYPE :: %44s | -\n", type.c_str());
 
+	TimeEvent timeSolClusterInit(string("Solver - Cluster init (K factorization incl.)"));timeSolClusterInit.start();
 	_inner->cluster = new SuperClusterCPU(configuration, &_inner->holder);
+	timeSolClusterInit.endWithBarrier(); timeEvalMain->addEvent(timeSolClusterInit);
 	_inner->solver  = new IterSolver(configuration);
 
 	init(info::mesh->neighbors, configuration);
@@ -501,8 +503,8 @@ void FETISystemSolver::setup_LocalSchurComplement(FETIConfiguration &configurati
 
 	if (_inner->cluster->USE_KINV == 1) {
 		PUSH_RANGE("Solver - Schur Complement asm.", 1)
-		TimeEvent KSCMem(string("Solver - SC asm. w PARDISO-SC mem [MB]")); KSCMem.startWithoutBarrier(GetProcessMemory_u());
-		TimeEvent timeSolSC2(string("Solver - Schur Complement asm. - using PARDISO-SC"));timeSolSC2.start();
+		TimeEvent KSCMem(string("Solver - SC asm. mem [MB]")); KSCMem.startWithoutBarrier(GetProcessMemory_u());
+		TimeEvent timeSolSC2(string("Solver - Schur Complement asm."));timeSolSC2.start();
 		bool USE_FLOAT = false;
 		if (configuration.schur_precision == FETIConfiguration::FLOAT_PRECISION::SINGLE) {
 			USE_FLOAT = true;

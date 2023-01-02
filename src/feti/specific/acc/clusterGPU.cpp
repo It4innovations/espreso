@@ -83,6 +83,7 @@ ClusterGPU::~ClusterGPU() {
 }
 
 void ClusterGPU::GetGPU() {
+	PUSH_RANGE("GetGPU", 1)
 	// If already set dont do anything
 	if(device_id < 0) {
 //		bool GPU_full = false;
@@ -172,6 +173,7 @@ void ClusterGPU::GetGPU() {
 		MPI_Status msg_status;
 		*/
 	}
+	POP_RANGE // GetGPU
 }
 
 
@@ -211,6 +213,7 @@ size_t ClusterGPU::CalculateGpuBufferSize(esint max_B1_nnz, esint max_B1_rows, e
 void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 	DEBUGOUT << "Creating B1*K+*B1t Schur Complements with CSparse and cuSparse on GPU\n";
 	
+	TimeEval* timeEvalSC  = new TimeEval("CSparse fact. Timing");
 	// Currently sets device_id for the cluster (all domains)
 	GetGPU();
 
@@ -381,6 +384,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		*/
 	}
 
+	TimeEvent timeSolSC3(string("Solver - Schur Complement asm. - CSparse fact."));timeSolSC3.start();
 	// Factorize and get factor sizes, process only domains that can fit GPU w/o factor-based buffers
 	PUSH_RANGE("Fact CSparse", 1)
 	int order;
@@ -468,6 +472,7 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 		}
 	}
 	POP_RANGE // END Fact CSparse
+	timeSolSC3.endWithBarrier(); timeEvalSC->addEvent(timeSolSC3);
 
 	// Reset max variables
 	max_B1_nnz = 0;
@@ -999,6 +1004,9 @@ void ClusterGPU::Create_SC_perDomain(bool USE_FLOAT) {
 //	}
 
 	////ESINFO(PROGRESS3);
+
+	timeEvalSC->printStatsMPI();
+	delete timeEvalSC;
 }
 
 
