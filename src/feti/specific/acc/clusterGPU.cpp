@@ -1140,8 +1140,8 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 		PUSH_RANGE("LSC device mem alloc", 1)
 		if(SYMMETRIC_SYSTEM) {
 			order = 1; // 0 = natural, 1 = amd(A+A')
-
-			#pragma omp parallel for
+			// Actually faster sequential, see #75
+			// #pragma omp parallel for
 			for (esint d = 0; d < n_lsc; d++) {
 				// Allocate device memory for LSCs
 				cuda::SetDevice(device_id);
@@ -1179,7 +1179,8 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 		} else {
 			order = 1; // 0 = natural, 1 = amd(A+A'), 2 = amd(S'*S), 3 = amd(A'*A)
 
-			#pragma omp parallel for
+			// Actually faster sequential, see #75
+			// #pragma omp parallel for
 			for (esint d = 0; d < n_lsc; d++) {
 				// Allocate device memory for LSCs
 				cuda::SetDevice(device_id);
