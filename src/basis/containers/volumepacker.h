@@ -47,11 +47,11 @@ struct VolumePacker {
 		while (grid.z > (1 << ++size.z));
 	}
 
-	size_t analyze(serializededata<esint, _Point<short> > *volumeIndices) const
+	size_t analyze(serializededata<size_t, _Point<short> > *volumeIndices, size_t begin, size_t end) const
 	{
 		size_t bytes = 0;
 		_Point<short> prev, diff;
-		for (auto e = volumeIndices->cbegin(); e != volumeIndices->cend(); ++e) {
+		for (auto e = volumeIndices->cbegin() + begin; e != volumeIndices->cbegin() + end; ++e) {
 			bool duplicate = false;
 			for (auto v = e->begin(); v != e->end(); prev = *v++) {
 				diff = *v - prev;
@@ -72,7 +72,7 @@ struct VolumePacker {
 		return bytes;
 	}
 
-	void pack(serializededata<esint, _Point<short> > *volumeIndices, char *packed) const
+	void pack(serializededata<size_t, _Point<short> > *volumeIndices, size_t begin, size_t end, char *packed) const
 	{
 		struct {
 			char *data; int empty;
@@ -101,13 +101,13 @@ struct VolumePacker {
 			}
 		} stream{packed, 8};
 
-		size_t count = volumeIndices->datatarray().size();
+		size_t count = (volumeIndices->cbegin() + end)->begin() - (volumeIndices->cbegin() + begin)->begin();
 		for (size_t i = 0; i < sizeof(count); ++i) {
 			stream.insert(reinterpret_cast<const char*>(&count) + i, 8);
 		}
 
 		_Point<short> prev, diff;
-		for (auto e = volumeIndices->cbegin(); e != volumeIndices->cend(); ++e) {
+		for (auto e = volumeIndices->cbegin() + begin; e != volumeIndices->cbegin() + end; ++e) {
 			int duplicate = 0;
 			for (auto v = e->begin(); v != e->end(); prev = *v++) {
 				diff = *v - prev;

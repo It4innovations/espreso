@@ -63,7 +63,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	origin += Point(step) / 2;
 	size = Point(grid) * step;
 
-	std::vector<std::vector<esint> > vdistribution(info::env::OMP_NUM_THREADS);
+	std::vector<std::vector<size_t> > vdistribution(info::env::OMP_NUM_THREADS);
 	std::vector<std::vector<_Point<short> > > vdata(info::env::OMP_NUM_THREADS);
 	vdistribution[0].push_back(0);
 
@@ -226,7 +226,7 @@ void computeVolumeIndices(ElementStore *elements, const NodeStore *nodes)
 	if (elements->volumeIndices) {
 		delete elements->volumeIndices;
 	}
-	elements->volumeIndices = new serializededata<esint, _Point<short> >(vdistribution, vdata);
+	elements->volumeIndices = new serializededata<size_t, _Point<short> >(vdistribution, vdata);
 
 	profiler::syncend("compute_volume_indices");
 	eslog::checkpointln("MESH: VOLUME INDICES COMPUTED");
