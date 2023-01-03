@@ -48,6 +48,7 @@ struct Variable {
 	int dimension;
 	std::string name;
 	std::vector<esfloat> data;
+	std::vector<std::pair<esfloat, esfloat> > filter;
 
 	Variable(int dimenstion, const std::string &name): dimension(dimenstion), name(name) {}
 };

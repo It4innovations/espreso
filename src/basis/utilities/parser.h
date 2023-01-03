@@ -101,6 +101,7 @@ public:
 	static std::string removecomments(const std::string &line, const std::string &tags);
 	static std::string strip(const std::string &line);
 	static std::vector<std::string> split(const std::string &line, const std::string &separator, bool skipMultiple = true);
+	static std::vector<std::pair<std::string, std::string> > getIntervals(const std::string &line);
 
 	static std::string stringwithcommas(size_t number);
 };

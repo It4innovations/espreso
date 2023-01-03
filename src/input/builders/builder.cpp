@@ -662,6 +662,7 @@ void chunkedValuesInit(VariablesBlocks &variables, Mesh &mesh)
 			default: break;
 			}
 		}
+		variables.loader->ndata.back()->filter = variables.nodes[v].filter;
 	}
 	for (size_t v = 0; v < variables.elements.size(); ++v) {
 		switch (variables.elements[v].dimension) {
@@ -669,6 +670,7 @@ void chunkedValuesInit(VariablesBlocks &variables, Mesh &mesh)
 		case 3: variables.loader->edata.push_back(mesh.elements->appendData(3, NamedData::DataType::VECTOR, variables.elements[v].name)); break;
 		default: break;
 		}
+		variables.loader->edata.back()->filter = variables.elements[v].filter;
 	}
 
 	chunked.nperm.resize(mesh.nodes->size);

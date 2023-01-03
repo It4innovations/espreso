@@ -553,6 +553,30 @@ void InputOpenFoamParallel::ivariables(const InputConfiguration &configuration)
 	for (size_t v = 0; v < evariables.size(); ++v) {
 		variables.elements.push_back({vheader[evariables[v]].dimension(), variableNames[evariables[v]]});
 	}
+
+	eslog::info(" == FILTERS %79s == \n", "");
+	for (auto filter = configuration.openfoam.filter.cbegin(); filter != configuration.openfoam.filter.cend(); ++filter) {
+		const std::string &name = filter->first;
+		std::vector<std::pair<std::string, std::string> > intervals = Parser::getIntervals(filter->second);
+		std::vector<std::pair<esfloat, esfloat> > vfilter;
+		for (auto interval = intervals.begin(); interval != intervals.end(); ++interval) {
+			vfilter.push_back(std::make_pair(std::stof(interval->first), std::stof(interval->second)));
+		}
+		if (intervals.size()) {
+			for (size_t v = 0; v < variables.nodes.size(); ++v) {
+				if (StringCompare::caseInsensitiveEq(variables.nodes[v].name, name)) {
+					eslog::info(" == > %s %*s == \n", variables.nodes[v].name.c_str(), 84 - variables.nodes[v].name.size(), filter->second.c_str());
+					variables.nodes[v].filter = vfilter;
+				}
+			}
+			for (size_t v = 0; v < variables.elements.size(); ++v) {
+				if (StringCompare::caseInsensitiveEq(variables.elements[v].name, name)) {
+					eslog::info(" == > %s %*s == \n", variables.elements[v].name.c_str(), 84 - variables.elements[v].name.size(), filter->second.c_str());
+					variables.elements[v].filter = vfilter;
+				}
+			}
+		}
+	}
 }
 
 void InputOpenFoamParallelDirect::ivariables(const InputConfiguration &configuration)

@@ -25,6 +25,7 @@ struct NamedData {
 	DataType dataType;
 	std::string name;
 	step::TYPE restriction;
+	std::vector<std::pair<esfloat, esfloat> > filter;
 
 	std::vector<esfloat> data, buffer, &store;
 

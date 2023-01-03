@@ -33,6 +33,8 @@ struct OpenFOAMInputConfiguration: public ECFDescription {
 
 	std::string time, variables;
 
+	std::map<std::string, std::string> filter;
+
 	OpenFOAMInputConfiguration();
 };
 

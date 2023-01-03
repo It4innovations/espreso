@@ -49,6 +49,11 @@ OpenFOAMInputConfiguration::OpenFOAMInputConfiguration()
 	REGISTER(variables, ECFMetaData()
 			.setdescription({ "Load only specified variables." })
 			.setdatatype({ ECFDataType::STRING }));
+
+	REGISTER(filter, ECFMetaData()
+			.setdescription({ "The name of a variable.", "Stored intervals." })
+			.setdatatype({ ECFDataType::STRING, ECFDataType::STRING })
+			.setpattern({ "VARIABLE", "<min, max> <min, max> ; ..." }));
 }
 
 InputConfiguration::InputConfiguration()

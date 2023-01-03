@@ -54,6 +54,29 @@ std::vector<std::string> Parser::split(const std::string &line, const std::strin
 	return result;
 }
 
+std::vector<std::pair<std::string, std::string> > Parser::getIntervals(const std::string &line)
+{
+	if (line.size() == 0) {
+		return std::vector<std::pair<std::string, std::string> >();
+	}
+
+	std::vector<std::pair<std::string, std::string> > result;
+
+	size_t pos = 0;
+	while (pos < line.size()) {
+		size_t begin = line.find_first_of('<', pos);
+		size_t mid = line.find_first_of(',', pos);
+		size_t end = line.find_first_of('>', pos);
+		if (begin < line.size() && end < line.size() && mid < line.size() && begin < mid && mid < end) {
+			result.push_back(std::make_pair(line.substr(begin + 1, mid - begin - 1), line.substr(mid + 1, end - mid - 1)));
+			pos = end + 1;
+		} else {
+			pos = line.size();
+		}
+	}
+	return result;
+}
+
 std::string Parser::stringwithcommas(size_t number)
 {
 	std::string result;
