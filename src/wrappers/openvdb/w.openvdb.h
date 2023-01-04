@@ -3,7 +3,6 @@
 #define SRC_WRAPPERS_OPENVDB_W_OPENVDB_H_
 
 #include "basis/containers/point.h"
-#include "basis/containers/volumepacker.h"
 
 #include <string>
 #include <vector>
@@ -20,7 +19,7 @@ struct OpenVDBWrapper {
 	struct FloatData: Data {
 		FloatData(const std::string &name);
 		~FloatData();
-		void insert(const VolumePacker &packer, char *voxels, float *values);
+		void insert(const _Point<short> &voxel, const float &value);
 
 		OpenVDBFloatWrapper *wrapper = nullptr;
 	};

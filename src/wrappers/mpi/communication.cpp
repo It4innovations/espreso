@@ -576,6 +576,13 @@ bool Communication::igather(void *in, void *out, size_t size, MPI_Datatype type,
 	return true;
 }
 
+bool Communication::test(MPI_Request* request)
+{
+	int flag;
+	MPI_Test(request, &flag, MPI_STATUS_IGNORE);
+	return flag;
+}
+
 bool Communication::testAll(int size, MPI_Request* requests)
 {
 	int flag;

@@ -17,7 +17,7 @@ public:
 	static Point shrink(const Point &p, const Point &ccenter, const Point &dcenter, double cratio, double dratio);
 
 	bool storeStep();
-	void updateMonitors() {}
+	virtual void updateMonitors() {}
 
 	Visualization();
 	~Visualization();

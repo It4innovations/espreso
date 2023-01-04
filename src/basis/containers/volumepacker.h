@@ -4,6 +4,7 @@
 
 #include "point.h"
 #include "serializededata.h"
+#include "mesh/store/elementstore.h"
 
 #include <functional>
 
@@ -11,11 +12,14 @@ namespace espreso {
 
 /*
  * header:
- * [0 - 2] voxel difference, 000 for duplicated voxel with DIFF(1, 0, 0), 111 for FULL voxel
+ * [0 - 2] voxel difference, 000 for voxel with DIFF(1, 0, 0), 111 for FULL voxel
  * [3] - duplicated value
  */
 struct VolumePacker {
-	_Point<short> size;
+	_Point<short> gridSize;
+	size_t packSize, packedVoxels, variableSize;
+	std::vector<std::string> names;
+	char *packedData;
 
 	inline int bits(const short &diff) const
 	{
@@ -41,38 +45,70 @@ struct VolumePacker {
 	}
 
 	VolumePacker(const _Point<short> &grid)
+	: packSize(0), packedVoxels(0), variableSize(0), packedData(nullptr)
 	{
-		while (grid.x > (1 << ++size.x));
-		while (grid.y > (1 << ++size.y));
-		while (grid.z > (1 << ++size.z));
+		while (grid.x > (1 << ++gridSize.x));
+		while (grid.y > (1 << ++gridSize.y));
+		while (grid.z > (1 << ++gridSize.z));
 	}
 
-	size_t analyze(serializededata<size_t, _Point<short> > *volumeIndices, size_t begin, size_t end) const
+	~VolumePacker()
 	{
-		size_t bytes = 0;
+		if (packedData) delete[] packedData;
+	}
+
+	void allocate()
+	{
+		packedData = new char[packSize];
+	}
+
+	void analyze(serializededata<size_t, _Point<short> > *volumeIndices, const std::vector<ElementData*> &variables)
+	{
+		size_t bytes = 0, i = 0;
 		_Point<short> prev, diff;
-		for (auto e = volumeIndices->cbegin() + begin; e != volumeIndices->cbegin() + end; ++e) {
-			bool duplicate = false;
-			for (auto v = e->begin(); v != e->end(); prev = *v++) {
-				diff = *v - prev;
-				if (duplicate && diff.x == 1 && diff.y == 0 && diff.z == 0) {
-					bytes += 3;
-				} else {
-					int max = bits(diff);
-					if (max == 7) {
-						bytes += 4 + size.x + size.y + size.z;
-					} else {
-						bytes += 4 + 3 * max;
+		for (auto e = volumeIndices->cbegin(); e != volumeIndices->cend(); ++e, ++i) {
+			if (e->size() == 0) continue;
+			bool duplicate = false, filtered = false;
+			for (size_t v = 0; v < variables.size(); ++v) {
+				if (variables[v]->filter.size()) {
+					filtered = true;
+					for (size_t f = 0; f < variables[v]->filter.size(); ++f) {
+						if (variables[v]->filter[f].first <= variables[v]->store[i] && variables[v]->store[i] <= variables[v]->filter[f].second) {
+							filtered = false;
+							break;
+						}
 					}
 				}
-				duplicate = true;
+			}
+			if (!filtered) {
+				packedVoxels += e->size();
+				for (auto v = e->begin(); v != e->end(); prev = *v++) {
+					diff = *v - prev;
+					if (duplicate && diff.x == 1 && diff.y == 0 && diff.z == 0) {
+						bytes += 3;
+					} else {
+						int max = bits(diff);
+						if (max == 7) {
+							bytes += 4 + gridSize.x + gridSize.y + gridSize.z;
+						} else {
+							bytes += 4 + 3 * max;
+						}
+					}
+					if (!duplicate) {
+						bytes += 8 * sizeof(float) * variables.size();
+					}
+					duplicate = true;
+				}
 			}
 		}
-		bytes = sizeof(size_t) + bytes / 8 + 1;
-		return bytes;
+		packSize = sizeof(size_t) + bytes / 8 + 1;
+		variableSize = variables.size();
+		for (size_t v = 0; v < variables.size(); ++v) {
+			names.push_back(variables[v]->name);
+		}
 	}
 
-	void pack(serializededata<size_t, _Point<short> > *volumeIndices, size_t begin, size_t end, char *packed) const
+	void pack(serializededata<size_t, _Point<short> > *volumeIndices, const std::vector<ElementData*> &variables)
 	{
 		struct {
 			char *data; int empty;
@@ -99,59 +135,89 @@ struct VolumePacker {
 					empty = 8;
 				}
 			}
-		} stream{packed, 8};
+		} stream{packedData, 8};
 
-		size_t count = (volumeIndices->cbegin() + end)->begin() - (volumeIndices->cbegin() + begin)->begin();
-		for (size_t i = 0; i < sizeof(count); ++i) {
-			stream.insert(reinterpret_cast<const char*>(&count) + i, 8);
+		for (size_t i = 0; i < sizeof(packedVoxels); ++i) {
+			stream.insert(reinterpret_cast<const char*>(&packedVoxels) + i, 8);
 		}
 
+		size_t i = 0;
 		_Point<short> prev, diff;
-		for (auto e = volumeIndices->cbegin() + begin; e != volumeIndices->cbegin() + end; ++e) {
-			int duplicate = 0;
-			for (auto v = e->begin(); v != e->end(); prev = *v++) {
-				diff = *v - prev;
-				if (duplicate && diff.x == 1 && diff.y == 0 && diff.z == 0) {
-					char header = 0;
-					stream.insert(&header, 3);
-				} else {
-					char max = bits(diff);
-					char header = (max << 1) | duplicate;
-					stream.insert(&header, 4);
-					if (max == 7) {
-						if (size.x > 8) {
-							stream.insert(reinterpret_cast<const char*>(&v->x), 8);
-							stream.insert(reinterpret_cast<const char*>(&v->x) + 1, size.x - 8);
-						} else {
-							stream.insert(reinterpret_cast<const char*>(&v->x), size.x);
+		for (auto e = volumeIndices->cbegin(); e != volumeIndices->cend(); ++e, ++i) {
+			if (e->size() == 0) continue;
+			bool duplicate = false, filtered = false;
+			for (size_t v = 0; v < variables.size(); ++v) {
+				if (variables[v]->filter.size()) {
+					filtered = true;
+					for (size_t f = 0; f < variables[v]->filter.size(); ++f) {
+						if (variables[v]->filter[f].first <= variables[v]->store[i] && variables[v]->store[i] <= variables[v]->filter[f].second) {
+							filtered = false;
+							break;
 						}
-						if (size.y > 8) {
-							stream.insert(reinterpret_cast<const char*>(&v->y), 8);
-							stream.insert(reinterpret_cast<const char*>(&v->y) + 1, size.y - 8);
-						} else {
-							stream.insert(reinterpret_cast<const char*>(&v->y), size.y);
-						}
-						if (size.z > 8) {
-							stream.insert(reinterpret_cast<const char*>(&v->z), 8);
-							stream.insert(reinterpret_cast<const char*>(&v->z) + 1, size.z - 8);
-						} else {
-							stream.insert(reinterpret_cast<const char*>(&v->z), size.z);
-						}
-					} else {
-						if (max > 1) {
-							diff += _Point<short>((1 << (max - 1)) - 1);
-						}
-						stream.insert(reinterpret_cast<const char*>(&diff.x), max);
-						stream.insert(reinterpret_cast<const char*>(&diff.y), max);
-						stream.insert(reinterpret_cast<const char*>(&diff.z), max);
 					}
 				}
-				duplicate = 1;
+			}
+			if (!filtered) {
+				for (auto voxels = e->begin(); voxels != e->end(); prev = *voxels++) {
+					diff = *voxels - prev;
+					if (duplicate && diff.x == 1 && diff.y == 0 && diff.z == 0) {
+						char header = 0;
+						stream.insert(&header, 3);
+					} else {
+						char max = bits(diff);
+						char header = (max << 1) | duplicate;
+						stream.insert(&header, 4);
+						if (max == 7) {
+							if (gridSize.x > 8) {
+								stream.insert(reinterpret_cast<const char*>(&voxels->x), 8);
+								stream.insert(reinterpret_cast<const char*>(&voxels->x) + 1, gridSize.x - 8);
+							} else {
+								stream.insert(reinterpret_cast<const char*>(&voxels->x), gridSize.x);
+							}
+							if (gridSize.y > 8) {
+								stream.insert(reinterpret_cast<const char*>(&voxels->y), 8);
+								stream.insert(reinterpret_cast<const char*>(&voxels->y) + 1, gridSize.y - 8);
+							} else {
+								stream.insert(reinterpret_cast<const char*>(&voxels->y), gridSize.y);
+							}
+							if (gridSize.z > 8) {
+								stream.insert(reinterpret_cast<const char*>(&voxels->z), 8);
+								stream.insert(reinterpret_cast<const char*>(&voxels->z) + 1, gridSize.z - 8);
+							} else {
+								stream.insert(reinterpret_cast<const char*>(&voxels->z), gridSize.z);
+							}
+						} else {
+							if (max > 1) {
+								diff += _Point<short>((1 << (max - 1)) - 1); // diff is always non-negative
+							}
+							stream.insert(reinterpret_cast<const char*>(&diff.x), max);
+							stream.insert(reinterpret_cast<const char*>(&diff.y), max);
+							stream.insert(reinterpret_cast<const char*>(&diff.z), max);
+						}
+						if (!duplicate) {
+							for (size_t v = 0; v < variables.size(); ++v) {
+								float value = 0;
+								if (variables[v]->dimension == 1) {
+									value = variables[v]->store[i];
+								} else {
+									for (int d = 0; d < variables[v]->dimension; ++d) {
+										value += variables[v]->store[variables[v]->dimension * i + d] * variables[v]->store[variables[v]->dimension * i + d];
+									}
+									value = std::sqrt(value);
+								}
+								for (size_t b = 0; b < sizeof(value); ++b) {
+									stream.insert(reinterpret_cast<const char*>(&value) + b, 8);
+								}
+							}
+						}
+					}
+					duplicate = 1;
+				}
 			}
 		}
 	}
 
-	void unpack(char *packed, std::function<void(const _Point<short>&, const size_t&)> callback) const
+	void unpack(std::function<void(const _Point<short>&, const size_t&, const float&)> callback) const
 	{
 		struct {
 			char *data; int unread;
@@ -185,15 +251,16 @@ struct VolumePacker {
 				}
 				return result;
 			}
-		} stream{packed, 8};
+		} stream{packedData, 8};
 
 		size_t count;
 		for (size_t i = 0; i < sizeof(count); ++i) {
 			stream.extract(reinterpret_cast<char*>(&count) + i, 8);
 		}
 
+		std::vector<float> values(variableSize);
 		_Point<short> voxel;
-		for (size_t v = 0, i = 0; v < count; ++v) {
+		for (size_t i = 0; i < count; ++i) {
 			_Point<short> diff;
 			char header = stream.extract(3);
 			char duplicate = 0;
@@ -205,23 +272,23 @@ struct VolumePacker {
 				break;
 			case 7:
 				duplicate = stream.extract(1);
-				if (size.x > 8) {
+				if (gridSize.x > 8) {
 					stream.extract(reinterpret_cast<char*>(&voxel.x), 8);
-					stream.extract(reinterpret_cast<char*>(&voxel.x) + 1, size.x - 8);
+					stream.extract(reinterpret_cast<char*>(&voxel.x) + 1, gridSize.x - 8);
 				} else {
-					stream.extract(reinterpret_cast<char*>(&voxel.x), size.x);
+					stream.extract(reinterpret_cast<char*>(&voxel.x), gridSize.x);
 				}
-				if (size.y > 8) {
+				if (gridSize.y > 8) {
 					stream.extract(reinterpret_cast<char*>(&voxel.y), 8);
-					stream.extract(reinterpret_cast<char*>(&voxel.y) + 1, size.y - 8);
+					stream.extract(reinterpret_cast<char*>(&voxel.y) + 1, gridSize.y - 8);
 				} else {
-					stream.extract(reinterpret_cast<char*>(&voxel.y), size.y);
+					stream.extract(reinterpret_cast<char*>(&voxel.y), gridSize.y);
 				}
-				if (size.z > 8) {
+				if (gridSize.z > 8) {
 					stream.extract(reinterpret_cast<char*>(&voxel.z), 8);
-					stream.extract(reinterpret_cast<char*>(&voxel.z) + 1, size.z - 8);
+					stream.extract(reinterpret_cast<char*>(&voxel.z) + 1, gridSize.z - 8);
 				} else {
-					stream.extract(reinterpret_cast<char*>(&voxel.z), size.z);
+					stream.extract(reinterpret_cast<char*>(&voxel.z), gridSize.z);
 				}
 				break;
 			default:
@@ -234,8 +301,17 @@ struct VolumePacker {
 				}
 				voxel += diff;
 			}
-			if (v && !duplicate) ++i;
-			callback(voxel, i);
+			if (!duplicate) {
+				for (size_t v = 0; v < variableSize; ++v) {
+					for (size_t b = 0; b < sizeof(float); ++b) {
+						stream.extract(reinterpret_cast<char*>(&values[v]) + b, 8);
+					}
+				}
+			}
+
+			for (size_t v = 0; v < variableSize; ++v) {
+				callback(voxel, v, values[v]);
+			}
 		}
 	}
 };

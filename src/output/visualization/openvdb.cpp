@@ -27,21 +27,17 @@ struct SharedVolume {
 	static std::condition_variable cv;
 
 	SharedVolume(const std::string &prefix, int step, int root)
-	: root(root),
-	  packer(info::mesh->elements->volumeGrid), nvoxels{}, ndata{}, nvalues{}, split{1}, pack{}, values{}
+	: root(root), step(step),
+	  packer(info::mesh->elements->volumeGrid)
 	{
 		std::stringstream name;
 		name << prefix + "." << std::setw(4) << std::setfill('0') << std::to_string(step) << ".vdb";
 		filename = name.str();
 	}
 
+	int root, step;
 	std::string filename;
-	int root;
-
 	VolumePacker packer;
-	size_t nvoxels, ndata, nvalues, split;
-	char *pack;
-	float* values;
 };
 
 int SharedVolume::counter = 0;
@@ -78,7 +74,7 @@ OpenVDB::OpenVDB()
 OpenVDB::~OpenVDB()
 {
 	while (!_postponed.empty()) {
-		if (_postponed.front().call()) {
+		if (_postponed.front().test()) {
 			_postponed.pop();
 		}
 	}
@@ -94,32 +90,32 @@ void OpenVDB::updateMesh()
 	info::mesh->voxelization.cv.notify_one();
 }
 
+void OpenVDB::updateMonitors()
+{
+	for (size_t di = 0; di < info::mesh->elements->data.size(); ++di) {
+		if (info::mesh->elements->data[di]->name.size()) {
+			activeVariables.push_back(info::mesh->elements->data[di]);
+		}
+	}
+}
+
 void store(SharedVolume *volume)
 {
 	if (volume->root == info::mpi::rank) {
 		OpenVDBWrapper wrapper(info::mesh->elements->volumeOrigin, info::mesh->elements->volumeSize, info::mesh->elements->volumeGrid);
-		for (size_t s = 0; s < volume->split; ++s) {
-			int ndata = 0;
-			for (size_t di = 0; di < info::mesh->elements->data.size(); di++) { // go through all element values
-				if (info::mesh->elements->data[di]->name.size()) {
-					OpenVDBWrapper::FloatData *data = wrapper.addFloat(info::mesh->elements->data[di]->name);
-					char *pack = volume->pack + s * volume->nvoxels * info::mpi::size;
-					float* values = volume->values + ndata * volume->nvalues + s * volume->ndata * volume->nvalues * info::mpi::size;
-					for (int r = 0; r < info::mpi::size; ++r) {
-						data->insert(volume->packer, pack, values);
-						pack += volume->nvoxels;
-						values += volume->ndata * volume->nvalues;
-					}
-					++ndata;
-				}
-			}
+		std::vector<OpenVDBWrapper::FloatData*> data(volume->packer.variableSize);
+		for (size_t v = 0; v < volume->packer.variableSize; ++v) {
+			data[v] = wrapper.addFloat(volume->packer.names[v]);
 		}
 
+		volume->packer.unpack([&data] (const _Point<short> &voxel, const size_t &vindex, const float &value) { data[vindex]->insert(voxel, value); });
+		for (int r = 1; r < info::mpi::size; ++r) {
+			MPI_Recv(volume->packer.packedData, volume->packer.packSize, MPI_BYTE, MPI_ANY_SOURCE, volume->step, MPITools::asynchronous->communicator, MPI_STATUS_IGNORE);
+			volume->packer.unpack([&data] (const _Point<short> &voxel, const size_t &vindex, const float &value) { data[vindex]->insert(voxel, value); });
+		}
 		wrapper.store(volume->filename.c_str());
 	}
 
-	delete[] volume->pack;
-	delete[] volume->values;
 	delete volume; // we are in detached thread
 	{
 		std::lock_guard<std::mutex> lk(SharedVolume::mutex);
@@ -128,16 +124,30 @@ void store(SharedVolume *volume)
 	SharedVolume::cv.notify_one();
 }
 
-bool OpenVDB::OpenVDBData::call()
+OpenVDB::OpenVDBData::OpenVDBData(SharedVolume *volume)
+: volume(volume), root(volume->root), req{}
 {
-	if (Communication::testAll(2 * volume->split, req.data())) {
+	if (root == info::mpi::rank) {
 		{
 			std::lock_guard<std::mutex> lk(SharedVolume::mutex);
 			++SharedVolume::counter;
 		}
 		std::thread t(store, volume);
 		t.detach();
+	} else {
+		MPI_Isend(volume->packer.packedData, volume->packer.packSize, MPI_BYTE, root, volume->step, MPITools::asynchronous->communicator, &req);
+	}
+}
+
+bool OpenVDB::OpenVDBData::test()
+{
+	if (root == info::mpi::rank) {
 		return true;
+	} else {
+		if (Communication::test(&req)) {
+			delete volume;
+			return true;
+		}
 	}
 	return false;
 }
@@ -155,13 +165,15 @@ void OpenVDB::updateSolution()
 		return;
 	}
 
+	if (_measure) { eslog::startln("OPENVDB: STORING STARTED", "OPENVDB"); }
+
 	if (info::ecf->output.volume_sleep) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(info::ecf->output.volume_sleep));
 	}
 
-	if (_measure) { eslog::startln("OPENVDB: STORING STARTED", "OPENVDB"); }
+	if (_measure) { eslog::checkpointln("OPENVDB: SLEPT"); }
 
-	while (!_postponed.empty() && _postponed.front().call()) {
+	while (!_postponed.empty() && _postponed.front().test()) {
 		_postponed.pop();
 	}
 
@@ -169,84 +181,10 @@ void OpenVDB::updateSolution()
 	int rank = nranks[(_step / MPITools::node->across.size) % MPITools::node->within.size];
 
 	SharedVolume *volume = new SharedVolume(_filename, _step++, node * MPITools::node->within.size + rank);
-
-	size_t datasize[2] = { 0, 0 };
-	datasize[0] = volume->packer.analyze(info::mesh->elements->volumeIndices, 0, info::mesh->elements->volumeIndices->structures());
-	for (auto e = info::mesh->elements->volumeIndices->cbegin(); e != info::mesh->elements->volumeIndices->cend(); ++e) {
-		if (e->size()) ++datasize[1];
-	}
-
-	Communication::allReduce(datasize, nullptr, 2, MPITools::getType<size_t>().mpitype, MPI_MAX, MPITools::asynchronous);
-	volume->nvoxels = datasize[0];
-	volume->nvalues = datasize[1];
-
-	for (size_t di = 0; di < info::mesh->elements->data.size(); di++) { // go through all element values
-		if (info::mesh->elements->data[di]->name.size()) {
-			++volume->ndata;
-		}
-	}
-
-	size_t mult = volume->root == info::mpi::rank ? info::mpi::size : 1;
-	size_t maxsize = std::max(datasize[0] * info::mpi::size, datasize[1] * info::mpi::size * sizeof(float));
-	volume->split = maxsize / (1UL << 30) + 1;
-	volume->nvoxels = volume->nvoxels / volume->split + 1;
-	volume->nvalues = volume->nvalues / volume->split + 1;
-
-	std::vector<size_t> splitters = { 0UL, info::mesh->elements->volumeIndices->structures() };
-	if (volume->split > 1) {
-		splitters.pop_back();
-		size_t counter = 0, i = 0;
-		for (auto e = info::mesh->elements->volumeIndices->cbegin(); e != info::mesh->elements->volumeIndices->cend(); ++e, ++i) {
-			if (e->size()) {
-				++counter;
-			}
-			if (counter && counter % volume->nvalues == 0) {
-				splitters.push_back(i);
-				counter = 0;
-			}
-		}
-		splitters.resize(volume->split + 1, info::mesh->elements->volumeIndices->structures());
-
-		for (size_t s = 0; s < volume->split; ++s) {
-			volume->nvoxels = std::max(volume->nvoxels, volume->packer.analyze(info::mesh->elements->volumeIndices, splitters[s], splitters[s + 1]));
-		}
-		Communication::allReduce(&volume->nvoxels, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_MAX, MPITools::asynchronous);
-	}
-
-	volume->pack = new char[volume->split * volume->nvoxels * mult];
-	volume->values = new float[volume->split * volume->ndata * volume->nvalues * mult];
-
-	int offset = volume->root == info::mpi::rank ? info::mpi::rank : 0;
-	for (size_t s = 0; s < volume->split; ++s) {
-		volume->packer.pack(info::mesh->elements->volumeIndices, splitters[s], splitters[s + 1], volume->pack + offset * volume->nvoxels + s * mult * volume->nvoxels);
-	}
-
-	offset *= volume->ndata * volume->nvalues;
-	for (size_t s = 0; s < volume->split; ++s) {
-		for (size_t di = 0; di < info::mesh->elements->data.size(); di++) { // go through all element values
-			if (info::mesh->elements->data[di]->name.size()) {
-				size_t i = 0, e = splitters[s];
-				for (auto indices = info::mesh->elements->volumeIndices->cbegin() + splitters[s]; indices != info::mesh->elements->volumeIndices->cbegin() + splitters[s + 1]; ++indices, ++e) {
-					if (indices->size()) {
-						if (info::mesh->elements->data[di]->dimension == 1) {
-							volume->values[offset + i] = info::mesh->elements->data[di]->store[e];
-						} else {
-							float value = 0;
-							for (int d = 0; d < info::mesh->elements->data[di]->dimension; ++d) {
-								double &v = info::mesh->elements->data[di]->store[e * info::mesh->elements->data[di]->dimension + d];
-								value += v * v;
-							}
-							volume->values[offset + i] = std::sqrt(value);
-						}
-						++i;
-					}
-				}
-				offset += volume->nvalues;
-			}
-		}
-		offset -= volume->ndata * volume->nvalues;
-		offset += volume->ndata * volume->nvalues * mult;
-	}
+	volume->packer.analyze(info::mesh->elements->volumeIndices, activeVariables);
+	Communication::reduce(&volume->packer.packSize, nullptr, 1, MPITools::getType(volume->packer.packSize).mpitype, MPI_MAX, volume->root, MPITools::asynchronous);
+	volume->packer.allocate();
+	volume->packer.pack(info::mesh->elements->volumeIndices, activeVariables);
 
 	{ // we can unlock mesh (values are copied by asynchronous output automatically)
 		std::lock_guard<std::mutex> lk(info::mesh->voxelization.mutex);
@@ -256,20 +194,7 @@ void OpenVDB::updateSolution()
 
 	if (_measure) { eslog::checkpointln("OPENVDB: DATA SERIALIZED"); }
 
-	_postponed.emplace();
-	_postponed.back().volume = volume;
-	_postponed.back().req.resize(2 * volume->split);
-	for (size_t s = 0; s < volume->split; ++s) {
-		Communication::igather(volume->pack + s * volume->nvoxels * mult, nullptr, volume->nvoxels, MPI_BYTE, volume->root, _postponed.back().req[2 * s], MPITools::asynchronous);
-		Communication::igather(volume->values + s * volume->ndata * volume->nvalues * mult, nullptr, volume->ndata * volume->nvalues, MPI_FLOAT, volume->root, _postponed.back().req[2 * s + 1], MPITools::asynchronous);
-	}
-
-	eslog::info(" == VOXELS GATHERED      ROOT %6d, NODE %4d, VOXELS %10.2f MB, VALUES %10.2f MB == \n", volume->root, node, info::mpi::size * volume->split * volume->nvoxels / 1024. / 1024., info::mpi::size * volume->split * volume->ndata * volume->nvalues * 4 / 1024. / 1024.);
-	if (_measure) { eslog::checkpointln("OPENVDB: DATA GATHERED"); }
-
-	if (_postponed.front().call()) {
-		_postponed.pop();
-	}
+	_postponed.push(volume);
 
 	if (_measure) { eslog::endln("OPENVDB: THREAD DETACHED"); }
 }

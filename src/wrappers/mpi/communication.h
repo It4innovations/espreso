@@ -225,6 +225,7 @@ struct Communication {
 	static bool allReduce(void *in, void *out, size_t size, MPI_Datatype type, MPI_Op op, MPIGroup *group = MPITools::procs);
 	static bool allGather(void *in, void *out, size_t size, MPI_Datatype type, MPIGroup *group = MPITools::procs);
 
+	static bool test(MPI_Request* request);
 	static bool testAll(int size, MPI_Request* requests);
 
 	template <typename Ttype, typename Talloc=std::allocator<Ttype> >

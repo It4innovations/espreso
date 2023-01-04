@@ -94,15 +94,11 @@ OpenVDBWrapper::FloatData::~FloatData()
 #endif
 }
 
-void OpenVDBWrapper::FloatData::insert(const VolumePacker &packer, char *voxels, float *values)
+void OpenVDBWrapper::FloatData::insert(const _Point<short> &voxel, const float &value)
 {
 #ifdef HAVE_OPENVDB
-	openvdb::FloatGrid::Accessor accessor = wrapper->grid->getAccessor();
-
-	packer.unpack(voxels, [&] (const _Point<short> &voxel, const size_t &vindex) {
-		openvdb::Coord xyz(voxel.x, voxel.y, voxel.z);
-		accessor.setValue(xyz, values[vindex]);
-	});
+	openvdb::Coord xyz(voxel.x, voxel.y, voxel.z);
+	wrapper->grid->getAccessor().setValue(xyz, value);
 #endif
 }
 
