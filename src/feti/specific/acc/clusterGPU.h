@@ -92,11 +92,12 @@ private:
         cudaEvent_t event1;
         cudaEvent_t event2;
         cudaEvent_t event3;
+        cudaEvent_t event4;
 
         csrsm2Info_t *h_array_info_L;
         csrsm2Info_t *h_array_info_U;
 
-        // Only one set of device arrays for CSC L and U (L^T)
+        // Only one set of device arrays for CSC/CSR L and U (L^T)
         int *d_csc_L_col_ptr;
         int *d_csc_L_row_ind;
         double *d_csc_L_val;
@@ -104,6 +105,14 @@ private:
         int *d_csc_U_col_ptr;
         int *d_csc_U_row_ind;
         double *d_csc_U_val;
+
+        int *d_csr_L_row_ptr;
+        int *d_csr_L_col_ind;
+        double *d_csr_L_val;
+
+        int *d_csr_U_row_ptr;
+        int *d_csr_U_col_ind;
+        double *d_csr_U_val;
 
         double *d_sym_full_lsc;
 

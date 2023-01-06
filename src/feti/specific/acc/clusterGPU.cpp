@@ -1285,11 +1285,11 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
         cusparseMatDescr_t h_descrU = NULL;
         cusparseMatDescr_t h_descrBt = NULL;
         int solve_algo = 1;  // solve_algo = 0 is non-block version; solve_algo = 1 is block version
-        cusparseOperation_t solve_transL = CUSPARSE_OPERATION_TRANSPOSE; // Transposed matrix require larger info object
-        cusparseOperation_t solve_transU = SYMMETRIC_SYSTEM ? CUSPARSE_OPERATION_NON_TRANSPOSE : CUSPARSE_OPERATION_TRANSPOSE;  // L^T and U in CSC
+		cusparseOperation_t solve_transL = CUSPARSE_OPERATION_NON_TRANSPOSE; // Transposed matrix require larger info object
+        cusparseOperation_t solve_transU = CUSPARSE_OPERATION_NON_TRANSPOSE; // U in CSC and then converted to CSR on GPU
         cusparseOperation_t solve_transB = CUSPARSE_OPERATION_NON_TRANSPOSE; // TODO LU probably change for U
         double solve_alpha = 1.0;
-        cusparseSolvePolicy_t policy = CUSPARSE_SOLVE_POLICY_NO_LEVEL; // CUSPARSE_SOLVE_POLICY_USE_LEVEL
+        cusparseSolvePolicy_t policy = CUSPARSE_SOLVE_POLICY_NO_LEVEL; // CUSPARSE_SOLVE_POLICY_USE_LEVEL is slightly slower
         // TODO: set according the largest domain #54
         size_t expected_buffer_size = std::max((size_t)3000, ((max_K_rows + max_nnz) * 4 + max_B1_size) * sizeof(double));
 		// This should be correct according NVIDIA but is too low in real
@@ -1298,29 +1298,31 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 		// Configuration of matrix descriptor L, U, and B^T*/
         checkCudaErrors(cusparseCreateMatDescr(&h_descrL));
         /* Loaded A is base-1 but CSparse converts it to base-0 */
-        checkCudaErrors(cusparseSetMatIndexBase(h_descrL, CUSPARSE_INDEX_BASE_ZERO));
+		cusparseIndexBase_t LU_idx_base = CUSPARSE_INDEX_BASE_ZERO;
+        checkCudaErrors(cusparseSetMatIndexBase(h_descrL, LU_idx_base));
         // A is actually symmetric (stored as lower triangular part only),
         // but csrsm2 routine supports only CUSPARSE_MATRIX_TYPE_GENERAL
         checkCudaErrors(cusparseSetMatType(h_descrL, CUSPARSE_MATRIX_TYPE_GENERAL));
         /* A is lower triangle in CSR but upper triangle in CSC*/
-        checkCudaErrors(cusparseSetMatFillMode(h_descrL, CUSPARSE_FILL_MODE_UPPER));
+		checkCudaErrors(cusparseSetMatFillMode(h_descrL, CUSPARSE_FILL_MODE_LOWER));
         /* A has non unit diagonal */
         checkCudaErrors(cusparseSetMatDiagType(h_descrL, SYMMETRIC_SYSTEM ? CUSPARSE_DIAG_TYPE_NON_UNIT : CUSPARSE_DIAG_TYPE_UNIT));
 
         checkCudaErrors(cusparseCreateMatDescr(&h_descrU));
         /* Loaded A is base-1 but CSparse converts it to base-0 */
-        checkCudaErrors(cusparseSetMatIndexBase(h_descrU, CUSPARSE_INDEX_BASE_ZERO));
+        checkCudaErrors(cusparseSetMatIndexBase(h_descrU, LU_idx_base));
         // A is actually symmetric (stored as lower triangular part only),
         // but csrsm2 routine supports only CUSPARSE_MATRIX_TYPE_GENERAL
         checkCudaErrors(cusparseSetMatType(h_descrU, CUSPARSE_MATRIX_TYPE_GENERAL));
         /* A is lower triangle in CSR but upper triangle in CSC*/
-        checkCudaErrors(cusparseSetMatFillMode(h_descrU, SYMMETRIC_SYSTEM ? CUSPARSE_FILL_MODE_UPPER : CUSPARSE_FILL_MODE_LOWER));
+        checkCudaErrors(cusparseSetMatFillMode(h_descrU, CUSPARSE_FILL_MODE_UPPER));
         /* A has non unit diagonal */
         checkCudaErrors(cusparseSetMatDiagType(h_descrU, CUSPARSE_DIAG_TYPE_NON_UNIT));
 
         checkCudaErrors(cusparseCreateMatDescr(&h_descrBt));
-        /* Loaded B is base-1 but CSparse converts it to base-0 */
-        checkCudaErrors(cusparseSetMatIndexBase(h_descrBt, CUSPARSE_INDEX_BASE_ZERO));
+        /* Loaded B is base-1 but converted to base-0 due to CSparse */
+		cusparseIndexBase_t B_idx_base = CUSPARSE_INDEX_BASE_ZERO;
+        checkCudaErrors(cusparseSetMatIndexBase(h_descrBt, B_idx_base));
         // A is actually symmetric (stored as lower triangular part only),
         // but csrsm2 routine supports only CUSPARSE_MATRIX_TYPE_GENERAL
         checkCudaErrors(cusparseSetMatType(h_descrBt, CUSPARSE_MATRIX_TYPE_GENERAL));
@@ -1338,7 +1340,6 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
         cusparseOrder_t spmm_order = CUSPARSE_ORDER_COL;
         cusparseIndexType_t spmm_csr_row_offsets_type = CUSPARSE_INDEX_32I;
         cusparseIndexType_t spmm_csr_col_ind_type = CUSPARSE_INDEX_32I;
-        cusparseIndexBase_t spmm_idx_base = CUSPARSE_INDEX_BASE_ZERO;
 		
 		// cuBLAS settings
 		cublasFillMode_t upper = CUBLAS_FILL_MODE_UPPER;
@@ -1390,13 +1391,14 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
             checkCudaErrors(cudaEventCreateWithFlags(&gpus[g].event1, cudaEventDisableTiming));
             checkCudaErrors(cudaEventCreateWithFlags(&gpus[g].event2, cudaEventDisableTiming));
 			checkCudaErrors(cudaEventCreateWithFlags(&gpus[g].event3, cudaEventDisableTiming));
+			checkCudaErrors(cudaEventCreateWithFlags(&gpus[g].event4, cudaEventDisableTiming));
 
             for (int i = 0; i < n_csrsm2_info_per_gpu; i++) {
                 checkCudaErrors(cusparseCreateCsrsm2Info(&gpus[g].h_array_info_L[i]));
                 checkCudaErrors(cusparseCreateCsrsm2Info(&gpus[g].h_array_info_U[i]));
             }
 
-            // Allocate only one set of device arrays for CSC L, U (L^T), and permutation vectors per GPU
+            // Allocate only one set of device arrays for CSC/CSR L, U (L^T), and permutation vectors per GPU
             checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_L_row_ind, max_L_nnz * sizeof(int)));
             checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_L_col_ptr, (max_K_rows + 1) * sizeof(int)));
             checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_L_val, max_L_nnz * sizeof(double)));
@@ -1404,6 +1406,16 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
             checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_U_row_ind, max_U_nnz * sizeof(int)));
             checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_U_col_ptr, (max_K_rows + 1) * sizeof(int)));
             checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csc_U_val, max_U_nnz * sizeof(double)));
+
+			checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csr_L_col_ind, max_L_nnz * sizeof(int)));
+            checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csr_L_row_ptr, (max_K_rows + 1) * sizeof(int)));
+            checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csr_L_val, max_L_nnz * sizeof(double)));
+
+			if(SYMMETRIC_SYSTEM == false) {
+				checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csr_U_col_ind, max_U_nnz * sizeof(int)));
+				checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csr_U_row_ptr, (max_K_rows + 1) * sizeof(int)));
+				checkCudaErrors(cudaMalloc((void **)&gpus[g].d_csr_U_val, max_U_nnz * sizeof(double)));
+			}
 
 			if (SYMMETRIC_SYSTEM && configuration.schur_type == FETIConfiguration::MATRIX_STORAGE::SYMMETRIC) {
 				checkCudaErrors(cudaMalloc((void **)&gpus[g].d_sym_full_lsc, max_B1_rows * max_B1_rows * sizeof(double)));
@@ -1414,63 +1426,63 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 		// Assembly Schur complements
 		for (int g = 0; g < n_gpu; g++) {
             checkCudaErrors(cudaSetDevice(g + gpu_id));
-			int idx = gpus[g].h_array_lsc_id[0];
+			int d_0 = gpus[g].h_array_lsc_id[0];
 
             // Copy CSR B and CSC L for the first domain from host to device
             PUSH_RANGE("B_csr 0 memcpy HtD", 4)
-			std::copy(vec_B1_comp_dom_copy[idx].CSR_V_values.begin(), vec_B1_comp_dom_copy[idx].CSR_V_values.end(), gpus[g].vec_B1_values_pinned[0]);
+			std::copy(vec_B1_comp_dom_copy[d_0].CSR_V_values.begin(), vec_B1_comp_dom_copy[d_0].CSR_V_values.end(), gpus[g].vec_B1_values_pinned[0]);
             checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_val[0], gpus[g].vec_B1_values_pinned[0],
-			 vec_B1_comp_dom_copy[idx].CSR_V_values.size() * sizeof(double), cudaMemcpyHostToDevice, gpus[g].data_stream));
+			 vec_B1_comp_dom_copy[d_0].CSR_V_values.size() * sizeof(double), cudaMemcpyHostToDevice, gpus[g].data_stream));
 
-			std::copy(vec_B1_comp_dom_copy[idx].CSR_J_col_indices.begin(), vec_B1_comp_dom_copy[idx].CSR_J_col_indices.end(), gpus[g].vec_B1_col_indices_pinned[0]);
+			std::copy(vec_B1_comp_dom_copy[d_0].CSR_J_col_indices.begin(), vec_B1_comp_dom_copy[d_0].CSR_J_col_indices.end(), gpus[g].vec_B1_col_indices_pinned[0]);
 			checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_col_ind[0], gpus[g].vec_B1_col_indices_pinned[0],
-			 vec_B1_comp_dom_copy[idx].CSR_V_values.size() * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
+			 vec_B1_comp_dom_copy[d_0].CSR_V_values.size() * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
 
-			std::copy(vec_B1_comp_dom_copy[idx].CSR_I_row_indices.begin(), vec_B1_comp_dom_copy[idx].CSR_I_row_indices.end(), gpus[g].vec_B1_row_indices_pinned[0]);
+			std::copy(vec_B1_comp_dom_copy[d_0].CSR_I_row_indices.begin(), vec_B1_comp_dom_copy[d_0].CSR_I_row_indices.end(), gpus[g].vec_B1_row_indices_pinned[0]);
 			checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_csr_B_row_ptr[0], gpus[g].vec_B1_row_indices_pinned[0],
-			 (domains[idx].B1_comp_dom.rows + 1) * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
+			 (domains[d_0].B1_comp_dom.rows + 1) * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
             POP_RANGE
 
             PUSH_RANGE("L_csr 0 + perm memcpy HtD", 4)
 			if(SYMMETRIC_SYSTEM) {
 				// Copy L factor into the U arrays to allow L factor preloading now, it will be swaped before Lsolve
-				std::copy(vec_L_values[idx], vec_L_values[idx] + vec_L_nnz[idx], gpus[g].vec_U_values_pinned);
-				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_val, gpus[g].vec_U_values_pinned, vec_L_nnz[idx] * sizeof(double),
+				std::copy(vec_L_values[d_0], vec_L_values[d_0] + vec_L_nnz[d_0], gpus[g].vec_U_values_pinned);
+				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_val, gpus[g].vec_U_values_pinned, vec_L_nnz[d_0] * sizeof(double),
 				cudaMemcpyHostToDevice, gpus[g].data_stream));
 				
-				std::copy(vec_L_row_indexes[idx], vec_L_row_indexes[idx] + vec_L_nnz[idx], gpus[g].vec_U_row_indexes_pinned);
-				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_row_ind, gpus[g].vec_U_row_indexes_pinned, vec_L_nnz[idx] * sizeof(int),
+				std::copy(vec_L_row_indexes[d_0], vec_L_row_indexes[d_0] + vec_L_nnz[d_0], gpus[g].vec_U_row_indexes_pinned);
+				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_row_ind, gpus[g].vec_U_row_indexes_pinned, vec_L_nnz[d_0] * sizeof(int),
 				cudaMemcpyHostToDevice, gpus[g].data_stream));
 
-				std::copy(vec_L_col_pointers[idx], vec_L_col_pointers[idx] + (domains[idx].K.rows + 1), gpus[g].vec_U_col_pointers_pinned);
-				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_col_ptr, gpus[g].vec_U_col_pointers_pinned, (domains[idx].K.rows + 1) * sizeof(int),
+				std::copy(vec_L_col_pointers[d_0], vec_L_col_pointers[d_0] + (domains[d_0].K.rows + 1), gpus[g].vec_U_col_pointers_pinned);
+				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_col_ptr, gpus[g].vec_U_col_pointers_pinned, (domains[d_0].K.rows + 1) * sizeof(int),
 				cudaMemcpyHostToDevice, gpus[g].data_stream));
 				
 				if(order) {
-					std::copy(vec_perm[idx], vec_perm[idx] + domains[idx].K.rows, gpus[g].vec_perm_pinned[0]);
-					checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[0], gpus[g].vec_perm_pinned[0], domains[idx].K.rows * sizeof(int),
+					std::copy(vec_perm[d_0], vec_perm[d_0] + domains[d_0].K.rows, gpus[g].vec_perm_pinned[0]);
+					checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[0], gpus[g].vec_perm_pinned[0], domains[d_0].K.rows * sizeof(int),
 					 cudaMemcpyHostToDevice, gpus[g].data_stream));
 				}
             } else {
-				std::copy(vec_L_values[idx], vec_L_values[idx] + vec_L_nnz[idx], gpus[g].vec_L_values_pinned);
-				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_val, gpus[g].vec_L_values_pinned, vec_L_nnz[idx] * sizeof(double),
+				std::copy(vec_L_values[d_0], vec_L_values[d_0] + vec_L_nnz[d_0], gpus[g].vec_L_values_pinned);
+				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_val, gpus[g].vec_L_values_pinned, vec_L_nnz[d_0] * sizeof(double),
 				cudaMemcpyHostToDevice, gpus[g].data_stream));
 
-				std::copy(vec_L_row_indexes[idx], vec_L_row_indexes[idx] + vec_L_nnz[idx], gpus[g].vec_L_row_indexes_pinned);
-				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_row_ind, gpus[g].vec_L_row_indexes_pinned, vec_L_nnz[idx] * sizeof(int),
+				std::copy(vec_L_row_indexes[d_0], vec_L_row_indexes[d_0] + vec_L_nnz[d_0], gpus[g].vec_L_row_indexes_pinned);
+				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_row_ind, gpus[g].vec_L_row_indexes_pinned, vec_L_nnz[d_0] * sizeof(int),
 				cudaMemcpyHostToDevice, gpus[g].data_stream));
 
-				std::copy(vec_L_col_pointers[idx], vec_L_col_pointers[idx] + (domains[idx].K.rows + 1), gpus[g].vec_L_col_pointers_pinned);
-				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_col_ptr, gpus[g].vec_L_col_pointers_pinned, (domains[idx].K.rows + 1) * sizeof(int),
+				std::copy(vec_L_col_pointers[d_0], vec_L_col_pointers[d_0] + (domains[d_0].K.rows + 1), gpus[g].vec_L_col_pointers_pinned);
+				checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_L_col_ptr, gpus[g].vec_L_col_pointers_pinned, (domains[d_0].K.rows + 1) * sizeof(int),
 				cudaMemcpyHostToDevice, gpus[g].data_stream));
 
 				if(order) {
-					std::copy(vec_perm_2[idx], vec_perm_2[idx] + domains[idx].K.rows, gpus[g].vec_perm_2_pinned[0]);
-					checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_q[0], gpus[g].vec_perm_2_pinned[0], domains[idx].K.rows * sizeof(int),
+					std::copy(vec_perm_2[d_0], vec_perm_2[d_0] + domains[d_0].K.rows, gpus[g].vec_perm_2_pinned[0]);
+					checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_q[0], gpus[g].vec_perm_2_pinned[0], domains[d_0].K.rows * sizeof(int),
 					 cudaMemcpyHostToDevice, gpus[g].data_stream));
 				}
-				std::copy(vec_perm[idx], vec_perm[idx] + domains[idx].K.rows, gpus[g].vec_perm_pinned[0]);
-				checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[0], gpus[g].vec_perm_pinned[0], domains[idx].K.rows * sizeof(int),
+				std::copy(vec_perm[d_0], vec_perm[d_0] + domains[d_0].K.rows, gpus[g].vec_perm_pinned[0]);
+				checkCudaErrors(cudaMemcpyAsync(gpus[g].h_array_d_pinv[0], gpus[g].vec_perm_pinned[0], domains[d_0].K.rows * sizeof(int),
 				 cudaMemcpyHostToDevice, gpus[g].data_stream));
             }
 			POP_RANGE
@@ -1500,29 +1512,30 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                 int i_gpu = i - gpus[g].start;
                 int s_gpu = i_gpu % n_streams_per_gpu;
                 int info_gpu = i_gpu % n_csrsm2_info_per_gpu;
+				int d = gpus[g].h_array_lsc_id[i_gpu];
 
 				checkCudaErrors(cublasSetStream(gpus[g].cublas_handle, gpus[g].h_array_stream[s_gpu])); 
 
                 PUSH_RANGE("Create SpMM objects", 5)
                 // Create B, X, LSC cusparse matrix objects
-                checkCudaErrors(cusparseCreateCsr(&h_array_h_matB[i], (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
-				 (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.CSR_V_values.size(), (void*) gpus[g].h_array_d_csr_B_row_ptr[s_gpu],
+                checkCudaErrors(cusparseCreateCsr(&h_array_h_matB[i], (int64_t) domains[d].B1_comp_dom.rows,
+				 (int64_t) domains[d].K.rows, (int64_t) domains[d].B1_comp_dom.CSR_V_values.size(), (void*) gpus[g].h_array_d_csr_B_row_ptr[s_gpu],
                 (void*) gpus[g].h_array_d_csr_B_col_ind[s_gpu], (void*) gpus[g].h_array_d_csr_B_val[s_gpu],
-                spmm_csr_row_offsets_type, spmm_csr_col_ind_type, spmm_idx_base, compute_type));
+                spmm_csr_row_offsets_type, spmm_csr_col_ind_type, B_idx_base, compute_type));
 				CUDA_SYNC // an illegal memory access was encountered
                 // h_array_d_buffer used instead of h_array_d_X
-                checkCudaErrors(cusparseCreateDnMat(&h_array_h_matX[i], (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows,
-				 (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows,
+                checkCudaErrors(cusparseCreateDnMat(&h_array_h_matX[i], (int64_t) domains[d].K.rows,
+				 (int64_t) domains[d].B1_comp_dom.rows, (int64_t) domains[d].K.rows,
                 (void*) gpus[g].h_array_d_buffer[s_gpu], compute_type, spmm_order));
 				CUDA_SYNC
 				
 				if (SYMMETRIC_SYSTEM && configuration.schur_type == FETIConfiguration::MATRIX_STORAGE::SYMMETRIC) {
-					checkCudaErrors(cusparseCreateDnMat(&h_array_h_matLSC[i], (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
-					(int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
+					checkCudaErrors(cusparseCreateDnMat(&h_array_h_matLSC[i], (int64_t) domains[d].B1_comp_dom.rows,
+					(int64_t) domains[d].B1_comp_dom.rows, (int64_t) domains[d].B1_comp_dom.rows,
 					(void*) gpus[g].d_sym_full_lsc, compute_type, spmm_order));
 				} else {
-					checkCudaErrors(cusparseCreateDnMat(&h_array_h_matLSC[i], (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
-					(int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, (int64_t) domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
+					checkCudaErrors(cusparseCreateDnMat(&h_array_h_matLSC[i], (int64_t) domains[d].B1_comp_dom.rows,
+					(int64_t) domains[d].B1_comp_dom.rows, (int64_t) domains[d].B1_comp_dom.rows,
 					(void*) gpus[g].h_array_d_lsc[i_gpu], compute_type, spmm_order));
 				}
 				POP_RANGE // Create SpMM objects
@@ -1545,9 +1558,9 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                 // Currently not necessary to get buffer size
 #ifdef CUDA_DEBUG
                 printf("Thr %d GPU %d: LSC %d: %d CUDA streams share %f MB buffers for all domains and both solves\n", tid, g, i, n_streams_per_gpu, (double)expected_buffer_size / 1024.0 / 1024.0);
-                checkCudaErrors(cusparseCsr2cscEx2_bufferSize(gpus[g].h_array_handle[s_gpu], domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.CSR_V_values.size(), gpus[g].h_array_d_csr_B_val[s_gpu],
+                checkCudaErrors(cusparseCsr2cscEx2_bufferSize(gpus[g].h_array_handle[s_gpu], domains[d].B1_comp_dom.rows, domains[d].K.rows, domains[d].B1_comp_dom.CSR_V_values.size(), gpus[g].h_array_d_csr_B_val[s_gpu],
                  gpus[g].h_array_d_csr_B_row_ptr[s_gpu], gpus[g].h_array_d_csr_B_col_ind[s_gpu], gpus[g].h_array_d_csr_Bt_val[s_gpu], gpus[g].h_array_d_csr_Bt_row_ptr[s_gpu],
-                  gpus[g].h_array_d_csr_Bt_col_ind[s_gpu], compute_type, CUSPARSE_ACTION_NUMERIC, CUSPARSE_INDEX_BASE_ZERO, CUSPARSE_CSR2CSC_ALG1,
+                  gpus[g].h_array_d_csr_Bt_col_ind[s_gpu], compute_type, CUSPARSE_ACTION_NUMERIC, B_idx_base, CUSPARSE_CSR2CSC_ALG1,
                    &solve_buffer_size));
                 
 				if(solve_buffer_size > std::max((size_t) 1024 * 1024, expected_buffer_size))
@@ -1556,23 +1569,23 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                 CUDA_SYNC
 #endif
 
-                checkCudaErrors(cusparseCsr2cscEx2(gpus[g].h_array_handle[s_gpu], domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows,
-				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.CSR_V_values.size(), gpus[g].h_array_d_csr_B_val[s_gpu],
+                checkCudaErrors(cusparseCsr2cscEx2(gpus[g].h_array_handle[s_gpu], domains[d].B1_comp_dom.rows,
+				 domains[d].K.rows, domains[d].B1_comp_dom.CSR_V_values.size(), gpus[g].h_array_d_csr_B_val[s_gpu],
                 gpus[g].h_array_d_csr_B_row_ptr[s_gpu], gpus[g].h_array_d_csr_B_col_ind[s_gpu], gpus[g].h_array_d_csr_Bt_val[s_gpu], 
                 gpus[g].h_array_d_csr_Bt_row_ptr[s_gpu], gpus[g].h_array_d_csr_Bt_col_ind[s_gpu], compute_type, CUSPARSE_ACTION_NUMERIC,
-                CUSPARSE_INDEX_BASE_ZERO, CUSPARSE_CSR2CSC_ALG1, gpus[g].h_array_d_buffer[s_gpu]));
+                B_idx_base, CUSPARSE_CSR2CSC_ALG1, gpus[g].h_array_d_buffer[s_gpu]));
                 POP_RANGE // Transpose B_csr
 				CUDA_SYNC
 
                 PUSH_RANGE("Convert Bt_csr to dense", 0)
                 // Convert B^T from CSR to dense on device
-                // m = Bt_cs->m = domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows
-                // n = Bt_cs->n = domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows
+                // m = Bt_cs->m = domains[d].K.rows
+                // n = Bt_cs->n = domains[d].B1_comp_dom.rows
                 // h_array_d_buffer used instead of h_array_d_X
-                checkCudaErrors(cusparseDcsr2dense(gpus[g].h_array_handle[s_gpu], domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows,
-				 domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, h_descrBt, gpus[g].h_array_d_csr_Bt_val[s_gpu],
+                checkCudaErrors(cusparseDcsr2dense(gpus[g].h_array_handle[s_gpu], domains[d].K.rows,
+				 domains[d].B1_comp_dom.rows, h_descrBt, gpus[g].h_array_d_csr_Bt_val[s_gpu],
                 gpus[g].h_array_d_csr_Bt_row_ptr[s_gpu], gpus[g].h_array_d_csr_Bt_col_ind[s_gpu], (double *) gpus[g].h_array_d_buffer[s_gpu],
-				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows));
+				 domains[d].K.rows));
                 POP_RANGE //Convert Bt_csr to dense
 				CUDA_SYNC
 
@@ -1582,7 +1595,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                 // Symm: h_array_d_X_reordered(S->pinv) = h_array_d_buffer
                 // Unsym: h_array_d_X_reordered(N->pinv) = h_array_d_buffer
                 cuda::IpvecReorderMrhs(gpus[g].h_array_d_pinv[s_gpu], (double *) gpus[g].h_array_d_buffer[s_gpu], gpus[g].h_array_d_X_reordered[s_gpu],
-                domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, gpus[g].h_array_stream[s_gpu]); /* b = P'*x */
+                domains[d].K.rows, domains[d].B1_comp_dom.rows, gpus[g].h_array_stream[s_gpu]); /* b = P'*x */
                 POP_RANGE // Input reordering
 				CUDA_SYNC
 
@@ -1601,13 +1614,27 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 					gpus[g].d_csc_U_val = tmp_val;
 				}
 
+				PUSH_RANGE("Transpose L", 4)
+				checkCudaErrors(cusparseCsr2cscEx2_bufferSize(gpus[g].h_array_handle[s_gpu], domains[d].K.rows, domains[d].K.rows, vec_L_nnz[i],
+				 gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind, gpus[g].d_csr_L_val, gpus[g].d_csr_L_row_ptr,
+                  gpus[g].d_csr_L_col_ind, compute_type, CUSPARSE_ACTION_NUMERIC, LU_idx_base, CUSPARSE_CSR2CSC_ALG1, &solve_buffer_size));
+				
+				if(solve_buffer_size > expected_buffer_size)
+                    printf("CSparse LSC warning: GPU %d: LSC %d: The calculated CSC2CSR buffer size (%f MB) is larger than the size of the used buffer (%f MB).\n",
+                     g, i, (double) solve_buffer_size / 1024.0 / 1024.0, (double) expected_buffer_size / 1024.0 / 1024.0);
+				
+				checkCudaErrors(cusparseCsr2cscEx2(gpus[g].h_array_handle[s_gpu], domains[d].K.rows, domains[d].K.rows, vec_L_nnz[i],
+				 gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind, gpus[g].d_csr_L_val, gpus[g].d_csr_L_row_ptr,
+                  gpus[g].d_csr_L_col_ind, compute_type, CUSPARSE_ACTION_NUMERIC, LU_idx_base, CUSPARSE_CSR2CSC_ALG1, gpus[g].h_array_d_buffer[s_gpu]));
+				POP_RANGE // Transpose L
+
                 PUSH_RANGE("Querry workspace lsolve", 2)
                 /* step 3: query workspace */
                 // requires sorted CSR
-                checkCudaErrors(cusparseDcsrsm2_bufferSizeExt(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transL, solve_transB,
-				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, vec_L_nnz[i],
-                 &solve_alpha, h_descrL, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
-				  domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_L[info_gpu], policy, &solve_buffer_size));
+				  checkCudaErrors(cusparseDcsrsm2_bufferSizeExt(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transL, solve_transB,
+				 domains[d].K.rows, domains[d].B1_comp_dom.rows, vec_L_nnz[i],
+                 &solve_alpha, h_descrL, gpus[g].d_csr_L_val, gpus[g].d_csr_L_row_ptr, gpus[g].d_csr_L_col_ind, gpus[g].h_array_d_X_reordered[s_gpu],
+				  domains[d].K.rows, gpus[g].h_array_info_L[info_gpu], policy, &solve_buffer_size));
                 CUDA_SYNC
 
 				if(solve_buffer_size > expected_buffer_size)
@@ -1618,19 +1645,19 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 
                 /* step 4: analysis */
                 PUSH_RANGE("Analysis lsolve", 3)
-                checkCudaErrors(cusparseDcsrsm2_analysis(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transL, solve_transB, domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows,
-				 domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, vec_L_nnz[i], &solve_alpha, h_descrL, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind,
-                 gpus[g].h_array_d_X_reordered[s_gpu], domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_L[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
+				checkCudaErrors(cusparseDcsrsm2_analysis(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transL, solve_transB, domains[d].K.rows,
+				 domains[d].B1_comp_dom.rows, vec_L_nnz[i], &solve_alpha, h_descrL, gpus[g].d_csr_L_val, gpus[g].d_csr_L_row_ptr, gpus[g].d_csr_L_col_ind,
+                 gpus[g].h_array_d_X_reordered[s_gpu], domains[d].K.rows, gpus[g].h_array_info_L[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
                 POP_RANGE // Analysis lsolve
 				CUDA_SYNC
 
 
                 /* step 5: solve X = L * X */
                 PUSH_RANGE("Lsolve", 5)
-                checkCudaErrors(cusparseDcsrsm2_solve(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transL, solve_transB,
-				 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, vec_L_nnz[i],
-				 &solve_alpha, h_descrL, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
-                 domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_L[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
+				checkCudaErrors(cusparseDcsrsm2_solve(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transL, solve_transB,
+				 domains[d].K.rows, domains[d].B1_comp_dom.rows, vec_L_nnz[i],
+				 &solve_alpha, h_descrL, gpus[g].d_csr_L_val, gpus[g].d_csr_L_row_ptr, gpus[g].d_csr_L_col_ind, gpus[g].h_array_d_X_reordered[s_gpu],
+                 domains[d].K.rows, gpus[g].h_array_info_L[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
                 POP_RANGE // Lsolve
 				CUDA_SYNC
 
@@ -1647,8 +1674,8 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 					std::copy(vec_U_row_indexes[i], vec_U_row_indexes[i] + vec_U_nnz[i], gpus[g].vec_U_row_indexes_pinned);
 					checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_row_ind, gpus[g].vec_U_row_indexes_pinned, vec_U_nnz[i] * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
 					
-					std::copy(vec_U_col_pointers[i], vec_U_col_pointers[i] + (domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows + 1), gpus[g].vec_U_col_pointers_pinned);
-					checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_col_ptr, gpus[g].vec_U_col_pointers_pinned,	(domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows + 1) * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
+					std::copy(vec_U_col_pointers[i], vec_U_col_pointers[i] + (domains[d].K.rows + 1), gpus[g].vec_U_col_pointers_pinned);
+					checkCudaErrors(cudaMemcpyAsync(gpus[g].d_csc_U_col_ptr, gpus[g].vec_U_col_pointers_pinned,	(domains[d].K.rows + 1) * sizeof(int), cudaMemcpyHostToDevice, gpus[g].data_stream));
 					POP_RANGE // U_csc memcpy HtD
 					
 					// Record all the remaining work of the data stream into the event3
@@ -1657,13 +1684,15 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 				}
 
 				if(SYMMETRIC_SYSTEM) {
+					// h_descrU and CSC format used to avoid transpose solve operation
+
 					/* step 6: query workspace */
 					PUSH_RANGE("Querry workspace Ltsolve", 1)
 					// requires sorted CSR
 					checkCudaErrors(cusparseDcsrsm2_bufferSizeExt(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transU, solve_transB,
-					domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, vec_L_nnz[i],
-					&solve_alpha, h_descrL, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
-					domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_L[info_gpu], policy, &solve_buffer_size));
+					domains[d].K.rows, domains[d].B1_comp_dom.rows, vec_L_nnz[i],
+					&solve_alpha, h_descrU, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
+					domains[d].K.rows, gpus[g].h_array_info_L[info_gpu], policy, &solve_buffer_size));
 					CUDA_SYNC
 
 					if(solve_buffer_size > expected_buffer_size)
@@ -1674,31 +1703,49 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 					/* step 7: analysis */
 					PUSH_RANGE("Analysis Ltsolve", 2)
 					checkCudaErrors(cusparseDcsrsm2_analysis(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transU, solve_transB,
-					domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, vec_L_nnz[i],
-					&solve_alpha, h_descrL, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
-					domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_L[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
+					domains[d].K.rows, domains[d].B1_comp_dom.rows, vec_L_nnz[i],
+					&solve_alpha, h_descrU, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
+					domains[d].K.rows, gpus[g].h_array_info_L[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
 					CUDA_SYNC
 					POP_RANGE // Analysis ltsolve
+
+					// Record device operations (incl. non-pinned memcpy) of the analysis phase to delay the following async copy
+					checkCudaErrors(cudaEventRecord(gpus[g].event4, gpus[g].h_array_stream[s_gpu]));
 
 					/* step 8: solve X = Lt\X */
 					PUSH_RANGE("Ltsolve", 3)
 					checkCudaErrors(cusparseDcsrsm2_solve(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transU, solve_transB,
-					domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, vec_L_nnz[i],
-					&solve_alpha, h_descrL, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
-					domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_L[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
+					domains[d].K.rows, domains[d].B1_comp_dom.rows, vec_L_nnz[i],
+					&solve_alpha, h_descrU, gpus[g].d_csc_L_val, gpus[g].d_csc_L_col_ptr, gpus[g].d_csc_L_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
+					domains[d].K.rows, gpus[g].h_array_info_L[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
 					CUDA_SYNC
 					POP_RANGE // Ltsolve
 
 				} else {
 					checkCudaErrors(cudaStreamWaitEvent(gpus[g].h_array_stream[s_gpu], gpus[g].event3, 0));
+
+					PUSH_RANGE("Transpose U", 5)
+					checkCudaErrors(cusparseCsr2cscEx2_bufferSize(gpus[g].h_array_handle[s_gpu], domains[d].K.rows, domains[d].K.rows, vec_U_nnz[i],
+					gpus[g].d_csc_U_val, gpus[g].d_csc_U_col_ptr, gpus[g].d_csc_U_row_ind, gpus[g].d_csr_U_val, gpus[g].d_csr_U_row_ptr,
+					gpus[g].d_csr_U_col_ind, compute_type, CUSPARSE_ACTION_NUMERIC, LU_idx_base, CUSPARSE_CSR2CSC_ALG1, &solve_buffer_size));
+					
+					if(solve_buffer_size > expected_buffer_size)
+						printf("CSparse LSC warning: GPU %d: LSC %d: The calculated CSC2CSR buffer size (%f MB) is larger than the size of the used buffer (%f MB).\n",
+						g, i, (double) solve_buffer_size / 1024.0 / 1024.0, (double) expected_buffer_size / 1024.0 / 1024.0);
+					
+					checkCudaErrors(cusparseCsr2cscEx2(gpus[g].h_array_handle[s_gpu], domains[d].K.rows, domains[d].K.rows, vec_U_nnz[i],
+					gpus[g].d_csc_U_val, gpus[g].d_csc_U_col_ptr, gpus[g].d_csc_U_row_ind, gpus[g].d_csr_U_val, gpus[g].d_csr_U_row_ptr,
+					gpus[g].d_csr_U_col_ind, compute_type, CUSPARSE_ACTION_NUMERIC, LU_idx_base, CUSPARSE_CSR2CSC_ALG1, gpus[g].h_array_d_buffer[s_gpu]));
+					POP_RANGE // Transpose U
+
 					/* step 6: query workspace */
 					PUSH_RANGE("Querry workspace U solve", 1)
 					// TODO LU check correctness in case of problems
 					// requires sorted CSR
 					checkCudaErrors(cusparseDcsrsm2_bufferSizeExt(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transU, solve_transB,
-					domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, vec_U_nnz[i],
-					&solve_alpha, h_descrU, gpus[g].d_csc_U_val, gpus[g].d_csc_U_col_ptr, gpus[g].d_csc_U_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
-					domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_U[info_gpu], policy, &solve_buffer_size));
+					domains[d].K.rows, domains[d].B1_comp_dom.rows, vec_U_nnz[i],
+					&solve_alpha, h_descrU, gpus[g].d_csr_U_val, gpus[g].d_csr_U_row_ptr, gpus[g].d_csr_U_col_ind, gpus[g].h_array_d_X_reordered[s_gpu],
+					domains[d].K.rows, gpus[g].h_array_info_U[info_gpu], policy, &solve_buffer_size));
 					CUDA_SYNC
 
 					if(solve_buffer_size > expected_buffer_size)
@@ -1709,18 +1756,18 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 					/* step 7: analysis */
 					PUSH_RANGE("Analysis U solve", 2)
 					checkCudaErrors(cusparseDcsrsm2_analysis(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transU, solve_transB,
-					domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, vec_U_nnz[i],
-					&solve_alpha, h_descrU, gpus[g].d_csc_U_val, gpus[g].d_csc_U_col_ptr, gpus[g].d_csc_U_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
-					domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_U[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
+					domains[d].K.rows, domains[d].B1_comp_dom.rows, vec_U_nnz[i],
+					&solve_alpha, h_descrU, gpus[g].d_csr_U_val, gpus[g].d_csr_U_row_ptr, gpus[g].d_csr_U_col_ind, gpus[g].h_array_d_X_reordered[s_gpu],
+					domains[d].K.rows, gpus[g].h_array_info_U[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
 					CUDA_SYNC
 					POP_RANGE // Analysis Usolve
 
 					/* step 8: solve X = U\X */
 					PUSH_RANGE("U solve", 3)
 					checkCudaErrors(cusparseDcsrsm2_solve(gpus[g].h_array_handle[s_gpu], solve_algo, solve_transU, solve_transB,
-					domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, vec_U_nnz[i],
-					&solve_alpha, h_descrU, gpus[g].d_csc_U_val, gpus[g].d_csc_U_col_ptr, gpus[g].d_csc_U_row_ind, gpus[g].h_array_d_X_reordered[s_gpu],
-					domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, gpus[g].h_array_info_U[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
+					domains[d].K.rows, domains[d].B1_comp_dom.rows, vec_U_nnz[i],
+					&solve_alpha, h_descrU, gpus[g].d_csr_U_val, gpus[g].d_csr_U_row_ptr, gpus[g].d_csr_U_col_ind, gpus[g].h_array_d_X_reordered[s_gpu],
+					domains[d].K.rows, gpus[g].h_array_info_U[info_gpu], policy, gpus[g].h_array_d_buffer[s_gpu]));
 					CUDA_SYNC
 					POP_RANGE // Usolve
 				}
@@ -1731,6 +1778,11 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 
                 // Overlap CSR B and CSC L transfer for the following iteration with the L^T-Solve (U-Solve)
                 if((i_gpu + 1) < gpus[g].n_lsc_gpu) {
+					if(SYMMETRIC_SYSTEM) {
+						// Delay the following async memcpy until analysis phase is finished to partially avoid breaking computation and data transfer overlap
+						checkCudaErrors(cudaStreamWaitEvent(gpus[g].data_stream, gpus[g].event4, 0));
+					}
+
                     PUSH_RANGE("B_csr+n_gpu memcpy HtD", 6)
                     int s_gpu_following = (i_gpu + 1) % n_streams_per_gpu;
 
@@ -1812,10 +1864,10 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                 // Unsym: h_array_d_buffer(S->q) = h_array_d_X_reordered
                 if (SYMMETRIC_SYSTEM) {
                     cuda::PvecReorderMrhs(gpus[g].h_array_d_pinv[s_gpu], gpus[g].h_array_d_X_reordered[s_gpu], (double *) gpus[g].h_array_d_buffer[s_gpu],
-					domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, gpus[g].h_array_stream[s_gpu]); /* b = P'*x */
+					domains[d].K.rows, domains[d].B1_comp_dom.rows, gpus[g].h_array_stream[s_gpu]); /* b = P'*x */
                 } else {
                     cuda::IpvecReorderMrhs(gpus[g].h_array_d_q[s_gpu], gpus[g].h_array_d_X_reordered[s_gpu], (double *) gpus[g].h_array_d_buffer[s_gpu],
-					domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows, domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, gpus[g].h_array_stream[s_gpu]);
+					domains[d].K.rows, domains[d].B1_comp_dom.rows, gpus[g].h_array_stream[s_gpu]);
                 }
                 POP_RANGE // Output reordering
 				CUDA_SYNC
@@ -1827,9 +1879,9 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                 h_array_h_matX[i], &spmm_beta, h_array_h_matLSC[i], compute_type, spmm_algo, &spmm_buffer_size));
 				printf("Thr %d GPU %d: LSC %d: Calculated SpMM spmm_buffer_size = %zu B\n", tid, g, i, (double)spmm_buffer_size);
                 
-				if(spmm_buffer_size > (domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows * domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows * sizeof(double)))
+				if(spmm_buffer_size > (domains[d].K.rows * domains[d].B1_comp_dom.rows * sizeof(double)))
                     printf("CSparse LSC warning: Thr %d GPU %d: LSC %d: The calculated SpMM buffer size (%f MB) is larger than the size of the used buffer (%f MB).\n",
-                     tid, g, i, (double) spmm_buffer_size / 1024.0 / 1024.0, (double) (domains[gpus[g].h_array_lsc_id[i_gpu]].K.rows * domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows * sizeof(double)) / 1024.0 / 1024.0);
+                     tid, g, i, (double) spmm_buffer_size / 1024.0 / 1024.0, (double) (domains[d].K.rows * domains[d].B1_comp_dom.rows * sizeof(double)) / 1024.0 / 1024.0);
                 CUDA_SYNC
 #endif
                 // h_array_d_buffer used instead of h_array_d_X
@@ -1843,8 +1895,8 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
 				if (SYMMETRIC_SYSTEM && configuration.schur_type == FETIConfiguration::MATRIX_STORAGE::SYMMETRIC) {
 					PUSH_RANGE("Remove triangle", 7)
 					checkCudaErrors(cublasDtrttp(gpus[g].cublas_handle, upper, 
-					domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, gpus[g].d_sym_full_lsc,
-                    domains[gpus[g].h_array_lsc_id[i_gpu]].B1_comp_dom.rows, gpus[g].h_array_d_lsc[i_gpu]));
+					domains[d].B1_comp_dom.rows, gpus[g].d_sym_full_lsc,
+                    domains[d].B1_comp_dom.rows, gpus[g].h_array_d_lsc[i_gpu]));
 					POP_RANGE // Remove triangle
 					CUDA_SYNC
 				}
@@ -1920,6 +1972,7 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
             checkCudaErrors(cudaEventDestroy(gpus[g].event1));
             checkCudaErrors(cudaEventDestroy(gpus[g].event2));
 			checkCudaErrors(cudaEventDestroy(gpus[g].event3));
+			checkCudaErrors(cudaEventDestroy(gpus[g].event4));
 
             for (int i = 0; i < n_csrsm2_info_per_gpu; i++) {
                 checkCudaErrors(cusparseDestroyCsrsm2Info(gpus[g].h_array_info_L[i]));
@@ -1931,6 +1984,14 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
             checkCudaErrors(cudaFree(gpus[g].d_csc_U_col_ptr));
             checkCudaErrors(cudaFree(gpus[g].d_csc_U_row_ind));
             checkCudaErrors(cudaFree(gpus[g].d_csc_U_val));
+			checkCudaErrors(cudaFree(gpus[g].d_csr_L_row_ptr));
+            checkCudaErrors(cudaFree(gpus[g].d_csr_L_col_ind));
+            checkCudaErrors(cudaFree(gpus[g].d_csr_L_val));
+			if(SYMMETRIC_SYSTEM == false) {
+				checkCudaErrors(cudaFree(gpus[g].d_csr_U_row_ptr));
+				checkCudaErrors(cudaFree(gpus[g].d_csr_U_col_ind));
+				checkCudaErrors(cudaFree(gpus[g].d_csr_U_val));
+			}
 			if (SYMMETRIC_SYSTEM && configuration.schur_type == FETIConfiguration::MATRIX_STORAGE::SYMMETRIC) {
 				checkCudaErrors(cudaFree(gpus[g].d_sym_full_lsc));
 			}
