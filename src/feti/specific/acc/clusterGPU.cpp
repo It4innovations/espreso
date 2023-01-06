@@ -1906,19 +1906,23 @@ void ClusterGPU::GetSchurComplementsGpu(bool USE_FLOAT, SEQ_VECTOR<int>& vec_L_n
                 checkCudaErrors(cusparseDestroyDnMat(h_array_h_matX[i]));
                 checkCudaErrors(cusparseDestroyDnMat(h_array_h_matLSC[i]));                
 
-                if(i_gpu % n_csrsm2_info_per_gpu == 0 && i_gpu != 0) {
-					// The loop splited and synchronized due to a potential bug in CUDA 11.3.1 and later
-					// Crashes w/o sync.
-                    for (int j = 0; j < n_csrsm2_info_per_gpu; j++) {
-                        checkCudaErrors(cusparseDestroyCsrsm2Info(gpus[g].h_array_info_L[j]));
-                	}
-					checkCudaErrors(cudaStreamSynchronize(gpus[g].h_array_stream[s_gpu]));
-					for (int j = 0; j < n_csrsm2_info_per_gpu; j++) {
-                        checkCudaErrors(cusparseDestroyCsrsm2Info(gpus[g].h_array_info_U[j]));
-                        checkCudaErrors(cusparseCreateCsrsm2Info(&gpus[g].h_array_info_L[j]));
-                        checkCudaErrors(cusparseCreateCsrsm2Info(&gpus[g].h_array_info_U[j]));
-                    }
-                }
+				// Seems like with NON_TRANSPOSE solve operations, the info_objects can be shared among domains,
+				// thus NUM_INFO_OBJECTS ECF variable can be set to 1.
+				// It is also not necessary to Destroy/Create them repeatedly
+				// Potential optimization - Destroy/Create the current info object as the last one, after the streamSynchronize
+                // if(info_gpu == n_csrsm2_info_per_gpu - 1 && (i_gpu + 1) < gpus[g].n_lsc_gpu && i_gpu != 0) {
+				// 	checkCudaErrors(cudaStreamSynchronize(gpus[g].h_array_stream[s_gpu]));
+                //     for (int j = 0; j < n_csrsm2_info_per_gpu; j++) {
+                //         checkCudaErrors(cusparseDestroyCsrsm2Info(gpus[g].h_array_info_L[j]));
+				// 		checkCudaErrors(cusparseCreateCsrsm2Info(&gpus[g].h_array_info_L[j]));
+                // 	}
+				// 	// if(SYMMETRIC_SYSTEM == false) {
+				// 		for (int j = 0; j < n_csrsm2_info_per_gpu; j++) {
+                //         checkCudaErrors(cusparseDestroyCsrsm2Info(gpus[g].h_array_info_U[j]));
+                //         checkCudaErrors(cusparseCreateCsrsm2Info(&gpus[g].h_array_info_U[j]));
+                //     }
+				// 	// }
+                // }
 				POP_RANGE // Destroy CSRSM2 and SpMMobjects
                 POP_RANGE // LSC
             } // LSC loop
