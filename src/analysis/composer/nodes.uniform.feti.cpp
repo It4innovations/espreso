@@ -69,7 +69,6 @@ void fillDecomposition(UniformNodesFETIPattern *pattern, int dofs, DOFsDecomposi
 	decomposition.dmap = new serializededata<esint, DIndex>(
 			tarray<esint>(info::mesh->nodes->domains->boundarytarray()),
 			tarray<DIndex>(info::mesh->nodes->domains->datatarray().distribution(), 1));
-	std::vector<std::vector<esint> > dindex(info::mesh->domains->size);
 
 	// order: inner, lambdas, dirichlet
 	{ // go through the rest dofs
@@ -282,18 +281,11 @@ void buildPattern(UniformNodesFETIPattern *pattern, int dofs, DOFsDecomposition 
 
 static void dirichlet(UniformNodesFETIPattern *pattern, std::map<std::string, ECFExpression> &settings, int dofs, DOFsDecomposition &decomposition)
 {
-	size_t size = 0;
+	pattern->dirichletInfo.resize(info::mesh->boundaryRegions.size());
 	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (settings.find(region->name) != settings.end()) {
-			size += region->nodes->datatarray().size();
-			pattern->dirichletInfo.dirichlet = true;
-		}
-	}
-
-	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
-		if (pattern->dirichletInfo.dirichlet) {
+			pattern->dirichletInfo[r].dirichlet = true;
 			for (auto n = region->nodes->datatarray().cbegin(); n != region->nodes->datatarray().cend(); ++n) {
 				for (int d = 0; d < dofs; ++d) {
 					decomposition.fixedDOFs.push_back(*n * dofs + d);
@@ -301,12 +293,12 @@ static void dirichlet(UniformNodesFETIPattern *pattern, std::map<std::string, EC
 			}
 		}
 	}
-	pattern->dirichletInfo.size = dofs * info::mesh->nodes->uniqInfo.offset;
-	pattern->dirichletInfo.f = decomposition.fixedDOFs; // use the first region to store indices permutation;
+
+	pattern->dirichletInfo[0].f = decomposition.fixedDOFs; // use the first region to store indices permutation;
 	utils::sortAndRemoveDuplicates(decomposition.fixedDOFs);
-	pattern->dirichletInfo.indices = decomposition.fixedDOFs;
-	for (size_t i = 0; i < pattern->dirichletInfo.f.size(); ++i) {
-		pattern->dirichletInfo.f[i] = std::lower_bound(decomposition.fixedDOFs.begin(), decomposition.fixedDOFs.end(), pattern->dirichletInfo.f[i]) - decomposition.fixedDOFs.begin();
+	pattern->dirichletInfo[0].indices = decomposition.fixedDOFs;
+	for (size_t i = 0; i < pattern->dirichletInfo[0].f.size(); ++i) {
+		pattern->dirichletInfo[0].f[i] = std::lower_bound(decomposition.fixedDOFs.begin(), decomposition.fixedDOFs.end(), pattern->dirichletInfo[0].f[i]) - decomposition.fixedDOFs.begin();
 	}
 }
 

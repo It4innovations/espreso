@@ -37,9 +37,9 @@ struct UniformNodesFETIPattern {
 	template<typename T>
 	void fill(Vector_Distributed<Vector_Sparse, T> &v)
 	{
-		v.cluster.resize(dirichletInfo.size, dirichletInfo.indices.size());
-		for (size_t i = 0; i < dirichletInfo.indices.size(); ++i) {
-			v.cluster.indices[i] = dirichletInfo.indices[i];
+		v.cluster.resize(dirichletInfo[0].size, dirichletInfo[0].indices.size());
+		for (size_t i = 0; i < dirichletInfo[0].indices.size(); ++i) {
+			v.cluster.indices[i] = dirichletInfo[0].indices[i];
 		}
 	}
 
@@ -125,11 +125,11 @@ struct UniformNodesFETIPattern {
 		v->mapping.boundary.resize(info::mesh->boundaryRegions.size());
 		for (size_t r = 1, offset = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 			const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
-			if (dirichletInfo.dirichlet) {
+			if (dirichletInfo[r].dirichlet) {
 				v->mapping.boundary[r].resize(info::mesh->boundaryRegions[r]->nodes->threads());
 				for (size_t t = 0; t < v->mapping.boundary[r].size(); ++t) {
 					v->mapping.boundary[r][t].data = v->cluster.vals;
-					v->mapping.boundary[r][t].position = dirichletInfo.f.data() + offset;
+					v->mapping.boundary[r][t].position = dirichletInfo[0].f.data() + offset;
 					offset += region->nodes->datatarray().size(t);
 				}
 			}
@@ -141,7 +141,7 @@ struct UniformNodesFETIPattern {
 	int dofs;
 	std::vector<RegionInfo> elements;
 	std::vector<std::vector<RegionInfo> > bregion; // RegionInfo per domain per boundary region
-	RegionInfo dirichletInfo;
+	std::vector<RegionInfo> dirichletInfo;
 };
 
 }

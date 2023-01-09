@@ -195,13 +195,11 @@ void buildPattern(UniformNodesDistributedPattern *pattern, int dofs, DOFsDistrib
 
 static void dirichlet(UniformNodesDistributedPattern *pattern, std::map<std::string, ECFExpression> &settings, int dofs)
 {
-	size_t size = 0;
 	std::vector<esint> indices;
 	pattern->bregion.resize(info::mesh->boundaryRegions.size());
 	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (settings.find(region->name) != settings.end()) {
-			size += region->nodes->datatarray().size();
 			pattern->bregion[r].dirichlet = true;
 		}
 	}
