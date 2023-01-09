@@ -29,7 +29,7 @@ namespace espreso {
 template <typename T>
 static void _print(const char *name, const IterativeSolverInfo &info, const step::Step *step, const Vector_Dual<T> &v)
 {
-	if (info::ecf->output.print_matrices) {
+	if (info::ecf->output.print_matrices > 1) {
 		eslog::storedata(" STORE: feti/cpg/{%s%s}\n", name, std::to_string(info.iterations).c_str());
 		math::store(v, utils::filename(utils::debugDirectory(*step) + "/feti/cpg", std::string(name) + std::to_string(info.iterations)).c_str());
 	}
