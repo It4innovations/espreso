@@ -154,7 +154,6 @@ void TotalFETIImplicit<T>::update()
 		math::solve(this->Kplus[d], this->feti->f->domains[d], this->KplusBtx[d], math::VectorSparsity::SPARSE_RHS);
 	}
 	applyB(this->feti, this->KplusBtx, this->d);
-	this->d.synchronize();
 	this->d.add(T{-1}, this->feti->equalityConstraints->c);
 	eslog::checkpointln("FETI: COMPUTE DUAL RHS [d]");
 
