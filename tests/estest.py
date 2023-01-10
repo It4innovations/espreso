@@ -114,17 +114,6 @@ class ESPRESOTest:
                 compare(value1.strip(), value2.strip())
 
     @staticmethod
-    def create_emr(preset):
-        emr = os.path.join(ESPRESOTest.path, "results", "last", ESPRESOTest.ecf.replace(".ecf", ".emr"))
-        if not os.path.isfile(emr):
-            ESPRESOTest.raise_error("Missing monitoring report '{0}'.".format(emr))
-
-        try:
-            shutil.copyfile(emr, os.path.join(ESPRESOTest.path, preset))
-        except OSError:
-            ESPRESOTest.raise_error("Cannot copy emr file")
-
-    @staticmethod
     def compare_mesh(preset, output):
         def read_log(log):
             mesh = dict();
