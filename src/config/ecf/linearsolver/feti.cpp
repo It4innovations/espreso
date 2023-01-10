@@ -40,7 +40,7 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdescription({ "Max iterations" })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
-	max_stagnation = 10;
+	max_stagnation = 50;
 	REGISTER(max_stagnation, ECFMetaData()
 			.setdescription({ "Max stagnation steps." })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
