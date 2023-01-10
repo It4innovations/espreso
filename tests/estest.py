@@ -9,7 +9,11 @@ class ESPRESOTest:
 
     mpirun = [ "mpirun", "-n" ]
     env["OMPI_MCA_rmaps_base_oversubscribe"] = "1"
-    env["OMPI_MCA_rmaps_base_mapping_policy"] = "numa"
+    env["MKL_NUM_THREADS"] = "1"
+    env["OMP_NUM_THREADS"] = "1"
+    env["SOLVER_NUM_THREADS"] = "1"
+    env["PAR_NUM_THREADS"] = "1"
+    env["OMPI_MCA_rmaps_base_mapping_policy"] = "core"
 
     path = ""
     ecf = "espreso.ecf"
@@ -33,7 +37,7 @@ class ESPRESOTest:
         ESPRESOTest.env["OMP_NUM_THREADS"] = str(threads)
         ESPRESOTest.env["SOLVER_NUM_THREADS"] = str(threads)
         ESPRESOTest.env["PAR_NUM_THREADS"] = str(threads)
-        ESPRESOTest.env["OMPI_MCA_rmaps_base_mapping_policy"] = "numa:pe=" + str(threads)
+        ESPRESOTest.env["OMPI_MCA_rmaps_base_mapping_policy"] = "slot:pe=" + str(threads)
 
     @staticmethod
     def raise_error(error, output=""):
