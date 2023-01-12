@@ -7,6 +7,8 @@
 #include "analysis/analysis/heat.steadystate.nonlinear.h"
 #include "analysis/analysis/acoustic.real.linear.h"
 #include "analysis/analysis/acoustic.complex.linear.h"
+#include "analysis/analysis/elasticity.steadystate.linear.h"
+
 #include "analysis/composer/nodes.uniform.feti.h"
 #include "feti/feti.h"
 #include "basis/utilities/sysutils.h"
@@ -216,6 +218,51 @@ template <> struct FETISystem<HeatSteadyStateNonLinear>: public FETISystemData<d
 	void update(step::Step &step)
 	{
 
+	}
+};
+
+template <> struct FETISystem<ElasticitySteadyStateLinear>: public FETISystemData<double, double> {
+
+	FETISystem(ElasticitySteadyStateLinear *analysis): FETISystemData(analysis->configuration.feti)
+	{
+//		assembler.K.type = solver.K.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+//		assembler.K.shape = solver.K.shape = Matrix_Shape::UPPER;
+//		for (auto mat = analysis->settings.material_set.begin(); mat != analysis->settings.material_set.end(); ++mat) {
+//			if (analysis->settings.materials.find(mat->second)->second.thermal_conductivity.model == ThermalConductivityConfiguration::MODEL::ANISOTROPIC) {
+//				assembler.K.type = solver.K.type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
+//				assembler.K.shape = solver.K.shape = Matrix_Shape::FULL;
+//			}
+//		}
+//
+//		_fillDirect(this, analysis->configuration.temperature, 1);
+	}
+
+	void set(step::Step &step)
+	{
+//		eslog::startln("FETI: SETTING LINEAR SYSTEM", "FETI[SET]");
+//		setEqualityConstraints(this, step);
+//		eslog::checkpointln("FETI: SET B1");
+//		setHeatTransferKernel(this, step);
+//		eslog::checkpointln("FETI: SET KERNELS");
+//		eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
+//		feti.set(step, solver.K, regularization, equalityConstraints);
+//		eslog::endln("FETI: LINEAR SYSTEM SET");
+	}
+
+	void update(step::Step &step)
+	{
+//		eslog::startln("FETI: UPDATING LINEAR SYSTEM", "FETI[UPDATE]");
+//		evaluateEqualityConstraints(this, step);
+//		eslog::checkpointln("FETI: UPDATE B1");
+//		evaluateHeatTransferKernel(this, step);
+//		eslog::checkpointln("FETI: UPDATE KERNELS");
+//		feti.update(step, solver.K, solver.f);
+//		if (info::ecf->output.print_matrices) {
+//			eslog::storedata(" STORE: system/{K, f}\n");
+//			math::store(solver.K, utils::filename(utils::debugDirectory(step) + "/system", "K").c_str());
+//			math::store(solver.f, utils::filename(utils::debugDirectory(step) + "/system", "f").c_str());
+//		}
+//		eslog::endln("FETI: LINEAR SYSTEM UPDATED");
 	}
 };
 

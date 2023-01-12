@@ -15,6 +15,7 @@ namespace espreso {
 
 struct ECFExpression;
 struct ECFExpressionVector;
+struct ECFExpressionOptionalVector;
 class ConvectionConfiguration;
 struct ImpedanceConfiguration;
 struct PointSourceConfiguration;
@@ -34,9 +35,10 @@ protected:
 	void fill();
 	void results();
 
-	void printVolume(const ParametersIntegration &integration);
-	void printParameterStats(const char* name, ParameterData &parameter);
-	void printParameterStats(const char* name, NamedData *data);
+	void printElementVolume(const ElementParameter<egps> &weight, const ElementParameter<egps> &jacobian);
+	void printBoundarySurface(const BoundaryParameter<egps> &weight, const BoundaryParameter<egps> &jacobian);
+	void printParameterStats(ParameterData &parameter);
+	void printParameterStats(NamedData *data);
 
 	void printMaterials(const std::map<std::string, std::string> &settings);
 	template<typename Ttype>
@@ -56,7 +58,8 @@ protected:
 	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ImpedanceConfiguration> &settings, ExternalBoundaryValue &impedance);
 	bool examineBoundaryParameter(const std::string &name, std::map<std::string, PointSourceConfiguration> &settings, ExternalBoundaryValue &point_source);
 
-	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings, ExternalBoundaryValue &externalValue, int dimension);
+	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings, ExternalBoundaryValue &value, int dimension);
+	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionOptionalVector> &settings, ExternalBoundaryValue &value, int dimension);
 
 	int version;
 };

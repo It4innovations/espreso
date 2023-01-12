@@ -61,8 +61,6 @@ protected:
 	void init();
 };
 
-struct ECFExpressionOptionalVector;
-
 struct ECFExpressionVector: public ECFDescription {
 	ECFExpression data[3];
 	ECFExpression &x = data[0], &y = data[1], &z = data[2];

@@ -200,7 +200,7 @@ static void dirichlet(UniformNodesDistributedPattern *pattern, std::map<std::str
 	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (settings.find(region->name) != settings.end()) {
-			pattern->bregion[r].dirichlet = true;
+			pattern->bregion[r].dirichlet = 1;
 		}
 	}
 
@@ -222,7 +222,47 @@ static void dirichlet(UniformNodesDistributedPattern *pattern, std::map<std::str
 	}
 }
 
+static void dirichlet(UniformNodesDistributedPattern *pattern, std::map<std::string, ECFExpressionOptionalVector> &settings, int dofs)
+{
+	std::vector<esint> indices;
+	pattern->bregion.resize(info::mesh->boundaryRegions.size());
+	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
+		auto expr = settings.find(region->name);
+		if (expr != settings.end()) {
+			for (int d = 0; d < dofs; ++d) {
+				if (expr->second.data[d].isset) {
+					pattern->bregion[r].dirichlet += 1 << d;
+				}
+			}
+		}
+	}
+
+	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
+		for (auto n = region->nodes->datatarray().cbegin(); n != region->nodes->datatarray().cend(); ++n) {
+			for (int d = 0; d < dofs; ++d) {
+				if (pattern->bregion[r].dirichlet & (1 << d)) {
+					indices.push_back(*n * dofs + d);
+				}
+			}
+		}
+	}
+	pattern->bregion[0].b = indices; // use the first region to store indices permutation;
+	utils::sortAndRemoveDuplicates(indices);
+	pattern->bregion[0].indices = indices;
+	for (size_t i = 0; i < pattern->bregion[0].b.size(); ++i) {
+		pattern->bregion[0].b[i] = std::lower_bound(indices.begin(), indices.end(), pattern->bregion[0].b[i]) - indices.begin();
+	}
+}
+
 void UniformNodesDistributedPattern::set(std::map<std::string, ECFExpression> &settings, int dofs, DOFsDistribution &distribution)
+{
+	dirichlet(this, settings, dofs);
+	buildPattern(this, dofs, distribution);
+}
+
+void UniformNodesDistributedPattern::set(std::map<std::string, ECFExpressionOptionalVector> &settings, int dofs, DOFsDistribution &distribution)
 {
 	dirichlet(this, settings, dofs);
 	buildPattern(this, dofs, distribution);

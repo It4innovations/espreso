@@ -5,6 +5,7 @@
 #include "analysis/acoustic.complex.linear.h"
 #include "analysis/heat.steadystate.linear.h"
 #include "analysis/heat.steadystate.nonlinear.h"
+#include "analysis/elasticity.steadystate.linear.h"
 
 #include "basis/expression/expression.h"
 #include "basis/expression/variable.h"
@@ -44,14 +45,24 @@ void Looper::run()
 		break;
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D:
 		switch (info::ecf->heat_transfer_2d.load_steps_settings.at(1).mode) {
-		case LoadStepSolverConfiguration::MODE::LINEAR : analysis = new HeatSteadyStateLinear(info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(1)); break;
-		case LoadStepSolverConfiguration::MODE::NONLINEAR : analysis = new HeatSteadyStateNonLinear(info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(1)); break;
+		case LoadStepSolverConfiguration::MODE::LINEAR: analysis = new HeatSteadyStateLinear(info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(1)); break;
+		case LoadStepSolverConfiguration::MODE::NONLINEAR: analysis = new HeatSteadyStateNonLinear(info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(1)); break;
 		}
 		break;
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D:
 		switch (info::ecf->heat_transfer_3d.load_steps_settings.at(1).mode) {
-		case LoadStepSolverConfiguration::MODE::LINEAR : analysis = new HeatSteadyStateLinear(info::ecf->heat_transfer_3d, info::ecf->heat_transfer_3d.load_steps_settings.at(1)); break;
-		case LoadStepSolverConfiguration::MODE::NONLINEAR : analysis = new HeatSteadyStateNonLinear(info::ecf->heat_transfer_3d, info::ecf->heat_transfer_3d.load_steps_settings.at(1)); break;
+		case LoadStepSolverConfiguration::MODE::LINEAR: analysis = new HeatSteadyStateLinear(info::ecf->heat_transfer_3d, info::ecf->heat_transfer_3d.load_steps_settings.at(1)); break;
+		case LoadStepSolverConfiguration::MODE::NONLINEAR: analysis = new HeatSteadyStateNonLinear(info::ecf->heat_transfer_3d, info::ecf->heat_transfer_3d.load_steps_settings.at(1)); break;
+		}
+		break;
+	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D:
+		switch (info::ecf->structural_mechanics_2d.load_steps_settings.at(1).mode) {
+		case LoadStepSolverConfiguration::MODE::LINEAR: analysis = new ElasticitySteadyStateLinear(info::ecf->structural_mechanics_2d, info::ecf->structural_mechanics_2d.load_steps_settings.at(1)); break;
+		}
+		break;
+	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
+		switch (info::ecf->structural_mechanics_3d.load_steps_settings.at(1).mode) {
+		case LoadStepSolverConfiguration::MODE::LINEAR: analysis = new ElasticitySteadyStateLinear(info::ecf->structural_mechanics_3d, info::ecf->structural_mechanics_3d.load_steps_settings.at(1)); break;
 		}
 		break;
 	}

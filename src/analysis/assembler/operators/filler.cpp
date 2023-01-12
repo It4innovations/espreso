@@ -4,6 +4,7 @@
 #include "analysis/assembler/operator.hpp"
 #include "analysis/assembler/module/acoustic.h"
 #include "analysis/assembler/module/heattransfer.h"
+#include "analysis/assembler/module/structuralmechanics.h"
 #include "analysis/scheme/steadystate.h"
 #include "analysis/scheme/harmonic.h"
 
@@ -46,7 +47,7 @@ void addFiller(HeatTransfer &module, SteadyState &scheme)
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (module.temperature.node.isSet(r)) {
 			for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-				module.boundaryFiller[r][t].emplace_back(instantiate<HeatTransfer::NGP, 1, VectorSetter>(r, t, module.controller, module.temperature.node.regions[r], scheme.dirichlet->mapping.boundary[r][t].data, scheme.dirichlet->mapping.boundary[r][t].position));
+				module.boundaryFiller[r][t].emplace_back(instantiate<HeatTransfer::NGP, 1, VectorSetter>(r, t, module.controller, module.temperature.node.regions[r], scheme.dirichlet->mapping.boundary[r][t].data, scheme.dirichlet->mapping.boundary[r][t].position, scheme.dirichlet->mapping.boundary[r][t].filter));
 				module.boundaryFiller[r][t].back()->isconst = false;
 			}
 		}
@@ -93,16 +94,62 @@ void addFiller(Acoustic &module, Harmonic &scheme)
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (module.pressure.node.isSet(r)) {
 			for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-				module.boundaryFiller[r][t].emplace_back(instantiate<Acoustic::NGP, 1, VectorSetter>(r, t, module.controller, module.pressure.node.regions[r], scheme.re.dirichlet->mapping.boundary[r][t].data, scheme.re.dirichlet->mapping.boundary[r][t].position));
+				module.boundaryFiller[r][t].emplace_back(instantiate<Acoustic::NGP, 1, VectorSetter>(r, t, module.controller, module.pressure.node.regions[r], scheme.re.dirichlet->mapping.boundary[r][t].data, scheme.re.dirichlet->mapping.boundary[r][t].position, scheme.re.dirichlet->mapping.boundary[r][t].filter));
 				module.boundaryFiller[r][t].back()->isconst = false;
 			}
 
 		if (module.pointSource.node.isSet(r)) {
 			for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-				module.boundaryFiller[r][t].emplace_back(instantiate<Acoustic::NGP, 1, VectorSetter>(r, t, module.controller, module.pointSource.node.regions[r], scheme.re.dirichlet->mapping.boundary[r][t].data, scheme.re.dirichlet->mapping.boundary[r][t].position));
+				module.boundaryFiller[r][t].emplace_back(instantiate<Acoustic::NGP, 1, VectorSetter>(r, t, module.controller, module.pointSource.node.regions[r], scheme.re.dirichlet->mapping.boundary[r][t].data, scheme.re.dirichlet->mapping.boundary[r][t].position, scheme.re.dirichlet->mapping.boundary[r][t].filter));
 				module.boundaryFiller[r][t].back()->isconst = false;
 			}
 		}
+		}
+	}
+}
+
+void addFiller(StructuralMechanics &module, SteadyState &scheme)
+{
+	if (info::mesh->dimension == 2) {
+		_add<2>(module, scheme.K, module.elements.stiffness);
+	}
+	if (info::mesh->dimension == 3) {
+		_add<3>(module, scheme.K, module.elements.stiffness);
+	}
+
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (info::mesh->boundaryRegions[r]->dimension && module.elements.boundary.rhs.isSet(r)) {
+			for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
+				switch (info::mesh->dimension) {
+				case 2:
+					module.boundaryFiller[r][interval].emplace_back(instantiate<StructuralMechanics::NGP, 2, VectorFiller>(r, interval, module.controller,
+							module.elements.boundary.rhs.regions[r], scheme.f->mapping.boundary[r][interval].data, scheme.f->mapping.boundary[r][interval].position));
+					break;
+				case 3:
+					module.boundaryFiller[r][interval].emplace_back(instantiate<StructuralMechanics::NGP, 3, VectorFiller>(r, interval, module.controller,
+							module.elements.boundary.rhs.regions[r], scheme.f->mapping.boundary[r][interval].data, scheme.f->mapping.boundary[r][interval].position));
+					break;
+				}
+			}
+		}
+	}
+
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (module.displacement.node.isSet(r)) {
+			for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+				switch (info::mesh->dimension) {
+				case 2:
+					module.boundaryFiller[r][t].emplace_back(instantiate<StructuralMechanics::NGP, 2, VectorSetter>(r, t, module.controller,
+							module.displacement.node.regions[r], scheme.dirichlet->mapping.boundary[r][t].data, scheme.dirichlet->mapping.boundary[r][t].position, scheme.dirichlet->mapping.boundary[r][t].filter));
+					break;
+				case 3:
+					module.boundaryFiller[r][t].emplace_back(instantiate<StructuralMechanics::NGP, 3, VectorSetter>(r, t, module.controller,
+							module.displacement.node.regions[r], scheme.dirichlet->mapping.boundary[r][t].data, scheme.dirichlet->mapping.boundary[r][t].position, scheme.dirichlet->mapping.boundary[r][t].filter));
+					break;
+				}
+
+				module.boundaryFiller[r][t].back()->isconst = false;
+			}
 		}
 	}
 }

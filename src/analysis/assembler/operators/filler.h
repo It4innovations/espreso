@@ -102,7 +102,7 @@ struct VectorFiller: public ActionOperator {
 
 	void move(int n)
 	{
-		rhs += n * rhs.inc;
+		rhs += n;
 		position += n * nodes * dimension;
 	}
 
@@ -116,11 +116,12 @@ struct VectorFiller: public ActionOperator {
 
 template<size_t nodes, size_t gps, size_t dimension>
 struct VectorSetter: public ActionOperator {
-	VectorSetter(int interval, const ParameterData &rhs, double *global, const esint *position)
+	VectorSetter(int interval, const ParameterData &rhs, double *global, const esint *position, int filter)
 	: rhs(rhs, interval),
-	  global(global), position(position) {}
+	  global(global), position(position), filter(filter) {}
 
 	InputParameterIterator rhs;
+	int filter;
 	double *global;
 	const esint *position;
 
@@ -131,14 +132,24 @@ struct VectorSetter: public ActionOperator {
 
 	void move(int n)
 	{
-		rhs += n * rhs.inc;
-		position += n * nodes * dimension;
+		rhs += n;
+		int dim = 0;
+		for (size_t d = 0; d < dimension; ++d) {
+			if (filter & (1 << d)) {
+				++dim;
+			}
+		}
+		position += n * nodes * dim;
 	}
 
 	void operator()()
 	{
-		for (size_t r = 0; r < nodes * dimension; ++r) {
-			global[*position++] = rhs.data[r];
+		for (size_t d = 0; d < dimension; ++d) {
+			for (size_t r = 0; r < nodes; ++r) {
+				if (filter & (1 << d)) {
+					global[*position++] = rhs.data[r];
+				}
+			}
 		}
 	}
 };

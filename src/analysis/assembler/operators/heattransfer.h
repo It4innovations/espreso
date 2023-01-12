@@ -8,8 +8,8 @@
 
 namespace espreso {
 
-struct Stiffness: public ActionOperator {
-	Stiffness(
+struct HeatStiffness: public ActionOperator {
+	HeatStiffness(
 			int interval,
 			const ParameterData &dND,
 			const ParameterData &weight,
@@ -44,7 +44,7 @@ struct Stiffness: public ActionOperator {
 		stiffness += n;
 	}
 
-	Stiffness& operator+=(const size_t rhs)
+	HeatStiffness& operator+=(const size_t rhs)
 	{
 		dND += rhs; determinant += rhs; conductivity += rhs; xi += rhs; thickness += rhs;
 		stiffness += rhs;
@@ -53,12 +53,11 @@ struct Stiffness: public ActionOperator {
 };
 
 template<size_t nodes, size_t gps>
-struct Stiffness2DHeatIsotropic: public Stiffness {
-	using Stiffness::Stiffness;
+struct Stiffness2DHeatIsotropic: public HeatStiffness {
+	using HeatStiffness::HeatStiffness;
 
 	void operator()()
 	{
-		std::fill(stiffness.data, stiffness.data + stiffness.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			ADDMN2M2N<nodes>(thickness[gpindex] * xi[gpindex] * determinant[gpindex] * weight[gpindex] * conductivity[gpindex], dND.data + 2 * nodes * gpindex, stiffness.data);
 		}
@@ -66,12 +65,11 @@ struct Stiffness2DHeatIsotropic: public Stiffness {
 };
 
 template<size_t nodes, size_t gps>
-struct Stiffness2DHeat: public Stiffness {
-	using Stiffness::Stiffness;
+struct Stiffness2DHeat: public HeatStiffness {
+	using HeatStiffness::HeatStiffness;
 
 	void operator()()
 	{
-		std::fill(stiffness.data, stiffness.data + stiffness.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			ADDMN2M22M2N<nodes>(thickness[gpindex] * xi[gpindex] * determinant[gpindex] * weight[gpindex], conductivity.data + 4 * gpindex, dND.data + 2 * nodes * gpindex, stiffness.data);
 		}
@@ -79,12 +77,11 @@ struct Stiffness2DHeat: public Stiffness {
 };
 
 template<size_t nodes, size_t gps>
-struct Stiffness3DHeatIsotropic: public Stiffness {
-	using Stiffness::Stiffness;
+struct Stiffness3DHeatIsotropic: public HeatStiffness {
+	using HeatStiffness::HeatStiffness;
 
 	void operator()()
 	{
-		std::fill(stiffness.data, stiffness.data + stiffness.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			ADDMN3M3N<nodes>(xi[gpindex] * determinant[gpindex] * weight[gpindex] * conductivity[gpindex], dND.data + 3 * nodes * gpindex, stiffness.data);
 		}
@@ -92,12 +89,11 @@ struct Stiffness3DHeatIsotropic: public Stiffness {
 };
 
 template<size_t nodes, size_t gps>
-struct Stiffness3DHeat: public Stiffness {
-	using Stiffness::Stiffness;
+struct Stiffness3DHeat: public HeatStiffness {
+	using HeatStiffness::HeatStiffness;
 
 	void operator()()
 	{
-		std::fill(stiffness.data, stiffness.data + stiffness.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			ADDMN3M33M3N<nodes>(xi[gpindex] * determinant[gpindex] * weight[gpindex], conductivity.data + 9 * gpindex, dND.data + 3 * nodes * gpindex, stiffness.data);
 		}
@@ -122,7 +118,6 @@ struct HeatRHS: public ActionOperator {
 
 	void operator()()
 	{
-		std::fill(rhs.data, rhs.data + rhs.inc, 0);
 		for (size_t n = 0; n < nodes; ++n) {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * heatSource.data[gpindex] * N.data[gpindex * nodes + n];
@@ -158,7 +153,6 @@ struct HeatQ: public ActionOperator {
 
 	void operator()()
 	{
-		std::fill(q.data, q.data + q.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			q.data[gpindex] += heatFlow.data[gpindex] / area;
 			q.data[gpindex] += heatFlux.data[gpindex];
@@ -203,7 +197,6 @@ struct HeatRHS2D: public ActionOperator {
 
 	void operator()()
 	{
-		std::fill(rhs.data, rhs.data + rhs.inc, 0);
 		for (size_t n = 0; n < nodes; ++n) {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * q.data[gpindex] * N.data[gpindex * nodes + n];
@@ -247,7 +240,6 @@ struct HeatRHS3D: public ActionOperator {
 
 	void operator()()
 	{
-		std::fill(rhs.data, rhs.data + rhs.inc, 0);
 		for (size_t n = 0; n < nodes; ++n) {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * q.data[gpindex] * N.data[gpindex * nodes + n];

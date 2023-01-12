@@ -34,6 +34,7 @@ struct UniformNodesDistributedPattern {
 	~UniformNodesDistributedPattern();
 
 	void set(std::map<std::string, ECFExpression> &settings, int dofs, DOFsDistribution &distribution);
+	void set(std::map<std::string, ECFExpressionOptionalVector> &settings, int dofs, DOFsDistribution &distribution);
 
 	template<typename T>
 	void fill(Vector_Distributed<Vector_Sparse, T> &v)
@@ -67,7 +68,8 @@ struct UniformNodesDistributedPattern {
 		for (size_t i = 0, offset = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 			m->mapping.elements[i].data = m->cluster.vals;
 			m->mapping.elements[i].position = elements.A.data() + offset;
-			offset += (info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin) * Mesh::edata[info::mesh->elements->eintervals[i].code].nodes * Mesh::edata[info::mesh->elements->eintervals[i].code].nodes;
+			esint esize = dofs * Mesh::edata[info::mesh->elements->eintervals[i].code].nodes;
+			offset += (info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin) * esize * esize;
 		}
 
 		m->mapping.boundary.resize(info::mesh->boundaryRegions.size());
@@ -77,7 +79,8 @@ struct UniformNodesDistributedPattern {
 				for (size_t i = 0, offset = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
 					m->mapping.boundary[r][i].data = m->cluster.vals;
 					m->mapping.boundary[r][i].position = bregion[r].A.data() + offset;
-					offset += (info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin) * Mesh::edata[info::mesh->boundaryRegions[r]->eintervals[i].code].nodes * Mesh::edata[info::mesh->boundaryRegions[r]->eintervals[i].code].nodes;
+					esint esize = dofs * Mesh::edata[info::mesh->boundaryRegions[r]->eintervals[i].code].nodes;
+					offset += (info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin) * esize * esize;
 				}
 			}
 		}
@@ -90,7 +93,8 @@ struct UniformNodesDistributedPattern {
 		for (size_t i = 0, offset = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 			v->mapping.elements[i].data = v->cluster.vals;
 			v->mapping.elements[i].position = elements.b.data() + offset;
-			offset += (info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin) * Mesh::edata[info::mesh->elements->eintervals[i].code].nodes;
+			esint esize = dofs * Mesh::edata[info::mesh->elements->eintervals[i].code].nodes;
+			offset += (info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin) * esize;
 		}
 
 		v->mapping.boundary.resize(info::mesh->boundaryRegions.size());
@@ -100,7 +104,8 @@ struct UniformNodesDistributedPattern {
 				for (size_t i = 0, offset = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
 					v->mapping.boundary[r][i].data = v->cluster.vals;
 					v->mapping.boundary[r][i].position = bregion[r].b.data() + offset;
-					offset += (info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin) * Mesh::edata[info::mesh->boundaryRegions[r]->eintervals[i].code].nodes;
+					esint esize = dofs * Mesh::edata[info::mesh->boundaryRegions[r]->eintervals[i].code].nodes;
+					offset += (info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin) * esize;
 				}
 			}
 		}
@@ -113,11 +118,18 @@ struct UniformNodesDistributedPattern {
 		for (size_t r = 1, offset = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 			const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 			if (bregion[r].dirichlet) {
+				int nsize = 0;
+				for (int d = 0; d < dofs; ++d) {
+					if (bregion[r].dirichlet & (1 << d)) {
+						++nsize;
+					}
+				}
 				v->mapping.boundary[r].resize(info::mesh->boundaryRegions[r]->nodes->threads());
 				for (size_t t = 0; t < v->mapping.boundary[r].size(); ++t) {
+					v->mapping.boundary[r][t].filter = bregion[r].dirichlet;
 					v->mapping.boundary[r][t].data = v->cluster.vals;
 					v->mapping.boundary[r][t].position = bregion[0].b.data() + offset;
-					offset += region->nodes->datatarray().size(t);
+					offset += region->nodes->datatarray().size(t) * nsize;
 				}
 			}
 		}

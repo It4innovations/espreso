@@ -9,12 +9,10 @@
 
 namespace espreso {
 
-void heatStiffness(HeatTransfer &module)
+void stiffness(HeatTransfer &module)
 {
 	if (info::mesh->dimension == 2) {
 		module.controller.addInput(module.elements.stiffness, module.thickness.gp);
-	} else {
-		module.thickness.gp.resize();
 	}
 	module.controller.addInput(module.elements.stiffness, module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant, module.material.conductivity, module.material.conductivityIsotropic, module.gradient.xi);
 	module.controller.prepare(module.elements.stiffness);
@@ -55,7 +53,7 @@ void heatStiffness(HeatTransfer &module)
 	}
 }
 
-void heatRHS(HeatTransfer &module)
+void RHS(HeatTransfer &module)
 {
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
 		module.controller.addInput(module.elements.rhs, module.heatSource.gp, module.integration.N, module.integration.weight, module.integration.jacobiDeterminant);

@@ -7,6 +7,7 @@
 #include "basis/expression/variable.h"
 #include "basis/utilities/parser.h"
 #include "basis/utilities/utils.h"
+#include "config/holders/expression.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/eslog.hpp"
@@ -266,40 +267,24 @@ void Assembler::results()
 }
 
 
-void Assembler::printVolume(const ParametersIntegration &integration)
+void Assembler::printElementVolume(const ElementParameter<egps> &weight, const ElementParameter<egps> &jacobian)
 {
-	std::vector<double> volume(info::mesh->elementsRegions.size() + info::mesh->boundaryRegions.size());
+	std::vector<double> volume(info::mesh->elementsRegions.size());
 	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
 		for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-			size_t gps = integration.weight.increment(i);
+			size_t gps = weight.increment(i);
 			if (info::mesh->elements->eintervals[i].region == (esint)r || (info::mesh->elements->eintervals[i].region == 0 && r == info::mesh->elementsRegions.size() - 1)) {
-				auto det = (integration.jacobiDeterminant.data->begin() + i)->data();
-				auto weight = (integration.weight.data->begin() + i)->data();
+				auto det = (jacobian.data->begin() + i)->data();
+				auto wit = (weight.data->begin() + i)->data();
 				for (esint e = info::mesh->elements->eintervals[i].begin; e < info::mesh->elements->eintervals[i].end; ++e) {
 					for (size_t gp = 0; gp < gps; ++gp, ++det) {
-						volume[0] += *det * weight[gp];
-						volume[r] += *det * weight[gp];
+						volume[0] += *det * wit[gp];
+						volume[r] += *det * wit[gp];
 					}
 				}
 			}
 		}
 	}
-
-	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-		if (info::mesh->boundaryRegions[r]->dimension) {
-			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-				size_t gps = integration.boundary.weight.regions[r].increment(i);
-				auto det = (integration.boundary.jacobian.regions[r].data->begin() + i)->begin();
-				auto weight = (integration.boundary.weight.regions[r].data->begin() + i)->begin();
-				for (esint e = info::mesh->boundaryRegions[r]->eintervals[i].begin; e < info::mesh->boundaryRegions[r]->eintervals[i].end; ++e) {
-					for (size_t gp = 0; gp < gps; ++gp, ++det) {
-						volume[info::mesh->elementsRegions.size() + r] += *det * weight[gp];
-					}
-				}
-			}
-		}
-	}
-
 	Communication::allReduce(volume, Communication::OP::SUM);
 
 	eslog::info("  ELEMENT REGION VOLUME                                                                        \n");
@@ -307,18 +292,38 @@ void Assembler::printVolume(const ParametersIntegration &integration)
 	for (size_t r = 0; r < info::mesh->elementsRegions.size(); ++r) {
 		eslog::info("     %30s :                                            %e   \n", info::mesh->elementsRegions[r]->name.c_str(), volume[r]);
 	}
+}
+
+void Assembler::printBoundarySurface(const BoundaryParameter<egps> &weight, const BoundaryParameter<egps> &jacobian)
+{
+	std::vector<double> volume(info::mesh->boundaryRegions.size());
+	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (info::mesh->boundaryRegions[r]->dimension) {
+			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+				size_t gps = weight.regions[r].increment(i);
+				auto det = (jacobian.regions[r].data->begin() + i)->begin();
+				auto wit = (weight.regions[r].data->begin() + i)->begin();
+				for (esint e = info::mesh->boundaryRegions[r]->eintervals[i].begin; e < info::mesh->boundaryRegions[r]->eintervals[i].end; ++e) {
+					for (size_t gp = 0; gp < gps; ++gp, ++det) {
+						volume[r] += *det * wit[gp];
+					}
+				}
+			}
+		}
+	}
+	Communication::allReduce(volume, Communication::OP::SUM);
+
 	eslog::info("\n  BOUDNARY REGION SURFACE                                                                      \n");
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - \n");
 	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
-			eslog::info("     %30s :                                            %e   \n", info::mesh->boundaryRegions[r]->name.c_str(), volume[info::mesh->elementsRegions.size() + r]);
-			info::mesh->boundaryRegions[r]->area = volume[info::mesh->elementsRegions.size() + r];
+			eslog::info("     %30s :                                            %e   \n", info::mesh->boundaryRegions[r]->name.c_str(), volume[r]);
+			info::mesh->boundaryRegions[r]->area = volume[r];
 		}
 	}
-	eslog::info(" ============================================================================================= \n");
 }
 
-void Assembler::printParameterStats(const char* name, ParameterData &parameter)
+void Assembler::printParameterStats(ParameterData &parameter)
 {
 	printf("parameter [isconst/update]:  ");
 	for (size_t i = 0; i < parameter.update.size(); ++i) {
@@ -328,12 +333,12 @@ void Assembler::printParameterStats(const char* name, ParameterData &parameter)
 			printf(" [-/-]");
 		}
 	}
-	printf(" %s\n", name);
+	printf(" %s\n", parameter.name.c_str());
 }
 
-void Assembler::printParameterStats(const char* name, NamedData *data)
+void Assembler::printParameterStats(NamedData *data)
 {
-	printf("nameddata [isconst/update]:   [ /%c] %s\n", data->updated ? 'U' : ' ', name);
+	printf("nameddata [isconst/update]:   [ /%c] %s\n", data->updated ? 'U' : ' ', data->name.c_str());
 }
 
 void Assembler::printMaterials(const std::map<std::string, std::string> &settings)
@@ -413,9 +418,14 @@ bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::
 	return true;
 }
 
-bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings, ExternalBoundaryValue &externalValue, int dimension)
+bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings, ExternalBoundaryValue &value, int dimension)
 {
-	return examineBoundaryParameter<ECFExpressionVector>(name, settings, externalValue, dimension, [&] (ECFExpressionVector &expr) { return &expr.data[dimension]; });
+	return examineBoundaryParameter<ECFExpressionVector>(name, settings, value, dimension, [&] (ECFExpressionVector &expr) { return &expr.data[dimension]; });
+}
+
+bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionOptionalVector> &settings, ExternalBoundaryValue &value, int dimension)
+{
+	return examineBoundaryParameter<ECFExpressionOptionalVector>(name, settings, value, dimension, [&] (ECFExpressionOptionalVector &expr) { return &expr.data[dimension]; });
 }
 
 

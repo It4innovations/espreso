@@ -5,6 +5,7 @@
 #include "analysis/assembler/parameter.h"
 #include "analysis/assembler/module/heattransfer.h"
 #include "analysis/assembler/module/acoustic.h"
+#include "analysis/assembler/module/structuralmechanics.h"
 #include "basis/evaluator/evaluator.h"
 #include "basis/expression/variable.h"
 #include "basis/utilities/parser.h"
@@ -58,6 +59,16 @@ void fromExpression(Acoustic &module, ParameterData &parameter, ExternalElementG
 	_fromExpression<Acoustic, ExpressionsToGPs>(module, parameter, value);
 }
 
+void fromExpression(StructuralMechanics &module, ParameterData &parameter, ExternalElementNodesValue &value)
+{
+	_fromExpression<StructuralMechanics, ExpressionsToNodes>(module, parameter, value);
+}
+
+void fromExpression(StructuralMechanics &module, ParameterData &parameter, ExternalElementGPsValue &value)
+{
+	_fromExpression<StructuralMechanics, ExpressionsToGPs>(module, parameter, value);
+}
+
 template <typename Module>
 void _fromExpression(Module &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values)
 {
@@ -94,6 +105,11 @@ void fromExpression(HeatTransfer &module, BoundaryParameterPack &parameter, Exte
 void fromExpression(Acoustic &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values)
 {
 	_fromExpression<Acoustic>(module, parameter, values);
+}
+
+void fromExpression(StructuralMechanics &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values)
+{
+	_fromExpression<StructuralMechanics>(module, parameter, values);
 }
 
 }

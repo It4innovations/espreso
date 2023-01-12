@@ -352,6 +352,94 @@ static inline void ADDMN3M33M3N(const double &sumscale, const double * __restric
 	}
 }
 
+// B * C * Bt
+//
+// C = 3x3
+// B = dX  0 dY
+//      0 dY dX
+template<size_t N>
+static inline void ADDDXDY33DXDYN(const double &sumscale, const double * __restrict__ m33, const double * __restrict__ dX, double * __restrict__ mNN)
+{
+	const double * __restrict__ dY = dX + N;
+	for (size_t n = 0; n < N; ++n) {
+		for (size_t m = 0; m < N; ++m) {
+			double a = dX[n] * m33[0] + dY[n] * m33[6];
+			double b = dX[n] * m33[1] + dY[n] * m33[7];
+			double c = dX[n] * m33[2] + dY[n] * m33[8];
+			mNN[n * 2 * N + m    ] += sumscale * (a * dX[m] + c * dY[m]);
+			mNN[n * 2 * N + m + N] += sumscale * (b * dY[m] + c * dX[m]);
+		}
+	}
+	mNN += 2 * N * N;
+	for (size_t n = 0; n < N; ++n) {
+		for (size_t m = 0; m < N; ++m) {
+			double a = dY[n] * m33[3] + dX[n] * m33[6];
+			double b = dY[n] * m33[4] + dX[n] * m33[7];
+			double c = dY[n] * m33[5] + dX[n] * m33[8];
+			mNN[n * 2 * N + m    ] += sumscale * (a * dX[m] + c * dY[m]);
+			mNN[n * 2 * N + m + N] += sumscale * (b * dY[m] + c * dX[m]);
+		}
+	}
+}
+
+// B * C * Bt
+//
+// C = 6x6
+// B = dX  0  0 dY  0 dZ
+//      0 dY  0 dX dZ  0
+//      0  0 dZ  0 dY dX
+//     - - - - - - - - -
+//      0  6 12 18 24 30
+//      a  b  c  d  e  f
+template<size_t N>
+static inline void ADDDXDYDZ66DXDYDZN(const double &sumscale, const double * __restrict__ m66, const double * __restrict__ dX, double * __restrict__ mNN)
+{
+	const double * __restrict__ dY = dX + N;
+	const double * __restrict__ dZ = dX + 2 * N;
+	for (size_t n = 0; n < N; ++n) {
+		for (size_t m = 0; m < N; ++m) {
+			double a = dX[n] * m66[ 0] + dY[n] * m66[18] + dZ[n] * m66[30];
+			double b = dX[n] * m66[ 1] + dY[n] * m66[19] + dZ[n] * m66[31];
+			double c = dX[n] * m66[ 2] + dY[n] * m66[20] + dZ[n] * m66[32];
+			double d = dX[n] * m66[ 3] + dY[n] * m66[21] + dZ[n] * m66[33];
+			double e = dX[n] * m66[ 4] + dY[n] * m66[22] + dZ[n] * m66[34];
+			double f = dX[n] * m66[ 5] + dY[n] * m66[23] + dZ[n] * m66[35];
+			mNN[n * 3 * N + m + 0 * N] += sumscale * (a * dX[m] + d * dY[m] + f * dZ[m]);
+			mNN[n * 3 * N + m + 1 * N] += sumscale * (b * dY[m] + d * dX[m] + e * dZ[m]);
+			mNN[n * 3 * N + m + 2 * N] += sumscale * (c * dZ[m] + e * dY[m] + f * dX[m]);
+		}
+	}
+	mNN += 3 * N * N;
+	for (size_t n = 0; n < N; ++n) {
+		for (size_t m = 0; m < N; ++m) {
+			double a = dY[n] * m66[ 6] + dX[n] * m66[18] + dZ[n] * m66[24];
+			double b = dY[n] * m66[ 7] + dX[n] * m66[19] + dZ[n] * m66[25];
+			double c = dY[n] * m66[ 8] + dX[n] * m66[20] + dZ[n] * m66[26];
+			double d = dY[n] * m66[ 9] + dX[n] * m66[21] + dZ[n] * m66[27];
+			double e = dY[n] * m66[10] + dX[n] * m66[22] + dZ[n] * m66[28];
+			double f = dY[n] * m66[11] + dX[n] * m66[23] + dZ[n] * m66[29];
+			mNN[n * 3 * N + m + 0 * N] += sumscale * (a * dX[m] + d * dY[m] + f * dZ[m]);
+			mNN[n * 3 * N + m + 1 * N] += sumscale * (b * dY[m] + d * dX[m] + e * dZ[m]);
+			mNN[n * 3 * N + m + 2 * N] += sumscale * (c * dZ[m] + e * dY[m] + f * dX[m]);
+		}
+	}
+	mNN += 3 * N * N;
+	for (size_t n = 0; n < N; ++n) {
+		for (size_t m = 0; m < N; ++m) {
+			double a = dZ[n] * m66[12] + dY[n] * m66[24] + dX[n] * m66[30];
+			double b = dZ[n] * m66[13] + dY[n] * m66[25] + dX[n] * m66[31];
+			double c = dZ[n] * m66[14] + dY[n] * m66[26] + dX[n] * m66[32];
+			double d = dZ[n] * m66[15] + dY[n] * m66[27] + dX[n] * m66[33];
+			double e = dZ[n] * m66[16] + dY[n] * m66[28] + dX[n] * m66[34];
+			double f = dZ[n] * m66[17] + dY[n] * m66[29] + dX[n] * m66[35];
+			mNN[n * 3 * N + m + 0 * N] += sumscale * (a * dX[m] + d * dY[m] + f * dZ[m]);
+			mNN[n * 3 * N + m + 1 * N] += sumscale * (b * dY[m] + d * dX[m] + e * dZ[m]);
+			mNN[n * 3 * N + m + 2 * N] += sumscale * (c * dZ[m] + e * dY[m] + f * dX[m]);
+		}
+	}
+}
+
+
 template<size_t N>
 static inline void ADDM12M2N(const double &sumscale, const double * __restrict__ m12, const double * __restrict__ m2N, double * __restrict__ result)
 {

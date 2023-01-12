@@ -1,6 +1,7 @@
 
 #include "analysis/assembler/module/acoustic.h"
 #include "analysis/assembler/module/heattransfer.h"
+#include "analysis/assembler/module/structuralmechanics.h"
 #include "esinfo/meshinfo.h"
 #include "mesh/element.h"
 #include "mesh/store/elementstore.h"
@@ -82,6 +83,10 @@ void baseFunction(Acoustic &module)
 	_baseFunction(module);
 }
 
+void baseFunction(StructuralMechanics &module)
+{
+	_baseFunction(module);
+}
 
 template<> void fill<Element::CODE::POINT1>(size_t gps, double *N, double *dN, double *w)
 {

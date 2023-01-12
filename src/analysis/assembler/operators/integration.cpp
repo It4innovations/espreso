@@ -4,8 +4,7 @@
 #include "analysis/assembler/operator.hpp"
 #include "analysis/assembler/module/acoustic.h"
 #include "analysis/assembler/module/heattransfer.h"
-
-
+#include "analysis/assembler/module/structuralmechanics.h"
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
 
@@ -54,6 +53,37 @@ void _boundaryIntegration(Module &module)
 	}
 }
 
+template <class Module>
+void _boundaryIntegrationWithNormal(Module &module)
+{
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (info::mesh->boundaryRegions[r]->dimension) {
+			module.controller.addInput(module.integration.boundary.jacobian.regions[r], module.coords.boundary.node.regions[r], module.integration.boundary.dN.regions[r]);
+			module.controller.prepare(module.integration.boundary.jacobian.regions[r]);
+			module.controller.addInput(module.integration.boundary.normal.regions[r], module.integration.boundary.jacobian.regions[r]);
+			module.controller.prepare(module.integration.boundary.normal.regions[r]);
+
+			for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
+				if (info::mesh->boundaryRegions[r]->dimension == 2) {
+					module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, BoundaryFaceNormal>(r, interval, module.controller,
+							module.coords.boundary.node.regions[r], module.integration.boundary.dN.regions[r],
+							module.integration.boundary.jacobian.regions[r], module.integration.boundary.normal.regions[r]));
+				}
+				if (info::mesh->boundaryRegions[r]->dimension == 1) {
+//					if (info::mesh->dimension == 3) { // how to do that?
+//						module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, BoundaryEdge3DJacobian>(r, interval, module.controller, module.coords.boundary.node.regions[r], module.integration.boundary.dN.regions[r], module.integration.boundary.jacobian.regions[r]));
+//					}
+					if (info::mesh->dimension == 2) {
+						module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, BoundaryEdge2DNormal>(r, interval, module.controller,
+								module.coords.boundary.node.regions[r], module.integration.boundary.dN.regions[r],
+								module.integration.boundary.jacobian.regions[r], module.integration.boundary.normal.regions[r]));
+					}
+				}
+			}
+		}
+	}
+}
+
 void elementIntegration(HeatTransfer &module)
 {
 	_elementIntegration(module);
@@ -64,6 +94,16 @@ void elementIntegration(Acoustic &module)
 {
 	_elementIntegration(module);
 	_boundaryIntegration(module);
+}
+
+void elementIntegration(StructuralMechanics &module)
+{
+	_elementIntegration(module);
+	if (module.configuration.normal_pressure.size()) {
+		_boundaryIntegrationWithNormal(module);
+	} else {
+		_boundaryIntegration(module);
+	}
 }
 
 }

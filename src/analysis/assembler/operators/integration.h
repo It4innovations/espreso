@@ -192,6 +192,71 @@ struct BoundaryEdge2DJacobian: public BoundaryJacobian {
 	}
 };
 
+struct BoundaryNormal: public ActionOperator {
+	BoundaryNormal(
+			int interval,
+			const ParameterData &coordinates,
+			const ParameterData &dN,
+			ParameterData &jacobian,
+			ParameterData &normal)
+	: coords(coordinates, interval),
+	  dN(dN, interval, 0),
+	  jacobian(jacobian, interval),
+	  normal(normal, interval)
+	{ }
+
+	InputParameterIterator coords, dN;
+	OutputParameterIterator jacobian, normal;
+
+	void operator++()
+	{
+		++coords;
+		++jacobian; ++normal;
+	}
+
+	void move(int n)
+	{
+		coords += n;
+		jacobian += n;
+		normal += n;
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct BoundaryFaceNormal: public BoundaryNormal {
+	using BoundaryNormal::BoundaryNormal;
+
+	void operator()()
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			double dND[6] = { 0, 0, 0, 0, 0, 0 };
+			M2NMN3<nodes>(1, dN.data + 2 * gpindex * nodes, coords.data, dND);
+			double x = dND[1] * dND[5] - dND[2] * dND[4];
+			double y = dND[2] * dND[3] - dND[0] * dND[5];
+			double z = dND[0] * dND[4] - dND[1] * dND[3];
+			jacobian.data[gpindex] = std::sqrt(x * x + y * y + z * z);
+			normal.data[3 * gpindex + 0] = x / jacobian.data[gpindex];
+			normal.data[3 * gpindex + 1] = y / jacobian.data[gpindex];
+			normal.data[3 * gpindex + 2] = z / jacobian.data[gpindex];
+		}
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct BoundaryEdge2DNormal: public BoundaryNormal {
+	using BoundaryNormal::BoundaryNormal;
+
+	void operator()()
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			double dND[2] = { 0, 0 };
+			M1NMN2<nodes>(1, dN.data + 1 * gpindex * nodes, coords.data, dND);
+			jacobian.data[gpindex] = std::sqrt(dND[0] * dND[0] + dND[1] * dND[1]);
+			normal.data[2 * gpindex + 0] = -dND[1] / jacobian.data[gpindex];
+			normal.data[2 * gpindex + 1] =  dND[0] / jacobian.data[gpindex];
+		}
+	}
+};
 
 }
 

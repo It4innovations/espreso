@@ -7,6 +7,7 @@
 #include "analysis/analysis/heat.steadystate.nonlinear.h"
 #include "analysis/analysis/acoustic.real.linear.h"
 #include "analysis/analysis/acoustic.complex.linear.h"
+#include "analysis/analysis/elasticity.steadystate.linear.h"
 
 #include "analysis/composer/nodes.uniform.distributed.h"
 #include "basis/utilities/sysutils.h"
@@ -139,9 +140,8 @@ inline void _fillSolver(MKLPDSSSystemData<A, S> *system, std::map<std::string, E
 }
 
 template <typename A, typename S>
-inline void _fillDirect(MKLPDSSSystemData<A, S> *system, std::map<std::string, ECFExpression> &dirichlet, int dofs)
+inline void _fillDirect(MKLPDSSSystemData<A, S> *system)
 {
-	system->assembler.pattern.set(dirichlet, dofs, system->solver.distribution);
 	system->assembler.pattern.fill(system->solver.A);
 	system->assembler.pattern.fill(system->solver.b);
 	system->assembler.pattern.fill(system->solver.x);
@@ -174,7 +174,8 @@ template <> struct MKLPDSSSystem<HeatSteadyStateLinear>: public MKLPDSSSystemDat
 			}
 		}
 
-		_fillDirect(this, analysis->configuration.temperature, 1);
+		assembler.pattern.set(analysis->configuration.temperature, 1, solver.distribution);
+		_fillDirect(this);
 	}
 };
 
@@ -190,7 +191,8 @@ template <> struct MKLPDSSSystem<HeatSteadyStateNonLinear>: public MKLPDSSSystem
 			}
 		}
 
-		_fillDirect(this, analysis->configuration.temperature, 1);
+		assembler.pattern.set(analysis->configuration.temperature, 1, solver.distribution);
+		_fillDirect(this);
 		solver.A.initApply();
 	}
 };
@@ -223,6 +225,17 @@ template <> struct MKLPDSSSystem<AcousticComplexLinear>: public MKLPDSSSystemDat
 		}
 
 		_fillSolver(this, analysis->configuration.acoustic_pressure, 1);
+	}
+};
+
+template <> struct MKLPDSSSystem<ElasticitySteadyStateLinear>: public MKLPDSSSystemData<double, double> {
+
+	MKLPDSSSystem(ElasticitySteadyStateLinear *analysis)
+	: MKLPDSSSystemData(analysis->configuration.mklpdss)
+	{
+		assembler.A.type = solver.A.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+		assembler.pattern.set(analysis->configuration.displacement, info::mesh->dimension, solver.distribution);
+		_fillDirect(this);
 	}
 };
 

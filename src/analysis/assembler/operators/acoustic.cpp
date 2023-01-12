@@ -13,7 +13,7 @@
 
 namespace espreso {
 
-void acousticStiffness(Acoustic &module)
+void stiffness(Acoustic &module)
 {
 	if (info::mesh->dimension == 2) {
 //		module.controller.addInput(module.elements.stiffness, module.thickness.gp);
@@ -31,7 +31,7 @@ void acousticStiffness(Acoustic &module)
 	}
 }
 
-void acousticMass(Acoustic &module)
+void mass(Acoustic &module)
 {
 	if (info::mesh->dimension == 2) {
 //		module.elements.stiffness.addInput(module.thickness.gp);
@@ -44,11 +44,11 @@ void acousticMass(Acoustic &module)
 	}
 }
 
-void acousticBoundaryMass(Acoustic &module)
+void boundaryMass(Acoustic &module)
 {
 }
 
-void acousticRHS(Acoustic &module)
+void RHS(Acoustic &module)
 {
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
 		if (module.monopoleSource.gp.isSet(interval)) {

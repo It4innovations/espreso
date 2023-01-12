@@ -190,9 +190,9 @@ struct InputParameterIterator {
 	const double * __restrict__ data;
 
 	InputParameterIterator(const ParameterData &info, esint interval)
-	: inc(info.isconst[interval] ? 0 : info.increment(info.size, interval)), data((info.data->begin() + interval)->data()) {}
+	: inc(info.isconst[interval] ? 0 : info.increment(info.size, interval)), data(info.data ? (info.data->begin() + interval)->data() : nullptr) {}
 	InputParameterIterator(const ParameterData &info, esint interval, PerElementSize size)
-	: inc(info.isconst[interval] ? 0 : info.increment(size, interval)), data((info.data->begin() + interval)->data()) {}
+	: inc(info.isconst[interval] ? 0 : info.increment(size, interval)), data(info.data ? (info.data->begin() + interval)->data() : nullptr) {}
 
 	inline InputParameterIterator& operator++() { data += inc; return *this; }
 	inline InputParameterIterator& operator+=(const int rhs) { data += rhs*inc; return *this; }

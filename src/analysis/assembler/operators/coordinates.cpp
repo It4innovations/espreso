@@ -5,6 +5,7 @@
 #include "analysis/assembler/operator.hpp"
 #include "analysis/assembler/module/acoustic.h"
 #include "analysis/assembler/module/heattransfer.h"
+#include "analysis/assembler/module/structuralmechanics.h"
 #include "basis/expression/variable.h"
 #include "config/ecf/physics/heattransfer.h"
 #include "esinfo/meshinfo.h"
@@ -171,6 +172,21 @@ void _analyzeBoundaryCondition(std::map<std::string, ECFExpressionVector> &bc)
 	}
 }
 
+void _analyzeBoundaryCondition(std::map<std::string, ECFExpressionOptionalVector> &bc)
+{
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		auto region = bc.find(info::mesh->boundaryRegions[r]->name);
+		if (region != bc.end()) {
+			Variable::analyze(region->second.x, r);
+			Variable::analyze(region->second.y, r);
+			if (info::mesh->dimension == 3) {
+				Variable::analyze(region->second.z, r);
+			}
+		}
+	}
+}
+
+
 void _analyzeBoundaryCondition(std::map<std::string, ImpedanceConfiguration> &bc)
 {
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
@@ -199,6 +215,15 @@ void elementCoordinates(Acoustic &module)
 	_analyzeBoundaryCondition(module.configuration.normal_acceleration);
 	_analyzeBoundaryCondition(module.configuration.acceleration);
 	_analyzeBoundaryCondition(module.configuration.impedance);
+	_boundaryCoordinates(module);
+}
+
+void elementCoordinates(StructuralMechanics &module)
+{
+	_elementCoordinates(module);
+
+	_analyzeBoundaryCondition(module.configuration.displacement);
+	_analyzeBoundaryCondition(module.configuration.normal_pressure);
 	_boundaryCoordinates(module);
 }
 

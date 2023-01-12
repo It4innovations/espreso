@@ -82,7 +82,7 @@ struct ParametersCoordinates {
 	};
 
 	ElementParameter<ndim * enodes> node;
-	ElementGPsExternalParameter<ndim * egps> gp;
+	ElementParameter<ndim * egps> gp;
 	Boundary boundary;
 };
 

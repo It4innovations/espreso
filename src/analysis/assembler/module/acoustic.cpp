@@ -83,8 +83,8 @@ void Acoustic::analyze()
 	}
 
 
-	acousticStiffness(*this);
-	acousticMass(*this);
+	stiffness(*this);
+	mass(*this);
 	// boundary conditions have to added according to boundary settings below
 //	acousticBoundaryMass(*this);
 
@@ -131,7 +131,7 @@ void Acoustic::analyze()
 	elements.dipole.name = "elements.dipole";
 	material.density.name = "material.density";
 	
-	acousticRHS(*this);
+	RHS(*this);
 
 	eslog::info(" ============================================================================================= \n");
 	if (correct) {
