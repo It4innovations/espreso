@@ -86,6 +86,68 @@ struct Stiffness3DElasticity: public StructuralMechanicsStiffness {
 	}
 };
 
+struct Acceleration: public ActionOperator {
+	Acceleration(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &density, const ParameterData &thickness, const ParameterData &acceleration, ParameterData &rhs)
+	: N(N, interval),
+	  weight(weight, interval),
+	  J(J, interval),
+	  density(density, interval),
+	  thickness(thickness, interval),
+	  acceleration(acceleration, interval),
+	  rhs(rhs, interval)
+	{
+
+	}
+
+	InputParameterIterator N, weight, J, density, thickness;
+	InputParameterIterator acceleration;
+	OutputParameterIterator rhs;
+
+	void operator++()
+	{
+		++weight; ++J; ++density; ++thickness;
+		++acceleration;
+		++rhs;
+	}
+
+	void move(int n)
+	{
+		weight += n; J += n; density += n; thickness += n;
+		acceleration += n;
+		rhs += n;
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct Acceleration2D: public Acceleration {
+	using Acceleration::Acceleration;
+
+	void operator()()
+	{
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+				rhs[        n] += J[gpindex] * weight[gpindex] * thickness[gpindex] * density[gpindex] * N[gpindex * nodes + n] * acceleration[2 * gpindex + 0];
+				rhs[nodes + n] += J[gpindex] * weight[gpindex] * thickness[gpindex] * density[gpindex] * N[gpindex * nodes + n] * acceleration[2 * gpindex + 1];
+			}
+		}
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct Acceleration3D: public Acceleration {
+	using Acceleration::Acceleration;
+
+	void operator()()
+	{
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+				rhs[0 * nodes + n] += J[gpindex] * weight[gpindex] * density[gpindex] * N[gpindex * nodes + n] * acceleration[3 * gpindex + 0];
+				rhs[1 * nodes + n] += J[gpindex] * weight[gpindex] * density[gpindex] * N[gpindex * nodes + n] * acceleration[3 * gpindex + 1];
+				rhs[2 * nodes + n] += J[gpindex] * weight[gpindex] * density[gpindex] * N[gpindex * nodes + n] * acceleration[3 * gpindex + 2];
+			}
+		}
+	}
+};
 
 struct NormalPressure: public ActionOperator {
 	NormalPressure(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &normal, const ParameterData &thickness, const ParameterData &normalPressure, ParameterData &rhs)

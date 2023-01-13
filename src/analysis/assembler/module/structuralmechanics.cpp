@@ -210,6 +210,15 @@ void StructuralMechanics::analyze()
 
 	stiffness(*this);
 
+	if (configuration.acceleration.size()) {
+		correct &= examineElementParameter("ACCELERATION.X", configuration.acceleration, acceleration.gp.externalValues, 0);
+		correct &= examineElementParameter("ACCELERATION.Y", configuration.acceleration, acceleration.gp.externalValues, 1);
+		if (info::mesh->dimension == 3) {
+			correct &= examineElementParameter("ACCELERATION.Z", configuration.acceleration, acceleration.gp.externalValues, 2);
+		}
+		fromExpression(*this, acceleration.gp, acceleration.gp.externalValues);
+	}
+
 	if (configuration.displacement.size()) {
 		correct &= examineBoundaryParameter("DISPLACEMENT.X", configuration.displacement, displacement.node.externalValues, 0);
 		correct &= examineBoundaryParameter("DISPLACEMENT.Y", configuration.displacement, displacement.node.externalValues, 1);

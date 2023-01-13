@@ -134,6 +134,19 @@ void addFiller(StructuralMechanics &module, SteadyState &scheme)
 		}
 	}
 
+	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+		if (module.acceleration.gp.isSet(interval)) {
+			switch (info::mesh->dimension) {
+			case 2:
+				module.elementFiller[interval].emplace_back(instantiate<HeatTransfer::NGP, 2, VectorFiller>(interval, module.controller, module.elements.rhs, scheme.f->mapping.elements[interval].data, scheme.f->mapping.elements[interval].position));
+				break;
+			case 3:
+				module.elementFiller[interval].emplace_back(instantiate<HeatTransfer::NGP, 3, VectorFiller>(interval, module.controller, module.elements.rhs, scheme.f->mapping.elements[interval].data, scheme.f->mapping.elements[interval].position));
+				break;
+			}
+		}
+	}
+
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (module.displacement.node.isSet(r)) {
 			for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {

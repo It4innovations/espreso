@@ -55,12 +55,25 @@ void RHS(StructuralMechanics &module)
 		module.controller.addInput(module.elements.rhs, module.acceleration.gp, module.integration.N, module.integration.weight, module.integration.jacobiDeterminant, module.material.density, module.thickness.gp);
 		module.controller.prepare(module.elements.rhs);
 		if (module.acceleration.gp.isSet(interval)) {
-			module.elementOps[interval].emplace_back(
-				instantiate<StructuralMechanics::NGP, Acceleration2D>(interval, module.controller,
-						module.integration.N, module.integration.weight, module.integration.jacobiDeterminant,
-						module.material.density, module.thickness.gp,
-						module.acceleration.gp,
-						module.elements.rhs));
+			switch (info::mesh->dimension) {
+			case 2:
+				module.elementOps[interval].emplace_back(
+						instantiate<StructuralMechanics::NGP, Acceleration2D>(interval, module.controller,
+								module.integration.N, module.integration.weight, module.integration.jacobiDeterminant,
+								module.material.density, module.thickness.gp,
+								module.acceleration.gp,
+								module.elements.rhs));
+				break;
+			case 3:
+				module.elementOps[interval].emplace_back(
+						instantiate<StructuralMechanics::NGP, Acceleration3D>(interval, module.controller,
+								module.integration.N, module.integration.weight, module.integration.jacobiDeterminant,
+								module.material.density, module.thickness.gp,
+								module.acceleration.gp,
+								module.elements.rhs));
+				break;
+			}
+
 		}
 	}
 
