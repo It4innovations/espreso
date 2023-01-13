@@ -51,9 +51,18 @@ void stiffness(StructuralMechanics &module)
 
 void RHS(StructuralMechanics &module)
 {
+	if (module.acceleration.gp.isSet() || module.angularVevocity.gp.isSet()) {
+		module.controller.addInput(module.elements.rhs, module.integration.N, module.integration.weight, module.integration.jacobiDeterminant, module.material.density, module.thickness.gp);
+	}
+	if (module.acceleration.gp.isSet()) {
+		module.controller.addInput(module.elements.rhs, module.acceleration.gp);
+	}
+	if (module.angularVevocity.gp.isSet()) {
+		module.controller.addInput(module.elements.rhs, module.angularVevocity.gp, module.coords.gp);
+	}
+	module.controller.prepare(module.elements.rhs);
+
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
-		module.controller.addInput(module.elements.rhs, module.acceleration.gp, module.integration.N, module.integration.weight, module.integration.jacobiDeterminant, module.material.density, module.thickness.gp);
-		module.controller.prepare(module.elements.rhs);
 		if (module.acceleration.gp.isSet(interval)) {
 			switch (info::mesh->dimension) {
 			case 2:
@@ -73,7 +82,26 @@ void RHS(StructuralMechanics &module)
 								module.elements.rhs));
 				break;
 			}
-
+		}
+		if (module.angularVevocity.gp.isSet(interval)) {
+			switch (info::mesh->dimension) {
+			case 2:
+				module.elementOps[interval].emplace_back(
+						instantiate<StructuralMechanics::NGP, AngularVelocity2D>(interval, module.controller,
+								module.integration.N, module.integration.weight, module.integration.jacobiDeterminant,
+								module.material.density, module.thickness.gp,
+								module.coords.gp, module.angularVevocity.gp,
+								module.elements.rhs));
+				break;
+			case 3:
+				module.elementOps[interval].emplace_back(
+						instantiate<StructuralMechanics::NGP, AngularVelocity3D>(interval, module.controller,
+								module.integration.N, module.integration.weight, module.integration.jacobiDeterminant,
+								module.material.density, module.thickness.gp,
+								module.coords.gp, module.angularVevocity.gp,
+								module.elements.rhs));
+				break;
+			}
 		}
 	}
 

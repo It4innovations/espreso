@@ -7,6 +7,7 @@
 #include "mesh/store/nameddata.h"
 
 #include <vector>
+#include <algorithm>
 
 namespace espreso {
 
@@ -95,6 +96,11 @@ struct ElementGPsExternalParameter: public ElementParameter<mask> {
 	ElementGPsExternalParameter(): externalValues(*this)
 	{
 		std::fill(this->update.begin(), this->update.end(), -1);
+	}
+
+	bool isSet()
+	{
+		return std::any_of(this->update.cbegin(), this->update.cend(), [] (int i) { return i != -1; });
 	}
 
 	bool isSet(size_t interval)

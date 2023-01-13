@@ -129,6 +129,10 @@ public:
 	} acceleration;
 
 	struct {
+		ElementGPsExternalParameter<3 * egps> gp;
+	} angularVevocity;
+
+	struct {
 		BoundaryExternalParameter<ndim * enodes> node;
 	} displacement;
 

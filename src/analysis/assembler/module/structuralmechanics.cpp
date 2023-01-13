@@ -219,6 +219,15 @@ void StructuralMechanics::analyze()
 		fromExpression(*this, acceleration.gp, acceleration.gp.externalValues);
 	}
 
+	if (configuration.angular_velocity.size()) {
+		if (info::mesh->dimension == 3) {
+			correct &= examineElementParameter("ANGULAR_VELOCITY.X", configuration.angular_velocity, angularVevocity.gp.externalValues, 0);
+			correct &= examineElementParameter("ANGULAR_VELOCITY.Y", configuration.angular_velocity, angularVevocity.gp.externalValues, 1);
+		}
+		correct &= examineElementParameter("ANGULAR_VELOCITY.Z", configuration.angular_velocity, angularVevocity.gp.externalValues, 2);
+		fromExpression(*this, angularVevocity.gp, angularVevocity.gp.externalValues);
+	}
+
 	if (configuration.displacement.size()) {
 		correct &= examineBoundaryParameter("DISPLACEMENT.X", configuration.displacement, displacement.node.externalValues, 0);
 		correct &= examineBoundaryParameter("DISPLACEMENT.Y", configuration.displacement, displacement.node.externalValues, 1);
@@ -318,6 +327,9 @@ void StructuralMechanics::initNames()
 //	elements.mass.name = "elements.mass";
 	elements.rhs.name = "elements.rhs";
 
+	acceleration.gp.name = "acceleration";
+	angularVevocity.gp.name = "angularVevocity";
+
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		integration.boundary.N.regions[r].name = info::mesh->boundaryRegions[r]->name + "::integration.boundary.N";
 		integration.boundary.dN.regions[r].name = info::mesh->boundaryRegions[r]->name + "::integration.boundary.dN";
@@ -328,12 +340,8 @@ void StructuralMechanics::initNames()
 		coords.boundary.node.regions[r].name = info::mesh->boundaryRegions[r]->name + "::coords.boundary.node";
 		coords.boundary.gp.regions[r].name = info::mesh->boundaryRegions[r]->name + "::coords.boundary.gp";
 
-//		convection.heatTransferCoeficient.gp.regions[r].name = info::mesh->boundaryRegions[r]->name + "::convection.heatTransferCoeficient.gp";
-//		convection.externalTemperature.gp.regions[r].name = info::mesh->boundaryRegions[r]->name + "::convection.externalTemperature.gp";
-//
-//		heatFlow.gp.regions[r].name = info::mesh->boundaryRegions[r]->name + "::heatFlow.gp";
-//		heatFlux.gp.regions[r].name = info::mesh->boundaryRegions[r]->name + "::heatFlux.gp";
-//		q.gp.regions[r].name = info::mesh->boundaryRegions[r]->name + "::q.gp";
+		normalPressure.gp.regions[r].name = info::mesh->boundaryRegions[r]->name + "::normalPressure.gp";
+		displacement.node.regions[r].name = info::mesh->boundaryRegions[r]->name + "::displacement.node";
 	}
 }
 
@@ -368,36 +376,13 @@ void StructuralMechanics::printVersions()
 	printParameterStats(material.elasticity2DAxisymm);
 	printParameterStats(material.elasticity3D);
 
-//	printParameterStats("temp.initial.output", temp.initial.output);
-//	printParameterStats("temp.initial.node", temp.initial.node);
-//	printParameterStats("temp.initial.gp", temp.initial.gp);
-//	printParameterStats("temp.output", temp.output);
-//	printParameterStats("temp.node", temp.node);
-//	printParameterStats("temp.gp", temp.gp);
-//
-//	printParameterStats("translationMotions.output", translationMotions.output);
-//	printParameterStats("translationMotions.gp", translationMotions.gp);
-//	printParameterStats("translationMotions.stiffness", translationMotions.stiffness);
-//	printParameterStats("translationMotions.rhs", translationMotions.rhs);
-//
-//	printParameterStats("heatSource.gp", heatSource.gp);
-
 	printParameterStats(elements.stiffness);
 //	printParameterStats("elements.mass", elements.mass);
 	printParameterStats(elements.rhs);
 
-//	if (gradient.output)
-//	{
-//		printParameterStats("gradient.output", gradient.output);
-//	}
-//
-//	printParameterStats("gradient.xi", gradient.xi);
-//
-//	if (flux.output)
-//	{
-//		printParameterStats("flux.output", flux.output);
-//	}
-//
+	printParameterStats(acceleration.gp);
+	printParameterStats(angularVevocity.gp);
+
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		printf("REGION: %s\n", info::mesh->boundaryRegions[r]->name.c_str());
 
@@ -410,12 +395,8 @@ void StructuralMechanics::printVersions()
 		printParameterStats(coords.boundary.node.regions[r]);
 		printParameterStats(coords.boundary.gp.regions[r]);
 
-//		printParameterStats("convection.heatTransferCoeficient.gp", convection.heatTransferCoeficient.gp.regions[r]);
-//		printParameterStats("convection.externalTemperature.gp", convection.externalTemperature.gp.regions[r]);
-//
-//		printParameterStats("heatFlow.gp", heatFlow.gp.regions[r]);
-//		printParameterStats("heatFlux.gp", heatFlux.gp.regions[r]);
-//		printParameterStats("q.gp", q.gp.regions[r]);
+		printParameterStats(normalPressure.gp.regions[r]);
+		printParameterStats(displacement.node.regions[r]);
 	}
 }
 

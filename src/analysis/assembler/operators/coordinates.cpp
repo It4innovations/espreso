@@ -15,12 +15,12 @@
 namespace espreso {
 
 template <class Module>
-void _elementCoordinates(Module &module)
+void _elementCoordinates(Module &module, bool toGPs)
 {
 	module.controller.addInput(module.coords.node, info::mesh->nodes->coordinates);
 	module.controller.prepare(module.coords.node);
 
-	bool toGPs = Variable::list.egps.count("COORDINATE_X") || Variable::list.egps.count("COORDINATE_Y") || Variable::list.egps.count("COORDINATE_Z");
+	toGPs |= Variable::list.egps.count("COORDINATE_X") || Variable::list.egps.count("COORDINATE_Y") || Variable::list.egps.count("COORDINATE_Z");
 	if (toGPs) {
 		module.controller.addInput(module.coords.gp, module.coords.node);
 		module.controller.prepare(module.coords.gp);
@@ -199,7 +199,7 @@ void _analyzeBoundaryCondition(std::map<std::string, ImpedanceConfiguration> &bc
 
 void elementCoordinates(HeatTransfer &module)
 {
-	_elementCoordinates(module);
+	_elementCoordinates(module, false);
 
 	_analyzeBoundaryCondition(module.configuration.temperature);
 	_analyzeBoundaryCondition(module.configuration.heat_flow);
@@ -209,7 +209,7 @@ void elementCoordinates(HeatTransfer &module)
 
 void elementCoordinates(Acoustic &module)
 {
-	_elementCoordinates(module);
+	_elementCoordinates(module, false);
 
 	_analyzeBoundaryCondition(module.configuration.acoustic_pressure);
 	_analyzeBoundaryCondition(module.configuration.normal_acceleration);
@@ -220,7 +220,7 @@ void elementCoordinates(Acoustic &module)
 
 void elementCoordinates(StructuralMechanics &module)
 {
-	_elementCoordinates(module);
+	_elementCoordinates(module, module.configuration.angular_velocity.size());
 
 	_analyzeBoundaryCondition(module.configuration.displacement);
 	_analyzeBoundaryCondition(module.configuration.normal_pressure);

@@ -149,6 +149,78 @@ struct Acceleration3D: public Acceleration {
 	}
 };
 
+struct AngularVelocity: public ActionOperator {
+	AngularVelocity(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &density, const ParameterData &thickness, const ParameterData &coordinates, const ParameterData &angularVelocity, ParameterData &rhs)
+	: N(N, interval),
+	  weight(weight, interval),
+	  J(J, interval),
+	  density(density, interval),
+	  thickness(thickness, interval),
+	  coordinates(coordinates, interval),
+	  angularVelocity(angularVelocity, interval),
+	  rhs(rhs, interval)
+	{
+
+	}
+
+	InputParameterIterator N, weight, J, density, thickness;
+	InputParameterIterator coordinates, angularVelocity;
+	OutputParameterIterator rhs;
+
+	void operator++()
+	{
+		++weight; ++J; ++density; ++thickness;
+		++coordinates; ++angularVelocity;
+		++rhs;
+	}
+
+	void move(int n)
+	{
+		weight += n; J += n; density += n; thickness += n;
+		coordinates += n; angularVelocity += n;
+		rhs += n;
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct AngularVelocity2D: public AngularVelocity {
+	using AngularVelocity::AngularVelocity;
+
+	void operator()()
+	{
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+				rhs[        n] += J[gpindex] * weight[gpindex] * thickness[gpindex] * density[gpindex] * N[gpindex * nodes + n] * coordinates[2 * gpindex + 0] * angularVelocity[3 * gpindex + 2] * angularVelocity[3 * gpindex + 2];
+				rhs[nodes + n] += J[gpindex] * weight[gpindex] * thickness[gpindex] * density[gpindex] * N[gpindex * nodes + n] * coordinates[2 * gpindex + 1] * angularVelocity[3 * gpindex + 2] * angularVelocity[3 * gpindex + 2];
+			}
+		}
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct AngularVelocity3D: public AngularVelocity {
+	using AngularVelocity::AngularVelocity;
+
+	void operator()()
+	{
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+				// angular velocity X
+				rhs[1 * nodes + n] += J[gpindex] * weight[gpindex] * density[gpindex] * N[gpindex * nodes + n] * coordinates[3 * gpindex + 1] * angularVelocity[3 * gpindex + 0] * angularVelocity[3 * gpindex + 0];
+				rhs[2 * nodes + n] += J[gpindex] * weight[gpindex] * density[gpindex] * N[gpindex * nodes + n] * coordinates[3 * gpindex + 2] * angularVelocity[3 * gpindex + 0] * angularVelocity[3 * gpindex + 0];
+
+				// angular velocity Y
+				rhs[0 * nodes + n] += J[gpindex] * weight[gpindex] * density[gpindex] * N[gpindex * nodes + n] * coordinates[3 * gpindex + 0] * angularVelocity[3 * gpindex + 1] * angularVelocity[3 * gpindex + 1];
+				rhs[2 * nodes + n] += J[gpindex] * weight[gpindex] * density[gpindex] * N[gpindex * nodes + n] * coordinates[3 * gpindex + 2] * angularVelocity[3 * gpindex + 1] * angularVelocity[3 * gpindex + 1];
+
+				// angular velocity Z
+				rhs[0 * nodes + n] += J[gpindex] * weight[gpindex] * density[gpindex] * N[gpindex * nodes + n] * coordinates[3 * gpindex + 0] * angularVelocity[3 * gpindex + 2] * angularVelocity[3 * gpindex + 2];
+				rhs[1 * nodes + n] += J[gpindex] * weight[gpindex] * density[gpindex] * N[gpindex * nodes + n] * coordinates[3 * gpindex + 1] * angularVelocity[3 * gpindex + 2] * angularVelocity[3 * gpindex + 2];
+			}
+		}
+	}
+};
+
 struct NormalPressure: public ActionOperator {
 	NormalPressure(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &normal, const ParameterData &thickness, const ParameterData &normalPressure, ParameterData &rhs)
 	: N(N, interval),

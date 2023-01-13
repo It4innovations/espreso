@@ -83,7 +83,6 @@ void addFiller(Acoustic &module, Harmonic &scheme)
 				module.boundaryFiller[r][interval].emplace_back(instantiate<Acoustic::NGP, 1, VectorFiller>(r, interval, module.controller, module.elements.boundary.rhs.regions[r], scheme.re.f->mapping.boundary[r][interval].data, scheme.re.f->mapping.boundary[r][interval].position));
 			}
 		}
-
 		if (info::mesh->boundaryRegions[r]->dimension && module.acceleration.gp.isSet(r)) {
 			for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
 				module.boundaryFiller[r][interval].emplace_back(instantiate<Acoustic::NGP, 1, VectorFiller>(r, interval, module.controller, module.proj_acceleration.gp.regions[r], scheme.re.f->mapping.boundary[r][interval].data, scheme.re.f->mapping.boundary[r][interval].position));
@@ -97,13 +96,12 @@ void addFiller(Acoustic &module, Harmonic &scheme)
 				module.boundaryFiller[r][t].emplace_back(instantiate<Acoustic::NGP, 1, VectorSetter>(r, t, module.controller, module.pressure.node.regions[r], scheme.re.dirichlet->mapping.boundary[r][t].data, scheme.re.dirichlet->mapping.boundary[r][t].position, scheme.re.dirichlet->mapping.boundary[r][t].filter));
 				module.boundaryFiller[r][t].back()->isconst = false;
 			}
-
+		}
 		if (module.pointSource.node.isSet(r)) {
 			for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
 				module.boundaryFiller[r][t].emplace_back(instantiate<Acoustic::NGP, 1, VectorSetter>(r, t, module.controller, module.pointSource.node.regions[r], scheme.re.dirichlet->mapping.boundary[r][t].data, scheme.re.dirichlet->mapping.boundary[r][t].position, scheme.re.dirichlet->mapping.boundary[r][t].filter));
 				module.boundaryFiller[r][t].back()->isconst = false;
 			}
-		}
 		}
 	}
 }
@@ -135,7 +133,7 @@ void addFiller(StructuralMechanics &module, SteadyState &scheme)
 	}
 
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
-		if (module.acceleration.gp.isSet(interval)) {
+		if (module.acceleration.gp.isSet(interval) || module.angularVevocity.gp.isSet(interval)) {
 			switch (info::mesh->dimension) {
 			case 2:
 				module.elementFiller[interval].emplace_back(instantiate<HeatTransfer::NGP, 2, VectorFiller>(interval, module.controller, module.elements.rhs, scheme.f->mapping.elements[interval].data, scheme.f->mapping.elements[interval].position));

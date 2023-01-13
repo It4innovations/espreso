@@ -55,9 +55,12 @@ void stiffness(HeatTransfer &module)
 
 void RHS(HeatTransfer &module)
 {
-	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+	if (module.heatSource.gp.isSet()) {
 		module.controller.addInput(module.elements.rhs, module.heatSource.gp, module.integration.N, module.integration.weight, module.integration.jacobiDeterminant);
-		module.controller.prepare(module.elements.rhs);
+	}
+	module.controller.prepare(module.elements.rhs);
+
+	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
 		if (module.heatSource.gp.isSet(interval)) {
 			module.elementOps[interval].emplace_back(
 				instantiate<HeatTransfer::NGP, HeatRHS>(interval, module.controller,
