@@ -1,5 +1,0 @@
-         ;          ;              ;    ALL_NODES   ;    ALL_NODES   ;        Y1        ;
-loadstep ;  substep ;         time ;  DISPLACEMENT  ;  DISPLACEMENT  ;  DISPLACEMENT_Y  ;
-         ;          ;              ;      <MIN>     ;      <MAX>     ;       <MAX>      ;
-
-       1 ;        1 ;     1.000000 ;   0.000000e+00 ;   6.742135e-01 ;    -4.565521e-01 ; 
