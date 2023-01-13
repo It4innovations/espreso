@@ -86,46 +86,6 @@ struct Stiffness3DElasticity: public StructuralMechanicsStiffness {
 	}
 };
 
-template<size_t nodes, size_t gps>
-struct StructuralMechanicsRHS: public ActionOperator {
-	StructuralMechanicsRHS(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &heatSource, ParameterData &rhs)
-	: N(N, interval),
-	  weight(weight, interval),
-	  J(J, interval),
-	  heatSource(heatSource, interval),
-	  rhs(rhs, interval)
-	{
-
-	}
-
-	InputParameterIterator N, weight, J;
-	InputParameterIterator heatSource;
-	OutputParameterIterator rhs;
-
-	void operator()()
-	{
-		std::fill(rhs.data, rhs.data + rhs.inc, 0);
-		for (size_t n = 0; n < nodes; ++n) {
-			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * heatSource.data[gpindex] * N.data[gpindex * nodes + n];
-			}
-		}
-	}
-
-	void operator++()
-	{
-		++weight; ++J;
-		++heatSource;
-		++rhs;
-	}
-
-	void move(int n)
-	{
-		weight += n; J += n;
-		heatSource += n;
-		rhs += n;
-	}
-};
 
 struct NormalPressure: public ActionOperator {
 	NormalPressure(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &normal, const ParameterData &thickness, const ParameterData &normalPressure, ParameterData &rhs)
@@ -168,8 +128,8 @@ struct NormalPressure2D: public NormalPressure {
 	{
 		for (size_t n = 0; n < nodes; ++n) {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-				rhs.data[        n] += J.data[gpindex] * weight.data[gpindex] * normal.data[2 * gpindex + 0] * normalPressure.data[gpindex] * N.data[gpindex * nodes + n];
-				rhs.data[nodes + n] += J.data[gpindex] * weight.data[gpindex] * normal.data[2 * gpindex + 1] * normalPressure.data[gpindex] * N.data[gpindex * nodes + n];
+				rhs[        n] += J[gpindex] * weight[gpindex] * normal[2 * gpindex + 0] * normalPressure[gpindex] * N[gpindex * nodes + n];
+				rhs[nodes + n] += J[gpindex] * weight[gpindex] * normal[2 * gpindex + 1] * normalPressure[gpindex] * N[gpindex * nodes + n];
 			}
 		}
 	}
@@ -183,9 +143,9 @@ struct NormalPressure3D: public NormalPressure {
 	{
 		for (size_t n = 0; n < nodes; ++n) {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-				rhs.data[0 * nodes + n] += J.data[gpindex] * weight.data[gpindex] * normal.data[3 * gpindex + 0] * normalPressure.data[gpindex] * N.data[gpindex * nodes + n];
-				rhs.data[1 * nodes + n] += J.data[gpindex] * weight.data[gpindex] * normal.data[3 * gpindex + 1] * normalPressure.data[gpindex] * N.data[gpindex * nodes + n];
-				rhs.data[2 * nodes + n] += J.data[gpindex] * weight.data[gpindex] * normal.data[3 * gpindex + 2] * normalPressure.data[gpindex] * N.data[gpindex * nodes + n];
+				rhs[0 * nodes + n] += J[gpindex] * weight[gpindex] * normal[3 * gpindex + 0] * normalPressure[gpindex] * N[gpindex * nodes + n];
+				rhs[1 * nodes + n] += J[gpindex] * weight[gpindex] * normal[3 * gpindex + 1] * normalPressure[gpindex] * N[gpindex * nodes + n];
+				rhs[2 * nodes + n] += J[gpindex] * weight[gpindex] * normal[3 * gpindex + 2] * normalPressure[gpindex] * N[gpindex * nodes + n];
 			}
 		}
 	}

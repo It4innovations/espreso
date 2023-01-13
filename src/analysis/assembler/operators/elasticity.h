@@ -40,13 +40,13 @@ struct ElasticityIsotropic2DPlaneStrain: public ElasticMaterial {
 	void operator()()
 	{
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			double ex = youngModulus.data[gpindex];
-			double mi = poissonRatio.data[gpindex];
+			double ex = youngModulus[gpindex];
+			double mi = poissonRatio[gpindex];
 			double k = ex * (1 - mi) / ((1 + mi) * (1 - 2 * mi));
 			int ogp = 9 * gpindex;
-			elasticity.data[ogp + 0] = k;                   elasticity.data[ogp + 1] = k * (mi / (1 - mi)); elasticity.data[ogp + 2] = 0;
-			elasticity.data[ogp + 3] = k * (mi / (1 - mi)); elasticity.data[ogp + 4] = k;                   elasticity.data[ogp + 5] = 0;
-			elasticity.data[ogp + 6] = 0;                   elasticity.data[ogp + 7] = 0;                   elasticity.data[ogp + 8] = k * ((1 - 2 * mi) / (2 * (1 - mi)));
+			elasticity[ogp + 0] = k;                   elasticity[ogp + 1] = k * (mi / (1 - mi)); elasticity[ogp + 2] = 0;
+			elasticity[ogp + 3] = k * (mi / (1 - mi)); elasticity[ogp + 4] = k;                   elasticity[ogp + 5] = 0;
+			elasticity[ogp + 6] = 0;                   elasticity[ogp + 7] = 0;                   elasticity[ogp + 8] = k * ((1 - 2 * mi) / (2 * (1 - mi)));
 		}
 	}
 };
@@ -58,13 +58,13 @@ struct ElasticityIsotropic2DPlaneStress: public ElasticMaterial {
 	void operator()()
 	{
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			double ex = youngModulus.data[gpindex];
-			double mi = poissonRatio.data[gpindex];
+			double ex = youngModulus[gpindex];
+			double mi = poissonRatio[gpindex];
 			double k = ex / (1 - mi * mi);
 			int ogp = 9 * gpindex;
-			elasticity.data[ogp + 0] = k;      elasticity.data[ogp + 1] = k * mi; elasticity.data[ogp + 2] = 0;
-			elasticity.data[ogp + 3] = k * mi; elasticity.data[ogp + 4] = k;      elasticity.data[ogp + 5] = 0;
-			elasticity.data[ogp + 6] = 0;      elasticity.data[ogp + 7] = 0;      elasticity.data[ogp + 8] = k * ((1 -  mi) / 2);
+			elasticity[ogp + 0] = k;      elasticity[ogp + 1] = k * mi; elasticity[ogp + 2] = 0;
+			elasticity[ogp + 3] = k * mi; elasticity[ogp + 4] = k;      elasticity[ogp + 5] = 0;
+			elasticity[ogp + 6] = 0;      elasticity[ogp + 7] = 0;      elasticity[ogp + 8] = k * ((1 -  mi) / 2);
 		}
 	}
 };
@@ -76,16 +76,16 @@ struct ElasticityIsotropic3D: public ElasticMaterial {
 	void operator()()
 	{
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			double ex = youngModulus.data[gpindex];
-			double mi = poissonRatio.data[gpindex];
+			double ex = youngModulus[gpindex];
+			double mi = poissonRatio[gpindex];
 			double ee = ex / ((1 + mi) * (1 - 2 * mi));
 			int ogp = 36 * gpindex;
-			elasticity.data[ogp +  0] = ee * (1.0 - mi); elasticity.data[ogp +  1] = ee * mi;         elasticity.data[ogp +  2] = ee * mi;         elasticity.data[ogp +  3] = 0;               elasticity.data[ogp +  4] = 0;               elasticity.data[ogp +  5] = 0;
-			elasticity.data[ogp +  6] = ee * mi;         elasticity.data[ogp +  7] = ee * (1.0 - mi); elasticity.data[ogp +  8] = ee * mi;         elasticity.data[ogp +  9] = 0;               elasticity.data[ogp + 10] = 0;               elasticity.data[ogp + 11] = 0;
-			elasticity.data[ogp + 12] = ee * mi;         elasticity.data[ogp + 13] = ee * mi;         elasticity.data[ogp + 14] = ee * (1.0 - mi); elasticity.data[ogp + 15] = 0;               elasticity.data[ogp + 16] = 0;               elasticity.data[ogp + 17] = 0;
-			elasticity.data[ogp + 18] = 0;               elasticity.data[ogp + 19] = 0;               elasticity.data[ogp + 20] = 0;               elasticity.data[ogp + 21] = ee * (0.5 - mi); elasticity.data[ogp + 22] = 0;               elasticity.data[ogp + 23] = 0;
-			elasticity.data[ogp + 24] = 0;               elasticity.data[ogp + 25] = 0;               elasticity.data[ogp + 26] = 0;               elasticity.data[ogp + 27] = 0;               elasticity.data[ogp + 28] = ee * (0.5 - mi); elasticity.data[ogp + 29] = 0;
-			elasticity.data[ogp + 30] = 0;               elasticity.data[ogp + 31] = 0;               elasticity.data[ogp + 32] = 0;               elasticity.data[ogp + 33] = 0;               elasticity.data[ogp + 34] = 0;               elasticity.data[ogp + 35] = ee * (0.5 - mi);
+			elasticity[ogp +  0] = ee * (1.0 - mi); elasticity[ogp +  1] = ee * mi;         elasticity[ogp +  2] = ee * mi;         elasticity[ogp +  3] = 0;               elasticity[ogp +  4] = 0;               elasticity[ogp +  5] = 0;
+			elasticity[ogp +  6] = ee * mi;         elasticity[ogp +  7] = ee * (1.0 - mi); elasticity[ogp +  8] = ee * mi;         elasticity[ogp +  9] = 0;               elasticity[ogp + 10] = 0;               elasticity[ogp + 11] = 0;
+			elasticity[ogp + 12] = ee * mi;         elasticity[ogp + 13] = ee * mi;         elasticity[ogp + 14] = ee * (1.0 - mi); elasticity[ogp + 15] = 0;               elasticity[ogp + 16] = 0;               elasticity[ogp + 17] = 0;
+			elasticity[ogp + 18] = 0;               elasticity[ogp + 19] = 0;               elasticity[ogp + 20] = 0;               elasticity[ogp + 21] = ee * (0.5 - mi); elasticity[ogp + 22] = 0;               elasticity[ogp + 23] = 0;
+			elasticity[ogp + 24] = 0;               elasticity[ogp + 25] = 0;               elasticity[ogp + 26] = 0;               elasticity[ogp + 27] = 0;               elasticity[ogp + 28] = ee * (0.5 - mi); elasticity[ogp + 29] = 0;
+			elasticity[ogp + 30] = 0;               elasticity[ogp + 31] = 0;               elasticity[ogp + 32] = 0;               elasticity[ogp + 33] = 0;               elasticity[ogp + 34] = 0;               elasticity[ogp + 35] = ee * (0.5 - mi);
 		}
 	}
 };

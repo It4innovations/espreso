@@ -212,7 +212,7 @@ struct AcousticQ: public ActionOperator {
 	{
 		std::fill(q.data, q.data + q.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			q.data[gpindex] += g.data[gpindex];
+			q[gpindex] += g[gpindex];
 		}
 	}
 
@@ -270,8 +270,8 @@ struct AcousticAcceleration2D: public ActionOperator {
 		std::fill(rhs.data, rhs.data + rhs.inc, 0);
 		for (size_t n = 0; n < nodes; ++n) {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-				double proj = normals.data[2*gpindex + 0] * acceleration_vector.data[2*gpindex + 0] + normals.data[2*gpindex + 1] * acceleration_vector.data[2*gpindex + 1];
-				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * (-proj) * N.data[gpindex * nodes + n];
+				double proj = normals[2*gpindex + 0] * acceleration_vector[2*gpindex + 0] + normals[2*gpindex + 1] * acceleration_vector[2*gpindex + 1];
+				rhs[n] += J[gpindex] * weight[gpindex] * (-proj) * N[gpindex * nodes + n];
 			}
 		}
 	}
@@ -314,8 +314,8 @@ struct AcousticAcceleration3D: public ActionOperator {
 		std::fill(rhs.data, rhs.data + rhs.inc, 0);
 		for (size_t n = 0; n < nodes; ++n) {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-				double proj = normals.data[3*gpindex + 0] * acceleration_vector.data[3*gpindex + 0] + normals.data[3*gpindex + 1] * acceleration_vector.data[3*gpindex + 1]  + normals.data[3*gpindex + 2] * acceleration_vector.data[3*gpindex + 2];
-				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * (-proj) * N.data[gpindex * nodes + n];
+				double proj = normals[3*gpindex + 0] * acceleration_vector[3*gpindex + 0] + normals[3*gpindex + 1] * acceleration_vector[3*gpindex + 1]  + normals[3*gpindex + 2] * acceleration_vector[3*gpindex + 2];
+				rhs[n] += J[gpindex] * weight[gpindex] * (-proj) * N[gpindex * nodes + n];
 			}
 		}
 	}
@@ -340,7 +340,7 @@ struct AcousticRHS2D: public ActionOperator {
 		std::fill(rhs.data, rhs.data + rhs.inc, 0);
 		for (size_t n = 0; n < nodes; ++n) {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * q.data[gpindex] * N.data[gpindex * nodes + n];
+				rhs[n] += J[gpindex] * weight[gpindex] * q[gpindex] * N[gpindex * nodes + n];
 			}
 		}
 	}
@@ -381,7 +381,7 @@ struct AcousticRHS3D: public ActionOperator {
 		std::fill(rhs.data, rhs.data + rhs.inc, 0);
 		for (size_t n = 0; n < nodes; ++n) {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * q.data[gpindex] * N.data[gpindex * nodes + n];
+				rhs[n] += J[gpindex] * weight[gpindex] * q[gpindex] * N[gpindex * nodes + n];
 			}
 		}
 	}
@@ -483,8 +483,8 @@ struct AcousticsPointSource_Flow: public ActionOperator {
 		const std::complex<double> i(0, 1);
 
 		for (size_t n = 0; n < nodes; ++n) {
-			std::complex<double> amplitude = std::exp(i * phase.data[n]) * i * omega * density *  flowRate.data[n] / (4.0 * M_PI);
-			this->rhs.data[n] = amplitude.real();
+			std::complex<double> amplitude = std::exp(i * phase[n]) * i * omega * density *  flowRate[n] / (4.0 * M_PI);
+			this->rhs[n] = amplitude.real();
 			// ?? pridat imag slozku
 		}
 	}

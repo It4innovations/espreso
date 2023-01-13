@@ -109,7 +109,7 @@ struct VectorFiller: public ActionOperator {
 	void operator()()
 	{
 		for (size_t r = 0; r < nodes * dimension; ++r) {
-			global[*position++] += rhs.data[r];
+			global[*position++] += rhs[r];
 		}
 	}
 };
@@ -147,7 +147,7 @@ struct VectorSetter: public ActionOperator {
 		for (size_t d = 0; d < dimension; ++d) {
 			for (size_t r = 0; r < nodes; ++r) {
 				if (filter & (1 << d)) {
-					global[*position++] = rhs.data[r];
+					global[*position++] = rhs[r];
 				}
 			}
 		}

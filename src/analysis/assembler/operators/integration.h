@@ -159,7 +159,7 @@ struct BoundaryFaceJacobian: public BoundaryJacobian {
 			double x = dND[1] * dND[5] - dND[2] * dND[4];
 			double y = dND[2] * dND[3] - dND[0] * dND[5];
 			double z = dND[0] * dND[4] - dND[1] * dND[3];
-			jacobian.data[gpindex] = std::sqrt(x * x + y * y + z * z);
+			jacobian[gpindex] = std::sqrt(x * x + y * y + z * z);
 		}
 	}
 };
@@ -173,7 +173,7 @@ struct BoundaryEdge3DJacobian: public BoundaryJacobian {
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			double dND[3] = { 0, 0, 0 };
 			M1NMN3<nodes>(1, dN.data + 1 * gpindex * nodes, coords.data, dND);
-			jacobian.data[gpindex] = std::sqrt(dND[0] * dND[0] + dND[1] * dND[1] + dND[2] * dND[2]);
+			jacobian[gpindex] = std::sqrt(dND[0] * dND[0] + dND[1] * dND[1] + dND[2] * dND[2]);
 		}
 	}
 };
@@ -187,7 +187,7 @@ struct BoundaryEdge2DJacobian: public BoundaryJacobian {
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			double dND[2] = { 0, 0 };
 			M1NMN2<nodes>(1, dN.data + 1 * gpindex * nodes, coords.data, dND);
-			jacobian.data[gpindex] = std::sqrt(dND[0] * dND[0] + dND[1] * dND[1]);
+			jacobian[gpindex] = std::sqrt(dND[0] * dND[0] + dND[1] * dND[1]);
 		}
 	}
 };
@@ -234,10 +234,10 @@ struct BoundaryFaceNormal: public BoundaryNormal {
 			double x = dND[1] * dND[5] - dND[2] * dND[4];
 			double y = dND[2] * dND[3] - dND[0] * dND[5];
 			double z = dND[0] * dND[4] - dND[1] * dND[3];
-			jacobian.data[gpindex] = std::sqrt(x * x + y * y + z * z);
-			normal.data[3 * gpindex + 0] = x / jacobian.data[gpindex];
-			normal.data[3 * gpindex + 1] = y / jacobian.data[gpindex];
-			normal.data[3 * gpindex + 2] = z / jacobian.data[gpindex];
+			jacobian[gpindex] = std::sqrt(x * x + y * y + z * z);
+			normal[3 * gpindex + 0] = x / jacobian[gpindex];
+			normal[3 * gpindex + 1] = y / jacobian[gpindex];
+			normal[3 * gpindex + 2] = z / jacobian[gpindex];
 		}
 	}
 };
@@ -251,9 +251,9 @@ struct BoundaryEdge2DNormal: public BoundaryNormal {
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			double dND[2] = { 0, 0 };
 			M1NMN2<nodes>(1, dN.data + 1 * gpindex * nodes, coords.data, dND);
-			jacobian.data[gpindex] = std::sqrt(dND[0] * dND[0] + dND[1] * dND[1]);
-			normal.data[2 * gpindex + 0] = -dND[1] / jacobian.data[gpindex];
-			normal.data[2 * gpindex + 1] =  dND[0] / jacobian.data[gpindex];
+			jacobian[gpindex] = std::sqrt(dND[0] * dND[0] + dND[1] * dND[1]);
+			normal[2 * gpindex + 0] = -dND[1] / jacobian[gpindex];
+			normal[2 * gpindex + 1] =  dND[0] / jacobian[gpindex];
 		}
 	}
 };

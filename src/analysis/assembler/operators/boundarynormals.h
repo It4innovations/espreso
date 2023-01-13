@@ -49,8 +49,8 @@ struct BoundaryNormal2D: public ActionOperator {
 			double norm = std::sqrt(tangent[0]*tangent[0] + tangent[1]*tangent[1]);
 			tangent[0] /= norm;
 			tangent[1] /= norm;
-			normal.data[2*gpindex + 0] = tangent[1];
-			normal.data[2*gpindex + 1] = -tangent[0];
+			normal[2*gpindex + 0] = tangent[1];
+			normal[2*gpindex + 1] = -tangent[0];
 		}
 	}
 };
@@ -100,9 +100,9 @@ struct BoundaryNormal3D: public ActionOperator {
 
 			// std::cout << "    >>>   " << normal.x << "  " << normal.y << "  " << normal.z << "\n";
 			
-			normals.data[3*gpindex + 0] = normal[0];
-			normals.data[3*gpindex + 1] = normal[1];
-			normals.data[3*gpindex + 2] = normal[2];
+			normals[3*gpindex + 0] = normal[0];
+			normals[3*gpindex + 1] = normal[1];
+			normals[3*gpindex + 2] = normal[2];
  		}
 	}
 };

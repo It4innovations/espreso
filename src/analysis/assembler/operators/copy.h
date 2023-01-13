@@ -36,7 +36,7 @@ struct CopyParameter: public ActionOperator {
 	{
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			for (size_t d = 0; d < dimension; ++d) {
-				to.data[gpindex * dimension + d] = from.data[gpindex * dimension + d];
+				to[gpindex * dimension + d] = from[gpindex * dimension + d];
 			}
 		}
 	}
@@ -152,7 +152,7 @@ struct CopyNodesToEnodes: public ActionOperator {
 //							for (auto e = info::mesh->boundaryRegions[r]->eintervals[ii].begin; e != info::mesh->boundaryRegions[r]->eintervals[ii].end; ++e, ++procNodes) {
 //								for (auto n = procNodes->begin(); n != procNodes->end(); ++n) {
 //									for (int dim = 0; dim < from.dimension; ++dim, ++i) {
-//										*i = from.data[*n * from.dimension + dim];
+//										*i = from[*n * from.dimension + dim];
 //									}
 //								}
 //							}

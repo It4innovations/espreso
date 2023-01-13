@@ -20,7 +20,7 @@ void averageEnodesToNodes(const ParameterData &from, NodeData &to)
 		for (esint e = info::mesh->elements->eintervals[i].begin; e < info::mesh->elements->eintervals[i].end; ++e, ++procNodes) {
 			for (auto n = procNodes->begin(); n != procNodes->end(); ++n, ++input) {
 				for (int d = 0; d < to.dimension; ++d) {
-					to.data[*n * to.dimension + d] += input.data[d];
+					to.data[*n * to.dimension + d] += input[d];
 				}
 			}
 		}

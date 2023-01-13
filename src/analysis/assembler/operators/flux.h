@@ -43,7 +43,7 @@ struct OutputFluxIsotropic2D: public OutputFlux {
 	void operator()()
 	{
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			ADDM2NMN1<nodes>(conductivity.data[gpindex] / gps, dND.data + 2 * nodes * gpindex, temp.data, flux);
+			ADDM2NMN1<nodes>(conductivity[gpindex] / gps, dND.data + 2 * nodes * gpindex, temp.data, flux);
 		}
 	}
 };
@@ -55,7 +55,7 @@ struct OutputFluxIsotropic3D: public OutputFlux {
 	void operator()()
 	{
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			ADDM2NMN1<nodes>(conductivity.data[gpindex] / gps, dND.data + 3 * nodes * gpindex, temp.data, flux);
+			ADDM2NMN1<nodes>(conductivity[gpindex] / gps, dND.data + 3 * nodes * gpindex, temp.data, flux);
 		}
 	}
 };

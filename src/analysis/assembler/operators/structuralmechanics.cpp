@@ -51,6 +51,19 @@ void stiffness(StructuralMechanics &module)
 
 void RHS(StructuralMechanics &module)
 {
+	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+		module.controller.addInput(module.elements.rhs, module.acceleration.gp, module.integration.N, module.integration.weight, module.integration.jacobiDeterminant, module.material.density, module.thickness.gp);
+		module.controller.prepare(module.elements.rhs);
+		if (module.acceleration.gp.isSet(interval)) {
+			module.elementOps[interval].emplace_back(
+				instantiate<StructuralMechanics::NGP, Acceleration2D>(interval, module.controller,
+						module.integration.N, module.integration.weight, module.integration.jacobiDeterminant,
+						module.material.density, module.thickness.gp,
+						module.acceleration.gp,
+						module.elements.rhs));
+		}
+	}
+
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
 			bool isSet = module.normalPressure.gp.isSet(r);

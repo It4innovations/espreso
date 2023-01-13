@@ -120,7 +120,7 @@ struct HeatRHS: public ActionOperator {
 	{
 		for (size_t n = 0; n < nodes; ++n) {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * heatSource.data[gpindex] * N.data[gpindex * nodes + n];
+				rhs[n] += J[gpindex] * weight[gpindex] * heatSource[gpindex] * N[gpindex * nodes + n];
 			}
 		}
 	}
@@ -154,9 +154,9 @@ struct HeatQ: public ActionOperator {
 	void operator()()
 	{
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			q.data[gpindex] += heatFlow.data[gpindex] / area;
-			q.data[gpindex] += heatFlux.data[gpindex];
-			q.data[gpindex] += htc.data[gpindex] * extTemp.data[gpindex];
+			q[gpindex] += heatFlow[gpindex] / area;
+			q[gpindex] += heatFlux[gpindex];
+			q[gpindex] += htc[gpindex] * extTemp[gpindex];
 		}
 	}
 
@@ -199,8 +199,8 @@ struct HeatRHS2D: public ActionOperator {
 	{
 		for (size_t n = 0; n < nodes; ++n) {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * q.data[gpindex] * N.data[gpindex * nodes + n];
-//				rhs.data[n] += thickness.data[gpindex] * J.data[gpindex] * weight.data[gpindex] * q.data[gpindex] * N.data[gpindex * nodes + n];
+				rhs[n] += J[gpindex] * weight[gpindex] * q[gpindex] * N[gpindex * nodes + n];
+//				rhs[n] += thickness[gpindex] * J[gpindex] * weight[gpindex] * q[gpindex] * N[gpindex * nodes + n];
 			}
 		}
 	}
@@ -242,7 +242,7 @@ struct HeatRHS3D: public ActionOperator {
 	{
 		for (size_t n = 0; n < nodes; ++n) {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-				rhs.data[n] += J.data[gpindex] * weight.data[gpindex] * q.data[gpindex] * N.data[gpindex * nodes + n];
+				rhs[n] += J[gpindex] * weight[gpindex] * q[gpindex] * N[gpindex * nodes + n];
 			}
 		}
 	}
