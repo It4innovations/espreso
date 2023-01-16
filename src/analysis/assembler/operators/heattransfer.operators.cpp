@@ -1,5 +1,6 @@
 
-#include "heattransfer.h"
+#include "heattransfer.stiffness.h"
+#include "heattransfer.forces.h"
 
 #include "analysis/assembler/operator.hpp"
 #include "analysis/assembler/module/heattransfer.h"

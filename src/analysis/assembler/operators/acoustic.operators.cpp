@@ -1,5 +1,6 @@
 
-#include "acoustic.h"
+#include "acoustic.forces.h"
+#include "acoustic.stiffness.h"
 
 #include "analysis/assembler/operator.hpp"
 #include "analysis/assembler/module/acoustic.h"

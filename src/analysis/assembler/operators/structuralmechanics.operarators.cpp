@@ -1,5 +1,6 @@
 
-#include "structuralmechanics.h"
+#include "structuralmechanics.stiffness.h"
+#include "structuralmechanics.forces.h"
 #include "analysis/assembler/module/structuralmechanics.h"
 
 #include "analysis/assembler/operator.hpp"
