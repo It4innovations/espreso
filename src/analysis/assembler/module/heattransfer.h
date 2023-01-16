@@ -5,6 +5,8 @@
 #include "assembler.h"
 #include "config/ecf/physics/heattransfer.h"
 #include "config/holders/expression.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/elementstore.h"
 #include "math/primitives/vector_sparse.h"
 #include "math/primitives/matrix_info.h"
 #include "math/physics/matrix_base.h"
@@ -53,31 +55,144 @@ public:
 	HeatTransferConfiguration &settings;
 	HeatTransferLoadStepConfiguration &configuration;
 
-	ParametersIntegration integration;
-	ParametersIntegrationSimd integrationSimd;
-	ParametersCoordinates coords;
-	ParametersCoordinates coordsSimd;
-	ParametersThickness thickness;
-	ParametersThickness thicknessSimd;
+	struct {
+		ElementParameter<egps> weight;
+		ElementParameter<enodes * egps> N;
+		ElementParameter<edim * enodes * egps> dN;
 
-	ParametersCoordinateSystem cooSystem;
-	ParametersMaterial material;
-	ParametersMaterial materialSimd;
+		ElementParameter<egps> jacobiDeterminant;
+		ElementParameter<ndim * ndim * egps> jacobiInversion;
+		ElementParameter<edim * enodes * egps> dND;
 
-	ParametersTemperature temp;
-	ParametersTranslationMotions translationMotions;
-	ParametersElementNodeFunction heatSource;
+		struct Boundary {
+			BoundaryParameter<egps> weight;
+			BoundaryParameter<enodes * egps> N;
+			BoundaryParameter<edim * enodes * egps> dN;
 
-	ParametersConvection convection;
-	ParametersBoundaryNodeFunction temperature;
-	ParametersBoundaryFunction heatFlow, heatFlux, q;
+			BoundaryParameter<egps> jacobian;
+		} boundary;
+	} integration;
 
-	ParametersElements<1> elements;
-	ParametersElements<1> elementsSimd;
+	struct {
+		ElementParameter<ndim * enodes> node;
+		ElementParameter<ndim * egps> gp;
 
-	ParametersGradient gradient;
-	ParametersGradient gradientSimd;
-	ParametersFlux flux;
+		struct Boundary {
+			BoundaryParameter<ndim * enodes> node;
+			BoundaryParameter<ndim * egps> gp;
+		} boundary;
+	} coords;
+
+	struct ParametersThickness {
+		ElementGPsExternalParameter<egps> gp;
+
+		struct {
+			BoundaryExternalParameter<egps> gp;
+		} boundary;
+	} thickness;
+
+	struct ParametersCoordinateSystem {
+		ElementGPsExternalParameter<egps> cartesian2D;
+		ElementGPsExternalParameter<ndim * egps> cartesian3D, spherical;
+		ElementGPsExternalParameter<2 * egps> cylindric;
+
+		ElementParameter<2 * egps> angle2D;
+		ElementParameter<6 * egps> angle3D;
+	} cooSystem;
+
+	struct ParametersMaterial {
+		struct Model {
+			ElementGPsExternalParameter<egps> isotropic;
+			ElementGPsExternalParameter<ndim * egps> diagonal;
+			ElementGPsExternalParameter<3 * egps> symmetric2D;
+			ElementGPsExternalParameter<6 * egps> symmetric3D;
+			ElementGPsExternalParameter<ndim * ndim * egps> anisotropic;
+		};
+
+		ElementGPsExternalParameter<egps> density, heatCapacity;
+		Model model;
+
+		ElementParameter<egps> mass;
+		ElementParameter<egps> conductivityIsotropic;
+		ElementParameter<ndim * ndim * egps> conductivity;
+	} material;
+
+	struct ParametersTemperature {
+		ElementNodesExternalParameter<enodes> node;
+		ElementGPsExternalParameter<egps> gp;
+
+		struct Initial {
+			ElementNodesExternalParameter<enodes> node;
+			ElementGPsExternalParameter<egps> gp;
+			struct Boundary {
+				BoundaryParameter<enodes> node;
+				BoundaryParameter<egps> gp;
+			} boundary;
+		} initial;
+
+		struct Boundary {
+			BoundaryParameter<enodes> node;
+			BoundaryParameter<egps> gp;
+		} boundary;
+	} temp;
+
+	struct ParametersTranslationMotions {
+		double sigma;
+		bool CAU, SUPG;
+
+		ElementGPsExternalParameter<ndim * egps> gp;
+		ElementParameter<enodes * enodes> stiffness;
+		ElementParameter<enodes> rhs;
+	} translationMotions;
+
+	struct ParametersElementNodeFunction {
+		ElementGPsExternalParameter<egps> gp;
+	} heatSource;
+
+	struct ParametersConvection {
+		// input
+		struct {
+			BoundaryExternalParameter<egps> gp;
+		} wallHeight, tiltAngle, diameter, plateLength, fluidVelocity, plateDistance, length, experimentalConstant, volumeFraction, absolutePressure;
+		// output
+		struct {
+			BoundaryExternalParameter<egps> gp;
+		} heatTransferCoeficient, externalTemperature;
+
+		struct {
+			BoundaryParameter<egps> gp;
+		} rho, dynamicViscosity, dynamicViscosityTemp, heatCapacity, thermalConductivity;
+
+		BoundarySettings<ConvectionConfiguration> configuration;
+	} convection;
+
+	struct {
+		BoundaryExternalParameter<enodes> node;
+	} temperature;
+
+	struct {
+		BoundaryExternalParameter<egps> gp;
+	} heatFlow, heatFlux, q;
+
+	struct ParametersElements {
+		ElementParameter<enodes * enodes> stiffness;
+		ElementParameter<enodes * enodes> mass;
+		ElementParameter<enodes> rhs;
+
+		struct {
+			BoundaryParameter<enodes * enodes> stiffness;
+			BoundaryParameter<enodes> rhs;
+		} boundary;
+	} elements;
+
+	struct  {
+		ElementParameter<egps> xi;
+	} gradient;
+
+	struct Results {
+		static NodeData *temperature, *initialTemperature;
+		static ElementData *translationMotion, *gradient, *flux;
+	};
 
 protected:
 	bool initTemperature();

@@ -429,9 +429,9 @@ bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::
 }
 
 
-bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection)
-{
-	return false;
+//bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection)
+//{
+//	return false;
 //	if (settings.size()) {
 //		eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
 //
@@ -578,7 +578,7 @@ bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::
 //		}
 //		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 //	}
-}
+//}
 
 bool Assembler::examineBoundaryParameter(const std::string &name, std::map<std::string, ImpedanceConfiguration> &settings, ExternalBoundaryValue &impedance)
 {

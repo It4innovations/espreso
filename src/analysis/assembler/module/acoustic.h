@@ -4,6 +4,8 @@
 
 #include "assembler.h"
 #include "config/ecf/physics/acoustic.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/elementstore.h"
 #include "math/primitives/vector_sparse.h"
 #include "math/primitives/matrix_info.h"
 #include "math/physics/matrix_base.h"
@@ -51,23 +53,90 @@ public:
 	AcousticConfiguration &settings;
 	AcousticLoadStepConfiguration &configuration;
 
-	ParametersAcousticPressure acoustic_pressure;
-	ParametersIntegration integration;
-	ParametersCoordinates coords;
+	struct ParametersAcousticPressure {
+		ElementParameter<enodes> node;
+		ElementGPsExternalParameter<egps> gp;
 
-	ParametersBoundaryNodeFunction pressure;
-	ParametersBoundaryFunction normalAcceleration, impedance, q, proj_acceleration;
-	ParametersBoundaryVectorFunction acceleration;
-	ParametersMaterial material;
+		struct {
+			ElementGPsExternalParameter<enodes> node;
+			ElementGPsExternalParameter<egps> gp;
+		} initial;
+	} acoustic_pressure;
 
-	ParametersBoundaryNodeFunction pointSource;
+	struct {
+		ElementParameter<egps> weight;
+		ElementParameter<enodes * egps> N;
+		ElementParameter<edim * enodes * egps> dN;
 
-	ParameterMonopoleSource monopoleSource;
-	ParameterDipoleSource dipoleSource;
+		ElementParameter<egps> jacobiDeterminant;
+		ElementParameter<ndim * ndim * egps> jacobiInversion;
+		ElementParameter<edim * enodes * egps> dND;
 
-	ParametersBoundaryVectorFunction normals;
+		struct {
+			BoundaryParameter<egps> weight;
+			BoundaryParameter<enodes * egps> N;
+			BoundaryParameter<edim * enodes * egps> dN;
 
-	ParametersElements<1> elements;
+			BoundaryParameter<egps> jacobian;
+		} boundary;
+	} integration;
+
+	struct {
+		ElementParameter<ndim * enodes> node;
+		ElementParameter<ndim * egps> gp;
+		struct {
+			BoundaryParameter<ndim * enodes> node;
+			BoundaryParameter<ndim * egps> gp;
+		} boundary;
+	} coords;
+
+	struct {
+		BoundaryExternalParameter<enodes> node;
+	} pressure;
+
+	struct {
+		BoundaryExternalParameter<egps> gp;
+	} normalAcceleration, impedance, q, proj_acceleration;
+
+	struct {
+		BoundaryExternalParameter<ndim * egps> gp;
+	} acceleration, normals;
+
+	struct {
+		ElementGPsExternalParameter<egps> density, speed_of_sound;
+	} material;
+
+	struct {
+		BoundaryExternalParameter<enodes> node;
+	} pointSource;
+
+	struct {
+		ElementGPsExternalParameter<egps> gp;
+	} monopoleSource;
+
+	struct {
+		ElementGPsExternalParameter<ndim * egps> gp;
+	} dipoleSource;
+
+	struct {
+		ElementParameter<enodes * enodes> stiffness;
+		ElementParameter<enodes * enodes> mass;
+		ElementParameter<enodes * enodes> damping;
+		ElementParameter<enodes> rhs;
+
+		ElementParameter<enodes> monopole;
+		ElementParameter<enodes> dipole;
+
+		struct {
+			BoundaryParameter<enodes * enodes> stiffness;
+			BoundaryParameter<enodes * enodes> mass;
+			BoundaryParameter<enodes> rhs;
+		} boundary;
+	} elements;
+
+	struct Results {
+		static NodeData *pressure, *initialPressure;
+	};
 protected:
 	void initParameters();
 };

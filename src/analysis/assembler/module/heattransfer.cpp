@@ -16,9 +16,13 @@
 #include <numeric>
 #include <algorithm>
 
-#include "basis/utilities/print.h"
-
 using namespace espreso;
+
+NodeData* HeatTransfer::Results::temperature = nullptr;
+NodeData* HeatTransfer::Results::initialTemperature = nullptr;
+ElementData* HeatTransfer::Results::translationMotion = nullptr;
+ElementData* HeatTransfer::Results::gradient = nullptr;
+ElementData* HeatTransfer::Results::flux = nullptr;
 
 HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
 : settings(settings), configuration(configuration)
@@ -28,10 +32,10 @@ HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &se
 
 void HeatTransfer::initParameters()
 {
-	if (ParametersTemperature::Initial::output == nullptr) {
-		ParametersTemperature::Initial::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_TEMPERATURE");
+	if (Results::initialTemperature == nullptr) {
+		Results::initialTemperature = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_TEMPERATURE");
 
-		Variable::list.node["INITIAL_TEMPERATURE"] = new OutputVariable(ParametersTemperature::Initial::output, 0, 1);
+		Variable::list.node["INITIAL_TEMPERATURE"] = new OutputVariable(Results::initialTemperature, 0, 1);
 		for (auto it = settings.initial_temperature.begin(); it != settings.initial_temperature.end(); ++it) {
 			it->second.scope = ECFExpression::Scope::ENODES;
 			for (auto p = it->second.parameters.begin(); p != it->second.parameters.end(); ++p) {
@@ -39,18 +43,18 @@ void HeatTransfer::initParameters()
 			}
 		}
 	}
-	if (ParametersTemperature::output == nullptr) {
-		ParametersTemperature::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "TEMPERATURE");
-		Variable::list.node["TEMPERATURE"] = new OutputVariable(ParametersTemperature::output, 0, 1);
+	if (Results::temperature == nullptr) {
+		Results::temperature = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "TEMPERATURE");
+		Variable::list.node["TEMPERATURE"] = new OutputVariable(Results::temperature, 0, 1);
 	}
-	if (info::ecf->output.results_selection.translation_motions && ParametersTranslationMotions::output == nullptr) {
-		ParametersTranslationMotions::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "TRANSLATION_MOTION");
+	if (info::ecf->output.results_selection.translation_motions && Results::translationMotion == nullptr) {
+		Results::translationMotion = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "TRANSLATION_MOTION");
 	}
-	if (info::ecf->output.results_selection.gradient && ParametersGradient::output == nullptr) {
-		ParametersGradient::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "GRADIENT");
+	if (info::ecf->output.results_selection.gradient && Results::gradient == nullptr) {
+		Results::gradient = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "GRADIENT");
 	}
-	if (info::ecf->output.results_selection.flux && ParametersFlux::output == nullptr) {
-		ParametersFlux::output = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUX");
+	if (info::ecf->output.results_selection.flux && Results::flux == nullptr) {
+		Results::flux = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUX");
 	}
 }
 
@@ -83,8 +87,8 @@ bool HeatTransfer::initTemperature()
 //
 //	temp.initial.node.builder->buildAndExecute(*this);
 
-	averageEnodesToNodes(temp.initial.node, *ParametersTemperature::Initial::output);
-	ParametersTemperature::output->data = ParametersTemperature::Initial::output->data;
+	averageEnodesToNodes(temp.initial.node, *Results::initialTemperature);
+	Results::temperature->data = Results::initialTemperature->data;
 
 //	if (info::mesh->dimension == 2 && info::ecf->heat_transfer_2d.init_temp_respect_bc) {
 //		CopyBoundaryRegionsSettingToNodes(configuration.temperature, *ParametersTemperature::Initial::output, "SET INITIAL TEMPERATURE ACCORDING TO DIRICHLET").buildAndExecute(*this);
@@ -97,8 +101,8 @@ bool HeatTransfer::initTemperature()
 //	ElementsGaussPointsBuilder<1>(integration.N, temp.initial.node, temp.initial.gp, "INTEGRATE INITIAL TEMPERATURE INTO ELEMENTS GAUSS POINTS").buildAndExecute(*this);
 //	BoundaryGaussPointsBuilder<1>(integration.boundary.N, temp.initial.boundary.node, temp.initial.boundary.gp, "INTEGRATE INITIAL TEMPERATURE INTO BOUNDARY GAUSS POINTS").buildAndExecute(*this);
 
-	if (Variable::list.egps.find("TEMPERATURE") != Variable::list.egps.end() || ParametersGradient::output) {
-		copyNodesToEnodes(*this, *ParametersTemperature::output, temp.node);
+	if (Variable::list.egps.find("TEMPERATURE") != Variable::list.egps.end() || Results::gradient) {
+		copyNodesToEnodes(*this, *Results::temperature, temp.node);
 	}
 
 	if (Variable::list.egps.find("TEMPERATURE") != Variable::list.egps.end()) {
@@ -333,7 +337,7 @@ void HeatTransfer::_evaluate()
 
 void HeatTransfer::updateSolution(SteadyState &scheme)
 {
-	scheme.x->storeTo(ParametersTemperature::output->data);
+	scheme.x->storeTo(Results::temperature->data);
 	results(); // do we need an update mechanism?
 	temp.node.setUpdate(1);
 }
@@ -433,14 +437,11 @@ void HeatTransfer::printVersions()
 	printParameterStats(material.heatCapacity);
 	printParameterStats(material.mass);
 
-	printParameterStats(temp.initial.output);
 	printParameterStats(temp.initial.node);
 	printParameterStats(temp.initial.gp);
-	printParameterStats(temp.output);
 	printParameterStats(temp.node);
 	printParameterStats(temp.gp);
 
-	printParameterStats(translationMotions.output);
 	printParameterStats(translationMotions.gp);
 	printParameterStats(translationMotions.stiffness);
 	printParameterStats(translationMotions.rhs);
@@ -451,17 +452,7 @@ void HeatTransfer::printVersions()
 	printParameterStats(elements.mass);
 	printParameterStats(elements.rhs);
 
-	if (gradient.output)
-	{
-		printParameterStats(gradient.output);
-	}
-
 	printParameterStats(gradient.xi);
-
-	if (flux.output)
-	{
-		printParameterStats(flux.output);
-	}
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		printf("REGION: %s\n", info::mesh->boundaryRegions[r]->name.c_str());

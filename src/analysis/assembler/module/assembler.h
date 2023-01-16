@@ -2,7 +2,6 @@
 #ifndef SRC_ANALYSIS_ASSEMBLER_MODULE_ASSEMBLER_H_
 #define SRC_ANALYSIS_ASSEMBLER_MODULE_ASSEMBLER_H_
 
-#include "parameters.h"
 #include "analysis/assembler/controller.h"
 #include "analysis/assembler/operator.h"
 #include "math/primitives/vector_sparse.h"
@@ -54,7 +53,7 @@ protected:
 	template<class TSecond>
 	bool examineBoundaryParameter(const std::string &name, std::map<std::string, TSecond> &settings, ExternalBoundaryValue &externalValue, int dimension, std::function<ECFExpression*(TSecond &expr)> getExpr);
 	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpression> &settings, ExternalBoundaryValue &value);
-	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection);
+//	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection);
 	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ImpedanceConfiguration> &settings, ExternalBoundaryValue &impedance);
 	bool examineBoundaryParameter(const std::string &name, std::map<std::string, PointSourceConfiguration> &settings, ExternalBoundaryValue &point_source);
 

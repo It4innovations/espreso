@@ -19,9 +19,10 @@
 #include <numeric>
 #include <algorithm>
 
-#include "basis/utilities/print.h"
-
 using namespace espreso;
+
+NodeData* Acoustic::Results::pressure = nullptr;
+NodeData* Acoustic::Results::initialPressure = nullptr;
 
 Acoustic::Acoustic(Acoustic *previous, AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration)
 : settings(settings), configuration(configuration)
@@ -31,13 +32,13 @@ Acoustic::Acoustic(Acoustic *previous, AcousticConfiguration &settings, Acoustic
 
 void Acoustic::initParameters()
 {
-	if (ParametersAcousticPressure::Initial::output == nullptr) {
-		ParametersAcousticPressure::Initial::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_ACOUSTIC_PRESSURE");
-		Variable::list.node["INITIAL_ACOUSTIC_PRESSURE"] = new OutputVariable(ParametersAcousticPressure::Initial::output, 0, 1);
+	if (Results::initialPressure == nullptr) {
+		Results::initialPressure = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_ACOUSTIC_PRESSURE");
+		Variable::list.node["INITIAL_ACOUSTIC_PRESSURE"] = new OutputVariable(Results::initialPressure, 0, 1);
 	}
-	if (ParametersAcousticPressure::output == nullptr) {
-		ParametersAcousticPressure::output = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "ACOUSTIC_PRESSURE");
-		Variable::list.node["ACOUSTIC_PRESSURE"] = new OutputVariable(ParametersAcousticPressure::output, 0, 1);
+	if (Results::pressure == nullptr) {
+		Results::pressure = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "ACOUSTIC_PRESSURE");
+		Variable::list.node["ACOUSTIC_PRESSURE"] = new OutputVariable(Results::pressure, 0, 1);
 	}
 }
 
@@ -159,5 +160,5 @@ void Acoustic::evaluate(Harmonic &scheme)
 
 void Acoustic::updateSolution(Harmonic &scheme)
 {
-	scheme.re.x->storeTo(ParametersAcousticPressure::output->data);
+	scheme.re.x->storeTo(Results::pressure->data);
 }
