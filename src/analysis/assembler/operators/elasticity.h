@@ -34,7 +34,7 @@ struct ElasticMaterial: public ActionOperator {
 };
 
 template<size_t nodes, size_t gps>
-struct ElasticityIsotropic2DPlaneStrain: public ElasticMaterial {
+struct ElasticityIsotropicPlaneStrain: public ElasticMaterial {
 	using ElasticMaterial::ElasticMaterial;
 
 	void operator()()
@@ -52,7 +52,7 @@ struct ElasticityIsotropic2DPlaneStrain: public ElasticMaterial {
 };
 
 template<size_t nodes, size_t gps>
-struct ElasticityIsotropic2DPlaneStress: public ElasticMaterial {
+struct ElasticityIsotropicPlaneStress: public ElasticMaterial {
 	using ElasticMaterial::ElasticMaterial;
 
 	void operator()()
@@ -65,6 +65,25 @@ struct ElasticityIsotropic2DPlaneStress: public ElasticMaterial {
 			elasticity[ogp + 0] = k;      elasticity[ogp + 1] = k * mi; elasticity[ogp + 2] = 0;
 			elasticity[ogp + 3] = k * mi; elasticity[ogp + 4] = k;      elasticity[ogp + 5] = 0;
 			elasticity[ogp + 6] = 0;      elasticity[ogp + 7] = 0;      elasticity[ogp + 8] = k * ((1 -  mi) / 2);
+		}
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct ElasticityIsotropicAxisymmetric: public ElasticMaterial {
+	using ElasticMaterial::ElasticMaterial;
+
+	void operator()()
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			double ex = youngModulus[gpindex];
+			double mi = poissonRatio[gpindex];
+			double k = ex * (1 - mi) / ((1 + mi) * (1 - 2 * mi));
+			int ogp = 16 * gpindex;
+			elasticity[ogp +  0] = k;                   elasticity[ogp +  1] = k * (mi / (1 - mi)); elasticity[ogp +  2] = 0;                                   elasticity[ogp +  3] = k * (mi / (1 - mi));
+			elasticity[ogp +  4] = k * (mi / (1 - mi)); elasticity[ogp +  5] = k;                   elasticity[ogp +  6] = 0;                                   elasticity[ogp +  7] = k * (mi / (1 - mi));
+			elasticity[ogp +  8] = 0;                   elasticity[ogp +  9] = 0;                   elasticity[ogp + 10] = k * ((1 - 2 * mi) / (2 * (1 - mi))); elasticity[ogp + 11] = 0;
+			elasticity[ogp + 12] = k * (mi / (1 - mi)); elasticity[ogp + 13] = k * (mi / (1 - mi)); elasticity[ogp + 14] = 0;                                   elasticity[ogp + 15] = k;
 		}
 	}
 };

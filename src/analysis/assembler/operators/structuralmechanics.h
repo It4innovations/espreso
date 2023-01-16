@@ -11,15 +11,19 @@ namespace espreso {
 struct StructuralMechanicsStiffness: public ActionOperator {
 	StructuralMechanicsStiffness(
 			int interval,
+			const ParameterData &N,
 			const ParameterData &dND,
 			const ParameterData &weight,
 			const ParameterData &determinant,
+			const ParameterData &coordinates,
 			const ParameterData &elasticity,
 			const ParameterData &thickness,
 			ParameterData &stiffness)
-	: dND(dND, interval),
+	: N(N, interval),
+	  dND(dND, interval),
 	  weight(weight, interval, 0),
 	  determinant(determinant, interval),
+	  coordinates(coordinates, interval),
 	  elasticity(elasticity, interval),
 	  thickness(thickness, interval),
 	  stiffness(stiffness, interval)
@@ -27,31 +31,24 @@ struct StructuralMechanicsStiffness: public ActionOperator {
 
 	}
 
-	InputParameterIterator dND, weight, determinant, elasticity,thickness;
+	InputParameterIterator N, dND, weight, determinant, coordinates, elasticity, thickness;
 	OutputParameterIterator stiffness;
 
 	void operator++()
 	{
-		++dND; ++determinant; ++elasticity; ++thickness;
+		++dND; ++determinant; ++coordinates; ++elasticity; ++thickness;
 		++stiffness;
 	}
 
 	void move(int n)
 	{
-		dND += n; determinant += n; elasticity += n; thickness += n;
+		dND += n; determinant += n; coordinates += n; elasticity += n; thickness += n;
 		stiffness += n;
-	}
-
-	StructuralMechanicsStiffness& operator+=(const size_t rhs)
-	{
-		dND += rhs; determinant += rhs; elasticity += rhs; thickness += rhs;
-		stiffness += rhs;
-		return *this;
 	}
 };
 
 template<size_t nodes, size_t gps>
-struct Stiffness2DPlane: public StructuralMechanicsStiffness {
+struct StiffnessPlane: public StructuralMechanicsStiffness {
 	using StructuralMechanicsStiffness::StructuralMechanicsStiffness;
 
 	void operator()()
@@ -63,7 +60,7 @@ struct Stiffness2DPlane: public StructuralMechanicsStiffness {
 };
 
 template<size_t nodes, size_t gps>
-struct Stiffness2DPlaneWithThickness: public StructuralMechanicsStiffness {
+struct StiffnessPlaneWithThickness: public StructuralMechanicsStiffness {
 	using StructuralMechanicsStiffness::StructuralMechanicsStiffness;
 
 	void operator()()
@@ -73,6 +70,23 @@ struct Stiffness2DPlaneWithThickness: public StructuralMechanicsStiffness {
 		}
 	}
 };
+
+template<size_t nodes, size_t gps>
+struct StiffnessAxisymmetric: public StructuralMechanicsStiffness {
+	using StructuralMechanicsStiffness::StructuralMechanicsStiffness;
+
+	void operator()()
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			double coo[nodes];
+			for (int n = 0; n < nodes; ++n) {
+				coo[n] = N[gpindex * nodes + n] / coordinates[2 * gpindex];
+			}
+			ADDDXDYCOO44DXDYN<nodes>(determinant[gpindex] * weight[gpindex] * 2 * M_PI * coordinates[2 * gpindex], elasticity.data + 16 * gpindex, dND.data + 2 * nodes * gpindex, coo, stiffness.data);
+		}
+	}
+};
+
 
 template<size_t nodes, size_t gps>
 struct Stiffness3DElasticity: public StructuralMechanicsStiffness {
@@ -87,11 +101,12 @@ struct Stiffness3DElasticity: public StructuralMechanicsStiffness {
 };
 
 struct Acceleration: public ActionOperator {
-	Acceleration(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &density, const ParameterData &thickness, const ParameterData &acceleration, ParameterData &rhs)
+	Acceleration(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &density, const ParameterData &coordinates, const ParameterData &thickness, const ParameterData &acceleration, ParameterData &rhs)
 	: N(N, interval),
 	  weight(weight, interval),
 	  J(J, interval),
 	  density(density, interval),
+	  coordinates(coordinates, interval),
 	  thickness(thickness, interval),
 	  acceleration(acceleration, interval),
 	  rhs(rhs, interval)
@@ -99,7 +114,7 @@ struct Acceleration: public ActionOperator {
 
 	}
 
-	InputParameterIterator N, weight, J, density, thickness;
+	InputParameterIterator N, weight, J, density, coordinates, thickness;
 	InputParameterIterator acceleration;
 	OutputParameterIterator rhs;
 
@@ -119,7 +134,22 @@ struct Acceleration: public ActionOperator {
 };
 
 template<size_t nodes, size_t gps>
-struct Acceleration2D: public Acceleration {
+struct AccelerationPlane: public Acceleration {
+	using Acceleration::Acceleration;
+
+	void operator()()
+	{
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+				rhs[        n] += J[gpindex] * weight[gpindex] * density[gpindex] * N[gpindex * nodes + n] * acceleration[2 * gpindex + 0];
+				rhs[nodes + n] += J[gpindex] * weight[gpindex] * density[gpindex] * N[gpindex * nodes + n] * acceleration[2 * gpindex + 1];
+			}
+		}
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct AccelerationPlaneWithThickness: public Acceleration {
 	using Acceleration::Acceleration;
 
 	void operator()()
@@ -128,6 +158,21 @@ struct Acceleration2D: public Acceleration {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 				rhs[        n] += J[gpindex] * weight[gpindex] * thickness[gpindex] * density[gpindex] * N[gpindex * nodes + n] * acceleration[2 * gpindex + 0];
 				rhs[nodes + n] += J[gpindex] * weight[gpindex] * thickness[gpindex] * density[gpindex] * N[gpindex * nodes + n] * acceleration[2 * gpindex + 1];
+			}
+		}
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct AccelerationAxisymmetric: public Acceleration {
+	using Acceleration::Acceleration;
+
+	void operator()()
+	{
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+				rhs[        n] += J[gpindex] * weight[gpindex] * 2 * M_PI * coordinates[2 * gpindex] * density[gpindex] * N[gpindex * nodes + n] * acceleration[2 * gpindex + 0];
+				rhs[nodes + n] += J[gpindex] * weight[gpindex] * 2 * M_PI * coordinates[2 * gpindex] * density[gpindex] * N[gpindex * nodes + n] * acceleration[2 * gpindex + 1];
 			}
 		}
 	}
@@ -183,7 +228,22 @@ struct AngularVelocity: public ActionOperator {
 };
 
 template<size_t nodes, size_t gps>
-struct AngularVelocity2D: public AngularVelocity {
+struct AngularVelocityPlane: public AngularVelocity {
+	using AngularVelocity::AngularVelocity;
+
+	void operator()()
+	{
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+				rhs[        n] += J[gpindex] * weight[gpindex] * density[gpindex] * N[gpindex * nodes + n] * coordinates[2 * gpindex + 0] * angularVelocity[3 * gpindex + 2] * angularVelocity[3 * gpindex + 2];
+				rhs[nodes + n] += J[gpindex] * weight[gpindex] * density[gpindex] * N[gpindex * nodes + n] * coordinates[2 * gpindex + 1] * angularVelocity[3 * gpindex + 2] * angularVelocity[3 * gpindex + 2];
+			}
+		}
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct AngularVelocityPlaneWithThickness: public AngularVelocity {
 	using AngularVelocity::AngularVelocity;
 
 	void operator()()
@@ -192,6 +252,21 @@ struct AngularVelocity2D: public AngularVelocity {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 				rhs[        n] += J[gpindex] * weight[gpindex] * thickness[gpindex] * density[gpindex] * N[gpindex * nodes + n] * coordinates[2 * gpindex + 0] * angularVelocity[3 * gpindex + 2] * angularVelocity[3 * gpindex + 2];
 				rhs[nodes + n] += J[gpindex] * weight[gpindex] * thickness[gpindex] * density[gpindex] * N[gpindex * nodes + n] * coordinates[2 * gpindex + 1] * angularVelocity[3 * gpindex + 2] * angularVelocity[3 * gpindex + 2];
+			}
+		}
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct AngularVelocityAxisymmetric: public AngularVelocity {
+	using AngularVelocity::AngularVelocity;
+
+	void operator()()
+	{
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+				rhs[        n] += J[gpindex] * weight[gpindex] * 2 * M_PI * coordinates[2 * gpindex] * density[gpindex] * N[gpindex * nodes + n] * coordinates[2 * gpindex + 0] * angularVelocity[3 * gpindex + 1] * angularVelocity[3 * gpindex + 1];
+				rhs[nodes + n] += J[gpindex] * weight[gpindex] * 2 * M_PI * coordinates[2 * gpindex] * density[gpindex] * N[gpindex * nodes + n] * coordinates[2 * gpindex + 1] * angularVelocity[3 * gpindex + 1] * angularVelocity[3 * gpindex + 1];
 			}
 		}
 	}
@@ -222,24 +297,25 @@ struct AngularVelocity3D: public AngularVelocity {
 };
 
 struct NormalPressure: public ActionOperator {
-	NormalPressure(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &normal, const ParameterData &thickness, const ParameterData &normalPressure, ParameterData &rhs)
+	NormalPressure(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &normal, const ParameterData &coordinates, const ParameterData &thickness, const ParameterData &normalPressure, ParameterData &rhs)
 	: N(N, interval),
 	  weight(weight, interval),
 	  J(J, interval),
 	  normal(normal, interval),
+	  coordinates(coordinates, interval),
 //	  thickness(thickness, interval), // TODO
 	  normalPressure(normalPressure, interval),
 	  rhs(rhs, interval)
 	{ }
 
-	InputParameterIterator N, weight, J, normal;
+	InputParameterIterator N, weight, J, normal, coordinates;
 //	InputParameterIterator thickness;
 	InputParameterIterator normalPressure;
 	OutputParameterIterator rhs;
 
 	void operator++()
 	{
-		++weight; ++J, ++normal;
+		++weight; ++J, ++normal; ++coordinates;
 //		++thickness;
 		++normalPressure;
 		++rhs;
@@ -247,7 +323,7 @@ struct NormalPressure: public ActionOperator {
 
 	void move(int n)
 	{
-		weight += n; J += n; normal += n;
+		weight += n; J += n; normal += n; coordinates += n;
 //		thickness += n;
 		normalPressure += n;
 		rhs += n;
@@ -255,7 +331,7 @@ struct NormalPressure: public ActionOperator {
 };
 
 template<size_t nodes, size_t gps>
-struct NormalPressure2D: public NormalPressure {
+struct NormalPressurePlane: public NormalPressure {
 	using NormalPressure::NormalPressure;
 
 	void operator()()
@@ -264,6 +340,37 @@ struct NormalPressure2D: public NormalPressure {
 			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 				rhs[        n] += J[gpindex] * weight[gpindex] * normal[2 * gpindex + 0] * normalPressure[gpindex] * N[gpindex * nodes + n];
 				rhs[nodes + n] += J[gpindex] * weight[gpindex] * normal[2 * gpindex + 1] * normalPressure[gpindex] * N[gpindex * nodes + n];
+			}
+		}
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct NormalPressurePlaneWithThickness: public NormalPressure {
+	using NormalPressure::NormalPressure;
+
+	void operator()()
+	{
+		// TODO: thickness
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+				rhs[        n] += J[gpindex] * weight[gpindex] * normal[2 * gpindex + 0] * normalPressure[gpindex] * N[gpindex * nodes + n];
+				rhs[nodes + n] += J[gpindex] * weight[gpindex] * normal[2 * gpindex + 1] * normalPressure[gpindex] * N[gpindex * nodes + n];
+			}
+		}
+	}
+};
+
+template<size_t nodes, size_t gps>
+struct NormalPressureAxisymmetric: public NormalPressure {
+	using NormalPressure::NormalPressure;
+
+	void operator()()
+	{
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+				rhs[        n] += J[gpindex] * weight[gpindex] * 2 * M_PI * coordinates[2 * gpindex] * normal[2 * gpindex + 0] * normalPressure[gpindex] * N[gpindex * nodes + n];
+				rhs[nodes + n] += J[gpindex] * weight[gpindex] * 2 * M_PI * coordinates[2 * gpindex] * normal[2 * gpindex + 1] * normalPressure[gpindex] * N[gpindex * nodes + n];
 			}
 		}
 	}

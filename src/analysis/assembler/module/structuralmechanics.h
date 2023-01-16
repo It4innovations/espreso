@@ -99,8 +99,8 @@ public:
 		ElementGPsExternalParameter<egps> density;
 
 		ElementParameter<egps> mass;
-		ElementParameter<3 * 3 * egps> elasticity2D;
-		ElementParameter<4 * 4 * egps> elasticity2DAxisymm;
+		ElementParameter<3 * 3 * egps> elasticityPlane;
+		ElementParameter<4 * 4 * egps> elasticityAxisymm;
 		ElementParameter<6 * 6 * egps> elasticity3D;
 	} material;
 

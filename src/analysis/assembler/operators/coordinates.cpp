@@ -77,11 +77,11 @@ void _elementCoordinates(Module &module, bool toGPs)
 }
 
 template <class Module>
-void _boundaryCoordinates(Module &module)
+void _boundaryCoordinates(Module &module, bool toGPs)
 {
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
-			bool toGPs = Variable::list.region[r].egps.count("COORDINATE_X") || Variable::list.region[r].egps.count("COORDINATE_Y") || Variable::list.region[r].egps.count("COORDINATE_Z");
+			toGPs |= Variable::list.region[r].egps.count("COORDINATE_X") || Variable::list.region[r].egps.count("COORDINATE_Y") || Variable::list.region[r].egps.count("COORDINATE_Z");
 
 			module.controller.addInput(module.coords.boundary.node.regions[r], info::mesh->nodes->coordinates);
 			module.controller.prepare(module.coords.boundary.node.regions[r]);
@@ -204,7 +204,7 @@ void elementCoordinates(HeatTransfer &module)
 	_analyzeBoundaryCondition(module.configuration.temperature);
 	_analyzeBoundaryCondition(module.configuration.heat_flow);
 	_analyzeBoundaryCondition(module.configuration.heat_flux);
-	_boundaryCoordinates(module);
+	_boundaryCoordinates(module, false);
 }
 
 void elementCoordinates(Acoustic &module)
@@ -215,16 +215,16 @@ void elementCoordinates(Acoustic &module)
 	_analyzeBoundaryCondition(module.configuration.normal_acceleration);
 	_analyzeBoundaryCondition(module.configuration.acceleration);
 	_analyzeBoundaryCondition(module.configuration.impedance);
-	_boundaryCoordinates(module);
+	_boundaryCoordinates(module, false);
 }
 
 void elementCoordinates(StructuralMechanics &module)
 {
-	_elementCoordinates(module, module.configuration.angular_velocity.size());
+	_elementCoordinates(module, module.configuration.angular_velocity.size() || module.settings.element_behaviour == StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC);
 
 	_analyzeBoundaryCondition(module.configuration.displacement);
 	_analyzeBoundaryCondition(module.configuration.normal_pressure);
-	_boundaryCoordinates(module);
+	_boundaryCoordinates(module, module.settings.element_behaviour == StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC && module.configuration.normal_pressure.size());
 }
 
 }

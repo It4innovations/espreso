@@ -131,11 +131,6 @@ void StructuralMechanics::analyze()
 	correct &= initTemperature();
 
 	if (step::step.loadstep == 0) {
-		if (info::mesh->dimension == 2) {
-			correct &= examineElementParameter("THICKNESS", settings.thickness, thickness.gp.externalValues);
-			fromExpression(*this, thickness.gp, thickness.gp.externalValues);
-		}
-
 		///////////////////////////////////// Set materials and check if there is not any incorrect region intersection
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		eslog::info("\n  MATERIALS                                                                                    \n");
@@ -157,9 +152,13 @@ void StructuralMechanics::analyze()
 						break;
 					case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
 						eslog::info("     ELEMENT BEHAVIOR:                                            PLANE STRESS WITH THICKNESS \n");
+						correct &= examineElementParameter("THICKNESS", settings.thickness, thickness.gp.externalValues);
+						fromExpression(*this, thickness.gp, thickness.gp.externalValues);
 						break;
 					case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
 						eslog::info("     ELEMENT BEHAVIOR:                                                           AXISYMMETRIC \n");
+						correct &= examineElementParameter("THICKNESS", settings.thickness, thickness.gp.externalValues);
+						fromExpression(*this, thickness.gp, thickness.gp.externalValues);
 						break;
 					}
 				}
@@ -220,11 +219,25 @@ void StructuralMechanics::analyze()
 	}
 
 	if (configuration.angular_velocity.size()) {
-		if (info::mesh->dimension == 3) {
+		switch (info::mesh->dimension) {
+		case 3:
 			correct &= examineElementParameter("ANGULAR_VELOCITY.X", configuration.angular_velocity, angularVevocity.gp.externalValues, 0);
 			correct &= examineElementParameter("ANGULAR_VELOCITY.Y", configuration.angular_velocity, angularVevocity.gp.externalValues, 1);
+			correct &= examineElementParameter("ANGULAR_VELOCITY.Z", configuration.angular_velocity, angularVevocity.gp.externalValues, 2);
+			break;
+		case 2:
+			switch (settings.element_behaviour) {
+			case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
+			case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
+			case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
+				correct &= examineElementParameter("ANGULAR_VELOCITY.Z", configuration.angular_velocity, angularVevocity.gp.externalValues, 2);
+				break;
+			case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
+				correct &= examineElementParameter("ANGULAR_VELOCITY.Y", configuration.angular_velocity, angularVevocity.gp.externalValues, 1);
+				break;
+			}
 		}
-		correct &= examineElementParameter("ANGULAR_VELOCITY.Z", configuration.angular_velocity, angularVevocity.gp.externalValues, 2);
+
 		fromExpression(*this, angularVevocity.gp, angularVevocity.gp.externalValues);
 	}
 
@@ -308,8 +321,8 @@ void StructuralMechanics::initNames()
 	material.density.name = "material.density";
 	material.mass.name = "material.mass";
 
-	material.elasticity2D.name = "material.elasticity2D";
-	material.elasticity2DAxisymm.name = "material.elasticity2DAxisymm";
+	material.elasticityPlane.name = "material.elasticityPlane";
+	material.elasticityAxisymm.name = "material.elasticityAxisymm";
 	material.elasticity3D.name = "material.elasticity3D";
 
 //	temp.initial.node.name = "temp.initial.node";
@@ -342,6 +355,9 @@ void StructuralMechanics::initNames()
 
 		normalPressure.gp.regions[r].name = info::mesh->boundaryRegions[r]->name + "::normalPressure.gp";
 		displacement.node.regions[r].name = info::mesh->boundaryRegions[r]->name + "::displacement.node";
+
+		elements.boundary.stiffness.regions[r].name = info::mesh->boundaryRegions[r]->name + "::stiffness";
+		elements.boundary.rhs.regions[r].name = info::mesh->boundaryRegions[r]->name + "::rhs";
 	}
 }
 
@@ -372,8 +388,8 @@ void StructuralMechanics::printVersions()
 	printParameterStats(material.density);
 	printParameterStats(material.mass);
 
-	printParameterStats(material.elasticity2D);
-	printParameterStats(material.elasticity2DAxisymm);
+	printParameterStats(material.elasticityPlane);
+	printParameterStats(material.elasticityAxisymm);
 	printParameterStats(material.elasticity3D);
 
 	printParameterStats(elements.stiffness);
@@ -397,6 +413,9 @@ void StructuralMechanics::printVersions()
 
 		printParameterStats(normalPressure.gp.regions[r]);
 		printParameterStats(displacement.node.regions[r]);
+
+		printParameterStats(elements.boundary.stiffness.regions[r]);
+		printParameterStats(elements.boundary.rhs.regions[r]);
 	}
 }
 

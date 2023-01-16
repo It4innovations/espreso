@@ -384,6 +384,38 @@ static inline void ADDDXDY33DXDYN(const double &sumscale, const double * __restr
 
 // B * C * Bt
 //
+// C = 4x4
+// B = dX  0  C dY
+//      0 dY  0 dX
+template<size_t N>
+static inline void ADDDXDYCOO44DXDYN(const double &sumscale, const double * __restrict__ m44, const double * __restrict__ dX, const double * __restrict__ coo, double * __restrict__ mNN)
+{
+	const double * __restrict__ dY = dX + N;
+	for (size_t n = 0; n < N; ++n) {
+		for (size_t m = 0; m < N; ++m) {
+			double a = dX[n] * m44[0] + coo[n] * m44[ 8] + dY[n] * m44[12];
+			double b = dX[n] * m44[1] + coo[n] * m44[ 9] + dY[n] * m44[13];
+			double c = dX[n] * m44[2] + coo[n] * m44[10] + dY[n] * m44[14];
+			double d = dX[n] * m44[3] + coo[n] * m44[11] + dY[n] * m44[15];
+			mNN[n * 2 * N + m    ] += sumscale * (a * dX[m] + c * coo[m] + d * dY[m]);
+			mNN[n * 2 * N + m + N] += sumscale * (b * dY[m] + d * dX[m]);
+		}
+	}
+	mNN += 2 * N * N;
+	for (size_t n = 0; n < N; ++n) {
+		for (size_t m = 0; m < N; ++m) {
+			double a = dY[n] * m44[4] + dX[n] * m44[12];
+			double b = dY[n] * m44[5] + dX[n] * m44[13];
+			double c = dY[n] * m44[6] + dX[n] * m44[14];
+			double d = dY[n] * m44[7] + dX[n] * m44[15];
+			mNN[n * 2 * N + m    ] += sumscale * (a * dX[m] + c * coo[m] + d * dY[m]);
+			mNN[n * 2 * N + m + N] += sumscale * (b * dY[m] + d * dX[m]);
+		}
+	}
+}
+
+// B * C * Bt
+//
 // C = 6x6
 // B = dX  0  0 dY  0 dZ
 //      0 dY  0 dX dZ  0

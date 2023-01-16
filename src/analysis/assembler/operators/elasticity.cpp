@@ -60,8 +60,8 @@ void elasticity(StructuralMechanics &module)
 	if (info::mesh->dimension == 2) {
 //		module.controller.addInput(module.cooSystem.angle2D, module.cooSystem.cartesian2D, module.cooSystem.cylindric);
 		module.controller.prepare(module.cooSystem.angle2D);
-		module.controller.addInput(module.material.elasticity2D, module.cooSystem.angle2D);
-		module.controller.addInput(module.material.elasticity2DAxisymm, module.cooSystem.angle2D);
+		module.controller.addInput(module.material.elasticityPlane, module.cooSystem.angle2D);
+		module.controller.addInput(module.material.elasticityAxisymm, module.cooSystem.angle2D);
 	}
 	if (info::mesh->dimension == 3) {
 //		module.controller.addInput(module.cooSystem.angle3D, module.cooSystem.cartesian3D, module.cooSystem.cylindric, module.cooSystem.spherical);
@@ -69,8 +69,8 @@ void elasticity(StructuralMechanics &module)
 		module.controller.addInput(module.material.elasticity3D, module.cooSystem.angle3D);
 	}
 
-	module.controller.addInput(module.material.elasticity2D, module.material.model.isoYoungModulus, module.material.model.isoPoissonRatio, module.material.model.youngModulus, module.material.model.poissonRatio);
-	module.controller.addInput(module.material.elasticity2DAxisymm, module.material.model.isoYoungModulus, module.material.model.isoPoissonRatio, module.material.model.youngModulus, module.material.model.poissonRatio);
+	module.controller.addInput(module.material.elasticityPlane, module.material.model.isoYoungModulus, module.material.model.isoPoissonRatio, module.material.model.youngModulus, module.material.model.poissonRatio);
+	module.controller.addInput(module.material.elasticityAxisymm, module.material.model.isoYoungModulus, module.material.model.isoPoissonRatio, module.material.model.youngModulus, module.material.model.poissonRatio);
 	module.controller.addInput(module.material.elasticity3D, module.material.model.isoYoungModulus, module.material.model.isoPoissonRatio, module.material.model.youngModulus, module.material.model.poissonRatio, module.material.model.shearModulus, module.material.model.anisotropic3D);
 
 	if (info::mesh->dimension == 2) {
@@ -78,10 +78,10 @@ void elasticity(StructuralMechanics &module)
 		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
 		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
 		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
-			module.controller.prepare(module.material.elasticity2D);
+			module.controller.prepare(module.material.elasticityPlane);
 			break;
 		case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
-			module.controller.prepare(module.material.elasticity2DAxisymm);
+			module.controller.prepare(module.material.elasticityAxisymm);
 			break;
 		}
 	}
@@ -96,18 +96,20 @@ void elasticity(StructuralMechanics &module)
 			case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
 				switch (module.settings.element_behaviour) {
 				case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
-					module.elementOps[interval].emplace_back(instantiate<StructuralMechanics::NGP, ElasticityIsotropic2DPlaneStrain>(interval, module.controller,
-							module.material.model.isoYoungModulus, module.material.model.isoPoissonRatio, module.material.model.shearModulus, module.material.elasticity2D));
+					module.elementOps[interval].emplace_back(instantiate<StructuralMechanics::NGP, ElasticityIsotropicPlaneStrain>(interval, module.controller,
+							module.material.model.isoYoungModulus, module.material.model.isoPoissonRatio, module.material.model.shearModulus, module.material.elasticityPlane));
 					break;
 				case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
-					module.elementOps[interval].emplace_back(instantiate<StructuralMechanics::NGP, ElasticityIsotropic2DPlaneStress>(interval, module.controller,
-							module.material.model.isoYoungModulus, module.material.model.isoPoissonRatio, module.material.model.shearModulus, module.material.elasticity2D));
+					module.elementOps[interval].emplace_back(instantiate<StructuralMechanics::NGP, ElasticityIsotropicPlaneStress>(interval, module.controller,
+							module.material.model.isoYoungModulus, module.material.model.isoPoissonRatio, module.material.model.shearModulus, module.material.elasticityPlane));
 					break;
 				case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
-					module.elementOps[interval].emplace_back(instantiate<StructuralMechanics::NGP, ElasticityIsotropic2DPlaneStress>(interval, module.controller,
-							module.material.model.isoYoungModulus, module.material.model.isoPoissonRatio, module.material.model.shearModulus, module.material.elasticity2D));
+					module.elementOps[interval].emplace_back(instantiate<StructuralMechanics::NGP, ElasticityIsotropicPlaneStress>(interval, module.controller,
+							module.material.model.isoYoungModulus, module.material.model.isoPoissonRatio, module.material.model.shearModulus, module.material.elasticityPlane));
 					break;
 				case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
+					module.elementOps[interval].emplace_back(instantiate<StructuralMechanics::NGP, ElasticityIsotropicAxisymmetric>(interval, module.controller,
+							module.material.model.isoYoungModulus, module.material.model.isoPoissonRatio, module.material.model.shearModulus, module.material.elasticityAxisymm));
 					break;
 				default:
 					break;
