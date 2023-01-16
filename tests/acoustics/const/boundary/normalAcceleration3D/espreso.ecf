@@ -17,7 +17,7 @@ DEFAULT_ARGS {
 
  10     COMPLEX;
 
- 11        FETI;
+ 11     MKLPDSS;
 }
 
 INPUT_TYPE   GENERATOR;

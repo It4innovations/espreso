@@ -3,8 +3,8 @@
 DEFAULT_ARGS {
   0     SQUARE4;
 
-  1           1;
-  2           1;
+  1           2;
+  2           2;
 
   3           2;
   4           2;
@@ -14,7 +14,7 @@ DEFAULT_ARGS {
 
   7      COMPLEX;
 
-  8         FETI;
+  8      MKLPDSS;
 }
 
 INPUT_TYPE      GENERATOR;
