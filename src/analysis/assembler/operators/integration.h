@@ -39,13 +39,6 @@ struct ElementJacobian: public ActionOperator {
 		coords += n;
 		inv += n; det += n; dND += n;
 	}
-
-	ElementJacobian& operator+=(const size_t rhs)
-	{
-		coords +=rhs;
-		inv += rhs; det += rhs; dND += rhs;
-		return *this;
-	}
 };
 
 template<size_t nodes, size_t gps>
@@ -73,6 +66,39 @@ struct ElementJacobian2D: public ElementJacobian {
 
 			M22M2N<nodes>(inv.data + 4 * gpindex, dN.data + 2 * gpindex * nodes, dND.data + 2 * gpindex * nodes);
 		}
+	}
+
+	void simd()
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			SIMD jacobian0 = zeros(), jacobian1 = zeros(), jacobian2 = zeros(), jacobian3 = zeros();
+
+			#pragma unroll(nodes)
+			for (size_t n = 0; n < nodes; ++n) {
+				SIMD coordsX = load(&coords[(n * 2 + 0) * SIMD::size]);
+				SIMD coordsY = load(&coords[(n * 2 + 1) * SIMD::size]);
+				SIMD dNX = load(&dN[(2 * gpindex * nodes + n + 0 * nodes) * SIMD::size]);
+				SIMD dNY = load(&dN[(2 * gpindex * nodes + n + 1 * nodes) * SIMD::size]);
+
+				jacobian0 = jacobian0 + dNX * coordsX;
+				jacobian1 = jacobian1 + dNX * coordsY;
+				jacobian2 = jacobian2 + dNY * coordsX;
+				jacobian3 = jacobian3 + dNY * coordsY;
+			}
+
+			SIMD determinant = jacobian0 * jacobian3 - jacobian1 * jacobian2;
+			store(&det[gpindex * SIMD::size], determinant);
+
+			SIMD detJx = ones() / determinant;
+			store(&inv[(4 * gpindex + 0) * SIMD::size],  detJx * jacobian3);
+			store(&inv[(4 * gpindex + 1) * SIMD::size], -detJx * jacobian1);
+			store(&inv[(4 * gpindex + 2) * SIMD::size], -detJx * jacobian2);
+			store(&inv[(4 * gpindex + 3) * SIMD::size],  detJx * jacobian0);
+
+			M22M2NSimd<nodes>(&inv[4 * SIMD::size * gpindex], &dN[2 * gpindex * nodes * SIMD::size], &dND[2 * gpindex * nodes * SIMD::size]);
+		}
+
+		move(SIMD::size);
 	}
 };
 

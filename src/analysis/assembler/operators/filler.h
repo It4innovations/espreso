@@ -43,6 +43,30 @@ struct MatrixUpperFiller: public MatrixFiller {
 			}
 		}
 	}
+
+	void simd()
+	{
+		for (size_t s = 0, i = 0; s < SIMD::size; ++s) {
+			for (size_t r = 0; r < nodes * dimension; ++r) {
+				for (size_t c = r; c < nodes * dimension; ++c, ++i) {
+					global[position[i]] += *(local.data + (r * nodes * dimension + c) * SIMD::size + s);
+				}
+			}
+		}
+		move(SIMD::size);
+	}
+
+	void peel(size_t size)
+	{
+		for (size_t s = 0, i = 0; s < size; ++s) {
+			for (size_t r = 0; r < nodes * dimension; ++r) {
+				for (size_t c = r; c < nodes * dimension; ++c, ++i) {
+					global[position[i]] += *(local.data + (r * nodes * dimension + c) * SIMD::size + s);
+				}
+			}
+		}
+		move(size);
+	}
 };
 
 template<size_t nodes, size_t gps, size_t dimension>

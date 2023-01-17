@@ -31,8 +31,6 @@ template <size_t nodes, size_t gps>
 struct ExpressionsToNodes: public ExpressionsToParameter {
 	using ExpressionsToParameter::ExpressionsToParameter;
 
-	double results[nodes];
-
 	void operator++()
 	{
 		++data;
@@ -51,18 +49,29 @@ struct ExpressionsToNodes: public ExpressionsToParameter {
 
 	void operator()()
 	{
+		double results[nodes];
 		evaluator->evalVector(nodes, params, results);
 		for (size_t n = 0; n < nodes; ++n) {
 			data[n * size + offset] = results[n];
 		}
+	}
+
+	void simd()
+	{
+		double results[SIMD::size * nodes];
+		evaluator->evalVector(SIMD::size * nodes, params, results);
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				data[(n * size + offset) * SIMD::size + s] = results[s * SIMD::size + n];
+			}
+		}
+		move(SIMD::size);
 	}
 };
 
 template <size_t nodes, size_t gps>
 struct ExpressionsToGPs: public ExpressionsToParameter {
 	using ExpressionsToParameter::ExpressionsToParameter;
-
-	double results[gps];
 
 	void operator++()
 	{
@@ -82,10 +91,23 @@ struct ExpressionsToGPs: public ExpressionsToParameter {
 
 	void operator()()
 	{
+		double results[gps];
 		evaluator->evalVector(gps, params, results);
 		for (size_t n = 0; n < gps; ++n) {
 			data[n * size + offset] = results[n];
 		}
+	}
+
+	void simd()
+	{
+		double results[SIMD::size * gps];
+		evaluator->evalVector(SIMD::size * gps, params, results);
+		for (size_t n = 0; n < gps; ++n) {
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				data[(n * size + offset) * SIMD::size + s] = results[s * SIMD::size * n];
+			}
+		}
+		move(SIMD::size);
 	}
 };
 

@@ -50,6 +50,30 @@ void _baseFunction(Module &module)
 			double *w = (module.integration.weight.data->begin() + index)->data();
 
 			fill<Module>(ei->code, n, dn, w);
+
+			if (module.settings.simd) {
+				esint nodes = Mesh::edata[ei->code].nodes;
+				esint gps = Mesh::edata[ei->code].gps;
+				esint dim = Mesh::edata[ei->code].dimension;
+
+				for (esint node = nodes - 1; 0 <= node; --node) {
+					for (esint gp = gps - 1; 0 <= gp; --gp) {
+						for (size_t s = 0; s < SIMD::size; ++s) {
+							n[SIMD::size * (gps * node + gp) + s] = n[gps * node + gp];
+						}
+						for (esint d = dim - 1; 0 <= d; --d) {
+							for (size_t s = 0; s < SIMD::size; ++s) {
+								dn[SIMD::size * (2 * gps * node + gp * dim + d) + s] = dn[2 * gps * node + gp * dim + d];
+							}
+						}
+					}
+				}
+				for (esint gp = gps - 1; 0 <= gp; --gp) {
+					for (size_t s = 0; s < SIMD::size; ++s) {
+						w[SIMD::size * gp + s] = w[gp];
+					}
+				}
+			}
 		}
 	}
 

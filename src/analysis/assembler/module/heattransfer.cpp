@@ -25,7 +25,7 @@ ElementData* HeatTransfer::Results::gradient = nullptr;
 ElementData* HeatTransfer::Results::flux = nullptr;
 
 HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration)
+: Assembler(settings), settings(settings), configuration(configuration)
 {
 
 }

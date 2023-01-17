@@ -29,10 +29,10 @@ void _elementCoordinates(Module &module, bool toGPs)
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
 		auto procNodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
 		if (info::mesh->dimension == 2) {
-			module.elementOps[interval].emplace_back(instantiate<Coordinates2DToElementNodes>(interval, module.controller, procNodes, module.coords.node));
+			module.elementOps[interval].emplace_back(instantiate<typename Module::NGP, Coordinates2DToElementNodes>(interval, module.controller, procNodes, module.coords.node));
 		}
 		if (info::mesh->dimension == 3) {
-			module.elementOps[interval].emplace_back(instantiate<Coordinates3DToElementNodes>(interval, module.controller, procNodes, module.coords.node));
+			module.elementOps[interval].emplace_back(instantiate<typename Module::NGP, Coordinates3DToElementNodes>(interval, module.controller, procNodes, module.coords.node));
 		}
 		if (toGPs) {
 			if (info::mesh->dimension == 2) {
@@ -94,10 +94,10 @@ void _boundaryCoordinates(Module &module, bool toGPs)
 			for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
 				auto procNodes = info::mesh->boundaryRegions[r]->elements->cbegin() + info::mesh->boundaryRegions[r]->eintervals[interval].begin;
 				if (info::mesh->dimension == 2) {
-					module.boundaryOps[r][interval].emplace_back(instantiate<Coordinates2DToElementNodes>(interval, module.controller, procNodes, module.coords.boundary.node.regions[r]));
+					module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, Coordinates2DToElementNodes>(interval, module.controller, procNodes, module.coords.boundary.node.regions[r]));
 				}
 				if (info::mesh->dimension == 3) {
-					module.boundaryOps[r][interval].emplace_back(instantiate<Coordinates3DToElementNodes>(interval, module.controller, procNodes, module.coords.boundary.node.regions[r]));
+					module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, Coordinates3DToElementNodes>(interval, module.controller, procNodes, module.coords.boundary.node.regions[r]));
 				}
 				if (toGPs) {
 					if (info::mesh->dimension == 2) {
@@ -116,10 +116,10 @@ void _boundaryCoordinates(Module &module, bool toGPs)
 				for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
 					auto nodes = info::mesh->boundaryRegions[r]->nodes->cbegin(t);
 					if (info::mesh->dimension == 2) {
-						module.boundaryOps[r][t].emplace_back(instantiate<Coordinates2DToElementNodes>(t, module.controller, nodes, module.coords.boundary.node.regions[r]));
+						module.boundaryOps[r][t].emplace_back(instantiate<typename Module::NGP, Coordinates2DToElementNodes>(t, module.controller, nodes, module.coords.boundary.node.regions[r]));
 					}
 					if (info::mesh->dimension == 3) {
-						module.boundaryOps[r][t].emplace_back(instantiate<Coordinates3DToElementNodes>(t, module.controller, nodes, module.coords.boundary.node.regions[r]));
+						module.boundaryOps[r][t].emplace_back(instantiate<typename Module::NGP, Coordinates3DToElementNodes>(t, module.controller, nodes, module.coords.boundary.node.regions[r]));
 					}
 				}
 			}

@@ -14,16 +14,16 @@ class edata {
 public:
 	size_t size() const          { return this->_end - this->_begin; }
 
-	TData& operator[] (size_t n) { return *(this->_begin + n); }
-	TData& at(size_t n)          { return *(this->_begin + n); }
-	TData* data()                { return   this->_begin; }
-	TData& back()                { return *(this->_end - 1); }
-	TData& front()               { return * this->_begin; }
-	TData* begin()               { return   this->_begin; }
-	TData* end()                 { return   this->_end; }
+	inline TData& operator[] (size_t n) { return *(this->_begin + n); }
+	inline TData& at(size_t n)          { return *(this->_begin + n); }
+	inline TData* data()                { return   this->_begin; }
+	inline TData& back()                { return *(this->_end - 1); }
+	inline TData& front()               { return * this->_begin; }
+	inline TData* begin()               { return   this->_begin; }
+	inline TData* end()                 { return   this->_end; }
 
-	const TData& operator[] (size_t n) const { return *(this->_begin + n); }
-	const TData* data()                const { return   this->_begin; }
+	inline const TData& operator[] (size_t n) const { return *(this->_begin + n); }
+	inline const TData* data()                const { return   this->_begin; }
 
 	edata(TData *data, size_t begin, size_t end): _begin(data + begin), _end(data + end) {}
 private:

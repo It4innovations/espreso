@@ -23,7 +23,7 @@ using namespace espreso;
 NodeData* StructuralMechanics::Results::displacement = nullptr;
 
 StructuralMechanics::StructuralMechanics(StructuralMechanics *previous, StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration)
+: Assembler(settings), settings(settings), configuration(configuration)
 {
 
 }

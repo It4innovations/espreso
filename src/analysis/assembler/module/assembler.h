@@ -18,13 +18,15 @@ struct ECFExpressionOptionalVector;
 class ConvectionConfiguration;
 struct ImpedanceConfiguration;
 struct PointSourceConfiguration;
+struct PhysicsConfiguration;
 
 class Assembler
 {
 public:
-	Assembler();
+	Assembler(PhysicsConfiguration &settings);
 	virtual ~Assembler() {}
 
+	PhysicsConfiguration &settings;
 	ParameterController controller;
 	std::vector<std::vector<std::unique_ptr<ActionOperator> > > elementOps, elementFiller, elementRes;
 	std::vector<std::vector<std::vector<std::unique_ptr<ActionOperator> > > > boundaryOps, boundaryFiller, boundaryRes;

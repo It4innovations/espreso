@@ -4,6 +4,7 @@
 #include "basis/utilities/utils.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/meshinfo.h"
+#include "math/simd/simd.h"
 #include "mesh/store/domainstore.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
@@ -89,6 +90,9 @@ BoundaryParameterPack::BoundaryParameterPack(PerElementSize mask)
 
 void ElementParameterData::resize(double init)
 {
+	size_t alignment = 64;
+	size_t simd = SIMD::size;
+
 	std::vector<std::vector<esint> > distribution(info::env::threads);
 
 	distribution[0].push_back(0);
@@ -96,53 +100,16 @@ void ElementParameterData::resize(double init)
 	for (int t = 0; t < info::env::threads; ++t) {
 		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
-				esint isize = increment(i);
-				if (!isconst[i]) {
-					isize *= info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
-				}
-				distribution[t].push_back(isize + sum);
-				sum += isize;
-			}
-		}
-	}
-
-	std::vector<size_t> datadistribution;
-	for (int t = 0; t < info::env::threads; ++t) {
-		if (distribution[t].size()) {
-			datadistribution.push_back(distribution[t].front());
-		} else {
-			datadistribution.push_back(sum);
-		}
-	}
-	datadistribution.push_back(sum);
-
-	if (data) {
-		delete data;
-	}
-	data = new serializededata<esint, double>(distribution, tarray<double>(datadistribution, 1, init));
-}
-
-void ElementParameterData::resizeAligned(size_t alignment, double init)
-{
-	std::vector<std::vector<esint> > distribution(info::env::threads);
-
-	distribution[0].push_back(0);
-	esint sum = 0;
-	for (int t = 0; t < info::env::threads; ++t) {
-		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
-			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
-				esint isize = increment(i);
-				esint elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
-				size_t alignmentInElements = alignment / sizeof(double);
-				elements = (((elements - 1)/ alignmentInElements)+ 1) * alignmentInElements;
-				if (!isconst[i]) {
+				size_t isize = increment(i);
+				if (isconst[i]) {
+					isize *= simd;
+				} else {
+					size_t elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
+					if (elements % simd) {
+						elements += simd - (elements % simd);
+					}
 					isize *= elements;
 				}
-				else
-				{
-					isize *= alignmentInElements;
-				}
-
 				distribution[t].push_back(isize + sum);
 				sum += isize;
 			}

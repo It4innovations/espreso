@@ -62,6 +62,18 @@ struct Stiffness2DHeatIsotropic: public HeatStiffness {
 			ADDMN2M2N<nodes>(thickness[gpindex] * xi[gpindex] * determinant[gpindex] * weight[gpindex] * conductivity[gpindex], dND.data + 2 * nodes * gpindex, stiffness.data);
 		}
 	}
+
+	void simd()
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			SIMD scale =  load(&thickness[gpindex * SIMD::size])
+						* load(&determinant[gpindex * SIMD::size])
+						* load(&weight[gpindex * SIMD::size])
+						* load(&conductivity[gpindex * SIMD::size]);
+			ADDMN2M2NSimd<nodes>(scale, dND.data + 2 * nodes * gpindex * SIMD::size, stiffness.data);
+		}
+		move(SIMD::size);
+	}
 };
 
 template<size_t nodes, size_t gps>

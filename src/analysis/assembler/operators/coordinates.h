@@ -39,9 +39,12 @@ struct CoordinatesToElementNodes: public ActionOperator {
 	}
 };
 
+template <size_t nodes, size_t gps>
 struct Coordinates2DToElementNodes: CoordinatesToElementNodes {
 	using CoordinatesToElementNodes::CoordinatesToElementNodes;
 
+	//   element 0    element 1
+	// [xy xy xy xy][xy xy xy xy]..
 	void operator()()
 	{
 		for (auto n = procNodes->begin(); n != procNodes->end(); ++n, ++ncoordinates) {
@@ -49,8 +52,33 @@ struct Coordinates2DToElementNodes: CoordinatesToElementNodes {
 			ncoordinates[1] = info::mesh->nodes->coordinates->datatarray()[*n].y;
 		}
 	}
+
+	//   element 0, 1           element 2, 3
+	// [xxyy xxyy xxyy xxyy][xxyy xxyy xxyy xxyy]
+	void simd()
+	{
+		for (size_t s = 0; s < SIMD::size; ++s, ++procNodes) {
+			for (size_t n = 0; n < nodes; ++n) {
+				ncoordinates[(2 * n + 0) * SIMD::size + s] = info::mesh->nodes->coordinates->datatarray()[procNodes->at(n)].x;
+				ncoordinates[(2 * n + 1) * SIMD::size + s] = info::mesh->nodes->coordinates->datatarray()[procNodes->at(n)].y;
+			}
+		}
+		ncoordinates += SIMD::size * nodes;
+	}
+
+	void peel(size_t size)
+	{
+		for (size_t s = 0; s < size; ++s, ++procNodes) {
+			for (size_t n = 0; n < nodes; ++n) {
+				ncoordinates[(2 * n + 0) * SIMD::size + s] = info::mesh->nodes->coordinates->datatarray()[procNodes->at(n)].x;
+				ncoordinates[(2 * n + 1) * SIMD::size + s] = info::mesh->nodes->coordinates->datatarray()[procNodes->at(n)].y;
+			}
+		}
+		ncoordinates += size * nodes;
+	}
 };
 
+template <size_t nodes, size_t gps>
 struct Coordinates3DToElementNodes: CoordinatesToElementNodes {
 	using CoordinatesToElementNodes::CoordinatesToElementNodes;
 
@@ -61,6 +89,18 @@ struct Coordinates3DToElementNodes: CoordinatesToElementNodes {
 			ncoordinates[1] = info::mesh->nodes->coordinates->datatarray()[*n].y;
 			ncoordinates[2] = info::mesh->nodes->coordinates->datatarray()[*n].z;
 		}
+	}
+
+	void simd()
+	{
+		for (size_t s = 0; s < SIMD::size; ++s, ++procNodes) {
+			for (size_t n = 0; n < nodes; ++n) {
+				ncoordinates[(2 * n + 0) * SIMD::size + s] = info::mesh->nodes->coordinates->datatarray()[procNodes->at(n)].x;
+				ncoordinates[(3 * n + 1) * SIMD::size + s] = info::mesh->nodes->coordinates->datatarray()[procNodes->at(n)].y;
+				ncoordinates[(3 * n + 2) * SIMD::size + s] = info::mesh->nodes->coordinates->datatarray()[procNodes->at(n)].z;
+			}
+		}
+		ncoordinates += SIMD::size * nodes;
 	}
 };
 

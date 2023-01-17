@@ -251,15 +251,13 @@ tarray<TType>::~tarray()
 template <typename TType>
 void tarray<TType>::allocate()
 {
-	if(_alignment != 0){
-		size_t sizeInElements = _size + ((_alignment - 1) / sizeof(TType)) +1;
-		size_t sizeInBytes = sizeInElements*sizeof(TType);
+	if(_alignment != 0) {
+		size_t sizeInElements = _size + ((_alignment - 1) / sizeof(TType)) + 1;
+		size_t sizeInBytes = sizeInElements * sizeof(TType);
 		_dataUnaligned = new TType[sizeInElements];
-		void* tmp = static_cast<void *>(_dataUnaligned);
-		_data = static_cast<TType *>(std::align(_alignment, _size*sizeof(TType), tmp, sizeInBytes));
-	}
-	else
-	{
+		void* tmp = static_cast<void*>(_dataUnaligned);
+		_data = static_cast<TType*>(std::align(_alignment, _size * sizeof(TType), tmp, sizeInBytes));
+	} else {
 		_dataUnaligned = new TType[_size];
 		_data = _dataUnaligned;
 	}

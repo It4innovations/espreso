@@ -25,7 +25,7 @@ NodeData* Acoustic::Results::pressure = nullptr;
 NodeData* Acoustic::Results::initialPressure = nullptr;
 
 Acoustic::Acoustic(Acoustic *previous, AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration)
+: Assembler(settings), settings(settings), configuration(configuration)
 {
 
 }

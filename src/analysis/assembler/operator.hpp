@@ -58,14 +58,6 @@ static inline ActionOperator* _instantiate(int code, size_t interval, Args&& ...
 	}
 }
 
-template <class Operator, class ... Args>
-static inline ActionOperator* instantiate(size_t interval, ParameterController &controller, Args&& ... args)
-{
-	auto op = new Operator(interval, std::forward<Args>(args)...);
-	controller.addOperator(op, interval, args...);
-	return op;
-}
-
 template <class NGP, template <size_t N, size_t GP> class Operator, class ... Args>
 static inline ActionOperator* instantiate(size_t interval, ParameterController &controller, Args&& ... args)
 {

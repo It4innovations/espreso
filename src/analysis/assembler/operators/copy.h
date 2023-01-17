@@ -40,9 +40,21 @@ struct CopyParameter: public ActionOperator {
 			}
 		}
 	}
+
+	void simd()
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			for (size_t d = 0; d < dimension; ++d) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					to[(gpindex * dimension + d) * SIMD::size + s] = from[(gpindex * dimension + d) * SIMD::size + s];
+				}
+			}
+		}
+		move(SIMD::size);
+	}
 };
 
-template <size_t dimension>
+template <size_t nodes, size_t gps, size_t dimension>
 struct CopyNodesToEnodes: public ActionOperator {
 	CopyNodesToEnodes(int interval, const NodeData &from, serializededata<esint, esint>::const_iterator procNodes, ParameterData &to)
 	: from(from),

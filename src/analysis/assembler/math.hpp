@@ -111,7 +111,7 @@ ALWAYS_INLINE static void M22M2NSimd(const double * __restrict__ m22, const doub
 
 	#pragma unroll(N)
 	for (size_t n = 0; n < N; ++n) {
-		SIMD m2N1 = load(&m2N[n * SIMD::size]);
+		SIMD m2N1 = load(&m2N[(0 + n) * SIMD::size]);
 		SIMD m2N2 = load(&m2N[(N + n) * SIMD::size]);
 
 		store(&result[(0 + n) * SIMD::size], m22Simd0 * m2N1 + m22Simd1 * m2N2);

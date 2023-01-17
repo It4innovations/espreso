@@ -23,12 +23,11 @@
 #include <algorithm>
 #include <numeric>
 
-#include "basis/utilities/print.h"
-
 using namespace espreso;
 
-Assembler::Assembler()
-: elementOps(info::mesh->elements->eintervals.size()), elementFiller(info::mesh->elements->eintervals.size()), elementRes(info::mesh->elements->eintervals.size()),
+Assembler::Assembler(PhysicsConfiguration &settings)
+: settings(settings),
+  elementOps(info::mesh->elements->eintervals.size()), elementFiller(info::mesh->elements->eintervals.size()), elementRes(info::mesh->elements->eintervals.size()),
   boundaryOps(info::mesh->boundaryRegions.size()), boundaryFiller(info::mesh->boundaryRegions.size()), boundaryRes(info::mesh->boundaryRegions.size()),
   version(0)
 {
@@ -51,29 +50,53 @@ void Assembler::iterate()
 	for (int t = 0; t < info::env::threads; ++t) {
 		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
-//				std::vector<int> updated;
-//				for (auto op = elementOps[i].begin(); op != elementOps[i].end(); ++op) {
-//					updated.push_back((*op)->update);
-//				}
-//				std::cout << updated;
-				size_t elementsInInterval = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
-
-				for (size_t element = 0; element < elementsInInterval; ++element) {
-					for (auto op = elementOps[i].begin(); op != elementOps[i].end(); ++op) {
-						if((*op)->update) {
-							if(element == 0 || !(*op)->isconst) {
-								(**op)();
-								++(**op);
+				size_t elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
+				if (settings.simd) {
+					size_t chunks = elements / SIMD::size;
+					size_t peel = elements % SIMD::size;
+					for (size_t c = 0; c < chunks; ++c) {
+						for (auto op = elementOps[i].begin(); op != elementOps[i].end(); ++op) {
+							if ((*op)->update) {
+								if (c == 0 || !(*op)->isconst) {
+									(*op)->simd();
+								}
 							}
 						}
 					}
-				}
-				for (auto op = elementOps[i].begin(); op != elementOps[i].end(); ++op) {
-					if((*op)->update) {
-						if((*op)->isconst) {
-							(*op)->move(-1);
-						} else {
-							(*op)->move(-elementsInInterval);
+					for (auto op = elementOps[i].begin(); peel && op != elementOps[i].end(); ++op) {
+						if ((*op)->update) {
+							if (chunks == 0 || !(*op)->isconst) {
+								(*op)->peel(peel);
+							}
+						}
+					}
+					for (auto op = elementOps[i].begin(); op != elementOps[i].end(); ++op) {
+						if((*op)->update) {
+							if((*op)->isconst) {
+								(*op)->move(-(long)SIMD::size);
+							} else {
+								(*op)->move(-(long)(chunks * SIMD::size + peel));
+							}
+						}
+					}
+				} else {
+					for (size_t element = 0; element < elements; ++element) {
+						for (auto op = elementOps[i].begin(); op != elementOps[i].end(); ++op) {
+							if((*op)->update) {
+								if(element == 0 || !(*op)->isconst) {
+									(**op)();
+									++(**op);
+								}
+							}
+						}
+					}
+					for (auto op = elementOps[i].begin(); op != elementOps[i].end(); ++op) {
+						if((*op)->update) {
+							if((*op)->isconst) {
+								(*op)->move(-1);
+							} else {
+								(*op)->move(-(long)elements);
+							}
 						}
 					}
 				}
@@ -137,17 +160,33 @@ void Assembler::iterate()
 void Assembler::fill()
 {
 	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-		size_t elementsInInterval = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
-
-		for (size_t element = 0; element < elementsInInterval; ++element) {
-			for (auto op = elementFiller[i].begin(); op != elementFiller[i].end(); ++op) {
-				(**op)();
-				++(**op);
+		size_t elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
+		if (settings.simd) {
+			size_t chunks = elements / SIMD::size;
+			size_t peel = elements % SIMD::size;
+			for (size_t c = 0; c < chunks; ++c) {
+				for (auto op = elementFiller[i].begin(); op != elementFiller[i].end(); ++op) {
+					(*op)->simd();
+				}
 			}
-		}
+			for (auto op = elementFiller[i].begin(); op != elementFiller[i].end(); ++op) {
+				(*op)->peel(peel);
+			}
+			for (auto op = elementFiller[i].begin(); op != elementFiller[i].end(); ++op) {
+				(*op)->move(-(long)(chunks * SIMD::size + peel));
+			}
+		} else {
+			size_t elementsInInterval = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
+			for (size_t element = 0; element < elementsInInterval; ++element) {
+				for (auto op = elementFiller[i].begin(); op != elementFiller[i].end(); ++op) {
+					(**op)();
+					++(**op);
+				}
+			}
 
-		for (auto op = elementFiller[i].begin(); op != elementFiller[i].end(); ++op) {
-			(*op)->move(-elementsInInterval);
+			for (auto op = elementFiller[i].begin(); op != elementFiller[i].end(); ++op) {
+				(*op)->move(-elementsInInterval);
+			}
 		}
 	}
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
