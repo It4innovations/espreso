@@ -10,7 +10,7 @@
 
 namespace espreso {
 
-template <class Module>
+template <template <size_t, size_t, size_t, size_t> class Operator, class Module>
 void _elementIntegration(Module &module)
 {
 	module.controller.addInput(module.integration.jacobiInversion  , module.coords.node, module.integration.dN);
@@ -19,12 +19,8 @@ void _elementIntegration(Module &module)
 	module.controller.prepare(module.integration.jacobiInversion, module.integration.jacobiDeterminant, module.integration.dND);
 
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
-		if (info::mesh->dimension == 2) {
-			module.elementOps[interval].emplace_back(instantiate<typename Module::NGP, ElementJacobian2D>(interval, module.controller, module.coords.node, module.integration.dN, module.integration.jacobiInversion, module.integration.jacobiDeterminant, module.integration.dND));
-		}
-		if (info::mesh->dimension == 3) {
-			module.elementOps[interval].emplace_back(instantiate<typename Module::NGP, ElementJacobian3D>(interval, module.controller, module.coords.node, module.integration.dN, module.integration.jacobiInversion, module.integration.jacobiDeterminant, module.integration.dND));
-		}
+		module.elementOps[interval].emplace_back(instantiate<typename Module::NGP, ElementJacobian, Operator>(interval, module.controller));
+		module.elementOps[interval].back()->isconst = false;
 	}
 }
 
@@ -86,19 +82,19 @@ void _boundaryIntegrationWithNormal(Module &module)
 
 void elementIntegration(HeatTransfer &module)
 {
-	_elementIntegration(module);
+	_elementIntegration<HeatTransferOperator>(module);
 	_boundaryIntegration(module);
 }
 
 void elementIntegration(Acoustic &module)
 {
-	_elementIntegration(module);
+	_elementIntegration<HeatTransferOperator>(module);
 	_boundaryIntegration(module);
 }
 
 void elementIntegration(StructuralMechanics &module)
 {
-	_elementIntegration(module);
+	_elementIntegration<HeatTransferOperator>(module);
 	if (module.configuration.normal_pressure.size()) {
 		_boundaryIntegrationWithNormal(module);
 	} else {

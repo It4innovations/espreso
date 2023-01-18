@@ -328,6 +328,28 @@ static inline void ADDMN3M3N(const double &sumscale, const double * __restrict__
 }
 
 template<size_t N>
+static ALWAYS_INLINE void ADDMN3M3NSimd(const SIMD &sumscale, const double * __restrict__ m3N, double * __restrict__ mNN)
+{
+	for (size_t n = 0; n < N; ++n) {
+		SIMD m3N1 = load(&m3N[n * SIMD::size]);
+		SIMD m3N2 = load(&m3N[(N + n) * SIMD::size]);
+		SIMD m3N3 = load(&m3N[(2 * N + n) * SIMD::size]);
+		for (size_t m = 0; m < N; ++m) {
+
+			SIMD m3N4 = load(&m3N[m * SIMD::size]);
+			SIMD m3N5 = load(&m3N[(N + m) * SIMD::size]);
+			SIMD m3N6 = load(&m3N[(2 * N + m) * SIMD::size]);
+
+			SIMD res  = load(&mNN[(n * N + m) * SIMD::size]);
+
+			res = res + sumscale * (m3N1 * m3N4 + m3N2 * m3N5 + m3N3 * m3N6);
+			store(&mNN[(n * N + m) * SIMD::size], res);
+		}
+	}
+}
+
+
+template<size_t N>
 static inline void ADDMN2M22M2N(const double &sumscale, const double * __restrict__ m22, const double * __restrict__ m2N, double * __restrict__ mNN)
 {
 	for (size_t n = 0; n < N; ++n) {
@@ -335,6 +357,29 @@ static inline void ADDMN2M22M2N(const double &sumscale, const double * __restric
 			double a = m2N[n] * m22[0] + m2N[N + n] * m22[2];
 			double b = m2N[n] * m22[1] + m2N[N + n] * m22[3];
 			mNN[n * N + m] += sumscale * (a * m2N[m] + b * m2N[N + m]);
+		}
+	}
+}
+
+template<size_t N>
+static ALWAYS_INLINE void ADDMN2M22M2NSimd(const SIMD &sumscale, const double * __restrict__ m22, const double * __restrict__ m2N, double * __restrict__ mNN)
+{
+	for (size_t n = 0; n < N; ++n) {
+		SIMD m2N1 = load(&m2N[n * SIMD::size]);
+		SIMD m2N2 = load(&m2N[(N + n) * SIMD::size]);
+
+		SIMD a = m2N1 * load(&m22[0 * SIMD::size]) + m2N2 * load(&m22[2 * SIMD::size]);
+		SIMD b = m2N1 * load(&m22[1 * SIMD::size]) + m2N2 * load(&m22[3 * SIMD::size]);
+		for (size_t m = 0; m < N; ++m) {
+
+			SIMD m2N3 = load(&m2N[m * SIMD::size]);
+			SIMD m2N4 = load(&m2N[(N + m) * SIMD::size]);
+
+			SIMD res  = load(&mNN[(n * N + m) * SIMD::size]);
+
+			res = res + sumscale * (a * m2N3 + b * m2N4);
+
+			store(&mNN[(n * N + m) * SIMD::size], res);
 		}
 	}
 }
@@ -348,6 +393,32 @@ static inline void ADDMN3M33M3N(const double &sumscale, const double * __restric
 			double b = m3N[n] * m33[1] + m3N[N + n] * m33[4] + m3N[2 * N + n] * m33[7];
 			double c = m3N[n] * m33[2] + m3N[N + n] * m33[5] + m3N[2 * N + n] * m33[8];
 			mNN[n * N + m] += sumscale * (a * m3N[m] + b * m3N[N + m] + c * m3N[2 * N + m]);
+		}
+	}
+}
+
+template<size_t N>
+static ALWAYS_INLINE void ADDMN3M33M3NSimd(const SIMD &sumscale, const double * __restrict__ m33, const double * __restrict__ m3N, double * __restrict__ mNN)
+{
+	for (size_t n = 0; n < N; ++n) {
+		SIMD m3N1 = load(&m3N[n * SIMD::size]);
+		SIMD m3N2 = load(&m3N[(N + n) * SIMD::size]);
+		SIMD m3N3 = load(&m3N[(2 * N + n) * SIMD::size]);
+
+		SIMD a = m3N1 * load(&m33[0 * SIMD::size]) + m3N2 * load(&m33[3 * SIMD::size]) + m3N3 * load(&m33[6 * SIMD::size]);
+		SIMD b = m3N1 * load(&m33[1 * SIMD::size]) + m3N2 * load(&m33[4 * SIMD::size]) + m3N3 * load(&m33[7 * SIMD::size]);
+		SIMD c = m3N1 * load(&m33[2 * SIMD::size]) + m3N2 * load(&m33[5 * SIMD::size]) + m3N3 * load(&m33[8 * SIMD::size]);
+
+		for (size_t m = 0; m < N; ++m) {
+
+			SIMD m3N4 = load(&m3N[m * SIMD::size]);
+			SIMD m3N5 = load(&m3N[(N + m) * SIMD::size]);
+			SIMD m3N6 = load(&m3N[(2 * N + m) * SIMD::size]);
+
+			SIMD res  = load(&mNN[(n * N + m) * SIMD::size]);
+
+			res = res + sumscale * (a * m3N4 + b * m3N5 + c * m3N6);
+			store(&mNN[(n * N + m) * SIMD::size], res);
 		}
 	}
 }

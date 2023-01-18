@@ -60,7 +60,7 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dim, MaterialConfi
 			.setdatatype({ ECFDataType::BOOL })
 			.setform());
 
-	simd = false;
+	simd = true;
 	REGISTER(simd, ECFMetaData()
 			.setdescription({ "Assembler use intrinsic functions." })
 			.setdatatype({ ECFDataType::BOOL })

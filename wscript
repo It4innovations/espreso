@@ -40,7 +40,10 @@ def configure(ctx):
         ctx.env.append_unique("DEFINES", [ "esint=long" ])
         ctx.env.append_unique("DEFINES_API", [ "FETI4I_INT_WIDTH=64", "MESIO_INT_WIDTH=64" ])
 
-    ctx.env.append_unique("CXXFLAGS", [ "-std=c++11" ])
+    if ctx.options.simd_off:
+        ctx.env.append_unique("DEFINES", [ "SIMD_OFF" ])
+
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++14" ])
     ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
     if ctx.options.mode == "release":
         ctx.env.append_unique("CXXFLAGS", [ "-O3", "-g" ])
@@ -238,6 +241,11 @@ def options(opt):
         choices=["32", "64"],
         metavar="32,64",
         help="ESPRESO integer datatype width [default: %default]")
+
+    opt.compiler.add_option("--simd-off",
+        action="store_true",
+        default=False,
+        help="Build ESPRESO without SIMD version of assembler.")
 
     modes=["release", "devel", "debug", "profile"]
     opt.compiler.add_option("-m", "--mode",

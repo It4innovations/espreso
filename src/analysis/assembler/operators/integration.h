@@ -8,77 +8,47 @@
 
 namespace espreso {
 
-struct ElementJacobian: public ActionOperator {
-	ElementJacobian(
-			int interval,
-			const ParameterData &coordinates,
-			const ParameterData &dN,
-			ParameterData &inversion,
-			ParameterData &det,
-			ParameterData &dND)
-	: coords(coordinates, interval),
-	  dN(dN, interval, 0),
-	  inv(inversion, interval),
-	  det(det, interval),
-	  dND(dND, interval)
-	{
+template<size_t nodes, size_t gps, size_t ndim, size_t edim, class Physics> struct ElementJacobian;
 
-	}
+template<size_t nodes, size_t gps, size_t edim, class Physics>
+struct ElementJacobian<nodes, gps, 2, edim, Physics>: ActionOperator, Physics {
 
-	InputParameterIterator coords, dN;
-	OutputParameterIterator inv, det, dND;
+	ElementJacobian(int interval) {}
 
-	void operator++()
-	{
-		++coords;
-		++inv; ++det; ++dND;
-	}
-
-	void move(int n)
-	{
-		coords += n;
-		inv += n; det += n; dND += n;
-	}
-};
-
-template<size_t nodes, size_t gps>
-struct ElementJacobian2D: public ElementJacobian {
-	using ElementJacobian::ElementJacobian;
-
-	void operator()()
+	void sisd(typename Physics::Element &element)
 	{
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			double jacobian[4] = { 0, 0, 0, 0 };
+			double jacobian[4] = { 0, 0, 0, 0 }, inv[4];
 
 			for (size_t n = 0; n < nodes; ++n) {
-				jacobian[0] += dN[2 * gpindex * nodes + n + 0 * nodes] * coords[2 * n + 0];
-				jacobian[1] += dN[2 * gpindex * nodes + n + 0 * nodes] * coords[2 * n + 1];
-				jacobian[2] += dN[2 * gpindex * nodes + n + 1 * nodes] * coords[2 * n + 0];
-				jacobian[3] += dN[2 * gpindex * nodes + n + 1 * nodes] * coords[2 * n + 1];
+				jacobian[0] += element.dN[2 * gpindex * nodes + n + 0 * nodes] * element.coords[2 * n + 0];
+				jacobian[1] += element.dN[2 * gpindex * nodes + n + 0 * nodes] * element.coords[2 * n + 1];
+				jacobian[2] += element.dN[2 * gpindex * nodes + n + 1 * nodes] * element.coords[2 * n + 0];
+				jacobian[3] += element.dN[2 * gpindex * nodes + n + 1 * nodes] * element.coords[2 * n + 1];
 			}
 
-			det[gpindex] = jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2];
-			double detJx = 1 / det[gpindex];
-			inv[4 * gpindex + 0] =   detJx * jacobian[3];
-			inv[4 * gpindex + 1] = - detJx * jacobian[1];
-			inv[4 * gpindex + 2] = - detJx * jacobian[2];
-			inv[4 * gpindex + 3] =   detJx * jacobian[0];
+			element.det[gpindex] = jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2];
+			double detJx = 1 / element.det[gpindex];
+			inv[0] =   detJx * jacobian[3];
+			inv[1] = - detJx * jacobian[1];
+			inv[2] = - detJx * jacobian[2];
+			inv[3] =   detJx * jacobian[0];
 
-			M22M2N<nodes>(inv.data + 4 * gpindex, dN.data + 2 * gpindex * nodes, dND.data + 2 * gpindex * nodes);
+			M22M2N<nodes>(inv, element.dN + 2 * gpindex * nodes, element.dND + 2 * gpindex * nodes);
 		}
 	}
 
-	void simd()
+	void simd(typename Physics::Element &element)
 	{
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			SIMD jacobian0 = zeros(), jacobian1 = zeros(), jacobian2 = zeros(), jacobian3 = zeros();
 
 			#pragma unroll(nodes)
 			for (size_t n = 0; n < nodes; ++n) {
-				SIMD coordsX = load(&coords[(n * 2 + 0) * SIMD::size]);
-				SIMD coordsY = load(&coords[(n * 2 + 1) * SIMD::size]);
-				SIMD dNX = load(&dN[(2 * gpindex * nodes + n + 0 * nodes) * SIMD::size]);
-				SIMD dNY = load(&dN[(2 * gpindex * nodes + n + 1 * nodes) * SIMD::size]);
+				SIMD coordsX = load(element.coords + (n * 2 + 0) * SIMD::size);
+				SIMD coordsY = load(element.coords + (n * 2 + 1) * SIMD::size);
+				SIMD dNX = load(element.dN + (2 * gpindex * nodes + n + 0 * nodes) * SIMD::size);
+				SIMD dNY = load(element.dN + (2 * gpindex * nodes + n + 1 * nodes) * SIMD::size);
 
 				jacobian0 = jacobian0 + dNX * coordsX;
 				jacobian1 = jacobian1 + dNX * coordsY;
@@ -87,42 +57,42 @@ struct ElementJacobian2D: public ElementJacobian {
 			}
 
 			SIMD determinant = jacobian0 * jacobian3 - jacobian1 * jacobian2;
-			store(&det[gpindex * SIMD::size], determinant);
+			store(element.det + gpindex * SIMD::size, determinant);
 
 			SIMD detJx = ones() / determinant;
-			store(&inv[(4 * gpindex + 0) * SIMD::size],  detJx * jacobian3);
-			store(&inv[(4 * gpindex + 1) * SIMD::size], -detJx * jacobian1);
-			store(&inv[(4 * gpindex + 2) * SIMD::size], -detJx * jacobian2);
-			store(&inv[(4 * gpindex + 3) * SIMD::size],  detJx * jacobian0);
+			double inv[4 * SIMD::size];
+			store(inv + 0 * SIMD::size,  detJx * jacobian3);
+			store(inv + 1 * SIMD::size, -detJx * jacobian1);
+			store(inv + 2 * SIMD::size, -detJx * jacobian2);
+			store(inv + 3 * SIMD::size,  detJx * jacobian0);
 
-			M22M2NSimd<nodes>(&inv[4 * SIMD::size * gpindex], &dN[2 * gpindex * nodes * SIMD::size], &dND[2 * gpindex * nodes * SIMD::size]);
+			M22M2NSimd<nodes>(inv, element.dN + 2 * gpindex * nodes * SIMD::size, element.dND + 2 * gpindex * nodes * SIMD::size);
 		}
-
-		move(SIMD::size);
 	}
 };
 
-template<size_t nodes, size_t gps>
-struct ElementJacobian3D: public ElementJacobian {
-	using ElementJacobian::ElementJacobian;
+template<size_t nodes, size_t gps, size_t edim, class Physics>
+struct ElementJacobian<nodes, gps, 3, edim, Physics>: ActionOperator, Physics {
 
-	void operator()()
+	ElementJacobian(int interval) {}
+
+	void sisd(typename Physics::Element &element)
 	{
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			double jacobian[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+			double jacobian[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 }, inv[9];
 
 			for (size_t n = 0; n < nodes; ++n) {
-				jacobian[0] += dN[3 * gpindex * nodes + n + 0 * nodes] * coords[3 * n + 0];
-				jacobian[1] += dN[3 * gpindex * nodes + n + 0 * nodes] * coords[3 * n + 1];
-				jacobian[2] += dN[3 * gpindex * nodes + n + 0 * nodes] * coords[3 * n + 2];
-				jacobian[3] += dN[3 * gpindex * nodes + n + 1 * nodes] * coords[3 * n + 0];
-				jacobian[4] += dN[3 * gpindex * nodes + n + 1 * nodes] * coords[3 * n + 1];
-				jacobian[5] += dN[3 * gpindex * nodes + n + 1 * nodes] * coords[3 * n + 2];
-				jacobian[6] += dN[3 * gpindex * nodes + n + 2 * nodes] * coords[3 * n + 0];
-				jacobian[7] += dN[3 * gpindex * nodes + n + 2 * nodes] * coords[3 * n + 1];
-				jacobian[8] += dN[3 * gpindex * nodes + n + 2 * nodes] * coords[3 * n + 2];
+				jacobian[0] += element.dN[3 * gpindex * nodes + n + 0 * nodes] * element.coords[3 * n + 0];
+				jacobian[1] += element.dN[3 * gpindex * nodes + n + 0 * nodes] * element.coords[3 * n + 1];
+				jacobian[2] += element.dN[3 * gpindex * nodes + n + 0 * nodes] * element.coords[3 * n + 2];
+				jacobian[3] += element.dN[3 * gpindex * nodes + n + 1 * nodes] * element.coords[3 * n + 0];
+				jacobian[4] += element.dN[3 * gpindex * nodes + n + 1 * nodes] * element.coords[3 * n + 1];
+				jacobian[5] += element.dN[3 * gpindex * nodes + n + 1 * nodes] * element.coords[3 * n + 2];
+				jacobian[6] += element.dN[3 * gpindex * nodes + n + 2 * nodes] * element.coords[3 * n + 0];
+				jacobian[7] += element.dN[3 * gpindex * nodes + n + 2 * nodes] * element.coords[3 * n + 1];
+				jacobian[8] += element.dN[3 * gpindex * nodes + n + 2 * nodes] * element.coords[3 * n + 2];
 			}
-			det[gpindex] =
+			element.det[gpindex] =
 					+ jacobian[0] * jacobian[4] * jacobian[8]
 					+ jacobian[1] * jacobian[5] * jacobian[6]
 					+ jacobian[2] * jacobian[3] * jacobian[7]
@@ -130,18 +100,69 @@ struct ElementJacobian3D: public ElementJacobian {
 					- jacobian[1] * jacobian[3] * jacobian[8]
 					- jacobian[0] * jacobian[5] * jacobian[7];
 
-			double detJx = 1 / det[gpindex];
-			inv[9 * gpindex + 0] = detJx * ( jacobian[8] * jacobian[4] - jacobian[7] * jacobian[5]);
-			inv[9 * gpindex + 1] = detJx * (-jacobian[8] * jacobian[1] + jacobian[7] * jacobian[2]);
-			inv[9 * gpindex + 2] = detJx * ( jacobian[5] * jacobian[1] - jacobian[4] * jacobian[2]);
-			inv[9 * gpindex + 3] = detJx * (-jacobian[8] * jacobian[3] + jacobian[6] * jacobian[5]);
-			inv[9 * gpindex + 4] = detJx * ( jacobian[8] * jacobian[0] - jacobian[6] * jacobian[2]);
-			inv[9 * gpindex + 5] = detJx * (-jacobian[5] * jacobian[0] + jacobian[3] * jacobian[2]);
-			inv[9 * gpindex + 6] = detJx * ( jacobian[7] * jacobian[3] - jacobian[6] * jacobian[4]);
-			inv[9 * gpindex + 7] = detJx * (-jacobian[7] * jacobian[0] + jacobian[6] * jacobian[1]);
-			inv[9 * gpindex + 8] = detJx * ( jacobian[4] * jacobian[0] - jacobian[3] * jacobian[1]);
+			double detJx = 1 / element.det[gpindex];
+			inv[0] = detJx * ( jacobian[8] * jacobian[4] - jacobian[7] * jacobian[5]);
+			inv[1] = detJx * (-jacobian[8] * jacobian[1] + jacobian[7] * jacobian[2]);
+			inv[2] = detJx * ( jacobian[5] * jacobian[1] - jacobian[4] * jacobian[2]);
+			inv[3] = detJx * (-jacobian[8] * jacobian[3] + jacobian[6] * jacobian[5]);
+			inv[4] = detJx * ( jacobian[8] * jacobian[0] - jacobian[6] * jacobian[2]);
+			inv[5] = detJx * (-jacobian[5] * jacobian[0] + jacobian[3] * jacobian[2]);
+			inv[6] = detJx * ( jacobian[7] * jacobian[3] - jacobian[6] * jacobian[4]);
+			inv[7] = detJx * (-jacobian[7] * jacobian[0] + jacobian[6] * jacobian[1]);
+			inv[8] = detJx * ( jacobian[4] * jacobian[0] - jacobian[3] * jacobian[1]);
 
-			M33M3N<nodes>(inv.data + 9 * gpindex, dN.data + 3 * gpindex * nodes, dND.data + 3 * gpindex * nodes);
+			M33M3N<nodes>(inv, element.dN + 3 * gpindex * nodes, element.dND + 3 * gpindex * nodes);
+		}
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			SIMD jacobian0 = zeros(), jacobian1 = zeros(), jacobian2 = zeros(), jacobian3 = zeros(), jacobian4 = zeros();
+			SIMD jacobian5 = zeros(), jacobian6 = zeros(), jacobian7 = zeros(), jacobian8 = zeros();
+
+			#pragma unroll(nodes)
+			for (size_t n = 0; n < nodes; ++n) {
+				SIMD coordsX = load(element.coords + (n * 3 + 0) * SIMD::size);
+				SIMD coordsY = load(element.coords + (n * 3 + 1) * SIMD::size);
+				SIMD coordsZ = load(element.coords + (n * 3 + 2) * SIMD::size);
+				SIMD dNX = load(element.dN + (3 * gpindex * nodes + n + 0 * nodes) * SIMD::size);
+				SIMD dNY = load(element.dN + (3 * gpindex * nodes + n + 1 * nodes) * SIMD::size);
+				SIMD dNZ = load(element.dN + (3 * gpindex * nodes + n + 2 * nodes) * SIMD::size);
+
+				jacobian0 = jacobian0 + dNX * coordsX;
+				jacobian1 = jacobian1 + dNX * coordsY;
+				jacobian2 = jacobian2 + dNX * coordsZ;
+				jacobian3 = jacobian3 + dNY * coordsX;
+				jacobian4 = jacobian4 + dNY * coordsY;
+				jacobian5 = jacobian5 + dNY * coordsZ;
+				jacobian6 = jacobian6 + dNZ * coordsX;
+				jacobian7 = jacobian7 + dNZ * coordsY;
+				jacobian8 = jacobian8 + dNZ * coordsZ;
+			}
+
+			SIMD determinant =
+					+ jacobian0 * jacobian4 * jacobian8
+					+ jacobian1 * jacobian5 * jacobian6
+					+ jacobian2 * jacobian3 * jacobian7
+					- jacobian2 * jacobian4 * jacobian6
+					- jacobian1 * jacobian3 * jacobian8
+					- jacobian0 * jacobian5 * jacobian7;
+			store(element.det + gpindex * SIMD::size, determinant);
+
+			SIMD detJx = ones() / determinant;
+			double inv[9 * SIMD::size];
+			store(inv + 0 * SIMD::size, detJx * ( jacobian8 * jacobian4 - jacobian7 * jacobian5));
+			store(inv + 1 * SIMD::size, detJx * (-jacobian8 * jacobian1 + jacobian7 * jacobian2));
+			store(inv + 2 * SIMD::size, detJx * ( jacobian5 * jacobian1 - jacobian4 * jacobian2));
+			store(inv + 3 * SIMD::size, detJx * (-jacobian8 * jacobian3 + jacobian6 * jacobian5));
+			store(inv + 4 * SIMD::size, detJx * ( jacobian8 * jacobian0 - jacobian6 * jacobian2));
+			store(inv + 5 * SIMD::size, detJx * (-jacobian5 * jacobian0 + jacobian3 * jacobian2));
+			store(inv + 6 * SIMD::size, detJx * ( jacobian7 * jacobian3 - jacobian6 * jacobian4));
+			store(inv + 7 * SIMD::size, detJx * (-jacobian7 * jacobian0 + jacobian6 * jacobian1));
+			store(inv + 8 * SIMD::size, detJx * ( jacobian4 * jacobian0 - jacobian3 * jacobian1));
+
+			M33M3NSimd<nodes>(inv, element.dN + 3 * gpindex * nodes * SIMD::size, element.dND + 3 * gpindex * nodes * SIMD::size);
 		}
 	}
 };

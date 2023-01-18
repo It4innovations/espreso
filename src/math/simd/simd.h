@@ -2,11 +2,11 @@
 #ifndef SRC_MATH_SIMD_SIMD_H_
 #define SRC_MATH_SIMD_SIMD_H_
 
-#if defined(__AVX512F__) && defined(__AVX512DQ__)
+#if !defined(SIMD_OFF) && defined(__AVX512F__) && defined(__AVX512DQ__)
 #include "simd.avx512.h"
-#elif defined(__AVX__)
+#elif !defined(SIMD_OFF) && defined(__AVX__)
 #include "simd.avx.h"
-#elif defined(__SSE2__)
+#elif !defined(SIMD_OFF) && defined(__SSE2__)
 #include "simd.sse2.h"
 #else
 

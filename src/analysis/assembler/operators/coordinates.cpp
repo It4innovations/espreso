@@ -14,7 +14,7 @@
 
 namespace espreso {
 
-template <class Module>
+template <template <size_t, size_t, size_t, size_t> class Operator, class Module>
 void _elementCoordinates(Module &module, bool toGPs)
 {
 	module.controller.addInput(module.coords.node, info::mesh->nodes->coordinates);
@@ -28,12 +28,7 @@ void _elementCoordinates(Module &module, bool toGPs)
 
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
 		auto procNodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
-		if (info::mesh->dimension == 2) {
-			module.elementOps[interval].emplace_back(instantiate<typename Module::NGP, Coordinates2DToElementNodes>(interval, module.controller, procNodes, module.coords.node));
-		}
-		if (info::mesh->dimension == 3) {
-			module.elementOps[interval].emplace_back(instantiate<typename Module::NGP, Coordinates3DToElementNodes>(interval, module.controller, procNodes, module.coords.node));
-		}
+		module.elementOps[interval].emplace_back(instantiate<typename Module::NGP, CoordinatesToElementNodes, Operator>(interval, module.controller, procNodes));
 		if (toGPs) {
 			if (info::mesh->dimension == 2) {
 				module.elementOps[interval].emplace_back(instantiate<typename Module::NGP, 2, FromNodesToGaussPoints>(interval, module.controller, module.integration.N, module.coords.node, module.coords.gp));
@@ -76,7 +71,7 @@ void _elementCoordinates(Module &module, bool toGPs)
 	}
 }
 
-template <class Module>
+template <template <size_t, size_t, size_t, size_t> class Operator, class Module>
 void _boundaryCoordinates(Module &module, bool toGPs)
 {
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
@@ -93,12 +88,8 @@ void _boundaryCoordinates(Module &module, bool toGPs)
 
 			for(size_t interval = 0; interval < info::mesh->boundaryRegions[r]->eintervals.size(); ++interval) {
 				auto procNodes = info::mesh->boundaryRegions[r]->elements->cbegin() + info::mesh->boundaryRegions[r]->eintervals[interval].begin;
-				if (info::mesh->dimension == 2) {
-					module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, Coordinates2DToElementNodes>(interval, module.controller, procNodes, module.coords.boundary.node.regions[r]));
-				}
-				if (info::mesh->dimension == 3) {
-					module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, Coordinates3DToElementNodes>(interval, module.controller, procNodes, module.coords.boundary.node.regions[r]));
-				}
+				module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, CoordinatesToElementNodes, Operator>(interval, module.controller, procNodes));
+
 				if (toGPs) {
 					if (info::mesh->dimension == 2) {
 						module.boundaryOps[r][interval].emplace_back(instantiate<typename Module::NGP, 2, FromNodesToGaussPoints>(r, interval, module.controller, module.integration.boundary.N.regions[r], module.coords.boundary.node.regions[r], module.coords.boundary.gp.regions[r]));
@@ -115,12 +106,7 @@ void _boundaryCoordinates(Module &module, bool toGPs)
 
 				for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
 					auto nodes = info::mesh->boundaryRegions[r]->nodes->cbegin(t);
-					if (info::mesh->dimension == 2) {
-						module.boundaryOps[r][t].emplace_back(instantiate<typename Module::NGP, Coordinates2DToElementNodes>(t, module.controller, nodes, module.coords.boundary.node.regions[r]));
-					}
-					if (info::mesh->dimension == 3) {
-						module.boundaryOps[r][t].emplace_back(instantiate<typename Module::NGP, Coordinates3DToElementNodes>(t, module.controller, nodes, module.coords.boundary.node.regions[r]));
-					}
+					module.boundaryOps[r][t].emplace_back(instantiate<typename Module::NGP, CoordinatesToElementNodes, Operator>(t, module.controller, nodes));
 				}
 			}
 		}
@@ -199,32 +185,32 @@ void _analyzeBoundaryCondition(std::map<std::string, ImpedanceConfiguration> &bc
 
 void elementCoordinates(HeatTransfer &module)
 {
-	_elementCoordinates(module, false);
+	_elementCoordinates<HeatTransferOperator>(module, false);
 
 	_analyzeBoundaryCondition(module.configuration.temperature);
 	_analyzeBoundaryCondition(module.configuration.heat_flow);
 	_analyzeBoundaryCondition(module.configuration.heat_flux);
-	_boundaryCoordinates(module, false);
+	_boundaryCoordinates<HeatTransferOperator>(module, false);
 }
 
 void elementCoordinates(Acoustic &module)
 {
-	_elementCoordinates(module, false);
+	_elementCoordinates<HeatTransferOperator>(module, false);
 
 	_analyzeBoundaryCondition(module.configuration.acoustic_pressure);
 	_analyzeBoundaryCondition(module.configuration.normal_acceleration);
 	_analyzeBoundaryCondition(module.configuration.acceleration);
 	_analyzeBoundaryCondition(module.configuration.impedance);
-	_boundaryCoordinates(module, false);
+	_boundaryCoordinates<HeatTransferOperator>(module, false);
 }
 
 void elementCoordinates(StructuralMechanics &module)
 {
-	_elementCoordinates(module, module.configuration.angular_velocity.size() || module.settings.element_behaviour == StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC);
+	_elementCoordinates<HeatTransferOperator>(module, module.configuration.angular_velocity.size() || module.settings.element_behaviour == StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC);
 
 	_analyzeBoundaryCondition(module.configuration.displacement);
 	_analyzeBoundaryCondition(module.configuration.normal_pressure);
-	_boundaryCoordinates(module, module.settings.element_behaviour == StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC && module.configuration.normal_pressure.size());
+	_boundaryCoordinates<HeatTransferOperator>(module, module.settings.element_behaviour == StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC && module.configuration.normal_pressure.size());
 }
 
 }

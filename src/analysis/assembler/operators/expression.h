@@ -55,18 +55,6 @@ struct ExpressionsToNodes: public ExpressionsToParameter {
 			data[n * size + offset] = results[n];
 		}
 	}
-
-	void simd()
-	{
-		double results[SIMD::size * nodes];
-		evaluator->evalVector(SIMD::size * nodes, params, results);
-		for (size_t n = 0; n < nodes; ++n) {
-			for (size_t s = 0; s < SIMD::size; ++s) {
-				data[(n * size + offset) * SIMD::size + s] = results[s * SIMD::size + n];
-			}
-		}
-		move(SIMD::size);
-	}
 };
 
 template <size_t nodes, size_t gps>
@@ -97,14 +85,118 @@ struct ExpressionsToGPs: public ExpressionsToParameter {
 			data[n * size + offset] = results[n];
 		}
 	}
+};
 
-	void simd()
+template<class Setter>
+struct ExpressionsToParameter2: public ActionOperator {
+	ExpressionsToParameter2(int interval, Setter setter, ParameterData &parameter, Evaluator *evaluator, size_t offset, size_t size)
+	: setter(setter),
+	  parameter(parameter, interval),
+	  evaluator(evaluator),
+	  params(evaluator->params),
+	  offset(offset), size(size)
+	{
+		for (size_t i = 0; i < params.general.size(); ++i) {
+			params.general[i].variable->set(interval, params.general[i]);
+		}
+	}
+
+	Setter setter;
+	OutputParameterIterator parameter;
+	Evaluator *evaluator;
+	Evaluator::Params params;
+	size_t offset, size;
+};
+
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, class Physics, class Setter>
+struct ExpressionsToNodes2: public ExpressionsToParameter2<Setter>, Physics {
+	using ExpressionsToParameter2<Setter>::ExpressionsToParameter;
+
+	void operator++()
+	{
+		++this->parameter;
+		for (size_t i = 0; i < this->params.general.size(); ++i) {
+			this->params.general[i].val += nodes * this->params.general[i].increment;
+		}
+	}
+
+	void move(int n)
+	{
+		this->parameter += n;
+		for (size_t i = 0; i < this->params.general.size(); ++i) {
+			this->params.general[i].val += n * nodes * this->params.general[i].increment;
+		}
+	}
+
+	void operator()()
+	{
+		double results[nodes];
+		this->evaluator->evalVector(nodes, this->params, results);
+		for (size_t n = 0; n < nodes; ++n) {
+//			this->parameter[n * this->size + this->offset] = results[n];
+		}
+	}
+
+	void sisd(typename Physics::Element &element)
+	{
+
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+//		printf("expr simd to nodes\n");
+		double results[SIMD::size * nodes];
+		this->evaluator->evalVector(SIMD::size * nodes, this->params, results);
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t s = 0; s < SIMD::size; ++s) {
+//				this->setter(element)[(n * this->size + this->offset) * SIMD::size + s] = results[s * SIMD::size + n];
+			}
+		}
+		move(SIMD::size);
+	}
+};
+
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, class Physics, class Setter>
+struct ExpressionsToGPs2: public ExpressionsToParameter2<Setter>, Physics {
+	using ExpressionsToParameter2<Setter>::ExpressionsToParameter2;
+
+	void operator++()
+	{
+		++this->parameter;
+		for (size_t i = 0; i < this->params.general.size(); ++i) {
+			this->params.general[i].val += gps * this->params.general[i].increment;
+		}
+	}
+
+	void move(int n)
+	{
+		this->parameter += n;
+		for (size_t i = 0; i < this->params.general.size(); ++i) {
+			this->params.general[i].val += n * gps * this->params.general[i].increment;
+		}
+	}
+
+	void operator()()
+	{
+		double results[gps];
+		this->evaluator->evalVector(gps, this->params, results);
+		for (size_t n = 0; n < gps; ++n) {
+//			this->parameter[n * this->size + this->offset] = results[n];
+		}
+	}
+
+	void sisd(typename Physics::Element &element)
+	{
+
+	}
+
+	void simd(typename Physics::Element &element)
 	{
 		double results[SIMD::size * gps];
-		evaluator->evalVector(SIMD::size * gps, params, results);
+		this->evaluator->evalVector(SIMD::size * gps, this->params, results);
 		for (size_t n = 0; n < gps; ++n) {
 			for (size_t s = 0; s < SIMD::size; ++s) {
-				data[(n * size + offset) * SIMD::size + s] = results[s * SIMD::size * n];
+//				this->setter(element)[(n * this->size + this->offset) * SIMD::size + s] = results[s * SIMD::size * n];
 			}
 		}
 		move(SIMD::size);

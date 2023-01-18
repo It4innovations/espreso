@@ -1,6 +1,5 @@
 
 #include "conductivity.h"
-#include "coordinatesystem.h"
 #include "copy.h"
 #include "gausspoints.h"
 
@@ -76,56 +75,30 @@ void thermalConductivity(HeatTransfer &module)
 
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
 		const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
-		if (info::mesh->dimension == 2) {
-			switch (mat->thermal_conductivity.model) {
-			case ThermalConductivityConfiguration::MODEL::ISOTROPIC: module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, 1, CopyParameter>(interval, module.controller, module.material.model.isotropic, module.material.conductivityIsotropic)); break;
-			case ThermalConductivityConfiguration::MODEL::DIAGONAL: module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, CopyDiagonal2DConductivity>(interval, module.controller, module.material.model.diagonal, module.material.conductivity)); break;
-			case ThermalConductivityConfiguration::MODEL::SYMMETRIC: module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, CopySymmetric2DConductivity>(interval, module.controller, module.material.model.symmetric2D, module.material.conductivity)); break;
-			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC: module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, CopyAnisotropic2DConductivity>(interval, module.controller, module.material.model.anisotropic, module.material.conductivity)); break;
-			}
 
-			if (mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
-				switch (mat->coordinate_system.type) {
-				case CoordinateSystemConfiguration::TYPE::CARTESIAN:
-					if (module.cooSystem.cartesian2D.externalValues.evaluator[interval]->isset) {
-						module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, CartesianRotation2D>(interval, module.controller, module.coords.gp, module.cooSystem.cartesian2D, module.cooSystem.angle2D));
-						module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, ConductivityRotation2D>(interval, module.controller, module.cooSystem.angle2D, module.material.conductivity));
-					}
-					break;
-				case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
-					module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, CylindricalRotation2D>(interval, module.controller, module.coords.gp, module.cooSystem.cylindric, module.cooSystem.angle2D));
-					module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, ConductivityRotation2D>(interval, module.controller, module.cooSystem.angle2D, module.material.conductivity));
-					break;
-				case CoordinateSystemConfiguration::TYPE::SPHERICAL:
-					break;
-				}
-			}
+		switch (mat->thermal_conductivity.model) {
+		case ThermalConductivityConfiguration::MODEL::DIAGONAL: module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, ConductivityDiagonal, HeatTransferOperator>(interval, module.controller)); break;
+		case ThermalConductivityConfiguration::MODEL::SYMMETRIC: module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, ConductivitySymmetric, HeatTransferOperator>(interval, module.controller)); break;
 		}
-		if (info::mesh->dimension == 3) {
-			switch (mat->thermal_conductivity.model) {
-			case ThermalConductivityConfiguration::MODEL::ISOTROPIC: module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, 1, CopyParameter>(interval, module.controller, module.material.model.isotropic, module.material.conductivityIsotropic)); break;
-			case ThermalConductivityConfiguration::MODEL::DIAGONAL: module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, CopyDiagonal3DConductivity>(interval, module.controller, module.material.model.diagonal, module.material.conductivity)); break;
-			case ThermalConductivityConfiguration::MODEL::SYMMETRIC: module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, CopySymmetric3DConductivity>(interval, module.controller, module.material.model.symmetric3D, module.material.conductivity)); break;
-			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC: module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, CopyAnisotropic3DConductivity>(interval, module.controller, module.material.model.anisotropic, module.material.conductivity)); break;
-			}
 
-			if (mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
-				switch (mat->coordinate_system.type) {
-				case CoordinateSystemConfiguration::TYPE::CARTESIAN:
-					if (module.cooSystem.cartesian3D.externalValues.evaluator[interval]->isset) {
-						module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, CartesianRotation3D>(interval, module.controller, module.coords.gp, module.cooSystem.cartesian3D, module.cooSystem.angle3D));
-						module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, ConductivityRotation3D>(interval, module.controller, module.cooSystem.angle3D, module.material.conductivity));
-					}
-					break;
-				case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
-					module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, CylindricalRotation3D>(interval, module.controller, module.coords.gp, module.cooSystem.cylindric, module.cooSystem.angle3D));
-					module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, ConductivityRotation3D>(interval, module.controller, module.cooSystem.angle3D, module.material.conductivity));
-					break;
-				case CoordinateSystemConfiguration::TYPE::SPHERICAL:
-					module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, SphericalRotation3D>(interval, module.controller, module.coords.gp, module.cooSystem.spherical, module.cooSystem.angle3D));
-					module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, ConductivityRotation3D>(interval, module.controller, module.cooSystem.angle3D, module.material.conductivity));
-					break;
+		if (mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
+			switch (mat->coordinate_system.type) {
+			case CoordinateSystemConfiguration::TYPE::CARTESIAN:
+				if (module.cooSystem.cartesian2D.externalValues.evaluator[interval]->isset) {
+					module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, ConductivityRotationCartesian, HeatTransferOperator>(interval, module.controller));
+					module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, ConductivityRotationApply, HeatTransferOperator>(interval, module.controller));
+				} else {
+					module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, ConductivityRotationSkip, HeatTransferOperator>(interval, module.controller));
 				}
+				break;
+			case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
+				module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, ConductivityRotationCylindric, HeatTransferOperator>(interval, module.controller));
+				module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, ConductivityRotationApply, HeatTransferOperator>(interval, module.controller));
+				break;
+			case CoordinateSystemConfiguration::TYPE::SPHERICAL:
+				module.elementOps[interval].emplace_back(instantiate3D<HeatTransfer::NGP, ConductivityRotationSpherical, HeatTransferOperator>(interval, module.controller));
+				module.elementOps[interval].emplace_back(instantiate3D<HeatTransfer::NGP, ConductivityRotationApply, HeatTransferOperator>(interval, module.controller));
+				break;
 			}
 		}
 		switch (mat->thermal_conductivity.model) {

@@ -6,12 +6,292 @@
 #include "basis/utilities/parser.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
+#include "esinfo/envinfo.h"
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/boundaryregionstore.h"
+#include "mesh/store/domainstore.h"
 
 using namespace espreso;
+
+template <template <size_t, size_t, size_t, size_t> class Operator, size_t nodes, size_t gps, size_t ndim, size_t edim>
+double simdloop(const std::vector<ActionOperator*> &ops, esint elements)
+{
+	typename Operator<nodes, gps, ndim, edim>::Element data;
+	std::vector<Operator<nodes, gps, ndim, edim>*> active; active.reserve(ops.size());
+
+	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
+//		if ((*op)->update) { // we must always update since clear object on the stact is created
+			if ((*op)->isconst) {
+				dynamic_cast<Operator<nodes, gps, ndim, edim>*>(*op)->simd(data);
+			} else {
+				active.push_back(dynamic_cast<Operator<nodes, gps, ndim, edim>*>(*op));
+				active.back()->simd(data);
+			}
+//		}
+	}
+
+	double start = eslog::time();
+	esint chunks = elements / SIMD::size;
+	for (esint c = 1; c < chunks; ++c) {
+		for (auto op = active.cbegin(); op != active.cend(); ++op) {
+			(*op)->simd(data);
+		}
+	}
+	double end = eslog::time();
+
+	if (elements % SIMD::size) {
+		for (auto op = active.cbegin(); op != active.cend(); ++op) {
+			(*op)->peel(data, elements % SIMD::size);
+		}
+	}
+
+	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
+//		if ((*op)->update) {
+			if ((*op)->isconst) {
+				(*op)->move(-(int)SIMD::size);
+			} else {
+				(*op)->move(-elements);
+			}
+//		}
+	}
+	return end - start;
+}
+
+template <template <size_t, size_t, size_t, size_t> class Operator, size_t nodes, size_t gps, size_t ndim, size_t edim>
+double sisdloop(const std::vector<ActionOperator*> &ops, esint elements)
+{
+	typename Operator<nodes, gps, ndim, edim>::Element data;
+	std::vector<Operator<nodes, gps, ndim, edim>*> active; active.reserve(ops.size());
+
+	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
+//		if ((*op)->update) { // we must always update since clear object on the stact is created
+			if ((*op)->isconst) {
+				dynamic_cast<Operator<nodes, gps, ndim, edim>*>(*op)->sisd(data);
+			} else {
+				active.push_back(dynamic_cast<Operator<nodes, gps, ndim, edim>*>(*op));
+				active.back()->sisd(data);
+			}
+//		}
+	}
+
+	double start = eslog::time();
+	for (esint c = 1; c < elements; ++c) {
+		for (auto op = active.cbegin(); op != active.cend(); ++op) {
+			(*op)->sisd(data);
+		}
+	}
+	double end = eslog::time();
+
+	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
+//		if ((*op)->update) {
+			if ((*op)->isconst) {
+				(*op)->move(-1);
+			} else {
+				(*op)->move(-elements);
+			}
+//		}
+	}
+	return end - start;
+}
+
+template <typename Physics, template <size_t, size_t, size_t, size_t> class Operator, size_t ndim>
+double simd(int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	switch (code) {
+	case static_cast<size_t>(Element::CODE::POINT1):    return simdloop<Operator,  1, Physics::NGP::POINT1    , ndim, 0>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::LINE2):     return simdloop<Operator,  2, Physics::NGP::LINE2     , ndim, 1>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::LINE3):     return simdloop<Operator,  3, Physics::NGP::LINE3     , ndim, 1>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::TRIANGLE3): return simdloop<Operator,  3, Physics::NGP::TRIANGLE3 , ndim, 2>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::TRIANGLE6): return simdloop<Operator,  6, Physics::NGP::TRIANGLE6 , ndim, 2>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::SQUARE4):   return simdloop<Operator,  4, Physics::NGP::SQUARE4   , ndim, 2>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::SQUARE8):   return simdloop<Operator,  8, Physics::NGP::SQUARE8   , ndim, 2>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::TETRA4):    return simdloop<Operator,  4, Physics::NGP::TETRA4    , ndim, 3>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::TETRA10):   return simdloop<Operator, 10, Physics::NGP::TETRA10   , ndim, 3>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PYRAMID5):  return simdloop<Operator,  5, Physics::NGP::PYRAMID5  , ndim, 3>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PYRAMID13): return simdloop<Operator, 13, Physics::NGP::PYRAMID13 , ndim, 3>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PRISMA6):   return simdloop<Operator,  6, Physics::NGP::PRISMA6   , ndim, 3>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PRISMA15):  return simdloop<Operator, 15, Physics::NGP::PRISMA15  , ndim, 3>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::HEXA8):     return simdloop<Operator,  8, Physics::NGP::HEXA8     , ndim, 3>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::HEXA20):    return simdloop<Operator, 20, Physics::NGP::HEXA20    , ndim, 3>(ops, elements); break;
+	}
+	return 0;
+}
+
+template <typename Physics, template <size_t, size_t, size_t, size_t> class Operator, size_t ndim>
+double sisd(int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	switch (code) {
+	case static_cast<size_t>(Element::CODE::POINT1):    return sisdloop<Operator,  1, Physics::NGP::POINT1    , ndim, 0>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::LINE2):     return sisdloop<Operator,  2, Physics::NGP::LINE2     , ndim, 1>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::LINE3):     return sisdloop<Operator,  3, Physics::NGP::LINE3     , ndim, 1>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::TRIANGLE3): return sisdloop<Operator,  3, Physics::NGP::TRIANGLE3 , ndim, 2>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::TRIANGLE6): return sisdloop<Operator,  6, Physics::NGP::TRIANGLE6 , ndim, 2>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::SQUARE4):   return sisdloop<Operator,  4, Physics::NGP::SQUARE4   , ndim, 2>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::SQUARE8):   return sisdloop<Operator,  8, Physics::NGP::SQUARE8   , ndim, 2>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::TETRA4):    return sisdloop<Operator,  4, Physics::NGP::TETRA4    , ndim, 3>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::TETRA10):   return sisdloop<Operator, 10, Physics::NGP::TETRA10   , ndim, 3>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PYRAMID5):  return sisdloop<Operator,  5, Physics::NGP::PYRAMID5  , ndim, 3>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PYRAMID13): return sisdloop<Operator, 13, Physics::NGP::PYRAMID13 , ndim, 3>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PRISMA6):   return sisdloop<Operator,  6, Physics::NGP::PRISMA6   , ndim, 3>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PRISMA15):  return sisdloop<Operator, 15, Physics::NGP::PRISMA15  , ndim, 3>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::HEXA8):     return sisdloop<Operator,  8, Physics::NGP::HEXA8     , ndim, 3>(ops, elements); break;
+	case static_cast<size_t>(Element::CODE::HEXA20):    return sisdloop<Operator, 20, Physics::NGP::HEXA20    , ndim, 3>(ops, elements); break;
+	}
+	return 0;
+}
+
+template <typename Physics, template <size_t, size_t, size_t, size_t> class Operator>
+double simd(int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	switch (info::mesh->dimension) {
+	case 2: return simd<Physics, Operator, 2>(code, ops, elements); break;
+	case 3: return simd<Physics, Operator, 3>(code, ops, elements); break;
+	}
+	return 0;
+}
+
+template <typename Physics, template <size_t, size_t, size_t, size_t> class Operator>
+double sisd(int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	switch (info::mesh->dimension) {
+	case 2: return sisd<Physics, Operator, 2>(code, ops, elements); break;
+	case 3: return sisd<Physics, Operator, 3>(code, ops, elements); break;
+	}
+	return 0;
+}
+
+template <typename Physics, template <size_t, size_t, size_t, size_t> class Operator>
+double Assembler::assemble()
+{
+	double time = 0;
+	#pragma omp parallel for reduction(max:time)
+	for (int t = 0; t < info::env::threads; ++t) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
+			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
+				size_t elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
+				if (settings.simd && elements >= SIMD::size) {
+					time = std::max(time, simd<Physics, Operator>(info::mesh->elements->eintervals[i].code, elementOps[i], elements));
+				} else {
+					time = std::max(time, sisd<Physics, Operator>(info::mesh->elements->eintervals[i].code, elementOps[i], elements));
+				}
+			}
+
+			for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+				if (info::mesh->boundaryRegions[r]->dimension) {
+					for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
+						size_t elementsInInterval = info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin;
+
+						for(size_t element = 0; element < elementsInInterval; ++element) {
+							for (auto op = boundaryOps[r][i].begin(); op != boundaryOps[r][i].end(); ++op) {
+								if((*op)->update) {
+									if(element == 0 || !(*op)->isconst) {
+										(**op)();
+										++(**op);
+									}
+								}
+							}
+						}
+
+						for (auto op = boundaryOps[r][i].begin(); op != boundaryOps[r][i].end(); ++op) {
+							if((*op)->update) {
+								if((*op)->isconst) {
+									(*op)->move(-1);
+								} else {
+									(*op)->move(-elementsInInterval);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+			if (info::mesh->boundaryRegions[r]->dimension == 0) {
+				for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().begin(t); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(t); ++n) {
+					for (auto op = boundaryOps[r][t].begin(); op != boundaryOps[r][t].end(); ++op) {
+						if((*op)->update) {
+							if(n == info::mesh->boundaryRegions[r]->nodes->datatarray().begin(t) || !(*op)->isconst) {
+								(**op)();
+								++(**op);
+							}
+						}
+					}
+				}
+				for (auto op = boundaryOps[r][t].begin(); op != boundaryOps[r][t].end(); ++op) {
+					if((*op)->update) {
+						if((*op)->isconst) {
+							(*op)->move(-1);
+						} else {
+							(*op)->move(-info::mesh->boundaryRegions[r]->nodes->datatarray().size(t));
+						}
+					}
+				}
+			}
+		}
+	}
+	return time;
+}
+
+template <class Element> struct ElementSize { size_t operator()(const Element& e) { return sizeof(e); } };
+
+template <template <size_t, size_t, size_t, size_t> class Operator, size_t nodes, size_t gps, size_t ndim, size_t edim, template <class> class callback>
+size_t simdloop(const std::vector<ActionOperator*> &ops, esint elements)
+{
+	typename Operator<nodes, gps, ndim, edim>::Element data;
+	callback<typename Operator<nodes, gps, ndim, edim>::Element> call;
+	return call(data);
+}
+
+template <typename Physics, template <size_t, size_t, size_t, size_t> class Operator, size_t ndim, template <class> class callback>
+size_t simd(int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	switch (code) {
+	case static_cast<size_t>(Element::CODE::POINT1):    return simdloop<Operator,  1, Physics::NGP::POINT1    , ndim, 0, callback>(ops, elements);
+	case static_cast<size_t>(Element::CODE::LINE2):     return simdloop<Operator,  2, Physics::NGP::LINE2     , ndim, 1, callback>(ops, elements);
+	case static_cast<size_t>(Element::CODE::LINE3):     return simdloop<Operator,  3, Physics::NGP::LINE3     , ndim, 1, callback>(ops, elements);
+	case static_cast<size_t>(Element::CODE::TRIANGLE3): return simdloop<Operator,  3, Physics::NGP::TRIANGLE3 , ndim, 2, callback>(ops, elements);
+	case static_cast<size_t>(Element::CODE::TRIANGLE6): return simdloop<Operator,  6, Physics::NGP::TRIANGLE6 , ndim, 2, callback>(ops, elements);
+	case static_cast<size_t>(Element::CODE::SQUARE4):   return simdloop<Operator,  4, Physics::NGP::SQUARE4   , ndim, 2, callback>(ops, elements);
+	case static_cast<size_t>(Element::CODE::SQUARE8):   return simdloop<Operator,  8, Physics::NGP::SQUARE8   , ndim, 2, callback>(ops, elements);
+	case static_cast<size_t>(Element::CODE::TETRA4):    return simdloop<Operator,  4, Physics::NGP::TETRA4    , ndim, 3, callback>(ops, elements);
+	case static_cast<size_t>(Element::CODE::TETRA10):   return simdloop<Operator, 10, Physics::NGP::TETRA10   , ndim, 3, callback>(ops, elements);
+	case static_cast<size_t>(Element::CODE::PYRAMID5):  return simdloop<Operator,  5, Physics::NGP::PYRAMID5  , ndim, 3, callback>(ops, elements);
+	case static_cast<size_t>(Element::CODE::PYRAMID13): return simdloop<Operator, 13, Physics::NGP::PYRAMID13 , ndim, 3, callback>(ops, elements);
+	case static_cast<size_t>(Element::CODE::PRISMA6):   return simdloop<Operator,  6, Physics::NGP::PRISMA6   , ndim, 3, callback>(ops, elements);
+	case static_cast<size_t>(Element::CODE::PRISMA15):  return simdloop<Operator, 15, Physics::NGP::PRISMA15  , ndim, 3, callback>(ops, elements);
+	case static_cast<size_t>(Element::CODE::HEXA8):     return simdloop<Operator,  8, Physics::NGP::HEXA8     , ndim, 3, callback>(ops, elements);
+	case static_cast<size_t>(Element::CODE::HEXA20):    return simdloop<Operator, 20, Physics::NGP::HEXA20    , ndim, 3, callback>(ops, elements);
+	}
+	return 0;
+}
+
+template <typename Physics, template <size_t, size_t, size_t, size_t> class Operator, template <class> class callback>
+size_t simd(int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	switch (info::mesh->dimension) {
+	case 2: return simd<Physics, Operator, 2, callback>(code, ops, elements);
+	case 3: return simd<Physics, Operator, 3, callback>(code, ops, elements);
+	}
+	return 0;
+}
+
+template <typename Physics, template <size_t nodes, size_t gps, size_t ndim, size_t edim> class Operator>
+size_t Assembler::esize()
+{
+	size_t esize = 0;
+	#pragma omp parallel for reduction(max:esize)
+	for (int t = 0; t < info::env::threads; ++t) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
+			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
+				size_t elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
+				esize = std::max(esize, simd<Physics, Operator, ElementSize>(info::mesh->elements->eintervals[i].code, elementOps[i], elements));
+			}
+		}
+	}
+	return esize;
+}
 
 template<typename Ttype>
 void Assembler::validateRegionSettings(const std::string &name, const std::map<std::string, Ttype> &settings)

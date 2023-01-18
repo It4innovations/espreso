@@ -21,36 +21,11 @@ void stiffness(HeatTransfer &module)
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
 		const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
 		if (mat->thermal_conductivity.model == ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
-			if (info::mesh->dimension == 2) {
-				module.elementOps[interval].emplace_back(
-						instantiate<HeatTransfer::NGP, Stiffness2DHeatIsotropic>(interval, module.controller,
-								module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant,
-								module.material.conductivityIsotropic,
-								module.gradient.xi, module.thickness.gp, module.elements.stiffness));
-			}
-			if (info::mesh->dimension == 3) {
-				module.elementOps[interval].emplace_back(
-						instantiate<HeatTransfer::NGP, Stiffness3DHeatIsotropic>(interval, module.controller,
-								module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant,
-								module.material.conductivityIsotropic,
-								module.gradient.xi, module.thickness.gp, module.elements.stiffness));
-			}
+			module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, HeatTransferStiffnessIsotropic, HeatTransferOperator>(interval, module.controller, module.elements.stiffness));
 		} else {
-			if (info::mesh->dimension == 2) {
-				module.elementOps[interval].emplace_back(
-						instantiate<HeatTransfer::NGP, Stiffness2DHeat>(interval, module.controller,
-								module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant,
-								module.material.conductivity,
-								module.gradient.xi, module.thickness.gp, module.elements.stiffness));
-			}
-			if (info::mesh->dimension == 3) {
-				module.elementOps[interval].emplace_back(
-						instantiate<HeatTransfer::NGP, Stiffness3DHeat>(interval, module.controller,
-								module.integration.dND, module.integration.weight, module.integration.jacobiDeterminant,
-								module.material.conductivity,
-								module.gradient.xi, module.thickness.gp, module.elements.stiffness));
-			}
+			module.elementOps[interval].emplace_back(instantiate<HeatTransfer::NGP, HeatTransferStiffness, HeatTransferOperator>(interval, module.controller, module.elements.stiffness));
 		}
+		module.elementOps[interval].back()->isconst = false;
 	}
 }
 

@@ -13,6 +13,11 @@ struct StructuralMechanics;
 struct SteadyState;
 struct Harmonic;
 
+template <class Setter> void fromExpression(HeatTransfer &module, ParameterData &parameter, ExternalElementNodesValue &value, Setter setter);
+template <class Setter> void fromExpression(HeatTransfer &module, ParameterData &parameter, ExternalElementGPsValue &value, Setter setter);
+template <class Setter> void fromExpression2D(HeatTransfer &module, ParameterData &parameter, ExternalElementGPsValue &value, Setter setter);
+template <class Setter> void fromExpression3D(HeatTransfer &module, ParameterData &parameter, ExternalElementGPsValue &value, Setter setter);
+
 void fromExpression(HeatTransfer &module, ParameterData &parameter, ExternalElementNodesValue &value);
 void fromExpression(HeatTransfer &module, ParameterData &parameter, ExternalElementGPsValue &value);
 void fromExpression(HeatTransfer &module, BoundaryParameterPack &parameter, ExternalBoundaryValue &values);
@@ -61,5 +66,7 @@ void RHS(StructuralMechanics &module);
 void addFiller(StructuralMechanics &module, SteadyState &scheme);
 
 }
+
+#include "expression.hpp"
 
 #endif /* SRC_ANALYSIS_ASSEMBLER_OPERATORS_OPERATORS_H_ */

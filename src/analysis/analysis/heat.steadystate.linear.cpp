@@ -42,10 +42,10 @@ void HeatSteadyStateLinear::analyze()
 
 void HeatSteadyStateLinear::run(step::Step &step)
 {
-	initSystem(system, this);
+//	initSystem(system, this);
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
-	scheme.init(system);
-	assembler.connect(scheme);
+//	scheme.init(system);
+//	assembler.connect(scheme);
 	scheme.setTime(time, configuration.duration_time);
 	if (MPITools::node->rank == 0) {
 		info::system::memory::physics = info::system::memoryAvail();
@@ -56,7 +56,7 @@ void HeatSteadyStateLinear::run(step::Step &step)
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" = RUN THE SOLVER                                                DURATION TIME: %10.4f s = \n", configuration.duration_time);
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-	system->set(step);
+//	system->set(step);
 	eslog::info(" ============================================================================================= \n\n");
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM SET");
 
@@ -66,19 +66,19 @@ void HeatSteadyStateLinear::run(step::Step &step)
 	double start = eslog::time();
 	assembler.evaluate(scheme);
 	eslog::checkpointln("SIMULATION: PHYSICS ASSEMBLED");
-	scheme.composeSystem(step, system);
+//	scheme.composeSystem(step, system);
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");
 	eslog::info("       = SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
 
-	system->update(step);
+//	system->update(step);
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM UPDATED");
-	system->solve(step);
+//	system->solve(step);
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM SOLVED");
 
 	double solution = eslog::time();
-	scheme.extractSolution(step, system);
-	assembler.updateSolution(scheme);
-	info::mesh->output->updateSolution(step, time);
+//	scheme.extractSolution(step, system);
+//	assembler.updateSolution(scheme);
+//	info::mesh->output->updateSolution(step, time);
 	eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");
 

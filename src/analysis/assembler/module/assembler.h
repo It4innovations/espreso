@@ -28,10 +28,13 @@ public:
 
 	PhysicsConfiguration &settings;
 	ParameterController controller;
-	std::vector<std::vector<std::unique_ptr<ActionOperator> > > elementOps, elementFiller, elementRes;
-	std::vector<std::vector<std::vector<std::unique_ptr<ActionOperator> > > > boundaryOps, boundaryFiller, boundaryRes;
+	std::vector<std::vector<ActionOperator*> > elementOps, elementFiller, elementRes;
+	std::vector<std::vector<std::vector<ActionOperator*> > > boundaryOps, boundaryFiller, boundaryRes;
 
 protected:
+	template <typename Physics, template <size_t, size_t, size_t, size_t> class Operator> double assemble();
+	template <typename Physics, template <size_t nodes, size_t gps, size_t ndim, size_t edim> class Operator> size_t esize();
+
 	void iterate();
 	void fill();
 	void results();
@@ -61,8 +64,6 @@ protected:
 
 	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings, ExternalBoundaryValue &value, int dimension);
 	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionOptionalVector> &settings, ExternalBoundaryValue &value, int dimension);
-
-	int version;
 };
 
 template <typename T>

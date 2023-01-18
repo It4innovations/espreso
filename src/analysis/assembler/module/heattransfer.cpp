@@ -10,6 +10,7 @@
 #include "mesh/store/nodestore.h"
 #include "mesh/store/boundaryregionstore.h"
 
+#include "analysis/assembler/operator.h"
 #include "analysis/assembler/operators/operators.h"
 #include "analysis/scheme/steadystate.h"
 
@@ -78,7 +79,8 @@ bool HeatTransfer::initTemperature()
 		temp.initial.node.setConstness(false);
 	}
 	examineElementParameter("INITIAL TEMPERATURE", settings.initial_temperature, temp.initial.node.externalValues);
-	fromExpression(*this, temp.initial.node, temp.initial.node.externalValues);
+	// TODO: fix
+//	fromExpression(*this, temp.initial.node, temp.initial.node.externalValues);
 	_evaluate();
 
 //	for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
@@ -87,8 +89,9 @@ bool HeatTransfer::initTemperature()
 //
 //	temp.initial.node.builder->buildAndExecute(*this);
 
-	averageEnodesToNodes(temp.initial.node, *Results::initialTemperature);
-	Results::temperature->data = Results::initialTemperature->data;
+	// TODO: fix
+//	averageEnodesToNodes(temp.initial.node, *Results::initialTemperature);
+//	Results::temperature->data = Results::initialTemperature->data;
 
 //	if (info::mesh->dimension == 2 && info::ecf->heat_transfer_2d.init_temp_respect_bc) {
 //		CopyBoundaryRegionsSettingToNodes(configuration.temperature, *ParametersTemperature::Initial::output, "SET INITIAL TEMPERATURE ACCORDING TO DIRICHLET").buildAndExecute(*this);
@@ -152,7 +155,7 @@ void HeatTransfer::analyze()
 	if (step::step.loadstep == 0) {
 		if (info::mesh->dimension == 2) {
 			correct &= examineElementParameter("THICKNESS", settings.thickness, thickness.gp.externalValues);
-			fromExpression(*this, thickness.gp, thickness.gp.externalValues);
+			fromExpression2D(*this, thickness.gp, thickness.gp.externalValues, [] (auto &element) { return element.ecf.thickness; });
 		}
 
 		///////////////////////////////////// Set materials and check if there is not any incorrect region intersection
@@ -225,55 +228,55 @@ void HeatTransfer::analyze()
 				eslog::info("         CONDUCTIVITY:                                                              SYMMETRIC \n");
 				if (info::mesh->dimension == 2) {
 					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.symmetric2D.externalValues, 0);
-					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.symmetric2D.externalValues, 1);
-					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.symmetric2D.externalValues, 2);
+					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.symmetric2D.externalValues, 2);
+					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.symmetric2D.externalValues, 1);
 				}
 				if (info::mesh->dimension == 3) {
 					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.symmetric3D.externalValues, 0);
-					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.symmetric3D.externalValues, 1);
+					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.symmetric3D.externalValues, 3);
 					correct &= examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), material.model.symmetric3D.externalValues, 2);
-					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.symmetric3D.externalValues, 3);
+					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.symmetric3D.externalValues, 1);
 					correct &= examineMaterialParameter(mat->name, "KYZ", mat->thermal_conductivity.values.get(1, 2), material.model.symmetric3D.externalValues, 4);
-					correct &= examineMaterialParameter(mat->name, "KXZ", mat->thermal_conductivity.values.get(0, 2), material.model.symmetric3D.externalValues, 5);
+					correct &= examineMaterialParameter(mat->name, "KXZ", mat->thermal_conductivity.values.get(0, 2), material.model.symmetric3D.externalValues, 2);
 				}
 				break;
 			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC:
 				eslog::info("         CONDUCTIVITY:                                                            ANISOTROPIC \n");
 				if (info::mesh->dimension == 2) {
 					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.anisotropic.externalValues, 0);
-					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.anisotropic.externalValues, 1);
-					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.anisotropic.externalValues, 2);
-					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(1, 0), material.model.anisotropic.externalValues, 3);
+					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.anisotropic.externalValues, 3);
+					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.anisotropic.externalValues, 1);
+					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(1, 0), material.model.anisotropic.externalValues, 2);
 				}
 				if (info::mesh->dimension == 3) {
 					correct &= examineMaterialParameter(mat->name, "KXX", mat->thermal_conductivity.values.get(0, 0), material.model.anisotropic.externalValues, 0);
-					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.anisotropic.externalValues, 1);
-					correct &= examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), material.model.anisotropic.externalValues, 2);
-					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.anisotropic.externalValues, 3);
-					correct &= examineMaterialParameter(mat->name, "KYZ", mat->thermal_conductivity.values.get(1, 2), material.model.anisotropic.externalValues, 4);
-					correct &= examineMaterialParameter(mat->name, "KXZ", mat->thermal_conductivity.values.get(0, 2), material.model.anisotropic.externalValues, 5);
-					correct &= examineMaterialParameter(mat->name, "KYX", mat->thermal_conductivity.values.get(1, 0), material.model.anisotropic.externalValues, 6);
+					correct &= examineMaterialParameter(mat->name, "KYY", mat->thermal_conductivity.values.get(1, 1), material.model.anisotropic.externalValues, 4);
+					correct &= examineMaterialParameter(mat->name, "KZZ", mat->thermal_conductivity.values.get(2, 2), material.model.anisotropic.externalValues, 8);
+					correct &= examineMaterialParameter(mat->name, "KXY", mat->thermal_conductivity.values.get(0, 1), material.model.anisotropic.externalValues, 1);
+					correct &= examineMaterialParameter(mat->name, "KYZ", mat->thermal_conductivity.values.get(1, 2), material.model.anisotropic.externalValues, 5);
+					correct &= examineMaterialParameter(mat->name, "KXZ", mat->thermal_conductivity.values.get(0, 2), material.model.anisotropic.externalValues, 2);
+					correct &= examineMaterialParameter(mat->name, "KYX", mat->thermal_conductivity.values.get(1, 0), material.model.anisotropic.externalValues, 3);
 					correct &= examineMaterialParameter(mat->name, "KZY", mat->thermal_conductivity.values.get(2, 1), material.model.anisotropic.externalValues, 7);
-					correct &= examineMaterialParameter(mat->name, "KZX", mat->thermal_conductivity.values.get(2, 0), material.model.anisotropic.externalValues, 8);
+					correct &= examineMaterialParameter(mat->name, "KZX", mat->thermal_conductivity.values.get(2, 0), material.model.anisotropic.externalValues, 6);
 				}
 				break;
 			}
 			eslog::info("                                                                                               \n");
 		}
 
-		fromExpression(*this, cooSystem.cartesian2D, cooSystem.cartesian2D.externalValues);
-		fromExpression(*this, cooSystem.cartesian3D, cooSystem.cartesian3D.externalValues);
-		fromExpression(*this, cooSystem.spherical, cooSystem.spherical.externalValues);
-		fromExpression(*this, cooSystem.cylindric, cooSystem.cylindric.externalValues);
+		fromExpression(*this, cooSystem.cartesian2D, cooSystem.cartesian2D.externalValues, [] (auto &element) { return element.ecf.angle; });
+		fromExpression(*this, cooSystem.cartesian3D, cooSystem.cartesian3D.externalValues, [] (auto &element) { return element.ecf.angle; });
+		fromExpression(*this, cooSystem.spherical, cooSystem.spherical.externalValues, [] (auto &element) { return element.ecf.angle; });
+		fromExpression(*this, cooSystem.cylindric, cooSystem.cylindric.externalValues, [] (auto &element) { return element.ecf.angle; });
 
-		fromExpression(*this, material.model.isotropic, material.model.isotropic.externalValues);
-		fromExpression(*this, material.model.diagonal, material.model.diagonal.externalValues);
-		fromExpression(*this, material.model.symmetric2D, material.model.symmetric2D.externalValues);
-		fromExpression(*this, material.model.symmetric3D, material.model.symmetric3D.externalValues);
-		fromExpression(*this, material.model.anisotropic, material.model.anisotropic.externalValues);
+		fromExpression(*this, material.model.isotropic, material.model.isotropic.externalValues, [] (auto &element) { return element.conductivity; }); // it is possible to put it directly to target
+		fromExpression(*this, material.model.diagonal, material.model.diagonal.externalValues, [] (auto &element) { return element.ecf.conductivity; });
+		fromExpression(*this, material.model.symmetric2D, material.model.symmetric2D.externalValues, [] (auto &element) { return element.ecf.conductivity; });
+		fromExpression(*this, material.model.symmetric3D, material.model.symmetric3D.externalValues, [] (auto &element) { return element.ecf.conductivity; });
+		fromExpression(*this, material.model.anisotropic, material.model.anisotropic.externalValues, [] (auto &element) { return element.ecf.conductivity; });
 
-		fromExpression(*this, material.density, material.density.externalValues);
-		fromExpression(*this, material.heatCapacity, material.heatCapacity.externalValues);
+		fromExpression(*this, material.density, material.density.externalValues, [] (auto &element) { return element.ecf.density; });
+		fromExpression(*this, material.heatCapacity, material.heatCapacity.externalValues, [] (auto &element) { return element.ecf.heatCapacity; });
 
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 		printMaterials(settings.material_set);
@@ -305,6 +308,9 @@ void HeatTransfer::analyze()
 	outputFlux(*this);
 
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+	eslog::info("  SIMD SIZE                                                                                 %lu \n", SIMD::size);
+	eslog::info("  MAX ELEMENT SIZE                                                                   %6lu B \n", esize<HeatTransfer, HeatTransferOperator>());
+	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 	if (correct) {
 		eslog::info("  PHYSICS CONFIGURED                                                               %8.3f s \n", eslog::time() - start);
 	} else {
@@ -322,8 +328,10 @@ void HeatTransfer::evaluate(SteadyState &scheme)
 {
 	controller.setUpdate();
 	reset(scheme.K, scheme.f, scheme.dirichlet);
-	iterate();
-	fill();
+//	iterate();
+//	printVersions();
+	eslog::info("       = SIMD LOOP                                                          %8.3f s = \n", assemble<HeatTransfer, HeatTransferOperator>());
+//	fill();
 	update(scheme.K, scheme.f);
 	controller.resetUpdate();
 }
@@ -331,7 +339,9 @@ void HeatTransfer::evaluate(SteadyState &scheme)
 void HeatTransfer::_evaluate()
 {
 	controller.setUpdate();
-	iterate();
+//	iterate();
+//	printVersions();
+	assemble<HeatTransfer, HeatTransferOperator>();
 	controller.resetUpdate();
 }
 

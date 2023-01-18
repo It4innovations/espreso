@@ -7,7 +7,7 @@
 
 namespace espreso {
 
-struct MatrixFiller: public ActionOperator {
+struct MatrixFiller: ActionOperator {
 	MatrixFiller(int interval, const ParameterData &local, double *global, const esint *position)
 	: local(local, interval),
 	  global(global), position(position)
@@ -26,7 +26,7 @@ struct MatrixFiller: public ActionOperator {
 };
 
 template<size_t nodes, size_t gps, size_t dimension>
-struct MatrixUpperFiller: public MatrixFiller {
+struct MatrixUpperFiller: MatrixFiller, InsertOperator {
 	using MatrixFiller::MatrixFiller;
 
 	void move(int n)
@@ -42,6 +42,16 @@ struct MatrixUpperFiller: public MatrixFiller {
 				global[*position++] += *(local.data + c);
 			}
 		}
+	}
+
+	void sisd()
+	{
+		for (size_t r = 0, i = 0; r < nodes * dimension; ++r) {
+			for (size_t c = r; c < nodes * dimension; ++c, ++i) {
+				global[position[i]] += *(local.data + r * nodes * dimension + c);
+			}
+		}
+		move(1);
 	}
 
 	void simd()
@@ -70,7 +80,7 @@ struct MatrixUpperFiller: public MatrixFiller {
 };
 
 template<size_t nodes, size_t gps, size_t dimension>
-struct MatrixLowerFiller: public MatrixFiller {
+struct MatrixLowerFiller: MatrixFiller, InsertOperator {
 	using MatrixFiller::MatrixFiller;
 
 	void move(int n)
@@ -87,10 +97,44 @@ struct MatrixLowerFiller: public MatrixFiller {
 			}
 		}
 	}
+
+	void sisd()
+	{
+		for (size_t r = 0, i = 0; r < nodes * dimension; ++r) {
+			for (size_t c = 0; c <= r; ++c, ++i) {
+				global[position[i]] += *(local.data + r * nodes * dimension + c);
+			}
+		}
+		move(1);
+	}
+
+	void simd()
+	{
+		for (size_t s = 0, i = 0; s < SIMD::size; ++s) {
+			for (size_t r = 0; r < nodes * dimension; ++r) {
+				for (size_t c = 0; c <= r; ++c, ++i) {
+					global[position[i]] += *(local.data + (r * nodes * dimension + c) * SIMD::size + s);
+				}
+			}
+		}
+		move(SIMD::size);
+	}
+
+	void peel(size_t size)
+	{
+		for (size_t s = 0, i = 0; s < size; ++s) {
+			for (size_t r = 0; r < nodes * dimension; ++r) {
+				for (size_t c = 0; c <= r; ++c, ++i) {
+					global[position[i]] += *(local.data + (r * nodes * dimension + c) * SIMD::size + s);
+				}
+			}
+		}
+		move(size);
+	}
 };
 
 template<size_t nodes, size_t gps, size_t dimension>
-struct MatrixFullFiller: public MatrixFiller {
+struct MatrixFullFiller: MatrixFiller, InsertOperator {
 	using MatrixFiller::MatrixFiller;
 
 	void move(int n)
@@ -106,6 +150,40 @@ struct MatrixFullFiller: public MatrixFiller {
 				global[*position++] += *local.data++;
 			}
 		}
+	}
+
+	void sisd()
+	{
+		for (size_t r = 0, i = 0; r < nodes * dimension; ++r) {
+			for (size_t c = 0; c < nodes * dimension; ++c, ++i) {
+				global[position[i]] += *(local.data + r * nodes * dimension + c);
+			}
+		}
+		move(1);
+	}
+
+	void simd()
+	{
+		for (size_t s = 0, i = 0; s < SIMD::size; ++s) {
+			for (size_t r = 0; r < nodes * dimension; ++r) {
+				for (size_t c = 0; c < nodes * dimension; ++c, ++i) {
+					global[position[i]] += *(local.data + (r * nodes * dimension + c) * SIMD::size + s);
+				}
+			}
+		}
+		move(SIMD::size);
+	}
+
+	void peel(size_t size)
+	{
+		for (size_t s = 0, i = 0; s < size; ++s) {
+			for (size_t r = 0; r < nodes * dimension; ++r) {
+				for (size_t c = 0; c < nodes * dimension; ++c, ++i) {
+					global[position[i]] += *(local.data + (r * nodes * dimension + c) * SIMD::size + s);
+				}
+			}
+		}
+		move(size);
 	}
 };
 

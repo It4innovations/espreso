@@ -8,8 +8,8 @@
 
 namespace espreso {
 
-template <size_t nodes, size_t gps, size_t dimension>
-struct CopyParameter: public ActionOperator {
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, class Physics, size_t dimension>
+struct CopyParameter: public ActionOperator, Physics {
 	CopyParameter(int interval, const ParameterData &from, ParameterData &to)
 	: from(from, interval),
 	  to(to, interval)
@@ -41,7 +41,16 @@ struct CopyParameter: public ActionOperator {
 		}
 	}
 
-	void simd()
+	void sisd(typename Physics::Element &element)
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			for (size_t d = 0; d < dimension; ++d) {
+				to[gpindex * dimension + d] = from[gpindex * dimension + d];
+			}
+		}
+	}
+
+	void simd(typename Physics::Element &element)
 	{
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			for (size_t d = 0; d < dimension; ++d) {
@@ -50,7 +59,6 @@ struct CopyParameter: public ActionOperator {
 				}
 			}
 		}
-		move(SIMD::size);
 	}
 };
 
