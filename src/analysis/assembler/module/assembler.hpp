@@ -166,15 +166,15 @@ template <typename Physics, template <size_t, size_t, size_t, size_t> class Oper
 double Assembler::assemble()
 {
 	double time = 0;
-	#pragma omp parallel for reduction(max:time)
+	#pragma omp parallel for reduction(+:time)
 	for (int t = 0; t < info::env::threads; ++t) {
 		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
 				size_t elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
 				if (settings.simd && elements >= SIMD::size) {
-					time = std::max(time, simd<Physics, Operator>(info::mesh->elements->eintervals[i].code, elementOps[i], elements));
+					time += simd<Physics, Operator>(info::mesh->elements->eintervals[i].code, elementOps[i], elements);
 				} else {
-					time = std::max(time, sisd<Physics, Operator>(info::mesh->elements->eintervals[i].code, elementOps[i], elements));
+					time += sisd<Physics, Operator>(info::mesh->elements->eintervals[i].code, elementOps[i], elements);
 				}
 			}
 
@@ -231,7 +231,8 @@ double Assembler::assemble()
 			}
 		}
 	}
-	return time;
+
+	return time / info::mesh->elements->eintervals.size();
 }
 
 template <class Element> struct ElementSize { size_t operator()(const Element& e) { return sizeof(e); } };

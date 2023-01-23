@@ -330,7 +330,7 @@ void HeatTransfer::evaluate(SteadyState &scheme)
 	reset(scheme.K, scheme.f, scheme.dirichlet);
 //	iterate();
 //	printVersions();
-	eslog::info("       = SIMD LOOP                                                          %8.3f s = \n", assemble<HeatTransfer, HeatTransferOperator>());
+	eslog::info("       = SIMD LOOP                                                      %12.8f s = \n", assemble<HeatTransfer, HeatTransferOperator>());
 //	fill();
 	update(scheme.K, scheme.f);
 	controller.resetUpdate();
