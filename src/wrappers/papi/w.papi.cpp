@@ -62,7 +62,7 @@ void PAPI::read(long long *values)
 
 PAPI::PAPI(): set{0} {}
 PAPI::~PAPI() {}
-void PAPI::init(int event) {}
-void PAPI::read(long long *values) { return 0; }
+void PAPI::init() {}
+void PAPI::read(long long *values) {}
 
 #endif
