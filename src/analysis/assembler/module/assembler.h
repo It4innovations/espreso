@@ -20,6 +20,12 @@ struct ImpedanceConfiguration;
 struct PointSourceConfiguration;
 struct PhysicsConfiguration;
 
+struct ParameterError {
+	enum: int {
+		OK
+	};
+};
+
 class Assembler
 {
 public:
@@ -28,19 +34,23 @@ public:
 
 	PhysicsConfiguration &settings;
 	ParameterController controller;
+	std::vector<int> etype;
 	std::vector<std::vector<ActionOperator*> > elementOps, elementFiller, elementRes;
 	std::vector<std::vector<std::vector<ActionOperator*> > > boundaryOps, boundaryFiller, boundaryRes;
 
 protected:
-	template <typename Physics, template <size_t, size_t, size_t, size_t> class Operator> double assemble();
-	template <typename Physics, template <size_t nodes, size_t gps, size_t ndim, size_t edim> class Operator> size_t esize();
+	double assemble();
+	virtual double instantiate(size_t interval, int code, const std::vector<ActionOperator*> &ops, esint elements) { return 0; }
+	template <template <int, int, int, int, int> class DataDescriptor, int nodes, int gps, int ndim, int edim, int etype> double loop(const std::vector<ActionOperator*> &ops, esint elements);
+
+	void check(int error, const char* parameter);
 
 	void iterate();
 	void fill();
 	void results();
 
-	void printElementVolume(const ElementParameter<egps> &weight, const ElementParameter<egps> &jacobian);
-	void printBoundarySurface(const BoundaryParameter<egps> &weight, const BoundaryParameter<egps> &jacobian);
+	void printElementVolume(std::vector<double> &volume);
+	void printBoundarySurface(std::vector<double> &surface);
 	void printParameterStats(ParameterData &parameter);
 	void printParameterStats(NamedData *data);
 

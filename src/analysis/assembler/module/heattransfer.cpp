@@ -145,8 +145,8 @@ void HeatTransfer::analyze()
 	elementIntegration(*this);
 
 	_evaluate(); // fill coordinates, compute determinants
-	printElementVolume(integration.weight, integration.jacobiDeterminant);
-	printBoundarySurface(integration.boundary.weight, integration.boundary.jacobian);
+//	printElementVolume(integration.weight, integration.jacobiDeterminant);
+//	printBoundarySurface(integration.boundary.weight, integration.boundary.jacobian);
 	eslog::info(" ============================================================================================= \n");
 	correct &= initTemperature();
 
@@ -309,7 +309,7 @@ void HeatTransfer::analyze()
 
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 	eslog::info("  SIMD SIZE                                                                                 %lu \n", SIMD::size);
-	eslog::info("  MAX ELEMENT SIZE                                                                   %6lu B \n", esize<HeatTransfer, HeatTransferOperator>());
+//	eslog::info("  MAX ELEMENT SIZE                                                                   %6lu B \n", esize<HeatTransfer, HeatTransferOperator>());
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 	if (correct) {
 		eslog::info("  PHYSICS CONFIGURED                                                               %8.3f s \n", eslog::time() - start);
@@ -330,7 +330,7 @@ void HeatTransfer::evaluate(SteadyState &scheme)
 	reset(scheme.K, scheme.f, scheme.dirichlet);
 //	iterate();
 //	printVersions();
-	eslog::info("       = SIMD LOOP                                                      %12.8f s = \n", assemble<HeatTransfer, HeatTransferOperator>());
+//	eslog::info("       = SIMD LOOP                                                      %12.8f s = \n", assemble<HeatTransfer, HeatTransferOperator>());
 //	fill();
 	update(scheme.K, scheme.f);
 	controller.resetUpdate();
@@ -341,7 +341,7 @@ void HeatTransfer::_evaluate()
 	controller.setUpdate();
 //	iterate();
 //	printVersions();
-	assemble<HeatTransfer, HeatTransferOperator>();
+//	assemble<HeatTransfer, HeatTransferOperator>();
 	controller.resetUpdate();
 }
 

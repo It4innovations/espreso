@@ -41,8 +41,30 @@ Assembler::Assembler(PhysicsConfiguration &settings)
 			boundaryRes[i].resize(info::mesh->boundaryRegions[i]->nodes->threads());
 		}
 	}
+}
 
+void Assembler::check(int error, const char* parameter)
+{
+	switch (error) {
+	case ParameterError::OK: break;
+	default:
+		eslog::error("%s: incorrect settings\n", parameter);
+	}
+}
 
+double Assembler::assemble()
+{
+	double time = 0;
+	#pragma omp parallel for reduction(+:time)
+	for (int t = 0; t < info::env::threads; ++t) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
+			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
+				time += instantiate(i, info::mesh->elements->eintervals[i].code, elementOps[i], info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin);
+			}
+		}
+	}
+
+	return time / info::mesh->elements->eintervals.size();
 }
 
 void Assembler::iterate()
@@ -275,58 +297,36 @@ void Assembler::results()
 }
 
 
-void Assembler::printElementVolume(const ElementParameter<egps> &weight, const ElementParameter<egps> &jacobian)
+void Assembler::printElementVolume(std::vector<double> &volume)
 {
-	std::vector<double> volume(info::mesh->elementsRegions.size());
+	std::vector<double> sum(info::mesh->elementsRegions.size());
 	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r) {
 		for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-			size_t gps = weight.increment(i);
 			if (info::mesh->elements->eintervals[i].region == (esint)r || (info::mesh->elements->eintervals[i].region == 0 && r == info::mesh->elementsRegions.size() - 1)) {
-				auto det = (jacobian.data->begin() + i)->data();
-				auto wit = (weight.data->begin() + i)->data();
-				for (esint e = info::mesh->elements->eintervals[i].begin; e < info::mesh->elements->eintervals[i].end; ++e) {
-					for (size_t gp = 0; gp < gps; ++gp, ++det) {
-						volume[0] += *det * wit[gp];
-						volume[r] += *det * wit[gp];
-					}
-				}
+				sum[0] += volume[i];
+				sum[r] += volume[i];
 			}
 		}
 	}
-	Communication::allReduce(volume, Communication::OP::SUM);
+	Communication::allReduce(sum, Communication::OP::SUM);
 
 	eslog::info("  ELEMENT REGION VOLUME                                                                        \n");
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - \n");
 	for (size_t r = 0; r < info::mesh->elementsRegions.size(); ++r) {
-		eslog::info("     %30s :                                            %e   \n", info::mesh->elementsRegions[r]->name.c_str(), volume[r]);
+		eslog::info("     %30s :                                            %e   \n", info::mesh->elementsRegions[r]->name.c_str(), sum[r]);
 	}
 }
 
-void Assembler::printBoundarySurface(const BoundaryParameter<egps> &weight, const BoundaryParameter<egps> &jacobian)
+void Assembler::printBoundarySurface(std::vector<double> &surface)
 {
-	std::vector<double> volume(info::mesh->boundaryRegions.size());
-	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-		if (info::mesh->boundaryRegions[r]->dimension) {
-			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-				size_t gps = weight.regions[r].increment(i);
-				auto det = (jacobian.regions[r].data->begin() + i)->begin();
-				auto wit = (weight.regions[r].data->begin() + i)->begin();
-				for (esint e = info::mesh->boundaryRegions[r]->eintervals[i].begin; e < info::mesh->boundaryRegions[r]->eintervals[i].end; ++e) {
-					for (size_t gp = 0; gp < gps; ++gp, ++det) {
-						volume[r] += *det * wit[gp];
-					}
-				}
-			}
-		}
-	}
-	Communication::allReduce(volume, Communication::OP::SUM);
+	Communication::allReduce(surface, Communication::OP::SUM);
 
 	eslog::info("\n  BOUDNARY REGION SURFACE                                                                      \n");
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - \n");
 	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
-			eslog::info("     %30s :                                            %e   \n", info::mesh->boundaryRegions[r]->name.c_str(), volume[r]);
-			info::mesh->boundaryRegions[r]->area = volume[r];
+			eslog::info("     %30s :                                            %e   \n", info::mesh->boundaryRegions[r]->name.c_str(), surface[r]);
+			info::mesh->boundaryRegions[r]->area = surface[r];
 		}
 	}
 }

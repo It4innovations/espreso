@@ -5,6 +5,7 @@
 #include "analysis/assembler/operator.h"
 #include "analysis/assembler/parameter.h"
 #include "analysis/assembler/math.hpp"
+#include "analysis/assembler/module/heattransfer.element.h"
 
 namespace espreso {
 
@@ -14,12 +15,116 @@ struct HeatTransferStiffnessBase: public ActionOperator {
 	HeatTransferStiffnessBase(int interval, ParameterData &stiffness)
 	: stiffness(stiffness, interval)
 	{
-
+		isconst = false;
 	}
 
 	void move(int n)
 	{
 		stiffness += n;
+	}
+};
+
+template <int nodes, int gps, int ndim, int edim, int etype, class Physics> struct HeatTransferStiffness2;
+
+template <int nodes, int gps, int edim, class Physics>
+struct HeatTransferStiffness2<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Physics>: HeatTransferStiffnessBase, Physics {
+	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
+
+	void sisd(typename Physics::Element &element)
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			ADDMN2M2N<nodes>(element.ecf.thickness[gpindex] * element.det[gpindex] * element.w[gpindex] * element.conductivity[gpindex], element.dND + 2 * nodes * gpindex, stiffness.data);
+		}
+		move(1);
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+//			SIMD scale =  load(element.ecf.thickness + gpindex * SIMD::size)
+//						* load(element.det + gpindex * SIMD::size)
+//						* load(element.w + gpindex * SIMD::size)
+//						* load(element.conductivity + gpindex * SIMD::size);
+			SIMD scale =  load(element.det + gpindex * SIMD::size)
+						* load(element.w + gpindex * SIMD::size);
+			ADDMN2M2NSimd<nodes>(scale, element.dND + 2 * nodes * gpindex * SIMD::size, stiffness.data);
+		}
+		move(SIMD::size);
+	}
+};
+
+template <int nodes, int gps, int edim, class Physics>
+struct HeatTransferStiffness2<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Physics>: HeatTransferStiffnessBase, Physics {
+	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
+
+	void sisd(typename Physics::Element &element)
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			ADDMN3M3N<nodes>(element.det[gpindex] * element.w[gpindex] * element.conductivity[gpindex], element.dND + 3 * nodes * gpindex, stiffness.data);
+		}
+		move(1);
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+//			SIMD scale =  load(element.det + gpindex * SIMD::size)
+//						* load(element.w + gpindex * SIMD::size)
+//						* load(element.conductivity + gpindex * SIMD::size);
+			SIMD scale =  load(element.det + gpindex * SIMD::size)
+						* load(element.w + gpindex * SIMD::size);
+			ADDMN3M3NSimd<nodes>(scale, element.dND + 3 * nodes * gpindex * SIMD::size, stiffness.data);
+		}
+		move(SIMD::size);
+	}
+};
+
+template <int nodes, int gps, int edim, class Physics>
+struct HeatTransferStiffness2<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: HeatTransferStiffnessBase, Physics {
+	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
+
+	void sisd(typename Physics::Element &element)
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			ADDMN2M22M2N<nodes>(element.ecf.thickness[gpindex] * element.det[gpindex] * element.w[gpindex], element.conductivity + 4 * gpindex, element.dND + 2 * nodes * gpindex, stiffness.data);
+		}
+		move(1);
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			SIMD scale =  load(element.ecf.thickness + gpindex * SIMD::size)
+						* load(element.det + gpindex * SIMD::size)
+						* load(element.w + gpindex * SIMD::size);
+
+			ADDMN2M22M2NSimd<nodes>(scale, element.conductivity + 4 * gpindex * SIMD::size, element.dND + 2 * nodes * gpindex * SIMD::size, stiffness.data);
+		}
+		move(SIMD::size);
+	}
+};
+
+template <int nodes, int gps, int edim, class Physics>
+struct HeatTransferStiffness2<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: HeatTransferStiffnessBase, Physics {
+	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
+
+	void sisd(typename Physics::Element &element)
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			ADDMN3M33M3N<nodes>(element.det[gpindex] * element.w[gpindex], element.conductivity + 9 * gpindex, element.dND + 3 * nodes * gpindex, stiffness.data);
+		}
+		move(1);
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
+			SIMD scale =  load(element.det + gpindex * SIMD::size)
+						* load(element.w + gpindex * SIMD::size);
+
+			ADDMN3M33M3NSimd<nodes>(scale, element.conductivity + 9 * gpindex * SIMD::size, element.dND + 3 * nodes * gpindex * SIMD::size, stiffness.data);
+		}
+		move(SIMD::size);
 	}
 };
 

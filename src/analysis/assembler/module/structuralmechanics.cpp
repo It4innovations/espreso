@@ -124,8 +124,8 @@ void StructuralMechanics::analyze()
 	elementIntegration(*this);
 
 	_evaluate(); // fill coordinates, compute determinants
-	printElementVolume(integration.weight, integration.jacobiDeterminant);
-	printBoundarySurface(integration.boundary.weight, integration.boundary.jacobian);
+//	printElementVolume(integration.weight, integration.jacobiDeterminant);
+//	printBoundarySurface(integration.boundary.weight, integration.boundary.jacobian);
 	eslog::info(" ============================================================================================= \n");
 
 	correct &= initTemperature();
