@@ -67,12 +67,13 @@ struct CoordinatesToElementNodes2: ActionOperator, Physics {
 	serializededata<esint, esint>::const_iterator procNodes;
 
 	CoordinatesToElementNodes2(int interval, serializededata<esint, esint>::const_iterator procNodes)
-	: procNodes(procNodes + info::mesh->elements->eintervals[interval].begin)
+	: procNodes(procNodes)
 	{
+		procNodes += info::mesh->elements->eintervals[interval].begin;
 		isconst = false;
 	}
 
-	void move(size_t n)
+	void move(int n)
 	{
 		procNodes += n;
 	}
@@ -83,7 +84,7 @@ struct CoordinatesToElementNodes2: ActionOperator, Physics {
 	{
 		for (size_t n = 0; n < nodes; ++n) {
 			for (size_t d = 0; d < ndim; ++d) {
-				element.coords[ndim * n + d] = info::mesh->nodes->coordinates->datatarray()[procNodes->at(n)][d];
+				element.coords[n][d][0] = info::mesh->nodes->coordinates->datatarray()[procNodes->at(n)][d];
 			}
 		}
 		++procNodes;
@@ -96,7 +97,7 @@ struct CoordinatesToElementNodes2: ActionOperator, Physics {
 		for (size_t s = 0; s < SIMD::size; ++s, ++procNodes) {
 			for (size_t n = 0; n < nodes; ++n) {
 				for (size_t d = 0; d < ndim; ++d) {
-					element.coords[(ndim * n + d) * SIMD::size + s] = info::mesh->nodes->coordinates->datatarray()[procNodes->at(n)][d];
+					element.coords[n][d][s] = info::mesh->nodes->coordinates->datatarray()[procNodes->at(n)][d];
 				}
 			}
 		}
@@ -107,7 +108,7 @@ struct CoordinatesToElementNodes2: ActionOperator, Physics {
 		for (size_t s = 0; s < size; ++s, ++procNodes) {
 			for (size_t n = 0; n < nodes; ++n) {
 				for (size_t d = 0; d < ndim; ++d) {
-					element.coords[(ndim * n + d) * SIMD::size + s] = info::mesh->nodes->coordinates->datatarray()[procNodes->at(n)][d];
+					element.coords[n][d][s] = info::mesh->nodes->coordinates->datatarray()[procNodes->at(n)][d];
 				}
 			}
 		}

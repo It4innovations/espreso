@@ -334,6 +334,8 @@ void Heat::evaluate(SteadyState &scheme)
 ////	iterate();
 ////	printVersions();
 	eslog::info("       = SIMD LOOP                                                      %12.8f s = \n", assemble());
+	eslog::info("       = SIMD LOOP                                                      %12.8f s = \n", assemble());
+	eslog::info("       = SIMD LOOP                                                      %12.8f s = \n", assemble());
 ////	fill();
 //	update(scheme.K, scheme.f);
 //	controller.resetUpdate();

@@ -21,10 +21,10 @@ struct Integration<nodes, gps, 2, edim, etype, Physics>: ActionOperator, Physics
 			double jacobian[4] = { 0, 0, 0, 0 }, inv[4];
 
 			for (size_t n = 0; n < nodes; ++n) {
-				jacobian[0] += element.dN[2 * gp * nodes + n + 0 * nodes] * element.coords[2 * n + 0];
-				jacobian[1] += element.dN[2 * gp * nodes + n + 0 * nodes] * element.coords[2 * n + 1];
-				jacobian[2] += element.dN[2 * gp * nodes + n + 1 * nodes] * element.coords[2 * n + 0];
-				jacobian[3] += element.dN[2 * gp * nodes + n + 1 * nodes] * element.coords[2 * n + 1];
+				jacobian[0] += element.dN[2 * gp * nodes + n + 0 * nodes] * element.coords[n][0];
+				jacobian[1] += element.dN[2 * gp * nodes + n + 0 * nodes] * element.coords[n][1];
+				jacobian[2] += element.dN[2 * gp * nodes + n + 1 * nodes] * element.coords[n][0];
+				jacobian[3] += element.dN[2 * gp * nodes + n + 1 * nodes] * element.coords[n][1];
 			}
 
 			element.det[gp] = jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2];
@@ -45,8 +45,8 @@ struct Integration<nodes, gps, 2, edim, etype, Physics>: ActionOperator, Physics
 
 			#pragma unroll(nodes)
 			for (size_t n = 0; n < nodes; ++n) {
-				SIMD coordsX = load(element.coords + (n * 2 + 0) * SIMD::size);
-				SIMD coordsY = load(element.coords + (n * 2 + 1) * SIMD::size);
+				SIMD coordsX = element.coords[n][0];
+				SIMD coordsY = element.coords[n][1];
 				SIMD dNX = load(element.dN + (2 * gp * nodes + n + 0 * nodes) * SIMD::size);
 				SIMD dNY = load(element.dN + (2 * gp * nodes + n + 1 * nodes) * SIMD::size);
 
@@ -82,15 +82,15 @@ struct Integration<nodes, gps, 3, edim, etype, Physics>: ActionOperator, Physics
 			double jacobian[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 }, inv[9];
 
 			for (size_t n = 0; n < nodes; ++n) {
-				jacobian[0] += element.dN[3 * gp * nodes + n + 0 * nodes] * element.coords[3 * n + 0];
-				jacobian[1] += element.dN[3 * gp * nodes + n + 0 * nodes] * element.coords[3 * n + 1];
-				jacobian[2] += element.dN[3 * gp * nodes + n + 0 * nodes] * element.coords[3 * n + 2];
-				jacobian[3] += element.dN[3 * gp * nodes + n + 1 * nodes] * element.coords[3 * n + 0];
-				jacobian[4] += element.dN[3 * gp * nodes + n + 1 * nodes] * element.coords[3 * n + 1];
-				jacobian[5] += element.dN[3 * gp * nodes + n + 1 * nodes] * element.coords[3 * n + 2];
-				jacobian[6] += element.dN[3 * gp * nodes + n + 2 * nodes] * element.coords[3 * n + 0];
-				jacobian[7] += element.dN[3 * gp * nodes + n + 2 * nodes] * element.coords[3 * n + 1];
-				jacobian[8] += element.dN[3 * gp * nodes + n + 2 * nodes] * element.coords[3 * n + 2];
+				jacobian[0] += element.dN[3 * gp * nodes + n + 0 * nodes] * element.coords[n][0];
+				jacobian[1] += element.dN[3 * gp * nodes + n + 0 * nodes] * element.coords[n][1];
+				jacobian[2] += element.dN[3 * gp * nodes + n + 0 * nodes] * element.coords[n][2];
+				jacobian[3] += element.dN[3 * gp * nodes + n + 1 * nodes] * element.coords[n][0];
+				jacobian[4] += element.dN[3 * gp * nodes + n + 1 * nodes] * element.coords[n][1];
+				jacobian[5] += element.dN[3 * gp * nodes + n + 1 * nodes] * element.coords[n][2];
+				jacobian[6] += element.dN[3 * gp * nodes + n + 2 * nodes] * element.coords[n][0];
+				jacobian[7] += element.dN[3 * gp * nodes + n + 2 * nodes] * element.coords[n][1];
+				jacobian[8] += element.dN[3 * gp * nodes + n + 2 * nodes] * element.coords[n][2];
 			}
 			element.det[gp] =
 					+ jacobian[0] * jacobian[4] * jacobian[8]
@@ -123,9 +123,9 @@ struct Integration<nodes, gps, 3, edim, etype, Physics>: ActionOperator, Physics
 
 			#pragma unroll(nodes)
 			for (size_t n = 0; n < nodes; ++n) {
-				SIMD coordsX = load(element.coords + (n * 3 + 0) * SIMD::size);
-				SIMD coordsY = load(element.coords + (n * 3 + 1) * SIMD::size);
-				SIMD coordsZ = load(element.coords + (n * 3 + 2) * SIMD::size);
+				SIMD coordsX = element.coords[n][0];
+				SIMD coordsY = element.coords[n][1];
+				SIMD coordsZ = element.coords[n][2];
 				SIMD dNX = load(element.dN + (3 * gp * nodes + n + 0 * nodes) * SIMD::size);
 				SIMD dNY = load(element.dN + (3 * gp * nodes + n + 1 * nodes) * SIMD::size);
 				SIMD dNZ = load(element.dN + (3 * gp * nodes + n + 2 * nodes) * SIMD::size);

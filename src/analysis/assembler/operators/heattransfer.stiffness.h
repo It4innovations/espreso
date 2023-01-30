@@ -18,7 +18,7 @@ struct HeatTransferStiffnessBase: public ActionOperator {
 		isconst = false;
 	}
 
-	void move(size_t n)
+	void move(int n)
 	{
 		stiffness += n;
 	}
