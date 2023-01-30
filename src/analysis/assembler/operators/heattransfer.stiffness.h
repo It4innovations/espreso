@@ -12,21 +12,21 @@ namespace espreso {
 struct HeatTransferStiffnessBase: public ActionOperator {
 	OutputParameterIterator stiffness;
 
-	HeatTransferStiffnessBase(int interval, ParameterData &stiffness)
+	HeatTransferStiffnessBase(size_t interval, ParameterData &stiffness)
 	: stiffness(stiffness, interval)
 	{
 		isconst = false;
 	}
 
-	void move(int n)
+	void move(size_t n)
 	{
 		stiffness += n;
 	}
 };
 
-template <int nodes, int gps, int ndim, int edim, int etype, class Physics> struct HeatTransferStiffness2;
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct HeatTransferStiffness2;
 
-template <int nodes, int gps, int edim, class Physics>
+template <size_t nodes, size_t gps, size_t edim, class Physics>
 struct HeatTransferStiffness2<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Physics>: HeatTransferStiffnessBase, Physics {
 	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
 
@@ -53,7 +53,7 @@ struct HeatTransferStiffness2<nodes, gps, 2, edim, HeatTransferElementType::SYMM
 	}
 };
 
-template <int nodes, int gps, int edim, class Physics>
+template <size_t nodes, size_t gps, size_t edim, class Physics>
 struct HeatTransferStiffness2<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Physics>: HeatTransferStiffnessBase, Physics {
 	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
 
@@ -79,7 +79,7 @@ struct HeatTransferStiffness2<nodes, gps, 3, edim, HeatTransferElementType::SYMM
 	}
 };
 
-template <int nodes, int gps, int edim, class Physics>
+template <size_t nodes, size_t gps, size_t edim, class Physics>
 struct HeatTransferStiffness2<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: HeatTransferStiffnessBase, Physics {
 	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
 
@@ -104,7 +104,7 @@ struct HeatTransferStiffness2<nodes, gps, 2, edim, HeatTransferElementType::SYMM
 	}
 };
 
-template <int nodes, int gps, int edim, class Physics>
+template <size_t nodes, size_t gps, size_t edim, class Physics>
 struct HeatTransferStiffness2<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: HeatTransferStiffnessBase, Physics {
 	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
 

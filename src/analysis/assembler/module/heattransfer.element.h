@@ -50,7 +50,7 @@ inline void printElementData(const char* name, const double *values, size_t size
 	printf("\n");
 }
 
-template <int nodes, int gps, int ndim, int edim, int etype>
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
 struct HeatTransferDataDescriptor {
 	virtual ~HeatTransferDataDescriptor() {}
 
@@ -108,7 +108,7 @@ struct HeatTransferDataDescriptor {
 //	}
 };
 
-template <int nodes, int gps, int edim, int etype>
+template <size_t nodes, size_t gps, size_t edim, size_t etype>
 struct HeatTransferDataDescriptor<nodes, gps, 2, edim, etype> {
 	virtual ~HeatTransferDataDescriptor() {}
 

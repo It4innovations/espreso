@@ -15,7 +15,7 @@
 
 using namespace espreso;
 
-template <template <int, int, int, int, int> class DataDescriptor, int nodes, int gps, int ndim, int edim, int etype>
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, int nodes, int gps, int ndim, int edim, int etype>
 double simdloop(const std::vector<ActionOperator*> &ops, esint elements)
 {
 	typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element element;
@@ -59,7 +59,7 @@ double simdloop(const std::vector<ActionOperator*> &ops, esint elements)
 	return end - start;
 }
 
-template <template <int, int, int, int, int> class DataDescriptor, int nodes, int gps, int ndim, int edim, int etype>
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, int nodes, int gps, int ndim, int edim, int etype>
 double sisdloop(const std::vector<ActionOperator*> &ops, esint elements)
 {
 	typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element element;
@@ -96,7 +96,7 @@ double sisdloop(const std::vector<ActionOperator*> &ops, esint elements)
 	return end - start;
 }
 
-template <template <int, int, int, int, int> class DataDescriptor, int nodes, int gps, int ndim, int edim, int etype>
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
 double Assembler::loop(const std::vector<ActionOperator*> &ops, esint elements)
 {
 	if (settings.simd && elements >= SIMD::size) {

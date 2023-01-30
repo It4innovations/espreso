@@ -68,7 +68,7 @@ static int generateBaseFunctions(const std::vector<int> &etype, std::vector<std:
 	return ParameterError::OK;
 }
 
-template <template <int, int, int, int, int, class> class Operator, int etype, class ... Args>
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, int etype, class ... Args>
 static ActionOperator* generateElementTypedOperator2D(size_t interval, Args&& ... args)
 {
 	switch (info::mesh->elements->eintervals[interval].code) {
@@ -80,7 +80,7 @@ static ActionOperator* generateElementTypedOperator2D(size_t interval, Args&& ..
 	}
 }
 
-template <template <int, int, int, int, int, class> class Operator, int etype, class ... Args>
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, int etype, class ... Args>
 static ActionOperator* generateElementTypedOperator3D(size_t interval, Args&& ... args)
 {
 	switch (info::mesh->elements->eintervals[interval].code) {
@@ -96,7 +96,7 @@ static ActionOperator* generateElementTypedOperator3D(size_t interval, Args&& ..
 	}
 }
 
-template <template <int, int, int, int, int, class> class Operator, class ... Args>
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
 static ActionOperator* generateElementOperator2D(size_t interval, int etype, Args&& ... args)
 {
 	switch (etype) {
@@ -106,7 +106,7 @@ static ActionOperator* generateElementOperator2D(size_t interval, int etype, Arg
 	return nullptr;
 }
 
-template <template <int, int, int, int, int, class> class Operator, class ... Args>
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
 static ActionOperator* generateElementOperator3D(size_t interval, int etype, Args&& ... args)
 {
 	switch (etype) {
@@ -116,7 +116,7 @@ static ActionOperator* generateElementOperator3D(size_t interval, int etype, Arg
 	return nullptr;
 }
 
-template <template <int, int, int, int, int, class> class Operator, class ... Args>
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
 static int generateElementOperators2D(const std::vector<int> &etype, std::vector<std::vector<ActionOperator*> > &ops, Args&& ... args)
 {
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
@@ -125,7 +125,7 @@ static int generateElementOperators2D(const std::vector<int> &etype, std::vector
 	return ParameterError::OK;
 }
 
-template <template <int, int, int, int, int, class> class Operator, class ... Args>
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
 static int generateElementOperators3D(const std::vector<int> &etype, std::vector<std::vector<ActionOperator*> > &ops, Args&& ... args)
 {
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
@@ -134,7 +134,7 @@ static int generateElementOperators3D(const std::vector<int> &etype, std::vector
 	return ParameterError::OK;
 }
 
-template <template <int, int, int, int, int, class> class Operator, class ... Args>
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
 static int generateElementOperators(const std::vector<int> &etype, std::vector<std::vector<ActionOperator*> > &ops, Args&& ... args)
 {
 	switch (info::mesh->dimension) {

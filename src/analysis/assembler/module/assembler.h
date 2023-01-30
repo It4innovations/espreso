@@ -41,7 +41,7 @@ public:
 protected:
 	double assemble();
 	virtual double instantiate(size_t interval, int code, const std::vector<ActionOperator*> &ops, esint elements) { return 0; }
-	template <template <int, int, int, int, int> class DataDescriptor, int nodes, int gps, int ndim, int edim, int etype> double loop(const std::vector<ActionOperator*> &ops, esint elements);
+	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype> double loop(const std::vector<ActionOperator*> &ops, esint elements);
 
 	void check(int error, const char* parameter);
 

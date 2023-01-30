@@ -62,7 +62,7 @@ struct CoordinatesToElementNodes: ActionOperator, Physics {
 	}
 };
 
-template <int nodes, int gps, int ndim, int edim, int etype, class Physics>
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
 struct CoordinatesToElementNodes2: ActionOperator, Physics {
 	serializededata<esint, esint>::const_iterator procNodes;
 
@@ -72,7 +72,7 @@ struct CoordinatesToElementNodes2: ActionOperator, Physics {
 		isconst = false;
 	}
 
-	void move(int n)
+	void move(size_t n)
 	{
 		procNodes += n;
 	}
