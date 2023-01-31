@@ -849,12 +849,12 @@ struct Basis: ActionOperator, Physics {
 
 	void sisd(typename Physics::Element &element)
 	{
-		for (int gp = 0; gp < gps; ++gp) {
+		for (size_t gp = 0; gp < gps; ++gp) {
 			element.w[gp] = GaussPoints<code, nodes, gps, edim>::w[gp];
-			for (int node = 0; node < nodes; ++node) {
-				element.N[gps * node + gp] = GaussPoints<code, nodes, gps, edim>::N[gps * node + gp];
-				for (int d = 0; d < edim; ++d) {
-					element.dN[edim * gps * node + gp * edim + d] = GaussPoints<code, nodes, gps, edim>::dN[edim * gps * node + gp * edim + d];
+			for (size_t n = 0; n < nodes; ++n) {
+				element.N[gp][n] = GaussPoints<code, nodes, gps, edim>::N[gp * nodes + n];
+				for (size_t d = 0; d < edim; ++d) {
+					element.dN[gp][n][d] = GaussPoints<code, nodes, gps, edim>::dN[gp * edim * nodes + d * nodes + n];
 				}
 			}
 		}
@@ -862,13 +862,13 @@ struct Basis: ActionOperator, Physics {
 
 	void simd(typename Physics::Element &element)
 	{
-		for (int s = 0; s < SIMD::size; ++s) {
-			for (int gp = 0; gp < gps; ++gp) {
-				element.w[SIMD::size * gp + s] = GaussPoints<code, nodes, gps, edim>::w[gp];
-				for (int node = 0; node < nodes; ++node) {
-					element.N[SIMD::size * (gps * node + gp) + s] = GaussPoints<code, nodes, gps, edim>::N[gps * node + gp];
-					for (int d = 0; d < edim; ++d) {
-						element.dN[SIMD::size * (edim * gps * node + gp * edim + d) + s] = GaussPoints<code, nodes, gps, edim>::dN[edim * gps * node + gp * edim + d];
+		for (size_t s = 0; s < SIMD::size; ++s) {
+			for (size_t gp = 0; gp < gps; ++gp) {
+				element.w[gp][s] = GaussPoints<code, nodes, gps, edim>::w[gp];
+				for (size_t n = 0; n < nodes; ++n) {
+					element.N[gp][n][s] = GaussPoints<code, nodes, gps, edim>::N[gp * nodes + n];
+					for (size_t d = 0; d < edim; ++d) {
+						element.dN[gp][n][d][s] = GaussPoints<code, nodes, gps, edim>::dN[gp * edim * nodes + d * nodes + n];
 					}
 				}
 			}

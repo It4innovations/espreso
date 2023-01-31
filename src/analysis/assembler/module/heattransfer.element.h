@@ -65,12 +65,12 @@ struct HeatTransferDataDescriptor {
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][ndim];
 		alignas(SIMD::size * sizeof(double)) double gpcoords[SIMD::size * gps * ndim];
 
-		alignas(SIMD::size * sizeof(double)) double  w [SIMD::size * gps];
-		alignas(SIMD::size * sizeof(double)) double  N [SIMD::size * gps * nodes];
-		alignas(SIMD::size * sizeof(double)) double dN [SIMD::size * gps * nodes * edim];
+		alignas(SIMD::size * sizeof(double)) SIMD  w [gps];
+		alignas(SIMD::size * sizeof(double)) SIMD  N [gps][nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD dN [gps][nodes][edim];
 
-		alignas(SIMD::size * sizeof(double)) double dND[SIMD::size * gps * nodes * edim];
-		alignas(SIMD::size * sizeof(double)) double det[SIMD::size * gps];
+		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
+		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
 
 		alignas(SIMD::size * sizeof(double)) double conductivity[SIMD::size * gps * 9]; // 3 x 3
 
@@ -86,26 +86,6 @@ struct HeatTransferDataDescriptor {
 	virtual void sisd(Element &element) =0;
 	virtual void simd(Element &element) =0;
 	virtual void peel(Element &element, size_t size) { simd(element); }
-
-	static void print(const Element &element)
-	{
-		printf("HeatTransferDataDescriptor<%d, %d, %d, %d, %d>\n", nodes, gps, ndim, edim, etype);
-		printElementData("ecf.conductivity", element.ecf.conductivity, SIMD::size * gps * 4);
-		printElementData("ecf.angle", element.ecf.angle, SIMD::size * gps * 4);
-		printElementData("ecf.density", element.ecf.density, SIMD::size * gps);
-		printElementData("ecf.heatCapacity", element.ecf.heatCapacity, SIMD::size * gps);
-
-		printElementData("coords", element.coords, SIMD::size * nodes * ndim);
-
-		printElementData("w", element.w, SIMD::size * gps);
-		printElementData("N", element.N, SIMD::size * gps * nodes);
-		printElementData("dN", element.dN, SIMD::size * gps * nodes * edim);
-
-		printElementData("dND", element.dND, SIMD::size * gps * nodes * edim);
-		printElementData("det", element.det, SIMD::size * gps);
-
-		printElementData("conductivity", element.conductivity, SIMD::size * gps * 4);
-	}
 };
 
 template <size_t nodes, size_t gps, size_t edim, size_t etype>
@@ -125,12 +105,12 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, etype> {
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][2];
 		alignas(SIMD::size * sizeof(double)) double gpcoords[SIMD::size * gps * 2];
 
-		alignas(SIMD::size * sizeof(double)) double  w [SIMD::size * gps];
-		alignas(SIMD::size * sizeof(double)) double  N [SIMD::size * gps * nodes];
-		alignas(SIMD::size * sizeof(double)) double dN [SIMD::size * gps * nodes * edim];
+		alignas(SIMD::size * sizeof(double)) SIMD  w [gps];
+		alignas(SIMD::size * sizeof(double)) SIMD  N [gps][nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD dN [gps][nodes][edim];
 
-		alignas(SIMD::size * sizeof(double)) double dND[SIMD::size * gps * nodes * edim];
-		alignas(SIMD::size * sizeof(double)) double det[SIMD::size * gps];
+		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
+		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
 
 		alignas(SIMD::size * sizeof(double)) double conductivity[SIMD::size * gps * 4]; // 2 x 2
 
@@ -147,27 +127,6 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, etype> {
 	virtual void sisd(Element &element) =0;
 	virtual void simd(Element &element) =0;
 	virtual void peel(Element &element, size_t size) { simd(element); }
-
-	static void print(const Element &element)
-	{
-		printf("HeatTransferDataDescriptor<%d, %d, %d, %d, %d>\n", nodes, gps, ndim, edim, etype);
-		printElementData("ecf.thickness", element.ecf.thickness, SIMD::size * gps * 4);
-		printElementData("ecf.conductivity", element.ecf.conductivity, SIMD::size * gps * 4);
-		printElementData("ecf.angle", element.ecf.angle, SIMD::size * gps * 4);
-		printElementData("ecf.density", element.ecf.density, SIMD::size * gps);
-		printElementData("ecf.heatCapacity", element.ecf.heatCapacity, SIMD::size * gps);
-
-		printElementData("coords", element.coords, SIMD::size * nodes * 2);
-
-		printElementData("w", element.w, SIMD::size * gps);
-		printElementData("N", element.N, SIMD::size * gps * nodes);
-		printElementData("dN", element.dN, SIMD::size * gps * nodes * edim);
-
-		printElementData("dND", element.dND, SIMD::size * gps * nodes * edim);
-		printElementData("det", element.det, SIMD::size * gps);
-
-		printElementData("conductivity", element.conductivity, SIMD::size * gps * 4);
-	}
 };
 
 }
