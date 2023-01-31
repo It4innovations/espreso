@@ -9,6 +9,49 @@
 
 namespace espreso {
 
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics, class Setter>
+struct ExternalExpression: ActionOperator, Physics {
+	ExternalExpression(int interval, Evaluator *evaluator, Setter &&setter)
+	: evaluator(evaluator),
+	  params(evaluator->params),
+	  setter(std::move(setter))
+	{
+		for (size_t i = 0; i < params.general.size(); ++i) {
+			params.general[i].variable->set(interval, params.general[i]);
+		}
+		isconst = evaluator->variables.size() == 0;
+	}
+
+	Evaluator *evaluator;
+	Evaluator::Params params;
+	Setter setter;
+
+	void move(int n)
+	{
+		for (size_t i = 0; i < params.general.size(); ++i) {
+			params.general[i].val += n * gps * params.general[i].increment;
+		}
+	}
+
+	void sisd(typename Physics::Element &element)
+	{
+
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+
+		double results[SIMD::size * gps];
+		evaluator->evalVector(SIMD::size * gps, params, results);
+		for (size_t gp = 0; gp < gps; ++gp) {
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				this->setter(element, gp, s, results[gps * s + gp]); // TODO: check correct order
+			}
+		}
+		move(SIMD::size);
+	}
+};
+
 struct ExpressionsToParameter: public ActionOperator {
 	ExpressionsToParameter(int interval, ParameterData &parameter, Evaluator *evaluator, size_t offset, size_t size)
 	: data(parameter, interval),

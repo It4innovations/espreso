@@ -32,12 +32,11 @@ struct HeatTransferStiffness2<nodes, gps, 2, edim, HeatTransferElementType::SYMM
 
 	void sisd(typename Physics::Element &element)
 	{
-		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-//			double scale = element.ecf.thickness[gpindex][0] * element.det[gpindex][0] * element.w[gpindex][0] * element.conductivity[gpindex][0][0];
-			double scale = element.det[gpindex] * element.w[gpindex];
+		for (size_t gp = 0; gp < gps; ++gp) {
+			double scale = element.ecf.thickness[gp] * element.det[gp] * element.w[gp] * element.conductivity[gp];
 			for (size_t n = 0; n < nodes; ++n) {
 				for (size_t m = 0; m < nodes; ++m) {
-					stiffness[n * nodes + m] += scale * (element.dND[gpindex][n][0] * element.dND[gpindex][m][0] + element.dND[gpindex][n][1] * element.dND[gpindex][m][1]);
+					stiffness[n * nodes + m] += scale * (element.dND[gp][n][0] * element.dND[gp][m][0] + element.dND[gp][n][1] * element.dND[gp][m][1]);
 				}
 			}
 		}
@@ -46,15 +45,14 @@ struct HeatTransferStiffness2<nodes, gps, 2, edim, HeatTransferElementType::SYMM
 
 	void simd(typename Physics::Element &element)
 	{
-		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-//			SIMD scale = load(element.ecf.thickness[gpindex]) * load(element.det[gpindex]) * load(element.w[gpindex]) * load(element.conductivity[gpindex][0]);
-			SIMD scale = element.det[gpindex] * element.w[gpindex];
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD scale = element.ecf.thickness[gp] * element.det[gp] * element.w[gp] * element.conductivity[gp];
 			for (size_t n = 0; n < nodes; ++n) {
-				SIMD nx = element.dND[gpindex][n][0];
-				SIMD ny = element.dND[gpindex][n][1];
+				SIMD nx = element.dND[gp][n][0];
+				SIMD ny = element.dND[gp][n][1];
 				for (size_t m = 0; m < nodes; ++m) {
-					SIMD mx = element.dND[gpindex][m][0];
-					SIMD my = element.dND[gpindex][m][1];
+					SIMD mx = element.dND[gp][m][0];
+					SIMD my = element.dND[gp][m][1];
 					SIMD res = load(stiffness.data + (n * nodes + m) * SIMD::size);
 					res = res + scale * (nx * mx + ny * my);
 					store(stiffness.data + (n * nodes + m) * SIMD::size, res);
@@ -71,15 +69,14 @@ struct HeatTransferStiffness2<nodes, gps, 3, edim, HeatTransferElementType::SYMM
 
 	void sisd(typename Physics::Element &element)
 	{
-		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-//			double scale = element.det[gpindex][0] * element.w[gpindex][0] * element.conductivity[gpindex][0][0];
-			double scale = element.det[gpindex] * element.w[gpindex];
+		for (size_t gp = 0; gp < gps; ++gp) {
+			double scale = element.det[gp] * element.w[gp] * element.conductivity[gp];
 			for (size_t n = 0; n < nodes; ++n) {
 				for (size_t m = 0; m < nodes; ++m) {
 					stiffness[n * nodes + m] += scale * (
-							element.dND[gpindex][n][0] * element.dND[gpindex][m][0] +
-							element.dND[gpindex][n][1] * element.dND[gpindex][m][1] +
-							element.dND[gpindex][n][2] * element.dND[gpindex][m][2]);
+							element.dND[gp][n][0] * element.dND[gp][m][0] +
+							element.dND[gp][n][1] * element.dND[gp][m][1] +
+							element.dND[gp][n][2] * element.dND[gp][m][2]);
 				}
 			}
 		}
@@ -89,17 +86,16 @@ struct HeatTransferStiffness2<nodes, gps, 3, edim, HeatTransferElementType::SYMM
 	void simd(typename Physics::Element &element)
 	{
 		double * __restrict__ out = stiffness.data;
-		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-//			SIMD scale = load(element.det[gpindex]) * load(element.w[gpindex]) * load(element.conductivity[gpindex]);
-			SIMD scale = element.det[gpindex] * element.w[gpindex];
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD scale = element.det[gp] * element.w[gp] * element.conductivity[gp];
 			for (size_t n = 0; n < nodes; ++n) {
-				SIMD nx = element.dND[gpindex][n][0];
-				SIMD ny = element.dND[gpindex][n][1];
-				SIMD nz = element.dND[gpindex][n][2];
+				SIMD nx = element.dND[gp][n][0];
+				SIMD ny = element.dND[gp][n][1];
+				SIMD nz = element.dND[gp][n][2];
 				for (size_t m = 0; m < nodes; ++m) {
-					SIMD mx = element.dND[gpindex][m][0];
-					SIMD my = element.dND[gpindex][m][1];
-					SIMD mz = element.dND[gpindex][m][2];
+					SIMD mx = element.dND[gp][m][0];
+					SIMD my = element.dND[gp][m][1];
+					SIMD mz = element.dND[gp][m][2];
 					SIMD res = load(out + (n * nodes + m) * SIMD::size);
 
 					res = res + scale * (nx * mx + ny * my + nz * mz);
@@ -117,22 +113,41 @@ struct HeatTransferStiffness2<nodes, gps, 2, edim, HeatTransferElementType::SYMM
 
 	void sisd(typename Physics::Element &element)
 	{
-//		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-//			ADDMN2M22M2N<nodes>(element.ecf.thickness[gpindex] * element.det[gpindex] * element.w[gpindex], element.conductivity + 4 * gpindex, element.dND + 2 * nodes * gpindex, stiffness.data);
-//		}
-//		move(1);
+		for (size_t gp = 0; gp < gps; ++gp) {
+			double scale = element.ecf.thickness[gp] * element.det[gp] * element.w[gp];
+			for (size_t n = 0; n < nodes; ++n) {
+				double a = element.dND[gp][n][0] * element.conductivity[gp][0] + element.dND[gp][n][1] * element.conductivity[gp][2];
+				double b = element.dND[gp][n][0] * element.conductivity[gp][1] + element.dND[gp][n][1] * element.conductivity[gp][3];
+				for (size_t m = 0; m < nodes; ++m) {
+					stiffness[n * nodes + m] += scale * (a * element.dND[gp][m][0] + b * element.dND[gp][m][1]);
+				}
+			}
+		}
+		move(1);
 	}
 
 	void simd(typename Physics::Element &element)
 	{
-//		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-//			SIMD scale =  load(element.ecf.thickness + gpindex * SIMD::size)
-//						* load(element.det + gpindex * SIMD::size)
-//						* load(element.w + gpindex * SIMD::size);
-//
-//			ADDMN2M22M2NSimd<nodes>(scale, element.conductivity + 4 * gpindex * SIMD::size, element.dND + 2 * nodes * gpindex * SIMD::size, stiffness.data);
-//		}
-//		move(SIMD::size);
+		double * __restrict__ out = stiffness.data;
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD c00 = element.conductivity[gp][0], c01 = element.conductivity[gp][1];
+			SIMD c10 = element.conductivity[gp][2], c11 = element.conductivity[gp][3];
+			double scale = element.ecf.thickness[gp] * element.det[gp] * element.w[gp];
+			for (size_t n = 0; n < nodes; ++n) {
+				SIMD nx = element.dND[gp][n][0];
+				SIMD ny = element.dND[gp][n][1];
+				SIMD a = nx * c00 + ny * c01;
+				SIMD b = nx * c10 + ny * c11;
+				for (size_t m = 0; m < nodes; ++m) {
+					SIMD mx = element.dND[gp][m][0];
+					SIMD my = element.dND[gp][m][1];
+					SIMD res = load(stiffness.data + (n * nodes + m) * SIMD::size);
+					res = res + scale * (a * mx + b * my);
+					store(stiffness.data + (n * nodes + m) * SIMD::size, res);
+				}
+			}
+		}
+		move(SIMD::size);
 	}
 };
 
@@ -142,21 +157,46 @@ struct HeatTransferStiffness2<nodes, gps, 3, edim, HeatTransferElementType::SYMM
 
 	void sisd(typename Physics::Element &element)
 	{
-//		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-//			ADDMN3M33M3N<nodes>(element.det[gpindex] * element.w[gpindex], element.conductivity + 9 * gpindex, element.dND + 3 * nodes * gpindex, stiffness.data);
-//		}
-//		move(1);
+		for (size_t gp = 0; gp < gps; ++gp) {
+			double scale = element.det[gp] * element.w[gp];
+			for (size_t n = 0; n < nodes; ++n) {
+				double a = element.dND[gp][n][0] * element.conductivity[gp][0] + element.dND[gp][n][1] * element.conductivity[gp][3] + element.dND[gp][n][2] * element.conductivity[gp][6];
+				double b = element.dND[gp][n][0] * element.conductivity[gp][1] + element.dND[gp][n][1] * element.conductivity[gp][4] + element.dND[gp][n][2] * element.conductivity[gp][7];
+				double c = element.dND[gp][n][0] * element.conductivity[gp][2] + element.dND[gp][n][1] * element.conductivity[gp][5] + element.dND[gp][n][2] * element.conductivity[gp][8];
+				for (size_t m = 0; m < nodes; ++m) {
+					stiffness[n * nodes + m] += scale * (a * element.dND[gp][m][0] + b * element.dND[gp][m][1] + c * element.dND[gp][m][2]);
+				}
+			}
+		}
+		move(1);
 	}
 
 	void simd(typename Physics::Element &element)
 	{
-//		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-//			SIMD scale =  load(element.det + gpindex * SIMD::size)
-//						* load(element.w + gpindex * SIMD::size);
-//
-//			ADDMN3M33M3NSimd<nodes>(scale, element.conductivity + 9 * gpindex * SIMD::size, element.dND + 3 * nodes * gpindex * SIMD::size, stiffness.data);
-//		}
-//		move(SIMD::size);
+		double * __restrict__ out = stiffness.data;
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD scale = element.det[gp] * element.w[gp];
+			SIMD c00 = element.conductivity[gp][0], c01 = element.conductivity[gp][1], c02 = element.conductivity[gp][2];
+			SIMD c10 = element.conductivity[gp][3], c11 = element.conductivity[gp][4], c12 = element.conductivity[gp][5];
+			SIMD c20 = element.conductivity[gp][6], c21 = element.conductivity[gp][7], c22 = element.conductivity[gp][8];
+			for (size_t n = 0; n < nodes; ++n) {
+				SIMD nx = element.dND[gp][n][0];
+				SIMD ny = element.dND[gp][n][1];
+				SIMD nz = element.dND[gp][n][2];
+				SIMD a = nx * c00 + ny * c01 + nz * c02;
+				SIMD b = nx * c10 + ny * c11 + nz * c12;
+				SIMD c = nx * c20 + ny * c21 + nz * c22;
+				for (size_t m = 0; m < nodes; ++m) {
+					SIMD mx = element.dND[gp][m][0];
+					SIMD my = element.dND[gp][m][1];
+					SIMD mz = element.dND[gp][m][2];
+					SIMD res = load(stiffness.data + (n * nodes + m) * SIMD::size);
+					res = res + scale * (a * mx + b * my + c * mz);
+					store(stiffness.data + (n * nodes + m) * SIMD::size, res);
+				}
+			}
+		}
+		move(SIMD::size);
 	}
 };
 

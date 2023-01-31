@@ -3,6 +3,7 @@
 #define SRC_ANALYSIS_ASSEMBLER_MODULE_HEAT_H_
 
 #include "assembler.h"
+#include "parameter.h"
 #include "config/ecf/physics/heattransfer.h"
 #include "config/holders/expression.h"
 #include "mesh/store/nodestore.h"
@@ -55,6 +56,23 @@ public:
 	HeatTransferConfiguration &settings;
 	HeatTransferLoadStepConfiguration &configuration;
 
+	struct {
+		struct {
+			ExternalValue<1> isotropic;
+			ExternalValue<2> diagonal2D;
+			ElementGPsExternalParameter<ndim * egps> diagonal;
+			ElementGPsExternalParameter<3 * egps> symmetric2D;
+			ElementGPsExternalParameter<6 * egps> symmetric3D;
+			ElementGPsExternalParameter<ndim * ndim * egps> anisotropic;
+		} model;
+
+		ElementGPsExternalParameter<egps> density, heatCapacity;
+
+		ElementParameter<egps> mass;
+		ElementParameter<egps> conductivityIsotropic;
+		ElementParameter<ndim * ndim * egps> conductivity;
+	} material;
+
 	struct ParametersElements {
 		ElementParameter<enodes * enodes> stiffness;
 		ElementParameter<enodes * enodes> mass;
@@ -72,6 +90,8 @@ public:
 	};
 
 protected:
+	template <int etype>
+	double typedInstance(size_t interval, int code, const std::vector<ActionOperator*> &ops, esint elements);
 	double instantiate(size_t interval, int code, const std::vector<ActionOperator*> &ops, esint elements);
 
 	bool initTemperature();

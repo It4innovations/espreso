@@ -99,6 +99,7 @@ public:
 	virtual double evaluate(double r) const { return 0; }
 
 	virtual std::string getEXPRTKForm() const { return ""; }
+	virtual std::string toString() const { return ""; }
 
 	Params params;
 	std::vector<std::string> variables;

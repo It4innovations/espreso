@@ -20,12 +20,6 @@ struct ImpedanceConfiguration;
 struct PointSourceConfiguration;
 struct PhysicsConfiguration;
 
-struct ParameterError {
-	enum: int {
-		OK
-	};
-};
-
 class Assembler
 {
 public:
@@ -43,7 +37,7 @@ protected:
 	virtual double instantiate(size_t interval, int code, const std::vector<ActionOperator*> &ops, esint elements) { return 0; }
 	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype> double loop(const std::vector<ActionOperator*> &ops, esint elements);
 
-	void check(int error, const char* parameter);
+	bool checkMaterialParameter(const std::string &material, const std::string &name, ECFExpression &settings);
 
 	void iterate();
 	void fill();

@@ -27,6 +27,7 @@ public:
 	double evaluate(double r) const { return _value; }
 
 	std::string getEXPRTKForm() const { return std::to_string(_value); }
+	std::string toString() const { return std::to_string(_value); }
 
 protected:
 	double _value;

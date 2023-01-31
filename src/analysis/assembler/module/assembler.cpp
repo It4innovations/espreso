@@ -43,15 +43,6 @@ Assembler::Assembler(PhysicsConfiguration &settings)
 	}
 }
 
-void Assembler::check(int error, const char* parameter)
-{
-	switch (error) {
-	case ParameterError::OK: break;
-	default:
-		eslog::error("%s: incorrect settings\n", parameter);
-	}
-}
-
 double Assembler::assemble()
 {
 	double time = 0;
@@ -364,6 +355,23 @@ void Assembler::printMaterials(const std::map<std::string, std::string> &setting
 			}
 		}
 	}
+}
+
+bool Assembler::checkMaterialParameter(const std::string &material, const std::string &name, ECFExpression &settings)
+{
+	if (settings.evaluator == nullptr) {
+		if (!Variable::create(settings)) {
+			eslog::warning("   %18s:  %69s \n", name.c_str(), "INVALID EXPRESSION");
+			return false;
+		}
+	}
+	if (settings.evaluator->variables.size()) {
+		std::string params = Parser::join(", ", settings.evaluator->variables);
+		eslog::info("   %18s:  %69s \n", settings.evaluator->toString().c_str());
+	} else {
+		eslog::info("   %18s:  %69g \n", name.c_str(), settings.evaluator->eval(Evaluator::Params()));
+	}
+	return true;
 }
 
 bool Assembler::examineMaterialParameter(const std::string &material, const std::string &name, ECFExpression &settings, ExternalElementValue &externalValue, int dimension)

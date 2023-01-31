@@ -33,8 +33,10 @@ struct HeatTransferGPC {
 
 struct HeatTransferElementType {
 	enum: int {
-		SYMMETRIC_ISOTROPIC = 0,
-		SYMMETRIC_GENERAL   = 1,
+		SYMMETRIC_ISOTROPIC  = 0,
+		SYMMETRIC_GENERAL    = 1,
+		ASYMMETRIC_ISOTROPIC = 2,
+		ASYMMETRIC_GENERAL   = 3,
 	};
 };
 
@@ -50,20 +52,20 @@ inline void printElementData(const char* name, const double *values, size_t size
 	printf("\n");
 }
 
-template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-struct HeatTransferDataDescriptor {
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype> struct HeatTransferDataDescriptor;
+
+template <size_t nodes, size_t gps, size_t edim>
+struct HeatTransferDataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC> {
 	virtual ~HeatTransferDataDescriptor() {}
 
 	struct Element {
 		struct {
-			alignas(SIMD::size * sizeof(double)) double conductivity[SIMD::size * gps * 9];
-			alignas(SIMD::size * sizeof(double)) double angle       [SIMD::size * gps * 6];
-			alignas(SIMD::size * sizeof(double)) double density     [SIMD::size * gps];
-			alignas(SIMD::size * sizeof(double)) double heatCapacity[SIMD::size * gps];
+			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
+			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
 		} ecf;
 
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][ndim];
-		alignas(SIMD::size * sizeof(double)) double gpcoords[SIMD::size * gps * ndim];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][ndim];
 
 		alignas(SIMD::size * sizeof(double)) SIMD  w [gps];
 		alignas(SIMD::size * sizeof(double)) SIMD  N [gps][nodes];
@@ -72,14 +74,14 @@ struct HeatTransferDataDescriptor {
 		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
 		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
 
-		alignas(SIMD::size * sizeof(double)) double conductivity[SIMD::size * gps * 9]; // 3 x 3
+		alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps];
 
 		Element()
 		{
-			std::fill(ecf.conductivity, ecf.conductivity + SIMD::size * gps * 9, 1);
-			std::fill(ecf.angle, ecf.angle+ SIMD::size * gps * 6, 0);
-			std::fill(ecf.density, ecf.density+ SIMD::size * gps, 1);
-			std::fill(ecf.heatCapacity, ecf.heatCapacity+ SIMD::size * gps, 1);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				ecf.density[gp] = 1;
+				ecf.heatCapacity[gp] = 1;
+			}
 		}
 	};
 
@@ -88,22 +90,20 @@ struct HeatTransferDataDescriptor {
 	virtual void peel(Element &element, size_t size) { simd(element); }
 };
 
-template <size_t nodes, size_t gps, size_t edim, size_t etype>
-struct HeatTransferDataDescriptor<nodes, gps, 2, edim, etype> {
+template <size_t nodes, size_t gps, size_t edim>
+struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC> {
 	virtual ~HeatTransferDataDescriptor() {}
 
 	struct Element {
 		struct {
-			alignas(SIMD::size * sizeof(double)) double thickness[SIMD::size * gps];
+			alignas(SIMD::size * sizeof(double)) SIMD thickness[gps];
 
-			alignas(SIMD::size * sizeof(double)) double conductivity[SIMD::size * gps * 4];
-			alignas(SIMD::size * sizeof(double)) double angle       [SIMD::size * gps * 4];
-			alignas(SIMD::size * sizeof(double)) double density     [SIMD::size * gps];
-			alignas(SIMD::size * sizeof(double)) double heatCapacity[SIMD::size * gps];
+			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
+			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
 		} ecf;
 
-		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][2];
-		alignas(SIMD::size * sizeof(double)) double gpcoords[SIMD::size * gps * 2];
+		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][ndim];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][ndim];
 
 		alignas(SIMD::size * sizeof(double)) SIMD  w [gps];
 		alignas(SIMD::size * sizeof(double)) SIMD  N [gps][nodes];
@@ -112,15 +112,103 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, etype> {
 		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
 		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
 
-		alignas(SIMD::size * sizeof(double)) double conductivity[SIMD::size * gps * 4]; // 2 x 2
+		alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps];
 
 		Element()
 		{
-			std::fill(ecf.thickness, ecf.thickness + SIMD::size * gps, 1);
-			std::fill(ecf.conductivity, ecf.conductivity + SIMD::size * gps * 4, 1);
-			std::fill(ecf.angle, ecf.angle+ SIMD::size * gps * 4, 0);
-			std::fill(ecf.density, ecf.density+ SIMD::size * gps, 1);
-			std::fill(ecf.heatCapacity, ecf.heatCapacity+ SIMD::size * gps, 1);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				ecf.thickness[gp] = 1;
+				ecf.density[gp] = 1;
+				ecf.heatCapacity[gp] = 1;
+			}
+		}
+	};
+
+	virtual void sisd(Element &element) =0;
+	virtual void simd(Element &element) =0;
+	virtual void peel(Element &element, size_t size) { simd(element); }
+};
+
+template <size_t nodes, size_t gps, size_t edim>
+struct HeatTransferDataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL> {
+	virtual ~HeatTransferDataDescriptor() {}
+
+	struct Element {
+		struct {
+			alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][9];
+			alignas(SIMD::size * sizeof(double)) SIMD angle       [gps][6];
+			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
+			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
+		} ecf;
+
+		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][ndim];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][ndim];
+
+		alignas(SIMD::size * sizeof(double)) SIMD  w [gps];
+		alignas(SIMD::size * sizeof(double)) SIMD  N [gps][nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD dN [gps][nodes][edim];
+
+		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
+		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
+
+		alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][9];
+
+		Element()
+		{
+			for (size_t gp = 0; gp < gps; ++gp) {
+				std::fill(ecf.conductivity[gp], ecf.conductivity[gp] + 9, 1.);
+				std::fill(ecf.angle[gp], ecf.angle[gp] + 6, 0.);
+				ecf.density[gp] = 1;
+				ecf.heatCapacity[gp] = 1;
+
+				std::fill(conductivity[gp], conductivity[gp] + 9, 0.);
+			}
+		}
+	};
+
+	virtual void sisd(Element &element) =0;
+	virtual void simd(Element &element) =0;
+	virtual void peel(Element &element, size_t size) { simd(element); }
+};
+
+template <size_t nodes, size_t gps, size_t edim>
+struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL> {
+	virtual ~HeatTransferDataDescriptor() {}
+
+	struct Element {
+		struct {
+			alignas(SIMD::size * sizeof(double)) SIMD thickness[gps];
+
+			alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][4];
+			alignas(SIMD::size * sizeof(double)) SIMD angle       [gps][2];
+			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
+			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
+		} ecf;
+
+		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][2];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][2];
+
+		alignas(SIMD::size * sizeof(double)) SIMD  w [gps];
+		alignas(SIMD::size * sizeof(double)) SIMD  N [gps][nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD dN [gps][nodes][edim];
+
+		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
+		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
+
+		alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][4];
+
+		Element()
+		{
+			for (size_t gp = 0; gp < gps; ++gp) {
+				ecf.thickness[gp] = 1;
+
+				std::fill(ecf.conductivity[gp], ecf.conductivity[gp] + 4, 0.);
+				std::fill(ecf.angle[gp], ecf.angle[gp] + 2, 0.);
+				ecf.density[gp] = 1;
+				ecf.heatCapacity[gp] = 1;
+
+				std::fill(conductivity[gp], conductivity[gp] + 4, 0.);
+			}
 		}
 	};
 

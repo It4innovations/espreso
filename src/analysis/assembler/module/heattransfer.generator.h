@@ -5,6 +5,7 @@
 #include "heattransfer.element.h"
 #include "analysis/assembler/operator.h"
 #include "analysis/assembler/operators/basis.h"
+#include "analysis/assembler/operators/expression.h"
 
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
@@ -33,7 +34,7 @@ static void generateBaseFunctions(size_t interval, std::vector<std::vector<Actio
 	}
 }
 
-static int generateBaseFunctions(const std::vector<int> &etype, std::vector<std::vector<ActionOperator*> > &ops)
+static void generateBaseFunctions(const std::vector<int> &etype, std::vector<std::vector<ActionOperator*> > &ops)
 {
 	GaussPoints<Element::CODE::LINE2, 2, 2, 1>::set();
 	GaussPoints<Element::CODE::TRIANGLE3, 3, 6, 2>::set();
@@ -64,8 +65,54 @@ static int generateBaseFunctions(const std::vector<int> &etype, std::vector<std:
 			} break;
 		}
 	}
+}
 
-	return ParameterError::OK;
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, int etype, class Setter>
+static ActionOperator* generateTypedExpression2D(size_t interval, Evaluator *evaluator, Setter &&setter)
+{
+	switch (info::mesh->elements->eintervals[interval].code) {
+	case static_cast<int>(Element::CODE::TRIANGLE3): return new Expression< 3, HeatTransferGPC::TRIANGLE3, 2, 2, etype, HeatTransferDataDescriptor< 3, HeatTransferGPC::TRIANGLE3, 2, 2, etype>, Setter>(interval, evaluator, std::move(setter));
+	case static_cast<int>(Element::CODE::TRIANGLE6): return new Expression< 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype, HeatTransferDataDescriptor< 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype>, Setter>(interval, evaluator, std::move(setter));
+	case static_cast<int>(Element::CODE::SQUARE4  ): return new Expression< 4, HeatTransferGPC::SQUARE4  , 2, 2, etype, HeatTransferDataDescriptor< 4, HeatTransferGPC::SQUARE4  , 2, 2, etype>, Setter>(interval, evaluator, std::move(setter));
+	case static_cast<int>(Element::CODE::SQUARE8  ): return new Expression< 8, HeatTransferGPC::SQUARE8  , 2, 2, etype, HeatTransferDataDescriptor< 8, HeatTransferGPC::SQUARE8  , 2, 2, etype>, Setter>(interval, evaluator, std::move(setter));
+	default: return nullptr;
+	}
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, int etype, class Setter>
+static ActionOperator* generateTypedExpression3D(size_t interval, Evaluator *evaluator, Setter &&setter)
+{
+	switch (info::mesh->elements->eintervals[interval].code) {
+	case static_cast<int>(Element::CODE::TETRA4   ): return new Expression< 4, HeatTransferGPC::TETRA4   , 3, 3, etype, HeatTransferDataDescriptor< 4, HeatTransferGPC::TETRA4   , 3, 3, etype>, Setter>(interval, evaluator, std::move(setter));
+	case static_cast<int>(Element::CODE::TETRA10  ): return new Expression<10, HeatTransferGPC::TETRA10  , 3, 3, etype, HeatTransferDataDescriptor<10, HeatTransferGPC::TETRA10  , 3, 3, etype>, Setter>(interval, evaluator, std::move(setter));
+	case static_cast<int>(Element::CODE::PYRAMID5 ): return new Expression< 5, HeatTransferGPC::PYRAMID5 , 3, 3, etype, HeatTransferDataDescriptor< 5, HeatTransferGPC::PYRAMID5 , 3, 3, etype>, Setter>(interval, evaluator, std::move(setter));
+	case static_cast<int>(Element::CODE::PYRAMID13): return new Expression<13, HeatTransferGPC::PYRAMID13, 3, 3, etype, HeatTransferDataDescriptor<13, HeatTransferGPC::PYRAMID13, 3, 3, etype>, Setter>(interval, evaluator, std::move(setter));
+	case static_cast<int>(Element::CODE::PRISMA6  ): return new Expression< 6, HeatTransferGPC::PRISMA6  , 3, 3, etype, HeatTransferDataDescriptor< 6, HeatTransferGPC::PRISMA6  , 3, 3, etype>, Setter>(interval, evaluator, std::move(setter));
+	case static_cast<int>(Element::CODE::PRISMA15 ): return new Expression<15, HeatTransferGPC::PRISMA15 , 3, 3, etype, HeatTransferDataDescriptor<15, HeatTransferGPC::PRISMA15 , 3, 3, etype>, Setter>(interval, evaluator, std::move(setter));
+	case static_cast<int>(Element::CODE::HEXA8    ): return new Expression< 8, HeatTransferGPC::HEXA8    , 3, 3, etype, HeatTransferDataDescriptor< 8, HeatTransferGPC::HEXA8    , 3, 3, etype>, Setter>(interval, evaluator, std::move(setter));
+	case static_cast<int>(Element::CODE::HEXA20   ): return new Expression<20, HeatTransferGPC::HEXA20   , 3, 3, etype, HeatTransferDataDescriptor<20, HeatTransferGPC::HEXA20   , 3, 3, etype>, Setter>(interval, evaluator, std::move(setter));
+	default: return nullptr;
+	}
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, int etype, class Setter>
+static ActionOperator* generateTypedExpression(size_t interval, Evaluator *evaluator, Setter &&setter)
+{
+	switch (info::mesh->dimension) {
+	case 2: return generateTypedExpression2D<Expression, etype, Setter>(interval, evaluator, std::move(setter));
+	case 3: return generateTypedExpression3D<Expression, etype, Setter>(interval, evaluator, std::move(setter));
+	}
+	return nullptr;
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
+static ActionOperator* generateExpression(size_t interval, int etype, Evaluator *evaluator, Setter &&setter)
+{
+	switch (etype) {
+	case HeatTransferElementType::SYMMETRIC_ISOTROPIC: return generateTypedExpression<Expression, HeatTransferElementType::SYMMETRIC_ISOTROPIC>(interval, evaluator, std::move(setter));
+	case HeatTransferElementType::SYMMETRIC_GENERAL:   return generateTypedExpression<Expression, HeatTransferElementType::SYMMETRIC_GENERAL  >(interval, evaluator, std::move(setter));
+	}
+	return nullptr;
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, int etype, class ... Args>
@@ -96,60 +143,39 @@ static ActionOperator* generateElementTypedOperator3D(size_t interval, Args&& ..
 	}
 }
 
-template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
-static ActionOperator* generateElementOperator2D(size_t interval, int etype, Args&& ... args)
-{
-	switch (etype) {
-	case HeatTransferElementType::SYMMETRIC_ISOTROPIC: return generateElementTypedOperator2D<Operator, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Args...>(interval, std::forward<Args>(args)...);
-	case HeatTransferElementType::SYMMETRIC_GENERAL:   return generateElementTypedOperator2D<Operator, HeatTransferElementType::SYMMETRIC_GENERAL  , Args...>(interval, std::forward<Args>(args)...);
-	}
-	return nullptr;
-}
-
-template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
-static ActionOperator* generateElementOperator3D(size_t interval, int etype, Args&& ... args)
-{
-	switch (etype) {
-	case HeatTransferElementType::SYMMETRIC_ISOTROPIC: return generateElementTypedOperator3D<Operator, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Args...>(interval, std::forward<Args>(args)...);
-	case HeatTransferElementType::SYMMETRIC_GENERAL:   return generateElementTypedOperator3D<Operator, HeatTransferElementType::SYMMETRIC_GENERAL  , Args...>(interval, std::forward<Args>(args)...);
-	}
-	return nullptr;
-}
-
-template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
-static int generateElementOperators2D(const std::vector<int> &etype, std::vector<std::vector<ActionOperator*> > &ops, Args&& ... args)
-{
-	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
-		ops[interval].push_back(generateElementOperator2D<Operator, Args...>(interval, etype[interval], std::forward<Args>(args)...));
-	}
-	return ParameterError::OK;
-}
-
-template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
-static int generateElementOperators3D(const std::vector<int> &etype, std::vector<std::vector<ActionOperator*> > &ops, Args&& ... args)
-{
-	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
-		ops[interval].push_back(generateElementOperator3D<Operator, Args...>(interval, etype[interval], std::forward<Args>(args)...));
-	}
-	return ParameterError::OK;
-}
-
-template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
-static int generateElementOperators(const std::vector<int> &etype, std::vector<std::vector<ActionOperator*> > &ops, Args&& ... args)
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, int etype, class ... Args>
+static ActionOperator* generateElementTypedOperator(size_t interval, Args&& ... args)
 {
 	switch (info::mesh->dimension) {
-	case 2: generateElementOperators2D<Operator, Args...>(etype, ops, std::forward<Args>(args)...); break;
-	case 3: generateElementOperators3D<Operator, Args...>(etype, ops, std::forward<Args>(args)...); break;
+	case 2: return generateElementTypedOperator2D<Operator, etype, Args...>(interval, std::forward<Args>(args)...);
+	case 3: return generateElementTypedOperator3D<Operator, etype, Args...>(interval, std::forward<Args>(args)...);
 	}
-	return ParameterError::OK;
+	return nullptr;
 }
 
-static int dropLastOperators(std::vector<std::vector<ActionOperator*> > &ops)
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
+static ActionOperator* generateElementOperator(size_t interval, int etype, Args&& ... args)
+{
+	switch (etype) {
+	case HeatTransferElementType::SYMMETRIC_ISOTROPIC: return generateElementTypedOperator<Operator, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Args...>(interval, std::forward<Args>(args)...);
+	case HeatTransferElementType::SYMMETRIC_GENERAL:   return generateElementTypedOperator<Operator, HeatTransferElementType::SYMMETRIC_GENERAL  , Args...>(interval, std::forward<Args>(args)...);
+	}
+	return nullptr;
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
+static void generateElementOperators(const std::vector<int> &etype, std::vector<std::vector<ActionOperator*> > &ops, Args&& ... args)
+{
+	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+		ops[interval].push_back(generateElementOperator<Operator, Args...>(interval, etype[interval], std::forward<Args>(args)...));
+	}
+}
+
+static void dropLastOperators(std::vector<std::vector<ActionOperator*> > &ops)
 {
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
 		ops[interval].pop_back();
 	}
-	return ParameterError::OK;
 }
 
 }

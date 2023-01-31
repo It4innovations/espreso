@@ -35,6 +35,7 @@ public:
 	double evaluate(double r) const;
 
 	std::string getEXPRTKForm() const;
+	std::string toString() const { return getEXPRTKForm(); }
 
 protected:
 	std::vector<Expression*> _expressions;
